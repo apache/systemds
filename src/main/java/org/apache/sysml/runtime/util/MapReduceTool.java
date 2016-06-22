@@ -25,6 +25,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -440,20 +441,20 @@ public class MapReduceTool
 	
 	public static void writeMetaDataFile(String mtdfile, ValueType vt, MatrixCharacteristics mc, OutputInfo outinfo) 
 		throws IOException {
-		writeMetaDataFile(mtdfile, vt, DataType.MATRIX, mc, outinfo);
+		writeMetaDataFile(mtdfile, vt, null, DataType.MATRIX, mc, outinfo);
 	}
 	
-	public static void writeMetaDataFile(String mtdfile, ValueType vt, DataType dt, MatrixCharacteristics mc, OutputInfo outinfo) 
+	public static void writeMetaDataFile(String mtdfile, ValueType vt, List<ValueType> schema, DataType dt, MatrixCharacteristics mc, OutputInfo outinfo) 
 		throws IOException {
-		writeMetaDataFile(mtdfile, vt, dt, mc, outinfo, null);
+		writeMetaDataFile(mtdfile, vt, schema, dt, mc, outinfo, null);
 	}
 
 	public static void writeMetaDataFile(String mtdfile, ValueType vt, MatrixCharacteristics mc,  OutputInfo outinfo, FileFormatProperties formatProperties) 
 		throws IOException {
-		writeMetaDataFile(mtdfile, vt, DataType.MATRIX, mc, outinfo, formatProperties);
+		writeMetaDataFile(mtdfile, vt, null, DataType.MATRIX, mc, outinfo, formatProperties);
 	}
 	
-	public static void writeMetaDataFile(String mtdfile, ValueType vt, DataType dt, MatrixCharacteristics mc, 
+	public static void writeMetaDataFile(String mtdfile, ValueType vt, List<ValueType> schema, DataType dt, MatrixCharacteristics mc, 
 			OutputInfo outinfo, FileFormatProperties formatProperties) 
 		throws IOException 
 	{
@@ -467,25 +468,52 @@ public class MapReduceTool
 		try {
 			// build JSON metadata object
 			mtd.put(DataExpression.DATATYPEPARAM, dt.toString().toLowerCase());
-			switch (vt) {
-				case DOUBLE:
-					mtd.put(DataExpression.VALUETYPEPARAM, "double");
-					break;
-				case INT:
-					mtd.put(DataExpression.VALUETYPEPARAM, "int");
-					break;
-				case BOOLEAN:
-					mtd.put(DataExpression.VALUETYPEPARAM, "boolean");
-					break;
-				case STRING:
-					mtd.put(DataExpression.VALUETYPEPARAM, "string");
-					break;
-				case UNKNOWN:
-					mtd.put(DataExpression.VALUETYPEPARAM, "unknown");
-					break;
-				case OBJECT:
-					mtd.put(DataExpression.VALUETYPEPARAM, "object");
-					break;
+			if (schema == null)
+				switch (vt) {
+					case DOUBLE:
+						mtd.put(DataExpression.VALUETYPEPARAM, "double");
+						break;
+					case INT:
+						mtd.put(DataExpression.VALUETYPEPARAM, "int");
+						break;
+					case BOOLEAN:
+						mtd.put(DataExpression.VALUETYPEPARAM, "boolean");
+						break;
+					case STRING:
+						mtd.put(DataExpression.VALUETYPEPARAM, "string");
+						break;
+					case UNKNOWN:
+						mtd.put(DataExpression.VALUETYPEPARAM, "unknown");
+						break;
+					case OBJECT:
+						mtd.put(DataExpression.VALUETYPEPARAM, "object");
+						break;
+				}
+			else
+			{
+				StringBuffer schemaStrBuffer = new StringBuffer();
+				for(int i=0; i < schema.size(); i++) {
+					switch (schema.get(i)) {
+						case DOUBLE:
+							schemaStrBuffer.append("DOUBLE");
+							break;
+						case INT:
+							schemaStrBuffer.append("INT");
+							break;
+						case BOOLEAN:
+							schemaStrBuffer.append("BOOLEAN");
+							break;
+						case STRING:
+							schemaStrBuffer.append("STRING");
+							break;
+						case UNKNOWN:
+						default:
+							schemaStrBuffer.append("*");
+							break;
+					}
+					schemaStrBuffer.append(DataExpression.DEFAULT_DELIM_DELIMITER);
+				}
+				mtd.put(DataExpression.SCHEMAPARAM, schemaStrBuffer.toString());
 			}
 			mtd.put(DataExpression.READROWPARAM, mc.getRows());
 			mtd.put(DataExpression.READCOLPARAM, mc.getCols());

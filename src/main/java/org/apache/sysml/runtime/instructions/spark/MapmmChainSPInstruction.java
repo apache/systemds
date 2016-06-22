@@ -33,7 +33,7 @@ import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
-import org.apache.sysml.runtime.instructions.spark.data.PartitionedBroadcastMatrix;
+import org.apache.sysml.runtime.instructions.spark.data.PartitionedBroadcast;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDAggregateUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
@@ -127,7 +127,7 @@ public class MapmmChainSPInstruction extends SPInstruction
 		
 		//get rdd and broadcast inputs
 		JavaPairRDD<MatrixIndexes,MatrixBlock> inX = sec.getBinaryBlockRDDHandleForVariable( _input1.getName() );
-		PartitionedBroadcastMatrix inV = sec.getBroadcastForVariable( _input2.getName() );
+		PartitionedBroadcast<MatrixBlock> inV = sec.getBroadcastForVariable( _input2.getName() );
 		
 		//execute mapmmchain (guaranteed to have single output block)
 		MatrixBlock out = null;
@@ -137,7 +137,7 @@ public class MapmmChainSPInstruction extends SPInstruction
 			out = RDDAggregateUtils.sumStable(tmp);		
 		}
 		else { // ChainType.XtwXv / ChainType.XtXvy
-			PartitionedBroadcastMatrix inW = sec.getBroadcastForVariable( _input3.getName() );
+			PartitionedBroadcast<MatrixBlock> inW = sec.getBroadcastForVariable( _input3.getName() );
 			RDDMapMMChainFunction2 fmmc = new RDDMapMMChainFunction2(inV, inW, _chainType);
 			JavaPairRDD<MatrixIndexes,MatrixBlock> tmp = inX.mapToPair(fmmc);
 			out = RDDAggregateUtils.sumStable(tmp);		
@@ -157,9 +157,9 @@ public class MapmmChainSPInstruction extends SPInstruction
 	{
 		private static final long serialVersionUID = 8197406787010296291L;
 
-		private PartitionedBroadcastMatrix _pmV = null;
+		private PartitionedBroadcast<MatrixBlock> _pmV = null;
 		
-		public RDDMapMMChainFunction( PartitionedBroadcastMatrix bV) 
+		public RDDMapMMChainFunction( PartitionedBroadcast<MatrixBlock> bV) 
 			throws DMLRuntimeException
 		{			
 			//get first broadcast vector (always single block)
@@ -170,7 +170,7 @@ public class MapmmChainSPInstruction extends SPInstruction
 		public MatrixBlock call( MatrixBlock arg0 ) 
 			throws Exception 
 		{
-			MatrixBlock pmV = _pmV.getMatrixBlock(1, 1);
+			MatrixBlock pmV = _pmV.getBlock(1, 1);
 			
 			//execute mapmmchain operation
 			MatrixBlock out = new MatrixBlock();
@@ -186,11 +186,11 @@ public class MapmmChainSPInstruction extends SPInstruction
 	{
 		private static final long serialVersionUID = -7926980450209760212L;
 
-		private PartitionedBroadcastMatrix _pmV = null;
-		private PartitionedBroadcastMatrix _pmW = null;
+		private PartitionedBroadcast<MatrixBlock> _pmV = null;
+		private PartitionedBroadcast<MatrixBlock> _pmW = null;
 		private ChainType _chainType = null;
 		
-		public RDDMapMMChainFunction2( PartitionedBroadcastMatrix bV, PartitionedBroadcastMatrix bW, ChainType chain) 
+		public RDDMapMMChainFunction2( PartitionedBroadcast<MatrixBlock> bV, PartitionedBroadcast<MatrixBlock> bW, ChainType chain) 
 			throws DMLRuntimeException
 		{			
 			//get both broadcast vectors (first always single block)
@@ -203,7 +203,7 @@ public class MapmmChainSPInstruction extends SPInstruction
 		public Tuple2<MatrixIndexes, MatrixBlock> call( Tuple2<MatrixIndexes, MatrixBlock> arg0 ) 
 			throws Exception 
 		{
-			MatrixBlock pmV = _pmV.getMatrixBlock(1, 1);
+			MatrixBlock pmV = _pmV.getBlock(1, 1);
 			
 			MatrixIndexes ixIn = arg0._1();
 			MatrixBlock blkIn = arg0._2();
@@ -213,7 +213,7 @@ public class MapmmChainSPInstruction extends SPInstruction
 			MatrixBlock blkOut = new MatrixBlock();
 			
 			//execute mapmmchain operation
-			blkIn.chainMatrixMultOperations(pmV, _pmW.getMatrixBlock(rowIx,1), blkOut, _chainType);
+			blkIn.chainMatrixMultOperations(pmV, _pmW.getBlock(rowIx,1), blkOut, _chainType);
 				
 			//output new tuple
 			return new Tuple2<MatrixIndexes, MatrixBlock>(ixOut, blkOut);

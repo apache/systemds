@@ -52,9 +52,9 @@ import org.apache.sysml.runtime.instructions.spark.CovarianceSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.CpmmSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.CumulativeAggregateSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.CumulativeOffsetSPInstruction;
+import org.apache.sysml.runtime.instructions.spark.IndexingSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.MapmmChainSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.MapmmSPInstruction;
-import org.apache.sysml.runtime.instructions.spark.MatrixIndexingSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.MatrixReshapeSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.PMapmmSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.ParameterizedBuiltinSPInstruction;
@@ -317,7 +317,7 @@ public class SPInstructionParser extends InstructionParser
 				return AggregateTernarySPInstruction.parseInstruction(str);
 				
 			case MatrixIndexing:
-				return MatrixIndexingSPInstruction.parseInstruction(str);
+				return IndexingSPInstruction.parseInstruction(str);
 				
 			case Reorg:
 				return ReorgSPInstruction.parseInstruction(str);

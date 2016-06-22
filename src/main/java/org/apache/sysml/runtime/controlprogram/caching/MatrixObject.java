@@ -229,7 +229,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 			if(_data != null &&  
 					// Not a column vector
 					_data.getNumRows() != 1 && _data.getNumColumns() != 1) {
-				double[] arr = ((MatrixBlock)_data).getDenseBlock();
+				double[] arr = _data.getDenseBlock();
 				LibMatrixDNN.cacheReuseableData(arr);
 			}
 		}

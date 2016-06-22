@@ -41,6 +41,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Locale;
 import java.util.Random;
 import java.util.StringTokenizer;
@@ -53,12 +54,19 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile;
+import org.apache.sysml.parser.Expression.ValueType;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.io.FrameWriter;
+import org.apache.sysml.runtime.io.FrameWriterFactory;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
+import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.IJV;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixCell;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
+import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.test.integration.BinaryMatrixCharacteristics;
 
 
@@ -842,7 +850,67 @@ public class TestUtils
 		_AssertOccured = true;
 		return false;
 	}
-
+	
+	
+	/**
+	 * 
+	 * @param vt
+	 * @param in1
+	 * @param in2
+	 * @param tolerance
+	 * 
+	 * @return
+	 */
+	public static int compareTo(ValueType vt, Object in1, Object in2, double tolerance) {
+		if(in1 == null && in2 == null) return 0;
+		else if(in1 == null) return -1;
+		else if(in2 == null) return 1;
+ 
+		switch( vt ) {
+			case STRING:  return ((String)in1).compareTo((String)in2);
+			case BOOLEAN: return ((Boolean)in1).compareTo((Boolean)in2);
+			case INT:     return ((Long)in1).compareTo((Long)in2);
+			case DOUBLE:  
+				return (Math.abs((Double)in1-(Double)in2) < tolerance)?0:	
+					((Double)in1).compareTo((Double)in2);
+			default: throw new RuntimeException("Unsupported value type: "+vt);
+		}
+	}
+	
+	/**
+	 * 
+	 * @param vt
+	 * @param in1
+	 * @param inR
+	 * @return
+	 */
+	public static int compareToR(ValueType vt, Object in1, Object inR, double tolerance) {
+		if(in1 == null && (inR == null || (inR.toString().compareTo("NA")==0))) return 0;
+		else if(in1 == null && vt == ValueType.STRING) return -1;
+		else if(inR == null) return 1;
+ 
+		switch( vt ) {
+			case STRING:  return ((String)in1).compareTo((String)inR);
+			case BOOLEAN: 
+				if(in1 == null)
+					return Boolean.FALSE.compareTo(((Boolean)inR).booleanValue());
+				else
+					return ((Boolean)in1).compareTo((Boolean)inR);
+			case INT:     
+				if(in1 == null)
+					return new Long(0).compareTo(((Long)inR));
+				else
+					return ((Long)in1).compareTo((Long)inR);
+			case DOUBLE:  
+				if(in1 == null)
+					return (new Double(0)).compareTo((Double)inR);
+				else
+					return (Math.abs((Double)in1-(Double)inR) < tolerance)?0:	
+						((Double)in1).compareTo((Double)inR);
+			default: throw new RuntimeException("Unsupported value type: "+vt);
+		}
+	}
+	
 	/**
 	 * Converts a 2D array into a sparse hashmap matrix.
 	 * 
@@ -1534,6 +1602,67 @@ public class TestUtils
 		writeTestMatrix(file, matrix, false);
 	}
 
+	
+	/**
+	 * <p>
+	 * Writes a frame to a file using the text format.
+	 * </p>
+	 * 
+	 * @param file
+	 *            file name
+	 * @param data
+	 *            frame data
+	 * @param isR
+	 * @throws IOException 
+	 * @throws DMLRuntimeException 
+	 */
+	public static void writeTestFrame(String file, double[][] data, List<ValueType> schema, OutputInfo oi, boolean isR) 
+			throws DMLRuntimeException, IOException 
+	{
+		FrameWriter writer = FrameWriterFactory.createFrameWriter(oi);
+		FrameBlock frame = new FrameBlock(schema);
+		initFrameData(frame, data, schema, data.length);
+		writer.writeFrameToHDFS(frame, file, data.length, schema.size());
+	}
+	
+	/**
+	 * <p>
+	 * Writes a frame to a file using the text format.
+	 * </p>
+	 * 
+	 * @param file
+	 *            file name
+	 * @param data
+	 *            frame data
+	 * @throws IOException 
+	 * @throws DMLRuntimeException 
+	 */
+	public static void writeTestFrame(String file, double[][] data, List<ValueType> schema, OutputInfo oi)
+		throws DMLRuntimeException, IOException
+	{
+		writeTestFrame(file, data, schema, oi, false);
+	}
+
+	/**
+	 * 
+	 * @param frame
+	 * @param data
+	 * @param lschema
+	 */
+	public static void initFrameData(FrameBlock frame, double[][] data, List<ValueType> lschema, int rows) {
+		Object[] row1 = new Object[lschema.size()];
+		for( int i=0; i<rows; i++ ) {
+			for( int j=0; j<lschema.size(); j++ ) {
+				data[i][j] = UtilFunctions.objectToDouble(lschema.get(j), 
+						row1[j] = UtilFunctions.doubleToObject(lschema.get(j), data[i][j]));
+				if(row1[j] != null && lschema.get(j) == ValueType.STRING)
+					row1[j] = "Str" + row1[j];
+			}
+			frame.appendRow(row1);
+		}
+	}
+
+	
 	/* Write a scalar value to a file */
 	public static void writeTestScalar(String file, double value) {
 		try {

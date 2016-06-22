@@ -20,12 +20,16 @@
 package org.apache.sysml.runtime.util;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.sysml.parser.Expression.ValueType;
+import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.NumItemsByEachReducerMetaData;
+import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
+import org.apache.wink.json4j.JSONArray;
 
 public class UtilFunctions 
 {
@@ -144,6 +148,23 @@ public class UtilFunctions
 	 * @param ix
 	 * @param brlen
 	 * @param bclen
+	 * @param rl
+	 * @param ru
+	 * @return
+	 */
+	public static boolean isInFrameBlockRange( Long ix, int brlen, int bclen, long rl, long ru )
+	{
+		if(rl > ix+brlen-1 || ru < ix)
+			return false;
+		else
+			return true;
+	}
+	
+	/**
+	 * 
+	 * @param ix
+	 * @param brlen
+	 * @param bclen
 	 * @param ixrange
 	 * @return
 	 */
@@ -152,6 +173,20 @@ public class UtilFunctions
 		return isInBlockRange(ix, brlen, bclen, 
 				ixrange.rowStart, ixrange.rowEnd, 
 				ixrange.colStart, ixrange.colEnd);
+	}
+	
+	/**
+	 * 
+	 * @param ix
+	 * @param brlen
+	 * @param bclen
+	 * @param ixrange
+	 * @return
+	 */
+	public static boolean isInFrameBlockRange( Long ix, int brlen, int bclen, IndexRange ixrange )
+	{
+		return isInFrameBlockRange(ix, brlen, bclen, 
+				ixrange.rowStart, ixrange.rowEnd);
 	}
 	
 	// Reused by both MR and Spark for performing zero out
@@ -189,6 +224,23 @@ public class UtilFunctions
 			tempRange.colEnd=rightColInRightBlock;
 		
 		return tempRange;
+	}
+	
+	// Reused by both MR and Spark for performing zero out
+	public static IndexRange getSelectedRangeForZeroOut(Pair<Long, FrameBlock> in, int blockRowFactor, int blockColFactor, IndexRange indexRange, long lSrcRowIndex, long lDestRowIndex) 
+	{
+		int iRowStart, iRowEnd, iColStart, iColEnd;
+		
+		if(indexRange.rowStart <= lDestRowIndex)
+			iRowStart = 0;
+		else
+			iRowStart = (int) (indexRange.rowStart - in.getKey());
+		iRowEnd = (int) Math.min(indexRange.rowEnd - lSrcRowIndex, blockRowFactor)-1;
+		
+		iColStart = UtilFunctions.computeCellInBlock(indexRange.colStart, blockColFactor);
+		iColEnd = UtilFunctions.computeCellInBlock(indexRange.colEnd, blockColFactor);
+
+		return  new IndexRange(iRowStart, iRowEnd, iColStart, iColEnd);
 	}
 	
 	public static long getTotalLength(NumItemsByEachReducerMetaData metadata) {
@@ -337,9 +389,62 @@ public class UtilFunctions
 	
 	/**
 	 * 
+	 * @param in
+	 * @param ignoreNull	
+	 * 		If this flag has set, it will ignore null. This flag is mainly used in merge functionality to override data with "null" data.
+	 * @return
+	 */
+	public static String objectToString( Object in, boolean ignoreNull ) {
+		String strReturn = objectToString(in); 
+		if( strReturn == null )
+			return strReturn;
+		else if (ignoreNull){
+			if(in instanceof Double && ((Double)in).doubleValue() == 0.0)
+				return null;
+			else if(in instanceof Long && ((Long)in).longValue() == 0)
+				return null;
+			else if(in instanceof Boolean && ((Boolean)in).booleanValue() == false)
+				return null;
+			else if(in instanceof String && ((String)in).trim().length() == 0)
+				return null;
+			else
+				return strReturn;
+		} 
+		else
+			return strReturn;
+	}
+	
+	/**
+	 * 
+	 * @param vt
+	 * @param in
+	 * @return
+	 */
+	public static Object objectToObject(ValueType vt, Object in ) {
+		String str = objectToString(in);
+		return stringToObject(vt, str );
+	}
+	
+	/**
+	 * 
+	 * @param vt
+	 * @param in
+	 * @return
+	 */
+	public static Object objectToObject(ValueType vt, Object in, boolean ignoreNull ) {
+		String str = objectToString(in, ignoreNull);
+		if (str==null || vt == ValueType.STRING)
+			return str;
+		else
+			return stringToObject(vt, str); 
+	}	
+	
+	/**
+	 * 
 	 * @param vt
 	 * @param in1
 	 * @param in2
+	 * 
 	 * @return
 	 */
 	public static int compareTo(ValueType vt, Object in1, Object in2) {
@@ -355,7 +460,7 @@ public class UtilFunctions
 			default: throw new RuntimeException("Unsupported value type: "+vt);
 		}
 	}
-	
+
 	/**
 	 * Compares two version strings of format x.y.z, where x is major,
 	 * y is minor, and z is maintenance release.
@@ -457,5 +562,39 @@ public class UtilFunctions
 		for( int i=low; i<=up; i+=incr )
 			ret.add(i);
 		return ret;
+	}
+
+	/**
+	 * Returns the schema based on Json object
+	 * 
+	 * @param schemaObject
+	 * @return
+	 */
+	public static List<ValueType> getSchemaType(Object schemaObject)
+	{
+		JSONArray schemaJsonArr = (JSONArray)schemaObject;
+		ValueType[] schemaArray = new ValueType[schemaJsonArr.size()];
+		
+		for(int i=0; i < schemaJsonArr.length(); i++)
+				schemaArray[i] = ValueType.valueOf((String)schemaJsonArr.get(0));
+		return Arrays.asList(schemaArray);
+	}
+	
+	/**
+	 * Returns the subset of the schema 
+	 * 
+	 * @param srcSchema
+	 * @param lStart
+	 * @param lEnd
+	 * 
+	 * @return
+	 */
+	public static List<ValueType> getSubSchema(List<ValueType> srcSchema, long lStart, long lEnd)
+	{
+		ValueType [] schema = new ValueType[(int) (lEnd-lStart+1)];
+		for(int i = 0; i < schema.length; i++)
+			schema[i] = srcSchema.get((int) (lStart+i));
+		
+		return Arrays.asList(schema);
 	}
 }

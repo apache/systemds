@@ -86,6 +86,7 @@ import org.apache.sysml.runtime.util.IndexRange;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
 
+
 public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizable
 {
 	private static final long serialVersionUID = 7319972089143154056L;
@@ -1732,6 +1733,12 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		else
 			for( int i=rl, ix2=rl*clen+cl; i<=ru; i++, ix2+=clen )
 				Arrays.fill(denseBlock, ix2, ix2+rowLen, 0);
+	}
+
+	public void merge(CacheBlock that, boolean appendOnly) 
+			throws DMLRuntimeException
+	{
+		merge((MatrixBlock)that, appendOnly);
 	}
 
 	
@@ -4034,7 +4041,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * 
 	 * @throws DMLRuntimeException 
 	 */
-	public MatrixBlock sliceOperations(int rl, int ru, int cl, int cu, MatrixBlock ret) 
+	public MatrixBlock sliceOperations(int rl, int ru, int cl, int cu, CacheBlock ret) 
 		throws DMLRuntimeException 
 	{	
 		// check the validity of bounds
@@ -4046,7 +4053,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		
 		// Output matrix will have the same sparsity as that of the input matrix.
 		// (assuming a uniform distribution of non-zeros in the input)
-		MatrixBlock result=checkType(ret);
+		MatrixBlock result=checkType((MatrixBlock)ret);
 		long estnnz= (long) ((double)this.nonZeros/rlen/clen*(ru-rl+1)*(cu-cl+1));
 		boolean result_sparsity = this.sparse && MatrixBlock.evalSparseFormatInMemory(ru-rl+1, cu-cl+1, estnnz);
 		if(result==null)
@@ -6212,5 +6219,16 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			estimatedNonZeros=nnzs;
 		}
 		public SparsityEstimate(){}
+	}
+
+	public ArrayList<Pair<MatrixIndexes, MatrixBlock>> getPairList()
+	{
+		return new ArrayList<Pair<MatrixIndexes,MatrixBlock>>();
+	}
+	
+	@SuppressWarnings("unchecked")
+	public ArrayList<Pair<?, ?>> performSlice(IndexRange ixrange, int brlen, int bclen, int iix, int jix, CacheBlock in) throws DMLRuntimeException
+	{
+		return OperationsOnMatrixValues.performSlice(ixrange, brlen, bclen, iix, jix, (MatrixBlock)in);
 	}
 }

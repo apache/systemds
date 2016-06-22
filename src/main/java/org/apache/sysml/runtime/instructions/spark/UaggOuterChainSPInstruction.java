@@ -42,7 +42,7 @@ import org.apache.sysml.runtime.functionobjects.ReduceRow;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.spark.data.LazyIterableIterator;
-import org.apache.sysml.runtime.instructions.spark.data.PartitionedBroadcastMatrix;
+import org.apache.sysml.runtime.instructions.spark.data.PartitionedBroadcast;
 import org.apache.sysml.runtime.instructions.spark.functions.AggregateDropCorrectionFunction;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDAggregateUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -158,7 +158,7 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction
 		}
 		else
 		{
-			PartitionedBroadcastMatrix bv = sec.getBroadcastForVariable( bcastVar ); 
+			PartitionedBroadcast<MatrixBlock> bv = sec.getBroadcastForVariable( bcastVar ); 
 			
 			//partitioning-preserving map-to-pair (under constraints)
 			out = in1.mapPartitionsToPair( new RDDMapGenUAggOuterChainFunction(bv, _uaggOp, _aggOp, _bOp, mcIn), noKeyChange );	
@@ -314,7 +314,7 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction
 	{
 		private static final long serialVersionUID = 8197406787010296291L;
 
-		private PartitionedBroadcastMatrix _pbc = null;
+		private PartitionedBroadcast<MatrixBlock> _pbc = null;
 		
 		// Operators
 		private AggregateUnaryOperator _uaggOp = null;
@@ -327,7 +327,7 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction
 		private MatrixValue _tmpVal1 = null;
 		private MatrixValue _tmpVal2 = null;
 
-		public RDDMapGenUAggOuterChainFunction(PartitionedBroadcastMatrix binput, AggregateUnaryOperator uaggOp, AggregateOperator aggOp, BinaryOperator bOp, 
+		public RDDMapGenUAggOuterChainFunction(PartitionedBroadcast<MatrixBlock> binput, AggregateUnaryOperator uaggOp, AggregateOperator aggOp, BinaryOperator bOp, 
 				MatrixCharacteristics mc)
 		{
 			_pbc = binput;
@@ -374,7 +374,7 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction
 				
 				for(int bidx=1; bidx <= in2_colBlocks; bidx++) 
 				{
-					MatrixValue in2Val = _pbc.getMatrixBlock(1, bidx);
+					MatrixValue in2Val = _pbc.getBlock(1, bidx);
 					
 					//outer block operation
 					OperationsOnMatrixValues.performBinaryIgnoreIndexes(in1Val, in2Val, _tmpVal1, _bOp);

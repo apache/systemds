@@ -92,6 +92,29 @@ public class SparkUtils
 		return ret;
 	}
 	
+	/**
+	 * 
+	 * @param in
+	 * @return
+	 */
+	public static Pair<MatrixIndexes,MatrixBlock> fromIndexedMatrixBlockToPair( IndexedMatrixValue in ){
+		return new Pair<MatrixIndexes,MatrixBlock>(in.getIndexes(), (MatrixBlock)in.getValue());
+	}
+	
+	/**
+	 * 
+	 * @param in
+	 * @return
+	 */
+	public static ArrayList<Pair<MatrixIndexes,MatrixBlock>> fromIndexedMatrixBlockToPair( ArrayList<IndexedMatrixValue> in )
+	{
+		ArrayList<Pair<MatrixIndexes,MatrixBlock>> ret = new ArrayList<Pair<MatrixIndexes,MatrixBlock>>();
+		for( IndexedMatrixValue imv : in )
+			ret.add(fromIndexedMatrixBlockToPair(imv));
+		
+		return ret;
+	}
+	
 	
 	/**
 	 * 
@@ -101,7 +124,6 @@ public class SparkUtils
 	public static Tuple2<Long,FrameBlock> fromIndexedFrameBlock( Pair<Long, FrameBlock> in ){
 		return new Tuple2<Long, FrameBlock>(in.getKey(), in.getValue());
 	}
-	
 	
 	/**
 	 * 
@@ -130,6 +152,25 @@ public class SparkUtils
 	}
 	
 	
+	/**
+	 * 
+	 * @param in
+	 * @return
+	 */
+	public static Pair<Long,FrameBlock> toIndexedFrameBlock( Tuple2<Long,FrameBlock> in ) {
+		return new Pair<Long,FrameBlock>(in._1(), in._2());
+	}
+	
+	/**
+	 * 
+	 * @param ix
+	 * @param mb
+	 * @return
+	 */
+	public static Pair<Long,FrameBlock> toIndexedFrameBlock( Long ix, FrameBlock fb ) {
+		return new Pair<Long,FrameBlock>(ix, fb);
+	}
+
 	/**
 	 * 
 	 * @param mb

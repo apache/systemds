@@ -107,6 +107,10 @@ public class FrameObject extends CacheableData<FrameBlock>
 		}
 	}
 	
+	public void setSchema(List<ValueType> schema) {
+		_schema = schema;
+	}
+		
 	@Override
 	public void refreshMetaData() 
 		throws CacheException
@@ -139,7 +143,7 @@ public class FrameObject extends CacheableData<FrameBlock>
 		MatrixCharacteristics mc = getMatrixCharacteristics();
 		return mc.getCols();
 	}
-
+	
 	@Override
 	protected FrameBlock readBlobFromCache(String fname) throws IOException {
 		return (FrameBlock)LazyWriteBuffer.readBlock(fname, false);
@@ -173,11 +177,19 @@ public class FrameObject extends CacheableData<FrameBlock>
 		return data;
 	}
 
+	/**
+	 * Read Frame object from RDD 
+	 * 
+	 * @param rdd
+	 * @param status
+	 * 
+	 * @param fo
+	 */
 	@Override
 	protected FrameBlock readBlobFromRDD(RDDObject rdd, MutableBoolean status)
 			throws IOException 
 	{
-		//note: the read of a matrix block from an RDD might trigger
+		//note: the read of a frame block from an RDD might trigger
 		//lazy evaluation of pending transformations.
 		RDDObject lrdd = rdd;
 
@@ -186,17 +198,20 @@ public class FrameObject extends CacheableData<FrameBlock>
 		
 		MatrixFormatMetaData iimd = (MatrixFormatMetaData) _metaData;
 		MatrixCharacteristics mc = iimd.getMatrixCharacteristics();
-		FrameBlock fb = null;
 		
-		try  {
+		FrameBlock fb = null;
+		try 
+		{
 			//prevent unnecessary collect through rdd checkpoint
 			if( rdd.allowsShortCircuitCollect() ) {
 				lrdd = (RDDObject)rdd.getLineageChilds().get(0);
 			}
 			
-			//collect frame block from binary block RDD
+			//obtain frame block from RDD
 			int rlen = (int)mc.getRows();
 			int clen = (int)mc.getCols();
+
+			//collect frame block from binary cell RDD
 			fb = SparkExecutionContext.toFrameBlock(lrdd, _schema, rlen, clen);	
 		}
 		catch(DMLRuntimeException ex) {
@@ -205,7 +220,7 @@ public class FrameObject extends CacheableData<FrameBlock>
 		
 		//sanity check correct output
 		if( fb == null ) {
-			throw new IOException("Unable to load matrix from rdd: "+lrdd.getVarName());
+			throw new IOException("Unable to load frame from rdd: "+lrdd.getVarName());
 		}
 		
 		return fb;
@@ -225,12 +240,13 @@ public class FrameObject extends CacheableData<FrameBlock>
 		throws IOException, DMLRuntimeException 
 	{
 		//prepare output info
-        MatrixFormatMetaData iimd = (MatrixFormatMetaData) _metaData;
-	    OutputInfo oinfo = (ofmt != null ? OutputInfo.stringToOutputInfo(ofmt) 
-                : InputInfo.getMatchingOutputInfo (iimd.getInputInfo()));
+		MatrixFormatMetaData iimd = (MatrixFormatMetaData) _metaData;
+		OutputInfo oinfo = (ofmt != null ? OutputInfo.stringToOutputInfo (ofmt ) 
+				: InputInfo.getMatchingOutputInfo (iimd.getInputInfo ()));
 	    
 		//note: the write of an RDD to HDFS might trigger
 		//lazy evaluation of pending transformations.				
 		SparkExecutionContext.writeFrameRDDtoHDFS(rdd, fname, oinfo);	
 	}
+
 }

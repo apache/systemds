@@ -67,6 +67,9 @@ public class OptimizerUtils
 	/** Default blocksize if unspecified or for testing purposes */
 	public static final int DEFAULT_BLOCKSIZE = 1000;
 	
+	/** Default frame blocksize */
+	public static final int DEFAULT_FRAME_BLOCKSIZE = 1000;
+	
 	/** Default optimization level if unspecified */
 	public static final OptimizationLevel DEFAULT_OPTLEVEL = 
 			OptimizationLevel.O2_LOCAL_MEMORY_DEFAULT;
@@ -386,6 +389,12 @@ public class OptimizerUtils
 	
 	public static void resetDefaultSize() {
 		DEFAULT_SIZE = getDefaultSize();
+	}
+	
+	
+	public static int getDefaultFrameSize()
+	{
+		return DEFAULT_FRAME_BLOCKSIZE;
 	}
 	
 	/**

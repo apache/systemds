@@ -25,7 +25,7 @@ import org.apache.spark.broadcast.Broadcast;
 import scala.Tuple2;
 
 import org.apache.sysml.lops.BinaryM.VectorType;
-import org.apache.sysml.runtime.instructions.spark.data.PartitionedMatrixBlock;
+import org.apache.sysml.runtime.instructions.spark.data.PartitionedBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
@@ -36,10 +36,10 @@ public class MatrixVectorBinaryOpFunction implements PairFunction<Tuple2<MatrixI
 	private static final long serialVersionUID = -7695883019452417300L;
 	
 	private BinaryOperator _op = null;
-	private Broadcast<PartitionedMatrixBlock> _pmV = null;
+	private Broadcast<PartitionedBlock<MatrixBlock>> _pmV = null;
 	private VectorType _vtype = null;
 	
-	public MatrixVectorBinaryOpFunction( BinaryOperator op, Broadcast<PartitionedMatrixBlock> binput, VectorType vtype ) 
+	public MatrixVectorBinaryOpFunction( BinaryOperator op, Broadcast<PartitionedBlock<MatrixBlock>> binput, VectorType vtype ) 
 	{
 		_op = op;
 		_pmV = binput;
@@ -56,7 +56,7 @@ public class MatrixVectorBinaryOpFunction implements PairFunction<Tuple2<MatrixI
 		//get the rhs block 
 		int rix= (int)((_vtype==VectorType.COL_VECTOR) ? ix.getRowIndex() : 1);
 		int cix= (int)((_vtype==VectorType.COL_VECTOR) ? 1 : ix.getColumnIndex());
-		MatrixBlock in2 = _pmV.value().getMatrixBlock(rix, cix);
+		MatrixBlock in2 = _pmV.value().getBlock(rix, cix);
 			
 		//execute the binary operation
 		MatrixBlock ret = (MatrixBlock) (in1.binaryOperations (_op, in2, new MatrixBlock()));

@@ -19,7 +19,12 @@
 
 package org.apache.sysml.runtime.controlprogram.caching;
 
+import java.util.ArrayList;
+
 import org.apache.hadoop.io.Writable;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.matrix.data.Pair;
+import org.apache.sysml.runtime.util.IndexRange;
 
 
 /**
@@ -40,7 +45,7 @@ public interface CacheBlock extends Writable
 	 * @return
 	 */
 	public long getExactSerializedSize();
-	
+
 	/**
 	 * Indicates if the cache block is subject to shallow serialized,
 	 * which is generally true if in-memory size and serialized size
@@ -54,4 +59,19 @@ public interface CacheBlock extends Writable
 	 * Free unnecessarily allocated empty block.
 	 */
 	public void compactEmptyBlock();
+	
+	public int getNumRows();
+	public int getNumColumns();
+	
+	public CacheBlock sliceOperations(int rl, int ru, int cl, int cu, CacheBlock block) 
+			throws DMLRuntimeException;
+	
+	public void merge(CacheBlock that, boolean appendOnly) 
+			throws DMLRuntimeException;
+	
+	@SuppressWarnings("rawtypes")
+	public 	ArrayList getPairList();
+
+	ArrayList<Pair<?, ?>> performSlice(IndexRange ixrange, int brlen, int bclen, int iix, int jix, CacheBlock in) 
+			throws DMLRuntimeException;
 }

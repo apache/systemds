@@ -92,7 +92,7 @@ public class OutputInfo implements Serializable
 		else 
 			throw new DMLRuntimeException("Unrecognized output info: " + oi);
 	}
-
+		
 	public static OutputInfo stringToOutputInfo (String str) {
 		if ( str.equalsIgnoreCase("textcell")) {
 			return TextCellOutputInfo;

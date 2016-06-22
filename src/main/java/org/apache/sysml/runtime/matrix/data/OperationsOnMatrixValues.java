@@ -21,10 +21,14 @@
 package org.apache.sysml.runtime.matrix.data;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
+import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysml.runtime.functionobjects.Builtin;
+import org.apache.sysml.runtime.instructions.spark.utils.SparkUtils;
 import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.matrix.operators.AggregateBinaryOperator;
@@ -292,6 +296,17 @@ public class OperationsOnMatrixValues
 		value1.aggregateBinaryOperations(value1, value2, valueOut, op);
 	}
 	
+	@SuppressWarnings("rawtypes")
+	public static ArrayList performSlice(IndexRange ixrange, int brlen, int bclen, int iix, int jix, MatrixBlock in) 
+			throws DMLRuntimeException
+	{
+		IndexedMatrixValue imv = new IndexedMatrixValue(new MatrixIndexes(iix, jix), (MatrixBlock)in);
+		ArrayList<IndexedMatrixValue> outlist = new ArrayList<IndexedMatrixValue>();
+		performSlice(imv, ixrange, brlen, bclen, outlist);
+	
+		return SparkUtils.fromIndexedMatrixBlockToPair(outlist);
+	}
+
 	/**
 	 * 
 	 * @param val
@@ -463,4 +478,144 @@ public class OperationsOnMatrixValues
 			}
 		}
 	}
+	
+	@SuppressWarnings("rawtypes")
+	public static ArrayList performSlice(IndexRange ixrange, int brlen, int bclen, int iix, int jix, FrameBlock in) 
+			throws DMLRuntimeException
+	{
+		Pair<Long, FrameBlock> lfp = new Pair<Long, FrameBlock>(new Long(((iix-1)*brlen)+1), in);
+		ArrayList<Pair<Long, FrameBlock>> outlist = new ArrayList<Pair<Long, FrameBlock>>();
+		performSlice(lfp, ixrange, brlen, bclen, outlist);
+	
+		return outlist;
+	}
+
+	
+	/**
+	 * This function will get slice of the input frame block overlapping in overall slice(Range), slice has requested for.
+	 * 
+	 * @param val
+	 * @param range
+	 * @param brlen
+	 * @param bclen
+	 * @param outlist
+	 * @throws DMLRuntimeException
+	 */
+	public static void performSlice(Pair<Long,FrameBlock> in, IndexRange ixrange, int brlen, int bclen, ArrayList<Pair<Long,FrameBlock>> outlist) 
+		throws DMLRuntimeException
+	{
+		long index = in.getKey();
+		FrameBlock block = in.getValue();
+		
+		// Get Block indexes (rows and columns boundaries)
+		long cellIndexTopRow = index;
+		long cellIndexBottomRow = index+block.getNumRows()-1;
+		long cellIndexLeftCol = 1;
+		long cellIndexRightCol = block.getNumColumns();
+		
+		// Calculate block boundaries with range of slice to be performed (Global index)
+		long cellIndexOverlapTop = Math.max(cellIndexTopRow, ixrange.rowStart);
+		long cellIndexOverlapBottom = Math.min(cellIndexBottomRow, ixrange.rowEnd);
+		long cellIndexOverlapLeft = Math.max(cellIndexLeftCol, ixrange.colStart);
+		long cellIndexOverlapRight = Math.min(cellIndexRightCol, ixrange.colEnd);
+		
+		//check if block is outside the indexing range
+		if(cellIndexOverlapTop>cellIndexOverlapBottom || cellIndexOverlapLeft>cellIndexOverlapRight) {
+			return;
+		}
+		
+		// Create IndexRange for the slice to be performed on this block.
+		IndexRange tmpRange = new IndexRange(
+				cellIndexOverlapTop - index,
+				cellIndexOverlapBottom - index,
+				cellIndexOverlapLeft -1,
+				cellIndexOverlapRight - 1);
+		
+		// Get Top Row and Left column cutting point. 
+		int rowCut=(int)(ixrange.rowStart-index);
+		
+		// Get indices for result block
+		long resultBlockIndexTop=UtilFunctions.computeBlockIndex(cellIndexOverlapTop, brlen);
+		long resultBlockIndexBottom=UtilFunctions.computeBlockIndex(cellIndexOverlapBottom, brlen);
+		
+		//allocate space for the output value
+		for(long r=resultBlockIndexTop; r<=resultBlockIndexBottom; r++)
+		{
+			List<ValueType> schema = UtilFunctions.getSubSchema(block.getSchema(), tmpRange.colStart, tmpRange.colEnd);
+			long iResultIndex = (r-1)*brlen+tmpRange.rowStart;
+			Pair<Long,FrameBlock> out=new Pair<Long,FrameBlock>(new Long(iResultIndex+1), new FrameBlock(schema));
+			outlist.add(out);
+		}
+		
+		//execute actual slice operation
+		block.sliceOperations(outlist, tmpRange, rowCut);
+	}
+
+	/**
+	 * 
+	 * @param in
+	 * @param ixrange
+	 * @param brlen
+	 * @param bclen
+	 * @param rlen
+	 * @param clen
+	 * @param outlist
+	 * @throws DMLRuntimeException
+	 */
+	public static void performShift(Pair<Long,FrameBlock> in, IndexRange ixrange, int brlenLeft, int clenLeft/*, int bclen*/, long rlen, long clen, ArrayList<Pair<Long,FrameBlock>> outlist) 
+		throws DMLRuntimeException
+	{
+		Long ix = in.getKey();
+		FrameBlock fb = in.getValue();
+		long start_lhs_globalRowIndex = ixrange.rowStart + (ix-1);
+		long start_lhs_globalColIndex = ixrange.colStart;
+		long end_lhs_globalRowIndex = start_lhs_globalRowIndex + fb.getNumRows() - 1;
+		long end_lhs_globalColIndex = ixrange.colEnd;
+		
+		long start_lhs_rowIndex = UtilFunctions.computeBlockIndex(start_lhs_globalRowIndex, brlenLeft);
+		long end_lhs_rowIndex = UtilFunctions.computeBlockIndex(end_lhs_globalRowIndex, brlenLeft);
+
+		for(long leftRowIndex = start_lhs_rowIndex; leftRowIndex <= end_lhs_rowIndex; leftRowIndex++) {
+				
+			// Calculate global index of right hand side block
+			long lhs_rl = Math.max((leftRowIndex-1)*brlenLeft+1, start_lhs_globalRowIndex);
+			long lhs_ru = Math.min(leftRowIndex*brlenLeft, end_lhs_globalRowIndex);
+			long lhs_cl = start_lhs_globalColIndex;
+			long lhs_cu = end_lhs_globalColIndex;
+			
+			int lhs_lrl = UtilFunctions.computeCellInBlock(lhs_rl, brlenLeft);
+			int lhs_lru = UtilFunctions.computeCellInBlock(lhs_ru, brlenLeft);
+			int lhs_lcl = (int)lhs_cl-1;
+			int lhs_lcu = (int)lhs_cu-1;
+			
+			long rhs_rl = lhs_rl - (ixrange.rowStart-1) - (ix-1);
+			long rhs_ru = rhs_rl + (lhs_ru - lhs_rl);
+			long rhs_cl = lhs_cl - ixrange.colStart + 1;
+			long rhs_cu = rhs_cl + (lhs_cu - lhs_cl);
+			
+			// local indices are 0 (zero) based.
+			int rhs_lrl = (int) (UtilFunctions.computeCellInBlock(rhs_rl, fb.getNumRows()));
+			int rhs_lru = (int) (UtilFunctions.computeCellInBlock(rhs_ru, fb.getNumRows()));
+			int rhs_lcl = (int)rhs_cl-1;
+			int rhs_lcu = (int)rhs_cu-1;
+																				
+			FrameBlock slicedRHSBlk = fb.sliceOperations(rhs_lrl, rhs_lru, rhs_lcl, rhs_lcu, new FrameBlock());
+			
+			int lbclen = clenLeft;
+			
+			List<ValueType> schemaPartialLeft = Collections.nCopies(lhs_lcl, ValueType.STRING);
+			List<ValueType> schemaRHS = UtilFunctions.getSubSchema(fb.getSchema(), rhs_lcl, rhs_lcl-lhs_lcl+lhs_lcu);
+			List<ValueType> schema = new ArrayList<ValueType>(schemaPartialLeft);
+			schema.addAll(schemaRHS);
+			List<ValueType> schemaPartialRight = Collections.nCopies(lbclen-schema.size(), ValueType.STRING);
+			schema.addAll(schemaPartialRight);
+			FrameBlock resultBlock = new FrameBlock(schema);
+			int iRHSRows = (int)(leftRowIndex<=rlen/brlenLeft?brlenLeft:rlen-(rlen/brlenLeft)*brlenLeft);
+			resultBlock.ensureAllocatedColumns(iRHSRows);
+			
+			resultBlock = resultBlock.leftIndexingOperations(slicedRHSBlk, lhs_lrl, lhs_lru, lhs_lcl, lhs_lcu, new FrameBlock());
+			outlist.add(new Pair<Long, FrameBlock>((leftRowIndex-1)*brlenLeft+1, resultBlock));
+		}
+	}
+
 }

@@ -221,6 +221,9 @@ public class FrameConverterTest extends AutomatedTestBase
 					iinfo = InputInfo.TextCellInputInfo;
 					break;
 				case MAT2BIN: 
+					oinfo = OutputInfo.BinaryBlockOutputInfo;
+					iinfo = InputInfo.BinaryBlockInputInfo;
+					break;
 				case BIN2MAT:
 					oinfo = OutputInfo.BinaryBlockOutputInfo;
 					iinfo = InputInfo.BinaryBlockInputInfo;

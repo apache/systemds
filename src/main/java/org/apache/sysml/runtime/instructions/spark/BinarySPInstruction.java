@@ -29,7 +29,7 @@ import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
-import org.apache.sysml.runtime.instructions.spark.data.PartitionedBroadcastMatrix;
+import org.apache.sysml.runtime.instructions.spark.data.PartitionedBroadcast;
 import org.apache.sysml.runtime.instructions.spark.functions.MatrixMatrixBinaryOpFunction;
 import org.apache.sysml.runtime.instructions.spark.functions.MatrixScalarUnaryFunction;
 import org.apache.sysml.runtime.instructions.spark.functions.MatrixVectorBinaryOpPartitionFunction;
@@ -154,7 +154,7 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction
 		String rddVar = input1.getName(); 
 		String bcastVar = input2.getName();
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( rddVar );
-		PartitionedBroadcastMatrix in2 = sec.getBroadcastForVariable( bcastVar );
+		PartitionedBroadcast<MatrixBlock> in2 = sec.getBroadcastForVariable( bcastVar );
 		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(rddVar);
 		MatrixCharacteristics mc2 = sec.getMatrixCharacteristics(bcastVar);
 		

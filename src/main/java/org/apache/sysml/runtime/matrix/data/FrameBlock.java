@@ -46,10 +46,12 @@ import org.apache.sysml.runtime.util.UtilFunctions;
  * 
  */
 @SuppressWarnings({"rawtypes","unchecked"}) //allow generic native arrays
-public class FrameBlock implements Writable, CacheBlock, Externalizable
+public class FrameBlock implements Writable, CacheBlock, Externalizable  
 {
 	private static final long serialVersionUID = -3993450030207130665L;
 	
+	public static final int BUFFER_SIZE = 1 * 1000 * 1000; //1M elements, size of default matrix block 
+
 	//internal configuration
 	private static final boolean REUSE_RECODE_MAPS = true;
 	
@@ -145,6 +147,16 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		return _schema;
 	}
 	
+	/**
+	 * Sets the schema of the frame block.
+	 * 
+	 * @return
+	 */
+	public void setSchema(List<ValueType> schema) {
+		_schema = schema;
+		_colnames = createColNames(schema.size());
+	}
+
 	/**
 	 * Returns the column names of the frame block.
 	 * 
@@ -288,13 +300,14 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * @param val
 	 */
 	public void set(int r, int c, Object val) {
-		_coldata.get(c).set(r, val);
+		_coldata.get(c).set(r, UtilFunctions.objectToObject(_schema.get(c), val));
 	}
-	
+
 	public void reset(int nrow) 
 	{
 		getSchema().clear();
 		getColumnNames().clear();
+		
 		if(_coldata != null)
 			for(int i=0; i < _coldata.size(); ++i)
 				_coldata.get(i)._size = nrow;
@@ -567,6 +580,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			throw new DMLRuntimeException("Invalid values for frame indexing: ["+(rl+1)+":"+(ru+1)+"," + (cl+1)+":"+(cu+1)+"] " +
 							"must be within frame dimensions ["+getNumRows()+","+getNumColumns()+"].");
 		}		
+
 		if ( (ru-rl+1) < rhsFrame.getNumRows() || (cu-cl+1) < rhsFrame.getNumColumns()) {
 			throw new DMLRuntimeException("Invalid values for frame indexing: " +
 					"dimensions of the source frame ["+rhsFrame.getNumRows()+"x" + rhsFrame.getNumColumns() + "] " +
@@ -574,12 +588,14 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 					(rl+1) +":" + (ru+1) + ", " + (cl+1) + ":" + (cu+1) + "].");
 		}
 		
+		
 		//allocate output frame (incl deep copy schema)
 		if( ret == null )
 			ret = new FrameBlock();
-		ret._numRows = _numRows;
+		ret._numRows = _numRows;								
 		ret._schema = new ArrayList<ValueType>(_schema);
 		ret._colnames = new ArrayList<String>(_colnames);
+		ret._colmeta = new ArrayList<ColumnMetadata>(_colmeta);
 		
 		//copy data to output and partial overwrite w/ rhs
 		for( int j=0; j<getNumColumns(); j++ ) {
@@ -618,9 +634,10 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * @param ret
 	 * @return
 	 */
-	public FrameBlock sliceOperations(int rl, int ru, int cl, int cu, FrameBlock ret) 
+	public FrameBlock sliceOperations(int rl, int ru, int cl, int cu, CacheBlock retCache) 
 		throws DMLRuntimeException
 	{
+		FrameBlock ret = (FrameBlock)retCache;
 		// check the validity of bounds
 		if (   rl < 0 || rl >= getNumRows() || ru < rl || ru >= getNumRows()
 			|| cl < 0 || cu >= getNumColumns() || cu < cl || cu >= getNumColumns() ) {
@@ -638,6 +655,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		for( int j=cl; j<=cu; j++ ) {
 			ret._schema.add(_schema.get(j));
 			ret._colnames.add(_colnames.get(j));
+			ret._colmeta.add(_colmeta.get(j));
 		}	
 		ret._numRows = ru-rl+1;
 
@@ -652,6 +670,41 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		return ret;
 	}
 	
+	
+	public void sliceOperations(ArrayList<Pair<Long,FrameBlock>> outlist, IndexRange range, int rowCut)
+	{
+		FrameBlock top=null, bottom=null;
+		Iterator<Pair<Long,FrameBlock>> p=outlist.iterator();
+		
+		if(range.rowStart<rowCut)
+			top=(FrameBlock) p.next().getValue();
+		
+		if(range.rowEnd>=rowCut)
+			bottom=(FrameBlock) p.next().getValue();
+		
+		if(getNumRows() > 0)
+		{
+			int r=(int) range.rowStart;
+			
+			for(; r<Math.min(rowCut, range.rowEnd+1); r++)
+			{
+				Object[] row = new Object[(int) (range.colEnd-range.colStart+1)];
+				for(int c=(int) range.colStart; c<range.colEnd+1; c++)
+					row[(int) (c-range.colStart)] = get(r,c);
+				top.appendRow(row);
+			}
+
+			for(; r<=range.rowEnd; r++)
+			{
+				Object[] row = new Object[(int) (range.colEnd-range.colStart+1)];
+				for(int c=(int) range.colStart; c<range.colEnd+1; c++)
+					row[(int) (c-range.colStart)] = get(r,c);
+				bottom.appendRow(row);
+			}
+		}
+
+	}
+
 	/**
 	 * Appends the given argument frameblock 'that' to this frameblock by 
 	 * creating a deep copy to prevent side effects. For cbind, the frames
@@ -789,12 +842,18 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		return map;
 	}
 
+	public void merge(CacheBlock that, boolean bDummy) 
+			throws DMLRuntimeException
+	{
+		merge((FrameBlock)that);
+	}
+	
 	/**
 	 * 
 	 * @param that
 	 * @throws DMLRuntimeException 
 	 */
-	public void merge(FrameBlock that ) 
+	public void merge(FrameBlock that) 
 		throws DMLRuntimeException
 	{
 		//check for empty input source (nothing to merge)
@@ -802,34 +861,76 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			return;
 		
 		//check dimensions (before potentially copy to prevent implicit dimension change) 
-		if( getNumRows() != that.getNumRows() || getNumColumns() != that.getNumColumns() )
+		if ( getNumRows() != that.getNumRows() || getNumColumns() != that.getNumColumns() )
 			throw new DMLRuntimeException("Dimension mismatch on merge disjoint (target="+getNumRows()+"x"+getNumColumns()+", source="+that.getNumRows()+"x"+that.getNumColumns()+")");
 		
 		//core frame block merge through cell copy
-		for( int i=0; i<getNumRows(); i++ ) {
+		for( int i=0; i<that.getNumRows(); i++ ) {
 			for( int j=0; j<getNumColumns(); j++ ) {
-				switch( _schema.get(j) ) {
-					case STRING:  
-						if (that.get(i,j) != null)
-							set(i,j,that.get(i, j));
-						break;
-					case BOOLEAN: 
-						if ((Boolean)that.get(i,j) != Boolean.getBoolean("false"))
-							set(i,j,that.get(i, j));
-						break;
-					case INT:     
-						if ((Long)that.get(i,j) != 0)
-							set(i,j,that.get(i, j));
-						break;
-					case DOUBLE:  
-						if ((Double)that.get(i,j) != 0.0)
-							set(i,j,that.get(i, j));
-						break;
-					default: throw new RuntimeException("Unsupported value type: "+_schema.get(j));
-				}
+				Object obj = UtilFunctions.objectToObject(getSchema().get(j), that.get(i,j), true);
+				if (obj != null) 			// Do not update with "null" data
+					set(i, j,obj);
 			}
 		}
 		
+	}
+	
+	/**
+	 * This function ZERO OUT the data in the slicing window applicable for this block.
+	 * 
+	 * 
+	 * @param result
+	 * @param range
+	 * @param complementary
+	 * @param iRowStartSrc
+	 * @param iRowStartDest
+	 * @param brlen
+	 * @param iMaxRowsToCopy
+	 * 
+	 */
+	public FrameBlock zeroOutOperations(FrameBlock result, IndexRange range, boolean complementary, int iRowStartSrc, int iRowStartDest, int brlen, int iMaxRowsToCopy)
+			throws DMLRuntimeException 
+	{
+		int clen = getNumColumns();
+		
+		if(result==null)
+			result=new FrameBlock(getSchema());
+		else 
+		{
+			result.reset(0);
+			result.setSchema(getSchema());
+		}
+		result.ensureAllocatedColumns(brlen);
+		
+		if(complementary)
+		{
+			for(int r=(int) range.rowStart; r<=range.rowEnd&&r+iRowStartDest<brlen; r++)
+			{
+				for(int c=(int) range.colStart; c<=range.colEnd; c++)
+					result.set(r+iRowStartDest, c, get(r+iRowStartSrc,c));
+			}
+		}else
+		{
+			int r=iRowStartDest;
+			for(; r<(int)range.rowStart && r-iRowStartDest<iMaxRowsToCopy ; r++)
+				for(int c=0; c<clen; c++/*, offset++*/)
+					result.set(r, c, get(r+iRowStartSrc-iRowStartDest,c));
+			
+			for(; r<=(int)range.rowEnd && r-iRowStartDest<iMaxRowsToCopy ; r++)
+			{
+				for(int c=0; c<(int)range.colStart; c++)
+					result.set(r, c, get(r+iRowStartSrc-iRowStartDest,c));
+
+				for(int c=(int)range.colEnd+1; c<clen; c++)
+					result.set(r, c, get(r+iRowStartSrc-iRowStartDest,c));
+			}
+			
+			for(; r-iRowStartDest<iMaxRowsToCopy ; r++)
+				for(int c=0; c<clen; c++)
+					result.set(r, c, get(r+iRowStartSrc-iRowStartDest,c));
+		}
+		
+		return result;
 	}
 
 	
@@ -886,6 +987,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			return _curRow;
 		}
 	}
+	
 	
 	/**
 	 * 
@@ -949,7 +1051,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			_data[index] = value;
 		}
 		public void set(int rl, int ru, Array value) {
-			System.arraycopy(((StringArray)value)._data, 0, _data, rl, ru-rl+1);
+			set(rl, ru, value, 0);
 		}
 		public void set(int rl, int ru, Array value, int rlSrc) {
 			System.arraycopy(((StringArray)value)._data, rlSrc, _data, rl, ru-rl+1);
@@ -995,7 +1097,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			_data[index] = (value!=null) ? value : false;
 		}
 		public void set(int rl, int ru, Array value) {
-			System.arraycopy(((BooleanArray)value)._data, 0, _data, rl, ru-rl+1);
+			set(rl, ru, value, 0);
 		}
 		public void set(int rl, int ru, Array value, int rlSrc) {
 			System.arraycopy(((BooleanArray)value)._data, rlSrc, _data, rl, ru-rl+1);
@@ -1042,7 +1144,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			_data[index] = (value!=null) ? value : 0L;
 		}
 		public void set(int rl, int ru, Array value) {
-			System.arraycopy(((LongArray)value)._data, 0, _data, rl, ru-rl+1);
+			set(rl, ru, value, 0);
 		}
 		public void set(int rl, int ru, Array value, int rlSrc) {
 			System.arraycopy(((LongArray)value)._data, rlSrc, _data, rl, ru-rl+1);
@@ -1089,7 +1191,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			_data[index] = (value!=null) ? value : 0d;
 		}
 		public void set(int rl, int ru, Array value) {
-			System.arraycopy(((DoubleArray)value)._data, 0, _data, rl, ru-rl+1);
+			set(rl,ru, value, 0);
 		}
 		public void set(int rl, int ru, Array value, int rlSrc) {
 			System.arraycopy(((DoubleArray)value)._data, rlSrc, _data, rl, ru-rl+1);
@@ -1147,4 +1249,15 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			_mvValue = mvVal;
 		}
 	}
+
+	@Override
+	public ArrayList getPairList() {
+		return new ArrayList<Pair<Long, FrameBlock>>();
+	}
+
+	public ArrayList<Pair<?, ?>> performSlice(IndexRange ixrange, int brlen, int bclen, int iix, int jix, CacheBlock in) throws DMLRuntimeException
+	{
+		return OperationsOnMatrixValues.performSlice(ixrange, brlen, bclen, iix, jix, (FrameBlock)in);
+	}
+
 }

@@ -27,89 +27,38 @@ import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
+import java.lang.reflect.Array;
+import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 
-import scala.Tuple2;
-
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.instructions.spark.utils.SparkUtils;
-import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
-import org.apache.sysml.runtime.matrix.data.OperationsOnMatrixValues;
-import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
+import org.apache.sysml.runtime.controlprogram.caching.CacheBlock;
+import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.util.FastBufferedDataInputStream;
 import org.apache.sysml.runtime.util.FastBufferedDataOutputStream;
 import org.apache.sysml.runtime.util.IndexRange;
 
 /**
- * The main purpose of this class is to provide a handle for partitioned matrix blocks, to be used
+ * This class is for partitioned matrix/frame blocks, to be used
  * as broadcasts. Distributed tasks require block-partitioned broadcasts but a lazy partitioning per
  * task would create instance-local copies and hence replicate broadcast variables which are shared
  * by all tasks within an executor.  
  * 
  */
-public class PartitionedMatrixBlock implements Externalizable
+public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 {
 
-	private static final long serialVersionUID = -5706923809800365593L;
-
-	private MatrixBlock[] _partBlocks = null; 
-	private int _rlen = -1;
-	private int _clen = -1;
-	private int _brlen = -1;
-	private int _bclen = -1;
-	private int _offset = 0;
+	protected T[] _partBlocks = null; 
+	protected long _rlen = -1;
+	protected long _clen = -1;
+	protected int _brlen = -1;
+	protected int _bclen = -1;
+	protected int _offset = 0;
 	
-	public PartitionedMatrixBlock() {
+	public PartitionedBlock() {
 		//do nothing (required for Externalizable)
 	}
 	
-	public PartitionedMatrixBlock(MatrixBlock mb, int brlen, int bclen) 
-	{
-		//get the input matrix block
-		int rlen = mb.getNumRows();
-		int clen = mb.getNumColumns();
-		
-		//partitioning input broadcast
-		_rlen = rlen;
-		_clen = clen;
-		_brlen = brlen;
-		_bclen = bclen;
-		
-		int nrblks = getNumRowBlocks();
-		int ncblks = getNumColumnBlocks();
-		_partBlocks = new MatrixBlock[nrblks * ncblks];
-		
-		try
-		{
-			for( int i=0, ix=0; i<nrblks; i++ )
-				for( int j=0; j<ncblks; j++, ix++ )
-				{
-					MatrixBlock tmp = new MatrixBlock();
-					mb.sliceOperations(i*brlen, Math.min((i+1)*brlen, rlen)-1, 
-							           j*bclen, Math.min((j+1)*bclen, clen)-1, tmp);
-					_partBlocks[ix] = tmp;
-				}
-		}
-		catch(Exception ex) {
-			throw new RuntimeException("Failed partitioning of broadcast variable input.", ex);
-		}
-		
-		_offset = 0;
-	}
-	
-	public PartitionedMatrixBlock(int rlen, int clen, int brlen, int bclen) 
-	{
-		//partitioning input broadcast
-		_rlen = rlen;
-		_clen = clen;
-		_brlen = brlen;
-		_bclen = bclen;
-		
-		int nrblks = getNumRowBlocks();
-		int ncblks = getNumColumnBlocks();
-		_partBlocks = new MatrixBlock[nrblks * ncblks];		
-	}
 	
 	public long getNumRows() {
 		return _rlen;
@@ -145,6 +94,56 @@ public class PartitionedMatrixBlock implements Externalizable
 		return (int)Math.ceil((double)_clen/_bclen);
 	}
 	
+	@SuppressWarnings("unchecked")
+	public PartitionedBlock(T block, int brlen, int bclen) 
+	{
+		//get the input frame block
+		int rlen = block.getNumRows();
+		int clen = block.getNumColumns();
+		
+		//partitioning input broadcast
+		_rlen = rlen;
+		_clen = clen;
+		_brlen = brlen;
+		_bclen = bclen;
+
+		int nrblks = getNumRowBlocks();
+		int ncblks = getNumColumnBlocks();
+		
+		try
+		{
+			_partBlocks = (T[])Array.newInstance((block.getClass()), nrblks * ncblks);
+			for( int i=0, ix=0; i<nrblks; i++ )
+				for( int j=0; j<ncblks; j++, ix++ )
+				{
+					T tmp = (T) block.getClass().newInstance();
+					block.sliceOperations(i*_brlen, Math.min((i+1)*_brlen, rlen)-1, 
+							           j*_bclen, Math.min((j+1)*_bclen, clen)-1, tmp);
+					_partBlocks[ix] = tmp;
+				}
+		}
+		catch(Exception ex) {
+			throw new RuntimeException("Failed partitioning of broadcast variable input.", ex);
+		}
+		
+		_offset = 0;
+	}
+
+	@SuppressWarnings("unchecked")
+	public PartitionedBlock(int rlen, int clen, int brlen, int bclen, T block) 
+	{
+		//partitioning input broadcast
+		_rlen = rlen;
+		_clen = clen;
+		_brlen = brlen;
+		_bclen = bclen;
+		
+		int nrblks = getNumRowBlocks();
+		int ncblks = getNumColumnBlocks();
+		_partBlocks = (T[])Array.newInstance((block.getClass()), nrblks * ncblks);
+
+	}
+	
 	/**
 	 * 
 	 * @param rowIndex
@@ -152,7 +151,7 @@ public class PartitionedMatrixBlock implements Externalizable
 	 * @return
 	 * @throws DMLRuntimeException 
 	 */
-	public MatrixBlock getMatrixBlock(int rowIndex, int colIndex) 
+	public T getBlock(int rowIndex, int colIndex) 
 		throws DMLRuntimeException 
 	{
 		//check for valid block index
@@ -162,11 +161,11 @@ public class PartitionedMatrixBlock implements Externalizable
 			throw new DMLRuntimeException("Block indexes ["+rowIndex+","+colIndex+"] out of range ["+nrblks+","+ncblks+"]");
 		}
 		
-		//get the requested matrix block
+		//get the requested frame/matrix block
 		int rix = rowIndex - 1;
 		int cix = colIndex - 1;
 		int ix = rix*ncblks+cix - _offset;
-		return _partBlocks[ ix ];
+		return _partBlocks[ix];
 	}
 	
 	/**
@@ -176,7 +175,7 @@ public class PartitionedMatrixBlock implements Externalizable
 	 * @param mb
 	 * @throws DMLRuntimeException
 	 */
-	public void setMatrixBlock(int rowIndex, int colIndex, MatrixBlock mb) 
+	public void setBlock(int rowIndex, int colIndex, T block) 
 		throws DMLRuntimeException
 	{
 		//check for valid block index
@@ -190,39 +189,8 @@ public class PartitionedMatrixBlock implements Externalizable
 		int rix = rowIndex - 1;
 		int cix = colIndex - 1;
 		int ix = rix*ncblks+cix - _offset;
-		_partBlocks[ ix ] = mb;
+		_partBlocks[ ix ] = block;
 		
-	}
-	
-	/**
-	 * 
-	 * @return
-	 */
-	public long estimateSizeInMemory()
-	{
-		long ret = 24; //header
-		ret += 32;    //block array
-		
-		if( _partBlocks != null )
-			for( MatrixBlock mb : _partBlocks )
-				ret += mb.estimateSizeInMemory();
-		
-		return ret;
-	}
-	
-	/**
-	 * 
-	 * @return
-	 */
-	public long estimateSizeOnDisk()
-	{
-		long ret = 24; //header
-		
-		if( _partBlocks != null )
-			for( MatrixBlock mb : _partBlocks )
-				ret += mb.estimateSizeOnDisk();
-		
-		return ret;
 	}
 	
 	/**
@@ -231,17 +199,50 @@ public class PartitionedMatrixBlock implements Externalizable
 	 * @param numBlks
 	 * @return
 	 */
-	public PartitionedMatrixBlock createPartition( int offset, int numBlks )
+	@SuppressWarnings("unchecked")
+	public PartitionedBlock<T> createPartition( int offset, int numBlks, T block )
 	{
-		PartitionedMatrixBlock ret = new PartitionedMatrixBlock();
+		PartitionedBlock<T> ret = new PartitionedBlock<T>();
 		ret._rlen = _rlen;
 		ret._clen = _clen;
 		ret._brlen = _brlen;
 		ret._bclen = _bclen;
-		ret._partBlocks = new MatrixBlock[numBlks];
+
+		_partBlocks = (T[])Array.newInstance(block.getClass(), numBlks);
 		ret._offset = offset;
-		
 		System.arraycopy(_partBlocks, offset, ret._partBlocks, 0, numBlks);
+		
+		return ret;
+	}
+
+	/**
+	 * 
+	 * @return
+	 */	
+	public long getInMemorySize()
+	{
+		long ret = 24; //header
+		ret += 32;    //block array
+		
+		if( _partBlocks != null )
+			for( T block : _partBlocks )
+				ret += block.getInMemorySize();
+		
+		return ret;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	
+	public long getExactSerializedSize()
+	{
+		long ret = 24; //header
+		
+		if( _partBlocks != null )
+			for( T block :  _partBlocks )
+				ret += block.getExactSerializedSize();
 		
 		return ret;
 	}
@@ -259,7 +260,8 @@ public class PartitionedMatrixBlock implements Externalizable
 	 * @return
 	 * @throws DMLRuntimeException 
 	 */
-	public MatrixBlock sliceOperations(long rl, long ru, long cl, long cu, MatrixBlock matrixBlock) 
+	@SuppressWarnings("unchecked")
+	public T sliceOperations(long rl, long ru, long cl, long cu, T block) 
 		throws DMLRuntimeException 
 	{
 		int lrl = (int) rl;
@@ -267,7 +269,7 @@ public class PartitionedMatrixBlock implements Externalizable
 		int lcl = (int) cl;
 		int lcu = (int) cu;
 		
-		ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> allBlks = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
+		ArrayList<Pair<?, ?>> allBlks = block.getPairList();
 		int start_iix = (lrl-1)/_brlen+1;
 		int end_iix = (lru-1)/_brlen+1;
 		int start_jix = (lcl-1)/_bclen+1;
@@ -276,28 +278,31 @@ public class PartitionedMatrixBlock implements Externalizable
 		for( int iix = start_iix; iix <= end_iix; iix++ )
 			for(int jix = start_jix; jix <= end_jix; jix++)		
 			{
-				MatrixBlock in = getMatrixBlock(iix, jix);
-				IndexedMatrixValue imv = new IndexedMatrixValue(new MatrixIndexes(iix, jix), in);
-				
-				ArrayList<IndexedMatrixValue> outlist = new ArrayList<IndexedMatrixValue>();
+				T in = getBlock(iix, jix);
 				IndexRange ixrange = new IndexRange(rl, ru, cl, cu);
-				OperationsOnMatrixValues.performSlice(imv, ixrange, _brlen, _bclen, outlist);
-				allBlks.addAll(SparkUtils.fromIndexedMatrixBlock(outlist));
+				ArrayList<Pair<?, ?>> outlist = block.performSlice(ixrange, _brlen, _bclen, iix, jix, in);
+				allBlks.addAll(outlist);
 			}
 		
 		if(allBlks.size() == 1) {
-			return allBlks.get(0)._2;
+			return (T) allBlks.get(0).getValue();
 		}
 		else {
 			//allocate output matrix
-			MatrixBlock ret = new MatrixBlock(lru-lrl+1, lcu-lcl+1, false);
-			for(Tuple2<MatrixIndexes, MatrixBlock> kv : allBlks) {
-				ret.merge(kv._2, false);
+			Constructor<?> constr;
+			try {
+				constr = block.getClass().getConstructor(int.class, int.class, boolean.class);
+				T ret = (T) constr.newInstance(lru-lrl+1, lcu-lcl+1, false);
+				for(Pair<?, ?> kv : allBlks) {
+					ret.merge((T)kv.getValue(), false);
+				}
+				return ret;
+			} catch (Exception e) {
+				throw new DMLRuntimeException(e);
 			}
-			return ret;
 		}
 	}
-	
+
 	/**
 	 * Redirects the default java serialization via externalizable to our default 
 	 * hadoop writable serialization for efficient broadcast deserialization. 
@@ -350,14 +355,15 @@ public class PartitionedMatrixBlock implements Externalizable
 	private void writeHeaderAndPayload(DataOutput dos) 
 		throws IOException
 	{
-		dos.writeInt(_rlen);
-		dos.writeInt(_clen);
+		dos.writeLong(_rlen);
+		dos.writeLong(_clen);
 		dos.writeInt(_brlen);
 		dos.writeInt(_bclen);
 		dos.writeInt(_offset);
 		dos.writeInt(_partBlocks.length);
-		for( MatrixBlock mb : _partBlocks )
-			mb.write(dos);
+		
+		for( T block : _partBlocks )
+			block.write(dos);
 	}
 
 	/**
@@ -365,6 +371,7 @@ public class PartitionedMatrixBlock implements Externalizable
 	 * @param din
 	 * @throws IOException 
 	 */
+	@SuppressWarnings("unchecked")
 	private void readHeaderAndPayload(DataInput dis) 
 		throws IOException
 	{
@@ -375,11 +382,18 @@ public class PartitionedMatrixBlock implements Externalizable
 		_offset = dis.readInt();
 		
 		int len = dis.readInt();
-		_partBlocks = new MatrixBlock[len];
 		
-		for( int i=0; i<len; i++ ) {
-			_partBlocks[i] = new MatrixBlock();
-			_partBlocks[i].readFields(dis);
+		try
+		{
+			_partBlocks = (T[])Array.newInstance(getClass(), len);
+			for( int i=0; i<len; i++ ) {
+				_partBlocks[i].readFields(dis);
+			}
 		}
+		catch(Exception ex) {
+			throw new RuntimeException("Failed partitioning of broadcast variable input.", ex);
+		}
+		
 	}
+	
 }

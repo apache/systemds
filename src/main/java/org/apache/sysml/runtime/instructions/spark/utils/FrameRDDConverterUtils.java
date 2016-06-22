@@ -178,7 +178,6 @@ public class FrameRDDConverterUtils
 		return textCellToBinaryBlockLongIndex(sc, input, mcOut, lschema);
 	}
 
-		
 	/**
 	 * 
 	 * @param sc
@@ -198,7 +197,7 @@ public class FrameRDDConverterUtils
 		
 		//aggregate partial matrix blocks
 		JavaPairRDD<Long,FrameBlock> out = 
-				RDDAggregateUtils.mergeByFrameKey( output ); 
+				(JavaPairRDD<Long, FrameBlock>) RDDAggregateUtils.mergeByFrameKey( output ); 
 
 		return out;
 	}
@@ -264,7 +263,7 @@ public class FrameRDDConverterUtils
 			
 			//aggregate partial frame blocks
 			if(mcIn.getCols() > mcIn.getColsPerBlock())
-				out = RDDAggregateUtils.mergeByFrameKey( out ); 	//TODO: Will need better merger
+				out = (JavaPairRDD<Long, FrameBlock>) RDDAggregateUtils.mergeByFrameKey( out );
 		}
 		else
 			out = input.mapToPair(new MatrixToBinaryBlockOneColumnBlockFunction(mcIn));
@@ -396,8 +395,6 @@ public class FrameRDDConverterUtils
 		private boolean _fill = false;
 		private int _maxRowsPerBlock = -1; 
 		
-		protected static final int BUFFER_SIZE = 1 * 1000 * 1000; //1M elements, size of default matrix block 
-
 		
 		public CSVToBinaryBlockFunction(MatrixCharacteristics mc, boolean hasHeader, String delim, boolean fill)
 		{
@@ -405,7 +402,7 @@ public class FrameRDDConverterUtils
 			_hasHeader = hasHeader;
 			_delim = delim;
 			_fill = fill;
-			_maxRowsPerBlock = Math.max((int) (BUFFER_SIZE/_clen), 1);
+			_maxRowsPerBlock = Math.max((int) (FrameBlock.BUFFER_SIZE/_clen), 1);
 		}
 
 		@Override
@@ -529,10 +526,7 @@ public class FrameRDDConverterUtils
 	{
 		private static final long serialVersionUID = -729614449626680946L;
 
-		//internal buffer size (aligned w/ default matrix block size)
-		protected static final int BUFFER_SIZE = 1 * 1000 * 1000; //1M elements (8MB), size of default matrix block
 		protected int _bufflen = -1;
-		
 		protected long _rlen = -1;
 		protected long _clen = -1;
 		
@@ -542,7 +536,7 @@ public class FrameRDDConverterUtils
 			_clen = mc.getCols();
 			
 			//determine upper bounded buffer len
-			_bufflen = (int) Math.min(_rlen*_clen, BUFFER_SIZE);
+			_bufflen = (int) Math.min(_rlen*_clen, FrameBlock.BUFFER_SIZE);
 		}
 
 
@@ -624,15 +618,12 @@ public class FrameRDDConverterUtils
 		private int _maxRowsPerBlock = -1;
 	
 		
-		protected static final int BUFFER_SIZE = 1 * 1000 * 1000; //1M elements (Default matrix block size) 
-
-		
 		public MatrixToBinaryBlockFunction(MatrixCharacteristics mc)
 		{
 			_brlen = mc.getRowsPerBlock();
 			_bclen = mc.getColsPerBlock();
 			_clen = mc.getCols();
-			_maxRowsPerBlock = Math.max((int) (BUFFER_SIZE/_clen), 1);
+			_maxRowsPerBlock = Math.max((int) (FrameBlock.BUFFER_SIZE/_clen), 1);
 		}
 
 		@Override

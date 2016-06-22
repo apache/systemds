@@ -201,7 +201,8 @@ public class FastBufferedDataOutputStream extends FilterOutputStream implements 
 
 	@Override
 	public void writeUTF(String s) throws IOException {
-		throw new IOException("Not supported.");
+		byte[] strBytes = s.getBytes("UTF-8");
+		write(strBytes, 0, strBytes.length);
 	}
 
 

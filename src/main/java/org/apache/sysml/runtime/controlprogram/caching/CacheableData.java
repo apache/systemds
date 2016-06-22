@@ -178,7 +178,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	//note: we use the abstraction of LineageObjects for two reasons: (1) to keep track of cleanup
 	//for lazily evaluated RDDs, and (2) as abstraction for environments that do not necessarily have spark libraries available
 	private RDDObject _rddHandle = null; //RDD handle
-	private BroadcastObject _bcHandle = null; //Broadcast handle
+	private BroadcastObject<T> _bcHandle = null; //Broadcast handle
 	public GPUObject _gpuHandle = null;
 	
 	/**
@@ -362,7 +362,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			rdd.setBackReference(this);
 	}
 	
-	public BroadcastObject getBroadcastHandle() {
+	public BroadcastObject<T> getBroadcastHandle() {
 		return _bcHandle;
 	}
 	
@@ -370,6 +370,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 * 
 	 * @param bc
 	 */
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public void setBroadcastHandle( BroadcastObject bc ) {
 		//cleanup potential old back reference
 		if( _bcHandle != null )
@@ -1064,7 +1065,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			{
 				mc = new MatrixCharacteristics(mc.getRows(), mc.getCols(), ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(), mc.getNonZeros());
 			}
-			MapReduceTool.writeMetaDataFile (filePathAndName + ".mtd", valueType, dataType, mc, oinfo, formatProperties);
+			MapReduceTool.writeMetaDataFile (filePathAndName + ".mtd", valueType, null, dataType, mc, oinfo, formatProperties);
 		}
 	}
 	

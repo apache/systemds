@@ -45,7 +45,7 @@ import org.apache.sysml.runtime.functionobjects.ValueFunction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.mr.GroupedAggregateInstruction;
-import org.apache.sysml.runtime.instructions.spark.data.PartitionedBroadcastMatrix;
+import org.apache.sysml.runtime.instructions.spark.data.PartitionedBroadcast;
 import org.apache.sysml.runtime.instructions.spark.functions.ExtractGroup.ExtractGroupBroadcast;
 import org.apache.sysml.runtime.instructions.spark.functions.ExtractGroup.ExtractGroupJoin;
 import org.apache.sysml.runtime.instructions.spark.functions.ExtractGroupNWeights;
@@ -196,7 +196,7 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			String targetVar = params.get(Statement.GAGG_TARGET);
 			String groupsVar = params.get(Statement.GAGG_GROUPS);			
 			JavaPairRDD<MatrixIndexes,MatrixBlock> target = sec.getBinaryBlockRDDHandleForVariable(targetVar);
-			PartitionedBroadcastMatrix groups = sec.getBroadcastForVariable(groupsVar);
+			PartitionedBroadcast<MatrixBlock> groups = sec.getBroadcastForVariable(groupsVar);
 			MatrixCharacteristics mc1 = sec.getMatrixCharacteristics( targetVar );
 			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
 			CPOperand ngrpOp = new CPOperand(params.get(Statement.GAGG_NUM_GROUPS));
@@ -252,7 +252,7 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 				
 				//execute basic grouped aggregate (extract and preagg)
 				if( broadcastGroups ) {
-					PartitionedBroadcastMatrix pbm = sec.getBroadcastForVariable(groupsVar);
+					PartitionedBroadcast<MatrixBlock> pbm = sec.getBroadcastForVariable(groupsVar);
 					groupWeightedCells = target
 							.flatMapToPair(new ExtractGroupBroadcast(pbm, mc1.getColsPerBlock(), ngroups, _optr));						
 				}
@@ -314,7 +314,7 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 				//get input rdd handle
 				JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryBlockRDDHandleForVariable( rddInVar );
 				JavaPairRDD<MatrixIndexes,MatrixBlock> off;
-				PartitionedBroadcastMatrix broadcastOff;
+				PartitionedBroadcast<MatrixBlock> broadcastOff;
 				long brlen = mcIn.getRowsPerBlock();
 				long bclen = mcIn.getColsPerBlock();
 				long numRep = (long)Math.ceil( rows ? (double)mcIn.getCols()/bclen : (double)mcIn.getRows()/brlen);
@@ -529,9 +529,9 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 		private long _brlen;
 		private long _bclen;
 		
-		private PartitionedBroadcastMatrix _off = null;
+		private PartitionedBroadcast<MatrixBlock> _off = null;
 				
-		public RDDRemoveEmptyFunctionInMem(boolean rmRows, long len, long brlen, long bclen, PartitionedBroadcastMatrix off) 
+		public RDDRemoveEmptyFunctionInMem(boolean rmRows, long len, long brlen, long bclen, PartitionedBroadcast<MatrixBlock> off) 
 		{
 			_rmRows = rmRows;
 			_len = len;
@@ -549,9 +549,9 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			//IndexedMatrixValue offsets = SparkUtils.toIndexedMatrixBlock(arg0._1(),arg0._2()._2());
 			IndexedMatrixValue offsets = null;
 			if(_rmRows)
-				offsets = SparkUtils.toIndexedMatrixBlock(arg0._1(), _off.getMatrixBlock((int)arg0._1().getRowIndex(), 1));
+				offsets = SparkUtils.toIndexedMatrixBlock(arg0._1(), _off.getBlock((int)arg0._1().getRowIndex(), 1));
 			else
-				offsets = SparkUtils.toIndexedMatrixBlock(arg0._1(), _off.getMatrixBlock(1, (int)arg0._1().getColumnIndex()));
+				offsets = SparkUtils.toIndexedMatrixBlock(arg0._1(), _off.getBlock(1, (int)arg0._1().getColumnIndex()));
 			
 			//execute remove empty operations
 			ArrayList<IndexedMatrixValue> out = new ArrayList<IndexedMatrixValue>();
@@ -606,13 +606,13 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 	{
 		private static final long serialVersionUID = 6795402640178679851L;
 		
-		private PartitionedBroadcastMatrix _pbm = null;
+		private PartitionedBroadcast<MatrixBlock> _pbm = null;
 		private Operator _op = null;
 		private int _ngroups = -1;
 		private int _brlen = -1;
 		private int _bclen = -1;
 		
-		public RDDMapGroupedAggFunction(PartitionedBroadcastMatrix pbm, Operator op, int ngroups, int brlen, int bclen) 
+		public RDDMapGroupedAggFunction(PartitionedBroadcast<MatrixBlock> pbm, Operator op, int ngroups, int brlen, int bclen) 
 		{
 			_pbm = pbm;
 			_op = op;
@@ -628,7 +628,7 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			//get all inputs
 			MatrixIndexes ix = arg0._1();
 			MatrixBlock target = arg0._2();		
-			MatrixBlock groups = _pbm.getMatrixBlock((int)ix.getRowIndex(), 1);
+			MatrixBlock groups = _pbm.getBlock((int)ix.getRowIndex(), 1);
 			
 			//execute map grouped aggregate operations
 			IndexedMatrixValue in1 = SparkUtils.toIndexedMatrixBlock(ix, target);

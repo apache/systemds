@@ -22,31 +22,35 @@ package org.apache.sysml.runtime.instructions.spark.data;
 import java.io.Serializable;
 
 import org.apache.spark.broadcast.Broadcast;
-
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.controlprogram.caching.CacheBlock;
 
 /**
- * This class is a wrapper around an array of broadcasts of partitioned matrix blocks,
+ * This class is a wrapper around an array of broadcasts of partitioned matrix/frame blocks,
  * which is required due to 2GB limitations of Spark's broadcast handling. Without this
- * partitioning of Broadcast<PartitionedMatrixBlock> into Broadcast<PartitionedMatrixBlock>[],
+ * partitioning of Broadcast<PartitionedBlock> into Broadcast<PartitionedBlock>[],
  * we got java.lang.IllegalArgumentException: Size exceeds Integer.MAX_VALUE issue.
  * Despite various jiras, this issue still showed up in Spark 1.4/1.5. 
  * 
  */
-public class PartitionedBroadcastMatrix implements Serializable
+public class PartitionedBroadcast<T extends CacheBlock> implements Serializable
 {
-	private static final long serialVersionUID = 1225135967889810877L;
-	private static final long BROADCAST_PARTSIZE = 200L*1024*1024; //200M cells ~ 1.6GB 
+	private static final long serialVersionUID = 7041959166079438401L;
+
+	protected static final long BROADCAST_PARTSIZE = 200L*1024*1024; //200M cells ~ 1.6GB 
 	
-	private Broadcast<PartitionedMatrixBlock>[] _pbc = null;
+	private Broadcast<PartitionedBlock<T>>[] _pbc = null;
 	
-	public PartitionedBroadcastMatrix(Broadcast<PartitionedMatrixBlock>[] broadcasts)
+	public PartitionedBroadcast() {
+		//do nothing (required for Externalizable)
+	}
+	
+	public PartitionedBroadcast(Broadcast<PartitionedBlock<T>>[] broadcasts)
 	{
 		_pbc = broadcasts;
 	}
 	
-	public Broadcast<PartitionedMatrixBlock>[] getBroadcasts() {
+	public Broadcast<PartitionedBlock<T>>[] getBroadcasts() {
 		return _pbc;
 	}
 	
@@ -64,50 +68,6 @@ public class PartitionedBroadcastMatrix implements Serializable
 	
 	/**
 	 * 
-	 * @param rowIndex
-	 * @param colIndex
-	 * @return
-	 * @throws DMLRuntimeException 
-	 */
-	public MatrixBlock getMatrixBlock(int rowIndex, int colIndex) 
-		throws DMLRuntimeException 
-	{
-		if( _pbc.length > 1 ) { 
-			//compute partition index
-			PartitionedMatrixBlock tmp = _pbc[0].value();
-			int numPerPart = computeBlocksPerPartition(tmp.getNumRows(), tmp.getNumCols(), 
-					tmp.getNumRowsPerBlock(), tmp.getNumColumnsPerBlock());
-			int ix = (rowIndex-1)*tmp.getNumColumnBlocks()+(colIndex-1);
-			int pix = ix / numPerPart;
-			
-			//get matrix block from partition
-			return _pbc[pix].value().getMatrixBlock(rowIndex, colIndex);	
-		}
-		else { //single partition
-			return _pbc[0].value().getMatrixBlock(rowIndex, colIndex);
-		}
-		
-	}
-	
-	public MatrixBlock sliceOperations(long rl, long ru, long cl, long cu, MatrixBlock matrixBlock) 
-		throws DMLRuntimeException 
-	{
-		MatrixBlock ret = null;
-		
-		for( Broadcast<PartitionedMatrixBlock> bc : _pbc ) {
-			PartitionedMatrixBlock pm = bc.value();
-			MatrixBlock tmp = pm.sliceOperations(rl, ru, cl, cu, new MatrixBlock());
-			if( ret != null )
-				ret.merge(tmp, false);
-			else
-				ret = tmp;
-		}
-		
-		return ret;
-	}
-	
-	/**
-	 * 
 	 * @param rlen
 	 * @param clen
 	 * @param brlen
@@ -118,4 +78,45 @@ public class PartitionedBroadcastMatrix implements Serializable
 		return (int) Math.floor( BROADCAST_PARTSIZE /  
 				Math.min(rlen, brlen) / Math.min(clen, bclen));
 	}
+	/**
+	 * 
+	 * @param rowIndex
+	 * @param colIndex
+	 * @return
+	 * @throws DMLRuntimeException 
+	 */
+	public T getBlock(int rowIndex, int colIndex) 
+		throws DMLRuntimeException 
+	{
+		int pix = 0;
+		
+		if( _pbc.length > 1 ) { 
+			//compute partition index
+			PartitionedBlock<T> tmp = _pbc[0].value();
+			int numPerPart = computeBlocksPerPartition(tmp.getNumRows(), tmp.getNumCols(), 
+					tmp.getNumRowsPerBlock(), tmp.getNumColumnsPerBlock());
+			int ix = (rowIndex-1)*tmp.getNumColumnBlocks()+(colIndex-1);
+			pix = ix / numPerPart;
+		}
+			
+		return _pbc[pix].value().getBlock(rowIndex, colIndex);
+	}
+	
+	public T sliceOperations(long rl, long ru, long cl, long cu, T block) 
+			throws DMLRuntimeException 
+	{
+		T ret = null;
+		
+		for( Broadcast<PartitionedBlock<T>> bc : _pbc ) {
+			PartitionedBlock<T> pm = bc.value();
+			T tmp = pm.sliceOperations(rl, ru, cl, cu, block);
+			if( ret != null )
+				ret.merge(tmp, false);
+			else
+				ret = tmp;
+		}
+		
+		return ret;
+	}
+
 }

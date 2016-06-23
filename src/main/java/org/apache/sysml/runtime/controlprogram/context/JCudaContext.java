@@ -18,6 +18,8 @@
  */
 package org.apache.sysml.runtime.controlprogram.context;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -53,7 +55,7 @@ public class JCudaContext extends GPUContext {
 	public static boolean DEBUG = false;
 	
 	public static long totalNumBytes = 0;
-	public static long availableNumBytesWithoutUtilFactor = 0;
+	public static AtomicLong availableNumBytesWithoutUtilFactor = new AtomicLong(0);
 	// Fraction of available memory to use. The available memory is computer when the JCudaContext is created
 	// to handle the tradeoff on calling cudaMemGetInfo too often. 
 	public static double GPU_MEMORY_UTILIZATION_FACTOR = 0.9; 
@@ -80,13 +82,13 @@ public class JCudaContext extends GPUContext {
 	        long total [] = { 0 };
 	        if(cudaMemGetInfo(free, total) == cudaSuccess) {
 	        	totalNumBytes = total[0];
-	        	availableNumBytesWithoutUtilFactor = free[0];
+	        	availableNumBytesWithoutUtilFactor.set(free[0]);
 	        }
 	        else {
 	        	throw new RuntimeException("ERROR: Unable to get memory information of the GPU.");
 	        }
 		}
-		return (long) (availableNumBytesWithoutUtilFactor*GPU_MEMORY_UTILIZATION_FACTOR);
+		return (long) (availableNumBytesWithoutUtilFactor.get()*GPU_MEMORY_UTILIZATION_FACTOR);
 	}
 	
 	
@@ -119,13 +121,13 @@ public class JCudaContext extends GPUContext {
         long total [] = { 0 };
         if(cudaMemGetInfo(free, total) == cudaSuccess) {
         	totalNumBytes = total[0];
-        	availableNumBytesWithoutUtilFactor = free[0];
+        	availableNumBytesWithoutUtilFactor.set(free[0]);
         }
         else {
         	throw new RuntimeException("ERROR: Unable to get memory information of the GPU.");
         }
         LOG.info("Total GPU memory: " + (totalNumBytes*(1e-6)) + " MB");
-        LOG.info("Available GPU memory: " + (availableNumBytesWithoutUtilFactor*(1e-6)) + " MB");
+        LOG.info("Available GPU memory: " + (availableNumBytesWithoutUtilFactor.get()*(1e-6)) + " MB");
 	}
 
 	@Override

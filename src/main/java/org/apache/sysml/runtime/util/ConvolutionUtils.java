@@ -94,9 +94,15 @@ public class ConvolutionUtils {
 					for(int i = 1; i < x_col.getInput().size(); i++) {
 						inputs.add(x_col.getInput().get(i));
 					}
-					ConvolutionOp fusedHop = new ConvolutionOp("tmp_directconv2dBackwardFilter" + image.getName(), image.getDataType(), image.getValueType(), ConvOp.DIRECT_CONV2D_BACKWARD_FILTER, inputs);
-					setPositions(currentHop, fusedHop);
-					return fusedHop.constructConvolutionLops(et, inputs);
+					
+					// K, C * R * S
+					long K = ConvolutionOp.extractValue(inputs.get(10));
+					long C = ConvolutionOp.extractValue(inputs.get(7));
+					long R = ConvolutionOp.extractValue(inputs.get(12));
+					long S = ConvolutionOp.extractValue(inputs.get(13));
+					long rlen = K;
+					long clen = ConvolutionOp.getExtractedVal(C, R, S);
+					return ConvolutionOp.constructFusedConvolutionLops(et, inputs, ConvOp.DIRECT_CONV2D_BACKWARD_FILTER, (ConvolutionOp) x_col, rlen, clen);
 				}
 			}
 		}
@@ -122,9 +128,26 @@ public class ConvolutionUtils {
 					for(int i = 1; i < x_col.getInput().size(); i++) {
 						inputs.add(x_col.getInput().get(i));
 					}
-					ConvolutionOp fusedHop = new ConvolutionOp("tmp_directconv2d" + image.getName(), image.getDataType(), image.getValueType(), ConvOp.DIRECT_CONV2D, inputs);
-					setPositions(currentHop, fusedHop);
-					return fusedHop.constructConvolutionLops(et, inputs);
+					
+					// N, K * P * Q
+					long N = ConvolutionOp.extractValue(inputs.get(6));
+					long H = ConvolutionOp.extractValue(inputs.get(8));
+					long W = ConvolutionOp.extractValue(inputs.get(9));
+					long K = ConvolutionOp.extractValue(inputs.get(10));
+					long R = ConvolutionOp.extractValue(inputs.get(12));
+					long S = ConvolutionOp.extractValue(inputs.get(13));
+					long stride_h = ConvolutionOp.extractValue(inputs.get(2));
+					long stride_w = ConvolutionOp.extractValue(inputs.get(3));
+					long pad_h = ConvolutionOp.extractValue(inputs.get(4));
+					long pad_w = ConvolutionOp.extractValue(inputs.get(5));
+					long P = -1; long Q = -1;
+					if(H > 0 && R > 0 && stride_h > 0 && pad_h > 0)
+						P = ConvolutionUtils.getP(H, R, stride_h, pad_h);
+					if(W > 0 && S > 0 && stride_w > 0 && pad_w > 0)
+						Q = ConvolutionUtils.getQ(W, S, stride_w, pad_w);
+					long rlen = N;
+					long clen = ConvolutionOp.getExtractedVal(K, P, Q);
+					return ConvolutionOp.constructFusedConvolutionLops(et, inputs, ConvOp.DIRECT_CONV2D, (ConvolutionOp) x_col, rlen, clen);
 				}
 			}
 		}
@@ -152,9 +175,17 @@ public class ConvolutionUtils {
 						for(int i = 1; i < rotate180.getInput().size(); i++) {
 							inputs.add(rotate180.getInput().get(i));
 						}
-						ConvolutionOp fusedHop = new ConvolutionOp("tmp_directconv2dBackwardData" + filter.getName(), filter.getDataType(), filter.getValueType(), ConvOp.DIRECT_CONV2D_BACKWARD_DATA, inputs);
-						setPositions(currentHop, fusedHop);
-						return fusedHop.constructConvolutionLops(et, inputs);
+						
+						// N, C * H * W
+						long N = ConvolutionOp.extractValue(inputs.get(6));
+						long C = ConvolutionOp.extractValue(inputs.get(7));
+						long H = ConvolutionOp.extractValue(inputs.get(8));
+						long W = ConvolutionOp.extractValue(inputs.get(9));
+						long rlen = N;
+						long clen = ConvolutionOp.getExtractedVal(C, H, W);
+						return ConvolutionOp.constructFusedConvolutionLops(et, inputs, ConvOp.DIRECT_CONV2D_BACKWARD_DATA, (ConvolutionOp) rotate180, rlen, clen);
+						
+						
 					}
 				}
 			}
@@ -163,8 +194,5 @@ public class ConvolutionUtils {
 		return null;
 	}
 	
-	private static void setPositions(Hop currentHop, Hop fusedHop) {
-		fusedHop.setAllPositions(currentHop.getBeginLine(), currentHop.getBeginColumn(), currentHop.getEndLine(), currentHop.getEndColumn());
-	}
 	
 }

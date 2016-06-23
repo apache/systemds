@@ -25,6 +25,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysml.utils.Statistics;
 
 //FIXME merge JCudaObject into GPUObject to avoid unnecessary complexity
 //FIXME move to gpu instruction package
@@ -73,6 +74,8 @@ public abstract class GPUObject
 		if(GPUContext.allocatedPointers.size() == 0) {
 			throw new DMLRuntimeException("There is not enough memory on device for this matrix!");
 		}
+		
+		Statistics.cudaEvictionCount.addAndGet(1);
 		
 		synchronized(evictionLock) {
 			Collections.sort(GPUContext.allocatedPointers, new Comparator<GPUObject>() {

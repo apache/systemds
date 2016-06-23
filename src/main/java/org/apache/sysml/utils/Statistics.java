@@ -114,6 +114,7 @@ public class Statistics
 	public static AtomicLong cudaDeAllocCount = new AtomicLong(0);
 	public static AtomicLong cudaToDevCount = new AtomicLong(0);
 	public static AtomicLong cudaFromDevCount = new AtomicLong(0);
+	public static AtomicLong cudaEvictionCount = new AtomicLong(0);
 	
 	public static void incrementAllocationTime(long allocationTime, boolean isSparse) {
 		if(isSparse)
@@ -378,6 +379,18 @@ public class Statistics
 		
 		denseBlockAllocationTime.set(0);
 		sparseBlockAllocationTime.set(0);
+		
+		cudaInitTime = 0;
+		cudaLibrariesInitTime = 0;
+		cudaAllocTime.set(0);
+		cudaDeAllocTime.set(0);
+		cudaToDevTime.set(0);
+		cudaFromDevTime.set(0);
+		cudaAllocCount.set(0);
+		cudaDeAllocCount.set(0);
+		cudaToDevCount.set(0);
+		cudaFromDevCount.set(0);
+		cudaEvictionCount.set(0);
 	}
 	
 	/**
@@ -632,11 +645,12 @@ public class Statistics
 					+ String.format("%.3f", cudaDeAllocTime.get()*1e-9) + "/"
 					+ String.format("%.3f", cudaToDevTime.get()*1e-9) + "/"
 					+ String.format("%.3f", cudaFromDevTime.get()*1e-9)  + " sec.\n");
-			sb.append("GPU mem tx count (alloc/dealloc/toDev/fromDev):\t" 
+			sb.append("GPU mem tx count (alloc/dealloc/toDev/fromDev/evict):\t" 
 					+ cudaAllocCount.get() + "/"
 					+ cudaDeAllocCount.get() + "/"
 					+ cudaToDevCount.get() + "/"
-					+ cudaFromDevCount.get()  + ".\n");
+					+ cudaFromDevCount.get() + "/"
+					+ cudaEvictionCount.get() + ".\n");
 		}
 		
 		//show extended caching/compilation statistics

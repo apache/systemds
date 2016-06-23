@@ -31,12 +31,13 @@ import static jcuda.jcudnn.JCudnn.cudnnDestroyTensorDescriptor;
 import static jcuda.jcudnn.JCudnn.cudnnGetConvolutionBackwardDataWorkspaceSize;
 import static jcuda.jcudnn.JCudnn.cudnnGetConvolutionBackwardFilterWorkspaceSize;
 import static jcuda.jcudnn.JCudnn.cudnnGetConvolutionForwardWorkspaceSize;
-import static jcuda.jcudnn.JCudnn.cudnnSetConvolutionNdDescriptor;
-import static jcuda.jcudnn.JCudnn.cudnnSetFilterNdDescriptor;
+import static jcuda.jcudnn.JCudnn.cudnnSetConvolution2dDescriptor;
+import static jcuda.jcudnn.JCudnn.cudnnSetFilter4dDescriptor;
 import static jcuda.jcudnn.JCudnn.cudnnSetTensor4dDescriptor;
 import static jcuda.jcudnn.cudnnConvolutionMode.CUDNN_CROSS_CORRELATION;
 import static jcuda.jcudnn.cudnnDataType.CUDNN_DATA_DOUBLE;
 import static jcuda.jcudnn.cudnnTensorFormat.CUDNN_TENSOR_NCHW;
+import jcuda.jcudnn.cudnnConvolutionFwdPreference;
 import static jcuda.runtime.JCuda.cudaFree;
 import jcuda.Pointer;
 import jcuda.jcublas.JCublas;
@@ -55,6 +56,8 @@ public class LibMatrixCUDA {
 	
 	public static cudnnHandle cudnnHandle;
 	public static cublasHandle cublasHandle;
+	
+	private static int CONVOLUTION_PREFERENCE = cudnnConvolutionFwdPreference.CUDNN_CONVOLUTION_FWD_NO_WORKSPACE;
 	
 	public static void conv2d(MatrixObject image, MatrixObject filter, MatrixObject outputBlock, int N, int C, int H, int W,
 			int K, int R, int S, int pad_h, int pad_w, int stride_h, int stride_w, int P, int Q)
@@ -85,16 +88,38 @@ public class LibMatrixCUDA {
 			int strides [] = { stride_h, stride_w };
 			convDesc = allocateConvolutionDescriptor(padding, strides);
 			
-			// TODO: Select the best algorithm depending on the data and supported CUDA
-			int algo = jcuda.jcudnn.cudnnConvolutionFwdAlgo.CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM;
+			// Select the best algorithm depending on the data and supported CUDA
 			
-			long sizeInBytesArray[] = { 0 };
-            workSpace = new Pointer();
-            cudnnGetConvolutionForwardWorkspaceSize(cudnnHandle, 
-                    srcTensorDesc, filterDesc, convDesc, dstTensorDesc, 
-                    algo, sizeInBytesArray);
-            
-			alpha = pointerTo(1.0); // TODO
+			int algo = -1; 
+			workSpace = new Pointer();
+			
+			if(CONVOLUTION_PREFERENCE == cudnnConvolutionFwdPreference.CUDNN_CONVOLUTION_FWD_NO_WORKSPACE) {
+				algo = jcuda.jcudnn.cudnnConvolutionFwdAlgo.CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM;
+			}
+			else if(CONVOLUTION_PREFERENCE == cudnnConvolutionFwdPreference.CUDNN_CONVOLUTION_FWD_PREFER_FASTEST) {
+				int [] algos = {
+	            		jcuda.jcudnn.cudnnConvolutionFwdAlgo.CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM,
+	            		jcuda.jcudnn.cudnnConvolutionFwdAlgo.CUDNN_CONVOLUTION_FWD_ALGO_GEMM,
+	            		jcuda.jcudnn.cudnnConvolutionFwdAlgo.CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_PRECOMP_GEMM
+	            };
+				// TODO: Look into FFt, Winograd, etc
+				// Also ensure that GPU has enough memory to allocate memory
+				long sizeInBytesArray[] = { 0 };
+	            algo = jcuda.jcudnn.JCudnn.cudnnGetConvolutionForwardAlgorithm(cudnnHandle, srcTensorDesc, filterDesc, convDesc, dstTensorDesc,
+	            		CONVOLUTION_PREFERENCE, sizeInBytesArray[0], algos);
+	            cudnnGetConvolutionForwardWorkspaceSize(cudnnHandle, srcTensorDesc, filterDesc, convDesc, dstTensorDesc, algo, sizeInBytesArray);
+	            if(sizeInBytesArray[0] != 0)
+	            	jcuda.runtime.JCuda.cudaMalloc(workSpace, sizeInBytesArray[0]);
+	            sizeInBytes = sizeInBytesArray[0];
+			}
+			else if(CONVOLUTION_PREFERENCE == cudnnConvolutionFwdPreference.CUDNN_CONVOLUTION_FWD_SPECIFY_WORKSPACE_LIMIT) {
+				throw new DMLRuntimeException("CUDNN_CONVOLUTION_FWD_SPECIFY_WORKSPACE_LIMIT is not implemented");
+			}
+			else {
+				throw new DMLRuntimeException("Unsupported preference criteria for convolution");
+			}
+			
+			alpha = pointerTo(1.0);
 			beta = pointerTo(0.0f);
 			int status = cudnnConvolutionForward(cudnnHandle, alpha, 
 					srcTensorDesc, imagePointer, 
@@ -123,14 +148,12 @@ public class LibMatrixCUDA {
 			if(workSpace != null && sizeInBytes != 0)
 				cudaFree(workSpace);
 		}
-	}
+	}	
 	
 	private static cudnnConvolutionDescriptor allocateConvolutionDescriptor(int padding [], int strides []) {
 		cudnnConvolutionDescriptor convDesc = new cudnnConvolutionDescriptor();
 		cudnnCreateConvolutionDescriptor(convDesc);
-		int upscale[] = { 1, 1 };
-		cudnnSetConvolutionNdDescriptor(convDesc, 2, padding, strides, upscale, 
-				CUDNN_CROSS_CORRELATION, CUDNN_DATA_DOUBLE);
+		cudnnSetConvolution2dDescriptor(convDesc, padding[0], padding[1], strides[0], strides[1], 1, 1, CUDNN_CROSS_CORRELATION);		
 		return convDesc;
 	}
 	
@@ -148,12 +171,10 @@ public class LibMatrixCUDA {
 	private static cudnnFilterDescriptor allocateFilterDescriptor(int K, int C, int R, int S) {
 		cudnnFilterDescriptor filterDesc = new cudnnFilterDescriptor();
 		cudnnCreateFilterDescriptor(filterDesc);
-		int filterDim[] = { K, C, R, S };
-		cudnnSetFilterNdDescriptor(filterDesc, CUDNN_DATA_DOUBLE, 4, filterDim);
+		cudnnSetFilter4dDescriptor(filterDesc, CUDNN_DATA_DOUBLE, K, C, R, S);
 		return filterDesc;
 	}
-
-
+	
 	public static void conv2d_backward_filter(MatrixObject image, MatrixObject dout,
 			MatrixObject outputBlock, int N, int C, int H, int W, int K, int R,
 			int S, int pad_h, int pad_w, int stride_h, int stride_w, int P,

@@ -103,6 +103,9 @@ if (fileY != " ")
     G2_scaled            = 0.0 / 0.0;
     G2_scaled_pValue     = 0.0 / 0.0;
     
+    # set Y_counts to avoid 'Initialization of Y_counts depends on if-else execution' warning
+    Y_counts = matrix(0.0, rows=1, cols=1);
+    
     if (dist_type == 1 & link_type == 1) {
     #
     # POWER DISTRIBUTIONS (GAUSSIAN, POISSON, GAMMA, ETC.)

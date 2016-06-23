@@ -136,7 +136,9 @@ im2col = function(matrix[double] img, int Hin, int Win, int Hf, int Wf, int stri
   Hout = as.integer((Hin - Hf) / strideh + 1)
   Wout = as.integer((Win - Wf) / stridew + 1)
 
-  img_cols = matrix(0, rows=C*Hf*Wf, cols=Hout*Wout)  # zeros
+  # Note: We start with `img_cols` transposed to allow for row-major
+  # left-indexing inside the loop, which is more performant.
+  img_cols = matrix(0, rows=Hout*Wout, cols=C*Hf*Wf)  # zeros
   parfor (hout in 1:Hout, check=0) {  # all output rows
     hin = (hout-1) * strideh + 1
     parfor (wout in 1:Wout, check=0) {  # all output columns
@@ -147,9 +149,10 @@ im2col = function(matrix[double] img, int Hin, int Win, int Hf, int Wf, int stri
         img_slice = matrix(img[c,], rows=Hin, cols=Win)  # reshape
         img_patch[c,] = matrix(img_slice[hin:hin+Hf-1, win:win+Wf-1], rows=1, cols=Hf*Wf)
       }
-      img_cols[,(hout-1)*Wout + wout] = matrix(img_patch, rows=C*Hf*Wf, cols=1)  # reshape
+      img_cols[(hout-1)*Wout + wout,] = t(matrix(img_patch, rows=C*Hf*Wf, cols=1))  # reshape
     }
   }
+  img_cols = t(img_cols)
 }
 
 col2im = function(matrix[double] img_cols, int C, int Hin, int Win, int Hf, int Wf,

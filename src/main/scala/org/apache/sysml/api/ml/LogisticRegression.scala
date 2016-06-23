@@ -20,9 +20,7 @@
 package org.apache.sysml.api.ml
 
 import java.io.File
-
 import scala.reflect.runtime.universe
-
 import org.apache.spark.ml.Estimator
 import org.apache.spark.ml.Model
 import org.apache.spark.ml.param.DoubleParam
@@ -37,6 +35,11 @@ import org.apache.sysml.api.MLOutput
 import org.apache.sysml.api.ml.util.RDDConverterUtilsExt
 import org.apache.sysml.runtime.instructions.spark.utils.{ RDDConverterUtilsExt => RDDConverterUtils }
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics
+import org.apache.spark.ml.util.Identifiable
+import org.apache.spark.ml.util.Identifiable
+import org.apache.spark.ml.util.Identifiable
+import org.apache.spark.ml.util.Identifiable
+import java.util.UUID
 
 
 trait HasIcpt extends Params {
@@ -65,7 +68,7 @@ trait HasRegParam extends Params {
   final def getRegParam: Double = $(regParam)
 }
 object LogisticRegression {
-  final val scriptPath = "scripts" + File.separator + "algorithms" + File.separator + "MultiLogReg.dml"
+  final val scriptPath = "algorithms" + File.separator + "MultiLogReg.dml"
 }
 
 /**
@@ -73,6 +76,10 @@ object LogisticRegression {
  */
 class LogisticRegression(override val uid: String) extends Estimator[LogisticRegressionModel] with HasIcpt
     with HasRegParam with HasTol with HasMaxOuterIter with HasMaxInnerIter {
+  
+  //Identifiable is private in spark 1.4
+  //def this() = this(Identifiable.randomUID("sysml-logreg"))
+  def this() = this("sysml-logreg_" + UUID.randomUUID().toString.takeRight(12))
 
   def setIcpt(value: Int) = set(icpt, value)
   def setMaxOuterIter(value: Int) = set(maxOuterIter, value)
@@ -113,7 +120,7 @@ class LogisticRegression(override val uid: String) extends Estimator[LogisticReg
   }
 }
 object LogisticRegressionModel {
-  final val scriptPath = "scripts" + File.separator + "algorithms" + File.separator + "GLM-predict.dml"
+  final val scriptPath = "algorithms" + File.separator + "GLM-predict.dml"
 }
 
 /**

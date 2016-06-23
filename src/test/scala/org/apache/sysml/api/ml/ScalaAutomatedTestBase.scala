@@ -19,7 +19,6 @@
 package org.apache.sysml.api.ml
 
 import java.io.File
-import org.apache.sysml.api.ml.ScriptsUtils
 
 object ScalaAutomatedTestBase {
   // *** HACK ALERT *** HACK ALERT *** HACK ALERT ***

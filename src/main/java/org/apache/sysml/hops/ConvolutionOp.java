@@ -23,7 +23,6 @@ import java.util.ArrayList;
 
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.Hop.MultiThreadedHop;
-import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.lops.ConvolutionTransform;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopsException;
@@ -424,31 +423,31 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 				|| op == ConvOp.DIRECT_CONV2D_BACKWARD_FILTER
 				|| op == ConvOp.DIRECT_CONV2D_BACKWARD_DATA) {
 			params = new ConvolutionParameters(
-					extractValue(getInput().get(6)),
-					extractValue(getInput().get(7)), 
-					extractValue(getInput().get(8)), 
-					extractValue(getInput().get(9)), 
-					extractValue(getInput().get(10)), 
-					extractValue(getInput().get(12)), 
-					extractValue(getInput().get(13)), 
-					extractValue(getInput().get(2)), 
-					extractValue(getInput().get(3)), 
-					extractValue(getInput().get(4)), 
-					extractValue(getInput().get(5)), _maxNumThreads);
+					computeSizeInformation(getInput().get(6)),
+					computeSizeInformation(getInput().get(7)), 
+					computeSizeInformation(getInput().get(8)), 
+					computeSizeInformation(getInput().get(9)), 
+					computeSizeInformation(getInput().get(10)), 
+					computeSizeInformation(getInput().get(12)), 
+					computeSizeInformation(getInput().get(13)), 
+					computeSizeInformation(getInput().get(2)), 
+					computeSizeInformation(getInput().get(3)), 
+					computeSizeInformation(getInput().get(4)), 
+					computeSizeInformation(getInput().get(5)), _maxNumThreads);
 		}
 		else {
 			params = new ConvolutionParameters(
-				extractValue(getInput().get(5)),
-				extractValue(getInput().get(6)), 
-				extractValue(getInput().get(7)), 
-				extractValue(getInput().get(8)), 
-				extractValue(getInput().get(9)), 
-				extractValue(getInput().get(11)), 
-				extractValue(getInput().get(12)), 
-				extractValue(getInput().get(1)), 
-				extractValue(getInput().get(2)), 
-				extractValue(getInput().get(3)), 
-				extractValue(getInput().get(4)), _maxNumThreads);
+					computeSizeInformation(getInput().get(5)),
+					computeSizeInformation(getInput().get(6)), 
+					computeSizeInformation(getInput().get(7)), 
+					computeSizeInformation(getInput().get(8)), 
+					computeSizeInformation(getInput().get(9)), 
+					computeSizeInformation(getInput().get(11)), 
+					computeSizeInformation(getInput().get(12)), 
+					computeSizeInformation(getInput().get(1)), 
+					computeSizeInformation(getInput().get(2)), 
+					computeSizeInformation(getInput().get(3)), 
+					computeSizeInformation(getInput().get(4)), _maxNumThreads);
 		}
 		return params;
 	}
@@ -556,12 +555,6 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 					" output_feature_map=[" + params.P + " " + params.Q + "] stride=[" + params.stride_h + " " + params.stride_w + "]" +
 					" pad=[" + params.pad_h + " " + params.pad_w + "]");
 		}
-	}
-	
-	public static long extractValue(Hop hop)  {
-		if(hop instanceof LiteralOp)
-			return (long) HopRewriteUtils.getDoubleValueSafe((LiteralOp)hop);
-		return -1;
 	}
 	
 	@Override

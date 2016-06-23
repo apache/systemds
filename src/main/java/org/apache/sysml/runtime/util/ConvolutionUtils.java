@@ -96,10 +96,10 @@ public class ConvolutionUtils {
 					}
 					
 					// K, C * R * S
-					long K = ConvolutionOp.extractValue(inputs.get(10));
-					long C = ConvolutionOp.extractValue(inputs.get(7));
-					long R = ConvolutionOp.extractValue(inputs.get(12));
-					long S = ConvolutionOp.extractValue(inputs.get(13));
+					long K = currentHop.computeSizeInformation(inputs.get(10));
+					long C = currentHop.computeSizeInformation(inputs.get(7));
+					long R = currentHop.computeSizeInformation(inputs.get(12));
+					long S = currentHop.computeSizeInformation(inputs.get(13));
 					long rlen = K;
 					long clen = ConvolutionOp.getExtractedVal(C, R, S);
 					return ConvolutionOp.constructFusedConvolutionLops(et, inputs, ConvOp.DIRECT_CONV2D_BACKWARD_FILTER, (ConvolutionOp) x_col, rlen, clen);
@@ -130,16 +130,16 @@ public class ConvolutionUtils {
 					}
 					
 					// N, K * P * Q
-					long N = ConvolutionOp.extractValue(inputs.get(6));
-					long H = ConvolutionOp.extractValue(inputs.get(8));
-					long W = ConvolutionOp.extractValue(inputs.get(9));
-					long K = ConvolutionOp.extractValue(inputs.get(10));
-					long R = ConvolutionOp.extractValue(inputs.get(12));
-					long S = ConvolutionOp.extractValue(inputs.get(13));
-					long stride_h = ConvolutionOp.extractValue(inputs.get(2));
-					long stride_w = ConvolutionOp.extractValue(inputs.get(3));
-					long pad_h = ConvolutionOp.extractValue(inputs.get(4));
-					long pad_w = ConvolutionOp.extractValue(inputs.get(5));
+					long N = currentHop.computeSizeInformation(inputs.get(6));
+					long H = currentHop.computeSizeInformation(inputs.get(8));
+					long W = currentHop.computeSizeInformation(inputs.get(9));
+					long K = currentHop.computeSizeInformation(inputs.get(10));
+					long R = currentHop.computeSizeInformation(inputs.get(12));
+					long S = currentHop.computeSizeInformation(inputs.get(13));
+					long stride_h = currentHop.computeSizeInformation(inputs.get(2));
+					long stride_w = currentHop.computeSizeInformation(inputs.get(3));
+					long pad_h = currentHop.computeSizeInformation(inputs.get(4));
+					long pad_w = currentHop.computeSizeInformation(inputs.get(5));
 					long P = -1; long Q = -1;
 					if(H > 0 && R > 0 && stride_h > 0 && pad_h > 0)
 						P = ConvolutionUtils.getP(H, R, stride_h, pad_h);
@@ -177,10 +177,10 @@ public class ConvolutionUtils {
 						}
 						
 						// N, C * H * W
-						long N = ConvolutionOp.extractValue(inputs.get(6));
-						long C = ConvolutionOp.extractValue(inputs.get(7));
-						long H = ConvolutionOp.extractValue(inputs.get(8));
-						long W = ConvolutionOp.extractValue(inputs.get(9));
+						long N = currentHop.computeSizeInformation(inputs.get(6));
+						long C = currentHop.computeSizeInformation(inputs.get(7));
+						long H = currentHop.computeSizeInformation(inputs.get(8));
+						long W = currentHop.computeSizeInformation(inputs.get(9));
 						long rlen = N;
 						long clen = ConvolutionOp.getExtractedVal(C, H, W);
 						return ConvolutionOp.constructFusedConvolutionLops(et, inputs, ConvOp.DIRECT_CONV2D_BACKWARD_DATA, (ConvolutionOp) rotate180, rlen, clen);

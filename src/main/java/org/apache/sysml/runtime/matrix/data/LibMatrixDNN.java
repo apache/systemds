@@ -24,6 +24,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -31,7 +32,7 @@ import org.apache.sysml.runtime.util.ConvolutionUtils;
 
 public class LibMatrixDNN {
 
-	public static boolean ALLOW_MULTI_THREADED_OPS = true;
+	public static final boolean ALLOW_MULTI_THREADED_OPS = true;
 	// Using hashmap to avoid any performance impacts of multimap
 	private static final ConcurrentHashMap<Integer, SoftReference<double[]>> non_zeroed_double_arr = new ConcurrentHashMap<Integer, SoftReference<double[]>>();
 	private static final int NON_ZEROED_DOUBLE_ARR_THRESHOLD = 100;
@@ -63,6 +64,8 @@ public class LibMatrixDNN {
 		public int N; public int C; public int H; public int W;
 		public int K; public int R; public int S; public int stride_h; public int stride_w; public int pad_h; public int pad_w;
 		public int P; public int Q; public int numThreads;
+		
+		public AtomicLong outputNNZ = new AtomicLong(-1);
 		
 		MatrixBlock input1; MatrixBlock input2; MatrixBlock output;
 		boolean reuseNonZeroedOutput = false;
@@ -219,6 +222,8 @@ public class LibMatrixDNN {
 			throw new DMLRuntimeException("Incorrect input dimensions in maxpooling:" + input.getNumRows() + " " + input.getNumColumns() + " " + params.N + " " + params.K*params.P*params.Q);
 		}
 		
+		params.outputNNZ.set(0);
+		
 		int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
 		if(!ALLOW_MULTI_THREADED_OPS || constrainedNumThreads <= 1) {
 			for (int n = 0; n < params.N; n++) {
@@ -240,6 +245,7 @@ public class LibMatrixDNN {
 		if (!params.output.isInSparseFormat())
 			outputArray = params.output.getDenseBlock();
 		
+		long tmpNNZ = 0;
 		for (int p = 0; p < params.P; p++) {
 			for (int q = 0; q < params.Q; q++) {
 				int start_index_h = p * params.stride_h - params.pad_h;
@@ -258,10 +264,13 @@ public class LibMatrixDNN {
 						else
 							inVal = params.input1.quickGetValue(n, c*params.H*params.W +  h*params.W + w);
 						outputArray[out_index] = Math.max(outputArray[out_index], inVal);
+						if(outputArray[out_index] != 0)
+							tmpNNZ++;
 					}
 				}
 			}
 		}
+		params.outputNNZ.addAndGet(tmpNNZ);
 	}
 		
 	// Reshape a 4D tensor of dimension (N, K, P, Q) to matrix of dimension (K, NPQ)
@@ -436,6 +445,7 @@ public class LibMatrixDNN {
 		params.input1 = input;
 		params.output = outputBlock;
 		
+		params.outputNNZ.set(0);
 		int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
 		if(!ALLOW_MULTI_THREADED_OPS || constrainedNumThreads <= 1) {
 			for (int n = 0; n < params.N; n++) { // Do following for all images
@@ -525,6 +535,7 @@ public class LibMatrixDNN {
 		final int inputOffset = n*params.C*params.H*params.W + c*params.H*params.W;
 		final int outputOffset = (c*params.R*params.S*params.N + n)*params.P*params.Q;
 		
+		long tmpNNZ = 0;
 		for (int r = 0; r < params.R; r++) { // Get an input patch of size R X S
 			for (int s = 0; s < params.S; s++) {
 				int localIndex = outputOffset + ((r*params.S*params.N + s*params.N)*params.P*params.Q);
@@ -541,6 +552,8 @@ public class LibMatrixDNN {
 									outputArray[localIndex] = inputArray[inputOffset + input_row*params.W + input_col];
 								else
 									outputArray[localIndex] = params.input1.quickGetValue(n, c*params.H*params.W + input_row*params.W + input_col);
+								if(outputArray[localIndex] != 0)
+									tmpNNZ++;
 							}
 							else if(params.reuseNonZeroedOutput) {
 								outputArray[localIndex] = 0;
@@ -560,5 +573,6 @@ public class LibMatrixDNN {
 			}
 		}
 		
+		params.outputNNZ.addAndGet(tmpNNZ);
 	}
 }

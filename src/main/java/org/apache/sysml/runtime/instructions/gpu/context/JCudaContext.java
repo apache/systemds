@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.sysml.runtime.controlprogram.context;
+package org.apache.sysml.runtime.instructions.gpu.context;
 
 import java.util.concurrent.atomic.AtomicLong;
 

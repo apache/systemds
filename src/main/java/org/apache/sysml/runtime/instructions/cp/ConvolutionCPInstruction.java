@@ -191,6 +191,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			outputBlock = getDenseOutputBlock(ec, C * R * S, N * P * Q, true);
 			params.setReuseNonZeroedOutput(_reuseNonZeroedOutput);
 			LibMatrixDNN.im2col(matBlock, outputBlock, params);
+			outputBlock.setNonZeros(params.outputNNZ.get());
 		}
 		else if (instOpcode.equalsIgnoreCase("reshape_col")) {
 			checkHeightWidth(ec, params);
@@ -199,6 +200,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			outputBlock = getDenseOutputBlock(ec, N, K * P * Q, true);
 			params.setReuseNonZeroedOutput(_reuseNonZeroedOutput);
 			LibMatrixDNN.reshape_col(matBlock, outputBlock, params);
+			outputBlock.setNonZeros(matBlock.getNonZeros()); // As number of non-zeros doesnot change for reshape_col
 		}
 		else if (instOpcode.equalsIgnoreCase("rotate180")) {
 			checkHeightWidth(ec, params);
@@ -206,6 +208,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			outputBlock = getDenseOutputBlock(ec, N * P * Q, K, true);
 			params.setReuseNonZeroedOutput(_reuseNonZeroedOutput);
 			LibMatrixDNN.rotate180(matBlock, outputBlock, params);
+			outputBlock.setNonZeros(matBlock.getNonZeros()); // As number of non-zeros doesnot change for rotate180
 		}
 		else if (instOpcode.equalsIgnoreCase("col2im")) {
 			checkHeightWidth(ec, params);
@@ -213,7 +216,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			// needs to be zeroed-out
 			outputBlock = getDenseOutputBlock(ec, N, C * H * W, false);
 			params.setReuseNonZeroedOutput(_reuseNonZeroedOutput);
-			LibMatrixDNN.col2im(matBlock, outputBlock, params);
+			LibMatrixDNN.col2im(matBlock, outputBlock, params); // No efficient nnz computation, so setting it to -1
 		}
 		else if (instOpcode.equalsIgnoreCase("maxpooling")) {
 			// Is eligible for REUSE_NONZEROED_OUTPUT but cannot guarantee that previous output has been rmvar-ed
@@ -221,6 +224,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			outputBlock = getDenseOutputBlock(ec, N, C*P*Q, true);
 			params.setReuseNonZeroedOutput(_reuseNonZeroedOutput);
 			LibMatrixDNN.maxpooling(matBlock, outputBlock, params);
+			outputBlock.setNonZeros(params.outputNNZ.get());
 		}
 		else if (instOpcode.equalsIgnoreCase("maxpooling_backward")) {
 			MatrixBlock dout = ec.getMatrixInput(_in2.getName());
@@ -228,7 +232,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			// without somewhat expensive HashMap checks
 			outputBlock = getDenseOutputBlock(ec, N, C*H*W, false);
 			params.setReuseNonZeroedOutput(_reuseNonZeroedOutput);
-			LibMatrixDNN.maxpooling_backward(matBlock, dout, outputBlock, params);
+			LibMatrixDNN.maxpooling_backward(matBlock, dout, outputBlock, params); // No efficient nnz computation, so setting it to -1
 			ec.releaseMatrixInput(_in2.getName());
 		}
 		else {
@@ -246,7 +250,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		if(DMLScript.STATISTICS)
 			start = System.nanoTime();
 		
-		MatrixBlock outputBlock = new MatrixBlock(numRows, numCols, numRows * numCols);
+		MatrixBlock outputBlock = new MatrixBlock(numRows, numCols, false, numRows * numCols);
 		_reuseNonZeroedOutput = false;
 		if(reuseNonZeroedOutput1 && DMLScript.REUSE_NONZEROED_OUTPUT) {
 			_reuseNonZeroedOutput = true;

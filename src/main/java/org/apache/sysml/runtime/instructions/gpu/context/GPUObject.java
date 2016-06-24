@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.sysml.runtime.controlprogram.context;
+package org.apache.sysml.runtime.instructions.gpu.context;
 
 import java.util.Collections;
 import java.util.Comparator;
@@ -28,13 +28,12 @@ import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.utils.Statistics;
 
 //FIXME merge JCudaObject into GPUObject to avoid unnecessary complexity
-//FIXME move to gpu instruction package
 public abstract class GPUObject 
 {
 	protected boolean isDeviceCopyModified = false;
 	protected AtomicInteger numLocks = new AtomicInteger(0);
 	protected boolean isInSparseFormat = false;
-	protected boolean isAllocated = false;
+	public boolean isAllocated = false;
 	protected MatrixObject mat = null;
 	
 	protected GPUObject(MatrixObject mat2)  {

@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.sysml.runtime.controlprogram.context;
+package org.apache.sysml.runtime.instructions.gpu.context;
 
 import java.util.ArrayList;
 
@@ -26,7 +26,6 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 
 //FIXME merge JCudaContext into GPUContext as this context is anyway CUDA specific
-//FIXME move to gpu instruction package
 public abstract class GPUContext {
 
 	public static ArrayList<GPUObject> allocatedPointers = new ArrayList<GPUObject>(); 

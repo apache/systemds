@@ -36,7 +36,7 @@ public abstract class GPUInstruction extends Instruction
 	protected boolean _requiresLabelUpdate = false;
 	
 	public GPUInstruction(String opcode, String istr) {
-		type = INSTRUCTION_TYPE.CONTROL_PROGRAM;
+		type = INSTRUCTION_TYPE.GPU;
 		instString = istr;
 		
 		//prepare opcode and update requirement for repeated usage

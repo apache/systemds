@@ -49,7 +49,7 @@ import jcuda.jcudnn.cudnnTensorDescriptor;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
-import org.apache.sysml.runtime.controlprogram.context.JCudaObject;
+import org.apache.sysml.runtime.instructions.gpu.context.JCudaObject;
 
 //FIXME move could to respective instructions, this is not a block library
 public class LibMatrixCUDA {

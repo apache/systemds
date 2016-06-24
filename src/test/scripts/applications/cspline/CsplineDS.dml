@@ -82,7 +82,7 @@ y_mat = matrix(y, 1, 1)
 if (fileO != " ") {
    write (y_mat, fileO);
  } else {
-   print(y_mat)
+   print(y)
 }
 
 

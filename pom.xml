@@ -601,6 +601,7 @@
                                 <exclude>src/test/scripts/functions/jmlc/tfmtd_example/Bin/sqft.bin</exclude>
                                 <exclude>src/test/scripts/functions/jmlc/tfmtd_example/column.names</exclude>
                                 <exclude>src/test/scripts/functions/jmlc/tfmtd_example/dummycoded.column.names</exclude>
+                                <exclude>src/test/scripts/functions/jmlc/tfmtd_example2/column.names</exclude>
                                 <exclude>src/test/scripts/functions/jmlc/tfmtd_frame_example/tfmtd_frame</exclude>
 								<exclude>src/test/scripts/functions/transform/input/homes/homesNAN.csv.colnames</exclude>
 							</excludes>

@@ -66,7 +66,7 @@ if(cmdLine_Y != " "){
 		stop("Stopping due to invalid argument: Label vector (Y) must be recoded")
 	
 	pred = rowIndexMax(scores);
-	correct_percentage = sum(ppred(pred - y, 0, "==")) / N * 100;
+	correct_percentage = sum((pred - y) == 0) / N * 100;
 	
 	acc_str = "Accuracy (%): " + correct_percentage
 	print(acc_str)

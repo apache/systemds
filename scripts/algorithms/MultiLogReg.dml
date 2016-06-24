@@ -114,7 +114,7 @@ if (intercept_status == 2)  # scale-&-shift X columns to mean 0, variance 1
 {                           # Important assumption: X [, D] = matrix (1, rows = N, cols = 1)
     avg_X_cols = t(colSums(X)) / N;
     var_X_cols = (t(colSums (X ^ 2)) - N * (avg_X_cols ^ 2)) / (N - 1);
-    is_unsafe = ppred (var_X_cols, 0.0, "<=");
+    is_unsafe = var_X_cols <= 0.0;
     scale_X = 1.0 / sqrt (var_X_cols * (1 - is_unsafe) + is_unsafe);
     scale_X [D, 1] = 1;
     shift_X = - avg_X_cols * scale_X;
@@ -142,7 +142,7 @@ if (intercept_status == 2)  # scale-&-shift X columns to mean 0, variance 1
 if (min (Y_vec) <= 0) { 
     # Category labels "0", "-1" etc. are converted into the largest label
     max_y = max (Y_vec);
-    Y_vec  = Y_vec  + (- Y_vec  + max_y + 1) * ppred (Y_vec , 0.0, "<=");
+    Y_vec  = Y_vec  + (- Y_vec  + max_y + 1) * (Y_vec <= 0.0);
 }
 Y = table (seq (1, N, 1), Y_vec);
 K = ncol (Y) - 1;   # The number of  non-baseline categories

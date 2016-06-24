@@ -634,7 +634,7 @@ Function | Description | Parameters | Example
 pmin() <br/> pmax() | "parallel min/max".<br/> Return cell-wise minimum/maximum. If the second input is a scalar then it is compared against all cells in the first input. | Input: (&lt;matrix&gt;, &lt;matrix&gt;), or (&lt;matrix&gt;, &lt;scalar&gt;) <br/> Output: matrix | pmin(X,Y) <br/> pmax(X,y)
 rowIndexMax() | Row-wise computation -- for each row, find the max value, and return its column index. | Input: (matrix) <br/> Output: (n x 1) matrix | rowIndexMax(X)
 rowIndexMin() | Row-wise computation -- for each row, find the minimum value, and return its column index. | Input: (matrix) <br/> Output: (n x 1) matrix | rowIndexMin(X)
-ppred() | "parallel predicate".<br/> The relational operator specified in the third argument is cell-wise applied to input matrices. If the second argument is a scalar, then it is used against all cells in the first argument. | Input: (&lt;matrix&gt;, &lt;matrix&gt;, &lt;string with relational operator&gt;), or <br/> (&lt;matrix&gt;, &lt;scalar&gt;, &lt;string with relational operator&gt;) <br/> Output: matrix | ppred(X,Y,"&lt;") <br/> ppred(X,y,"&lt;")
+ppred() | "parallel predicate".<br/> The relational operator specified in the third argument is cell-wise applied to input matrices. If the second argument is a scalar, then it is used against all cells in the first argument. <br/> **NOTE: ppred() has been replaced by the relational operators, so its use is discouraged.**| Input: (&lt;matrix&gt;, &lt;matrix&gt;, &lt;string with relational operator&gt;), or <br/> (&lt;matrix&gt;, &lt;scalar&gt;, &lt;string with relational operator&gt;) <br/> Output: matrix | ppred(X,Y,"&lt;") <br/> ppred(X,y,"&lt;")
 
 ### Casting Built-In Functions
 

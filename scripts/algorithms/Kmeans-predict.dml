@@ -144,7 +144,7 @@ if (fileX != " ") {
     # Compute the means, as opposed to the centroids
     cluster_sizes = t(colSums (P));
     record_of_ones = matrix (1, rows = 1, cols = ncol (X));
-    M = (t(P) %*% X) / ((cluster_sizes + ppred (cluster_sizes, 0, "==")) %*% record_of_ones);
+    M = (t(P) %*% X) / ((cluster_sizes + (cluster_sizes == 0)) %*% record_of_ones);
     # Compute the WCSS for the means
     wcss_means = sum ((X - P %*% M) ^ 2);
     wcss_means_pc = 100.0 * wcss_means / total_ss;
@@ -323,7 +323,7 @@ return (Matrix[double] row_ids, Matrix[double] col_ids, Matrix[double] margins,
         Matrix[double] max_counts, Matrix[double] rounded_percentages)
 {
     margins = rowSums (counts);
-    select_positive = diag (ppred (margins, 0, ">"));
+    select_positive = diag (margins > 0);
     select_positive = removeEmpty (target = select_positive, margin = "rows");
     row_ids = select_positive %*% seq (1, nrow (margins), 1);
     pos_counts = select_positive %*% counts;
@@ -331,9 +331,9 @@ return (Matrix[double] row_ids, Matrix[double] col_ids, Matrix[double] margins,
     max_counts = rowMaxs (pos_counts);
     one_per_column = matrix (1, rows = 1, cols = ncol (pos_counts));
     max_counts_ppred = max_counts %*% one_per_column;
-    is_max_count = ppred (pos_counts, max_counts_ppred, "==");
+    is_max_count = (pos_counts == max_counts_ppred);
     aggr_is_max_count = t(cumsum (t(is_max_count)));
-    col_ids = rowSums (ppred (aggr_is_max_count, 0, "==")) + 1;
+    col_ids = rowSums (aggr_is_max_count == 0) + 1;
     rounded_percentages = round (1000000.0 * max_counts / pos_margins) / 10000.0;
 }
 

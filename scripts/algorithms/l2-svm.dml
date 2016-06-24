@@ -48,8 +48,8 @@ if(nrow(X) < 2)
 
 check_min = min(Y)
 check_max = max(Y)
-num_min = sum(ppred(Y, check_min, "=="))
-num_max = sum(ppred(Y, check_max, "=="))
+num_min = sum(Y == check_min)
+num_max = sum(Y == check_max)
 
 if(check_min == check_max)
 	stop("Stopping due to invalid inputs: Y seems to contain exactly one label")
@@ -111,7 +111,7 @@ while(continue == 1 & iter < maxiterations)  {
     while(continue1 == 1){
 		tmp_Xw = Xw + step_sz*Xd
       	out = 1 - Y * (tmp_Xw)
-      	sv = ppred(out, 0, ">")
+      	sv = (out > 0)
       	out = out * sv
       	g = wd + step_sz*dd - sum(out * Y * Xd)
       	h = dd + sum(Xd * sv * Xd)
@@ -126,7 +126,7 @@ while(continue == 1 & iter < maxiterations)  {
 	Xw = Xw + step_sz*Xd
 	
     out = 1 - Y * Xw
-    sv = ppred(out, 0, ">")
+    sv = (out > 0)
     out = sv * out
     obj = 0.5 * sum(out * out) + lambda/2 * sum(w * w)
     g_new = t(X) %*% (out * Y) - lambda * w

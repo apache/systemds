@@ -62,7 +62,7 @@ if(addNoise == 1){
 	r = Rand(rows=numSamples, cols=1, min=0, max=1, pdf="uniform", seed=0)
 	#r = Rand(rows=numSamples, cols=1, min=0.5, max=0.5, pdf="uniform")
 }
-Y = 1 - 2*ppred(prob, r, "<")
+Y = 1 - 2 * (prob < r)
 if( $12 == 1 ) {
   Y = (Y+3)/2;
 }

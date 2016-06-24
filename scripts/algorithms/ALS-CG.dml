@@ -73,7 +73,7 @@ n = ncol (X);
 U = rand (rows = m, cols = r, min = -0.5, max = 0.5); # mxr
 V = rand (rows = n, cols = r, min = -0.5, max = 0.5); # nxr
 
-W = ppred (X, 0, "!=");
+W = X != 0;
   
 # check for regularization
 if( reg == "L2" ) {
@@ -101,7 +101,7 @@ is_U = TRUE;  # TRUE = Optimize U, FALSE = Optimize V
 maxinneriter = r ; # min (ncol (U), 15);
 
 if( check ) {
-  loss_init = 0.5 * sum (ppred(X,0, "!=") * (U %*% t(V) - X) ^ 2);
+  loss_init = 0.5 * sum (X != 0) * (U %*% t(V) - X) ^ 2);
   loss_init = loss_init + 0.5 * lambda * (sum (U ^ 2 * row_nonzeros) + sum (V ^ 2 * col_nonzeros));
   print ("-----   Initial train loss: " + loss_init + " -----");
 }
@@ -112,10 +112,10 @@ while( as.integer(it/2) < max_iter & ! converged )
 {
   it = it + 1;
   if( is_U ) {
-    G = (ppred(X,0,"!=") * (U %*% t(V) - X)) %*% V + lambda * U * row_nonzeros;
+    G = (X != 0) * (U %*% t(V) - X)) %*% V + lambda * U * row_nonzeros;
   } 
   else {
-    G = t(t(U) %*% (ppred(X,0,"!=") * (U %*% t(V) - X))) + lambda * V * col_nonzeros;
+    G = t(t(U) %*% (X != 0) * (U %*% t(V) - X))) + lambda * V * col_nonzeros;
   }
 
   R = -G;
@@ -149,7 +149,7 @@ while( as.integer(it/2) < max_iter & ! converged )
 	
   # check for convergence
   if( check & (it%%2 == 0) ) {
-    loss_cur = 0.5 * sum (ppred(X,0, "!=") * (U %*% t(V) - X) ^ 2);
+    loss_cur = 0.5 * sum (X != 0) * (U %*% t(V) - X) ^ 2);
     loss_cur = loss_cur + 0.5 * lambda * (sum (U ^ 2 * row_nonzeros) + sum (V ^ 2 * col_nonzeros));
 	
     loss_dec = (loss_init - loss_cur) / loss_init;

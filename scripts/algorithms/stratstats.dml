@@ -140,8 +140,8 @@ print ("Preparing the covariates...");
 
 XnoNaNs = replace (target = XwithNaNs, pattern = 0.0/0.0, replacement = 0);
 YnoNaNs = replace (target = YwithNaNs, pattern = 0.0/0.0, replacement = 0);
-XNaNmask = ppred (XwithNaNs, XwithNaNs, "==");
-YNaNmask = ppred (YwithNaNs, YwithNaNs, "==");
+XNaNmask = (XwithNaNs == XwithNaNs);
+YNaNmask = (YwithNaNs == YwithNaNs);
 one_to_num_attrs_X = seq (1, num_attrs_X, 1);
 one_to_num_attrs_Y = seq (1, num_attrs_Y, 1);
 ProjX = matrix (0, rows = num_attrs, cols = num_attrs_X);
@@ -161,8 +161,8 @@ Y_mask = YNaNmask %*% ProjY;
 print ("Preparing the strata...");
 
 SnoNaNs = replace (target = SwithNaNs, pattern = 0.0/0.0, replacement = 0);
-S = round (SnoNaNs) * ppred (SnoNaNs, 0.0, ">");
-Proj_good_stratumID = diag (ppred (S, 0.0, ">"));
+S = round (SnoNaNs) * (SnoNaNs > 0.0);
+Proj_good_stratumID = diag (S > 0.0);
 Proj_good_stratumID = removeEmpty (target = Proj_good_stratumID, margin = "rows");
 vector_of_good_stratumIDs = Proj_good_stratumID %*% S;
 vector_of_good_stratumIDs = vector_of_good_stratumIDs + (1 - min (vector_of_good_stratumIDs));
@@ -199,8 +199,8 @@ print ("Computing the stratified single-variate statistics...");
 
 Cnt_X_per_stratum = StrataSummator %*% X_mask;
 Cnt_Y_per_stratum = StrataSummator %*% Y_mask;
-Is_none_X_per_stratum = ppred (Cnt_X_per_stratum, 0, "==");
-Is_none_Y_per_stratum = ppred (Cnt_Y_per_stratum, 0, "==");
+Is_none_X_per_stratum = (Cnt_X_per_stratum == 0);
+Is_none_Y_per_stratum = (Cnt_Y_per_stratum == 0);
 One_over_cnt_X_per_stratum = (1 - Is_none_X_per_stratum) / (Cnt_X_per_stratum + Is_none_X_per_stratum);
 One_over_cnt_Y_per_stratum = (1 - Is_none_Y_per_stratum) / (Cnt_Y_per_stratum + Is_none_Y_per_stratum);
 num_X_nonempty_strata = num_strata - colSums (Is_none_X_per_stratum);
@@ -294,7 +294,7 @@ Sum_Y_forXY_per_stratum  = StrataSummator %*% (( X_mask %*% Proj_X_to_XY) * ( Y 
 Sum_YY_forXY_per_stratum = StrataSummator %*% (( X_mask %*% Proj_X_to_XY) * ((Y * Y) %*% Proj_Y_to_XY));
 Sum_XY_per_stratum       = StrataSummator %*% (( X      %*% Proj_X_to_XY) * ( Y      %*% Proj_Y_to_XY));
 
-Is_none_XY_per_stratum = ppred (Cnt_XY_per_stratum, 0, "==");
+Is_none_XY_per_stratum = (Cnt_XY_per_stratum == 0);
 One_over_cnt_XY_per_stratum = (1 - Is_none_XY_per_stratum) / (Cnt_XY_per_stratum + Is_none_XY_per_stratum);
 num_XY_nonempty_strata = num_strata - colSums (Is_none_XY_per_stratum);
 
@@ -361,7 +361,7 @@ OutMtx [35, ] = stdev_errY_vs_X_stratified;  # Stratified residual standard devi
 OutMtx [36, ] = r_sqr_X_vs_Y_stratified;     # Stratified R-squared
 OutMtx [37, ] = adj_r_sqr_X_vs_Y_stratified; # Stratified adjusted R-squared
 OutMtx [38, ] = p_val_Y_vs_X_stratified;     # Stratified P-value for hypothesis "slope = 0"
-OutMtx [39, ] = colSums (ppred (Cnt_XY_per_stratum, 2, ">="));  # Number of strata with at least two counted points
+OutMtx [39, ] = colSums (Cnt_XY_per_stratum >= 2);  # Number of strata with at least two counted points
 
 OutMtx = t(OutMtx);
 
@@ -388,9 +388,9 @@ fStat_tailprob = function (Matrix[double] fStat, Matrix[double] df_1, Matrix[dou
 
 sqrt_failsafe = function (Matrix[double] input_A) return (Matrix[double] output_A)
 {
-    mask_A = ppred (input_A, 0.0, ">=");
+    mask_A = (input_A >= 0.0);
     prep_A = input_A * mask_A;
-    mask_A = mask_A * ppred (prep_A, prep_A, "==");
+    mask_A = mask_A * (prep_A == prep_A);
     prep_A = replace (target = prep_A, pattern = 0.0/0.0, replacement = 0);
     output_A = sqrt (prep_A) / mask_A;
 }

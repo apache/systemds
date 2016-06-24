@@ -90,7 +90,7 @@ R_scale = matrix (0, rows = 1, cols = 1);
 
 if (fileR != " ") {
 	R = read (fileR);
-	dummy_coded = ppred (R[,2], R[,3], "!=");
+	dummy_coded = (R[,2] != R[,3]);
 	R_scale = removeEmpty (target = R[,2] * (1 - dummy_coded), margin = "rows");
 	R_cat = removeEmpty (target = R[,2:3] * dummy_coded, margin = "rows");
 } else { # only scale features available
@@ -143,7 +143,7 @@ parfor (i in 1:num_records, check = 0) {
 				cur_end_ind = as.scalar (R_cat[cur_feature,2]);					
 				cur_value = as.scalar (rowIndexMax(cur_sample[,cur_start_ind:cur_end_ind])); 
 				cur_offset = as.scalar (M[6,cur_node_pos]);
-				value_found = sum (ppred (M[7:(7 + cur_offset - 1),cur_node_pos], cur_value, "=="));
+				value_found = sum (M[7:(7 + cur_offset - 1),cur_node_pos] == cur_value);
 				if (value_found >= 1) { # go to left branch
 					cur_node_pos = cur_node_pos + as.scalar (M[3,cur_node_pos]);
 					# cur_node = as.scalar (cur_M[1,cur_node_pos]);
@@ -162,7 +162,7 @@ if (fileY != " ") {
 	Y_dummy = read (fileY);
 	num_classes = ncol (Y_dummy);
 	Y = rowSums (Y_dummy * t (seq (1, num_classes)));
-	result = ppred (Y, Y_predicted, "==");
+	result = (Y == Y_predicted);
 	result = sum (result);
 	accuracy = result / num_records * 100;
 	acc_str = "Accuracy (%): " + accuracy;
@@ -172,12 +172,12 @@ if (fileY != " ") {
 		print (acc_str);
 	}
 	if (fileC != " ") {
-		oob_ind = ppred (rowSums (label_counts_oob), 0, ">")
+		oob_ind = (rowSums (label_counts_oob) > 0)
 		label_counts_oob = removeEmpty (target = label_counts_oob, margin = "rows");
 		num_oob = nrow (label_counts_oob);
 		Y_predicted_oob = rowIndexMax (label_counts_oob);
 		Y_oob = removeEmpty (target = Y * oob_ind, margin = "rows");
-		result = ppred (Y_oob, Y_predicted_oob, "==");
+		result = (Y_oob == Y_predicted_oob);
 		oob_error = (1 - (sum (result) / num_oob)) * 100;
 		oob_str = "Out-Of-Bag error (%): " + oob_error;
 		if (fileOOB != " ") {

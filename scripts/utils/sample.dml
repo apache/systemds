@@ -60,8 +60,8 @@ svUpBnd = cumsum(sv);
 # Construct sampling matrix SM, and apply to create samples
 parfor ( i in 1:nrow(sv))
 {
-  T1 = ppred(R, as.scalar(svUpBnd[i,1]), "<=");
-  T2 = ppred(R, as.scalar(svLowBnd[i,1]), ">");
+  T1 = R <= as.scalar(svUpBnd[i,1]);
+  T2 = R > as.scalar(svLowBnd[i,1]);
   SM = T1 * T2; 
   P = removeEmpty(target=diag(SM), margin="rows");
   iX = P %*% X;

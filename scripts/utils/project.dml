@@ -63,7 +63,7 @@ if (exclude==FALSE)
    EE[1:nrow(E),1] = E
 
    # Convert exclude column list to include column list, and create column indices
-   EE = ppred(EE, 0, "==")
+   EE = (EE == 0)
    EE = EE * seq(1, ncol(X), 1)
    P = removeEmpty(target=EE, margin="rows")
 

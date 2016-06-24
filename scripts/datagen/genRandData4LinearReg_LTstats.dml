@@ -110,7 +110,7 @@ Prob = t(cumsum (t(Prob)));
 
 r = Rand (rows = numSamples, cols = 1, min = 0, max = 1, pdf = "uniform", seed = 0);
 R = r %*% ones;
-Y = 1 + rowSums (ppred (Prob, R, "<"));
+Y = 1 + rowSums (Prob < R);
 if (isBinomialPMOne) {
     Y = 3 - 2 * Y;
 }
@@ -185,7 +185,7 @@ generateWeights =
     b_qe = 2.0 * meanLT * (t(r_1) %*% XDW);
     c_qe = meanLT^2 * norm_r_1_sq - sigmaLT^2 * nrow(X);
 
-    is_sigmaLT_OK = ppred (c_qe, 0.0, "<=");
+    is_sigmaLT_OK = (c_qe <= 0.0);
     new_sigmaLT = is_sigmaLT_OK * sigmaLT + (1 - is_sigmaLT_OK) * abs (meanLT) * sqrt (norm_r_1_sq / nrow(X));
     c_qe = is_sigmaLT_OK * c_qe;
     x_qe = (- b_qe + sqrt (b_qe * b_qe - 4.0 * a_qe * c_qe)) / (2.0 * a_qe);

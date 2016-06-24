@@ -60,7 +60,7 @@ V = read (fileV);
 Vrows = nrow(V);
 Vcols = ncol(V);
 
-zero_cols_ind = ppred (colSums (ppred (R, 0, "!=")), 0, "==");
+zero_cols_ind = (colSums (R != 0)) == 0;
 K = min (Vcols - sum (zero_cols_ind), K);
 
 n = nrow(X);
@@ -93,7 +93,7 @@ V_filter = U_prime %*% R;
 V_prime = projection_matrix %*% V;
 
 # filter for already recommended items
-V_prime = ppred(V_prime, 0, '==');
+V_prime = V_prime == 0);
 
 # removes already recommended items and creating user2item matrix
 V_filter = V_prime * V_filter; 
@@ -115,7 +115,7 @@ for (i in 1:K){
 	V_filter = V_filter - range * table (seq (1, nrow (V_filter), 1), rowIndexMax, nrow(V_filter), ncol(V_filter));
 }
 
-V_top_indices = V_top_indices * ppred (V_top_values, 0, ">");
+V_top_indices = V_top_indices * (V_top_values > 0);
 
 # append users as a first column
 V_top_indices = append (X[,1], V_top_indices);

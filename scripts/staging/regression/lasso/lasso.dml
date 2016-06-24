@@ -66,7 +66,7 @@ while(iter < maxiter & continue) {
 		u = w - g/alpha
 		lambda = tau/alpha
 		
-		wnew = sign(u) * (abs(u) - lambda) * ppred(abs(u) - lambda, 0, ">")
+		wnew = sign(u) * (abs(u) - lambda) * ((abs(u) - lambda) > 0)
 		dw = wnew - w
 		dw2 = sum(dw*dw)
 		
@@ -99,13 +99,13 @@ while(iter < maxiter & continue) {
 	alpha = max(alpha_min, min(alpha_max, alphanew))
 	
 	old_inactive_set = inactive_set
-	inactive_set = ppred(w, 0, "!=")
+	inactive_set = w != 0
 	diff = sum(abs(old_inactive_set - inactive_set))
 
 	if(diff == 0 & relChangeObj < tol) 
 		continue = FALSE
 
-	num_inactive = sum(ppred(w, 0, "!="))
+	num_inactive = sum(w != 0)
 	print("ITER=" + iter + " OBJ=" + obj + " relative change=" + relChangeObj + " num_inactive=" + num_inactive)
 	iter = iter + 1
 }

@@ -67,11 +67,11 @@ V = read (fileV);
 
 
 # check the input matrix V, if some rows or columns contain only zeros remove them from V  
-V_nonzero_ind = ppred (V, 0, "!=");
+V_nonzero_ind = V != 0;
 row_nonzeros = rowSums (V_nonzero_ind);
 col_nonzeros = t (colSums (V_nonzero_ind));
-orig_nonzero_rows_ind = ppred (row_nonzeros, 0, "!=");
-orig_nonzero_cols_ind = ppred (col_nonzeros, 0, "!=");
+orig_nonzero_rows_ind = row_nonzeros != 0;
+orig_nonzero_cols_ind = col_nonzeros != 0;
 num_zero_rows = nrow (V) - sum (orig_nonzero_rows_ind);
 num_zero_cols = ncol (V) - sum (orig_nonzero_cols_ind);
 if (num_zero_rows > 0) {
@@ -84,7 +84,7 @@ if (num_zero_cols > 0) {
 }
 if (num_zero_rows > 0 | num_zero_cols > 0) {
 	print ("Recomputing nonzero rows and columns!");
-	V_nonzero_ind = ppred (V, 0, "!=");
+	V_nonzero_ind = V != 0;
 	row_nonzeros = rowSums (V_nonzero_ind);
 	col_nonzeros = t (colSums (V_nonzero_ind));	
 }
@@ -121,7 +121,7 @@ while ((it < max_iter) & (!converged)) {
 	it = it + 1;
 	# keep R fixed and update L
 	parfor (i in 1:m) {
-    	R_nonzero_ind = t(ppred(V[i,],0,"!="));
+    	R_nonzero_ind = t(V[i,] != 0);
 		R_nonzero = removeEmpty (target=R * R_nonzero_ind, margin="rows");			
 		A1 = (t(R_nonzero) %*% R_nonzero) + (as.scalar(row_nonzeros[i,1]) * lambda_I); # coefficient matrix
 		L[i,] = t(solve (A1, t(V[i,] %*% R)));		
@@ -129,7 +129,7 @@ while ((it < max_iter) & (!converged)) {
   
 	# keep L fixed and update R
 	parfor (j in 1:n) {
-		L_nonzero_ind = t(ppred(Vt[j,],0,"!="))
+		L_nonzero_ind = t(Vt[j,] != 0)
 		L_nonzero = removeEmpty (target=L * L_nonzero_ind, margin="rows");
 		A2 = (t(L_nonzero) %*% L_nonzero) + (as.scalar(col_nonzeros[j,1]) * lambda_I); # coefficient matrix
 		R[j,] = t(solve (A2, t(Vt[j,] %*% L)));    

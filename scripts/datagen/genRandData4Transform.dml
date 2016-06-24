@@ -48,7 +48,7 @@ num_categorical_cols = 0.0
 scalar_ind = matrix(1, rows=num_scalar_cols, cols=1)
 if(prob_categorical > 0){
   categorical_ind = Rand(rows=num_cols, cols=1, min=0, max=1, pdf="uniform")
-  categorical_ind = ppred(categorical_ind, prob_categorical, "<")
+  categorical_ind = categorical_ind < prob_categorical
   categorical_col_ids = removeEmpty(target=seq(1, num_cols, 1)*categorical_ind, margin="rows")
   num_categorical_cols = sum(categorical_ind)
   write(categorical_col_ids, $out_categorical, format="csv")
@@ -82,12 +82,12 @@ if(num_categorical_cols > 0 & num_scalar_cols > 0){
 
 if(prob_missing_col > 0){
   missing_col_ind = Rand(rows=num_cols, cols=1, min=0, max=1, pdf="uniform")
-  missing_col_ind = ppred(missing_col_ind, prob_missing_col, "<")
+  missing_col_ind = missing_col_ind < prob_missing_col
   #currently only support missing value imputation for scale cols
   missing_col_ind = missing_col_ind * scalar_ind
   missing_col_ids = removeEmpty(target=seq(1, num_cols, 1)*missing_col_ind, margin="rows")
   missing_values = Rand(rows=num_rows, cols=nrow(missing_col_ids), min=0, max=1, pdf="uniform")
-  missing_values = ppred(missing_values, prob_missing_val, "<")
+  missing_values = missing_values < prob_missing_val
   X = append(X, missing_values)
   
   write(missing_col_ids, $out_missing, format="csv")

@@ -145,10 +145,8 @@ public class OutputInfo implements Serializable
 	 * 
 	 * @param oinfo
 	 * @return
-	 * @throws DMLRuntimeException 
 	 */
 	public static String outputInfoToStringExternal(OutputInfo oinfo) 
-		throws DMLRuntimeException 
 	{
 		if( oinfo == OutputInfo.TextCellOutputInfo )
 			return DataExpression.FORMAT_TYPE_VALUE_TEXT;
@@ -156,10 +154,11 @@ public class OutputInfo implements Serializable
 			return DataExpression.FORMAT_TYPE_VALUE_MATRIXMARKET;
 		else if( oinfo == OutputInfo.CSVOutputInfo )
 			return DataExpression.FORMAT_TYPE_VALUE_CSV;
-		else if( oinfo == OutputInfo.BinaryBlockOutputInfo )
+		else if( oinfo == OutputInfo.BinaryBlockOutputInfo 
+				|| oinfo == OutputInfo.BinaryCellOutputInfo )
 			return DataExpression.FORMAT_TYPE_VALUE_BINARY;
 		else
-			throw new DMLRuntimeException("Unrecognized outputInfo: " + oinfo);
+			return "specialized";
 	}
 	
 	@Override

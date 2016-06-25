@@ -31,9 +31,14 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.FileSplit;
+import org.apache.hadoop.mapred.InputFormat;
 import org.apache.hadoop.mapred.InputSplit;
+import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
+import org.apache.hadoop.mapred.Reporter;
 import org.apache.sysml.runtime.util.LocalFileUtils;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
@@ -181,5 +186,40 @@ public class IOUtilFunctions
 			});
 		}		
 		return splits;
+	}
+	
+	/**
+	 * Counts the number of columns in a given collection of csv file splits. This primitive aborts 
+	 * if a row with more than 0 columns is found and hence is robust against empty file splits etc.
+	 * 
+	 * @param splits
+	 * @param informat
+	 * @param job
+	 * @param delim
+	 * @return
+	 * @throws IOException 
+	 */
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	public static int countNumColumnsCSV(InputSplit[] splits, InputFormat informat, JobConf job, String delim ) 
+		throws IOException 
+	{
+		LongWritable key = new LongWritable();
+		Text value = new Text();
+		int ncol = -1;
+		for( int i=0; i<splits.length && ncol<=0; i++ ) {
+			RecordReader<LongWritable, Text> reader = 
+					informat.getRecordReader(splits[i], job, Reporter.NULL);
+			try {
+				if( reader.next(key, value) ) {
+					String row = value.toString().trim();
+					if( !row.isEmpty() )
+						ncol = StringUtils.countMatches(row, delim) + 1;
+				}
+			}
+			finally {
+				closeSilently(reader);	
+			}
+		}
+		return ncol;
 	}
 }

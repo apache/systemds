@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
@@ -217,26 +216,22 @@ public class FrameReaderTextCSV extends FrameReader
 		InputSplit[] splits = informat.getSplits(job, 1);
 		splits = IOUtilFunctions.sortInputSplits(splits);
 		
-		boolean first = true;
-		int ncol = -1;
-		int nrow = -1;
+		//compute number of columns
+		int ncol = IOUtilFunctions.countNumColumnsCSV(splits, informat, job, _props.getDelim());
 		
-		for( InputSplit split : splits ) 
+		//compute number of rows
+		int nrow = -1;
+		for( int i=0; i<splits.length; i++ ) 
 		{
-			RecordReader<LongWritable, Text> reader = informat.getRecordReader(split, job, Reporter.NULL);
+			RecordReader<LongWritable, Text> reader = informat.getRecordReader(splits[i], job, Reporter.NULL);
 			LongWritable key = new LongWritable();
 			Text value = new Text();
 			
 			try
 			{
-				//read head and first line to determine num columns
-				if( first ) {
-					if ( _props.hasHeader() ) 
-						reader.next(key, value); //ignore header
+				//ignore header of first split
+				if( i==0 && _props.hasHeader() )
 					reader.next(key, value);
-					ncol = StringUtils.countMatches(value.toString(), _props.getDelim()) + 1;
-					nrow = 1; first = false;
-				}
 				
 				//count remaining number of rows
 				while ( reader.next(key, value) )

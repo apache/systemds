@@ -27,7 +27,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
@@ -96,7 +95,7 @@ public class FrameReaderTextCSVParallel extends FrameReaderTextCSV
 				offset += count.get();
 			}
 			
-			//read individial splits
+			//read individual splits
 			ArrayList<ReadRowsTask> tasks2 = new ArrayList<ReadRowsTask>();
 			for( int i=0; i<splits.length; i++ )
 				tasks2.add( new ReadRowsTask(splits[i], informat, job, dest, offsets.get(i).intValue(), i==0));
@@ -115,7 +114,7 @@ public class FrameReaderTextCSVParallel extends FrameReaderTextCSV
 	@Override
 	protected Pair<Integer,Integer> computeCSVSize( Path path, JobConf job, FileSystem fs) 
 		throws IOException 
-	{		
+	{	
 		int numThreads = OptimizerUtils.getParallelTextReadParallelism();
 		
 		TextInputFormat informat = new TextInputFormat();
@@ -123,18 +122,11 @@ public class FrameReaderTextCSVParallel extends FrameReaderTextCSV
 		InputSplit[] splits = informat.getSplits(job, numThreads);
 		
 		//compute number of columns
-		RecordReader<LongWritable, Text> reader = informat.getRecordReader(splits[0], job, Reporter.NULL);
-		LongWritable key = new LongWritable();
-		Text value = new Text();
-		reader.next(key, value);
-		int ncol = StringUtils.countMatches(value.toString(), _props.getDelim()) + 1;
-		reader.close();
+		int ncol = IOUtilFunctions.countNumColumnsCSV(splits, informat, job, _props.getDelim());
 		
 		//compute number of rows
-		ExecutorService pool = Executors.newFixedThreadPool(numThreads);
-		
-		//compute num rows per split
 		int nrow = 0;
+		ExecutorService pool = Executors.newFixedThreadPool(numThreads);
 		try {
 			ArrayList<CountRowsTask> tasks = new ArrayList<CountRowsTask>();
 			for( int i=0; i<splits.length; i++ )

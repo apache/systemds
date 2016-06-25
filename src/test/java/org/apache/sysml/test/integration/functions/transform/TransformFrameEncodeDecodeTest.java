@@ -122,8 +122,6 @@ public class TransformFrameEncodeDecodeTest extends AutomatedTestBase
 			OptimizerUtils.ALLOW_FRAME_CSV_REBLOCK = true;
 			runTest(true, false, null, -1); 
 			
-			//System.exit(1);
-			
 			//read input/output and compare
 			FrameReader reader1 = FrameReaderFactory.createFrameReader(InputInfo.CSVInputInfo, 
 					new CSVFileFormatProperties(true, ",", false));

@@ -574,8 +574,8 @@
 								<exclude>**/*.mtd</exclude>
 								<exclude>**/target/**</exclude>
 								<exclude>**/README.md</exclude>
-                                <!-- Jupyter Notebooks -->
-                                <exclude>samples/jupyter-notebooks/*.ipynb</exclude>
+								<!-- Jupyter Notebooks -->
+								<exclude>**/*.ipynb</exclude>
 								<!-- Generated antlr files -->
 								<exclude>src/main/java/*.tokens</exclude>
 								<!-- Test Validation files -->

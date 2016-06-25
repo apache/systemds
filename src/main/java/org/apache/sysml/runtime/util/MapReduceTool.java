@@ -55,6 +55,7 @@ import org.apache.sysml.runtime.matrix.data.NumItemsByEachReducerMetaData;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
 import org.apache.sysml.runtime.matrix.sort.ReadWithZeros;
+import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.OrderedJSONObject;
 
 
@@ -395,7 +396,6 @@ public class MapReduceTool
         }
         br.write(line.toString());
         br.close();
-        //System.out.println("Finished writing dimsFile: " + filename);
 	}
 	
 	public static MatrixCharacteristics[] processDimsFiles(String dir, MatrixCharacteristics[] stats) 
@@ -461,134 +461,95 @@ public class MapReduceTool
 		Path pt = new Path(mtdfile);
 		FileSystem fs = FileSystem.get(_rJob);
 		BufferedWriter br = new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
-		formatProperties = (formatProperties==null && outinfo==OutputInfo.CSVOutputInfo) ?
-				new CSVFileFormatProperties() : formatProperties;
-		OrderedJSONObject mtd = new OrderedJSONObject(); // maintain order in output file
 
 		try {
-			// build JSON metadata object
-			mtd.put(DataExpression.DATATYPEPARAM, dt.toString().toLowerCase());
-			if (schema == null)
-				switch (vt) {
-					case DOUBLE:
-						mtd.put(DataExpression.VALUETYPEPARAM, "double");
-						break;
-					case INT:
-						mtd.put(DataExpression.VALUETYPEPARAM, "int");
-						break;
-					case BOOLEAN:
-						mtd.put(DataExpression.VALUETYPEPARAM, "boolean");
-						break;
-					case STRING:
-						mtd.put(DataExpression.VALUETYPEPARAM, "string");
-						break;
-					case UNKNOWN:
-						mtd.put(DataExpression.VALUETYPEPARAM, "unknown");
-						break;
-					case OBJECT:
-						mtd.put(DataExpression.VALUETYPEPARAM, "object");
-						break;
-				}
-			else
-			{
-				StringBuffer schemaStrBuffer = new StringBuffer();
-				for(int i=0; i < schema.size(); i++) {
-					switch (schema.get(i)) {
-						case DOUBLE:
-							schemaStrBuffer.append("DOUBLE");
-							break;
-						case INT:
-							schemaStrBuffer.append("INT");
-							break;
-						case BOOLEAN:
-							schemaStrBuffer.append("BOOLEAN");
-							break;
-						case STRING:
-							schemaStrBuffer.append("STRING");
-							break;
-						case UNKNOWN:
-						default:
-							schemaStrBuffer.append("*");
-							break;
-					}
-					schemaStrBuffer.append(DataExpression.DEFAULT_DELIM_DELIMITER);
-				}
-				mtd.put(DataExpression.SCHEMAPARAM, schemaStrBuffer.toString());
-			}
-			mtd.put(DataExpression.READROWPARAM, mc.getRows());
-			mtd.put(DataExpression.READCOLPARAM, mc.getCols());
-			// only output rows_in_block and cols_in_block for matrix binary format
-			if (outinfo == OutputInfo.BinaryBlockOutputInfo && dt.isMatrix() ) {
-				mtd.put(DataExpression.ROWBLOCKCOUNTPARAM, mc.getRowsPerBlock());
-				mtd.put(DataExpression.COLUMNBLOCKCOUNTPARAM, mc.getColsPerBlock());
-			}
-			// only output nnz for matrix
-			if( dt.isMatrix() ) {
-				mtd.put(DataExpression.READNUMNONZEROPARAM, mc.getNonZeros());
-			}
-			if (outinfo == OutputInfo.TextCellOutputInfo) {
-				mtd.put(DataExpression.FORMAT_TYPE, "text");
-			} else if (outinfo == OutputInfo.BinaryBlockOutputInfo || outinfo == OutputInfo.BinaryCellOutputInfo ) {
-				mtd.put(DataExpression.FORMAT_TYPE, "binary");
-			} else if (outinfo == OutputInfo.CSVOutputInfo) {
-				mtd.put(DataExpression.FORMAT_TYPE, "csv");
-			} else {
-				mtd.put(DataExpression.FORMAT_TYPE, "specialized");
-			}
-			if (outinfo == OutputInfo.CSVOutputInfo) {
-				CSVFileFormatProperties csvProperties = (CSVFileFormatProperties) formatProperties;
-				mtd.put(DataExpression.DELIM_HAS_HEADER_ROW, csvProperties.hasHeader());
-				mtd.put(DataExpression.DELIM_DELIMITER, csvProperties.getDelim());
-			}
-			mtd.put(DataExpression.DESCRIPTIONPARAM,
-					new OrderedJSONObject().put(DataExpression.AUTHORPARAM, "SystemML"));
-
-			// write metadata JSON object to file
-			mtd.write(br, 4); // indent with 4 spaces
+			String mtd = metaDataToString(mtdfile, vt, schema, dt, mc, outinfo, formatProperties);
+			br.write(mtd);
 			br.close();
 		} catch (Exception e) {
 			throw new IOException("Error creating and writing metadata JSON file", e);
 		}
 	}
 
-	public static void writeScalarMetaDataFile(String mtdfile, ValueType v) throws IOException {
-		Path pt=new Path(mtdfile);
+	public static void writeScalarMetaDataFile(String mtdfile, ValueType vt) 
+		throws IOException 
+	{
+		Path pt = new Path(mtdfile);
 		FileSystem fs = FileSystem.get(_rJob);
-		BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
-		OrderedJSONObject mtd = new OrderedJSONObject(); // maintain order in output file
+		BufferedWriter br = new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
 
 		try {
-			// build JSON metadata object
-			mtd.put(DataExpression.DATATYPEPARAM, "scalar");
-			switch (v) {
-				case DOUBLE:
-					mtd.put(DataExpression.VALUETYPEPARAM, "double");
-					break;
-				case INT:
-					mtd.put(DataExpression.VALUETYPEPARAM, "int");
-					break;
-				case BOOLEAN:
-					mtd.put(DataExpression.VALUETYPEPARAM, "boolean");
-					break;
-				case STRING:
-					mtd.put(DataExpression.VALUETYPEPARAM, "string");
-					break;
-				case UNKNOWN:
-					mtd.put(DataExpression.VALUETYPEPARAM, "unknown");
-					break;
-				case OBJECT:
-					throw new IOException("Write of generic object types not supported.");
-			}
-			mtd.put(DataExpression.FORMAT_TYPE, "text");
-			mtd.put(DataExpression.DESCRIPTIONPARAM,
-					new OrderedJSONObject().put(DataExpression.AUTHORPARAM, "SystemML"));
-
-			// write metadata JSON object to file
-			mtd.write(br, 4); // indent with 4 spaces
+			String mtd = metaDataToString(mtdfile, vt, null, 
+				DataType.SCALAR, null, OutputInfo.TextCellOutputInfo, null);
+			br.write(mtd);
 			br.close();
-		} catch (Exception e) {
+		} 
+		catch (Exception e) {
 			throw new IOException("Error creating and writing metadata JSON file", e);
 		}
+	}
+	
+	/**
+	 * 
+	 * @param mtdfile
+	 * @param vt
+	 * @param schema
+	 * @param dt
+	 * @param mc
+	 * @param outinfo
+	 * @param formatProperties
+	 * @return
+	 * @throws JSONException 
+	 * @throws DMLRuntimeException 
+	 */
+	public static String metaDataToString(String mtdfile, ValueType vt, List<ValueType> schema, DataType dt, MatrixCharacteristics mc, 
+			OutputInfo outinfo, FileFormatProperties formatProperties) throws JSONException, DMLRuntimeException
+	{
+		OrderedJSONObject mtd = new OrderedJSONObject(); // maintain order in output file
+
+		//handle data type and value types (incl schema for frames)
+		mtd.put(DataExpression.DATATYPEPARAM, dt.toString().toLowerCase());
+		if (schema == null) {
+			mtd.put(DataExpression.VALUETYPEPARAM, vt.toString().toLowerCase());
+		}	
+		else {
+			StringBuffer schemaSB = new StringBuffer();
+			for(int i=0; i < schema.size(); i++) {
+				if( schema.get(i) == ValueType.UNKNOWN )
+					schemaSB.append("*");
+				else
+					schemaSB.append(schema.get(i).toString());
+				schemaSB.append(DataExpression.DEFAULT_DELIM_DELIMITER);
+			}
+			mtd.put(DataExpression.SCHEMAPARAM, schemaSB.toString());
+		}
+		
+		//handle output dimensions
+		if( !dt.isScalar() ) {
+			mtd.put(DataExpression.READROWPARAM, mc.getRows());
+			mtd.put(DataExpression.READCOLPARAM, mc.getCols());
+			// handle output nnz and binary block configuration
+			if( dt.isMatrix() ) {
+				if (outinfo == OutputInfo.BinaryBlockOutputInfo ) {
+					mtd.put(DataExpression.ROWBLOCKCOUNTPARAM, mc.getRowsPerBlock());
+					mtd.put(DataExpression.COLUMNBLOCKCOUNTPARAM, mc.getColsPerBlock());
+				}
+				mtd.put(DataExpression.READNUMNONZEROPARAM, mc.getNonZeros());
+			}
+		}
+			
+		//handle format type and additional arguments	
+		mtd.put(DataExpression.FORMAT_TYPE, OutputInfo.outputInfoToStringExternal(outinfo));
+		if (outinfo == OutputInfo.CSVOutputInfo) {
+			CSVFileFormatProperties csvProperties = (formatProperties==null) ?
+				new CSVFileFormatProperties() : (CSVFileFormatProperties)formatProperties;
+			mtd.put(DataExpression.DELIM_HAS_HEADER_ROW, csvProperties.hasHeader());
+			mtd.put(DataExpression.DELIM_DELIMITER, csvProperties.getDelim());
+		}
+		mtd.put(DataExpression.DESCRIPTIONPARAM,
+			new OrderedJSONObject().put(DataExpression.AUTHORPARAM, "SystemML"));
+
+		return mtd.toString(4); // indent with 4 spaces	
 	}
 	
 	public static double[][] readMatrixFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, int brlen, int bclen) 

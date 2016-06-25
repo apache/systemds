@@ -31,6 +31,7 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.OutputFormat;
 import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.hadoop.mapred.TextOutputFormat;
+import org.apache.sysml.parser.DataExpression;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.mapred.CSVWriteReducer.RowBlockForTextOutput;
 import org.apache.sysml.runtime.matrix.sort.CompactOutputFormat;
@@ -138,6 +139,27 @@ public class OutputInfo implements Serializable
 			return "csv";
 		else
 			throw new DMLRuntimeException("Unrecognized outputInfo: " + oi);
+	}
+	
+	/**
+	 * 
+	 * @param oinfo
+	 * @return
+	 * @throws DMLRuntimeException 
+	 */
+	public static String outputInfoToStringExternal(OutputInfo oinfo) 
+		throws DMLRuntimeException 
+	{
+		if( oinfo == OutputInfo.TextCellOutputInfo )
+			return DataExpression.FORMAT_TYPE_VALUE_TEXT;
+		else if( oinfo == OutputInfo.MatrixMarketOutputInfo )
+			return DataExpression.FORMAT_TYPE_VALUE_MATRIXMARKET;
+		else if( oinfo == OutputInfo.CSVOutputInfo )
+			return DataExpression.FORMAT_TYPE_VALUE_CSV;
+		else if( oinfo == OutputInfo.BinaryBlockOutputInfo )
+			return DataExpression.FORMAT_TYPE_VALUE_BINARY;
+		else
+			throw new DMLRuntimeException("Unrecognized outputInfo: " + oinfo);
 	}
 	
 	@Override

@@ -176,9 +176,9 @@ generate_dummy_data = function()
 #   ```
 #   $SPARK_HOME/bin/spark-submit --master local[*] --driver-memory 5G
 #   --conf spark.driver.maxResultSize=0 --conf spark.akka.frameSize=128
-#   $SYSTEMML_HOME/target/SystemML.jar -f examples/mnist_softmax.dml
-#   -nvargs train=examples/data/mnist/mnist_train.csv
-#   test=examples/data/mnist/mnist_test.csv out_dir=examples/model/mnist_softmax
+#   $SYSTEMML_HOME/target/SystemML.jar -f mnist_softmax.dml
+#   -nvargs train=data/mnist/mnist_train.csv test=data/mnist/mnist_test.csv
+#   out_dir=model/mnist_softmax
 #   ```
 #
 

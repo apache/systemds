@@ -302,9 +302,9 @@ generate_dummy_data = function()
 #   ```
 #   $SPARK_HOME/bin/spark-submit --master local[*] --driver-memory 10G
 #   --conf spark.driver.maxResultSize=0 --conf spark.akka.frameSize=128
-#   $SYSTEMML_HOME/target/SystemML.jar -f examples/mnist_lenet.dml
-#   -nvargs train=examples/data/mnist/mnist_train.csv
-#   test=examples/data/mnist/mnist_test.csv C=1 Hin=28 Win=28 out_dir=examples/model/mnist_lenet
+#   $SYSTEMML_HOME/target/SystemML.jar -f mnist_lenet.dml
+#   -nvargs train=data/mnist/mnist_train.csv test=data/mnist/mnist_test.csv
+#   C=1 Hin=28 Win=28 out_dir=model/mnist_lenet
 #   ```
 #
 

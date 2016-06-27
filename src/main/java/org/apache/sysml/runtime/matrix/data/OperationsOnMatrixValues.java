@@ -542,7 +542,7 @@ public class OperationsOnMatrixValues
 		for(long r=resultBlockIndexTop; r<=resultBlockIndexBottom; r++)
 		{
 			List<ValueType> schema = UtilFunctions.getSubSchema(block.getSchema(), tmpRange.colStart, tmpRange.colEnd);
-			long iResultIndex = (r-1)*brlen+tmpRange.rowStart;
+			long iResultIndex = Math.max(((r-1)*brlen - ixrange.rowStart + 1), 0);
 			Pair<Long,FrameBlock> out=new Pair<Long,FrameBlock>(new Long(iResultIndex+1), new FrameBlock(schema));
 			outlist.add(out);
 		}

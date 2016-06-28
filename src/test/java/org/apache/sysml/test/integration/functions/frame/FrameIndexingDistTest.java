@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 
 import org.junit.Assert;
@@ -48,8 +49,15 @@ public class FrameIndexingDistTest extends AutomatedTestBase
 	
 	private final static String TEST_DIR = "functions/frame/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FrameIndexingDistTest.class.getSimpleName() + "/";
-	private final static String TEST_NAME = "FrameIndexingDistTest";
+	private final static String TEST_NAME = "FrameLeftIndexing";
+	private final static String RTEST_NAME = "FrameRightIndexing";
 	
+	private enum IXType {
+		RIX,
+		LIX,
+	}
+	
+
 	private final static double epsilon=0.0000000001;
 
 	// Test data with 2 blocks of rows and columns
@@ -57,6 +65,12 @@ public class FrameIndexingDistTest extends AutomatedTestBase
 	
 	private final static int min=0;
 	private final static int max=100;
+	
+	private final static double sparsity1 = 1.0;
+	private final static double sparsity2 = 0.5;
+	private final static double sparsity3 = 0.1;
+	private final static double sparsity4 = 0.01;
+
 	
 	private final static List<ValueType> schemaMixedLargeListStr = Collections.nCopies(cols/4, ValueType.STRING);
 	private final static List<ValueType> schemaMixedLargeListDble  = Collections.nCopies(cols/4, ValueType.DOUBLE);
@@ -74,27 +88,51 @@ public class FrameIndexingDistTest extends AutomatedTestBase
 	 
 	@Override
 	public void setUp() {
-		addTestConfiguration("FrameIndexingDistTest", new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, 
+		addTestConfiguration("FrameLeftIndexing", new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, 
 				new String[] {"AB", "AC", "AD"}));
+		addTestConfiguration("FrameRightIndexing", new TestConfiguration(TEST_CLASS_DIR, RTEST_NAME, 
+				new String[] {"B", "C", "D"}));
 	}
 	
 
 	// Left Indexing Spark test cases
 	@Test
 	public void testMapLeftIndexingSP() throws DMLRuntimeException, IOException {
-		runTestLeftIndexing(ExecType.SPARK, LeftIndexingMethod.SP_MLEFTINDEX, schemaMixedLarge);
+		runTestLeftIndexing(ExecType.SPARK, LeftIndexingMethod.SP_MLEFTINDEX, schemaMixedLarge, IXType.LIX, true);
 	}
 	
 	@Test
 	public void testGeneralLeftIndexingSP() throws DMLRuntimeException, IOException {
-		runTestLeftIndexing(ExecType.SPARK, LeftIndexingMethod.SP_GLEFTINDEX, schemaMixedLarge);
+		runTestLeftIndexing(ExecType.SPARK, LeftIndexingMethod.SP_GLEFTINDEX, schemaMixedLarge, IXType.LIX, true);
 	}
 	
-	private void runTestLeftIndexing(ExecType et, LeftIndexingOp.LeftIndexingMethod indexingMethod, ValueType[] schema) throws DMLRuntimeException, IOException {
+	
+	// Right Indexing Spark test cases
+	@Test
+	public void testRightIndexingSPSparse() throws DMLRuntimeException, IOException {
+		runTestLeftIndexing(ExecType.SPARK, null, schemaMixedLarge, IXType.RIX, true);
+	}
+	
+	@Test
+	public void testRightIndexingSPDense() throws DMLRuntimeException, IOException {
+		runTestLeftIndexing(ExecType.SPARK, null, schemaMixedLarge, IXType.RIX, false);
+	}
+	
+
+	
+	private void runTestLeftIndexing(ExecType et, LeftIndexingOp.LeftIndexingMethod indexingMethod, ValueType[] schema, IXType itype, boolean bSparse) throws DMLRuntimeException, IOException {
 		
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		RUNTIME_PLATFORM oldRTP = rtplatform;
-		TestConfiguration config = getTestConfiguration("FrameIndexingDistTest");
+		TestConfiguration config = null;
+		
+		HashMap<String, ValueType[]> outputSchema = new HashMap<String, ValueType[]>();
+		
+		if (itype == IXType.LIX) 
+			config = getTestConfiguration("FrameLeftIndexing");
+		else
+			config = getTestConfiguration("FrameRightIndexing");
+			
 		try
 		{
 			if(indexingMethod != null) {
@@ -123,47 +161,87 @@ public class FrameIndexingDistTest extends AutomatedTestBase
 	        config.addVariable("colend", colend);
 			loadTestConfiguration(config);
 	        
-			/* This is for running the junit test the new way, i.e., construct the arguments directly */
-			String LI_HOME = SCRIPT_DIR + TEST_DIR;
-			fullDMLScriptName = LI_HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args",  input("A"),
-				Long.toString(rows), Long.toString(cols),
-				Long.toString(rowstart), Long.toString(rowend),
-				Long.toString(colstart), Long.toString(colend),
-				output("AB"), output("AC"), output("AD"),
-				input("B"), input("C"), input("D"),
-				Long.toString(rowend-rowstart+1), 
-				Long.toString(colend-colstart+1),
-				Long.toString(cols-colstart+1)};
-			
-			fullRScriptName = LI_HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-				inputDir() + " " + rowstart + " " + rowend + " " + colstart + " " + colend + " " + expectedDir();
-			
-			//initialize the frame data.
-			List<ValueType> lschema = Arrays.asList(schema);
+			if (itype == IXType.LIX) {
+				/* This is for running the junit test the new way, i.e., construct the arguments directly */
+				String LI_HOME = SCRIPT_DIR + TEST_DIR;
+				fullDMLScriptName = LI_HOME + TEST_NAME + ".dml";
+				programArgs = new String[]{"-args",  input("A"),
+					Long.toString(rows), Long.toString(cols),
+					Long.toString(rowstart), Long.toString(rowend),
+					Long.toString(colstart), Long.toString(colend),
+					output("AB"), output("AC"), output("AD"),
+					input("B"), input("C"), input("D"),
+					Long.toString(rowend-rowstart+1), 
+					Long.toString(colend-colstart+1),
+					Long.toString(cols-colstart+1)};
+				
+				fullRScriptName = LI_HOME + TEST_NAME + ".R";
+				rCmd = "Rscript" + " " + fullRScriptName + " " + 
+					inputDir() + " " + rowstart + " " + rowend + " " + colstart + " " + colend + " " + expectedDir();
+				
+				//initialize the frame data.
+				List<ValueType> lschema = Arrays.asList(schema);
+		
+				double sparsity=sparsity1;//rand.nextDouble(); 
+		        double[][] A = getRandomMatrix(rows, cols, min, max, sparsity, 1111 /*\\System.currentTimeMillis()*/);
+		        writeInputFrameWithMTD("A", A, true, lschema, OutputInfo.BinaryBlockOutputInfo);	        
+		        
+		        sparsity=sparsity3;//rand.nextDouble();
+		        double[][] B = getRandomMatrix((int)(rowend-rowstart+1), (int)(colend-colstart+1), min, max, sparsity, 2345 /*System.currentTimeMillis()*/);
+		        List<ValueType> lschemaB = lschema.subList((int)colstart-1, (int)colend); 
+		        writeInputFrameWithMTD("B", B, true, lschemaB, OutputInfo.BinaryBlockOutputInfo);	        
 	
-			double sparsity=1.0;//rand.nextDouble(); 
-	        double[][] A = getRandomMatrix(rows, cols, min, max, sparsity, 1111 /*\\System.currentTimeMillis()*/);
-	        writeInputFrameWithMTD("A", A, true, lschema, OutputInfo.BinaryBlockOutputInfo);	        
-	        
-	        sparsity=0.1;//rand.nextDouble();
-	        double[][] B = getRandomMatrix((int)(rowend-rowstart+1), (int)(colend-colstart+1), min, max, sparsity, 2345 /*System.currentTimeMillis()*/);
-	        List<ValueType> lschemaB = lschema.subList((int)colstart-1, (int)colend); 
-	        writeInputFrameWithMTD("B", B, true, lschemaB, OutputInfo.BinaryBlockOutputInfo);	        
-
-	        sparsity=0.5;//rand.nextDouble();
-	        double[][] C = getRandomMatrix((int)(rowend), (int)(cols-colstart+1), min, max, sparsity, 3267 /*System.currentTimeMillis()*/);
-	        List<ValueType> lschemaC = lschema.subList((int)colstart-1, (int)cols); 
-	        writeInputFrameWithMTD("C", C, true, lschemaC, OutputInfo.BinaryBlockOutputInfo);	        
-
-	        sparsity=0.01;//rand.nextDoublBe();
-	        double[][] D = getRandomMatrix(rows, (int)(colend-colstart+1), min, max, sparsity, 4856 /*System.currentTimeMillis()*/);
-	        writeInputFrameWithMTD("D", D, true, lschemaB, OutputInfo.BinaryBlockOutputInfo);	        
+		        sparsity=sparsity2;//rand.nextDouble();
+		        double[][] C = getRandomMatrix((int)(rowend), (int)(cols-colstart+1), min, max, sparsity, 3267 /*System.currentTimeMillis()*/);
+		        List<ValueType> lschemaC = lschema.subList((int)colstart-1, (int)cols); 
+		        writeInputFrameWithMTD("C", C, true, lschemaC, OutputInfo.BinaryBlockOutputInfo);	        
 	
-	        boolean exceptionExpected = false;
-			int expectedNumberOfJobs = -1;
-			runTest(true, exceptionExpected, null, expectedNumberOfJobs);
+		        sparsity=sparsity4;//rand.nextDoublBe();
+		        double[][] D = getRandomMatrix(rows, (int)(colend-colstart+1), min, max, sparsity, 4856 /*System.currentTimeMillis()*/);
+		        writeInputFrameWithMTD("D", D, true, lschemaB, OutputInfo.BinaryBlockOutputInfo);	        
+		
+		        boolean exceptionExpected = false;
+				int expectedNumberOfJobs = -1;
+				runTest(true, exceptionExpected, null, expectedNumberOfJobs);
+				
+				for(String file: config.getOutputFiles())
+					outputSchema.put(file, schema);
+			}
+			else {
+				/* This is for running the junit test the new way, i.e., construct the arguments directly */
+				String RI_HOME = SCRIPT_DIR + TEST_DIR;
+				fullDMLScriptName = RI_HOME + RTEST_NAME + ".dml";
+				programArgs = new String[]{"-stats", "-explain","-args",  input("A"), 
+					Long.toString(rows), Long.toString(cols),
+					Long.toString(rowstart), Long.toString(rowend),
+					Long.toString(colstart), Long.toString(colend),
+					output("B"), output("C"), output("D")}; 
+				
+				fullRScriptName = RI_HOME + RTEST_NAME + ".R";
+				rCmd = "Rscript" + " " + fullRScriptName + " " + 
+					inputDir() + " " + rowstart + " " + rowend + " " + colstart + " " + colend + " " + expectedDir();
+		
+				//initialize the frame data.
+				List<ValueType> lschema = Arrays.asList(schema);
+		
+			    double sparsity = bSparse ? sparsity4 : sparsity2;
+		        double[][] A = getRandomMatrix(rows, cols, min, max, sparsity, 1111 /*\\System.currentTimeMillis()*/);
+		        writeInputFrameWithMTD("A", A, true, lschema, OutputInfo.BinaryBlockOutputInfo);	        
+		        
+		        ValueType[] schemaB = new ValueType[(int) (colend-colstart+1)]; 
+		        System.arraycopy(schema, (int)(colstart-1), schemaB, 0, (int)(colend-colstart+1)); 
+				outputSchema.put(config.getOutputFiles()[0], schemaB);
+
+		        ValueType[] schemaC = new ValueType[(int) (cols-colstart+1)]; 
+		        System.arraycopy(schema, (int)(colstart-1), schemaC, 0, (int)(cols-colstart+1)); 
+				outputSchema.put(config.getOutputFiles()[1], schemaC);
+
+				outputSchema.put(config.getOutputFiles()[2], schemaB);
+				
+				boolean exceptionExpected = false;
+				int expectedNumberOfJobs = -1;
+				runTest(true, exceptionExpected, null, expectedNumberOfJobs);
+			}
 		}
 		catch(Exception ex) {
 			ex.printStackTrace();
@@ -183,7 +261,8 @@ public class FrameIndexingDistTest extends AutomatedTestBase
 			FrameBlock frameBlock = readDMLFrameFromHDFS(file, InputInfo.BinaryBlockInputInfo);
 			MatrixCharacteristics md = new MatrixCharacteristics(frameBlock.getNumRows(), frameBlock.getNumColumns(), -1, -1);
 			FrameBlock frameRBlock = readRFrameFromHDFS(file+".csv", InputInfo.CSVInputInfo, md);
-			verifyFrameData(frameBlock, frameRBlock, schema);
+			ValueType[] schemaOut = outputSchema.get(file);
+			verifyFrameData(frameBlock, frameRBlock, schemaOut);
 			System.out.println("File processed is " + file);
 		}
 	}

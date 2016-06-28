@@ -67,8 +67,72 @@ using rule-based and cost-based optimization techniques. The optimizer automatic
 execution plans ranging from in-memory, single-node execution, to distributed computations on Spark or Hadoop.
 This ensures both efficiency and scalability. Automatic optimization reduces or eliminates the need to hand-tune
 distributed runtime execution plans and system configurations.
+* * *
 
+## SystemML Assumptions
 
+Before you get started on SystemML, make sure that your environment is set up and ready to go.
+
+  1. **If you’re on a mac, you’ll want to install homebrew (http://brew.sh) if you haven’t already.**
+
+  *Copy and paste the following into your terminal.*
+
+  ```
+  /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+  ```
+  2. **Now install Java (need Java 8).**
+```
+  brew tap caskroom/cask
+  brew install Caskroom/cask/java
+```
+  3. **Now install everything else you need**
+
+  *In order to install something on homebrew all you need to do is type "brew install" followed by what you want to install. See below.*
+
+  **Install Spark 1.6**
+  ```
+  brew install apache-spark
+  ```
+  **Install python**
+  ```
+  brew install python
+  ```
+  **Install jupyter and matplotlib and numpy.**
+  ```
+  pip install jupyter matplotlib numpy
+  ```
+  4. **Now you can install SystemML.**
+
+  Go to http://systemml.apache.org/download.html and click on the systemml-0.10.0-incubating zip (should be 2nd).
+
+  *The next step is optional, but it will make your life a lot easier.*
+
+  5. **Set `SPARK_HOME and SYSTEMML_HOME` on your bash profile.**
+
+  *First, use vim to create/edit your bash profile. Not sure what vim is? Check https://www.linux.com/learn/vim-101-beginners-guide-vim.*
+
+  *We are going to insert our file where Spark and SystemML is stored into our bash profile. This will make it easier to access. **Type the following to open your bash profile using vim:***
+```
+vim .bash_profile
+```
+**Now you are in vim. First, type “i” for insert.**
+```
+i
+```
+**Now insert Spark and SystemML.** Note: /Documents is where I saved my Spark and SystemML. Be sure that your file path is accurate.
+
+  ```
+  export SPARK_HOME=/Users/stc/Documents/spark-1.5.1-bin-hadoop2.6
+
+  export SYSTEMML_HOME=/Users/stc/Documents/systemml-0.10.0-incubating
+  ```
+  **Now type :wq to write the file and quit.**
+```
+:wq
+```
+*Make sure to open a new tab in terminal so that you make sure the changes have been made.*
+
+**Congrats! You can now run SystemML!** 
 * * *
 
 ## Building SystemML
@@ -103,7 +167,7 @@ If required, please install the following packages in R:
 
 ## Importing SystemML into IDE
 
-This section describe how to import SystemML source code into an IDE. 
+This section describe how to import SystemML source code into an IDE.
 
 ### Import SystemML Project to Eclipse
 
@@ -381,4 +445,3 @@ For convenience, we can encapsulate our DML invocations in a single script:
 In this example, we've seen a small part of the capabilities of SystemML. For more detailed information, please
 consult the [Apache SystemML (incubating)](http://systemml.apache.org/) website and the
 [SystemML Documentation](http://apache.github.io/incubator-systemml/) website on GitHub.
-

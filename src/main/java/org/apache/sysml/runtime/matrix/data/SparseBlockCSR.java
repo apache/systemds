@@ -60,6 +60,13 @@ public class SparseBlockCSR extends SparseBlock
 		_size = 0;
 	}
 	
+	public SparseBlockCSR(int[] rowPtr, int[] colInd, double[] values, int nnz){
+		_ptr = rowPtr;
+		_indexes = colInd;
+		_values = values;
+		_size = nnz;
+	}
+	
 	/**
 	 * Copy constructor sparse block abstraction. 
 	 */
@@ -645,5 +652,32 @@ public class SparseBlockCSR extends SparseBlock
 		int rlen = numRows();
 		for( int i=rl; i<rlen+1; i++ )
 			_ptr[i]-=cnt;
+	}
+	
+	/**
+	 * Get raw access to underlying array of row pointers
+	 * For use in GPU code
+	 * @return
+	 */
+	public int[] getRowPointerArray() {
+		return _ptr;
+	}
+	
+	/** 
+	 * Get raw access to underlying array of column indices
+	 * For use in GPU code
+	 * @return
+	 */
+	public int[] getColumnIndexArray() {
+		return _indexes;
+	}
+	
+	/**
+	 * Get raw access to underlying array of values
+	 * For use in GPU code
+	 * @return
+	 */
+	public double[] getValuesArray() {
+		return _values;
 	}
 }

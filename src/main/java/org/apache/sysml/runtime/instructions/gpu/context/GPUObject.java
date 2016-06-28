@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.utils.Statistics;
 
 //FIXME merge JCudaObject into GPUObject to avoid unnecessary complexity
@@ -56,26 +57,61 @@ public abstract class GPUObject
 	}
 	
 	public abstract void acquireDeviceRead() throws DMLRuntimeException;
-	public abstract void acquireDenseDeviceModify(int numElemsToAllocate) throws DMLRuntimeException;
+	/**
+	 * To signal intent that a matrix block will be written to on the GPU
+	 * @throws DMLRuntimeException
+	 */
+	public abstract void acquireDeviceModifyDense() throws DMLRuntimeException;
+	/**
+	 * To signal intent that a sparse matrix block will be written to on the GPU
+	 * @throws DMLRuntimeException
+	 */
+	public abstract void acquireDeviceModifySparse() throws DMLRuntimeException;
+	
+	/**
+	 * If memory on GPU has been allocated from elsewhere, this method 
+	 * updates the internal bookkeeping
+	 * @param numBytes
+	 */
+	public abstract void setDeviceModify(long numBytes);
+	
 	public abstract void acquireHostRead() throws CacheException;
 	public abstract void acquireHostModify() throws CacheException;
 	public abstract void releaseInput() throws CacheException;
 	public abstract void releaseOutput() throws CacheException;
 	
 	// package-level visibility as these methods are guarded by underlying GPUContext
+	/**
+	 * Allocates memory on the GPU
+	 * @param numElemToAllocate		number of elements in dense matrix, -1 for unknown or sparse matrix
+	 * @throws DMLRuntimeException	
+	 */
 	abstract void allocateMemoryOnDevice(int numElemToAllocate) throws DMLRuntimeException;
 	abstract void deallocateMemoryOnDevice() throws DMLRuntimeException;
 	abstract long getSizeOnDevice() throws DMLRuntimeException;
-	abstract void copyFromHostToDevice() throws DMLRuntimeException;
-	abstract void copyFromDeviceToHost() throws DMLRuntimeException; // Called by export()
 	
+	abstract void copyFromHostToDevice() throws DMLRuntimeException;
 	
 	/**
-	 * It finds matrix toBeRemoved such that toBeRemoved.GPUSize is the smallest one whose size is greater than the eviction size
-	 * // TODO: update it with hybrid policy
-	 * @return toBeRemoved
+	 * Copies a matrix block (dense or sparse) from GPU Memory to Host memory.
+	 * A {@link MatrixBlock} instance is allocated, data from the GPU is copied in,
+	 * the current one in Host memory is deallocated by calling {@link MatrixObject#acquireModify(MatrixBlock)}
+	 * and overwritten with the newly allocated instance.
+	 * TODO : re-examine this to avoid spurious allocations of memory for optimizations
+	 * @throws DMLRuntimeException
 	 */
-	protected void evict(final long GPUSize) throws DMLRuntimeException {
+	abstract void copyFromDeviceToHost() throws DMLRuntimeException; // Called by export()
+	
+	/**
+	 * Cycles through the sorted list of allocated {@link GPUObject} instances. Sorting is based on
+	 * number of (read) locks that have been obtained on it (reverse order). It repeatedly frees up 
+	 * blocks on which there are zero locks until the required size has been freed up.  
+	 * // TODO: update it with hybrid policy
+	 * @param GPUSize 				Desired size to be freed up on the GPU
+	 * @throws DMLRuntimeException 	If no blocks to free up or if not enough blocks with zero locks on them.	 
+	 * @return 
+	 */
+	protected static void evict(final long GPUSize) throws DMLRuntimeException {
         if(GPUContext.allocatedPointers.size() == 0) {
                 throw new DMLRuntimeException("There is not enough memory on device for this matrix!");
         }
@@ -153,7 +189,7 @@ public abstract class GPUObject
 	
 	static Boolean evictionLock = new Boolean(true);
 	
-	protected long getAvailableMemory() {
+	protected static long getAvailableMemory() {
 		return GPUContext.currContext.getAvailableMemory();
 	}
 	

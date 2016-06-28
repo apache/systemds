@@ -22,49 +22,57 @@ package org.apache.sysml.runtime.matrix.data;
 import static jcuda.jcudnn.JCudnn.cudnnConvolutionBackwardData;
 import static jcuda.jcudnn.JCudnn.cudnnConvolutionBackwardFilter;
 import static jcuda.jcudnn.JCudnn.cudnnConvolutionForward;
-import static jcuda.jcudnn.JCudnn.cudnnPoolingForward;
-import static jcuda.jcudnn.JCudnn.cudnnPoolingBackward;
 import static jcuda.jcudnn.JCudnn.cudnnCreateConvolutionDescriptor;
 import static jcuda.jcudnn.JCudnn.cudnnCreateFilterDescriptor;
-import static jcuda.jcudnn.JCudnn.cudnnCreateTensorDescriptor;
 import static jcuda.jcudnn.JCudnn.cudnnCreatePoolingDescriptor;
+import static jcuda.jcudnn.JCudnn.cudnnCreateTensorDescriptor;
 import static jcuda.jcudnn.JCudnn.cudnnDestroyConvolutionDescriptor;
 import static jcuda.jcudnn.JCudnn.cudnnDestroyFilterDescriptor;
-import static jcuda.jcudnn.JCudnn.cudnnDestroyTensorDescriptor;
 import static jcuda.jcudnn.JCudnn.cudnnDestroyPoolingDescriptor;
+import static jcuda.jcudnn.JCudnn.cudnnDestroyTensorDescriptor;
 import static jcuda.jcudnn.JCudnn.cudnnGetConvolutionBackwardDataWorkspaceSize;
 import static jcuda.jcudnn.JCudnn.cudnnGetConvolutionBackwardFilterWorkspaceSize;
 import static jcuda.jcudnn.JCudnn.cudnnGetConvolutionForwardWorkspaceSize;
+import static jcuda.jcudnn.JCudnn.cudnnPoolingBackward;
+import static jcuda.jcudnn.JCudnn.cudnnPoolingForward;
 import static jcuda.jcudnn.JCudnn.cudnnSetConvolution2dDescriptor;
 import static jcuda.jcudnn.JCudnn.cudnnSetFilter4dDescriptor;
-import static jcuda.jcudnn.JCudnn.cudnnSetTensor4dDescriptor;
 import static jcuda.jcudnn.JCudnn.cudnnSetPooling2dDescriptor;
+import static jcuda.jcudnn.JCudnn.cudnnSetTensor4dDescriptor;
 import static jcuda.jcudnn.cudnnConvolutionMode.CUDNN_CROSS_CORRELATION;
 import static jcuda.jcudnn.cudnnDataType.CUDNN_DATA_DOUBLE;
-import static jcuda.jcudnn.cudnnTensorFormat.CUDNN_TENSOR_NCHW;
 import static jcuda.jcudnn.cudnnPoolingMode.CUDNN_POOLING_MAX;
-import jcuda.jcudnn.cudnnConvolutionFwdPreference;
-import static jcuda.runtime.JCuda.cudaMalloc;
+import static jcuda.jcudnn.cudnnTensorFormat.CUDNN_TENSOR_NCHW;
+import static jcuda.jcusparse.JCusparse.cusparseDcsrgemm;
+import static jcuda.jcusparse.cusparseOperation.CUSPARSE_OPERATION_NON_TRANSPOSE;
+import static jcuda.jcusparse.cusparseOperation.CUSPARSE_OPERATION_TRANSPOSE;
 import static jcuda.runtime.JCuda.cudaFree;
+import static jcuda.runtime.JCuda.cudaMalloc;
+
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysml.runtime.instructions.gpu.context.JCudaObject;
+import org.apache.sysml.runtime.instructions.gpu.context.JCudaObject.CSRPointer;
+
 import jcuda.Pointer;
 import jcuda.Sizeof;
 import jcuda.jcublas.JCublas;
 import jcuda.jcublas.cublasHandle;
 import jcuda.jcudnn.cudnnConvolutionDescriptor;
+import jcuda.jcudnn.cudnnConvolutionFwdPreference;
 import jcuda.jcudnn.cudnnFilterDescriptor;
 import jcuda.jcudnn.cudnnHandle;
 import jcuda.jcudnn.cudnnPoolingDescriptor;
 import jcuda.jcudnn.cudnnTensorDescriptor;
-
-import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
-import org.apache.sysml.runtime.instructions.gpu.context.JCudaObject;
+import jcuda.jcusparse.cusparseHandle;
 
 //FIXME move could to respective instructions, this is not a block library
 public class LibMatrixCUDA {
 	
 	public static cudnnHandle cudnnHandle;
 	public static cublasHandle cublasHandle;
+	public static cusparseHandle cusparseHandle;
 	
 	private static int CONVOLUTION_PREFERENCE = cudnnConvolutionFwdPreference.CUDNN_CONVOLUTION_FWD_NO_WORKSPACE;
 	
@@ -89,9 +97,9 @@ public class LibMatrixCUDA {
 			// (Pointer) gpuCtx.prepare(image, true, true);
 			// (Pointer) gpuCtx.prepare(filter, true, true);
 			
-			Pointer imagePointer = ((JCudaObject)image.getGPUObject()).jcudaPointer; 
-			Pointer filterPointer = ((JCudaObject)filter.getGPUObject()).jcudaPointer; 
-			Pointer dstPointer = ((JCudaObject)outputBlock.getGPUObject()).jcudaPointer; 
+			Pointer imagePointer = ((JCudaObject)image.getGPUObject()).jcudaDenseMatrixPtr; 
+			Pointer filterPointer = ((JCudaObject)filter.getGPUObject()).jcudaDenseMatrixPtr; 
+			Pointer dstPointer = ((JCudaObject)outputBlock.getGPUObject()).jcudaDenseMatrixPtr; 
 			
 			int padding [] = { pad_h, pad_w }; 
 			int strides [] = { stride_h, stride_w };
@@ -221,9 +229,9 @@ public class LibMatrixCUDA {
 			dwDesc = allocateFilterDescriptor(K, C, R, S);
 			
 			// Allocate data
-			Pointer imagePointer = ((JCudaObject)image.getGPUObject()).jcudaPointer; 
-			Pointer doutPointer = ((JCudaObject)dout.getGPUObject()).jcudaPointer; 
-			Pointer dwPointer = ((JCudaObject)outputBlock.getGPUObject()).jcudaPointer; 
+			Pointer imagePointer = ((JCudaObject)image.getGPUObject()).jcudaDenseMatrixPtr; 
+			Pointer doutPointer = ((JCudaObject)dout.getGPUObject()).jcudaDenseMatrixPtr; 
+			Pointer dwPointer = ((JCudaObject)outputBlock.getGPUObject()).jcudaDenseMatrixPtr; 
 			
 			alpha = pointerTo(1.0); // TODO
 			beta = pointerTo(0.0f);
@@ -300,15 +308,15 @@ public class LibMatrixCUDA {
 	    if(!output.getGPUObject().isAllocated)
 	            throw new DMLRuntimeException("Output is not allocated:" + output.getGPUObject().isAllocated);
 	
-	    Pointer A = ((JCudaObject)left.getGPUObject()).jcudaPointer;
-	    Pointer C = ((JCudaObject)output.getGPUObject()).jcudaPointer;
+	    Pointer A = ((JCudaObject)left.getGPUObject()).jcudaDenseMatrixPtr;
+	    Pointer C = ((JCudaObject)output.getGPUObject()).jcudaDenseMatrixPtr;
 	    
 	    //TODO: Fix it if there is a cuBLAS API to do flipping
 	    JCublas.cublasDsyrk('U',transa, m, k, alpha, A, lda, beta, C, ldc);
 	    JCublas.cublasDsyrk('L',transa, m, k, alpha, A, lda, beta, C, ldc);
 	}
 	
-	public static void matmult(MatrixObject left1, MatrixObject right1, MatrixObject output, 
+	public static MatrixObject matmult(ExecutionContext ec, MatrixObject left1, MatrixObject right1, String outputName,
 			boolean isLeftTransposed1, boolean isRightTransposed1) throws DMLRuntimeException {
 		if(isInSparseFormat(left1) || isInSparseFormat(right1)) {
 			throw new DMLRuntimeException("Sparse GPU matrix multiplication is not implemented");
@@ -318,6 +326,7 @@ public class LibMatrixCUDA {
 		// reverse the order of matrix-multiplication and take care of dimension mismatch.
 		MatrixObject left = right1; 
 		MatrixObject right = left1;
+		MatrixObject output = null;
 		boolean isLeftTransposed = isRightTransposed1; 
 		boolean isRightTransposed = isLeftTransposed1; 
 		
@@ -343,14 +352,44 @@ public class LibMatrixCUDA {
 		
 		if(!left.getGPUObject().isAllocated() || !right.getGPUObject().isAllocated())
 			throw new DMLRuntimeException("One of input is not allocated:" + left.getGPUObject().isAllocated() + " " + right.getGPUObject().isAllocated());
-		if(!output.getGPUObject().isAllocated())
-			throw new DMLRuntimeException("Output is not allocated:" + output.getGPUObject().isAllocated());
 		
-		Pointer A = ((JCudaObject)left.getGPUObject()).jcudaPointer;
-		Pointer B = ((JCudaObject)right.getGPUObject()).jcudaPointer;
-		Pointer C = ((JCudaObject)output.getGPUObject()).jcudaPointer;
+		boolean isSparseA = left.getGPUObject().isInSparseFormat();
+		boolean isSparseB = right.getGPUObject().isInSparseFormat();
 		
-		JCublas.cublasDgemm(transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc);
+		
+		if (!isSparseA && !isSparseB) {		// Dense C = Dense A * Dense B 
+			Pointer A = ((JCudaObject)left.getGPUObject()).jcudaDenseMatrixPtr;
+			Pointer B = ((JCudaObject)right.getGPUObject()).jcudaDenseMatrixPtr;
+			
+	        output = ec.getDenseMatrixOutputForGPUInstruction(outputName);
+			Pointer C = ((JCudaObject)output.getGPUObject()).jcudaDenseMatrixPtr;
+			JCublas.cublasDgemm(transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc);
+		}
+		else if (isSparseA && isSparseB){	// Sparse C = Sparse A * Sparse B
+			CSRPointer A = ((JCudaObject)left.getGPUObject()).jcudaSparseMatrixPtr;
+			CSRPointer B = ((JCudaObject)right.getGPUObject()).jcudaSparseMatrixPtr;
+			CSRPointer C = CSRPointer.allocateForMatrixMultiply(cusparseHandle, A, transa, B, transb, m, n, k);
+			
+			// Do bookkeeping for Matrix C since it was allocated outside of JCudaObject#acquireDeviceModifyDense
+			output = ec.getMatrixObject(outputName);
+			((JCudaObject)output.getGPUObject()).setSparseMatrixCudaPointer(C);
+			long sizeOfC = CSRPointer.estimateSize(C.nnz, output.getNumRows());
+			output.getGPUObject().setDeviceModify(sizeOfC);
+			
+			int transA = isLeftTransposed ? CUSPARSE_OPERATION_TRANSPOSE : CUSPARSE_OPERATION_NON_TRANSPOSE;
+			int transB = isRightTransposed ? CUSPARSE_OPERATION_TRANSPOSE : CUSPARSE_OPERATION_NON_TRANSPOSE;
+			cusparseDcsrgemm(cusparseHandle, transA, transB, m, n, k,
+					A.descr, (int)A.nnz, A.val, A.rowPtr, A.colInd,
+					B.descr, (int)B.nnz, B.val, B.rowPtr, B.colInd,
+					C.descr, C.val, C.rowPtr, C.colInd);
+		}
+		else {	// Either of A or B is sparse, Sparse C = Sparse/Dense A * Dense/Sparse B
+			// Convert the dense to sparse and use the cusparseDcsrgemm routine
+			// TODO
+			throw new DMLRuntimeException("Sparse %*% Dense not implemented");
+		}
+		
+		return output;
 	}
 
 	public static void conv2d_backward_data(MatrixObject filter, MatrixObject dout,
@@ -373,9 +412,9 @@ public class LibMatrixCUDA {
 			dxDesc = allocateTensorDescriptor(N, C, H, W);
 			
 			// Allocate data
-			Pointer w = ((JCudaObject)filter.getGPUObject()).jcudaPointer; 
-			Pointer dy = ((JCudaObject)dout.getGPUObject()).jcudaPointer; 
-			Pointer dx = ((JCudaObject)output.getGPUObject()).jcudaPointer; 
+			Pointer w = ((JCudaObject)filter.getGPUObject()).jcudaDenseMatrixPtr; 
+			Pointer dy = ((JCudaObject)dout.getGPUObject()).jcudaDenseMatrixPtr; 
+			Pointer dx = ((JCudaObject)output.getGPUObject()).jcudaDenseMatrixPtr; 
 			
 			alpha = pointerTo(1.0); // TODO
 			beta = pointerTo(0.0f);
@@ -453,8 +492,8 @@ public class LibMatrixCUDA {
 			poolingDesc = allocatePoolingDescriptor(R, S, pad_h, pad_w, stride_h, stride_w);
 			
 			// Allocate data
-			Pointer x = ((JCudaObject)image.getGPUObject()).jcudaPointer; 
-			Pointer y = ((JCudaObject)outputBlock.getGPUObject()).jcudaPointer; 
+			Pointer x = ((JCudaObject)image.getGPUObject()).jcudaDenseMatrixPtr; 
+			Pointer y = ((JCudaObject)outputBlock.getGPUObject()).jcudaDenseMatrixPtr; 
 			
 			alpha = pointerTo(1.0);
 			beta = pointerTo(0.0f);
@@ -527,9 +566,9 @@ public class LibMatrixCUDA {
 			cudaMalloc(y, numBytes);
 			
 			// Allocate data
-			Pointer x = ((JCudaObject)image.getGPUObject()).jcudaPointer; 
-			Pointer dx = ((JCudaObject)outputBlock.getGPUObject()).jcudaPointer;
-			Pointer dy = ((JCudaObject)dout.getGPUObject()).jcudaPointer;
+			Pointer x = ((JCudaObject)image.getGPUObject()).jcudaDenseMatrixPtr;
+			Pointer dx = ((JCudaObject)outputBlock.getGPUObject()).jcudaDenseMatrixPtr;
+			Pointer dy = ((JCudaObject)dout.getGPUObject()).jcudaDenseMatrixPtr;
 			
 			alpha = pointerTo(1.0);
 			beta = pointerTo(0.0f);

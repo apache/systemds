@@ -258,21 +258,35 @@ public class ExecutionContext
 				((MatrixFormatMetaData)oldMetaData).getInputInfo()));
 	}
 	
-	public MatrixObject getMatrixOutputForGPUInstruction(String varName, boolean isSparse) 
+	public MatrixObject getDenseMatrixOutputForGPUInstruction(String varName) 
 		throws DMLRuntimeException 
 	{	
-		if(isSparse) {
-			throw new DMLRuntimeException("Sparse matrix block is not supported for GPU instruction");
-		}
 		MatrixObject mo = getMatrixObject(varName);
 		if( mo.getGPUObject() == null ) {
 			mo.setGPUObject(GPUContext.createGPUObject(mo));
 		}
-		mo.getGPUObject().acquireDenseDeviceModify((int)(mo.getNumRows()*mo.getNumColumns()));
+		mo.getGPUObject().acquireDeviceModifyDense();
 		mo.getMatrixCharacteristics().setNonZeros(-1);
 		return mo;
 	}
 	
+	/**
+	 * Allocates a sparse matrix in CSR format on the GPU.
+	 * Assumes that mat.getNumRows() returns a valid number
+	 * @param varName
+	 * @param nnz	number of non zeroes
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public MatrixObject getSparseMatrixOutputForGPUInstruction(String varName, long nnz)
+		throws DMLRuntimeException
+	{
+		MatrixObject mo = getMatrixObject(varName);
+		mo.getMatrixCharacteristics().setNonZeros(nnz);
+		mo.getGPUObject().acquireDeviceModifySparse();
+		return mo;
+	}
+		
 	public MatrixObject getMatrixInputForGPUInstruction(String varName) 
 			throws DMLRuntimeException 
 	{	

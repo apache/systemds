@@ -85,6 +85,7 @@ Before you get started on SystemML, make sure that your environment is set up an
   brew tap caskroom/cask
   brew install Caskroom/cask/java
   ```
+  
   3. **Now install everything else you need**
 
   *In order to install something on homebrew all you need to do is type "brew install" followed by what you want to install. See below.*

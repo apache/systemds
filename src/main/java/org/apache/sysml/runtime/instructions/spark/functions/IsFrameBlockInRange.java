@@ -23,7 +23,6 @@ import org.apache.spark.api.java.function.Function;
 
 import scala.Tuple2;
 
-import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.util.UtilFunctions;
@@ -32,23 +31,17 @@ public class IsFrameBlockInRange implements Function<Tuple2<Long,FrameBlock>, Bo
 {
 	private static final long serialVersionUID = 4433918122474769296L;
 
-	private long _rl; long _ru; long _cl; long _cu;
-	private int _brlen; int _bclen;
+	private long _rl, _ru;
 	
-	public IsFrameBlockInRange(long rl, long ru, long cl, long cu, MatrixCharacteristics mcOut) {
+	public IsFrameBlockInRange(long rl, long ru, MatrixCharacteristics mcOut) {
 		_rl = rl;
 		_ru = ru;
-		_cl = cl;
-		_cu = cu;
-		_brlen = OptimizerUtils.getDefaultFrameSize();
-		_bclen = (int) mcOut.getCols();
-
 	}
 
 	@Override
 	public Boolean call(Tuple2<Long, FrameBlock> kv) 
 		throws Exception 
 	{
-		return UtilFunctions.isInFrameBlockRange(kv._1(), _brlen, _bclen, _rl, _ru);
+		return UtilFunctions.isInFrameBlockRange(kv._1(), kv._2().getNumRows(), _rl, _ru);
 	}
 }

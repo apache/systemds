@@ -106,7 +106,7 @@ public class FrameIndexingSPInstruction  extends IndexingSPInstruction
 						new SliceBlockPartitionFunction(ixrange, mcOut), true);
 			}
 			else{
-				out = in1.filter(new IsFrameBlockInRange(rl, ru, cl, cu, mcOut))
+				out = in1.filter(new IsFrameBlockInRange(rl, ru, mcOut))
 			             .flatMapToPair(new SliceBlock(ixrange, mcOut));
 				
 				//aggregation if required 
@@ -183,8 +183,7 @@ public class FrameIndexingSPInstruction  extends IndexingSPInstruction
 	private boolean isPartitioningPreservingRightIndexing(MatrixCharacteristics mcIn, IndexRange ixrange)
 	{
 		return ( mcIn.dimsKnown() &&
-			(ixrange.rowStart==1 && ixrange.rowEnd==mcIn.getRows() )   //Entire Column/s			 
-		  ||(ixrange.colStart==1 && ixrange.colEnd==mcIn.getCols() )); //Entire Row/s
+			(ixrange.rowStart==1 && ixrange.rowEnd==mcIn.getRows() ));   //Entire Column/s			 
 	}
 	
 	

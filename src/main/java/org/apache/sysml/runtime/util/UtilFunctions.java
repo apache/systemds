@@ -152,7 +152,7 @@ public class UtilFunctions
 	 * @param ru
 	 * @return
 	 */
-	public static boolean isInFrameBlockRange( Long ix, int brlen, int bclen, long rl, long ru )
+	public static boolean isInFrameBlockRange( Long ix, int brlen, long rl, long ru )
 	{
 		if(rl > ix+brlen-1 || ru < ix)
 			return false;
@@ -185,8 +185,7 @@ public class UtilFunctions
 	 */
 	public static boolean isInFrameBlockRange( Long ix, int brlen, int bclen, IndexRange ixrange )
 	{
-		return isInFrameBlockRange(ix, brlen, bclen, 
-				ixrange.rowStart, ixrange.rowEnd);
+		return isInFrameBlockRange(ix, brlen, ixrange.rowStart, ixrange.rowEnd);
 	}
 	
 	// Reused by both MR and Spark for performing zero out

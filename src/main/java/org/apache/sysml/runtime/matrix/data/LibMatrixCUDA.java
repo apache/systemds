@@ -55,6 +55,11 @@ import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.gpu.context.JCudaObject;
 import org.apache.sysml.runtime.instructions.gpu.context.JCudaObject.CSRPointer;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+
 import jcuda.Pointer;
 import jcuda.Sizeof;
 import jcuda.jcublas.JCublas;
@@ -73,7 +78,9 @@ public class LibMatrixCUDA {
 	public static cudnnHandle cudnnHandle;
 	public static cublasHandle cublasHandle;
 	public static cusparseHandle cusparseHandle;
-	
+
+    private static final Log LOG = LogFactory.getLog(LibMatrixCUDA.class.getName());
+
 	private static int CONVOLUTION_PREFERENCE = cudnnConvolutionFwdPreference.CUDNN_CONVOLUTION_FWD_NO_WORKSPACE;
 	
 	public static void conv2d(MatrixObject image, MatrixObject filter, MatrixObject outputBlock, int N, int C, int H, int W,
@@ -358,6 +365,9 @@ public class LibMatrixCUDA {
 		
 		
 		if (!isSparseA && !isSparseB) {		// Dense C = Dense A * Dense B 
+
+            LOG.info(" Dense-Dense Matrix Multiply ");
+
 			Pointer A = ((JCudaObject)left.getGPUObject()).jcudaDenseMatrixPtr;
 			Pointer B = ((JCudaObject)right.getGPUObject()).jcudaDenseMatrixPtr;
 			
@@ -366,6 +376,9 @@ public class LibMatrixCUDA {
 			JCublas.cublasDgemm(transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc);
 		}
 		else if (isSparseA && isSparseB){	// Sparse C = Sparse A * Sparse B
+
+            LOG.info(" Sparse-Sparse Matrix Multiply ");
+
 			CSRPointer A = ((JCudaObject)left.getGPUObject()).jcudaSparseMatrixPtr;
 			CSRPointer B = ((JCudaObject)right.getGPUObject()).jcudaSparseMatrixPtr;
 			CSRPointer C = CSRPointer.allocateForMatrixMultiply(cusparseHandle, A, transa, B, transb, m, n, k);

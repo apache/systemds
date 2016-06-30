@@ -220,7 +220,7 @@ public class JCudaObject extends GPUObject {
 	};
 	
 	public Pointer jcudaDenseMatrixPtr = null;		/** Pointer to dense matrix */
-	public CSRPointer jcudaSparseMatrixPtr = null;	
+	public CSRPointer jcudaSparseMatrixPtr = null;	/** Pointer to sparse matrix */
 	
 	/**
 	 * Convenience method to directly examine the Sparse matrix on GPU
@@ -238,7 +238,6 @@ public class JCudaObject extends GPUObject {
 		this.jcudaSparseMatrixPtr = jcudaSparseMatrixPtr;
 	}
 
-	/** Pointer to sparse matrix*/
 	public long numBytes;
 
 	JCudaObject(MatrixObject mat2) {

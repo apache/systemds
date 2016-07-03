@@ -451,7 +451,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			
 		case CAST_AS_SCALAR:
 			checkNumParameters(1);
-			checkMatrixParam(getFirstExpr());
+			checkMatrixFrameParam(getFirstExpr());
 			if (( getFirstExpr().getOutput().getDim1() != -1 && getFirstExpr().getOutput().getDim1() !=1) || ( getFirstExpr().getOutput().getDim2() != -1 && getFirstExpr().getOutput().getDim2() !=1)) {
 				raiseValidateError("dimension mismatch while casting matrix to scalar: dim1: " + getFirstExpr().getOutput().getDim1() +  " dim2 " + getFirstExpr().getOutput().getDim2(), 
 				          conditional, LanguageErrorCodes.INVALID_PARAMETERS);
@@ -473,7 +473,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			break;
 		case CAST_AS_FRAME:
 			checkNumParameters(1);
-			checkMatrixParam(getFirstExpr());
+			checkMatrixScalarParam(getFirstExpr());
 			output.setDataType(DataType.FRAME);
 			output.setDimensions(id.getDim1(), id.getDim2());
 			if( getFirstExpr().getOutput().getDataType()==DataType.SCALAR )
@@ -1331,7 +1331,20 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		throws LanguageException 
 	{
 		if (e.getOutput().getDataType() != DataType.MATRIX && e.getOutput().getDataType() != DataType.FRAME) {
-			raiseValidateError("Expecting matrix or frame parameter for function "+ this.getOpCode(), false, LanguageErrorCodes.UNSUPPORTED_PARAMETERS);
+			raiseValidateError("Expecting matrix or frame parameter for function "+ getOpCode(), false, LanguageErrorCodes.UNSUPPORTED_PARAMETERS);
+		}
+	}
+	
+	/**
+	 * 
+	 * @param e
+	 * @throws LanguageException
+	 */
+	protected void checkMatrixScalarParam(Expression e) //always unconditional
+		throws LanguageException 
+	{
+		if (e.getOutput().getDataType() != DataType.MATRIX && e.getOutput().getDataType() != DataType.SCALAR) {
+			raiseValidateError("Expecting matrix or scalar parameter for function "+ getOpCode(), false, LanguageErrorCodes.UNSUPPORTED_PARAMETERS);
 		}
 	}
 	

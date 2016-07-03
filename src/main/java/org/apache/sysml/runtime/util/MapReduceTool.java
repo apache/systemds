@@ -298,37 +298,16 @@ public class MapReduceTool
         return br;
 	}
 	
-	public static double readDoubleFromHDFSFile(String filename) 
-		throws IOException 
-	{
-		BufferedReader br = setupInputFile(filename);
-		String line = br.readLine();
-		br.close();
-		if( line == null )
-			throw new IOException("Empty file on hdfs: "+filename);
-		return Double.parseDouble(line);
+	public static double readDoubleFromHDFSFile(String filename) throws IOException {
+		return (Double)readObjectFromHDFSFile(filename, ValueType.DOUBLE);
 	}
 	
-	public static long readIntegerFromHDFSFile(String filename) 
-		throws IOException 
-	{
-		BufferedReader br = setupInputFile(filename);
-		String line = br.readLine();
-		br.close();
-		if( line == null )
-			throw new IOException("Empty file on hdfs: "+filename);
-		return Long.parseLong(line);
+	public static long readIntegerFromHDFSFile(String filename) throws IOException {
+		return (Long)readObjectFromHDFSFile(filename, ValueType.INT);
 	}
 	
-	public static boolean readBooleanFromHDFSFile(String filename) 
-		throws IOException 
-	{
-		BufferedReader br = setupInputFile(filename);
-		String line = br.readLine();
-		br.close();
-		if( line == null )
-			throw new IOException("Empty file on hdfs: "+filename);
-		return Boolean.parseBoolean(line);
+	public static boolean readBooleanFromHDFSFile(String filename) throws IOException {
+		return (Boolean)readObjectFromHDFSFile(filename, ValueType.BOOLEAN);
 	}
 	
 	public static String readStringFromHDFSFile(String filename) 
@@ -347,6 +326,21 @@ public class MapReduceTool
 		//return string without last character
 		return sb.substring(0, sb.length()-1);
 	}
+	
+	public static Object readObjectFromHDFSFile(String filename, ValueType vt) throws IOException {
+		BufferedReader br = setupInputFile(filename);
+		String line = br.readLine();
+		br.close();
+		if( line == null )
+			throw new IOException("Empty file on hdfs: "+filename);
+		
+		switch( vt ) {
+			case BOOLEAN: return Boolean.parseBoolean(line);
+			case DOUBLE: return Double.parseDouble(line);
+			case INT: return Long.parseLong(line);
+			default: return line;
+		}
+	}
 		
 	private static BufferedWriter setupOutputFile ( String filename ) throws IOException {
         Path pt=new Path(filename);
@@ -356,31 +350,25 @@ public class MapReduceTool
 	}
 	
 	public static void writeDoubleToHDFS ( double d, String filename ) throws IOException {
-        BufferedWriter br = setupOutputFile(filename);
-        String line = "" + d;
-        br.write(line);
-        br.close();
+		writeObjectToHDFS(d, filename);
 	}
 	
 	public static void writeIntToHDFS ( long i, String filename ) throws IOException {
-        BufferedWriter br = setupOutputFile(filename);
-        String line = "" + i;
-        br.write(line);
-        br.close();
+	    writeObjectToHDFS(i, filename);
 	}
 	
 	public static void writeBooleanToHDFS ( boolean b, String filename ) throws IOException {
-        BufferedWriter br = setupOutputFile(filename);
-        String line = "" + b;
-        br.write(line);
-        br.close();
+	    writeObjectToHDFS(b, filename);
 	}
 	
 	public static void writeStringToHDFS ( String s, String filename ) throws IOException {
-        BufferedWriter br = setupOutputFile(filename);
-        String line = "" + s;
-        br.write(line);
-        br.close();
+		writeObjectToHDFS(s, filename);
+	}
+	
+	public static void writeObjectToHDFS ( Object obj, String filename ) throws IOException {
+		BufferedWriter br = setupOutputFile(filename);
+		br.write(obj.toString());
+		br.close();
 	}
 	
 	public static void writeDimsFile ( String filename, byte[] unknownFlags, long[] maxRows, long[] maxCols) throws IOException {

@@ -17,30 +17,25 @@
  * under the License.
  */
 
-package org.apache.sysml.test.integration.functions.frame;
+package org.apache.sysml.runtime.instructions.cp;
 
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
+import org.apache.sysml.parser.Expression.ValueType;
 
-/** Group together the tests in this package into a single suite so that the Maven build
- *  won't run two of them at once. */
-@RunWith(Suite.class)
-@Suite.SuiteClasses({
-	FrameAppendTest.class,
-	FrameCastingTest.class,
-	FrameConverterTest.class,
-	FrameCopyTest.class,
-	FrameGetSetTest.class,
-	FrameIndexingTest.class,
-	FrameMatrixCastingTest.class,
-	FrameReadWriteTest.class,
-	FrameScalarCastingTest.class,
-	FrameSchemaReadTest.class,
-	FrameSerializationTest.class,
-})
-
-
-/** This class is just a holder for the above JUnit annotations. */
-public class ZPackageSuite {
-
+public abstract class ScalarObjectFactory
+{
+	/**
+	 * 
+	 * @param vt
+	 * @param obj
+	 * @return
+	 */
+	public static ScalarObject createScalarObject(ValueType vt, Object obj) {
+		switch( vt ) {
+			case BOOLEAN: return new BooleanObject((Boolean)obj);
+			case INT:     return new IntObject((Long)obj);
+			case DOUBLE:  return new DoubleObject((Double)obj);
+			case STRING:  return new StringObject((String)obj);
+			default: throw new RuntimeException("Unsupported scalar object type: "+vt.toString());
+		}
+	}
 }

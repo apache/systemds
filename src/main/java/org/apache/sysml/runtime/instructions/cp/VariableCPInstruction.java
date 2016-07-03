@@ -528,12 +528,23 @@ public class VariableCPInstruction extends CPInstruction
 			break;
 			
 		case CastAsScalarVariable: //castAsScalarVariable
-			MatrixBlock mBlock = ec.getMatrixInput(input1.getName());
-			if( mBlock.getNumRows()!=1 || mBlock.getNumColumns()!=1 )
-				throw new DMLRuntimeException("Dimension mismatch - unable to cast matrix '"+input1.getName()+"' of dimension ("+mBlock.getNumRows()+" x "+mBlock.getNumColumns()+") to scalar.");
-			double value = mBlock.getValue(0,0);
-			ec.releaseMatrixInput(input1.getName());
-			ec.setScalarOutput(output.getName(), new DoubleObject(value));
+			if( input1.getDataType()==DataType.FRAME ) {
+				FrameBlock fBlock = ec.getFrameInput(input1.getName());
+				if( fBlock.getNumRows()!=1 || fBlock.getNumColumns()!=1 )
+					throw new DMLRuntimeException("Dimension mismatch - unable to cast frame '"+input1.getName()+"' of dimension ("+fBlock.getNumRows()+" x "+fBlock.getNumColumns()+") to scalar.");
+				Object value = fBlock.get(0,0);
+				ec.releaseFrameInput(input1.getName());
+				ec.setScalarOutput(output.getName(), 
+						ScalarObjectFactory.createScalarObject(fBlock.getSchema().get(0), value));
+			}
+			else { //assume DataType.MATRIX otherwise
+				MatrixBlock mBlock = ec.getMatrixInput(input1.getName());
+				if( mBlock.getNumRows()!=1 || mBlock.getNumColumns()!=1 )
+					throw new DMLRuntimeException("Dimension mismatch - unable to cast matrix '"+input1.getName()+"' of dimension ("+mBlock.getNumRows()+" x "+mBlock.getNumColumns()+") to scalar.");
+				double value = mBlock.getValue(0,0);
+				ec.releaseMatrixInput(input1.getName());
+				ec.setScalarOutput(output.getName(), new DoubleObject(value));
+			}
 			break;
 		case CastAsMatrixVariable:{
 			MatrixBlock out = null;
@@ -555,6 +566,7 @@ public class VariableCPInstruction extends CPInstruction
 			if( input1.getDataType()==DataType.SCALAR ) {
 				ScalarObject scalarInput = ec.getScalarInput(input1.getName(), input1.getValueType(), input1.isLiteral());
 				out = new FrameBlock(1, input1.getValueType());
+				out.ensureAllocatedColumns(1);
 				out.set(0, 0, scalarInput.getStringValue());	
 			}
 			else { //DataType.FRAME
@@ -851,26 +863,10 @@ public class VariableCPInstruction extends CPInstruction
 	private void writeScalarToHDFS(ExecutionContext ec, String fname) 
 		throws DMLRuntimeException 
 	{
-		ScalarObject scalar = ec.getScalarInput(input1.getName(), input1.getValueType(), input1.isLiteral());
 		try {
-			switch ( input1.getValueType() ) {
-			case DOUBLE:
-				MapReduceTool.writeDoubleToHDFS(scalar.getDoubleValue(), fname);
-				break;
-			case INT:
-				MapReduceTool.writeIntToHDFS(scalar.getLongValue(), fname);
-				break;
-			case BOOLEAN:
-				MapReduceTool.writeBooleanToHDFS(scalar.getBooleanValue(), fname);
-				break;
-			case STRING:
-				MapReduceTool.writeStringToHDFS(scalar.getStringValue(), fname);
-				break;
-			default:
-				throw new DMLRuntimeException("Invalid value type (" + input1.getValueType() + ") in writeScalar instruction: " + instString);
-			}
-		  // write out .mtd file
-		  MapReduceTool.writeScalarMetaDataFile(fname +".mtd", input1.getValueType());
+			ScalarObject scalar = ec.getScalarInput(input1.getName(), input1.getValueType(), input1.isLiteral());
+			MapReduceTool.writeObjectToHDFS(scalar.getValue(), fname);
+			MapReduceTool.writeScalarMetaDataFile(fname +".mtd", input1.getValueType());
 		} catch ( IOException e ) {
 			throw new DMLRuntimeException(e);
 		}

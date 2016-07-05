@@ -170,7 +170,7 @@ parfor (run_index in 1 : num_runs, check = 0)
                 P = P / rowSums (P);
                 # Compute the column normalization factor for P
                 P_denom = colSums (P);
-                if (sum (P_denom <= 0.0) > 0) {
+                if (sum (P_denom <= 0) > 0) {
                     term_code = 3;  # There is a "runaway" centroid with 0.0 denominator
                 } else {
                     C_old = C;

@@ -198,7 +198,7 @@ if (intercept_status == 2)  # scale-&-shift X columns to mean 0, variance 1
 {                           # Important assumption: X [, num_features] = ones_r
     avg_X_cols = t(colSums(X)) / num_records;
     var_X_cols = (t(colSums (X ^ 2)) - num_records * (avg_X_cols ^ 2)) / (num_records - 1);
-    is_unsafe = (var_X_cols <= 0.0);
+    is_unsafe = (var_X_cols <= 0);
     scale_X = 1.0 / sqrt (var_X_cols * (1 - is_unsafe) + is_unsafe);
     scale_X [num_features, 1] = 1;
     shift_X = - avg_X_cols * scale_X;
@@ -477,7 +477,7 @@ pearson_residual_sq = replace (target = pearson_residual_sq, pattern = 0.0/0.0, 
 if (num_records > num_features) {
     estimated_dispersion = sum (pearson_residual_sq) / (num_records - num_features);
 }
-if (dispersion <= 0.0) {
+if (dispersion <= 0) {
     dispersion = estimated_dispersion;
 }
 deviance = deviance_nodisp / dispersion;
@@ -519,28 +519,28 @@ check_if_supported =
     if (ncol_y == 1 & dist_type == 1 & link_type == 1)
     { # POWER DISTRIBUTION
         is_supported = 1;
-        if (var_power == 0.0 & link_power == -1.0) {print ("Gaussian.inverse");      } else {
-        if (var_power == 0.0 & link_power ==  0.0) {print ("Gaussian.log");          } else {
-        if (var_power == 0.0 & link_power ==  0.5) {print ("Gaussian.sqrt");         } else {
-        if (var_power == 0.0 & link_power ==  1.0) {print ("Gaussian.id");           } else {
-        if (var_power == 0.0                     ) {print ("Gaussian.power_nonlog"); } else {
+        if (var_power == 0 & link_power == -1.0) {print ("Gaussian.inverse");      } else {
+        if (var_power == 0 & link_power ==    0) {print ("Gaussian.log");          } else {
+        if (var_power == 0 & link_power ==  0.5) {print ("Gaussian.sqrt");         } else {
+        if (var_power == 0 & link_power ==  1.0) {print ("Gaussian.id");           } else {
+        if (var_power == 0                     ) {print ("Gaussian.power_nonlog"); } else {
         if (var_power == 1.0 & link_power == -1.0) {print ("Poisson.inverse");       } else {
-        if (var_power == 1.0 & link_power ==  0.0) {print ("Poisson.log");           } else {
+        if (var_power == 1.0 & link_power ==    0) {print ("Poisson.log");           } else {
         if (var_power == 1.0 & link_power ==  0.5) {print ("Poisson.sqrt");          } else {
         if (var_power == 1.0 & link_power ==  1.0) {print ("Poisson.id");            } else {
         if (var_power == 1.0                     ) {print ("Poisson.power_nonlog");  } else {
         if (var_power == 2.0 & link_power == -1.0) {print ("Gamma.inverse");         } else {
-        if (var_power == 2.0 & link_power ==  0.0) {print ("Gamma.log");             } else {
+        if (var_power == 2.0 & link_power ==    0) {print ("Gamma.log");             } else {
         if (var_power == 2.0 & link_power ==  0.5) {print ("Gamma.sqrt");            } else {
         if (var_power == 2.0 & link_power ==  1.0) {print ("Gamma.id");              } else {
         if (var_power == 2.0                     ) {print ("Gamma.power_nonlog");    } else {
         if (var_power == 3.0 & link_power == -2.0) {print ("InvGaussian.1/mu^2");    } else {
         if (var_power == 3.0 & link_power == -1.0) {print ("InvGaussian.inverse");   } else {
-        if (var_power == 3.0 & link_power ==  0.0) {print ("InvGaussian.log");       } else {
+        if (var_power == 3.0 & link_power ==    0) {print ("InvGaussian.log");       } else {
         if (var_power == 3.0 & link_power ==  0.5) {print ("InvGaussian.sqrt");      } else {
         if (var_power == 3.0 & link_power ==  1.0) {print ("InvGaussian.id");        } else {
         if (var_power == 3.0                     ) {print ("InvGaussian.power_nonlog");}else{
-        if (                   link_power ==  0.0) {print ("PowerDist.log");         } else {
+        if (                   link_power ==    0) {print ("PowerDist.log");         } else {
                                                     print ("PowerDist.power_nonlog");
     }   }}}}} }}}}} }}}}} }}}}} }}
     if (ncol_y == 1 & dist_type == 2)
@@ -551,7 +551,7 @@ check_if_supported =
     { # BINOMIAL/BERNOULLI DISTRIBUTION
         is_supported = 1;
         if (link_type == 1 & link_power == -1.0) {print ("Binomial.inverse");        } else {
-        if (link_type == 1 & link_power ==  0.0) {print ("Binomial.log");            } else {
+        if (link_type == 1 & link_power ==    0) {print ("Binomial.log");            } else {
         if (link_type == 1 & link_power ==  0.5) {print ("Binomial.sqrt");           } else {
         if (link_type == 1 & link_power ==  1.0) {print ("Binomial.id");             } else {
         if (link_type == 1)                      {print ("Binomial.power_nonlog");   } else {
@@ -574,14 +574,14 @@ return (Matrix[double] beta, double saturated_log_l, int isNaN)
     y_corr = Y [, 1];
     if (dist_type == 2) {
         n_corr = rowSums (Y);
-        is_n_zero = (n_corr == 0.0);
+        is_n_zero = (n_corr == 0);
         y_corr = Y [, 1] / (n_corr + is_n_zero) + (0.5 - Y [, 1]) * is_n_zero;    
     }
     linear_terms = y_corr;
     if (dist_type == 1 & link_type == 1) { # POWER DISTRIBUTION
-        if          (link_power ==  0.0) {
-            if (sum (y_corr < 0.0) == 0) {
-                is_zero_y_corr = (y_corr == 0.0);
+        if          (link_power ==  0) {
+            if (sum (y_corr < 0) == 0) {
+                is_zero_y_corr = (y_corr == 0);
                 linear_terms = log (y_corr + is_zero_y_corr) - is_zero_y_corr / (1.0 - is_zero_y_corr);
             } else { isNaN = 1; }
         } else { if (link_power ==  1.0) {
@@ -589,38 +589,38 @@ return (Matrix[double] beta, double saturated_log_l, int isNaN)
         } else { if (link_power == -1.0) {
             linear_terms = 1.0 / y_corr;
         } else { if (link_power ==  0.5) {
-            if (sum (y_corr < 0.0) == 0) {
+            if (sum (y_corr < 0) == 0) {
                 linear_terms = sqrt (y_corr);
             } else { isNaN = 1; }
-        } else { if (link_power >   0.0) {
-            if (sum (y_corr < 0.0) == 0) {
-                is_zero_y_corr = (y_corr == 0.0);
+        } else { if (link_power >   0) {
+            if (sum (y_corr < 0) == 0) {
+                is_zero_y_corr = (y_corr == 0);
                 linear_terms = (y_corr + is_zero_y_corr) ^ link_power - is_zero_y_corr;
             } else { isNaN = 1; }
         } else {
-            if (sum (y_corr <= 0.0) == 0) {
+            if (sum (y_corr <= 0) == 0) {
                 linear_terms = y_corr ^ link_power;
             } else { isNaN = 1; }
         }}}}}
     }
     if (dist_type == 2 & link_type >= 1 & link_type <= 5)
     { # BINOMIAL/BERNOULLI DISTRIBUTION
-        if          (link_type == 1 & link_power == 0.0)  { # Binomial.log
-            if (sum (y_corr < 0.0) == 0) {
-                is_zero_y_corr = (y_corr == 0.0);
+        if          (link_type == 1 & link_power == 0)  { # Binomial.log
+            if (sum (y_corr < 0) == 0) {
+                is_zero_y_corr = (y_corr == 0);
                 linear_terms = log (y_corr + is_zero_y_corr) - is_zero_y_corr / (1.0 - is_zero_y_corr);
             } else { isNaN = 1; }
-        } else { if (link_type == 1 & link_power >  0.0)  { # Binomial.power_nonlog pos
-            if (sum (y_corr < 0.0) == 0) {
-                is_zero_y_corr = (y_corr == 0.0);
+        } else { if (link_type == 1 & link_power >  0)  { # Binomial.power_nonlog pos
+            if (sum (y_corr < 0) == 0) {
+                is_zero_y_corr = (y_corr == 0);
                 linear_terms = (y_corr + is_zero_y_corr) ^ link_power - is_zero_y_corr;
             } else { isNaN = 1; }
         } else { if (link_type == 1)                      { # Binomial.power_nonlog neg
-            if (sum (y_corr <= 0.0) == 0) {
+            if (sum (y_corr <= 0) == 0) {
                 linear_terms = y_corr ^ link_power;
             } else { isNaN = 1; }
         } else { 
-            is_zero_y_corr = (y_corr <= 0.0);
+            is_zero_y_corr = (y_corr <= 0);
             is_one_y_corr  = (y_corr >= 1.0);
             y_corr = y_corr * (1.0 - is_zero_y_corr) * (1.0 - is_one_y_corr) + 0.5 * (is_zero_y_corr + is_one_y_corr);
             if (link_type == 2)                           { # Binomial.logit
@@ -647,11 +647,11 @@ return (Matrix[double] beta, double saturated_log_l, int isNaN)
             glm_log_likelihood_part (linear_terms, Y, dist_type, var_power, link_type, link_power);
     }
     
-    if ((dist_type == 1 & link_type == 1 & link_power == 0.0) |
+    if ((dist_type == 1 & link_type == 1 & link_power == 0) |
         (dist_type == 2 & link_type >= 2))
     {    
         desired_eta = 0.0;
-    } else { if (link_type == 1 & link_power == 0.0) {
+    } else { if (link_type == 1 & link_power == 0) {
         desired_eta = log (0.5);
     } else { if (link_type == 1) {
         desired_eta = 0.5 ^ link_power;
@@ -661,7 +661,7 @@ return (Matrix[double] beta, double saturated_log_l, int isNaN)
     
     beta = matrix (0.0, rows = ncol(X), cols = 1);
     
-    if (desired_eta != 0.0) {
+    if (desired_eta != 0) {
         if (icept_status == 1 | icept_status == 2) {
             beta [nrow(beta), 1] = desired_eta;
         } else {
@@ -712,7 +712,7 @@ glm_dist = function (Matrix[double] linear_terms, Matrix[double] Y,
     
     if (dist_type == 1 & link_type == 1) { # POWER DISTRIBUTION
         y_mean = zeros_r;
-        if          (link_power ==  0.0) {
+        if          (link_power ==  0) {
             y_mean = exp (linear_terms);
             y_mean_pow = y_mean ^ (1 - var_power);
             w   = y_mean_pow * y_mean;
@@ -731,7 +731,7 @@ glm_dist = function (Matrix[double] linear_terms, Matrix[double] Y,
     if (dist_type == 2 & link_type >= 1 & link_type <= 5)
     { # BINOMIAL/BERNOULLI DISTRIBUTION
         if (link_type == 1) { # BINOMIAL.POWER LINKS
-            if (link_power == 0.0)  { # Binomial.log
+            if (link_power == 0)  { # Binomial.log
                 vec1 = 1 / (exp (- linear_terms) - 1);
                 g_Y = Y [, 1] - Y [, 2] * vec1;
                 w   = rowSums (Y) * vec1;
@@ -739,12 +739,12 @@ glm_dist = function (Matrix[double] linear_terms, Matrix[double] Y,
                 vec1 = zeros_r;
                 if (link_power == 0.5)  {
                     vec1 = 1 / (1 - linear_terms ^ 2);
-                } else { if (sum (linear_terms < 0.0) == 0) {
+                } else { if (sum (linear_terms < 0) == 0) {
                     vec1 = linear_terms ^ (- 2 + 1 / link_power) / (1 - linear_terms ^ (1 / link_power));
                 } else {isNaN = 1;}}
                 # We want a "zero-protected" version of
                 #     vec2 = Y [, 1] / linear_terms;
-                is_y_0 = (Y [, 1] == 0.0);
+                is_y_0 = (Y [, 1] == 0);
                 vec2 = (Y [, 1] + is_y_0) / (linear_terms * (1 - is_y_0) + is_y_0) - is_y_0;
                 g_Y =  (vec2 - Y [, 2] * vec1 * linear_terms) / link_power;
                 w   =  rowSums (Y) * vec1 / link_power ^ 2;
@@ -762,7 +762,7 @@ glm_dist = function (Matrix[double] linear_terms, Matrix[double] Y,
                 g_Y = rowSums (Y * (Y_prob %*% flip_neg));           ### = y_residual;
                 w   = rowSums (Y * (Y_prob %*% flip_pos) * Y_prob);  ### = y_variance;
             } else { if (link_type == 3)                  { # Binomial.probit
-                is_lt_pos = (linear_terms >= 0.0);
+                is_lt_pos = (linear_terms >= 0);
                 t_gp = 1.0 / (1.0 + abs (finite_linear_terms) * 0.231641888);  # 0.231641888 = 0.3275911 / sqrt (2.0)
                 pt_gp = t_gp * ( 0.254829592 
                       + t_gp * (-0.284496736 # "Handbook of Mathematical Functions", ed. by M. Abramowitz and I.A. Stegun,
@@ -809,52 +809,52 @@ glm_log_likelihood_part = function (Matrix[double] linear_terms, Matrix[double] 
         b_cumulant = zeros_r;
         natural_parameters = zeros_r;
         is_natural_parameter_log_zero = zeros_r;
-        if          (var_power == 1.0 & link_power == 0.0)  { # Poisson.log
+        if          (var_power == 1.0 & link_power == 0)  { # Poisson.log
             b_cumulant = exp (linear_terms);
             is_natural_parameter_log_zero = (linear_terms == -1.0/0.0);
             natural_parameters = replace (target = linear_terms, pattern = -1.0/0.0, replacement = 0);
         } else { if (var_power == 1.0 & link_power == 1.0)  { # Poisson.id
-            if (sum (linear_terms < 0.0) == 0)  {
+            if (sum (linear_terms < 0) == 0)  {
                 b_cumulant = linear_terms;
-                is_natural_parameter_log_zero = (linear_terms == 0.0);
+                is_natural_parameter_log_zero = (linear_terms == 0);
                 natural_parameters = log (linear_terms + is_natural_parameter_log_zero);
             } else {isNaN = 1;}
         } else { if (var_power == 1.0 & link_power == 0.5)  { # Poisson.sqrt
-            if (sum (linear_terms < 0.0) == 0)  {
+            if (sum (linear_terms < 0) == 0)  {
                 b_cumulant = linear_terms ^ 2;
-                is_natural_parameter_log_zero = (linear_terms == 0.0);
+                is_natural_parameter_log_zero = (linear_terms == 0);
                 natural_parameters = 2.0 * log (linear_terms + is_natural_parameter_log_zero);
             } else {isNaN = 1;}
-        } else { if (var_power == 1.0 & link_power  > 0.0)  { # Poisson.power_nonlog, pos
-            if (sum (linear_terms < 0.0) == 0)  {
-                is_natural_parameter_log_zero = (linear_terms == 0.0);
+        } else { if (var_power == 1.0 & link_power  > 0)  { # Poisson.power_nonlog, pos
+            if (sum (linear_terms < 0) == 0)  {
+                is_natural_parameter_log_zero = (linear_terms == 0);
                 b_cumulant = (linear_terms + is_natural_parameter_log_zero) ^ (1.0 / link_power) - is_natural_parameter_log_zero;
                 natural_parameters = log (linear_terms + is_natural_parameter_log_zero) / link_power;
             } else {isNaN = 1;}
         } else { if (var_power == 1.0)                      { # Poisson.power_nonlog, neg
-            if (sum (linear_terms <= 0.0) == 0) {
+            if (sum (linear_terms <= 0) == 0) {
                 b_cumulant = linear_terms ^ (1.0 / link_power);
                 natural_parameters = log (linear_terms) / link_power;
             } else {isNaN = 1;}
         } else { if (var_power == 2.0 & link_power == -1.0) { # Gamma.inverse
-            if (sum (linear_terms <= 0.0) == 0) {
+            if (sum (linear_terms <= 0) == 0) {
                 b_cumulant = - log (linear_terms);
                 natural_parameters = - linear_terms;
             } else {isNaN = 1;}
         } else { if (var_power == 2.0 & link_power ==  1.0) { # Gamma.id
-            if (sum (linear_terms <= 0.0) == 0) {
+            if (sum (linear_terms <= 0) == 0) {
                 b_cumulant = log (linear_terms);
                 natural_parameters = - 1.0 / linear_terms;
             } else {isNaN = 1;}
-        } else { if (var_power == 2.0 & link_power ==  0.0) { # Gamma.log
+        } else { if (var_power == 2.0 & link_power ==  0) { # Gamma.log
             b_cumulant = linear_terms;
             natural_parameters = - exp (- linear_terms);
         } else { if (var_power == 2.0)                      { # Gamma.power_nonlog
-            if (sum (linear_terms <= 0.0) == 0) {
+            if (sum (linear_terms <= 0) == 0) {
                 b_cumulant = log (linear_terms) / link_power;
                 natural_parameters = - linear_terms ^ (- 1.0 / link_power);
             } else {isNaN = 1;}
-        } else { if                    (link_power ==  0.0) { # PowerDist.log
+        } else { if                    (link_power ==  0) { # PowerDist.log
             natural_parameters = exp (linear_terms * (1.0 - var_power)) / (1.0 - var_power);
             b_cumulant = exp (linear_terms * (2.0 - var_power)) / (2.0 - var_power);
         } else {                                              # PowerDist.power_nonlog
@@ -867,7 +867,7 @@ glm_log_likelihood_part = function (Matrix[double] linear_terms, Matrix[double] 
             } else { if ( 2 * link_power == 1.0 - var_power) {
                 natural_parameters = linear_terms ^ 2 / (1.0 - var_power);
             } else {
-                if (sum (linear_terms <= 0.0) == 0) {
+                if (sum (linear_terms <= 0) == 0) {
                     power = (1.0 - var_power) / link_power;
                     natural_parameters = (linear_terms ^ power) / (1.0 - var_power);
                 } else {isNaN = 1;}
@@ -881,13 +881,13 @@ glm_log_likelihood_part = function (Matrix[double] linear_terms, Matrix[double] 
             } else { if ( 2 * link_power == 2.0 - var_power) {
                 b_cumulant = linear_terms ^ 2 / (2.0 - var_power);
             } else {
-                if (sum (linear_terms <= 0.0) == 0) {
+                if (sum (linear_terms <= 0) == 0) {
                     power = (2.0 - var_power) / link_power;
                     b_cumulant = (linear_terms ^ power) / (2.0 - var_power);
                 } else {isNaN = 1;}
             }}}}
         }}}}} }}}}}
-        if (sum (is_natural_parameter_log_zero * abs (Y)) > 0.0) {
+        if (sum (is_natural_parameter_log_zero * abs (Y)) > 0) {
             log_l = -1.0 / 0.0;
             isNaN = 1;
         }
@@ -905,8 +905,8 @@ glm_log_likelihood_part = function (Matrix[double] linear_terms, Matrix[double] 
         [Y_prob, isNaN] = binomial_probability_two_column (linear_terms, link_type, link_power);
         
         if (isNaN == 0) {            
-            does_prob_contradict = (Y_prob <= 0.0);
-            if (sum (does_prob_contradict * abs (Y)) == 0.0) {
+            does_prob_contradict = (Y_prob <= 0);
+            if (sum (does_prob_contradict * abs (Y)) == 0) {
                 log_l = sum (Y * log (Y_prob * (1 - does_prob_contradict) + does_prob_contradict));
                 if (log_l != log_l | (log_l == log_l + 1.0 & log_l == log_l * 2.0)) {
                     isNaN = 1;
@@ -949,12 +949,12 @@ binomial_probability_two_column =
 
     Y_prob = zeros_r %*% ones_2;
     if (link_type == 1) { # Binomial.power
-        if          (link_power == 0.0) { # Binomial.log
+        if          (link_power == 0) { # Binomial.log
             Y_prob = exp (linear_terms) %*% p_one_m_one + ones_r %*% zero_one;    
         } else { if (link_power == 0.5) { # Binomial.sqrt
             Y_prob = (linear_terms ^ 2) %*% p_one_m_one + ones_r %*% zero_one;    
         } else {                          # Binomial.power_nonlog
-            if (sum (linear_terms < 0.0) == 0) {
+            if (sum (linear_terms < 0) == 0) {
                 Y_prob = (linear_terms ^ (1.0 / link_power)) %*% p_one_m_one + ones_r %*% zero_one;    
             } else {isNaN = 1;}
         }}
@@ -968,7 +968,7 @@ binomial_probability_two_column =
             Y_prob = exp (finite_linear_terms) %*% one_zero + ones_r %*% zero_one;
             Y_prob = Y_prob / (rowSums (Y_prob) %*% ones_2);
         } else { if (link_type == 3)    { # Binomial.probit
-            lt_pos_neg = (finite_linear_terms >= 0.0) %*% p_one_m_one + ones_r %*% zero_one;
+            lt_pos_neg = (finite_linear_terms >= 0) %*% p_one_m_one + ones_r %*% zero_one;
             t_gp = 1.0 / (1.0 + abs (finite_linear_terms) * 0.231641888);  # 0.231641888 = 0.3275911 / sqrt (2.0)
             pt_gp = t_gp * ( 0.254829592 
                   + t_gp * (-0.284496736 # "Handbook of Mathematical Functions", ed. by M. Abramowitz and I.A. Stegun,
@@ -1148,13 +1148,13 @@ return (double mantissa, int eee)
             mantissa = 1.0;
             d_eee = d_eee + 1;
         }
-        if (x_to_truncate < 0.0) {
+        if (x_to_truncate < 0) {
             mantissa = - mantissa;
         }
         eee = 0;
         pow_two = 1;
         res_eee = abs (d_eee);
-        while (res_eee != 0.0) {
+        while (res_eee != 0) {
             new_res_eee = round (res_eee / 2.0 - 0.3);
             if (new_res_eee * 2.0 < res_eee) {
                 eee = eee + pow_two;
@@ -1162,7 +1162,7 @@ return (double mantissa, int eee)
             res_eee = new_res_eee;
             pow_two = 2 * pow_two;
         }
-        if (d_eee < 0.0) {
+        if (d_eee < 0) {
             eee = - eee;
         }
     } else { mantissa = x_to_truncate; }

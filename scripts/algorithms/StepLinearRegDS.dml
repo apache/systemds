@@ -219,7 +219,7 @@ linear_regression = function (Matrix[Double] X, Matrix[Double] y, Double m_orig,
 							     # Important assumption: X [, m_ext] = ones_n
 		avg_X_cols = t(colSums(X)) / n;
 		var_X_cols = (t(colSums (X ^ 2)) - n * (avg_X_cols ^ 2)) / (n - 1);
-		is_unsafe = (var_X_cols <= 0.0);
+		is_unsafe = (var_X_cols <= 0);
 		scale_X = 1.0 / sqrt (var_X_cols * (1 - is_unsafe) + is_unsafe);
 		scale_X [m_ext, 1] = 1;
 		shift_X = - avg_X_cols * scale_X;

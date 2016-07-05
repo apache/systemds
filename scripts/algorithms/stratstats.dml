@@ -161,8 +161,8 @@ Y_mask = YNaNmask %*% ProjY;
 print ("Preparing the strata...");
 
 SnoNaNs = replace (target = SwithNaNs, pattern = 0.0/0.0, replacement = 0);
-S = round (SnoNaNs) * (SnoNaNs > 0.0);
-Proj_good_stratumID = diag (S > 0.0);
+S = round (SnoNaNs) * (SnoNaNs > 0);
+Proj_good_stratumID = diag (S > 0);
 Proj_good_stratumID = removeEmpty (target = Proj_good_stratumID, margin = "rows");
 vector_of_good_stratumIDs = Proj_good_stratumID %*% S;
 vector_of_good_stratumIDs = vector_of_good_stratumIDs + (1 - min (vector_of_good_stratumIDs));
@@ -378,7 +378,7 @@ fStat_tailprob = function (Matrix[double] fStat, Matrix[double] df_1, Matrix[dou
         q = as.scalar (fStat [i, j]);
         d1 = as.scalar (df_1 [i, j]);
         d2 = as.scalar (df_2 [i, j]);
-        if (d1 >= 1 & d2 >= 1 & q >= 0.0) {
+        if (d1 >= 1 & d2 >= 1 & q >= 0) {
             tailprob  [i, j] = pf(target = q, df1 = d1, df2 = d2, lower.tail=FALSE);
         } else {
             tailprob  [i, j] = 0/0;
@@ -388,7 +388,7 @@ fStat_tailprob = function (Matrix[double] fStat, Matrix[double] df_1, Matrix[dou
 
 sqrt_failsafe = function (Matrix[double] input_A) return (Matrix[double] output_A)
 {
-    mask_A = (input_A >= 0.0);
+    mask_A = (input_A >= 0);
     prep_A = input_A * mask_A;
     mask_A = mask_A * (prep_A == prep_A);
     prep_A = replace (target = prep_A, pattern = 0.0/0.0, replacement = 0);

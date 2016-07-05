@@ -72,7 +72,7 @@ if (numCategories == 1) {
     isBinomialPMOne = TRUE;
 }
 do_we_output_intercept = 1;
-if (minIntercept == 0.0 & maxIntercept == 0.0) {
+if (minIntercept == 0 & maxIntercept == 0) {
     do_we_output_intercept = 0;
 }
 
@@ -185,7 +185,7 @@ generateWeights =
     b_qe = 2.0 * meanLT * (t(r_1) %*% XDW);
     c_qe = meanLT^2 * norm_r_1_sq - sigmaLT^2 * nrow(X);
 
-    is_sigmaLT_OK = (c_qe <= 0.0);
+    is_sigmaLT_OK = (c_qe <= 0);
     new_sigmaLT = is_sigmaLT_OK * sigmaLT + (1 - is_sigmaLT_OK) * abs (meanLT) * sqrt (norm_r_1_sq / nrow(X));
     c_qe = is_sigmaLT_OK * c_qe;
     x_qe = (- b_qe + sqrt (b_qe * b_qe - 4.0 * a_qe * c_qe)) / (2.0 * a_qe);

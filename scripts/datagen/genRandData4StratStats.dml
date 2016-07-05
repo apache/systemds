@@ -139,7 +139,7 @@ Data = append (append (min_stratumID - 1 + SID, t(t_X)), t(t_Y));
 RNaNS = Rand  (rows = num_records, cols = 1, min = 1.0, max = 1.0, sparsity = prob_NaN_in_stratum);
 RNaNX = Rand  (rows = num_records, cols = num_features, min = 1.0, max = 1.0, sparsity = prob_NaN_in_X);
 RNaNY = Rand  (rows = num_records, cols = num_features, min = 1.0, max = 1.0, sparsity = prob_NaN_in_Y);
-Mask = (append (append (RNaNS, RNaNX), RNaNY)) != 0.0;
+Mask = (append (append (RNaNS, RNaNX), RNaNY)) != 0;
 Data = Data + (1.0 - Mask) / (1.0 - Mask);
 
 # Output the dataset and the auxiliaries

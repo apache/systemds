@@ -487,7 +487,7 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 		String namespace = fnNames[0];
 		String functionName = fnNames[1];
 		ArrayList<ParameterExpression> paramExpression = getParameterExpressionList(ctx.paramExprs);
-
+		
 		castAsScalarDeprecationCheck(functionName, ctx);
 		
 		boolean hasLHS = ctx.targetList != null;

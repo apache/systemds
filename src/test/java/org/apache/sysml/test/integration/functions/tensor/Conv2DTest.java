@@ -22,6 +22,7 @@ import java.util.HashMap;
 
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
+import org.apache.sysml.hops.ConvolutionOp;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
@@ -47,29 +48,72 @@ public class Conv2DTest extends AutomatedTestBase
 	public void testConv2DDense1() 
 	{
 		int numImg = 5; int imgSize = 3; int numChannels = 3; int numFilters = 6; int filterSize = 2; int stride = 1; int pad = 0;
-		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad);
+		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false);
 	}
 	
 	@Test
 	public void testConv2DDense2() 
 	{
 		int numImg = 1; int imgSize = 10; int numChannels = 4; int numFilters = 3; int filterSize = 4; int stride = 2; int pad = 0;
-		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad);
+		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false);
 	}
 	
 	@Test
 	public void testConv2DDense3() 
 	{
 		int numImg = 1; int imgSize = 10; int numChannels = 4; int numFilters = 3; int filterSize = 4; int stride = 2; int pad = 1;
-		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad);
+		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false);
 	}
 	
 	@Test
 	public void testConv2DDense4() 
 	{
 		int numImg = 3; int imgSize = 10; int numChannels = 1; int numFilters = 3; int filterSize = 2; int stride = 2; int pad = 1;
-		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad);
+		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false);
 	}
+	
+	@Test
+	public void testConv2DDense5() 
+	{
+		int numImg = 3; int imgSize = 8; int numChannels = 2; int numFilters = 3; int filterSize = 3; int stride = 1; int pad = 2;
+		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false);
+	}
+	
+	@Test
+	public void testConv2DDense6() 
+	{
+		int numImg = 5; int imgSize = 3; int numChannels = 3; int numFilters = 6; int filterSize = 2; int stride = 1; int pad = 0;
+		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, true);
+	}
+	
+	@Test
+	public void testConv2DDense7() 
+	{
+		int numImg = 1; int imgSize = 10; int numChannels = 4; int numFilters = 3; int filterSize = 4; int stride = 2; int pad = 0;
+		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, true);
+	}
+	
+	@Test
+	public void testConv2DDense8() 
+	{
+		int numImg = 1; int imgSize = 10; int numChannels = 4; int numFilters = 3; int filterSize = 4; int stride = 2; int pad = 1;
+		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, true);
+	}
+	
+	@Test
+	public void testConv2DDense9() 
+	{
+		int numImg = 3; int imgSize = 10; int numChannels = 1; int numFilters = 3; int filterSize = 2; int stride = 2; int pad = 1;
+		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, true);
+	}
+	
+	@Test
+	public void testConv2DDense10() 
+	{
+		int numImg = 3; int imgSize = 8; int numChannels = 2; int numFilters = 3; int filterSize = 3; int stride = 1; int pad = 2;
+		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, true);
+	}
+	
 	
 	/**
 	 * 
@@ -77,11 +121,14 @@ public class Conv2DTest extends AutomatedTestBase
 	 * @param sparse
 	 */
 	public void runConv2DTest( ExecType et, int imgSize, int numImg, int numChannels, int numFilters, 
-			int filterSize, int stride, int pad) 
+			int filterSize, int stride, int pad, boolean FORCE_NON_IM2COL) 
 	{
 		RUNTIME_PLATFORM oldRTP = rtplatform;
 			
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		
+		boolean oldForceNonIm2col = ConvolutionOp.FORCE_NON_IM2COL; 
+		ConvolutionOp.FORCE_NON_IM2COL = FORCE_NON_IM2COL;
 		
 		try
 		{
@@ -128,6 +175,7 @@ public class Conv2DTest extends AutomatedTestBase
 		{
 			rtplatform = oldRTP;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+			ConvolutionOp.FORCE_NON_IM2COL = oldForceNonIm2col;
 		}
 	}
 }

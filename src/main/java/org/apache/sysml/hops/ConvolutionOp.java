@@ -39,6 +39,8 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	private Hop.ConvOp op;
 
 	private int _maxNumThreads = -1; //-1 for unlimited
+	
+	public static boolean FORCE_NON_IM2COL = false;
 
 	private ConvolutionOp() {
 		//default constructor for clone
@@ -173,8 +175,9 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		}
 		
 		Lop in = inputs.get(0).constructLops();
+		int numThreads = et == ExecType.CP ? OptimizerUtils.getConstrainedNumThreads(primaryOp.getMaxNumThreads()) : 1;
 		ConvolutionTransform transform1 = new ConvolutionTransform( in, 
-				HopsConv2Lops.get(op), primaryOp.getDataType(), primaryOp.getValueType(), et, 1);
+				HopsConv2Lops.get(op), primaryOp.getDataType(), primaryOp.getValueType(), et, numThreads);
 		
 		// setOutputDimensions(transform1);
 		transform1.getOutputParameters().setDimensions(

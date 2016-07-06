@@ -73,11 +73,22 @@ public class ConvolutionUtils {
 		return false;
 	}
 	
+	// Simple heuristic that prefers im2col for non-test/non-validation cases.
+	private static boolean preferIm2Col(ExecType et, long N, long K, long C, long R, long S, long P, long Q) throws HopsException {
+		if(et == ExecType.CP && ConvolutionOp.FORCE_NON_IM2COL) {
+			return false;
+		}
+		else if(et == ExecType.CP && N < 256 ) {
+			return true; // Prefer im2col to non-test/non-validation
+		}
+		return false;
+	}
+	
 	public static Lop constructConvolutionBackwardFilterLops(Hop currentHop) throws HopsException, LopsException {
-		ExecType et = ExecType.CP;
+		ExecType et = ExecType.CP; // TODO: Check memory estimates
 		if(DMLScript.USE_ACCELERATOR)
 			et = ExecType.GPU; // TODO: Add memory estimate checks
-		else
+		else if(et == ExecType.MR || et == ExecType.SPARK)
 			return null;
 		
 		if(currentHop != null && isTranspose(currentHop)) {
@@ -96,10 +107,27 @@ public class ConvolutionUtils {
 					}
 					
 					// K, C * R * S
-					long K = currentHop.computeSizeInformation(inputs.get(10));
+					long N = currentHop.computeSizeInformation(inputs.get(6));
 					long C = currentHop.computeSizeInformation(inputs.get(7));
+					long H = currentHop.computeSizeInformation(inputs.get(8));
+					long W = currentHop.computeSizeInformation(inputs.get(9));
+					long K = currentHop.computeSizeInformation(inputs.get(10));
 					long R = currentHop.computeSizeInformation(inputs.get(12));
 					long S = currentHop.computeSizeInformation(inputs.get(13));
+					long stride_h = currentHop.computeSizeInformation(inputs.get(2));
+					long stride_w = currentHop.computeSizeInformation(inputs.get(3));
+					long pad_h = currentHop.computeSizeInformation(inputs.get(4));
+					long pad_w = currentHop.computeSizeInformation(inputs.get(5));
+					long P = -1; long Q = -1;
+					if(H > 0 && R > 0 && stride_h > 0 && pad_h > 0)
+						P = ConvolutionUtils.getP(H, R, stride_h, pad_h);
+					if(W > 0 && S > 0 && stride_w > 0 && pad_w > 0)
+						Q = ConvolutionUtils.getQ(W, S, stride_w, pad_w);
+					
+					if(preferIm2Col(et, N, K, C, R, S, P, Q)) {
+						return null;
+					}
+					
 					long rlen = K;
 					long clen = ConvolutionOp.getExtractedVal(C, R, S);
 					return ConvolutionOp.constructFusedConvolutionLops(et, inputs, ConvOp.DIRECT_CONV2D_BACKWARD_FILTER, (ConvolutionOp) x_col, rlen, clen);
@@ -112,7 +140,7 @@ public class ConvolutionUtils {
 	public static Lop constructConvolutionLops(Hop currentHop, ExecType et) throws HopsException, LopsException {
 		if(DMLScript.USE_ACCELERATOR)
 			et = ExecType.GPU; // TODO: Add memory estimate checks
-		else
+		else if(et == ExecType.MR || et == ExecType.SPARK)
 			return null;
 		
 		if(currentHop != null && isConvolutionOp(currentHop, ConvOp.RESHAPE_COL)) {
@@ -131,6 +159,7 @@ public class ConvolutionUtils {
 					
 					// N, K * P * Q
 					long N = currentHop.computeSizeInformation(inputs.get(6));
+					long C = currentHop.computeSizeInformation(inputs.get(7));
 					long H = currentHop.computeSizeInformation(inputs.get(8));
 					long W = currentHop.computeSizeInformation(inputs.get(9));
 					long K = currentHop.computeSizeInformation(inputs.get(10));
@@ -145,6 +174,11 @@ public class ConvolutionUtils {
 						P = ConvolutionUtils.getP(H, R, stride_h, pad_h);
 					if(W > 0 && S > 0 && stride_w > 0 && pad_w > 0)
 						Q = ConvolutionUtils.getQ(W, S, stride_w, pad_w);
+					
+					if(preferIm2Col(et, N, K, C, R, S, P, Q)) {
+						return null;
+					}
+					
 					long rlen = N;
 					long clen = ConvolutionOp.getExtractedVal(K, P, Q);
 					return ConvolutionOp.constructFusedConvolutionLops(et, inputs, ConvOp.DIRECT_CONV2D, (ConvolutionOp) x_col, rlen, clen);

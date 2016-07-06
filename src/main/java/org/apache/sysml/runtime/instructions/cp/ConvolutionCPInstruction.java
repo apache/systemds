@@ -116,7 +116,9 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 					padding, input_shape, filter_shape, k);
 		} 
 		else if (opcode.equalsIgnoreCase("pooling_backward_reshape")
-				|| opcode.equalsIgnoreCase("maxpooling_backward")) {
+				|| opcode.equalsIgnoreCase("maxpooling_backward")
+				|| opcode.equalsIgnoreCase("conv2d")
+				|| opcode.equalsIgnoreCase("conv2d_backward_filter")) {
 			InstructionUtils.checkNumFields(parts, 16);
 			// dout, stride1, stride2, padding1, padding2
 			// input_shape1, input_shape2, input_shape3, input_shape4,
@@ -191,7 +193,6 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			outputBlock = getDenseOutputBlock(ec, C * R * S, N * P * Q, true);
 			params.setReuseNonZeroedOutput(_reuseNonZeroedOutput);
 			LibMatrixDNN.im2col(matBlock, outputBlock, params);
-			outputBlock.setNonZeros(params.outputNNZ.get());
 		}
 		else if (instOpcode.equalsIgnoreCase("reshape_col")) {
 			checkHeightWidth(ec, params);
@@ -200,7 +201,6 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			outputBlock = getDenseOutputBlock(ec, N, K * P * Q, true);
 			params.setReuseNonZeroedOutput(_reuseNonZeroedOutput);
 			LibMatrixDNN.reshape_col(matBlock, outputBlock, params);
-			outputBlock.setNonZeros(matBlock.getNonZeros()); // As number of non-zeros doesnot change for reshape_col
 		}
 		else if (instOpcode.equalsIgnoreCase("rotate180")) {
 			checkHeightWidth(ec, params);
@@ -208,7 +208,6 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			outputBlock = getDenseOutputBlock(ec, N * P * Q, K, true);
 			params.setReuseNonZeroedOutput(_reuseNonZeroedOutput);
 			LibMatrixDNN.rotate180(matBlock, outputBlock, params);
-			outputBlock.setNonZeros(matBlock.getNonZeros()); // As number of non-zeros doesnot change for rotate180
 		}
 		else if (instOpcode.equalsIgnoreCase("col2im")) {
 			checkHeightWidth(ec, params);
@@ -216,7 +215,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			// needs to be zeroed-out
 			outputBlock = getDenseOutputBlock(ec, N, C * H * W, false);
 			params.setReuseNonZeroedOutput(_reuseNonZeroedOutput);
-			LibMatrixDNN.col2im(matBlock, outputBlock, params); // No efficient nnz computation, so setting it to -1
+			LibMatrixDNN.col2im(matBlock, outputBlock, params);
 		}
 		else if (instOpcode.equalsIgnoreCase("maxpooling")) {
 			// Is eligible for REUSE_NONZEROED_OUTPUT but cannot guarantee that previous output has been rmvar-ed
@@ -224,7 +223,6 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			outputBlock = getDenseOutputBlock(ec, N, C*P*Q, true);
 			params.setReuseNonZeroedOutput(_reuseNonZeroedOutput);
 			LibMatrixDNN.maxpooling(matBlock, outputBlock, params);
-			outputBlock.setNonZeros(params.outputNNZ.get());
 		}
 		else if (instOpcode.equalsIgnoreCase("maxpooling_backward")) {
 			MatrixBlock dout = ec.getMatrixInput(_in2.getName());
@@ -232,7 +230,21 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			// without somewhat expensive HashMap checks
 			outputBlock = getDenseOutputBlock(ec, N, C*H*W, false);
 			params.setReuseNonZeroedOutput(_reuseNonZeroedOutput);
-			LibMatrixDNN.maxpooling_backward(matBlock, dout, outputBlock, params); // No efficient nnz computation, so setting it to -1
+			LibMatrixDNN.maxpooling_backward(matBlock, dout, outputBlock, params);
+			ec.releaseMatrixInput(_in2.getName());
+		}
+		else if (instOpcode.equalsIgnoreCase("conv2d")) {
+			MatrixBlock filter = ec.getMatrixInput(_in2.getName());
+			outputBlock = getDenseOutputBlock(ec, N, K*P*Q, false);
+			params.setReuseNonZeroedOutput(_reuseNonZeroedOutput);
+			LibMatrixDNN.conv2d(matBlock, filter, outputBlock, params);
+			ec.releaseMatrixInput(_in2.getName());
+		}
+		else if (instOpcode.equalsIgnoreCase("conv2d_backward_filter")) {
+			MatrixBlock filter = ec.getMatrixInput(_in2.getName());
+			outputBlock = getDenseOutputBlock(ec, K, C*R*S, false);
+			params.setReuseNonZeroedOutput(_reuseNonZeroedOutput);
+			LibMatrixDNN.conv2d_backward_filter(matBlock, filter, outputBlock, params);
 			ec.releaseMatrixInput(_in2.getName());
 		}
 		else {

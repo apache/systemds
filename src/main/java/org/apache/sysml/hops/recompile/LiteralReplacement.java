@@ -252,7 +252,8 @@ public class LiteralReplacement
 		
 		//as.scalar/matrix read - literal replacement
 		if( c instanceof UnaryOp && ((UnaryOp)c).getOp() == OpOp1.CAST_AS_SCALAR 
-			&& c.getInput().get(0) instanceof DataOp )
+			&& c.getInput().get(0) instanceof DataOp
+			&& c.getInput().get(0).getDataType() == DataType.MATRIX )
 		{
 			Data dat = vars.get(c.getInput().get(0).getName());
 			if( dat != null ) //required for selective constant propagation
@@ -287,7 +288,8 @@ public class LiteralReplacement
 		
 		//as.scalar/right indexing w/ literals/vars and matrix less than 10^6 cells
 		if( c instanceof UnaryOp && ((UnaryOp)c).getOp() == OpOp1.CAST_AS_SCALAR 
-			&& c.getInput().get(0) instanceof IndexingOp )
+			&& c.getInput().get(0) instanceof IndexingOp
+			&& c.getInput().get(0).getDataType() == DataType.MATRIX)
 		{
 			IndexingOp rix = (IndexingOp)c.getInput().get(0);
 			Hop data = rix.getInput().get(0);

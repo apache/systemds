@@ -199,7 +199,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	private Hop removeEmptyRightIndexing(Hop parent, Hop hi, int pos) 
 		throws HopsException
 	{
-		if( hi instanceof IndexingOp  ) //indexing op
+		if( hi instanceof IndexingOp && hi.getDataType()==DataType.MATRIX  ) //indexing op
 		{	
 			Hop input = hi.getInput().get(0);
 			if( input.getNnz()==0 && //nnz input known and empty
@@ -230,11 +230,11 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	 */
 	private Hop removeUnnecessaryRightIndexing(Hop parent, Hop hi, int pos)
 	{
-		if( hi instanceof IndexingOp  ) //indexing op
+		if( hi instanceof IndexingOp ) //indexing op
 		{
 			Hop input = hi.getInput().get(0);
 			if( HopRewriteUtils.isEqualSize(hi, input)     //equal dims
-				&& !(hi.getDim1()==1 && hi.getDim2()==1) ) //not 1-1 matrix	
+				&& !(hi.getDim1()==1 && hi.getDim2()==1) ) //not 1-1 matrix/frame	
 			{
 				//equal dims of right indexing input and output -> no need for indexing
 				//(not applied for 1-1 matrices because low potential and issues w/ error
@@ -264,7 +264,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	private Hop removeEmptyLeftIndexing(Hop parent, Hop hi, int pos) 
 		throws HopsException
 	{
-		if( hi instanceof LeftIndexingOp  ) //left indexing op
+		if( hi instanceof LeftIndexingOp && hi.getDataType() == DataType.MATRIX  ) //left indexing op
 		{
 			Hop input1 = hi.getInput().get(0); //lhs matrix
 			Hop input2 = hi.getInput().get(1); //rhs matrix
@@ -297,7 +297,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	{
 		if( hi instanceof LeftIndexingOp  ) //left indexing op
 		{
-			Hop input = hi.getInput().get(1); //rhs matrix
+			Hop input = hi.getInput().get(1); //rhs matrix/frame
 			
 			if( HopRewriteUtils.isEqualSize(hi, input) ) //equal dims
 			{
@@ -327,7 +327,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	{
 		boolean applied = false;
 		
-		//pattern1: X[,1]=A; X[,2]=B -> X=cbind(A,B)
+		//pattern1: X[,1]=A; X[,2]=B -> X=cbind(A,B); matrix / frame
 		if( hi instanceof LeftIndexingOp                      //first lix 
 			&& HopRewriteUtils.isFullColumnIndexing((LeftIndexingOp)hi)
 			&& hi.getInput().get(0) instanceof LeftIndexingOp //second lix	
@@ -342,7 +342,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			
 			if( pred1 instanceof LiteralOp && HopRewriteUtils.getDoubleValueSafe((LiteralOp)pred1)==1
 				&& pred2 instanceof LiteralOp && HopRewriteUtils.getDoubleValueSafe((LiteralOp)pred2)==2
-				&& input1.getDataType()==DataType.MATRIX && input2.getDataType()==DataType.MATRIX )
+				&& input1.getDataType()!=DataType.SCALAR && input2.getDataType()!=DataType.SCALAR )
 			{
 				//create new cbind operation and rewrite inputs
 				HopRewriteUtils.removeChildReference(parent, hi);		
@@ -369,7 +369,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			
 			if( pred1 instanceof LiteralOp && HopRewriteUtils.getDoubleValueSafe((LiteralOp)pred1)==1
 				&& pred2 instanceof LiteralOp && HopRewriteUtils.getDoubleValueSafe((LiteralOp)pred2)==2
-				&& input1.getDataType()==DataType.MATRIX && input2.getDataType()==DataType.MATRIX )
+				&& input1.getDataType()!=DataType.SCALAR && input2.getDataType()!=DataType.SCALAR )
 			{
 				//create new cbind operation and rewrite inputs
 				HopRewriteUtils.removeChildReference(parent, hi);		

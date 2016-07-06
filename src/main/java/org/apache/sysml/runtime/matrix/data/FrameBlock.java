@@ -193,6 +193,16 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	
 	/**
 	 * 
+	 * @param c
+	 * @return
+	 */
+	public boolean isColumnMetadataDefault(int c) {
+		return _colmeta.get(c).getMvValue() == null
+			&& _colmeta.get(c).getNumDistinct() == 0;
+	}
+	
+	/**
+	 * 
 	 * @param colmeta
 	 */
 	public void setColumnMetadata(List<ColumnMetadata> colmeta) {
@@ -315,18 +325,20 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		_coldata.get(c).set(r, UtilFunctions.objectToObject(_schema.get(c), val));
 	}
 
-	public void reset(int nrow) 
-	{
+	public void reset(int nrow)  {
 		getSchema().clear();
 		getColumnNames().clear();
-		
-		if(_coldata != null)
-			for(int i=0; i < _coldata.size(); ++i)
+		if( _colmeta != null ) {
+			for( int i=0; i<_colmeta.size(); i++ )
+				_colmeta.get(i).reset();
+		}
+		if(_coldata != null) {
+			for( int i=0; i < _coldata.size(); i++ )
 				_coldata.get(i)._size = nrow;
+		}
 	}
 
-	public void reset() 
-	{
+	public void reset() {
 		reset(0);
 	}
 	
@@ -1237,7 +1249,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * 
 	 */
 	public static class ColumnMetadata {
-		private long _ndistinct = -1;
+		private long _ndistinct = 0;
 		private String _mvValue = null;
 		
 		public ColumnMetadata(long ndistinct, String mvval) {
@@ -1247,7 +1259,11 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		public ColumnMetadata(long ndistinct) {
 			_ndistinct = ndistinct;
 		}
-
+		public void reset() {
+			_ndistinct = 0;
+			_mvValue = null;
+		}
+		
 		public long getNumDistinct() {
 			return _ndistinct;
 		}		

@@ -711,12 +711,13 @@ public class SparkExecutionContext extends ExecutionContext
 
 			FrameBlock block = new FrameBlock(src.getSchema());
 			
-			//copy submatrix to block
-			src.sliceOperations( roffset, roffset+maxRow-1, 
-					             0, src.getNumColumns()-1, block );							
+			//copy sub frame to block, incl meta data on first
+			src.sliceOperations( roffset, roffset+maxRow-1, 0, src.getNumColumns()-1, block );		
+			if( roffset == 0 )
+				block.setColumnMetadata(src.getColumnMetadata());
 			
 			//append block to sequence file
-			list.addLast(new Tuple2<Long,FrameBlock>(new Long(roffset+1), block));
+			list.addLast(new Tuple2<Long,FrameBlock>((long)roffset+1, block));
 		}
 		
 		JavaPairRDD<Long,FrameBlock> result = sc.parallelizePairs(list);
@@ -977,8 +978,9 @@ public class SparkExecutionContext extends ExecutionContext
 			FrameBlock block = keyval._2();
 		
 			//copy into output frame
-			out.copy( ix, ix+block.getNumRows()-1, 
-					  0, block.getNumColumns()-1, block );	
+			out.copy( ix, ix+block.getNumRows()-1, 0, block.getNumColumns()-1, block );
+			if( ix == 0 )
+				out.setColumnMetadata(block.getColumnMetadata());
 		}
 		
 		if (DMLScript.STATISTICS) {

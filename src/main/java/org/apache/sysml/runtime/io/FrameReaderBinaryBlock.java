@@ -116,13 +116,11 @@ public class FrameReaderBinaryBlock extends FrameReader
 		
 		try
 		{
-			//note: next(key, value) does not yet exploit the given serialization classes, record reader does but is generally slower.
 			while( reader.next(key, value) ) {	
 				int row_offset = (int)(key.get()-1);
-				
 				int rows = value.getNumRows();
 				int cols = value.getNumColumns();
-
+				
 				if(rows == 0 || cols == 0)	//Empty block, ignore it.
 					continue;
 				
@@ -132,8 +130,10 @@ public class FrameReaderBinaryBlock extends FrameReader
 							              "out of overall frame range [1:"+rlen+",1:"+clen+"].");
 				}
 		
-				dest.copy( row_offset, row_offset+rows-1, 
-						0, cols-1, value);
+				//copy block into target frame, incl meta on first
+				dest.copy( row_offset, row_offset+rows-1, 0, cols-1, value);
+				if( row_offset==0 )
+					dest.setColumnMetadata(value.getColumnMetadata());
 			}
 		}
 		finally {

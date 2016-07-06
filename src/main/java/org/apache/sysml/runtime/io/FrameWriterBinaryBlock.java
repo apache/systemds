@@ -130,9 +130,11 @@ public class FrameWriterBinaryBlock extends FrameWriter
 				for(int bi = rl; bi < ru; bi += blen) {
 					int len = Math.min(blen,  src.getNumRows()-bi);
 					
-					//get reuse frame block and copy subpart to block
+					//get reuse frame block and copy subpart to block (incl meta on first)
 					FrameBlock block = getFrameBlockForReuse(blocks);
 					src.sliceOperations( bi, bi+len-1, 0, src.getNumColumns()-1, block );
+					if( bi==0 ) //first block
+						block.setColumnMetadata(src.getColumnMetadata());
 					
 					//append block to sequence file
 					index.set(bi+1);

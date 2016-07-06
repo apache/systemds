@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 
-import org.apache.commons.logging.Log;
 import org.apache.sysml.parser.LanguageException.LanguageErrorCodes;
 
 public class BuiltinFunctionExpression extends DataIdentifier 
@@ -560,6 +559,9 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			break;
 			
 		case PPRED:
+			// TODO: remove this when ppred has been removed from DML
+			raiseValidateError("ppred() has been deprecated. Please use the operator directly.", true);
+
 			// ppred (X,Y, "<"); ppred (X,y, "<"); ppred (y,X, "<");
 			checkNumParameters(3);
 			
@@ -1465,7 +1467,6 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		// check if the function name is built-in function
 		//	(assign built-in function op if function is built-in
 		Expression.BuiltinFunctionOp bifop = null;
-
 		
 		if (functionName.equals("avg"))
 			bifop = Expression.BuiltinFunctionOp.MEAN;
@@ -1498,11 +1499,9 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			bifop = Expression.BuiltinFunctionOp.MIN;
 		else if (functionName.equals("pmax"))
 			 bifop = Expression.BuiltinFunctionOp.MAX;
-		else if (functionName.equals("ppred")) {
-			// TODO: remove this when ppred has been removed from DML
-			raiseWarning(filename, blp, bcp, "ppred() has been deprecated. Please use the operator directly.");
+		else if (functionName.equals("ppred"))
 			bifop = Expression.BuiltinFunctionOp.PPRED;
-		} else if (functionName.equals("log"))
+		else if (functionName.equals("log"))
 			bifop = Expression.BuiltinFunctionOp.LOG;
 		else if (functionName.equals("length"))
 			bifop = Expression.BuiltinFunctionOp.LENGTH;
@@ -1645,10 +1644,6 @@ public class BuiltinFunctionExpression extends DataIdentifier
 	
 		return retVal;
 	} // end method getBuiltinFunctionExpression
-
-	static private void raiseWarning(String filename, int line, int col, String msg) {
-		LOG.warn(filename + " line " + line + ":" + col + " " + msg);
-	}
 
 	/**
 	 * Convert a value type (double, int, or boolean) to a built-in function operator.

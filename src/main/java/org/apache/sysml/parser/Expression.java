@@ -559,7 +559,7 @@ public abstract class Expression
 				throw new LanguageException( fullMsg );
 		}
 	}
-	
+
 	
 	/**
 	 * Returns the matrix characteristics for scalar-scalar, scalar-matrix, matrix-scalar, matrix-matrix

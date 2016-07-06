@@ -489,7 +489,6 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 		ArrayList<ParameterExpression> paramExpression = getParameterExpressionList(ctx.paramExprs);
 
 		castAsScalarDeprecationCheck(functionName, ctx);
-		castPpredDeprecationCheck(functionName, ctx);
 		
 		boolean hasLHS = ctx.targetList != null;
 		functionCallAssignmentStatementHelper(ctx, printStatements, outputStatements, hasLHS ? ctx.targetList.dataInfo.expr : null, ctx.info, ctx.name,
@@ -500,13 +499,6 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 	private void castAsScalarDeprecationCheck(String functionName, ParserRuleContext ctx) {
 		if ("castAsScalar".equalsIgnoreCase(functionName)) {
 			raiseWarning("castAsScalar() has been deprecated. Please use as.scalar().", ctx.start);
-		}
-	}
-
-	// TODO: remove this when ppred has been removed from DML
-	private void castPpredDeprecationCheck(String functionName, ParserRuleContext ctx) {
-		if ("ppred".equalsIgnoreCase(functionName)) {
-			raiseWarning("ppred() has been deprecated. Please use the operator directly.", ctx.start);
 		}
 	}
 

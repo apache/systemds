@@ -208,31 +208,60 @@ public class LibMatrixDNN {
 		double [] outputArray = params.output.getDenseBlock();
 		
 		long outputVal = 0;
-		for (int n = 0; n < params.N; n++) {
-			for (int p = 0; p < params.P; p++) {
-				for (int q = 0; q < params.Q; q++) {
-					double doutVal = 0;
-					if(doutArray != null)
-						doutVal = doutArray[n*params.K*params.P*params.Q + k*params.P*params.Q + p*params.Q + q];
-					else
-						doutVal = params.input2.quickGetValue(n, k*params.P*params.Q + p*params.Q + q);
-					if(doutVal != 0) {
-						// TODO: Improve the performance by striding
-						for (int h = 0; h < params.H; h++) {
-							for (int w = 0; w < params.W; w++) { 
-								if(h == p*params.stride_h + r - params.pad_h &&
-										w == q*params.stride_w + s - params.pad_w) {
-									if(inputArray != null)
-										outputVal += doutVal*inputArray[n*params.C*params.H*params.W + c*params.H*params.W + h*params.W+w];
-									else 
-										outputVal += doutVal*params.input1.quickGetValue(n, c*params.H*params.W + h*params.W + w);
-								}
+		if(doutArray != null) {
+			for (int n = 0; n < params.N; n++) {
+				for (int p = 0; p < params.P; p++) {
+					for (int q = 0; q < params.Q; q++) {
+						int h = p*params.stride_h + r - params.pad_h;
+						int w = q*params.stride_w + s - params.pad_w;
+						if(h >= 0 && h < params.H && w >= 0 && w < params.W) {
+							double doutVal = doutArray[n*params.K*params.P*params.Q + k*params.P*params.Q + p*params.Q + q];
+							if(doutVal != 0) {
+								if(inputArray != null)
+									outputVal += doutVal*inputArray[n*params.C*params.H*params.W + c*params.H*params.W + h*params.W+w];
+								else 
+									outputVal += doutVal*params.input1.quickGetValue(n, c*params.H*params.W + h*params.W + w);
 							}
 						}
 					}
 				}
 			}
 		}
+		else {
+			MatrixBlock dout = params.input2;
+			if( !dout.isEmptyBlock(false) ) {
+				int start=0;
+				int rlen = dout.getNumRows();
+				int clen = dout.getNumColumns();
+				for(int r1=0; r1<Math.min(dout.sparseBlock.numRows(), rlen); r1++, start+=clen)
+				{
+					if(dout.sparseBlock.isEmpty(r1)) 
+						continue;
+					int pos = dout.sparseBlock.pos(r1);
+					int len = dout.sparseBlock.size(r1);
+					int[] aix = dout.sparseBlock.indexes(r1);
+					double[] avals = dout.sparseBlock.values(r1);
+					
+					for(int i=pos; i<pos+len; i++) {
+						int index = start+aix[i];
+						double doutVal = avals[i];
+						int n = index / clen; 
+						int p = index / params.Q;
+						int q = index % params.Q;
+						int h = p*params.stride_h + r - params.pad_h;
+						int w = q*params.stride_w + s - params.pad_w;
+						if(h >= 0 && h < params.H && w >= 0 && w < params.W && doutVal != 0) {
+							if(inputArray != null)
+								outputVal += doutVal*inputArray[n*params.C*params.H*params.W + c*params.H*params.W + h*params.W+w];
+							else 
+								outputVal += doutVal*params.input1.quickGetValue(n, c*params.H*params.W + h*params.W + w);
+						}
+					}
+				}
+			}	
+		}
+		
+		
 		outputArray[k*params.C*params.R*params.S + c*params.R*params.S + r*params.S + s] = outputVal;
 	}
 	

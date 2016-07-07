@@ -110,6 +110,17 @@ public class FrameWriterTextCell extends FrameWriter
 			//for obj reuse and preventing repeated buffer re-allocations
 			StringBuilder sb = new StringBuilder();
 			
+			//write frame meta data
+			if( rl == 0 ) {
+				for( int j=0; j<cols; j++ )
+					if( !src.isColumnMetadataDefault(j) ) {
+						sb.append("-1 " + (j+1) + " " + src.getColumnMetadata(j).getNumDistinct() + "\n");
+						sb.append("-2 " + (j+1) + " " + src.getColumnMetadata(j).getMvValue() + "\n");
+						br.write( sb.toString() );
+						sb.setLength(0);
+					}
+			}
+			
 			//write frame row range to output
 			Iterator<String[]> iter = src.getStringRowIterator(rl, ru);
 			for( int i=rl; iter.hasNext(); i++ ) { //for all rows

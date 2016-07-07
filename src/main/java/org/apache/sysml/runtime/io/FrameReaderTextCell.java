@@ -182,7 +182,12 @@ public class FrameReaderTextCell extends FrameReader
 				st.reset( value.toString() ); //reinit tokenizer
 				row = st.nextInt()-1;
 				col = st.nextInt()-1;
-				dest.set(row, col, UtilFunctions.stringToObject(schema.get(col), st.nextToken()));
+				if( row == -3 )
+					dest.getColumnMetadata(col).setMvValue(st.nextToken());
+				else if( row == -2 )
+					dest.getColumnMetadata(col).setNumDistinct(st.nextLong());
+				else
+					dest.set(row, col, UtilFunctions.stringToObject(schema.get(col), st.nextToken()));
 			}
 		}
 		catch(Exception ex) 
@@ -253,8 +258,13 @@ public class FrameReaderTextCell extends FrameReader
 			while( (value=br.readLine())!=null ) {
 				st.reset( value ); //reinit tokenizer
 				row = st.nextInt()-1;
-				col = st.nextInt()-1;	
-				dest.set(row, col, UtilFunctions.stringToObject(schema.get(col), st.nextToken()));
+				col = st.nextInt()-1;
+				if( row == -3 )
+					dest.getColumnMetadata(col).setMvValue(st.nextToken());
+				else if (row == -2)
+					dest.getColumnMetadata(col).setNumDistinct(st.nextLong());
+				else
+					dest.set(row, col, UtilFunctions.stringToObject(schema.get(col), st.nextToken()));
 			}
 		}
 		catch(Exception ex)
@@ -272,5 +282,4 @@ public class FrameReaderTextCell extends FrameReader
 			IOUtilFunctions.closeSilently(br);
 		}
 	}
-
 }

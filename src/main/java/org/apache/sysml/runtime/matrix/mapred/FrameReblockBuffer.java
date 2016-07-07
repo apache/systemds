@@ -218,7 +218,8 @@ public class FrameReblockBuffer
 		long cbi = -1, cbj = -1; //current block indexes
 		for( int i=0; i<_count; i++ )
 		{
-			long bi = UtilFunctions.computeBlockIndex(_buff[i].getRow(), _brlen);
+			//compute block indexes (w/ robustness for meta data handling)
+			long bi = Math.max(UtilFunctions.computeBlockIndex(_buff[i].getRow(), _brlen), 1);
 			long bj = UtilFunctions.computeBlockIndex(_buff[i].getCol(), _bclen);
 			
 			//output block and switch to next index pair
@@ -229,13 +230,17 @@ public class FrameReblockBuffer
 				cbj = bj;					
 				tmpIx = (bi-1)*_brlen+1;
 				tmpBlock = new FrameBlock(_schema);
-				tmpBlock.ensureAllocatedColumns(Math.min(_brlen, (int)(_rlen-(bi-1)*_brlen)));
-				
+				tmpBlock.ensureAllocatedColumns(Math.min(_brlen, (int)(_rlen-(bi-1)*_brlen)));				
 			}
 			
 			int ci = UtilFunctions.computeCellInBlock(_buff[i].getRow(), _brlen);
 			int cj = UtilFunctions.computeCellInBlock(_buff[i].getCol(), _bclen);
-			tmpBlock.set(ci, cj, _buff[i].getObjVal());
+			if( ci == -3 )
+				tmpBlock.getColumnMetadata(cj).setMvValue(_buff[i].getObjVal().toString());
+			else if( ci == -2 )
+				tmpBlock.getColumnMetadata(cj).setNumDistinct(Long.parseLong(_buff[i].getObjVal().toString()));
+			else
+				tmpBlock.set(ci, cj, _buff[i].getObjVal());
 		}
 		
 		//output last block 

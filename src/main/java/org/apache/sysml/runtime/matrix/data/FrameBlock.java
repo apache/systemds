@@ -83,8 +83,9 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	}
 	
 	public FrameBlock(FrameBlock that) {
-		this(that.getSchema());
+		this(that.getSchema(), that.getColumnNames());
 		copy(that);
+		setColumnMetadata(that.getColumnMetadata());
 	}
 	
 	public FrameBlock(int ncols, ValueType vt) {
@@ -206,7 +207,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * @param colmeta
 	 */
 	public void setColumnMetadata(List<ColumnMetadata> colmeta) {
-		_colmeta = colmeta;
+		_colmeta = new ArrayList<FrameBlock.ColumnMetadata>(colmeta);
 	}
 	
 	/**
@@ -330,7 +331,8 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		getColumnNames().clear();
 		if( _colmeta != null ) {
 			for( int i=0; i<_colmeta.size(); i++ )
-				_colmeta.get(i).reset();
+				if( !isColumnMetadataDefault(i) )
+					_colmeta.set(i, new ColumnMetadata(0));
 		}
 		if(_coldata != null) {
 			for( int i=0; i < _coldata.size(); i++ )
@@ -888,6 +890,13 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		if ( getNumRows() != that.getNumRows() || getNumColumns() != that.getNumColumns() )
 			throw new DMLRuntimeException("Dimension mismatch on merge disjoint (target="+getNumRows()+"x"+getNumColumns()+", source="+that.getNumRows()+"x"+that.getNumColumns()+")");
 		
+		//meta data copy if necessary
+		for( int j=0; j<getNumColumns(); j++ )
+			if( !that.isColumnMetadataDefault(j) ) {
+				_colmeta.get(j).setNumDistinct(that._colmeta.get(j).getNumDistinct());
+				_colmeta.get(j).setMvValue(that._colmeta.get(j).getMvValue());
+			}
+		
 		//core frame block merge through cell copy
 		for( int i=0; i<that.getNumRows(); i++ ) {
 			for( int j=0; j<getNumColumns(); j++ ) {
@@ -896,7 +905,6 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 					set(i, j,obj);
 			}
 		}
-		
 	}
 	
 	/**
@@ -1252,16 +1260,16 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		private long _ndistinct = 0;
 		private String _mvValue = null;
 		
+		public ColumnMetadata(long ndistinct) {
+			_ndistinct = ndistinct;
+		}
 		public ColumnMetadata(long ndistinct, String mvval) {
 			_ndistinct = ndistinct;
 			_mvValue = mvval;
 		}
-		public ColumnMetadata(long ndistinct) {
-			_ndistinct = ndistinct;
-		}
-		public void reset() {
-			_ndistinct = 0;
-			_mvValue = null;
+		public ColumnMetadata(ColumnMetadata that) {
+			_ndistinct = that._ndistinct;
+			_mvValue = that._mvValue;
 		}
 		
 		public long getNumDistinct() {

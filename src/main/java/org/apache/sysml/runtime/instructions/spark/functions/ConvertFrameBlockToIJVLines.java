@@ -40,6 +40,15 @@ public class ConvertFrameBlockToIJVLines implements FlatMapFunction<Tuple2<Long,
 		
 		ArrayList<String> cells = new ArrayList<String>();
 		
+		//write frame meta data
+		if( rowoffset == 1 ) {
+			for( int j=0; j<block.getNumColumns(); j++ )
+				if( !block.isColumnMetadataDefault(j) ) {
+					cells.add("-1 " + (j+1) + " " + block.getColumnMetadata(j).getNumDistinct());
+					cells.add("-2 " + (j+1) + " " + block.getColumnMetadata(j).getMvValue());
+				}
+		}
+		
 		//convert frame block to list of ijv cell triples
 		StringBuilder sb = new StringBuilder();
 		Iterator<String[]> iter = block.getStringRowIterator();

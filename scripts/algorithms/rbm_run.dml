@@ -46,26 +46,6 @@
 
 # -------------------------------------------- START OF RBM_MINIBATCH.DML --------------------------------------------
 
-# This function returns a new matrix by replicating the input matrix X.
-# The "times" parameter controls how many times X is to be repeated.
-#
-# Example:
-# 
-# Z = matrix(1, rows=1,cols=2)  | 1.0 | 1.0 | 
-#
-# Z = rep(Z, 3)			| 1.0 | 1.0 | 
-#				| 1.0 | 1.0 | 
-#				| 1.0 | 1.0 | 
-#
-rep = function(matrix[double] X, int times) return (matrix[double] retval) {
-  retval = X
-  i = 1
-  while (i < times) {
-    retval = rbind(retval, X)
-    i = i + 1
-  }
-}
-
 # Default values
 output_format	      = ifdef($fmt, "csv")
 
@@ -96,7 +76,6 @@ if (minX < 0.0 | maxX > 1.0) {
 print("Running RBM...")
 
 # Compute the probabilities P(h=1|v)
-b_matrix  = rep(b, N)
 p_h1_given_v = 1.0 / (1 + exp(-(X %*% w + b)))
 
 # Sample from P(h=1|v)

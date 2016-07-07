@@ -59,27 +59,6 @@
 
 # -------------------------------------------- START OF RBM_MINIBATCH.DML --------------------------------------------
 
-
-# This function returns a new matrix by replicating the input matrix X.
-# The "times" parameter controls how many times X is to be repeated.
-#
-# Example:
-# 
-# Z = matrix(1, rows=1,cols=2)  | 1.0 | 1.0 | 
-#
-# Z = rep(Z, 3)			| 1.0 | 1.0 | 
-#				| 1.0 | 1.0 | 
-#				| 1.0 | 1.0 | 
-#
-rep = function(matrix[double] X, int times) return (matrix[double] retval) {
-  retval = X
-  i = 1
-  while (i < times) {
-    retval = rbind(retval, X)
-    i = i + 1
-  }
-}
-
 # Default values
 learning_rate	    = ifdef($alpha, 0.1)
 hidden_units_count  = ifdef($hid, 2)
@@ -139,14 +118,10 @@ for (epoch in 1:epoch_count) {
     # Get the number of observations in v_1
     batch_N = nrow(v_1)
 
-    # Setup bias matrices
-    a_bias_matrix  = rep(a, batch_N)
-    b_bias_matrix  = rep(b, batch_N)
-
     # POSITIVE PHASE
 
     # Compute the probabilities P(h=1|v)
-    p_h1_given_v = 1.0 / (1 + exp(-(v_1 %*% w + b_bias_matrix)))   
+    p_h1_given_v = 1.0 / (1 + exp(-(v_1 %*% w + b)))   
 
     # Sample from P(h=1|v)
     h1 = p_h1_given_v > rand(rows = batch_N, cols = hidden_units_count)
@@ -154,10 +129,10 @@ for (epoch in 1:epoch_count) {
     # NEGATIVE PHASE         
         
     # Compute the probabilities P(v2=1|h1)
-    p_v2_given_h1  = 1.0 / (1 + exp(-(h1 %*% t(w) + a_bias_matrix)))
+    p_v2_given_h1  = 1.0 / (1 + exp(-(h1 %*% t(w) + a)))
 
     # Compute the probabilities P(h2=1|v2)          
-    p_h2_given_v2 = 1.0 / (1 + exp(-(p_v2_given_h1 %*% w + b_bias_matrix)))         
+    p_h2_given_v2 = 1.0 / (1 + exp(-(p_v2_given_h1 %*% w + b)))         
 
     # UPDATE WEIGHTS AND BIASES
     w = w + learning_rate * ((t(v_1) %*% p_h1_given_v - t(p_v2_given_h1) %*% p_h2_given_v2) / batch_N)        

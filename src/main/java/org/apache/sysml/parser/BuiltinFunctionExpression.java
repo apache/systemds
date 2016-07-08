@@ -559,6 +559,9 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			break;
 			
 		case PPRED:
+			// TODO: remove this when ppred has been removed from DML
+			raiseValidateError("ppred() has been deprecated. Please use the operator directly.", true);
+
 			// ppred (X,Y, "<"); ppred (X,y, "<"); ppred (y,X, "<");
 			checkNumParameters(3);
 			

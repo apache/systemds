@@ -43,7 +43,7 @@ numWordsPerDoc = $4
 
 docTopicMixtures = Rand(rows=numDocuments, cols=numTopics, min=0.0, max=1.0, pdf="uniform", seed=0, sparsity=0.75)
 denomsTM = rowSums(docTopicMixtures)
-zerosInDenomsTM = ppred(denomsTM, 0, "==")
+zerosInDenomsTM = denomsTM == 0
 denomsTM = 0.1*zerosInDenomsTM + (1-zerosInDenomsTM)*denomsTM
 parfor(i in 1:numTopics){
 	docTopicMixtures[,i] = docTopicMixtures[,i]/denomsTM

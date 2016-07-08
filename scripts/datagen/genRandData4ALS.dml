@@ -37,7 +37,7 @@ I = floor(rand(rows = nnz, cols = 1, min = 1, max = m + 0.999999999));
 J = floor(rand(rows = nnz, cols = 1, min = 1, max = n + 0.999999999));
 X = rand(rows = nnz, cols = 1, pdf = "normal") * sqrt(sigma);
 N = table(I, J, X);
-T = ppred(N, 0, "!=");
+T = (N != 0);
 X = T * (W %*% H) + T * N;
 write(X, Xfile, format = fmt);
 write(W, Wfile, format = fmt);

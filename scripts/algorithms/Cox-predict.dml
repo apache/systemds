@@ -120,7 +120,7 @@ e_r = aggregate (target = RT_X, groups = RT_X, fn = "count");
 Idx = cumsum (e_r); 
 all_times = table (seq (1, nrow (Idx), 1), Idx) %*% T_X; # distinct event times 
 
-event_times = removeEmpty (target = ppred (d_r, 0, ">") * all_times, margin = "rows");
+event_times = removeEmpty (target = (d_r > 0) * all_times, margin = "rows");
 num_distinct_event = nrow (event_times);
 
 num_distinct = nrow (all_times); # no. of distinct timestamps censored or uncensored
@@ -130,8 +130,8 @@ select = t (colSums (table (seq (1, num_distinct), e_r_rev_agg)));
 
 min_event_time = min (event_times);
 max_event_time = max (event_times);
-T_Y = T_Y + (min_event_time * ppred (T_Y, min_event_time, "<"));
-T_Y = T_Y + (max_event_time * ppred (T_Y, max_event_time, ">"));
+T_Y = T_Y + (min_event_time * (T_Y < min_event_time));
+T_Y = T_Y + (max_event_time * (T_Y > max_event_time));
 
 Ind = outer (T_Y, t (event_times), ">=");
 Ind = table (seq (1, nrow (T_Y)), rowIndexMax (Ind), nrow (T_Y), num_distinct_event);

@@ -88,7 +88,7 @@ num_records = nrow (X);
 num_classes = ncol (Y_bin);
 
 # check if there is only one class label
-Y_bin_sum = sum (ppred (colSums (Y_bin), num_records, "=="));
+Y_bin_sum = sum (colSums (Y_bin) == num_records);
 if (Y_bin_sum == 1) {
 	stop ("Y contains only one class label. No model will be learned!");
 } else if (Y_bin_sum > 1) {
@@ -99,7 +99,7 @@ if (Y_bin_sum == 1) {
 if (fileR != " ") {
 	R = read (fileR);
 	R = order (target = R, by = 2); # sort by start indices
-	dummy_coded = ppred (R[,2], R[,3], "!=");
+	dummy_coded = (R[,2] != R[,3]);
 	R_scale = removeEmpty (target = R[,2:3] * (1 - dummy_coded), margin = "rows");
 	R_cat = removeEmpty (target = R[,2:3] * dummy_coded, margin = "rows");
 	if (fileS_map != " ") {
@@ -140,7 +140,7 @@ if (fileR != " ") {
 			W[2 * num_cat_features,] = 0;
 		}
 		
-		last = ppred (R_cat[,2], ncol (X), "!=");
+		last = (R_cat[,2] != ncol (X));
 		R_cat1 = (R_cat[,2] + 1) * last;
 		R_cat[,2] = (R_cat[,2] * (1 - last)) + R_cat1;
 		R_cat_vec = matrix (R_cat, rows = 2 * num_cat_features, cols = 1);	
@@ -252,7 +252,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 			
 		# --- find best split ---
 		# samples that reach cur_node 
-		Ix = ppred (L[,1], cur_node, "==");		
+		Ix = (L[,1] == cur_node);		
 		
 		cur_Y_bin = Y_bin * Ix;
 		label_counts_overall = colSums (cur_Y_bin);
@@ -260,7 +260,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 		label_dist_overall = label_counts_overall / label_sum_overall;
 
 		if (imp == "entropy") {
-			label_dist_zero = ppred (label_dist_overall, 0, "==");
+			label_dist_zero = (label_dist_overall == 0);
 			cur_impurity = - sum (label_dist_overall * log (label_dist_overall + label_dist_zero)); # / log (2); # impurity before
 		} else { # imp == "Gini"
 			cur_impurity = sum (label_dist_overall * (1 - label_dist_overall)); # impurity before
@@ -301,7 +301,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 			# determine best feature to split on and the split value
 			best_scale_gain = max (I_gain_scale);
 			max_I_gain_ind_scale = as.scalar (rowIndexMax (t (I_gain_scale))); 
-			p = ppred (cum_count_thresholds, max_I_gain_ind_scale, "<");
+			p = (cum_count_thresholds < max_I_gain_ind_scale);
 			sum_cum_count_thresholds = sum (p);
 			best_scale_feature = sum_cum_count_thresholds + 1;
 			best_scale_split = max_I_gain_ind_scale;
@@ -380,8 +380,8 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 				}
 				I_gain = cur_impurity - ( ( label_sum_left / label_sum_overall ) * impurity_left + ( label_sum_right / label_sum_overall ) * impurity_right);
 			
-				Ix_label_sum_left_zero = ppred (label_sum_left, 0, "==");
-				Ix_label_sum_right_zero = ppred (label_sum_right, 0, "==");
+				Ix_label_sum_left_zero = (label_sum_left == 0);
+				Ix_label_sum_right_zero = (label_sum_right == 0);
 				Ix_label_sum_zero = Ix_label_sum_left_zero * Ix_label_sum_right_zero;
 				I_gain = I_gain * (1 - Ix_label_sum_zero);	
 				
@@ -500,7 +500,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 					
 			# samples going to the left subtree
 			Ix_left = rowSums (X_cat[,start_ind:(start_ind + offset - 1)] * best_split_values_bin);
-			Ix_left = ppred (Ix_left, 1, ">=");
+			Ix_left = (Ix_left >= 1);
 											  
 			Ix_left = Ix * Ix_left;		
 			Ix_right = Ix * (1 - Ix_left);
@@ -625,7 +625,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 		cur_node_small = as.scalar (cur_nodes_small_nonzero[1,i7]);		
 		
 		# build dataset for SMALL node
-		Ix = ppred (L[,1], cur_node_small, "==");	
+		Ix = (L[,1] == cur_node_small);	
 		if (num_scale_features > 0) {
 			X_scale_ext_small = removeEmpty (target = X_scale_ext, margin = "rows", select = Ix);
 		}
@@ -667,14 +667,14 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 				
 				# --- find best split ---
 				# samples that reach cur_node 
-				Ix = ppred (L_small[,1], cur_node, "==");		
+				Ix = (L_small[,1] == cur_node);		
 				cur_Y_bin = Y_bin_small * Ix;
 				label_counts_overall = colSums (cur_Y_bin);
 				
 				label_sum_overall = sum (label_counts_overall);
 				label_dist_overall = label_counts_overall / label_sum_overall;
 				if (imp == "entropy") {
-					label_dist_zero = ppred (label_dist_overall, 0, "==");
+					label_dist_zero = (label_dist_overall == 0);
 					cur_impurity = - sum (label_dist_overall * log (label_dist_overall + label_dist_zero)); 
 				} else { # imp == "Gini"
 					cur_impurity = sum (label_dist_overall * (1 - label_dist_overall)); 			
@@ -714,7 +714,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 					# determine best feature to split on and the split value
 					best_scale_gain = max (I_gain_scale);
 					max_I_gain_ind_scale = as.scalar (rowIndexMax (t (I_gain_scale))); 
-					p = ppred (cum_count_thresholds, max_I_gain_ind_scale, "<");
+					p = (cum_count_thresholds < max_I_gain_ind_scale);
 					sum_cum_count_thresholds = sum (p);
 					best_scale_feature = sum_cum_count_thresholds + 1;
 					best_scale_split = max_I_gain_ind_scale;
@@ -792,8 +792,8 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 						}
 						I_gain = cur_impurity - ( ( label_sum_left / label_sum_overall ) * impurity_left + ( label_sum_right / label_sum_overall ) * impurity_right);
 			
-						Ix_label_sum_left_zero = ppred (label_sum_left, 0, "==");
-						Ix_label_sum_right_zero = ppred (label_sum_right, 0, "==");
+						Ix_label_sum_left_zero = (label_sum_left == 0);
+						Ix_label_sum_right_zero = (label_sum_right == 0);
 						Ix_label_sum_zero = Ix_label_sum_left_zero * Ix_label_sum_right_zero;
 						I_gain = I_gain * (1 - Ix_label_sum_zero);	
 			
@@ -909,7 +909,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 					
 					# samples going to the left subtree
 					Ix_left = rowSums (X_cat_small[,start_ind:(start_ind + offset - 1)] * best_split_values_bin);
-					Ix_left = ppred (Ix_left, 1, ">=");
+					Ix_left = (Ix_left >= 1);
 					
 					Ix_left = Ix * Ix_left;		
 					Ix_right = Ix * (1 - Ix_left);
@@ -1176,11 +1176,11 @@ if (ncol (M) > 1) {
 	process_red_subtree = FALSE;
 	invalid_node_ind = matrix (0, rows = 1, cols = ncol (M));
 	while (red_leaf & ncol (M) > 1) {
-		leaf_ind = ppred (M[3,], 0, "==");
+		leaf_ind = (M[3,] == 0);
 		labels = M[4,] * leaf_ind;
 		parent_ids = floor (M[1,] /2);
-		cond1 = ppred (labels[,1:(ncol (M) - 1)], labels[,2:ncol (M)], "=="); # siebling leaves with same label
-		cond2 = ppred (parent_ids[,1:(ncol (M)- 1)], parent_ids[,2:ncol (M)], "=="); # same parents
+		cond1 = (labels[,1:(ncol (M) - 1)] == labels[,2:ncol (M)]); # siebling leaves with same label
+		cond2 = (parent_ids[,1:(ncol (M)- 1)] == parent_ids[,2:ncol (M)]); # same parents
 		red_leaf_ind =  cond1 * cond2 * leaf_ind[,2:ncol (M)];	
 		
 		if (sum (red_leaf_ind) > 0) { # if redundant subtrees exist
@@ -1189,8 +1189,8 @@ if (ncol (M) > 1) {
 			parfor (it in 1:ncol (red_leaf_ids_nonzero), check = 0){
 				cur_right_leaf_id = as.scalar (red_leaf_ids_nonzero[1,it]); 
 				cur_parent_id = floor (cur_right_leaf_id / 2);
-				cur_right_leaf_pos = as.scalar (rowIndexMax (ppred (M[1,], cur_right_leaf_id, "==")));
-				cur_parent_pos = as.scalar(rowIndexMax (ppred (M[1,], cur_parent_id, "==")));
+				cur_right_leaf_pos = as.scalar (rowIndexMax ((M[1,] == cur_right_leaf_id)));
+				cur_parent_pos = as.scalar(rowIndexMax (M[1,] == cur_parent_id));
 				M[2:nrow (M), cur_parent_pos] = M[2:nrow (M), cur_right_leaf_pos];
 				M[3,cur_right_leaf_pos] = -1;
 				M[3,cur_right_leaf_pos - 1] = -1;
@@ -1206,14 +1206,14 @@ if (ncol (M) > 1) {
 	
 	if (process_red_subtree) {
 		print ("REMOVING REDUNDANT SUBTREES...");
-		valid_node_ind = ppred (invalid_node_ind, 0, "==");
+		valid_node_ind = (invalid_node_ind == 0);
 		M = removeEmpty (target = M * valid_node_ind, margin = "cols");
 	}
 }
 
 if (ncol (M) > 1) { # if internal nodes exist
     print ("COMPUTING OFFSETS TO THE LEFT CHILD FOR INTERNAL NODES...");
-    internal_ind = ppred (M[3,], 0, ">");
+    internal_ind = (M[3,] > 0);
     internal_ids = internal_ind * M[1,]; 
     internal_ids_nonzero = removeEmpty (target = internal_ids, margin = "cols");
     a1 = internal_ids_nonzero;

@@ -61,7 +61,7 @@ baseStats = matrix(0, rows=numBaseStats, cols=n);
 
 # Compute max domain size among all categorical attributes
 maxs = colMaxs(A);
-maxDomainSize = max( ppred(K, 1, ">") * maxs );
+maxDomainSize = max( (K > 1) * maxs );
 maxDomain = as.integer(maxDomainSize);
 
 parfor(i in 1:n, check=0) {
@@ -134,7 +134,7 @@ parfor(i in 1:n, check=0) {
 
 				mode = rowIndexMax(t(cat_counts));
 				mx = max(cat_counts)
-				modeArr =  ppred(cat_counts, mx, "==")
+				modeArr =  (cat_counts == mx)
 				numModes = sum(modeArr);
 
 				# place the computed statistics in output matrices

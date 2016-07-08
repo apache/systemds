@@ -45,7 +45,7 @@ numClasses = max(C)
 if(numClasses == 1)
 	stop("Stopping due to invalid argument: Maximum label value is 1, need more than one class to learn a multi-class classifier")	
 mod1 = C %% 1
-mod1_should_be_nrow = sum(abs(ppred(mod1, 0, "==")))
+mod1_should_be_nrow = sum(abs(mod1 == 0))
 if(mod1_should_be_nrow != numRows)
 	stop("Stopping due to invalid argument: Please ensure that Y contains (positive) integral labels")
 	
@@ -85,7 +85,7 @@ D_w_ones = append(D, ones)
 model = append(class_conditionals, class_prior)
 log_probs = D_w_ones %*% t(log(model))
 pred = rowIndexMax(log_probs)
-acc = sum(ppred(pred, C, "==")) / numRows * 100
+acc = sum(pred == C) / numRows * 100
 
 acc_str = "Training Accuracy (%): " + acc
 print(acc_str)

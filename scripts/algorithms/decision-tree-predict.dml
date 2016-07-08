@@ -79,7 +79,7 @@ R_scale = matrix (0, rows = 1, cols = 1);
 
 if (fileR != " ") {
 	R = read (fileR);
-	dummy_coded = ppred (R[,2], R[,3], "!=");
+	dummy_coded = (R[,2] != R[,3]);
 	R_scale = removeEmpty (target = R[,2] * (1 - dummy_coded), margin = "rows");
 	R_cat = removeEmpty (target = R[,2:3] * dummy_coded, margin = "rows");
 } else { # only scale features available
@@ -112,7 +112,7 @@ parfor (i in 1:num_records, check = 0) {
 				cur_end_ind = as.scalar (R_cat[cur_feature,2]);					
 				cur_value = as.scalar (rowIndexMax(cur_sample[,cur_start_ind:cur_end_ind])); # as.scalar (cur_sample[,cur_feature]);
 				cur_offset = as.scalar (M[5,cur_node_pos]);
-				value_found = sum (ppred (M[6:(6 + cur_offset - 1),cur_node_pos], cur_value, "=="));
+				value_found = sum (M[6:(6 + cur_offset - 1),cur_node_pos] == cur_value);
 				if (value_found) { # go to left branch
 					cur_node_pos = cur_node_pos + as.scalar (M[2,cur_node_pos]);
 				} else { # go to right branch
@@ -126,7 +126,7 @@ if (fileY != " ") {
 	Y_test = read (fileY);
 	num_classes = ncol (Y_test);
 	Y_test = rowSums (Y_test * t (seq (1, num_classes)));
-	result = ppred (Y_test, Y_predicted, "==");
+	result = (Y_test == Y_predicted);
 	result = sum (result);
 	accuracy = result / num_records * 100;
 	acc_str = "Accuracy (%): " + accuracy;

@@ -57,7 +57,7 @@ Prob = Prob / (1.0 + rowSums(Prob));
 Prob = t(cumsum (t(Prob)));
 
 r = Rand (rows = num_records, cols = 1, min = 0, max = 1, pdf = "uniform");
-Y = 1 + rowSums (ppred (Prob, r, "<"));
+Y = 1 + rowSums (Prob < r);
 
 # ensure all classes are represented
 Y[(num_records-num_categories+1):num_records,1] = seq(1,num_categories);

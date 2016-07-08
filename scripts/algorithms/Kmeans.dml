@@ -99,7 +99,7 @@ for (i in 1 : num_centroids)
     # probability ~ min_distances:
     random_row = Rand (rows = 1, cols = num_runs, min = 0.0, max = 1.0);  
     threshold_matrix = random_row * cdf_min_distances [sample_block_size, ];
-    centroid_ids = t(colSums (ppred (cdf_min_distances, threshold_matrix, "<"))) + 1;
+    centroid_ids = t(colSums (cdf_min_distances < threshold_matrix)) + 1;
     
     # Place the selected centroids together, one per run, into a matrix:
     centroid_placer = matrix (0, rows = num_runs, cols = (sample_block_size * num_runs));
@@ -165,12 +165,12 @@ parfor (run_index in 1 : num_runs, check = 0)
             } else {
                 iter_count = iter_count + 1;
                 # Find the closest centroid for each record
-                P = ppred (D, minD, "<=");
+                P = (D <= minD);
                 # If some records belong to multiple centroids, share them equally
                 P = P / rowSums (P);
                 # Compute the column normalization factor for P
                 P_denom = colSums (P);
-                if (sum (ppred (P_denom, 0.0, "<=")) > 0) {
+                if (sum (P_denom <= 0) > 0) {
                     term_code = 3;  # There is a "runaway" centroid with 0.0 denominator
                 } else {
                     C_old = C;
@@ -200,9 +200,9 @@ if (num_successful_runs > 0) {
     worst_wcss = max (final_wcss_successful);
     best_wcss = min (final_wcss_successful + (10 * worst_wcss + 10) * (1 - termination_bitmap [, 1]));
     avg_wcss = sum (final_wcss_successful) / num_successful_runs;
-    best_index_vector = ppred (final_wcss_successful, best_wcss, "==");
+    best_index_vector = (final_wcss_successful == best_wcss);
     aggr_best_index_vector = cumsum (best_index_vector);
-    best_index = as.integer (sum (ppred (aggr_best_index_vector, 0, "==")) + 1);
+    best_index = as.integer (sum (aggr_best_index_vector == 0) + 1);
     print ("Successful runs:  Best run is " + best_index + " with Centroid WCSS = " + best_wcss 
         + ";  Avg WCSS = " + avg_wcss + ";  Worst WCSS = " + worst_wcss);
     C = All_Centroids [(num_centroids * (best_index - 1) + 1) : (num_centroids * best_index), ];
@@ -211,9 +211,9 @@ if (num_successful_runs > 0) {
     if (is_write_Y == 1) {
         print ("Writing out the best-WCSS cluster labels...");
         D =  -2 * (X %*% t(C)) + t(rowSums (C ^ 2));
-        P = ppred (D, rowMins (D), "<=");
+        P = (D <= rowMins (D));
         aggr_P = t(cumsum (t(P)));
-        Y = rowSums (ppred (aggr_P, 0, "==")) + 1
+        Y = rowSums (aggr_P == 0) + 1
         write (Y, fileY, format=fmtCY);
     }
     print ("DONE.");
@@ -240,7 +240,7 @@ get_sample_maps = function (int num_records, int num_samples, int approx_sample_
         sample_rec_ids = cumsum (sample_rec_ids);  #  (skip to next one) --> (skip to i-th one)
         
         # Replace all sample record ids over "num_records" (i.e. out of range) by "num_records + 1":
-        is_sample_rec_id_within_range = ppred (sample_rec_ids, num_records, "<=");
+        is_sample_rec_id_within_range = (sample_rec_ids <= num_records);
         sample_rec_ids = sample_rec_ids * is_sample_rec_id_within_range 
                        + (num_records + 1) * (1 - is_sample_rec_id_within_range);
         

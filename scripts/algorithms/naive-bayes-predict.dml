@@ -65,7 +65,7 @@ if(cmdLine_Y != " "){
 		stop("Stopping due to invalid argument: Label vector (Y) must be recoded")
 	
 	pred = rowIndexMax(log_probs)
-	acc = sum(ppred(pred, C, "==")) / numRows * 100
+	acc = sum(pred == C) / numRows * 100
 
 	acc_str = "Accuracy (%): " + acc
 	print(acc_str)

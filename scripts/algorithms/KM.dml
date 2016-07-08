@@ -183,7 +183,7 @@ if (n_group_cols > 0) {
 	}
 	XG = X[,3:(3 + n_group_cols - 1)];
 	Idx = matrix (1, rows = num_records, cols = 1);
-	Idx[2:num_records,] = rowMaxs (ppred (X[1:(num_records - 1),3:(2 + n_group_cols)], X[2:num_records,3:(2 + n_group_cols)], "!="));
+	Idx[2:num_records,] = rowMaxs (X[1:(num_records - 1),3:(2 + n_group_cols)] != X[2:num_records,3:(2 + n_group_cols)]);
 	num_groups = sum (Idx);
 
 	XG = replace (target = XG, pattern = 0, replacement = "Infinity");
@@ -219,7 +219,7 @@ if (n_stratum_cols > 0) {
 	}
 	XS = X[,(s_offset + 1):(s_offset + n_stratum_cols)];
 	Idx = matrix (1, rows = num_records, cols = 1);
-	Idx[2:num_records,] = rowMaxs (ppred (X[1:(num_records - 1),(s_offset + 1):(s_offset + n_stratum_cols)], X[2:num_records,(s_offset + 1):(s_offset + n_stratum_cols)], "!="));
+	Idx[2:num_records,] = rowMaxs (X[1:(num_records - 1),(s_offset + 1):(s_offset + n_stratum_cols)] != X[2:num_records,(s_offset + 1):(s_offset + n_stratum_cols)]);
 	num_strata = sum (Idx);
 
 	XS = replace (target = XS, pattern = 0, replacement = "Infinity");
@@ -294,7 +294,7 @@ parfor (s in 1:num_strata, check = 0) {
 	if (range == 1) {
 		RT = matrix (1, rows = 1, cols = 1);
 	} else {
-		Idx1[2:range,1] = ppred (X_cur[1:(range - 1),1], X_cur[2:range,1], "!=");
+		Idx1[2:range,1] = (X_cur[1:(range - 1),1] != X_cur[2:range,1]);
 		num_timestamps = sum (Idx1);
 		A1 = removeEmpty (target = diag (Idx1), margin = "cols");
 		if (ncol (A1) > 1) {
@@ -315,7 +315,7 @@ parfor (s in 1:num_strata, check = 0) {
 	n_event_all_stratum = aggregate (target = E, groups = RT, fn = "count"); # no. both censored and uncensored of events per stratum 
 	Idx1 = cumsum (n_event_all_stratum); 
 	time_stratum = table (seq (1, nrow (Idx1), 1), Idx1) %*% T; # distinct timestamps both censored and uncensored per stratum 
-	time_stratum_has_zero = sum (ppred (time_stratum, 0, "==")) > 0;
+	time_stratum_has_zero = sum (time_stratum == 0) > 0;
 	if (time_stratum_has_zero) {
 		time_stratum = 	replace (target = time_stratum, pattern = 0, replacement = "Infinity");
 	}
@@ -332,7 +332,7 @@ parfor (s in 1:num_strata, check = 0) {
 
 	parfor (g in 1:num_groups, check = 0) {
 	
-		group_ind = ppred (G, g, "==");
+		group_ind = (G == g);
 		KM_offset = (s - 1) * num_groups * 7 + (g - 1) * 7;
 		M_offset = (s - 1) * num_groups + g;
 		if (sum (group_ind) != 0) { # group g is present in the stratum s
@@ -347,7 +347,7 @@ parfor (s in 1:num_strata, check = 0) {
 			n_event = aggregate (target = E_cur, groups = RT, fn = "sum"); # no. of uncensored events per stratum per group
 			n_event_all = aggregate (target = group_ind, groups = RT, fn = "sum"); # no. of both censored and uncensored events per stratum per group
 			Idx1 = cumsum (n_event_all); 
-			event_occurred = ppred (n_event, 0, ">");
+			event_occurred = (n_event > 0);
 			if (time_stratum_has_zero) {
 				time = replace (target = time_stratum * event_occurred, pattern = "NaN", replacement = 0);
 				time = removeEmpty (target = time, margin = "rows");
@@ -369,7 +369,7 @@ parfor (s in 1:num_strata, check = 0) {
 			}
 			
 			# Extract only rows corresponding to events, i.e., for which n_event is nonzero 
-			Idx1 = ppred (n_event, 0, "!=");
+			Idx1 = (n_event != 0);
 			KM_1 = matrix (0, rows = n_time_all2, cols = 2);
 			KM_1[,1] = n_risk;
 			KM_1[,2] = n_event;
@@ -421,7 +421,7 @@ parfor (s in 1:num_strata, check = 0) {
 						
 			######## ESTIMATE MEDIAN OF SERVIVAL TIMES AND ITS 100(1-ALPHA)% CONFIDENCE INTERVAL
 		
-			p_5 = ppred (surv, 0.5, "<="); 
+			p_5 = (surv <= 0.5); 
 			pn_5 = sum (p_5);
 			#M_offset = (s - 1) * num_groups + g;
 			# if the estimated survivor function is larger than 0.5 for all timestamps median does not exist! 
@@ -439,8 +439,8 @@ parfor (s in 1:num_strata, check = 0) {
 					t_5 = as.scalar (time[n_time - pn_5 + 1,1]);
 				}
 		
-				l_ind = ppred (CI_l, 0.5, "<=");
-				r_ind = ppred (CI_r, 0.5, "<=");
+				l_ind = (CI_l <= 0.5);
+				r_ind = (CI_r <= 0.5);
 				l_ind_sum = sum (l_ind);
 				r_ind_sum = sum (r_ind);
 				l_min_ind = as.scalar (rowIndexMin (t(l_ind)));

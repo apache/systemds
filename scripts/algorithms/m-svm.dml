@@ -61,7 +61,7 @@ num_classes = max(Y)
 if(num_classes == 1)
 	stop("Stopping due to invalid argument: Maximum label value is 1, need more than one class to learn a multi-class classifier")	
 mod1 = Y %% 1
-mod1_should_be_nrow = sum(abs(ppred(mod1, 0, "==")))
+mod1_should_be_nrow = sum(abs(mod1 == 0))
 if(mod1_should_be_nrow != nrow(Y))
 	stop("Stopping due to invalid argument: Please ensure that Y contains (positive) integral labels")
 	
@@ -93,7 +93,7 @@ w = matrix(0, rows=num_rows_in_w, cols=num_classes)
 
 debug_mat = matrix(-1, rows=max_iterations, cols=num_classes)
 parfor(iter_class in 1:num_classes){		  
-	Y_local = 2 * ppred(Y, iter_class, "==") - 1
+	Y_local = 2 * (Y == iter_class) - 1
 	w_class = matrix(0, rows=num_features, cols=1)
 	if (intercept == 1) {
 		zero_matrix = matrix(0, rows=1, cols=1);
@@ -116,7 +116,7 @@ parfor(iter_class in 1:num_classes){
 		while(continue1 == 1){
  			tmp_Xw = Xw + step_sz*Xd
  			out = 1 - Y_local * (tmp_Xw)
- 			sv = ppred(out, 0, ">")
+ 			sv = (out > 0)
  			out = out * sv
  			g = wd + step_sz*dd - sum(out * Y_local * Xd)
  			h = dd + sum(Xd * sv * Xd)
@@ -131,14 +131,14 @@ parfor(iter_class in 1:num_classes){
 		Xw = Xw + step_sz*Xd
  
 		out = 1 - Y_local * Xw
-		sv = ppred(out, 0, ">")
+		sv = (out > 0)
 		out = sv * out
 		obj = 0.5 * sum(out * out) + lambda/2 * sum(w_class * w_class)
   		g_new = t(X) %*% (out * Y_local) - lambda * w_class
 
   		tmp = sum(s * g_old)
   
-  		train_acc = sum(ppred(Y_local*(X%*%w_class), 0, ">="))/num_samples*100
+  		train_acc = sum(Y_local*(X%*%w_class) >= 0)/num_samples*100
   		print("For class " + iter_class + " iteration " + iter + " training accuracy: " + train_acc)
   		debug_mat[iter+1,iter_class] = obj	   
    

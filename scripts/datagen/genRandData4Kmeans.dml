@@ -94,9 +94,9 @@ X = Y_bitmap %*% C + X_shift;
 print ("Computing record-to-cluster assignments by minimum centroid distance...");
 
 D = t(t(-2 * (X %*% t(C))) + rowSums (C ^ 2));
-P = ppred (D, rowMins (D), "<=");
+P = (D <= rowMins (D));
 aggr_P = t(cumsum (t(P)));
-Y_by_C = rowSums (ppred (aggr_P, 0, "==")) + 1;
+Y_by_C = rowSums (aggr_P == 0) + 1;
 
 print ("Computing useful statistics...");
 

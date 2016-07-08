@@ -339,7 +339,7 @@ getErr_k = function (  matrix[double] in_m_neighbor_value,
     out_m_err = matrix( 0,i_row,i_col - in_i_k_min + 1  );
     if( in_i_cl_type == 2  ){
         #category
-        m_correct = ppred( in_m_neighbor_value,in_m_cl[1:i_row,],"!="  );
+        m_correct = in_m_neighbor_value != in_m_cl[1:i_row,];
     }else{
         #continues
         m_correct = (in_m_neighbor_value - in_m_cl[1:i_row,])^2;#ppred( in_m_neighbor_value,in_m_cl,"-"  );
@@ -471,7 +471,7 @@ return(
         }
         
         #m_tmp = ppred( colSums( m_active_flag_tmp  ),1,">="  );
-        m_active_flag =  ppred( m_active_flag + m_active_flag_tmp,1,">="  );
+        m_active_flag =  m_active_flag + m_active_flag_tmp >= 1;
         i_active_model_number = -sum( m_active_flag - 1  );
         
         # 5.break while check
@@ -493,7 +493,7 @@ return(
         m_err_for_order = 
             append( t( m_iter_err_sum ), matrix( seq( k_min,k_max,1  ),k_max-k_min+1,1  )  );
         m_err_for_order = removeEmpty( 
-            target=m_err_for_order * t( ppred( m_active_flag,0,"=="  )  ),margin="rows"  );
+            target=m_err_for_order * t( m_active_flag == 0 ),margin="rows"  );
         for( i in 1:nrow( m_err_for_order  )  ){
             print( "k:" + as.scalar( m_err_for_order[i,2]  ) + 
                 ",err:" + as.scalar( m_err_for_order[i,1]  )  );
@@ -513,7 +513,7 @@ getErr = function (  matrix[double] in_m_neighbor_value,
     
     if( in_i_cl_type == 2 ){
         #category
-        m_correct = ppred( in_m_neighbor_value,in_m_cl[1:i_row,],"!=" );
+        m_correct = in_m_neighbor_value != in_m_cl[1:i_row,];
     }else{
         #continues
         m_correct = (in_m_neighbor_value - in_m_cl[1:i_row,])^2;#ppred( in_m_neighbor_value,in_m_cl,"-" );
@@ -657,7 +657,7 @@ return(
             #We mark bit to 1 for selected feature before current loop, 
             #and mark bit to 1 also for dropped feature in current loop
                         
-            if( sum( ppred( m_active_flag_tmp,1,"!=" ) ) > 1 ){
+            if( sum( m_active_flag_tmp != 1 ) > 1 ){
                 b_selected_morethan_one = TRUE;
             }
             m_col_sums_err = m_iter_err_sum #colSums( m_err );
@@ -665,7 +665,7 @@ return(
             d_min_LOOCV = as.scalar( m_col_sums_err[1,i_index_min_LOOCV] );
             i_index_min_LOOCV = i_index_min_LOOCV%% ( i_n_column+1 )
             
-            if( sum( ppred( m_active_flag_tmp,1,"!=" ) ) <= 1 ){
+            if( sum( m_active_flag_tmp != 1 ) <= 1 ){
                 b_continue_loop = FALSE;
             }
             if( as.scalar( m_active_flag_tmp[1,i_n_column+1] ) == 1 ){

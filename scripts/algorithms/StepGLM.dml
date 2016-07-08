@@ -100,7 +100,7 @@ X_orig = read (fileX);
 Y = read (fileY);
 
 if (distribution_type == 2 & ncol(Y) == 1) {
-	is_Y_negative = ppred (Y, bernoulli_No_label, "==");
+	is_Y_negative = (Y == bernoulli_No_label);
 	Y = append (1 - is_Y_negative, is_Y_negative);
 	count_Y_negative = sum (is_Y_negative);
 	if (count_Y_negative == 0) {
@@ -275,7 +275,7 @@ glm = function (Matrix[Double] X, Matrix[Double] Y, Int intercept_status, Double
 		# Important assumption: X [, num_features] = ones_r
         avg_X_cols = t(colSums(X)) / num_records;
         var_X_cols = (t(colSums (X ^ 2)) - num_records * (avg_X_cols ^ 2)) / (num_records - 1);
-        is_unsafe = ppred (var_X_cols, 0.0, "<=");
+        is_unsafe = (var_X_cols <= 0);
         scale_X = 1.0 / sqrt (var_X_cols * (1 - is_unsafe) + is_unsafe);
         scale_X [num_features, 1] = 1;
         shift_X = - avg_X_cols * scale_X;
@@ -490,7 +490,7 @@ glm = function (Matrix[Double] X, Matrix[Double] Y, Int intercept_status, Double
                 }
                 
                 if (intercept_status == 0 & num_features == 1) {
-					p = sum (ppred (X, 1, "=="));
+					p = sum (X == 1);
 					if (p == num_records) {
 						beta_out = beta_out[1,];
 					}					
@@ -522,7 +522,7 @@ glm = function (Matrix[Double] X, Matrix[Double] Y, Int intercept_status, Double
                 if (num_records > num_features) {
 					estimated_dispersion = sum (pearson_residual_sq) / (num_records - num_features);
                 }
-                if (dispersion <= 0.0) {
+                if (dispersion <= 0) {
 					dispersion = estimated_dispersion;
                 }
                 deviance = deviance_nodisp / dispersion;
@@ -639,14 +639,14 @@ glm_initialize = function (Matrix[double] X, Matrix[double] Y, int dist_type, do
     y_corr = Y [, 1];
     if (dist_type == 2) {
       n_corr = rowSums (Y);
-      is_n_zero = ppred (n_corr, 0.0, "==");
+      is_n_zero = (n_corr == 0);
       y_corr = Y [, 1] / (n_corr + is_n_zero) + (0.5 - Y [, 1]) * is_n_zero;    
     }
     linear_terms = y_corr;
     if (dist_type == 1 & link_type == 1) { # POWER DISTRIBUTION
-      if          (link_power ==  0.0) {
-        if (sum (ppred (y_corr, 0.0, "<")) == 0) {
-          is_zero_y_corr = ppred (y_corr, 0.0, "==");
+      if          (link_power ==  0) {
+        if (sum (y_corr < 0) == 0) {
+          is_zero_y_corr = (y_corr == 0);
           linear_terms = log (y_corr + is_zero_y_corr) - is_zero_y_corr / (1.0 - is_zero_y_corr);
         } else { isNaN = 1; }
       } else { if (link_power ==  1.0) {
@@ -654,48 +654,48 @@ glm_initialize = function (Matrix[double] X, Matrix[double] Y, int dist_type, do
       } else { if (link_power == -1.0) {
         linear_terms = 1.0 / y_corr;
       } else { if (link_power ==  0.5) {
-        if (sum (ppred (y_corr, 0.0, "<")) == 0) {
+        if (sum (y_corr < 0) == 0) {
           linear_terms = sqrt (y_corr);
         } else { isNaN = 1; }
-      } else { if (link_power >   0.0) {
-        if (sum (ppred (y_corr, 0.0, "<")) == 0) {
-          is_zero_y_corr = ppred (y_corr, 0.0, "==");
+      } else { if (link_power >   0) {
+        if (sum (y_corr < 0) == 0) {
+          is_zero_y_corr = (y_corr == 0);
           linear_terms = (y_corr + is_zero_y_corr) ^ link_power - is_zero_y_corr;
         } else { isNaN = 1; }
       } else {
-        if (sum (ppred (y_corr, 0.0, "<=")) == 0) {
+        if (sum (y_corr <= 0) == 0) {
           linear_terms = y_corr ^ link_power;
         } else { isNaN = 1; }
       }}}}}
     }
     if (dist_type == 2 & link_type >= 1 & link_type <= 5)
     { # BINOMIAL/BERNOULLI DISTRIBUTION
-      if          (link_type == 1 & link_power == 0.0)  { # Binomial.log
-        if (sum (ppred (y_corr, 0.0, "<")) == 0) {
-          is_zero_y_corr = ppred (y_corr, 0.0, "==");
+      if          (link_type == 1 & link_power == 0)  { # Binomial.log
+        if (sum (y_corr < 0) == 0) {
+          is_zero_y_corr = (y_corr == 0);
           linear_terms = log (y_corr + is_zero_y_corr) - is_zero_y_corr / (1.0 - is_zero_y_corr);
         } else { isNaN = 1; }
-      } else { if (link_type == 1 & link_power >  0.0)  { # Binomial.power_nonlog pos
-        if (sum (ppred (y_corr, 0.0, "<")) == 0) {
-          is_zero_y_corr = ppred (y_corr, 0.0, "==");
+      } else { if (link_type == 1 & link_power >  0)  { # Binomial.power_nonlog pos
+        if (sum (y_corr < 0) == 0) {
+          is_zero_y_corr = (y_corr == 0);
           linear_terms = (y_corr + is_zero_y_corr) ^ link_power - is_zero_y_corr;
         } else { isNaN = 1; }
       } else { if (link_type == 1)                      { # Binomial.power_nonlog neg
-        if (sum (ppred (y_corr, 0.0, "<=")) == 0) {
+        if (sum (y_corr <= 0) == 0) {
           linear_terms = y_corr ^ link_power;
         } else { isNaN = 1; }
       } else { 
-        is_zero_y_corr = ppred (y_corr, 0.0, "<=");
-        is_one_y_corr  = ppred (y_corr, 1.0, ">=");
+        is_zero_y_corr = (y_corr <= 0);
+        is_one_y_corr  = (y_corr >= 1.0);
         y_corr = y_corr * (1.0 - is_zero_y_corr) * (1.0 - is_one_y_corr) + 0.5 * (is_zero_y_corr + is_one_y_corr);
         if (link_type == 2)                           { # Binomial.logit
           linear_terms = log (y_corr / (1.0 - y_corr)) 
           + is_one_y_corr / (1.0 - is_one_y_corr) - is_zero_y_corr / (1.0 - is_zero_y_corr);
         } else { if (link_type == 3)                  { # Binomial.probit
-          y_below_half = y_corr + (1.0 - 2.0 * y_corr) * ppred (y_corr, 0.5, ">");
+          y_below_half = y_corr + (1.0 - 2.0 * y_corr) * (y_corr > 0.5);
           t = sqrt (- 2.0 * log (y_below_half));
           approx_inv_Gauss_CDF = - t + (2.515517 + t * (0.802853 + t * 0.010328)) / (1.0 + t * (1.432788 + t * (0.189269 + t * 0.001308)));
-          linear_terms = approx_inv_Gauss_CDF * (1.0 - 2.0 * ppred (y_corr, 0.5, ">"))
+          linear_terms = approx_inv_Gauss_CDF * (1.0 - 2.0 * (y_corr > 0.5))
           + is_one_y_corr / (1.0 - is_one_y_corr) - is_zero_y_corr / (1.0 - is_zero_y_corr);
         } else { if (link_type == 4)                  { # Binomial.cloglog
           linear_terms = log (- log (1.0 - y_corr))
@@ -712,11 +712,11 @@ glm_initialize = function (Matrix[double] X, Matrix[double] Y, int dist_type, do
         glm_log_likelihood_part (linear_terms, Y, dist_type, var_power, link_type, link_power);
     }
     
-    if ((dist_type == 1 & link_type == 1 & link_power == 0.0) |
+    if ((dist_type == 1 & link_type == 1 & link_power == 0) |
           (dist_type == 2 & link_type >= 2))
     {    
       desired_eta = 0.0;
-    } else { if (link_type == 1 & link_power == 0.0) {
+    } else { if (link_type == 1 & link_power == 0) {
       desired_eta = log (0.5);
     } else { if (link_type == 1) {
       desired_eta = 0.5 ^ link_power;
@@ -726,7 +726,7 @@ glm_initialize = function (Matrix[double] X, Matrix[double] Y, int dist_type, do
     
     beta = matrix (0.0, rows = ncol(X), cols = 1);
     
-    if (desired_eta != 0.0) {
+    if (desired_eta != 0) {
       if (icept_status == 1 | icept_status == 2) {
         beta [nrow(beta), 1] = desired_eta;
       } else {
@@ -777,7 +777,7 @@ glm_dist = function (Matrix[double] linear_terms, Matrix[double] Y,
     
     if (dist_type == 1 & link_type == 1) { # POWER DISTRIBUTION
       y_mean = zeros_r;
-      if          (link_power ==  0.0) {
+      if          (link_power ==  0) {
         y_mean = exp (linear_terms);
         y_mean_pow = y_mean ^ (1 - var_power);
         w   = y_mean_pow * y_mean;
@@ -796,7 +796,7 @@ glm_dist = function (Matrix[double] linear_terms, Matrix[double] Y,
     if (dist_type == 2 & link_type >= 1 & link_type <= 5)
     { # BINOMIAL/BERNOULLI DISTRIBUTION
       if (link_type == 1) { # BINOMIAL.POWER LINKS
-        if (link_power == 0.0)  { # Binomial.log
+        if (link_power == 0)  { # Binomial.log
           vec1 = 1 / (exp (- linear_terms) - 1);
           g_Y = Y [, 1] - Y [, 2] * vec1;
           w   = rowSums (Y) * vec1;
@@ -804,19 +804,19 @@ glm_dist = function (Matrix[double] linear_terms, Matrix[double] Y,
           vec1 = zeros_r;
           if (link_power == 0.5)  {
             vec1 = 1 / (1 - linear_terms ^ 2);
-          } else { if (sum (ppred (linear_terms, 0.0, "<")) == 0) {
+          } else { if (sum (linear_terms < 0) == 0) {
             vec1 = linear_terms ^ (- 2 + 1 / link_power) / (1 - linear_terms ^ (1 / link_power));
           } else {isNaN = 1;}}
           # We want a "zero-protected" version of
           #     vec2 = Y [, 1] / linear_terms;
-          is_y_0 = ppred (Y [, 1], 0.0, "==");
+          is_y_0 = (Y [, 1] == 0);
           vec2 = (Y [, 1] + is_y_0) / (linear_terms * (1 - is_y_0) + is_y_0) - is_y_0;
           g_Y =  (vec2 - Y [, 2] * vec1 * linear_terms) / link_power;
           w   =  rowSums (Y) * vec1 / link_power ^ 2;
         }
       } else {
-        is_LT_pos_infinite = ppred (linear_terms,  1.0/0.0, "==");
-        is_LT_neg_infinite = ppred (linear_terms, -1.0/0.0, "==");
+        is_LT_pos_infinite = (linear_terms == 1.0/0.0);
+        is_LT_neg_infinite = (linear_terms == -1.0/0.0);
         is_LT_infinite = is_LT_pos_infinite %*% one_zero + is_LT_neg_infinite %*% zero_one;
         finite_linear_terms = replace (target =        linear_terms, pattern =  1.0/0.0, replacement = 0);
         finite_linear_terms = replace (target = finite_linear_terms, pattern = -1.0/0.0, replacement = 0);
@@ -827,7 +827,7 @@ glm_dist = function (Matrix[double] linear_terms, Matrix[double] Y,
           g_Y = rowSums (Y * (Y_prob %*% flip_neg));           ### = y_residual;
           w   = rowSums (Y * (Y_prob %*% flip_pos) * Y_prob);  ### = y_variance;
         } else { if (link_type == 3)                  { # Binomial.probit
-          is_lt_pos = ppred (linear_terms, 0.0, ">=");
+          is_lt_pos = (linear_terms >= 0);
           t_gp = 1.0 / (1.0 + abs (finite_linear_terms) * 0.231641888);  # 0.231641888 = 0.3275911 / sqrt (2.0)
           pt_gp = t_gp * ( 0.254829592 
                            + t_gp * (-0.284496736 # "Handbook of Mathematical Functions", ed. by M. Abramowitz and I.A. Stegun,
@@ -842,7 +842,7 @@ glm_dist = function (Matrix[double] linear_terms, Matrix[double] Y,
         } else { if (link_type == 4)                  { # Binomial.cloglog
           the_exp = exp (linear_terms)
           the_exp_exp = exp (- the_exp);
-          is_too_small = ppred (10000000 + the_exp, 10000000, "==");
+          is_too_small = ((10000000 + the_exp) == 10000000);
           the_exp_ratio = (1 - is_too_small) * (1 - the_exp_exp) / (the_exp + is_too_small) + is_too_small * (1 - the_exp / 2);
           g_Y =  (rowSums (Y) * the_exp_exp - Y [, 2]) / the_exp_ratio;
           w   =  the_exp_exp * the_exp * rowSums (Y) / the_exp_ratio;
@@ -874,52 +874,52 @@ glm_log_likelihood_part = function (Matrix[double] linear_terms, Matrix[double] 
       b_cumulant = zeros_r;
       natural_parameters = zeros_r;
       is_natural_parameter_log_zero = zeros_r;
-      if          (var_power == 1.0 & link_power == 0.0)  { # Poisson.log
+      if          (var_power == 1.0 & link_power == 0)  { # Poisson.log
         b_cumulant = exp (linear_terms);
-        is_natural_parameter_log_zero = ppred (linear_terms, -1.0/0.0, "==");
+        is_natural_parameter_log_zero = (linear_terms == -1.0/0.0);
         natural_parameters = replace (target = linear_terms, pattern = -1.0/0.0, replacement = 0);
       } else { if (var_power == 1.0 & link_power == 1.0)  { # Poisson.id
-        if (sum (ppred (linear_terms, 0.0, "<")) == 0)  {
+        if (sum (linear_terms < 0) == 0)  {
           b_cumulant = linear_terms;
-          is_natural_parameter_log_zero = ppred (linear_terms, 0.0, "==");
+          is_natural_parameter_log_zero = (linear_terms == 0);
           natural_parameters = log (linear_terms + is_natural_parameter_log_zero);
         } else {isNaN = 1;}
       } else { if (var_power == 1.0 & link_power == 0.5)  { # Poisson.sqrt
-        if (sum (ppred (linear_terms, 0.0, "<")) == 0)  {
+        if (sum (linear_terms < 0) == 0)  {
           b_cumulant = linear_terms ^ 2;
-          is_natural_parameter_log_zero = ppred (linear_terms, 0.0, "==");
+          is_natural_parameter_log_zero = (linear_terms == 0);
           natural_parameters = 2.0 * log (linear_terms + is_natural_parameter_log_zero);
         } else {isNaN = 1;}
-      } else { if (var_power == 1.0 & link_power  > 0.0)  { # Poisson.power_nonlog, pos
-        if (sum (ppred (linear_terms, 0.0, "<")) == 0)  {
-          is_natural_parameter_log_zero = ppred (linear_terms, 0.0, "==");
+      } else { if (var_power == 1.0 & link_power  > 0)  { # Poisson.power_nonlog, pos
+        if (sum (linear_terms < 0) == 0)  {
+          is_natural_parameter_log_zero = (linear_terms == 0);
           b_cumulant = (linear_terms + is_natural_parameter_log_zero) ^ (1.0 / link_power) - is_natural_parameter_log_zero;
           natural_parameters = log (linear_terms + is_natural_parameter_log_zero) / link_power;
         } else {isNaN = 1;}
       } else { if (var_power == 1.0)                      { # Poisson.power_nonlog, neg
-        if (sum (ppred (linear_terms, 0.0, "<=")) == 0) {
+        if (sum (linear_terms <= 0) == 0) {
           b_cumulant = linear_terms ^ (1.0 / link_power);
           natural_parameters = log (linear_terms) / link_power;
         } else {isNaN = 1;}
       } else { if (var_power == 2.0 & link_power == -1.0) { # Gamma.inverse
-        if (sum (ppred (linear_terms, 0.0, "<=")) == 0) {
+        if (sum (linear_terms <= 0) == 0) {
           b_cumulant = - log (linear_terms);
           natural_parameters = - linear_terms;
         } else {isNaN = 1;}
       } else { if (var_power == 2.0 & link_power ==  1.0) { # Gamma.id
-        if (sum (ppred (linear_terms, 0.0, "<=")) == 0) {
+        if (sum (linear_terms <= 0) == 0) {
           b_cumulant = log (linear_terms);
           natural_parameters = - 1.0 / linear_terms;
         } else {isNaN = 1;}
-      } else { if (var_power == 2.0 & link_power ==  0.0) { # Gamma.log
+      } else { if (var_power == 2.0 & link_power ==  0) { # Gamma.log
         b_cumulant = linear_terms;
         natural_parameters = - exp (- linear_terms);
       } else { if (var_power == 2.0)                      { # Gamma.power_nonlog
-        if (sum (ppred (linear_terms, 0.0, "<=")) == 0) {
+        if (sum (linear_terms <= 0) == 0) {
           b_cumulant = log (linear_terms) / link_power;
           natural_parameters = - linear_terms ^ (- 1.0 / link_power);
         } else {isNaN = 1;}
-      } else { if                    (link_power ==  0.0) { # PowerDist.log
+      } else { if                    (link_power ==  0) { # PowerDist.log
         natural_parameters = exp (linear_terms * (1.0 - var_power)) / (1.0 - var_power);
         b_cumulant = exp (linear_terms * (2.0 - var_power)) / (2.0 - var_power);
       } else {                                              # PowerDist.power_nonlog
@@ -932,7 +932,7 @@ glm_log_likelihood_part = function (Matrix[double] linear_terms, Matrix[double] 
         } else { if ( 2 * link_power == 1.0 - var_power) {
           natural_parameters = linear_terms ^ 2 / (1.0 - var_power);
         } else {
-          if (sum (ppred (linear_terms, 0.0, "<=")) == 0) {
+          if (sum (linear_terms <= 0) == 0) {
             power = (1.0 - var_power) / link_power;
             natural_parameters = (linear_terms ^ power) / (1.0 - var_power);
           } else {isNaN = 1;}
@@ -946,13 +946,13 @@ glm_log_likelihood_part = function (Matrix[double] linear_terms, Matrix[double] 
         } else { if ( 2 * link_power == 2.0 - var_power) {
           b_cumulant = linear_terms ^ 2 / (2.0 - var_power);
         } else {
-          if (sum (ppred (linear_terms, 0.0, "<=")) == 0) {
+          if (sum (linear_terms <= 0) == 0) {
             power = (2.0 - var_power) / link_power;
             b_cumulant = (linear_terms ^ power) / (2.0 - var_power);
           } else {isNaN = 1;}
         }}}}
       }}}}} }}}}}
-      if (sum (is_natural_parameter_log_zero * abs (Y)) > 0.0) {
+      if (sum (is_natural_parameter_log_zero * abs (Y)) > 0) {
         log_l = -1.0 / 0.0;
         isNaN = 1;
       }
@@ -970,8 +970,8 @@ glm_log_likelihood_part = function (Matrix[double] linear_terms, Matrix[double] 
       [Y_prob, isNaN] = binomial_probability_two_column (linear_terms, link_type, link_power);
       
       if (isNaN == 0) {            
-        does_prob_contradict = ppred (Y_prob, 0.0, "<=");
-        if (sum (does_prob_contradict * abs (Y)) == 0.0) {
+        does_prob_contradict = (Y_prob <= 0);
+        if (sum (does_prob_contradict * abs (Y)) == 0) {
           log_l = sum (Y * log (Y_prob * (1 - does_prob_contradict) + does_prob_contradict));
           if (log_l != log_l | (log_l == log_l + 1.0 & log_l == log_l * 2.0)) {
             isNaN = 1;
@@ -1014,18 +1014,18 @@ binomial_probability_two_column =
       
       Y_prob = zeros_r %*% ones_2;
       if (link_type == 1) { # Binomial.power
-        if          (link_power == 0.0) { # Binomial.log
+        if          (link_power == 0) { # Binomial.log
           Y_prob = exp (linear_terms) %*% p_one_m_one + ones_r %*% zero_one;    
         } else { if (link_power == 0.5) { # Binomial.sqrt
           Y_prob = (linear_terms ^ 2) %*% p_one_m_one + ones_r %*% zero_one;    
         } else {                          # Binomial.power_nonlog
-          if (sum (ppred (linear_terms, 0.0, "<")) == 0) {
+          if (sum (linear_terms < 0) == 0) {
             Y_prob = (linear_terms ^ (1.0 / link_power)) %*% p_one_m_one + ones_r %*% zero_one;    
           } else {isNaN = 1;}
         }}
       } else {              # Binomial.non_power
-        is_LT_pos_infinite = ppred (linear_terms,  1.0/0.0, "==");
-        is_LT_neg_infinite = ppred (linear_terms, -1.0/0.0, "==");
+        is_LT_pos_infinite = (linear_terms == 1.0/0.0);
+        is_LT_neg_infinite = (linear_terms == -1.0/0.0);
         is_LT_infinite = is_LT_pos_infinite %*% one_zero + is_LT_neg_infinite %*% zero_one;
         finite_linear_terms = replace (target =        linear_terms, pattern =  1.0/0.0, replacement = 0);
         finite_linear_terms = replace (target = finite_linear_terms, pattern = -1.0/0.0, replacement = 0);
@@ -1033,7 +1033,7 @@ binomial_probability_two_column =
           Y_prob = exp (finite_linear_terms) %*% one_zero + ones_r %*% zero_one;
           Y_prob = Y_prob / (rowSums (Y_prob) %*% ones_2);
         } else { if (link_type == 3)    { # Binomial.probit
-          lt_pos_neg = ppred (finite_linear_terms, 0.0, ">=") %*% p_one_m_one + ones_r %*% zero_one;
+          lt_pos_neg = (finite_linear_terms >= 0) %*% p_one_m_one + ones_r %*% zero_one;
           t_gp = 1.0 / (1.0 + abs (finite_linear_terms) * 0.231641888);  # 0.231641888 = 0.3275911 / sqrt (2.0)
           pt_gp = t_gp * ( 0.254829592 
                            + t_gp * (-0.284496736 # "Handbook of Mathematical Functions", ed. by M. Abramowitz and I.A. Stegun,
@@ -1045,7 +1045,7 @@ binomial_probability_two_column =
         } else { if (link_type == 4)    { # Binomial.cloglog
           the_exp = exp (finite_linear_terms);
           the_exp_exp = exp (- the_exp);
-          is_too_small = ppred (10000000 + the_exp, 10000000, "==");
+          is_too_small = ((10000000 + the_exp) == 10000000);
           Y_prob [, 1] = (1 - is_too_small) * (1 - the_exp_exp) + is_too_small * the_exp * (1 - the_exp / 2);
           Y_prob [, 2] = the_exp_exp;
         } else { if (link_type == 5)    { # Binomial.cauchit

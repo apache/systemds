@@ -159,7 +159,7 @@ num_timestamps = 1;
 if (N == 1) {
 	RT = matrix (1, rows = 1, cols = 1);
 } else {
-	Idx[2:N,1] = ppred (X_orig[1:(N - 1),1], X_orig[2:N,1], "!=");
+	Idx[2:N,1] = (X_orig[1:(N - 1),1] != X_orig[2:N,1]);
 	num_timestamps = sum (Idx);
 	A = removeEmpty (target = diag (Idx), margin = "cols");
 	if (ncol (A) > 1) {

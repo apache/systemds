@@ -85,7 +85,7 @@ UI = table (X[,1], X[,2], ones, Vrows, Vcols);
 U = rowSums (UI)
 
 # replacing all rows > 1 with 1
-U =  ppred (U, 1, ">=");
+U = U >= 1;
 
 # selecting users from factor L
 U_prime = L * U;

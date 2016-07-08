@@ -142,7 +142,7 @@ interpSpline = function(
 ) return (double q) {
 
   #first find the right knots for interpolation
-  i = as.integer(nrow(X) - sum(ppred(X, x, ">=")) + 1)
+  i = as.integer(nrow(X) - sum(X >= x) + 1)
 
   #calc the y as per the algo docs
   t = (x - X[i-1,1]) / ( X[i,1] - X[i-1,1])

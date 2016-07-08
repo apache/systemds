@@ -171,8 +171,8 @@ if (fileY != " ")
     #
     # POWER DISTRIBUTIONS (GAUSSIAN, POISSON, GAMMA, ETC.)
     #
-        if (link_power == 0.0) {
-            is_zero_Y = ppred (Y, 0.0, "==");
+        if (link_power == 0) {
+            is_zero_Y = (Y == 0);
             lt_saturated = log (Y + is_zero_Y) - is_zero_Y / (1.0 - is_zero_Y);
         } else {
             lt_saturated = Y ^ link_power;
@@ -198,7 +198,7 @@ if (fileY != " ")
             num_categories = ncol (beta) + 1;
             if (min (Y) <= 0) { 
                 # Category labels "0", "-1" etc. are converted into the baseline label
-                Y = Y + (- Y + num_categories) * ppred (Y, 0, "<=");
+                Y = Y + (- Y + num_categories) * (Y <= 0);
             }
             Y_size = min (num_categories, max(Y));
             Y_unsized = table (seq (1, num_records, 1), Y);
@@ -210,8 +210,8 @@ if (fileY != " ")
         }
         
         P = means;
-        zero_Y = ppred (Y, 0.0, "==");
-        zero_P = ppred (P, 0.0, "==");
+        zero_Y = (Y == 0);
+        zero_P = (P == 0);
         ones_ctg = matrix (1, rows = ncol(Y), cols = 1);
         
         logl_vec = rowSums (Y *  log (P + zero_Y)   );
@@ -224,10 +224,10 @@ if (fileY != " ")
         means = means * (Y_counts %*% t(ones_ctg));
         vars  = vars  * (Y_counts %*% t(ones_ctg));
         
-        frac_below_5 = sum (ppred (means, 5, "<")) / (nrow (means) * ncol (means));
-        frac_below_1 = sum (ppred (means, 1, "<")) / (nrow (means) * ncol (means));
+        frac_below_5 = sum (means < 5) / (nrow (means) * ncol (means));
+        frac_below_1 = sum (means < 1) / (nrow (means) * ncol (means));
         
-        if (frac_below_5 > 0.2 | frac_below_1 > 0.0) {
+        if (frac_below_5 > 0.2 | frac_below_1 > 0) {
             print ("WARNING: residual statistics are inaccurate here due to low cell means.");
         }
         
@@ -341,7 +341,7 @@ glm_means_and_vars =
     num_points = nrow (linear_terms);
     if (dist_type == 1 & link_type == 1) {
     # POWER DISTRIBUTION
-        if          (link_power ==  0.0) {
+        if          (link_power ==  0) {
             y_mean = exp (linear_terms);
         } else { if (link_power ==  1.0) {
             y_mean = linear_terms;
@@ -350,7 +350,7 @@ glm_means_and_vars =
         } else {
             y_mean = linear_terms ^ (1.0 / link_power);
         }}}
-        if (var_power == 0.0) {
+        if (var_power == 0) {
             var_function = matrix (1.0, rows = num_points, cols = 1);
         } else { if (var_power == 1.0) {
             var_function = y_mean;
@@ -362,10 +362,10 @@ glm_means_and_vars =
     } else { if (dist_type == 2 & link_type >= 1 & link_type <= 5) {
     # BINOMIAL/BERNOULLI DISTRIBUTION
         y_prob = matrix (0.0, rows = num_points, cols = 2);
-        if          (link_type == 1 & link_power == 0.0)  { # Binomial.log
+        if          (link_type == 1 & link_power == 0)  { # Binomial.log
             y_prob [, 1]  = exp (linear_terms);
             y_prob [, 2]  = 1.0 - y_prob [, 1];
-        } else { if (link_type == 1 & link_power != 0.0)  { # Binomial.power_nonlog
+        } else { if (link_type == 1 & link_power != 0)  { # Binomial.power_nonlog
             y_prob [, 1]  = linear_terms ^ (1.0 / link_power);
             y_prob [, 2]  = 1.0 - y_prob [, 1];
         } else { if (link_type == 2)                      { # Binomial.logit
@@ -373,7 +373,7 @@ glm_means_and_vars =
             y_prob [, 1]  = elt / (1.0 + elt);
             y_prob [, 2]  = 1.0 / (1.0 + elt);
         } else { if (link_type == 3)                      { # Binomial.probit
-            sign_lt = 2 * ppred (linear_terms, 0.0, ">=") - 1;
+            sign_lt = 2 * (linear_terms >= 0) - 1;
             t_gp = 1.0 / (1.0 + abs (linear_terms) * 0.231641888);  # 0.231641888 = 0.3275911 / sqrt (2.0)
             erf_corr =
                 t_gp * ( 0.254829592 
@@ -386,7 +386,7 @@ glm_means_and_vars =
             y_prob = y_prob / 2;
         } else { if (link_type == 4)                      { # Binomial.cloglog
             elt = exp (linear_terms);
-            is_too_small = ppred (10000000 + elt, 10000000, "==");
+            is_too_small = ((10000000 + elt) == 10000000);
             y_prob [, 2] = exp (- elt);
             y_prob [, 1] = (1 - is_too_small) * (1.0 - y_prob [, 2]) + is_too_small * elt * (1.0 - elt / 2);
         } else { if (link_type == 5)                      { # Binomial.cauchit
@@ -416,25 +416,25 @@ glm_partial_loglikelihood_for_power_dist_and_link =   # Assumes: dist_type == 1 
 {
     num_records = nrow (Y);
     if (var_power == 1.0) { # Poisson
-        if (link_power == 0.0)  { # Poisson.log
-            is_natural_parameter_log_zero = ppred (linear_terms, -1.0/0.0, "==");
+        if (link_power == 0)  { # Poisson.log
+            is_natural_parameter_log_zero = (linear_terms == -1.0/0.0);
             natural_parameters = replace (target = linear_terms, pattern = -1.0/0.0, replacement = 0);
             b_cumulant = exp (linear_terms);
         } else {                  # Poisson.power_nonlog
-            is_natural_parameter_log_zero = ppred (linear_terms, 0.0, "==");
+            is_natural_parameter_log_zero = (linear_terms == 0);
             natural_parameters = log (linear_terms + is_natural_parameter_log_zero) / link_power;
             b_cumulant = (linear_terms + is_natural_parameter_log_zero) ^ (1.0 / link_power) - is_natural_parameter_log_zero;
         }
-        is_minus_infinity = ppred (Y, 0, ">") * is_natural_parameter_log_zero;
+        is_minus_infinity = (Y > 0) * is_natural_parameter_log_zero;
         log_l_part = Y * natural_parameters - b_cumulant - is_minus_infinity / (1 - is_minus_infinity);
     } else {
-        if (var_power == 2.0 & link_power == 0.0)  { # Gamma.log
+        if (var_power == 2.0 & link_power == 0)  { # Gamma.log
             natural_parameters = - exp (- linear_terms);
             b_cumulant = linear_terms;
         } else { if (var_power == 2.0)  { # Gamma.power_nonlog
             natural_parameters = - linear_terms ^ (- 1.0 / link_power);
             b_cumulant = log (linear_terms) / link_power;
-        } else { if (link_power == 0.0) { # PowerDist.log
+        } else { if (link_power == 0) { # PowerDist.log
             natural_parameters = exp (linear_terms * (1.0 - var_power)) / (1.0 - var_power);
             b_cumulant = exp (linear_terms * (2.0 - var_power)) / (2.0 - var_power);
         } else {                          # PowerDist.power_nonlog

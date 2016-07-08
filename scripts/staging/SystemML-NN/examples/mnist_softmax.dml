@@ -32,8 +32,10 @@ train = function(matrix[double] X, matrix[double] y,
                  matrix[double] X_val, matrix[double] y_val)
     return (matrix[double] W, matrix[double] b) {
   /*
-   * Trains a softmax classifier.  The input matrix, X, has N examples,
-   * each with D features.  The targets, y, have K classes.
+   * Trains a softmax classifier.
+   *
+   * The input matrix, X, has N examples, each with D features.
+   * The targets, y, have K classes, and are one-hot encoded.
    *
    * Inputs:
    *  - X: Input data matrix, of shape (N, D).
@@ -82,8 +84,11 @@ train = function(matrix[double] X, matrix[double] y,
       # Compute loss & accuracy for training & validation data
       loss = cross_entropy_loss::forward(probs, y_batch)
       accuracy = mean(rowIndexMax(probs) == rowIndexMax(y_batch))
-      [loss_val, accuracy_val] = eval(X_val, y_val, W, b)
-      print("Epoch: " + e + ", Iter: " + i + ", Train Loss: " + loss + ", Train Accuracy: " + accuracy + ", Val Loss: " + loss_val + ", Val Accuracy: " + accuracy_val)
+      probs_val = predict(X_val, W, b)
+      loss_val = cross_entropy_loss::forward(probs_val, y_val)
+      accuracy_val = mean(rowIndexMax(probs_val) == rowIndexMax(y_val))
+      print("Epoch: " + e + ", Iter: " + i + ", Train Loss: " + loss + ", Train Accuracy: " +
+            accuracy + ", Val Loss: " + loss_val + ", Val Accuracy: " + accuracy_val)
 
       # Compute backward pass
       ## loss:
@@ -103,27 +108,44 @@ train = function(matrix[double] X, matrix[double] y,
   }
 }
 
-eval = function(matrix[double] X, matrix[double] y, matrix[double] W, matrix[double] b)
-    return (double loss, double accuracy) {
+predict = function(matrix[double] X, matrix[double] W, matrix[double] b)
+    return (matrix[double] probs) {
   /*
-   * Evaluates a softmax classifier.  The input matrix, X, has N
-   * examples, each with D features.  The targets, y, have K classes.
+   * Computes the class probability predictions of a softmax classifier.
+   *
+   * The input matrix, X, has N examples, each with D features.
    *
    * Inputs:
    *  - X: Input data matrix, of shape (N, D).
-   *  - y: Target matrix, of shape (N, K).
    *  - W: Weights (parameters) matrix, of shape (D, M).
    *  - b: Biases vector, of shape (1, M).
    *
    * Outputs:
-   *  - loss: Scalar loss, of shape (1).
-   *  - accuracy: Scalar accuracy, of shape (1).
+   *  - probs: Class probabilities, of shape (N, K).
    */
   # Compute forward pass
   ## affine & softmax:
   out = affine::forward(X, W, b)
   probs = softmax::forward(out)
+}
 
+eval = function(matrix[double] probs, matrix[double] y)
+    return (double loss, double accuracy) {
+  /*
+   * Evaluates a softmax classifier.
+   *
+   * The probs matrix contains the class probability predictions
+   * of K classes over N examples.  The targets, y, have K classes,
+   * and are one-hot encoded.
+   *
+   * Inputs:
+   *  - probs: Class probabilities, of shape (N, K).
+   *  - y: Target matrix, of shape (N, K).
+   *
+   * Outputs:
+   *  - loss: Scalar loss, of shape (1).
+   *  - accuracy: Scalar accuracy, of shape (1).
+   */
   # Compute loss & accuracy
   loss = cross_entropy_loss::forward(probs, y)
   correct_pred = rowIndexMax(probs) == rowIndexMax(y)
@@ -152,74 +174,4 @@ generate_dummy_data = function()
   classes = round(rand(rows=N, cols=1, min=1, max=T, pdf="uniform"))
   y = table(seq(1, N), classes)  # one-hot encoding
 }
-
-
-#
-# Main
-#
-# This runs if called as a script.
-#
-# The MNIST dataset contains labeled images of handwritten digits,
-# where each example is a 28x28 pixel image of grayscale values in
-# the range [0,255] stretched out as 784 pixels, and each label is
-# one of 10 possible digits in [0,9].
-#
-# Here, we assume 60,000 training examples, and 10,000 test examples,
-# where the format is "label, pixel_1, pixel_2, ..., pixel_n".
-#
-# 1. Download data
-#   ```
-#   examples/get_mnist_data.sh
-#   ```
-#
-# 2. Execute using Spark
-#   ```
-#   $SPARK_HOME/bin/spark-submit --master local[*] --driver-memory 5G
-#   --conf spark.driver.maxResultSize=0 --conf spark.akka.frameSize=128
-#   $SYSTEMML_HOME/target/SystemML.jar -f mnist_softmax.dml
-#   -nvargs train=data/mnist/mnist_train.csv test=data/mnist/mnist_test.csv
-#   out_dir=model/mnist_softmax
-#   ```
-#
-
-# Read training data
-train = read($train, format="csv")
-test = read($test, format="csv")
-
-# Extract images and labels
-images = train[,2:ncol(train)]
-labels = train[,1]
-X_test = test[,2:ncol(test)]
-y_test = test[,1]
-
-# Scale images to [0,1], and one-hot encode the labels
-n = nrow(train)
-n_test = nrow(test)
-images = images / 255.0
-labels = table(seq(1, n), labels+1, n, 10)
-X_test = X_test / 255.0
-y_test = table(seq(1, n_test), y_test+1, n_test, 10)
-
-# Split into training (55,000 examples) and validation (5,000 examples)
-X = images[5001:nrow(images),]
-X_val = images[1:5000,]
-y = labels[5001:nrow(images),]
-y_val = labels[1:5000,]
-
-# Train
-[W, b] = train(X, y, X_val, y_val)
-
-# Write model out
-write(W, $out_dir+"/W")
-write(b, $out_dir+"/b")
-
-# Eval on test set
-[loss, accuracy] = eval(X_test, y_test, W, b)
-
-# Output results
-print("Test Accuracy: " + accuracy)
-write(accuracy, $out_dir+"/accuracy")
-
-print("")
-print("")
 

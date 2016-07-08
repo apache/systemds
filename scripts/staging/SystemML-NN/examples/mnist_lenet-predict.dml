@@ -1,0 +1,87 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# MNIST LeNet - Predict
+#
+# This script computes the class probability predictions of a
+# trained convolutional net using the "LeNet" architecture on
+# images of handwritten digits.
+#
+# Inputs:
+#  - X: File containing training images.
+#     The format is "pixel_1, pixel_2, ..., pixel_n".
+#  - C: Number of color chanels in the images.
+#  - Hin: Input image height.
+#  - Win: Input image width.
+#  - model_dir: Directory containing the trained weights and biases
+#     of the model.
+#  - out_dir: Directory to store class probability predictions for
+#     each image.
+#  - fmt: [DEFAULT: "csv"] File format of `X` and output predictions.
+#     Options include: "csv", "mm", "text", and "binary".
+#
+# Outputs:
+#  - probs: File containing class probability predictions for each
+#     image.
+# 
+# Data:
+# The X file should contain images of handwritten digits,
+# where each example is a 28x28 pixel image of grayscale values in
+# the range [0,255] stretched out as 784 pixels.
+#
+# Sample Invocation:
+# Execute using Spark
+#   ```
+#   $SPARK_HOME/bin/spark-submit --master local[*] --driver-memory 5G
+#   --conf spark.driver.maxResultSize=0 --conf spark.akka.frameSize=128
+#   $SYSTEMML_HOME/target/SystemML.jar -f mnist_lenet-predict.dml
+#   -nvargs X=data/mnist/images.csv C=1 Hin=28 Win=28
+#   model_dir=model/mnist_lenet out_dir=data/mnist
+#   ```
+#
+source("mnist_lenet.dml") as mnist_lenet
+
+# Read training data
+fmt = ifdef($fmt, "csv")
+X = read($X, format=fmt)
+C = $C
+Hin = $Hin
+Win = $Win
+
+# Scale images to [-1,1]
+X = (X / 255.0) * 2 - 1
+
+# Read model coefficients
+W1 = read($model_dir+"/W1")
+b1 = read($model_dir+"/b1")
+W2 = read($model_dir+"/W2")
+b2 = read($model_dir+"/b2")
+W3 = read($model_dir+"/W3")
+b3 = read($model_dir+"/b3")
+W4 = read($model_dir+"/W4")
+b4 = read($model_dir+"/b4")
+
+# Predict classes 
+probs = mnist_lenet::predict(X, C, Hin, Win, W1, b1, W2, b2, W3, b3, W4, b4)
+
+# Output results
+write(probs, $out_dir+"/probs."+fmt, format=fmt)
+

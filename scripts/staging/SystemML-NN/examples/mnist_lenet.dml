@@ -139,7 +139,9 @@ train = function(matrix[double] X, matrix[double] y,
         accuracy = mean(rowIndexMax(probs) == rowIndexMax(y_batch))
 
         # Compute validation loss & accuracy
-        [loss_val, accuracy_val] = eval(X_val, y_val, C, Hin, Win, W1, b1, W2, b2, W3, b3, W4, b4)
+        probs_val = predict(X_val, C, Hin, Win, W1, b1, W2, b2, W3, b3, W4, b4)
+        loss_val = cross_entropy_loss::forward(probs_val, y_val)
+        accuracy_val = mean(rowIndexMax(probs_val) == rowIndexMax(y_val))
 
         # Output results
         print("Epoch: " + e + ", Iter: " + i + ", Train Loss: " + loss + ", Train Accuracy: " + accuracy + ", Val Loss: " + loss_val + ", Val Accuracy: " + accuracy_val)
@@ -190,22 +192,21 @@ train = function(matrix[double] X, matrix[double] y,
   }
 }
 
-eval = function(matrix[double] X, matrix[double] y, int C, int Hin, int Win,
-                matrix[double] W1, matrix[double] b1,
-                matrix[double] W2, matrix[double] b2,
-                matrix[double] W3, matrix[double] b3,
-                matrix[double] W4, matrix[double] b4)
-    return (double loss, double accuracy) {
+predict = function(matrix[double] X, int C, int Hin, int Win,
+                   matrix[double] W1, matrix[double] b1,
+                   matrix[double] W2, matrix[double] b2,
+                   matrix[double] W3, matrix[double] b3,
+                   matrix[double] W4, matrix[double] b4)
+    return (matrix[double] probs) {
   /*
-   * Evaluates a convolutional net using the "LeNet" architecture.
+   * Computes the class probability predictions of a convolutional
+   * net using the "LeNet" architecture.
    *
    * The input matrix, X, has N examples, each represented as a 3D
-   * volume unrolled into a single vector.  The targets, y, have K
-   * classes, and are one-hot encoded.
+   * volume unrolled into a single vector.
    *
    * Inputs:
    *  - X: Input data matrix, of shape (N, C*Hin*Win).
-   *  - y: Target matrix, of shape (N, K).
    *  - C: Number of input channels (dimensionality of input depth).
    *  - Hin: Input height.
    *  - Win: Input width.
@@ -219,10 +220,9 @@ eval = function(matrix[double] X, matrix[double] y, int C, int Hin, int Win,
    *  - b4: 4th layer biases vector, of shape (1, K).
    *
    * Outputs:
-   *  - loss: Scalar loss, of shape (1).
-   *  - accuracy: Scalar accuracy, of shape (1).
+   *  - probs: Class probabilities, of shape (N, K).
    */
-  # Eval network:
+  # Network:
   # conv1 -> relu1 -> pool1 -> conv2 -> relu2 -> pool2 -> affine3 -> relu3 -> affine4 -> softmax
   Hf = 5  # filter height
   Wf = 5  # filter width
@@ -249,7 +249,25 @@ eval = function(matrix[double] X, matrix[double] y, int C, int Hin, int Win,
   ## layer 4:  affine4 -> softmax
   outa4 = affine::forward(outr3, W4, b4)
   probs = softmax::forward(outa4)
+}
 
+eval = function(matrix[double] probs, matrix[double] y)
+    return (double loss, double accuracy) {
+  /*
+   * Evaluates a convolutional net using the "LeNet" architecture.
+   *
+   * The probs matrix contains the class probability predictions
+   * of K classes over N examples.  The targets, y, have K classes,
+   * and are one-hot encoded.
+   *
+   * Inputs:
+   *  - probs: Class probabilities, of shape (N, K).
+   *  - y: Target matrix, of shape (N, 
+   *
+   * Outputs:
+   *  - loss: Scalar loss, of shape (1).
+   *  - accuracy: Scalar accuracy, of shape (1).
+   */
   # Compute loss & accuracy
   loss = cross_entropy_loss::forward(probs, y)
   correct_pred = rowIndexMax(probs) == rowIndexMax(y)
@@ -278,83 +296,4 @@ generate_dummy_data = function()
   classes = round(rand(rows=N, cols=1, min=1, max=K, pdf="uniform"))
   y = table(seq(1, N), classes)  # one-hot encoding
 }
-
-
-#
-# Main
-#
-# This runs if called as a script.
-#
-# The MNIST dataset contains labeled images of handwritten digits,
-# where each example is a 28x28 pixel image of grayscale values in
-# the range [0,255] stretched out as 784 pixels, and each label is
-# one of 10 possible digits in [0,9].
-#
-# Here, we assume 60,000 training examples, and 10,000 test examples,
-# where the format is "label, pixel_1, pixel_2, ..., pixel_n".
-#
-# 1. Download data
-#   ```
-#   examples/get_mnist_data.sh
-#   ```
-#
-# 2. Execute using Spark
-#   ```
-#   $SPARK_HOME/bin/spark-submit --master local[*] --driver-memory 10G
-#   --conf spark.driver.maxResultSize=0 --conf spark.akka.frameSize=128
-#   $SYSTEMML_HOME/target/SystemML.jar -f mnist_lenet.dml
-#   -nvargs train=data/mnist/mnist_train.csv test=data/mnist/mnist_test.csv
-#   C=1 Hin=28 Win=28 out_dir=model/mnist_lenet
-#   ```
-#
-
-# Read training data
-train = read($train, format="csv")
-test = read($test, format="csv")
-C = $C
-Hin = $Hin
-Win = $Win
-
-# Extract images and labels
-images = train[,2:ncol(train)]
-labels = train[,1]
-X_test = test[,2:ncol(test)]
-y_test = test[,1]
-
-# Scale images to [-1,1], and one-hot encode the labels
-n = nrow(train)
-n_test = nrow(test)
-images = (images / 255.0) * 2 - 1
-labels = table(seq(1, n), labels+1, n, 10)
-X_test = X_test / 255.0
-y_test = table(seq(1, n_test), y_test+1, n_test, 10)
-
-# Split into training (55,000 examples) and validation (5,000 examples)
-X = images[5001:nrow(images),]
-X_val = images[1:5000,]
-y = labels[5001:nrow(images),]
-y_val = labels[1:5000,]
-
-# Train
-[W1, b1, W2, b2, W3, b3, W4, b4] = train(X, y, X_val, y_val, C, Hin, Win)
-
-# Write model out
-write(W1, $out_dir+"/W1")
-write(b1, $out_dir+"/b1")
-write(W2, $out_dir+"/W2")
-write(b2, $out_dir+"/b2")
-write(W3, $out_dir+"/W3")
-write(b3, $out_dir+"/b3")
-write(W4, $out_dir+"/W4")
-write(b4, $out_dir+"/b4")
-
-# Eval on test set
-[loss, accuracy] = eval(X_test, y_test, C, Hin, Win, W1, b1, W2, b2, W3, b3, W4, b4)
-
-# Output results
-print("Test Accuracy: " + accuracy)
-write(accuracy, $out_dir+"/accuracy")
-
-print("")
-print("")
 

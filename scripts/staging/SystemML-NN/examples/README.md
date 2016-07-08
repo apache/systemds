@@ -23,6 +23,26 @@ limitations under the License.
 
 ---
 
+# Examples
+### MNIST Softmax Classifier
+
+* This example trains a softmax classifier, which is essentially a multi-class logistic regression model, on the MNIST data.  The model will be trained on the *training* images, validated on the *validation* images, and tested for final performance metrics on the *test* images.
+* Notebook: `Example - MNIST Softmax Classifier.ipynb`.
+* DML Functions: `mnist_softmax.dml`
+* Training script: `mnist_softmax-train.dml`
+* Prediction script: `mnist_softmax-predict.dml`
+
+### MNIST "LeNet" Neural Net
+
+* This example trains a neural network on the MNIST data using a ["LeNet" architecture](http://yann.lecun.com/exdb/publis/pdf/lecun-98.pdf). The model will be trained on the *training* images, validated on the *validation* images, and tested for final performance metrics on the *test* images.
+* Notebook: `Example - MNIST LeNet.ipynb`.
+* DML Functions: `mnist_lenet.dml`
+* Training script: `mnist_lenet-train.dml`
+* Prediction script: `mnist_lenet-predict.dml`
+
+---
+
+# Setup
 ## Code
 * To run the examples, please first download and unzip the project via GitHub using the "Clone or download" button on the [homepage of the project](https://github.com/dusenberrymw/systemml-nn), *or* via the following commands:
 
@@ -37,12 +57,14 @@ limitations under the License.
   ```
 
 ## Data
-* The following examples use the classic [MNIST](http://yann.lecun.com/exdb/mnist/) dataset, which contains labeled 28x28 pixel images of handwritten digits in the range of 0-9.  There are 60,000 training images, and 10,000 testing images.  Of the 60,000 training images, 5,000 will be used as validation images.
-* The data will be automatically downloaded as a step in either of the example notebooks.  (*If* you wish to download it separately, please run `get_mnist_data.sh`).
+* These examples use the classic [MNIST](http://yann.lecun.com/exdb/mnist/) dataset, which contains labeled 28x28 pixel images of handwritten digits in the range of 0-9.  There are 60,000 training images, and 10,000 testing images.  Of the 60,000 training images, 5,000 will be used as validation images.
+* **Download**:
+  * **Notebooks**: The data will be automatically downloaded as a step in either of the example notebooks.
+  * **Training scripts**: Please run `get_mnist_data.sh` to download the data separately.
 
 ## Execution
 * These examples contain scripts written in SystemML's R-like language (`*.dml`), as well as PySpark Jupyter notebooks (`*.ipynb`).  The scripts contain the math for the algorithms, enclosed in functions, and the notebooks serve as full, end-to-end examples of reading in data, training models using the functions within the scripts, and evaluating final performance.
-* To run the notebook examples, please startup Jupyter in the following manner from this directory (or for more information, please see [this great blog post](http://spark.tc/0-to-life-changing-application-with-apache-systemml/)):
+* **Notebooks**: To run the notebook examples, please startup Jupyter in the following manner from this directory (or for more information, please see [this great blog post](http://spark.tc/0-to-life-changing-application-with-apache-systemml/)):
 
   ```
   PYSPARK_DRIVER_PYTHON=jupyter PYSPARK_DRIVER_PYTHON_OPTS="notebook" $SPARK_HOME/bin/pyspark --master local[*] --driver-memory 3G --driver-class-path $SYSTEMML_HOME/SystemML.jar
@@ -50,18 +72,4 @@ limitations under the License.
 
   Note that all printed output, such as training statistics, from the SystemML scripts will be sent to the terminal in which Jupyter was started (for now...).
 
-* To run the scripts directly using `spark-submit`, please see the comments located at the bottom of the scripts.
-
-## Examples
-### MNIST Softmax Classifier
-
-* This example trains a softmax classifier, which is essentially a multi-class logistic regression model, on the MNIST data.  The model will be trained on the *training* images, validated on the *validation* images, and tested for final performance metrics on the *test* images.
-* Notebook: `Example - MNIST Softmax Classifier.ipynb`.
-* Script: `mnist_softmax.dml`
-
-### MNIST "LeNet" Neural Net
-
-* This example trains a neural network on the MNIST data using a ["LeNet" architecture](http://yann.lecun.com/exdb/publis/pdf/lecun-98.pdf). The model will be trained on the *training* images, validated on the *validation* images, and tested for final performance metrics on the *test* images.
-* Notebook: `Example - MNIST LeNet.ipynb`.
-* Script: `mnist_lenet.dml`
-
+* **Scripts**: To run the scripts from the command line using `spark-submit`, please see the comments located at the top of the `-train` and `-predict` scripts.

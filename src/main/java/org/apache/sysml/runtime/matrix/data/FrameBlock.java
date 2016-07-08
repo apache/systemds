@@ -777,6 +777,8 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			ret._schema.addAll(that._schema);
 			ret._colnames = new ArrayList<String>(_colnames);
 			ret._colnames.addAll(that._colnames);
+			ret._colmeta = new ArrayList<ColumnMetadata>(_colmeta);
+			ret._colmeta.addAll(that._colmeta);
 			
 			//concatenate column data (w/ deep copy to prevent side effects)
 			for( Array tmp : _coldata )

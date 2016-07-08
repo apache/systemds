@@ -23,7 +23,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
+import org.apache.sysml.runtime.instructions.InstructionUtils;
+import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.NumItemsByEachReducerMetaData;
@@ -595,5 +598,21 @@ public class UtilFunctions
 			schema[i] = srcSchema.get((int) (lStart+i));
 		
 		return Arrays.asList(schema);
+	}
+	
+	
+	/*
+	 * This function will return datatype, if its Matrix or Frame
+	 * 
+	 *  @param	str
+	 *  		Instruction string to execute
+	 */
+	
+	public static DataType getDataType(String str, int index)
+	{
+		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
+		CPOperand in1 = new CPOperand(parts[index]);
+	
+		return in1.getDataType();
 	}
 }

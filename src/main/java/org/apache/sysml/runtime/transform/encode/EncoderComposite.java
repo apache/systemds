@@ -78,10 +78,10 @@ public class EncoderComposite extends Encoder
 		
 		//propagate meta data 
 		_meta = new FrameBlock(in.getNumColumns(), ValueType.STRING);
-		for( Encoder encoder : _encoders ) {
-			encoder.initMetaData(_meta);
+		for( Encoder encoder : _encoders )
 			_meta = encoder.getMetaData(_meta);
-		}
+		for( Encoder encoder : _encoders )
+			encoder.initMetaData(_meta);
 		
 		//apply meta data
 		for( Encoder encoder : _encoders )

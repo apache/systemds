@@ -369,7 +369,7 @@ public class UtilFunctions
 	public static double objectToDouble(ValueType vt, Object in) {
 		if( in == null )  return 0;
 		switch( vt ) {
-			case STRING:  return Double.parseDouble((String)in);
+			case STRING:  return !((String)in).isEmpty() ? Double.parseDouble((String)in) : 0;
 			case BOOLEAN: return ((Boolean)in)?1d:0d;
 			case INT:     return (Long)in;
 			case DOUBLE:  return (Double)in;

@@ -763,6 +763,7 @@ public class DataExpression extends DataIdentifier
 		        // if the MTD file exists, check the values specified in read statement match values in metadata MTD file
 		        if (configObject != null){
 		        	parseMetaDataFileParameters(mtdFileName, configObject, conditional);
+		        	inferredFormatType = true;
 		        }
 		        else {
 		        	LOG.warn("Metadata file: " + new Path(mtdFileName) + " not provided");

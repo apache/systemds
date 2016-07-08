@@ -412,7 +412,7 @@ public class RecodeAgent extends Encoder
 				//probe and build column map
 				HashMap<String,Long> map = _rcdMaps.get(colID);
 				String key = row[colID-1];
-				if( !map.containsKey(key) )
+				if( key!=null && !key.isEmpty() && !map.containsKey(key) )
 					map.put(key, new Long(map.size()+1));
 			}
 		}

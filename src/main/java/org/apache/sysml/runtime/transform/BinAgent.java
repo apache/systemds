@@ -375,8 +375,7 @@ public class BinAgent extends Encoder
 
 	@Override
 	public FrameBlock getMetaData(FrameBlock meta) {
-		// TODO Auto-generated method stub
-		return null;
+		return meta;
 	}
 	
 	@Override

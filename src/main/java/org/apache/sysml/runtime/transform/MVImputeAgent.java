@@ -30,6 +30,7 @@ import java.util.BitSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map.Entry;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -67,15 +68,8 @@ public class MVImputeAgent extends Encoder
 	
 	public enum MVMethod { INVALID, GLOBAL_MEAN, GLOBAL_MODE, CONSTANT };
 	
-	/* 
-	 * Imputation Methods:
-	 * 1 - global_mean
-	 * 2 - global_mode
-	 * 3 - constant
-	 * 
-	 */
-	private byte[] _mvMethodList = null;
-	private byte[] _mvscMethodList = null;	// scaling methods for attributes that are imputed and also scaled
+	private MVMethod[] _mvMethodList = null;
+	private MVMethod[] _mvscMethodList = null;	// scaling methods for attributes that are imputed and also scaled
 	
 	private BitSet _isMVScaled = null;
 	private CM _varFn = CM.getCMFnObject(AggregateOperationTypes.VARIANCE);		// function object that understands variance computation
@@ -86,10 +80,9 @@ public class MVImputeAgent extends Encoder
 	private long[] _countList = null;				// #of non-missing values
 	
 	private CM_COV_Object[] _varList = null;		// column-level variances, computed so far (for scaling)
-	
 
 	private int[] 			_scnomvList = null;			// List of attributes that are scaled but not imputed
-	private byte[]			_scnomvMethodList = null;	// scaling methods: 0 for invalid; 1 for mean-subtraction; 2 for z-scoring
+	private MVMethod[]		_scnomvMethodList = null;	// scaling methods: 0 for invalid; 1 for mean-subtraction; 2 for z-scoring
 	private KahanObject[] 	_scnomvMeanList = null;		// column-level means, for attributes scaled but not imputed
 	private long[] 			_scnomvCountList = null;	// #of non-missing values, for attributes scaled but not imputed
 	private CM_COV_Object[] _scnomvVarList = null;		// column-level variances, computed so far
@@ -97,6 +90,7 @@ public class MVImputeAgent extends Encoder
 	private String[] _replacementList = null;		// replacements: for global_mean, mean; and for global_mode, recode id of mode category
 	private String[] _NAstrings = null;
 	private List<Integer> _rcList = null; 
+	private HashMap<Integer,HashMap<String,Long>> _hist = null;
 	
 	public String[] getReplacements() { return _replacementList; }
 	public KahanObject[] getMeans()   { return _meanList; }
@@ -108,9 +102,16 @@ public class MVImputeAgent extends Encoder
 		throws JSONException
 	{
 		super(null, clen);
+		
+		//handle column list
 		int[] collist = TfMetaUtils.parseJsonObjectIDList(parsedSpec, TfUtils.TXMETHOD_IMPUTE);
 		initColList(collist);
 	
+		//handle method list
+		parseMethodsAndReplacments(parsedSpec);
+		
+		//create reuse histograms
+		_hist = new HashMap<Integer, HashMap<String,Long>>();
 	}
 			
 	public MVImputeAgent(JSONObject parsedSpec, String[] NAstrings, int clen)
@@ -136,7 +137,7 @@ public class MVImputeAgent extends Encoder
 			int mvLength = mvattrs.size();
 			
 			_colList = new int[mvLength];
-			_mvMethodList = new byte[mvLength];
+			_mvMethodList = new MVMethod[mvLength];
 			
 			_meanList = new KahanObject[mvLength];
 			_countList = new long[mvLength];
@@ -147,7 +148,7 @@ public class MVImputeAgent extends Encoder
 			
 			for(int i=0; i < _colList.length; i++) {
 				_colList[i] = UtilFunctions.toInt(mvattrs.get(i));
-				_mvMethodList[i] = (byte) UtilFunctions.toInt(mvmthds.get(i)); 
+				_mvMethodList[i] = MVMethod.values()[UtilFunctions.toInt(mvmthds.get(i))]; 
 				_meanList[i] = new KahanObject(0, 0);
 			}
 			
@@ -173,7 +174,7 @@ public class MVImputeAgent extends Encoder
 		else
 		{
 			if ( _colList != null ) 
-				_mvscMethodList = new byte[_colList.length];
+				_mvscMethodList = new MVMethod[_colList.length];
 			
 			JSONObject scobj = (JSONObject) parsedSpec.get(TfUtils.TXMETHOD_SCALE);
 			JSONArray scattrs = (JSONArray) scobj.get(TfUtils.JSON_ATTRS);
@@ -195,7 +196,7 @@ public class MVImputeAgent extends Encoder
 				if(mvidx != -1)
 				{
 					_isMVScaled.set(mvidx);
-					_mvscMethodList[mvidx] = mthd;
+					_mvscMethodList[mvidx] = MVMethod.values()[mthd];
 					_varList[mvidx] = new CM_COV_Object();
 				}
 				else
@@ -205,7 +206,7 @@ public class MVImputeAgent extends Encoder
 			if(scnomv > 0)
 			{
 				_scnomvList = new int[scnomv];			
-				_scnomvMethodList = new byte[scnomv];	
+				_scnomvMethodList = new MVMethod[scnomv];	
 	
 				_scnomvMeanList = new KahanObject[scnomv];
 				_scnomvCountList = new long[scnomv];
@@ -219,7 +220,7 @@ public class MVImputeAgent extends Encoder
 					if(isApplicable(colID) == -1)
 					{	// scaled but not imputed
 						_scnomvList[idx] = colID;
-						_scnomvMethodList[idx] = mthd;
+						_scnomvMethodList[idx] = MVMethod.values()[mthd];
 						_scnomvMeanList[idx] = new KahanObject(0, 0);
 						_scnomvVarList[idx] = new CM_COV_Object();
 						idx++;
@@ -228,6 +229,28 @@ public class MVImputeAgent extends Encoder
 			}
 		}
 	}
+	
+	/**
+	 * 
+	 * @param parsedSpec
+	 * @throws JSONException
+	 */
+	private void parseMethodsAndReplacments(JSONObject parsedSpec) throws JSONException {
+		JSONArray mvspec = (JSONArray) parsedSpec.get(TfUtils.TXMETHOD_IMPUTE);
+		_mvMethodList = new MVMethod[mvspec.size()];
+		_replacementList = new String[mvspec.size()];
+		_meanList = new KahanObject[mvspec.size()];
+		_countList = new long[mvspec.size()];
+		for(int i=0; i < mvspec.size(); i++) {
+			JSONObject mvobj = (JSONObject)mvspec.get(i);
+			_mvMethodList[i] = MVMethod.valueOf(mvobj.get("method").toString().toUpperCase()); 
+			if( _mvMethodList[i] == MVMethod.CONSTANT ) {
+				_replacementList[i] = mvobj.getString("value").toString();
+			}
+			_meanList[i] = new KahanObject(0, 0);
+		}
+	}
+	
 	
 	public void prepare(String[] words) throws IOException {
 		
@@ -242,13 +265,13 @@ public class MVImputeAgent extends Encoder
 				if(!TfUtils.isNA(_NAstrings, w)) {
 					_countList[i]++;
 					
-					boolean computeMean = (_mvMethodList[i] == 1 || _isMVScaled.get(i) );
+					boolean computeMean = (_mvMethodList[i] == MVMethod.GLOBAL_MEAN || _isMVScaled.get(i) );
 					if(computeMean) {
 						// global_mean
 						double d = UtilFunctions.parseToDouble(w);
 						_meanFn.execute2(_meanList[i], d, _countList[i]);
 						
-						if (_isMVScaled.get(i) && _mvscMethodList[i] == 2)
+						if (_isMVScaled.get(i) && _mvscMethodList[i] == MVMethod.GLOBAL_MODE)
 							_varFn.execute(_varList[i], d);
 					}
 					else {
@@ -271,7 +294,7 @@ public class MVImputeAgent extends Encoder
 				double d = UtilFunctions.parseToDouble(w);
 				_scnomvCountList[i]++; 		// not required, this is always equal to total #records processed
 				_meanFn.execute2(_scnomvMeanList[i], d, _scnomvCountList[i]);
-				if(_scnomvMethodList[i] == 2)
+				if(_scnomvMethodList[i] == MVMethod.GLOBAL_MODE)
 					_varFn.execute(_scnomvVarList[i], d);
 			}
 		} catch(Exception e) {
@@ -311,15 +334,15 @@ public class MVImputeAgent extends Encoder
 	
 	private DistinctValue prepMeanOutput(int taskID, int idx, StringBuilder sb, boolean scnomv) throws CharacterCodingException {
 		
-		byte mthd = (scnomv ? _scnomvMethodList[idx] : _mvMethodList[idx]);
+		MVMethod mthd = (scnomv ? _scnomvMethodList[idx] : _mvMethodList[idx]);
 		
-		if ( scnomv || mthd == 1 || _isMVScaled.get(idx) ) {
+		if ( scnomv || mthd == MVMethod.GLOBAL_MEAN || _isMVScaled.get(idx) ) {
 			String suffix = null;
 			if(scnomv)
 				suffix = "scnomv";
-			else if ( mthd ==1 && _isMVScaled.get(idx) )
+			else if ( mthd == MVMethod.GLOBAL_MEAN && _isMVScaled.get(idx) )
 				suffix = "scmv"; 	// both scaled and mv imputed
-			else if ( mthd == 1 )
+			else if ( mthd == MVMethod.GLOBAL_MEAN )
 				suffix = "noscmv";
 			else
 				suffix = "scnomv";
@@ -341,8 +364,8 @@ public class MVImputeAgent extends Encoder
 	}
 	
 	private DistinctValue prepMeanCorrectionOutput(int taskID, int idx, StringBuilder sb, boolean scnomv) throws CharacterCodingException {
-		byte mthd = (scnomv ? _scnomvMethodList[idx] : _mvMethodList[idx]);
-		if ( scnomv || mthd == 1 || _isMVScaled.get(idx) ) {
+		MVMethod mthd = (scnomv ? _scnomvMethodList[idx] : _mvMethodList[idx]);
+		if ( scnomv || mthd == MVMethod.GLOBAL_MEAN || _isMVScaled.get(idx) ) {
 			sb.setLength(0);
 			//CORRECTION_PREFIX + "_" + taskID + "_" + Double.toString(mean._correction);
 			sb.append(CORRECTION_PREFIX);
@@ -357,8 +380,8 @@ public class MVImputeAgent extends Encoder
 	}
 	
 	private DistinctValue prepMeanCountOutput(int taskID, int idx, StringBuilder sb, boolean scnomv) throws CharacterCodingException {
-		byte mthd = (scnomv ? _scnomvMethodList[idx] : _mvMethodList[idx]);
-		if ( scnomv || mthd == 1 || _isMVScaled.get(idx) ) {
+		MVMethod mthd = (scnomv ? _scnomvMethodList[idx] : _mvMethodList[idx]);
+		if ( scnomv || mthd == MVMethod.GLOBAL_MEAN || _isMVScaled.get(idx) ) {
 			sb.setLength(0);
 			//s = COUNT_PREFIX + "_" + taskID + "_" + Long.toString(count);
 			sb.append(COUNT_PREFIX);
@@ -373,8 +396,8 @@ public class MVImputeAgent extends Encoder
 	}
 	
 	private DistinctValue prepTotalCountOutput(int taskID, int idx, StringBuilder sb, boolean scnomv, TfUtils agents) throws CharacterCodingException {
-		byte mthd = (scnomv ? _scnomvMethodList[idx] : _mvMethodList[idx]);
-		if ( scnomv || mthd == 1 || _isMVScaled.get(idx) ) {
+		MVMethod mthd = (scnomv ? _scnomvMethodList[idx] : _mvMethodList[idx]);
+		if ( scnomv || mthd == MVMethod.GLOBAL_MEAN || _isMVScaled.get(idx) ) {
 			sb.setLength(0);
 			//TOTAL_COUNT_PREFIX + "_" + taskID + "_" + Long.toString(TransformationAgent._numValidRecords);
 			sb.append(TOTAL_COUNT_PREFIX);
@@ -390,8 +413,8 @@ public class MVImputeAgent extends Encoder
 	private DistinctValue prepConstantOutput(int idx, StringBuilder sb) throws CharacterCodingException {
 		if ( _mvMethodList == null )
 			return null;
-		byte mthd = _mvMethodList[idx];
-		if ( mthd == 3 ) {
+		MVMethod mthd = _mvMethodList[idx];
+		if ( mthd == MVMethod.CONSTANT ) {
 			sb.setLength(0);
 			sb.append(CONSTANT_PREFIX);
 			sb.append("_");
@@ -402,7 +425,7 @@ public class MVImputeAgent extends Encoder
 	}
 	
 	private DistinctValue prepVarOutput(int taskID, int idx, StringBuilder sb, boolean scnomv) throws CharacterCodingException {
-		if ( scnomv || _isMVScaled.get(idx) && _mvscMethodList[idx] == 2 ) {
+		if ( scnomv || _isMVScaled.get(idx) && _mvscMethodList[idx] == MVMethod.GLOBAL_MODE ) {
 			sb.setLength(0);
 			sb.append(VARIANCE_PREFIX);
 			sb.append("_");
@@ -560,7 +583,7 @@ public class MVImputeAgent extends Encoder
 					
 					double imputedValue = Double.NaN;
 					KahanObject gmean = null;
-					if ( _mvMethodList[i] == 1 ) 
+					if ( _mvMethodList[i] == MVMethod.GLOBAL_MEAN ) 
 					{
 						gmean = _meanList[i];
 						imputedValue = _meanList[i]._sum;
@@ -568,7 +591,7 @@ public class MVImputeAgent extends Encoder
 						double mean = ( _countList[i] == 0 ? 0.0 : _meanList[i]._sum); 
 						writeTfMtd(colID, Double.toString(mean), outputDir, fs, agents);
 					}
-					else if ( _mvMethodList[i] == 3 ) 
+					else if ( _mvMethodList[i] == MVMethod.CONSTANT ) 
 					{
 						writeTfMtd(colID, _replacementList[i], outputDir, fs, agents);
 						
@@ -584,7 +607,7 @@ public class MVImputeAgent extends Encoder
 					if ( _isMVScaled.get(i) ) 
 					{
 						double sdev = -1.0;
-						if ( _mvscMethodList[i] == 2 ) {
+						if ( _mvscMethodList[i] == MVMethod.GLOBAL_MODE ) {
 							// Adjust variance with missing values
 							long totalMissingCount = (agents.getValid() - _countList[i]);
 							_varFn.execute(_varList[i], imputedValue, totalMissingCount);
@@ -601,7 +624,7 @@ public class MVImputeAgent extends Encoder
 					int colID = _scnomvList[i];
 					double mean = (_scnomvCountList[i] == 0 ? 0.0 : _scnomvMeanList[i]._sum);
 					double sdev = -1.0;
-					if ( _scnomvMethodList[i] == 2 ) 
+					if ( _scnomvMethodList[i] == MVMethod.GLOBAL_MODE ) 
 					{
 						double var = _scnomvVarList[i].getRequiredResult(new CMOperator(_varFn, AggregateOperationTypes.VARIANCE));
 						sdev = Math.sqrt(var);
@@ -788,7 +811,7 @@ public class MVImputeAgent extends Encoder
 					// since missing values themselves are replaced with gmean.
 					long totalMissingCount = (totalRecordCount-totalValidCount);
 					int idx = isApplicable(colID);
-					if(idx != -1 && _mvMethodList[idx] == 3) 
+					if(idx != -1 && _mvMethodList[idx] == MVMethod.CONSTANT) 
 						_meanFn.execute(gmean, UtilFunctions.parseToDouble(_replacementList[idx]), totalRecordCount);
 					_varFn.execute(gcm, gmean._sum, totalMissingCount);
 				}
@@ -863,10 +886,10 @@ public class MVImputeAgent extends Encoder
 				for(int i=0; i<_colList.length;i++) {
 					int colID = _colList[i];
 					
-					if ( _mvMethodList[i] == 1 || _mvMethodList[i] == 2 )
+					if ( _mvMethodList[i] == MVMethod.GLOBAL_MEAN || _mvMethodList[i] == MVMethod.GLOBAL_MODE )
 						// global_mean or global_mode
 						_replacementList[i] = readReplacement(colID, fs, tfMtdDir, agents);
-					else if ( _mvMethodList[i] == 3 ) {
+					else if ( _mvMethodList[i] == MVMethod.CONSTANT ) {
 						// constant: replace a missing value by a given constant
 						// nothing to do. The constant values are loaded already during configure 
 					}
@@ -894,15 +917,8 @@ public class MVImputeAgent extends Encoder
 		int idx = isApplicable(colID);		
 		if(idx == -1)
 			return MVMethod.INVALID;
-		
-		switch(_mvMethodList[idx])
-		{
-			case 1: return MVMethod.GLOBAL_MEAN;
-			case 2: return MVMethod.GLOBAL_MODE;
-			case 3: return MVMethod.CONSTANT;
-			default: return MVMethod.INVALID;
-		}
-		
+		else
+			return _mvMethodList[idx];
 	}
 	
 	public long getNonMVCount(int colID) {
@@ -917,14 +933,48 @@ public class MVImputeAgent extends Encoder
 	
 	@Override
 	public MatrixBlock encode(FrameBlock in, MatrixBlock out) {
-		// TODO Auto-generated method stub
-		return null;
+		build(in);
+		return apply(in, out);
 	}
 	
 	@Override
 	public void build(FrameBlock in) {
-		// TODO Auto-generated method stub
-		
+		try {
+			for( int j=0; j<_colList.length; j++ ) {
+				int colID = _colList[j];
+				if( _mvMethodList[j] == MVMethod.GLOBAL_MEAN ) {
+					//compute global column mean (scale)
+					long off = _countList[j];
+					for( int i=0; i<in.getNumRows(); i++ )
+						_meanFn.execute2(_meanList[j], UtilFunctions.objectToDouble(
+							in.getSchema().get(colID-1), in.get(i, colID-1)), off+i+1);
+					_replacementList[j] = String.valueOf(_meanList[j]._sum);
+					_countList[j] += in.getNumRows();
+				}
+				else if( _mvMethodList[j] == MVMethod.GLOBAL_MODE ) {
+					//compute global column mode (categorical), i.e., most frequent category
+					HashMap<String,Long> hist = _hist.containsKey(colID) ? 
+							_hist.get(colID) : new HashMap<String,Long>();
+					for( int i=0; i<in.getNumRows(); i++ ) {
+						String key = String.valueOf(in.get(i, colID-1));
+						if( key != null && !key.isEmpty() ) {
+							Long val = hist.get(key);
+							hist.put(key, (val!=null) ? val+1 : 1);
+						}	
+					}
+					_hist.put(colID, hist);
+					long max = Long.MIN_VALUE; 
+					for( Entry<String, Long> e : hist.entrySet() ) 
+						if( e.getValue() > max  ) {
+							_replacementList[j] = e.getKey();
+							max = e.getValue();
+						}
+				}
+			}
+		}
+		catch(Exception ex) {
+			throw new RuntimeException(ex);
+		}
 	}
 
 	@Override
@@ -938,7 +988,7 @@ public class MVImputeAgent extends Encoder
 					w = words[colID-1] = _replacementList[i];
 				
 				if ( _isMVScaled.get(i) )
-					if ( _mvscMethodList[i] == 1 )
+					if ( _mvscMethodList[i] == MVMethod.GLOBAL_MEAN )
 						words[colID-1] = Double.toString( UtilFunctions.parseToDouble(w) - _meanList[i]._sum );
 					else
 						words[colID-1] = Double.toString( (UtilFunctions.parseToDouble(w) - _meanList[i]._sum) / _varList[i].mean._sum );
@@ -948,7 +998,7 @@ public class MVImputeAgent extends Encoder
 		for(int i=0; i < _scnomvList.length; i++)
 		{
 			int colID = _scnomvList[i];
-			if ( _scnomvMethodList[i] == 1 )
+			if ( _scnomvMethodList[i] == MVMethod.GLOBAL_MEAN )
 				words[colID-1] = Double.toString( UtilFunctions.parseToDouble(words[colID-1]) - _scnomvMeanList[i]._sum );
 			else
 				words[colID-1] = Double.toString( (UtilFunctions.parseToDouble(words[colID-1]) - _scnomvMeanList[i]._sum) / _scnomvVarList[i].mean._sum );
@@ -971,8 +1021,11 @@ public class MVImputeAgent extends Encoder
 	
 	@Override
 	public FrameBlock getMetaData(FrameBlock out) {
-		// TODO Auto-generated method stub
-		return null;
+		for( int j=0; j<_colList.length; j++ ) {
+			out.getColumnMetadata(_colList[j]-1)
+			   .setMvValue(_replacementList[j]);
+		}
+		return out;
 	}
 	
 	/**
@@ -983,14 +1036,13 @@ public class MVImputeAgent extends Encoder
 	public void initMetaData(FrameBlock meta) {
 		//init replacement lists, replace recoded values to
 		//apply mv imputation potentially after recoding
-		_replacementList = new String[_colList.length];
 		for( int j=0; j<_colList.length; j++ ) {
-			int colID = _colList[j];
+			int colID = _colList[j];	
 			String mvVal = UtilFunctions.unquote(meta.getColumnMetadata(colID-1).getMvValue()); 
 			if( _rcList.contains(colID) ) {
 				Long mvVal2 = meta.getRecodeMap(colID-1).get(mvVal);
-				if( mvVal2 == null) 
-					throw new RuntimeException("Missing recode value for impute value '"+mvVal+"'.");
+				if( mvVal2 == null)
+					throw new RuntimeException("Missing recode value for impute value '"+mvVal+"' (colID="+colID+").");
 				_replacementList[j] = mvVal2.toString();
 			}
 			else {
@@ -1005,5 +1057,15 @@ public class MVImputeAgent extends Encoder
 	 */
 	public void initRecodeIDList(List<Integer> rcList) {
 		_rcList = rcList;
+	}
+	
+	/**
+	 * Exposes the internal histogram after build.
+	 * 
+	 * @param colID
+	 * @return
+	 */
+	public HashMap<String,Long> getHistogram( int colID ) {
+		return _hist.get(colID);
 	}
 }

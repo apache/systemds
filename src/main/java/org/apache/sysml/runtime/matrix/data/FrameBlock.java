@@ -25,6 +25,7 @@ import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.io.Serializable;
 import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1256,7 +1257,9 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	/**
 	 * 
 	 */
-	public static class ColumnMetadata {
+	public static class ColumnMetadata implements Serializable {
+		private static final long serialVersionUID = -90094082422100311L;
+		
 		private long _ndistinct = 0;
 		private String _mvValue = null;
 		

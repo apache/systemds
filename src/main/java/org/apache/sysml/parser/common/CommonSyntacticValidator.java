@@ -332,7 +332,9 @@ public abstract class CommonSyntacticValidator {
 						.replaceAll("\\\\t","\t")
 						.replaceAll("\\\\n","\n")
 						.replaceAll("\\\\f","\f")
-						.replaceAll("\\\\r","\r");
+						.replaceAll("\\\\r","\r")
+						.replace("\\'","'")
+						.replace("\\\"","\"");
 				}
 				else if(text.equals("\"\"") || text.equals("\'\'")) {
 					val = "";
@@ -344,7 +346,9 @@ public abstract class CommonSyntacticValidator {
 					.replaceAll("\\\\t","\t")
 					.replaceAll("\\\\n","\n")
 					.replaceAll("\\\\f","\f")
-					.replaceAll("\\\\r","\r");
+					.replaceAll("\\\\r","\r")
+					.replace("\\'","'")
+					.replace("\\\"","\"");
 		}
 		return val;
 	}

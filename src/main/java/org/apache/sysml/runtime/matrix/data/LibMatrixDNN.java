@@ -32,10 +32,10 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.util.ConvolutionUtils;
-
 
 public class LibMatrixDNN {
 	
@@ -75,6 +75,44 @@ public class LibMatrixDNN {
 		public int [] maxIndexArrS;
 		int minCommonIndexS;
 		int maxCommonIndexS;
+	}
+	
+	private static AtomicLong conv2dSparseCount = new AtomicLong(0);
+	private static AtomicLong conv2dDenseCount = new AtomicLong(0);
+	private static AtomicLong conv2dBwdFilterSparseCount = new AtomicLong(0);
+	private static AtomicLong conv2dBwdFilterDenseCount = new AtomicLong(0);
+	private static AtomicLong conv2dBwdDataSparseCount = new AtomicLong(0);
+	private static AtomicLong conv2dBwdDataDenseCount = new AtomicLong(0);
+	private static AtomicLong im2colSparseCount = new AtomicLong(0);
+	private static AtomicLong im2colDenseCount = new AtomicLong(0);
+	private static AtomicLong maxPoolBwdSparseCount = new AtomicLong(0);
+	private static AtomicLong maxPoolBwdDenseCount = new AtomicLong(0);
+	public static void appendStatistics(StringBuilder sb) {
+		sb.append("LibMatrixDNN dense count (conv/bwdF/bwdD/im2col/maxBwd):\t" 
+				+ conv2dDenseCount.get() + "/"
+				+ conv2dBwdFilterDenseCount.get() + "/"
+				+ conv2dBwdDataDenseCount.get() + "/"
+				+ im2colDenseCount.get() + "/"
+				+ maxPoolBwdDenseCount.get() + ".\n");
+		sb.append("LibMatrixDNN sparse count (conv/bwdF/bwdD/im2col/maxBwd):\t" 
+				+ conv2dSparseCount.get() + "/"
+				+ conv2dBwdFilterSparseCount.get() + "/"
+				+ conv2dBwdDataSparseCount.get() + "/"
+				+ im2colSparseCount.get() + "/"
+				+ maxPoolBwdSparseCount.get() + ".\n");
+	}
+	public static void resetStatistics() {
+		conv2dDenseCount.set(0);
+		conv2dBwdFilterDenseCount.set(0);
+		conv2dBwdDataDenseCount.set(0);
+		im2colDenseCount.set(0);
+		maxPoolBwdDenseCount.set(0);
+		
+		conv2dSparseCount.set(0);
+		conv2dBwdFilterSparseCount.set(0);
+		conv2dBwdDataSparseCount.set(0);
+		im2colSparseCount.set(0);
+		maxPoolBwdSparseCount.set(0);
 	}
 	
 	public static class ConvolutionParameters {
@@ -167,6 +205,15 @@ public class LibMatrixDNN {
 		}
 		if(params.stride_h <= 0 || params.stride_w <= 0) {
 			throw new DMLRuntimeException("Only positive strides supported");
+		}
+		
+		if(DMLScript.STATISTICS) {
+			if(input.isInSparseFormat() || dout.isInSparseFormat()) {
+				conv2dBwdFilterSparseCount.addAndGet(1);
+			}
+			else {
+				conv2dBwdFilterDenseCount.addAndGet(1);
+			}
 		}
 		
 		int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
@@ -366,6 +413,15 @@ public class LibMatrixDNN {
 			throw new DMLRuntimeException("Incorrect input to conv2d");
 		}
 		
+		if(DMLScript.STATISTICS) {
+			if(input.isInSparseFormat() || filter.isInSparseFormat()) {
+				conv2dSparseCount.addAndGet(1);
+			}
+			else {
+				conv2dDenseCount.addAndGet(1);
+			}
+		}
+		
 		params.tmpData = new TemporaryConvolutionData();
 		if(input.isInSparseFormat()) {
 			params.tmpData.minIndexArrR = new int[params.H];
@@ -433,6 +489,15 @@ public class LibMatrixDNN {
 		if(dout.getNumColumns() != params.C*params.P*params.Q || dout.getNumRows() != params.N) {
 			throw new DMLRuntimeException("Incorrect dout dimensions in maxpooling_backward:" + input.getNumRows() + " " + input.getNumColumns() + " " + params.N + " " + params.K*params.P*params.Q);
 		}
+		
+		if(DMLScript.STATISTICS) {
+			if(input.isInSparseFormat() || dout.isInSparseFormat()) {
+				maxPoolBwdSparseCount.addAndGet(1);
+			}
+			else {
+				maxPoolBwdDenseCount.addAndGet(1);
+			}
+		}
 
 		int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
 		if(!ALLOW_MULTI_THREADED_OPS || constrainedNumThreads <= 1) {
@@ -455,41 +520,10 @@ public class LibMatrixDNN {
 		int [] minIndexArrS = params.tmpData.minIndexArrS;
 		int [] maxIndexArrS = params.tmpData.maxIndexArrS;
 		
-		int minCommonIndexS = params.tmpData.minCommonIndexS;
-		int maxCommonIndexS = params.tmpData.maxCommonIndexS;
+		final int minCommonIndexS = params.tmpData.minCommonIndexS;
+		final int maxCommonIndexS = params.tmpData.maxCommonIndexS;
 		
-		
-		int minS = 0;
-		if(params.S >= 4) {
-			minS = params.S - params.S % 4;
-			for (int n = n1; n < n2; n++) {
-				for (int c = 0; c < params.C; c++) {
-					for (int r = 0; r < params.R; r++) {
-						final int filterOffset = k*params.C*params.R*params.S + c*params.R*params.S + r*params.S;
-						for (int p = minIndexArrR[r]; p < maxIndexArrR[r]; p++) {
-							final int h = p*params.stride_h + r - params.pad_h;
-							final int inputOffSet = n*params.C*params.H*params.W + c*params.H*params.W + h*params.W - params.pad_w;
-							final int outputOffset = n*params.K*params.P*params.Q + k*params.P*params.Q + p*params.Q;
-							// ------------------------------------------------------------------------
-							// Efficient striding with vectorization
-							for (int q = minCommonIndexS; q < maxCommonIndexS; q++) {
-								final int wOffset = inputOffSet + q*params.stride_w;
-								final int outOffsetWithQ = outputOffset + q;
-								for (int s = 0; s < minS; s += 4) {
-									final int inOffsetWithS = wOffset + s;
-									final int filterOffsetWithS = filterOffset + s;
-									outputArray[outOffsetWithQ] += inputArray[inOffsetWithS]*filterArray[filterOffsetWithS]
-											+ inputArray[inOffsetWithS+1]*filterArray[filterOffsetWithS+1]
-											+ inputArray[inOffsetWithS+2]*filterArray[filterOffsetWithS+2]
-											+ inputArray[inOffsetWithS+3]*filterArray[filterOffsetWithS+3];
-								}
-							}
-							// ------------------------------------------------------------------------
-						}
-					}
-				}
-			}
-		}
+		final int minS = (params.S >= 4) ? (params.S - params.S % 4) : 0;
 		
 		for (int n = n1; n < n2; n++) {
 			for (int c = 0; c < params.C; c++) {
@@ -499,27 +533,27 @@ public class LibMatrixDNN {
 						final int h = p*params.stride_h + r - params.pad_h;
 						final int inputOffSet = n*params.C*params.H*params.W + c*params.H*params.W + h*params.W - params.pad_w;
 						final int outputOffset = n*params.K*params.P*params.Q + k*params.P*params.Q + p*params.Q;
-						// ------------------------------------------------------------------------
-						// Efficient striding
+						
 						for (int q = minCommonIndexS; q < maxCommonIndexS; q++) {
 							final int wOffset = inputOffSet + q*params.stride_w;
+							// ------------------------------------------------------------------------
+							// Efficient striding with vectorization
+							final int outOffsetWithQ = outputOffset + q;
+							for (int s = 0; s < minS; s += 4) {
+								final int inOffsetWithS = wOffset + s;
+								final int filterOffsetWithS = filterOffset + s;
+								outputArray[outOffsetWithQ] += inputArray[inOffsetWithS]*filterArray[filterOffsetWithS]
+										+ inputArray[inOffsetWithS+1]*filterArray[filterOffsetWithS+1]
+										+ inputArray[inOffsetWithS+2]*filterArray[filterOffsetWithS+2]
+										+ inputArray[inOffsetWithS+3]*filterArray[filterOffsetWithS+3];
+							}
+							// ------------------------------------------------------------------------
+							// Efficient striding without vectorization
 							for (int s = minS; s < params.S; s++) {
 								outputArray[outputOffset + q] += inputArray[wOffset + s]*filterArray[filterOffset + s];
 							}
+							// ------------------------------------------------------------------------
 						}
-						// ------------------------------------------------------------------------
-					}
-				}
-			}
-			
-			
-			for (int c = 0; c < params.C; c++) {
-				for (int r = 0; r < params.R; r++) {
-					final int filterOffset = k*params.C*params.R*params.S + c*params.R*params.S + r*params.S;
-					for (int p = minIndexArrR[r]; p < maxIndexArrR[r]; p++) {
-						final int h = p*params.stride_h + r - params.pad_h;
-						final int inputOffSet = n*params.C*params.H*params.W + c*params.H*params.W + h*params.W - params.pad_w;
-						final int outputOffset = n*params.K*params.P*params.Q + k*params.P*params.Q + p*params.Q;
 						// ------------------------------------------------------------------------
 						// Inefficient striding
 						for (int s = 0; s < params.S; s++) {
@@ -1032,6 +1066,16 @@ public class LibMatrixDNN {
 		params.output = outputBlock;
 		
 		params.outputNNZ.set(0);
+		
+		if(DMLScript.STATISTICS) {
+			if(input.isInSparseFormat()) {
+				im2colSparseCount.addAndGet(1);
+			}
+			else {
+				im2colDenseCount.addAndGet(1);
+			}
+		}
+		
 		int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
 		if(!ALLOW_MULTI_THREADED_OPS || constrainedNumThreads <= 1) {
 			for (int n = 0; n < params.N; n++) { // Do following for all images

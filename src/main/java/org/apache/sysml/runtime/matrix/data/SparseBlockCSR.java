@@ -112,6 +112,8 @@ public class SparseBlockCSR extends SparseBlock
 	
 	/**
 	 * Copy constructor old sparse row representation. 
+	 * @param rows
+	 * @param nnz number of non-zeroes
 	 */
 	public SparseBlockCSR(SparseRow[] rows, int nnz)
 	{
@@ -126,13 +128,49 @@ public class SparseBlockCSR extends SparseBlock
 			int alen = rows[i].size();
 			int[] aix = rows[i].indexes();
 			double[] avals = rows[i].values();
-			for( int j=0; j<alen; j++ ) {
-				_indexes[pos] = aix[j];
-				_values[pos] = avals[j];
-				pos++;
-			}
+			System.arraycopy(aix, 0, _indexes, pos, alen);
+			System.arraycopy(avals, 0, _values, pos, alen);
+			pos += alen;
 			_ptr[i+1]=pos;	
 		}
+	}
+	
+	/**
+	 * Copy constructor for COO representation
+	 * @param rowInd	row indices
+	 * @param colInd	column indices
+	 * @param values	non zero values
+	 */
+	public SparseBlockCSR(int rows, int[] rowInd, int[] colInd, double[] values){
+		int nnz = values.length;
+		_ptr = new int[rows+1];
+		_indexes = Arrays.copyOf(colInd, colInd.length);
+		_values = Arrays.copyOf(values, values.length);
+		_size = nnz;
+		
+		for (int i=0; i<rows; i++){
+			_ptr[i] = -1;
+		}
+		_ptr[rows] = nnz;
+		_ptr[0]    = 0;
+		
+		// Input Example -> rowInd = [0,0,1,1,2,2,2,4,4,5]
+		//							 [0,1,2,3,4,5,6,7,8,9]
+		for (int i=nnz-1; i>=1; i--){
+			_ptr[rowInd[i]] = i;
+		}
+		// Output Example -> _ptr = [0|2|_|4|7|9|nnz]
+		// _ = -1
+		
+		// Pad out the missing values
+		// Input example -> _ptr = [0|2|_|4|7|9|nnz]
+		for (int i=1; i<rows; i++){
+			if (_ptr[i] == -1){
+				_ptr[i] = _ptr[i-1];
+			}
+		}
+		// Output example -> _ptr = [0|2|2|4|7|9|nnz]
+				
 	}
 	
 	/**

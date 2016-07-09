@@ -456,23 +456,34 @@ public class JCudaObject extends GPUObject {
 		MatrixBlock tmp = mat.acquireRead();
 		if(tmp.isInSparseFormat()) {
 			
+			int rowPtr[] = null;
+			int colInd[] = null;
+			double[] values = null;
+					
 			SparseBlock block = tmp.getSparseBlock();
-			if (block instanceof SparseBlockCSR){
-				// The SparseBlockCSR CP maps cleanly to what cuSparse expects. 
-				int[] rowPtr = ((SparseBlockCSR)block).getRowPointerArray();
-				int[] colInd = ((SparseBlockCSR)block).getColumnIndexArray();
-				double[] values = ((SparseBlockCSR)block).getValuesArray();
-				ensureFreeSpace(CSRPointer.estimateSize(mat.getNnz(), mat.getNumRows()));
-				allocateMemoryOnDevice(-1);
-				synchronized(evictionLock) {
-					GPUContext.allocatedPointers.add(this);
-				}
-				CSRPointer.copyToDevice(jcudaSparseMatrixPtr, tmp.getNumRows(), tmp.getNonZeros(), rowPtr, colInd, values);
+			// CSR is the preferred format for cuSparse GEMM
+			// Converts MCSR and COO to CSR
+			SparseBlockCSR csrBlock = null;
+			if (block instanceof SparseBlockCSR){ 
+				csrBlock = (SparseBlockCSR)block;
 			} else if (block instanceof SparseBlockCOO) {
-				throw new DMLRuntimeException("Sparse Block COO format not supported");
+				SparseBlockCOO cooBlock = (SparseBlockCOO)block;
+				csrBlock = new SparseBlockCSR((int)mat.getNumRows(), cooBlock.getRowIndexArray(), cooBlock.getColumnIndexArray(), cooBlock.getValuesArray());
 			} else if (block instanceof SparseBlockMCSR) {
-				throw new DMLRuntimeException("Sparse Block MCSR format not supported");
+				SparseBlockMCSR mcsrBlock = (SparseBlockMCSR)block;
+				csrBlock = new SparseBlockCSR(mcsrBlock.getRows(), (int)mcsrBlock.size());
+			} else {
+				throw new DMLRuntimeException("Unsupported sparse matrix format for CUDA operations");
 			}
+			rowPtr = csrBlock.getRowPointerArray();
+			colInd = csrBlock.getColumnIndexArray();
+			values = csrBlock.getValuesArray();	
+			ensureFreeSpace(CSRPointer.estimateSize(mat.getNnz(), mat.getNumRows()));
+			allocateMemoryOnDevice(-1);
+			synchronized(evictionLock) {
+				GPUContext.allocatedPointers.add(this);
+			}
+			CSRPointer.copyToDevice(jcudaSparseMatrixPtr, tmp.getNumRows(), tmp.getNonZeros(), rowPtr, colInd, values);
 			
 			// throw new DMLRuntimeException("Sparse matrix is not implemented");
 			// tmp.sparseToDense();

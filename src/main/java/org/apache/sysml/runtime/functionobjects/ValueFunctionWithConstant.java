@@ -24,7 +24,7 @@ import java.io.Serializable;
 public abstract class ValueFunctionWithConstant extends ValueFunction implements Serializable
 {
 	private static final long serialVersionUID = -4985988545393861058L;
-	double _constant;
+	protected double _constant;
 	
 	public void setConstant(double constant)
 	{

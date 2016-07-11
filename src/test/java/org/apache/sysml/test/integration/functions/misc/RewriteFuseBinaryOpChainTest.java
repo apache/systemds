@@ -37,14 +37,14 @@ import org.apache.sysml.utils.Statistics;
  * Regression test for function recompile-once issue with literal replacement.
  * 
  */
-public class RewriteAxpy extends AutomatedTestBase 
+public class RewriteFuseBinaryOpChainTest extends AutomatedTestBase 
 {
 	
-	private static final String TEST_NAME1 = "RewriteAxpy";
-	private static final String TEST_NAME2 = "RewriteAxmy";
+	private static final String TEST_NAME1 = "RewriteFuseBinaryOpChainTest1";
+	private static final String TEST_NAME2 = "RewriteFuseBinaryOpChainTest2";
 
 	private static final String TEST_DIR = "functions/misc/";
-	private static final String TEST_CLASS_DIR = TEST_DIR + RewriteAxpy.class.getSimpleName() + "/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + RewriteFuseBinaryOpChainTest.class.getSimpleName() + "/";
 	
 	//private static final int rows = 1234;
 	//private static final int cols = 567;
@@ -57,59 +57,59 @@ public class RewriteAxpy extends AutomatedTestBase
 		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "R" }) );
 		addTestConfiguration( TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "R" }) );
 	}
-	/*
+	
 	@Test
-	public void testAxpyNoRewrite() 
+	public void testFuseBinaryPlusNoRewrite() 
 	{
 		testRewriteAxpy( TEST_NAME1, false, ExecType.CP );
 	}
 	
 	
 	@Test
-	public void testAxpyRewrite() 
+	public void testFuseBinaryPlusRewrite() 
 	{
 		testRewriteAxpy( TEST_NAME1, true, ExecType.CP);
 	}
 	@Test
-	public void testAxmyNoRewrite() 
+	public void testFuseBinaryMinusNoRewrite() 
 	{
 		testRewriteAxpy( TEST_NAME2, false, ExecType.CP );
 	}
 	
 	@Test
-	public void testAxmyRewrite() 
+	public void testFuseBinaryMinusRewrite() 
 	{
 		testRewriteAxpy( TEST_NAME2, true, ExecType.CP );
 	}
-	*/
 	
-	/*
+	
+	
 	@Test
-	public void testSpAxpyNoRewrite() 
+	public void testSpFuseBinaryPlusNoRewrite() 
 	{
 		testRewriteAxpy( TEST_NAME1, false, ExecType.SPARK );
 	}
-	*/
+	
 	
 	@Test
-	public void testSpAxpyRewrite() 
+	public void testSpFuseBinaryPlusRewrite() 
 	{
 		testRewriteAxpy( TEST_NAME1, true, ExecType.SPARK );
 	}
 	
-	/*
+	
 	@Test
-	public void testSpAxmyNoRewrite() 
+	public void testSpFuseBinaryMinusNoRewrite() 
 	{
 		testRewriteAxpy( TEST_NAME2, false, ExecType.SPARK  );
 	}
 	
 	@Test
-	public void testSpAxmyRewrite() 
+	public void testSpFuseBinaryMinusRewrite() 
 	{
 		testRewriteAxpy( TEST_NAME2, true, ExecType.SPARK  );
 	}
-	*/
+	
 	
 	/**
 	 * 
@@ -153,9 +153,7 @@ public class RewriteAxpy extends AutomatedTestBase
 			//compare matrices 
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("S");
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("S");
-			Assert.assertTrue(TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R"));
-			System.out.println("Test case passed");
-			
+			Assert.assertTrue(TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R"));			
 		}
 		finally
 		{

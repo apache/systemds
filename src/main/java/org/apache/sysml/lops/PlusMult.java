@@ -88,11 +88,11 @@ public class PlusMult extends Lop
 		sb.append( getInputs().get(0).prepInputOperand(input1) );
 		sb.append( OPERAND_DELIMITOR );
 		
-		// Scalar
+		// Matrix2
 		sb.append( getInputs().get(1).prepScalarInputOperand(input2) );
 		sb.append( OPERAND_DELIMITOR );
 		
-		// Matrix2
+		// Scalar
 		sb.append( getInputs().get(2).prepInputOperand(input3));
 		sb.append( OPERAND_DELIMITOR );
 		

@@ -763,10 +763,9 @@ public class TernaryOp extends Hop
 			case PLUS_MULT:
 			case MINUS_MULT:
 				//compute back NNz
-				double matrix1Sparsity = OptimizerUtils.getSparsity(mc[0].getRows(), mc[0].getRows(), mc[0].getNonZeros()); 
-				double matrix2Sparsity = OptimizerUtils.getSparsity(mc[2].getRows(), mc[2].getRows(), mc[2].getNonZeros());
-				double overallSparsity = (matrix1Sparsity + matrix2Sparsity < 1) ? matrix1Sparsity + matrix2Sparsity : 1;
-				return new long[]{mc[0].getRows(), mc[0].getCols(), (long) (overallSparsity*mc[0].getRows()*mc[0].getCols())};
+				double sp1 = OptimizerUtils.getSparsity(mc[0].getRows(), mc[0].getRows(), mc[0].getNonZeros()); 
+				double sp2 = OptimizerUtils.getSparsity(mc[2].getRows(), mc[2].getRows(), mc[2].getNonZeros());
+				return new long[]{mc[0].getRows(), mc[0].getCols(), (long) Math.min(sp1+sp2,1)};
 			default:
 				throw new RuntimeException("Memory for operation (" + _op + ") can not be estimated.");
 		}

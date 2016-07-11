@@ -162,7 +162,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			hi = fuseLogNzBinaryOperation(hop, hi, i);           //e.g., ppred(X,0,"!=")*log(X,0.5) -> log_nz(X,0.5)
 			hi = simplifyOuterSeqExpand(hop, hi, i);             //e.g., outer(v, seq(1,m), "==") -> rexpand(v, max=m, dir=row, ignore=true, cast=false)
 			hi = simplifyTableSeqExpand(hop, hi, i);             //e.g., table(seq(1,nrow(v)), v, nrow(v), m) -> rexpand(v, max=m, dir=row, ignore=false, cast=true)
-			hi = simplifyAxpy(hop, hi, i);						  //e.g., X + lamda*Y -> X +* lambda Y	
+			hi = fuseBinaryOperationChain(hop, hi, i);			 //e.g., X + lamda*Y -> X +* lambda Y	
 			//hi = removeUnecessaryPPred(hop, hi, i);            //e.g., ppred(X,X,"==")->matrix(1,rows=nrow(X),cols=ncol(X))
 
 			//process childs recursively after rewrites (to investigate pattern newly created by rewrites)
@@ -1915,7 +1915,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 	 * @return
 	 * @throws HopsException
 	 */
-	private Hop simplifyAxpy(Hop parent, Hop hi, int pos) {
+	private Hop fuseBinaryOperationChain(Hop parent, Hop hi, int pos) {
 		//pattern: X + lamda*Y -> X +* lambda Y		
 		if( hi instanceof BinaryOp
 				&& (((BinaryOp)hi).getOp()==OpOp2.PLUS || ((BinaryOp)hi).getOp()==OpOp2.MINUS) 
@@ -1936,7 +1936,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				HopRewriteUtils.removeChildReferenceByPos(parent, hi, pos);
 				HopRewriteUtils.addChildReference(parent, ternOp, pos);
 				
-				LOG.debug("Applied simplifyAxpy.");
+				LOG.debug("Applied fuseBinaryOperationChain. (line " +hi.getBeginLine()+")");
 				return ternOp;
 			}
 		}

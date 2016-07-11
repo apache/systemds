@@ -42,7 +42,9 @@ public class TransformFrameEncodeDecodeTest extends AutomatedTestBase
 	//dataset and transform tasks without missing values
 	private final static String DATASET1 	= "homes3/homes.csv";
 	private final static String SPEC1 		= "homes3/homes.tfspec_recode.json"; 
+	private final static String SPEC1b 		= "homes3/homes.tfspec_recode2.json"; 
 	private final static String SPEC2 		= "homes3/homes.tfspec_dummy.json";
+	private final static String SPEC2b 		= "homes3/homes.tfspec_dummy2.json";
 	
 	public enum TransformType {
 		RECODE,
@@ -60,23 +62,43 @@ public class TransformFrameEncodeDecodeTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testHomesRecodeSingleNodeCSV() {
-		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", TransformType.RECODE);
+	public void testHomesRecodeIDsSingleNodeCSV() {
+		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", TransformType.RECODE, false);
 	}
 	
 	@Test
-	public void testHomesRecodeSparkCSV() {
-		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", TransformType.RECODE);
+	public void testHomesRecodeIDsSparkCSV() {
+		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", TransformType.RECODE, false);
 	}
 	
 	@Test
-	public void testHomesDummycodeSingleNodeCSV() {
-		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", TransformType.DUMMY);
+	public void testHomesDummycodeIDsSingleNodeCSV() {
+		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", TransformType.DUMMY, false);
 	}
 	
 	@Test
-	public void testHomesDummycodeSparkCSV() {
-		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", TransformType.DUMMY);
+	public void testHomesDummycodeIDsSparkCSV() {
+		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", TransformType.DUMMY, false);
+	}
+	
+	@Test
+	public void testHomesRecodeColnamesSingleNodeCSV() {
+		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", TransformType.RECODE, true);
+	}
+	
+	@Test
+	public void testHomesRecodeColnamesSparkCSV() {
+		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", TransformType.RECODE, true);
+	}
+	
+	@Test
+	public void testHomesDummycodeColnamesSingleNodeCSV() {
+		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", TransformType.DUMMY, true);
+	}
+	
+	@Test
+	public void testHomesDummycodeColnamesSparkCSV() {
+		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", TransformType.DUMMY, true);
 	}
 	
 	/**
@@ -85,7 +107,7 @@ public class TransformFrameEncodeDecodeTest extends AutomatedTestBase
 	 * @param ofmt
 	 * @param dataset
 	 */
-	private void runTransformTest( RUNTIME_PLATFORM rt, String ofmt, TransformType type )
+	private void runTransformTest( RUNTIME_PLATFORM rt, String ofmt, TransformType type, boolean colnames )
 	{
 		//set runtime platform
 		RUNTIME_PLATFORM rtold = rtplatform;
@@ -99,8 +121,8 @@ public class TransformFrameEncodeDecodeTest extends AutomatedTestBase
 		//set transform specification
 		String SPEC = null; String DATASET = null;
 		switch( type ) {
-			case RECODE: SPEC = SPEC1; DATASET = DATASET1; break;
-			case DUMMY:  SPEC = SPEC2; DATASET = DATASET1; break;
+			case RECODE: SPEC = colnames?SPEC1b:SPEC1; DATASET = DATASET1; break;
+			case DUMMY:  SPEC = colnames?SPEC2b:SPEC2; DATASET = DATASET1; break;
 			default: throw new RuntimeException("Unsupported transform type for encode/decode test.");
 		}
 

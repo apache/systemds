@@ -68,10 +68,10 @@ public class BinAgent extends Encoder
 		super( null, clen );
 	}
 	
-	public BinAgent(JSONObject parsedSpec, int clen) 
+	public BinAgent(JSONObject parsedSpec, List<String> colnames, int clen) 
 		throws JSONException, IOException 
 	{
-		this(parsedSpec, clen, false);
+		this(parsedSpec, colnames, clen, false);
 	}
 	
 	/**
@@ -81,7 +81,7 @@ public class BinAgent extends Encoder
 	 * @throws JSONException
 	 * @throws IOException 
 	 */
-	public BinAgent(JSONObject parsedSpec, int clen, boolean colsOnly) 
+	public BinAgent(JSONObject parsedSpec, List<String> colnames, int clen, boolean colsOnly) 
 		throws JSONException, IOException 
 	{
 		super( null, clen );		
@@ -89,7 +89,7 @@ public class BinAgent extends Encoder
 			return;
 		
 		if( colsOnly ) {
-			List<Integer> collist = TfMetaUtils.parseBinningColIDs(parsedSpec);
+			List<Integer> collist = TfMetaUtils.parseBinningColIDs(parsedSpec, colnames);
 			initColList(ArrayUtils.toPrimitive(collist.toArray(new Integer[0])));
 		}
 		else 

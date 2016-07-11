@@ -24,6 +24,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map.Entry;
 
 import org.apache.spark.Accumulator;
@@ -126,9 +127,11 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 			String spec = ec.getScalarInput(input2.getName(), input2.getValueType(), input2.isLiteral()).getStringValue();
 			MatrixCharacteristics mcIn = sec.getMatrixCharacteristics(input1.getName());
 			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
-			
+			List<String> colnames = !TfMetaUtils.isIDSpecification(spec) ?
+					in.lookup(1L).get(0).getColumnNames() : null; 
+					
 			//step 1: build transform meta data
-			Encoder encoderBuild = EncoderFactory.createEncoder(spec, 
+			Encoder encoderBuild = EncoderFactory.createEncoder(spec, colnames,
 					fo.getSchema(), (int)fo.getNumColumns(), null);
 			
 			Accumulator<Long> accMax = sec.getSparkContext().accumulator(0L, new MaxAcc()); 
@@ -148,17 +151,18 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 			FrameReader reader = FrameReaderFactory.createFrameReader(InputInfo.TextCellInputInfo);
 			FrameBlock meta = reader.readFrameFromHDFS(fometa.getFileName(), accMax.value(), fo.getNumColumns());
 			meta.recomputeColumnCardinality(); //recompute num distinct items per column
+			meta.setColumnNames((colnames!=null)?colnames:meta.getColumnNames());
 			
 			//step 2: transform apply (similar to spark transformapply)
 			//compute omit offset map for block shifts
 			TfOffsetMap omap = null;
-			if( TfMetaUtils.containsOmitSpec(spec) ) {
+			if( TfMetaUtils.containsOmitSpec(spec, colnames) ) {
 				omap = new TfOffsetMap(SparkUtils.toIndexedLong(in.mapToPair(
-					new RDDTransformApplyOffsetFunction(spec)).collect()));
+					new RDDTransformApplyOffsetFunction(spec, colnames)).collect()));
 			}
 				
 			//create encoder broadcast (avoiding replication per task) 
-			Encoder encoder = EncoderFactory.createEncoder(spec, 
+			Encoder encoder = EncoderFactory.createEncoder(spec, colnames,
 					fo.getSchema(), (int)fo.getNumColumns(), meta);
 			mcOut.setDimension(mcIn.getRows()-((omap!=null)?omap.getNumRmRows():0), encoder.getNumCols()); 
 			Broadcast<Encoder> bmeta = sec.getSparkContext().broadcast(encoder);

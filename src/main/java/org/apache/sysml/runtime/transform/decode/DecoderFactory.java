@@ -46,7 +46,7 @@ public class DecoderFactory
 	 * @throws DMLRuntimeException
 	 */
 	@SuppressWarnings("unchecked")
-	public static Decoder createDecoder(String spec, List<ValueType> schema, FrameBlock meta) 
+	public static Decoder createDecoder(String spec, List<String> colnames, List<ValueType> schema, FrameBlock meta) 
 		throws DMLRuntimeException 
 	{	
 		Decoder decoder = null;
@@ -64,9 +64,9 @@ public class DecoderFactory
 			
 			//create decoders 'recode', 'dummy' and 'pass-through'
 			List<Integer> rcIDs = Arrays.asList(ArrayUtils.toObject(
-					TfMetaUtils.parseJsonIDList(jSpec, TfUtils.TXMETHOD_RECODE)));
+					TfMetaUtils.parseJsonIDList(jSpec, colnames, TfUtils.TXMETHOD_RECODE)));
 			List<Integer> dcIDs = Arrays.asList(ArrayUtils.toObject(
-					TfMetaUtils.parseJsonIDList(jSpec, TfUtils.TXMETHOD_DUMMYCODE))); 
+					TfMetaUtils.parseJsonIDList(jSpec, colnames, TfUtils.TXMETHOD_DUMMYCODE))); 
 			rcIDs = new ArrayList<Integer>(CollectionUtils.union(rcIDs, dcIDs));
 			List<Integer> ptIDs = new ArrayList<Integer>(CollectionUtils
 					.subtract(UtilFunctions.getSequenceList(1, schema.size(), 1), rcIDs)); 

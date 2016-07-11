@@ -98,13 +98,13 @@ public class MVImputeAgent extends Encoder
 	public KahanObject[] getMeans_scnomv()   { return _scnomvMeanList; }
 	public CM_COV_Object[] getVars_scnomv()  { return _scnomvVarList; }
 	
-	public MVImputeAgent(JSONObject parsedSpec, int clen) 
+	public MVImputeAgent(JSONObject parsedSpec, List<String> colnames, int clen) 
 		throws JSONException
 	{
 		super(null, clen);
 		
 		//handle column list
-		int[] collist = TfMetaUtils.parseJsonObjectIDList(parsedSpec, TfUtils.TXMETHOD_IMPUTE);
+		int[] collist = TfMetaUtils.parseJsonObjectIDList(parsedSpec, colnames, TfUtils.TXMETHOD_IMPUTE);
 		initColList(collist);
 	
 		//handle method list

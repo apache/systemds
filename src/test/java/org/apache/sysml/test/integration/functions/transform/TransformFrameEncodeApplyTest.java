@@ -39,13 +39,18 @@ public class TransformFrameEncodeApplyTest extends AutomatedTestBase
 	//dataset and transform tasks without missing values
 	private final static String DATASET1 	= "homes3/homes.csv";
 	private final static String SPEC1 		= "homes3/homes.tfspec_recode.json"; 
+	private final static String SPEC1b 		= "homes3/homes.tfspec_recode2.json"; 
 	private final static String SPEC2 		= "homes3/homes.tfspec_dummy.json";
+	private final static String SPEC2b 		= "homes3/homes.tfspec_dummy2.json";
 	private final static String SPEC3 		= "homes3/homes.tfspec_bin.json"; //incl recode
+	private final static String SPEC3b 		= "homes3/homes.tfspec_bin2.json"; //incl recode
 	
 	//dataset and transform tasks with missing values
 	private final static String DATASET2 	= "homes/homes.csv";
 	private final static String SPEC4 		= "homes3/homes.tfspec_impute.json";
+	private final static String SPEC4b 		= "homes3/homes.tfspec_impute2.json";
 	private final static String SPEC5 		= "homes3/homes.tfspec_omit.json";
+	private final static String SPEC5b 		= "homes3/homes.tfspec_omit2.json";
 	
 	public enum TransformType {
 		RECODE,
@@ -62,62 +67,112 @@ public class TransformFrameEncodeApplyTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testHomesRecodeSingleNodeCSV() {
-		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", TransformType.RECODE);
+	public void testHomesRecodeIDsSingleNodeCSV() {
+		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", TransformType.RECODE, false);
 	}
 	
 	@Test
-	public void testHomesRecodeSparkCSV() {
-		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", TransformType.RECODE);
+	public void testHomesRecodeIDsSparkCSV() {
+		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", TransformType.RECODE, false);
 	}
 	
 	@Test
-	public void testHomesDummycodeSingleNodeCSV() {
-		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", TransformType.DUMMY);
+	public void testHomesDummycodeIDsSingleNodeCSV() {
+		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", TransformType.DUMMY, false);
 	}
 	
 	@Test
-	public void testHomesDummycodeSparkCSV() {
-		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", TransformType.DUMMY);
+	public void testHomesDummycodeIDsSparkCSV() {
+		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", TransformType.DUMMY, false);
 	}
 	
 	@Test
-	public void testHomesBinningSingleNodeCSV() {
-		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", TransformType.BIN);
+	public void testHomesBinningIDsSingleNodeCSV() {
+		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", TransformType.BIN, false);
 	}
 	
 	@Test
-	public void testHomesBinningSparkCSV() {
-		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", TransformType.BIN);
+	public void testHomesBinningIDsSparkCSV() {
+		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", TransformType.BIN, false);
 	}
 	
 	@Test
-	public void testHomesOmitSingleNodeCSV() {
-		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", TransformType.OMIT);
+	public void testHomesOmitIDsSingleNodeCSV() {
+		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", TransformType.OMIT, false);
 	}
 	
 	@Test
-	public void testHomesOmitSparkCSV() {
-		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", TransformType.OMIT);
+	public void testHomesOmitIDsSparkCSV() {
+		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", TransformType.OMIT, false);
 	}
 	
 	@Test
-	public void testHomesImputeSingleNodeCSV() {
-		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", TransformType.IMPUTE);
+	public void testHomesImputeIDsSingleNodeCSV() {
+		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", TransformType.IMPUTE, false);
 	}
 	
 	@Test
-	public void testHomesImputeSparkCSV() {
-		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", TransformType.IMPUTE);
+	public void testHomesImputeIDsSparkCSV() {
+		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", TransformType.IMPUTE, false);
 	}
 
+	@Test
+	public void testHomesRecodeColnamesSingleNodeCSV() {
+		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", TransformType.RECODE, true);
+	}
+	
+	@Test
+	public void testHomesRecodeColnamesSparkCSV() {
+		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", TransformType.RECODE, true);
+	}
+	
+	@Test
+	public void testHomesDummycodeColnamesSingleNodeCSV() {
+		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", TransformType.DUMMY, true);
+	}
+	
+	@Test
+	public void testHomesDummycodeColnamesSparkCSV() {
+		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", TransformType.DUMMY, true);
+	}
+	
+	@Test
+	public void testHomesBinningColnamesSingleNodeCSV() {
+		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", TransformType.BIN, true);
+	}
+	
+	@Test
+	public void testHomesBinningColnamesSparkCSV() {
+		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", TransformType.BIN, true);
+	}
+	
+	@Test
+	public void testHomesOmitColnamesSingleNodeCSV() {
+		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", TransformType.OMIT, true);
+	}
+	
+	@Test
+	public void testHomesOmitvColnamesSparkCSV() {
+		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", TransformType.OMIT, true);
+	}
+	
+	@Test
+	public void testHomesImputeColnamesSingleNodeCSV() {
+		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", TransformType.IMPUTE, true);
+	}
+	
+	@Test
+	public void testHomesImputeColnamesSparkCSV() {
+		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", TransformType.IMPUTE, true);
+	}
+	
 	/**
 	 * 
 	 * @param rt
 	 * @param ofmt
 	 * @param dataset
 	 */
-	private void runTransformTest( RUNTIME_PLATFORM rt, String ofmt, TransformType type )
+	private void runTransformTest( RUNTIME_PLATFORM rt, String ofmt, TransformType type, boolean colnames )
 	{
 		//set runtime platform
 		RUNTIME_PLATFORM rtold = rtplatform;
@@ -131,11 +186,11 @@ public class TransformFrameEncodeApplyTest extends AutomatedTestBase
 		//set transform specification
 		String SPEC = null; String DATASET = null;
 		switch( type ) {
-			case RECODE: SPEC = SPEC1; DATASET = DATASET1; break;
-			case DUMMY:  SPEC = SPEC2; DATASET = DATASET1; break;
-			case BIN:    SPEC = SPEC3; DATASET = DATASET1; break;
-			case IMPUTE: SPEC = SPEC4; DATASET = DATASET2; break;
-			case OMIT:   SPEC = SPEC5; DATASET = DATASET2; break;
+			case RECODE: SPEC = colnames?SPEC1b:SPEC1; DATASET = DATASET1; break;
+			case DUMMY:  SPEC = colnames?SPEC2b:SPEC2; DATASET = DATASET1; break;
+			case BIN:    SPEC = colnames?SPEC3b:SPEC3; DATASET = DATASET1; break;
+			case IMPUTE: SPEC = colnames?SPEC4b:SPEC4; DATASET = DATASET2; break;
+			case OMIT:   SPEC = colnames?SPEC5b:SPEC5; DATASET = DATASET2; break;
 		}
 
 		if( !ofmt.equals("csv") )

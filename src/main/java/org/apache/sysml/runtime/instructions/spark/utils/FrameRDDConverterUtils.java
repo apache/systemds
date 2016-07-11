@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Arrays;
 
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
@@ -394,10 +395,9 @@ public class FrameRDDConverterUtils
 		private String _delim = null;
 		private boolean _fill = false;
 		private int _maxRowsPerBlock = -1; 
+		private List<String> _colnames = null;
 		
-		
-		public CSVToBinaryBlockFunction(MatrixCharacteristics mc, boolean hasHeader, String delim, boolean fill)
-		{
+		public CSVToBinaryBlockFunction(MatrixCharacteristics mc, boolean hasHeader, String delim, boolean fill) {
 			_clen = mc.getCols();
 			_hasHeader = hasHeader;
 			_delim = delim;
@@ -420,10 +420,12 @@ public class FrameRDDConverterUtils
 				Tuple2<Text,Long> tmp = arg0.next();
 				String row = tmp._1().toString();
 				long rowix = tmp._2();
-				if(!_hasHeader) 	// In case there is no header, rowindex to be adjusted to base 1.
-					++rowix;
-				if(_hasHeader && rowix == 0)	//Skip header
+				if(!_hasHeader) // In case there is no header, rowindex to be adjusted to base 1.
+					rowix++;
+				if(_hasHeader && rowix == 0) { //Skip header
+					_colnames = Arrays.asList(row.split(_delim));
 					continue;
+				}
 			
 				if( iRowsInBlock == 0 || iRowsInBlock == _maxRowsPerBlock) {
 					if( iRowsInBlock == _maxRowsPerBlock )
@@ -436,7 +438,7 @@ public class FrameRDDConverterUtils
 				String[] parts = IOUtilFunctions.split(row, _delim);
 				boolean emptyFound = false;
 				mb[0].appendRow(parts);
-				++iRowsInBlock;
+				iRowsInBlock++;
 		
 				//sanity check empty cells filled w/ values
 				IOUtilFunctions.checkAndRaiseErrorCSVEmptyField(row, _fill, emptyFound);
@@ -453,7 +455,9 @@ public class FrameRDDConverterUtils
 		{
 			//compute row block index and number of column blocks
 			ix[0] = new LongWritable(rowix);
-			mb[0] = new FrameBlock((int)_clen, ValueType.STRING);		
+			mb[0] = new FrameBlock((int)_clen, ValueType.STRING);
+			if( _colnames != null )
+				mb[0].setColumnNames(_colnames);
 		}
 		
 		// Flushes current state of filled column blocks to output list.

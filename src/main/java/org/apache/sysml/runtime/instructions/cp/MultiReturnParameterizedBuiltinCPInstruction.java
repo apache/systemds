@@ -20,6 +20,7 @@
 package org.apache.sysml.runtime.instructions.cp;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
@@ -81,11 +82,13 @@ public class MultiReturnParameterizedBuiltinCPInstruction extends ComputationCPI
 		//obtain and pin input frame
 		FrameBlock fin = ec.getFrameInput(input1.getName());
 		String spec = ec.getScalarInput(input2.getName(), input2.getValueType(), input2.isLiteral()).getStringValue();
+		List<String> colnames = fin.getColumnNames(); 
 		
 		//execute block transform encode
-		Encoder encoder = EncoderFactory.createEncoder(spec, fin.getNumColumns(), null);
+		Encoder encoder = EncoderFactory.createEncoder(spec, colnames, fin.getNumColumns(), null);
 		MatrixBlock data = encoder.encode(fin, new MatrixBlock(fin.getNumRows(), fin.getNumColumns(), false)); //build and apply
 		FrameBlock meta = encoder.getMetaData(new FrameBlock(fin.getNumColumns(), ValueType.STRING));
+		meta.setColumnNames(colnames);
 		
 		//release input and outputs
 		ec.releaseFrameInput(input1.getName());

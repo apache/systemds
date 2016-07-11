@@ -21,6 +21,7 @@ package org.apache.sysml.runtime.transform;
 
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.List;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -49,13 +50,13 @@ public class OmitAgent extends Encoder
 		super(list, clen);
 	}
 	
-	public OmitAgent(JSONObject parsedSpec, int clen) 
+	public OmitAgent(JSONObject parsedSpec, List<String> colnames, int clen) 
 		throws JSONException 
 	{
 		super(null, clen);
 		if (!parsedSpec.containsKey(TfUtils.TXMETHOD_OMIT))
 			return;
-		int[] collist = TfMetaUtils.parseJsonIDList(parsedSpec, TfUtils.TXMETHOD_OMIT);
+		int[] collist = TfMetaUtils.parseJsonIDList(parsedSpec, colnames, TfUtils.TXMETHOD_OMIT);
 		initColList(collist);
 	}
 	

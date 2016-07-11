@@ -179,7 +179,7 @@ public class FrameReadMetaTest extends AutomatedTestBase
 		throws DMLRuntimeException 
 	{
 		List<Integer> collist = Arrays.asList(ArrayUtils.toObject(
-				TfMetaUtils.parseJsonIDList(spec, TfUtils.TXMETHOD_RECODE)));
+				TfMetaUtils.parseJsonIDList(spec, M.getColumnNames(), TfUtils.TXMETHOD_RECODE)));
 		HashMap<String,Long>[] ret = new HashMap[M.getNumColumns()];
 		Iterator<Object[]> iter = M.getObjectRowIterator();
 		while( iter.hasNext() ) {

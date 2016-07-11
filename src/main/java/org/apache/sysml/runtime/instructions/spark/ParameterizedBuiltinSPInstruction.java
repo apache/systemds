@@ -21,6 +21,7 @@ package org.apache.sysml.runtime.instructions.spark;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
@@ -428,16 +429,18 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			FrameBlock meta = sec.getFrameInput(params.get("meta"));		
 			MatrixCharacteristics mcIn = sec.getMatrixCharacteristics(params.get("target"));
 			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
+			List<String> colnames = !TfMetaUtils.isIDSpecification(params.get("spec")) ?
+					in.lookup(1L).get(0).getColumnNames() : null; 
 			
 			//compute omit offset map for block shifts
 			TfOffsetMap omap = null;
-			if( TfMetaUtils.containsOmitSpec(params.get("spec")) ) {
+			if( TfMetaUtils.containsOmitSpec(params.get("spec"), colnames) ) {
 				omap = new TfOffsetMap(SparkUtils.toIndexedLong(in.mapToPair(
-					new RDDTransformApplyOffsetFunction(params.get("spec"))).collect()));
+					new RDDTransformApplyOffsetFunction(params.get("spec"), colnames)).collect()));
 			}
 				
 			//create encoder broadcast (avoiding replication per task) 
-			Encoder encoder = EncoderFactory.createEncoder(params.get("spec"), 
+			Encoder encoder = EncoderFactory.createEncoder(params.get("spec"), colnames,
 					fo.getSchema(), (int)fo.getNumColumns(), meta);
 			mcOut.setDimension(mcIn.getRows()-((omap!=null)?omap.getNumRmRows():0), encoder.getNumCols()); 
 			Broadcast<Encoder> bmeta = sec.getSparkContext().broadcast(encoder);
@@ -460,6 +463,7 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryBlockRDDHandleForVariable(params.get("target"));
 			MatrixCharacteristics mc = sec.getMatrixCharacteristics(params.get("target"));
 			FrameBlock meta = sec.getFrameInput(params.get("meta"));		
+			List<String> colnames = meta.getColumnNames();
 			
 			//reblock if necessary (clen > bclen)
 			if( mc.getCols() > mc.getNumColBlocks() ) {
@@ -469,7 +473,7 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			}
 			
 			//construct decoder and decode individual matrix blocks
-			Decoder decoder = DecoderFactory.createDecoder(params.get("spec"), null, meta);
+			Decoder decoder = DecoderFactory.createDecoder(params.get("spec"), colnames, null, meta);
 			JavaPairRDD<Long,FrameBlock> out = in.mapToPair(
 					new RDDTransformDecodeFunction(decoder, meta.getNumColumns(), mc.getRowsPerBlock()));
 			
@@ -769,9 +773,9 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 		
 		private int[] _omitColList = null;
 		
-		public RDDTransformApplyOffsetFunction(String spec) {
+		public RDDTransformApplyOffsetFunction(String spec, List<String> colnames) {
 			try {
-				_omitColList = TfMetaUtils.parseJsonIDList(spec, TfUtils.TXMETHOD_OMIT);
+				_omitColList = TfMetaUtils.parseJsonIDList(spec, colnames, TfUtils.TXMETHOD_OMIT);
 			} 
 			catch (DMLRuntimeException e) {
 				throw new RuntimeException(e);

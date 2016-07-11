@@ -59,19 +59,19 @@ public class RecodeAgent extends Encoder
 	private HashMap<Integer, HashMap<String, Long>> _rcdMaps  = new HashMap<Integer, HashMap<String, Long>>();
 	private HashMap<Integer, HashMap<String,String>> _finalMaps = null;
 	
-	public RecodeAgent(JSONObject parsedSpec, int clen)
+	public RecodeAgent(JSONObject parsedSpec, List<String> colnames, int clen)
 		throws JSONException 
 	{
 		super(null, clen);
 		int rcdCount = 0;
 		
 		if( parsedSpec.containsKey(TfUtils.TXMETHOD_RECODE) ) {
-			int[] collist = TfMetaUtils.parseJsonIDList(parsedSpec, TfUtils.TXMETHOD_RECODE);
+			int[] collist = TfMetaUtils.parseJsonIDList(parsedSpec, colnames, TfUtils.TXMETHOD_RECODE);
 			rcdCount = initColList(collist);
 		}
 		
 		if ( parsedSpec.containsKey(TfUtils.TXMETHOD_MVRCD)) {
-			_mvrcdList = TfMetaUtils.parseJsonIDList(parsedSpec, TfUtils.TXMETHOD_MVRCD);
+			_mvrcdList = TfMetaUtils.parseJsonIDList(parsedSpec, colnames, TfUtils.TXMETHOD_MVRCD);
 			rcdCount += _mvrcdList.length;
 		}
 		

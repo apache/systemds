@@ -23,6 +23,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.List;
 import java.util.regex.Pattern;
 
 import org.apache.hadoop.filecache.DistributedCache;
@@ -135,7 +136,7 @@ public class TfUtils implements Serializable{
 		}		
 		_NAstrings = TfUtils.parseNAStrings(job);
 		_spec = job.get(MRJobConfiguration.TF_SPEC);
-		_oa = new OmitAgent(new JSONObject(_spec), -1);
+		_oa = new OmitAgent(new JSONObject(_spec), null, -1);
 	}
 	
 	// called from GenTFMtdMapper, ApplyTf (Hadoop)
@@ -244,11 +245,13 @@ public class TfUtils implements Serializable{
 	private void createAgents(JSONObject spec, String[] naStrings) 
 		throws IOException, JSONException 
 	{
-		_oa = new OmitAgent(spec, _numInputCols);
+		List<String> colnames = Arrays.asList(_outputColumnNames);
+		
+		_oa = new OmitAgent(spec, colnames, _numInputCols);
 		_mia = new MVImputeAgent(spec, naStrings, _numInputCols);
-		_ra = new RecodeAgent(spec, _numInputCols);
-		_ba = new BinAgent(spec, _numInputCols);
-		_da = new DummycodeAgent(spec, _numInputCols);
+		_ra = new RecodeAgent(spec, colnames, _numInputCols);
+		_ba = new BinAgent(spec, colnames, _numInputCols);
+		_da = new DummycodeAgent(spec, colnames, _numInputCols);
 	}
 	
 	public void setupAgents(OmitAgent oa, MVImputeAgent mia, RecodeAgent ra, BinAgent ba, DummycodeAgent da)  {

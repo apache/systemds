@@ -64,11 +64,11 @@ public class DummycodeAgent extends Encoder
 		super(list, clen);
 	}
 	
-	public DummycodeAgent(JSONObject parsedSpec, int clen) throws JSONException {
+	public DummycodeAgent(JSONObject parsedSpec, List<String> colnames, int clen) throws JSONException {
 		super(null, clen);
 		
 		if ( parsedSpec.containsKey(TfUtils.TXMETHOD_DUMMYCODE) ) {
-			int[] collist = TfMetaUtils.parseJsonIDList(parsedSpec, TfUtils.TXMETHOD_DUMMYCODE);
+			int[] collist = TfMetaUtils.parseJsonIDList(parsedSpec, colnames, TfUtils.TXMETHOD_DUMMYCODE);
 			initColList(collist);
 		}
 	}

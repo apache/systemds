@@ -48,8 +48,8 @@ public class EncoderFactory
 	 * @return
 	 * @throws DMLRuntimeException 
 	 */
-	public static Encoder createEncoder(String spec, int clen, FrameBlock meta) throws DMLRuntimeException {
-		return createEncoder(spec, Collections.nCopies(clen, ValueType.STRING), meta);
+	public static Encoder createEncoder(String spec, List<String> colnames, int clen, FrameBlock meta) throws DMLRuntimeException {
+		return createEncoder(spec, colnames, Collections.nCopies(clen, ValueType.STRING), meta);
 	}
 	
 	/**
@@ -61,9 +61,9 @@ public class EncoderFactory
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static Encoder createEncoder(String spec, List<ValueType> schema, int clen, FrameBlock meta) throws DMLRuntimeException {
+	public static Encoder createEncoder(String spec, List<String> colnames, List<ValueType> schema, int clen, FrameBlock meta) throws DMLRuntimeException {
 		List<ValueType> lschema = (schema==null) ? Collections.nCopies(clen, ValueType.STRING) : schema;
-		return createEncoder(spec, lschema, meta);
+		return createEncoder(spec, colnames, lschema, meta);
 	}
 	
 	
@@ -75,7 +75,7 @@ public class EncoderFactory
 	 * @throws DMLRuntimeException
 	 */
 	@SuppressWarnings("unchecked")
-	public static Encoder createEncoder(String spec, List<ValueType> schema, FrameBlock meta) 
+	public static Encoder createEncoder(String spec,  List<String> colnames, List<ValueType> schema, FrameBlock meta) 
 		throws DMLRuntimeException 
 	{	
 		Encoder encoder = null;
@@ -89,21 +89,21 @@ public class EncoderFactory
 			//prepare basic id lists (recode, dummycode, pass-through)
 			//note: any dummycode column requires recode as preparation
 			List<Integer> rcIDs = Arrays.asList(ArrayUtils.toObject(
-					TfMetaUtils.parseJsonIDList(jSpec, TfUtils.TXMETHOD_RECODE)));
+					TfMetaUtils.parseJsonIDList(jSpec, colnames, TfUtils.TXMETHOD_RECODE)));
 			List<Integer> dcIDs = Arrays.asList(ArrayUtils.toObject(
-					TfMetaUtils.parseJsonIDList(jSpec, TfUtils.TXMETHOD_DUMMYCODE))); 
+					TfMetaUtils.parseJsonIDList(jSpec, colnames, TfUtils.TXMETHOD_DUMMYCODE))); 
 			rcIDs = new ArrayList<Integer>(CollectionUtils.union(rcIDs, dcIDs));
-			List<Integer> binIDs = TfMetaUtils.parseBinningColIDs(jSpec); 
+			List<Integer> binIDs = TfMetaUtils.parseBinningColIDs(jSpec, colnames); 
 			List<Integer> ptIDs = new ArrayList<Integer>(CollectionUtils.subtract(
 					CollectionUtils.subtract(UtilFunctions.getSequenceList(1, clen, 1), rcIDs), binIDs)); 
 			List<Integer> oIDs = Arrays.asList(ArrayUtils.toObject(
-					TfMetaUtils.parseJsonIDList(jSpec, TfUtils.TXMETHOD_OMIT))); 
+					TfMetaUtils.parseJsonIDList(jSpec, colnames, TfUtils.TXMETHOD_OMIT))); 
 			List<Integer> mvIDs = Arrays.asList(ArrayUtils.toObject(
-					TfMetaUtils.parseJsonObjectIDList(jSpec, TfUtils.TXMETHOD_IMPUTE))); 
+					TfMetaUtils.parseJsonObjectIDList(jSpec, colnames, TfUtils.TXMETHOD_IMPUTE))); 
 			
 			//create individual encoders
 			if( !rcIDs.isEmpty() ) {
-				RecodeAgent ra = new RecodeAgent(jSpec, clen);
+				RecodeAgent ra = new RecodeAgent(jSpec, colnames, clen);
 				ra.setColList(ArrayUtils.toPrimitive(rcIDs.toArray(new Integer[0])));
 				lencoders.add(ra);	
 			}
@@ -111,13 +111,13 @@ public class EncoderFactory
 				lencoders.add(new EncoderPassThrough(
 						ArrayUtils.toPrimitive(ptIDs.toArray(new Integer[0])), clen));	
 			if( !dcIDs.isEmpty() )
-				lencoders.add(new DummycodeAgent(jSpec, schema.size()));
+				lencoders.add(new DummycodeAgent(jSpec, colnames, schema.size()));
 			if( !binIDs.isEmpty() )
-				lencoders.add(new BinAgent(jSpec, schema.size(), true));
+				lencoders.add(new BinAgent(jSpec, colnames, schema.size(), true));
 			if( !oIDs.isEmpty() )
-				lencoders.add(new OmitAgent(jSpec, schema.size()));
+				lencoders.add(new OmitAgent(jSpec, colnames, schema.size()));
 			if( !mvIDs.isEmpty() ) {
-				MVImputeAgent ma = new MVImputeAgent(jSpec, schema.size());
+				MVImputeAgent ma = new MVImputeAgent(jSpec, colnames, schema.size());
 				ma.initRecodeIDList(rcIDs);
 				lencoders.add(ma);
 			}

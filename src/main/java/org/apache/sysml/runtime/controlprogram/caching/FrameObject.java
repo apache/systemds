@@ -121,6 +121,7 @@ public class FrameObject extends CacheableData<FrameBlock>
 		//update matrix characteristics
 		MatrixCharacteristics mc = ((MatrixDimensionsMetaData) _metaData).getMatrixCharacteristics();
 		mc.setDimension( _data.getNumRows(),_data.getNumColumns() );
+		mc.setNonZeros(_data.getNumRows()*_data.getNumColumns());
 		
 		//update schema information
 		_schema = _data.getSchema();

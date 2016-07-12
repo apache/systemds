@@ -19,6 +19,7 @@
 
 package org.apache.sysml.test.integration.functions.transform;
 
+import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
@@ -32,6 +33,7 @@ import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
+import org.apache.sysml.utils.Statistics;
 
 public class TransformFrameEncodeDecodeTest extends AutomatedTestBase 
 {
@@ -72,6 +74,11 @@ public class TransformFrameEncodeDecodeTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testHomesRecodeIDsHybridCSV() {
+		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "csv", TransformType.RECODE, false);
+	}
+	
+	@Test
 	public void testHomesDummycodeIDsSingleNodeCSV() {
 		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", TransformType.DUMMY, false);
 	}
@@ -79,6 +86,11 @@ public class TransformFrameEncodeDecodeTest extends AutomatedTestBase
 	@Test
 	public void testHomesDummycodeIDsSparkCSV() {
 		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", TransformType.DUMMY, false);
+	}
+	
+	@Test
+	public void testHomesDummycodeIDsHybridCSV() {
+		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "csv", TransformType.DUMMY, false);
 	}
 	
 	@Test
@@ -92,6 +104,11 @@ public class TransformFrameEncodeDecodeTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testHomesRecodeColnamesHybridCSV() {
+		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "csv", TransformType.RECODE, true);
+	}
+	
+	@Test
 	public void testHomesDummycodeColnamesSingleNodeCSV() {
 		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", TransformType.DUMMY, true);
 	}
@@ -99,6 +116,11 @@ public class TransformFrameEncodeDecodeTest extends AutomatedTestBase
 	@Test
 	public void testHomesDummycodeColnamesSparkCSV() {
 		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", TransformType.DUMMY, true);
+	}
+	
+	@Test
+	public void testHomesDummycodeColnamesHybridCSV() {
+		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "csv", TransformType.DUMMY, true);
 	}
 	
 	/**
@@ -153,6 +175,11 @@ public class TransformFrameEncodeDecodeTest extends AutomatedTestBase
 			String[][] R1 = DataConverter.convertToStringFrame(fb1);
 			String[][] R2 = DataConverter.convertToStringFrame(fb2);
 			TestUtils.compareFrames(R1, R2, R1.length, R1[0].length);			
+			
+			if( rt == RUNTIME_PLATFORM.HYBRID_SPARK ) {
+				Assert.assertEquals("Wrong number of executed Spark instructions: " + 
+					Statistics.getNoOfExecutedSPInst(), new Long(2), new Long(Statistics.getNoOfExecutedSPInst()));
+			}
 		}
 		catch(Exception ex) {
 			throw new RuntimeException(ex);

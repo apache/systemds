@@ -979,8 +979,10 @@ public class SparkExecutionContext extends ExecutionContext
 		
 			//copy into output frame
 			out.copy( ix, ix+block.getNumRows()-1, 0, block.getNumColumns()-1, block );
-			if( ix == 0 )
+			if( ix == 0 ) {
+				out.setColumnNames(block.getColumnNames());
 				out.setColumnMetadata(block.getColumnMetadata());
+			}
 		}
 		
 		if (DMLScript.STATISTICS) {

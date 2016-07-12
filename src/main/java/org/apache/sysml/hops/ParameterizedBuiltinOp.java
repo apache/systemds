@@ -1062,8 +1062,7 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 			Hop dir = getInput().get(_paramIndexMap.get("dir"));
 			double maxVal = HopRewriteUtils.getDoubleValueSafe((LiteralOp)max);
 			String dirVal = ((LiteralOp)dir).getStringValue();
-			if( mc.dimsKnown() )
-			{
+			if( mc.dimsKnown() ) {
 				long lnnz = mc.nnzKnown() ? mc.getNonZeros() : mc.getRows();
 				if( "cols".equals(dirVal) ) { //expand horizontally
 					ret = new long[]{mc.getRows(), UtilFunctions.toLong(maxVal), lnnz};
@@ -1071,6 +1070,20 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 				else if( "rows".equals(dirVal) ){ //expand vertically
 					ret = new long[]{UtilFunctions.toLong(maxVal), mc.getRows(), lnnz};
 				}	
+			}
+		}
+		else if( _op == ParamBuiltinOp.TRANSFORMDECODE ) {
+			if( mc.dimsKnown() ) {
+				//rows: remain unchanged
+				//cols: dummy coding might decrease never increase cols 
+				return new long[]{mc.getRows(), mc.getCols(), mc.getRows()*mc.getCols()};
+			}
+		}
+		else if( _op == ParamBuiltinOp.TRANSFORMAPPLY ) {
+			if( mc.dimsKnown() ) {
+				//rows: omitting might decrease but never increase rows
+				//cols: dummy coding and binning might increase cols but nnz stays constant
+				return new long[]{mc.getRows(), mc.getCols(), mc.getRows()*mc.getCols()};
 			}
 		}
 		
@@ -1205,11 +1218,21 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 				
 				break;	
 			}
-			case TRANSFORMAPPLY: {
+			case TRANSFORMDECODE: {
 				Hop target = getInput().get(_paramIndexMap.get("target"));
-				setDim1( target.getDim1() ); //rows remain unchanged
-			}
+				//rows remain unchanged for recoding and dummy coding
+				setDim1( target.getDim1() );
+				//cols remain unchanged only if no dummy coding
+				//TODO parse json spec
 				break;
+			}
+			
+			case TRANSFORMAPPLY: {
+				//rows remain unchanged only if no omitting
+				//cols remain unchanged of no dummy coding 
+				//TODO parse json spec
+				break;
+			}
 			default:
 				//do nothing
 				break;

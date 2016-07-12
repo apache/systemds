@@ -1638,12 +1638,16 @@ public class Recompiler
 			if( vars.keySet().contains( varName ) )
 			{
 				Data dat = vars.get(varName);
-				if( dat instanceof MatrixObject )
-				{
+				if( dat instanceof MatrixObject ) {
 					MatrixObject mo = (MatrixObject) dat;
 					d.setDim1(mo.getNumRows());
 					d.setDim2(mo.getNumColumns());
 					d.setNnz(mo.getNnz());
+				}
+				else if( dat instanceof FrameObject ) {
+					FrameObject fo = (FrameObject) dat;
+					d.setDim1(fo.getNumRows());
+					d.setDim2(fo.getNumColumns());
 				}
 			}
 		}

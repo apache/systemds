@@ -119,7 +119,6 @@ public class RewriteFuseBinaryOpChainTest extends AutomatedTestBase
 	 */
 	private void testRewriteAxpy( String testname, boolean rewrites, ExecType instType )
 	{	
-		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( instType ){
 			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
@@ -145,23 +144,19 @@ public class RewriteFuseBinaryOpChainTest extends AutomatedTestBase
 			fullRScriptName = HOME + testname + ".R";
 			rCmd = getRCmd(inputDir(), expectedDir());			
 
-			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
-
 			runTest(true, false, null, -1); 
 			runRScript(true); 
 			
 			//compare matrices 
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("S");
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("S");
-			Assert.assertTrue(TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R"));			
+			Assert.assertTrue(TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R"));
 		}
 		finally
 		{
-			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlag;
+			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewritesOld;
 			rtplatform = platformOld;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
-			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewritesOld;
-			
 		}
 		
 	}	

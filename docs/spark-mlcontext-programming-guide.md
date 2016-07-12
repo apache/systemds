@@ -1024,6 +1024,9 @@ We can then open up the `SystemML-PySpark-Recommendation-Demo` notebook:
 %autoreload 2
 %matplotlib inline
 
+# Add SystemML PySpark API file.
+sc.addPyFile("https://raw.githubusercontent.com/apache/incubator-systemml/3d5f9b11741f6d6ecc6af7cbaa1069cde32be838/src/main/java/org/apache/sysml/api/python/SystemML.py")
+
 import numpy as np
 import matplotlib.pyplot as plt
 plt.rcParams['figure.figsize'] = (10, 6)

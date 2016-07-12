@@ -53,6 +53,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.matrix.mapred.FrameReblockBuffer;
+import org.apache.sysml.runtime.transform.TfUtils;
 import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.runtime.util.FastStringTokenizer;
 import org.apache.sysml.runtime.util.UtilFunctions;
@@ -85,8 +86,12 @@ public class FrameRDDConverterUtils
 		if( !mcOut.dimsKnown(true) ) {
 			JavaRDD<String> tmp = input.values()
 					.map(new TextToStringFunction());
-			long rlen = tmp.count() - (hasHeader ? 1 : 0);
-			long clen = tmp.first().split(delim).length;
+			String tmpStr = tmp.first();
+			boolean metaHeader = tmpStr.startsWith(TfUtils.TXMTD_MVPREFIX) 
+					|| tmpStr.startsWith(TfUtils.TXMTD_NDPREFIX);
+			tmpStr = (metaHeader) ? tmpStr.substring(tmpStr.indexOf(delim)+1) : tmpStr;
+			long rlen = tmp.count() - (hasHeader ? 1 : 0) - (metaHeader ? 2 : 0);
+			long clen = tmpStr.split(delim).length;
 			mcOut.set(rlen, clen, mcOut.getRowsPerBlock(), mcOut.getColsPerBlock(), -1);
 		}
 		
@@ -396,6 +401,8 @@ public class FrameRDDConverterUtils
 		private boolean _fill = false;
 		private int _maxRowsPerBlock = -1; 
 		private List<String> _colnames = null;
+		private List<String> _mvMeta = null; //missing value meta data
+		private List<String> _ndMeta = null; //num distinct meta data
 		
 		public CSVToBinaryBlockFunction(MatrixCharacteristics mc, boolean hasHeader, String delim, boolean fill) {
 			_clen = mc.getCols();
@@ -420,13 +427,22 @@ public class FrameRDDConverterUtils
 				Tuple2<Text,Long> tmp = arg0.next();
 				String row = tmp._1().toString();
 				long rowix = tmp._2();
-				if(!_hasHeader) // In case there is no header, rowindex to be adjusted to base 1.
-					rowix++;
 				if(_hasHeader && rowix == 0) { //Skip header
 					_colnames = Arrays.asList(row.split(_delim));
 					continue;
 				}
-			
+				if( row.startsWith(TfUtils.TXMTD_MVPREFIX) ) {
+					_mvMeta = Arrays.asList(Arrays.copyOfRange(row.split(_delim), 1, (int)_clen+1));
+					continue;
+				}
+				else if( row.startsWith(TfUtils.TXMTD_NDPREFIX) ) {
+					_ndMeta = Arrays.asList(Arrays.copyOfRange(row.split(_delim), 1, (int)_clen+1));
+					continue;
+				}
+				
+				//adjust row index for header and meta data
+				rowix += (_hasHeader ? 0 : 1) - ((_mvMeta == null) ? 0 : 2);
+				
 				if( iRowsInBlock == 0 || iRowsInBlock == _maxRowsPerBlock) {
 					if( iRowsInBlock == _maxRowsPerBlock )
 						flushBlocksToList(ix, mb, ret);
@@ -458,6 +474,12 @@ public class FrameRDDConverterUtils
 			mb[0] = new FrameBlock((int)_clen, ValueType.STRING);
 			if( _colnames != null )
 				mb[0].setColumnNames(_colnames);
+			if( _mvMeta != null )
+				for( int j=0; j<_clen; j++ )
+					mb[0].getColumnMetadata(j).setMvValue(_mvMeta.get(j));
+			if( _ndMeta != null )
+				for( int j=0; j<_clen; j++ )
+					mb[0].getColumnMetadata(j).setNumDistinct(Long.parseLong(_ndMeta.get(j)));
 		}
 		
 		// Flushes current state of filled column blocks to output list.
@@ -493,20 +515,33 @@ public class FrameRDDConverterUtils
 			FrameBlock blk = arg0._2();
 			
 			ArrayList<String> ret = new ArrayList<String>();
+			StringBuilder sb = new StringBuilder();
 			
-			//handle header information
-			if(_props.hasHeader() && ix==1 ) {
-				StringBuilder sb = new StringBuilder();
-				for(int j = 1; j <= blk.getNumColumns(); j++) {
-					if(j != 1)
-						sb.append(_props.getDelim());
-					sb.append("C" + j);
+			//handle header information and frame meta data
+			if( ix==1 ) {
+				if( _props.hasHeader() ) {
+					for(int j = 1; j <= blk.getNumColumns(); j++) {
+						sb.append(blk.getColumnNames().get(j) 
+							+ ((j<blk.getNumColumns()-1)?_props.getDelim():""));
+					}
+					ret.add(sb.toString());
+					sb.setLength(0); //reset
 				}
-				ret.add(sb.toString());
+				if( !blk.isColumnMetadataDefault() ) {
+					sb.append(TfUtils.TXMTD_MVPREFIX + _props.getDelim());
+					for( int j=0; j<blk.getNumColumns(); j++ )
+						sb.append(blk.getColumnMetadata(j).getMvValue() + ((j<blk.getNumColumns()-1)?_props.getDelim():""));
+					ret.add(sb.toString());
+					sb.setLength(0); //reset
+					sb.append(TfUtils.TXMTD_NDPREFIX + _props.getDelim());
+					for( int j=0; j<blk.getNumColumns(); j++ )
+						sb.append(blk.getColumnMetadata(j).getNumDistinct() + ((j<blk.getNumColumns()-1)?_props.getDelim():""));
+					ret.add(sb.toString());
+					sb.setLength(0); //reset		
+				}
 			}
 		
 			//handle Frame block data
-			StringBuilder sb = new StringBuilder();
 			Iterator<String[]> iter = blk.getStringRowIterator();
 			while( iter.hasNext() ) {
 				String[] row = iter.next();

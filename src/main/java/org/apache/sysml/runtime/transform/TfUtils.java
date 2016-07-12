@@ -38,6 +38,7 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
 import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.DataExpression;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
@@ -83,7 +84,11 @@ public class TfUtils implements Serializable{
 	public static final String TXMETHOD_OMIT      = "omit";
 	public static final String TXMETHOD_MVRCD     = "mvrcd";
 		
-	//transform meta data constants
+	//transform meta data constants (frame-based transform)
+	public static final String TXMTD_MVPREFIX = "#Meta"+Lop.DATATYPE_PREFIX+"MV";
+	public static final String TXMTD_NDPREFIX = "#Meta"+Lop.DATATYPE_PREFIX+"ND";
+	
+	//transform meta data constants (old file-based transform)
 	public static final String TXMTD_SEP         = ",";
 	public static final String TXMTD_COLTYPES    = "coltypes.csv";	
 	public static final String TXMTD_COLNAMES    = "column.names";

@@ -93,6 +93,8 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		this();
 		_schema.addAll(Collections.nCopies(ncols, vt));
 		_colnames = createColNames(ncols);
+		for( int j=0; j<ncols; j++ )
+			_colmeta.add(new ColumnMetadata(0));
 	}
 	
 	public FrameBlock(List<ValueType> schema) {
@@ -191,6 +193,17 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 */
 	public ColumnMetadata getColumnMetadata(int c) {
 		return _colmeta.get(c);
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public boolean isColumnMetadataDefault() {
+		boolean ret = true;
+		for( int j=0; j<getNumColumns() && ret; j++ )
+			ret &= isColumnMetadataDefault(j);
+		return ret;
 	}
 	
 	/**

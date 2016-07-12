@@ -39,6 +39,7 @@ import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
+import org.apache.sysml.runtime.transform.TfUtils;
 import org.apache.sysml.runtime.util.LocalFileUtils;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
@@ -212,6 +213,10 @@ public class IOUtilFunctions
 			try {
 				if( reader.next(key, value) ) {
 					String row = value.toString().trim();
+					if( row.startsWith(TfUtils.TXMTD_MVPREFIX) )
+						reader.next(key, value);
+					if( row.startsWith(TfUtils.TXMTD_NDPREFIX) )
+						reader.next(key, value);
 					if( !row.isEmpty() )
 						ncol = StringUtils.countMatches(row, delim) + 1;
 				}

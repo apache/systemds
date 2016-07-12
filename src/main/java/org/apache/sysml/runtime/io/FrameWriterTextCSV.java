@@ -31,6 +31,7 @@ import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
+import org.apache.sysml.runtime.transform.TfUtils;
 import org.apache.sysml.runtime.util.MapReduceTool;
 
 /**
@@ -125,19 +126,27 @@ public class FrameWriterTextCSV extends FrameWriter
 			String delim = props.getDelim();
 			
 			// Write header line, if needed
-			if( props.hasHeader() && rl==0 ) 
-			{
-				//write row chunk-wise to prevent OOM on large number of columns
-				for( int bj=0; bj<cols; bj+=BLOCKSIZE_J ) {
-					for( int j=bj; j < Math.min(cols,bj+BLOCKSIZE_J); j++) {
-						sb.append("C"+ (j+1));
+			if( rl==0 ) {
+				//append column names if header requested
+				if( props.hasHeader() ) {
+					for( int j=0; j<cols; j++ ) {
+						sb.append(src.getColumnNames().get(j));
 						if ( j < cols-1 )
 							sb.append(delim);
 					}
-					br.write( sb.toString() );
-		            sb.setLength(0);	
+					sb.append('\n');
 				}
-				sb.append('\n');
+				//append meta data
+				if( !src.isColumnMetadataDefault() ) {
+					sb.append(TfUtils.TXMTD_MVPREFIX + delim);
+					for( int j=0; j<cols; j++ )
+						sb.append(src.getColumnMetadata(j).getMvValue() + ((j<cols-1)?delim:""));
+					sb.append("\n");
+					sb.append(TfUtils.TXMTD_NDPREFIX + delim);
+					for( int j=0; j<cols; j++ )
+						sb.append(src.getColumnMetadata(j).getNumDistinct() + ((j<cols-1)?delim:""));
+					sb.append("\n");
+				}
 				br.write( sb.toString() );
 	            sb.setLength(0);
 			}

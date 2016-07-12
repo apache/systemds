@@ -39,6 +39,7 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.Pair;
+import org.apache.sysml.runtime.transform.TfUtils;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
 /**
@@ -172,6 +173,17 @@ public class FrameReaderTextCSV extends FrameReader
 				emptyValuesFound = false; col = 0;
 				String[] parts = IOUtilFunctions.split(cellStr, delim);
 				
+				//parse frame meta data (missing values / num distinct)
+				if( parts[0].equals(TfUtils.TXMTD_MVPREFIX) || parts[0].equals(TfUtils.TXMTD_NDPREFIX) ) {
+					if( parts[0].equals(TfUtils.TXMTD_MVPREFIX) )
+						for( int j=0; j<dest.getNumColumns(); j++ )
+							dest.getColumnMetadata(j).setMvValue(parts[j+1]);
+					else if( parts[0].equals(TfUtils.TXMTD_NDPREFIX) )
+						for( int j=0; j<dest.getNumColumns(); j++ )
+							dest.getColumnMetadata(j).setNumDistinct(Long.parseLong(parts[j+1]));
+					continue;
+				}
+				
 				for( String part : parts ) //foreach cell
 				{
 					part = part.trim();
@@ -233,9 +245,12 @@ public class FrameReaderTextCSV extends FrameReader
 				if( i==0 && _props.hasHeader() )
 					reader.next(key, value);
 				
-				//count remaining number of rows
-				while ( reader.next(key, value) )
-					nrow++;
+				//count remaining number of rows, ignore meta data
+				while ( reader.next(key, value) ) {
+					String val = value.toString();
+					nrow += ( val.startsWith(TfUtils.TXMTD_MVPREFIX)
+						|| val.startsWith(TfUtils.TXMTD_NDPREFIX)) ? 0 : 1; 
+				}
 			}
 			finally {
 				IOUtilFunctions.closeSilently(reader);

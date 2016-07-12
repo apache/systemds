@@ -41,6 +41,7 @@ import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.Pair;
+import org.apache.sysml.runtime.transform.TfUtils;
 
 /**
  * Multi-threaded frame text csv reader.
@@ -175,8 +176,11 @@ public class FrameReaderTextCSVParallel extends FrameReaderTextCSV
 			try {
 				if ( _firstSplit && _hasHeader )
 					reader.next(key, value);
-				while (reader.next(key, value))
-					nrows++;
+				while ( reader.next(key, value) ) {
+					String val = value.toString();
+					nrows += ( val.startsWith(TfUtils.TXMTD_MVPREFIX)
+						|| val.startsWith(TfUtils.TXMTD_NDPREFIX)) ? 0 : 1; 
+				}
 			} 
 			finally {
 				IOUtilFunctions.closeSilently(reader);

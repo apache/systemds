@@ -70,16 +70,15 @@ public class FrameMetaReadWriteTest extends AutomatedTestBase
 		runFrameReadWriteTest(OutputInfo.TextCellOutputInfo, ExecType.SPARK);
 	}
 	
-// TODO: add meta data support for text formats (requires consolidation with file-based transform first) 	
-//	@Test
-//	public void testFrameCsvCP()  {
-//		runFrameReadWriteTest(OutputInfo.CSVOutputInfo, ExecType.CP);
-//	}
-//
-//	@Test
-//	public void testFrameCsvSpark()  {
-//		runFrameReadWriteTest(OutputInfo.CSVOutputInfo, ExecType.SPARK);
-//	}
+	@Test
+	public void testFrameCsvCP()  {
+		runFrameReadWriteTest(OutputInfo.CSVOutputInfo, ExecType.CP);
+	}
+
+	@Test
+	public void testFrameCsvSpark()  {
+		runFrameReadWriteTest(OutputInfo.CSVOutputInfo, ExecType.SPARK);
+	}
 	
 	/**
 	 * 

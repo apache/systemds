@@ -40,7 +40,7 @@ binary-block data format, allowing for SystemML's optimizations to be performed.
 
 ## Start Spark Shell with SystemML
 
-To use SystemML with the Spark Shell, the SystemML jar can be referenced using the Spark Shell's `--jars` option. 
+To use SystemML with the Spark Shell, the SystemML jar can be referenced using the Spark Shell's `--jars` option.
 Instructions to build the SystemML jar can be found in the [SystemML GitHub README](https://github.com/apache/incubator-systemml).
 
 {% highlight bash %}
@@ -263,7 +263,7 @@ arguments to blank `String`s so that the script can pass validation.
 
 The `shape.dml` script is executed by the call to `execute()`, where we supply the `Map` of required named arguments. The
 execution results are returned as the `MLOutput` fixed variable `outputs`. The number of rows is obtained by calling the `getStaticInt()`
-helper method with the `outputs` object and `"m"`. The number of columns is retrieved by calling `getStaticInt()` with 
+helper method with the `outputs` object and `"m"`. The number of columns is retrieved by calling `getStaticInt()` with
 `outputs` and `"n"`.
 
 <div class="codetabs">
@@ -325,7 +325,7 @@ This DML will find the minimum, maximum, and mean value of a matrix.
 
 <div data-lang="Spark Shell" markdown="1">
 {% highlight scala %}
-scala> val minMaxMeanScript: String = 
+scala> val minMaxMeanScript: String =
      | """
      | Xin = read(" ")
      | minOut = matrix(min(Xin), rows=1, cols=1)
@@ -335,7 +335,7 @@ scala> val minMaxMeanScript: String =
      | write(maxOut, " ")
      | write(meanOut, " ")
      | """
-minMaxMeanScript: String = 
+minMaxMeanScript: String =
 "
 Xin = read(" ")
 minOut = matrix(min(Xin), rows=1, cols=1)
@@ -351,7 +351,7 @@ write(meanOut, " ")
 
 <div data-lang="Statements" markdown="1">
 {% highlight scala %}
-val minMaxMeanScript: String = 
+val minMaxMeanScript: String =
 """
 Xin = read(" ")
 minOut = matrix(min(Xin), rows=1, cols=1)
@@ -552,7 +552,7 @@ Let's briefly consider these cells.
 
 ## Trigger Spark Startup
 
-This cell triggers Spark to initialize by calling the `SparkContext` `sc` object. Information regarding these startup operations can be viewed in the 
+This cell triggers Spark to initialize by calling the `SparkContext` `sc` object. Information regarding these startup operations can be viewed in the
 console window in which `zeppelin.sh` is running.
 
 **Cell:**
@@ -860,10 +860,10 @@ import org.apache.sysml.api.MLOutput
 
 def getScalar(outputs: MLOutput, symbol: String): Any =
     outputs.getDF(sqlContext, symbol).first()(1)
-    
-def getScalarDouble(outputs: MLOutput, symbol: String): Double = 
+
+def getScalarDouble(outputs: MLOutput, symbol: String): Double =
     getScalar(outputs, symbol).asInstanceOf[Double]
-    
+
 def getScalarInt(outputs: MLOutput, symbol: String): Int =
     getScalarDouble(outputs, symbol).toInt
 {% endhighlight %}
@@ -882,7 +882,7 @@ getScalarInt: (outputs: org.apache.sysml.api.MLOutput, symbol: String)Int
 SystemML uses a binary-block format for matrix data representation. This cell
 explicitly converts the `DataFrame` `data` object to a binary-block `features` matrix
 and single-column `label` matrix, both represented by the
-`JavaPairRDD[MatrixIndexes, MatrixBlock]` datatype. 
+`JavaPairRDD[MatrixIndexes, MatrixBlock]` datatype.
 
 
 **Cell:**
@@ -1007,7 +1007,7 @@ and can be [downloaded here](https://raw.githubusercontent.com/apache/incubator-
 
 From the directory with the downloaded notebook, start Jupyter with PySpark:
 
-    PYSPARK_DRIVER_PYTHON=jupyter PYSPARK_DRIVER_PYTHON_OPTS="notebook" $SPARK_HOME/bin/pyspark --master local[*] --jars $SYSTEMML_HOME/target/SystemML.jar --py-files $SYSTEMML_HOME/src/main/java/org/apache/sysml/api/python/SystemML.py --driver-class-path $SYSTEMML_HOME/target/SystemML.jar
+    PYSPARK_DRIVER_PYTHON=jupyter PYSPARK_DRIVER_PYTHON_OPTS="notebook" $SPARK_HOME/bin/pyspark --master local[*] --driver-class-path $SYSTEMML_HOME/SystemML.jar
 
 This will open Jupyter in a browser:
 
@@ -1023,6 +1023,9 @@ We can then open up the `SystemML-PySpark-Recommendation-Demo` notebook:
 %load_ext autoreload
 %autoreload 2
 %matplotlib inline
+
+# Add SystemML PySpark API file.
+sc.addPyFile("https://raw.githubusercontent.com/apache/incubator-systemml/3d5f9b11741f6d6ecc6af7cbaa1069cde32be838/src/main/java/org/apache/sysml/api/python/SystemML.py")
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -1092,9 +1095,9 @@ losses = matrix(0, rows=max_iteration, cols=1)
 i=1
 while(i <= max_iteration) {
   # update params
-  H = (H * (t(W) %*% (V/(W%*%H))))/t(colSums(W)) 
+  H = (H * (t(W) %*% (V/(W%*%H))))/t(colSums(W))
   W = (W * ((V/(W%*%H)) %*% t(H)))/t(rowSums(H))
-  
+
   # compute loss
   losses[i,] = -1 * (sum(V*log(W%*%H)) - as.scalar(colSums(W)%*%rowSums(H)))
   i = i + 1;

@@ -1,0 +1,255 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+/*
+ * LSTM layer.
+ */
+source("nn/layers/sigmoid.dml") as sigmoid
+source("nn/layers/tanh.dml") as tanh
+
+forward = function(matrix[double] X, matrix[double] W, matrix[double] b, int T, int D,
+                   boolean return_sequences, matrix[double] out0, matrix[double] c0)
+    return (matrix[double] out, matrix[double] c,
+            matrix[double] cache_out, matrix[double] cache_c, matrix[double] cache_ifog) {
+  /*
+   * Computes the forward pass for an LSTM layer with M neurons.
+   * The input data has N sequences of T examples, each with D features.
+   *
+   * In an LSTM, an internal cell state is maintained, additive
+   * interactions operate over the cell state at each timestep, and
+   * some amount of this cell state is exposed as output at each
+   * timestep.  Additionally, the output of the previous timestep is fed
+   * back in as an additional input at the current timestep.
+   *
+   * Reference:
+   *  - Long Short-Term Memory, Hochreiter, 1997
+   *    - http://deeplearning.cs.cmu.edu/pdfs/Hochreiter97_lstm.pdf
+   *
+   * Inputs:
+   *  - X: Input data matrix, of shape (N, T*D).
+   *  - W: Weights (parameters) matrix, of shape (D+M, 4M).
+   *  - b: Biases vector, of shape (1, 4M).
+   *  - T: Length of example sequences (number of timesteps).
+   *  - D: Dimensionality of the input features.
+   *  - return_sequences: Whether to return `out` at all timesteps,
+   *      or just for the final timestep.
+   *  - out0: Output matrix at previous timestep, of shape (N, M).
+   *      Note: This is *optional* and could just be an empty matrix.
+   *  - c0: Initial cell state matrix, of shape (N, M).
+   *      Note: This is *optional* and could just be an empty matrix.
+   *
+   * Outputs:
+   *  - out: If `return_sequences` is True, outputs for all timesteps,
+   *      of shape (N, T*M).  Else, outputs for the final timestep, of
+   *      shape (N, M).
+   *  - c: Cell state for final timestep, of shape (N, M).
+   *  - cache_out: Cache of outputs, of shape (T, N*M).
+   *      Note: This is used for performance during training.
+   *  - cache_c: Cache of cell state, of shape (T, N*M).
+   *      Note: This is used for performance during training.
+   *  - cache_ifog: Cache of intermediate values, of shape (T, N*4M).
+   *      Note: This is used for performance during training.
+   */
+  N = nrow(X)
+  M = as.integer(ncol(W)/4)
+  out_prev = out0
+  c_prev = c0
+  c = c_prev
+  if (return_sequences) {
+    out = matrix(0, rows=N, cols=T*M)
+  }
+  else {
+    out = matrix(0, rows=N, cols=M)
+  }
+  # caches to be used during the backward pass for performance
+  cache_out = matrix(0, rows=T, cols=N*M)
+  cache_c = matrix(0, rows=T, cols=N*M) 
+  cache_ifog = matrix(0, rows=T, cols=N*4*M)
+
+  for (t in 1:T) {  # each timestep
+    X_t = X[,(t-1)*D+1:t*D]  # shape (N, D)
+    input = cbind(X_t, out_prev)  # shape (N, D+M)
+    ifog = input %*% W + b  # input, forget, output, and g gates; shape (N, 4M)
+    tmp = sigmoid::forward(ifog[,1:3*M])  # i,f,o gates squashed with sigmoid
+    ifog[,1:3*M] = tmp
+    tmp = tanh::forward(ifog[,3*M+1:4*M])  # g gate squashed with tanh
+    ifog[,3*M+1:4*M] = tmp
+    # c_t = f*prev_c + i*g
+    c = ifog[,M+1:2*M]*c_prev + ifog[,1:M]*ifog[,3*M+1:4*M]  # shape (N, M)
+    # out_t = o*tanh(c)
+    tmp = tanh::forward(c)
+    out_t = ifog[,2*M+1:3*M] * tmp  # shape (N, M)
+
+    # store
+    if (return_sequences) {
+      out[,(t-1)*M+1:t*M] = out_t
+    }
+    else {
+      out = out_t
+    }
+    out_prev = out_t
+    c_prev = c
+    cache_out[t,] = matrix(out_t, rows=1, cols=N*M)  # reshape
+    cache_c[t,] = matrix(c, rows=1, cols=N*M)  # reshape
+    cache_ifog[t,] = matrix(ifog, rows=1, cols=N*4*M)  # reshape
+  }
+}
+
+backward = function(matrix[double] dout, matrix[double] dc, 
+                    matrix[double] X, matrix[double] W, matrix[double] b, int T, int D,
+                    boolean given_sequences, matrix[double] out0, matrix[double] c0,
+                    matrix[double] cache_out, matrix[double] cache_c, matrix[double] cache_ifog)
+    return (matrix[double] dX, matrix[double] dW, matrix[double] db,
+            matrix[double] dout0, matrix[double] dc0) {
+  /*
+   * Computes the backward pass for an LSTM layer with M neurons.
+   *
+   * Inputs:
+   *  - dout: Gradient on output from upstream.  If `given_sequences`
+   *      is True, contains gradients on outputs for all timesteps,
+   *      of shape (N, T*M).  Else, contains gradient on output for
+   *      the final timestep, of shape (N, M).
+   *  - dc: Gradient on final (current) cell state from later in time,
+   *      of shape (N, M).
+   *  - X: Input data matrix, of shape (N, T*D).
+   *  - W: Weights (parameters) matrix, of shape (D+M, 4M).
+   *  - b: Biases vector, of shape (1, 4M).
+   *  - T: Length of example sequences (number of timesteps).
+   *  - D: Dimensionality of the input features.
+   *  - given_sequences: Whether `dout` is for all timesteps,
+   *      or just for the final timestep.  This is based on whether
+   *      `return_sequences` was true in the forward pass.
+   *  - out0: Output matrix at previous timestep, of shape (N, M).
+   *      Note: This is *optional* and could just be an empty matrix.
+   *  - c0: Initial cell state matrix, of shape (N, M).
+   *      Note: This is *optional* and could just be an empty matrix.
+   *  - cache_out: Cache of outputs, of shape (T, N*M).
+   *      Note: This is used for performance during training.
+   *  - cache_c: Cache of cell state, of shape (T, N*M).
+   *      Note: This is used for performance during training.
+   *  - cache_ifog: Cache of intermediate values, of shape (T, N*4*M).
+   *      Note: This is used for performance during training.
+   *
+   * Outputs:
+   *  - dX: Gradient wrt X, of shape (N, T*D).
+   *  - dW: Gradient wrt W, of shape (D+M, 4M).
+   *  - db: Gradient wrt b, of shape (1, 4M).
+   *  - dout0: Gradient wrt out0, of shape (N, M).
+   *  - dc0: Gradient wrt c0, of shape (N, M).
+   */
+  N = nrow(X)
+  M = as.integer(ncol(W)/4)
+  dX = matrix(0, rows=N, cols=T*D)
+  dW = matrix(0, rows=D+M, cols=4*M)
+  db = matrix(0, rows=1, cols=4*M)
+  dout0 = matrix(0, rows=N, cols=M)
+  dc0 = matrix(0, rows=N, cols=M)
+  dct = dc
+  if (!given_sequences) {
+    # only given dout for output at final timestep, so prepend empty douts for all other timesteps
+    dout = cbind(matrix(0, rows=N, cols=(T-1)*D), dout)  # shape (N, T*M)
+  }
+
+  t = T
+  for (iter in 1:T) {  # each timestep in reverse order
+    X_t = X[,(t-1)*D+1:t*D]  # shape (N, D)
+    dout_t = dout[,(t-1)*M+1:t*M]  # shape (N, M)
+    out_t = matrix(cache_out[t,], rows=N, cols=M)  # shape (N, M)
+    ct = matrix(cache_c[t,], rows=N, cols=M)  # shape (N, M)
+    if (t == 1) {
+      out_prev = out0  # shape (N, M)
+      c_prev = c0  # shape (N, M)
+    }
+    else {
+      out_prev = matrix(cache_out[t-1,], rows=N, cols=M)  # shape (N, M)
+      c_prev = matrix(cache_c[t-1,], rows=N, cols=M)  # shape (N, M)
+    }
+    input = cbind(X_t, out_prev)  # shape (N, D+M)
+    ifog = matrix(cache_ifog[t,], rows=N, cols=4*M)
+    i = ifog[,1:M]  # input gate, shape (N, M)
+    f = ifog[,M+1:2*M]  # forget gate, shape (N, M)
+    o = ifog[,2*M+1:3*M]  # output gate, shape (N, M)
+    g = ifog[,3*M+1:4*M]  # g gate, shape (N, M)
+
+    tmp = tanh::backward(dout_t, ct)
+    dct = dct + o * tmp  # shape (N, M)
+    tmp = tanh::forward(ct)
+    do = tmp * dout_t  # output gate, shape (N, M)
+    df = c_prev * dct  # forget gate, shape (N, M)
+    dc_prev = f * dct  # shape (N, M)
+    di = g * dct  # input gate, shape (N, M)
+    dg = i * dct  # g gate, shape (N, M)
+    
+    di_raw = i * (1-i) * di
+    df_raw = f * (1-f) * df
+    do_raw = o * (1-o) * do
+    dg_raw = (1 - g^2) * dg
+    difog_raw = cbind(di_raw, cbind(df_raw, cbind(do_raw, dg_raw)))  # shape (N, 4M)
+
+    dW = dW + t(input) %*% difog_raw  # shape (D+M, 4M)
+    db = db + colSums(difog_raw)  # shape (1, 4M)
+    dinput = difog_raw %*% t(W)  # shape (N, D+M)
+    dX[,(t-1)*D+1:t*D] = dinput[,1:D]
+    dout_prev = dinput[,D+1:D+M]  # shape (N, M)
+    if (t == 1) {
+      dout0 = dout_prev  # shape (N, M)
+      dc0 = dc_prev  # shape (N, M)
+    }
+    else {
+      dout[,(t-2)*M+1:(t-1)*M] = dout[,(t-2)*M+1:(t-1)*M] + dout_prev  # shape (N, M)
+      dct = dc_prev  # shape (N, M)
+    }
+    t = t-1
+  }
+}
+
+init = function(int N, int D, int M)
+    return (matrix[double] W, matrix[double] b, matrix[double] out0, matrix[double] c0) {
+  /*
+   * Initialize the parameters of this layer.
+   *
+   * Note: This is just a convenience function, and parameters
+   * may be initialized manually if needed.
+   * 
+   * We use the Glorot uniform heuristic which limits the magnification
+   * of inputs/gradients during forward/backward passes by scaling
+   * uniform weights by a factor of sqrt(6/(fan_in + fan_out)).
+   *
+   * Inputs:
+   *  - N: Number of examples in batch.
+   *  - D: Dimensionality of the input features.
+   *  - M: Number of neurons in this layer.
+   *
+   * Outputs:
+   *  - W: Weights (parameters) matrix, of shape (D+M, 4M).
+   *  - b: Biases vector, of shape (1, 4M).
+   *  - out0: Dummy output matrix at previous timestep, of shape (N, M).
+   *  - c0: Initial empty cell state matrix, of shape (N, M).
+   */
+  fan_in = D+M
+  fan_out = 4*M
+  scale = sqrt(6/(fan_in+fan_out))
+  W = rand(rows=D+M, cols=4*M, min=-scale, max=scale, pdf="uniform")
+  b = matrix(0, rows=1, cols=4*M) 
+  out0 = matrix(0, rows=N, cols=M)
+  c0 = matrix(0, rows=N, cols=M)
+}
+

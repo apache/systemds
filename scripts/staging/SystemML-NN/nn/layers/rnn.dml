@@ -1,0 +1,182 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+/*
+ * Simple (Vanilla) RNN layer.
+ */
+source("nn/layers/tanh.dml") as tanh
+
+forward = function(matrix[double] X, matrix[double] W, matrix[double] b, int T, int D,
+                   boolean return_sequences, matrix[double] out0)
+    return (matrix[double] out, matrix[double] cache_out) {
+  /*
+   * Computes the forward pass for a simple RNN layer with M neurons.
+   * The input data has N sequences of T examples, each with D features.
+   *
+   * In a simple RNN, the output of the previous timestep is fed back
+   * in as an additional input at the current timestep.
+   *
+   * Inputs:
+   *  - X: Input data matrix, of shape (N, T*D).
+   *  - W: Weights (parameters) matrix, of shape (D+M, M).
+   *  - b: Biases vector, of shape (1, M).
+   *  - T: Length of example sequences (number of timesteps).
+   *  - D: Dimensionality of the input features.
+   *  - return_sequences: Whether to return `out` at all timesteps,
+   *      or just for the final timestep.
+   *  - out0: Output matrix at previous timestep, of shape (N, M).
+   *      Note: This is *optional* and could just be an empty matrix.
+   *
+   * Outputs:
+   *  - out: If `return_sequences` is True, outputs for all timesteps,
+   *      of shape (N, T*M).  Else, outputs for the final timestep, of
+   *      shape (N, M).
+   *  - cache_out: Cache of outputs, of shape (T, N*M).
+   *      Note: This is used for performance during training.
+   */
+  N = nrow(X)
+  M = ncol(W)
+  out_prev = out0
+  if (return_sequences) {
+    out = matrix(0, rows=N, cols=T*M)
+  }
+  else {
+    out = matrix(0, rows=N, cols=M)
+  }
+  # caches to be used during the backward pass for performance
+  cache_out = matrix(0, rows=T, cols=N*M)
+
+  for (t in 1:T) {  # each timestep
+    X_t = X[,(t-1)*D+1:t*D]  # shape (N, D)
+    input = cbind(X_t, out_prev)  # shape (N, D+M)
+    out_t = tanh::forward(input %*% W + b)  # shape (N, M)
+    # store
+    if (return_sequences) {
+      out[,(t-1)*M+1:t*M] = out_t
+    }
+    else {
+      out = out_t
+    }
+    out_prev = out_t
+    cache_out[t,] = matrix(out_t, rows=1, cols=N*M)  # reshape
+  }
+}
+
+backward = function(matrix[double] dout, matrix[double] X, matrix[double] W, matrix[double] b,
+                    int T, int D, boolean given_sequences, matrix[double] out0,
+                    matrix[double] cache_out) 
+    return (matrix[double] dX, matrix[double] dW, matrix[double] db, matrix[double] dout0) {
+  /*
+   * Computes the backward pass for a simple RNN layer with M neurons.
+   *
+   * Inputs:
+   *  - dout: Gradient on output from upstream.  If `given_sequences`
+   *      is True, contains gradients on outputs for all timesteps,
+   *      of shape (N, T*M).  Else, contains gradient on output for
+   *      the final timestep, of shape (N, M).
+   *  - X: Input data matrix, of shape (N, T*D).
+   *  - W: Weights (parameters) matrix, of shape (D+M, M).
+   *  - b: Biases vector, of shape (1, M).
+   *  - T: Length of example sequences (number of timesteps).
+   *  - D: Dimensionality of the input features.
+   *  - given_sequences: Whether `dout` is for all timesteps,
+   *      or just for the final timestep.  This is based on whether
+   *      `return_sequences` was true in the forward pass.
+   *  - out0: Output matrix at previous timestep, of shape (N, M).
+   *      Note: This is *optional* and could just be an empty matrix.
+   *  - cache_out: Cache of outputs, of shape (T, N*M).
+   *      Note: This is used for performance during training.
+   *
+   * Outputs:
+   *  - dX: Gradient wrt X, of shape (N, T*D).
+   *  - dW: Gradient wrt W, of shape (D+M, 4M).
+   *  - db: Gradient wrt b, of shape (1, 4M).
+   *  - dout0: Gradient wrt out0, of shape (N, M).
+   */
+  N = nrow(X)
+  M = ncol(W)
+  dX = matrix(0, rows=N, cols=T*D)
+  dW = matrix(0, rows=D+M, cols=M)
+  db = matrix(0, rows=1, cols=M)
+  dout0 = matrix(0, rows=N, cols=M)
+  if (!given_sequences) {
+    # only given dout for output at final timestep, so prepend empty douts for all other timesteps
+    dout = cbind(matrix(0, rows=N, cols=(T-1)*D), dout)  # shape (N, T*M)
+  }
+
+  t = T
+  for (iter in 1:T) {  # each timestep in reverse order
+    X_t = X[,(t-1)*D+1:t*D]  # shape (N, D)
+    dout_t = dout[,(t-1)*M+1:t*M]  # shape (N, M)
+    out_t = matrix(cache_out[t,], rows=N, cols=M)  # shape (N, M)
+    if (t == 1) {
+      out_prev = out0  # shape (N, M)
+    }
+    else {
+      out_prev = matrix(cache_out[t-1,], rows=N, cols=M)  # shape (N, M)
+    }
+    input = cbind(X_t, out_prev)  # shape (N, D+M)
+    dout_t_raw = (1 - out_t^2) * dout_t  # into tanh, shape (N, M)
+    dW = dW + t(input) %*% dout_t_raw  # shape (D+M, M)
+    db = db + colSums(dout_t_raw)  # shape (1, M)
+    dinput = dout_t_raw %*% t(W)  # shape (N, D+M)
+    dX[,(t-1)*D+1:t*D] = dinput[,1:D]
+    dout_prev = dinput[,D+1:D+M]  # shape (N, M)
+    if (t == 1) {
+      dout0 = dout_prev  # shape (N, M)
+    }
+    else {
+      dout[,(t-2)*M+1:(t-1)*M] = dout[,(t-2)*M+1:(t-1)*M] + dout_prev  # shape (N, M)
+    }
+    t = t-1
+  }
+}
+
+init = function(int N, int D, int M)
+    return (matrix[double] W, matrix[double] b, matrix[double] out0) {
+  /*
+   * Initialize the parameters of this layer.
+   *
+   * Note: This is just a convenience function, and parameters
+   * may be initialized manually if needed.
+   * 
+   * We use the Glorot uniform heuristic which limits the magnification
+   * of inputs/gradients during forward/backward passes by scaling
+   * uniform weights by a factor of sqrt(6/(fan_in + fan_out)).
+   *
+   * Inputs:
+   *  - N: Number of examples in batch.
+   *  - D: Dimensionality of the input features.
+   *  - M: Number of neurons in this layer.
+   *
+   * Outputs:
+   *  - W: Weights (parameters) matrix, of shape (D+M, M).
+   *  - b: Biases vector, of shape (1, M).
+   *  - out0: Dummy output matrix at previous timestep, of shape (N, M).
+   */
+  fan_in = D+M
+  fan_out = M
+  scale = sqrt(6/(fan_in+fan_out))
+  W = rand(rows=D+M, cols=M, min=-scale, max=scale, pdf="uniform")
+  b = matrix(0, rows=1, cols=M) 
+  out0 = matrix(0, rows=N, cols=M)
+}
+

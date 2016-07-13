@@ -1125,7 +1125,7 @@ public class BinaryOp extends Hop
 		
 		Lop offset = createOffsetLop( left, cbind ); //offset 1st input
 		AppendMethod am = optFindAppendSPMethod(left.getDim1(), left.getDim2(), right.getDim1(), right.getDim2(), 
-				right.getRowsInBlock(), right.getColsInBlock(), right.getNnz(), cbind);
+				right.getRowsInBlock(), right.getColsInBlock(), right.getNnz(), cbind, dt);
 	
 		switch( am )
 		{
@@ -1281,16 +1281,17 @@ public class BinaryOp extends Hop
 		return AppendMethod.MR_GAPPEND; 	
 	}
 	
-	private static AppendMethod optFindAppendSPMethod( long m1_dim1, long m1_dim2, long m2_dim1, long m2_dim2, long m1_rpb, long m1_cpb, long m2_nnz, boolean cbind )
+	private static AppendMethod optFindAppendSPMethod( long m1_dim1, long m1_dim2, long m2_dim1, long m2_dim2, long m1_rpb, long m1_cpb, long m2_nnz, boolean cbind, DataType dt )
 	{
 		if(FORCED_APPEND_METHOD != null) {
 			return FORCED_APPEND_METHOD;
 		}
 		
 		//check for best case (map-only w/o shuffle)		
-		if(    m2_dim1 >= 1 && m2_dim2 >= 1   //rhs dims known 				
+		if((    m2_dim1 >= 1 && m2_dim2 >= 1   //rhs dims known 				
 			&& (cbind && m2_dim2 <= m1_cpb    //rhs is smaller than column block 
 			|| !cbind && m2_dim1 <= m1_rpb) ) //rhs is smaller than row block
+			&& ((dt == DataType.MATRIX) || (dt == DataType.FRAME && cbind)))
 		{
 			if( OptimizerUtils.checkSparkBroadcastMemoryBudget(m2_dim1, m2_dim2, m1_rpb, m1_cpb, m2_nnz) ) {
 				return AppendMethod.MR_MAPPEND;

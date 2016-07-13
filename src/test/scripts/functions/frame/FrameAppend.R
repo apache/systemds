@@ -25,6 +25,9 @@ library("Matrix")
 
 A=read.csv(paste(args[1], "A.csv", sep=""), header = FALSE, stringsAsFactors=FALSE)
 B=read.csv(paste(args[1], "B.csv", sep=""), header = FALSE, stringsAsFactors=FALSE)
-C=cbind2(A, B)
-
+if(args[3] == "rbind") {
+	C=rbind(A, B)
+} else {
+	C=cbind2(A, B)
+}
 write.csv(C, paste(args[2], "C.csv", sep=""), row.names = FALSE, quote = FALSE)

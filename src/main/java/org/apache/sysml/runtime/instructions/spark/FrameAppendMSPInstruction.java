@@ -19,7 +19,6 @@
 
 package org.apache.sysml.runtime.instructions.spark;
 
-import java.util.ArrayList;
 import java.util.Iterator;
 
 import org.apache.spark.api.java.JavaPairRDD;
@@ -80,16 +79,14 @@ public class FrameAppendMSPInstruction extends AppendMSPInstruction
 		PartitionedBroadcast<FrameBlock> in2 = sec.getBroadcastForFrameVariable( input2.getName() );
 		long off = sec.getScalarInput( _offset.getName(), _offset.getValueType(), _offset.isLiteral()).getLongValue();
 		
-		//execute map-append operations (partitioning preserving if #in-blocks = #out-blocks)
+		//execute map-append operations (partitioning preserving if keys for blocks not changing)
 		JavaPairRDD<Long,FrameBlock> out = null;
 		if( preservesPartitioning(_cbind) ) {
 			out = in1.mapPartitionsToPair(
 					new MapSideAppendPartitionFunction(in2, _cbind, off), true);
 		}
-		else {
-			out = in1.flatMapToPair(
-					new MapSideAppendFunction(in2, _cbind, off));
-		}
+		else 
+			throw new DMLRuntimeException("FrameAppendM for rbind is not supported/required, instead FrameAppendR should be used,");
 		
 		//put output RDD handle into symbol table
 		updateBinaryAppendOutputMatrixCharacteristics(sec, _cbind);
@@ -106,63 +103,8 @@ public class FrameAppendMSPInstruction extends AppendMSPInstruction
 	private boolean preservesPartitioning( boolean cbind )
 	{
 		//Partitions for input1 will be preserved in case of cbind, 
-		// where as in case of rbind partitions for input2 (added in output) will not be preserved.
+		// where as in case of rbind partitions will not be preserved.
 		return cbind;
-	}
-	
-	/**
-	 * 
-	 */
-	private static class MapSideAppendFunction implements  PairFlatMapFunction<Tuple2<Long,FrameBlock>, Long, FrameBlock> 
-	{
-		private static final long serialVersionUID = -4536950734144427203L;
-
-		private PartitionedBroadcast<FrameBlock> _pm = null;
-		private boolean _cbind = true;
-		private long _offset; 
-		
-		public MapSideAppendFunction(PartitionedBroadcast<FrameBlock> binput, boolean cbind, long offset)  
-		{
-			_pm = binput;
-			_cbind = cbind;
-			_offset = offset;
-		}
-		
-		@Override
-		public Iterable<Tuple2<Long, FrameBlock>> call(Tuple2<Long, FrameBlock> kv) 
-			throws Exception 
-		{
-			ArrayList<Tuple2<Long, FrameBlock>> ret = new ArrayList<Tuple2<Long, FrameBlock>>();
-			
-			FrameBlock in1 = kv._2();
-			Long ix = kv._1();
-			
-			//case 1: pass through of non-boundary blocks
-			if(!_cbind && ix < _offset) 
-			{
-				ret.add( kv ); 
-			}
-			//case 2: change key of rhs blocks in boundary case 
-			else if(!_cbind && ix >= _offset)
-			{				
-				//output lhs block
-				ret.add( kv );
-
-				//output rhs block with new key
-				ret.add( new Tuple2<Long, FrameBlock>(
-						ix+kv._2().getNumRows(),
-						_pm.getBlock(1, 1)) );	
-			}
-			// will not hit this case
-			else 
-			{
-				FrameBlock right = _pm.getBlock((ix.intValue()-1)/OptimizerUtils.DEFAULT_FRAME_BLOCKSIZE+1, 1);
-				FrameBlock out = in1.appendOperations(right, new FrameBlock(), _cbind);
-				ret.add(new Tuple2<Long, FrameBlock>(ix, out));
-			}
-			
-			return ret;
-		}
 	}
 	
 	/**

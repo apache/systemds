@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Random;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -51,7 +50,8 @@ public class FrameAppendDistTest extends AutomatedTestBase
 	private final static int min=1;
 	private final static int max=100;
 	
-	private final static int rows = 1692;
+	private final static int rows1 = 1692;
+	private final static int rows2 = 1192;
 	//usecase a: inblock single
 	private final static int cols1a = 375;
 	private final static int cols2a = 92;
@@ -74,35 +74,44 @@ public class FrameAppendDistTest extends AutomatedTestBase
 
 	@Test
 	public void testAppendInBlock1DenseSP() {
-		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1a, cols2a, false, AppendMethod.MR_RAPPEND);
+		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows1, rows1, cols1a, cols2a, false, AppendMethod.MR_RAPPEND, false);
 	}   
 	
 	@Test
 	public void testAppendInBlock1SparseSP() {
-		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1a, cols2a, true, AppendMethod.MR_RAPPEND);
+		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows1, rows1, cols1a, cols2a, true, AppendMethod.MR_RAPPEND, false);
+	}   
+	
+	@Test
+	public void testAppendInBlock1DenseRBindSP() {
+		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows1, rows2, cols1a, cols1a, false, AppendMethod.MR_RAPPEND, true);
+	}   
+	
+	@Test
+	public void testAppendInBlock1SparseRBindSP() {
+		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows1, rows1, cols1a, cols1a, true, AppendMethod.MR_RAPPEND, true);
 	}   
 	
 	//NOTE: mappend only applied for m2_cols<=blocksize
 	@Test
 	public void testMapAppendInBlock2DenseSP() {
-		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1b, cols2a, false, AppendMethod.MR_MAPPEND);
+		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows1, rows1, cols1b, cols2a, false, AppendMethod.MR_MAPPEND, false);
 	}
 	
 	@Test
 	public void testMapAppendInBlock2SparseSP() {
-		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1b, cols2a, true, AppendMethod.MR_MAPPEND);
+		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows1, rows1, cols1b, cols2a, true, AppendMethod.MR_MAPPEND, false);
 	}
 	
 	@Test
 	public void testMapAppendOutBlock2DenseSP() {
-		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1d, cols3d, false, AppendMethod.MR_MAPPEND);
+		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows1, rows1, cols1d, cols3d, false, AppendMethod.MR_MAPPEND, false);
 	}
 	
 	@Test
 	public void testMapAppendOutBlock2SparseSP() {
-		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1d, cols3d, true, AppendMethod.MR_MAPPEND);
+		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows1, rows1, cols1d, cols3d, true, AppendMethod.MR_MAPPEND, false);
 	}
-	
 	
 	/**
 	 * 
@@ -112,7 +121,7 @@ public class FrameAppendDistTest extends AutomatedTestBase
 	 * @param cols2
 	 * @param sparse
 	 */
-	public void commonAppendTest(RUNTIME_PLATFORM platform, int rows, int cols1, int cols2, boolean sparse, AppendMethod forcedAppendMethod)
+	public void commonAppendTest(RUNTIME_PLATFORM platform, int rows1, int rows2, int cols1, int cols2, boolean sparse, AppendMethod forcedAppendMethod, boolean rbind)
 	{
 		TestConfiguration config = getAndLoadTestConfiguration(TEST_NAME);
 	    
@@ -126,39 +135,38 @@ public class FrameAppendDistTest extends AutomatedTestBase
 			if(forcedAppendMethod != null) {
 				BinaryOp.FORCED_APPEND_METHOD = forcedAppendMethod;
 			}
-		    rtplatform = platform;
-		    if( rtplatform == RUNTIME_PLATFORM.SPARK )
+			rtplatform = platform;
+			if( rtplatform == RUNTIME_PLATFORM.SPARK )
 				DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 	
-	        config.addVariable("rows", rows);
-	        config.addVariable("cols", cols1);
+			config.addVariable("rows", rows1);
+			config.addVariable("cols", cols1);
 	          
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String RI_HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = RI_HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args",  input("A"), 
-					                             Long.toString(rows), 
+			programArgs = new String[]{"-explain","-args",  input("A"), 
+					                             Long.toString(rows1), 
 					                             Long.toString(cols1),
 								                 input("B"),
+					                             Long.toString(rows2), 
 								                 Long.toString(cols2),
-		                                         output("C") };
+		                                         output("C"),
+		                                         (rbind? "rbind": "cbind")};
 			fullRScriptName = RI_HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       inputDir() + " " + expectedDir();
+			       inputDir() + " " + expectedDir() + " " + (rbind? "rbind": "cbind");
 	
-			Random rand=new Random(System.currentTimeMillis());
-	        
 			//initialize the frame data.
 			List<ValueType> lschemaA = Arrays.asList(genMixSchema(cols1));
-	        double[][] A = getRandomMatrix(rows, cols1, min, max, sparsity, 1111 /*\\System.currentTimeMillis()*/);
-	        writeInputFrameWithMTD("A", A, true, lschemaA, OutputInfo.BinaryBlockOutputInfo);	        
+			double[][] A = getRandomMatrix(rows1, cols1, min, max, sparsity, 1111 /*\\System.currentTimeMillis()*/);
+			writeInputFrameWithMTD("A", A, true, lschemaA, OutputInfo.BinaryBlockOutputInfo);	        
 	        
 			List<ValueType> lschemaB = Arrays.asList(genMixSchema(cols2));
-	        sparsity=rand.nextDouble();
-	        double[][] B = getRandomMatrix(rows, cols2, min, max, sparsity, 2345 /*\\System.currentTimeMillis()*/);
-	        writeInputFrameWithMTD("B", B, true, lschemaB, OutputInfo.BinaryBlockOutputInfo);	        
+			double[][] B = getRandomMatrix(rows2, cols2, min, max, sparsity, 2345 /*\\System.currentTimeMillis()*/);
+			writeInputFrameWithMTD("B", B, true, lschemaB, OutputInfo.BinaryBlockOutputInfo);	        
 	        	        
-	        boolean exceptionExpected = false;
+			boolean exceptionExpected = false;
 			int expectedNumberOfJobs = -1;
 			runTest(true, exceptionExpected, null, expectedNumberOfJobs);
 			runRScript(true);

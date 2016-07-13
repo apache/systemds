@@ -21,15 +21,18 @@ package org.apache.sysml.runtime.instructions.spark;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
+import org.apache.spark.api.java.function.PairFunction;
 
 import scala.Tuple2;
 
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.functionobjects.OffsetColumnIndex;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
+import org.apache.sysml.runtime.instructions.spark.utils.RDDAggregateUtils;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
@@ -68,11 +71,20 @@ public class FrameAppendRSPInstruction extends AppendRSPInstruction
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		JavaPairRDD<Long,FrameBlock> in1 = sec.getFrameBinaryBlockRDDHandleForVariable( input1.getName() );
 		JavaPairRDD<Long,FrameBlock> in2 = sec.getFrameBinaryBlockRDDHandleForVariable( input2.getName() );
+		JavaPairRDD<Long,FrameBlock> out = null;
+		long leftRows = sec.getMatrixCharacteristics(input1.getName()).getRows();
 		
-		//execute reduce-append operations (partitioning preserving)
-		JavaPairRDD<Long,FrameBlock> out = in1
-				.join(in2)
-				.mapValues(new ReduceSideAppendFunction(_cbind));
+		if(_cbind) {
+			JavaPairRDD<Long,FrameBlock> in1Aligned = in1.mapToPair(new ReduceSideAppendAlignFunction(leftRows));			
+			in1Aligned = (JavaPairRDD<Long, FrameBlock>) RDDAggregateUtils.mergeByFrameKey(in1Aligned);			
+			JavaPairRDD<Long,FrameBlock> in2Aligned = in2.mapToPair(new ReduceSideAppendAlignFunction(leftRows));
+			in2Aligned = (JavaPairRDD<Long, FrameBlock>) RDDAggregateUtils.mergeByFrameKey(in2Aligned);			
+			
+			out = in1Aligned.join(in2Aligned).mapValues(new ReduceSideColumnsFunction(_cbind));
+		} else {	//rbind
+			JavaPairRDD<Long,FrameBlock> right = in2.mapToPair( new ReduceSideAppendRowsFunction(leftRows));
+			out = in1.union(right);
+		}
 		
 		//put output RDD handle into symbol table
 		updateBinaryAppendOutputMatrixCharacteristics(sec, _cbind);
@@ -84,13 +96,13 @@ public class FrameAppendRSPInstruction extends AppendRSPInstruction
 	/**
 	 * 
 	 */
-	private static class ReduceSideAppendFunction implements Function<Tuple2<FrameBlock, FrameBlock>, FrameBlock> 
+	private static class ReduceSideColumnsFunction implements Function<Tuple2<FrameBlock, FrameBlock>, FrameBlock> 
 	{
 		private static final long serialVersionUID = -97824903649667646L;
 
 		private boolean _cbind = true;
 				
-		public ReduceSideAppendFunction(boolean cbind) {
+		public ReduceSideColumnsFunction(boolean cbind) {
 			_cbind = cbind;
 		}
 		
@@ -104,5 +116,55 @@ public class FrameAppendRSPInstruction extends AppendRSPInstruction
 			return left.appendOperations(right, new FrameBlock(), _cbind);
 		}
 	}
-}
 
+	/**
+	 * 
+	 */
+	private static class ReduceSideAppendRowsFunction implements PairFunction<Tuple2<Long, FrameBlock>, Long, FrameBlock> 
+	{
+		private static final long serialVersionUID = 1723795153048336791L;
+
+		private long _offset;
+				
+		public ReduceSideAppendRowsFunction(long offset) {
+			_offset = offset;
+		}
+		
+		@Override
+		public Tuple2<Long,FrameBlock> call(Tuple2<Long, FrameBlock> arg0)
+			throws Exception 
+		{
+			return new Tuple2<Long, FrameBlock>(arg0._1()+_offset, arg0._2());
+		}
+	}
+
+	/**
+	 * 
+	 */
+	private static class ReduceSideAppendAlignFunction implements PairFunction<Tuple2<Long, FrameBlock>, Long, FrameBlock> 
+	{
+		private static final long serialVersionUID = 5850400295183766409L;
+
+		private long _rows;
+				
+		public ReduceSideAppendAlignFunction(long rows) {
+			_rows = rows;
+		}
+		
+		@Override
+		public Tuple2<Long,FrameBlock> call(Tuple2<Long, FrameBlock> arg0)
+			throws Exception 
+		{
+			FrameBlock resultBlock = new FrameBlock(arg0._2().getSchema());
+						
+			long index = (arg0._1()/OptimizerUtils.DEFAULT_FRAME_BLOCKSIZE)*OptimizerUtils.DEFAULT_FRAME_BLOCKSIZE+1;
+			int maxRows = (int) (_rows - index+1 >= OptimizerUtils.DEFAULT_FRAME_BLOCKSIZE?OptimizerUtils.DEFAULT_FRAME_BLOCKSIZE:_rows - index+1);
+
+			resultBlock.ensureAllocatedColumns(maxRows);
+			resultBlock = resultBlock.leftIndexingOperations(arg0._2(), 0, maxRows-1, 0, arg0._2().getNumColumns()-1, new FrameBlock());
+			
+			return new Tuple2<Long, FrameBlock>(index, resultBlock);
+		}
+	}
+
+}

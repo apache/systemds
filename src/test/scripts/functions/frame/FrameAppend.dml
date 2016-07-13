@@ -20,6 +20,10 @@
 #-------------------------------------------------------------
 
 A=read($1, data_type="frame", rows=$2, cols=$3, format="binary")
-B=read($4, data_type="frame", rows=$2, cols=$5, format="binary")
-C=append(A, B)
-write(C, $6, format="binary")
+B=read($4, data_type="frame", rows=$5, cols=$6, format="binary")
+if ($8 == "rbind") {
+	C=rbind(A, B)
+} else {
+	C=cbind(A, B)
+}
+write(C, $7, format="binary")

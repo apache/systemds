@@ -2710,14 +2710,16 @@ public class LibMatrixMult
 		
 		//approach: iterate over non-zeros of w, selective mm computation
 		//blocked over ij, while maintaining front of column indexes, where the
-		//blocksize is chosen such that we reuse each vector on average 8 times.
-		final int blocksizeIJ = (int) (8L*mW.rlen*mW.clen/mW.nonZeros); 
-		int[] curk = new int[blocksizeIJ];		
-		boolean[] aligned = (four&&!scalar) ? new boolean[blocksizeIJ] : null;
+		//blocksize is chosen such that we reuse each  Ui/Vj vector on average 8 times,
+		//with custom blocksizeJ for wdivmm_left to avoid LLC misses on output.
+		final int blocksizeI = (int) (8L*mW.rlen*mW.clen/mW.nonZeros);
+		final int blocksizeJ = left ? Math.max(8,Math.min(256*1024/(mU.clen*8), blocksizeI)) : blocksizeI; 
+		int[] curk = new int[blocksizeI];		
+		boolean[] aligned = (four&&!scalar) ? new boolean[blocksizeI] : null;
 		
-		for( int bi = rl; bi < ru; bi+=blocksizeIJ ) 
+		for( int bi = rl; bi < ru; bi+=blocksizeI ) 
 		{
-			int bimin = Math.min(ru, bi+blocksizeIJ);
+			int bimin = Math.min(ru, bi+blocksizeI);
 			//prepare starting indexes for block row
 			for( int i=bi; i<bimin; i++ ) {
 				int k = (cl==0||w.isEmpty(i)) ? 0 : w.posFIndexGTE(i,cl);
@@ -2728,9 +2730,9 @@ public class LibMatrixMult
 				for( int i=bi; i<bimin; i++ )
 					aligned[i-bi] = w.isAligned(i-bi, x);
 			//blocked execution over column blocks
-			for( int bj = cl; bj < cu; bj+=blocksizeIJ ) 
+			for( int bj = cl; bj < cu; bj+=blocksizeJ ) 
 			{
-				int bjmin = Math.min(cu, bj+blocksizeIJ);
+				int bjmin = Math.min(cu, bj+blocksizeJ);
 				for( int i=bi, uix=bi*cd; i<bimin; i++, uix+=cd ) {
 					if( !w.isEmpty(i) ) {
 						int wpos = w.pos(i);

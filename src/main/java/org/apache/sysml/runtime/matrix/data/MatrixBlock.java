@@ -1282,7 +1282,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * @param cu 	column upper index, 0-based, inclusive
 	 * @return
 	 */
-	protected long recomputeNonZeros(int rl, int ru, int cl, int cu)
+	public long recomputeNonZeros(int rl, int ru, int cl, int cu)
 	{
 		if( sparse && sparseBlock!=null ) //SPARSE (max long)
 		{

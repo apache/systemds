@@ -42,4 +42,12 @@ public abstract class KahanFunction extends ValueFunction implements Serializabl
      * @param in The current term to be added.
      */
     public abstract void execute2(KahanObject kObj, double in);
+    
+    /**
+     * 
+     * @param kObj
+     * @param in
+     * @param count
+     */
+    public abstract void execute3(KahanObject kObj, double in, int count);
 }

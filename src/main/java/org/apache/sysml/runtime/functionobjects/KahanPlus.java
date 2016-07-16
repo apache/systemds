@@ -109,4 +109,9 @@ public class KahanPlus extends KahanFunction implements Serializable
 		double sum = in1._sum + correction;
 		in1.set(sum, correction-(sum-in1._sum)); //prevent eager JIT opt 	
 	}
+	
+	@Override
+	public void execute3(KahanObject in1, double in2, int count) {
+		execute2(in1, in2*count);
+	}
 }

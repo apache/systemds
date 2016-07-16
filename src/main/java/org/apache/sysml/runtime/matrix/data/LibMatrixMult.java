@@ -95,6 +95,21 @@ public class LibMatrixMult
 	public static void matrixMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret) 
 		throws DMLRuntimeException
 	{	
+		matrixMult(m1, m2, ret, 0, m1.rlen);
+	}
+	
+	/**
+	 * 
+	 * @param m1
+	 * @param m2
+	 * @param ret
+	 * @param rl
+	 * @param ru
+	 * @throws DMLRuntimeException
+	 */
+	public static void matrixMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int rl, int ru) 
+		throws DMLRuntimeException
+	{	
 		//check inputs / outputs
 		if( m1.isEmptyBlock(false) || m2.isEmptyBlock(false) ) {
 			ret.examSparsity(); //turn empty dense into sparse
@@ -112,20 +127,20 @@ public class LibMatrixMult
 		
 		//prepare row-upper for special cases of vector-matrix
 		boolean pm2 = checkParMatrixMultRightInputRows(m1, m2, Integer.MAX_VALUE);
-		int ru = pm2 ? m2.rlen : m1.rlen; 
+		int ru2 = (pm2 && ru==m1.rlen) ? m2.rlen : ru; 
 		int cu = m2.clen;
 		
 		//core matrix mult computation
 		if( m1.isUltraSparse() || m2.isUltraSparse() )
-			matrixMultUltraSparse(m1, m2, ret, 0, ru);
+			matrixMultUltraSparse(m1, m2, ret, 0, ru2);
 		else if(!m1.sparse && !m2.sparse)
-			matrixMultDenseDense(m1, m2, ret, tm2, pm2, 0, ru, 0, cu);
+			matrixMultDenseDense(m1, m2, ret, tm2, pm2, 0, ru2, 0, cu);
 		else if(m1.sparse && m2.sparse)
-			matrixMultSparseSparse(m1, m2, ret, pm2, 0, ru);
+			matrixMultSparseSparse(m1, m2, ret, pm2, 0, ru2);
 		else if(m1.sparse)
-			matrixMultSparseDense(m1, m2, ret, pm2, 0, ru);
+			matrixMultSparseDense(m1, m2, ret, pm2, 0, ru2);
 		else
-			matrixMultDenseSparse(m1, m2, ret, pm2, 0, ru);
+			matrixMultDenseSparse(m1, m2, ret, pm2, 0, ru2);
 		
 		//post-processing: nnz/representation
 		if( !ret.sparse )

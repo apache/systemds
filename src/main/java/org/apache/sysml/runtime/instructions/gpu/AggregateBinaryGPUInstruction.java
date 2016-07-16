@@ -84,33 +84,8 @@ public class AggregateBinaryGPUInstruction extends GPUInstruction
 	
 	@Override
 	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException
-	{	
-		// --------------------------------------
-		// This code will be removed when the JIRA SYSTEMML-702 is complete
-		// FIXME this code does not adhere to compiler memory budgets
-		if(	isSparse(ec, _input1.getName()) || isSparse(ec, _input2.getName())) {
-			//get inputs
-			MatrixBlock matBlock1 = ec.getMatrixInput(_input1.getName());
-	        MatrixBlock matBlock2 = ec.getMatrixInput(_input2.getName());
-	        
-	        if(_isLeftTransposed) 
-	        	matBlock1 = transpose(matBlock1);
-	        if(_isRightTransposed) 
-	        	matBlock2 = transpose(matBlock2);
-			
-	        //compute matrix multiplication
-	        AggregateBinaryOperator ab_op = (AggregateBinaryOperator) _optr;
-			MatrixBlock soresBlock = (MatrixBlock) (matBlock1.aggregateBinaryOperations(matBlock1, matBlock2, new MatrixBlock(), ab_op));
-				
-			//release inputs/outputs
-			ec.releaseMatrixInput(_input1.getName());
-			ec.releaseMatrixInput(_input2.getName());
-			ec.setMatrixOutput(_output.getName(), soresBlock);
-			return;
-		}
-		// --------------------------------------
-		
+		throws DMLRuntimeException 
+	{
 		Statistics.incrementNoOfExecutedGPUInst();
 		
 		AggregateBinaryOperator op = (AggregateBinaryOperator) _optr;

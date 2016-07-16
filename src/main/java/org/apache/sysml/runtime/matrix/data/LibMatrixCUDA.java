@@ -325,9 +325,6 @@ public class LibMatrixCUDA {
 	
 	public static MatrixObject matmult(ExecutionContext ec, MatrixObject left1, MatrixObject right1, String outputName,
 			boolean isLeftTransposed1, boolean isRightTransposed1) throws DMLRuntimeException {
-		if(isInSparseFormat(left1) || isInSparseFormat(right1)) {
-			throw new DMLRuntimeException("Sparse GPU matrix multiplication is not implemented");
-		}
 		
 		// Since CuBLAS expects inputs in column-major format,
 		// reverse the order of matrix-multiplication and take care of dimension mismatch.
@@ -428,7 +425,7 @@ public class LibMatrixCUDA {
 			Pointer w = ((JCudaObject)filter.getGPUObject()).jcudaDenseMatrixPtr; 
 			Pointer dy = ((JCudaObject)dout.getGPUObject()).jcudaDenseMatrixPtr; 
 			Pointer dx = ((JCudaObject)output.getGPUObject()).jcudaDenseMatrixPtr; 
-			
+
 			alpha = pointerTo(1.0); // TODO
 			beta = pointerTo(0.0f);
 			

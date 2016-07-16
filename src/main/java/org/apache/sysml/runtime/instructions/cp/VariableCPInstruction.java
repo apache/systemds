@@ -28,6 +28,7 @@ import org.apache.sysml.lops.UnaryCP;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
@@ -655,6 +656,7 @@ public class VariableCPInstruction extends CPInstruction
 	 * @param ec
 	 * @throws DMLRuntimeException
 	 */
+	@SuppressWarnings("rawtypes")
 	private void processMoveInstruction(ExecutionContext ec) throws DMLRuntimeException {
 		
 		if ( input3 == null ) {
@@ -687,10 +689,7 @@ public class VariableCPInstruction extends CPInstruction
 			
 			if ( input3.getName().equalsIgnoreCase("binaryblock") ) {
 				boolean success = false;
-				if(object instanceof MatrixObject)
-					success = ((MatrixObject)object).moveData(input2.getName(), input3.getName());
-				else if (object instanceof FrameObject)
-					success = ((FrameObject)object).moveData(input2.getName(), input3.getName());
+				success = ((CacheableData)object).moveData(input2.getName(), input3.getName());
 				if (!success) {
 					throw new DMLRuntimeException("Failed to move var " + input1.getName() + " to file " + input2.getName() + ".");
 				}

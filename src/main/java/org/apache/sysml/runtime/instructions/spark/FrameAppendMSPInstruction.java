@@ -77,16 +77,15 @@ public class FrameAppendMSPInstruction extends AppendMSPInstruction
 		
 		JavaPairRDD<Long,FrameBlock> in1 = sec.getFrameBinaryBlockRDDHandleForVariable( input1.getName() );
 		PartitionedBroadcast<FrameBlock> in2 = sec.getBroadcastForFrameVariable( input2.getName() );
-		long off = sec.getScalarInput( _offset.getName(), _offset.getValueType(), _offset.isLiteral()).getLongValue();
 		
 		//execute map-append operations (partitioning preserving if keys for blocks not changing)
 		JavaPairRDD<Long,FrameBlock> out = null;
 		if( preservesPartitioning(_cbind) ) {
 			out = in1.mapPartitionsToPair(
-					new MapSideAppendPartitionFunction(in2, _cbind, off), true);
+					new MapSideAppendPartitionFunction(in2), true);
 		}
 		else 
-			throw new DMLRuntimeException("FrameAppendM for rbind is not supported/required, instead FrameAppendR should be used,");
+			throw new DMLRuntimeException("Opcode " + instOpcode + " not supported/required with FrameAppendM, instead use FrameAppendR for this opcode processing.");
 		
 		//put output RDD handle into symbol table
 		updateBinaryAppendOutputMatrixCharacteristics(sec, _cbind);
@@ -115,14 +114,10 @@ public class FrameAppendMSPInstruction extends AppendMSPInstruction
 		private static final long serialVersionUID = -3997051891171313830L;
 
 		private PartitionedBroadcast<FrameBlock> _pm = null;
-		private boolean _cbind = true;
-		private long _offset;
 		
-		public MapSideAppendPartitionFunction(PartitionedBroadcast<FrameBlock> binput, boolean cbind, long offset)  
+		public MapSideAppendPartitionFunction(PartitionedBroadcast<FrameBlock> binput)  
 		{
 			_pm = binput;
-			_cbind = cbind;
-			_offset = offset;
 		}
 
 		@Override
@@ -150,19 +145,12 @@ public class FrameAppendMSPInstruction extends AppendMSPInstruction
 				Long ix = arg._1();
 				FrameBlock in1 = arg._2();
 			
-				//Non existing case
-				if( (!_cbind) && (_offset >= ix && ix < _offset+in1.getNumRows())) {	
-					return arg;
-				}
-				//case : append operation on boundary block
-				else {
-					int rowix = _cbind ? (ix.intValue()-1)/OptimizerUtils.DEFAULT_FRAME_BLOCKSIZE+1 : 1;
-					int colix = 1;
-					
-					FrameBlock in2 = _pm.getBlock(rowix, colix);
-					FrameBlock out = in1.appendOperations(in2, new FrameBlock(), _cbind);
-					return new Tuple2<Long,FrameBlock>(ix, out);
-				}	
+				int rowix = (ix.intValue()-1)/OptimizerUtils.DEFAULT_FRAME_BLOCKSIZE+1;
+				int colix = 1;
+				
+				FrameBlock in2 = _pm.getBlock(rowix, colix);
+				FrameBlock out = in1.appendOperations(in2, new FrameBlock(), true); //cbind
+				return new Tuple2<Long,FrameBlock>(ix, out);
 			}			
 		}
 	}

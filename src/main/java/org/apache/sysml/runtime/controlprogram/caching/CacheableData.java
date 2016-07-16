@@ -1437,14 +1437,9 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		
 		try
 		{
-			//ensure input file is persistent on hdfs (pending RDD operations), 
-			//file might have been written during export or collect via write/read
-			if( getRDDHandle() != null && !MapReduceTool.existsFileOnHDFS(_hdfsFileName) ) { 
-				writeBlobFromRDDtoHDFS(getRDDHandle(), _hdfsFileName, outputFormat);
-			}
-			
 			//export or rename to target file on hdfs
-			if( isDirty() || (!isEqualOutputFormat(outputFormat) && isEmpty(true))) 
+			if( (isDirty() || (!isEqualOutputFormat(outputFormat) && isEmpty(true))) ||
+				(getRDDHandle() != null && !MapReduceTool.existsFileOnHDFS(_hdfsFileName)))
 			{
 				exportData(fName, outputFormat);
 				ret = true;

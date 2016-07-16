@@ -61,25 +61,25 @@ public class RewriteFuseBinaryOpChainTest extends AutomatedTestBase
 	@Test
 	public void testFuseBinaryPlusNoRewrite() 
 	{
-		testRewriteAxpy( TEST_NAME1, false, ExecType.CP );
+		testFuseBinaryChain( TEST_NAME1, false, ExecType.CP );
 	}
 	
 	
 	@Test
 	public void testFuseBinaryPlusRewrite() 
 	{
-		testRewriteAxpy( TEST_NAME1, true, ExecType.CP);
+		testFuseBinaryChain( TEST_NAME1, true, ExecType.CP);
 	}
 	@Test
 	public void testFuseBinaryMinusNoRewrite() 
 	{
-		testRewriteAxpy( TEST_NAME2, false, ExecType.CP );
+		testFuseBinaryChain( TEST_NAME2, false, ExecType.CP );
 	}
 	
 	@Test
 	public void testFuseBinaryMinusRewrite() 
 	{
-		testRewriteAxpy( TEST_NAME2, true, ExecType.CP );
+		testFuseBinaryChain( TEST_NAME2, true, ExecType.CP );
 	}
 	
 	
@@ -87,27 +87,27 @@ public class RewriteFuseBinaryOpChainTest extends AutomatedTestBase
 	@Test
 	public void testSpFuseBinaryPlusNoRewrite() 
 	{
-		testRewriteAxpy( TEST_NAME1, false, ExecType.SPARK );
+		testFuseBinaryChain( TEST_NAME1, false, ExecType.SPARK );
 	}
 	
 	
 	@Test
 	public void testSpFuseBinaryPlusRewrite() 
 	{
-		testRewriteAxpy( TEST_NAME1, true, ExecType.SPARK );
+		testFuseBinaryChain( TEST_NAME1, true, ExecType.SPARK );
 	}
 	
 	
 	@Test
 	public void testSpFuseBinaryMinusNoRewrite() 
 	{
-		testRewriteAxpy( TEST_NAME2, false, ExecType.SPARK  );
+		testFuseBinaryChain( TEST_NAME2, false, ExecType.SPARK  );
 	}
 	
 	@Test
 	public void testSpFuseBinaryMinusRewrite() 
 	{
-		testRewriteAxpy( TEST_NAME2, true, ExecType.SPARK  );
+		testFuseBinaryChain( TEST_NAME2, true, ExecType.SPARK  );
 	}
 	
 	
@@ -117,7 +117,7 @@ public class RewriteFuseBinaryOpChainTest extends AutomatedTestBase
 	 * @param branchRemoval
 	 * @param IPA
 	 */
-	private void testRewriteAxpy( String testname, boolean rewrites, ExecType instType )
+	private void testFuseBinaryChain( String testname, boolean rewrites, ExecType instType )
 	{	
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( instType ){
@@ -125,6 +125,7 @@ public class RewriteFuseBinaryOpChainTest extends AutomatedTestBase
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
 			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}
+		
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		if( rtplatform == RUNTIME_PLATFORM.SPARK )
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;

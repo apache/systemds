@@ -25,6 +25,8 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.hops.AggBinaryOp;
 import org.apache.sysml.hops.AggUnaryOp;
 import org.apache.sysml.hops.BinaryOp;
@@ -32,6 +34,7 @@ import org.apache.sysml.hops.DataGenOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.OpOp1;
 import org.apache.sysml.hops.IndexingOp;
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.TernaryOp;
 import org.apache.sysml.hops.UnaryOp;
 import org.apache.sysml.hops.Hop.AggOp;
@@ -1919,7 +1922,8 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		//pattern: X + lamda*Y -> X +* lambda Y		
 		if( hi instanceof BinaryOp
 				&& (((BinaryOp)hi).getOp()==OpOp2.PLUS || ((BinaryOp)hi).getOp()==OpOp2.MINUS) 
-				&& ((BinaryOp)hi).getInput().get(0).getDataType()==DataType.MATRIX && ((BinaryOp)hi).getInput().get(1) instanceof BinaryOp)
+				&& ((BinaryOp)hi).getInput().get(0).getDataType()==DataType.MATRIX && ((BinaryOp)hi).getInput().get(1) instanceof BinaryOp 
+				&& (DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE || OptimizerUtils.isSparkExecutionMode()) )
 		{
 			//Check that the inner binary Op is a product of Scalar times Matrix or viceversa
 			Hop innerBinaryOp =  ((BinaryOp)hi).getInput().get(1);

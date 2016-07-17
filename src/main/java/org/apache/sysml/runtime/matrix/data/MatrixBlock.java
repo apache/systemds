@@ -6139,8 +6139,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * @return
 	 */
 	public boolean isThreadSafe() {
-		return !sparse || (sparseBlock != null) ? sparseBlock.isThreadSafe() : 
-			DEFAULT_SPARSEBLOCK == SparseBlock.Type.MCSR; //only MCSR thread-safe
+		return !sparse || ((sparseBlock != null) ? sparseBlock.isThreadSafe() : 
+			DEFAULT_SPARSEBLOCK == SparseBlock.Type.MCSR); //only MCSR thread-safe
 	}
 	
 	/**

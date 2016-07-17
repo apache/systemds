@@ -22,6 +22,7 @@ package org.apache.sysml.runtime.instructions.cp;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.functionobjects.Multiply;
 import org.apache.sysml.runtime.functionobjects.Plus;
@@ -80,7 +81,11 @@ public class AggregateBinaryCPInstruction extends BinaryCPInstruction
 		
         //compute matrix multiplication
         AggregateBinaryOperator ab_op = (AggregateBinaryOperator) _optr;
-		MatrixBlock soresBlock = (MatrixBlock) (matBlock1.aggregateBinaryOperations(matBlock1, matBlock2, new MatrixBlock(), ab_op));
+		MatrixBlock soresBlock = null;
+		if( matBlock2 instanceof CompressedMatrixBlock )
+			soresBlock = (MatrixBlock) (matBlock2.aggregateBinaryOperations(matBlock1, matBlock2, new MatrixBlock(), ab_op));
+		else 
+			soresBlock = (MatrixBlock) (matBlock1.aggregateBinaryOperations(matBlock1, matBlock2, new MatrixBlock(), ab_op));
 			
 		//release inputs/outputs
 		ec.releaseMatrixInput(input1.getName());

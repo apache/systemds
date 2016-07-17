@@ -19,6 +19,7 @@
 package org.apache.sysml.runtime.instructions.spark.functions;
 
 import org.apache.spark.api.java.function.Function;
+import org.apache.sysml.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.SparseBlock;
 
@@ -44,7 +45,7 @@ public class CreateSparseBlockFunction implements Function<MatrixBlock,MatrixBlo
 	{
 		//convert given block to CSR representation if in sparse format
 		//but allow shallow pass-through if already in CSR representation. 
-		if( arg0.isInSparseFormat() )
+		if( arg0.isInSparseFormat() && !(arg0 instanceof CompressedMatrixBlock) )
 			return new MatrixBlock(arg0, _stype, false);
 		else //pass through dense
 			return arg0;	

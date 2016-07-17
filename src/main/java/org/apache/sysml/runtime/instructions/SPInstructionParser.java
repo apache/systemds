@@ -22,6 +22,7 @@ package org.apache.sysml.runtime.instructions;
 import java.util.HashMap;
 
 import org.apache.sysml.lops.Checkpoint;
+import org.apache.sysml.lops.Compression;
 import org.apache.sysml.lops.DataGen;
 import org.apache.sysml.lops.WeightedCrossEntropy;
 import org.apache.sysml.lops.WeightedCrossEntropyR;
@@ -48,6 +49,7 @@ import org.apache.sysml.runtime.instructions.spark.CSVReblockSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.CastSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.CentralMomentSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.CheckpointSPInstruction;
+import org.apache.sysml.runtime.instructions.spark.CompressionSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.CovarianceSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.CpmmSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.CumulativeAggregateSPInstruction;
@@ -183,6 +185,7 @@ public class SPInstructionParser extends InstructionParser
 	
 		// Spark-specific instructions
 		String2SPInstructionType.put( Checkpoint.OPCODE, SPINSTRUCTION_TYPE.Checkpoint);
+		String2SPInstructionType.put( Compression.OPCODE, SPINSTRUCTION_TYPE.Compression);
 		
 		// Builtin Instruction Opcodes 
 		String2SPInstructionType.put( "log"  , SPINSTRUCTION_TYPE.Builtin);
@@ -426,6 +429,9 @@ public class SPInstructionParser extends InstructionParser
 				
 			case Checkpoint:
 				return CheckpointSPInstruction.parseInstruction(str);
+			
+			case Compression:
+				return CompressionSPInstruction.parseInstruction(str);
 			
 			case Cast:
 				return CastSPInstruction.parseInstruction(str);

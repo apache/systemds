@@ -37,6 +37,7 @@ import org.apache.sysml.runtime.instructions.cp.BuiltinBinaryCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.BuiltinUnaryCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.CPInstruction;
 import org.apache.sysml.runtime.instructions.cp.CentralMomentCPInstruction;
+import org.apache.sysml.runtime.instructions.cp.CompressionCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.ConvolutionCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.CovarianceCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.DataGenCPInstruction;
@@ -266,7 +267,7 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "eigen", CPINSTRUCTION_TYPE.MultiReturnBuiltin);
 		
 		String2CPInstructionType.put( "partition", CPINSTRUCTION_TYPE.Partition);
-		
+		String2CPInstructionType.put( "compress", CPINSTRUCTION_TYPE.Compression);
 		
 		//CP FILE instruction
 		String2CPFileInstructionType = new HashMap<String, CPINSTRUCTION_TYPE>();
@@ -418,6 +419,9 @@ public class CPInstructionParser extends InstructionParser
 			case Partition:
 				return DataPartitionCPInstruction.parseInstruction(str);	
 	
+			case Compression:
+				return (CPInstruction) CompressionCPInstruction.parseInstruction(str);	
+				
 			case CentralMoment:
 				return CentralMomentCPInstruction.parseInstruction(str);
 	

@@ -26,6 +26,7 @@ import java.util.List;
 
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysml.runtime.functionobjects.Builtin;
 import org.apache.sysml.runtime.instructions.spark.utils.SparkUtils;
@@ -284,7 +285,10 @@ public class OperationsOnMatrixValues
 		indexesOut.setIndexes(indexes1.getRowIndex(), indexes2.getColumnIndex());
 		
 		//perform on the value
-		value1.aggregateBinaryOperations(indexes1, value1, indexes2, value2, valueOut, op);
+		if( value2 instanceof CompressedMatrixBlock )
+			value2.aggregateBinaryOperations(value1, value2, valueOut, op);
+		else //default
+			value1.aggregateBinaryOperations(indexes1, value1, indexes2, value2, valueOut, op);
 	}
 
 	public static void performAggregateBinaryIgnoreIndexes(

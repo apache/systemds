@@ -34,6 +34,9 @@ import org.apache.sysml.lops.WeightedSquaredLossR;
 import org.apache.sysml.lops.WeightedUnaryMM;
 import org.apache.sysml.lops.WeightedUnaryMMR;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.instructions.cp.ArithmeticBinaryCPInstruction;
+import org.apache.sysml.runtime.instructions.cp.PlusMultCPInstruction;
+import org.apache.sysml.runtime.instructions.cp.CPInstruction.CPINSTRUCTION_TYPE;
 import org.apache.sysml.runtime.instructions.spark.AggregateTernarySPInstruction;
 import org.apache.sysml.runtime.instructions.spark.AggregateUnarySPInstruction;
 import org.apache.sysml.runtime.instructions.spark.AppendGAlignedSPInstruction;
@@ -59,6 +62,7 @@ import org.apache.sysml.runtime.instructions.spark.MatrixReshapeSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.MultiReturnParameterizedBuiltinSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.PMapmmSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.ParameterizedBuiltinSPInstruction;
+import org.apache.sysml.runtime.instructions.spark.PlusMultSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.PmmSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.QuantilePickSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.QuaternarySPInstruction;
@@ -148,7 +152,9 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( "1-*"  , SPINSTRUCTION_TYPE.ArithmeticBinary);
 		String2SPInstructionType.put( "^"    , SPINSTRUCTION_TYPE.ArithmeticBinary);
 		String2SPInstructionType.put( "^2"   , SPINSTRUCTION_TYPE.ArithmeticBinary); 
-		String2SPInstructionType.put( "*2"   , SPINSTRUCTION_TYPE.ArithmeticBinary); 
+		String2SPInstructionType.put( "*2"   , SPINSTRUCTION_TYPE.ArithmeticBinary);
+		String2SPInstructionType.put( "+*"   , SPINSTRUCTION_TYPE.ArithmeticBinary); 
+		String2SPInstructionType.put( "-*"   , SPINSTRUCTION_TYPE.ArithmeticBinary); 
 		String2SPInstructionType.put( "map+"    , SPINSTRUCTION_TYPE.ArithmeticBinary);
 		String2SPInstructionType.put( "map-"    , SPINSTRUCTION_TYPE.ArithmeticBinary);
 		String2SPInstructionType.put( "map*"    , SPINSTRUCTION_TYPE.ArithmeticBinary);
@@ -157,6 +163,8 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( "map%/%"  , SPINSTRUCTION_TYPE.ArithmeticBinary);
 		String2SPInstructionType.put( "map1-*"  , SPINSTRUCTION_TYPE.ArithmeticBinary);
 		String2SPInstructionType.put( "map^"    , SPINSTRUCTION_TYPE.ArithmeticBinary);
+		String2SPInstructionType.put( "map+*"   , SPINSTRUCTION_TYPE.ArithmeticBinary); 
+		String2SPInstructionType.put( "map-*"   , SPINSTRUCTION_TYPE.ArithmeticBinary); 
 		String2SPInstructionType.put( "map>"    , SPINSTRUCTION_TYPE.RelationalBinary);
 		String2SPInstructionType.put( "map>="   , SPINSTRUCTION_TYPE.RelationalBinary);
 		String2SPInstructionType.put( "map<"    , SPINSTRUCTION_TYPE.RelationalBinary);
@@ -326,7 +334,11 @@ public class SPInstructionParser extends InstructionParser
 				return ReorgSPInstruction.parseInstruction(str);
 				
 			case ArithmeticBinary:
-				return ArithmeticBinarySPInstruction.parseInstruction(str);
+				String opcode = InstructionUtils.getOpCode(str);
+				if( opcode.equals("+*") || opcode.equals("-*")  )
+					return PlusMultSPInstruction.parseInstruction(str);
+				else			
+					return ArithmeticBinarySPInstruction.parseInstruction(str);
 				
 			case RelationalBinary:
 				return RelationalBinarySPInstruction.parseInstruction(str);

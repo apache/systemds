@@ -1064,7 +1064,7 @@ public abstract class Hop
 
 	// Operations that require 3 operands
 	public enum OpOp3 {
-		QUANTILE, INTERQUANTILE, CTABLE, CENTRALMOMENT, COVARIANCE, INVALID 
+		QUANTILE, INTERQUANTILE, CTABLE, CENTRALMOMENT, COVARIANCE, INVALID, PLUS_MULT, MINUS_MULT
 	};
 	
 	// Operations that require 4 operands
@@ -1416,6 +1416,8 @@ public abstract class Hop
 		HopsOpOp3String.put(OpOp3.CTABLE, "ctable");
 		HopsOpOp3String.put(OpOp3.CENTRALMOMENT, "cm");
 		HopsOpOp3String.put(OpOp3.COVARIANCE, "cov");
+		HopsOpOp3String.put(OpOp3.PLUS_MULT, "+*");
+		HopsOpOp3String.put(OpOp3.MINUS_MULT, "-*");
 	}
 	
 	protected static final HashMap<Hop.OpOp4, String> HopsOpOp4String;

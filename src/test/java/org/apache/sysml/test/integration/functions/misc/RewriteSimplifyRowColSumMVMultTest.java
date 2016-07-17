@@ -56,25 +56,25 @@ public class RewriteSimplifyRowColSumMVMultTest extends AutomatedTestBase
 	}
 
 	@Test
-	public void testRewriteRowSumsMVMultNoRewrite() 
+	public void testMultiScalarToBinaryNoRewrite() 
 	{
 		testRewriteRowColSumsMVMult( TEST_NAME1, false );
 	}
 	
 	@Test
-	public void testRewriteRowSumsMVMultRewrite() 
+	public void testMultiScalarToBinaryRewrite() 
 	{
 		testRewriteRowColSumsMVMult( TEST_NAME1, true );
 	}
 	
 	@Test
-	public void testRewriteColSumsMVMultNoRewrite() 
+	public void testMultiBinaryToScalarNoRewrite() 
 	{
 		testRewriteRowColSumsMVMult( TEST_NAME2, false );
 	}
 	
 	@Test
-	public void testRewriteColSumsMVMultRewrite() 
+	public void testMultiBinaryToScalarRewrite() 
 	{
 		testRewriteRowColSumsMVMult( TEST_NAME2, true );
 	}

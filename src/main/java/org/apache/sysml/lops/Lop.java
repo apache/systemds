@@ -59,6 +59,7 @@ public abstract class Lop
 		WeightedSquaredLoss, WeightedSigmoid, WeightedDivMM, WeightedCeMM, WeightedUMM,
 		SortKeys, PickValues,
 		Checkpoint, 										//Spark persist into storage level
+		PlusMult, MinusMult,								//CP
 	};
 
 	/**

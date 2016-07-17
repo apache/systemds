@@ -92,6 +92,7 @@ public class ProgramRewriter
 			_dagRuleSet.add(     new RewriteTransientWriteParentHandling()       );
 			_dagRuleSet.add(     new RewriteRemoveReadAfterWrite()               ); //dependency: before blocksize
 			_dagRuleSet.add(     new RewriteBlockSizeAndReblock()                );
+			_dagRuleSet.add(     new RewriteCompressedReblock()                  );
 			_dagRuleSet.add(     new RewriteRemoveUnnecessaryCasts()             );		
 			if( OptimizerUtils.ALLOW_COMMON_SUBEXPRESSION_ELIMINATION )
 				_dagRuleSet.add( new RewriteCommonSubexpressionElimination()     );

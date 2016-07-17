@@ -70,6 +70,7 @@ public class DMLConfig
 	public static final String YARN_APPQUEUE    	= "dml.yarn.app.queue"; 
 	public static final String CP_PARALLEL_MATRIXMULT = "cp.parallel.matrixmult";
 	public static final String CP_PARALLEL_TEXTIO   = "cp.parallel.textio";
+	public static final String COMPRESSED_LINALG    = "compressed.linalg";
 
 	// supported prefixes for custom map/reduce configurations
 	public static final String PREFIX_MAPRED = "mapred";
@@ -100,6 +101,7 @@ public class DMLConfig
 		_defaultVals.put(YARN_APPQUEUE,    	     "default" );
 		_defaultVals.put(CP_PARALLEL_MATRIXMULT, "true" );
 		_defaultVals.put(CP_PARALLEL_TEXTIO,     "true" );
+		_defaultVals.put(COMPRESSED_LINALG,      "false" );
 	}
 	
 	public DMLConfig()

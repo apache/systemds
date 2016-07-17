@@ -29,6 +29,7 @@ import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.lops.CSVReBlock;
 import org.apache.sysml.lops.Checkpoint;
+import org.apache.sysml.lops.Compression;
 import org.apache.sysml.lops.Data;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopsException;
@@ -107,6 +108,10 @@ public abstract class Hop
 	// indicates if the output of this hop needs to be reblocked
 	// (usually this happens on persistent reads dataops)
 	protected boolean _requiresReblock = false;
+	
+	// indicates if the output of this hop needs to be compressed
+	// (this happens on persistent reads after reblock but before checkpoint)
+	protected boolean _requiresCompression = false;
 	
 	// indicates if the output of this hop needs to be checkpointed (cached)
 	// (the default storage level for caching is not yet exposed here)
@@ -234,9 +239,16 @@ public abstract class Hop
 		}
 	}
 	
-	public void setRequiresReblock(boolean flag)
-	{
+	public void setRequiresReblock(boolean flag) {
 		_requiresReblock = flag;
+	}
+	
+	public void setRequiresCompression(boolean flag) {
+		_requiresCompression = flag;
+	}
+	
+	public boolean requiresCompression() {
+		return _requiresCompression;
 	}
 	
 	public boolean hasMatrixInputWithDifferentBlocksizes()
@@ -285,7 +297,10 @@ public abstract class Hop
 		//Step 1: construct reblock lop if required (output of hop)
 		constructAndSetReblockLopIfRequired();
 		
-		//Step 2: construct checkpoint lop if required (output of hop or reblock)
+		//Step 2: construct compression lop if required
+		constructAndSetCompressionLopIfRequired();
+		
+		//Step 3: construct checkpoint lop if required (output of hop or reblock)
 		constructAndSetCheckpointLopIfRequired();
 	}
 	
@@ -397,8 +412,49 @@ public abstract class Hop
 			catch( LopsException ex ) {
 				throw new HopsException(ex);
 			}
+		}	
+	}
+	
+	/**
+	 * 
+	 * @throws HopsException
+	 */
+	private void constructAndSetCompressionLopIfRequired() 
+		throws HopsException
+	{
+		//determine execution type
+		ExecType et = ExecType.CP;
+		if( OptimizerUtils.isSparkExecutionMode() 
+			&& getDataType()!=DataType.SCALAR )
+		{
+			//conditional checkpoint based on memory estimate in order to avoid unnecessary 
+			//persist and unpersist calls (4x the memory budget is conservative)
+			if(    OptimizerUtils.isHybridExecutionMode() 
+				&& 2*_outputMemEstimate < OptimizerUtils.getLocalMemBudget()
+				|| _etypeForced == ExecType.CP )
+			{
+				et = ExecType.CP;
+			}
+			else //default case
+			{
+				et = ExecType.SPARK;
+			}
 		}
-		
+
+		//add reblock lop to output if required
+		if( _requiresCompression )
+		{
+			try
+			{
+				Lop compress = new Compression(getLops(), getDataType(), getValueType(), et);				
+				setOutputDimensions( compress );
+				setLineNumbers( compress );
+				setLops( compress );
+			}
+			catch( LopsException ex ) {
+				throw new HopsException(ex);
+			}
+		}
 	}
 	
 	

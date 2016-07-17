@@ -187,7 +187,7 @@ public class LibMatrixReorg
 		//redirect small or special cases to sequential execution
 		if( in.isEmptyBlock(false) || (in.rlen * in.clen < PAR_NUMCELL_THRESHOLD)
 			|| (SHALLOW_DENSE_VECTOR_TRANSPOSE && !in.sparse && !out.sparse && (in.rlen==1 || in.clen==1) )
-			|| (in.sparse && !out.sparse && in.rlen==1) || out.sparse )
+			|| (in.sparse && !out.sparse && in.rlen==1) || out.sparse || !out.isThreadSafe())
 		{
 			return transpose(in, out);
 		}

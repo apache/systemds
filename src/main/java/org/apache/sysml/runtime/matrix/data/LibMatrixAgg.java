@@ -230,7 +230,8 @@ public class LibMatrixAgg
 	{
 		//fall back to sequential version if necessary
 		if(    k <= 1 || (long)in.rlen*in.clen < PAR_NUMCELL_THRESHOLD || in.rlen <= k
-			|| (!(uaop.indexFn instanceof ReduceCol) &&  out.clen*8*k > PAR_INTERMEDIATE_SIZE_THRESHOLD ) ) {
+			|| (!(uaop.indexFn instanceof ReduceCol) &&  out.clen*8*k > PAR_INTERMEDIATE_SIZE_THRESHOLD ) || 
+			!out.isThreadSafe()) {
 			aggregateUnaryMatrix(in, out, uaop);
 			return;
 		}
@@ -254,6 +255,8 @@ public class LibMatrixAgg
 			out.reset(m2, n2, false); //always dense
 			out.allocateDenseBlock();
 		}
+		
+		
 		
 		//core multi-threaded unary aggregate computation
 		//(currently: always parallelization over number of rows)
@@ -343,7 +346,7 @@ public class LibMatrixAgg
 		
 		//fall back to sequential if necessary or agg not supported
 		if(    k <= 1 || (long)in.rlen*in.clen < PAR_NUMCELL_THRESHOLD || in.rlen <= k
-			|| out.clen*8*k > PAR_INTERMEDIATE_SIZE_THRESHOLD || uaop == null ) {
+			|| out.clen*8*k > PAR_INTERMEDIATE_SIZE_THRESHOLD || uaop == null || !out.isThreadSafe()) {
 			return cumaggregateUnaryMatrix(in, out, uop);
 		}
 		
@@ -540,9 +543,12 @@ public class LibMatrixAgg
 	public static void groupedAggregate(MatrixBlock groups, MatrixBlock target, MatrixBlock weights, MatrixBlock result, int numGroups, Operator op, int k) 
 		throws DMLRuntimeException
 	{
+		//preprocessing
+		result.sparse = false;	// Do not need to check for isThreadSafe, because dense is assumed to be thread safe
+		
 		//fall back to sequential version if necessary
 		boolean rowVector = (target.getNumRows()==1 && target.getNumColumns()>1);
-		if( k <= 1 || (long)target.rlen*target.clen < PAR_NUMCELL_THRESHOLD || rowVector || target.clen==1 ) {
+		if( k <= 1 || (long)target.rlen*target.clen < PAR_NUMCELL_THRESHOLD || rowVector || target.clen==1) {
 			groupedAggregate(groups, target, weights, result, numGroups, op);
 			return;
 		}
@@ -551,8 +557,6 @@ public class LibMatrixAgg
 			throw new DMLRuntimeException("Invalid operator (" + op + ") encountered while processing groupedAggregate.");
 		}
 		
-		//preprocessing
-		result.sparse = false;
 		result.allocateDenseBlock();
 		
 		//core multi-threaded grouped aggregate computation

@@ -392,17 +392,13 @@ public class LibMatrixDatagen
 		boolean lsparse = MatrixBlock.evalSparseFormatInMemory( rows, cols, estnnz );
 		
 		//fallback to sequential if single rowblock or too few cells or if MatrixBlock is not thread safe
-		if( k<=1 || (rows <= rpb && lsparse) || (long)rows*cols < PAR_NUMCELL_THRESHOLD) {
+		if( k<=1 || (rows <= rpb && lsparse) || (long)rows*cols < PAR_NUMCELL_THRESHOLD 
+			|| !MatrixBlock.isThreadSafe(lsparse) ) {
 			generateRandomMatrix(out, rgen, nnzInBlocks, bigrand, bSeed);
 			return;
 		}
 
 		out.reset(rows, cols, lsparse);
-		
-		if (!out.isThreadSafe()) {
-			generateRandomMatrix(out, rgen, nnzInBlocks, bigrand, bSeed);
-			return;
-		}
 		
 		//special case shortcuts for efficiency
 		if ( rgen._pdf.equalsIgnoreCase(RAND_PDF_UNIFORM)) {

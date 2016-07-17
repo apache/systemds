@@ -25,7 +25,6 @@ import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.lops.compile.JobType;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
-import org.apache.sysml.parser.Expression.*;
 
 
 /**
@@ -100,8 +99,4 @@ public class PlusMult extends Lop
 		
 		return sb.toString();
 	}
-	
-	
-	
-	
 }

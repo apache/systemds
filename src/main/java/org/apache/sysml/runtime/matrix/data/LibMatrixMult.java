@@ -300,9 +300,6 @@ public class LibMatrixMult
 			ret.examSparsity(); //turn empty dense into sparse
 			return;
 		}
-
-		//pre-processing
-		ret.sparse = false; // MatrixBlock is assumed to be thread safe if dense
 		
 		//check too high additional memory requirements (fallback to sequential)
 		//check too small workload in terms of flops (fallback to sequential too)
@@ -315,7 +312,8 @@ public class LibMatrixMult
 		
 		//Timing time = new Timing(true);
 				
-		//pre-processing
+		//pre-processing (no need to check isThreadSafe)
+		ret.sparse = false;
 		ret.allocateDenseBlock();
 		
 		//core matrix mult chain computation
@@ -399,9 +397,6 @@ public class LibMatrixMult
 			return;
 		}
 		
-		// pre-processing
-		ret.sparse = false;	// MatrixBlock is assumed to be thread safe if dense
-		
 		//check no parallelization benefit (fallback to sequential)
 		//check too small workload in terms of flops (fallback to sequential too)
 		if( ret.rlen == 1 
@@ -414,8 +409,9 @@ public class LibMatrixMult
 		
 		//Timing time = new Timing(true);
 		
-		//pre-processing
+		//pre-processing (no need to check isThreadSafe)
 		m1 = prepMatrixMultTransposeSelfInput(m1, leftTranspose);
+		ret.sparse = false;	
 		ret.allocateDenseBlock();
 	
 		//core multi-threaded matrix mult computation
@@ -500,9 +496,6 @@ public class LibMatrixMult
 		if( pm1.isEmptyBlock(false) || m2.isEmptyBlock(false) )
 			return;
 
-		//pre-processing
-		ret1.sparse = false;	// MatrixBlock is assumed to be thread safe if dense
-
 		//check no parallelization benefit (fallback to sequential)
 		if (pm1.rlen == 1) {
 			matrixMultPermute(pm1, m2, ret1, ret2);
@@ -512,6 +505,7 @@ public class LibMatrixMult
 		//Timing time = new Timing(true);
 		
 		//allocate first output block (second allocated if needed)
+		ret1.sparse = false;	  // no need to check isThreadSafe
 		ret1.allocateDenseBlock();
 		
 		try
@@ -598,7 +592,8 @@ public class LibMatrixMult
 		}
 		
 		//check no parallelization benefit (fallback to sequential)
-		if (mX.rlen == 1 || !ret.isThreadSafe()) {
+		//no need to check isThreadSafe (scalar output)
+		if( mX.rlen == 1 ) {
 			matrixMultWSLoss(mX, mU, mV, mW, ret, wt);
 			return;
 		}
@@ -684,11 +679,8 @@ public class LibMatrixMult
 			return; 
 		}
 
-		//pre-processing
-		ret.sparse = mW.sparse;
-		
 		//check no parallelization benefit (fallback to sequential)
-		if (mW.rlen == 1 || !ret.isThreadSafe()) {
+		if (mW.rlen == 1 || !MatrixBlock.isThreadSafe(mW.sparse)) {
 			matrixMultWSigmoid(mW, mU, mV, ret, wt);
 			return;
 		}
@@ -696,6 +688,7 @@ public class LibMatrixMult
 		//Timing time = new Timing(true);
 
 		//pre-processing
+		ret.sparse = mW.sparse;
 		ret.allocateDenseOrSparseBlock();
 		
 		try 
@@ -905,14 +898,9 @@ public class LibMatrixMult
 
 		//Timing time = new Timing(true);
 
-		//pre-processing
+		//pre-processing (no need to check isThreadSafe)
 		ret.sparse = false;
 		ret.allocateDenseBlock();
-		
-		if (!ret.isThreadSafe()){
-			matrixMultWCeMM(mW, mU, mV, eps, ret, wt);
-			return;
-		}
 		
 		try 
 		{			
@@ -993,11 +981,8 @@ public class LibMatrixMult
 			return; 
 		}
 		
-		//pre-processing
-		ret.sparse = mW.sparse;
-		
 		//check no parallelization benefit (fallback to sequential)
-		if (mW.rlen == 1 || !ret.isThreadSafe()) {
+		if (mW.rlen == 1 || !MatrixBlock.isThreadSafe(mW.sparse)) {
 			matrixMultWuMM(mW, mU, mV, ret, wt, fn);
 			return;
 		}
@@ -1005,6 +990,7 @@ public class LibMatrixMult
 		//Timing time = new Timing(true);
 
 		//pre-processing
+		ret.sparse = mW.sparse;
 		ret.allocateDenseOrSparseBlock();
 		
 		try 

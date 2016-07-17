@@ -543,9 +543,6 @@ public class LibMatrixAgg
 	public static void groupedAggregate(MatrixBlock groups, MatrixBlock target, MatrixBlock weights, MatrixBlock result, int numGroups, Operator op, int k) 
 		throws DMLRuntimeException
 	{
-		//preprocessing
-		result.sparse = false;	// Do not need to check for isThreadSafe, because dense is assumed to be thread safe
-		
 		//fall back to sequential version if necessary
 		boolean rowVector = (target.getNumRows()==1 && target.getNumColumns()>1);
 		if( k <= 1 || (long)target.rlen*target.clen < PAR_NUMCELL_THRESHOLD || rowVector || target.clen==1) {
@@ -556,7 +553,9 @@ public class LibMatrixAgg
 		if( !(op instanceof CMOperator || op instanceof AggregateOperator) ) {
 			throw new DMLRuntimeException("Invalid operator (" + op + ") encountered while processing groupedAggregate.");
 		}
-		
+	
+		//preprocessing (no need to check isThreadSafe)
+		result.sparse = false;
 		result.allocateDenseBlock();
 		
 		//core multi-threaded grouped aggregate computation

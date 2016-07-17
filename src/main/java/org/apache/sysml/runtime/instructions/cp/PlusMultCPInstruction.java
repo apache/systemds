@@ -1,19 +1,13 @@
 package org.apache.sysml.runtime.instructions.cp;
 
-import org.apache.sysml.parser.Expression.DataType;
-import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysml.runtime.functionobjects.CM;
 import org.apache.sysml.runtime.functionobjects.MinusMultiply;
 import org.apache.sysml.runtime.functionobjects.PlusMultiply;
 import org.apache.sysml.runtime.functionobjects.ValueFunctionWithConstant;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
-import org.apache.sysml.runtime.matrix.operators.CMOperator;
-import org.apache.sysml.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
 
 public class PlusMultCPInstruction extends ArithmeticBinaryCPInstruction {
 	public PlusMultCPInstruction(BinaryOperator op, CPOperand in1, CPOperand in2, 
@@ -41,15 +35,13 @@ public class PlusMultCPInstruction extends ArithmeticBinaryCPInstruction {
 	@Override
 	public void processInstruction( ExecutionContext ec )
 		throws DMLRuntimeException
-	{
-		
+	{		
 		String output_name = output.getName();
 
 		//get all the inputs
 		MatrixBlock matrix1 = ec.getMatrixInput(input1.getName());
 		MatrixBlock matrix2 = ec.getMatrixInput(input2.getName());
 		ScalarObject lambda = ec.getScalarInput(input3.getName(), input3.getValueType(), input3.isLiteral()); 
-		
 		
 		//execution
 		((ValueFunctionWithConstant) ((BinaryOperator)_optr).fn).setConstant(lambda.getDoubleValue());

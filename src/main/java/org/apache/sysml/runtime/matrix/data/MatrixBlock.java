@@ -6134,25 +6134,24 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	}
 	
 	/**
-	 * Whether concurrent modification operations are allowed
-	 * This method is to be used by methods that attempt to do a task concurrently,
-	 * like in {@link LibMatrixDatagen#generateRandomMatrix(MatrixBlock, RandomMatrixGenerator, long[], Well1024a, long, int)}
+	 * Indicates if concurrent modifications of disjoint rows are thread-safe.
+	 * 
 	 * @return
 	 */
 	public boolean isThreadSafe() {
-		if (sparse){
-			if (sparseBlock == null){
-				// It is assumed that MCSR is the only safe sparse block implementation available.
-				return DEFAULT_SPARSEBLOCK == SparseBlock.Type.MCSR;
-			} 
-			else {
-				return sparseBlock.isThreadSafe();	
-			}
-		} 
-		else {
-			return true;
-		}
+		return !sparse || (sparseBlock != null) ? sparseBlock.isThreadSafe() : 
+			DEFAULT_SPARSEBLOCK == SparseBlock.Type.MCSR; //only MCSR thread-safe
 	}
+	
+	/**
+	 * Indicates if concurrent modifications of disjoint rows are thread-safe.
+	 * 
+	 * @param sparse
+	 * @return
+	 */
+	public static boolean isThreadSafe(boolean sparse) {
+		return !sparse || DEFAULT_SPARSEBLOCK == SparseBlock.Type.MCSR; //only MCSR thread-safe	
+	} 
 	
 	public void print()
 	{

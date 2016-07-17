@@ -193,6 +193,10 @@ public class LibMatrixDNN {
 		public void setReuseNonZeroedOutput(boolean reuseNonZeroedOutput) {
 			this.reuseNonZeroedOutput = reuseNonZeroedOutput;
 		}
+
+		public boolean isOutputThreadSafe() {
+			return output.isThreadSafe();
+		}
 	}
 	
 	public static void conv2d_backward_filter(MatrixBlock input, MatrixBlock dout, MatrixBlock outputBlock, ConvolutionParameters params) throws DMLRuntimeException {
@@ -475,7 +479,7 @@ public class LibMatrixDNN {
 			}
 		}
 		else
-			runParallelConvTask(constrainedNumThreads, params.K, TaskType.LoopBasedConv2d, params);
+			runConvTask(constrainedNumThreads, params.K, TaskType.LoopBasedConv2d, params);
 	}
 	
 	public static void maxpooling_backward(MatrixBlock input, MatrixBlock dout, MatrixBlock outputBlock, ConvolutionParameters params) throws DMLRuntimeException {
@@ -508,7 +512,7 @@ public class LibMatrixDNN {
 			}
 		}
 		else {
-			runParallelConvTask(constrainedNumThreads, params.C, TaskType.MaxPooling_Backward, params);
+			runConvTask(constrainedNumThreads, params.C, TaskType.MaxPooling_Backward, params);
 		}
 	}
 	
@@ -815,7 +819,7 @@ public class LibMatrixDNN {
 			}
 		}
 		else {
-			runParallelConvTask(constrainedNumThreads, params.C, TaskType.MaxPooling_Forward, params);
+			runConvTask(constrainedNumThreads, params.C, TaskType.MaxPooling_Forward, params);
 		}
 		outputBlock.setNonZeros(params.outputNNZ.get());
 	}
@@ -872,7 +876,7 @@ public class LibMatrixDNN {
 			}
 		}
 		else {
-			runParallelConvTask(constrainedNumThreads, 1, TaskType.Rotate180, params);
+			runConvTask(constrainedNumThreads, 1, TaskType.Rotate180, params);
 		}
 		outputBlock.setNonZeros(input.getNonZeros()); // As number of non-zeros doesnot change for rotate180
 	}
@@ -914,7 +918,7 @@ public class LibMatrixDNN {
 			}
 		}
 		else {
-			runParallelConvTask(constrainedNumThreads, 1, TaskType.ReshapeCol, params);
+			runConvTask(constrainedNumThreads, 1, TaskType.ReshapeCol, params);
 		}
 		outputBlock.setNonZeros(input.getNonZeros()); // As number of non-zeros doesnot change for reshape_col
 	}
@@ -945,7 +949,25 @@ public class LibMatrixDNN {
 		return ret;
 	}
 	
-	private static void runParallelConvTask(int constrainedNumThreads, int Z, TaskType type, ConvolutionParameters params) throws DMLRuntimeException {
+	private static void runConvTask(int constrainedNumThreads, int Z, TaskType type, ConvolutionParameters params) throws DMLRuntimeException {
+		if (params.isOutputThreadSafe() && constrainedNumThreads > 1) {
+			runParallelConvTask(constrainedNumThreads, Z, type, params);
+		} else {
+			runSequentialConvTask(Z, type, params);
+		}
+	}
+	
+	private static void runSequentialConvTask(int Z, TaskType type, ConvolutionParameters params) throws DMLRuntimeException {
+		ConvTask task = new ConvTask(0, params.N, 0, Z, type, params);
+		try {
+			task.call();
+		} catch (Exception e) {
+			throw new DMLRuntimeException("Error while executing single-threaded " + type.name(), e);
+		}
+	}
+	
+	private static void runParallelConvTask(int constrainedNumThreads, int Z, TaskType type,
+			ConvolutionParameters params) throws DMLRuntimeException {
 		ArrayList<ConvTask> tasks = new ArrayList<ConvTask>();
 		int [] taskSizes = getTaskSize(constrainedNumThreads, params.N, Z);
 		for (int n = 0; n < params.N; n += taskSizes[0]) {
@@ -967,7 +989,6 @@ public class LibMatrixDNN {
 		} catch (ExecutionException e) {
 			throw new DMLRuntimeException("Error while executing multi-threaded " + type.name(), e);
 		}
-		
 	}
 	
 	private static class ConvTask implements Callable<Object> {
@@ -1085,7 +1106,7 @@ public class LibMatrixDNN {
 			}
 		}
 		else {
-			runParallelConvTask(constrainedNumThreads, params.C, TaskType.Im2Col, params);
+			runConvTask(constrainedNumThreads, params.C, TaskType.Im2Col, params);
 		}
 		outputBlock.setNonZeros(params.outputNNZ.get());
 	}
@@ -1106,7 +1127,7 @@ public class LibMatrixDNN {
 		}
 		else {
 			// Parallel col2im
-			runParallelConvTask(constrainedNumThreads, params.C, TaskType.Col2Im, params);
+			runConvTask(constrainedNumThreads, params.C, TaskType.Col2Im, params);
 		}
 	}
 	

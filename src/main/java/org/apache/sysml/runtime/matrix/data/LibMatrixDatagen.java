@@ -391,13 +391,18 @@ public class LibMatrixDatagen
 		final long estnnz = ((min==0.0 && max==0.0) ? 0 : (long)(sparsity * rows * cols));
 		boolean lsparse = MatrixBlock.evalSparseFormatInMemory( rows, cols, estnnz );
 		
-		//fallback to sequential if single rowblock or too few cells
-		if( k<=1 || (rows <= rpb && lsparse) || (long)rows*cols < PAR_NUMCELL_THRESHOLD  ) {
+		//fallback to sequential if single rowblock or too few cells or if MatrixBlock is not thread safe
+		if( k<=1 || (rows <= rpb && lsparse) || (long)rows*cols < PAR_NUMCELL_THRESHOLD) {
 			generateRandomMatrix(out, rgen, nnzInBlocks, bigrand, bSeed);
 			return;
 		}
 
 		out.reset(rows, cols, lsparse);
+		
+		if (!out.isThreadSafe()) {
+			generateRandomMatrix(out, rgen, nnzInBlocks, bigrand, bSeed);
+			return;
+		}
 		
 		//special case shortcuts for efficiency
 		if ( rgen._pdf.equalsIgnoreCase(RAND_PDF_UNIFORM)) {
@@ -418,7 +423,7 @@ public class LibMatrixDatagen
 			out.allocateSparseRowsBlock();
 		else
 			out.allocateDenseBlock();	
-		
+	
 		int nrb = (int) Math.ceil((double)rows/rpb);
 		int ncb = (int) Math.ceil((double)cols/cpb);
 		

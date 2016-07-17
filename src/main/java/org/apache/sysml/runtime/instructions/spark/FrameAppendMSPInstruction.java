@@ -85,7 +85,7 @@ public class FrameAppendMSPInstruction extends AppendMSPInstruction
 					new MapSideAppendPartitionFunction(in2), true);
 		}
 		else 
-			throw new DMLRuntimeException("Opcode " + instOpcode + " not supported/required with FrameAppendM, instead use FrameAppendR for this opcode processing.");
+			throw new DMLRuntimeException("Append type rbind not supported for frame mappend, instead use rappend");
 		
 		//put output RDD handle into symbol table
 		updateBinaryAppendOutputMatrixCharacteristics(sec, _cbind);

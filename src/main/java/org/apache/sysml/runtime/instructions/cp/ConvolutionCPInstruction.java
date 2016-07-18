@@ -237,14 +237,16 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			MatrixBlock filter = ec.getMatrixInput(_in2.getName());
 			outputBlock = getDenseOutputBlock(ec, N, K*P*Q, false);
 			params.setReuseNonZeroedOutput(_reuseNonZeroedOutput);
-			LibMatrixDNN.conv2d(matBlock, filter, outputBlock, params);
+			boolean useMemoryLessConvolution = false;
+			LibMatrixDNN.conv2d(matBlock, filter, outputBlock, params, useMemoryLessConvolution);
 			ec.releaseMatrixInput(_in2.getName());
 		}
 		else if (instOpcode.equalsIgnoreCase("conv2d_backward_filter")) {
 			MatrixBlock filter = ec.getMatrixInput(_in2.getName());
 			outputBlock = getDenseOutputBlock(ec, K, C*R*S, false);
 			params.setReuseNonZeroedOutput(_reuseNonZeroedOutput);
-			LibMatrixDNN.conv2d_backward_filter(matBlock, filter, outputBlock, params);
+			boolean useMemoryLessConvolution = false;
+			LibMatrixDNN.conv2d_backward_filter(matBlock, filter, outputBlock, params, useMemoryLessConvolution);
 			ec.releaseMatrixInput(_in2.getName());
 		}
 		else {

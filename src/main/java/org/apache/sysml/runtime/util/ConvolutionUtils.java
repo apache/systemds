@@ -78,9 +78,9 @@ public class ConvolutionUtils {
 		if(et == ExecType.CP && ConvolutionOp.FORCE_NON_IM2COL) {
 			return false;
 		}
-		else if(et == ExecType.CP && N < 256 ) {
-			return true; // Prefer im2col to non-test/non-validation
-		}
+//		else if(et == ExecType.CP && N < 256 ) {
+//			return true; // Prefer im2col to non-test/non-validation
+//		}
 		return false;
 	}
 	

@@ -64,6 +64,7 @@ public class JCudaObject extends GPUObject {
 			val = new Pointer();
 			rowPtr = new Pointer();
 			colInd = new Pointer();
+			allocateMatDescrPointer();
 		}
 		
 		public long nnz;				/** Number of non zeroes	 									*/
@@ -82,6 +83,7 @@ public class JCudaObject extends GPUObject {
 			cusparseCreateMatDescr(tdescr);
 			cusparseSetMatType(tdescr, CUSPARSE_MATRIX_TYPE_GENERAL);
 			cusparseSetMatIndexBase(tdescr, CUSPARSE_INDEX_BASE_ZERO);
+			this.descr = tdescr;
 		}
 		
 		/**
@@ -119,7 +121,6 @@ public class JCudaObject extends GPUObject {
 			cudaMalloc(r.val, Sizeof.DOUBLE * nnz2);
 			cudaMalloc(r.rowPtr, Sizeof.INT * (rows + 1));
 			cudaMalloc(r.colInd, Sizeof.INT * nnz2);
-			r.allocateMatDescrPointer();
 			return r;
 		}
 		
@@ -139,7 +140,6 @@ public class JCudaObject extends GPUObject {
 			cudaMemcpy(r.rowPtr, Pointer.to(rowPtr), (rows + 1) * Sizeof.INT, cudaMemcpyHostToDevice);
 			cudaMemcpy(r.colInd, Pointer.to(colInd), nnz * Sizeof.INT, cudaMemcpyHostToDevice);
 			cudaMemcpy(r.val, Pointer.to(values), nnz * Sizeof.DOUBLE, cudaMemcpyHostToDevice);
-			r.allocateMatDescrPointer();
 		}
 		
 		/**
@@ -178,7 +178,6 @@ public class JCudaObject extends GPUObject {
 			// https://github.com/jcuda/jcuda-matrix-utils/blob/master/JCudaMatrixUtils/src/test/java/org/jcuda/matrix/samples/JCusparseSampleDgemm.java
 			
 			CSRPointer C = new CSRPointer();
-			C.allocateMatDescrPointer();
 			cusparseSetPointerMode(handle, cusparsePointerMode.CUSPARSE_POINTER_MODE_HOST);
 			
 			JCudaObject.ensureFreeSpace(Sizeof.INT * (m+1));
@@ -236,6 +235,9 @@ public class JCudaObject extends GPUObject {
 	 */
 	public void setSparseMatrixCudaPointer(CSRPointer jcudaSparseMatrixPtr) {
 		this.jcudaSparseMatrixPtr = jcudaSparseMatrixPtr;
+		this.isAllocated = true;
+		this.numLocks.addAndGet(1);
+		this.isInSparseFormat = true;
 	}
 
 	public long numBytes;
@@ -538,8 +540,8 @@ public class JCudaObject extends GPUObject {
 			long start = System.nanoTime();
 			
 			int rows = (int) mat.getNumRows();
-			int nnz = (int) mat.getNnz();
 			int cols = (int) mat.getNumColumns();
+			int nnz = (int) jcudaSparseMatrixPtr.nnz;
 			int[] rowPtr = new int[rows + 1];
 			int[] colInd = new int[nnz];
 			double[] values = new double[nnz];

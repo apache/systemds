@@ -23,21 +23,25 @@ import java.io.Serializable;
 
 public class PlusMultiply extends ValueFunctionWithConstant implements Serializable
 {
-
 	private static final long serialVersionUID = 2801982061205871665L;
 	
-	public PlusMultiply() {
+	private PlusMultiply() {
 		// nothing to do here
 	}
+
+	public static PlusMultiply getPlusMultiplyFnObject() {
+		//create new object as the constant is modified and hence 
+		//cannot be shared across multiple threads (e.g., in parfor)
+		return new PlusMultiply();
+	}
+	
 	public Object clone() throws CloneNotSupportedException {
 		// cloning is not supported for singleton classes
 		throw new CloneNotSupportedException();
 	}
-	@Override
-	public double execute(double in1, double in2)
-	{
-		return in1 + _constant*in2;
-		
-	}
 	
+	@Override
+	public double execute(double in1, double in2) {
+		return in1 + _constant*in2;	
+	}
 }

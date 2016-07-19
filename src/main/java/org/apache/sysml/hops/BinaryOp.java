@@ -1335,7 +1335,7 @@ public class BinaryOp extends Hop
 	 * @param right
 	 * @return
 	 */
-	private static boolean requiresReplication( Hop left, Hop right )
+	public static boolean requiresReplication( Hop left, Hop right )
 	{
 		return (!(left.getDim2()>=1 && right.getDim2()>=1) //cols of any input unknown 
 				||(left.getDim2() > 1 && right.getDim2()==1 && left.getDim2()>=left.getColsInBlock() ) //col MV and more than 1 block

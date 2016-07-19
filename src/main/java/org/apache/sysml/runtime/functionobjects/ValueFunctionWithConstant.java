@@ -26,13 +26,11 @@ public abstract class ValueFunctionWithConstant extends ValueFunction implements
 	private static final long serialVersionUID = -4985988545393861058L;
 	protected double _constant;
 	
-	public void setConstant(double constant)
-	{
+	public void setConstant(double constant) {
 		_constant = constant;
 	}
 	
-	public double getConstant()
-	{
+	public double getConstant() {
 		return _constant;
 	}
 }

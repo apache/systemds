@@ -63,6 +63,7 @@ import org.apache.sysml.runtime.instructions.mr.MatrixReshapeMRInstruction;
 import org.apache.sysml.runtime.instructions.mr.PMMJMRInstruction;
 import org.apache.sysml.runtime.instructions.mr.ParameterizedBuiltinMRInstruction;
 import org.apache.sysml.runtime.instructions.mr.PickByCountInstruction;
+import org.apache.sysml.runtime.instructions.mr.PlusMultInstruction;
 import org.apache.sysml.runtime.instructions.mr.QuaternaryInstruction;
 import org.apache.sysml.runtime.instructions.mr.RandInstruction;
 import org.apache.sysml.runtime.instructions.mr.RangeBasedReIndexInstruction;
@@ -182,6 +183,9 @@ public class MRInstructionParser extends InstructionParser
 		String2MRInstructionType.put( "^2"   , MRINSTRUCTION_TYPE.ArithmeticBinary); //special ^ case
 		String2MRInstructionType.put( "*2"   , MRINSTRUCTION_TYPE.ArithmeticBinary); //special * case
 		String2MRInstructionType.put( "-nz"  , MRINSTRUCTION_TYPE.ArithmeticBinary); //special - case
+		String2MRInstructionType.put( "+*"   , MRINSTRUCTION_TYPE.ArithmeticBinary2); 
+		String2MRInstructionType.put( "-*"   , MRINSTRUCTION_TYPE.ArithmeticBinary2); 
+		
 		String2MRInstructionType.put( "map+"    , MRINSTRUCTION_TYPE.ArithmeticBinary);
 		String2MRInstructionType.put( "map-"    , MRINSTRUCTION_TYPE.ArithmeticBinary);
 		String2MRInstructionType.put( "map*"    , MRINSTRUCTION_TYPE.ArithmeticBinary);
@@ -332,6 +336,9 @@ public class MRInstructionParser extends InstructionParser
 						return BinaryInstruction.parseInstruction(str);
 				}
 			}
+			
+			case ArithmeticBinary2:
+				return PlusMultInstruction.parseInstruction(str);
 			
 			case AggregateBinary:
 				return AggregateBinaryInstruction.parseInstruction(str);

@@ -56,6 +56,7 @@ import org.apache.sysml.runtime.functionobjects.LessThanEquals;
 import org.apache.sysml.runtime.functionobjects.Mean;
 import org.apache.sysml.runtime.functionobjects.Minus;
 import org.apache.sysml.runtime.functionobjects.Minus1Multiply;
+import org.apache.sysml.runtime.functionobjects.MinusMultiply;
 import org.apache.sysml.runtime.functionobjects.MinusNz;
 import org.apache.sysml.runtime.functionobjects.Modulus;
 import org.apache.sysml.runtime.functionobjects.Multiply;
@@ -63,6 +64,7 @@ import org.apache.sysml.runtime.functionobjects.Multiply2;
 import org.apache.sysml.runtime.functionobjects.NotEquals;
 import org.apache.sysml.runtime.functionobjects.Or;
 import org.apache.sysml.runtime.functionobjects.Plus;
+import org.apache.sysml.runtime.functionobjects.PlusMultiply;
 import org.apache.sysml.runtime.functionobjects.Power;
 import org.apache.sysml.runtime.functionobjects.Power2;
 import org.apache.sysml.runtime.functionobjects.ReduceAll;
@@ -626,6 +628,10 @@ public class InstructionUtils
 			return new BinaryOperator(Builtin.getBuiltinFnObject("max"));
 		else if ( opcode.equalsIgnoreCase("min") ) 
 			return new BinaryOperator(Builtin.getBuiltinFnObject("min"));
+		else if ( opcode.equalsIgnoreCase("+*") )
+			return new BinaryOperator(PlusMultiply.getPlusMultiplyFnObject());
+		else if ( opcode.equalsIgnoreCase("-*") )
+			return new BinaryOperator(MinusMultiply.getMinusMultiplyFnObject());
 		
 		throw new DMLRuntimeException("Unknown binary opcode " + opcode);
 	}

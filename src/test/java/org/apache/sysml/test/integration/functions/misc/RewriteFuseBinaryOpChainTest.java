@@ -46,8 +46,6 @@ public class RewriteFuseBinaryOpChainTest extends AutomatedTestBase
 	private static final String TEST_DIR = "functions/misc/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + RewriteFuseBinaryOpChainTest.class.getSimpleName() + "/";
 	
-	//private static final int rows = 1234;
-	//private static final int cols = 567;
 	private static final double eps = Math.pow(10, -10);
 	
 	@Override
@@ -58,44 +56,64 @@ public class RewriteFuseBinaryOpChainTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testFuseBinaryPlusNoRewrite() {
+	public void testFuseBinaryPlusNoRewriteCP() {
 		testFuseBinaryChain( TEST_NAME1, false, ExecType.CP );
 	}
 	
 	
 	@Test
-	public void testFuseBinaryPlusRewrite() {
+	public void testFuseBinaryPlusRewriteCP() {
 		testFuseBinaryChain( TEST_NAME1, true, ExecType.CP);
 	}
 	
 	@Test
-	public void testFuseBinaryMinusNoRewrite() {
+	public void testFuseBinaryMinusNoRewriteCP() {
 		testFuseBinaryChain( TEST_NAME2, false, ExecType.CP );
 	}
 	
 	@Test
-	public void testFuseBinaryMinusRewrite() {
+	public void testFuseBinaryMinusRewriteCP() {
 		testFuseBinaryChain( TEST_NAME2, true, ExecType.CP );
 	}
 	
 	@Test
-	public void testSpFuseBinaryPlusNoRewrite() {
+	public void testFuseBinaryPlusNoRewriteSP() {
 		testFuseBinaryChain( TEST_NAME1, false, ExecType.SPARK );
 	}
 	
 	@Test
-	public void testSpFuseBinaryPlusRewrite() {
+	public void testFuseBinaryPlusRewriteSP() {
 		testFuseBinaryChain( TEST_NAME1, true, ExecType.SPARK );
 	}
 	
 	@Test
-	public void testSpFuseBinaryMinusNoRewrite() {
-		testFuseBinaryChain( TEST_NAME2, false, ExecType.SPARK  );
+	public void testFuseBinaryMinusNoRewriteSP() {
+		testFuseBinaryChain( TEST_NAME2, false, ExecType.SPARK );
 	}
 	
 	@Test
-	public void testSpFuseBinaryMinusRewrite() {
-		testFuseBinaryChain( TEST_NAME2, true, ExecType.SPARK  );
+	public void testFuseBinaryMinusRewriteSP() {
+		testFuseBinaryChain( TEST_NAME2, true, ExecType.SPARK );
+	}
+	
+	@Test
+	public void testFuseBinaryPlusNoRewriteMR() {
+		testFuseBinaryChain( TEST_NAME1, false, ExecType.MR );
+	}
+	
+	@Test
+	public void testFuseBinaryPlusRewriteMR() {
+		testFuseBinaryChain( TEST_NAME1, true, ExecType.MR );
+	}
+	
+	@Test
+	public void testFuseBinaryMinusNoRewriteMR() {
+		testFuseBinaryChain( TEST_NAME2, false, ExecType.MR );
+	}
+	
+	@Test
+	public void testFuseBinaryMinusRewriteMR() {
+		testFuseBinaryChain( TEST_NAME2, true, ExecType.MR );
 	}
 	
 	
@@ -111,7 +129,7 @@ public class RewriteFuseBinaryOpChainTest extends AutomatedTestBase
 		switch( instType ){
 			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
-			default: rtplatform = RUNTIME_PLATFORM.SINGLE_NODE; break;
+			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}
 		
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
@@ -142,7 +160,7 @@ public class RewriteFuseBinaryOpChainTest extends AutomatedTestBase
 			Assert.assertTrue(TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R"));
 			
 			//check for applies rewrites
-			if( rewrites ) {
+			if( rewrites && instType!=ExecType.MR  ) {
 				String prefix = (instType==ExecType.SPARK) ? Instruction.SP_INST_PREFIX  : "";
 				Assert.assertTrue("Rewrite not applied.",Statistics.getCPHeavyHitterOpCodes()
 						.contains(testname.equals(TEST_NAME1) ? prefix+"+*" : prefix+"-*" ));

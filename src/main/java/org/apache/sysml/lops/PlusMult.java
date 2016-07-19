@@ -34,9 +34,9 @@ public class PlusMult extends Lop
 {
 	
 	private void init(Lop input1, Lop input2, Lop input3, ExecType et) {
-		this.addInput(input1);
-		this.addInput(input2);
-		this.addInput(input3);
+		addInput(input1);
+		addInput(input2);
+		addInput(input3);
 		input1.addOutput(this);	
 		input2.addOutput(this);	
 		input3.addOutput(this);	
@@ -47,7 +47,13 @@ public class PlusMult extends Lop
 		
 		if ( et == ExecType.CP ||  et == ExecType.SPARK ){
 			lps.addCompatibility(JobType.INVALID);
-			this.lps.setProperties( inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
+			lps.setProperties( inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
+		}
+		else if( et == ExecType.MR ) {
+			lps.addCompatibility(JobType.GMR);
+			lps.addCompatibility(JobType.DATAGEN);
+			lps.addCompatibility(JobType.REBLOCK);
+			lps.setProperties( inputs, et, ExecLocation.Reduce, breaksAlignment, aligner, definesMRJob );
 		}
 	}
 	
@@ -60,13 +66,15 @@ public class PlusMult extends Lop
 
 	@Override
 	public String toString() {
-
 		return "Operation = PlusMult";
 	}
 	
+	public String getOpString() {
+		return (type==Lop.Type.PlusMult) ? "+*" : "-*";
+	}
 	
 	/**
-	 * Function to generate CP Sum of a matrix with another matrix multiplied by Scalar.
+	 * Function to generate CP/Spark axpy.
 	 * 
 	 * input1: matrix1
 	 * input2: Scalar
@@ -75,23 +83,51 @@ public class PlusMult extends Lop
 	@Override
 	public String getInstructions(String input1, String input2, String input3, String output) {
 		StringBuilder sb = new StringBuilder();
+		
 		sb.append( getExecType() );
 		sb.append( OPERAND_DELIMITOR );
-		if(type==Lop.Type.PlusMult)
-			sb.append( "+*" );
-		else
-			sb.append( "-*" );
+		
+		sb.append(getOpString());
 		sb.append( OPERAND_DELIMITOR );
 		
 		// Matrix1
 		sb.append( getInputs().get(0).prepInputOperand(input1) );
 		sb.append( OPERAND_DELIMITOR );
 		
-		// Matrix2
+		// Scalar
 		sb.append( getInputs().get(1).prepScalarInputOperand(input2) );
 		sb.append( OPERAND_DELIMITOR );
 		
+		// Matrix2
+		sb.append( getInputs().get(2).prepInputOperand(input3));
+		sb.append( OPERAND_DELIMITOR );
+		
+		sb.append( prepOutputOperand(output));
+		
+		return sb.toString();
+	}
+	
+	@Override
+	public String getInstructions(int input1, int input2, int input3, int output) 
+		throws LopsException 
+	{
+		StringBuilder sb = new StringBuilder();
+		
+		sb.append( getExecType() );
+		sb.append( OPERAND_DELIMITOR );
+		
+		sb.append(getOpString());
+		sb.append( OPERAND_DELIMITOR );
+		
+		// Matrix1
+		sb.append( getInputs().get(0).prepInputOperand(input1) );
+		sb.append( OPERAND_DELIMITOR );
+		
 		// Scalar
+		sb.append( getInputs().get(1).prepScalarLabel() );
+		sb.append( OPERAND_DELIMITOR );
+		
+		// Matrix2
 		sb.append( getInputs().get(2).prepInputOperand(input3));
 		sb.append( OPERAND_DELIMITOR );
 		

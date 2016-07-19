@@ -44,6 +44,7 @@ public class PlusMultSPInstruction extends  ArithmeticBinarySPInstruction
 			throw new DMLRuntimeException("Unknown opcode in PlusMultSPInstruction: " + toString());
 		}		
 	}
+	
 	public static PlusMultSPInstruction parseInstruction(String str) throws DMLRuntimeException
 	{
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
@@ -52,14 +53,10 @@ public class PlusMultSPInstruction extends  ArithmeticBinarySPInstruction
 		CPOperand operand2 = new CPOperand(parts[3]);	//put the second matrix (parts[3]) in Operand2 to make using Binary matrix operations easier
 		CPOperand operand3 = new CPOperand(parts[2]);
 		CPOperand outOperand = new CPOperand(parts[4]);
-		BinaryOperator bOperator = null;
-		if(opcode.equals("+*"))
-			bOperator = new BinaryOperator(new PlusMultiply());
-		else if (opcode.equals("-*"))
-			bOperator = new BinaryOperator(new MinusMultiply());
+		BinaryOperator bOperator = new BinaryOperator(opcode.equals("+*") ? 
+				PlusMultiply.getPlusMultiplyFnObject():MinusMultiply.getMinusMultiplyFnObject());
 		return new PlusMultSPInstruction(bOperator,operand1, operand2, operand3, outOperand, opcode,str);	
 	}
-	
 	
 	@Override
 	public void processInstruction(ExecutionContext ec) 
@@ -74,5 +71,4 @@ public class PlusMultSPInstruction extends  ArithmeticBinarySPInstruction
 		super.processMatrixMatrixBinaryInstruction(sec);
 	
 	}
-
 }

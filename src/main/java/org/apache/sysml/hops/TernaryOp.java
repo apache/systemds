@@ -31,6 +31,7 @@ import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.lops.PickByCount;
 import org.apache.sysml.lops.PlusMult;
+import org.apache.sysml.lops.RepMat;
 import org.apache.sysml.lops.SortKeys;
 import org.apache.sysml.lops.Ternary;
 import org.apache.sysml.lops.UnaryCP;
@@ -627,16 +628,58 @@ public class TernaryOp extends Hop
 			}
 		}
 	}
-	private void constructLopsPlusMult() throws HopsException, LopsException {
+	
+	/**
+	 * 
+	 * @throws HopsException
+	 * @throws LopsException
+	 */
+	private void constructLopsPlusMult() 
+		throws HopsException, LopsException 
+	{
 		if ( _op != OpOp3.PLUS_MULT && _op != OpOp3.MINUS_MULT )
 			throw new HopsException("Unexpected operation: " + _op + ", expecting " + OpOp3.PLUS_MULT + " or" +  OpOp3.MINUS_MULT);
 		
 		ExecType et = optFindExecType();
-		PlusMult plusmult = new PlusMult(getInput().get(0).constructLops(),getInput().get(1).constructLops(),getInput().get(2).constructLops(), _op, getDataType(),getValueType(), et );
+		PlusMult plusmult = null;
+		
+		if( et == ExecType.CP || et == ExecType.SPARK ) {
+			plusmult = new PlusMult(
+					getInput().get(0).constructLops(),
+					getInput().get(1).constructLops(),
+					getInput().get(2).constructLops(), 
+					_op, getDataType(),getValueType(), et );	
+		}
+		else { //MR
+			Hop left = getInput().get(0);
+			Hop right = getInput().get(2);
+			boolean requiresRep = BinaryOp.requiresReplication(left, right);
+			
+			Lop rightLop = right.constructLops();
+			if( requiresRep ) {
+				Lop offset = createOffsetLop(left, (right.getDim2()<=1)); //ncol of left input (determines num replicates)
+				rightLop = new RepMat(rightLop, offset, (right.getDim2()<=1), right.getDataType(), right.getValueType());
+				setOutputDimensions(rightLop);
+				setLineNumbers(rightLop);	
+			}
+		
+			Group group1 = new Group(left.constructLops(), Group.OperationTypes.Sort, getDataType(), getValueType());
+			setLineNumbers(group1);
+			setOutputDimensions(group1);
+		
+			Group group2 = new Group(rightLop, Group.OperationTypes.Sort, getDataType(), getValueType());
+			setLineNumbers(group2);
+			setOutputDimensions(group2);
+			
+			plusmult = new PlusMult(group1, getInput().get(1).constructLops(), 
+					group2, _op, getDataType(),getValueType(), et );	
+		}
+		
 		setOutputDimensions(plusmult);
 		setLineNumbers(plusmult);
 		setLops(plusmult);
 	}
+	
 	@Override
 	public String getOpString() {
 		String s = new String("");

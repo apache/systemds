@@ -28,6 +28,7 @@ import org.apache.sysml.lops.UnaryCP;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
@@ -655,6 +656,7 @@ public class VariableCPInstruction extends CPInstruction
 	 * @param ec
 	 * @throws DMLRuntimeException
 	 */
+	@SuppressWarnings("rawtypes")
 	private void processMoveInstruction(ExecutionContext ec) throws DMLRuntimeException {
 		
 		if ( input3 == null ) {
@@ -683,16 +685,22 @@ public class VariableCPInstruction extends CPInstruction
 			if ( ec.getVariable(input1.getName()) == null ) 
 				throw new DMLRuntimeException("Unexpected error: could not find a data object for variable name:" + input1.getName() + ", while processing instruction " +this.toString());
 			
-			MatrixObject mo = (MatrixObject) ec.getVariable(input1.getName());
+			Object object = ec.getVariable(input1.getName());
+			
 			if ( input3.getName().equalsIgnoreCase("binaryblock") ) {
-				boolean success = mo.moveData(input2.getName(), input3.getName());
+				boolean success = false;
+				success = ((CacheableData)object).moveData(input2.getName(), input3.getName());
 				if (!success) {
 					throw new DMLRuntimeException("Failed to move var " + input1.getName() + " to file " + input2.getName() + ".");
 				}
 			}
-			else 
-				throw new DMLRuntimeException("Unexpected formats while copying: from blocks [" 
-							+ mo.getNumRowsPerBlock() + "," + mo.getNumColumnsPerBlock() + "] to " + input3.getName());
+			else
+				if(object instanceof MatrixObject)
+					throw new DMLRuntimeException("Unexpected formats while copying: from matrix blocks [" 
+							+ ((MatrixObject)object).getNumRowsPerBlock() + "," + ((MatrixObject)object).getNumColumnsPerBlock() + "] to " + input3.getName());
+				else if (object instanceof FrameObject)
+					throw new DMLRuntimeException("Unexpected formats while copying: from fram object [" 
+							+ ((FrameObject)object).getNumColumns() + "," + ((FrameObject)object).getNumColumns() + "] to " + input3.getName());
 		}
 	}
 	

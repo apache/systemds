@@ -282,50 +282,6 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		
 		return str.toString();
 	}
-
-	/**
-	 * 
-	 * @param fName
-	 * @param outputFormat
-	 * @return
-	 * @throws CacheException
-	 */
-	public synchronized boolean moveData(String fName, String outputFormat) 
-		throws CacheException 
-	{	
-		boolean ret = false;
-		
-		try
-		{
-			//ensure input file is persistent on hdfs (pending RDD operations), 
-			//file might have been written during export or collect via write/read
-			if( getRDDHandle() != null && !MapReduceTool.existsFileOnHDFS(_hdfsFileName) ) { 
-				writeBlobFromRDDtoHDFS(getRDDHandle(), _hdfsFileName, outputFormat);
-			}
-			
-			//export or rename to target file on hdfs
-			if( isDirty() || (!isEqualOutputFormat(outputFormat) && isEmpty(true))) 
-			{
-				exportData(fName, outputFormat);
-				ret = true;
-			}
-			else if( isEqualOutputFormat(outputFormat) )
-			{
-				MapReduceTool.deleteFileIfExistOnHDFS(fName);
-				MapReduceTool.deleteFileIfExistOnHDFS(fName+".mtd");
-				MapReduceTool.renameFileOnHDFS( _hdfsFileName, fName );
-				writeMetaData( fName, outputFormat, null );
-				ret = true;
-			}				
-		}
-		catch (Exception e)
-		{
-			throw new CacheException ("Move to " + fName + " failed.", e);
-		}
-		
-		return ret;
-	}
-	
 	
 	// *********************************************
 	// ***                                       ***

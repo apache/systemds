@@ -1422,4 +1422,43 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	public static synchronized void enableCaching() {
 		_activeFlag = true;
 	}
+
+	/**
+	 * 
+	 * @param fName
+	 * @param outputFormat
+	 * @return
+	 * @throws CacheException
+	 */
+	public synchronized boolean moveData(String fName, String outputFormat) 
+		throws CacheException 
+	{	
+		boolean ret = false;
+		
+		try
+		{
+			//export or rename to target file on hdfs
+			if( (isDirty() || (!isEqualOutputFormat(outputFormat) && isEmpty(true))) ||
+				(getRDDHandle() != null && !MapReduceTool.existsFileOnHDFS(_hdfsFileName)))
+			{
+				exportData(fName, outputFormat);
+				ret = true;
+			}
+			else if( isEqualOutputFormat(outputFormat) )
+			{
+				MapReduceTool.deleteFileIfExistOnHDFS(fName);
+				MapReduceTool.deleteFileIfExistOnHDFS(fName+".mtd");
+				MapReduceTool.renameFileOnHDFS( _hdfsFileName, fName );
+				writeMetaData( fName, outputFormat, null );
+				ret = true;
+			}				
+		}
+		catch (Exception e)
+		{
+			throw new CacheException ("Move to " + fName + " failed.", e);
+		}
+		
+		return ret;
+	}
+
 }

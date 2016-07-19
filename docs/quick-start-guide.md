@@ -145,25 +145,78 @@ for each feature column using the algorithm `Univar-Stats.dml` which requires 3
 
 * `X`:  location of the input data file to analyze
 * `TYPES`:  location of the file that contains the feature column types encoded by integer numbers: `1` = scale, `2` = nominal, `3` = ordinal
-* `STATS`:  location of the output matrix of computed statistics will be stored
+* `STATS`:  location where the output matrix of computed statistics is to be stored
 
 We need to create a file `types.csv` that describes the type of each column in
-the data along with it's metadata file `types.csv.mtd`.
+the data along with its metadata file `types.csv.mtd`.
 
     $ echo '1,1,1,2' > data/types.csv
     $ echo '{"rows": 1, "cols": 4, "format": "csv"}' > data/types.csv.mtd
 
 
-To run the `Univar-Stats.dml` algorithm, issue the following command:
+To run the `Univar-Stats.dml` algorithm, issue the following command (we set the optional argument `CONSOLE_OUTPUT` to `TRUE` to print the statistics to the console):
 
-    $ ./runStandaloneSystemML.sh scripts/algorithms/Univar-Stats.dml -nvargs X=data/haberman.data TYPES=data/types.csv STATS=data/univarOut.mtx
+    $ ./runStandaloneSystemML.sh scripts/algorithms/Univar-Stats.dml -nvargs X=data/haberman.data TYPES=data/types.csv STATS=data/univarOut.mtx CONSOLE_OUTPUT=TRUE
+      
+    [...]
+    -------------------------------------------------
+    Feature [1]: Scale
+     (01) Minimum             | 30.0
+     (02) Maximum             | 83.0
+     (03) Range               | 53.0
+     (04) Mean                | 52.45751633986928
+     (05) Variance            | 116.71458266366658
+     (06) Std deviation       | 10.803452349303281
+     (07) Std err of mean     | 0.6175922641866753
+     (08) Coeff of variation  | 0.20594669940735139
+     (09) Skewness            | 0.1450718616532357
+     (10) Kurtosis            | -0.6150152487211726
+     (11) Std err of skewness | 0.13934809593495995
+     (12) Std err of kurtosis | 0.277810485320835
+     (13) Median              | 52.0
+     (14) Interquartile mean  | 52.16013071895425
+    -------------------------------------------------
+    Feature [2]: Scale
+     (01) Minimum             | 58.0
+     (02) Maximum             | 69.0
+     (03) Range               | 11.0
+     (04) Mean                | 62.85294117647059
+     (05) Variance            | 10.558630665380907
+     (06) Std deviation       | 3.2494046632238507
+     (07) Std err of mean     | 0.18575610076612029
+     (08) Coeff of variation  | 0.051698529971741194
+     (09) Skewness            | 0.07798443581479181
+     (10) Kurtosis            | -1.1324380182967442
+     (11) Std err of skewness | 0.13934809593495995
+     (12) Std err of kurtosis | 0.277810485320835
+     (13) Median              | 63.0
+     (14) Interquartile mean  | 62.80392156862745
+    -------------------------------------------------
+    Feature [3]: Scale
+     (01) Minimum             | 0.0
+     (02) Maximum             | 52.0
+     (03) Range               | 52.0
+     (04) Mean                | 4.026143790849673
+     (05) Variance            | 51.691117539912135
+     (06) Std deviation       | 7.189653506248555
+     (07) Std err of mean     | 0.41100513466216837
+     (08) Coeff of variation  | 1.7857418611299172
+     (09) Skewness            | 2.954633471088322
+     (10) Kurtosis            | 11.425776549251449
+     (11) Std err of skewness | 0.13934809593495995
+     (12) Std err of kurtosis | 0.277810485320835
+     (13) Median              | 1.0
+     (14) Interquartile mean  | 1.2483660130718954
+    -------------------------------------------------
+    Feature [4]: Categorical (Nominal)
+     (15) Num of categories   | 2
+     (16) Mode                | 1
+     (17) Num of modes        | 1
+  
 
-The resulting matrix has one row per each univariate statistic and one column
-per input feature. The output file `univarOut.mtx` describes that
-matrix. The elements of the first column denote the number of the statistic,
-the elements of the second column refer to the number of the feature column in
-the input data, and the elements of the third column show the value of the
-univariate statistic.
+The `Univar-Stats.dml` script writes the computed statistics to the `univarOut.mtx` file. The matrix has one row per univariate statistic and one column per input feature. The first column gives the number of the statistic 
+(see above table), the second column gives the number of the feature column in
+the input data, and the third column gives the value of the univariate statistic.
 
     1 1 30.0
     1 2 58.0
@@ -209,31 +262,6 @@ univariate statistic.
     15 4 2.0
     16 4 1.0
     17 4 1.0
-
-The following table lists the number and name of each univariate statistic. The row
-numbers below correspond to the elements of the first column in the output
-matrix above. The signs "+" show applicability to scale or/and to categorical
-features.
-
-  | Row | Name of Statistic          | Scale | Categ. |
-  | :-: |:-------------------------- |:-----:| :-----:|
-  |  1  | Minimum                    |   +   |        |
-  |  2  | Maximum                    |   +   |        |
-  |  3  | Range                      |   +   |        |
-  |  4  | Mean                       |   +   |        |
-  |  5  | Variance                   |   +   |        |
-  |  6  | Standard deviation         |   +   |        |
-  |  7  | Standard error of mean     |   +   |        |
-  |  8  | Coefficient of variation   |   +   |        |
-  |  9  | Skewness                   |   +   |        |
-  | 10  | Kurtosis                   |   +   |        |
-  | 11  | Standard error of skewness |   +   |        |
-  | 12  | Standard error of kurtosis |   +   |        |
-  | 13  | Median                     |   +   |        |
-  | 14  | Inter quartile mean        |   +   |        |
-  | 15  | Number of categories       |       |    +   |
-  | 16  | Mode                       |       |    +   |
-  | 17  | Number of modes            |       |    +   |
 
 
 <br/>
@@ -368,3 +396,4 @@ the memory available to the JVM, i.e:
 
 <br/>
 
+`this is code`

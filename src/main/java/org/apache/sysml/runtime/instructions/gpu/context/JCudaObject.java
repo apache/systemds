@@ -116,11 +116,14 @@ public class JCudaObject extends GPUObject {
 		 * @return a {@link CSRPointer} instance that encapsulates the CSR matrix on GPU
 		 */
 		public static CSRPointer allocateEmpty(long nnz2, long rows) {
+			long t0 = System.nanoTime();
 			CSRPointer r = new CSRPointer();
 			r.nnz = nnz2;
 			cudaMalloc(r.val, Sizeof.DOUBLE * nnz2);
 			cudaMalloc(r.rowPtr, Sizeof.INT * (rows + 1));
 			cudaMalloc(r.colInd, Sizeof.INT * nnz2);
+			Statistics.cudaAllocTime.addAndGet(System.nanoTime()-t0);
+			Statistics.cudaAllocCount.addAndGet(3);
 			return r;
 		}
 		
@@ -136,10 +139,13 @@ public class JCudaObject extends GPUObject {
 		 */
 		public static void copyToDevice(CSRPointer dest, int rows, long nnz, int[] rowPtr, int[] colInd, double[] values) {
 			CSRPointer r = dest;
+			long t0 = System.nanoTime();
 			r.nnz = nnz;
 			cudaMemcpy(r.rowPtr, Pointer.to(rowPtr), (rows + 1) * Sizeof.INT, cudaMemcpyHostToDevice);
 			cudaMemcpy(r.colInd, Pointer.to(colInd), nnz * Sizeof.INT, cudaMemcpyHostToDevice);
 			cudaMemcpy(r.val, Pointer.to(values), nnz * Sizeof.DOUBLE, cudaMemcpyHostToDevice);
+			Statistics.cudaToDevTime.addAndGet(System.nanoTime()-t0);
+			Statistics.cudaToDevCount.addAndGet(3);
 		}
 		
 		/**
@@ -153,9 +159,12 @@ public class JCudaObject extends GPUObject {
 		 */
 		public static void copyToHost(CSRPointer src, int rows, long nnz, int[] rowPtr, int[] colInd, double[] values){
 			CSRPointer r = src;
+			long t0 = System.nanoTime();
 			cudaMemcpy(Pointer.to(rowPtr), r.rowPtr, (rows + 1) * Sizeof.INT, cudaMemcpyDeviceToHost);
 			cudaMemcpy(Pointer.to(colInd), r.colInd, nnz * Sizeof.INT, cudaMemcpyDeviceToHost);
 			cudaMemcpy(Pointer.to(values), r.val, nnz * Sizeof.DOUBLE, cudaMemcpyDeviceToHost);
+			Statistics.cudaFromDevTime.addAndGet(System.nanoTime()-t0);
+			Statistics.cudaFromDevCount.addAndGet(3);
 		}
 		
 		/**
@@ -181,7 +190,10 @@ public class JCudaObject extends GPUObject {
 			cusparseSetPointerMode(handle, cusparsePointerMode.CUSPARSE_POINTER_MODE_HOST);
 			
 			JCudaObject.ensureFreeSpace(Sizeof.INT * (m+1));
+			long t0 = System.nanoTime();
 			cudaMalloc(C.rowPtr, Sizeof.INT * (m+1));
+			Statistics.cudaAllocTime.addAndGet(System.nanoTime()-t0);
+			Statistics.cudaAllocCount.addAndGet(1);
 			int[] CnnzArray = { -1 };
 			if (A.nnz >= Integer.MAX_VALUE || B.nnz >= Integer.MAX_VALUE) { 
 				throw new DMLRuntimeException("Number of non zeroes is larger than supported by cuSparse"); 
@@ -200,10 +212,16 @@ public class JCudaObject extends GPUObject {
 	            C.nnz = CnnzArray[0] - baseArray[0];
 			}
 			JCudaObject.ensureFreeSpace(Sizeof.DOUBLE * C.nnz);
+			long t1 = System.nanoTime();
 			cudaMalloc(C.val, Sizeof.DOUBLE * C.nnz);
+			Statistics.cudaAllocTime.addAndGet(System.nanoTime()-t1);
+			Statistics.cudaAllocCount.addAndGet(1);
 			
 			JCudaObject.ensureFreeSpace(Sizeof.INT * C.nnz);
+			long t2 = System.nanoTime();
 			cudaMalloc(C.colInd, Sizeof.INT * C.nnz);
+			Statistics.cudaAllocTime.addAndGet(System.nanoTime()-t2);
+			Statistics.cudaAllocCount.addAndGet(1);
 			
 			return C;
 		}
@@ -469,11 +487,17 @@ public class JCudaObject extends GPUObject {
 			if (block instanceof SparseBlockCSR){ 
 				csrBlock = (SparseBlockCSR)block;
 			} else if (block instanceof SparseBlockCOO) {
+				long t0 = System.nanoTime();
 				SparseBlockCOO cooBlock = (SparseBlockCOO)block;
 				csrBlock = new SparseBlockCSR((int)mat.getNumRows(), cooBlock.getRowIndexArray(), cooBlock.getColumnIndexArray(), cooBlock.getValuesArray());
+				Statistics.cudaConversionTime.addAndGet(System.nanoTime() - t0);
+				Statistics.cudaConversionCount.incrementAndGet();
 			} else if (block instanceof SparseBlockMCSR) {
+				long t0 = System.nanoTime();
 				SparseBlockMCSR mcsrBlock = (SparseBlockMCSR)block;
 				csrBlock = new SparseBlockCSR(mcsrBlock.getRows(), (int)mcsrBlock.size());
+				Statistics.cudaConversionTime.addAndGet(System.nanoTime() - t0);
+				Statistics.cudaConversionCount.incrementAndGet();
 			} else {
 				throw new DMLRuntimeException("Unsupported sparse matrix format for CUDA operations");
 			}

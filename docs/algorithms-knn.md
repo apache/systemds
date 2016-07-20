@@ -256,4 +256,3 @@ The script outputs the indices of the k nearest neighbours of the query points. 
 * Hamerly G. and Speegle G. (2010) Efficient Model Selection for Large-Scale Nearest-Neighbor Data Mining. BNCOD, 6121 of Lecture Notes in Computer Science, 37-54.
 * Li Y. and Lu B.-L.. (2009) Feature selection based on loss-margin of nearest neighbor classification. Pattern Recognition 42(9), 1914-1921.
 * Moore A. and Lee M. S. (1994) Efficient Algorithms for Minimizing Cross Validation Error. In International Conference on Machine Learning. 190-198.
-* Navot A., Shpigelman L., Tishby N. and Vaadia E. (2005) Nearest Neighbor Based Feature Selection for Regression and its Application to Neural Activity. In NIPS. 996-1002.

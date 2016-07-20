@@ -7,9 +7,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -18,7 +18,7 @@
 # under the License.
 #
 #-------------------------------------------------------------
-#  
+#
 # THIS SCRIPT IMPLEMENTS KNN( K Nearest Neighbor ) ALGORITHM
 #
 # INPUT   PARAMETERS:
@@ -34,8 +34,8 @@
 #                                           categorical ( =2 )
 # K                     String   ---    Y   Location to write the result of selected k value
 # PR                    String   ---    Y   Location to write the predicted value result,
-#                                           it's optional when Y is NOT specified.   
-# NNR                   String   ---    N   Location to write the nearest neighbor index result for T.   
+#                                           it's optional when Y is NOT specified.
+# NNR                   String   ---    N   Location to write the nearest neighbor index result for T.
 # trans_continuous      int      0      Y   Option flag for continuous feature transformed to [-1,1]:
 #                                           0 = do not transform continuous variable;
 #                                           1 = transform continuous variable;
@@ -43,7 +43,7 @@
 #                                           ( 1 means yes )
 # k_min                 int      1      Y   Min k value(  available if select_k = 1 )
 # k_max                 int      100    Y   Max k value(  available if select_k = 1 )
-# select_feature        int      0      Y   Use feature selection algorithm to select feature 
+# select_feature        int      0      Y   Use feature selection algorithm to select feature
 #                                           ( 1 means yes )
 # START_SELECTED        String   ---    Y   Location to read feature selection initinal value
 # FEATURE_SELECTED      String   ---    Y   Location to write feature selection result
@@ -124,15 +124,15 @@ if( select_k == 1 | select_feature==1 ){
         if(  k_max >= interval  ){
             interval = k_max + 1;
             # k_max should equal interval -1, because we drop self when search nn.
-            print( "interval should be no less than k_max, change interval equal : " + 
+            print( "interval should be no less than k_max, change interval equal : " +
             interval );
         }
         if(  k_max <= 1  ){
             stop( "uncorrect k_max value"  );
-        }   
+        }
         if(  k_min >= k_max ){
             stop( "k_min >= k_max" );
-        }   
+        }
     }
     if( select_feature == 1 ){
         if(  k_value >= n_records  ){
@@ -147,7 +147,7 @@ if( select_k == 1 | select_feature==1 ){
             m_start_selected_feature = matrix( 0,1,n_features );
         }else{
             m_start_selected_feature = read( StartSelectedPath );
-        }       
+        }
     }
     CL = read( CLPath );
     CLType = read( CLTypePath );
@@ -155,7 +155,7 @@ if( select_k == 1 | select_feature==1 ){
     if( select_k == 1 & select_feature == 1){
         #Combined k and feature selection
         print("Start combined k and feature selection ...");
-        [m_selected_feature,s_selected_k] = 
+        [m_selected_feature,s_selected_k] =
             getSelectedFeatureAndK( Train,CL,type,m_start_selected_feature,
                 feature_max,k_min,k_max,interval );
     }else if( select_k == 1 ){
@@ -165,7 +165,7 @@ if( select_k == 1 | select_feature==1 ){
     }else if( select_feature == 1 ){
         #Select feature only
         print("Start feature selection ... ");
-        [m_selected_feature,d_err] = 
+        [m_selected_feature,d_err] =
             getSelectedFeature( Train,CL,type,m_start_selected_feature,
                 feature_max,k_value,interval );
     }
@@ -173,19 +173,17 @@ if( select_k == 1 | select_feature==1 ){
 if( feature_importance == 1){
     if(  k_value >= n_records  ){
         k_value = n_records - 1;
-        print( "k_value should be no greater than number of record, make k_value equal " + 
+        print( "k_value should be no greater than number of record, make k_value equal " +
         "( number of record - 1 ) : " + k_value );
     }
     CL = read( CLPath );
     CLType = read( CLTypePath );
-    type = as.integer( as.scalar( CLType[1,1] ) );  
+    type = as.integer( as.scalar( CLType[1,1] ) );
     FeatureImportanceExportPath = ifdef( $FEATURE_IMPORTANCE_VALUE," " );
     if(FeatureImportanceExportPath != " "){
-        [m_feature_importance,m_norm_feature_importance] = 
+        [m_feature_importance,m_norm_feature_importance] =
             getFeatureImportance(Train,CL,type,k_value);
-        #print( "feature importance is "  );
-        #tmp = matrixDisplay( m_feature_importance );
-        write ( m_feature_importance,FeatureImportanceExportPath,format=FMT );          
+        write ( m_feature_importance,FeatureImportanceExportPath,format=FMT );
     }
 }
 
@@ -197,7 +195,7 @@ if(select_k == 1){
 }
 if(  k_value >= n_records ){
     k_value = n_records - 1;
-    print( "k_value should be no greater than number of record, make k_value equal " + 
+    print( "k_value should be no greater than number of record, make k_value equal " +
         "( number of record - 1 )" );
 }
 print( "k value is " + k_value );
@@ -259,21 +257,21 @@ naiveKNNsearch = function(
     Qt = t(Q);
     PQt = P %*% Qt;
     P2 = rowSums (P ^ 2);
-	D = -2 * PQt + P2;
-    #D = -2 * PQt + P2 + t(Q2);
+    Q2 = rowSums (Q ^ 2);
+    D = -2 * PQt + P2 + t(Q2);
     if (K == 1) {
         Dt = t(D);
         O = rowIndexMin (Dt);
     } else {
         O = matrix (0, rows = num_queries, cols = K);
-        parfor (i in 1:num_queries) {
+        for (i in 1:num_queries) {
             #print("case: " + i)
             D_sorted=order(target=D[,i], by=1, decreasing=FALSE, index.return=TRUE);
             O[i,] = t(D_sorted[1:K,1]);
             #print(as.scalar(D[as.scalar(D_sorted[2,1]),i]))
             #print(as.scalar(D_sorted[3,2]))
-        }   
-    }   
+        }
+    }
 }
 #naive knn search for predict value only implement
 naiveKNNsearchForPredict = function(
@@ -305,17 +303,17 @@ naiveKNNsearchForPredict = function(
         parfor (i in 1:num_queries) {
             D_sorted=order(target=append(D[,i],L), by=1, decreasing=FALSE, index.return=FALSE);
             OL[i,] = t(D_sorted[1:K,2]);
-        }   
-    }   
+        }
+    }
 }
 # prepareKNNData:
-#   Do data prepare - [-1,1] transform for continues variable 
+#   Do data prepare - [-1,1] transform for continues variable
 # Argument:
 # in_m_data                     input matrix as features
-prepareKNNData = function ( 
+prepareKNNData = function (
     matrix[double] in_m_data
      )
-return( 
+return(
     matrix[double] out_m_data
      )
 {
@@ -326,8 +324,8 @@ return(
 
 getKNeighbor = function (  matrix[double] in_m_data,
         matrix[double] in_m_test_data,
-        matrix[double] in_m_cl, 
-        integer in_i_k_max   ) 
+        matrix[double] in_m_cl,
+        integer in_i_k_max   )
     return (  matrix[double] out_m_neighbor_value  ) {
     #to naive
     m_search_result = naiveKNNsearchForPredict(in_m_data,in_m_test_data,in_m_cl,in_i_k_max + 1)
@@ -336,12 +334,12 @@ getKNeighbor = function (  matrix[double] in_m_data,
 
 getErr_k = function (  matrix[double] in_m_neighbor_value,
         matrix[double] in_m_cl,
-        integer in_i_cl_type , 
-        integer in_i_k_min  ) 
+        integer in_i_cl_type ,
+        integer in_i_k_min  )
     return (  matrix[double] out_m_err  ){
     i_col = ncol( in_m_neighbor_value  );
-    i_row  = nrow( in_m_neighbor_value  );  
-    
+    i_row  = nrow( in_m_neighbor_value  );
+
     out_m_err = matrix( 0,i_row,i_col - in_i_k_min + 1  );
     if( in_i_cl_type == 2  ){
         #category
@@ -351,43 +349,22 @@ getErr_k = function (  matrix[double] in_m_neighbor_value,
         m_correct = (in_m_neighbor_value - in_m_cl[1:i_row,])^2;#ppred( in_m_neighbor_value,in_m_cl,"-"  );
     }
     parfor( i in 1:i_col-in_i_k_min+1 ,check = 0 ){
-        out_m_err[,i] = 
+        out_m_err[,i] =
             ( rowSums( m_correct[,1:in_i_k_min + i - 1]  ) / ( in_i_k_min + i - 1  )  );
     }
     #return err for each record and each k ( belong to range 1~max  );
 }
-/*
-eliminateModel = function (  matrix[double] in_j_err, matrix[double] in_j1_err   )
-    return(  boolean out_b_inactived   ){
-    out_b_inactived = FALSE;
-    i_row  = nrow( in_j_err  ); 
-    m_err_mean = as.scalar( colSums( in_j_err - in_j1_err  ) / i_row  );
-    m_err_variance = as.scalar( 
-        sqrt(  colSums( ( in_j_err - in_j1_err - m_err_mean  ) ^ 2  ) / ( i_row-1  )))
-    
-    #alpha, beta, gamma, delta
-    d_gamma = 0.001;
-    d_delta = 0.001;
-    
-    tmp_d_delta = cdf(  
-        target = ( -d_gamma - m_err_mean  ) / m_err_variance, dist="t",df=i_row-1  );
-    #print( "m_err_mean=" + m_err_mean + ",m_err_variance=" + 
-    #   m_err_variance + ",tmp_d_delta=" + tmp_d_delta  );
-    if( tmp_d_delta < d_delta  ){
-        out_b_inactived = TRUE;
-    }
 
-}*/
 eliminateModel = function (  double s_err_mean, double s_err_vars, integer i_row  )
     return(  boolean out_b_inactived   ){
     out_b_inactived = FALSE;
     #alpha, beta, gamma, delta
     d_gamma = 0.001;
     d_delta = 0.001;
-    
-    tmp_d_delta = cdf(  
+
+    tmp_d_delta = cdf(
         target = ( -d_gamma - s_err_mean  ) / s_err_vars, dist="t",df=i_row-1  );
-    #print( "m_err_mean=" + m_err_mean + ",m_err_variance=" + 
+    #print( "m_err_mean=" + m_err_mean + ",m_err_variance=" +
     #   m_err_variance + ",tmp_d_delta=" + tmp_d_delta  );
     if( tmp_d_delta < d_delta  ){
         out_b_inactived = TRUE;
@@ -395,7 +372,7 @@ eliminateModel = function (  double s_err_mean, double s_err_vars, integer i_row
 
 }
 # getSelectedKBase:
-#   k selection algorithm with simple KNN algorithm.  
+#   k selection algorithm with simple KNN algorithm.
 #   Refer to ADD part "6.3 Optimized LOOCV + BRACE"
 # Argument:
 # in_m_data                     input matrix as features
@@ -407,14 +384,14 @@ eliminateModel = function (  double s_err_mean, double s_err_vars, integer i_row
 #
 # Reture:
 # k                             output k value for k selection
-getSelectedKBase = function ( 
+getSelectedKBase = function (
     matrix[double] in_m_data,
     matrix[double] in_m_data_target,
     integer in_i_is_categorical, # 1 = category , 0 = continuous
     integer k_min,
     integer k_max,
     integer interval  )
-return( 
+return(
     integer k
       )
 {
@@ -424,7 +401,7 @@ return(
 
     m_active_flag = matrix( 0,1,k_max-k_min+1  );
     i_active_model_number = k_max - k_min + 1;
-    
+
     m_iter_err_sum = matrix( 0,1,k_max-k_min+1);
     m_iter_err_sum_squared = matrix( 0,1,k_max-k_min+1);
     while( b_continue_loop  ){
@@ -438,34 +415,31 @@ return(
         i_process_begin_item = (i_iter - 1)*interval + 1
         #i_process_begin_item = 1
         i_process_end_item = i_process_item
-        
+
         m_neighbor_value = getKNeighbor( in_m_data,in_m_data[i_process_begin_item:i_process_end_item,],in_m_data_target,k_max  );
-        # 3.get matrix of err from k_min to k_max 
+        # 3.get matrix of err from k_min to k_max
         m_err = getErr_k( m_neighbor_value,in_m_data_target[i_process_begin_item:i_process_end_item,],in_i_is_categorical,k_min  );
 
         # 4.check this matrix to drop unnessary record
         m_active_flag_tmp = matrix( 0,1,ncol( m_err  )  );
-        
+
         s_rows_number = i_process_item#nrow(m_err);
-            
+
         m_iter_err_sum = colSums(m_err) + m_iter_err_sum
         m_iter_err_sum_squared = colSums(m_err ^ 2) + m_iter_err_sum_squared
-        
+
         m_err_mean = - outer(t(m_iter_err_sum), m_iter_err_sum , "-") / s_rows_number
         m_err_vars = ( m_err_mean ^2 * s_rows_number -
             2 * m_err_mean * m_iter_err_sum  + m_iter_err_sum_squared) / (s_rows_number-1)
         m_err_vars = sqrt(m_err_vars)
-        
+
         parfor( i in 1:ncol( m_err  )  ){
-            #m_err_i = m_err - m_err[,i];
-            #m_err_i_mean = colMeans(m_err_i);
-            #m_err_i_vars = colVars(m_err_i);
             parfor( j in 1:ncol( m_err  ),check=0  ){
                 b_execute_block = TRUE;
                 if( j==i  ) b_execute_block = FALSE;
-                if( as.scalar( m_active_flag_tmp[1,i]  ) == 1  )  b_execute_block = FALSE; 
-                #i has dropped, ignore this case 
-                if( as.scalar( m_active_flag_tmp[1,j]  ) == 1  )  b_execute_block = FALSE; 
+                if( as.scalar( m_active_flag_tmp[1,i]  ) == 1  )  b_execute_block = FALSE;
+                #i has dropped, ignore this case
+                if( as.scalar( m_active_flag_tmp[1,j]  ) == 1  )  b_execute_block = FALSE;
                 #j has dropped, ignore this case
                 if( b_execute_block  ){
                     b_flag = eliminateModel( as.scalar(m_err_mean[i,j]),as.scalar(m_err_vars[i,j]),s_rows_number);
@@ -475,11 +449,11 @@ return(
                 }
             }
         }
-        
+
         #m_tmp = ppred( colSums( m_active_flag_tmp  ),1,">="  );
         m_active_flag =  ppred( m_active_flag + m_active_flag_tmp,1,">="  );
         i_active_model_number = -sum( m_active_flag - 1  );
-        
+
         # 5.break while check
         if( i_active_model_number <= 1  ){
             b_continue_loop = FALSE;
@@ -496,12 +470,12 @@ return(
         k = k_min + as.integer( as.scalar( rowIndexMin( m_active_flag  )  )  ) - 1;
         print( "Get k, which value is " + k  );
     }else{
-        m_err_for_order = 
+        m_err_for_order =
             append( t( m_iter_err_sum ), matrix( seq( k_min,k_max,1  ),k_max-k_min+1,1  )  );
-        m_err_for_order = removeEmpty( 
+        m_err_for_order = removeEmpty(
             target=m_err_for_order * t( ppred( m_active_flag,0,"=="  )  ),margin="rows"  );
         for( i in 1:nrow( m_err_for_order  )  ){
-            print( "k:" + as.scalar( m_err_for_order[i,2]  ) + 
+            print( "k:" + as.scalar( m_err_for_order[i,2]  ) +
                 ",err:" + as.scalar( m_err_for_order[i,1]  )  );
         }
         m_err_order = order( target=m_err_for_order,by=1,decreasing=FALSE,index.return=FALSE  );
@@ -512,11 +486,11 @@ return(
 
 getErr = function (  matrix[double] in_m_neighbor_value,
         matrix[double] in_m_cl,
-        integer in_i_cl_type ) 
+        integer in_i_cl_type )
     return (  matrix[double] out_m_err ){
     i_col = ncol( in_m_neighbor_value );
-    i_row  = nrow( in_m_neighbor_value );   
-    
+    i_row  = nrow( in_m_neighbor_value );
+
     if( in_i_cl_type == 2 ){
         #category
         m_correct = ppred( in_m_neighbor_value,in_m_cl[1:i_row,],"!=" );
@@ -528,7 +502,7 @@ getErr = function (  matrix[double] in_m_neighbor_value,
 }
 
 # getSelectedFeature:
-#   feature selection algorithm.  
+#   feature selection algorithm.
 #   Refer to ADD part "7.1 FS+BRACE"
 # Argument:
 # in_m_data                     input matrix as features
@@ -543,7 +517,7 @@ getErr = function (  matrix[double] in_m_neighbor_value,
 # out_m_selected_feature        output matrix for feature selection
 # out_d_min_LOOCV               output err
 
-getSelectedFeature = function ( 
+getSelectedFeature = function (
     matrix[double] in_m_data,
     matrix[double] in_m_data_target,
     integer in_i_is_categorical, # 1 = category , 0 = continuous
@@ -551,7 +525,7 @@ getSelectedFeature = function (
     integer in_i_max_select,
     integer k_value,
     integer interval )
-return( 
+return(
     matrix[double] out_m_selected_feature,
     double out_d_min_LOOCV
      )
@@ -590,10 +564,10 @@ return(
                 parfor( i in 1:i_n_column ,check=0){
                     if( as.scalar( m_feature_selected_flag[1,i] ) != 1 ){
                         m_tmp_process_data = in_m_data[,i];
-                        m_neighbor_value = getKNeighbor( 
+                        m_neighbor_value = getKNeighbor(
                             m_tmp_process_data,m_tmp_process_data[i_process_begin_item:i_process_end_item,],
-                            in_m_data_target,k_value );                            
-                        m_tmp_err = getErr( 
+                            in_m_data_target,k_value );
+                        m_tmp_err = getErr(
                             m_neighbor_value,in_m_data_target[i_process_begin_item:i_process_end_item,],in_i_is_categorical );
                         m_err[,i] = m_tmp_err;
                     }
@@ -604,18 +578,18 @@ return(
                 # m_feature_selected_flag: which feature are dropped & init selected
                 m_tmp_data = removeEmpty( target=in_m_data ,margin="cols", select = m_main_selected_flag);
                 if( m_this_model_selected_flag == TRUE ){
-                    m_neighbor_value = getKNeighbor( 
+                    m_neighbor_value = getKNeighbor(
                         m_tmp_data,m_tmp_data[i_process_begin_item:i_process_end_item,],in_m_data_target, k_value );
-                    
+
                     m_tmp_err = getErr( m_neighbor_value,in_m_data_target[i_process_begin_item:i_process_end_item,],in_i_is_categorical );
                     m_err[,i_n_column+1] = m_tmp_err;
                 }
                 parfor( i in 1:i_n_column ,check=0){
                     if( as.scalar( m_feature_selected_flag[1,i] ) != 1 ){
                         m_tmp_process_data = append( m_tmp_data,in_m_data[,i] );
-                        m_neighbor_value = getKNeighbor( 
+                        m_neighbor_value = getKNeighbor(
                             m_tmp_process_data,m_tmp_process_data[i_process_begin_item:i_process_end_item,],in_m_data_target,k_value );
-                        m_tmp_err = getErr( 
+                        m_tmp_err = getErr(
                             m_neighbor_value,in_m_data_target[i_process_begin_item:i_process_end_item,],in_i_is_categorical );
                         m_err[,i] = m_tmp_err;
                     }
@@ -626,17 +600,17 @@ return(
             }else{
                 m_active_flag_tmp = append( m_feature_selected_flag,matrix( 1,1,1 ) );
             }
-            
+
             s_rows_number = i_process_item#nrow(m_err);
-            
+
             m_iter_err_sum = colSums(m_err) + m_iter_err_sum
             m_iter_err_sum_squared = colSums(m_err ^ 2) + m_iter_err_sum_squared
-            
+
             m_err_mean = - outer(t(m_iter_err_sum), m_iter_err_sum , "-") / s_rows_number
             m_err_vars = ( m_err_mean ^2 * s_rows_number -
                     2 * m_err_mean * m_iter_err_sum  + m_iter_err_sum_squared) / (s_rows_number-1)
             m_err_vars = sqrt(m_err_vars)
-            
+
             parfor( i in 1:ncol( m_err ) ){
                 #m_err_i_mean = (m_iter_err_sum - m_iter_err_sum[,i])/s_rows_number
                 #m_err_i_vars = (m_iter_err_sum_squared + m_err_i_mean ^2 * s_rows_number -
@@ -647,9 +621,9 @@ return(
                 parfor( j in 1:ncol( m_err ) ,check=0){
                     b_execute_block = TRUE;
                     if( j==i ) b_execute_block = FALSE;
-                    if( as.scalar( m_active_flag_tmp[1,i] ) == 1 )  b_execute_block = FALSE; 
-                    #i has dropped, ignore this case 
-                    if( as.scalar( m_active_flag_tmp[1,j] ) == 1 )  b_execute_block = FALSE; 
+                    if( as.scalar( m_active_flag_tmp[1,i] ) == 1 )  b_execute_block = FALSE;
+                    #i has dropped, ignore this case
+                    if( as.scalar( m_active_flag_tmp[1,j] ) == 1 )  b_execute_block = FALSE;
                     #j has dropped, ignore this case
                     if( b_execute_block ){
                         #print( "i=" + i + ",j=" + j );
@@ -660,9 +634,9 @@ return(
                     }
                 }
             }
-            #We mark bit to 1 for selected feature before current loop, 
+            #We mark bit to 1 for selected feature before current loop,
             #and mark bit to 1 also for dropped feature in current loop
-                        
+
             if( sum( ppred( m_active_flag_tmp,1,"!=" ) ) > 1 ){
                 b_selected_morethan_one = TRUE;
             }
@@ -670,7 +644,7 @@ return(
             i_index_min_LOOCV = as.scalar( rowIndexMin( m_col_sums_err ) );
             d_min_LOOCV = as.scalar( m_col_sums_err[1,i_index_min_LOOCV] );
             i_index_min_LOOCV = i_index_min_LOOCV%% ( i_n_column+1 )
-            
+
             if( sum( ppred( m_active_flag_tmp,1,"!=" ) ) <= 1 ){
                 b_continue_loop = FALSE;
             }
@@ -678,7 +652,7 @@ return(
                 m_this_model_selected_flag = FALSE;
             }
             m_feature_selected_flag = m_active_flag_tmp[,1:i_n_column];
-            i_iter = i_iter + 1;            
+            i_iter = i_iter + 1;
         }
         #select current model, jump out.
         if( i_index_min_LOOCV == 0 ){
@@ -703,7 +677,7 @@ return(
 }
 
 # getSelectedFeatureAndK:
-#   Combine k and feature selection algorithm.  
+#   Combine k and feature selection algorithm.
 #   Refer to ADD part "8.Combined k and feature selection"
 # Argument:
 # in_m_data                     input matrix as features
@@ -718,7 +692,7 @@ return(
 # Reture:
 # out_m_selected_feature        output matrix for feature selection
 # out_i_selected_k              output k value for k selection
-getSelectedFeatureAndK = function ( 
+getSelectedFeatureAndK = function (
     matrix[double] in_m_data,
     matrix[double] in_m_data_target,
     integer in_i_is_categorical, # 1 = category , 0 = continuous
@@ -727,27 +701,27 @@ getSelectedFeatureAndK = function (
     integer k_min,
     integer k_max,
     integer interval )
-return( 
+return(
     matrix[double] out_m_selected_feature,
     integer out_i_selected_k
      )
 {
     m_err = matrix( 0,1,k_max-k_min+1 );
     m_feature = matrix( 0,k_max-k_min+1,ncol( in_m_data ) );
-    
+
     #Step 1. For each k in [k_min,k_max] ( k_min has default value 1, k_max has default value 100 )
     #in parallel select relevant features using FS+BRACE or schemata search described in Section 7.
     parfor( i in k_min:k_max,check=0 ){
         #print( " ************** " + i  + " ****************" );
-        [m_selected_feature,d_err] = 
+        [m_selected_feature,d_err] =
             getSelectedFeature( in_m_data,in_m_data_target,in_i_is_categorical
             ,in_m_init_selected,in_i_max_select,i,interval );
-        
+
         m_err[1,i] = d_err;
         m_feature[i,] = m_selected_feature;
         #print( "err:" + d_err );
     }
-    
+
     #Step 2. Output the combination of features and k with the smallest LOOCV error.
     i_min_err_index = as.integer( as.scalar( rowIndexMin( m_err ) ) );
     out_m_selected_feature = m_feature[i_min_err_index,];
@@ -755,12 +729,12 @@ return(
     #print( "min err k is " + out_i_selected_k );
 }
 
-getFeatureImportance = function ( 
+getFeatureImportance = function (
     matrix[double] in_m_data,
     matrix[double] in_m_data_target,
     integer in_i_is_categorical, # 1 = category , 0 = continuous
     integer k_value)
-return( 
+return(
     matrix[double] out_m_feature_importance,
     matrix[double] out_m_norm_feature_importance
      )
@@ -780,6 +754,6 @@ return(
         m_err[,i_feature] = m_tmp_err
     }
     out_m_feature_importance = colSums( m_err );
-    out_m_norm_feature_importance = 
+    out_m_norm_feature_importance =
         out_m_feature_importance / as.scalar(rowSums(out_m_feature_importance))
 }

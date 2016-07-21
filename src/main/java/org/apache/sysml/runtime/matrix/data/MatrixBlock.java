@@ -3891,7 +3891,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public MatrixBlock leftIndexingOperations(MatrixBlock rhsMatrix, IndexRange ixrange, MatrixBlock ret, UpdateType update) 
+	public final MatrixBlock leftIndexingOperations(MatrixBlock rhsMatrix, IndexRange ixrange, MatrixBlock ret, UpdateType update) 
 		throws DMLRuntimeException 
 	{
 		return leftIndexingOperations(
@@ -4029,7 +4029,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * @return
 	 * @throws DMLRuntimeException 
 	 */
-	public MatrixBlock sliceOperations(IndexRange ixrange, MatrixBlock ret) throws DMLRuntimeException {
+	public final MatrixBlock sliceOperations(IndexRange ixrange, MatrixBlock ret) throws DMLRuntimeException {
 		return sliceOperations(
 				(int)ixrange.rowStart, (int)ixrange.rowEnd, 
 				(int)ixrange.colStart, (int)ixrange.colEnd, ret);

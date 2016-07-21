@@ -40,8 +40,9 @@ import org.apache.sysml.utils.Statistics;
  */
 public class RewriteFuseBinaryOpChainTest extends AutomatedTestBase 
 {
-	private static final String TEST_NAME1 = "RewriteFuseBinaryOpChainTest1";
-	private static final String TEST_NAME2 = "RewriteFuseBinaryOpChainTest2";
+	private static final String TEST_NAME1 = "RewriteFuseBinaryOpChainTest1"; //+* (X+s*Y)
+	private static final String TEST_NAME2 = "RewriteFuseBinaryOpChainTest2"; //-* (X-s*Y) 
+	private static final String TEST_NAME3 = "RewriteFuseBinaryOpChainTest3"; //+* (s*Y+X)
 
 	private static final String TEST_DIR = "functions/misc/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + RewriteFuseBinaryOpChainTest.class.getSimpleName() + "/";
@@ -53,13 +54,13 @@ public class RewriteFuseBinaryOpChainTest extends AutomatedTestBase
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "R" }) );
 		addTestConfiguration( TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "R" }) );
+		addTestConfiguration( TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] { "R" }) );
 	}
 	
 	@Test
 	public void testFuseBinaryPlusNoRewriteCP() {
 		testFuseBinaryChain( TEST_NAME1, false, ExecType.CP );
 	}
-	
 	
 	@Test
 	public void testFuseBinaryPlusRewriteCP() {
@@ -74,6 +75,16 @@ public class RewriteFuseBinaryOpChainTest extends AutomatedTestBase
 	@Test
 	public void testFuseBinaryMinusRewriteCP() {
 		testFuseBinaryChain( TEST_NAME2, true, ExecType.CP );
+	}
+	
+	@Test
+	public void testFuseBinaryPlus2NoRewriteCP() {
+		testFuseBinaryChain( TEST_NAME3, false, ExecType.CP );
+	}
+	
+	@Test
+	public void testFuseBinaryPlus2RewriteCP() {
+		testFuseBinaryChain( TEST_NAME3, true, ExecType.CP );
 	}
 	
 	@Test
@@ -97,6 +108,16 @@ public class RewriteFuseBinaryOpChainTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testFuseBinaryPlus2NoRewriteSP() {
+		testFuseBinaryChain( TEST_NAME3, false, ExecType.SPARK );
+	}
+	
+	@Test
+	public void testFuseBinaryPlus2RewriteSP() {
+		testFuseBinaryChain( TEST_NAME3, true, ExecType.SPARK );
+	}
+	
+	@Test
 	public void testFuseBinaryPlusNoRewriteMR() {
 		testFuseBinaryChain( TEST_NAME1, false, ExecType.MR );
 	}
@@ -116,6 +137,15 @@ public class RewriteFuseBinaryOpChainTest extends AutomatedTestBase
 		testFuseBinaryChain( TEST_NAME2, true, ExecType.MR );
 	}
 	
+	@Test
+	public void testFuseBinaryPlus2NoRewriteMR() {
+		testFuseBinaryChain( TEST_NAME3, false, ExecType.MR );
+	}
+	
+	@Test
+	public void testFuseBinaryPlus2RewriteMR() {
+		testFuseBinaryChain( TEST_NAME3, true, ExecType.MR );
+	}
 	
 	/**
 	 * 
@@ -162,8 +192,8 @@ public class RewriteFuseBinaryOpChainTest extends AutomatedTestBase
 			//check for applies rewrites
 			if( rewrites && instType!=ExecType.MR  ) {
 				String prefix = (instType==ExecType.SPARK) ? Instruction.SP_INST_PREFIX  : "";
-				Assert.assertTrue("Rewrite not applied.",Statistics.getCPHeavyHitterOpCodes()
-						.contains(testname.equals(TEST_NAME1) ? prefix+"+*" : prefix+"-*" ));
+				String opcode = (testname.equals(TEST_NAME1)||testname.equals(TEST_NAME3)) ? prefix+"+*" : prefix+"-*";
+				Assert.assertTrue("Rewrite not applied.",Statistics.getCPHeavyHitterOpCodes().contains(opcode));
 			}
 		}
 		finally

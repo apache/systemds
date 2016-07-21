@@ -35,6 +35,7 @@ import org.apache.sysml.hops.Hop.AggOp;
 import org.apache.sysml.hops.Hop.DataGenMethod;
 import org.apache.sysml.hops.Hop.Direction;
 import org.apache.sysml.hops.Hop.OpOp1;
+import org.apache.sysml.hops.Hop.OpOp3;
 import org.apache.sysml.hops.Hop.OpOp4;
 import org.apache.sysml.hops.Hop.ReOrgOp;
 import org.apache.sysml.hops.HopsException;
@@ -174,6 +175,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			hi = simplifyWeightedUnaryMM(hop, hi, i);         //e.g., X*exp(U%*%t(V)) -> wumm(X, U, t(V), exp)
 			hi = simplifyDotProductSum(hop, hi, i);           //e.g., sum(v^2) -> t(v)%*%v if ncol(v)==1 
 			hi = fuseSumSquared(hop, hi, i);                  //e.g., sum(X^2) -> sumSq(X), if ncol(X)>1
+			hi = fuseAxpyBinaryOperationChain(hop, hi, i);    //e.g., (X+s*Y) -> (X+*s Y), (X-s*Y) -> (X-*s Y) 	
 			hi = reorderMinusMatrixMult(hop, hi, i);          //e.g., (-t(X))%*%y->-(t(X)%*%y), TODO size
 			hi = simplifySumMatrixMult(hop, hi, i);           //e.g., sum(A%*%B) -> sum(t(colSums(A))*rowSums(B)), if not dot product / wsloss
 			hi = simplifyEmptyBinaryOperation(hop, hi, i);    //e.g., X*Y -> matrix(0,nrow(X), ncol(X)) / X+Y->X / X-Y -> X
@@ -2455,6 +2457,69 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				}
 			}
 		}
+		return hi;
+	}
+	
+
+	/**
+	 * 
+	 * @param parent
+	 * @param hi
+	 * @param pos
+	 * @return
+	 * @throws HopsException
+	 */
+	private Hop fuseAxpyBinaryOperationChain(Hop parent, Hop hi, int pos) 
+	{
+		//patterns: (a) X + s*Y -> X +* sY, (b) s*Y+X -> X +* sY, (c) X - s*Y -> X -* sY		
+		if( hi instanceof BinaryOp 
+			&& (((BinaryOp)hi).getOp()==OpOp2.PLUS || ((BinaryOp)hi).getOp()==OpOp2.MINUS) )
+		{
+			BinaryOp bop = (BinaryOp) hi;
+			Hop left = bop.getInput().get(0);
+			Hop right = bop.getInput().get(1);
+			Hop ternop = null;
+			
+			//pattern (a) X + s*Y -> X +* sY
+			if( bop.getOp() == OpOp2.PLUS && left.getDataType()==DataType.MATRIX 
+				&& HopRewriteUtils.isScalarMatrixBinaryMult(right)
+				&& right.getParent().size() == 1 )           //single consumer s*Y
+			{
+				Hop smid = right.getInput().get( (right.getInput().get(0).getDataType()==DataType.SCALAR) ? 0 : 1); 
+				Hop mright = right.getInput().get( (right.getInput().get(0).getDataType()==DataType.SCALAR) ? 1 : 0);
+				ternop = HopRewriteUtils.createTernaryOp(left, smid, mright, OpOp3.PLUS_MULT);
+				LOG.debug("Applied fuseAxpyBinaryOperationChain1. (line " +hi.getBeginLine()+")");
+			}
+			//pattern (b) s*Y + X -> X +* sY
+			else if( bop.getOp() == OpOp2.PLUS && right.getDataType()==DataType.MATRIX 
+				&& HopRewriteUtils.isScalarMatrixBinaryMult(left)
+				&& left.getParent().size() == 1              //single consumer s*Y
+				&& HopRewriteUtils.isEqualSize(left, right)) //correctness matrix-vector
+			{
+				Hop smid = left.getInput().get( (left.getInput().get(0).getDataType()==DataType.SCALAR) ? 0 : 1); 
+				Hop mright = left.getInput().get( (left.getInput().get(0).getDataType()==DataType.SCALAR) ? 1 : 0);
+				ternop = HopRewriteUtils.createTernaryOp(right, smid, mright, OpOp3.PLUS_MULT);
+				LOG.debug("Applied fuseAxpyBinaryOperationChain2. (line " +hi.getBeginLine()+")");	
+			}
+			//pattern (c) X - s*Y -> X -* sY
+			else if( bop.getOp() == OpOp2.MINUS && left.getDataType()==DataType.MATRIX 
+				&& HopRewriteUtils.isScalarMatrixBinaryMult(right)
+				&& right.getParent().size() == 1 )           //single consumer s*Y
+			{
+				Hop smid = right.getInput().get( (right.getInput().get(0).getDataType()==DataType.SCALAR) ? 0 : 1); 
+				Hop mright = right.getInput().get( (right.getInput().get(0).getDataType()==DataType.SCALAR) ? 1 : 0);
+				ternop = HopRewriteUtils.createTernaryOp(left, smid, mright, OpOp3.MINUS_MULT);
+				LOG.debug("Applied fuseAxpyBinaryOperationChain3. (line " +hi.getBeginLine()+")");
+			}
+			
+			//rewire parent-child operators if rewrite applied
+			if( ternop != null ) { 
+				HopRewriteUtils.removeChildReferenceByPos(parent, hi, pos);
+				HopRewriteUtils.addChildReference(parent, ternop, pos);
+				hi = ternop;
+			}
+		}
+		
 		return hi;
 	}
 	

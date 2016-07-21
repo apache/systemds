@@ -162,7 +162,6 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			hi = fuseLogNzBinaryOperation(hop, hi, i);           //e.g., ppred(X,0,"!=")*log(X,0.5) -> log_nz(X,0.5)
 			hi = simplifyOuterSeqExpand(hop, hi, i);             //e.g., outer(v, seq(1,m), "==") -> rexpand(v, max=m, dir=row, ignore=true, cast=false)
 			hi = simplifyTableSeqExpand(hop, hi, i);             //e.g., table(seq(1,nrow(v)), v, nrow(v), m) -> rexpand(v, max=m, dir=row, ignore=false, cast=true)
-			hi = fuseBinaryOperationChain(hop, hi, i);			 //e.g., (X+s*Y) -> (X+*s Y), (X-s*Y) -> (X-*s Y) 	
 			//hi = removeUnecessaryPPred(hop, hi, i);            //e.g., ppred(X,X,"==")->matrix(1,rows=nrow(X),cols=ncol(X))
 
 			//process childs recursively after rewrites (to investigate pattern newly created by rewrites)
@@ -1901,46 +1900,6 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				HopRewriteUtils.removeChildReference(parent, hi);
 				HopRewriteUtils.addChildReference(parent, datagen, pos);
 				hi = datagen;
-			}
-		}
-		
-		return hi;
-	}
-
-	/**
-	 * 
-	 * @param parent
-	 * @param hi
-	 * @param pos
-	 * @return
-	 * @throws HopsException
-	 */
-	private Hop fuseBinaryOperationChain(Hop parent, Hop hi, int pos) {
-		//pattern: X + lamda*Y -> X +* lambda Y		
-		if( hi instanceof BinaryOp 
-			&& (((BinaryOp)hi).getOp()==OpOp2.PLUS || ((BinaryOp)hi).getOp()==OpOp2.MINUS) 
-			&& hi.getInput().get(0).getDataType()==DataType.MATRIX 
-			&& hi.getInput().get(1) instanceof BinaryOp 
-			&& ((BinaryOp)hi.getInput().get(1)).getOp()==OpOp2.MULT )
-		{
-			//Check that the inner binary Op is a product of Scalar times Matrix or viceversa
-			Hop innerBinaryOp =  hi.getInput().get(1);
-			if ( (innerBinaryOp.getInput().get(0).getDataType()==DataType.SCALAR && innerBinaryOp.getInput().get(1).getDataType()==DataType.MATRIX) 
-					|| (innerBinaryOp.getInput().get(0).getDataType()==DataType.MATRIX && innerBinaryOp.getInput().get(1).getDataType()==DataType.SCALAR))
-			{
-				//check which operand is the Scalar and which is the matrix
-				Hop lamda = (innerBinaryOp.getInput().get(0).getDataType()==DataType.SCALAR) ? innerBinaryOp.getInput().get(0) : innerBinaryOp.getInput().get(1); 
-				Hop matrix = (innerBinaryOp.getInput().get(0).getDataType()==DataType.MATRIX) ? innerBinaryOp.getInput().get(0) : innerBinaryOp.getInput().get(1);
-
-				OpOp3 op = (((BinaryOp)hi).getOp()==OpOp2.PLUS) ? OpOp3.PLUS_MULT : OpOp3.MINUS_MULT;
-				TernaryOp ternOp = new TernaryOp("tmp", DataType.MATRIX, ValueType.DOUBLE, op, hi.getInput().get(0), lamda, matrix);
-				HopRewriteUtils.refreshOutputParameters(ternOp, hi.getInput().get(0));
-				
-				HopRewriteUtils.removeChildReferenceByPos(parent, hi, pos);
-				HopRewriteUtils.addChildReference(parent, ternOp, pos);
-				
-				LOG.debug("Applied fuseBinaryOperationChain. (line " +hi.getBeginLine()+")");
-				return ternOp;
 			}
 		}
 		

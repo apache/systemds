@@ -36,6 +36,7 @@ import org.apache.sysml.hops.Hop.DataOpTypes;
 import org.apache.sysml.hops.Hop.Direction;
 import org.apache.sysml.hops.Hop.FileFormatTypes;
 import org.apache.sysml.hops.Hop.OpOp2;
+import org.apache.sysml.hops.Hop.OpOp3;
 import org.apache.sysml.hops.Hop.ParamBuiltinOp;
 import org.apache.sysml.hops.Hop.ReOrgOp;
 import org.apache.sysml.hops.Hop.VisitStatus;
@@ -45,6 +46,7 @@ import org.apache.sysml.hops.LiteralOp;
 import org.apache.sysml.hops.MemoTable;
 import org.apache.sysml.hops.ParameterizedBuiltinOp;
 import org.apache.sysml.hops.ReorgOp;
+import org.apache.sysml.hops.TernaryOp;
 import org.apache.sysml.hops.UnaryOp;
 import org.apache.sysml.hops.Hop.OpOp1;
 import org.apache.sysml.parser.DataExpression;
@@ -644,6 +646,22 @@ public class HopRewriteUtils
 		return datagen;
 	}
 	
+	/**
+	 * 
+	 * @param mleft
+	 * @param smid
+	 * @param mright
+	 * @param op
+	 * @return
+	 */
+	public static TernaryOp createTernaryOp(Hop mleft, Hop smid, Hop mright, OpOp3 op) {
+		TernaryOp ternOp = new TernaryOp("tmp", DataType.MATRIX, ValueType.DOUBLE, op, mleft, smid, mright);
+		ternOp.setRowsInBlock(mleft.getRowsInBlock());
+		ternOp.setColsInBlock(mleft.getColsInBlock());
+		ternOp.refreshSizeInformation();
+		return ternOp;
+	}
+	
 	public static void setOutputBlocksizes( Hop hop, long brlen, long bclen )
 	{
 		hop.setRowsInBlock( brlen );
@@ -871,6 +889,17 @@ public class HopRewriteUtils
 		
 		return rowPred && cl instanceof LiteralOp && getDoubleValueSafe((LiteralOp)cl)==1
 				&& cu instanceof LiteralOp && getDoubleValueSafe((LiteralOp)cu)==hop.getDim2();
+	}
+	
+	/**
+	 * 
+	 * @param hop
+	 * @return
+	 */
+	public static boolean isScalarMatrixBinaryMult( Hop hop ) {
+		return hop instanceof BinaryOp && ((BinaryOp)hop).getOp()==OpOp2.MULT
+			&& ((hop.getInput().get(0).getDataType()==DataType.SCALAR && hop.getInput().get(1).getDataType()==DataType.MATRIX)
+			|| (hop.getInput().get(0).getDataType()==DataType.MATRIX && hop.getInput().get(1).getDataType()==DataType.SCALAR));
 	}
 	
 	/**

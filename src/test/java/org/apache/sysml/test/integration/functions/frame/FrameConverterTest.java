@@ -27,9 +27,15 @@ import java.util.List;
 
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.sql.DataFrame;
+import org.apache.spark.sql.Row;
+import org.apache.spark.sql.RowFactory;
+import org.apache.spark.sql.SQLContext;
+import org.apache.spark.sql.types.StructType;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.parser.Expression.ValueType;
@@ -62,6 +68,7 @@ import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
 import org.junit.Assert;
 import org.junit.Test;
+
 
 
 
@@ -100,7 +107,11 @@ public class FrameConverterTest extends AutomatedTestBase
 		BIN2TXTCELL,
 		MAT2BIN,
 		BIN2MAT,
+		DFRM2BIN,
+		BIN2DFRM,
 	}
+	
+	private static String separator = ",";
 	
 	@Override
 	public void setUp() {
@@ -178,7 +189,16 @@ public class FrameConverterTest extends AutomatedTestBase
 		runFrameConverterTest(schemaMixedLarge, ConvType.BIN2MAT);
 	}
 	
-	
+	@Test
+	public void testFrameMixedDFrameBinSpark()  {
+		runFrameConverterTest(schemaMixedLarge, ConvType.DFRM2BIN);
+	}
+		
+	@Test
+	public void testFrameMixedBinDFrameSpark()  {
+		runFrameConverterTest(schemaMixedLarge, ConvType.BIN2DFRM);
+	}
+		
 	/**
 	 * 
 	 * @param schema
@@ -204,7 +224,8 @@ public class FrameConverterTest extends AutomatedTestBase
 			OutputInfo oinfo = null;
 			InputInfo iinfo = null;
 			switch( type ) {
-				case CSV2BIN: 
+				case CSV2BIN:
+				case DFRM2BIN:
 					oinfo = OutputInfo.CSVOutputInfo;
 					iinfo = InputInfo.BinaryBlockInputInfo;
 					break;
@@ -221,6 +242,7 @@ public class FrameConverterTest extends AutomatedTestBase
 					iinfo = InputInfo.TextCellInputInfo;
 					break;
 				case MAT2BIN: 
+				case BIN2DFRM:
 					oinfo = OutputInfo.BinaryBlockOutputInfo;
 					iinfo = InputInfo.BinaryBlockInputInfo;
 					break;
@@ -444,7 +466,7 @@ public class FrameConverterTest extends AutomatedTestBase
 				OutputInfo oinfo = OutputInfo.BinaryBlockOutputInfo;
 				JavaPairRDD<LongWritable,Text> rddIn = sc.hadoopFile(fnameIn, iinfo.inputFormatClass, iinfo.inputKeyClass, iinfo.inputValueClass);
 				JavaPairRDD<LongWritable, FrameBlock> rddOut = FrameRDDConverterUtils
-						.csvToBinaryBlock(sc, rddIn, mc, false, ",", false, 0)
+						.csvToBinaryBlock(sc, rddIn, mc, false, separator, false, 0)
 						.mapToPair(new LongFrameToLongWritableFrameFunction());
 				rddOut.saveAsHadoopFile(fnameOut, LongWritable.class, FrameBlock.class, oinfo.outputFormatClass);
 				break;
@@ -494,10 +516,69 @@ public class FrameConverterTest extends AutomatedTestBase
 				rddOut.saveAsHadoopFile(fnameOut, MatrixIndexes.class, MatrixBlock.class, oinfo.outputFormatClass);
 				break;
 			}
+			case DFRM2BIN: {
+				OutputInfo oinfo = OutputInfo.BinaryBlockOutputInfo;
+
+				//Create DataFrame 
+				SQLContext sqlContext = new SQLContext(sc);
+				StructType dfSchema = UtilFunctions.convertFrameSchemaToDFSchema(schema);
+				JavaRDD<Row> rowRDD = getRowRDD(sc, fnameIn, separator);
+				DataFrame df = sqlContext.createDataFrame(rowRDD, dfSchema);
+				
+				JavaPairRDD<LongWritable, FrameBlock> rddOut = FrameRDDConverterUtils
+						.dataFrameToBinaryBlock(sc, df, mc, false/*, columns*/)
+						.mapToPair(new LongFrameToLongWritableFrameFunction());
+				rddOut.saveAsHadoopFile(fnameOut, LongWritable.class, FrameBlock.class, oinfo.outputFormatClass);
+				break;
+			}
+			case BIN2DFRM: {
+				InputInfo iinfo = InputInfo.BinaryBlockInputInfo;
+				OutputInfo oinfo = OutputInfo.BinaryBlockOutputInfo;
+				JavaPairRDD<LongWritable, FrameBlock> rddIn = sc.hadoopFile(fnameIn, iinfo.inputFormatClass, LongWritable.class, FrameBlock.class);
+				JavaPairRDD<Long, FrameBlock> rddIn2 = rddIn.mapToPair(new LongWritableFrameToLongFrameFunction());
+				DataFrame df = FrameRDDConverterUtils.binaryBlockToDataFrame(rddIn2, mc, true, sc);
+				
+				//Convert back DataFrame to binary block for comparison using original binary to converted DF and back to binary 
+				JavaPairRDD<LongWritable, FrameBlock> rddOut = FrameRDDConverterUtils
+						.dataFrameToBinaryBlock(sc, df, mc, false/*, columns*/)
+						.mapToPair(new LongFrameToLongWritableFrameFunction());
+				rddOut.saveAsHadoopFile(fnameOut, LongWritable.class, FrameBlock.class, oinfo.outputFormatClass);
+			
+				break;
+			}
 			default: 
 				throw new RuntimeException("Unsuported converter type: "+type.toString());
 		}
 		
 		sec.close();
 	}
+	
+	/* 
+	 * It will return JavaRDD<Row> based on csv data input file.
+	 */
+	JavaRDD<Row> getRowRDD(JavaSparkContext sc, String fnameIn, String separator)
+	{
+		// Load a text file and convert each line to a java rdd.
+		JavaRDD<String> dataRdd = sc.textFile(fnameIn);
+		return dataRdd.map(new RowGenerator());
+	}
+	
+	/* 
+	 * Row Generator class based on individual line in CSV file.
+	 */
+	private static class RowGenerator implements Function<String,Row> 
+	{
+		private static final long serialVersionUID = -6736256507697511070L;
+
+		@Override
+		public Row call(String record) throws Exception {
+		      String[] fields = record.split(",");
+		      Object[] objects = new Object[fields.length]; 
+		      for (int i=0; i<fields.length; ++i) {
+			      objects[i] = fields[i];
+		      }
+		      return RowFactory.create(objects);
+		}
+	}
+
 }

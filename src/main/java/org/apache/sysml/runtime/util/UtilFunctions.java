@@ -23,6 +23,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.apache.spark.sql.types.DataTypes;
+import org.apache.spark.sql.types.StructField;
+import org.apache.spark.sql.types.StructType;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
@@ -615,4 +618,45 @@ public class UtilFunctions
 	
 		return in1.getDataType();
 	}
+	
+	/*
+	 * This function will convert Frame schema into DataFrame schema 
+	 * 
+	 *  @param	schema
+	 *  		Frame schema in the form of List<ValueType>
+	 *  @return
+	 *  		Returns the DataFrame schema (StructType)
+	 */
+	public static StructType convertFrameSchemaToDFSchema(List<ValueType> lschema)
+	{
+		// Generate the schema based on the string of schema
+		List<StructField> fields = new ArrayList<StructField>();
+		
+		int i = 1;
+		for (ValueType schema : lschema)
+		{
+			org.apache.spark.sql.types.DataType dataType = DataTypes.StringType;
+			switch(schema)
+			{
+				case STRING:
+					dataType = DataTypes.StringType;
+					break;
+				case DOUBLE:
+					dataType = DataTypes.DoubleType;
+					break;
+				case INT:
+					dataType = DataTypes.LongType;
+					break;
+				case BOOLEAN:
+					dataType = DataTypes.BooleanType;
+					break;
+				default:
+					System.out.println("Default schema type is String.");
+			}
+			fields.add(DataTypes.createStructField("C"+i++, dataType, true));
+		}
+		
+		return DataTypes.createStructType(fields);
+	}
+	
 }

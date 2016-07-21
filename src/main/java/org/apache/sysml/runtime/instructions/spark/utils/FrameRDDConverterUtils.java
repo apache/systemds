@@ -36,6 +36,13 @@ import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
+import org.apache.spark.sql.DataFrame;
+import org.apache.spark.sql.Row;
+import org.apache.spark.sql.RowFactory;
+import org.apache.spark.sql.SQLContext;
+import org.apache.spark.sql.types.DataTypes;
+import org.apache.spark.sql.types.StructField;
+import org.apache.spark.sql.types.StructType;
 
 import scala.Tuple2;
 
@@ -101,8 +108,7 @@ public class FrameRDDConverterUtils
 		
 		//convert csv rdd to binary block rdd (w/ partial blocks)
 		JavaPairRDD<Long, FrameBlock> out = prepinput
-				.mapPartitionsToPair(new CSVToBinaryBlockFunction(mcOut, hasHeader, delim, fill))
-				.mapToPair(new LongWritableFrameToLongFrameFunction());
+				.mapPartitionsToPair(new CSVToBinaryBlockFunction(mcOut, hasHeader, delim, fill));
 		
 		return out;
 	}
@@ -300,8 +306,78 @@ public class FrameRDDConverterUtils
 		return out;
 	}
 	
+	//=====================================
+	// DataFrame <--> Binary block
 
+	/**
+	 * 
+	 * @param sc
+	 * @param input
+	 * @param mcOut
+	 * @param hasHeader
+	 * @param delim
+	 * @param fill
+	 * @param missingValue
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static JavaPairRDD<Long, FrameBlock> dataFrameToBinaryBlock(JavaSparkContext sc,
+			DataFrame df, MatrixCharacteristics mcOut, boolean containsID) 
+		throws DMLRuntimeException 
+	{
+		
+		if(containsID)
+			df = df.drop("ID");
+		
+		//determine unknown dimensions if required
+		if( !mcOut.dimsKnown(true) ) {
+			JavaRDD<Row> tmp = df.javaRDD();
+			long rlen = tmp.count();
+			long clen = containsID ? (df.columns().length - 1) : df.columns().length;
+			mcOut.set(rlen, clen, mcOut.getRowsPerBlock(), mcOut.getColsPerBlock(), -1);
+		}
+		
+		JavaPairRDD<Row, Long> prepinput = df.javaRDD()
+				.zipWithIndex(); //zip row index
+		
+		//convert rdd to binary block rdd
+		JavaPairRDD<Long, FrameBlock> out = prepinput
+				.mapPartitionsToPair(new DataFrameToBinaryBlockFunction(mcOut));
+		
+		return out;
+	}
+
+	/**
+	 * 
+	 * @param in
+	 * @param mcIn
+	 * @param props
+	 * @param strict
+	 * @return
+	 */
+	public static DataFrame binaryBlockToDataFrame(JavaPairRDD<Long,FrameBlock> in, MatrixCharacteristics mcIn, boolean strict, JavaSparkContext sc)
+	{
+		JavaPairRDD<Long,FrameBlock> input = in;
+		
+		//sort if required (on blocks/rows)
+		if( strict ) {
+			input = input.sortByKey(true);
+		}
+		
+		List<ValueType> schema = in.first()._2().getSchema();
+		
+		//convert binary block to rows rdd (from blocks/rows)
+		JavaRDD<Row> rowRDD = input
+				.flatMap(new BinaryBlockToDataFrameFunction());
+				
+		SQLContext sqlContext = new SQLContext(sc);
+		StructType dfSchema = UtilFunctions.convertFrameSchemaToDFSchema(schema);
+		DataFrame df = sqlContext.createDataFrame(rowRDD, dfSchema);
 	
+		return df;
+	}
+	
+
 	/////////////////////////////////
 	// CSV-SPECIFIC FUNCTIONS
 	
@@ -391,7 +467,7 @@ public class FrameRDDConverterUtils
 	 * In terms of memory consumption this is better than creating partial blocks of row segments.
 	 * 
 	 */
-	private static class CSVToBinaryBlockFunction implements PairFlatMapFunction<Iterator<Tuple2<Text,Long>>,LongWritable,FrameBlock> 
+	private static class CSVToBinaryBlockFunction implements PairFlatMapFunction<Iterator<Tuple2<Text,Long>>,Long,FrameBlock> 
 	{
 		private static final long serialVersionUID = -1976803898174960086L;
 
@@ -413,12 +489,12 @@ public class FrameRDDConverterUtils
 		}
 
 		@Override
-		public Iterable<Tuple2<LongWritable, FrameBlock>> call(Iterator<Tuple2<Text,Long>> arg0) 
+		public Iterable<Tuple2<Long, FrameBlock>> call(Iterator<Tuple2<Text,Long>> arg0) 
 			throws Exception 
 		{
-			ArrayList<Tuple2<LongWritable,FrameBlock>> ret = new ArrayList<Tuple2<LongWritable,FrameBlock>>();
+			ArrayList<Tuple2<Long,FrameBlock>> ret = new ArrayList<Tuple2<Long,FrameBlock>>();
 
-			LongWritable[] ix = new LongWritable[1];
+			Long[] ix = new Long[1];
 			FrameBlock[] mb = new FrameBlock[1];
 			int iRowsInBlock = 0;
 			
@@ -467,10 +543,10 @@ public class FrameRDDConverterUtils
 		}
 		
 		// Creates new state of empty column blocks for current global row index.
-		private void createBlocks(long rowix, LongWritable[] ix, FrameBlock[] mb)
+		private void createBlocks(long rowix, Long[] ix, FrameBlock[] mb)
 		{
 			//compute row block index and number of column blocks
-			ix[0] = new LongWritable(rowix);
+			ix[0] = rowix;
 			mb[0] = new FrameBlock((int)_clen, ValueType.STRING);
 			if( _colnames != null )
 				mb[0].setColumnNames(_colnames);
@@ -480,17 +556,6 @@ public class FrameRDDConverterUtils
 			if( _ndMeta != null )
 				for( int j=0; j<_clen; j++ )
 					mb[0].getColumnMetadata(j).setNumDistinct(Long.parseLong(_ndMeta.get(j)));
-		}
-		
-		// Flushes current state of filled column blocks to output list.
-		private void flushBlocksToList( LongWritable[] ix, FrameBlock[] mb, ArrayList<Tuple2<LongWritable,FrameBlock>> ret ) 
-			throws DMLRuntimeException
-		{
-			int len = ix.length;			
-			for( int i=0; i<len; i++ )
-				if( mb[i] != null ) {
-					ret.add(new Tuple2<LongWritable,FrameBlock>(ix[i],mb[i]));
-				}	
 		}
 	}
 	
@@ -558,6 +623,117 @@ public class FrameRDDConverterUtils
 			return ret;
 		}
 	}
+	
+	/////////////////////////////////
+	// DataFrame-SPECIFIC FUNCTIONS
+	
+	private static class DataFrameToBinaryBlockFunction implements PairFlatMapFunction<Iterator<Tuple2<Row,Long>>,Long,FrameBlock> 
+	{
+		private static final long serialVersionUID = 2269315691094111843L;
+
+		private long _clen = -1;
+		private int _maxRowsPerBlock = -1;
+		
+		public DataFrameToBinaryBlockFunction(MatrixCharacteristics mc) {
+			_clen = mc.getCols();
+			_maxRowsPerBlock = Math.max((int) (FrameBlock.BUFFER_SIZE/_clen), 1);
+		}
+		
+		@Override
+		public Iterable<Tuple2<Long, FrameBlock>> call(Iterator<Tuple2<Row, Long>> arg0) throws Exception {
+			ArrayList<Tuple2<Long,FrameBlock>> ret = new ArrayList<Tuple2<Long,FrameBlock>>();
+
+			Long[] ix = new Long[1];
+			FrameBlock[] mb = new FrameBlock[1];
+			int iRowsInBlock = 0;
+			
+			while( arg0.hasNext() )
+			{
+				Tuple2<Row,Long> tmp = arg0.next();
+				Row row = tmp._1();
+				long rowix = tmp._2()+1;
+				
+				if( iRowsInBlock == 0 || iRowsInBlock == _maxRowsPerBlock) {
+					if( iRowsInBlock == _maxRowsPerBlock )
+						flushBlocksToList(ix, mb, ret);
+					createBlocks(rowix, ix, mb, row);
+					iRowsInBlock = 0;
+				}
+				
+				//process row data
+				Object[] parts = rowToObjectArray(row, (int)_clen, mb[0].getSchema());
+				mb[0].appendRow(parts);
+				iRowsInBlock++;
+			}
+		
+			//flush last blocks
+			flushBlocksToList(ix, mb, ret);
+		
+			return ret;
+		}
+		
+		public Object[] rowToObjectArray(Row row, int _clen, List<ValueType> schema) throws Exception {
+			Object[] ret = new Object[_clen];
+			for(int i = 0; i < row.length(); i++)
+				ret[i] = UtilFunctions.objectToObject(schema.get(i), row.get(i));
+			for(int i=row.length(); i<_clen; ++i)
+				ret[i] = "";
+			return ret;
+		}
+
+		// Creates new state of empty column blocks for current global row index.
+		private void createBlocks(long rowix, Long[] ix, FrameBlock[] mb, Row row)
+		{
+			//compute row block index and number of column blocks
+			ix[0] = new Long(rowix);
+			
+			List<String> columns = new ArrayList<String>();
+			List<ValueType> schema = new ArrayList<ValueType>();
+			for (StructField structType: row.schema().fields()) {
+				columns.add(structType.name());
+				if(structType.dataType() == DataTypes.DoubleType || structType.dataType() == DataTypes.FloatType)
+					schema.add(ValueType.DOUBLE);
+				else if(structType.dataType() == DataTypes.LongType || structType.dataType() == DataTypes.IntegerType)
+					schema.add(ValueType.INT);
+				else if(structType.dataType() == DataTypes.BooleanType)
+					schema.add(ValueType.BOOLEAN);
+				else
+					schema.add(ValueType.STRING);
+			}
+			mb[0] = new FrameBlock(schema);
+			mb[0].setColumnNames(columns);
+		}
+	}
+
+	/**
+	 * 
+	 */
+	private static class BinaryBlockToDataFrameFunction implements FlatMapFunction<Tuple2<Long,FrameBlock>,Row> 
+	{
+		private static final long serialVersionUID = 8093340778966667460L;
+		
+		@Override
+		public Iterable<Row> call(Tuple2<Long, FrameBlock> arg0)
+			throws Exception 
+		{
+			FrameBlock blk = arg0._2();
+			ArrayList<Row> ret = new ArrayList<Row>();
+
+			//handle Frame block data
+			Iterator<Object[]> iter = blk.getObjectRowIterator();
+			Object[] columns = null;
+			while( iter.hasNext() ) {
+				columns = new Object[blk.getNumColumns()];
+				Object[] tmp = iter.next();
+				for(int i=0; i<tmp.length; ++i)
+					columns[i] = tmp[i];
+				ret.add(RowFactory.create(columns));
+			}
+				
+			return ret;
+		}
+	}
+	
 	/////////////////////////////////
 	// TEXTCELL-SPECIFIC FUNCTIONS
 	
@@ -807,5 +983,19 @@ public class FrameRDDConverterUtils
 
 			return ret;
 		}
+	}
+	
+	//////////////////////////////////////
+	// Common functions
+	
+	// Flushes current state of filled column blocks to output list.
+	private static void flushBlocksToList( Long[] ix, FrameBlock[] mb, ArrayList<Tuple2<Long,FrameBlock>> ret ) 
+		throws DMLRuntimeException
+	{
+		int len = ix.length;			
+		for( int i=0; i<len; i++ )
+			if( mb[i] != null ) {
+				ret.add(new Tuple2<Long,FrameBlock>(ix[i],mb[i]));
+			}	
 	}
 }

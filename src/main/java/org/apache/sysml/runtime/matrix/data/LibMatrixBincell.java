@@ -35,6 +35,7 @@ import org.apache.sysml.runtime.functionobjects.NotEquals;
 import org.apache.sysml.runtime.functionobjects.Or;
 import org.apache.sysml.runtime.functionobjects.Plus;
 import org.apache.sysml.runtime.functionobjects.Power2;
+import org.apache.sysml.runtime.functionobjects.ValueFunction;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysml.runtime.util.DataConverter;
@@ -402,23 +403,24 @@ public class LibMatrixBincell
 				//3) recompute nnz
 				ret.recomputeNonZeros();
 			}
-			else if( !ret.sparse && !m1.sparse && !m2.sparse && m1.denseBlock!=null && m2.denseBlock!=null )
+			else if( !ret.sparse && !m1.sparse && !m2.sparse 
+					&& m1.denseBlock!=null && m2.denseBlock!=null )
 			{
 				ret.allocateDenseBlock();
 				final int m = ret.rlen;
 				final int n = ret.clen;
+				double[] a = m1.denseBlock;
+				double[] b = m2.denseBlock;
 				double[] c = ret.denseBlock;
+				ValueFunction fn = op.fn;
 				
-				//int nnz = 0;
-				for( int i=0; i<m*n; i++ )
-				{
-					c[i] = op.fn.execute(m1.denseBlock[i], m2.denseBlock[i]);
-					//HotSpot JVM bug causes crash in presence of NaNs 
-					//nnz += (c[i]!=0)? 1 : 0;
-					if( c[i] != 0 )
-						ret.nonZeros++;
+				//compute dense-dense binary, maintain nnz on-the-fly
+				int nnz = 0;
+				for( int i=0; i<m*n; i++ ) {
+					c[i] = fn.execute(a[i], b[i]);
+					nnz += (c[i]!=0)? 1 : 0;
 				}
-				//result.nonZeros = nnz;
+				ret.nonZeros = nnz;
 			}
 			else //generic case
 			{

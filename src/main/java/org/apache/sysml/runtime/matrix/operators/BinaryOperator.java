@@ -33,32 +33,32 @@ import org.apache.sysml.runtime.functionobjects.IntegerDivide;
 import org.apache.sysml.runtime.functionobjects.LessThan;
 import org.apache.sysml.runtime.functionobjects.LessThanEquals;
 import org.apache.sysml.runtime.functionobjects.Minus;
+import org.apache.sysml.runtime.functionobjects.MinusMultiply;
 import org.apache.sysml.runtime.functionobjects.MinusNz;
 import org.apache.sysml.runtime.functionobjects.Modulus;
 import org.apache.sysml.runtime.functionobjects.Multiply;
 import org.apache.sysml.runtime.functionobjects.NotEquals;
 import org.apache.sysml.runtime.functionobjects.Or;
 import org.apache.sysml.runtime.functionobjects.Plus;
+import org.apache.sysml.runtime.functionobjects.PlusMultiply;
 import org.apache.sysml.runtime.functionobjects.Power;
 import org.apache.sysml.runtime.functionobjects.ValueFunction;
 import org.apache.sysml.runtime.functionobjects.Builtin.BuiltinFunctionCode;
 
 public class BinaryOperator  extends Operator implements Serializable
 {
-
 	private static final long serialVersionUID = -2547950181558989209L;
 
 	public ValueFunction fn;
 	
 	public BinaryOperator(ValueFunction p)
 	{
-		fn=p;
-		//as long as (0 op 0)=0, then op is sparseSafe
-		if(fn instanceof Plus || fn instanceof Multiply || fn instanceof Minus 
-				|| fn instanceof And || fn instanceof Or)
-			sparseSafe=true;
-		else
-			sparseSafe=false;
+		fn = p;
+		
+		//binaryop is sparse-safe iff (0 op 0) == 0
+		sparseSafe = (fn instanceof Plus || fn instanceof Multiply 
+			|| fn instanceof Minus || fn instanceof And || fn instanceof Or 
+			|| fn instanceof PlusMultiply || fn instanceof MinusMultiply);
 	}
 	
 	/**

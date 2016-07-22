@@ -24,6 +24,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 
@@ -47,6 +48,8 @@ public class IOUtilFunctions
 {
 	private static final Log LOG = LogFactory.getLog(UtilFunctions.class.getName());
 
+	private static final char CSV_QUOTE_CHAR = '"';
+	
 	/**
 	 * 
 	 * @param io
@@ -138,6 +141,102 @@ public class IOUtilFunctions
 	}
 	
 	/**
+	 * Splits a string by a specified delimiter into all tokens, including empty
+	 * while respecting the rules for quotes and escapes defined in RFC4180.
+	 * 
+	 * NOTE: use StringEscapeUtils.unescapeCsv(tmp) if needed afterwards.
+	 * 
+	 * @param str
+	 * @param delim
+	 * @return
+	 */
+	public static String[] splitCSV(String str, String delim)
+	{
+		// check for empty input
+		if( str == null || str.isEmpty() )
+			return new String[]{""};
+		
+		// scan string and create individual tokens
+		ArrayList<String> tokens = new ArrayList<String>();
+		int from = 0, to = 0; 
+		int len = str.length();
+		while( from < len  ) { // for all tokens
+			if( str.charAt(from) == CSV_QUOTE_CHAR ) {
+				to = str.indexOf(CSV_QUOTE_CHAR, from+1);
+				// handle escaped inner quotes, e.g. "aa""a"
+				while( to+1 < len && str.charAt(to+1)==CSV_QUOTE_CHAR )
+					to = str.indexOf(CSV_QUOTE_CHAR, to+2); // to + ""
+				to += 1; // last "
+			}
+			else if(str.regionMatches(from, delim, 0, delim.length())) {
+				to = from; // empty string
+			}
+			else { // default: unquoted non-empty
+				to = str.indexOf(delim, from+1);
+			}
+			
+			// slice out token and advance position
+			to = (to >= 0) ? to : len;
+			tokens.add(str.substring(from, to));
+			from = to + delim.length();
+		}
+		
+		// handle empty string at end
+		if( from == len )
+			tokens.add("");
+			
+		// return tokens
+		return tokens.toArray(new String[0]);
+	}
+	
+	/**
+	 * Counts the number of tokens defined by the given delimiter, respecting 
+	 * the rules for quotes and escapes defined in RFC4180.
+	 * 
+	 * @param str
+	 * @param delim
+	 * @return
+	 */
+	public static int countTokensCSV(String str, String delim)
+	{
+		// check for empty input
+		if( str == null || str.isEmpty() )
+			return 1;
+		
+		// scan string and compute num tokens
+		int numTokens = 0;
+		int from = 0, to = 0; 
+		int len = str.length();
+		while( from < len  ) { // for all tokens
+			if( str.charAt(from) == CSV_QUOTE_CHAR ) {
+				to = str.indexOf(CSV_QUOTE_CHAR, from+1);
+				// handle escaped inner quotes, e.g. "aa""a"
+				while( to+1 < len && str.charAt(to+1)==CSV_QUOTE_CHAR ) 
+					to = str.indexOf(CSV_QUOTE_CHAR, to+2); // to + ""
+				to += 1; // last "
+			}
+			else if(str.regionMatches(from, delim, 0, delim.length())) {
+				to = from; // empty string
+			}
+			else { // default: unquoted non-empty
+				to = str.indexOf(delim, from+1);
+			}
+			
+			//increase counter and advance position
+			to = (to >= 0) ? to : len;
+			from = to + delim.length();
+			numTokens++;
+		}
+		
+		// handle empty string at end
+		if( from == len )
+			numTokens++;
+		
+		// return number of tokens
+		return numTokens;
+	}
+	
+	/**
 	 * 
 	 * @param input
 	 * @return
@@ -218,7 +317,7 @@ public class IOUtilFunctions
 					if( row.startsWith(TfUtils.TXMTD_NDPREFIX) )
 						reader.next(key, value);
 					if( !row.isEmpty() )
-						ncol = StringUtils.countMatches(row, delim) + 1;
+						ncol = IOUtilFunctions.countTokensCSV(row, delim);
 				}
 			}
 			finally {

@@ -33,6 +33,7 @@ import org.apache.sysml.api.jmlc.PreparedScript;
 import org.apache.sysml.api.jmlc.ResultVariables;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.transform.TfUtils;
 import org.apache.sysml.runtime.transform.meta.TfMetaUtils;
@@ -188,7 +189,8 @@ public class FrameReadMetaTest extends AutomatedTestBase
 				if( collist.contains(j+1) && tmp[j] != null ) {
 					if( ret[j] == null )
 						ret[j] = new HashMap<String,Long>();
-					String[] parts = tmp[j].toString().split(Lop.DATATYPE_PREFIX);
+					String[] parts = IOUtilFunctions.splitCSV(
+							tmp[j].toString(), Lop.DATATYPE_PREFIX);
 					ret[j].put(parts[0], Long.parseLong(parts[1]));
 				}
 		}

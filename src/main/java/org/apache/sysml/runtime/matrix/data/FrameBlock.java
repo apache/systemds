@@ -40,6 +40,7 @@ import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheBlock;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.util.IndexRange;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
@@ -871,7 +872,8 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		for( int i=0; i<getNumRows(); i++ ) {
 			Object val = ldata.get(i);
 			if( val != null ) {
-				String[] tmp = val.toString().split(Lop.DATATYPE_PREFIX);
+				String[] tmp = IOUtilFunctions.splitCSV(
+						val.toString(), Lop.DATATYPE_PREFIX);
 				map.put(tmp[0], Long.parseLong(tmp[1]));
 			}
 		}

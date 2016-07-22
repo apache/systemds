@@ -171,7 +171,7 @@ public class FrameReaderTextCSV extends FrameReader
 			{
 				String cellStr = value.toString().trim();
 				emptyValuesFound = false; col = 0;
-				String[] parts = IOUtilFunctions.split(cellStr, delim);
+				String[] parts = IOUtilFunctions.splitCSV(cellStr, delim);
 				
 				//parse frame meta data (missing values / num distinct)
 				if( parts[0].equals(TfUtils.TXMTD_MVPREFIX) || parts[0].equals(TfUtils.TXMTD_NDPREFIX) ) {
@@ -232,7 +232,7 @@ public class FrameReaderTextCSV extends FrameReader
 		int ncol = IOUtilFunctions.countNumColumnsCSV(splits, informat, job, _props.getDelim());
 		
 		//compute number of rows
-		int nrow = -1;
+		int nrow = 0;
 		for( int i=0; i<splits.length; i++ ) 
 		{
 			RecordReader<LongWritable, Text> reader = informat.getRecordReader(splits[i], job, Reporter.NULL);

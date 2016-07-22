@@ -29,6 +29,7 @@ import org.junit.runners.Suite;
 	RunTest.class,
 	ScalingTest.class,
 	TransformAndApplyTest.class,
+	TransformCSVFrameEncodeDecodeTest.class,
 	TransformEncodeDecodeTest.class,
 	TransformFrameApplyTest.class,
 	TransformFrameEncodeApplyTest.class,

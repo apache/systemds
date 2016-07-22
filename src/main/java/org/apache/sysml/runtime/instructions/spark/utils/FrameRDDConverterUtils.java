@@ -91,7 +91,7 @@ public class FrameRDDConverterUtils
 					|| tmpStr.startsWith(TfUtils.TXMTD_NDPREFIX);
 			tmpStr = (metaHeader) ? tmpStr.substring(tmpStr.indexOf(delim)+1) : tmpStr;
 			long rlen = tmp.count() - (hasHeader ? 1 : 0) - (metaHeader ? 2 : 0);
-			long clen = tmpStr.split(delim).length;
+			long clen = IOUtilFunctions.splitCSV(tmpStr, delim).length;
 			mcOut.set(rlen, clen, mcOut.getRowsPerBlock(), mcOut.getColsPerBlock(), -1);
 		}
 		
@@ -425,18 +425,18 @@ public class FrameRDDConverterUtils
 			while( arg0.hasNext() )
 			{
 				Tuple2<Text,Long> tmp = arg0.next();
-				String row = tmp._1().toString();
+				String row = tmp._1().toString().trim();
 				long rowix = tmp._2();
 				if(_hasHeader && rowix == 0) { //Skip header
-					_colnames = Arrays.asList(row.split(_delim));
+					_colnames = Arrays.asList(IOUtilFunctions.splitCSV(row, _delim));
 					continue;
 				}
 				if( row.startsWith(TfUtils.TXMTD_MVPREFIX) ) {
-					_mvMeta = Arrays.asList(Arrays.copyOfRange(row.split(_delim), 1, (int)_clen+1));
+					_mvMeta = Arrays.asList(Arrays.copyOfRange(IOUtilFunctions.splitCSV(row, _delim), 1, (int)_clen+1));
 					continue;
 				}
 				else if( row.startsWith(TfUtils.TXMTD_NDPREFIX) ) {
-					_ndMeta = Arrays.asList(Arrays.copyOfRange(row.split(_delim), 1, (int)_clen+1));
+					_ndMeta = Arrays.asList(Arrays.copyOfRange(IOUtilFunctions.splitCSV(row, _delim), 1, (int)_clen+1));
 					continue;
 				}
 				
@@ -451,7 +451,7 @@ public class FrameRDDConverterUtils
 				}
 				
 				//process row data
-				String[] parts = IOUtilFunctions.split(row, _delim);
+				String[] parts = IOUtilFunctions.splitCSV(row, _delim);
 				boolean emptyFound = false;
 				mb[0].appendRow(parts);
 				iRowsInBlock++;

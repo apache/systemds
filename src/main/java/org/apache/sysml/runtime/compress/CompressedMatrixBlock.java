@@ -497,6 +497,22 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		}
 	} 
 
+	@Override
+	public double quickGetValue(int r, int c) {
+		if( !isCompressed() ) {
+			return super.quickGetValue(r, c);
+		}
+		
+		//find column group according to col index
+		ColGroup grp = null;
+		for( ColGroup group : _colGroups )
+			if( Arrays.binarySearch(group.getColIndices(), c) >= 0 ) {
+				grp = group; break;
+			}
+		
+		//find row value 
+		return grp.get(r, c);
+	}	
 	
 	//////////////////////////////////////////
 	// Serialization / Deserialization

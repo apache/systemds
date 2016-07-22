@@ -263,6 +263,32 @@ public abstract class ColGroupBitmap extends ColGroup
 			}
 		}
 	}
+
+	//generic get for OLE/RLE, to be overwritten for performance
+	//potential: skip scan (segment length agg and run length) instead of decode
+	@Override
+	public double get(int r, int c) {
+		//find local column index
+		int ix = Arrays.binarySearch(_colIndexes, c);
+		if( ix < 0 )
+			throw new RuntimeException("Column index "+c+" not in bitmap group.");
+		
+		//find row index in value offset lists via scan
+		final int numCols = getNumCols();
+		final int numVals = getNumValues();
+		for (int i = 0; i < numVals; i++) {
+			Iterator<Integer> decoder = getDecodeIterator(i);
+			int valOff = i*numCols;
+			while (decoder.hasNext()) {
+				int row = decoder.next();
+				if( row == r )
+					return _values[valOff+ix];
+				else if( row > r )
+					break; //current value
+			}
+		}		
+		return 0;
+	}
 	
 	/**
 	 * 

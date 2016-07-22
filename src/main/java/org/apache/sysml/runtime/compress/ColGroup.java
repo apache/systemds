@@ -203,6 +203,15 @@ public abstract class ColGroup implements Serializable
 	public abstract long getExactSizeOnDisk();
 	
 	/**
+	 * Get the value at a global row/column position.
+	 * 
+	 * @param r
+	 * @param c
+	 * @return
+	 */
+	public abstract double get(int r, int c);
+	
+	/**
 	 * Multiply the slice of the matrix that this column group represents by a
 	 * vector on the right.
 	 * 

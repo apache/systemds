@@ -248,6 +248,17 @@ public class ColGroupUncompressed extends ColGroup
 	}
 
 	@Override
+	public double get(int r, int c) {
+		//find local column index
+		int ix = Arrays.binarySearch(_colIndexes, c);
+		if( ix < 0 )
+			throw new RuntimeException("Column index "+c+" not in uncompressed group.");
+		
+		//uncompressed get value
+		return _data.quickGetValue(r, ix);
+	}
+	
+	@Override
 	public void rightMultByVector(MatrixBlock vector, MatrixBlock result, int rl, int ru)
 			throws DMLRuntimeException 
 	{

@@ -27,6 +27,7 @@ import org.junit.runners.Suite;
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
 	BasicCompressionTest.class,
+	BasicGetValueTest.class,
 	BasicMatrixAppendTest.class,
 	BasicMatrixMultChainTest.class,
 	BasicMatrixTransposeSelfMultTest.class,

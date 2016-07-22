@@ -956,8 +956,8 @@ public class DataConverter
 					}
 				}
 			} else {	// Block is in dense format
-				for (int i=0; i<rowLength; ++i){
-					for (int j=0; j<colLength; ++j){
+				for (int i=0; i<rowLength; i++){
+					for (int j=0; j<colLength; j++){
 						double value = mb.getValue(i, j);
 						if (value != 0.0){
 							sb.append(i+1).append(separator).append(j+1).append(separator);

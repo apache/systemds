@@ -108,7 +108,7 @@ extends SequenceFileInputFormat<K,V>
 	    // take N samples from different parts of the input
 	    
 	    int totalcount = 0;
-	    for(int i=0; i < samples; ++i) {
+	    for(int i=0; i < samples; i++) {
 	    	SequenceFileRecordReader reader = 
 	    		(SequenceFileRecordReader) inFormat.getRecordReader(splits[sampleStep * i], conf, null);
 	    	int count=0;
@@ -227,7 +227,7 @@ extends SequenceFileInputFormat<K,V>
 			float stepSize = numRecords / (float) numPartitions;
 			//System.out.println("Step size is " + stepSize);
 			ArrayList<WritableComparable> result = new ArrayList<WritableComparable>(numPartitions-1);
-			for(int i=1; i < numPartitions; ++i) {
+			for(int i=1; i < numPartitions; i++) {
 				result.add(records.get(Math.round(stepSize * i)));
 			}
 			

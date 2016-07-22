@@ -5069,7 +5069,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		// keep scanning the weights, until we hit the required position <code>fromPos</code>
 		while ( count < fromPos ) {
 			count += quickGetValue(index,1);
-			++index;
+			index++;
 		}
 		
 		double runningSum; 
@@ -5086,7 +5086,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			runningSum += (val * Math.min(wt, selectRange-selectedCount));
 			selectedCount += Math.min(wt, selectRange-selectedCount);
 			count += wt;
-			++index;
+			index++;
 		}
 		
 		//System.out.println(fromPos + ", " + toPos + ": " + count + ", "+ runningSum + ", " + selectedCount);

@@ -355,20 +355,12 @@ public class FrameRDDConverterUtils
 	 * @param strict
 	 * @return
 	 */
-	public static DataFrame binaryBlockToDataFrame(JavaPairRDD<Long,FrameBlock> in, MatrixCharacteristics mcIn, boolean strict, JavaSparkContext sc)
+	public static DataFrame binaryBlockToDataFrame(JavaPairRDD<Long,FrameBlock> in, MatrixCharacteristics mcIn, JavaSparkContext sc)
 	{
-		JavaPairRDD<Long,FrameBlock> input = in;
-		
-		//sort if required (on blocks/rows)
-		if( strict ) {
-			input = input.sortByKey(true);
-		}
-		
 		List<ValueType> schema = in.first()._2().getSchema();
 		
 		//convert binary block to rows rdd (from blocks/rows)
-		JavaRDD<Row> rowRDD = input
-				.flatMap(new BinaryBlockToDataFrameFunction());
+		JavaRDD<Row> rowRDD = in.flatMap(new BinaryBlockToDataFrameFunction());
 				
 		SQLContext sqlContext = new SQLContext(sc);
 		StructType dfSchema = UtilFunctions.convertFrameSchemaToDFSchema(schema);
@@ -676,7 +668,7 @@ public class FrameRDDConverterUtils
 			Object[] ret = new Object[_clen];
 			for(int i = 0; i < row.length(); i++)
 				ret[i] = UtilFunctions.objectToObject(schema.get(i), row.get(i));
-			for(int i=row.length(); i<_clen; ++i)
+			for(int i=row.length(); i<_clen; i++)
 				ret[i] = "";
 			return ret;
 		}
@@ -721,14 +713,8 @@ public class FrameRDDConverterUtils
 
 			//handle Frame block data
 			Iterator<Object[]> iter = blk.getObjectRowIterator();
-			Object[] columns = null;
-			while( iter.hasNext() ) {
-				columns = new Object[blk.getNumColumns()];
-				Object[] tmp = iter.next();
-				for(int i=0; i<tmp.length; ++i)
-					columns[i] = tmp[i];
-				ret.add(RowFactory.create(columns));
-			}
+			while( iter.hasNext() )
+				ret.add(RowFactory.create(iter.next().clone()));
 				
 			return ret;
 		}

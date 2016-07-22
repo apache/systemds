@@ -268,7 +268,7 @@ public class FrameIndexingDistTest extends AutomatedTestBase
 	}
 	
 	private void verifyFrameData(FrameBlock frame1, FrameBlock frame2, ValueType[] schema) {
-		for ( int i=0; i<frame1.getNumRows(); ++i )
+		for ( int i=0; i<frame1.getNumRows(); i++ )
 			for( int j=0; j<frame1.getNumColumns(); j++ )	{
 				Object val1 = UtilFunctions.stringToObject(schema[j], UtilFunctions.objectToString(frame1.get(i, j)));
 				Object val2 = UtilFunctions.stringToObject(schema[j], UtilFunctions.objectToString(frame2.get(i, j)));

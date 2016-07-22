@@ -104,7 +104,7 @@ public abstract class FrameReader
 		throws IOException, DMLRuntimeException
 	{
 		List<String> colNames = new ArrayList<String>();
-		for (int i=0; i < clen; ++i)
+		for (int i=0; i < clen; i++)
 			colNames.add("C"+i);
 		return colNames;
 	}

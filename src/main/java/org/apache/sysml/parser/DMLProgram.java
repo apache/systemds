@@ -80,6 +80,17 @@ public class DMLProgram
 		return _blocks.size();
 	}
 
+	/**
+	 * 
+	 * @param fkey   function key as concatenation of namespace and function name 
+	 *               (see DMLProgram.constructFunctionKey)
+	 * @return
+	 */
+	public FunctionStatementBlock getFunctionStatementBlock(String fkey) {
+		String[] tmp = splitFunctionKey(fkey);
+		return getFunctionStatementBlock(tmp[0], tmp[1]);
+	}
+	
 	public FunctionStatementBlock getFunctionStatementBlock(String namespaceKey, String functionName) {
 		DMLProgram namespaceProgram = this.getNamespaces().get(namespaceKey);
 		if (namespaceProgram == null)

@@ -172,7 +172,7 @@ public class FrameCopyTest extends AutomatedTestBase
 	void verifyFrameData(FrameBlock frame1, FrameBlock frame2)
 	{
 		List<ValueType> lschema = frame1.getSchema();
-		for ( int i=0; i<frame1.getNumRows(); ++i )
+		for ( int i=0; i<frame1.getNumRows(); i++ )
 			for( int j=0; j<lschema.size(); j++ )	{
 				if( UtilFunctions.compareTo(lschema.get(j), frame1.get(i, j), frame2.get(i, j)) != 0)
 					Assert.fail("Target value for cell ("+ i + "," + j + ") is " + frame1.get(i,  j) + 

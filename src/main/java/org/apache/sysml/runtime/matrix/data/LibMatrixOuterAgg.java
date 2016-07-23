@@ -184,10 +184,10 @@ public class LibMatrixOuterAgg
 			
 			double dvix[] = new double[vix.length];
 			if (bPrimeCumSum)
-				for (int i = 0; i< vix.length; ++i)
+				for (int i = 0; i< vix.length; i++)
 					dvix[vix.length-1-i] = vix[i];
 			else
-				for (int i = 0; i< vix.length; ++i)
+				for (int i = 0; i< vix.length; i++)
 					dvix[i] = vix[i];
 			
 			MatrixBlock mbix = DataConverter.convertToMatrixBlock(dvix, true);
@@ -197,7 +197,7 @@ public class LibMatrixOuterAgg
 			
 			vixCumSum = DataConverter.convertToIntVector(mbResult);  
 			if (bPrimeCumSum)
-				for (int i = 0; i< (vixCumSum.length+1)/2; ++i) {
+				for (int i = 0; i< (vixCumSum.length+1)/2; i++) {
 					int iTemp = vixCumSum[vixCumSum.length-1-i];
 					vixCumSum[vixCumSum.length-1-i] = vixCumSum[i];
 					vixCumSum[i] = iTemp;
@@ -264,10 +264,10 @@ public class LibMatrixOuterAgg
 			
 			double dvix[] = new double[vix.length];
 			if (bPrimeCumSum)
-				for (int i = 0; i< vix.length; ++i)
+				for (int i = 0; i< vix.length; i++)
 					dvix[vix.length-1-i] = vix[i];
 			else
-				for (int i = 0; i< vix.length; ++i)
+				for (int i = 0; i< vix.length; i++)
 					dvix[i] = vix[i];
 			
 			MatrixBlock mbix = DataConverter.convertToMatrixBlock(dvix, true);
@@ -277,7 +277,7 @@ public class LibMatrixOuterAgg
 			
 			vixCumSum = DataConverter.convertToIntVector(mbResult);  
 			if (bPrimeCumSum)
-				for (int i = 0; i< (vixCumSum.length+1)/2; ++i) {
+				for (int i = 0; i< (vixCumSum.length+1)/2; i++) {
 					int iTemp = vixCumSum[vixCumSum.length-1-i];
 					vixCumSum[vixCumSum.length-1-i] = vixCumSum[i];
 					vixCumSum[i] = iTemp;
@@ -1030,7 +1030,7 @@ public class LibMatrixOuterAgg
 			int[] aix = sblock.indexes(j);
 			double [] avals = sblock.values(j);
 			
-			for (int i=apos; i < apos+alen; ++i) {
+			for (int i=apos; i < apos+alen; i++) {
 				int cnt = sumEqNe(avals[i], bv, bOp);
 				out.quickSetValue(0, aix[i], cnt);
 			}
@@ -1447,7 +1447,7 @@ public class LibMatrixOuterAgg
     	} else if(bOp.fn instanceof Equals) {
     		double dFirstValue = vmb[0];
     		int i=0;
-    		while(i<vmb.length-1 && dFirstValue == vmb[i+1]) ++i;
+    		while(i<vmb.length-1 && dFirstValue == vmb[i+1]) i++;
     		if (i < vmb.length-1) 
     			vix[0] = i+1;
     		else	
@@ -1455,7 +1455,7 @@ public class LibMatrixOuterAgg
     	} else if(bOp.fn instanceof NotEquals) {
     		double dFirstValue = vmb[0];
     		int i=0;
-    		while(i<vmb.length-1 && dFirstValue == vmb[i+1]) ++i;
+    		while(i<vmb.length-1 && dFirstValue == vmb[i+1]) i++;
     		if (i < vmb.length-1) 
     			vix[0] = i-1;
     		else	
@@ -1520,10 +1520,10 @@ public class LibMatrixOuterAgg
 	{
     	int iCurInd = 0;
 		
-    	for (int i = 0; i < vix.length;++i)
+    	for (int i = 0; i < vix.length;i++)
     	{
     		double dPrevVal = vmb[iCurInd];
-			while(i<vix.length && dPrevVal == vmb[i]) ++i;
+			while(i<vix.length && dPrevVal == vmb[i]) i++;
 			
 			if(i < vix.length) {
 				for(int j=iCurInd; j<i; ++j) vix[j] = vix[i];
@@ -1555,9 +1555,9 @@ public class LibMatrixOuterAgg
 		int iLastIndex = 0;
 		double dLastVal = vix[iLastIndex];
 
-    	for (int i = 0; i < vix.length-1; ++i)
+    	for (int i = 0; i < vix.length-1; i++)
     	{
-    		while(i<vmb.length-1 && dLastVal == vmb[i+1]) ++i;
+    		while(i<vmb.length-1 && dLastVal == vmb[i+1]) i++;
     		for (int j=iLastIndex+1; j<=i; ++j) 
     			vix[j] = vix[iLastIndex];
     		if (i < vix.length-1) {

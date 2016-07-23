@@ -781,7 +781,7 @@ public class LibMatrixBincell
 			if( ixPos1 >= 0 ){ //match, scan to next val
 				if(bOp.fn instanceof LessThan || bOp.fn instanceof GreaterThanEquals 
 						|| bOp.fn instanceof Equals || bOp.fn instanceof NotEquals)
-					while( ixPos1<bv.length && value==bv[ixPos1]  ) ++ixPos1;
+					while( ixPos1<bv.length && value==bv[ixPos1]  ) ixPos1++;
 				if(bOp.fn instanceof GreaterThan || bOp.fn instanceof LessThanEquals 
 						|| bOp.fn instanceof Equals || bOp.fn instanceof NotEquals)
 					while(  ixPos2 > 0 && value==bv[ixPos2-1]) --ixPos2;

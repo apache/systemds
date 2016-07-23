@@ -1549,6 +1549,12 @@ public class OptimizerRuleBased extends Optimizer
 						//need to recompile SB, if changed constraint
 						recompileSB = true;	
 					}
+					//for all other multi-threaded hops set k=1 to simply debugging
+					else if( h instanceof MultiThreadedHop ) {
+						MultiThreadedHop mhop = (MultiThreadedHop) h;
+						mhop.setMaxNumThreads(1); //set max constraint in hop
+						c.setK(1); //set optnode k (for explain)
+					}
 				}
 				else
 					rAssignRemainingParallelism(c, parforK, opsK);

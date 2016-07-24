@@ -859,24 +859,32 @@ public class LibMatrixReorg
 		double[] a = in.getDenseBlock();
 		SparseBlock c = out.getSparseBlock();
 		
-		//blocking according to typical L2 cache sizes 
-		final int blocksizeI = 128;
-		final int blocksizeJ = 128; 
-		
-		//blocked execution
-		for( int bi = 0; bi<m; bi+=blocksizeI )
-			for( int bj = 0; bj<n; bj+=blocksizeJ )
-			{
-				int bimin = Math.min(bi+blocksizeI, m);
-				int bjmin = Math.min(bj+blocksizeJ, n);
-				//core transpose operation
-				for( int i=bi; i<bimin; i++ )				
-					for( int j=bj, aix=i*n+bj; j<bjmin; j++, aix++ )
-					{
-						c.allocate(j, ennz2, n2); 
-						c.append(j, i, a[aix]);
-					}
-			}
+		if( out.rlen == 1 ) //VECTOR-VECTOR
+		{	
+			c.allocate(0, (int)in.nonZeros); 
+			c.setIndexRange(0, 0, m, a, 0, m);
+		}
+		else //general case: MATRIX-MATRIX
+		{
+			//blocking according to typical L2 cache sizes 
+			final int blocksizeI = 128;
+			final int blocksizeJ = 128; 
+			
+			//blocked execution
+			for( int bi = 0; bi<m; bi+=blocksizeI )
+				for( int bj = 0; bj<n; bj+=blocksizeJ )
+				{
+					int bimin = Math.min(bi+blocksizeI, m);
+					int bjmin = Math.min(bj+blocksizeJ, n);
+					//core transpose operation
+					for( int i=bi; i<bimin; i++ )				
+						for( int j=bj, aix=i*n+bj; j<bjmin; j++, aix++ )
+						{
+							c.allocate(j, ennz2, n2); 
+							c.append(j, i, a[aix]);
+						}
+				}
+		}
 	}
 	
 	/**

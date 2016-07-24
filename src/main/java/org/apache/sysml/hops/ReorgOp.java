@@ -31,6 +31,7 @@ import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.lops.SortKeys;
 import org.apache.sysml.lops.Transform;
 import org.apache.sysml.lops.LopProperties.ExecType;
+import org.apache.sysml.lops.Transform.OperationTypes;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -131,12 +132,19 @@ public class ReorgOp extends Hop implements MultiThreadedHop
 		{
 			case TRANSPOSE:
 			{
-				int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
-				Transform transform1 = new Transform( getInput().get(0).constructLops(), 
-						HopsTransf2Lops.get(op), getDataType(), getValueType(), et, k);
-				setOutputDimensions(transform1);
-				setLineNumbers(transform1);
-				setLops(transform1);			
+				Lop lin = getInput().get(0).constructLops();
+				if( lin instanceof Transform && ((Transform)lin).getOperationType()==OperationTypes.Transpose )
+					setLops(lin.getInputs().get(0)); //if input is already a transpose, avoid redundant transpose ops
+				else if( getDim1()==1 && getDim2()==1 )
+					setLops(lin); //if input of size 1x1, avoid unnecessary transpose
+				else { //general case
+					int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
+					Transform transform1 = new Transform( lin, 
+							HopsTransf2Lops.get(op), getDataType(), getValueType(), et, k);
+					setOutputDimensions(transform1);
+					setLineNumbers(transform1);
+					setLops(transform1);
+				}
 				break;
 			}
 			case DIAG:

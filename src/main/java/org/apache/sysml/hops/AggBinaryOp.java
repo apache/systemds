@@ -695,20 +695,23 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 	{
 		Hop X = getInput().get(0).getInput().get(0); //guaranteed to exists
 		Hop Y = getInput().get(1);
+		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 		
 		//right vector transpose
-		Lop tY = new Transform(Y.constructLops(), OperationTypes.Transpose, getDataType(), getValueType(), ExecType.CP);
+		Lop lY = Y.constructLops();
+		Lop tY = (lY instanceof Transform && ((Transform)lY).getOperationType()==OperationTypes.Transpose ) ?
+				lY.getInputs().get(0) : //if input is already a transpose, avoid redundant transpose ops
+				new Transform(lY, OperationTypes.Transpose, getDataType(), getValueType(), ExecType.CP, k);
 		tY.getOutputParameters().setDimensions(Y.getDim2(), Y.getDim1(), getRowsInBlock(), getColsInBlock(), Y.getNnz());
 		setLineNumbers(tY);
 		
 		//matrix mult
-		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 		Lop mult = new Binary(tY, X.constructLops(), Binary.OperationTypes.MATMULT, getDataType(), getValueType(), ExecType.CP, k);	
 		mult.getOutputParameters().setDimensions(Y.getDim2(), X.getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 		setLineNumbers(mult);
 		
 		//result transpose (dimensions set outside)
-		Lop out = new Transform(mult, OperationTypes.Transpose, getDataType(), getValueType(), ExecType.CP);
+		Lop out = new Transform(mult, OperationTypes.Transpose, getDataType(), getValueType(), ExecType.CP, k);
 		
 		return out;
 	}

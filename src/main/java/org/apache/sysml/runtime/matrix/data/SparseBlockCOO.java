@@ -654,7 +654,7 @@ public class SparseBlockCOO extends SparseBlock
 	 * For use in GPU code
 	 * @return
 	 */
-	public int[] getRowIndexArray() {
+	public int[] rowIndexes() {
 		return _rindexes;
 	}
 	
@@ -663,7 +663,7 @@ public class SparseBlockCOO extends SparseBlock
 	 * For use in GPU code
 	 * @return
 	 */
-	public int[] getColumnIndexArray() {
+	public int[] indexes() {
 		return _cindexes;
 	}
 	
@@ -672,7 +672,7 @@ public class SparseBlockCOO extends SparseBlock
 	 * For use in GPU code
 	 * @return
 	 */
-	public double[] getValuesArray() {
+	public double[] values() {
 		return _values;
 	}
 }

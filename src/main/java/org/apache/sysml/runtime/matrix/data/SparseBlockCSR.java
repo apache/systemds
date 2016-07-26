@@ -697,7 +697,7 @@ public class SparseBlockCSR extends SparseBlock
 	 * For use in GPU code
 	 * @return
 	 */
-	public int[] getRowPointerArray() {
+	public int[] rowPointers() {
 		return _ptr;
 	}
 	
@@ -706,7 +706,7 @@ public class SparseBlockCSR extends SparseBlock
 	 * For use in GPU code
 	 * @return
 	 */
-	public int[] getColumnIndexArray() {
+	public int[] indexes() {
 		return _indexes;
 	}
 	
@@ -715,7 +715,7 @@ public class SparseBlockCSR extends SparseBlock
 	 * For use in GPU code
 	 * @return
 	 */
-	public double[] getValuesArray() {
+	public double[] values() {
 		return _values;
 	}
 }

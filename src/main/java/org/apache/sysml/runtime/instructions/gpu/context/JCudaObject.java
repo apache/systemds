@@ -487,9 +487,10 @@ public class JCudaObject extends GPUObject {
 			if (block instanceof SparseBlockCSR){ 
 				csrBlock = (SparseBlockCSR)block;
 			} else if (block instanceof SparseBlockCOO) {
+				// TODO - should we do this on the GPU using cusparse<t>coo2csr() ?
 				long t0 = System.nanoTime();
 				SparseBlockCOO cooBlock = (SparseBlockCOO)block;
-				csrBlock = new SparseBlockCSR((int)mat.getNumRows(), cooBlock.getRowIndexArray(), cooBlock.getColumnIndexArray(), cooBlock.getValuesArray());
+				csrBlock = new SparseBlockCSR((int)mat.getNumRows(), cooBlock.rowIndexes(), cooBlock.indexes(), cooBlock.values());
 				Statistics.cudaConversionTime.addAndGet(System.nanoTime() - t0);
 				Statistics.cudaConversionCount.incrementAndGet();
 			} else if (block instanceof SparseBlockMCSR) {
@@ -501,9 +502,9 @@ public class JCudaObject extends GPUObject {
 			} else {
 				throw new DMLRuntimeException("Unsupported sparse matrix format for CUDA operations");
 			}
-			rowPtr = csrBlock.getRowPointerArray();
-			colInd = csrBlock.getColumnIndexArray();
-			values = csrBlock.getValuesArray();	
+			rowPtr = csrBlock.rowPointers();
+			colInd = csrBlock.indexes();
+			values = csrBlock.values();	
 			ensureFreeSpace(CSRPointer.estimateSize(mat.getNnz(), mat.getNumRows()));
 			allocateMemoryOnDevice(-1);
 			synchronized(evictionLock) {

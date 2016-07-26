@@ -36,11 +36,7 @@ import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.broadcast.Broadcast;
 import org.apache.spark.storage.RDDInfo;
 import org.apache.spark.storage.StorageLevel;
-
-import scala.Tuple2;
-
 import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.api.MLContext;
 import org.apache.sysml.api.MLContextProxy;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.OptimizerUtils;
@@ -81,6 +77,8 @@ import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
 import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.utils.Statistics;
+
+import scala.Tuple2;
 
 
 public class SparkExecutionContext extends ExecutionContext
@@ -178,22 +176,28 @@ public class SparkExecutionContext extends ExecutionContext
 	 * 
 	 */
 	private synchronized static void initSparkContext()
-	{	
+	{
 		//check for redundant spark context init
 		if( _spctx != null )
 			return;
-	
+
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		
 		//create a default spark context (master, appname, etc refer to system properties
 		//as given in the spark configuration or during spark-submit)
 		
-		MLContext mlCtx = MLContextProxy.getActiveMLContext();
-		if(mlCtx != null) 
+		Object mlCtxObj = MLContextProxy.getActiveMLContext();
+		if(mlCtxObj != null) 
 		{
 			// This is when DML is called through spark shell
 			// Will clean the passing of static variables later as this involves minimal change to DMLScript
-			_spctx = new JavaSparkContext(mlCtx.getSparkContext());
+			if (mlCtxObj instanceof org.apache.sysml.api.MLContext) {
+				org.apache.sysml.api.MLContext mlCtx = (org.apache.sysml.api.MLContext) mlCtxObj;
+				_spctx = new JavaSparkContext(mlCtx.getSparkContext());
+			} else if (mlCtxObj instanceof org.apache.sysml.api.mlcontext.MLContext) {
+				org.apache.sysml.api.mlcontext.MLContext mlCtx = (org.apache.sysml.api.mlcontext.MLContext) mlCtxObj;
+				_spctx = new JavaSparkContext(mlCtx.getSparkContext());
+			}
 		}
 		else 
 		{
@@ -1424,11 +1428,26 @@ public class SparkExecutionContext extends ExecutionContext
 			}
 		}
 		
-		MLContext mlContext = MLContextProxy.getActiveMLContext();
-		if(mlContext != null && mlContext.getMonitoringUtil() != null) {
-			mlContext.getMonitoringUtil().setLineageInfo(inst, outDebugString);
-		}
-		else {
+		
+		Object mlContextObj = MLContextProxy.getActiveMLContext();
+		if (mlContextObj != null) {
+			if (mlContextObj instanceof org.apache.sysml.api.MLContext) {
+				org.apache.sysml.api.MLContext mlCtx = (org.apache.sysml.api.MLContext) mlContextObj;
+				if (mlCtx.getMonitoringUtil() != null) {
+					mlCtx.getMonitoringUtil().setLineageInfo(inst, outDebugString);
+				} else {
+					throw new DMLRuntimeException("The method setLineageInfoForExplain should be called only through MLContext");
+				}
+			} else if (mlContextObj instanceof org.apache.sysml.api.mlcontext.MLContext) {
+				org.apache.sysml.api.mlcontext.MLContext mlCtx = (org.apache.sysml.api.mlcontext.MLContext) mlContextObj;
+				if (mlCtx.getSparkMonitoringUtil() != null) {
+					mlCtx.getSparkMonitoringUtil().setLineageInfo(inst, outDebugString);
+				} else {
+					throw new DMLRuntimeException("The method setLineageInfoForExplain should be called only through MLContext");
+				}
+			}
+			
+		} else {
 			throw new DMLRuntimeException("The method setLineageInfoForExplain should be called only through MLContext");
 		}
 		

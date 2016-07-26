@@ -87,6 +87,10 @@ import org.apache.sysml.utils.Explain.ExplainCounts;
 import org.apache.sysml.utils.Statistics;
 
 /**
+ * The MLContext API has been redesigned and this API will be deprecated.
+ * Please migrate to {@link org.apache.sysml.api.mlcontext.MLContext}.
+ * <p>
+ * 
  * MLContext is useful for passing RDDs as input/output to SystemML. This API avoids the need to read/write
  * from HDFS (which is another way to pass inputs to SystemML).
  * <p>

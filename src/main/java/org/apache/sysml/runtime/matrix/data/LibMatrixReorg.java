@@ -162,7 +162,7 @@ public class LibMatrixReorg
 		if( !in.sparse && !out.sparse )
 			transposeDenseToDense( in, out, 0, in.rlen, 0, in.clen );
 		else if( in.sparse && out.sparse )
-			transposeSparseToSparse( in, out );
+			transposeSparseToSparse( in, out, 0, in.rlen, 0, in.clen );
 		else if( in.sparse )
 			transposeSparseToDense( in, out, 0, in.rlen, 0, in.clen );
 		else
@@ -187,7 +187,8 @@ public class LibMatrixReorg
 		//redirect small or special cases to sequential execution
 		if( in.isEmptyBlock(false) || (in.rlen * in.clen < PAR_NUMCELL_THRESHOLD)
 			|| (SHALLOW_DENSE_VECTOR_TRANSPOSE && !in.sparse && !out.sparse && (in.rlen==1 || in.clen==1) )
-			|| (in.sparse && !out.sparse && in.rlen==1) || out.sparse || !out.isThreadSafe())
+			|| (in.sparse && !out.sparse && in.rlen==1) || (!in.sparse && out.sparse && in.rlen==1) 
+			|| (!in.sparse && out.sparse) || !out.isThreadSafe())
 		{
 			return transpose(in, out);
 		}
@@ -205,11 +206,11 @@ public class LibMatrixReorg
 		try {
 			ExecutorService pool = Executors.newFixedThreadPool( k );
 			ArrayList<TransposeTask> tasks = new ArrayList<TransposeTask>();
-			boolean row = in.sparse || in.rlen >= in.clen;
+			boolean row = (in.sparse || in.rlen >= in.clen) && !out.sparse;
 			int len = row ? in.rlen : in.clen;
 			int blklen = (int)(Math.ceil((double)len/k));
 			blklen += (blklen%8 != 0)?8-blklen%8:0;
-			for( int i=0; i<k & i*blklen<in.rlen; i++ )
+			for( int i=0; i<k & i*blklen<len; i++ )
 				tasks.add(new TransposeTask(in, out, row, i*blklen, Math.min((i+1)*blklen, len)));
 			//execute tasks and check for errors
 			List<Future<Object>> taskret = pool.invokeAll(tasks);	
@@ -892,9 +893,11 @@ public class LibMatrixReorg
 	 * @param in
 	 * @param out
 	 */
-	private static void transposeSparseToSparse(MatrixBlock in, MatrixBlock out)
+	private static void transposeSparseToSparse(MatrixBlock in, MatrixBlock out, int rl, int ru, int cl, int cu)
 	{
-		//NOTE: called only in sequential execution
+		//NOTE: called only in sequential or column-wise parallel execution
+		if( rl > 0 || ru < in.rlen )
+			throw new RuntimeException("Unsupported row-parallel transposeSparseToSparse: "+rl+", "+ru);
 		
 		final int m = in.rlen;
 		final int n = in.clen;
@@ -918,42 +921,49 @@ public class LibMatrixReorg
 		
 		//allocate output sparse rows
 		if( cnt != null ) {
-			for( int i=0; i<m2; i++ )
+			for( int i=cl; i<cu; i++ )
 				if( cnt[i] > 0 )
 					c.allocate(i, cnt[i]);
 		}
 		
 		//blocking according to typical L2 cache sizes 
 		final int blocksizeI = 128;
-		final int blocksizeJ = 128; 
+		final int blocksizeJ = 128;
 	
 		//temporary array for block boundaries (for preventing binary search) 
 		int[] ix = new int[blocksizeI];
 		
 		//blocked execution
-		for( int bi = 0; bi<m; bi+=blocksizeI )
+		for( int bi=rl; bi<ru; bi+=blocksizeI )
 		{
-			Arrays.fill(ix, 0);
-			for( int bj = 0; bj<n; bj+=blocksizeJ )
-			{
-				int bimin = Math.min(bi+blocksizeI, m);
-				int bjmin = Math.min(bj+blocksizeJ, n);
-
-				//core transpose operation
-				for( int i=bi, iix=0; i<bimin; i++, iix++ )
-				{
+			Arrays.fill(ix, 0);			
+			//find column starting positions
+			int bimin = Math.min(bi+blocksizeI, ru);
+			if( cl > 0 ) {
+				for( int i=bi; i<bimin; i++ )
 					if( !a.isEmpty(i) ) {
-						int apos = a.pos(i);
-						int alen = a.size(i);
-						int[] aix = a.indexes(i);
-						double[] avals = a.values(i);
-						int j = ix[iix]; //last block boundary
-						for( ; j<alen && aix[j]<bjmin; j++ ) {
-							c.allocate(aix[apos+j], ennz2,n2);
-							c.append(aix[apos+j], i, avals[apos+j]);
-						}
-						ix[iix] = j; //keep block boundary
+						int pos = a.posFIndexGTE(i, cl);
+						ix[i-bi] = (pos>=0) ? pos : a.size(i);
 					}
+			}
+			
+			for( int bj=cl; bj<cu; bj+=blocksizeJ ) {
+				int bjmin = Math.min(bj+blocksizeJ, cu);
+
+				//core block transpose operation
+				for( int i=bi, iix=0; i<bimin; i++, iix++ ) {
+					if( a.isEmpty(i) ) continue;
+					
+					int apos = a.pos(i);
+					int alen = a.size(i);
+					int[] aix = a.indexes(i);
+					double[] avals = a.values(i);
+					int j = ix[iix]; //last block boundary
+					for( ; j<alen && aix[j]<bjmin; j++ ) {
+						c.allocate(aix[apos+j], ennz2,n2);
+						c.append(aix[apos+j], i, avals[apos+j]);
+					}
+					ix[iix] = j; //keep block boundary
 				}
 			}
 		}
@@ -2362,7 +2372,7 @@ public class LibMatrixReorg
 			if( !_in.sparse && !_out.sparse )
 				transposeDenseToDense( _in, _out, rl, ru, cl, cu );
 			else if( _in.sparse && _out.sparse )
-				throw new DMLRuntimeException("Unsupported multi-threaded sparse-sparse transpose.");
+				transposeSparseToSparse( _in, _out, rl, ru, cl, cu );
 			else if( _in.sparse )
 				transposeSparseToDense( _in, _out, rl, ru, cl, cu );
 			else

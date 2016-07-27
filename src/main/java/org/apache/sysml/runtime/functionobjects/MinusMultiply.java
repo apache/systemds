@@ -42,6 +42,21 @@ public class MinusMultiply extends ValueFunctionWithConstant implements Serializ
 	
 	@Override
 	public double execute(double in1, double in2) {
-		return in1 - _constant*in2;	
+		return in1 - _constant * in2;	
+	}
+	
+	@Override
+	public double execute(double in1, long in2) {
+		return in1 - _constant * in2;	
+	}
+	
+	@Override
+	public double execute(long in1, double in2) {
+		return in1 - _constant * in2;	
+	}
+	
+	@Override
+	public double execute(long in1, long in2) {
+		return in1 - _constant * in2;	
 	}
 }

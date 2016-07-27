@@ -181,7 +181,7 @@ public class JCudaObject extends GPUObject {
 		 * @return
 		 * @throws DMLRuntimeException
 		 */
-		public static CSRPointer allocateForMatrixMultiply(cusparseHandle handle, CSRPointer A, char transA, CSRPointer B, char transB, int m, int n, int k) 
+		public static CSRPointer allocateForMatrixMultiply(cusparseHandle handle, CSRPointer A, int transA, CSRPointer B, int transB, int m, int n, int k) 
 				throws DMLRuntimeException{
 			// Following the code example at http://docs.nvidia.com/cuda/cusparse/#cusparse-lt-t-gt-csrgemm and at
 			// https://github.com/jcuda/jcuda-matrix-utils/blob/master/JCudaMatrixUtils/src/test/java/org/jcuda/matrix/samples/JCusparseSampleDgemm.java

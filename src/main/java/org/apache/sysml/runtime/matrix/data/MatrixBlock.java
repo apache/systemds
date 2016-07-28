@@ -6240,15 +6240,4 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		}
 		public SparsityEstimate(){}
 	}
-
-	public ArrayList<Pair<MatrixIndexes, MatrixBlock>> getPairList()
-	{
-		return new ArrayList<Pair<MatrixIndexes,MatrixBlock>>();
-	}
-	
-	@SuppressWarnings("unchecked")
-	public ArrayList<Pair<?, ?>> performSlice(IndexRange ixrange, int brlen, int bclen, int iix, int jix, CacheBlock in) throws DMLRuntimeException
-	{
-		return OperationsOnMatrixValues.performSlice(ixrange, brlen, bclen, iix, jix, (MatrixBlock)in);
-	}
 }

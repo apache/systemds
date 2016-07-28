@@ -19,12 +19,8 @@
 
 package org.apache.sysml.runtime.controlprogram.caching;
 
-import java.util.ArrayList;
-
 import org.apache.hadoop.io.Writable;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.matrix.data.Pair;
-import org.apache.sysml.runtime.util.IndexRange;
 
 
 /**
@@ -34,6 +30,18 @@ import org.apache.sysml.runtime.util.IndexRange;
  */
 public interface CacheBlock extends Writable 
 {
+	/**
+	 * 
+	 * @return
+	 */
+	public int getNumRows();
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public int getNumColumns();
+	
 	/**
 	 * Get the in-memory size in bytes of the cache block.
 	 * @return
@@ -60,18 +68,29 @@ public interface CacheBlock extends Writable
 	 */
 	public void compactEmptyBlock();
 	
-	public int getNumRows();
-	public int getNumColumns();
-	
+	/**
+	 * Slice a sub block out of the current block and write into the given output block.
+	 * This method returns the passed instance if not null.
+	 * 
+	 * @param rl
+	 * @param ru
+	 * @param cl
+	 * @param cu
+	 * @param block
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
 	public CacheBlock sliceOperations(int rl, int ru, int cl, int cu, CacheBlock block) 
-			throws DMLRuntimeException;
+		throws DMLRuntimeException;
 	
+	/**
+	 * Merge the given block into the current block. Both blocks needs to be of equal 
+	 * dimensions and contain disjoint non-zero cells.
+	 * 
+	 * @param that
+	 * @param appendOnly
+	 * @throws DMLRuntimeException
+	 */
 	public void merge(CacheBlock that, boolean appendOnly) 
-			throws DMLRuntimeException;
-	
-	@SuppressWarnings("rawtypes")
-	public 	ArrayList getPairList();
-
-	ArrayList<Pair<?, ?>> performSlice(IndexRange ixrange, int brlen, int bclen, int iix, int jix, CacheBlock in) 
-			throws DMLRuntimeException;
+		throws DMLRuntimeException;
 }

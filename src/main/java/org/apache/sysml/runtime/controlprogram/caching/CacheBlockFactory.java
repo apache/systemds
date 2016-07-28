@@ -19,8 +19,12 @@
 
 package org.apache.sysml.runtime.controlprogram.caching;
 
+import java.util.ArrayList;
+
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysml.runtime.matrix.data.Pair;
 
 /**
  * Factory to create instances of matrix/frame blocks given
@@ -53,5 +57,19 @@ public class CacheBlockFactory
 		else if( block instanceof FrameBlock )
 			return 1;
 		throw new RuntimeException("Unsupported cache block type: "+block.getClass().getName());
+	}
+	
+	/**
+	 * 
+	 * @param block
+	 * @return
+	 */
+	public static ArrayList<?> getPairList(CacheBlock block) {
+		int code = getCode(block);
+		switch( code ) {
+			case 0: return new ArrayList<Pair<MatrixIndexes,MatrixBlock>>();
+			case 1: return new ArrayList<Pair<Long,FrameBlock>>();
+		}
+		throw new RuntimeException("Unsupported cache block type: "+code);
 	}
 }

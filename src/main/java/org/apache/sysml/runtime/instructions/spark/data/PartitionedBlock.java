@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysml.runtime.controlprogram.caching.CacheBlockFactory;
+import org.apache.sysml.runtime.matrix.data.OperationsOnMatrixValues;
 import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.util.FastBufferedDataInputStream;
 import org.apache.sysml.runtime.util.FastBufferedDataOutputStream;
@@ -260,19 +261,17 @@ public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 		int lcl = (int) cl;
 		int lcu = (int) cu;
 		
-		ArrayList<Pair<?, ?>> allBlks = block.getPairList();
+		ArrayList<Pair<?, ?>> allBlks = (ArrayList<Pair<?, ?>>) CacheBlockFactory.getPairList(block);
 		int start_iix = (lrl-1)/_brlen+1;
 		int end_iix = (lru-1)/_brlen+1;
 		int start_jix = (lcl-1)/_bclen+1;
 		int end_jix = (lcu-1)/_bclen+1;
 				
 		for( int iix = start_iix; iix <= end_iix; iix++ )
-			for(int jix = start_jix; jix <= end_jix; jix++)		
-			{
-				T in = getBlock(iix, jix);
+			for(int jix = start_jix; jix <= end_jix; jix++) {
 				IndexRange ixrange = new IndexRange(rl, ru, cl, cu);
-				ArrayList<Pair<?, ?>> outlist = block.performSlice(ixrange, _brlen, _bclen, iix, jix, in);
-				allBlks.addAll(outlist);
+				allBlks.addAll(OperationsOnMatrixValues.performSlice(
+						ixrange, _brlen, _bclen, iix, jix, getBlock(iix, jix)));
 			}
 		
 		if(allBlks.size() == 1) {

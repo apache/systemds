@@ -1305,17 +1305,4 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			_mvValue = mvVal;
 		}
 	}
-
-	//TODO generalize these methods and remove from frame block
-	
-	@Override
-	public ArrayList getPairList() {
-		return new ArrayList<Pair<Long, FrameBlock>>();
-	}
-
-	public ArrayList<Pair<?, ?>> performSlice(IndexRange ixrange, int brlen, int bclen, int iix, int jix, CacheBlock in) throws DMLRuntimeException
-	{
-		return OperationsOnMatrixValues.performSlice(ixrange, brlen, bclen, iix, jix, (FrameBlock)in);
-	}
-
 }

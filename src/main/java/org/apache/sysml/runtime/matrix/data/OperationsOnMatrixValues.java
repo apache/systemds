@@ -27,6 +27,7 @@ import java.util.List;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.compress.CompressedMatrixBlock;
+import org.apache.sysml.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysml.runtime.functionobjects.Builtin;
 import org.apache.sysml.runtime.instructions.spark.utils.SparkUtils;
@@ -299,6 +300,29 @@ public class OperationsOnMatrixValues
 		//perform on the value
 		value1.aggregateBinaryOperations(value1, value2, valueOut, op);
 	}
+	
+	/**
+	 * 
+	 * @param ixrange
+	 * @param brlen
+	 * @param bclen
+	 * @param iix
+	 * @param jix
+	 * @param in
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	@SuppressWarnings("rawtypes")
+	public static ArrayList performSlice(IndexRange ixrange, int brlen, int bclen, int iix, int jix, CacheBlock in) 
+		throws DMLRuntimeException
+	{
+		if( in instanceof MatrixBlock )
+			return performSlice(ixrange, brlen, bclen, iix, jix, (MatrixBlock)in);
+		else if( in instanceof FrameBlock )
+			return performSlice(ixrange, brlen, bclen, iix, jix, (FrameBlock)in);
+		throw new DMLRuntimeException("Unsupported cache block type: "+in.getClass().getName());
+	}
+	
 	
 	@SuppressWarnings("rawtypes")
 	public static ArrayList performSlice(IndexRange ixrange, int brlen, int bclen, int iix, int jix, MatrixBlock in) 

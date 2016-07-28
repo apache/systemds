@@ -23,6 +23,7 @@ import static jcuda.jcusparse.JCusparse.cusparseSetMatIndexBase;
 import static jcuda.jcusparse.JCusparse.cusparseSetMatType;
 import static jcuda.jcusparse.JCusparse.cusparseSetPointerMode;
 import static jcuda.jcusparse.JCusparse.cusparseXcsrgemmNnz;
+import static jcuda.jcusparse.JCusparse.cusparseDcsr2dense;
 import static jcuda.jcusparse.cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO;
 import static jcuda.jcusparse.cusparseMatrixType.CUSPARSE_MATRIX_TYPE_GENERAL;
 import static jcuda.runtime.JCuda.cudaFree;
@@ -227,6 +228,25 @@ public class JCudaObject extends GPUObject {
 		}
 		
 		/**
+		 * Copies this CSR matrix on the GPU to a dense column-major matrix
+		 * on the GPU. This is a temporary matrix for operations such as 
+		 * cusparseDcsrmv.
+		 * Since the allocated matrix is temporary, bookkeeping is not updated.
+		 * The called is responsible for calling "free" on the returned Pointer object
+		 * @param handle	a valid {@link cusparseHandle}
+		 * @param rows		number of rows in this CSR matrix
+		 * @param cols		number of columns in this CSR matrix
+		 * @return			A {@link Pointer} to the allocated dense matrix (in column-major format)
+		 * @throws DMLRuntimeException
+		 */
+		public Pointer copyToTemporaryDenseColumnMajor(cusparseHandle handle, int rows, int cols) throws DMLRuntimeException {
+			long size = rows * cols * Sizeof.DOUBLE;
+			Pointer A = JCudaObject.allocateTemporarySpaceOnDevice(size);
+			cusparseDcsr2dense(handle, rows, cols, descr, val, rowPtr, colInd, A, rows);
+			return A;
+		}
+		
+		/**
 		 * Calls cudaFree on the allocated {@link Pointer} instances
 		 */
 		public void deallocate() {
@@ -247,14 +267,13 @@ public class JCudaObject extends GPUObject {
 	}
 
 	/**
-	 * Convenienve method to directly set the sparse matrix on GPU
+	 * Convenience method to directly set the sparse matrix on GPU
 	 * Needed for operations like {@link JCusparse#cusparseDcsrgemm(cusparseHandle, int, int, int, int, int, cusparseMatDescr, int, Pointer, Pointer, Pointer, cusparseMatDescr, int, Pointer, Pointer, Pointer, cusparseMatDescr, Pointer, Pointer, Pointer)}
 	 * @param jcudaSparseMatrixPtr
 	 */
 	public void setSparseMatrixCudaPointer(CSRPointer jcudaSparseMatrixPtr) {
 		this.jcudaSparseMatrixPtr = jcudaSparseMatrixPtr;
 		this.isAllocated = true;
-		this.numLocks.addAndGet(1);
 		this.isInSparseFormat = true;
 	}
 
@@ -262,6 +281,24 @@ public class JCudaObject extends GPUObject {
 
 	JCudaObject(MatrixObject mat2) {
 		super(mat2);
+	}
+	
+	/**
+	 * Allocates temporary space on the device.
+	 * Does not update bookkeeping.
+	 * The caller is responsible for freeing up after usage.
+	 * @param size
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static Pointer allocateTemporarySpaceOnDevice(long size) throws DMLRuntimeException{
+		Pointer A = new Pointer();
+		ensureFreeSpace(size);
+		long t0 = System.nanoTime();
+		cudaMalloc(A, size);
+		Statistics.cudaAllocTime.getAndAdd(System.nanoTime() - t0);
+		Statistics.cudaAllocCount.getAndAdd(1);
+		return A;
 	}
 	
 	/**
@@ -429,6 +466,7 @@ public class JCudaObject extends GPUObject {
 	
 	@Override
 	public void setDeviceModify(long numBytes) {
+		this.numLocks.addAndGet(1);
 		this.numBytes = numBytes;
 		JCudaContext.availableNumBytesWithoutUtilFactor.addAndGet(-numBytes);
 	}

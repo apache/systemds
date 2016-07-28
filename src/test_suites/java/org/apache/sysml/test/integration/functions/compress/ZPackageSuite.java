@@ -43,6 +43,7 @@ import org.junit.runners.Suite;
 	LargeMatrixVectorMultTest.class,
 	LargeParMatrixVectorMultTest.class,
 	LargeVectorMatrixMultTest.class,
+	ParCompressionTest.class,
 	ParMatrixMultChainTest.class,
 	ParMatrixVectorMultTest.class,
 	ParTransposeSelfLeftMatrixMultTest.class,

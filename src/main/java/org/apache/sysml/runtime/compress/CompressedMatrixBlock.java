@@ -193,8 +193,22 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	 * which should be fixed if we move ahead with this compression strategy.
 	 * 
 	 * +per column sparsity
+	 * 
+	 * @throws DMLRuntimeException
 	 */
 	public void compress() 
+		throws DMLRuntimeException
+	{
+		//default sequential execution
+		compress(1);
+	}
+	
+	/**
+	 * 
+	 * @param k  number of threads
+	 * @throws DMLRuntimeException
+	 */
+	public void compress(int k) 
 		throws DMLRuntimeException 
 	{
 		//check for redundant compression
@@ -216,11 +230,8 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		final int numRows = getNumRows();
 		final int numCols = getNumColumns();
 		final boolean sparse = isInSparseFormat();
-		MatrixBlock rawblock = this;
-		if( TRANSPOSE_INPUT )
-			rawblock = LibMatrixReorg.transpose(rawblock, new MatrixBlock(numCols, numRows, sparse));
-		else
-			rawblock = new MatrixBlock(this);
+		MatrixBlock rawblock = !TRANSPOSE_INPUT ? new MatrixBlock(this) :
+			LibMatrixReorg.transpose(this, new MatrixBlock(numCols, numRows, sparse), k);
 		
 		//construct sample-based size estimator
 		CompressedSizeEstimator bitmapSizeEstimator = 
@@ -234,18 +245,12 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 
 		// We start with a full set of columns.
 		HashSet<Integer> remainingCols = new HashSet<Integer>();
-		for (int i = 0; i < numCols; i++) {
+		for (int i = 0; i < numCols; i++)
 			remainingCols.add(i);
-		}
 
 		// PHASE 1: Classify columns by compression type
-		// We start by determining which columns are amenable to bitmap
-		// compression
-
-		// It is correct to use the dense size as the uncompressed size
-		// FIXME not numRows but nnz / col otherwise too aggressive overestimation
-		// of uncompressed size and hence overestimation of compression potential
-		double uncompressedColumnSize = 8 * numRows;
+		// We start by determining which columns are amenable to bitmap compression
+		double uncompressedColumnSize = getUncompressedSize(numRows, 1);
 
 		// information about the bitmap amenable columns
 		List<Integer> bitmapCols = new ArrayList<Integer>();
@@ -256,11 +261,12 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		
 		// Minimum ratio (size of uncompressed / size of compressed) that we
 		// will accept when encoding a field with a bitmap.
+		CompressedSizeInfo[] sizeInfos = (k > 1) ?
+				computeCompressedSizeInfos(bitmapSizeEstimator, numCols, k) : 
+				computeCompressedSizeInfos(bitmapSizeEstimator, numCols);		
 		for (int col = 0; col < numCols; col++) 
-		{
-			CompressedSizeInfo compressedSizeInfo = bitmapSizeEstimator
-					.estimateCompressedColGroupSize(new int[] { col });
-			long compressedSize = compressedSizeInfo.getMinSize();
+		{	
+			long compressedSize = sizeInfos[col].getMinSize();
 			double compRatio = uncompressedColumnSize / compressedSize;
 			
 			//FIXME: compression ratio should be checked against 1 instead of min compression
@@ -269,7 +275,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 			if (compRatio >= MIN_COMPRESSION_RATIO) {
 				bitmapCols.add(col);
 				compressionRatios.put(col, compRatio);
-				colsCardinalities.add(compressedSizeInfo.getEstCarinality());
+				colsCardinalities.add(sizeInfos[col].getEstCarinality());
 				compressedSizes.add(compressedSize);
 			}
 			else
@@ -313,77 +319,15 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		}
 		
 		// PHASE 3: Compress and correct sample-based decisions
-		
-		for (int[] groupIndices : bitmapColGrps) 
-		{
-			int[] allGroupIndices = null;
-			int allColsCount = groupIndices.length;
-			CompressedSizeInfo bitmapSizeInfo;
-			// The compression type is decided based on a full bitmap since it
-			// will be reused for the actual compression step.
-			UncompressedBitmap ubm;
-			PriorityQueue<CompressedColumn> compRatioPQ = null;
-			boolean skipGroup = false;
-			while (true) 
-			{
-				ubm = BitmapEncoder.extractBitmap(groupIndices, rawblock); 
-				bitmapSizeInfo = bitmapSizeEstimator
-						.estimateCompressedColGroupSize(ubm);
-				double compRatio = uncompressedColumnSize * groupIndices.length
-						/ bitmapSizeInfo.getMinSize();
-				if (compRatio >= MIN_COMPRESSION_RATIO) {
-					// we have a good group
-					for( Integer col : groupIndices )
-						remainingCols.remove(col);
-					break;
-				} else {
-					// modify the group
-					if (compRatioPQ == null) {
-						// first modification
-						allGroupIndices = Arrays.copyOf(groupIndices, groupIndices.length);
-						compRatioPQ = new PriorityQueue<CompressedMatrixBlock.CompressedColumn>();
-						for (int i = 0; i < groupIndices.length; i++)
-							compRatioPQ.add(new CompressedColumn(i,
-									compressionRatios.get(groupIndices[i])));
-					}
-
-					// index in allGroupIndices
-					int removeIx = compRatioPQ.poll().colIx;
-					allGroupIndices[removeIx] = -1;
-					allColsCount--;
-					if (allColsCount == 0) {
-						skipGroup = true;
-						break;
-					}
-					groupIndices = new int[allColsCount];
-					// copying the values that do not equal -1
-					int ix = 0;
-					for (int col : allGroupIndices) {
-						if (col != -1) {
-							groupIndices[ix++] = col;
-						}
-					}
-
-				}
+		ColGroup[] colGroups = (k > 1) ?
+				compressColGroups(rawblock, bitmapSizeEstimator, compressionRatios, numRows, bitmapColGrps, k) : 
+				compressColGroups(rawblock, bitmapSizeEstimator, compressionRatios, numRows, bitmapColGrps); 	
+		for( int j=0; j<colGroups.length; j++ ) {
+			if( colGroups[j] != null ) {
+				for( int col : colGroups[j].getColIndices() )
+					remainingCols.remove(col);
+				_colGroups.add(colGroups[j]);
 			}
-
-			if (skipGroup)
-				continue;
-			long rleNumBytes = bitmapSizeInfo.getRLESize();
-			long offsetNumBytes = bitmapSizeInfo.getOLESize();
-			double rleRatio = (double) offsetNumBytes / (double) rleNumBytes;
-
-			if (rleRatio > MIN_RLE_RATIO) {
-				ColGroupRLE compressedGroup = new ColGroupRLE(groupIndices,
-						numRows, ubm);
-				_colGroups.add(compressedGroup);
-			} 
-			else {
-				ColGroupOLE compressedGroup = new ColGroupOLE(
-						groupIndices, numRows, ubm);
-				_colGroups.add(compressedGroup);
-			}
-
 		}
 		
 		_stats.timePhase3 = time.stop();
@@ -405,6 +349,182 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		_stats.timePhase4 = time.stop();
 		if( LOG.isDebugEnabled() )
 			LOG.debug("compression phase 4: "+_stats.timePhase4);
+	}
+
+	public CompressionStatistics getCompressionStatistics() {
+		return _stats;
+	}
+
+	/**
+	 * 
+	 * @param estim
+	 * @param clen
+	 * @return
+	 */
+	private static CompressedSizeInfo[] computeCompressedSizeInfos(CompressedSizeEstimator estim, int clen) {
+		CompressedSizeInfo[] ret = new CompressedSizeInfo[clen];
+		for( int col=0; col<clen; col++ )
+			ret[col] = estim.estimateCompressedColGroupSize(new int[] { col });
+		return ret;
+	}
+	
+	/**
+	 * 
+	 * @param estim
+	 * @param clen
+	 * @param k
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	private static CompressedSizeInfo[] computeCompressedSizeInfos(CompressedSizeEstimator estim, int clen, int k) 
+		throws DMLRuntimeException 
+	{	
+		try {
+			ExecutorService pool = Executors.newFixedThreadPool( k );
+			ArrayList<SizeEstimTask> tasks = new ArrayList<SizeEstimTask>();
+			for( int col=0; col<clen; col++ )
+				tasks.add(new SizeEstimTask(estim, col));
+			List<Future<CompressedSizeInfo>> rtask = pool.invokeAll(tasks);	
+			ArrayList<CompressedSizeInfo> ret = new ArrayList<CompressedSizeInfo>();
+			for( Future<CompressedSizeInfo> lrtask : rtask )
+				ret.add(lrtask.get());
+			pool.shutdown();
+			return ret.toArray(new CompressedSizeInfo[0]);
+		}
+		catch(Exception ex) {
+			throw new DMLRuntimeException(ex);
+		}
+	}
+
+	/**
+	 * 
+	 * @param in
+	 * @param estim
+	 * @param compRatios
+	 * @param rlen
+	 * @param groups
+	 * @return
+	 */
+	private static ColGroup[] compressColGroups(MatrixBlock in, CompressedSizeEstimator estim, HashMap<Integer, Double> compRatios, int rlen, List<int[]> groups)
+	{
+		ColGroup[] ret = new ColGroup[groups.size()];
+		for( int i=0; i<groups.size(); i++ )
+			ret[i] = compressColGroup(in, estim, compRatios, rlen, groups.get(i));
+		
+		return ret;
+	}
+	
+	/**
+	 * 
+	 * @param in
+	 * @param estim
+	 * @param compRatios
+	 * @param rlen
+	 * @param groups
+	 * @param k
+	 * @return
+	 * @throws DMLRuntimeException 
+	 */
+	private static ColGroup[] compressColGroups(MatrixBlock in, CompressedSizeEstimator estim, HashMap<Integer, Double> compRatios, int rlen, List<int[]> groups, int k) 
+		throws DMLRuntimeException
+	{
+		try {
+			ExecutorService pool = Executors.newFixedThreadPool( k );
+			ArrayList<CompressTask> tasks = new ArrayList<CompressTask>();
+			for( int[] colIndexes : groups )
+				tasks.add(new CompressTask(in, estim, compRatios, rlen, colIndexes));
+			List<Future<ColGroup>> rtask = pool.invokeAll(tasks);	
+			ArrayList<ColGroup> ret = new ArrayList<ColGroup>();
+			for( Future<ColGroup> lrtask : rtask )
+				ret.add(lrtask.get());
+			pool.shutdown();
+			return ret.toArray(new ColGroup[0]);
+		}
+		catch(Exception ex) {
+			throw new DMLRuntimeException(ex);
+		}
+	}
+	
+	/**
+	 * 
+	 * @param in
+	 * @param estim
+	 * @param compRatios
+	 * @param rlen
+	 * @param colIndexes
+	 * @return
+	 */
+	private static ColGroup compressColGroup(MatrixBlock in, CompressedSizeEstimator estim, HashMap<Integer, Double> compRatios, int rlen, int[] colIndexes) 
+	{
+		int[] allGroupIndices = null;
+		int allColsCount = colIndexes.length;
+		CompressedSizeInfo sizeInfo;
+		// The compression type is decided based on a full bitmap since it
+		// will be reused for the actual compression step.
+		UncompressedBitmap ubm = null;
+		PriorityQueue<CompressedColumn> compRatioPQ = null;
+		boolean skipGroup = false;
+		while (true) 
+		{
+			//exact big list and observe compression ratio
+			ubm = BitmapEncoder.extractBitmap(colIndexes, in); 
+			sizeInfo = estim.estimateCompressedColGroupSize(ubm);		
+			double compRatio = getUncompressedSize(rlen, colIndexes.length) / sizeInfo.getMinSize();
+			
+			if (compRatio >= MIN_COMPRESSION_RATIO) {
+				break; // we have a good group
+			} 
+			
+			// modify the group
+			if (compRatioPQ == null) {
+				// first modification
+				allGroupIndices = Arrays.copyOf(colIndexes, colIndexes.length);
+				compRatioPQ = new PriorityQueue<CompressedMatrixBlock.CompressedColumn>();
+				for (int i = 0; i < colIndexes.length; i++)
+					compRatioPQ.add(new CompressedColumn(i, compRatios.get(colIndexes[i])));
+			}
+
+			// index in allGroupIndices
+			int removeIx = compRatioPQ.poll().colIx;
+			allGroupIndices[removeIx] = -1;
+			allColsCount--;
+			if (allColsCount == 0) {
+				skipGroup = true;
+				break;
+			}
+			colIndexes = new int[allColsCount];
+			// copying the values that do not equal -1
+			int ix = 0;
+			for (int col : allGroupIndices)
+				if (col != -1)
+					colIndexes[ix++] = col;
+		}
+
+		//add group to uncompressed fallback
+		if( skipGroup )
+			return null;
+
+		//create compressed column group
+		long rleNumBytes = sizeInfo.getRLESize();
+		long offsetNumBytes = sizeInfo.getOLESize();
+		double rleRatio = (double) offsetNumBytes / (double) rleNumBytes;
+		if (rleRatio > MIN_RLE_RATIO)
+			return new ColGroupRLE(colIndexes, rlen, ubm);
+		else
+			return new ColGroupOLE(colIndexes, rlen, ubm);
+	}
+	
+	/**
+	 * 
+	 * @param rlen
+	 * @param clen
+	 * @return
+	 */
+	private static double getUncompressedSize(int rlen, int clen) {
+		// It is correct to use the dense size as the uncompressed size
+		// FIXME not numRows but nnz / col otherwise too aggressive overestimation
+		// of uncompressed size and hence overestimation of compression potential
+		return 8 * rlen * clen;
 	}
 
 	/**
@@ -439,11 +559,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 
 		return ret;
 	}
-
-	public CompressionStatistics getCompressionStatistics(){
-		return _stats;
-	}
-
+	
 	/**
 	 * 
 	 * @return an upper bound on the memory used to store this compressed block
@@ -463,7 +579,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		return total;
 	}
 
-	private class CompressedColumn implements Comparable<CompressedColumn> {
+	private static class CompressedColumn implements Comparable<CompressedColumn> {
 		int colIx;
 		double compRatio;
 
@@ -1369,6 +1485,50 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		
 		public MatrixBlock getResult(){
 			return _ret;
+		}
+	}
+	
+	/**
+	 * 
+	 */
+	private static class SizeEstimTask implements Callable<CompressedSizeInfo> 
+	{
+		private CompressedSizeEstimator _estim = null;
+		private int _col = -1;
+		
+		protected SizeEstimTask( CompressedSizeEstimator estim, int col )  {
+			_estim = estim;
+			_col = col;
+		}
+		
+		@Override
+		public CompressedSizeInfo call() throws DMLRuntimeException {
+			return _estim.estimateCompressedColGroupSize(new int[] { _col });
+		}
+	}
+	
+	/**
+	 *
+	 */
+	private static class CompressTask implements Callable<ColGroup> 
+	{
+		private MatrixBlock _in = null;
+		private CompressedSizeEstimator _estim = null;
+		private HashMap<Integer, Double> _compRatios = null;
+		private int _rlen = -1;
+		private int[] _colIndexes = null;
+		
+		protected CompressTask( MatrixBlock in, CompressedSizeEstimator estim, HashMap<Integer, Double> compRatios, int rlen, int[] colIndexes )  {
+			_in = in;
+			_estim = estim;
+			_compRatios = compRatios;
+			_rlen = rlen;
+			_colIndexes = colIndexes;
+		}
+		
+		@Override
+		public ColGroup call() throws DMLRuntimeException {
+			return compressColGroup(_in, _estim, _compRatios, _rlen, _colIndexes);
 		}
 	}
 	

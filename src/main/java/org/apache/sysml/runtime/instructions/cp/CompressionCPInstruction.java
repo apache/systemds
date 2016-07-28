@@ -19,6 +19,7 @@
 
 package org.apache.sysml.runtime.instructions.cp;
 
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
@@ -54,7 +55,7 @@ public class CompressionCPInstruction extends UnaryCPInstruction
 		
 		//compress the matrix block
 		CompressedMatrixBlock cmb = new CompressedMatrixBlock(in);
-		cmb.compress();
+		cmb.compress(OptimizerUtils.getConstrainedNumThreads(-1));
 		
 		//set output and release input
 		ec.releaseMatrixInput(input1.getName());

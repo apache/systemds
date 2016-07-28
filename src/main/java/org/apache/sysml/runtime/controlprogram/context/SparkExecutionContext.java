@@ -910,7 +910,7 @@ public class SparkExecutionContext extends ExecutionContext
 		
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 
-		PartitionedBlock<MatrixBlock> out = new PartitionedBlock<MatrixBlock>(rlen, clen, brlen, bclen, new MatrixBlock());
+		PartitionedBlock<MatrixBlock> out = new PartitionedBlock<MatrixBlock>(rlen, clen, brlen, bclen);
 		List<Tuple2<MatrixIndexes,MatrixBlock>> list = rdd.collect();
 		
 		//copy blocks one-at-a-time into output matrix block

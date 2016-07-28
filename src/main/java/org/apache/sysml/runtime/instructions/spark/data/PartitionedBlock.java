@@ -27,28 +27,27 @@ import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
-import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheBlock;
+import org.apache.sysml.runtime.controlprogram.caching.CacheBlockFactory;
 import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.util.FastBufferedDataInputStream;
 import org.apache.sysml.runtime.util.FastBufferedDataOutputStream;
 import org.apache.sysml.runtime.util.IndexRange;
 
 /**
- * This class is for partitioned matrix/frame blocks, to be used
- * as broadcasts. Distributed tasks require block-partitioned broadcasts but a lazy partitioning per
- * task would create instance-local copies and hence replicate broadcast variables which are shared
- * by all tasks within an executor.  
+ * This class is for partitioned matrix/frame blocks, to be used as broadcasts. 
+ * Distributed tasks require block-partitioned broadcasts but a lazy partitioning 
+ * per task would create instance-local copies and hence replicate broadcast 
+ * variables which are shared by all tasks within an executor.  
  * 
  */
 public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 {
-
-	protected T[] _partBlocks = null; 
+	protected CacheBlock[] _partBlocks = null; 
 	protected long _rlen = -1;
 	protected long _clen = -1;
 	protected int _brlen = -1;
@@ -59,6 +58,74 @@ public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 		//do nothing (required for Externalizable)
 	}
 	
+	
+	@SuppressWarnings("unchecked")
+	public PartitionedBlock(T block, int brlen, int bclen) 
+	{
+		//get the input frame block
+		int rlen = block.getNumRows();
+		int clen = block.getNumColumns();
+		
+		//partitioning input broadcast
+		_rlen = rlen;
+		_clen = clen;
+		_brlen = brlen;
+		_bclen = bclen;
+		int nrblks = getNumRowBlocks();
+		int ncblks = getNumColumnBlocks();
+		int code = CacheBlockFactory.getCode(block);
+		
+		try
+		{
+			_partBlocks = new CacheBlock[nrblks * ncblks];
+			for( int i=0, ix=0; i<nrblks; i++ )
+				for( int j=0; j<ncblks; j++, ix++ ) {
+					T tmp = (T) CacheBlockFactory.newInstance(code);
+					block.sliceOperations(i*_brlen, Math.min((i+1)*_brlen, rlen)-1, 
+							           j*_bclen, Math.min((j+1)*_bclen, clen)-1, tmp);
+					_partBlocks[ix] = tmp;
+				}
+		}
+		catch(Exception ex) {
+			throw new RuntimeException("Failed partitioning of broadcast variable input.", ex);
+		}
+		
+		_offset = 0;
+	}
+
+	public PartitionedBlock(int rlen, int clen, int brlen, int bclen) 
+	{
+		//partitioning input broadcast
+		_rlen = rlen;
+		_clen = clen;
+		_brlen = brlen;
+		_bclen = bclen;
+		
+		int nrblks = getNumRowBlocks();
+		int ncblks = getNumColumnBlocks();
+		_partBlocks = new CacheBlock[nrblks * ncblks];
+	}
+	
+	
+	/**
+	 * 
+	 * @param offset
+	 * @param numBlks
+	 * @return
+	 */
+	public PartitionedBlock<T> createPartition( int offset, int numBlks, T block )
+	{
+		PartitionedBlock<T> ret = new PartitionedBlock<T>();
+		ret._rlen = _rlen;
+		ret._clen = _clen;
+		ret._brlen = _brlen;
+		ret._bclen = _bclen;
+		ret._partBlocks = new CacheBlock[numBlks];
+		ret._offset = offset;
+		System.arraycopy(_partBlocks, offset, ret._partBlocks, 0, numBlks);
+		
+		return ret;
+	}
 	
 	public long getNumRows() {
 		return _rlen;
@@ -80,8 +147,7 @@ public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 	 * 
 	 * @return
 	 */
-	public int getNumRowBlocks() 
-	{
+	public int getNumRowBlocks() {
 		return (int)Math.ceil((double)_rlen/_brlen);
 	}
 	
@@ -89,59 +155,8 @@ public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 	 * 
 	 * @return
 	 */
-	public int getNumColumnBlocks() 
-	{
+	public int getNumColumnBlocks() {
 		return (int)Math.ceil((double)_clen/_bclen);
-	}
-	
-	@SuppressWarnings("unchecked")
-	public PartitionedBlock(T block, int brlen, int bclen) 
-	{
-		//get the input frame block
-		int rlen = block.getNumRows();
-		int clen = block.getNumColumns();
-		
-		//partitioning input broadcast
-		_rlen = rlen;
-		_clen = clen;
-		_brlen = brlen;
-		_bclen = bclen;
-
-		int nrblks = getNumRowBlocks();
-		int ncblks = getNumColumnBlocks();
-		
-		try
-		{
-			_partBlocks = (T[])Array.newInstance((block.getClass()), nrblks * ncblks);
-			for( int i=0, ix=0; i<nrblks; i++ )
-				for( int j=0; j<ncblks; j++, ix++ )
-				{
-					T tmp = (T) block.getClass().newInstance();
-					block.sliceOperations(i*_brlen, Math.min((i+1)*_brlen, rlen)-1, 
-							           j*_bclen, Math.min((j+1)*_bclen, clen)-1, tmp);
-					_partBlocks[ix] = tmp;
-				}
-		}
-		catch(Exception ex) {
-			throw new RuntimeException("Failed partitioning of broadcast variable input.", ex);
-		}
-		
-		_offset = 0;
-	}
-
-	@SuppressWarnings("unchecked")
-	public PartitionedBlock(int rlen, int clen, int brlen, int bclen, T block) 
-	{
-		//partitioning input broadcast
-		_rlen = rlen;
-		_clen = clen;
-		_brlen = brlen;
-		_bclen = bclen;
-		
-		int nrblks = getNumRowBlocks();
-		int ncblks = getNumColumnBlocks();
-		_partBlocks = (T[])Array.newInstance((block.getClass()), nrblks * ncblks);
-
 	}
 	
 	/**
@@ -151,6 +166,7 @@ public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 	 * @return
 	 * @throws DMLRuntimeException 
 	 */
+	@SuppressWarnings("unchecked")
 	public T getBlock(int rowIndex, int colIndex) 
 		throws DMLRuntimeException 
 	{
@@ -165,7 +181,7 @@ public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 		int rix = rowIndex - 1;
 		int cix = colIndex - 1;
 		int ix = rix*ncblks+cix - _offset;
-		return _partBlocks[ix];
+		return (T)_partBlocks[ix];
 	}
 	
 	/**
@@ -189,43 +205,19 @@ public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 		int rix = rowIndex - 1;
 		int cix = colIndex - 1;
 		int ix = rix*ncblks+cix - _offset;
-		_partBlocks[ ix ] = block;
-		
-	}
-	
-	/**
-	 * 
-	 * @param offset
-	 * @param numBlks
-	 * @return
-	 */
-	@SuppressWarnings("unchecked")
-	public PartitionedBlock<T> createPartition( int offset, int numBlks, T block )
-	{
-		PartitionedBlock<T> ret = new PartitionedBlock<T>();
-		ret._rlen = _rlen;
-		ret._clen = _clen;
-		ret._brlen = _brlen;
-		ret._bclen = _bclen;
-
-		_partBlocks = (T[])Array.newInstance(block.getClass(), numBlks);
-		ret._offset = offset;
-		System.arraycopy(_partBlocks, offset, ret._partBlocks, 0, numBlks);
-		
-		return ret;
+		_partBlocks[ ix ] = block;	
 	}
 
 	/**
 	 * 
 	 * @return
 	 */	
-	public long getInMemorySize()
-	{
+	public long getInMemorySize() {
 		long ret = 24; //header
 		ret += 32;    //block array
 		
 		if( _partBlocks != null )
-			for( T block : _partBlocks )
+			for( CacheBlock block : _partBlocks )
 				ret += block.getInMemorySize();
 		
 		return ret;
@@ -236,12 +228,11 @@ public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 	 * @return
 	 */
 	
-	public long getExactSerializedSize()
-	{
+	public long getExactSerializedSize() {
 		long ret = 24; //header
 		
 		if( _partBlocks != null )
-			for( T block :  _partBlocks )
+			for( CacheBlock block : _partBlocks )
 				ret += block.getExactSerializedSize();
 		
 		return ret;
@@ -361,8 +352,9 @@ public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 		dos.writeInt(_bclen);
 		dos.writeInt(_offset);
 		dos.writeInt(_partBlocks.length);
+		dos.writeByte(CacheBlockFactory.getCode(_partBlocks[0]));
 		
-		for( T block : _partBlocks )
+		for( CacheBlock block : _partBlocks )
 			block.write(dos);
 	}
 
@@ -371,29 +363,21 @@ public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 	 * @param din
 	 * @throws IOException 
 	 */
-	@SuppressWarnings("unchecked")
 	private void readHeaderAndPayload(DataInput dis) 
 		throws IOException
 	{
-		_rlen = dis.readInt();
-		_clen = dis.readInt();
+		_rlen = dis.readLong();
+		_clen = dis.readLong();
 		_brlen = dis.readInt();
 		_bclen = dis.readInt();
-		_offset = dis.readInt();
-		
+		_offset = dis.readInt();		
 		int len = dis.readInt();
+		int code = dis.readByte();
 		
-		try
-		{
-			_partBlocks = (T[])Array.newInstance(getClass(), len);
-			for( int i=0; i<len; i++ ) {
-				_partBlocks[i].readFields(dis);
-			}
+		_partBlocks = new CacheBlock[len];
+		for( int i=0; i<len; i++ ) {
+			_partBlocks[i] = CacheBlockFactory.newInstance(code);
+			_partBlocks[i].readFields(dis);
 		}
-		catch(Exception ex) {
-			throw new RuntimeException("Failed partitioning of broadcast variable input.", ex);
-		}
-		
 	}
-	
 }

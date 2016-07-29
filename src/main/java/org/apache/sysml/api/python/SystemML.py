@@ -210,7 +210,7 @@ class MLOutput(object):
 
     def getBinaryBlockedRDD(self, varName):
         raise Exception('Not supported in Python MLContext')
-		#try:
+        #try:
         #    rdd = RDD(self.jmlOut.getBinaryBlockedRDD(varName), self.sc)
         #    return rdd
         #except Py4JJavaError:
@@ -218,7 +218,7 @@ class MLOutput(object):
 
     def getMatrixCharacteristics(self, varName):
         raise Exception('Not supported in Python MLContext')
-		#try:
+        #try:
         #    chars = self.jmlOut.getMatrixCharacteristics(varName)
         #    return chars
         #except Py4JJavaError:
@@ -234,14 +234,14 @@ class MLOutput(object):
 
     def getMLMatrix(self, sqlContext, varName):
         raise Exception('Not supported in Python MLContext')
-		#try:
+        #try:
         #    mlm = self.jmlOut.getMLMatrix(sqlContext._scala_SQLContext, varName)
         #    return mlm
         #except Py4JJavaError:
         #    traceback.print_exc()
 
     def getStringRDD(self, varName, format):
-		raise Exception('Not supported in Python MLContext')
+        raise Exception('Not supported in Python MLContext')
         #try:
         #    rdd = RDD(self.jmlOut.getStringRDD(varName, format), self.sc)
         #    return rdd

@@ -110,7 +110,7 @@ class MLContext(object):
         try:
             # Register inputs as needed
             if nargs is not None:
-                for key, value in nargs.items():
+                for key, value in list(nargs.items()):
                     if isinstance(value, DataFrame):
                         self.registerInput(key, value)
                         del nargs[key]

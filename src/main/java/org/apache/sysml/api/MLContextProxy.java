@@ -61,8 +61,10 @@ public class MLContextProxy
 	 */
 	public static ArrayList<Instruction> performCleanupAfterRecompilation(ArrayList<Instruction> tmp) 
 	{
-		if(MLContext.getActiveMLContext() != null) {
-			return MLContext.getActiveMLContext().performCleanupAfterRecompilation(tmp);
+		if(org.apache.sysml.api.MLContext.getActiveMLContext() != null) {
+			return org.apache.sysml.api.MLContext.getActiveMLContext().performCleanupAfterRecompilation(tmp);
+		} else if (org.apache.sysml.api.mlcontext.MLContext.getActiveMLContext() != null) {
+			return org.apache.sysml.api.mlcontext.MLContext.getActiveMLContext().getInternalProxy().performCleanupAfterRecompilation(tmp);
 		}
 		return tmp;
 	}
@@ -76,28 +78,55 @@ public class MLContextProxy
 	public static void setAppropriateVarsForRead(Expression source, String targetname) 
 		throws LanguageException 
 	{
-		MLContext mlContext = MLContext.getActiveMLContext();
-		if(mlContext != null) {
-			mlContext.setAppropriateVarsForRead(source, targetname);
+		if(org.apache.sysml.api.MLContext.getActiveMLContext() != null) {
+			org.apache.sysml.api.MLContext.getActiveMLContext().setAppropriateVarsForRead(source, targetname);
+		} else if (org.apache.sysml.api.mlcontext.MLContext.getActiveMLContext() != null) {
+			org.apache.sysml.api.mlcontext.MLContext.getActiveMLContext().getInternalProxy().setAppropriateVarsForRead(source, targetname);
 		}
 	}
 	
-	public static MLContext getActiveMLContext() {
-		return MLContext.getActiveMLContext();
+	public static Object getActiveMLContext() {
+		if (org.apache.sysml.api.MLContext.getActiveMLContext() != null) {
+			return org.apache.sysml.api.MLContext.getActiveMLContext();
+		} else if (org.apache.sysml.api.mlcontext.MLContext.getActiveMLContext() != null) {
+			return org.apache.sysml.api.mlcontext.MLContext.getActiveMLContext();
+		} else {
+			return null;
+		}
+		
 	}
 	
 	public static void setInstructionForMonitoring(Instruction inst) {
 		Location loc = inst.getLocation();
-		MLContext mlContext = MLContext.getActiveMLContext();
-		if(loc != null && mlContext != null && mlContext.getMonitoringUtil() != null) {
-			mlContext.getMonitoringUtil().setInstructionLocation(loc, inst);
+		if (loc == null) {
+			return;
+		}
+		
+		if (org.apache.sysml.api.MLContext.getActiveMLContext() != null) {
+			org.apache.sysml.api.MLContext mlContext = org.apache.sysml.api.MLContext.getActiveMLContext();
+			if(mlContext.getMonitoringUtil() != null) {
+				mlContext.getMonitoringUtil().setInstructionLocation(loc, inst);
+			}
+		} else if (org.apache.sysml.api.mlcontext.MLContext.getActiveMLContext() != null) {
+			org.apache.sysml.api.mlcontext.MLContext mlContext = org.apache.sysml.api.mlcontext.MLContext.getActiveMLContext();
+			if(mlContext.getSparkMonitoringUtil() != null) {
+				mlContext.getSparkMonitoringUtil().setInstructionLocation(loc, inst);
+			}
 		}
 	}
 	
 	public static void addRDDForInstructionForMonitoring(SPInstruction inst, Integer rddID) {
-		MLContext mlContext = MLContext.getActiveMLContext();
-		if(mlContext != null && mlContext.getMonitoringUtil() != null) {
-			mlContext.getMonitoringUtil().addRDDForInstruction(inst, rddID);
+		
+		if (org.apache.sysml.api.MLContext.getActiveMLContext() != null) {
+			org.apache.sysml.api.MLContext mlContext = org.apache.sysml.api.MLContext.getActiveMLContext();
+			if(mlContext.getMonitoringUtil() != null) {
+				mlContext.getMonitoringUtil().addRDDForInstruction(inst, rddID);
+			}
+		} else if (org.apache.sysml.api.mlcontext.MLContext.getActiveMLContext() != null) {
+			org.apache.sysml.api.mlcontext.MLContext mlContext = org.apache.sysml.api.mlcontext.MLContext.getActiveMLContext();
+			if(mlContext.getSparkMonitoringUtil() != null) {
+				mlContext.getSparkMonitoringUtil().addRDDForInstruction(inst, rddID);
+			}
 		}
 	}
 	

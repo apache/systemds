@@ -394,6 +394,7 @@
 						<include>**/integration/functions/gdfo/*Suite.java</include>
 						<include>**/integration/functions/sparse/*Suite.java</include>
 						<include>**/integration/functions/**/*Test*.java</include>
+						<include>**/integration/mlcontext/*Suite.java</include>
 						<include>**/integration/scalability/**/*Test.java</include>
 					</includes>
 

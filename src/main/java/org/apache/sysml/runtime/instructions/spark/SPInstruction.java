@@ -19,7 +19,6 @@
 
 package org.apache.sysml.runtime.instructions.spark;
 
-import org.apache.sysml.api.MLContext;
 import org.apache.sysml.api.MLContextProxy;
 import org.apache.sysml.lops.runtime.RunMRJobs;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -99,13 +98,23 @@ public abstract class SPInstruction extends Instruction
 
 		//spark-explain-specific handling of current instructions 
 		//This only relevant for ComputationSPInstruction as in postprocess we call setDebugString which is valid only for ComputationSPInstruction
-		MLContext mlCtx = MLContextProxy.getActiveMLContext();
-		if(    tmp instanceof ComputationSPInstruction 
-			&& mlCtx != null && mlCtx.getMonitoringUtil() != null 
-			&& ec instanceof SparkExecutionContext ) 
-		{
-			mlCtx.getMonitoringUtil().addCurrentInstruction((SPInstruction)tmp);
-			MLContextProxy.setInstructionForMonitoring(tmp);
+		Object mlCtxObj = MLContextProxy.getActiveMLContext();
+		if (mlCtxObj instanceof org.apache.sysml.api.MLContext) {
+			org.apache.sysml.api.MLContext mlCtx = (org.apache.sysml.api.MLContext) mlCtxObj;
+			if (tmp instanceof ComputationSPInstruction 
+				&& mlCtx != null && mlCtx.getMonitoringUtil() != null 
+				&& ec instanceof SparkExecutionContext ) {
+				mlCtx.getMonitoringUtil().addCurrentInstruction((SPInstruction)tmp);
+				MLContextProxy.setInstructionForMonitoring(tmp);
+			}
+		} else if (mlCtxObj instanceof org.apache.sysml.api.mlcontext.MLContext) {
+			org.apache.sysml.api.mlcontext.MLContext mlCtx = (org.apache.sysml.api.mlcontext.MLContext) mlCtxObj;
+			if (tmp instanceof ComputationSPInstruction 
+				&& mlCtx != null && mlCtx.getSparkMonitoringUtil() != null 
+				&& ec instanceof SparkExecutionContext ) {
+				mlCtx.getSparkMonitoringUtil().addCurrentInstruction((SPInstruction)tmp);
+				MLContextProxy.setInstructionForMonitoring(tmp);
+			}
 		}
 		
 		return tmp;
@@ -120,14 +129,25 @@ public abstract class SPInstruction extends Instruction
 			throws DMLRuntimeException 
 	{
 		//spark-explain-specific handling of current instructions
-		MLContext mlCtx = MLContextProxy.getActiveMLContext();
-		if(    this instanceof ComputationSPInstruction 
-			&& mlCtx != null && mlCtx.getMonitoringUtil() != null
-			&& ec instanceof SparkExecutionContext ) 
-		{
-			SparkExecutionContext sec = (SparkExecutionContext) ec;
-			sec.setDebugString(this, ((ComputationSPInstruction) this).getOutputVariableName());
-			mlCtx.getMonitoringUtil().removeCurrentInstruction(this);
+		Object mlCtxObj = MLContextProxy.getActiveMLContext();
+		if (mlCtxObj instanceof org.apache.sysml.api.MLContext) {
+			org.apache.sysml.api.MLContext mlCtx = (org.apache.sysml.api.MLContext) mlCtxObj;
+			if (this instanceof ComputationSPInstruction 
+					&& mlCtx != null && mlCtx.getMonitoringUtil() != null
+					&& ec instanceof SparkExecutionContext ) {
+				SparkExecutionContext sec = (SparkExecutionContext) ec;
+				sec.setDebugString(this, ((ComputationSPInstruction) this).getOutputVariableName());
+				mlCtx.getMonitoringUtil().removeCurrentInstruction(this);
+			}
+		} else if (mlCtxObj instanceof org.apache.sysml.api.mlcontext.MLContext) {
+			org.apache.sysml.api.mlcontext.MLContext mlCtx = (org.apache.sysml.api.mlcontext.MLContext) mlCtxObj;
+			if (this instanceof ComputationSPInstruction 
+					&& mlCtx != null && mlCtx.getSparkMonitoringUtil() != null
+					&& ec instanceof SparkExecutionContext ) {
+				SparkExecutionContext sec = (SparkExecutionContext) ec;
+				sec.setDebugString(this, ((ComputationSPInstruction) this).getOutputVariableName());
+				mlCtx.getSparkMonitoringUtil().removeCurrentInstruction(this);
+			}
 		}
 		
 		//maintain statistics

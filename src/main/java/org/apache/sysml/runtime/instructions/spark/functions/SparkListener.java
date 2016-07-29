@@ -33,15 +33,13 @@ import org.apache.spark.storage.RDDInfo;
 import org.apache.spark.ui.jobs.StagesTab;
 import org.apache.spark.ui.jobs.UIData.TaskUIData;
 import org.apache.spark.ui.scope.RDDOperationGraphListener;
+import org.apache.sysml.api.MLContextProxy;
+import org.apache.sysml.runtime.instructions.spark.SPInstruction;
 
 import scala.Option;
 import scala.collection.Iterator;
 import scala.collection.Seq;
 import scala.xml.Node;
-
-import org.apache.sysml.api.MLContext;
-import org.apache.sysml.api.MLContextProxy;
-import org.apache.sysml.runtime.instructions.spark.SPInstruction;
 
 // Instead of extending org.apache.spark.JavaSparkListener
 /**
@@ -94,9 +92,19 @@ public class SparkListener extends RDDOperationGraphListener {
 		jobDAGs.put(jobID, jobNodes);
 		synchronized(currentInstructions) {
 			for(SPInstruction inst : currentInstructions) {
-				MLContext mlContext = MLContextProxy.getActiveMLContext();
-				if(mlContext != null && mlContext.getMonitoringUtil() != null) {
-					mlContext.getMonitoringUtil().setJobId(inst, jobID);
+				Object mlContextObj = MLContextProxy.getActiveMLContext();
+				if (mlContextObj != null) {
+					if (mlContextObj instanceof org.apache.sysml.api.MLContext) {
+						org.apache.sysml.api.MLContext mlContext = (org.apache.sysml.api.MLContext) mlContextObj;
+						if (mlContext.getMonitoringUtil() != null) {
+							mlContext.getMonitoringUtil().setJobId(inst, jobID);
+						}
+					} else if (mlContextObj instanceof org.apache.sysml.api.mlcontext.MLContext) {
+						org.apache.sysml.api.mlcontext.MLContext mlContext = (org.apache.sysml.api.mlcontext.MLContext) mlContextObj;
+						if (mlContext.getSparkMonitoringUtil() != null) {
+							mlContext.getSparkMonitoringUtil().setJobId(inst, jobID);
+						}
+					}
 				}
 			}
 		}
@@ -140,9 +148,19 @@ public class SparkListener extends RDDOperationGraphListener {
 		
 		synchronized(currentInstructions) {
 			for(SPInstruction inst : currentInstructions) {
-				MLContext mlContext = MLContextProxy.getActiveMLContext();
-				if(mlContext != null && mlContext.getMonitoringUtil() != null) {
-					mlContext.getMonitoringUtil().setStageId(inst, stageSubmitted.stageInfo().stageId());
+				Object mlContextObj = MLContextProxy.getActiveMLContext();
+				if (mlContextObj != null) {
+					if (mlContextObj instanceof org.apache.sysml.api.MLContext) {
+						org.apache.sysml.api.MLContext mlContext = (org.apache.sysml.api.MLContext) mlContextObj;
+						if (mlContext.getMonitoringUtil() != null) {
+							mlContext.getMonitoringUtil().setStageId(inst, stageSubmitted.stageInfo().stageId());
+						}
+					} else if (mlContextObj instanceof org.apache.sysml.api.mlcontext.MLContext) {
+						org.apache.sysml.api.mlcontext.MLContext mlContext = (org.apache.sysml.api.mlcontext.MLContext) mlContextObj;
+						if (mlContext.getSparkMonitoringUtil() != null) {
+							mlContext.getSparkMonitoringUtil().setStageId(inst, stageSubmitted.stageInfo().stageId());
+						}
+					}
 				}
 			}
 		}

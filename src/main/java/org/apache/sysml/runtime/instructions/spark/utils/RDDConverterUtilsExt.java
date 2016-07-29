@@ -410,7 +410,7 @@ public class RDDConverterUtilsExt
 
 	}
 
-	private static class DataFrameAnalysisFunction implements Function<Row,Row>  {
+	public static class DataFrameAnalysisFunction implements Function<Row,Row>  {
 		private static final long serialVersionUID = 5705371332119770215L;
 		private RowAnalysisFunctionHelper helper = null;
 		boolean isVectorBasedRDD;
@@ -445,7 +445,7 @@ public class RDDConverterUtilsExt
 		
 	}
 	
-	private static class DataFrameToBinaryBlockFunction implements PairFlatMapFunction<Iterator<Tuple2<Row,Long>>,MatrixIndexes,MatrixBlock> {
+	public static class DataFrameToBinaryBlockFunction implements PairFlatMapFunction<Iterator<Tuple2<Row,Long>>,MatrixIndexes,MatrixBlock> {
 		private static final long serialVersionUID = 653447740362447236L;
 		private RowToBinaryBlockFunctionHelper helper = null; 
 		boolean isVectorBasedDF;

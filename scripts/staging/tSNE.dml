@@ -1,0 +1,131 @@
+X = read($X)
+
+distance_matrix = function(matrix[double] X)
+  return (matrix[double] out) {
+    n = nrow(X)
+    s = rowSums(X * X)
+    out = - 2*X %*% t(X) + s + t(s)
+  }
+
+x2p = function(matrix[double] X, double tol, double perplexity)
+  return(matrix[double] P) {
+    INF = 1.0e20
+    n = nrow(X)
+    D = distance_matrix(X)
+
+    P = matrix(0, rows=n, cols=n)
+    beta = matrix(1, rows=n, cols=1)
+    logU = log(perplexity)
+
+    for (i in 1:n) {
+      betamin = 0 # beta cannot be negative
+      betamax = INF
+      Hdiff = INF
+      itr = 0
+
+      while (abs(Hdiff) > tol & itr < 50) {
+        P[i,] = exp(-D[i,] * beta[i,1])
+        P[i,i] = 0.
+        sum_Pi = sum(P[i,])
+
+        H = log(sum_Pi) + beta[i,1] * sum(D[i,] * P[i,]) / sum_Pi
+        P[i,] = P[i,]/sum_Pi
+
+        Hdiff = as.scalar(H - logU)
+        # print(i + " " + itr + " " +  as.scalar(D[i,1]) + " " + as.scalar(beta[i,1]) +
+        #   " " + as.scalar(P[i,1]) + " " + sum_Pi + " " + as.scalar(H[1,1]))
+        if (Hdiff > 0.) {
+          betamin = as.scalar(beta[i,1])
+          if (betamax == INF) {
+            beta[i,1] = beta[i,1] * 2.
+          } else {
+             beta[i,1] = (beta[i,1] + betamax) / 2.
+          }
+        } else {
+          betamax = as.scalar(beta[i,1])
+          if (betamin == 0.) {
+            beta[i,1] = beta[i,1] / 2.
+          } else {
+            beta[i,1] = (beta[i,1] + betamin) / 2.
+          }
+        }
+        itr = itr + 1
+      }
+    }
+    P = P + t(P)
+    P = P / sum(P)
+  }
+
+tsne = function(matrix[double] X, int reduced_dims, int initial_dims, int perplexity)
+  return(matrix[double] Y, matrix[double] C) {
+    d = reduced_dims
+    n = nrow(X)
+
+    max_iter = 2000
+    eta = 500
+
+    P = x2p(X, 1.0e-5, 20.0)
+    P = P*4
+    Y = rand(rows=n, cols=d, pdf="normal")
+    C = matrix(0, rows=max_iter, cols=1)
+
+    for (itr in 1:max_iter) {
+      D = distance_matrix(Y)
+      Z = 1/(D + 1)
+      parfor (j in 1:n) {
+        Z[j,j] = 0
+      }
+      Q = Z/sum(Z)
+      W = (P - Q)*Z
+      sumW = rowSums(W)
+      grad_C = Y * sumW - W %*% Y
+      Y = Y - eta*grad_C
+      Y = Y - colMeans(Y)
+
+      C[itr,] = sum(P * log(pmax(P, 1e-12) / pmax(Q, 1e-12)))
+
+      if (itr == 100) {
+        P = P/4
+      }
+    }
+  }
+
+[Y, C] = tsne(X, 2, 50, 20.0)
+
+# D = distance_matrix(X)
+# P = x2p(X, 1.0e-5, 20.0)
+# P = P*4
+#
+# n = 3
+# d = 2
+# Y = matrix("-0.6504417 0.85034195 1.0750099 -1.79416571 0.9378183 -0.75541276", rows=n, cols=d)
+# #Y = rand(rows=n, cols=d, pdf="normal")
+# DY = distance_matrix(Y)
+#
+# Z = 1/(DY + 1)
+# parfor (j in 1:n)
+#   Z[j,j] = 0
+#
+# Q = Z/sum(Z)
+#
+# W = (P - Q)*Z
+# sumW = rowSums(W)
+#
+# grad_C = Y * sumW - W %*% Y
+#
+# Y1 = Y - 500*grad_C
+# Y1 = Y1 - colMeans(Y1)
+#
+# C = P*log(pmax(P, 1e-12)/pmax(Q, 1e-12))
+
+# write(D, "")
+# write(P, "")
+# write(DY, "")
+# write(Z, "")
+# write(Q, "")
+# write(W, "")
+# write(sumW, "")
+# write(grad_C, "")
+# write(Y1, "")
+write(Y, "")
+write(C, "")

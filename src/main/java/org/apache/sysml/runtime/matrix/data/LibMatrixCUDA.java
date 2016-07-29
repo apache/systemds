@@ -52,6 +52,14 @@ import static jcuda.jcusparse.cusparseOperation.CUSPARSE_OPERATION_TRANSPOSE;
 import static jcuda.runtime.JCuda.cudaFree;
 import static jcuda.runtime.JCuda.cudaMalloc;
 
+import static jcuda.jcusparse.cusparseOperation.CUSPARSE_OPERATION_NON_TRANSPOSE;
+import static jcuda.jcusparse.cusparseOperation.CUSPARSE_OPERATION_TRANSPOSE;
+import static jcuda.runtime.JCuda.cudaFree;
+import static jcuda.runtime.JCuda.cudaMemcpy;
+import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost;
+import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice;
+
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -59,6 +67,7 @@ import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.gpu.context.JCudaObject;
 import org.apache.sysml.runtime.instructions.gpu.context.JCudaObject.CSRPointer;
+import org.apache.sysml.utils.Statistics;
 
 import jcuda.Pointer;
 import jcuda.Sizeof;
@@ -70,7 +79,6 @@ import jcuda.jcudnn.cudnnFilterDescriptor;
 import jcuda.jcudnn.cudnnHandle;
 import jcuda.jcudnn.cudnnPoolingDescriptor;
 import jcuda.jcudnn.cudnnTensorDescriptor;
-import jcuda.jcusparse.cusparseDirection;
 import jcuda.jcusparse.cusparseHandle;
 import java.util.Arrays;
 
@@ -325,6 +333,20 @@ public class LibMatrixCUDA {
 	    JCublas.cublasDsyrk('L',transa, m, k, alpha, A, lda, beta, C, ldc);
 	}
 	
+	/**
+	 * Matrix multiply on GPU
+	 * Examines sparsity and shapes and routes call to appropriate method
+	 * from cuBLAS or cuSparse
+	 * C = op(A) x op(B)
+	 * @param ec					Current {@link ExecutionContext} instance
+	 * @param left1					Matrix A
+	 * @param right1				Matrix B
+	 * @param outputName			Name of the output matrix C (in code generated after LOP layer)
+	 * @param isLeftTransposed1		op for A, transposed or not
+	 * @param isRightTransposed1	op for B, tranposed or not
+	 * @return	output of matrix multiply
+	 * @throws DMLRuntimeException
+	 */
 	public static MatrixObject matmult(ExecutionContext ec, MatrixObject left1, MatrixObject right1, String outputName,
 			boolean isLeftTransposed1, boolean isRightTransposed1) throws DMLRuntimeException {
 		
@@ -334,37 +356,42 @@ public class LibMatrixCUDA {
 		boolean bothDense = !left1.getGPUObject().isInSparseFormat() && !right1.getGPUObject().isInSparseFormat();
 		boolean bothSparse = left1.getGPUObject().isInSparseFormat() && right1.getGPUObject().isInSparseFormat();
 		
-		MatrixObject output = null;
-		
-		// For both dense, do cuBLAS
-		if (bothDense) {
-			output = denseDenseMatmult(ec, left1, right1, outputName, isLeftTransposed1, isRightTransposed1);
+		MatrixObject output = ec.getMatrixObject(outputName);
+
+		if (bothDense) {		// Dense C = Dense A * Dense B
+			// For both dense, do cuBLAS
+			ec.getDenseMatrixOutputForGPUInstruction(outputName);	// Allocated the dense output matrix
+			denseDenseMatmult(output, left1, right1, isLeftTransposed1, isRightTransposed1);
 		}
 		else if (bothSparse){	// Sparse C = Sparse A * Sparse B
-			output = sparseSparseMatmult(ec, left1, right1, outputName, isLeftTransposed1, isRightTransposed1);
+			ec.allocateGPUMatrixObject(outputName);
+			bothSparseMatmult(output, left1, right1, isLeftTransposed1, isRightTransposed1);
 		}
 		else {	// Either of A or B is sparse, Sparse C = Sparse/Dense A * Dense/Sparse B
-			// Convert the dense to sparse and use the cusparseDcsrgemm routine
-			// TODO
-			throw new DMLRuntimeException("Sparse %*% Dense not implemented");
+				// Convert the dense to sparse and use the cusparseDcsrgemm routine
+			ec.allocateGPUMatrixObject(outputName);
+			eitherSparseMatmult(output, left1, right1, isLeftTransposed1, isRightTransposed1);
 		}
 		
 		return output;
 	}
-
-	protected static MatrixObject sparseSparseMatmult(ExecutionContext ec, MatrixObject left1, MatrixObject right1,
-			String outputName, boolean isLeftTransposed1, boolean isRightTransposed1) throws DMLRuntimeException {
-		
-		MatrixObject output;
-		MatrixObject right = right1; 
-		MatrixObject left = left1;
-		boolean isLeftTransposed = isLeftTransposed1; 
-		boolean isRightTransposed = isRightTransposed1; 
+	
+	/**
+	 * One of the matrices is sparse, the other dense
+	 * C = op(A) x op(B)
+	 * @param output				allocated output object for C on host to which GPU output will be attached
+	 * @param left					Matrix A on host
+	 * @param right					Matrix B on host
+	 * @param isLeftTransposed		op for A, tranposed or not
+	 * @param isRightTransposed		op for B, transposed or not
+	 * @throws DMLRuntimeException
+	 */
+	protected static void eitherSparseMatmult(MatrixObject output, MatrixObject left, MatrixObject right,
+			boolean isLeftTransposed, boolean isRightTransposed) throws DMLRuntimeException {
 		
 		int transA = isLeftTransposed ? CUSPARSE_OPERATION_TRANSPOSE : CUSPARSE_OPERATION_NON_TRANSPOSE;
 		int transB = isRightTransposed ? CUSPARSE_OPERATION_TRANSPOSE : CUSPARSE_OPERATION_NON_TRANSPOSE;
 		
-		// Note: the dimensions are swapped
 		int m = (int) (isLeftTransposed ? left.getNumColumns() : left.getNumRows()) ;
 		int n = (int) (isRightTransposed ? right.getNumRows() : right.getNumColumns());
 		int k = (int) (isLeftTransposed ? left.getNumRows() :  left.getNumColumns());
@@ -375,79 +402,292 @@ public class LibMatrixCUDA {
 		if(m == -1 || n == -1 || k == -1)
 			throw new DMLRuntimeException("Incorrect dimensions");
 		
-		LOG.info(" Sparse-Sparse Matrix Multiply ");
-	
-		CSRPointer A = ((JCudaObject)left.getGPUObject()).jcudaSparseMatrixPtr;
-		CSRPointer B = ((JCudaObject)right.getGPUObject()).jcudaSparseMatrixPtr;
-		// Do bookkeeping for Matrix C since it was allocated outside of JCudaObject#acquireDeviceModifyDense
-		output = ec.getMatrixObject(outputName);
 		
-		if (!isRightTransposed && right.getNumColumns() == 1){ 	// Matrix-Vector multiplication
-			Pointer B_dense = B.copyToTemporaryDenseColumnMajor(cusparseHandle, (int)right.getNumRows(), 1);
-			long size = right.getNumRows() * Sizeof.DOUBLE;
-			Pointer C_dense = JCudaObject.allocateTemporarySpaceOnDevice(size);
-			double[] alpha = { 1 };
-			double[] beta = { 0 };
-			// Do the matrix-vector multiply
-			cusparseDcsrmv(cusparseHandle, transA, m, n, (int)A.nnz, Pointer.to(alpha), A.descr, A.val, A.rowPtr, A.colInd, B_dense, Pointer.to(beta), C_dense);
-			int[] nnzPerRow = new int[m];
-			Arrays.fill(nnzPerRow, -1);
-			int[] nnzTotalDevHostPtr = { -1 };
-			// Output is in dense vector format, convert it to CSR
-			cusparseDnnz(cusparseHandle, cusparseDirection.CUSPARSE_DIRECTION_ROW, m, n, A.descr, C_dense, m, Pointer.to(nnzPerRow), Pointer.to(nnzTotalDevHostPtr));
-			
-			if (nnzPerRow[0] == -1 || nnzTotalDevHostPtr[0] == -1){
-				throw new DMLRuntimeException("cusparseDnnz did not calculate the correct number of nnz from the sparse-matrix vector mulitply on the GPU");
-			}
-			
-			long nnzC = 0;
-			for (int i=0; i<nnzPerRow.length; i++){
-				nnzC += nnzPerRow[i];
-			}
-			CSRPointer C = CSRPointer.allocateEmpty(nnzC, m);
-			((JCudaObject)output.getGPUObject()).setSparseMatrixCudaPointer(C);
-			long sizeOfC = CSRPointer.estimateSize(C.nnz, output.getNumRows());
-			output.getGPUObject().setDeviceModify(sizeOfC);
-			
-			cusparseDdense2csr(cusparseHandle, m, n, A.descr, C_dense, m, Pointer.to(nnzPerRow), C.val, C.rowPtr, C.colInd);
-			
-			cudaFree(B_dense);
-			cudaFree(C_dense);
-						
-		} else {							// Matrix-Matrix multiplication
-				
-			
-			CSRPointer C = CSRPointer.allocateForMatrixMultiply(cusparseHandle, A, transA, B, transB, m, n, k);
-			((JCudaObject)output.getGPUObject()).setSparseMatrixCudaPointer(C);
-			long sizeOfC = CSRPointer.estimateSize(C.nnz, output.getNumRows());
-			output.getGPUObject().setDeviceModify(sizeOfC);
-			
-			cusparseDcsrgemm(cusparseHandle, transA, transB, m, n, k,
-					A.descr, (int)A.nnz, A.val, A.rowPtr, A.colInd,
-					B.descr, (int)B.nnz, B.val, B.rowPtr, B.colInd,
-					C.descr, C.val, C.rowPtr, C.colInd);
+		if (left.getGPUObject().isInSparseFormat()) {	
+			// Left sparse, right dense
+			sparseDenseMatmult(output, left, right, isLeftTransposed, isRightTransposed, transA, transB, m, n, k);
+		} else {
+			// Left dense, right sparse
+			denseSparseMatmult(output, right, left, isLeftTransposed, isRightTransposed, transA, transB, m, n, k);
 		}
-		
-		return output;
+	}
+	
+	/**
+	 * C = op(A) * op(B) where A is dense and B is sparse
+	 * If B is ultrasparse, A is converted to a sparse matrix and {@link #sparseSparseMatmult(MatrixObject, int, int, int, int, int, CSRPointer, CSRPointer)} is invoked
+	 * otherwise B is converted to a dense matrix and {@link #denseDenseMatmult(MatrixObject, int, int, int, int, boolean, boolean, Pointer, Pointer)} is invoked.
+	 * @param output
+	 * @param right
+	 * @param left
+	 * @param isLeftTransposed
+	 * @param isRightTransposed
+	 * @param transA
+	 * @param transB
+	 * @param m
+	 * @param n
+	 * @param k
+	 * @throws DMLRuntimeException
+	 */
+	protected static void denseSparseMatmult(MatrixObject output, MatrixObject right, MatrixObject left,
+			boolean isLeftTransposed, boolean isRightTransposed, int transA, int transB, int m, int n, int k)
+			throws DMLRuntimeException {
+		// right sparse, left dense
+		CSRPointer B = ((JCudaObject)right.getGPUObject()).jcudaSparseMatrixPtr;
+		Pointer A_dense = ((JCudaObject)left.getGPUObject()).jcudaDenseMatrixPtr;
+		if (B.isUltraSparse(k, n)){
+			// Convert left to CSR and do cuSparse matmul
+			long t0 = System.nanoTime();
+			CSRPointer A = JCudaObject.denseToSparse(cusparseHandle, (int)left.getNumRows(), (int)right.getNumColumns(), A_dense);
+			Statistics.cudaConversionTime.addAndGet(System.nanoTime() - t0);
+			Statistics.cudaConversionCount.addAndGet(1);
+			sparseSparseMatmult(output, transA, transB, m, n, k, A, B);
+			A.deallocate();
+		} else {
+			// Convert right to dense and do a cuBlas matmul
+			Pointer B_dense = B.toDenseMatrix(cusparseHandle, (int)right.getNumRows(), (int)right.getNumColumns());
+			output.getGPUObject().acquireDeviceModifyDense();	// To allocate the dense matrix
+			denseDenseMatmult(output, 
+					(int) left.getNumRows(), (int) left.getNumColumns(),
+					(int) right.getNumRows(), (int) right.getNumColumns(), 
+					isLeftTransposed, isRightTransposed,
+					A_dense, B_dense);
+			cudaFree(B_dense);
+		}
 	}
 
-	protected static MatrixObject denseDenseMatmult(ExecutionContext ec, MatrixObject left1, MatrixObject right1,
-			String outputName, boolean isLeftTransposed1, boolean isRightTransposed1) throws DMLRuntimeException {
-		MatrixObject output;
+	/**
+	 * * C = op(A) * op(B) where A is sparse and B is dense
+	 * If A is ultrasparse, B is converted to a sparse matrix and {@link #sparseSparseMatmult(MatrixObject, int, int, int, int, int, CSRPointer, CSRPointer)} is invoked
+	 * otherwise A is converted to a dense matrix and {@link #denseDenseMatmult(MatrixObject, int, int, int, int, boolean, boolean, Pointer, Pointer)} is invoked.
+	 * @param output
+	 * @param left
+	 * @param right
+	 * @param isLeftTransposed
+	 * @param isRightTransposed
+	 * @param transA
+	 * @param transB
+	 * @param m
+	 * @param n
+	 * @param k
+	 * @throws DMLRuntimeException
+	 */
+	protected static void sparseDenseMatmult(MatrixObject output, MatrixObject left, MatrixObject right,
+			boolean isLeftTransposed, boolean isRightTransposed, int transA, int transB, int m, int n, int k)
+			throws DMLRuntimeException {
+		CSRPointer A = ((JCudaObject)left.getGPUObject()).jcudaSparseMatrixPtr;
+		Pointer B_dense = ((JCudaObject)right.getGPUObject()).jcudaDenseMatrixPtr;
+		
+		if (n == 1){	
+			// Sparse Matrix - Dense Vector multiply
+			sparseMatrixDenseVectorMult(output, A, B_dense, transA, (int)left.getNumRows(), (int)right.getNumColumns(), (int)left.getNumColumns());
+			
+		} else {
+			// Sparse Matrix Dense Matrix multiply
+			if (A.isUltraSparse(m, k)){	
+				// Convert right to CSR and do cuSparse matmul
+				long t0 = System.nanoTime();
+				CSRPointer B = JCudaObject.denseToSparse(cusparseHandle, (int)right.getNumRows(), (int)right.getNumColumns(), B_dense);
+				Statistics.cudaConversionTime.addAndGet(System.nanoTime() - t0);
+				Statistics.cudaConversionCount.addAndGet(1);
+				sparseSparseMatmult(output, transA, transB, m, n, k, A, B);
+				B.deallocate();
+			} else {					
+				// Convert left to dense and do a cuBlas matmul
+				Pointer A_dense = A.toDenseMatrix(cusparseHandle, (int)left.getNumRows(), (int)left.getNumColumns());
+				output.getGPUObject().acquireDeviceModifyDense();	// To allocate the dense matrix
+				denseDenseMatmult(output, 
+						(int) left.getNumRows(), (int) left.getNumColumns(),
+						(int) right.getNumRows(), (int) right.getNumColumns(), 
+						isLeftTransposed, isRightTransposed,
+						A_dense, B_dense);
+				cudaFree(A_dense);
+			}
+		}
+	}
+
+	/**
+	 * C = op(A) x B
+	 * A is a sparse matrix, B is a dense vector
+	 * @param output	allocated output on the host, to which the GPU output C will be attached
+	 * @param A			sparse matrix A on the GPU
+	 * @param B_dense	dense matrix/vector B on the GPU
+	 * @param transA	op for A, tranposed or not
+	 * @param m			number of rows in A (not op(A))
+	 * @param n			number of cols in B (not op(B))
+	 * @param k			number of cols in A or number of rows in B (not op(A) or op(B))
+	 * @throws DMLRuntimeException
+	 */
+	protected static void sparseMatrixDenseVectorMult(MatrixObject output, CSRPointer A, Pointer B_dense, int transA,
+			int m, int n, int k) throws DMLRuntimeException {
+		long size = k * Sizeof.DOUBLE;
+		Pointer C_dense = JCudaObject.allocate((int)size);
+		double[] alpha = { 1 };
+		double[] beta = { 0 };
+		cusparseDcsrmv(cusparseHandle, transA, m, k, (int)A.nnz, Pointer.to(alpha), A.descr, A.val, A.rowPtr, A.colInd, B_dense, Pointer.to(beta), C_dense);
+		
+		long t0 = System.nanoTime();
+		CSRPointer C = JCudaObject.denseToSparse(cusparseHandle, m, n, C_dense);
+		Statistics.cudaConversionTime.addAndGet(System.nanoTime() - t0);
+		Statistics.cudaConversionCount.addAndGet(1);
+		
+		((JCudaObject)output.getGPUObject()).setSparseMatrixCudaPointer(C);
+		long sizeOfC = CSRPointer.estimateSize(C.nnz, output.getNumRows());
+		output.getGPUObject().setDeviceModify(sizeOfC);
+		cudaFree(C_dense);
+	}
+
+	/**
+	 * Sparse C = Sparse op(A) * Sparse op(B)
+	 * Reroutes call to sparse matrix-vector mult if needed
+	 * @param output
+	 * @param left
+	 * @param right
+	 * @param isLeftTransposed
+	 * @param isRightTransposed
+	 * @throws DMLRuntimeException
+	 */
+	protected static void bothSparseMatmult(MatrixObject output, MatrixObject left, MatrixObject right,
+			boolean isLeftTransposed, boolean isRightTransposed) throws DMLRuntimeException {
+		
+		int transA = isLeftTransposed ? CUSPARSE_OPERATION_TRANSPOSE : CUSPARSE_OPERATION_NON_TRANSPOSE;
+		int transB = isRightTransposed ? CUSPARSE_OPERATION_TRANSPOSE : CUSPARSE_OPERATION_NON_TRANSPOSE;
+		
+		int m = (int) (isLeftTransposed ? left.getNumColumns() : left.getNumRows()) ;
+		int n = (int) (isRightTransposed ? right.getNumRows() : right.getNumColumns());
+		int k = (int) (isLeftTransposed ? left.getNumRows() :  left.getNumColumns());
+		int k1 = (int) (isRightTransposed ? right.getNumColumns() : right.getNumRows());
+		if(k != k1) 
+			throw new DMLRuntimeException("Dimension mismatch: " + k + " != " + k1);
+		
+		if(m == -1 || n == -1 || k == -1)
+			throw new DMLRuntimeException("Incorrect dimensions");
+			
+		CSRPointer A = ((JCudaObject)left.getGPUObject()).jcudaSparseMatrixPtr;
+		CSRPointer B = ((JCudaObject)right.getGPUObject()).jcudaSparseMatrixPtr;
+		
+		// TODO if (m == 1) {	// Vector-matrix multiplication
+		
+		if (!isRightTransposed && right.getNumColumns() == 1){ 	// Matrix-Vector multiplication
+			sparseMatrixVectorMult(output, transA, (int)left.getNumRows(), (int)left.getNumColumns(), (int)right.getNumRows(), A, B);
+		} else {												// Matrix-Matrix multiplication
+			sparseSparseMatmult(output, transA, transB, m, n, k, A, B);
+		}
+	}
+
+	/**
+	 * Does a sparse matrix-vector multiply.
+	 * C = op(A) x B, A is a sparse matrix, B is a sparse matrix with numCols = 1.
+	 * @param output	allocated output object C to which the GPU output matrix will be attached
+	 * @param transA	if A is to be transposed or not (the op in op(A))
+	 * @param m			number of rows in A (not op(A))
+	 * @param n			number of cols in A (not op(A))
+	 * @param k			number of rows in B, (cols in B is assumed to be 1)		
+	 * @param A			left sparse matrix on GPU
+	 * @param B			right sparse matrix on GPU
+	 * @throws DMLRuntimeException
+	 */
+	protected static void sparseMatrixVectorMult(MatrixObject output, int transA, int m, int n, int k,
+			CSRPointer A, CSRPointer B) throws DMLRuntimeException {
+		LOG.info(" GPU Sparse Matrix-Vector Multiply ");
+		Pointer B_dense = B.toDenseMatrix(cusparseHandle, k, 1);
+		sparseMatrixDenseVectorMult(output, A, B_dense, transA, m, n, k);
+	}
+
+	/**
+	 * Does a sparse-sparse Matrix multiply
+	 * C = op(A) x op(B), A, B are sparse matrices
+	 * @param output	allocated output object on host to which the GPU output matrix will be attached
+	 * @param transA	op for A - to be transposed or not
+	 * @param transB	op for B
+	 * @param m			number of rows in op(A)
+	 * @param n			number of cols in op(B)
+	 * @param k			number of cols in op(A) or rows in op(B)
+	 * @param A			left sparse matrix on GPU
+	 * @param B			right sparse matrix on GPU
+	 * @throws DMLRuntimeException
+	 */
+	protected static void sparseSparseMatmult(MatrixObject output, int transA, int transB, int m, int n, int k,
+			CSRPointer A, CSRPointer B) throws DMLRuntimeException {
+		LOG.info(" GPU Sparse-Sparse Matrix Multiply ");
+
+		CSRPointer C = CSRPointer.allocateForMatrixMultiply(cusparseHandle, A, transA, B, transB, m, n, k);
+		((JCudaObject)output.getGPUObject()).setSparseMatrixCudaPointer(C);
+		long sizeOfC = CSRPointer.estimateSize(C.nnz, output.getNumRows());
+		output.getGPUObject().setDeviceModify(sizeOfC);
+		
+		cusparseDcsrgemm(cusparseHandle, transA, transB, m, n, k,
+				A.descr, (int)A.nnz, A.val, A.rowPtr, A.colInd,
+				B.descr, (int)B.nnz, B.val, B.rowPtr, B.colInd,
+				C.descr, C.val, C.rowPtr, C.colInd);
+	}
+
+	/**
+	 * Dense dense matrix multiply
+	 * C = op(A) * op(B), A and B are dense matrices
+	 * @param output				output object C on host with GPU data allocated				
+	 * @param left1					left matrix A on host (in row-major order)
+	 * @param right1				right matrix B on host (in row-major order)
+	 * @param isLeftTransposed1 	op for A, transposed or not
+	 * @param isRightTransposed1	op for B, transposed or not
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	protected static void denseDenseMatmult(MatrixObject output, MatrixObject left1, MatrixObject right1,
+			boolean isLeftTransposed1, boolean isRightTransposed1) throws DMLRuntimeException {
 		// Since CuBLAS expects inputs in column-major format,
 		// reverse the order of matrix-multiplication and take care of dimension mismatch.
-		MatrixObject left = right1; 
-		MatrixObject right = left1;
+		
+		Pointer leftPtr = ((JCudaObject)left1.getGPUObject()).jcudaDenseMatrixPtr;
+		Pointer rightPtr = ((JCudaObject)right1.getGPUObject()).jcudaDenseMatrixPtr;
+		
+		int leftRows = (int) left1.getNumRows();
+		int leftCols = (int) left1.getNumColumns();
+		int rightRows = (int) right1.getNumRows();
+		int rightCols = (int) right1.getNumColumns();
+				
+		denseDenseMatmult(output, leftRows, leftCols, rightRows, rightCols, isLeftTransposed1, isRightTransposed1,
+				leftPtr, rightPtr);
+	}
+
+	/**
+	 * Dense-dense matrix multiply
+	 * C = op(A) * op(B), A and B are dense matrices
+	 * On the host, the matrices are in row-major format; cuBLAS expects them in column-major format.
+	 * What we have as input is t(A) and t(B), t(X) = transpose of X.
+	 * We do t(B) %*% t(A) to get t(C); 
+	 * If we were to calculate t(t(C), we would get the resultant matrix C, but this would be in column-major format.
+	 * What we really want is t(C). This we already have as the result of t(B) %*% t(A).
+	 * @param output			output object C on host with GPU data allocated
+	 * @param leftRows1			number of rows in A
+	 * @param leftCols1			number of cols in A
+	 * @param rightRows1		number of rows in B
+	 * @param rightCols1		number of cols in B
+	 * @param isLeftTransposed1	op for A, transposed or not
+	 * @param isRightTransposed1	op for B transposed or not
+	 * @param leftPtr			A allocated on the GPU
+	 * @param rightPtr			B allocated on the GPU
+	 * @throws DMLRuntimeException
+	 */
+	protected static void denseDenseMatmult(MatrixObject output, int leftRows1, int leftCols1, int rightRows1,
+			int rightCols1, boolean isLeftTransposed1, boolean isRightTransposed1, Pointer leftPtr, Pointer rightPtr)
+			throws DMLRuntimeException {
+		
+		Pointer A = rightPtr;
+		Pointer B = leftPtr;
+		
+		int leftRows = rightRows1;
+		int leftCols = rightCols1;
+		int rightRows = leftRows1;
+		int rightCols = leftCols1;
+		
 		boolean isLeftTransposed = isRightTransposed1; 
 		boolean isRightTransposed = isLeftTransposed1; 
 		
-		char transa = isLeftTransposed ? 'T' : 'N';
-		char transb = isRightTransposed ? 'T' : 'N';
 		// Note: the dimensions are swapped
-		int m = (int) (isLeftTransposed ? left.getNumRows() : left.getNumColumns()) ;
-		int n = (int) (isRightTransposed ? right.getNumColumns() : right.getNumRows());
-		int k = (int) (isLeftTransposed ?  left.getNumColumns() : left.getNumRows());
-		int k1 = (int) (isRightTransposed ?  right.getNumRows() : right.getNumColumns());
+		int m = (int) (isLeftTransposed ? leftRows : leftCols) ;
+		int n = (int) (isRightTransposed ? rightCols : rightRows);
+		int k = (int) (isLeftTransposed ?  leftRows : leftRows);
+		int k1 = (int) (isRightTransposed ?  rightRows : rightCols);
 		if(k != k1) 
 			throw new DMLRuntimeException("Dimension mismatch: " + k + " != " + k1);
 		
@@ -460,16 +700,33 @@ public class LibMatrixCUDA {
 		int lda = isLeftTransposed ?  k : m;
 		int ldb = isRightTransposed ? n : k;
 		int ldc = m;
-
-		LOG.info(" Dense-Dense Matrix Multiply ");
-
-		Pointer A = ((JCudaObject)left.getGPUObject()).jcudaDenseMatrixPtr;
-		Pointer B = ((JCudaObject)right.getGPUObject()).jcudaDenseMatrixPtr;
 		
-		output = ec.getDenseMatrixOutputForGPUInstruction(outputName);
+		char transa = isLeftTransposed ? 'T' : 'N';
+		char transb = isRightTransposed ? 'T' : 'N';
+
 		Pointer C = ((JCudaObject)output.getGPUObject()).jcudaDenseMatrixPtr;
-		JCublas.cublasDgemm(transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc);
-		return output;
+		if (m == 1 && n == 1){ 
+			// Vector product
+			LOG.info(" GPU Dense-dense Vector Product");
+			double result = JCublas.cublasDdot(k, A, 1, B, 1);
+			double[] resultArr = new double[1];
+			resultArr[0] = result;
+			long t0 = System.nanoTime();
+			cudaMemcpy(C, Pointer.to(resultArr), Sizeof.DOUBLE, cudaMemcpyHostToDevice);
+			Statistics.cudaToDevCount.addAndGet(1);
+			Statistics.cudaToDevTime.addAndGet(System.nanoTime() - t0);
+		} else if (m == 1) {
+			// Vector-matrix multiply
+			LOG.info(" GPU Vector-Matrix Multiply");
+			JCublas.cublasDgemv(transb, k, n, 1.0, B, ldb, A, 1, 0.0, C, 1);
+		} else if (n == 1){
+			// Matrix-vector multiply
+			LOG.info(" GPU Matrix-Vector Multiply");
+			JCublas.cublasDgemv(transa, m, n, 1.0, A, lda, B, 1, 0.0, C, 1);
+		} else {
+			LOG.info(" GPU Dense-Dense Matrix Multiply ");
+			JCublas.cublasDgemm(transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc);
+		}
 	}
 
 	public static void conv2d_backward_data(MatrixObject filter, MatrixObject dout,

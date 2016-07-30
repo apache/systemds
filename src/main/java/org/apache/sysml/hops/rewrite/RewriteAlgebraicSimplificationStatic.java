@@ -1184,6 +1184,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				//by definition, either left or right or none applies. 
 				//note: if there are multiple consumers on the intermediate tmp=(X>0), it's still beneficial
 				//to replace the X*tmp with selp(X) due to lower memory requirements and simply sparsity propagation 
+				boolean applied = false;
 				
 				if( left instanceof BinaryOp ) //(X>0)*X
 				{
@@ -1206,11 +1207,12 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 							HopRewriteUtils.removeAllChildReferences(left);
 						
 						hi = unary;
+						applied = true;
 						
 						LOG.debug("Applied fuseBinarySubDAGToUnaryOperation-selp1");
 					}
 				}				
-				if( right instanceof BinaryOp ) //X*(X>0)
+				if( !applied && right instanceof BinaryOp ) //X*(X>0)
 				{
 					BinaryOp bright = (BinaryOp)right;
 					Hop right1 = bright.getInput().get(0);
@@ -1231,6 +1233,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 							HopRewriteUtils.removeAllChildReferences(right);
 						
 						hi = unary;
+						applied= true;
 						
 						LOG.debug("Applied fuseBinarySubDAGToUnaryOperation-selp2");
 					}
@@ -1251,6 +1254,22 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				hi = unary;
 				
 				LOG.debug("Applied fuseBinarySubDAGToUnaryOperation-selp3");
+			}
+			
+			//select positive (selp) operator; pattern: max(0,X) -> selp+
+			if( bop.getOp() == OpOp2.MAX && right.getDataType()==DataType.MATRIX 
+					&& left instanceof LiteralOp && HopRewriteUtils.getDoubleValue((LiteralOp)left)==0 )
+			{
+				UnaryOp unary = HopRewriteUtils.createUnary(right, OpOp1.SELP);
+				HopRewriteUtils.removeChildReferenceByPos(parent, bop, pos);
+				HopRewriteUtils.addChildReference(parent, unary, pos);
+				
+				//cleanup if only consumer of intermediate
+				if( bop.getParent().isEmpty() )
+					HopRewriteUtils.removeAllChildReferences(bop);					
+				hi = unary;
+				
+				LOG.debug("Applied fuseBinarySubDAGToUnaryOperation-selp4");
 			}
 		}
 		

@@ -237,9 +237,6 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		CompressedSizeEstimator bitmapSizeEstimator = 
 				SizeEstimatorFactory.getSizeEstimator(rawblock, numRows);
 
-		//allocate list of column groups
-		allocateColGroupList();
-
 		// The current implementation of this method is written for correctness,
 		// not for performance or for minimal use of temporary space.
 
@@ -255,7 +252,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		// information about the bitmap amenable columns
 		List<Integer> bitmapCols = new ArrayList<Integer>();
 		List<Integer> uncompressedCols = new ArrayList<Integer>();
-		List<Integer> colsCardinalities = new ArrayList<Integer>();
+		List<Integer> colsCards = new ArrayList<Integer>();
 		List<Long> compressedSizes = new ArrayList<Long>();
 		HashMap<Integer, Double> compressionRatios = new HashMap<Integer, Double>();
 		
@@ -275,7 +272,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 			if (compRatio >= MIN_COMPRESSION_RATIO) {
 				bitmapCols.add(col);
 				compressionRatios.put(col, compRatio);
-				colsCardinalities.add(sizeInfos[col].getEstCarinality());
+				colsCards.add(sizeInfos[col].getEstCarinality());
 				compressedSizes.add(compressedSize);
 			}
 			else
@@ -295,15 +292,13 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 			// Too many columns to compute co-coding groups with current methods.
 			// Generate singleton groups.
 			bitmapColGrps = new ArrayList<int[]>(bitmapCols.size());
-			for (int col : bitmapCols) {
+			for (int col : bitmapCols)
 				bitmapColGrps.add(new int[] { col });
-			}
 		} 
 		else {
-			bitmapColGrps = PlanningCoCoder.findCocodesByPartitioning(
-					bitmapSizeEstimator, bitmapCols, colsCardinalities,
-					compressedSizes, numRows, isInSparseFormat() ? 
-					OptimizerUtils.getSparsity(numRows, numCols, getNonZeros()): 1);
+			bitmapColGrps = PlanningCoCoder.findCocodesByPartitioning(bitmapSizeEstimator, 
+					bitmapCols, colsCards, compressedSizes, numRows, isInSparseFormat() ? 
+					OptimizerUtils.getSparsity(numRows, numCols, getNonZeros()):1, k);
 		}
 
 		_stats.timePhase2 = time.stop();
@@ -322,6 +317,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		ColGroup[] colGroups = (k > 1) ?
 				compressColGroups(rawblock, bitmapSizeEstimator, compressionRatios, numRows, bitmapColGrps, k) : 
 				compressColGroups(rawblock, bitmapSizeEstimator, compressionRatios, numRows, bitmapColGrps); 	
+		allocateColGroupList();
 		for( int j=0; j<colGroups.length; j++ ) {
 			if( colGroups[j] != null ) {
 				for( int col : colGroups[j].getColIndices() )

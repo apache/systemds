@@ -24,7 +24,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.PriorityQueue;
 import java.util.TreeMap;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
+import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.compress.estim.CompressedSizeEstimator;
 
 public class PlanningCoCoder 
@@ -45,58 +50,110 @@ public class PlanningCoCoder
 	 * @param numRows
 	 * @param sparsity
 	 * @return
+	 * @throws DMLRuntimeException 
 	 */
 	public static List<int[]> findCocodesByPartitioning(CompressedSizeEstimator sizeEstimator, List<Integer> availCols, 
-			List<Integer> colsCardinalities,List<Long> compressedSize, int numRows, double sparsity) 
+			List<Integer> colsCardinalities, List<Long> compressedSize, int numRows, double sparsity, int k) 
+		throws DMLRuntimeException 
 	{
-		float numRowsWeight = numRows;
 		List<int[]> retGroups = new ArrayList<int[]>();
+		
 		// filtering out non-groupable columns as singleton groups
-		int numCols = availCols.size();
-		List<Integer> groupabaleCols = new ArrayList<Integer>();
 		// weighted of each column is the ratio of its cardinality to the number
 		// of rows scaled by the matrix sparsity
-		List<Float> groupabaleColWeights = new ArrayList<Float>();
-		HashMap<Integer, GroupableColInfo> groupableColsInfo = new HashMap<Integer, GroupableColInfo>();
+		int numCols = availCols.size();
+		List<Integer> groupCols = new ArrayList<Integer>();
+		List<Float> groupColWeights = new ArrayList<Float>();
+		HashMap<Integer, GroupableColInfo> groupColsInfo = new HashMap<Integer, GroupableColInfo>();
 		for (int i = 0; i < numCols; i++) {
 			int colIx = availCols.get(i);
 			int cardinality = colsCardinalities.get(i);
-			float weight = ((float) cardinality) / numRowsWeight;
+			float weight = ((float) cardinality) / numRows;
 			if (weight <= GROUPABILITY_THRESHOLD) {
-				groupabaleCols.add(colIx);
-				groupabaleColWeights.add(weight);
-				groupableColsInfo.put(colIx, new GroupableColInfo(weight,
-						compressedSize.get(i)));
+				groupCols.add(colIx);
+				groupColWeights.add(weight);
+				groupColsInfo.put(colIx, new GroupableColInfo(weight,compressedSize.get(i)));
 			} else {
 				retGroups.add(new int[] { colIx });
 			}
 		}
+		
 		// bin packing based on PARTITION_WEIGHT and column weights
 		float weight = computeWeightForCoCoding(numRows, sparsity);
 		TreeMap<Float, List<List<Integer>>> bins = new PlanningBinPacker(
-				weight, groupabaleCols, groupabaleColWeights) 
-				.packFirstFit();
+				weight, groupCols, groupColWeights).packFirstFit();
 
 		// brute force grouping within each partition
+		retGroups.addAll( (k > 1) ?
+				getCocodingGroupsBruteForce(bins, groupColsInfo, sizeEstimator, numRows, k) :
+				getCocodingGroupsBruteForce(bins, groupColsInfo, sizeEstimator, numRows));
+			
+		return retGroups;
+	}
+	
+	/**
+	 * 
+	 * @param bins
+	 * @param groupColsInfo
+	 * @param estim
+	 * @param rlen
+	 * @return
+	 */
+	private static List<int[]> getCocodingGroupsBruteForce(TreeMap<Float, List<List<Integer>>> bins, HashMap<Integer, GroupableColInfo> groupColsInfo, CompressedSizeEstimator estim, int rlen) 
+	{
+		List<int[]> retGroups = new ArrayList<int[]>();		
 		for (List<List<Integer>> binList : bins.values()) {
 			for (List<Integer> bin : binList) {
 				// building an array of singleton CoCodingGroup
-				PlanningCoCodingGroup[] singltonGroups = new PlanningCoCodingGroup[bin.size()];
-				int i = 0;
-				GroupableColInfo colInfo;
-				for (Integer col : bin) {
-					colInfo = groupableColsInfo.get(col);
-					singltonGroups[i++] = new PlanningCoCodingGroup(col, colInfo.size,
-							colInfo.cardRatio);
-				}
+				ArrayList<PlanningCoCodingGroup> sgroups = new ArrayList<PlanningCoCodingGroup>();
+				for (Integer col : bin)
+					sgroups.add(new PlanningCoCodingGroup(col, groupColsInfo.get(col)));
+				// brute force co-coding	
 				PlanningCoCodingGroup[] outputGroups = findCocodesBruteForce(
-						sizeEstimator, numRowsWeight, singltonGroups);
-				
-				for (PlanningCoCodingGroup grp : outputGroups) {
+						estim, rlen, sgroups.toArray(new PlanningCoCodingGroup[0]));
+				for (PlanningCoCodingGroup grp : outputGroups)
 					retGroups.add(grp.getColIndices());
-				}
 			}
 		}
+		
+		return retGroups;
+	}
+	
+	/**
+	 * 
+	 * @param bins
+	 * @param groupColsInfo
+	 * @param estim
+	 * @param rlen
+	 * @param k
+	 * @return
+	 * @throws DMLRuntimeException 
+	 */
+	private static List<int[]> getCocodingGroupsBruteForce(TreeMap<Float, List<List<Integer>>> bins, HashMap<Integer, GroupableColInfo> groupColsInfo, CompressedSizeEstimator estim, int rlen, int k) 
+		throws DMLRuntimeException 
+	{
+		List<int[]> retGroups = new ArrayList<int[]>();		
+		try {
+			ExecutorService pool = Executors.newFixedThreadPool( k );
+			ArrayList<CocodeTask> tasks = new ArrayList<CocodeTask>();
+			for (List<List<Integer>> binList : bins.values())
+				for (List<Integer> bin : binList) {
+					// building an array of singleton CoCodingGroup
+					ArrayList<PlanningCoCodingGroup> sgroups = new ArrayList<PlanningCoCodingGroup>();
+					for (Integer col : bin)
+						sgroups.add(new PlanningCoCodingGroup(col, groupColsInfo.get(col)));
+					tasks.add(new CocodeTask(estim, sgroups, rlen));
+				}
+			List<Future<PlanningCoCodingGroup[]>> rtask = pool.invokeAll(tasks);	
+			for( Future<PlanningCoCodingGroup[]> lrtask : rtask )
+				for (PlanningCoCodingGroup grp : lrtask.get())
+					retGroups.add(grp.getColIndices());
+			pool.shutdown();
+		}
+		catch(Exception ex) {
+			throw new DMLRuntimeException(ex);
+		}
+		
 		return retGroups;
 	}
 
@@ -215,13 +272,36 @@ public class PlanningCoCoder
 	/**
 	 * 
 	 */
-	private static class GroupableColInfo {
+	protected static class GroupableColInfo {
 		float cardRatio;
 		long size;
 
 		public GroupableColInfo(float lcardRatio, long lsize) {
 			cardRatio = lcardRatio;
 			size = lsize;
+		}
+	}
+	
+	/**
+	 * 
+	 */
+	private static class CocodeTask implements Callable<PlanningCoCodingGroup[]> 
+	{
+		private CompressedSizeEstimator _estim = null;
+		private ArrayList<PlanningCoCodingGroup> _sgroups = null;
+		private int _rlen = -1;
+		
+		protected CocodeTask( CompressedSizeEstimator estim, ArrayList<PlanningCoCodingGroup> sgroups, int rlen )  {
+			_estim = estim;
+			_sgroups = sgroups;
+			_rlen = rlen;
+		}
+		
+		@Override
+		public PlanningCoCodingGroup[] call() throws DMLRuntimeException {
+			// brute force co-coding	
+			return findCocodesBruteForce(_estim, _rlen, 
+					_sgroups.toArray(new PlanningCoCodingGroup[0]));
 		}
 	}
 }

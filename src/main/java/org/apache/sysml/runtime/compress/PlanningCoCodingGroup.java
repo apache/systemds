@@ -21,6 +21,7 @@ package org.apache.sysml.runtime.compress;
 
 import java.util.Arrays;
 
+import org.apache.sysml.runtime.compress.PlanningCoCoder.GroupableColInfo;
 import org.apache.sysml.runtime.compress.estim.CompressedSizeEstimator;
 import org.apache.sysml.runtime.compress.estim.CompressedSizeInfo;
 
@@ -38,10 +39,10 @@ public class PlanningCoCodingGroup
 	 * Constructor for a one-column group; i.e. do not co-code a given column.
 	 * 
 	 */
-	public PlanningCoCodingGroup(int col, long estSize, float cardRatio) {
+	public PlanningCoCodingGroup(int col, GroupableColInfo info) {
 		_colIndexes = new int[]{col};
-		_estSize = estSize;
-		_cardRatio = cardRatio;
+		_estSize = info.size;
+		_cardRatio = info.cardRatio;
 	}
 
 	/**

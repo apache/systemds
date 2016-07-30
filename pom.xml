@@ -66,10 +66,9 @@
 		<hadoop.version>2.4.1</hadoop.version>
 		<antlr.version>4.3</antlr.version>
 		<spark.version>1.4.1</spark.version>
-		<scala.version>2.10.5</scala.version>
-		<scala.binary.version>2.10</scala.binary.version>
-		<scala.test.version>2.2.1</scala.test.version>
-		<scala.check.version>1.11.3</scala.check.version>
+		<scala.version>2.11.8</scala.version>
+		<scala.binary.version>2.11</scala.binary.version>
+		<scala.test.version>2.2.6</scala.test.version>
 		<!-- OS-specific JVM arguments for running integration tests -->
 		<integrationTestExtraJVMArgs />
 	</properties>
@@ -485,6 +484,14 @@
 
 	<profiles>
 		<profile>
+			<id>scala-2.10</id>
+			<properties>
+				<scala.version>2.10.5</scala.version>
+				<scala.binary.version>2.10</scala.binary.version>
+			</properties>
+		</profile>
+
+		<profile>
 			<!-- Profile for Windows builds. Not currently needed, but might be needed
 				in the future. -->
 			<id>platform-windows</id>
@@ -851,14 +858,14 @@
 	
 		<dependency>
 			<groupId>org.apache.spark</groupId>
-			<artifactId>spark-core_2.10</artifactId>
+			<artifactId>spark-core_${scala.binary.version}</artifactId>
 			<version>${spark.version}</version>
 			<scope>provided</scope>
 		</dependency>
 
 		<dependency>
 			<groupId>org.apache.spark</groupId>
-			<artifactId>spark-mllib_2.10</artifactId>
+			<artifactId>spark-mllib_${scala.binary.version}</artifactId>
 			<version>${spark.version}</version>
 			<scope>provided</scope>
 		</dependency>
@@ -866,7 +873,7 @@
 		<!-- To support dataframe in mlcontext -->
 		<dependency>
 			<groupId>org.apache.spark</groupId>
-			<artifactId>spark-sql_2.10</artifactId>
+			<artifactId>spark-sql_${scala.binary.version}</artifactId>
 			<version>${spark.version}</version>
 			<scope>provided</scope>
 		</dependency>
@@ -1060,25 +1067,7 @@
 		</dependency>
 		<dependency>
 			<groupId>org.scala-lang</groupId>
-			<artifactId>scala-compiler</artifactId>
-			<version>${scala.version}</version>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.scala-lang</groupId>
-			<artifactId>scala-reflect</artifactId>
-			<version>${scala.version}</version>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.scala-lang</groupId>
 			<artifactId>scala-library</artifactId>
-			<version>${scala.version}</version>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.scala-lang</groupId>
-			<artifactId>scala-actors</artifactId>
 			<version>${scala.version}</version>
 			<scope>provided</scope>
 		</dependency>
@@ -1092,12 +1081,6 @@
 			<groupId>org.scalatest</groupId>
 			<artifactId>scalatest_${scala.binary.version}</artifactId>
 			<version>${scala.test.version}</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.scalacheck</groupId>
-			<artifactId>scalacheck_${scala.binary.version}</artifactId>
-			<version>${scala.check.version}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>

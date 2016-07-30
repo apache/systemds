@@ -257,7 +257,7 @@ public class Script {
 	 * @return {@code this} Script object to allow chaining of methods
 	 */
 	public Script in(scala.collection.Seq<Object> inputs) {
-		List<Object> list = JavaConversions.asJavaList(inputs);
+		List<Object> list = JavaConversions.seqAsJavaList(inputs);
 		for (Object obj : list) {
 			if (obj instanceof Tuple3) {
 				@SuppressWarnings("unchecked")

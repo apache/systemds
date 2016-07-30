@@ -785,6 +785,17 @@ public class HopRewriteUtils
 				    : (hop.getDim1()>0 && hop.getDim1()<=hop.getRowsInBlock());
 	}
 	
+	/**
+	 * 
+	 * @param hop
+	 * @return
+	 */
+	public static boolean isOuterProductLikeMM( Hop hop ) {
+		return hop instanceof AggBinaryOp
+			&& hop.getInput().get(0).getDim1() > hop.getInput().get(0).getDim2()
+			&& hop.getInput().get(1).getDim1() < hop.getInput().get(1).getDim2();
+	}
+	
 	public static boolean isEqualValue( LiteralOp hop1, LiteralOp hop2 ) 
 		throws HopsException
 	{

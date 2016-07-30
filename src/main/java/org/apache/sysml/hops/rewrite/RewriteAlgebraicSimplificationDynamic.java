@@ -1852,7 +1852,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			//alternative pattern: t(U) %*% (W*(U%*%t(V)))
 			if( right instanceof BinaryOp && HopRewriteUtils.isValidOp(((BinaryOp)right).getOp(),LOOKUP_VALID_WDIVMM_BINARY)	
 				&& HopRewriteUtils.isEqualSize(right.getInput().get(0), right.getInput().get(1)) //prevent mv
-				&& right.getInput().get(1) instanceof AggBinaryOp
+				&& HopRewriteUtils.isOuterProductLikeMM(right.getInput().get(1))
 				&& HopRewriteUtils.isSingleBlock(right.getInput().get(1).getInput().get(0),true) ) //BLOCKSIZE CONSTRAINT
 			{
 				Hop W = right.getInput().get(0); 
@@ -1886,6 +1886,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				&& right.getInput().get(1) instanceof BinaryOp
 				&& ((BinaryOp) right.getInput().get(1)).getOp() == Hop.OpOp2.PLUS
 				&& right.getInput().get(1).getInput().get(1).getDataType() == DataType.SCALAR
+				&& HopRewriteUtils.isOuterProductLikeMM(right.getInput().get(1).getInput().get(0))
 				&& HopRewriteUtils.isSingleBlock(right.getInput().get(1).getInput().get(0).getInput().get(0),true) ) //BLOCKSIZE CONSTRAINT
 			{
 				Hop W = right.getInput().get(0); 
@@ -1917,7 +1918,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			if( !appliedPattern
 				&& left instanceof BinaryOp && HopRewriteUtils.isValidOp(((BinaryOp)left).getOp(), LOOKUP_VALID_WDIVMM_BINARY)	
 				&& HopRewriteUtils.isEqualSize(left.getInput().get(0), left.getInput().get(1)) //prevent mv
-				&& left.getInput().get(1) instanceof AggBinaryOp
+				&& HopRewriteUtils.isOuterProductLikeMM(left.getInput().get(1))
 				&& HopRewriteUtils.isSingleBlock(left.getInput().get(1).getInput().get(0),true) ) //BLOCKSIZE CONSTRAINT
 			{
 				Hop W = left.getInput().get(0); 
@@ -1948,6 +1949,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				&& left.getInput().get(1) instanceof BinaryOp
 				&& ((BinaryOp) left.getInput().get(1)).getOp() == Hop.OpOp2.PLUS
 				&& left.getInput().get(1).getInput().get(1).getDataType() == DataType.SCALAR
+				&& HopRewriteUtils.isOuterProductLikeMM(left.getInput().get(1).getInput().get(0))
 				&& HopRewriteUtils.isSingleBlock(left.getInput().get(1).getInput().get(0).getInput().get(0),true) ) //BLOCKSIZE CONSTRAINT
 			{
 				Hop W = left.getInput().get(0); 
@@ -1975,8 +1977,8 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			if( !appliedPattern
 				&& right instanceof BinaryOp && ((BinaryOp)right).getOp()==LOOKUP_VALID_WDIVMM_BINARY[0] //MULT
 				&& right.getInput().get(1) instanceof BinaryOp && ((BinaryOp)right.getInput().get(1)).getOp()==OpOp2.MINUS	
-				&& right.getInput().get(1).getInput().get(0) instanceof AggBinaryOp
-                && right.getInput().get(1).getInput().get(1).getDataType() == DataType.MATRIX
+				&& HopRewriteUtils.isOuterProductLikeMM(right.getInput().get(1).getInput().get(0))
+				&& right.getInput().get(1).getInput().get(1).getDataType() == DataType.MATRIX
 				&& HopRewriteUtils.isSingleBlock(right.getInput().get(1).getInput().get(0).getInput().get(0),true) ) //BLOCKSIZE CONSTRAINT
 			{
 				Hop W = right.getInput().get(0); 
@@ -2008,8 +2010,8 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			if( !appliedPattern
 				&& left instanceof BinaryOp && ((BinaryOp)left).getOp()==LOOKUP_VALID_WDIVMM_BINARY[0] //MULT	
 				&& left.getInput().get(1) instanceof BinaryOp && ((BinaryOp)left.getInput().get(1)).getOp()==OpOp2.MINUS	
-				&& left.getInput().get(1).getInput().get(0) instanceof AggBinaryOp
-                && left.getInput().get(1).getInput().get(1).getDataType() == DataType.MATRIX
+				&& HopRewriteUtils.isOuterProductLikeMM(left.getInput().get(1).getInput().get(0))
+				&& left.getInput().get(1).getInput().get(1).getDataType() == DataType.MATRIX
 				&& HopRewriteUtils.isSingleBlock(left.getInput().get(1).getInput().get(0).getInput().get(0),true) ) //BLOCKSIZE CONSTRAINT
 			{
 				Hop W = left.getInput().get(0); 
@@ -2038,8 +2040,8 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			if( !appliedPattern
 				&& right instanceof BinaryOp && ((BinaryOp)right).getOp()==LOOKUP_VALID_WDIVMM_BINARY[0] //MULT
 				&& right.getInput().get(1) instanceof BinaryOp && ((BinaryOp)right.getInput().get(1)).getOp()==OpOp2.MINUS	
-				&& right.getInput().get(1).getInput().get(0) instanceof AggBinaryOp
-                && right.getInput().get(1).getInput().get(1).getDataType() == DataType.MATRIX
+				&& HopRewriteUtils.isOuterProductLikeMM(right.getInput().get(1).getInput().get(0))
+				&& right.getInput().get(1).getInput().get(1).getDataType() == DataType.MATRIX
 				&& HopRewriteUtils.isSingleBlock(right.getInput().get(1).getInput().get(0).getInput().get(0),true) ) //BLOCKSIZE CONSTRAINT
 			{
 				Hop W = right.getInput().get(0); 
@@ -2071,8 +2073,8 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			if( !appliedPattern
 				&& left instanceof BinaryOp && ((BinaryOp)left).getOp()==LOOKUP_VALID_WDIVMM_BINARY[0] //MULT	
 				&& left.getInput().get(1) instanceof BinaryOp && ((BinaryOp)left.getInput().get(1)).getOp()==OpOp2.MINUS	
-				&& left.getInput().get(1).getInput().get(0) instanceof AggBinaryOp
-                && left.getInput().get(1).getInput().get(1).getDataType() == DataType.MATRIX
+				&& HopRewriteUtils.isOuterProductLikeMM(left.getInput().get(1).getInput().get(0))
+				&& left.getInput().get(1).getInput().get(1).getDataType() == DataType.MATRIX
 				&& HopRewriteUtils.isSingleBlock(left.getInput().get(1).getInput().get(0).getInput().get(0),true) ) //BLOCKSIZE CONSTRAINT
 			{
 				Hop W = left.getInput().get(0); 
@@ -2105,7 +2107,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			&& hi.getDim2() > 1 //not applied for vector-vector mult
 			&& hi.getInput().get(0).getDataType() == DataType.MATRIX 
 			&& hi.getInput().get(0).getDim2() > hi.getInput().get(0).getColsInBlock()
-			&& hi.getInput().get(1) instanceof AggBinaryOp
+			&& HopRewriteUtils.isOuterProductLikeMM(hi.getInput().get(1))
 			&& (((AggBinaryOp) hi.getInput().get(1)).checkMapMultChain() == ChainType.NONE || hi.getInput().get(1).getInput().get(1).getDim2() > 1) //no mmchain
 			&& HopRewriteUtils.isSingleBlock(hi.getInput().get(1).getInput().get(0),true) ) //BLOCKSIZE CONSTRAINT
 		{

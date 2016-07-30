@@ -2901,24 +2901,48 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		final int m = rlen;
 		final int n = clen;
 		
-		if( sparse ) //SPARSE <- SPARSE
+		if( sparse && ret.sparse ) //SPARSE <- SPARSE
 		{
+			ret.allocateSparseRowsBlock();
 			SparseBlock a = sparseBlock;
-			
+			SparseBlock c = ret.sparseBlock;
+		
+			long nnz = 0;
 			for(int i=0; i<m; i++) {
-				if( !a.isEmpty(i) )
-				{
-					int apos = a.pos(i);
-					int alen = a.size(i);
-					int[] aix = a.indexes(i);
-					double[] avals = a.values(i);
-					
-					for( int j=apos; j<apos+alen; j++ ) {
-						double val = op.fn.execute(avals[j]);
-						ret.appendValue(i, aix[j], val);
-					}
+				if( a.isEmpty(i) ) continue;
+				
+				int apos = a.pos(i);
+				int alen = a.size(i);
+				int[] aix = a.indexes(i);
+				double[] avals = a.values(i);
+				
+				c.allocate(i, alen); //avoid repeated alloc
+				for( int j=apos; j<apos+alen; j++ ) {
+					double val = op.fn.execute(avals[j]);
+					c.append(i, aix[j], val);
+					nnz += (val != 0) ? 1 : 0;
 				}
 			}
+			ret.nonZeros = nnz;
+		}
+		else if( sparse ) //DENSE <- SPARSE
+		{
+			SparseBlock a = sparseBlock;			
+			
+			for(int i=0; i<m; i++) {
+				if( a.isEmpty(i) ) continue;
+			
+				int apos = a.pos(i);
+				int alen = a.size(i);
+				int[] aix = a.indexes(i);
+				double[] avals = a.values(i);
+				
+				for( int j=apos; j<apos+alen; j++ ) {
+					double val = op.fn.execute(avals[j]);
+					ret.appendValue(i, aix[j], val);
+				}
+			}
+			//nnz maintained on appendValue
 		}
 		else //DENSE <- DENSE
 		{
@@ -2926,13 +2950,15 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			ret.allocateDenseBlock();						
 			double[] a = denseBlock;
 			double[] c = ret.denseBlock;
+			int len = m * n;
 			
 			//unary op, incl nnz maintenance
-			int len = m*n;
+			int nnz = 0;
 			for( int i=0; i<len; i++ ) {
 				c[i] = op.fn.execute(a[i]);
-				ret.nonZeros += (c[i] != 0) ? 1 : 0;
-			}			
+				nnz += (c[i] != 0) ? 1 : 0;
+			}
+			ret.nonZeros = nnz;
 		}
 	}
 	

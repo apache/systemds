@@ -52,32 +52,23 @@ public class ScalarOperator  extends Operator
 		
 		//as long as (0 op v)=0, then op is sparsesafe
 		//note: additional functionobjects might qualify according to constant
-		if(   fn instanceof Multiply || fn instanceof Multiply2 
-		   || fn instanceof Power || fn instanceof Power2 
-		   || fn instanceof And || fn instanceof MinusNz
-		   || (fn instanceof Builtin && ((Builtin)fn).getBuiltinFunctionCode()==BuiltinFunctionCode.LOG_NZ)) 
-		{
-			sparseSafe=true;
-		}
-		else
-		{
-			sparseSafe=false;
-		}
+		sparseSafe = (fn instanceof Multiply || fn instanceof Multiply2 
+				|| fn instanceof Power || fn instanceof Power2 
+				|| fn instanceof And || fn instanceof MinusNz
+				|| (fn instanceof Builtin && ((Builtin)fn).getBuiltinFunctionCode()==BuiltinFunctionCode.LOG_NZ));
 	}
 	
-	public double getConstant()
-	{
+	public double getConstant() {
 		return _constant;
 	}
 	
-	public void setConstant(double cst) 
-	{
+	public void setConstant(double cst) {
 		//set constant
 		_constant = cst;
 		
 		//revisit sparse safe decision according to known constant
 		//note: there would be even more potential if we take left/right op into account
-		if(    fn instanceof Multiply || fn instanceof Multiply2 
+		sparseSafe = ( fn instanceof Multiply || fn instanceof Multiply2 
 			|| fn instanceof Power || fn instanceof Power2 
 			|| fn instanceof And || fn instanceof MinusNz
 			|| fn instanceof Builtin && ((Builtin)fn).getBuiltinFunctionCode()==BuiltinFunctionCode.LOG_NZ
@@ -88,14 +79,7 @@ public class ScalarOperator  extends Operator
 			|| (fn instanceof Minus && _constant==0)
 			|| (fn instanceof Minus && _constant==0)
 			|| (fn instanceof Builtin && ((Builtin)fn).getBuiltinFunctionCode()==BuiltinFunctionCode.MAX && _constant<=0)
-			|| (fn instanceof Builtin && ((Builtin)fn).getBuiltinFunctionCode()==BuiltinFunctionCode.MIN && _constant>=0))
-		{
-			sparseSafe = true;
-		}
-		else
-		{
-			sparseSafe = false;
-		}
+			|| (fn instanceof Builtin && ((Builtin)fn).getBuiltinFunctionCode()==BuiltinFunctionCode.MIN && _constant>=0));
 	}
 	
 	public double executeScalar(double in) throws DMLRuntimeException {

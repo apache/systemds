@@ -29,11 +29,13 @@ import org.apache.sysml.runtime.functionobjects.GreaterThanEquals;
 import org.apache.sysml.runtime.functionobjects.LessThan;
 import org.apache.sysml.runtime.functionobjects.LessThanEquals;
 import org.apache.sysml.runtime.functionobjects.Minus;
+import org.apache.sysml.runtime.functionobjects.MinusMultiply;
 import org.apache.sysml.runtime.functionobjects.Multiply;
 import org.apache.sysml.runtime.functionobjects.Multiply2;
 import org.apache.sysml.runtime.functionobjects.NotEquals;
 import org.apache.sysml.runtime.functionobjects.Or;
 import org.apache.sysml.runtime.functionobjects.Plus;
+import org.apache.sysml.runtime.functionobjects.PlusMultiply;
 import org.apache.sysml.runtime.functionobjects.Power2;
 import org.apache.sysml.runtime.functionobjects.ValueFunction;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
@@ -332,7 +334,8 @@ public class LibMatrixBincell
 				}
 			}
 			else if( !ret.sparse && (m1.sparse || m2.sparse) &&
-					(op.fn instanceof Plus || op.fn instanceof Minus || 
+					(op.fn instanceof Plus || op.fn instanceof Minus ||
+					op.fn instanceof PlusMultiply || op.fn instanceof MinusMultiply ||
 					(op.fn instanceof Multiply && !m2.sparse )))
 			{
 				//specific case in order to prevent binary search on sparse inputs (see quickget and quickset)
@@ -464,7 +467,8 @@ public class LibMatrixBincell
 		double[] a = m1.denseBlock;
 		double[] b = m2.denseBlock;
 		double[] c = ret.denseBlock;
-
+		int nnz = 0;
+		
 		if( atype == BinaryAccessType.MATRIX_COL_VECTOR )
 		{
 			for( int i=0, ix=0; i<rlen; i++, ix+=clen )
@@ -474,33 +478,39 @@ public class LibMatrixBincell
 				if( skipEmpty && v2 == 0 ) //skip empty rows
 					continue;
 					
-				if( isMultiply && v2 == 1 ) //ROW COPY
-				{
+				if( isMultiply && v2 == 1 ) { //ROW COPY
 					//a guaranteed to be non-null (see early abort)
 					System.arraycopy(a, ix, c, ix, clen);
+					nnz += m1.recomputeNonZeros(i, i, 0, clen-1);
 				}
-				else //GENERAL CASE
-				{
+				else { //GENERAL CASE
 					if( a != null )
-						for( int j=0; j<clen; j++ )
+						for( int j=0; j<clen; j++ ) {
 							c[ix+j] = op.fn.execute( a[ix+j], v2 );	
-					else
-						Arrays.fill(c, ix, ix+clen, op.fn.execute( 0, v2 ));	
+							nnz += (c[ix+j] != 0) ? 1 : 0;
+						}
+					else {
+						double val = op.fn.execute( 0, v2 );
+						Arrays.fill(c, ix, ix+clen, val);
+						nnz += (val != 0) ? clen : 0;
+					}
 				}
 			}
 		}
 		else if( atype == BinaryAccessType.MATRIX_ROW_VECTOR )
 		{
-			if( a==null && b==null ) //both empty
-			{
+			if( a==null && b==null ) { //both empty
 				double v = op.fn.execute( 0, 0 );
 				Arrays.fill(c, 0, rlen*clen, v);
+				nnz += (v != 0) ? rlen*clen : 0;
 			}
 			else if( a==null ) //left empty
 			{
 				//compute first row
-				for( int j=0; j<clen; j++ )
+				for( int j=0; j<clen; j++ ) {
 					c[j] = op.fn.execute( 0, b[j] );
+					nnz += (c[j] != 0) ? rlen : 0;
+				}
 				//copy first to all other rows
 				for( int i=1, ix=clen; i<rlen; i++, ix+=clen )
 					System.arraycopy(c, 0, c, ix, clen);
@@ -508,12 +518,14 @@ public class LibMatrixBincell
 			else //default case (incl right empty) 
 			{
 				for( int i=0, ix=0; i<rlen; i++, ix+=clen )
-					for( int j=0; j<clen; j++ )
+					for( int j=0; j<clen; j++ ) {
 						c[ix+j] = op.fn.execute( a[ix+j], ((b!=null) ? b[j] : 0) );	
+						nnz += (c[ix+j] != 0) ? 1 : 0;
+					}
 			}
 		}
 		
-		ret.recomputeNonZeros();
+		ret.nonZeros = nnz;
 	}
 	
 	/**
@@ -608,7 +620,7 @@ public class LibMatrixBincell
 					for( int j=apos; j<apos+alen; j++ )
 					{
 						//empty left
-						for( int k = lastIx+1; k<aix[j]; k++ ){
+						for( int k=lastIx+1; !skipEmpty&&k<aix[j]; k++ ){
 							double v2 = m2.quickGetValue(0, k);
 							double v = op.fn.execute( 0, v2 );
 							ret.appendValue(i, k, v);
@@ -622,7 +634,7 @@ public class LibMatrixBincell
 				}
 				
 				//empty left
-				for( int k = lastIx+1; k<clen; k++ ){
+				for( int k=lastIx+1; !skipEmpty&&k<clen; k++ ){
 					double v2 = m2.quickGetValue(0, k);
 					double v = op.fn.execute( 0, v2 );
 					ret.appendValue(i, k, v);
@@ -945,43 +957,43 @@ public class LibMatrixBincell
 			ret.allocateSparseRowsBlock();
 			SparseBlock a = m1.sparseBlock;
 			SparseBlock c = ret.sparseBlock;
+			int rlen = Math.min(m1.rlen, a.numRows());
 			
-			for(int r=0; r<Math.min(m1.rlen, a.numRows()); r++) {
-				if( !a.isEmpty(r) )
-				{
-					int apos = a.pos(r);
-					int alen = a.size(r);
-					int[] aix = a.indexes(r);
-					double[] avals = a.values(r);
+			long nnz = 0;
+			for(int r=0; r<rlen; r++) {
+				if( a.isEmpty(r) ) continue;
+				
+				int apos = a.pos(r);
+				int alen = a.size(r);
+				int[] aix = a.indexes(r);
+				double[] avals = a.values(r);
+				
+				if( copyOnes ) { //SPECIAL CASE: e.g., (X != 0) 
+					//create sparse row without repeated resizing
+					SparseRow crow = new SparseRow(alen);
+					crow.setSize(alen);
 					
-					if( copyOnes ) //SPECIAL CASE: e.g., (X != 0) 
-					{
-						//create sparse row without repeated resizing
-						SparseRow crow = new SparseRow(alen);
-						crow.setSize(alen);
-						
-						//memcopy/memset of indexes/values (sparseblock guarantees absence of 0s) 
-						System.arraycopy(aix, apos, crow.indexes(), 0, alen);
-						Arrays.fill(crow.values(), 0, alen, 1);
-						c.set(r, crow, false);
-						ret.nonZeros+=alen;
+					//memcopy/memset of indexes/values (sparseblock guarantees absence of 0s) 
+					System.arraycopy(aix, apos, crow.indexes(), 0, alen);
+					Arrays.fill(crow.values(), 0, alen, 1);
+					c.set(r, crow, false);
+					nnz += alen;
+				}
+				else { //GENERAL CASE
+					//create sparse row without repeated resizing for specific ops
+					if( op.fn instanceof Multiply || op.fn instanceof Multiply2 
+						|| op.fn instanceof Power2  ) {
+						c.allocate(r, alen);
 					}
-					else //GENERAL CASE
-					{
-						//create sparse row without repeated resizing for specific ops
-						if( op.fn instanceof Multiply || op.fn instanceof Multiply2 
-							|| op.fn instanceof Power2  )
-						{
-							c.allocate(r, alen);
-						}
-						
-						for(int j=apos; j<apos+alen; j++) {
-							double val = op.executeScalar(avals[j]);
-							ret.appendValue(r, aix[j], val);
-						}
+					
+					for(int j=apos; j<apos+alen; j++) {
+						double val = op.executeScalar(avals[j]);
+						c.append(r, aix[j], val);
+						nnz += (val != 0) ? 1 : 0; 
 					}
 				}
 			}
+			ret.nonZeros = nnz;
 		}
 		else //DENSE <- DENSE
 		{
@@ -992,12 +1004,12 @@ public class LibMatrixBincell
 			double[] c = ret.denseBlock;
 			
 			int limit = m1.rlen*m1.clen;
-			for( int i=0; i<limit; i++ )
-			{
+			int nnz = 0;
+			for( int i=0; i<limit; i++ ) {
 				c[i] = op.executeScalar( a[i] );
-				if( c[i] != 0 )
-					ret.nonZeros++;
+				nnz += (c[i] != 0) ? 1 : 0;
 			}
+			ret.nonZeros = nnz;
 		}
 		
 	}
@@ -1040,8 +1052,8 @@ public class LibMatrixBincell
 			Arrays.fill(c, cval0);
 			
 			//compute non-zero input values
-			for(int i=0, cix=0; i<m; i++, cix+=n) 
-			{
+			int nnz = m*n;
+			for(int i=0, cix=0; i<m; i++, cix+=n) {
 				if( !a.isEmpty(i) ) {
 					int apos = a.pos(i);
 					int alen = a.size(i);
@@ -1050,12 +1062,11 @@ public class LibMatrixBincell
 					for(int j=apos; j<apos+alen; j++) {
 						double val = op.executeScalar(avals[j]);
 						c[ cix+aix[j] ] = val;
+						nnz -= (val==0) ? 1 : 0;
 					}
 				}
 			}
-		
-			//recompute non zeros 
-			ret.recomputeNonZeros();
+			ret.nonZeros = nnz;
 		}
 		else //DENSE MATRIX
 		{
@@ -1067,12 +1078,12 @@ public class LibMatrixBincell
 			
 			//compute scalar operation, incl nnz maintenance
 			int limit = m1.rlen*m1.clen;
-			for( int i=0; i<limit; i++ )
-			{
+			int nnz = 0;
+			for( int i=0; i<limit; i++ ) {
 				c[i] = op.executeScalar( a[i] );
-				if( c[i] != 0 )
-					ret.nonZeros++;
+				nnz += (c[i] != 0) ? 1 : 0;
 			}
+			ret.nonZeros = nnz;
 		}
 	}
 
@@ -1270,21 +1281,18 @@ public class LibMatrixBincell
 		while( p1<size1 && p2< size2 )
 		{
 			double value = 0;
-			if(cols1[pos1+p1]<cols2[pos2+p2])
-			{
+			if(cols1[pos1+p1]<cols2[pos2+p2]) {
 				value = op.fn.execute(values1[pos1+p1], 0);
 				column = cols1[pos1+p1];
 				p1++;
 			}
-			else if(cols1[pos1+p1]==cols2[pos2+p2])
-			{
+			else if(cols1[pos1+p1]==cols2[pos2+p2]) {
 				value = op.fn.execute(values1[pos1+p1], values2[pos2+p2]);
 				column = cols1[pos1+p1];
 				p1++;
 				p2++;
 			}
-			else
-			{
+			else {
 				value = op.fn.execute(0, values2[pos2+p2]);
 				column = cols2[pos2+p2];
 				p2++;

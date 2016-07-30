@@ -575,20 +575,20 @@ public class MLContextTest extends AutomatedTestBase {
 	public void testCSVMatrixFileInputVariableSumDML() {
 		System.out.println("MLContextTest - CSV matrix file input variable sum DML");
 
-		String s = "M = read(Min); print('sum: ' + sum(M));";
+		String s = "M = read($Min); print('sum: ' + sum(M));";
 		String csvFile = baseDirectory + File.separator + "1234.csv";
 		setExpectedStdOut("sum: 10.0");
-		ml.execute(dml(s).in("Min", csvFile));
+		ml.execute(dml(s).in("$Min", csvFile));
 	}
 
 	@Test
 	public void testCSVMatrixFileInputVariableSumPYDML() {
 		System.out.println("MLContextTest - CSV matrix file input variable sum PYDML");
 
-		String s = "M = load(Min)\nprint('sum: ' + sum(M))";
+		String s = "M = load($Min)\nprint('sum: ' + sum(M))";
 		String csvFile = baseDirectory + File.separator + "1234.csv";
 		setExpectedStdOut("sum: 10.0");
-		ml.execute(pydml(s).in("Min", csvFile));
+		ml.execute(pydml(s).in("$Min", csvFile));
 	}
 
 	@Test
@@ -771,9 +771,9 @@ public class MLContextTest extends AutomatedTestBase {
 	public void testInputFrameDML() {
 		System.out.println("MLContextTest - input frame DML");
 
-		String s = "M = read(Min, data_type='frame', format='csv'); print(toString(M));";
+		String s = "M = read($Min, data_type='frame', format='csv'); print(toString(M));";
 		String csvFile = baseDirectory + File.separator + "one-two-three-four.csv";
-		Script script = dml(s).in("Min", csvFile);
+		Script script = dml(s).in("$Min", csvFile);
 		setExpectedStdOut("one");
 		ml.execute(script);
 	}
@@ -782,9 +782,9 @@ public class MLContextTest extends AutomatedTestBase {
 	public void testInputFramePYDML() {
 		System.out.println("MLContextTest - input frame PYDML");
 
-		String s = "M = load(Min, data_type='frame', format='csv')\nprint(toString(M))";
+		String s = "M = load($Min, data_type='frame', format='csv')\nprint(toString(M))";
 		String csvFile = baseDirectory + File.separator + "one-two-three-four.csv";
-		Script script = pydml(s).in("Min", csvFile);
+		Script script = pydml(s).in("$Min", csvFile);
 		setExpectedStdOut("one");
 		ml.execute(script);
 	}
@@ -793,9 +793,9 @@ public class MLContextTest extends AutomatedTestBase {
 	public void testOutputFrameDML() {
 		System.out.println("MLContextTest - output frame DML");
 
-		String s = "M = read(Min, data_type='frame', format='csv');";
+		String s = "M = read($Min, data_type='frame', format='csv');";
 		String csvFile = baseDirectory + File.separator + "one-two-three-four.csv";
-		Script script = dml(s).in("Min", csvFile).out("M");
+		Script script = dml(s).in("$Min", csvFile).out("M");
 		String[][] frame = ml.execute(script).getFrame("M");
 		Assert.assertEquals("one", frame[0][0]);
 		Assert.assertEquals("two", frame[0][1]);
@@ -807,9 +807,9 @@ public class MLContextTest extends AutomatedTestBase {
 	public void testOutputFramePYDML() {
 		System.out.println("MLContextTest - output frame PYDML");
 
-		String s = "M = load(Min, data_type='frame', format='csv')";
+		String s = "M = load($Min, data_type='frame', format='csv')";
 		String csvFile = baseDirectory + File.separator + "one-two-three-four.csv";
-		Script script = pydml(s).in("Min", csvFile).out("M");
+		Script script = pydml(s).in("$Min", csvFile).out("M");
 		String[][] frame = ml.execute(script).getFrame("M");
 		Assert.assertEquals("one", frame[0][0]);
 		Assert.assertEquals("two", frame[0][1]);

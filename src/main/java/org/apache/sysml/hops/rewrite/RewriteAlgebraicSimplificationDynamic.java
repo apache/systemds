@@ -69,6 +69,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	//valid aggregation operation types for empty (sparse-safe) operations (not all operations apply)
 	//AggOp.MEAN currently not due to missing count/corrections
 	private static AggOp[] LOOKUP_VALID_EMPTY_AGGREGATE = new AggOp[]{AggOp.SUM, AggOp.SUM_SQ, AggOp.MIN, AggOp.MAX, AggOp.PROD, AggOp.TRACE};
+	private static AggOp[] LOOKUP_VALID_UNNECESSARY_AGGREGATE = new AggOp[]{AggOp.SUM, AggOp.MIN, AggOp.MAX, AggOp.PROD, AggOp.TRACE};
 	
 	//valid unary operation types for empty (sparse-safe) operations (not all operations apply)
 	private static OpOp1[] LOOKUP_VALID_EMPTY_UNARY = new OpOp1[]{OpOp1.ABS, OpOp1.SIN, OpOp1.TAN, OpOp1.SQRT, OpOp1.ROUND, OpOp1.CUMSUM}; 
@@ -149,13 +150,14 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			hi = removeUnnecessaryLeftIndexing(hop, hi, i);   //e.g., X[,1]=Y -> Y, if output == input dims 
 			hi = fuseLeftIndexingChainToAppend(hop, hi, i);   //e.g., X[,1]=A; X[,2]=B -> X=cbind(A,B), iff ncol(X)==2 and col1/2 lix
 			hi = removeUnnecessaryCumulativeOp(hop, hi, i);   //e.g., cumsum(X) -> X, if nrow(X)==1;
-			hi = removeUnnecessaryReorgOperation(hop, hi, i); //e.g., matrix(X) -> X, if output == input dims
+			hi = removeUnnecessaryReorgOperation(hop, hi, i); //e.g., matrix(X) -> X, if dims(in)==dims(out); r(X)->X, if 1x1 dims
 			hi = removeUnnecessaryOuterProduct(hop, hi, i);   //e.g., X*(Y%*%matrix(1,...) -> X*Y, if Y col vector
 			hi = fuseDatagenAndReorgOperation(hop, hi, i);    //e.g., t(rand(rows=10,cols=1)) -> rand(rows=1,cols=10), if one dim=1
 			hi = simplifyColwiseAggregate(hop, hi, i);        //e.g., colsums(X) -> sum(X) or X, if col/row vector
 			hi = simplifyRowwiseAggregate(hop, hi, i);        //e.g., rowsums(X) -> sum(X) or X, if row/col vector
 			hi = simplifyColSumsMVMult(hop, hi, i);           //e.g., colSums(X*Y) -> t(Y) %*% X, if Y col vector
 			hi = simplifyRowSumsMVMult(hop, hi, i);           //e.g., rowSums(X*Y) -> X %*% t(Y), if Y row vector
+			hi = simplifyUnnecessaryAggregate(hop, hi, i);    //e.g., sum(X) -> as.scalar(X), if 1x1 dims
 			hi = simplifyEmptyAggregate(hop, hi, i);          //e.g., sum(X) -> 0, if nnz(X)==0
 			hi = simplifyEmptyUnaryOperation(hop, hi, i);     //e.g., round(X) -> matrix(0,nrow(X),ncol(X)), if nnz(X)==0			
 			hi = simplifyEmptyReorgOperation(hop, hi, i);     //e.g., t(X) -> matrix(0, ncol(X), nrow(X)) 
@@ -428,22 +430,26 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	 */
 	private Hop removeUnnecessaryReorgOperation(Hop parent, Hop hi, int pos)
 	{
-		if( hi instanceof ReorgOp && ((ReorgOp)hi).getOp() == ReOrgOp.RESHAPE ) //reshape operation
+		if( hi instanceof ReorgOp ) 
 		{
+			ReorgOp rop = (ReorgOp) hi;
 			Hop input = hi.getInput().get(0); 
-
-			if( HopRewriteUtils.isEqualSize(hi, input) ) //equal dims
-			{
-				//equal dims of reshape input and output -> no need for reshape because 
-				//byrow always refers to both input/output and hence gives the same result
-				
-				//remove unnecessary right indexing
-				HopRewriteUtils.removeChildReference(parent, hi);				
+			boolean apply = false;
+			
+			//equal dims of reshape input and output -> no need for reshape because 
+			//byrow always refers to both input/output and hence gives the same result
+			apply |= (rop.getOp()==ReOrgOp.RESHAPE && HopRewriteUtils.isEqualSize(hi, input));
+			
+			//1x1 dimensions of transpose/reshape -> no need for reorg 	
+			apply |= ((rop.getOp()==ReOrgOp.TRANSPOSE || rop.getOp()==ReOrgOp.RESHAPE) 
+					&& rop.getDim1()==1 && rop.getDim2()==1);
+			
+			if( apply ) {
+				HopRewriteUtils.removeChildReferenceByPos(parent, hi, pos);				
 				HopRewriteUtils.addChildReference(parent, input, pos);
 				parent.refreshSizeInformation();
 				hi = input;
-				
-				LOG.debug("Applied removeUnnecessaryReshape");
+				LOG.debug("Applied removeUnnecessaryReorg.");
 			}			
 		}
 		
@@ -828,6 +834,43 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 					}
 				}	
 			}
+		}
+		
+		return hi;
+	}
+	
+	/**
+	 * 
+	 * @param parent
+	 * @param hi
+	 * @param pos
+	 * @return
+	 * @throws HopsException
+	 */
+	private Hop simplifyUnnecessaryAggregate(Hop parent, Hop hi, int pos) 
+		throws HopsException
+	{
+		//e.g., sum(X) -> as.scalar(X) if 1x1 (applies to sum, min, max, prod, trace)
+		if( hi instanceof AggUnaryOp && ((AggUnaryOp)hi).getDirection()==Direction.RowCol  ) 
+		{
+			AggUnaryOp uhi = (AggUnaryOp)hi;
+			Hop input = uhi.getInput().get(0);
+			
+			if( HopRewriteUtils.isValidOp(uhi.getOp(), LOOKUP_VALID_UNNECESSARY_AGGREGATE) ){		
+				
+				if( input.getDim1()==1 && input.getDim2()==1 )
+				{
+					UnaryOp cast = HopRewriteUtils.createUnary(input, OpOp1.CAST_AS_SCALAR);
+					
+					//remove unnecessary aggregation 
+					HopRewriteUtils.removeChildReferenceByPos(parent, hi, pos);
+					HopRewriteUtils.addChildReference(parent, cast, pos);
+					parent.refreshSizeInformation();
+					hi = cast;
+					
+					LOG.debug("Applied simplifyUnncessaryAggregate");
+				}
+			}			
 		}
 		
 		return hi;

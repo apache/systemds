@@ -512,7 +512,8 @@ public class HopRewriteUtils
 	public static UnaryOp createUnary(Hop input, OpOp1 type) 
 		throws HopsException
 	{
-		UnaryOp unary = new UnaryOp(input.getName(), input.getDataType(), input.getValueType(), type, input);
+		DataType dt = (type==OpOp1.CAST_AS_SCALAR) ? DataType.SCALAR : input.getDataType();
+		UnaryOp unary = new UnaryOp(input.getName(), dt, input.getValueType(), type, input);
 		HopRewriteUtils.setOutputBlocksizes(unary, input.getRowsInBlock(), input.getColsInBlock());
 		HopRewriteUtils.copyLineNumbers(input, unary);
 		unary.refreshSizeInformation();	

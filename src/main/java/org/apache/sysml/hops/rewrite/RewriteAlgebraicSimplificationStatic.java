@@ -144,6 +144,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
  			hi = simplifyDistributiveBinaryOperation(hop, hi, i);//e.g., (X-Y*X) -> (1-Y)*X
  			hi = simplifyBushyBinaryOperation(hop, hi, i);       //e.g., (X*(Y*(Z%*%v))) -> (X*Y)*(Z%*%v)
  			hi = simplifyUnaryAggReorgOperation(hop, hi, i);     //e.g., sum(t(X)) -> sum(X)
+ 			hi = simplifyBinaryMatrixScalarOperation(hop, hi, i);//e.g., as.scalar(X*s) -> as.scalar(X)*s;
  			hi = pushdownUnaryAggTransposeOperation(hop, hi, i); //e.g., colSums(t(X)) -> t(rowSums(X))
  			hi = pushdownSumBinaryMult(hop, hi, i);              //e.g., sum(lamda*X) -> lamda*sum(X)
  			hi = simplifyUnaryPPredOperation(hop, hi, i);        //e.g., abs(ppred()) -> ppred(), others: round, ceil, floor
@@ -878,6 +879,52 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				HopRewriteUtils.addChildReference(hi, input);
 				
 				LOG.debug("Applied simplifyUnaryAggReorgOperation");
+			}
+		}
+		
+		return hi;
+	}
+	
+	/**
+	 * 
+	 * @param parent
+	 * @param hi
+	 * @param pos
+	 * @return
+	 * @throws HopsException
+	 */
+	private Hop simplifyBinaryMatrixScalarOperation( Hop parent, Hop hi, int pos ) 
+		throws HopsException
+	{
+		if(   hi instanceof UnaryOp && ((UnaryOp)hi).getOp()==OpOp1.CAST_AS_SCALAR  
+		   && hi.getInput().get(0) instanceof BinaryOp ) 
+		{
+			BinaryOp bin = (BinaryOp) hi.getInput().get(0);
+			BinaryOp bout = null;
+			
+			//as.scalar(X*Y) -> as.scalar(X) * as.scalar(Y)
+			if( bin.getInput().get(0).getDataType()==DataType.MATRIX 
+				&& bin.getInput().get(1).getDataType()==DataType.MATRIX ) {
+				UnaryOp cast1 = HopRewriteUtils.createUnary(bin.getInput().get(0), OpOp1.CAST_AS_SCALAR);
+				UnaryOp cast2 = HopRewriteUtils.createUnary(bin.getInput().get(1), OpOp1.CAST_AS_SCALAR);
+				bout = HopRewriteUtils.createBinary(cast1, cast2, bin.getOp());
+			}
+			//as.scalar(X*s) -> as.scalar(X) * s
+			else if( bin.getInput().get(0).getDataType()==DataType.MATRIX ) {
+				UnaryOp cast = HopRewriteUtils.createUnary(bin.getInput().get(0), OpOp1.CAST_AS_SCALAR);
+				bout = HopRewriteUtils.createBinary(cast, bin.getInput().get(1), bin.getOp());
+			}
+			//as.scalar(s*X) -> s * as.scalar(X)
+			else if ( bin.getInput().get(1).getDataType()==DataType.MATRIX ) {
+				UnaryOp cast = HopRewriteUtils.createUnary(bin.getInput().get(1), OpOp1.CAST_AS_SCALAR);
+				bout = HopRewriteUtils.createBinary(bin.getInput().get(0), cast, bin.getOp());
+			}
+			
+			if( bout != null ) {
+				HopRewriteUtils.removeChildReferenceByPos(parent, hi, pos);
+				HopRewriteUtils.addChildReference(parent, bout, pos);
+				
+				LOG.debug("Applied simplifyBinaryMatrixScalarOperation.");
 			}
 		}
 		

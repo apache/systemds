@@ -60,16 +60,10 @@ public abstract class ArithmeticBinaryCPInstruction extends BinaryCPInstruction
 		//make sure these checks belong here
 		//if either input is a matrix, then output
 		//has to be a matrix
-		if((dt1 == DataType.MATRIX 
-			|| dt2 == DataType.MATRIX) 
-		   && dt3 != DataType.MATRIX)
-			throw new DMLRuntimeException("Element-wise matrix operations between variables "
-										  + in1.getName()
-										  + " and "
-										  + in2.getName()
-										  + " must produce a matrix, which "
-										  + out.getName()
-										  + "is not");
+		if((dt1 == DataType.MATRIX  || dt2 == DataType.MATRIX) && dt3 != DataType.MATRIX) {
+			throw new DMLRuntimeException("Element-wise matrix operations between variables " + in1.getName() + 
+					" and " + in2.getName() + " must produce a matrix, which " + out.getName() + "is not");
+		}
 		
 		Operator operator = (dt1 != dt2) ?
 					InstructionUtils.parseScalarBinaryOperator(opcode, (dt1 == DataType.SCALAR)) : 

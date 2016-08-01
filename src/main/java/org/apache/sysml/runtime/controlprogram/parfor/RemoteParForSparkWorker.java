@@ -21,11 +21,11 @@ package org.apache.sysml.runtime.controlprogram.parfor;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import org.apache.spark.Accumulator;
 import org.apache.spark.TaskContext;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
-
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDHandler;
@@ -64,7 +64,7 @@ public class RemoteParForSparkWorker extends ParWorker implements PairFlatMapFun
 	}
 	
 	@Override 
-	public Iterable<Tuple2<Long, String>> call(Task arg0)
+	public Iterator<Tuple2<Long, String>> call(Task arg0)
 		throws Exception 
 	{
 		//lazy parworker initialization
@@ -86,7 +86,7 @@ public class RemoteParForSparkWorker extends ParWorker implements PairFlatMapFun
 		for( String val : tmp )
 			ret.add(new Tuple2<Long,String>(_workerID, val));
 			
-		return ret;
+		return ret.iterator();
 	}
 	
 	/**

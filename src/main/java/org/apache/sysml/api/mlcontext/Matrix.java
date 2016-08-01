@@ -21,7 +21,8 @@ package org.apache.sysml.api.mlcontext;
 
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.rdd.RDD;
-import org.apache.spark.sql.DataFrame;
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Row;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -107,8 +108,8 @@ public class Matrix {
 	 * 
 	 * @return the matrix as a {@code DataFrame}
 	 */
-	public DataFrame asDataFrame() {
-		DataFrame df = MLContextConversionUtil.matrixObjectToDataFrame(matrixObject, sparkExecutionContext);
+	public Dataset<Row> asDataFrame() {
+		Dataset<Row> df = MLContextConversionUtil.matrixObjectToDataFrame(matrixObject, sparkExecutionContext);
 		return df;
 	}
 

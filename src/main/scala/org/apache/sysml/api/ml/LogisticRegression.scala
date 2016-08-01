@@ -25,6 +25,8 @@ import org.apache.sysml.runtime.matrix.MatrixCharacteristics
 import org.apache.sysml.runtime.instructions.spark.utils.{ RDDConverterUtilsExt => RDDConverterUtils }
 import org.apache.spark.{ SparkContext }
 import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.Dataset
+import org.apache.spark.sql.Row
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.ml.{ Model, Estimator }
 import org.apache.spark.ml.classification._
@@ -81,10 +83,11 @@ class LogisticRegression(override val uid: String, val sc: SparkContext) extends
     copyValues(that, extra)
   }
   override def transformSchema(schema: StructType): StructType = schema
-  override def fit(df: DataFrame): LogisticRegressionModel = {
+  override def fit(df: Dataset[_]): LogisticRegressionModel = {
     val ml = new MLContext(df.rdd.sparkContext)
     val mcXin = new MatrixCharacteristics()
-    val Xin = RDDConverterUtils.vectorDataFrameToBinaryBlock(sc, df, mcXin, false, "features")
+    val frame = df.asInstanceOf[Dataset[Row]]
+    val Xin = RDDConverterUtils.vectorDataFrameToBinaryBlock(sc, frame, mcXin, false, "features")
     val yin = df.select("label").rdd.map { _.apply(0).toString() }
 
     val mloutput = {
@@ -124,11 +127,12 @@ class LogisticRegressionModel(
     copyValues(that, extra)
   }
   override def transformSchema(schema: StructType): StructType = schema
-  override def transform(df: DataFrame): DataFrame = {
+  override def transform(df: Dataset[_]): DataFrame = {
     val ml = new MLContext(df.rdd.sparkContext)
 
     val mcXin = new MatrixCharacteristics()
-    val Xin = RDDConverterUtils.vectorDataFrameToBinaryBlock(df.rdd.sparkContext, df, mcXin, false, "features")
+    val frame = df.asInstanceOf[Dataset[Row]]
+    val Xin = RDDConverterUtils.vectorDataFrameToBinaryBlock(df.rdd.sparkContext, frame, mcXin, false, "features")
 
     val mlscoreoutput = {
       val paramsMap: Map[String, String] = Map(
@@ -161,7 +165,7 @@ class LogisticRegressionModel(
     val rawPred = outNew.getDF(df.sqlContext, "rawPred", true).withColumnRenamed("C1", "rawPrediction").withColumnRenamed("ID", "ID2")
     var predictionsNProb = prob.join(pred, prob.col("ID").equalTo(pred.col("ID1"))).select("ID", "probability", "prediction")
     predictionsNProb = predictionsNProb.join(rawPred, predictionsNProb.col("ID").equalTo(rawPred.col("ID2"))).select("ID", "probability", "prediction", "rawPrediction")
-    val dataset1 = RDDConverterUtils.addIDToDataFrame(df, df.sqlContext, "ID")
+    val dataset1 = RDDConverterUtils.addIDToDataFrame(frame, df.sqlContext, "ID")
     dataset1.join(predictionsNProb, dataset1.col("ID").equalTo(predictionsNProb.col("ID")))
   }
 }

@@ -48,7 +48,7 @@ public class MatrixVectorBinaryOpPartitionFunction implements PairFlatMapFunctio
 	}
 
 	@Override
-	public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<MatrixIndexes, MatrixBlock>> arg0) 
+	public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<MatrixIndexes, MatrixBlock>> arg0) 
 		throws Exception 
 	{
 		return new MapBinaryPartitionIterator( arg0 );

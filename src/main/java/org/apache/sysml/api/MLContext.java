@@ -34,7 +34,8 @@ import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.rdd.RDD;
-import org.apache.spark.sql.DataFrame;
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SQLContext;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.api.jmlc.JMLCUtils;
@@ -258,7 +259,7 @@ public class MLContext {
 	 * @param df
 	 * @throws DMLRuntimeException
 	 */
-	public void registerInput(String varName, DataFrame df) throws DMLRuntimeException {
+	public void registerInput(String varName, Dataset<Row> df) throws DMLRuntimeException {
 		registerInput(varName, df, false);
 	}
 	
@@ -272,7 +273,7 @@ public class MLContext {
 	 * @param containsID false if the DataFrame has an column ID which denotes the row ID.
 	 * @throws DMLRuntimeException
 	 */
-	public void registerInput(String varName, DataFrame df, boolean containsID) throws DMLRuntimeException {
+	public void registerInput(String varName, Dataset<Row> df, boolean containsID) throws DMLRuntimeException {
 		MatrixCharacteristics mcOut = new MatrixCharacteristics();
 		JavaPairRDD<MatrixIndexes, MatrixBlock> rdd = RDDConverterUtilsExt.dataFrameToBinaryBlock(new JavaSparkContext(_sc), df, mcOut, containsID);
 		registerInput(varName, rdd, mcOut);

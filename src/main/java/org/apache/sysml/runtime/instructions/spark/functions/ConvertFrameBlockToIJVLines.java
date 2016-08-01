@@ -32,7 +32,7 @@ public class ConvertFrameBlockToIJVLines implements FlatMapFunction<Tuple2<Long,
 	private static final long serialVersionUID = 1803516615963340115L;
 
 	@Override
-	public Iterable<String> call(Tuple2<Long, FrameBlock> kv) 
+	public Iterator<String> call(Tuple2<Long, FrameBlock> kv) 
 		throws Exception 
 	{
 		long rowoffset = kv._1;
@@ -68,6 +68,6 @@ public class ConvertFrameBlockToIJVLines implements FlatMapFunction<Tuple2<Long,
 			}
 		}
 		
-		return cells;
+		return cells.iterator();
 	}
 }

@@ -39,7 +39,8 @@ import org.apache.spark.mllib.linalg.Vector;
 import org.apache.spark.mllib.linalg.VectorUDT;
 import org.apache.spark.mllib.linalg.distributed.CoordinateMatrix;
 import org.apache.spark.mllib.linalg.distributed.MatrixEntry;
-import org.apache.spark.sql.DataFrame;
+import org.apache.spark.rdd.RDD;
+import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.SQLContext;
@@ -141,19 +142,19 @@ public class RDDConverterUtilsExt
 	}
 	
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> vectorDataFrameToBinaryBlock(SparkContext sc,
-			DataFrame inputDF, MatrixCharacteristics mcOut, boolean containsID, String vectorColumnName) throws DMLRuntimeException {
+			Dataset<Row> inputDF, MatrixCharacteristics mcOut, boolean containsID, String vectorColumnName) throws DMLRuntimeException {
 		return vectorDataFrameToBinaryBlock(new JavaSparkContext(sc), inputDF, mcOut, containsID, vectorColumnName);
 	}
 	
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> vectorDataFrameToBinaryBlock(JavaSparkContext sc,
-			DataFrame inputDF, MatrixCharacteristics mcOut, boolean containsID, String vectorColumnName)
+			Dataset<Row> inputDF, MatrixCharacteristics mcOut, boolean containsID, String vectorColumnName)
 			throws DMLRuntimeException {
 		
 		if(containsID) {
 			inputDF = dropColumn(inputDF.sort("ID"), "ID");
 		}
 		
-		DataFrame df = inputDF.select(vectorColumnName);
+		Dataset<Row> df = inputDF.select(vectorColumnName);
 			
 		//determine unknown dimensions and sparsity if required
 		if( !mcOut.dimsKnown(true) ) {
@@ -186,7 +187,7 @@ public class RDDConverterUtilsExt
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static DataFrame dropColumn(DataFrame df, String column) throws DMLRuntimeException {
+	public static Dataset<Row> dropColumn(Dataset<Row> df, String column) throws DMLRuntimeException {
 		ArrayList<String> columnToSelect = new ArrayList<String>();
 		String firstCol = null;
 		boolean colPresent = false;
@@ -213,7 +214,7 @@ public class RDDConverterUtilsExt
 		return df.select(firstCol, scala.collection.JavaConversions.asScalaBuffer(columnToSelect).toList());
 	}
 	
-	public static DataFrame projectColumns(DataFrame df, ArrayList<String> columns) throws DMLRuntimeException {
+	public static Dataset<Row> projectColumns(Dataset<Row> df, ArrayList<String> columns) throws DMLRuntimeException {
 		ArrayList<String> columnToSelect = new ArrayList<String>();
 		for(int i = 1; i < columns.size(); i++) {
 			columnToSelect.add(columns.get(i));
@@ -222,41 +223,41 @@ public class RDDConverterUtilsExt
 	}
 	
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> dataFrameToBinaryBlock(SparkContext sc,
-			DataFrame df, MatrixCharacteristics mcOut, boolean containsID) throws DMLRuntimeException {
+			Dataset<Row> df, MatrixCharacteristics mcOut, boolean containsID) throws DMLRuntimeException {
 		return dataFrameToBinaryBlock(new JavaSparkContext(sc), df, mcOut, containsID, null);
 	}
 	
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> dataFrameToBinaryBlock(SparkContext sc,
-			DataFrame df, MatrixCharacteristics mcOut, String [] columns) throws DMLRuntimeException {
+			Dataset<Row> df, MatrixCharacteristics mcOut, String [] columns) throws DMLRuntimeException {
 		ArrayList<String> columns1 = new ArrayList<String>(Arrays.asList(columns));
 		return dataFrameToBinaryBlock(new JavaSparkContext(sc), df, mcOut, false, columns1);
 	}
 	
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> dataFrameToBinaryBlock(SparkContext sc,
-			DataFrame df, MatrixCharacteristics mcOut, ArrayList<String> columns) throws DMLRuntimeException {
+			Dataset<Row> df, MatrixCharacteristics mcOut, ArrayList<String> columns) throws DMLRuntimeException {
 		return dataFrameToBinaryBlock(new JavaSparkContext(sc), df, mcOut, false, columns);
 	}
 	
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> dataFrameToBinaryBlock(SparkContext sc,
-			DataFrame df, MatrixCharacteristics mcOut, boolean containsID, String [] columns) 
+			Dataset<Row> df, MatrixCharacteristics mcOut, boolean containsID, String [] columns) 
 			throws DMLRuntimeException {
 		ArrayList<String> columns1 = new ArrayList<String>(Arrays.asList(columns));
 		return dataFrameToBinaryBlock(new JavaSparkContext(sc), df, mcOut, containsID, columns1);
 	}
 	
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> dataFrameToBinaryBlock(SparkContext sc,
-			DataFrame df, MatrixCharacteristics mcOut, boolean containsID, ArrayList<String> columns) 
+			Dataset<Row> df, MatrixCharacteristics mcOut, boolean containsID, ArrayList<String> columns) 
 			throws DMLRuntimeException {
 		return dataFrameToBinaryBlock(new JavaSparkContext(sc), df, mcOut, containsID, columns);
 	}
 	
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> dataFrameToBinaryBlock(JavaSparkContext sc,
-			DataFrame df, MatrixCharacteristics mcOut, boolean containsID) throws DMLRuntimeException {
+			Dataset<Row> df, MatrixCharacteristics mcOut, boolean containsID) throws DMLRuntimeException {
 		return dataFrameToBinaryBlock(sc, df, mcOut, containsID, null);
 	}
 	
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> dataFrameToBinaryBlock(JavaSparkContext sc,
-			DataFrame df, MatrixCharacteristics mcOut, ArrayList<String> columns) throws DMLRuntimeException {
+			Dataset<Row> df, MatrixCharacteristics mcOut, ArrayList<String> columns) throws DMLRuntimeException {
 		return dataFrameToBinaryBlock(sc, df, mcOut, false, columns);
 	}
 	
@@ -272,7 +273,7 @@ public class RDDConverterUtilsExt
 	 * @throws DMLRuntimeException
 	 */
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> dataFrameToBinaryBlock(JavaSparkContext sc,
-			DataFrame df, MatrixCharacteristics mcOut, boolean containsID, ArrayList<String> columns) 
+			Dataset<Row> df, MatrixCharacteristics mcOut, boolean containsID, ArrayList<String> columns) 
 			throws DMLRuntimeException {
 		if(columns != null) {
 			df = projectColumns(df, columns);
@@ -306,7 +307,7 @@ public class RDDConverterUtilsExt
 		return out;
 	}
 	
-	public static DataFrame binaryBlockToVectorDataFrame(JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlockRDD, 
+	public static Dataset<Row> binaryBlockToVectorDataFrame(JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlockRDD, 
 			MatrixCharacteristics mc, SQLContext sqlContext) throws DMLRuntimeException {
 		long rlen = mc.getRows(); long clen = mc.getCols();
 		int brlen = mc.getRowsPerBlock(); int bclen = mc.getColsPerBlock();
@@ -328,7 +329,7 @@ public class RDDConverterUtilsExt
 		// This will cause infinite recursion due to bug in Spark
 		// https://issues.apache.org/jira/browse/SPARK-6999
 		// return sqlContext.createDataFrame(rowsRDD, colNames); // where ArrayList<String> colNames
-		return sqlContext.createDataFrame(rowsRDD.rdd(), DataTypes.createStructType(fields));
+		return RDDConverterUtilsExt.createDataFrame(sqlContext, rowsRDD.rdd(), DataTypes.createStructType(fields));
 	}
 	
 	public static class AddRowID implements Function<Tuple2<Row,Long>, Row> {
@@ -354,7 +355,7 @@ public class RDDConverterUtilsExt
 	 * @param nameOfCol name of index column
 	 * @return new data frame
 	 */
-	public static DataFrame addIDToDataFrame(DataFrame df, SQLContext sqlContext, String nameOfCol) {
+	public static Dataset<Row> addIDToDataFrame(Dataset<Row> df, SQLContext sqlContext, String nameOfCol) {
 		StructField[] oldSchema = df.schema().fields();
 		StructField[] newSchema = new StructField[oldSchema.length + 1];
 		for(int i = 0; i < oldSchema.length; i++) {
@@ -363,10 +364,11 @@ public class RDDConverterUtilsExt
 		newSchema[oldSchema.length] = DataTypes.createStructField(nameOfCol, DataTypes.DoubleType, false);
 		// JavaRDD<Row> newRows = df.rdd().toJavaRDD().map(new AddRowID());
 		JavaRDD<Row> newRows = df.rdd().toJavaRDD().zipWithIndex().map(new AddRowID());
-		return sqlContext.createDataFrame(newRows, new StructType(newSchema));
+		//return sqlContext.createDataFrame(newRows, new StructType(newSchema));
+		return RDDConverterUtilsExt.createDataFrame(sqlContext, newRows, new StructType(newSchema));
 	}
 	
-	public static DataFrame binaryBlockToDataFrame(JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlockRDD, 
+	public static Dataset<Row> binaryBlockToDataFrame(JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlockRDD, 
 			MatrixCharacteristics mc, SQLContext sqlContext) throws DMLRuntimeException {
 		long rlen = mc.getRows(); long clen = mc.getCols();
 		int brlen = mc.getRowsPerBlock(); int bclen = mc.getColsPerBlock();
@@ -391,7 +393,72 @@ public class RDDConverterUtilsExt
 		// This will cause infinite recursion due to bug in Spark
 		// https://issues.apache.org/jira/browse/SPARK-6999
 		// return sqlContext.createDataFrame(rowsRDD, colNames); // where ArrayList<String> colNames
-		return sqlContext.createDataFrame(rowsRDD.rdd(), DataTypes.createStructType(fields));
+		return RDDConverterUtilsExt.createDataFrame(sqlContext, rowsRDD.rdd(), DataTypes.createStructType(fields));
+	}
+	
+	/**
+	 * Wrapper for org.apache.spark.sql.SQLContext.createDataFrame
+	 * 
+	 * *** HACK ALERT *** HACK ALERT *** HACK ALERT ***
+	 * Work-around for Spark 2.0.0 uri syntax issue on Windows [SPARK-15893] [SPARK-15899]
+	 * 
+	 * @param sqlContext SQLContext
+	 * @param rowRDD RDD<Row>
+	 * @param schema org.apache.spark.sql.types.StructType
+	 * @return
+	 */
+	public static Dataset<Row> createDataFrame(SQLContext sqlContext, RDD<Row> rowRDD, StructType schema) {
+		String userDir = System.getProperty("user.dir");
+		boolean windows = System.getProperty("os.name").toLowerCase().contains("win");
+		if (windows) {
+			// Prevent java.net.URISyntaxException: Relative path in absolute URI
+			String uriDir = userDir.replace('\\', '/');
+			if (!uriDir.startsWith("/")) {
+				uriDir = "/" + uriDir;
+			}
+			System.setProperty("user.dir", uriDir);
+		}
+
+		Dataset<Row> df = sqlContext.createDataFrame(rowRDD, schema);
+		
+		if (windows) {
+			// Restore original value
+			System.setProperty("user.dir", userDir);
+		}
+
+		return df;
+	}
+	/**
+	 * Wrapper for org.apache.spark.sql.SQLContext.createDataFrame
+	 * 
+	 * *** HACK ALERT *** HACK ALERT *** HACK ALERT ***
+	 * Work-around for Spark 2.0.0 uri syntax issue on Windows [SPARK-15893] [SPARK-15899]
+	 * 
+	 * @param sqlContext SQLContext
+	 * @param rowRDD JavaRDD<Row>
+	 * @param schema org.apache.spark.sql.types.StructType
+	 * @return
+	 */
+	public static Dataset<Row> createDataFrame(SQLContext sqlContext, JavaRDD<Row> rowRDD, StructType schema) {
+		String userDir = System.getProperty("user.dir");
+		boolean windows = System.getProperty("os.name").toLowerCase().contains("win");
+		if (windows) {
+			// Prevent java.net.URISyntaxException: Relative path in absolute URI
+			String uriDir = userDir.replace('\\', '/');
+			if (!uriDir.startsWith("/")) {
+				uriDir = "/" + uriDir;
+			}
+			System.setProperty("user.dir", uriDir);
+		}
+
+		Dataset<Row> df = sqlContext.createDataFrame(rowRDD, schema);
+		
+		if (windows) {
+			// Restore original value
+			System.setProperty("user.dir", userDir);
+		}
+
+		return df;
 	}
 	
 	private static class MatrixEntryToBinaryBlockFunction implements PairFlatMapFunction<Iterator<MatrixEntry>,MatrixIndexes,MatrixBlock> 
@@ -404,7 +471,7 @@ public class RDDConverterUtilsExt
 		}
 
 		@Override
-		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<MatrixEntry> arg0) throws Exception {
+		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<MatrixEntry> arg0) throws Exception {
 			return helper.convertToBinaryBlock(arg0, RDDConverterTypes.MATRIXENTRY_TO_MATRIXCELL);
 		}
 
@@ -439,7 +506,7 @@ public class RDDConverterUtilsExt
 		}
 		
 		@Override
-		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<Text, Long>> arg0) throws Exception {
+		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<Text, Long>> arg0) throws Exception {
 			return helper.convertToBinaryBlock(arg0, RDDConverterTypes.TEXT_TO_DOUBLEARR);
 		}
 		
@@ -456,7 +523,7 @@ public class RDDConverterUtilsExt
 		}
 		
 		@Override
-		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<Row, Long>> arg0) throws Exception {
+		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<Row, Long>> arg0) throws Exception {
 			if(isVectorBasedDF)
 				return helper.convertToBinaryBlock(arg0, RDDConverterTypes.VECTOR_TO_DOUBLEARR);
 			else
@@ -588,7 +655,7 @@ public class RDDConverterUtilsExt
 		
 		// ----------------------------------------------------
 		
-		Iterable<Tuple2<MatrixIndexes, MatrixBlock>> convertToBinaryBlock(Object arg0, RDDConverterTypes converter)  throws Exception {
+		Iterator<Tuple2<MatrixIndexes, MatrixBlock>> convertToBinaryBlock(Object arg0, RDDConverterTypes converter)  throws Exception {
 			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
 			ReblockBuffer rbuff = new ReblockBuffer(_bufflen, _rlen, _clen, _brlen, _bclen);
 		
@@ -623,7 +690,7 @@ public class RDDConverterUtilsExt
 			//final flush buffer
 			flushBufferToList(rbuff, ret);
 		
-			return ret;
+			return ret.iterator();
 		}
 		
 		/**
@@ -710,7 +777,7 @@ public class RDDConverterUtilsExt
 		}
 		// ----------------------------------------------------
 
-		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> convertToBinaryBlock(Object arg0, RDDConverterTypes converter) 
+		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> convertToBinaryBlock(Object arg0, RDDConverterTypes converter) 
 			throws Exception 
 		{
 			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
@@ -772,7 +839,7 @@ public class RDDConverterUtilsExt
 			//flush last blocks
 			flushBlocksToList(ix, mb, ret);
 		
-			return ret;
+			return ret.iterator();
 		}
 			
 		// Creates new state of empty column blocks for current global row index.

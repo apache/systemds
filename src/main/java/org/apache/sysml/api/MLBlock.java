@@ -20,6 +20,7 @@ package org.apache.sysml.api;
 
 import java.math.BigDecimal;
 import java.sql.Date;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -28,7 +29,6 @@ import org.apache.spark.sql.Row;
 import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
-
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 
@@ -253,9 +253,15 @@ public class MLBlock implements Row {
 	public static StructType getDefaultSchemaForBinaryBlock() {
 		// TODO:
 		StructField[] fields = new StructField[2];
-		fields[0] = new StructField("IgnoreSchema", DataType.fromCaseClassString("DoubleType"), true, null);
-		fields[1] = new StructField("IgnoreSchema1", DataType.fromCaseClassString("DoubleType"), true, null);
+		fields[0] = new StructField("IgnoreSchema", DataType.fromJson("DoubleType"), true, null);
+		fields[1] = new StructField("IgnoreSchema1", DataType.fromJson("DoubleType"), true, null);
 		return new StructType(fields);
+	}
+
+	@Override
+	public Timestamp getTimestamp(int arg0) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 

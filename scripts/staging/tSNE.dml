@@ -1,3 +1,27 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# This script performs dimensionality reduction using tSNE algorithm based on
+# the paper: Visualizing Data using t-SNE, Maaten et. al.
+
 X = read($X)
 
 distance_matrix = function(matrix[double] X)
@@ -18,22 +42,24 @@ x2p = function(matrix[double] X, double tol, double perplexity)
     logU = log(perplexity)
 
     for (i in 1:n) {
-      betamin = 0 # beta cannot be negative
+      betamin = 0. # beta cannot be negative
       betamax = INF
       Hdiff = INF
       itr = 0
+      if (i %% 100 == 0) {
+        print("1 : "+ i)
+      }
 
+      Di = D[i,]
       while (abs(Hdiff) > tol & itr < 50) {
-        P[i,] = exp(-D[i,] * beta[i,1])
-        P[i,i] = 0.
-        sum_Pi = sum(P[i,])
+        Pi = exp(-Di * beta[i,1])
+        P[1,i] = 0.
+        sum_Pi = sum(Pi)
 
-        H = log(sum_Pi) + beta[i,1] * sum(D[i,] * P[i,]) / sum_Pi
-        P[i,] = P[i,]/sum_Pi
-
+        H = log(sum_Pi) + beta[i,1] * sum(Di * Pi) / sum_Pi
+        Pi = Pi/sum_Pi
         Hdiff = as.scalar(H - logU)
-        # print(i + " " + itr + " " +  as.scalar(D[i,1]) + " " + as.scalar(beta[i,1]) +
-        #   " " + as.scalar(P[i,1]) + " " + sum_Pi + " " + as.scalar(H[1,1]))
+
         if (Hdiff > 0.) {
           betamin = as.scalar(beta[i,1])
           if (betamax == INF) {
@@ -42,6 +68,8 @@ x2p = function(matrix[double] X, double tol, double perplexity)
              beta[i,1] = (beta[i,1] + betamax) / 2.
           }
         } else {
+          #print("in Hdiff <= 0.0")
+
           betamax = as.scalar(beta[i,1])
           if (betamin == 0.) {
             beta[i,1] = beta[i,1] / 2.
@@ -51,6 +79,7 @@ x2p = function(matrix[double] X, double tol, double perplexity)
         }
         itr = itr + 1
       }
+      P[i,] = Pi
     }
     P = P + t(P)
     P = P / sum(P)
@@ -63,18 +92,16 @@ tsne = function(matrix[double] X, int reduced_dims, int initial_dims, int perple
 
     max_iter = 2000
     eta = 500
-
     P = x2p(X, 1.0e-5, 20.0)
     P = P*4
     Y = rand(rows=n, cols=d, pdf="normal")
     C = matrix(0, rows=max_iter, cols=1)
+    ZERODIAG = (diag(matrix(-1, rows=n, cols=1)) + 1)
 
     for (itr in 1:max_iter) {
       D = distance_matrix(Y)
       Z = 1/(D + 1)
-      parfor (j in 1:n) {
-        Z[j,j] = 0
-      }
+      Z = Z * ZERODIAG
       Q = Z/sum(Z)
       W = (P - Q)*Z
       sumW = rowSums(W)
@@ -82,8 +109,10 @@ tsne = function(matrix[double] X, int reduced_dims, int initial_dims, int perple
       Y = Y - eta*grad_C
       Y = Y - colMeans(Y)
 
-      C[itr,] = sum(P * log(pmax(P, 1e-12) / pmax(Q, 1e-12)))
-
+      if (itr%%50 == 0) {
+        #C[itr,] = sum(P * log(pmax(P, 1e-12) / pmax(Q, 1e-12)))
+        print(as.scalar(C[itr,1]))
+      }
       if (itr == 100) {
         P = P/4
       }
@@ -92,40 +121,5 @@ tsne = function(matrix[double] X, int reduced_dims, int initial_dims, int perple
 
 [Y, C] = tsne(X, 2, 50, 20.0)
 
-# D = distance_matrix(X)
-# P = x2p(X, 1.0e-5, 20.0)
-# P = P*4
-#
-# n = 3
-# d = 2
-# Y = matrix("-0.6504417 0.85034195 1.0750099 -1.79416571 0.9378183 -0.75541276", rows=n, cols=d)
-# #Y = rand(rows=n, cols=d, pdf="normal")
-# DY = distance_matrix(Y)
-#
-# Z = 1/(DY + 1)
-# parfor (j in 1:n)
-#   Z[j,j] = 0
-#
-# Q = Z/sum(Z)
-#
-# W = (P - Q)*Z
-# sumW = rowSums(W)
-#
-# grad_C = Y * sumW - W %*% Y
-#
-# Y1 = Y - 500*grad_C
-# Y1 = Y1 - colMeans(Y1)
-#
-# C = P*log(pmax(P, 1e-12)/pmax(Q, 1e-12))
-
-# write(D, "")
-# write(P, "")
-# write(DY, "")
-# write(Z, "")
-# write(Q, "")
-# write(W, "")
-# write(sumW, "")
-# write(grad_C, "")
-# write(Y1, "")
-write(Y, "")
-write(C, "")
+rite(Y, $Y)
+write(C, $C)

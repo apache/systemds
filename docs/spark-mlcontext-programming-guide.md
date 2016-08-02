@@ -58,6 +58,14 @@ should see a "`Welcome to Apache SystemML!`" message.
 
 <div class="codetabs">
 
+<div data-lang="Scala" markdown="1">
+{% highlight scala %}
+import org.apache.sysml.api.mlcontext._
+import org.apache.sysml.api.mlcontext.ScriptFactory._
+val ml = new MLContext(sc)
+{% endhighlight %}
+</div>
+
 <div data-lang="Spark Shell" markdown="1">
 {% highlight scala %}
 scala> import org.apache.sysml.api.mlcontext._
@@ -75,14 +83,6 @@ ml: org.apache.sysml.api.mlcontext.MLContext = org.apache.sysml.api.mlcontext.ML
 {% endhighlight %}
 </div>
 
-<div data-lang="Statements" markdown="1">
-{% highlight scala %}
-import org.apache.sysml.api.mlcontext._
-import org.apache.sysml.api.mlcontext.ScriptFactory._
-val ml = new MLContext(sc)
-{% endhighlight %}
-</div>
-
 </div>
 
 
@@ -97,6 +97,13 @@ The `execute` method returns an MLResults object, which contains no results sinc
 no outputs.
 
 <div class="codetabs">
+
+<div data-lang="Scala" markdown="1">
+{% highlight scala %}
+val helloScript = dml("print('hello world')")
+ml.execute(helloScript)
+{% endhighlight %}
+</div>
 
 <div data-lang="Spark Shell" markdown="1">
 {% highlight scala %}
@@ -116,13 +123,6 @@ None
 {% endhighlight %}
 </div>
 
-<div data-lang="Statements" markdown="1">
-{% highlight scala %}
-val helloScript = dml("print('hello world')")
-ml.execute(helloScript)
-{% endhighlight %}
-</div>
-
 </div>
 
 
@@ -131,6 +131,19 @@ ml.execute(helloScript)
 For demonstration purposes, we'll use Spark to create a `DataFrame` called `df` of random `double`s from 0 to 1 consisting of 10,000 rows and 1,000 columns.
 
 <div class="codetabs">
+
+<div data-lang="Scala" markdown="1">
+{% highlight scala %}
+import org.apache.spark.sql._
+import org.apache.spark.sql.types.{StructType,StructField,DoubleType}
+import scala.util.Random
+val numRows = 10000
+val numCols = 1000
+val data = sc.parallelize(0 to numRows-1).map { _ => Row.fromSeq(Seq.fill(numCols)(Random.nextDouble)) }
+val schema = StructType((0 to numCols-1).map { i => StructField("C" + i, DoubleType, true) } )
+val df = sqlContext.createDataFrame(data, schema)
+{% endhighlight %}
+</div>
 
 <div data-lang="Spark Shell" markdown="1">
 {% highlight scala %}
@@ -160,19 +173,6 @@ df: org.apache.spark.sql.DataFrame = [C0: double, C1: double, C2: double, C3: do
 {% endhighlight %}
 </div>
 
-<div data-lang="Statements" markdown="1">
-{% highlight scala %}
-import org.apache.spark.sql._
-import org.apache.spark.sql.types.{StructType,StructField,DoubleType}
-import scala.util.Random
-val numRows = 10000
-val numCols = 1000
-val data = sc.parallelize(0 to numRows-1).map { _ => Row.fromSeq(Seq.fill(numCols)(Random.nextDouble)) }
-val schema = StructType((0 to numCols-1).map { i => StructField("C" + i, DoubleType, true) } )
-val df = sqlContext.createDataFrame(data, schema)
-{% endhighlight %}
-</div>
-
 </div>
 
 
@@ -190,6 +190,21 @@ We execute the script and obtain the results as a Tuple by calling `getTuple` on
 the types and names of the output variables.
 
 <div class="codetabs">
+
+<div data-lang="Scala" markdown="1">
+{% highlight scala %}
+val minMaxMean =
+"""
+minOut = min(Xin)
+maxOut = max(Xin)
+meanOut = mean(Xin)
+"""
+val mm = new MatrixMetadata(numRows, numCols)
+val minMaxMeanScript = dml(minMaxMean).in("Xin", df, mm).out("minOut", "maxOut", "meanOut")
+val (min, max, mean) = ml.execute(minMaxMeanScript).getTuple[Double, Double, Double]("minOut", "maxOut", "meanOut")
+
+{% endhighlight %}
+</div>
 
 <div data-lang="Spark Shell" markdown="1">
 {% highlight scala %}
@@ -228,21 +243,6 @@ mean: Double = 0.49996223966662934
 {% endhighlight %}
 </div>
 
-<div data-lang="Statements" markdown="1">
-{% highlight scala %}
-val minMaxMean =
-"""
-minOut = min(Xin)
-maxOut = max(Xin)
-meanOut = mean(Xin)
-"""
-val mm = new MatrixMetadata(numRows, numCols)
-val minMaxMeanScript = dml(minMaxMean).in("Xin", df, mm).out("minOut", "maxOut", "meanOut")
-val (min, max, mean) = ml.execute(minMaxMeanScript).getTuple[Double, Double, Double]("minOut", "maxOut", "meanOut")
-
-{% endhighlight %}
-</div>
-
 </div>
 
 Many different types of input and output variables are automatically allowed. These types include
@@ -263,6 +263,30 @@ to create the script object based on the file. We'll also specify the inputs usi
 we could have also chained together two `in` methods to specify the same inputs.
 
 <div class="codetabs">
+
+<div data-lang="Scala" markdown="1">
+{% highlight scala %}
+val rdd1 = sc.parallelize(Array("1.0,2.0", "3.0,4.0"))
+val rdd2 = sc.parallelize(Array("5.0,6.0", "7.0,8.0"))
+val sums = """
+s1 = sum(m1);
+s2 = sum(m2);
+if (s1 > s2) {
+  message = "s1 is greater"
+} else if (s2 > s1) {
+  message = "s2 is greater"
+} else {
+  message = "s1 and s2 are equal"
+}
+"""
+scala.tools.nsc.io.File("sums.dml").writeAll(sums)
+val sumScript = dmlFromFile("sums.dml").in(Map("m1"-> rdd1, "m2"-> rdd2)).out("s1", "s2", "message")
+val sumResults = ml.execute(sumScript)
+val s1 = sumResults.getDouble("s1")
+val s2 = sumResults.getDouble("s2")
+val message = sumResults.getString("message")
+{% endhighlight %}
+</div>
 
 <div data-lang="Spark Shell" markdown="1">
 {% highlight scala %}
@@ -309,13 +333,11 @@ Outputs:
   [2] s2
   [3] message
 
-
 scala> val sumResults = ml.execute(sumScript)
 sumResults: org.apache.sysml.api.mlcontext.MLResults = 
   [1] (Double) s1: 10.0
   [2] (Double) s2: 26.0
   [3] (String) message: s2 is greater
-
 
 scala> val s1 = sumResults.getDouble("s1")
 s1: Double = 10.0
@@ -326,31 +348,6 @@ s2: Double = 26.0
 scala> val message = sumResults.getString("message")
 message: String = s2 is greater
 
-
-{% endhighlight %}
-</div>
-
-<div data-lang="Statements" markdown="1">
-{% highlight scala %}
-val rdd1 = sc.parallelize(Array("1.0,2.0", "3.0,4.0"))
-val rdd2 = sc.parallelize(Array("5.0,6.0", "7.0,8.0"))
-val sums = """
-s1 = sum(m1);
-s2 = sum(m2);
-if (s1 > s2) {
-  message = "s1 is greater"
-} else if (s2 > s1) {
-  message = "s2 is greater"
-} else {
-  message = "s1 and s2 are equal"
-}
-"""
-scala.tools.nsc.io.File("sums.dml").writeAll(sums)
-val sumScript = dmlFromFile("sums.dml").in(Map("m1"-> rdd1, "m2"-> rdd2)).out("s1", "s2", "message")
-val sumResults = ml.execute(sumScript)
-val s1 = sumResults.getDouble("s1")
-val s2 = sumResults.getDouble("s2")
-val message = sumResults.getString("message")
 {% endhighlight %}
 </div>
 
@@ -361,6 +358,16 @@ If you have metadata that you would like to supply along with the input matrices
 accomplished using a Scala Seq, List, or Array.
 
 <div class="codetabs">
+
+<div data-lang="Scala" markdown="1">
+{% highlight scala %}
+val rdd1Metadata = new MatrixMetadata(2, 2)
+val rdd2Metadata = new MatrixMetadata(2, 2)
+val sumScript = dmlFromFile("sums.dml").in(Seq(("m1", rdd1, rdd1Metadata), ("m2", rdd2, rdd2Metadata))).out("s1", "s2", "message")
+val (firstSum, secondSum, sumMessage) = ml.execute(sumScript).getTuple[Double, Double, String]("s1", "s2", "message")
+
+{% endhighlight %}
+</div>
 
 <div data-lang="Spark Shell" markdown="1">
 {% highlight scala %}
@@ -390,16 +397,6 @@ sumMessage: String = s2 is greater
 {% endhighlight %}
 </div>
 
-<div data-lang="Statements" markdown="1">
-{% highlight scala %}
-val rdd1Metadata = new MatrixMetadata(2, 2)
-val rdd2Metadata = new MatrixMetadata(2, 2)
-val sumScript = dmlFromFile("sums.dml").in(Seq(("m1", rdd1, rdd1Metadata), ("m2", rdd2, rdd2Metadata))).out("s1", "s2", "message")
-val (firstSum, secondSum, sumMessage) = ml.execute(sumScript).getTuple[Double, Double, String]("s1", "s2", "message")
-
-{% endhighlight %}
-</div>
-
 </div>
 
 
@@ -407,6 +404,14 @@ The same inputs with metadata can be supplied by chaining `in` methods, as in th
 chained.
 
 <div class="codetabs">
+
+<div data-lang="Scala" markdown="1">
+{% highlight scala %}
+val sumScript = dmlFromFile("sums.dml").in("m1", rdd1, rdd1Metadata).in("m2", rdd2, rdd2Metadata).out("s1").out("s2").out("message")
+val (firstSum, secondSum, sumMessage) = ml.execute(sumScript).getTuple[Double, Double, String]("s1", "s2", "message")
+
+{% endhighlight %}
+</div>
 
 <div data-lang="Spark Shell" markdown="1">
 {% highlight scala %}
@@ -431,14 +436,6 @@ sumMessage: String = s2 is greater
 {% endhighlight %}
 </div>
 
-<div data-lang="Statements" markdown="1">
-{% highlight scala %}
-val sumScript = dmlFromFile("sums.dml").in("m1", rdd1, rdd1Metadata).in("m2", rdd2, rdd2Metadata).out("s1").out("s2").out("message")
-val (firstSum, secondSum, sumMessage) = ml.execute(sumScript).getTuple[Double, Double, String]("s1", "s2", "message")
-
-{% endhighlight %}
-</div>
-
 </div>
 
 
@@ -455,6 +452,24 @@ RDD of IJV values, an RDD of CSV values, a DataFrame, and a two-dimensional Doub
 the values in each of these data structures.
 
 <div class="codetabs">
+
+<div data-lang="Scala" markdown="1">
+{% highlight scala %}
+val s =
+"""
+m = matrix("11 22 33 44", rows=2, cols=2)
+n = sum(m)
+"""
+val scr = dml(s).out("m", "n");
+val res = ml.execute(scr)
+val (x, y) = res.getTuple[Matrix, Double]("m", "n")
+x.asRDDStringIJV.collect.foreach(println)
+x.asRDDStringCSV.collect.foreach(println)
+x.asDataFrame.collect.foreach(println)
+x.asDoubleMatrix
+
+{% endhighlight %}
+</div>
 
 <div data-lang="Spark Shell" markdown="1">
 {% highlight scala %}
@@ -509,24 +524,6 @@ res10: Array[Array[Double]] = Array(Array(11.0, 22.0), Array(33.0, 44.0))
 {% endhighlight %}
 </div>
 
-<div data-lang="Statements" markdown="1">
-{% highlight scala %}
-val s =
-"""
-m = matrix("11 22 33 44", rows=2, cols=2)
-n = sum(m)
-"""
-val scr = dml(s).out("m", "n");
-val res = ml.execute(scr)
-val (x, y) = res.getTuple[Matrix, Double]("m", "n")
-x.asRDDStringIJV.collect.foreach(println)
-x.asRDDStringCSV.collect.foreach(println)
-x.asDataFrame.collect.foreach(println)
-x.asDoubleMatrix
-
-{% endhighlight %}
-</div>
-
 </div>
 
 
@@ -552,6 +549,21 @@ variables in the [Input Variables vs Input Parameters](spark-mlcontext-programmi
 section below.
 
 <div class="codetabs">
+
+<div data-lang="Scala" markdown="1">
+{% highlight scala %}
+val habermanUrl = "http://archive.ics.uci.edu/ml/machine-learning-databases/haberman/haberman.data"
+val habermanList = scala.io.Source.fromURL(habermanUrl).mkString.split("\n")
+val habermanRDD = sc.parallelize(habermanList)
+val habermanMetadata = new MatrixMetadata(306, 4)
+val typesRDD = sc.parallelize(Array("1.0,1.0,1.0,2.0"))
+val typesMetadata = new MatrixMetadata(1, 4)
+val scriptUrl = "https://raw.githubusercontent.com/apache/incubator-systemml/master/scripts/algorithms/Univar-Stats.dml"
+val uni = dmlFromUrl(scriptUrl).in("A", habermanRDD, habermanMetadata).in("K", typesRDD, typesMetadata).in("$CONSOLE_OUTPUT", true)
+ml.execute(uni)
+
+{% endhighlight %}
+</div>
 
 <div data-lang="Spark Shell" markdown="1">
 {% highlight scala %}
@@ -647,25 +659,10 @@ None
 {% endhighlight %}
 </div>
 
-<div data-lang="Statements" markdown="1">
-{% highlight scala %}
-val habermanUrl = "http://archive.ics.uci.edu/ml/machine-learning-databases/haberman/haberman.data"
-val habermanList = scala.io.Source.fromURL(habermanUrl).mkString.split("\n")
-val habermanRDD = sc.parallelize(habermanList)
-val habermanMetadata = new MatrixMetadata(306, 4)
-val typesRDD = sc.parallelize(Array("1.0,1.0,1.0,2.0"))
-val typesMetadata = new MatrixMetadata(1, 4)
-val scriptUrl = "https://raw.githubusercontent.com/apache/incubator-systemml/master/scripts/algorithms/Univar-Stats.dml"
-val uni = dmlFromUrl(scriptUrl).in("A", habermanRDD, habermanMetadata).in("K", typesRDD, typesMetadata).in("$CONSOLE_OUTPUT", true)
-ml.execute(uni)
-
-{% endhighlight %}
-</div>
-
 </div>
 
 
-###Input Variables vs Input Parameters###
+### Input Variables vs Input Parameters
 
 If we examine the
 [`Univar-Stats.dml`](https://raw.githubusercontent.com/apache/incubator-systemml/master/scripts/algorithms/Univar-Stats.dml)
@@ -715,6 +712,14 @@ the input types matrix to the `K` variable, and the output matrix to the `baseSt
 
 <div class="codetabs">
 
+<div data-lang="Scala" markdown="1">
+{% highlight scala %}
+val uni = dmlFromUrl(scriptUrl).in("A", habermanRDD, habermanMetadata).in("K", typesRDD, typesMetadata).out("baseStats")
+val baseStats = ml.execute(uni).getMatrix("baseStats")
+baseStats.asRDDStringIJV.collect.slice(0,9).foreach(println)
+{% endhighlight %}
+</div>
+
 <div data-lang="Spark Shell" markdown="1">
 {% highlight scala %}
 scala> val uni = dmlFromUrl(scriptUrl).in("A", habermanRDD, habermanMetadata).in("K", typesRDD, typesMetadata).out("baseStats")
@@ -745,14 +750,6 @@ scala> baseStats.asRDDStringIJV.collect.slice(0,9).foreach(println)
 {% endhighlight %}
 </div>
 
-<div data-lang="Statements" markdown="1">
-{% highlight scala %}
-val uni = dmlFromUrl(scriptUrl).in("A", habermanRDD, habermanMetadata).in("K", typesRDD, typesMetadata).out("baseStats")
-val baseStats = ml.execute(uni).getMatrix("baseStats")
-baseStats.asRDDStringIJV.collect.slice(0,9).foreach(println)
-{% endhighlight %}
-</div>
-
 </div>
 
 
@@ -763,6 +760,20 @@ the inputs, output, symbol table, script string, and the script execution string
 SystemML.
 
 <div class="codetabs">
+
+<div data-lang="Scala" markdown="1">
+{% highlight scala %}
+val minMaxMean =
+"""
+minOut = min(Xin)
+maxOut = max(Xin)
+meanOut = mean(Xin)
+"""
+val minMaxMeanScript = dml(minMaxMean).in("Xin", df, mm).out("minOut", "maxOut", "meanOut")
+val (min, max, mean) = ml.execute(minMaxMeanScript).getTuple[Double, Double, Double]("minOut", "maxOut", "meanOut")
+println(minMaxMeanScript.info)
+{% endhighlight %}
+</div>
 
 <div data-lang="Spark Shell" markdown="1">
 {% highlight scala %}
@@ -842,20 +853,6 @@ write(meanOut, '');
 {% endhighlight %}
 </div>
 
-<div data-lang="Statements" markdown="1">
-{% highlight scala %}
-val minMaxMean =
-"""
-minOut = min(Xin)
-maxOut = max(Xin)
-meanOut = mean(Xin)
-"""
-val minMaxMeanScript = dml(minMaxMean).in("Xin", df, mm).out("minOut", "maxOut", "meanOut")
-val (min, max, mean) = ml.execute(minMaxMeanScript).getTuple[Double, Double, Double]("minOut", "maxOut", "meanOut")
-println(minMaxMeanScript.info)
-{% endhighlight %}
-</div>
-
 </div>
 
 
@@ -869,6 +866,15 @@ In this example, we display the symbol table of the `minMaxMeanScript`, call `cl
 then display the symbol table, which is empty.
 
 <div class="codetabs">
+
+<div data-lang="Scala" markdown="1">
+{% highlight scala %}
+println(minMaxMeanScript.displaySymbolTable)
+minMaxMeanScript.clearAll
+println(minMaxMeanScript.displaySymbolTable)
+
+{% endhighlight %}
+</div>
 
 <div data-lang="Spark Shell" markdown="1">
 {% highlight scala %}
@@ -884,15 +890,6 @@ scala> minMaxMeanScript.clearAll
 scala> println(minMaxMeanScript.displaySymbolTable)
 Symbol Table:
 None
-
-{% endhighlight %}
-</div>
-
-<div data-lang="Statements" markdown="1">
-{% highlight scala %}
-println(minMaxMeanScript.displaySymbolTable)
-minMaxMeanScript.clearAll
-println(minMaxMeanScript.displaySymbolTable)
 
 {% endhighlight %}
 </div>
@@ -914,6 +911,21 @@ Statistics about script executions can be output to the console by calling MLCon
 method with a value of `true`.
 
 <div class="codetabs">
+
+<div data-lang="Scala" markdown="1">
+{% highlight scala %}
+ml.setStatistics(true)
+val minMaxMean =
+"""
+minOut = min(Xin)
+maxOut = max(Xin)
+meanOut = mean(Xin)
+"""
+val minMaxMeanScript = dml(minMaxMean).in("Xin", df, mm).out("minOut", "maxOut", "meanOut")
+val (min, max, mean) = ml.execute(minMaxMeanScript).getTuple[Double, Double, Double]("minOut", "maxOut", "meanOut")
+
+{% endhighlight %}
+</div>
 
 <div data-lang="Spark Shell" markdown="1">
 {% highlight scala %}
@@ -975,9 +987,20 @@ mean: Double = 0.5002109404821844
 {% endhighlight %}
 </div>
 
-<div data-lang="Statements" markdown="1">
+</div>
+
+
+## Explain
+
+A DML or PyDML script is converted into a SystemML program during script execution. Information
+about this program can be displayed by calling MLContext's `setExplain` method with a value
+of `true`.
+
+<div class="codetabs">
+
+<div data-lang="Scala" markdown="1">
 {% highlight scala %}
-ml.setStatistics(true)
+ml.setExplain(true)
 val minMaxMean =
 """
 minOut = min(Xin)
@@ -989,17 +1012,6 @@ val (min, max, mean) = ml.execute(minMaxMeanScript).getTuple[Double, Double, Dou
 
 {% endhighlight %}
 </div>
-
-</div>
-
-
-## Explain
-
-A DML or PyDML script is converted into a SystemML program during script execution. Information
-about this program can be displayed by calling MLContext's `setExplain` method with a value
-of `true`.
-
-<div class="codetabs">
 
 <div data-lang="Spark Shell" markdown="1">
 {% highlight scala %}
@@ -1049,21 +1061,6 @@ mean: Double = 0.49997351913605814
 {% endhighlight %}
 </div>
 
-<div data-lang="Statements" markdown="1">
-{% highlight scala %}
-ml.setExplain(true)
-val minMaxMean =
-"""
-minOut = min(Xin)
-maxOut = max(Xin)
-meanOut = mean(Xin)
-"""
-val minMaxMeanScript = dml(minMaxMean).in("Xin", df, mm).out("minOut", "maxOut", "meanOut")
-val (min, max, mean) = ml.execute(minMaxMeanScript).getTuple[Double, Double, Double]("minOut", "maxOut", "meanOut")
-
-{% endhighlight %}
-</div>
-
 </div>
 
 
@@ -1074,6 +1071,15 @@ of two types: DML (R-based syntax) and PYDML (Python-based syntax). If no Script
 is specified, the default Script type is DML.
 
 <div class="codetabs">
+
+<div data-lang="Scala" markdown="1">
+{% highlight scala %}
+val script = new Script()
+println(script.getScriptType)
+val script = new Script(ScriptType.PYDML)
+println(script.getScriptType)
+{% endhighlight %}
+</div>
 
 <div data-lang="Spark Shell" markdown="1">
 {% highlight scala %}
@@ -1087,15 +1093,6 @@ scala> val script = new Script(ScriptType.PYDML);
 scala> println(script.getScriptType)
 PYDML
 
-{% endhighlight %}
-</div>
-
-<div data-lang="Statements" markdown="1">
-{% highlight scala %}
-val script = new Script()
-println(script.getScriptType)
-val script = new Script(ScriptType.PYDML)
-println(script.getScriptType)
 {% endhighlight %}
 </div>
 
@@ -1168,6 +1165,18 @@ during these execution steps.
 
 <div class="codetabs">
 
+<div data-lang="Scala" markdown="1">
+{% highlight scala %}
+class MyScriptExecutor extends org.apache.sysml.api.mlcontext.ScriptExecutor {
+  override def parseScript{ println("Parsing script"); super.parseScript(); }
+  override def validateScript{ println("Validating script"); super.validateScript(); }
+}
+val helloScript = dml("print('hello world')")
+ml.execute(helloScript, new MyScriptExecutor)
+
+{% endhighlight %}
+</div>
+
 <div data-lang="Spark Shell" markdown="1">
 {% highlight scala %}
 scala> class MyScriptExecutor extends org.apache.sysml.api.mlcontext.ScriptExecutor {
@@ -1190,18 +1199,6 @@ Validating script
 hello world
 res63: org.apache.sysml.api.mlcontext.MLResults = 
 None
-
-{% endhighlight %}
-</div>
-
-<div data-lang="Statements" markdown="1">
-{% highlight scala %}
-class MyScriptExecutor extends org.apache.sysml.api.mlcontext.ScriptExecutor {
-  override def parseScript{ println("Parsing script"); super.parseScript(); }
-  override def validateScript{ println("Validating script"); super.validateScript(); }
-}
-val helloScript = dml("print('hello world')")
-ml.execute(helloScript, new MyScriptExecutor)
 
 {% endhighlight %}
 </div>
@@ -1230,6 +1227,15 @@ it is recommended that metadata is supplied. We output the sum and mean of the c
 
 <div class="codetabs">
 
+<div data-lang="Scala" markdown="1">
+{% highlight scala %}
+val rddCSV = sc.parallelize(Array("1.0,2.0", "3.0,4.0"))
+val sumAndMean = dml("sum = sum(m); mean = mean(m)").in("m", rddCSV).out("sum", "mean")
+ml.execute(sumAndMean)
+
+{% endhighlight %}
+</div>
+
 <div data-lang="Spark Shell" markdown="1">
 {% highlight scala %}
 scala> val rddCSV = sc.parallelize(Array("1.0,2.0", "3.0,4.0"))
@@ -1252,15 +1258,6 @@ res20: org.apache.sysml.api.mlcontext.MLResults =
 {% endhighlight %}
 </div>
 
-<div data-lang="Statements" markdown="1">
-{% highlight scala %}
-val rddCSV = sc.parallelize(Array("1.0,2.0", "3.0,4.0"))
-val sumAndMean = dml("sum = sum(m); mean = mean(m)").in("m", rddCSV).out("sum", "mean")
-ml.execute(sumAndMean)
-
-{% endhighlight %}
-</div>
-
 </div>
 
 
@@ -1274,6 +1271,16 @@ from these IJV rows, we need to supply metadata describing the matrix size.
 Here, we specify that our matrix has 3 rows and 3 columns.
 
 <div class="codetabs">
+
+<div data-lang="Scala" markdown="1">
+{% highlight scala %}
+val rddIJV = sc.parallelize(Array("1 1 1", "2 1 2", "1 2 3", "3 3 4"))
+val mm3x3 = new MatrixMetadata(MatrixFormat.IJV, 3, 3)
+val sumAndMean = dml("sum = sum(m); mean = mean(m)").in("m", rddIJV, mm3x3).out("sum", "mean")
+ml.execute(sumAndMean)
+
+{% endhighlight %}
+</div>
 
 <div data-lang="Spark Shell" markdown="1">
 {% highlight scala %}
@@ -1300,22 +1307,22 @@ res21: org.apache.sysml.api.mlcontext.MLResults =
 {% endhighlight %}
 </div>
 
-<div data-lang="Statements" markdown="1">
-{% highlight scala %}
-val rddIJV = sc.parallelize(Array("1 1 1", "2 1 2", "1 2 3", "3 3 4"))
-val mm3x3 = new MatrixMetadata(MatrixFormat.IJV, 3, 3)
-val sumAndMean = dml("sum = sum(m); mean = mean(m)").in("m", rddIJV, mm3x3).out("sum", "mean")
-ml.execute(sumAndMean)
-
-{% endhighlight %}
-</div>
-
 </div>
 
 
 Next, we'll run the same DML, but this time we'll specify that the input matrix is 4x4 instead of 3x3.
 
 <div class="codetabs">
+
+<div data-lang="Scala" markdown="1">
+{% highlight scala %}
+val rddIJV = sc.parallelize(Array("1 1 1", "2 1 2", "1 2 3", "3 3 4"))
+val mm4x4 = new MatrixMetadata(MatrixFormat.IJV, 4, 4)
+val sumAndMean = dml("sum = sum(m); mean = mean(m)").in("m", rddIJV, mm4x4).out("sum", "mean")
+ml.execute(sumAndMean)
+
+{% endhighlight %}
+</div>
 
 <div data-lang="Spark Shell" markdown="1">
 {% highlight scala %}
@@ -1338,16 +1345,6 @@ scala> ml.execute(sumAndMean)
 res22: org.apache.sysml.api.mlcontext.MLResults = 
   [1] (Double) sum: 10.0
   [2] (Double) mean: 0.625
-
-{% endhighlight %}
-</div>
-
-<div data-lang="Statements" markdown="1">
-{% highlight scala %}
-val rddIJV = sc.parallelize(Array("1 1 1", "2 1 2", "1 2 3", "3 3 4"))
-val mm4x4 = new MatrixMetadata(MatrixFormat.IJV, 4, 4)
-val sumAndMean = dml("sum = sum(m); mean = mean(m)").in("m", rddIJV, mm4x4).out("sum", "mean")
-ml.execute(sumAndMean)
 
 {% endhighlight %}
 </div>
@@ -1428,6 +1425,20 @@ script five times, feeding the output matrix as the input matrix for the next sc
 
 <div class="codetabs">
 
+<div data-lang="Scala" markdown="1">
+{% highlight scala %}
+val rddCSV = sc.parallelize(Array("1.0,2.0", "3.0,4.0"))
+val add = dml("y = x + 1").in("x", rddCSV).out("y")
+for (i <- 1 to 5) {
+  println("#" + i + ":");
+  val m = ml.execute(add).getMatrix("y")
+  m.asRDDStringCSV.collect.foreach(println)
+  add.in("x", m)
+}
+
+{% endhighlight %}
+</div>
+
 <div data-lang="Spark Shell" markdown="1">
 {% highlight scala %}
 scala> val rddCSV = sc.parallelize(Array("1.0,2.0", "3.0,4.0"))
@@ -1467,76 +1478,7 @@ scala> for (i <- 1 to 5) {
 {% endhighlight %}
 </div>
 
-<div data-lang="Statements" markdown="1">
-{% highlight scala %}
-val rddCSV = sc.parallelize(Array("1.0,2.0", "3.0,4.0"))
-val add = dml("y = x + 1").in("x", rddCSV).out("y")
-for (i <- 1 to 5) {
-  println("#" + i + ":");
-  val m = ml.execute(add).getMatrix("y")
-  m.asRDDStringCSV.collect.foreach(println)
-  add.in("x", m)
-}
-
-{% endhighlight %}
 </div>
-
-</div>
-
-
-* * *
-
-# Java Example - OLD API
-
-Next, let's consider a Java example. The `MLContextExample` class creates an `MLContext` object from a `JavaSparkContext`.
-Next, it reads in a matrix CSV file as a `JavaRDD<String>` object. It registers this as input `X`. It registers
-two outputs, `m` and `n`. A `HashMap` maps the expected command-line arguments of the `shape.dml` script to spaces so that
-it passes validation. The `shape.dml` script is executed, and the number of rows and columns in the matrix are output
-to standard output.
-
-
-{% highlight java %}
-package org.apache.sysml;
-
-import java.util.HashMap;
-
-import org.apache.spark.SparkConf;
-import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.sql.DataFrame;
-import org.apache.spark.sql.SQLContext;
-
-import org.apache.sysml.api.MLContext;
-import org.apache.sysml.api.MLOutput;
-
-public class MLContextExample {
-
-	public static void main(String[] args) throws Exception {
-
-		SparkConf conf = new SparkConf().setAppName("MLContextExample").setMaster("local");
-		JavaSparkContext sc = new JavaSparkContext(conf);
-		SQLContext sqlContext = new SQLContext(sc);
-		MLContext ml = new MLContext(sc);
-
-		JavaRDD<String> csv = sc.textFile("A.csv");
-		ml.registerInput("X", csv, "csv");
-		ml.registerOutput("m");
-		ml.registerOutput("n");
-		HashMap<String, String> cmdLineArgs = new HashMap<String, String>();
-		cmdLineArgs.put("X", " ");
-		cmdLineArgs.put("m", " ");
-		cmdLineArgs.put("n", " ");
-		MLOutput output = ml.execute("shape.dml", cmdLineArgs);
-		DataFrame mDf = output.getDF(sqlContext, "m");
-		DataFrame nDf = output.getDF(sqlContext, "n");
-		System.out.println("rows:" + mDf.first().getDouble(1));
-		System.out.println("cols:" + nDf.first().getDouble(1));
-	}
-
-}
-
-
-{% endhighlight %}
 
 
 * * *

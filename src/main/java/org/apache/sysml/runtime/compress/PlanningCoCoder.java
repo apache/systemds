@@ -36,11 +36,9 @@ public class PlanningCoCoder
 {
 	//constants for weight computation
 	private final static float GROUPABILITY_THRESHOLD = 0.00064f;
-	private final static boolean USE_BIN_WEIGHT = false;
 	private final static float PARTITION_WEIGHT = 0.05F; //higher values lead to more grouping
 	private final static float PARTITION_SIZE = PARTITION_WEIGHT * GROUPABILITY_THRESHOLD;
-	private final static float BIN_WEIGHT_PARAM = -0.65f; //lower values lead to more grouping
-
+	
 	/**
 	 * 
 	 * @param sizeEstimator
@@ -243,15 +241,10 @@ public class PlanningCoCoder
 	 * @param sparsity
 	 * @return
 	 */
-	private static float computeWeightForCoCoding(int numRows, double sparsity)
-	{
-		if( USE_BIN_WEIGHT ) { //new method (non-conclusive)
-			//return (float) Math.pow(numRows*sparsity,BIN_WEIGHT_PARAM);
-			return (float) Math.pow(numRows,BIN_WEIGHT_PARAM);
-		}
-		else {
-			return PARTITION_SIZE;
-		}
+	private static float computeWeightForCoCoding(int numRows, double sparsity) {
+		//we use a constant partition size (independent of the number of rows
+		//in order to ensure constant compression speed independent of blocking)
+		return PARTITION_SIZE;
 	}
 	
 	/**

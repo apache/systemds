@@ -47,7 +47,7 @@ x2p = function(matrix[double] X, double tol, double perplexity)
       Hdiff = INF
       itr = 0
       if (i %% 100 == 0) {
-        print("1 : "+ i)
+        print(i)
       }
 
       Di = D[i,]
@@ -68,8 +68,6 @@ x2p = function(matrix[double] X, double tol, double perplexity)
              beta[i,1] = (beta[i,1] + betamax) / 2.
           }
         } else {
-          #print("in Hdiff <= 0.0")
-
           betamax = as.scalar(beta[i,1])
           if (betamin == 0.) {
             beta[i,1] = beta[i,1] / 2.
@@ -111,7 +109,8 @@ tsne = function(matrix[double] X, int reduced_dims, int initial_dims, int perple
 
       if (itr%%50 == 0) {
         #C[itr,] = sum(P * log(pmax(P, 1e-12) / pmax(Q, 1e-12)))
-        print(as.scalar(C[itr,1]))
+        #print(as.scalar(C[itr,1]))
+        print(itr)
       }
       if (itr == 100) {
         P = P/4
@@ -121,5 +120,5 @@ tsne = function(matrix[double] X, int reduced_dims, int initial_dims, int perple
 
 [Y, C] = tsne(X, 2, 50, 20.0)
 
-rite(Y, $Y)
+write(Y, $Y)
 write(C, $C)

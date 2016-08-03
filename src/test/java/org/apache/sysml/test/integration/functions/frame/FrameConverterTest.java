@@ -70,15 +70,11 @@ import org.apache.sysml.test.utils.TestUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
-
-
-
 public class FrameConverterTest extends AutomatedTestBase
 {
 	private final static String TEST_DIR = "functions/frame/";
 	private final static String TEST_NAME = "FrameConv";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FrameConverterTest.class.getSimpleName() + "/";
-
 
 	private final static int rows = 1593;
 	private final static ValueType[] schemaStrings = new ValueType[]{ValueType.STRING, ValueType.STRING, ValueType.STRING};	
@@ -190,13 +186,10 @@ public class FrameConverterTest extends AutomatedTestBase
 		runFrameConverterTest(schemaMixedLarge, ConvType.BIN2MAT);
 	}
 	
-	//@Test
-	// TODO Restore after resolving excessive error messages under Spark 2.0.0
-	// java.lang.RuntimeException: java.lang.String is not a valid external type for schema of double
-	//
-	//public void testFrameMixedDFrameBinSpark()  {
-	//	runFrameConverterTest(schemaMixedLarge, ConvType.DFRM2BIN);
-	//}
+	@Test
+	public void testFrameMixedDFrameBinSpark()  {
+		runFrameConverterTest(schemaMixedLarge, ConvType.DFRM2BIN);
+	}
 		
 	@Test
 	public void testFrameMixedBinDFrameSpark()  {
@@ -526,7 +519,7 @@ public class FrameConverterTest extends AutomatedTestBase
 				//Create DataFrame 
 				SQLContext sqlContext = new SQLContext(sc);
 				StructType dfSchema = UtilFunctions.convertFrameSchemaToDFSchema(schema);
-				JavaRDD<Row> rowRDD = getRowRDD(sc, fnameIn, separator);
+				JavaRDD<Row> rowRDD = getRowRDD(sc, fnameIn, separator, schema);
 								
 				Dataset<Row> df = RDDConverterUtilsExt.createDataFrame(sqlContext, rowRDD, dfSchema);
 				
@@ -561,11 +554,11 @@ public class FrameConverterTest extends AutomatedTestBase
 	/* 
 	 * It will return JavaRDD<Row> based on csv data input file.
 	 */
-	JavaRDD<Row> getRowRDD(JavaSparkContext sc, String fnameIn, String separator)
+	JavaRDD<Row> getRowRDD(JavaSparkContext sc, String fnameIn, String separator, List<ValueType> schema)
 	{
 		// Load a text file and convert each line to a java rdd.
 		JavaRDD<String> dataRdd = sc.textFile(fnameIn);
-		return dataRdd.map(new RowGenerator());
+		return dataRdd.map(new RowGenerator(schema));
 	}
 	
 	/* 
@@ -574,13 +567,20 @@ public class FrameConverterTest extends AutomatedTestBase
 	private static class RowGenerator implements Function<String,Row> 
 	{
 		private static final long serialVersionUID = -6736256507697511070L;
+		
+		List<ValueType> _schema = null;
+		
+		public RowGenerator(List<ValueType> schema)
+		{
+			_schema = schema;
+		}
 
 		@Override
 		public Row call(String record) throws Exception {
 		      String[] fields = record.split(",");
 		      Object[] objects = new Object[fields.length]; 
 		      for (int i=0; i<fields.length; i++) {
-			      objects[i] = fields[i];
+			      objects[i] = UtilFunctions.stringToObject(_schema.get(i), fields[i]);
 		      }
 		      return RowFactory.create(objects);
 		}

@@ -26,6 +26,7 @@
 source("nn/layers/affine.dml") as affine
 source("nn/layers/conv_builtin.dml") as conv
 source("nn/layers/cross_entropy_loss.dml") as cross_entropy_loss
+source("nn/layers/dropout.dml") as dropout
 source("nn/layers/l2_reg.dml") as l2_reg
 source("nn/layers/max_pool_builtin.dml") as max_pool
 source("nn/layers/relu.dml") as relu
@@ -120,11 +121,12 @@ train = function(matrix[double] X, matrix[double] y,
       [outc2, Houtc2, Woutc2] = conv::forward(outp1, W2, b2, F1, Houtp1, Woutp1, Hf, Wf, stride, stride, pad, pad)
       outr2 = relu::forward(outc2)
       [outp2, Houtp2, Woutp2] = max_pool::forward(outr2, F2, Houtc2, Woutc2, Hf=2, Wf=2, strideh=2, stridew=2) 
-      ## layer 3:  affine3 -> relu3
+      ## layer 3:  affine3 -> relu3 -> dropout
       outa3 = affine::forward(outp2, W3, b3)
       outr3 = relu::forward(outa3)
+      [outd3, maskd3] = dropout::forward(outr3, 0.5, -1)
       ## layer 4:  affine4 -> softmax
-      outa4 = affine::forward(outr3, W4, b4)
+      outa4 = affine::forward(outd3, W4, b4)
       probs = softmax::forward(outa4)
 
       # Compute loss & accuracy for training & validation data every 100 iterations.
@@ -152,8 +154,9 @@ train = function(matrix[double] X, matrix[double] y,
       dprobs = cross_entropy_loss::backward(probs, y_batch)
       ## layer 4:  affine4 -> softmax
       douta4 = softmax::backward(dprobs, outa4)
-      [doutr3, dW4, db4] = affine::backward(douta4, outr3, W4, b4)
-      ## layer 3:  affine3 -> relu3
+      [doutd3, dW4, db4] = affine::backward(douta4, outr3, W4, b4)
+      ## layer 3:  affine3 -> relu3 -> dropout
+      doutr3 = dropout::backward(doutd3, outr3, 0.5, maskd3)
       douta3 = relu::backward(doutr3, outa3)
       [doutp2, dW3, db3] = affine::backward(douta3, outp2, W3, b3)
       ## layer 2: conv2 -> relu2 -> pool2

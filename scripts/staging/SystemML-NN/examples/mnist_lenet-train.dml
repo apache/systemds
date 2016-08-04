@@ -84,7 +84,7 @@ n = nrow(train)
 n_test = nrow(test)
 images = (images / 255.0) * 2 - 1
 labels = table(seq(1, n), labels+1, n, 10)
-X_test = X_test / 255.0
+X_test = (X_test / 255.0) * 2 - 1
 y_test = table(seq(1, n_test), y_test+1, n_test, 10)
 
 # Split into training (55,000 examples) and validation (5,000 examples)

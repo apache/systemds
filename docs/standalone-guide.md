@@ -1,8 +1,8 @@
 ---
 layout: global
-title: SystemML Quick Start Guide
-description: SystemML Quick Start Guide
-displayTitle: SystemML Quick Start Guide
+title: SystemML Standalone Guide
+description: SystemML Standalone Guide
+displayTitle: SystemML Standalone Guide
 ---
 <!--
 {% comment %}
@@ -48,8 +48,6 @@ SystemML features a suite of algorithms for Descriptive Statistics, Classificati
 Clustering, Regression, Matrix Factorization, and Survival Analysis. Detailed descriptions of these
 algorithms can be found in the [Algorithms Reference](algorithms-reference.html).
 
-<br/>
-
 # Download SystemML
 
 Apache incubator releases of SystemML are available from the [downloads](http://systemml.apache.org/download.html) page.
@@ -58,58 +56,16 @@ The SystemML project is available on GitHub at [https://github.com/apache/incuba
 SystemML can be downloaded from GitHub and built with Maven. Instructions to build and
 test SystemML can be found in the [SystemML GitHub README](https://github.com/apache/incubator-systemml).
 
-<br/>
-
 # Standalone vs Distributed Execution Mode
 
 SystemML's standalone mode is designed to allow data scientists to rapidly prototype algorithms
-on a single machine. The standalone release packages all required libraries into a single distribution file.
-In standalone mode, all operations occur on a single node in a non-Hadoop environment. Standalone mode
-is not appropriate for large datasets.
+on a single machine. In standalone mode, all operations occur on a single node in a non-Hadoop
+environment. Standalone mode is not appropriate for large datasets.
 
 For large-scale production environments, SystemML algorithm execution can be
 distributed across multi-node clusters using [Apache Hadoop](https://hadoop.apache.org/)
 or [Apache Spark](http://spark.apache.org/).
 We will make use of standalone mode throughout this tutorial.
-
-<br/>
-
-# Contents of the SystemML Standalone Package
-
-To follow along with this guide, first build a standalone package of SystemML
-using [Apache Maven](http://maven.apache.org)
-and unpack it.
-
-    $ git clone https://github.com/apache/incubator-systemml.git
-    $ cd incubator-systemml
-    $ mvn clean package -P distribution
-    $ tar -xvzf target/systemml-*-standalone.tar.gz -C ..
-    $ cd ..
-
-The extracted package should have these contents:
-
-    $ ls -lF systemml-{{site.SYSTEMML_VERSION}}/
-    total 96
-    -rw-r--r--  LICENSE
-    -rw-r--r--  NOTICE
-    -rw-r--r--  SystemML-config.xml
-    drwxr-xr-x  docs/
-    drwxr-xr-x  lib/
-    -rw-r--r--  log4j.properties
-    -rw-r--r--  readme.txt
-    -rwxr-xr-x  runStandaloneSystemML.bat*
-    -rwxr-xr-x  runStandaloneSystemML.sh*
-    drwxr-xr-x  scripts/
-
-For the rest of the tutorial we will switch to the `systemml-{{site.SYSTEMML_VERSION}}` directory.
-
-    $ cd  ~/systemml-{{site.SYSTEMML_VERSION}}
-
-Note that standalone mode supports both Mac/UNIX and Windows. To run the following examples on
-Windows, the "`./runStandaloneSystemML.sh ...`" commands can be replaced with
-"`./runStandaloneSystemML.bat ...`" commands.
-
-<br/>
 
 # Choosing Test Data
 
@@ -157,7 +113,7 @@ the data along with its metadata file `types.csv.mtd`.
 To run the `Univar-Stats.dml` algorithm, issue the following command (we set the optional argument `CONSOLE_OUTPUT` to `TRUE` to print the statistics to the console):
 
     $ ./runStandaloneSystemML.sh scripts/algorithms/Univar-Stats.dml -nvargs X=data/haberman.data TYPES=data/types.csv STATS=data/univarOut.mtx CONSOLE_OUTPUT=TRUE
-      
+
     [...]
     -------------------------------------------------
     Feature [1]: Scale
@@ -212,9 +168,9 @@ To run the `Univar-Stats.dml` algorithm, issue the following command (we set the
      (15) Num of categories   | 2
      (16) Mode                | 1
      (17) Num of modes        | 1
-  
 
-The `Univar-Stats.dml` script writes the computed statistics to the `univarOut.mtx` file. The matrix has one row per univariate statistic and one column per input feature. The first column gives the number of the statistic 
+
+The `Univar-Stats.dml` script writes the computed statistics to the `univarOut.mtx` file. The matrix has one row per univariate statistic and one column per input feature. The first column gives the number of the statistic
 (see above table), the second column gives the number of the feature column in
 the input data, and the third column gives the value of the univariate statistic.
 
@@ -384,6 +340,237 @@ Refer to the [Algorithms Reference](algorithms-reference.html) for more details.
 
 <br/>
 
+# Example 3 - Linear Regression
+
+For this example, we'll use a standalone wrapper executable, `bin/systemml`, that is available to
+be run directly within the project's source directory when built locally.
+
+After you build SystemML from source (`mvn clean package`), the standalone mode can be executed
+either on Linux or OS X using the `./bin/systemml` script, or on Windows using the
+`.\bin\systemml.bat` batch file.
+
+If you run from the script from the project root folder `./` or from the `./bin` folder, then the
+output files from running SystemML will be created inside the `./temp` folder to keep them separate
+from the SystemML source files managed by Git. The output files for this example will be created
+under the `./temp` folder.
+
+The runtime behavior and logging behavior of SystemML can be customized by editing the files
+`./conf/SystemML-config.xml` and `./conf/log4j.properties`. Both files will be created from their
+corresponding `*.template` files during the first execution of the SystemML executable script.
+
+When invoking the `./bin/systemml` or `.\bin\systemml.bat` with any of the prepackaged DML scripts
+you can omit the relative path to the DML script file. The following two commands are equivalent:
+
+    ./bin/systemml ./scripts/datagen/genLinearRegressionData.dml -nvargs numSamples=1000 numFeatures=50 maxFeatureValue=5 maxWeight=5 addNoise=FALSE b=0 sparsity=0.7 output=linRegData.csv format=csv perc=0.5
+
+    ./bin/systemml genLinearRegressionData.dml -nvargs numSamples=1000 numFeatures=50 maxFeatureValue=5 maxWeight=5 addNoise=FALSE b=0 sparsity=0.7 output=linRegData.csv format=csv perc=0.5
+
+In this guide we invoke the command with the relative folder to make it easier to look up the source
+of the DML scripts.
+
+## Linear Regression Example
+
+As an example of the capabilities and power of SystemML and DML, let's consider the Linear Regression algorithm.
+We require sets of data to train and test our model. To obtain this data, we can either use real data or
+generate data for our algorithm. The
+[UCI Machine Learning Repository Datasets](https://archive.ics.uci.edu/ml/datasets.html) is one location for real data.
+Use of real data typically involves some degree of data wrangling. In the following example, we will use SystemML to
+generate random data to train and test our model.
+
+This example consists of the following parts:
+
+  * [Run DML Script to Generate Random Data](#run-dml-script-to-generate-random-data)
+  * [Divide Generated Data into Two Sample Groups](#divide-generated-data-into-two-sample-groups)
+  * [Split Label Column from First Sample](#split-label-column-from-first-sample)
+  * [Split Label Column from Second Sample](#split-label-column-from-second-sample)
+  * [Train Model on First Sample](#train-model-on-first-sample)
+  * [Test Model on Second Sample](#test-model-on-second-sample)
+
+SystemML is distributed in several packages, including a standalone package. We'll operate in Standalone mode in this
+example.
+
+<a name="run-dml-script-to-generate-random-data" />
+
+### Run DML Script to Generate Random Data
+
+We can execute the `genLinearRegressionData.dml` script in Standalone mode using either the `systemml` or `systemml.bat`
+file.
+In this example, we'll generate a matrix of 1000 rows of 50 columns of test data, with sparsity 0.7. In addition to
+this, a 51<sup>st</sup> column consisting of labels will
+be appended to the matrix.
+
+    ./bin/systemml ./scripts/datagen/genLinearRegressionData.dml -nvargs numSamples=1000 numFeatures=50 maxFeatureValue=5 maxWeight=5 addNoise=FALSE b=0 sparsity=0.7 output=linRegData.csv format=csv perc=0.5
+
+This generates the following files inside the `./temp` folder:
+
+    linRegData.csv      # 1000 rows of 51 columns of doubles (50 data columns and 1 label column), csv format
+    linRegData.csv.mtd  # Metadata file
+    perc.csv            # Used to generate two subsets of the data (for training and testing)
+    perc.csv.mtd        # Metadata file
+    scratch_space       # SystemML scratch_space directory
+
+<a name="divide-generated-data-into-two-sample-groups" />
+
+### Divide Generated Data into Two Sample Groups
+
+Next, we'll create two subsets of the generated data, each of size ~50%. We can accomplish this using the `sample.dml`
+script with the `perc.csv` file created in the previous step:
+
+    0.5
+    0.5
+
+
+The `sample.dml` script will randomly sample rows from the `linRegData.csv` file and place them into 2 files based
+on the percentages specified in `perc.csv`. This will create two sample groups of roughly 50 percent each.
+
+    ./bin/systemml ./scripts/utils/sample.dml -nvargs X=linRegData.csv sv=perc.csv O=linRegDataParts ofmt=csv
+
+
+This script creates two partitions of the original data and places them in a `linRegDataParts` folder. The files created
+are as follows:
+
+    linRegDataParts/1       # first partition of data, ~50% of rows of linRegData.csv, csv format
+    linRegDataParts/1.mtd   # metadata
+    linRegDataParts/2       # second partition of data, ~50% of rows of linRegData.csv, csv format
+    linRegDataParts/2.mtd   # metadata
+
+
+The `1` file contains the first partition of data, and the `2` file contains the second partition of data.
+An associated metadata file describes
+the nature of each partition of data. If we open `1` and `2` and look at the number of rows, we can see that typically
+the partitions are not exactly 50% but instead are close to 50%. However, we find that the total number of rows in the
+original data file equals the sum of the number of rows in `1` and `2`.
+
+
+<a name="split-label-column-from-first-sample" />
+
+### Split Label Column from First Sample
+
+The next task is to split the label column from the first sample. We can do this using the `splitXY.dml` script.
+
+    ./bin/systemml ./scripts/utils/splitXY.dml -nvargs X=linRegDataParts/1 y=51 OX=linRegData.train.data.csv OY=linRegData.train.labels.csv ofmt=csv
+
+This splits column 51, the label column, off from the data. When done, the following files have been created.
+
+    linRegData.train.data.csv        # training data of 50 columns, csv format
+    linRegData.train.data.csv.mtd    # metadata
+    linRegData.train.labels.csv      # training labels of 1 column, csv format
+    linRegData.train.labels.csv.mtd  # metadata
+
+
+<a name="split-label-column-from-second-sample" />
+
+### Split Label Column from Second Sample
+
+We also need to split the label column from the second sample.
+
+    ./bin/systemml ./scripts/utils/splitXY.dml -nvargs X=linRegDataParts/2 y=51 OX=linRegData.test.data.csv OY=linRegData.test.labels.csv ofmt=csv
+
+This splits column 51 off the data, resulting in the following files:
+
+    linRegData.test.data.csv        # test data of 50 columns, csv format
+    linRegData.test.data.csv.mtd    # metadata
+    linRegData.test.labels.csv      # test labels of 1 column, csv format
+    linRegData.test.labels.csv.mtd  # metadata
+
+
+<a name="train-model-on-first-sample" />
+
+### Train Model on First Sample
+
+Now, we can train our model based on the first sample. To do this, we utilize the `LinearRegDS.dml` (Linear Regression
+Direct Solve) script. Note that SystemML also includes a `LinearRegCG.dml` (Linear Regression Conjugate Gradient)
+algorithm for situations where the number of features is large.
+
+    ./bin/systemml ./scripts/algorithms/LinearRegDS.dml -nvargs X=linRegData.train.data.csv Y=linRegData.train.labels.csv B=betas.csv fmt=csv
+
+This will generate the following files:
+
+    betas.csv      # betas, 50 rows of 1 column, csv format
+    betas.csv.mtd  # metadata
+
+The LinearRegDS.dml script generates statistics to standard output similar to the following.
+
+	BEGIN LINEAR REGRESSION SCRIPT
+	Reading X and Y...
+	Calling the Direct Solver...
+	Computing the statistics...
+	AVG_TOT_Y,-2.160284487670675
+	STDEV_TOT_Y,66.86434576808432
+	AVG_RES_Y,-3.3127468704080085E-10
+	STDEV_RES_Y,1.7231785003947183E-8
+	DISPERSION,2.963950542926297E-16
+	PLAIN_R2,1.0
+	ADJUSTED_R2,1.0
+	PLAIN_R2_NOBIAS,1.0
+	ADJUSTED_R2_NOBIAS,1.0
+	PLAIN_R2_VS_0,1.0
+	ADJUSTED_R2_VS_0,1.0
+	Writing the output matrix...
+	END LINEAR REGRESSION SCRIPT
+
+Now that we have our `betas.csv`, we can test our model with our second set of data.
+
+
+<a name="test-model-on-second-sample" />
+
+### Test Model on Second Sample
+
+To test our model on the second sample, we can use the `GLM-predict.dml` script. This script can be used for both
+prediction and scoring. Here, we're using it for scoring since we include the `Y` named argument. Our `betas.csv`
+file is specified as the `B` named argument.
+
+    ./bin/systemml ./scripts/algorithms/GLM-predict.dml -nvargs X=linRegData.test.data.csv Y=linRegData.test.labels.csv B=betas.csv fmt=csv
+
+This generates statistics similar to the following to standard output.
+
+	LOGLHOOD_Z,,FALSE,NaN
+	LOGLHOOD_Z_PVAL,,FALSE,NaN
+	PEARSON_X2,,FALSE,1.895530994504798E-13
+	PEARSON_X2_BY_DF,,FALSE,4.202951207327712E-16
+	PEARSON_X2_PVAL,,FALSE,1.0
+	DEVIANCE_G2,,FALSE,0.0
+	DEVIANCE_G2_BY_DF,,FALSE,0.0
+	DEVIANCE_G2_PVAL,,FALSE,1.0
+	LOGLHOOD_Z,,TRUE,NaN
+	LOGLHOOD_Z_PVAL,,TRUE,NaN
+	PEARSON_X2,,TRUE,1.895530994504798E-13
+	PEARSON_X2_BY_DF,,TRUE,4.202951207327712E-16
+	PEARSON_X2_PVAL,,TRUE,1.0
+	DEVIANCE_G2,,TRUE,0.0
+	DEVIANCE_G2_BY_DF,,TRUE,0.0
+	DEVIANCE_G2_PVAL,,TRUE,1.0
+	AVG_TOT_Y,1,,1.0069397725436522
+	STDEV_TOT_Y,1,,68.29092137526905
+	AVG_RES_Y,1,,-4.1450397073455047E-10
+	STDEV_RES_Y,1,,2.0519206226041048E-8
+	PRED_STDEV_RES,1,TRUE,1.0
+	PLAIN_R2,1,,1.0
+	ADJUSTED_R2,1,,1.0
+	PLAIN_R2_NOBIAS,1,,1.0
+	ADJUSTED_R2_NOBIAS,1,,1.0
+
+
+We see that the STDEV_RES_Y value of the testing phase is of similar magnitude
+to the value obtained from the model training phase.
+
+For convenience, we can encapsulate our DML invocations in a single script:
+
+	#!/bin/bash
+
+	./bin/systemml ./scripts/datagen/genLinearRegressionData.dml -nvargs numSamples=1000 numFeatures=50 maxFeatureValue=5 maxWeight=5 addNoise=FALSE b=0 sparsity=0.7 output=linRegData.csv format=csv perc=0.5
+
+	./bin/systemml ./scripts/utils/sample.dml -nvargs X=linRegData.csv sv=perc.csv O=linRegDataParts ofmt=csv
+
+	./bin/systemml ./scripts/utils/splitXY.dml -nvargs X=linRegDataParts/1 y=51 OX=linRegData.train.data.csv OY=linRegData.train.labels.csv ofmt=csv
+
+	./bin/systemml ./scripts/utils/splitXY.dml -nvargs X=linRegDataParts/2 y=51 OX=linRegData.test.data.csv OY=linRegData.test.labels.csv ofmt=csv
+
+	./bin/systemml ./scripts/algorithms/LinearRegDS.dml -nvargs X=linRegData.train.data.csv Y=linRegData.train.labels.csv B=betas.csv fmt=csv
+
+	./bin/systemml ./scripts/algorithms/GLM-predict.dml -nvargs X=linRegData.test.data.csv Y=linRegData.test.labels.csv B=betas.csv fmt=csv
+
+
 # Troubleshooting
 
 If you encounter a `"java.lang.OutOfMemoryError"` you can edit the invocation
@@ -393,7 +580,3 @@ the memory available to the JVM, i.e:
     java -Xmx16g -Xms4g -Xmn1g -cp ${CLASSPATH} org.apache.sysml.api.DMLScript \
          -f ${SCRIPT_FILE} -exec singlenode -config=SystemML-config.xml \
          $@
-
-<br/>
-
-`this is code`

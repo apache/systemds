@@ -84,23 +84,23 @@ this OS X example.
 
 	# download artifacts
 	wget -r -nH -nd -np -R index.html* https://dist.apache.org/repos/dist/dev/incubator/systemml/0.10.0-incubating-rc1/
-	
+
 	# verify standalone tar.gz works
 	tar -xvzf systemml-0.10.0-incubating-standalone.tar.gz
 	cd systemml-0.10.0-incubating-standalone
 	echo "print('hello world');" > hello.dml
 	./runStandaloneSystemML.sh hello.dml
 	cd ..
-	
+
 	# verify main jar works
 	mkdir lib
 	cp -R systemml-0.10.0-incubating-standalone/lib/* lib/
 	rm lib/systemml-0.10.0-incubating.jar
 	java -cp ./lib/*:systemml-0.10.0-incubating.jar org.apache.sysml.api.DMLScript -s "print('hello world');"
-	
+
 	# verify standalone jar works
 	java -jar systemml-0.10.0-incubating-standalone.jar -s "print('hello world');"
-	
+
 	# verify src works
 	tar -xvzf systemml-0.10.0-incubating-src.tar.gz
 	cd systemml-0.10.0-incubating-src
@@ -111,21 +111,21 @@ this OS X example.
 	java -jar systemml-0.10.0-incubating-standalone.jar -s "print('hello world');"
 	cd ..
 	cd ..
-	
+
 	# verify in-memory jar works
 	echo "import org.apache.sysml.api.jmlc.*;public class JMLCEx {public static void main(String[] args) throws Exception {Connection conn = new Connection();PreparedScript script = conn.prepareScript(\"print('hello world');\", new String[]{}, new String[]{}, false);script.executeScript();}}" > JMLCEx.java
 	javac -cp systemml-0.10.0-incubating-inmemory.jar JMLCEx.java
 	java -cp .:systemml-0.10.0-incubating-inmemory.jar JMLCEx
-	
+
 	# verify distrib tar.gz works
 	tar -xvzf systemml-0.10.0-incubating.tar.gz
 	cd systemml-0.10.0-incubating
 	java -cp ../lib/*:SystemML.jar org.apache.sysml.api.DMLScript -s "print('hello world');"
-	
+
 	# verify spark batch mode
 	export SPARK_HOME=/Users/deroneriksson/spark-1.5.1-bin-hadoop2.6
 	$SPARK_HOME/bin/spark-submit SystemML.jar -s "print('hello world');" -exec hybrid_spark
-	
+
 	# verify hadoop batch mode
 	hadoop jar SystemML.jar -s "print('hello world');"
 
@@ -135,18 +135,18 @@ sanity check on OS X after building the artifacts manually.
 
 	# build distribution artifacts
 	mvn clean package -P distribution
-	
+
 	cd target
-	
+
 	# verify main jar works
 	java -cp ./lib/*:systemml-0.10.0-incubating.jar org.apache.sysml.api.DMLScript -s "print('hello world');"
-	
+
 	# verify SystemML.jar works
 	java -cp ./lib/*:SystemML.jar org.apache.sysml.api.DMLScript -s "print('hello world');"
-	
+
 	# verify standalone jar works
 	java -jar systemml-0.10.0-incubating-standalone.jar -s "print('hello world');"
-	
+
 	# verify src works
 	tar -xvzf systemml-0.10.0-incubating-src.tar.gz
 	cd systemml-0.10.0-incubating-src
@@ -157,28 +157,28 @@ sanity check on OS X after building the artifacts manually.
 	java -jar systemml-0.10.0-incubating-standalone.jar -s "print('hello world');"
 	cd ..
 	cd ..
-	
+
 	# verify in-memory jar works
 	echo "import org.apache.sysml.api.jmlc.*;public class JMLCEx {public static void main(String[] args) throws Exception {Connection conn = new Connection();PreparedScript script = conn.prepareScript(\"print('hello world');\", new String[]{}, new String[]{}, false);script.executeScript();}}" > JMLCEx.java
 	javac -cp systemml-0.10.0-incubating-inmemory.jar JMLCEx.java
 	java -cp .:systemml-0.10.0-incubating-inmemory.jar JMLCEx
-	
+
 	# verify standalone tar.gz works
 	tar -xvzf systemml-0.10.0-incubating-standalone.tar.gz
 	cd systemml-0.10.0-incubating-standalone
 	echo "print('hello world');" > hello.dml
 	./runStandaloneSystemML.sh hello.dml
 	cd ..
-	
+
 	# verify distrib tar.gz works
 	tar -xvzf systemml-0.10.0-incubating.tar.gz
 	cd systemml-0.10.0-incubating
 	java -cp ../lib/*:SystemML.jar org.apache.sysml.api.DMLScript -s "print('hello world');"
-	
+
 	# verify spark batch mode
 	export SPARK_HOME=/Users/deroneriksson/spark-1.5.1-bin-hadoop2.6
 	$SPARK_HOME/bin/spark-submit SystemML.jar -s "print('hello world');" -exec hybrid_spark
-	
+
 	# verify hadoop batch mode
 	hadoop jar SystemML.jar -s "print('hello world');"
 
@@ -222,7 +222,7 @@ The standalone tar.gz and zip artifacts contain `runStandaloneSystemML.sh` and `
 files. Verify that one or more algorithms can be run on a single node using these
 standalone distributions.
 
-Here is an example based on the [Quick Start Guide](http://apache.github.io/incubator-systemml/quick-start-guide.html)
+Here is an example based on the [Standalone Guide](http://apache.github.io/incubator-systemml/standalone-guide.html)
 demonstrating the execution of an algorithm (on OS X).
 
 	$ tar -xvzf systemml-0.10.0-incubating-standalone.tar.gz
@@ -276,7 +276,3 @@ For examples, see the [Spark MLContext Programming Guide](http://apache.github.i
 
 Verify that the performance suite located at scripts/perftest/ executes on Spark and Hadoop. Testing should
 include 80MB, 800MB, 8GB, and 80GB data sizes.
-
-
-
-

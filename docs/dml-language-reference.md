@@ -61,15 +61,16 @@ limitations under the License.
 
 ## Introduction
 
-SystemML compiles scripts written in Declarative Machine Learning (or DML for short) into MapReduce jobs. DML’s syntax closely follows R, thereby minimizing the learning curve to use SystemML. Before getting into detail, let’s start with a simple Hello World program in DML. Assuming that Hadoop is installed on your machine or cluster, place SystemML.jar and SystemML-config.xml into your directory. Now, create a text file "hello.dml" containing following code:
+SystemML compiles scripts written in Declarative Machine Learning (or DML for short) into mixed driver and distributed jobs. DML’s syntax closely follows R, thereby minimizing the learning curve to use SystemML. Before getting into detail, let’s start with a simple Hello World program in DML. Assuming that Spark is installed on your machine or cluster, place `SystemML.jar` into your directory. Now, create a text file `hello.dml` containing following code:
 
     print("Hello World");
 
 To run this program on your machine, use following command:
 
-    hadoop jar SystemML.jar –f hello.dml
+    spark-submit SystemML.jar -f hello.dml
 
-The option `-f` in the above command refers to the path to the DML script. The detailed list of the options is given in the section "Invocation of SystemML".
+The option `-f` in the above command refers to the path to the DML script. A detailed list of the
+available options can be found running `spark-submit SystemML.jar -help`.
 
 
 ## Variables
@@ -547,13 +548,13 @@ In above script, `ifdef(\$nbrRows, 10)` function is a short-hand for "`ifdef(\$n
 
 Let’s assume that the above script is invoked using following the command line values:
 
-    hadoop jar SystemML.jar -f test.dml -nvargs fname=test.mtx nbrRows=5 nbrCols=5
+    spark-submit SystemML.jar -f test.dml -nvargs fname=test.mtx nbrRows=5 nbrCols=5
 
 In this case, the script will create a random matrix M with 5 rows and 5 columns and write it to the file "text.mtx" in csv format. After that it will print the message "Done creating and writing random matrix in test.mtx" on the standard output.
 
 If however, the above script is invoked from the command line using named arguments:
 
-    hadoop jar SystemML.jar -f test.dml -nvargs fname=test.mtx nbrCols=5
+    spark-submit SystemML.jar -f test.dml -nvargs fname=test.mtx nbrCols=5
 
 Then, the script will instead create a random matrix M with 10 rows (i.e. default value provided in the script) and 5 columns.
 
@@ -1539,170 +1540,3 @@ All reserved keywords are case-sensitive.
     String
     TRUE
     while
-
-
-## Invocation of SystemML
-
-To execute a DML script, SystemML is invoked as follows:
-
-    hadoop jar SystemML.jar [-? | -help | -f] <filename> (-config=<config_filename>)? (-args | -nvargs)? <args-list>?
-
-Where
-
-`-f <filename>: will be interpreted as a path to file with DML script. <filename> prefixed with hdfs or gpfs is assumed path in DFS, otherwise <filename> treated as path on local file system`
-
-`-debug: (optional) run in debug mode`
-
-`-config=<config_filename>: (optional) use config file located at specified path <config_filename>. <config_filename> prefixed with hdfs or gpfs is assumed path in DFS, otherwise <config_filename> treated as path on local file system (default value for <config_filename> is ./SystemML-config.xml)`
-
-`-args <args-list>: (optional) parameterize DML script with contents of <args-list>, which is ALL args after -args flag. Each argument must be an unnamed-argument, where 1st value after -args will replace \$1 in DML script, 2nd value will replace \$2 in DML script, and so on.`
-
-`-nvargs <args-list>: (optional) parameterize DML script with contents of <args-list>, which is ALL args after -nvargs flag. Each argument must be named-argument of form name=value, where value will replace \$name in DML script.`
-
-`-?, or -help: show this help.`
-
-NOTE: Please refer to section on Command-line Arguments for more details and restrictions on usage of command-line arguments to DML script using `–args <args-list> and –nvargs <args-list>`.
-
-
-### Examples
-
-Run a script in local file foo.dml:
-
-    hadoop jar SystemML.jar -f foo.dml
-
-An example debug session:
-
-First, you need to call SystemML using –debug flag.
-
-    hadoop jar SystemML.jar -f test.dml –debug
-
-You can see the line numbers in your DML script by "list" (or simply "l") command:
-
-    (SystemMLdb) l
-    line    1: A = matrix("1 2 3 4 5 6", rows=3, cols=2)
-    line    2:
-    line    3: B = cumsum(A)
-    line    4: #print(B)
-    line    5: print(sum(B))
-
-The next step is usually to set a breakpoint where we need to analyze the state of our variables:
-
-    (SystemMLdb) b 5
-
-Breakpoint added at .defaultNS::main, line 5.
-
-Now, that we have set a breakpoint, we can start running our DML script:
-
-    (SystemMLdb) r
-    Breakpoint reached at .defaultNS::main instID 15: (line 5).
-    (SystemMLdb) p B
-    1.0000  2.0000
-    4.0000  6.0000
-    9.0000  12.0000
-
-
-## MLContext API
-----
-
-The MLContext API allows users to pass RDDs as input/output to SystemML through Java, Scala, or Python.
-
-Typical usage for MLContext using Spark's Scala Shell is as follows:
-
-    scala> import org.apache.sysml.api.MLContext
-
-Create input DataFrame from CSV file and potentially perform some feature transformation
-
-    scala> val W = sqlContext.load(...)
-    scala> val H = sc.textFile("V.csv")
-    scala> val V = sc.textFile("V.text")
-
-Create MLContext
-
-    scala> val ml = new MLContext(sc)
-
-Register input and output DataFrame/RDD
-
-Supported formats are:
-
-  1. DataFrame
-  2. CSV/Text (as JavaRDD&lt;String&gt; or JavaPairRDD&lt;LongWritable, Text&gt;)
-  3. Binary blocked RDD (JavaPairRDD&lt;MatrixIndexes,MatrixBlock&gt;))
-
-Also overloaded to support metadata information such as format, rlen,
-clen, etc.
-
-Please note the variable names given below in quotes correspond to the
-variables in DML script.
-
-These variables need to have corresponding read/write associated in DML
-script.
-
-Currently, only matrix variables are supported through
-registerInput/registerOutput interface.
-
-To pass scalar variables, use named/positional arguments (described
-later) or wrap them into matrix variable.
-
-    scala> ml.registerInput("V", V)
-    scala> ml.registerInput("W", W, "csv")
-    scala> ml.registerInput("H", H, "text", 50, 1500)
-    scala> ml.registerOutput("H")
-    scala> ml.registerOutput("W")
-
-As DataFrame is internally converted to CSV format, one can skip
-providing dimensions.
-
-Call script with default arguments:
-
-    scala> val outputs = ml.execute("GNMF.dml")
-
-MLContext also supports calling script with positional arguments (args)
-and named arguments (nargs):
-
-    scala> val args = Array("V.mtx", "W.mtx", "H.mtx", "2000", "1500", "50", "1", "WOut.mtx", "HOut.mtx")
-    scala> val nargs = Map("maxIter"->"1")
-    scala> val outputs = ml.execute("GNMF.dml", args) # or ml.execute("GNMF.dml", nargs)
-
-We can then fetch the output RDDs in SystemML’s binary blocked format or
-as DataFrame.
-
-    scala> val HOut = outputs.getDF(sqlContext, "H")
-    scala> val WOut = outputs. getBinaryBlockedRDD(sqlContext, "W")
-
-To register new input/outputs and to re-execute the script, it is
-recommended that you first reset MLContext
-
-    scala> ml.reset()
-    scala> ml.registerInput("V", newV)
-
-Though it is possible to re-run the script using different (or even same
-arguments), but using same registered input/outputs without reset, it is
-discouraged. This is because the symbol table entries would have been
-updated since last invocation:
-
-    scala> val new_outputs = ml.execute("GNMF.dml", new_args)
-
-The Python MLContext API is similar to Scala/Java MLContext API. Here is
-an example:
-
-    >>> from pyspark.sql import SQLContext
-    >>> from SystemML import MLContext
-    >>> sqlContext = SQLContext(sc)
-    >>> H = sqlContext.jsonFile("H.json")
-    >>> V = sqlContext.jsonFile("V.json")
-    >>> W = sqlContext.jsonFile("W.json")
-    >>> ml = MLContext(sc)
-    >>> ml.registerInput("V", V)
-    >>> ml.registerInput("W", W)
-    >>> ml.registerInput("H", H)
-    >>> ml.registerOutput("H")
-    >>> ml.registerOutput("W")
-    >>> outputs = ml.execute("GNMF.dml")
-
-Note:
-
--   The current version does not allow users to create multiple
-    MLContexts and only allows one thread to execute DML script using
-    the created MLContext.
--   Even though the above example shows the usage through Scala/Python
-    Shell, it works for Spark-Submit and PySpark-Submit as well.

@@ -30,59 +30,58 @@ SystemML is a flexible, scalable machine learning system.
 SystemML's distinguishing characteristics are:
 
   1. **Algorithm customizability via R-like and Python-like languages**.
-  2. **Multiple execution modes**, including Standalone, Spark Batch, Spark MLContext, Hadoop Batch, and JMLC.
+  2. **Multiple execution modes**, including Spark MLContext, Spark Batch, Hadoop Batch, Standalone, and JMLC.
   3. **Automatic optimization** based on data and cluster characteristics to ensure both efficiency and scalability.
 
 The [**SystemML GitHub README**](https://github.com/apache/incubator-systemml) describes
-building, testing, and running SystemML. Please read [**Contributing to SystemML**](contributing-to-systemml.html)
+building, testing, and running SystemML. Please read [**Contributing to SystemML**](contributing-to-systemml)
 to find out how to help make SystemML even better!
 
-To download SystemML, visit the [downloads](http://systemml.apache.org/download.html) page.
+To download SystemML, visit the [downloads](http://systemml.apache.org/download) page.
 
 
 ## Running SystemML
 
-* **Standalone** - Standalone mode allows data scientists to rapidly prototype algorithms on a single
+* **[Spark MLContext](spark-mlcontext-programming-guide)** - Spark MLContext is a programmatic API
+for running SystemML from Spark via Scala, Python, or Java.
+  * See the [Spark MLContext Programming Guide](spark-mlcontext-programming-guide) with the
+  following examples:
+    * [**Spark Shell (Scala)**](spark-mlcontext-programming-guide#spark-shell-example---new-api)
+    * [**Zeppelin Notebook (Scala)**](spark-mlcontext-programming-guide#zeppelin-notebook-example---linear-regression-algorithm---old-api)
+    * [**Jupyter Notebook (PySpark)**](spark-mlcontext-programming-guide#jupyter-pyspark-notebook-example---poisson-nonnegative-matrix-factorization---old-api)
+* **[Spark Batch](spark-batch-mode)** - Algorithms are automatically optimized to run across Spark clusters.
+  * See [Invoking SystemML in Spark Batch Mode](spark-batch-mode) for detailed information.
+* **[Hadoop Batch](hadoop-batch-mode)** - Algorithms are automatically optimized when distributed across Hadoop clusters.
+  * See [Invoking SystemML in Hadoop Batch Mode](hadoop-batch-mode) for detailed information.
+* **[Standalone](standalone-guide)** - Standalone mode allows data scientists to rapidly prototype algorithms on a single
 machine in R-like and Python-like declarative languages.
-  * The [SystemML GitHub README](https://github.com/apache/incubator-systemml) describes
-  a linear regression example in Standalone Mode.
-  * The [Quick Start Guide](quick-start-guide.html) provides additional examples of algorithm execution
+  * The [Standalone Guide](standalone-guide) provides examples of algorithm execution
   in Standalone Mode.
-* **Spark MLContext** - Spark MLContext is a programmatic API for running SystemML from Spark via Scala, Python, or Java.
-  * See the [Spark MLContext Programming Guide](spark-mlcontext-programming-guide.html) for
-  [**Spark Shell (Scala)**](spark-mlcontext-programming-guide.html#spark-shell-example),
-  [Java](spark-mlcontext-programming-guide.html#java-example), 
-  [**Zeppelin Notebook**](spark-mlcontext-programming-guide.html#zeppelin-notebook-example---linear-regression-algorithm),
-  and [**Jupyter Notebook (PySpark)**](spark-mlcontext-programming-guide.html#jupyter-pyspark-notebook-example---poisson-nonnegative-matrix-factorization)
-  examples.
-* **Spark Batch** - Algorithms are automatically optimized to run across Spark clusters.
-  * See **Invoking SystemML in Spark Batch Mode** **(Coming soon)**.
-* **Hadoop Batch** - Algorithms are automatically optimized when distributed across Hadoop clusters.
-  * See [Invoking SystemML in Hadoop Batch Mode](hadoop-batch-mode.html) for detailed information.
-* **JMLC** - Java Machine Learning Connector.
-  * See [Java Machine Learning Connector (JMLC)](jmlc.html) for more information.
+* **[JMLC](jmlc)** - Java Machine Learning Connector.
+  * See [Java Machine Learning Connector (JMLC)](jmlc) for more information.
 
 ## Language Guides
 
-* [DML Language Reference](dml-language-reference.html) -
+* [DML Language Reference](dml-language-reference) -
 DML is a high-level R-like declarative language for machine learning.
 * **PyDML Language Reference** **(Coming Soon)** -
 PyDML is a high-level Python-like declarative language for machine learning.
-* [Beginner's Guide to DML and PyDML](beginners-guide-to-dml-and-pydml.html) -
+* [Beginner's Guide to DML and PyDML](beginners-guide-to-dml-and-pydml) -
 An introduction to the basics of DML and PyDML.
 
 ## ML Algorithms
 
-* [Algorithms Reference](algorithms-reference.html) - The Algorithms Reference describes the
+* [Algorithms Reference](algorithms-reference) - The Algorithms Reference describes the
 machine learning algorithms included with SystemML in detail.
 
 ## Tools
 
-* [Debugger Guide](debugger-guide.html) - SystemML supports DML script-level debugging through a
+* [Debugger Guide](debugger-guide) - SystemML supports DML script-level debugging through a
 command-line interface.
-* [IDE Guide](developer-tools-systemml.html) - Useful IDE Guide for Developing SystemML.
+* [IDE Guide](developer-tools-systemml) - Useful IDE Guide for Developing SystemML.
 
 ## Other
 
-* [Contributing to SystemML](contributing-to-systemml.html) - Describes ways to contribute to SystemML.
-* [Troubleshooting Guide](troubleshooting-guide.html) - Troubleshoot various issues related to SystemML.
+* [Contributing to SystemML](contributing-to-systemml) - Describes ways to contribute to SystemML.
+* [Engine Developer Guide](engine-dev-guide) - Guide for internal SystemML engine development.
+* [Troubleshooting Guide](troubleshooting-guide) - Troubleshoot various issues related to SystemML.

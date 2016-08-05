@@ -302,7 +302,7 @@ class mllearn:
             self.max_iter = max_iter
             self.max_inner_iter = max_inner_iter
             self.tol = tol
-            if C < 0:
+            if C <= 0:
                 raise Exception('C has to be positive')
             reg = 1.0 / C
             self.reg = reg

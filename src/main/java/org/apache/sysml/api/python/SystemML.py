@@ -259,24 +259,19 @@ class MLOutput(object):
         #    traceback.print_exc()
 
 def getNumCols(numPyArr):
-	if len(numPyArr.shape) == 1:
+	if numPyArr.ndim == 1:
 		return 1
 	else:
 		return numPyArr.shape[1]
        
 def convertToJavaMatrix(sc, src):
-	if isinstance(src, np.ndarray):
-		from array import array
-		numCols = getNumCols(src)
-		numRows = src.shape[0]
-		if src.dtype.type is np.float64:
-			arr = src.reshape(-1)
-		else:
-			arr = array('d', src.reshape(-1))
-		buf = bytearray(arr.tostring())
-		return sc._jvm.org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt.convertPy4JArrayToMB(buf, numRows, numCols)
-	else:
-		raise Exception('Type is not supported')
+	src = np.asarray(src)
+	numCols = getNumCols(src)
+	numRows = src.shape[0]
+	arr = src.ravel().astype(np.float64)
+	buf = bytearray(arr.tostring())
+	return sc._jvm.org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt.convertPy4JArrayToMB(buf, numRows, numCols)
+	
 
 def convertToNumpyArr(sc, mb):
 	numRows = mb.getNumRows()

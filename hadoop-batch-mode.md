@@ -47,9 +47,7 @@ refer to the Hadoop documentation.
 
 # Hadoop Batch Mode Invocation Syntax
 
-As described in the [Invocation of SystemML](dml-language-reference.html#invocation-of-systemml) section
-of the [DML Language Reference](dml-language-reference.html), SystemML can be invoked in Hadoop Batch mode using
-the following syntax:
+SystemML can be invoked in Hadoop Batch mode using the following syntax:
 
     hadoop jar SystemML.jar [-? | -help | -f <filename>] (-config=<config_filename>) ([-args | -nvargs] <args-list>)
 
@@ -110,14 +108,14 @@ that I unpacked. I updated the `PATH` variable to include the `JAVA_HOME` `bin` 
 and the `HADOOP_HOME` `sbin` directory.
 
 	[hadoop@host1 ~]# vi .bash_profile
-	
+
 	...
 	export JAVA_HOME=/usr/lib/jvm/java-1.7.0-openjdk.x86_64
 	export HADOOP_HOME=/home/hadoop/hadoop-2.6.2
 	PATH=$JAVA_HOME/bin:$PATH:$HOME/bin:$HADOOP_HOME/bin:$HADOOP_HOME/sbin
 	export PATH
 	...
-	
+
 	[hadoop@host1 ~]$ source ~/.bash_profile
 
 To verify that Java and Hadoop were on the path, I used the `java -version` and `hadoop version` commands.
@@ -167,7 +165,7 @@ arguments to the DML script were specified following the `-nvargs` option.
 	15/11/11 15:56:22 INFO api.DMLScript: SystemML Statistics:
 	Total execution time:		0.288 sec.
 	Number of executed MR Jobs:	0.
-	
+
 	15/11/11 15:56:22 INFO api.DMLScript: END DML run 11/11/2015 15:56:22
 
 In the console output, we see a warning that no default SystemML config file was found in the current working directory.
@@ -207,7 +205,7 @@ To clean things up, I'll delete the files that were generated.
 Next, we'll look at running SystemML with Hadoop in Pseudo-Distributed mode. In Pseudo-Distributed mode, each Hadoop daemon
 (such as NameNode and DataNode) runs in a separate Java process on a single machine.
 
-In the previous section about Hadoop Standalone mode, we set up the `JAVA_HOME` and `HADOOP_HOME` environment variables 
+In the previous section about Hadoop Standalone mode, we set up the `JAVA_HOME` and `HADOOP_HOME` environment variables
 and added `JAVA_HOME/bin`, `HADOOP_HOME/bin`, and `HADOOP_HOME/sbin` to the `PATH` in `.bash_profile`.
 
 We also need to set the `JAVA_HOME` value in the `hadoop-env.sh` file in the Hadoop configuration directory (`etc/hadoop`).
@@ -215,7 +213,7 @@ We also need to set the `JAVA_HOME` value in the `hadoop-env.sh` file in the Had
 	[hadoop@host1 hadoop]$ pwd
 	/home/hadoop/hadoop-2.6.2/etc/hadoop
 	[hadoop@host1 hadoop]$ vi hadoop-env.sh
-	
+
 	...
 	export JAVA_HOME=/usr/lib/jvm/java-1.7.0-openjdk.x86_64
 	...
@@ -247,8 +245,8 @@ a password.
 In the Hadoop configuration directory (`etc/hadoop`), in the `core-site.xml` file, we specify the `fs.defaultFS`
 property to be `localhost` with port `9000`.
 
-	[hadoop@host1 hadoop]$ vi core-site.xml 
-	
+	[hadoop@host1 hadoop]$ vi core-site.xml
+
 	...
 	<configuration>
 	    <property>
@@ -261,8 +259,8 @@ property to be `localhost` with port `9000`.
 By default, HDFS replicates data on three nodes. Since we're running on a single machine, we'll change this to one.
 We'll add a `dfs.replication` property to `hdfs-site.xml` and set its value to `1`.
 
-	[hadoop@host1 hadoop]$ vi hdfs-site.xml 
-	
+	[hadoop@host1 hadoop]$ vi hdfs-site.xml
+
 	...
 	<configuration>
 	    <property>
@@ -275,7 +273,7 @@ We'll add a `dfs.replication` property to `hdfs-site.xml` and set its value to `
 Next, we'll format HDFS.
 
 	[hadoop@host1 ~]$ hdfs namenode -format
-	15/11/11 17:23:33 INFO namenode.NameNode: STARTUP_MSG: 
+	15/11/11 17:23:33 INFO namenode.NameNode: STARTUP_MSG:
 	/************************************************************
 	STARTUP_MSG: Starting NameNode
 	STARTUP_MSG:   host = host1.example.com/9.30.252.15
@@ -342,7 +340,7 @@ Let's go ahead and execute the `genLinearRegressionData.dml` script in Hadoop Ps
 	15/11/11 18:16:35 INFO api.DMLScript: SystemML Statistics:
 	Total execution time:		1.484 sec.
 	Number of executed MR Jobs:	0.
-	
+
 	15/11/11 18:16:35 INFO api.DMLScript: END DML run 11/11/2015 18:16:35
 
 If we list the contents of the current directory in our regular file system, we see that no files have been written
@@ -413,7 +411,7 @@ In the `yarn-site.xml` configuration file, we specify the `yarn.nodemanager.aux-
 to be `mapreduce_shuffle`.
 
 	[hadoop@host1 hadoop]$ vi yarn-site.xml
-	
+
 	...
 	<configuration>
 	    <property>
@@ -450,7 +448,7 @@ daemons (ResourceManager and NodeManager) are running.
 	51712 DataNode
 	51880 SecondaryNameNode
 
-We can now view YARN information via the web interface on port 8088 (http://host1.example.com:8088). 
+We can now view YARN information via the web interface on port 8088 (http://host1.example.com:8088).
 
 I'll execute the `genLinearRegressionData.dml` example that we've previously considered.
 
@@ -465,7 +463,7 @@ I'll execute the `genLinearRegressionData.dml` example that we've previously con
 	15/11/12 11:57:07 INFO api.DMLScript: SystemML Statistics:
 	Total execution time:		1.265 sec.
 	Number of executed MR Jobs:	0.
-	
+
 	15/11/12 11:57:07 INFO api.DMLScript: END DML run 11/12/2015 11:57:07
 
 If we examine the HDFS file system, we see the files generated by the execution of the DML script by SystemML on Hadoop.
@@ -529,12 +527,12 @@ First, I created a hadoop user on each slave node.
 	[root@host2 ~]# useradd hadoop
 	[root@host2 ~]# passwd hadoop
 	[root@host2 ~]# exit
-	
+
 	[root@host1 ~]$ ssh root@host3.example.com
 	[root@host2 ~]# useradd hadoop
 	[root@host2 ~]# passwd hadoop
 	[root@host2 ~]# exit
-	
+
 	[root@host1 ~]$ ssh root@host4.example.com
 	[root@host2 ~]# useradd hadoop
 	[root@host2 ~]# passwd hadoop
@@ -547,17 +545,17 @@ tested the passwordless login from the master node to each of the slave nodes fo
 user.
 
 	$ ssh hadoop@host1.example.com
-	
+
 	[hadoop@host1 ~]$ ssh-copy-id host2.example.com
 	[hadoop@host1 ~]$ ssh hadoop@host2.example.com
 	Last login: Thu Nov 12 14:16:21 2015
 	[hadoop@host2 ~]$ exit
-	
+
 	[hadoop@host1 ~]$ ssh-copy-id host3.example.com
 	[hadoop@host1 ~]$ ssh hadoop@host3.example.com
 	Last login: Thu Nov 12 14:16:40 2015
 	[hadoop@host3 ~]$ exit
-	
+
 	[hadoop@host1 ~]$ ssh-copy-id host4.example.com
 	[hadoop@host1 ~]$ ssh hadoop@host4.example.com
 	Last login: Thu Nov 12 14:17:10 2015
@@ -575,7 +573,7 @@ On the master node, I specified the slave nodes in the Hadoop `slaves` configura
 In the `core-site.xml` file, I specified the `fs.defaultFS` property to reference the master node.
 
 	[hadoop@host1 hadoop]$ more core-site.xml
-	
+
 	...
 	<configuration>
 	    <property>
@@ -590,7 +588,7 @@ In the `hdfs-site.xml` configuration file, I removed the previous `dfs.replicati
 will use the default replication value (of 3).
 
 	[hadoop@host1 hadoop]$ more hdfs-site.xml
-	
+
 	...
 	<configuration>
 	</configuration>
@@ -604,7 +602,7 @@ Furthermore, we'll set `mapreduce.map.memory.mb` and `mapreduce.reduce.memory.mb
 values are set to at least 1.5 times the value of the maximum heap size.
 
 	[hadoop@host1 hadoop]$ more mapred-site.xml
-	
+
 	...
 	<configuration>
 	    <property>
@@ -634,7 +632,7 @@ In the `yarn-site.xml` configuration file, I added a `yarn.resourcemanager.hostn
 the master node as the host.
 
 	[hadoop@host1 hadoop]$ more yarn-site.xml
-	
+
 	...
 	<configuration>
 	    <property>
@@ -652,7 +650,7 @@ In the previous example, we specified the `JAVA_HOME` in the `hadoop-env.sh` con
 We will use that same value.
 
 	[hadoop@host1 hadoop]$ more hadoop-env.sh
-	
+
 	...
 	export JAVA_HOME=/usr/lib/jvm/java-1.7.0-openjdk.x86_64
 	...
@@ -744,13 +742,13 @@ If we look at the Hadoop (on port 50070) and YARN (on port 8088) web interfaces,
 Let's go ahead and run the SystemML example from the GitHub README.
 
 	[hadoop@host1 ~]$ hadoop jar systemml-{{site.SYSTEMML_VERSION}}/SystemML.jar -f genLinearRegressionData.dml -nvargs numSamples=1000 numFeatures=50 maxFeatureValue=5 maxWeight=5 addNoise=FALSE b=0 sparsity=0.7 output=linRegData.csv format=csv perc=0.5
-	
+
 	[hadoop@host1 ~]$ hadoop jar systemml-{{site.SYSTEMML_VERSION}}/SystemML.jar -f systemml-{{site.SYSTEMML_VERSION}}/algorithms/utils/sample.dml -nvargs X=linRegData.csv sv=perc.csv O=linRegDataParts ofmt=csv
-	
+
 	[hadoop@host1 ~]$ hadoop jar systemml-{{site.SYSTEMML_VERSION}}/SystemML.jar -f systemml-{{site.SYSTEMML_VERSION}}/algorithms/utils/splitXY.dml -nvargs X=linRegDataParts/1 y=51 OX=linRegData.train.data.csv OY=linRegData.train.labels.csv ofmt=csv
-	
+
 	[hadoop@host1 ~]$ hadoop jar systemml-{{site.SYSTEMML_VERSION}}/SystemML.jar -f systemml-{{site.SYSTEMML_VERSION}}/algorithms/utils/splitXY.dml -nvargs X=linRegDataParts/2 y=51 OX=linRegData.test.data.csv OY=linRegData.test.labels.csv ofmt=csv
-	
+
 	[hadoop@host1 ~]$ hadoop jar systemml-{{site.SYSTEMML_VERSION}}/SystemML.jar -f systemml-{{site.SYSTEMML_VERSION}}/algorithms/LinearRegDS.dml -nvargs X=linRegData.train.data.csv Y=linRegData.train.labels.csv B=betas.csv fmt=csv
 	...
 	BEGIN LINEAR REGRESSION SCRIPT
@@ -773,7 +771,7 @@ Let's go ahead and run the SystemML example from the GitHub README.
 	15/11/17 15:50:34 INFO api.DMLScript: SystemML Statistics:
 	Total execution time:		0.480 sec.
 	...
-	
+
 	[hadoop@host1 ~]$ hadoop jar systemml-{{site.SYSTEMML_VERSION}}/SystemML.jar -f systemml-{{site.SYSTEMML_VERSION}}/algorithms/GLM-predict.dml -nvargs X=linRegData.test.data.csv Y=linRegData.test.labels.csv B=betas.csv fmt=csv
 	...
 	LOGLHOOD_Z,,FALSE,NaN
@@ -863,7 +861,7 @@ executing SystemML in Hadoop from my home directory rather than from the SystemM
 
 	[hadoop@host1 ~]$ hadoop jar systemml-{{site.SYSTEMML_VERSION}}/SystemML.jar -f genRandData4Kmeans.dml -config=systemml-{{site.SYSTEMML_VERSION}}/SystemML-config.xml -nvargs nr=1000000 nf=100 nc=10 dc=10.0 dr=1.0 fbf=100.0 cbf=100.0 X=X.mtx C=C.mtx Y=Y.mtx YbyC=YbyC.mtx
 
-After the data generation has finished, I'll check HDFS for the amount of space used. The 1M-row matrix `X.mtx` 
+After the data generation has finished, I'll check HDFS for the amount of space used. The 1M-row matrix `X.mtx`
 requires about 2.8GB of space.
 
 	[hadoop@host1 ~]$ hdfs dfs -df -h
@@ -895,7 +893,7 @@ Here we can see the `X.mtx` data files.
 	-rw-r--r--   1 hadoop supergroup  481624723 2015-11-19 11:56 X.mtx/2-r-00004
 	-rw-r--r--   1 hadoop supergroup  481624048 2015-11-19 11:56 X.mtx/2-r-00005
 
-Next, I'll run the `Kmeans.dml` algorithm on the 1M-row matrix `X.mtx`. 
+Next, I'll run the `Kmeans.dml` algorithm on the 1M-row matrix `X.mtx`.
 
 	[hadoop@host1 ~]$ hadoop jar systemml-{{site.SYSTEMML_VERSION}}/SystemML.jar -f systemml-{{site.SYSTEMML_VERSION}}/algorithms/Kmeans.dml -config=/systemml-{{site.SYSTEMML_VERSION}}/SystemML-config.xml -nvargs X=X.mtx k=5 C=Centroids.mtx
 
@@ -920,7 +918,7 @@ the `Kmeans-predict.dml` script.
 
 	[hadoop@host1 ~]$ hadoop jar systemml-{{site.SYSTEMML_VERSION}}/SystemML.jar -f systemml-{{site.SYSTEMML_VERSION}}/algorithms/Kmeans-predict.dml -config=systemml-{{site.SYSTEMML_VERSION}}/SystemML-config.xml -nvargs X=X.mtx C=Centroids.mtx prY=PredY.mtx O=stats.txt
 
-In the file system, we can see that the `PredY.mtx` matrix was created. 
+In the file system, we can see that the `PredY.mtx` matrix was created.
 The `stats.txt` file lists statistics about the results.
 
 	[hadoop@host1 ~]$ hdfs dfs -ls
@@ -1019,6 +1017,3 @@ in a clustered environment.
     </tr>
   </tbody>
 </table>
-
-
-

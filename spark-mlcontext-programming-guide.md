@@ -108,7 +108,7 @@ ml.execute(helloScript)
 <div data-lang="Spark Shell" markdown="1">
 {% highlight scala %}
 scala> val helloScript = dml("print('hello world')")
-helloScript: org.apache.sysml.api.mlcontext.Script = 
+helloScript: org.apache.sysml.api.mlcontext.Script =
 Inputs:
 None
 
@@ -117,7 +117,7 @@ None
 
 scala> ml.execute(helloScript)
 hello world
-res0: org.apache.sysml.api.mlcontext.MLResults = 
+res0: org.apache.sysml.api.mlcontext.MLResults =
 None
 
 {% endhighlight %}
@@ -214,7 +214,7 @@ scala> val minMaxMean =
      | maxOut = max(Xin)
      | meanOut = mean(Xin)
      | """
-minMaxMean: String = 
+minMaxMean: String =
 "
 minOut = min(Xin)
 maxOut = max(Xin)
@@ -307,7 +307,7 @@ scala> val sums = """
      |   message = "s1 and s2 are equal"
      | }
      | """
-sums: String = 
+sums: String =
 "
 s1 = sum(m1);
 s2 = sum(m2);
@@ -323,7 +323,7 @@ if (s1 > s2) {
 scala> scala.tools.nsc.io.File("sums.dml").writeAll(sums)
 
 scala> val sumScript = dmlFromFile("sums.dml").in(Map("m1"-> rdd1, "m2"-> rdd2)).out("s1", "s2", "message")
-sumScript: org.apache.sysml.api.mlcontext.Script = 
+sumScript: org.apache.sysml.api.mlcontext.Script =
 Inputs:
   [1] (RDD) m1: ParallelCollectionRDD[42] at parallelize at <console>:38
   [2] (RDD) m2: ParallelCollectionRDD[43] at parallelize at <console>:38
@@ -334,7 +334,7 @@ Outputs:
   [3] message
 
 scala> val sumResults = ml.execute(sumScript)
-sumResults: org.apache.sysml.api.mlcontext.MLResults = 
+sumResults: org.apache.sysml.api.mlcontext.MLResults =
   [1] (Double) s1: 10.0
   [2] (Double) s2: 26.0
   [3] (String) message: s2 is greater
@@ -378,7 +378,7 @@ scala> val rdd2Metadata = new MatrixMetadata(2, 2)
 rdd2Metadata: org.apache.sysml.api.mlcontext.MatrixMetadata = rows: 2, columns: 2, non-zeros: None, rows per block: None, columns per block: None
 
 scala> val sumScript = dmlFromFile("sums.dml").in(Seq(("m1", rdd1, rdd1Metadata), ("m2", rdd2, rdd2Metadata))).out("s1", "s2", "message")
-sumScript: org.apache.sysml.api.mlcontext.Script = 
+sumScript: org.apache.sysml.api.mlcontext.Script =
 Inputs:
   [1] (RDD) m1: ParallelCollectionRDD[42] at parallelize at <console>:38
   [2] (RDD) m2: ParallelCollectionRDD[43] at parallelize at <console>:38
@@ -416,7 +416,7 @@ val (firstSum, secondSum, sumMessage) = ml.execute(sumScript).getTuple[Double, D
 <div data-lang="Spark Shell" markdown="1">
 {% highlight scala %}
 scala> val sumScript = dmlFromFile("sums.dml").in("m1", rdd1, rdd1Metadata).in("m2", rdd2, rdd2Metadata).out("s1").out("s2").out("message")
-sumScript: org.apache.sysml.api.mlcontext.Script = 
+sumScript: org.apache.sysml.api.mlcontext.Script =
 Inputs:
   [1] (RDD) m1: ParallelCollectionRDD[42] at parallelize at <console>:38
   [2] (RDD) m2: ParallelCollectionRDD[43] at parallelize at <console>:38
@@ -445,7 +445,7 @@ Let's look at an example of reading a matrix out of SystemML. We'll create a DML
 in which we create a 2x2 matrix `m`. We'll set the variable `n` to be the sum of the cells in the matrix.
 
 We create a script object using String `s`, and we set `m` and `n` as the outputs. We execute the script, and in
-the results we see we have Matrix `m` and Double `n`. The `n` output variable has a value of `110.0`. 
+the results we see we have Matrix `m` and Double `n`. The `n` output variable has a value of `110.0`.
 
 We get Matrix `m` and Double `n` as a Tuple of values `x` and `y`. We then convert Matrix `m` to an
 RDD of IJV values, an RDD of CSV values, a DataFrame, and a two-dimensional Double Array, and we display
@@ -478,14 +478,14 @@ scala> val s =
      | m = matrix("11 22 33 44", rows=2, cols=2)
      | n = sum(m)
      | """
-s: String = 
+s: String =
 "
 m = matrix("11 22 33 44", rows=2, cols=2)
 n = sum(m)
 "
 
 scala> val scr = dml(s).out("m", "n");
-scr: org.apache.sysml.api.mlcontext.Script = 
+scr: org.apache.sysml.api.mlcontext.Script =
 Inputs:
 None
 
@@ -495,7 +495,7 @@ Outputs:
 
 
 scala> val res = ml.execute(scr)
-res: org.apache.sysml.api.mlcontext.MLResults = 
+res: org.apache.sysml.api.mlcontext.MLResults =
   [1] (Matrix) m: Matrix: scratch_space//_p12059_9.31.117.12//_t0/temp26_14, [2 x 2, nnz=4, blocks (1000 x 1000)], binaryblock, dirty
   [2] (Double) n: 110.0
 
@@ -588,7 +588,7 @@ scala> val scriptUrl = "https://raw.githubusercontent.com/apache/incubator-syste
 scriptUrl: String = https://raw.githubusercontent.com/apache/incubator-systemml/master/scripts/algorithms/Univar-Stats.dml
 
 scala> val uni = dmlFromUrl(scriptUrl).in("A", habermanRDD, habermanMetadata).in("K", typesRDD, typesMetadata).in("$CONSOLE_OUTPUT", true)
-uni: org.apache.sysml.api.mlcontext.Script = 
+uni: org.apache.sysml.api.mlcontext.Script =
 Inputs:
   [1] (RDD) A: ParallelCollectionRDD[159] at parallelize at <console>:43
   [2] (RDD) K: ParallelCollectionRDD[160] at parallelize at <console>:39
@@ -653,7 +653,7 @@ Feature [4]: Categorical (Nominal)
  (15) Num of categories   | 2
  (16) Mode                | 1
  (17) Num of modes        | 1
-res23: org.apache.sysml.api.mlcontext.MLResults = 
+res23: org.apache.sysml.api.mlcontext.MLResults =
 None
 
 {% endhighlight %}
@@ -723,7 +723,7 @@ baseStats.asRDDStringIJV.collect.slice(0,9).foreach(println)
 <div data-lang="Spark Shell" markdown="1">
 {% highlight scala %}
 scala> val uni = dmlFromUrl(scriptUrl).in("A", habermanRDD, habermanMetadata).in("K", typesRDD, typesMetadata).out("baseStats")
-uni: org.apache.sysml.api.mlcontext.Script = 
+uni: org.apache.sysml.api.mlcontext.Script =
 Inputs:
   [1] (RDD) A: ParallelCollectionRDD[159] at parallelize at <console>:43
   [2] (RDD) K: ParallelCollectionRDD[160] at parallelize at <console>:39
@@ -783,7 +783,7 @@ scala> val minMaxMean =
      | maxOut = max(Xin)
      | meanOut = mean(Xin)
      | """
-minMaxMean: String = 
+minMaxMean: String =
 "
 minOut = min(Xin)
 maxOut = max(Xin)
@@ -937,7 +937,7 @@ scala> val minMaxMean =
      | maxOut = max(Xin)
      | meanOut = mean(Xin)
      | """
-minMaxMean: String = 
+minMaxMean: String =
 "
 minOut = min(Xin)
 maxOut = max(Xin)
@@ -1023,7 +1023,7 @@ scala> val minMaxMean =
      | maxOut = max(Xin)
      | meanOut = mean(Xin)
      | """
-minMaxMean: String = 
+minMaxMean: String =
 "
 minOut = min(Xin)
 maxOut = max(Xin)
@@ -1186,7 +1186,7 @@ scala> class MyScriptExecutor extends org.apache.sysml.api.mlcontext.ScriptExecu
 defined class MyScriptExecutor
 
 scala> val helloScript = dml("print('hello world')")
-helloScript: org.apache.sysml.api.mlcontext.Script = 
+helloScript: org.apache.sysml.api.mlcontext.Script =
 Inputs:
 None
 
@@ -1197,7 +1197,7 @@ scala> ml.execute(helloScript, new MyScriptExecutor)
 Parsing script
 Validating script
 hello world
-res63: org.apache.sysml.api.mlcontext.MLResults = 
+res63: org.apache.sysml.api.mlcontext.MLResults =
 None
 
 {% endhighlight %}
@@ -1242,7 +1242,7 @@ scala> val rddCSV = sc.parallelize(Array("1.0,2.0", "3.0,4.0"))
 rddCSV: org.apache.spark.rdd.RDD[String] = ParallelCollectionRDD[190] at parallelize at <console>:38
 
 scala> val sumAndMean = dml("sum = sum(m); mean = mean(m)").in("m", rddCSV).out("sum", "mean")
-sumAndMean: org.apache.sysml.api.mlcontext.Script = 
+sumAndMean: org.apache.sysml.api.mlcontext.Script =
 Inputs:
   [1] (RDD) m: ParallelCollectionRDD[190] at parallelize at <console>:38
 
@@ -1251,7 +1251,7 @@ Outputs:
   [2] mean
 
 scala> ml.execute(sumAndMean)
-res20: org.apache.sysml.api.mlcontext.MLResults = 
+res20: org.apache.sysml.api.mlcontext.MLResults =
   [1] (Double) sum: 10.0
   [2] (Double) mean: 2.5
 
@@ -1291,7 +1291,7 @@ scala> val mm3x3 = new MatrixMetadata(MatrixFormat.IJV, 3, 3)
 mm3x3: org.apache.sysml.api.mlcontext.MatrixMetadata = rows: 3, columns: 3, non-zeros: None, rows per block: None, columns per block: None
 
 scala> val sumAndMean = dml("sum = sum(m); mean = mean(m)").in("m", rddIJV, mm3x3).out("sum", "mean")
-sumAndMean: org.apache.sysml.api.mlcontext.Script = 
+sumAndMean: org.apache.sysml.api.mlcontext.Script =
 Inputs:
   [1] (RDD) m: ParallelCollectionRDD[202] at parallelize at <console>:38
 
@@ -1300,7 +1300,7 @@ Outputs:
   [2] mean
 
 scala> ml.execute(sumAndMean)
-res21: org.apache.sysml.api.mlcontext.MLResults = 
+res21: org.apache.sysml.api.mlcontext.MLResults =
   [1] (Double) sum: 10.0
   [2] (Double) mean: 1.1111111111111112
 
@@ -1333,7 +1333,7 @@ scala> val mm4x4 = new MatrixMetadata(MatrixFormat.IJV, 4, 4)
 mm4x4: org.apache.sysml.api.mlcontext.MatrixMetadata = rows: 4, columns: 4, non-zeros: None, rows per block: None, columns per block: None
 
 scala> val sumAndMean = dml("sum = sum(m); mean = mean(m)").in("m", rddIJV, mm4x4).out("sum", "mean")
-sumAndMean: org.apache.sysml.api.mlcontext.Script = 
+sumAndMean: org.apache.sysml.api.mlcontext.Script =
 Inputs:
   [1] (RDD) m: ParallelCollectionRDD[210] at parallelize at <console>:38
 
@@ -1342,7 +1342,7 @@ Outputs:
   [2] mean
 
 scala> ml.execute(sumAndMean)
-res22: org.apache.sysml.api.mlcontext.MLResults = 
+res22: org.apache.sysml.api.mlcontext.MLResults =
   [1] (Double) sum: 10.0
   [2] (Double) mean: 0.625
 
@@ -1445,7 +1445,7 @@ scala> val rddCSV = sc.parallelize(Array("1.0,2.0", "3.0,4.0"))
 rddCSV: org.apache.spark.rdd.RDD[String] = ParallelCollectionRDD[341] at parallelize at <console>:53
 
 scala> val add = dml("y = x + 1").in("x", rddCSV).out("y")
-add: org.apache.sysml.api.mlcontext.Script = 
+add: org.apache.sysml.api.mlcontext.Script =
 Inputs:
   [1] (RDD) x: ParallelCollectionRDD[341] at parallelize at <console>:53
 
@@ -2100,3 +2100,8 @@ plt.title('PNMF Training Loss')
 {% endhighlight %}
 
 ![Jupyter Loss Graph](img/spark-mlcontext-programming-guide/jupyter_loss_graph.png "Jupyter Loss Graph")
+
+# Recommended Spark Configuration Settings
+
+For best performance, we recommend setting the following flags when running SystemML with Spark:
+`--conf spark.driver.maxResultSize=0 --conf spark.akka.frameSize=128`.

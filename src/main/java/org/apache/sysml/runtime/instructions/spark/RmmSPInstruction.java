@@ -20,6 +20,7 @@
 package org.apache.sysml.runtime.instructions.spark;
 
 
+import java.util.Iterator;
 import java.util.LinkedList;
 
 import org.apache.spark.api.java.JavaPairRDD;
@@ -132,7 +133,7 @@ public class RmmSPInstruction extends BinarySPInstruction
 		}
 		
 		@Override
-		public Iterable<Tuple2<TripleIndexes, MatrixBlock>> call( Tuple2<MatrixIndexes, MatrixBlock> arg0 ) 
+		public Iterator<Tuple2<TripleIndexes, MatrixBlock>> call( Tuple2<MatrixIndexes, MatrixBlock> arg0 ) 
 			throws Exception 
 		{
 			LinkedList<Tuple2<TripleIndexes, MatrixBlock>> ret = new LinkedList<Tuple2<TripleIndexes, MatrixBlock>>();
@@ -165,7 +166,7 @@ public class RmmSPInstruction extends BinarySPInstruction
 			}
 			
 			//output list of new tuples
-			return ret;
+			return ret.iterator();
 		}
 	}
 

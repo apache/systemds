@@ -21,6 +21,7 @@ package org.apache.sysml.api;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -31,7 +32,7 @@ import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.mllib.linalg.DenseVector;
 import org.apache.spark.mllib.linalg.VectorUDT;
-import org.apache.spark.sql.DataFrame;
+import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.SQLContext;
@@ -86,7 +87,7 @@ public class MLOutput {
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public DataFrame getDF(SQLContext sqlContext, String varName) throws DMLRuntimeException {
+	public Dataset<Row> getDF(SQLContext sqlContext, String varName) throws DMLRuntimeException {
 		if(sqlContext == null) {
 			throw new DMLRuntimeException("SQLContext is not created.");
 		}
@@ -106,7 +107,7 @@ public class MLOutput {
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public DataFrame getDF(SQLContext sqlContext, String varName, boolean outputVector) throws DMLRuntimeException {
+	public Dataset<Row> getDF(SQLContext sqlContext, String varName, boolean outputVector) throws DMLRuntimeException {
 		if(sqlContext == null) {
 			throw new DMLRuntimeException("SQLContext is not created.");
 		}
@@ -132,7 +133,7 @@ public class MLOutput {
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public DataFrame getDF(SQLContext sqlContext, String varName, Map<String, Tuple2<Long, Long>> range) throws DMLRuntimeException {
+	public Dataset<Row> getDF(SQLContext sqlContext, String varName, Map<String, Tuple2<Long, Long>> range) throws DMLRuntimeException {
 		if(sqlContext == null) {
 			throw new DMLRuntimeException("SQLContext is not created.");
 		}
@@ -227,7 +228,7 @@ public class MLOutput {
 		}
 
 		@Override
-		public Iterable<Tuple2<Long, Tuple2<Long, Double[]>>> call(Tuple2<MatrixIndexes, MatrixBlock> kv) throws Exception {
+		public Iterator<Tuple2<Long, Tuple2<Long, Double[]>>> call(Tuple2<MatrixIndexes, MatrixBlock> kv) throws Exception {
 			// ------------------------------------------------------------------
     		//	Compute local block size: 
     		// Example: For matrix: 1500 X 1100 with block length 1000 X 1000
@@ -248,7 +249,7 @@ public class MLOutput {
 				}
 				retVal.add(new Tuple2<Long, Tuple2<Long,Double[]>>(startRowIndex + i, new Tuple2<Long,Double[]>(kv._1.getColumnIndex(), partialRow)));
 			}
-			return retVal;
+			return retVal.iterator();
 		}
 	}
 	

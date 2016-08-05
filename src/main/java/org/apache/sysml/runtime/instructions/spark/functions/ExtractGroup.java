@@ -21,6 +21,7 @@ package org.apache.sysml.runtime.instructions.spark.functions;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 
@@ -57,7 +58,7 @@ public abstract class ExtractGroup implements Serializable
 	 * @return
 	 * @throws Exception 
 	 */
-	protected Iterable<Tuple2<MatrixIndexes, WeightedCell>> execute(MatrixIndexes ix, MatrixBlock group, MatrixBlock target) throws Exception
+	protected Iterator<Tuple2<MatrixIndexes, WeightedCell>> execute(MatrixIndexes ix, MatrixBlock group, MatrixBlock target) throws Exception
 	{
 		//sanity check matching block dimensions
 		if(group.getNumRows() != target.getNumRows()) {
@@ -105,7 +106,7 @@ public abstract class ExtractGroup implements Serializable
 			}
 		}
 		
-		return groupValuePairs;	
+		return groupValuePairs.iterator();	
 	}
 	
 	/**
@@ -120,7 +121,7 @@ public abstract class ExtractGroup implements Serializable
 		}
 		
 		@Override
-		public Iterable<Tuple2<MatrixIndexes, WeightedCell>> call(
+		public Iterator<Tuple2<MatrixIndexes, WeightedCell>> call(
 				Tuple2<MatrixIndexes, Tuple2<MatrixBlock, MatrixBlock>> arg)
 				throws Exception 
 		{
@@ -147,7 +148,7 @@ public abstract class ExtractGroup implements Serializable
 		}
 		
 		@Override
-		public Iterable<Tuple2<MatrixIndexes, WeightedCell>> call(
+		public Iterator<Tuple2<MatrixIndexes, WeightedCell>> call(
 				Tuple2<MatrixIndexes, MatrixBlock> arg)
 				throws Exception 
 		{

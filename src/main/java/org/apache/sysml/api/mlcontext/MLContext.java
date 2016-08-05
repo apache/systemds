@@ -60,7 +60,7 @@ public class MLContext {
 	/**
 	 * Minimum Spark version supported by SystemML.
 	 */
-	public static final String SYSTEMML_MINIMUM_SPARK_VERSION = "1.4.0";
+	public static final String SYSTEMML_MINIMUM_SPARK_VERSION = "2.0.0";
 
 	/**
 	 * SparkContext object.

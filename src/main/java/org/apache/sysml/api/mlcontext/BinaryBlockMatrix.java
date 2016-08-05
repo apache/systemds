@@ -20,7 +20,8 @@
 package org.apache.sysml.api.mlcontext;
 
 import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.sql.DataFrame;
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Row;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
@@ -42,7 +43,7 @@ public class BinaryBlockMatrix {
 	 * @param matrixMetadata
 	 *            matrix metadata, such as number of rows and columns
 	 */
-	public BinaryBlockMatrix(DataFrame dataFrame, MatrixMetadata matrixMetadata) {
+	public BinaryBlockMatrix(Dataset<Row> dataFrame, MatrixMetadata matrixMetadata) {
 		this.matrixMetadata = matrixMetadata;
 		binaryBlocks = MLContextConversionUtil.dataFrameToBinaryBlocks(dataFrame, matrixMetadata);
 	}
@@ -58,7 +59,7 @@ public class BinaryBlockMatrix {
 	 * @param numCols
 	 *            the number of columns
 	 */
-	public BinaryBlockMatrix(DataFrame dataFrame, long numRows, long numCols) {
+	public BinaryBlockMatrix(Dataset<Row> dataFrame, long numRows, long numCols) {
 		this(dataFrame, new MatrixMetadata(numRows, numCols, MLContextUtil.defaultBlockSize(),
 				MLContextUtil.defaultBlockSize()));
 	}
@@ -69,7 +70,7 @@ public class BinaryBlockMatrix {
 	 * @param dataFrame
 	 *            the Spark DataFrame
 	 */
-	public BinaryBlockMatrix(DataFrame dataFrame) {
+	public BinaryBlockMatrix(Dataset<Row> dataFrame) {
 		this(dataFrame, new MatrixMetadata());
 	}
 

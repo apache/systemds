@@ -28,12 +28,11 @@ import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.ml.classification.ProbabilisticClassificationModel;
 import org.apache.spark.ml.param.ParamMap;
-import org.apache.spark.mllib.linalg.Vector;
-import org.apache.spark.sql.DataFrame;
+import org.apache.spark.ml.linalg.Vector;
+import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.SQLContext;
-
 import org.apache.sysml.api.MLContext;
 import org.apache.sysml.api.MLOutput;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -115,13 +114,14 @@ public class LogisticRegressionModel extends ProbabilisticClassificationModel<Ve
 		
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
-	public DataFrame transform(DataFrame dataset) {
+	public Dataset<Row> transform(Dataset<?> dataset) {
 		try {
 			MatrixCharacteristics mcXin = new MatrixCharacteristics();
 			JavaPairRDD<MatrixIndexes, MatrixBlock> Xin;
 			try {
-				Xin = RDDConverterUtilsExt.vectorDataFrameToBinaryBlock(new JavaSparkContext(this.sc), dataset, mcXin, false, "features");
+				Xin = RDDConverterUtilsExt.vectorDataFrameToBinaryBlock(new JavaSparkContext(this.sc), (Dataset<Row>) dataset, mcXin, false, "features");
 			} catch (DMLRuntimeException e1) {
 				e1.printStackTrace();
 				return null;
@@ -149,7 +149,7 @@ public class LogisticRegressionModel extends ProbabilisticClassificationModel<Ve
 			MLOutput out = ml.execute(dmlFilePath, param);
 			
 			SQLContext sqlContext = new SQLContext(sc);
-			DataFrame prob = out.getDF(sqlContext, "means", true).withColumnRenamed("C1", "probability");
+			Dataset<Row> prob = out.getDF(sqlContext, "means", true).withColumnRenamed("C1", "probability");
 			
 			MLContext mlNew = new MLContext(sc);
 			mlNew.registerInput("X", Xin, mcXin);
@@ -166,11 +166,11 @@ public class LogisticRegressionModel extends ProbabilisticClassificationModel<Ve
 					+ "write(rawPred, \"tempOut1\", \"csv\")");
 			
 			// TODO: Perform joins in the DML
-			DataFrame pred = outNew.getDF(sqlContext, "Prediction").withColumnRenamed("C1", "prediction").withColumnRenamed("ID", "ID1");
-			DataFrame rawPred = outNew.getDF(sqlContext, "rawPred", true).withColumnRenamed("C1", "rawPrediction").withColumnRenamed("ID", "ID2");
-			DataFrame predictionsNProb = prob.join(pred, prob.col("ID").equalTo(pred.col("ID1"))).select("ID", "probability", "prediction");
+			Dataset<Row> pred = outNew.getDF(sqlContext, "Prediction").withColumnRenamed("C1", "prediction").withColumnRenamed("ID", "ID1");
+			Dataset<Row> rawPred = outNew.getDF(sqlContext, "rawPred", true).withColumnRenamed("C1", "rawPrediction").withColumnRenamed("ID", "ID2");
+			Dataset<Row> predictionsNProb = prob.join(pred, prob.col("ID").equalTo(pred.col("ID1"))).select("ID", "probability", "prediction");
 			predictionsNProb = predictionsNProb.join(rawPred, predictionsNProb.col("ID").equalTo(rawPred.col("ID2"))).select("ID", "probability", "prediction", "rawPrediction");
-			DataFrame dataset1 = RDDConverterUtilsExt.addIDToDataFrame(dataset, sqlContext, "ID");			
+			Dataset<Row> dataset1 = RDDConverterUtilsExt.addIDToDataFrame((Dataset<Row>) dataset, sqlContext, "ID");			
 			return dataset1.join(predictionsNProb, dataset1.col("ID").equalTo(predictionsNProb.col("ID"))).orderBy("id");
 		} catch (Exception e) {
 			throw new RuntimeException(e);

@@ -21,6 +21,7 @@ package org.apache.sysml.runtime.instructions.spark;
 
 
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
@@ -143,7 +144,7 @@ public class PmmSPInstruction extends BinarySPInstruction
 		}
 		
 		@Override
-		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call( Tuple2<MatrixIndexes, MatrixBlock> arg0 ) 
+		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call( Tuple2<MatrixIndexes, MatrixBlock> arg0 ) 
 			throws Exception 
 		{
 			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
@@ -183,7 +184,7 @@ public class PmmSPInstruction extends BinarySPInstruction
 					ret.add(new Tuple2<MatrixIndexes, MatrixBlock>(new MatrixIndexes(rowIX2, ixIn.getColumnIndex()), out2));
 			}
 			
-			return ret;
+			return ret.iterator();
 		}
 	}
 	

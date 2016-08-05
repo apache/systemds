@@ -121,7 +121,7 @@ public class FrameAppendMSPInstruction extends AppendMSPInstruction
 		}
 
 		@Override
-		public Iterable<Tuple2<Long, FrameBlock>> call(Iterator<Tuple2<Long, FrameBlock>> arg0)
+		public Iterator<Tuple2<Long, FrameBlock>> call(Iterator<Tuple2<Long, FrameBlock>> arg0)
 			throws Exception 
 		{
 			return new MapAppendPartitionIterator(arg0);

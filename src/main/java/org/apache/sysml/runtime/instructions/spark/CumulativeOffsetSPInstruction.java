@@ -20,6 +20,7 @@
 package org.apache.sysml.runtime.instructions.spark;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
@@ -145,7 +146,7 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction
 		}
 		
 		@Override
-		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call( Tuple2<MatrixIndexes, MatrixBlock> arg0 ) 
+		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call( Tuple2<MatrixIndexes, MatrixBlock> arg0 ) 
 			throws Exception 
 		{
 			ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes, MatrixBlock>>();
@@ -178,7 +179,7 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction
 					ret.add(new Tuple2<MatrixIndexes,MatrixBlock>(tmpix, tmpblk));
 				}
 			
-			return ret;
+			return ret.iterator();
 		}
 	}
 	

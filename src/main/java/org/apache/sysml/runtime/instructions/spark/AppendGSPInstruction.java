@@ -182,7 +182,7 @@ public class AppendGSPInstruction extends BinarySPInstruction
 		}
 
 		@Override
-		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Tuple2<MatrixIndexes, MatrixBlock> kv) 
+		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Tuple2<MatrixIndexes, MatrixBlock> kv) 
 			throws Exception 
 		{
 			//common preparation
@@ -246,7 +246,7 @@ public class AppendGSPInstruction extends BinarySPInstruction
 				}
 			}
 			
-			return retVal;
+			return retVal.iterator();
 		}
 	}
 }

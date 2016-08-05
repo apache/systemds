@@ -21,7 +21,7 @@ package org.apache.sysml.api.ml
 
 import org.scalatest.FunSuite
 import org.scalatest.Matchers
-import org.apache.spark.Logging
+
 import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.ml.Pipeline
@@ -34,7 +34,7 @@ import scala.reflect.runtime.universe._
 case class LabeledDocument[T:TypeTag](id: Long, text: String, label: Double)
 case class Document[T:TypeTag](id: Long, text: String)
 
-class LogisticRegressionSuite extends FunSuite with WrapperSparkContext with Matchers with Logging {
+class LogisticRegressionSuite extends FunSuite with WrapperSparkContext with Matchers {
 
   // Note: This is required by every test to ensure that it runs successfully on windows laptop !!!
   val loadConfig = ScalaAutomatedTestBase

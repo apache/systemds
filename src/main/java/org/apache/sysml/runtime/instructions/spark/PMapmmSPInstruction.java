@@ -21,6 +21,7 @@ package org.apache.sysml.runtime.instructions.spark;
 
 
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
@@ -192,7 +193,7 @@ public class PMapmmSPInstruction extends BinarySPInstruction
 		}
 
 		@Override
-		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Tuple2<MatrixIndexes, MatrixBlock> arg0)
+		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Tuple2<MatrixIndexes, MatrixBlock> arg0)
 			throws Exception 
 		{
 			PartitionedBlock<MatrixBlock> pm = _pbc.value();
@@ -218,7 +219,7 @@ public class PMapmmSPInstruction extends BinarySPInstruction
 				ret.add(new Tuple2<MatrixIndexes, MatrixBlock>(ixOut, blkOut));
 			}
 			
-			return ret;
+			return ret.iterator();
 		}
 	}
 }

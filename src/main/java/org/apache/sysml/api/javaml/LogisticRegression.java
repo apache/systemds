@@ -31,9 +31,11 @@ import org.apache.spark.ml.classification.ProbabilisticClassifier;
 import org.apache.spark.ml.param.BooleanParam;
 import org.apache.spark.ml.param.DoubleParam;
 import org.apache.spark.ml.param.IntParam;
+import org.apache.spark.ml.param.Param;
 import org.apache.spark.ml.param.StringArrayParam;
-import org.apache.spark.mllib.linalg.Vector;
-import org.apache.spark.sql.DataFrame;
+import org.apache.spark.ml.linalg.Vector;
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SQLContext;
 import org.apache.sysml.api.MLContext;
 import org.apache.sysml.api.MLOutput;
@@ -63,7 +65,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
  * import org.apache.spark.ml.Pipeline
  * import org.apache.sysml.api.ml.LogisticRegression
  * import org.apache.spark.ml.feature.{HashingTF, Tokenizer}
- * import org.apache.spark.mllib.linalg.Vector
+ * import org.apache.spark.ml.linalg.Vector
  * case class LabeledDocument(id: Long, text: String, label: Double)
  * case class Document(id: Long, text: String)
  * val training = sc.parallelize(Seq(
@@ -97,7 +99,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
  * import org.apache.spark.ml.evaluation.BinaryClassificationEvaluator
  * import org.apache.spark.ml.feature.{HashingTF, Tokenizer}
  * import org.apache.spark.ml.tuning.{ParamGridBuilder, CrossValidator}
- * import org.apache.spark.mllib.linalg.Vector
+ * import org.apache.spark.ml.linalg.Vector
  * case class LabeledDocument(id: Long, text: String, label: Double)
  * case class Document(id: Long, text: String)
  * val training = sc.parallelize(Seq(
@@ -411,8 +413,9 @@ public class LogisticRegression extends ProbabilisticClassifier<Vector, Logistic
 		return outputCol;
 	}
 	
+	@SuppressWarnings("unchecked")
 	@Override
-	public LogisticRegressionModel train(DataFrame df) {
+	public LogisticRegressionModel train(Dataset<?> df) {
 		MLContext ml = null;
 		MLOutput out = null;
 		
@@ -427,7 +430,7 @@ public class LogisticRegression extends ProbabilisticClassifier<Vector, Logistic
 		MatrixCharacteristics mcXin = new MatrixCharacteristics();
 		JavaPairRDD<MatrixIndexes, MatrixBlock> Xin;
 		try {
-			Xin = RDDConverterUtilsExt.vectorDataFrameToBinaryBlock(new JavaSparkContext(this.sc), df, mcXin, false, "features");
+			Xin = RDDConverterUtilsExt.vectorDataFrameToBinaryBlock(new JavaSparkContext(this.sc), (Dataset<Row>) df, mcXin, false, "features");
 		} catch (DMLRuntimeException e1) {
 			e1.printStackTrace();
 			return null;
@@ -469,5 +472,55 @@ public class LogisticRegression extends ProbabilisticClassifier<Vector, Logistic
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		} 
+	}
+
+	@Override
+	public boolean getStandardization() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public void org$apache$spark$ml$param$shared$HasStandardization$_setter_$standardization_$eq(
+			BooleanParam arg0) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public BooleanParam standardization() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String getWeightCol() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void org$apache$spark$ml$param$shared$HasWeightCol$_setter_$weightCol_$eq(
+			Param arg0) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public Param<String> weightCol() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void checkThresholdConsistency() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public LogisticRegressionParams setThreshold(double arg0) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

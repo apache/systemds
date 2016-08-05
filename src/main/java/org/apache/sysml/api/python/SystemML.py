@@ -25,7 +25,13 @@ import traceback
 import os
 from pyspark.sql import DataFrame, SQLContext
 from pyspark.rdd import RDD
-
+import numpy as np
+import pandas as pd
+import sklearn as sk
+from pyspark.ml.feature import VectorAssembler
+from pyspark.mllib.linalg import Vectors
+import sys
+from pyspark.ml import Estimator, Model
 
 class MLContext(object):
 
@@ -57,6 +63,7 @@ class MLContext(object):
             setForcedSparkExecType = (args[1] if len(args) > 1 else False)
             self.sc = sc
             self.ml = sc._jvm.org.apache.sysml.api.MLContext(sc._jsc, monitorPerformance, setForcedSparkExecType)
+            self.sqlCtx = SQLContext(sc)
         except Py4JError:
             traceback.print_exc()
 
@@ -171,7 +178,6 @@ class MLContext(object):
             else:
                 raise TypeError('Arguments do not match MLContext-API')
         except Py4JJavaError:
-
             traceback.print_exc()
 
     def registerOutput(self, varName):
@@ -232,6 +238,10 @@ class MLOutput(object):
         except Py4JJavaError:
             traceback.print_exc()
 
+    def getPandasDF(self, sqlContext, varName):
+        df = self.toDF(sqlContext, varName).sort('ID').drop('ID')
+        return df.toPandas()
+        
     def getMLMatrix(self, sqlContext, varName):
         raise Exception('Not supported in Python MLContext')
         #try:
@@ -247,3 +257,163 @@ class MLOutput(object):
         #    return rdd
         #except Py4JJavaError:
         #    traceback.print_exc()
+
+def getNumCols(numPyArr):
+	if len(numPyArr.shape) == 1:
+		return 1
+	else:
+		return numPyArr.shape[1]
+       
+def convertToJavaMatrix(sc, src):
+	if isinstance(src, np.ndarray):
+		from array import array
+		numCols = getNumCols(src)
+		numRows = src.shape[0]
+		if src.dtype.type is np.float64:
+			arr = src.reshape(-1)
+		else:
+			arr = array('d', src.reshape(-1))
+		buf = bytearray(arr.tostring())
+		return sc._jvm.org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt.convertPy4JArrayToMB(buf, numRows, numCols)
+	else:
+		raise Exception('Type is not supported')
+
+def convertToNumpyArr(sc, mb):
+	numRows = mb.getNumRows()
+	numCols = mb.getNumColumns()
+	buf = sc._jvm.org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt.convertMBtoPy4JDenseArr(mb)
+	return np.frombuffer(buf, count=numRows*numCols, dtype=np.float64)
+
+class mllearn:
+    # Or we can create new Python project with package structure
+    class LogisticRegression(Estimator):
+
+        def __init__(self, sqlCtx, penalty='l2', fit_intercept=True, max_iter=100, max_inner_iter=0, tol=0.000001, C=1.0, solver='newton-cg', transferUsingDF=False):
+            self.sqlCtx = sqlCtx
+            self.sc = sqlCtx._sc
+            self.log = self.sc._jvm.org.apache.sysml.api.ml.LogisticRegression("lr", self.sc._jsc.sc())
+            self.transferUsingDF = transferUsingDF
+            if penalty != 'l2':
+                raise Exception('Only l2 penalty is supported')
+            if fit_intercept:
+                self.icpt = 1
+            else:
+                self.icpt = 0
+            self.max_iter = max_iter
+            self.max_inner_iter = max_inner_iter
+            self.tol = tol
+            if C == 0:
+                raise Exception('C cannot be 0')
+            reg = 1/C
+            self.reg = reg
+            self.updateLog()
+            if solver != 'newton-cg':
+                raise Exception('Only newton-cg solver supported')
+             
+        def updateLog(self):
+            self.log.setMaxOuterIter(self.max_iter)
+            self.log.setMaxInnerIter(self.max_inner_iter) 
+            self.log.setRegParam(self.reg)
+            self.log.setTol(self.tol)
+            self.log.setIcpt(self.icpt)
+            
+        def convertToPDF(self, X):
+            if isinstance(X, np.ndarray):
+                colNames = []
+                numCols = getNumCols(X)
+                for i in range(0, numCols):
+                    colNames = colNames + [ str('C' + str(i))]
+                pdfX = pd.DataFrame(X, columns=colNames)
+            elif isinstance(X, pd.core.frame.DataFrame):
+                pdfX = X
+            else:
+                raise Exception('The input type not supported')
+            return pdfX
+            
+        def tolist(self, inputCols):
+            if isinstance(inputCols, pd.indexes.base.Index):
+                return inputCols.get_values().tolist()
+            elif isinstance(inputCols, list):
+                return inputCols
+            else:
+                raise Exception('inputCols should be of type pandas.indexes.base.Index or list')
+                
+        def assemble(self, pdf, inputCols, outputCol):
+            tmpDF = self.sqlCtx.createDataFrame(pdf, self.tolist(pdf.columns))
+            assembler = VectorAssembler(inputCols=self.tolist(inputCols), outputCol=outputCol)
+            return assembler.transform(tmpDF)
+            
+        def _fit(self, X):
+            if hasattr(X, '_jdf') and 'features' in X.columns and 'label' in X.columns:
+                self.model = self.log.fit(X._jdf)
+                return self
+            else:
+                raise Exception('Incorrect usage: Expected dataframe as input with features/label as columns')
+            
+        # TOOD: Ignoring kwargs
+        def fit(self, X, *args, **kwargs):
+            self.updateLog()
+            numArgs = len(args) + 1
+            if numArgs == 1:
+                return self._fit(X)
+            elif numArgs == 2 and (isinstance(X, np.ndarray) or isinstance(X, pd.core.frame.DataFrame)):
+                y = args[0]
+                if self.transferUsingDF:
+                    pdfX = self.convertToPDF(X)
+                    pdfY = self.convertToPDF(y)
+                    if getNumCols(pdfY) != 1:
+                        raise Exception('y should be a column vector')
+                    if pdfX.shape[0] != pdfY.shape[0]:
+                        raise Exception('Number of rows of X and y should match')
+                    colNames = pdfX.columns
+                    pdfX['label'] = pdfY[pdfY.columns[0]]
+                    df = self.assemble(pdfX, colNames, 'features').select('features', 'label')
+                    self.model = self.log.fit(df._jdf)
+                else:
+                    numColsy = getNumCols(y)
+                    if numColsy != 1:
+                        raise Exception('Expected y to be a column vector')
+                    self.model = self.log.fit(convertToJavaMatrix(self.sc, X), convertToJavaMatrix(self.sc, y))
+                self.model.setOutputRawPredictions(False)
+                return self
+            else:
+                raise Exception('Unsupported input type')
+        
+        def transform(self, X):
+            return self.predict(X)
+            
+        def predict(self, X):
+            if isinstance(X, np.ndarray) or isinstance(X, pd.core.frame.DataFrame):
+                if self.transferUsingDF:
+                    pdfX = self.convertToPDF(X)
+                    df = self.assemble(pdfX, pdfX.columns, 'features').select('features')
+                    retjDF = self.model.transform(df._jdf)
+                    retDF = DataFrame(retjDF, self.sqlCtx)
+                    retPDF = retDF.sort('ID').select('prediction').toPandas()
+                    if isinstance(X, np.ndarray):
+                        return retPDF.as_matrix().flatten()
+                    else:
+                        return retPDF
+                else:
+                    retNumPy = convertToNumpyArr(self.sc, self.model.transform(convertToJavaMatrix(self.sc, X)))
+                    if isinstance(X, np.ndarray):
+                        return retNumPy
+                    else:
+                        return retNumPy # TODO: Convert to Pandas
+            elif hasattr(X, '_jdf'):
+                if 'features' in X.columns:
+                    # No need to assemble as input DF is likely coming via MLPipeline
+                    df = X
+                else:
+                    assembler = VectorAssembler(inputCols=X.columns, outputCol='features')
+                    df = assembler.transform(X)
+                retjDF = self.model.transform(df._jdf)
+                retDF = DataFrame(retjDF, self.sqlCtx)
+                # Return DF
+                return retDF.sort('ID')
+            else:
+                raise Exception('Unsupported input type')
+                
+        def score(self, X, y):
+            return sk.metrics.accuracy_score(y, self.predict(X))
+                

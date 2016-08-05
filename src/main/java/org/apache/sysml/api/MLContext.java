@@ -477,6 +477,25 @@ public class MLContext {
 		registerInput(varName, rdd.toJavaRDD().mapToPair(new ConvertStringToLongTextPair()), format, rlen, clen, nnz, null);
 	}
 	
+	public void registerInput(String varName, MatrixBlock mb) throws DMLRuntimeException {
+		MatrixCharacteristics mc = new MatrixCharacteristics(mb.getNumRows(), mb.getNumColumns(), OptimizerUtils.DEFAULT_BLOCKSIZE, OptimizerUtils.DEFAULT_BLOCKSIZE, mb.getNonZeros());
+		registerInput(varName, mb, mc);
+	}
+	
+	public void registerInput(String varName, MatrixBlock mb, MatrixCharacteristics mc) throws DMLRuntimeException {
+		if(_variables == null)
+			_variables = new LocalVariableMap();
+		if(_inVarnames == null)
+			_inVarnames = new ArrayList<String>();
+	
+		MatrixObject mo = new MatrixObject(ValueType.DOUBLE, "temp", new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
+		mo.acquireModify(mb); 
+		mo.release();
+		_variables.put(varName, mo);
+		_inVarnames.add(varName);
+		checkIfRegisteringInputAllowed();
+	}
+	
 	// All CSV related methods call this ... It provides access to dimensions, nnz, file properties.
 	private void registerInput(String varName, JavaPairRDD<LongWritable, Text> textOrCsv_rdd, String format, long rlen, long clen, long nnz, FileFormatProperties props) throws DMLRuntimeException {
 		if(!(DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK || DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK)) {
@@ -1237,8 +1256,6 @@ public class MLContext {
 			
 			if(DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK || DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK) {
 				
-				Map<String, JavaPairRDD<MatrixIndexes,MatrixBlock>> retVal = null;
-				
 				// Depending on whether registerInput/registerOutput was called initialize the variables 
 				String[] inputs; String[] outputs;
 				if(_inVarnames != null) {
@@ -1268,10 +1285,6 @@ public class MLContext {
 					
 					for( String ovar : _outVarnames ) {
 						if( _variables.keySet().contains(ovar) ) {
-							if(retVal == null) {
-								retVal = new HashMap<String, JavaPairRDD<MatrixIndexes,MatrixBlock>>();
-							}
-							retVal.put(ovar, ((SparkExecutionContext) ec).getBinaryBlockRDDHandleForVariable(ovar));
 							outMetadata.put(ovar, ec.getMatrixCharacteristics(ovar)); // For converting output to dataframe
 						}
 						else {
@@ -1280,7 +1293,7 @@ public class MLContext {
 					}
 				}
 				
-				return new MLOutput(retVal, outMetadata);
+				return new MLOutput(_variables, ec, outMetadata);
 			}
 			else {
 				throw new DMLRuntimeException("Unsupported runtime:" + DMLScript.rtplatform.name());

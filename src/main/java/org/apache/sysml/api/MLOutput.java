@@ -39,13 +39,16 @@ import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
+import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.spark.functions.GetMLBlock;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.util.UtilFunctions;
-
+import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import scala.Tuple2;
 
 /**
@@ -54,25 +57,39 @@ import scala.Tuple2;
  */
 public class MLOutput {
 	
-	
-	
-	Map<String, JavaPairRDD<MatrixIndexes,MatrixBlock>> _outputs;
+	private LocalVariableMap _variables;
+	private ExecutionContext _ec;
 	private Map<String, MatrixCharacteristics> _outMetadata = null;
 	
-	public MLOutput(Map<String, JavaPairRDD<MatrixIndexes,MatrixBlock>> outputs, Map<String, MatrixCharacteristics> outMetadata) {
-		this._outputs = outputs;
+	public MLOutput(LocalVariableMap variables, ExecutionContext ec, Map<String, MatrixCharacteristics> outMetadata) {
+		this._variables = variables;
+		this._ec = ec;
 		this._outMetadata = outMetadata;
 	}
 	
-	public JavaPairRDD<MatrixIndexes,MatrixBlock> getBinaryBlockedRDD(String varName) throws DMLRuntimeException {
-		if(_outputs.containsKey(varName)) {
-			return _outputs.get(varName);
+	public MatrixBlock getMatrixBlock(String varName) throws DMLRuntimeException {
+		if( _variables.keySet().contains(varName) ) {
+			MatrixObject mo = _ec.getMatrixObject(varName);
+			MatrixBlock mb = mo.acquireRead();
+			mo.release();
+			return mb;
 		}
-		throw new DMLRuntimeException("Variable " + varName + " not found in the output symbol table.");
+		else {
+			throw new DMLRuntimeException("Variable " + varName + " not found in the output symbol table.");
+		}
+	}
+	
+	public JavaPairRDD<MatrixIndexes,MatrixBlock> getBinaryBlockedRDD(String varName) throws DMLRuntimeException {
+		if( _variables.keySet().contains(varName) ) {
+			return ((SparkExecutionContext) _ec).getBinaryBlockRDDHandleForVariable(varName);
+		}
+		else {
+			throw new DMLRuntimeException("Variable " + varName + " not found in the output symbol table.");
+		}
 	}
 	
 	public MatrixCharacteristics getMatrixCharacteristics(String varName) throws DMLRuntimeException {
-		if(_outputs.containsKey(varName)) {
+		if(_outMetadata.containsKey(varName)) {
 			return _outMetadata.get(varName);
 		}
 		throw new DMLRuntimeException("Variable " + varName + " not found in the output symbol table.");
@@ -246,7 +263,7 @@ public class MLOutput {
 				for(int j = 0; j < lclen; j++) {
 					partialRow[j] = blk.getValue(i, j);
 				}
-				retVal.add(new Tuple2<Long, Tuple2<Long,Double[]>>(startRowIndex + i, new Tuple2<Long,Double[]>(kv._1.getColumnIndex(), partialRow)));
+				retVal.add(new Tuple2<Long, Tuple2<Long,Double[]>>(startRowIndex + i + 1, new Tuple2<Long,Double[]>(kv._1.getColumnIndex(), partialRow)));
 			}
 			return retVal;
 		}

@@ -23,6 +23,7 @@
 from py4j.protocol import Py4JJavaError, Py4JError
 import traceback
 import os
+from pyspark.context import SparkContext 
 from pyspark.sql import DataFrame, SQLContext
 from pyspark.rdd import RDD
 import numpy as np
@@ -259,25 +260,31 @@ class MLOutput(object):
         #    traceback.print_exc()
 
 def getNumCols(numPyArr):
-	if numPyArr.ndim == 1:
-		return 1
-	else:
-		return numPyArr.shape[1]
+    if numPyArr.ndim == 1:
+        return 1
+    else:
+        return numPyArr.shape[1]
        
-def convertToJavaMatrix(sc, src):
-	src = np.asarray(src)
-	numCols = getNumCols(src)
-	numRows = src.shape[0]
-	arr = src.ravel().astype(np.float64)
-	buf = bytearray(arr.tostring())
-	return sc._jvm.org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt.convertPy4JArrayToMB(buf, numRows, numCols)
-	
+def convertToMatrixBlock(sc, src):
+    if isinstance(sc, SparkContext):
+        src = np.asarray(src)
+        numCols = getNumCols(src)
+        numRows = src.shape[0]
+        arr = src.ravel().astype(np.float64)
+        buf = bytearray(arr.tostring())
+        return sc._jvm.org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt.convertPy4JArrayToMB(buf, numRows, numCols)
+    else:
+        raise TypeError('sc needs to be of type SparkContext') # TODO: We can generalize this by creating py4j gateway ourselves
+    
 
 def convertToNumpyArr(sc, mb):
-	numRows = mb.getNumRows()
-	numCols = mb.getNumColumns()
-	buf = sc._jvm.org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt.convertMBtoPy4JDenseArr(mb)
-	return np.frombuffer(buf, count=numRows*numCols, dtype=np.float64)
+    if isinstance(sc, SparkContext):
+        numRows = mb.getNumRows()
+        numCols = mb.getNumColumns()
+        buf = sc._jvm.org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt.convertMBtoPy4JDenseArr(mb)
+        return np.frombuffer(buf, count=numRows*numCols, dtype=np.float64)
+    else:
+        raise TypeError('sc needs to be of type SparkContext') # TODO: We can generalize this by creating py4j gateway ourselves
 
 class mllearn:
     # Or we can create new Python project with package structure
@@ -290,15 +297,12 @@ class mllearn:
             self.transferUsingDF = transferUsingDF
             if penalty != 'l2':
                 raise Exception('Only l2 penalty is supported')
-            if fit_intercept:
-                self.icpt = 1
-            else:
-                self.icpt = 0
+            self.icpt = int(fit_intercept)
             self.max_iter = max_iter
             self.max_inner_iter = max_inner_iter
             self.tol = tol
-            if C == 0:
-                raise Exception('C cannot be 0')
+            if C < 0:
+                raise Exception('C has to be positive')
             reg = 1/C
             self.reg = reg
             self.updateLog()
@@ -312,7 +316,7 @@ class mllearn:
             self.log.setTol(self.tol)
             self.log.setIcpt(self.icpt)
             
-        def convertToPDF(self, X):
+        def convertToPandasDF(self, X):
             if isinstance(X, np.ndarray):
                 colNames = []
                 numCols = getNumCols(X)
@@ -354,8 +358,8 @@ class mllearn:
             elif numArgs == 2 and (isinstance(X, np.ndarray) or isinstance(X, pd.core.frame.DataFrame)):
                 y = args[0]
                 if self.transferUsingDF:
-                    pdfX = self.convertToPDF(X)
-                    pdfY = self.convertToPDF(y)
+                    pdfX = self.convertToPandasDF(X)
+                    pdfY = self.convertToPandasDF(y)
                     if getNumCols(pdfY) != 1:
                         raise Exception('y should be a column vector')
                     if pdfX.shape[0] != pdfY.shape[0]:
@@ -368,7 +372,7 @@ class mllearn:
                     numColsy = getNumCols(y)
                     if numColsy != 1:
                         raise Exception('Expected y to be a column vector')
-                    self.model = self.log.fit(convertToJavaMatrix(self.sc, X), convertToJavaMatrix(self.sc, y))
+                    self.model = self.log.fit(convertToMatrixBlock(self.sc, X), convertToMatrixBlock(self.sc, y))
                 self.model.setOutputRawPredictions(False)
                 return self
             else:
@@ -380,7 +384,7 @@ class mllearn:
         def predict(self, X):
             if isinstance(X, np.ndarray) or isinstance(X, pd.core.frame.DataFrame):
                 if self.transferUsingDF:
-                    pdfX = self.convertToPDF(X)
+                    pdfX = self.convertToPandasDF(X)
                     df = self.assemble(pdfX, pdfX.columns, 'features').select('features')
                     retjDF = self.model.transform(df._jdf)
                     retDF = DataFrame(retjDF, self.sqlCtx)
@@ -390,7 +394,7 @@ class mllearn:
                     else:
                         return retPDF
                 else:
-                    retNumPy = convertToNumpyArr(self.sc, self.model.transform(convertToJavaMatrix(self.sc, X)))
+                    retNumPy = convertToNumpyArr(self.sc, self.model.transform(convertToMatrixBlock(self.sc, X)))
                     if isinstance(X, np.ndarray):
                         return retNumPy
                     else:

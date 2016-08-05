@@ -33,6 +33,7 @@ from pyspark.ml.feature import VectorAssembler
 from pyspark.mllib.linalg import Vectors
 import sys
 from pyspark.ml import Estimator, Model
+from __future__ import division
 
 class MLContext(object):
 
@@ -303,7 +304,7 @@ class mllearn:
             self.tol = tol
             if C < 0:
                 raise Exception('C has to be positive')
-            reg = 1/C
+            reg = 1.0 / C
             self.reg = reg
             self.updateLog()
             if solver != 'newton-cg':

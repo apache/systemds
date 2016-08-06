@@ -89,6 +89,7 @@ public class AggregateBinaryGPUInstruction extends GPUInstruction
 	{	
 		// --------------------------------------
 		// This code will be removed when the JIRA SYSTEMML-702 is complete
+		// FIXME this code does not adhere to compiler memory budgets
 		if(	isSparse(ec, _input1.getName()) || isSparse(ec, _input2.getName())) {
 			//get inputs
 			MatrixBlock matBlock1 = ec.getMatrixInput(_input1.getName());

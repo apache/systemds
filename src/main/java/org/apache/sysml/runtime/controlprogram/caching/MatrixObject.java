@@ -33,7 +33,6 @@ import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
-import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysml.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MatrixDimensionsMetaData;
@@ -88,8 +87,6 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	 */
 	public MatrixObject (ValueType vt, String file) {
 		this (vt, file, null); //HDFS file path
-		if(DMLScript.USE_ACCELERATOR)
-			_gpuHandle = GPUContext.createGPUObject(this);
 	}
 	
 	/**
@@ -101,8 +98,6 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		_hdfsFileName = file;		
 		_cache = null;
 		_data = null;
-		if(DMLScript.USE_ACCELERATOR)
-			_gpuHandle = GPUContext.createGPUObject(this);
 	}
 	
 	/**
@@ -223,22 +218,10 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	@Override
 	protected void clearReusableData() {
 		if(DMLScript.REUSE_NONZEROED_OUTPUT) {
-			if(_data == null) {
+			if(_data == null)
 				getCache();
-			}
-			if(_data != null &&  
-					// Not a column vector
-					_data.getNumRows() != 1 && _data.getNumColumns() != 1) {
-				double[] arr = _data.getDenseBlock();
-				LibMatrixDNN.cacheReuseableData(arr);
-			}
-		}
-	}
-	
-	@Override
-	protected void exportGPUData() throws CacheException {
-		if(DMLScript.USE_ACCELERATOR && getGPUObject() != null) {
-			getGPUObject().acquireHostRead();
+			if( _data != null && !_data.isVector() )
+				LibMatrixDNN.cacheReuseableData(_data.getDenseBlock());
 		}
 	}
 	

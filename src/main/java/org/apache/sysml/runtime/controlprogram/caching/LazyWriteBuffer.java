@@ -77,7 +77,9 @@ public class LazyWriteBuffer
 		//handle caching/eviction if it fits in writebuffer
 		if( !requiresWrite ) 
 		{			
-			ByteBuffer bbuff = null;
+			//create byte buffer handle (no block allocation yet)
+			ByteBuffer bbuff = new ByteBuffer( lSize );
+			int numEvicted = 0;
 			
 			//modify buffer pool
 			synchronized( _mQueue )
@@ -90,8 +92,7 @@ public class LazyWriteBuffer
 					String ftmp = entry.getKey();
 					ByteBuffer tmp = entry.getValue();
 					
-					if( tmp != null ) 
-					{
+					if( tmp != null ) {
 						//wait for pending serialization
 						tmp.checkSerialized();
 						
@@ -99,16 +100,11 @@ public class LazyWriteBuffer
 						tmp.evictBuffer(ftmp);
 						tmp.freeMemory();
 						_size-=tmp.getSize();
-						
-						if( DMLScript.STATISTICS )
-							CacheStatistics.incrementFSWrites();
+						numEvicted++;
 					}
 				}
 				
-				//create buffer (reserve mem), and lock
-				bbuff = new ByteBuffer( lSize );
-				
-				//put placeholder into buffer pool 
+				//put placeholder into buffer pool (reserve mem) 
 				_mQueue.addLast(fname, bbuff);
 				_size += lSize;	
 			}
@@ -116,8 +112,10 @@ public class LazyWriteBuffer
 			//serialize matrix (outside synchronized critical path)
 			bbuff.serializeBlock(cb); 
 			
-			if( DMLScript.STATISTICS )
+			if( DMLScript.STATISTICS ) {
 				CacheStatistics.incrementFSBuffWrites();
+				CacheStatistics.incrementFSWrites(numEvicted);
+			}
 		}	
 		else
 		{

@@ -80,9 +80,9 @@ public class LibMatrixCUDA {
 			// (Pointer) gpuCtx.prepare(image, true, true);
 			// (Pointer) gpuCtx.prepare(filter, true, true);
 			
-			Pointer imagePointer = ((JCudaObject)image._gpuHandle).jcudaPointer; 
-			Pointer filterPointer = ((JCudaObject)filter._gpuHandle).jcudaPointer; 
-			Pointer dstPointer = ((JCudaObject)outputBlock._gpuHandle).jcudaPointer; 
+			Pointer imagePointer = ((JCudaObject)image.getGPUObject()).jcudaPointer; 
+			Pointer filterPointer = ((JCudaObject)filter.getGPUObject()).jcudaPointer; 
+			Pointer dstPointer = ((JCudaObject)outputBlock.getGPUObject()).jcudaPointer; 
 			
 			int padding [] = { pad_h, pad_w }; 
 			int strides [] = { stride_h, stride_w };
@@ -195,9 +195,9 @@ public class LibMatrixCUDA {
 			dwDesc = allocateFilterDescriptor(K, C, R, S);
 			
 			// Allocate data
-			Pointer imagePointer = ((JCudaObject)image._gpuHandle).jcudaPointer; 
-			Pointer doutPointer = ((JCudaObject)dout._gpuHandle).jcudaPointer; 
-			Pointer dwPointer = ((JCudaObject)outputBlock._gpuHandle).jcudaPointer; 
+			Pointer imagePointer = ((JCudaObject)image.getGPUObject()).jcudaPointer; 
+			Pointer doutPointer = ((JCudaObject)dout.getGPUObject()).jcudaPointer; 
+			Pointer dwPointer = ((JCudaObject)outputBlock.getGPUObject()).jcudaPointer; 
 			
 			alpha = pointerTo(1.0); // TODO
 			beta = pointerTo(0.0f);
@@ -305,9 +305,9 @@ public class LibMatrixCUDA {
 			dxDesc = allocateTensorDescriptor(N, C, H, W);
 			
 			// Allocate data
-			Pointer w = ((JCudaObject)filter._gpuHandle).jcudaPointer; 
-			Pointer dy = ((JCudaObject)dout._gpuHandle).jcudaPointer; 
-			Pointer dx = ((JCudaObject)output._gpuHandle).jcudaPointer; 
+			Pointer w = ((JCudaObject)filter.getGPUObject()).jcudaPointer; 
+			Pointer dy = ((JCudaObject)dout.getGPUObject()).jcudaPointer; 
+			Pointer dx = ((JCudaObject)output.getGPUObject()).jcudaPointer; 
 			
 			alpha = pointerTo(1.0); // TODO
 			beta = pointerTo(0.0f);

@@ -39,8 +39,7 @@ public class ByteBuffer
 	protected byte[]     _bdata = null; //sparse matrix
 	protected CacheBlock _cdata = null; //dense matrix/frame
 	
-	public ByteBuffer( long size )
-	{
+	public ByteBuffer( long size ) {
 		_size = size;
 		_serialized = false;
 	}

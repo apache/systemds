@@ -265,6 +265,9 @@ public class ExecutionContext
 			throw new DMLRuntimeException("Sparse matrix block is not supported for GPU instruction");
 		}
 		MatrixObject mo = getMatrixObject(varName);
+		if( mo.getGPUObject() == null ) {
+			mo.setGPUObject(GPUContext.createGPUObject(mo));
+		}
 		mo.getGPUObject().acquireDenseDeviceModify((int)(mo.getNumRows()*mo.getNumColumns()));
 		mo.getMatrixCharacteristics().setNonZeros(-1);
 		return mo;
@@ -277,9 +280,13 @@ public class ExecutionContext
 		if(mo == null) {
 			throw new DMLRuntimeException("No matrix object available for variable:" + varName);
 		}
-		if(mo.getGPUObject() == null || !mo.getGPUObject().isAllocated) {
+		if( mo.getGPUObject() == null ) {
+			mo.setGPUObject(GPUContext.createGPUObject(mo));
+		}
+		if( !mo.getGPUObject().isAllocated ) {
 			mo.acquireRead();
 			mo.release();
+			//FIXME: after release the matrix block might get evicted
 		}
 		mo.getGPUObject().acquireDeviceRead();
 		return mo;

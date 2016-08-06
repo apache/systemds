@@ -179,7 +179,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	//for lazily evaluated RDDs, and (2) as abstraction for environments that do not necessarily have spark libraries available
 	private RDDObject _rddHandle = null; //RDD handle
 	private BroadcastObject<T> _bcHandle = null; //Broadcast handle
-	public GPUObject _gpuHandle = null;
+	protected GPUObject _gpuHandle = null;
 	
 	/**
 	 * Basic constructor for any cacheable data.
@@ -388,6 +388,10 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 */
 	public GPUObject getGPUObject() {
 		return _gpuHandle;
+	}
+	
+	public void setGPUObject(GPUObject handle) {
+		_gpuHandle = handle;
 	}
 	
 	
@@ -753,8 +757,6 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		exportData(fName, outputFormat, -1, formatProperties);
 	}
 	
-	protected void exportGPUData()  throws CacheException { }
-	
 	/**
 	 * Synchronized because there might be parallel threads (parfor local) that
 	 * access the same object (in case it was created before the loop).
@@ -784,7 +786,9 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		LOG.trace("Exporting " + this.getDebugName() + " to " + fName + " in format " + outputFormat);
 		
 		//TODO remove 
-		exportGPUData();
+		if( getGPUObject() != null ) {
+			getGPUObject().acquireHostRead();
+		}
 				
 		boolean pWrite = false; // !fName.equals(_hdfsFileName); //persistent write flag
 		if ( fName.equals(_hdfsFileName) ) {

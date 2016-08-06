@@ -66,7 +66,9 @@ import org.apache.sysml.api.mlcontext.ScriptExecutor;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import scala.Tuple2;
@@ -79,23 +81,23 @@ public class MLContextTest extends AutomatedTestBase {
 	protected final static String TEST_DIR = "org/apache/sysml/api/mlcontext";
 	protected final static String TEST_NAME = "MLContext";
 
-	static SparkConf conf;
-	static JavaSparkContext sc;
-	MLContext ml;
+	private static SparkConf conf;
+	private static JavaSparkContext sc;
+	private static MLContext ml;
 
+	@BeforeClass
+	public static void setUpClass() {
+		if (conf == null)
+			conf = new SparkConf().setAppName("MLContextTest").setMaster("local");
+		if (sc == null)
+			sc = new JavaSparkContext(conf);
+		ml = new MLContext(sc);
+	}
+	
 	@Override
 	public void setUp() {
 		addTestConfiguration(TEST_DIR, TEST_NAME);
 		getAndLoadTestConfiguration(TEST_NAME);
-
-		if (conf == null) {
-			conf = new SparkConf().setAppName("MLContextTest").setMaster("local");
-		}
-		if (sc == null) {
-			sc = new JavaSparkContext(conf);
-		}
-		ml = new MLContext(sc);
-		// ml.setExplain(true);
 	}
 
 	@Test
@@ -1710,4 +1712,16 @@ public class MLContextTest extends AutomatedTestBase {
 		super.tearDown();
 	}
 
+	@AfterClass
+	public static void tearDownClass() {
+		//stop spark context to allow single jvm tests (otherwise the 
+		//next test that tries to create a SparkContext would fail)
+		sc.stop();
+		sc = null;
+		conf = null;
+		
+		//clear status mlcontext and spark exec context
+		ml.close();
+		ml = null;
+	}
 }

@@ -144,10 +144,16 @@ public class SparkExecutionContext extends ExecutionContext
 	 * 
 	 * @return
 	 */
-	public static JavaSparkContext getSparkContextStatic()
-	{
+	public static JavaSparkContext getSparkContextStatic() {
 		initSparkContext();
 		return _spctx;
+	}
+	
+	/**
+	 * 
+	 */
+	public static void resetSparkContextStatic() {
+		_spctx = null;
 	}
 	
 	/**

@@ -42,6 +42,7 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
@@ -56,7 +57,6 @@ import org.apache.sysml.runtime.matrix.data.OutputInfo;
  *
  */
 public class MLContext {
-
 	/**
 	 * Minimum Spark version supported by SystemML.
 	 */
@@ -502,4 +502,16 @@ public class MLContext {
 		clearCache();
 	}
 
+	public void close() {
+		//reset static status (refs to sc / mlcontext)
+		SparkExecutionContext.resetSparkContextStatic();
+		MLContextProxy.setActive(false);
+		activeMLContext = null;
+		
+		//clear local status, but do not stop sc as it
+		//may be used or stopped externally
+		clear();
+		resetConfig();
+		sc = null;
+	}
 }

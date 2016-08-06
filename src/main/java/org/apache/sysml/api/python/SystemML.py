@@ -20,6 +20,7 @@
 #
 #-------------------------------------------------------------
 
+from __future__ import division
 from py4j.protocol import Py4JJavaError, Py4JError
 import traceback
 import os
@@ -33,7 +34,7 @@ from pyspark.ml.feature import VectorAssembler
 from pyspark.mllib.linalg import Vectors
 import sys
 from pyspark.ml import Estimator, Model
-from __future__ import division
+
 
 class MLContext(object):
 
@@ -318,17 +319,9 @@ class mllearn:
             self.log.setIcpt(self.icpt)
             
         def convertToPandasDF(self, X):
-            if isinstance(X, np.ndarray):
-                colNames = []
-                numCols = getNumCols(X)
-                for i in range(0, numCols):
-                    colNames = colNames + [ str('C' + str(i))]
-                pdfX = pd.DataFrame(X, columns=colNames)
-            elif isinstance(X, pd.core.frame.DataFrame):
-                pdfX = X
-            else:
-                raise Exception('The input type not supported')
-            return pdfX
+            if not instance(X, pd.DataFrame):
+                return pd.DataFrame(X, columns=['C' + str(i) for i in range(numCols)])
+            return X
             
         def tolist(self, inputCols):
             if isinstance(inputCols, pd.indexes.base.Index):
@@ -350,14 +343,11 @@ class mllearn:
             else:
                 raise Exception('Incorrect usage: Expected dataframe as input with features/label as columns')
             
-        # TOOD: Ignoring kwargs
-        def fit(self, X, *args, **kwargs):
+        def fit(self, X, y=None, params=None):
             self.updateLog()
-            numArgs = len(args) + 1
-            if numArgs == 1:
+            if y is None:
                 return self._fit(X)
-            elif numArgs == 2 and (isinstance(X, np.ndarray) or isinstance(X, pd.core.frame.DataFrame)):
-                y = args[0]
+            elif y is not None and (isinstance(X, np.ndarray) or isinstance(X, pd.core.frame.DataFrame)):
                 if self.transferUsingDF:
                     pdfX = self.convertToPandasDF(X)
                     pdfY = self.convertToPandasDF(y)

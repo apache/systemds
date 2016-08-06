@@ -66,9 +66,13 @@ public class WeightedDivMatrixMultTest extends AutomatedTestBase
 	private final static double eps = 1e-6;
 	private final static double div_eps = 0.1;
 	
-	private final static int rows = 1201;
-	private final static int cols = 1103;
-	private final static int rank = 10;
+	private final static int rows1 = 1201;
+	private final static int cols1 = 1103;
+	private final static int rows2 = 3401;
+	private final static int cols2 = 2403;
+	private final static int rank1 = 10;
+	private final static int rank2 = 100;
+	
 	private final static double spSparse = 0.001;
 	private final static double spDense = 0.6;
 	
@@ -617,6 +621,10 @@ public class WeightedDivMatrixMultTest extends AutomatedTestBase
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir() + " " + div_eps;
 	
+			int rows = sparse ? rows2 : rows1;
+			int cols = sparse ? cols2 : cols1;
+			int rank = sparse ? rank2 : rank1;
+			
 			//generate actual dataset 
 			double[][] W = getRandomMatrix(rows, cols, 0, 1, sparsity, 7); 
 			writeInputMatrixWithMTD("W", W, true);

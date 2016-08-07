@@ -35,7 +35,6 @@ import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.mllib.regression.LabeledPoint
 import scala.reflect.ClassTag
 import scala.collection.immutable.HashMap
-import org.apache.spark.sql.functions.udf
 import org.apache.sysml.runtime.matrix.data.MatrixBlock
 import org.apache.sysml.runtime.DMLRuntimeException
 
@@ -89,27 +88,8 @@ class LogisticRegression(override val uid: String, val sc: SparkContext) extends
   // Note: will update the y_mb as this will be called by Python mllearn
   def fit(X_mb: MatrixBlock, y_mb: MatrixBlock): LogisticRegressionModel = {
     val ml = new MLContext(sc)
-    val labelMapping = new java.util.HashMap[String, Int]
     val revLabelMapping = new java.util.HashMap[Int, String]
-    if(y_mb.getNumColumns != 1) {
-      throw new RuntimeException("Expected a column vector for y")
-    }
-    if(y_mb.isInSparseFormat()) {
-      throw new DMLRuntimeException("Sparse block is not implemented for fit")
-    }
-    else {
-      val denseBlock = y_mb.getDenseBlock()
-      var id:Int = 1
-      for(i <- 0 until denseBlock.length) {
-        val v = denseBlock(i).toString()
-        if(!labelMapping.containsKey(v)) {
-          labelMapping.put(v, id)
-          revLabelMapping.put(id, v)
-          id += 1
-        }
-        denseBlock.update(i, labelMapping.get(v))
-      }  
-    }
+    PredictionUtils.fillLabelMapping(y_mb, revLabelMapping)
     
     val mloutput = {
       ml.registerInput("X", X_mb);
@@ -136,14 +116,8 @@ class LogisticRegression(override val uid: String, val sc: SparkContext) extends
     val ml = new MLContext(df.rdd.sparkContext)
     val mcXin = new MatrixCharacteristics()
     val Xin = RDDConverterUtils.vectorDataFrameToBinaryBlock(sc, df, mcXin, false, "features")
-    val temp = df.select("label").distinct.rdd.map(_.apply(0).toString).collect()
-    val labelMapping = new java.util.HashMap[String, Int]
     val revLabelMapping = new java.util.HashMap[Int, String]
-    for(i <- 0 until temp.length) {
-      labelMapping.put(temp(i), i+1)
-      revLabelMapping.put(i+1, temp(i))
-    }
-    val yin = df.select("label").rdd.map( x => labelMapping.get(x.apply(0).toString).toString )
+    val yin = PredictionUtils.fillLabelMapping(df, revLabelMapping)
     val mloutput = {
       ml.registerInput("X", Xin, mcXin);
       ml.registerInput("Y_vec", yin, "csv");
@@ -157,31 +131,6 @@ object LogisticRegressionModel {
   final val scriptPath = "scripts" + File.separator + "algorithms" + File.separator + "GLM-predict.dml"
 }
 
-class LogisticRegressionModelSerializableData(val labelMapping: java.util.HashMap[Int, String]) extends Serializable {
- def mapLabelStr(x:Double):String = {
-   if(labelMapping.containsKey(x.toInt))
-     labelMapping.get(x.toInt)
-   else
-     throw new RuntimeException("Incorrect label mapping")
- }
- def mapLabelDouble(x:Double):Double = {
-   if(labelMapping.containsKey(x.toInt))
-     labelMapping.get(x.toInt).toDouble
-   else
-     throw new RuntimeException("Incorrect label mapping")
- }
- val mapLabel_udf =  {
-      try {
-        val it = labelMapping.values().iterator()
-        while(it.hasNext()) {
-          it.next().toDouble
-        }
-        udf(mapLabelDouble _)
-      } catch {
-        case e: Exception => udf(mapLabelStr _)
-      }
-    }
-}
 /**
  * Logistic Regression Scala API
  */
@@ -206,37 +155,12 @@ class LogisticRegressionModel(
       val isSingleNode = true
       val ret = PredictionUtils.computePredictedClassLabelsFromProbability(
           PredictionUtils.doGLMPredict(isSingleNode, null, X, sc, mloutput, "B_out", getPredictParams), 
-          isSingleNode, sc).getMatrixBlock("Prediction");
+          isSingleNode, sc, "means").getMatrixBlock("Prediction");
       if(ret.getNumColumns != 1) {
         throw new RuntimeException("Expected predicted label to be a column vector")
       }
-      if(ret.isInSparseFormat()) {
-        throw new RuntimeException("Since predicted label is a column vector, expected it to be in dense format")
-      }
-      else {
-        updateLabels(true, null, ret, null)
-      }
+      PredictionUtils.updateLabels(true, null, ret, null, labelMapping)
       return ret
-    }
-  }
-  
-  def updateLabels(isSingleNode:Boolean, df:DataFrame, X: MatrixBlock, labelColName:String): DataFrame = {
-    if(isSingleNode) {
-      for(i <- 0 until X.getNumRows) {
-        val v:Int = X.getValue(i, 0).toInt
-        if(labelMapping.containsKey(v)) {
-          X.setValue(i, 0, labelMapping.get(v).toDouble)
-        }
-        else {
-          throw new RuntimeException("No mapping found for " + v + " in " + labelMapping.toString())
-        }
-      }
-      return null
-    }
-    else {
-      val serObj = new LogisticRegressionModelSerializableData(labelMapping)
-      return df.withColumn(labelColName, serObj.mapLabel_udf(df(labelColName)))
-               .withColumnRenamed(labelColName, "prediction")
     }
   }
   
@@ -244,8 +168,8 @@ class LogisticRegressionModel(
   override def transform(df: DataFrame): DataFrame = {
     val isSingleNode = false
     val glmPredOut = PredictionUtils.doGLMPredict(isSingleNode, df, null, sc, mloutput, "B_out", getPredictParams())
-    val predLabelOut = PredictionUtils.computePredictedClassLabelsFromProbability(glmPredOut, isSingleNode, sc)
-    val predictedDF = updateLabels(isSingleNode, predLabelOut.getDF(df.sqlContext, "Prediction"), null, "C1").select("ID", "prediction")
+    val predLabelOut = PredictionUtils.computePredictedClassLabelsFromProbability(glmPredOut, isSingleNode, sc, "means")
+    val predictedDF = PredictionUtils.updateLabels(isSingleNode, predLabelOut.getDF(df.sqlContext, "Prediction"), null, "C1", labelMapping).select("ID", "prediction")
     val prob = glmPredOut.getDF(df.sqlContext, "means", true).withColumnRenamed("C1", "probability").select("ID", "probability")
     val dataset = RDDConverterUtils.addIDToDataFrame(df, df.sqlContext, "ID")
     

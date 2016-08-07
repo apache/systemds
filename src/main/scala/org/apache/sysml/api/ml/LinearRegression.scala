@@ -51,7 +51,6 @@ class LinearRegression(override val uid: String, val sc: SparkContext, val solve
   }
   def transformSchema(schema: StructType): StructType = schema
   
-  // Note: will update the y_mb as this will be called by Python mllearn
   def fit(X_mb: MatrixBlock, y_mb: MatrixBlock): LinearRegressionModel = {
     val ml = new MLContext(sc)
     if(y_mb.getNumColumns != 1) {

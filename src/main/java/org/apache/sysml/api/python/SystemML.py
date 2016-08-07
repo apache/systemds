@@ -30,6 +30,7 @@ from pyspark.rdd import RDD
 import numpy as np
 import pandas as pd
 import sklearn as sk
+from sklearn import metrics
 from pyspark.ml.feature import VectorAssembler
 from pyspark.mllib.linalg import Vectors
 import sys
@@ -377,7 +378,7 @@ class mllearn:
                 raise Exception('Unsupported input type')
                 
         def score(self, X, y):
-            return sk.metrics.accuracy_score(y, self.predict(X))    
+            return metrics.accuracy_score(y, self.predict(X))    
     
     # Or we can create new Python project with package structure
     class LogisticRegression(BaseSystemMLEstimator):
@@ -421,5 +422,25 @@ class mllearn:
             self.estimator.setIcpt(int(fit_intercept))
             self.transferUsingDF = transferUsingDF
             self.setOutputRawPredictionsToFalse = False
-            
+
+        def score(self, X, y):
+            return metrics.r2_score(y, self.predict(X), multioutput='variance_weighted')    
+
+
+    class SVM(BaseSystemMLEstimator):
+
+        def __init__(self, sqlCtx, fit_intercept=True, max_iter=100, tol=0.000001, C=1.0, is_multi_class=False, transferUsingDF=False):
+            self.sqlCtx = sqlCtx
+            self.sc = sqlCtx._sc
+            self.uid = "svm"
+            self.estimator = self.sc._jvm.org.apache.sysml.api.ml.SVM(self.uid, self.sc._jsc.sc(), is_multi_class)
+            self.estimator.setMaxIter(max_iter)
+            if C <= 0:
+                raise Exception('C has to be positive')
+            reg = 1.0 / C
+            self.estimator.setRegParam(reg)
+            self.estimator.setTol(tol)
+            self.estimator.setIcpt(int(fit_intercept))
+            self.transferUsingDF = transferUsingDF
+            self.setOutputRawPredictionsToFalse = False            
                 

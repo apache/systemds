@@ -175,4 +175,7 @@ for(iter_class in 1:ncol(debug_mat)){
 			debug_str = append(debug_str, iter_class + "," + iter + "," + obj)
 	}
 }
-write(debug_str, $Log)
+logFile = $Log
+if(logFile != " ") {
+	write(debug_str, logFile)
+}

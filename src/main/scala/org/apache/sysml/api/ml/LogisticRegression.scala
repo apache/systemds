@@ -112,7 +112,16 @@ class LogisticRegression(override val uid: String, val sc: SparkContext) extends
     }
     
     val mloutput = {
-      val paramsMap: Map[String, String] = Map(
+      ml.registerInput("X", X_mb);
+      ml.registerInput("Y_vec", y_mb);
+      ml.registerOutput("B_out");
+      ml.executeScript(ScriptsUtils.getDMLScript(LogisticRegression.scriptPath), getParamMap())
+    }
+    new LogisticRegressionModel("logisticRegression")(mloutput, revLabelMapping, sc)
+  }
+  
+  def getParamMap():Map[String, String] = {
+    Map(
         "icpt" -> this.getIcpt.toString(),
         "reg" -> this.getRegParam.toString(),
         "tol" -> this.getTol.toString,
@@ -122,12 +131,6 @@ class LogisticRegression(override val uid: String, val sc: SparkContext) extends
         "X" -> " ",
         "Y" -> " ",
         "B" -> " ")
-      ml.registerInput("X", X_mb);
-      ml.registerInput("Y_vec", y_mb);
-      ml.registerOutput("B_out");
-      ml.executeScript(ScriptsUtils.getDMLScript(LogisticRegression.scriptPath), paramsMap)
-    }
-    new LogisticRegressionModel("logisticRegression")(mloutput, revLabelMapping, sc)
   }
   override def fit(df: DataFrame): LogisticRegressionModel = {
     val ml = new MLContext(df.rdd.sparkContext)
@@ -142,20 +145,10 @@ class LogisticRegression(override val uid: String, val sc: SparkContext) extends
     }
     val yin = df.select("label").rdd.map( x => labelMapping.get(x.apply(0).toString).toString )
     val mloutput = {
-      val paramsMap: Map[String, String] = Map(
-        "icpt" -> this.getIcpt.toString(),
-        "reg" -> this.getRegParam.toString(),
-        "tol" -> this.getTol.toString,
-        "moi" -> this.getMaxOuterIte.toString,
-        "mii" -> this.getMaxInnerIter.toString,
-
-        "X" -> " ",
-        "Y" -> " ",
-        "B" -> " ")
       ml.registerInput("X", Xin, mcXin);
       ml.registerInput("Y_vec", yin, "csv");
       ml.registerOutput("B_out");
-      ml.executeScript(ScriptsUtils.getDMLScript(LogisticRegression.scriptPath), paramsMap)
+      ml.executeScript(ScriptsUtils.getDMLScript(LogisticRegression.scriptPath), getParamMap())
     }
     new LogisticRegressionModel("logisticRegression")(mloutput, revLabelMapping, sc)
   }
@@ -211,7 +204,9 @@ class LogisticRegressionModel(
     }
     else {
       val isSingleNode = true
-      val ret = computePredictedLabels(doGLMPredict(isSingleNode, null, X), isSingleNode).getMatrixBlock("Prediction");
+      val ret = PredictionUtils.computePredictedClassLabelsFromProbability(
+          PredictionUtils.doGLMPredict(isSingleNode, null, X, sc, mloutput, "B_out", getPredictParams), 
+          isSingleNode, sc).getMatrixBlock("Prediction");
       if(ret.getNumColumns != 1) {
         throw new RuntimeException("Expected predicted label to be a column vector")
       }
@@ -245,54 +240,11 @@ class LogisticRegressionModel(
     }
   }
   
-  def doGLMPredict(isSingleNode:Boolean, df:DataFrame, X: MatrixBlock): MLOutput = {
-    val ml = new MLContext(sc)
-    val paramsMap: Map[String, String] = Map(
-        "X" -> " ",
-        "B" -> " ",
-        "dfam" -> "3")
-      if(isSingleNode) {
-        ml.registerInput("X", X);
-        ml.registerInput("B_full", mloutput.getMatrixBlock("B_out"), mloutput.getMatrixCharacteristics("B_out"));
-      }
-      else {
-        val mcXin = new MatrixCharacteristics()
-        val Xin = RDDConverterUtils.vectorDataFrameToBinaryBlock(df.rdd.sparkContext, df, mcXin, false, "features")
-        ml.registerInput("X", Xin, mcXin);
-        ml.registerInput("B_full", mloutput.getBinaryBlockedRDD("B_out"), mloutput.getMatrixCharacteristics("B_out"));  
-      }
-      ml.registerOutput("means");
-      ml.executeScript(ScriptsUtils.getDMLScript(LogisticRegressionModel.scriptPath), paramsMap)
-  }
-  
-  def computePredictedLabels(mlscoreoutput:MLOutput, isSingleNode:Boolean): MLOutput = {
-    val mlNew = new MLContext(sc)
-    if(isSingleNode) {
-      mlNew.registerInput("Prob", mlscoreoutput.getMatrixBlock("means"), mlscoreoutput.getMatrixCharacteristics("means"));
-    }
-    else {
-      mlNew.registerInput("Prob", mlscoreoutput.getBinaryBlockedRDD("means"), mlscoreoutput.getMatrixCharacteristics("means"));
-    }
-    mlNew.registerOutput("Prediction")
-    mlNew.executeScript(
-      """
-        Prob = read("temp1");
-        Prediction = rowIndexMax(Prob); # assuming one-based label mapping
-        write(Prediction, "tempOut", "csv");
-        """)
-  }
-  
-  def joinUsingID(df1:DataFrame, df2:DataFrame):DataFrame = {
-    val tempDF1 = df1.withColumnRenamed("ID", "ID1")
-    tempDF1.join(df2, tempDF1.col("ID1").equalTo(df2.col("ID"))).drop("ID1")
-  }
   
   override def transform(df: DataFrame): DataFrame = {
-    val ml = new MLContext(df.rdd.sparkContext)
-
     val isSingleNode = false
-    val glmPredOut = doGLMPredict(isSingleNode, df, null)
-    val predLabelOut = computePredictedLabels(glmPredOut, isSingleNode)
+    val glmPredOut = PredictionUtils.doGLMPredict(isSingleNode, df, null, sc, mloutput, "B_out", getPredictParams())
+    val predLabelOut = PredictionUtils.computePredictedClassLabelsFromProbability(glmPredOut, isSingleNode, sc)
     val predictedDF = updateLabels(isSingleNode, predLabelOut.getDF(df.sqlContext, "Prediction"), null, "C1").select("ID", "prediction")
     val prob = glmPredOut.getDF(df.sqlContext, "means", true).withColumnRenamed("C1", "probability").select("ID", "probability")
     val dataset = RDDConverterUtils.addIDToDataFrame(df, df.sqlContext, "ID")
@@ -300,7 +252,13 @@ class LogisticRegressionModel(
     if(outputRawPredictions) {
       // Not supported: rawPred = 1 / (1 + exp(- X * t(B_full)) );
     }
-    return joinUsingID(dataset, joinUsingID(prob, predictedDF))
+    return PredictionUtils.joinUsingID(dataset, PredictionUtils.joinUsingID(prob, predictedDF))
+  }
+  
+  def getPredictParams(): Map[String, String] = {
+    Map("X" -> " ",
+        "B" -> " ",
+        "dfam" -> "3")
   }
 }
 

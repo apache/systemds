@@ -1241,74 +1241,56 @@ public class MLContext {
 	 * @throws ParseException
 	 */
 	private synchronized MLOutput compileAndExecuteScript(String dmlScriptFilePath, String [] args,  boolean isFile, boolean isNamedArgument, boolean isPyDML, String configFilePath) throws IOException, DMLException {
-		try {
-			if(getActiveMLContext() != null) {
-				throw new DMLRuntimeException("SystemML (and hence by definition MLContext) doesnot support parallel execute() calls from same or different MLContexts. "
-						+ "As a temporary fix, please do explicit synchronization, i.e. synchronized(MLContext.class) { ml.execute(...) } ");
-			}
+		// Set active MLContext.
+		_activeMLContext = this;
+		
+		if(_monitorUtils != null) {
+			_monitorUtils.resetMonitoringData();
+		}
+		
+		if(DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK || DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK) {
 			
-			// Set active MLContext.
-			_activeMLContext = this;
-			
-			if(_monitorUtils != null) {
-				_monitorUtils.resetMonitoringData();
-			}
-			
-			if(DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK || DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK) {
-				
-				// Depending on whether registerInput/registerOutput was called initialize the variables 
-				String[] inputs; String[] outputs;
-				if(_inVarnames != null) {
-					inputs = _inVarnames.toArray(new String[0]);
-				}
-				else {
-					inputs = new String[0];
-				}
-				if(_outVarnames != null) {
-					outputs = _outVarnames.toArray(new String[0]);
-				}
-				else {
-					outputs = new String[0];
-				}
-				Map<String, MatrixCharacteristics> outMetadata = new HashMap<String, MatrixCharacteristics>();
-				
-				Map<String, String> argVals = DMLScript.createArgumentsMap(isNamedArgument, args);
-				
-				// Run the DML script
-				ExecutionContext ec = executeUsingSimplifiedCompilationChain(dmlScriptFilePath, isFile, argVals, isPyDML, inputs, outputs, _variables, configFilePath);
-				
-				// Now collect the output
-				if(_outVarnames != null) {
-					if(_variables == null) {
-						throw new DMLRuntimeException("The symbol table returned after executing the script is empty");
-					}
-					
-					for( String ovar : _outVarnames ) {
-						if( _variables.keySet().contains(ovar) ) {
-							outMetadata.put(ovar, ec.getMatrixCharacteristics(ovar)); // For converting output to dataframe
-						}
-						else {
-							throw new DMLException("Error: The variable " + ovar + " is not available as output after the execution of the DMLScript.");
-						}
-					}
-				}
-				
-				return new MLOutput(_variables, ec, outMetadata);
+			// Depending on whether registerInput/registerOutput was called initialize the variables 
+			String[] inputs; String[] outputs;
+			if(_inVarnames != null) {
+				inputs = _inVarnames.toArray(new String[0]);
 			}
 			else {
-				throw new DMLRuntimeException("Unsupported runtime:" + DMLScript.rtplatform.name());
+				inputs = new String[0];
 			}
-		
-		}
-		finally {
-			// Remove global dml config and all thread-local configs
-			// TODO enable cleanup whenever invalid GNMF MLcontext is fixed 
-			// (the test is invalid because it assumes that status of previous execute is kept)
-			//ConfigurationManager.setGlobalConfig(new DMLConfig());
-			//ConfigurationManager.clearLocalConfigs();
+			if(_outVarnames != null) {
+				outputs = _outVarnames.toArray(new String[0]);
+			}
+			else {
+				outputs = new String[0];
+			}
+			Map<String, MatrixCharacteristics> outMetadata = new HashMap<String, MatrixCharacteristics>();
 			
-			// Reset active MLContext.
-			_activeMLContext = null;	
+			Map<String, String> argVals = DMLScript.createArgumentsMap(isNamedArgument, args);
+			
+			// Run the DML script
+			ExecutionContext ec = executeUsingSimplifiedCompilationChain(dmlScriptFilePath, isFile, argVals, isPyDML, inputs, outputs, _variables, configFilePath);
+			
+			// Now collect the output
+			if(_outVarnames != null) {
+				if(_variables == null) {
+					throw new DMLRuntimeException("The symbol table returned after executing the script is empty");
+				}
+				
+				for( String ovar : _outVarnames ) {
+					if( _variables.keySet().contains(ovar) ) {
+						outMetadata.put(ovar, ec.getMatrixCharacteristics(ovar)); // For converting output to dataframe
+					}
+					else {
+						throw new DMLException("Error: The variable " + ovar + " is not available as output after the execution of the DMLScript.");
+					}
+				}
+			}
+			
+			return new MLOutput(_variables, ec, outMetadata);
+		}
+		else {
+			throw new DMLRuntimeException("Unsupported runtime:" + DMLScript.rtplatform.name());
 		}
 	}
 	

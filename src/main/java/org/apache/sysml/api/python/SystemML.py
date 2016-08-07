@@ -288,83 +288,55 @@ def convertToNumpyArr(sc, mb):
     else:
         raise TypeError('sc needs to be of type SparkContext') # TODO: We can generalize this by creating py4j gateway ourselves
 
-class mllearn:
-    # Or we can create new Python project with package structure
-    class LogisticRegression(Estimator):
+def convertToPandasDF(X):
+    if not isinstance(X, pd.DataFrame):
+        return pd.DataFrame(X, columns=['C' + str(i) for i in range(getNumCols(X))])
+    return X
+            
+def tolist(inputCols):
+    if isinstance(inputCols, pd.indexes.base.Index):
+        return inputCols.get_values().tolist()
+    elif isinstance(inputCols, list):
+        return inputCols
+    else:
+        raise Exception('inputCols should be of type pandas.indexes.base.Index or list')
 
-        def __init__(self, sqlCtx, penalty='l2', fit_intercept=True, max_iter=100, max_inner_iter=0, tol=0.000001, C=1.0, solver='newton-cg', transferUsingDF=False):
-            self.sqlCtx = sqlCtx
-            self.sc = sqlCtx._sc
-            self.log = self.sc._jvm.org.apache.sysml.api.ml.LogisticRegression("lr", self.sc._jsc.sc())
-            self.transferUsingDF = transferUsingDF
-            if penalty != 'l2':
-                raise Exception('Only l2 penalty is supported')
-            self.icpt = int(fit_intercept)
-            self.max_iter = max_iter
-            self.max_inner_iter = max_inner_iter
-            self.tol = tol
-            if C <= 0:
-                raise Exception('C has to be positive')
-            reg = 1.0 / C
-            self.reg = reg
-            self.updateLog()
-            if solver != 'newton-cg':
-                raise Exception('Only newton-cg solver supported')
-             
-        def updateLog(self):
-            self.log.setMaxOuterIter(self.max_iter)
-            self.log.setMaxInnerIter(self.max_inner_iter) 
-            self.log.setRegParam(self.reg)
-            self.log.setTol(self.tol)
-            self.log.setIcpt(self.icpt)
-            
-        def convertToPandasDF(self, X):
-            if not instance(X, pd.DataFrame):
-                return pd.DataFrame(X, columns=['C' + str(i) for i in range(numCols)])
-            return X
-            
-        def tolist(self, inputCols):
-            if isinstance(inputCols, pd.indexes.base.Index):
-                return inputCols.get_values().tolist()
-            elif isinstance(inputCols, list):
-                return inputCols
-            else:
-                raise Exception('inputCols should be of type pandas.indexes.base.Index or list')
-                
-        def assemble(self, pdf, inputCols, outputCol):
-            tmpDF = self.sqlCtx.createDataFrame(pdf, self.tolist(pdf.columns))
-            assembler = VectorAssembler(inputCols=self.tolist(inputCols), outputCol=outputCol)
-            return assembler.transform(tmpDF)
-            
+def assemble(sqlCtx, pdf, inputCols, outputCol):
+    tmpDF = sqlCtx.createDataFrame(pdf, tolist(pdf.columns))
+    assembler = VectorAssembler(inputCols=tolist(inputCols), outputCol=outputCol)
+    return assembler.transform(tmpDF)
+
+class mllearn:
+    class BaseSystemMLEstimator(Estimator):
         def _fit(self, X):
             if hasattr(X, '_jdf') and 'features' in X.columns and 'label' in X.columns:
-                self.model = self.log.fit(X._jdf)
+                self.model = self.estimator.fit(X._jdf)
                 return self
             else:
                 raise Exception('Incorrect usage: Expected dataframe as input with features/label as columns')
             
         def fit(self, X, y=None, params=None):
-            self.updateLog()
             if y is None:
                 return self._fit(X)
             elif y is not None and (isinstance(X, np.ndarray) or isinstance(X, pd.core.frame.DataFrame)):
                 if self.transferUsingDF:
-                    pdfX = self.convertToPandasDF(X)
-                    pdfY = self.convertToPandasDF(y)
+                    pdfX = convertToPandasDF(X)
+                    pdfY = convertToPandasDF(y)
                     if getNumCols(pdfY) != 1:
                         raise Exception('y should be a column vector')
                     if pdfX.shape[0] != pdfY.shape[0]:
                         raise Exception('Number of rows of X and y should match')
                     colNames = pdfX.columns
                     pdfX['label'] = pdfY[pdfY.columns[0]]
-                    df = self.assemble(pdfX, colNames, 'features').select('features', 'label')
-                    self.model = self.log.fit(df._jdf)
+                    df = assemble(self.sqlCtx, pdfX, colNames, 'features').select('features', 'label')
+                    self.model = self.estimator.fit(df._jdf)
                 else:
                     numColsy = getNumCols(y)
                     if numColsy != 1:
                         raise Exception('Expected y to be a column vector')
-                    self.model = self.log.fit(convertToMatrixBlock(self.sc, X), convertToMatrixBlock(self.sc, y))
-                self.model.setOutputRawPredictions(False)
+                    self.model = self.estimator.fit(convertToMatrixBlock(self.sc, X), convertToMatrixBlock(self.sc, y))
+                if self.setOutputRawPredictionsToFalse:
+                    self.model.setOutputRawPredictions(False)
                 return self
             else:
                 raise Exception('Unsupported input type')
@@ -375,8 +347,8 @@ class mllearn:
         def predict(self, X):
             if isinstance(X, np.ndarray) or isinstance(X, pd.core.frame.DataFrame):
                 if self.transferUsingDF:
-                    pdfX = self.convertToPandasDF(X)
-                    df = self.assemble(pdfX, pdfX.columns, 'features').select('features')
+                    pdfX = convertToPandasDF(X)
+                    df = assemble(self.sqlCtx, pdfX, pdfX.columns, 'features').select('features')
                     retjDF = self.model.transform(df._jdf)
                     retDF = DataFrame(retjDF, self.sqlCtx)
                     retPDF = retDF.sort('ID').select('prediction').toPandas()
@@ -405,5 +377,49 @@ class mllearn:
                 raise Exception('Unsupported input type')
                 
         def score(self, X, y):
-            return sk.metrics.accuracy_score(y, self.predict(X))
+            return sk.metrics.accuracy_score(y, self.predict(X))    
+    
+    # Or we can create new Python project with package structure
+    class LogisticRegression(BaseSystemMLEstimator):
+
+        def __init__(self, sqlCtx, penalty='l2', fit_intercept=True, max_iter=100, max_inner_iter=0, tol=0.000001, C=1.0, solver='newton-cg', transferUsingDF=False):
+            self.sqlCtx = sqlCtx
+            self.sc = sqlCtx._sc
+            self.uid = "logReg"
+            self.estimator = self.sc._jvm.org.apache.sysml.api.ml.LogisticRegression(self.uid, self.sc._jsc.sc())
+            self.estimator.setMaxOuterIter(max_iter)
+            self.estimator.setMaxInnerIter(max_inner_iter)
+            if C <= 0:
+                raise Exception('C has to be positive')
+            reg = 1.0 / C
+            self.estimator.setRegParam(reg)
+            self.estimator.setTol(tol)
+            self.estimator.setIcpt(int(fit_intercept))
+            self.transferUsingDF = transferUsingDF
+            self.setOutputRawPredictionsToFalse = True
+            if penalty != 'l2':
+                raise Exception('Only l2 penalty is supported')
+            if solver != 'newton-cg':
+                raise Exception('Only newton-cg solver supported')
+
+    class LinearRegression(BaseSystemMLEstimator):
+
+        def __init__(self, sqlCtx, fit_intercept=True, max_iter=100, tol=0.000001, C=1.0, solver='newton-cg', transferUsingDF=False):
+            self.sqlCtx = sqlCtx
+            self.sc = sqlCtx._sc
+            self.uid = "lr"
+            if solver == 'newton-cg' or solver == 'direct-solve':
+                self.estimator = self.sc._jvm.org.apache.sysml.api.ml.LinearRegression(self.uid, self.sc._jsc.sc(), solver)
+            else:
+                raise Exception('Only newton-cg solver supported')
+            self.estimator.setMaxIter(max_iter)
+            if C <= 0:
+                raise Exception('C has to be positive')
+            reg = 1.0 / C
+            self.estimator.setRegParam(reg)
+            self.estimator.setTol(tol)
+            self.estimator.setIcpt(int(fit_intercept))
+            self.transferUsingDF = transferUsingDF
+            self.setOutputRawPredictionsToFalse = False
+            
                 

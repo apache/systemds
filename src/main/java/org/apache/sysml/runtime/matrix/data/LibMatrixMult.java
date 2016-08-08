@@ -2943,19 +2943,35 @@ public class LibMatrixMult
 		SparseBlock w = mW.sparseBlock;
 		double[] u = mU.denseBlock;
 		double[] v = mV.denseBlock;
+		final int n = mW.clen;
 		final int cd = mU.clen;
 		double wceval = 0; 
 		
-		// approach: iterate over all cells of X and 
-		for( int i=rl, uix=rl*cd; i<ru; i++, uix+=cd ) {
-			if( !w.isEmpty(i) ) { 
-				int wpos = w.pos(i);
-				int wlen = w.size(i);
-				int[] wix = w.indexes(i);
-				double[] wval = w.values(i);
-				for( int k=wpos; k<wpos+wlen; k++ ) {
-					double uvij = dotProduct(u, v, uix, wix[k]*cd, cd);
-					wceval += wval[k] * FastMath.log(uvij + eps);					
+		// approach: iterate over W, point-wise in order to exploit sparsity
+		// blocked over ij, while maintaining front of column indexes, where the
+		// blocksize is chosen such that we reuse each vector on average 8 times.
+		final int blocksizeIJ = (int) (8L*mW.rlen*mW.clen/mW.nonZeros); 
+		int[] curk = new int[blocksizeIJ];			
+		
+		for( int bi=rl; bi<ru; bi+=blocksizeIJ ) {
+			int bimin = Math.min(ru, bi+blocksizeIJ);
+			//prepare starting indexes for block row
+			Arrays.fill(curk, 0); 
+			//blocked execution over column blocks
+			for( int bj=0; bj<n; bj+=blocksizeIJ ) {
+				int bjmin = Math.min(n, bj+blocksizeIJ);
+				for( int i=bi, uix=bi*cd; i<bimin; i++, uix+=cd ) {
+					if( w.isEmpty(i) ) continue;
+					int wpos = w.pos(i);
+					int wlen = w.size(i);
+					int[] wix = w.indexes(i);
+					double[] wval = w.values(i);
+					int k = wpos + curk[i-bi];
+					for( ; k<wpos+wlen && wix[k]<bjmin; k++ ) {
+						double uvij = dotProduct(u, v, uix, wix[k]*cd, cd);
+						wceval += wval[k] * FastMath.log(uvij + eps);	
+					}
+					curk[i-bi] = k - wpos;
 				}
 			}
 		}

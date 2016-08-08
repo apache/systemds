@@ -84,7 +84,7 @@ efficient when the number of features $m$ is relatively small
 {% highlight python %}
 import SystemML as sml
 # C = 1/reg
-lr = sml.mllearn.LinearRegression(sqlCtx, fit_intercept=True, max_iter=100, tol=0.000001, C=1.0, solver='direct-solve')
+lr = sml.mllearn.LinearRegression(sqlCtx, fit_intercept=True, C=1.0, solver='direct-solve')
 # X_train, y_train and X_test can be NumPy matrices or Pandas DataFrame
 y_test = lr.fit(X_train, y_train)
 # df_train is DataFrame that contains two columns: "features" (of type Vector) and "label". df_test is a DataFrame that contains the column "features"

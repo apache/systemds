@@ -1150,6 +1150,17 @@ val s5 = ScriptFactory.dmlFromInputStream(inputStream)
 {% endhighlight %}
 
 
+**Script from Resource:**
+
+As mentioned, the SystemML jar file contains all the primary algorithm script files. For convenience, we can
+read these script files or other script files on the classpath using ScriptFactory's `dmlFromResource` and `pydmlFromResource`
+methods.
+
+{% highlight scala %}
+val s6 = ScriptFactory.dmlFromResource("/scripts/algorithms/Univar-Stats.dml");
+{% endhighlight %}
+
+
 ## ScriptExecutor
 
 A Script is executed by a ScriptExecutor. If no ScriptExecutor is specified, a default ScriptExecutor will

@@ -80,6 +80,15 @@ efficient when the number of features $m$ is relatively small
 **Linear Regression - Direct Solve**:
 
 <div class="codetabs">
+<div data-lang="Python" markdown="1">
+import SystemML as sml
+# C = 1/reg
+lr = sml.mllearn.LinearRegression(sqlCtx, fit_intercept=True, max_iter=100, tol=0.000001, C=1.0, solver='direct-solve')
+# X_train, y_train and X_test can be NumPy matrices or Pandas DataFrame
+y_test = lr.fit(X_train, y_train)
+# df_train is DataFrame that contains two columns: "features" (of type Vector) and "label". df_test is a DataFrame that contains the column "features"
+y_test = lr.fit(df_train)
+</div>
 <div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f LinearRegDS.dml
                             -nvargs X=<file>
@@ -111,6 +120,15 @@ efficient when the number of features $m$ is relatively small
 **Linear Regression - Conjugate Gradient**:
 
 <div class="codetabs">
+<div data-lang="Python" markdown="1">
+import SystemML as sml
+# C = 1/reg
+lr = sml.mllearn.LinearRegression(sqlCtx, fit_intercept=True, max_iter=100, tol=0.000001, C=1.0, solver='newton-cg')
+# X_train, y_train and X_test can be NumPy matrices or Pandas DataFrame
+y_test = lr.fit(X_train, y_train)
+# df_train is DataFrame that contains two columns: "features" (of type Vector) and "label". df_test is a DataFrame that contains the column "features"
+y_test = lr.fit(df_train)
+</div>
 <div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f LinearRegCG.dml
                             -nvargs X=<file>
@@ -196,6 +214,28 @@ SystemML Language Reference for details.
 **Linear Regression - Direct Solve**:
 
 <div class="codetabs">
+<div data-lang="Python" markdown="1">
+import numpy as np
+from sklearn import datasets
+import SystemML as sml
+from pyspark.sql import SQLContext
+# Load the diabetes dataset
+diabetes = datasets.load_diabetes()
+# Use only one feature
+diabetes_X = diabetes.data[:, np.newaxis, 2]
+# Split the data into training/testing sets
+diabetes_X_train = diabetes_X[:-20]
+diabetes_X_test = diabetes_X[-20:]
+# Split the targets into training/testing sets
+diabetes_y_train = diabetes.target[:-20]
+diabetes_y_test = diabetes.target[-20:]
+# Create linear regression object
+regr = sml.mllearn.LinearRegression(sqlCtx, solver='direct-solve')
+# Train the model using the training sets
+regr.fit(diabetes_X_train, diabetes_y_train)
+# The mean square error
+print("Residual sum of squares: %.2f" % np.mean((regr.predict(diabetes_X_test) - diabetes_y_test) ** 2))
+</div>
 <div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f LinearRegDS.dml
                             -nvargs X=/user/ml/X.mtx
@@ -227,6 +267,28 @@ SystemML Language Reference for details.
 **Linear Regression - Conjugate Gradient**:
 
 <div class="codetabs">
+<div data-lang="Python" markdown="1">
+import numpy as np
+from sklearn import datasets
+import SystemML as sml
+from pyspark.sql import SQLContext
+# Load the diabetes dataset
+diabetes = datasets.load_diabetes()
+# Use only one feature
+diabetes_X = diabetes.data[:, np.newaxis, 2]
+# Split the data into training/testing sets
+diabetes_X_train = diabetes_X[:-20]
+diabetes_X_test = diabetes_X[-20:]
+# Split the targets into training/testing sets
+diabetes_y_train = diabetes.target[:-20]
+diabetes_y_test = diabetes.target[-20:]
+# Create linear regression object
+regr = sml.mllearn.LinearRegression(sqlCtx, solver='newton-cg')
+# Train the model using the training sets
+regr.fit(diabetes_X_train, diabetes_y_train)
+# The mean square error
+print("Residual sum of squares: %.2f" % np.mean((regr.predict(diabetes_X_test) - diabetes_y_test) ** 2))
+</div>
 <div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f LinearRegCG.dml
                             -nvargs X=/user/ml/X.mtx

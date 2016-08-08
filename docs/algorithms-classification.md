@@ -128,6 +128,7 @@ Eqs. (1) and (2).
 
 <div class="codetabs">
 <div data-lang="Python" markdown="1">
+{% highlight python %}
 import SystemML as sml
 # C = 1/reg
 logistic = sml.mllearn.LogisticRegression(sqlCtx, fit_intercept=True, max_iter=100, max_inner_iter=0, tol=0.000001, C=1.0)
@@ -135,6 +136,7 @@ logistic = sml.mllearn.LogisticRegression(sqlCtx, fit_intercept=True, max_iter=1
 y_test = logistic.fit(X_train, y_train).predict(X_test)
 # df_train is DataFrame that contains two columns: "features" (of type Vector) and "label". df_test is a DataFrame that contains the column "features"
 y_test = logistic.fit(df_train).transform(df_test)
+{% endhighlight %}
 </div>
 <div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f MultiLogReg.dml
@@ -224,6 +226,7 @@ SystemML Language Reference for details.
 
 <div class="codetabs">
 <div data-lang="Python" markdown="1">
+{% highlight python %}
 # Scikit-learn way
 from sklearn import datasets, neighbors
 import SystemML as sml
@@ -272,6 +275,7 @@ test = sqlCtx.createDataFrame([
     (15L, "apache hadoop")], ["id", "text"])
 prediction = model.transform(test)
 prediction.show()
+{% endhighlight %}
 </div>
 <div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f MultiLogReg.dml
@@ -453,6 +457,7 @@ support vector machine (`y` with domain size `2`).
 
 <div class="codetabs">
 <div data-lang="Python" markdown="1">
+{% highlight python %}
 import SystemML as sml
 # C = 1/reg
 svm = sml.mllearn.SVM(sqlCtx, fit_intercept=True, max_iter=100, tol=0.000001, C=1.0, is_multi_class=False)
@@ -460,6 +465,7 @@ svm = sml.mllearn.SVM(sqlCtx, fit_intercept=True, max_iter=100, tol=0.000001, C=
 y_test = svm.fit(X_train, y_train)
 # df_train is DataFrame that contains two columns: "features" (of type Vector) and "label". df_test is a DataFrame that contains the column "features"
 y_test = svm.fit(df_train)
+{% endhighlight %}
 </div>
 <div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f l2-svm.dml
@@ -497,10 +503,12 @@ y_test = svm.fit(df_train)
 
 <div class="codetabs">
 <div data-lang="Python" markdown="1">
+{% highlight python %}
 # X_test can be NumPy matrices or Pandas DataFrame
 y_test = svm.predict(X_test)
 # df_test is a DataFrame that contains the column "features" of type Vector
 y_test = svm.transform(df_test)
+{% endhighlight %}
 </div>
 <div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f l2-svm-predict.dml
@@ -705,6 +713,7 @@ class labels.
 
 <div class="codetabs">
 <div data-lang="Python" markdown="1">
+{% highlight python %}
 import SystemML as sml
 # C = 1/reg
 svm = sml.mllearn.SVM(sqlCtx, fit_intercept=True, max_iter=100, tol=0.000001, C=1.0, is_multi_class=True)
@@ -712,6 +721,7 @@ svm = sml.mllearn.SVM(sqlCtx, fit_intercept=True, max_iter=100, tol=0.000001, C=
 y_test = svm.fit(X_train, y_train)
 # df_train is DataFrame that contains two columns: "features" (of type Vector) and "label". df_test is a DataFrame that contains the column "features"
 y_test = svm.fit(df_train)
+{% endhighlight %}
 </div>
 <div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f m-svm.dml
@@ -749,10 +759,12 @@ y_test = svm.fit(df_train)
 
 <div class="codetabs">
 <div data-lang="Python" markdown="1">
+{% highlight python %}
 # X_test can be NumPy matrices or Pandas DataFrame
 y_test = svm.predict(X_test)
 # df_test is a DataFrame that contains the column "features" of type Vector
 y_test = svm.transform(df_test)
+{% endhighlight %}
 </div>
 <div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f m-svm-predict.dml
@@ -837,6 +849,7 @@ SystemML Language Reference for details.
 
 <div class="codetabs">
 <div data-lang="Python" markdown="1">
+{% highlight python %}
 # Scikit-learn way
 from sklearn import datasets, neighbors
 import SystemML as sml
@@ -885,6 +898,7 @@ test = sqlCtx.createDataFrame([
     (15L, "apache hadoop")], ["id", "text"])
 prediction = model.transform(test)
 prediction.show()
+{% endhighlight %}
 </div>
 <div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f m-svm.dml

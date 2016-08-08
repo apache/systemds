@@ -81,6 +81,7 @@ efficient when the number of features $m$ is relatively small
 
 <div class="codetabs">
 <div data-lang="Python" markdown="1">
+{% highlight python %}
 import SystemML as sml
 # C = 1/reg
 lr = sml.mllearn.LinearRegression(sqlCtx, fit_intercept=True, max_iter=100, tol=0.000001, C=1.0, solver='direct-solve')
@@ -88,6 +89,7 @@ lr = sml.mllearn.LinearRegression(sqlCtx, fit_intercept=True, max_iter=100, tol=
 y_test = lr.fit(X_train, y_train)
 # df_train is DataFrame that contains two columns: "features" (of type Vector) and "label". df_test is a DataFrame that contains the column "features"
 y_test = lr.fit(df_train)
+{% endhighlight %}
 </div>
 <div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f LinearRegDS.dml
@@ -121,6 +123,7 @@ y_test = lr.fit(df_train)
 
 <div class="codetabs">
 <div data-lang="Python" markdown="1">
+{% highlight python %}
 import SystemML as sml
 # C = 1/reg
 lr = sml.mllearn.LinearRegression(sqlCtx, fit_intercept=True, max_iter=100, tol=0.000001, C=1.0, solver='newton-cg')
@@ -128,6 +131,7 @@ lr = sml.mllearn.LinearRegression(sqlCtx, fit_intercept=True, max_iter=100, tol=
 y_test = lr.fit(X_train, y_train)
 # df_train is DataFrame that contains two columns: "features" (of type Vector) and "label". df_test is a DataFrame that contains the column "features"
 y_test = lr.fit(df_train)
+{% endhighlight %}
 </div>
 <div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f LinearRegCG.dml
@@ -215,6 +219,7 @@ SystemML Language Reference for details.
 
 <div class="codetabs">
 <div data-lang="Python" markdown="1">
+{% highlight python %}
 import numpy as np
 from sklearn import datasets
 import SystemML as sml
@@ -235,6 +240,7 @@ regr = sml.mllearn.LinearRegression(sqlCtx, solver='direct-solve')
 regr.fit(diabetes_X_train, diabetes_y_train)
 # The mean square error
 print("Residual sum of squares: %.2f" % np.mean((regr.predict(diabetes_X_test) - diabetes_y_test) ** 2))
+{% endhighlight %}
 </div>
 <div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f LinearRegDS.dml
@@ -268,6 +274,7 @@ print("Residual sum of squares: %.2f" % np.mean((regr.predict(diabetes_X_test) -
 
 <div class="codetabs">
 <div data-lang="Python" markdown="1">
+{% highlight python %}
 import numpy as np
 from sklearn import datasets
 import SystemML as sml
@@ -288,6 +295,7 @@ regr = sml.mllearn.LinearRegression(sqlCtx, solver='newton-cg')
 regr.fit(diabetes_X_train, diabetes_y_train)
 # The mean square error
 print("Residual sum of squares: %.2f" % np.mean((regr.predict(diabetes_X_test) - diabetes_y_test) ** 2))
+{% endhighlight %}
 </div>
 <div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f LinearRegCG.dml

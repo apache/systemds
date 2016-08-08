@@ -20,20 +20,27 @@
 package org.apache.sysml.api.ml
 
 import java.io.File
-import org.apache.sysml.api.{ MLContext, MLOutput }
-import org.apache.sysml.runtime.matrix.MatrixCharacteristics
-import org.apache.sysml.runtime.instructions.spark.utils.{ RDDConverterUtilsExt => RDDConverterUtils }
-import org.apache.spark.{ SparkContext }
+import scala.reflect.runtime.universe
+import org.apache.spark.ml.Estimator
+import org.apache.spark.ml.Model
+import org.apache.spark.ml.param.DoubleParam
+import org.apache.spark.ml.param.Param
+import org.apache.spark.ml.param.ParamMap
+import org.apache.spark.ml.param.Params
+import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.types.StructType
-import org.apache.spark.ml.{ Model, Estimator }
-import org.apache.spark.ml.classification._
-import org.apache.spark.ml.param.{ Params, Param, ParamMap, DoubleParam }
-import org.apache.spark.ml.param.shared._
-import org.apache.spark.SparkConf
-import org.apache.spark.mllib.linalg.Vectors
-import org.apache.spark.mllib.regression.LabeledPoint
-import scala.reflect.ClassTag
+import org.apache.sysml.api.MLContext
+import org.apache.sysml.api.MLOutput
+import org.apache.sysml.api.ml.util.RDDConverterUtilsExt
+import org.apache.sysml.runtime.instructions.spark.utils.{ RDDConverterUtilsExt => RDDConverterUtils }
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics
+import org.apache.spark.ml.util.Identifiable
+import org.apache.spark.ml.util.Identifiable
+import org.apache.spark.ml.util.Identifiable
+import org.apache.spark.ml.util.Identifiable
+import java.util.UUID
+
 
 trait HasIcpt extends Params {
   final val icpt: Param[Int] = new Param[Int](this, "icpt", "Intercept presence, shifting and rescaling X columns")
@@ -61,14 +68,18 @@ trait HasRegParam extends Params {
   final def getRegParam: Double = $(regParam)
 }
 object LogisticRegression {
-  final val scriptPath = "scripts" + File.separator + "algorithms" + File.separator + "MultiLogReg.dml"
+  final val scriptPath = "algorithms" + File.separator + "MultiLogReg.dml"
 }
 
 /**
  * Logistic Regression Scala API
  */
-class LogisticRegression(override val uid: String, val sc: SparkContext) extends Estimator[LogisticRegressionModel] with HasIcpt
+class LogisticRegression(override val uid: String) extends Estimator[LogisticRegressionModel] with HasIcpt
     with HasRegParam with HasTol with HasMaxOuterIter with HasMaxInnerIter {
+  
+  //Identifiable is private in spark 1.4
+  //def this() = this(Identifiable.randomUID("sysml-logreg"))
+  def this() = this("sysml-logreg_" + UUID.randomUUID().toString.takeRight(12))
 
   def setIcpt(value: Int) = set(icpt, value)
   def setMaxOuterIter(value: Int) = set(maxOuterIter, value)
@@ -77,11 +88,12 @@ class LogisticRegression(override val uid: String, val sc: SparkContext) extends
   def setTol(value: Double) = set(tol, value)
 
   override def copy(extra: ParamMap): LogisticRegression = {
-    val that = new LogisticRegression(uid, sc)
+    val that = new LogisticRegression(uid)
     copyValues(that, extra)
   }
   override def transformSchema(schema: StructType): StructType = schema
   override def fit(df: DataFrame): LogisticRegressionModel = {
+    val sc = df.sqlContext.sparkContext
     val ml = new MLContext(df.rdd.sparkContext)
     val mcXin = new MatrixCharacteristics()
     val Xin = RDDConverterUtils.vectorDataFrameToBinaryBlock(sc, df, mcXin, false, "features")
@@ -108,7 +120,7 @@ class LogisticRegression(override val uid: String, val sc: SparkContext) extends
   }
 }
 object LogisticRegressionModel {
-  final val scriptPath = "scripts" + File.separator + "algorithms" + File.separator + "GLM-predict.dml"
+  final val scriptPath = "algorithms" + File.separator + "GLM-predict.dml"
 }
 
 /**
@@ -133,7 +145,8 @@ class LogisticRegressionModel(
     val mlscoreoutput = {
       val paramsMap: Map[String, String] = Map(
         "X" -> " ",
-        "B" -> " ")
+        "B" -> " ",
+        "dfam" -> "2")
       ml.registerInput("X", Xin, mcXin);
       ml.registerInput("B_full", mloutput.getBinaryBlockedRDD("B_out"), mloutput.getMatrixCharacteristics("B_out"));
       ml.registerOutput("means");
@@ -161,8 +174,8 @@ class LogisticRegressionModel(
     val rawPred = outNew.getDF(df.sqlContext, "rawPred", true).withColumnRenamed("C1", "rawPrediction").withColumnRenamed("ID", "ID2")
     var predictionsNProb = prob.join(pred, prob.col("ID").equalTo(pred.col("ID1"))).select("ID", "probability", "prediction")
     predictionsNProb = predictionsNProb.join(rawPred, predictionsNProb.col("ID").equalTo(rawPred.col("ID2"))).select("ID", "probability", "prediction", "rawPrediction")
-    val dataset1 = RDDConverterUtils.addIDToDataFrame(df, df.sqlContext, "ID")
-    dataset1.join(predictionsNProb, dataset1.col("ID").equalTo(predictionsNProb.col("ID")))
+    val dataset1 = RDDConverterUtilsExt.addIDToDataFrame(df,"dfindex",0)
+    dataset1.join(predictionsNProb, dataset1.col("dfindex").equalTo(predictionsNProb.col("ID")))
   }
 }
 
@@ -188,7 +201,7 @@ object LogisticRegressionExample {
       LabeledPoint(1.0, Vectors.dense(1.0, 0.5, 2.2)),
       LabeledPoint(2.0, Vectors.dense(1.6, 0.8, 3.6)),
       LabeledPoint(1.0, Vectors.dense(1.0, 0.0, 2.3))))
-    val lr = new LogisticRegression("log", sc)
+    val lr = new LogisticRegression("log")
     val lrmodel = lr.fit(training.toDF)
     lrmodel.mloutput.getDF(sqlContext, "B_out").show()
 

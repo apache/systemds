@@ -19,9 +19,10 @@
 
 package org.apache.sysml.api.ml
 
-import java.io.File
 import java.io.BufferedReader
+import java.io.File
 import java.io.InputStreamReader
+
 import org.apache.sysml.runtime.DMLRuntimeException
 
 object ScriptsUtils {

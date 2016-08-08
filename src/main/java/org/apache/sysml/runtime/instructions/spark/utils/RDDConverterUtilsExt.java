@@ -266,6 +266,24 @@ public class RDDConverterUtilsExt
 		return convertPy4JArrayToMB(data, rlen, clen, false);
 	}
 	
+	public static MatrixBlock convertSciPyCOOToMB(byte [] data, byte [] row, byte [] col, int rlen, int clen, int nnz) throws DMLRuntimeException {
+		MatrixBlock mb = new MatrixBlock(rlen, clen, true);
+		mb.allocateSparseRowsBlock(false);
+		ByteBuffer buf1 = ByteBuffer.wrap(data);
+		buf1.order(ByteOrder.nativeOrder());
+		ByteBuffer buf2 = ByteBuffer.wrap(row);
+		buf2.order(ByteOrder.nativeOrder());
+		ByteBuffer buf3 = ByteBuffer.wrap(col);
+		buf3.order(ByteOrder.nativeOrder());
+		for(int i = 0; i < nnz; i++) {
+			double val = buf1.getDouble();
+			int rowIndex = buf2.getInt();
+			int colIndex = buf3.getInt();
+			mb.setValue(rowIndex, colIndex, val); // TODO: Improve the performance
+		}
+		return mb;
+	}
+	
 	public static MatrixBlock convertPy4JArrayToMB(byte [] data, int rlen, int clen, boolean isSparse) throws DMLRuntimeException {
 		MatrixBlock mb = new MatrixBlock(rlen, clen, isSparse, -1);
 		if(isSparse) {

@@ -35,7 +35,8 @@ from pyspark.ml.feature import VectorAssembler
 from pyspark.mllib.linalg import Vectors
 import sys
 from pyspark.ml import Estimator, Model
-
+from scipy.sparse import spmatrix
+from scipy.sparse import coo_matrix
 
 class MLContext(object):
 
@@ -269,7 +270,19 @@ def getNumCols(numPyArr):
         return numPyArr.shape[1]
        
 def convertToMatrixBlock(sc, src):
-    if isinstance(sc, SparkContext):
+    if isinstance(src, spmatrix):
+        src = coo_matrix(src,  dtype=np.float64)
+        numRows = src.shape[0]
+        numCols = src.shape[1]
+        data = src.data.astype(np.float64)
+        row = src.row.astype(np.int32)
+        col = src.col.astype(np.int32)
+        nnz = len(src.col)
+        buf1 = bytearray(data.tostring())
+        buf2 = bytearray(row.tostring())
+        buf3 = bytearray(col.tostring())
+        return sc._jvm.org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt.convertSciPyCOOToMB(buf1, buf2, buf3, numRows, numCols, nnz)
+    elif isinstance(sc, SparkContext):
         src = np.asarray(src)
         numCols = getNumCols(src)
         numRows = src.shape[0]
@@ -319,7 +332,7 @@ class mllearn:
         def fit(self, X, y=None, params=None):
             if y is None:
                 return self._fit(X)
-            elif y is not None and (isinstance(X, np.ndarray) or isinstance(X, pd.core.frame.DataFrame)):
+            elif y is not None and (isinstance(X, np.ndarray) or isinstance(X, pd.core.frame.DataFrame) or isinstance(X, spmatrix)):
                 if self.transferUsingDF:
                     pdfX = convertToPandasDF(X)
                     pdfY = convertToPandasDF(y)
@@ -346,7 +359,7 @@ class mllearn:
             return self.predict(X)
             
         def predict(self, X):
-            if isinstance(X, np.ndarray) or isinstance(X, pd.core.frame.DataFrame):
+            if isinstance(X, np.ndarray) or isinstance(X, pd.core.frame.DataFrame) or isinstance(X, spmatrix):
                 if self.transferUsingDF:
                     pdfX = convertToPandasDF(X)
                     df = assemble(self.sqlCtx, pdfX, pdfX.columns, 'features').select('features')
@@ -442,5 +455,15 @@ class mllearn:
             self.estimator.setTol(tol)
             self.estimator.setIcpt(int(fit_intercept))
             self.transferUsingDF = transferUsingDF
-            self.setOutputRawPredictionsToFalse = False            
-                
+            self.setOutputRawPredictionsToFalse = False    
+
+    class NaiveBayes(BaseSystemMLEstimator):
+
+        def __init__(self, sqlCtx, laplace=1.0, transferUsingDF=False):
+            self.sqlCtx = sqlCtx
+            self.sc = sqlCtx._sc
+            self.uid = "nb"
+            self.estimator = self.sc._jvm.org.apache.sysml.api.ml.NaiveBayes(self.uid, self.sc._jsc.sc())
+            self.estimator.setLaplace(laplace)
+            self.transferUsingDF = transferUsingDF
+            self.setOutputRawPredictionsToFalse = False                

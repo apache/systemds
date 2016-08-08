@@ -159,7 +159,7 @@ class LogisticRegressionModel(
       if(ret.getNumColumns != 1) {
         throw new RuntimeException("Expected predicted label to be a column vector")
       }
-      PredictionUtils.updateLabels(true, null, ret, null, labelMapping)
+      PredictionUtils.updateLabels(isSingleNode, null, ret, null, labelMapping)
       return ret
     }
   }

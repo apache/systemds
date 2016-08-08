@@ -132,7 +132,7 @@ Eqs. (1) and (2).
 import SystemML as sml
 # C = 1/reg
 logistic = sml.mllearn.LogisticRegression(sqlCtx, fit_intercept=True, max_iter=100, max_inner_iter=0, tol=0.000001, C=1.0)
-# X_train, y_train and X_test can be NumPy matrices or Pandas DataFrame
+# X_train, y_train and X_test can be NumPy matrices or Pandas DataFrame or SciPy Sparse Matrix
 y_test = logistic.fit(X_train, y_train).predict(X_test)
 # df_train is DataFrame that contains two columns: "features" (of type Vector) and "label". df_test is a DataFrame that contains the column "features"
 y_test = logistic.fit(df_train).transform(df_test)
@@ -461,7 +461,7 @@ support vector machine (`y` with domain size `2`).
 import SystemML as sml
 # C = 1/reg
 svm = sml.mllearn.SVM(sqlCtx, fit_intercept=True, max_iter=100, tol=0.000001, C=1.0, is_multi_class=False)
-# X_train, y_train and X_test can be NumPy matrices or Pandas DataFrame
+# X_train, y_train and X_test can be NumPy matrices or Pandas DataFrame or SciPy Sparse Matrix
 y_test = svm.fit(X_train, y_train)
 # df_train is DataFrame that contains two columns: "features" (of type Vector) and "label". df_test is a DataFrame that contains the column "features"
 y_test = svm.fit(df_train)
@@ -504,7 +504,7 @@ y_test = svm.fit(df_train)
 <div class="codetabs">
 <div data-lang="Python" markdown="1">
 {% highlight python %}
-# X_test can be NumPy matrices or Pandas DataFrame
+# X_test can be NumPy matrices or Pandas DataFrame or SciPy Sparse Matrix
 y_test = svm.predict(X_test)
 # df_test is a DataFrame that contains the column "features" of type Vector
 y_test = svm.transform(df_test)
@@ -717,7 +717,7 @@ class labels.
 import SystemML as sml
 # C = 1/reg
 svm = sml.mllearn.SVM(sqlCtx, fit_intercept=True, max_iter=100, tol=0.000001, C=1.0, is_multi_class=True)
-# X_train, y_train and X_test can be NumPy matrices or Pandas DataFrame
+# X_train, y_train and X_test can be NumPy matrices or Pandas DataFrame or SciPy Sparse Matrix
 y_test = svm.fit(X_train, y_train)
 # df_train is DataFrame that contains two columns: "features" (of type Vector) and "label". df_test is a DataFrame that contains the column "features"
 y_test = svm.fit(df_train)
@@ -760,7 +760,7 @@ y_test = svm.fit(df_train)
 <div class="codetabs">
 <div data-lang="Python" markdown="1">
 {% highlight python %}
-# X_test can be NumPy matrices or Pandas DataFrame
+# X_test can be NumPy matrices or Pandas DataFrame or SciPy Sparse Matrix
 y_test = svm.predict(X_test)
 # df_test is a DataFrame that contains the column "features" of type Vector
 y_test = svm.transform(df_test)
@@ -1024,6 +1024,16 @@ applicable when all features are counts of categorical values.
 **Naive Bayes**:
 
 <div class="codetabs">
+<div data-lang="Python" markdown="1">
+{% highlight python %}
+import SystemML as sml
+nb = sml.mllearn.NaiveBayes(sqlCtx, laplace=1.0)
+# X_train, y_train and X_test can be NumPy matrices or Pandas DataFrame or SciPy Sparse Matrix
+y_test = nb.fit(X_train, y_train)
+# df_train is DataFrame that contains two columns: "features" (of type Vector) and "label". df_test is a DataFrame that contains the column "features"
+y_test = nb.fit(df_train)
+{% endhighlight %}
+</div>
 <div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f naive-bayes.dml
                             -nvargs X=<file>
@@ -1055,6 +1065,14 @@ applicable when all features are counts of categorical values.
 **Naive Bayes Prediction**:
 
 <div class="codetabs">
+<div data-lang="Python" markdown="1">
+{% highlight python %}
+# X_test can be NumPy matrices or Pandas DataFrame or SciPy Sparse Matrix
+y_test = nb.predict(X_test)
+# df_test is a DataFrame that contains the column "features" of type Vector
+y_test = nb.transform(df_test)
+{% endhighlight %}
+</div>
 <div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f naive-bayes-predict.dml
                             -nvargs X=<file>
@@ -1127,6 +1145,27 @@ SystemML Language Reference for details.
 **Naive Bayes**:
 
 <div class="codetabs">
+<div data-lang="Python" markdown="1">
+{% highlight python %}
+from sklearn.datasets import fetch_20newsgroups
+from sklearn.feature_extraction.text import TfidfVectorizer
+import SystemML as sml
+from sklearn import metrics
+from pyspark.sql import SQLContext
+sqlCtx = SQLContext(sc)
+categories = ['alt.atheism', 'talk.religion.misc', 'comp.graphics', 'sci.space']
+newsgroups_train = fetch_20newsgroups(subset='train', categories=categories)
+newsgroups_test = fetch_20newsgroups(subset='test', categories=categories)
+vectorizer = TfidfVectorizer()
+# Both vectors and vectors_test are SciPy CSR matrix
+vectors = vectorizer.fit_transform(newsgroups_train.data)
+vectors_test = vectorizer.transform(newsgroups_test.data)
+nb = sml.mllearn.NaiveBayes(sqlCtx)
+nb.fit(vectors, newsgroups_train.target)
+pred = nb.predict(vectors_test)
+metrics.f1_score(newsgroups_test.target, pred, average='weighted')
+{% endhighlight %}
+</div>
 <div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f naive-bayes.dml
                             -nvargs X=/user/ml/X.mtx

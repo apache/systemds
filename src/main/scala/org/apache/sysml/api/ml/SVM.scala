@@ -19,17 +19,19 @@
 
 package org.apache.sysml.api.ml
 
+import org.apache.spark.rdd.RDD
 import java.io.File
 import org.apache.spark.SparkContext
 import org.apache.spark.ml.{ Model, Estimator }
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.types.StructType
-import org.apache.spark.ml.param.ParamMap
-import org.apache.sysml.api.{ MLContext, MLOutput }
+import org.apache.spark.ml.param.{ Params, Param, ParamMap, DoubleParam }
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics
 import org.apache.sysml.runtime.matrix.data.MatrixBlock
 import org.apache.sysml.runtime.DMLRuntimeException
 import org.apache.sysml.runtime.instructions.spark.utils.{ RDDConverterUtilsExt => RDDConverterUtils }
+import org.apache.sysml.api.mlcontext._
+import org.apache.sysml.api.mlcontext.ScriptFactory._
 
 object SVM {
   final val scriptPathBinary = "scripts" + File.separator + "algorithms" + File.separator + "l2-svm.dml"
@@ -37,71 +39,41 @@ object SVM {
 }
 
 class SVM (override val uid: String, val sc: SparkContext, val isMultiClass:Boolean=false) extends Estimator[SVMModel] with HasIcpt
-    with HasRegParam with HasTol with HasMaxOuterIter {
+    with HasRegParam with HasTol with HasMaxOuterIter with BaseSystemMLClassifier {
 
   def setIcpt(value: Int) = set(icpt, value)
   def setMaxIter(value: Int) = set(maxOuterIter, value)
   def setRegParam(value: Double) = set(regParam, value)
   def setTol(value: Double) = set(tol, value)
   
-  def setModelParams(m:SVMModel):SVMModel = {
-    m.setIcpt(this.getIcpt).setMaxIter(this.getMaxOuterIte).setRegParam(this.getRegParam).setTol(this.getTol)
-  }
-  
   override def copy(extra: ParamMap): Estimator[SVMModel] = {
     val that = new SVM(uid, sc, isMultiClass)
     copyValues(that, extra)
   }
-  def transformSchema(schema: StructType): StructType = schema
   
-  def fit(X_mb: MatrixBlock, y_mb: MatrixBlock): SVMModel = {
-    val ml = new MLContext(sc)
-    val revLabelMapping = new java.util.HashMap[Int, String]
-    PredictionUtils.fillLabelMapping(y_mb, revLabelMapping)
-    if(y_mb.getNumColumns != 1) {
-      throw new RuntimeException("Expected a column vector for y")
-    }
-    val mloutput = {
-      ml.registerInput("X", X_mb);
-      ml.registerInput("Y", y_mb);
-      ml.registerOutput("w");
-      if(isMultiClass)
-        ml.executeScript(ScriptsUtils.getDMLScript(SVM.scriptPathMulticlass), getParamMap())
-      else {
-        ml.executeScript(ScriptsUtils.getDMLScript(SVM.scriptPathBinary), getParamMap())
-      }
-    }
-    setModelParams(new SVMModel("svm")(mloutput, sc, isMultiClass, revLabelMapping))
+  def getTrainingScript(isSingleNode:Boolean):(Script, String, String)  = {
+    val script = dml(ScriptsUtils.getDMLScript(if(isMultiClass) SVM.scriptPathMulticlass else SVM.scriptPathBinary))
+      .in("$X", " ")
+      .in("$Y", " ")
+      .in("$model", " ")
+      .in("$Log", " ")
+      .in("$icpt", toDouble(getIcpt))
+      .in("$reg", toDouble(getRegParam))
+      .in("$tol", toDouble(getTol))
+      .in("$maxiter", toDouble(getMaxOuterIte))
+      .out("w")
+    (script, "X", "Y")
   }
   
-  def getParamMap(): Map[String, String] = {
-    Map(  "icpt" -> this.getIcpt.toString(),
-          "reg" -> this.getRegParam.toString(),
-          "tol" -> this.getTol.toString,
-          "maxiter" -> this.getMaxOuterIte.toString,
-          "X" -> " ",
-          "Y" -> " ",
-          "model" -> " ",
-          "Log" -> " ")
+  // Note: will update the y_mb as this will be called by Python mllearn
+  def fit(X_mb: MatrixBlock, y_mb: MatrixBlock): SVMModel = {
+    val ret = fit(X_mb, y_mb, sc)
+    new SVMModel("svm")(ret._1, sc, isMultiClass, ret._2)
   }
   
   def fit(df: DataFrame): SVMModel = {
-    val ml = new MLContext(df.rdd.sparkContext)
-    val mcXin = new MatrixCharacteristics()
-    val Xin = RDDConverterUtils.vectorDataFrameToBinaryBlock(sc, df, mcXin, false, "features")
-    val revLabelMapping = new java.util.HashMap[Int, String]
-    val yin = PredictionUtils.fillLabelMapping(df, revLabelMapping)
-    val mloutput = {
-      ml.registerInput("X", Xin, mcXin);
-      ml.registerInput("Y", yin, "csv");
-      ml.registerOutput("w");
-      if(isMultiClass)
-        ml.executeScript(ScriptsUtils.getDMLScript(SVM.scriptPathMulticlass), getParamMap())
-      else {
-        ml.executeScript(ScriptsUtils.getDMLScript(SVM.scriptPathBinary), getParamMap())
-      }
-    }
-    setModelParams(new SVMModel("svm")(mloutput, sc, isMultiClass, revLabelMapping))
+    val ret = fit(df, sc)
+    new SVMModel("svm")(ret._1, sc, isMultiClass, ret._2)
   }
   
 }
@@ -111,77 +83,31 @@ object SVMModel {
   final val predictionScriptPathMulticlass = "scripts" + File.separator + "algorithms" + File.separator + "m-svm-predict.dml"
 }
 
-class SVMModel (override val uid: String)(val mloutput: MLOutput, val sc: SparkContext, val isMultiClass:Boolean, val labelMapping: java.util.HashMap[Int, String]) extends Model[SVMModel] with HasIcpt
-    with HasRegParam with HasTol with HasMaxOuterIter {
+class SVMModel (override val uid: String)(val mloutput: MLResults, val sc: SparkContext, val isMultiClass:Boolean, 
+    val labelMapping: java.util.HashMap[Int, String]) extends Model[SVMModel] with BaseSystemMLClassifierModel {
   override def copy(extra: ParamMap): SVMModel = {
     val that = new SVMModel(uid)(mloutput, sc, isMultiClass, labelMapping)
     copyValues(that, extra)
   }
   
-  def setIcpt(value: Int) = set(icpt, value)
-  def setMaxIter(value: Int) = set(maxOuterIter, value)
-  def setRegParam(value: Double) = set(regParam, value)
-  def setTol(value: Double) = set(tol, value)
-  
-  override def transformSchema(schema: StructType): StructType = schema
-  
-  def transform(df: DataFrame): DataFrame = {
-    val ml = new MLContext(sc)
-    val mcXin = new MatrixCharacteristics()
-    val Xin = RDDConverterUtils.vectorDataFrameToBinaryBlock(df.rdd.sparkContext, df, mcXin, false, "features")
-    ml.registerInput("X", Xin, mcXin);
-    ml.registerOutput("scores");
-    val glmPredOut = {
-      if(isMultiClass) {
-        ml.registerInput("W", mloutput.getBinaryBlockedRDD("w"), mloutput.getMatrixCharacteristics("w"));
-        ml.executeScript(ScriptsUtils.getDMLScript(SVMModel.predictionScriptPathMulticlass), getPredictParams())
-      }
-      else {
-        ml.registerInput("w", mloutput.getBinaryBlockedRDD("w"), mloutput.getMatrixCharacteristics("w"));
-        ml.executeScript(ScriptsUtils.getDMLScript(SVMModel.predictionScriptPathBinary), getPredictParams())
-      }
+  def getPredictionScript(mloutput: MLResults, isSingleNode:Boolean): (Script, String)  = {
+    val script = dml(ScriptsUtils.getDMLScript(if(isMultiClass) SVMModel.predictionScriptPathMulticlass else SVMModel.predictionScriptPathBinary))
+      .in("$X", " ")
+      .in("$model", " ")
+      .out("scores")
+    
+    val w = mloutput.getBinaryBlockMatrix("w")
+    val wVar = if(isMultiClass) "W" else "w"
+      
+    val ret = if(isSingleNode) {
+      script.in(wVar, w.getMatrixBlock, w.getMatrixMetadata)
     }
-    val isSingleNode = false
-    val predLabelOut = PredictionUtils.computePredictedClassLabelsFromProbability(glmPredOut, isSingleNode, sc, "scores")
-    val predictedDF = PredictionUtils.updateLabels(isSingleNode, predLabelOut.getDF(df.sqlContext, "Prediction"), null, "C1", labelMapping).select("ID", "prediction")
-    val dataset = RDDConverterUtils.addIDToDataFrame(df, df.sqlContext, "ID")
-    return PredictionUtils.joinUsingID(dataset, predictedDF)
+    else {
+      script.in(wVar, w)
+    }
+    (ret, "X")
   }
   
-  def transform(X: MatrixBlock): MatrixBlock =  {
-    val ml = new MLContext(sc)
-    ml.registerInput("X", X);
-    ml.registerInput("w", mloutput.getMatrixBlock("w"), mloutput.getMatrixCharacteristics("w"));
-    ml.registerOutput("scores");
-    val glmPredOut = {
-      if(isMultiClass) {
-        ml.registerInput("W", mloutput.getMatrixBlock("w"), mloutput.getMatrixCharacteristics("w"));
-        ml.executeScript(ScriptsUtils.getDMLScript(SVMModel.predictionScriptPathMulticlass), getPredictParams())
-      }
-      else { 
-        ml.registerInput("w", mloutput.getMatrixBlock("w"), mloutput.getMatrixCharacteristics("w"));
-        ml.executeScript(ScriptsUtils.getDMLScript(SVMModel.predictionScriptPathBinary), getPredictParams())
-      }
-    }
-    val isSingleNode = true
-    val ret = PredictionUtils.computePredictedClassLabelsFromProbability(glmPredOut, isSingleNode, sc, "scores").getMatrixBlock("Prediction");
-    if(ret.getNumColumns != 1) {
-      throw new RuntimeException("Expected predicted label to be a column vector")
-    }
-    PredictionUtils.updateLabels(true, null, ret, null, labelMapping)
-    return ret
-  }
-  
-  
-  def getPredictParams(): Map[String, String] = {
-    Map(  "icpt" -> this.getIcpt.toString(),
-          "reg" -> this.getRegParam.toString(),
-          "tol" -> this.getTol.toString,
-          "maxiter" -> this.getMaxOuterIte.toString,
-          "X" -> " ",
-          "Y" -> " ",
-          "model" -> " ",
-          "Log" -> " ")
-  }
-
+  def transform(X: MatrixBlock): MatrixBlock = transform(X, mloutput, labelMapping, sc, "scores")
+  def transform(df: DataFrame): DataFrame = transform(df, mloutput, labelMapping, sc, "scores")
 }

@@ -39,8 +39,6 @@ import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
-import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.spark.functions.GetMLBlock;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt;
@@ -48,7 +46,7 @@ import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.util.UtilFunctions;
-import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
+
 import scala.Tuple2;
 
 /**
@@ -57,39 +55,31 @@ import scala.Tuple2;
  */
 public class MLOutput {
 	
-	private LocalVariableMap _variables;
-	private ExecutionContext _ec;
+	Map<String, JavaPairRDD<MatrixIndexes,MatrixBlock>> _outputs;
 	private Map<String, MatrixCharacteristics> _outMetadata = null;
 	
-	public MLOutput(LocalVariableMap variables, ExecutionContext ec, Map<String, MatrixCharacteristics> outMetadata) {
-		this._variables = variables;
-		this._ec = ec;
+	public MatrixBlock getMatrixBlock(String varName) throws DMLRuntimeException {
+		MatrixCharacteristics mc = getMatrixCharacteristics(varName);
+		// The matrix block is always pushed to an RDD and then we do collect
+		// We can later avoid this by returning symbol table rather than "Map<String, JavaPairRDD<MatrixIndexes,MatrixBlock>> _outputs"
+		MatrixBlock mb = SparkExecutionContext.toMatrixBlock(getBinaryBlockedRDD(varName), (int) mc.getRows(), (int) mc.getCols(), 
+				mc.getRowsPerBlock(), mc.getColsPerBlock(), mc.getNonZeros());
+		return mb;
+	}
+	public MLOutput(Map<String, JavaPairRDD<MatrixIndexes,MatrixBlock>> outputs, Map<String, MatrixCharacteristics> outMetadata) {
+		this._outputs = outputs;
 		this._outMetadata = outMetadata;
 	}
 	
-	public MatrixBlock getMatrixBlock(String varName) throws DMLRuntimeException {
-		if( _variables.keySet().contains(varName) ) {
-			MatrixObject mo = _ec.getMatrixObject(varName);
-			MatrixBlock mb = mo.acquireRead();
-			mo.release();
-			return mb;
-		}
-		else {
-			throw new DMLRuntimeException("Variable " + varName + " not found in the output symbol table.");
-		}
-	}
-	
 	public JavaPairRDD<MatrixIndexes,MatrixBlock> getBinaryBlockedRDD(String varName) throws DMLRuntimeException {
-		if( _variables.keySet().contains(varName) ) {
-			return ((SparkExecutionContext) _ec).getBinaryBlockRDDHandleForVariable(varName);
+		if(_outputs.containsKey(varName)) {
+			return _outputs.get(varName);
 		}
-		else {
-			throw new DMLRuntimeException("Variable " + varName + " not found in the output symbol table.");
-		}
+		throw new DMLRuntimeException("Variable " + varName + " not found in the output symbol table.");
 	}
 	
 	public MatrixCharacteristics getMatrixCharacteristics(String varName) throws DMLRuntimeException {
-		if(_outMetadata.containsKey(varName)) {
+		if(_outputs.containsKey(varName)) {
 			return _outMetadata.get(varName);
 		}
 		throw new DMLRuntimeException("Variable " + varName + " not found in the output symbol table.");
@@ -255,7 +245,7 @@ public class MLOutput {
     		int lclen = UtilFunctions.computeBlockSize(clen, blockColIndex, bclen);
     		// ------------------------------------------------------------------
 			
-			long startRowIndex = (kv._1.getRowIndex()-1) * bclen;
+			long startRowIndex = (kv._1.getRowIndex()-1) * bclen + 1;
 			MatrixBlock blk = kv._2;
 			ArrayList<Tuple2<Long, Tuple2<Long, Double[]>>> retVal = new ArrayList<Tuple2<Long,Tuple2<Long,Double[]>>>();
 			for(int i = 0; i < lrlen; i++) {
@@ -263,7 +253,7 @@ public class MLOutput {
 				for(int j = 0; j < lclen; j++) {
 					partialRow[j] = blk.getValue(i, j);
 				}
-				retVal.add(new Tuple2<Long, Tuple2<Long,Double[]>>(startRowIndex + i + 1, new Tuple2<Long,Double[]>(kv._1.getColumnIndex(), partialRow)));
+				retVal.add(new Tuple2<Long, Tuple2<Long,Double[]>>(startRowIndex + i, new Tuple2<Long,Double[]>(kv._1.getColumnIndex(), partialRow)));
 			}
 			return retVal;
 		}

@@ -65,6 +65,7 @@ import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
+import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.spark.data.RDDObject;
@@ -476,25 +477,6 @@ public class MLContext {
 		registerInput(varName, rdd.toJavaRDD().mapToPair(new ConvertStringToLongTextPair()), format, rlen, clen, nnz, null);
 	}
 	
-	public void registerInput(String varName, MatrixBlock mb) throws DMLRuntimeException {
-		MatrixCharacteristics mc = new MatrixCharacteristics(mb.getNumRows(), mb.getNumColumns(), OptimizerUtils.DEFAULT_BLOCKSIZE, OptimizerUtils.DEFAULT_BLOCKSIZE, mb.getNonZeros());
-		registerInput(varName, mb, mc);
-	}
-	
-	public void registerInput(String varName, MatrixBlock mb, MatrixCharacteristics mc) throws DMLRuntimeException {
-		if(_variables == null)
-			_variables = new LocalVariableMap();
-		if(_inVarnames == null)
-			_inVarnames = new ArrayList<String>();
-	
-		MatrixObject mo = new MatrixObject(ValueType.DOUBLE, "temp", new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
-		mo.acquireModify(mb); 
-		mo.release();
-		_variables.put(varName, mo);
-		_inVarnames.add(varName);
-		checkIfRegisteringInputAllowed();
-	}
-	
 	// All CSV related methods call this ... It provides access to dimensions, nnz, file properties.
 	private void registerInput(String varName, JavaPairRDD<LongWritable, Text> textOrCsv_rdd, String format, long rlen, long clen, long nnz, FileFormatProperties props) throws DMLRuntimeException {
 		if(!(DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK || DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK)) {
@@ -613,6 +595,24 @@ public class MLContext {
 		
 		MatrixObject mo = new MatrixObject(ValueType.DOUBLE, "temp", new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
 		mo.setRDDHandle(new RDDObject(copyRDD, varName));
+		_variables.put(varName, mo);
+		_inVarnames.add(varName);
+		checkIfRegisteringInputAllowed();
+	}
+	
+	public void registerInput(String varName, MatrixBlock mb) throws DMLRuntimeException {
+		MatrixCharacteristics mc = new MatrixCharacteristics(mb.getNumRows(), mb.getNumColumns(), OptimizerUtils.DEFAULT_BLOCKSIZE, OptimizerUtils.DEFAULT_BLOCKSIZE, mb.getNonZeros());
+		registerInput(varName, mb, mc);
+	}
+	
+	public void registerInput(String varName, MatrixBlock mb, MatrixCharacteristics mc) throws DMLRuntimeException {
+		if(_variables == null)
+			_variables = new LocalVariableMap();
+		if(_inVarnames == null)
+			_inVarnames = new ArrayList<String>();
+		MatrixObject mo = new MatrixObject(ValueType.DOUBLE, "temp", new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
+		mo.acquireModify(mb); 
+		mo.release();
 		_variables.put(varName, mo);
 		_inVarnames.add(varName);
 		checkIfRegisteringInputAllowed();
@@ -1240,56 +1240,80 @@ public class MLContext {
 	 * @throws ParseException
 	 */
 	private synchronized MLOutput compileAndExecuteScript(String dmlScriptFilePath, String [] args,  boolean isFile, boolean isNamedArgument, boolean isPyDML, String configFilePath) throws IOException, DMLException {
-		// Set active MLContext.
-		_activeMLContext = this;
-		
-		if(_monitorUtils != null) {
-			_monitorUtils.resetMonitoringData();
-		}
-		
-		if(DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK || DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK) {
-			
-			// Depending on whether registerInput/registerOutput was called initialize the variables 
-			String[] inputs; String[] outputs;
-			if(_inVarnames != null) {
-				inputs = _inVarnames.toArray(new String[0]);
+		try {
+			if(getActiveMLContext() != null) {
+				throw new DMLRuntimeException("SystemML (and hence by definition MLContext) doesnot support parallel execute() calls from same or different MLContexts. "
+						+ "As a temporary fix, please do explicit synchronization, i.e. synchronized(MLContext.class) { ml.execute(...) } ");
 			}
-			else {
-				inputs = new String[0];
-			}
-			if(_outVarnames != null) {
-				outputs = _outVarnames.toArray(new String[0]);
-			}
-			else {
-				outputs = new String[0];
-			}
-			Map<String, MatrixCharacteristics> outMetadata = new HashMap<String, MatrixCharacteristics>();
 			
-			Map<String, String> argVals = DMLScript.createArgumentsMap(isNamedArgument, args);
+			// Set active MLContext.
+			_activeMLContext = this;
 			
-			// Run the DML script
-			ExecutionContext ec = executeUsingSimplifiedCompilationChain(dmlScriptFilePath, isFile, argVals, isPyDML, inputs, outputs, _variables, configFilePath);
+			if(_monitorUtils != null) {
+				_monitorUtils.resetMonitoringData();
+			}
 			
-			// Now collect the output
-			if(_outVarnames != null) {
-				if(_variables == null) {
-					throw new DMLRuntimeException("The symbol table returned after executing the script is empty");
+			if(DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK || DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK) {
+				
+				Map<String, JavaPairRDD<MatrixIndexes,MatrixBlock>> retVal = null;
+				
+				// Depending on whether registerInput/registerOutput was called initialize the variables 
+				String[] inputs; String[] outputs;
+				if(_inVarnames != null) {
+					inputs = _inVarnames.toArray(new String[0]);
+				}
+				else {
+					inputs = new String[0];
+				}
+				if(_outVarnames != null) {
+					outputs = _outVarnames.toArray(new String[0]);
+				}
+				else {
+					outputs = new String[0];
+				}
+				Map<String, MatrixCharacteristics> outMetadata = new HashMap<String, MatrixCharacteristics>();
+				
+				Map<String, String> argVals = DMLScript.createArgumentsMap(isNamedArgument, args);
+				
+				// Run the DML script
+				ExecutionContext ec = executeUsingSimplifiedCompilationChain(dmlScriptFilePath, isFile, argVals, isPyDML, inputs, outputs, _variables, configFilePath);
+				
+				// Now collect the output
+				if(_outVarnames != null) {
+					if(_variables == null) {
+						throw new DMLRuntimeException("The symbol table returned after executing the script is empty");
+					}
+					
+					for( String ovar : _outVarnames ) {
+						if( _variables.keySet().contains(ovar) ) {
+							if(retVal == null) {
+								retVal = new HashMap<String, JavaPairRDD<MatrixIndexes,MatrixBlock>>();
+							}
+							retVal.put(ovar, ((SparkExecutionContext) ec).getBinaryBlockRDDHandleForVariable(ovar));
+							outMetadata.put(ovar, ec.getMatrixCharacteristics(ovar)); // For converting output to dataframe
+						}
+						else {
+							throw new DMLException("Error: The variable " + ovar + " is not available as output after the execution of the DMLScript.");
+						}
+					}
 				}
 				
-				for( String ovar : _outVarnames ) {
-					if( _variables.keySet().contains(ovar) ) {
-						outMetadata.put(ovar, ec.getMatrixCharacteristics(ovar)); // For converting output to dataframe
-					}
-					else {
-						throw new DMLException("Error: The variable " + ovar + " is not available as output after the execution of the DMLScript.");
-					}
-				}
+				return new MLOutput(retVal, outMetadata);
 			}
-			
-			return new MLOutput(_variables, ec, outMetadata);
+			else {
+				throw new DMLRuntimeException("Unsupported runtime:" + DMLScript.rtplatform.name());
+			}
+		
 		}
-		else {
-			throw new DMLRuntimeException("Unsupported runtime:" + DMLScript.rtplatform.name());
+		finally {
+			// Remove global dml config and all thread-local configs
+			// TODO enable cleanup whenever invalid GNMF MLcontext is fixed 
+			// (the test is invalid because it assumes that status of previous execute is kept)
+			//ConfigurationManager.setGlobalConfig(new DMLConfig());
+			//ConfigurationManager.clearLocalConfigs();
+			
+			// Reset active MLContext.
+			_activeMLContext = null;	
 		}
 	}
 	

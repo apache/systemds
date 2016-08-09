@@ -38,6 +38,8 @@ from pyspark.ml import Estimator, Model
 from scipy.sparse import spmatrix
 from scipy.sparse import coo_matrix
 
+SUPPORTED_TYPES = (np.ndarray, pd.DataFrame, spmatrix)
+
 class MLContext(object):
 
     """
@@ -274,7 +276,7 @@ def convertToMatrixBlock(sc, src):
         src = coo_matrix(src,  dtype=np.float64)
         numRows = src.shape[0]
         numCols = src.shape[1]
-        data = src.data.astype(np.float64)
+        data = src.data
         row = src.row.astype(np.int32)
         col = src.col.astype(np.int32)
         nnz = len(src.col)
@@ -308,12 +310,7 @@ def convertToPandasDF(X):
     return X
             
 def tolist(inputCols):
-    if isinstance(inputCols, pd.indexes.base.Index):
-        return inputCols.get_values().tolist()
-    elif isinstance(inputCols, list):
-        return inputCols
-    else:
-        raise Exception('inputCols should be of type pandas.indexes.base.Index or list')
+    return list(inputCols)
 
 def assemble(sqlCtx, pdf, inputCols, outputCol):
     tmpDF = sqlCtx.createDataFrame(pdf, tolist(pdf.columns))
@@ -322,6 +319,8 @@ def assemble(sqlCtx, pdf, inputCols, outputCol):
 
 class mllearn:
     class BaseSystemMLEstimator(Estimator):
+    # TODO: Allow users to set featuresCol (with default 'features') and labelCol (with default 'label')
+    
         def _fit(self, X):
             if hasattr(X, '_jdf') and 'features' in X.columns and 'label' in X.columns:
                 self.model = self.estimator.fit(X._jdf)
@@ -332,7 +331,7 @@ class mllearn:
         def fit(self, X, y=None, params=None):
             if y is None:
                 return self._fit(X)
-            elif y is not None and (isinstance(X, np.ndarray) or isinstance(X, pd.core.frame.DataFrame) or isinstance(X, spmatrix)):
+            elif y is not None and isinstance(X, SUPPORTED_TYPES):
                 if self.transferUsingDF:
                     pdfX = convertToPandasDF(X)
                     pdfY = convertToPandasDF(y)
@@ -359,7 +358,7 @@ class mllearn:
             return self.predict(X)
             
         def predict(self, X):
-            if isinstance(X, np.ndarray) or isinstance(X, pd.core.frame.DataFrame) or isinstance(X, spmatrix):
+            if isinstance(X, SUPPORTED_TYPES):
                 if self.transferUsingDF:
                     pdfX = convertToPandasDF(X)
                     df = assemble(self.sqlCtx, pdfX, pdfX.columns, 'features').select('features')

@@ -108,7 +108,7 @@ public class Matrix {
 	 * @return the matrix as a {@code DataFrame}
 	 */
 	public DataFrame asDataFrame() {
-		DataFrame df = MLContextConversionUtil.matrixObjectToDataFrame(matrixObject, sparkExecutionContext);
+		DataFrame df = MLContextConversionUtil.matrixObjectToDataFrame(matrixObject, sparkExecutionContext, false);
 		return df;
 	}
 

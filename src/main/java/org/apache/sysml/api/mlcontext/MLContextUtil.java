@@ -44,7 +44,9 @@ import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.parser.ParseException;
+import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
+import org.apache.sysml.runtime.controlprogram.caching.CacheException;
 import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.instructions.cp.BooleanObject;
@@ -52,8 +54,12 @@ import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.DoubleObject;
 import org.apache.sysml.runtime.instructions.cp.IntObject;
 import org.apache.sysml.runtime.instructions.cp.StringObject;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
+import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysml.runtime.matrix.data.OutputInfo;
 
 /**
  * Utility class containing methods for working with the MLContext API.
@@ -72,7 +78,7 @@ public final class MLContextUtil {
 	 */
 	@SuppressWarnings("rawtypes")
 	public static final Class[] COMPLEX_DATA_TYPES = { JavaRDD.class, RDD.class, DataFrame.class,
-			BinaryBlockMatrix.class, Matrix.class, (new double[][] {}).getClass() };
+			BinaryBlockMatrix.class, Matrix.class, (new double[][] {}).getClass(), MatrixBlock.class };
 
 	/**
 	 * All data types supported by the MLContext API
@@ -391,6 +397,8 @@ public final class MLContextUtil {
 				convertedMap.put(key, Double.toString((Double) value));
 			} else if (value instanceof String) {
 				convertedMap.put(key, (String) value);
+			} else {
+				throw new MLContextException("Incorrect type for input parameters");
 			}
 		}
 		return convertedMap;
@@ -448,7 +456,24 @@ public final class MLContextUtil {
 			}
 
 			return matrixObject;
-		} else if (value instanceof DataFrame) {
+		} else if (value instanceof MatrixBlock) {
+			MatrixCharacteristics matrixCharacteristics;
+			if (matrixMetadata != null) {
+				matrixCharacteristics = matrixMetadata.asMatrixCharacteristics();
+			} else {
+				matrixCharacteristics = new MatrixCharacteristics();
+			}
+			MatrixFormatMetaData mtd = new MatrixFormatMetaData(matrixCharacteristics, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
+			MatrixObject matrixObject = new MatrixObject(ValueType.DOUBLE, MLContextUtil.scratchSpace() + "/" + name, mtd);
+			try {
+				matrixObject.acquireModify((MatrixBlock)value);
+				matrixObject.release();
+			} catch (CacheException e) {
+				throw new MLContextException(e);
+			}
+			return matrixObject;
+		}
+		else if (value instanceof DataFrame) {
 			DataFrame dataFrame = (DataFrame) value;
 			MatrixObject matrixObject = MLContextConversionUtil
 					.dataFrameToMatrixObject(name, dataFrame, matrixMetadata);

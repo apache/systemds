@@ -28,8 +28,27 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock
 import org.apache.sysml.runtime.DMLRuntimeException
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics
 import org.apache.sysml.runtime.instructions.spark.utils.{ RDDConverterUtilsExt => RDDConverterUtils }
+import org.apache.sysml.api.mlcontext.MLResults
+import org.apache.sysml.api.mlcontext.ScriptFactory._
+import org.apache.sysml.api.mlcontext.Script
+import org.apache.sysml.api.mlcontext.BinaryBlockMatrix
 
 object PredictionUtils {
+  
+  def getGLMPredictionScript(B_full: BinaryBlockMatrix, isSingleNode:Boolean): (Script, String)  = {
+    val script = dml(ScriptsUtils.getDMLScript(LogisticRegressionModel.scriptPath))
+      .in("$X", " ")
+      .in("$B", " ")
+      .in("$dfam", "3")
+      .out("means")
+    val ret = if(isSingleNode) {
+      script.in("B_full", B_full.getMatrixBlock, B_full.getMatrixMetadata)
+    }
+    else {
+      script.in("B_full", B_full)
+    }
+    (ret, "X")
+  }
   
   def doGLMPredict(isSingleNode:Boolean, df:DataFrame, X: MatrixBlock, sc:SparkContext, mloutput:MLOutput, B:String, paramsMap: Map[String, String]): MLOutput = {
     val ml = new MLContext(sc)
@@ -148,5 +167,22 @@ object PredictionUtils {
         Prediction = rowIndexMax(Prob); # assuming one-based label mapping
         write(Prediction, "tempOut", "csv");
         """)
+  }
+  
+  def computePredictedClassLabelsFromProbability(mlscoreoutput:MLResults, isSingleNode:Boolean, sc:SparkContext, inProbVar:String): MLResults = {
+    val ml = new org.apache.sysml.api.mlcontext.MLContext(sc)
+    val script = dml(
+        """
+        Prob = read("temp1");
+        Prediction = rowIndexMax(Prob); # assuming one-based label mapping
+        write(Prediction, "tempOut", "csv");
+        """).out("Prediction")
+    val probVar = mlscoreoutput.getBinaryBlockMatrix(inProbVar)
+    if(isSingleNode) {
+      ml.execute(script.in("Prob", probVar.getMatrixBlock, probVar.getMatrixMetadata))
+    }
+    else {
+      ml.execute(script.in("Prob", probVar))
+    }
   }
 }

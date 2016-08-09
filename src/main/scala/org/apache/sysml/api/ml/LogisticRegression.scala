@@ -19,50 +19,20 @@
 
 package org.apache.sysml.api.ml
 
+import org.apache.spark.rdd.RDD
 import java.io.File
-import org.apache.sysml.api.{ MLContext, MLOutput }
-import org.apache.sysml.runtime.matrix.MatrixCharacteristics
-import org.apache.sysml.runtime.instructions.spark.utils.{ RDDConverterUtilsExt => RDDConverterUtils }
-import org.apache.spark.{ SparkContext }
+import org.apache.spark.SparkContext
+import org.apache.spark.ml.{ Model, Estimator }
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.types.StructType
-import org.apache.spark.ml.{ Model, Estimator }
-import org.apache.spark.ml.classification._
 import org.apache.spark.ml.param.{ Params, Param, ParamMap, DoubleParam }
-import org.apache.spark.ml.param.shared._
-import org.apache.spark.SparkConf
-import org.apache.spark.mllib.linalg.Vectors
-import org.apache.spark.mllib.regression.LabeledPoint
-import scala.reflect.ClassTag
-import scala.collection.immutable.HashMap
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics
 import org.apache.sysml.runtime.matrix.data.MatrixBlock
 import org.apache.sysml.runtime.DMLRuntimeException
+import org.apache.sysml.runtime.instructions.spark.utils.{ RDDConverterUtilsExt => RDDConverterUtils }
+import org.apache.sysml.api.mlcontext._
+import org.apache.sysml.api.mlcontext.ScriptFactory._
 
-trait HasIcpt extends Params {
-  final val icpt: Param[Int] = new Param[Int](this, "icpt", "Intercept presence, shifting and rescaling X columns")
-  setDefault(icpt, 0)
-  final def getIcpt: Int = $(icpt)
-}
-trait HasMaxOuterIter extends Params {
-  final val maxOuterIter: Param[Int] = new Param[Int](this, "maxOuterIter", "max. number of outer (Newton) iterations")
-  setDefault(maxOuterIter, 100)
-  final def getMaxOuterIte: Int = $(maxOuterIter)
-}
-trait HasMaxInnerIter extends Params {
-  final val maxInnerIter: Param[Int] = new Param[Int](this, "maxInnerIter", "max. number of inner (conjugate gradient) iterations, 0 = no max")
-  setDefault(maxInnerIter, 0)
-  final def getMaxInnerIter: Int = $(maxInnerIter)
-}
-trait HasTol extends Params {
-  final val tol: DoubleParam = new DoubleParam(this, "tol", "the convergence tolerance for iterative algorithms")
-  setDefault(tol, 0.000001)
-  final def getTol: Double = $(tol)
-}
-trait HasRegParam extends Params {
-  final val regParam: DoubleParam = new DoubleParam(this, "tol", "the convergence tolerance for iterative algorithms")
-  setDefault(regParam, 0.000001)
-  final def getRegParam: Double = $(regParam)
-}
 object LogisticRegression {
   final val scriptPath = "scripts" + File.separator + "algorithms" + File.separator + "MultiLogReg.dml"
 }
@@ -71,7 +41,7 @@ object LogisticRegression {
  * Logistic Regression Scala API
  */
 class LogisticRegression(override val uid: String, val sc: SparkContext) extends Estimator[LogisticRegressionModel] with HasIcpt
-    with HasRegParam with HasTol with HasMaxOuterIter with HasMaxInnerIter {
+    with HasRegParam with HasTol with HasMaxOuterIter with HasMaxInnerIter with BaseSystemMLClassifier {
 
   def setIcpt(value: Int) = set(icpt, value)
   def setMaxOuterIter(value: Int) = set(maxOuterIter, value)
@@ -83,48 +53,31 @@ class LogisticRegression(override val uid: String, val sc: SparkContext) extends
     val that = new LogisticRegression(uid, sc)
     copyValues(that, extra)
   }
-  override def transformSchema(schema: StructType): StructType = schema
   
   // Note: will update the y_mb as this will be called by Python mllearn
   def fit(X_mb: MatrixBlock, y_mb: MatrixBlock): LogisticRegressionModel = {
-    val ml = new MLContext(sc)
-    val revLabelMapping = new java.util.HashMap[Int, String]
-    PredictionUtils.fillLabelMapping(y_mb, revLabelMapping)
-    
-    val mloutput = {
-      ml.registerInput("X", X_mb);
-      ml.registerInput("Y_vec", y_mb);
-      ml.registerOutput("B_out");
-      ml.executeScript(ScriptsUtils.getDMLScript(LogisticRegression.scriptPath), getParamMap())
-    }
-    new LogisticRegressionModel("logisticRegression")(mloutput, revLabelMapping, sc)
+    val ret = fit(X_mb, y_mb, sc)
+    new LogisticRegressionModel("log")(ret._1, ret._2, sc)
   }
   
-  def getParamMap():Map[String, String] = {
-    Map(
-        "icpt" -> this.getIcpt.toString(),
-        "reg" -> this.getRegParam.toString(),
-        "tol" -> this.getTol.toString,
-        "moi" -> this.getMaxOuterIte.toString,
-        "mii" -> this.getMaxInnerIter.toString,
-
-        "X" -> " ",
-        "Y" -> " ",
-        "B" -> " ")
+  def fit(df: DataFrame): LogisticRegressionModel = {
+    val ret = fit(df, sc)
+    new LogisticRegressionModel("log")(ret._1, ret._2, sc)
   }
-  override def fit(df: DataFrame): LogisticRegressionModel = {
-    val ml = new MLContext(df.rdd.sparkContext)
-    val mcXin = new MatrixCharacteristics()
-    val Xin = RDDConverterUtils.vectorDataFrameToBinaryBlock(sc, df, mcXin, false, "features")
-    val revLabelMapping = new java.util.HashMap[Int, String]
-    val yin = PredictionUtils.fillLabelMapping(df, revLabelMapping)
-    val mloutput = {
-      ml.registerInput("X", Xin, mcXin);
-      ml.registerInput("Y_vec", yin, "csv");
-      ml.registerOutput("B_out");
-      ml.executeScript(ScriptsUtils.getDMLScript(LogisticRegression.scriptPath), getParamMap())
-    }
-    new LogisticRegressionModel("logisticRegression")(mloutput, revLabelMapping, sc)
+  
+  
+  def getTrainingScript(isSingleNode:Boolean):(Script, String, String)  = {
+    val script = dml(ScriptsUtils.getDMLScript(LogisticRegression.scriptPath))
+      .in("$X", " ")
+      .in("$Y", " ")
+      .in("$B", " ")
+      .in("$icpt", toDouble(getIcpt))
+      .in("$reg", toDouble(getRegParam))
+      .in("$tol", toDouble(getTol))
+      .in("$moi", toDouble(getMaxOuterIte))
+      .in("$mii", toDouble(getMaxInnerIter))
+      .out("B_out")
+    (script, "X", "Y_vec")
   }
 }
 object LogisticRegressionModel {
@@ -135,55 +88,22 @@ object LogisticRegressionModel {
  * Logistic Regression Scala API
  */
 
-class LogisticRegressionModel(
-  override val uid: String)(
-    val mloutput: MLOutput, val labelMapping: java.util.HashMap[Int, String], val sc: SparkContext) extends Model[LogisticRegressionModel] with HasIcpt
-    with HasRegParam with HasTol with HasMaxOuterIter with HasMaxInnerIter {
+class LogisticRegressionModel(override val uid: String)(
+    val mloutput: MLResults, val labelMapping: java.util.HashMap[Int, String], val sc: SparkContext) 
+    extends Model[LogisticRegressionModel] with HasIcpt
+    with HasRegParam with HasTol with HasMaxOuterIter with HasMaxInnerIter with BaseSystemMLClassifierModel {
   override def copy(extra: ParamMap): LogisticRegressionModel = {
     val that = new LogisticRegressionModel(uid)(mloutput, labelMapping, sc)
     copyValues(that, extra)
   }
   var outputRawPredictions = true
   def setOutputRawPredictions(outRawPred:Boolean): Unit = { outputRawPredictions = outRawPred }
-  override def transformSchema(schema: StructType): StructType = schema
+  
+  def getPredictionScript(mloutput: MLResults, isSingleNode:Boolean): (Script, String) =
+    PredictionUtils.getGLMPredictionScript(mloutput.getBinaryBlockMatrix("B_out"), isSingleNode)
    
-  def transform(X: MatrixBlock): MatrixBlock = {
-    if(outputRawPredictions) {
-      throw new RuntimeException("Outputting raw prediction is not supported")
-    }
-    else {
-      val isSingleNode = true
-      val ret = PredictionUtils.computePredictedClassLabelsFromProbability(
-          PredictionUtils.doGLMPredict(isSingleNode, null, X, sc, mloutput, "B_out", getPredictParams), 
-          isSingleNode, sc, "means").getMatrixBlock("Prediction");
-      if(ret.getNumColumns != 1) {
-        throw new RuntimeException("Expected predicted label to be a column vector")
-      }
-      PredictionUtils.updateLabels(isSingleNode, null, ret, null, labelMapping)
-      return ret
-    }
-  }
-  
-  
-  override def transform(df: DataFrame): DataFrame = {
-    val isSingleNode = false
-    val glmPredOut = PredictionUtils.doGLMPredict(isSingleNode, df, null, sc, mloutput, "B_out", getPredictParams())
-    val predLabelOut = PredictionUtils.computePredictedClassLabelsFromProbability(glmPredOut, isSingleNode, sc, "means")
-    val predictedDF = PredictionUtils.updateLabels(isSingleNode, predLabelOut.getDF(df.sqlContext, "Prediction"), null, "C1", labelMapping).select("ID", "prediction")
-    val prob = glmPredOut.getDF(df.sqlContext, "means", true).withColumnRenamed("C1", "probability").select("ID", "probability")
-    val dataset = RDDConverterUtils.addIDToDataFrame(df, df.sqlContext, "ID")
-    
-    if(outputRawPredictions) {
-      // Not supported: rawPred = 1 / (1 + exp(- X * t(B_full)) );
-    }
-    return PredictionUtils.joinUsingID(dataset, PredictionUtils.joinUsingID(prob, predictedDF))
-  }
-  
-  def getPredictParams(): Map[String, String] = {
-    Map("X" -> " ",
-        "B" -> " ",
-        "dfam" -> "3")
-  }
+  def transform(X: MatrixBlock): MatrixBlock = transform(X, mloutput, labelMapping, sc, "means")
+  def transform(df: DataFrame): DataFrame = transform(df, mloutput, labelMapping, sc, "means")
 }
 
 /**
@@ -210,7 +130,7 @@ object LogisticRegressionExample {
       LabeledPoint(1.0, Vectors.dense(1.0, 0.0, 2.3))))
     val lr = new LogisticRegression("log", sc)
     val lrmodel = lr.fit(training.toDF)
-    lrmodel.mloutput.getDF(sqlContext, "B_out").show()
+    // lrmodel.mloutput.getDF(sqlContext, "B_out").show()
 
     val testing = sc.parallelize(Seq(
       LabeledPoint(1.0, Vectors.dense(1.0, 0.0, 3.0)),

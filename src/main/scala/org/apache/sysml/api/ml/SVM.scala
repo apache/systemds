@@ -71,7 +71,7 @@ class SVM (override val uid: String, val sc: SparkContext, val isMultiClass:Bool
     new SVMModel("svm")(ret._1, sc, isMultiClass, ret._2)
   }
   
-  def fit(df: DataFrame): SVMModel = {
+  def fit(df: ScriptsUtils.SparkDataType): SVMModel = {
     val ret = fit(df, sc)
     new SVMModel("svm")(ret._1, sc, isMultiClass, ret._2)
   }
@@ -109,5 +109,5 @@ class SVMModel (override val uid: String)(val mloutput: MLResults, val sc: Spark
   }
   
   def transform(X: MatrixBlock): MatrixBlock = transform(X, mloutput, labelMapping, sc, "scores")
-  def transform(df: DataFrame): DataFrame = transform(df, mloutput, labelMapping, sc, "scores")
+  def transform(df: ScriptsUtils.SparkDataType): DataFrame = transform(df, mloutput, labelMapping, sc, "scores")
 }

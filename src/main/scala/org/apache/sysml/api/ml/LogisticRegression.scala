@@ -60,7 +60,7 @@ class LogisticRegression(override val uid: String, val sc: SparkContext) extends
     new LogisticRegressionModel("log")(ret._1, ret._2, sc)
   }
   
-  def fit(df: DataFrame): LogisticRegressionModel = {
+  def fit(df: ScriptsUtils.SparkDataType): LogisticRegressionModel = {
     val ret = fit(df, sc)
     new LogisticRegressionModel("log")(ret._1, ret._2, sc)
   }
@@ -100,10 +100,10 @@ class LogisticRegressionModel(override val uid: String)(
   def setOutputRawPredictions(outRawPred:Boolean): Unit = { outputRawPredictions = outRawPred }
   
   def getPredictionScript(mloutput: MLResults, isSingleNode:Boolean): (Script, String) =
-    PredictionUtils.getGLMPredictionScript(mloutput.getBinaryBlockMatrix("B_out"), isSingleNode)
+    PredictionUtils.getGLMPredictionScript(mloutput.getBinaryBlockMatrix("B_out"), isSingleNode, 3)
    
   def transform(X: MatrixBlock): MatrixBlock = transform(X, mloutput, labelMapping, sc, "means")
-  def transform(df: DataFrame): DataFrame = transform(df, mloutput, labelMapping, sc, "means")
+  def transform(df: ScriptsUtils.SparkDataType): DataFrame = transform(df, mloutput, labelMapping, sc, "means")
 }
 
 /**

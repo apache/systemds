@@ -50,7 +50,7 @@ class NaiveBayes(override val uid: String, val sc: SparkContext) extends Estimat
     new NaiveBayesModel("naive")(ret._1, ret._2, sc)
   }
   
-  def fit(df: DataFrame): NaiveBayesModel = {
+  def fit(df: ScriptsUtils.SparkDataType): NaiveBayesModel = {
     val ret = fit(df, sc)
     new NaiveBayesModel("naive")(ret._1, ret._2, sc)
   }
@@ -104,6 +104,6 @@ class NaiveBayesModel(override val uid: String)
   }
   
   def transform(X: MatrixBlock): MatrixBlock = transform(X, mloutput, labelMapping, sc, "probs")
-  def transform(df: DataFrame): DataFrame = transform(df, mloutput, labelMapping, sc, "probs")
+  def transform(df: ScriptsUtils.SparkDataType): DataFrame = transform(df, mloutput, labelMapping, sc, "probs")
   
 }

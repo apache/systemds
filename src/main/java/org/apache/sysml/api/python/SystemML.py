@@ -321,13 +321,15 @@ class mllearn:
     class BaseSystemMLEstimator(Estimator):
     # TODO: Allow users to set featuresCol (with default 'features') and labelCol (with default 'label')
     
+        # Returns a model after calling fit(df) on Estimator object on JVM    
         def _fit(self, X):
             if hasattr(X, '_jdf') and 'features' in X.columns and 'label' in X.columns:
                 self.model = self.estimator.fit(X._jdf)
                 return self
             else:
                 raise Exception('Incorrect usage: Expected dataframe as input with features/label as columns')
-            
+        
+        # Returns a model after calling fit(X:MatrixBlock, y:MatrixBlock) on Estimator object on JVM  
         def fit(self, X, y=None, params=None):
             if y is None:
                 return self._fit(X)
@@ -356,7 +358,8 @@ class mllearn:
         
         def transform(self, X):
             return self.predict(X)
-            
+        
+        # Returns either a DataFrame or MatrixBlock after calling transform(X:MatrixBlock, y:MatrixBlock) on Model object on JVM    
         def predict(self, X):
             if isinstance(X, SUPPORTED_TYPES):
                 if self.transferUsingDF:
@@ -389,12 +392,23 @@ class mllearn:
             else:
                 raise Exception('Unsupported input type')
                 
+    class BaseSystemMLClassifier(BaseSystemMLEstimator):
+
+        # Scores the predicted value with ground truth 'y'
         def score(self, X, y):
             return metrics.accuracy_score(y, self.predict(X))    
     
-    # Or we can create new Python project with package structure
-    class LogisticRegression(BaseSystemMLEstimator):
+    class BaseSystemMLRegressor(BaseSystemMLEstimator):
 
+        # Scores the predicted value with ground truth 'y'
+        def score(self, X, y):
+            return metrics.r2_score(y, self.predict(X), multioutput='variance_weighted')
+
+    
+    # Or we can create new Python project with package structure
+    class LogisticRegression(BaseSystemMLClassifier):
+
+        # See https://apache.github.io/incubator-systemml/algorithms-reference for usage
         def __init__(self, sqlCtx, penalty='l2', fit_intercept=True, max_iter=100, max_inner_iter=0, tol=0.000001, C=1.0, solver='newton-cg', transferUsingDF=False):
             self.sqlCtx = sqlCtx
             self.sc = sqlCtx._sc
@@ -415,8 +429,9 @@ class mllearn:
             if solver != 'newton-cg':
                 raise Exception('Only newton-cg solver supported')
 
-    class LinearRegression(BaseSystemMLEstimator):
+    class LinearRegression(BaseSystemMLRegressor):
 
+        # See https://apache.github.io/incubator-systemml/algorithms-reference for usage
         def __init__(self, sqlCtx, fit_intercept=True, max_iter=100, tol=0.000001, C=1.0, solver='newton-cg', transferUsingDF=False):
             self.sqlCtx = sqlCtx
             self.sc = sqlCtx._sc
@@ -435,12 +450,10 @@ class mllearn:
             self.transferUsingDF = transferUsingDF
             self.setOutputRawPredictionsToFalse = False
 
-        def score(self, X, y):
-            return metrics.r2_score(y, self.predict(X), multioutput='variance_weighted')    
 
+    class SVM(BaseSystemMLClassifier):
 
-    class SVM(BaseSystemMLEstimator):
-
+        # See https://apache.github.io/incubator-systemml/algorithms-reference for usage
         def __init__(self, sqlCtx, fit_intercept=True, max_iter=100, tol=0.000001, C=1.0, is_multi_class=False, transferUsingDF=False):
             self.sqlCtx = sqlCtx
             self.sc = sqlCtx._sc
@@ -456,8 +469,9 @@ class mllearn:
             self.transferUsingDF = transferUsingDF
             self.setOutputRawPredictionsToFalse = False    
 
-    class NaiveBayes(BaseSystemMLEstimator):
+    class NaiveBayes(BaseSystemMLClassifier):
 
+        # See https://apache.github.io/incubator-systemml/algorithms-reference for usage
         def __init__(self, sqlCtx, laplace=1.0, transferUsingDF=False):
             self.sqlCtx = sqlCtx
             self.sc = sqlCtx._sc
@@ -465,4 +479,4 @@ class mllearn:
             self.estimator = self.sc._jvm.org.apache.sysml.api.ml.NaiveBayes(self.uid, self.sc._jsc.sc())
             self.estimator.setLaplace(laplace)
             self.transferUsingDF = transferUsingDF
-            self.setOutputRawPredictionsToFalse = False                
+            self.setOutputRawPredictionsToFalse = False

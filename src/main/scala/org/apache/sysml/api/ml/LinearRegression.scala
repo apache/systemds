@@ -19,17 +19,19 @@
 
 package org.apache.sysml.api.ml
 
+import org.apache.spark.rdd.RDD
 import java.io.File
 import org.apache.spark.SparkContext
 import org.apache.spark.ml.{ Model, Estimator }
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.types.StructType
-import org.apache.spark.ml.param.ParamMap
-import org.apache.sysml.api.{ MLContext, MLOutput }
+import org.apache.spark.ml.param.{ Params, Param, ParamMap, DoubleParam }
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics
 import org.apache.sysml.runtime.matrix.data.MatrixBlock
 import org.apache.sysml.runtime.DMLRuntimeException
 import org.apache.sysml.runtime.instructions.spark.utils.{ RDDConverterUtilsExt => RDDConverterUtils }
+import org.apache.sysml.api.mlcontext._
+import org.apache.sysml.api.mlcontext.ScriptFactory._
 
 object LinearRegression {
   final val scriptPathCG = "scripts" + File.separator + "algorithms" + File.separator + "LinearRegCG.dml"
@@ -37,8 +39,9 @@ object LinearRegression {
 }
 
 // algorithm = "direct-solve", "conjugate-gradient"
-class LinearRegression(override val uid: String, val sc: SparkContext, val solver:String="direct-solve") extends Estimator[LinearRegressionModel] with HasIcpt
-    with HasRegParam with HasTol with HasMaxOuterIter {
+class LinearRegression(override val uid: String, val sc: SparkContext, val solver:String="direct-solve") 
+  extends Estimator[LinearRegressionModel] with HasIcpt
+    with HasRegParam with HasTol with HasMaxOuterIter with BaseSystemMLRegressor {
   
   def setIcpt(value: Int) = set(icpt, value)
   def setMaxIter(value: Int) = set(maxOuterIter, value)
@@ -49,97 +52,46 @@ class LinearRegression(override val uid: String, val sc: SparkContext, val solve
     val that = new LinearRegression(uid, sc, solver)
     copyValues(that, extra)
   }
-  def transformSchema(schema: StructType): StructType = schema
   
-  def fit(X_mb: MatrixBlock, y_mb: MatrixBlock): LinearRegressionModel = {
-    val ml = new MLContext(sc)
-    if(y_mb.getNumColumns != 1) {
-      throw new RuntimeException("Expected a column vector for y")
-    }
-    val mloutput = {
-      ml.registerInput("X", X_mb);
-      ml.registerInput("y", y_mb);
-      ml.registerOutput("beta_out");
-      if(solver.compareTo("direct-solve") == 0)
-        ml.executeScript(ScriptsUtils.getDMLScript(LinearRegression.scriptPathDS), getParamMap())
-      else if(solver.compareTo("newton-cg") == 0) {
-        ml.executeScript(ScriptsUtils.getDMLScript(LinearRegression.scriptPathCG), getParamMap())
-      }
-      else {
-        throw new DMLRuntimeException("The algorithm should be direct-solve or conjugate-gradient")
-      }
-    }
-    new LinearRegressionModel("linearRegression")(mloutput, sc)
+          
+  def getTrainingScript(isSingleNode:Boolean):(Script, String, String)  = {
+    val script = dml(ScriptsUtils.getDMLScript(
+        if(solver.compareTo("direct-solve") == 0) LinearRegression.scriptPathDS 
+        else if(solver.compareTo("newton-cg") == 0) LinearRegression.scriptPathCG
+        else throw new DMLRuntimeException("The algorithm should be direct-solve or newton-cg")))
+      .in("$X", " ")
+      .in("$Y", " ")
+      .in("$B", " ")
+      .in("$Log", " ")
+      .in("$fmt", "binary")
+      .in("$icpt", toDouble(getIcpt))
+      .in("$reg", toDouble(getRegParam))
+      .in("$tol", toDouble(getTol))
+      .in("$maxi", toDouble(getMaxOuterIte))
+      .out("beta_out")
+    (script, "X", "y")
   }
   
-  def getParamMap(): Map[String, String] = {
-    Map(  "icpt" -> this.getIcpt.toString(),
-          "reg" -> this.getRegParam.toString(),
-          "tol" -> this.getTol.toString,
-          "maxi" -> this.getMaxOuterIte.toString,
+  def fit(X_mb: MatrixBlock, y_mb: MatrixBlock): LinearRegressionModel = 
+    new LinearRegressionModel("lr")(fit(X_mb, y_mb, sc), sc)
+    
+  def fit(df: ScriptsUtils.SparkDataType): LinearRegressionModel = 
+    new LinearRegressionModel("lr")(fit(df, sc), sc)
   
-          "X" -> " ",
-          "Y" -> " ",
-          "B" -> " ", 
-          "O" -> " ", 
-          "Log" -> " ",
-          "fmt" -> "binary")
-  }
-  
-  def fit(df: DataFrame): LinearRegressionModel = {
-    val ml = new MLContext(df.rdd.sparkContext)
-    val mcXin = new MatrixCharacteristics()
-    val Xin = RDDConverterUtils.vectorDataFrameToBinaryBlock(sc, df, mcXin, false, "features")
-    val yin = df.select("label")
-    val mloutput = {
-      ml.registerInput("X", Xin, mcXin);
-      ml.registerInput("y", yin);
-      ml.registerOutput("beta_out");
-      if(solver.compareTo("direct-solve") == 0)
-        ml.executeScript(ScriptsUtils.getDMLScript(LinearRegression.scriptPathDS), getParamMap())
-      else if(solver.compareTo("newton-cg") == 0) {
-        ml.executeScript(ScriptsUtils.getDMLScript(LinearRegression.scriptPathCG), getParamMap())
-      }
-      else {
-        throw new DMLRuntimeException("The algorithm should be direct-solve or conjugate-gradient")
-      }
-    }
-    new LinearRegressionModel("linearRegression")(mloutput, sc)
-  }
 }
 
-class LinearRegressionModel(override val uid: String)(val mloutput: MLOutput, val sc: SparkContext) extends Model[LinearRegressionModel] with HasIcpt
-    with HasRegParam with HasTol with HasMaxOuterIter {
+class LinearRegressionModel(override val uid: String)(val mloutput: MLResults, val sc: SparkContext) extends Model[LinearRegressionModel] with HasIcpt
+    with HasRegParam with HasTol with HasMaxOuterIter with BaseSystemMLRegressorModel {
   override def copy(extra: ParamMap): LinearRegressionModel = {
     val that = new LinearRegressionModel(uid)(mloutput, sc)
     copyValues(that, extra)
   }
   
-  override def transformSchema(schema: StructType): StructType = schema
+  def getPredictionScript(mloutput: MLResults, isSingleNode:Boolean): (Script, String) =
+    PredictionUtils.getGLMPredictionScript(mloutput.getBinaryBlockMatrix("beta_out"), isSingleNode)
   
-  def transform(df: DataFrame): DataFrame = {
-    val isSingleNode = false
-    val glmPredOut = PredictionUtils.doGLMPredict(isSingleNode, df, null, sc, mloutput, "beta_out", getPredictParams())
-    val predictedDF = glmPredOut.getDF(df.sqlContext, "means").withColumnRenamed("C1", "prediction")
-    val dataset = RDDConverterUtils.addIDToDataFrame(df, df.sqlContext, "ID")
-    return PredictionUtils.joinUsingID(dataset, predictedDF)
-  }
+  def transform(df: ScriptsUtils.SparkDataType): DataFrame = transform(df, mloutput, sc, "means")
   
-  def transform(X: MatrixBlock): MatrixBlock =  {
-    val isSingleNode = true
-    return PredictionUtils.doGLMPredict(isSingleNode, null, X, sc, mloutput, "beta_out", getPredictParams()).getMatrixBlock("means")
-  }
+  def transform(X: MatrixBlock): MatrixBlock =  transform(X, mloutput, sc, "means")
   
-  
-  def getPredictParams(): Map[String, String] = {
-    Map("X" -> " ",
-        "B" -> " ",
-        // Gaussian distribution
-        "dfam" -> "1", "vpow" -> "0.0",
-        // identity link function
-        "link" -> "1", "lpow" -> "1.0"
-//        // Dispersion value: TODO
-//        ,"disp" -> "5.0"
-        )
-  }
 }

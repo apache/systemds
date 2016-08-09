@@ -21,7 +21,6 @@ package org.apache.sysml.api.ml
 
 import org.apache.spark.sql.functions.udf
 import org.apache.spark.rdd.RDD
-import org.apache.sysml.api.{ MLContext, MLOutput }
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.SparkContext
 import org.apache.sysml.runtime.matrix.data.MatrixBlock
@@ -35,11 +34,11 @@ import org.apache.sysml.api.mlcontext.BinaryBlockMatrix
 
 object PredictionUtils {
   
-  def getGLMPredictionScript(B_full: BinaryBlockMatrix, isSingleNode:Boolean): (Script, String)  = {
+  def getGLMPredictionScript(B_full: BinaryBlockMatrix, isSingleNode:Boolean, dfam:java.lang.Integer=1): (Script, String)  = {
     val script = dml(ScriptsUtils.getDMLScript(LogisticRegressionModel.scriptPath))
       .in("$X", " ")
       .in("$B", " ")
-      .in("$dfam", "3")
+      .in("$dfam", dfam)
       .out("means")
     val ret = if(isSingleNode) {
       script.in("B_full", B_full.getMatrixBlock, B_full.getMatrixMetadata)
@@ -50,23 +49,7 @@ object PredictionUtils {
     (ret, "X")
   }
   
-  def doGLMPredict(isSingleNode:Boolean, df:DataFrame, X: MatrixBlock, sc:SparkContext, mloutput:MLOutput, B:String, paramsMap: Map[String, String]): MLOutput = {
-    val ml = new MLContext(sc)
-    if(isSingleNode) {
-      ml.registerInput("X", X);
-      ml.registerInput("B_full", mloutput.getMatrixBlock(B), mloutput.getMatrixCharacteristics(B));
-    }
-    else {
-      val mcXin = new MatrixCharacteristics()
-      val Xin = RDDConverterUtils.vectorDataFrameToBinaryBlock(df.rdd.sparkContext, df, mcXin, false, "features")
-      ml.registerInput("X", Xin, mcXin);
-      ml.registerInput("B_full", mloutput.getBinaryBlockedRDD(B), mloutput.getMatrixCharacteristics(B));  
-    }
-    ml.registerOutput("means");
-    ml.executeScript(ScriptsUtils.getDMLScript(LogisticRegressionModel.scriptPath), paramsMap)
-  }
-  
-  def fillLabelMapping(df: DataFrame, revLabelMapping: java.util.HashMap[Int, String]): RDD[String]  = {
+  def fillLabelMapping(df: ScriptsUtils.SparkDataType, revLabelMapping: java.util.HashMap[Int, String]): RDD[String]  = {
     val temp = df.select("label").distinct.rdd.map(_.apply(0).toString).collect()
     val labelMapping = new java.util.HashMap[String, Int]
     for(i <- 0 until temp.length) {
@@ -150,23 +133,6 @@ object PredictionUtils {
   def joinUsingID(df1:DataFrame, df2:DataFrame):DataFrame = {
     val tempDF1 = df1.withColumnRenamed("ID", "ID1")
     tempDF1.join(df2, tempDF1.col("ID1").equalTo(df2.col("ID"))).drop("ID1")
-  }
-  
-  def computePredictedClassLabelsFromProbability(mlscoreoutput:MLOutput, isSingleNode:Boolean, sc:SparkContext, inProbVar:String): MLOutput = {
-    val mlNew = new MLContext(sc)
-    if(isSingleNode) {
-      mlNew.registerInput("Prob", mlscoreoutput.getMatrixBlock(inProbVar), mlscoreoutput.getMatrixCharacteristics(inProbVar));
-    }
-    else {
-      mlNew.registerInput("Prob", mlscoreoutput.getBinaryBlockedRDD(inProbVar), mlscoreoutput.getMatrixCharacteristics(inProbVar));
-    }
-    mlNew.registerOutput("Prediction")
-    mlNew.executeScript(
-      """
-        Prob = read("temp1");
-        Prediction = rowIndexMax(Prob); # assuming one-based label mapping
-        write(Prediction, "tempOut", "csv");
-        """)
   }
   
   def computePredictedClassLabelsFromProbability(mlscoreoutput:MLResults, isSingleNode:Boolean, sc:SparkContext, inProbVar:String): MLResults = {

@@ -130,6 +130,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 			case MAX_POOLING:
 			case MAX_POOLING_BACKWARD:
 			{	
+				//TODO: Fix me. Currently forcing the instruction to GPU if gpu flag is set
 				if(DMLScript.USE_ACCELERATOR) {
 					et = ExecType.GPU;
 					setLops(constructConvolutionLops(et, inputs));
@@ -404,6 +405,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		
 		checkAndSetForcedPlatform();
 		
+		//TODO: Remove this once memEstimate is fixed for these instructions 
 		if((op == ConvOp.MAX_POOLING || op == ConvOp.MAX_POOLING_BACKWARD) && DMLScript.USE_ACCELERATOR) {
 			return ExecType.GPU;
 		}

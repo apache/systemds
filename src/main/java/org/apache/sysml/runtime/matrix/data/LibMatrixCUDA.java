@@ -287,6 +287,7 @@ public class LibMatrixCUDA {
 	    Pointer A = ((JCudaObject)left.getGPUObject()).jcudaPointer;
 	    Pointer C = ((JCudaObject)output.getGPUObject()).jcudaPointer;
 	    
+	    //TODO: Fix it if there is a cuBLAS API to do flipping
 	    JCublas.cublasDsyrk('U',transa, m, k, alpha, A, lda, beta, C, ldc);
 	    JCublas.cublasDsyrk('L',transa, m, k, alpha, A, lda, beta, C, ldc);
 	}
@@ -417,8 +418,8 @@ public class LibMatrixCUDA {
 			poolingDesc = allocatePoolingDescriptor(R, S, pad_h, pad_w, stride_h, stride_w);
 			
 			// Allocate data
-			Pointer x = ((JCudaObject)image._gpuHandle).jcudaPointer; 
-			Pointer y = ((JCudaObject)outputBlock._gpuHandle).jcudaPointer; 
+			Pointer x = ((JCudaObject)image.getGPUObject()).jcudaPointer; 
+			Pointer y = ((JCudaObject)outputBlock.getGPUObject()).jcudaPointer; 
 			
 			alpha = pointerTo(1.0);
 			beta = pointerTo(0.0f);
@@ -456,21 +457,24 @@ public class LibMatrixCUDA {
 		cudnnPoolingDescriptor poolingDesc = null;
 
 		try {
-			// calling forwardPooling first
+			// Allocate descriptors
 			xDesc = allocateTensorDescriptor(N, C, H, W);
 			yDesc = allocateTensorDescriptor(N, C, P, Q);
 			dxDesc = allocateTensorDescriptor(N, C, H, W);
 			dyDesc = allocateTensorDescriptor(N, C, P, Q);
 			
 			poolingDesc = allocatePoolingDescriptor(R, S, pad_h, pad_w, stride_h, stride_w);
-			// Allocate data
+			
+			// Calling PoolForward first, y is one of the inputs for poolBackward
+			// TODO: Remove calling poolForward after necessary changes at language level for poolBackward
 			Pointer y = new Pointer();
 			long numBytes = N*C*P*Q*Sizeof.DOUBLE;
 			cudaMalloc(y, numBytes);
-			Pointer x = ((JCudaObject)image._gpuHandle).jcudaPointer;
-			 
-			Pointer dx = ((JCudaObject)outputBlock._gpuHandle).jcudaPointer;
-			Pointer dy = ((JCudaObject)dout._gpuHandle).jcudaPointer;
+			
+			// Allocate data
+			Pointer x = ((JCudaObject)image.getGPUObject()).jcudaPointer; 
+			Pointer dx = ((JCudaObject)outputBlock.getGPUObject()).jcudaPointer;
+			Pointer dy = ((JCudaObject)dout.getGPUObject()).jcudaPointer;
 			
 			alpha = pointerTo(1.0);
 			beta = pointerTo(0.0f);

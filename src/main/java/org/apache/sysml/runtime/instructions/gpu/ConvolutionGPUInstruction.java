@@ -135,7 +135,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction
 	public void processInstruction(ExecutionContext ec) 
 			throws DMLRuntimeException 
 	{
-		// TODO: Fix Me
+		// TODO: Fix Me. Currently calling CP if data is sparse
 		if (instOpcode.equalsIgnoreCase("maxpooling")) {
 			if(	isSparse(ec, _input1.getName())) {
 				ConvolutionCPInstruction.parseInstruction(this.toString() + Instruction.OPERAND_DELIM + InfrastructureAnalyzer.getLocalParallelism()).processInstruction(ec);

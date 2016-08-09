@@ -429,6 +429,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		if( _data == null )
 			getCache();
 			
+		//call acquireHostRead if gpuHandle is set as well as is allocated  
 		if( _gpuHandle != null && _gpuHandle.isAllocated()) {
 			_gpuHandle.acquireHostRead();
 			if( _data == null )

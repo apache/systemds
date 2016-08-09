@@ -160,4 +160,7 @@ extra_model_params[4,1] = dimensions
 w = t(append(t(w), t(extra_model_params)))
 write(w, $model, format=cmdLine_fmt)
 
-write(debug_str, $Log)
+logFile = $Log
+if(logFile != " ") {
+	write(debug_str, logFile)
+}

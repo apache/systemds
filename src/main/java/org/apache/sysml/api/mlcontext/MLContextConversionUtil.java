@@ -676,7 +676,7 @@ public class MLContextConversionUtil {
 	 * @return the {@code MatrixObject} converted to a {@code DataFrame}
 	 */
 	public static DataFrame matrixObjectToDataFrame(MatrixObject matrixObject,
-			SparkExecutionContext sparkExecutionContext) {
+			SparkExecutionContext sparkExecutionContext, boolean isVectorDF) {
 		try {
 			@SuppressWarnings("unchecked")
 			JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlockMatrix = (JavaPairRDD<MatrixIndexes, MatrixBlock>) sparkExecutionContext
@@ -686,8 +686,17 @@ public class MLContextConversionUtil {
 			MLContext activeMLContext = (MLContext) MLContextProxy.getActiveMLContext();
 			SparkContext sc = activeMLContext.getSparkContext();
 			SQLContext sqlContext = new SQLContext(sc);
-			DataFrame df = RDDConverterUtilsExt.binaryBlockToDataFrame(binaryBlockMatrix, matrixCharacteristics,
+			DataFrame df = null;
+			if(isVectorDF) {
+				df = RDDConverterUtilsExt.binaryBlockToVectorDataFrame(binaryBlockMatrix, matrixCharacteristics,
+						sqlContext);
+			}
+			else {
+				df = RDDConverterUtilsExt.binaryBlockToDataFrame(binaryBlockMatrix, matrixCharacteristics,
 					sqlContext);
+			}
+			
+			
 			return df;
 		} catch (DMLRuntimeException e) {
 			throw new MLContextException("DMLRuntimeException while converting matrix object to DataFrame", e);

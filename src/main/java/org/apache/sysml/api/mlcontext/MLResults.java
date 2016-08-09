@@ -255,7 +255,13 @@ public class MLResults {
 	 */
 	public DataFrame getDataFrame(String outputName) {
 		MatrixObject mo = getMatrixObject(outputName);
-		DataFrame df = MLContextConversionUtil.matrixObjectToDataFrame(mo, sparkExecutionContext);
+		DataFrame df = MLContextConversionUtil.matrixObjectToDataFrame(mo, sparkExecutionContext, false);
+		return df;
+	}
+	
+	public DataFrame getDataFrame(String outputName, boolean isVectorDF) {
+		MatrixObject mo = getMatrixObject(outputName);
+		DataFrame df = MLContextConversionUtil.matrixObjectToDataFrame(mo, sparkExecutionContext, isVectorDF);
 		return df;
 	}
 
@@ -271,6 +277,7 @@ public class MLResults {
 		Matrix matrix = new Matrix(mo, sparkExecutionContext);
 		return matrix;
 	}
+	
 
 	/**
 	 * Obtain an output as a {@code BinaryBlockMatrix}.

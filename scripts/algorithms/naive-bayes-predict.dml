@@ -28,7 +28,6 @@
 cmdLine_Y = ifdef($Y, " ")
 cmdLine_accuracy = ifdef($accuracy, " ")
 cmdLine_confusion = ifdef($confusion, " ")
-cmdLine_probabilities = ifdef($probabilities, " ")
 cmdLine_fmt = ifdef($fmt, "text")
 
 D = read($X)
@@ -51,13 +50,13 @@ model = append(conditionals, prior)
 
 log_probs = D_w_ones %*% t(log(model))
 
-if(cmdLine_probabilities != " "){
-	mx = rowMaxs(log_probs)
-	ones = matrix(1, rows=1, cols=nrow(prior))
-	probs = log_probs - mx %*% ones
-	probs = exp(probs)/(rowSums(exp(probs)) %*% ones)
-	write(probs, cmdLine_probabilities, format=cmdLine_fmt)
-}
+
+mx = rowMaxs(log_probs)
+ones = matrix(1, rows=1, cols=nrow(prior))
+probs = log_probs - mx %*% ones
+probs = exp(probs)/(rowSums(exp(probs)) %*% ones)
+write(probs, $probabilities, format=cmdLine_fmt)
+
 
 if(cmdLine_Y != " "){
 	C = read(cmdLine_Y)

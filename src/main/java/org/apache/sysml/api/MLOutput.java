@@ -39,6 +39,7 @@ import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.spark.functions.GetMLBlock;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -54,11 +55,17 @@ import scala.Tuple2;
  */
 public class MLOutput {
 	
-	
-	
 	Map<String, JavaPairRDD<MatrixIndexes,MatrixBlock>> _outputs;
 	private Map<String, MatrixCharacteristics> _outMetadata = null;
 	
+	public MatrixBlock getMatrixBlock(String varName) throws DMLRuntimeException {
+		MatrixCharacteristics mc = getMatrixCharacteristics(varName);
+		// The matrix block is always pushed to an RDD and then we do collect
+		// We can later avoid this by returning symbol table rather than "Map<String, JavaPairRDD<MatrixIndexes,MatrixBlock>> _outputs"
+		MatrixBlock mb = SparkExecutionContext.toMatrixBlock(getBinaryBlockedRDD(varName), (int) mc.getRows(), (int) mc.getCols(), 
+				mc.getRowsPerBlock(), mc.getColsPerBlock(), mc.getNonZeros());
+		return mb;
+	}
 	public MLOutput(Map<String, JavaPairRDD<MatrixIndexes,MatrixBlock>> outputs, Map<String, MatrixCharacteristics> outMetadata) {
 		this._outputs = outputs;
 		this._outMetadata = outMetadata;
@@ -238,7 +245,7 @@ public class MLOutput {
     		int lclen = UtilFunctions.computeBlockSize(clen, blockColIndex, bclen);
     		// ------------------------------------------------------------------
 			
-			long startRowIndex = (kv._1.getRowIndex()-1) * bclen;
+			long startRowIndex = (kv._1.getRowIndex()-1) * bclen + 1;
 			MatrixBlock blk = kv._2;
 			ArrayList<Tuple2<Long, Tuple2<Long, Double[]>>> retVal = new ArrayList<Tuple2<Long,Tuple2<Long,Double[]>>>();
 			for(int i = 0; i < lrlen; i++) {

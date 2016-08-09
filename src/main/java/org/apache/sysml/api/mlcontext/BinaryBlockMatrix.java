@@ -21,6 +21,8 @@ package org.apache.sysml.api.mlcontext;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.sql.DataFrame;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
@@ -96,6 +98,13 @@ public class BinaryBlockMatrix {
 	 */
 	public JavaPairRDD<MatrixIndexes, MatrixBlock> getBinaryBlocks() {
 		return binaryBlocks;
+	}
+	
+	public MatrixBlock getMatrixBlock() throws DMLRuntimeException {
+		MatrixCharacteristics mc = getMatrixCharacteristics();
+		MatrixBlock mb = SparkExecutionContext.toMatrixBlock(binaryBlocks, (int) mc.getRows(), (int) mc.getCols(), 
+				mc.getRowsPerBlock(), mc.getColsPerBlock(), mc.getNonZeros());
+		return mb;
 	}
 
 	/**

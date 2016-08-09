@@ -91,6 +91,9 @@ public class JCudaObject extends GPUObject {
 				throw new CacheException(e);
 			}
 		}
+		else {
+			throw new CacheException("Cannot perform acquireHostRead as the GPU data is not allocated:" + mat.getVarName());
+		}
 	}
 	
 	@Override
@@ -108,11 +111,35 @@ public class JCudaObject extends GPUObject {
 		}
 	}
 	
-	public void release(boolean isGPUCopyModified) throws CacheException {
+	private void updateReleaseLocks() throws CacheException {
 		if(numLocks.addAndGet(-1) < 0) {
-			throw new CacheException("Redundant release of GPU object");
+            throw new CacheException("Redundant release of GPU object");
 		}
-		isDeviceCopyModified = isGPUCopyModified;
+		if(evictionPolicy == EvictionPolicy.LRU) {
+            timestamp.set(System.nanoTime());
+		}
+		else if(evictionPolicy == EvictionPolicy.LFU) {
+            timestamp.addAndGet(1);
+		}
+		else if(evictionPolicy == EvictionPolicy.MIN_EVICT) {
+            // Do Nothing
+		}
+		else {
+            throw new CacheException("The eviction policy is not supported:" + evictionPolicy.name());
+		}
+	}
+	
+	public void releaseInput() throws CacheException {
+		updateReleaseLocks();
+		if(!isAllocated)
+			throw new CacheException("Attempting to release an output before allocating it");
+	}
+	
+	public void releaseOutput() throws CacheException {
+		updateReleaseLocks();
+		isDeviceCopyModified = true;
+		if(!isAllocated)
+			throw new CacheException("Attempting to release an output before allocating it");
 	}
 
 	@Override
@@ -214,7 +241,7 @@ public class JCudaObject extends GPUObject {
 				double [] data = tmp.getDenseBlock();
 				
 				cudaMemcpy(Pointer.to(data), jcudaPointer, data.length * Sizeof.DOUBLE, cudaMemcpyDeviceToHost);
-				
+
 				tmp.recomputeNonZeros();
 				mat.acquireModify(tmp);
 				mat.release();

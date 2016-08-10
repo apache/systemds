@@ -86,6 +86,13 @@ public class TransposeSelfMatrixMultiplication extends AutomatedTestBase
         @Test
         public void testTransposeMMDenseDenseCP1()
         {
+        		/**
+        		 * test case to test the pattern X %*% t(X) and t(X) %*% X 
+        		 * @param1	isSparse
+        		 * @param2	ExecType
+        		 * @param3	isVector
+        		 * @param4	isLeftTransposed	for A %*% A', it's false; for A' %*% A, it's true
+        		 */
                 runTransposeSelfMatrixMultiplication(false, ExecType.CP, false, true);
         }
 

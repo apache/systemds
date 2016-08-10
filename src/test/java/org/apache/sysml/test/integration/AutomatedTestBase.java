@@ -94,7 +94,7 @@ public abstract class AutomatedTestBase
 	public static final boolean EXCEPTION_NOT_EXPECTED = false;
 	
 	// By default: TEST_GPU is set to false to allow developers without Nvidia GPU to run integration test suite 
-	public static final boolean TEST_GPU = true;
+	public static final boolean TEST_GPU = false;
 	
 	protected ScriptType scriptType;
 	

@@ -71,10 +71,9 @@ public abstract class GPUObject
 	
 	
 	/**
-	 * It finds matrix toBeRemoved such that toBeRemoved.GPUSize >= size
-	 * // TODO: it is the smallest matrix size that satisfy the above condition. For now just evicting the largest pointer.
-	 * Then returns toBeRemoved. 
-	 * 
+	 * It finds matrix toBeRemoved such that toBeRemoved.GPUSize is the smallest one whose size is greater than the eviction size
+	 * // TODO: update it with hybrid policy
+	 * @return toBeRemoved
 	 */
 	protected void evict(final long GPUSize) throws DMLRuntimeException {
         if(GPUContext.allocatedPointers.size() == 0) {

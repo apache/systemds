@@ -111,6 +111,10 @@ public class JCudaObject extends GPUObject {
 		}
 	}
 	
+	/**
+	 * updates the locks depending on the eviction policy selected
+	 * @throws CacheException if there is no locked GPU Object
+	 */
 	private void updateReleaseLocks() throws CacheException {
 		if(numLocks.addAndGet(-1) < 0) {
             throw new CacheException("Redundant release of GPU object");
@@ -129,12 +133,20 @@ public class JCudaObject extends GPUObject {
 		}
 	}
 	
+	/**
+	 * releases input allocated on GPU
+	 * @throws CacheException if data is not allocated
+	 */
 	public void releaseInput() throws CacheException {
 		updateReleaseLocks();
 		if(!isAllocated)
-			throw new CacheException("Attempting to release an output before allocating it");
+			throw new CacheException("Attempting to release an input before allocating it");
 	}
 	
+	/**
+	 * releases output allocated on GPU
+	 * @throws CacheException if data is not allocated
+	 */
 	public void releaseOutput() throws CacheException {
 		updateReleaseLocks();
 		isDeviceCopyModified = true;

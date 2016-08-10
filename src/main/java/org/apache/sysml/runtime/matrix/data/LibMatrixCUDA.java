@@ -185,6 +185,16 @@ public class LibMatrixCUDA {
 		return filterDesc;
 	}
 	
+	/**
+	 * allocates pooling descriptor, used in poolingForward and poolingBackward
+	 * @param R			pooling window height
+	 * @param S			pooling window width
+	 * @param pad_h		vertical padding
+	 * @param pad_w		horizontal padding
+	 * @param stride_h	pooling vertical stride
+	 * @param stride_w	pooling horizontal stride
+	 * @return
+	 */
 	private static cudnnPoolingDescriptor allocatePoolingDescriptor(int R, int S, int pad_h, int pad_w, int stride_h, int stride_w) {
 		cudnnPoolingDescriptor poolingDesc = new cudnnPoolingDescriptor();
 		cudnnCreatePoolingDescriptor(poolingDesc);
@@ -257,6 +267,13 @@ public class LibMatrixCUDA {
 		
 	}
 
+	/**
+	 * Performs tsmm, A %*% A' or A' %*% A, on GPU by exploiting cublasDsyrk(...)
+	 * @param left	input matrix, as in a tsmm expression like A %*% A' or A' %*% A, we just need to check whether the left one is transposed or not, I named it 'left'
+	 * @param output
+	 * @param isLeftTransposed
+	 * @throws DMLRuntimeException
+	 */
 	public static void matmultTSMM(MatrixObject left, MatrixObject output,
             boolean isLeftTransposed) throws DMLRuntimeException {
 	    if(isInSparseFormat(left)) {
@@ -401,6 +418,25 @@ public class LibMatrixCUDA {
 		}
 	}
 	
+	/**
+	 * performs maxpooling on GPU by exploiting cudnnPoolingForward(...)
+	 * @param image
+	 * @param outputBlock
+	 * @param N				batch size
+	 * @param C				number of channels
+	 * @param H				height of image
+	 * @param W				width of image
+	 * @param K				number of filters
+	 * @param R				height of filter
+	 * @param S				width of filter
+	 * @param pad_h			vertical padding
+	 * @param pad_w			horizontal padding
+	 * @param stride_h		horizontal stride
+	 * @param stride_w		vertical stride
+	 * @param P				(H - R + 1 + 2*pad_h)/stride_h
+	 * @param Q				(W - S + 1 + 2*pad_w)/stride_w
+	 * @throws DMLRuntimeException
+	 */
 	public static void maxpooling(MatrixObject image,
 			MatrixObject outputBlock, int N, int C, int H, int W, int K, int R,
 			int S, int pad_h, int pad_w, int stride_h, int stride_w, int P,
@@ -444,6 +480,26 @@ public class LibMatrixCUDA {
 		}
 	}
 	
+	/**
+	 * performs maxpoolingBackward on GPU by exploiting cudnnPoolingBackward(...)
+	 * @param image
+	 * @param dout			delta matrix, output of previous layer
+	 * @param outputBlock
+	 * @param N				batch size
+	 * @param C				number of channels
+	 * @param H				height of image
+	 * @param W				width of image
+	 * @param K				number of filters
+	 * @param R				height of filter
+	 * @param S				width of filter
+	 * @param pad_h			vertical padding
+	 * @param pad_w			horizontal padding
+	 * @param stride_h		horizontal stride
+	 * @param stride_w		vertical stride
+	 * @param P				(H - R + 1 + 2*pad_h)/stride_h
+	 * @param Q				(W - S + 1 + 2*pad_w)/stride_w
+	 * @throws DMLRuntimeException
+	 */
 	public static void maxpooling_backward(MatrixObject image, MatrixObject dout,
 			MatrixObject outputBlock, int N, int C, int H, int W, int K, int R,
 			int S, int pad_h, int pad_w, int stride_h, int stride_w, int P,

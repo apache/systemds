@@ -192,6 +192,7 @@ public class ConvolutionUtils {
 	public static Lop constructConvolutionBackwardDataLops(Hop currentHop, ExecType et) throws HopsException, LopsException {
 		return null; // Until we add CP conv2d_backward_data
 		
+		//TODO: uncomment the following after CP conv2d_backward_data is added
 //		if(DMLScript.USE_ACCELERATOR)
 //			et = ExecType.GPU; // TODO: Add memory estimate checks
 //		else

@@ -19,6 +19,13 @@
 
 package org.apache.sysml.runtime.instructions.gpu;
 
+/*
+ * Parses and processes the MMTSJ GPU Instruction
+ * @function	GPUInstruction(...)
+ * @function	parseInstruction(...)
+ * @function	processInstruction(...)
+ * @function	getMMTSJType(...)
+ */
 import org.apache.sysml.lops.MMTSJ.MMTSJType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
@@ -37,6 +44,14 @@ public class MMTSJGPUInstruction extends GPUInstruction
         CPOperand _input;
         CPOperand _output;
 
+        /**
+         * @param op	operator
+         * @param in1	input
+         * @param type	left/right, left-> A' %*% A, right-> A %*% A'
+         * @param out	output
+         * @param opcode
+         * @param istr
+         */
         public MMTSJGPUInstruction(Operator op, CPOperand in1, MMTSJType type, CPOperand out,  String opcode, String istr)
         {
                 super(op, opcode, istr);
@@ -47,6 +62,7 @@ public class MMTSJGPUInstruction extends GPUInstruction
         }
 
         /**
+         * parse MMTSJ GPU instruction
          * @param str
          * @return
          * @throws DMLRuntimeException
@@ -68,6 +84,11 @@ public class MMTSJGPUInstruction extends GPUInstruction
                         return new MMTSJGPUInstruction(new Operator(true), in1, titype, out, opcode, str);
         }
 
+        /**
+         * process MMTSJ GPU instruction 
+         * @param ec	execution context
+         * @throws DMLRuntimeException
+         */
         @Override
         public void processInstruction(ExecutionContext ec)
                 throws DMLRuntimeException
@@ -91,6 +112,10 @@ public class MMTSJGPUInstruction extends GPUInstruction
                 ec.releaseMatrixOutputForGPUInstruction(_output.getName());
         }
 
+        /**
+         * returns left/right depending on the type of MMTSJ instruction
+         * @return _type
+         */
         public MMTSJType getMMTSJType()
         {
                 return _type;

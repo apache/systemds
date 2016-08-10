@@ -1001,12 +1001,12 @@ public class MLContextTest extends AutomatedTestBase {
 		DataFrame dataFrame = results.getDataFrame("M");
 		List<Row> list = dataFrame.collectAsList();
 		Row row1 = list.get(0);
-		Assert.assertEquals(0.0, row1.getDouble(0), 0.0);
+		Assert.assertEquals(1.0, row1.getDouble(0), 0.0);
 		Assert.assertEquals(1.0, row1.getDouble(1), 0.0);
 		Assert.assertEquals(2.0, row1.getDouble(2), 0.0);
 
 		Row row2 = list.get(1);
-		Assert.assertEquals(1.0, row2.getDouble(0), 0.0);
+		Assert.assertEquals(2.0, row2.getDouble(0), 0.0);
 		Assert.assertEquals(3.0, row2.getDouble(1), 0.0);
 		Assert.assertEquals(4.0, row2.getDouble(2), 0.0);
 	}
@@ -1021,12 +1021,12 @@ public class MLContextTest extends AutomatedTestBase {
 		DataFrame dataFrame = results.getDataFrame("M");
 		List<Row> list = dataFrame.collectAsList();
 		Row row1 = list.get(0);
-		Assert.assertEquals(0.0, row1.getDouble(0), 0.0);
+		Assert.assertEquals(1.0, row1.getDouble(0), 0.0);
 		Assert.assertEquals(1.0, row1.getDouble(1), 0.0);
 		Assert.assertEquals(2.0, row1.getDouble(2), 0.0);
 
 		Row row2 = list.get(1);
-		Assert.assertEquals(1.0, row2.getDouble(0), 0.0);
+		Assert.assertEquals(2.0, row2.getDouble(0), 0.0);
 		Assert.assertEquals(3.0, row2.getDouble(1), 0.0);
 		Assert.assertEquals(4.0, row2.getDouble(2), 0.0);
 	}

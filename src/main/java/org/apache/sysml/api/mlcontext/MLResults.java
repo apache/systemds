@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -92,7 +92,7 @@ public class MLResults {
 
 	/**
 	 * Obtain an output as a {@code Data} object.
-	 * 
+	 *
 	 * @param outputName
 	 *            the name of the output
 	 * @return the output as a {@code Data} object
@@ -108,7 +108,7 @@ public class MLResults {
 
 	/**
 	 * Obtain an output as a {@code MatrixObject}
-	 * 
+	 *
 	 * @param outputName
 	 *            the name of the output
 	 * @return the output as a {@code MatrixObject}
@@ -124,7 +124,7 @@ public class MLResults {
 
 	/**
 	 * Obtain an output as a two-dimensional {@code double} array.
-	 * 
+	 *
 	 * @param outputName
 	 *            the name of the output
 	 * @return the output as a two-dimensional {@code double} array
@@ -150,7 +150,7 @@ public class MLResults {
 	 * <br>2 1 3.0
 	 * <br>2 2 4.0
 	 * </code>
-	 * 
+	 *
 	 * @param outputName
 	 *            the name of the output
 	 * @return the output as a {@code JavaRDD<String>} in IJV format
@@ -174,7 +174,7 @@ public class MLResults {
 	 * <code>1.0,2.0
 	 * <br>3.0,4.0
 	 * </code>
-	 * 
+	 *
 	 * @param outputName
 	 *            the name of the output
 	 * @return the output as a {@code JavaRDD<String>} in CSV format
@@ -198,7 +198,7 @@ public class MLResults {
 	 * <code>1.0,2.0
 	 * <br>3.0,4.0
 	 * </code>
-	 * 
+	 *
 	 * @param outputName
 	 *            the name of the output
 	 * @return the output as a {@code RDD<String>} in CSV format
@@ -224,7 +224,7 @@ public class MLResults {
 	 * <br>2 1 3.0
 	 * <br>2 2 4.0
 	 * </code>
-	 * 
+	 *
 	 * @param outputName
 	 *            the name of the output
 	 * @return the output as a {@code RDD<String>} in IJV format
@@ -248,7 +248,7 @@ public class MLResults {
 	 * <code>[0.0,1.0,2.0]
 	 * <br>[1.0,3.0,4.0]
 	 * </code>
-	 * 
+	 *
 	 * @param outputName
 	 *            the name of the output
 	 * @return the output as a {@code DataFrame} of doubles
@@ -258,7 +258,7 @@ public class MLResults {
 		DataFrame df = MLContextConversionUtil.matrixObjectToDataFrame(mo, sparkExecutionContext, false);
 		return df;
 	}
-	
+
 	public DataFrame getDataFrame(String outputName, boolean isVectorDF) {
 		MatrixObject mo = getMatrixObject(outputName);
 		DataFrame df = MLContextConversionUtil.matrixObjectToDataFrame(mo, sparkExecutionContext, isVectorDF);
@@ -267,7 +267,7 @@ public class MLResults {
 
 	/**
 	 * Obtain an output as a {@code Matrix}.
-	 * 
+	 *
 	 * @param outputName
 	 *            the name of the output
 	 * @return the output as a {@code Matrix}
@@ -277,11 +277,11 @@ public class MLResults {
 		Matrix matrix = new Matrix(mo, sparkExecutionContext);
 		return matrix;
 	}
-	
+
 
 	/**
 	 * Obtain an output as a {@code BinaryBlockMatrix}.
-	 * 
+	 *
 	 * @param outputName
 	 *            the name of the output
 	 * @return the output as a {@code BinaryBlockMatrix}
@@ -295,7 +295,7 @@ public class MLResults {
 
 	/**
 	 * Obtain an output as a two-dimensional {@code String} array.
-	 * 
+	 *
 	 * @param outputName
 	 *            the name of the output
 	 * @return the output as a two-dimensional {@code String} array
@@ -320,7 +320,7 @@ public class MLResults {
 
 	/**
 	 * Obtain a {@code double} output
-	 * 
+	 *
 	 * @param outputName
 	 *            the name of the output
 	 * @return the output as a {@code double}
@@ -330,9 +330,19 @@ public class MLResults {
 		return so.getDoubleValue();
 	}
 
+	public Object get(String outputName) {
+		Data data = getData(outputName);
+	  if (data instanceof ScalarObject) {
+	  	ScalarObject so = (ScalarObject) data;
+	    	return so.getValue();
+	  } else {
+	      return data;
+	  }
+	}
+
 	/**
 	 * Obtain an output as a {@code Scalar} object.
-	 * 
+	 *
 	 * @param outputName
 	 *            the name of the output
 	 * @return the output as a {@code Scalar} object
@@ -348,7 +358,7 @@ public class MLResults {
 
 	/**
 	 * Obtain a {@code boolean} output
-	 * 
+	 *
 	 * @param outputName
 	 *            the name of the output
 	 * @return the output as a {@code boolean}
@@ -360,7 +370,7 @@ public class MLResults {
 
 	/**
 	 * Obtain a {@code long} output
-	 * 
+	 *
 	 * @param outputName
 	 *            the name of the output
 	 * @return the output as a {@code long}
@@ -372,7 +382,7 @@ public class MLResults {
 
 	/**
 	 * Obtain a {@code String} output
-	 * 
+	 *
 	 * @param outputName
 	 *            the name of the output
 	 * @return the output as a {@code String}
@@ -384,7 +394,7 @@ public class MLResults {
 
 	/**
 	 * Obtain the Script object associated with these results.
-	 * 
+	 *
 	 * @return the DML or PYDML Script object
 	 */
 	public Script getScript() {
@@ -393,7 +403,7 @@ public class MLResults {
 
 	/**
 	 * Obtain a Scala tuple.
-	 * 
+	 *
 	 * @param outputName1
 	 *            the name of the first output
 	 * @return a Scala tuple
@@ -405,7 +415,7 @@ public class MLResults {
 
 	/**
 	 * Obtain a Scala tuple.
-	 * 
+	 *
 	 * @param outputName1
 	 *            the name of the first output
 	 * @param outputName2
@@ -419,7 +429,7 @@ public class MLResults {
 
 	/**
 	 * Obtain a Scala tuple.
-	 * 
+	 *
 	 * @param outputName1
 	 *            the name of the first output
 	 * @param outputName2
@@ -436,7 +446,7 @@ public class MLResults {
 
 	/**
 	 * Obtain a Scala tuple.
-	 * 
+	 *
 	 * @param outputName1
 	 *            the name of the first output
 	 * @param outputName2
@@ -456,7 +466,7 @@ public class MLResults {
 
 	/**
 	 * Obtain a Scala tuple.
-	 * 
+	 *
 	 * @param outputName1
 	 *            the name of the first output
 	 * @param outputName2
@@ -478,7 +488,7 @@ public class MLResults {
 
 	/**
 	 * Obtain a Scala tuple.
-	 * 
+	 *
 	 * @param outputName1
 	 *            the name of the first output
 	 * @param outputName2
@@ -503,7 +513,7 @@ public class MLResults {
 
 	/**
 	 * Obtain a Scala tuple.
-	 * 
+	 *
 	 * @param outputName1
 	 *            the name of the first output
 	 * @param outputName2
@@ -531,7 +541,7 @@ public class MLResults {
 
 	/**
 	 * Obtain a Scala tuple.
-	 * 
+	 *
 	 * @param outputName1
 	 *            the name of the first output
 	 * @param outputName2
@@ -561,7 +571,7 @@ public class MLResults {
 
 	/**
 	 * Obtain a Scala tuple.
-	 * 
+	 *
 	 * @param outputName1
 	 *            the name of the first output
 	 * @param outputName2
@@ -594,7 +604,7 @@ public class MLResults {
 
 	/**
 	 * Obtain a Scala tuple.
-	 * 
+	 *
 	 * @param outputName1
 	 *            the name of the first output
 	 * @param outputName2
@@ -629,7 +639,7 @@ public class MLResults {
 
 	/**
 	 * Obtain a Scala tuple.
-	 * 
+	 *
 	 * @param outputName1
 	 *            the name of the first output
 	 * @param outputName2
@@ -668,7 +678,7 @@ public class MLResults {
 
 	/**
 	 * Obtain a Scala tuple.
-	 * 
+	 *
 	 * @param outputName1
 	 *            the name of the first output
 	 * @param outputName2
@@ -709,7 +719,7 @@ public class MLResults {
 
 	/**
 	 * Obtain a Scala tuple.
-	 * 
+	 *
 	 * @param outputName1
 	 *            the name of the first output
 	 * @param outputName2
@@ -752,7 +762,7 @@ public class MLResults {
 
 	/**
 	 * Obtain a Scala tuple.
-	 * 
+	 *
 	 * @param outputName1
 	 *            the name of the first output
 	 * @param outputName2
@@ -798,7 +808,7 @@ public class MLResults {
 
 	/**
 	 * Obtain a Scala tuple.
-	 * 
+	 *
 	 * @param outputName1
 	 *            the name of the first output
 	 * @param outputName2
@@ -846,7 +856,7 @@ public class MLResults {
 
 	/**
 	 * Obtain a Scala tuple.
-	 * 
+	 *
 	 * @param outputName1
 	 *            the name of the first output
 	 * @param outputName2
@@ -898,7 +908,7 @@ public class MLResults {
 
 	/**
 	 * Obtain a Scala tuple.
-	 * 
+	 *
 	 * @param outputName1
 	 *            the name of the first output
 	 * @param outputName2
@@ -952,7 +962,7 @@ public class MLResults {
 
 	/**
 	 * Obtain a Scala tuple.
-	 * 
+	 *
 	 * @param outputName1
 	 *            the name of the first output
 	 * @param outputName2
@@ -1008,7 +1018,7 @@ public class MLResults {
 
 	/**
 	 * Obtain a Scala tuple.
-	 * 
+	 *
 	 * @param outputName1
 	 *            the name of the first output
 	 * @param outputName2
@@ -1067,7 +1077,7 @@ public class MLResults {
 
 	/**
 	 * Obtain a Scala tuple.
-	 * 
+	 *
 	 * @param outputName1
 	 *            the name of the first output
 	 * @param outputName2
@@ -1128,7 +1138,7 @@ public class MLResults {
 
 	/**
 	 * Obtain a Scala tuple.
-	 * 
+	 *
 	 * @param outputName1
 	 *            the name of the first output
 	 * @param outputName2
@@ -1192,7 +1202,7 @@ public class MLResults {
 
 	/**
 	 * Obtain a Scala tuple.
-	 * 
+	 *
 	 * @param outputName1
 	 *            the name of the first output
 	 * @param outputName2
@@ -1262,7 +1272,7 @@ public class MLResults {
 	 * specific output type. MLResults tuple support requires specifying the
 	 * object types at runtime to avoid the items in the tuple being returned as
 	 * Anys.
-	 * 
+	 *
 	 * @param outputName
 	 *            the name of the output
 	 * @return the output value cast to a specific output type
@@ -1289,7 +1299,7 @@ public class MLResults {
 	/**
 	 * Obtain the symbol table, which is essentially a {@code Map<String, Data>}
 	 * representing variables and their values as SystemML representations.
-	 * 
+	 *
 	 * @return the symbol table
 	 */
 	public LocalVariableMap getSymbolTable() {

@@ -295,7 +295,7 @@ public abstract class ColGroupBitmap extends ColGroup
 	 * @param bitmapIx
 	 * @return
 	 */
-	protected double sumValues(int bitmapIx)
+	protected final double sumValues(int bitmapIx)
 	{
 		final int numCols = getNumCols();
 		final int valOff = bitmapIx * numCols;
@@ -308,7 +308,7 @@ public abstract class ColGroupBitmap extends ColGroup
 		return val;
 	}
 	
-	protected double sumValues(int bitmapIx, double[] b)
+	protected final double sumValues(int bitmapIx, double[] b)
 	{
 		final int numCols = getNumCols();
 		final int valOff = bitmapIx * numCols;
@@ -326,7 +326,7 @@ public abstract class ColGroupBitmap extends ColGroup
 	 * @param b
 	 * @param c
 	 */
-	protected void sumAllValues(double[] b, double[] c)
+	protected final void sumAllValues(double[] b, double[] c)
 	{
 		final int numVals = getNumValues();
 		final int numCols = getNumCols();
@@ -337,6 +337,21 @@ public abstract class ColGroupBitmap extends ColGroup
 			LinearAlgebraUtils.vectMultiplyAdd(b[i], _values, c, off, 0, numVals);
 	}
 
+
+	/**
+	 * 
+	 * @param numVals
+	 * @param sb
+	 * @return
+	 */
+	protected final double[] preaggValues(int numVals, double[] b) {
+		double[] ret = new double[numVals];
+		for( int k = 0; k < numVals; k++ )
+			ret[k] = sumValues(k, b);
+		
+		return ret;
+	}
+	
 	/**
 	 * Method for use by subclasses. Applies a scalar operation to the value
 	 * metadata stored in the superclass.

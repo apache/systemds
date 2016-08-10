@@ -65,9 +65,9 @@ public class ColGroupRLE extends ColGroupBitmap
 		final int numVals = ubm.getNumValues();
 		char[][] lbitmaps = new char[numVals][];
 		int totalLen = 0;
-		for( int i=0; i<numVals; i++ ) {
-			lbitmaps[i] = BitmapEncoder.genRLEBitmap(ubm.getOffsetsList(i));
-			totalLen += lbitmaps[i].length;
+		for( int k=0; k<numVals; k++ ) {
+			lbitmaps[k] = BitmapEncoder.genRLEBitmap(ubm.getOffsetsList(k));
+			totalLen += lbitmaps[k].length;
 		}
 		
 		// compact bitmaps to linearized representation
@@ -106,20 +106,20 @@ public class ColGroupRLE extends ColGroupBitmap
 			for( int bi=0; bi<n; bi+=blksz ) {
 				int bimax = Math.min(bi+blksz, n);					
 				for (int k=0, off=0; k < numVals; k++, off+=numCols) {
-					int bitmapOff = _ptr[k];
-					int bitmapLen = len(k);
-					int bufIx = apos[k];
+					int boff = _ptr[k];
+					int blen = len(k);
+					int bix = apos[k];
 					int start = astart[k];
-					for( ; bufIx<bitmapLen & start<bimax; bufIx+=2) {
-						start += _data[bitmapOff + bufIx];
-						int len = _data[bitmapOff + bufIx+1];
+					for( ; bix<blen & start<bimax; bix+=2) {
+						start += _data[boff + bix];
+						int len = _data[boff + bix+1];
 						for( int i=start; i<start+len; i++ )
 							for( int j=0; j<numCols; j++ )
 								if( _values[off+j]!=0 )
 									target.appendValue(i, _colIndexes[j], _values[off+j]);
 						start += len;
 					}
-					apos[k] = bufIx;	
+					apos[k] = bix;	
 					astart[k] = start;
 				}
 			}
@@ -154,22 +154,22 @@ public class ColGroupRLE extends ColGroupBitmap
 			for( int bi=0; bi<n; bi+=blksz ) {
 				int bimax = Math.min(bi+blksz, n);					
 				for (int k=0, off=0; k < numVals; k++, off+=numCols) {
-					int bitmapOff = _ptr[k];
-					int bitmapLen = len(k);
-					int bufIx = apos[k];
-					if( bufIx >= bitmapLen ) 
+					int boff = _ptr[k];
+					int blen = len(k);
+					int bix = apos[k];
+					if( bix >= blen ) 
 						continue;
 					int start = astart[k];
-					for( ; bufIx<bitmapLen & start<bimax; bufIx+=2) {
-						start += _data[bitmapOff + bufIx];
-						int len = _data[bitmapOff + bufIx+1];
+					for( ; bix<blen & start<bimax; bix+=2) {
+						start += _data[boff + bix];
+						int len = _data[boff + bix+1];
 						for( int i=start; i<start+len; i++ )
 							for( int j=0; j<numCols; j++ )
 								if( _values[off+j]!=0 )
 									target.appendValue(i, cix[j], _values[off+j]);
 						start += len;
 					}
-					apos[k] = bufIx;	
+					apos[k] = bix;	
 					astart[k] = start;
 				}
 			}
@@ -200,20 +200,20 @@ public class ColGroupRLE extends ColGroupBitmap
 			for( int bi=0; bi<n; bi+=blksz ) {
 				int bimax = Math.min(bi+blksz, n);					
 				for (int k=0, off=0; k < numVals; k++, off+=numCols) {
-					int bitmapOff = _ptr[k];
-					int bitmapLen = len(k);
-					int bufIx = apos[k];
-					if( bufIx >= bitmapLen ) 
+					int boff = _ptr[k];
+					int blen = len(k);
+					int bix = apos[k];
+					if( bix >= blen ) 
 						continue;
 					int start = astart[k];
-					for( ; bufIx<bitmapLen & start<bimax; bufIx+=2) {
-						start += _data[bitmapOff + bufIx];
-						int len = _data[bitmapOff + bufIx+1];
+					for( ; bix<blen & start<bimax; bix+=2) {
+						start += _data[boff + bix];
+						int len = _data[boff + bix+1];
 						for( int i=start; i<start+len; i++ )
 							c[i] = _values[off+colpos];
 						start += len;
 					}
-					apos[k] = bufIx;	
+					apos[k] = bix;	
 					astart[k] = start;
 				}
 			}
@@ -253,34 +253,10 @@ public class ColGroupRLE extends ColGroupBitmap
 			//step 1: prepare position and value arrays
 			
 			//current pos / values per RLE list
-			int[] apos = new int[numVals];
 			int[] astart = new int[numVals];
-			double[] aval = new double[numVals];
+			int[] apos = skipScan(numVals, rl, astart);
+			double[] aval = preaggValues(numVals, sb);
 			
-			//skip-scan to beginning for all OLs 
-			if( rl > 0 ) { //rl aligned with blksz	
-				for (int k = 0; k < numVals; k++) {
-					int boff = _ptr[k];
-					int blen = len(k);
-					int bix = 0;
-					int start = 0;
-					while( bix<blen ) {	
-						int lstart = _data[boff + bix]; //start
-						int llen = _data[boff + bix + 1]; //len
-						if( start+lstart+llen >= rl )
-							break;
-						start += lstart + llen;
-						bix += 2;
-					}
-					apos[k] = bix;
-					astart[k] = start;
-				}
-			}
-			
-			//pre-aggregate values per OLs
-			for( int k = 0; k < numVals; k++ )
-				aval[k] = sumValues(k, sb);
-					
 			//step 2: cache conscious matrix-vector via horizontal scans 
 			for( int bi=rl; bi<ru; bi+=blksz ) 
 			{
@@ -376,21 +352,21 @@ public class ColGroupRLE extends ColGroupBitmap
 				
 				//horizontal scan, incl pos maintenance
 				for (int k = 0; k < numVals; k++) {
-					int bitmapOff = _ptr[k];
-					int bitmapLen = len(k);						
-					int bufIx = apos[k];
+					int boff = _ptr[k];
+					int blen = len(k);						
+					int bix = apos[k];
 					int start = astart[k];
 					
 					//compute partial results, not aligned
-					while( bufIx<bitmapLen & start<aimax ) {
-						start += _data[bitmapOff + bufIx];
-						int len = _data[bitmapOff + bufIx+1];
+					while( bix<blen & start<aimax ) {
+						start += _data[boff + bix];
+						int len = _data[boff + bix+1];
 						cvals[k] += LinearAlgebraUtils.vectSum(a, start, len);
 						start += len;
-						bufIx += 2;
+						bix += 2;
 					}
 					
-					apos[k] = bufIx;	
+					apos[k] = bix;	
 					astart[k] = start;
 				}
 			}
@@ -404,16 +380,16 @@ public class ColGroupRLE extends ColGroupBitmap
 		else
 		{
 			//iterate over all values and their bitmaps
-			for (int bitmapIx=0, valOff=0; bitmapIx<numVals; bitmapIx++, valOff+=numCols) 
+			for (int k=0, valOff=0; k<numVals; k++, valOff+=numCols) 
 			{	
-				int bitmapOff = _ptr[bitmapIx];
-				int bitmapLen = len(bitmapIx);
+				int boff = _ptr[k];
+				int blen = len(k);
 				
 				double vsum = 0;
 				int curRunEnd = 0;
-				for (int bufIx = 0; bufIx < bitmapLen; bufIx += 2) {
-					int curRunStartOff = curRunEnd + _data[bitmapOff+bufIx];
-					int curRunLen = _data[bitmapOff+bufIx + 1];
+				for ( int bix = 0; bix < blen; bix+=2 ) {
+					int curRunStartOff = curRunEnd + _data[boff+bix];
+					int curRunLen = _data[boff+bix+1];
 					vsum += LinearAlgebraUtils.vectSum(a, curRunStartOff, curRunLen);
 					curRunEnd = curRunStartOff + curRunLen;
 				}
@@ -484,15 +460,15 @@ public class ColGroupRLE extends ColGroupBitmap
 		final int numCols = getNumCols();
 		final int numVals = getNumValues();
 		
-		for (int bitmapIx = 0; bitmapIx < numVals; bitmapIx++) {
-			int bitmapOff = _ptr[bitmapIx];
-			int bitmapLen = len(bitmapIx);
-			int valOff = bitmapIx * numCols;
+		for (int k = 0; k < numVals; k++) {
+			int boff = _ptr[k];
+			int blen = len(k);
+			int valOff = k * numCols;
 			int curRunEnd = 0;
 			int count = 0;
-			for (int bufIx = 0; bufIx < bitmapLen; bufIx += 2) {
-				int curRunStartOff = curRunEnd + _data[bitmapOff+bufIx];
-				curRunEnd = curRunStartOff + _data[bitmapOff+bufIx + 1];
+			for (int bix = 0; bix < blen; bix+=2) {
+				int curRunStartOff = curRunEnd + _data[boff+bix];
+				curRunEnd = curRunStartOff + _data[boff+bix+1];
 				count += curRunEnd-curRunStartOff;
 			}
 			
@@ -514,17 +490,17 @@ public class ColGroupRLE extends ColGroupBitmap
 		KahanObject kbuff = new KahanObject(0, 0);
 		final int numVals = getNumValues();
 		
-		for (int bitmapIx = 0; bitmapIx < numVals; bitmapIx++) {
-			int bitmapOff = _ptr[bitmapIx];
-			int bitmapLen = len(bitmapIx);
-			double val = sumValues(bitmapIx);
+		for (int k = 0; k < numVals; k++) {
+			int boff = _ptr[k];
+			int blen = len(k);
+			double val = sumValues(k);
 					
 			if (val != 0.0) {
 				int curRunStartOff = 0;
 				int curRunEnd = 0;
-				for (int bufIx = 0; bufIx < bitmapLen; bufIx += 2) {
-					curRunStartOff = curRunEnd + _data[bitmapOff+bufIx];
-					curRunEnd = curRunStartOff + _data[bitmapOff+bufIx + 1];
+				for (int bix = 0; bix < blen; bix+=2) {
+					curRunStartOff = curRunEnd + _data[boff+bix];
+					curRunEnd = curRunStartOff + _data[boff+bix+1];
 					for (int rix = curRunStartOff; rix < curRunEnd; rix++) {
 						kbuff.set(result.quickGetValue(rix, 0), result.quickGetValue(rix, 1));
 						kplus.execute2(kbuff, val);
@@ -547,15 +523,15 @@ public class ColGroupRLE extends ColGroupBitmap
 		final int numCols = getNumCols();
 		final int numVals = getNumValues();
 		
-		for (int bitmapIx = 0; bitmapIx < numVals; bitmapIx++) {
-			int bitmapOff = _ptr[bitmapIx];
-			int bitmapLen = len(bitmapIx);
-			int valOff = bitmapIx * numCols;
+		for (int k = 0; k < numVals; k++) {
+			int boff = _ptr[k];
+			int blen = len(k);
+			int valOff = k * numCols;
 			int curRunEnd = 0;
 			int count = 0;
-			for (int bufIx = 0; bufIx < bitmapLen; bufIx += 2) {
-				int curRunStartOff = curRunEnd + _data[bitmapOff+bufIx];
-				curRunEnd = curRunStartOff + _data[bitmapOff+bufIx + 1];
+			for (int bix=0; bix < blen; bix+=2) {
+				int curRunStartOff = curRunEnd + _data[boff+bix];
+				curRunEnd = curRunStartOff + _data[boff+bix+1];
 				count += curRunEnd-curRunStartOff;
 			}
 			
@@ -578,15 +554,15 @@ public class ColGroupRLE extends ColGroupBitmap
 		//initialize everything with zero
 		Arrays.fill(ret, true);
 		
-		for (int bitmapIx = 0; bitmapIx < numVals; bitmapIx++) {
-			int bitmapOff = _ptr[bitmapIx];
-			int bitmapLen = len(bitmapIx);
+		for (int k = 0; k < numVals; k++) {
+			int boff = _ptr[k];
+			int blen = len(k);
 			
 			int curRunStartOff = 0;
 			int curRunEnd = 0;
-			for (int bufIx = 0; bufIx < bitmapLen; bufIx += 2) {
-				curRunStartOff = curRunEnd + _data[bitmapOff+bufIx];
-				curRunEnd = curRunStartOff + _data[bitmapOff+bufIx + 1];
+			for (int bix = 0; bix < blen; bix+=2) {
+				curRunStartOff = curRunEnd + _data[boff+bix];
+				curRunEnd = curRunStartOff + _data[boff+bix + 1];
 				Arrays.fill(ret, curRunStartOff, curRunEnd, false);
 			}
 		}
@@ -601,17 +577,56 @@ public class ColGroupRLE extends ColGroupBitmap
 		final int numCols = getNumCols();
 		
 		for (int k = 0; k < numVals; k++) {
-			int bitmapOff = _ptr[k];
-			int bitmapLen = len(k);
+			int boff = _ptr[k];
+			int blen = len(k);
 			
 			int curRunStartOff = 0;
 			int curRunEnd = 0;
-			for (int bufIx = 0; bufIx < bitmapLen; bufIx += 2) {
-				curRunStartOff = curRunEnd + _data[bitmapOff+bufIx];
-				curRunEnd = curRunStartOff + _data[bitmapOff+bufIx + 1];
+			for (int bix = 0; bix < blen; bix+=2) {
+				curRunStartOff = curRunEnd + _data[boff+bix];
+				curRunEnd = curRunStartOff + _data[boff+bix + 1];
 				for( int i=curRunStartOff; i<curRunEnd; i++ )
 					rnnz[i] += numCols;
 			}
 		}
+	}
+	
+	/////////////////////////////////
+	// internal helper functions
+
+	
+	/**
+	 * Scans to given row_lower position by scanning run length 
+	 * fields. Returns array of positions for all values and modifies
+	 * given array of start positions for all values too. 
+	 * 
+	 * @param numVals
+	 * @param rl
+	 * @param astart
+	 * @return
+	 */
+	private int[] skipScan(int numVals, int rl, int[] astart) {
+		int[] apos = new int[numVals]; 
+		
+		if( rl > 0 ) { //rl aligned with blksz	
+			for (int k = 0; k < numVals; k++) {
+				int boff = _ptr[k];
+				int blen = len(k);
+				int bix = 0;
+				int start = 0;
+				while( bix<blen ) {	
+					int lstart = _data[boff + bix]; //start
+					int llen = _data[boff + bix + 1]; //len
+					if( start+lstart+llen >= rl )
+						break;
+					start += lstart + llen;
+					bix += 2;
+				}
+				apos[k] = bix;
+				astart[k] = start;
+			}
+		}
+		
+		return apos;
 	}
 }

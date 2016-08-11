@@ -68,6 +68,26 @@ img.logo {
   color: #555555;
 }
 
+.navbar .version {
+  color: #fff;
+  font-size: 12px;
+  font-weight: bold;
+  line-height: 20px;
+  margin: 0;
+  padding: 0 0 0 2px;
+  vertical-align: bottom;
+}
+
+.navbar .projecttitle {
+  margin-top: 10px;
+  height: 40px;
+  white-space: nowrap;
+}
+
+.navbar .projectlogo {
+  width: 75px;
+}
+
 /* Dropdown menu */
 .dropdown-menu {
   /* Remove the default 2px top margin which causes a small

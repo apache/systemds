@@ -26,9 +26,28 @@ limitations under the License.
 * This will become a table of contents (this text will be scraped).
 {:toc}
 
+
 # Release Candidate Build and Deployment
 
-To be written.
+To be written. (Describe how the release candidate is built, including checksums. Describe how
+the release candidate is deployed to servers for review.)
+
+
+## Release Documentation
+
+The `SYSTEMML_VERSION` value in docs/_config.yml should be updated to the correct release version. The documentation
+site should be built.
+The SystemML documentation site should be deployed to a docs version folder within the main website project (using
+svn). As an example, the documentation site for SystemML version 0.11.0 should be available
+at http://systemml.apache.org/docs/0.11.0.
+
+The Javadocs should be generated for the project and should be deployed to a docs version folder, such as
+http://systemml.apache.org/docs/0.11.0/api/java. Any other docs, such as Scaladocs if they are available, should
+be deployed to corresponding locations. Note that the version number specified in the Javadocs is determined by the project
+version number in the project pom.xml file.
+
+Additionally, the Javadocs should be deployed to http://systemml.apache.org/docs/latest/api/java
+if the Javadocs have not already been deployed to this location.
 
 
 # Release Candidate Checklist
@@ -276,3 +295,21 @@ For examples, see the [Spark MLContext Programming Guide](http://apache.github.i
 
 Verify that the performance suite located at scripts/perftest/ executes on Spark and Hadoop. Testing should
 include 80MB, 800MB, 8GB, and 80GB data sizes.
+
+
+# Voting
+
+Following a successful release candidate vote by SystemML PMC members on the SystemML mailing list, the release candidate
+is voted on by Incubator PMC members on the general incubator mailing list. If this vote succeeds, the release candidate
+has been approved.
+
+
+# Release
+
+
+## Release Deployment
+
+To be written. (What steps need to be done? How is the release deployed to the central maven repo? What updates need to
+happen to the main website, such as updating the Downloads page? Where do the release notes for the release go?)
+
+

@@ -21,6 +21,7 @@
 package org.apache.sysml.runtime.matrix.operators;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.functionobjects.Divide;
 import org.apache.sysml.runtime.functionobjects.GreaterThan;
 import org.apache.sysml.runtime.functionobjects.GreaterThanEquals;
 import org.apache.sysml.runtime.functionobjects.LessThan;
@@ -49,12 +50,10 @@ public class RightScalarOperator extends ScalarOperator
 		super.setConstant(cst);
 		
 		//enable conditionally sparse safe operations
-		if(    (fn instanceof GreaterThan && _constant>=0)
+		sparseSafe = (fn instanceof GreaterThan && _constant>=0)
 			|| (fn instanceof GreaterThanEquals && _constant>0)
 			|| (fn instanceof LessThan && _constant<=0)
-			|| (fn instanceof LessThanEquals && _constant<0))
-		{
-			sparseSafe = true;
-		}
+			|| (fn instanceof LessThanEquals && _constant<0)
+			|| (fn instanceof Divide && _constant!=0);
 	}
 }

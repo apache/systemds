@@ -229,7 +229,7 @@ public class LibMatrixAgg
 		throws DMLRuntimeException
 	{
 		//fall back to sequential version if necessary
-		if(    k <= 1 || (long)in.rlen*in.clen < PAR_NUMCELL_THRESHOLD || in.rlen <= k
+		if(    k <= 1 || (long)in.nonZeros < PAR_NUMCELL_THRESHOLD || in.rlen <= k/2
 			|| (!(uaop.indexFn instanceof ReduceCol) &&  out.clen*8*k > PAR_INTERMEDIATE_SIZE_THRESHOLD ) || 
 			!out.isThreadSafe()) {
 			aggregateUnaryMatrix(in, out, uaop);

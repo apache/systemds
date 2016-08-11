@@ -495,31 +495,29 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 		
 		//currently we support only sum over binary multiply but potentially 
 		//it can be generalized to any RC aggregate over two common binary operations
-		if( _direction == Direction.RowCol 
-			&& _op == AggOp.SUM ) 
+		if( OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES &&
+			_direction == Direction.RowCol && _op == AggOp.SUM ) 
 		{
 			Hop input1 = getInput().get(0);
-			if( input1 instanceof BinaryOp && ((BinaryOp)input1).getOp()==OpOp2.MULT )
+			if( input1.getParent().size() == 1 && //sum single consumer
+				input1 instanceof BinaryOp && ((BinaryOp)input1).getOp()==OpOp2.MULT )
 			{
 				Hop input11 = input1.getInput().get(0);
 				Hop input12 = input1.getInput().get(1);
 				
-				if( input11 instanceof BinaryOp && ((BinaryOp)input11).getOp()==OpOp2.MULT )
-				{
+				if( input11 instanceof BinaryOp && ((BinaryOp)input11).getOp()==OpOp2.MULT ) {
 					//ternary, arbitrary matrices but no mv/outer operations.
 					ret = HopRewriteUtils.isEqualSize(input11.getInput().get(0), input1)
 						&& HopRewriteUtils.isEqualSize(input11.getInput().get(1), input1)	
 						&& HopRewriteUtils.isEqualSize(input12, input1);
 				}
-				else if( input12 instanceof BinaryOp && ((BinaryOp)input12).getOp()==OpOp2.MULT )
-				{
+				else if( input12 instanceof BinaryOp && ((BinaryOp)input12).getOp()==OpOp2.MULT ) {
 					//ternary, arbitrary matrices but no mv/outer operations.
 					ret = HopRewriteUtils.isEqualSize(input12.getInput().get(0), input1)
 							&& HopRewriteUtils.isEqualSize(input12.getInput().get(1), input1)	
 							&& HopRewriteUtils.isEqualSize(input11, input1);
 				}
-				else
-				{
+				else {
 					//binary, arbitrary matrices but no mv/outer operations.
 					ret = HopRewriteUtils.isEqualSize(input11, input12);
 				}

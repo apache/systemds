@@ -109,6 +109,17 @@ public class ScriptFactory {
 	}
 
 	/**
+	 * Create a DML Script object based on a resource path.
+	 * 
+	 * @param resourcePath
+	 *            path to a resource on the classpath
+	 * @return DML Script object
+	 */
+	public static Script dmlFromResource(String resourcePath) {
+		return scriptFromResource(resourcePath, ScriptType.DML);
+	}
+
+	/**
 	 * Create a PYDML Script object based on a string path to a file.
 	 * 
 	 * @param scriptFilePath
@@ -174,6 +185,17 @@ public class ScriptFactory {
 	 */
 	public static Script pydmlFromUrl(URL scriptUrl) {
 		return scriptFromUrl(scriptUrl, ScriptType.PYDML);
+	}
+
+	/**
+	 * Create a PYDML Script object based on a resource path.
+	 * 
+	 * @param resourcePath
+	 *            path to a resource on the classpath
+	 * @return PYDML Script object
+	 */
+	public static Script pydmlFromResource(String resourcePath) {
+		return scriptFromResource(resourcePath, ScriptType.PYDML);
 	}
 
 	/**
@@ -260,6 +282,20 @@ public class ScriptFactory {
 	private static Script scriptFromUrl(URL scriptUrl, ScriptType scriptType) {
 		String scriptString = getScriptStringFromUrl(scriptUrl);
 		return scriptFromString(scriptString, scriptType).setName(scriptUrl.toString());
+	}
+
+	/**
+	 * Create a DML or PYDML Script object based on a resource path.
+	 * 
+	 * @param resourcePath
+	 *            path to a resource on the classpath
+	 * @param scriptType
+	 *            {@code ScriptType.DML} or {@code ScriptType.PYDML}
+	 * @return DML or PYDML Script object
+	 */
+	private static Script scriptFromResource(String resourcePath, ScriptType scriptType) {
+		InputStream inputStream = ScriptFactory.class.getResourceAsStream(resourcePath);
+		return scriptFromInputStream(inputStream, scriptType).setName(resourcePath);
 	}
 
 	/**

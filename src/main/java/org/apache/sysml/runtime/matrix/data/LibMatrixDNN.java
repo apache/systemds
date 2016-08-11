@@ -54,6 +54,14 @@ public class LibMatrixDNN {
 			non_zeroed_double_arr.put(arr.length, new SoftReference<double[]>(arr));
 		}
 	}
+	private static boolean warnedSingleThread = false;
+	private static void warnSingleThreaded() {
+		if(!warnedSingleThread) {
+			throw new RuntimeException("WARN: Single thread execution in LibMatrixDNN");
+			// LOG.warn("WARN: Single thread execution in LibMatrixDNN");
+			// warnedSingleThread = true;
+		}
+	}
 	public static double[] getReuseableData(long length) {
 		if(length >= NON_ZEROED_DOUBLE_ARR_THRESHOLD) {
 			// Explicit "new Integer" required here for HashMap.remove
@@ -89,19 +97,33 @@ public class LibMatrixDNN {
 	private static AtomicLong im2colDenseCount = new AtomicLong(0);
 	private static AtomicLong maxPoolBwdSparseCount = new AtomicLong(0);
 	private static AtomicLong maxPoolBwdDenseCount = new AtomicLong(0);
+	private static AtomicLong loopedConvMatMultTime = new AtomicLong(0);
+	private static AtomicLong loopedConvIm2ColTime = new AtomicLong(0);
+	private static AtomicLong loopedConvBwdMatMultTime = new AtomicLong(0);
+	private static AtomicLong loopedConvBwdIm2ColTime = new AtomicLong(0);
+	
 	public static void appendStatistics(StringBuilder sb) {
-		sb.append("LibMatrixDNN dense count (conv/bwdF/bwdD/im2col/maxBwd):\t" 
-				+ conv2dDenseCount.get() + "/"
-				+ conv2dBwdFilterDenseCount.get() + "/"
-				+ conv2dBwdDataDenseCount.get() + "/"
-				+ im2colDenseCount.get() + "/"
-				+ maxPoolBwdDenseCount.get() + ".\n");
-		sb.append("LibMatrixDNN sparse count (conv/bwdF/bwdD/im2col/maxBwd):\t" 
-				+ conv2dSparseCount.get() + "/"
-				+ conv2dBwdFilterSparseCount.get() + "/"
-				+ conv2dBwdDataSparseCount.get() + "/"
-				+ im2colSparseCount.get() + "/"
-				+ maxPoolBwdSparseCount.get() + ".\n");
+		if(DMLScript.STATISTICS && (conv2dDenseCount.get() != 0 || conv2dSparseCount.get() != 0)) {
+			sb.append("LibMatrixDNN dense count (conv/bwdF/bwdD/im2col/maxBwd):\t" 
+					+ conv2dDenseCount.get() + "/"
+					+ conv2dBwdFilterDenseCount.get() + "/"
+					+ conv2dBwdDataDenseCount.get() + "/"
+					+ im2colDenseCount.get() + "/"
+					+ maxPoolBwdDenseCount.get() + ".\n");
+			sb.append("LibMatrixDNN sparse count (conv/bwdF/bwdD/im2col/maxBwd):\t" 
+					+ conv2dSparseCount.get() + "/"
+					+ conv2dBwdFilterSparseCount.get() + "/"
+					+ conv2dBwdDataSparseCount.get() + "/"
+					+ im2colSparseCount.get() + "/"
+					+ maxPoolBwdSparseCount.get() + ".\n");
+			if(loopedConvMatMultTime.get() != 0 || loopedConvIm2ColTime.get() != 0) {
+				sb.append("LibMatrixDNN conv(im2col/matmult), bwdFil (im2col/matmult) time:\t" +
+						String.format("%.3f", loopedConvIm2ColTime.get()*1e-9) + "/" +
+						String.format("%.3f", loopedConvMatMultTime.get()*1e-9) + "/" + 
+						String.format("%.3f", loopedConvBwdIm2ColTime.get()*1e-9) + "/" +
+						String.format("%.3f", loopedConvBwdMatMultTime.get()*1e-9) + " sec.\n");
+			}
+		}
 	}
 	public static void resetStatistics() {
 		conv2dDenseCount.set(0);
@@ -115,6 +137,11 @@ public class LibMatrixDNN {
 		conv2dBwdDataSparseCount.set(0);
 		im2colSparseCount.set(0);
 		maxPoolBwdSparseCount.set(0);
+		
+		loopedConvIm2ColTime.set(0);
+		loopedConvMatMultTime.set(0);
+		loopedConvBwdMatMultTime.set(0);
+		loopedConvBwdIm2ColTime.set(0);
 	}
 	
 	public static class ConvolutionParameters {
@@ -228,6 +255,7 @@ public class LibMatrixDNN {
 		
 		int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
 		if(!ALLOW_MULTI_THREADED_OPS || constrainedNumThreads <= 1) {
+			warnSingleThreaded();
 			if(useMemoryLessConvolution) {
 				for (int c = 0; c < params.C; c++) {
 					for (int k = 0; k < params.K; k++) {
@@ -316,16 +344,24 @@ public class LibMatrixDNN {
 	private static MatrixBlock doLoopedIm2ColConv2dBwdFilter(int n, 
 			MatrixBlock im2ColOutBlock, MatrixBlock dout_reshaped, MatrixBlock partialRetBlock, ConvolutionParameters params) throws DMLRuntimeException {
 		long nnz = 0;
+		long t1 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		for (int c = 0; c < params.C; c++) {
 			nnz += doIm2colOverInputPath_NCHW(n, c, im2ColOutBlock, params);
 		}
+		long t2 = DMLScript.STATISTICS ? System.nanoTime() : 0 ;
 		im2ColOutBlock.setNonZeros(nnz);
 		
 		doRotate180(n, 0, params.input2, dout_reshaped.denseBlock, params, true);
 		dout_reshaped.recomputeNonZeros();
 		
 		MatrixBlock temp = new MatrixBlock(params.C*params.R*params.S, params.K, false);
+		long t3 = DMLScript.STATISTICS ? System.nanoTime() : 0 ;
 		LibMatrixMult.matrixMult(im2ColOutBlock, dout_reshaped, temp);
+		long t4 = DMLScript.STATISTICS ? System.nanoTime() : 0 ;
+		if(DMLScript.STATISTICS) {
+			loopedConvBwdMatMultTime.addAndGet(t4-t3);
+			loopedConvBwdIm2ColTime.addAndGet(t2-t1);
+		}
 		
 		elementWiseInPlaceTransposedAddition(partialRetBlock, temp);
 		return partialRetBlock;
@@ -489,6 +525,7 @@ public class LibMatrixDNN {
 		int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
 		
 		if(!ALLOW_MULTI_THREADED_OPS || constrainedNumThreads <= 1) {
+			warnSingleThreaded();
 			if(useMemoryLessConvolution) {
 				for (int n = 0; n < params.N; n++) {
 					for (int k = 0; k < params.K; k++) {
@@ -514,12 +551,22 @@ public class LibMatrixDNN {
 	
 	private static void doLoopedIm2ColConv2d(int n, MatrixBlock im2ColOutBlock, ConvolutionParameters params) throws DMLRuntimeException {
 		long nnz = 0;
+		long t1 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		for (int c = 0; c < params.C; c++) {
 			nnz += doIm2colOverInputPath_NCHW(n, c, im2ColOutBlock, params);
 		}
+		long t2 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+		
 		im2ColOutBlock.setNonZeros(nnz);
 		MatrixBlock matMultOutBlock = new MatrixBlock(params.K, params.P*params.Q, false);
 		LibMatrixMult.matrixMult(params.input2, im2ColOutBlock, matMultOutBlock);
+		long t3 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+		
+		if(DMLScript.STATISTICS) {
+			loopedConvIm2ColTime.addAndGet(t2 - t1);
+			loopedConvMatMultTime.addAndGet(t3 - t2);
+		}
+		
 		if(matMultOutBlock.isInSparseFormat()) {
 			Iterator<IJV> iter = matMultOutBlock.sparseBlock.getIterator();
 			final int outOffset = n*params.K*params.P*params.Q;
@@ -608,6 +655,7 @@ public class LibMatrixDNN {
 
 		int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
 		if(!ALLOW_MULTI_THREADED_OPS || constrainedNumThreads <= 1) {
+			warnSingleThreaded();
 			for (int n = 0; n < params.N; n++) {
 				doPoolingBackward(n, params);
 			}
@@ -686,25 +734,23 @@ public class LibMatrixDNN {
 		int [] maxIndexArrS = params.tmpData.maxIndexArrS;
 		final int outputOffset = n*params.K*params.P*params.Q + k*params.P*params.Q;
 		
-		Iterator<IJV> iter = params.input2.sparseBlock.getIterator();
+		Iterator<IJV> iter = params.input2.sparseBlock.getIterator(k, k+1);
 		int [] tensorIndexes = new int[4];
 		
 		while(iter.hasNext()) {
 			IJV ijv = iter.next();
 			computeTensorIndexes(ijv.getI(), ijv.getJ(), tensorIndexes, params.K, params.C, params.R, params.S);
-			if(k == tensorIndexes[0]) {
-				int c = tensorIndexes[1];
-				int r = tensorIndexes[2];
-				int s = tensorIndexes[3];
-				double filterVal = ijv.getV();
-				final int inputOffset = n*params.C*params.H*params.W + c*params.H*params.W + s - params.pad_w;
-				for (int p = minIndexArrR[r]; p < maxIndexArrR[r]; p++) {
-					final int hOffset = inputOffset + (p*params.stride_h + r - params.pad_h)*params.W;
-					final int pOffset = outputOffset + p*params.Q;
-					for (int q = minIndexArrS[s]; q < maxIndexArrS[s]; q++) {
-						final int w = q*params.stride_w;
-						outputArray[pOffset + q] += inputArray[hOffset + w]*filterVal;
-					}
+			int c = tensorIndexes[1];
+			int r = tensorIndexes[2];
+			int s = tensorIndexes[3];
+			double filterVal = ijv.getV();
+			final int inputOffset = n*params.C*params.H*params.W + c*params.H*params.W + s - params.pad_w;
+			for (int p = minIndexArrR[r]; p < maxIndexArrR[r]; p++) {
+				final int hOffset = inputOffset + (p*params.stride_h + r - params.pad_h)*params.W;
+				final int pOffset = outputOffset + p*params.Q;
+				for (int q = minIndexArrS[s]; q < maxIndexArrS[s]; q++) {
+					final int w = q*params.stride_w;
+					outputArray[pOffset + q] += inputArray[hOffset + w]*filterVal;
 				}
 			}
 		}
@@ -714,7 +760,7 @@ public class LibMatrixDNN {
 		double [] outputArray = params.output.getDenseBlock();
 		int outputOffset = n*params.K*params.P*params.Q + k*params.P*params.Q;
 		
-		Iterator<IJV> iter = params.input1.sparseBlock.getIterator();
+		Iterator<IJV> iter = params.input1.sparseBlock.getIterator(n, n+1);
 		int [] tensorIndexes = new int[4];
 		
 		int [] minIndexArrR = params.tmpData.minIndexArrR;
@@ -722,22 +768,21 @@ public class LibMatrixDNN {
 		while(iter.hasNext()) {
 			IJV ijv = iter.next();
 			computeTensorIndexes(ijv.getI(), ijv.getJ(), tensorIndexes, params.N, params.C, params.H, params.W);
-			if(n == tensorIndexes[0]) {
-				int c = tensorIndexes[1];
-				int h = tensorIndexes[2];
-				int w = tensorIndexes[3];
-				double imgVal = ijv.getV();
-				for (int r = minIndexArrR[h]; r < params.R; r += params.stride_h) {
-					int filterOffset = k*params.C*params.R*params.S + c*params.R*params.S + r*params.S;
-					for (int s = minIndexArrS[w]; s < params.S; s += params.stride_w) {
-						int p = (int)Math.ceil(((double)(h + params.pad_h - r)) / params.stride_h);
-						int q = (int)Math.ceil(((double)(w + params.pad_w - s)) / params.stride_w);
-						if(p >= 0 && p < params.P && q >= 0 && q < params.Q) {
-							double filterVal = filterArray[filterOffset + s];
-							outputArray[outputOffset + p*params.Q + q] += imgVal*filterVal;
-						}
+			
+			int c = tensorIndexes[1];
+			int h = tensorIndexes[2];
+			int w = tensorIndexes[3];
+			double imgVal = ijv.getV();
+			for (int r = minIndexArrR[h]; r < params.R; r += params.stride_h) {
+				int filterOffset = k*params.C*params.R*params.S + c*params.R*params.S + r*params.S;
+				for (int s = minIndexArrS[w]; s < params.S; s += params.stride_w) {
+					int p = (int)Math.ceil(((double)(h + params.pad_h - r)) / params.stride_h);
+					int q = (int)Math.ceil(((double)(w + params.pad_w - s)) / params.stride_w);
+					if(p >= 0 && p < params.P && q >= 0 && q < params.Q) {
+						double filterVal = filterArray[filterOffset + s];
+						outputArray[outputOffset + p*params.Q + q] += imgVal*filterVal;
 					}
-				}	
+				}
 			}
 		}
 	}
@@ -754,7 +799,7 @@ public class LibMatrixDNN {
 		int [] tensorIndexesImage = new int[4];
 		int [] tensorIndexesFilter = new int[4];
 
-		Iterator<IJV> iter = params.input1.sparseBlock.getIterator();
+		Iterator<IJV> iter = params.input1.sparseBlock.getIterator(n, n+1);
 		
 		while(iter.hasNext()) {
 			IJV ijv = iter.next();
@@ -765,11 +810,11 @@ public class LibMatrixDNN {
 				int w = tensorIndexesImage[3];
 				double imgVal = ijv.getV();
 		
-				Iterator<IJV> iter1 = params.input2.sparseBlock.getIterator();
+				Iterator<IJV> iter1 = params.input2.sparseBlock.getIterator(k, k+1);
 				while(iter1.hasNext()) {
 					IJV ijv1 = iter1.next();
 					computeTensorIndexes(ijv1.getI(), ijv1.getJ(), tensorIndexesFilter, params.K, params.C, params.R, params.S);
-					if(k == tensorIndexesFilter[0] && c == tensorIndexesFilter[1]) {
+					if(c == tensorIndexesFilter[1]) {
 						int r =  tensorIndexesFilter[2];
 						int s =  tensorIndexesFilter[3];
 						if((r-minIndexArrR[h])%params.stride_h == 0 && (s-minIndexArrS[w])%params.stride_w == 0) {
@@ -870,70 +915,65 @@ public class LibMatrixDNN {
 				doPoolingBackwardDenseSparse(n, inputArray, params.input2, outputArray, params);
 		}
 		else {
-			doPoolingBackwardUnOptimizedSparse_(n, params);
+			if(doutArray != null)
+				doPoolingBackwardSparseDense(n, doutArray, outputArray, params);
+			else
+				doPoolingBackwardSparseSparse(n, outputArray, params);
 		}
-			
 	}
 	
-	private static void doPoolingBackwardUnOptimizedSparse_(int n, ConvolutionParameters params) throws DMLRuntimeException {
+	private static void doPoolingBackwardSparseDense(int n, double [] doutArray,  double [] outputArray, ConvolutionParameters params) throws DMLRuntimeException {
 		if (!params.input1.isInSparseFormat())
 			throw new DMLRuntimeException("Incorrect usage: Call optimized versions");
-		double [] doutArray = null;
-		if (!params.input2.isInSparseFormat())
-			doutArray = params.input2.getDenseBlock();
-		double [] outputArray = null;
-		if (!params.output.isInSparseFormat())
-			outputArray = params.output.getDenseBlock();
-			
+		
 		for (int c = 0; c < params.C; c++) {
 			for (int p = 0; p < params.P; p++) {
 				for (int q = 0; q < params.Q; q++) {
-					int start_index_h = p * params.stride_h - params.pad_h;
-					int start_index_w = q * params.stride_w - params.pad_w;
-					int end_index_h = Math.min(start_index_h + params.R, params.H);
-					int end_index_w = Math.min(start_index_w + params.S, params.W);
-					start_index_h = Math.max(start_index_h, 0);
-					start_index_w = Math.max(start_index_w, 0);
-					int maxIndex = n*params.C*params.H*params.W + c*params.H*params.W +  start_index_h*params.W + start_index_w; 
-					double maxVal = -Double.MAX_VALUE; 
-	
-	
-					double currDoutVal = -1;
-					for (int h = start_index_h; h < end_index_h; h++) {
-						for (int w = start_index_w; w < end_index_w; w++) {
-							currDoutVal = params.input1.quickGetValue(n, c*params.H*params.W + h*params.W + w);
-	
-							if(maxVal < currDoutVal) {
-								maxIndex = n*params.C*params.H*params.W + c*params.H*params.W +  h*params.W + w;
-								maxVal = currDoutVal;
-							}
-						}
-					}
-	
-					double inVal = -1;
-					if(doutArray != null)
-						inVal = doutArray[n*params.C*params.P*params.Q + c*params.P*params.Q +  p * params.Q + q];
-					else
-						inVal = params.input2.quickGetValue(n, c*params.P*params.Q +  p * params.Q + q);
-	
-					// synchronized(this) {
+					double inVal = doutArray[n*params.C*params.P*params.Q + c*params.P*params.Q +  p * params.Q + q];
+					if(inVal != 0) {
+						final int inputOffset = n*params.C*params.H*params.W + c*params.H*params.W;
+						int start_index_h = p * params.stride_h - params.pad_h;
+						final int end_index_h = Math.min(start_index_h + params.R, params.H);
+						start_index_h = Math.max(start_index_h, 0);
+						int maxIndex = getMaxIndexSparse(start_index_h, end_index_h, q, inputOffset, n, c, params.input1, params);
 						outputArray[maxIndex] += inVal;
-					// }
+					}
 				}
 			}
 		}
 	}
 	
-	private static void doPoolingBackwardDenseSparse(int n, double [] inputArray, 
-			MatrixBlock dout, double [] outputArray, ConvolutionParameters params) throws DMLRuntimeException {
-		Iterator<IJV> iter = dout.sparseBlock.getIterator();
+	private static void doPoolingBackwardSparseSparse(int n, double [] outputArray, ConvolutionParameters params) throws DMLRuntimeException {
+		if (!params.input1.isInSparseFormat())
+			throw new DMLRuntimeException("Incorrect usage: Call optimized versions");
+		
+		Iterator<IJV> iter = params.input2.sparseBlock.getIterator(n, n+1);
 		int [] tensorIndexes = new int[4];
 		
 		while(iter.hasNext()) {
 			IJV ijv = iter.next();
-			if(ijv.getI() != n)
-				continue;
+			computeTensorIndexes(ijv.getI(), ijv.getJ(), tensorIndexes, params.N, params.C, params.P, params.Q);
+			int c = tensorIndexes[1];
+			int p = tensorIndexes[2];
+			int q = tensorIndexes[3];
 			
+			final int inputOffset = n*params.C*params.H*params.W + c*params.H*params.W;
+			int start_index_h = p * params.stride_h - params.pad_h;
+			final int end_index_h = Math.min(start_index_h + params.R, params.H);
+			start_index_h = Math.max(start_index_h, 0);
+			int maxIndex = getMaxIndexSparse(start_index_h, end_index_h, q, inputOffset, n, c, params.input1, params);
+			outputArray[maxIndex] += ijv.getV();
+		}	
+		
+	}
+	
+	private static void doPoolingBackwardDenseSparse(int n, double [] inputArray, 
+			MatrixBlock dout, double [] outputArray, ConvolutionParameters params) throws DMLRuntimeException {
+		Iterator<IJV> iter = dout.sparseBlock.getIterator(n, n+1);
+		int [] tensorIndexes = new int[4];
+		
+		while(iter.hasNext()) {
+			IJV ijv = iter.next();
 			computeTensorIndexes(ijv.getI(), ijv.getJ(), tensorIndexes, params.N, params.C, params.P, params.Q);
 			int c = tensorIndexes[1];
 			int p = tensorIndexes[2];
@@ -965,6 +1005,41 @@ public class LibMatrixDNN {
 				}
 			}
 		}
+	}
+	
+	private static int getMaxIndexSparse(int start_index_h, int end_index_h, 
+			int q, int inputOffset, int n, int c, MatrixBlock input, ConvolutionParameters params) throws DMLRuntimeException {
+		if(!input.isInSparseFormat())
+			throw new DMLRuntimeException("Incorrect usage: Only sparse format supported");
+		
+		Iterator<IJV> iter = input.sparseBlock.getIterator(n, n+1);
+		int [] tensorIndexes = new int[4];
+		
+		int start_index_w = Math.max(q * params.stride_w - params.pad_w, 0);
+		int end_index_w = Math.min(start_index_w + params.S, params.W);
+		start_index_w = Math.max(start_index_w, 0);
+		
+		int maxIndex = inputOffset +  start_index_h*params.W + start_index_w; 
+		double maxVal = -Double.MAX_VALUE;
+
+		// Find maxIndex
+		double currDoutVal = -1;
+		while(iter.hasNext()) {
+			IJV ijv = iter.next();
+			computeTensorIndexes(ijv.getI(), ijv.getJ(), tensorIndexes, params.N, params.C, params.H, params.W);
+			if(c != tensorIndexes[1])
+				continue;
+			int h = tensorIndexes[2];
+			int w = tensorIndexes[3];
+			if(h >= start_index_h && h < end_index_h && w >= start_index_w && w < end_index_w) {
+				currDoutVal = ijv.getV();
+				if(maxVal < currDoutVal) {
+					maxIndex = inputOffset +  h*params.W + w;
+					maxVal = currDoutVal;
+				}
+			}	
+		}
+		return maxIndex;
 	}
 	
 	private static int getMaxIndex(int start_index_h, int end_index_h, 
@@ -1002,6 +1077,7 @@ public class LibMatrixDNN {
 		
 		int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
 		if(!ALLOW_MULTI_THREADED_OPS || constrainedNumThreads <= 1) {
+			warnSingleThreaded();
 			for (int n = 0; n < params.N; n++) {
 				for (int c = 0; c < params.C; c++) {
 					doPooling(n, c, params);
@@ -1061,6 +1137,7 @@ public class LibMatrixDNN {
 		
 		int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
 		if(!ALLOW_MULTI_THREADED_OPS || constrainedNumThreads <= 1) {
+			warnSingleThreaded();
 			for (int n = 0; n < params.N; n++) {
 				doRotate180(n, params);
 			}
@@ -1102,12 +1179,10 @@ public class LibMatrixDNN {
 			if(zeroOutSparseOutput)
 				Arrays.fill(outputArray, 0);
 			
-			Iterator<IJV> iter = input.sparseBlock.getIterator();
+			Iterator<IJV> iter = input.sparseBlock.getIterator(inputN, inputN+1);
 			int [] tensorIndexes = new int[4];
 			while(iter.hasNext()) {
 				IJV ijv = iter.next();
-				if(ijv.getI() != inputN) 
-					continue;
 				computeTensorIndexes(ijv.getI(), ijv.getJ(), tensorIndexes, params.N, params.K, params.P, params.Q);
 				int k = tensorIndexes[1];
 				int p = tensorIndexes[2];
@@ -1129,6 +1204,7 @@ public class LibMatrixDNN {
 		
 		int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
 		if(!ALLOW_MULTI_THREADED_OPS || constrainedNumThreads <= 1) {
+			warnSingleThreaded();
 			for (int n = 0; n < params.N; n++) { 
 				doReshapeCol(n, params);
 			}
@@ -1167,6 +1243,7 @@ public class LibMatrixDNN {
 	
 	private static void runSequentialConvTask(int NSize, int Z, TaskType type, ConvolutionParameters params) throws DMLRuntimeException {
 		ConvTask task = new ConvTask(0, NSize, 0, Z, type, params);
+		warnSingleThreaded();
 		try {
 			task.call();
 		} catch (Exception e) {
@@ -1356,6 +1433,7 @@ public class LibMatrixDNN {
 		
 		int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
 		if(!ALLOW_MULTI_THREADED_OPS || constrainedNumThreads <= 1) {
+			warnSingleThreaded();
 			long nnz = 0;
 			for (int n = 0; n < params.N; n++) { // Do following for all images
 				for (int c = 0; c < params.C; c++) { // Since format is NCHW
@@ -1378,6 +1456,7 @@ public class LibMatrixDNN {
 		
 		int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
 		if(!ALLOW_MULTI_THREADED_OPS || constrainedNumThreads <= 1) {
+			warnSingleThreaded();
 			// Sequential col2im
 			for (int n = 0; n < params.N; n++) { // Do following for all images
 				for (int c = 0; c < params.C; c++) { // Since format is NCHW

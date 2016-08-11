@@ -21,6 +21,7 @@ package org.apache.sysml.hops;
 
 import java.util.ArrayList;
 
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.Hop.MultiThreadedHop;
 import org.apache.sysml.lops.ConvolutionTransform;
@@ -111,8 +112,6 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 			case RESHAPE_COL:
 			case ROTATE180:
 			case COL2IM:
-			case MAX_POOLING:
-			case MAX_POOLING_BACKWARD:
 			{	
 				et = ExecType.CP; // TODO: Since max_backwards and other Convolution Ops only implemented for CP
 				
@@ -127,7 +126,27 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 					throw new HopsException("Unimplemented ConvolutionOp for execution type: " + et.name());
 				}
 				// break;
-			}	
+			}
+			case MAX_POOLING:
+			case MAX_POOLING_BACKWARD:
+			{	
+				//TODO: Fix me. Currently forcing the instruction to GPU if gpu flag is set
+				if(DMLScript.USE_ACCELERATOR) {
+					et = ExecType.GPU;
+					setLops(constructConvolutionLops(et, inputs));
+					break;
+				}
+				else if(et == ExecType.CP) {
+					setLops(constructConvolutionLops(et, inputs));
+					break;
+				}			
+				else {
+					// TODO: Add support for SPARK/MR backends once we are happy with the performance of
+					// single node Lenet script. 
+					throw new HopsException("Unimplemented ConvolutionOp for execution type: " + et.name());
+				}
+				// break;
+			}
 			case DIRECT_CONV2D:
 			case DIRECT_CONV2D_BACKWARD_DATA:
 			case DIRECT_CONV2D_BACKWARD_FILTER:
@@ -385,6 +404,11 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	protected ExecType optFindExecType() throws HopsException {
 		
 		checkAndSetForcedPlatform();
+		
+		//TODO: Remove this once memEstimate is fixed for these instructions 
+		if((op == ConvOp.MAX_POOLING || op == ConvOp.MAX_POOLING_BACKWARD) && DMLScript.USE_ACCELERATOR) {
+			return ExecType.GPU;
+		}
 	
 		ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
 		

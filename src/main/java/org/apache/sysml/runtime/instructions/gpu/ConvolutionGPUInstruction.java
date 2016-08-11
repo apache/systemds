@@ -23,9 +23,12 @@ import java.util.ArrayList;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.functionobjects.SwapIndex;
+import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
+import org.apache.sysml.runtime.instructions.cp.ConvolutionCPInstruction;
 import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysml.runtime.util.ConvolutionUtils;
@@ -64,43 +67,88 @@ public class ConvolutionGPUInstruction extends GPUInstruction
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 		
-		if( !( opcode.equalsIgnoreCase("conv2d")
+		if( ( opcode.equalsIgnoreCase("conv2d")
 			 || opcode.equalsIgnoreCase("conv2d_backward_filter")
-			 || opcode.equalsIgnoreCase("conv2d_backward_data")) ) 
-		{
+			 || opcode.equalsIgnoreCase("conv2d_backward_data")
+			 || opcode.equalsIgnoreCase("maxpooling_backward")) ) {
+			InstructionUtils.checkNumFields(parts, 15);
+			CPOperand in1 = new CPOperand(parts[1]);
+			CPOperand in2 = new CPOperand(parts[2]);
+			CPOperand out = new CPOperand(parts[15]);
+		
+			ArrayList<CPOperand> stride = new ArrayList<CPOperand>();
+			ArrayList<CPOperand> padding = new ArrayList<CPOperand>();
+			ArrayList<CPOperand> input_shape = new ArrayList<CPOperand>();
+			ArrayList<CPOperand> filter_shape = new ArrayList<CPOperand>();
+			stride.add(new CPOperand(parts[3]));
+			stride.add(new CPOperand(parts[4]));
+			padding.add(new CPOperand(parts[5]));
+			padding.add(new CPOperand(parts[6]));
+			input_shape.add(new CPOperand(parts[7]));
+			input_shape.add(new CPOperand(parts[8]));
+			input_shape.add(new CPOperand(parts[9]));
+			input_shape.add(new CPOperand(parts[10]));
+			filter_shape.add(new CPOperand(parts[11]));
+			filter_shape.add(new CPOperand(parts[12]));
+			filter_shape.add(new CPOperand(parts[13]));
+			filter_shape.add(new CPOperand(parts[14]));
+
+			return new ConvolutionGPUInstruction(in1, in2, out, opcode, str, stride,
+					padding, input_shape, filter_shape);
+		}
+		else if (opcode.equalsIgnoreCase("maxpooling")) {
+			InstructionUtils.checkNumFields(parts, 14);
+			CPOperand in1 = new CPOperand(parts[1]);
+			CPOperand out = new CPOperand(parts[14]);
+		
+			ArrayList<CPOperand> stride = new ArrayList<CPOperand>();
+			ArrayList<CPOperand> padding = new ArrayList<CPOperand>();
+			ArrayList<CPOperand> input_shape = new ArrayList<CPOperand>();
+			ArrayList<CPOperand> filter_shape = new ArrayList<CPOperand>();
+			stride.add(new CPOperand(parts[2]));
+			stride.add(new CPOperand(parts[3]));
+			padding.add(new CPOperand(parts[4]));
+			padding.add(new CPOperand(parts[5]));
+			input_shape.add(new CPOperand(parts[6]));
+			input_shape.add(new CPOperand(parts[7]));
+			input_shape.add(new CPOperand(parts[8]));
+			input_shape.add(new CPOperand(parts[9]));
+			filter_shape.add(new CPOperand(parts[10]));
+			filter_shape.add(new CPOperand(parts[11]));
+			filter_shape.add(new CPOperand(parts[12]));
+			filter_shape.add(new CPOperand(parts[13]));
+
+			return new ConvolutionGPUInstruction(in1, null, out, opcode, str, stride,
+					padding, input_shape, filter_shape);
+		}
+		else {
 			throw new DMLRuntimeException("Unknown opcode while parsing a ConvolutionGPUInstruction: " + str);	
 		}
-		
-		InstructionUtils.checkNumFields(parts, 15);
-		CPOperand in1 = new CPOperand(parts[1]);
-		CPOperand in2 = new CPOperand(parts[2]);
-		CPOperand out = new CPOperand(parts[15]);
+	}
 	
-		ArrayList<CPOperand> stride = new ArrayList<CPOperand>();
-		ArrayList<CPOperand> padding = new ArrayList<CPOperand>();
-		ArrayList<CPOperand> input_shape = new ArrayList<CPOperand>();
-		ArrayList<CPOperand> filter_shape = new ArrayList<CPOperand>();
-		stride.add(new CPOperand(parts[3]));
-		stride.add(new CPOperand(parts[4]));
-		padding.add(new CPOperand(parts[5]));
-		padding.add(new CPOperand(parts[6]));
-		input_shape.add(new CPOperand(parts[7]));
-		input_shape.add(new CPOperand(parts[8]));
-		input_shape.add(new CPOperand(parts[9]));
-		input_shape.add(new CPOperand(parts[10]));
-		filter_shape.add(new CPOperand(parts[11]));
-		filter_shape.add(new CPOperand(parts[12]));
-		filter_shape.add(new CPOperand(parts[13]));
-		filter_shape.add(new CPOperand(parts[14]));
-
-		return new ConvolutionGPUInstruction(in1, in2, out, opcode, str, stride,
-				padding, input_shape, filter_shape);
+	private boolean isSparse(ExecutionContext ec, String var) throws DMLRuntimeException {
+		MatrixObject mo = ec.getMatrixObject(var);
+		return LibMatrixCUDA.isInSparseFormat(mo);
 	}
 	
 	@Override
 	public void processInstruction(ExecutionContext ec) 
 			throws DMLRuntimeException 
 	{
+		// TODO: Fix Me. Currently calling CP if data is sparse
+		if (instOpcode.equalsIgnoreCase("maxpooling")) {
+			if(	isSparse(ec, _input1.getName())) {
+				ConvolutionCPInstruction.parseInstruction(this.toString() + Instruction.OPERAND_DELIM + InfrastructureAnalyzer.getLocalParallelism()).processInstruction(ec);
+				return;
+			}
+		}
+		else {
+			if(	isSparse(ec, _input1.getName()) || isSparse(ec, _input2.getName())) {
+				ConvolutionCPInstruction.parseInstruction(this.toString() + Instruction.OPERAND_DELIM + InfrastructureAnalyzer.getLocalParallelism()).processInstruction(ec);
+				return;
+			}
+		}
+		
 		Statistics.incrementNoOfExecutedGPUInst();
 					
 		int pad_h = getScalarInput(ec, _padding, 0);
@@ -136,7 +184,6 @@ public class ConvolutionGPUInstruction extends GPUInstruction
 			MatrixObject out = ec.getMatrixOutputForGPUInstruction(_output.getName(), false);
 			LibMatrixCUDA.conv2d(image, filter, out, N, C, H, W,
 					K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
-			
 		}
 		else if (instOpcode.equalsIgnoreCase("conv2d_backward_filter")) {
 			MatrixObject image = ec.getMatrixInputForGPUInstruction(_input1.getName());
@@ -172,13 +219,43 @@ public class ConvolutionGPUInstruction extends GPUInstruction
 			LibMatrixCUDA.conv2d_backward_data(filter, dout, out, N, C, H, W,
 					K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
 		}
+		else if (instOpcode.equalsIgnoreCase("maxpooling")) {
+			MatrixObject image = ec.getMatrixInputForGPUInstruction(_input1.getName());
+			if(LibMatrixCUDA.isInSparseFormat(image))
+				throw new DMLRuntimeException("Sparse maxpooling not implemented");
+			if(image.getNumRows() != N || image.getNumColumns() != C*H*W) 
+				throw new DMLRuntimeException("Incorrect dimensions for image in maxpooling: " + 
+						image.getNumRows() + " != " +  N + " || " + image.getNumColumns() + " != " + C*H*W);
+			
+			ec.setMetaData(_output.getName(), N, C * P * Q);
+			MatrixObject out = ec.getMatrixOutputForGPUInstruction(_output.getName(), false);
+			LibMatrixCUDA.maxpooling(image, out, N, C, H, W,
+					K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
+		}
+		else if (instOpcode.equalsIgnoreCase("maxpooling_backward")) {
+			MatrixObject image = ec.getMatrixInputForGPUInstruction(_input1.getName());
+			MatrixObject dout = ec.getMatrixInputForGPUInstruction(_input2.getName());
+			if(LibMatrixCUDA.isInSparseFormat(image) || LibMatrixCUDA.isInSparseFormat(dout))
+				throw new DMLRuntimeException("Sparse maxpooling_backward_data not implemented");
+			if(dout.getNumRows() != N || dout.getNumColumns() != C*P*Q) 
+				throw new DMLRuntimeException("Incorrect dimensions for dout in maxpooling_backward");
+			if(image.getNumRows() != N || image.getNumColumns() != C*H*W) 
+				throw new DMLRuntimeException("Incorrect dimensions for image in maxpooling_backward: " + 
+						image.getNumRows() + " != " +  N + " || " + image.getNumColumns() + " != " + K*P*Q);
+			
+			ec.setMetaData(_output.getName(), N, C * H * W);
+			MatrixObject out = ec.getMatrixOutputForGPUInstruction(_output.getName(), false);
+			LibMatrixCUDA.maxpooling_backward(image, dout, out, N, C, H, W,
+					K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
+		}
 		else {
 			throw new DMLRuntimeException("Unsupported GPU context for " + instOpcode);
 		}
 		
 		// release inputs/outputs
 		ec.releaseMatrixInputForGPUInstruction(_input1.getName());
-		ec.releaseMatrixInputForGPUInstruction(_input2.getName());
+		if (!instOpcode.equalsIgnoreCase("maxpooling"))
+			ec.releaseMatrixInputForGPUInstruction(_input2.getName());
 		ec.releaseMatrixOutputForGPUInstruction(_output.getName());
 	}
 	

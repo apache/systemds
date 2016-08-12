@@ -1168,9 +1168,10 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 			try {
 				ExecutorService pool = Executors.newFixedThreadPool( k );
 				ArrayList<MatrixMultTransposeTask> tasks = new ArrayList<MatrixMultTransposeTask>();
-				int blklen = (int)(Math.ceil((double)clen/(2*k)));
+				int numgrp = _colGroups.size();
+				int blklen = (int)(Math.ceil((double)numgrp/(2*k)));
 				for( int i=0; i<2*k & i*blklen<clen; i++ )
-					tasks.add(new MatrixMultTransposeTask(_colGroups, out, i*blklen, Math.min((i+1)*blklen, clen)));
+					tasks.add(new MatrixMultTransposeTask(_colGroups, out, i*blklen, Math.min((i+1)*blklen, numgrp)));
 				List<Future<Object>> ret = pool.invokeAll(tasks);
 				for( Future<Object> tret : ret )
 					tret.get(); //check for errors
@@ -1330,10 +1331,13 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 
 	/**
 	 * 
+	 * @param groups
 	 * @param result
+	 * @param gl
+	 * @param gu
 	 * @throws DMLRuntimeException
 	 */
-	private static void leftMultByTransposeSelf(ArrayList<ColGroup> groups, MatrixBlock result, int cl, int cu)
+	private static void leftMultByTransposeSelf(ArrayList<ColGroup> groups, MatrixBlock result, int gl, int gu)
 		throws DMLRuntimeException 
 	{
 		final int numRows = groups.get(0).getNumRows();
@@ -1345,7 +1349,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		
 		//approach: for each colgroup, extract uncompressed columns one at-a-time
 		//vector-matrix multiplies against remaining col groups
-		for( int i=cl; i<cu; i++ ) 
+		for( int i=gl; i<gu; i++ ) 
 		{
 			//get current group and relevant col groups
 			ColGroup group = groups.get(i);	
@@ -1479,19 +1483,19 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	{
 		private ArrayList<ColGroup> _groups = null;
 		private MatrixBlock _ret = null;
-		private int _cl = -1;
-		private int _cu = -1;
+		private int _gl = -1;
+		private int _gu = -1;
 		
-		protected MatrixMultTransposeTask(ArrayList<ColGroup> groups, MatrixBlock ret, int cl, int cu)  {
+		protected MatrixMultTransposeTask(ArrayList<ColGroup> groups, MatrixBlock ret, int gl, int gu)  {
 			_groups = groups;
 			_ret = ret;
-			_cl = cl;
-			_cu = cu;
+			_gl = gl;
+			_gu = gu;
 		}
 		
 		@Override
 		public Object call() throws DMLRuntimeException {
-			leftMultByTransposeSelf(_groups, _ret, _cl, _cu);
+			leftMultByTransposeSelf(_groups, _ret, _gl, _gu);
 			return null;
 		}
 	}

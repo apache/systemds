@@ -50,11 +50,11 @@ algorithms can be found in the [Algorithms Reference](algorithms-reference.html)
 
 # Download SystemML
 
-Apache incubator releases of SystemML are available from the [downloads](http://systemml.apache.org/download.html) page.
+Apache incubator releases of SystemML are available from the [Downloads](http://systemml.apache.org/download.html) page.
 
+SystemML can also be downloaded from GitHub and built with Maven.
 The SystemML project is available on GitHub at [https://github.com/apache/incubator-systemml](https://github.com/apache/incubator-systemml).
-SystemML can be downloaded from GitHub and built with Maven. Instructions to build and
-test SystemML can be found in the [SystemML GitHub README](https://github.com/apache/incubator-systemml).
+Instructions to build SystemML can be found in the <a href="engine-dev-guide.html">Engine Developer Guide</a>.
 
 # Standalone vs Distributed Execution Mode
 
@@ -91,7 +91,8 @@ data file `<filename>` must be `<filename>.mtd`.
 
     $ echo '{"rows": 306, "cols": 4, "format": "csv"}' > data/haberman.data.mtd
 
-<br/>
+
+---
 
 # Example 1 - Univariate Statistics
 
@@ -170,9 +171,10 @@ To run the `Univar-Stats.dml` algorithm, issue the following command (we set the
      (17) Num of modes        | 1
 
 
-The `Univar-Stats.dml` script writes the computed statistics to the `univarOut.mtx` file. The matrix has one row per univariate statistic and one column per input feature. The first column gives the number of the statistic
-(see above table), the second column gives the number of the feature column in
-the input data, and the third column gives the value of the univariate statistic.
+In addition to writing statistics to the console, the `Univar-Stats.dml` script writes the computed statistics
+to the `data/univarOut.mtx` file specified by the STATS input parameter.
+
+**univarOut.mtx file**
 
     1 1 30.0
     1 2 58.0
@@ -219,9 +221,33 @@ the input data, and the third column gives the value of the univariate statistic
     16 4 1.0
     17 4 1.0
 
+The following table lists the number and name of each univariate statistic. The row
+numbers below correspond to the elements of the first column in the output
+matrix above. The signs "+" show applicability to scale or/and to categorical
+features.
 
-<br/>
-<br/>
+  | Row | Name of Statistic          | Scale | Categ. |
+  | :-: |:-------------------------- |:-----:| :-----:|
+  |  1  | Minimum                    |   +   |        |
+  |  2  | Maximum                    |   +   |        |
+  |  3  | Range                      |   +   |        |
+  |  4  | Mean                       |   +   |        |
+  |  5  | Variance                   |   +   |        |
+  |  6  | Standard deviation         |   +   |        |
+  |  7  | Standard error of mean     |   +   |        |
+  |  8  | Coefficient of variation   |   +   |        |
+  |  9  | Skewness                   |   +   |        |
+  | 10  | Kurtosis                   |   +   |        |
+  | 11  | Standard error of skewness |   +   |        |
+  | 12  | Standard error of kurtosis |   +   |        |
+  | 13  | Median                     |   +   |        |
+  | 14  | Inter quartile mean        |   +   |        |
+  | 15  | Number of categories       |       |    +   |
+  | 16  | Mode                       |       |    +   |
+  | 17  | Number of modes            |       |    +   |
+
+
+---
 
 # Example 2 - Binary-class Support Vector Machines
 
@@ -338,7 +364,8 @@ If the confusion matrix looks like this ...
 
 Refer to the [Algorithms Reference](algorithms-reference.html) for more details.
 
-<br/>
+
+---
 
 # Example 3 - Linear Regression
 

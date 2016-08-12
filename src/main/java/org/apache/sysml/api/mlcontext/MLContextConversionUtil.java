@@ -19,10 +19,13 @@
 
 package org.apache.sysml.api.mlcontext;
 
+import java.io.InputStream;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.spark.Accumulator;
@@ -114,6 +117,71 @@ public class MLContextConversionUtil {
 			return matrixObject;
 		} catch (DMLRuntimeException e) {
 			throw new MLContextException("Exception converting double[][] array to MatrixObject", e);
+		}
+	}
+
+	/**
+	 * Convert a matrix at a URL to a {@code MatrixObject}.
+	 * 
+	 * @param variableName
+	 *            name of the variable associated with the matrix
+	 * @param url
+	 *            the URL to a matrix (in CSV or IJV format)
+	 * @param matrixMetadata
+	 *            the matrix metadata
+	 * @return the matrix at a URL converted to a {@code MatrixObject}
+	 */
+	public static MatrixObject urlToMatrixObject(String variableName, URL url, MatrixMetadata matrixMetadata) {
+		try {
+			InputStream is = url.openStream();
+			List<String> lines = IOUtils.readLines(is);
+			MLContext activeMLContext = (MLContext) MLContextProxy.getActiveMLContext();
+			SparkContext sparkContext = activeMLContext.getSparkContext();
+			@SuppressWarnings("resource")
+			JavaSparkContext javaSparkContext = new JavaSparkContext(sparkContext);
+			JavaRDD<String> javaRDD = javaSparkContext.parallelize(lines);
+			if ((matrixMetadata == null) || (matrixMetadata.getMatrixFormat() == MatrixFormat.CSV)) {
+				MatrixObject matrixObject = javaRDDStringCSVToMatrixObject(variableName, javaRDD, matrixMetadata);
+				return matrixObject;
+			} else if (matrixMetadata.getMatrixFormat() == MatrixFormat.IJV) {
+				MatrixObject matrixObject = javaRDDStringIJVToMatrixObject(variableName, javaRDD, matrixMetadata);
+				return matrixObject;
+			}
+			return null;
+		} catch (Exception e) {
+			throw new MLContextException("Exception converting URL to MatrixObject", e);
+		}
+	}
+
+	/**
+	 * Convert a {@code MatrixBlock} to a {@code MatrixObject}.
+	 * 
+	 * @param variableName
+	 *            name of the variable associated with the matrix
+	 * @param matrixBlock
+	 *            matrix as a MatrixBlock
+	 * @param matrixMetadata
+	 *            the matrix metadata
+	 * @return the {@code MatrixBlock} converted to a {@code MatrixObject}
+	 */
+	public static MatrixObject matrixBlockToMatrixObject(String variableName, MatrixBlock matrixBlock,
+			MatrixMetadata matrixMetadata) {
+		try {
+			MatrixCharacteristics matrixCharacteristics;
+			if (matrixMetadata != null) {
+				matrixCharacteristics = matrixMetadata.asMatrixCharacteristics();
+			} else {
+				matrixCharacteristics = new MatrixCharacteristics();
+			}
+			MatrixFormatMetaData mtd = new MatrixFormatMetaData(matrixCharacteristics,
+					OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
+			MatrixObject matrixObject = new MatrixObject(ValueType.DOUBLE, MLContextUtil.scratchSpace() + "/"
+					+ variableName, mtd);
+			matrixObject.acquireModify(matrixBlock);
+			matrixObject.release();
+			return matrixObject;
+		} catch (CacheException e) {
+			throw new MLContextException("Exception converting MatrixBlock to MatrixObject", e);
 		}
 	}
 
@@ -687,16 +755,13 @@ public class MLContextConversionUtil {
 			SparkContext sc = activeMLContext.getSparkContext();
 			SQLContext sqlContext = new SQLContext(sc);
 			DataFrame df = null;
-			if(isVectorDF) {
+			if (isVectorDF) {
 				df = RDDConverterUtilsExt.binaryBlockToVectorDataFrame(binaryBlockMatrix, matrixCharacteristics,
 						sqlContext);
+			} else {
+				df = RDDConverterUtilsExt.binaryBlockToDataFrame(binaryBlockMatrix, matrixCharacteristics, sqlContext);
 			}
-			else {
-				df = RDDConverterUtilsExt.binaryBlockToDataFrame(binaryBlockMatrix, matrixCharacteristics,
-					sqlContext);
-			}
-			
-			
+
 			return df;
 		} catch (DMLRuntimeException e) {
 			throw new MLContextException("DMLRuntimeException while converting matrix object to DataFrame", e);

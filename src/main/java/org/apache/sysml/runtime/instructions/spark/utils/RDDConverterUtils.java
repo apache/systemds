@@ -200,7 +200,7 @@ public class RDDConverterUtils
 		//convert csv rdd to binary block rdd (w/ partial blocks)
 		JavaPairRDD<MatrixIndexes, MatrixBlock> out = 
 				prepinput.mapPartitionsToPair(
-					new CSVToBinaryBlockFunction(mcOut, delim, fill, fillValue));
+					new CSVToBinaryBlockFunction(mcOut, hasHeader, delim, fill, fillValue));
 		
 		//aggregate partial matrix blocks
 		out = RDDAggregateUtils.mergeByKey( out ); 
@@ -522,16 +522,18 @@ public class RDDConverterUtils
 		private long _clen = -1;
 		private int _brlen = -1;
 		private int _bclen = -1;
+		private boolean _header = false;
 		private String _delim = null;
 		private boolean _fill = false;
 		private double _fillValue = 0;
 		
-		public CSVToBinaryBlockFunction(MatrixCharacteristics mc, String delim, boolean fill, double fillValue)
+		public CSVToBinaryBlockFunction(MatrixCharacteristics mc, boolean hasHeader, String delim, boolean fill, double fillValue)
 		{
 			_rlen = mc.getRows();
 			_clen = mc.getCols();
 			_brlen = mc.getRowsPerBlock();
 			_bclen = mc.getColsPerBlock();
+			_header = hasHeader;
 			_delim = delim;
 			_fill = fill;
 			_fillValue = fillValue;
@@ -551,7 +553,11 @@ public class RDDConverterUtils
 			{
 				Tuple2<Text,Long> tmp = arg0.next();
 				String row = tmp._1().toString();
-				long rowix = tmp._2() + 1;
+				long rowix = tmp._2() + (_header ? 0 : 1);
+				
+				//skip existing header
+				if( _header && rowix == 0  ) 
+					continue;
 				
 				long rix = UtilFunctions.computeBlockIndex(rowix, _brlen);
 				int pos = UtilFunctions.computeCellInBlock(rowix, _brlen);

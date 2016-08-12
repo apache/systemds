@@ -84,27 +84,26 @@ public class ColGroupRLE extends ColGroupBitmap
 	}
 
 	@Override
-	public Iterator<Integer> getDecodeIterator(int bmpIx) {
-		return new BitmapDecoderRLE(_data, _ptr[bmpIx], len(bmpIx)); 
+	public Iterator<Integer> getDecodeIterator(int k) {
+		return new BitmapDecoderRLE(_data, _ptr[k], len(k)); 
 	}
 	
 	@Override
-	public void decompressToBlock(MatrixBlock target) 
+	public void decompressToBlock(MatrixBlock target, int rl, int ru) 
 	{
 		if( LOW_LEVEL_OPT && getNumValues() > 1 )
 		{
 			final int blksz = 128 * 1024;
 			final int numCols = getNumCols();
 			final int numVals = getNumValues();
-			final int n = getNumRows();
 			
 			//position and start offset arrays
-			int[] apos = new int[numVals];
 			int[] astart = new int[numVals];
+			int[] apos = skipScan(numVals, rl, astart);
 			
 			//cache conscious append via horizontal scans 
-			for( int bi=0; bi<n; bi+=blksz ) {
-				int bimax = Math.min(bi+blksz, n);					
+			for( int bi=rl; bi<ru; bi+=blksz ) {
+				int bimax = Math.min(bi+blksz, ru);					
 				for (int k=0, off=0; k < numVals; k++, off+=numCols) {
 					int boff = _ptr[k];
 					int blen = len(k);
@@ -113,7 +112,7 @@ public class ColGroupRLE extends ColGroupBitmap
 					for( ; bix<blen & start<bimax; bix+=2) {
 						start += _data[boff + bix];
 						int len = _data[boff + bix+1];
-						for( int i=start; i<start+len; i++ )
+						for( int i=Math.max(rl,start); i<Math.min(start+len,ru); i++ )
 							for( int j=0; j<numCols; j++ )
 								if( _values[off+j]!=0 )
 									target.appendValue(i, _colIndexes[j], _values[off+j]);
@@ -127,7 +126,7 @@ public class ColGroupRLE extends ColGroupBitmap
 		else
 		{
 			//call generic decompression with decoder
-			super.decompressToBlock(target);
+			super.decompressToBlock(target, rl, ru);
 		}
 	}
 
@@ -571,22 +570,27 @@ public class ColGroupRLE extends ColGroupBitmap
 	}
 	
 	@Override
-	protected void countNonZerosPerRow(int[] rnnz)
+	protected void countNonZerosPerRow(int[] rnnz, int rl, int ru)
 	{
 		final int numVals = getNumValues();
 		final int numCols = getNumCols();
 		
+		//current pos / values per RLE list
+		int[] astart = new int[numVals];
+		int[] apos = skipScan(numVals, rl, astart);
+		
 		for (int k = 0; k < numVals; k++) {
 			int boff = _ptr[k];
 			int blen = len(k);
-			
+			int bix = apos[k];
+					
 			int curRunStartOff = 0;
 			int curRunEnd = 0;
-			for (int bix = 0; bix < blen; bix+=2) {
+			for( ; bix < blen && curRunStartOff<ru; bix+=2) {
 				curRunStartOff = curRunEnd + _data[boff+bix];
 				curRunEnd = curRunStartOff + _data[boff+bix + 1];
-				for( int i=curRunStartOff; i<curRunEnd; i++ )
-					rnnz[i] += numCols;
+				for( int i=Math.max(curRunStartOff,rl); i<Math.min(curRunEnd, ru); i++ )
+					rnnz[i-rl] += numCols;
 			}
 		}
 	}

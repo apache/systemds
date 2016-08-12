@@ -152,7 +152,7 @@ public abstract class ColGroup implements Serializable
 	 *            a matrix block where the columns covered by this column group
 	 *            have not yet been filled in.
 	 */
-	public abstract void decompressToBlock(MatrixBlock target);
+	public abstract void decompressToBlock(MatrixBlock target, int rl, int ru);
 
 	/**
 	 * Decompress the contents of this column group into uncompressed packed
@@ -263,6 +263,8 @@ public abstract class ColGroup implements Serializable
 	/**
 	 * 
 	 * @param rnnz
+	 * @param rl row lower bound, inclusive
+ 	 * @param ru row upper bound, exclusive
 	 */
-	protected abstract void countNonZerosPerRow(int[] rnnz);
+	protected abstract void countNonZerosPerRow(int[] rnnz, int rl, int ru);
 }

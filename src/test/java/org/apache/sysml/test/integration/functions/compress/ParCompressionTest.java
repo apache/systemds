@@ -19,6 +19,7 @@
 
 package org.apache.sysml.test.integration.functions.compress;
 
+import org.apache.sysml.runtime.compress.BitmapEncoder;
 import org.apache.sysml.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -32,7 +33,8 @@ import org.junit.Test;
  */
 public class ParCompressionTest extends AutomatedTestBase
 {	
-	private static final int rows = 1023;
+	//large enough for multiple parallel tasks and mis-aligned
+	private static final int rows = 3 * BitmapEncoder.BITMAP_BLOCK_SZ + 7;
 	private static final int cols = 20;
 	private static final double sparsity1 = 0.9;
 	private static final double sparsity2 = 0.1;
@@ -143,6 +145,7 @@ public class ParCompressionTest extends AutomatedTestBase
 			}
 			
 			//generate input data
+			int k = InfrastructureAnalyzer.getLocalParallelism();
 			double min = (vtype==ValueType.CONST)? 10 : -10;
 			double[][] input = TestUtils.generateTestMatrix(rows, cols, min, 10, sparsity, 7);
 			if( vtype==ValueType.RAND_ROUND )
@@ -152,10 +155,10 @@ public class ParCompressionTest extends AutomatedTestBase
 			//compress given matrix block
 			CompressedMatrixBlock cmb = new CompressedMatrixBlock(mb);
 			if( compress )
-				cmb.compress(InfrastructureAnalyzer.getLocalParallelism());
+				cmb.compress(k);
 			
 			//decompress the compressed matrix block
-			MatrixBlock tmp = cmb.decompress();
+			MatrixBlock tmp = cmb.decompress(k);
 			
 			//compare result with input
 			double[][] d1 = DataConverter.convertToDoubleMatrix(mb);

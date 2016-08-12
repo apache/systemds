@@ -105,25 +105,24 @@ public class ColGroupOLE extends ColGroupBitmap
 	}
 
 	@Override
-	public Iterator<Integer> getDecodeIterator(int bmpIx) {
-		return new BitmapDecoderOLE(_data, _ptr[bmpIx], len(bmpIx));
+	public Iterator<Integer> getDecodeIterator(int k) {
+		return new BitmapDecoderOLE(_data, _ptr[k], len(k));
 	}
 	
 	@Override
-	public void decompressToBlock(MatrixBlock target) 
+	public void decompressToBlock(MatrixBlock target, int rl, int ru) 
 	{
 		if( LOW_LEVEL_OPT && getNumValues() > 1 )
 		{
 			final int blksz = BitmapEncoder.BITMAP_BLOCK_SZ;
 			final int numCols = getNumCols();
 			final int numVals = getNumValues();
-			final int n = getNumRows();
 			
 			//cache blocking config and position array
-			int[] apos = new int[numVals];
+			int[] apos = skipScan(numVals, rl);
 					
 			//cache conscious append via horizontal scans 
-			for( int bi=0; bi<n; bi+=blksz ) {
+			for( int bi=rl; bi<ru; bi+=blksz ) {
 				for (int k = 0, off=0; k < numVals; k++, off+=numCols) {
 					int boff = _ptr[k];
 					int blen = len(k);					
@@ -143,7 +142,7 @@ public class ColGroupOLE extends ColGroupBitmap
 		else
 		{
 			//call generic decompression with decoder
-			super.decompressToBlock(target);
+			super.decompressToBlock(target, rl, ru);
 		}
 	}
 
@@ -581,27 +580,36 @@ public class ColGroupOLE extends ColGroupBitmap
 	}
 	
 	@Override
-	protected void countNonZerosPerRow(int[] rnnz)
+	protected void countNonZerosPerRow(int[] rnnz, int rl, int ru)
 	{
 		final int blksz = BitmapEncoder.BITMAP_BLOCK_SZ;
+		final int blksz2 = ColGroupBitmap.WRITE_CACHE_BLKSZ;
 		final int numVals = getNumValues();
 		final int numCols = getNumCols();
 		
-		//iterate over all values and their bitmaps
-		for (int k = 0; k < numVals; k++) 
-		{
-			//prepare value-to-add for entire value bitmap
-			int boff = _ptr[k];
-			int blen = len(k);
+		//current pos per OLs / output values
+		int[] apos = skipScan(numVals, rl);
+		
+		
+		//cache conscious count via horizontal scans 
+		for( int bi=rl; bi<ru; bi+=blksz2 )  {
+			int bimax = Math.min(bi+blksz2, ru);
 			
-			//iterate over bitmap blocks and add values
-			int off = 0;
-			int slen;
-			for (int bix=0; bix<blen; bix+=slen+1, off+=blksz) {
-				slen = _data[boff+bix];
-				for (int blckIx = 1; blckIx <= slen; blckIx++) {
-					rnnz[off + _data[boff+bix + blckIx]] += numCols;
+			//iterate over all values and their bitmaps
+			for (int k = 0; k < numVals; k++)  {
+				//prepare value-to-add for entire value bitmap
+				int boff = _ptr[k];
+				int blen = len(k);
+				int bix = apos[k];
+				
+				//iterate over bitmap blocks and add values
+				for( int off=bi, slen=0; bix<blen && off<bimax; bix+=slen+1, off+=blksz ) {
+					slen = _data[boff+bix];
+					for (int blckIx = 1; blckIx <= slen; blckIx++)
+						rnnz[off + _data[boff+bix + blckIx] - bi] += numCols;
 				}
+				
+				apos[k] = bix;
 			}
 		}
 	}

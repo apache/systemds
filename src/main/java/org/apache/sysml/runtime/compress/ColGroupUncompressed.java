@@ -204,11 +204,11 @@ public class ColGroupUncompressed extends ColGroup
 	}
 
 	@Override
-	public void decompressToBlock(MatrixBlock target) {
+	public void decompressToBlock(MatrixBlock target, int rl, int ru) {
 		//empty block, nothing to add to output
 		if( _data.isEmptyBlock(false) )
 			return;		
-		for (int row = 0; row < _data.getNumRows(); row++) {
+		for (int row = rl; row < ru; row++) {
 			for (int colIx = 0; colIx < _colIndexes.length; colIx++) {
 				int col = _colIndexes[colIx];
 				double cellVal = _data.quickGetValue(row, colIx);
@@ -363,9 +363,9 @@ public class ColGroupUncompressed extends ColGroup
 	}
 	
 	@Override
-	protected void countNonZerosPerRow(int[] rnnz)
+	protected void countNonZerosPerRow(int[] rnnz, int rl, int ru)
 	{
-		for( int i=0; i<_data.getNumRows(); i++ )
-			rnnz[i] += _data.recomputeNonZeros(i, i, 0, _data.getNumColumns()-1);
+		for( int i=rl; i<ru; i++ )
+			rnnz[i-rl] += _data.recomputeNonZeros(i, i, 0, _data.getNumColumns()-1);
 	}
 }

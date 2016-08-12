@@ -202,7 +202,7 @@ public abstract class ColGroupBitmap extends ColGroup
 
 	//generic decompression for OLE/RLE, to be overwritten for performance
 	@Override
-	public void decompressToBlock(MatrixBlock target) 
+	public void decompressToBlock(MatrixBlock target, int rl, int ru) 
 	{
 		final int numCols = getNumCols();
 		final int numVals = getNumValues();
@@ -215,9 +215,11 @@ public abstract class ColGroupBitmap extends ColGroup
 
 			while (decoder.hasNext()) {
 				int row = decoder.next();
-				for (int colIx = 0; colIx < numCols; colIx++) {
+				if( row<rl ) continue;
+				if( row>ru ) break;
+				
+				for (int colIx = 0; colIx < numCols; colIx++)
 					target.appendValue(row, colIndices[colIx], _values[valOff+colIx]);
-				}
 			}
 		}
 	}
@@ -432,7 +434,9 @@ public abstract class ColGroupBitmap extends ColGroup
 	 *         valid until the next call to this method. May be reused across
 	 *         calls.
 	 */
-	public abstract Iterator<Integer> getDecodeIterator(int bmpIx);
+	public abstract Iterator<Integer> getDecodeIterator(int k);
+
+	//TODO getDecodeIterator(int k, int rl, int ru)
 
 	/**
 	 * Utility function of sparse-unsafe operations.

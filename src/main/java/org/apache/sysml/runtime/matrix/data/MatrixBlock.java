@@ -886,12 +886,26 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	}
 	
 	/**
-	 * 
+	 * Sorts all existing sparse rows by column indexes.
 	 */
 	public void sortSparseRows() {
 		if( !sparse || sparseBlock==null )
 			return;		
 		sparseBlock.sort();
+	}
+	
+	/**
+	 * Sorts all existing sparse rows in range [rl,ru) by 
+	 * column indexes. 
+	 * 
+	 * @param rl row lower bound, inclusive 
+	 * @param ru row upper bound, exclusive
+	 */
+	public void sortSparseRows(int rl, int ru) {
+		if( !sparse || sparseBlock==null )
+			return;		
+		for( int i=rl; i<ru; i++ )
+			sparseBlock.sort(i);
 	}
 	
 	/**

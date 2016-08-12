@@ -523,12 +523,14 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		if( !isCompressed() )
 			return new MatrixBlock(this); 
 		
+		Timing time = new Timing(true);
+		
 		//preallocation sparse rows to avoid repeated reallocations		
 		MatrixBlock ret = new MatrixBlock(getNumRows(), getNumColumns(), isInSparseFormat(), getNonZeros());
 		if( ret.isInSparseFormat() ) {
 			int[] rnnz = new int[rlen];
 			for (ColGroup grp : _colGroups)
-				grp.countNonZerosPerRow(rnnz);
+				grp.countNonZerosPerRow(rnnz, 0, rlen);
 			ret.allocateSparseRowsBlock();
 			SparseBlock rows = ret.getSparseBlock();
 			for( int i=0; i<rlen; i++ )
@@ -537,15 +539,66 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		
 		//core decompression (append if sparse)
 		for (ColGroup grp : _colGroups)
-			grp.decompressToBlock(ret);
+			grp.decompressToBlock(ret, 0, rlen);
 		
 		//post-processing (for append in decompress)
-		if( isInSparseFormat() )
+		ret.setNonZeros(nonZeros);
+		if( ret.isInSparseFormat() )
 			ret.sortSparseRows();
 
+		if( LOG.isDebugEnabled() )
+			LOG.debug("decompressed block in "+time.stop()+"ms.");
+		
 		return ret;
 	}
 	
+	/**
+	 * @param k degree of parallelism
+	 * @return a new uncompressed matrix block containing the contents 
+	 * of this block
+	 * @throws DMLRuntimeException
+	 */
+	public MatrixBlock decompress(int k) throws DMLRuntimeException 
+	{
+		//early abort for not yet compressed blocks
+		if( !isCompressed() )
+			return new MatrixBlock(this); 
+		if( k <= 1 )
+			return decompress();
+		
+		Timing time = new Timing(true);
+		
+		MatrixBlock ret = new MatrixBlock(rlen, clen, sparse, nonZeros);
+		ret.allocateDenseOrSparseBlock();
+		
+		//multi-threaded decompression
+		try {
+			ExecutorService pool = Executors.newFixedThreadPool( k );
+			int rlen = getNumRows();
+			int seqsz = BitmapEncoder.BITMAP_BLOCK_SZ;
+			int blklen = (int)(Math.ceil((double)rlen/k));
+			blklen += (blklen%seqsz != 0)?seqsz-blklen%seqsz:0;
+			ArrayList<DecompressTask> tasks = new ArrayList<DecompressTask>();
+			for( int i=0; i<k & i*blklen<getNumRows(); i++ )
+				tasks.add(new DecompressTask(_colGroups, ret, i*blklen, Math.min((i+1)*blklen,rlen)));
+			List<Future<Object>> rtasks = pool.invokeAll(tasks);	
+			pool.shutdown();
+			for( Future<Object> rt : rtasks )
+				rt.get(); //error handling
+		}
+		catch(Exception ex) {
+			throw new DMLRuntimeException(ex);
+		}
+		
+		//post-processing 
+		ret.setNonZeros(nonZeros);
+		
+		if( LOG.isDebugEnabled() )
+			LOG.debug("decompressed block w/ k="+k+" in "+time.stop()+"ms.");
+		
+		return ret;
+	}
+
 	/**
 	 * 
 	 * @return an upper bound on the memory used to store this compressed block
@@ -1519,6 +1572,45 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		@Override
 		public ColGroup call() throws DMLRuntimeException {
 			return compressColGroup(_in, _estim, _compRatios, _rlen, _sp, _colIndexes);
+		}
+	}
+	
+	private static class DecompressTask implements Callable<Object> 
+	{
+		private List<ColGroup> _colGroups = null;
+		private MatrixBlock _ret = null;
+		private int _rl = -1;
+		private int _ru = -1;
+		
+		protected DecompressTask( List<ColGroup> colGroups, MatrixBlock ret, int rl, int ru )  {
+			_colGroups = colGroups;
+			_ret = ret;
+			_rl = rl;
+			_ru = ru;
+		}
+		
+		@Override
+		public Object call() throws DMLRuntimeException {
+			
+			//preallocate sparse rows to avoid repeated alloc		
+			if( _ret.isInSparseFormat() ) {
+				int[] rnnz = new int[_ru-_rl];
+				for (ColGroup grp : _colGroups)
+					grp.countNonZerosPerRow(rnnz, _rl, _ru);
+				SparseBlock rows = _ret.getSparseBlock();
+				for( int i=_rl; i<_ru; i++ )
+					rows.allocate(i, rnnz[i-_rl]);
+			}
+			
+			//decompress row partition
+			for (ColGroup grp : _colGroups)
+				grp.decompressToBlock(_ret, _rl, _ru);
+
+			//post processing (sort due to append)
+			if( _ret.isInSparseFormat() )
+				_ret.sortSparseRows(_rl, _ru);
+			
+			return null;
 		}
 	}
 	

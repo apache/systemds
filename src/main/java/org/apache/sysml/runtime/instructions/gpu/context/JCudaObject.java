@@ -592,6 +592,9 @@ public class JCudaObject extends GPUObject {
 
 	@Override
 	protected void copyFromDeviceToHost() throws DMLRuntimeException {
+		if (jcudaDenseMatrixPtr != null && jcudaSparseMatrixPtr != null){
+			throw new DMLRuntimeException("Invalid state : JCuda dense/sparse pointer are both allocated");
+		}
 		if(jcudaDenseMatrixPtr != null) {
 			printCaller();
 			long start = System.nanoTime();

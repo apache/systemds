@@ -435,6 +435,7 @@ public class LibMatrixCUDA {
 		CSRPointer B = ((JCudaObject)right.getGPUObject()).jcudaSparseMatrixPtr;
 		Pointer A_dense = ((JCudaObject)left.getGPUObject()).jcudaDenseMatrixPtr;
 		if (B.isUltraSparse(k, n)){
+			LOG.info(" GPU Dense-Sparse Matrix Multiplication (Converted to Sparse-Sparse)");
 			// Convert left to CSR and do cuSparse matmul
 			long t0 = System.nanoTime();
 			CSRPointer A = JCudaObject.denseToSparse(cusparseHandle, (int)left.getNumRows(), (int)right.getNumColumns(), A_dense);
@@ -443,6 +444,7 @@ public class LibMatrixCUDA {
 			sparseSparseMatmult(output, transA, transB, m, n, k, A, B);
 			A.deallocate();
 		} else {
+			LOG.info(" GPU Dense-Sparse Matrix Multiplication (Converted to Dense-Dense)");
 			// Convert right to dense and do a cuBlas matmul
 			Pointer B_dense = B.toDenseMatrix(cusparseHandle, (int)right.getNumRows(), (int)right.getNumColumns());
 			output.getGPUObject().acquireDeviceModifyDense();	// To allocate the dense matrix
@@ -479,11 +481,13 @@ public class LibMatrixCUDA {
 		
 		if (n == 1){	
 			// Sparse Matrix - Dense Vector multiply
+			LOG.info(" GPU Sparse Matrix - Dense Vector Mutliply");
 			sparseMatrixDenseVectorMult(output, A, B_dense, transA, (int)left.getNumRows(), (int)right.getNumColumns(), (int)left.getNumColumns());
 			
 		} else {
 			// Sparse Matrix Dense Matrix multiply
 			if (A.isUltraSparse(m, k)){	
+				LOG.info(" GPU Sparse-Dense Matrix Multiplication (Converted to Sparse-Sparse)");
 				// Convert right to CSR and do cuSparse matmul
 				long t0 = System.nanoTime();
 				CSRPointer B = JCudaObject.denseToSparse(cusparseHandle, (int)right.getNumRows(), (int)right.getNumColumns(), B_dense);
@@ -492,6 +496,7 @@ public class LibMatrixCUDA {
 				sparseSparseMatmult(output, transA, transB, m, n, k, A, B);
 				B.deallocate();
 			} else {					
+				LOG.info(" GPU Sparse-Dense Matrix Multiplication (Converted to Dense-Dense)");
 				// Convert left to dense and do a cuBlas matmul
 				Pointer A_dense = A.toDenseMatrix(cusparseHandle, (int)left.getNumRows(), (int)left.getNumColumns());
 				output.getGPUObject().acquireDeviceModifyDense();	// To allocate the dense matrix
@@ -588,7 +593,7 @@ public class LibMatrixCUDA {
 	 */
 	protected static void sparseMatrixVectorMult(MatrixObject output, int transA, int m, int n, int k,
 			CSRPointer A, CSRPointer B) throws DMLRuntimeException {
-		LOG.info(" GPU Sparse Matrix-Vector Multiply ");
+		LOG.info(" GPU Sparse Matrix Sparse Vector Multiply (Converted to Sparse Matrix Dense Vector Multiply)");
 		Pointer B_dense = B.toDenseMatrix(cusparseHandle, k, 1);
 		sparseMatrixDenseVectorMult(output, A, B_dense, transA, m, n, k);
 	}

@@ -118,7 +118,8 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		else if (opcode.equalsIgnoreCase("pooling_backward_reshape")
 				|| opcode.equalsIgnoreCase("maxpooling_backward")
 				|| opcode.equalsIgnoreCase("conv2d")
-				|| opcode.equalsIgnoreCase("conv2d_backward_filter")) {
+				|| opcode.equalsIgnoreCase("conv2d_backward_filter")
+				|| opcode.equalsIgnoreCase("conv2d_backward_data")) {
 			InstructionUtils.checkNumFields(parts, 16);
 			// dout, stride1, stride2, padding1, padding2
 			// input_shape1, input_shape2, input_shape3, input_shape4,
@@ -236,16 +237,21 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			MatrixBlock filter = ec.getMatrixInput(_in2.getName());
 			outputBlock = getDenseOutputBlock(ec, N, K*P*Q, false);
 			params.setReuseNonZeroedOutput(_reuseNonZeroedOutput);
-			boolean useMemoryLessConvolution = false;
-			LibMatrixDNN.conv2d(matBlock, filter, outputBlock, params, useMemoryLessConvolution);
+			LibMatrixDNN.conv2d(matBlock, filter, outputBlock, params);
 			ec.releaseMatrixInput(_in2.getName());
 		}
 		else if (instOpcode.equalsIgnoreCase("conv2d_backward_filter")) {
-			MatrixBlock filter = ec.getMatrixInput(_in2.getName());
+			MatrixBlock dout = ec.getMatrixInput(_in2.getName());
 			outputBlock = getDenseOutputBlock(ec, K, C*R*S, false);
 			params.setReuseNonZeroedOutput(_reuseNonZeroedOutput);
-			boolean useMemoryLessConvolution = false;
-			LibMatrixDNN.conv2d_backward_filter(matBlock, filter, outputBlock, params, useMemoryLessConvolution);
+			LibMatrixDNN.conv2d_backward_filter(matBlock, dout, outputBlock, params);
+			ec.releaseMatrixInput(_in2.getName());
+		}
+		else if (instOpcode.equalsIgnoreCase("conv2d_backward_data")) {
+			MatrixBlock dout = ec.getMatrixInput(_in2.getName());
+			outputBlock = getDenseOutputBlock(ec, N, C * H * W, false);
+			params.setReuseNonZeroedOutput(_reuseNonZeroedOutput);
+			LibMatrixDNN.conv2d_backward_data(matBlock, dout, outputBlock, params);
 			ec.releaseMatrixInput(_in2.getName());
 		}
 		else {

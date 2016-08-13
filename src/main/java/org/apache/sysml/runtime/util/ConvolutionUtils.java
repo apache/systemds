@@ -190,45 +190,42 @@ public class ConvolutionUtils {
 	}
 	
 	public static Lop constructConvolutionBackwardDataLops(Hop currentHop, ExecType et) throws HopsException, LopsException {
-		return null; // Until we add CP conv2d_backward_data
+		if(DMLScript.USE_ACCELERATOR)
+			et = ExecType.GPU; // TODO: Add memory estimate checks
+		else if(et == ExecType.MR || et == ExecType.SPARK)
+			return null;
 		
-		//TODO: uncomment the following after CP conv2d_backward_data is added
-//		if(DMLScript.USE_ACCELERATOR)
-//			et = ExecType.GPU; // TODO: Add memory estimate checks
-//		else
-//			return null;
-//		
-//		if(currentHop != null && isConvolutionOp(currentHop, ConvOp.COL2IM)) {
-//			Hop temp = currentHop.getInput().get(0);
-//			if(temp != null && isTranspose(temp)) {
-//				Hop matMult = temp.getInput().get(0);
-//				if(matMult != null && isMatMult(matMult)) {
-//					Hop rotate180 = matMult.getInput().get(0);
-//					Hop filter = matMult.getInput().get(1);
-//					if(isConvolutionOp(rotate180, ConvOp.ROTATE180)) {
-//						ArrayList<Hop> inputs = new ArrayList<Hop>();
-//						inputs.add(filter);
-//						inputs.add(rotate180.getInput().get(0));
-//						for(int i = 1; i < rotate180.getInput().size(); i++) {
-//							inputs.add(rotate180.getInput().get(i));
-//						}
-//						
-//						// N, C * H * W
-//						long N = currentHop.computeSizeInformation(inputs.get(6));
-//						long C = currentHop.computeSizeInformation(inputs.get(7));
-//						long H = currentHop.computeSizeInformation(inputs.get(8));
-//						long W = currentHop.computeSizeInformation(inputs.get(9));
-//						long rlen = N;
-//						long clen = ConvolutionOp.getExtractedVal(C, H, W);
-//						return ConvolutionOp.constructFusedConvolutionLops(et, inputs, ConvOp.DIRECT_CONV2D_BACKWARD_DATA, (ConvolutionOp) rotate180, rlen, clen);
-//						
-//						
-//					}
-//				}
-//			}
-//		}
-//		
-//		return null;
+		if(currentHop != null && isConvolutionOp(currentHop, ConvOp.COL2IM)) {
+			Hop temp = currentHop.getInput().get(0);
+			if(temp != null && isTranspose(temp)) {
+				Hop matMult = temp.getInput().get(0);
+				if(matMult != null && isMatMult(matMult)) {
+					Hop rotate180 = matMult.getInput().get(0);
+					Hop filter = matMult.getInput().get(1);
+					if(isConvolutionOp(rotate180, ConvOp.ROTATE180)) {
+						ArrayList<Hop> inputs = new ArrayList<Hop>();
+						inputs.add(filter);
+						inputs.add(rotate180.getInput().get(0));
+						for(int i = 1; i < rotate180.getInput().size(); i++) {
+							inputs.add(rotate180.getInput().get(i));
+						}
+						
+						// N, C * H * W
+						long N = currentHop.computeSizeInformation(inputs.get(6));
+						long C = currentHop.computeSizeInformation(inputs.get(7));
+						long H = currentHop.computeSizeInformation(inputs.get(8));
+						long W = currentHop.computeSizeInformation(inputs.get(9));
+						long rlen = N;
+						long clen = ConvolutionOp.getExtractedVal(C, H, W);
+						return ConvolutionOp.constructFusedConvolutionLops(et, inputs, ConvOp.DIRECT_CONV2D_BACKWARD_DATA, (ConvolutionOp) rotate180, rlen, clen);
+						
+						
+					}
+				}
+			}
+		}
+		
+		return null;
 	}
 	
 	

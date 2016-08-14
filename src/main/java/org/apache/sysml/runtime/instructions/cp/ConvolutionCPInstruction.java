@@ -309,13 +309,13 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 
 	private void checkInputDimensionForIm2col(MatrixBlock matBlock, ConvolutionParameters params) throws DMLRuntimeException {
 		if((params.N != matBlock.getNumRows() || params.C*params.H*params.W != matBlock.getNumColumns())) {
-			throw new DMLRuntimeException("Incorrect input shape in conv2d");
+			throw new DMLRuntimeException("Incorrect input shape in im2col");
 		}
 	}
 	
 	private void checkInputDimensionForCol2im(MatrixBlock matBlock, ConvolutionParameters params) throws DMLRuntimeException {
-		if((params.C*params.R*params.S != matBlock.getNumRows() || params.N*params.P*params.Q != matBlock.getNumColumns())) {
-			throw new DMLRuntimeException("Incorrect input shape in conv2d_backward_data");
+		if((params.N*params.P*params.Q != matBlock.getNumRows() || params.C*params.R*params.S != matBlock.getNumColumns())) {
+			throw new DMLRuntimeException("Incorrect input shape in col2im");
 		}
 	}
 }

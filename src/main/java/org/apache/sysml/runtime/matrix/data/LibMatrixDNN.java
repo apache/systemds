@@ -411,11 +411,10 @@ public class LibMatrixDNN {
 		return partialRetBlock;
 	}
 	
-	private static void computeTensorIndexes(int i, int j, int [] ret, int N, int C, int H, int W) throws DMLRuntimeException {
-		ret[0] = i;
-		ret[1] = j / (H*W);
-		ret[2] = (j - ret[1]*(H*W))/W;
-		ret[3] = j % W;
+	private static void computeTensorIndexes(int j, int [] ret, int H, int W) throws DMLRuntimeException {
+		ret[0] = j / (H*W);
+		ret[1] = (j - ret[0]*(H*W))/W;
+		ret[2] = j % W;
 	}
 	
 	public static void conv2d(MatrixBlock input, MatrixBlock filter, MatrixBlock outputBlock, ConvolutionParameters params) throws DMLRuntimeException {
@@ -575,14 +574,14 @@ public class LibMatrixDNN {
 			throw new DMLRuntimeException("Incorrect usage: Call optimized versions");
 		
 		Iterator<IJV> iter = params.input2.sparseBlock.getIterator(n, n+1);
-		int [] tensorIndexes = new int[4];
+		int [] tensorIndexes = new int[3];
 		
 		while(iter.hasNext()) {
 			IJV ijv = iter.next();
-			computeTensorIndexes(ijv.getI(), ijv.getJ(), tensorIndexes, params.N, params.C, params.P, params.Q);
-			int c = tensorIndexes[1];
-			int p = tensorIndexes[2];
-			int q = tensorIndexes[3];
+			computeTensorIndexes(ijv.getJ(), tensorIndexes, params.P, params.Q);
+			int c = tensorIndexes[0];
+			int p = tensorIndexes[1];
+			int q = tensorIndexes[2];
 			
 			final int inputOffset = n*params.C*params.H*params.W + c*params.H*params.W;
 			int start_index_h = p * params.stride_h - params.pad_h;
@@ -597,14 +596,14 @@ public class LibMatrixDNN {
 	private static void doPoolingBackwardDenseSparse(int n, double [] inputArray, 
 			MatrixBlock dout, double [] outputArray, ConvolutionParameters params) throws DMLRuntimeException {
 		Iterator<IJV> iter = dout.sparseBlock.getIterator(n, n+1);
-		int [] tensorIndexes = new int[4];
+		int [] tensorIndexes = new int[3];
 		
 		while(iter.hasNext()) {
 			IJV ijv = iter.next();
-			computeTensorIndexes(ijv.getI(), ijv.getJ(), tensorIndexes, params.N, params.C, params.P, params.Q);
-			int c = tensorIndexes[1];
-			int p = tensorIndexes[2];
-			int q = tensorIndexes[3];
+			computeTensorIndexes(ijv.getJ(), tensorIndexes, params.P, params.Q);
+			int c = tensorIndexes[0];
+			int p = tensorIndexes[1];
+			int q = tensorIndexes[2];
 			
 			final int inputOffset = n*params.C*params.H*params.W + c*params.H*params.W;
 			int start_index_h = p * params.stride_h - params.pad_h;
@@ -640,7 +639,7 @@ public class LibMatrixDNN {
 			throw new DMLRuntimeException("Incorrect usage: Only sparse format supported");
 		
 		Iterator<IJV> iter = input.sparseBlock.getIterator(n, n+1);
-		int [] tensorIndexes = new int[4];
+		int [] tensorIndexes = new int[3];
 		
 		int start_index_w = Math.max(q * params.stride_w - params.pad_w, 0);
 		int end_index_w = Math.min(start_index_w + params.S, params.W);
@@ -653,11 +652,11 @@ public class LibMatrixDNN {
 		double currDoutVal = -1;
 		while(iter.hasNext()) {
 			IJV ijv = iter.next();
-			computeTensorIndexes(ijv.getI(), ijv.getJ(), tensorIndexes, params.N, params.C, params.H, params.W);
-			if(c != tensorIndexes[1])
+			computeTensorIndexes(ijv.getJ(), tensorIndexes, params.H, params.W);
+			if(c != tensorIndexes[0])
 				continue;
-			int h = tensorIndexes[2];
-			int w = tensorIndexes[3];
+			int h = tensorIndexes[1];
+			int w = tensorIndexes[2];
 			if(h >= start_index_h && h < end_index_h && w >= start_index_w && w < end_index_w) {
 				currDoutVal = ijv.getV();
 				if(maxVal < currDoutVal) {
@@ -807,13 +806,13 @@ public class LibMatrixDNN {
 				Arrays.fill(outputArray, 0);
 			
 			Iterator<IJV> iter = input.sparseBlock.getIterator(inputN, inputN+1);
-			int [] tensorIndexes = new int[4];
+			int [] tensorIndexes = new int[3];
 			while(iter.hasNext()) {
 				IJV ijv = iter.next();
-				computeTensorIndexes(ijv.getI(), ijv.getJ(), tensorIndexes, params.N, params.K, params.P, params.Q);
-				int k = tensorIndexes[1];
-				int p = tensorIndexes[2];
-				int q = tensorIndexes[3];
+				computeTensorIndexes(ijv.getJ(), tensorIndexes, params.P, params.Q);
+				int k = tensorIndexes[0];
+				int p = tensorIndexes[1];
+				int q = tensorIndexes[2];
 				outputArray[outputOffset + p*params.Q*params.K + q*params.K + k] = ijv.getV();
 			}
 		}
@@ -961,9 +960,7 @@ public class LibMatrixDNN {
 					break;
 				case Col2Im:
 					for (int n = n1; n < n2; n++) {
-						for (int z = z1; z < z2; z++) {
-							doCol2imOverInputPath_NCHW(n, z, params);
-						}
+						doCol2imOverMultipleImages(n, params);
 					}
 					break;
 				case MaxPooling_Forward:
@@ -1082,20 +1079,18 @@ public class LibMatrixDNN {
 			warnSingleThreaded();
 			// Sequential col2im
 			for (int n = 0; n < params.N; n++) { // Do following for all images
-				for (int c = 0; c < params.C; c++) { // Since format is NCHW
-					doCol2imOverInputPath_NCHW(n, c, params);
-				}
+				doCol2imOverMultipleImages(n, params);
 			}
 		}
 		else {
 			// Parallel col2im
-			runConvTask(constrainedNumThreads, params.C, TaskType.Col2Im, params);
+			runConvTask(constrainedNumThreads, 1, TaskType.Col2Im, params);
 		}
 	}
 	
 	
 	// Converts input: PQ X CRS matrix and writes to 1 X CHW
-	private static void doCol2imOverSingleImage(int n, MatrixBlock input, ConvolutionParameters params) throws DMLRuntimeException {
+	private static void doCol2imOverSingleImage(int outputN, MatrixBlock input, ConvolutionParameters params) throws DMLRuntimeException {
 		if(input.rlen != params.P*params.Q || input.clen != params.C*params.R*params.S) {
 			throw new DMLRuntimeException("Incorrect input dimensions");
 		}
@@ -1109,45 +1104,64 @@ public class LibMatrixDNN {
 		
 		if(!input.isInSparseFormat()) {
 			double [] inputArray = input.getDenseBlock();
-			doCol2IMDenseInput(n, inputArray, outputArray, params);
+			doCol2IMDenseInput(0, outputN, inputArray, outputArray, params);
 		}
 		else {
-			doCol2IMSparseInput(n, input.getSparseBlockIterator(), outputArray, params);
+			doCol2IMSparseInput(0, outputN, input.getSparseBlockIterator(), outputArray, params);
 		}
 	}
 	
-	private static void doCol2IMSparseInput(int n, Iterator<IJV> inputIter, double [] outputArray, ConvolutionParameters params) throws DMLRuntimeException {
-		int [] tensorIndexes = new int[4];
+	private static void doCol2IMSparseInput(int inputN, int outputN, Iterator<IJV> inputIter, double [] outputArray, ConvolutionParameters params) throws DMLRuntimeException {
+		int [] tensorIndexes = new int[3];
+		
 		while(inputIter.hasNext()) {
 			IJV ijv = inputIter.next();
-			computeTensorIndexes(ijv.getI(), ijv.getJ(), tensorIndexes, params.P*params.Q, params.C, params.R, params.S);
-			int c = tensorIndexes[1];
-			int r = tensorIndexes[2];
-			int s = tensorIndexes[3];
-			int p = ijv.getI() / params.Q;
-			int q = ijv.getI() % params.Q;
+			computeTensorIndexes(ijv.getJ(), tensorIndexes, params.R, params.S);
+			int c = tensorIndexes[0];
+			int r = tensorIndexes[1];
+			int s = tensorIndexes[2];
+			computeTensorIndexes(ijv.getI(), tensorIndexes, params.P, params.Q);
+			int p = tensorIndexes[1];
+			int q = tensorIndexes[2];
+			if(inputN != tensorIndexes[0]) {
+				throw new DMLRuntimeException("Incorrect tensor indexes: " + inputN + " != " + tensorIndexes[0] + " <" + p + " " + q + " " + ijv.getI() + params.P + " " + params.Q + ">");
+			}
 			int h = p*params.stride_h + r - params.pad_h;
 			int w = q*params.stride_w + s - params.pad_w;
 			if(h >= 0 && h < params.H && w >= 0 && w < params.W) {
-				int outIndex = n*params.C*params.H*params.W + c*params.H*params.W + h*params.W + w;
+				int outIndex = outputN*params.C*params.H*params.W + c*params.H*params.W + h*params.W + w;
 				outputArray[outIndex] += ijv.getV();
 			}
 		}
 	}
 	
-	private static void doCol2IMDenseInput(int n, double [] inputArray, double [] outputArray, ConvolutionParameters params) throws DMLRuntimeException {
-		for (int c = 0; c < params.C; c++) {
-			for (int r = 0; r < params.R; r++) { // Get an input patch of size R X S
-				for (int s = 0; s < params.S; s++) {
-					for (int p = 0; p < params.P; p++) {
-						for (int q = 0; q < params.Q; q++) {
-							int inputIndex = (p*params.Q + q)*params.C*params.R*params.S + c*params.R*params.S + r*params.S + s;
-							int h = p*params.stride_h + r - params.pad_h;
-							int w = q*params.stride_w + s - params.pad_w;
-							if(h >= 0 && h < params.H && w >= 0 && w < params.W) {
-								int outIndex = n*params.C*params.H*params.W + c*params.H*params.W + h*params.W + w;
-								outputArray[outIndex] += inputArray[inputIndex];
-							}
+	// Converts input: PQ X CRS matrix and writes to 1 X CHW if inputN == 0
+	// Or converts input: NPQ X CRS matrix and writes to N X CHW 
+	private static void doCol2IMDenseInput(int inputN, int outputN, double [] inputArray, double [] outputArray, ConvolutionParameters params) throws DMLRuntimeException {
+		final int outputNOffset = outputN*params.C*params.H*params.W;
+		for (int p = 0; p < params.P; p++) {
+			// h = p*params.stride_h + r - params.pad_h
+			//   = r + hOffset
+			// Based on restrictions: h >= 0 and r >= 0 and h < params.H and r < params.R, we get
+			// max(0, - hOffset) <= r < min(params.R, params.H - hOffset)
+			final int hOffset = p*params.stride_h - params.pad_h;
+			final int rStart = Math.max(0, - hOffset);
+			final int rEnd = Math.min(params.R, params.H - hOffset);
+			for (int q = 0; q < params.Q; q++) {
+				// Using the same logic as above on following:
+				// w = q*params.stride_w + s - params.pad_w
+				final int wOffset = q*params.stride_w - params.pad_w;
+				final int sStart = Math.max(0, - wOffset);
+				final int sEnd = Math.min(params.S, params.W - wOffset);
+				final int tempOffset = (inputN*params.P*params.Q + p*params.Q + q)*params.C*params.R*params.S;
+				for (int c = 0; c < params.C; c++) {
+					final int outOffset = outputNOffset + c*params.H*params.W;
+					final int inputOffset = tempOffset + c*params.R*params.S;
+					for (int r = rStart; r < rEnd; r++) {
+						for (int s = sStart; s < sEnd; s++) {
+							int inputIndex = inputOffset + r*params.S + s;
+							int outIndex = outOffset + (hOffset + r)*params.W + wOffset + s;
+							outputArray[outIndex] += inputArray[inputIndex];
 						}
 					}
 				}
@@ -1155,48 +1169,28 @@ public class LibMatrixDNN {
 		}
 	}
 		
-	private static void doCol2imOverInputPath_NCHW(int n, int c, ConvolutionParameters params) {
-		double [] inputArray = null;
-		if (!params.input1.isInSparseFormat())
-			inputArray = params.input1.getDenseBlock();
+	// NPQ X CRS
+	private static void doCol2imOverMultipleImages(int n, ConvolutionParameters params) throws DMLRuntimeException {
+		MatrixBlock input = params.input1;
+		
+		if(input.rlen != params.N*params.P*params.Q || input.clen != params.C*params.R*params.S) {
+			throw new DMLRuntimeException("Incorrect input dimensions");
+		}
+		
 		double [] outputArray = null;
 		if (!params.output.isInSparseFormat())
 			outputArray = params.output.getDenseBlock();
-		
-		for (int r = 0; r < params.R; r++) { // Get an input patch of size R X S
-			for (int s = 0; s < params.S; s++) {
-				int localIndex = ((c*params.R*params.S*params.N + r*params.S*params.N + s*params.N + n)*params.P*params.Q);
-				
-				int input_row = r - params.pad_h;
-				// And copy it to outputArray[i] (taking care of padding & striding)
-				for (int p = params.P; p > 0; p--) {
-					if (input_row >= 0 && input_row < params.H) {
-						int input_col = s - params.pad_w;
-						for (int q = params.Q; q > 0; q--, localIndex++) {
-							if (input_col >= 0 && input_col < params.W) {
-								// Copy from [channel c, height input_row, width input_col]
-								int index = n*params.C*params.H*params.W + c*params.H*params.W + input_row*params.W + input_col;
-								if (inputArray != null) {
-									outputArray[index] += inputArray[localIndex];
-								}
-								else {
-									// TODO: Optimize for sparse input
-									// Note: localIndex = row*N*P*Q + col
-									int row = localIndex / (params.N*params.P*params.Q);
-									int col = localIndex % (params.N*params.P*params.Q);
-									outputArray[index] += params.input1.quickGetValue(row, col); 
-								}
-							}
-							input_col += params.stride_w;
-						}
-					} else {
-						localIndex += params.Q;
-					}
-					input_row += params.stride_h;
-				}
-			}
+		else {
+			throw new DMLRuntimeException("Only dense output is implemented");
 		}
 		
+		if(!input.isInSparseFormat()) {
+			double [] inputArray = input.getDenseBlock();
+			doCol2IMDenseInput(n, n, inputArray, outputArray, params);
+		}
+		else {
+			doCol2IMSparseInput(n, n, input.getSparseBlockIterator(n*params.P*params.Q, (n+1)*params.P*params.Q), outputArray, params);
+		}
 	}
 	
 	private static long doIm2colOverInputPath_NCHW(int n, int c, ConvolutionParameters params) throws DMLRuntimeException {

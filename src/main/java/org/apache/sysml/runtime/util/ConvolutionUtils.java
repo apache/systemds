@@ -196,33 +196,45 @@ public class ConvolutionUtils {
 			return null;
 		
 		if(currentHop != null && isConvolutionOp(currentHop, ConvOp.COL2IM)) {
-			Hop temp = currentHop.getInput().get(0);
-			if(temp != null && isTranspose(temp)) {
-				Hop matMult = temp.getInput().get(0);
-				if(matMult != null && isMatMult(matMult)) {
-					Hop rotate180 = matMult.getInput().get(0);
-					Hop filter = matMult.getInput().get(1);
-					if(isConvolutionOp(rotate180, ConvOp.ROTATE180)) {
-						ArrayList<Hop> inputs = new ArrayList<Hop>();
-						inputs.add(filter);
-						inputs.add(rotate180.getInput().get(0));
-						for(int i = 1; i < rotate180.getInput().size(); i++) {
-							inputs.add(rotate180.getInput().get(i));
-						}
-						
-						// N, C * H * W
-						long N = currentHop.computeSizeInformation(inputs.get(6));
-						long C = currentHop.computeSizeInformation(inputs.get(7));
-						long H = currentHop.computeSizeInformation(inputs.get(8));
-						long W = currentHop.computeSizeInformation(inputs.get(9));
-						long rlen = N;
-						long clen = ConvolutionOp.getExtractedVal(C, H, W);
-						return ConvolutionOp.constructFusedConvolutionLops(et, inputs, ConvOp.DIRECT_CONV2D_BACKWARD_DATA, (ConvolutionOp) rotate180, rlen, clen);
-						
-						
+			Hop matMult = currentHop.getInput().get(0);
+			if(matMult != null && isMatMult(matMult)) {
+				Hop rotate180 = matMult.getInput().get(0);
+				Hop filter = matMult.getInput().get(1);
+				if(isConvolutionOp(rotate180, ConvOp.ROTATE180)) {
+					ArrayList<Hop> inputs = new ArrayList<Hop>();
+					inputs.add(filter);
+					inputs.add(rotate180.getInput().get(0));
+					for(int i = 1; i < rotate180.getInput().size(); i++) {
+						inputs.add(rotate180.getInput().get(i));
 					}
+					
+					// N, C * H * W
+					long N = currentHop.computeSizeInformation(inputs.get(6));
+					long C = currentHop.computeSizeInformation(inputs.get(7));
+					long H = currentHop.computeSizeInformation(inputs.get(8));
+					long W = currentHop.computeSizeInformation(inputs.get(9));
+					long K = currentHop.computeSizeInformation(inputs.get(10));
+					long R = currentHop.computeSizeInformation(inputs.get(12));
+					long S = currentHop.computeSizeInformation(inputs.get(13));
+					long stride_h = currentHop.computeSizeInformation(inputs.get(2));
+					long stride_w = currentHop.computeSizeInformation(inputs.get(3));
+					long pad_h = currentHop.computeSizeInformation(inputs.get(4));
+					long pad_w = currentHop.computeSizeInformation(inputs.get(5));
+					long P = -1; long Q = -1;
+					if(H > 0 && R > 0 && stride_h > 0 && pad_h > 0)
+						P = ConvolutionUtils.getP(H, R, stride_h, pad_h);
+					if(W > 0 && S > 0 && stride_w > 0 && pad_w > 0)
+						Q = ConvolutionUtils.getQ(W, S, stride_w, pad_w);
+					
+					if(preferIm2Col(et, N, K, C, R, S, P, Q)) {
+						return null;
+					}
+					long rlen = N;
+					long clen = ConvolutionOp.getExtractedVal(C, H, W);
+					return ConvolutionOp.constructFusedConvolutionLops(et, inputs, ConvOp.DIRECT_CONV2D_BACKWARD_DATA, (ConvolutionOp) rotate180, rlen, clen);					
 				}
 			}
+			
 		}
 		
 		return null;

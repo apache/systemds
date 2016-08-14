@@ -2863,9 +2863,9 @@ public class DMLTranslator
 			Hop dout_reshaped = new ConvolutionOp(dout.getName(), dout.getDataType(), dout.getValueType(), Hop.ConvOp.ROTATE180, inHops1);
 
 			Hop temp1 = new AggBinaryOp("temp" + target.getName(), target.getDataType(), target.getValueType(), OpOp2.MULT, AggOp.SUM, dout_reshaped, filter);
-			Hop temp2 = new ReorgOp("tempTranspose" + target.getName(), target.getDataType(), target.getValueType(), Hop.ReOrgOp.TRANSPOSE, temp1);
+			// Hop temp2 = new ReorgOp("tempTranspose" + target.getName(), target.getDataType(), target.getValueType(), Hop.ReOrgOp.TRANSPOSE, temp1);
 
-			ArrayList<Hop> inHops2 = getALHopsForConvOp(temp2, source, 2, hops);
+			ArrayList<Hop> inHops2 = getALHopsForConvOp(temp1, source, 2, hops);
 			currBuiltinOp = new ConvolutionOp(target.getName(), target.getDataType(), target.getValueType(), Hop.ConvOp.COL2IM, inHops2);
 			setBlockSizeAndRefreshSizeInfo(filter, currBuiltinOp);
 			break;

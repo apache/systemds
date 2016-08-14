@@ -100,6 +100,31 @@ public class LibMatrixMult
 	}
 	
 	/**
+	 * This method allows one to disabling exam sparsity. This feature is useful if matrixMult is used as an intermediate
+	 * operation (for example: LibMatrixDNN). It makes sense for LibMatrixDNN because the output is internally
+	 * consumed by another dense instruction, which makes repeated conversion to sparse wasteful.
+	 * This should be used in rare cases and if you are unsure,
+	 * use the method 'matrixMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret)' instead.
+	 * 
+	 * @param m1
+	 * @param m2
+	 * @param ret
+	 * @param examSparsity
+	 * @throws DMLRuntimeException
+	 */
+	public static void matrixMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, boolean examSparsity) 
+			throws DMLRuntimeException
+	{	
+		matrixMult(m1, m2, ret, 0, m1.rlen, examSparsity);
+	}
+	
+	public static void matrixMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int rl, int ru) 
+			throws DMLRuntimeException
+	{
+		matrixMult(m1, m2, ret, rl, ru, true);
+	}
+	
+	/**
 	 * 
 	 * @param m1
 	 * @param m2
@@ -108,7 +133,7 @@ public class LibMatrixMult
 	 * @param ru
 	 * @throws DMLRuntimeException
 	 */
-	public static void matrixMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int rl, int ru) 
+	public static void matrixMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int rl, int ru, boolean examSparsity) 
 		throws DMLRuntimeException
 	{	
 		//check inputs / outputs
@@ -146,7 +171,9 @@ public class LibMatrixMult
 		//post-processing: nnz/representation
 		if( !ret.sparse )
 			ret.recomputeNonZeros();
-		ret.examSparsity();
+		
+		if(examSparsity)
+			ret.examSparsity();
 		
 		//System.out.println("MM ("+m1.isInSparseFormat()+","+m1.getNumRows()+","+m1.getNumColumns()+","+m1.getNonZeros()+")x" +
 		//		              "("+m2.isInSparseFormat()+","+m2.getNumRows()+","+m2.getNumColumns()+","+m2.getNonZeros()+") in "+time.stop());

@@ -33,15 +33,12 @@ import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.LibMatrixDNN.ConvolutionParameters;
-import org.apache.sysml.runtime.util.ConvolutionUtils;
 
 public class ConvolutionOp extends Hop  implements MultiThreadedHop
 {	
 	private Hop.ConvOp op;
 
 	private int _maxNumThreads = -1; //-1 for unlimited
-	
-	public static boolean FORCE_NON_IM2COL = false;
 
 	private ConvolutionOp() {
 		//default constructor for clone
@@ -94,41 +91,14 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		
 		ExecType et = optFindExecType();
 		
-		Lop ret = ConvolutionUtils.constructConvolutionLops(this, et);
-		if(ret != null) {
-			setLops(ret);
-			return ret;
-		}
-		ret = ConvolutionUtils.constructConvolutionBackwardDataLops(this, et);
-		if(ret != null) {
-			setLops(ret);
-			return ret;
-		}
-		
 		ArrayList<Hop> inputs = getInput();
 		switch( op )
 		{
-			case IM2COL:
-			case RESHAPE_COL:
-			case ROTATE180:
-			case COL2IM:
-			{	
-				et = ExecType.CP; // TODO: Since max_backwards and other Convolution Ops only implemented for CP
-				
-				if( et == ExecType.CP  )
-				{
-					setLops(constructConvolutionLops(et, inputs));
-					break;
-				}
-				else {
-					// TODO: Add support for SPARK/MR backends once we are happy with the performance of
-					// single node Lenet script. 
-					throw new HopsException("Unimplemented ConvolutionOp for execution type: " + et.name());
-				}
-				// break;
-			}
 			case MAX_POOLING:
 			case MAX_POOLING_BACKWARD:
+			case DIRECT_CONV2D:
+			case DIRECT_CONV2D_BACKWARD_DATA:
+			case DIRECT_CONV2D_BACKWARD_FILTER:
 			{	
 				//TODO: Fix me. Currently forcing the instruction to GPU if gpu flag is set
 				if(DMLScript.USE_ACCELERATOR) {
@@ -140,22 +110,6 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 					setLops(constructConvolutionLops(et, inputs));
 					break;
 				}			
-				else {
-					// TODO: Add support for SPARK/MR backends once we are happy with the performance of
-					// single node Lenet script. 
-					throw new HopsException("Unimplemented ConvolutionOp for execution type: " + et.name());
-				}
-				// break;
-			}
-			case DIRECT_CONV2D:
-			case DIRECT_CONV2D_BACKWARD_DATA:
-			case DIRECT_CONV2D_BACKWARD_FILTER:
-			{	
-				if( et == ExecType.GPU )
-				{
-					setLops(constructConvolutionLops(et, inputs));
-					break;
-				}
 				else {
 					// TODO: Add support for SPARK/MR backends once we are happy with the performance of
 					// single node Lenet script. 
@@ -261,24 +215,6 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	protected double computeOutputMemEstimate( long dim1, long dim2, long nnz )
 	{		
 		double sparsity = 1.0;
-		switch(op) 
-		{
-			case RESHAPE_COL:
-			case ROTATE180:
-			{
-				sparsity = OptimizerUtils.getSparsity(dim1, dim2, nnz);
-				break;
-			}
-			case IM2COL:
-			case COL2IM: 
-			case MAX_POOLING: 
-			case MAX_POOLING_BACKWARD:
-			case DIRECT_CONV2D: 
-			case DIRECT_CONV2D_BACKWARD_FILTER: 
-			case DIRECT_CONV2D_BACKWARD_DATA:
-				sparsity = 1.0; // worst-case estimate
-				break;
-		}
 		return OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);
 	}
 	
@@ -306,38 +242,6 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		
 		switch(op) 
 		{
-			case RESHAPE_COL:
-			{				
-				ret = new long[3];
-				ret[0] = params.N;
-				ret[1] = getExtractedVal(params.K, params.P, params.Q);
-				ret[2] = mc.getNonZeros(); // exact estimates
-				break;
-			}
-			case ROTATE180:
-			{
-				ret = new long[3];
-				ret[0] = getExtractedVal(params.N, params.P, params.Q);
-				ret[1] = params.K;
-				ret[2] = mc.getNonZeros(); // exact estimates
-				break;
-			}
-			case IM2COL:
-			{
-				ret = new long[3];
-				ret[0] = getExtractedVal(params.C, params.R, params.S);
-				ret[1] = getExtractedVal(params.N, params.P, params.Q);
-				ret[2] = -1;
-				break;
-			}
-			case COL2IM:
-			{
-				ret = new long[3];
-				ret[0] = params.N;
-				ret[1] = getExtractedVal(params.C, params.H, params.W);
-				ret[2] = -1;
-				break;
-			}
 			case MAX_POOLING:
 			{
 				ret = new long[3];
@@ -496,8 +400,6 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	@Override
 	public void refreshSizeInformation()
 	{
-		Hop input1 = getInput().get(0);
-		
 		ConvolutionParameters params;
 		try {
 			params = parseInput();
@@ -507,35 +409,6 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		
 		switch(op) 
 		{
-			case IM2COL:
-			{
-				_dim1 = getExtractedVal(params.C, params.R, params.S);
-				_dim2 = getExtractedVal(params.N, params.P, params.Q);
-				_nnz = -1;
-				break;
-			}
-			case COL2IM:
-			{
-				// Set _dim1, _dim2 and if possible _nnz (use input1.getNnz())
-				_dim1 = params.N;
-				_dim2 = getExtractedVal(params.C, params.H, params.W);
-				_nnz = -1; // cannot infer stats
-				break;
-			}
-			case RESHAPE_COL:
-			{
-				_dim1 = params.N;
-				_dim2 = getExtractedVal(params.K, params.P, params.Q);
-				_nnz = input1.getNnz(); // exact estimates
-				break;
-			}
-			case ROTATE180:
-			{
-				_dim1 = getExtractedVal(params.N, params.P, params.Q);
-				_dim2 = params.K;
-				_nnz = input1.getNnz(); // exact estimates
-				break;
-			}
 			case MAX_POOLING:
 			{	
 				_dim1 = params.N;

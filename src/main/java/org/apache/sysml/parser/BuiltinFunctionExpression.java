@@ -1109,8 +1109,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		case MAX_POOL_BACKWARD:
 		{
 			// At DML level:
-			// output = conv2d(input, filter, input_shape=[3, 2, 2], filter_shape=[3, 2, 2], 
-			// strides=[1, 1], border_mode="valid")
+			// output = conv2d(input, filter, input_shape=[1, 3, 2, 2], filter_shape=[1, 3, 2, 2], 
+			// strides=[1, 1], padding=[1,1])
 			// 
 			// Converted to following in constructor (only supported NCHW):
 			// output = conv2d(input, filter, stride1, stride2, padding1,padding2,  

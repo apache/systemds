@@ -2803,18 +2803,9 @@ public class DMLTranslator
 			
 		case CONV2D:
 		{
-			Hop filter = expr2;
-			// Step 1: IM2COL
 			Hop image = expr;
-			ArrayList<Hop> inHops1 = getALHopsForConvOp(image, source, 2, hops);
-			Hop loweredMat = new ConvolutionOp(image.getName(), image.getDataType(), image.getValueType(), Hop.ConvOp.IM2COL, inHops1);
-
-			// Step 2: Matrix multiplication
-			Hop temp = new AggBinaryOp("temp" + target.getName(), target.getDataType(), target.getValueType(), OpOp2.MULT, AggOp.SUM, filter, loweredMat);
-
-			// Step 3: Reshape col
-			ArrayList<Hop> inHops2 = getALHopsForConvOp(temp, source, 2, hops);
-			currBuiltinOp = new ConvolutionOp(target.getName(), target.getDataType(), target.getValueType(), Hop.ConvOp.RESHAPE_COL, inHops2);
+			ArrayList<Hop> inHops1 = getALHopsForConvOp(image, source, 1, hops);
+			currBuiltinOp = new ConvolutionOp(target.getName(), target.getDataType(), target.getValueType(), Hop.ConvOp.DIRECT_CONV2D, inHops1);
 			setBlockSizeAndRefreshSizeInfo(image, currBuiltinOp);
 			break;
 		}
@@ -2841,33 +2832,17 @@ public class DMLTranslator
 		case CONV2D_BACKWARD_FILTER:
 		{
 			Hop image = expr;
-			Hop dout = expr2;
-
-			ArrayList<Hop> inHops1 = getALHopsForConvOp(image, source, 2, hops);
-			Hop x_col = new ConvolutionOp(image.getName(), image.getDataType(), image.getValueType(), Hop.ConvOp.IM2COL, inHops1);
-
-			ArrayList<Hop> inHops2 = getALHopsForConvOp(dout, source, 2, hops);
-			Hop dout_reshaped = new ConvolutionOp(dout.getName(), dout.getDataType(), dout.getValueType(), Hop.ConvOp.ROTATE180, inHops2);
-
-			Hop dfilter1 = new AggBinaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp2.MULT, AggOp.SUM, x_col, dout_reshaped);
-			currBuiltinOp = new ReorgOp("tempTranspose" + image.getName(), image.getDataType(), image.getValueType(), Hop.ReOrgOp.TRANSPOSE, dfilter1);
+			ArrayList<Hop> inHops1 = getALHopsForConvOp(image, source, 1, hops);
+			currBuiltinOp = new ConvolutionOp(target.getName(), target.getDataType(), target.getValueType(), Hop.ConvOp.DIRECT_CONV2D_BACKWARD_FILTER, inHops1);
 			setBlockSizeAndRefreshSizeInfo(image, currBuiltinOp);
 			break;
 		}
 		case CONV2D_BACKWARD_DATA:
 		{
-			Hop filter = expr;
-			Hop dout = expr2;
-
-			ArrayList<Hop> inHops1 = getALHopsForConvOp(dout, source, 2, hops);
-			Hop dout_reshaped = new ConvolutionOp(dout.getName(), dout.getDataType(), dout.getValueType(), Hop.ConvOp.ROTATE180, inHops1);
-
-			Hop temp1 = new AggBinaryOp("temp" + target.getName(), target.getDataType(), target.getValueType(), OpOp2.MULT, AggOp.SUM, dout_reshaped, filter);
-			// Hop temp2 = new ReorgOp("tempTranspose" + target.getName(), target.getDataType(), target.getValueType(), Hop.ReOrgOp.TRANSPOSE, temp1);
-
-			ArrayList<Hop> inHops2 = getALHopsForConvOp(temp1, source, 2, hops);
-			currBuiltinOp = new ConvolutionOp(target.getName(), target.getDataType(), target.getValueType(), Hop.ConvOp.COL2IM, inHops2);
-			setBlockSizeAndRefreshSizeInfo(filter, currBuiltinOp);
+			Hop image = expr;
+			ArrayList<Hop> inHops1 = getALHopsForConvOp(image, source, 1, hops);
+			currBuiltinOp = new ConvolutionOp(target.getName(), target.getDataType(), target.getValueType(), Hop.ConvOp.DIRECT_CONV2D_BACKWARD_DATA, inHops1);
+			setBlockSizeAndRefreshSizeInfo(image, currBuiltinOp);
 			break;
 		}
 			 

@@ -80,13 +80,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
-		if (opcode.equalsIgnoreCase("reshape_col")
-				|| opcode.equalsIgnoreCase("rotate180")
-				|| opcode.equalsIgnoreCase("im2col")
-				|| opcode.equalsIgnoreCase("col2im")
-				|| opcode.equalsIgnoreCase("pooling_pre_reshape")
-				|| opcode.equalsIgnoreCase("pooling_post_reshape")
-				|| opcode.equalsIgnoreCase("maxpooling")) {
+		if (opcode.equalsIgnoreCase("maxpooling")) {
 			InstructionUtils.checkNumFields(parts, 15);
 			// stride1, stride2, padding1, padding2
 			// input_shape1, input_shape2, input_shape3, input_shape4,
@@ -115,8 +109,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			return new ConvolutionCPInstruction(in, out, opcode, str, stride,
 					padding, input_shape, filter_shape, k);
 		} 
-		else if (opcode.equalsIgnoreCase("pooling_backward_reshape")
-				|| opcode.equalsIgnoreCase("maxpooling_backward")
+		else if (opcode.equalsIgnoreCase("maxpooling_backward")
 				|| opcode.equalsIgnoreCase("conv2d")
 				|| opcode.equalsIgnoreCase("conv2d_backward_filter")
 				|| opcode.equalsIgnoreCase("conv2d_backward_data")) {
@@ -186,38 +179,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		int Q = (int) ConvolutionUtils.getQ(W, S, stride_w, pad_w);
 		
 		ConvolutionParameters params = new ConvolutionParameters(N, C, H, W, K, R, S, stride_h, stride_w, pad_h, pad_w, _numThreads);
-		
-		if (instOpcode.equalsIgnoreCase("im2col")) {
-			checkHeightWidth(ec, params);
-			checkInputDimensionForIm2col(matBlock, params);
-			outputBlock = getDenseOutputBlock(ec, C * R * S, N * P * Q, true);
-			params.setReuseNonZeroedOutput(_reuseNonZeroedOutput);
-			LibMatrixDNN.im2col(matBlock, outputBlock, params);
-		}
-		else if (instOpcode.equalsIgnoreCase("reshape_col")) {
-			checkHeightWidth(ec, params);
-			// Is eligible for REUSE_NONZEROED_OUTPUT but cannot guarantee that previous output has been rmvar-ed
-			// without somewhat expensive HashMap checks
-			outputBlock = getDenseOutputBlock(ec, N, K * P * Q, true);
-			params.setReuseNonZeroedOutput(_reuseNonZeroedOutput);
-			LibMatrixDNN.reshape_col(matBlock, outputBlock, params);
-		}
-		else if (instOpcode.equalsIgnoreCase("rotate180")) {
-			checkHeightWidth(ec, params);
-			// Is eligible for REUSE_NONZEROED_OUTPUT and always an intermediate instruction
-			outputBlock = getDenseOutputBlock(ec, N * P * Q, K, true);
-			params.setReuseNonZeroedOutput(_reuseNonZeroedOutput);
-			LibMatrixDNN.rotate180(matBlock, outputBlock, params);
-		}
-		else if (instOpcode.equalsIgnoreCase("col2im")) {
-			checkHeightWidth(ec, params);
-			checkInputDimensionForCol2im(matBlock, params);
-			// needs to be zeroed-out
-			outputBlock = getDenseOutputBlock(ec, N, C * H * W, false);
-			params.setReuseNonZeroedOutput(_reuseNonZeroedOutput);
-			LibMatrixDNN.col2im(matBlock, outputBlock, params);
-		}
-		else if (instOpcode.equalsIgnoreCase("maxpooling")) {
+		if (instOpcode.equalsIgnoreCase("maxpooling")) {
 			// Is eligible for REUSE_NONZEROED_OUTPUT but cannot guarantee that previous output has been rmvar-ed
 			// without somewhat expensive HashMap checks
 			outputBlock = getDenseOutputBlock(ec, N, C*P*Q, true);
@@ -283,39 +245,5 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		if(DMLScript.STATISTICS)
 			Statistics.incrementAllocationTime(System.nanoTime()-start, false);
 		return outputBlock;
-	}
-	
-	private void checkHeightWidth(ExecutionContext ec, ConvolutionParameters params) throws DMLRuntimeException {
-		int numChannelsInFilter = getScalarInput(ec, _filter_shape, 1);
-		
-		if (numChannelsInFilter != params.C) { 
-			throw new DMLRuntimeException("The number of channels of input and filter should match");
-		}
-		if((params.W + 2 * params.pad_w - params.S) % params.stride_w != 0) {
-			throw new DMLRuntimeException("The width does not work (Hint: (W + 2 * pad_w - S) % stride_w should be 0 [ ==> (" + params.W + "+" + " 2*" + params.pad_w + "-" +  params.S + ") % " + params.stride_w + "!= 0] ");
-		}
-		if((params.H + 2 * params.pad_h - params.R) % params.stride_h != 0) {
-			throw new DMLRuntimeException("The height does not work (Hint: (H + 2 * pad_h - R) % stride_h should be 0 [ ==> (" + params.H + "+" + " 2*" + params.pad_h + "-" +  params.R + ") % " + params.stride_h + "!= 0] ");
-		}
-		if(params.H <= 0) {
-			throw new DMLRuntimeException("Height of output patch should be zero");
-		}
-		if(params.Q <= 0) {
-			throw new DMLRuntimeException("Width of output patch should be zero");
-		}
-	}
-
-
-
-	private void checkInputDimensionForIm2col(MatrixBlock matBlock, ConvolutionParameters params) throws DMLRuntimeException {
-		if((params.N != matBlock.getNumRows() || params.C*params.H*params.W != matBlock.getNumColumns())) {
-			throw new DMLRuntimeException("Incorrect input shape in im2col");
-		}
-	}
-	
-	private void checkInputDimensionForCol2im(MatrixBlock matBlock, ConvolutionParameters params) throws DMLRuntimeException {
-		if((params.N*params.P*params.Q != matBlock.getNumRows() || params.C*params.R*params.S != matBlock.getNumColumns())) {
-			throw new DMLRuntimeException("Incorrect input shape in col2im");
-		}
 	}
 }

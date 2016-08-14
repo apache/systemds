@@ -22,7 +22,6 @@ import java.util.HashMap;
 
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
-import org.apache.sysml.hops.ConvolutionOp;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.runtime.util.ConvolutionUtils;
@@ -50,70 +49,35 @@ public class Conv2DBackwardTest extends AutomatedTestBase
 	public void testConv2DBackwardFilterDense1() 
 	{
 		int numImg = 3; int imgSize = 3; int numChannels = 3; int numFilters = 1; int filterSize = 2; int stride = 1; int pad = 0;
-		runConv2DBackwardFilterTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false);
+		runConv2DBackwardFilterTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad);
 	}
 	
 	@Test
 	public void testConv2DBackwardFilterDense2() 
 	{
 		int numImg = 3; int imgSize = 3; int numChannels = 3; int numFilters = 4; int filterSize = 2; int stride = 1; int pad = 0;
-		runConv2DBackwardFilterTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false);
+		runConv2DBackwardFilterTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad);
 	}
 	
 	@Test
 	public void testConv2DBackwardFilterDense3() 
 	{
 		int numImg = 3; int imgSize = 10; int numChannels = 4; int numFilters = 3; int filterSize = 2; int stride = 2; int pad = 1;
-		runConv2DBackwardFilterTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false);
+		runConv2DBackwardFilterTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad);
 	}
 	
 	@Test
 	public void testConv2DBackwardFilterDense4() 
 	{
 		int numImg = 3; int imgSize = 10; int numChannels = 4; int numFilters = 3; int filterSize = 5; int stride = 1; int pad = 1;
-		runConv2DBackwardFilterTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false);
+		runConv2DBackwardFilterTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad);
 	}
 	
 	@Test
 	public void testConv2DBackwardFilterDense5() 
 	{
 		int numImg = 3; int imgSize = 10; int numChannels = 2; int numFilters = 3; int filterSize = 5; int stride = 3; int pad = 2;
-		runConv2DBackwardFilterTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false);
-	}
-	
-	@Test
-	public void testConv2DBackwardFilterDense6() 
-	{
-		int numImg = 3; int imgSize = 3; int numChannels = 3; int numFilters = 1; int filterSize = 2; int stride = 1; int pad = 0;
-		runConv2DBackwardFilterTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, true);
-	}
-	
-	@Test
-	public void testConv2DBackwardFilterDense7() 
-	{
-		int numImg = 3; int imgSize = 3; int numChannels = 3; int numFilters = 4; int filterSize = 2; int stride = 1; int pad = 0;
-		runConv2DBackwardFilterTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, true);
-	}
-	
-	@Test
-	public void testConv2DBackwardFilterDense8() 
-	{
-		int numImg = 3; int imgSize = 10; int numChannels = 4; int numFilters = 3; int filterSize = 2; int stride = 2; int pad = 1;
-		runConv2DBackwardFilterTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, true);
-	}
-	
-	@Test
-	public void testConv2DBackwardFilterDense9() 
-	{
-		int numImg = 3; int imgSize = 10; int numChannels = 4; int numFilters = 3; int filterSize = 5; int stride = 1; int pad = 1;
-		runConv2DBackwardFilterTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, true);
-	}
-	
-	@Test
-	public void testConv2DBackwardFilterDense10() 
-	{
-		int numImg = 3; int imgSize = 10; int numChannels = 2; int numFilters = 3; int filterSize = 5; int stride = 3; int pad = 2;
-		runConv2DBackwardFilterTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, true);
+		runConv2DBackwardFilterTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad);
 	}
 	
 	/**
@@ -122,13 +86,11 @@ public class Conv2DBackwardTest extends AutomatedTestBase
 	 * @param sparse
 	 */
 	public void runConv2DBackwardFilterTest( ExecType et, int imgSize, int numImg, int numChannels, int numFilters, 
-			int filterSize, int stride, int pad, boolean forceNonIm2Col) 
+			int filterSize, int stride, int pad) 
 	{
 		RUNTIME_PLATFORM oldRTP = rtplatform;
 			
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		boolean oldForceNonIm2col = ConvolutionOp.FORCE_NON_IM2COL;
-		ConvolutionOp.FORCE_NON_IM2COL = forceNonIm2Col;
 		try
 		{
 		    TestConfiguration config = getTestConfiguration(TEST_NAME);
@@ -176,7 +138,6 @@ public class Conv2DBackwardTest extends AutomatedTestBase
 		{
 			rtplatform = oldRTP;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
-			ConvolutionOp.FORCE_NON_IM2COL = oldForceNonIm2col;
 		}
 	}
 	

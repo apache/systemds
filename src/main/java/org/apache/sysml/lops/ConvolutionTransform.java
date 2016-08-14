@@ -30,12 +30,7 @@ public class ConvolutionTransform extends Lop
 
 	
 	public enum OperationTypes {
-		IM2COL,
-		RESHAPE_COL,
-		ROTATE180,
-		COL2IM,
-		MAX_POOLING,
-		MAX_POOLING_BACKWARD,
+		MAX_POOLING, MAX_POOLING_BACKWARD,
 		DIRECT_CONV2D, DIRECT_CONV2D_BACKWARD_FILTER, DIRECT_CONV2D_BACKWARD_DATA
 	};
 	
@@ -101,19 +96,7 @@ public class ConvolutionTransform extends Lop
 
 	private String getOpcode() {
 		switch(operation) {
-			
-		case IM2COL:
-			return "im2col";
-			
-		case RESHAPE_COL:
-			return "reshape_col";
-		
-		case ROTATE180:
-			return "rotate180";
-		
-		case COL2IM:
-			return "col2im";
-			
+				
 		case MAX_POOLING:
 			return "maxpooling";
 			

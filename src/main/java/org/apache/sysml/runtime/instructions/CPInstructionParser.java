@@ -218,10 +218,6 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "rsort"      , CPINSTRUCTION_TYPE.Reorg);
 
 		// Opcodes related to convolutions
-		String2CPInstructionType.put( "im2col"      , CPINSTRUCTION_TYPE.Convolution);
-		String2CPInstructionType.put( "reshape_col"      , CPINSTRUCTION_TYPE.Convolution);
-		String2CPInstructionType.put( "rotate180"      , CPINSTRUCTION_TYPE.Convolution);
-		String2CPInstructionType.put( "col2im"      , CPINSTRUCTION_TYPE.Convolution);
 		String2CPInstructionType.put( "maxpooling"      , CPINSTRUCTION_TYPE.Convolution);
 		String2CPInstructionType.put( "maxpooling_backward"      , CPINSTRUCTION_TYPE.Convolution);
 		String2CPInstructionType.put( "conv2d"      , CPINSTRUCTION_TYPE.Convolution);

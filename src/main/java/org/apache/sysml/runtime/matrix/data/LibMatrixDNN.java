@@ -74,7 +74,7 @@ public class LibMatrixDNN {
 	}
 	
 	enum TaskType {
-		ReshapeCol, Rotate180, Im2Col, Col2Im, MaxPooling_Forward, MaxPooling_Backward, 
+		MaxPooling_Forward, MaxPooling_Backward, 
 		LoopedIm2ColConv2d, LoopedIm2ColConv2dBwdFilter, LoopedIm2ColConv2dBwdData
 	}
 	
@@ -250,6 +250,11 @@ public class LibMatrixDNN {
 			throw new DMLRuntimeException("Only positive strides supported");
 		}
 		
+		// Convert filter (which is relatively small matrix) to dense
+		if(params.input1.isInSparseFormat()) {
+			params.input1.sparseToDense();
+		}
+		
 		if(DMLScript.STATISTICS) {
 			if(filter.isInSparseFormat() || dout.isInSparseFormat()) {
 				conv2dBwdDataSparseCount.addAndGet(1);
@@ -375,7 +380,7 @@ public class LibMatrixDNN {
 		
 		MatrixBlock temp = new MatrixBlock(params.P*params.Q, params.C*params.R*params.S, false);
 		long t1 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-		LibMatrixMult.matrixMult(dout_reshaped, filter, temp);
+		LibMatrixMult.matrixMult(dout_reshaped, filter, temp, false);
 		long t2 = DMLScript.STATISTICS ? System.nanoTime() : 0 ;
 		doCol2imOverSingleImage(n, temp, params);
 		long t3 = DMLScript.STATISTICS ? System.nanoTime() : 0 ;
@@ -400,7 +405,7 @@ public class LibMatrixDNN {
 		
 		MatrixBlock temp = new MatrixBlock(params.C*params.R*params.S, params.K, false);
 		long t3 = DMLScript.STATISTICS ? System.nanoTime() : 0 ;
-		LibMatrixMult.matrixMult(im2ColOutBlock, dout_reshaped, temp);
+		LibMatrixMult.matrixMult(im2ColOutBlock, dout_reshaped, temp, false);
 		long t4 = DMLScript.STATISTICS ? System.nanoTime() : 0 ;
 		if(DMLScript.STATISTICS) {
 			loopedConvBwdFilterMatMultTime.addAndGet(t4-t3);
@@ -425,6 +430,11 @@ public class LibMatrixDNN {
 		if(input.getNumRows() != params.N || input.getNumColumns() != params.C*params.H*params.W || 
 				filter.getNumRows() != params.K || filter.getNumColumns() != params.C*params.R*params.S) {
 			throw new DMLRuntimeException("Incorrect input to conv2d");
+		}
+		
+		// Convert filter (which is relatively small matrix) to dense
+		if(params.input2.isInSparseFormat()) {
+			params.input2.sparseToDense();
 		}
 		
 		if(DMLScript.STATISTICS) {
@@ -461,7 +471,7 @@ public class LibMatrixDNN {
 		
 		im2ColOutBlock.setNonZeros(nnz);
 		MatrixBlock matMultOutBlock = new MatrixBlock(params.K, params.P*params.Q, false);
-		LibMatrixMult.matrixMult(params.input2, im2ColOutBlock, matMultOutBlock);
+		LibMatrixMult.matrixMult(params.input2, im2ColOutBlock, matMultOutBlock, false);
 		long t3 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		
 		if(DMLScript.STATISTICS) {
@@ -751,37 +761,6 @@ public class LibMatrixDNN {
 		}
 		params.outputNNZ.addAndGet(tmpNNZ);
 	}
-		
-	// Reshape a 4D tensor of dimension (N, K, P, Q) to matrix of dimension (NPQ, K)
-	public static void rotate180(MatrixBlock input, MatrixBlock outputBlock, ConvolutionParameters params) throws DMLRuntimeException {
-		params.input1 = input;
-		params.output = outputBlock;
-		
-		if(input.getNumColumns() != params.K*params.P*params.Q || input.getNumRows() != params.N) {
-			throw new DMLRuntimeException("Incorrect input dimensions in rotate180:" + input.getNumRows() + " " + input.getNumColumns() + " " + params.N + " " + params.K*params.P*params.Q);
-		}
-		
-		int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
-		if(!ALLOW_MULTI_THREADED_OPS || constrainedNumThreads <= 1) {
-			warnSingleThreaded();
-			for (int n = 0; n < params.N; n++) {
-				doRotate180(n, params);
-			}
-		}
-		else {
-			runConvTask(constrainedNumThreads, 1, TaskType.Rotate180, params);
-		}
-		outputBlock.setNonZeros(input.getNonZeros()); // As number of non-zeros doesnot change for rotate180
-	}
-	
-	private static void doRotate180(int n, ConvolutionParameters params) throws DMLRuntimeException {
-		double [] outputArray = null;
-		if (!params.output.isInSparseFormat())
-			outputArray = params.output.getDenseBlock();
-		else
-			throw new DMLRuntimeException("Sparse output is not supported for rotate180");
-		doRotate180(n, n, params.input1, outputArray, params, false);
-	}
 	
 	private static void doRotate180(int inputN, int outputN, MatrixBlock input, 
 			double [] outputArray,  ConvolutionParameters params, boolean zeroOutSparseOutput) throws DMLRuntimeException {
@@ -816,29 +795,6 @@ public class LibMatrixDNN {
 				outputArray[outputOffset + p*params.Q*params.K + q*params.K + k] = ijv.getV();
 			}
 		}
-	}
-	
-	
-	// Reshape a matrix of dimension (K, NPQ) to 4D tensor of dimension (N, K, P, params.Q)
-	public static void reshape_col(MatrixBlock input, MatrixBlock outputBlock, ConvolutionParameters params) throws DMLRuntimeException {
-		params.input1 = input;
-		params.output = outputBlock;
-		
-		if(input.getNumColumns() != params.N*params.P*params.Q || input.getNumRows() != params.K) {
-			throw new DMLRuntimeException("Incorrect input dimensions in reshape_col:" + input.getNumRows() + " " + input.getNumColumns());
-		}
-		
-		int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
-		if(!ALLOW_MULTI_THREADED_OPS || constrainedNumThreads <= 1) {
-			warnSingleThreaded();
-			for (int n = 0; n < params.N; n++) { 
-				doReshapeCol(n, params);
-			}
-		}
-		else {
-			runConvTask(constrainedNumThreads, 1, TaskType.ReshapeCol, params);
-		}
-		outputBlock.setNonZeros(input.getNonZeros()); // As number of non-zeros doesnot change for reshape_col
 	}
 	
 	private static int [] getTaskSize(int constrainedNumThreads, int maxNumTaskSize1, int maxNumTaskSize2) {
@@ -939,30 +895,6 @@ public class LibMatrixDNN {
 		@Override
 		public Object call() throws DMLRuntimeException {
 			switch(type) {
-				case ReshapeCol:
-					for (int n = n1; n < n2; n++) {
-						doReshapeCol(n, params);
-					}
-					break;
-				case Rotate180:
-					for (int n = n1; n < n2; n++) {
-						doRotate180(n, params);
-					}
-					break;
-				case Im2Col:
-					long nnz = 0;
-					for (int n = n1; n < n2; n++) {
-						for (int z = z1; z < z2; z++) {
-							nnz += doIm2colOverInputPath_NCHW(n, z, params);
-						}
-					}
-					params.outputNNZ.addAndGet(nnz);
-					break;
-				case Col2Im:
-					for (int n = n1; n < n2; n++) {
-						doCol2imOverMultipleImages(n, params);
-					}
-					break;
 				case MaxPooling_Forward:
 					for (int n = n1; n < n2; n++) {
 						for (int z = z1; z < z2; z++) {
@@ -1011,84 +943,6 @@ public class LibMatrixDNN {
 		}
 	}
 		
-	private static void doReshapeCol(int n, ConvolutionParameters params) {
-		double [] inputArray = null;
-		if (!params.input1.isInSparseFormat())
-			inputArray = params.input1.getDenseBlock();
-		double [] outputArray = null;
-		if (!params.output.isInSparseFormat())
-			outputArray = params.output.getDenseBlock();
-		
-		if(inputArray != null) {
-			for (int k = 0; k < params.K; k++)  {
-				System.arraycopy(inputArray, k*params.N*params.P*params.Q + n*params.P*params.Q, outputArray, n*params.K*params.P*params.Q + k*params.P*params.Q, params.P*params.Q);
-			}
-		}
-		else {
-			for (int k = 0; k < params.K; k++) {
-				for (int p = 0; p < params.P; p++) { 
-					for (int q = 0; q < params.Q; q++) {
-						outputArray[n*params.K*params.P*params.Q + k*params.P*params.Q + p*params.Q + q] = params.input1.quickGetValue(k, n*params.P*params.Q + p*params.Q + q);
-					}
-				}
-			}
-		}
-	}
-	
-	// Converts a 4D tensor (N, C, R, S) to a matrix of dimension (CRS, NPQ)
-	public static void im2col(MatrixBlock input, MatrixBlock outputBlock, ConvolutionParameters params) throws DMLRuntimeException {
-		params.input1 = input;
-		params.output = outputBlock;
-		
-		params.outputNNZ.set(0);
-		
-		if(DMLScript.STATISTICS) {
-			if(input.isInSparseFormat()) {
-				im2colSparseCount.addAndGet(1);
-			}
-			else {
-				im2colDenseCount.addAndGet(1);
-			}
-		}
-		
-		int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
-		if(!ALLOW_MULTI_THREADED_OPS || constrainedNumThreads <= 1) {
-			warnSingleThreaded();
-			long nnz = 0;
-			for (int n = 0; n < params.N; n++) { // Do following for all images
-				for (int c = 0; c < params.C; c++) { // Since format is NCHW
-					nnz += doIm2colOverInputPath_NCHW(n, c, params);
-				}
-			}
-			outputBlock.setNonZeros(nnz);
-		}
-		else {
-			runConvTask(constrainedNumThreads, params.C, TaskType.Im2Col, params);
-			outputBlock.setNonZeros(params.outputNNZ.get());
-		}
-		
-	}
-	
-	// Converts a matrix of dimension (CRS, NPQ) to a 4D tensor (N, C, H, W)
-	public static void col2im(MatrixBlock input, MatrixBlock outputBlock, ConvolutionParameters params) throws DMLRuntimeException {
-		params.input1 = input;
-		params.output = outputBlock;
-		
-		int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
-		if(!ALLOW_MULTI_THREADED_OPS || constrainedNumThreads <= 1) {
-			warnSingleThreaded();
-			// Sequential col2im
-			for (int n = 0; n < params.N; n++) { // Do following for all images
-				doCol2imOverMultipleImages(n, params);
-			}
-		}
-		else {
-			// Parallel col2im
-			runConvTask(constrainedNumThreads, 1, TaskType.Col2Im, params);
-		}
-	}
-	
-	
 	// Converts input: PQ X CRS matrix and writes to 1 X CHW
 	private static void doCol2imOverSingleImage(int outputN, MatrixBlock input, ConvolutionParameters params) throws DMLRuntimeException {
 		if(input.rlen != params.P*params.Q || input.clen != params.C*params.R*params.S) {
@@ -1169,34 +1023,6 @@ public class LibMatrixDNN {
 		}
 	}
 		
-	// NPQ X CRS
-	private static void doCol2imOverMultipleImages(int n, ConvolutionParameters params) throws DMLRuntimeException {
-		MatrixBlock input = params.input1;
-		
-		if(input.rlen != params.N*params.P*params.Q || input.clen != params.C*params.R*params.S) {
-			throw new DMLRuntimeException("Incorrect input dimensions");
-		}
-		
-		double [] outputArray = null;
-		if (!params.output.isInSparseFormat())
-			outputArray = params.output.getDenseBlock();
-		else {
-			throw new DMLRuntimeException("Only dense output is implemented");
-		}
-		
-		if(!input.isInSparseFormat()) {
-			double [] inputArray = input.getDenseBlock();
-			doCol2IMDenseInput(n, n, inputArray, outputArray, params);
-		}
-		else {
-			doCol2IMSparseInput(n, n, input.getSparseBlockIterator(n*params.P*params.Q, (n+1)*params.P*params.Q), outputArray, params);
-		}
-	}
-	
-	private static long doIm2colOverInputPath_NCHW(int n, int c, ConvolutionParameters params) throws DMLRuntimeException {
-		return doIm2colOverInputPath_NCHW(n, c, null, params);
-	}
-	
 	private static long doIm2colOverInputPath_NCHW(int n, int c, MatrixBlock output, ConvolutionParameters params) throws DMLRuntimeException {
 		double [] inputArray = null;
 		if (!params.input1.isInSparseFormat())

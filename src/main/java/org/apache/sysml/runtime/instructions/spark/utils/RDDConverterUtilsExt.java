@@ -37,6 +37,7 @@ import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.mllib.linalg.Vector;
 import org.apache.spark.mllib.linalg.VectorUDT;
+import org.apache.spark.mllib.linalg.Vectors;
 import org.apache.spark.mllib.linalg.distributed.CoordinateMatrix;
 import org.apache.spark.mllib.linalg.distributed.MatrixEntry;
 import org.apache.spark.sql.DataFrame;
@@ -141,7 +142,71 @@ public class RDDConverterUtilsExt
 			throw new DMLRuntimeException("The output format:" + format + " is not implemented yet.");
 		}
 	}
-	
+
+
+
+	public static DataFrame stringDataFrameToVectorDataFrame(SQLContext sqlContext, DataFrame inputDF)
+			throws DMLRuntimeException {
+
+		StructField[] oldSchema = inputDF.schema().fields();
+		//create the new schema
+		StructField[] newSchema = new StructField[oldSchema.length];
+		for(int i = 0; i < oldSchema.length; i++) {
+			String colName = oldSchema[i].name();
+			newSchema[i] = DataTypes.createStructField(colName, new VectorUDT(), true);
+		}
+
+		//converter
+		class StringToVector implements Function<Tuple2<Row, Long>, Row> {
+			private static final long serialVersionUID = -4733816995375745659L;
+			@Override
+			public Row call(Tuple2<Row, Long> arg0) throws Exception {
+				Row oldRow = arg0._1;
+				int oldNumCols = oldRow.length();
+				if (oldNumCols > 1) {
+					throw new DMLRuntimeException("The row must have at most one column");
+				}
+
+				// parse the various strings. i.e
+				// ((1.2,4.3, 3.4))  or (1.2, 3.4, 2.2) or (1.2 3.4)
+				// [[1.2,34.3, 1.2, 1.2]] or [1.2, 3.4] or [1.3 1.2]
+				Object [] fields = new Object[oldNumCols];
+				ArrayList<Object> fieldsArr = new ArrayList<Object>();
+				for (int i = 0; i < oldRow.length(); i++) {
+					Object ci=oldRow.get(i);
+					if (ci instanceof String) {
+						String cis = (String)ci;
+						StringBuffer sb = new StringBuffer(cis.trim());
+						for (int nid=0; i < 2; i++) { //remove two level nesting
+							if ((sb.charAt(0) == '(' && sb.charAt(sb.length() - 1) == ')') ||
+									(sb.charAt(0) == '[' && sb.charAt(sb.length() - 1) == ']')
+									) {
+								sb.deleteCharAt(0);
+								sb.setLength(sb.length() - 1);
+							}
+						}
+						//have the replace code
+						String ncis = "[" + sb.toString().replaceAll(" *, *", ",") + "]";
+						Vector v = Vectors.parse(ncis);
+						fieldsArr.add(v);
+					} else {
+						throw new DMLRuntimeException("Only String is supported");
+					}
+				}
+				Row row = RowFactory.create(fieldsArr.toArray());
+				return row;
+			}
+		}
+
+		//output DF
+		JavaRDD<Row> newRows = inputDF.rdd().toJavaRDD().zipWithIndex().map(new StringToVector());
+		// DataFrame outDF = sqlContext.createDataFrame(newRows, new StructType(newSchema)); //TODO investigate why it doesn't work
+		DataFrame outDF = sqlContext.createDataFrame(newRows.rdd(),
+				DataTypes.createStructType(newSchema));
+
+		return outDF;
+	}
+
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> vectorDataFrameToBinaryBlock(SparkContext sc,
 			DataFrame inputDF, MatrixCharacteristics mcOut, boolean containsID, String vectorColumnName) throws DMLRuntimeException {
 		return vectorDataFrameToBinaryBlock(new JavaSparkContext(sc), inputDF, mcOut, containsID, vectorColumnName);

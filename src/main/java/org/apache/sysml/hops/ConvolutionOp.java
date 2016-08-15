@@ -31,7 +31,6 @@ import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.LibMatrixDNN.ConvolutionParameters;
 
 public class ConvolutionOp extends Hop  implements MultiThreadedHop
@@ -231,9 +230,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		// [numRows, numCols, NNZ] 
 		long[] ret = null;
 	
-		Hop input1 = getInput().get(0);
 		ConvolutionParameters params;
-		MatrixCharacteristics mc = memo.getAllInputStats(input1);
 		try {
 			params = parseInput();
 		} catch (DMLRuntimeException e) {

@@ -1203,20 +1203,33 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		allocateSparseRowsBlock();
 		reset();
 		
-		//copy dense to sparse
+		//copy dense to sparse with (1) row pre-allocation to avoid repeated 
+		//allocation on append, and (2) nnz re-computation 
 		double[] a = denseBlock;
 		SparseBlock c = sparseBlock;
+		final int m = rlen;
+		final int n = clen;
 		
-		for( int i=0, aix=0; i<rlen; i++ )
-			for(int j=0; j<clen; j++, aix++)
-				if( a[aix] != 0 ) {
-					//create sparse row only if required
-					c.allocate(i, estimatedNNzsPerRow, clen);
-					c.append(i, j, a[aix]);
-					nonZeros++;
-				}
+		long nnz = 0;
+		for( int i=0, aix=0; i<m; i++, aix+=n ) {
+			//recompute nnz per row (not via recomputeNonZeros as sparse allocated)
+			int lnnz = 0;
+			for(int j=0; j<n; j++)
+				lnnz += (a[aix+j]!=0) ? 1 : 0;
+			if( lnnz <= 0 ) continue;
+			
+			//allocate sparse row and append non-zero values
+			c.allocate(i, lnnz); 
+			for(int j=0; j<n; j++) {
+				double val = a[aix+j];
+				if( val != 0 )
+					c.append(i, j, val);
+			}
+			nnz += lnnz;
+		}
 				
-		//cleanup dense block
+		//update nnz and cleanup dense block
+		nonZeros = nnz;
 		denseBlock = null;
 	}
 	

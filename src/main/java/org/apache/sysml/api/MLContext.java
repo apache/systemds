@@ -837,7 +837,52 @@ public class MLContext {
 		argsArr = args.toArray(argsArr);
 		return execute(dmlScriptFilePath, argsArr, parsePyDML, configFilePath);
 	}
-	
+
+	/*
+	  @NOTE: from calling with the SparkR , somehow Map passing from R to java
+	   is not working and hence we pass in two  arrays each representing keys
+	   and values
+	 */
+	/**
+	 * Execute DML script by passing positional arguments using specified config file
+	 * @param dmlScriptFilePath
+	 * @param argsName
+	 * @param argsValues
+	 * @param configFilePath
+	 * @throws IOException
+	 * @throws DMLException
+	 * @throws ParseException
+	 */
+	public MLOutput execute(String dmlScriptFilePath, ArrayList<String> argsName,
+							ArrayList<String> argsValues, String configFilePath)
+			throws IOException, DMLException, ParseException  {
+		HashMap<String, String> newNamedArgs = new HashMap<String, String>();
+		if (argsName.size() != argsValues.size()) {
+			throw new DMLException("size of argsName " + argsName.size() +
+					" is diff than " + " size of argsValues");
+		}
+		for (int i = 0; i < argsName.size(); i++) {
+			String k = argsName.get(i);
+			String v = argsValues.get(i);
+			newNamedArgs.put(k, v);
+		}
+		return execute(dmlScriptFilePath, newNamedArgs, configFilePath);
+	}
+	/**
+	 * Execute DML script by passing positional arguments using specified config file
+	 * @param dmlScriptFilePath
+	 * @param argsName
+	 * @param argsValues
+	 * @throws IOException
+	 * @throws DMLException
+	 * @throws ParseException
+	 */
+	public MLOutput execute(String dmlScriptFilePath, ArrayList<String> argsName,
+							ArrayList<String> argsValues)
+			throws IOException, DMLException, ParseException  {
+		return execute(dmlScriptFilePath, argsName, argsValues, null);
+	}
+
 	/**
 	 * Experimental: Execute DML script by passing positional arguments if parsePyDML=true, using specified config file.
 	 * @param dmlScriptFilePath
@@ -1163,10 +1208,39 @@ public class MLContext {
 		return executeScript(dmlScript, false, configFilePath);
 	}
 
+
 	public MLOutput executeScript(String dmlScript, boolean isPyDML, String configFilePath)
 			throws IOException, DMLException {
 		return compileAndExecuteScript(dmlScript, null, false, false, isPyDML, configFilePath);
 	}
+
+	/*
+	  @NOTE: from calling with the SparkR , somehow HashMap passing from R to java
+	   is not working and hence we pass in two  arrays each representing keys
+	   and values
+	 */
+	public MLOutput executeScript(String dmlScript, ArrayList<String> argsName,
+								  ArrayList<String> argsValues, String configFilePath)
+			throws IOException, DMLException, ParseException  {
+		HashMap<String, String> newNamedArgs = new HashMap<String, String>();
+		if (argsName.size() != argsValues.size()) {
+			throw new DMLException("size of argsName " + argsName.size() +
+					" is diff than " + " size of argsValues");
+		}
+		for (int i = 0; i < argsName.size(); i++) {
+			String k = argsName.get(i);
+			String v = argsValues.get(i);
+			newNamedArgs.put(k, v);
+		}
+		return executeScript(dmlScript, newNamedArgs, configFilePath);
+	}
+
+	public MLOutput executeScript(String dmlScript, ArrayList<String> argsName,
+								  ArrayList<String> argsValues)
+			throws IOException, DMLException, ParseException  {
+		return executeScript(dmlScript, argsName, argsValues, null);
+	}
+
 
 	public MLOutput executeScript(String dmlScript, scala.collection.immutable.Map<String, String> namedArgs)
 			throws IOException, DMLException {

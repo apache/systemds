@@ -693,6 +693,12 @@ public class JCudaObject extends GPUObject {
 		this.isInSparseFormat = true;
 	}
 	
+	public void setDenseMatrixCudaPointer(Pointer densePtr){
+		this.jcudaDenseMatrixPtr = densePtr;
+		this.isAllocated = true;
+		this.isInSparseFormat = false;
+	}
+	
 	/**
 	 * Convenience method to convert a CSR matrix to a dense matrix on the GPU
 	 * Since the allocated matrix is temporary, bookkeeping is not updated.

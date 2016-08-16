@@ -71,8 +71,10 @@ import org.apache.sysml.utils.Statistics;
 
 import jcuda.Pointer;
 import jcuda.Sizeof;
-import jcuda.jcublas.JCublas;
+import jcuda.jcublas.JCublas2;
+import jcuda.jcublas.cublasFillMode;
 import jcuda.jcublas.cublasHandle;
+import jcuda.jcublas.cublasOperation;
 import jcuda.jcudnn.cudnnConvolutionDescriptor;
 import jcuda.jcudnn.cudnnConvolutionFwdPreference;
 import jcuda.jcudnn.cudnnFilterDescriptor;
@@ -306,7 +308,7 @@ public class LibMatrixCUDA {
 	
 	    // Since CuBLAS expects inputs in column-major format,
 	    // reverse the order of matrix-multiplication and take care of dimension mismatch.      
-	    char transa = isLeftTransposed ? 'N' : 'T';
+	    int transa = isLeftTransposed ? cublasOperation.CUBLAS_OP_N : cublasOperation.CUBLAS_OP_T;
 	    // Note: the dimensions are swapped
 	    int m = (int) (isLeftTransposed ? left.getNumColumns() : left.getNumRows());
 	    int k = (int) (isLeftTransposed ? left.getNumRows() : left.getNumColumns());
@@ -314,8 +316,8 @@ public class LibMatrixCUDA {
 	    if(m == -1)
 	            throw new DMLRuntimeException("Incorrect dimensions");
 	
-	    double alpha = 1.0d;
-	    double beta = 0.0d;
+	    double[] alpha = {1.0d};
+	    double[] beta = {0.0d};
 	
 	    int lda = (int) (isLeftTransposed ? m : k);
 	    int ldc = m;
@@ -329,8 +331,9 @@ public class LibMatrixCUDA {
 	    Pointer C = ((JCudaObject)output.getGPUObject()).jcudaDenseMatrixPtr;
 	    
 	    //TODO: Fix it if there is a cuBLAS API to do flipping
-	    JCublas.cublasDsyrk('U',transa, m, k, alpha, A, lda, beta, C, ldc);
-	    JCublas.cublasDsyrk('L',transa, m, k, alpha, A, lda, beta, C, ldc);
+	    
+	    JCublas2.cublasDsyrk(cublasHandle, cublasFillMode.CUBLAS_FILL_MODE_UPPER,transa, m, k, Pointer.to(alpha), A, lda, Pointer.to(beta), C, ldc);
+	    JCublas2.cublasDsyrk(cublasHandle, cublasFillMode.CUBLAS_FILL_MODE_LOWER,transa, m, k, Pointer.to(alpha), A, lda, Pointer.to(beta), C, ldc);
 	}
 	
 	/**
@@ -448,10 +451,11 @@ public class LibMatrixCUDA {
 			// Convert right to dense and do a cuBlas matmul
 			Pointer BDenseTransposed = B.toDenseMatrix(cusparseHandle, cublasHandle, (int)right.getNumRows(), (int)right.getNumColumns());
 			output.getGPUObject().acquireDeviceModifyDense();	// To allocate the dense matrix
-			denseDenseMatmult(output, 
-					(int) left.getNumRows(), (int) left.getNumColumns(),
+			Pointer C = ((JCudaObject)output.getGPUObject()).jcudaDenseMatrixPtr;		
+			denseDenseMatmult(C, 
+					(int) left.getNumColumns(), (int) left.getNumRows(),
 					(int) right.getNumRows(), (int) right.getNumColumns(), 
-					isLeftTransposed, isRightTransposed,
+					isLeftTransposed, !isRightTransposed,
 					ADense, BDenseTransposed);
 			cudaFree(BDenseTransposed);
 		}
@@ -500,10 +504,11 @@ public class LibMatrixCUDA {
 				// Convert left to dense and do a cuBlas matmul
 				Pointer ADenseTransposed = A.toDenseMatrix(cusparseHandle, cublasHandle, (int)left.getNumRows(), (int)left.getNumColumns());
 				output.getGPUObject().acquireDeviceModifyDense();	// To allocate the dense matrix
-				denseDenseMatmult(output, 
+				Pointer C = ((JCudaObject)output.getGPUObject()).jcudaDenseMatrixPtr;		
+				denseDenseMatmult(C, 
 						(int) left.getNumRows(), (int) left.getNumColumns(),
-						(int) right.getNumRows(), (int) right.getNumColumns(), 
-						isLeftTransposed, isRightTransposed,
+						(int) right.getNumColumns(), (int) right.getNumRows(), 
+						!isLeftTransposed, isRightTransposed,
 						ADenseTransposed, BDense);
 				cudaFree(ADenseTransposed);
 			}
@@ -649,8 +654,8 @@ public class LibMatrixCUDA {
 		int leftCols = (int) left1.getNumColumns();
 		int rightRows = (int) right1.getNumRows();
 		int rightCols = (int) right1.getNumColumns();
-				
-		denseDenseMatmult(output, leftRows, leftCols, rightRows, rightCols, isLeftTransposed1, isRightTransposed1,
+		Pointer C = ((JCudaObject)output.getGPUObject()).jcudaDenseMatrixPtr;		
+		denseDenseMatmult(C, leftRows, leftCols, rightRows, rightCols, isLeftTransposed1, isRightTransposed1,
 				leftPtr, rightPtr);
 	}
 
@@ -662,7 +667,7 @@ public class LibMatrixCUDA {
 	 * We do t(B) %*% t(A) to get t(C); 
 	 * If we were to calculate t(t(C), we would get the resultant matrix C, but this would be in column-major format.
 	 * What we really want is t(C). This we already have as the result of t(B) %*% t(A).
-	 * @param output			output object C on host with GPU data allocated
+	 * @param output			output allocated on GPU in column major format
 	 * @param leftRows1			number of rows in A
 	 * @param leftCols1			number of cols in A
 	 * @param rightRows1		number of rows in B
@@ -673,7 +678,7 @@ public class LibMatrixCUDA {
 	 * @param rightPtr			B allocated on the GPU in row-major format
 	 * @throws DMLRuntimeException
 	 */
-	protected static void denseDenseMatmult(MatrixObject output, int leftRows1, int leftCols1, int rightRows1,
+	public static void denseDenseMatmult(Pointer output, int leftRows1, int leftCols1, int rightRows1,
 			int rightCols1, boolean isLeftTransposed1, boolean isRightTransposed1, Pointer leftPtr, Pointer rightPtr)
 			throws DMLRuntimeException {
 		
@@ -699,40 +704,35 @@ public class LibMatrixCUDA {
 		if(m == -1 || n == -1 || k == -1)
 			throw new DMLRuntimeException("Incorrect dimensions");
 		
-		double alpha = 1;
-		double beta = 0;
+		double[] one = { 1 };
+		double[] zero = { 0 };
 		
 		int lda = isLeftTransposed ?  k : m;
 		int ldb = isRightTransposed ? n : k;
 		int ldc = m;
 		
-		char transa = isLeftTransposed ? 'T' : 'N';
-		char transb = isRightTransposed ? 'T' : 'N';
+		int transa = isLeftTransposed ? cublasOperation.CUBLAS_OP_T : cublasOperation.CUBLAS_OP_N;
+		int transb = isRightTransposed ? cublasOperation.CUBLAS_OP_T : cublasOperation.CUBLAS_OP_N;
 
-		Pointer C = ((JCudaObject)output.getGPUObject()).jcudaDenseMatrixPtr;
+		//Pointer C = ((JCudaObject)output.getGPUObject()).jcudaDenseMatrixPtr;
+		Pointer C = output;
 		if (m == 1 && n == 1){ 
 			// Vector product
 			LOG.info(" GPU Dense-dense Vector Product");
-			double result = JCublas.cublasDdot(k, A, 1, B, 1);
-			double[] resultArr = new double[1];
-			resultArr[0] = result;
-			long t0 = System.nanoTime();
-			cudaMemcpy(C, Pointer.to(resultArr), Sizeof.DOUBLE, cudaMemcpyHostToDevice);
-			Statistics.cudaToDevCount.addAndGet(1);
-			Statistics.cudaToDevTime.addAndGet(System.nanoTime() - t0);
+			JCublas2.cublasDdot(cublasHandle, k, A, 1, B, 1, C);
 		} else if (m == 1) {
 			// Vector-matrix multiply
 			LOG.info(" GPU Vector-Matrix Multiply");
 			// TODO B is in row-major format, need to flip it for column major
-			JCublas.cublasDgemv(transb, k, n, 1.0, B, ldb, A, 1, 0.0, C, 1);
+			JCublas2.cublasDgemv(cublasHandle, transb, k, n, Pointer.to(one), B, ldb, A, 1, Pointer.to(zero), C, 1);
 		} else if (n == 1){
 			// Matrix-vector multiply
 			LOG.info(" GPU Matrix-Vector Multiply");
 			// TODO A is in row-major format, need to flip it for column major
-			JCublas.cublasDgemv(transa, m, n, 1.0, A, lda, B, 1, 0.0, C, 1);
+			JCublas2.cublasDgemv(cublasHandle, transa, m, n, Pointer.to(one), A, lda, B, 1, Pointer.to(zero), C, 1);
 		} else {
 			LOG.info(" GPU Dense-Dense Matrix Multiply ");
-			JCublas.cublasDgemm(transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc);
+			JCublas2.cublasDgemm(cublasHandle, transa, transb, m, n, k, Pointer.to(one), A, lda, B, ldb, Pointer.to(zero), C, ldc);
 		}
 	}
 

@@ -277,11 +277,13 @@ public class JCudaObject extends GPUObject {
 			long size = rows * cols * Sizeof.DOUBLE;
 			Pointer A = JCudaObject.allocate(size);
 			cusparseDcsr2dense(cusparseHandle, rows, cols, descr, val, rowPtr, colInd, A, rows);
-			int[] alpha = { 1 };
-			int[] beta = { 1 };
-			double[] dummy = { 0 };
+			// int[] alpha = { 1 };
+			// int[] beta = { 1 };
+			// Pointer C = JCudaObject.allocate(size);
 			// Transpose the matrix to get a dense matrix
-			JCublas2.cublasDgeam(cublasHandle, cublasOperation.CUBLAS_OP_T, cublasOperation.CUBLAS_OP_N, rows, cols, Pointer.to(alpha), A, cols, Pointer.to(beta), Pointer.to(dummy), 0, A, rows);
+			// JCublas2.cublasDgeam(cublasHandle, cublasOperation.CUBLAS_OP_T, cublasOperation.CUBLAS_OP_N, cols, rows, Pointer.to(alpha), A, rows, Pointer.to(beta), new Pointer(), cols, C, cols);
+			// cudaFree(A);
+			// return C;
 			return A;
 		}
 		

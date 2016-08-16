@@ -841,7 +841,7 @@ public class FrameRDDConverterUtils
 
 			//Global index within frame blocks
 			long colixLow = (int)((matrixIndexes.getColumnIndex()-1)*_bclen+1);
-			long colixHigh = Math.min(colixLow+matrixBlock.getMaxColumn()-1, _clen);
+			long colixHigh = Math.min(colixLow+matrixBlock.getNumColumns()-1, _clen);
 			
 			//Index within a local matrix block
 			int iColLowMat = UtilFunctions.computeCellInBlock(colixLow, _bclen);
@@ -850,18 +850,18 @@ public class FrameRDDConverterUtils
 			FrameBlock tmpBlock = DataConverter.convertToFrameBlock(matrixBlock);
 
 			int iRowLow = 0;	//Index within a local frame block
-			while(iRowLow < matrixBlock.getMaxRow()) {
-				int iRowHigh = Math.min(iRowLow+_maxRowsPerBlock-1,  matrixBlock.getMaxRow()-1);
+			while(iRowLow < matrixBlock.getNumRows()) {
+				int iRowHigh = Math.min(iRowLow+_maxRowsPerBlock-1,  matrixBlock.getNumRows()-1);
 				
 				FrameBlock tmpBlock2 = null;
 				//All rows from matrix block can fit into single frame block, no need for slicing 
-				if(iRowLow == 0 && iRowHigh == matrixBlock.getMaxRow()-1)
+				if(iRowLow == 0 && iRowHigh == matrixBlock.getNumRows()-1)
 					tmpBlock2 = tmpBlock;
 				else
 					tmpBlock2 = tmpBlock.sliceOperations(iRowLow, iRowHigh, iColLowMat, iColHighMat, tmpBlock2);
 				
 				//If Matrix has only one column block, then simply assigns converted block to frame block
-				if(colixLow == 0 && colixHigh == matrixBlock.getMaxColumn()-1)
+				if(colixLow == 0 && colixHigh == matrixBlock.getNumColumns()-1)
 					ret.add(new Tuple2<Long, FrameBlock>(rowix+iRowLow, tmpBlock2));
 				else
 				{

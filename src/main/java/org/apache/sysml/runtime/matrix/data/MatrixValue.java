@@ -92,17 +92,12 @@ public abstract class MatrixValue implements WritableComparable
 
 	public abstract boolean isInSparseFormat();
 	public abstract boolean isEmpty();
-		
-	public abstract int getMaxRow() throws DMLRuntimeException;;	
-	public abstract int getMaxColumn() throws DMLRuntimeException;;
-	public abstract void setMaxRow(int _r) throws DMLRuntimeException;	
-	public abstract void setMaxColumn(int _c) throws DMLRuntimeException;;
 
 	public abstract void reset();
 	public abstract void reset(int rl, int cl);
 	public abstract void reset(int rl, int cl, boolean sp);
 	public abstract void reset(int rl, int cl, boolean sp, long nnzs);
-	public abstract void resetDenseWithValue(int rl, int cl, double v) throws DMLRuntimeException ;
+	public abstract void reset(int rl, int cl, double v) throws DMLRuntimeException ;
 
 	public abstract void copy(MatrixValue that);
 	public abstract void copy(MatrixValue that, boolean sp);

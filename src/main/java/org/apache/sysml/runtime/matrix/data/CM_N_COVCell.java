@@ -89,16 +89,6 @@ public class CM_N_COVCell extends MatrixValue implements WritableComparable
 	}
 
 	@Override
-	public int getMaxColumn() throws DMLRuntimeException {
-		return 1;
-	}
-
-	@Override
-	public int getMaxRow() throws DMLRuntimeException {
-		return 1;
-	}
-
-	@Override
 	public long getNonZeros() {
 		return 1;
 	}
@@ -150,41 +140,24 @@ public class CM_N_COVCell extends MatrixValue implements WritableComparable
 	}
 
 	@Override
-	public void reset() {
-	}
+	public void reset() {}
 
 	@Override
-	public void reset(int rl, int cl) {
-		
-	}
+	public void reset(int rl, int cl) {}
 
 	@Override
-	public void reset(int rl, int cl, boolean sp) {
-	}
+	public void reset(int rl, int cl, boolean sp) {}
 	
-	public void reset(int rl, int cl, boolean sp, long nnzs)
-	{
-	}
+	@Override
+	public void reset(int rl, int cl, boolean sp, long nnzs) {}
 
 	@Override
-	public void resetDenseWithValue(int rl, int cl, double v) {
-		throw new RuntimeException("operation not supported fro WeightedCell");
-	}
+	public void reset(int rl, int cl, double v) {}
 
 	@Override
 	public MatrixValue scalarOperations(ScalarOperator op, MatrixValue result)
 			throws DMLRuntimeException {
 		throw new DMLRuntimeException("operation not supported fro WeightedCell");
-	}
-	
-	@Override
-	public void setMaxColumn(int c) throws DMLRuntimeException {
-		
-	}
-
-	@Override
-	public void setMaxRow(int r) throws DMLRuntimeException {
-		
 	}
 
 	@Override

@@ -765,7 +765,7 @@ public class LibMatrixBincell
 		if( ret.sparse )
 			ret.allocateSparseRowsBlock();
 		
-		if(LibMatrixOuterAgg.isCompareOperator(op) && SortUtils.isSorted(0, m2.getMaxColumn(), DataConverter.convertToDoubleVector(m2))) {
+		if(LibMatrixOuterAgg.isCompareOperator(op) && SortUtils.isSorted(0, m2.getNumColumns(), DataConverter.convertToDoubleVector(m2))) {
 			performBinOuterOperation(m1, m2, ret, op);
 		} else {
 			for(int r=0; r<rlen; r++) {
@@ -902,7 +902,7 @@ public class LibMatrixBincell
 			//TODO performance improvement for relational operations like ">"
 			//sort rhs by val, compute cutoff and memset 1/0 for halfs
 	
-			if(LibMatrixOuterAgg.isCompareOperator(op) && SortUtils.isSorted(0, m2.getMaxColumn(), DataConverter.convertToDoubleVector(m2))) {
+			if(LibMatrixOuterAgg.isCompareOperator(op) && SortUtils.isSorted(0, m2.getNumColumns(), DataConverter.convertToDoubleVector(m2))) {
 				performBinOuterOperation(m1, m2, ret, op);
 			} else {
 				for(int r=0; r<rlen; r++) {
@@ -1033,7 +1033,7 @@ public class LibMatrixBincell
 			//compute 0 op constant once and set into dense output
 			double val = op.executeScalar(0);
 			if( val != 0 )
-				ret.init(val, ret.rlen, ret.clen);
+				ret.reset(ret.rlen, ret.clen, val);
 			return;
 		}
 		

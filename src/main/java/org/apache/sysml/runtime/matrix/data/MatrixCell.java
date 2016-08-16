@@ -154,8 +154,8 @@ public class MatrixCell extends MatrixValue implements WritableComparable, Seria
 	}
 
 	@Override
-	public void resetDenseWithValue(int rl, int cl, double v) {
-		value=0;
+	public void reset(int rl, int cl, double v) {
+		value=v;
 	}
 
 	@Override
@@ -292,26 +292,6 @@ public class MatrixCell extends MatrixValue implements WritableComparable, Seria
 	@Override
 	public int hashCode() {
 		throw new RuntimeException("hashCode() should never be called on instances of this class.");
-	}
-
-	@Override
-	public int getMaxColumn() throws DMLRuntimeException {
-		throw new DMLRuntimeException("getMaxColumn() can not be executed on cells");
-	}
-
-	@Override
-	public int getMaxRow() throws DMLRuntimeException {
-		throw new DMLRuntimeException("getMaxRow() can not be executed on cells");
-	}
-
-	@Override
-	public void setMaxColumn(int c) throws DMLRuntimeException {
-		throw new DMLRuntimeException("setMaxColumn() can not be executed on cells");
-	}
-
-	@Override
-	public void setMaxRow(int r) throws DMLRuntimeException {
-		throw new DMLRuntimeException("setMaxRow() can not be executed on cells");
 	}
 
 	@Override

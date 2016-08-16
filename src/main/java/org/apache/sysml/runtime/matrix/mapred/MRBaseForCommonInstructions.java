@@ -29,7 +29,6 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.MapReduceBase;
 import org.apache.hadoop.mapred.Reporter;
-
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
@@ -50,6 +49,8 @@ import org.apache.sysml.runtime.instructions.mr.ReorgInstruction;
 import org.apache.sysml.runtime.instructions.mr.UnaryMRInstructionBase;
 import org.apache.sysml.runtime.instructions.mr.ZeroOutInstruction;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.MatrixCell;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.MatrixValue;
 
@@ -131,14 +132,8 @@ public class MRBaseForCommonInstructions extends MapReduceBase
 			// compute dimensions for the resulting matrix
 			
 			// find the maximum row index and column index encountered in current output block/cell 
-			long maxrow=0, maxcol=0;
-		
-			try {
-				maxrow = value.getMaxRow();
-				maxcol = value.getMaxColumn();
-			} catch (DMLRuntimeException e) {
-				throw new IOException(e);
-			}
+			long maxrow = getMaxDimension(indexes, value, true);
+			long maxcol = getMaxDimension(indexes, value, false);
 			
 			if ( maxrow > resultsMaxRowDims[i] )
 				resultsMaxRowDims[i] = maxrow;
@@ -332,5 +327,21 @@ public class MRBaseForCommonInstructions extends MapReduceBase
 	        	dcValues.put(inputIndex, dcInputs[i]);
         	}
 		}	
+	}
+	
+	/**
+	 * Returns the maximum row or column dimension of the given key and value pair. 
+	 * 
+	 * @param key
+	 * @param value
+	 * @param row
+	 * @return
+	 */
+	private long getMaxDimension( MatrixIndexes key, MatrixValue value, boolean row ) {
+		if( value instanceof MatrixCell )
+			return row ? key.getRowIndex() : key.getColumnIndex();
+		else if( value instanceof MatrixBlock )
+			return row ? value.getNumRows() : value.getNumColumns();
+		return 0;
 	}
 }

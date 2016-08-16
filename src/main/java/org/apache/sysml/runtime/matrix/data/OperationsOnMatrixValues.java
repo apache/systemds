@@ -239,8 +239,8 @@ public class OperationsOnMatrixValues
 				correction.reset(corRow, corCol, false);
 			}
 			else {
-				valueOut.resetDenseWithValue(outRow, outCol, op.initialValue);
-				correction.resetDenseWithValue(corRow, corCol, op.initialValue);
+				valueOut.reset(outRow, outCol, op.initialValue);
+				correction.reset(corRow, corCol, op.initialValue);
 			}
 			
 		}
@@ -249,7 +249,7 @@ public class OperationsOnMatrixValues
 			if(op.initialValue==0)
 				valueOut.reset(rlen, clen, sparseHint);
 			else
-				valueOut.resetDenseWithValue(rlen, clen, op.initialValue);
+				valueOut.reset(rlen, clen, op.initialValue);
 		}
 	}
 	

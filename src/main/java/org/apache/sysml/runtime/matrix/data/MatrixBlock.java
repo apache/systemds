@@ -121,10 +121,6 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		
 	//sparse-block-specific attributes (allocation only)
 	protected int estimatedNNzsPerRow = -1; 
-		
-	//ctable-specific attributes
-	protected int maxrow = -1;
-	protected int maxcolumn = -1;
 	
 	//grpaggregate-specific attributes (optional)
 	protected int numGroups = -1;
@@ -137,57 +133,34 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	// Matrix Constructors
 	//
 	
-	public MatrixBlock()
-	{
-		rlen = 0;
-		clen = 0;
-		sparse = true;
-		nonZeros = 0;
-		maxrow = 0;
-		maxcolumn = 0;
-	}
-	public MatrixBlock(int rl, int cl, boolean sp)
-	{
-		rlen = rl;
-		clen = cl;
-		sparse = sp;
-		nonZeros = 0;
-		maxrow = 0;
-		maxcolumn = 0;
+	public MatrixBlock() {
+		this(0, 0, true, -1);
 	}
 	
-	public MatrixBlock(int rl, int cl, long estnnzs) 
-	{
-		this(rl, cl, false, estnnzs);
+	public MatrixBlock(int rl, int cl, boolean sp) {
+		this(rl, cl, sp, -1);
+	}
+	
+	public MatrixBlock(int rl, int cl, long estnnz) {
+		this(rl, cl, evalSparseFormatInMemory(rl, cl, estnnz), estnnz);
+	}
+	
+	public MatrixBlock(int rl, int cl, boolean sp, long estnnz) {
+		reset(rl, cl, sp, estnnz, 0);
+	}
+	
+	public MatrixBlock(MatrixBlock that) {
+		copy(that);
+	}
+	
+	public MatrixBlock(MatrixBlock that, SparseBlock.Type stype, boolean deep) {
+		this(that.rlen, that.clen, that.sparse);
 		
-		// Adjust sparsity based on estimated non-zeros
-		double denseSize = estimateSizeDenseInMemory(rl, cl);
-		double sparseSize = estimateSizeSparseInMemory(rl, cl, (double)estnnzs/(rl*cl));
-		this.sparse = (denseSize < sparseSize ? false : true);
-		
-	}
-	
-	public MatrixBlock(int rl, int cl, boolean sp, long estnnzs)
-	{
-		this(rl, cl, sp);
-		estimatedNNzsPerRow=(int)Math.ceil((double)estnnzs/(double)rl);	
-	}
-	
-	public MatrixBlock(MatrixBlock that)
-	{
-		this.copy(that);
-	}
-	
-	public MatrixBlock(MatrixBlock that, SparseBlock.Type stype, boolean deep)
-	{
 		//sanity check sparse matrix block
 		if( !that.isInSparseFormat() )
 			throw new RuntimeException("Sparse matrix block expected.");
 		
 		//deep copy and change sparse block type
-		rlen = that.rlen;
-		clen = that.clen;
-		sparse = that.sparse;
 		nonZeros = that.nonZeros;
 		estimatedNNzsPerRow = that.estimatedNNzsPerRow;
 		sparseBlock = SparseBlockFactory
@@ -198,87 +171,82 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	// Initialization methods
 	// (reset, init, allocate, etc)
 	
-	public void reset()
-	{
-		reset(-rlen);
+	@Override
+	public void reset() {
+		reset(rlen, clen, sparse, -1, 0);
 	}
 	
-	public void reset(long estnnzs)
-	{
-		estimatedNNzsPerRow=(int)Math.ceil((double)estnnzs/(double)rlen);
-		if(sparse)
-		{
+	@Override
+	public void reset(int rl, int cl) {
+		reset(rl, cl, sparse, -1, 0);
+	}
+	
+	public void reset(int rl, int cl, long estnnz) {
+		reset(rl, cl, evalSparseFormatInMemory(rl, cl, estnnz), estnnz, 0);
+	}
+	
+	@Override
+	public void reset(int rl, int cl, boolean sp) {
+		reset(rl, cl, sp, -1, 0);
+	}
+	
+	@Override
+	public void reset(int rl, int cl, boolean sp, long estnnz) {
+		reset(rl, cl, sp, estnnz, 0);
+	}
+	
+	@Override
+	public void reset(int rl, int cl, double val) {
+		reset(rl, cl, false, -1, val);
+	}
+	
+	/**
+	 * Internal canonical reset of dense and sparse matrix blocks. 
+	 * 
+	 * @param rl      number of rows
+	 * @param cl      number of columns
+	 * @param sp      sparse representation
+	 * @param estnnz  estimated number of non-zeros
+	 * @param val     initialization value
+	 */
+	private void reset(int rl, int cl, boolean sp, long estnnz, double val) {
+		//reset basic meta data
+		rlen = rl;
+		clen = cl;
+		sparse = (val == 0) ? sp : false;
+		nonZeros = (val == 0) ? 0 : rl*cl;		
+		estimatedNNzsPerRow = (estnnz < 0 || !sparse) ? -1 :
+			(int)Math.ceil((double)estnnz/(double)rlen);
+		
+		//reset sparse/dense blocks
+		if( sparse ) {
 			resetSparse();
 		}
-		else
-		{
-			if(denseBlock!=null)
-			{
-				if(denseBlock.length<rlen*clen)
-					denseBlock=null;
-				else
-					Arrays.fill(denseBlock, 0, rlen*clen, 0);
-			}
+		else {
+			resetDense(val);
 		}
-		nonZeros=0;
 		
-		//operation-specific attributes
-		maxrow = rlen;
-		maxcolumn = clen;
+		//reset operation-specific attributes
 		numGroups = -1;
+		diag = false;
 	}
 	
-	public void reset(int rl, int cl) {
-		rlen=rl;
-		clen=cl;
-		nonZeros=0;
-		reset();
-	}
-	
-	public void reset(int rl, int cl, long estnnzs) {
-		rlen=rl;
-		clen=cl;
-		nonZeros=0;
-		reset(estnnzs);
-	}
-		
-	public void reset(int rl, int cl, boolean sp) {
-		sparse=sp;
-		reset(rl, cl);
-	}
-	
-	public void reset(int rl, int cl, boolean sp, long estnnzs) {
-		sparse=sp;
-		reset(rl, cl, estnnzs);
-	}
-	
-	public void resetSparse() {
-		if(sparseBlock != null) {
-			sparseBlock.reset(estimatedNNzsPerRow, clen);
-		}
-	}
-	
-	public void resetDenseWithValue(int rl, int cl, double v) 
-		throws DMLRuntimeException 
-	{	
-		estimatedNNzsPerRow=-1;
-		rlen=rl;
-		clen=cl;
-		sparse=false;
-		
-		if(v==0)
-		{
-			reset();
+	private void resetSparse() {
+		if(sparseBlock == null)
 			return;
-		}
-		
-		//allocate dense block
-		allocateDenseBlock();
-		
-		//init with constant value (non-zero, see above)
-		int limit = rlen * clen;
-		Arrays.fill(denseBlock, 0, limit, v);
-		nonZeros=limit;
+		sparseBlock.reset(estimatedNNzsPerRow, clen);
+	}
+	
+	private void resetDense(double val) {
+		//handle to dense block allocation
+		if( denseBlock != null && denseBlock.length<rlen*clen && val==0)
+			denseBlock = null;
+		else if( val != 0 )
+			allocateDenseBlock(false);
+			
+		//reset dense block to given value 
+		if( denseBlock != null )
+			Arrays.fill(denseBlock, 0, rlen*clen, val);
 	}
 	
 	/**
@@ -305,9 +273,6 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		for(int i=0, ix=0; i < r; i++, ix+=clen) 
 			System.arraycopy(arr[i], 0, denseBlock, ix, arr[i].length);
 		recomputeNonZeros();
-		
-		maxrow = r;
-		maxcolumn = c;
 	}
 	
 	/**
@@ -333,47 +298,6 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		//copy and compute nnz 
 		System.arraycopy(arr, 0, denseBlock, 0, arr.length);
 		recomputeNonZeros();
-		
-		maxrow = r;
-		maxcolumn = c;
-	}
-	
-	/**
-	 * 
-	 * @param val
-	 * @param r
-	 * @param c
-	 * @throws DMLRuntimeException
-	 */
-	public void init(double val, int r, int c)
-		throws DMLRuntimeException 
-	{	
-		//input checks 
-		if ( sparse )
-			throw new DMLRuntimeException("MatrixBlockDSM.init() can be invoked only on matrices with dense representation.");
-		if( r*c > rlen*clen )
-			throw new DMLRuntimeException("MatrixBlockDSM.init() invoked with too large dimensions ("+r+","+c+") vs ("+rlen+","+clen+")");
-		
-		if( val != 0 ) {
-			//allocate or resize dense block
-			allocateDenseBlock();
-			
-			if( r*c == rlen*clen ) { //FULL MATRIX INIT
-				//memset value  
-				Arrays.fill(denseBlock, val);
-			}
-			else { //PARTIAL MATRIX INIT
-				//rowwise memset value 
-				for(int i=0, ix=0; i < r; i++, ix+=clen) 
-					Arrays.fill(denseBlock, ix, ix+c, val);
-			}
-			
-			//set non zeros to input dims
-			nonZeros = r*c;
-		}
-		
-		maxrow = r;
-		maxcolumn = c;
 	}
 	
 	/**
@@ -545,38 +469,6 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	
 	public boolean isVector() {
 		return (rlen == 1 || clen == 1);
-	}
-	
-	
-	/**
-	 * Return the maximum row encountered WITHIN the current block
-	 *  
-	 */
-	public int getMaxRow() {
-		if (!sparse) 
-			return getNumRows();
-		else 
-			return maxrow;
-	}
-	
-	public void setMaxRow(int r) {
-		maxrow = r;
-	}
-	
-	
-	/**
-	 * Return the maximum column encountered WITHIN the current block
-	 * 
-	 */
-	public int getMaxColumn() {
-		if (!sparse) 
-			return getNumColumns();
-		else 
-			return maxcolumn;
-	}
-	
-	public void setMaxColumn(int c) {
-		maxcolumn = c;
 	}
 	
 	@Override
@@ -3008,13 +2900,13 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		//(otherwise full init with val0, no need for computation)
 		if( isEmptyBlock(false) ) {
 			if( val0 != 0 )
-				ret.init(val0, m, n);
+				ret.reset(m, n, val0);
 			return;
 		}
 		
 		//redirection to sparse safe operation w/ init by val0
 		if( sparse && val0 != 0 )
-			ret.init(val0, m, n);
+			ret.reset(m, n, val0);
 		sparseUnaryOperations(op, ret);
 	}
 	
@@ -4569,7 +4461,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	{
 		//initialize result
 		if(op.aggOp.initialValue!=0)
-			result.resetDenseWithValue(result.rlen, result.clen, op.aggOp.initialValue);
+			result.reset(result.rlen, result.clen, op.aggOp.initialValue);
 		
 		CellIndex tempCellIndex = new CellIndex(-1,-1);
 		KahanObject buffer=new KahanObject(0,0);
@@ -4621,7 +4513,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	{
 		//initialize 
 		if(op.aggOp.initialValue!=0)
-			result.resetDenseWithValue(result.rlen, result.clen, op.aggOp.initialValue);
+			result.reset(result.rlen, result.clen, op.aggOp.initialValue);
 		
 		CellIndex tempCellIndex = new CellIndex(-1,-1);
 		KahanObject buffer=new KahanObject(0,0);

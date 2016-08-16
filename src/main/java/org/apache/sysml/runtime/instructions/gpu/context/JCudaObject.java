@@ -47,6 +47,9 @@ import org.apache.sysml.utils.Statistics;
 
 import jcuda.Pointer;
 import jcuda.Sizeof;
+import jcuda.jcublas.JCublas2;
+import jcuda.jcublas.cublasHandle;
+import jcuda.jcublas.cublasOperation;
 import jcuda.jcusparse.JCusparse;
 import jcuda.jcusparse.cusparseDirection;
 import jcuda.jcusparse.cusparseHandle;
@@ -258,21 +261,27 @@ public class JCudaObject extends GPUObject {
 		}
 		
 		/**
-		 * Copies this CSR matrix on the GPU to a dense column-major matrix
+		 * Copies this CSR matrix on the GPU to a dense row-major matrix
 		 * on the GPU. This is a temporary matrix for operations such as 
 		 * cusparseDcsrmv.
 		 * Since the allocated matrix is temporary, bookkeeping is not updated.
 		 * The called is responsible for calling "free" on the returned Pointer object
-		 * @param handle	a valid {@link cusparseHandle}
+		 * @param cusparseHandle	a valid {@link cusparseHandle}
+		 * @param cublasHandle 		a valid {@link cublasHandle}
 		 * @param rows		number of rows in this CSR matrix
 		 * @param cols		number of columns in this CSR matrix
 		 * @return			A {@link Pointer} to the allocated dense matrix (in column-major format)
 		 * @throws DMLRuntimeException
 		 */
-		public Pointer toDenseMatrix(cusparseHandle handle, int rows, int cols) throws DMLRuntimeException {
+		public Pointer toDenseMatrix(cusparseHandle cusparseHandle, cublasHandle cublasHandle, int rows, int cols) throws DMLRuntimeException {
 			long size = rows * cols * Sizeof.DOUBLE;
 			Pointer A = JCudaObject.allocate(size);
-			cusparseDcsr2dense(handle, rows, cols, descr, val, rowPtr, colInd, A, rows);
+			cusparseDcsr2dense(cusparseHandle, rows, cols, descr, val, rowPtr, colInd, A, rows);
+			int[] alpha = { 1 };
+			int[] beta = { 1 };
+			double[] dummy = { 0 };
+			// Transpose the matrix to get a dense matrix
+			JCublas2.cublasDgeam(cublasHandle, cublasOperation.CUBLAS_OP_T, cublasOperation.CUBLAS_OP_N, rows, cols, Pointer.to(alpha), A, cols, Pointer.to(beta), Pointer.to(dummy), 0, A, rows);
 			return A;
 		}
 		

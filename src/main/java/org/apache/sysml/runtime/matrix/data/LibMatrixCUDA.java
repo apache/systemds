@@ -446,7 +446,7 @@ public class LibMatrixCUDA {
 		} else {
 			LOG.info(" GPU Dense-Sparse Matrix Multiplication (Converted to Dense-Dense)");
 			// Convert right to dense and do a cuBlas matmul
-			Pointer BDenseTransposed = B.toDenseMatrix(cusparseHandle, (int)right.getNumRows(), (int)right.getNumColumns());
+			Pointer BDenseTransposed = B.toDenseMatrix(cusparseHandle, cublasHandle, (int)right.getNumRows(), (int)right.getNumColumns());
 			output.getGPUObject().acquireDeviceModifyDense();	// To allocate the dense matrix
 			denseDenseMatmult(output, 
 					(int) left.getNumRows(), (int) left.getNumColumns(),
@@ -498,7 +498,7 @@ public class LibMatrixCUDA {
 			} else {					
 				LOG.info(" GPU Sparse-Dense Matrix Multiplication (Converted to Dense-Dense)");
 				// Convert left to dense and do a cuBlas matmul
-				Pointer ADenseTransposed = A.toDenseMatrix(cusparseHandle, (int)left.getNumRows(), (int)left.getNumColumns());
+				Pointer ADenseTransposed = A.toDenseMatrix(cusparseHandle, cublasHandle, (int)left.getNumRows(), (int)left.getNumColumns());
 				output.getGPUObject().acquireDeviceModifyDense();	// To allocate the dense matrix
 				denseDenseMatmult(output, 
 						(int) left.getNumRows(), (int) left.getNumColumns(),
@@ -596,7 +596,7 @@ public class LibMatrixCUDA {
 	protected static void sparseMatrixVectorMult(MatrixObject output, int transA, int m, int n, int k,
 			CSRPointer A, CSRPointer B) throws DMLRuntimeException {
 		LOG.info(" GPU Sparse Matrix Sparse Vector Multiply (Converted to Sparse Matrix Dense Vector Multiply)");
-		Pointer BDenseVector = B.toDenseMatrix(cusparseHandle, k, 1);
+		Pointer BDenseVector = B.toDenseMatrix(cusparseHandle, cublasHandle, k, 1);
 		sparseMatrixDenseVectorMult(output, A, BDenseVector, transA, m, n, k);
 	}
 
@@ -723,10 +723,12 @@ public class LibMatrixCUDA {
 		} else if (m == 1) {
 			// Vector-matrix multiply
 			LOG.info(" GPU Vector-Matrix Multiply");
+			// TODO B is in row-major format, need to flip it for column major
 			JCublas.cublasDgemv(transb, k, n, 1.0, B, ldb, A, 1, 0.0, C, 1);
 		} else if (n == 1){
 			// Matrix-vector multiply
 			LOG.info(" GPU Matrix-Vector Multiply");
+			// TODO A is in row-major format, need to flip it for column major
 			JCublas.cublasDgemv(transa, m, n, 1.0, A, lda, B, 1, 0.0, C, 1);
 		} else {
 			LOG.info(" GPU Dense-Dense Matrix Multiply ");

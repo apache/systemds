@@ -705,7 +705,7 @@ public class JCudaObject extends GPUObject {
 	 * Caller is responsible for deallocating memory on GPU.
 	 * @param rows
 	 * @param cols
-	 * @param densePtr	[in] dense matrix pointer on the GPU
+	 * @param densePtr	[in] dense matrix pointer on the GPU in row major
 	 * @return
 	 * @throws DMLRuntimeException
 	 */

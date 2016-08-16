@@ -447,12 +447,11 @@ public class LibMatrixCUDA {
 			LOG.info(" GPU Dense-Sparse Matrix Multiplication (Converted to Dense-Dense)");
 			// Convert right to dense and do a cuBlas matmul
 			Pointer BDenseTransposed = B.toDenseMatrix(cusparseHandle, (int)right.getNumRows(), (int)right.getNumColumns());
-			boolean isBDenseTransposed = !isRightTransposed;
 			output.getGPUObject().acquireDeviceModifyDense();	// To allocate the dense matrix
 			denseDenseMatmult(output, 
 					(int) left.getNumRows(), (int) left.getNumColumns(),
 					(int) right.getNumRows(), (int) right.getNumColumns(), 
-					isLeftTransposed, isBDenseTransposed,
+					isLeftTransposed, isRightTransposed,
 					ADense, BDenseTransposed);
 			cudaFree(BDenseTransposed);
 		}
@@ -500,12 +499,11 @@ public class LibMatrixCUDA {
 				LOG.info(" GPU Sparse-Dense Matrix Multiplication (Converted to Dense-Dense)");
 				// Convert left to dense and do a cuBlas matmul
 				Pointer ADenseTransposed = A.toDenseMatrix(cusparseHandle, (int)left.getNumRows(), (int)left.getNumColumns());
-				boolean isADenseTransposed = !isLeftTransposed;
 				output.getGPUObject().acquireDeviceModifyDense();	// To allocate the dense matrix
 				denseDenseMatmult(output, 
 						(int) left.getNumRows(), (int) left.getNumColumns(),
 						(int) right.getNumRows(), (int) right.getNumColumns(), 
-						isADenseTransposed, isRightTransposed,
+						isLeftTransposed, isRightTransposed,
 						ADenseTransposed, BDense);
 				cudaFree(ADenseTransposed);
 			}
@@ -643,8 +641,6 @@ public class LibMatrixCUDA {
 	 */
 	protected static void denseDenseMatmult(MatrixObject output, MatrixObject left1, MatrixObject right1,
 			boolean isLeftTransposed1, boolean isRightTransposed1) throws DMLRuntimeException {
-		// Since CuBLAS expects inputs in column-major format,
-		// reverse the order of matrix-multiplication and take care of dimension mismatch.
 		
 		Pointer leftPtr = ((JCudaObject)left1.getGPUObject()).jcudaDenseMatrixPtr;
 		Pointer rightPtr = ((JCudaObject)right1.getGPUObject()).jcudaDenseMatrixPtr;
@@ -671,10 +667,10 @@ public class LibMatrixCUDA {
 	 * @param leftCols1			number of cols in A
 	 * @param rightRows1		number of rows in B
 	 * @param rightCols1		number of cols in B
-	 * @param isLeftTransposed1	op for A, transposed or not
-	 * @param isRightTransposed1	op for B transposed or not
-	 * @param leftPtr			A allocated on the GPU
-	 * @param rightPtr			B allocated on the GPU
+	 * @param isLeftTransposed1		op for A, transposed or not
+	 * @param isRightTransposed1	op for B, transposed or not
+	 * @param leftPtr			A allocated on the GPU in row-major format
+	 * @param rightPtr			B allocated on the GPU in row-major format
 	 * @throws DMLRuntimeException
 	 */
 	protected static void denseDenseMatmult(MatrixObject output, int leftRows1, int leftCols1, int rightRows1,

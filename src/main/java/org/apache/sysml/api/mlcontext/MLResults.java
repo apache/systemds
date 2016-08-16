@@ -330,6 +330,14 @@ public class MLResults {
 		return so.getDoubleValue();
 	}
 
+	/**
+	 * Obtain a serializable object as output
+	 *
+	 * @param outputName
+	 *            the name of the output
+	 * @return the output as a serializable object.
+	 */
+
 	public Object get(String outputName) {
 		Data data = getData(outputName);
 	  if (data instanceof ScalarObject) {

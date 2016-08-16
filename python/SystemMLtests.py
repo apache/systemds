@@ -24,7 +24,9 @@ import unittest
 from pyspark.sql import SQLContext
 from pyspark.context import SparkContext
 
-from SystemML import Dml, MLContext
+from SystemML import dml
+from SystemML import pydml
+from SystemML import MLContext
 
 sc = SparkContext()
 ml = MLContext(sc)
@@ -32,9 +34,8 @@ ml = MLContext(sc)
 class TestAPI(unittest.TestCase):
 
     def test_output_string(self):
-        dml = Dml("x1 = 'Hello World'").out("x1")
-        ml.execute(dml)
-        self.assertEqual(ml.execute(dml).get("x1"), "Hello World")
+        script = dml("x1 = 'Hello World'").out("x1")
+        self.assertEqual(ml.execute(script).get("x1"), "Hello World")
 
     def test_output_list(self):
         script = """
@@ -42,24 +43,24 @@ class TestAPI(unittest.TestCase):
         x2 = x1 + 1
         x3 = x1 + 2
         """
-        dml = Dml(script).out("x1", "x2", "x3")
-        self.assertEqual(ml.execute(dml).get("x1", "x2"), [0.2, 1.2])
-        self.assertEqual(ml.execute(dml).get("x1", "x3"), [0.2, 2.2])
+        script = dml(script).out("x1", "x2", "x3")
+        self.assertEqual(ml.execute(script).get("x1", "x2"), [0.2, 1.2])
+        self.assertEqual(ml.execute(script).get("x1", "x3"), [0.2, 2.2])
 
     def test_input_single(self):
         script = """
         x2 = x1 + 1
         x3 = x1 + 2
         """
-        dml = Dml(script).input("x1", 5).out("x2", "x3")
-        self.assertEqual(ml.execute(dml).get("x2", "x3"), [6, 7])
+        script = dml(script).input("x1", 5).out("x2", "x3")
+        self.assertEqual(ml.execute(script).get("x2", "x3"), [6, 7])
 
     def test_input(self):
         script = """
         x3 = x1 + x2
         """
-        dml = Dml(script).input(x1=5, x2=3).out("x3")
-        self.assertEqual(ml.execute(dml).get("x3"), 8)
+        script = dml(script).input(x1=5, x2=3).out("x3")
+        self.assertEqual(ml.execute(script).get("x3"), 8)
 
     def test_rdd(self):
         sums = """
@@ -69,9 +70,17 @@ class TestAPI(unittest.TestCase):
         """
         rdd1 = sc.parallelize(["1.0,2.0", "3.0,4.0"])
         rdd2 = sc.parallelize(["5.0,6.0", "7.0,8.0"])
-        dml = Dml(sums).input(m1=rdd1).input(m2=rdd2).out("s1", "s2", "s3")
+        script = dml(sums).input(m1=rdd1).input(m2=rdd2).out("s1", "s2", "s3")
         self.assertEqual(
-            ml.execute(dml).get("s1", "s2", "s3"), [10.0, 26.0, "whatever"])
+            ml.execute(script).get("s1", "s2", "s3"), [10.0, 26.0, "whatever"])
+
+    def test_pydml(self):
+        script = "A = full('1 2 3 4 5 6 7 8 9', rows=3, cols=3)\nx = toString(A)"
+        script = pydml(script).out("x")
+        self.assertEqual(
+            ml.execute(script).get("x")
+            '1.000 2.000 3.000\n4.000 5.000 6.000\n7.000 8.000 9.000\n'
+        )
 
 
 if __name__ == "__main__":

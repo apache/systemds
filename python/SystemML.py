@@ -61,17 +61,18 @@ class MLResults(object):
         return outs
 
 
-class Dml(object):
+class Script(object):
     """
-    DML instance.
+    Instance of a DML/PyDML Script.
 
     Parameters
     ----------
     path: string
         Can be either a file path to a DML script or a DML script itself.
     """
-    def __init__(self, path):
-        self.path = path
+    def __init__(self, scriptString, scriptType="dml"):
+        self.scriptString = scriptString
+        self.scriptType = scriptType
         self._input = {}
         self._output = []
 
@@ -105,6 +106,44 @@ class Dml(object):
         return self
 
 
+def pydml(scriptString):
+    """
+    Create a pydml script object based on a string.
+
+    Parameters
+    ----------
+    scriptString: string
+        Can be a path to a pydml script or a pydml script itself.
+
+    Returns
+    -------
+    script: Script instance
+        Instance of a script object.
+    """
+    if not isinstance(scriptString, str):
+        raise ValueError("scriptString should be a string, got %s" % type(scriptString))
+    return Script(scriptString, scriptType="pydml")
+
+
+def dml(scriptString):
+    """
+    Create a dml script object based on a string.
+
+    Parameters
+    ----------
+    scriptString: string
+        Can be a path to a dml script or a dml script itself.
+
+    Returns
+    -------
+    script: Script instance
+        Instance of a script object.
+    """
+    if not isinstance(scriptString, str):
+        raise ValueError("scriptString should be a string, got %s" % type(scriptString))
+    return Script(scriptString, scriptType="dml")
+
+
 class MLContext(object):
     """
     Wrapper around the new SystemML MLContext.
@@ -123,32 +162,42 @@ class MLContext(object):
     def __repr__(self):
         return "MLContext"
 
-    def execute(self, dml):
+    def execute(self, script):
         """
-        Execute a DML script.
+        Execute a DML / PyDML script.
 
         Parameters
         ----------
-        dml: DML instance
-            DML instance defined with the appropriate input and output variables.
+        script: Script instance
+            Script instance defined with the appropriate input and output variables.
 
         Returns
         -------
         ml_results: MLResults
             MLResults instance.
         """
-        if not isinstance(dml, Dml):
-            raise ValueError("Expected dml to be an instance of Dml")
-        path = dml.path
-        if isinstance(path, str):
-            if os.path.exists(path):
-                dml_java = self._sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.dmlFromFile(path)
+        if not isinstance(script, Script):
+            raise ValueError("Expected script to be an instance of Script")
+        scriptString = script.scriptString
+        if script.scriptType == "dml":
+            if scriptString.endswith(".dml"):
+                if os.path.exists(scriptString):
+                    script_java = self._sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.dmlFromFile(scriptString)
+                else:
+                    raise ValueError("path: %s does not exist" % scriptString)
             else:
-                dml_java = self._sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.dml(path)
-        else:
-            raise ValueError("path should be a string, got %s" % dml)
-        for key, val in dml._input.items():
-            dml_java.input(key, _py2java(self._sc, val))
-        for val in dml._output:
-            dml_java.out(val)
-        return MLResults(self._ml.execute(dml_java), self._sc)
+                script_java = self._sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.dml(scriptString)
+        elif script.scriptType == "pydml":
+            if scriptString.endswith(".pydml"):
+                if os.path.exists(scriptString):
+                    script_java = self._sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.pydmlFromFile(scriptString)
+                else:
+                    raise ValueError("path: %s does not exist" % scriptString)
+            else:
+                script_java = self._sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.pydml(scriptString)
+
+        for key, val in script._input.items():
+            script_java.input(key, _py2java(self._sc, val))
+        for val in script._output:
+            script_java.out(val)
+        return MLResults(self._ml.execute(script_java), self._sc)

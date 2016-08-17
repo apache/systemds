@@ -25,7 +25,7 @@
 		<version>18</version>
 	</parent>
 	<groupId>org.apache.systemml</groupId>
-	<version>0.11.0-incubating-SNAPSHOT</version>
+	<version>0.11.0-incubating-preview</version>
 	<artifactId>systemml</artifactId>
 	<packaging>jar</packaging>
 	<name>SystemML</name>
@@ -41,7 +41,7 @@
 		<connection>scm:git:git@github.com:apache/incubator-systemml</connection>
 		<developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/incubator-systemml</developerConnection>
 		<url>https://git-wip-us.apache.org/repos/asf?p=incubator-systemml.git</url>
-		<tag>HEAD</tag>
+		<tag>0.11.0-incubating-preview</tag>
 	</scm>
 	<issueManagement>
 		<system>JIRA</system>

@@ -50,6 +50,7 @@ import org.apache.sysml.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysml.runtime.instructions.spark.functions.SparkListener;
 import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
+import org.apache.sysml.utils.Explain.ExplainType;
 
 /**
  * The MLContext API offers programmatic access to SystemML on Spark from
@@ -99,8 +100,48 @@ public class MLContext {
 	 */
 	private boolean statistics = false;
 
+	/**
+	 * The level and type of program explanation that should be displayed if
+	 * explain is set to true.
+	 */
+	private ExplainLevel explainLevel = null;
+
 	private List<String> scriptHistoryStrings = new ArrayList<String>();
 	private Map<String, Script> scripts = new LinkedHashMap<String, Script>();
+
+	/**
+	 * The different explain levels supported by SystemML.
+	 *
+	 */
+	public enum ExplainLevel {
+		/** Explain disabled */
+		NONE,
+		/** Explain program and HOPs */
+		HOPS,
+		/** Explain runtime program */
+		RUNTIME,
+		/** Explain HOPs, including recompile */
+		RECOMPILE_HOPS,
+		/** Explain runtime program, including recompile */
+		RECOMPILE_RUNTIME;
+
+		public ExplainType getExplainType() {
+			switch (this) {
+			case NONE:
+				return ExplainType.NONE;
+			case HOPS:
+				return ExplainType.HOPS;
+			case RUNTIME:
+				return ExplainType.RUNTIME;
+			case RECOMPILE_HOPS:
+				return ExplainType.RECOMPILE_HOPS;
+			case RECOMPILE_RUNTIME:
+				return ExplainType.RECOMPILE_RUNTIME;
+			default:
+				return ExplainType.HOPS;
+			}
+		}
+	};
 
 	/**
 	 * Retrieve the currently active MLContext. This is used internally by
@@ -225,6 +266,7 @@ public class MLContext {
 	public MLResults execute(Script script) {
 		ScriptExecutor scriptExecutor = new ScriptExecutor(sparkMonitoringUtil);
 		scriptExecutor.setExplain(explain);
+		scriptExecutor.setExplainLevel(explainLevel);
 		scriptExecutor.setStatistics(statistics);
 		return execute(script, scriptExecutor);
 	}
@@ -309,6 +351,17 @@ public class MLContext {
 	 */
 	public void setExplain(boolean explain) {
 		this.explain = explain;
+	}
+
+	/**
+	 * Set the level of program explanation that should be displayed if explain
+	 * is set to true.
+	 * 
+	 * @param explainLevel
+	 *            the level of program explanation
+	 */
+	public void setExplainLevel(ExplainLevel explainLevel) {
+		this.explainLevel = explainLevel;
 	}
 
 	/**
@@ -503,13 +556,13 @@ public class MLContext {
 	}
 
 	public void close() {
-		//reset static status (refs to sc / mlcontext)
+		// reset static status (refs to sc / mlcontext)
 		SparkExecutionContext.resetSparkContextStatic();
 		MLContextProxy.setActive(false);
 		activeMLContext = null;
-		
-		//clear local status, but do not stop sc as it
-		//may be used or stopped externally
+
+		// clear local status, but do not stop sc as it
+		// may be used or stopped externally
 		clear();
 		resetConfig();
 		sc = null;

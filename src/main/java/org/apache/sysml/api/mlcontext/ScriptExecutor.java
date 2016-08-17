@@ -26,6 +26,7 @@ import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.jmlc.JMLCUtils;
+import org.apache.sysml.api.mlcontext.MLContext.ExplainLevel;
 import org.apache.sysml.api.monitoring.SparkMonitoringUtil;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
@@ -48,6 +49,7 @@ import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysml.utils.Explain;
 import org.apache.sysml.utils.Explain.ExplainCounts;
+import org.apache.sysml.utils.Explain.ExplainType;
 import org.apache.sysml.utils.Statistics;
 
 /**
@@ -114,6 +116,7 @@ public class ScriptExecutor {
 	protected Script script;
 	protected boolean explain = false;
 	protected boolean statistics = false;
+	protected ExplainLevel explainLevel;
 
 	/**
 	 * ScriptExecutor constructor.
@@ -197,7 +200,12 @@ public class ScriptExecutor {
 	protected void showExplanation() {
 		if (explain) {
 			try {
-				System.out.println(Explain.explain(dmlProgram));
+				if (explainLevel == null) {
+					System.out.println(Explain.explain(dmlProgram));
+				} else {
+					ExplainType explainType = explainLevel.getExplainType();
+					System.out.println(Explain.explain(dmlProgram, runtimeProgram, explainType));
+				}
 			} catch (HopsException e) {
 				throw new MLContextException("Exception occurred while explaining dml program", e);
 			} catch (DMLRuntimeException e) {
@@ -276,10 +284,10 @@ public class ScriptExecutor {
 	 * <li>{@link #validateScript()}</li>
 	 * <li>{@link #constructHops()}</li>
 	 * <li>{@link #rewriteHops()}</li>
-	 * <li>{@link #showExplanation()}</li>
 	 * <li>{@link #rewritePersistentReadsAndWrites()}</li>
 	 * <li>{@link #constructLops()}</li>
 	 * <li>{@link #generateRuntimeProgram()}</li>
+	 * <li>{@link #showExplanation()}</li>
 	 * <li>{@link #globalDataFlowOptimization()}</li>
 	 * <li>{@link #countCompiledMRJobsAndSparkInstructions()}</li>
 	 * <li>{@link #initializeCachingAndScratchSpace()}</li>
@@ -304,10 +312,10 @@ public class ScriptExecutor {
 		validateScript();
 		constructHops();
 		rewriteHops();
-		showExplanation();
 		rewritePersistentReadsAndWrites();
 		constructLops();
 		generateRuntimeProgram();
+		showExplanation();
 		globalDataFlowOptimization();
 		countCompiledMRJobsAndSparkInstructions();
 		initializeCachingAndScratchSpace();
@@ -619,6 +627,23 @@ public class ScriptExecutor {
 	 */
 	public void setStatistics(boolean statistics) {
 		this.statistics = statistics;
+	}
+
+	/**
+	 * Set the level of program explanation that should be displayed if explain
+	 * is set to true.
+	 * 
+	 * @param explainLevel
+	 *            the level of program explanation
+	 */
+	public void setExplainLevel(ExplainLevel explainLevel) {
+		this.explainLevel = explainLevel;
+		if (explainLevel == null) {
+			DMLScript.EXPLAIN = ExplainType.NONE;
+		} else {
+			ExplainType explainType = explainLevel.getExplainType();
+			DMLScript.EXPLAIN = explainType;
+		}
 	}
 
 }

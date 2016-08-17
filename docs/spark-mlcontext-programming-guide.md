@@ -1108,6 +1108,7 @@ minOut = min(Xin)
 maxOut = max(Xin)
 meanOut = mean(Xin)
 """
+val mm = new MatrixMetadata(numRows, numCols)
 val minMaxMeanScript = dml(minMaxMean).in("Xin", df, mm).out("minOut", "maxOut", "meanOut")
 val (min, max, mean) = ml.execute(minMaxMeanScript).getTuple[Double, Double, Double]("minOut", "maxOut", "meanOut")
 
@@ -1131,6 +1132,9 @@ maxOut = max(Xin)
 meanOut = mean(Xin)
 "
 
+scala> val mm = new MatrixMetadata(numRows, numCols)
+mm: org.apache.sysml.api.mlcontext.MatrixMetadata = rows: 10000, columns: 1000, non-zeros: None, rows per block: None, columns per block: None
+
 scala> val minMaxMeanScript = dml(minMaxMean).in("Xin", df, mm).out("minOut", "maxOut", "meanOut")
 minMaxMeanScript: org.apache.sysml.api.mlcontext.Script =
 Inputs:
@@ -1147,17 +1151,57 @@ scala> val (min, max, mean) = ml.execute(minMaxMeanScript).getTuple[Double, Doub
 PROGRAM
 --MAIN PROGRAM
 ----GENERIC (lines 1-8) [recompile=false]
-------(4959) PRead Xin [10000,1000,1000,1000,10000000] [0,0,76 -> 76MB] [chkpt]
-------(4960) ua(minRC) (4959) [0,0,-1,-1,-1] [76,0,0 -> 76MB]
-------(4968) PWrite minOut (4960) [0,0,-1,-1,-1] [0,0,0 -> 0MB]
-------(4961) ua(maxRC) (4959) [0,0,-1,-1,-1] [76,0,0 -> 76MB]
-------(4974) PWrite maxOut (4961) [0,0,-1,-1,-1] [0,0,0 -> 0MB]
-------(4962) ua(meanRC) (4959) [0,0,-1,-1,-1] [76,0,0 -> 76MB]
-------(4980) PWrite meanOut (4962) [0,0,-1,-1,-1] [0,0,0 -> 0MB]
+------(12) TRead Xin [10000,1000,1000,1000,10000000] [0,0,76 -> 76MB] [chkpt], CP
+------(13) ua(minRC) (12) [0,0,-1,-1,-1] [76,0,0 -> 76MB], CP
+------(21) TWrite minOut (13) [0,0,-1,-1,-1] [0,0,0 -> 0MB], CP
+------(14) ua(maxRC) (12) [0,0,-1,-1,-1] [76,0,0 -> 76MB], CP
+------(27) TWrite maxOut (14) [0,0,-1,-1,-1] [0,0,0 -> 0MB], CP
+------(15) ua(meanRC) (12) [0,0,-1,-1,-1] [76,0,0 -> 76MB], CP
+------(33) TWrite meanOut (15) [0,0,-1,-1,-1] [0,0,0 -> 0MB], CP
 
-min: Double = 3.682402316407263E-8
-max: Double = 0.999999984664141
-mean: Double = 0.49997351913605814
+min: Double = 5.16651366133658E-9
+max: Double = 0.9999999368927975
+mean: Double = 0.5001096515241128
+
+{% endhighlight %}
+</div>
+
+</div>
+
+
+Different explain levels can be set. The explain levels are NONE, HOPS, RUNTIME, RECOMPILE_HOPS, and RECOMPILE_RUNTIME.
+
+<div class="codetabs">
+
+<div data-lang="Scala" markdown="1">
+{% highlight scala %}
+ml.setExplainLevel(MLContext.ExplainLevel.RUNTIME)
+val (min, max, mean) = ml.execute(minMaxMeanScript).getTuple[Double, Double, Double]("minOut", "maxOut", "meanOut")
+{% endhighlight %}
+</div>
+
+<div data-lang="Spark Shell" markdown="1">
+{% highlight scala %}
+scala> ml.setExplainLevel(MLContext.ExplainLevel.RUNTIME)
+
+scala> val (min, max, mean) = ml.execute(minMaxMeanScript).getTuple[Double, Double, Double]("minOut", "maxOut", "meanOut")
+
+PROGRAM ( size CP/SP = 9/0 )
+--MAIN PROGRAM
+----GENERIC (lines 1-8) [recompile=false]
+------CP uamin Xin.MATRIX.DOUBLE _Var8.SCALAR.DOUBLE 8
+------CP uamax Xin.MATRIX.DOUBLE _Var9.SCALAR.DOUBLE 8
+------CP uamean Xin.MATRIX.DOUBLE _Var10.SCALAR.DOUBLE 8
+------CP assignvar _Var8.SCALAR.DOUBLE.false minOut.SCALAR.DOUBLE
+------CP assignvar _Var9.SCALAR.DOUBLE.false maxOut.SCALAR.DOUBLE
+------CP assignvar _Var10.SCALAR.DOUBLE.false meanOut.SCALAR.DOUBLE
+------CP rmvar _Var8
+------CP rmvar _Var9
+------CP rmvar _Var10
+
+min: Double = 5.16651366133658E-9
+max: Double = 0.9999999368927975
+mean: Double = 0.5001096515241128
 
 {% endhighlight %}
 </div>

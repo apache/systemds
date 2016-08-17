@@ -577,6 +577,7 @@
 								<exclude>docs</exclude>
 								<exclude>**/docs/**</exclude>
 								<exclude>**/*.csv</exclude>
+								<exclude>**/*.ijv</exclude>
 								<exclude>**/*.json</exclude>
 								<exclude>**/*.mtx</exclude>
 								<exclude>**/*.mtd</exclude>

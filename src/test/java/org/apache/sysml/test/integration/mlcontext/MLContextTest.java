@@ -93,7 +93,7 @@ public class MLContextTest extends AutomatedTestBase {
 			sc = new JavaSparkContext(conf);
 		ml = new MLContext(sc);
 	}
-	
+
 	@Override
 	public void setUp() {
 		addTestConfiguration(TEST_DIR, TEST_NAME);
@@ -1641,6 +1641,48 @@ public class MLContextTest extends AutomatedTestBase {
 		ml.execute(script);
 	}
 
+	@Test
+	public void testCSVMatrixFromURLSumDML() throws MalformedURLException {
+		System.out.println("MLContextTest - CSV matrix from URL sum DML");
+		String csv = "https://raw.githubusercontent.com/apache/incubator-systemml/master/src/test/scripts/org/apache/sysml/api/mlcontext/1234.csv";
+		URL url = new URL(csv);
+		Script script = dml("print('sum: ' + sum(M));").in("M", url);
+		setExpectedStdOut("sum: 10.0");
+		ml.execute(script);
+	}
+
+	@Test
+	public void testCSVMatrixFromURLSumPYDML() throws MalformedURLException {
+		System.out.println("MLContextTest - CSV matrix from URL sum PYDML");
+		String csv = "https://raw.githubusercontent.com/apache/incubator-systemml/master/src/test/scripts/org/apache/sysml/api/mlcontext/1234.csv";
+		URL url = new URL(csv);
+		Script script = pydml("print('sum: ' + sum(M))").in("M", url);
+		setExpectedStdOut("sum: 10.0");
+		ml.execute(script);
+	}
+
+	@Test
+	public void testIJVMatrixFromURLSumDML() throws MalformedURLException {
+		System.out.println("MLContextTest - IJV matrix from URL sum DML");
+		String ijv = "https://raw.githubusercontent.com/apache/incubator-systemml/master/src/test/scripts/org/apache/sysml/api/mlcontext/1234.ijv";
+		URL url = new URL(ijv);
+		MatrixMetadata mm = new MatrixMetadata(MatrixFormat.IJV, 2, 2);
+		Script script = dml("print('sum: ' + sum(M));").in("M", url, mm);
+		setExpectedStdOut("sum: 10.0");
+		ml.execute(script);
+	}
+
+	@Test
+	public void testIJVMatrixFromURLSumPYDML() throws MalformedURLException {
+		System.out.println("MLContextTest - IJV matrix from URL sum PYDML");
+		String ijv = "https://raw.githubusercontent.com/apache/incubator-systemml/master/src/test/scripts/org/apache/sysml/api/mlcontext/1234.ijv";
+		URL url = new URL(ijv);
+		MatrixMetadata mm = new MatrixMetadata(MatrixFormat.IJV, 2, 2);
+		Script script = pydml("print('sum: ' + sum(M))").in("M", url, mm);
+		setExpectedStdOut("sum: 10.0");
+		ml.execute(script);
+	}
+
 	// NOTE: Uncomment these tests once they work
 
 	// @SuppressWarnings({ "rawtypes", "unchecked" })
@@ -1714,13 +1756,13 @@ public class MLContextTest extends AutomatedTestBase {
 
 	@AfterClass
 	public static void tearDownClass() {
-		//stop spark context to allow single jvm tests (otherwise the 
-		//next test that tries to create a SparkContext would fail)
+		// stop spark context to allow single jvm tests (otherwise the
+		// next test that tries to create a SparkContext would fail)
 		sc.stop();
 		sc = null;
 		conf = null;
-		
-		//clear status mlcontext and spark exec context
+
+		// clear status mlcontext and spark exec context
 		ml.close();
 		ml = null;
 	}

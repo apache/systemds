@@ -20,6 +20,7 @@
 package org.apache.sysml.api.mlcontext;
 
 import java.io.FileNotFoundException;
+import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -44,9 +45,7 @@ import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.parser.ParseException;
-import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
-import org.apache.sysml.runtime.controlprogram.caching.CacheException;
 import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.instructions.cp.BooleanObject;
@@ -54,12 +53,8 @@ import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.DoubleObject;
 import org.apache.sysml.runtime.instructions.cp.IntObject;
 import org.apache.sysml.runtime.instructions.cp.StringObject;
-import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
-import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
-import org.apache.sysml.runtime.matrix.data.OutputInfo;
 
 /**
  * Utility class containing methods for working with the MLContext API.
@@ -78,7 +73,7 @@ public final class MLContextUtil {
 	 */
 	@SuppressWarnings("rawtypes")
 	public static final Class[] COMPLEX_DATA_TYPES = { JavaRDD.class, RDD.class, DataFrame.class,
-			BinaryBlockMatrix.class, Matrix.class, (new double[][] {}).getClass(), MatrixBlock.class };
+			BinaryBlockMatrix.class, Matrix.class, (new double[][] {}).getClass(), MatrixBlock.class, URL.class };
 
 	/**
 	 * All data types supported by the MLContext API
@@ -343,7 +338,7 @@ public final class MLContextUtil {
 
 	/**
 	 * Is the object one of the supported complex data types? (JavaRDD, RDD,
-	 * DataFrame, BinaryBlockMatrix, Matrix, double[][])
+	 * DataFrame, BinaryBlockMatrix, Matrix, double[][], MatrixBlock, URL)
 	 * 
 	 * @param object
 	 *            the object type to be examined
@@ -457,23 +452,11 @@ public final class MLContextUtil {
 
 			return matrixObject;
 		} else if (value instanceof MatrixBlock) {
-			MatrixCharacteristics matrixCharacteristics;
-			if (matrixMetadata != null) {
-				matrixCharacteristics = matrixMetadata.asMatrixCharacteristics();
-			} else {
-				matrixCharacteristics = new MatrixCharacteristics();
-			}
-			MatrixFormatMetaData mtd = new MatrixFormatMetaData(matrixCharacteristics, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
-			MatrixObject matrixObject = new MatrixObject(ValueType.DOUBLE, MLContextUtil.scratchSpace() + "/" + name, mtd);
-			try {
-				matrixObject.acquireModify((MatrixBlock)value);
-				matrixObject.release();
-			} catch (CacheException e) {
-				throw new MLContextException(e);
-			}
+			MatrixBlock matrixBlock = (MatrixBlock) value;
+			MatrixObject matrixObject = MLContextConversionUtil.matrixBlockToMatrixObject(name, matrixBlock,
+					matrixMetadata);
 			return matrixObject;
-		}
-		else if (value instanceof DataFrame) {
+		} else if (value instanceof DataFrame) {
 			DataFrame dataFrame = (DataFrame) value;
 			MatrixObject matrixObject = MLContextConversionUtil
 					.dataFrameToMatrixObject(name, dataFrame, matrixMetadata);
@@ -495,6 +478,10 @@ public final class MLContextUtil {
 			double[][] doubleMatrix = (double[][]) value;
 			MatrixObject matrixObject = MLContextConversionUtil.doubleMatrixToMatrixObject(name, doubleMatrix,
 					matrixMetadata);
+			return matrixObject;
+		} else if (value instanceof URL) {
+			URL url = (URL) value;
+			MatrixObject matrixObject = MLContextConversionUtil.urlToMatrixObject(name, url, matrixMetadata);
 			return matrixObject;
 		} else if (value instanceof Integer) {
 			Integer i = (Integer) value;

@@ -662,6 +662,107 @@ None
 </div>
 
 
+Alternatively, we could supply a `java.net.URL` to the Script `in` method. Note that if the URL matrix data is in IJV
+format, metadata needs to be supplied for the matrix.
+
+<div class="codetabs">
+
+<div data-lang="Scala" markdown="1">
+{% highlight scala %}
+val habermanUrl = "http://archive.ics.uci.edu/ml/machine-learning-databases/haberman/haberman.data"
+val typesRDD = sc.parallelize(Array("1.0,1.0,1.0,2.0"))
+val scriptUrl = "https://raw.githubusercontent.com/apache/incubator-systemml/master/scripts/algorithms/Univar-Stats.dml"
+val uni = dmlFromUrl(scriptUrl).in("A", new java.net.URL(habermanUrl)).in("K", typesRDD).in("$CONSOLE_OUTPUT", true)
+ml.execute(uni)
+{% endhighlight %}
+</div>
+
+<div data-lang="Spark Shell" markdown="1">
+{% highlight scala %}
+scala> val habermanUrl = "http://archive.ics.uci.edu/ml/machine-learning-databases/haberman/haberman.data"
+habermanUrl: String = http://archive.ics.uci.edu/ml/machine-learning-databases/haberman/haberman.data
+
+scala> val typesRDD = sc.parallelize(Array("1.0,1.0,1.0,2.0"))
+typesRDD: org.apache.spark.rdd.RDD[String] = ParallelCollectionRDD[50] at parallelize at <console>:33
+
+scala> val scriptUrl = "https://raw.githubusercontent.com/apache/incubator-systemml/master/scripts/algorithms/Univar-Stats.dml"
+scriptUrl: String = https://raw.githubusercontent.com/apache/incubator-systemml/master/scripts/algorithms/Univar-Stats.dml
+
+scala> val uni = dmlFromUrl(scriptUrl).in("A", new java.net.URL(habermanUrl)).in("K", typesRDD).in("$CONSOLE_OUTPUT", true)
+uni: org.apache.sysml.api.mlcontext.Script =
+Inputs:
+  [1] (URL) A: http://archive.ics.uci.edu/ml/machine-learning-databases/haberman/haberman.data
+  [2] (RDD) K: ParallelCollectionRDD[50] at parallelize at <console>:33
+  [3] (Boolean) $CONSOLE_OUTPUT: true
+
+Outputs:
+None
+
+
+scala> ml.execute(uni)
+...
+-------------------------------------------------
+ (01) Minimum             | 30.0
+ (02) Maximum             | 83.0
+ (03) Range               | 53.0
+ (04) Mean                | 52.45751633986928
+ (05) Variance            | 116.71458266366658
+ (06) Std deviation       | 10.803452349303281
+ (07) Std err of mean     | 0.6175922641866753
+ (08) Coeff of variation  | 0.20594669940735139
+ (09) Skewness            | 0.1450718616532357
+ (10) Kurtosis            | -0.6150152487211726
+ (11) Std err of skewness | 0.13934809593495995
+ (12) Std err of kurtosis | 0.277810485320835
+ (13) Median              | 52.0
+ (14) Interquartile mean  | 52.16013071895425
+Feature [1]: Scale
+-------------------------------------------------
+ (01) Minimum             | 58.0
+ (02) Maximum             | 69.0
+ (03) Range               | 11.0
+ (04) Mean                | 62.85294117647059
+ (05) Variance            | 10.558630665380907
+ (06) Std deviation       | 3.2494046632238507
+ (07) Std err of mean     | 0.18575610076612029
+ (08) Coeff of variation  | 0.051698529971741194
+ (09) Skewness            | 0.07798443581479181
+ (10) Kurtosis            | -1.1324380182967442
+ (11) Std err of skewness | 0.13934809593495995
+ (12) Std err of kurtosis | 0.277810485320835
+ (13) Median              | 63.0
+ (14) Interquartile mean  | 62.80392156862745
+Feature [2]: Scale
+-------------------------------------------------
+ (01) Minimum             | 0.0
+ (02) Maximum             | 52.0
+ (03) Range               | 52.0
+ (04) Mean                | 4.026143790849673
+ (05) Variance            | 51.691117539912135
+ (06) Std deviation       | 7.189653506248555
+ (07) Std err of mean     | 0.41100513466216837
+ (08) Coeff of variation  | 1.7857418611299172
+ (09) Skewness            | 2.954633471088322
+ (10) Kurtosis            | 11.425776549251449
+ (11) Std err of skewness | 0.13934809593495995
+ (12) Std err of kurtosis | 0.277810485320835
+ (13) Median              | 1.0
+ (14) Interquartile mean  | 1.2483660130718954
+Feature [3]: Scale
+-------------------------------------------------
+Feature [4]: Categorical (Nominal)
+ (15) Num of categories   | 2
+ (16) Mode                | 1
+ (17) Num of modes        | 1
+res5: org.apache.sysml.api.mlcontext.MLResults =
+None
+
+{% endhighlight %}
+</div>
+
+</div>
+
+
 ### Input Variables vs Input Parameters
 
 If we examine the

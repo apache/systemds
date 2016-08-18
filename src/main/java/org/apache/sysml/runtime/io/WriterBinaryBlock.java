@@ -65,6 +65,8 @@ public class WriterBinaryBlock extends MatrixWriter
 			writeDiagBinaryBlockMatrixToHDFS(path, job, fs, src, rlen, clen, brlen, bclen);
 		else
 			writeBinaryBlockMatrixToHDFS(path, job, fs, src, rlen, clen, brlen, bclen);
+
+		IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, fname);
 	}
 
 	@Override
@@ -84,6 +86,8 @@ public class WriterBinaryBlock extends MatrixWriter
 											(int)Math.min(clen, bclen), true);
 		writer.append(index, block);
 		writer.close();
+
+		IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, fname);
 	}
 	
 	/**

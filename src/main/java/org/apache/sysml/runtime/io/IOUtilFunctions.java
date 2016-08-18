@@ -31,6 +31,8 @@ import java.util.Comparator;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
@@ -325,5 +327,14 @@ public class IOUtilFunctions
 			}
 		}
 		return ncol;
+	}
+
+	public static void deleteCrcFilesFromLocalFileSystem(FileSystem fs, String fname) throws IOException {
+		if (fs instanceof LocalFileSystem) {
+			Path fnameCrc = new Path("." + fname + ".crc");
+			fs.delete(fnameCrc, false);
+			Path fnameMtdCrc = new Path("." + fname + ".mtd.crc");
+			fs.delete(fnameMtdCrc, false);
+		}
 	}
 }

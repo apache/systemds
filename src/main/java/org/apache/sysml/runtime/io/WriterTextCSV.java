@@ -76,6 +76,8 @@ public class WriterTextCSV extends MatrixWriter
 			
 		//core write (sequential/parallel)
 		writeCSVMatrixToHDFS(path, job, fs, src, _props);
+
+		IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, fname);
 	}
 
 	@Override
@@ -88,6 +90,8 @@ public class WriterTextCSV extends MatrixWriter
 
 		MatrixBlock src = new MatrixBlock((int)rlen, 1, true);
 		writeCSVMatrixToHDFS(path, job, fs, src, _props);
+
+		IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, fname);
 	}
 	
 	/**

@@ -453,8 +453,8 @@ public class LibMatrixCUDA {
 			output.getGPUObject().acquireDeviceModifyDense();	// To allocate the dense matrix
 			Pointer C = ((JCudaObject)output.getGPUObject()).jcudaDenseMatrixPtr;		
 			denseDenseMatmult(C, 
-					(int) left.getNumColumns(), (int) left.getNumRows(),
-					(int) right.getNumRows(), (int) right.getNumColumns(), 
+					(int) left.getNumRows(), (int) left.getNumColumns(),
+					(int) right.getNumColumns(), (int) right.getNumRows(), 
 					isLeftTransposed, !isRightTransposed,
 					ADense, BDenseTransposed);
 			cudaFree(BDenseTransposed);
@@ -506,8 +506,8 @@ public class LibMatrixCUDA {
 				output.getGPUObject().acquireDeviceModifyDense();	// To allocate the dense matrix
 				Pointer C = ((JCudaObject)output.getGPUObject()).jcudaDenseMatrixPtr;		
 				denseDenseMatmult(C, 
-						(int) left.getNumRows(), (int) left.getNumColumns(),
-						(int) right.getNumColumns(), (int) right.getNumRows(), 
+						(int) left.getNumColumns(), (int) left.getNumRows(),
+						(int) right.getNumRows(), (int) right.getNumColumns(), 
 						!isLeftTransposed, isRightTransposed,
 						ADenseTransposed, BDense);
 				cudaFree(ADenseTransposed);
@@ -722,14 +722,12 @@ public class LibMatrixCUDA {
 			JCublas2.cublasDdot(cublasHandle, k, A, 1, B, 1, C);
 		} else if (m == 1) {
 			// Vector-matrix multiply
-			LOG.info(" GPU Vector-Matrix Multiply");
-			// TODO B is in row-major format, need to flip it for column major
+			LOG.info(" GPU Dense Vector-Matrix Multiply");
 			JCublas2.cublasDgemv(cublasHandle, transb, k, n, Pointer.to(one), B, ldb, A, 1, Pointer.to(zero), C, 1);
 		} else if (n == 1){
 			// Matrix-vector multiply
-			LOG.info(" GPU Matrix-Vector Multiply");
-			// TODO A is in row-major format, need to flip it for column major
-			JCublas2.cublasDgemv(cublasHandle, transa, m, n, Pointer.to(one), A, lda, B, 1, Pointer.to(zero), C, 1);
+			LOG.info(" GPU Dense Matrix-Vector Multiply");
+			JCublas2.cublasDgemv(cublasHandle, transa, m, k, Pointer.to(one), A, lda, B, 1, Pointer.to(zero), C, 1);
 		} else {
 			LOG.info(" GPU Dense-Dense Matrix Multiply ");
 			JCublas2.cublasDgemm(cublasHandle, transa, transb, m, n, k, Pointer.to(one), A, lda, B, ldb, Pointer.to(zero), C, ldc);

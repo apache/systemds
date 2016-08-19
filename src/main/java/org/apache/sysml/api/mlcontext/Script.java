@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -97,7 +97,7 @@ public class Script {
 	/**
 	 * Script constructor, specifying the type of script ({@code ScriptType.DML}
 	 * or {@code ScriptType.PYDML}).
-	 * 
+	 *
 	 * @param scriptType
 	 *            {@code ScriptType.DML} or {@code ScriptType.PYDML}
 	 */
@@ -108,7 +108,7 @@ public class Script {
 	/**
 	 * Script constructor, specifying the script content. By default, the script
 	 * type is DML.
-	 * 
+	 *
 	 * @param scriptString
 	 *            the script content as a string
 	 */
@@ -120,7 +120,7 @@ public class Script {
 	/**
 	 * Script constructor, specifying the script content and the type of script
 	 * (DML or PYDML).
-	 * 
+	 *
 	 * @param scriptString
 	 *            the script content as a string
 	 * @param scriptType
@@ -133,7 +133,7 @@ public class Script {
 
 	/**
 	 * Obtain the script type.
-	 * 
+	 *
 	 * @return {@code ScriptType.DML} or {@code ScriptType.PYDML}
 	 */
 	public ScriptType getScriptType() {
@@ -142,7 +142,7 @@ public class Script {
 
 	/**
 	 * Set the type of script (DML or PYDML).
-	 * 
+	 *
 	 * @param scriptType
 	 *            {@code ScriptType.DML} or {@code ScriptType.PYDML}
 	 */
@@ -152,7 +152,7 @@ public class Script {
 
 	/**
 	 * Obtain the script string.
-	 * 
+	 *
 	 * @return the script string
 	 */
 	public String getScriptString() {
@@ -161,7 +161,7 @@ public class Script {
 
 	/**
 	 * Set the script string.
-	 * 
+	 *
 	 * @param scriptString
 	 *            the script string
 	 * @return {@code this} Script object to allow chaining of methods
@@ -173,7 +173,7 @@ public class Script {
 
 	/**
 	 * Obtain the input variable names as an unmodifiable set of strings.
-	 * 
+	 *
 	 * @return the input variable names
 	 */
 	public Set<String> getInputVariables() {
@@ -182,7 +182,7 @@ public class Script {
 
 	/**
 	 * Obtain the output variable names as an unmodifiable set of strings.
-	 * 
+	 *
 	 * @return the output variable names
 	 */
 	public Set<String> getOutputVariables() {
@@ -192,7 +192,7 @@ public class Script {
 	/**
 	 * Obtain the symbol table, which is essentially a
 	 * {@code HashMap<String, Data>} representing variables and their values.
-	 * 
+	 *
 	 * @return the symbol table
 	 */
 	public LocalVariableMap getSymbolTable() {
@@ -201,7 +201,7 @@ public class Script {
 
 	/**
 	 * Obtain an unmodifiable map of all inputs (parameters ($) and variables).
-	 * 
+	 *
 	 * @return all inputs to the script
 	 */
 	public Map<String, Object> getInputs() {
@@ -210,7 +210,7 @@ public class Script {
 
 	/**
 	 * Obtain an unmodifiable map of input matrix metadata.
-	 * 
+	 *
 	 * @return input matrix metadata
 	 */
 	public Map<String, MatrixMetadata> getInputMatrixMetadata() {
@@ -219,7 +219,7 @@ public class Script {
 
 	/**
 	 * Pass a map of inputs to the script.
-	 * 
+	 *
 	 * @param inputs
 	 *            map of inputs (parameters ($) and variables).
 	 * @return {@code this} Script object to allow chaining of methods
@@ -232,9 +232,13 @@ public class Script {
 		return this;
 	}
 
+	public Script input(Map<String, Object> inputs) {
+		return in(inputs);
+	}
+
 	/**
 	 * Pass a Scala Map of inputs to the script.
-	 * 
+	 *
 	 * @param inputs
 	 *            Scala Map of inputs (parameters ($) and variables).
 	 * @return {@code this} Script object to allow chaining of methods
@@ -246,12 +250,16 @@ public class Script {
 		return this;
 	}
 
+	public Script input(scala.collection.Map<String, Object> inputs) {
+		return in(inputs);
+	}
+
 	/**
 	 * Pass a Scala Seq of inputs to the script. The inputs are either two-value
 	 * or three-value tuples, where the first value is the variable name, the
 	 * second value is the variable value, and the third optional value is the
 	 * metadata.
-	 * 
+	 *
 	 * @param inputs
 	 *            Scala Seq of inputs (parameters ($) and variables).
 	 * @return {@code this} Script object to allow chaining of methods
@@ -274,9 +282,13 @@ public class Script {
 		return this;
 	}
 
+	public Script input(scala.collection.Seq<Object> inputs) {
+		return in(inputs);
+	}
+
 	/**
 	 * Obtain an unmodifiable map of all input parameters ($).
-	 * 
+	 *
 	 * @return input parameters ($)
 	 */
 	public Map<String, Object> getInputParameters() {
@@ -285,7 +297,7 @@ public class Script {
 
 	/**
 	 * Register an input (parameter ($) or variable).
-	 * 
+	 *
 	 * @param name
 	 *            name of the input
 	 * @param value
@@ -296,10 +308,14 @@ public class Script {
 		return in(name, value, null);
 	}
 
+	public Script input(String name, Object value) {
+		return in(name, value);
+	}
+
 	/**
 	 * Register an input (parameter ($) or variable) with optional matrix
 	 * metadata.
-	 * 
+	 *
 	 * @param name
 	 *            name of the input
 	 * @param value
@@ -336,9 +352,13 @@ public class Script {
 		return this;
 	}
 
+	public Script input(String name, Object value, MatrixMetadata matrixMetadata) {
+		return in(name, value, matrixMetadata);
+	}
+
 	/**
 	 * Register an output variable.
-	 * 
+	 *
 	 * @param outputName
 	 *            name of the output variable
 	 * @return {@code this} Script object to allow chaining of methods
@@ -350,7 +370,7 @@ public class Script {
 
 	/**
 	 * Register output variables.
-	 * 
+	 *
 	 * @param outputNames
 	 *            names of the output variables
 	 * @return {@code this} Script object to allow chaining of methods
@@ -411,7 +431,7 @@ public class Script {
 
 	/**
 	 * Obtain the results of the script execution.
-	 * 
+	 *
 	 * @return the results of the script execution.
 	 */
 	public MLResults results() {
@@ -420,7 +440,7 @@ public class Script {
 
 	/**
 	 * Obtain the results of the script execution.
-	 * 
+	 *
 	 * @return the results of the script execution.
 	 */
 	public MLResults getResults() {
@@ -429,7 +449,7 @@ public class Script {
 
 	/**
 	 * Set the results of the script execution.
-	 * 
+	 *
 	 * @param results
 	 *            the results of the script execution.
 	 */
@@ -439,7 +459,7 @@ public class Script {
 
 	/**
 	 * Obtain the script executor used by this Script.
-	 * 
+	 *
 	 * @return the ScriptExecutor used by this Script.
 	 */
 	public ScriptExecutor getScriptExecutor() {
@@ -448,7 +468,7 @@ public class Script {
 
 	/**
 	 * Set the ScriptExecutor used by this Script.
-	 * 
+	 *
 	 * @param scriptExecutor
 	 *            the script executor
 	 */
@@ -458,7 +478,7 @@ public class Script {
 
 	/**
 	 * Is the script type DML?
-	 * 
+	 *
 	 * @return {@code true} if the script type is DML, {@code false} otherwise
 	 */
 	public boolean isDML() {
@@ -467,7 +487,7 @@ public class Script {
 
 	/**
 	 * Is the script type PYDML?
-	 * 
+	 *
 	 * @return {@code true} if the script type is PYDML, {@code false} otherwise
 	 */
 	public boolean isPYDML() {
@@ -477,7 +497,7 @@ public class Script {
 	/**
 	 * Generate the script execution string, which adds read/load/write/save
 	 * statements to the beginning and end of the script to execute.
-	 * 
+	 *
 	 * @return the script execution string
 	 */
 	public String getScriptExecutionString() {
@@ -545,7 +565,7 @@ public class Script {
 	 * script type, inputs, outputs, input parameters, input variables, output
 	 * variables, the symbol table, the script string, and the script execution
 	 * string.
-	 * 
+	 *
 	 * @return information about this script as a String
 	 */
 	public String info() {
@@ -576,7 +596,7 @@ public class Script {
 
 	/**
 	 * Display the script inputs.
-	 * 
+	 *
 	 * @return the script inputs
 	 */
 	public String displayInputs() {
@@ -585,7 +605,7 @@ public class Script {
 
 	/**
 	 * Display the script outputs.
-	 * 
+	 *
 	 * @return the script outputs as a String
 	 */
 	public String displayOutputs() {
@@ -594,7 +614,7 @@ public class Script {
 
 	/**
 	 * Display the script input parameters.
-	 * 
+	 *
 	 * @return the script input parameters as a String
 	 */
 	public String displayInputParameters() {
@@ -603,7 +623,7 @@ public class Script {
 
 	/**
 	 * Display the script input variables.
-	 * 
+	 *
 	 * @return the script input variables as a String
 	 */
 	public String displayInputVariables() {
@@ -612,7 +632,7 @@ public class Script {
 
 	/**
 	 * Display the script output variables.
-	 * 
+	 *
 	 * @return the script output variables as a String
 	 */
 	public String displayOutputVariables() {
@@ -621,7 +641,7 @@ public class Script {
 
 	/**
 	 * Display the script symbol table.
-	 * 
+	 *
 	 * @return the script symbol table as a String
 	 */
 	public String displaySymbolTable() {
@@ -630,7 +650,7 @@ public class Script {
 
 	/**
 	 * Obtain the script name.
-	 * 
+	 *
 	 * @return the script name
 	 */
 	public String getName() {
@@ -639,7 +659,7 @@ public class Script {
 
 	/**
 	 * Set the script name.
-	 * 
+	 *
 	 * @param name
 	 *            the script name
 	 * @return {@code this} Script object to allow chaining of methods

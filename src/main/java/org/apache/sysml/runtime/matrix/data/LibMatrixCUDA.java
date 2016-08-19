@@ -685,19 +685,19 @@ public class LibMatrixCUDA {
 		Pointer A = rightPtr;
 		Pointer B = leftPtr;
 		
-		int leftRows = rightRows1;
-		int leftCols = rightCols1;
-		int rightRows = leftRows1;
-		int rightCols = leftCols1;
+		int leftRows = rightCols1;
+		int leftCols = rightRows1;
+		int rightRows = leftCols1;
+		int rightCols = leftRows1;
 		
 		boolean isLeftTransposed = isRightTransposed1; 
 		boolean isRightTransposed = isLeftTransposed1; 
 		
 		// Note: the dimensions are swapped
-		int m = (int) (isLeftTransposed ? leftRows : leftCols) ;
-		int n = (int) (isRightTransposed ? rightCols : rightRows);
-		int k = (int) (isLeftTransposed ?  leftRows : leftRows);
-		int k1 = (int) (isRightTransposed ?  rightRows : rightCols);
+		int m = (int) (isLeftTransposed ? leftCols : leftRows) ;
+		int n = (int) (isRightTransposed ? rightRows : rightCols);
+		int k = (int) (isLeftTransposed ?  leftRows : leftCols);
+		int k1 = (int) (isRightTransposed ?  rightCols : rightRows);
 		if(k != k1) 
 			throw new DMLRuntimeException("Dimension mismatch: " + k + " != " + k1);
 		
@@ -707,22 +707,28 @@ public class LibMatrixCUDA {
 		double[] one = { 1 };
 		double[] zero = { 0 };
 		
-		int lda = isLeftTransposed ?  k : m;
-		int ldb = isRightTransposed ? n : k;
+		int lda = leftRows;
+		int ldb = leftCols;
 		int ldc = m;
 		
 		int transa = isLeftTransposed ? cublasOperation.CUBLAS_OP_T : cublasOperation.CUBLAS_OP_N;
 		int transb = isRightTransposed ? cublasOperation.CUBLAS_OP_T : cublasOperation.CUBLAS_OP_N;
 
-		//Pointer C = ((JCudaObject)output.getGPUObject()).jcudaDenseMatrixPtr;
 		Pointer C = output;
 		if (m == 1 && n == 1){ 
 			// Vector product
 			LOG.info(" GPU Dense-dense Vector Product");
-			JCublas2.cublasDdot(cublasHandle, k, A, 1, B, 1, C);
+			double[] result = {0};
+			JCublas2.cublasDdot(cublasHandle, k, A, 1, B, 1, Pointer.to(result));
+			// By default in CuBlas V2, cublas pointer mode is set to CUBLAS_POINTER_MODE_HOST.
+			// This means that scalar values passed are on host (as opposed to on device).
+			// The result is copied from the host back to the device so that the rest of 
+			// infrastructure can treat it uniformly.
+			cudaMemcpy(C, Pointer.to(result), 1 * Sizeof.DOUBLE, cudaMemcpyHostToDevice);
 		} else if (m == 1) {
 			// Vector-matrix multiply
 			LOG.info(" GPU Dense Vector-Matrix Multiply");
+			transb = isRightTransposed ? cublasOperation.CUBLAS_OP_N : cublasOperation.CUBLAS_OP_T;
 			JCublas2.cublasDgemv(cublasHandle, transb, k, n, Pointer.to(one), B, ldb, A, 1, Pointer.to(zero), C, 1);
 		} else if (n == 1){
 			// Matrix-vector multiply

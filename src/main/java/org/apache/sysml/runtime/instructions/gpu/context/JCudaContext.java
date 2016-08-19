@@ -29,6 +29,7 @@ import org.apache.sysml.utils.Statistics;
 import jcuda.driver.JCudaDriver;
 import jcuda.jcublas.JCublas2;
 import jcuda.jcublas.cublasHandle;
+import jcuda.jcublas.cublasPointerMode;
 import jcuda.jcudnn.JCudnn;
 import jcuda.runtime.JCuda;
 import jcuda.jcudnn.cudnnHandle;
@@ -37,6 +38,7 @@ import jcuda.jcusparse.cusparseHandle;
 
 import static jcuda.jcudnn.JCudnn.cudnnCreate;
 import static jcuda.jcublas.JCublas2.cublasCreate;
+import static jcuda.jcublas.JCublas2.cublasSetPointerMode;
 import static jcuda.jcublas.JCublas2.cublasDestroy;
 import static jcuda.jcudnn.JCudnn.cudnnDestroy;
 import static jcuda.jcusparse.JCusparse.cusparseDestroy;
@@ -121,6 +123,9 @@ public class JCudaContext extends GPUContext {
 		cudnnCreate(LibMatrixCUDA.cudnnHandle);
 		LibMatrixCUDA.cublasHandle = new cublasHandle();
 		cublasCreate(LibMatrixCUDA.cublasHandle);
+		// For cublas v2, cublasSetPointerMode tells Cublas whether to expect scalar arguments on device or on host
+		// This applies to arguments like "alpha" in Dgemm, and "y" in Ddot.
+		// cublasSetPointerMode(LibMatrixCUDA.cublasHandle, cublasPointerMode.CUBLAS_POINTER_MODE_DEVICE); 
 		LibMatrixCUDA.cusparseHandle = new cusparseHandle();
 		cusparseCreate(LibMatrixCUDA.cusparseHandle);
 		Statistics.cudaLibrariesInitTime = System.nanoTime() - start;

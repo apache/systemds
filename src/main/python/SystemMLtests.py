@@ -78,7 +78,7 @@ class TestAPI(unittest.TestCase):
         script = "A = full('1 2 3 4 5 6 7 8 9', rows=3, cols=3)\nx = toString(A)"
         script = pydml(script).out("x")
         self.assertEqual(
-            ml.execute(script).get("x")
+            ml.execute(script).get("x"),
             '1.000 2.000 3.000\n4.000 5.000 6.000\n7.000 8.000 9.000\n'
         )
 

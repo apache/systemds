@@ -958,7 +958,7 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 		}
 		else if(namespace.equals(DMLProgram.DEFAULT_NAMESPACE) && functionName.equals("range")) {
 			if(paramExpression.size() != 3) {
-				notifyErrorListeners("The builtin function \'" + functionName + "\' accepts exactly 3 arguments (matrix, scalar value that should be replaced (pattern), scalar value (replacement))", fnName);
+				notifyErrorListeners("The builtin function \'" + functionName + "\' accepts exactly 3 arguments (from, to, increment)", fnName);
 				return null;
 			}
 			functionName = "seq";

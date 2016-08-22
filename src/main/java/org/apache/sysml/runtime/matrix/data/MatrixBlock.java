@@ -153,6 +153,21 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		copy(that);
 	}
 	
+	/**
+	 * Constructs a sparse {@link MatrixBlock} with a given instance of a {@link SparseBlock} 
+	 * @param rows	number of rows
+	 * @param cols	number of columns
+	 * @param nnz	number of non zeroes
+	 * @param sparseBlock
+	 */
+	public MatrixBlock(int rows, int cols, long nnz, SparseBlock sparseBlock) {
+		this.rlen = rows;
+		this.clen = cols;
+		this.nonZeros = nnz;
+		this.sparse = true;
+		this.sparseBlock = sparseBlock;
+	}
+	
 	public MatrixBlock(MatrixBlock that, SparseBlock.Type stype, boolean deep) {
 		this(that.rlen, that.clen, that.sparse);
 		

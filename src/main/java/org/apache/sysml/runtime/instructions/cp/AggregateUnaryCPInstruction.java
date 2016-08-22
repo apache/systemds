@@ -21,9 +21,10 @@ package org.apache.sysml.runtime.instructions.cp;
 
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.functionobjects.Builtin;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
@@ -101,13 +102,18 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 			//Note: check on matrix characteristics to cover incorrect length (-1*-1 -> 1)
 			if( !mc.dimsKnown() ) //invalid nrow/ncol/length
 			{
-				if( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
+				if(    DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE 
+					|| (input1.getDataType() == DataType.FRAME && OptimizerUtils.isHadoopExecutionMode()) )
 				{
-					//read the input data and explicitly refresh input data
-					MatrixObject mo = (MatrixObject)ec.getVariable(input1.getName());
-					mo.acquireRead();
-					mo.refreshMetaData();
-					mo.release();
+					if( OptimizerUtils.isHadoopExecutionMode() ) {
+						LOG.warn("Reading csv input frame of unkown size into memory for '"+opcode+"'.");
+					}
+					
+					//read the input matrix/frame and explicitly refresh meta data
+					CacheableData<?> obj = ec.getCacheableData(input1.getName());
+					obj.acquireRead();
+					obj.refreshMetaData();
+					obj.release();
 					
 					//update meta data information
 					mc = ec.getMatrixCharacteristics(input1.getName());

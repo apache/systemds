@@ -594,6 +594,15 @@ public class OptimizerUtils
 	 * 
 	 * @return
 	 */
+	public static boolean isHadoopExecutionMode() {
+		return (   DMLScript.rtplatform == RUNTIME_PLATFORM.HADOOP
+				|| DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID);
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
 	public static boolean isHybridExecutionMode() {
 		return (  DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID 
 			   || DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK );

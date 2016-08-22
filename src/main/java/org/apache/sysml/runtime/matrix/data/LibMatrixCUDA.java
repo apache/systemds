@@ -438,7 +438,7 @@ public class LibMatrixCUDA {
 		CSRPointer B = ((JCudaObject)right.getGPUObject()).jcudaSparseMatrixPtr;
 		Pointer ADense = ((JCudaObject)left.getGPUObject()).jcudaDenseMatrixPtr;
 		if (B.isUltraSparse(k, n)){
-			LOG.info(" GPU Dense-Sparse Matrix Multiplication (Converted to Sparse-Sparse)");
+			LOG.debug(" GPU Dense-Sparse Matrix Multiplication (Converted to Sparse-Sparse)");
 			// Convert left to CSR and do cuSparse matmul
 			long t0 = System.nanoTime();
 			CSRPointer A = JCudaObject.denseToSparse(cusparseHandle, (int)left.getNumRows(), (int)right.getNumColumns(), ADense);
@@ -447,7 +447,7 @@ public class LibMatrixCUDA {
 			sparseSparseMatmult(output, transA, transB, m, n, k, A, B);
 			A.deallocate();
 		} else {
-			LOG.info(" GPU Dense-Sparse Matrix Multiplication (Converted to Dense-Dense)");
+			LOG.debug(" GPU Dense-Sparse Matrix Multiplication (Converted to Dense-Dense)");
 			// Convert right to dense and do a cuBlas matmul
 			// BDenseTransposed is a column major matrix
 			// Note the arguments to denseDenseMatmult to accommodate for this.
@@ -487,13 +487,13 @@ public class LibMatrixCUDA {
 		
 		if (n == 1){	
 			// Sparse Matrix - Dense Vector multiply
-			LOG.info(" GPU Sparse Matrix - Dense Vector Mutliply");
+			LOG.debug(" GPU Sparse Matrix - Dense Vector Mutliply");
 			sparseMatrixDenseVectorMult(output, A, BDense, transA, (int)left.getNumRows(), (int)left.getNumColumns());
 			
 		} else {
 			// Sparse Matrix Dense Matrix multiply
 			if (A.isUltraSparse(m, k)){	
-				LOG.info(" GPU Sparse-Dense Matrix Multiplication (Converted to Sparse-Sparse)");
+				LOG.debug(" GPU Sparse-Dense Matrix Multiplication (Converted to Sparse-Sparse)");
 				// Convert right to CSR and do cuSparse matmul
 				long t0 = System.nanoTime();
 				CSRPointer B = JCudaObject.denseToSparse(cusparseHandle, (int)right.getNumRows(), (int)right.getNumColumns(), BDense);
@@ -502,7 +502,7 @@ public class LibMatrixCUDA {
 				sparseSparseMatmult(output, transA, transB, m, n, k, A, B);
 				B.deallocate();
 			} else {					
-				LOG.info(" GPU Sparse-Dense Matrix Multiplication (Converted to Dense-Dense)");
+				LOG.debug(" GPU Sparse-Dense Matrix Multiplication (Converted to Dense-Dense)");
 				// Convert left to dense and do a cuBlas matmul
 				// ADenseTransposed is a column major matrix
 				// Note the arguments to denseDenseMatmult to accommodate for this.
@@ -597,7 +597,7 @@ public class LibMatrixCUDA {
 	 */
 	protected static void sparseMatrixVectorMult(MatrixObject output, int transA, int m, int n, int k,
 			CSRPointer A, CSRPointer B) throws DMLRuntimeException {
-		LOG.info(" GPU Sparse Matrix Sparse Vector Multiply (Converted to Sparse Matrix Dense Vector Multiply)");
+		LOG.debug(" GPU Sparse Matrix Sparse Vector Multiply (Converted to Sparse Matrix Dense Vector Multiply)");
 		Pointer BDenseVector = B.toDenseMatrix(cusparseHandle, cublasHandle, k, 1);
 		sparseMatrixDenseVectorMult(output, A, BDenseVector, transA, m, k);
 	}
@@ -617,7 +617,7 @@ public class LibMatrixCUDA {
 	 */
 	protected static void sparseSparseMatmult(MatrixObject output, int transA, int transB, int m, int n, int k,
 			CSRPointer A, CSRPointer B) throws DMLRuntimeException {
-		LOG.info(" GPU Sparse-Sparse Matrix Multiply ");
+		LOG.debug(" GPU Sparse-Sparse Matrix Multiply ");
 
 		CSRPointer C = CSRPointer.allocateForMatrixMultiply(cusparseHandle, A, transA, B, transB, m, n, k);
 		((JCudaObject)output.getGPUObject()).setSparseMatrixCudaPointer(C);
@@ -716,7 +716,7 @@ public class LibMatrixCUDA {
 		Pointer C = output;
 		if (m == 1 && n == 1){ 
 			// Vector product
-			LOG.info(" GPU Dense-dense Vector Product");
+			LOG.debug(" GPU Dense-dense Vector Product");
 			double[] result = {0};
 			JCublas2.cublasDdot(cublasHandle, k, A, 1, B, 1, Pointer.to(result));
 			// By default in CuBlas V2, cublas pointer mode is set to CUBLAS_POINTER_MODE_HOST.
@@ -726,15 +726,15 @@ public class LibMatrixCUDA {
 			cudaMemcpy(C, Pointer.to(result), 1 * Sizeof.DOUBLE, cudaMemcpyHostToDevice);
 		} else if (m == 1) {
 			// Vector-matrix multiply
-			LOG.info(" GPU Dense Vector-Matrix Multiply");
+			LOG.debug(" GPU Dense Vector-Matrix Multiply");
 			transb = isRightTransposed ? cublasOperation.CUBLAS_OP_N : cublasOperation.CUBLAS_OP_T;
 			JCublas2.cublasDgemv(cublasHandle, transb, rightRows, rightCols, Pointer.to(one), B, ldb, A, 1, Pointer.to(zero), C, 1);
 		} else if (n == 1){
 			// Matrix-vector multiply
-			LOG.info(" GPU Dense Matrix-Vector Multiply");
+			LOG.debug(" GPU Dense Matrix-Vector Multiply");
 			JCublas2.cublasDgemv(cublasHandle, transa, leftRows, leftCols, Pointer.to(one), A, lda, B, 1, Pointer.to(zero), C, 1);
 		} else {
-			LOG.info(" GPU Dense-Dense Matrix Multiply ");
+			LOG.debug(" GPU Dense-Dense Matrix Multiply ");
 			JCublas2.cublasDgemm(cublasHandle, transa, transb, m, n, k, Pointer.to(one), A, lda, B, ldb, Pointer.to(zero), C, ldc);
 		}
 	}

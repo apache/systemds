@@ -46,6 +46,7 @@ import org.apache.sysml.runtime.instructions.cp.IntObject;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.instructions.cp.StringObject;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUObject;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MatrixDimensionsMetaData;
 import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
@@ -258,21 +259,46 @@ public class ExecutionContext
 				((MatrixFormatMetaData)oldMetaData).getInputInfo()));
 	}
 	
-	public MatrixObject getMatrixOutputForGPUInstruction(String varName, boolean isSparse) 
+	public MatrixObject getDenseMatrixOutputForGPUInstruction(String varName) 
 		throws DMLRuntimeException 
 	{	
-		if(isSparse) {
-			throw new DMLRuntimeException("Sparse matrix block is not supported for GPU instruction");
-		}
-		MatrixObject mo = getMatrixObject(varName);
-		if( mo.getGPUObject() == null ) {
-			mo.setGPUObject(GPUContext.createGPUObject(mo));
-		}
-		mo.getGPUObject().acquireDenseDeviceModify((int)(mo.getNumRows()*mo.getNumColumns()));
+		MatrixObject mo = allocateGPUMatrixObject(varName);
+		mo.getGPUObject().acquireDeviceModifyDense();
 		mo.getMatrixCharacteristics().setNonZeros(-1);
 		return mo;
 	}
+
+	/**
+	 * Allocates a sparse matrix in CSR format on the GPU.
+	 * Assumes that mat.getNumRows() returns a valid number
+	 * @param varName
+	 * @param nnz	number of non zeroes
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public MatrixObject getSparseMatrixOutputForGPUInstruction(String varName, long nnz)
+		throws DMLRuntimeException
+	{
+		MatrixObject mo = allocateGPUMatrixObject(varName);
+		mo.getMatrixCharacteristics().setNonZeros(nnz);
+		mo.getGPUObject().acquireDeviceModifySparse();
+		return mo;
+	}
 	
+	/**
+	 * Allocates the {@link GPUObject} for a given LOPS Variable (eg. _mVar3)
+	 * @param varName
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public MatrixObject allocateGPUMatrixObject(String varName) throws DMLRuntimeException {
+		MatrixObject mo = getMatrixObject(varName);
+		if( mo.getGPUObject() == null ) {
+			mo.allocateGPUObject();
+		}
+		return mo;
+	}
+
 	public MatrixObject getMatrixInputForGPUInstruction(String varName) 
 			throws DMLRuntimeException 
 	{	

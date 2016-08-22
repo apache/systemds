@@ -648,4 +648,31 @@ public class SparseBlockCOO extends SparseBlock
 			throw new RuntimeException("SparseBlockCOOIterator is unsupported!");			
 		}		
 	}
+	
+	/**
+	 * Get raw access to underlying array of row indices
+	 * For use in GPU code
+	 * @return
+	 */
+	public int[] rowIndexes() {
+		return _rindexes;
+	}
+	
+	/** 
+	 * Get raw access to underlying array of column indices
+	 * For use in GPU code
+	 * @return
+	 */
+	public int[] indexes() {
+		return _cindexes;
+	}
+	
+	/**
+	 * Get raw access to underlying array of values
+	 * For use in GPU code
+	 * @return
+	 */
+	public double[] values() {
+		return _values;
+	}
 }

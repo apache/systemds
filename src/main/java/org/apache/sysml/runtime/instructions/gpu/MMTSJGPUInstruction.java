@@ -105,7 +105,7 @@ public class MMTSJGPUInstruction extends GPUInstruction
 
                 //execute operations 
                 ec.setMetaData(_output.getName(), rlen, clen);
-                MatrixObject out = ec.getMatrixOutputForGPUInstruction(_output.getName(), false);
+                MatrixObject out = ec.getDenseMatrixOutputForGPUInstruction(_output.getName());
                 LibMatrixCUDA.matmultTSMM(mat, out, isLeftTransposed);
                 
                 ec.releaseMatrixInputForGPUInstruction(_input.getName());

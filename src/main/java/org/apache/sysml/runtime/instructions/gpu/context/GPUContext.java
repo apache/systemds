@@ -36,24 +36,21 @@ public abstract class GPUContext {
 	
 	public abstract long getAvailableMemory();
 	
-	// Creation / Destruction of GPUContext and related handles
+	/**
+	 * Creation / Destruction of GPUContext and related handles
+	 * @return
+	 */
 	public static GPUContext createGPUContext() {
 		if(currContext == null && DMLScript.USE_ACCELERATOR) {
-			// TODO: Handle this thread and resolve concurrency related bugs if any
-			new Thread(new Runnable() {
-				@Override
-				public void run() {
-					// Lazy GPU context creation
-					synchronized(isGPUContextCreated) {
-						currContext = new JCudaContext();
-						OptimizerUtils.GPU_MEMORY_BUDGET = ((JCudaContext)currContext).getAvailableMemory();
-						isGPUContextCreated = true;
-					}
-				}
-			}).start();
+			synchronized(isGPUContextCreated) {
+				currContext = new JCudaContext();
+				OptimizerUtils.GPU_MEMORY_BUDGET = ((JCudaContext)currContext).getAvailableMemory();
+				isGPUContextCreated = true;
+			}
 		}
 		return currContext;
 	}
+	
 	public static GPUObject createGPUObject(MatrixObject mo) {
 		if(DMLScript.USE_ACCELERATOR) {
 			synchronized(isGPUContextCreated) {

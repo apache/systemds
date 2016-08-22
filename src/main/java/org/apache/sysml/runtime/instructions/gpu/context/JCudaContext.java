@@ -29,13 +29,20 @@ import org.apache.sysml.utils.Statistics;
 import jcuda.driver.JCudaDriver;
 import jcuda.jcublas.JCublas2;
 import jcuda.jcublas.cublasHandle;
+import jcuda.jcublas.cublasPointerMode;
 import jcuda.jcudnn.JCudnn;
 import jcuda.runtime.JCuda;
 import jcuda.jcudnn.cudnnHandle;
+import jcuda.jcusparse.JCusparse;
+import jcuda.jcusparse.cusparseHandle;
+
 import static jcuda.jcudnn.JCudnn.cudnnCreate;
 import static jcuda.jcublas.JCublas2.cublasCreate;
+import static jcuda.jcublas.JCublas2.cublasSetPointerMode;
 import static jcuda.jcublas.JCublas2.cublasDestroy;
 import static jcuda.jcudnn.JCudnn.cudnnDestroy;
+import static jcuda.jcusparse.JCusparse.cusparseDestroy;
+import static jcuda.jcusparse.JCusparse.cusparseCreate;
 import static jcuda.driver.JCudaDriver.cuInit;
 import static jcuda.driver.JCudaDriver.cuDeviceGetCount;
 import static jcuda.runtime.JCuda.cudaMemGetInfo;
@@ -66,6 +73,7 @@ public class JCudaContext extends GPUContext {
 		JCuda.setExceptionsEnabled(true);
 		JCudnn.setExceptionsEnabled(true);
 		JCublas2.setExceptionsEnabled(true);
+		JCusparse.setExceptionsEnabled(true);
 		JCudaDriver.setExceptionsEnabled(true);
 		cuInit(0); // Initialize the driver
 		// Obtain the number of devices
@@ -115,6 +123,11 @@ public class JCudaContext extends GPUContext {
 		cudnnCreate(LibMatrixCUDA.cudnnHandle);
 		LibMatrixCUDA.cublasHandle = new cublasHandle();
 		cublasCreate(LibMatrixCUDA.cublasHandle);
+		// For cublas v2, cublasSetPointerMode tells Cublas whether to expect scalar arguments on device or on host
+		// This applies to arguments like "alpha" in Dgemm, and "y" in Ddot.
+		// cublasSetPointerMode(LibMatrixCUDA.cublasHandle, cublasPointerMode.CUBLAS_POINTER_MODE_DEVICE); 
+		LibMatrixCUDA.cusparseHandle = new cusparseHandle();
+		cusparseCreate(LibMatrixCUDA.cusparseHandle);
 		Statistics.cudaLibrariesInitTime = System.nanoTime() - start;
 		
 		long free [] = { 0 };
@@ -136,6 +149,7 @@ public class JCudaContext extends GPUContext {
 			synchronized(isGPUContextCreated) {
 				cudnnDestroy(LibMatrixCUDA.cudnnHandle);
 				cublasDestroy(LibMatrixCUDA.cublasHandle);
+				cusparseDestroy(LibMatrixCUDA.cusparseHandle);
 				currContext = null;
 				isGPUContextCreated = false;
 			}

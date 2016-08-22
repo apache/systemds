@@ -319,4 +319,12 @@ public class SparseBlockMCSR extends SparseBlock
 		
 		return sb.toString();
 	}
+	
+	/**
+	 * Helper function for MCSR -> {COO, CSR}
+	 * @return the underlying array of {@link SparseRow}
+	 */
+	public SparseRow[] getRows() {
+		return _rows;
+	}
 }

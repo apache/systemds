@@ -1,4 +1,3 @@
-#!/usr/bin/python
 #-------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -22,21 +21,112 @@
 import os
 
 from py4j.java_gateway import JavaObject
-from py4j.java_collections import ListConverter, JavaArray, JavaList
-from pyspark import SparkContext, RDD
-from pyspark.mllib.common import _java2py, _py2java
-from pyspark.serializers import PickleSerializer, AutoBatchedSerializer
-from pyspark.sql import DataFrame
+from pyspark import SparkContext
+import pyspark.mllib.common
+
+
+def dml(scriptString):
+    """
+    Create a dml script object based on a string.
+
+    Parameters
+    ----------
+    scriptString: string
+        Can be a path to a dml script or a dml script itself.
+
+    Returns
+    -------
+    script: Script instance
+        Instance of a script object.
+    """
+    if not isinstance(scriptString, str):
+        raise ValueError("scriptString should be a string, got %s" % type(scriptString))
+    return Script(scriptString, scriptType="dml")
+
+
+def pydml(scriptString):
+    """
+    Create a pydml script object based on a string.
+
+    Parameters
+    ----------
+    scriptString: string
+        Can be a path to a pydml script or a pydml script itself.
+
+    Returns
+    -------
+    script: Script instance
+        Instance of a script object.
+    """
+    if not isinstance(scriptString, str):
+        raise ValueError("scriptString should be a string, got %s" % type(scriptString))
+    return Script(scriptString, scriptType="pydml")
+
+
+def _java2py(sc, obj):
+    """ Convert Java object to Python. """
+    obj = pyspark.mllib.common._java2py(sc, obj)
+    if isinstance(obj, JavaObject):
+        class_name = obj.getClass().getSimpleName()
+        if class_name == 'Matrix':
+            obj = Matrix(obj, sc)
+    return obj
+
+
+def _py2java(sc, obj):
+    """ Convert Python object to Java. """
+    if isinstance(obj, Matrix):
+        obj = obj._java_matrix
+    obj = pyspark.mllib.common._py2java(sc, obj)
+    return obj
+
+
+class Matrix(object):
+    """
+    Wrapper around a Java Matrix object.
+
+    Parameters
+    ----------
+    javaMatrix: JavaObject
+        A Java Matrix object as returned by calling `ml.execute().get()`.
+
+    sc: SparkContext
+        SparkContext
+    """
+    def __init__(self, javaMatrix, sc):
+        self._java_matrix = javaMatrix
+        self.sc = sc
+
+    def __repr__(self):
+        return "Matrix"
+
+    def toDF(self, keepIndex=False):
+        """
+        Convert the Matrix to a DataFrame.
+
+        Parameters
+        ----------
+        keepIndex: Boolean
+            Either keep the row index in the DataFrame as a column named "ID",
+            or sort the DataFrame by the row index, then drop the index column.
+            Note: If the index is dropped, the DataFrame will be returned ordered,
+            but the order may not be preserved in subsequent operations.
+        """
+        jdf = self._java_matrix.asDataFrame()
+        df = _java2py(self.sc, jdf)
+        if not keepIndex:
+            df = df.sort("ID").drop("ID")
+        return df
 
 
 class MLResults(object):
     """
-    Wrapper around the Java ML Results object.
+    Wrapper around a Java ML Results object.
 
     Parameters
     ----------
     results: JavaObject
-        A Java MLResults object as returned by calling ml.execute()
+        A Java MLResults object as returned by calling `ml.execute()`.
 
     sc: SparkContext
         SparkContext
@@ -67,8 +157,11 @@ class Script(object):
 
     Parameters
     ----------
-    path: string
+    scriptString: string
         Can be either a file path to a DML script or a DML script itself.
+
+    scriptType: string
+        Script language, either "dml" for DML (R-like) or "pydml" for PyDML (Python-like).
     """
     def __init__(self, scriptString, scriptType="dml"):
         self.scriptString = scriptString
@@ -81,8 +174,8 @@ class Script(object):
         Parameters
         ----------
         args: name, value tuple
-            where name is a string and currently supported value formats
-            are double, string, rdds and list of such object.
+            where name is a string, and currently supported value formats
+            are double, string, dataframe, rdd, and list of such object.
 
         kwargs: dict of name, value pairs
             To know what formats are supported for name and value, look above.
@@ -99,49 +192,11 @@ class Script(object):
         """
         Parameters
         ----------
-        outputs: string, list of strings
+        names: string, list of strings
             Output variables as defined inside the DML script.
         """
         self._output.extend(names)
         return self
-
-
-def pydml(scriptString):
-    """
-    Create a pydml script object based on a string.
-
-    Parameters
-    ----------
-    scriptString: string
-        Can be a path to a pydml script or a pydml script itself.
-
-    Returns
-    -------
-    script: Script instance
-        Instance of a script object.
-    """
-    if not isinstance(scriptString, str):
-        raise ValueError("scriptString should be a string, got %s" % type(scriptString))
-    return Script(scriptString, scriptType="pydml")
-
-
-def dml(scriptString):
-    """
-    Create a dml script object based on a string.
-
-    Parameters
-    ----------
-    scriptString: string
-        Can be a path to a dml script or a dml script itself.
-
-    Returns
-    -------
-    script: Script instance
-        Instance of a script object.
-    """
-    if not isinstance(scriptString, str):
-        raise ValueError("scriptString should be a string, got %s" % type(scriptString))
-    return Script(scriptString, scriptType="dml")
 
 
 class MLContext(object):

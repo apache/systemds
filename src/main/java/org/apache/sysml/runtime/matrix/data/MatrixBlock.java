@@ -95,9 +95,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	public static final double SPARSITY_TURN_POINT = 0.4;
 	//sparsity threshold for ultra-sparse matrix operations (40nnz in a 1kx1k block)
 	public static final double ULTRA_SPARSITY_TURN_POINT = 0.00004; 
-	//default sparse block type: modified compressed sparse rows, CSR would best suited to use cuSparse 
+	//default sparse block type: modified compressed sparse rows, for efficient incremental construction
 	public static final SparseBlock.Type DEFAULT_SPARSEBLOCK = SparseBlock.Type.MCSR;
-	//default sparse block type for update in place: compressed sparse rows to prevent serialization
+	//default sparse block type for update in place: compressed sparse rows, to prevent serialization
 	public static final SparseBlock.Type DEFAULT_INPLACE_SPARSEBLOCK = SparseBlock.Type.CSR;
 	//basic header (int rlen, int clen, byte type)
 	public static final int HEADER_SIZE = 9;
@@ -160,12 +160,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * @param nnz	number of non zeroes
 	 * @param sparseBlock
 	 */
-	public MatrixBlock(int rows, int cols, long nnz, SparseBlock sparseBlock) {
-		this.rlen = rows;
-		this.clen = cols;
-		this.nonZeros = nnz;
-		this.sparse = true;
-		this.sparseBlock = sparseBlock;
+	public MatrixBlock(int rl, int cl, long nnz, SparseBlock sblock) {
+		this(rl, cl, true, nnz);
+		nonZeros = nnz;
+		sparseBlock = sblock;
 	}
 	
 	public MatrixBlock(MatrixBlock that, SparseBlock.Type stype, boolean deep) {

@@ -29,7 +29,6 @@ import org.apache.sysml.utils.Statistics;
 import jcuda.driver.JCudaDriver;
 import jcuda.jcublas.JCublas2;
 import jcuda.jcublas.cublasHandle;
-import jcuda.jcublas.cublasPointerMode;
 import jcuda.jcudnn.JCudnn;
 import jcuda.runtime.JCuda;
 import jcuda.jcudnn.cudnnHandle;
@@ -38,7 +37,6 @@ import jcuda.jcusparse.cusparseHandle;
 
 import static jcuda.jcudnn.JCudnn.cudnnCreate;
 import static jcuda.jcublas.JCublas2.cublasCreate;
-import static jcuda.jcublas.JCublas2.cublasSetPointerMode;
 import static jcuda.jcublas.JCublas2.cublasDestroy;
 import static jcuda.jcudnn.JCudnn.cudnnDestroy;
 import static jcuda.jcusparse.JCusparse.cusparseDestroy;

@@ -294,7 +294,7 @@ public class ExecutionContext
 	public MatrixObject allocateGPUMatrixObject(String varName) throws DMLRuntimeException {
 		MatrixObject mo = getMatrixObject(varName);
 		if( mo.getGPUObject() == null ) {
-			mo.allocateGPUObject();
+			mo.setGPUObject(GPUContext.createGPUObject(mo));
 		}
 		return mo;
 	}

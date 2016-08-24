@@ -99,11 +99,9 @@ public class SparseBlockCSR extends SparseBlock
 					int alen = sblock.size(i);
 					int[] aix = sblock.indexes(i);
 					double[] avals = sblock.values(i);
-					for( int j=apos; j<apos+alen; j++ ) {
-						_indexes[pos] = aix[j];
-						_values[pos] = avals[j];
-						pos++;
-					}
+					System.arraycopy(aix, apos, _indexes, pos, alen);
+					System.arraycopy(avals, apos, _values, pos, alen);
+					pos += alen;
 				}
 				_ptr[i+1]=pos;
 			}			
@@ -125,12 +123,14 @@ public class SparseBlockCSR extends SparseBlock
 		_size = nnz;
 		
 		for( int i=0, pos=0; i<rlen; i++ ) {
-			int alen = rows[i].size();
-			int[] aix = rows[i].indexes();
-			double[] avals = rows[i].values();
-			System.arraycopy(aix, 0, _indexes, pos, alen);
-			System.arraycopy(avals, 0, _values, pos, alen);
-			pos += alen;
+			if( rows[i]!=null && !rows[i].isEmpty() ) {
+				int alen = rows[i].size();
+				int[] aix = rows[i].indexes();
+				double[] avals = rows[i].values();
+				System.arraycopy(aix, 0, _indexes, pos, alen);
+				System.arraycopy(avals, 0, _values, pos, alen);
+				pos += alen;
+			}
 			_ptr[i+1]=pos;	
 		}
 	}

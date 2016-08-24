@@ -103,12 +103,54 @@ public class Matrix {
 	}
 
 	/**
-	 * Obtain the matrix as a {@code DataFrame}
+	 * Obtain the matrix as a {@code DataFrame} of doubles with an ID column
 	 * 
-	 * @return the matrix as a {@code DataFrame}
+	 * @return the matrix as a {@code DataFrame} of doubles with an ID column
 	 */
 	public DataFrame asDataFrame() {
 		DataFrame df = MLContextConversionUtil.matrixObjectToDataFrame(matrixObject, sparkExecutionContext, false);
+		return df;
+	}
+
+	/**
+	 * Obtain the matrix as a {@code DataFrame} of doubles with an ID column
+	 * 
+	 * @return the matrix as a {@code DataFrame} of doubles with an ID column
+	 */
+	public DataFrame asDataFrameDoubleWithIDColumn() {
+		DataFrame df = MLContextConversionUtil.matrixObjectToDataFrame(matrixObject, sparkExecutionContext, false);
+		return df;
+	}
+
+	/**
+	 * Obtain the matrix as a {@code DataFrame} of doubles with no ID column
+	 * 
+	 * @return the matrix as a {@code DataFrame} of doubles with no ID column
+	 */
+	public DataFrame asDataFrameDoubleNoIDColumn() {
+		DataFrame df = MLContextConversionUtil.matrixObjectToDataFrame(matrixObject, sparkExecutionContext, false);
+		df = df.drop("ID");
+		return df;
+	}
+
+	/**
+	 * Obtain the matrix as a {@code DataFrame} of vectors with an ID column
+	 * 
+	 * @return the matrix as a {@code DataFrame} of vectors with an ID column
+	 */
+	public DataFrame asDataFrameVectorWithIDColumn() {
+		DataFrame df = MLContextConversionUtil.matrixObjectToDataFrame(matrixObject, sparkExecutionContext, true);
+		return df;
+	}
+
+	/**
+	 * Obtain the matrix as a {@code DataFrame} of vectors with no ID column
+	 * 
+	 * @return the matrix as a {@code DataFrame} of vectors with no ID column
+	 */
+	public DataFrame asDataFrameVectorNoIDColumn() {
+		DataFrame df = MLContextConversionUtil.matrixObjectToDataFrame(matrixObject, sparkExecutionContext, true);
+		df = df.drop("ID");
 		return df;
 	}
 

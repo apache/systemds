@@ -236,7 +236,7 @@ public class MLResults {
 	}
 
 	/**
-	 * Obtain an output as a {@code DataFrame} of doubles.
+	 * Obtain an output as a {@code DataFrame} of doubles with an ID column.
 	 * <p>
 	 * The following matrix in DML:
 	 * </p>
@@ -245,13 +245,13 @@ public class MLResults {
 	 * <p>
 	 * is equivalent to the following {@code DataFrame} of doubles:
 	 * </p>
-	 * <code>[0.0,1.0,2.0]
-	 * <br>[1.0,3.0,4.0]
+	 * <code>[1.0,1.0,2.0]
+	 * <br>[2.0,3.0,4.0]
 	 * </code>
 	 *
 	 * @param outputName
 	 *            the name of the output
-	 * @return the output as a {@code DataFrame} of doubles
+	 * @return the output as a {@code DataFrame} of doubles with an ID column
 	 */
 	public DataFrame getDataFrame(String outputName) {
 		MatrixObject mo = getMatrixObject(outputName);
@@ -259,9 +259,136 @@ public class MLResults {
 		return df;
 	}
 
+	/**
+	 * Obtain an output as a {@code DataFrame} of doubles or vectors with an ID
+	 * column.
+	 * <p>
+	 * The following matrix in DML:
+	 * </p>
+	 * <code>M = full('1 2 3 4', rows=2, cols=2);
+	 * </code>
+	 * <p>
+	 * is equivalent to the following {@code DataFrame} of doubles:
+	 * </p>
+	 * <code>[1.0,1.0,2.0]
+	 * <br>[2.0,3.0,4.0]
+	 * </code>
+	 * <p>
+	 * or the following {@code DataFrame} of vectors:
+	 * </p>
+	 * <code>[1.0,[1.0,2.0]]
+	 * <br>[2.0,[3.0,4.0]]
+	 * </code>
+	 *
+	 * @param outputName
+	 *            the name of the output
+	 * @param isVectorDF
+	 *            {@code true} for a vector {@code DataFrame}, {@code false} for
+	 *            a double {@code DataFrame}
+	 * @return the output as a {@code DataFrame} of doubles or vectors with an
+	 *         ID column
+	 */
 	public DataFrame getDataFrame(String outputName, boolean isVectorDF) {
 		MatrixObject mo = getMatrixObject(outputName);
 		DataFrame df = MLContextConversionUtil.matrixObjectToDataFrame(mo, sparkExecutionContext, isVectorDF);
+		return df;
+	}
+
+	/**
+	 * Obtain an output as a {@code DataFrame} of doubles with an ID column.
+	 * <p>
+	 * The following matrix in DML:
+	 * </p>
+	 * <code>M = full('1 2 3 4', rows=2, cols=2);
+	 * </code>
+	 * <p>
+	 * is equivalent to the following {@code DataFrame} of doubles:
+	 * </p>
+	 * <code>[1.0,1.0,2.0]
+	 * <br>[2.0,3.0,4.0]
+	 * </code>
+	 *
+	 * @param outputName
+	 *            the name of the output
+	 * @return the output as a {@code DataFrame} of doubles with an ID column
+	 */
+	public DataFrame getDataFrameDoubleWithIDColumn(String outputName) {
+		MatrixObject mo = getMatrixObject(outputName);
+		DataFrame df = MLContextConversionUtil.matrixObjectToDataFrame(mo, sparkExecutionContext, false);
+		return df;
+	}
+
+	/**
+	 * Obtain an output as a {@code DataFrame} of vectors with an ID column.
+	 * <p>
+	 * The following matrix in DML:
+	 * </p>
+	 * <code>M = full('1 2 3 4', rows=2, cols=2);
+	 * </code>
+	 * <p>
+	 * is equivalent to the following {@code DataFrame} of vectors:
+	 * </p>
+	 * <code>[1.0,[1.0,2.0]]
+	 * <br>[2.0,[3.0,4.0]]
+	 * </code>
+	 *
+	 * @param outputName
+	 *            the name of the output
+	 * @return the output as a {@code DataFrame} of vectors with an ID column
+	 */
+	public DataFrame getDataFrameVectorWithIDColumn(String outputName) {
+		MatrixObject mo = getMatrixObject(outputName);
+		DataFrame df = MLContextConversionUtil.matrixObjectToDataFrame(mo, sparkExecutionContext, true);
+		return df;
+	}
+
+	/**
+	 * Obtain an output as a {@code DataFrame} of doubles with no ID column.
+	 * <p>
+	 * The following matrix in DML:
+	 * </p>
+	 * <code>M = full('1 2 3 4', rows=2, cols=2);
+	 * </code>
+	 * <p>
+	 * is equivalent to the following {@code DataFrame} of doubles:
+	 * </p>
+	 * <code>[1.0,2.0]
+	 * <br>[3.0,4.0]
+	 * </code>
+	 *
+	 * @param outputName
+	 *            the name of the output
+	 * @return the output as a {@code DataFrame} of doubles with no ID column
+	 */
+	public DataFrame getDataFrameDoubleNoIDColumn(String outputName) {
+		MatrixObject mo = getMatrixObject(outputName);
+		DataFrame df = MLContextConversionUtil.matrixObjectToDataFrame(mo, sparkExecutionContext, false);
+		df = df.drop("ID");
+		return df;
+	}
+
+	/**
+	 * Obtain an output as a {@code DataFrame} of vectors with no ID column.
+	 * <p>
+	 * The following matrix in DML:
+	 * </p>
+	 * <code>M = full('1 2 3 4', rows=2, cols=2);
+	 * </code>
+	 * <p>
+	 * is equivalent to the following {@code DataFrame} of vectors:
+	 * </p>
+	 * <code>[[1.0,2.0]]
+	 * <br>[[3.0,4.0]]
+	 * </code>
+	 *
+	 * @param outputName
+	 *            the name of the output
+	 * @return the output as a {@code DataFrame} of vectors with no ID column
+	 */
+	public DataFrame getDataFrameVectorNoIDColumn(String outputName) {
+		MatrixObject mo = getMatrixObject(outputName);
+		DataFrame df = MLContextConversionUtil.matrixObjectToDataFrame(mo, sparkExecutionContext, true);
+		df = df.drop("ID");
 		return df;
 	}
 
@@ -277,7 +404,6 @@ public class MLResults {
 		Matrix matrix = new Matrix(mo, sparkExecutionContext);
 		return matrix;
 	}
-
 
 	/**
 	 * Obtain an output as a {@code BinaryBlockMatrix}.
@@ -340,12 +466,12 @@ public class MLResults {
 
 	public Object get(String outputName) {
 		Data data = getData(outputName);
-	  if (data instanceof ScalarObject) {
-	  	ScalarObject so = (ScalarObject) data;
-	    	return so.getValue();
-	  } else {
-	      return data;
-	  }
+		if (data instanceof ScalarObject) {
+			ScalarObject so = (ScalarObject) data;
+			return so.getValue();
+		} else {
+			return data;
+		}
 	}
 
 	/**

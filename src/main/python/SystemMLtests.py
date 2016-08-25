@@ -21,12 +21,9 @@
 #-------------------------------------------------------------
 import unittest
 
-from pyspark.sql import SQLContext
 from pyspark.context import SparkContext
 
-from SystemML import dml
-from SystemML import pydml
-from SystemML import MLContext
+from SystemML import MLContext, dml, pydml
 
 sc = SparkContext()
 ml = MLContext(sc)
@@ -46,6 +43,26 @@ class TestAPI(unittest.TestCase):
         script = dml(script).out("x1", "x2", "x3")
         self.assertEqual(ml.execute(script).get("x1", "x2"), [0.2, 1.2])
         self.assertEqual(ml.execute(script).get("x1", "x3"), [0.2, 2.2])
+
+    def test_output_matrix(self):
+        sums = """
+        s1 = sum(m1)
+        m2 = m1 * 2
+        """
+        rdd1 = sc.parallelize(["1.0,2.0", "3.0,4.0"])
+        script = dml(sums).input(m1=rdd1).out("s1", "m2")
+        s1, m2 = ml.execute(script).get("s1", "m2")
+        self.assertEqual((s1, repr(m2)), (10.0, "Matrix"))
+
+    def test_matrix_toDF(self):
+        sums = """
+        s1 = sum(m1)
+        m2 = m1 * 2
+        """
+        rdd1 = sc.parallelize(["1.0,2.0", "3.0,4.0"])
+        script = dml(sums).input(m1=rdd1).out("m2")
+        m2 = ml.execute(script).get("m2")
+        self.assertEqual(repr(m2.toDF()), "DataFrame[ID: double, C1: double, C2: double]")
 
     def test_input_single(self):
         script = """

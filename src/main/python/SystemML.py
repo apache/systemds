@@ -65,6 +65,7 @@ def pydml(scriptString):
 
 def _java2py(sc, obj):
     """ Convert Java object to Python. """
+    # TODO: Port this private PySpark function.
     obj = pyspark.mllib.common._java2py(sc, obj)
     if isinstance(obj, JavaObject):
         class_name = obj.getClass().getSimpleName()
@@ -77,6 +78,7 @@ def _py2java(sc, obj):
     """ Convert Python object to Java. """
     if isinstance(obj, Matrix):
         obj = obj._java_matrix
+    # TODO: Port this private PySpark function.
     obj = pyspark.mllib.common._py2java(sc, obj)
     return obj
 
@@ -100,22 +102,20 @@ class Matrix(object):
     def __repr__(self):
         return "Matrix"
 
-    def toDF(self, keepIndex=False):
+    def toDF(self):
         """
-        Convert the Matrix to a DataFrame.
+        Convert the Matrix to a PySpark SQL DataFrame.
 
-        Parameters
-        ----------
-        keepIndex: Boolean
-            Either keep the row index in the DataFrame as a column named "ID",
-            or sort the DataFrame by the row index, then drop the index column.
-            Note: If the index is dropped, the DataFrame will be returned ordered,
-            but the order may not be preserved in subsequent operations.
+        Returns
+        -------
+        df: PySpark SQL DataFrame
+            A PySpark SQL DataFrame representing the matrix, with
+            one "ID" column containing the row index (since Spark
+            DataFrames are unordered), followed by columns of doubles
+            for each column in the matrix.
         """
         jdf = self._java_matrix.asDataFrame()
         df = _java2py(self.sc, jdf)
-        if not keepIndex:
-            df = df.sort("ID").drop("ID")
         return df
 
 

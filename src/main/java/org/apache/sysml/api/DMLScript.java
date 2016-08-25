@@ -35,6 +35,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Scanner;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -345,6 +346,9 @@ public class DMLScript
 				setLoggingProperties( conf );
 		
 			//Step 2: prepare script invocation
+			if (StringUtils.endsWithIgnoreCase(args[1], ".pydml")) {
+				parsePyDML = true;
+			}
 			String dmlScriptStr = readDMLScript(args[0], args[1]);
 			Map<String, String> argVals = createArgumentsMap(namedScriptArgs, scriptArgs);
 			

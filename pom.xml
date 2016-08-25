@@ -66,8 +66,8 @@
 		<hadoop.version>2.4.1</hadoop.version>
 		<antlr.version>4.3</antlr.version>
 		<spark.version>1.4.1</spark.version>
-		<scala.version>2.11.8</scala.version>
-		<scala.binary.version>2.11</scala.binary.version>
+		<scala.version>2.10.5</scala.version>
+		<scala.binary.version>2.10</scala.binary.version>
 		<scala.test.version>2.2.6</scala.test.version>
 		<!-- OS-specific JVM arguments for running integration tests -->
 		<integrationTestExtraJVMArgs />
@@ -488,6 +488,14 @@
 			<properties>
 				<scala.version>2.10.5</scala.version>
 				<scala.binary.version>2.10</scala.binary.version>
+			</properties>
+		</profile>
+		
+		<profile>
+			<id>scala-2.11</id>
+			<properties>
+				<scala.version>2.11.8</scala.version>
+				<scala.binary.version>2.11</scala.binary.version>
 			</properties>
 		</profile>
 

@@ -340,12 +340,14 @@ public class MLResults {
 
 	public Object get(String outputName) {
 		Data data = getData(outputName);
-	  if (data instanceof ScalarObject) {
-	  	ScalarObject so = (ScalarObject) data;
-	    	return so.getValue();
-	  } else {
-	      return data;
-	  }
+		if (data instanceof ScalarObject) {
+			ScalarObject so = (ScalarObject) data;
+			return so.getValue();
+		} else if(data instanceof MatrixObject) {
+			return getMatrix(outputName);
+		} else {
+			return data;
+		}
 	}
 
 	/**

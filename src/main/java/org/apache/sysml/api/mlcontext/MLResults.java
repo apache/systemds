@@ -363,7 +363,7 @@ public class MLResults {
 	public DataFrame getDataFrameDoubleNoIDColumn(String outputName) {
 		MatrixObject mo = getMatrixObject(outputName);
 		DataFrame df = MLContextConversionUtil.matrixObjectToDataFrame(mo, sparkExecutionContext, false);
-		df = df.drop("ID");
+		df = df.sort("ID").drop("ID");
 		return df;
 	}
 
@@ -388,7 +388,7 @@ public class MLResults {
 	public DataFrame getDataFrameVectorNoIDColumn(String outputName) {
 		MatrixObject mo = getMatrixObject(outputName);
 		DataFrame df = MLContextConversionUtil.matrixObjectToDataFrame(mo, sparkExecutionContext, true);
-		df = df.drop("ID");
+		df = df.sort("ID").drop("ID");
 		return df;
 	}
 

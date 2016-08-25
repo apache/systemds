@@ -54,3 +54,31 @@ If required, please install the following packages in R:
     install.packages(c("batch", "bitops", "boot", "caTools", "data.table", "doMC", "doSNOW", "ggplot2", "glmnet", "lda", "Matrix", "matrixStats", "moments", "plotrix", "psych", "reshape", "topicmodels", "wordcloud"), dependencies=TRUE)
 
 * * *
+
+## Development Environment
+
+SystemML itself is written in Java and is managed using Maven. As a result, SystemML can readily be
+imported into a standard development environment such as Eclipse and IntelliJ IDEA.
+The `DMLScript` class serves as the main entrypoint to SystemML. Executing
+`DMLScript` with no arguments displays usage information. A script file can be specified using the `-f` argument.
+
+In Eclipse, a Debug Configuration can be created with `DMLScript` as the Main class and any arguments specified as
+Program arguments. A PyDML script requires the addition of a `-python` switch.
+
+Suppose that we have a `hello.dml` script containing the following:
+
+	print('hello ' + $1)
+
+This SystemML script can be debugged in Eclipse using a Debug Configuration such as the following:
+
+<div class="codetabs2">
+
+<div data-lang="Eclipse Debug Configuration - Main" markdown="1">
+![Eclipse Debug Configuration - Main](img/engine-dev-guide/dmlscript-debug-configuration-hello-world-main-class.png "DMLScript Debug Configuration, Main class")
+</div>
+
+<div data-lang="Eclipse Debug Configuration - Arguments" markdown="1">
+![Eclipse Debug Configuration - Arguments](img/engine-dev-guide/dmlscript-debug-configuration-hello-world-program-arguments.png "DMLScript Debug Configuration, Program arguments")
+</div>
+
+</div>

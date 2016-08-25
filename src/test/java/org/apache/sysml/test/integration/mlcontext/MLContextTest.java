@@ -650,7 +650,7 @@ public class MLContextTest extends AutomatedTestBase {
 			}
 		};
 
-		scala.collection.mutable.Map<String, Object> scalaMap = JavaConversions.asScalaMap(inputs);
+		scala.collection.mutable.Map<String, Object> scalaMap = JavaConversions.mapAsScalaMap(inputs);
 
 		String s = "M = M + $X; print('sum: ' + sum(M));";
 		Script script = dml(s).in(scalaMap);
@@ -675,7 +675,7 @@ public class MLContextTest extends AutomatedTestBase {
 			}
 		};
 
-		scala.collection.mutable.Map<String, Object> scalaMap = JavaConversions.asScalaMap(inputs);
+		scala.collection.mutable.Map<String, Object> scalaMap = JavaConversions.mapAsScalaMap(inputs);
 
 		String s = "M = M + $X\nprint('sum: ' + sum(M))";
 		Script script = pydml(s).in(scalaMap);

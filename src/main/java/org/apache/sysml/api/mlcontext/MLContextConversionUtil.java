@@ -33,6 +33,7 @@ import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.mllib.linalg.Vector;
 import org.apache.spark.rdd.RDD;
 import org.apache.spark.sql.DataFrame;
 import org.apache.spark.sql.Row;
@@ -311,7 +312,14 @@ public class MLContextConversionUtil {
 		} else {
 			matrixCharacteristics = new MatrixCharacteristics();
 		}
-		determineDataFrameDimensionsIfNeeded(dataFrame, matrixCharacteristics);
+
+		if (isDataFrameWithIDColumn(matrixMetadata)) {
+			dataFrame = dataFrame.sort("ID").drop("ID");
+		}
+
+		boolean isVectorBasedDataFrame = isVectorBasedDataFrame(matrixMetadata);
+
+		determineDataFrameDimensionsIfNeeded(dataFrame, matrixCharacteristics, isVectorBasedDataFrame);
 		if (matrixMetadata != null) {
 			// so external reference can be updated with the metadata
 			matrixMetadata.setMatrixCharacteristics(matrixCharacteristics);
@@ -320,9 +328,47 @@ public class MLContextConversionUtil {
 		JavaRDD<Row> javaRDD = dataFrame.javaRDD();
 		JavaPairRDD<Row, Long> prepinput = javaRDD.zipWithIndex();
 		JavaPairRDD<MatrixIndexes, MatrixBlock> out = prepinput.mapPartitionsToPair(new DataFrameToBinaryBlockFunction(
-				matrixCharacteristics, false));
+				matrixCharacteristics, isVectorBasedDataFrame));
 		out = RDDAggregateUtils.mergeByKey(out);
 		return out;
+	}
+
+	/**
+	 * Return whether or not the DataFrame has an ID column.
+	 * 
+	 * @param matrixMetadata
+	 *            the matrix metadata
+	 * @return {@code true} if the DataFrame has an ID column, {@code false}
+	 *         otherwise.
+	 */
+	public static boolean isDataFrameWithIDColumn(MatrixMetadata matrixMetadata) {
+		if (matrixMetadata == null) {
+			return false;
+		}
+		MatrixFormat matrixFormat = matrixMetadata.getMatrixFormat();
+		if (matrixFormat == null) {
+			return false;
+		}
+		return matrixFormat.hasIDColumn();
+	}
+
+	/**
+	 * Return whether or not the DataFrame is vector-based.
+	 * 
+	 * @param matrixMetadata
+	 *            the matrix metadata
+	 * @return {@code true} if the DataFrame is vector-based, {@code false}
+	 *         otherwise.
+	 */
+	public static boolean isVectorBasedDataFrame(MatrixMetadata matrixMetadata) {
+		if (matrixMetadata == null) {
+			return false;
+		}
+		MatrixFormat matrixFormat = matrixMetadata.getMatrixFormat();
+		if (matrixFormat == null) {
+			return false;
+		}
+		return matrixFormat.isVectorBased();
 	}
 
 	/**
@@ -334,20 +380,28 @@ public class MLContextConversionUtil {
 	 *            the Spark {@code DataFrame}
 	 * @param matrixCharacteristics
 	 *            the matrix metadata
+	 * @param vectorBased
+	 *            is the DataFrame vector-based
 	 */
 	public static void determineDataFrameDimensionsIfNeeded(DataFrame dataFrame,
-			MatrixCharacteristics matrixCharacteristics) {
+			MatrixCharacteristics matrixCharacteristics, boolean vectorBased) {
 		if (!matrixCharacteristics.dimsKnown(true)) {
-			// only available to the new MLContext API, not the old API
 			MLContext activeMLContext = (MLContext) MLContextProxy.getActiveMLContext();
 			SparkContext sparkContext = activeMLContext.getSparkContext();
 			@SuppressWarnings("resource")
 			JavaSparkContext javaSparkContext = new JavaSparkContext(sparkContext);
 
 			Accumulator<Double> aNnz = javaSparkContext.accumulator(0L);
-			JavaRDD<Row> javaRDD = dataFrame.javaRDD().map(new DataFrameAnalysisFunction(aNnz, false));
+			JavaRDD<Row> javaRDD = dataFrame.javaRDD().map(new DataFrameAnalysisFunction(aNnz, vectorBased));
 			long numRows = javaRDD.count();
-			long numColumns = dataFrame.columns().length;
+			long numColumns;
+			if (vectorBased) {
+				Vector v = (Vector) javaRDD.first().get(0);
+				numColumns = v.size();
+			} else {
+				numColumns = dataFrame.columns().length;
+			}
+
 			long numNonZeros = UtilFunctions.toLong(aNnz.value());
 			matrixCharacteristics.set(numRows, numColumns, matrixCharacteristics.getRowsPerBlock(),
 					matrixCharacteristics.getColsPerBlock(), numNonZeros);

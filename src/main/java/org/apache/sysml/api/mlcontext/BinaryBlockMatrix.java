@@ -99,12 +99,21 @@ public class BinaryBlockMatrix {
 	public JavaPairRDD<MatrixIndexes, MatrixBlock> getBinaryBlocks() {
 		return binaryBlocks;
 	}
-	
-	public MatrixBlock getMatrixBlock() throws DMLRuntimeException {
-		MatrixCharacteristics mc = getMatrixCharacteristics();
-		MatrixBlock mb = SparkExecutionContext.toMatrixBlock(binaryBlocks, (int) mc.getRows(), (int) mc.getCols(), 
-				mc.getRowsPerBlock(), mc.getColsPerBlock(), mc.getNonZeros());
-		return mb;
+
+	/**
+	 * Obtain a SystemML binary-block matrix as a {@code MatrixBlock}
+	 * 
+	 * @return the SystemML binary-block matrix as a {@code MatrixBlock}
+	 */
+	public MatrixBlock getMatrixBlock() {
+		try {
+			MatrixCharacteristics mc = getMatrixCharacteristics();
+			MatrixBlock mb = SparkExecutionContext.toMatrixBlock(binaryBlocks, (int) mc.getRows(), (int) mc.getCols(),
+					mc.getRowsPerBlock(), mc.getColsPerBlock(), mc.getNonZeros());
+			return mb;
+		} catch (DMLRuntimeException e) {
+			throw new MLContextException("Exception while getting MatrixBlock from binary-block matrix", e);
+		}
 	}
 
 	/**

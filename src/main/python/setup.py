@@ -23,7 +23,7 @@
 from setuptools import setup, find_packages
 import os
 
-VERSION = '0.11.22'
+VERSION = '0.11.0.dev0'
 
 numpy_version = '1.8.2'
 scipy_version = '0.15.1'
@@ -41,7 +41,16 @@ setup(
     name='SystemML',
     version=VERSION,
     description='Apache SystemML is a distributed and declarative machine learning platform.',
-    long_description='SystemML provides declarative large-scale machine learning (ML) that aims at flexible specification of ML algorithms and automatic generation of hybrid runtime plans ranging from single-node, in-memory computations, to distributed computations on Apache Hadoop and Apache Spark.',
+    long_description='''
+    Apache SystemML is an effort undergoing incubation at the Apache Software Foundation (ASF), sponsored by the Apache Incubator PMC.
+    While incubation status is not necessarily a reflection of the completeness
+    or stability of the code, it does indicate that the project has yet to be
+    fully endorsed by the ASF.
+    
+    Apache SystemML provides declarative large-scale machine learning (ML) that aims at 
+    flexible specification of ML algorithms and automatic generation of hybrid runtime 
+    plans ranging from single-node, in-memory computations, to distributed computations on Apache Hadoop and Apache Spark.
+    ''',
     url='http://systemml.apache.org/',
     author='Apache SystemML',
     author_email='dev@systemml.incubator.apache.org',
@@ -51,5 +60,15 @@ setup(
     package_data={
         'SystemML-java': PACKAGE_DATA
     },
+    classifiers=[
+        'Intended Audience :: Developers',
+        'Intended Audience :: Education',
+        'Intended Audience :: Science/Research',
+        'License :: OSI Approved :: Apache Software License',
+        'Programming Language :: Python :: 2.7',
+        'Topic :: Scientific/Engineering :: Mathematics',
+        'Topic :: Software Development :: Libraries :: Python Modules',
+        'Topic :: Software Development :: Libraries',
+        ],
     license='Apache 2.0',
     )

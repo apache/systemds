@@ -121,7 +121,7 @@ class matrix(object):
         
         Parameters
         ----------
-        data: NumPy ndarray, Pandas DataFrame, scipy sparse matrix or PySpark DataFrame 
+        data: NumPy ndarray, Pandas DataFrame, scipy sparse matrix or PySpark DataFrame. (data cannot be None for external users, 'data=None' is used internally for lazy evaluation).
         """
         checkIfMLContextIsSet()
         self.visited = False 
@@ -134,9 +134,10 @@ class matrix(object):
             self.data = data
         elif data is None and op is not None:
             self.data = None
+            # op refers to the node of Abstract Syntax Tree created internally for lazy evaluation
             self.op = op
         else:
-            raise Exception('Unsupported input type')
+            raise TypeError('Unsupported input type')
             
     def eval(self, outputDF=False):
         eval([self], outputDF=False)

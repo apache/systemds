@@ -24,6 +24,8 @@ import java.util.Set;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.rdd.RDD;
 import org.apache.spark.sql.DataFrame;
+import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.caching.CacheException;
@@ -37,7 +39,10 @@ import org.apache.sysml.runtime.instructions.cp.DoubleObject;
 import org.apache.sysml.runtime.instructions.cp.IntObject;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.instructions.cp.StringObject;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.matrix.MatrixDimensionsMetaData;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.util.DataConverter;
 
 import scala.Tuple1;
@@ -115,7 +120,21 @@ public class MLResults {
 	 */
 	public MatrixObject getMatrixObject(String outputName) {
 		Data data = getData(outputName);
-		if (!(data instanceof MatrixObject)) {
+		if(data instanceof ScalarObject) {
+			double val = getDouble(outputName);
+			MatrixObject one_X_one_mo = new MatrixObject(ValueType.DOUBLE, " ", new MatrixDimensionsMetaData(new MatrixCharacteristics(1, 1, OptimizerUtils.DEFAULT_BLOCKSIZE, OptimizerUtils.DEFAULT_BLOCKSIZE, 1)));
+			MatrixBlock mb = new MatrixBlock(1, 1, false);
+			mb.allocateDenseBlock();
+			mb.setValue(0, 0, val);
+			try {
+				one_X_one_mo.acquireModify(mb);
+				one_X_one_mo.release();
+			} catch (CacheException e) {
+				throw new RuntimeException(e);
+			}
+			return one_X_one_mo;
+		}
+		else if (!(data instanceof MatrixObject)) {
 			throw new MLContextException("Variable '" + outputName + "' not a matrix");
 		}
 		MatrixObject mo = (MatrixObject) data;

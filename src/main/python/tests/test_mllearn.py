@@ -20,7 +20,7 @@
 #
 #-------------------------------------------------------------
 from sklearn import datasets, neighbors
-import SystemML as sml
+from SystemML.mllearn import LogisticRegression, LinearRegression, SVM, NaiveBayes 
 from pyspark.sql import SQLContext
 from pyspark.context import SparkContext
 import unittest
@@ -47,7 +47,7 @@ class TestMLLearn(unittest.TestCase):
         y_train = y_digits[:.9 * n_samples]
         X_test = X_digits[.9 * n_samples:]
         y_test = y_digits[.9 * n_samples:]
-        logistic = sml.mllearn.LogisticRegression(sqlCtx)
+        logistic = LogisticRegression(sqlCtx)
         score = logistic.fit(X_train, y_train).score(X_test, y_test)
         self.failUnless(score > 0.9)
         
@@ -61,7 +61,7 @@ class TestMLLearn(unittest.TestCase):
         X_test = X_digits[.9 * n_samples:]
         y_test = y_digits[.9 * n_samples:]
         # Convert to DataFrame for i/o: current way to transfer data
-        logistic = sml.mllearn.LogisticRegression(sqlCtx, transferUsingDF=True)
+        logistic = LogisticRegression(sqlCtx, transferUsingDF=True)
         score = logistic.fit(X_train, y_train).score(X_test, y_test)
         self.failUnless(score > 0.9)
 
@@ -82,7 +82,7 @@ class TestMLLearn(unittest.TestCase):
             ], ["id", "text", "label"])
         tokenizer = Tokenizer(inputCol="text", outputCol="words")
         hashingTF = HashingTF(inputCol="words", outputCol="features", numFeatures=20)
-        lr = sml.mllearn.LogisticRegression(sqlCtx)
+        lr = LogisticRegression(sqlCtx)
         pipeline = Pipeline(stages=[tokenizer, hashingTF, lr])
         model = pipeline.fit(training)
         test = sqlCtx.createDataFrame([
@@ -103,7 +103,7 @@ class TestMLLearn(unittest.TestCase):
         diabetes_X_test = diabetes_X[-20:]
         diabetes_y_train = diabetes.target[:-20]
         diabetes_y_test = diabetes.target[-20:]
-        regr = sml.mllearn.LinearRegression(sqlCtx)
+        regr = LinearRegression(sqlCtx)
         regr.fit(diabetes_X_train, diabetes_y_train)
         score = regr.score(diabetes_X_test, diabetes_y_test)
         self.failUnless(score > 0.4) # TODO: Improve r2-score (may be I am using it incorrectly)
@@ -115,7 +115,7 @@ class TestMLLearn(unittest.TestCase):
         diabetes_X_test = diabetes_X[-20:]
         diabetes_y_train = diabetes.target[:-20]
         diabetes_y_test = diabetes.target[-20:]
-        regr = sml.mllearn.LinearRegression(sqlCtx, transferUsingDF=True)
+        regr = LinearRegression(sqlCtx, transferUsingDF=True)
         regr.fit(diabetes_X_train, diabetes_y_train)
         score = regr.score(diabetes_X_test, diabetes_y_test)
         self.failUnless(score > 0.4) # TODO: Improve r2-score (may be I am using it incorrectly)
@@ -129,7 +129,7 @@ class TestMLLearn(unittest.TestCase):
         y_train = y_digits[:.9 * n_samples]
         X_test = X_digits[.9 * n_samples:]
         y_test = y_digits[.9 * n_samples:]
-        svm = sml.mllearn.SVM(sqlCtx, is_multi_class=True)
+        svm = SVM(sqlCtx, is_multi_class=True)
         score = svm.fit(X_train, y_train).score(X_test, y_test)
         self.failUnless(score > 0.9)
 
@@ -142,7 +142,7 @@ class TestMLLearn(unittest.TestCase):
         y_train = y_digits[:.9 * n_samples]
         X_test = X_digits[.9 * n_samples:]
         y_test = y_digits[.9 * n_samples:]
-        svm = sml.mllearn.SVM(sqlCtx, is_multi_class=True, transferUsingDF=True)
+        svm = SVM(sqlCtx, is_multi_class=True, transferUsingDF=True)
         score = svm.fit(X_train, y_train).score(X_test, y_test)
         self.failUnless(score > 0.9)
 
@@ -155,7 +155,7 @@ class TestMLLearn(unittest.TestCase):
         y_train = y_digits[:.9 * n_samples]
         X_test = X_digits[.9 * n_samples:]
         y_test = y_digits[.9 * n_samples:]
-        nb = sml.mllearn.NaiveBayes(sqlCtx)
+        nb = NaiveBayes(sqlCtx)
         score = nb.fit(X_train, y_train).score(X_test, y_test)
         self.failUnless(score > 0.85)
 
@@ -167,7 +167,7 @@ class TestMLLearn(unittest.TestCase):
         # Both vectors and vectors_test are SciPy CSR matrix
         vectors = vectorizer.fit_transform(newsgroups_train.data)
         vectors_test = vectorizer.transform(newsgroups_test.data)
-        nb = sml.mllearn.NaiveBayes(sqlCtx)
+        nb = NaiveBayes(sqlCtx)
         nb.fit(vectors, newsgroups_train.target)
         pred = nb.predict(vectors_test)
         score = metrics.f1_score(newsgroups_test.target, pred, average='weighted')

@@ -35,9 +35,9 @@ through the specification of a high-level declarative machine learning language
 that comes in two flavors, one with an R-like syntax (DML) and one with
 a Python-like syntax (PyDML).
 
-Algorithm scripts written in DML and PyDML can be run on Hadoop, on Spark, or
+Algorithm scripts written in DML and PyDML can be run on Spark, on Hadoop, or
 in Standalone mode. SystemML also features an MLContext API that allows SystemML
-to be accessed from a Spark Shell, a Jupyter Notebook, or a Zeppelin Notebook.
+to be accessed via Scala or Python from a Spark Shell, a Jupyter Notebook, or a Zeppelin Notebook.
 
 This Beginner's Guide serves as a starting point for writing DML and PyDML
 scripts.
@@ -57,13 +57,6 @@ is passed as the first argument to these scripts, along with a variety of argume
 
 	./runStandaloneSystemML.sh hello.dml -args world
 	./runStandaloneSystemML.sh hello.pydml -python -args world
-
-SystemML contains a default set of configuration information. In addition to this, SystemML looks for a default `./SystemML-config.xml` file in the working directory, where overriding configuration information can be specified. Furthermore, a config file can be specified using the `-config` argument, as in this example:
-
-	-f hello.dml -config=src/main/standalone/SystemML-config.xml -args world
-
-When operating in a distributed environment, it is *highly recommended* that cluster-specific configuration information
-is provided to SystemML via a configuration file for optimal performance.
 
 
 # Data Types

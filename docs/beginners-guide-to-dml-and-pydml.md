@@ -35,11 +35,9 @@ through the specification of a high-level declarative machine learning language
 that comes in two flavors, one with an R-like syntax (DML) and one with
 a Python-like syntax (PyDML).
 
-Algorithm scripts written in DML and PyDML can be run on Hadoop, on Spark, or
-in Standalone mode. No script modifications are required to change between modes.
-SystemML automatically performs advanced
-optimizations based on data and cluster characteristics, so much of the need to manually
-tweak algorithms is largely reduced or eliminated.
+Algorithm scripts written in DML and PyDML can be run on Spark, on Hadoop, or
+in Standalone mode. SystemML also features an MLContext API that allows SystemML
+to be accessed via Scala or Python from a Spark Shell, a Jupyter Notebook, or a Zeppelin Notebook.
 
 This Beginner's Guide serves as a starting point for writing DML and PyDML
 scripts.
@@ -52,42 +50,13 @@ DML and PyDML scripts can be invoked in a variety of ways. Suppose that we have 
 
 	print('hello ' + $1)
 
-One way to begin working with SystemML is to build the project and unpack the standalone distribution,
-which features the `runStandaloneSystemML.sh` and `runStandaloneSystemML.bat` scripts. The name of the DML or PyDML script
+One way to begin working with SystemML is to [download a standalone tar.gz or zip distribution of SystemML](http://systemml.apache.org/download.html)
+and use the `runStandaloneSystemML.sh` and `runStandaloneSystemML.bat` scripts to run SystemML in standalone
+mode. The name of the DML or PyDML script
 is passed as the first argument to these scripts, along with a variety of arguments.
 
 	./runStandaloneSystemML.sh hello.dml -args world
 	./runStandaloneSystemML.sh hello.pydml -python -args world
-
-For DML and PyDML script invocations that take multiple arguments, a common technique is to create
-a standard script that invokes `runStandaloneSystemML.sh` or `runStandaloneSystemML.bat` with the arguments specified.
-
-SystemML itself is written in Java and is managed using Maven. As a result, SystemML can readily be
-imported into a standard development environment such as Eclipse.
-The `DMLScript` class serves as the main entrypoint to SystemML. Executing
-`DMLScript` with no arguments displays usage information. A script file can be specified using the `-f` argument.
-
-In Eclipse, a Debug Configuration can be created with `DMLScript` as the Main class and any arguments specified as
-Program arguments. A PyDML script requires the addition of a `-python` switch.
-
-<div class="codetabs2">
-
-<div data-lang="Eclipse Debug Configuration - Main" markdown="1">
-![Eclipse Debug Configuration - Main](img/beginners-guide-to-dml-and-pydml/dmlscript-debug-configuration-hello-world-main-class.png "DMLScript Debug Configuration, Main class")
-</div>
-
-<div data-lang="Eclipse Debug Configuration - Arguments" markdown="1">
-![Eclipse Debug Configuration - Arguments](img/beginners-guide-to-dml-and-pydml/dmlscript-debug-configuration-hello-world-program-arguments.png "DMLScript Debug Configuration, Program arguments")
-</div>
-
-</div>
-
-SystemML contains a default set of configuration information. In addition to this, SystemML looks for a default `./SystemML-config.xml` file in the working directory, where overriding configuration information can be specified. Furthermore, a config file can be specified using the `-config` argument, as in this example:
-
-	-f hello.dml -config=src/main/standalone/SystemML-config.xml -args world
-
-When operating in a distributed environment, it is *highly recommended* that cluster-specific configuration information
-is provided to SystemML via a configuration file for optimal performance.
 
 
 # Data Types
@@ -913,6 +882,5 @@ for (i in 0:numRowsToPrint-1):
 
 The [Language Reference](dml-language-reference.html) contains highly detailed information regarding DML.
 
-In addition, many excellent examples of DML and PyDML can be found in the `system-ml/scripts` and 
-`system-ml/test/scripts/applications` directories.
+In addition, many excellent examples of DML and PyDML can be found in the [`scripts`](https://github.com/apache/incubator-systemml/tree/master/scripts) directory.
 

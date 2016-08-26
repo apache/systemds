@@ -131,7 +131,10 @@ class MLResults(object):
     def __init__(self, results, sc):
         self._java_results = results
         self.sc = sc
-        if MLResults.sqlContext is None:
+        try:
+            if MLResults.sqlContext is None:
+                MLResults.sqlContext = SQLContext(sc)
+        except AttributeError:
             MLResults.sqlContext = SQLContext(sc)
 
     def __repr__(self):

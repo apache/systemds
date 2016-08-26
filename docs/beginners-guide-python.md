@@ -79,6 +79,8 @@ SPARK_CLASSPATH=$SYSTEMML_HOME"/SystemML.jar"
 echo '' >> ~/.bashrc
 echo 'export SYSTEMML_HOME='$SYSTEMML_HOME >> ~/.bashrc
 echo 'export SPARK_CLASSPATH=$SPARK_CLASSPATH:'$SPARK_CLASSPATH >> ~/.bashrc
+
+# Alternatively, you can provide '--driver-class-path $SYSTEMML_HOME"/SystemML.jar"' argument to pyspark.
 {% endhighlight %}
 </div>
 <div data-lang="Linux" markdown="1">
@@ -93,6 +95,8 @@ SPARK_CLASSPATH=$SYSTEMML_HOME"/SystemML.jar"
 echo '' >> ~/.bashrc
 echo 'export SYSTEMML_HOME='$SYSTEMML_HOME >> ~/.bashrc
 echo 'export SPARK_CLASSPATH=$SPARK_CLASSPATH:'$SPARK_CLASSPATH >> ~/.bashrc
+
+# Alternatively, you can provide '--driver-class-path $SYSTEMML_HOME"/SystemML.jar"' argument to pyspark.
 </div>
 </div>
 

@@ -39,6 +39,7 @@ def dml(scriptString):
     ----------
     scriptString: string
         Can be a path to a dml script or a dml script itself.
+        
     Returns
     -------
     script: Script instance
@@ -52,10 +53,12 @@ def dml(scriptString):
 def pydml(scriptString):
     """
     Create a pydml script object based on a string.
+    
     Parameters
     ----------
     scriptString: string
         Can be a path to a pydml script or a pydml script itself.
+        
     Returns
     -------
     script: Script instance
@@ -89,10 +92,12 @@ def _py2java(sc, obj):
 class Matrix(object):
     """
     Wrapper around a Java Matrix object.
+    
     Parameters
     ----------
     javaMatrix: JavaObject
         A Java Matrix object as returned by calling `ml.execute().get()`.
+        
     sc: SparkContext
         SparkContext
     """
@@ -106,6 +111,7 @@ class Matrix(object):
     def toDF(self):
         """
         Convert the Matrix to a PySpark SQL DataFrame.
+        
         Returns
         -------
         df: PySpark SQL DataFrame
@@ -122,10 +128,12 @@ class Matrix(object):
 class MLResults(object):
     """
     Wrapper around a Java ML Results object.
+    
     Parameters
     ----------
     results: JavaObject
         A Java MLResults object as returned by calling `ml.execute()`.
+        
     sc: SparkContext
         SparkContext
     """
@@ -185,6 +193,9 @@ class Script(object):
     Parameters
     ----------
     scriptString: string
+        Can be either a file path to a DML script or a DML script itself.
+    
+    scriptType: string
         Script language, either "dml" for DML (R-like) or "pydml" for PyDML (Python-like).
     """
     def __init__(self, scriptString, scriptType="dml"):

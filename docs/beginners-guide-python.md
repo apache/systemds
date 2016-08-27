@@ -84,7 +84,7 @@ into the installed location. To find the location of the downloaded Java binarie
 python -c 'import imp; import os; print os.path.join(imp.find_module("SystemML")[1], "SystemML-java")'
 ```
 
-#### (Optional but recommended step) Set SYSTEMML_HOME:
+#### Step 3: (Optional but recommended) Set SYSTEMML_HOME environment variable
 <div class="codetabs">
 <div data-lang="OSX" markdown="1">
 ```bash
@@ -124,8 +124,8 @@ pyspark --master local[*] --driver-class-path $SYSTEMML_HOME"/SystemML.jar"
 </div>
 
 ## Matrix operations
- 
-The simplest way to get started with SystemML is to try simple matrix operations:
+
+To get started with SystemML, let's try few elementary matrix multiplication operations:
 
 ```python
 import SystemML as sml
@@ -146,8 +146,8 @@ array([[-60.],
        [-60.]])
 ```
 
-Next, we will write a simple script to train [linear regression](https://apache.github.io/incubator-systemml/algorithms-regression.html#linear-regression) 
-model. For simplicity, we will use direct-solve method and ignore regularization parameter as well as intercept. 
+Let us now write a simple script to train [linear regression](https://apache.github.io/incubator-systemml/algorithms-regression.html#linear-regression) 
+model: $ \beta = solve(X^T X, X^T y) $. For simplicity, we will use direct-solve method and ignore regularization parameter as well as intercept. 
 
 ```python
 import numpy as np
@@ -187,6 +187,8 @@ We can improve the residual error by adding an intercept and regularization para
 
 SystemML also exposes a subpackage `mllearn`. This subpackage allows Python users to invoke SystemML algorithms
 using Scikit-learn or MLPipeline API.  
+
+### Scikit-learn interface
 
 In the below example, we invoke SystemML's [Linear Regression](https://apache.github.io/incubator-systemml/algorithms-regression.html#linear-regression)
 algorithm.
@@ -243,8 +245,32 @@ logistic = LogisticRegression(sqlCtx)
 print('LogisticRegression score: %f' % logistic.fit(X_train, y_train).score(X_test, y_test))
 ```
 
-In the below example, we demonstrate how the same `LogisticRegression` class can be support DataFrame (as well as Spark's
-MLPipelines), thus allowing it to fit seamlessly into large data pipelines.
+### Passing PySpark DataFrame
+
+To train the above algorithm on larger dataset, we can load the dataset into DataFrame and pass it to the `fit` method:
+
+```python
+from sklearn import datasets, neighbors
+from SystemML.mllearn import LogisticRegression
+from pyspark.sql import SQLContext
+import SystemML as sml
+sqlCtx = SQLContext(sc)
+digits = datasets.load_digits()
+X_digits = digits.data
+y_digits = digits.target + 1
+n_samples = len(X_digits)
+# Split the data into training/testing sets and convert to PySpark DataFrame
+df_train = sml.convertToLabeledDF(sqlContext, X_digits[:.9 * n_samples], y_digits[:.9 * n_samples])
+X_test = X_digits[.9 * n_samples:]
+y_test = y_digits[.9 * n_samples:]
+logistic = LogisticRegression(sqlCtx)
+print('LogisticRegression score: %f' % logistic.fit(df_train).score(X_test, y_test))
+```
+
+### MLPipeline interface
+
+In the below example, we demonstrate how the same `LogisticRegression` class can allow SystemML to fit seamlessly into 
+large data pipelines.
 
 ```python
 # MLPipeline way
@@ -283,4 +309,26 @@ prediction.show()
 
 ## Invoking DML/PyDML scripts using MLContext
 
-TODO
+TODO: This is work in progress.
+
+```python
+from sklearn import datasets, neighbors
+from SystemML.mllearn import LogisticRegression
+from pyspark.sql import DataFrame, SQLContext
+import SystemML as sml
+import pandas as pd
+import os
+sqlCtx = SQLContext(sc)
+digits = datasets.load_digits()
+X_digits = digits.data
+y_digits = digits.target + 1
+n_samples = len(X_digits)
+# Split the data into training/testing sets and convert to PySpark DataFrame
+X_df = sqlCtx.createDataFrame(pd.DataFrame(X_digits[:.9 * n_samples]))
+y_df = sqlCtx.createDataFrame(pd.DataFrame(y_digits[:.9 * n_samples]))
+ml = sml.MLContext(sc)
+script = os.path.join(os.environ['SYSTEMML_HOME'], 'scripts', 'algorithms', 'MultiLogReg.dml')
+script = sml.dml(script).input(X=X_df, Y_vec=y_df).out("B_out")
+# .input($X=' ', $Y=' ', $B=' ')
+beta = ml.execute(script).getNumPyArray('B_out')
+```

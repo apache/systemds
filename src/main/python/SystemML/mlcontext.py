@@ -34,6 +34,7 @@ from .converters import *
 def dml(scriptString):
     """
     Create a dml script object based on a string.
+    
     Parameters
     ----------
     scriptString: string
@@ -183,8 +184,8 @@ class Script(object):
 
     Parameters
     ----------
-    path: string
-        Can be either a file path to a DML script or a DML script itself.
+    scriptString: string
+        Script language, either "dml" for DML (R-like) or "pydml" for PyDML (Python-like).
     """
     def __init__(self, scriptString, scriptType="dml"):
         self.scriptString = scriptString

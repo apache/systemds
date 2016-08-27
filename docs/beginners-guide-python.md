@@ -229,15 +229,18 @@ algorithm on digits datasets.
 # Scikit-learn way
 from sklearn import datasets, neighbors
 from SystemML.mllearn import LogisticRegression
-import SystemML as sml
-from pyspark.sql import DataFrame, SQLContext
-import pandas as pd
+from pyspark.sql import SQLContext
 sqlCtx = SQLContext(sc)
 digits = datasets.load_digits()
-df_train = sml.convertToLabeledDF(sqlCtx, X_digits[:.9 * n_samples], y_digits[:.9 * n_samples])
-df_test = sml.convertToLabeledDF(sqlCtx, X_digits[.9 * n_samples:], y_digits[.9 * n_samples:])
+X_digits = digits.data
+y_digits = digits.target + 1
+n_samples = len(X_digits)
+X_train = X_digits[:.9 * n_samples]
+y_train = y_digits[:.9 * n_samples]
+X_test = X_digits[.9 * n_samples:]
+y_test = y_digits[.9 * n_samples:]
 logistic = LogisticRegression(sqlCtx)
-print('LogisticRegression score: %f' % logistic.fit(df_train).score(X_test, y_test))
+print('LogisticRegression score: %f' % logistic.fit(X_train, y_train).score(X_test, y_test))
 ```
 
 In the below example, we demonstrate how the same `LogisticRegression` class can be support DataFrame (as well as Spark's

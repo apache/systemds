@@ -47,6 +47,14 @@
 		</fileSet>
 
 		<fileSet>
+			<directory>src/main/python</directory>
+			<excludes>
+				<exclude>**/*tests.py</exclude>
+			</excludes>
+			<outputDirectory>.</outputDirectory>
+		</fileSet>
+
+		<fileSet>
 			<directory>${basedir}/src/main/standalone</directory>
 			<includes>
 				<include>log4j.properties</include>

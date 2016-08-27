@@ -93,8 +93,8 @@
 
 	<build>
 
-	<!-- Adds scripts to main jar, in-memory jar, sources jar, and standalone jar -->
 	<resources>
+		<!-- Adds scripts to main jar, in-memory jar, sources jar, and standalone jar -->
 		<resource>
 			<directory>scripts</directory>
 			<excludes>
@@ -107,6 +107,13 @@
 				<!-- <exclude>*.sh</exclude> --> <!-- applies to sparkDML.sh -->
 			</excludes>
 			<targetPath>scripts</targetPath>
+		</resource>
+		<!-- Adds SystemML.py to main jar, in-memory jar, sources jar, and standalone jar -->
+		<resource>
+			<directory>src/main/python</directory>
+			<excludes>
+				<exclude>**/*tests.py</exclude>
+			</excludes>
 		</resource>
 	</resources>
 

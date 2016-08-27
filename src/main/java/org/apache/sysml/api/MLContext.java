@@ -23,6 +23,7 @@ package org.apache.sysml.api;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Scanner;
@@ -62,6 +63,7 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
@@ -73,11 +75,13 @@ import org.apache.sysml.runtime.instructions.spark.functions.ConvertStringToLong
 import org.apache.sysml.runtime.instructions.spark.functions.CopyBlockPairFunction;
 import org.apache.sysml.runtime.instructions.spark.functions.CopyTextInputFunction;
 import org.apache.sysml.runtime.instructions.spark.functions.SparkListener;
+import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDConverterUtils;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
 import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FileFormatProperties;
+import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
@@ -263,6 +267,21 @@ public class MLContext {
 	}
 	
 	/**
+	 * Register DataFrame as input. DataFrame is assumed to be in row format and each cell can be converted into 
+	 * SystemML frame row. Each column could be of type, Double, Float, Long, Integer, String or Boolean.  
+	 * <p>
+	 * Marks the variable in the DML script as input variable.
+	 * Note that this expects a "varName = read(...)" statement in the DML script which through non-MLContext invocation
+	 * would have been created by reading a HDFS file.
+	 * @param varName
+	 * @param df
+	 * @throws DMLRuntimeException
+	 */
+	public void registerFrameInput(String varName, DataFrame df) throws DMLRuntimeException {
+		registerFrameInput(varName, df, false);
+	}
+	
+	/**
 	 * Register DataFrame as input. 
 	 * Marks the variable in the DML script as input variable.
 	 * Note that this expects a "varName = read(...)" statement in the DML script which through non-MLContext invocation
@@ -276,6 +295,21 @@ public class MLContext {
 		MatrixCharacteristics mcOut = new MatrixCharacteristics();
 		JavaPairRDD<MatrixIndexes, MatrixBlock> rdd = RDDConverterUtilsExt.dataFrameToBinaryBlock(new JavaSparkContext(_sc), df, mcOut, containsID);
 		registerInput(varName, rdd, mcOut);
+	}
+	
+	/**
+	 * Register DataFrame as input. DataFrame is assumed to be in row format and each cell can be converted into 
+	 * SystemML frame row. Each column could be of type, Double, Float, Long, Integer, String or Boolean.  
+	 * <p>
+	 * @param varName
+	 * @param df
+	 * @param containsID false if the DataFrame has an column ID which denotes the row ID.
+	 * @throws DMLRuntimeException
+	 */
+	public void registerFrameInput(String varName, DataFrame df, boolean containsID) throws DMLRuntimeException {
+		MatrixCharacteristics mcOut = new MatrixCharacteristics();
+		JavaPairRDD<Long, FrameBlock> rdd = FrameRDDConverterUtils.dataFrameToBinaryBlock(new JavaSparkContext(_sc), df, mcOut, containsID);
+		registerInput(varName, rdd, mcOut.getRows(), mcOut.getCols(), null);
 	}
 	
 	/**
@@ -516,6 +550,87 @@ public class MLContext {
 			mo.setFileFormatProperties(props);
 		mo.setRDDHandle(new RDDObject(rdd, varName));
 		_variables.put(varName, mo);
+		_inVarnames.add(varName);
+		checkIfRegisteringInputAllowed();
+	}
+	
+	/**
+	 * Register Frame with CSV/Text as inputs: with dimensions. 
+	 * File properties (example: delim, fill, ..) can be specified through props else defaults will be used.
+	 * <p>
+	 * Marks the variable in the DML script as input variable.
+	 * Note that this expects a "varName = read(...)" statement in the DML script which through non-MLContext invocation
+	 * would have been created by reading a HDFS file.
+	 * @param varName
+	 * @param rdd
+	 * @param format
+	 * @param rlen
+	 * @param clen
+	 * @param props
+	 * @schema schema 
+	 * 			List of column types.
+	 * @throws DMLRuntimeException
+	 */
+	public void registerInput(String varName, JavaRDD<String> rddIn, String format, long rlen, long clen, FileFormatProperties props, 
+			List<ValueType> schema) throws DMLRuntimeException {
+		if(!(DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK || DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK)) {
+			throw new DMLRuntimeException("The registerInput functionality only supported for spark runtime. Please use MLContext(sc) instead of default constructor.");
+		}
+		
+		long nnz = -1;
+		if(_variables == null)
+			_variables = new LocalVariableMap();
+		if(_inVarnames == null)
+			_inVarnames = new ArrayList<String>();
+		
+		JavaPairRDD<LongWritable, Text> rddText = rddIn.mapToPair(new ConvertStringToLongTextPair());
+		
+		MatrixCharacteristics mc = new MatrixCharacteristics(rlen, clen, OptimizerUtils.DEFAULT_BLOCKSIZE, OptimizerUtils.DEFAULT_BLOCKSIZE, nnz);
+		FrameObject fo = new FrameObject(null, new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
+		JavaPairRDD<Long, FrameBlock> rdd = null; 
+		if( format.equals("csv") ) {
+			//TODO replace default block size
+			
+			rdd = FrameRDDConverterUtils.csvToBinaryBlock(new JavaSparkContext(getSparkContext()), rddText, mc, false, ",", false, -1);
+		}
+		else if( format.equals("text") ) {
+			if(rlen == -1 || clen == -1) {
+				throw new DMLRuntimeException("The metadata is required in registerInput for format:" + format);
+			}
+			//TODO replace default block size
+			rdd = FrameRDDConverterUtils.textCellToBinaryBlock(new JavaSparkContext(getSparkContext()), rddText, mc, schema);
+		}
+		else {
+			
+			throw new DMLRuntimeException("Incorrect format in registerInput: " + format);
+		}
+		if(props != null)
+			fo.setFileFormatProperties(props);
+		
+		fo.setRDDHandle(new RDDObject(rdd, varName));
+		_variables.put(varName, fo);
+		_inVarnames.add(varName);
+		checkIfRegisteringInputAllowed();
+	}
+	
+	private void registerInput(String varName, JavaPairRDD<Long, FrameBlock> rdd, long rlen, long clen, FileFormatProperties props) throws DMLRuntimeException {
+		if(!(DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK || DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK)) {
+			throw new DMLRuntimeException("The registerInput functionality only supported for spark runtime. Please use MLContext(sc) instead of default constructor.");
+		}
+		
+		if(_variables == null)
+			_variables = new LocalVariableMap();
+		if(_inVarnames == null)
+			_inVarnames = new ArrayList<String>();
+		
+		MatrixCharacteristics mc = new MatrixCharacteristics(rlen, clen, OptimizerUtils.DEFAULT_BLOCKSIZE, OptimizerUtils.DEFAULT_BLOCKSIZE, -1);
+		FrameObject fo = new FrameObject(null, new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
+		
+		if(props != null)
+			fo.setFileFormatProperties(props);
+		
+		fo.setRDDHandle(new RDDObject(rdd, varName));
+		_variables.put(varName, fo);
 		_inVarnames.add(varName);
 		checkIfRegisteringInputAllowed();
 	}
@@ -1008,37 +1123,70 @@ public class MLContext {
 			// Do not check metadata file for registered reads 
 			((DataExpression) source).setCheckMetadata(false);
 			
-			MatrixObject mo = null;
-			try {
-				mo = getMatrixObject(target);
-				int blp = source.getBeginLine(); int bcp = source.getBeginColumn();
-				int elp = source.getEndLine(); int ecp = source.getEndColumn();
-				((DataExpression) source).addVarParam(DataExpression.READROWPARAM, new IntIdentifier(mo.getNumRows(), source.getFilename(), blp, bcp, elp, ecp));
-				((DataExpression) source).addVarParam(DataExpression.READCOLPARAM, new IntIdentifier(mo.getNumColumns(), source.getFilename(), blp, bcp, elp, ecp));
-				((DataExpression) source).addVarParam(DataExpression.READNUMNONZEROPARAM, new IntIdentifier(mo.getNnz(), source.getFilename(), blp, bcp, elp, ecp));
-				((DataExpression) source).addVarParam(DataExpression.DATATYPEPARAM, new StringIdentifier("matrix", source.getFilename(), blp, bcp, elp, ecp));
-				((DataExpression) source).addVarParam(DataExpression.VALUETYPEPARAM, new StringIdentifier("double", source.getFilename(), blp, bcp, elp, ecp));
+		 	if (((DataExpression)source).getDataType() == Expression.DataType.MATRIX) {
+
+				MatrixObject mo = null;
 				
-				if(mo.getMetaData() instanceof MatrixFormatMetaData) {
-					MatrixFormatMetaData metaData = (MatrixFormatMetaData) mo.getMetaData();
-					if(metaData.getOutputInfo() == OutputInfo.CSVOutputInfo) {
-						((DataExpression) source).addVarParam(DataExpression.FORMAT_TYPE, new StringIdentifier(DataExpression.FORMAT_TYPE_VALUE_CSV, source.getFilename(), blp, bcp, elp, ecp));
+				try {
+					mo = getMatrixObject(target);
+					int blp = source.getBeginLine(); int bcp = source.getBeginColumn();
+					int elp = source.getEndLine(); int ecp = source.getEndColumn();
+					((DataExpression) source).addVarParam(DataExpression.READROWPARAM, new IntIdentifier(mo.getNumRows(), source.getFilename(), blp, bcp, elp, ecp));
+					((DataExpression) source).addVarParam(DataExpression.READCOLPARAM, new IntIdentifier(mo.getNumColumns(), source.getFilename(), blp, bcp, elp, ecp));
+					((DataExpression) source).addVarParam(DataExpression.READNUMNONZEROPARAM, new IntIdentifier(mo.getNnz(), source.getFilename(), blp, bcp, elp, ecp));
+					((DataExpression) source).addVarParam(DataExpression.DATATYPEPARAM, new StringIdentifier("matrix", source.getFilename(), blp, bcp, elp, ecp));
+					((DataExpression) source).addVarParam(DataExpression.VALUETYPEPARAM, new StringIdentifier("double", source.getFilename(), blp, bcp, elp, ecp));
+					
+					if(mo.getMetaData() instanceof MatrixFormatMetaData) {
+						MatrixFormatMetaData metaData = (MatrixFormatMetaData) mo.getMetaData();
+						if(metaData.getOutputInfo() == OutputInfo.CSVOutputInfo) {
+							((DataExpression) source).addVarParam(DataExpression.FORMAT_TYPE, new StringIdentifier(DataExpression.FORMAT_TYPE_VALUE_CSV, source.getFilename(), blp, bcp, elp, ecp));
+						}
+						else if(metaData.getOutputInfo() == OutputInfo.TextCellOutputInfo) {
+							((DataExpression) source).addVarParam(DataExpression.FORMAT_TYPE, new StringIdentifier(DataExpression.FORMAT_TYPE_VALUE_TEXT, source.getFilename(), blp, bcp, elp, ecp));
+						}
+						else if(metaData.getOutputInfo() == OutputInfo.BinaryBlockOutputInfo) {
+							((DataExpression) source).addVarParam(DataExpression.ROWBLOCKCOUNTPARAM, new IntIdentifier(mo.getNumRowsPerBlock(), source.getFilename(), blp, bcp, elp, ecp));
+							((DataExpression) source).addVarParam(DataExpression.COLUMNBLOCKCOUNTPARAM, new IntIdentifier(mo.getNumColumnsPerBlock(), source.getFilename(), blp, bcp, elp, ecp));
+							((DataExpression) source).addVarParam(DataExpression.FORMAT_TYPE, new StringIdentifier(DataExpression.FORMAT_TYPE_VALUE_BINARY, source.getFilename(), blp, bcp, elp, ecp));
+						}
+						else {
+							throw new LanguageException("Unsupported format through MLContext");
+						}
 					}
-					else if(metaData.getOutputInfo() == OutputInfo.TextCellOutputInfo) {
-						((DataExpression) source).addVarParam(DataExpression.FORMAT_TYPE, new StringIdentifier(DataExpression.FORMAT_TYPE_VALUE_TEXT, source.getFilename(), blp, bcp, elp, ecp));
-					}
-					else if(metaData.getOutputInfo() == OutputInfo.BinaryBlockOutputInfo) {
-						((DataExpression) source).addVarParam(DataExpression.ROWBLOCKCOUNTPARAM, new IntIdentifier(mo.getNumRowsPerBlock(), source.getFilename(), blp, bcp, elp, ecp));
-						((DataExpression) source).addVarParam(DataExpression.COLUMNBLOCKCOUNTPARAM, new IntIdentifier(mo.getNumColumnsPerBlock(), source.getFilename(), blp, bcp, elp, ecp));
-						((DataExpression) source).addVarParam(DataExpression.FORMAT_TYPE, new StringIdentifier(DataExpression.FORMAT_TYPE_VALUE_BINARY, source.getFilename(), blp, bcp, elp, ecp));
-					}
-					else {
-						throw new LanguageException("Unsupported format through MLContext");
-					}
+				} catch (DMLRuntimeException e) {
+					throw new LanguageException(e);
 				}
-			} catch (DMLRuntimeException e) {
-				throw new LanguageException(e);
-			}
+		 	} else if (((DataExpression)source).getDataType() == Expression.DataType.FRAME) {
+				FrameObject mo = null;
+				try {
+					mo = getFrameObject(target);
+					int blp = source.getBeginLine(); int bcp = source.getBeginColumn();
+					int elp = source.getEndLine(); int ecp = source.getEndColumn();
+					((DataExpression) source).addVarParam(DataExpression.READROWPARAM, new IntIdentifier(mo.getNumRows(), source.getFilename(), blp, bcp, elp, ecp));
+					((DataExpression) source).addVarParam(DataExpression.READCOLPARAM, new IntIdentifier(mo.getNumColumns(), source.getFilename(), blp, bcp, elp, ecp));
+					((DataExpression) source).addVarParam(DataExpression.DATATYPEPARAM, new StringIdentifier("frame", source.getFilename(), blp, bcp, elp, ecp));
+					((DataExpression) source).addVarParam(DataExpression.VALUETYPEPARAM, new StringIdentifier("double", source.getFilename(), blp, bcp, elp, ecp));	//TODO change to schema
+					
+					if(mo.getMetaData() instanceof MatrixFormatMetaData) {
+						MatrixFormatMetaData metaData = (MatrixFormatMetaData) mo.getMetaData();
+						if(metaData.getOutputInfo() == OutputInfo.CSVOutputInfo) {
+							((DataExpression) source).addVarParam(DataExpression.FORMAT_TYPE, new StringIdentifier(DataExpression.FORMAT_TYPE_VALUE_CSV, source.getFilename(), blp, bcp, elp, ecp));
+						}
+						else if(metaData.getOutputInfo() == OutputInfo.TextCellOutputInfo) {
+							((DataExpression) source).addVarParam(DataExpression.FORMAT_TYPE, new StringIdentifier(DataExpression.FORMAT_TYPE_VALUE_TEXT, source.getFilename(), blp, bcp, elp, ecp));
+						}
+						else if(metaData.getOutputInfo() == OutputInfo.BinaryBlockOutputInfo) {
+							((DataExpression) source).addVarParam(DataExpression.FORMAT_TYPE, new StringIdentifier(DataExpression.FORMAT_TYPE_VALUE_BINARY, source.getFilename(), blp, bcp, elp, ecp));
+						}
+						else {
+							throw new LanguageException("Unsupported format through MLContext");
+						}
+					}
+				} catch (DMLRuntimeException e) {
+					throw new LanguageException(e);
+				}
+		 	}
 		}
 	}
 	
@@ -1129,6 +1277,18 @@ public class MLContext {
 		throw new DMLRuntimeException("ERROR: getMatrixObject not set for variable:" + varName);
 	}
 	
+	private FrameObject getFrameObject(String varName) throws DMLRuntimeException {
+		if(_variables != null) {
+			Data mo = _variables.get(varName);
+			if(mo instanceof FrameObject) {
+				return (FrameObject) mo;
+			}
+			else {
+				throw new DMLRuntimeException("ERROR: Incorrect type");
+			}
+		}
+		throw new DMLRuntimeException("ERROR: getMatrixObject not set for variable:" + varName);
+	}
 	
 	private int compareVersion(String versionStr1, String versionStr2) {
 		Scanner s1 = null;
@@ -1329,7 +1489,7 @@ public class MLContext {
 			
 			if(DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK || DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK) {
 				
-				Map<String, JavaPairRDD<MatrixIndexes,MatrixBlock>> retVal = null;
+				Map<String, JavaPairRDD<?,?>> retVal = null;
 				
 				// Depending on whether registerInput/registerOutput was called initialize the variables 
 				String[] inputs; String[] outputs;
@@ -1361,7 +1521,7 @@ public class MLContext {
 					for( String ovar : _outVarnames ) {
 						if( _variables.keySet().contains(ovar) ) {
 							if(retVal == null) {
-								retVal = new HashMap<String, JavaPairRDD<MatrixIndexes,MatrixBlock>>();
+								retVal = new HashMap<String, JavaPairRDD<?,?>>();
 							}
 							retVal.put(ovar, ((SparkExecutionContext) ec).getBinaryBlockRDDHandleForVariable(ovar));
 							outMetadata.put(ovar, ec.getMatrixCharacteristics(ovar)); // For converting output to dataframe

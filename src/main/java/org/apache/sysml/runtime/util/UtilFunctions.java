@@ -23,6 +23,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.api.java.function.Function;
+import org.apache.spark.sql.Row;
+import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
@@ -658,5 +663,35 @@ public class UtilFunctions
 		
 		return DataTypes.createStructType(fields);
 	}
+	
+	/* 
+	 * It will return JavaRDD<Row> based on csv data input file.
+	 */
+	public static JavaRDD<Row> getRowRDD(JavaSparkContext sc, String fnameIn, String separator)
+	{
+		// Load a text file and convert each line to a java rdd.
+		JavaRDD<String> dataRdd = sc.textFile(fnameIn);
+		return dataRdd.map(new RowGenerator());
+	}
+	
+	/* 
+	 * Row Generator class based on individual line in CSV file.
+	 */
+	private static class RowGenerator implements Function<String,Row> 
+	{
+		private static final long serialVersionUID = -6736256507697511070L;
+
+		@Override
+		public Row call(String record) throws Exception {
+		      String[] fields = record.split(",");
+		      Object[] objects = new Object[fields.length]; 
+		      for (int i=0; i<fields.length; i++) {
+			      objects[i] = fields[i];
+		      }
+		      return RowFactory.create(objects);
+		}
+	}
+
+
 	
 }

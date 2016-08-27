@@ -27,13 +27,11 @@ import java.util.List;
 
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.DataFrame;
 import org.apache.spark.sql.Row;
-import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.SQLContext;
 import org.apache.spark.sql.types.StructType;
 import org.apache.sysml.api.DMLScript;
@@ -522,7 +520,7 @@ public class FrameConverterTest extends AutomatedTestBase
 				//Create DataFrame 
 				SQLContext sqlContext = new SQLContext(sc);
 				StructType dfSchema = UtilFunctions.convertFrameSchemaToDFSchema(schema);
-				JavaRDD<Row> rowRDD = getRowRDD(sc, fnameIn, separator);
+				JavaRDD<Row> rowRDD = UtilFunctions.getRowRDD(sc, fnameIn, separator);
 				DataFrame df = sqlContext.createDataFrame(rowRDD, dfSchema);
 				
 				JavaPairRDD<LongWritable, FrameBlock> rddOut = FrameRDDConverterUtils
@@ -552,33 +550,4 @@ public class FrameConverterTest extends AutomatedTestBase
 		
 		sec.close();
 	}
-	
-	/* 
-	 * It will return JavaRDD<Row> based on csv data input file.
-	 */
-	JavaRDD<Row> getRowRDD(JavaSparkContext sc, String fnameIn, String separator)
-	{
-		// Load a text file and convert each line to a java rdd.
-		JavaRDD<String> dataRdd = sc.textFile(fnameIn);
-		return dataRdd.map(new RowGenerator());
-	}
-	
-	/* 
-	 * Row Generator class based on individual line in CSV file.
-	 */
-	private static class RowGenerator implements Function<String,Row> 
-	{
-		private static final long serialVersionUID = -6736256507697511070L;
-
-		@Override
-		public Row call(String record) throws Exception {
-		      String[] fields = record.split(",");
-		      Object[] objects = new Object[fields.length]; 
-		      for (int i=0; i<fields.length; i++) {
-			      objects[i] = fields[i];
-		      }
-		      return RowFactory.create(objects);
-		}
-	}
-
 }

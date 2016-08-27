@@ -53,6 +53,7 @@ import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.DoubleObject;
 import org.apache.sysml.runtime.instructions.cp.IntObject;
 import org.apache.sysml.runtime.instructions.cp.StringObject;
+import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 
@@ -456,6 +457,11 @@ public final class MLContextUtil {
 			MatrixObject matrixObject = MLContextConversionUtil.matrixBlockToMatrixObject(name, matrixBlock,
 					matrixMetadata);
 			return matrixObject;
+		} else if (value instanceof FrameBlock) {
+			FrameBlock frameBlock = (FrameBlock) value;
+			FrameObject frameObject = MLContextConversionUtil.frameBlockToframeObject(name, frameBlock,
+					matrixMetadata);
+			return frameObject;
 		} else if (value instanceof DataFrame) {
 			DataFrame dataFrame = (DataFrame) value;
 			MatrixObject matrixObject = MLContextConversionUtil

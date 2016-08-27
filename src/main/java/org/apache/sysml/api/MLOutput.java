@@ -27,6 +27,7 @@ import java.util.Map.Entry;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.mllib.linalg.DenseVector;
@@ -41,8 +42,11 @@ import org.apache.spark.sql.types.StructType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.spark.functions.GetMLBlock;
+import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDConverterUtils;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
+import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.util.UtilFunctions;
@@ -55,7 +59,7 @@ import scala.Tuple2;
  */
 public class MLOutput {
 	
-	Map<String, JavaPairRDD<MatrixIndexes,MatrixBlock>> _outputs;
+	Map<String, JavaPairRDD<?,?>> _outputs;
 	private Map<String, MatrixCharacteristics> _outMetadata = null;
 	
 	public MatrixBlock getMatrixBlock(String varName) throws DMLRuntimeException {
@@ -66,14 +70,32 @@ public class MLOutput {
 				mc.getRowsPerBlock(), mc.getColsPerBlock(), mc.getNonZeros());
 		return mb;
 	}
-	public MLOutput(Map<String, JavaPairRDD<MatrixIndexes,MatrixBlock>> outputs, Map<String, MatrixCharacteristics> outMetadata) {
+
+	public MLOutput(Map<String, JavaPairRDD<?,?>> outputs, Map<String, MatrixCharacteristics> outMetadata) {
 		this._outputs = outputs;
 		this._outMetadata = outMetadata;
 	}
 	
+	@SuppressWarnings("unchecked")
 	public JavaPairRDD<MatrixIndexes,MatrixBlock> getBinaryBlockedRDD(String varName) throws DMLRuntimeException {
 		if(_outputs.containsKey(varName)) {
-			return _outputs.get(varName);
+			JavaPairRDD<?,?> tmp = _outputs.get(varName);
+			if (tmp.first()._2() instanceof MatrixBlock)
+				return (JavaPairRDD<MatrixIndexes,MatrixBlock>)tmp;
+			else
+				return null;
+		}
+		throw new DMLRuntimeException("Variable " + varName + " not found in the output symbol table.");
+	}
+	
+	@SuppressWarnings("unchecked")
+	public JavaPairRDD<Long,FrameBlock> getFrameBinaryBlockedRDD(String varName) throws DMLRuntimeException {
+		if(_outputs.containsKey(varName)) {
+			JavaPairRDD<?,?> tmp = _outputs.get(varName);
+			if (tmp.first()._2() instanceof FrameBlock)
+				return (JavaPairRDD<Long,FrameBlock>)tmp;
+			else
+				return null;
 		}
 		throw new DMLRuntimeException("Variable " + varName + " not found in the output symbol table.");
 	}
@@ -195,6 +217,27 @@ public class MLOutput {
 			throw new DMLRuntimeException("The output format:" + format + " is not implemented yet.");
 		}
 		
+	}
+	
+	public JavaRDD<String> getStringFrameRDD(String varName, String format, CSVFileFormatProperties fprop ) throws DMLRuntimeException {
+		JavaPairRDD<Long, FrameBlock> binaryRDD = getFrameBinaryBlockedRDD(varName);
+		MatrixCharacteristics mcIn = getMatrixCharacteristics(varName); 
+		if(format.equals("csv")) {
+			return FrameRDDConverterUtils.binaryBlockToCsv(binaryRDD, mcIn, fprop, false);
+		}
+		else if(format.equals("text")) {
+			return FrameRDDConverterUtils.binaryBlockToTextCell(binaryRDD, mcIn);
+		}
+		else {
+			throw new DMLRuntimeException("The output format:" + format + " is not implemented yet.");
+		}
+		
+	}
+	
+	public DataFrame getDataFrameRDD(String varName, JavaSparkContext jsc) throws DMLRuntimeException {
+		JavaPairRDD<Long, FrameBlock> binaryRDD = getFrameBinaryBlockedRDD(varName);
+		MatrixCharacteristics mcIn = getMatrixCharacteristics(varName);
+		return FrameRDDConverterUtils.binaryBlockToDataFrame(binaryRDD, mcIn, jsc);
 	}
 	
 	public MLMatrix getMLMatrix(MLContext ml, SQLContext sqlContext, String varName) throws DMLRuntimeException {

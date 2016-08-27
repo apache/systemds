@@ -108,7 +108,7 @@ Note: the user is free to either use the prepackaged Java binaries
 or download them from [SystemML website](http://systemml.apache.org/download.html) 
 or build them from the [source](https://github.com/apache/incubator-systemml).
 
-#### Step 3: Start Pyspark shell
+#### Start Pyspark shell
 
 <div class="codetabs">
 <div data-lang="OSX" markdown="1">
@@ -121,7 +121,7 @@ pyspark --master local[*] --driver-class-path $SYSTEMML_HOME"/SystemML.jar"
 pyspark --master local[*] --driver-class-path $SYSTEMML_HOME"/SystemML.jar"
 ```
 </div>
-
+</div>
 
 ## Matrix operations
  

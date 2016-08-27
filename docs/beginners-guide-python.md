@@ -84,7 +84,7 @@ into the installed location. To find the location of the downloaded Java binarie
 python -c 'import imp; import os; print os.path.join(imp.find_module("SystemML")[1], "SystemML-java")'
 ```
 
-(Optional but recommended step) Set SYSTEMML_HOME:
+#### (Optional but recommended step) Set SYSTEMML_HOME:
 <div class="codetabs">
 <div data-lang="OSX" markdown="1">
 ```bash
@@ -108,7 +108,7 @@ Note: the user is free to either use the prepackaged Java binaries
 or download them from [SystemML website](http://systemml.apache.org/download.html) 
 or build them from the [source](https://github.com/apache/incubator-systemml).
 
-#### Start Pyspark shell
+### Start Pyspark shell
 
 <div class="codetabs">
 <div data-lang="OSX" markdown="1">

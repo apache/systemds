@@ -78,6 +78,19 @@ def binaryOp(lhs, rhs, opStr):
     dmlOp.dml = [out.ID, ' = ', lhsStr, opStr, rhsStr, '\n']
     return out
 
+def binaryMatrixFunction(X, Y, fnName):
+    if not isinstance(X, matrix) or not isinstance(Y, matrix):
+        raise TypeError('Incorrect input type. Expected matrix type')
+    inputs = [X, Y]
+    dmlOp = DMLOp(inputs)
+    out = matrix(None, op=dmlOp)
+    dmlOp.dml = [out.ID, ' = ', fnName,'(', X.ID, ', ', Y.ID, ')\n']
+    return out
+
+def solve(A, b):
+    return binaryMatrixFunction(A, b, 'solve')
+
+    
 def eval(outputs, outputDF=False, execute=True):
     """
     Executes the unevaluated DML script and computes the matrices specified by outputs.
@@ -277,9 +290,6 @@ class matrix(object):
         return out        
 
     def dot(self, other):
-        dmlOp = DMLOp([self])
-        out = matrix(None, op=dmlOp)
-        dmlOp.dml = [out.ID, ' = dot(', self.ID, ', ', other.ID, ')\n']
-        return out       
+        return binaryMatrixFunction(self, other, 'dot')
             
-__all__ = [ 'setSparkContext', 'matrix', 'eval']
+__all__ = [ 'setSparkContext', 'matrix', 'eval', 'solve']

@@ -38,6 +38,26 @@ def getNumCols(numPyArr):
     else:
         return numPyArr.shape[1]
        
+def convertToLabeledDF(sqlCtx, X, y=None):
+    from pyspark.ml.feature import VectorAssembler
+    if y is not None:
+        pd1 = pd.DataFrame(X)
+        pd2 = pd.DataFrame(y, columns=['label'])
+        pdf = pd.concat([pd1, pd2], axis=1)
+        inputColumns = ['C' + str(i) for i in pd1.columns]
+        outputColumns = inputColumns + ['label']
+    else:
+        pdf = pd.DataFrame(X)
+        inputColumns = ['C' + str(i) for i in pdf.columns]
+        outputColumns = inputColumns
+    assembler = VectorAssembler(inputCols=inputColumns, outputCol='features')
+    out = assembler.transform(sqlCtx.createDataFrame(pdf, outputColumns))
+    if y is not None:
+        return out.select('features', 'label')
+    else:
+        return out.select('features')
+    
+
 def convertToMatrixBlock(sc, src):
     if isinstance(src, spmatrix):
         src = coo_matrix(src,  dtype=np.float64)
@@ -77,4 +97,4 @@ def convertToPandasDF(X):
         return pd.DataFrame(X, columns=['C' + str(i) for i in range(getNumCols(X))])
     return X
     
-__all__ = [ 'getNumCols', 'convertToMatrixBlock', 'convertToNumpyArr', 'convertToPandasDF', 'SUPPORTED_TYPES' ]
+__all__ = [ 'getNumCols', 'convertToMatrixBlock', 'convertToNumpyArr', 'convertToPandasDF', 'SUPPORTED_TYPES' , 'convertToLabeledDF']

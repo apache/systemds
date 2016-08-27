@@ -27,84 +27,107 @@ limitations under the License.
 
 <br/>
 
+## Introduction
+
+SystemML enables flexible, scalable machine learning. This flexibility is achieved through the specification of a high-level declarative machine learning language that comes in two flavors, 
+one with an R-like syntax (DML) and one with a Python-like syntax (PyDML).
+
+Algorithm scripts written in DML and PyDML can be run on Hadoop, on Spark, or in Standalone mode. 
+No script modifications are required to change between modes. SystemML automatically performs advanced optimizations 
+based on data and cluster characteristics, so much of the need to manually tweak algorithms is largely reduced or eliminated.
+To understand more about DML and PyDML, we recommend that you read [Beginner's Guide to DML and PyDML](https://apache.github.io/incubator-systemml/beginners-guide-to-dml-and-pydml.html).
+
+For convenience of Python users, SystemML exposes several language-level APIs that allow Python users to use SystemML
+and its algorithms without the need to know DML or PyDML. We explain these APIs in the below sections with example usecases.
 
 ## Download & Setup
 
 Before you get started on SystemML, make sure that your environment is set up and ready to go.
 
-### Install Java and Spark
+### Install Java (need Java 8) and Apache Spark
+
+If you already have a Apache Spark installation, you can skip this step.
   
 <div class="codetabs">
 <div data-lang="OSX" markdown="1">
-{% highlight bash %}
+```bash
 /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
-
-# Install Java (need Java 8)
 brew tap caskroom/cask
 brew install Caskroom/cask/java
-
-# Install Spark
 brew install apache-spark
-{% endhighlight %}
+```
 </div>
 <div data-lang="Linux" markdown="1">
-{% highlight bash %}
+```bash
 ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Linuxbrew/install/master/install)"
-
-# Install Java (need Java 8)
 brew tap caskroom/cask
 brew install Caskroom/cask/java
-
-# Install Spark
 brew install apache-spark
-{% endhighlight %}
+```
 </div>
 </div>
 
 ### Install SystemML
 
-The simplest way to install SystemML is `pip`.
+#### Step 1: Install SystemML Python package 
+
+```bash
+pip install SystemML
+```
+
+#### Step 2: Download SystemML Java binaries
+
+SystemML Python package downloads the corresponding Java binaries (along with algorithms) and places them 
+into the installed location. To find the location of the downloaded Java binaries, use the following command:
+
+```bash
+python -c 'import imp; import os; print os.path.join(imp.find_module("SystemML")[1], "SystemML-java")'
+```
+
+(Optional but recommended step) Set SYSTEMML_HOME:
+<div class="codetabs">
+<div data-lang="OSX" markdown="1">
+```bash
+SYSTEMML_HOME=`python -c 'import imp; import os; print os.path.join(imp.find_module("SystemML")[1], "SystemML-java")'`
+# If you are using zsh or ksh or csh, append it to ~/.zshrc or ~/.profile or ~/.login respectively.
+echo '' >> ~/.bashrc
+echo 'export SYSTEMML_HOME='$SYSTEMML_HOME >> ~/.bashrc
+```
+</div>
+<div data-lang="Linux" markdown="1">
+```bash
+SYSTEMML_HOME=`python -c 'import imp; import os; print os.path.join(imp.find_module("SystemML")[1], "SystemML-java")'`
+# If you are using zsh or ksh or csh, append it to ~/.zshrc or ~/.profile or ~/.login respectively.
+echo '' >> ~/.bashrc
+echo 'export SYSTEMML_HOME='$SYSTEMML_HOME >> ~/.bashrc
+```
+</div>
+</div>
+
+Note: the user is free to either use the prepackaged Java binaries 
+or download them from [SystemML website](http://systemml.apache.org/download.html) 
+or build them from the [source](https://github.com/apache/incubator-systemml).
+
+#### Step 3: Start Pyspark shell
 
 <div class="codetabs">
 <div data-lang="OSX" markdown="1">
-{% highlight bash %}
-pip install SystemML
-
-# Get SYSTEMML_HOME and SPARK_CLASSPATH
-SYSTEMML_HOME=`python -c 'import imp; import os; print os.path.join(imp.find_module("SystemML")[1], "SystemML-java")'`
-SPARK_CLASSPATH=$SYSTEMML_HOME"/SystemML.jar"
-
-# Append the above variables to ~/.bashrc
-# If you are using zsh, append it to ~/.zshrc; if you are using ksh, append to ~/.profile and if you are using csh or tcsh, append to ~/.login
-echo '' >> ~/.bashrc
-echo 'export SYSTEMML_HOME='$SYSTEMML_HOME >> ~/.bashrc
-echo 'export SPARK_CLASSPATH=$SPARK_CLASSPATH:'$SPARK_CLASSPATH >> ~/.bashrc
-
-# Alternatively, you can provide '--driver-class-path $SYSTEMML_HOME"/SystemML.jar"' argument to pyspark.
-{% endhighlight %}
+```bash
+pyspark --master local[*] --driver-class-path $SYSTEMML_HOME"/SystemML.jar"
+```
 </div>
 <div data-lang="Linux" markdown="1">
-pip install SystemML
-
-# Get SYSTEMML_HOME and SPARK_CLASSPATH
-SYSTEMML_HOME=`python -c 'import imp; import os; print os.path.join(imp.find_module("SystemML")[1], "SystemML-java")'`
-SPARK_CLASSPATH=$SYSTEMML_HOME"/SystemML.jar"
-
-# Append the above variables to ~/.bashrc
-# If you are using zsh, append it to ~/.zshrc; if you are using ksh, append to ~/.profile and if you are using csh or tcsh, append to ~/.login 
-echo '' >> ~/.bashrc
-echo 'export SYSTEMML_HOME='$SYSTEMML_HOME >> ~/.bashrc
-echo 'export SPARK_CLASSPATH=$SPARK_CLASSPATH:'$SPARK_CLASSPATH >> ~/.bashrc
-
-# Alternatively, you can provide '--driver-class-path $SYSTEMML_HOME"/SystemML.jar"' argument to pyspark.
+```bash
+pyspark --master local[*] --driver-class-path $SYSTEMML_HOME"/SystemML.jar"
+```
 </div>
-</div>
+
 
 ## Matrix operations
-
-The simplest way to get started with SystemML is to try simple matrix operations:
  
-{% highlight python %}
+The simplest way to get started with SystemML is to try simple matrix operations:
+
+```python
 import SystemML as sml
 import numpy as np
 sml.setSparkContext(sc)
@@ -112,39 +135,115 @@ m1 = sml.matrix(np.ones((3,3)) + 2)
 m2 = sml.matrix(np.ones((3,3)) + 3)
 m2 = m1 * (m2 + m1)
 m4 = 1.0 - m2
-m4.sum().toNumPyArray()
-{% endhighlight %}
+m4.sum(axis=1).toNumPyArray()
+```
+
+Output:
+
+```bash
+array([[-60.],
+       [-60.],
+       [-60.]])
+```
+
+Next, we will write a simple script to train [linear regression](https://apache.github.io/incubator-systemml/algorithms-regression.html#linear-regression) 
+model. For simplicity, we will use direct-solve method and ignore regularization parameter as well as intercept. 
+
+```python
+import numpy as np
+from sklearn import datasets
+import SystemML as sml
+from pyspark.sql import SQLContext
+# Load the diabetes dataset
+diabetes = datasets.load_diabetes()
+# Use only one feature
+diabetes_X = diabetes.data[:, np.newaxis, 2]
+# Split the data into training/testing sets
+X_train = diabetes_X[:-20]
+X_test = diabetes_X[-20:]
+# Split the targets into training/testing sets
+y_train = diabetes.target[:-20]
+y_test = diabetes.target[-20:]
+# Train Linear Regression model
+sml.setSparkContext(sc)
+X = sml.matrix(X_train)
+y = sml.matrix(y_train)
+A = X.transpose().dot(X)
+b = X.transpose().dot(y)
+beta = sml.solve(A, b).toNumPyArray()
+y_predicted = X_test.dot(beta)
+print('Residual sum of squares: %.2f' % np.mean((y_predicted - y_test) ** 2)) 
+```
+
+Output:
+
+```bash
+Residual sum of squares: 25282.12
+```
+
+We can improve the residual error by adding an intercept and regularization parameter. To do so, we will use `mllearn` API described in the next section.
 
 ## Invoke SystemML's algorithms
- 
+
 SystemML also exposes a subpackage `mllearn`. This subpackage allows Python users to invoke SystemML algorithms
 using Scikit-learn or MLPipeline API.  
- 
-In the below example, we invoke SystemML's [Logistic Regression](https://apache.github.io/incubator-systemml/algorithms-classification.html#multinomial-logistic-regression)
-algorithm on scikit-learn's datasets.
 
-{% highlight python %}
+In the below example, we invoke SystemML's [Linear Regression](https://apache.github.io/incubator-systemml/algorithms-regression.html#linear-regression)
+algorithm.
+ 
+```python
+import numpy as np
+from sklearn import datasets
+from SystemML.mllearn import LinearRegression
+from pyspark.sql import SQLContext
+# Load the diabetes dataset
+diabetes = datasets.load_diabetes()
+# Use only one feature
+diabetes_X = diabetes.data[:, np.newaxis, 2]
+# Split the data into training/testing sets
+X_train = diabetes_X[:-20]
+X_test = diabetes_X[-20:]
+# Split the targets into training/testing sets
+y_train = diabetes.target[:-20]
+y_test = diabetes.target[-20:]
+# Create linear regression object
+regr = LinearRegression(sqlCtx, fit_intercept=True, C=1, solver='direct-solve')
+# Train the model using the training sets
+regr.fit(X_train, y_train)
+y_predicted = regr.predict(X_test)
+print('Residual sum of squares: %.2f' % np.mean((y_predicted - y_test) ** 2)) 
+```
+
+Output:
+
+```bash
+Residual sum of squares: 6991.17
+```
+
+As expected, by adding intercept and regularizer the residual error drops significantly.
+
+Here is another example that where we invoke SystemML's [Logistic Regression](https://apache.github.io/incubator-systemml/algorithms-classification.html#multinomial-logistic-regression)
+algorithm on digits datasets.
+
+```python
 # Scikit-learn way
 from sklearn import datasets, neighbors
 from SystemML.mllearn import LogisticRegression
-from pyspark.sql import SQLContext
+import SystemML as sml
+from pyspark.sql import DataFrame, SQLContext
+import pandas as pd
 sqlCtx = SQLContext(sc)
 digits = datasets.load_digits()
-X_digits = digits.data
-y_digits = digits.target + 1
-n_samples = len(X_digits)
-X_train = X_digits[:.9 * n_samples]
-y_train = y_digits[:.9 * n_samples]
-X_test = X_digits[.9 * n_samples:]
-y_test = y_digits[.9 * n_samples:]
+df_train = sml.convertToLabeledDF(sqlCtx, X_digits[:.9 * n_samples], y_digits[:.9 * n_samples])
+df_test = sml.convertToLabeledDF(sqlCtx, X_digits[.9 * n_samples:], y_digits[.9 * n_samples:])
 logistic = LogisticRegression(sqlCtx)
-print('LogisticRegression score: %f' % logistic.fit(X_train, y_train).score(X_test, y_test))
-{% endhighlight %}
+print('LogisticRegression score: %f' % logistic.fit(df_train).score(X_test, y_test))
+```
 
-In the below example, we demonstrate how the same class can be support DataFrame (as well as Spark's
+In the below example, we demonstrate how the same `LogisticRegression` class can be support DataFrame (as well as Spark's
 MLPipelines), thus allowing it to fit seamlessly into large data pipelines.
 
-{% highlight python %}
+```python
 # MLPipeline way
 from pyspark.ml import Pipeline
 from SystemML.mllearn import LogisticRegression
@@ -177,7 +276,7 @@ test = sqlCtx.createDataFrame([
     (15L, "apache hadoop")], ["id", "text"])
 prediction = model.transform(test)
 prediction.show()
-{% endhighlight %}
+```
 
 ## Invoking DML/PyDML scripts using MLContext
 

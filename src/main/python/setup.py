@@ -22,9 +22,10 @@
 
 from setuptools import setup, find_packages
 import os
+import time
 
-VERSION = '0.11.0.dev0'
-
+VERSION = '0.11.0.dev1'
+RELEASED_DATE = str(time.strftime("%m/%d/%Y"))
 numpy_version = '1.8.2'
 scipy_version = '0.15.1'
 REQUIRED_PACKAGES = [
@@ -42,6 +43,7 @@ setup(
     version=VERSION,
     description='Apache SystemML is a distributed and declarative machine learning platform.',
     long_description='''
+    
     Apache SystemML is an effort undergoing incubation at the Apache Software Foundation (ASF), sponsored by the Apache Incubator PMC.
     While incubation status is not necessarily a reflection of the completeness
     or stability of the code, it does indicate that the project has yet to be
@@ -50,7 +52,8 @@ setup(
     Apache SystemML provides declarative large-scale machine learning (ML) that aims at 
     flexible specification of ML algorithms and automatic generation of hybrid runtime 
     plans ranging from single-node, in-memory computations, to distributed computations on Apache Hadoop and Apache Spark.
-    ''',
+    
+    Note: This is not a released version and was built with SNAPSHOT available on the date''' + RELEASED_DATE,
     url='http://systemml.apache.org/',
     author='Apache SystemML',
     author_email='dev@systemml.incubator.apache.org',

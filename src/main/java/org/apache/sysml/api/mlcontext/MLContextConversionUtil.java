@@ -42,6 +42,7 @@ import org.apache.sysml.api.MLContextProxy;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheException;
+import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.spark.data.RDDObject;
@@ -54,6 +55,7 @@ import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt.Da
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt.DataFrameToBinaryBlockFunction;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
+import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.IJV;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -181,6 +183,38 @@ public class MLContextConversionUtil {
 			matrixObject.acquireModify(matrixBlock);
 			matrixObject.release();
 			return matrixObject;
+		} catch (CacheException e) {
+			throw new MLContextException("Exception converting MatrixBlock to MatrixObject", e);
+		}
+	}
+
+	/**
+	 * Convert a {@code FrameBlock} to a {@code FrameObject}.
+	 * 
+	 * @param variableName
+	 *            name of the variable associated with the frame
+	 * @param frameBlock
+	 *            frame as a FrameBlock
+	 * @param matrixMetadata
+	 *            the matrix metadata
+	 * @return the {@code FrameBlock} converted to a {@code FrameObject}
+	 */
+	public static FrameObject frameBlockToframeObject(String variableName, FrameBlock frameBlock,
+			MatrixMetadata matrixMetadata) {
+		try {
+			MatrixCharacteristics matrixCharacteristics;
+			if (matrixMetadata != null) {
+				matrixCharacteristics = matrixMetadata.asMatrixCharacteristics();
+			} else {
+				matrixCharacteristics = new MatrixCharacteristics();
+			}
+			MatrixFormatMetaData mtd = new MatrixFormatMetaData(matrixCharacteristics,
+					OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
+			FrameObject frameObject = new FrameObject(MLContextUtil.scratchSpace() + "/"
+					+ variableName, mtd);
+			frameObject.acquireModify(frameBlock);
+			frameObject.release();
+			return frameObject;
 		} catch (CacheException e) {
 			throw new MLContextException("Exception converting MatrixBlock to MatrixObject", e);
 		}

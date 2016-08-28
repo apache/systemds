@@ -68,6 +68,8 @@ DML is a high-level R-like declarative language for machine learning.
 PyDML is a high-level Python-like declarative language for machine learning.
 * [Beginner's Guide to DML and PyDML](beginners-guide-to-dml-and-pydml) -
 An introduction to the basics of DML and PyDML.
+* [Beginner's Guide for Python users](beginners-guide-python) -
+Beginner's Guide for Python users.
 
 ## ML Algorithms
 

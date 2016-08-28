@@ -32,7 +32,7 @@ public class IntegerDivide extends ValueFunction
 		// nothing to do here
 	}
 	
-	public static IntegerDivide getIntegerDivideFnObject() {
+	public static IntegerDivide getFnObject() {
 		if ( singleObj == null )
 			singleObj = new IntegerDivide();
 		return singleObj;

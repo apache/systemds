@@ -77,7 +77,7 @@ public class ElementwiseModulusTest extends AutomatedTestBase
 		double[][] a = getRandomMatrix(rows, cols, -5, 5, 1, -1);
 		double[][] b = getNonZeroRandomMatrix(rows, cols, -20, 20, -1);
 		double[][] c = new double[rows][cols];
-		Modulus fnmod = Modulus.getModulusFnObject();
+		Modulus fnmod = Modulus.getFnObject();
 		for(int i = 0; i < rows; i++) {
 			for(int j = 0; j < cols; j++) {
 				c[i][j] = fnmod.execute(a[i][j], b[i][j]);
@@ -106,7 +106,7 @@ public class ElementwiseModulusTest extends AutomatedTestBase
 		double[][] a = getRandomMatrix(rows, cols, -5, 5, 0.05, -1);
 		double[][] b = getNonZeroRandomMatrix(rows, cols, -20, 20, -1);
 		double[][] c = new double[rows][cols];
-		Modulus fnmod = Modulus.getModulusFnObject();
+		Modulus fnmod = Modulus.getFnObject();
 		for(int i = 0; i < rows; i++) {
 			for(int j = 0; j < cols; j++) {
 				c[i][j] = fnmod.execute(a[i][j], b[i][j]);
@@ -279,7 +279,7 @@ public class ElementwiseModulusTest extends AutomatedTestBase
 		double[][] a = getRandomMatrix(rows, cols, -1, 1, 0.5, -1);
 		double[][] b = getRandomMatrix(rows, cols, -1, 1, 0.5, -1);
 		double[][] c = new double[rows][cols];
-		Modulus fnmod = Modulus.getModulusFnObject();
+		Modulus fnmod = Modulus.getFnObject();
 		for(int i = 0; i < rows; i++) {
 			for(int j = 0; j < cols; j++) {
 				c[i][j] = fnmod.execute(a[i][j], b[i][j]);

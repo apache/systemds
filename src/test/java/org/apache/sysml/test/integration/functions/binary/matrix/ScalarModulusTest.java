@@ -73,7 +73,7 @@ public class ScalarModulusTest extends AutomatedTestBase
 		double[][] vector = getNonZeroRandomMatrix(rows, 1, 1, 5, -1);
 		double[][] computedVectorLeft = new double[rows][1];
 		double[][] computedVectorRight = new double[rows][1];
-		Modulus fnmod = Modulus.getModulusFnObject();
+		Modulus fnmod = Modulus.getFnObject();
 		for(int i = 0; i < rows; i++) {
 			computedVectorLeft[i][0] = fnmod.execute(vector[i][0], divisor);
 			computedVectorRight[i][0] = fnmod.execute(dividend, vector[i][0]);
@@ -119,7 +119,7 @@ public class ScalarModulusTest extends AutomatedTestBase
 		double[][] vector = getNonZeroRandomMatrix(rows, 1, 1, 5, -1);
 		double[][] computedVectorLeft = new double[rows][1];
 		double[][] computedVectorRight = new double[rows][1];
-		Modulus fnmod = Modulus.getModulusFnObject();
+		Modulus fnmod = Modulus.getFnObject();
 		for(int i = 0; i < rows; i++) {
 			computedVectorLeft[i][0] = fnmod.execute(vector[i][0], divisor);
 			computedVectorRight[i][0] = fnmod.execute(dividend, vector[i][0]);
@@ -165,7 +165,7 @@ public class ScalarModulusTest extends AutomatedTestBase
 		double[][] vector = getNonZeroRandomMatrix(rows, 1, 1, 5, -1);
 		double[][] computedVectorLeft = new double[rows][1];
 		double[][] computedVectorRight = new double[rows][1];
-		Modulus fnmod = Modulus.getModulusFnObject();
+		Modulus fnmod = Modulus.getFnObject();
 		for(int i = 0; i < rows; i++) {
 			computedVectorLeft[i][0] = fnmod.execute(vector[i][0], divisor);
 			computedVectorRight[i][0] = fnmod.execute(dividend, vector[i][0]);
@@ -211,7 +211,7 @@ public class ScalarModulusTest extends AutomatedTestBase
 		double[][] vector = getNonZeroRandomMatrix(rows, 1, 1, 5, -1);
 		double[][] computedVectorLeft = new double[rows][1];
 		double[][] computedVectorRight = new double[rows][1];
-		Modulus fnmod = Modulus.getModulusFnObject();
+		Modulus fnmod = Modulus.getFnObject();
 		for(int i = 0; i < rows; i++) {
 			computedVectorLeft[i][0] = fnmod.execute(vector[i][0], divisor);
 			computedVectorRight[i][0] = fnmod.execute(dividend, vector[i][0]);
@@ -257,7 +257,7 @@ public class ScalarModulusTest extends AutomatedTestBase
 		double[][] vector = getRandomMatrix(rows, 1, 1, 5, 0.05, -1);
 		double[][] computedVectorLeft = new double[rows][1];
 		double[][] computedVectorRight = new double[rows][1];
-		Modulus fnmod = Modulus.getModulusFnObject();
+		Modulus fnmod = Modulus.getFnObject();
 		for(int i = 0; i < rows; i++) {
 			computedVectorLeft[i][0] = fnmod.execute(vector[i][0], divisor);
 			computedVectorRight[i][0] = fnmod.execute(dividend, vector[i][0]);
@@ -303,7 +303,7 @@ public class ScalarModulusTest extends AutomatedTestBase
 		double[][] vector = getRandomMatrix(rows, 1, 1, 5, 0.5, -1);
 		double[][] computedVectorLeft = new double[rows][1];
 		double[][] computedVectorRight = new double[rows][1];
-		Modulus fnmod = Modulus.getModulusFnObject();
+		Modulus fnmod = Modulus.getFnObject();
 		for(int i = 0; i < rows; i++) {
 			computedVectorLeft[i][0] = fnmod.execute(vector[i][0], divisor);
 			computedVectorRight[i][0] = fnmod.execute(dividend, vector[i][0]);

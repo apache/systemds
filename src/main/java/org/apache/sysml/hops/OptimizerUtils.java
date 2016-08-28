@@ -41,6 +41,8 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.apache.sysml.runtime.functionobjects.IntegerDivide;
+import org.apache.sysml.runtime.functionobjects.Modulus;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -1423,6 +1425,9 @@ public class OptimizerUtils
 				case MIN:   ret = Math.min(lret, rret); break;
 				case MAX:   ret = Math.max(lret, rret); break;
 				case POW:   ret = Math.pow(lret, rret); break; 
+				//special mod / inddiv for runtime consistency
+				case MODULUS: ret = Modulus.getFnObject().execute(lret, rret); break;
+				case INTDIV:  ret = IntegerDivide.getFnObject().execute(lret, rret); break; 
 				default: ret = Double.MAX_VALUE;
 			}
 		}
@@ -1464,6 +1469,9 @@ public class OptimizerUtils
 				case MIN:   ret = Math.min(lret, rret); break;
 				case MAX:   ret = Math.max(lret, rret); break;
 				case POW:   ret = Math.pow(lret, rret); break; 
+				//special mod / inddiv for runtime consistency
+				case MODULUS: ret = Modulus.getFnObject().execute(lret, rret); break;
+				case INTDIV:  ret = IntegerDivide.getFnObject().execute(lret, rret); break; 
 				default: ret = Double.MAX_VALUE;
 			}
 		}

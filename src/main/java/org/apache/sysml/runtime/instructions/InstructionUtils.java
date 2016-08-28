@@ -617,9 +617,9 @@ public class InstructionUtils
 		else if(opcode.equalsIgnoreCase("/"))
 			return new BinaryOperator(Divide.getDivideFnObject());
 		else if(opcode.equalsIgnoreCase("%%"))
-			return new BinaryOperator(Modulus.getModulusFnObject());
+			return new BinaryOperator(Modulus.getFnObject());
 		else if(opcode.equalsIgnoreCase("%/%"))
-			return new BinaryOperator(IntegerDivide.getIntegerDivideFnObject());
+			return new BinaryOperator(IntegerDivide.getFnObject());
 		else if(opcode.equalsIgnoreCase("^"))
 			return new BinaryOperator(Power.getPowerFnObject());
 		else if ( opcode.equalsIgnoreCase("^2") )
@@ -689,13 +689,13 @@ public class InstructionUtils
 		}  
 		else if ( opcode.equalsIgnoreCase("%%") ) {
 			if(arg1IsScalar)
-				return new LeftScalarOperator(Modulus.getModulusFnObject(), constant);
-			else return new RightScalarOperator(Modulus.getModulusFnObject(), constant);
+				return new LeftScalarOperator(Modulus.getFnObject(), constant);
+			else return new RightScalarOperator(Modulus.getFnObject(), constant);
 		}
 		else if ( opcode.equalsIgnoreCase("%/%") ) {
 			if(arg1IsScalar)
-				return new LeftScalarOperator(IntegerDivide.getIntegerDivideFnObject(), constant);
-			else return new RightScalarOperator(IntegerDivide.getIntegerDivideFnObject(), constant);
+				return new LeftScalarOperator(IntegerDivide.getFnObject(), constant);
+			else return new RightScalarOperator(IntegerDivide.getFnObject(), constant);
 		}
 		else if ( opcode.equalsIgnoreCase("^") ){
 			if(arg1IsScalar)
@@ -805,9 +805,9 @@ public class InstructionUtils
 		else if(opcode.equalsIgnoreCase("/") || opcode.equalsIgnoreCase("map/"))
 			return new BinaryOperator(Divide.getDivideFnObject());
 		else if(opcode.equalsIgnoreCase("%%") || opcode.equalsIgnoreCase("map%%"))
-			return new BinaryOperator(Modulus.getModulusFnObject());
+			return new BinaryOperator(Modulus.getFnObject());
 		else if(opcode.equalsIgnoreCase("%/%") || opcode.equalsIgnoreCase("map%/%"))
-			return new BinaryOperator(IntegerDivide.getIntegerDivideFnObject());
+			return new BinaryOperator(IntegerDivide.getFnObject());
 		else if(opcode.equalsIgnoreCase("^") || opcode.equalsIgnoreCase("map^"))
 			return new BinaryOperator(Power.getPowerFnObject());
 		else if ( opcode.equalsIgnoreCase("^2") )

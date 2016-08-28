@@ -36,10 +36,10 @@ public class Modulus extends ValueFunction
 	private IntegerDivide _intdiv = null;
 	
 	private Modulus() {
-		_intdiv = IntegerDivide.getIntegerDivideFnObject();
+		_intdiv = IntegerDivide.getFnObject();
 	}
 	
-	public static Modulus getModulusFnObject() {
+	public static Modulus getFnObject() {
 		if ( singleObj == null )
 			singleObj = new Modulus();
 		return singleObj;

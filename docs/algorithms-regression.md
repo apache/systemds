@@ -82,9 +82,9 @@ efficient when the number of features $m$ is relatively small
 <div class="codetabs">
 <div data-lang="Python" markdown="1">
 {% highlight python %}
-import SystemML as sml
+from SystemML.mllearn import LinearRegression
 # C = 1/reg
-lr = sml.mllearn.LinearRegression(sqlCtx, fit_intercept=True, C=1.0, solver='direct-solve')
+lr = LinearRegression(sqlCtx, fit_intercept=True, C=1.0, solver='direct-solve')
 # X_train, y_train and X_test can be NumPy matrices or Pandas DataFrame or SciPy Sparse Matrix
 y_test = lr.fit(X_train, y_train)
 # df_train is DataFrame that contains two columns: "features" (of type Vector) and "label". df_test is a DataFrame that contains the column "features"
@@ -124,9 +124,9 @@ y_test = lr.fit(df_train)
 <div class="codetabs">
 <div data-lang="Python" markdown="1">
 {% highlight python %}
-import SystemML as sml
+from SystemML.mllearn import LinearRegression
 # C = 1/reg
-lr = sml.mllearn.LinearRegression(sqlCtx, fit_intercept=True, max_iter=100, tol=0.000001, C=1.0, solver='newton-cg')
+lr = LinearRegression(sqlCtx, fit_intercept=True, max_iter=100, tol=0.000001, C=1.0, solver='newton-cg')
 # X_train, y_train and X_test can be NumPy matrices or Pandas DataFrames or SciPy Sparse matrices
 y_test = lr.fit(X_train, y_train)
 # df_train is DataFrame that contains two columns: "features" (of type Vector) and "label". df_test is a DataFrame that contains the column "features"
@@ -222,7 +222,7 @@ SystemML Language Reference for details.
 {% highlight python %}
 import numpy as np
 from sklearn import datasets
-import SystemML as sml
+from SystemML.mllearn import LinearRegression
 from pyspark.sql import SQLContext
 # Load the diabetes dataset
 diabetes = datasets.load_diabetes()
@@ -235,7 +235,7 @@ diabetes_X_test = diabetes_X[-20:]
 diabetes_y_train = diabetes.target[:-20]
 diabetes_y_test = diabetes.target[-20:]
 # Create linear regression object
-regr = sml.mllearn.LinearRegression(sqlCtx, solver='direct-solve')
+regr = LinearRegression(sqlCtx, solver='direct-solve')
 # Train the model using the training sets
 regr.fit(diabetes_X_train, diabetes_y_train)
 # The mean square error
@@ -277,7 +277,7 @@ print("Residual sum of squares: %.2f" % np.mean((regr.predict(diabetes_X_test) -
 {% highlight python %}
 import numpy as np
 from sklearn import datasets
-import SystemML as sml
+from SystemML.mllearn import LinearRegression
 from pyspark.sql import SQLContext
 # Load the diabetes dataset
 diabetes = datasets.load_diabetes()
@@ -290,7 +290,7 @@ diabetes_X_test = diabetes_X[-20:]
 diabetes_y_train = diabetes.target[:-20]
 diabetes_y_test = diabetes.target[-20:]
 # Create linear regression object
-regr = sml.mllearn.LinearRegression(sqlCtx, solver='newton-cg')
+regr = LinearRegression(sqlCtx, solver='newton-cg')
 # Train the model using the training sets
 regr.fit(diabetes_X_train, diabetes_y_train)
 # The mean square error

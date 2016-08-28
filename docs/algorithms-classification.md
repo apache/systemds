@@ -129,9 +129,9 @@ Eqs. (1) and (2).
 <div class="codetabs">
 <div data-lang="Python" markdown="1">
 {% highlight python %}
-import SystemML as sml
+from SystemML.mllearn import LogisticRegression
 # C = 1/reg
-logistic = sml.mllearn.LogisticRegression(sqlCtx, fit_intercept=True, max_iter=100, max_inner_iter=0, tol=0.000001, C=1.0)
+logistic = LogisticRegression(sqlCtx, fit_intercept=True, max_iter=100, max_inner_iter=0, tol=0.000001, C=1.0)
 # X_train, y_train and X_test can be NumPy matrices or Pandas DataFrame or SciPy Sparse Matrix
 y_test = logistic.fit(X_train, y_train).predict(X_test)
 # df_train is DataFrame that contains two columns: "features" (of type Vector) and "label". df_test is a DataFrame that contains the column "features"
@@ -229,7 +229,7 @@ SystemML Language Reference for details.
 {% highlight python %}
 # Scikit-learn way
 from sklearn import datasets, neighbors
-import SystemML as sml
+from SystemML.mllearn import LogisticRegression
 from pyspark.sql import SQLContext
 sqlCtx = SQLContext(sc)
 digits = datasets.load_digits()
@@ -240,12 +240,12 @@ X_train = X_digits[:.9 * n_samples]
 y_train = y_digits[:.9 * n_samples]
 X_test = X_digits[.9 * n_samples:]
 y_test = y_digits[.9 * n_samples:]
-logistic = sml.mllearn.LogisticRegression(sqlCtx)
+logistic = LogisticRegression(sqlCtx)
 print('LogisticRegression score: %f' % logistic.fit(X_train, y_train).score(X_test, y_test))
 
 # MLPipeline way
 from pyspark.ml import Pipeline
-import SystemML as sml
+from SystemML.mllearn import LogisticRegression
 from pyspark.ml.feature import HashingTF, Tokenizer
 from pyspark.sql import SQLContext
 sqlCtx = SQLContext(sc)
@@ -265,7 +265,7 @@ training = sqlCtx.createDataFrame([
 ], ["id", "text", "label"])
 tokenizer = Tokenizer(inputCol="text", outputCol="words")
 hashingTF = HashingTF(inputCol="words", outputCol="features", numFeatures=20)
-lr = sml.mllearn.LogisticRegression(sqlCtx)
+lr = LogisticRegression(sqlCtx)
 pipeline = Pipeline(stages=[tokenizer, hashingTF, lr])
 model = pipeline.fit(training)
 test = sqlCtx.createDataFrame([
@@ -458,9 +458,9 @@ support vector machine (`y` with domain size `2`).
 <div class="codetabs">
 <div data-lang="Python" markdown="1">
 {% highlight python %}
-import SystemML as sml
+from SystemML.mllearn import SVM
 # C = 1/reg
-svm = sml.mllearn.SVM(sqlCtx, fit_intercept=True, max_iter=100, tol=0.000001, C=1.0, is_multi_class=False)
+svm = SVM(sqlCtx, fit_intercept=True, max_iter=100, tol=0.000001, C=1.0, is_multi_class=False)
 # X_train, y_train and X_test can be NumPy matrices or Pandas DataFrame or SciPy Sparse Matrix
 y_test = svm.fit(X_train, y_train)
 # df_train is DataFrame that contains two columns: "features" (of type Vector) and "label". df_test is a DataFrame that contains the column "features"
@@ -714,9 +714,9 @@ class labels.
 <div class="codetabs">
 <div data-lang="Python" markdown="1">
 {% highlight python %}
-import SystemML as sml
+from SystemML.mllearn import SVM
 # C = 1/reg
-svm = sml.mllearn.SVM(sqlCtx, fit_intercept=True, max_iter=100, tol=0.000001, C=1.0, is_multi_class=True)
+svm = SVM(sqlCtx, fit_intercept=True, max_iter=100, tol=0.000001, C=1.0, is_multi_class=True)
 # X_train, y_train and X_test can be NumPy matrices or Pandas DataFrame or SciPy Sparse Matrix
 y_test = svm.fit(X_train, y_train)
 # df_train is DataFrame that contains two columns: "features" (of type Vector) and "label". df_test is a DataFrame that contains the column "features"
@@ -852,7 +852,7 @@ SystemML Language Reference for details.
 {% highlight python %}
 # Scikit-learn way
 from sklearn import datasets, neighbors
-import SystemML as sml
+from SystemML.mllearn import SVM
 from pyspark.sql import SQLContext
 sqlCtx = SQLContext(sc)
 digits = datasets.load_digits()
@@ -863,12 +863,12 @@ X_train = X_digits[:.9 * n_samples]
 y_train = y_digits[:.9 * n_samples]
 X_test = X_digits[.9 * n_samples:]
 y_test = y_digits[.9 * n_samples:]
-svm = sml.mllearn.SVM(sqlCtx, is_multi_class=True)
+svm = SVM(sqlCtx, is_multi_class=True)
 print('LogisticRegression score: %f' % svm.fit(X_train, y_train).score(X_test, y_test))
 
 # MLPipeline way
 from pyspark.ml import Pipeline
-import SystemML as sml
+from SystemML.mllearn import SVM
 from pyspark.ml.feature import HashingTF, Tokenizer
 from pyspark.sql import SQLContext
 sqlCtx = SQLContext(sc)
@@ -888,7 +888,7 @@ training = sqlCtx.createDataFrame([
 ], ["id", "text", "label"])
 tokenizer = Tokenizer(inputCol="text", outputCol="words")
 hashingTF = HashingTF(inputCol="words", outputCol="features", numFeatures=20)
-svm = sml.mllearn.SVM(sqlCtx, is_multi_class=True)
+svm = SVM(sqlCtx, is_multi_class=True)
 pipeline = Pipeline(stages=[tokenizer, hashingTF, svm])
 model = pipeline.fit(training)
 test = sqlCtx.createDataFrame([
@@ -1026,8 +1026,8 @@ applicable when all features are counts of categorical values.
 <div class="codetabs">
 <div data-lang="Python" markdown="1">
 {% highlight python %}
-import SystemML as sml
-nb = sml.mllearn.NaiveBayes(sqlCtx, laplace=1.0)
+from SystemML.mllearn import NaiveBayes
+nb = NaiveBayes(sqlCtx, laplace=1.0)
 # X_train, y_train and X_test can be NumPy matrices or Pandas DataFrame or SciPy Sparse Matrix
 y_test = nb.fit(X_train, y_train)
 # df_train is DataFrame that contains two columns: "features" (of type Vector) and "label". df_test is a DataFrame that contains the column "features"
@@ -1149,7 +1149,7 @@ SystemML Language Reference for details.
 {% highlight python %}
 from sklearn.datasets import fetch_20newsgroups
 from sklearn.feature_extraction.text import TfidfVectorizer
-import SystemML as sml
+from SystemML.mllearn import NaiveBayes
 from sklearn import metrics
 from pyspark.sql import SQLContext
 sqlCtx = SQLContext(sc)
@@ -1160,7 +1160,7 @@ vectorizer = TfidfVectorizer()
 # Both vectors and vectors_test are SciPy CSR matrix
 vectors = vectorizer.fit_transform(newsgroups_train.data)
 vectors_test = vectorizer.transform(newsgroups_test.data)
-nb = sml.mllearn.NaiveBayes(sqlCtx)
+nb = NaiveBayes(sqlCtx)
 nb.fit(vectors, newsgroups_train.target)
 pred = nb.predict(vectors_test)
 metrics.f1_score(newsgroups_test.target, pred, average='weighted')

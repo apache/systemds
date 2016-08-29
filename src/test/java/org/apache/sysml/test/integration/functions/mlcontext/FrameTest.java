@@ -224,13 +224,13 @@ public class FrameTest extends AutomatedTestBase
 		{
 			//Create DataFrame for input A 
 			SQLContext sqlContext = new SQLContext(sc);
-			StructType dfSchemaA = UtilFunctions.convertFrameSchemaToDFSchema(lschema);
-			JavaRDD<Row> rowRDDA = UtilFunctions.getRowRDD(jsc, input("A"), DataExpression.DEFAULT_DELIM_DELIMITER, lschema);
+			StructType dfSchemaA = FrameRDDConverterUtils.convertFrameSchemaToDFSchema(lschema);
+			JavaRDD<Row> rowRDDA = FrameRDDConverterUtils.getRowRDD(jsc, input("A"), DataExpression.DEFAULT_DELIM_DELIMITER, lschema);
 			dfA = sqlContext.createDataFrame(rowRDDA, dfSchemaA);
 			
 			//Create DataFrame for input B 
-			StructType dfSchemaB = UtilFunctions.convertFrameSchemaToDFSchema(lschemaB);
-			JavaRDD<Row> rowRDDB = UtilFunctions.getRowRDD(jsc, input("B"), DataExpression.DEFAULT_DELIM_DELIMITER, lschemaB);
+			StructType dfSchemaB = FrameRDDConverterUtils.convertFrameSchemaToDFSchema(lschemaB);
+			JavaRDD<Row> rowRDDB = FrameRDDConverterUtils.getRowRDD(jsc, input("B"), DataExpression.DEFAULT_DELIM_DELIMITER, lschemaB);
 			dfB = sqlContext.createDataFrame(rowRDDB, dfSchemaB);
 		}
 

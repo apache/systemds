@@ -27,6 +27,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Arrays;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -69,6 +71,8 @@ import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class FrameRDDConverterUtils 
 {
+	private static final Log LOG = LogFactory.getLog(FrameRDDConverterUtils.class.getName());
+	
 	//=====================================
 	// CSV <--> Binary block
 
@@ -363,10 +367,77 @@ public class FrameRDDConverterUtils
 		JavaRDD<Row> rowRDD = in.flatMap(new BinaryBlockToDataFrameFunction());
 				
 		SQLContext sqlContext = new SQLContext(sc);
-		StructType dfSchema = UtilFunctions.convertFrameSchemaToDFSchema(schema);
+		StructType dfSchema = convertFrameSchemaToDFSchema(schema);
 		DataFrame df = sqlContext.createDataFrame(rowRDD, dfSchema);
 	
 		return df;
+	}
+	
+	
+	/*
+	 * This function will convert Frame schema into DataFrame schema 
+	 * 
+	 *  @param	schema
+	 *  		Frame schema in the form of List<ValueType>
+	 *  @return
+	 *  		Returns the DataFrame schema (StructType)
+	 */
+	public static StructType convertFrameSchemaToDFSchema(List<ValueType> lschema)
+	{
+		// Generate the schema based on the string of schema
+		List<StructField> fields = new ArrayList<StructField>();
+		
+		int i = 1;
+		for (ValueType schema : lschema) {
+			org.apache.spark.sql.types.DataType dataType = DataTypes.StringType;
+			switch(schema) {
+				case STRING:  dataType = DataTypes.StringType; break;
+				case DOUBLE:  dataType = DataTypes.DoubleType; break;
+				case INT:     dataType = DataTypes.LongType; break;
+				case BOOLEAN: dataType = DataTypes.BooleanType; break;
+				default:
+					LOG.warn("Using default type String for " + schema.toString());
+			}
+			fields.add(DataTypes.createStructField("C"+i++, dataType, true));
+		}
+		
+		return DataTypes.createStructType(fields);
+	}
+	
+	/* 
+	 * It will return JavaRDD<Row> based on csv data input file.
+	 */
+	public static JavaRDD<Row> getRowRDD(JavaSparkContext sc, String fnameIn, String delim, List<ValueType> schema)
+	{
+		// Load a text file and convert each line to a java rdd.
+		JavaRDD<String> dataRdd = sc.textFile(fnameIn);
+		return dataRdd.map(new RowGenerator(schema, delim));
+	}
+	
+	/* 
+	 * Row Generator class based on individual line in CSV file.
+	 */
+	private static class RowGenerator implements Function<String,Row> 
+	{
+		private static final long serialVersionUID = -6736256507697511070L;
+
+		private List<ValueType> _schema = null;
+		private String _delim = null; 
+		
+		public RowGenerator(List<ValueType> schema, String delim) {
+			_schema = schema;
+			_delim = delim;
+		}		
+		 
+		@Override
+		public Row call(String record) throws Exception {
+		      String[] fields = IOUtilFunctions.splitCSV(record, _delim);
+		      Object[] objects = new Object[fields.length]; 
+		      for (int i=0; i<fields.length; i++) {
+			      objects[i] = UtilFunctions.stringToObject(_schema.get(i), fields[i]);
+		      }
+		      return RowFactory.create(objects);
+		}
 	}
 	
 

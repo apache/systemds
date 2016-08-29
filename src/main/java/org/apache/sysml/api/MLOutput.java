@@ -79,25 +79,17 @@ public class MLOutput {
 	@SuppressWarnings("unchecked")
 	public JavaPairRDD<MatrixIndexes,MatrixBlock> getBinaryBlockedRDD(String varName) throws DMLRuntimeException {
 		if(_outputs.containsKey(varName)) {
-			JavaPairRDD<?,?> tmp = _outputs.get(varName);
-			if (tmp.first()._2() instanceof MatrixBlock)
-				return (JavaPairRDD<MatrixIndexes,MatrixBlock>)tmp;
-			else
-				return null;
+			return (JavaPairRDD<MatrixIndexes,MatrixBlock>) _outputs.get(varName);
 		}
-		throw new DMLRuntimeException("Variable " + varName + " not found in the output symbol table.");
+		throw new DMLRuntimeException("Variable " + varName + " not found in the outputs.");
 	}
 	
 	@SuppressWarnings("unchecked")
 	public JavaPairRDD<Long,FrameBlock> getFrameBinaryBlockedRDD(String varName) throws DMLRuntimeException {
 		if(_outputs.containsKey(varName)) {
-			JavaPairRDD<?,?> tmp = _outputs.get(varName);
-			if (tmp.first()._2() instanceof FrameBlock)
-				return (JavaPairRDD<Long,FrameBlock>)tmp;
-			else
-				return null;
+			return (JavaPairRDD<Long,FrameBlock>)_outputs.get(varName);
 		}
-		throw new DMLRuntimeException("Variable " + varName + " not found in the output symbol table.");
+		throw new DMLRuntimeException("Variable " + varName + " not found in the outputs.");
 	}
 	
 	public MatrixCharacteristics getMatrixCharacteristics(String varName) throws DMLRuntimeException {

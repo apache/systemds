@@ -515,9 +515,7 @@ public final class MLContextUtil {
 	 * @return the default matrix block size
 	 */
 	public static int defaultBlockSize() {
-		DMLConfig conf = ConfigurationManager.getDMLConfig();
-		int blockSize = conf.getIntValue(DMLConfig.DEFAULT_BLOCK_SIZE);
-		return blockSize;
+		return ConfigurationManager.getBlocksize();
 	}
 
 	/**
@@ -526,9 +524,7 @@ public final class MLContextUtil {
 	 * @return the lcoation of the scratch space directory
 	 */
 	public static String scratchSpace() {
-		DMLConfig conf = ConfigurationManager.getDMLConfig();
-		String scratchSpace = conf.getTextValue(DMLConfig.SCRATCH_SPACE);
-		return scratchSpace;
+		return ConfigurationManager.getScratchSpace(); 
 	}
 
 	/**

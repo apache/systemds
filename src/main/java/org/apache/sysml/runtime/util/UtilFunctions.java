@@ -23,14 +23,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.api.java.function.Function;
-import org.apache.spark.sql.Row;
-import org.apache.spark.sql.RowFactory;
-import org.apache.spark.sql.types.DataTypes;
-import org.apache.spark.sql.types.StructField;
-import org.apache.spark.sql.types.StructType;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
@@ -623,80 +615,4 @@ public class UtilFunctions
 	
 		return in1.getDataType();
 	}
-	
-	/*
-	 * This function will convert Frame schema into DataFrame schema 
-	 * 
-	 *  @param	schema
-	 *  		Frame schema in the form of List<ValueType>
-	 *  @return
-	 *  		Returns the DataFrame schema (StructType)
-	 */
-	public static StructType convertFrameSchemaToDFSchema(List<ValueType> lschema)
-	{
-		// Generate the schema based on the string of schema
-		List<StructField> fields = new ArrayList<StructField>();
-		
-		int i = 1;
-		for (ValueType schema : lschema)
-		{
-			org.apache.spark.sql.types.DataType dataType = DataTypes.StringType;
-			switch(schema)
-			{
-				case STRING:
-					dataType = DataTypes.StringType;
-					break;
-				case DOUBLE:
-					dataType = DataTypes.DoubleType;
-					break;
-				case INT:
-					dataType = DataTypes.LongType;
-					break;
-				case BOOLEAN:
-					dataType = DataTypes.BooleanType;
-					break;
-				default:
-					System.out.println("Default schema type is String.");
-			}
-			fields.add(DataTypes.createStructField("C"+i++, dataType, true));
-		}
-		
-		return DataTypes.createStructType(fields);
-	}
-	
-	/* 
-	 * It will return JavaRDD<Row> based on csv data input file.
-	 */
-	public static JavaRDD<Row> getRowRDD(JavaSparkContext sc, String fnameIn, String separator, List<ValueType> schema)
-	{
-		// Load a text file and convert each line to a java rdd.
-		JavaRDD<String> dataRdd = sc.textFile(fnameIn);
-		return dataRdd.map(new RowGenerator(schema));
-	}
-	
-	/* 
-	 * Row Generator class based on individual line in CSV file.
-	 */
-	private static class RowGenerator implements Function<String,Row> 
-	{
-		private static final long serialVersionUID = -6736256507697511070L;
-
-		List<ValueType> _schema = null;
-		 
-		public RowGenerator(List<ValueType> schema)
-		{
-			_schema = schema;
-		}		
-		 
-		@Override
-		public Row call(String record) throws Exception {
-		      String[] fields = record.split(",");
-		      Object[] objects = new Object[fields.length]; 
-		      for (int i=0; i<fields.length; i++) {
-			      objects[i] = UtilFunctions.stringToObject(_schema.get(i), fields[i]);
-		      }
-		      return RowFactory.create(objects);
-		}
-	}
-	
 }

@@ -138,6 +138,14 @@ y_test = logistic.fit(X_train, y_train).predict(X_test)
 y_test = logistic.fit(df_train).transform(df_test)
 {% endhighlight %}
 </div>
+<div data-lang="Scala" markdown="1">
+{% highlight scala %}
+import org.apache.sysml.api.ml.LogisticRegression
+val lr = new LogisticRegression("logReg", sc).setIcpt(0).setMaxOuterIter(100).setMaxInnerIter(0).setRegParam(0.000001).setTol(0.000001)
+val model = lr.fit(X_train_df)
+val prediction = model.transform(X_test_df)
+{% endhighlight %}
+</div>
 <div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f MultiLogReg.dml
                             -nvargs X=<file>
@@ -274,6 +282,38 @@ test = sqlCtx.createDataFrame([
     (14L, "mapreduce spark"),
     (15L, "apache hadoop")], ["id", "text"])
 prediction = model.transform(test)
+prediction.show()
+{% endhighlight %}
+</div>
+<div data-lang="Scala" markdown="1">
+{% highlight scala %}
+import org.apache.spark.ml.feature.{HashingTF, Tokenizer}
+import org.apache.sysml.api.ml.LogisticRegression
+import org.apache.spark.ml.Pipeline
+val training = sqlContext.createDataFrame(Seq(
+    ("a b c d e spark", 1.0),
+    ("b d", 2.0),
+    ("spark f g h", 1.0),
+    ("hadoop mapreduce", 2.0),
+    ("b spark who", 1.0),
+    ("g d a y", 2.0),
+    ("spark fly", 1.0),
+    ("was mapreduce", 2.0),
+    ("e spark program", 1.0),
+    ("a e c l", 2.0),
+    ("spark compile", 1.0),
+    ("hadoop software", 2.0))).toDF("text", "label")
+val tokenizer = new Tokenizer().setInputCol("text").setOutputCol("words")
+val hashingTF = new HashingTF().setNumFeatures(20).setInputCol(tokenizer.getOutputCol).setOutputCol("features")
+val lr = new LogisticRegression("logReg", sc)
+val pipeline = new Pipeline().setStages(Array(tokenizer, hashingTF, lr))
+val model = pipeline.fit(training)
+val test = sqlContext.createDataFrame(Seq(
+    ("spark i j k", 1.0),
+    ("l m n", 2.0),
+    ("mapreduce spark", 1.0),
+    ("apache hadoop", 2.0))).toDF("text", "trueLabel")
+val prediction = model.transform(test)
 prediction.show()
 {% endhighlight %}
 </div>
@@ -467,6 +507,13 @@ y_test = svm.fit(X_train, y_train)
 y_test = svm.fit(df_train)
 {% endhighlight %}
 </div>
+<div data-lang="Scala" markdown="1">
+{% highlight scala %}
+import org.apache.sysml.api.ml.SVM
+val svm = new SVM("svm", sc, isMultiClass=false).setIcpt(0).setMaxIter(100).setRegParam(0.000001).setTol(0.000001)
+val model = svm.fit(X_train_df)
+{% endhighlight %}
+</div>
 <div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f l2-svm.dml
                             -nvargs X=<file>
@@ -508,6 +555,11 @@ y_test = svm.fit(df_train)
 y_test = svm.predict(X_test)
 # df_test is a DataFrame that contains the column "features" of type Vector
 y_test = svm.transform(df_test)
+{% endhighlight %}
+</div>
+<div data-lang="Scala" markdown="1">
+{% highlight scala %}
+val prediction = model.transform(X_test_df)
 {% endhighlight %}
 </div>
 <div data-lang="Hadoop" markdown="1">
@@ -723,6 +775,13 @@ y_test = svm.fit(X_train, y_train)
 y_test = svm.fit(df_train)
 {% endhighlight %}
 </div>
+<div data-lang="Scala" markdown="1">
+{% highlight scala %}
+import org.apache.sysml.api.ml.SVM
+val svm = new SVM("svm", sc, isMultiClass=true).setIcpt(0).setMaxIter(100).setRegParam(0.000001).setTol(0.000001)
+val model = svm.fit(X_train_df)
+{% endhighlight %}
+</div>
 <div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f m-svm.dml
                             -nvargs X=<file>
@@ -764,6 +823,11 @@ y_test = svm.fit(df_train)
 y_test = svm.predict(X_test)
 # df_test is a DataFrame that contains the column "features" of type Vector
 y_test = svm.transform(df_test)
+{% endhighlight %}
+</div>
+<div data-lang="Scala" markdown="1">
+{% highlight scala %}
+val prediction = model.transform(X_test_df)
 {% endhighlight %}
 </div>
 <div data-lang="Hadoop" markdown="1">
@@ -897,6 +961,38 @@ test = sqlCtx.createDataFrame([
     (14L, "mapreduce spark"),
     (15L, "apache hadoop")], ["id", "text"])
 prediction = model.transform(test)
+prediction.show()
+{% endhighlight %}
+</div>
+<div data-lang="Scala" markdown="1">
+{% highlight scala %}
+import org.apache.spark.ml.feature.{HashingTF, Tokenizer}
+import org.apache.sysml.api.ml.SVM
+import org.apache.spark.ml.Pipeline
+val training = sqlContext.createDataFrame(Seq(
+    ("a b c d e spark", 1.0),
+    ("b d", 2.0),
+    ("spark f g h", 1.0),
+    ("hadoop mapreduce", 2.0),
+    ("b spark who", 1.0),
+    ("g d a y", 2.0),
+    ("spark fly", 1.0),
+    ("was mapreduce", 2.0),
+    ("e spark program", 1.0),
+    ("a e c l", 2.0),
+    ("spark compile", 1.0),
+    ("hadoop software", 2.0))).toDF("text", "label")
+val tokenizer = new Tokenizer().setInputCol("text").setOutputCol("words")
+val hashingTF = new HashingTF().setNumFeatures(20).setInputCol(tokenizer.getOutputCol).setOutputCol("features")
+val svm = new SVM("svm", sc, isMultiClass=true)
+val pipeline = new Pipeline().setStages(Array(tokenizer, hashingTF, svm))
+val model = pipeline.fit(training)
+val test = sqlContext.createDataFrame(Seq(
+    ("spark i j k", 1.0),
+    ("l m n", 2.0),
+    ("mapreduce spark", 1.0),
+    ("apache hadoop", 2.0))).toDF("text", "trueLabel")
+val prediction = model.transform(test)
 prediction.show()
 {% endhighlight %}
 </div>
@@ -1034,6 +1130,13 @@ y_test = nb.fit(X_train, y_train)
 y_test = nb.fit(df_train)
 {% endhighlight %}
 </div>
+<div data-lang="Scala" markdown="1">
+{% highlight scala %}
+import org.apache.sysml.api.ml.NaiveBayes
+val nb = new NaiveBayes("naiveBayes", sc, isMultiClass=true).setLaplace(1.0)
+val model = nb.fit(X_train_df)
+{% endhighlight %}
+</div>
 <div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f naive-bayes.dml
                             -nvargs X=<file>
@@ -1071,6 +1174,11 @@ y_test = nb.fit(df_train)
 y_test = nb.predict(X_test)
 # df_test is a DataFrame that contains the column "features" of type Vector
 y_test = nb.transform(df_test)
+{% endhighlight %}
+</div>
+<div data-lang="Scala" markdown="1">
+{% highlight scala %}
+val prediction = model.transform(X_test_df)
 {% endhighlight %}
 </div>
 <div data-lang="Hadoop" markdown="1">

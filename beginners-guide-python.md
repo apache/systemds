@@ -309,11 +309,11 @@ prediction.show()
 
 ## Invoking DML/PyDML scripts using MLContext
 
-TODO: This is work in progress.
+The below example demonstrates how to invoke the algorithm [scripts/algorithms/MultiLogReg.dml](https://github.com/apache/incubator-systemml/blob/master/scripts/algorithms/MultiLogReg.dml)
+using Python [MLContext API](https://apache.github.io/incubator-systemml/spark-mlcontext-programming-guide).
 
 ```python
 from sklearn import datasets, neighbors
-from SystemML.mllearn import LogisticRegression
 from pyspark.sql import DataFrame, SQLContext
 import SystemML as sml
 import pandas as pd
@@ -328,7 +328,6 @@ X_df = sqlCtx.createDataFrame(pd.DataFrame(X_digits[:.9 * n_samples]))
 y_df = sqlCtx.createDataFrame(pd.DataFrame(y_digits[:.9 * n_samples]))
 ml = sml.MLContext(sc)
 script = os.path.join(os.environ['SYSTEMML_HOME'], 'scripts', 'algorithms', 'MultiLogReg.dml')
-script = sml.dml(script).input(X=X_df, Y_vec=y_df).out("B_out")
-# .input($X=' ', $Y=' ', $B=' ')
+script = sml.dml(script).input(X=X_df, Y_vec=y_df).input(**{"$X": ' ', "$Y": ' ', "$B": ' '}).out("B_out")
 beta = ml.execute(script).getNumPyArray('B_out')
 ```

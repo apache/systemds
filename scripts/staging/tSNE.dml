@@ -24,6 +24,12 @@
 
 X = read($X)
 
+ndim = ifdef($ndim, 2)
+perplexity = ifdef($perplexity, 30)
+lr = ifdef($rate, 300.)
+momentum = ifdef($momentum, 0.9)
+iter = ifdef($iterations, 1000)
+
 distance_matrix = function(matrix[double] X)
   return (matrix[double] out) {
     n = nrow(X)
@@ -31,8 +37,9 @@ distance_matrix = function(matrix[double] X)
     out = - 2*X %*% t(X) + s + t(s)
   }
 
-x2p = function(matrix[double] X, double tol, double perplexity)
+x2p = function(matrix[double] X, double perplexity)
   return(matrix[double] P) {
+    tol = 1.0e-5
     INF = 1.0e20
     n = nrow(X)
     D = distance_matrix(X)
@@ -46,14 +53,14 @@ x2p = function(matrix[double] X, double tol, double perplexity)
       betamax = INF
       Hdiff = INF
       itr = 0
-      if (i %% 100 == 0) {
+      if (i %% 500 == 0) {
         print(i)
       }
 
       Di = D[i,]
       while (abs(Hdiff) > tol & itr < 50) {
         Pi = exp(-Di * beta[i,1])
-        P[1,i] = 0.
+        Pi[1,i] = 0.
         sum_Pi = sum(Pi)
 
         H = log(sum_Pi) + beta[i,1] * sum(Di * Pi) / sum_Pi
@@ -83,17 +90,17 @@ x2p = function(matrix[double] X, double tol, double perplexity)
     P = P / sum(P)
   }
 
-tsne = function(matrix[double] X, int reduced_dims, int initial_dims, int perplexity)
+tsne = function(matrix[double] X, int reduced_dims, int perplexity,
+  double lr, double momentum, int max_iter)
   return(matrix[double] Y, matrix[double] C) {
     d = reduced_dims
     n = nrow(X)
 
-    max_iter = 2000
-    eta = 500
-    P = x2p(X, 1.0e-5, 20.0)
+    P = x2p(X, perplexity)
     P = P*4
     Y = rand(rows=n, cols=d, pdf="normal")
-    C = matrix(0, rows=max_iter, cols=1)
+    dY = matrix(0, rows=n, cols=d)
+    C = matrix(0, rows=max_iter/100, cols=1)
     ZERODIAG = (diag(matrix(-1, rows=n, cols=1)) + 1)
 
     for (itr in 1:max_iter) {
@@ -103,14 +110,13 @@ tsne = function(matrix[double] X, int reduced_dims, int initial_dims, int perple
       Q = Z/sum(Z)
       W = (P - Q)*Z
       sumW = rowSums(W)
-      grad_C = Y * sumW - W %*% Y
-      Y = Y - eta*grad_C
+      g = Y * sumW - W %*% Y
+      dY = momentum*dY - lr*g
+      Y = Y + dY
       Y = Y - colMeans(Y)
 
-      if (itr%%50 == 0) {
-        #C[itr,] = sum(P * log(pmax(P, 1e-12) / pmax(Q, 1e-12)))
-        #print(as.scalar(C[itr,1]))
-        print(itr)
+      if (itr%%100 == 0) {
+        C[itr/100,] = sum(P * log(pmax(P, 1e-12) / pmax(Q, 1e-12)))
       }
       if (itr == 100) {
         P = P/4
@@ -118,7 +124,7 @@ tsne = function(matrix[double] X, int reduced_dims, int initial_dims, int perple
     }
   }
 
-[Y, C] = tsne(X, 2, 50, 20.0)
+[Y, C] = tsne(X, ndim, perplexity, lr, momentum, iter)
 
-write(Y, $Y)
-write(C, $C)
+write(Y, "")
+write(C, "")

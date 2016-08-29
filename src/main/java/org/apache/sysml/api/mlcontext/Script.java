@@ -29,6 +29,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
+import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.instructions.cp.Data;
 
@@ -66,6 +67,10 @@ public class Script {
 	 * The input variables.
 	 */
 	private Set<String> inputVariables = new LinkedHashSet<String>();
+	/**
+	 * The input variable type (if its frame of matrix).
+	 */
+	private Map<String, Boolean> inputVariablesType = new LinkedHashMap<String, Boolean>();
 	/**
 	 * The input matrix metadata if present.
 	 */
@@ -410,6 +415,23 @@ public class Script {
 	 * @return {@code this} Script object to allow chaining of methods
 	 */
 	public Script in(String name, Object value, MatrixMetadata matrixMetadata) {
+		return in(name, value, matrixMetadata, false);
+	}	
+	/**
+	 * Register an input (parameter ($) or variable) with optional matrix
+	 * metadata.
+	 *
+	 * @param name
+	 *            name of the input
+	 * @param value
+	 *            value of the input
+	 * @param matrixMetadata
+	 *            optional matrix metadata
+	 * @param bFrame
+	 *            if input is of type frame
+	 * @return {@code this} Script object to allow chaining of methods
+	 */
+	public Script in(String name, Object value, MatrixMetadata matrixMetadata, boolean bFrame) {
 		MLContextUtil.checkInputValueType(name, value);
 		if (inputs == null) {
 			inputs = new LinkedHashMap<String, Object>();
@@ -423,11 +445,15 @@ public class Script {
 			}
 			inputParameters.put(name, value);
 		} else {
-			Data data = MLContextUtil.convertInputType(name, value, matrixMetadata);
+			Data data = MLContextUtil.convertInputType(name, value, matrixMetadata, bFrame);
 			if (data != null) {
 				symbolTable.put(name, data);
 				inputVariables.add(name);
-				if (data instanceof MatrixObject) {
+				if (inputVariablesType == null) {
+					inputVariablesType = new LinkedHashMap<String, Boolean>();
+				}
+				inputVariablesType.put(name, new Boolean(bFrame));
+				if (data instanceof MatrixObject || data instanceof FrameObject) {
 					if (matrixMetadata != null) {
 						inputMatrixMetadata.put(name, matrixMetadata);
 					}
@@ -531,6 +557,7 @@ public class Script {
 		inputs.clear();
 		inputParameters.clear();
 		inputVariables.clear();
+		inputVariablesType.clear();
 		inputMatrixMetadata.clear();
 	}
 
@@ -633,7 +660,10 @@ public class Script {
 				} else if (MLContextUtil.isBasicType(inValue)) {
 					sb.append(" = read('', data_type='scalar');\n");
 				} else {
-					sb.append(" = read('');\n");
+					if(inputVariablesType.get(in).booleanValue())
+						sb.append(" = read('', data_type='frame');\n");
+					else
+						sb.append(" = read('');\n");
 				}
 			} else if (isPYDML()) {
 				if (inValue instanceof String) {
@@ -642,7 +672,10 @@ public class Script {
 				} else if (MLContextUtil.isBasicType(inValue)) {
 					sb.append(" = load('', data_type='scalar')\n");
 				} else {
-					sb.append(" = load('')\n");
+					if(inputVariablesType.get(in).booleanValue())
+						sb.append(" = load('', data_type='frame')\n");
+					else
+						sb.append(" = load('')\n");
 				}
 			}
 

@@ -142,6 +142,21 @@ public class MLResults {
 	}
 
 	/**
+	 * Obtain an output as a {@code FrameObject}
+	 *
+	 * @param outputName
+	 *            the name of the output
+	 * @return the output as a {@code FrameObject}
+	 */
+	public FrameObject getFrameObject(String outputName) {
+		Data data = getData(outputName);
+		if (!(data instanceof FrameObject)) {
+			throw new MLContextException("Variable '" + outputName + "' not a frame");
+		}
+		return (FrameObject) data;
+	}
+
+	/**
 	 * Obtain an output as a two-dimensional {@code double} array.
 	 *
 	 * @param outputName
@@ -408,6 +423,19 @@ public class MLResults {
 		MatrixObject mo = getMatrixObject(outputName);
 		DataFrame df = MLContextConversionUtil.matrixObjectToDataFrame(mo, sparkExecutionContext, true);
 		df = df.sort("ID").drop("ID");
+		return df;
+	}
+
+	/**
+	 * Obtain an output as a {@code DataFrame} without an ID column.
+	 *
+	 * @param outputName
+	 *            the name of the output
+	 * @return the output as a {@code DataFrame} without an ID column
+	 */
+	public DataFrame getFrameDataFrame(String outputName) {
+		FrameObject mo = getFrameObject(outputName);
+		DataFrame df = MLContextConversionUtil.frameObjectToDataFrame(mo, sparkExecutionContext);
 		return df;
 	}
 

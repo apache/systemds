@@ -518,7 +518,9 @@ public class MLContextTest extends AutomatedTestBase {
 		StructType schema = DataTypes.createStructType(fields);
 		DataFrame dataFrame = sqlContext.createDataFrame(javaRddRow, schema);
 
-		Script script = dml("print('sum: ' + sum(M));").in("M", dataFrame);
+		MatrixMetadata mm = new MatrixMetadata(MatrixFormat.DF_DOUBLES_WITH_NO_ID_COLUMN);
+
+		Script script = dml("print('sum: ' + sum(M));").in("M", dataFrame, mm);
 		setExpectedStdOut("sum: 450.0");
 		ml.execute(script);
 	}
@@ -542,7 +544,9 @@ public class MLContextTest extends AutomatedTestBase {
 		StructType schema = DataTypes.createStructType(fields);
 		DataFrame dataFrame = sqlContext.createDataFrame(javaRddRow, schema);
 
-		Script script = pydml("print('sum: ' + sum(M))").in("M", dataFrame);
+		MatrixMetadata mm = new MatrixMetadata(MatrixFormat.DF_DOUBLES_WITH_NO_ID_COLUMN);
+
+		Script script = pydml("print('sum: ' + sum(M))").in("M", dataFrame, mm);
 		setExpectedStdOut("sum: 450.0");
 		ml.execute(script);
 	}
@@ -2065,12 +2069,200 @@ public class MLContextTest extends AutomatedTestBase {
 		ml.execute(script);
 	}
 
+	@Test
+	public void testDataFrameSumDMLDoublesWithNoIDColumnNoFormatSpecified() {
+		System.out.println("MLContextTest - DataFrame sum DML, doubles with no ID column, no format specified");
+
+		List<String> list = new ArrayList<String>();
+		list.add("2,2,2");
+		list.add("3,3,3");
+		list.add("4,4,4");
+		JavaRDD<String> javaRddString = sc.parallelize(list);
+
+		JavaRDD<Row> javaRddRow = javaRddString.map(new CommaSeparatedValueStringToRow());
+		SQLContext sqlContext = new SQLContext(sc);
+		List<StructField> fields = new ArrayList<StructField>();
+		fields.add(DataTypes.createStructField("C1", DataTypes.StringType, true));
+		fields.add(DataTypes.createStructField("C2", DataTypes.StringType, true));
+		fields.add(DataTypes.createStructField("C3", DataTypes.StringType, true));
+		StructType schema = DataTypes.createStructType(fields);
+		DataFrame dataFrame = sqlContext.createDataFrame(javaRddRow, schema);
+
+		Script script = dml("print('sum: ' + sum(M));").in("M", dataFrame);
+		setExpectedStdOut("sum: 27.0");
+		ml.execute(script);
+	}
+
+	@Test
+	public void testDataFrameSumPYDMLDoublesWithNoIDColumnNoFormatSpecified() {
+		System.out.println("MLContextTest - DataFrame sum PYDML, doubles with no ID column, no format specified");
+
+		List<String> list = new ArrayList<String>();
+		list.add("2,2,2");
+		list.add("3,3,3");
+		list.add("4,4,4");
+		JavaRDD<String> javaRddString = sc.parallelize(list);
+
+		JavaRDD<Row> javaRddRow = javaRddString.map(new CommaSeparatedValueStringToRow());
+		SQLContext sqlContext = new SQLContext(sc);
+		List<StructField> fields = new ArrayList<StructField>();
+		fields.add(DataTypes.createStructField("C1", DataTypes.StringType, true));
+		fields.add(DataTypes.createStructField("C2", DataTypes.StringType, true));
+		fields.add(DataTypes.createStructField("C3", DataTypes.StringType, true));
+		StructType schema = DataTypes.createStructType(fields);
+		DataFrame dataFrame = sqlContext.createDataFrame(javaRddRow, schema);
+
+		Script script = pydml("print('sum: ' + sum(M))").in("M", dataFrame);
+		setExpectedStdOut("sum: 27.0");
+		ml.execute(script);
+	}
+
+	@Test
+	public void testDataFrameSumDMLDoublesWithIDColumnNoFormatSpecified() {
+		System.out.println("MLContextTest - DataFrame sum DML, doubles with ID column, no format specified");
+
+		List<String> list = new ArrayList<String>();
+		list.add("1,2,2,2");
+		list.add("2,3,3,3");
+		list.add("3,4,4,4");
+		JavaRDD<String> javaRddString = sc.parallelize(list);
+
+		JavaRDD<Row> javaRddRow = javaRddString.map(new CommaSeparatedValueStringToRow());
+		SQLContext sqlContext = new SQLContext(sc);
+		List<StructField> fields = new ArrayList<StructField>();
+		fields.add(DataTypes.createStructField("ID", DataTypes.StringType, true));
+		fields.add(DataTypes.createStructField("C1", DataTypes.StringType, true));
+		fields.add(DataTypes.createStructField("C2", DataTypes.StringType, true));
+		fields.add(DataTypes.createStructField("C3", DataTypes.StringType, true));
+		StructType schema = DataTypes.createStructType(fields);
+		DataFrame dataFrame = sqlContext.createDataFrame(javaRddRow, schema);
+
+		Script script = dml("print('sum: ' + sum(M));").in("M", dataFrame);
+		setExpectedStdOut("sum: 27.0");
+		ml.execute(script);
+	}
+
+	@Test
+	public void testDataFrameSumPYDMLDoublesWithIDColumnNoFormatSpecified() {
+		System.out.println("MLContextTest - DataFrame sum PYDML, doubles with ID column, no format specified");
+
+		List<String> list = new ArrayList<String>();
+		list.add("1,2,2,2");
+		list.add("2,3,3,3");
+		list.add("3,4,4,4");
+		JavaRDD<String> javaRddString = sc.parallelize(list);
+
+		JavaRDD<Row> javaRddRow = javaRddString.map(new CommaSeparatedValueStringToRow());
+		SQLContext sqlContext = new SQLContext(sc);
+		List<StructField> fields = new ArrayList<StructField>();
+		fields.add(DataTypes.createStructField("ID", DataTypes.StringType, true));
+		fields.add(DataTypes.createStructField("C1", DataTypes.StringType, true));
+		fields.add(DataTypes.createStructField("C2", DataTypes.StringType, true));
+		fields.add(DataTypes.createStructField("C3", DataTypes.StringType, true));
+		StructType schema = DataTypes.createStructType(fields);
+		DataFrame dataFrame = sqlContext.createDataFrame(javaRddRow, schema);
+
+		Script script = pydml("print('sum: ' + sum(M))").in("M", dataFrame);
+		setExpectedStdOut("sum: 27.0");
+		ml.execute(script);
+	}
+
+	@Test
+	public void testDataFrameSumDMLVectorWithIDColumnNoFormatSpecified() {
+		System.out.println("MLContextTest - DataFrame sum DML, vector with ID column, no format specified");
+
+		List<Tuple2<Double, Vector>> list = new ArrayList<Tuple2<Double, Vector>>();
+		list.add(new Tuple2<Double, Vector>(1.0, Vectors.dense(1.0, 2.0, 3.0)));
+		list.add(new Tuple2<Double, Vector>(2.0, Vectors.dense(4.0, 5.0, 6.0)));
+		list.add(new Tuple2<Double, Vector>(3.0, Vectors.dense(7.0, 8.0, 9.0)));
+		JavaRDD<Tuple2<Double, Vector>> javaRddTuple = sc.parallelize(list);
+
+		JavaRDD<Row> javaRddRow = javaRddTuple.map(new DoubleVectorRow());
+		SQLContext sqlContext = new SQLContext(sc);
+		List<StructField> fields = new ArrayList<StructField>();
+		fields.add(DataTypes.createStructField("ID", DataTypes.StringType, true));
+		fields.add(DataTypes.createStructField("C1", new VectorUDT(), true));
+		StructType schema = DataTypes.createStructType(fields);
+		DataFrame dataFrame = sqlContext.createDataFrame(javaRddRow, schema);
+
+		Script script = dml("print('sum: ' + sum(M));").in("M", dataFrame);
+		setExpectedStdOut("sum: 45.0");
+		ml.execute(script);
+	}
+
+	@Test
+	public void testDataFrameSumPYDMLVectorWithIDColumnNoFormatSpecified() {
+		System.out.println("MLContextTest - DataFrame sum PYDML, vector with ID column, no format specified");
+
+		List<Tuple2<Double, Vector>> list = new ArrayList<Tuple2<Double, Vector>>();
+		list.add(new Tuple2<Double, Vector>(1.0, Vectors.dense(1.0, 2.0, 3.0)));
+		list.add(new Tuple2<Double, Vector>(2.0, Vectors.dense(4.0, 5.0, 6.0)));
+		list.add(new Tuple2<Double, Vector>(3.0, Vectors.dense(7.0, 8.0, 9.0)));
+		JavaRDD<Tuple2<Double, Vector>> javaRddTuple = sc.parallelize(list);
+
+		JavaRDD<Row> javaRddRow = javaRddTuple.map(new DoubleVectorRow());
+		SQLContext sqlContext = new SQLContext(sc);
+		List<StructField> fields = new ArrayList<StructField>();
+		fields.add(DataTypes.createStructField("ID", DataTypes.StringType, true));
+		fields.add(DataTypes.createStructField("C1", new VectorUDT(), true));
+		StructType schema = DataTypes.createStructType(fields);
+		DataFrame dataFrame = sqlContext.createDataFrame(javaRddRow, schema);
+
+		Script script = dml("print('sum: ' + sum(M))").in("M", dataFrame);
+		setExpectedStdOut("sum: 45.0");
+		ml.execute(script);
+	}
+
+	@Test
+	public void testDataFrameSumDMLVectorWithNoIDColumnNoFormatSpecified() {
+		System.out.println("MLContextTest - DataFrame sum DML, vector with no ID column, no format specified");
+
+		List<Vector> list = new ArrayList<Vector>();
+		list.add(Vectors.dense(1.0, 2.0, 3.0));
+		list.add(Vectors.dense(4.0, 5.0, 6.0));
+		list.add(Vectors.dense(7.0, 8.0, 9.0));
+		JavaRDD<Vector> javaRddVector = sc.parallelize(list);
+
+		JavaRDD<Row> javaRddRow = javaRddVector.map(new VectorRow());
+		SQLContext sqlContext = new SQLContext(sc);
+		List<StructField> fields = new ArrayList<StructField>();
+		fields.add(DataTypes.createStructField("C1", new VectorUDT(), true));
+		StructType schema = DataTypes.createStructType(fields);
+		DataFrame dataFrame = sqlContext.createDataFrame(javaRddRow, schema);
+
+		Script script = dml("print('sum: ' + sum(M));").in("M", dataFrame);
+		setExpectedStdOut("sum: 45.0");
+		ml.execute(script);
+	}
+
+	@Test
+	public void testDataFrameSumPYDMLVectorWithNoIDColumnNoFormatSpecified() {
+		System.out.println("MLContextTest - DataFrame sum PYDML, vector with no ID column, no format specified");
+
+		List<Vector> list = new ArrayList<Vector>();
+		list.add(Vectors.dense(1.0, 2.0, 3.0));
+		list.add(Vectors.dense(4.0, 5.0, 6.0));
+		list.add(Vectors.dense(7.0, 8.0, 9.0));
+		JavaRDD<Vector> javaRddVector = sc.parallelize(list);
+
+		JavaRDD<Row> javaRddRow = javaRddVector.map(new VectorRow());
+		SQLContext sqlContext = new SQLContext(sc);
+		List<StructField> fields = new ArrayList<StructField>();
+		fields.add(DataTypes.createStructField("C1", new VectorUDT(), true));
+		StructType schema = DataTypes.createStructType(fields);
+		DataFrame dataFrame = sqlContext.createDataFrame(javaRddRow, schema);
+
+		Script script = dml("print('sum: ' + sum(M))").in("M", dataFrame);
+		setExpectedStdOut("sum: 45.0");
+		ml.execute(script);
+	}
 	// NOTE: Uncomment these tests once they work
 
 	// @SuppressWarnings({ "rawtypes", "unchecked" })
 	// @Test
 	// public void testInputTupleSeqWithAndWithoutMetadataDML() {
-	// System.out.println("MLContextTest - Tuple sequence with and without metadata DML");
+	// System.out.println("MLContextTest - Tuple sequence with and without
+	// metadata DML");
 	//
 	// List<String> list1 = new ArrayList<String>();
 	// list1.add("1,2");
@@ -2102,7 +2294,8 @@ public class MLContextTest extends AutomatedTestBase {
 	// @SuppressWarnings({ "rawtypes", "unchecked" })
 	// @Test
 	// public void testInputTupleSeqWithAndWithoutMetadataPYDML() {
-	// System.out.println("MLContextTest - Tuple sequence with and without metadata PYDML");
+	// System.out.println("MLContextTest - Tuple sequence with and without
+	// metadata PYDML");
 	//
 	// List<String> list1 = new ArrayList<String>();
 	// list1.add("1,2");

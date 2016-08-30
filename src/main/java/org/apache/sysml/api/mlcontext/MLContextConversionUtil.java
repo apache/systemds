@@ -38,6 +38,7 @@ import org.apache.spark.rdd.RDD;
 import org.apache.spark.sql.DataFrame;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SQLContext;
+import org.apache.spark.sql.types.StructType;
 import org.apache.sysml.api.MLContextProxy;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -107,14 +108,14 @@ public class MLContextConversionUtil {
 			if (matrixMetadata != null) {
 				matrixCharacteristics = matrixMetadata.asMatrixCharacteristics();
 			} else {
-				matrixCharacteristics = new MatrixCharacteristics(matrixBlock.getNumRows(),
-						matrixBlock.getNumColumns(), MLContextUtil.defaultBlockSize(), MLContextUtil.defaultBlockSize());
+				matrixCharacteristics = new MatrixCharacteristics(matrixBlock.getNumRows(), matrixBlock.getNumColumns(),
+						MLContextUtil.defaultBlockSize(), MLContextUtil.defaultBlockSize());
 			}
 
 			MatrixFormatMetaData meta = new MatrixFormatMetaData(matrixCharacteristics,
 					OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
-			MatrixObject matrixObject = new MatrixObject(ValueType.DOUBLE, MLContextUtil.scratchSpace() + "/"
-					+ variableName, meta);
+			MatrixObject matrixObject = new MatrixObject(ValueType.DOUBLE,
+					MLContextUtil.scratchSpace() + "/" + variableName, meta);
 			matrixObject.acquireModify(matrixBlock);
 			matrixObject.release();
 			return matrixObject;
@@ -176,10 +177,10 @@ public class MLContextConversionUtil {
 			} else {
 				matrixCharacteristics = new MatrixCharacteristics();
 			}
-			MatrixFormatMetaData mtd = new MatrixFormatMetaData(matrixCharacteristics,
-					OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
-			MatrixObject matrixObject = new MatrixObject(ValueType.DOUBLE, MLContextUtil.scratchSpace() + "/"
-					+ variableName, mtd);
+			MatrixFormatMetaData mtd = new MatrixFormatMetaData(matrixCharacteristics, OutputInfo.BinaryBlockOutputInfo,
+					InputInfo.BinaryBlockInputInfo);
+			MatrixObject matrixObject = new MatrixObject(ValueType.DOUBLE,
+					MLContextUtil.scratchSpace() + "/" + variableName, mtd);
 			matrixObject.acquireModify(matrixBlock);
 			matrixObject.release();
 			return matrixObject;
@@ -208,10 +209,9 @@ public class MLContextConversionUtil {
 			} else {
 				matrixCharacteristics = new MatrixCharacteristics();
 			}
-			MatrixFormatMetaData mtd = new MatrixFormatMetaData(matrixCharacteristics,
-					OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
-			FrameObject frameObject = new FrameObject(MLContextUtil.scratchSpace() + "/"
-					+ variableName, mtd);
+			MatrixFormatMetaData mtd = new MatrixFormatMetaData(matrixCharacteristics, OutputInfo.BinaryBlockOutputInfo,
+					InputInfo.BinaryBlockInputInfo);
+			FrameObject frameObject = new FrameObject(MLContextUtil.scratchSpace() + "/" + variableName, mtd);
 			frameObject.acquireModify(frameBlock);
 			frameObject.release();
 			return frameObject;
@@ -263,9 +263,9 @@ public class MLContextConversionUtil {
 
 		JavaPairRDD<MatrixIndexes, MatrixBlock> javaPairRdd = binaryBlocks.mapToPair(new CopyBlockPairFunction());
 
-		MatrixObject matrixObject = new MatrixObject(ValueType.DOUBLE, MLContextUtil.scratchSpace() + "/" + "temp_"
-				+ System.nanoTime(), new MatrixFormatMetaData(matrixCharacteristics, OutputInfo.BinaryBlockOutputInfo,
-				InputInfo.BinaryBlockInputInfo));
+		MatrixObject matrixObject = new MatrixObject(ValueType.DOUBLE,
+				MLContextUtil.scratchSpace() + "/" + "temp_" + System.nanoTime(), new MatrixFormatMetaData(
+						matrixCharacteristics, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
 		matrixObject.setRDDHandle(new RDDObject(javaPairRdd, variableName));
 		return matrixObject;
 	}
@@ -301,8 +301,8 @@ public class MLContextConversionUtil {
 		if (matrixMetadata == null) {
 			matrixMetadata = new MatrixMetadata();
 		}
-		JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlock = MLContextConversionUtil.dataFrameToBinaryBlocks(
-				dataFrame, matrixMetadata);
+		JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlock = MLContextConversionUtil.dataFrameToBinaryBlocks(dataFrame,
+				matrixMetadata);
 		MatrixObject matrixObject = MLContextConversionUtil.binaryBlocksToMatrixObject(variableName, binaryBlock,
 				matrixMetadata);
 		return matrixObject;
@@ -337,6 +337,8 @@ public class MLContextConversionUtil {
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> dataFrameToBinaryBlocks(DataFrame dataFrame,
 			MatrixMetadata matrixMetadata) {
 
+		determineMatrixFormatIfNeeded(dataFrame, matrixMetadata);
+
 		MatrixCharacteristics matrixCharacteristics;
 		if (matrixMetadata != null) {
 			matrixCharacteristics = matrixMetadata.asMatrixCharacteristics();
@@ -361,10 +363,54 @@ public class MLContextConversionUtil {
 
 		JavaRDD<Row> javaRDD = dataFrame.javaRDD();
 		JavaPairRDD<Row, Long> prepinput = javaRDD.zipWithIndex();
-		JavaPairRDD<MatrixIndexes, MatrixBlock> out = prepinput.mapPartitionsToPair(new DataFrameToBinaryBlockFunction(
-				matrixCharacteristics, isVectorBasedDataFrame));
+		JavaPairRDD<MatrixIndexes, MatrixBlock> out = prepinput
+				.mapPartitionsToPair(new DataFrameToBinaryBlockFunction(matrixCharacteristics, isVectorBasedDataFrame));
 		out = RDDAggregateUtils.mergeByKey(out);
 		return out;
+	}
+
+	/**
+	 * If the MatrixFormat of the DataFrame has not been explicitly specified,
+	 * attempt to determine the proper MatrixFormat.
+	 * 
+	 * @param dataFrame
+	 *            the Spark {@code DataFrame}
+	 * @param matrixMetadata
+	 *            the matrix metadata, if available
+	 */
+	public static void determineMatrixFormatIfNeeded(DataFrame dataFrame, MatrixMetadata matrixMetadata) {
+		MatrixFormat matrixFormat = matrixMetadata.getMatrixFormat();
+		if (matrixFormat != null) {
+			return;
+		}
+		StructType schema = dataFrame.schema();
+		boolean hasID = false;
+		try {
+			schema.fieldIndex("ID");
+			hasID = true;
+		} catch (IllegalArgumentException iae) {
+		}
+		Row firstRow = dataFrame.first();
+		MatrixFormat mf = null;
+		if (hasID) {
+			Object object = firstRow.get(1);
+			if (object instanceof Vector) {
+				mf = MatrixFormat.DF_VECTOR_WITH_ID_COLUMN;
+			} else {
+				mf = MatrixFormat.DF_DOUBLES_WITH_ID_COLUMN;
+			}
+		} else {
+			Object object = firstRow.get(0);
+			if (object instanceof Vector) {
+				mf = MatrixFormat.DF_VECTOR_WITH_NO_ID_COLUMN;
+			} else {
+				mf = MatrixFormat.DF_DOUBLES_WITH_NO_ID_COLUMN;
+			}
+		}
+		if (mf == null) {
+			throw new MLContextException("DataFrame format not recognized as an accepted SystemML MatrixFormat");
+		}
+		matrixMetadata.setMatrixFormat(mf);
 	}
 
 	/**
@@ -475,8 +521,8 @@ public class MLContextConversionUtil {
 		} else {
 			matrixCharacteristics = new MatrixCharacteristics();
 		}
-		MatrixObject matrixObject = new MatrixObject(ValueType.DOUBLE, null, new MatrixFormatMetaData(
-				matrixCharacteristics, OutputInfo.CSVOutputInfo, InputInfo.CSVInputInfo));
+		MatrixObject matrixObject = new MatrixObject(ValueType.DOUBLE, null,
+				new MatrixFormatMetaData(matrixCharacteristics, OutputInfo.CSVOutputInfo, InputInfo.CSVInputInfo));
 		JavaPairRDD<LongWritable, Text> javaPairRDD2 = javaPairRDD.mapToPair(new CopyTextInputFunction());
 		matrixObject.setRDDHandle(new RDDObject(javaPairRDD2, variableName));
 		return matrixObject;
@@ -747,7 +793,8 @@ public class MLContextConversionUtil {
 			matrixObject.release();
 			return list;
 		} catch (CacheException e) {
-			throw new MLContextException("Cache exception while converting matrix object to List<String> CSV format", e);
+			throw new MLContextException("Cache exception while converting matrix object to List<String> CSV format",
+					e);
 		}
 	}
 
@@ -800,7 +847,8 @@ public class MLContextConversionUtil {
 			matrixObject.release();
 			return list;
 		} catch (CacheException e) {
-			throw new MLContextException("Cache exception while converting matrix object to List<String> IJV format", e);
+			throw new MLContextException("Cache exception while converting matrix object to List<String> IJV format",
+					e);
 		}
 	}
 

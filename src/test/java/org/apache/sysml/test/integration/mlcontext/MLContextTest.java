@@ -69,7 +69,7 @@ import org.apache.sysml.api.mlcontext.Script;
 import org.apache.sysml.api.mlcontext.ScriptExecutor;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
-import org.apache.sysml.runtime.util.UtilFunctions;
+import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDConverterUtils;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -88,7 +88,7 @@ public class MLContextTest extends AutomatedTestBase {
 	protected final static String TEST_NAME = "MLContext";
 
 	public static enum SCRIPT_TYPE {DML, PYDML, SCALA};
-	public static enum IO_TYPE {ANY, FILE, JAVA_RDD, RDD, DATAFRAME};
+	public static enum IO_TYPE {ANY, FILE, JAVA_RDD_STR_CSV, JAVA_RDD_STR_IJV, RDD_STR_CSV, RDD_STR_IJV, DATAFRAME};
 
 	private static SparkConf conf;
 	private static JavaSparkContext sc;
@@ -2335,22 +2335,52 @@ public class MLContextTest extends AutomatedTestBase {
 	////////////////////////////////////////////
 	@Test
 	public void testFrameJavaRDD_CSV_DML() {
-		testFrame(MatrixFormat.CSV, SCRIPT_TYPE.DML, IO_TYPE.JAVA_RDD, IO_TYPE.ANY);
+		testFrame(MatrixFormat.CSV, SCRIPT_TYPE.DML, IO_TYPE.JAVA_RDD_STR_CSV, IO_TYPE.ANY);
+	}
+
+	@Test
+	public void testFrameJavaRDD_CSV_DML_OutJavaRddCSV() {
+		testFrame(MatrixFormat.CSV, SCRIPT_TYPE.DML, IO_TYPE.JAVA_RDD_STR_CSV, IO_TYPE.JAVA_RDD_STR_CSV);
 	}
 
 	@Test
 	public void testFrameJavaRDD_CSV_PYDML() {
-		testFrame(MatrixFormat.CSV, SCRIPT_TYPE.PYDML, IO_TYPE.JAVA_RDD, IO_TYPE.ANY);
+		testFrame(MatrixFormat.CSV, SCRIPT_TYPE.PYDML, IO_TYPE.JAVA_RDD_STR_CSV, IO_TYPE.ANY);
+	}
+
+	@Test
+	public void testFrameRDD_CSV_PYDML() {
+		testFrame(MatrixFormat.CSV, SCRIPT_TYPE.PYDML, IO_TYPE.RDD_STR_CSV, IO_TYPE.ANY);
+	}
+
+	@Test
+	public void testFrameJavaRDD_CSV_PYDML_OutRddIJV() {
+		testFrame(MatrixFormat.CSV, SCRIPT_TYPE.PYDML, IO_TYPE.JAVA_RDD_STR_CSV, IO_TYPE.RDD_STR_IJV);
 	}
 
 	@Test
 	public void testFrameJavaRDD_IJV_DML() {
-		testFrame(MatrixFormat.IJV, SCRIPT_TYPE.DML, IO_TYPE.JAVA_RDD, IO_TYPE.ANY);
+		testFrame(MatrixFormat.IJV, SCRIPT_TYPE.DML, IO_TYPE.JAVA_RDD_STR_IJV, IO_TYPE.ANY);
+	}
+
+	@Test
+	public void testFrameRDD_IJV_DML() {
+		testFrame(MatrixFormat.IJV, SCRIPT_TYPE.DML, IO_TYPE.RDD_STR_IJV, IO_TYPE.ANY);
+	}
+
+	@Test
+	public void testFrameJavaRDD_IJV_DML_OutRddCSV() {
+		testFrame(MatrixFormat.IJV, SCRIPT_TYPE.DML, IO_TYPE.JAVA_RDD_STR_IJV, IO_TYPE.RDD_STR_CSV);
 	}
 
 	@Test
 	public void testFrameJavaRDD_IJV_PYDML() {
-		testFrame(MatrixFormat.IJV, SCRIPT_TYPE.PYDML, IO_TYPE.JAVA_RDD, IO_TYPE.ANY);
+		testFrame(MatrixFormat.IJV, SCRIPT_TYPE.PYDML, IO_TYPE.JAVA_RDD_STR_IJV, IO_TYPE.ANY);
+	}
+
+	@Test
+	public void testFrameJavaRDD_IJV_PYDML_OutJavaRddIJV() {
+		testFrame(MatrixFormat.IJV, SCRIPT_TYPE.PYDML, IO_TYPE.JAVA_RDD_STR_IJV, IO_TYPE.JAVA_RDD_STR_IJV);
 	}
 
 	@Test
@@ -2383,11 +2413,10 @@ public class MLContextTest extends AutomatedTestBase {
 		testFrame(MatrixFormat.CSV, SCRIPT_TYPE.PYDML, IO_TYPE.DATAFRAME, IO_TYPE.ANY);
 	}
 
-// This case is not working, will fix it soon.
-//	@Test
-//	public void testFrameDataFrameOutDataFrame_CSV_DML() {
-//		testFrame(MatrixFormat.CSV, SCRIPT_TYPE.DML, IO_TYPE.DATAFRAME, IO_TYPE.DATAFRAME);
-//	}
+	@Test
+	public void testFrameDataFrameOutDataFrame_CSV_DML() {
+		testFrame(MatrixFormat.CSV, SCRIPT_TYPE.DML, IO_TYPE.DATAFRAME, IO_TYPE.DATAFRAME);
+	}
 
 
 
@@ -2451,9 +2480,9 @@ public class MLContextTest extends AutomatedTestBase {
 	
 				//Create DataFrame 
 				SQLContext sqlContext = new SQLContext(sc);
-				StructType dfSchemaA = UtilFunctions.convertFrameSchemaToDFSchema(lschemaA);
+				StructType dfSchemaA = FrameRDDConverterUtils.convertFrameSchemaToDFSchema(lschemaA);
 				DataFrame dataFrameA = sqlContext.createDataFrame(javaRddRowA, dfSchemaA);
-				StructType dfSchemaB = UtilFunctions.convertFrameSchemaToDFSchema(lschemaB);
+				StructType dfSchemaB = FrameRDDConverterUtils.convertFrameSchemaToDFSchema(lschemaB);
 				DataFrame dataFrameB = sqlContext.createDataFrame(javaRddRowB, dfSchemaB);
 				if (script_type == SCRIPT_TYPE.DML)
 					script = dml("A[2:3,2:4]=B;C=A[2:3,2:3]").in("A", dataFrameA, mmA, true).in("B", dataFrameB, mmB, true).out("A").out("C");
@@ -2463,13 +2492,27 @@ public class MLContextTest extends AutomatedTestBase {
 							// Value for ROW index gets incremented at script level to adjust index in PyDML, but not for Column Index 
 							.in("$X", 1).in("$Y", 3).in("$Z", 4).out("A").out("C");
 			} else {
-				if (script_type == SCRIPT_TYPE.DML)
-					script = dml("A[2:3,2:4]=B;C=A[2:3,2:3]").in("A", javaRDDA, mmA, true).in("B", javaRDDB, mmB, true).out("A").out("C");
-				else if (script_type == SCRIPT_TYPE.PYDML)
-					// DO NOT USE ; at the end of any statment, it throws NPE
-					script = pydml("A[$X:$Y,$X:$Z]=B\nC=A[$X:$Y,$X:$Y]").in("A", javaRDDA, mmA, true).in("B", javaRDDB, mmB, true)
-							// Value for ROW index gets incremented at script level to adjust index in PyDML, but not for Column Index 
-							.in("$X", 1).in("$Y", 3).in("$Z", 4).out("A").out("C");
+				if(inputType == IO_TYPE.JAVA_RDD_STR_CSV || inputType == IO_TYPE.JAVA_RDD_STR_IJV) {
+					if (script_type == SCRIPT_TYPE.DML)
+						script = dml("A[2:3,2:4]=B;C=A[2:3,2:3]").in("A", javaRDDA, mmA, true).in("B", javaRDDB, mmB, true).out("A").out("C");
+					else if (script_type == SCRIPT_TYPE.PYDML)
+						// DO NOT USE ; at the end of any statment, it throws NPE
+						script = pydml("A[$X:$Y,$X:$Z]=B\nC=A[$X:$Y,$X:$Y]").in("A", javaRDDA, mmA, true).in("B", javaRDDB, mmB, true)
+								// Value for ROW index gets incremented at script level to adjust index in PyDML, but not for Column Index 
+								.in("$X", 1).in("$Y", 3).in("$Z", 4).out("A").out("C");
+				} else if(inputType == IO_TYPE.RDD_STR_CSV || inputType == IO_TYPE.RDD_STR_IJV) {
+					RDD<String> rddA = JavaRDD.toRDD(javaRDDA);
+					RDD<String> rddB = JavaRDD.toRDD(javaRDDB);
+
+					if (script_type == SCRIPT_TYPE.DML)
+						script = dml("A[2:3,2:4]=B;C=A[2:3,2:3]").in("A", rddA, mmA, true).in("B", rddB, mmB, true).out("A").out("C");
+					else if (script_type == SCRIPT_TYPE.PYDML)
+						// DO NOT USE ; at the end of any statment, it throws NPE
+						script = pydml("A[$X:$Y,$X:$Z]=B\nC=A[$X:$Y,$X:$Y]").in("A", rddA, mmA, true).in("B", rddB, mmB, true)
+								// Value for ROW index gets incremented at script level to adjust index in PyDML, but not for Column Index 
+								.in("$X", 1).in("$Y", 3).in("$Z", 4).out("A").out("C");
+				}
+				
 			}
 
 		} else {	// Input type is file
@@ -2493,7 +2536,98 @@ public class MLContextTest extends AutomatedTestBase {
 
 		MLResults mlResults = ml.execute(script);
 		
-		if(outputType != IO_TYPE.DATAFRAME) {
+		if(outputType == IO_TYPE.JAVA_RDD_STR_CSV) {
+			
+			JavaRDD<String> javaRDDStringCSVA = mlResults.getFrameJavaRDDStringCSV("A", ",");
+			List<String> linesA = javaRDDStringCSVA.collect();
+			Assert.assertEquals("1,Str2,3.0,true", linesA.get(0));
+			Assert.assertEquals("4,Str12,13.0,true", linesA.get(1));
+			Assert.assertEquals("7,Str25,26.0,false", linesA.get(2));
+			
+			JavaRDD<String> javaRDDStringCSVC = mlResults.getFrameJavaRDDStringCSV("C", ",");
+			List<String> linesC = javaRDDStringCSVC.collect();
+			Assert.assertEquals("Str12,13.0", linesC.get(0));
+			Assert.assertEquals("Str25,26.0", linesC.get(1));
+		} else if(outputType == IO_TYPE.JAVA_RDD_STR_IJV) {
+			JavaRDD<String> javaRDDStringIJVA = mlResults.getFrameJavaRDDStringIJV("A");
+			List<String> linesA = javaRDDStringIJVA.collect();
+			Assert.assertEquals("1 1 1", linesA.get(0));
+			Assert.assertEquals("1 2 Str2", linesA.get(1));
+			Assert.assertEquals("1 3 3.0", linesA.get(2));
+			Assert.assertEquals("1 4 true", linesA.get(3));
+			Assert.assertEquals("2 1 4", linesA.get(4));
+			Assert.assertEquals("2 2 Str12", linesA.get(5));
+			Assert.assertEquals("2 3 13.0", linesA.get(6));
+			Assert.assertEquals("2 4 true", linesA.get(7));
+			
+			JavaRDD<String> javaRDDStringIJVC = mlResults.getFrameJavaRDDStringIJV("C");
+			List<String> linesC = javaRDDStringIJVC.collect();
+			Assert.assertEquals("1 1 Str12", linesC.get(0));
+			Assert.assertEquals("1 2 13.0", linesC.get(1));
+			Assert.assertEquals("2 1 Str25", linesC.get(2));
+			Assert.assertEquals("2 2 26.0", linesC.get(3));
+		} else if(outputType == IO_TYPE.RDD_STR_CSV) {
+			RDD<String> rddStringCSVA = mlResults.getFrameRDDStringCSV("A", ","); //TODO fix delimiter
+			Iterator<String> iteratorA = rddStringCSVA.toLocalIterator();
+			Assert.assertEquals("1,Str2,3.0,true", iteratorA.next());
+			Assert.assertEquals("4,Str12,13.0,true", iteratorA.next());
+			Assert.assertEquals("7,Str25,26.0,false", iteratorA.next());
+
+			RDD<String> rddStringCSVC = mlResults.getFrameRDDStringCSV("C", ","); //TODO fix delimiter
+			Iterator<String> iteratorC = rddStringCSVC.toLocalIterator();
+			Assert.assertEquals("Str12,13.0", iteratorC.next());
+			Assert.assertEquals("Str25,26.0", iteratorC.next());
+		} else if(outputType == IO_TYPE.RDD_STR_IJV) {
+			RDD<String> rddStringIJVA = mlResults.getFrameRDDStringIJV("A");
+			Iterator<String> iteratorA = rddStringIJVA.toLocalIterator();
+			Assert.assertEquals("1 1 1", iteratorA.next());
+			Assert.assertEquals("1 2 Str2", iteratorA.next());
+			Assert.assertEquals("1 3 3.0", iteratorA.next());
+			Assert.assertEquals("1 4 true", iteratorA.next());
+			Assert.assertEquals("2 1 4", iteratorA.next());
+			Assert.assertEquals("2 2 Str12", iteratorA.next());
+			Assert.assertEquals("2 3 13.0", iteratorA.next());
+			Assert.assertEquals("2 4 true", iteratorA.next());
+			Assert.assertEquals("3 1 7", iteratorA.next());
+			Assert.assertEquals("3 2 Str25", iteratorA.next());
+			Assert.assertEquals("3 3 26.0", iteratorA.next());
+			Assert.assertEquals("3 4 false", iteratorA.next());
+
+			RDD<String> rddStringIJVC = mlResults.getFrameRDDStringIJV("C");
+			Iterator<String> iteratorC = rddStringIJVC.toLocalIterator();
+			Assert.assertEquals("1 1 Str12", iteratorC.next());
+			Assert.assertEquals("1 2 13.0", iteratorC.next());
+			Assert.assertEquals("2 1 Str25", iteratorC.next());
+			Assert.assertEquals("2 2 26.0", iteratorC.next());
+
+		} else if(outputType == IO_TYPE.DATAFRAME) {
+		
+			DataFrame dataFrameA = mlResults.getFrameDataFrame("A");
+			List<Row> listAOut = dataFrameA.collectAsList();
+	
+			Row row1 = listAOut.get(0);
+			Assert.assertEquals("Mistmatch with expected value", "1", row1.getString(0));
+			Assert.assertEquals("Mistmatch with expected value", "Str2", row1.getString(1));
+			Assert.assertEquals("Mistmatch with expected value", "3.0", row1.getString(2));
+			Assert.assertEquals("Mistmatch with expected value", "true", row1.getString(3));
+	
+			Row row2 = listAOut.get(1);
+			Assert.assertEquals("Mistmatch with expected value", "4", row2.getString(0));
+			Assert.assertEquals("Mistmatch with expected value", "Str12", row2.getString(1));
+			Assert.assertEquals("Mistmatch with expected value", "13.0", row2.getString(2));
+			Assert.assertEquals("Mistmatch with expected value", "true", row2.getString(3));
+			
+			DataFrame dataFrameC = mlResults.getFrameDataFrame("C");
+			List<Row> listCOut = dataFrameC.collectAsList();
+
+			Row row3 = listCOut.get(0);
+			Assert.assertEquals("Mistmatch with expected value", "Str12", row3.getString(0));
+			Assert.assertEquals("Mistmatch with expected value", "13.0", row3.getString(1));
+
+			Row row4 = listCOut.get(1);
+			Assert.assertEquals("Mistmatch with expected value", "Str25", row4.getString(0));
+			Assert.assertEquals("Mistmatch with expected value", "26.0", row4.getString(1));
+		} else {
 			String[][] frameA = mlResults.getFrame("A");
 			Assert.assertEquals("Str2", frameA[0][1]);
 			Assert.assertEquals("3.0", frameA[0][2]);
@@ -2506,41 +2640,6 @@ public class MLContextTest extends AutomatedTestBase {
 			Assert.assertEquals("Str25", frameC[1][0]);
 			Assert.assertEquals("13.0", frameC[0][1]);
 			Assert.assertEquals("26.0", frameC[1][1]);
-		} else {
-		
-			DataFrame dataFrameA = mlResults.getFrameDataFrame("A");
-			List<Row> listAOut = dataFrameA.collectAsList();
-	
-			listA.add("1,Str2,3.0,true");
-			listA.add("4,Str5,6.0,false");
-			listA.add("7,Str8,9.0,true");
-
-			listB.add("Str12,13.0,true");
-			listB.add("Str25,26.0,false"); 
-
-			Row row1 = listAOut.get(0);
-			Assert.assertEquals("1", row1.getString(0), 0.0);
-			Assert.assertEquals("Str2", row1.getString(1), 0.0);
-			Assert.assertEquals("3.0", row1.getString(2), 0.0);
-			Assert.assertEquals("true", row1.getString(3));
-	
-			Row row2 = listAOut.get(1);
-			Assert.assertEquals("4", row2.getString(0), 0.0);
-			Assert.assertEquals("Str12", row2.getString(1), 0.0);
-			Assert.assertEquals("13.0", row2.getString(2), 0.0);
-			Assert.assertEquals("true", row2.getString(3));
-			
-//			DataFrame dataFrameC = mlResults.getFrameDataFrame("C");
-//			List<Row> listCOut = dataFrameC.collectAsList();
-//
-//			Row row3 = listCOut.get(0);
-//			Assert.assertEquals("Str12", row3.getString(0), 0.0);
-//			Assert.assertEquals(13.0, row3.getDouble(1), 0.0);
-//
-//			Row row4 = listCOut.get(1);
-//			Assert.assertEquals("Str25", row4.getString(0), 0.0);
-//			Assert.assertEquals(26.0, row4.getDouble(1), 0.0);
-
 		}
 	}
 	////////////////////////////////////////////

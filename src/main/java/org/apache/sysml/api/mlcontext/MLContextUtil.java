@@ -457,14 +457,24 @@ public final class MLContextUtil {
 		} else if (value instanceof RDD<?>) {
 			@SuppressWarnings("unchecked")
 			RDD<String> rdd = (RDD<String>) value;
-			MatrixObject matrixObject;
-			if ((matrixMetadata != null) && (matrixMetadata.getMatrixFormat() == MatrixFormat.IJV)) {
-				matrixObject = MLContextConversionUtil.rddStringIJVToMatrixObject(name, rdd, matrixMetadata);
+			if(!bFrame) {
+				MatrixObject matrixObject;
+				if ((matrixMetadata != null) && (matrixMetadata.getMatrixFormat() == MatrixFormat.IJV)) {
+					matrixObject = MLContextConversionUtil.rddStringIJVToMatrixObject(name, rdd, matrixMetadata);
+				} else {
+					matrixObject = MLContextConversionUtil.rddStringCSVToMatrixObject(name, rdd, matrixMetadata);
+				}
+				return matrixObject;
 			} else {
-				matrixObject = MLContextConversionUtil.rddStringCSVToMatrixObject(name, rdd, matrixMetadata);
+				FrameObject frameObject;
+				if ((matrixMetadata != null) && (matrixMetadata.getMatrixFormat() == MatrixFormat.IJV)) {
+					frameObject = MLContextConversionUtil.rddStringIJVToFrameObject(name, rdd, matrixMetadata);
+				} else {
+					frameObject = MLContextConversionUtil.rddStringCSVToFrameObject(name, rdd, matrixMetadata);
+				}
+				return frameObject;
 			}
 
-			return matrixObject;
 		} else if (value instanceof MatrixBlock) {
 			MatrixBlock matrixBlock = (MatrixBlock) value;
 			MatrixObject matrixObject = MLContextConversionUtil.matrixBlockToMatrixObject(name, matrixBlock,

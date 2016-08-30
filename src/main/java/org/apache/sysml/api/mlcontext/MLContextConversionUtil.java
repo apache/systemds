@@ -775,6 +775,37 @@ public class MLContextConversionUtil {
 	}
 
 	/**
+	 * Convert a {@code RDD<String>} in CSV format to a {@code FrameObject}
+	 * 
+	 * @param variableName
+	 *            name of the variable associated with the frame
+	 * @param rdd
+	 *            the RDD of strings
+	 * @return the {@code RDD<String>} converted to a {@code FrameObject}
+	 */
+	public static FrameObject rddStringCSVToFrameObject(String variableName, RDD<String> rdd) {
+		return rddStringCSVToFrameObject(variableName, rdd, null);
+	}
+
+	/**
+	 * Convert a {@code RDD<String>} in CSV format to a {@code FrameObject}
+	 * 
+	 * @param variableName
+	 *            name of the variable associated with the frame
+	 * @param rdd
+	 *            the RDD of strings
+	 * @param matrixMetadata
+	 *            frame metadata
+	 * @return the {@code RDD<String>} converted to a {@code FrameObject}
+	 */
+	public static FrameObject rddStringCSVToFrameObject(String variableName, RDD<String> rdd,
+			MatrixMetadata matrixMetadata) {
+		ClassTag<String> tag = scala.reflect.ClassTag$.MODULE$.apply(String.class);
+		JavaRDD<String> javaRDD = JavaRDD.fromRDD(rdd, tag);
+		return javaRDDStringCSVToFrameObject(variableName, javaRDD, matrixMetadata);
+	}
+
+	/**
 	 * Convert a {@code RDD<String>} in IJV format to a {@code MatrixObject}.
 	 * Note that metadata is required for IJV format.
 	 * 
@@ -791,6 +822,25 @@ public class MLContextConversionUtil {
 		ClassTag<String> tag = scala.reflect.ClassTag$.MODULE$.apply(String.class);
 		JavaRDD<String> javaRDD = JavaRDD.fromRDD(rdd, tag);
 		return javaRDDStringIJVToMatrixObject(variableName, javaRDD, matrixMetadata);
+	}
+
+	/**
+	 * Convert a {@code RDD<String>} in IJV format to a {@code FrameObject}.
+	 * Note that metadata is required for IJV format.
+	 * 
+	 * @param variableName
+	 *            name of the variable associated with the frame
+	 * @param rdd
+	 *            the RDD of strings
+	 * @param matrixMetadata
+	 *            frame metadata
+	 * @return the {@code RDD<String>} converted to a {@code FrameObject}
+	 */
+	public static FrameObject rddStringIJVToFrameObject(String variableName, RDD<String> rdd,
+			MatrixMetadata matrixMetadata) {
+		ClassTag<String> tag = scala.reflect.ClassTag$.MODULE$.apply(String.class);
+		JavaRDD<String> javaRDD = JavaRDD.fromRDD(rdd, tag);
+		return javaRDDStringIJVToFrameObject(variableName, javaRDD, matrixMetadata);
 	}
 
 	/**
@@ -848,6 +898,22 @@ public class MLContextConversionUtil {
 	}
 
 	/**
+	 * Convert a {@code FrameObject} to a {@code JavaRDD<String>} in CSV
+	 * format.
+	 * 
+	 * @param frameObject
+	 *            the {@code FrameObject}
+	 * @return the {@code FrameObject} converted to a {@code JavaRDD<String>}
+	 */
+	public static JavaRDD<String> frameObjectToJavaRDDStringCSV(FrameObject frameObject, String delimiter) {
+		List<String> list = frameObjectToListStringCSV(frameObject, delimiter);
+
+		JavaSparkContext jsc = getJavaSparkContext((MLContext)MLContextProxy.getActiveMLContext());
+		JavaRDD<String> javaRDDStringCSV = jsc.parallelize(list);
+		return javaRDDStringCSV;
+	}
+
+	/**
 	 * Convert a {@code MatrixObject} to a {@code JavaRDD<String>} in IJV
 	 * format.
 	 * 
@@ -864,6 +930,22 @@ public class MLContextConversionUtil {
 		JavaSparkContext jsc = new JavaSparkContext(sc);
 		JavaRDD<String> javaRDDStringCSV = jsc.parallelize(list);
 		return javaRDDStringCSV;
+	}
+
+	/**
+	 * Convert a {@code FrameObject} to a {@code JavaRDD<String>} in IJV
+	 * format.
+	 * 
+	 * @param frameObject
+	 *            the {@code FrameObject}
+	 * @return the {@code FrameObject} converted to a {@code JavaRDD<String>}
+	 */
+	public static JavaRDD<String> frameObjectToJavaRDDStringIJV(FrameObject frameObject) {
+		List<String> list = frameObjectToListStringIJV(frameObject);
+
+		JavaSparkContext jsc = getJavaSparkContext((MLContext)MLContextProxy.getActiveMLContext());
+		JavaRDD<String> javaRDDStringIJV = jsc.parallelize(list);
+		return javaRDDStringIJV;
 	}
 
 	/**
@@ -895,6 +977,33 @@ public class MLContextConversionUtil {
 	}
 
 	/**
+	 * Convert a {@code FrameObject} to a {@code RDD<String>} in IJV format.
+	 * 
+	 * @param frameObject
+	 *            the {@code FrameObject}
+	 * @return the {@code FrameObject} converted to a {@code RDD<String>}
+	 */
+	public static RDD<String> frameObjectToRDDStringIJV(FrameObject frameObject) {
+
+		// NOTE: The following works when called from Java but does not
+		// currently work when called from Spark Shell (when you call
+		// collect() on the RDD<String>).
+		//
+		// JavaRDD<String> javaRDD = jsc.parallelize(list);
+		// RDD<String> rdd = JavaRDD.toRDD(javaRDD);
+		//
+		// Therefore, we call parallelize() on the SparkContext rather than
+		// the JavaSparkContext to produce the RDD<String> for Scala.
+
+		List<String> list = frameObjectToListStringIJV(frameObject);
+
+		SparkContext sc = getSparkContext((MLContext) MLContextProxy.getActiveMLContext());
+		ClassTag<String> tag = scala.reflect.ClassTag$.MODULE$.apply(String.class);
+		RDD<String> rddString = sc.parallelize(JavaConversions.asScalaBuffer(list), sc.defaultParallelism(), tag);
+		return rddString;
+	}
+
+	/**
 	 * Convert a {@code MatrixObject} to a {@code RDD<String>} in CSV format.
 	 * 
 	 * @param matrixObject
@@ -917,6 +1026,33 @@ public class MLContextConversionUtil {
 
 		MLContext activeMLContext = (MLContext) MLContextProxy.getActiveMLContext();
 		SparkContext sc = activeMLContext.getSparkContext();
+		ClassTag<String> tag = scala.reflect.ClassTag$.MODULE$.apply(String.class);
+		RDD<String> rddString = sc.parallelize(JavaConversions.asScalaBuffer(list), sc.defaultParallelism(), tag);
+		return rddString;
+	}
+
+	/**
+	 * Convert a {@code FrameObject} to a {@code RDD<String>} in CSV format.
+	 * 
+	 * @param frameObject
+	 *            the {@code FrameObject}
+	 * @return the {@code FrameObject} converted to a {@code RDD<String>}
+	 */
+	public static RDD<String> frameObjectToRDDStringCSV(FrameObject frameObject, String delimiter) {
+
+		// NOTE: The following works when called from Java but does not
+		// currently work when called from Spark Shell (when you call
+		// collect() on the RDD<String>).
+		//
+		// JavaRDD<String> javaRDD = jsc.parallelize(list);
+		// RDD<String> rdd = JavaRDD.toRDD(javaRDD);
+		//
+		// Therefore, we call parallelize() on the SparkContext rather than
+		// the JavaSparkContext to produce the RDD<String> for Scala.
+
+		List<String> list = frameObjectToListStringCSV(frameObject, delimiter);
+
+		SparkContext sc = getSparkContext((MLContext) MLContextProxy.getActiveMLContext());
 		ClassTag<String> tag = scala.reflect.ClassTag$.MODULE$.apply(String.class);
 		RDD<String> rddString = sc.parallelize(JavaConversions.asScalaBuffer(list), sc.defaultParallelism(), tag);
 		return rddString;
@@ -986,6 +1122,39 @@ public class MLContextConversionUtil {
 	}
 
 	/**
+	 * Convert a {@code FrameObject} to a {@code List<String>} in CSV format.
+	 * 
+	 * @param frameObject
+	 *            the {@code FrameObject}
+	 * @return the {@code FrameObject} converted to a {@code List<String>}
+	 */
+	public static List<String> frameObjectToListStringCSV(FrameObject frameObject, String delimiter) {
+		try {
+			FrameBlock fb = frameObject.acquireRead();
+
+			int rows = fb.getNumRows();
+			int cols = fb.getNumColumns();
+			List<String> list = new ArrayList<String>();
+
+			for (int i = 0; i < rows; i++) {
+				StringBuilder sb = new StringBuilder();
+				for (int j = 0; j < cols; j++) {
+					if (j > 0) {
+						sb.append(delimiter);
+					}
+					sb.append(fb.get(i, j));
+				}
+				list.add(sb.toString());
+			}
+
+			frameObject.release();
+			return list;
+		} catch (CacheException e) {
+			throw new MLContextException("Cache exception while converting frame object to List<String> CSV format", e);
+		}
+	}
+
+	/**
 	 * Convert a {@code MatrixObject} to a {@code List<String>} in IJV format.
 	 * 
 	 * @param matrixObject
@@ -1036,6 +1205,42 @@ public class MLContextConversionUtil {
 		} catch (CacheException e) {
 			throw new MLContextException("Cache exception while converting matrix object to List<String> IJV format",
 					e);
+		}
+	}
+
+	/**
+	 * Convert a {@code FrameObject} to a {@code List<String>} in IJV format.
+	 * 
+	 * @param frameObject
+	 *            the {@code FrameObject}
+	 * @return the {@code FrameObject} converted to a {@code List<String>}
+	 */
+	public static List<String> frameObjectToListStringIJV(FrameObject frameObject) {
+		try {
+			FrameBlock fb = frameObject.acquireRead();
+
+			int rows = fb.getNumRows();
+			int cols = fb.getNumColumns();
+			List<String> list = new ArrayList<String>();
+
+			StringBuilder sb = null;
+			for (int i = 0; i < rows; i++) {
+				sb = new StringBuilder();
+				for (int j = 0; j < cols; j++) {
+					sb = new StringBuilder();
+					sb.append(i + 1);
+					sb.append(" ");
+					sb.append(j + 1);
+					sb.append(" ");
+					sb.append(fb.get(i, j));
+					list.add(sb.toString());
+				}
+			}
+
+			frameObject.release();
+			return list;
+		} catch (CacheException e) {
+			throw new MLContextException("Cache exception while converting frame object to List<String> IJV format", e);
 		}
 	}
 
@@ -1139,6 +1344,11 @@ public class MLContextConversionUtil {
 		}
 	}
 	
+	public static SparkContext getSparkContext(MLContext mlContext)
+	{
+		return mlContext.getSparkContext();
+	}
+
 	public static JavaSparkContext getJavaSparkContext(MLContext mlContext)
 	{
 		return new JavaSparkContext(mlContext.getSparkContext());

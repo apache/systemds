@@ -196,6 +196,19 @@ public class MLResults {
 	}
 
 	/**
+	 * Obtain an output as a {@code JavaRDD<String>} in IJV format.
+	 *
+	 * @param outputName
+	 *            the name of the output
+	 * @return the output as a {@code JavaRDD<String>} in IJV format
+	 */
+	public JavaRDD<String> getFrameJavaRDDStringIJV(String outputName) {
+		FrameObject fo = getFrameObject(outputName);
+		JavaRDD<String> javaRDDStringIJV = MLContextConversionUtil.frameObjectToJavaRDDStringIJV(fo);
+		return javaRDDStringIJV;
+	}
+
+	/**
 	 * Obtain an output as a {@code JavaRDD<String>} in CSV format.
 	 * <p>
 	 * The following matrix in DML:
@@ -216,6 +229,19 @@ public class MLResults {
 	public JavaRDD<String> getJavaRDDStringCSV(String outputName) {
 		MatrixObject mo = getMatrixObject(outputName);
 		JavaRDD<String> javaRDDStringCSV = MLContextConversionUtil.matrixObjectToJavaRDDStringCSV(mo);
+		return javaRDDStringCSV;
+	}
+
+	/**
+	 * Obtain an output as a {@code JavaRDD<String>} in CSV format.
+	 *
+	 * @param outputName
+	 *            the name of the output
+	 * @return the output as a {@code JavaRDD<String>} in CSV format
+	 */
+	public JavaRDD<String> getFrameJavaRDDStringCSV(String outputName, String delimiter) {
+		FrameObject fo = getFrameObject(outputName);
+		JavaRDD<String> javaRDDStringCSV = MLContextConversionUtil.frameObjectToJavaRDDStringCSV(fo, delimiter);
 		return javaRDDStringCSV;
 	}
 
@@ -243,6 +269,20 @@ public class MLResults {
 		return rddStringCSV;
 	}
 
+
+	/**
+	 * Obtain an output as a {@code RDD<String>} in CSV format.
+	 *
+	 * @param outputName
+	 *            the name of the output
+	 * @return the output as a {@code RDD<String>} in CSV format
+	 */
+	public RDD<String> getFrameRDDStringCSV(String outputName, String delimiter) {
+		FrameObject fo = getFrameObject(outputName);
+		RDD<String> rddStringCSV = MLContextConversionUtil.frameObjectToRDDStringCSV(fo, delimiter);
+		return rddStringCSV;
+	}
+
 	/**
 	 * Obtain an output as a {@code RDD<String>} in IJV format.
 	 * <p>
@@ -266,6 +306,19 @@ public class MLResults {
 	public RDD<String> getRDDStringIJV(String outputName) {
 		MatrixObject mo = getMatrixObject(outputName);
 		RDD<String> rddStringIJV = MLContextConversionUtil.matrixObjectToRDDStringIJV(mo);
+		return rddStringIJV;
+	}
+
+	/**
+	 * Obtain an output as a {@code RDD<String>} in IJV format.
+	 *
+	 * @param outputName
+	 *            the name of the output
+	 * @return the output as a {@code RDD<String>} in IJV format
+	 */
+	public RDD<String> getFrameRDDStringIJV(String outputName) {
+		FrameObject fo = getFrameObject(outputName);
+		RDD<String> rddStringIJV = MLContextConversionUtil.frameObjectToRDDStringIJV(fo);
 		return rddStringIJV;
 	}
 

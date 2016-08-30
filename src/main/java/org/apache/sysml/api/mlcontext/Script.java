@@ -245,6 +245,15 @@ public class Script {
 
 	/**
 	 * Pass a Scala Map of inputs to the script.
+	 * <p>
+	 * Note that the {@code Map} key/value types are not explicitly specified on
+	 * this method because {@code [String, Any]} can't be recognized on the Java
+	 * side since {@code Any} doesn't have an equivalent in the Java class
+	 * hierarchy ({@code scala.Any} is a superclass of {@code scala.AnyRef},
+	 * which is equivalent to {@code java.lang.Object}). Therefore, specifying
+	 * {@code scala.collection.Map<String, Object>} as an input parameter to
+	 * this Java method is not encompassing enough and would require types such
+	 * as a {@code scala.Double} to be cast using {@code asInstanceOf[AnyRef]}.
 	 *
 	 * @param inputs
 	 *            Scala Map of inputs (parameters ($) and variables).
@@ -260,6 +269,15 @@ public class Script {
 
 	/**
 	 * Pass a Scala Map of inputs to the script.
+	 * <p>
+	 * Note that the {@code Map} key/value types are not explicitly specified on
+	 * this method because {@code [String, Any]} can't be recognized on the Java
+	 * side since {@code Any} doesn't have an equivalent in the Java class
+	 * hierarchy ({@code scala.Any} is a superclass of {@code scala.AnyRef},
+	 * which is equivalent to {@code java.lang.Object}). Therefore, specifying
+	 * {@code scala.collection.Map<String, Object>} as an input parameter to
+	 * this Java method is not encompassing enough and would require types such
+	 * as a {@code scala.Double} to be cast using {@code asInstanceOf[AnyRef]}.
 	 *
 	 * @param inputs
 	 *            Scala Map of inputs (parameters ($) and variables).

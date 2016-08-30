@@ -305,11 +305,44 @@ public class Script {
 	 * @return {@code this} Script object to allow chaining of methods
 	 */
 	public Script in(String name, Object value) {
-		return in(name, value, null);
+		return in(name, value, (MatrixMetadata) null);
 	}
 
 	public Script input(String name, Object value) {
 		return in(name, value);
+	}
+
+	/**
+	 * Register an input (parameter ($) or variable) with optional matrix
+	 * metadata.
+	 *
+	 * @param name
+	 *            name of the input
+	 * @param value
+	 *            value of the input
+	 * @param matrixFormat
+	 *            optional matrix format
+	 * @return {@code this} Script object to allow chaining of methods
+	 */
+	public Script in(String name, Object value, MatrixFormat matrixFormat) {
+		MatrixMetadata matrixMetadata = new MatrixMetadata(matrixFormat);
+		return in(name, value, matrixMetadata);
+	}
+
+	/**
+	 * Register an input (parameter ($) or variable) with optional matrix
+	 * metadata.
+	 *
+	 * @param name
+	 *            name of the input
+	 * @param value
+	 *            value of the input
+	 * @param matrixFormat
+	 *            optional matrix format
+	 * @return {@code this} Script object to allow chaining of methods
+	 */
+	public Script input(String name, Object value, MatrixFormat matrixFormat) {
+		return in(name, value, matrixFormat);
 	}
 
 	/**

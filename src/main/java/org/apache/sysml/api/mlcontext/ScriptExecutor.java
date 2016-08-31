@@ -355,7 +355,7 @@ public class ScriptExecutor {
 			if (symbolTable.get(inputVariable) == null) {
 				// retrieve optional metadata if it exists
 				MatrixMetadata mm = inputMatrixMetadata.get(inputVariable);
-				script.in(inputVariable, inputs.get(inputVariable), mm);
+				script.in(inputVariable, inputs.get(inputVariable), mm, script.getInputVariablesType().get(inputVariable));
 			}
 		}
 	}

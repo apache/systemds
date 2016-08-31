@@ -186,6 +186,15 @@ public class Script {
 	}
 
 	/**
+	 * Obtain the input variable type flag (if its frame or not)
+	 *
+	 * @return the input variable names
+	 */
+	public Map<String, Boolean> getInputVariablesType() {
+		return inputVariablesType;
+	}
+
+	/**
 	 * Obtain the output variable names as an unmodifiable set of strings.
 	 *
 	 * @return the output variable names

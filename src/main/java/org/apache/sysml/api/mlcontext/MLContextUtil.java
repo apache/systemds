@@ -38,6 +38,7 @@ import org.apache.commons.lang3.text.WordUtils;
 import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.rdd.RDD;
 import org.apache.spark.sql.DataFrame;
 import org.apache.sysml.conf.CompilerConfig;
@@ -887,6 +888,16 @@ public final class MLContextUtil {
 			sb.append(history);
 		}
 		return sb.toString();
+	}
+
+	public static SparkContext getSparkContext(MLContext mlContext)
+	{
+		return mlContext.getSparkContext();
+	}
+
+	public static JavaSparkContext getJavaSparkContext(MLContext mlContext)
+	{
+		return new JavaSparkContext(mlContext.getSparkContext());
 	}
 
 }

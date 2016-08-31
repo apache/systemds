@@ -242,6 +242,27 @@ public class ReblockSPInstruction extends UnarySPInstruction
 			sec.setRDDHandleForVariable(output.getName(), out);
 			sec.addLineageRDD(output.getName(), input1.getName());
 		}
+		else if(iinfo == InputInfo.CSVInputInfo) {
+			// HACK ALERT: Until we introduces the rewrite to insert csvrblock for non-persistent read
+			// throw new DMLRuntimeException("CSVInputInfo is not supported for ReblockSPInstruction");
+			CSVReblockSPInstruction csvInstruction = null;
+			boolean hasHeader = false;
+			String delim = ",";
+			boolean fill = false;
+			double fillValue = 0;
+			if(fo.getFileFormatProperties() instanceof CSVFileFormatProperties 
+			   && fo.getFileFormatProperties() != null ) 
+			{
+				CSVFileFormatProperties props = (CSVFileFormatProperties) fo.getFileFormatProperties();
+				hasHeader = props.hasHeader();
+				delim = props.getDelim();
+				fill = props.isFill();
+				fillValue = props.getFillValue();
+			}
+			
+			csvInstruction = new CSVReblockSPInstruction(null, input1, output, mcOut.getRowsPerBlock(), mcOut.getColsPerBlock(), hasHeader, delim, fill, fillValue, "csvrblk", instString);
+			csvInstruction.processInstruction(sec);
+		}
 		else {
 			throw new DMLRuntimeException("The given InputInfo is not implemented for ReblockSPInstruction:" + iinfo);
 		}

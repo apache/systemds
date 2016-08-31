@@ -44,6 +44,9 @@ def checkIfMLContextIsSet():
         raise Exception('Expected setSparkContext(sc) to be called.')
 
 class DMLOp(object):
+    """
+    Represents an intermediate node of Abstract syntax tree created to generate the PyDML script
+    """
     def __init__(self, inputs, dml=None):
         self.inputs = inputs
         self.dml = dml
@@ -53,11 +56,17 @@ class DMLOp(object):
             
 
 def reset():
+    """
+    Resets the visited status of matrix and the operators in the generated AST.
+    """
     for m in matrix.visited:
         m.visited = False
     matrix.visited = []
         
 def binaryOp(lhs, rhs, opStr):
+    """
+    Common function called by all the binary operators in matrix class
+    """
     inputs = []
     if isinstance(lhs, matrix):
         lhsStr = lhs.ID
@@ -79,6 +88,10 @@ def binaryOp(lhs, rhs, opStr):
     return out
 
 def binaryMatrixFunction(X, Y, fnName):
+    """
+    Common function called by supported PyDML built-in function that has two arguments both of which are matrices.
+    TODO: This needs to be generalized to support arbitrary arguments of differen types.
+    """
     if not isinstance(X, matrix) or not isinstance(Y, matrix):
         raise TypeError('Incorrect input type. Expected matrix type')
     inputs = [X, Y]
@@ -88,9 +101,33 @@ def binaryMatrixFunction(X, Y, fnName):
     return out
 
 def solve(A, b):
+    """
+    Computes the least squares solution for system of linear equations A %*% x = b
+    
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from sklearn import datasets
+    >>> import SystemML as sml
+    >>> from pyspark.sql import SQLContext
+    >>> diabetes = datasets.load_diabetes()
+    >>> diabetes_X = diabetes.data[:, np.newaxis, 2]
+    >>> X_train = diabetes_X[:-20]
+    >>> X_test = diabetes_X[-20:]
+    >>> y_train = diabetes.target[:-20]
+    >>> y_test = diabetes.target[-20:]
+    >>> sml.setSparkContext(sc)
+    >>> X = sml.matrix(X_train)
+    >>> y = sml.matrix(y_train)
+    >>> A = X.transpose().dot(X)
+    >>> b = X.transpose().dot(y)
+    >>> beta = sml.solve(A, b).toNumPyArray()
+    >>> y_predicted = X_test.dot(beta)
+    >>> print('Residual sum of squares: %.2f' % np.mean((y_predicted - y_test) ** 2)) 
+    Residual sum of squares: 25282.12
+    """
     return binaryMatrixFunction(A, b, 'solve')
 
-    
 def eval(outputs, outputDF=False, execute=True):
     """
     Executes the unevaluated DML script and computes the matrices specified by outputs.
@@ -115,19 +152,73 @@ def eval(outputs, outputDF=False, execute=True):
         return ''.join(matrix.dml)
     matrix.script.scriptString = ''.join(matrix.dml)
     results = matrix.ml.execute(matrix.script)
+    # Note: an evaluated matrix contains a data field computed by eval method as DataFrame or NumPy array.
     for m in outputs:
         if outputDF:
             m.data = results.getDataFrame(m.ID)
         else:
             m.data = results.getNumPyArray(m.ID)
     
-# Instead of inheriting from np.matrix
 class matrix(object):
+    """
+    matrix class is a python wrapper that implements basic matrix operator.
+    Note: an evaluated matrix contains a data field computed by eval method as DataFrame or NumPy array.
+    
+    Examples
+    --------
+    >>> import SystemML as sml
+    >>> import numpy as np
+    >>> sml.setSparkContext(sc)
+    
+    Welcome to Apache SystemML!
+    
+    >>> m1 = sml.matrix(np.ones((3,3)) + 2)
+    >>> m2 = sml.matrix(np.ones((3,3)) + 3)
+    >>> m2 = m1 * (m2 + m1)
+    >>> m4 = 1.0 - m2
+    >>> m4
+    # This matrix (mVar5) is backed by below given PyDML script (which is not yet evaluated). To fetch the data of this matrix, invoke toNumPyArray() or toDataFrame() or toPandas() methods.
+    mVar1 = load(" ", format="csv")
+    mVar2 = load(" ", format="csv")
+    mVar3 = mVar2 + mVar1
+    mVar4 = mVar1 * mVar3
+    mVar5 = 1.0 - mVar4
+    save(mVar5, " ")
+    
+    <SystemML.defmatrix.matrix object>
+    >>> m2.eval()
+    >>> m2
+    # This matrix (mVar4) is backed by NumPy array. To fetch the NumPy array, invoke toNumPyArray() method.
+    <SystemML.defmatrix.matrix object>
+    >>> m4
+    # This matrix (mVar5) is backed by below given PyDML script (which is not yet evaluated). To fetch the data of this matrix, invoke toNumPyArray() or toDataFrame() or toPandas() methods.
+    mVar4 = load(" ", format="csv")
+    mVar5 = 1.0 - mVar4
+    save(mVar5, " ")
+    
+    <SystemML.defmatrix.matrix object>
+    >>> m4.sum(axis=1).toNumPyArray()
+    array([[-60.],
+           [-60.],
+           [-60.]])
+    """
+    # Global variable that is used to keep track of intermediate matrix variables in the DML script
     systemmlVarID = 0
+    
+    # Since joining of string is expensive operation, we collect the set of strings into list and then join
+    # them before execution: See matrix.script.scriptString = ''.join(matrix.dml) in eval() method
     dml = []
+    
+    # Represents MLContext's script object
     script = None
+    
+    # Represents MLContext object
     ml = None
+    
+    # Contains list of nodes visited in Abstract Syntax Tree. This helps to avoid computation of matrix objects
+    # that have been previously evaluated.
     visited = []
+    
     def __init__(self, data, op=None):
         """
         Constructs a lazy matrix
@@ -153,14 +244,23 @@ class matrix(object):
             raise TypeError('Unsupported input type')
             
     def eval(self, outputDF=False):
+        """
+        This is a convenience function that calls the global eval method
+        """
         eval([self], outputDF=False)
-        
+      
     def toPandas(self):
+        """
+        This is a convenience function that calls the global eval method and then converts the matrix object into Pandas DataFrame.
+        """
         if self.data is None:
             self.eval()
         return convertToPandasDF(self.data)    
     
     def toNumPyArray(self):
+        """
+        This is a convenience function that calls the global eval method and then converts the matrix object into NumPy array.
+        """
         if self.data is None:
             self.eval()
         if isinstance(self.data, DataFrame):
@@ -169,6 +269,9 @@ class matrix(object):
         return self.data
     
     def toDataFrame(self):
+        """
+        This is a convenience function that calls the global eval method and then converts the matrix object into DataFrame.
+        """
         if self.data is None:
             self.eval(outputDF=True)
         if not isinstance(self.data, DataFrame):
@@ -178,6 +281,12 @@ class matrix(object):
         return self.data
         
     def _visit(self, execute=True):
+        """
+        This function is called for two scenarios:
+        1. For printing the PyDML script which has not yet been evaluated (execute=False). See '__repr__' method.
+        2. Called as part of 'eval' method (execute=True). In this scenario, it builds the PyDML script by visiting itself 
+        and its child nodes. Also, it does appropriate registration as input or output that is required by MLContext.  
+        """
         if self.visited:
             return self
         self.visited = True
@@ -203,6 +312,9 @@ class matrix(object):
         return self
     
     def __repr__(self):
+        """
+        This function helps to debug matrix class and also examine the generated PyDML script
+        """ 
         if self.data is None:
             print('# This matrix (' + self.ID + ') is backed by below given PyDML script (which is not yet evaluated). To fetch the data of this matrix, invoke toNumPyArray() or toDataFrame() or toPandas() methods.\n' + eval([self], execute=False))
         elif isinstance(self.data, DataFrame):
@@ -281,6 +393,9 @@ class matrix(object):
         return self._aggFn('trace', axis)
         
     def _aggFn(self, fnName, axis):
+        """
+        Common function that is called for functions that have axis as parameter.
+        """ 
         dmlOp = DMLOp([self])
         out = matrix(None, op=dmlOp)
         if axis is None:

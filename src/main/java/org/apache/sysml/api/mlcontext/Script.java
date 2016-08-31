@@ -246,11 +246,11 @@ public class Script {
 	/**
 	 * Pass a Scala Map of inputs to the script.
 	 * <p>
-	 * Note that the {@code Map} key/value types are not explicitly specified on
-	 * this method because {@code [String, Any]} can't be recognized on the Java
-	 * side since {@code Any} doesn't have an equivalent in the Java class
-	 * hierarchy ({@code scala.Any} is a superclass of {@code scala.AnyRef},
-	 * which is equivalent to {@code java.lang.Object}). Therefore, specifying
+	 * Note that the {@code Map} value type is not explicitly specified on this
+	 * method because {@code [String, Any]} can't be recognized on the Java side
+	 * since {@code Any} doesn't have an equivalent in the Java class hierarchy
+	 * ({@code scala.Any} is a superclass of {@code scala.AnyRef}, which is
+	 * equivalent to {@code java.lang.Object}). Therefore, specifying
 	 * {@code scala.collection.Map<String, Object>} as an input parameter to
 	 * this Java method is not encompassing enough and would require types such
 	 * as a {@code scala.Double} to be cast using {@code asInstanceOf[AnyRef]}.
@@ -260,7 +260,7 @@ public class Script {
 	 * @return {@code this} Script object to allow chaining of methods
 	 */
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	public Script in(scala.collection.Map inputs) {
+	public Script in(scala.collection.Map<String, ?> inputs) {
 		Map javaMap = JavaConversions.mapAsJavaMap(inputs);
 		in(javaMap);
 
@@ -270,11 +270,11 @@ public class Script {
 	/**
 	 * Pass a Scala Map of inputs to the script.
 	 * <p>
-	 * Note that the {@code Map} key/value types are not explicitly specified on
-	 * this method because {@code [String, Any]} can't be recognized on the Java
-	 * side since {@code Any} doesn't have an equivalent in the Java class
-	 * hierarchy ({@code scala.Any} is a superclass of {@code scala.AnyRef},
-	 * which is equivalent to {@code java.lang.Object}). Therefore, specifying
+	 * Note that the {@code Map} value type is not explicitly specified on this
+	 * method because {@code [String, Any]} can't be recognized on the Java side
+	 * since {@code Any} doesn't have an equivalent in the Java class hierarchy
+	 * ({@code scala.Any} is a superclass of {@code scala.AnyRef}, which is
+	 * equivalent to {@code java.lang.Object}). Therefore, specifying
 	 * {@code scala.collection.Map<String, Object>} as an input parameter to
 	 * this Java method is not encompassing enough and would require types such
 	 * as a {@code scala.Double} to be cast using {@code asInstanceOf[AnyRef]}.
@@ -283,8 +283,7 @@ public class Script {
 	 *            Scala Map of inputs (parameters ($) and variables).
 	 * @return {@code this} Script object to allow chaining of methods
 	 */
-	@SuppressWarnings("rawtypes")
-	public Script input(scala.collection.Map inputs) {
+	public Script input(scala.collection.Map<String, ?> inputs) {
 		return in(inputs);
 	}
 

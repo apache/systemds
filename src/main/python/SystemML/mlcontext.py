@@ -22,10 +22,11 @@
 import os
 
 try:
+    import py4j.java_gateway
     from py4j.java_gateway import JavaObject
 except ImportError:
     raise ImportError('Unable to import JavaObject from py4j.java_gateway. Hint: Make sure you are running with pyspark')
-    
+
 from pyspark import SparkContext
 import pyspark.mllib.common
 from pyspark.sql import DataFrame, SQLContext
@@ -34,12 +35,12 @@ from .converters import *
 def dml(scriptString):
     """
     Create a dml script object based on a string.
-    
+
     Parameters
     ----------
     scriptString: string
         Can be a path to a dml script or a dml script itself.
-        
+
     Returns
     -------
     script: Script instance
@@ -53,12 +54,12 @@ def dml(scriptString):
 def pydml(scriptString):
     """
     Create a pydml script object based on a string.
-    
+
     Parameters
     ----------
     scriptString: string
         Can be a path to a pydml script or a pydml script itself.
-        
+
     Returns
     -------
     script: Script instance
@@ -92,12 +93,12 @@ def _py2java(sc, obj):
 class Matrix(object):
     """
     Wrapper around a Java Matrix object.
-    
+
     Parameters
     ----------
     javaMatrix: JavaObject
         A Java Matrix object as returned by calling `ml.execute().get()`.
-        
+
     sc: SparkContext
         SparkContext
     """
@@ -111,7 +112,7 @@ class Matrix(object):
     def toDF(self):
         """
         Convert the Matrix to a PySpark SQL DataFrame.
-        
+
         Returns
         -------
         df: PySpark SQL DataFrame
@@ -128,12 +129,12 @@ class Matrix(object):
 class MLResults(object):
     """
     Wrapper around a Java ML Results object.
-    
+
     Parameters
     ----------
     results: JavaObject
         A Java MLResults object as returned by calling `ml.execute()`.
-        
+
     sc: SparkContext
         SparkContext
     """
@@ -160,7 +161,7 @@ class MLResults(object):
         if len(outs) == 1:
             return outs[0]
         return outs
-    
+
     def getDataFrame(self, *outputs):
         """
         Parameters
@@ -172,7 +173,7 @@ class MLResults(object):
         if len(outs) == 1:
             return outs[0]
         return outs
-            
+
     def get(self, *outputs):
         """
         Parameters
@@ -194,7 +195,7 @@ class Script(object):
     ----------
     scriptString: string
         Can be either a file path to a DML script or a DML script itself.
-    
+
     scriptType: string
         Script language, either "dml" for DML (R-like) or "pydml" for PyDML (Python-like).
     """
@@ -223,7 +224,7 @@ class Script(object):
             self._input[name] = value
         return self
 
-    def out(self, *names):
+    def output(self, *names):
         """
         Parameters
         ----------
@@ -287,7 +288,12 @@ class MLContext(object):
                 script_java = self._sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.pydml(scriptString)
 
         for key, val in script._input.items():
-            script_java.input(key, _py2java(self._sc, val))
+            # `in` is a reserved word ("keyword") in Python, so `script_java.in(...)` is not
+            # allowed. Therefore, we use the following code in which we retrieve a function
+            # representing `script_java.in`, and then call it with the arguments.  This is in
+            # lieu of adding a new `input` method on the JVM side, as that would complicate use
+            # from Scala/Java.
+            py4j.java_gateway.get_method(script_java, "in")(key, _py2java(self._sc, val))
         for val in script._output:
             script_java.out(val)
         return MLResults(self._ml.execute(script_java), self._sc)

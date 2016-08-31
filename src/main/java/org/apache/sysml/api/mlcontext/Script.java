@@ -247,17 +247,6 @@ public class Script {
 	}
 
 	/**
-	 * Pass a map of inputs to the script.
-	 *
-	 * @param inputs
-	 *            map of inputs (parameters ($) and variables).
-	 * @return {@code this} Script object to allow chaining of methods
-	 */
-	public Script input(Map<String, Object> inputs) {
-		return in(inputs);
-	}
-
-	/**
 	 * Pass a Scala Map of inputs to the script.
 	 * <p>
 	 * Note that the {@code Map} value type is not explicitly specified on this
@@ -279,26 +268,6 @@ public class Script {
 		in(javaMap);
 
 		return this;
-	}
-
-	/**
-	 * Pass a Scala Map of inputs to the script.
-	 * <p>
-	 * Note that the {@code Map} value type is not explicitly specified on this
-	 * method because {@code [String, Any]} can't be recognized on the Java side
-	 * since {@code Any} doesn't have an equivalent in the Java class hierarchy
-	 * ({@code scala.Any} is a superclass of {@code scala.AnyRef}, which is
-	 * equivalent to {@code java.lang.Object}). Therefore, specifying
-	 * {@code scala.collection.Map<String, Object>} as an input parameter to
-	 * this Java method is not encompassing enough and would require types such
-	 * as a {@code scala.Double} to be cast using {@code asInstanceOf[AnyRef]}.
-	 *
-	 * @param inputs
-	 *            Scala Map of inputs (parameters ($) and variables).
-	 * @return {@code this} Script object to allow chaining of methods
-	 */
-	public Script input(scala.collection.Map<String, ?> inputs) {
-		return in(inputs);
 	}
 
 	/**
@@ -330,20 +299,6 @@ public class Script {
 	}
 
 	/**
-	 * Pass a Scala Seq of inputs to the script. The inputs are either two-value
-	 * or three-value tuples, where the first value is the variable name, the
-	 * second value is the variable value, and the third optional value is the
-	 * metadata.
-	 *
-	 * @param inputs
-	 *            Scala Seq of inputs (parameters ($) and variables).
-	 * @return {@code this} Script object to allow chaining of methods
-	 */
-	public Script input(scala.collection.Seq<Object> inputs) {
-		return in(inputs);
-	}
-
-	/**
 	 * Obtain an unmodifiable map of all input parameters ($).
 	 *
 	 * @return input parameters ($)
@@ -366,19 +321,6 @@ public class Script {
 	}
 
 	/**
-	 * Register an input (parameter ($) or variable).
-	 *
-	 * @param name
-	 *            name of the input
-	 * @param value
-	 *            value of the input
-	 * @return {@code this} Script object to allow chaining of methods
-	 */
-	public Script input(String name, Object value) {
-		return in(name, value);
-	}
-
-	/**
 	 * Register an input (parameter ($) or variable) with optional matrix
 	 * metadata.
 	 *
@@ -393,22 +335,6 @@ public class Script {
 	public Script in(String name, Object value, MatrixFormat matrixFormat) {
 		MatrixMetadata matrixMetadata = new MatrixMetadata(matrixFormat);
 		return in(name, value, matrixMetadata);
-	}
-
-	/**
-	 * Register an input (parameter ($) or variable) with optional matrix
-	 * metadata.
-	 *
-	 * @param name
-	 *            name of the input
-	 * @param value
-	 *            value of the input
-	 * @param matrixFormat
-	 *            optional matrix format
-	 * @return {@code this} Script object to allow chaining of methods
-	 */
-	public Script input(String name, Object value, MatrixFormat matrixFormat) {
-		return in(name, value, matrixFormat);
 	}
 
 	/**
@@ -473,22 +399,6 @@ public class Script {
 	}
 
 	/**
-	 * Register an input (parameter ($) or variable) with optional matrix
-	 * metadata.
-	 *
-	 * @param name
-	 *            name of the input
-	 * @param value
-	 *            value of the input
-	 * @param matrixMetadata
-	 *            optional matrix metadata
-	 * @return {@code this} Script object to allow chaining of methods
-	 */
-	public Script input(String name, Object value, MatrixMetadata matrixMetadata) {
-		return in(name, value, matrixMetadata);
-	}
-
-	/**
 	 * Register an output variable.
 	 *
 	 * @param outputName
@@ -501,17 +411,6 @@ public class Script {
 	}
 
 	/**
-	 * Register an output variable.
-	 *
-	 * @param outputName
-	 *            name of the output variable
-	 * @return {@code this} Script object to allow chaining of methods
-	 */
-	public Script output(String outputName) {
-		return out(outputName);
-	}
-
-	/**
 	 * Register output variables.
 	 *
 	 * @param outputNames
@@ -521,17 +420,6 @@ public class Script {
 	public Script out(String... outputNames) {
 		outputVariables.addAll(Arrays.asList(outputNames));
 		return this;
-	}
-
-	/**
-	 * Register output variables.
-	 *
-	 * @param outputNames
-	 *            names of the output variables
-	 * @return {@code this} Script object to allow chaining of methods
-	 */
-	public Script output(String... outputNames) {
-		return output(outputNames);
 	}
 
 	/**

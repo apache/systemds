@@ -583,25 +583,21 @@ public class MLContext {
 		if(_inVarnames == null)
 			_inVarnames = new ArrayList<String>();
 		
-		//FIXME: MB why does the register input for frames implicitly convert the data to binary block,
-		//while the register input for matrices does not? FIXME
-		
 		JavaPairRDD<LongWritable, Text> rddText = rddIn.mapToPair(new ConvertStringToLongTextPair());
 		
 		int blksz = ConfigurationManager.getBlocksize();
 		MatrixCharacteristics mc = new MatrixCharacteristics(rlen, clen, blksz, blksz, nnz);
-		FrameObject fo = new FrameObject(null, new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
-		JavaPairRDD<Long, FrameBlock> rdd = null; 
+		FrameObject fo = null;
 		if( format.equals("csv") ) {
 			CSVFileFormatProperties csvprops = (props!=null) ? (CSVFileFormatProperties)props: new CSVFileFormatProperties();
-			rdd = FrameRDDConverterUtils.csvToBinaryBlock(new JavaSparkContext(getSparkContext()), 
-					rddText, mc, csvprops.hasHeader(), csvprops.getDelim(), csvprops.isFill(), csvprops.getFillValue());
+			fo = new FrameObject(null, new MatrixFormatMetaData(mc, OutputInfo.CSVOutputInfo, InputInfo.CSVInputInfo));
+			fo.setFileFormatProperties(csvprops);
 		}
 		else if( format.equals("text") ) {
 			if(rlen == -1 || clen == -1) {
 				throw new DMLRuntimeException("The metadata is required in registerInput for format:" + format);
 			}
-			rdd = FrameRDDConverterUtils.textCellToBinaryBlock(new JavaSparkContext(getSparkContext()), rddText, mc, schema);
+			fo = new FrameObject(null, new MatrixFormatMetaData(mc, OutputInfo.TextCellOutputInfo, InputInfo.TextCellInputInfo));
 		}
 		else {
 			
@@ -610,7 +606,8 @@ public class MLContext {
 		if(props != null)
 			fo.setFileFormatProperties(props);
 		
-		fo.setRDDHandle(new RDDObject(rdd, varName));
+		fo.setRDDHandle(new RDDObject(rddText, varName));
+		fo.setSchema("String");		//TODO fix schema 
 		_variables.put(varName, fo);
 		_inVarnames.add(varName);
 		checkIfRegisteringInputAllowed();

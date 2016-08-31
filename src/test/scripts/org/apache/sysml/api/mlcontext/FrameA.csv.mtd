@@ -1,0 +1,13 @@
+{
+    "data_type": "frame",
+    "value_type": "string",
+    "rows": 3,
+    "cols": 4,
+    "nnz": -1,
+    "format": "csv",
+    "header": false,
+    "sep": ",",
+    "description": {
+        "author": "SystemML"
+    }
+}

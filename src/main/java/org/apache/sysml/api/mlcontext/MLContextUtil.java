@@ -38,6 +38,7 @@ import org.apache.commons.lang3.text.WordUtils;
 import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.rdd.RDD;
 import org.apache.spark.sql.DataFrame;
 import org.apache.sysml.conf.CompilerConfig;
@@ -45,6 +46,7 @@ import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.parser.ParseException;
+import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
@@ -410,7 +412,7 @@ public final class MLContextUtil {
 	 * @return input in SystemML data representation
 	 */
 	public static Data convertInputType(String parameterName, Object parameterValue) {
-		return convertInputType(parameterName, parameterValue, null);
+		return convertInputType(parameterName, parameterValue, null, false);
 	}
 
 	/**
@@ -422,9 +424,11 @@ public final class MLContextUtil {
 	 *            The value of the input parameter
 	 * @param matrixMetadata
 	 *            matrix metadata
+	 * @param bFrame
+	 *            if input is of type frame
 	 * @return input in SystemML data representation
 	 */
-	public static Data convertInputType(String parameterName, Object parameterValue, MatrixMetadata matrixMetadata) {
+	public static Data convertInputType(String parameterName, Object parameterValue, MatrixMetadata matrixMetadata, boolean bFrame) {
 		String name = parameterName;
 		Object value = parameterValue;
 		if (name == null) {
@@ -434,24 +438,44 @@ public final class MLContextUtil {
 		} else if (value instanceof JavaRDD<?>) {
 			@SuppressWarnings("unchecked")
 			JavaRDD<String> javaRDD = (JavaRDD<String>) value;
-			MatrixObject matrixObject;
-			if ((matrixMetadata != null) && (matrixMetadata.getMatrixFormat() == MatrixFormat.IJV)) {
-				matrixObject = MLContextConversionUtil.javaRDDStringIJVToMatrixObject(name, javaRDD, matrixMetadata);
+			if(!bFrame) {
+				MatrixObject matrixObject;
+				if ((matrixMetadata != null) && (matrixMetadata.getMatrixFormat() == MatrixFormat.IJV)) {
+					matrixObject = MLContextConversionUtil.javaRDDStringIJVToMatrixObject(name, javaRDD, matrixMetadata);
+				} else {
+					matrixObject = MLContextConversionUtil.javaRDDStringCSVToMatrixObject(name, javaRDD, matrixMetadata);
+				}
+				return matrixObject;
 			} else {
-				matrixObject = MLContextConversionUtil.javaRDDStringCSVToMatrixObject(name, javaRDD, matrixMetadata);
+				FrameObject frameObject;
+				if ((matrixMetadata != null) && (matrixMetadata.getMatrixFormat() == MatrixFormat.IJV)) {
+					frameObject = MLContextConversionUtil.javaRDDStringIJVToFrameObject(name, javaRDD, matrixMetadata);
+				} else {
+					frameObject = MLContextConversionUtil.javaRDDStringCSVToFrameObject(name, javaRDD, matrixMetadata);
+				}
+				return frameObject;
 			}
-			return matrixObject;
 		} else if (value instanceof RDD<?>) {
 			@SuppressWarnings("unchecked")
 			RDD<String> rdd = (RDD<String>) value;
-			MatrixObject matrixObject;
-			if ((matrixMetadata != null) && (matrixMetadata.getMatrixFormat() == MatrixFormat.IJV)) {
-				matrixObject = MLContextConversionUtil.rddStringIJVToMatrixObject(name, rdd, matrixMetadata);
+			if(!bFrame) {
+				MatrixObject matrixObject;
+				if ((matrixMetadata != null) && (matrixMetadata.getMatrixFormat() == MatrixFormat.IJV)) {
+					matrixObject = MLContextConversionUtil.rddStringIJVToMatrixObject(name, rdd, matrixMetadata);
+				} else {
+					matrixObject = MLContextConversionUtil.rddStringCSVToMatrixObject(name, rdd, matrixMetadata);
+				}
+				return matrixObject;
 			} else {
-				matrixObject = MLContextConversionUtil.rddStringCSVToMatrixObject(name, rdd, matrixMetadata);
+				FrameObject frameObject;
+				if ((matrixMetadata != null) && (matrixMetadata.getMatrixFormat() == MatrixFormat.IJV)) {
+					frameObject = MLContextConversionUtil.rddStringIJVToFrameObject(name, rdd, matrixMetadata);
+				} else {
+					frameObject = MLContextConversionUtil.rddStringCSVToFrameObject(name, rdd, matrixMetadata);
+				}
+				return frameObject;
 			}
 
-			return matrixObject;
 		} else if (value instanceof MatrixBlock) {
 			MatrixBlock matrixBlock = (MatrixBlock) value;
 			MatrixObject matrixObject = MLContextConversionUtil.matrixBlockToMatrixObject(name, matrixBlock,
@@ -459,14 +483,25 @@ public final class MLContextUtil {
 			return matrixObject;
 		} else if (value instanceof FrameBlock) {
 			FrameBlock frameBlock = (FrameBlock) value;
-			FrameObject frameObject = MLContextConversionUtil.frameBlockToframeObject(name, frameBlock,
+			FrameObject frameObject = MLContextConversionUtil.frameBlockToFrameObject(name, frameBlock,
 					matrixMetadata);
 			return frameObject;
 		} else if (value instanceof DataFrame) {
 			DataFrame dataFrame = (DataFrame) value;
-			MatrixObject matrixObject = MLContextConversionUtil
-					.dataFrameToMatrixObject(name, dataFrame, matrixMetadata);
-			return matrixObject;
+			if(!bFrame) {
+				MatrixObject matrixObject = MLContextConversionUtil
+						.dataFrameToMatrixObject(name, dataFrame, matrixMetadata);
+				return matrixObject;
+			} else {
+				FrameObject frameObject = null;
+				try {
+					frameObject = MLContextConversionUtil
+							.dataFrameToFrameObject(name, dataFrame, matrixMetadata);
+				} catch (DMLRuntimeException e) {
+					e.printStackTrace();
+				}
+				return frameObject;
+			}
 		} else if (value instanceof BinaryBlockMatrix) {
 			BinaryBlockMatrix binaryBlockMatrix = (BinaryBlockMatrix) value;
 			if (matrixMetadata == null) {
@@ -853,6 +888,16 @@ public final class MLContextUtil {
 			sb.append(history);
 		}
 		return sb.toString();
+	}
+
+	public static SparkContext getSparkContext(MLContext mlContext)
+	{
+		return mlContext.getSparkContext();
+	}
+
+	public static JavaSparkContext getJavaSparkContext(MLContext mlContext)
+	{
+		return new JavaSparkContext(mlContext.getSparkContext());
 	}
 
 }

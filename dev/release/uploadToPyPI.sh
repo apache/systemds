@@ -20,15 +20,15 @@
 #
 #-------------------------------------------------------------
 
-cd ../../..
+cd ../..
 mvn clean package -P distribution
-tar -xzf target/systemml-*-SNAPSHOT.tar.gz -C src/main/python/SystemML
-
-cd src/main/python/SystemML
-mv systemml-*-incubating-SNAPSHOT SystemML-java
+tar -xzf target/systemml-*-SNAPSHOT.tar.gz -C src/main/python/systemml
+ 
+cd src/main/python/systemml
+mv systemml-*-incubating-SNAPSHOT systemml-java
 
 cd ..
 echo "Preparing to upload to PyPI ...."
-python setup.py register sdist upload
+python setup.py register sdist upload -r https://pypi.python.org/pypi
 
-rm -r SystemML/SystemML-java
+rm -r systemml/systemml-java

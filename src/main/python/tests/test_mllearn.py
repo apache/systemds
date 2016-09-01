@@ -20,7 +20,7 @@
 #
 #-------------------------------------------------------------
 from sklearn import datasets, neighbors
-from SystemML.mllearn import LogisticRegression, LinearRegression, SVM, NaiveBayes 
+from systemml.mllearn import LogisticRegression, LinearRegression, SVM, NaiveBayes 
 from pyspark.sql import SQLContext
 from pyspark.context import SparkContext
 import unittest

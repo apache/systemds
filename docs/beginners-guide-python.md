@@ -72,7 +72,7 @@ brew install apache-spark
 #### Step 1: Install SystemML Python package 
 
 ```bash
-pip install SystemML
+pip install systemml
 ```
 
 #### Step 2: Download SystemML Java binaries
@@ -81,14 +81,14 @@ SystemML Python package downloads the corresponding Java binaries (along with al
 into the installed location. To find the location of the downloaded Java binaries, use the following command:
 
 ```bash
-python -c 'import imp; import os; print os.path.join(imp.find_module("SystemML")[1], "SystemML-java")'
+python -c 'import imp; import os; print os.path.join(imp.find_module("systemml")[1], "systemml-java")'
 ```
 
 #### Step 3: (Optional but recommended) Set SYSTEMML_HOME environment variable
 <div class="codetabs">
 <div data-lang="OSX" markdown="1">
 ```bash
-SYSTEMML_HOME=`python -c 'import imp; import os; print os.path.join(imp.find_module("SystemML")[1], "SystemML-java")'`
+SYSTEMML_HOME=`python -c 'import imp; import os; print os.path.join(imp.find_module("systemml")[1], "systemml-java")'`
 # If you are using zsh or ksh or csh, append it to ~/.zshrc or ~/.profile or ~/.login respectively.
 echo '' >> ~/.bashrc
 echo 'export SYSTEMML_HOME='$SYSTEMML_HOME >> ~/.bashrc
@@ -96,7 +96,7 @@ echo 'export SYSTEMML_HOME='$SYSTEMML_HOME >> ~/.bashrc
 </div>
 <div data-lang="Linux" markdown="1">
 ```bash
-SYSTEMML_HOME=`python -c 'import imp; import os; print os.path.join(imp.find_module("SystemML")[1], "SystemML-java")'`
+SYSTEMML_HOME=`python -c 'import imp; import os; print os.path.join(imp.find_module("systemml")[1], "systemml-java")'`
 # If you are using zsh or ksh or csh, append it to ~/.zshrc or ~/.profile or ~/.login respectively.
 echo '' >> ~/.bashrc
 echo 'export SYSTEMML_HOME='$SYSTEMML_HOME >> ~/.bashrc
@@ -128,7 +128,7 @@ pyspark --master local[*] --driver-class-path $SYSTEMML_HOME"/SystemML.jar"
 To get started with SystemML, let's try few elementary matrix multiplication operations:
 
 ```python
-import SystemML as sml
+import systemml as sml
 import numpy as np
 sml.setSparkContext(sc)
 m1 = sml.matrix(np.ones((3,3)) + 2)
@@ -152,7 +152,7 @@ model: $ \beta = solve(X^T X, X^T y) $. For simplicity, we will use direct-solve
 ```python
 import numpy as np
 from sklearn import datasets
-import SystemML as sml
+import systemml as sml
 from pyspark.sql import SQLContext
 # Load the diabetes dataset
 diabetes = datasets.load_diabetes()
@@ -196,7 +196,7 @@ algorithm.
 ```python
 import numpy as np
 from sklearn import datasets
-from SystemML.mllearn import LinearRegression
+from systemml.mllearn import LinearRegression
 from pyspark.sql import SQLContext
 # Load the diabetes dataset
 diabetes = datasets.load_diabetes()
@@ -230,7 +230,7 @@ algorithm on digits datasets.
 ```python
 # Scikit-learn way
 from sklearn import datasets, neighbors
-from SystemML.mllearn import LogisticRegression
+from systemml.mllearn import LogisticRegression
 from pyspark.sql import SQLContext
 sqlCtx = SQLContext(sc)
 digits = datasets.load_digits()
@@ -245,15 +245,21 @@ logistic = LogisticRegression(sqlCtx)
 print('LogisticRegression score: %f' % logistic.fit(X_train, y_train).score(X_test, y_test))
 ```
 
+Output:
+
+```bash
+LogisticRegression score: 0.922222
+```
+
 ### Passing PySpark DataFrame
 
 To train the above algorithm on larger dataset, we can load the dataset into DataFrame and pass it to the `fit` method:
 
 ```python
 from sklearn import datasets, neighbors
-from SystemML.mllearn import LogisticRegression
+from systemml.mllearn import LogisticRegression
 from pyspark.sql import SQLContext
-import SystemML as sml
+import systemml as sml
 sqlCtx = SQLContext(sc)
 digits = datasets.load_digits()
 X_digits = digits.data
@@ -267,6 +273,12 @@ logistic = LogisticRegression(sqlCtx)
 print('LogisticRegression score: %f' % logistic.fit(df_train).score(X_test, y_test))
 ```
 
+Output:
+
+```bash
+LogisticRegression score: 0.922222
+```
+
 ### MLPipeline interface
 
 In the below example, we demonstrate how the same `LogisticRegression` class can allow SystemML to fit seamlessly into 
@@ -275,7 +287,7 @@ large data pipelines.
 ```python
 # MLPipeline way
 from pyspark.ml import Pipeline
-from SystemML.mllearn import LogisticRegression
+from systemml.mllearn import LogisticRegression
 from pyspark.ml.feature import HashingTF, Tokenizer
 from pyspark.sql import SQLContext
 sqlCtx = SQLContext(sc)
@@ -307,6 +319,19 @@ prediction = model.transform(test)
 prediction.show()
 ```
 
+Output:
+
+```bash
++--+---------------+--------------------+--------------------+--------------------+---+----------+
+|id|           text|               words|            features|         probability| ID|prediction|
++--+---------------+--------------------+--------------------+--------------------+---+----------+
+|12|    spark i j k|ArrayBuffer(spark...|(20,[5,6,7],[2.0,...|[0.99999999999975...|1.0|       1.0|
+|13|          l m n|ArrayBuffer(l, m, n)|(20,[8,9,10],[1.0...|[1.37552128844736...|2.0|       2.0|
+|14|mapreduce spark|ArrayBuffer(mapre...|(20,[5,10],[1.0,1...|[0.99860290938153...|3.0|       1.0|
+|15|  apache hadoop|ArrayBuffer(apach...|(20,[9,14],[1.0,1...|[5.41688748236143...|4.0|       2.0|
++--+---------------+--------------------+--------------------+--------------------+---+----------+
+```
+
 ## Invoking DML/PyDML scripts using MLContext
 
 The below example demonstrates how to invoke the algorithm [scripts/algorithms/MultiLogReg.dml](https://github.com/apache/incubator-systemml/blob/master/scripts/algorithms/MultiLogReg.dml)
@@ -315,7 +340,7 @@ using Python [MLContext API](https://apache.github.io/incubator-systemml/spark-m
 ```python
 from sklearn import datasets, neighbors
 from pyspark.sql import DataFrame, SQLContext
-import SystemML as sml
+import systemml as sml
 import pandas as pd
 import os
 sqlCtx = SQLContext(sc)

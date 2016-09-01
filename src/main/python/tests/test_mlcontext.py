@@ -23,7 +23,7 @@ import unittest
 
 from pyspark.context import SparkContext
 
-from SystemML import MLContext, dml, pydml
+from systemml import MLContext, dml, pydml
 
 sc = SparkContext()
 ml = MLContext(sc)

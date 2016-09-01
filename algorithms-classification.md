@@ -129,7 +129,7 @@ Eqs. (1) and (2).
 <div class="codetabs">
 <div data-lang="Python" markdown="1">
 {% highlight python %}
-from SystemML.mllearn import LogisticRegression
+from systemml.mllearn import LogisticRegression
 # C = 1/reg
 logistic = LogisticRegression(sqlCtx, fit_intercept=True, max_iter=100, max_inner_iter=0, tol=0.000001, C=1.0)
 # X_train, y_train and X_test can be NumPy matrices or Pandas DataFrame or SciPy Sparse Matrix
@@ -237,7 +237,7 @@ SystemML Language Reference for details.
 {% highlight python %}
 # Scikit-learn way
 from sklearn import datasets, neighbors
-from SystemML.mllearn import LogisticRegression
+from systemml.mllearn import LogisticRegression
 from pyspark.sql import SQLContext
 sqlCtx = SQLContext(sc)
 digits = datasets.load_digits()
@@ -253,7 +253,7 @@ print('LogisticRegression score: %f' % logistic.fit(X_train, y_train).score(X_te
 
 # MLPipeline way
 from pyspark.ml import Pipeline
-from SystemML.mllearn import LogisticRegression
+from systemml.mllearn import LogisticRegression
 from pyspark.ml.feature import HashingTF, Tokenizer
 from pyspark.sql import SQLContext
 sqlCtx = SQLContext(sc)
@@ -498,7 +498,7 @@ support vector machine (`y` with domain size `2`).
 <div class="codetabs">
 <div data-lang="Python" markdown="1">
 {% highlight python %}
-from SystemML.mllearn import SVM
+from systemml.mllearn import SVM
 # C = 1/reg
 svm = SVM(sqlCtx, fit_intercept=True, max_iter=100, tol=0.000001, C=1.0, is_multi_class=False)
 # X_train, y_train and X_test can be NumPy matrices or Pandas DataFrame or SciPy Sparse Matrix
@@ -766,7 +766,7 @@ class labels.
 <div class="codetabs">
 <div data-lang="Python" markdown="1">
 {% highlight python %}
-from SystemML.mllearn import SVM
+from systemml.mllearn import SVM
 # C = 1/reg
 svm = SVM(sqlCtx, fit_intercept=True, max_iter=100, tol=0.000001, C=1.0, is_multi_class=True)
 # X_train, y_train and X_test can be NumPy matrices or Pandas DataFrame or SciPy Sparse Matrix
@@ -916,7 +916,7 @@ SystemML Language Reference for details.
 {% highlight python %}
 # Scikit-learn way
 from sklearn import datasets, neighbors
-from SystemML.mllearn import SVM
+from systemml.mllearn import SVM
 from pyspark.sql import SQLContext
 sqlCtx = SQLContext(sc)
 digits = datasets.load_digits()
@@ -932,7 +932,7 @@ print('LogisticRegression score: %f' % svm.fit(X_train, y_train).score(X_test, y
 
 # MLPipeline way
 from pyspark.ml import Pipeline
-from SystemML.mllearn import SVM
+from systemml.mllearn import SVM
 from pyspark.ml.feature import HashingTF, Tokenizer
 from pyspark.sql import SQLContext
 sqlCtx = SQLContext(sc)
@@ -1122,7 +1122,7 @@ applicable when all features are counts of categorical values.
 <div class="codetabs">
 <div data-lang="Python" markdown="1">
 {% highlight python %}
-from SystemML.mllearn import NaiveBayes
+from systemml.mllearn import NaiveBayes
 nb = NaiveBayes(sqlCtx, laplace=1.0)
 # X_train, y_train and X_test can be NumPy matrices or Pandas DataFrame or SciPy Sparse Matrix
 y_test = nb.fit(X_train, y_train)
@@ -1257,7 +1257,7 @@ SystemML Language Reference for details.
 {% highlight python %}
 from sklearn.datasets import fetch_20newsgroups
 from sklearn.feature_extraction.text import TfidfVectorizer
-from SystemML.mllearn import NaiveBayes
+from systemml.mllearn import NaiveBayes
 from sklearn import metrics
 from pyspark.sql import SQLContext
 sqlCtx = SQLContext(sc)

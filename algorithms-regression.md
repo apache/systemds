@@ -82,7 +82,7 @@ efficient when the number of features $m$ is relatively small
 <div class="codetabs">
 <div data-lang="Python" markdown="1">
 {% highlight python %}
-from SystemML.mllearn import LinearRegression
+from systemml.mllearn import LinearRegression
 # C = 1/reg
 lr = LinearRegression(sqlCtx, fit_intercept=True, C=1.0, solver='direct-solve')
 # X_train, y_train and X_test can be NumPy matrices or Pandas DataFrame or SciPy Sparse Matrix
@@ -124,7 +124,7 @@ y_test = lr.fit(df_train)
 <div class="codetabs">
 <div data-lang="Python" markdown="1">
 {% highlight python %}
-from SystemML.mllearn import LinearRegression
+from systemml.mllearn import LinearRegression
 # C = 1/reg
 lr = LinearRegression(sqlCtx, fit_intercept=True, max_iter=100, tol=0.000001, C=1.0, solver='newton-cg')
 # X_train, y_train and X_test can be NumPy matrices or Pandas DataFrames or SciPy Sparse matrices
@@ -222,7 +222,7 @@ SystemML Language Reference for details.
 {% highlight python %}
 import numpy as np
 from sklearn import datasets
-from SystemML.mllearn import LinearRegression
+from systemml.mllearn import LinearRegression
 from pyspark.sql import SQLContext
 # Load the diabetes dataset
 diabetes = datasets.load_diabetes()
@@ -277,7 +277,7 @@ print("Residual sum of squares: %.2f" % np.mean((regr.predict(diabetes_X_test) -
 {% highlight python %}
 import numpy as np
 from sklearn import datasets
-from SystemML.mllearn import LinearRegression
+from systemml.mllearn import LinearRegression
 from pyspark.sql import SQLContext
 # Load the diabetes dataset
 diabetes = datasets.load_diabetes()

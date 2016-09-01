@@ -34,7 +34,7 @@ REQUIRED_PACKAGES = [
 ]
 
 PACKAGE_DATA = []
-for path, subdirs, files in os.walk('SystemML/SystemML-java'):
+for path, subdirs, files in os.walk('systemml/systemml-java'):
     for name in files:
         PACKAGE_DATA = PACKAGE_DATA + [ os.path.join(path, name).replace('./', '') ]
         
@@ -61,7 +61,7 @@ setup(
     install_requires=REQUIRED_PACKAGES,
     include_package_data=True,
     package_data={
-        'SystemML-java': PACKAGE_DATA
+        'systemml-java': PACKAGE_DATA
     },
     classifiers=[
         'Intended Audience :: Developers',

@@ -18,12 +18,12 @@
 # under the License.
 #
 #-------------------------------------------------------------
-include SystemML/SystemML-java/LICENSE
-include SystemML/SystemML-java/SystemML-config.xml
-include SystemML/SystemML-java/NOTICE
-include SystemML/SystemML-java/SystemML.jar
-include SystemML/SystemML-java/DISCLAIMER
-include SystemML/SystemML-java/scripts/sparkDML.sh
-recursive-include SystemML/SystemML-java/scripts/algorithms *
-recursive-include SystemML/SystemML-java/scripts/datagen *
-recursive-include SystemML/SystemML-java/scripts/utils *
+include systemml/systemml-java/LICENSE
+include systemml/systemml-java/SystemML-config.xml
+include systemml/systemml-java/NOTICE
+include systemml/systemml-java/SystemML.jar
+include systemml/systemml-java/DISCLAIMER
+include systemml/systemml-java/scripts/sparkDML.sh
+recursive-include systemml/systemml-java/scripts/algorithms *
+recursive-include systemml/systemml-java/scripts/datagen *
+recursive-include systemml/systemml-java/scripts/utils *

@@ -329,12 +329,9 @@ class MLContext(object):
         Parameters
         ----------
         explainLevel: string
-            Can be one of "HOPS", "RUNTIME", "RECOMPILE_HOPS", "RECOMPILE_RUNTIME"
+            Can be one of "hops", "runtime", "recompile_hops", "recompile_runtime"
+            or in the above in upper case.
         """
-        ALLOWED_EXPLAIN_LEVELS = ["HOPS", "RUNTIME", "RECOMPILE_HOPS", "RECOMPILE_RUNTIME"]
-        if explainLevel not in ALLOWED_EXPLAIN_LEVELS:
-            raise ValueError("Expected explainLevel to be in %s, got %s" %
-                             (ALLOWED_EXPLAIN_LEVELS, explainLevel))
         self._ml.setExplainLevel(explainLevel)
         return self
 

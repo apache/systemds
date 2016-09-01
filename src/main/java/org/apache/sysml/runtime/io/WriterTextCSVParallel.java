@@ -28,6 +28,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysml.conf.DMLConfig;
@@ -90,8 +91,18 @@ public class WriterTextCSVParallel extends WriterTextCSV
 		} 
 		catch (Exception e) {
 			throw new IOException("Failed parallel write of csv output.", e);
-		}		
-	}	
+		}
+
+		// delete crc files if written to local file system
+		if (fs instanceof LocalFileSystem) {
+			int rlen = src.getNumRows();
+			int blklen = (int)Math.ceil((double)rlen / numThreads);
+			for(int i=0; i<numThreads & i*blklen<rlen; i++) {
+				Path newPath = new Path(path, String.format("0-m-%05d",i));
+				IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, newPath);
+			}
+		}
+	}
 
 	
 	/**

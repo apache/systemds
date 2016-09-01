@@ -329,11 +329,22 @@ public class IOUtilFunctions
 		return ncol;
 	}
 
-	public static void deleteCrcFilesFromLocalFileSystem(FileSystem fs, String fname) throws IOException {
+	/**
+	 * Delete the CRC files from the local file system associated with a
+	 * particular file and its metadata file.
+	 * 
+	 * @param fs
+	 *            the file system
+	 * @param path
+	 *            the path to a file
+	 * @throws IOException
+	 *             thrown if error occurred attempting to delete crc files
+	 */
+	public static void deleteCrcFilesFromLocalFileSystem(FileSystem fs, Path path) throws IOException {
 		if (fs instanceof LocalFileSystem) {
-			Path fnameCrc = new Path("." + fname + ".crc");
+			Path fnameCrc = new Path(path.getParent(), "." + path.getName() + ".crc");
 			fs.delete(fnameCrc, false);
-			Path fnameMtdCrc = new Path("." + fname + ".mtd.crc");
+			Path fnameMtdCrc = new Path(path.getParent(), "." + path.getName() + ".mtd.crc");
 			fs.delete(fnameMtdCrc, false);
 		}
 	}

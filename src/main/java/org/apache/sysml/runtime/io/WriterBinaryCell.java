@@ -52,7 +52,7 @@ public class WriterBinaryCell extends MatrixWriter
 		writeBinaryCellMatrixToHDFS(path, job, src, rlen, clen, brlen, bclen);
 
 		FileSystem fs = FileSystem.get(job);
-		IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, fname);
+		IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, path);
 	}
 
 	@Override
@@ -72,7 +72,7 @@ public class WriterBinaryCell extends MatrixWriter
 		writer.append(index, cell);
 		writer.close();
 
-		IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, fname);
+		IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, path);
 	}
 
 	/**

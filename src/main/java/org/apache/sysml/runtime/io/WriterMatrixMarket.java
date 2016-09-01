@@ -64,7 +64,7 @@ public class WriterMatrixMarket extends MatrixWriter
 		//core write
 		writeMatrixMarketMatrixToHDFS(path, job, fs, src);
 
-		IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, fname);
+		IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, path);
 	}
 
 	@Override
@@ -78,7 +78,7 @@ public class WriterMatrixMarket extends MatrixWriter
 		writer.writeBytes("1 1 0");
 		writer.close();
 
-		IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, fname);
+		IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, path);
 	}
 	
 	/**

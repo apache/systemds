@@ -56,7 +56,7 @@ public class WriterTextCell extends MatrixWriter
 		//core write
 		writeTextCellMatrixToHDFS(path, job, fs, src, rlen, clen);
 
-		IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, fname);
+		IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, path);
 	}
 
 	@Override
@@ -70,7 +70,7 @@ public class WriterTextCell extends MatrixWriter
 		writer.writeBytes("1 1 0");
 		writer.close();
 
-		IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, fname);
+		IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, path);
 	}
 	
 	/**

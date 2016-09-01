@@ -30,7 +30,7 @@ from pyspark.sql import DataFrame, SQLContext
 def setSparkContext(sc):
     """
     Before using the matrix, the user needs to invoke this function.
-    
+
     Parameters
     ----------
     sc: SparkContext
@@ -38,7 +38,7 @@ def setSparkContext(sc):
     """
     matrix.ml = MLContext(sc)
     matrix.sc = sc
-    
+
 def checkIfMLContextIsSet():
     if matrix.ml is None:
         raise Exception('Expected setSparkContext(sc) to be called.')
@@ -50,10 +50,10 @@ class DMLOp(object):
     def __init__(self, inputs, dml=None):
         self.inputs = inputs
         self.dml = dml
-        
+
     def _visit(self, execute=True):
         matrix.dml = matrix.dml + self.dml
-            
+
 
 def reset():
     """
@@ -62,7 +62,7 @@ def reset():
     for m in matrix.visited:
         m.visited = False
     matrix.visited = []
-        
+
 def binaryOp(lhs, rhs, opStr):
     """
     Common function called by all the binary operators in matrix class
@@ -103,7 +103,7 @@ def binaryMatrixFunction(X, Y, fnName):
 def solve(A, b):
     """
     Computes the least squares solution for system of linear equations A %*% x = b
-    
+
     Examples
     --------
     >>> import numpy as np
@@ -123,7 +123,7 @@ def solve(A, b):
     >>> b = X.transpose().dot(y)
     >>> beta = sml.solve(A, b).toNumPyArray()
     >>> y_predicted = X_test.dot(beta)
-    >>> print('Residual sum of squares: %.2f' % np.mean((y_predicted - y_test) ** 2)) 
+    >>> print('Residual sum of squares: %.2f' % np.mean((y_predicted - y_test) ** 2))
     Residual sum of squares: 25282.12
     """
     return binaryMatrixFunction(A, b, 'solve')
@@ -158,20 +158,20 @@ def eval(outputs, outputDF=False, execute=True):
             m.data = results.getDataFrame(m.ID)
         else:
             m.data = results.getNumPyArray(m.ID)
-    
+
 class matrix(object):
     """
     matrix class is a python wrapper that implements basic matrix operator.
     Note: an evaluated matrix contains a data field computed by eval method as DataFrame or NumPy array.
-    
+
     Examples
     --------
     >>> import SystemML as sml
     >>> import numpy as np
     >>> sml.setSparkContext(sc)
-    
+
     Welcome to Apache SystemML!
-    
+
     >>> m1 = sml.matrix(np.ones((3,3)) + 2)
     >>> m2 = sml.matrix(np.ones((3,3)) + 3)
     >>> m2 = m1 * (m2 + m1)
@@ -184,7 +184,7 @@ class matrix(object):
     mVar4 = mVar1 * mVar3
     mVar5 = 1.0 - mVar4
     save(mVar5, " ")
-    
+
     <SystemML.defmatrix.matrix object>
     >>> m2.eval()
     >>> m2
@@ -195,7 +195,7 @@ class matrix(object):
     mVar4 = load(" ", format="csv")
     mVar5 = 1.0 - mVar4
     save(mVar5, " ")
-    
+
     <SystemML.defmatrix.matrix object>
     >>> m4.sum(axis=1).toNumPyArray()
     array([[-60.],
@@ -204,31 +204,31 @@ class matrix(object):
     """
     # Global variable that is used to keep track of intermediate matrix variables in the DML script
     systemmlVarID = 0
-    
+
     # Since joining of string is expensive operation, we collect the set of strings into list and then join
     # them before execution: See matrix.script.scriptString = ''.join(matrix.dml) in eval() method
     dml = []
-    
+
     # Represents MLContext's script object
     script = None
-    
+
     # Represents MLContext object
     ml = None
-    
+
     # Contains list of nodes visited in Abstract Syntax Tree. This helps to avoid computation of matrix objects
     # that have been previously evaluated.
     visited = []
-    
+
     def __init__(self, data, op=None):
         """
         Constructs a lazy matrix
-        
+
         Parameters
         ----------
         data: NumPy ndarray, Pandas DataFrame, scipy sparse matrix or PySpark DataFrame. (data cannot be None for external users, 'data=None' is used internally for lazy evaluation).
         """
         checkIfMLContextIsSet()
-        self.visited = False 
+        self.visited = False
         matrix.systemmlVarID += 1
         self.output = False
         self.ID = 'mVar' + str(matrix.systemmlVarID)
@@ -242,21 +242,21 @@ class matrix(object):
             self.op = op
         else:
             raise TypeError('Unsupported input type')
-            
+
     def eval(self, outputDF=False):
         """
         This is a convenience function that calls the global eval method
         """
         eval([self], outputDF=False)
-      
+
     def toPandas(self):
         """
         This is a convenience function that calls the global eval method and then converts the matrix object into Pandas DataFrame.
         """
         if self.data is None:
             self.eval()
-        return convertToPandasDF(self.data)    
-    
+        return convertToPandasDF(self.data)
+
     def toNumPyArray(self):
         """
         This is a convenience function that calls the global eval method and then converts the matrix object into NumPy array.
@@ -267,7 +267,7 @@ class matrix(object):
             self.data = self.data.toPandas().as_matrix()
         # Always keep default format as NumPy array if possible
         return self.data
-    
+
     def toDataFrame(self):
         """
         This is a convenience function that calls the global eval method and then converts the matrix object into DataFrame.
@@ -279,13 +279,13 @@ class matrix(object):
                 MLResults.sqlContext = SQLContext(matrix.sc)
             self.data = sqlContext.createDataFrame(self.toPandas())
         return self.data
-        
+
     def _visit(self, execute=True):
         """
         This function is called for two scenarios:
         1. For printing the PyDML script which has not yet been evaluated (execute=False). See '__repr__' method.
-        2. Called as part of 'eval' method (execute=True). In this scenario, it builds the PyDML script by visiting itself 
-        and its child nodes. Also, it does appropriate registration as input or output that is required by MLContext.  
+        2. Called as part of 'eval' method (execute=True). In this scenario, it builds the PyDML script by visiting itself
+        and its child nodes. Also, it does appropriate registration as input or output that is required by MLContext.
         """
         if self.visited:
             return self
@@ -308,13 +308,13 @@ class matrix(object):
         if self.data is None and self.output:
             matrix.dml = matrix.dml + ['save(',  self.ID, ', \" \")\n']
             if execute:
-                matrix.script.out(self.ID)
+                matrix.script.output(self.ID)
         return self
-    
+
     def __repr__(self):
         """
         This function helps to debug matrix class and also examine the generated PyDML script
-        """ 
+        """
         if self.data is None:
             print('# This matrix (' + self.ID + ') is backed by below given PyDML script (which is not yet evaluated). To fetch the data of this matrix, invoke toNumPyArray() or toDataFrame() or toPandas() methods.\n' + eval([self], execute=False))
         elif isinstance(self.data, DataFrame):
@@ -322,49 +322,49 @@ class matrix(object):
         else:
             print('# This matrix (' + self.ID + ') is backed by NumPy array. To fetch the NumPy array, invoke toNumPyArray() method.')
         return '<SystemML.defmatrix.matrix object>'
-        
+
     def __add__(self, other):
         return binaryOp(self, other, ' + ')
-        
+
     def __sub__(self, other):
         return binaryOp(self, other, ' - ')
-        
+
     def __mul__(self, other):
         return binaryOp(self, other, ' * ')
-        
+
     def __floordiv__(self, other):
         return binaryOp(self, other, ' // ')
-        
+
     def __div__(self, other):
         return binaryOp(self, other, ' / ')
-        
+
     def __mod__(self, other):
         return binaryOp(self, other, ' % ')
-        
+
     def __pow__(self, other):
         return binaryOp(self, other, ' ** ')
 
     def __radd__(self, other):
         return binaryOp(other, self, ' + ')
-        
+
     def __rsub__(self, other):
         return binaryOp(other, self, ' - ')
-        
+
     def __rmul__(self, other):
         return binaryOp(other, self, ' * ')
-        
+
     def __rfloordiv__(self, other):
         return binaryOp(other, self, ' // ')
-        
+
     def __rdiv__(self, other):
         return binaryOp(other, self, ' / ')
-        
+
     def __rmod__(self, other):
         return binaryOp(other, self, ' % ')
-        
+
     def __rpow__(self, other):
         return binaryOp(other, self, ' ** ')
-        
+
     def sum(self, axis=None):
         return self._aggFn('sum', axis)
 
@@ -382,7 +382,7 @@ class matrix(object):
 
     def argmax(self, axis=None):
         return self._aggFn('argmax', axis)
-        
+
     def cumsum(self, axis=None):
         return self._aggFn('cumsum', axis)
 
@@ -391,20 +391,20 @@ class matrix(object):
 
     def trace(self, axis=None):
         return self._aggFn('trace', axis)
-        
+
     def _aggFn(self, fnName, axis):
         """
         Common function that is called for functions that have axis as parameter.
-        """ 
+        """
         dmlOp = DMLOp([self])
         out = matrix(None, op=dmlOp)
         if axis is None:
             dmlOp.dml = [out.ID, ' = ', fnName, '(', self.ID, ')\n']
         else:
             dmlOp.dml = [out.ID, ' = ', fnName, '(', self.ID, ', axis=', str(axis) ,')\n']
-        return out        
+        return out
 
     def dot(self, other):
         return binaryMatrixFunction(self, other, 'dot')
-            
+
 __all__ = [ 'setSparkContext', 'matrix', 'eval', 'solve']

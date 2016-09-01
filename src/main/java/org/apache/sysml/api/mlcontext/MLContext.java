@@ -371,18 +371,18 @@ public class MLContext {
 	 * @param explainLevel
 	 *            string denoting program explanation
 	 */
-	public void setExplainLevel(String explainLevel) {
-		if (explainLevel != null) {
-      for (ExplainLevel exp : ExplainLevel.values()) {
-				String expString = exp.toString();
-        if (expString.equalsIgnoreCase(explainLevel)) {
-          setExplainLevel(exp);
-					return;
-        }
-      }
+  public void setExplainLevel(String explainLevel) {
+   if (explainLevel != null) {
+    for (ExplainLevel exp : ExplainLevel.values()) {
+     String expString = exp.toString();
+     if (expString.equalsIgnoreCase(explainLevel)) {
+      setExplainLevel(exp);
+      return;
+     }
     }
-		throw new MLContextException("Failed to parse explain level: "+ explainLevel + " " +
-																 "(valid types: hops, runtime, recompile_hops, recompile_runtime).");
+   }
+   throw new MLContextException("Failed to parse explain level: "+ explainLevel + " " +
+	                              "(valid types: hops, runtime, recompile_hops, recompile_runtime).");
   }
 
 	/**

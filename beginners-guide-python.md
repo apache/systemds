@@ -328,6 +328,6 @@ X_df = sqlCtx.createDataFrame(pd.DataFrame(X_digits[:.9 * n_samples]))
 y_df = sqlCtx.createDataFrame(pd.DataFrame(y_digits[:.9 * n_samples]))
 ml = sml.MLContext(sc)
 script = os.path.join(os.environ['SYSTEMML_HOME'], 'scripts', 'algorithms', 'MultiLogReg.dml')
-script = sml.dml(script).input(X=X_df, Y_vec=y_df).input(**{"$X": ' ', "$Y": ' ', "$B": ' '}).out("B_out")
+script = sml.dml(script).input(X=X_df, Y_vec=y_df).output("B_out")
 beta = ml.execute(script).getNumPyArray('B_out')
 ```

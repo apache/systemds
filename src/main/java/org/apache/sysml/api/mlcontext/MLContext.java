@@ -364,26 +364,26 @@ public class MLContext {
 		this.explainLevel = explainLevel;
 	}
 
-	/**
-	 * Set the level of program explanation that should be displayed if explain
-	 * is set to true.
-	 *
-	 * @param explainLevel
-	 *            string denoting program explanation
-	 */
-  public void setExplainLevel(String explainLevel) {
-   if (explainLevel != null) {
-    for (ExplainLevel exp : ExplainLevel.values()) {
-     String expString = exp.toString();
+ /**
+  * Set the level of program explanation that should be displayed if explain
+  * is set to true.
+  *
+  * @param explainLevel
+  *            string denoting program explanation
+  */
+ public void setExplainLevel(String explainLevel) {
+  if (explainLevel != null) {
+   for (ExplainLevel exp : ExplainLevel.values()) {
+    String expString = exp.toString();
      if (expString.equalsIgnoreCase(explainLevel)) {
       setExplainLevel(exp);
       return;
      }
-    }
    }
-   throw new MLContextException("Failed to parse explain level: "+ explainLevel + " " +
-	                              "(valid types: hops, runtime, recompile_hops, recompile_runtime).");
   }
+  throw new MLContextException("Failed to parse explain level: "+ explainLevel + " " +
+	                             "(valid types: hops, runtime, recompile_hops, recompile_runtime).");
+ }
 
 	/**
 	 * Used internally by MLContextProxy.

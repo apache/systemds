@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -146,7 +146,7 @@ public class MLContext {
 	/**
 	 * Retrieve the currently active MLContext. This is used internally by
 	 * SystemML via MLContextProxy.
-	 * 
+	 *
 	 * @return the active MLContext
 	 */
 	public static MLContext getActiveMLContext() {
@@ -156,7 +156,7 @@ public class MLContext {
 	/**
 	 * Create an MLContext based on a SparkContext for interaction with SystemML
 	 * on Spark.
-	 * 
+	 *
 	 * @param sparkContext
 	 *            SparkContext
 	 */
@@ -167,7 +167,7 @@ public class MLContext {
 	/**
 	 * Create an MLContext based on a JavaSparkContext for interaction with
 	 * SystemML on Spark.
-	 * 
+	 *
 	 * @param javaSparkContext
 	 *            JavaSparkContext
 	 */
@@ -178,7 +178,7 @@ public class MLContext {
 	/**
 	 * Create an MLContext based on a SparkContext for interaction with SystemML
 	 * on Spark, optionally monitor performance.
-	 * 
+	 *
 	 * @param sc
 	 *            SparkContext object.
 	 * @param monitorPerformance
@@ -193,7 +193,7 @@ public class MLContext {
 	 * Initialize MLContext. Verify Spark version supported, set default
 	 * execution mode, set MLContextProxy, set default config, set compiler
 	 * config, and configure monitoring if needed.
-	 * 
+	 *
 	 * @param sc
 	 *            SparkContext object.
 	 * @param monitorPerformance
@@ -242,7 +242,7 @@ public class MLContext {
 	/**
 	 * Set configuration property, such as
 	 * {@code setConfigProperty("localtmpdir", "/tmp/systemml")}.
-	 * 
+	 *
 	 * @param propertyName
 	 *            property name
 	 * @param propertyValue
@@ -259,7 +259,7 @@ public class MLContext {
 
 	/**
 	 * Execute a DML or PYDML Script.
-	 * 
+	 *
 	 * @param script
 	 *            The DML or PYDML Script object to execute.
 	 */
@@ -275,7 +275,7 @@ public class MLContext {
 	 * Execute a DML or PYDML Script object using a ScriptExecutor. The
 	 * ScriptExecutor class can be extended to allow the modification of the
 	 * default execution pathway.
-	 * 
+	 *
 	 * @param script
 	 *            the DML or PYDML Script object
 	 * @param scriptExecutor
@@ -304,7 +304,7 @@ public class MLContext {
 
 	/**
 	 * Set SystemML configuration based on a configuration file.
-	 * 
+	 *
 	 * @param configFilePath
 	 *            path to the configuration file
 	 */
@@ -314,7 +314,7 @@ public class MLContext {
 
 	/**
 	 * Obtain the SparkMonitoringUtil if it is available.
-	 * 
+	 *
 	 * @return the SparkMonitoringUtil if it is available.
 	 */
 	public SparkMonitoringUtil getSparkMonitoringUtil() {
@@ -323,7 +323,7 @@ public class MLContext {
 
 	/**
 	 * Obtain the SparkContext associated with this MLContext.
-	 * 
+	 *
 	 * @return the SparkContext associated with this MLContext.
 	 */
 	public SparkContext getSparkContext() {
@@ -333,7 +333,7 @@ public class MLContext {
 	/**
 	 * Whether or not an explanation of the DML/PYDML program should be output
 	 * to standard output.
-	 * 
+	 *
 	 * @return {@code true} if explanation should be output, {@code false}
 	 *         otherwise
 	 */
@@ -344,7 +344,7 @@ public class MLContext {
 	/**
 	 * Whether or not an explanation of the DML/PYDML program should be output
 	 * to standard output.
-	 * 
+	 *
 	 * @param explain
 	 *            {@code true} if explanation should be output, {@code false}
 	 *            otherwise
@@ -356,13 +356,34 @@ public class MLContext {
 	/**
 	 * Set the level of program explanation that should be displayed if explain
 	 * is set to true.
-	 * 
+	 *
 	 * @param explainLevel
 	 *            the level of program explanation
 	 */
 	public void setExplainLevel(ExplainLevel explainLevel) {
 		this.explainLevel = explainLevel;
 	}
+
+ /**
+  * Set the level of program explanation that should be displayed if explain
+  * is set to true.
+  *
+  * @param explainLevel
+  *            string denoting program explanation
+  */
+ public void setExplainLevel(String explainLevel) {
+  if (explainLevel != null) {
+   for (ExplainLevel exp : ExplainLevel.values()) {
+    String expString = exp.toString();
+     if (expString.equalsIgnoreCase(explainLevel)) {
+      setExplainLevel(exp);
+      return;
+     }
+   }
+  }
+  throw new MLContextException("Failed to parse explain level: "+ explainLevel + " " +
+	                             "(valid types: hops, runtime, recompile_hops, recompile_runtime).");
+ }
 
 	/**
 	 * Used internally by MLContextProxy.
@@ -492,7 +513,7 @@ public class MLContext {
 	/**
 	 * Whether or not statistics of the DML/PYDML program execution should be
 	 * output to standard output.
-	 * 
+	 *
 	 * @return {@code true} if statistics should be output, {@code false}
 	 *         otherwise
 	 */
@@ -503,7 +524,7 @@ public class MLContext {
 	/**
 	 * Whether or not statistics of the DML/PYDML program execution should be
 	 * output to standard output.
-	 * 
+	 *
 	 * @param statistics
 	 *            {@code true} if statistics should be output, {@code false}
 	 *            otherwise
@@ -515,7 +536,7 @@ public class MLContext {
 
 	/**
 	 * Obtain a map of the scripts that have executed.
-	 * 
+	 *
 	 * @return a map of the scripts that have executed
 	 */
 	public Map<String, Script> getScripts() {
@@ -524,7 +545,7 @@ public class MLContext {
 
 	/**
 	 * Obtain a script that has executed by name.
-	 * 
+	 *
 	 * @param name
 	 *            the name of the script
 	 * @return the script corresponding to the name
@@ -539,7 +560,7 @@ public class MLContext {
 
 	/**
 	 * Display the history of scripts that have executed.
-	 * 
+	 *
 	 * @return the history of scripts that have executed
 	 */
 	public String history() {

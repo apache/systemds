@@ -26,6 +26,7 @@ try:
     from py4j.java_gateway import JavaObject
 except ImportError:
     raise ImportError('Unable to import JavaObject from py4j.java_gateway. Hint: Make sure you are running with pyspark')
+
 from pyspark import SparkContext
 import pyspark.mllib.common
 from pyspark.sql import DataFrame, SQLContext
@@ -297,6 +298,42 @@ class MLContext(object):
         for val in script._output:
             script_java.out(val)
         return MLResults(self._ml.execute(script_java), self._sc)
+
+    def setStatistics(self, statistics):
+        """
+        Whether or not to output statistics (such as execution time, elapsed time)
+        about script executions.
+
+        Parameters
+        ----------
+        statistics: boolean
+        """
+        self._ml.setStatistics(bool(statistics))
+        return self
+
+    def setExplain(self, explain):
+        """
+        Explanation about the program. Mainly intended for developers.
+
+        Parameters
+        ----------
+        explain: boolean
+        """
+        self._ml.setExplain(bool(explain))
+        return self
+
+    def setExplainLevel(self, explainLevel):
+        """
+        Set explain level.
+
+        Parameters
+        ----------
+        explainLevel: string
+            Can be one of "hops", "runtime", "recompile_hops", "recompile_runtime"
+            or in the above in upper case.
+        """
+        self._ml.setExplainLevel(explainLevel)
+        return self
 
 
 __all__ = ['MLResults', 'MLContext', 'Script', 'dml', 'pydml']

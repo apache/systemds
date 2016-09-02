@@ -1,4 +1,3 @@
-#!/usr/bin/python
 #-------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -20,12 +19,13 @@
 #
 #-------------------------------------------------------------
 
-import numpy as np
+__all__ = [ 'setSparkContext', 'matrix', 'eval', 'solve']
 
-from . import pydml, MLContext
-from .converters import *
-from pyspark import SparkContext, RDD
+from pyspark import SparkContext
 from pyspark.sql import DataFrame, SQLContext
+
+from . import MLContext, pydml
+from .converters import *
 
 def setSparkContext(sc):
     """
@@ -39,9 +39,11 @@ def setSparkContext(sc):
     matrix.ml = MLContext(sc)
     matrix.sc = sc
 
+
 def checkIfMLContextIsSet():
     if matrix.ml is None:
         raise Exception('Expected setSparkContext(sc) to be called.')
+
 
 class DMLOp(object):
     """
@@ -62,6 +64,7 @@ def reset():
     for m in matrix.visited:
         m.visited = False
     matrix.visited = []
+
 
 def binaryOp(lhs, rhs, opStr):
     """
@@ -87,6 +90,7 @@ def binaryOp(lhs, rhs, opStr):
     dmlOp.dml = [out.ID, ' = ', lhsStr, opStr, rhsStr, '\n']
     return out
 
+
 def binaryMatrixFunction(X, Y, fnName):
     """
     Common function called by supported PyDML built-in function that has two arguments both of which are matrices.
@@ -99,6 +103,7 @@ def binaryMatrixFunction(X, Y, fnName):
     out = matrix(None, op=dmlOp)
     dmlOp.dml = [out.ID, ' = ', fnName,'(', X.ID, ', ', Y.ID, ')\n']
     return out
+
 
 def solve(A, b):
     """
@@ -127,6 +132,7 @@ def solve(A, b):
     Residual sum of squares: 25282.12
     """
     return binaryMatrixFunction(A, b, 'solve')
+
 
 def eval(outputs, outputDF=False, execute=True):
     """
@@ -158,6 +164,7 @@ def eval(outputs, outputDF=False, execute=True):
             m.data = results.getDataFrame(m.ID)
         else:
             m.data = results.getNumPyArray(m.ID)
+
 
 class matrix(object):
     """
@@ -406,5 +413,3 @@ class matrix(object):
 
     def dot(self, other):
         return binaryMatrixFunction(self, other, 'dot')
-
-__all__ = [ 'setSparkContext', 'matrix', 'eval', 'solve']

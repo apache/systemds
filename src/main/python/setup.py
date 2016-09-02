@@ -1,4 +1,3 @@
-#!/usr/bin/python
 #-------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -8,9 +7,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,8 +19,8 @@
 #
 #-------------------------------------------------------------
 
-from setuptools import setup, find_packages
 import os
+from setuptools import find_packages, setup
 import time
 
 VERSION = '0.11.0.dev1'
@@ -37,22 +36,22 @@ PACKAGE_DATA = []
 for path, subdirs, files in os.walk('systemml/systemml-java'):
     for name in files:
         PACKAGE_DATA = PACKAGE_DATA + [ os.path.join(path, name).replace('./', '') ]
-        
+
 setup(
-    name='SystemML',
+    name='systemml',
     version=VERSION,
     description='Apache SystemML is a distributed and declarative machine learning platform.',
     long_description='''
-    
+
     Apache SystemML is an effort undergoing incubation at the Apache Software Foundation (ASF), sponsored by the Apache Incubator PMC.
     While incubation status is not necessarily a reflection of the completeness
     or stability of the code, it does indicate that the project has yet to be
     fully endorsed by the ASF.
-    
-    Apache SystemML provides declarative large-scale machine learning (ML) that aims at 
-    flexible specification of ML algorithms and automatic generation of hybrid runtime 
+
+    Apache SystemML provides declarative large-scale machine learning (ML) that aims at
+    flexible specification of ML algorithms and automatic generation of hybrid runtime
     plans ranging from single-node, in-memory computations, to distributed computations on Apache Hadoop and Apache Spark.
-    
+
     Note: This is not a released version and was built with SNAPSHOT available on the date''' + RELEASED_DATE,
     url='http://systemml.apache.org/',
     author='Apache SystemML',

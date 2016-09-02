@@ -1,4 +1,3 @@
-#!/usr/bin/python
 #-------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -19,6 +18,7 @@
 # under the License.
 #
 #-------------------------------------------------------------
+
 import os
 
 try:
@@ -26,10 +26,10 @@ try:
     from py4j.java_gateway import JavaObject
 except ImportError:
     raise ImportError('Unable to import JavaObject from py4j.java_gateway. Hint: Make sure you are running with pyspark')
-
 from pyspark import SparkContext
 import pyspark.mllib.common
 from pyspark.sql import DataFrame, SQLContext
+
 from .converters import *
 
 def dml(scriptString):

@@ -1,4 +1,3 @@
-#!/usr/bin/python
 #-------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -8,9 +7,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,15 +19,12 @@
 #
 #-------------------------------------------------------------
 
-from pyspark.context import SparkContext 
-from pyspark.sql import DataFrame, SQLContext
-from pyspark.rdd import RDD
+__all__ = [ 'getNumCols', 'convertToMatrixBlock', 'convertToNumpyArr', 'convertToPandasDF', 'SUPPORTED_TYPES' , 'convertToLabeledDF']
+
 import numpy as np
 import pandas as pd
-import sklearn as sk
-
-from scipy.sparse import spmatrix
-from scipy.sparse import coo_matrix
+from pyspark.context import SparkContext
+from scipy.sparse import coo_matrix, spmatrix
 
 SUPPORTED_TYPES = (np.ndarray, pd.DataFrame, spmatrix)
 
@@ -37,7 +33,8 @@ def getNumCols(numPyArr):
         return 1
     else:
         return numPyArr.shape[1]
-       
+
+
 def convertToLabeledDF(sqlCtx, X, y=None):
     from pyspark.ml.feature import VectorAssembler
     if y is not None:
@@ -56,7 +53,7 @@ def convertToLabeledDF(sqlCtx, X, y=None):
         return out.select('features', 'label')
     else:
         return out.select('features')
-    
+
 
 def convertToMatrixBlock(sc, src):
     if isinstance(src, spmatrix):
@@ -80,7 +77,7 @@ def convertToMatrixBlock(sc, src):
         return sc._jvm.org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt.convertPy4JArrayToMB(buf, numRows, numCols)
     else:
         raise TypeError('sc needs to be of type SparkContext') # TODO: We can generalize this by creating py4j gateway ourselves
-    
+
 
 def convertToNumpyArr(sc, mb):
     if isinstance(sc, SparkContext):
@@ -96,5 +93,3 @@ def convertToPandasDF(X):
     if not isinstance(X, pd.DataFrame):
         return pd.DataFrame(X, columns=['C' + str(i) for i in range(getNumCols(X))])
     return X
-    
-__all__ = [ 'getNumCols', 'convertToMatrixBlock', 'convertToNumpyArr', 'convertToPandasDF', 'SUPPORTED_TYPES' , 'convertToLabeledDF']

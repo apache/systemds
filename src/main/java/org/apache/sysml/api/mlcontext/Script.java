@@ -68,13 +68,9 @@ public class Script {
 	 */
 	private Set<String> inputVariables = new LinkedHashSet<String>();
 	/**
-	 * The input variable type (if its frame of matrix).
+	 * The input matrix or frame metadata if present.
 	 */
-	private Map<String, Boolean> inputVariablesType = new LinkedHashMap<String, Boolean>();
-	/**
-	 * The input matrix metadata if present.
-	 */
-	private Map<String, MatrixMetadata> inputMatrixMetadata = new LinkedHashMap<String, MatrixMetadata>();
+	private Map<String, Metadata> inputMetadata = new LinkedHashMap<String, Metadata>();
 	/**
 	 * The output variables.
 	 */
@@ -186,15 +182,6 @@ public class Script {
 	}
 
 	/**
-	 * Obtain the input variable type flag (if its frame or not)
-	 *
-	 * @return the input variable names
-	 */
-	public Map<String, Boolean> getInputVariablesType() {
-		return inputVariablesType;
-	}
-
-	/**
 	 * Obtain the output variable names as an unmodifiable set of strings.
 	 *
 	 * @return the output variable names
@@ -223,12 +210,12 @@ public class Script {
 	}
 
 	/**
-	 * Obtain an unmodifiable map of input matrix metadata.
+	 * Obtain an unmodifiable map of input matrix/frame metadata.
 	 *
-	 * @return input matrix metadata
+	 * @return input matrix/frame metadata
 	 */
-	public Map<String, MatrixMetadata> getInputMatrixMetadata() {
-		return Collections.unmodifiableMap(inputMatrixMetadata);
+	public Map<String, Metadata> getInputMetadata() {
+		return Collections.unmodifiableMap(inputMetadata);
 	}
 
 	/**
@@ -317,7 +304,7 @@ public class Script {
 	 * @return {@code this} Script object to allow chaining of methods
 	 */
 	public Script in(String name, Object value) {
-		return in(name, value, (MatrixMetadata) null);
+		return in(name, value, null);
 	}
 
 	/**
@@ -328,45 +315,11 @@ public class Script {
 	 *            name of the input
 	 * @param value
 	 *            value of the input
-	 * @param matrixFormat
-	 *            optional matrix format
+	 * @param metadata
+	 *            optional matrix/frame metadata
 	 * @return {@code this} Script object to allow chaining of methods
 	 */
-	public Script in(String name, Object value, MatrixFormat matrixFormat) {
-		MatrixMetadata matrixMetadata = new MatrixMetadata(matrixFormat);
-		return in(name, value, matrixMetadata);
-	}
-
-	/**
-	 * Register an input (parameter ($) or variable) with optional matrix
-	 * metadata.
-	 *
-	 * @param name
-	 *            name of the input
-	 * @param value
-	 *            value of the input
-	 * @param matrixMetadata
-	 *            optional matrix metadata
-	 * @return {@code this} Script object to allow chaining of methods
-	 */
-	public Script in(String name, Object value, MatrixMetadata matrixMetadata) {
-		return in(name, value, matrixMetadata, false);
-	}	
-	/**
-	 * Register an input (parameter ($) or variable) with optional matrix
-	 * metadata.
-	 *
-	 * @param name
-	 *            name of the input
-	 * @param value
-	 *            value of the input
-	 * @param matrixMetadata
-	 *            optional matrix metadata
-	 * @param bFrame
-	 *            if input is of type frame
-	 * @return {@code this} Script object to allow chaining of methods
-	 */
-	public Script in(String name, Object value, MatrixMetadata matrixMetadata, boolean bFrame) {
+	public Script in(String name, Object value, Metadata metadata) {
 		MLContextUtil.checkInputValueType(name, value);
 		if (inputs == null) {
 			inputs = new LinkedHashMap<String, Object>();
@@ -380,17 +333,13 @@ public class Script {
 			}
 			inputParameters.put(name, value);
 		} else {
-			Data data = MLContextUtil.convertInputType(name, value, matrixMetadata, bFrame);
+			Data data = MLContextUtil.convertInputType(name, value, metadata);
 			if (data != null) {
 				symbolTable.put(name, data);
 				inputVariables.add(name);
-				if (inputVariablesType == null) {
-					inputVariablesType = new LinkedHashMap<String, Boolean>();
-				}
-				inputVariablesType.put(name, new Boolean(bFrame));
 				if (data instanceof MatrixObject || data instanceof FrameObject) {
-					if (matrixMetadata != null) {
-						inputMatrixMetadata.put(name, matrixMetadata);
+					if (metadata != null) {
+						inputMetadata.put(name, metadata);
 					}
 				}
 			}
@@ -454,8 +403,7 @@ public class Script {
 		inputs.clear();
 		inputParameters.clear();
 		inputVariables.clear();
-		inputVariablesType.clear();
-		inputMatrixMetadata.clear();
+		inputMetadata.clear();
 	}
 
 	/**
@@ -556,11 +504,10 @@ public class Script {
 					sb.append(" = " + quotedString + ";\n");
 				} else if (MLContextUtil.isBasicType(inValue)) {
 					sb.append(" = read('', data_type='scalar');\n");
+				} else if (MLContextUtil.doesSymbolTableContainFrameObject(symbolTable, in)) {
+					sb.append(" = read('', data_type='frame');\n");
 				} else {
-					if(inputVariablesType.get(in).booleanValue())
-						sb.append(" = read('', data_type='frame');\n");
-					else
-						sb.append(" = read('');\n");
+					sb.append(" = read('');\n");
 				}
 			} else if (isPYDML()) {
 				if (inValue instanceof String) {
@@ -568,11 +515,10 @@ public class Script {
 					sb.append(" = " + quotedString + "\n");
 				} else if (MLContextUtil.isBasicType(inValue)) {
 					sb.append(" = load('', data_type='scalar')\n");
+				} else if (MLContextUtil.doesSymbolTableContainFrameObject(symbolTable, in)) {
+					sb.append(" = load('', data_type='frame')\n");
 				} else {
-					if(inputVariablesType.get(in).booleanValue())
-						sb.append(" = load('', data_type='frame')\n");
-					else
-						sb.append(" = load('')\n");
+					sb.append(" = load('')\n");
 				}
 			}
 
@@ -603,7 +549,7 @@ public class Script {
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(MLContextUtil.displayInputs("Inputs", inputs));
+		sb.append(MLContextUtil.displayInputs("Inputs", inputs, symbolTable));
 		sb.append("\n");
 		sb.append(MLContextUtil.displayOutputs("Outputs", outputVariables, symbolTable));
 		return sb.toString();
@@ -623,7 +569,7 @@ public class Script {
 		sb.append("Script Type: ");
 		sb.append(scriptType);
 		sb.append("\n\n");
-		sb.append(MLContextUtil.displayInputs("Inputs", inputs));
+		sb.append(MLContextUtil.displayInputs("Inputs", inputs, symbolTable));
 		sb.append("\n");
 		sb.append(MLContextUtil.displayOutputs("Outputs", outputVariables, symbolTable));
 		sb.append("\n");
@@ -649,7 +595,7 @@ public class Script {
 	 * @return the script inputs
 	 */
 	public String displayInputs() {
-		return MLContextUtil.displayInputs("Inputs", inputs);
+		return MLContextUtil.displayInputs("Inputs", inputs, symbolTable);
 	}
 
 	/**

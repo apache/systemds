@@ -28,7 +28,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 
 /**
- * BinaryBlockMatrix stores data as a SystemML binary-block representation.
+ * BinaryBlockMatrix stores data as a SystemML binary-block matrix representation.
  *
  */
 public class BinaryBlockMatrix {
@@ -46,7 +46,7 @@ public class BinaryBlockMatrix {
 	 */
 	public BinaryBlockMatrix(DataFrame dataFrame, MatrixMetadata matrixMetadata) {
 		this.matrixMetadata = matrixMetadata;
-		binaryBlocks = MLContextConversionUtil.dataFrameToBinaryBlocks(dataFrame, matrixMetadata);
+		binaryBlocks = MLContextConversionUtil.dataFrameToMatrixBinaryBlocks(dataFrame, matrixMetadata);
 	}
 
 	/**

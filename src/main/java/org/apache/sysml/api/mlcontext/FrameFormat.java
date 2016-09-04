@@ -17,22 +17,26 @@
  * under the License.
  */
 
-package org.apache.sysml.test.integration.mlcontext;
+package org.apache.sysml.api.mlcontext;
 
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
+/**
+ * FrameFormat represents the different frame formats supported by the MLContext
+ * API.
+ *
+ */
+public enum FrameFormat {
+	/**
+	 * Comma-separated value format (dense).
+	 */
+	CSV,
 
-/** Group together the tests in this package/related subpackages into a single suite so that the Maven build
- *  won't run two of them at once. Since the DML and PyDML equivalent tests currently share the same directories,
- *  they should not be run in parallel. */
-@RunWith(Suite.class)
-@Suite.SuiteClasses({
-  org.apache.sysml.test.integration.mlcontext.MLContextTest.class,
-  org.apache.sysml.test.integration.mlcontext.MLContextFrameTest.class
-})
+	/**
+	 * (I J V) format (sparse). I and J represent frame coordinates and V
+	 * represents the value. The I J and V values are space-separated.
+	 */
+	IJV;
 
-
-/** This class is just a holder for the above JUnit annotations. */
-public class ZPackageSuite {
-
+	public boolean hasIDColumn() {
+		return false;
+	}
 }

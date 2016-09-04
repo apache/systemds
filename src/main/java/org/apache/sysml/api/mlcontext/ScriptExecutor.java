@@ -348,14 +348,14 @@ public class ScriptExecutor {
 	 */
 	protected void restoreInputsInSymbolTable() {
 		Map<String, Object> inputs = script.getInputs();
-		Map<String, MatrixMetadata> inputMatrixMetadata = script.getInputMatrixMetadata();
+		Map<String, Metadata> inputMetadata = script.getInputMetadata();
 		LocalVariableMap symbolTable = script.getSymbolTable();
 		Set<String> inputVariables = script.getInputVariables();
 		for (String inputVariable : inputVariables) {
 			if (symbolTable.get(inputVariable) == null) {
 				// retrieve optional metadata if it exists
-				MatrixMetadata mm = inputMatrixMetadata.get(inputVariable);
-				script.in(inputVariable, inputs.get(inputVariable), mm, script.getInputVariablesType().get(inputVariable));
+				Metadata m = inputMetadata.get(inputVariable);
+				script.in(inputVariable, inputs.get(inputVariable), m);
 			}
 		}
 	}
@@ -451,8 +451,8 @@ public class ScriptExecutor {
 		if (symbolTable != null) {
 			String[] inputs = (script.getInputVariables() == null) ? new String[0] : script.getInputVariables()
 					.toArray(new String[0]);
-			String[] outputs = (script.getOutputVariables() == null) ? new String[0] : script.getOutputVariables()
-					.toArray(new String[0]);
+			String[] outputs = (script.getOutputVariables() == null) ? new String[0]
+					: script.getOutputVariables().toArray(new String[0]);
 			RewriteRemovePersistentReadWrite rewrite = new RewriteRemovePersistentReadWrite(inputs, outputs);
 			ProgramRewriter programRewriter = new ProgramRewriter(rewrite);
 			try {

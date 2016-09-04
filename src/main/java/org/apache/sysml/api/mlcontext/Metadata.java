@@ -17,22 +17,14 @@
  * under the License.
  */
 
-package org.apache.sysml.test.integration.mlcontext;
+package org.apache.sysml.api.mlcontext;
 
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
-
-/** Group together the tests in this package/related subpackages into a single suite so that the Maven build
- *  won't run two of them at once. Since the DML and PyDML equivalent tests currently share the same directories,
- *  they should not be run in parallel. */
-@RunWith(Suite.class)
-@Suite.SuiteClasses({
-  org.apache.sysml.test.integration.mlcontext.MLContextTest.class,
-  org.apache.sysml.test.integration.mlcontext.MLContextFrameTest.class
-})
-
-
-/** This class is just a holder for the above JUnit annotations. */
-public class ZPackageSuite {
+/**
+ * Abstract metadata class for MLContext API. Complex types such as SystemML
+ * matrices and frames typically require metadata, so this abstract class serves
+ * as a common parent class of these types.
+ *
+ */
+public abstract class Metadata {
 
 }

@@ -27,7 +27,7 @@ import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
  * columns per block in the matrix.
  *
  */
-public class MatrixMetadata {
+public class MatrixMetadata extends Metadata {
 
 	private Long numRows = null;
 	private Long numColumns = null;

@@ -19,7 +19,9 @@
 #
 #-------------------------------------------------------------
 
-__all__ = [ 'setSparkContext', 'matrix', 'eval', 'solve']
+trigFn = [ 'exp', 'log', 'abs', 'sqrt', 'round', 'floor', 'ceil', 'sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'sign' ]
+__all__ = [ 'setSparkContext', 'matrix', 'eval', 'solve' ] + trigFn
+
 
 from pyspark import SparkContext
 from pyspark.sql import DataFrame, SQLContext
@@ -90,21 +92,74 @@ def binaryOp(lhs, rhs, opStr):
     dmlOp.dml = [out.ID, ' = ', lhsStr, opStr, rhsStr, '\n']
     return out
 
+def getValue(obj):
+    if isinstance(obj, matrix):
+        return obj.ID
+    elif isinstance(obj, float) or isinstance(obj, int):
+        return str(obj)
+    else:
+        raise TypeError('Unsupported type for ' + s)
+
 
 def binaryMatrixFunction(X, Y, fnName):
     """
-    Common function called by supported PyDML built-in function that has two arguments both of which are matrices.
-    TODO: This needs to be generalized to support arbitrary arguments of differen types.
+    Common function called by supported PyDML built-in function that has two arguments.
     """
-    if not isinstance(X, matrix) or not isinstance(Y, matrix):
-        raise TypeError('Incorrect input type. Expected matrix type')
     inputs = [X, Y]
     dmlOp = DMLOp(inputs)
     out = matrix(None, op=dmlOp)
-    dmlOp.dml = [out.ID, ' = ', fnName,'(', X.ID, ', ', Y.ID, ')\n']
+    dmlOp.dml = [out.ID, ' = ', fnName,'(', getValue(X), ', ', getValue(Y), ')\n']
     return out
 
+def unaryMatrixFunction(X, fnName):
+    """
+    Common function called by supported PyDML built-in function that has one argument.
+    """
+    inputs = [X]
+    dmlOp = DMLOp(inputs)
+    out = matrix(None, op=dmlOp)
+    dmlOp.dml = [out.ID, ' = ', fnName,'(', getValue(X), ')\n']
+    return out
 
+def log(X, y=None):
+    if y is None:
+        return unaryMatrixFunction(X, 'log')
+    else:
+        return binaryMatrixFunction(X, y, 'log')
+
+def sqrt(X):
+    return unaryMatrixFunction(X, 'sqrt')
+    
+def round(X):
+    return unaryMatrixFunction(X, 'round')
+
+def floor(X):
+    return unaryMatrixFunction(X, 'floor')
+
+def ceil(X):
+    return unaryMatrixFunction(X, 'ceil')
+    
+def sin(X):
+    return unaryMatrixFunction(X, 'sin')
+
+def cos(X):
+    return unaryMatrixFunction(X, 'cos')
+
+def tan(X):
+    return unaryMatrixFunction(X, 'tan')
+
+def asin(X):
+    return unaryMatrixFunction(X, 'asin')
+
+def acos(X):
+    return unaryMatrixFunction(X, 'acos')
+
+def atan(X):
+    return unaryMatrixFunction(X, 'atan')
+
+def sign(X):
+    return unaryMatrixFunction(X, 'sign')
+    
 def solve(A, b):
     """
     Computes the least squares solution for system of linear equations A %*% x = b
@@ -164,8 +219,27 @@ def eval(outputs, outputDF=False, execute=True):
             m.data = results.getDataFrame(m.ID)
         else:
             m.data = results.getNumPyArray(m.ID)
-
-
+            
+# utility function that converts 1:3 into DML string
+def convertSeqToDML(s):
+    ret = []
+    if s is None:
+        return ''
+    elif isinstance(s, slice):
+        if s.step is not None:
+            raise ValueError('Slicing with step is not supported.')
+        if s.start is None:
+            ret = ret + [ '0 : ' ]
+        else:
+            ret = ret + [ getValue(s.start), ':' ]
+        if s.start is None:
+            ret = ret + [ '' ]
+        else:
+            ret = ret + [ getValue(s.stop) ]
+    else:
+        ret = ret + [ getValue(s) ]
+    return ''.join(ret)
+    
 class matrix(object):
     """
     matrix class is a python wrapper that implements basic matrix operator.
@@ -413,3 +487,40 @@ class matrix(object):
 
     def dot(self, other):
         return binaryMatrixFunction(self, other, 'dot')
+    
+    def __getitem__(self, index):
+        """
+        Implements evaluation of right indexing operations such as m[1,1], m[0:1,], m[:, 0:1]
+        """
+        dmlOp = DMLOp([self])
+        out = matrix(None, op=dmlOp)
+        dmlOp.dml = [out.ID, ' = ', self.ID, '[']
+        if isinstance(index, tuple) and len(index) == 1:
+            dmlOp.dml = dmlOp.dml + [ convertSeqToDML(index[0]), ',' ]
+        elif isinstance(index, tuple) and len(index) == 2:
+            dmlOp.dml = dmlOp.dml + [ convertSeqToDML(index[0]), ',', convertSeqToDML(index[1]) ]
+        else:
+            raise TypeError('matrix indexes can only be tuple of length 2. For example: m[1,1], m[0:1,], m[:, 0:1]')
+        dmlOp.dml = dmlOp.dml + [ ']\n' ] 
+        return out
+    
+    def __setitem__(self, index, value):
+        """
+        Implements evaluation of left indexing operations such as m[1,1]=2
+        """
+        if self.data is not None:
+            temp = matrix(self.data, op=None)
+            self.op = DMLOp([temp])
+            self.data = None
+        newDml = [ self.ID, '[' ]
+        if isinstance(value, matrix): 
+            self.op.inputs = self.op.inputs + [ value ]
+        if isinstance(index, tuple) and len(index) == 1:
+            newDml = newDml + [ convertSeqToDML(index[0]), ',' ]
+        elif isinstance(index, tuple) and len(index) == 2:
+            newDml = newDml + [ convertSeqToDML(index[0]), ',', convertSeqToDML(index[1]) ]
+        else:
+            raise TypeError('matrix indexes can only be tuple of length 2. For example: m[1,1], m[0:1,], m[:, 0:1]')
+        newDml = newDml + [ '] = ', getValue(value) ]
+        self.op.dml = self.op.dml + [ '\n' ] + newDml + [ '\n' ]
+        

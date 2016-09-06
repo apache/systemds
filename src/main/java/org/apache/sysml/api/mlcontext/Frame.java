@@ -45,7 +45,7 @@ public class Frame {
 	 * 
 	 * @return the frame as a SystemML FrameObject
 	 */
-	public FrameObject asFrameObject() {
+	public FrameObject toFrameObject() {
 		return frameObject;
 	}
 
@@ -54,7 +54,7 @@ public class Frame {
 	 * 
 	 * @return the frame as a two-dimensional String array
 	 */
-	public String[][] as2DStringArray() {
+	public String[][] to2DStringArray() {
 		String[][] strArray = MLContextConversionUtil.frameObjectTo2DStringArray(frameObject);
 		return strArray;
 	}
@@ -64,7 +64,7 @@ public class Frame {
 	 * 
 	 * @return the frame as a {@code JavaRDD<String>} in IJV format
 	 */
-	public JavaRDD<String> asJavaRDDStringIJV() {
+	public JavaRDD<String> toJavaRDDIJV() {
 		JavaRDD<String> javaRDDStringIJV = MLContextConversionUtil.frameObjectToJavaRDDStringIJV(frameObject);
 		return javaRDDStringIJV;
 	}
@@ -74,7 +74,7 @@ public class Frame {
 	 * 
 	 * @return the frame as a {@code JavaRDD<String>} in CSV format
 	 */
-	public JavaRDD<String> asJavaRDDStringCSV() {
+	public JavaRDD<String> toJavaRDDCSV() {
 		JavaRDD<String> javaRDDStringCSV = MLContextConversionUtil.frameObjectToJavaRDDStringCSV(frameObject, ",");
 		return javaRDDStringCSV;
 	}
@@ -84,7 +84,7 @@ public class Frame {
 	 * 
 	 * @return the frame as a {@code RDD<String>} in CSV format
 	 */
-	public RDD<String> asRDDStringCSV() {
+	public RDD<String> toRDDCSV() {
 		RDD<String> rddStringCSV = MLContextConversionUtil.frameObjectToRDDStringCSV(frameObject, ",");
 		return rddStringCSV;
 	}
@@ -94,7 +94,7 @@ public class Frame {
 	 * 
 	 * @return the frame as a {@code RDD<String>} in IJV format
 	 */
-	public RDD<String> asRDDStringIJV() {
+	public RDD<String> toRDDIJV() {
 		RDD<String> rddStringIJV = MLContextConversionUtil.frameObjectToRDDStringIJV(frameObject);
 		return rddStringIJV;
 	}
@@ -104,7 +104,7 @@ public class Frame {
 	 * 
 	 * @return the frame as a {@code DataFrame}
 	 */
-	public DataFrame asDataFrame() {
+	public DataFrame toDF() {
 		DataFrame df = MLContextConversionUtil.frameObjectToDataFrame(frameObject, sparkExecutionContext);
 		return df;
 	}
@@ -114,7 +114,7 @@ public class Frame {
 	 * 
 	 * @return the matrix as a {@code BinaryBlockFrame}
 	 */
-	public BinaryBlockFrame asBinaryBlockFrame() {
+	public BinaryBlockFrame toBinaryBlockFrame() {
 		BinaryBlockFrame binaryBlockFrame = MLContextConversionUtil.frameObjectToBinaryBlockFrame(frameObject,
 				sparkExecutionContext);
 		return binaryBlockFrame;

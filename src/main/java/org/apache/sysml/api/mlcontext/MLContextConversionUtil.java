@@ -1295,7 +1295,7 @@ public class MLContextConversionUtil {
 	 *            the {@code MatrixObject}
 	 * @return the {@code MatrixObject} converted to a {@code double[][]}
 	 */
-	public static double[][] matrixObjectToDoubleMatrix(MatrixObject matrixObject) {
+	public static double[][] matrixObjectTo2DDoubleArray(MatrixObject matrixObject) {
 		try {
 			MatrixBlock mb = matrixObject.acquireRead();
 			double[][] matrix = DataConverter.convertToDoubleMatrix(mb);

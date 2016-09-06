@@ -124,7 +124,7 @@ class Matrix(object):
             DataFrames are unordered), followed by columns of doubles
             for each column in the matrix.
         """
-        jdf = self._java_matrix.asDataFrame()
+        jdf = self._java_matrix.toDF()
         df = _java2py(self.sc, jdf)
         return df
 
@@ -160,7 +160,7 @@ class MLResults(object):
         outputs: string, list of strings
             Output variables as defined inside the DML script.
         """
-        outs = [convertToNumpyArr(self.sc, self._java_results.getMatrix(out).asBinaryBlockMatrix().getMatrixBlock()) for out in outputs]
+        outs = [convertToNumpyArr(self.sc, self._java_results.getMatrix(out).toBinaryBlockMatrix().getMatrixBlock()) for out in outputs]
         if len(outs) == 1:
             return outs[0]
         return outs

@@ -463,10 +463,10 @@ n = sum(m)
 val scr = dml(s).out("m", "n");
 val res = ml.execute(scr)
 val (x, y) = res.getTuple[Matrix, Double]("m", "n")
-x.asRDDStringIJV.collect.foreach(println)
-x.asRDDStringCSV.collect.foreach(println)
-x.asDataFrame.collect.foreach(println)
-x.asDoubleMatrix
+x.toRDDIJV.collect.foreach(println)
+x.toRDDCSV.collect.foreach(println)
+x.toDF.collect.foreach(println)
+x.to2DDoubleArray
 
 {% endhighlight %}
 </div>
@@ -504,21 +504,21 @@ scala> val (x, y) = res.getTuple[Matrix, Double]("m", "n")
 x: org.apache.sysml.api.mlcontext.Matrix = Matrix: scratch_space//_p12059_9.31.117.12//_t0/temp26_14, [2 x 2, nnz=4, blocks (1000 x 1000)], binaryblock, dirty
 y: Double = 110.0
 
-scala> x.asRDDStringIJV.collect.foreach(println)
+scala> x.toRDDIJV.collect.foreach(println)
 1 1 11.0
 1 2 22.0
 2 1 33.0
 2 2 44.0
 
-scala> x.asRDDStringCSV.collect.foreach(println)
+scala> x.toRDDCSV.collect.foreach(println)
 11.0,22.0
 33.0,44.0
 
-scala> x.asDataFrame.collect.foreach(println)
+scala> x.toDF.collect.foreach(println)
 [0.0,11.0,22.0]
 [1.0,33.0,44.0]
 
-scala> x.asDoubleMatrix
+scala> x.to2DDoubleArray
 res10: Array[Array[Double]] = Array(Array(11.0, 22.0), Array(33.0, 44.0))
 
 {% endhighlight %}
@@ -817,7 +817,7 @@ the input types matrix to the `K` variable, and the output matrix to the `baseSt
 {% highlight scala %}
 val uni = dmlFromUrl(scriptUrl).in("A", habermanRDD, habermanMetadata).in("K", typesRDD, typesMetadata).out("baseStats")
 val baseStats = ml.execute(uni).getMatrix("baseStats")
-baseStats.asRDDStringIJV.collect.slice(0,9).foreach(println)
+baseStats.toRDDIJV.collect.slice(0,9).foreach(println)
 {% endhighlight %}
 </div>
 
@@ -837,7 +837,7 @@ scala> val baseStats = ml.execute(uni).getMatrix("baseStats")
 ...
 baseStats: org.apache.sysml.api.mlcontext.Matrix = Matrix: scratch_space/_p12059_9.31.117.12/parfor/4_resultmerge1, [17 x 4, nnz=44, blocks (1000 x 1000)], binaryblock, dirty
 
-scala> baseStats.asRDDStringIJV.collect.slice(0,9).foreach(println)
+scala> baseStats.toRDDIJV.collect.slice(0,9).foreach(println)
 1 1 30.0
 1 2 58.0
 1 3 0.0
@@ -1588,7 +1588,7 @@ val add = dml("y = x + 1").in("x", rddCSV).out("y")
 for (i <- 1 to 5) {
   println("#" + i + ":");
   val m = ml.execute(add).getMatrix("y")
-  m.asRDDStringCSV.collect.foreach(println)
+  m.toRDDCSV.collect.foreach(println)
   add.in("x", m)
 }
 
@@ -1612,7 +1612,7 @@ Outputs:
 scala> for (i <- 1 to 5) {
      |   println("#" + i + ":");
      |   val m = ml.execute(add).getMatrix("y")
-     |   m.asRDDStringCSV.collect.foreach(println)
+     |   m.toRDDCSV.collect.foreach(println)
      |   add.in("x", m)
      | }
 #1:

@@ -142,7 +142,7 @@ public class MLResults {
 	 */
 	public double[][] getMatrixAs2DDoubleArray(String outputName) {
 		MatrixObject mo = getMatrixObject(outputName);
-		double[][] doubleMatrix = MLContextConversionUtil.matrixObjectToDoubleMatrix(mo);
+		double[][] doubleMatrix = MLContextConversionUtil.matrixObjectTo2DDoubleArray(mo);
 		return doubleMatrix;
 	}
 
@@ -166,7 +166,7 @@ public class MLResults {
 	 *            the name of the output
 	 * @return the output as a {@code JavaRDD<String>} in IJV format
 	 */
-	public JavaRDD<String> getJavaRDDStringIJV(String outputName) {
+	public JavaRDD<String> getJavaRDDIJV(String outputName) {
 		if (isMatrixObject(outputName)) {
 			MatrixObject mo = getMatrixObject(outputName);
 			JavaRDD<String> javaRDDStringIJV = MLContextConversionUtil.matrixObjectToJavaRDDStringIJV(mo);
@@ -197,7 +197,7 @@ public class MLResults {
 	 *            the name of the output
 	 * @return the output as a {@code JavaRDD<String>} in CSV format
 	 */
-	public JavaRDD<String> getJavaRDDStringCSV(String outputName) {
+	public JavaRDD<String> getJavaRDDCSV(String outputName) {
 		if (isMatrixObject(outputName)) {
 			MatrixObject mo = getMatrixObject(outputName);
 			JavaRDD<String> javaRDDStringCSV = MLContextConversionUtil.matrixObjectToJavaRDDStringCSV(mo);
@@ -228,7 +228,7 @@ public class MLResults {
 	 *            the name of the output
 	 * @return the output as a {@code RDD<String>} in CSV format
 	 */
-	public RDD<String> getRDDStringCSV(String outputName) {
+	public RDD<String> getRDDCSV(String outputName) {
 		if (isMatrixObject(outputName)) {
 			MatrixObject mo = getMatrixObject(outputName);
 			RDD<String> rddStringCSV = MLContextConversionUtil.matrixObjectToRDDStringCSV(mo);
@@ -261,7 +261,7 @@ public class MLResults {
 	 *            the name of the output
 	 * @return the output as a {@code RDD<String>} in IJV format
 	 */
-	public RDD<String> getRDDStringIJV(String outputName) {
+	public RDD<String> getRDDIJV(String outputName) {
 		if (isMatrixObject(outputName)) {
 			MatrixObject mo = getMatrixObject(outputName);
 			RDD<String> rddStringIJV = MLContextConversionUtil.matrixObjectToRDDStringIJV(mo);

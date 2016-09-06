@@ -1032,7 +1032,7 @@ public class MLContextTest extends AutomatedTestBase {
 		String s = "M = matrix('1 2 3 4', rows=2, cols=2);";
 		Script script = dml(s).out("M");
 		MLResults results = ml.execute(script);
-		JavaRDD<String> javaRDDStringIJV = results.getJavaRDDStringIJV("M");
+		JavaRDD<String> javaRDDStringIJV = results.getJavaRDDIJV("M");
 		List<String> lines = javaRDDStringIJV.collect();
 		Assert.assertEquals("1 1 1.0", lines.get(0));
 		Assert.assertEquals("1 2 2.0", lines.get(1));
@@ -1047,7 +1047,7 @@ public class MLContextTest extends AutomatedTestBase {
 		String s = "M = full('1 2 3 4', rows=2, cols=2)";
 		Script script = pydml(s).out("M");
 		MLResults results = ml.execute(script);
-		JavaRDD<String> javaRDDStringIJV = results.getJavaRDDStringIJV("M");
+		JavaRDD<String> javaRDDStringIJV = results.getJavaRDDIJV("M");
 		List<String> lines = javaRDDStringIJV.collect();
 		Assert.assertEquals("1 1 1.0", lines.get(0));
 		Assert.assertEquals("1 2 2.0", lines.get(1));
@@ -1062,7 +1062,7 @@ public class MLContextTest extends AutomatedTestBase {
 		String s = "M = matrix('1 2 3 4', rows=2, cols=2); print(toString(M));";
 		Script script = dml(s).out("M");
 		MLResults results = ml.execute(script);
-		JavaRDD<String> javaRDDStringCSV = results.getJavaRDDStringCSV("M");
+		JavaRDD<String> javaRDDStringCSV = results.getJavaRDDCSV("M");
 		List<String> lines = javaRDDStringCSV.collect();
 		Assert.assertEquals("1.0,2.0", lines.get(0));
 		Assert.assertEquals("3.0,4.0", lines.get(1));
@@ -1075,7 +1075,7 @@ public class MLContextTest extends AutomatedTestBase {
 		String s = "M = full('1 2 3 4', rows=2, cols=2)\nprint(toString(M))";
 		Script script = pydml(s).out("M");
 		MLResults results = ml.execute(script);
-		JavaRDD<String> javaRDDStringCSV = results.getJavaRDDStringCSV("M");
+		JavaRDD<String> javaRDDStringCSV = results.getJavaRDDCSV("M");
 		List<String> lines = javaRDDStringCSV.collect();
 		Assert.assertEquals("1.0,2.0", lines.get(0));
 		Assert.assertEquals("3.0,4.0", lines.get(1));
@@ -1092,7 +1092,7 @@ public class MLContextTest extends AutomatedTestBase {
 		String s = "M = matrix(0, rows=10, cols=10); M[1,1]=1; M[1,2]=2; M[2,1]=3; M[2,2]=4; print(toString(M));";
 		Script script = dml(s).out("M");
 		MLResults results = ml.execute(script);
-		JavaRDD<String> javaRDDStringCSV = results.getJavaRDDStringCSV("M");
+		JavaRDD<String> javaRDDStringCSV = results.getJavaRDDCSV("M");
 		List<String> lines = javaRDDStringCSV.collect();
 		Assert.assertEquals("1.0,2.0", lines.get(0));
 		Assert.assertEquals("3.0,4.0", lines.get(1));
@@ -1109,7 +1109,7 @@ public class MLContextTest extends AutomatedTestBase {
 		String s = "M = full(0, rows=10, cols=10)\nM[0,0]=1\nM[0,1]=2\nM[1,0]=3\nM[1,1]=4\nprint(toString(M))";
 		Script script = pydml(s).out("M");
 		MLResults results = ml.execute(script);
-		JavaRDD<String> javaRDDStringCSV = results.getJavaRDDStringCSV("M");
+		JavaRDD<String> javaRDDStringCSV = results.getJavaRDDCSV("M");
 		List<String> lines = javaRDDStringCSV.collect();
 		Assert.assertEquals("1.0,2.0", lines.get(0));
 		Assert.assertEquals("3.0,4.0", lines.get(1));
@@ -1122,7 +1122,7 @@ public class MLContextTest extends AutomatedTestBase {
 		String s = "M = matrix('1 2 3 4', rows=2, cols=2);";
 		Script script = dml(s).out("M");
 		MLResults results = ml.execute(script);
-		RDD<String> rddStringIJV = results.getRDDStringIJV("M");
+		RDD<String> rddStringIJV = results.getRDDIJV("M");
 		Iterator<String> iterator = rddStringIJV.toLocalIterator();
 		Assert.assertEquals("1 1 1.0", iterator.next());
 		Assert.assertEquals("1 2 2.0", iterator.next());
@@ -1137,7 +1137,7 @@ public class MLContextTest extends AutomatedTestBase {
 		String s = "M = full('1 2 3 4', rows=2, cols=2)";
 		Script script = pydml(s).out("M");
 		MLResults results = ml.execute(script);
-		RDD<String> rddStringIJV = results.getRDDStringIJV("M");
+		RDD<String> rddStringIJV = results.getRDDIJV("M");
 		Iterator<String> iterator = rddStringIJV.toLocalIterator();
 		Assert.assertEquals("1 1 1.0", iterator.next());
 		Assert.assertEquals("1 2 2.0", iterator.next());
@@ -1152,7 +1152,7 @@ public class MLContextTest extends AutomatedTestBase {
 		String s = "M = matrix('1 2 3 4', rows=2, cols=2); print(toString(M));";
 		Script script = dml(s).out("M");
 		MLResults results = ml.execute(script);
-		RDD<String> rddStringCSV = results.getRDDStringCSV("M");
+		RDD<String> rddStringCSV = results.getRDDCSV("M");
 		Iterator<String> iterator = rddStringCSV.toLocalIterator();
 		Assert.assertEquals("1.0,2.0", iterator.next());
 		Assert.assertEquals("3.0,4.0", iterator.next());
@@ -1165,7 +1165,7 @@ public class MLContextTest extends AutomatedTestBase {
 		String s = "M = full('1 2 3 4', rows=2, cols=2)\nprint(toString(M))";
 		Script script = pydml(s).out("M");
 		MLResults results = ml.execute(script);
-		RDD<String> rddStringCSV = results.getRDDStringCSV("M");
+		RDD<String> rddStringCSV = results.getRDDCSV("M");
 		Iterator<String> iterator = rddStringCSV.toLocalIterator();
 		Assert.assertEquals("1.0,2.0", iterator.next());
 		Assert.assertEquals("3.0,4.0", iterator.next());
@@ -1178,7 +1178,7 @@ public class MLContextTest extends AutomatedTestBase {
 		String s = "M = matrix(0, rows=10, cols=10); M[1,1]=1; M[1,2]=2; M[2,1]=3; M[2,2]=4; print(toString(M));";
 		Script script = dml(s).out("M");
 		MLResults results = ml.execute(script);
-		RDD<String> rddStringCSV = results.getRDDStringCSV("M");
+		RDD<String> rddStringCSV = results.getRDDCSV("M");
 		Iterator<String> iterator = rddStringCSV.toLocalIterator();
 		Assert.assertEquals("1.0,2.0", iterator.next());
 		Assert.assertEquals("3.0,4.0", iterator.next());
@@ -1191,7 +1191,7 @@ public class MLContextTest extends AutomatedTestBase {
 		String s = "M = full(0, rows=10, cols=10)\nM[0,0]=1\nM[0,1]=2\nM[1,0]=3\nM[1,1]=4\nprint(toString(M))";
 		Script script = pydml(s).out("M");
 		MLResults results = ml.execute(script);
-		RDD<String> rddStringCSV = results.getRDDStringCSV("M");
+		RDD<String> rddStringCSV = results.getRDDCSV("M");
 		Iterator<String> iterator = rddStringCSV.toLocalIterator();
 		Assert.assertEquals("1.0,2.0", iterator.next());
 		Assert.assertEquals("3.0,4.0", iterator.next());

@@ -48,7 +48,7 @@ public class Matrix {
 	 * 
 	 * @return the matrix as a SystemML MatrixObject
 	 */
-	public MatrixObject asMatrixObject() {
+	public MatrixObject toMatrixObject() {
 		return matrixObject;
 	}
 
@@ -57,8 +57,8 @@ public class Matrix {
 	 * 
 	 * @return the matrix as a two-dimensional double array
 	 */
-	public double[][] asDoubleMatrix() {
-		double[][] doubleMatrix = MLContextConversionUtil.matrixObjectToDoubleMatrix(matrixObject);
+	public double[][] to2DDoubleArray() {
+		double[][] doubleMatrix = MLContextConversionUtil.matrixObjectTo2DDoubleArray(matrixObject);
 		return doubleMatrix;
 	}
 
@@ -67,7 +67,7 @@ public class Matrix {
 	 * 
 	 * @return the matrix as a {@code JavaRDD<String>} in IJV format
 	 */
-	public JavaRDD<String> asJavaRDDStringIJV() {
+	public JavaRDD<String> toJavaRDDIJV() {
 		JavaRDD<String> javaRDDStringIJV = MLContextConversionUtil.matrixObjectToJavaRDDStringIJV(matrixObject);
 		return javaRDDStringIJV;
 	}
@@ -77,7 +77,7 @@ public class Matrix {
 	 * 
 	 * @return the matrix as a {@code JavaRDD<String>} in CSV format
 	 */
-	public JavaRDD<String> asJavaRDDStringCSV() {
+	public JavaRDD<String> toJavaRDDCSV() {
 		JavaRDD<String> javaRDDStringCSV = MLContextConversionUtil.matrixObjectToJavaRDDStringCSV(matrixObject);
 		return javaRDDStringCSV;
 	}
@@ -87,7 +87,7 @@ public class Matrix {
 	 * 
 	 * @return the matrix as a {@code RDD<String>} in CSV format
 	 */
-	public RDD<String> asRDDStringCSV() {
+	public RDD<String> toRDDCSV() {
 		RDD<String> rddStringCSV = MLContextConversionUtil.matrixObjectToRDDStringCSV(matrixObject);
 		return rddStringCSV;
 	}
@@ -97,7 +97,7 @@ public class Matrix {
 	 * 
 	 * @return the matrix as a {@code RDD<String>} in IJV format
 	 */
-	public RDD<String> asRDDStringIJV() {
+	public RDD<String> toRDDIJV() {
 		RDD<String> rddStringIJV = MLContextConversionUtil.matrixObjectToRDDStringIJV(matrixObject);
 		return rddStringIJV;
 	}
@@ -107,7 +107,7 @@ public class Matrix {
 	 * 
 	 * @return the matrix as a {@code DataFrame} of doubles with an ID column
 	 */
-	public DataFrame asDataFrame() {
+	public DataFrame toDF() {
 		DataFrame df = MLContextConversionUtil.matrixObjectToDataFrame(matrixObject, sparkExecutionContext, false);
 		return df;
 	}
@@ -117,7 +117,7 @@ public class Matrix {
 	 * 
 	 * @return the matrix as a {@code DataFrame} of doubles with an ID column
 	 */
-	public DataFrame asDataFrameDoubleWithIDColumn() {
+	public DataFrame toDFDoubleWithIDColumn() {
 		DataFrame df = MLContextConversionUtil.matrixObjectToDataFrame(matrixObject, sparkExecutionContext, false);
 		return df;
 	}
@@ -127,7 +127,7 @@ public class Matrix {
 	 * 
 	 * @return the matrix as a {@code DataFrame} of doubles with no ID column
 	 */
-	public DataFrame asDataFrameDoubleNoIDColumn() {
+	public DataFrame toDFDoubleNoIDColumn() {
 		DataFrame df = MLContextConversionUtil.matrixObjectToDataFrame(matrixObject, sparkExecutionContext, false);
 		df = df.sort("ID").drop("ID");
 		return df;
@@ -138,7 +138,7 @@ public class Matrix {
 	 * 
 	 * @return the matrix as a {@code DataFrame} of vectors with an ID column
 	 */
-	public DataFrame asDataFrameVectorWithIDColumn() {
+	public DataFrame toDFVectorWithIDColumn() {
 		DataFrame df = MLContextConversionUtil.matrixObjectToDataFrame(matrixObject, sparkExecutionContext, true);
 		return df;
 	}
@@ -148,7 +148,7 @@ public class Matrix {
 	 * 
 	 * @return the matrix as a {@code DataFrame} of vectors with no ID column
 	 */
-	public DataFrame asDataFrameVectorNoIDColumn() {
+	public DataFrame toDFVectorNoIDColumn() {
 		DataFrame df = MLContextConversionUtil.matrixObjectToDataFrame(matrixObject, sparkExecutionContext, true);
 		df = df.sort("ID").drop("ID");
 		return df;
@@ -159,7 +159,7 @@ public class Matrix {
 	 * 
 	 * @return the matrix as a {@code BinaryBlockMatrix}
 	 */
-	public BinaryBlockMatrix asBinaryBlockMatrix() {
+	public BinaryBlockMatrix toBinaryBlockMatrix() {
 		BinaryBlockMatrix binaryBlockMatrix = MLContextConversionUtil.matrixObjectToBinaryBlockMatrix(matrixObject,
 				sparkExecutionContext);
 		return binaryBlockMatrix;

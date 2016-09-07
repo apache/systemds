@@ -56,18 +56,18 @@ class DMLOp(object):
         self.dml = dml
         self.ID = None
         for m in self.inputs:
-            m.referenced = m.referenced + [ self ] 
+            m.referenced = m.referenced + [ self ]
 
     def _visit(self, execute=True):
         matrix.dml = matrix.dml + self.dml
-    
+
     # Don't use this method instead use matrix's printAST()
     def printAST(self, numSpaces):
         ret = []
         for m in self.inputs:
             ret = [ m.printAST(numSpaces+2) ]
         return ''.join(ret)
-    
+
 # Special object used internally to specify the placeholder which will be replaced by output ID
 # This helps to provide dml containing output ID in constructIntermediateNode
 OUTPUT_ID = '$$OutputID$$'
@@ -75,11 +75,11 @@ OUTPUT_ID = '$$OutputID$$'
 def constructIntermediateNode(inputs, dml):
     """
     Convenient utility to create an intermediate node of AST.
-    
+
     Parameters
     ----------
     inputs = list of input matrix objects and/or DMLOp
-    dml = list of DML string (which will be eventually joined before execution). To specify out.ID, please use the placeholder  
+    dml = list of DML string (which will be eventually joined before execution). To specify out.ID, please use the placeholder
     """
     dmlOp = DMLOp(inputs)
     out = matrix(None, op=dmlOp)
@@ -215,7 +215,7 @@ def populateOutputs(outputs, results, outputDF):
 
 def exp(X):
     return unaryMatrixFunction(X, 'exp')
-    
+
 def log(X, y=None):
     if y is None:
         return unaryMatrixFunction(X, 'log')
@@ -224,10 +224,10 @@ def log(X, y=None):
 
 def abs(X):
     return unaryMatrixFunction(X, 'abs')
-        
+
 def sqrt(X):
     return unaryMatrixFunction(X, 'sqrt')
-    
+
 def round(X):
     return unaryMatrixFunction(X, 'round')
 
@@ -236,7 +236,7 @@ def floor(X):
 
 def ceil(X):
     return unaryMatrixFunction(X, 'ceil')
-    
+
 def sin(X):
     return unaryMatrixFunction(X, 'sin')
 
@@ -257,7 +257,7 @@ def atan(X):
 
 def sign(X):
     return unaryMatrixFunction(X, 'sign')
-    
+
 def solve(A, b):
     """
     Computes the least squares solution for system of linear equations A %*% x = b
@@ -305,20 +305,20 @@ def eval(outputs, outputDF=False, execute=True):
     results = matrix.ml.execute(matrix.script)
     populateOutputs(outputs, results, outputDF)
     resetOutputFlag(outputs)
-            
+
 ###############################################################################
 
 # DESIGN DECISIONS:
 # 1. Until eval() method is invoked, we create an AST (not exposed to the user) that consist of unevaluated operations and data required by those operations.
-#    As an anology, a spark user can treat eval() method similar to calling RDD.persist() followed by RDD.count().  
+#    As an anology, a spark user can treat eval() method similar to calling RDD.persist() followed by RDD.count().
 # 2. The AST consist of two kinds of nodes: either of type matrix or of type DMLOp.
 #    Both these classes expose _visit method, that helps in traversing the AST in DFS manner.
-# 3. A matrix object can either be evaluated or not. 
+# 3. A matrix object can either be evaluated or not.
 #    If evaluated, the attribute 'data' is set to one of the supported types (for example: NumPy array or DataFrame). In this case, the attribute 'op' is set to None.
 #    If not evaluated, the attribute 'op' which refers to one of the intermediate node of AST and if of type DMLOp.  In this case, the attribute 'data' is set to None.
-# 5. DMLOp has an attribute 'inputs' which contains list of matrix objects or DMLOp. 
+# 5. DMLOp has an attribute 'inputs' which contains list of matrix objects or DMLOp.
 # 6. To simplify the traversal, every matrix object is considered immutable and an matrix operations creates a new matrix object.
-#    As an example: 
+#    As an example:
 #    - m1 = sml.matrix(np.ones((3,3))) creates a matrix object backed by 'data=(np.ones((3,3))'.
 #    - m1 = m1 * 2 will create a new matrix object which is now backed by 'op=DMLOp( ... )' whose input is earlier created matrix object.
 # 7. Left indexing (implemented in __setitem__ method) is a special case, where Python expects the existing object to be mutated.
@@ -462,7 +462,7 @@ class matrix(object):
         # for cleanup
         matrix.visited = matrix.visited + [ self ]
         return self
-        
+
     def _registerAsInput(self, execute):
         # TODO: Remove this when automatic registration of frame is resolved
         matrix.dml = [ self.ID,  ' = load(\" \", format=\"csv\")\n'] + matrix.dml
@@ -471,13 +471,13 @@ class matrix(object):
         elif execute:
             matrix.script.input(self.ID, convertToMatrixBlock(matrix.sc, self.data))
         return self
-        
+
     def _registerAsOutput(self, execute):
         # TODO: Remove this when automatic registration of frame is resolved
         matrix.dml = matrix.dml + ['save(',  self.ID, ', \" \")\n']
         if execute:
             matrix.script.output(self.ID)
-    
+
     def _visit(self, execute=True):
         """
         This function is called for two scenarios:
@@ -516,10 +516,10 @@ class matrix(object):
         else:
             raise ValueError('Either op or data needs to be set')
         if numSpaces == 0:
-            print out
+            print(out)
         else:
             return out
-            
+
     def __repr__(self):
         """
         This function helps to debug matrix class and also examine the generated PyDML script
@@ -533,7 +533,7 @@ class matrix(object):
         return '<SystemML.defmatrix.matrix object>'
 
     ######################### Arithmetic operators ######################################
-    
+
     def __add__(self, other):
         return binaryOp(self, other, ' + ')
 
@@ -557,7 +557,7 @@ class matrix(object):
         Performs division (Python 3 way).
         """
         return binaryOp(self, other, ' / ')
-    
+
     def __mod__(self, other):
         return binaryOp(self, other, ' % ')
 
@@ -584,49 +584,49 @@ class matrix(object):
 
     def __rpow__(self, other):
         return binaryOp(other, self, ' ** ')
-        
+
     def dot(self, other):
         """
         Numpy way of performing matrix multiplication
         """
         return binaryMatrixFunction(self, other, 'dot')
-    
+
     def __matmul__(self, other):
         """
         Performs matrix multiplication (infix operator: @). See PEP 465)
         """
         return binaryMatrixFunction(self, other, 'dot')
-    
-    
+
+
     ######################### Relational/Boolean operators ######################################
-    
+
     def __lt__(self, other):
         return binaryOp(other, self, ' < ')
-        
+
     def __le__(self, other):
         return binaryOp(other, self, ' <= ')
-    
+
     def __gt__(self, other):
         return binaryOp(other, self, ' > ')
-        
+
     def __ge__(self, other):
         return binaryOp(other, self, ' >= ')
-        
+
     def __eq__(self, other):
         return binaryOp(other, self, ' == ')
-        
+
     def __ne__(self, other):
         return binaryOp(other, self, ' != ')
-        
+
     # TODO: Cast the output back into scalar and return boolean results
     def __and__(self, other):
         return binaryOp(other, self, ' & ')
 
     def __or__(self, other):
         return binaryOp(other, self, ' | ')
-        
+
     ######################### Aggregation functions ######################################
-    
+
     def sum(self, axis=None):
         return self._aggFn('sum', axis)
 
@@ -665,9 +665,9 @@ class matrix(object):
         else:
             dmlOp.dml = [out.ID, ' = ', fnName, '(', self.ID, ', axis=', str(axis) ,')\n']
         return out
-        
+
     ######################### Indexing operators ######################################
-    
+
     def __getitem__(self, index):
         """
         Implements evaluation of right indexing operations such as m[1,1], m[0:1,], m[:, 0:1]
@@ -676,7 +676,7 @@ class matrix(object):
         out = matrix(None, op=dmlOp)
         dmlOp.dml = [out.ID, ' = ', self.ID ] + getIndexingDML(index) + [ '\n' ]
         return out
-    
+
     # Performs deep copy if the matrix is backed by data
     def _prepareForInPlaceUpdate(self):
         temp = matrix(self.data, op=self.op)
@@ -687,13 +687,13 @@ class matrix(object):
         self.data = None
         temp.referenced = self.referenced + [ self.op ]
         self.referenced = []
-    
+
     def __setitem__(self, index, value):
         """
         Implements evaluation of left indexing operations such as m[1,1]=2
         """
         self._prepareForInPlaceUpdate()
-        if isinstance(value, matrix) or isinstance(value, DMLOp): 
+        if isinstance(value, matrix) or isinstance(value, DMLOp):
             self.op.inputs = self.op.inputs + [ value ]
         if isinstance(value, matrix):
             value.referenced = value.referenced + [ self.op ]

@@ -54,9 +54,19 @@ class DMLOp(object):
     def __init__(self, inputs, dml=None):
         self.inputs = inputs
         self.dml = dml
+        self.ID = None
+        for m in self.inputs:
+            m.referenced = m.referenced + [ self ] 
 
     def _visit(self, execute=True):
         matrix.dml = matrix.dml + self.dml
+    
+    # Don't use this method instead use matrix's printAST()
+    def printAST(self, numSpaces):
+        ret = []
+        for m in self.inputs:
+            ret = [ m.printAST(numSpaces+2) ]
+        return ''.join(ret)
     
 # Special object used internally to specify the placeholder which will be replaced by output ID
 # This helps to provide dml containing output ID in constructIntermediateNode
@@ -315,7 +325,21 @@ def eval(outputs, outputDF=False, execute=True):
 #    To ensure the above property, we make deep copy of existing object and point any references to the left-indexed matrix to the newly created object.
 #    Then the left-indexed matrix is set to be backed by DMLOp consisting of following pydml:
 #    left-indexed-matrix = new-deep-copied-matrix
-#    left-indexed-matrix[index] = value 
+#    left-indexed-matrix[index] = value
+# 8. Please use m.printAST() and/or  type `m` for debugging. Here is a sample session:
+# >>> npm = np.ones((3,3))
+# >>> m1 = sml.matrix(npm + 3)
+# >>> m2 = sml.matrix(npm + 5)
+# >>> m3 = m1 + m2
+# >>> m3
+# mVar2 = load(" ", format="csv")
+# mVar1 = load(" ", format="csv")
+# mVar3 = mVar1 + mVar2
+# save(mVar3, " ")
+# >>> m3.printAST()
+# - [mVar3] (op).
+#   - [mVar1] (data).
+#   - [mVar2] (data).
 class matrix(object):
     """
     matrix class is a python wrapper that implements basic matrix operator.
@@ -395,8 +419,6 @@ class matrix(object):
         self.data = data
         if not (isinstance(data, SUPPORTED_TYPES) or hasattr(data, '_jdf') or (data is None and op is not None)):
             raise TypeError('Unsupported input type')
-        if op is not None:
-            self.referenced = self.referenced + [ op ]
 
     def eval(self, outputDF=False):
         """
@@ -479,6 +501,25 @@ class matrix(object):
             self._registerAsOutput(execute)
         return self
 
+    def printAST(self, numSpaces = 0):
+        """
+        Used for debugging purposes
+        """
+        head = ''.join([ ' ' ]*numSpaces + [ '- [', self.ID, '] ' ])
+        if self.data is not None:
+            out = head + '(data).\n'
+        elif self.op is not None:
+            ret = [ head, '(op).\n' ]
+            for m in self.op.inputs:
+                ret = ret + [ m.printAST(numSpaces + 2) ]
+            out = ''.join(ret)
+        else:
+            raise ValueError('Either op or data needs to be set')
+        if numSpaces == 0:
+            print out
+        else:
+            return out
+            
     def __repr__(self):
         """
         This function helps to debug matrix class and also examine the generated PyDML script
@@ -639,18 +680,21 @@ class matrix(object):
     # Performs deep copy if the matrix is backed by data
     def _prepareForInPlaceUpdate(self):
         temp = matrix(self.data, op=self.op)
-        self.ID, temp.ID = temp.ID, self.ID # Copy even the IDs as the IDs might be used to create DML
         for op in self.referenced:
-            op.inputs.remove(self) #while self in op.inputs:
-            op.inputs = op.inputs + [ temp ]
+            op.inputs = [temp if x.ID==self.ID else x for x in op.inputs]
+        self.ID, temp.ID = temp.ID, self.ID # Copy even the IDs as the IDs might be used to create DML
         self.op = DMLOp([temp], dml=[self.ID, " = ", temp.ID])
-        self.data = None       
+        self.data = None
+        temp.referenced = self.referenced + [ self.op ]
+        self.referenced = []
     
     def __setitem__(self, index, value):
         """
         Implements evaluation of left indexing operations such as m[1,1]=2
         """
         self._prepareForInPlaceUpdate()
-        if isinstance(value, matrix): 
+        if isinstance(value, matrix) or isinstance(value, DMLOp): 
             self.op.inputs = self.op.inputs + [ value ]
+        if isinstance(value, matrix):
+            value.referenced = value.referenced + [ self.op ]
         self.op.dml = self.op.dml + [ '\n', self.ID ] + getIndexingDML(index) + [ ' = ',  getValue(value), '\n']

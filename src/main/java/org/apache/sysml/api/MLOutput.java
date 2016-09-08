@@ -101,7 +101,7 @@ public class MLOutput {
 	
 	/**
 	 * Note, the output DataFrame has an additional column ID.
-	 * An easy way to get DataFrame without ID is by df.sort("ID").drop("ID")
+	 * An easy way to get DataFrame without ID is by df.sort("__INDEX").drop("__INDEX")
 	 * @param sqlContext
 	 * @param varName
 	 * @return
@@ -181,7 +181,7 @@ public class MLOutput {
 		
 		List<StructField> fields = new ArrayList<StructField>();
 		// LongTypes throw an error: java.lang.Double incompatible with java.lang.Long
-		fields.add(DataTypes.createStructField("ID", DataTypes.DoubleType, false));
+		fields.add(DataTypes.createStructField("__INDEX", DataTypes.DoubleType, false));
 		for(int k = 0; k < alRange.size(); k++) {
 			String colName = alRange.get(k)._1;
 			long low = alRange.get(k)._2._1;

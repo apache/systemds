@@ -120,7 +120,7 @@ class Matrix(object):
         -------
         df: PySpark SQL DataFrame
             A PySpark SQL DataFrame representing the matrix, with
-            one "ID" column containing the row index (since Spark
+            one "__INDEX" column containing the row index (since Spark
             DataFrames are unordered), followed by columns of doubles
             for each column in the matrix.
         """

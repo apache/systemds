@@ -456,7 +456,7 @@ public class MLResults {
 		}
 		MatrixObject mo = getMatrixObject(outputName);
 		DataFrame df = MLContextConversionUtil.matrixObjectToDataFrame(mo, sparkExecutionContext, false);
-		df = df.sort("ID").drop("ID");
+		df = df.sort("__INDEX").drop("__INDEX");
 		return df;
 	}
 
@@ -484,7 +484,7 @@ public class MLResults {
 		}
 		MatrixObject mo = getMatrixObject(outputName);
 		DataFrame df = MLContextConversionUtil.matrixObjectToDataFrame(mo, sparkExecutionContext, true);
-		df = df.sort("ID").drop("ID");
+		df = df.sort("__INDEX").drop("__INDEX");
 		return df;
 	}
 

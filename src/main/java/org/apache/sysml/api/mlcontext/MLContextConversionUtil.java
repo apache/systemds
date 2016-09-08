@@ -454,7 +454,7 @@ public class MLContextConversionUtil {
 		}
 
 		if (isDataFrameWithIDColumn(matrixMetadata)) {
-			dataFrame = dataFrame.sort("ID").drop("ID");
+			dataFrame = dataFrame.sort("__INDEX").drop("__INDEX");
 		}
 
 		boolean isVectorBasedDataFrame = isVectorBasedDataFrame(matrixMetadata);
@@ -507,7 +507,7 @@ public class MLContextConversionUtil {
 		StructType schema = dataFrame.schema();
 		boolean hasID = false;
 		try {
-			schema.fieldIndex("ID");
+			schema.fieldIndex("__INDEX");
 			hasID = true;
 		} catch (IllegalArgumentException iae) {
 		}

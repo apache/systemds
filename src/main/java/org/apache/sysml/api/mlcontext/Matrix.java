@@ -129,7 +129,7 @@ public class Matrix {
 	 */
 	public DataFrame asDataFrameDoubleNoIDColumn() {
 		DataFrame df = MLContextConversionUtil.matrixObjectToDataFrame(matrixObject, sparkExecutionContext, false);
-		df = df.sort("ID").drop("ID");
+		df = df.sort("__INDEX").drop("__INDEX");
 		return df;
 	}
 
@@ -150,7 +150,7 @@ public class Matrix {
 	 */
 	public DataFrame asDataFrameVectorNoIDColumn() {
 		DataFrame df = MLContextConversionUtil.matrixObjectToDataFrame(matrixObject, sparkExecutionContext, true);
-		df = df.sort("ID").drop("ID");
+		df = df.sort("__INDEX").drop("__INDEX");
 		return df;
 	}
 

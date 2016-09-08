@@ -516,16 +516,16 @@ public class MLContextConversionUtil {
 		if (hasID) {
 			Object object = firstRow.get(1);
 			if (object instanceof Vector) {
-				mf = MatrixFormat.DF_VECTOR_WITH_ID_COLUMN;
+				mf = MatrixFormat.DF_VECTOR_WITH_INDEX;
 			} else {
-				mf = MatrixFormat.DF_DOUBLES_WITH_ID_COLUMN;
+				mf = MatrixFormat.DF_DOUBLES_WITH_INDEX;
 			}
 		} else {
 			Object object = firstRow.get(0);
 			if (object instanceof Vector) {
-				mf = MatrixFormat.DF_VECTOR_WITH_NO_ID_COLUMN;
+				mf = MatrixFormat.DF_VECTOR;
 			} else {
-				mf = MatrixFormat.DF_DOUBLES_WITH_NO_ID_COLUMN;
+				mf = MatrixFormat.DF_DOUBLES;
 			}
 		}
 		if (mf == null) {

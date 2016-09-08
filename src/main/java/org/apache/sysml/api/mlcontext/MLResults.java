@@ -142,7 +142,7 @@ public class MLResults {
 	 */
 	public double[][] getMatrixAs2DDoubleArray(String outputName) {
 		MatrixObject mo = getMatrixObject(outputName);
-		double[][] doubleMatrix = MLContextConversionUtil.matrixObjectToDoubleMatrix(mo);
+		double[][] doubleMatrix = MLContextConversionUtil.matrixObjectTo2DDoubleArray(mo);
 		return doubleMatrix;
 	}
 

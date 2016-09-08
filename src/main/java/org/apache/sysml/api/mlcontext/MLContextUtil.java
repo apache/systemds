@@ -524,11 +524,11 @@ public final class MLContextUtil {
 			return frameObject;
 		} else if (value instanceof Matrix) {
 			Matrix matrix = (Matrix) value;
-			MatrixObject matrixObject = matrix.asMatrixObject();
+			MatrixObject matrixObject = matrix.toMatrixObject();
 			return matrixObject;
 		} else if (value instanceof Frame) {
 			Frame frame = (Frame) value;
-			FrameObject frameObject = frame.asFrameObject();
+			FrameObject frameObject = frame.toFrameObject();
 			return frameObject;
 		} else if (value instanceof double[][]) {
 			double[][] doubleMatrix = (double[][]) value;

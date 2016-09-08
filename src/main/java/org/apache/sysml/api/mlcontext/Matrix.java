@@ -67,7 +67,7 @@ public class Matrix {
 	 * 
 	 * @return the matrix as a {@code JavaRDD<String>} in IJV format
 	 */
-	public JavaRDD<String> toJavaRDDIJV() {
+	public JavaRDD<String> toJavaRDDStringIJV() {
 		JavaRDD<String> javaRDDStringIJV = MLContextConversionUtil.matrixObjectToJavaRDDStringIJV(matrixObject);
 		return javaRDDStringIJV;
 	}
@@ -77,7 +77,7 @@ public class Matrix {
 	 * 
 	 * @return the matrix as a {@code JavaRDD<String>} in CSV format
 	 */
-	public JavaRDD<String> toJavaRDDCSV() {
+	public JavaRDD<String> toJavaRDDStringCSV() {
 		JavaRDD<String> javaRDDStringCSV = MLContextConversionUtil.matrixObjectToJavaRDDStringCSV(matrixObject);
 		return javaRDDStringCSV;
 	}
@@ -87,7 +87,7 @@ public class Matrix {
 	 * 
 	 * @return the matrix as a {@code RDD<String>} in CSV format
 	 */
-	public RDD<String> toRDDCSV() {
+	public RDD<String> toRDDStringCSV() {
 		RDD<String> rddStringCSV = MLContextConversionUtil.matrixObjectToRDDStringCSV(matrixObject);
 		return rddStringCSV;
 	}
@@ -97,7 +97,7 @@ public class Matrix {
 	 * 
 	 * @return the matrix as a {@code RDD<String>} in IJV format
 	 */
-	public RDD<String> toRDDIJV() {
+	public RDD<String> toRDDStringIJV() {
 		RDD<String> rddStringIJV = MLContextConversionUtil.matrixObjectToRDDStringIJV(matrixObject);
 		return rddStringIJV;
 	}

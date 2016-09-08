@@ -2532,7 +2532,8 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			{
 				Hop smid = right.getInput().get( (right.getInput().get(0).getDataType()==DataType.SCALAR) ? 0 : 1); 
 				Hop mright = right.getInput().get( (right.getInput().get(0).getDataType()==DataType.SCALAR) ? 1 : 0);
-				ternop = HopRewriteUtils.createTernaryOp(left, smid, mright, OpOp3.PLUS_MULT);
+				ternop = (smid instanceof LiteralOp && HopRewriteUtils.getDoubleValueSafe((LiteralOp)smid)==0) ? 
+						left : HopRewriteUtils.createTernaryOp(left, smid, mright, OpOp3.PLUS_MULT);
 				LOG.debug("Applied fuseAxpyBinaryOperationChain1. (line " +hi.getBeginLine()+")");
 			}
 			//pattern (b) s*Y + X -> X +* sY
@@ -2543,7 +2544,8 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			{
 				Hop smid = left.getInput().get( (left.getInput().get(0).getDataType()==DataType.SCALAR) ? 0 : 1); 
 				Hop mright = left.getInput().get( (left.getInput().get(0).getDataType()==DataType.SCALAR) ? 1 : 0);
-				ternop = HopRewriteUtils.createTernaryOp(right, smid, mright, OpOp3.PLUS_MULT);
+				ternop = (smid instanceof LiteralOp && HopRewriteUtils.getDoubleValueSafe((LiteralOp)smid)==0) ? 
+						right : HopRewriteUtils.createTernaryOp(right, smid, mright, OpOp3.PLUS_MULT);
 				LOG.debug("Applied fuseAxpyBinaryOperationChain2. (line " +hi.getBeginLine()+")");	
 			}
 			//pattern (c) X - s*Y -> X -* sY
@@ -2553,7 +2555,8 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			{
 				Hop smid = right.getInput().get( (right.getInput().get(0).getDataType()==DataType.SCALAR) ? 0 : 1); 
 				Hop mright = right.getInput().get( (right.getInput().get(0).getDataType()==DataType.SCALAR) ? 1 : 0);
-				ternop = HopRewriteUtils.createTernaryOp(left, smid, mright, OpOp3.MINUS_MULT);
+				ternop = (smid instanceof LiteralOp && HopRewriteUtils.getDoubleValueSafe((LiteralOp)smid)==0) ? 
+						left : HopRewriteUtils.createTernaryOp(left, smid, mright, OpOp3.MINUS_MULT);
 				LOG.debug("Applied fuseAxpyBinaryOperationChain3. (line " +hi.getBeginLine()+")");
 			}
 			

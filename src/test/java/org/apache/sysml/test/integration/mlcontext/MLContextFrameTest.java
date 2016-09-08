@@ -304,18 +304,18 @@ public class MLContextFrameTest extends AutomatedTestBase {
 
 		if (outputType == IO_TYPE.JAVA_RDD_STR_CSV) {
 
-			JavaRDD<String> javaRDDStringCSVA = mlResults.getJavaRDDCSV("A");
+			JavaRDD<String> javaRDDStringCSVA = mlResults.getJavaRDDStringCSV("A");
 			List<String> linesA = javaRDDStringCSVA.collect();
 			Assert.assertEquals("1,Str2,3.0,true", linesA.get(0));
 			Assert.assertEquals("4,Str12,13.0,true", linesA.get(1));
 			Assert.assertEquals("7,Str25,26.0,false", linesA.get(2));
 
-			JavaRDD<String> javaRDDStringCSVC = mlResults.getJavaRDDCSV("C");
+			JavaRDD<String> javaRDDStringCSVC = mlResults.getJavaRDDStringCSV("C");
 			List<String> linesC = javaRDDStringCSVC.collect();
 			Assert.assertEquals("Str12,13.0", linesC.get(0));
 			Assert.assertEquals("Str25,26.0", linesC.get(1));
 		} else if (outputType == IO_TYPE.JAVA_RDD_STR_IJV) {
-			JavaRDD<String> javaRDDStringIJVA = mlResults.getJavaRDDIJV("A");
+			JavaRDD<String> javaRDDStringIJVA = mlResults.getJavaRDDStringIJV("A");
 			List<String> linesA = javaRDDStringIJVA.collect();
 			Assert.assertEquals("1 1 1", linesA.get(0));
 			Assert.assertEquals("1 2 Str2", linesA.get(1));
@@ -326,25 +326,25 @@ public class MLContextFrameTest extends AutomatedTestBase {
 			Assert.assertEquals("2 3 13.0", linesA.get(6));
 			Assert.assertEquals("2 4 true", linesA.get(7));
 
-			JavaRDD<String> javaRDDStringIJVC = mlResults.getJavaRDDIJV("C");
+			JavaRDD<String> javaRDDStringIJVC = mlResults.getJavaRDDStringIJV("C");
 			List<String> linesC = javaRDDStringIJVC.collect();
 			Assert.assertEquals("1 1 Str12", linesC.get(0));
 			Assert.assertEquals("1 2 13.0", linesC.get(1));
 			Assert.assertEquals("2 1 Str25", linesC.get(2));
 			Assert.assertEquals("2 2 26.0", linesC.get(3));
 		} else if (outputType == IO_TYPE.RDD_STR_CSV) {
-			RDD<String> rddStringCSVA = mlResults.getRDDCSV("A");
+			RDD<String> rddStringCSVA = mlResults.getRDDStringCSV("A");
 			Iterator<String> iteratorA = rddStringCSVA.toLocalIterator();
 			Assert.assertEquals("1,Str2,3.0,true", iteratorA.next());
 			Assert.assertEquals("4,Str12,13.0,true", iteratorA.next());
 			Assert.assertEquals("7,Str25,26.0,false", iteratorA.next());
 
-			RDD<String> rddStringCSVC = mlResults.getRDDCSV("C");
+			RDD<String> rddStringCSVC = mlResults.getRDDStringCSV("C");
 			Iterator<String> iteratorC = rddStringCSVC.toLocalIterator();
 			Assert.assertEquals("Str12,13.0", iteratorC.next());
 			Assert.assertEquals("Str25,26.0", iteratorC.next());
 		} else if (outputType == IO_TYPE.RDD_STR_IJV) {
-			RDD<String> rddStringIJVA = mlResults.getRDDIJV("A");
+			RDD<String> rddStringIJVA = mlResults.getRDDStringIJV("A");
 			Iterator<String> iteratorA = rddStringIJVA.toLocalIterator();
 			Assert.assertEquals("1 1 1", iteratorA.next());
 			Assert.assertEquals("1 2 Str2", iteratorA.next());
@@ -359,7 +359,7 @@ public class MLContextFrameTest extends AutomatedTestBase {
 			Assert.assertEquals("3 3 26.0", iteratorA.next());
 			Assert.assertEquals("3 4 false", iteratorA.next());
 
-			RDD<String> rddStringIJVC = mlResults.getRDDIJV("C");
+			RDD<String> rddStringIJVC = mlResults.getRDDStringIJV("C");
 			Iterator<String> iteratorC = rddStringIJVC.toLocalIterator();
 			Assert.assertEquals("1 1 Str12", iteratorC.next());
 			Assert.assertEquals("1 2 13.0", iteratorC.next());

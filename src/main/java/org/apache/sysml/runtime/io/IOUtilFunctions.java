@@ -31,6 +31,8 @@ import java.util.Comparator;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
@@ -325,5 +327,25 @@ public class IOUtilFunctions
 			}
 		}
 		return ncol;
+	}
+
+	/**
+	 * Delete the CRC files from the local file system associated with a
+	 * particular file and its metadata file.
+	 * 
+	 * @param fs
+	 *            the file system
+	 * @param path
+	 *            the path to a file
+	 * @throws IOException
+	 *             thrown if error occurred attempting to delete crc files
+	 */
+	public static void deleteCrcFilesFromLocalFileSystem(FileSystem fs, Path path) throws IOException {
+		if (fs instanceof LocalFileSystem) {
+			Path fnameCrc = new Path(path.getParent(), "." + path.getName() + ".crc");
+			fs.delete(fnameCrc, false);
+			Path fnameMtdCrc = new Path(path.getParent(), "." + path.getName() + ".mtd.crc");
+			fs.delete(fnameMtdCrc, false);
+		}
 	}
 }

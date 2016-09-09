@@ -21,6 +21,7 @@ package org.apache.sysml.api;
 
 import java.util.ArrayList;
 
+import org.apache.sysml.api.mlcontext.MLContextException;
 import org.apache.sysml.api.monitoring.Location;
 import org.apache.sysml.parser.Expression;
 import org.apache.sysml.parser.LanguageException;
@@ -90,10 +91,9 @@ public class MLContextProxy
 			return org.apache.sysml.api.MLContext.getActiveMLContext();
 		} else if (org.apache.sysml.api.mlcontext.MLContext.getActiveMLContext() != null) {
 			return org.apache.sysml.api.mlcontext.MLContext.getActiveMLContext();
-		} else {
-			return null;
 		}
-		
+		throw new MLContextException("No MLContext object is currently active. Have you created one? "
+				+ "Hint: in Scala, 'val ml = new MLContext(sc)'", true);
 	}
 	
 	public static void setInstructionForMonitoring(Instruction inst) {

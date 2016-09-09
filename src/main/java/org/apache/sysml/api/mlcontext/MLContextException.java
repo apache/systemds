@@ -21,12 +21,13 @@ package org.apache.sysml.api.mlcontext;
 
 /**
  * Uncaught exception representing SystemML exceptions that occur through the
- * MLContext API
+ * MLContext API.
  *
  */
 public class MLContextException extends RuntimeException {
 
-	private static final long serialVersionUID = 1L;
+	private static final long serialVersionUID = 1842275827863526536L;
+	private boolean suppressStacktrace = false;
 
 	public MLContextException() {
 		super();
@@ -42,6 +43,30 @@ public class MLContextException extends RuntimeException {
 
 	public MLContextException(Throwable cause) {
 		super(cause);
+	}
+
+	/**
+	 * Generate an exception and optionally suppress the stacktrace. This can be
+	 * useful in an environment such as a Spark Shell in certain situations
+	 * where a stacktrace may be extraneous.
+	 * 
+	 * @param message
+	 *            the exception message
+	 * @param suppressStacktrace
+	 *            {@code true} to suppress stacktrace, {@code false} otherwise
+	 */
+	public MLContextException(String message, boolean suppressStacktrace) {
+		super(message, null, suppressStacktrace, !suppressStacktrace);
+		this.suppressStacktrace = suppressStacktrace;
+	}
+
+	@Override
+	public String toString() {
+		if (suppressStacktrace) {
+			return getLocalizedMessage();
+		} else {
+			return super.toString();
+		}
 	}
 
 }

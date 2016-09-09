@@ -217,7 +217,7 @@ public class RDDConverterUtilsExt
 			throws DMLRuntimeException {
 		
 		if(containsID) {
-			inputDF = dropColumn(inputDF.sort("ID"), "ID");
+			inputDF = dropColumn(inputDF.sort("__INDEX"), "__INDEX");
 		}
 		
 		DataFrame df = inputDF.select(vectorColumnName);
@@ -276,7 +276,7 @@ public class RDDConverterUtilsExt
 			throw new DMLRuntimeException("No column other than \"" + column + "\" present in the dataframe.");
 		}
 		
-		// Round about way to do in Java (not exposed in Spark 1.3.0): df = df.drop("ID");
+		// Round about way to do in Java (not exposed in Spark 1.3.0): df = df.drop("__INDEX");
 		return df.select(firstCol, scala.collection.JavaConversions.asScalaBuffer(columnToSelect).toList());
 	}
 	
@@ -405,7 +405,7 @@ public class RDDConverterUtilsExt
 		}
 		
 		if(containsID) {
-			df = dropColumn(df.sort("ID"), "ID");
+			df = dropColumn(df.sort("__INDEX"), "__INDEX");
 		}
 			
 		//determine unknown dimensions and sparsity if required
@@ -447,7 +447,7 @@ public class RDDConverterUtilsExt
 		
 		List<StructField> fields = new ArrayList<StructField>();
 		// LongTypes throw an error: java.lang.Double incompatible with java.lang.Long
-		fields.add(DataTypes.createStructField("ID", DataTypes.DoubleType, false));
+		fields.add(DataTypes.createStructField("__INDEX", DataTypes.DoubleType, false));
 		fields.add(DataTypes.createStructField("C1", new VectorUDT(), false));
 		// fields.add(DataTypes.createStructField("C1", DataTypes.createArrayType(DataTypes.DoubleType), false));
 		
@@ -509,7 +509,7 @@ public class RDDConverterUtilsExt
 		
 		List<StructField> fields = new ArrayList<StructField>();
 		// LongTypes throw an error: java.lang.Double incompatible with java.lang.Long
-		fields.add(DataTypes.createStructField("ID", DataTypes.DoubleType, false)); 
+		fields.add(DataTypes.createStructField("__INDEX", DataTypes.DoubleType, false));
 		for(int i = 1; i <= numColumns; i++) {
 			fields.add(DataTypes.createStructField("C" + i, DataTypes.DoubleType, false));
 		}

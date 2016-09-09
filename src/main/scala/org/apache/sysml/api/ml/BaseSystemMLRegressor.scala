@@ -79,8 +79,8 @@ trait BaseSystemMLRegressorModel extends BaseSystemMLEstimatorModel {
     val script = getPredictionScript(mloutput, isSingleNode)
     val Xin_bin = new BinaryBlockMatrix(Xin, mcXin)
     val modelPredict = ml.execute(script._1.in(script._2, Xin_bin))
-    val predictedDF = modelPredict.getDataFrame(predictionVar).select("ID", "C1").withColumnRenamed("C1", "prediction")
-    val dataset = RDDConverterUtils.addIDToDataFrame(df.asInstanceOf[DataFrame], df.sqlContext, "ID")
+    val predictedDF = modelPredict.getDataFrame(predictionVar).select("__INDEX", "C1").withColumnRenamed("C1", "prediction")
+    val dataset = RDDConverterUtils.addIDToDataFrame(df.asInstanceOf[DataFrame], df.sqlContext, "__INDEX")
     return PredictionUtils.joinUsingID(dataset, predictedDF)
   }
 }

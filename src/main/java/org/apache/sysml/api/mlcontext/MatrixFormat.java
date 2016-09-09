@@ -37,24 +37,24 @@ public enum MatrixFormat {
 	IJV,
 
 	/**
-	 * DataFrame of doubles with an ID column.
+	 * DataFrame of doubles with a row index.
 	 */
-	DF_DOUBLES_WITH_ID_COLUMN,
+	DF_DOUBLES_WITH_INDEX,
 
 	/**
-	 * DataFrame of doubles with no ID column.
+	 * DataFrame of doubles with no row index.
 	 */
-	DF_DOUBLES_WITH_NO_ID_COLUMN,
+	DF_DOUBLES,
 
 	/**
-	 * Vector DataFrame with an ID column.
+	 * Vector DataFrame with a row index.
 	 */
-	DF_VECTOR_WITH_ID_COLUMN,
+	DF_VECTOR_WITH_INDEX,
 
 	/**
-	 * Vector DataFrame with no ID column.
+	 * Vector DataFrame with no row index.
 	 */
-	DF_VECTOR_WITH_NO_ID_COLUMN;
+	DF_VECTOR;
 
 	/**
 	 * Is the matrix format vector-based?
@@ -63,9 +63,9 @@ public enum MatrixFormat {
 	 *         otherwise.
 	 */
 	public boolean isVectorBased() {
-		if (this == DF_VECTOR_WITH_ID_COLUMN) {
+		if (this == DF_VECTOR_WITH_INDEX) {
 			return true;
-		} else if (this == DF_VECTOR_WITH_NO_ID_COLUMN) {
+		} else if (this == DF_VECTOR) {
 			return true;
 		} else {
 			return false;
@@ -73,15 +73,15 @@ public enum MatrixFormat {
 	}
 
 	/**
-	 * Does the DataFrame have an ID column?
+	 * Does the DataFrame have a row index?
 	 * 
-	 * @return {@code true} if the DataFrame has an ID column, {@code false}
+	 * @return {@code true} if the DataFrame has a row index, {@code false}
 	 *         otherwise.
 	 */
 	public boolean hasIDColumn() {
-		if (this == DF_DOUBLES_WITH_ID_COLUMN) {
+		if (this == DF_DOUBLES_WITH_INDEX) {
 			return true;
-		} else if (this == DF_VECTOR_WITH_ID_COLUMN) {
+		} else if (this == DF_VECTOR_WITH_INDEX) {
 			return true;
 		} else {
 			return false;

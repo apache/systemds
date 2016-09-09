@@ -62,7 +62,7 @@ class TestAPI(unittest.TestCase):
         rdd1 = sc.parallelize(["1.0,2.0", "3.0,4.0"])
         script = dml(sums).input(m1=rdd1).output("m2")
         m2 = ml.execute(script).get("m2")
-        self.assertEqual(repr(m2.toDF()), "DataFrame[ID: double, C1: double, C2: double]")
+        self.assertEqual(repr(m2.toDF()), "DataFrame[__INDEX: double, C1: double, C2: double]")
 
     def test_input_single(self):
         script = """

@@ -79,7 +79,7 @@ class TestMLLearn(unittest.TestCase):
             (9, "a e c l", 2.0),
             (10, "spark compile", 1.0),
             (11, "hadoop software", 2.0)
-            ], ["id", "text", "label"])
+            ], ["__INDEX", "text", "label"])
         tokenizer = Tokenizer(inputCol="text", outputCol="words")
         hashingTF = HashingTF(inputCol="words", outputCol="features", numFeatures=20)
         lr = LogisticRegression(sqlCtx)
@@ -89,7 +89,7 @@ class TestMLLearn(unittest.TestCase):
             (12, "spark i j k", 1.0),
             (13, "l m n", 2.0),
             (14, "mapreduce spark", 1.0),
-            (15, "apache hadoop", 2.0)], ["id", "text", "label"])
+            (15, "apache hadoop", 2.0)], ["__INDEX", "text", "label"])
         result = model.transform(test)
         predictionAndLabels = result.select("prediction", "label")
         evaluator = MulticlassClassificationEvaluator()

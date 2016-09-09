@@ -243,4 +243,35 @@ public class FrameObject extends CacheableData<FrameBlock>
 		SparkExecutionContext.writeFrameRDDtoHDFS(rdd, fname, oinfo);	
 	}
 
+	@Override
+	public String toString() {
+		StringBuilder str = new StringBuilder();
+		str.append("Frame: ");
+		str.append(_hdfsFileName + ", ");
+
+		try {
+			MatrixFormatMetaData md = (MatrixFormatMetaData) _metaData;
+			if (md != null) {
+				MatrixCharacteristics mc = ((MatrixDimensionsMetaData) _metaData).getMatrixCharacteristics();
+				str.append(mc.toString());
+
+				InputInfo ii = md.getInputInfo();
+				if (ii == null)
+					str.append("null");
+				else {
+					str.append(", ");
+					str.append(InputInfo.inputInfoToString(ii));
+				}
+			} else {
+				str.append("null, null");
+			}
+		} catch (Exception ex) {
+			LOG.error(ex);
+		}
+		str.append(", ");
+		str.append(isDirty() ? "dirty" : "not-dirty");
+
+		return str.toString();
+	}
+
 }

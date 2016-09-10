@@ -42,7 +42,6 @@ import org.apache.sysml.runtime.matrix.data.FileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.LibMatrixDNN;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.apache.sysml.runtime.matrix.data.NumItemsByEachReducerMetaData;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.runtime.util.IndexRange;
@@ -223,47 +222,6 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 			if( _data != null && !_data.isVector() )
 				LibMatrixDNN.cacheReuseableData(_data.getDenseBlock());
 		}
-	}
-	
-	public String toString()
-	{ 
-		StringBuilder str = new StringBuilder();
-		str.append("Matrix: ");
-		str.append(_hdfsFileName + ", ");
-		
-		if ( _metaData instanceof NumItemsByEachReducerMetaData ) {
-			str.append("NumItemsByEachReducerMetaData");
-		} 
-		else 
-		{
-			try
-			{
-				MatrixFormatMetaData md = (MatrixFormatMetaData)_metaData;
-				if ( md != null ) {
-					MatrixCharacteristics mc = ((MatrixDimensionsMetaData)_metaData).getMatrixCharacteristics();
-					str.append(mc.toString());
-					
-					InputInfo ii = md.getInputInfo();
-					if ( ii == null )
-						str.append("null");
-					else {
-						str.append(", ");
-						str.append(InputInfo.inputInfoToString(ii));
-					}
-				}
-				else {
-					str.append("null, null");
-				}
-			}
-			catch(Exception ex)
-			{
-				LOG.error(ex);
-			}
-		}
-		str.append(", ");
-		str.append(isDirty() ? "dirty" : "not-dirty");
-		
-		return str.toString();
 	}
 	
 	// *********************************************

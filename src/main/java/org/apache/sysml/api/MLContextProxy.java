@@ -85,17 +85,24 @@ public class MLContextProxy
 			org.apache.sysml.api.mlcontext.MLContext.getActiveMLContext().getInternalProxy().setAppropriateVarsForRead(source, targetname);
 		}
 	}
-	
+
 	public static Object getActiveMLContext() {
 		if (org.apache.sysml.api.MLContext.getActiveMLContext() != null) {
 			return org.apache.sysml.api.MLContext.getActiveMLContext();
 		} else if (org.apache.sysml.api.mlcontext.MLContext.getActiveMLContext() != null) {
 			return org.apache.sysml.api.mlcontext.MLContext.getActiveMLContext();
 		}
+		return null;
+	}
+
+	public static Object getActiveMLContextForAPI() {
+		if (org.apache.sysml.api.mlcontext.MLContext.getActiveMLContext() != null) {
+			return org.apache.sysml.api.mlcontext.MLContext.getActiveMLContext();
+		}
 		throw new MLContextException("No MLContext object is currently active. Have you created one? "
 				+ "Hint: in Scala, 'val ml = new MLContext(sc)'", true);
 	}
-	
+
 	public static void setInstructionForMonitoring(Instruction inst) {
 		Location loc = inst.getLocation();
 		if (loc == null) {

@@ -590,7 +590,7 @@ public class MLContext {
 		FrameObject fo = null;
 		if( format.equals("csv") ) {
 			CSVFileFormatProperties csvprops = (props!=null) ? (CSVFileFormatProperties)props: new CSVFileFormatProperties();
-			fo = new FrameObject(null, new MatrixFormatMetaData(mc, OutputInfo.CSVOutputInfo, InputInfo.CSVInputInfo));
+			fo = new FrameObject(OptimizerUtils.getUniqueTempFileName(), new MatrixFormatMetaData(mc, OutputInfo.CSVOutputInfo, InputInfo.CSVInputInfo));
 			fo.setFileFormatProperties(csvprops);
 		}
 		else if( format.equals("text") ) {
@@ -624,7 +624,7 @@ public class MLContext {
 			_inVarnames = new ArrayList<String>();
 		
 		MatrixCharacteristics mc = new MatrixCharacteristics(rlen, clen, OptimizerUtils.DEFAULT_BLOCKSIZE, OptimizerUtils.DEFAULT_BLOCKSIZE, -1);
-		FrameObject fo = new FrameObject(null, new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
+		FrameObject fo = new FrameObject(OptimizerUtils.getUniqueTempFileName(), new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
 		
 		if(props != null)
 			fo.setFileFormatProperties(props);
@@ -708,7 +708,8 @@ public class MLContext {
 		// Bug in Spark is messing up blocks and indexes due to too eager reuse of data structures
 		JavaPairRDD<MatrixIndexes, MatrixBlock> copyRDD = rdd.mapToPair( new CopyBlockPairFunction() );
 		
-		MatrixObject mo = new MatrixObject(ValueType.DOUBLE, "temp", new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
+		MatrixObject mo = new MatrixObject(ValueType.DOUBLE, OptimizerUtils.getUniqueTempFileName(), 
+				new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
 		mo.setRDDHandle(new RDDObject(copyRDD, varName));
 		_variables.put(varName, mo);
 		_inVarnames.add(varName);
@@ -725,7 +726,8 @@ public class MLContext {
 			_variables = new LocalVariableMap();
 		if(_inVarnames == null)
 			_inVarnames = new ArrayList<String>();
-		MatrixObject mo = new MatrixObject(ValueType.DOUBLE, "temp", new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
+		MatrixObject mo = new MatrixObject(ValueType.DOUBLE, OptimizerUtils.getUniqueTempFileName(), 
+				new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
 		mo.acquireModify(mb); 
 		mo.release();
 		_variables.put(varName, mo);

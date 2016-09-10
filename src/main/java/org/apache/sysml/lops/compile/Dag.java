@@ -179,19 +179,9 @@ public class Dag<N extends Lop>
 		}
 		public void addLastInstruction(Instruction inst) {
 			lastInstructions.add(inst);
-		}
-		
+		}		
 	}
 	
-	private String getFilePath() {
-		if ( scratchFilePath == null ) {
-			scratchFilePath = scratch + Lop.FILE_SEPARATOR
-								+ Lop.PROCESS_PREFIX + DMLScript.getUUID()
-								+ Lop.FILE_SEPARATOR + Lop.FILE_SEPARATOR
-								+ ProgramConverter.CP_ROOT_THREAD_ID + Lop.FILE_SEPARATOR;
-		}
-		return scratchFilePath;
-	}
 	
 	/**
 	 * Constructor
@@ -205,7 +195,32 @@ public class Dag<N extends Lop>
 		// get number of reducers from dml config
 		total_reducers = ConfigurationManager.getNumReducers();
 	}
+	
+	///////
+	// filename handling
+	
+	private String getFilePath() {
+		if ( scratchFilePath == null ) {
+			scratchFilePath = scratch + Lop.FILE_SEPARATOR
+								+ Lop.PROCESS_PREFIX + DMLScript.getUUID()
+								+ Lop.FILE_SEPARATOR + Lop.FILE_SEPARATOR
+								+ ProgramConverter.CP_ROOT_THREAD_ID + Lop.FILE_SEPARATOR;
+		}
+		return scratchFilePath;
+	}
 
+	public String getNextUniqueFilename() {
+		return getFilePath() + "temp" + job_id.getNextID();
+	}
+	
+	public static String getNextUniqueVarname(DataType dt) {
+		return (dt==DataType.MATRIX ? Lop.MATRIX_VAR_NAME_PREFIX :
+			Lop.FRAME_VAR_NAME_PREFIX) + var_index.getNextID();
+	}
+	
+	///////
+	// Dag modifications
+	
 	/**
 	 * Method to add a node to the DAG.
 	 * 
@@ -2388,8 +2403,8 @@ public class Dag<N extends Lop>
 					// TODO: change it to output binaryblock
 					
 					Data dataInput = (Data) input;
-					oparams.setFile_name(getFilePath() + "temp" + job_id.getNextID());
-					oparams.setLabel(Lop.MATRIX_VAR_NAME_PREFIX + var_index.getNextID());
+					oparams.setFile_name(getNextUniqueFilename());
+					oparams.setLabel(getNextUniqueVarname(DataType.MATRIX));
 
 					// generate an instruction that creates a symbol table entry for the new variable in CSV format
 					Data delimLop = (Data) dataInput.getNamedInputLop(
@@ -2425,9 +2440,8 @@ public class Dag<N extends Lop>
 			{
 				// generate temporary filename and a variable name to hold the
 				// output produced by "rootNode"
-				oparams.setFile_name(getFilePath() + "temp" + job_id.getNextID());
-				oparams.setLabel( (node.getDataType()==DataType.MATRIX ? Lop.MATRIX_VAR_NAME_PREFIX :
-						Lop.FRAME_VAR_NAME_PREFIX) + var_index.getNextID());
+				oparams.setFile_name(getNextUniqueFilename());
+				oparams.setLabel(getNextUniqueVarname(node.getDataType()));
 
 				// generate an instruction that creates a symbol table entry for the new variable
 				//String createInst = prepareVariableInstruction("createvar", node);
@@ -2575,7 +2589,7 @@ public class Dag<N extends Lop>
 						
 						// generate temporary filename & var name
 						String tempVarName = oparams.getLabel() + "temp";
-						String tempFileName = getFilePath() + "temp" + job_id.getNextID();
+						String tempFileName = getNextUniqueFilename();
 						
 						//String createInst = prepareVariableInstruction("createvar", tempVarName, node.getDataType(), node.getValueType(), tempFileName, oparams, out.getOutInfo());
 						//out.addPreInstruction(CPInstructionParser.parseSingleInstruction(createInst));
@@ -2665,8 +2679,7 @@ public class Dag<N extends Lop>
 						// part MM format file on hdfs.
 						if (oparams.getFormat() == Format.CSV)  {
 							
-							String tempFileName = getFilePath() + "temp" + job_id.getNextID();
-							
+							String tempFileName = getNextUniqueFilename();
 							String createInst = node.getInstructions(tempFileName);
 							createvarInst= CPInstructionParser.parseSingleInstruction(createInst);
 						
@@ -2690,11 +2703,9 @@ public class Dag<N extends Lop>
 						} 
 						else if (oparams.getFormat() == Format.MM )  {
 							
-							String tempFileName = getFilePath() + "temp" + job_id.getNextID();
-							
 							createvarInst= VariableCPInstruction.prepareCreateVariableInstruction(
 													oparams.getLabel(), 
-													tempFileName, 
+													getNextUniqueFilename(), 
 													false, node.getDataType(),
 													OutputInfo.outputInfoToString(getOutputInfo(node, false)), 
 													new MatrixCharacteristics(oparams.getNumRows(), oparams.getNumCols(), rpb, cpb, oparams.getNnz()),

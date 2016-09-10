@@ -19,6 +19,7 @@
 
 package org.apache.sysml.api.mlcontext;
 
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 
 /**
@@ -478,8 +479,8 @@ public class MatrixMetadata extends Metadata {
 
 		long nr = (numRows == null) ? -1 : numRows;
 		long nc = (numColumns == null) ? -1 : numColumns;
-		int nrpb = (numRowsPerBlock == null) ? MLContextUtil.defaultBlockSize() : numRowsPerBlock;
-		int ncpb = (numColumnsPerBlock == null) ? MLContextUtil.defaultBlockSize() : numColumnsPerBlock;
+		int nrpb = (numRowsPerBlock == null) ? ConfigurationManager.getBlocksize() : numRowsPerBlock;
+		int ncpb = (numColumnsPerBlock == null) ? ConfigurationManager.getBlocksize() : numColumnsPerBlock;
 		long nnz = (numNonZeros == null) ? -1 : numNonZeros;
 		MatrixCharacteristics mc = new MatrixCharacteristics(nr, nc, nrpb, ncpb, nnz);
 		return mc;

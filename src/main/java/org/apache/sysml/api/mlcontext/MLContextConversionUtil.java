@@ -41,6 +41,8 @@ import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SQLContext;
 import org.apache.spark.sql.types.StructType;
 import org.apache.sysml.api.MLContextProxy;
+import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheException;
@@ -106,18 +108,13 @@ public class MLContextConversionUtil {
 			MatrixMetadata matrixMetadata) {
 		try {
 			MatrixBlock matrixBlock = DataConverter.convertToMatrixBlock(doubleMatrix);
-			MatrixCharacteristics matrixCharacteristics;
-			if (matrixMetadata != null) {
-				matrixCharacteristics = matrixMetadata.asMatrixCharacteristics();
-			} else {
-				matrixCharacteristics = new MatrixCharacteristics(matrixBlock.getNumRows(), matrixBlock.getNumColumns(),
-						MLContextUtil.defaultBlockSize(), MLContextUtil.defaultBlockSize());
-			}
+			MatrixCharacteristics mc = (matrixMetadata != null) ? 
+					matrixMetadata.asMatrixCharacteristics() : new MatrixCharacteristics(matrixBlock.getNumRows(), 
+					matrixBlock.getNumColumns(), ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize());
 
-			MatrixFormatMetaData meta = new MatrixFormatMetaData(matrixCharacteristics,
-					OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
-			MatrixObject matrixObject = new MatrixObject(ValueType.DOUBLE,
-					MLContextUtil.scratchSpace() + "/" + variableName, meta);
+			MatrixObject matrixObject = new MatrixObject(ValueType.DOUBLE, OptimizerUtils.getUniqueTempFileName(), 
+					new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
+			
 			matrixObject.acquireModify(matrixBlock);
 			matrixObject.release();
 			return matrixObject;
@@ -173,16 +170,10 @@ public class MLContextConversionUtil {
 	public static MatrixObject matrixBlockToMatrixObject(String variableName, MatrixBlock matrixBlock,
 			MatrixMetadata matrixMetadata) {
 		try {
-			MatrixCharacteristics matrixCharacteristics;
-			if (matrixMetadata != null) {
-				matrixCharacteristics = matrixMetadata.asMatrixCharacteristics();
-			} else {
-				matrixCharacteristics = new MatrixCharacteristics();
-			}
-			MatrixFormatMetaData mtd = new MatrixFormatMetaData(matrixCharacteristics, OutputInfo.BinaryBlockOutputInfo,
-					InputInfo.BinaryBlockInputInfo);
-			MatrixObject matrixObject = new MatrixObject(ValueType.DOUBLE,
-					MLContextUtil.scratchSpace() + "/" + variableName, mtd);
+			MatrixCharacteristics mc = (matrixMetadata != null) ? 
+					matrixMetadata.asMatrixCharacteristics() : new MatrixCharacteristics();
+			MatrixObject matrixObject = new MatrixObject(ValueType.DOUBLE, OptimizerUtils.getUniqueTempFileName(), 
+					new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
 			matrixObject.acquireModify(matrixBlock);
 			matrixObject.release();
 			return matrixObject;
@@ -213,7 +204,7 @@ public class MLContextConversionUtil {
 			}
 			MatrixFormatMetaData mtd = new MatrixFormatMetaData(matrixCharacteristics, OutputInfo.BinaryBlockOutputInfo,
 					InputInfo.BinaryBlockInputInfo);
-			FrameObject frameObject = new FrameObject(MLContextUtil.scratchSpace() + "/" + variableName, mtd);
+			FrameObject frameObject = new FrameObject(OptimizerUtils.getUniqueTempFileName(), mtd);
 			frameObject.acquireModify(frameBlock);
 			frameObject.release();
 			return frameObject;
@@ -256,18 +247,12 @@ public class MLContextConversionUtil {
 	public static MatrixObject binaryBlocksToMatrixObject(String variableName,
 			JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlocks, MatrixMetadata matrixMetadata) {
 
-		MatrixCharacteristics matrixCharacteristics;
-		if (matrixMetadata != null) {
-			matrixCharacteristics = matrixMetadata.asMatrixCharacteristics();
-		} else {
-			matrixCharacteristics = new MatrixCharacteristics();
-		}
-
+		MatrixCharacteristics mc = (matrixMetadata != null) ?
+			matrixMetadata.asMatrixCharacteristics() : new MatrixCharacteristics();
 		JavaPairRDD<MatrixIndexes, MatrixBlock> javaPairRdd = binaryBlocks.mapToPair(new CopyBlockPairFunction());
-
-		MatrixObject matrixObject = new MatrixObject(ValueType.DOUBLE,
-				MLContextUtil.scratchSpace() + "/" + "temp_" + System.nanoTime(), new MatrixFormatMetaData(
-						matrixCharacteristics, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
+		
+		MatrixObject matrixObject = new MatrixObject(ValueType.DOUBLE, OptimizerUtils.getUniqueTempFileName(),
+				new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
 		matrixObject.setRDDHandle(new RDDObject(javaPairRdd, variableName));
 		return matrixObject;
 	}
@@ -304,17 +289,11 @@ public class MLContextConversionUtil {
 	public static FrameObject binaryBlocksToFrameObject(String variableName, JavaPairRDD<Long, FrameBlock> binaryBlocks,
 			FrameMetadata frameMetadata) {
 
-		MatrixCharacteristics matrixCharacteristics;
-		if (frameMetadata != null) {
-			matrixCharacteristics = frameMetadata.asMatrixCharacteristics();
-		} else {
-			matrixCharacteristics = new MatrixCharacteristics();
-		}
+		MatrixCharacteristics mc = (frameMetadata != null) ? 
+				frameMetadata.asMatrixCharacteristics() : new MatrixCharacteristics();
 
-		MatrixFormatMetaData mtd = new MatrixFormatMetaData(matrixCharacteristics, OutputInfo.BinaryBlockOutputInfo,
-				InputInfo.BinaryBlockInputInfo);
-		FrameObject frameObject = new FrameObject(
-				MLContextUtil.scratchSpace() + "/" + "temp_" + System.nanoTime() + variableName, mtd);
+		FrameObject frameObject = new FrameObject(OptimizerUtils.getUniqueTempFileName(), 
+				new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
 		frameObject.setRDDHandle(new RDDObject(binaryBlocks, variableName));
 		return frameObject;
 	}
@@ -655,14 +634,11 @@ public class MLContextConversionUtil {
 	public static MatrixObject javaRDDStringCSVToMatrixObject(String variableName, JavaRDD<String> javaRDD,
 			MatrixMetadata matrixMetadata) {
 		JavaPairRDD<LongWritable, Text> javaPairRDD = javaRDD.mapToPair(new ConvertStringToLongTextPair());
-		MatrixCharacteristics matrixCharacteristics;
-		if (matrixMetadata != null) {
-			matrixCharacteristics = matrixMetadata.asMatrixCharacteristics();
-		} else {
-			matrixCharacteristics = new MatrixCharacteristics();
-		}
-		MatrixObject matrixObject = new MatrixObject(ValueType.DOUBLE, null,
-				new MatrixFormatMetaData(matrixCharacteristics, OutputInfo.CSVOutputInfo, InputInfo.CSVInputInfo));
+		MatrixCharacteristics mc = (matrixMetadata != null) ? 
+				matrixMetadata.asMatrixCharacteristics() : new MatrixCharacteristics();
+
+		MatrixObject matrixObject = new MatrixObject(ValueType.DOUBLE, OptimizerUtils.getUniqueTempFileName(),
+				new MatrixFormatMetaData(mc, OutputInfo.CSVOutputInfo, InputInfo.CSVInputInfo));
 		JavaPairRDD<LongWritable, Text> javaPairRDD2 = javaPairRDD.mapToPair(new CopyTextInputFunction());
 		matrixObject.setRDDHandle(new RDDObject(javaPairRDD2, variableName));
 		return matrixObject;
@@ -695,22 +671,17 @@ public class MLContextConversionUtil {
 	public static FrameObject javaRDDStringCSVToFrameObject(String variableName, JavaRDD<String> javaRDD,
 			FrameMetadata frameMetadata) {
 		JavaPairRDD<LongWritable, Text> javaPairRDD = javaRDD.mapToPair(new ConvertStringToLongTextPair());
-		MatrixCharacteristics matrixCharacteristics;
-		if (frameMetadata != null) {
-			matrixCharacteristics = frameMetadata.asMatrixCharacteristics();
-		} else {
-			matrixCharacteristics = new MatrixCharacteristics();
-		}
+		MatrixCharacteristics mc = (frameMetadata != null) ? 
+				frameMetadata.asMatrixCharacteristics() : new MatrixCharacteristics();
 		JavaPairRDD<LongWritable, Text> javaPairRDDText = javaPairRDD.mapToPair(new CopyTextInputFunction());
 
 		JavaSparkContext jsc = MLContextUtil.getJavaSparkContext((MLContext) MLContextProxy.getActiveMLContextForAPI());
 
-		FrameObject frameObject = new FrameObject(null, new MatrixFormatMetaData(matrixCharacteristics,
-				OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
+		FrameObject frameObject = new FrameObject(OptimizerUtils.getUniqueTempFileName(), 
+				new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
 		JavaPairRDD<Long, FrameBlock> rdd;
 		try {
-			rdd = FrameRDDConverterUtils.csvToBinaryBlock(jsc, javaPairRDDText, matrixCharacteristics, false, ",",
-					false, -1);
+			rdd = FrameRDDConverterUtils.csvToBinaryBlock(jsc, javaPairRDDText, mc, false, ",", false, -1);
 		} catch (DMLRuntimeException e) {
 			e.printStackTrace();
 			return null;
@@ -734,14 +705,11 @@ public class MLContextConversionUtil {
 	public static MatrixObject javaRDDStringIJVToMatrixObject(String variableName, JavaRDD<String> javaRDD,
 			MatrixMetadata matrixMetadata) {
 		JavaPairRDD<LongWritable, Text> javaPairRDD = javaRDD.mapToPair(new ConvertStringToLongTextPair());
-		MatrixCharacteristics matrixCharacteristics;
-		if (matrixMetadata != null) {
-			matrixCharacteristics = matrixMetadata.asMatrixCharacteristics();
-		} else {
-			matrixCharacteristics = new MatrixCharacteristics();
-		}
-		MatrixObject matrixObject = new MatrixObject(ValueType.DOUBLE, null, new MatrixFormatMetaData(
-				matrixCharacteristics, OutputInfo.TextCellOutputInfo, InputInfo.TextCellInputInfo));
+		MatrixCharacteristics mc = (matrixMetadata != null) ? 
+				matrixMetadata.asMatrixCharacteristics() : new MatrixCharacteristics();
+
+		MatrixObject matrixObject = new MatrixObject(ValueType.DOUBLE, OptimizerUtils.getUniqueTempFileName(), 
+				new MatrixFormatMetaData(mc, OutputInfo.TextCellOutputInfo, InputInfo.TextCellInputInfo));
 		JavaPairRDD<LongWritable, Text> javaPairRDD2 = javaPairRDD.mapToPair(new CopyTextInputFunction());
 		matrixObject.setRDDHandle(new RDDObject(javaPairRDD2, variableName));
 		return matrixObject;
@@ -762,25 +730,21 @@ public class MLContextConversionUtil {
 	public static FrameObject javaRDDStringIJVToFrameObject(String variableName, JavaRDD<String> javaRDD,
 			FrameMetadata frameMetadata) {
 		JavaPairRDD<LongWritable, Text> javaPairRDD = javaRDD.mapToPair(new ConvertStringToLongTextPair());
-		MatrixCharacteristics matrixCharacteristics;
-		if (frameMetadata != null) {
-			matrixCharacteristics = frameMetadata.asMatrixCharacteristics();
-		} else {
-			matrixCharacteristics = new MatrixCharacteristics();
-		}
+		MatrixCharacteristics mc = (frameMetadata != null) ? 
+				frameMetadata.asMatrixCharacteristics() : new MatrixCharacteristics();
 
 		JavaPairRDD<LongWritable, Text> javaPairRDDText = javaPairRDD.mapToPair(new CopyTextInputFunction());
 
 		JavaSparkContext jsc = MLContextUtil.getJavaSparkContext((MLContext) MLContextProxy.getActiveMLContextForAPI());
 
-		FrameObject frameObject = new FrameObject(null, new MatrixFormatMetaData(matrixCharacteristics,
-				OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
+		FrameObject frameObject = new FrameObject(OptimizerUtils.getUniqueTempFileName(), 
+				new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
 		JavaPairRDD<Long, FrameBlock> rdd;
 		try {
 			List<ValueType> lschema = null;
 			if (lschema == null)
-				lschema = Collections.nCopies((int) matrixCharacteristics.getCols(), ValueType.STRING);
-			rdd = FrameRDDConverterUtils.textCellToBinaryBlock(jsc, javaPairRDDText, matrixCharacteristics, lschema);
+				lschema = Collections.nCopies((int) mc.getCols(), ValueType.STRING);
+			rdd = FrameRDDConverterUtils.textCellToBinaryBlock(jsc, javaPairRDDText, mc, lschema);
 		} catch (DMLRuntimeException e) {
 			e.printStackTrace();
 			return null;

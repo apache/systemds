@@ -21,6 +21,7 @@ package org.apache.sysml.api.mlcontext;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.sql.DataFrame;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -61,8 +62,8 @@ public class BinaryBlockMatrix {
 	 *            the number of columns
 	 */
 	public BinaryBlockMatrix(DataFrame dataFrame, long numRows, long numCols) {
-		this(dataFrame, new MatrixMetadata(numRows, numCols, MLContextUtil.defaultBlockSize(),
-				MLContextUtil.defaultBlockSize()));
+		this(dataFrame, new MatrixMetadata(numRows, numCols, 
+				ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize()));
 	}
 
 	/**

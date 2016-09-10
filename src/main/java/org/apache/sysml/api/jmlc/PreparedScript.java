@@ -29,6 +29,7 @@ import java.util.Map.Entry;
 
 import org.apache.sysml.api.DMLException;
 import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.Program;
@@ -234,13 +235,12 @@ public class PreparedScript
 		if( !_inVarnames.contains(varname) )
 			throw new DMLException("Unspecified input variable: "+varname);
 				
-		String scratch_space = ConfigurationManager.getScratchSpace();
 		int blocksize = ConfigurationManager.getBlocksize();
 		
 		//create new matrix object
 		MatrixCharacteristics mc = new MatrixCharacteristics(matrix.getNumRows(), matrix.getNumColumns(), blocksize, blocksize);
 		MatrixFormatMetaData meta = new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
-		MatrixObject mo = new MatrixObject(ValueType.DOUBLE, scratch_space+"/"+varname, meta);
+		MatrixObject mo = new MatrixObject(ValueType.DOUBLE, OptimizerUtils.getUniqueTempFileName(), meta);
 		mo.acquireModify(matrix); 
 		mo.release();
 		
@@ -342,13 +342,11 @@ public class PreparedScript
 	{
 		if( !_inVarnames.contains(varname) )
 			throw new DMLException("Unspecified input variable: "+varname);
-				
-		String scratch_space = ConfigurationManager.getScratchSpace();
 		
 		//create new frame object
 		MatrixCharacteristics mc = new MatrixCharacteristics(frame.getNumRows(), frame.getNumColumns(), -1, -1);
 		MatrixFormatMetaData meta = new MatrixFormatMetaData(mc, OutputInfo.BinaryCellOutputInfo, InputInfo.BinaryCellInputInfo);
-		FrameObject fo = new FrameObject(scratch_space+"/"+varname, meta);
+		FrameObject fo = new FrameObject(OptimizerUtils.getUniqueTempFileName(), meta);
 		fo.acquireModify(frame);
 		fo.release();
 		

@@ -610,24 +610,6 @@ public final class MLContextUtil {
 	}
 
 	/**
-	 * Return the default matrix block size.
-	 * 
-	 * @return the default matrix block size
-	 */
-	public static int defaultBlockSize() {
-		return ConfigurationManager.getBlocksize();
-	}
-
-	/**
-	 * Return the location of the scratch space directory.
-	 * 
-	 * @return the lcoation of the scratch space directory
-	 */
-	public static String scratchSpace() {
-		return ConfigurationManager.getScratchSpace();
-	}
-
-	/**
 	 * Return a double-quoted string with inner single and double quotes
 	 * escaped.
 	 * 

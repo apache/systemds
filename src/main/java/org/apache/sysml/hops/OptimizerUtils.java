@@ -35,7 +35,10 @@ import org.apache.sysml.hops.Hop.FileFormatTypes;
 import org.apache.sysml.hops.Hop.OpOp2;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.lops.Checkpoint;
+import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopProperties.ExecType;
+import org.apache.sysml.lops.compile.Dag;
+import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
@@ -939,6 +942,23 @@ public class OptimizerUtils
 		return ret;
 	}
 	
+	/**
+	 * Wrapper over internal filename construction for external usage. 
+	 * 
+	 * @return
+	 */
+	public static String getUniqueTempFileName() {
+		return new Dag<Lop>().getNextUniqueFilename();
+	}
+	
+	/**
+	 * Wrapper over internal varname construction for external usage.
+	 * 
+	 * @return
+	 */
+	public static String getUniqueVariableName(DataType dt) {
+		return Dag.getNextUniqueVarname(dt);
+	}
 
 	/**
 	 * 

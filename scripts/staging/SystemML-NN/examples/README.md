@@ -64,10 +64,10 @@ limitations under the License.
 
 ## Execution
 * These examples contain scripts written in SystemML's R-like language (`*.dml`), as well as PySpark Jupyter notebooks (`*.ipynb`).  The scripts contain the math for the algorithms, enclosed in functions, and the notebooks serve as full, end-to-end examples of reading in data, training models using the functions within the scripts, and evaluating final performance.
-* **Notebooks**: To run the notebook examples, please startup Jupyter in the following manner from this directory (or for more information, please see [this great blog post](http://spark.tc/0-to-life-changing-application-with-apache-systemml/)):
+* **Notebooks**: To run the notebook examples, please install the SystemML Python package with `pip install systemml`, and then startup Jupyter in the following manner from this directory (or for more information, please see [this great blog post](http://spark.tc/0-to-life-changing-application-with-apache-systemml/)):
 
   ```
-  PYSPARK_DRIVER_PYTHON=jupyter PYSPARK_DRIVER_PYTHON_OPTS="notebook" $SPARK_HOME/bin/pyspark --master local[*] --driver-memory 3G --driver-class-path $SYSTEMML_HOME/SystemML.jar
+  PYSPARK_DRIVER_PYTHON=jupyter PYSPARK_DRIVER_PYTHON_OPTS="notebook" pyspark --master local[*] --driver-memory 3G --driver-class-path $SYSTEMML_HOME/SystemML.jar --jars $SYSTEMML_HOME/SystemML.jar
   ```
 
   Note that all printed output, such as training statistics, from the SystemML scripts will be sent to the terminal in which Jupyter was started (for now...).

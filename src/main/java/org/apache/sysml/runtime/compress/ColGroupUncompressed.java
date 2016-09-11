@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.functionobjects.ReduceRow;
 import org.apache.sysml.runtime.matrix.data.LibMatrixAgg;
 import org.apache.sysml.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -325,6 +326,20 @@ public class ColGroupUncompressed extends ColGroup
 	{
 		//execute unary aggregate operations
 		LibMatrixAgg.aggregateUnaryMatrix(_data, ret, op);
+		
+		//shift result into correct column indexes
+		if( op.indexFn instanceof ReduceRow ) {
+			//clear corrections
+			for( int i=0; i<_colIndexes.length; i++ )
+				if( op.aggOp.correctionExists )
+					ret.quickSetValue(0, i+_colIndexes.length, 0);
+			//shift partial results
+			for( int i=_colIndexes.length-1; i>=0; i-- ) {
+				double val = ret.quickGetValue(0, i);
+				ret.quickSetValue(0, i, 0);
+				ret.quickSetValue(0, _colIndexes[i], val);
+			}
+		}
 	}
 
 	@Override

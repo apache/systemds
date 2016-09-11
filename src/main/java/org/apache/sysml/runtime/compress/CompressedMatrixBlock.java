@@ -1049,6 +1049,9 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 			ArrayList<ColGroup>[] grpParts = createStaticTaskPartitioning(op.getNumThreads(), false);
 			ColGroupUncompressed uc = getUncompressedColGroup();
 			try {
+				//compute uncompressed column group in parallel (otherwise bottleneck)
+				if( uc != null )
+					 ret = (MatrixBlock)uc.getData().aggregateUnaryOperations(op, ret, blockingFactorRow, blockingFactorCol, indexesIn, false);					
 				//compute all compressed column groups
 				ExecutorService pool = Executors.newFixedThreadPool( op.getNumThreads() );
 				ArrayList<UnaryAggregateTask> tasks = new ArrayList<UnaryAggregateTask>();
@@ -1056,9 +1059,6 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 					tasks.add(new UnaryAggregateTask(grp, ret, op));
 				pool.invokeAll(tasks);	
 				pool.shutdown();
-				//compute uncompressed column group in parallel (otherwise bottleneck)
-				if( uc != null )
-					 ret = (MatrixBlock)uc.getData().aggregateUnaryOperations(op, ret, blockingFactorRow, blockingFactorCol, indexesIn, false);					
 				//aggregate partial results
 				if( !(op.indexFn instanceof ReduceRow) ){
 					KahanObject kbuff = new KahanObject(0,0);
@@ -1077,9 +1077,16 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 			}
 		}
 		else {
-			for (ColGroup grp : _colGroups) {
-				grp.unaryAggregateOperations(op, ret);
-			}
+			//process UC column group
+			for (ColGroup grp : _colGroups)
+				if( grp instanceof ColGroupUncompressed )
+					grp.unaryAggregateOperations(op, ret);
+			
+			//process OLE/RLE column groups
+			for (ColGroup grp : _colGroups)
+				if( !(grp instanceof ColGroupUncompressed) )
+					grp.unaryAggregateOperations(op, ret);
+			
 		}
 		
 		//drop correction if necessary

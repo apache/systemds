@@ -64,7 +64,7 @@ public class LibMatrixOuterAgg
 	public static boolean isRowIndexMax(AggregateUnaryOperator uaggOp)
 	{
 		return 	(uaggOp.aggOp.increOp.fn instanceof Builtin														
-			    && (((Builtin)(uaggOp.aggOp.increOp.fn)).bFunc == Builtin.BuiltinFunctionCode.MAXINDEX));						
+			    && (((Builtin)(uaggOp.aggOp.increOp.fn)).bFunc == Builtin.BuiltinCode.MAXINDEX));						
 	}
 	
 	/**
@@ -76,7 +76,7 @@ public class LibMatrixOuterAgg
 	public static boolean isRowIndexMin(AggregateUnaryOperator uaggOp)
 	{
 		return 	(uaggOp.aggOp.increOp.fn instanceof Builtin									
-			    && (((Builtin)(uaggOp.aggOp.increOp.fn)).bFunc == Builtin.BuiltinFunctionCode.MININDEX));						
+			    && (((Builtin)(uaggOp.aggOp.increOp.fn)).bFunc == Builtin.BuiltinCode.MININDEX));						
 	}
 	
 	
@@ -192,7 +192,7 @@ public class LibMatrixOuterAgg
 			
 			MatrixBlock mbix = DataConverter.convertToMatrixBlock(dvix, true);
 			
-			UnaryOperator u_op = new UnaryOperator(Builtin.getBuiltinFnObject(Builtin.BuiltinFunctionCode.CUMMAX));
+			UnaryOperator u_op = new UnaryOperator(Builtin.getBuiltinFnObject(Builtin.BuiltinCode.CUMMAX));
 			MatrixBlock mbResult = (MatrixBlock) mbix.unaryOperations(u_op, new MatrixBlock());
 			
 			vixCumSum = DataConverter.convertToIntVector(mbResult);  
@@ -272,7 +272,7 @@ public class LibMatrixOuterAgg
 			
 			MatrixBlock mbix = DataConverter.convertToMatrixBlock(dvix, true);
 			
-			UnaryOperator u_op = new UnaryOperator(Builtin.getBuiltinFnObject(Builtin.BuiltinFunctionCode.CUMMIN));
+			UnaryOperator u_op = new UnaryOperator(Builtin.getBuiltinFnObject(Builtin.BuiltinCode.CUMMIN));
 			MatrixBlock mbResult = (MatrixBlock) mbix.unaryOperations(u_op, new MatrixBlock());
 			
 			vixCumSum = DataConverter.convertToIntVector(mbResult);  

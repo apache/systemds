@@ -49,48 +49,48 @@ public class Builtin extends ValueFunction
 
 	private static final long serialVersionUID = 3836744687789840574L;
 	
-	public enum BuiltinFunctionCode { INVALID, SIN, COS, TAN, ASIN, ACOS, ATAN, LOG, LOG_NZ, MIN, MAX, ABS, SIGN, SQRT, EXP, PLOGP, PRINT, NROW, NCOL, LENGTH, ROUND, MAXINDEX, MININDEX, STOP, CEIL, FLOOR, CUMSUM, CUMPROD, CUMMIN, CUMMAX, INVERSE, SPROP, SIGMOID, SELP };
-	public BuiltinFunctionCode bFunc;
+	public enum BuiltinCode { INVALID, SIN, COS, TAN, ASIN, ACOS, ATAN, LOG, LOG_NZ, MIN, MAX, ABS, SIGN, SQRT, EXP, PLOGP, PRINT, NROW, NCOL, LENGTH, ROUND, MAXINDEX, MININDEX, STOP, CEIL, FLOOR, CUMSUM, CUMPROD, CUMMIN, CUMMAX, INVERSE, SPROP, SIGMOID, SELP };
+	public BuiltinCode bFunc;
 	
 	private static final boolean FASTMATH = true;
 	
-	static public HashMap<String, BuiltinFunctionCode> String2BuiltinFunctionCode;
+	static public HashMap<String, BuiltinCode> String2BuiltinCode;
 	static {
-		String2BuiltinFunctionCode = new HashMap<String, BuiltinFunctionCode>();
+		String2BuiltinCode = new HashMap<String, BuiltinCode>();
 		
-		String2BuiltinFunctionCode.put( "sin"    , BuiltinFunctionCode.SIN);
-		String2BuiltinFunctionCode.put( "cos"    , BuiltinFunctionCode.COS);
-		String2BuiltinFunctionCode.put( "tan"    , BuiltinFunctionCode.TAN);
-		String2BuiltinFunctionCode.put( "asin"   , BuiltinFunctionCode.ASIN);
-		String2BuiltinFunctionCode.put( "acos"   , BuiltinFunctionCode.ACOS);
-		String2BuiltinFunctionCode.put( "atan"   , BuiltinFunctionCode.ATAN);
-		String2BuiltinFunctionCode.put( "log"    , BuiltinFunctionCode.LOG);
-		String2BuiltinFunctionCode.put( "log_nz"    , BuiltinFunctionCode.LOG_NZ);
-		String2BuiltinFunctionCode.put( "min"    , BuiltinFunctionCode.MIN);
-		String2BuiltinFunctionCode.put( "max"    , BuiltinFunctionCode.MAX);
-		String2BuiltinFunctionCode.put( "maxindex"    , BuiltinFunctionCode.MAXINDEX);
-		String2BuiltinFunctionCode.put( "minindex"    , BuiltinFunctionCode.MININDEX);
-		String2BuiltinFunctionCode.put( "abs"    , BuiltinFunctionCode.ABS);
-		String2BuiltinFunctionCode.put( "sign"   , BuiltinFunctionCode.SIGN);
-		String2BuiltinFunctionCode.put( "sqrt"   , BuiltinFunctionCode.SQRT);
-		String2BuiltinFunctionCode.put( "exp"    , BuiltinFunctionCode.EXP);
-		String2BuiltinFunctionCode.put( "plogp"  , BuiltinFunctionCode.PLOGP);
-		String2BuiltinFunctionCode.put( "print"  , BuiltinFunctionCode.PRINT);
-		String2BuiltinFunctionCode.put( "nrow"   , BuiltinFunctionCode.NROW);
-		String2BuiltinFunctionCode.put( "ncol"   , BuiltinFunctionCode.NCOL);
-		String2BuiltinFunctionCode.put( "length" , BuiltinFunctionCode.LENGTH);
-		String2BuiltinFunctionCode.put( "round"  , BuiltinFunctionCode.ROUND);
-		String2BuiltinFunctionCode.put( "stop"   , BuiltinFunctionCode.STOP);
-		String2BuiltinFunctionCode.put( "ceil"   , BuiltinFunctionCode.CEIL);
-		String2BuiltinFunctionCode.put( "floor"  , BuiltinFunctionCode.FLOOR);
-		String2BuiltinFunctionCode.put( "ucumk+" , BuiltinFunctionCode.CUMSUM);
-		String2BuiltinFunctionCode.put( "ucum*"  , BuiltinFunctionCode.CUMPROD);
-		String2BuiltinFunctionCode.put( "ucummin", BuiltinFunctionCode.CUMMIN);
-		String2BuiltinFunctionCode.put( "ucummax", BuiltinFunctionCode.CUMMAX);
-		String2BuiltinFunctionCode.put( "inverse", BuiltinFunctionCode.INVERSE);
-		String2BuiltinFunctionCode.put( "sprop",   BuiltinFunctionCode.SPROP);
-		String2BuiltinFunctionCode.put( "sigmoid",   BuiltinFunctionCode.SIGMOID);
-		String2BuiltinFunctionCode.put( "sel+",   BuiltinFunctionCode.SELP);
+		String2BuiltinCode.put( "sin"    , BuiltinCode.SIN);
+		String2BuiltinCode.put( "cos"    , BuiltinCode.COS);
+		String2BuiltinCode.put( "tan"    , BuiltinCode.TAN);
+		String2BuiltinCode.put( "asin"   , BuiltinCode.ASIN);
+		String2BuiltinCode.put( "acos"   , BuiltinCode.ACOS);
+		String2BuiltinCode.put( "atan"   , BuiltinCode.ATAN);
+		String2BuiltinCode.put( "log"    , BuiltinCode.LOG);
+		String2BuiltinCode.put( "log_nz" , BuiltinCode.LOG_NZ);
+		String2BuiltinCode.put( "min"    , BuiltinCode.MIN);
+		String2BuiltinCode.put( "max"    , BuiltinCode.MAX);
+		String2BuiltinCode.put( "maxindex", BuiltinCode.MAXINDEX);
+		String2BuiltinCode.put( "minindex", BuiltinCode.MININDEX);
+		String2BuiltinCode.put( "abs"    , BuiltinCode.ABS);
+		String2BuiltinCode.put( "sign"   , BuiltinCode.SIGN);
+		String2BuiltinCode.put( "sqrt"   , BuiltinCode.SQRT);
+		String2BuiltinCode.put( "exp"    , BuiltinCode.EXP);
+		String2BuiltinCode.put( "plogp"  , BuiltinCode.PLOGP);
+		String2BuiltinCode.put( "print"  , BuiltinCode.PRINT);
+		String2BuiltinCode.put( "nrow"   , BuiltinCode.NROW);
+		String2BuiltinCode.put( "ncol"   , BuiltinCode.NCOL);
+		String2BuiltinCode.put( "length" , BuiltinCode.LENGTH);
+		String2BuiltinCode.put( "round"  , BuiltinCode.ROUND);
+		String2BuiltinCode.put( "stop"   , BuiltinCode.STOP);
+		String2BuiltinCode.put( "ceil"   , BuiltinCode.CEIL);
+		String2BuiltinCode.put( "floor"  , BuiltinCode.FLOOR);
+		String2BuiltinCode.put( "ucumk+" , BuiltinCode.CUMSUM);
+		String2BuiltinCode.put( "ucum*"  , BuiltinCode.CUMPROD);
+		String2BuiltinCode.put( "ucummin", BuiltinCode.CUMMIN);
+		String2BuiltinCode.put( "ucummax", BuiltinCode.CUMMAX);
+		String2BuiltinCode.put( "inverse", BuiltinCode.INVERSE);
+		String2BuiltinCode.put( "sprop",   BuiltinCode.SPROP);
+		String2BuiltinCode.put( "sigmoid", BuiltinCode.SIGMOID);
+		String2BuiltinCode.put( "sel+",    BuiltinCode.SELP);
 	}
 	
 	// We should create one object for every builtin function that we support
@@ -101,11 +101,11 @@ public class Builtin extends ValueFunction
 	private static Builtin inverseObj=null, cumsumObj=null, cumprodObj=null, cumminObj=null, cummaxObj=null;
 	private static Builtin stopObj = null, spropObj = null, sigmoidObj = null, selpObj = null;
 	
-	private Builtin(BuiltinFunctionCode bf) {
+	private Builtin(BuiltinCode bf) {
 		bFunc = bf;
 	}
 	
-	public BuiltinFunctionCode getBuiltinFunctionCode() {
+	public BuiltinCode getBuiltinCode() {
 		return bFunc;
 	}
 	
@@ -116,7 +116,7 @@ public class Builtin extends ValueFunction
 	 */
 	public static Builtin getBuiltinFnObject (String str) 
 	{
-		BuiltinFunctionCode code = String2BuiltinFunctionCode.get(str);
+		BuiltinCode code = String2BuiltinCode.get(str);
 		return getBuiltinFnObject( code );
 	}
 	
@@ -125,7 +125,7 @@ public class Builtin extends ValueFunction
 	 * @param code
 	 * @return
 	 */
-	public static Builtin getBuiltinFnObject(BuiltinFunctionCode code) 
+	public static Builtin getBuiltinFnObject(BuiltinCode code) 
 	{	
 		if ( code == null ) 
 			return null; 
@@ -133,140 +133,140 @@ public class Builtin extends ValueFunction
 		switch ( code ) {
 		case SIN:
 			if ( sinObj == null )
-				sinObj = new Builtin(BuiltinFunctionCode.SIN);
+				sinObj = new Builtin(BuiltinCode.SIN);
 			return sinObj;
 		
 		case COS:
 			if ( cosObj == null )
-				cosObj = new Builtin(BuiltinFunctionCode.COS);
+				cosObj = new Builtin(BuiltinCode.COS);
 			return cosObj;
 		case TAN:
 			if ( tanObj == null )
-				tanObj = new Builtin(BuiltinFunctionCode.TAN);
+				tanObj = new Builtin(BuiltinCode.TAN);
 			return tanObj;
 		case ASIN:
 			if ( asinObj == null )
-				asinObj = new Builtin(BuiltinFunctionCode.ASIN);
+				asinObj = new Builtin(BuiltinCode.ASIN);
 			return asinObj;
 		
 		case ACOS:
 			if ( acosObj == null )
-				acosObj = new Builtin(BuiltinFunctionCode.ACOS);
+				acosObj = new Builtin(BuiltinCode.ACOS);
 			return acosObj;
 		case ATAN:
 			if ( atanObj == null )
-				atanObj = new Builtin(BuiltinFunctionCode.ATAN);
+				atanObj = new Builtin(BuiltinCode.ATAN);
 			return atanObj;
 		case LOG:
 			if ( logObj == null )
-				logObj = new Builtin(BuiltinFunctionCode.LOG);
+				logObj = new Builtin(BuiltinCode.LOG);
 			return logObj;
 		case LOG_NZ:
 			if ( lognzObj == null )
-				lognzObj = new Builtin(BuiltinFunctionCode.LOG_NZ);
+				lognzObj = new Builtin(BuiltinCode.LOG_NZ);
 			return lognzObj;
 		case MAX:
 			if ( maxObj == null )
-				maxObj = new Builtin(BuiltinFunctionCode.MAX);
+				maxObj = new Builtin(BuiltinCode.MAX);
 			return maxObj;
 		case MAXINDEX:
 			if ( maxindexObj == null )
-				maxindexObj = new Builtin(BuiltinFunctionCode.MAXINDEX);
+				maxindexObj = new Builtin(BuiltinCode.MAXINDEX);
 			return maxindexObj;
 		case MIN:
 			if ( minObj == null )
-				minObj = new Builtin(BuiltinFunctionCode.MIN);
+				minObj = new Builtin(BuiltinCode.MIN);
 			return minObj;
 		case MININDEX:
 			if ( minindexObj == null )
-				minindexObj = new Builtin(BuiltinFunctionCode.MININDEX);
+				minindexObj = new Builtin(BuiltinCode.MININDEX);
 			return minindexObj;
 		case ABS:
 			if ( absObj == null )
-				absObj = new Builtin(BuiltinFunctionCode.ABS);
+				absObj = new Builtin(BuiltinCode.ABS);
 			return absObj;
 		case SIGN:
 			if ( signObj == null )
-				signObj = new Builtin(BuiltinFunctionCode.SIGN);
+				signObj = new Builtin(BuiltinCode.SIGN);
 			return signObj;
 		case SQRT:
 			if ( sqrtObj == null )
-				sqrtObj = new Builtin(BuiltinFunctionCode.SQRT);
+				sqrtObj = new Builtin(BuiltinCode.SQRT);
 			return sqrtObj;
 		case EXP:
 			if ( expObj == null )
-				expObj = new Builtin(BuiltinFunctionCode.EXP);
+				expObj = new Builtin(BuiltinCode.EXP);
 			return expObj;
 		case PLOGP:
 			if ( plogpObj == null )
-				plogpObj = new Builtin(BuiltinFunctionCode.PLOGP);
+				plogpObj = new Builtin(BuiltinCode.PLOGP);
 			return plogpObj;
 		case PRINT:
 			if ( printObj == null )
-				printObj = new Builtin(BuiltinFunctionCode.PRINT);
+				printObj = new Builtin(BuiltinCode.PRINT);
 			return printObj;
 		case NROW:
 			if ( nrowObj == null )
-				nrowObj = new Builtin(BuiltinFunctionCode.NROW);
+				nrowObj = new Builtin(BuiltinCode.NROW);
 			return nrowObj;
 		case NCOL:
 			if ( ncolObj == null )
-				ncolObj = new Builtin(BuiltinFunctionCode.NCOL);
+				ncolObj = new Builtin(BuiltinCode.NCOL);
 			return ncolObj;
 		case LENGTH:
 			if ( lengthObj == null )
-				lengthObj = new Builtin(BuiltinFunctionCode.LENGTH);
+				lengthObj = new Builtin(BuiltinCode.LENGTH);
 			return lengthObj;
 		case ROUND:
 			if ( roundObj == null )
-				roundObj = new Builtin(BuiltinFunctionCode.ROUND);
+				roundObj = new Builtin(BuiltinCode.ROUND);
 			return roundObj;
 		case CEIL:
 			if ( ceilObj == null )
-				ceilObj = new Builtin(BuiltinFunctionCode.CEIL);
+				ceilObj = new Builtin(BuiltinCode.CEIL);
 			return ceilObj;
 		case FLOOR:
 			if ( floorObj == null )
-				floorObj = new Builtin(BuiltinFunctionCode.FLOOR);
+				floorObj = new Builtin(BuiltinCode.FLOOR);
 			return floorObj;
 		case CUMSUM:
 			if ( cumsumObj == null )
-				cumsumObj = new Builtin(BuiltinFunctionCode.CUMSUM);
+				cumsumObj = new Builtin(BuiltinCode.CUMSUM);
 			return cumsumObj;	
 		case CUMPROD:
 			if ( cumprodObj == null )
-				cumprodObj = new Builtin(BuiltinFunctionCode.CUMPROD);
+				cumprodObj = new Builtin(BuiltinCode.CUMPROD);
 			return cumprodObj;	
 		case CUMMIN:
 			if ( cumminObj == null )
-				cumminObj = new Builtin(BuiltinFunctionCode.CUMMIN);
+				cumminObj = new Builtin(BuiltinCode.CUMMIN);
 			return cumminObj;	
 		case CUMMAX:
 			if ( cummaxObj == null )
-				cummaxObj = new Builtin(BuiltinFunctionCode.CUMMAX);
+				cummaxObj = new Builtin(BuiltinCode.CUMMAX);
 			return cummaxObj;	
 		case INVERSE:
 			if ( inverseObj == null )
-				inverseObj = new Builtin(BuiltinFunctionCode.INVERSE);
+				inverseObj = new Builtin(BuiltinCode.INVERSE);
 			return inverseObj;	
 		case STOP:
 			if ( stopObj == null )
-				stopObj = new Builtin(BuiltinFunctionCode.STOP);
+				stopObj = new Builtin(BuiltinCode.STOP);
 			return stopObj;
 
 		case SPROP:
 			if ( spropObj == null )
-				spropObj = new Builtin(BuiltinFunctionCode.SPROP);
+				spropObj = new Builtin(BuiltinCode.SPROP);
 			return spropObj;
 			
 		case SIGMOID:
 			if ( sigmoidObj == null )
-				sigmoidObj = new Builtin(BuiltinFunctionCode.SIGMOID);
+				sigmoidObj = new Builtin(BuiltinCode.SIGMOID);
 			return sigmoidObj;
 		
 		case SELP:
 			if ( selpObj == null )
-				selpObj = new Builtin(BuiltinFunctionCode.SELP);
+				selpObj = new Builtin(BuiltinCode.SELP);
 			return selpObj;
 			
 		default:

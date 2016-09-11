@@ -3115,8 +3115,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		}else if(aggOp.correctionLocation==CorrectionLocationType.LASTCOLUMN)
 		{
 			if(aggOp.increOp.fn instanceof Builtin 
-			   && ( ((Builtin)(aggOp.increOp.fn)).bFunc == Builtin.BuiltinFunctionCode.MAXINDEX
-			         || ((Builtin)(aggOp.increOp.fn)).bFunc == Builtin.BuiltinFunctionCode.MININDEX )
+			   && ( ((Builtin)(aggOp.increOp.fn)).bFunc == Builtin.BuiltinCode.MAXINDEX
+			         || ((Builtin)(aggOp.increOp.fn)).bFunc == Builtin.BuiltinCode.MININDEX )
 			         ){
 					// *** HACK ALERT *** HACK ALERT *** HACK ALERT ***
 					// rowIndexMax() and its siblings don't fit very well into the standard
@@ -3364,8 +3364,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		else if(aggOp.correctionLocation==CorrectionLocationType.LASTCOLUMN)
 		{
 			if(aggOp.increOp.fn instanceof Builtin 
-			   && ( ((Builtin)(aggOp.increOp.fn)).bFunc == Builtin.BuiltinFunctionCode.MAXINDEX 
-			        || ((Builtin)(aggOp.increOp.fn)).bFunc == Builtin.BuiltinFunctionCode.MININDEX) 
+			   && ( ((Builtin)(aggOp.increOp.fn)).bFunc == Builtin.BuiltinCode.MAXINDEX 
+			        || ((Builtin)(aggOp.increOp.fn)).bFunc == Builtin.BuiltinCode.MININDEX) 
 			        ){
 				// *** HACK ALERT *** HACK ALERT *** HACK ALERT ***
 				// rowIndexMax() and its siblings don't fit very well into the standard
@@ -4540,8 +4540,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 				if(op.aggOp.correctionExists
 				   && op.aggOp.correctionLocation == CorrectionLocationType.LASTCOLUMN
 				   && op.aggOp.increOp.fn instanceof Builtin 
-				   && ( ((Builtin)(op.aggOp.increOp.fn)).bFunc == Builtin.BuiltinFunctionCode.MAXINDEX
-				        || ((Builtin)(op.aggOp.increOp.fn)).bFunc == Builtin.BuiltinFunctionCode.MININDEX) 
+				   && ( ((Builtin)(op.aggOp.increOp.fn)).bFunc == Builtin.BuiltinCode.MAXINDEX
+				        || ((Builtin)(op.aggOp.increOp.fn)).bFunc == Builtin.BuiltinCode.MININDEX) 
 				        ){
 					double currMaxValue = result.quickGetValue(i, 1);
 					long newMaxIndex = UtilFunctions.computeCellIndex(indexesIn.getColumnIndex(), blockingFactorCol, j);

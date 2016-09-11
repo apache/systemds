@@ -73,7 +73,7 @@ public final class UncompressedBitmap
 	public int getNumColumns() {
 		return _numCols;
 	}
-
+	
 	/**
 	 * @param ix   index of a particular distinct value
 	 * @return the tuple of column values associated with the specified index
@@ -97,5 +97,16 @@ public final class UncompressedBitmap
 	 */
 	public int[] getOffsetsList(int ix) {
 		return _offsetsLists[ix];
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public int getNumOffsets() {
+		int ret = 0;
+		for( int[] offlist : _offsetsLists )
+			ret += offlist.length;
+		return ret;
 	}
 }

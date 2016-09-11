@@ -52,13 +52,13 @@ public class ConverterUtils
 		}
 		else if( group instanceof ColGroupRLE ) {
 			ColGroupRLE in = (ColGroupRLE)group;
-			ret = new ColGroupRLE(colIndices, in.getNumRows(), in.getValues(), 
-					in.getBitmaps(), in.getBitmapOffsets());
+			ret = new ColGroupRLE(colIndices, in.getNumRows(), in.hasZeros(), 
+					in.getValues(), in.getBitmaps(), in.getBitmapOffsets());
 		}
 		else if( group instanceof ColGroupOLE ) {
 			ColGroupOLE in = (ColGroupOLE) group;
-			ret = new ColGroupOLE(colIndices, in.getNumRows(), in.getValues(), 
-					in.getBitmaps(), in.getBitmapOffsets());
+			ret = new ColGroupOLE(colIndices, in.getNumRows(), in.hasZeros(),
+					in.getValues(), in.getBitmaps(), in.getBitmapOffsets());
 		}
 		
 		return ret;

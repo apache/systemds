@@ -54,12 +54,14 @@ import org.apache.sysml.runtime.compress.utils.LinearAlgebraUtils;
 import org.apache.sysml.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
+import org.apache.sysml.runtime.functionobjects.Builtin;
+import org.apache.sysml.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysml.runtime.functionobjects.KahanPlus;
 import org.apache.sysml.runtime.functionobjects.KahanPlusSq;
 import org.apache.sysml.runtime.functionobjects.Multiply;
+import org.apache.sysml.runtime.functionobjects.ReduceCol;
 import org.apache.sysml.runtime.functionobjects.ReduceRow;
 import org.apache.sysml.runtime.instructions.cp.CM_COV_Object;
-import org.apache.sysml.runtime.instructions.cp.KahanObject;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.matrix.data.CTableMap;
 import org.apache.sysml.runtime.matrix.data.LibMatrixBincell;
@@ -1011,8 +1013,11 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		}
 		
 		//check for supported operations
-		if( !(op.aggOp.increOp.fn instanceof KahanPlus || op.aggOp.increOp.fn instanceof KahanPlusSq) ){
-			throw new DMLRuntimeException("Unary aggregates other than sums not supported yet.");
+		if( !(op.aggOp.increOp.fn instanceof KahanPlus || op.aggOp.increOp.fn instanceof KahanPlusSq
+			 || (op.aggOp.increOp.fn instanceof Builtin && 
+				(((Builtin)op.aggOp.increOp.fn).getBuiltinCode()==BuiltinCode.MIN 
+				||((Builtin)op.aggOp.increOp.fn).getBuiltinCode()==BuiltinCode.MAX))) ){
+			throw new DMLRuntimeException("Unary aggregates other than sum/sumsq/min/max not supported yet.");
 		}
 		
 		//prepare output dimensions
@@ -1030,20 +1035,24 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 			}
 		}
 		
-		//prepare output
+		// initialize and allocate the result
 		if(result==null)
 			result=new MatrixBlock(tempCellIndex.row, tempCellIndex.column, false);
 		else
 			result.reset(tempCellIndex.row, tempCellIndex.column, false);
-		
 		MatrixBlock ret = (MatrixBlock) result;
+		ret.allocateDenseBlock();
+		
+		//special handling init value for rowmins/rowmax
+		if( op.indexFn instanceof ReduceCol && op.aggOp.increOp.fn instanceof Builtin ) {
+			double val = Double.MAX_VALUE * ((((Builtin)op.aggOp.increOp.fn).getBuiltinCode()==BuiltinCode.MAX)?-1:1);
+			Arrays.fill(ret.getDenseBlock(), val);
+		}
 		
 		//core unary aggregate
 		if(    op.getNumThreads() > 1 
 			&& getExactSizeOnDisk() > MIN_PAR_AGG_THRESHOLD ) 
 		{
-			// initialize and allocate the result
-			ret.allocateDenseBlock();
 			
 			//multi-threaded execution of all groups 
 			ArrayList<ColGroup>[] grpParts = createStaticTaskPartitioning(op.getNumThreads(), false);
@@ -1059,16 +1068,15 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 					tasks.add(new UnaryAggregateTask(grp, ret, op));
 				pool.invokeAll(tasks);	
 				pool.shutdown();
+				
 				//aggregate partial results
-				if( !(op.indexFn instanceof ReduceRow) ){
-					KahanObject kbuff = new KahanObject(0,0);
-					KahanPlus kplus = KahanPlus.getKahanPlusFnObject();
+				if( !(op.indexFn instanceof ReduceRow) ) {
 					for( int i=0; i<ret.getNumRows(); i++ ) {
-						kbuff.set(ret.quickGetValue(i, 0), ret.quickGetValue(i, 0));
+						double val = ret.quickGetValue(i, 0);
 						for( UnaryAggregateTask task : tasks )
-							kplus.execute2(kbuff, task.getResult().quickGetValue(i, 0));
-						ret.quickSetValue(i, 0, kbuff._sum);
-						ret.quickSetValue(i, 1, kbuff._correction);
+							val = op.aggOp.increOp.fn.execute(val,
+									task.getResult().quickGetValue(i, 0));
+						ret.quickSetValue(i, 0, val);
 					}
 				}		
 			}
@@ -1086,7 +1094,17 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 			for (ColGroup grp : _colGroups)
 				if( !(grp instanceof ColGroupUncompressed) )
 					grp.unaryAggregateOperations(op, ret);
-			
+		}
+		
+		//special handling zeros for rowmins/rowmax
+		if( op.indexFn instanceof ReduceCol && op.aggOp.increOp.fn instanceof Builtin ) {
+			int[] rnnz = new int[rlen];
+			for( ColGroup grp : _colGroups )
+				grp.countNonZerosPerRow(rnnz, 0, rlen);
+			Builtin builtin = (Builtin)op.aggOp.increOp.fn;
+			for( int i=0; i<rlen; i++ )
+				if( rnnz[i] < clen )
+					ret.quickSetValue(i, 0, builtin.execute2(ret.quickGetValue(i, 0), 0));
 		}
 		
 		//drop correction if necessary
@@ -1520,10 +1538,13 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 			if( !(_op.indexFn instanceof ReduceRow) ) { //sum/rowSums
 				_ret = new MatrixBlock(ret.getNumRows(), ret.getNumColumns(), false);
 				_ret.allocateDenseBlock();
+				if( _op.aggOp.increOp.fn instanceof Builtin )
+					System.arraycopy(ret.getDenseBlock(), 0, _ret.getDenseBlock(), 0, ret.getNumRows()*ret.getNumColumns());
 			}
 			else { //colSums
 				_ret = ret;
 			}
+			System.out.println(_ret.getNonZeros());
 		}
 		
 		@Override

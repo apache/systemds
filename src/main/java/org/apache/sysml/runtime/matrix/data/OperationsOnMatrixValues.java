@@ -183,8 +183,8 @@ public class OperationsOnMatrixValues
 					break;
 				case LASTCOLUMN:
 					if(op.increOp.fn instanceof Builtin 
-					   && ( ((Builtin)(op.increOp.fn)).bFunc == Builtin.BuiltinFunctionCode.MAXINDEX 
-					        || ((Builtin)(op.increOp.fn)).bFunc == Builtin.BuiltinFunctionCode.MININDEX) )
+					   && ( ((Builtin)(op.increOp.fn)).bFunc == Builtin.BuiltinCode.MAXINDEX 
+					        || ((Builtin)(op.increOp.fn)).bFunc == Builtin.BuiltinCode.MININDEX) )
 					{
 						outRow = rlen;
 						outCol = 1;

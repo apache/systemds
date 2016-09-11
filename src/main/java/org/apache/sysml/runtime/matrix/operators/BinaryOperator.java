@@ -43,7 +43,7 @@ import org.apache.sysml.runtime.functionobjects.Plus;
 import org.apache.sysml.runtime.functionobjects.PlusMultiply;
 import org.apache.sysml.runtime.functionobjects.Power;
 import org.apache.sysml.runtime.functionobjects.ValueFunction;
-import org.apache.sysml.runtime.functionobjects.Builtin.BuiltinFunctionCode;
+import org.apache.sysml.runtime.functionobjects.Builtin.BuiltinCode;
 
 public class BinaryOperator  extends Operator implements Serializable
 {
@@ -87,11 +87,11 @@ public class BinaryOperator  extends Operator implements Serializable
 		else if( fn instanceof Power )			return OpOp2.POW;
 		else if( fn instanceof MinusNz )		return OpOp2.MINUS_NZ;
 		else if( fn instanceof Builtin ) {
-			BuiltinFunctionCode bfc = ((Builtin) fn).getBuiltinFunctionCode();
-			if( bfc == BuiltinFunctionCode.MIN ) 		return OpOp2.MIN;
-			else if( bfc == BuiltinFunctionCode.MAX ) 	return OpOp2.MAX;
-			else if( bfc == BuiltinFunctionCode.LOG ) 	return OpOp2.LOG;
-			else if( bfc == BuiltinFunctionCode.LOG_NZ ) return OpOp2.LOG_NZ;
+			BuiltinCode bfc = ((Builtin) fn).getBuiltinCode();
+			if( bfc == BuiltinCode.MIN ) 		return OpOp2.MIN;
+			else if( bfc == BuiltinCode.MAX ) 	return OpOp2.MAX;
+			else if( bfc == BuiltinCode.LOG ) 	return OpOp2.LOG;
+			else if( bfc == BuiltinCode.LOG_NZ ) return OpOp2.LOG_NZ;
 		}
 		
 		//non-supported ops (not required for sparsity estimates):

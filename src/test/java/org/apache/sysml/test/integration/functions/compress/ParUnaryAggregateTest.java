@@ -59,7 +59,13 @@ public class ParUnaryAggregateTest extends AutomatedTestBase
 		SUM,
 		ROWSUMSSQ,
 		COLSUMSSQ,
-		SUMSQ
+		SUMSQ,
+		ROWMAXS,
+		COLMAXS,
+		MAX,
+		ROWMINS,
+		COLMINS,
+		MIN,
 	}
 	
 	@Override
@@ -486,6 +492,427 @@ public class ParUnaryAggregateTest extends AutomatedTestBase
 	public void testSumSqSparseConstDataNoCompression() {
 		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.CONST, AggType.SUMSQ, false);
 	}
+	
+
+	@Test
+	public void testRowMaxsDenseRandDataCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND, AggType.ROWMAXS, true);
+	}
+	
+	@Test
+	public void testRowMaxsSparseRandDataCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND, AggType.ROWMAXS, true);
+	}
+	
+	@Test
+	public void testRowMaxsEmptyCompression() {
+		runUnaryAggregateTest(SparsityType.EMPTY, ValueType.RAND, AggType.ROWMAXS, true);
+	}
+	
+	@Test
+	public void testRowMaxsDenseRoundRandDataCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND, AggType.ROWMAXS, true);
+	}
+	
+	@Test
+	public void testRowMaxsSparseRoundRandDataCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND, AggType.ROWMAXS, true);
+	}
+	
+	@Test
+	public void testRowMaxsDenseConstantDataCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.CONST, AggType.ROWMAXS, true);
+	}
+	
+	@Test
+	public void testRowMaxsSparseConstDataCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.CONST, AggType.ROWMAXS, true);
+	}
+	
+	@Test
+	public void testRowMaxsDenseRandDataNoCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND, AggType.ROWMAXS, false);
+	}
+	
+	@Test
+	public void testRowMaxsSparseRandDataNoCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND, AggType.ROWMAXS, false);
+	}
+	
+	@Test
+	public void testRowMaxsEmptyNoCompression() {
+		runUnaryAggregateTest(SparsityType.EMPTY, ValueType.RAND, AggType.ROWMAXS, false);
+	}
+	
+	@Test
+	public void testRowMaxsDenseRoundRandDataNoCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND, AggType.ROWMAXS, false);
+	}
+	
+	@Test
+	public void testRowMaxsSparseRoundRandDataNoCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND, AggType.ROWMAXS, false);
+	}
+	
+	@Test
+	public void testRowMaxsDenseConstDataNoCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.CONST, AggType.ROWMAXS, false);
+	}
+	
+	@Test
+	public void testRowMaxsSparseConstDataNoCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.CONST, AggType.ROWMAXS, false);
+	}
+	
+	@Test
+	public void testColMaxsDenseRandDataCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND, AggType.COLMAXS, true);
+	}
+	
+	@Test
+	public void testColMaxsSparseRandDataCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND, AggType.COLMAXS, true);
+	}
+	
+	@Test
+	public void testColMaxsEmptyCompression() {
+		runUnaryAggregateTest(SparsityType.EMPTY, ValueType.RAND, AggType.COLMAXS, true);
+	}
+	
+	@Test
+	public void testColMaxsDenseRoundRandDataCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND, AggType.COLMAXS, true);
+	}
+	
+	@Test
+	public void testColMaxsSparseRoundRandDataCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND, AggType.COLMAXS, true);
+	}
+	
+	@Test
+	public void testColMaxsDenseConstantDataCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.CONST, AggType.COLMAXS, true);
+	}
+	
+	@Test
+	public void testColMaxsSparseConstDataCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.CONST, AggType.COLMAXS, true);
+	}
+	
+	@Test
+	public void testColMaxsDenseRandDataNoCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND, AggType.COLMAXS, false);
+	}
+	
+	@Test
+	public void testColMaxsSparseRandDataNoCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND, AggType.COLMAXS, false);
+	}
+	
+	@Test
+	public void testColMaxsEmptyNoCompression() {
+		runUnaryAggregateTest(SparsityType.EMPTY, ValueType.RAND, AggType.COLMAXS, false);
+	}
+	
+	@Test
+	public void testColMaxsDenseRoundRandDataNoCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND, AggType.COLMAXS, false);
+	}
+	
+	@Test
+	public void testColMaxsSparseRoundRandDataNoCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND, AggType.COLMAXS, false);
+	}
+	
+	@Test
+	public void testColMaxsDenseConstDataNoCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.CONST, AggType.COLMAXS, false);
+	}
+	
+	@Test
+	public void testColMaxsSparseConstDataNoCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.CONST, AggType.COLMAXS, false);
+	}
+
+	@Test
+	public void testMaxDenseRandDataCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND, AggType.MAX, true);
+	}
+	
+	@Test
+	public void testMaxSparseRandDataCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND, AggType.MAX, true);
+	}
+	
+	@Test
+	public void testMaxEmptyCompression() {
+		runUnaryAggregateTest(SparsityType.EMPTY, ValueType.RAND, AggType.MAX, true);
+	}
+	
+	@Test
+	public void testMaxDenseRoundRandDataCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND, AggType.MAX, true);
+	}
+	
+	@Test
+	public void testMaxSparseRoundRandDataCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND, AggType.MAX, true);
+	}
+	
+	@Test
+	public void testMaxDenseConstantDataCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.CONST, AggType.MAX, true);
+	}
+	
+	@Test
+	public void testMaxSparseConstDataCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.CONST, AggType.MAX, true);
+	}
+	
+	@Test
+	public void testMaxDenseRandDataNoCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND, AggType.MAX, false);
+	}
+	
+	@Test
+	public void testMaxSparseRandDataNoCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND, AggType.MAX, false);
+	}
+	
+	@Test
+	public void testMaxEmptyNoCompression() {
+		runUnaryAggregateTest(SparsityType.EMPTY, ValueType.RAND, AggType.MAX, false);
+	}
+	
+	@Test
+	public void testMaxDenseRoundRandDataNoCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND, AggType.MAX, false);
+	}
+	
+	@Test
+	public void testMaxSparseRoundRandDataNoCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND, AggType.MAX, false);
+	}
+	
+	@Test
+	public void testMaxDenseConstDataNoCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.CONST, AggType.MAX, false);
+	}
+	
+	@Test
+	public void testMaxSparseConstDataNoCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.CONST, AggType.MAX, false);
+	}
+	
+	@Test
+	public void testRowMinsDenseRandDataCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND, AggType.ROWMINS, true);
+	}
+	
+	@Test
+	public void testRowMinsSparseRandDataCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND, AggType.ROWMINS, true);
+	}
+	
+	@Test
+	public void testRowMinsEmptyCompression() {
+		runUnaryAggregateTest(SparsityType.EMPTY, ValueType.RAND, AggType.ROWMINS, true);
+	}
+	
+	@Test
+	public void testRowMinsDenseRoundRandDataCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND, AggType.ROWMINS, true);
+	}
+	
+	@Test
+	public void testRowMinsSparseRoundRandDataCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND, AggType.ROWMINS, true);
+	}
+	
+	@Test
+	public void testRowMinsDenseConstantDataCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.CONST, AggType.ROWMINS, true);
+	}
+	
+	@Test
+	public void testRowMinsSparseConstDataCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.CONST, AggType.ROWMINS, true);
+	}
+	
+	@Test
+	public void testRowMinsDenseRandDataNoCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND, AggType.ROWMINS, false);
+	}
+	
+	@Test
+	public void testRowMinsSparseRandDataNoCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND, AggType.ROWMINS, false);
+	}
+	
+	@Test
+	public void testRowMinsEmptyNoCompression() {
+		runUnaryAggregateTest(SparsityType.EMPTY, ValueType.RAND, AggType.ROWMINS, false);
+	}
+	
+	@Test
+	public void testRowMinsDenseRoundRandDataNoCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND, AggType.ROWMINS, false);
+	}
+	
+	@Test
+	public void testRowMinsSparseRoundRandDataNoCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND, AggType.ROWMINS, false);
+	}
+	
+	@Test
+	public void testRowMinsDenseConstDataNoCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.CONST, AggType.ROWMINS, false);
+	}
+	
+	@Test
+	public void testRowMinsSparseConstDataNoCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.CONST, AggType.ROWMINS, false);
+	}
+	
+	@Test
+	public void testColMinsDenseRandDataCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND, AggType.COLMINS, true);
+	}
+	
+	@Test
+	public void testColMinsSparseRandDataCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND, AggType.COLMINS, true);
+	}
+	
+	@Test
+	public void testColMinsEmptyCompression() {
+		runUnaryAggregateTest(SparsityType.EMPTY, ValueType.RAND, AggType.COLMINS, true);
+	}
+	
+	@Test
+	public void testColMinsDenseRoundRandDataCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND, AggType.COLMINS, true);
+	}
+	
+	@Test
+	public void testColMinsSparseRoundRandDataCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND, AggType.COLMINS, true);
+	}
+	
+	@Test
+	public void testColMinsDenseConstantDataCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.CONST, AggType.COLMINS, true);
+	}
+	
+	@Test
+	public void testColMinsSparseConstDataCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.CONST, AggType.COLMINS, true);
+	}
+	
+	@Test
+	public void testColMinsDenseRandDataNoCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND, AggType.COLMINS, false);
+	}
+	
+	@Test
+	public void testColMinsSparseRandDataNoCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND, AggType.COLMINS, false);
+	}
+	
+	@Test
+	public void testColMinsEmptyNoCompression() {
+		runUnaryAggregateTest(SparsityType.EMPTY, ValueType.RAND, AggType.COLMINS, false);
+	}
+	
+	@Test
+	public void testColMinsDenseRoundRandDataNoCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND, AggType.COLMINS, false);
+	}
+	
+	@Test
+	public void testColMinsSparseRoundRandDataNoCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND, AggType.COLMINS, false);
+	}
+	
+	@Test
+	public void testColMinsDenseConstDataNoCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.CONST, AggType.COLMINS, false);
+	}
+	
+	@Test
+	public void testColMinsSparseConstDataNoCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.CONST, AggType.COLMINS, false);
+	}
+
+	@Test
+	public void testMinDenseRandDataCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND, AggType.MIN, true);
+	}
+	
+	@Test
+	public void testMinSparseRandDataCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND, AggType.MIN, true);
+	}
+	
+	@Test
+	public void testMinEmptyCompression() {
+		runUnaryAggregateTest(SparsityType.EMPTY, ValueType.RAND, AggType.MIN, true);
+	}
+	
+	@Test
+	public void testMinDenseRoundRandDataCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND, AggType.MIN, true);
+	}
+	
+	@Test
+	public void testMinSparseRoundRandDataCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND, AggType.MIN, true);
+	}
+	
+	@Test
+	public void testMinDenseConstantDataCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.CONST, AggType.MIN, true);
+	}
+	
+	@Test
+	public void testMinSparseConstDataCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.CONST, AggType.MIN, true);
+	}
+	
+	@Test
+	public void testMinDenseRandDataNoCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND, AggType.MIN, false);
+	}
+	
+	@Test
+	public void testMinSparseRandDataNoCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND, AggType.MIN, false);
+	}
+	
+	@Test
+	public void testMinEmptyNoCompression() {
+		runUnaryAggregateTest(SparsityType.EMPTY, ValueType.RAND, AggType.MIN, false);
+	}
+	
+	@Test
+	public void testMinDenseRoundRandDataNoCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND, AggType.MIN, false);
+	}
+	
+	@Test
+	public void testMinSparseRoundRandDataNoCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND, AggType.MIN, false);
+	}
+	
+	@Test
+	public void testMinDenseConstDataNoCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.CONST, AggType.MIN, false);
+	}
+	
+	@Test
+	public void testMinSparseConstDataNoCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.CONST, AggType.MIN, false);
+	}
 		
 	/**
 	 * 
@@ -520,6 +947,12 @@ public class ParUnaryAggregateTest extends AutomatedTestBase
 				case SUMSQ: auop = InstructionUtils.parseBasicAggregateUnaryOperator("uasqk+"); break;
 				case ROWSUMSSQ: auop = InstructionUtils.parseBasicAggregateUnaryOperator("uarsqk+"); break;
 				case COLSUMSSQ: auop = InstructionUtils.parseBasicAggregateUnaryOperator("uacsqk+"); break;
+				case MAX: auop = InstructionUtils.parseBasicAggregateUnaryOperator("uamax"); break;
+				case ROWMAXS: auop = InstructionUtils.parseBasicAggregateUnaryOperator("uarmax"); break;
+				case COLMAXS: auop = InstructionUtils.parseBasicAggregateUnaryOperator("uacmax"); break;
+				case MIN: auop = InstructionUtils.parseBasicAggregateUnaryOperator("uamin"); break;
+				case ROWMINS: auop = InstructionUtils.parseBasicAggregateUnaryOperator("uarmin"); break;
+				case COLMINS: auop = InstructionUtils.parseBasicAggregateUnaryOperator("uacmin"); break;
 			}
 			auop.setNumThreads(InfrastructureAnalyzer.getLocalParallelism());
 			
@@ -537,8 +970,10 @@ public class ParUnaryAggregateTest extends AutomatedTestBase
 			//compare result with input
 			double[][] d1 = DataConverter.convertToDoubleMatrix(ret1);
 			double[][] d2 = DataConverter.convertToDoubleMatrix(ret2);
-			int dim1 = (aggtype == AggType.ROWSUMS)?rows:1;
-			int dim2 = (aggtype == AggType.COLSUMS)?cols1:1;
+			int dim1 = (aggtype == AggType.ROWSUMS || aggtype == AggType.ROWSUMSSQ 
+					|| aggtype == AggType.ROWMINS || aggtype == AggType.ROWMINS)?rows:1;
+			int dim2 = (aggtype == AggType.COLSUMS || aggtype == AggType.COLSUMSSQ 
+					|| aggtype == AggType.COLMAXS || aggtype == AggType.COLMINS)?cols1:1;
 			TestUtils.compareMatrices(d1, d2, dim1, dim2, 0.00000000001);
 		}
 		catch(Exception ex) {

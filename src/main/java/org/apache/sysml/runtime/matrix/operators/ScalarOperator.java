@@ -23,7 +23,7 @@ package org.apache.sysml.runtime.matrix.operators;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.functionobjects.And;
 import org.apache.sysml.runtime.functionobjects.Builtin;
-import org.apache.sysml.runtime.functionobjects.Builtin.BuiltinFunctionCode;
+import org.apache.sysml.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysml.runtime.functionobjects.Equals;
 import org.apache.sysml.runtime.functionobjects.GreaterThan;
 import org.apache.sysml.runtime.functionobjects.LessThan;
@@ -55,7 +55,7 @@ public class ScalarOperator  extends Operator
 		sparseSafe = (fn instanceof Multiply || fn instanceof Multiply2 
 				|| fn instanceof Power || fn instanceof Power2 
 				|| fn instanceof And || fn instanceof MinusNz
-				|| (fn instanceof Builtin && ((Builtin)fn).getBuiltinFunctionCode()==BuiltinFunctionCode.LOG_NZ));
+				|| (fn instanceof Builtin && ((Builtin)fn).getBuiltinCode()==BuiltinCode.LOG_NZ));
 	}
 	
 	public double getConstant() {
@@ -71,15 +71,15 @@ public class ScalarOperator  extends Operator
 		sparseSafe = ( fn instanceof Multiply || fn instanceof Multiply2 
 			|| fn instanceof Power || fn instanceof Power2 
 			|| fn instanceof And || fn instanceof MinusNz
-			|| fn instanceof Builtin && ((Builtin)fn).getBuiltinFunctionCode()==BuiltinFunctionCode.LOG_NZ
+			|| fn instanceof Builtin && ((Builtin)fn).getBuiltinCode()==BuiltinCode.LOG_NZ
 			|| (fn instanceof GreaterThan && _constant==0) 
 			|| (fn instanceof LessThan && _constant==0)
 			|| (fn instanceof NotEquals && _constant==0)
 			|| (fn instanceof Equals && _constant!=0)
 			|| (fn instanceof Minus && _constant==0)
 			|| (fn instanceof Minus && _constant==0)
-			|| (fn instanceof Builtin && ((Builtin)fn).getBuiltinFunctionCode()==BuiltinFunctionCode.MAX && _constant<=0)
-			|| (fn instanceof Builtin && ((Builtin)fn).getBuiltinFunctionCode()==BuiltinFunctionCode.MIN && _constant>=0));
+			|| (fn instanceof Builtin && ((Builtin)fn).getBuiltinCode()==BuiltinCode.MAX && _constant<=0)
+			|| (fn instanceof Builtin && ((Builtin)fn).getBuiltinCode()==BuiltinCode.MIN && _constant>=0));
 	}
 	
 	public double executeScalar(double in) throws DMLRuntimeException {

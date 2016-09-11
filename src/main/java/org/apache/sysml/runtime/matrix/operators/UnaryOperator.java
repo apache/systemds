@@ -42,11 +42,11 @@ public class UnaryOperator extends Operator
 		
 		if( fn instanceof Builtin ) {
 			Builtin f=(Builtin)fn;
-			sparseSafe = (f.bFunc==Builtin.BuiltinFunctionCode.SIN || f.bFunc==Builtin.BuiltinFunctionCode.TAN 
-					|| f.bFunc==Builtin.BuiltinFunctionCode.ROUND || f.bFunc==Builtin.BuiltinFunctionCode.ABS
-					|| f.bFunc==Builtin.BuiltinFunctionCode.SQRT || f.bFunc==Builtin.BuiltinFunctionCode.SPROP
-					|| f.bFunc==Builtin.BuiltinFunctionCode.SELP || f.bFunc==Builtin.BuiltinFunctionCode.LOG_NZ
-					|| f.bFunc==Builtin.BuiltinFunctionCode.SIGN );
+			sparseSafe = (f.bFunc==Builtin.BuiltinCode.SIN || f.bFunc==Builtin.BuiltinCode.TAN 
+					|| f.bFunc==Builtin.BuiltinCode.ROUND || f.bFunc==Builtin.BuiltinCode.ABS
+					|| f.bFunc==Builtin.BuiltinCode.SQRT || f.bFunc==Builtin.BuiltinCode.SPROP
+					|| f.bFunc==Builtin.BuiltinCode.SELP || f.bFunc==Builtin.BuiltinCode.LOG_NZ
+					|| f.bFunc==Builtin.BuiltinCode.SIGN );
 		}
 	}
 	

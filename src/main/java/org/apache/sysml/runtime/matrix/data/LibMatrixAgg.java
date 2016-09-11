@@ -31,7 +31,7 @@ import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysml.runtime.functionobjects.Builtin;
-import org.apache.sysml.runtime.functionobjects.Builtin.BuiltinFunctionCode;
+import org.apache.sysml.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysml.runtime.functionobjects.CM;
 import org.apache.sysml.runtime.functionobjects.IndexFunction;
 import org.apache.sysml.runtime.functionobjects.KahanFunction;
@@ -666,7 +666,7 @@ public class LibMatrixAgg
 		if( vfn instanceof Builtin &&
 		    (ifn instanceof ReduceAll || ifn instanceof ReduceCol || ifn instanceof ReduceRow) )
 		{
-			BuiltinFunctionCode bfcode = ((Builtin)vfn).bFunc;
+			BuiltinCode bfcode = ((Builtin)vfn).bFunc;
 			switch( bfcode ){
 				case MAX: return AggType.MAX;
 				case MIN: return AggType.MIN;
@@ -690,7 +690,7 @@ public class LibMatrixAgg
 
 		//cumsum/cumprod/cummin/cummax
 		if( vfn instanceof Builtin ) {
-			BuiltinFunctionCode bfunc = ((Builtin) vfn).bFunc;
+			BuiltinCode bfunc = ((Builtin) vfn).bFunc;
 			switch( bfunc )
 			{
 				case CUMSUM: 	return AggType.CUM_KAHAN_SUM;

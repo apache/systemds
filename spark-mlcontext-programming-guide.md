@@ -1640,6 +1640,160 @@ scala> for (i <- 1 to 5) {
 
 </div>
 
+---
+
+# Jupyter (PySpark) Notebook Example - Poisson Nonnegative Matrix Factorization
+
+Similar to the Scala API, SystemML also provides a Python MLContext API.  In addition to the
+regular `SystemML.jar` file, you'll need to install the Python API as follows:
+
+  * Latest release:
+    * Python 2:
+
+      ```
+      pip install systemml
+      # Bleeding edge: pip install git+git://github.com/apache/incubator-systemml.git#subdirectory=src/main/python
+      ```
+
+    * Python 3:
+
+      ```
+      pip3 install systemml
+      # Bleeding edge: pip3 install git+git://github.com/apache/incubator-systemml.git#subdirectory=src/main/python
+      ```
+  * Don't forget to download the `SystemML.jar` file, which can be found in the latest release, or
+  in a nightly build.
+
+Here, we'll explore the use of SystemML via PySpark in a [Jupyter notebook](http://jupyter.org/).
+This Jupyter notebook example can be nicely viewed in a rendered state
+[on GitHub](https://github.com/apache/incubator-systemml/blob/master/samples/jupyter-notebooks/SystemML-PySpark-Recommendation-Demo.ipynb),
+and can be [downloaded here](https://raw.githubusercontent.com/apache/incubator-systemml/master/samples/jupyter-notebooks/SystemML-PySpark-Recommendation-Demo.ipynb) to a directory of your choice.
+
+From the directory with the downloaded notebook, start Jupyter with PySpark:
+
+  * Python 2:
+
+    ```
+    PYSPARK_DRIVER_PYTHON=jupyter PYSPARK_DRIVER_PYTHON_OPTS="notebook" pyspark --master local[*] --driver-class-path SystemML.jar --jars SystemML.jar
+    ```
+
+  * Python 3:
+
+    ```
+    PYSPARK_PYTHON=python3 PYSPARK_DRIVER_PYTHON=jupyter PYSPARK_DRIVER_PYTHON_OPTS="notebook" pyspark --master local[*] --driver-class-path SystemML.jar --jars SystemML.jar
+    ```
+
+This will open Jupyter in a browser:
+
+![Jupyter Notebook](img/spark-mlcontext-programming-guide/jupyter1.png "Jupyter Notebook")
+
+We can then open up the `SystemML-PySpark-Recommendation-Demo` notebook.
+
+## Set up the notebook and download the data
+
+{% highlight python %}
+%load_ext autoreload
+%autoreload 2
+%matplotlib inline
+
+import numpy as np
+import matplotlib.pyplot as plt
+from systemml import MLContext, dml  # pip install systeml
+plt.rcParams['figure.figsize'] = (10, 6)
+{% endhighlight %}
+
+{% highlight python %}
+%%sh
+# Download dataset
+curl -O http://snap.stanford.edu/data/amazon0601.txt.gz
+gunzip amazon0601.txt.gz
+{% endhighlight %}
+
+## Use PySpark to load the data in as a Spark DataFrame
+
+{% highlight python %}
+# Load data
+import pyspark.sql.functions as F
+dataPath = "amazon0601.txt"
+
+X_train = (sc.textFile(dataPath)
+    .filter(lambda l: not l.startswith("#"))
+    .map(lambda l: l.split("\t"))
+    .map(lambda prods: (int(prods[0]), int(prods[1]), 1.0))
+    .toDF(("prod_i", "prod_j", "x_ij"))
+    .filter("prod_i < 500 AND prod_j < 500") # Filter for memory constraints
+    .cache())
+
+max_prod_i = X_train.select(F.max("prod_i")).first()[0]
+max_prod_j = X_train.select(F.max("prod_j")).first()[0]
+numProducts = max(max_prod_i, max_prod_j) + 1 # 0-based indexing
+print("Total number of products: {}".format(numProducts))
+{% endhighlight %}
+
+## Create a SystemML MLContext object
+
+{% highlight python %}
+# Create SystemML MLContext
+ml = MLContext(sc)
+{% endhighlight %}
+
+## Define a kernel for Poisson nonnegative matrix factorization (PNMF) in DML
+
+{% highlight python %}
+# Define PNMF kernel in SystemML's DSL using the R-like syntax for PNMF
+pnmf = """
+# data & args
+X = X+1 # change product IDs to be 1-based, rather than 0-based
+V = table(X[,1], X[,2])
+size = ifdef($size, -1)
+if(size > -1) {
+    V = V[1:size,1:size]
+}
+
+n = nrow(V)
+m = ncol(V)
+range = 0.01
+W = Rand(rows=n, cols=rank, min=0, max=range, pdf="uniform")
+H = Rand(rows=rank, cols=m, min=0, max=range, pdf="uniform")
+losses = matrix(0, rows=max_iter, cols=1)
+
+# run PNMF
+i=1
+while(i <= max_iter) {
+  # update params
+  H = (H * (t(W) %*% (V/(W%*%H))))/t(colSums(W))
+  W = (W * ((V/(W%*%H)) %*% t(H)))/t(rowSums(H))
+
+  # compute loss
+  losses[i,] = -1 * (sum(V*log(W%*%H)) - as.scalar(colSums(W)%*%rowSums(H)))
+  i = i + 1;
+}
+"""
+{% endhighlight %}
+
+## Execute the algorithm
+
+{% highlight python %}
+# Run the PNMF script on SystemML with Spark
+script = dml(pnmf).input(X=X_train, max_iter=100, rank=10).output("W", "H", "losses")
+W, H, losses = ml.execute(script).get("W", "H", "losses")
+{% endhighlight %}
+
+## Retrieve the losses during training and plot them
+
+{% highlight python %}
+# Plot training loss over time
+xy = losses.toDF().sort("__INDEX").map(lambda r: (r[0], r[1])).collect()
+x, y = zip(*xy)
+plt.plot(x, y)
+plt.xlabel('Iteration')
+plt.ylabel('Loss')
+plt.title('PNMF Training Loss')
+{% endhighlight %}
+
+![Jupyter Loss Graph](img/spark-mlcontext-programming-guide/jupyter_loss_graph.png "Jupyter Loss Graph")
+
+---
 
 # Spark Shell Example - OLD API
 
@@ -2682,6 +2836,8 @@ plt.title('PNMF Training Loss')
 {% endhighlight %}
 
 ![Jupyter Loss Graph](img/spark-mlcontext-programming-guide/jupyter_loss_graph.png "Jupyter Loss Graph")
+
+---
 
 # Recommended Spark Configuration Settings
 

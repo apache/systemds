@@ -67,6 +67,7 @@ tmp = test::padding()
 tmp = test::conv()
 tmp = test::cross_entropy_loss()
 tmp = test::max_pool()
+tmp = test::tanh()
 
 print("---")
 print("Other tests complete -- look for any ERRORs or WARNINGs.")

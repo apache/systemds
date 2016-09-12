@@ -27,6 +27,7 @@ source("nn/layers/conv_builtin.dml") as conv_builtin
 source("nn/layers/cross_entropy_loss.dml") as cross_entropy_loss
 source("nn/layers/max_pool.dml") as max_pool
 source("nn/layers/max_pool_builtin.dml") as max_pool_builtin
+source("nn/layers/tanh.dml") as tanh
 source("nn/test/conv_simple.dml") as conv_simple
 source("nn/test/max_pool_simple.dml") as max_pool_simple
 source("nn/util.dml") as util
@@ -216,5 +217,27 @@ max_pool = function() {
   target = matrix("6 8 14 16 6 14 8 16", rows=1, cols=C*Hout*Wout)
   target = rbind(target, target)  # N=2
   tmp = util::check_all_equal(out, target)
+}
+
+tanh = function() {
+  /*
+   * Test for the `tanh` forward function.
+   */
+  print("Testing the tanh forward function.")
+
+  # Generate data
+  N = 2  # num examples
+  C = 3  # num channels
+  X = rand(rows=N, cols=C, pdf="normal")
+
+  out = tanh::forward(X)
+  out_ref = (exp(X) - exp(-X)) / (exp(X) + exp(-X))
+
+  # Equivalency check
+  for (i in 1:nrow(out)) {
+    for (j in 1:ncol(out)) {
+      rel_error = util::check_rel_error(as.scalar(out[i,j]), as.scalar(out_ref[i,j]), 1e-10, 1e-12)
+    }
+  }
 }
 

@@ -32,7 +32,7 @@ forward = function(matrix[double] scores) return (matrix[double] probs) {
    * This can be interpreted as a generalization of the sigmoid
    * function to multiple classes.
    *
-   * probs_ij = e^scores_ij / sum(e^scores)
+   * probs_ij = e^scores_ij / sum(e^scores_i)
    *
    * Inputs:
    *  - scores: Input data matrix, of shape (N, D).

@@ -105,9 +105,9 @@ check_rel_error = function(double x1, double x2, double thresh_error, double thr
       print("ERROR: Relative error " + rel_error + " > " + thresh_error + " with " + x1 +
             " vs " + x2 + ".")
   }
-  else if (rel_error > thresh_warn & rel_error < thresh_error) {
-      print("WARNING: Relative error " + rel_error + " > " + thresh_warn + " with " + x1 +
-            " vs " + x2 + ".")
+  else if (rel_error > thresh_warn & rel_error <= thresh_error) {
+      print("WARNING: Relative error " + rel_error + " > " + thresh_warn + " & <= " + thresh_error +
+            " with " + x1 + " vs " + x2 + ".")
   }
 }
 

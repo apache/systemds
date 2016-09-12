@@ -68,15 +68,17 @@ check_rel_error = function(double dw_a, double dw_n, double lossph, double lossm
   rel_error = util::compute_rel_error(dw_a, dw_n)
   
   # Evaluate relative error
-  if (rel_error > 1e-2) {
-      print("ERROR: Relative error " + rel_error + " > 1e-2 with " + dw_a +
-            " analytical vs " + dw_n + " numerical, with lossph " + lossph +
-            " and lossmh " + lossmh)
+  thresh_error = 1e-2
+  thresh_warn = 1e-4
+  if (rel_error > thresh_error) {
+    print("ERROR: Relative error " + rel_error + " > " + thresh_error + " with " + dw_a +
+          " analytical vs " + dw_n + " numerical, with lossph " + lossph +
+          " and lossmh " + lossmh)
   }
-  else if (rel_error > 1e-4 & rel_error <= 1e-2) {
-      print("WARNING: Relative error " + rel_error + " <= 1e-2 & > 1e-4 with " + dw_a +
-            " analytical vs " + dw_n + " numerical, with lossph " + lossph +
-            " and lossmh " + lossmh)
+  else if (rel_error > thresh_warn & rel_error <= thresh_error) {
+    print("WARNING: Relative error " + rel_error + " > " + thresh_warn + " & <= " + thresh_error +
+          " with " + dw_a + " analytical vs " + dw_n + " numerical, with lossph " + lossph +
+          " and lossmh " + lossmh)
   }
 }
 
@@ -1222,7 +1224,7 @@ two_layer_affine_l2_net = function() {
   N = 1000 # num examples
   D = 100 # num features
   yD = 5 # num targets
-  X = rand(rows=N, cols=D, pdf="normal") * 0.0001
+  X = rand(rows=N, cols=D, pdf="normal")
   y = rand(rows=N, cols=yD)
 
   # Create 2-layer, fully-connected network
@@ -1257,12 +1259,12 @@ two_layer_affine_l2_net = function() {
   for (i in 1:2) {
     for (j in 1:ncol(X)) {
       # Compute numerical derivative
-      old_w = as.scalar(X[i,j])
-      X[i,j] = old_w - h
+      old_x = as.scalar(X[i,j])
+      X[i,j] = old_x - h
       [lossmh, pred, aout, hout] = two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
-      X[i,j] = old_w + h
+      X[i,j] = old_x + h
       [lossph, pred, aout, hout] = two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
-      X[i,j] = old_w  # reset W[i,j]
+      X[i,j] = old_x  # reset X[i,j]
       dX_num = (lossph - lossmh) / (2 * h) # numerical derivative
 
       # Check error

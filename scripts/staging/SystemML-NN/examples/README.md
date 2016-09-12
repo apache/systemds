@@ -67,7 +67,7 @@ limitations under the License.
 * **Notebooks**: To run the notebook examples, please install the SystemML Python package with `pip install systemml`, and then startup Jupyter in the following manner from this directory (or for more information, please see [this great blog post](http://spark.tc/0-to-life-changing-application-with-apache-systemml/)):
 
   ```
-  PYSPARK_DRIVER_PYTHON=jupyter PYSPARK_DRIVER_PYTHON_OPTS="notebook" pyspark --master local[*] --driver-memory 3G --driver-class-path $SYSTEMML_HOME/SystemML.jar --jars $SYSTEMML_HOME/SystemML.jar
+  PYSPARK_DRIVER_PYTHON=jupyter PYSPARK_DRIVER_PYTHON_OPTS="notebook" pyspark --master local[*] --driver-memory 3G --driver-class-path SystemML.jar --jars SystemML.jar
   ```
 
   Note that all printed output, such as training statistics, from the SystemML scripts will be sent to the terminal in which Jupyter was started (for now...).

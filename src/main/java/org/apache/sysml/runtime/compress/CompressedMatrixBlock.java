@@ -59,8 +59,8 @@ import org.apache.sysml.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysml.runtime.functionobjects.KahanPlus;
 import org.apache.sysml.runtime.functionobjects.KahanPlusSq;
 import org.apache.sysml.runtime.functionobjects.Multiply;
+import org.apache.sysml.runtime.functionobjects.ReduceAll;
 import org.apache.sysml.runtime.functionobjects.ReduceCol;
-import org.apache.sysml.runtime.functionobjects.ReduceRow;
 import org.apache.sysml.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.matrix.data.CTableMap;
@@ -1020,6 +1020,8 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 			throw new DMLRuntimeException("Unary aggregates other than sum/sumsq/min/max not supported yet.");
 		}
 		
+		Timing time = LOG.isDebugEnabled() ? new Timing(true) : null;
+
 		//prepare output dimensions
 		CellIndex tempCellIndex = new CellIndex(-1,-1);
 		op.indexFn.computeDimension(rlen, clen, tempCellIndex);
@@ -1053,9 +1055,9 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		if(    op.getNumThreads() > 1 
 			&& getExactSizeOnDisk() > MIN_PAR_AGG_THRESHOLD ) 
 		{
-			
 			//multi-threaded execution of all groups 
-			ArrayList<ColGroup>[] grpParts = createStaticTaskPartitioning(op.getNumThreads(), false);
+			ArrayList<ColGroup>[] grpParts = createStaticTaskPartitioning(
+					(op.indexFn instanceof ReduceCol) ? 1 : op.getNumThreads(), false);
 			ColGroupUncompressed uc = getUncompressedColGroup();
 			try {
 				//compute uncompressed column group in parallel (otherwise bottleneck)
@@ -1064,20 +1066,26 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 				//compute all compressed column groups
 				ExecutorService pool = Executors.newFixedThreadPool( op.getNumThreads() );
 				ArrayList<UnaryAggregateTask> tasks = new ArrayList<UnaryAggregateTask>();
-				for( ArrayList<ColGroup> grp : grpParts )
-					tasks.add(new UnaryAggregateTask(grp, ret, op));
-				pool.invokeAll(tasks);	
+				if( op.indexFn instanceof ReduceCol && grpParts.length > 0 ) {
+					int seqsz = BitmapEncoder.BITMAP_BLOCK_SZ;
+					int blklen = (int)(Math.ceil((double)rlen/op.getNumThreads()));
+					blklen += (blklen%seqsz != 0)?seqsz-blklen%seqsz:0;
+					for( int i=0; i<op.getNumThreads() & i*blklen<rlen; i++ )
+						tasks.add(new UnaryAggregateTask(grpParts[0], ret, i*blklen, Math.min((i+1)*blklen,rlen), op));
+				}
+				else
+					for( ArrayList<ColGroup> grp : grpParts )
+						tasks.add(new UnaryAggregateTask(grp, ret, 0, rlen, op));
+				List<Future<MatrixBlock>> rtasks = pool.invokeAll(tasks);	
 				pool.shutdown();
 				
 				//aggregate partial results
-				if( !(op.indexFn instanceof ReduceRow) ) {
-					for( int i=0; i<ret.getNumRows(); i++ ) {
-						double val = ret.quickGetValue(i, 0);
-						for( UnaryAggregateTask task : tasks )
-							val = op.aggOp.increOp.fn.execute(val,
-									task.getResult().quickGetValue(i, 0));
-						ret.quickSetValue(i, 0, val);
-					}
+				if( op.indexFn instanceof ReduceAll ) {
+					double val = ret.quickGetValue(0, 0);
+					for( Future<MatrixBlock> rtask : rtasks )
+						val = op.aggOp.increOp.fn.execute(val, 
+								rtask.get().quickGetValue(0, 0));
+					ret.quickSetValue(0, 0, val);
 				}		
 			}
 			catch(Exception ex) {
@@ -1113,6 +1121,10 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	
 		//post-processing
 		ret.recomputeNonZeros();
+		
+		if( LOG.isDebugEnabled() )
+			LOG.debug("Compressed uagg k="+op.getNumThreads()+" in "+time.stop());
+		
 		
 		return ret;
 	}
@@ -1525,17 +1537,21 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		}
 	}
 	
-	private static class UnaryAggregateTask implements Callable<Object> 
+	private static class UnaryAggregateTask implements Callable<MatrixBlock> 
 	{
 		private ArrayList<ColGroup> _groups = null;
+		private int _rl = -1;
+		private int _ru = -1;
 		private MatrixBlock _ret = null;
 		private AggregateUnaryOperator _op = null;
 		
-		protected UnaryAggregateTask( ArrayList<ColGroup> groups, MatrixBlock ret, AggregateUnaryOperator op)  {
+		protected UnaryAggregateTask( ArrayList<ColGroup> groups, MatrixBlock ret, int rl, int ru, AggregateUnaryOperator op)  {
 			_groups = groups;
 			_op = op;
+			_rl = rl;
+			_ru = ru;
 			
-			if( !(_op.indexFn instanceof ReduceRow) ) { //sum/rowSums
+			if( _op.indexFn instanceof ReduceAll ) { //sum
 				_ret = new MatrixBlock(ret.getNumRows(), ret.getNumColumns(), false);
 				_ret.allocateDenseBlock();
 				if( _op.aggOp.increOp.fn instanceof Builtin )
@@ -1544,19 +1560,14 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 			else { //colSums
 				_ret = ret;
 			}
-			System.out.println(_ret.getNonZeros());
 		}
 		
 		@Override
-		public Object call() throws DMLRuntimeException 
-		{
-			// delegate vector-matrix operation to each column group
+		public MatrixBlock call() throws DMLRuntimeException {
+			// delegate unary aggregate operation to each column group
+			// (uncompressed column group handles separately)
 			for( ColGroup grp : _groups )
-				grp.unaryAggregateOperations(_op, _ret);
-			return null;
-		}
-		
-		public MatrixBlock getResult(){
+				((ColGroupBitmap)grp).unaryAggregateOperations(_op, _ret, _rl, _ru);
 			return _ret;
 		}
 	}

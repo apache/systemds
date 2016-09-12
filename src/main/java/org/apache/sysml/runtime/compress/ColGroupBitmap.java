@@ -33,6 +33,7 @@ import org.apache.sysml.runtime.compress.utils.LinearAlgebraUtils;
 import org.apache.sysml.runtime.functionobjects.Builtin;
 import org.apache.sysml.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysml.runtime.matrix.operators.ScalarOperator;
 
 
@@ -299,6 +300,17 @@ public abstract class ColGroupBitmap extends ColGroup
 		}		
 		return 0;
 	}
+	
+	/**
+	 * 
+	 * @param op
+	 * @param result
+	 * @param rl
+	 * @param ru
+	 * @throws DMLRuntimeException
+	 */
+	public abstract void unaryAggregateOperations(AggregateUnaryOperator op, MatrixBlock result, int rl, int ru)
+		throws DMLRuntimeException;
 	
 	/**
 	 * 

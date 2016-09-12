@@ -756,19 +756,24 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		
 		if( that.sparse ) //SPARSE <- SPARSE
 		{
+			SparseBlock b = that.sparseBlock;
 			for( int i=0; i<that.rlen; i++ )
 			{
-				SparseBlock b = that.sparseBlock;
-				if( !b.isEmpty(i) ) {
-					int aix = rowoffset+i;
+				if( b.isEmpty(i) ) continue;
+				int aix = rowoffset+i;
+					
+				//single block append (avoid re-allocations)
+				if( sparseBlock.isEmpty(aix) && coloffset==0 ) { 
+					sparseBlock.set(aix, b.get(i), true);
+				}
+				else { //general case
 					int pos = b.pos(i);
 					int len = b.size(i);
 					int[] ix = b.indexes(i);
 					double[] val = b.values(i);
-					
-					sparseBlock.allocate(aix, estimatedNNzsPerRow,clen);
+					sparseBlock.allocate(aix, estimatedNNzsPerRow, clen);
 					for( int j=pos; j<pos+len; j++ )
-						sparseBlock.append(aix, coloffset+ix[j], val[j]);		
+						sparseBlock.append(aix, coloffset+ix[j], val[j]);	
 				}
 			}
 		}

@@ -125,7 +125,7 @@ class BaseSystemMLEstimator(Estimator):
                 df = assemble(self.sqlCtx, pdfX, pdfX.columns, self.featuresCol).select(self.featuresCol)
                 retjDF = self.model.transform(df._jdf)
                 retDF = DataFrame(retjDF, self.sqlCtx)
-                retPDF = retDF.sort('ID').select('prediction').toPandas()
+                retPDF = retDF.sort('__INDEX').select('prediction').toPandas()
                 if isinstance(X, np.ndarray):
                     return retPDF.as_matrix().flatten()
                 else:
@@ -146,7 +146,7 @@ class BaseSystemMLEstimator(Estimator):
             retjDF = self.model.transform(df._jdf)
             retDF = DataFrame(retjDF, self.sqlCtx)
             # Return DF
-            return retDF.sort('ID')
+            return retDF.sort('__INDEX')
         else:
             raise Exception('Unsupported input type')
 

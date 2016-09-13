@@ -67,29 +67,29 @@ class TestMLLearn(unittest.TestCase):
 
     def testLogisticMLPipeline1(self):
         training = sqlCtx.createDataFrame([
-            (0, "a b c d e spark", 1.0),
-            (1, "b d", 2.0),
-            (2, "spark f g h", 1.0),
-            (3, "hadoop mapreduce", 2.0),
-            (4, "b spark who", 1.0),
-            (5, "g d a y", 2.0),
-            (6, "spark fly", 1.0),
-            (7, "was mapreduce", 2.0),
-            (8, "e spark program", 1.0),
-            (9, "a e c l", 2.0),
-            (10, "spark compile", 1.0),
-            (11, "hadoop software", 2.0)
-            ], ["__INDEX", "text", "label"])
+            ("a b c d e spark", 1.0),
+            ("b d", 2.0),
+            ("spark f g h", 1.0),
+            ("hadoop mapreduce", 2.0),
+            ("b spark who", 1.0),
+            ("g d a y", 2.0),
+            ("spark fly", 1.0),
+            ("was mapreduce", 2.0),
+            ("e spark program", 1.0),
+            ("a e c l", 2.0),
+            ("spark compile", 1.0),
+            ("hadoop software", 2.0)
+            ], ["text", "label"])
         tokenizer = Tokenizer(inputCol="text", outputCol="words")
         hashingTF = HashingTF(inputCol="words", outputCol="features", numFeatures=20)
         lr = LogisticRegression(sqlCtx)
         pipeline = Pipeline(stages=[tokenizer, hashingTF, lr])
         model = pipeline.fit(training)
         test = sqlCtx.createDataFrame([
-            (12, "spark i j k", 1.0),
-            (13, "l m n", 2.0),
-            (14, "mapreduce spark", 1.0),
-            (15, "apache hadoop", 2.0)], ["__INDEX", "text", "label"])
+            ("spark i j k", 1.0),
+            ("l m n", 2.0),
+            ("mapreduce spark", 1.0),
+            ("apache hadoop", 2.0)], ["text", "label"])
         result = model.transform(test)
         predictionAndLabels = result.select("prediction", "label")
         evaluator = MulticlassClassificationEvaluator()

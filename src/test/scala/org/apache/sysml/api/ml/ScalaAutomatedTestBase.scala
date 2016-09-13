@@ -49,6 +49,6 @@ object ScalaAutomatedTestBase {
 	}
 
 	// This ensures that MLPipeline wrappers get appropriate paths to the scripts
-	ScriptsUtils.setSystemmlHome(System.getProperty("user.dir") + File.separator + "scripts")
+	ScriptsUtils.setSystemmlHome(System.getProperty("user.dir"))
 	// *** END HACK ***
 }

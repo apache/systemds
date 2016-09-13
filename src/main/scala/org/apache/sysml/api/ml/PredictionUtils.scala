@@ -131,8 +131,7 @@ object PredictionUtils {
   }
   
   def joinUsingID(df1:DataFrame, df2:DataFrame):DataFrame = {
-    val tempDF1 = df1.withColumnRenamed("__INDEX", "ID1")
-    tempDF1.join(df2, tempDF1.col("ID1").equalTo(df2.col("__INDEX"))).drop("ID1")
+    df1.join(df2, "__INDEX")
   }
   
   def computePredictedClassLabelsFromProbability(mlscoreoutput:MLResults, isSingleNode:Boolean, sc:SparkContext, inProbVar:String): MLResults = {

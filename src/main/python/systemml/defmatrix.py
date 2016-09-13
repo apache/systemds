@@ -39,6 +39,7 @@ def setSparkContext(sc):
         SparkContext
     """
     matrix.sc = sc
+    matrix.sqlContext = SQLContext(sc)
     matrix.ml = MLContext(matrix.sc)
 
 def checkIfMLContextIsSet():
@@ -205,9 +206,9 @@ def populateOutputs(outputs, results, outputDF):
     """
     for m in outputs:
         if outputDF:
-            m.data = results.getDataFrame(m.ID)
+            m.data = results.get(m.ID).toDF()
         else:
-            m.data = results.getNumPyArray(m.ID)
+            m.data = results.get(m.ID).toNumPyArray()
 
 ###############################################################################
 
@@ -452,9 +453,7 @@ class matrix(object):
         if self.data is None:
             self.eval(outputDF=True)
         if not isinstance(self.data, DataFrame):
-            if MLResults.sqlContext is None:
-                MLResults.sqlContext = SQLContext(matrix.sc)
-            self.data = sqlContext.createDataFrame(self.toPandas())
+            self.data = matrix.sqlContext.createDataFrame(self.toPandas())
         return self.data
 
     def _markAsVisited(self):

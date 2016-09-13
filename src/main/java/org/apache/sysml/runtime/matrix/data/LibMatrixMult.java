@@ -1070,11 +1070,11 @@ public class LibMatrixMult
 
 		if( LOW_LEVEL_OPTIMIZATION )
 		{
-			if( m==1 && n==1 ) 		   //DOT PRODUCT
+			if( m==1 && n==1 ) 		      //DOT PRODUCT
 			{
 				c[0] = dotProduct(a, b, cd);
 			}
-			else if( n>1 && cd == 1 )  //OUTER PRODUCT
+			else if( n>1 && cd == 1 )     //OUTER PRODUCT
 			{
 				for( int i=rl, cix=rl*n; i < ru; i++, cix+=n) {
 					if( a[i] == 1 )
@@ -1085,16 +1085,29 @@ public class LibMatrixMult
 						Arrays.fill(c, cix, cix+n, 0);
 				}
 			}
-			else if( n==1 && cd == 1 ) //VECTOR-SCALAR
+			else if( n==1 && cd == 1 )    //VECTOR-SCALAR
 			{
 				vectMultiplyWrite(b[0], a, c, rl, rl, ru-rl);
 			}
-			else if( n==1 )            //MATRIX-VECTOR
+			else if( n==1 && cd<=2*1024 ) //MATRIX-VECTOR (short rhs)
 			{
 				for( int i=rl, aix=rl*cd; i < ru; i++, aix+=cd) 
-					c[ i ] = dotProduct(a, b, aix, 0, cd);	
+					c[i] = dotProduct(a, b, aix, 0, cd);	
 			}
-			else if( pm2 && m==1 )     //VECTOR-MATRIX
+			else if( n==1 )               //MATRIX-VECTOR (tall rhs)
+			{
+				final int blocksizeI = 32;
+				final int blocksizeK = 2*1024; //16KB vector blocks (L1) 
+				for( int bi=rl; bi<ru; bi+=blocksizeI ) {
+					int bimin = Math.min(bi+blocksizeI, ru);
+					for( int bk=0; bk<cd; bk+=blocksizeK ) {
+						int bkmin = Math.min(bk+blocksizeK, cd);
+						for( int i=bi, aix=bi*cd+bk; i<bimin; i++, aix+=cd) 
+							c[i] += dotProduct(a, b, aix, bk, bkmin-bk);	
+					}
+				}
+			}
+			else if( pm2 && m==1 )        //VECTOR-MATRIX
 			{
 				//parallelization over rows in rhs matrix
 				//rest not aligned to blocks of 2 rows
@@ -1112,7 +1125,7 @@ public class LibMatrixMult
 						vectMultiplyAdd(a[k+1], b, c, bix+n, 0, n);
 				}
 			}
-			else if( pm2 && m<=16 )    //MATRIX-MATRIX (short lhs) 
+			else if( pm2 && m<=16 )       //MATRIX-MATRIX (short lhs) 
 			{
 				//cache-conscious parallelization over rows in rhs matrix
 				final int kn = (ru-rl)%4;				
@@ -1139,7 +1152,7 @@ public class LibMatrixMult
 							}
 					}
 			}
-			else if( tm2 )             //MATRIX-MATRIX (skinny rhs)
+			else if( tm2 )                //MATRIX-MATRIX (skinny rhs)
 			{
 				//note: prepared rhs input via transpose for: m > n && cd > 64 && n < 64
 				//however, explicit flag required since dimension change m2
@@ -1148,7 +1161,7 @@ public class LibMatrixMult
 					for( int j=0, bix=0; j<n2; j++, bix+=cd )
 						c[cix+j] = dotProduct(a, b, aix, bix, cd);
 			}
-			else                       //MATRIX-MATRIX
+			else                          //MATRIX-MATRIX
 			{	
 				//1) Unrolled inner loop (for better instruction-level parallelism)
 				//2) Blocked execution (for less cache trashing in parallel exec) 	

@@ -292,7 +292,8 @@ public class MLContext {
 	 * @throws DMLRuntimeException
 	 */
 	public void registerInput(String varName, DataFrame df, boolean containsID) throws DMLRuntimeException {
-		MatrixCharacteristics mcOut = new MatrixCharacteristics();
+		int blksz = ConfigurationManager.getBlocksize();
+		MatrixCharacteristics mcOut = new MatrixCharacteristics(-1, -1, blksz, blksz);
 		JavaPairRDD<MatrixIndexes, MatrixBlock> rdd = RDDConverterUtilsExt.dataFrameToBinaryBlock(new JavaSparkContext(_sc), df, mcOut, containsID);
 		registerInput(varName, rdd, mcOut);
 	}
@@ -307,7 +308,8 @@ public class MLContext {
 	 * @throws DMLRuntimeException
 	 */
 	public void registerFrameInput(String varName, DataFrame df, boolean containsID) throws DMLRuntimeException {
-		MatrixCharacteristics mcOut = new MatrixCharacteristics();
+		int blksz = ConfigurationManager.getBlocksize();
+		MatrixCharacteristics mcOut = new MatrixCharacteristics(-1, -1, blksz, blksz);
 		JavaPairRDD<Long, FrameBlock> rdd = FrameRDDConverterUtils.dataFrameToBinaryBlock(new JavaSparkContext(_sc), df, mcOut, containsID);
 		registerInput(varName, rdd, mcOut.getRows(), mcOut.getCols(), null);
 	}
@@ -623,7 +625,8 @@ public class MLContext {
 		if(_inVarnames == null)
 			_inVarnames = new ArrayList<String>();
 		
-		MatrixCharacteristics mc = new MatrixCharacteristics(rlen, clen, OptimizerUtils.DEFAULT_BLOCKSIZE, OptimizerUtils.DEFAULT_BLOCKSIZE, -1);
+		int blksz = ConfigurationManager.getBlocksize();
+		MatrixCharacteristics mc = new MatrixCharacteristics(rlen, clen, blksz, blksz, -1);
 		FrameObject fo = new FrameObject(OptimizerUtils.getUniqueTempFileName(), new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
 		
 		if(props != null)
@@ -717,7 +720,8 @@ public class MLContext {
 	}
 	
 	public void registerInput(String varName, MatrixBlock mb) throws DMLRuntimeException {
-		MatrixCharacteristics mc = new MatrixCharacteristics(mb.getNumRows(), mb.getNumColumns(), OptimizerUtils.DEFAULT_BLOCKSIZE, OptimizerUtils.DEFAULT_BLOCKSIZE, mb.getNonZeros());
+		int blksz = ConfigurationManager.getBlocksize();
+		MatrixCharacteristics mc = new MatrixCharacteristics(mb.getNumRows(), mb.getNumColumns(), blksz, blksz, mb.getNonZeros());
 		registerInput(varName, mb, mc);
 	}
 	
@@ -1681,34 +1685,5 @@ public class MLContext {
 		JavaPairRDD<MatrixIndexes, MatrixBlock> blocks = out.getBinaryBlockedRDD("output");
 		MatrixCharacteristics mcOut = out.getMatrixCharacteristics("output");
 		return MLMatrix.createMLMatrix(this, sqlContext, blocks, mcOut);
-	}
-	
-//	// TODO: Test this in different scenarios: sparse/dense/mixed
-//	/**
-//	 * Experimental unstable API: Might be discontinued in future release
-//	 * @param ml
-//	 * @param sqlContext
-//	 * @param mllibMatrix
-//	 * @return
-//	 * @throws DMLRuntimeException
-//	 */
-//	public MLMatrix read(SQLContext sqlContext, BlockMatrix mllibMatrix) throws DMLRuntimeException {
-//		long nnz = -1; // TODO: Find number of non-zeros from mllibMatrix ... This is important !!
-//		
-//		JavaPairRDD<Tuple2<Object, Object>, Matrix> mllibBlocks = JavaPairRDD.fromJavaRDD(mllibMatrix.blocks().toJavaRDD());
-//		long rlen = mllibMatrix.numRows(); long clen = mllibMatrix.numCols();
-//		int brlen = mllibMatrix.numRowBlocks();
-//		int bclen = mllibMatrix.numColBlocks();
-//		if(mllibMatrix.numRowBlocks() != DMLTranslator.DMLBlockSize && mllibMatrix.numColBlocks() != DMLTranslator.DMLBlockSize) {
-//			System.err.println("WARNING: Since the block size of mllib matrix is not " + DMLTranslator.DMLBlockSize + ", it may cause "
-//					+ "reblocks");
-//		}
-//		
-//		JavaPairRDD<MatrixIndexes, MatrixBlock> blocks = mllibBlocks
-//				.mapToPair(new ConvertMLLibBlocksToBinaryBlocks(rlen, clen, brlen, bclen));
-//		
-//		MatrixCharacteristics mc = new MatrixCharacteristics(rlen, clen, brlen, bclen, nnz);
-//		return MLMatrix.createMLMatrix(this, sqlContext, blocks, mc);
-//	}
-	
+	}	
 }

@@ -509,12 +509,12 @@ public class MLContextTest extends AutomatedTestBase {
 		list.add("70,80,90");
 		JavaRDD<String> javaRddString = sc.parallelize(list);
 
-		JavaRDD<Row> javaRddRow = javaRddString.map(new CommaSeparatedValueStringToRow());
+		JavaRDD<Row> javaRddRow = javaRddString.map(new CommaSeparatedValueStringToDoubleArrayRow());
 		SQLContext sqlContext = new SQLContext(sc);
 		List<StructField> fields = new ArrayList<StructField>();
-		fields.add(DataTypes.createStructField("C1", DataTypes.StringType, true));
-		fields.add(DataTypes.createStructField("C2", DataTypes.StringType, true));
-		fields.add(DataTypes.createStructField("C3", DataTypes.StringType, true));
+		fields.add(DataTypes.createStructField("C1", DataTypes.DoubleType, true));
+		fields.add(DataTypes.createStructField("C2", DataTypes.DoubleType, true));
+		fields.add(DataTypes.createStructField("C3", DataTypes.DoubleType, true));
 		StructType schema = DataTypes.createStructType(fields);
 		DataFrame dataFrame = sqlContext.createDataFrame(javaRddRow, schema);
 
@@ -535,12 +535,12 @@ public class MLContextTest extends AutomatedTestBase {
 		list.add("70,80,90");
 		JavaRDD<String> javaRddString = sc.parallelize(list);
 
-		JavaRDD<Row> javaRddRow = javaRddString.map(new CommaSeparatedValueStringToRow());
+		JavaRDD<Row> javaRddRow = javaRddString.map(new CommaSeparatedValueStringToDoubleArrayRow());
 		SQLContext sqlContext = new SQLContext(sc);
 		List<StructField> fields = new ArrayList<StructField>();
-		fields.add(DataTypes.createStructField("C1", DataTypes.StringType, true));
-		fields.add(DataTypes.createStructField("C2", DataTypes.StringType, true));
-		fields.add(DataTypes.createStructField("C3", DataTypes.StringType, true));
+		fields.add(DataTypes.createStructField("C1", DataTypes.DoubleType, true));
+		fields.add(DataTypes.createStructField("C2", DataTypes.DoubleType, true));
+		fields.add(DataTypes.createStructField("C3", DataTypes.DoubleType, true));
 		StructType schema = DataTypes.createStructType(fields);
 		DataFrame dataFrame = sqlContext.createDataFrame(javaRddRow, schema);
 
@@ -561,13 +561,13 @@ public class MLContextTest extends AutomatedTestBase {
 		list.add("3,7,8,9");
 		JavaRDD<String> javaRddString = sc.parallelize(list);
 
-		JavaRDD<Row> javaRddRow = javaRddString.map(new CommaSeparatedValueStringToRow());
+		JavaRDD<Row> javaRddRow = javaRddString.map(new CommaSeparatedValueStringToDoubleArrayRow());
 		SQLContext sqlContext = new SQLContext(sc);
 		List<StructField> fields = new ArrayList<StructField>();
-		fields.add(DataTypes.createStructField("__INDEX", DataTypes.StringType, true));
-		fields.add(DataTypes.createStructField("C1", DataTypes.StringType, true));
-		fields.add(DataTypes.createStructField("C2", DataTypes.StringType, true));
-		fields.add(DataTypes.createStructField("C3", DataTypes.StringType, true));
+		fields.add(DataTypes.createStructField("__INDEX", DataTypes.DoubleType, true));
+		fields.add(DataTypes.createStructField("C1", DataTypes.DoubleType, true));
+		fields.add(DataTypes.createStructField("C2", DataTypes.DoubleType, true));
+		fields.add(DataTypes.createStructField("C3", DataTypes.DoubleType, true));
 		StructType schema = DataTypes.createStructType(fields);
 		DataFrame dataFrame = sqlContext.createDataFrame(javaRddRow, schema);
 
@@ -588,13 +588,13 @@ public class MLContextTest extends AutomatedTestBase {
 		list.add("3,7,8,9");
 		JavaRDD<String> javaRddString = sc.parallelize(list);
 
-		JavaRDD<Row> javaRddRow = javaRddString.map(new CommaSeparatedValueStringToRow());
+		JavaRDD<Row> javaRddRow = javaRddString.map(new CommaSeparatedValueStringToDoubleArrayRow());
 		SQLContext sqlContext = new SQLContext(sc);
 		List<StructField> fields = new ArrayList<StructField>();
-		fields.add(DataTypes.createStructField("__INDEX", DataTypes.StringType, true));
-		fields.add(DataTypes.createStructField("C1", DataTypes.StringType, true));
-		fields.add(DataTypes.createStructField("C2", DataTypes.StringType, true));
-		fields.add(DataTypes.createStructField("C3", DataTypes.StringType, true));
+		fields.add(DataTypes.createStructField("__INDEX", DataTypes.DoubleType, true));
+		fields.add(DataTypes.createStructField("C1", DataTypes.DoubleType, true));
+		fields.add(DataTypes.createStructField("C2", DataTypes.DoubleType, true));
+		fields.add(DataTypes.createStructField("C3", DataTypes.DoubleType, true));
 		StructType schema = DataTypes.createStructType(fields);
 		DataFrame dataFrame = sqlContext.createDataFrame(javaRddRow, schema);
 
@@ -615,13 +615,13 @@ public class MLContextTest extends AutomatedTestBase {
 		list.add("2,4,5,6");
 		JavaRDD<String> javaRddString = sc.parallelize(list);
 
-		JavaRDD<Row> javaRddRow = javaRddString.map(new CommaSeparatedValueStringToRow());
+		JavaRDD<Row> javaRddRow = javaRddString.map(new CommaSeparatedValueStringToDoubleArrayRow());
 		SQLContext sqlContext = new SQLContext(sc);
 		List<StructField> fields = new ArrayList<StructField>();
-		fields.add(DataTypes.createStructField("__INDEX", DataTypes.StringType, true));
-		fields.add(DataTypes.createStructField("C1", DataTypes.StringType, true));
-		fields.add(DataTypes.createStructField("C2", DataTypes.StringType, true));
-		fields.add(DataTypes.createStructField("C3", DataTypes.StringType, true));
+		fields.add(DataTypes.createStructField("__INDEX", DataTypes.DoubleType, true));
+		fields.add(DataTypes.createStructField("C1", DataTypes.DoubleType, true));
+		fields.add(DataTypes.createStructField("C2", DataTypes.DoubleType, true));
+		fields.add(DataTypes.createStructField("C3", DataTypes.DoubleType, true));
 		StructType schema = DataTypes.createStructType(fields);
 		DataFrame dataFrame = sqlContext.createDataFrame(javaRddRow, schema);
 
@@ -642,13 +642,13 @@ public class MLContextTest extends AutomatedTestBase {
 		list.add("2,4,5,6");
 		JavaRDD<String> javaRddString = sc.parallelize(list);
 
-		JavaRDD<Row> javaRddRow = javaRddString.map(new CommaSeparatedValueStringToRow());
+		JavaRDD<Row> javaRddRow = javaRddString.map(new CommaSeparatedValueStringToDoubleArrayRow());
 		SQLContext sqlContext = new SQLContext(sc);
 		List<StructField> fields = new ArrayList<StructField>();
-		fields.add(DataTypes.createStructField("__INDEX", DataTypes.StringType, true));
-		fields.add(DataTypes.createStructField("C1", DataTypes.StringType, true));
-		fields.add(DataTypes.createStructField("C2", DataTypes.StringType, true));
-		fields.add(DataTypes.createStructField("C3", DataTypes.StringType, true));
+		fields.add(DataTypes.createStructField("__INDEX", DataTypes.DoubleType, true));
+		fields.add(DataTypes.createStructField("C1", DataTypes.DoubleType, true));
+		fields.add(DataTypes.createStructField("C2", DataTypes.DoubleType, true));
+		fields.add(DataTypes.createStructField("C3", DataTypes.DoubleType, true));
 		StructType schema = DataTypes.createStructType(fields);
 		DataFrame dataFrame = sqlContext.createDataFrame(javaRddRow, schema);
 
@@ -672,7 +672,7 @@ public class MLContextTest extends AutomatedTestBase {
 		JavaRDD<Row> javaRddRow = javaRddTuple.map(new DoubleVectorRow());
 		SQLContext sqlContext = new SQLContext(sc);
 		List<StructField> fields = new ArrayList<StructField>();
-		fields.add(DataTypes.createStructField("__INDEX", DataTypes.StringType, true));
+		fields.add(DataTypes.createStructField("__INDEX", DataTypes.DoubleType, true));
 		fields.add(DataTypes.createStructField("C1", new VectorUDT(), true));
 		StructType schema = DataTypes.createStructType(fields);
 		DataFrame dataFrame = sqlContext.createDataFrame(javaRddRow, schema);
@@ -697,7 +697,7 @@ public class MLContextTest extends AutomatedTestBase {
 		JavaRDD<Row> javaRddRow = javaRddTuple.map(new DoubleVectorRow());
 		SQLContext sqlContext = new SQLContext(sc);
 		List<StructField> fields = new ArrayList<StructField>();
-		fields.add(DataTypes.createStructField("__INDEX", DataTypes.StringType, true));
+		fields.add(DataTypes.createStructField("__INDEX", DataTypes.DoubleType, true));
 		fields.add(DataTypes.createStructField("C1", new VectorUDT(), true));
 		StructType schema = DataTypes.createStructType(fields);
 		DataFrame dataFrame = sqlContext.createDataFrame(javaRddRow, schema);
@@ -784,6 +784,20 @@ public class MLContextTest extends AutomatedTestBase {
 		public Row call(String str) throws Exception {
 			String[] fields = str.split(",");
 			return RowFactory.create((Object[]) fields);
+		}
+	}
+
+	static class CommaSeparatedValueStringToDoubleArrayRow implements Function<String, Row> {
+		private static final long serialVersionUID = -8058786466523637317L;
+
+		@Override
+		public Row call(String str) throws Exception {
+			String[] strings = str.split(",");
+			Double[] doubles = new Double[strings.length];
+			for (int i = 0; i < strings.length; i++) {
+				doubles[i] = Double.parseDouble(strings[i]);
+			}
+			return RowFactory.create((Object[]) doubles);
 		}
 	}
 
@@ -1835,12 +1849,12 @@ public class MLContextTest extends AutomatedTestBase {
 		list.add("70,80,90");
 		JavaRDD<String> javaRddString = sc.parallelize(list);
 
-		JavaRDD<Row> javaRddRow = javaRddString.map(new CommaSeparatedValueStringToRow());
+		JavaRDD<Row> javaRddRow = javaRddString.map(new CommaSeparatedValueStringToDoubleArrayRow());
 		SQLContext sqlContext = new SQLContext(sc);
 		List<StructField> fields = new ArrayList<StructField>();
-		fields.add(DataTypes.createStructField("C1", DataTypes.StringType, true));
-		fields.add(DataTypes.createStructField("C2", DataTypes.StringType, true));
-		fields.add(DataTypes.createStructField("C3", DataTypes.StringType, true));
+		fields.add(DataTypes.createStructField("C1", DataTypes.DoubleType, true));
+		fields.add(DataTypes.createStructField("C2", DataTypes.DoubleType, true));
+		fields.add(DataTypes.createStructField("C3", DataTypes.DoubleType, true));
 		StructType schema = DataTypes.createStructType(fields);
 		DataFrame dataFrame = sqlContext.createDataFrame(javaRddRow, schema);
 
@@ -1861,12 +1875,12 @@ public class MLContextTest extends AutomatedTestBase {
 		list.add("70,80,90");
 		JavaRDD<String> javaRddString = sc.parallelize(list);
 
-		JavaRDD<Row> javaRddRow = javaRddString.map(new CommaSeparatedValueStringToRow());
+		JavaRDD<Row> javaRddRow = javaRddString.map(new CommaSeparatedValueStringToDoubleArrayRow());
 		SQLContext sqlContext = new SQLContext(sc);
 		List<StructField> fields = new ArrayList<StructField>();
-		fields.add(DataTypes.createStructField("C1", DataTypes.StringType, true));
-		fields.add(DataTypes.createStructField("C2", DataTypes.StringType, true));
-		fields.add(DataTypes.createStructField("C3", DataTypes.StringType, true));
+		fields.add(DataTypes.createStructField("C1", DataTypes.DoubleType, true));
+		fields.add(DataTypes.createStructField("C2", DataTypes.DoubleType, true));
+		fields.add(DataTypes.createStructField("C3", DataTypes.DoubleType, true));
 		StructType schema = DataTypes.createStructType(fields);
 		DataFrame dataFrame = sqlContext.createDataFrame(javaRddRow, schema);
 
@@ -2051,12 +2065,12 @@ public class MLContextTest extends AutomatedTestBase {
 		list.add("4,4,4");
 		JavaRDD<String> javaRddString = sc.parallelize(list);
 
-		JavaRDD<Row> javaRddRow = javaRddString.map(new CommaSeparatedValueStringToRow());
+		JavaRDD<Row> javaRddRow = javaRddString.map(new CommaSeparatedValueStringToDoubleArrayRow());
 		SQLContext sqlContext = new SQLContext(sc);
 		List<StructField> fields = new ArrayList<StructField>();
-		fields.add(DataTypes.createStructField("C1", DataTypes.StringType, true));
-		fields.add(DataTypes.createStructField("C2", DataTypes.StringType, true));
-		fields.add(DataTypes.createStructField("C3", DataTypes.StringType, true));
+		fields.add(DataTypes.createStructField("C1", DataTypes.DoubleType, true));
+		fields.add(DataTypes.createStructField("C2", DataTypes.DoubleType, true));
+		fields.add(DataTypes.createStructField("C3", DataTypes.DoubleType, true));
 		StructType schema = DataTypes.createStructType(fields);
 		DataFrame dataFrame = sqlContext.createDataFrame(javaRddRow, schema);
 
@@ -2075,12 +2089,12 @@ public class MLContextTest extends AutomatedTestBase {
 		list.add("4,4,4");
 		JavaRDD<String> javaRddString = sc.parallelize(list);
 
-		JavaRDD<Row> javaRddRow = javaRddString.map(new CommaSeparatedValueStringToRow());
+		JavaRDD<Row> javaRddRow = javaRddString.map(new CommaSeparatedValueStringToDoubleArrayRow());
 		SQLContext sqlContext = new SQLContext(sc);
 		List<StructField> fields = new ArrayList<StructField>();
-		fields.add(DataTypes.createStructField("C1", DataTypes.StringType, true));
-		fields.add(DataTypes.createStructField("C2", DataTypes.StringType, true));
-		fields.add(DataTypes.createStructField("C3", DataTypes.StringType, true));
+		fields.add(DataTypes.createStructField("C1", DataTypes.DoubleType, true));
+		fields.add(DataTypes.createStructField("C2", DataTypes.DoubleType, true));
+		fields.add(DataTypes.createStructField("C3", DataTypes.DoubleType, true));
 		StructType schema = DataTypes.createStructType(fields);
 		DataFrame dataFrame = sqlContext.createDataFrame(javaRddRow, schema);
 
@@ -2099,13 +2113,13 @@ public class MLContextTest extends AutomatedTestBase {
 		list.add("3,4,4,4");
 		JavaRDD<String> javaRddString = sc.parallelize(list);
 
-		JavaRDD<Row> javaRddRow = javaRddString.map(new CommaSeparatedValueStringToRow());
+		JavaRDD<Row> javaRddRow = javaRddString.map(new CommaSeparatedValueStringToDoubleArrayRow());
 		SQLContext sqlContext = new SQLContext(sc);
 		List<StructField> fields = new ArrayList<StructField>();
-		fields.add(DataTypes.createStructField("__INDEX", DataTypes.StringType, true));
-		fields.add(DataTypes.createStructField("C1", DataTypes.StringType, true));
-		fields.add(DataTypes.createStructField("C2", DataTypes.StringType, true));
-		fields.add(DataTypes.createStructField("C3", DataTypes.StringType, true));
+		fields.add(DataTypes.createStructField("__INDEX", DataTypes.DoubleType, true));
+		fields.add(DataTypes.createStructField("C1", DataTypes.DoubleType, true));
+		fields.add(DataTypes.createStructField("C2", DataTypes.DoubleType, true));
+		fields.add(DataTypes.createStructField("C3", DataTypes.DoubleType, true));
 		StructType schema = DataTypes.createStructType(fields);
 		DataFrame dataFrame = sqlContext.createDataFrame(javaRddRow, schema);
 
@@ -2124,13 +2138,13 @@ public class MLContextTest extends AutomatedTestBase {
 		list.add("3,4,4,4");
 		JavaRDD<String> javaRddString = sc.parallelize(list);
 
-		JavaRDD<Row> javaRddRow = javaRddString.map(new CommaSeparatedValueStringToRow());
+		JavaRDD<Row> javaRddRow = javaRddString.map(new CommaSeparatedValueStringToDoubleArrayRow());
 		SQLContext sqlContext = new SQLContext(sc);
 		List<StructField> fields = new ArrayList<StructField>();
-		fields.add(DataTypes.createStructField("__INDEX", DataTypes.StringType, true));
-		fields.add(DataTypes.createStructField("C1", DataTypes.StringType, true));
-		fields.add(DataTypes.createStructField("C2", DataTypes.StringType, true));
-		fields.add(DataTypes.createStructField("C3", DataTypes.StringType, true));
+		fields.add(DataTypes.createStructField("__INDEX", DataTypes.DoubleType, true));
+		fields.add(DataTypes.createStructField("C1", DataTypes.DoubleType, true));
+		fields.add(DataTypes.createStructField("C2", DataTypes.DoubleType, true));
+		fields.add(DataTypes.createStructField("C3", DataTypes.DoubleType, true));
 		StructType schema = DataTypes.createStructType(fields);
 		DataFrame dataFrame = sqlContext.createDataFrame(javaRddRow, schema);
 
@@ -2152,7 +2166,7 @@ public class MLContextTest extends AutomatedTestBase {
 		JavaRDD<Row> javaRddRow = javaRddTuple.map(new DoubleVectorRow());
 		SQLContext sqlContext = new SQLContext(sc);
 		List<StructField> fields = new ArrayList<StructField>();
-		fields.add(DataTypes.createStructField("__INDEX", DataTypes.StringType, true));
+		fields.add(DataTypes.createStructField("__INDEX", DataTypes.DoubleType, true));
 		fields.add(DataTypes.createStructField("C1", new VectorUDT(), true));
 		StructType schema = DataTypes.createStructType(fields);
 		DataFrame dataFrame = sqlContext.createDataFrame(javaRddRow, schema);
@@ -2175,7 +2189,7 @@ public class MLContextTest extends AutomatedTestBase {
 		JavaRDD<Row> javaRddRow = javaRddTuple.map(new DoubleVectorRow());
 		SQLContext sqlContext = new SQLContext(sc);
 		List<StructField> fields = new ArrayList<StructField>();
-		fields.add(DataTypes.createStructField("__INDEX", DataTypes.StringType, true));
+		fields.add(DataTypes.createStructField("__INDEX", DataTypes.DoubleType, true));
 		fields.add(DataTypes.createStructField("C1", new VectorUDT(), true));
 		StructType schema = DataTypes.createStructType(fields);
 		DataFrame dataFrame = sqlContext.createDataFrame(javaRddRow, schema);

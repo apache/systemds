@@ -1321,24 +1321,48 @@ public class LibMatrixMult
 		final int m = m1.rlen;
 		final int n = m2.clen;
 		final int cd = m2.rlen;
+		final long xsp = (long)m*cd/m1.nonZeros;
 
 		if( LOW_LEVEL_OPTIMIZATION )
 		{
 			SparseBlock a = m1.sparseBlock;
 			
-			if( m==1 && n==1 )         //DOT PRODUCT
+			if( m==1 && n==1 )            //DOT PRODUCT
 			{
 				if( !a.isEmpty(0) ) {
 					c[0] = dotProduct(a.values(0), b, a.indexes(0), a.pos(0), 0, a.size(0));
 				}
 			}
-			else if( n==1 )            //MATRIX-VECTOR
+			else if( n==1 && cd<=2*1024 ) //MATRIX-VECTOR (short rhs)
 			{
 				for( int i=rl; i<ru; i++ )
 					if( !a.isEmpty(i) )
 						c[i] = dotProduct(a.values(i), b, a.indexes(i), a.pos(i), 0, a.size(i));							
 			}
-			else if( pm2 && m==1 )     //VECTOR-MATRIX
+			else if( n==1 )               //MATRIX-VECTOR (tall rhs)
+			{
+				final int blocksizeI = 32;
+				final int blocksizeK = (int)Math.max(2*1024,2*1024*xsp/32); //~ 16KB L1  
+				int[] curk = new int[blocksizeI];
+				
+				for( int bi = rl; bi < ru; bi+=blocksizeI ) {
+					Arrays.fill(curk, 0); //reset positions
+					for( int bk=0, bimin = Math.min(ru, bi+blocksizeI); bk<cd; bk+=blocksizeK ) {
+						for( int i=bi, bkmin = Math.min(bk+blocksizeK, cd); i<bimin; i++) {
+							if( a.isEmpty(i) ) continue;
+							int apos = a.pos(i);
+							int alen = a.size(i);
+							int[] aix = a.indexes(i);
+							double[] avals = a.values(i);					
+							int k = curk[i-bi] + apos;									
+							for( ; k<apos+alen && aix[k]<bkmin; k++ )
+								c[i] += avals[k] * b[aix[k]];
+							curk[i-bi] = k - apos;
+						}
+					}	
+				}
+			}
+			else if( pm2 && m==1 )        //VECTOR-MATRIX
 			{
 				//parallelization over rows in rhs matrix
 				if( !a.isEmpty(0) ) 
@@ -1357,7 +1381,7 @@ public class LibMatrixMult
 					}
 				}
 			}
-			else if( pm2 && m<=16 )    //MATRIX-MATRIX (short lhs) 
+			else if( pm2 && m<=16 )       //MATRIX-MATRIX (short lhs) 
 			{
 				int arlen = a.numRows();
 				for( int i=0, cix=0; i<arlen; i++, cix+=n )
@@ -1388,7 +1412,7 @@ public class LibMatrixMult
 		    			}
 					}
 			}
-			else if( n<=64 )           //MATRIX-MATRIX (skinny rhs)
+			else if( n<=64 )              //MATRIX-MATRIX (skinny rhs)
 			{
 				//no blocking since b and c fit into cache anyway
 				for( int i=rl, cix=rl*n; i<ru; i++, cix+=n ) {
@@ -1408,7 +1432,7 @@ public class LibMatrixMult
 	    					aix[k]*n, aix[k+1]*n, aix[k+2]*n, aix[k+3]*n, cix, n );
 				}	
 			}
-			else                       //MATRIX-MATRIX
+			else                          //MATRIX-MATRIX
 			{							
 				//blocksizes to fit blocks of B (dense) and several rows of A/C in common L2 cache size, 
 				//while blocking A/C for L1/L2 yet allowing long scans (2 pages) in the inner loop over j

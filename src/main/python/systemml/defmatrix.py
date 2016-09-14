@@ -39,6 +39,7 @@ def setSparkContext(sc):
         SparkContext
     """
     matrix.sc = sc
+    matrix.sqlContext = SQLContext(sc)
     matrix.ml = MLContext(matrix.sc)
 
 def checkIfMLContextIsSet():
@@ -205,9 +206,9 @@ def populateOutputs(outputs, results, outputDF):
     """
     for m in outputs:
         if outputDF:
-            m.data = results.getDataFrame(m.ID)
+            m.data = results.get(m.ID).toDF()
         else:
-            m.data = results.getNumPyArray(m.ID)
+            m.data = results.get(m.ID).toNumPy()
 
 ###############################################################################
 
@@ -279,7 +280,7 @@ def solve(A, b):
     >>> y = sml.matrix(y_train)
     >>> A = X.transpose().dot(X)
     >>> b = X.transpose().dot(y)
-    >>> beta = sml.solve(A, b).toNumPyArray()
+    >>> beta = sml.solve(A, b).toNumPy()
     >>> y_predicted = X_test.dot(beta)
     >>> print('Residual sum of squares: %.2f' % np.mean((y_predicted - y_test) ** 2))
     Residual sum of squares: 25282.12
@@ -378,7 +379,7 @@ class matrix(object):
     save(mVar5, " ")
 
     <SystemML.defmatrix.matrix object>
-    >>> m4.sum(axis=1).toNumPyArray()
+    >>> m4.sum(axis=1).toNumPy()
     array([[-60.],
            [-60.],
            [-60.]])
@@ -452,9 +453,7 @@ class matrix(object):
         if self.data is None:
             self.eval(outputDF=True)
         if not isinstance(self.data, DataFrame):
-            if MLResults.sqlContext is None:
-                MLResults.sqlContext = SQLContext(matrix.sc)
-            self.data = sqlContext.createDataFrame(self.toPandas())
+            self.data = matrix.sqlContext.createDataFrame(self.toPandas())
         return self.data
 
     def _markAsVisited(self):

@@ -1,4 +1,3 @@
-#!/usr/bin/python
 #-------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -22,6 +21,8 @@
 import unittest
 
 from pyspark.context import SparkContext
+
+import numpy as np
 
 from systemml import MLContext, dml, pydml
 
@@ -64,6 +65,15 @@ class TestAPI(unittest.TestCase):
         m2 = ml.execute(script).get("m2")
         self.assertEqual(repr(m2.toDF()), "DataFrame[__INDEX: double, C1: double, C2: double]")
 
+    def test_matrix_toNumPy(self):
+        script = """
+        m2 = m1 * 2
+        """
+        rdd1 = sc.parallelize(["1.0,2.0", "3.0,4.0"])
+        script = dml(script).input(m1=rdd1).output("m2")
+        m2 = ml.execute(script).get("m2")
+        self.assertTrue((m2.toNumPy() == np.array([[2.0, 4.0], [6.0, 8.0]])).all())
+
     def test_input_single(self):
         script = """
         x2 = x1 + 1
@@ -88,15 +98,14 @@ class TestAPI(unittest.TestCase):
         rdd1 = sc.parallelize(["1.0,2.0", "3.0,4.0"])
         rdd2 = sc.parallelize(["5.0,6.0", "7.0,8.0"])
         script = dml(sums).input(m1=rdd1).input(m2=rdd2).output("s1", "s2", "s3")
-        self.assertEqual(
-            ml.execute(script).get("s1", "s2", "s3"), [10.0, 26.0, "whatever"])
+        self.assertEqual(ml.execute(script).get("s1", "s2", "s3"), [10.0, 26.0, "whatever"])
 
     def test_pydml(self):
         script = "A = full('1 2 3 4 5 6 7 8 9', rows=3, cols=3)\nx = toString(A)"
         script = pydml(script).output("x")
         self.assertEqual(
-            ml.execute(script).get("x"),
-            '1.000 2.000 3.000\n4.000 5.000 6.000\n7.000 8.000 9.000\n'
+                ml.execute(script).get("x"),
+                '1.000 2.000 3.000\n4.000 5.000 6.000\n7.000 8.000 9.000\n'
         )
 
 

@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-__all__ = [ 'getNumCols', 'convertToMatrixBlock', 'convertToNumpyArr', 'convertToPandasDF', 'SUPPORTED_TYPES' , 'convertToLabeledDF']
+__all__ = [ 'getNumCols', 'convertToMatrixBlock', 'convertToNumPyArr', 'convertToPandasDF', 'SUPPORTED_TYPES' , 'convertToLabeledDF']
 
 import numpy as np
 import pandas as pd
@@ -79,7 +79,7 @@ def convertToMatrixBlock(sc, src):
         raise TypeError('sc needs to be of type SparkContext') # TODO: We can generalize this by creating py4j gateway ourselves
 
 
-def convertToNumpyArr(sc, mb):
+def convertToNumPyArr(sc, mb):
     if isinstance(sc, SparkContext):
         numRows = mb.getNumRows()
         numCols = mb.getNumColumns()

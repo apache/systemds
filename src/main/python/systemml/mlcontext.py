@@ -31,7 +31,6 @@ except ImportError:
 
 from pyspark import SparkContext
 import pyspark.mllib.common
-from pyspark.sql import DataFrame, SQLContext
 
 from .converters import *
 
@@ -118,7 +117,7 @@ class Matrix(object):
 
         Returns
         -------
-        df: PySpark SQL DataFrame
+        PySpark SQL DataFrame
             A PySpark SQL DataFrame representing the matrix, with
             one "__INDEX" column containing the row index (since Spark
             DataFrames are unordered), followed by columns of doubles
@@ -127,6 +126,18 @@ class Matrix(object):
         jdf = self._java_matrix.toDF()
         df = _java2py(self.sc, jdf)
         return df
+
+    def toNumPy(self):
+        """
+        Convert the Matrix to a NumPy Array.
+
+        Returns
+        -------
+        NumPy Array
+            A NumPy Array representing the Matrix object.
+        """
+        np_array = convertToNumPyArr(self.sc, self._java_matrix.toBinaryBlockMatrix().getMatrixBlock())
+        return np_array
 
 
 class MLResults(object):
@@ -144,38 +155,9 @@ class MLResults(object):
     def __init__(self, results, sc):
         self._java_results = results
         self.sc = sc
-        try:
-            if MLResults.sqlContext is None:
-                MLResults.sqlContext = SQLContext(sc)
-        except AttributeError:
-            MLResults.sqlContext = SQLContext(sc)
 
     def __repr__(self):
         return "MLResults"
-
-    def getNumPyArray(self, *outputs):
-        """
-        Parameters
-        ----------
-        outputs: string, list of strings
-            Output variables as defined inside the DML script.
-        """
-        outs = [convertToNumpyArr(self.sc, self._java_results.getMatrix(out).toBinaryBlockMatrix().getMatrixBlock()) for out in outputs]
-        if len(outs) == 1:
-            return outs[0]
-        return outs
-
-    def getDataFrame(self, *outputs):
-        """
-        Parameters
-        ----------
-        outputs: string, list of strings
-            Output variables as defined inside the DML script.
-        """
-        outs = [DataFrame(self._java_results.getDataFrame(out), MLResults.sqlContext) for out in outputs]
-        if len(outs) == 1:
-            return outs[0]
-        return outs
 
     def get(self, *outputs):
         """

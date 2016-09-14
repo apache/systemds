@@ -126,19 +126,19 @@ public class ExecutionContext
 	 * -------------------------------------------------------
 	 */
 	
-	public Data getVariable(String name) 
-	{
+	public Data getVariable(String name) {
 		return _variables.get(name);
 	}
 	
-	public void setVariable(String name, Data val) 
-		throws DMLRuntimeException
-	{
+	public void setVariable(String name, Data val) {
 		_variables.put(name, val);
 	}
+	
+	public boolean containsVariable(String name) {
+		return _variables.keySet().contains(name);
+	}
 
-	public Data removeVariable(String name) 
-	{
+	public Data removeVariable(String name) {
 		return _variables.remove(name);
 	}
 

@@ -604,7 +604,14 @@ public final class MLContextUtil {
 		for (StructField field : fields) {
 			DataType dataType = field.dataType();
 			if ((dataType != DataTypes.DoubleType) && (dataType != DataTypes.IntegerType)
-					&& (!(dataType instanceof VectorUDT))) {
+					&& (dataType != DataTypes.LongType) && (!(dataType instanceof VectorUDT))) {
+				// uncomment if we support arrays of doubles for matrices
+				// if (dataType instanceof ArrayType) {
+				// ArrayType arrayType = (ArrayType) dataType;
+				// if (arrayType.elementType() == DataTypes.DoubleType) {
+				// continue;
+				// }
+				// }
 				return false;
 			}
 		}
@@ -978,9 +985,8 @@ public final class MLContextUtil {
 	 *         FrameObject, {@code false} otherwise.
 	 */
 	public static boolean doesSymbolTableContainFrameObject(LocalVariableMap symbolTable, String variableName) {
-		return (symbolTable != null
-			&& symbolTable.keySet().contains(variableName)
-			&& symbolTable.get(variableName) instanceof FrameObject);
+		return (symbolTable != null && symbolTable.keySet().contains(variableName)
+				&& symbolTable.get(variableName) instanceof FrameObject);
 	}
 
 	/**
@@ -995,8 +1001,7 @@ public final class MLContextUtil {
 	 *         MatrixObject, {@code false} otherwise.
 	 */
 	public static boolean doesSymbolTableContainMatrixObject(LocalVariableMap symbolTable, String variableName) {
-		return (symbolTable != null
-			&& symbolTable.keySet().contains(variableName)
-			&& symbolTable.get(variableName) instanceof MatrixObject);
+		return (symbolTable != null && symbolTable.keySet().contains(variableName)
+				&& symbolTable.get(variableName) instanceof MatrixObject);
 	}
 }

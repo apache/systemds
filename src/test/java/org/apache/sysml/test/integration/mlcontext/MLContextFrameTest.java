@@ -46,6 +46,7 @@ import org.apache.sysml.api.mlcontext.MatrixMetadata;
 import org.apache.sysml.api.mlcontext.Script;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDConverterUtils;
+import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.mlcontext.MLContextTest.CommaSeparatedValueStringToRow;
 import org.junit.After;
@@ -230,9 +231,9 @@ public class MLContextFrameTest extends AutomatedTestBase {
 
 				// Create DataFrame
 				SQLContext sqlContext = new SQLContext(sc);
-				StructType dfSchemaA = FrameRDDConverterUtils.convertFrameSchemaToDFSchema(lschemaA);
+				StructType dfSchemaA = FrameRDDConverterUtils.convertFrameSchemaToDFSchema(lschemaA, false);
 				DataFrame dataFrameA = sqlContext.createDataFrame(javaRddRowA, dfSchemaA);
-				StructType dfSchemaB = FrameRDDConverterUtils.convertFrameSchemaToDFSchema(lschemaB);
+				StructType dfSchemaB = FrameRDDConverterUtils.convertFrameSchemaToDFSchema(lschemaB, false);
 				DataFrame dataFrameB = sqlContext.createDataFrame(javaRddRowB, dfSchemaB);
 				if (script_type == SCRIPT_TYPE.DML)
 					script = dml("A[2:3,2:4]=B;C=A[2:3,2:3]").in("A", dataFrameA, fmA).in("B", dataFrameB, fmB).out("A")
@@ -368,31 +369,31 @@ public class MLContextFrameTest extends AutomatedTestBase {
 
 		} else if (outputType == IO_TYPE.DATAFRAME) {
 
-			DataFrame dataFrameA = mlResults.getDataFrame("A");
+			DataFrame dataFrameA = mlResults.getDataFrame("A").drop(RDDConverterUtils.DF_ID_COLUMN);
 			List<Row> listAOut = dataFrameA.collectAsList();
 
 			Row row1 = listAOut.get(0);
-			Assert.assertEquals("Mistmatch with expected value", "1", row1.getString(0));
-			Assert.assertEquals("Mistmatch with expected value", "Str2", row1.getString(1));
-			Assert.assertEquals("Mistmatch with expected value", "3.0", row1.getString(2));
-			Assert.assertEquals("Mistmatch with expected value", "true", row1.getString(3));
-
+			Assert.assertEquals("Mistmatch with expected value", "1", row1.get(0).toString());
+			Assert.assertEquals("Mistmatch with expected value", "Str2", row1.get(1).toString());
+			Assert.assertEquals("Mistmatch with expected value", "3.0", row1.get(2).toString());
+			Assert.assertEquals("Mistmatch with expected value", "true", row1.get(3).toString());
+			
 			Row row2 = listAOut.get(1);
-			Assert.assertEquals("Mistmatch with expected value", "4", row2.getString(0));
-			Assert.assertEquals("Mistmatch with expected value", "Str12", row2.getString(1));
-			Assert.assertEquals("Mistmatch with expected value", "13.0", row2.getString(2));
-			Assert.assertEquals("Mistmatch with expected value", "true", row2.getString(3));
+			Assert.assertEquals("Mistmatch with expected value", "4", row2.get(0).toString());
+			Assert.assertEquals("Mistmatch with expected value", "Str12", row2.get(1).toString());
+			Assert.assertEquals("Mistmatch with expected value", "13.0", row2.get(2).toString());
+			Assert.assertEquals("Mistmatch with expected value", "true", row2.get(3).toString());
 
-			DataFrame dataFrameC = mlResults.getDataFrame("C");
+			DataFrame dataFrameC = mlResults.getDataFrame("C").drop(RDDConverterUtils.DF_ID_COLUMN);
 			List<Row> listCOut = dataFrameC.collectAsList();
 
 			Row row3 = listCOut.get(0);
-			Assert.assertEquals("Mistmatch with expected value", "Str12", row3.getString(0));
-			Assert.assertEquals("Mistmatch with expected value", "13.0", row3.getString(1));
+			Assert.assertEquals("Mistmatch with expected value", "Str12", row3.get(0).toString());
+			Assert.assertEquals("Mistmatch with expected value", "13.0", row3.get(1).toString());
 
 			Row row4 = listCOut.get(1);
-			Assert.assertEquals("Mistmatch with expected value", "Str25", row4.getString(0));
-			Assert.assertEquals("Mistmatch with expected value", "26.0", row4.getString(1));
+			Assert.assertEquals("Mistmatch with expected value", "Str25", row4.get(0));
+			Assert.assertEquals("Mistmatch with expected value", "26.0", row4.get(1));
 		} else {
 			String[][] frameA = mlResults.getFrameAs2DStringArray("A");
 			Assert.assertEquals("Str2", frameA[0][1]);

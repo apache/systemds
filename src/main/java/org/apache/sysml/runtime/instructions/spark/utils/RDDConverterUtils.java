@@ -322,7 +322,7 @@ public class RDDConverterUtils
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static DataFrame binaryBlockToDataFrame(SQLContext sqlContext, 
+	public static DataFrame binaryBlockToDataFrame(SQLContext sqlctx, 
 			JavaPairRDD<MatrixIndexes, MatrixBlock> in, MatrixCharacteristics mc, boolean toVector)  
 	{
 		if( !mc.colsKnown() )
@@ -344,7 +344,7 @@ public class RDDConverterUtils
 		}
 		
 		//rdd to data frame conversion
-		return sqlContext.createDataFrame(rowsRDD.rdd(), DataTypes.createStructType(fields));
+		return sqlctx.createDataFrame(rowsRDD.rdd(), DataTypes.createStructType(fields));
 	}
 	
 	/**
@@ -1011,7 +1011,7 @@ public class RDDConverterUtils
 	/**
 	 * 
 	 */
-	private static class DataFrameExtractIDFunction implements PairFunction<Row, Row,Long> 
+	protected static class DataFrameExtractIDFunction implements PairFunction<Row, Row,Long> 
 	{
 		private static final long serialVersionUID = 7438855241666363433L;
 

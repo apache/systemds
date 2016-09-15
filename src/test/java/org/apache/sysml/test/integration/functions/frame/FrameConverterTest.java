@@ -519,8 +519,8 @@ public class FrameConverterTest extends AutomatedTestBase
 
 				//Create DataFrame 
 				SQLContext sqlContext = new SQLContext(sc);
-				StructType dfSchema = FrameRDDConverterUtils.convertFrameSchemaToDFSchema(schema);
-				JavaRDD<Row> rowRDD = FrameRDDConverterUtils.getRowRDD(sc, fnameIn, separator, schema);
+				StructType dfSchema = FrameRDDConverterUtils.convertFrameSchemaToDFSchema(schema, false);
+				JavaRDD<Row> rowRDD = FrameRDDConverterUtils.csvToRowRDD(sc, fnameIn, separator, schema);
 				DataFrame df = sqlContext.createDataFrame(rowRDD, dfSchema);
 				
 				JavaPairRDD<LongWritable, FrameBlock> rddOut = FrameRDDConverterUtils
@@ -532,13 +532,14 @@ public class FrameConverterTest extends AutomatedTestBase
 			case BIN2DFRM: {
 				InputInfo iinfo = InputInfo.BinaryBlockInputInfo;
 				OutputInfo oinfo = OutputInfo.BinaryBlockOutputInfo;
-				JavaPairRDD<LongWritable, FrameBlock> rddIn = sc.hadoopFile(fnameIn, iinfo.inputFormatClass, LongWritable.class, FrameBlock.class);
-				JavaPairRDD<Long, FrameBlock> rddIn2 = rddIn.mapToPair(new LongWritableFrameToLongFrameFunction());
-				DataFrame df = FrameRDDConverterUtils.binaryBlockToDataFrame(rddIn2, mc, sc);
+				JavaPairRDD<Long, FrameBlock> rddIn = sc
+						.hadoopFile(fnameIn, iinfo.inputFormatClass, LongWritable.class, FrameBlock.class)
+				 		.mapToPair(new LongWritableFrameToLongFrameFunction());
+				DataFrame df = FrameRDDConverterUtils.binaryBlockToDataFrame(new SQLContext(sc), rddIn, mc, schema);
 				
 				//Convert back DataFrame to binary block for comparison using original binary to converted DF and back to binary 
 				JavaPairRDD<LongWritable, FrameBlock> rddOut = FrameRDDConverterUtils
-						.dataFrameToBinaryBlock(sc, df, mc, false/*, columns*/)
+						.dataFrameToBinaryBlock(sc, df, mc, true)
 						.mapToPair(new LongFrameToLongWritableFrameFunction());
 				rddOut.saveAsHadoopFile(fnameOut, LongWritable.class, FrameBlock.class, oinfo.outputFormatClass);
 			

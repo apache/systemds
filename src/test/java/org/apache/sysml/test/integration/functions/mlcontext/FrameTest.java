@@ -226,13 +226,13 @@ public class FrameTest extends AutomatedTestBase
 		{
 			//Create DataFrame for input A 
 			SQLContext sqlContext = new SQLContext(sc);
-			StructType dfSchemaA = FrameRDDConverterUtils.convertFrameSchemaToDFSchema(lschema);
-			JavaRDD<Row> rowRDDA = FrameRDDConverterUtils.getRowRDD(jsc, input("A"), DataExpression.DEFAULT_DELIM_DELIMITER, lschema);
+			StructType dfSchemaA = FrameRDDConverterUtils.convertFrameSchemaToDFSchema(lschema, false);
+			JavaRDD<Row> rowRDDA = FrameRDDConverterUtils.csvToRowRDD(jsc, input("A"), DataExpression.DEFAULT_DELIM_DELIMITER, lschema);
 			dfA = sqlContext.createDataFrame(rowRDDA, dfSchemaA);
 			
 			//Create DataFrame for input B 
-			StructType dfSchemaB = FrameRDDConverterUtils.convertFrameSchemaToDFSchema(lschemaB);
-			JavaRDD<Row> rowRDDB = FrameRDDConverterUtils.getRowRDD(jsc, input("B"), DataExpression.DEFAULT_DELIM_DELIMITER, lschemaB);
+			StructType dfSchemaB = FrameRDDConverterUtils.convertFrameSchemaToDFSchema(lschemaB, false);
+			JavaRDD<Row> rowRDDB = FrameRDDConverterUtils.csvToRowRDD(jsc, input("B"), DataExpression.DEFAULT_DELIM_DELIMITER, lschemaB);
 			dfB = sqlContext.createDataFrame(rowRDDB, dfSchemaB);
 		}
 
@@ -285,7 +285,7 @@ public class FrameTest extends AutomatedTestBase
 				//Convert back DataFrame to binary block for comparison using original binary to converted DF and back to binary 
 				MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, -1, -1, -1);
 				JavaPairRDD<LongWritable, FrameBlock> rddOut = FrameRDDConverterUtils
-						.dataFrameToBinaryBlock(jsc, df, mc, false)
+						.dataFrameToBinaryBlock(jsc, df, mc, bFromDataFrame)
 						.mapToPair(new LongFrameToLongWritableFrameFunction());
 				rddOut.saveAsHadoopFile(output("AB"), LongWritable.class, FrameBlock.class, OutputInfo.BinaryBlockOutputInfo.outputFormatClass);
 			}
@@ -306,7 +306,7 @@ public class FrameTest extends AutomatedTestBase
 				//Convert back DataFrame to binary block for comparison using original binary to converted DF and back to binary 
 				MatrixCharacteristics mc = new MatrixCharacteristics(cRows, cCols, -1, -1, -1);
 				JavaPairRDD<LongWritable, FrameBlock> rddOut = FrameRDDConverterUtils
-						.dataFrameToBinaryBlock(jsc, df, mc, false)
+						.dataFrameToBinaryBlock(jsc, df, mc, bFromDataFrame)
 						.mapToPair(new LongFrameToLongWritableFrameFunction());
 				rddOut.saveAsHadoopFile(fName, LongWritable.class, FrameBlock.class, OutputInfo.BinaryBlockOutputInfo.outputFormatClass);
 			}

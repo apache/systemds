@@ -47,18 +47,17 @@ public class MLOutput {
 	Map<String, JavaPairRDD<?,?>> _outputs;
 	private Map<String, MatrixCharacteristics> _outMetadata = null;
 	
+	public MLOutput(Map<String, JavaPairRDD<?,?>> outputs, Map<String, MatrixCharacteristics> outMetadata) {
+		this._outputs = outputs;
+		this._outMetadata = outMetadata;
+	}
+	
 	public MatrixBlock getMatrixBlock(String varName) throws DMLRuntimeException {
 		MatrixCharacteristics mc = getMatrixCharacteristics(varName);
 		// The matrix block is always pushed to an RDD and then we do collect
 		// We can later avoid this by returning symbol table rather than "Map<String, JavaPairRDD<MatrixIndexes,MatrixBlock>> _outputs"
-		MatrixBlock mb = SparkExecutionContext.toMatrixBlock(getBinaryBlockedRDD(varName), (int) mc.getRows(), (int) mc.getCols(), 
+		return SparkExecutionContext.toMatrixBlock(getBinaryBlockedRDD(varName), (int) mc.getRows(), (int) mc.getCols(), 
 				mc.getRowsPerBlock(), mc.getColsPerBlock(), mc.getNonZeros());
-		return mb;
-	}
-
-	public MLOutput(Map<String, JavaPairRDD<?,?>> outputs, Map<String, MatrixCharacteristics> outMetadata) {
-		this._outputs = outputs;
-		this._outMetadata = outMetadata;
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -160,6 +159,8 @@ public class MLOutput {
 	}
 	
 	public JavaRDD<String> getStringFrameRDD(String varName, String format, CSVFileFormatProperties fprop ) throws DMLRuntimeException {
+		//TODO MB: note that on construction of MLOutput only matrix binary blocks are passed, and 
+		//hence we will never find a frame binary block in the outputs.
 		JavaPairRDD<Long, FrameBlock> binaryRDD = getFrameBinaryBlockedRDD(varName);
 		MatrixCharacteristics mcIn = getMatrixCharacteristics(varName); 
 		if(format.equals("csv")) {
@@ -175,9 +176,11 @@ public class MLOutput {
 	}
 	
 	public DataFrame getDataFrameRDD(String varName, JavaSparkContext jsc) throws DMLRuntimeException {
+		//TODO MB: note that on construction of MLOutput only matrix binary blocks are passed, and 
+		//hence we will never find a frame binary block in the outputs.
 		JavaPairRDD<Long, FrameBlock> binaryRDD = getFrameBinaryBlockedRDD(varName);
 		MatrixCharacteristics mcIn = getMatrixCharacteristics(varName);
-		return FrameRDDConverterUtils.binaryBlockToDataFrame(binaryRDD, mcIn, jsc);
+		return FrameRDDConverterUtils.binaryBlockToDataFrame(new SQLContext(jsc), binaryRDD, mcIn, null);
 	}
 	
 	public MLMatrix getMLMatrix(MLContext ml, SQLContext sqlContext, String varName) throws DMLRuntimeException {

@@ -1217,11 +1217,10 @@ public class MLContextConversionUtil {
 			@SuppressWarnings("unchecked")
 			JavaPairRDD<Long, FrameBlock> binaryBlockFrame = (JavaPairRDD<Long, FrameBlock>) sparkExecutionContext
 					.getRDDHandleForFrameObject(frameObject, InputInfo.BinaryBlockInputInfo);
-			MatrixCharacteristics matrixCharacteristics = frameObject.getMatrixCharacteristics();
+			MatrixCharacteristics mc = frameObject.getMatrixCharacteristics();
 
 			JavaSparkContext jsc = MLContextUtil.getJavaSparkContext((MLContext) MLContextProxy.getActiveMLContextForAPI());
-
-			return FrameRDDConverterUtils.binaryBlockToDataFrame(binaryBlockFrame, matrixCharacteristics, jsc);
+			return FrameRDDConverterUtils.binaryBlockToDataFrame(new SQLContext(jsc), binaryBlockFrame, mc, frameObject.getSchema());
 		} 
 		catch (DMLRuntimeException e) {
 			throw new MLContextException("DMLRuntimeException while converting frame object to DataFrame", e);

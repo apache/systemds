@@ -35,6 +35,7 @@ import org.apache.sysml.runtime.instructions.cp.DoubleObject;
 import org.apache.sysml.runtime.instructions.cp.IntObject;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.instructions.cp.StringObject;
+import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils;
 
 import scala.Tuple1;
 import scala.Tuple10;
@@ -98,8 +99,7 @@ public class MLResults {
 		if (!keys.contains(outputName)) {
 			throw new MLContextException("Variable '" + outputName + "' not found");
 		}
-		Data data = symbolTable.get(outputName);
-		return data;
+		return symbolTable.get(outputName);
 	}
 
 	/**
@@ -114,8 +114,7 @@ public class MLResults {
 		if (!(data instanceof MatrixObject)) {
 			throw new MLContextException("Variable '" + outputName + "' not a matrix");
 		}
-		MatrixObject mo = (MatrixObject) data;
-		return mo;
+		return (MatrixObject) data;
 	}
 
 	/**
@@ -142,8 +141,7 @@ public class MLResults {
 	 */
 	public double[][] getMatrixAs2DDoubleArray(String outputName) {
 		MatrixObject mo = getMatrixObject(outputName);
-		double[][] doubleMatrix = MLContextConversionUtil.matrixObjectTo2DDoubleArray(mo);
-		return doubleMatrix;
+		return MLContextConversionUtil.matrixObjectTo2DDoubleArray(mo);
 	}
 
 	/**
@@ -169,12 +167,10 @@ public class MLResults {
 	public JavaRDD<String> getJavaRDDStringIJV(String outputName) {
 		if (isMatrixObject(outputName)) {
 			MatrixObject mo = getMatrixObject(outputName);
-			JavaRDD<String> javaRDDStringIJV = MLContextConversionUtil.matrixObjectToJavaRDDStringIJV(mo);
-			return javaRDDStringIJV;
+			return MLContextConversionUtil.matrixObjectToJavaRDDStringIJV(mo);
 		} else if (isFrameObject(outputName)) {
 			FrameObject fo = getFrameObject(outputName);
-			JavaRDD<String> javaRDDStringIJV = MLContextConversionUtil.frameObjectToJavaRDDStringIJV(fo);
-			return javaRDDStringIJV;
+			return MLContextConversionUtil.frameObjectToJavaRDDStringIJV(fo);
 		}
 		return null;
 	}
@@ -200,12 +196,10 @@ public class MLResults {
 	public JavaRDD<String> getJavaRDDStringCSV(String outputName) {
 		if (isMatrixObject(outputName)) {
 			MatrixObject mo = getMatrixObject(outputName);
-			JavaRDD<String> javaRDDStringCSV = MLContextConversionUtil.matrixObjectToJavaRDDStringCSV(mo);
-			return javaRDDStringCSV;
+			return MLContextConversionUtil.matrixObjectToJavaRDDStringCSV(mo);
 		} else if (isFrameObject(outputName)) {
 			FrameObject fo = getFrameObject(outputName);
-			JavaRDD<String> javaRDDStringCSV = MLContextConversionUtil.frameObjectToJavaRDDStringCSV(fo, ",");
-			return javaRDDStringCSV;
+			return MLContextConversionUtil.frameObjectToJavaRDDStringCSV(fo, ",");
 		}
 		return null;
 	}
@@ -231,12 +225,10 @@ public class MLResults {
 	public RDD<String> getRDDStringCSV(String outputName) {
 		if (isMatrixObject(outputName)) {
 			MatrixObject mo = getMatrixObject(outputName);
-			RDD<String> rddStringCSV = MLContextConversionUtil.matrixObjectToRDDStringCSV(mo);
-			return rddStringCSV;
+			return MLContextConversionUtil.matrixObjectToRDDStringCSV(mo);
 		} else if (isFrameObject(outputName)) {
 			FrameObject fo = getFrameObject(outputName);
-			RDD<String> rddStringCSV = MLContextConversionUtil.frameObjectToRDDStringCSV(fo, ",");
-			return rddStringCSV;
+			return MLContextConversionUtil.frameObjectToRDDStringCSV(fo, ",");
 		}
 		return null;
 	}
@@ -264,12 +256,10 @@ public class MLResults {
 	public RDD<String> getRDDStringIJV(String outputName) {
 		if (isMatrixObject(outputName)) {
 			MatrixObject mo = getMatrixObject(outputName);
-			RDD<String> rddStringIJV = MLContextConversionUtil.matrixObjectToRDDStringIJV(mo);
-			return rddStringIJV;
+			return MLContextConversionUtil.matrixObjectToRDDStringIJV(mo);
 		} else if (isFrameObject(outputName)) {
 			FrameObject fo = getFrameObject(outputName);
-			RDD<String> rddStringIJV = MLContextConversionUtil.frameObjectToRDDStringIJV(fo);
-			return rddStringIJV;
+			return MLContextConversionUtil.frameObjectToRDDStringIJV(fo);
 		}
 		return null;
 	}
@@ -296,12 +286,10 @@ public class MLResults {
 	public DataFrame getDataFrame(String outputName) {
 		if (isMatrixObject(outputName)) {
 			MatrixObject mo = getMatrixObject(outputName);
-			DataFrame df = MLContextConversionUtil.matrixObjectToDataFrame(mo, sparkExecutionContext, false);
-			return df;
+			return MLContextConversionUtil.matrixObjectToDataFrame(mo, sparkExecutionContext, false);
 		} else if (isFrameObject(outputName)) {
 			FrameObject mo = getFrameObject(outputName);
-			DataFrame df = MLContextConversionUtil.frameObjectToDataFrame(mo, sparkExecutionContext);
-			return df;
+			return MLContextConversionUtil.frameObjectToDataFrame(mo, sparkExecutionContext);
 		}
 		return null;
 	}
@@ -316,11 +304,7 @@ public class MLResults {
 	 */
 	private boolean isMatrixObject(String outputName) {
 		Data data = getData(outputName);
-		if (data instanceof MatrixObject) {
-			return true;
-		} else {
-			return false;
-		}
+		return (data instanceof MatrixObject);
 	}
 
 	/**
@@ -333,11 +317,7 @@ public class MLResults {
 	 */
 	private boolean isFrameObject(String outputName) {
 		Data data = getData(outputName);
-		if (data instanceof FrameObject) {
-			return true;
-		} else {
-			return false;
-		}
+		return (data instanceof FrameObject);
 	}
 
 	/**
@@ -374,8 +354,7 @@ public class MLResults {
 			throw new MLContextException("This method currently supports only matrices");
 		}
 		MatrixObject mo = getMatrixObject(outputName);
-		DataFrame df = MLContextConversionUtil.matrixObjectToDataFrame(mo, sparkExecutionContext, isVectorDF);
-		return df;
+		return MLContextConversionUtil.matrixObjectToDataFrame(mo, sparkExecutionContext, isVectorDF);
 	}
 
 	/**
@@ -401,8 +380,7 @@ public class MLResults {
 			throw new MLContextException("This method currently supports only matrices");
 		}
 		MatrixObject mo = getMatrixObject(outputName);
-		DataFrame df = MLContextConversionUtil.matrixObjectToDataFrame(mo, sparkExecutionContext, false);
-		return df;
+		return MLContextConversionUtil.matrixObjectToDataFrame(mo, sparkExecutionContext, false);
 	}
 
 	/**
@@ -428,8 +406,7 @@ public class MLResults {
 			throw new MLContextException("This method currently supports only matrices");
 		}
 		MatrixObject mo = getMatrixObject(outputName);
-		DataFrame df = MLContextConversionUtil.matrixObjectToDataFrame(mo, sparkExecutionContext, true);
-		return df;
+		return MLContextConversionUtil.matrixObjectToDataFrame(mo, sparkExecutionContext, true);
 	}
 
 	/**
@@ -456,8 +433,7 @@ public class MLResults {
 		}
 		MatrixObject mo = getMatrixObject(outputName);
 		DataFrame df = MLContextConversionUtil.matrixObjectToDataFrame(mo, sparkExecutionContext, false);
-		df = df.sort("__INDEX").drop("__INDEX");
-		return df;
+		return df.drop(RDDConverterUtils.DF_ID_COLUMN);
 	}
 
 	/**
@@ -484,8 +460,7 @@ public class MLResults {
 		}
 		MatrixObject mo = getMatrixObject(outputName);
 		DataFrame df = MLContextConversionUtil.matrixObjectToDataFrame(mo, sparkExecutionContext, true);
-		df = df.sort("__INDEX").drop("__INDEX");
-		return df;
+		return df.drop(RDDConverterUtils.DF_ID_COLUMN);
 	}
 
 	/**
@@ -497,8 +472,7 @@ public class MLResults {
 	 */
 	public Matrix getMatrix(String outputName) {
 		MatrixObject mo = getMatrixObject(outputName);
-		Matrix matrix = new Matrix(mo, sparkExecutionContext);
-		return matrix;
+		return new Matrix(mo, sparkExecutionContext);
 	}
 
 	/**
@@ -510,8 +484,7 @@ public class MLResults {
 	 */
 	public Frame getFrame(String outputName) {
 		FrameObject fo = getFrameObject(outputName);
-		Frame frame = new Frame(fo, sparkExecutionContext);
-		return frame;
+		return new Frame(fo, sparkExecutionContext);
 	}
 
 	/**
@@ -523,9 +496,7 @@ public class MLResults {
 	 */
 	public BinaryBlockMatrix getBinaryBlockMatrix(String outputName) {
 		MatrixObject mo = getMatrixObject(outputName);
-		BinaryBlockMatrix binaryBlockMatrix = MLContextConversionUtil.matrixObjectToBinaryBlockMatrix(mo,
-				sparkExecutionContext);
-		return binaryBlockMatrix;
+		return MLContextConversionUtil.matrixObjectToBinaryBlockMatrix(mo, sparkExecutionContext);
 	}
 
 	/**
@@ -537,8 +508,7 @@ public class MLResults {
 	 */
 	public String[][] getFrameAs2DStringArray(String outputName) {
 		FrameObject frameObject = getFrameObject(outputName);
-		String[][] frame = MLContextConversionUtil.frameObjectTo2DStringArray(frameObject);
-		return frame;
+		return MLContextConversionUtil.frameObjectTo2DStringArray(frameObject);
 	}
 
 	/**
@@ -587,8 +557,7 @@ public class MLResults {
 		if (!(data instanceof ScalarObject)) {
 			throw new MLContextException("Variable '" + outputName + "' not a scalar");
 		}
-		ScalarObject so = (ScalarObject) data;
-		return so;
+		return (ScalarObject) data;
 	}
 
 	/**

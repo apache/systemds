@@ -1014,6 +1014,10 @@ public class RDDConverterUtils
 		public Tuple2<Row, Long> call(Row arg0) throws Exception {
 			//extract 1-based IDs and convert to 0-based positions
 			long id = UtilFunctions.toLong(UtilFunctions.getDouble(arg0.get(0)));
+			if( id <= 0 ) {
+				throw new DMLRuntimeException("ID Column '" + DF_ID_COLUMN 
+						+ "' expected to be 1-based, but found value: "+id);
+			}
 			return new Tuple2<Row,Long>(arg0, id-1);
 		}
 	}

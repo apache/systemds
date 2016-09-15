@@ -86,7 +86,7 @@ public class MLOutput {
 	
 	/**
 	 * Note, the output DataFrame has an additional column ID.
-	 * An easy way to get DataFrame without ID is by df.sort("__INDEX").drop("__INDEX")
+	 * An easy way to get DataFrame without ID is by df.drop("__INDEX")
 	 * @param sqlContext
 	 * @param varName
 	 * @return

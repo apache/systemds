@@ -26,7 +26,7 @@ import org.apache.spark.SparkContext
 import org.apache.sysml.runtime.matrix.data.MatrixBlock
 import org.apache.sysml.runtime.DMLRuntimeException
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics
-import org.apache.sysml.runtime.instructions.spark.utils.{ RDDConverterUtilsExt => RDDConverterUtils }
+import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils
 import org.apache.sysml.api.mlcontext.MLResults
 import org.apache.sysml.api.mlcontext.ScriptFactory._
 import org.apache.sysml.api.mlcontext.Script
@@ -131,7 +131,7 @@ object PredictionUtils {
   }
   
   def joinUsingID(df1:DataFrame, df2:DataFrame):DataFrame = {
-    df1.join(df2, "__INDEX")
+    df1.join(df2, RDDConverterUtils.DF_ID_COLUMN)
   }
   
   def computePredictedClassLabelsFromProbability(mlscoreoutput:MLResults, isSingleNode:Boolean, sc:SparkContext, inProbVar:String): MLResults = {

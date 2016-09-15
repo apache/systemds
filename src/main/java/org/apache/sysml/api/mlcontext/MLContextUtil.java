@@ -140,11 +140,7 @@ public final class MLContextUtil {
 	 * @return {@code true} if Spark version supported; otherwise {@code false}.
 	 */
 	public static boolean isSparkVersionSupported(String sparkVersion) {
-		if (compareVersion(sparkVersion, MLContext.SYSTEMML_MINIMUM_SPARK_VERSION) < 0) {
-			return false;
-		} else {
-			return true;
-		}
+		return compareVersion(sparkVersion, MLContext.SYSTEMML_MINIMUM_SPARK_VERSION) >= 0;
 	}
 
 	/**
@@ -409,33 +405,25 @@ public final class MLContextUtil {
 
 			if (hasMatrixMetadata) {
 				MatrixMetadata matrixMetadata = (MatrixMetadata) metadata;
-				MatrixObject matrixObject;
 				if (matrixMetadata.getMatrixFormat() == MatrixFormat.IJV) {
-					matrixObject = MLContextConversionUtil.javaRDDStringIJVToMatrixObject(name, javaRDD,
-							matrixMetadata);
+					return MLContextConversionUtil.javaRDDStringIJVToMatrixObject(name, javaRDD, matrixMetadata);
 				} else {
-					matrixObject = MLContextConversionUtil.javaRDDStringCSVToMatrixObject(name, javaRDD,
-							matrixMetadata);
+					return MLContextConversionUtil.javaRDDStringCSVToMatrixObject(name, javaRDD, matrixMetadata);
 				}
-				return matrixObject;
 			} else if (hasFrameMetadata) {
 				FrameMetadata frameMetadata = (FrameMetadata) metadata;
-				FrameObject frameObject;
 				if (frameMetadata.getFrameFormat() == FrameFormat.IJV) {
-					frameObject = MLContextConversionUtil.javaRDDStringIJVToFrameObject(name, javaRDD, frameMetadata);
+					return MLContextConversionUtil.javaRDDStringIJVToFrameObject(name, javaRDD, frameMetadata);
 				} else {
-					frameObject = MLContextConversionUtil.javaRDDStringCSVToFrameObject(name, javaRDD, frameMetadata);
+					return MLContextConversionUtil.javaRDDStringCSVToFrameObject(name, javaRDD, frameMetadata);
 				}
-				return frameObject;
 			} else if (!hasMetadata) {
 				String firstLine = javaRDD.first();
 				boolean isAllNumbers = isCSVLineAllNumbers(firstLine);
 				if (isAllNumbers) {
-					MatrixObject matrixObject = MLContextConversionUtil.javaRDDStringCSVToMatrixObject(name, javaRDD);
-					return matrixObject;
+					return MLContextConversionUtil.javaRDDStringCSVToMatrixObject(name, javaRDD);
 				} else {
-					FrameObject frameObject = MLContextConversionUtil.javaRDDStringCSVToFrameObject(name, javaRDD);
-					return frameObject;
+					return MLContextConversionUtil.javaRDDStringCSVToFrameObject(name, javaRDD);
 				}
 			}
 
@@ -445,63 +433,47 @@ public final class MLContextUtil {
 
 			if (hasMatrixMetadata) {
 				MatrixMetadata matrixMetadata = (MatrixMetadata) metadata;
-				MatrixObject matrixObject;
 				if (matrixMetadata.getMatrixFormat() == MatrixFormat.IJV) {
-					matrixObject = MLContextConversionUtil.rddStringIJVToMatrixObject(name, rdd, matrixMetadata);
+					return MLContextConversionUtil.rddStringIJVToMatrixObject(name, rdd, matrixMetadata);
 				} else {
-					matrixObject = MLContextConversionUtil.rddStringCSVToMatrixObject(name, rdd, matrixMetadata);
+					return MLContextConversionUtil.rddStringCSVToMatrixObject(name, rdd, matrixMetadata);
 				}
-				return matrixObject;
 			} else if (hasFrameMetadata) {
 				FrameMetadata frameMetadata = (FrameMetadata) metadata;
-				FrameObject frameObject;
 				if (frameMetadata.getFrameFormat() == FrameFormat.IJV) {
-					frameObject = MLContextConversionUtil.rddStringIJVToFrameObject(name, rdd, frameMetadata);
+					return MLContextConversionUtil.rddStringIJVToFrameObject(name, rdd, frameMetadata);
 				} else {
-					frameObject = MLContextConversionUtil.rddStringCSVToFrameObject(name, rdd, frameMetadata);
+					return MLContextConversionUtil.rddStringCSVToFrameObject(name, rdd, frameMetadata);
 				}
-				return frameObject;
 			} else if (!hasMetadata) {
 				String firstLine = rdd.first();
 				boolean isAllNumbers = isCSVLineAllNumbers(firstLine);
 				if (isAllNumbers) {
-					MatrixObject matrixObject = MLContextConversionUtil.rddStringCSVToMatrixObject(name, rdd);
-					return matrixObject;
+					return MLContextConversionUtil.rddStringCSVToMatrixObject(name, rdd);
 				} else {
-					FrameObject frameObject = MLContextConversionUtil.rddStringCSVToFrameObject(name, rdd);
-					return frameObject;
+					return MLContextConversionUtil.rddStringCSVToFrameObject(name, rdd);
 				}
 			}
 		} else if (value instanceof MatrixBlock) {
 			MatrixBlock matrixBlock = (MatrixBlock) value;
-			MatrixObject matrixObject = MLContextConversionUtil.matrixBlockToMatrixObject(name, matrixBlock,
-					(MatrixMetadata) metadata);
-			return matrixObject;
+			return MLContextConversionUtil.matrixBlockToMatrixObject(name, matrixBlock, (MatrixMetadata) metadata);
 		} else if (value instanceof FrameBlock) {
 			FrameBlock frameBlock = (FrameBlock) value;
-			FrameObject frameObject = MLContextConversionUtil.frameBlockToFrameObject(name, frameBlock,
-					(FrameMetadata) metadata);
-			return frameObject;
+			return MLContextConversionUtil.frameBlockToFrameObject(name, frameBlock, (FrameMetadata) metadata);
 		} else if (value instanceof DataFrame) {
 			DataFrame dataFrame = (DataFrame) value;
 
 			if (hasMatrixMetadata) {
-				MatrixObject matrixObject = MLContextConversionUtil.dataFrameToMatrixObject(name, dataFrame,
-						(MatrixMetadata) metadata);
-				return matrixObject;
+				return MLContextConversionUtil.dataFrameToMatrixObject(name, dataFrame, (MatrixMetadata) metadata);
 			} else if (hasFrameMetadata) {
-				FrameObject frameObject = MLContextConversionUtil.dataFrameToFrameObject(name, dataFrame,
-						(FrameMetadata) metadata);
-				return frameObject;
+				return MLContextConversionUtil.dataFrameToFrameObject(name, dataFrame, (FrameMetadata) metadata);
 			} else if (!hasMetadata) {
 				Row firstRow = dataFrame.first();
 				boolean looksLikeMatrix = doesRowLookLikeMatrixRow(firstRow);
 				if (looksLikeMatrix) {
-					MatrixObject matrixObject = MLContextConversionUtil.dataFrameToMatrixObject(name, dataFrame);
-					return matrixObject;
+					return MLContextConversionUtil.dataFrameToMatrixObject(name, dataFrame);
 				} else {
-					FrameObject frameObject = MLContextConversionUtil.dataFrameToFrameObject(name, dataFrame);
-					return frameObject;
+					return MLContextConversionUtil.dataFrameToFrameObject(name, dataFrame);
 				}
 			}
 		} else if (value instanceof BinaryBlockMatrix) {
@@ -510,51 +482,34 @@ public final class MLContextUtil {
 				metadata = binaryBlockMatrix.getMatrixMetadata();
 			}
 			JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlocks = binaryBlockMatrix.getBinaryBlocks();
-			MatrixObject matrixObject = MLContextConversionUtil.binaryBlocksToMatrixObject(name, binaryBlocks,
-					(MatrixMetadata) metadata);
-			return matrixObject;
+			return MLContextConversionUtil.binaryBlocksToMatrixObject(name, binaryBlocks, (MatrixMetadata) metadata);
 		} else if (value instanceof BinaryBlockFrame) {
 			BinaryBlockFrame binaryBlockFrame = (BinaryBlockFrame) value;
 			if (metadata == null) {
 				metadata = binaryBlockFrame.getFrameMetadata();
 			}
 			JavaPairRDD<Long, FrameBlock> binaryBlocks = binaryBlockFrame.getBinaryBlocks();
-			FrameObject frameObject = MLContextConversionUtil.binaryBlocksToFrameObject(name, binaryBlocks,
-					(FrameMetadata) metadata);
-			return frameObject;
+			return MLContextConversionUtil.binaryBlocksToFrameObject(name, binaryBlocks, (FrameMetadata) metadata);
 		} else if (value instanceof Matrix) {
 			Matrix matrix = (Matrix) value;
-			MatrixObject matrixObject = matrix.toMatrixObject();
-			return matrixObject;
+			return matrix.toMatrixObject();
 		} else if (value instanceof Frame) {
 			Frame frame = (Frame) value;
-			FrameObject frameObject = frame.toFrameObject();
-			return frameObject;
+			return frame.toFrameObject();
 		} else if (value instanceof double[][]) {
 			double[][] doubleMatrix = (double[][]) value;
-			MatrixObject matrixObject = MLContextConversionUtil.doubleMatrixToMatrixObject(name, doubleMatrix,
-					(MatrixMetadata) metadata);
-			return matrixObject;
+			return MLContextConversionUtil.doubleMatrixToMatrixObject(name, doubleMatrix, (MatrixMetadata) metadata);
 		} else if (value instanceof URL) {
 			URL url = (URL) value;
-			MatrixObject matrixObject = MLContextConversionUtil.urlToMatrixObject(name, url, (MatrixMetadata) metadata);
-			return matrixObject;
+			return MLContextConversionUtil.urlToMatrixObject(name, url, (MatrixMetadata) metadata);
 		} else if (value instanceof Integer) {
-			Integer i = (Integer) value;
-			IntObject iObj = new IntObject(i);
-			return iObj;
+			return new IntObject((Integer) value);
 		} else if (value instanceof Double) {
-			Double d = (Double) value;
-			DoubleObject dObj = new DoubleObject(d);
-			return dObj;
+			return new DoubleObject((Double) value);
 		} else if (value instanceof String) {
-			String s = (String) value;
-			StringObject sObj = new StringObject(s);
-			return sObj;
+			return new StringObject((String) value);
 		} else if (value instanceof Boolean) {
-			Boolean b = (Boolean) value;
-			BooleanObject bObj = new BooleanObject(b);
-			return bObj;
+			return new BooleanObject((Boolean) value);
 		}
 		return null;
 	}

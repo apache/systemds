@@ -252,8 +252,7 @@ public class ScriptFactory {
 	 * @return DML or PYDML Script object
 	 */
 	private static Script scriptFromString(String scriptString, ScriptType scriptType) {
-		Script script = new Script(scriptString, scriptType);
-		return script;
+		return new Script(scriptString, scriptType);
 	}
 
 	/**
@@ -360,15 +359,13 @@ public class ScriptFactory {
 				FileSystem fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
 				Path path = new Path(scriptFilePath);
 				FSDataInputStream fsdis = fs.open(path);
-				String scriptString = IOUtils.toString(fsdis);
-				return scriptString;
+				return IOUtils.toString(fsdis);
 			} else {// from local file system
 				if (!LocalFileUtils.validateExternalFilename(scriptFilePath, false)) {
 					throw new MLContextException("Invalid (non-trustworthy) local filename: " + scriptFilePath);
 				}
 				File scriptFile = new File(scriptFilePath);
-				String scriptString = FileUtils.readFileToString(scriptFile);
-				return scriptString;
+				return FileUtils.readFileToString(scriptFile);
 			}
 		} catch (IllegalArgumentException e) {
 			throw new MLContextException("Error trying to read script string from file: " + scriptFilePath, e);
@@ -391,8 +388,7 @@ public class ScriptFactory {
 			throw new MLContextException("InputStream is null");
 		}
 		try {
-			String scriptString = IOUtils.toString(inputStream);
-			return scriptString;
+			return IOUtils.toString(inputStream);
 		} catch (IOException e) {
 			throw new MLContextException("Error trying to read script string from InputStream", e);
 		}
@@ -438,8 +434,7 @@ public class ScriptFactory {
 		}
 		try {
 			InputStream is = url.openStream();
-			String scriptString = IOUtils.toString(is);
-			return scriptString;
+			return IOUtils.toString(is);
 		} catch (IOException e) {
 			throw new MLContextException("Error trying to read script string from URL: " + url, e);
 		}

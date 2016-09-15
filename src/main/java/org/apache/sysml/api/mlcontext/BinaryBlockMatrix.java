@@ -109,9 +109,8 @@ public class BinaryBlockMatrix {
 	public MatrixBlock getMatrixBlock() {
 		try {
 			MatrixCharacteristics mc = getMatrixCharacteristics();
-			MatrixBlock mb = SparkExecutionContext.toMatrixBlock(binaryBlocks, (int) mc.getRows(), (int) mc.getCols(),
+			return SparkExecutionContext.toMatrixBlock(binaryBlocks, (int) mc.getRows(), (int) mc.getCols(),
 					mc.getRowsPerBlock(), mc.getColsPerBlock(), mc.getNonZeros());
-			return mb;
 		} catch (DMLRuntimeException e) {
 			throw new MLContextException("Exception while getting MatrixBlock from binary-block matrix", e);
 		}

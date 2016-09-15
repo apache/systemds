@@ -482,8 +482,7 @@ public class MatrixMetadata extends Metadata {
 		int nrpb = (numRowsPerBlock == null) ? ConfigurationManager.getBlocksize() : numRowsPerBlock;
 		int ncpb = (numColumnsPerBlock == null) ? ConfigurationManager.getBlocksize() : numColumnsPerBlock;
 		long nnz = (numNonZeros == null) ? -1 : numNonZeros;
-		MatrixCharacteristics mc = new MatrixCharacteristics(nr, nc, nrpb, ncpb, nnz);
-		return mc;
+		return new MatrixCharacteristics(nr, nc, nrpb, ncpb, nnz);
 	}
 
 	@Override

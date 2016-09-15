@@ -31,6 +31,7 @@ import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.api.MLContextProxy;
+import org.apache.sysml.api.jmlc.JMLCUtils;
 import org.apache.sysml.api.monitoring.SparkMonitoringUtil;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
@@ -46,7 +47,6 @@ import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
-import org.apache.sysml.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysml.runtime.instructions.spark.functions.SparkListener;
 import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
@@ -478,27 +478,11 @@ public class MLContext {
 		}
 
 		public ArrayList<Instruction> performCleanupAfterRecompilation(ArrayList<Instruction> instructions) {
-			if (executingScript == null) {
+			if (executingScript == null || executingScript.getOutputVariables() == null)
 				return instructions;
-			}
+			
 			Set<String> outputVariableNames = executingScript.getOutputVariables();
-			if (outputVariableNames == null) {
-				return instructions;
-			}
-
-			for (int i = 0; i < instructions.size(); i++) {
-				Instruction inst = instructions.get(i);
-				if (inst instanceof VariableCPInstruction && ((VariableCPInstruction) inst).isRemoveVariable()) {
-					VariableCPInstruction varInst = (VariableCPInstruction) inst;
-					for (String outputVariableName : outputVariableNames)
-						if (varInst.isRemoveVariable(outputVariableName)) {
-							instructions.remove(i);
-							i--;
-							break;
-						}
-				}
-			}
-			return instructions;
+			return JMLCUtils.cleanupRuntimeInstructions(instructions, outputVariableNames.toArray(new String[0]));
 		}
 	}
 

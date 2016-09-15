@@ -122,9 +122,8 @@ public class BinaryBlockFrame {
 		try {
 			MatrixCharacteristics mc = getMatrixCharacteristics();
 			FrameSchema frameSchema = frameMetadata.getFrameSchema();
-			FrameBlock mb = SparkExecutionContext.toFrameBlock(binaryBlocks, frameSchema.getSchema(),
+			return SparkExecutionContext.toFrameBlock(binaryBlocks, frameSchema.getSchema(),
 					(int) mc.getRows(), (int) mc.getCols());
-			return mb;
 		} catch (DMLRuntimeException e) {
 			throw new MLContextException("Exception while getting FrameBlock from binary-block frame", e);
 		}

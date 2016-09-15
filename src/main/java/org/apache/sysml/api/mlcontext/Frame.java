@@ -24,7 +24,6 @@ import org.apache.spark.rdd.RDD;
 import org.apache.spark.sql.DataFrame;
 import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
-import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 
 /**
  * Frame encapsulates a SystemML frame.
@@ -55,8 +54,7 @@ public class Frame {
 	 * @return the frame as a two-dimensional String array
 	 */
 	public String[][] to2DStringArray() {
-		String[][] strArray = MLContextConversionUtil.frameObjectTo2DStringArray(frameObject);
-		return strArray;
+		return MLContextConversionUtil.frameObjectTo2DStringArray(frameObject);
 	}
 
 	/**
@@ -65,8 +63,7 @@ public class Frame {
 	 * @return the frame as a {@code JavaRDD<String>} in IJV format
 	 */
 	public JavaRDD<String> toJavaRDDStringIJV() {
-		JavaRDD<String> javaRDDStringIJV = MLContextConversionUtil.frameObjectToJavaRDDStringIJV(frameObject);
-		return javaRDDStringIJV;
+		return MLContextConversionUtil.frameObjectToJavaRDDStringIJV(frameObject);
 	}
 
 	/**
@@ -75,8 +72,7 @@ public class Frame {
 	 * @return the frame as a {@code JavaRDD<String>} in CSV format
 	 */
 	public JavaRDD<String> toJavaRDDStringCSV() {
-		JavaRDD<String> javaRDDStringCSV = MLContextConversionUtil.frameObjectToJavaRDDStringCSV(frameObject, ",");
-		return javaRDDStringCSV;
+		return MLContextConversionUtil.frameObjectToJavaRDDStringCSV(frameObject, ",");
 	}
 
 	/**
@@ -85,8 +81,7 @@ public class Frame {
 	 * @return the frame as a {@code RDD<String>} in CSV format
 	 */
 	public RDD<String> toRDDStringCSV() {
-		RDD<String> rddStringCSV = MLContextConversionUtil.frameObjectToRDDStringCSV(frameObject, ",");
-		return rddStringCSV;
+		return MLContextConversionUtil.frameObjectToRDDStringCSV(frameObject, ",");
 	}
 
 	/**
@@ -95,8 +90,7 @@ public class Frame {
 	 * @return the frame as a {@code RDD<String>} in IJV format
 	 */
 	public RDD<String> toRDDStringIJV() {
-		RDD<String> rddStringIJV = MLContextConversionUtil.frameObjectToRDDStringIJV(frameObject);
-		return rddStringIJV;
+		return MLContextConversionUtil.frameObjectToRDDStringIJV(frameObject);
 	}
 
 	/**
@@ -105,8 +99,7 @@ public class Frame {
 	 * @return the frame as a {@code DataFrame}
 	 */
 	public DataFrame toDF() {
-		DataFrame df = MLContextConversionUtil.frameObjectToDataFrame(frameObject, sparkExecutionContext);
-		return df;
+		return MLContextConversionUtil.frameObjectToDataFrame(frameObject, sparkExecutionContext);
 	}
 
 	/**
@@ -115,9 +108,7 @@ public class Frame {
 	 * @return the matrix as a {@code BinaryBlockFrame}
 	 */
 	public BinaryBlockFrame toBinaryBlockFrame() {
-		BinaryBlockFrame binaryBlockFrame = MLContextConversionUtil.frameObjectToBinaryBlockFrame(frameObject,
-				sparkExecutionContext);
-		return binaryBlockFrame;
+		return MLContextConversionUtil.frameObjectToBinaryBlockFrame(frameObject, sparkExecutionContext);
 	}
 
 	/**
@@ -126,9 +117,7 @@ public class Frame {
 	 * @return the frame metadata
 	 */
 	public FrameMetadata getFrameMetadata() {
-		MatrixCharacteristics matrixCharacteristics = frameObject.getMatrixCharacteristics();
-		FrameMetadata frameMetadata = new FrameMetadata(matrixCharacteristics);
-		return frameMetadata;
+		return new FrameMetadata(frameObject.getMatrixCharacteristics());
 	}
 
 	@Override

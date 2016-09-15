@@ -331,7 +331,7 @@ public class FrameRDDConverterUtils
 	{
 		
 		if(containsID)
-			df = df.drop("__INDEX");
+			df = df.drop(RDDConverterUtils.DF_ID_COLUMN);
 		
 		//determine unknown dimensions if required
 		if( !mcOut.dimsKnown(true) ) {

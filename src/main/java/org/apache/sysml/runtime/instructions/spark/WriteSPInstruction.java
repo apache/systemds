@@ -36,7 +36,6 @@ import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.spark.functions.ComputeBinaryBlockNnzFunction;
-import org.apache.sysml.runtime.instructions.spark.functions.ConvertMatrixBlockToIJVLines;
 import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDConverterUtils;
 import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDConverterUtils.LongFrameToLongWritableFrameFunction;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils;
@@ -192,7 +191,7 @@ public class WriteSPInstruction extends SPInstruction
 				header = sec.getSparkContext().parallelize(headerContainer);
 			}
 			
-			JavaRDD<String> ijv = in1.flatMap(new ConvertMatrixBlockToIJVLines(mc.getRowsPerBlock(), mc.getColsPerBlock()));
+			JavaRDD<String> ijv = RDDConverterUtils.binaryBlockToTextCell(in1, mc);
 			if(header != null)
 				customSaveTextFile(header.union(ijv), fname, true);
 			else

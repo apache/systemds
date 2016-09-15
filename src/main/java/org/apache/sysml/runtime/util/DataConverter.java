@@ -904,6 +904,33 @@ public class DataConverter
 	/**
 	 * 
 	 * @param mb
+	 * @param dest
+	 * @param destPos
+	 */
+	public static void copyToDoubleVector( MatrixBlock mb, double[] dest, int destPos )
+	{
+		if( mb.isEmptyBlock(false) )
+			return; //quick path
+			
+		int rows = mb.getNumRows();
+		int cols = mb.getNumColumns();
+		
+		if( mb.isInSparseFormat() ) {
+			Iterator<IJV> iter = mb.getSparseBlockIterator();
+			while( iter.hasNext() ) {
+				IJV cell = iter.next();
+				dest[destPos+cell.getI()*cols+cell.getJ()] = cell.getV();
+			}
+		}
+		else {
+			//memcopy row major representation if at least 1 non-zero
+			System.arraycopy(mb.getDenseBlock(), 0, dest, destPos, rows*cols);
+		}
+	}
+	
+	/**
+	 * 
+	 * @param mb
 	 * @return
 	 */
 	public static String toString(MatrixBlock mb) {

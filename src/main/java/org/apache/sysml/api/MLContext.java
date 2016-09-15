@@ -76,7 +76,7 @@ import org.apache.sysml.runtime.instructions.spark.functions.CopyBlockPairFuncti
 import org.apache.sysml.runtime.instructions.spark.functions.CopyTextInputFunction;
 import org.apache.sysml.runtime.instructions.spark.functions.SparkListener;
 import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDConverterUtils;
-import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt;
+import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
 import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
@@ -294,7 +294,8 @@ public class MLContext {
 	public void registerInput(String varName, DataFrame df, boolean containsID) throws DMLRuntimeException {
 		int blksz = ConfigurationManager.getBlocksize();
 		MatrixCharacteristics mcOut = new MatrixCharacteristics(-1, -1, blksz, blksz);
-		JavaPairRDD<MatrixIndexes, MatrixBlock> rdd = RDDConverterUtilsExt.dataFrameToBinaryBlock(new JavaSparkContext(_sc), df, mcOut, containsID);
+		JavaPairRDD<MatrixIndexes, MatrixBlock> rdd = RDDConverterUtils
+				.dataFrameToBinaryBlock(new JavaSparkContext(_sc), df, mcOut, containsID, false);
 		registerInput(varName, rdd, mcOut);
 	}
 	

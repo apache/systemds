@@ -976,18 +976,9 @@ public final class MLContextUtil {
 	 *         FrameObject, {@code false} otherwise.
 	 */
 	public static boolean doesSymbolTableContainFrameObject(LocalVariableMap symbolTable, String variableName) {
-		if (symbolTable == null) {
-			return false;
-		}
-		Data data = symbolTable.get(variableName);
-		if (data == null) {
-			return false;
-		}
-		if (data instanceof FrameObject) {
-			return true;
-		} else {
-			return false;
-		}
+		return (symbolTable != null
+			&& symbolTable.keySet().contains(variableName)
+			&& symbolTable.get(variableName) instanceof FrameObject);
 	}
 
 	/**
@@ -1002,18 +993,8 @@ public final class MLContextUtil {
 	 *         MatrixObject, {@code false} otherwise.
 	 */
 	public static boolean doesSymbolTableContainMatrixObject(LocalVariableMap symbolTable, String variableName) {
-		if (symbolTable == null) {
-			return false;
-		}
-		Data data = symbolTable.get(variableName);
-		if (data == null) {
-			return false;
-		}
-		if (data instanceof MatrixObject) {
-			return true;
-		} else {
-			return false;
-		}
+		return (symbolTable != null
+			&& symbolTable.keySet().contains(variableName)
+			&& symbolTable.get(variableName) instanceof MatrixObject);
 	}
-
 }

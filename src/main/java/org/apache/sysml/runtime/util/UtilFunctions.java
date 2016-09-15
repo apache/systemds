@@ -601,18 +601,42 @@ public class UtilFunctions
 	}
 	
 	
-	/*
+	/**
 	 * This function will return datatype, if its Matrix or Frame
 	 * 
 	 *  @param	str
 	 *  		Instruction string to execute
 	 */
-	
 	public static DataType getDataType(String str, int index)
 	{
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		CPOperand in1 = new CPOperand(parts[index]);
 	
 		return in1.getDataType();
+	}
+	
+	/**
+	 * 
+	 * @param obj
+	 * @return
+	 */
+	public static double getDouble(Object obj) {
+		return (obj instanceof Double) ? (Double)obj :
+			Double.parseDouble(obj.toString());
+	}
+	
+	/**
+	 * 
+	 * @param obj
+	 * @return
+	 */
+	public static boolean isNonZero(Object obj) {
+		if( obj instanceof Double ) 
+			return ((Double) obj) != 0;
+		else {
+			//avoid expensive double parsing
+			String sobj = obj.toString();
+			return (!sobj.equals("0") && !sobj.equals("0.0"));
+		}
 	}
 }

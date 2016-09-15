@@ -155,14 +155,16 @@ public class MatrixCharacteristics implements Serializable
 		+", blocks ("+numRowsPerBlock+" x "+numColumnsPerBlock+")]";
 	}
 	
-	public void setDimension(long nr, long nc)
-	{
+	public void setDimension(long nr, long nc) {
 		numRows = nr;
 		numColumns = nc;
 	}
 	
-	public void setBlockSize(int bnr, int bnc)
-	{
+	public void setBlockSize(int blen) {
+		setBlockSize(blen, blen);
+	}
+	
+	public void setBlockSize(int bnr, int bnc) {
 		numRowsPerBlock = bnr;
 		numColumnsPerBlock = bnc;
 	}

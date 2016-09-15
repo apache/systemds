@@ -35,17 +35,17 @@ import org.apache.spark.sql.DataFrame;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SQLContext;
 import org.apache.spark.sql.types.StructType;
-import org.junit.Assert;
-import org.junit.Test;
 import org.apache.sysml.api.DMLException;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.api.MLContext;
+import org.apache.sysml.api.MLContextProxy;
 import org.apache.sysml.api.MLOutput;
-import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.parser.DataExpression;
+import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.parser.ParseException;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDConverterUtils;
 import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDConverterUtils.LongFrameToLongWritableFrameFunction;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -58,6 +58,8 @@ import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
+import org.junit.Assert;
+import org.junit.Test;
 
 
 public class FrameTest extends AutomatedTestBase 
@@ -334,6 +336,12 @@ public class FrameTest extends AutomatedTestBase
 		finally {
 			DMLScript.rtplatform = oldRT;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = oldConfig;
+
+			if (sc != null) {
+				sc.stop();
+			}
+			SparkExecutionContext.resetSparkContextStatic();
+			MLContextProxy.setActive(false);
 		}
 	}
 	

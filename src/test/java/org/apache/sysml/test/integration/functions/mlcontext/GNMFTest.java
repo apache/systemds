@@ -30,19 +30,20 @@ import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
+import org.apache.spark.mllib.linalg.distributed.CoordinateMatrix;
+import org.apache.spark.mllib.linalg.distributed.MatrixEntry;
 import org.apache.sysml.api.DMLException;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.api.MLContext;
+import org.apache.sysml.api.MLContextProxy;
 import org.apache.sysml.api.MLOutput;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.parser.ParseException;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils;
+import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
@@ -50,10 +51,11 @@ import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.utils.TestUtils;
-import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils;
-import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt;
-import org.apache.spark.mllib.linalg.distributed.MatrixEntry;
-import org.apache.spark.mllib.linalg.distributed.CoordinateMatrix;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
 @RunWith(value = Parameterized.class)
 public class GNMFTest extends AutomatedTestBase 
@@ -142,12 +144,14 @@ public class GNMFTest extends AutomatedTestBase
 		DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		RUNTIME_PLATFORM oldRT = DMLScript.rtplatform;
 		
+		MLContext mlCtx = null;
+		SparkContext sc = null;
 		try 
 		{
 			DMLScript.rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK;
 		
-			MLContext mlCtx = getMLContextForTesting();
-			SparkContext sc = mlCtx.getSparkContext();
+			mlCtx = getMLContextForTesting();
+			sc = mlCtx.getSparkContext();
 			mlCtx.reset(true); // Cleanup config to ensure future MLContext testcases have correct 'cp.parallel.matrixmult'
 			
 			// Read two matrices through RDD and one through HDFS
@@ -229,6 +233,12 @@ public class GNMFTest extends AutomatedTestBase
 		finally {
 			DMLScript.rtplatform = oldRT;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = oldConfig;
+
+			if (sc != null) {
+				sc.stop();
+			}
+			SparkExecutionContext.resetSparkContextStatic();
+			MLContextProxy.setActive(false);
 		}
 	}
 	

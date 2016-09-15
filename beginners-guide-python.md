@@ -62,7 +62,8 @@ brew install apache-spark
 ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Linuxbrew/install/master/install)"
 brew tap caskroom/cask
 brew install Caskroom/cask/java
-brew install apache-spark
+brew tap homebrew/versions
+brew install apache-spark16
 ```
 </div>
 </div>

@@ -34,10 +34,12 @@ import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.mllib.linalg.Vector;
+import org.apache.spark.mllib.linalg.VectorUDT;
 import org.apache.spark.rdd.RDD;
 import org.apache.spark.sql.DataFrame;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SQLContext;
+import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 import org.apache.sysml.api.MLContextProxy;
 import org.apache.sysml.conf.ConfigurationManager;
@@ -466,23 +468,23 @@ public class MLContextConversionUtil {
 			hasID = true;
 		} catch (IllegalArgumentException iae) {
 		}
-		Row firstRow = dataFrame.first();
+
+		StructField[] fields = schema.fields();
 		MatrixFormat mf = null;
 		if (hasID) {
-			Object object = firstRow.get(1);
-			if (object instanceof Vector) {
+			if (fields[1].dataType() instanceof VectorUDT) {
 				mf = MatrixFormat.DF_VECTOR_WITH_INDEX;
 			} else {
 				mf = MatrixFormat.DF_DOUBLES_WITH_INDEX;
 			}
 		} else {
-			Object object = firstRow.get(0);
-			if (object instanceof Vector) {
+			if (fields[0].dataType() instanceof VectorUDT) {
 				mf = MatrixFormat.DF_VECTOR;
 			} else {
 				mf = MatrixFormat.DF_DOUBLES;
 			}
 		}
+
 		if (mf == null) {
 			throw new MLContextException("DataFrame format not recognized as an accepted SystemML MatrixFormat");
 		}

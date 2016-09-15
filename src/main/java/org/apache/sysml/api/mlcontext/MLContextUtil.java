@@ -38,10 +38,13 @@ import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.mllib.linalg.Vector;
+import org.apache.spark.mllib.linalg.VectorUDT;
 import org.apache.spark.rdd.RDD;
 import org.apache.spark.sql.DataFrame;
-import org.apache.spark.sql.Row;
+import org.apache.spark.sql.types.DataType;
+import org.apache.spark.sql.types.DataTypes;
+import org.apache.spark.sql.types.StructField;
+import org.apache.spark.sql.types.StructType;
 import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.conf.ConfigurationManager;
@@ -494,8 +497,7 @@ public final class MLContextUtil {
 						(FrameMetadata) metadata);
 				return frameObject;
 			} else if (!hasMetadata) {
-				Row firstRow = dataFrame.first();
-				boolean looksLikeMatrix = doesRowLookLikeMatrixRow(firstRow);
+				boolean looksLikeMatrix = doesDataFrameLookLikeMatrix(dataFrame);
 				if (looksLikeMatrix) {
 					MatrixObject matrixObject = MLContextConversionUtil.dataFrameToMatrixObject(name, dataFrame);
 					return matrixObject;
@@ -585,24 +587,24 @@ public final class MLContextUtil {
 	}
 
 	/**
-	 * If no metadata is supplied for a DataFrame, this method can be used to
-	 * determine whether the data appears to be a matrix (or a frame)
+	 * Examine the DataFrame schema to determine whether the data appears to be
+	 * a matrix.
 	 * 
-	 * @param row
-	 *            a row in the DataFrame
-	 * @return {@code true} if the row appears to be a matrix row, {@code false}
-	 *         otherwise
+	 * @param df
+	 *            the DataFrame
+	 * @return {@code true} if the DataFrame appears to be a matrix,
+	 *         {@code false} otherwise
 	 */
-	public static boolean doesRowLookLikeMatrixRow(Row row) {
-		for (int i = 0; i < row.length(); i++) {
-			Object object = row.get(i);
-			if (object instanceof Vector) {
-				return true;
-			}
-			String str = object.toString();
-			try {
-				Double.parseDouble(str);
-			} catch (NumberFormatException e) {
+	public static boolean doesDataFrameLookLikeMatrix(DataFrame df) {
+		StructType schema = df.schema();
+		StructField[] fields = schema.fields();
+		if (fields == null) {
+			return true;
+		}
+		for (StructField field : fields) {
+			DataType dataType = field.dataType();
+			if ((dataType != DataTypes.DoubleType) && (dataType != DataTypes.IntegerType)
+					&& (!(dataType instanceof VectorUDT))) {
 				return false;
 			}
 		}

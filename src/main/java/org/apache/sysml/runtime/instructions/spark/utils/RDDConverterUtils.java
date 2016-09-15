@@ -50,6 +50,7 @@ import org.apache.spark.sql.types.StructField;
 import scala.Tuple2;
 
 import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.spark.data.SerLongWritable;
 import org.apache.sysml.runtime.instructions.spark.data.SerText;
@@ -597,9 +598,8 @@ public class RDDConverterUtils
 			//determine number of non-zeros of row (w/o string parsing)
 			long lnnz = 0;
 			for( String col : cols ) {
-				if( !col.isEmpty() && !col.equals("0") && !col.equals("0.0") ) {
-					lnnz++;
-				}
+				lnnz += (!col.isEmpty() && !col.equals("0") 
+						&& !col.equals("0.0")) ? 1 : 0;
 			}
 			
 			//update counters
@@ -626,6 +626,8 @@ public class RDDConverterUtils
 		private long _clen = -1;
 		private int _brlen = -1;
 		private int _bclen = -1;
+		private double _sparsity = 1.0;
+		private boolean _sparse = false;
 		private boolean _header = false;
 		private String _delim = null;
 		private boolean _fill = false;
@@ -637,6 +639,9 @@ public class RDDConverterUtils
 			_clen = mc.getCols();
 			_brlen = mc.getRowsPerBlock();
 			_bclen = mc.getColsPerBlock();
+			_sparsity = OptimizerUtils.getSparsity(mc);
+			_sparse = mc.nnzKnown() && MatrixBlock.evalSparseFormatInMemory(mc.getRows(), 
+					mc.getCols(), mc.getNonZeros()) && (!fill || fillValue==0);
 			_header = hasHeader;
 			_delim = delim;
 			_fill = fill;
@@ -710,7 +715,7 @@ public class RDDConverterUtils
 			for( int cix=1; cix<=ncblks; cix++ ) {
 				int lclen = (int)UtilFunctions.computeBlockSize(_clen, cix, _bclen);				
 				ix[cix-1] = new MatrixIndexes(rix, cix);
-				mb[cix-1] = new MatrixBlock(lrlen, lclen, false);		
+				mb[cix-1] = new MatrixBlock(lrlen, lclen, _sparse, (int)(lrlen*lclen*_sparsity));		
 			}
 		}
 		

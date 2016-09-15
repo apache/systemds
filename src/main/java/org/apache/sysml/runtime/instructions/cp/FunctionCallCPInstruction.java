@@ -151,7 +151,7 @@ public class FunctionCallCPInstruction extends CPInstruction
 				CPOperand operand = _boundInputParamOperands.get(i);
 				String varname = operand.getName();
 				//error handling non-existing variables
-				if( !operand.isLiteral() && ec.containsVariable(varname) ) {
+				if( !operand.isLiteral() && !ec.containsVariable(varname) ) {
 					throw new DMLRuntimeException("Input variable '"+varname+"' not existing on call of " + 
 							DMLProgram.constructFunctionKey(_namespace, _functionName) + " (line "+getLineNum()+").");
 				}

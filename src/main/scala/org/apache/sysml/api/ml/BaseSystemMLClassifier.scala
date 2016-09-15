@@ -28,7 +28,7 @@ import org.apache.spark.ml.param.{ Params, Param, ParamMap, DoubleParam }
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics
 import org.apache.sysml.runtime.matrix.data.MatrixBlock
 import org.apache.sysml.runtime.DMLRuntimeException
-import org.apache.sysml.runtime.instructions.spark.utils.{ RDDConverterUtilsExt => RDDConverterUtils }
+import org.apache.sysml.runtime.instructions.spark.utils.{ RDDConverterUtilsExt, RDDConverterUtils }
 import org.apache.sysml.api.mlcontext._
 import org.apache.sysml.api.mlcontext.ScriptFactory._
 import org.apache.spark.sql._
@@ -110,7 +110,7 @@ trait BaseSystemMLClassifier extends BaseSystemMLEstimator {
     val isSingleNode = false
     val ml = new MLContext(df.rdd.sparkContext)
     val mcXin = new MatrixCharacteristics()
-    val Xin = RDDConverterUtils.vectorDataFrameToBinaryBlock(sc, df.asInstanceOf[DataFrame], mcXin, false, "features")
+    val Xin = RDDConverterUtils.dataFrameToBinaryBlock(sc, df.asInstanceOf[DataFrame], mcXin, false, true)
     val revLabelMapping = new java.util.HashMap[Int, String]
     val yin = PredictionUtils.fillLabelMapping(df, revLabelMapping)
     val ret = getTrainingScript(isSingleNode)
@@ -142,7 +142,7 @@ trait BaseSystemMLClassifierModel extends BaseSystemMLEstimatorModel {
     val isSingleNode = false
     val ml = new MLContext(sc)
     val mcXin = new MatrixCharacteristics()
-    val Xin = RDDConverterUtils.vectorDataFrameToBinaryBlock(df.rdd.sparkContext, df.asInstanceOf[DataFrame], mcXin, false, "features")
+    val Xin = RDDConverterUtils.dataFrameToBinaryBlock(df.rdd.sparkContext, df.asInstanceOf[DataFrame], mcXin, false, true)
     val script = getPredictionScript(mloutput, isSingleNode)
     val Xin_bin = new BinaryBlockMatrix(Xin, mcXin)
     val modelPredict = ml.execute(script._1.in(script._2, Xin_bin))
@@ -150,11 +150,11 @@ trait BaseSystemMLClassifierModel extends BaseSystemMLEstimatorModel {
     val predictedDF = PredictionUtils.updateLabels(isSingleNode, predLabelOut.getDataFrame("Prediction"), null, "C1", labelMapping).select("__INDEX", "prediction")
     if(outputProb) {
       val prob = modelPredict.getDataFrame(probVar, true).withColumnRenamed("C1", "probability").select("__INDEX", "probability")
-      val dataset = RDDConverterUtils.addIDToDataFrame(df.asInstanceOf[DataFrame], df.sqlContext, "__INDEX")
+      val dataset = RDDConverterUtilsExt.addIDToDataFrame(df.asInstanceOf[DataFrame], df.sqlContext, "__INDEX")
       return PredictionUtils.joinUsingID(dataset, PredictionUtils.joinUsingID(prob, predictedDF))
     }
     else {
-      val dataset = RDDConverterUtils.addIDToDataFrame(df.asInstanceOf[DataFrame], df.sqlContext, "__INDEX")
+      val dataset = RDDConverterUtilsExt.addIDToDataFrame(df.asInstanceOf[DataFrame], df.sqlContext, "__INDEX")
       return PredictionUtils.joinUsingID(dataset, predictedDF)
     }
     

@@ -2284,6 +2284,9 @@ val numRows = 10000
 val numCols = 1000
 val rawData = LinearDataGenerator.generateLinearRDD(sc, numRows, numCols, 1).toDF()
 
+//For Spark version <= 1.6.0 you can use createDataFrame() (comment the line above and uncomment the line below), and for Spark version >= 1.6.1 use .toDF()
+//val rawData = sqlContext.createDataFrame(LinearDataGenerator.generateLinearRDD(sc, numRows, numCols, 1))
+
 // Repartition into a more parallelism-friendly number of partitions
 val data = rawData.repartition(64).cache()
 {% endhighlight %}

@@ -2287,6 +2287,10 @@ val numRows = 10000
 val numCols = 1000
 val rawData = LinearDataGenerator.generateLinearRDD(sc, numRows, numCols, 1).toDF()
 
+//In case the line above doesn't compile please use this one:
+//val rawData = sqlContext.createDataFrame(LinearDataGenerator.generateLinearRDD(sc, numRows, numCols, 1))
+
+
 // Repartition into a more parallelism-friendly number of partitions
 val data = rawData.repartition(64).cache()
 {% endhighlight %}

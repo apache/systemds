@@ -1923,6 +1923,9 @@ getScalarInt: (outputs: org.apache.sysml.api.MLOutput, symbol: String)Int
 <div data-lang="Statements" markdown="1">
 {% highlight scala %}
 import org.apache.sysml.api.MLOutput
+import org.apache.spark.sql.SQLContext
+
+val sqlContext = new SQLContext(sc)
 def getScalar(outputs: MLOutput, symbol: String): Any =
 outputs.getDF(sqlContext, symbol).first()(1)
 def getScalarDouble(outputs: MLOutput, symbol: String): Double =

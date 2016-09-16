@@ -5,6 +5,8 @@
 .classpath
 .project
 .settings/
+.externalToolBuilders/
+maven-eclipse.xml
 
 # Intellij
 .idea/
@@ -60,3 +62,11 @@ scratch_space/
 
 # Ruby
 Gemfile.lock
+
+# Python
+**/systemml.egg-info/
+**/__pycache__
+
+# Spark
+**/metastore_db
+derby.log

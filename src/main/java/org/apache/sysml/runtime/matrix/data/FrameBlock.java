@@ -305,6 +305,26 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	
 	/**
 	 * 
+	 * @return
+	 */
+	public boolean isColNamesDefault() {
+		boolean ret = true;
+		for( int j=0; j<getNumColumns() && ret; j++ )
+			ret &= isColNameDefault(j);
+		return ret;	
+	}
+	
+	/**
+	 * 
+	 * @param i
+	 * @return
+	 */
+	public boolean isColNameDefault(int i) {
+		return _colnames.get(i).equals("C"+i);
+	}
+	
+	/**
+	 * 
 	 */
 	public void recomputeColumnCardinality() {
 		for( int j=0; j<getNumColumns(); j++ ) {
@@ -510,16 +530,21 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	
 	@Override
 	public void write(DataOutput out) throws IOException {
-		//write header (rows, cols)
+		boolean isDefaultMeta = isColNamesDefault()
+				&& isColumnMetadataDefault();
+		//write header (rows, cols, default)
 		out.writeInt(getNumRows());
 		out.writeInt(getNumColumns());
+		out.writeBoolean(isDefaultMeta);
 		//write columns (value type, data)
 		for( int j=0; j<getNumColumns(); j++ ) {
 			out.writeByte(_schema.get(j).ordinal());
-			out.writeUTF(_colnames.get(j));
-			out.writeLong(_colmeta.get(j).getNumDistinct());
-			out.writeUTF( (_colmeta.get(j).getMvValue()!=null) ? 
-					_colmeta.get(j).getMvValue() : "" );
+			if( !isDefaultMeta ) {
+				out.writeUTF(_colnames.get(j));
+				out.writeLong(_colmeta.get(j).getNumDistinct());
+				out.writeUTF( (_colmeta.get(j).getMvValue()!=null) ? 
+						_colmeta.get(j).getMvValue() : "" );
+			}
 			_coldata.get(j).write(out);
 		}
 	}
@@ -529,15 +554,16 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		//read head (rows, cols)
 		_numRows = in.readInt();
 		int numCols = in.readInt();
+		boolean isDefaultMeta = in.readBoolean();
 		//read columns (value type, meta, data)
 		_schema.clear();
 		_colmeta.clear();
 		_coldata.clear();
 		for( int j=0; j<numCols; j++ ) {
 			ValueType vt = ValueType.values()[in.readByte()];
-			String name = in.readUTF();
-			long ndistinct = in.readLong();
-			String mvvalue = in.readUTF();
+			String name = isDefaultMeta ? createColName(j) : in.readUTF();
+			long ndistinct = isDefaultMeta ? 0 : in.readLong();
+			String mvvalue = isDefaultMeta ? null : in.readUTF();
 			Array arr = null;
 			switch( vt ) {
 				case STRING:  arr = new StringArray(new String[_numRows]); break;
@@ -550,7 +576,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			_schema.add(vt);
 			_colnames.add(name);
 			_colmeta.add(new ColumnMetadata(ndistinct, 
-					mvvalue.isEmpty() ? null : mvvalue));
+					(mvvalue==null || mvvalue.isEmpty()) ? null : mvvalue));
 			_coldata.add(arr);
 		}
 	}

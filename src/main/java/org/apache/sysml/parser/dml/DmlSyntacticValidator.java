@@ -362,7 +362,9 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 						+ "through commandline or initialized to default value.";
 				if( ConfigurationManager.getCompilerConfigFlag(ConfigType.IGNORE_UNSPECIFIED_ARGS) ) {
 					ctx.dataInfo.expr = getConstIdFromString(" ", ctx.start);
-					raiseWarning(msg, ctx.start);
+					if (!ConfigurationManager.getCompilerConfigFlag(ConfigType.MLCONTEXT)) {
+						raiseWarning(msg, ctx.start);
+					}
 				}
 				else {
 					notifyErrorListeners(msg, ctx.start);

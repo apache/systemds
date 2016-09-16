@@ -71,6 +71,7 @@ public class CompilerConfig
 		//data on mlcontext (local) /jmlc (global); ignore unknowns on jmlc
 		IGNORE_READ_WRITE_METADATA, // global skip meta data reads
 		REJECT_READ_WRITE_UNKNOWNS, // ignore missing meta data	
+		MLCONTEXT // execution via new MLContext
 	}
 	
 	//default flags (exposed for testing purposes only)
@@ -96,6 +97,7 @@ public class CompilerConfig
 		_bmap.put(ConfigType.IGNORE_UNSPECIFIED_ARGS, false);
 		_bmap.put(ConfigType.IGNORE_READ_WRITE_METADATA, false);
 		_bmap.put(ConfigType.REJECT_READ_WRITE_UNKNOWNS, true);
+		_bmap.put(ConfigType.MLCONTEXT, false);
 		
 		_imap = new HashMap<CompilerConfig.ConfigType, Integer>();
 		_imap.put(ConfigType.BLOCK_SIZE, OptimizerUtils.DEFAULT_BLOCKSIZE);

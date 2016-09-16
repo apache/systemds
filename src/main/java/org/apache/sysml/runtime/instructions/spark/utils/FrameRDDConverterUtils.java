@@ -156,7 +156,7 @@ public class FrameRDDConverterUtils
 		JavaPairRDD<Long,FrameBlock> input = in;
 		
 		//sort if required (on blocks/rows)
-		if( strict ) {
+		if( strict && !isSorted(input) ) {
 			input = input.sortByKey(true);
 		}
 		
@@ -454,7 +454,7 @@ public class FrameRDDConverterUtils
 		JavaRDD<String> dataRdd = sc.textFile(fnameIn);
 		return dataRdd.map(new RowGenerator(schema, delim));
 	}
-	
+
 	/* 
 	 * Row Generator class based on individual line in CSV file.
 	 */
@@ -480,8 +480,50 @@ public class FrameRDDConverterUtils
 		      return RowFactory.create(objects);
 		}
 	}
-	
 
+	/**
+	 * Check if the rdd is already sorted in order to avoid unnecessary
+	 * sampling, shuffle, and sort per partition.
+	 * 
+	 * @param in
+	 * @return
+	 */
+	private static boolean isSorted(JavaPairRDD<Long, FrameBlock> in) {		
+		//check sorted partitions (returns max key if true; -1 otherwise)
+		List<Long> keys = in.keys().mapPartitions(
+				new SortingAnalysisFunction()).collect();
+		long max = 0;
+		for( Long val : keys ) {
+			if( val < max )
+				return false;
+			max = val;
+		}
+		return true;
+	}
+
+	/**
+	 * 
+	 */
+	private static class SortingAnalysisFunction implements FlatMapFunction<Iterator<Long>,Long> 
+	{
+		private static final long serialVersionUID = -5789003262381127469L;
+
+		@Override
+		public Iterable<Long> call(Iterator<Long> arg0) throws Exception 
+		{
+			long max = 0;
+			while( max >= 0 && arg0.hasNext() ) {
+				long val = arg0.next();
+				max = (val < max) ? -1 : val;
+			}			
+			
+			ArrayList<Long> ret = new ArrayList<Long>();	
+			ret.add(max);
+			return ret;
+		}
+	}
+	
+	
 	/////////////////////////////////
 	// CSV-SPECIFIC FUNCTIONS
 	
@@ -1087,7 +1129,14 @@ public class FrameRDDConverterUtils
 	//////////////////////////////////////
 	// Common functions
 	
-	// Flushes current state of filled column blocks to output list.
+	/**
+	 * Flushes current state of filled column blocks to output list.
+	 * 
+	 * @param ix
+	 * @param fb
+	 * @param ret
+	 * @throws DMLRuntimeException
+	 */
 	private static void flushBlocksToList( Long[] ix, FrameBlock[] fb, ArrayList<Tuple2<Long,FrameBlock>> ret ) 
 		throws DMLRuntimeException
 	{			

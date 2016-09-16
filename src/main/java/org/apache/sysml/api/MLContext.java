@@ -1489,53 +1489,34 @@ public class MLContext {
 			
 			// Set active MLContext.
 			_activeMLContext = this;
-			
 			if(_monitorUtils != null) {
 				_monitorUtils.resetMonitoringData();
 			}
 			
-			if(DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK || DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK) {
-				
-				Map<String, JavaPairRDD<?,?>> retVal = null;
-				
+			if( OptimizerUtils.isSparkExecutionMode() ) {
 				// Depending on whether registerInput/registerOutput was called initialize the variables 
-				String[] inputs; String[] outputs;
-				if(_inVarnames != null) {
-					inputs = _inVarnames.toArray(new String[0]);
-				}
-				else {
-					inputs = new String[0];
-				}
-				if(_outVarnames != null) {
-					outputs = _outVarnames.toArray(new String[0]);
-				}
-				else {
-					outputs = new String[0];
-				}
+				String[] inputs = (_inVarnames != null) ? _inVarnames.toArray(new String[0]) : new String[0];
+				String[] outputs = (_outVarnames != null) ? _outVarnames.toArray(new String[0]) : new String[0];
+				Map<String, JavaPairRDD<?,?>> retVal = (_outVarnames!=null && !_outVarnames.isEmpty()) ? 
+						retVal = new HashMap<String, JavaPairRDD<?,?>>() : null;
 				Map<String, MatrixCharacteristics> outMetadata = new HashMap<String, MatrixCharacteristics>();
-				
 				Map<String, String> argVals = DMLScript.createArgumentsMap(isNamedArgument, args);
 				
 				// Run the DML script
 				ExecutionContext ec = executeUsingSimplifiedCompilationChain(dmlScriptFilePath, isFile, argVals, isPyDML, inputs, outputs, _variables, configFilePath);
+				SparkExecutionContext sec = (SparkExecutionContext) ec;
 				
 				// Now collect the output
 				if(_outVarnames != null) {
-					if(_variables == null) {
-						throw new DMLRuntimeException("The symbol table returned after executing the script is empty");
-					}
+					if(_variables == null)
+						throw new DMLRuntimeException("The symbol table returned after executing the script is empty");			
 					
 					for( String ovar : _outVarnames ) {
-						if( _variables.keySet().contains(ovar) ) {
-							if(retVal == null) {
-								retVal = new HashMap<String, JavaPairRDD<?,?>>();
-							}
-							retVal.put(ovar, ((SparkExecutionContext) ec).getBinaryBlockRDDHandleForVariable(ovar));
-							outMetadata.put(ovar, ec.getMatrixCharacteristics(ovar)); // For converting output to dataframe
-						}
-						else {
+						if( !_variables.keySet().contains(ovar) )
 							throw new DMLException("Error: The variable " + ovar + " is not available as output after the execution of the DMLScript.");
-						}
+						
+						retVal.put(ovar, sec.getRDDHandleForVariable(ovar, InputInfo.BinaryBlockInputInfo));
+						outMetadata.put(ovar, ec.getMatrixCharacteristics(ovar)); // For converting output to dataframe
 					}
 				}
 				
@@ -1544,7 +1525,6 @@ public class MLContext {
 			else {
 				throw new DMLRuntimeException("Unsupported runtime:" + DMLScript.rtplatform.name());
 			}
-		
 		}
 		finally {
 			// Remove global dml config and all thread-local configs

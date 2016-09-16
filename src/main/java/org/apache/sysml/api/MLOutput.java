@@ -159,8 +159,6 @@ public class MLOutput {
 	}
 	
 	public JavaRDD<String> getStringFrameRDD(String varName, String format, CSVFileFormatProperties fprop ) throws DMLRuntimeException {
-		//TODO MB: note that on construction of MLOutput only matrix binary blocks are passed, and 
-		//hence we will never find a frame binary block in the outputs.
 		JavaPairRDD<Long, FrameBlock> binaryRDD = getFrameBinaryBlockedRDD(varName);
 		MatrixCharacteristics mcIn = getMatrixCharacteristics(varName); 
 		if(format.equals("csv")) {
@@ -176,8 +174,6 @@ public class MLOutput {
 	}
 	
 	public DataFrame getDataFrameRDD(String varName, JavaSparkContext jsc) throws DMLRuntimeException {
-		//TODO MB: note that on construction of MLOutput only matrix binary blocks are passed, and 
-		//hence we will never find a frame binary block in the outputs.
 		JavaPairRDD<Long, FrameBlock> binaryRDD = getFrameBinaryBlockedRDD(varName);
 		MatrixCharacteristics mcIn = getMatrixCharacteristics(varName);
 		return FrameRDDConverterUtils.binaryBlockToDataFrame(new SQLContext(jsc), binaryRDD, mcIn, null);

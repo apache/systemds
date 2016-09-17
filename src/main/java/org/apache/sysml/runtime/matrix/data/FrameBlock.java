@@ -134,6 +134,14 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	}
 	
 	/**
+	 * 
+	 * @param numRows
+	 */
+	public void setNumRows(int numRows) {
+		_numRows = numRows;
+	}
+	
+	/**
 	 * Get the number of columns of the frame block, that is
 	 * the number of columns defined in the schema.
 	 * 
@@ -361,13 +369,20 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		_coldata.get(c).set(r, UtilFunctions.objectToObject(_schema.get(c), val));
 	}
 
-	public void reset(int nrow)  {
-		getSchema().clear();
-		getColumnNames().clear();
-		if( _colmeta != null ) {
-			for( int i=0; i<_colmeta.size(); i++ )
-				if( !isColumnMetadataDefault(i) )
-					_colmeta.set(i, new ColumnMetadata(0));
+	/**
+	 * 
+	 * @param nrow
+	 * @param clearMeta
+	 */
+	public void reset(int nrow, boolean clearMeta) {
+		if( clearMeta ) {
+			getSchema().clear();
+			getColumnNames().clear();
+			if( _colmeta != null ) {
+				for( int i=0; i<_colmeta.size(); i++ )
+					if( !isColumnMetadataDefault(i) )
+						_colmeta.set(i, new ColumnMetadata(0));
+			}
 		}
 		if(_coldata != null) {
 			for( int i=0; i < _coldata.size(); i++ )
@@ -375,8 +390,11 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		}
 	}
 
+	/**
+	 * 
+	 */
 	public void reset() {
-		reset(0);
+		reset(0, true);
 	}
 	
 
@@ -716,7 +734,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		if( ret == null )
 			ret = new FrameBlock();
 		else
-			ret.reset(ru-rl+1);
+			ret.reset(ru-rl+1, true);
 		
 		//copy output schema and colnames
 		for( int j=cl; j<=cu; j++ ) {
@@ -973,7 +991,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			result=new FrameBlock(getSchema());
 		else 
 		{
-			result.reset(0);
+			result.reset(0, true);
 			result.setSchema(getSchema());
 		}
 		result.ensureAllocatedColumns(brlen);

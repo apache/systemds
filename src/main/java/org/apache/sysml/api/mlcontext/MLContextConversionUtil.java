@@ -601,7 +601,8 @@ public class MLContextConversionUtil {
 				new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
 		JavaPairRDD<Long, FrameBlock> rdd;
 		try {
-			rdd = FrameRDDConverterUtils.csvToBinaryBlock(jsc, javaPairRDDText, mc, false, ",", false, -1);
+			rdd = FrameRDDConverterUtils.csvToBinaryBlock(jsc, javaPairRDDText, mc, 
+					frameObject.getSchema(), false, ",", false, -1);
 		} catch (DMLRuntimeException e) {
 			e.printStackTrace();
 			return null;

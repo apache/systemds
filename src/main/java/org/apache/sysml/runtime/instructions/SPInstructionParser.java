@@ -34,12 +34,13 @@ import org.apache.sysml.lops.WeightedSquaredLoss;
 import org.apache.sysml.lops.WeightedSquaredLossR;
 import org.apache.sysml.lops.WeightedUnaryMM;
 import org.apache.sysml.lops.WeightedUnaryMMR;
-import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.spark.AggregateTernarySPInstruction;
 import org.apache.sysml.runtime.instructions.spark.AggregateUnarySPInstruction;
 import org.apache.sysml.runtime.instructions.spark.AppendGAlignedSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.AppendGSPInstruction;
+import org.apache.sysml.runtime.instructions.spark.AppendMSPInstruction;
+import org.apache.sysml.runtime.instructions.spark.AppendRSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.ArithmeticBinarySPInstruction;
 import org.apache.sysml.runtime.instructions.spark.BinUaggChainSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.BuiltinBinarySPInstruction;
@@ -53,13 +54,9 @@ import org.apache.sysml.runtime.instructions.spark.CovarianceSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.CpmmSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.CumulativeAggregateSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.CumulativeOffsetSPInstruction;
-import org.apache.sysml.runtime.instructions.spark.FrameAppendMSPInstruction;
-import org.apache.sysml.runtime.instructions.spark.FrameAppendRSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.IndexingSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.MapmmChainSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.MapmmSPInstruction;
-import org.apache.sysml.runtime.instructions.spark.MatrixAppendMSPInstruction;
-import org.apache.sysml.runtime.instructions.spark.MatrixAppendRSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.MatrixReshapeSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.MultiReturnParameterizedBuiltinSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.PMapmmSPInstruction;
@@ -81,7 +78,6 @@ import org.apache.sysml.runtime.instructions.spark.QuantileSortSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.UaggOuterChainSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.WriteSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.ZipmmSPInstruction;
-import org.apache.sysml.runtime.util.UtilFunctions;
 
 
 public class SPInstructionParser extends InstructionParser 
@@ -392,23 +388,17 @@ public class SPInstructionParser extends InstructionParser
 			case MatrixReshape:
 				return MatrixReshapeSPInstruction.parseInstruction(str);
 				
-			case MAppend:
-				if(UtilFunctions.getDataType(str, 1) == DataType.MATRIX)
-					return MatrixAppendMSPInstruction.parseInstruction(str);
-				else
-					return FrameAppendMSPInstruction.parseInstruction(str);
+			case MAppend: //matrix/frame
+				return AppendMSPInstruction.parseInstruction(str);
+				
+			case RAppend: //matrix/frame
+				return AppendRSPInstruction.parseInstruction(str);
 			
-			case GAppend:
+			case GAppend: 
 				return AppendGSPInstruction.parseInstruction(str);
 			
 			case GAlignedAppend:
 				return AppendGAlignedSPInstruction.parseInstruction(str);
-				
-			case RAppend:
-				if(UtilFunctions.getDataType(str, 1) == DataType.MATRIX)
-					return MatrixAppendRSPInstruction.parseInstruction(str);
-				else
-					return FrameAppendRSPInstruction.parseInstruction(str);
 				
 			case Rand:
 				return RandSPInstruction.parseInstruction(str);

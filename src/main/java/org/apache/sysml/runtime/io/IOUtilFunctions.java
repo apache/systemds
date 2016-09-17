@@ -192,6 +192,52 @@ public class IOUtilFunctions
 	}
 	
 	/**
+	 * 
+	 * @param str
+	 * @param delim
+	 * @param tokens
+	 * @return
+	 */
+	public static String[] splitCSV(String str, String delim, String[] tokens)
+	{
+		// check for empty input
+		if( str == null || str.isEmpty() )
+			return new String[]{""};
+		
+		// scan string and create individual tokens
+		int from = 0, to = 0; 
+		int len = str.length();
+		int pos = 0;
+		while( from < len  ) { // for all tokens
+			if( str.charAt(from) == CSV_QUOTE_CHAR ) {
+				to = str.indexOf(CSV_QUOTE_CHAR, from+1);
+				// handle escaped inner quotes, e.g. "aa""a"
+				while( to+1 < len && str.charAt(to+1)==CSV_QUOTE_CHAR )
+					to = str.indexOf(CSV_QUOTE_CHAR, to+2); // to + ""
+				to += 1; // last "
+			}
+			else if(str.regionMatches(from, delim, 0, delim.length())) {
+				to = from; // empty string
+			}
+			else { // default: unquoted non-empty
+				to = str.indexOf(delim, from+1);
+			}
+			
+			// slice out token and advance position
+			to = (to >= 0) ? to : len;
+			tokens[pos++] = str.substring(from, to);
+			from = to + delim.length();
+		}
+		
+		// handle empty string at end
+		if( from == len )
+			tokens[pos] = "";
+			
+		// return tokens
+		return tokens;
+	}
+	
+	/**
 	 * Counts the number of tokens defined by the given delimiter, respecting 
 	 * the rules for quotes and escapes defined in RFC4180.
 	 * 

@@ -19,8 +19,12 @@
 
 package org.apache.sysml.runtime.instructions.spark;
 
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.functionobjects.OffsetColumnIndex;
+import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.matrix.operators.Operator;
+import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
 
 
 public abstract class AppendRSPInstruction extends BinarySPInstruction
@@ -32,6 +36,32 @@ public abstract class AppendRSPInstruction extends BinarySPInstruction
 		super(op, in1, in2, out, opcode, istr);
 		_sptype = SPINSTRUCTION_TYPE.RAppend;
 		_cbind = cbind;
+	}
+
+	public static AppendRSPInstruction parseInstruction ( String str ) 
+		throws DMLRuntimeException 
+	{	
+		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
+		InstructionUtils.checkNumFields (parts, 4);
+		
+		String opcode = parts[0];
+		CPOperand in1 = new CPOperand(parts[1]);
+		CPOperand in2 = new CPOperand(parts[2]);
+		CPOperand out = new CPOperand(parts[3]);
+		boolean cbind = Boolean.parseBoolean(parts[4]);
+		
+		if(!opcode.equalsIgnoreCase("rappend"))
+			throw new DMLRuntimeException("Unknown opcode while parsing a MatrixAppendRSPInstruction: " + str);
+		
+		if( in1.getDataType().isMatrix() ) {
+			return new MatrixAppendRSPInstruction(new ReorgOperator(OffsetColumnIndex
+					.getOffsetColumnIndexFnObject(-1)), in1, in2, out, cbind, opcode, str);
+		}
+		else { //frame
+
+			return new FrameAppendRSPInstruction(new ReorgOperator(OffsetColumnIndex
+					.getOffsetColumnIndexFnObject(-1)), in1, in2, out, cbind, opcode, str);
+		}
 	}
 }
 

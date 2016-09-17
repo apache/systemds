@@ -82,47 +82,8 @@ public class FrameRDDConverterUtils
 	 * 
 	 * @param sc
 	 * @param input
-	 * @param mcOut
-	 * @param hasHeader
-	 * @param delim
-	 * @param fill
-	 * @param missingValue
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
-	public static JavaPairRDD<Long, FrameBlock> csvToBinaryBlock(JavaSparkContext sc,
-			JavaPairRDD<LongWritable, Text> input, MatrixCharacteristics mcOut, 
-			boolean hasHeader, String delim, boolean fill, double fillValue) 
-		throws DMLRuntimeException 
-	{
-		//determine unknown dimensions and sparsity if required
-		if( !mcOut.dimsKnown(true) ) {
-			JavaRDD<String> tmp = input.values()
-					.map(new TextToStringFunction());
-			String tmpStr = tmp.first();
-			boolean metaHeader = tmpStr.startsWith(TfUtils.TXMTD_MVPREFIX) 
-					|| tmpStr.startsWith(TfUtils.TXMTD_NDPREFIX);
-			tmpStr = (metaHeader) ? tmpStr.substring(tmpStr.indexOf(delim)+1) : tmpStr;
-			long rlen = tmp.count() - (hasHeader ? 1 : 0) - (metaHeader ? 2 : 0);
-			long clen = IOUtilFunctions.splitCSV(tmpStr, delim).length;
-			mcOut.set(rlen, clen, mcOut.getRowsPerBlock(), mcOut.getColsPerBlock(), -1);
-		}
-		
-		//prepare csv w/ row indexes (sorted by filenames)
-		JavaPairRDD<Text,Long> prepinput = input.values()
-				.zipWithIndex(); //zip row index
-		
-		//convert csv rdd to binary block rdd (w/ partial blocks)
-		JavaPairRDD<Long, FrameBlock> out = prepinput
-				.mapPartitionsToPair(new CSVToBinaryBlockFunction(mcOut, hasHeader, delim, fill));
-		
-		return out;
-	}
-	
-	/**
-	 * @param sc 
-	 * @param input
-	 * @param mcOut
+	 * @param mc
+	 * @param schema
 	 * @param hasHeader
 	 * @param delim
 	 * @param fill
@@ -131,7 +92,55 @@ public class FrameRDDConverterUtils
 	 * @throws DMLRuntimeException
 	 */
 	public static JavaPairRDD<Long, FrameBlock> csvToBinaryBlock(JavaSparkContext sc,
-			JavaRDD<String> input, MatrixCharacteristics mcOut, 
+			JavaPairRDD<LongWritable, Text> input, MatrixCharacteristics mc, List<ValueType> schema,
+			boolean hasHeader, String delim, boolean fill, double fillValue) 
+		throws DMLRuntimeException 
+	{
+		//determine unknown dimensions and sparsity if required
+		if( !mc.dimsKnown() ) { //nnz irrelevant here
+ 			JavaRDD<String> tmp = input.values()
+					.map(new TextToStringFunction());
+			String tmpStr = tmp.first();
+			boolean metaHeader = tmpStr.startsWith(TfUtils.TXMTD_MVPREFIX) 
+					|| tmpStr.startsWith(TfUtils.TXMTD_NDPREFIX);
+			tmpStr = (metaHeader) ? tmpStr.substring(tmpStr.indexOf(delim)+1) : tmpStr;
+			long rlen = tmp.count() - (hasHeader ? 1 : 0) - (metaHeader ? 2 : 0);
+			long clen = IOUtilFunctions.splitCSV(tmpStr, delim).length;
+			mc.set(rlen, clen, mc.getRowsPerBlock(), mc.getColsPerBlock(), -1);
+		}
+		
+		//prepare csv w/ row indexes (sorted by filenames)
+		JavaPairRDD<Text,Long> prepinput = input.values()
+				.zipWithIndex(); //zip row index
+		
+		//prepare default schema if needed
+		if( schema == null || schema.size()==1 ) {
+			schema = Collections.nCopies((int)mc.getCols(), 
+				(schema!=null) ? schema.get(0) : ValueType.STRING);
+		}
+			
+		//convert csv rdd to binary block rdd (w/ partial blocks)
+		JavaPairRDD<Long, FrameBlock> out = prepinput.mapPartitionsToPair(
+				new CSVToBinaryBlockFunction(mc, schema, hasHeader, delim));
+		
+		return out;
+	}
+	
+	/**
+	 * 
+	 * @param sc
+	 * @param input
+	 * @param mcOut
+	 * @param schema
+	 * @param hasHeader
+	 * @param delim
+	 * @param fill
+	 * @param fillValue
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static JavaPairRDD<Long, FrameBlock> csvToBinaryBlock(JavaSparkContext sc,
+			JavaRDD<String> input, MatrixCharacteristics mcOut, List<ValueType> schema,
 			boolean hasHeader, String delim, boolean fill, double fillValue) 
 		throws DMLRuntimeException 
 	{
@@ -140,7 +149,7 @@ public class FrameRDDConverterUtils
 				input.mapToPair(new StringToSerTextFunction());
 		
 		//convert to binary block
-		return csvToBinaryBlock(sc, prepinput, mcOut, hasHeader, delim, fill, fillValue);
+		return csvToBinaryBlock(sc, prepinput, mcOut, schema, hasHeader, delim, fill, fillValue);
 	}
 	
 	/**
@@ -151,12 +160,13 @@ public class FrameRDDConverterUtils
 	 * @param strict
 	 * @return
 	 */
-	public static JavaRDD<String> binaryBlockToCsv(JavaPairRDD<Long,FrameBlock> in, MatrixCharacteristics mcIn, CSVFileFormatProperties props, boolean strict)
+	public static JavaRDD<String> binaryBlockToCsv(JavaPairRDD<Long,FrameBlock> in, 
+			MatrixCharacteristics mcIn, CSVFileFormatProperties props, boolean strict)
 	{
 		JavaPairRDD<Long,FrameBlock> input = in;
 		
 		//sort if required (on blocks/rows)
-		if( strict ) {
+		if( strict && !isSorted(input) ) {
 			input = input.sortByKey(true);
 		}
 		
@@ -184,16 +194,12 @@ public class FrameRDDConverterUtils
 			JavaPairRDD<LongWritable, Text> in, MatrixCharacteristics mcOut, List<ValueType> schema ) 
 		throws DMLRuntimeException  
 	{
-		//replicate schema entry if necessary
-		List<ValueType> lschema = (schema.size()==1 && mcOut.getCols()>1) ?
-				Collections.nCopies((int)mcOut.getCols(), schema.get(0)) : schema;
-		
 		//convert input rdd to serializable long/frame block
 		JavaPairRDD<Long,Text> input = 
 				in.mapToPair(new LongWritableTextToLongTextFunction());
 		
 		//do actual conversion
-		return textCellToBinaryBlockLongIndex(sc, input, mcOut, lschema);
+		return textCellToBinaryBlockLongIndex(sc, input, mcOut, schema);
 	}
 
 	/**
@@ -206,12 +212,18 @@ public class FrameRDDConverterUtils
 	 * @throws DMLRuntimeException
 	 */
 	public static JavaPairRDD<Long, FrameBlock> textCellToBinaryBlockLongIndex(JavaSparkContext sc,
-			JavaPairRDD<Long, Text> input, MatrixCharacteristics mcOut, List<ValueType> schema ) 
+			JavaPairRDD<Long, Text> input, MatrixCharacteristics mc, List<ValueType> schema ) 
 		throws DMLRuntimeException  
 	{
+		//prepare default schema if needed
+		if( schema == null || schema.size()==1 ) {
+			schema = Collections.nCopies((int)mc.getCols(), 
+				(schema!=null) ? schema.get(0) : ValueType.STRING);
+		}
 		
  		//convert textcell rdd to binary block rdd (w/ partial blocks)
-		JavaPairRDD<Long, FrameBlock> output = input.values().mapPartitionsToPair(new TextToBinaryBlockFunction( mcOut, schema ));
+		JavaPairRDD<Long, FrameBlock> output = input.values()
+				.mapPartitionsToPair(new TextToBinaryBlockFunction( mc, schema ));
 		
 		//aggregate partial matrix blocks
 		JavaPairRDD<Long,FrameBlock> out = 
@@ -250,14 +262,9 @@ public class FrameRDDConverterUtils
 			JavaPairRDD<MatrixIndexes, MatrixBlock> input, MatrixCharacteristics mcIn)
 		throws DMLRuntimeException 
 	{
-		//Do actual conversion
-		JavaPairRDD<Long, FrameBlock> output = matrixBlockToBinaryBlockLongIndex(sc,input, mcIn);
-		
-		//convert input rdd to serializable LongWritable/frame block
-		JavaPairRDD<LongWritable,FrameBlock> out = 
-				output.mapToPair(new LongFrameToLongWritableFrameFunction());
-		
-		return out;
+		//convert and map to serializable LongWritable/frame block
+		return matrixBlockToBinaryBlockLongIndex(sc,input, mcIn)
+			.mapToPair(new LongFrameToLongWritableFrameFunction());
 	}
 	
 
@@ -276,16 +283,17 @@ public class FrameRDDConverterUtils
 		JavaPairRDD<Long, FrameBlock> out = null;
 		
 		if(mcIn.getCols() > mcIn.getColsPerBlock()) {
-			
+			//convert matrix binary block to frame binary block
 			out = input.flatMapToPair(new MatrixToBinaryBlockFunction(mcIn));
 			
 			//aggregate partial frame blocks
-			if(mcIn.getCols() > mcIn.getColsPerBlock())
-				out = (JavaPairRDD<Long, FrameBlock>) RDDAggregateUtils.mergeByFrameKey( out );
+			out = (JavaPairRDD<Long, FrameBlock>) RDDAggregateUtils.mergeByFrameKey( out );
 		}
-		else
+		else {
+			//convert single matrix binary block to frame binary block (w/o shuffle)
 			out = input.mapToPair(new MatrixToBinaryBlockOneColumnBlockFunction(mcIn));
-		
+		}
+			
 		return out;
 	}
 	
@@ -454,7 +462,7 @@ public class FrameRDDConverterUtils
 		JavaRDD<String> dataRdd = sc.textFile(fnameIn);
 		return dataRdd.map(new RowGenerator(schema, delim));
 	}
-	
+
 	/* 
 	 * Row Generator class based on individual line in CSV file.
 	 */
@@ -480,8 +488,50 @@ public class FrameRDDConverterUtils
 		      return RowFactory.create(objects);
 		}
 	}
-	
 
+	/**
+	 * Check if the rdd is already sorted in order to avoid unnecessary
+	 * sampling, shuffle, and sort per partition.
+	 * 
+	 * @param in
+	 * @return
+	 */
+	private static boolean isSorted(JavaPairRDD<Long, FrameBlock> in) {		
+		//check sorted partitions (returns max key if true; -1 otherwise)
+		List<Long> keys = in.keys().mapPartitions(
+				new SortingAnalysisFunction()).collect();
+		long max = 0;
+		for( Long val : keys ) {
+			if( val < max )
+				return false;
+			max = val;
+		}
+		return true;
+	}
+
+	/**
+	 * 
+	 */
+	private static class SortingAnalysisFunction implements FlatMapFunction<Iterator<Long>,Long> 
+	{
+		private static final long serialVersionUID = -5789003262381127469L;
+
+		@Override
+		public Iterable<Long> call(Iterator<Long> arg0) throws Exception 
+		{
+			long max = 0;
+			while( max >= 0 && arg0.hasNext() ) {
+				long val = arg0.next();
+				max = (val < max) ? -1 : val;
+			}			
+			
+			ArrayList<Long> ret = new ArrayList<Long>();	
+			ret.add(max);
+			return ret;
+		}
+	}
+	
+	
 	/////////////////////////////////
 	// CSV-SPECIFIC FUNCTIONS
 	
@@ -578,17 +628,17 @@ public class FrameRDDConverterUtils
 		private long _clen = -1;
 		private boolean _hasHeader = false;
 		private String _delim = null;
-		private boolean _fill = false;
 		private int _maxRowsPerBlock = -1; 
+		private List<ValueType> _schema = null;
 		private List<String> _colnames = null;
 		private List<String> _mvMeta = null; //missing value meta data
 		private List<String> _ndMeta = null; //num distinct meta data
 		
-		public CSVToBinaryBlockFunction(MatrixCharacteristics mc, boolean hasHeader, String delim, boolean fill) {
+		public CSVToBinaryBlockFunction(MatrixCharacteristics mc, List<ValueType> schema, boolean hasHeader, String delim) {
 			_clen = mc.getCols();
+			_schema = schema;
 			_hasHeader = hasHeader;
 			_delim = delim;
-			_fill = fill;
 			_maxRowsPerBlock = Math.max((int) (FrameBlock.BUFFER_SIZE/_clen), 1);
 		}
 
@@ -598,9 +648,9 @@ public class FrameRDDConverterUtils
 		{
 			ArrayList<Tuple2<Long,FrameBlock>> ret = new ArrayList<Tuple2<Long,FrameBlock>>();
 
-			Long[] ix = new Long[1];
-			FrameBlock[] mb = new FrameBlock[1];
-			int iRowsInBlock = 0;
+			long ix = -1;
+			FrameBlock fb = null;
+			String[] tmprow = new String[(int)_clen]; 
 			
 			while( arg0.hasNext() )
 			{
@@ -623,43 +673,59 @@ public class FrameRDDConverterUtils
 				//adjust row index for header and meta data
 				rowix += (_hasHeader ? 0 : 1) - ((_mvMeta == null) ? 0 : 2);
 				
-				if( iRowsInBlock == 0 || iRowsInBlock == _maxRowsPerBlock) {
-					if( iRowsInBlock == _maxRowsPerBlock )
-						flushBlocksToList(ix, mb, ret);
-					createBlocks(rowix, ix, mb);
-					iRowsInBlock = 0;
+				if( fb == null || fb.getNumRows() == _maxRowsPerBlock) {
+					if( fb != null )
+						flushBlocksToList(ix, fb, ret);
+					ix = rowix;
+					fb = createFrameBlock();
 				}
 				
-				//process row data
-				String[] parts = IOUtilFunctions.splitCSV(row, _delim);
-				boolean emptyFound = false;
-				mb[0].appendRow(parts);
-				iRowsInBlock++;
-		
-				//sanity check empty cells filled w/ values
-				IOUtilFunctions.checkAndRaiseErrorCSVEmptyField(row, _fill, emptyFound);
+				//split and process row data 
+				fb.appendRow(IOUtilFunctions.splitCSV(row, _delim, tmprow));
 			}
 		
 			//flush last blocks
-			flushBlocksToList(ix, mb, ret);
+			flushBlocksToList(ix, fb, ret);
 		
 			return ret;
 		}
 		
 		// Creates new state of empty column blocks for current global row index.
-		private void createBlocks(long rowix, Long[] ix, FrameBlock[] mb)
+		private FrameBlock createFrameBlock()
 		{
-			//compute row block index and number of column blocks
-			ix[0] = rowix;
-			mb[0] = new FrameBlock((int)_clen, ValueType.STRING);
+			//frame block with given schema
+			FrameBlock fb = new FrameBlock(_schema);
+			
+			//preallocate physical columns (to avoid re-allocations)
+			fb.ensureAllocatedColumns(_maxRowsPerBlock);
+			fb.reset(0, false); //reset data but keep schema
+			fb.setNumRows(0);   //reset num rows to allow for append
+			
+			//handle meta data
 			if( _colnames != null )
-				mb[0].setColumnNames(_colnames);
+				fb.setColumnNames(_colnames);
 			if( _mvMeta != null )
 				for( int j=0; j<_clen; j++ )
-					mb[0].getColumnMetadata(j).setMvValue(_mvMeta.get(j));
+					fb.getColumnMetadata(j).setMvValue(_mvMeta.get(j));
 			if( _ndMeta != null )
 				for( int j=0; j<_clen; j++ )
-					mb[0].getColumnMetadata(j).setNumDistinct(Long.parseLong(_ndMeta.get(j)));
+					fb.getColumnMetadata(j).setNumDistinct(Long.parseLong(_ndMeta.get(j)));
+		
+			return fb;
+		}
+		
+		/**
+		 * 
+		 * @param ix
+		 * @param fb
+		 * @param ret
+		 * @throws DMLRuntimeException
+		 */
+		private void flushBlocksToList( Long ix, FrameBlock fb, ArrayList<Tuple2<Long,FrameBlock>> ret ) 
+			throws DMLRuntimeException
+		{			
+			if( fb != null && fb.getNumRows()>0 )
+				ret.add(new Tuple2<Long,FrameBlock>(ix, fb));
 		}
 	}
 	
@@ -1084,15 +1150,4 @@ public class FrameRDDConverterUtils
 		}
 	}
 	
-	//////////////////////////////////////
-	// Common functions
-	
-	// Flushes current state of filled column blocks to output list.
-	private static void flushBlocksToList( Long[] ix, FrameBlock[] fb, ArrayList<Tuple2<Long,FrameBlock>> ret ) 
-		throws DMLRuntimeException
-	{			
-		for( int i=0; i<ix.length; i++ )
-			if( fb[i] != null && fb[0].getNumRows()>0 )
-				ret.add(new Tuple2<Long,FrameBlock>(ix[i], fb[i]));
-	}
 }

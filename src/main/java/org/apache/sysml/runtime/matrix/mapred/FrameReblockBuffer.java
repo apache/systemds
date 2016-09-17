@@ -181,7 +181,7 @@ public class FrameReblockBuffer
 				cbi = bi;
 				cbj = bj;					
 				tmpIx = bi;
-				tmpBlock.reset(Math.min(_brlen, (int)(_rlen-(bi-1)*_brlen)));
+				tmpBlock.reset(Math.min(_brlen, (int)(_rlen-(bi-1)*_brlen)), true);
 			}
 			
 			int ci = UtilFunctions.computeCellInBlock(_buff[i].getRow(), _brlen);

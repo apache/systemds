@@ -42,6 +42,7 @@ import org.apache.spark.sql.DataFrame;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.SQLContext;
+import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
@@ -54,6 +55,7 @@ import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysml.runtime.instructions.spark.data.SerLongWritable;
 import org.apache.sysml.runtime.instructions.spark.data.SerText;
 import org.apache.sysml.runtime.instructions.spark.functions.ConvertFrameBlockToIJVLines;
+import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils.DataFrameExtractIDFunction;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
@@ -326,27 +328,29 @@ public class FrameRDDConverterUtils
 	 * @throws DMLRuntimeException
 	 */
 	public static JavaPairRDD<Long, FrameBlock> dataFrameToBinaryBlock(JavaSparkContext sc,
-			DataFrame df, MatrixCharacteristics mcOut, boolean containsID) 
+			DataFrame df, MatrixCharacteristics mc, boolean containsID) 
 		throws DMLRuntimeException 
 	{
-		
-		if(containsID)
-			df = df.drop(RDDConverterUtils.DF_ID_COLUMN);
-		
 		//determine unknown dimensions if required
-		if( !mcOut.dimsKnown(true) ) {
+		if( !mc.dimsKnown() ) { //nnz are irrelevant here
 			JavaRDD<Row> tmp = df.javaRDD();
 			long rlen = tmp.count();
-			long clen = containsID ? (df.columns().length - 1) : df.columns().length;
-			mcOut.set(rlen, clen, mcOut.getRowsPerBlock(), mcOut.getColsPerBlock(), -1);
+			long clen = df.columns().length - (containsID?1:0);
+			mc.set(rlen, clen, mc.getRowsPerBlock(), mc.getColsPerBlock(), -1);
 		}
 		
-		JavaPairRDD<Row, Long> prepinput = df.javaRDD()
-				.zipWithIndex(); //zip row index
-		
+		JavaPairRDD<Row, Long> prepinput = containsID ?
+				df.javaRDD().mapToPair(new DataFrameExtractIDFunction()) :
+				df.javaRDD().zipWithIndex(); //zip row index
+
+		//convert data frame to frame schema (prepare once)
+		List<String> colnames = new ArrayList<String>();
+		List<ValueType> fschema = new ArrayList<ValueType>();
+		convertDFSchemaToFrameSchema(df.schema(), colnames, fschema, containsID);
+				
 		//convert rdd to binary block rdd
-		JavaPairRDD<Long, FrameBlock> out = prepinput
-				.mapPartitionsToPair(new DataFrameToBinaryBlockFunction(mcOut));
+		JavaPairRDD<Long, FrameBlock> out = prepinput.mapPartitionsToPair(
+				new DataFrameToBinaryBlockFunction(mc, colnames, fschema, containsID));
 		
 		return out;
 	}
@@ -359,22 +363,27 @@ public class FrameRDDConverterUtils
 	 * @param strict
 	 * @return
 	 */
-	public static DataFrame binaryBlockToDataFrame(JavaPairRDD<Long,FrameBlock> in, MatrixCharacteristics mcIn, JavaSparkContext sc)
+	public static DataFrame binaryBlockToDataFrame(SQLContext sqlctx, JavaPairRDD<Long,FrameBlock> in, 
+			MatrixCharacteristics mc, List<ValueType> schema)
 	{
-		List<ValueType> schema = in.first()._2().getSchema();
+		if( !mc.colsKnown() )
+			throw new RuntimeException("Number of columns needed to convert binary block to data frame.");
 		
-		//convert binary block to rows rdd (from blocks/rows)
-		JavaRDD<Row> rowRDD = in.flatMap(new BinaryBlockToDataFrameFunction());
+		//convert binary block to rows rdd 
+		JavaRDD<Row> rowRDD = in.flatMap(
+				new BinaryBlockToDataFrameFunction());
 				
-		SQLContext sqlContext = new SQLContext(sc);
-		StructType dfSchema = convertFrameSchemaToDFSchema(schema);
-		DataFrame df = sqlContext.createDataFrame(rowRDD, dfSchema);
+		//create data frame schema
+		if( schema == null )
+			schema = Collections.nCopies((int)mc.getCols(), ValueType.STRING);
+		StructType dfSchema = convertFrameSchemaToDFSchema(schema, true);
 	
-		return df;
+		//rdd to data frame conversion
+		return sqlctx.createDataFrame(rowRDD, dfSchema);
 	}
 	
 	
-	/*
+	/**
 	 * This function will convert Frame schema into DataFrame schema 
 	 * 
 	 *  @param	schema
@@ -382,32 +391,64 @@ public class FrameRDDConverterUtils
 	 *  @return
 	 *  		Returns the DataFrame schema (StructType)
 	 */
-	public static StructType convertFrameSchemaToDFSchema(List<ValueType> lschema)
+	public static StructType convertFrameSchemaToDFSchema(List<ValueType> fschema, boolean containsID)
 	{
-		// Generate the schema based on the string of schema
+		// generate the schema based on the string of schema
 		List<StructField> fields = new ArrayList<StructField>();
 		
-		int i = 1;
-		for (ValueType schema : lschema) {
-			org.apache.spark.sql.types.DataType dataType = DataTypes.StringType;
+		// add id column type
+		if( containsID )
+			fields.add(DataTypes.createStructField(RDDConverterUtils.DF_ID_COLUMN, 
+					DataTypes.DoubleType, true));
+		
+		// add remaining types
+		int col = 1;
+		for (ValueType schema : fschema) {
+			DataType dt = null;
 			switch(schema) {
-				case STRING:  dataType = DataTypes.StringType; break;
-				case DOUBLE:  dataType = DataTypes.DoubleType; break;
-				case INT:     dataType = DataTypes.LongType; break;
-				case BOOLEAN: dataType = DataTypes.BooleanType; break;
-				default:
+				case STRING:  dt = DataTypes.StringType; break;
+				case DOUBLE:  dt = DataTypes.DoubleType; break;
+				case INT:     dt = DataTypes.LongType; break;
+				case BOOLEAN: dt = DataTypes.BooleanType; break;
+				default:      dt = DataTypes.StringType;
 					LOG.warn("Using default type String for " + schema.toString());
 			}
-			fields.add(DataTypes.createStructField("C"+i++, dataType, true));
+			fields.add(DataTypes.createStructField("C"+col++, dt, true));
 		}
 		
 		return DataTypes.createStructType(fields);
 	}
 	
+	/**
+	 * 
+	 * @param dfschema
+	 * @param containsID
+	 * @return
+	 */
+	public static void convertDFSchemaToFrameSchema(StructType dfschema, List<String> colnames, 
+			List<ValueType> fschema, boolean containsID)
+	{
+		int off = containsID ? 1 : 0;
+		for( int i=off; i<dfschema.fields().length; i++ ) {
+			StructField structType = dfschema.apply(i);
+			colnames.add(structType.name());
+			if(structType.dataType() == DataTypes.DoubleType 
+				|| structType.dataType() == DataTypes.FloatType)
+				fschema.add(ValueType.DOUBLE);
+			else if(structType.dataType() == DataTypes.LongType 
+				|| structType.dataType() == DataTypes.IntegerType)
+				fschema.add(ValueType.INT);
+			else if(structType.dataType() == DataTypes.BooleanType)
+				fschema.add(ValueType.BOOLEAN);
+			else
+				fschema.add(ValueType.STRING);
+		}
+	}
+	
 	/* 
 	 * It will return JavaRDD<Row> based on csv data input file.
 	 */
-	public static JavaRDD<Row> getRowRDD(JavaSparkContext sc, String fnameIn, String delim, List<ValueType> schema)
+	public static JavaRDD<Row> csvToRowRDD(JavaSparkContext sc, String fnameIn, String delim, List<ValueType> schema)
 	{
 		// Load a text file and convert each line to a java rdd.
 		JavaRDD<String> dataRdd = sc.textFile(fnameIn);
@@ -695,20 +736,29 @@ public class FrameRDDConverterUtils
 		private static final long serialVersionUID = 2269315691094111843L;
 
 		private long _clen = -1;
+		private List<String> _colnames = null;
+		private List<ValueType> _schema = null;
+		private boolean _containsID = false;
 		private int _maxRowsPerBlock = -1;
 		
-		public DataFrameToBinaryBlockFunction(MatrixCharacteristics mc) {
+		public DataFrameToBinaryBlockFunction(MatrixCharacteristics mc, List<String> colnames, 
+				List<ValueType> schema, boolean containsID) {
 			_clen = mc.getCols();
+			_colnames = colnames;
+			_schema = schema;
+			_containsID = containsID;
 			_maxRowsPerBlock = Math.max((int) (FrameBlock.BUFFER_SIZE/_clen), 1);
 		}
 		
 		@Override
-		public Iterable<Tuple2<Long, FrameBlock>> call(Iterator<Tuple2<Row, Long>> arg0) throws Exception {
+		public Iterable<Tuple2<Long, FrameBlock>> call(Iterator<Tuple2<Row, Long>> arg0) 
+			throws Exception 
+		{
 			ArrayList<Tuple2<Long,FrameBlock>> ret = new ArrayList<Tuple2<Long,FrameBlock>>();
 
-			Long[] ix = new Long[1];
-			FrameBlock[] mb = new FrameBlock[1];
-			int iRowsInBlock = 0;
+			long ix = -1;
+			FrameBlock fb = null;
+			Object[] tmprow = new Object[(int)_clen];
 			
 			while( arg0.hasNext() )
 			{
@@ -716,55 +766,40 @@ public class FrameRDDConverterUtils
 				Row row = tmp._1();
 				long rowix = tmp._2()+1;
 				
-				if( iRowsInBlock == 0 || iRowsInBlock == _maxRowsPerBlock) {
-					if( iRowsInBlock == _maxRowsPerBlock )
-						flushBlocksToList(ix, mb, ret);
-					createBlocks(rowix, ix, mb, row);
-					iRowsInBlock = 0;
+				if( fb == null || fb.getNumRows() == _maxRowsPerBlock) {
+					if( fb != null )
+						flushBlocksToList(ix, fb, ret);
+					ix = rowix;
+					fb = new FrameBlock(_schema, _colnames);
 				}
 				
 				//process row data
-				Object[] parts = rowToObjectArray(row, (int)_clen, mb[0].getSchema());
-				mb[0].appendRow(parts);
-				iRowsInBlock++;
+				int off = _containsID ? 1 : 0;
+				for(int i=off; i<row.size(); i++) {
+					tmprow[i-off] = UtilFunctions.objectToObject(
+							_schema.get(i-off), row.get(i));
+				}
+				fb.appendRow(tmprow);
 			}
 		
 			//flush last blocks
-			flushBlocksToList(ix, mb, ret);
+			flushBlocksToList(ix, fb, ret);
 		
 			return ret;
 		}
 		
-		public Object[] rowToObjectArray(Row row, int _clen, List<ValueType> schema) throws Exception {
-			Object[] ret = new Object[_clen];
-			for(int i = 0; i < row.length(); i++)
-				ret[i] = UtilFunctions.objectToObject(schema.get(i), row.get(i));
-			for(int i=row.length(); i<_clen; i++)
-				ret[i] = "";
-			return ret;
-		}
-
-		// Creates new state of empty column blocks for current global row index.
-		private void createBlocks(long rowix, Long[] ix, FrameBlock[] mb, Row row)
-		{
-			//compute row block index and number of column blocks
-			ix[0] = new Long(rowix);
-			
-			List<String> columns = new ArrayList<String>();
-			List<ValueType> schema = new ArrayList<ValueType>();
-			for (StructField structType: row.schema().fields()) {
-				columns.add(structType.name());
-				if(structType.dataType() == DataTypes.DoubleType || structType.dataType() == DataTypes.FloatType)
-					schema.add(ValueType.DOUBLE);
-				else if(structType.dataType() == DataTypes.LongType || structType.dataType() == DataTypes.IntegerType)
-					schema.add(ValueType.INT);
-				else if(structType.dataType() == DataTypes.BooleanType)
-					schema.add(ValueType.BOOLEAN);
-				else
-					schema.add(ValueType.STRING);
-			}
-			mb[0] = new FrameBlock(schema);
-			mb[0].setColumnNames(columns);
+		/**
+		 * 
+		 * @param ix
+		 * @param fb
+		 * @param ret
+		 * @throws DMLRuntimeException
+		 */
+		private static void flushBlocksToList( Long ix, FrameBlock fb, ArrayList<Tuple2<Long,FrameBlock>> ret ) 
+			throws DMLRuntimeException
+		{			
+			if( fb != null && fb.getNumRows()>0 )
+				ret.add(new Tuple2<Long,FrameBlock>(ix, fb));
 		}
 	}
 
@@ -779,14 +814,21 @@ public class FrameRDDConverterUtils
 		public Iterable<Row> call(Tuple2<Long, FrameBlock> arg0)
 			throws Exception 
 		{
+			long rowIndex = arg0._1();
 			FrameBlock blk = arg0._2();
 			ArrayList<Row> ret = new ArrayList<Row>();
 
 			//handle Frame block data
-			Iterator<Object[]> iter = blk.getObjectRowIterator();
-			while( iter.hasNext() )
-				ret.add(RowFactory.create(iter.next().clone()));
-				
+			int rows = blk.getNumRows();
+			int cols = blk.getNumColumns();
+			for( int i=0; i<rows; i++ ) {
+				Object[] row = new Object[cols+1];
+				row[0] = rowIndex++;
+				for( int j=0; j<cols; j++ )
+					row[j+1] = blk.get(i, j);
+				ret.add(RowFactory.create(row));
+			}
+			
 			return ret;
 		}
 	}
@@ -1046,13 +1088,11 @@ public class FrameRDDConverterUtils
 	// Common functions
 	
 	// Flushes current state of filled column blocks to output list.
-	private static void flushBlocksToList( Long[] ix, FrameBlock[] mb, ArrayList<Tuple2<Long,FrameBlock>> ret ) 
+	private static void flushBlocksToList( Long[] ix, FrameBlock[] fb, ArrayList<Tuple2<Long,FrameBlock>> ret ) 
 		throws DMLRuntimeException
-	{
-		int len = ix.length;			
-		for( int i=0; i<len; i++ )
-			if( mb[i] != null ) {
-				ret.add(new Tuple2<Long,FrameBlock>(ix[i],mb[i]));
-			}	
+	{			
+		for( int i=0; i<ix.length; i++ )
+			if( fb[i] != null && fb[0].getNumRows()>0 )
+				ret.add(new Tuple2<Long,FrameBlock>(ix[i], fb[i]));
 	}
 }

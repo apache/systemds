@@ -197,6 +197,7 @@ public final class MLContextUtil {
 		compilerConfig.set(ConfigType.IGNORE_UNSPECIFIED_ARGS, true);
 		compilerConfig.set(ConfigType.REJECT_READ_WRITE_UNKNOWNS, false);
 		compilerConfig.set(ConfigType.ALLOW_CSE_PERSISTENT_READS, false);
+		compilerConfig.set(ConfigType.MLCONTEXT, true);
 		ConfigurationManager.setGlobalConfig(compilerConfig);
 	}
 

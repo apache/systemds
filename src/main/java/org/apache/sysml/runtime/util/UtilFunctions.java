@@ -423,8 +423,11 @@ public class UtilFunctions
 	 * @return
 	 */
 	public static Object objectToObject(ValueType vt, Object in ) {
-		String str = objectToString(in);
-		return stringToObject(vt, str );
+		if( in instanceof Double && vt == ValueType.DOUBLE 
+			|| in instanceof Long && vt == ValueType.INT )
+			return in; //quick path to avoid double parsing
+		else
+			return stringToObject(vt, objectToString(in) );
 	}
 	
 	/**

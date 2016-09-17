@@ -205,11 +205,8 @@ public class OptimizerUtils
 	
 	/**
 	 * Enables automatic csv-binary block reblock.
-	 * 
-	 * TODO enable by default and remove once file-based transform completely
-	 * removed via frame-based transform/transformapply 
 	 */
-	public static boolean ALLOW_FRAME_CSV_REBLOCK = false;
+	public static boolean ALLOW_FRAME_CSV_REBLOCK = true;
 	
 	
 	public static long GPU_MEMORY_BUDGET = -1;

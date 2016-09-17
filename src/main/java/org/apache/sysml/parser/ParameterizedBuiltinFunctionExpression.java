@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 import org.apache.sysml.hops.Hop.ParamBuiltinOp;
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.parser.LanguageException.LanguageErrorCodes;
 
 
@@ -298,7 +299,9 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 	}
 	
 	// example: A = transform(data=D, txmtd="", txspec="")
-	private void validateTransform(DataIdentifier output, boolean conditional) throws LanguageException {
+	private void validateTransform(DataIdentifier output, boolean conditional) 
+		throws LanguageException 
+	{
 		//validate data
 		checkDataType("transform", TF_FN_PARAM_DATA, DataType.FRAME, conditional);
 		
@@ -336,6 +339,14 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			if ( applyMTD != null)
 				raiseValidateError("Only one of '" + TF_FN_PARAM_APPLYMTD + "' or '" + TF_FN_PARAM_OUTNAMES + "' can be specified in transform().", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 		}
+		
+		// disable frame csv reblocks as transform operates directly over csv files
+		// (this is required to support both file-based transform and frame-based
+		// transform at the same time; hence, transform and frame-based transform
+		// functions over csv cannot be used in the same script; accordingly we
+		// give an appropriate warning)
+		OptimizerUtils.ALLOW_FRAME_CSV_REBLOCK = false;
+		raiseValidateError("Disable frame csv reblock to support file-based transform.", true);
 		
 		// Output is a matrix with same dims as input
 		output.setDataType(DataType.MATRIX);

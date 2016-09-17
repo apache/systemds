@@ -1302,12 +1302,15 @@ public class BinaryOp extends Hop
 		if( cbind && m1_dim2 >= 1 && m2_dim2 >= 0  //column dims known
 			&& m1_dim2+m2_dim2 <= m1_cpb   //output has one column block
 		  ||!cbind && m1_dim1 >= 1 && m2_dim1 >= 0 //row dims known
-			&& m1_dim1+m2_dim1 <= m1_rpb ) //output has one column block
+			&& m1_dim1+m2_dim1 <= m1_rpb   //output has one column block
+		  || dt == DataType.FRAME ) 
 		{
 			return AppendMethod.MR_RAPPEND;
 		}
 		
-		// if(mc1.getCols() % mc1.getColsPerBlock() == 0) {
+		//note: below append methods are only supported for matrix, not frame
+		
+		//special case of block-aligned append line
 		if( cbind && m1_dim2 % m1_cpb == 0 
 		   || !cbind && m1_dim1 % m1_rpb == 0 ) 
 		{

@@ -160,7 +160,8 @@ public class FrameRDDConverterUtils
 	 * @param strict
 	 * @return
 	 */
-	public static JavaRDD<String> binaryBlockToCsv(JavaPairRDD<Long,FrameBlock> in, MatrixCharacteristics mcIn, CSVFileFormatProperties props, boolean strict)
+	public static JavaRDD<String> binaryBlockToCsv(JavaPairRDD<Long,FrameBlock> in, 
+			MatrixCharacteristics mcIn, CSVFileFormatProperties props, boolean strict)
 	{
 		JavaPairRDD<Long,FrameBlock> input = in;
 		
@@ -193,16 +194,12 @@ public class FrameRDDConverterUtils
 			JavaPairRDD<LongWritable, Text> in, MatrixCharacteristics mcOut, List<ValueType> schema ) 
 		throws DMLRuntimeException  
 	{
-		//replicate schema entry if necessary
-		List<ValueType> lschema = (schema.size()==1 && mcOut.getCols()>1) ?
-				Collections.nCopies((int)mcOut.getCols(), schema.get(0)) : schema;
-		
 		//convert input rdd to serializable long/frame block
 		JavaPairRDD<Long,Text> input = 
 				in.mapToPair(new LongWritableTextToLongTextFunction());
 		
 		//do actual conversion
-		return textCellToBinaryBlockLongIndex(sc, input, mcOut, lschema);
+		return textCellToBinaryBlockLongIndex(sc, input, mcOut, schema);
 	}
 
 	/**
@@ -215,12 +212,18 @@ public class FrameRDDConverterUtils
 	 * @throws DMLRuntimeException
 	 */
 	public static JavaPairRDD<Long, FrameBlock> textCellToBinaryBlockLongIndex(JavaSparkContext sc,
-			JavaPairRDD<Long, Text> input, MatrixCharacteristics mcOut, List<ValueType> schema ) 
+			JavaPairRDD<Long, Text> input, MatrixCharacteristics mc, List<ValueType> schema ) 
 		throws DMLRuntimeException  
 	{
+		//prepare default schema if needed
+		if( schema == null || schema.size()==1 ) {
+			schema = Collections.nCopies((int)mc.getCols(), 
+				(schema!=null) ? schema.get(0) : ValueType.STRING);
+		}
 		
  		//convert textcell rdd to binary block rdd (w/ partial blocks)
-		JavaPairRDD<Long, FrameBlock> output = input.values().mapPartitionsToPair(new TextToBinaryBlockFunction( mcOut, schema ));
+		JavaPairRDD<Long, FrameBlock> output = input.values()
+				.mapPartitionsToPair(new TextToBinaryBlockFunction( mc, schema ));
 		
 		//aggregate partial matrix blocks
 		JavaPairRDD<Long,FrameBlock> out = 
@@ -259,14 +262,9 @@ public class FrameRDDConverterUtils
 			JavaPairRDD<MatrixIndexes, MatrixBlock> input, MatrixCharacteristics mcIn)
 		throws DMLRuntimeException 
 	{
-		//Do actual conversion
-		JavaPairRDD<Long, FrameBlock> output = matrixBlockToBinaryBlockLongIndex(sc,input, mcIn);
-		
-		//convert input rdd to serializable LongWritable/frame block
-		JavaPairRDD<LongWritable,FrameBlock> out = 
-				output.mapToPair(new LongFrameToLongWritableFrameFunction());
-		
-		return out;
+		//convert and map to serializable LongWritable/frame block
+		return matrixBlockToBinaryBlockLongIndex(sc,input, mcIn)
+			.mapToPair(new LongFrameToLongWritableFrameFunction());
 	}
 	
 
@@ -285,16 +283,17 @@ public class FrameRDDConverterUtils
 		JavaPairRDD<Long, FrameBlock> out = null;
 		
 		if(mcIn.getCols() > mcIn.getColsPerBlock()) {
-			
+			//convert matrix binary block to frame binary block
 			out = input.flatMapToPair(new MatrixToBinaryBlockFunction(mcIn));
 			
 			//aggregate partial frame blocks
-			if(mcIn.getCols() > mcIn.getColsPerBlock())
-				out = (JavaPairRDD<Long, FrameBlock>) RDDAggregateUtils.mergeByFrameKey( out );
+			out = (JavaPairRDD<Long, FrameBlock>) RDDAggregateUtils.mergeByFrameKey( out );
 		}
-		else
+		else {
+			//convert single matrix binary block to frame binary block (w/o shuffle)
 			out = input.mapToPair(new MatrixToBinaryBlockOneColumnBlockFunction(mcIn));
-		
+		}
+			
 		return out;
 	}
 	
@@ -725,10 +724,8 @@ public class FrameRDDConverterUtils
 		private void flushBlocksToList( Long ix, FrameBlock fb, ArrayList<Tuple2<Long,FrameBlock>> ret ) 
 			throws DMLRuntimeException
 		{			
-			if( fb != null && fb.getNumRows()>0 ) {
-				fb.setSchema(_schema); //use shared schema
+			if( fb != null && fb.getNumRows()>0 )
 				ret.add(new Tuple2<Long,FrameBlock>(ix, fb));
-			}
 		}
 	}
 	

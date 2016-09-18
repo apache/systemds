@@ -204,6 +204,10 @@ public class SparkExecutionContext extends ExecutionContext
 				org.apache.sysml.api.mlcontext.MLContext mlCtx = (org.apache.sysml.api.mlcontext.MLContext) mlCtxObj;
 				_spctx = new JavaSparkContext(mlCtx.getSparkContext());
 			}
+
+			//always set unlimited result size (required for cp collect)
+			if(!(DMLScript.USE_LOCAL_SPARK_CONFIG))
+				_spctx.getConf().set("spark.driver.maxResultSize", "0");
 		}
 		else 
 		{

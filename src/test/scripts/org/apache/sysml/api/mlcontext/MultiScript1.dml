@@ -1,0 +1,2 @@
+X = rand(rows=$rows, cols=$cols);
+write(X, "out/X", format="binary");

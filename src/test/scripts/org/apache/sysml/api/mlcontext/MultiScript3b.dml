@@ -1,0 +1,4 @@
+X = read("out/X", format="binary");
+Y = read("out/Y", format="binary");
+z = sum(X + Y);
+write(z, "out/z");

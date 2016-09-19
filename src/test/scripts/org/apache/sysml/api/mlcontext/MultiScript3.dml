@@ -1,0 +1,2 @@
+z = sum(X + Y);
+write(z, "out/z");

@@ -32,15 +32,11 @@ public class Location implements Comparable<Location> {
 	
 	@Override
 	public boolean equals(Object other) {
-		if(other instanceof Location) {
-			Location loc = (Location) other;
-			return loc.beginLine == beginLine && loc.endLine == endLine && loc.beginCol == beginCol && loc.endCol == endCol;
-		}
-		return false;
-	}
-	
-	private int compare(int v1, int v2) {
-		return new Integer(v1).compareTo(v2);
+		if(!( other instanceof Location ))
+			return false;
+		Location loc = (Location) other;
+		return loc.beginLine == beginLine && loc.endLine == endLine 
+				&& loc.beginCol == beginCol && loc.endCol == endCol;
 	}
 	
 	public String toString() {
@@ -49,27 +45,11 @@ public class Location implements Comparable<Location> {
 
 	@Override
 	public int compareTo(Location loc) {
-		if(loc.beginLine == beginLine && loc.endLine == endLine && loc.beginCol == beginCol && loc.endCol == endCol)
-			return 0;
+		int ret1 = Integer.compare(loc.beginLine, beginLine);
+		int ret2 = Integer.compare(loc.endLine, endLine);
+		int ret3 = Integer.compare(loc.beginCol, beginCol);
+		int ret4 = Integer.compare(loc.endCol, endCol);
 		
-		int retVal = compare(beginLine, loc.beginLine);
-		if(retVal != 0) { 
-			return retVal;
-		}
-		else { 
-			retVal = compare(beginCol, loc.beginCol);
-			if(retVal != 0) { 
-				return retVal;
-			}
-			else { 
-				retVal = compare(endLine, loc.endLine);
-				if(retVal != 0) { 
-					return retVal;
-				}
-				else {
-					return compare(endCol, loc.endCol);
-				}
-			}
-		}
+		return (ret1 != 0) ? ret1 : (ret2 != 0) ? ret2 : (ret3 != 0) ? ret3 : ret4;   
 	}
 }

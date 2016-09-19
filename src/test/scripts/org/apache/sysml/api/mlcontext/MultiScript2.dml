@@ -1,0 +1,8 @@
+Y = X^2 + X;
+
+#cut to test cleanup X
+if( sum(X)>1 ){
+   Y = Y + sum(X);
+}
+
+write(Y, "out/Y", format="binary");

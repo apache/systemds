@@ -29,8 +29,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
-import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
-import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.instructions.cp.Data;
 
 import scala.Tuple2;
@@ -332,15 +331,19 @@ public class Script {
 				inputParameters = new LinkedHashMap<String, Object>();
 			}
 			inputParameters.put(name, value);
-		} else {
+		} 
+		else {
 			Data data = MLContextUtil.convertInputType(name, value, metadata);
 			if (data != null) {
+				//store input variable name and data
 				symbolTable.put(name, data);
 				inputVariables.add(name);
-				if (data instanceof MatrixObject || data instanceof FrameObject) {
-					if (metadata != null) {
+				
+				//store matrix/frame meta data and disable variable cleanup
+				if( data instanceof CacheableData ) {
+					if( metadata != null )
 						inputMetadata.put(name, metadata);
-					}
+					((CacheableData<?>)data).enableCleanup(false);
 				}
 			}
 		}

@@ -28,7 +28,6 @@ import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.api.mlcontext.MLContext;
-import org.apache.sysml.api.mlcontext.MLContext.ExplainLevel;
 import org.apache.sysml.api.mlcontext.Matrix;
 import org.apache.sysml.api.mlcontext.Script;
 import org.apache.sysml.test.integration.AutomatedTestBase;
@@ -96,7 +95,6 @@ public class MLContextMultipleScriptsTest extends AutomatedTestBase
 		JavaSparkContext sc = new JavaSparkContext(conf);
 		MLContext ml = new MLContext(sc);
 		ml.setExplain(true);
-		ml.setExplainLevel(ExplainLevel.RUNTIME);
 		
 		String dml1 = baseDirectory + File.separator + "MultiScript1.dml";
 		String dml2 = baseDirectory + File.separator + (wRead?"MultiScript2b.dml":"MultiScript2.dml");

@@ -200,19 +200,13 @@ public class ScriptExecutor {
 	protected void showExplanation() {
 		if (explain) {
 			try {
-				if (explainLevel == null) {
-					System.out.println(Explain.explain(dmlProgram));
-				} else {
-					ExplainType explainType = explainLevel.getExplainType();
-					System.out.println(Explain.explain(dmlProgram, runtimeProgram, explainType));
-				}
-			} catch (HopsException e) {
+				ExplainType explainType = (explainLevel != null) ? 
+						explainLevel.getExplainType() : ExplainType.RUNTIME;
+				System.out.println(Explain.explain(dmlProgram, runtimeProgram, explainType));
+			} 
+			catch (Exception e) {
 				throw new MLContextException("Exception occurred while explaining dml program", e);
-			} catch (DMLRuntimeException e) {
-				throw new MLContextException("Exception occurred while explaining dml program", e);
-			} catch (LanguageException e) {
-				throw new MLContextException("Exception occurred while explaining dml program", e);
-			}
+			} 
 		}
 	}
 

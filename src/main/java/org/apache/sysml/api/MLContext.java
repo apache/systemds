@@ -28,6 +28,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Scanner;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.spark.SparkContext;
@@ -185,6 +187,8 @@ public class MLContext {
 	// static variables in SystemML codebase.
 	private static MLContext _activeMLContext = null;
 	
+	private static final Log LOG = LogFactory.getLog(MLContext.class.getName());
+
 	// Package protected so as to maintain a clean public API for MLContext.
 	// Use MLContextProxy.getActiveMLContext() if necessary
 	static MLContext getActiveMLContext() {
@@ -1332,6 +1336,13 @@ public class MLContext {
 			throw new DMLRuntimeException("Expected spark version >= 1.3.0 for running SystemML");
 		}
 		
+		// MaxResultSize setting need to be set, by default its 1g (required for cp collect)
+		try {
+			sc.getConf().get("spark.driver.maxResultSize");
+		} catch (Exception e) {
+			LOG.warn("Configuration parameter spark.driver.maxResultSize has not, by default it gets set to 1g. You can set it through Spark default configuration setting.");
+		}
+
 		if(setForcedSparkExecType)
 			DMLScript.rtplatform = RUNTIME_PLATFORM.SPARK;
 		else

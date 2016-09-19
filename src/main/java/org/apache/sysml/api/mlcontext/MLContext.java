@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.sysml.api.DMLScript;
@@ -107,6 +109,8 @@ public class MLContext {
 
 	private List<String> scriptHistoryStrings = new ArrayList<String>();
 	private Map<String, Script> scripts = new LinkedHashMap<String, Script>();
+	
+	private static final Log LOG = LogFactory.getLog(MLContext.class.getName());
 
 	/**
 	 * The different explain levels supported by SystemML.
@@ -203,6 +207,13 @@ public class MLContext {
 
 		if (activeMLContext == null) {
 			System.out.println(MLContextUtil.welcomeMessage());
+			
+			// MaxResultSize setting need to be set, by default its 1g (required for cp collect)
+			try {
+				sc.getConf().get("spark.driver.maxResultSize");
+			} catch (Exception e) {
+				LOG.warn("Configuration parameter spark.driver.maxResultSize has not, by default it gets set to 1g. You can set it through Spark default configuration setting.");
+			}
 		}
 
 		this.sc = sc;

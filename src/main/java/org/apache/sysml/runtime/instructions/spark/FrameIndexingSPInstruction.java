@@ -117,6 +117,10 @@ public class FrameIndexingSPInstruction  extends IndexingSPInstruction
 			//put output RDD handle into symbol table
 			sec.setRDDHandleForVariable(output.getName(), out);
 			sec.addLineageRDD(output.getName(), input1.getName());
+			
+			//update schema of output with subset of input schema
+			sec.getFrameObject(output.getName()).setSchema(
+				sec.getFrameObject(input1.getName()).getSchema((int)cl, (int)cu));
 		}
 		//left indexing
 		else if ( opcode.equalsIgnoreCase("leftIndex") || opcode.equalsIgnoreCase("mapLeftIndex"))

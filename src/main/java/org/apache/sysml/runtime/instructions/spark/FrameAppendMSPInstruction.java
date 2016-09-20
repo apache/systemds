@@ -68,6 +68,11 @@ public class FrameAppendMSPInstruction extends AppendMSPInstruction
 		sec.setRDDHandleForVariable(output.getName(), out);
 		sec.addLineageRDD(output.getName(), input1.getName());
 		sec.addLineageBroadcast(output.getName(), input2.getName());
+		
+		//update schema of output with merged input schemas
+		sec.getFrameObject(output.getName()).setSchema(
+			sec.getFrameObject(input1.getName()).mergeSchemas(
+			sec.getFrameObject(input2.getName())));
 	}
 	
 	/** 

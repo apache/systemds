@@ -91,6 +91,33 @@ public class FrameObject extends CacheableData<FrameBlock>
 		return _schema;
 	}
 
+	/**
+	 * 
+	 * @param cl column lower bound, inclusive
+	 * @param cu column upper bound, inclusive
+	 * @return
+	 */
+	public List<ValueType> getSchema(int cl, int cu) {
+		return (_schema!=null && _schema.size()>cu) ? _schema.subList(cl, cu+1) :
+			Collections.nCopies(cu-cl+1, ValueType.STRING);
+	}
+
+	/**
+	 * Creates a new collection which contains the schema of the current
+	 * frame object concatenated with the schema of the passed frame object.
+	 * 
+	 * @param fo
+	 * @return
+	 */
+	public List<ValueType> mergeSchemas(FrameObject fo) {
+		ArrayList<ValueType> ret = new ArrayList<ValueType>();
+		ret.addAll((_schema!=null) ? _schema : 
+			Collections.nCopies((int)getNumColumns(), ValueType.STRING));
+		ret.addAll((fo.getSchema()!=null) ? fo.getSchema() : 
+			Collections.nCopies((int)fo.getNumColumns(), ValueType.STRING));
+		return ret;
+	} 
+	
 	public void setSchema(String schema) {
 		if( schema.equals("*") ) {
 			//populate default schema

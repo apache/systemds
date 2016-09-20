@@ -871,7 +871,7 @@ public class DMLScript
 	 * @throws IOException
 	 * @throws ParseException
 	 */
-	private static void cleanupHadoopExecution( DMLConfig config ) 
+	public static void cleanupHadoopExecution( DMLConfig config ) 
 		throws IOException, ParseException
 	{
 		//create dml-script-specific suffix

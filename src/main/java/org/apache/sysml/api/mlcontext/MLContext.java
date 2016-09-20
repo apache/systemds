@@ -41,7 +41,6 @@ import org.apache.sysml.parser.IntIdentifier;
 import org.apache.sysml.parser.StringIdentifier;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
-import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.Instruction;
@@ -225,14 +224,6 @@ public class MLContext {
 	}
 
 	/**
-	 * Clean up the variables from the buffer pool, including evicted files,
-	 * because the buffer pool holds references.
-	 */
-	public void clearCache() {
-		CacheableData.cleanupCacheDir();
-	}
-
-	/**
 	 * Reset configuration settings to default settings.
 	 */
 	public void resetConfig() {
@@ -268,6 +259,7 @@ public class MLContext {
 		scriptExecutor.setExplain(explain);
 		scriptExecutor.setExplainLevel(explainLevel);
 		scriptExecutor.setStatistics(statistics);
+		scriptExecutor.setInit(scriptHistoryStrings.isEmpty());
 		return execute(script, scriptExecutor);
 	}
 
@@ -552,31 +544,31 @@ public class MLContext {
 	}
 
 	/**
-	 * Clear all the scripts, removing them from the history, and clear the
-	 * cache.
+	 * Closes the mlcontext, which includes the cleanup of static and local
+	 * state as well as scratch space and buffer pool cleanup. Note that the
+	 * spark context is not explicitly closed to allow external reuse.
 	 */
-	public void clear() {
-		Set<String> scriptNames = scripts.keySet();
-		for (String scriptName : scriptNames) {
-			Script script = scripts.get(scriptName);
-			script.clearAll();
-		}
-
-		scripts.clear();
-		scriptHistoryStrings.clear();
-
-		clearCache();
-	}
-
 	public void close() {
 		// reset static status (refs to sc / mlcontext)
 		SparkExecutionContext.resetSparkContextStatic();
 		MLContextProxy.setActive(false);
 		activeMLContext = null;
 
+		// cleanup scratch space and buffer pool
+		try {
+			DMLScript.cleanupHadoopExecution(
+					ConfigurationManager.getDMLConfig());
+		}
+		catch(Exception ex) {
+			throw new MLContextException("Failed to cleanup working directories.", ex);
+		}
+		
 		// clear local status, but do not stop sc as it
 		// may be used or stopped externally
-		clear();
+		for (Script script : scripts.values()) 
+			script.clearAll();
+		scripts.clear();
+		scriptHistoryStrings.clear();
 		resetConfig();
 		sc = null;
 	}

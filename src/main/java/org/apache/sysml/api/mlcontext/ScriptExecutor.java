@@ -114,6 +114,7 @@ public class ScriptExecutor {
 	protected Program runtimeProgram;
 	protected ExecutionContext executionContext;
 	protected Script script;
+	protected boolean init = false;
 	protected boolean explain = false;
 	protected boolean statistics = false;
 	protected ExplainLevel explainLevel;
@@ -198,16 +199,16 @@ public class ScriptExecutor {
 	 * Output a description of the program to standard output.
 	 */
 	protected void showExplanation() {
-		if (explain) {
-			try {
-				ExplainType explainType = (explainLevel != null) ? 
-						explainLevel.getExplainType() : ExplainType.RUNTIME;
-				System.out.println(Explain.explain(dmlProgram, runtimeProgram, explainType));
-			} 
-			catch (Exception e) {
-				throw new MLContextException("Exception occurred while explaining dml program", e);
-			} 
-		}
+		if( !explain ) return;
+			
+		try {
+			ExplainType explainType = (explainLevel != null) ? 
+					explainLevel.getExplainType() : ExplainType.RUNTIME;
+			System.out.println(Explain.explain(dmlProgram, runtimeProgram, explainType));
+		} 
+		catch (Exception e) {
+			throw new MLContextException("Exception occurred while explaining dml program", e);
+		} 
 	}
 
 	/**
@@ -390,6 +391,8 @@ public class ScriptExecutor {
 	 * initialize caching, and reset statistics.
 	 */
 	protected void initializeCachingAndScratchSpace() {
+		if( !init ) return;
+		
 		try {
 			DMLScript.initHadoopExecution(config);
 		} catch (ParseException e) {
@@ -621,6 +624,17 @@ public class ScriptExecutor {
 	 */
 	public void setStatistics(boolean statistics) {
 		this.statistics = statistics;
+	}
+	
+	/**
+	 * Whether or not to initialize the scratch_space, bufferpool, etc. Note that any 
+	 * redundant initialize (e.g., multiple scripts from one MLContext) clears existing 
+	 * files from the scratch space and buffer pool.
+	 *  
+	 * @param init
+	 */
+	public void setInit(boolean init) {
+		this.init = init;
 	}
 
 	/**

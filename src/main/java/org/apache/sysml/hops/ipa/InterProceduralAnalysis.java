@@ -203,7 +203,11 @@ public class InterProceduralAnalysis
 		if( REMOVE_UNNECESSARY_CHECKPOINTS 
 			&& OptimizerUtils.isSparkExecutionMode() )
 		{
+			//remove unnecessary checkpoint before update 
 			removeUnnecessaryCheckpoints(dmlp);
+			
+			//move necessary checkpoint after update
+			moveCheckpointAfterUpdate(dmlp);
 		}
 		
 		//step 7: remove constant binary ops
@@ -1152,9 +1156,8 @@ public class InterProceduralAnalysis
 				for( String cand : cands2 )
 					if( sb.variablesUpdated().containsVariable(cand) && sb.get_hops() != null) 
 					{
-						ArrayList<Hop> hops = sb.get_hops();
-						Hop.resetVisitStatus(hops);
-						for( Hop root : hops )
+						Hop.resetVisitStatus(sb.get_hops());
+						for( Hop root : sb.get_hops() )
 							if( root.getName().equals(cand) &&
 								!HopRewriteUtils.rHasSimpleReadChain(root, cand) ) {
 								chkpointCand.remove(cand);
@@ -1171,6 +1174,82 @@ public class InterProceduralAnalysis
 				chkpointCand.put(chkpoint.getName(), chkpoint);
 			}
 			
+		}
+	}
+
+	/**
+	 * 
+	 * @param dmlp
+	 * @throws HopsException
+	 */
+	private void moveCheckpointAfterUpdate(DMLProgram dmlp) 
+		throws HopsException
+	{
+		//approach: scan over top-level program (guaranteed to be unconditional),
+		//collect checkpoints; determine if used before update; move first checkpoint
+		//after update if not used before update (best effort move which often avoids
+		//the second checkpoint on loops even though used in between)
+		
+		HashMap<String, Hop> chkpointCand = new HashMap<String, Hop>();
+		
+		for( StatementBlock sb : dmlp.getStatementBlocks() ) 
+		{
+			//prune candidates (used before updated)
+			Set<String> cands = new HashSet<String>(chkpointCand.keySet());
+			for( String cand : cands )
+				if( sb.variablesRead().containsVariable(cand) 
+					&& !sb.variablesUpdated().containsVariable(cand) ) 
+				{	
+					//note: variableRead might include false positives due to meta 
+					//data operations like nrow(X) or operations removed by rewrites 
+					//double check hops on basic blocks; otherwise worst-case
+					boolean skipRemove = false;
+					if( sb.get_hops() !=null ) {
+						Hop.resetVisitStatus(sb.get_hops());
+						skipRemove = true;
+						for( Hop root : sb.get_hops() )
+							skipRemove &= !HopRewriteUtils.rContainsRead(root, cand, false);
+					}					
+					if( !skipRemove )
+						chkpointCand.remove(cand);
+				}
+			
+			//prune candidates (updated in conditional control flow)
+			Set<String> cands2 = new HashSet<String>(chkpointCand.keySet());
+			if( sb instanceof IfStatementBlock || sb instanceof WhileStatementBlock 
+				|| sb instanceof ForStatementBlock )
+			{
+				for( String cand : cands2 )
+					if( sb.variablesUpdated().containsVariable(cand) ) {
+						chkpointCand.remove(cand);
+					}
+			}
+			//move checkpoint after update with simple read chain 
+			//(note: right now this only applies if the checkpoints comes from a previous
+			//statement block, within-dag checkpoints should be handled during injection)
+			else
+			{
+				for( String cand : cands2 )
+					if( sb.variablesUpdated().containsVariable(cand) && sb.get_hops() != null) {
+						Hop.resetVisitStatus(sb.get_hops());
+						for( Hop root : sb.get_hops() )
+							if( root.getName().equals(cand) ) {
+								if( HopRewriteUtils.rHasSimpleReadChain(root, cand) ) {
+									chkpointCand.get(cand).setRequiresCheckpoint(false);
+									root.getInput().get(0).setRequiresCheckpoint(true);
+									chkpointCand.put(cand, root.getInput().get(0));
+								}
+								else
+									chkpointCand.remove(cand);		
+							}
+					}	
+			}
+		
+			//collect checkpoints
+			ArrayList<Hop> tmp = collectCheckpoints(sb.get_hops());
+			for( Hop chkpoint : tmp ) {
+				chkpointCand.put(chkpoint.getName(), chkpoint);
+			}
 		}
 	}
 	

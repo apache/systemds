@@ -326,17 +326,32 @@ public class FrameRDDConverterUtils
 	/**
 	 * 
 	 * @param sc
-	 * @param input
-	 * @param mcOut
-	 * @param hasHeader
-	 * @param delim
-	 * @param fill
-	 * @param missingValue
+	 * @param df
+	 * @param mc
+	 * @param containsID
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
 	public static JavaPairRDD<Long, FrameBlock> dataFrameToBinaryBlock(JavaSparkContext sc,
 			DataFrame df, MatrixCharacteristics mc, boolean containsID) 
+		throws DMLRuntimeException 
+	{
+		return dataFrameToBinaryBlock(sc, df, mc, containsID, null, null);
+	}
+
+	/**
+	 * 
+	 * @param sc
+	 * @param df
+	 * @param mc
+	 * @param containsID
+	 * @param colnames
+	 * @param fschema
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static JavaPairRDD<Long, FrameBlock> dataFrameToBinaryBlock(JavaSparkContext sc,
+			DataFrame df, MatrixCharacteristics mc, boolean containsID, List<String> colnames, List<ValueType> fschema) 
 		throws DMLRuntimeException 
 	{
 		//determine unknown dimensions if required
@@ -351,10 +366,12 @@ public class FrameRDDConverterUtils
 				df.javaRDD().mapToPair(new DataFrameExtractIDFunction()) :
 				df.javaRDD().zipWithIndex(); //zip row index
 
-		//convert data frame to frame schema (prepare once)
-		List<String> colnames = new ArrayList<String>();
-		List<ValueType> fschema = new ArrayList<ValueType>();
-		convertDFSchemaToFrameSchema(df.schema(), colnames, fschema, containsID);
+		//convert data frame schema to frame schema (prepare once)
+		if(fschema == null) {
+			colnames = new ArrayList<String>();
+			fschema = new ArrayList<ValueType>();
+			convertDFSchemaToFrameSchema(df.schema(), colnames, fschema, containsID);
+		}
 				
 		//convert rdd to binary block rdd
 		JavaPairRDD<Long, FrameBlock> out = prepinput.mapPartitionsToPair(
@@ -889,7 +906,7 @@ public class FrameRDDConverterUtils
 			int cols = blk.getNumColumns();
 			for( int i=0; i<rows; i++ ) {
 				Object[] row = new Object[cols+1];
-				row[0] = rowIndex++;
+				row[0] = (double)rowIndex++;
 				for( int j=0; j<cols; j++ )
 					row[j+1] = blk.get(i, j);
 				ret.add(RowFactory.create(row));

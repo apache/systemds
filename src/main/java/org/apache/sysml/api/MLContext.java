@@ -88,6 +88,7 @@ import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
+import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.utils.Explain;
 import org.apache.sysml.utils.Explain.ExplainCounts;
 import org.apache.sysml.utils.Statistics;
@@ -1336,12 +1337,27 @@ public class MLContext {
 			throw new DMLRuntimeException("Expected spark version >= 1.3.0 for running SystemML");
 		}
 		
+		String strDriverMaxResSize = "1g";
+		boolean bDriverMaxResSizeSet = true;
 		// MaxResultSize setting need to be set, by default its 1g (required for cp collect)
 		try {
-			sc.getConf().get("spark.driver.maxResultSize");
+			strDriverMaxResSize = sc.getConf().get("spark.driver.maxResultSize");
 		} catch (Exception e) {
-			LOG.warn("Configuration parameter spark.driver.maxResultSize has not, by default it gets set to 1g. You can set it through Spark default configuration setting.");
+			bDriverMaxResSizeSet = false;
 		}
+		long driverMaxResSize = UtilFunctions.parseMemorySize(strDriverMaxResSize); 
+		if (driverMaxResSize != 0 && driverMaxResSize<OptimizerUtils.getLocalMemBudget())
+			if (bDriverMaxResSizeSet)
+				LOG.warn("Configuration parameter spark.driver.maxResultSize set to " 
+						+ UtilFunctions.formatMemorySize(driverMaxResSize)
+						+ " which is less than available memory budget of size " 
+						+ UtilFunctions.formatMemorySize((long)OptimizerUtils.getLocalMemBudget()) + "." 
+						+ " You can set it through Spark default configuration setting either to 0 (unlimited) or to " 
+						+ UtilFunctions.formatMemorySize((long)OptimizerUtils.getLocalMemBudget()));
+			else
+				LOG.warn("Configuration parameter spark.driver.maxResultSize has not set, by default it gets set to 1g." 
+						+ " You can set it through Spark default configuration setting either to 0 (unlimited) or to " 
+						+ UtilFunctions.formatMemorySize((long)OptimizerUtils.getLocalMemBudget()));
 
 		if(setForcedSparkExecType)
 			DMLScript.rtplatform = RUNTIME_PLATFORM.SPARK;

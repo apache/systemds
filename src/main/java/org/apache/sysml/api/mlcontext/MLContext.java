@@ -37,6 +37,7 @@ import org.apache.sysml.api.jmlc.JMLCUtils;
 import org.apache.sysml.api.monitoring.SparkMonitoringUtil;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.parser.DataExpression;
 import org.apache.sysml.parser.Expression;
 import org.apache.sysml.parser.IntIdentifier;
@@ -51,6 +52,7 @@ import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.instructions.spark.functions.SparkListener;
 import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
+import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.utils.Explain.ExplainType;
 
 /**
@@ -208,12 +210,27 @@ public class MLContext {
 		if (activeMLContext == null) {
 			System.out.println(MLContextUtil.welcomeMessage());
 			
+			String strDriverMaxResSize = "1g";
+			boolean bDriverMaxResSizeSet = true;
 			// MaxResultSize setting need to be set, by default its 1g (required for cp collect)
 			try {
-				sc.getConf().get("spark.driver.maxResultSize");
+				strDriverMaxResSize = sc.getConf().get("spark.driver.maxResultSize");
 			} catch (Exception e) {
-				LOG.warn("Configuration parameter spark.driver.maxResultSize has not, by default it gets set to 1g. You can set it through Spark default configuration setting.");
+				bDriverMaxResSizeSet = false;
 			}
+			long driverMaxResSize = UtilFunctions.parseMemorySize(strDriverMaxResSize); 
+			if (driverMaxResSize != 0 && driverMaxResSize<OptimizerUtils.getLocalMemBudget())
+				if (bDriverMaxResSizeSet)
+					LOG.warn("Configuration parameter spark.driver.maxResultSize set to " 
+							+ UtilFunctions.formatMemorySize(driverMaxResSize)
+							+ " which is less than available memory budget of size " 
+							+ UtilFunctions.formatMemorySize((long)OptimizerUtils.getLocalMemBudget()) + "." 
+							+ " You can set it through Spark default configuration setting either to 0 (unlimited) or to " 
+							+ UtilFunctions.formatMemorySize((long)OptimizerUtils.getLocalMemBudget()));
+				else
+					LOG.warn("Configuration parameter spark.driver.maxResultSize has not set, by default it gets set to 1g." 
+							+ " You can set it through Spark default configuration setting either to 0 (unlimited) or to " 
+							+ UtilFunctions.formatMemorySize((long)OptimizerUtils.getLocalMemBudget()));
 		}
 
 		this.sc = sc;

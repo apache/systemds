@@ -1281,8 +1281,9 @@ public class SparkExecutionContext extends ExecutionContext
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in = (JavaPairRDD<MatrixIndexes, MatrixBlock>) 
 				getRDDHandleForMatrixObject(mo, InputInfo.BinaryBlockInputInfo);
 		
-		//persist rdd (force rdd caching)
-		in.count(); //trigger caching to prevent contention			       
+		//persist rdd (force rdd caching, if not already cached)
+		if( !isRDDCached(in.id()) )
+			in.count(); //trigger caching to prevent contention			       
 	}
 	
 	/**

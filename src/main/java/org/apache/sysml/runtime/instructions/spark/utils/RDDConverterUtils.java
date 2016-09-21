@@ -204,19 +204,19 @@ public class RDDConverterUtils
 	 * @throws DMLRuntimeException
 	 */
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> csvToBinaryBlock(JavaSparkContext sc,
-			JavaPairRDD<LongWritable, Text> input, MatrixCharacteristics mcOut, 
+			JavaPairRDD<LongWritable, Text> input, MatrixCharacteristics mc, 
 			boolean hasHeader, String delim, boolean fill, double fillValue) 
 		throws DMLRuntimeException 
 	{
 		//determine unknown dimensions and sparsity if required
-		if( !mcOut.dimsKnown(true) ) {
+		if( !mc.dimsKnown(true) ) {
 			Accumulator<Double> aNnz = sc.accumulator(0L);
 			JavaRDD<String> tmp = input.values()
 					.map(new CSVAnalysisFunction(aNnz, delim));
 			long rlen = tmp.count() - (hasHeader ? 1 : 0);
 			long clen = tmp.first().split(delim).length;
 			long nnz = UtilFunctions.toLong(aNnz.value());
-			mcOut.set(rlen, clen, mcOut.getRowsPerBlock(), mcOut.getColsPerBlock(), nnz);
+			mc.set(rlen, clen, mc.getRowsPerBlock(), mc.getColsPerBlock(), nnz);
 		}
 		
 		//prepare csv w/ row indexes (sorted by filenames)
@@ -224,9 +224,10 @@ public class RDDConverterUtils
 				.zipWithIndex(); //zip row index
 		
 		//convert csv rdd to binary block rdd (w/ partial blocks)
+		boolean sparse = requiresSparseAllocation(prepinput, mc);
 		JavaPairRDD<MatrixIndexes, MatrixBlock> out = 
-				prepinput.mapPartitionsToPair(
-					new CSVToBinaryBlockFunction(mcOut, hasHeader, delim, fill, fillValue));
+				prepinput.mapPartitionsToPair(new CSVToBinaryBlockFunction(
+						mc, sparse, hasHeader, delim, fill, fillValue));
 		
 		//aggregate partial matrix blocks
 		out = RDDAggregateUtils.mergeByKey( out ); 
@@ -298,14 +299,16 @@ public class RDDConverterUtils
 			mc.setBlockSize(ConfigurationManager.getBlocksize());
 		}
 		
+		//construct or reuse row ids
 		JavaPairRDD<Row, Long> prepinput = containsID ?
 				df.javaRDD().mapToPair(new DataFrameExtractIDFunction()) :
 				df.javaRDD().zipWithIndex(); //zip row index
 		
 		//convert csv rdd to binary block rdd (w/ partial blocks)
+		boolean sparse = requiresSparseAllocation(prepinput, mc);
 		JavaPairRDD<MatrixIndexes, MatrixBlock> out = 
 				prepinput.mapPartitionsToPair(
-					new DataFrameToBinaryBlockFunction(mc, containsID, isVector));
+					new DataFrameToBinaryBlockFunction(mc, sparse, containsID, isVector));
 		
 		//aggregate partial matrix blocks
 		out = RDDAggregateUtils.mergeByKey( out ); 
@@ -357,6 +360,28 @@ public class RDDConverterUtils
 		return in.mapToPair(new TextToSerTextFunction());
 	}
 
+	/**
+	 * 
+	 * @param in
+	 * @param mc
+	 * @return
+	 */
+	private static boolean requiresSparseAllocation(JavaPairRDD<?,?> in, MatrixCharacteristics mc) {
+		//if nnz unknown or sparse, pick the robust sparse representation
+		if( !mc.nnzKnown() || (mc.nnzKnown() && MatrixBlock.evalSparseFormatInMemory(
+			mc.getRows(), mc.getCols(), mc.getNonZeros())) ) {
+			return true;
+		}
+		
+		//if dense evaluate expected rows per partition to handle wide matrices
+		//(pick sparse representation if fraction of rows per block less than sparse theshold)
+		double datasize = OptimizerUtils.estimatePartitionedSizeExactSparsity(mc);
+		double rowsize = OptimizerUtils.estimatePartitionedSizeExactSparsity(1, mc.getCols(),
+				mc.getNumRowBlocks(), mc.getColsPerBlock(), Math.ceil((double)mc.getNonZeros()/mc.getRows()));
+		double partsize = Math.ceil(datasize/in.partitions().size());
+		double blksz = Math.min(mc.getRows(), mc.getRowsPerBlock());
+		return partsize/rowsize/blksz < MatrixBlock.SPARSITY_TURN_POINT;
+	}
 	
 	/////////////////////////////////
 	// BINARYBLOCK-SPECIFIC FUNCTIONS
@@ -633,15 +658,14 @@ public class RDDConverterUtils
 		private boolean _fill = false;
 		private double _fillValue = 0;
 		
-		public CSVToBinaryBlockFunction(MatrixCharacteristics mc, boolean hasHeader, String delim, boolean fill, double fillValue)
+		public CSVToBinaryBlockFunction(MatrixCharacteristics mc, boolean sparse, boolean hasHeader, String delim, boolean fill, double fillValue)
 		{
 			_rlen = mc.getRows();
 			_clen = mc.getCols();
 			_brlen = mc.getRowsPerBlock();
 			_bclen = mc.getColsPerBlock();
 			_sparsity = OptimizerUtils.getSparsity(mc);
-			_sparse = mc.nnzKnown() && MatrixBlock.evalSparseFormatInMemory(mc.getRows(), 
-					mc.getCols(), mc.getNonZeros()) && (!fill || fillValue==0);
+			_sparse = sparse && (!fill || fillValue==0);
 			_header = hasHeader;
 			_delim = delim;
 			_fill = fill;
@@ -879,13 +903,12 @@ public class RDDConverterUtils
 		private boolean _containsID;
 		private boolean _isVector;
 		
-		public DataFrameToBinaryBlockFunction(MatrixCharacteristics mc, boolean containsID, boolean isVector) {
+		public DataFrameToBinaryBlockFunction(MatrixCharacteristics mc, boolean sparse, boolean containsID, boolean isVector) {
 			_rlen = mc.getRows();
 			_clen = mc.getCols();
 			_brlen = mc.getRowsPerBlock();
 			_bclen = mc.getColsPerBlock();
-			_sparse = mc.nnzKnown() && MatrixBlock.evalSparseFormatInMemory(
-					mc.getRows(), mc.getCols(), mc.getNonZeros());
+			_sparse = sparse;
 			_containsID = containsID;
 			_isVector = isVector;
 		}

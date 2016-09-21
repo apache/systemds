@@ -75,6 +75,7 @@
 				<include>*:commons-configuration*</include>
 				<include>*:commons-lang*</include>
 				<include>*:commons-logging*</include>
+				<include>*:guava*</include>
 				<include>*:hadoop-auth*</include>
 				<include>*:hadoop-common*</include>
 				<include>*:hadoop-mapreduce-client-core*</include>

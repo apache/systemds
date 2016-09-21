@@ -372,7 +372,7 @@ public class MLContextConversionUtil {
 			frameMetadata.setFrameSchema(new FrameSchema(fschema));
 
 			JavaPairRDD<Long, FrameBlock> binaryBlock = FrameRDDConverterUtils.dataFrameToBinaryBlock(javaSparkContext,
-					dataFrame, matrixCharacteristics, containsID, colnames, fschema);
+					dataFrame, matrixCharacteristics, containsID);
 
 			return MLContextConversionUtil.binaryBlocksToFrameObject(variableName, binaryBlock, frameMetadata);
 		} catch (DMLRuntimeException e) {

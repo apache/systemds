@@ -336,24 +336,6 @@ public class FrameRDDConverterUtils
 			DataFrame df, MatrixCharacteristics mc, boolean containsID) 
 		throws DMLRuntimeException 
 	{
-		return dataFrameToBinaryBlock(sc, df, mc, containsID, null, null);
-	}
-
-	/**
-	 * 
-	 * @param sc
-	 * @param df
-	 * @param mc
-	 * @param containsID
-	 * @param colnames
-	 * @param fschema
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
-	public static JavaPairRDD<Long, FrameBlock> dataFrameToBinaryBlock(JavaSparkContext sc,
-			DataFrame df, MatrixCharacteristics mc, boolean containsID, List<String> colnames, List<ValueType> fschema) 
-		throws DMLRuntimeException 
-	{
 		//determine unknown dimensions if required
 		if( !mc.dimsKnown() ) { //nnz are irrelevant here
 			JavaRDD<Row> tmp = df.javaRDD();
@@ -366,22 +348,11 @@ public class FrameRDDConverterUtils
 				df.javaRDD().mapToPair(new DataFrameExtractIDFunction()) :
 				df.javaRDD().zipWithIndex(); //zip row index
 
-		//convert data frame schema to frame schema (prepare once)
-		if(fschema == null) {
-			colnames = new ArrayList<String>();
-			fschema = new ArrayList<ValueType>();
-			convertDFSchemaToFrameSchema(df.schema(), colnames, fschema, containsID);
-		}
-		if (colnames == null) {
-			colnames = new ArrayList<String>();
-			int off = containsID ? 1 : 0;
-			StructType dfschema = df.schema();
-			for( int i=off; i<dfschema.fields().length; i++ ) {
-				StructField structType = dfschema.apply(i);
-				colnames.add(structType.name());
-			}
-		}
-		
+		//convert data frame to frame schema (prepare once)
+		List<String> colnames = new ArrayList<String>();
+		List<ValueType> fschema = new ArrayList<ValueType>();
+		convertDFSchemaToFrameSchema(df.schema(), colnames, fschema, containsID);
+				
 		//convert rdd to binary block rdd
 		JavaPairRDD<Long, FrameBlock> out = prepinput.mapPartitionsToPair(
 				new DataFrameToBinaryBlockFunction(mc, colnames, fschema, containsID));

@@ -563,11 +563,11 @@ public class UtilFunctions
 	 * @return
 	 */
 	public static String formatMemorySize(long arg) {
-		if (arg > 1024 * 1024 * 1024)
+		if (arg >= 1024 * 1024 * 1024)
 			return String.format("%d GB", arg/(1024*1024*1024));
-		else if (arg > 1024 * 1024)
+		else if (arg >= 1024 * 1024)
 			return String.format("%d MB", arg/(1024*1024));
-		else if (arg > 1024)
+		else if (arg >= 1024)
 			return String.format("%d KB", arg/(1024));
 		else
 			return String.format("%d", arg);

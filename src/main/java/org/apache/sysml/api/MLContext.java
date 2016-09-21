@@ -28,8 +28,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Scanner;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.spark.SparkContext;
@@ -88,7 +86,6 @@ import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
-import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.utils.Explain;
 import org.apache.sysml.utils.Explain.ExplainCounts;
 import org.apache.sysml.utils.Statistics;
@@ -188,8 +185,6 @@ public class MLContext {
 	// static variables in SystemML codebase.
 	private static MLContext _activeMLContext = null;
 	
-	private static final Log LOG = LogFactory.getLog(MLContext.class.getName());
-
 	// Package protected so as to maintain a clean public API for MLContext.
 	// Use MLContextProxy.getActiveMLContext() if necessary
 	static MLContext getActiveMLContext() {
@@ -1337,28 +1332,6 @@ public class MLContext {
 			throw new DMLRuntimeException("Expected spark version >= 1.3.0 for running SystemML");
 		}
 		
-		String strDriverMaxResSize = "1g";
-		boolean bDriverMaxResSizeSet = true;
-		// MaxResultSize setting need to be set, by default its 1g (required for cp collect)
-		try {
-			strDriverMaxResSize = sc.getConf().get("spark.driver.maxResultSize");
-		} catch (Exception e) {
-			bDriverMaxResSizeSet = false;
-		}
-		long driverMaxResSize = UtilFunctions.parseMemorySize(strDriverMaxResSize); 
-		if (driverMaxResSize != 0 && driverMaxResSize<OptimizerUtils.getLocalMemBudget())
-			if (bDriverMaxResSizeSet)
-				LOG.warn("Configuration parameter spark.driver.maxResultSize set to " 
-						+ UtilFunctions.formatMemorySize(driverMaxResSize)
-						+ " which is less than available memory budget of size " 
-						+ UtilFunctions.formatMemorySize((long)OptimizerUtils.getLocalMemBudget()) + "." 
-						+ " You can set it through Spark default configuration setting either to 0 (unlimited) or to " 
-						+ UtilFunctions.formatMemorySize((long)OptimizerUtils.getLocalMemBudget()));
-			else
-				LOG.warn("Configuration parameter spark.driver.maxResultSize has not set, by default it gets set to 1g." 
-						+ " You can set it through Spark default configuration setting either to 0 (unlimited) or to " 
-						+ UtilFunctions.formatMemorySize((long)OptimizerUtils.getLocalMemBudget()));
-
 		if(setForcedSparkExecType)
 			DMLScript.rtplatform = RUNTIME_PLATFORM.SPARK;
 		else

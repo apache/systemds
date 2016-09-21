@@ -87,6 +87,7 @@ public class FrameObject extends CacheableData<FrameBlock>
 		super(fo);
 	}
 	
+	@Override
 	public List<ValueType> getSchema() {
 		return _schema;
 	}

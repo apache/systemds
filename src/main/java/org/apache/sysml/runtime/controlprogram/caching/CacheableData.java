@@ -22,6 +22,7 @@ package org.apache.sysml.runtime.controlprogram.caching;
 import java.io.File;
 import java.io.IOException;
 import java.lang.ref.SoftReference;
+import java.util.List;
 
 import org.apache.commons.lang.mutable.MutableBoolean;
 import org.apache.commons.logging.Log;
@@ -972,6 +973,10 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		return (_data.getInMemorySize() <= CACHING_THRESHOLD);
 	}
 	
+	protected List<ValueType> getSchema() {
+		return null;
+	}
+	
 	/**
 	 * 
 	 */
@@ -1074,7 +1079,10 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			{
 				mc = new MatrixCharacteristics(mc.getRows(), mc.getCols(), ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(), mc.getNonZeros());
 			}
-			MapReduceTool.writeMetaDataFile (filePathAndName + ".mtd", valueType, null, dataType, mc, oinfo, formatProperties);
+			
+			//write the actual meta data file
+			MapReduceTool.writeMetaDataFile (filePathAndName + ".mtd", valueType, 
+					getSchema(), dataType, mc, oinfo, formatProperties);
 		}
 	}
 	

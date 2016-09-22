@@ -247,9 +247,8 @@ winutils.pdb
 
 The following ANTLR dependencies are distributed under the BSD license.
 
-ANTLR 4 Tool (http://www.antlr.org) org.antlr:antlr4-annotations:4.3 (antlr4-4.3.jar)
-ANTLR 4 Runtime Annotations (http://www.antlr.org) org.antlr:antlr4-annotations:4.3
-ANTLR 4 Runtime (http://www.antlr.org) org.antlr:antlr4-runtime:4.3
+ANTLR 4 Tool (http://www.antlr.org) org.antlr:antlr4:4.5.3 (antlr4-4.5.3.jar)
+ANTLR 4 Runtime (http://www.antlr.org) org.antlr:antlr4-runtime:4.5.3
 
 Copyright (c) 2012 Terence Parr and Sam Harwell
 All rights reserved.

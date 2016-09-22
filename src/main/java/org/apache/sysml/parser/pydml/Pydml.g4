@@ -404,4 +404,4 @@ NEWLINE : ( '\r'? '\n' | '\r' ) SPACES?
 }
 ;
 
-SKIP : ( SPACES | COMMENT | LINE_JOINING ) -> skip ;
+SKIP_WS : ( SPACES | COMMENT | LINE_JOINING ) -> skip ;

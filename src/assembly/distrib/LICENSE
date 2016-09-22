@@ -210,8 +210,7 @@ Apache Wink :: JSON4J (http://www.apache.org/wink/wink-json4j/) org.apache.wink:
 
 The following compile-scope ANTLR dependencies are distributed under the BSD license.
 
-ANTLR 4 Runtime Annotations (http://www.antlr.org/antlr4-annotations) org.antlr:antlr4-annotations:4.3
-ANTLR 4 Runtime (http://www.antlr.org/antlr4-runtime) org.antlr:antlr4-runtime:4.3
+ANTLR 4 Runtime (http://www.antlr.org/antlr4-runtime) org.antlr:antlr4-runtime:4.5.3
 
 Copyright (c) 2012 Terence Parr and Sam Harwell
 All rights reserved.

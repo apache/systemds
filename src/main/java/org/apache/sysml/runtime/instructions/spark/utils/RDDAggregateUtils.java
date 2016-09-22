@@ -100,7 +100,7 @@ public class RDDAggregateUtils
 	{
 		//stable sum of blocks per key, by passing correction blocks along with aggregates 		
 		JavaPairRDD<MatrixIndexes, CorrMatrixBlock> tmp = 
-				in.combineByKey( new CreateBlockCombinerFunction(), 
+				in.combineByKey( new CreateCorrBlockCombinerFunction(), 
 							     new MergeSumBlockValueFunction(), 
 							     new MergeSumBlockCombinerFunction() );
 		
@@ -111,28 +111,6 @@ public class RDDAggregateUtils
 		//return the aggregate rdd
 		return out;
 	}
-	
-	/**
-	 * 
-	 * @param in
-	 * @return
-	 */
-//	public static JavaPairRDD<MatrixIndexes, MatrixBlock> sumByKeyStable( MatrixCharacteristics mc, JavaPairRDD<MatrixIndexes, MatrixBlock> in )
-//	{
-//		//stable sum of blocks per key, by passing correction blocks along with aggregates 		
-//		JavaPairRDD<MatrixIndexes, CorrMatrixBlock> tmp = 
-//				in.combineByKey( new CreateBlockCombinerFunction(), 
-//							     new MergeSumBlockValueFunction(), 
-//							     new MergeSumBlockCombinerFunction(),
-//							     new BlockPartitioner(mc, in.partitions().size()));
-//		
-//		//strip-off correction blocks from 					     
-//		JavaPairRDD<MatrixIndexes, MatrixBlock> out =  
-//				tmp.mapValues( new ExtractMatrixBlock() );
-//		
-//		//return the aggregate rdd
-//		return out;
-//	}
 	
 	/**
 	 * 
@@ -191,7 +169,7 @@ public class RDDAggregateUtils
 	{
 		//stable sum of blocks per key, by passing correction blocks along with aggregates 		
 		JavaPairRDD<MatrixIndexes, CorrMatrixBlock> tmp = 
-				in.combineByKey( new CreateBlockCombinerFunction(), 
+				in.combineByKey( new CreateCorrBlockCombinerFunction(), 
 							     new MergeAggBlockValueFunction(aop), 
 							     new MergeAggBlockCombinerFunction(aop) );
 		
@@ -204,30 +182,6 @@ public class RDDAggregateUtils
 	}
 	
 	/**
-	 * 
-	 * @param mc
-	 * @param in
-	 * @param aop
-	 * @return
-	 */
-//	public static JavaPairRDD<MatrixIndexes, MatrixBlock> aggByKeyStable( MatrixCharacteristics mc, JavaPairRDD<MatrixIndexes, MatrixBlock> in, AggregateOperator aop )
-//	{
-//		//stable sum of blocks per key, by passing correction blocks along with aggregates 		
-//		JavaPairRDD<MatrixIndexes, CorrMatrixBlock> tmp = 
-//				in.combineByKey( new CreateBlockCombinerFunction(), 
-//							     new MergeAggBlockValueFunction(aop), 
-//							     new MergeAggBlockCombinerFunction(aop),
-//							     new BlockPartitioner(mc, in.partitions().size()));
-//		
-//		//strip-off correction blocks from 					     
-//		JavaPairRDD<MatrixIndexes, MatrixBlock> out =  
-//				tmp.mapValues( new ExtractMatrixBlock() );
-//		
-//		//return the aggregate rdd
-//		return out;
-//	}
-	
-	/**
 	 * Merges disjoint data of all blocks per key.
 	 * 
 	 * Note: The behavior of this method is undefined for both sparse and dense data if the 
@@ -238,22 +192,12 @@ public class RDDAggregateUtils
 	 */
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> mergeByKey( JavaPairRDD<MatrixIndexes, MatrixBlock> in )
 	{
-		return in.reduceByKey(
-				new MergeBlocksFunction());
+		//use combine by key to avoid unnecessary deep block copies, i.e.
+		//create combiner block once and merge remaining blocks in-place.
+ 		return in.combineByKey( new CreateBlockCombinerFunction(), 
+			    new MergeBlocksFunction(false), 
+			    new MergeBlocksFunction(false) );
 	}
-	
-	/**
-	 * 
-	 * @param mc
-	 * @param in
-	 * @return
-	 */
-//	public static JavaPairRDD<MatrixIndexes, MatrixBlock> mergeByKey( MatrixCharacteristics mc, JavaPairRDD<MatrixIndexes, MatrixBlock> in )
-//	{
-//		return in.reduceByKey(
-//				new BlockPartitioner(mc, in.partitions().size()),
-//				new MergeBlocksFunction());
-//	}
 	
 	/**
 	 * Merges disjoint data of all blocks per key.
@@ -268,13 +212,13 @@ public class RDDAggregateUtils
 	{
 		return in.combineByKey( new CreateRowBlockCombinerFunction(), 
 							    new MergeRowBlockValueFunction(), 
-							    new MergeRowBlockCombinerFunction() );
+							    new MergeBlocksFunction(false) );
 	}
 	
 	/**
 	 * 
 	 */
-	private static class CreateBlockCombinerFunction implements Function<MatrixBlock, CorrMatrixBlock> 
+	private static class CreateCorrBlockCombinerFunction implements Function<MatrixBlock, CorrMatrixBlock> 
 	{
 		private static final long serialVersionUID = -3666451526776017343L;
 
@@ -349,6 +293,22 @@ public class RDDAggregateUtils
 	/**
 	 *
 	 */
+	private static class CreateBlockCombinerFunction implements Function<MatrixBlock, MatrixBlock> 
+	{
+		private static final long serialVersionUID = 1987501624176848292L;
+
+		@Override
+		public MatrixBlock call(MatrixBlock arg0) 
+			throws Exception 
+		{
+			//create deep copy of given block
+			return new MatrixBlock(arg0);
+		}	
+	}
+	
+	/**
+	 *
+	 */
 	private static class CreateRowBlockCombinerFunction implements Function<RowMatrixBlock, MatrixBlock> 
 	{
 		private static final long serialVersionUID = 2866598914232118425L;
@@ -383,26 +343,6 @@ public class RDDAggregateUtils
 			MatrixBlock row = arg1.getValue();
 			MatrixBlock out = arg0; //in-place update
 			out.copy(arg1.getRow(), arg1.getRow(), 0, row.getNumColumns()-1, row, true);
-			out.examSparsity();
-			
-			return out;
-		}	
-	}
-	
-	/**
-	 * 
-	 */
-	private static class MergeRowBlockCombinerFunction implements Function2<MatrixBlock, MatrixBlock, MatrixBlock> 
-	{
-		private static final long serialVersionUID = 5142967296705548000L;
-
-		@Override
-		public MatrixBlock call(MatrixBlock arg0, MatrixBlock arg1) 
-			throws Exception 
-		{
-			//merge second matrix block into first
-			MatrixBlock out = arg0; //in-place update
-			out.merge(arg1, false);
 			out.examSparsity();
 			
 			return out;
@@ -736,11 +676,25 @@ public class RDDAggregateUtils
 	private static class MergeBlocksFunction implements Function2<MatrixBlock, MatrixBlock, MatrixBlock> 
 	{		
 		private static final long serialVersionUID = -8881019027250258850L;
-
+		private boolean _deep = false;
+		
+		@SuppressWarnings("unused")
+		public MergeBlocksFunction() {
+			//by default deep copy first argument
+			this(true); 
+		}
+		
+		public MergeBlocksFunction(boolean deep) {
+			_deep = deep;
+		}
+		
 		@Override
 		public MatrixBlock call(MatrixBlock b1, MatrixBlock b2) 
 			throws Exception 
 		{
+			long b1nnz = b1.getNonZeros();
+			long b2nnz = b2.getNonZeros();
+			
 			// sanity check input dimensions
 			if (b1.getNumRows() != b2.getNumRows() || b1.getNumColumns() != b2.getNumColumns()) {
 				throw new DMLRuntimeException("Mismatched block sizes for: "
@@ -749,14 +703,14 @@ public class RDDAggregateUtils
 			}
 
 			// execute merge (never pass by reference)
-			MatrixBlock ret = new MatrixBlock(b1);
+			MatrixBlock ret = _deep ? new MatrixBlock(b1) : b1;
 			ret.merge(b2, false);
 			ret.examSparsity();
 			
 			// sanity check output number of non-zeros
-			if (ret.getNonZeros() != b1.getNonZeros() + b2.getNonZeros()) {
+			if (ret.getNonZeros() != b1nnz + b2nnz) {
 				throw new DMLRuntimeException("Number of non-zeros does not match: "
-						+ ret.getNonZeros() + " != " + b1.getNonZeros() + " + " + b2.getNonZeros());
+						+ ret.getNonZeros() + " != " + b1nnz + " + " + b2nnz);
 			}
 
 			return ret;

@@ -426,6 +426,25 @@
 							</filesets>
 						</configuration>
 					</execution>
+					<execution>
+						<!-- remove antlr tokens files during initialize phase so antlr4 -->
+						<!-- plugin can regenerate them during generate-sources phase -->
+						<id>remove-antlr-tokens-files</id>
+						<phase>initialize</phase>
+						<goals>
+							<goal>clean</goal>
+						</goals>
+						<configuration>
+							<filesets>
+								<fileset>
+									<directory>src/main/java</directory>
+									<includes>
+										<include>*.tokens</include>
+									</includes>
+								</fileset>
+							</filesets>
+						</configuration>
+					</execution>
 				</executions>
 			</plugin>
 

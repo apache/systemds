@@ -79,6 +79,20 @@ public class FrameObject extends CacheableData<FrameBlock>
 	}
 	
 	/**
+	 * 
+	 * @param fname
+	 * @param meta
+	 * @param schema
+	 * 
+	 */
+	public FrameObject(String fname, MetaData meta, List<ValueType> schema) {
+		this();
+		setFileName(fname);
+		setMetaData(meta);
+		setSchema(schema);
+	}
+	
+	/**
 	 * Copy constructor that copies meta data but NO data.
 	 * 
 	 * @param fo

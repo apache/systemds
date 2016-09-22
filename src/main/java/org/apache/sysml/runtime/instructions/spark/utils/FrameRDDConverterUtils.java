@@ -326,12 +326,9 @@ public class FrameRDDConverterUtils
 	/**
 	 * 
 	 * @param sc
-	 * @param input
-	 * @param mcOut
-	 * @param hasHeader
-	 * @param delim
-	 * @param fill
-	 * @param missingValue
+	 * @param df
+	 * @param mc
+	 * @param containsID
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
@@ -889,7 +886,7 @@ public class FrameRDDConverterUtils
 			int cols = blk.getNumColumns();
 			for( int i=0; i<rows; i++ ) {
 				Object[] row = new Object[cols+1];
-				row[0] = rowIndex++;
+				row[0] = (double)rowIndex++;
 				for( int j=0; j<cols; j++ )
 					row[j+1] = blk.get(i, j);
 				ret.add(RowFactory.create(row));

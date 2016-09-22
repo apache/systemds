@@ -193,7 +193,7 @@ public class MLContextConversionUtil {
 					frameMetadata.asMatrixCharacteristics() : new MatrixCharacteristics();
 			MatrixFormatMetaData mtd = new MatrixFormatMetaData(mc, 
 					OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
-			FrameObject frameObject = new FrameObject(OptimizerUtils.getUniqueTempFileName(), mtd);
+			FrameObject frameObject = new FrameObject(OptimizerUtils.getUniqueTempFileName(), mtd, frameMetadata.getFrameSchema().getSchema());
 			frameObject.acquireModify(frameBlock);
 			frameObject.release();
 			return frameObject;
@@ -282,7 +282,7 @@ public class MLContextConversionUtil {
 				frameMetadata.asMatrixCharacteristics() : new MatrixCharacteristics();
 
 		FrameObject frameObject = new FrameObject(OptimizerUtils.getUniqueTempFileName(), 
-				new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
+				new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo), frameMetadata.getFrameSchema().getSchema());
 		frameObject.setRDDHandle(new RDDObject(binaryBlocks, variableName));
 		return frameObject;
 	}
@@ -365,6 +365,12 @@ public class MLContextConversionUtil {
 				matrixCharacteristics.setDimension(rows, cols);
 				frameMetadata.setMatrixCharacteristics(matrixCharacteristics);
 			}
+			
+			List<String> colnames = new ArrayList<String>();
+			List<ValueType> fschema = new ArrayList<ValueType>();
+			FrameRDDConverterUtils.convertDFSchemaToFrameSchema(dataFrame.schema(), colnames, fschema, containsID);	
+			frameMetadata.setFrameSchema(new FrameSchema(fschema));
+
 			JavaPairRDD<Long, FrameBlock> binaryBlock = FrameRDDConverterUtils.dataFrameToBinaryBlock(javaSparkContext,
 					dataFrame, matrixCharacteristics, containsID);
 
@@ -598,7 +604,7 @@ public class MLContextConversionUtil {
 		JavaSparkContext jsc = MLContextUtil.getJavaSparkContext((MLContext) MLContextProxy.getActiveMLContextForAPI());
 
 		FrameObject frameObject = new FrameObject(OptimizerUtils.getUniqueTempFileName(), 
-				new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
+				new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo), frameMetadata.getFrameSchema().getSchema());
 		JavaPairRDD<Long, FrameBlock> rdd;
 		try {
 			rdd = FrameRDDConverterUtils.csvToBinaryBlock(jsc, javaPairRDDText, mc, 
@@ -659,7 +665,7 @@ public class MLContextConversionUtil {
 		JavaSparkContext jsc = MLContextUtil.getJavaSparkContext((MLContext) MLContextProxy.getActiveMLContextForAPI());
 
 		FrameObject frameObject = new FrameObject(OptimizerUtils.getUniqueTempFileName(), 
-				new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
+				new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo), frameMetadata.getFrameSchema().getSchema());
 		JavaPairRDD<Long, FrameBlock> rdd;
 		try {
 			List<ValueType> lschema = null;

@@ -30,7 +30,7 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
-import org.apache.sysml.runtime.instructions.spark.utils.RDDAggregateUtils;
+import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDAggregateUtils;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
@@ -53,9 +53,9 @@ public class FrameAppendRSPInstruction extends AppendRSPInstruction
 		
 		if(_cbind) {
 			JavaPairRDD<Long,FrameBlock> in1Aligned = in1.mapToPair(new ReduceSideAppendAlignFunction(leftRows));			
-			in1Aligned = (JavaPairRDD<Long, FrameBlock>) RDDAggregateUtils.mergeByFrameKey(in1Aligned);			
+			in1Aligned = FrameRDDAggregateUtils.mergeByKey(in1Aligned);			
 			JavaPairRDD<Long,FrameBlock> in2Aligned = in2.mapToPair(new ReduceSideAppendAlignFunction(leftRows));
-			in2Aligned = (JavaPairRDD<Long, FrameBlock>) RDDAggregateUtils.mergeByFrameKey(in2Aligned);			
+			in2Aligned = FrameRDDAggregateUtils.mergeByKey(in2Aligned);			
 			
 			out = in1Aligned.join(in2Aligned).mapValues(new ReduceSideColumnsFunction(_cbind));
 		} else {	//rbind

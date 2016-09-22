@@ -36,7 +36,7 @@ import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.spark.data.LazyIterableIterator;
 import org.apache.sysml.runtime.instructions.spark.data.PartitionedBroadcast;
 import org.apache.sysml.runtime.instructions.spark.functions.IsFrameBlockInRange;
-import org.apache.sysml.runtime.instructions.spark.utils.RDDAggregateUtils;
+import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDAggregateUtils;
 import org.apache.sysml.runtime.instructions.spark.utils.SparkUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
@@ -111,7 +111,7 @@ public class FrameIndexingSPInstruction  extends IndexingSPInstruction
 				
 				//aggregation if required 
 				if( _aggType != SparkAggType.NONE )
-					out = RDDAggregateUtils.mergeByFrameKey(out);
+					out = FrameRDDAggregateUtils.mergeByKey(out);
 			}
 			
 			//put output RDD handle into symbol table
@@ -164,7 +164,7 @@ public class FrameIndexingSPInstruction  extends IndexingSPInstruction
 				in2 = sec.getFrameBinaryBlockRDDHandleForVariable( input2.getName() )
 					    .flatMapToPair(new SliceRHSForLeftIndexing(ixrange, mcLeft));
 
-				out = (JavaPairRDD<Long, FrameBlock>) RDDAggregateUtils.mergeByFrameKey(in1.union(in2));
+				out = FrameRDDAggregateUtils.mergeByKey(in1.union(in2));
 			}
 			
 			sec.setRDDHandleForVariable(output.getName(), out);

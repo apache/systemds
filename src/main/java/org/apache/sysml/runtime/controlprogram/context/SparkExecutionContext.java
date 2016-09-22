@@ -233,7 +233,15 @@ public class SparkExecutionContext extends ExecutionContext
 				_spctx = new JavaSparkContext(conf);
 			}
 		}
-			
+		
+		// Set warning if spark.driver.maxResultSize is not set. It needs to be set before starting Spark Context for CP collect 
+		String strDriverMaxResSize = _spctx.getConf().get("spark.driver.maxResultSize", "1g");
+		long driverMaxResSize = UtilFunctions.parseMemorySize(strDriverMaxResSize); 
+		if (driverMaxResSize != 0 && driverMaxResSize<OptimizerUtils.getLocalMemBudget())
+			LOG.warn("Configuration parameter spark.driver.maxResultSize set to " + UtilFunctions.formatMemorySize(driverMaxResSize) + "."
+					+ " You can set it through Spark default configuration setting either to 0 (unlimited) or to available memory budget of size " 
+					+ UtilFunctions.formatMemorySize((long)OptimizerUtils.getLocalMemBudget()) + ".");
+		
 		//globally add binaryblock serialization framework for all hdfs read/write operations
 		//TODO if spark context passed in from outside (mlcontext), we need to clean this up at the end 
 		if( MRJobConfiguration.USE_BINARYBLOCK_SERIALIZATION )

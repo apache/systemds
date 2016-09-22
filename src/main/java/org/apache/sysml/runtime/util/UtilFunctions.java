@@ -556,6 +556,24 @@ public class UtilFunctions
 	}
 	
 	/**
+	 * Format a memory size with g/m/k quantifiers into its
+	 * number representation.
+	 * 
+	 * @param arg
+	 * @return
+	 */
+	public static String formatMemorySize(long arg) {
+		if (arg >= 1024 * 1024 * 1024)
+			return String.format("%d GB", arg/(1024*1024*1024));
+		else if (arg >= 1024 * 1024)
+			return String.format("%d MB", arg/(1024*1024));
+		else if (arg >= 1024)
+			return String.format("%d KB", arg/(1024));
+		else
+			return String.format("%d", arg);
+	}
+	
+	/**
 	 * 
 	 * @param low   lower bound (inclusive)
 	 * @param up    upper bound (inclusive)

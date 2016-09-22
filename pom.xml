@@ -426,6 +426,25 @@
 							</filesets>
 						</configuration>
 					</execution>
+					<execution>
+						<!-- remove antlr tokens files during initialize phase so antlr4 -->
+						<!-- plugin can regenerate them during generate-sources phase -->
+						<id>remove-antlr-tokens-files</id>
+						<phase>initialize</phase>
+						<goals>
+							<goal>clean</goal>
+						</goals>
+						<configuration>
+							<filesets>
+								<fileset>
+									<directory>src/main/java</directory>
+									<includes>
+										<include>*.tokens</include>
+									</includes>
+								</fileset>
+							</filesets>
+						</configuration>
+					</execution>
 				</executions>
 			</plugin>
 
@@ -540,6 +559,20 @@
 												<versionRange>[1.0,)</versionRange>
 												<goals>
 													<goal>process</goal>
+												</goals>
+											</pluginExecutionFilter>
+											<action>
+												<ignore>
+												</ignore>
+											</action>
+										</pluginExecution>
+										<pluginExecution>
+											<pluginExecutionFilter>
+												<groupId>org.apache.maven.plugins</groupId>
+												<artifactId>maven-clean-plugin</artifactId>
+												<versionRange>[3.0.0,)</versionRange>
+												<goals>
+													<goal>clean</goal>
 												</goals>
 											</pluginExecutionFilter>
 											<action>

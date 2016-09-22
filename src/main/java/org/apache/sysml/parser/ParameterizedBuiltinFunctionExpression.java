@@ -259,7 +259,13 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			break;
 			
 		default: //always unconditional (because unsupported operation)
-			raiseValidateError("Unsupported parameterized function "+ getOpCode(), false, LanguageErrorCodes.INVALID_PARAMETERS);
+			//handle common issue of transformencode
+			if( getOpCode()==ParameterizedBuiltinFunctionOp.TRANSFORMENCODE )
+				raiseValidateError("Parameterized function "+ getOpCode() +" requires a multi-assignment statement "
+						+ "for data and metadata.", false, LanguageErrorCodes.UNSUPPORTED_EXPRESSION);
+			else
+				raiseValidateError("Unsupported parameterized function "+ getOpCode(), 
+						false, LanguageErrorCodes.UNSUPPORTED_EXPRESSION);
 		}
 		return;
 	}

@@ -480,6 +480,8 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			sec.setRDDHandleForVariable(output.getName(), out);
 			sec.addLineageRDD(output.getName(), params.get("target"));
 			ec.releaseFrameInput(params.get("meta"));
+			sec.getMatrixCharacteristics(output.getName()).set(mc.getRows(), 
+				meta.getNumColumns(), mc.getRowsPerBlock(), mc.getColsPerBlock(), -1);
 		}
 		else {
 			throw new DMLRuntimeException("Unknown parameterized builtin opcode: "+opcode);

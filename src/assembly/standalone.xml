@@ -108,7 +108,6 @@
 				<exclude>*:${artifactId}*</exclude> <!-- exclude from base dir -->
 				<!-- Exclude compile-scoped dependencies since they are in main artifact jar -->
 				<exclude>*:antlr4-runtime*</exclude>
-				<exclude>*:org.abego.treelayout.core*</exclude>
 				<exclude>*:wink-json4j*</exclude>
 			</excludes>
 		</dependencySet>

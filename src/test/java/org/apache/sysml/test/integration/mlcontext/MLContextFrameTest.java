@@ -42,6 +42,7 @@ import org.apache.sysml.api.mlcontext.FrameFormat;
 import org.apache.sysml.api.mlcontext.FrameMetadata;
 import org.apache.sysml.api.mlcontext.FrameSchema;
 import org.apache.sysml.api.mlcontext.MLContext;
+import org.apache.sysml.api.mlcontext.MLContext.ExplainLevel;
 import org.apache.sysml.api.mlcontext.MLResults;
 import org.apache.sysml.api.mlcontext.MatrixFormat;
 import org.apache.sysml.api.mlcontext.MatrixMetadata;
@@ -82,6 +83,7 @@ public class MLContextFrameTest extends AutomatedTestBase {
 		if (sc == null)
 			sc = new JavaSparkContext(conf);
 		ml = new MLContext(sc);
+		ml.setExplainLevel(ExplainLevel.RECOMPILE_HOPS);
 	}
 
 	@Override
@@ -293,7 +295,7 @@ public class MLContextFrameTest extends AutomatedTestBase {
 			}
 
 			if (script_type == SCRIPT_TYPE.DML)
-				script = dml("A=read($A); B=read($B);A[2:3,2:4]=B;C=A[2:3,2:3]").in("$A", fileA, fmA)
+				script = dml("A=read($A); B=read($B);A[2:3,2:4]=B;C=A[2:3,2:3];A[1,1]=234").in("$A", fileA, fmA)
 						.in("$B", fileB, fmB).out("A").out("C");
 			else if (script_type == SCRIPT_TYPE.PYDML)
 				// DO NOT USE ; at the end of any statment, it throws NPE
@@ -309,20 +311,13 @@ public class MLContextFrameTest extends AutomatedTestBase {
 		//Validate output schema
 		List<ValueType> lschemaOutA = Arrays.asList(mlResults.getFrameObject("A").getSchema());
 		List<ValueType> lschemaOutC = Arrays.asList(mlResults.getFrameObject("C").getSchema());
-		if(inputType != IO_TYPE.FILE) {
-			Assert.assertEquals(ValueType.INT, lschemaOutA.get(0));
-			Assert.assertEquals(ValueType.STRING, lschemaOutA.get(1));
-			Assert.assertEquals(ValueType.DOUBLE, lschemaOutA.get(2));
-			Assert.assertEquals(ValueType.BOOLEAN, lschemaOutA.get(3));
-			
-			Assert.assertEquals(ValueType.STRING, lschemaOutC.get(0));
-			Assert.assertEquals(ValueType.DOUBLE, lschemaOutC.get(1));
-		} else {
-			for (int i=0; i < lschemaOutA.size(); i++)
-				Assert.assertEquals(ValueType.STRING, lschemaOutA.get(i));
-			for (int i=0; i < lschemaOutC.size(); i++)
-				Assert.assertEquals(ValueType.STRING, lschemaOutC.get(i));
-		}
+		Assert.assertEquals(ValueType.INT, lschemaOutA.get(0));
+		Assert.assertEquals(ValueType.STRING, lschemaOutA.get(1));
+		Assert.assertEquals(ValueType.DOUBLE, lschemaOutA.get(2));
+		Assert.assertEquals(ValueType.BOOLEAN, lschemaOutA.get(3));
+		
+		Assert.assertEquals(ValueType.STRING, lschemaOutC.get(0));
+		Assert.assertEquals(ValueType.DOUBLE, lschemaOutC.get(1));
 
 		if (outputType == IO_TYPE.JAVA_RDD_STR_CSV) {
 

@@ -266,7 +266,6 @@ public class DataExpression extends DataIdentifier
 				// handle first parameter, which is data and may be unnamed
 				ParameterExpression firstParam = passedParamExprs.get(0);
 				if (firstParam.getName() != null && !firstParam.getName().equals(DataExpression.RAND_DATA)){
-					// throw exception -- must be filename as first parameter
 					errorListener.validationError(blp, bcp, "matrix method must have data parameter as first parameter or unnamed parameter");
 					return null;
 				} else {

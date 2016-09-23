@@ -20,7 +20,6 @@
 package org.apache.sysml.hops;
 
 import java.util.HashMap;
-import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -899,10 +898,10 @@ public class OptimizerUtils
 	 * @param names
 	 * @return
 	 */
-	public static boolean isValidCPDimensions( List<ValueType> schema, List<String> names )
+	public static boolean isValidCPDimensions( ValueType[] schema, String[] names )
 	{
 		// Length of schema and names to be same, and > 0.
-		return (schema != null && names != null && schema.size() > 0 && schema.size() == names.size());
+		return (schema != null && names != null && schema.length > 0 && schema.length == names.length);
 	}
 	
 	/**

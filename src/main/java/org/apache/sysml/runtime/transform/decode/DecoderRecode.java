@@ -54,7 +54,7 @@ public class DecoderRecode extends Decoder
 				for( int j=0; j<_colList.length; j++ ) {
 					int colID = _colList[j];
 					double val = UtilFunctions.objectToDouble(
-							out.getSchema().get(colID-1), out.get(i, colID-1));
+							out.getSchema()[colID-1], out.get(i, colID-1));
 					long key = UtilFunctions.toLong(val);
 					out.set(i, colID-1, _rcMaps[j].get(key));
 				}

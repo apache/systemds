@@ -68,7 +68,7 @@ public class BinAgent extends Encoder
 		super( null, clen );
 	}
 	
-	public BinAgent(JSONObject parsedSpec, List<String> colnames, int clen) 
+	public BinAgent(JSONObject parsedSpec, String[] colnames, int clen) 
 		throws JSONException, IOException 
 	{
 		this(parsedSpec, colnames, clen, false);
@@ -81,7 +81,7 @@ public class BinAgent extends Encoder
 	 * @throws JSONException
 	 * @throws IOException 
 	 */
-	public BinAgent(JSONObject parsedSpec, List<String> colnames, int clen, boolean colsOnly) 
+	public BinAgent(JSONObject parsedSpec, String[] colnames, int clen, boolean colsOnly) 
 		throws JSONException, IOException 
 	{
 		super( null, clen );		
@@ -364,7 +364,7 @@ public class BinAgent extends Encoder
 			int colID = _colList[j];
 			for( int i=0; i<in.getNumRows(); i++ ) {
 				double inVal = UtilFunctions.objectToDouble(
-						in.getSchema().get(colID-1), in.get(i, colID-1));
+						in.getSchema()[colID-1], in.get(i, colID-1));
 				int ix = Arrays.binarySearch(_binMaxs[j], inVal);
 				int binID = ((ix < 0) ? Math.abs(ix+1) : ix) + 1;		
 				out.quickSetValue(i, colID-1, binID);
@@ -384,7 +384,7 @@ public class BinAgent extends Encoder
 		_binMaxs = new double[_colList.length][];
 		for( int j=0; j<_colList.length; j++ ) {
 			int colID = _colList[j]; //1-based
-			int nbins = (int)meta.getColumnMetadata().get(colID-1).getNumDistinct();
+			int nbins = (int)meta.getColumnMetadata()[colID-1].getNumDistinct();
 			_binMins[j] = new double[nbins];
 			_binMaxs[j] = new double[nbins];
 			for( int i=0; i<nbins; i++ ) {

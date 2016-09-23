@@ -180,20 +180,19 @@ public class FrameIndexingDistTest extends AutomatedTestBase
 					inputDir() + " " + rowstart + " " + rowend + " " + colstart + " " + colend + " " + expectedDir();
 				
 				//initialize the frame data.
-				List<ValueType> lschema = Arrays.asList(schema);
-		
+
 				double sparsity=sparsity1;//rand.nextDouble(); 
 		        double[][] A = getRandomMatrix(rows, cols, min, max, sparsity, 1111 /*\\System.currentTimeMillis()*/);
-		        writeInputFrameWithMTD("A", A, true, lschema, OutputInfo.BinaryBlockOutputInfo);	        
+		        writeInputFrameWithMTD("A", A, true, schema, OutputInfo.BinaryBlockOutputInfo);	        
 		        
 		        sparsity=sparsity3;//rand.nextDouble();
 		        double[][] B = getRandomMatrix((int)(rowend-rowstart+1), (int)(colend-colstart+1), min, max, sparsity, 2345 /*System.currentTimeMillis()*/);
-		        List<ValueType> lschemaB = lschema.subList((int)colstart-1, (int)colend); 
+		        ValueType[] lschemaB = Arrays.copyOfRange(schema, (int)colstart-1, (int)colend); 
 		        writeInputFrameWithMTD("B", B, true, lschemaB, OutputInfo.BinaryBlockOutputInfo);	        
 	
 		        sparsity=sparsity2;//rand.nextDouble();
 		        double[][] C = getRandomMatrix((int)(rowend), (int)(cols-colstart+1), min, max, sparsity, 3267 /*System.currentTimeMillis()*/);
-		        List<ValueType> lschemaC = lschema.subList((int)colstart-1, (int)cols); 
+		        ValueType[] lschemaC = Arrays.copyOfRange(schema, (int)colstart-1, (int)cols); 
 		        writeInputFrameWithMTD("C", C, true, lschemaC, OutputInfo.BinaryBlockOutputInfo);	        
 	
 		        sparsity=sparsity4;//rand.nextDoublBe();
@@ -222,11 +221,10 @@ public class FrameIndexingDistTest extends AutomatedTestBase
 					inputDir() + " " + rowstart + " " + rowend + " " + colstart + " " + colend + " " + expectedDir();
 		
 				//initialize the frame data.
-				List<ValueType> lschema = Arrays.asList(schema);
 		
 			    double sparsity = bSparse ? sparsity4 : sparsity2;
 		        double[][] A = getRandomMatrix(rows, cols, min, max, sparsity, 1111 /*\\System.currentTimeMillis()*/);
-		        writeInputFrameWithMTD("A", A, true, lschema, OutputInfo.BinaryBlockOutputInfo);	        
+		        writeInputFrameWithMTD("A", A, true, schema, OutputInfo.BinaryBlockOutputInfo);	        
 		        
 		        ValueType[] schemaB = new ValueType[(int) (colend-colstart+1)]; 
 		        System.arraycopy(schema, (int)(colstart-1), schemaB, 0, (int)(colend-colstart+1)); 

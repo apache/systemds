@@ -310,7 +310,7 @@ public class PreparedScript
 	 * @throws DMLException
 	 */
 	public void setFrame(String varname, String[][] frame, List<ValueType> schema, boolean reuse) throws DMLException {
-		setFrame(varname, DataConverter.convertToFrameBlock(frame, schema), reuse);
+		setFrame(varname, DataConverter.convertToFrameBlock(frame, schema.toArray(new ValueType[0])), reuse);
 	}
 	
 	/**
@@ -324,7 +324,8 @@ public class PreparedScript
 	 * @throws DMLException
 	 */
 	public void setFrame(String varname, String[][] frame, List<ValueType> schema, List<String> colnames, boolean reuse) throws DMLException {
-		setFrame(varname, DataConverter.convertToFrameBlock(frame, schema, colnames), reuse);
+		setFrame(varname, DataConverter.convertToFrameBlock( frame, 
+				schema.toArray(new ValueType[0]), colnames.toArray(new String[0])), reuse);
 	}
 	
 	/**

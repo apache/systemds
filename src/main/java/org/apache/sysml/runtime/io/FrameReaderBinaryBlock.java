@@ -20,7 +20,6 @@
 package org.apache.sysml.runtime.io;
 
 import java.io.IOException;
-import java.util.List;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -51,12 +50,12 @@ public class FrameReaderBinaryBlock extends FrameReader
 	 * @throws IOException 
 	 */
 	@Override
-	public final FrameBlock readFrameFromHDFS(String fname, List<ValueType> schema, List<String> names, long rlen, long clen) 
+	public final FrameBlock readFrameFromHDFS(String fname, ValueType[] schema, String[] names, long rlen, long clen) 
 		throws IOException, DMLRuntimeException 
 	{
 		//allocate output frame block
-		List<ValueType> lschema = createOutputSchema(schema, clen);
-		List<String> lnames = createOutputNames(names, clen);
+		ValueType[] lschema = createOutputSchema(schema, clen);
+		String[] lnames = createOutputNames(names, clen);
 		FrameBlock ret = createOutputFrameBlock(lschema, lnames, rlen);
 		
 		//prepare file access

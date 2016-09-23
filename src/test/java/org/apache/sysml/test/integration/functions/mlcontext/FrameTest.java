@@ -201,7 +201,7 @@ public class FrameTest extends AutomatedTestBase
 		
 		double sparsity=sparsity1;//rand.nextDouble(); 
         double[][] A = getRandomMatrix(rows, cols, min, max, sparsity, 1111 /*\\System.currentTimeMillis()*/);
-        writeInputFrameWithMTD("A", A, true, lschema, oinfo);	        
+        writeInputFrameWithMTD("A", A, true, schema, oinfo);	        
         
         sparsity=sparsity2;//rand.nextDouble();
         double[][] B = getRandomMatrix((int)(bRows), (int)(bCols), min, max, sparsity, 2345 /*System.currentTimeMillis()*/);
@@ -211,7 +211,7 @@ public class FrameTest extends AutomatedTestBase
         for (int i = 0; i < bCols; ++i)
         	schemaB[i] = schema[colstart-1+i];
 		List<ValueType> lschemaB = Arrays.asList(schemaB);
-        writeInputFrameWithMTD("B", B, true, lschemaB, oinfo);	        
+        writeInputFrameWithMTD("B", B, true, schemaB, oinfo);	        
 
         ValueType[] schemaC = new ValueType[colendC-colstartC+1];
         for (int i = 0; i < cCols; ++i)
@@ -226,13 +226,13 @@ public class FrameTest extends AutomatedTestBase
 		{
 			//Create DataFrame for input A 
 			SQLContext sqlContext = new SQLContext(sc);
-			StructType dfSchemaA = FrameRDDConverterUtils.convertFrameSchemaToDFSchema(lschema, false);
-			JavaRDD<Row> rowRDDA = FrameRDDConverterUtils.csvToRowRDD(jsc, input("A"), DataExpression.DEFAULT_DELIM_DELIMITER, lschema);
+			StructType dfSchemaA = FrameRDDConverterUtils.convertFrameSchemaToDFSchema(schema, false);
+			JavaRDD<Row> rowRDDA = FrameRDDConverterUtils.csvToRowRDD(jsc, input("A"), DataExpression.DEFAULT_DELIM_DELIMITER, schema);
 			dfA = sqlContext.createDataFrame(rowRDDA, dfSchemaA);
 			
 			//Create DataFrame for input B 
-			StructType dfSchemaB = FrameRDDConverterUtils.convertFrameSchemaToDFSchema(lschemaB, false);
-			JavaRDD<Row> rowRDDB = FrameRDDConverterUtils.csvToRowRDD(jsc, input("B"), DataExpression.DEFAULT_DELIM_DELIMITER, lschemaB);
+			StructType dfSchemaB = FrameRDDConverterUtils.convertFrameSchemaToDFSchema(schemaB, false);
+			JavaRDD<Row> rowRDDB = FrameRDDConverterUtils.csvToRowRDD(jsc, input("B"), DataExpression.DEFAULT_DELIM_DELIMITER, schemaB);
 			dfB = sqlContext.createDataFrame(rowRDDB, dfSchemaB);
 		}
 

@@ -458,7 +458,7 @@ public class ExecutionContext
 	{
 		FrameObject fo = getFrameObject(varName);
 		if( outputData.getNumColumns()>0 && outputData.getSchema()!=null )
-			fo.setValueType(outputData.getSchema().get(0));
+			fo.setValueType(outputData.getSchema()[0]);
 		fo.acquireModify(outputData);
 		fo.release();
 		    

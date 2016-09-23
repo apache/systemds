@@ -70,8 +70,8 @@ public class DecoderPassThrough extends Decoder
 					ix1 ++;
 				}
 				else { //_colList[ix1] > _dcCols[ix2]
-					off += (int)meta.getColumnMetadata()
-							.get(_dcCols[ix2]-1).getNumDistinct() - 1;
+					off += (int)meta.getColumnMetadata()[_dcCols[ix2]-1]
+							.getNumDistinct() - 1;
 					ix2 ++;
 				}
 			}

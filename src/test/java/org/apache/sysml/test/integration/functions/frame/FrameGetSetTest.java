@@ -19,9 +19,6 @@
 
 package org.apache.sysml.test.integration.functions.frame;
 
-import java.util.Arrays;
-import java.util.List;
-
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.util.UtilFunctions;
@@ -92,14 +89,13 @@ public class FrameGetSetTest extends AutomatedTestBase
 			double[][] A = getRandomMatrix(rows, schema.length, -10, 10, 0.9, 8234); 
 			
 			//init data frame
-			List<ValueType> lschema = Arrays.asList(schema);
-			FrameBlock frame = new FrameBlock(lschema);
+			FrameBlock frame = new FrameBlock(schema);
 			
 			//init data frame 
 			if( itype == InitType.COLUMN ) 
 			{
-				for( int j=0; j<lschema.size(); j++ ) {
-					ValueType vt = lschema.get(j);
+				for( int j=0; j<schema.length; j++ ) {
+					ValueType vt = schema[j];
 					switch( vt ) {
 						case STRING: 
 							String[] tmp1 = new String[rows];
@@ -131,20 +127,20 @@ public class FrameGetSetTest extends AutomatedTestBase
 				}
 			}
 			else if( itype == InitType.ROW_OBJ ) {
-				Object[] row = new Object[lschema.size()];
+				Object[] row = new Object[schema.length];
 				for( int i=0; i<rows; i++ ) {
-					for( int j=0; j<lschema.size(); j++ )
-						A[i][j] = UtilFunctions.objectToDouble(lschema.get(j), 
-								row[j] = UtilFunctions.doubleToObject(lschema.get(j), A[i][j]));
+					for( int j=0; j<schema.length; j++ )
+						A[i][j] = UtilFunctions.objectToDouble(schema[j], 
+								row[j] = UtilFunctions.doubleToObject(schema[j], A[i][j]));
 					frame.appendRow(row);
 				}			
 			}
 			else if( itype == InitType.ROW_STRING ) {
-				String[] row = new String[lschema.size()];
+				String[] row = new String[schema.length];
 				for( int i=0; i<rows; i++ ) {
-					for( int j=0; j<lschema.size(); j++ ) {
-						Object obj = UtilFunctions.doubleToObject(lschema.get(j), A[i][j]);
-						A[i][j] = UtilFunctions.objectToDouble(lschema.get(j), obj);
+					for( int j=0; j<schema.length; j++ ) {
+						Object obj = UtilFunctions.doubleToObject(schema[j], A[i][j]);
+						A[i][j] = UtilFunctions.objectToDouble(schema[j], obj);
 						row[j] = (obj!=null) ? obj.toString() : null;
 					}
 					frame.appendRow(row);
@@ -154,7 +150,7 @@ public class FrameGetSetTest extends AutomatedTestBase
 			//some updates via set
 			for( int i=7; i<13; i++ )
 				for( int j=0; j<=2; j++ ) {
-					frame.set(i, j, UtilFunctions.doubleToObject(lschema.get(j), (double)i*j));
+					frame.set(i, j, UtilFunctions.doubleToObject(schema[j], (double)i*j));
 					A[i][j] = (double)i*j;
 				}
 			
@@ -164,8 +160,8 @@ public class FrameGetSetTest extends AutomatedTestBase
 		
 			//check correct values			
 			for( int i=0; i<rows; i++ ) 
-				for( int j=0; j<lschema.size(); j++ )	{
-					double tmp = UtilFunctions.objectToDouble(lschema.get(j), frame.get(i, j));
+				for( int j=0; j<schema.length; j++ )	{
+					double tmp = UtilFunctions.objectToDouble(schema[j], frame.get(i, j));
 					if( tmp != A[i][j] )
 						Assert.fail("Wrong get value for cell ("+i+","+j+"): "+tmp+", expected: "+A[i][j]);
 				}		

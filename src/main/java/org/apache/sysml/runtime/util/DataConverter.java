@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -629,10 +628,10 @@ public class DataConverter
 		MatrixBlock mb = new MatrixBlock(m, n, false);
 		mb.allocateDenseBlock();
 		
-		List<ValueType> schema = frame.getSchema();
-		int dFreq = Collections.frequency(schema, ValueType.DOUBLE);
+		ValueType[] schema = frame.getSchema();
+		int dFreq = UtilFunctions.frequency(schema, ValueType.DOUBLE);
 		
-		if( dFreq == schema.size() ) {
+		if( dFreq == schema.length ) {
 			// special case double schema (without cell-object creation, 
 			// cache-friendly row-column copy)
 			double[][] a = new double[n][];
@@ -654,7 +653,7 @@ public class DataConverter
 			for( int i=0; i<frame.getNumRows(); i++ ) 
 				for( int j=0; j<frame.getNumColumns(); j++ ) {
 					mb.appendValue(i, j, UtilFunctions.objectToDouble(
-							schema.get(j), frame.get(i, j)));
+							schema[j], frame.get(i, j)));
 				}
 		}
 		
@@ -699,7 +698,7 @@ public class DataConverter
 			return new FrameBlock();
 		
 		//create schema and frame block
-		List<ValueType> schema = Collections.nCopies(data[0].length, ValueType.STRING);
+		ValueType[] schema = UtilFunctions.nCopies(data[0].length, ValueType.STRING);
 		return convertToFrameBlock(data, schema);
 	}
 	
@@ -709,7 +708,7 @@ public class DataConverter
 	 * @param schema
 	 * @return
 	 */
-	public static FrameBlock convertToFrameBlock(String[][] data, List<ValueType> schema) {
+	public static FrameBlock convertToFrameBlock(String[][] data, ValueType[] schema) {
 		//check for empty frame block 
 		if( data == null || data.length==0 )
 			return new FrameBlock();
@@ -725,7 +724,7 @@ public class DataConverter
 	 * @param colnames
 	 * @return
 	 */
-	public static FrameBlock convertToFrameBlock(String[][] data, List<ValueType> schema, List<String> colnames) {
+	public static FrameBlock convertToFrameBlock(String[][] data, ValueType[] schema, String[] colnames) {
 		//check for empty frame block 
 		if( data == null || data.length==0 )
 			return new FrameBlock();
@@ -753,7 +752,7 @@ public class DataConverter
 	 */
 	public static FrameBlock convertToFrameBlock(MatrixBlock mb, ValueType vt) {
 		//create schema and frame block
-		List<ValueType> schema = Collections.nCopies(mb.getNumColumns(), vt);
+		ValueType[] schema = UtilFunctions.nCopies(mb.getNumColumns(), vt);
 		return convertToFrameBlock(mb, schema);
 	}
 	
@@ -763,7 +762,7 @@ public class DataConverter
 	 * @param schema
 	 * @return
 	 */
-	public static FrameBlock convertToFrameBlock(MatrixBlock mb, List<ValueType> schema)
+	public static FrameBlock convertToFrameBlock(MatrixBlock mb, ValueType[] schema)
 	{
 		FrameBlock frame = new FrameBlock(schema);
 		Object[] row = new Object[mb.getNumColumns()];
@@ -780,7 +779,7 @@ public class DataConverter
 					double[] aval = sblock.values(i);
 					for( int j=apos; j<apos+alen; j++ ) {
 						row[aix[j]] = UtilFunctions.doubleToObject(
-								schema.get(aix[j]), aval[j]);					
+								schema[aix[j]], aval[j]);					
 					}
 				}
 				frame.appendRow(row);
@@ -788,9 +787,9 @@ public class DataConverter
 		}
 		else //DENSE
 		{
-			int dFreq = Collections.frequency(schema, ValueType.DOUBLE);
+			int dFreq = UtilFunctions.frequency(schema, ValueType.DOUBLE);
 		
-			if( dFreq == schema.size() ) {
+			if( dFreq == schema.length ) {
 				// special case double schema (without cell-object creation, 
 				// col pre-allocation, and cache-friendly row-column copy)
 				int m = mb.getNumRows();
@@ -816,7 +815,7 @@ public class DataConverter
 				for( int i=0; i<mb.getNumRows(); i++ ) {
 					for( int j=0; j<mb.getNumColumns(); j++ ) {
 							row[j] = UtilFunctions.doubleToObject(
-									schema.get(j), mb.quickGetValue(i, j));
+									schema[j], mb.quickGetValue(i, j));
 					}
 					frame.appendRow(row);
 				}
@@ -1052,7 +1051,7 @@ public class DataConverter
 		//print column names
 		sb.append("#"); sb.append(separator);
 		for( int j=0; j<colLength; j++ ) {
-			sb.append(fb.getColumnNames().get(j));
+			sb.append(fb.getColumnNames()[j]);
 			if( j != colLength-1 )
 				sb.append(separator);
 		}
@@ -1061,7 +1060,7 @@ public class DataConverter
 		//print schema
 		sb.append("#"); sb.append(separator);
 		for( int j=0; j<colLength; j++ ) {
-			sb.append(fb.getSchema().get(j));
+			sb.append(fb.getSchema()[j]);
 			if( j != colLength-1 )
 				sb.append(separator);
 		}
@@ -1078,7 +1077,7 @@ public class DataConverter
 			Object[] row = iter.next();
 			for( int j=0; j<colLength; j++ ) {
 				if( row[j]!=null ) {
-					if( fb.getSchema().get(j) == ValueType.DOUBLE )
+					if( fb.getSchema()[j] == ValueType.DOUBLE )
 						sb.append(df.format(row[j]));
 					else
 						sb.append(row[j]);

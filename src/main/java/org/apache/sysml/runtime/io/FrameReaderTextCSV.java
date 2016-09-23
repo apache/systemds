@@ -20,8 +20,6 @@
 package org.apache.sysml.runtime.io;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -67,7 +65,7 @@ public class FrameReaderTextCSV extends FrameReader
 	 * @throws IOException 
 	 */
 	@Override
-	public final FrameBlock readFrameFromHDFS(String fname, List<ValueType> schema, List<String> names,
+	public final FrameBlock readFrameFromHDFS(String fname, ValueType[] schema, String[] names,
 			long rlen, long clen)
 		throws IOException, DMLRuntimeException 
 	{
@@ -88,8 +86,8 @@ public class FrameReaderTextCSV extends FrameReader
 		}
 		
 		//allocate output frame block
-		List<ValueType> lschema = createOutputSchema(schema, clen);
-		List<String> lnames = createOutputNames(names, clen);
+		ValueType[] lschema = createOutputSchema(schema, clen);
+		String[] lnames = createOutputNames(names, clen);
 		FrameBlock ret = createOutputFrameBlock(lschema, lnames, rlen);
 	
 		//core read (sequential/parallel) 
@@ -112,7 +110,7 @@ public class FrameReaderTextCSV extends FrameReader
 	 * @throws IOException 
 	 */
 	protected void readCSVFrameFromHDFS( Path path, JobConf job, FileSystem fs, 
-			FrameBlock dest, List<ValueType> schema, List<String> names, long rlen, long clen) 
+			FrameBlock dest, ValueType[] schema, String[] names, long rlen, long clen) 
 		throws IOException
 	{
 		TextInputFormat informat = new TextInputFormat();
@@ -140,7 +138,7 @@ public class FrameReaderTextCSV extends FrameReader
 	 * @throws IOException
 	 */
 	protected final void readCSVFrameFromInputSplit( InputSplit split, TextInputFormat informat, JobConf job, 
-			FrameBlock dest, List<ValueType> schema, List<String> names, long rlen, long clen, int rl, boolean first)
+			FrameBlock dest, ValueType[] schema, String[] names, long rlen, long clen, int rl, boolean first)
 		throws IOException
 	{
 		boolean hasHeader = _props.hasHeader();
@@ -159,8 +157,7 @@ public class FrameReaderTextCSV extends FrameReader
 		//handle header if existing
 		if(first && hasHeader ) {
 			reader.next(key, value); //read header
-			List<String> colnames = Arrays.asList(value.toString().split(delim));
-			dest.setColumnNames(colnames);
+			dest.setColumnNames(value.toString().split(delim));
 		}
 			
 		// Read the data
@@ -189,11 +186,11 @@ public class FrameReaderTextCSV extends FrameReader
 					part = part.trim();
 					if ( part.isEmpty() ) {
 						if( isFill && dfillValue!=0 )
-							dest.set(row, col, UtilFunctions.stringToObject(schema.get(col), sfillValue));
+							dest.set(row, col, UtilFunctions.stringToObject(schema[col], sfillValue));
 						emptyValuesFound = true;
 					}
 					else {
-						dest.set(row, col, UtilFunctions.stringToObject(schema.get(col), part));
+						dest.set(row, col, UtilFunctions.stringToObject(schema[col], part));
 					}
 					col++;
 				}

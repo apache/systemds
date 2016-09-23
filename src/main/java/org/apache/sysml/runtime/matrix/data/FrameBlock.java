@@ -29,12 +29,11 @@ import java.io.Serializable;
 import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.hadoop.io.Writable;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.Expression.ValueType;
@@ -61,29 +60,32 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	private int _numRows = -1;
 	
 	/** The schema of the data frame as an ordered list of value types */
-	private List<ValueType> _schema = null; 
+	private ValueType[] _schema = null; 
 	
 	/** The column names of the data frame as an ordered list of strings */
-	private List<String> _colnames = null;
+	private String[] _colnames = null;
 	
-	private List<ColumnMetadata> _colmeta = null;
+	private ColumnMetadata[] _colmeta = null;
 	
 	/** The data frame data as an ordered list of columns */
-	private List<Array> _coldata = null;
+	private Array[] _coldata = null;
 	
 	/** Cache for recode maps from frame meta data, indexed by column 0-based */
 	private Map<Integer, SoftReference<HashMap<String,Long>>> _rcdMapCache = null;
 	
 	public FrameBlock() {
 		_numRows = 0;
-		_schema = new ArrayList<ValueType>();
-		_colnames = new ArrayList<String>();
-		_colmeta = new ArrayList<ColumnMetadata>();
-		_coldata = new ArrayList<Array>();
 		if( REUSE_RECODE_MAPS )
 			_rcdMapCache = new HashMap<Integer, SoftReference<HashMap<String,Long>>>();
 	}
 	
+	/**
+	 * Copy constructor for frame blocks, which uses a shallow copy for
+	 * the schema (column types and names) but a deep copy for meta data 
+	 * and actual column data.
+	 * 
+	 * @param that
+	 */
 	public FrameBlock(FrameBlock that) {
 		this(that.getSchema(), that.getColumnNames());
 		copy(that);
@@ -92,32 +94,32 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	
 	public FrameBlock(int ncols, ValueType vt) {
 		this();
-		_schema.addAll(Collections.nCopies(ncols, vt));
+		_schema = UtilFunctions.nCopies(ncols, vt);
 		_colnames = createColNames(ncols);
+		_colmeta = new ColumnMetadata[ncols];
 		for( int j=0; j<ncols; j++ )
-			_colmeta.add(new ColumnMetadata(0));
+			_colmeta[j] = new ColumnMetadata(0);
 	}
 	
-	public FrameBlock(List<ValueType> schema) {
+	public FrameBlock(ValueType[] schema) {
 		this(schema, new String[0][]);
 	}
 	
-	public FrameBlock(List<ValueType> schema, List<String> names) {
+	public FrameBlock(ValueType[] schema, String[] names) {
 		this(schema, names, new String[0][]);
 	}
 	
-	public FrameBlock(List<ValueType> schema, String[][] data) {
-		this(schema, createColNames(schema.size()), data);
+	public FrameBlock(ValueType[] schema, String[][] data) {
+		this(schema, createColNames(schema.length), data);
 	}
 	
-	public FrameBlock(List<ValueType> schema, List<String> names, String[][] data) {
+	public FrameBlock(ValueType[] schema, String[] names, String[][] data) {
 		_numRows = 0; //maintained on append
-		_schema = new ArrayList<ValueType>(schema);
-		_colnames = new ArrayList<String>(names);
-		_colmeta = new ArrayList<ColumnMetadata>();
-		for( int j=0; j<_schema.size(); j++ )
-			_colmeta.add(new ColumnMetadata(0));
-		_coldata = new ArrayList<Array>();
+		_schema = schema;
+		_colnames = names;
+		_colmeta = new ColumnMetadata[_schema.length];
+		for( int j=0; j<_schema.length; j++ )
+			_colmeta[j] = new ColumnMetadata(0);
 		for( int i=0; i<data.length; i++ )
 			appendRow(data[i]);
 		if( REUSE_RECODE_MAPS )
@@ -148,7 +150,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * @return
 	 */
 	public int getNumColumns() {
-		return _schema.size();
+		return _schema.length;
 	}
 	
 	/**
@@ -156,7 +158,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * 
 	 * @return
 	 */
-	public List<ValueType> getSchema() {
+	public ValueType[] getSchema() {
 		return _schema;
 	}
 	
@@ -165,9 +167,9 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * 
 	 * @return
 	 */
-	public void setSchema(List<ValueType> schema) {
+	public void setSchema(ValueType[] schema) {
 		_schema = schema;
-		_colnames = createColNames(schema.size());
+		_colnames = createColNames(schema.length);
 	}
 
 	/**
@@ -175,7 +177,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * 
 	 * @return
 	 */
-	public List<String> getColumnNames() {
+	public String[] getColumnNames() {
 		return _colnames;
 	}
 	
@@ -183,7 +185,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * 
 	 * @param colnames
 	 */
-	public void setColumnNames(List<String> colnames) {
+	public void setColumnNames(String[] colnames) {
 		_colnames = colnames;
 	}
 	
@@ -191,7 +193,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * 
 	 * @return
 	 */
-	public List<ColumnMetadata> getColumnMetadata() {
+	public ColumnMetadata[] getColumnMetadata() {
 		return _colmeta;
 	}
 	
@@ -201,7 +203,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * @return
 	 */
 	public ColumnMetadata getColumnMetadata(int c) {
-		return _colmeta.get(c);
+		return _colmeta[c];
 	}
 	
 	/**
@@ -221,16 +223,16 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * @return
 	 */
 	public boolean isColumnMetadataDefault(int c) {
-		return _colmeta.get(c).getMvValue() == null
-			&& _colmeta.get(c).getNumDistinct() == 0;
+		return _colmeta[c].getMvValue() == null
+			&& _colmeta[c].getNumDistinct() == 0;
 	}
 	
 	/**
 	 * 
 	 * @param colmeta
 	 */
-	public void setColumnMetadata(List<ColumnMetadata> colmeta) {
-		_colmeta = new ArrayList<FrameBlock.ColumnMetadata>(colmeta);
+	public void setColumnMetadata(ColumnMetadata[] colmeta) {
+		System.arraycopy(colmeta, 0, _colmeta, 0, _colmeta.length);
 	}
 	
 	/**
@@ -239,7 +241,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * @param colmeta
 	 */
 	public void setColumnMetadata(int c, ColumnMetadata colmeta) {
-		_colmeta.set(c, colmeta);
+		_colmeta[c] = colmeta;
 	}
 	
 	/**
@@ -251,7 +253,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	public Map<String,Integer> getColumnNameIDMap() {
 		Map<String, Integer> ret = new HashMap<String, Integer>();
 		for( int j=0; j<getNumColumns(); j++ )
-			ret.put(_colnames.get(j), j+1);
+			ret.put(_colnames[j], j+1);
 		return ret;	
 	}
 	
@@ -261,21 +263,24 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 */
 	public void ensureAllocatedColumns(int numRows) {
 		//early abort if already allocated
-		if( _schema.size() == _coldata.size() ) 
+		if( _coldata != null && _schema.length == _coldata.length ) 
 			return;		
-		//allocate column meta data
-		for( int j=0; j<_schema.size(); j++ )
-			_colmeta.add(new ColumnMetadata(0));
+		//allocate column meta data if necessary
+		if( _colmeta == null || _schema.length != _colmeta.length ) {
+			_colmeta = new ColumnMetadata[_schema.length];
+			for( int j=0; j<_schema.length; j++ )
+				_colmeta[j] = new ColumnMetadata(0);
+		}
 		//allocate columns if necessary
-		for( int j=0; j<_schema.size(); j++ ) {
-			if( j >= _coldata.size() )
-				switch( _schema.get(j) ) {
-					case STRING:  _coldata.add(new StringArray(new String[numRows])); break;
-					case BOOLEAN: _coldata.add(new BooleanArray(new boolean[numRows])); break;
-					case INT:     _coldata.add(new LongArray(new long[numRows])); break;
-					case DOUBLE:  _coldata.add(new DoubleArray(new double[numRows])); break;
-					default: throw new RuntimeException("Unsupported value type: "+_schema.get(j));
-				}
+		_coldata = new Array[_schema.length];
+		for( int j=0; j<_schema.length; j++ ) {
+			switch( _schema[j] ) {
+				case STRING:  _coldata[j] = new StringArray(new String[numRows]); break;
+				case BOOLEAN: _coldata[j] = new BooleanArray(new boolean[numRows]); break;
+				case INT:     _coldata[j] = new LongArray(new long[numRows]); break;
+				case DOUBLE:  _coldata[j] = new DoubleArray(new double[numRows]); break;
+				default: throw new RuntimeException("Unsupported value type: "+_schema[j]);
+			}
 		}
 		_numRows = numRows;
 	}
@@ -286,7 +291,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * @param newlen
 	 */
 	public void ensureColumnCompatibility(int newlen) {
-		if( _coldata.size() > 0 && _numRows != newlen )
+		if( _coldata!=null && _coldata.length > 0 && _numRows != newlen )
 			throw new RuntimeException("Mismatch in number of rows: "+newlen+" (expected: "+_numRows+")");
 	}
 	
@@ -295,10 +300,10 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * @param size
 	 * @return
 	 */
-	public static List<String> createColNames(int size) {
-		ArrayList<String> ret = new ArrayList<String>(size);
+	public static String[] createColNames(int size) {
+		String[] ret = new String[size];
 		for( int i=1; i<=size; i++ )
-			ret.add(createColName(i));
+			ret[i-1] = createColName(i);
 		return ret;
 	}
 	
@@ -328,7 +333,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * @return
 	 */
 	public boolean isColNameDefault(int i) {
-		return _colnames.get(i).equals("C"+i);
+		return _colnames[i].equals("C"+(i+1));
 	}
 	
 	/**
@@ -339,7 +344,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			int card = 0;
 			for( int i=0; i<getNumRows(); i++ )
 				card += (get(i, j) != null) ? 1 : 0;
-			_colmeta.get(j).setNumDistinct(card);
+			_colmeta[j].setNumDistinct(card);
 		}
 	}
 	
@@ -354,7 +359,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * @return
 	 */
 	public Object get(int r, int c) {
-		return _coldata.get(c).get(r);
+		return _coldata[c].get(r);
 	}
 	
 	/**
@@ -366,7 +371,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * @param val
 	 */
 	public void set(int r, int c, Object val) {
-		_coldata.get(c).set(r, UtilFunctions.objectToObject(_schema.get(c), val));
+		_coldata[c].set(r, UtilFunctions.objectToObject(_schema[c], val));
 	}
 
 	/**
@@ -376,17 +381,17 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 */
 	public void reset(int nrow, boolean clearMeta) {
 		if( clearMeta ) {
-			getSchema().clear();
-			getColumnNames().clear();
+			_schema = null;
+			_colnames = null;
 			if( _colmeta != null ) {
-				for( int i=0; i<_colmeta.size(); i++ )
+				for( int i=0; i<_colmeta.length; i++ )
 					if( !isColumnMetadataDefault(i) )
-						_colmeta.set(i, new ColumnMetadata(0));
+						_colmeta[i] = new ColumnMetadata(0);
 			}
 		}
 		if(_coldata != null) {
-			for( int i=0; i < _coldata.size(); i++ )
-				_coldata.get(i)._size = nrow;
+			for( int i=0; i < _coldata.length; i++ )
+				_coldata[i]._size = nrow;
 		}
 	}
 
@@ -407,7 +412,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	public void appendRow(Object[] row) {
 		ensureAllocatedColumns(0);
 		for( int j=0; j<row.length; j++ )
-			_coldata.get(j).append(row[j]);
+			_coldata[j].append(row[j]);
 		_numRows++;
 	}
 	
@@ -420,7 +425,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	public void appendRow(String[] row) {
 		ensureAllocatedColumns(0);
 		for( int j=0; j<row.length; j++ )
-			_coldata.get(j).append(row[j]);
+			_coldata[j].append(row[j]);
 		_numRows++;
 	}
 	
@@ -433,9 +438,10 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 */
 	public void appendColumn(String[] col) {
 		ensureColumnCompatibility(col.length);
-		_schema.add(ValueType.STRING);
-		_colnames.add(createColName(_schema.size()));
-		_coldata.add(new StringArray(col));
+		_schema = ArrayUtils.add(_schema, ValueType.STRING);
+		_colnames = ArrayUtils.add(_colnames, createColName(_schema.length));
+		_coldata = (_coldata==null) ? new Array[]{new StringArray(col)} :
+			ArrayUtils.add(_coldata, new StringArray(col));
 		_numRows = col.length;
 	}
 	
@@ -448,9 +454,10 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 */
 	public void appendColumn(boolean[] col) {
 		ensureColumnCompatibility(col.length);
-		_schema.add(ValueType.BOOLEAN);
-		_colnames.add(createColName(_schema.size()));
-		_coldata.add(new BooleanArray(col));	
+		_schema = ArrayUtils.add(_schema, ValueType.BOOLEAN);
+		_colnames = ArrayUtils.add(_colnames, createColName(_schema.length));
+		_coldata = (_coldata==null) ? new Array[]{new BooleanArray(col)} :
+			ArrayUtils.add(_coldata, new BooleanArray(col));	
 		_numRows = col.length;
 	}
 	
@@ -463,9 +470,10 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 */
 	public void appendColumn(long[] col) {
 		ensureColumnCompatibility(col.length);
-		_schema.add(ValueType.INT);
-		_colnames.add(createColName(_schema.size()));
-		_coldata.add(new LongArray(col));
+		_schema = ArrayUtils.add(_schema, ValueType.INT);
+		_colnames = ArrayUtils.add(_colnames, createColName(_schema.length));
+		_coldata = (_coldata==null) ? new Array[]{new LongArray(col)} :
+			ArrayUtils.add(_coldata, new LongArray(col));
 		_numRows = col.length;
 	}
 	
@@ -478,9 +486,10 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 */
 	public void appendColumn(double[] col) {
 		ensureColumnCompatibility(col.length);
-		_schema.add(ValueType.DOUBLE);
-		_colnames.add(createColName(_schema.size()));
-		_coldata.add(new DoubleArray(col));
+		_schema = ArrayUtils.add(_schema, ValueType.DOUBLE);
+		_colnames = ArrayUtils.add(_colnames, createColName(_schema.length));
+		_coldata = (_coldata==null) ? new Array[]{new DoubleArray(col)} :
+			ArrayUtils.add(_coldata, new DoubleArray(col));
 		_numRows = col.length;
 	}
 	
@@ -490,11 +499,11 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * @return
 	 */
 	public Object getColumn(int c) {
-		switch(_schema.get(c)) {
-			case STRING:  return ((StringArray)_coldata.get(c))._data; 
-			case BOOLEAN: return ((BooleanArray)_coldata.get(c))._data;
-			case INT:     return ((LongArray)_coldata.get(c))._data;
-			case DOUBLE:  return ((DoubleArray)_coldata.get(c))._data;
+		switch(_schema[c]) {
+			case STRING:  return ((StringArray)_coldata[c])._data; 
+			case BOOLEAN: return ((BooleanArray)_coldata[c])._data;
+			case INT:     return ((LongArray)_coldata[c])._data;
+			case DOUBLE:  return ((DoubleArray)_coldata[c])._data;
 			default:      return null;
 	 	}
 	}
@@ -556,14 +565,14 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		out.writeBoolean(isDefaultMeta);
 		//write columns (value type, data)
 		for( int j=0; j<getNumColumns(); j++ ) {
-			out.writeByte(_schema.get(j).ordinal());
+			out.writeByte(_schema[j].ordinal());
 			if( !isDefaultMeta ) {
-				out.writeUTF(_colnames.get(j));
-				out.writeLong(_colmeta.get(j).getNumDistinct());
-				out.writeUTF( (_colmeta.get(j).getMvValue()!=null) ? 
-						_colmeta.get(j).getMvValue() : "" );
+				out.writeUTF(_colnames[j]);
+				out.writeLong(_colmeta[j].getNumDistinct());
+				out.writeUTF( (_colmeta[j].getMvValue()!=null) ? 
+						_colmeta[j].getMvValue() : "" );
 			}
-			_coldata.get(j).write(out);
+			_coldata[j].write(out);
 		}
 	}
 
@@ -573,10 +582,16 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		_numRows = in.readInt();
 		int numCols = in.readInt();
 		boolean isDefaultMeta = in.readBoolean();
+		//allocate schema/meta data arrays
+		_schema = (_schema!=null && _schema.length==numCols) ? 
+				_schema : new ValueType[numCols];
+		_colnames = (_colnames != null && _colnames.length==numCols) ? 
+				_colnames : new String[numCols];
+		_colmeta = (_colmeta != null && _colmeta.length==numCols) ? 
+				_colmeta : new ColumnMetadata[numCols];
+		_coldata = (_coldata!=null && _coldata.length==numCols) ? 
+				_coldata : new Array[numCols];
 		//read columns (value type, meta, data)
-		_schema.clear();
-		_colmeta.clear();
-		_coldata.clear();
 		for( int j=0; j<numCols; j++ ) {
 			ValueType vt = ValueType.values()[in.readByte()];
 			String name = isDefaultMeta ? createColName(j) : in.readUTF();
@@ -591,11 +606,11 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 				default: throw new IOException("Unsupported value type: "+vt);
 			}
 			arr.readFields(in);
-			_schema.add(vt);
-			_colnames.add(name);
-			_colmeta.add(new ColumnMetadata(ndistinct, 
-					(mvvalue==null || mvvalue.isEmpty()) ? null : mvvalue));
-			_coldata.add(arr);
+			_schema[j] = vt;
+			_colnames[j] = name;
+			_colmeta[j] = new ColumnMetadata(ndistinct, 
+					(mvvalue==null || mvvalue.isEmpty()) ? null : mvvalue);
+			_coldata[j] = arr;
 		}
 	}
 
@@ -678,16 +693,17 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		if( ret == null )
 			ret = new FrameBlock();
 		ret._numRows = _numRows;								
-		ret._schema = new ArrayList<ValueType>(_schema);
-		ret._colnames = new ArrayList<String>(_colnames);
-		ret._colmeta = new ArrayList<ColumnMetadata>(_colmeta);
+		ret._schema = _schema.clone();
+		ret._colnames = _colnames.clone();
+		ret._colmeta = _colmeta.clone();
+		ret._coldata = new Array[getNumColumns()];
 		
 		//copy data to output and partial overwrite w/ rhs
 		for( int j=0; j<getNumColumns(); j++ ) {
-			Array tmp = _coldata.get(j).clone();
+			Array tmp = _coldata[j].clone();
 			if( j>=cl && j<=cu )
-				tmp.set(rl, ru, rhsFrame._coldata.get(j-cl));
-			ret._coldata.add(tmp);
+				tmp.set(rl, ru, rhsFrame._coldata[j-cl]);
+			ret._coldata[j] = tmp;
 		}
 		
 		return ret;
@@ -737,20 +753,27 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			ret.reset(ru-rl+1, true);
 		
 		//copy output schema and colnames
+		int numCols = cu-cl+1;
+		ret._schema = new ValueType[numCols];
+		ret._colnames = new String[numCols];
+		ret._colmeta = new ColumnMetadata[numCols];
+		
 		for( int j=cl; j<=cu; j++ ) {
-			ret._schema.add(_schema.get(j));
-			ret._colnames.add(_colnames.get(j));
-			ret._colmeta.add(_colmeta.get(j));
+			ret._schema[j-cl] = _schema[j];
+			ret._colnames[j-cl] = _colnames[j];
+			ret._colmeta[j-cl] = _colmeta[j];
 		}	
 		ret._numRows = ru-rl+1;
 
 		//copy output data
-		if(ret._coldata.size() == 0)
+		if(ret._coldata == null ) { 
+			ret._coldata = new Array[numCols];
 			for( int j=cl; j<=cu; j++ )
-				ret._coldata.add(_coldata.get(j).slice(rl,ru));
+				ret._coldata[j-cl] = _coldata[j].slice(rl,ru);
+		}
 		else
 			for( int j=cl; j<=cu; j++ )
-				ret._coldata.get(j-cl).set(0, ru-rl, _coldata.get(j), rl);	
+				ret._coldata[j-cl].set(0, ru-rl, _coldata[j], rl);	
 		
 		return ret;
 	}
@@ -818,18 +841,14 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			ret._numRows = _numRows;
 			
 			//concatenate schemas (w/ deep copy to prevent side effects)
-			ret._schema = new ArrayList<ValueType>(_schema);
-			ret._schema.addAll(that._schema);
-			ret._colnames = new ArrayList<String>(_colnames);
-			ret._colnames.addAll(that._colnames);
-			ret._colmeta = new ArrayList<ColumnMetadata>(_colmeta);
-			ret._colmeta.addAll(that._colmeta);
+			ret._schema = ArrayUtils.addAll(_schema, that._schema);
+			ret._colnames = ArrayUtils.addAll(_colnames, that._colnames);
+			ret._colmeta = ArrayUtils.addAll(_colmeta, that._colmeta);
 			
 			//concatenate column data (w/ deep copy to prevent side effects)
-			for( Array tmp : _coldata )
-				ret._coldata.add(tmp.clone());
-			for( Array tmp : that._coldata )
-				ret._coldata.add(tmp.clone());	
+			ret._coldata = ArrayUtils.addAll(_coldata, that._coldata);
+			for( int i=0; i<ret._coldata.length; i++ )
+				ret._coldata[i] = ret._coldata[i].clone();
 		}
 		else //ROW APPEND
 		{
@@ -843,12 +862,13 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			if( ret == null )
 				ret = new FrameBlock();
 			ret._numRows = _numRows;
-			ret._schema = new ArrayList<ValueType>(_schema);
-			ret._colnames = new ArrayList<String>(_colnames);
+			ret._schema = _schema.clone();
+			ret._colnames = _colnames.clone();
 			
 			//concatenate data (deep copy first, append second)
-			for( Array tmp : _coldata )
-				ret._coldata.add(tmp.clone());
+			ret._coldata = new Array[_coldata.length];
+			for( int j=0; j<_coldata.length; j++ )
+				ret._coldata[j] = _coldata[j].clone();
 			Iterator<Object[]> iter = that.getObjectRowIterator();
 			while( iter.hasNext() )
 				ret.appendRow(iter.next());
@@ -882,13 +902,13 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		//copy values
 		for( int j=cl; j<=cu; j++ ) {
 			//special case: column memcopy 
-			if( _schema.get(j).equals(src._schema.get(j-cl)) )
-				_coldata.get(j).set(rl, ru, src._coldata.get(j-cl));
+			if( _schema[j].equals(src._schema[j-cl]) )
+				_coldata[j].set(rl, ru, src._coldata[j-cl]);
 			//general case w/ schema transformation
 			else 
 				for( int i=rl; i<=ru; i++ ) {
 					String tmp = src.get(i-rl, j-cl)!=null ? src.get(i-rl, j-cl).toString() : null;
-					set(i, j, UtilFunctions.stringToObject(_schema.get(j), tmp));
+					set(i, j, UtilFunctions.stringToObject(_schema[j], tmp));
 				}
 		}
 	}
@@ -912,7 +932,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		
 		//construct recode map
 		HashMap<String,Long> map = new HashMap<String,Long>();
-		Array ldata = _coldata.get(col); 
+		Array ldata = _coldata[col]; 
 		for( int i=0; i<getNumRows(); i++ ) {
 			Object val = ldata.get(i);
 			if( val != null ) {
@@ -955,21 +975,21 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		//meta data copy if necessary
 		for( int j=0; j<getNumColumns(); j++ )
 			if( !that.isColumnMetadataDefault(j) ) {
-				_colmeta.get(j).setNumDistinct(that._colmeta.get(j).getNumDistinct());
-				_colmeta.get(j).setMvValue(that._colmeta.get(j).getMvValue());
+				_colmeta[j].setNumDistinct(that._colmeta[j].getNumDistinct());
+				_colmeta[j].setMvValue(that._colmeta[j].getMvValue());
 			}
 		
 		//core frame block merge through cell copy
 		//with column-wide access pattern
 		for( int j=0; j<getNumColumns(); j++ ) {
 			//special case: copy non-zeros of column 
-			if( _schema.get(j).equals(that._schema.get(j)) )
-				_coldata.get(j).setNz(0, _numRows-1, that._coldata.get(j));
+			if( _schema[j].equals(that._schema[j]) )
+				_coldata[j].setNz(0, _numRows-1, that._coldata[j]);
 			//general case w/ schema transformation
 			else {
 				for( int i=0; i<_numRows; i++ ) {
 					Object obj = UtilFunctions.objectToObject(
-							getSchema().get(j), that.get(i,j), true);
+							_schema[j], that.get(i,j), true);
 					if (obj != null) //merge non-zeros
 						set(i, j,obj);
 				}

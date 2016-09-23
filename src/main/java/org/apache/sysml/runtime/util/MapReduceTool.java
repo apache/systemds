@@ -25,7 +25,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -432,7 +431,7 @@ public class MapReduceTool
 		writeMetaDataFile(mtdfile, vt, null, DataType.MATRIX, mc, outinfo);
 	}
 	
-	public static void writeMetaDataFile(String mtdfile, ValueType vt, List<ValueType> schema, DataType dt, MatrixCharacteristics mc, OutputInfo outinfo) 
+	public static void writeMetaDataFile(String mtdfile, ValueType vt, ValueType[] schema, DataType dt, MatrixCharacteristics mc, OutputInfo outinfo) 
 		throws IOException {
 		writeMetaDataFile(mtdfile, vt, schema, dt, mc, outinfo, null);
 	}
@@ -442,7 +441,7 @@ public class MapReduceTool
 		writeMetaDataFile(mtdfile, vt, null, DataType.MATRIX, mc, outinfo, formatProperties);
 	}
 	
-	public static void writeMetaDataFile(String mtdfile, ValueType vt, List<ValueType> schema, DataType dt, MatrixCharacteristics mc, 
+	public static void writeMetaDataFile(String mtdfile, ValueType vt, ValueType[] schema, DataType dt, MatrixCharacteristics mc, 
 			OutputInfo outinfo, FileFormatProperties formatProperties) 
 		throws IOException 
 	{
@@ -490,7 +489,7 @@ public class MapReduceTool
 	 * @throws JSONException 
 	 * @throws DMLRuntimeException 
 	 */
-	public static String metaDataToString(String mtdfile, ValueType vt, List<ValueType> schema, DataType dt, MatrixCharacteristics mc, 
+	public static String metaDataToString(String mtdfile, ValueType vt, ValueType[] schema, DataType dt, MatrixCharacteristics mc, 
 			OutputInfo outinfo, FileFormatProperties formatProperties) throws JSONException, DMLRuntimeException
 	{
 		OrderedJSONObject mtd = new OrderedJSONObject(); // maintain order in output file
@@ -502,11 +501,11 @@ public class MapReduceTool
 		}	
 		else {
 			StringBuffer schemaSB = new StringBuffer();
-			for(int i=0; i < schema.size(); i++) {
-				if( schema.get(i) == ValueType.UNKNOWN )
+			for(int i=0; i < schema.length; i++) {
+				if( schema[i] == ValueType.UNKNOWN )
 					schemaSB.append("*");
 				else
-					schemaSB.append(schema.get(i).toString());
+					schemaSB.append(schema[i].toString());
 				schemaSB.append(DataExpression.DEFAULT_DELIM_DELIMITER);
 			}
 			mtd.put(DataExpression.SCHEMAPARAM, schemaSB.toString());

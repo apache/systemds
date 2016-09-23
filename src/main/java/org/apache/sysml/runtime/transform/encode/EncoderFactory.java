@@ -21,7 +21,6 @@ package org.apache.sysml.runtime.transform.encode;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import org.apache.commons.collections.CollectionUtils;
@@ -48,8 +47,8 @@ public class EncoderFactory
 	 * @return
 	 * @throws DMLRuntimeException 
 	 */
-	public static Encoder createEncoder(String spec, List<String> colnames, int clen, FrameBlock meta) throws DMLRuntimeException {
-		return createEncoder(spec, colnames, Collections.nCopies(clen, ValueType.STRING), meta);
+	public static Encoder createEncoder(String spec, String[] colnames, int clen, FrameBlock meta) throws DMLRuntimeException {
+		return createEncoder(spec, colnames, UtilFunctions.nCopies(clen, ValueType.STRING), meta);
 	}
 	
 	/**
@@ -61,8 +60,8 @@ public class EncoderFactory
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static Encoder createEncoder(String spec, List<String> colnames, List<ValueType> schema, int clen, FrameBlock meta) throws DMLRuntimeException {
-		List<ValueType> lschema = (schema==null) ? Collections.nCopies(clen, ValueType.STRING) : schema;
+	public static Encoder createEncoder(String spec, String[] colnames, ValueType[] schema, int clen, FrameBlock meta) throws DMLRuntimeException {
+		ValueType[] lschema = (schema==null) ? UtilFunctions.nCopies(clen, ValueType.STRING) : schema;
 		return createEncoder(spec, colnames, lschema, meta);
 	}
 	
@@ -75,11 +74,11 @@ public class EncoderFactory
 	 * @throws DMLRuntimeException
 	 */
 	@SuppressWarnings("unchecked")
-	public static Encoder createEncoder(String spec,  List<String> colnames, List<ValueType> schema, FrameBlock meta) 
+	public static Encoder createEncoder(String spec,  String[] colnames, ValueType[] schema, FrameBlock meta) 
 		throws DMLRuntimeException 
 	{	
 		Encoder encoder = null;
-		int clen = schema.size();
+		int clen = schema.length;
 		
 		try {
 			//parse transform specification
@@ -111,13 +110,13 @@ public class EncoderFactory
 				lencoders.add(new EncoderPassThrough(
 						ArrayUtils.toPrimitive(ptIDs.toArray(new Integer[0])), clen));	
 			if( !dcIDs.isEmpty() )
-				lencoders.add(new DummycodeAgent(jSpec, colnames, schema.size()));
+				lencoders.add(new DummycodeAgent(jSpec, colnames, schema.length));
 			if( !binIDs.isEmpty() )
-				lencoders.add(new BinAgent(jSpec, colnames, schema.size(), true));
+				lencoders.add(new BinAgent(jSpec, colnames, schema.length, true));
 			if( !oIDs.isEmpty() )
-				lencoders.add(new OmitAgent(jSpec, colnames, schema.size()));
+				lencoders.add(new OmitAgent(jSpec, colnames, schema.length));
 			if( !mvIDs.isEmpty() ) {
-				MVImputeAgent ma = new MVImputeAgent(jSpec, colnames, schema.size());
+				MVImputeAgent ma = new MVImputeAgent(jSpec, colnames, schema.length);
 				ma.initRecodeIDList(rcIDs);
 				lencoders.add(ma);
 			}

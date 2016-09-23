@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.List;
 
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.OutputCollector;
@@ -54,7 +53,7 @@ public class FrameReblockBuffer
 	private int _brlen = -1;
 	private int _bclen = -1;
 	
-	private List<ValueType> _schema;
+	private ValueType[] _schema;
 
 
 	/**
@@ -64,7 +63,7 @@ public class FrameReblockBuffer
 	 * @return
 	 * 
 	 */
-	public FrameReblockBuffer( long rlen, long clen, List<ValueType> schema )
+	public FrameReblockBuffer( long rlen, long clen, ValueType[] schema )
 	{
 		this( DEFAULT_BUFFER_SIZE, rlen, clen, schema );
 	}
@@ -77,7 +76,7 @@ public class FrameReblockBuffer
 	 * @return
 	 * 
 	 */
-	public FrameReblockBuffer( int buffersize,  long rlen, long clen, List<ValueType> schema )
+	public FrameReblockBuffer( int buffersize,  long rlen, long clen, ValueType[] schema )
 	{
 		_bufflen = buffersize;
 		_count = 0;

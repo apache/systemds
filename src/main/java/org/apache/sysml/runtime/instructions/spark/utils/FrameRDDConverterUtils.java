@@ -22,7 +22,6 @@ package org.apache.sysml.runtime.instructions.spark.utils;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Arrays;
@@ -92,7 +91,7 @@ public class FrameRDDConverterUtils
 	 * @throws DMLRuntimeException
 	 */
 	public static JavaPairRDD<Long, FrameBlock> csvToBinaryBlock(JavaSparkContext sc,
-			JavaPairRDD<LongWritable, Text> input, MatrixCharacteristics mc, List<ValueType> schema,
+			JavaPairRDD<LongWritable, Text> input, MatrixCharacteristics mc, ValueType[] schema,
 			boolean hasHeader, String delim, boolean fill, double fillValue) 
 		throws DMLRuntimeException 
 	{
@@ -114,11 +113,9 @@ public class FrameRDDConverterUtils
 				.zipWithIndex(); //zip row index
 		
 		//prepare default schema if needed
-		if( schema == null || schema.size()==1 ) {
-			schema = Collections.nCopies((int)mc.getCols(), 
-				(schema!=null) ? schema.get(0) : ValueType.STRING);
-		}
-			
+		if( schema == null || schema.length==1 )
+			schema = UtilFunctions.nCopies((int)mc.getCols(), ValueType.STRING);
+
 		//convert csv rdd to binary block rdd (w/ partial blocks)
 		JavaPairRDD<Long, FrameBlock> out = prepinput.mapPartitionsToPair(
 				new CSVToBinaryBlockFunction(mc, schema, hasHeader, delim));
@@ -140,7 +137,7 @@ public class FrameRDDConverterUtils
 	 * @throws DMLRuntimeException
 	 */
 	public static JavaPairRDD<Long, FrameBlock> csvToBinaryBlock(JavaSparkContext sc,
-			JavaRDD<String> input, MatrixCharacteristics mcOut, List<ValueType> schema,
+			JavaRDD<String> input, MatrixCharacteristics mcOut, ValueType[] schema,
 			boolean hasHeader, String delim, boolean fill, double fillValue) 
 		throws DMLRuntimeException 
 	{
@@ -189,7 +186,7 @@ public class FrameRDDConverterUtils
 	 * @throws DMLRuntimeException
 	 */
 	public static JavaPairRDD<Long, FrameBlock> textCellToBinaryBlock(JavaSparkContext sc,
-			JavaPairRDD<LongWritable, Text> in, MatrixCharacteristics mcOut, List<ValueType> schema ) 
+			JavaPairRDD<LongWritable, Text> in, MatrixCharacteristics mcOut, ValueType[] schema ) 
 		throws DMLRuntimeException  
 	{
 		//convert input rdd to serializable long/frame block
@@ -210,13 +207,13 @@ public class FrameRDDConverterUtils
 	 * @throws DMLRuntimeException
 	 */
 	public static JavaPairRDD<Long, FrameBlock> textCellToBinaryBlockLongIndex(JavaSparkContext sc,
-			JavaPairRDD<Long, Text> input, MatrixCharacteristics mc, List<ValueType> schema ) 
+			JavaPairRDD<Long, Text> input, MatrixCharacteristics mc, ValueType[] schema ) 
 		throws DMLRuntimeException  
 	{
 		//prepare default schema if needed
-		if( schema == null || schema.size()==1 ) {
-			schema = Collections.nCopies((int)mc.getCols(), 
-				(schema!=null) ? schema.get(0) : ValueType.STRING);
+		if( schema == null || schema.length==1 ) {
+			schema = UtilFunctions.nCopies((int)mc.getCols(), 
+				(schema!=null) ? schema[0] : ValueType.STRING);
 		}
 		
  		//convert textcell rdd to binary block rdd (w/ partial blocks)
@@ -342,8 +339,8 @@ public class FrameRDDConverterUtils
 				df.javaRDD().zipWithIndex(); //zip row index
 
 		//convert data frame to frame schema (prepare once)
-		List<String> colnames = new ArrayList<String>();
-		List<ValueType> fschema = new ArrayList<ValueType>();
+		String[] colnames = new String[(int)mc.getCols()];
+		ValueType[] fschema = new ValueType[(int)mc.getCols()];
 		convertDFSchemaToFrameSchema(df.schema(), colnames, fschema, containsID);
 				
 		//convert rdd to binary block rdd
@@ -360,7 +357,7 @@ public class FrameRDDConverterUtils
 	 * @return
 	 */
 	public static DataFrame binaryBlockToDataFrame(SQLContext sqlctx, JavaPairRDD<Long,FrameBlock> in, 
-			MatrixCharacteristics mc, List<ValueType> schema)
+			MatrixCharacteristics mc, ValueType[] schema)
 	{
 		if( !mc.colsKnown() )
 			throw new RuntimeException("Number of columns needed to convert binary block to data frame.");
@@ -371,7 +368,7 @@ public class FrameRDDConverterUtils
 				
 		//create data frame schema
 		if( schema == null )
-			schema = Collections.nCopies((int)mc.getCols(), ValueType.STRING);
+			schema = UtilFunctions.nCopies((int)mc.getCols(), ValueType.STRING);
 		StructType dfSchema = convertFrameSchemaToDFSchema(schema, true);
 	
 		//rdd to data frame conversion
@@ -387,7 +384,7 @@ public class FrameRDDConverterUtils
 	 *  @return
 	 *  		Returns the DataFrame schema (StructType)
 	 */
-	public static StructType convertFrameSchemaToDFSchema(List<ValueType> fschema, boolean containsID)
+	public static StructType convertFrameSchemaToDFSchema(ValueType[] fschema, boolean containsID)
 	{
 		// generate the schema based on the string of schema
 		List<StructField> fields = new ArrayList<StructField>();
@@ -421,30 +418,30 @@ public class FrameRDDConverterUtils
 	 * @param containsID
 	 * @return
 	 */
-	public static void convertDFSchemaToFrameSchema(StructType dfschema, List<String> colnames, 
-			List<ValueType> fschema, boolean containsID)
+	public static void convertDFSchemaToFrameSchema(StructType dfschema, String[] colnames, 
+			ValueType[] fschema, boolean containsID)
 	{
 		int off = containsID ? 1 : 0;
 		for( int i=off; i<dfschema.fields().length; i++ ) {
 			StructField structType = dfschema.apply(i);
-			colnames.add(structType.name());
+			colnames[i-off] = structType.name();
 			if(structType.dataType() == DataTypes.DoubleType 
 				|| structType.dataType() == DataTypes.FloatType)
-				fschema.add(ValueType.DOUBLE);
+				fschema[i-off] = ValueType.DOUBLE;
 			else if(structType.dataType() == DataTypes.LongType 
 				|| structType.dataType() == DataTypes.IntegerType)
-				fschema.add(ValueType.INT);
+				fschema[i-off] = ValueType.INT;
 			else if(structType.dataType() == DataTypes.BooleanType)
-				fschema.add(ValueType.BOOLEAN);
+				fschema[i-off] = ValueType.BOOLEAN;
 			else
-				fschema.add(ValueType.STRING);
+				fschema[i-off] = ValueType.STRING;
 		}
 	}
 	
 	/* 
 	 * It will return JavaRDD<Row> based on csv data input file.
 	 */
-	public static JavaRDD<Row> csvToRowRDD(JavaSparkContext sc, String fnameIn, String delim, List<ValueType> schema)
+	public static JavaRDD<Row> csvToRowRDD(JavaSparkContext sc, String fnameIn, String delim, ValueType[] schema)
 	{
 		// Load a text file and convert each line to a java rdd.
 		JavaRDD<String> dataRdd = sc.textFile(fnameIn);
@@ -458,10 +455,10 @@ public class FrameRDDConverterUtils
 	{
 		private static final long serialVersionUID = -6736256507697511070L;
 
-		private List<ValueType> _schema = null;
+		private ValueType[] _schema = null;
 		private String _delim = null; 
 		
-		public RowGenerator(List<ValueType> schema, String delim) {
+		public RowGenerator(ValueType[] schema, String delim) {
 			_schema = schema;
 			_delim = delim;
 		}		
@@ -471,7 +468,7 @@ public class FrameRDDConverterUtils
 		      String[] fields = IOUtilFunctions.splitCSV(record, _delim);
 		      Object[] objects = new Object[fields.length]; 
 		      for (int i=0; i<fields.length; i++) {
-			      objects[i] = UtilFunctions.stringToObject(_schema.get(i), fields[i]);
+			      objects[i] = UtilFunctions.stringToObject(_schema[i], fields[i]);
 		      }
 		      return RowFactory.create(objects);
 		}
@@ -617,12 +614,12 @@ public class FrameRDDConverterUtils
 		private boolean _hasHeader = false;
 		private String _delim = null;
 		private int _maxRowsPerBlock = -1; 
-		private List<ValueType> _schema = null;
-		private List<String> _colnames = null;
+		private ValueType[] _schema = null;
+		private String[] _colnames = null;
 		private List<String> _mvMeta = null; //missing value meta data
 		private List<String> _ndMeta = null; //num distinct meta data
 		
-		public CSVToBinaryBlockFunction(MatrixCharacteristics mc, List<ValueType> schema, boolean hasHeader, String delim) {
+		public CSVToBinaryBlockFunction(MatrixCharacteristics mc, ValueType[] schema, boolean hasHeader, String delim) {
 			_clen = mc.getCols();
 			_schema = schema;
 			_hasHeader = hasHeader;
@@ -646,7 +643,7 @@ public class FrameRDDConverterUtils
 				String row = tmp._1().toString().trim();
 				long rowix = tmp._2();
 				if(_hasHeader && rowix == 0) { //Skip header
-					_colnames = Arrays.asList(IOUtilFunctions.splitCSV(row, _delim));
+					_colnames = IOUtilFunctions.splitCSV(row, _delim);
 					continue;
 				}
 				if( row.startsWith(TfUtils.TXMTD_MVPREFIX) ) {
@@ -744,7 +741,7 @@ public class FrameRDDConverterUtils
 			if( ix==1 ) {
 				if( _props.hasHeader() ) {
 					for(int j = 1; j <= blk.getNumColumns(); j++) {
-						sb.append(blk.getColumnNames().get(j) 
+						sb.append(blk.getColumnNames()[j] 
 							+ ((j<blk.getNumColumns()-1)?_props.getDelim():""));
 					}
 					ret.add(sb.toString());
@@ -790,13 +787,13 @@ public class FrameRDDConverterUtils
 		private static final long serialVersionUID = 2269315691094111843L;
 
 		private long _clen = -1;
-		private List<String> _colnames = null;
-		private List<ValueType> _schema = null;
+		private String[] _colnames = null;
+		private ValueType[] _schema = null;
 		private boolean _containsID = false;
 		private int _maxRowsPerBlock = -1;
 		
-		public DataFrameToBinaryBlockFunction(MatrixCharacteristics mc, List<String> colnames, 
-				List<ValueType> schema, boolean containsID) {
+		public DataFrameToBinaryBlockFunction(MatrixCharacteristics mc, String[] colnames, 
+				ValueType[] schema, boolean containsID) {
 			_clen = mc.getCols();
 			_colnames = colnames;
 			_schema = schema;
@@ -831,7 +828,7 @@ public class FrameRDDConverterUtils
 				int off = _containsID ? 1 : 0;
 				for(int i=off; i<row.size(); i++) {
 					tmprow[i-off] = UtilFunctions.objectToObject(
-							_schema.get(i-off), row.get(i));
+							_schema[i-off], row.get(i));
 				}
 				fb.appendRow(tmprow);
 			}
@@ -932,9 +929,9 @@ public class FrameRDDConverterUtils
 	private static class TextToBinaryBlockFunction extends CellToBinaryBlockFunction implements PairFlatMapFunction<Iterator<Text>,Long,FrameBlock> 
 	{
 		private static final long serialVersionUID = -2042208027876880588L;
-		List<ValueType> _schema = null;
+		ValueType[] _schema = null;
 		
-		protected TextToBinaryBlockFunction(MatrixCharacteristics mc, List<ValueType> schema ) {
+		protected TextToBinaryBlockFunction(MatrixCharacteristics mc, ValueType[] schema ) {
 			super(mc);
 			_schema = schema;
 		}
@@ -958,7 +955,7 @@ public class FrameRDDConverterUtils
 				st.reset( strVal );
 				long row = st.nextLong();
 				long col = st.nextLong();
-				Object val = UtilFunctions.stringToObject(_schema.get((int)col-1), st.nextToken());
+				Object val = UtilFunctions.stringToObject(_schema[(int)col-1], st.nextToken());
 				
 				//flush buffer if necessary
 				if( rbuff.getSize() >= rbuff.getCapacity() )

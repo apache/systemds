@@ -19,9 +19,6 @@
 
 package org.apache.sysml.test.integration.functions.mlcontext;
 
-import java.util.Collections;
-import java.util.List;
-
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.DataFrame;
@@ -38,6 +35,7 @@ import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.util.DataConverter;
+import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
@@ -212,7 +210,7 @@ public class DataFrameFrameConversionTest extends AutomatedTestBase
 			int blksz = ConfigurationManager.getBlocksize();
 			MatrixCharacteristics mc1 = new MatrixCharacteristics(rows1, cols, blksz, blksz, mbA.getNonZeros());
 			MatrixCharacteristics mc2 = unknownDims ? new MatrixCharacteristics() : new MatrixCharacteristics(mc1);
-			List<ValueType> schema = Collections.nCopies(cols, vt);
+			ValueType[] schema = UtilFunctions.nCopies(cols, vt);
 			
 			//setup spark context
 			sec = (SparkExecutionContext) ExecutionContextFactory.createContext();		

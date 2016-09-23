@@ -536,7 +536,7 @@ public class VariableCPInstruction extends CPInstruction
 				Object value = fBlock.get(0,0);
 				ec.releaseFrameInput(input1.getName());
 				ec.setScalarOutput(output.getName(), 
-						ScalarObjectFactory.createScalarObject(fBlock.getSchema().get(0), value));
+						ScalarObjectFactory.createScalarObject(fBlock.getSchema()[0], value));
 			}
 			else { //assume DataType.MATRIX otherwise
 				MatrixBlock mBlock = ec.getMatrixInput(input1.getName());

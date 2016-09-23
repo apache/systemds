@@ -98,7 +98,7 @@ public class MVImputeAgent extends Encoder
 	public KahanObject[] getMeans_scnomv()   { return _scnomvMeanList; }
 	public CM_COV_Object[] getVars_scnomv()  { return _scnomvVarList; }
 	
-	public MVImputeAgent(JSONObject parsedSpec, List<String> colnames, int clen) 
+	public MVImputeAgent(JSONObject parsedSpec, String[] colnames, int clen) 
 		throws JSONException
 	{
 		super(null, clen);
@@ -114,7 +114,7 @@ public class MVImputeAgent extends Encoder
 		_hist = new HashMap<Integer, HashMap<String,Long>>();
 	}
 			
-	public MVImputeAgent(JSONObject parsedSpec, String[] NAstrings, int clen)
+	public MVImputeAgent(JSONObject parsedSpec, String[] colnames, String[] NAstrings, int clen)
 		throws JSONException 
 	{
 		super(null, clen);	
@@ -947,7 +947,7 @@ public class MVImputeAgent extends Encoder
 					long off = _countList[j];
 					for( int i=0; i<in.getNumRows(); i++ )
 						_meanFn.execute2(_meanList[j], UtilFunctions.objectToDouble(
-							in.getSchema().get(colID-1), in.get(i, colID-1)), off+i+1);
+							in.getSchema()[colID-1], in.get(i, colID-1)), off+i+1);
 					_replacementList[j] = String.valueOf(_meanList[j]._sum);
 					_countList[j] += in.getNumRows();
 				}

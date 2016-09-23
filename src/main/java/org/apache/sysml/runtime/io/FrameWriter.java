@@ -20,7 +20,6 @@
 package org.apache.sysml.runtime.io;
 
 import java.io.IOException;
-import java.util.List;
 
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -56,7 +55,7 @@ public abstract class FrameWriter
 	 * @return
 	 * @throws DMLRuntimeException 
 	 */
-	public static FrameBlock[] createFrameBlocksForReuse( List<ValueType> schema, List<String> names, long rlen ) 
+	public static FrameBlock[] createFrameBlocksForReuse( ValueType[] schema, String[] names, long rlen ) 
 		throws DMLRuntimeException
 	{
 		FrameBlock frameBlock[] = new FrameBlock[1];

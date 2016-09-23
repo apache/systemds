@@ -19,8 +19,6 @@
 
 package org.apache.sysml.runtime.instructions.spark;
 
-import java.util.List;
-
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -163,7 +161,7 @@ public class CSVReblockSPInstruction extends UnarySPInstruction
 	 * @throws DMLRuntimeException
 	 */
 	@SuppressWarnings("unchecked")
-	protected JavaPairRDD<Long,FrameBlock> processFrameCSVReblockInstruction(SparkExecutionContext sec, MatrixCharacteristics mcOut, List<ValueType> schema) 
+	protected JavaPairRDD<Long,FrameBlock> processFrameCSVReblockInstruction(SparkExecutionContext sec, MatrixCharacteristics mcOut, ValueType[] schema) 
 		throws DMLRuntimeException
 	{
 		//get input rdd (needs to be longwritable/text for consistency with meta data, in case of

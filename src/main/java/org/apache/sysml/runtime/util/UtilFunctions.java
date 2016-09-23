@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
@@ -604,25 +605,6 @@ public class UtilFunctions
 	}
 	
 	/**
-	 * Returns the subset of the schema 
-	 * 
-	 * @param srcSchema
-	 * @param lStart
-	 * @param lEnd
-	 * 
-	 * @return
-	 */
-	public static List<ValueType> getSubSchema(List<ValueType> srcSchema, long lStart, long lEnd)
-	{
-		ValueType [] schema = new ValueType[(int) (lEnd-lStart+1)];
-		for(int i = 0; i < schema.length; i++)
-			schema[i] = srcSchema.get((int) (lStart+i));
-		
-		return Arrays.asList(schema);
-	}
-	
-	
-	/**
 	 * This function will return datatype, if its Matrix or Frame
 	 * 
 	 *  @param	str
@@ -659,5 +641,40 @@ public class UtilFunctions
 			String sobj = obj.toString();
 			return (!sobj.equals("0") && !sobj.equals("0.0"));
 		}
+	}
+	
+	/**
+	 * 
+	 * @param n
+	 * @param vt
+	 * @return
+	 */
+	public static ValueType[] nCopies(int n, ValueType vt) {
+		ValueType[] ret = new ValueType[n];
+		Arrays.fill(ret, vt);
+		return ret;
+	}
+
+	/**
+	 * 
+	 * @param schema
+	 * @param vt
+	 * @return
+	 */
+	public static int frequency(ValueType[] schema, ValueType vt) {
+		int count = 0;
+		for( ValueType tmp : schema )
+			count += tmp.equals(vt) ? 1 : 0;
+		return count;
+	}
+	
+	/**
+	 * 
+	 * @param schema1
+	 * @param schema2
+	 * @return
+	 */
+	public static ValueType[] copyOf(ValueType[] schema1, ValueType[] schema2) {
+		return (ValueType[]) ArrayUtils.addAll(schema1, schema2);
 	}
 }

@@ -19,9 +19,6 @@
 
 package org.apache.sysml.test.integration.functions.frame;
 
-import java.util.Arrays;
-import java.util.List;
-
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.instructions.cp.AppendCPInstruction.AppendType;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
@@ -90,24 +87,22 @@ public class FrameAppendTest extends AutomatedTestBase
 			double[][] B = getRandomMatrix(rows, schema2.length, -10, 10, 0.9, 129); 
 			
 			//init data frame 1
-			List<ValueType> lschema1 = Arrays.asList(schema1);
-			FrameBlock frame1 = new FrameBlock(lschema1);
-			Object[] row1 = new Object[lschema1.size()];
+			FrameBlock frame1 = new FrameBlock(schema1);
+			Object[] row1 = new Object[schema1.length];
 			for( int i=0; i<rows; i++ ) {
-				for( int j=0; j<lschema1.size(); j++ )
-					A[i][j] = UtilFunctions.objectToDouble(lschema1.get(j), 
-							row1[j] = UtilFunctions.doubleToObject(lschema1.get(j), A[i][j]));
+				for( int j=0; j<schema1.length; j++ )
+					A[i][j] = UtilFunctions.objectToDouble(schema1[j], 
+							row1[j] = UtilFunctions.doubleToObject(schema1[j], A[i][j]));
 				frame1.appendRow(row1);
 			}
 			
 			//init data frame 2
-			List<ValueType> lschema2 = Arrays.asList(schema2);
-			FrameBlock frame2 = new FrameBlock(lschema2);
-			Object[] row2 = new Object[lschema2.size()];
+			FrameBlock frame2 = new FrameBlock(schema2);
+			Object[] row2 = new Object[schema2.length];
 			for( int i=0; i<rows; i++ ) {
-				for( int j=0; j<lschema2.size(); j++ )
-					B[i][j] = UtilFunctions.objectToDouble(lschema2.get(j), 
-							row2[j] = UtilFunctions.doubleToObject(lschema2.get(j), B[i][j]));
+				for( int j=0; j<schema2.length; j++ )
+					B[i][j] = UtilFunctions.objectToDouble(schema2[j], 
+							row2[j] = UtilFunctions.doubleToObject(schema2[j], B[i][j]));
 				frame2.appendRow(row2);
 			}
 			
@@ -125,10 +120,10 @@ public class FrameAppendTest extends AutomatedTestBase
 				Assert.fail("Wrong number of rows: "+frame3.getNumRows()+", expected: "+mbC.getNumRows());
 		
 			//check correct values
-			List<ValueType> lschema = frame3.getSchema();
+			ValueType[] lschema = frame3.getSchema();
 			for( int i=0; i<rows; i++ ) 
-				for( int j=0; j<lschema.size(); j++ )	{
-					double tmp = UtilFunctions.objectToDouble(lschema.get(j), frame3.get(i, j));
+				for( int j=0; j<lschema.length; j++ )	{
+					double tmp = UtilFunctions.objectToDouble(lschema[j], frame3.get(i, j));
 					if( tmp != mbC.quickGetValue(i, j) )
 						Assert.fail("Wrong get value for cell ("+i+","+j+"): "+tmp+", expected: "+mbC.quickGetValue(i, j));
 				}		

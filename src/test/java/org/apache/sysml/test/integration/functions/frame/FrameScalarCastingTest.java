@@ -19,9 +19,6 @@
 
 package org.apache.sysml.test.integration.functions.frame;
 
-
-import java.util.Arrays;
-
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.io.FrameReaderFactory;
 import org.apache.sysml.runtime.io.FrameWriterFactory;
@@ -133,7 +130,7 @@ public class FrameScalarCastingTest extends AutomatedTestBase
 			}
 			else {
 				retval = FrameReaderFactory.createFrameReader(InputInfo.TextCellInputInfo)
-					.readFrameFromHDFS(output("B"), Arrays.asList(vt), 1, 1)
+					.readFrameFromHDFS(output("B"), new ValueType[]{vt}, 1, 1)
 					.get(0, 0);
 			}
 			Assert.assertEquals("Wrong output: "+retval+" (expected: "+inval+")", inval, retval);

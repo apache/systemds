@@ -20,7 +20,6 @@
 package org.apache.sysml.runtime.controlprogram.context;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -958,7 +957,7 @@ public class SparkExecutionContext extends ExecutionContext
 	 * @throws DMLRuntimeException 
 	 */
 	@SuppressWarnings("unchecked")
-	public static FrameBlock toFrameBlock(RDDObject rdd, List<ValueType> schema, int rlen, int clen) 
+	public static FrameBlock toFrameBlock(RDDObject rdd, ValueType[] schema, int rlen, int clen) 
 		throws DMLRuntimeException 
 	{
 		JavaPairRDD<Long,FrameBlock> lrdd = (JavaPairRDD<Long,FrameBlock>) rdd.getRDD();
@@ -974,13 +973,13 @@ public class SparkExecutionContext extends ExecutionContext
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static FrameBlock toFrameBlock(JavaPairRDD<Long,FrameBlock> rdd, List<ValueType> schema, int rlen, int clen) 
+	public static FrameBlock toFrameBlock(JavaPairRDD<Long,FrameBlock> rdd, ValueType[] schema, int rlen, int clen) 
 		throws DMLRuntimeException
 	{
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 
 		if(schema == null)
-			schema = Collections.nCopies(clen, ValueType.STRING);
+			schema = UtilFunctions.nCopies(clen, ValueType.STRING);
 
 		//create output frame block (w/ lazy allocation)
 		FrameBlock out = new FrameBlock(schema);

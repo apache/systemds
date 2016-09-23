@@ -24,7 +24,6 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map.Entry;
 
 import org.apache.spark.Accumulator;
@@ -127,7 +126,7 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 			String spec = ec.getScalarInput(input2.getName(), input2.getValueType(), input2.isLiteral()).getStringValue();
 			MatrixCharacteristics mcIn = sec.getMatrixCharacteristics(input1.getName());
 			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
-			List<String> colnames = !TfMetaUtils.isIDSpecification(spec) ?
+			String[] colnames = !TfMetaUtils.isIDSpecification(spec) ?
 					in.lookup(1L).get(0).getColumnNames() : null; 
 					
 			//step 1: build transform meta data

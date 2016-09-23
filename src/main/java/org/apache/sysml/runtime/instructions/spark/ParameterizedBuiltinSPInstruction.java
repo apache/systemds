@@ -21,7 +21,6 @@ package org.apache.sysml.runtime.instructions.spark;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
@@ -429,7 +428,7 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			FrameBlock meta = sec.getFrameInput(params.get("meta"));		
 			MatrixCharacteristics mcIn = sec.getMatrixCharacteristics(params.get("target"));
 			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
-			List<String> colnames = !TfMetaUtils.isIDSpecification(params.get("spec")) ?
+			String[] colnames = !TfMetaUtils.isIDSpecification(params.get("spec")) ?
 					in.lookup(1L).get(0).getColumnNames() : null; 
 			
 			//compute omit offset map for block shifts
@@ -463,7 +462,7 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryBlockRDDHandleForVariable(params.get("target"));
 			MatrixCharacteristics mc = sec.getMatrixCharacteristics(params.get("target"));
 			FrameBlock meta = sec.getFrameInput(params.get("meta"));		
-			List<String> colnames = meta.getColumnNames();
+			String[] colnames = meta.getColumnNames();
 			
 			//reblock if necessary (clen > bclen)
 			if( mc.getCols() > mc.getNumColBlocks() ) {
@@ -773,7 +772,7 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 		
 		private int[] _omitColList = null;
 		
-		public RDDTransformApplyOffsetFunction(String spec, List<String> colnames) {
+		public RDDTransformApplyOffsetFunction(String spec, String[] colnames) {
 			try {
 				_omitColList = TfMetaUtils.parseJsonIDList(spec, colnames, TfUtils.TXMETHOD_OMIT);
 			} 
@@ -796,7 +795,7 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 				for( int j=0; j<_omitColList.length; j++ ) {
 					int colID = _omitColList[j];
 					Object val = blk.get(i, colID-1);
-					valid &= !(val==null || (blk.getSchema().get(colID-1)==
+					valid &= !(val==null || (blk.getSchema()[colID-1]==
 							ValueType.STRING &&  val.toString().isEmpty())); 
 				}
 				rmRows += valid ? 0 : 1;

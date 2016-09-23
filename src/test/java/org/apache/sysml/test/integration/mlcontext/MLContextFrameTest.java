@@ -183,9 +183,11 @@ public class MLContextFrameTest extends AutomatedTestBase {
 		List<String> listB = new ArrayList<String>();
 		FrameMetadata fmA = null, fmB = null;
 		Script script = null;
-		List<ValueType> lschemaA = Arrays.asList(ValueType.INT, ValueType.STRING, ValueType.DOUBLE, ValueType.BOOLEAN);
+		ValueType[] schemaA = { ValueType.INT, ValueType.STRING, ValueType.DOUBLE, ValueType.BOOLEAN };
+		List<ValueType> lschemaA = Arrays.asList(schemaA);
 		FrameSchema fschemaA = new FrameSchema(lschemaA);
-		List<ValueType> lschemaB = Arrays.asList(ValueType.STRING, ValueType.DOUBLE, ValueType.BOOLEAN);
+		ValueType[] schemaB = { ValueType.STRING, ValueType.DOUBLE, ValueType.BOOLEAN };
+		List<ValueType> lschemaB = Arrays.asList(schemaB);
 		FrameSchema fschemaB = new FrameSchema(lschemaB);
 
 		if (inputType != IO_TYPE.FILE) {
@@ -232,9 +234,9 @@ public class MLContextFrameTest extends AutomatedTestBase {
 
 				// Create DataFrame
 				SQLContext sqlContext = new SQLContext(sc);
-				StructType dfSchemaA = FrameRDDConverterUtils.convertFrameSchemaToDFSchema(lschemaA, false);
+				StructType dfSchemaA = FrameRDDConverterUtils.convertFrameSchemaToDFSchema(schemaA, false);
 				DataFrame dataFrameA = sqlContext.createDataFrame(javaRddRowA, dfSchemaA);
-				StructType dfSchemaB = FrameRDDConverterUtils.convertFrameSchemaToDFSchema(lschemaB, false);
+				StructType dfSchemaB = FrameRDDConverterUtils.convertFrameSchemaToDFSchema(schemaB, false);
 				DataFrame dataFrameB = sqlContext.createDataFrame(javaRddRowB, dfSchemaB);
 				if (script_type == SCRIPT_TYPE.DML)
 					script = dml("A[2:3,2:4]=B;C=A[2:3,2:3]").in("A", dataFrameA, fmA).in("B", dataFrameB, fmB).out("A")
@@ -305,8 +307,8 @@ public class MLContextFrameTest extends AutomatedTestBase {
 		MLResults mlResults = ml.execute(script);
 		
 		//Validate output schema
-		List<ValueType> lschemaOutA = mlResults.getFrameObject("A").getSchema();
-		List<ValueType> lschemaOutC = mlResults.getFrameObject("C").getSchema();
+		List<ValueType> lschemaOutA = Arrays.asList(mlResults.getFrameObject("A").getSchema());
+		List<ValueType> lschemaOutC = Arrays.asList(mlResults.getFrameObject("C").getSchema());
 		if(inputType != IO_TYPE.FILE) {
 			Assert.assertEquals(ValueType.INT, lschemaOutA.get(0));
 			Assert.assertEquals(ValueType.STRING, lschemaOutA.get(1));

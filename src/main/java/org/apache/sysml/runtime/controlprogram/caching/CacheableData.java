@@ -22,7 +22,6 @@ package org.apache.sysml.runtime.controlprogram.caching;
 import java.io.File;
 import java.io.IOException;
 import java.lang.ref.SoftReference;
-import java.util.List;
 
 import org.apache.commons.lang.mutable.MutableBoolean;
 import org.apache.commons.logging.Log;
@@ -973,7 +972,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		return (_data.getInMemorySize() <= CACHING_THRESHOLD);
 	}
 	
-	protected List<ValueType> getSchema() {
+	protected ValueType[] getSchema() {
 		return null;
 	}
 	

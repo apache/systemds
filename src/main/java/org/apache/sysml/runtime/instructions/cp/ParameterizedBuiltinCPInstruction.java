@@ -20,7 +20,6 @@
 package org.apache.sysml.runtime.instructions.cp;
 
 import java.util.HashMap;
-import java.util.List;
 
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.ParameterizedBuiltinFunctionExpression;
@@ -270,7 +269,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 			//acquire locks
 			FrameBlock data = ec.getFrameInput(params.get("target"));
 			FrameBlock meta = ec.getFrameInput(params.get("meta"));		
-			List<String> colNames = data.getColumnNames();
+			String[] colNames = data.getColumnNames();
 			
 			//compute transformapply
 			Encoder encoder = EncoderFactory.createEncoder(params.get("spec"), colNames, data.getNumColumns(), meta);
@@ -285,7 +284,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 			//acquire locks
 			MatrixBlock data = ec.getMatrixInput(params.get("target"));
 			FrameBlock meta = ec.getFrameInput(params.get("meta"));
-			List<String> colnames = meta.getColumnNames();
+			String[] colnames = meta.getColumnNames();
 			
 			//compute transformdecode
 			Decoder decoder = DecoderFactory.createDecoder(getParameterMap().get("spec"), colnames, null, meta);

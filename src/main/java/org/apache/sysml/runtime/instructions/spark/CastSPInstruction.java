@@ -19,8 +19,6 @@
 
 package org.apache.sysml.runtime.instructions.spark;
 
-import java.util.Collections;
-
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.lops.UnaryCP;
@@ -37,6 +35,7 @@ import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.operators.Operator;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 
 public class CastSPInstruction extends UnarySPInstruction
@@ -95,7 +94,7 @@ public class CastSPInstruction extends UnarySPInstruction
 		//update schema information for output frame
 		if( opcode.equals(UnaryCP.CAST_AS_FRAME_OPCODE) ) {
 			sec.getFrameObject(output.getName()).setSchema(
-				Collections.nCopies((int)mcIn.getCols(), ValueType.DOUBLE));
+				UtilFunctions.nCopies((int)mcIn.getCols(), ValueType.DOUBLE));
 		}
 	}
 }

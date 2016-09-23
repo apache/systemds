@@ -68,7 +68,7 @@ public class FrameReaderTextCSVParallel extends FrameReaderTextCSV
 	 */
 	@Override
 	protected void readCSVFrameFromHDFS( Path path, JobConf job, FileSystem fs, 
-			FrameBlock dest, List<ValueType> schema, List<String> names, long rlen, long clen) 
+			FrameBlock dest, ValueType[] schema, String[] names, long rlen, long clen) 
 		throws IOException
 	{
 		int numThreads = OptimizerUtils.getParallelTextReadParallelism();

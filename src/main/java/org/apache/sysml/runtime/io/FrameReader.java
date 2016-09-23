@@ -21,10 +21,7 @@ package org.apache.sysml.runtime.io;
 
 import java.io.EOFException;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedList;
-import java.util.List;
 
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -34,6 +31,7 @@ import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.util.MapReduceTool;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 /**
  * Base class for all format-specific frame readers. Every reader is required to implement the basic 
@@ -53,7 +51,7 @@ public abstract class FrameReader
 	 * @param clen
 	 * @return
 	 */
-	public abstract FrameBlock readFrameFromHDFS( String fname, List<ValueType> schema, List<String> names, long rlen, long clen)
+	public abstract FrameBlock readFrameFromHDFS( String fname, ValueType[] schema, String[] names, long rlen, long clen)
 		throws IOException, DMLRuntimeException;
 	
 	/**
@@ -64,10 +62,10 @@ public abstract class FrameReader
 	 * @param clen
 	 * @return
 	 */
-	public FrameBlock readFrameFromHDFS( String fname, List<ValueType> schema, long rlen, long clen )
+	public FrameBlock readFrameFromHDFS( String fname, ValueType[] schema, long rlen, long clen )
 		throws IOException, DMLRuntimeException
 	{
-		return readFrameFromHDFS(fname, schema, getDefColNames(schema.size()), rlen, clen);
+		return readFrameFromHDFS(fname, schema, getDefColNames(schema.length), rlen, clen);
 	}
 	
 	/**
@@ -88,11 +86,11 @@ public abstract class FrameReader
 	 * @param iNumColumns
 	 * @return
 	 */
-	public List<ValueType> getDefSchema( long clen )
+	public ValueType[] getDefSchema( long clen )
 		throws IOException, DMLRuntimeException
 	{
 		int lclen = Math.max((int)clen, 1);
-		return Collections.nCopies(lclen, ValueType.STRING);
+		return UtilFunctions.nCopies(lclen, ValueType.STRING);
 	}
 
 	/**
@@ -100,13 +98,11 @@ public abstract class FrameReader
 	 * @param iNumColumns
 	 * @return
 	 */
-	public List<String> getDefColNames( long clen )
+	public String[] getDefColNames( long clen )
 		throws IOException, DMLRuntimeException
 	{
-		List<String> colNames = new ArrayList<String>();
-		for (int i=0; i < clen; i++)
-			colNames.add("C"+i);
-		return colNames;
+		return (clen < 0) ? new String[0] : 
+			FrameBlock.createColNames((int)clen);
 	}
 
 	/**
@@ -148,7 +144,7 @@ public abstract class FrameReader
 	 * @throws DMLRuntimeException 
 	 * @throws IOException 
 	 */
-	protected static FrameBlock createOutputFrameBlock(List<ValueType> schema, List<String> names, long nrow)
+	protected static FrameBlock createOutputFrameBlock(ValueType[] schema, String[] names, long nrow)
 		throws IOException, DMLRuntimeException
 	{
 		//check schema and column names
@@ -167,9 +163,9 @@ public abstract class FrameReader
 	 * @param ncol
 	 * @return
 	 */
-	protected static List<ValueType> createOutputSchema(List<ValueType> schema, long ncol) {
-		if( schema.size()==1 && ncol > 1 )
-			return Collections.nCopies((int)ncol, schema.get(0));
+	protected static ValueType[] createOutputSchema(ValueType[] schema, long ncol) {
+		if( schema.length==1 && ncol > 1 )
+			return UtilFunctions.nCopies((int)ncol, schema[0]);
 		return schema;
 	}
 	
@@ -179,8 +175,8 @@ public abstract class FrameReader
 	 * @param ncol
 	 * @return
 	 */
-	protected static List<String> createOutputNames(List<String> names, long ncol) {
-		if( names.size() != ncol )
+	protected static String[] createOutputNames(String[] names, long ncol) {
+		if( names.length != ncol )
 			return FrameBlock.createColNames((int)ncol);
 		return names;
 	}

@@ -23,7 +23,6 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Arrays;
-import java.util.List;
 import java.util.regex.Pattern;
 
 import org.apache.hadoop.filecache.DistributedCache;
@@ -250,13 +249,11 @@ public class TfUtils implements Serializable{
 	private void createAgents(JSONObject spec, String[] naStrings) 
 		throws IOException, JSONException 
 	{
-		List<String> colnames = Arrays.asList(_outputColumnNames);
-		
-		_oa = new OmitAgent(spec, colnames, _numInputCols);
-		_mia = new MVImputeAgent(spec, naStrings, _numInputCols);
-		_ra = new RecodeAgent(spec, colnames, _numInputCols);
-		_ba = new BinAgent(spec, colnames, _numInputCols);
-		_da = new DummycodeAgent(spec, colnames, _numInputCols);
+		_oa = new OmitAgent(spec, _outputColumnNames, _numInputCols);
+		_mia = new MVImputeAgent(spec, null, naStrings, _numInputCols);
+		_ra = new RecodeAgent(spec, _outputColumnNames, _numInputCols);
+		_ba = new BinAgent(spec, _outputColumnNames, _numInputCols);
+		_da = new DummycodeAgent(spec, _outputColumnNames, _numInputCols);
 	}
 	
 	public void setupAgents(OmitAgent oa, MVImputeAgent mia, RecodeAgent ra, BinAgent ba, DummycodeAgent da)  {

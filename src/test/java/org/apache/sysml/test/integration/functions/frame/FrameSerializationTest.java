@@ -25,8 +25,6 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.util.Arrays;
-import java.util.List;
 
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
@@ -87,15 +85,14 @@ public class FrameSerializationTest extends AutomatedTestBase
 			double[][] A = getRandomMatrix(rows, schema.length, -10, 10, 0.9, 8234); 
 			
 			//init data frame
-			List<ValueType> lschema = Arrays.asList(schema);
-			FrameBlock frame = new FrameBlock(lschema);
+			FrameBlock frame = new FrameBlock(schema);
 			
 			//init data frame 
-			Object[] row = new Object[lschema.size()];
+			Object[] row = new Object[schema.length];
 			for( int i=0; i<rows; i++ ) {
-				for( int j=0; j<lschema.size(); j++ )
-					A[i][j] = UtilFunctions.objectToDouble(lschema.get(j), 
-							row[j] = UtilFunctions.doubleToObject(lschema.get(j), A[i][j]));
+				for( int j=0; j<schema.length; j++ )
+					A[i][j] = UtilFunctions.objectToDouble(schema[j], 
+							row[j] = UtilFunctions.doubleToObject(schema[j], A[i][j]));
 				frame.appendRow(row);
 			}			
 			
@@ -130,8 +127,8 @@ public class FrameSerializationTest extends AutomatedTestBase
 		
 			//check correct values			
 			for( int i=0; i<rows; i++ ) 
-				for( int j=0; j<lschema.size(); j++ )	{
-					double tmp = UtilFunctions.objectToDouble(lschema.get(j), frame.get(i, j));
+				for( int j=0; j<schema.length; j++ )	{
+					double tmp = UtilFunctions.objectToDouble(schema[j], frame.get(i, j));
 					if( tmp != A[i][j] )
 						Assert.fail("Wrong get value for cell ("+i+","+j+"): "+tmp+", expected: "+A[i][j]);
 				}		

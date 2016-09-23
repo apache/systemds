@@ -64,7 +64,7 @@ public class DummycodeAgent extends Encoder
 		super(list, clen);
 	}
 	
-	public DummycodeAgent(JSONObject parsedSpec, List<String> colnames, int clen) throws JSONException {
+	public DummycodeAgent(JSONObject parsedSpec, String[] colnames, int clen) throws JSONException {
 		super(null, clen);
 		
 		if ( parsedSpec.containsKey(TfUtils.TXMETHOD_DUMMYCODE) ) {
@@ -443,7 +443,7 @@ public class DummycodeAgent extends Encoder
 					idx++;
 				}
 				else {
-					double ptval = UtilFunctions.objectToDouble(in.getSchema().get(colID-1), in.get(i, colID-1));
+					double ptval = UtilFunctions.objectToDouble(in.getSchema()[colID-1], in.get(i, colID-1));
 					ret.quickSetValue(i, ncolID-1, ptval);
 					ncolID++;
 				}
@@ -465,7 +465,7 @@ public class DummycodeAgent extends Encoder
 		_dummycodedLength = _clen;
 		for( int j=0; j<_colList.length; j++ ) {
 			int colID = _colList[j]; //1-based
-			_domainSizes[j] = (int)meta.getColumnMetadata().get(colID-1).getNumDistinct();
+			_domainSizes[j] = (int)meta.getColumnMetadata()[colID-1].getNumDistinct();
 			_dummycodedLength +=  _domainSizes[j]-1;
 		}
 	}

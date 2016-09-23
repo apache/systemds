@@ -130,7 +130,7 @@ public class FrameWriterTextCSV extends FrameWriter
 				//append column names if header requested
 				if( props.hasHeader() ) {
 					for( int j=0; j<cols; j++ ) {
-						sb.append(src.getColumnNames().get(j));
+						sb.append(src.getColumnNames()[j]);
 						if ( j < cols-1 )
 							sb.append(delim);
 					}

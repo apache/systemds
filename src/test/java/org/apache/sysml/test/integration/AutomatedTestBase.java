@@ -31,7 +31,6 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 
 import org.apache.sysml.lops.Lop;
 import org.apache.commons.io.FileUtils;
@@ -1700,7 +1699,7 @@ public abstract class AutomatedTestBase
 	 * @throws IOException 
 	 * @throws DMLRuntimeException 
 	 */
-	protected double[][] writeInputFrame(String name, double[][] data, boolean bIncludeR, List<ValueType> schema, OutputInfo oi) 
+	protected double[][] writeInputFrame(String name, double[][] data, boolean bIncludeR, ValueType[] schema, OutputInfo oi) 
 			throws DMLRuntimeException, IOException 
 	{
 		String completePath = baseDirectory + INPUT_DIR + name;
@@ -1725,14 +1724,14 @@ public abstract class AutomatedTestBase
 		return data;
 	}
 
-	protected double[][] writeInputFrameWithMTD(String name, double[][] data, boolean bIncludeR, List<ValueType> schema, OutputInfo oi) 
+	protected double[][] writeInputFrameWithMTD(String name, double[][] data, boolean bIncludeR, ValueType[] schema, OutputInfo oi) 
 			throws DMLRuntimeException, IOException 
 	{
 		MatrixCharacteristics mc = new MatrixCharacteristics(data.length, data[0].length, OptimizerUtils.DEFAULT_BLOCKSIZE, data[0].length, -1);
 		return writeInputFrameWithMTD(name, data, bIncludeR, mc, schema, oi);
 	}
 	
-	protected double[][] writeInputFrameWithMTD(String name, double[][] data, boolean bIncludeR, MatrixCharacteristics mc, List<ValueType> schema, OutputInfo oi) 
+	protected double[][] writeInputFrameWithMTD(String name, double[][] data, boolean bIncludeR, MatrixCharacteristics mc, ValueType[] schema, OutputInfo oi) 
 			throws DMLRuntimeException, IOException 
 	{
 		writeInputFrame(name, data, bIncludeR, schema, oi);
@@ -1766,7 +1765,7 @@ public abstract class AutomatedTestBase
 	 * @throws IOException 
 	 * @throws DMLRuntimeException 
 	 */
-	protected double[][] writeInputFrame(String name, double[][] data, List<ValueType> schema, OutputInfo oi) 
+	protected double[][] writeInputFrame(String name, double[][] data, ValueType[] schema, OutputInfo oi) 
 			throws DMLRuntimeException, IOException 
 	{
 		return writeInputFrame(name, data, false, schema, oi);

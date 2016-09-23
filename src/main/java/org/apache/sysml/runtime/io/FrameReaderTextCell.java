@@ -23,7 +23,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.List;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -60,12 +59,12 @@ public class FrameReaderTextCell extends FrameReader
 	 * @throws IOException 
 	 */
 	@Override
-	public final FrameBlock readFrameFromHDFS(String fname, List<ValueType> schema, List<String> names, long rlen, long clen)
+	public final FrameBlock readFrameFromHDFS(String fname, ValueType[] schema, String[] names, long rlen, long clen)
 		throws IOException, DMLRuntimeException
 	{
 		//allocate output frame block
-		List<ValueType> lschema = createOutputSchema(schema, clen);
-		List<String> lnames = createOutputNames(names, clen);
+		ValueType[] lschema = createOutputSchema(schema, clen);
+		String[] lnames = createOutputNames(names, clen);
 		FrameBlock ret = createOutputFrameBlock(lschema, lnames, rlen);
 		
 		//prepare file access
@@ -107,12 +106,12 @@ public class FrameReaderTextCell extends FrameReader
 	 * @throws DMLRuntimeException 
 	 * @throws IOException 
 	 */
-	public final FrameBlock readFrameFromInputStream(InputStream is, List<ValueType> schema, List<String> names, long rlen, long clen) 
+	public final FrameBlock readFrameFromInputStream(InputStream is, ValueType[] schema, String[] names, long rlen, long clen) 
 		throws IOException, DMLRuntimeException 
 	{
 		//allocate output frame block
-		List<ValueType> lschema = createOutputSchema(schema, clen);
-		List<String> lnames = createOutputNames(names, clen);
+		ValueType[] lschema = createOutputSchema(schema, clen);
+		String[] lnames = createOutputNames(names, clen);
 		FrameBlock ret = createOutputFrameBlock(lschema, lnames, rlen);
 	
 		//core read 
@@ -134,7 +133,7 @@ public class FrameReaderTextCell extends FrameReader
 	 * @throws IOException
 	 */
 	protected void readTextCellFrameFromHDFS( Path path, JobConf job, FileSystem fs, FrameBlock dest, 
-			List<ValueType> schema, List<String> names, long rlen, long clen)
+			ValueType[] schema, String[] names, long rlen, long clen)
 		throws IOException
 	{
 		if( fs.isDirectory(path) ) {
@@ -163,7 +162,7 @@ public class FrameReaderTextCell extends FrameReader
 	protected final void readTextCellFrameFromInputSplit( InputSplit split, TextInputFormat informat, JobConf job, FrameBlock dest)
 		throws IOException
 	{
-		List<ValueType> schema = dest.getSchema();
+		ValueType[] schema = dest.getSchema();
 		int rlen = dest.getNumRows();
 		int clen = dest.getNumColumns();
 		
@@ -187,7 +186,7 @@ public class FrameReaderTextCell extends FrameReader
 				else if( row == -2 )
 					dest.getColumnMetadata(col).setNumDistinct(st.nextLong());
 				else
-					dest.set(row, col, UtilFunctions.stringToObject(schema.get(col), st.nextToken()));
+					dest.set(row, col, UtilFunctions.stringToObject(schema[col], st.nextToken()));
 			}
 		}
 		catch(Exception ex) 
@@ -221,7 +220,7 @@ public class FrameReaderTextCell extends FrameReader
 	 * @throws IOException
 	 */
 	protected final void readRawTextCellFrameFromHDFS( Path path, JobConf job, FileSystem fs, FrameBlock dest, 
-			List<ValueType> schema, List<String> names, long rlen, long clen)
+			ValueType[] schema, String[] names, long rlen, long clen)
 		throws IOException
 	{
 		//create input stream for path
@@ -242,7 +241,7 @@ public class FrameReaderTextCell extends FrameReader
 	 * @return
 	 * @throws IOException
 	 */
-	protected final void readRawTextCellFrameFromInputStream( InputStream is, FrameBlock dest, List<ValueType> schema, List<String> names, long rlen, long clen)
+	protected final void readRawTextCellFrameFromInputStream( InputStream is, FrameBlock dest, ValueType[] schema, String[] names, long rlen, long clen)
 		throws IOException
 	{
 		//create buffered reader
@@ -264,7 +263,7 @@ public class FrameReaderTextCell extends FrameReader
 				else if (row == -2)
 					dest.getColumnMetadata(col).setNumDistinct(st.nextLong());
 				else
-					dest.set(row, col, UtilFunctions.stringToObject(schema.get(col), st.nextToken()));
+					dest.set(row, col, UtilFunctions.stringToObject(schema[col], st.nextToken()));
 			}
 		}
 		catch(Exception ex)

@@ -21,7 +21,6 @@ package org.apache.sysml.runtime.instructions.spark;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Random;
 
 import org.apache.hadoop.io.LongWritable;
@@ -137,7 +136,7 @@ public class WriteSPInstruction extends SPInstruction
 
 		//get filename (literal or variable expression)
 		String fname = ec.getScalarInput(input2.getName(), ValueType.STRING, input2.isLiteral()).getStringValue();
-		List<ValueType> schema = (input1.getDataType()==DataType.FRAME) ? 
+		ValueType[] schema = (input1.getDataType()==DataType.FRAME) ? 
 				sec.getFrameObject(input1.getName()).getSchema() : null;
 		
 		try
@@ -282,7 +281,7 @@ public class WriteSPInstruction extends SPInstruction
 	 * @throws IOException 
 	 */
 	@SuppressWarnings("unchecked")
-	protected void processFrameWriteInstruction(SparkExecutionContext sec, String fname, OutputInfo oi, List<ValueType> schema) 
+	protected void processFrameWriteInstruction(SparkExecutionContext sec, String fname, OutputInfo oi, ValueType[] schema) 
 		throws DMLRuntimeException, IOException
 	{
 		//get input rdd

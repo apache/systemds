@@ -46,7 +46,7 @@ public class DecoderFactory
 	 * @throws DMLRuntimeException
 	 */
 	@SuppressWarnings("unchecked")
-	public static Decoder createDecoder(String spec, List<String> colnames, List<ValueType> schema, FrameBlock meta) 
+	public static Decoder createDecoder(String spec, String[] colnames, List<ValueType> schema, FrameBlock meta) 
 		throws DMLRuntimeException 
 	{	
 		Decoder decoder = null;

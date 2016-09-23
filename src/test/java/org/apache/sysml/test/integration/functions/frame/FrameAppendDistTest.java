@@ -20,7 +20,6 @@
 package org.apache.sysml.test.integration.functions.frame;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -158,11 +157,11 @@ public class FrameAppendDistTest extends AutomatedTestBase
 			       inputDir() + " " + expectedDir() + " " + (rbind? "rbind": "cbind");
 	
 			//initialize the frame data.
-			List<ValueType> lschemaA = Arrays.asList(genMixSchema(cols1));
+			ValueType[] lschemaA = genMixSchema(cols1);
 			double[][] A = getRandomMatrix(rows1, cols1, min, max, sparsity, 1111 /*\\System.currentTimeMillis()*/);
 			writeInputFrameWithMTD("A", A, true, lschemaA, OutputInfo.BinaryBlockOutputInfo);	        
 	        
-			List<ValueType> lschemaB = Arrays.asList(genMixSchema(cols2));
+			ValueType[] lschemaB = genMixSchema(cols2);
 			double[][] B = getRandomMatrix(rows2, cols2, min, max, sparsity, 2345 /*\\System.currentTimeMillis()*/);
 			writeInputFrameWithMTD("B", B, true, lschemaB, OutputInfo.BinaryBlockOutputInfo);	        
 	        	        
@@ -171,15 +170,14 @@ public class FrameAppendDistTest extends AutomatedTestBase
 			runTest(true, exceptionExpected, null, expectedNumberOfJobs);
 			runRScript(true);
 
-			List<ValueType> lschemaAB = new ArrayList<ValueType>(lschemaA);
-			lschemaAB.addAll(lschemaB);
+			ValueType[] lschemaAB = UtilFunctions.copyOf(lschemaA, lschemaB);
 			
 			for(String file: config.getOutputFiles())
 			{
 				FrameBlock frameBlock = readDMLFrameFromHDFS(file, InputInfo.BinaryBlockInputInfo);
 				MatrixCharacteristics md = new MatrixCharacteristics(frameBlock.getNumRows(), frameBlock.getNumColumns(), -1, -1);
 				FrameBlock frameRBlock = readRFrameFromHDFS(file+".csv", InputInfo.CSVInputInfo, md);
-				verifyFrameData(frameBlock, frameRBlock, (ValueType[]) lschemaAB.toArray(new ValueType[0]));
+				verifyFrameData(frameBlock, frameRBlock, (ValueType[]) lschemaAB);
 				System.out.println("File processed is " + file);
 			}
 		}

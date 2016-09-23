@@ -57,7 +57,7 @@ public class FrameReaderTextCellParallel extends FrameReaderTextCell
 	 */
 	@Override
 	protected void readTextCellFrameFromHDFS( Path path, JobConf job, FileSystem fs, FrameBlock dest, 
-			List<ValueType> schema, List<String> names, long rlen, long clen)
+			ValueType[] schema, String[] names, long rlen, long clen)
 		throws IOException
 	{
 		int numThreads = OptimizerUtils.getParallelTextReadParallelism();

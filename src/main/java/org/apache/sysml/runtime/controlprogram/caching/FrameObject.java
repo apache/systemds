@@ -21,10 +21,9 @@ package org.apache.sysml.runtime.controlprogram.caching;
 
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.Arrays;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.mutable.MutableBoolean;
 import org.apache.sysml.parser.DataExpression;
 import org.apache.sysml.parser.Expression.DataType;
@@ -44,12 +43,13 @@ import org.apache.sysml.runtime.matrix.data.FileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class FrameObject extends CacheableData<FrameBlock>
 {
 	private static final long serialVersionUID = 1755082174281927785L;
 
-	private List<ValueType> _schema = null;
+	private ValueType[] _schema = null;
 	
 	/**
 	 * 
@@ -85,7 +85,7 @@ public class FrameObject extends CacheableData<FrameBlock>
 	 * @param schema
 	 * 
 	 */
-	public FrameObject(String fname, MetaData meta, List<ValueType> schema) {
+	public FrameObject(String fname, MetaData meta, ValueType[] schema) {
 		this();
 		setFileName(fname);
 		setMetaData(meta);
@@ -102,7 +102,7 @@ public class FrameObject extends CacheableData<FrameBlock>
 	}
 	
 	@Override
-	public List<ValueType> getSchema() {
+	public ValueType[] getSchema() {
 		return _schema;
 	}
 
@@ -112,9 +112,9 @@ public class FrameObject extends CacheableData<FrameBlock>
 	 * @param cu column upper bound, inclusive
 	 * @return
 	 */
-	public List<ValueType> getSchema(int cl, int cu) {
-		return (_schema!=null && _schema.size()>cu) ? _schema.subList(cl, cu+1) :
-			Collections.nCopies(cu-cl+1, ValueType.STRING);
+	public ValueType[] getSchema(int cl, int cu) {
+		return (_schema!=null && _schema.length>cu) ? Arrays.copyOfRange(_schema, cl, cu+1) :
+			UtilFunctions.nCopies(cu-cl+1, ValueType.STRING);
 	}
 
 	/**
@@ -124,13 +124,10 @@ public class FrameObject extends CacheableData<FrameBlock>
 	 * @param fo
 	 * @return
 	 */
-	public List<ValueType> mergeSchemas(FrameObject fo) {
-		ArrayList<ValueType> ret = new ArrayList<ValueType>();
-		ret.addAll((_schema!=null) ? _schema : 
-			Collections.nCopies((int)getNumColumns(), ValueType.STRING));
-		ret.addAll((fo.getSchema()!=null) ? fo.getSchema() : 
-			Collections.nCopies((int)fo.getNumColumns(), ValueType.STRING));
-		return ret;
+	public ValueType[] mergeSchemas(FrameObject fo) {
+		return (ValueType[]) ArrayUtils.addAll(
+			(_schema!=null) ? _schema : UtilFunctions.nCopies((int)getNumColumns(), ValueType.STRING), 
+			(fo._schema!=null) ? fo._schema : UtilFunctions.nCopies((int)fo.getNumColumns(), ValueType.STRING));
 	} 
 	
 	public void setSchema(String schema) {
@@ -138,18 +135,18 @@ public class FrameObject extends CacheableData<FrameBlock>
 			//populate default schema
 			int clen = (int) getNumColumns();
 			if( clen > 0 ) //known number of cols
-				_schema = Collections.nCopies(clen, ValueType.STRING);
+				_schema = UtilFunctions.nCopies(clen, ValueType.STRING);
 		}
 		else {
 			//parse given schema
-			_schema = new ArrayList<ValueType>();
 			String[] parts = schema.split(DataExpression.DEFAULT_DELIM_DELIMITER);
-			for( String svt : parts )
-				_schema.add(ValueType.valueOf(svt.toUpperCase()));
+			_schema = new ValueType[parts.length];
+			for( int i=0; i<parts.length; i++ )
+				_schema[i] = ValueType.valueOf(parts[i].toUpperCase());
 		}
 	}
 	
-	public void setSchema(List<ValueType> schema) {
+	public void setSchema(ValueType[] schema) {
 		_schema = schema;
 	}
 		
@@ -200,8 +197,8 @@ public class FrameObject extends CacheableData<FrameBlock>
 		MatrixCharacteristics mc = iimd.getMatrixCharacteristics();
 		
 		//handle missing schema if necessary
-		List<ValueType> lschema = (_schema!=null) ? _schema : 
-			Collections.nCopies(clen>=1 ? (int)clen : 1, ValueType.STRING);
+		ValueType[] lschema = (_schema!=null) ? _schema : 
+			UtilFunctions.nCopies(clen>=1 ? (int)clen : 1, ValueType.STRING);
 		
 		//read the frame block
 		FrameBlock data = null;
@@ -237,8 +234,8 @@ public class FrameObject extends CacheableData<FrameBlock>
 		int clen = (int)mc.getCols();
 		
 		//handle missing schema if necessary
-		List<ValueType> lschema = (_schema!=null) ? _schema : 
-			Collections.nCopies(clen>=1 ? (int)clen : 1, ValueType.STRING);
+		ValueType[] lschema = (_schema!=null) ? _schema : 
+			UtilFunctions.nCopies(clen>=1 ? (int)clen : 1, ValueType.STRING);
 		
 		FrameBlock fb = null;
 		try  {

@@ -285,9 +285,8 @@ public class FrameConverterTest extends AutomatedTestBase
 		try
 		{
 			//initialize the frame data.
-			List<ValueType> lschema = Arrays.asList(schema);
-			FrameBlock frame1 = new FrameBlock(lschema);
-			initFrameData(frame1, A, lschema);
+			FrameBlock frame1 = new FrameBlock(schema);
+			initFrameData(frame1, A, schema);
 			
 			//write frame data to hdfs
 			FrameWriter writer = FrameWriterFactory.createFrameWriter(oinfo);
@@ -346,9 +345,8 @@ public class FrameConverterTest extends AutomatedTestBase
 			} 
 			else {
 				//initialize the frame data.
-				List<ValueType> lschema = Arrays.asList(schema);
-				frame1 = new FrameBlock(lschema);
-				initFrameData(frame1, A, lschema);
+				frame1 = new FrameBlock(schema);
+				initFrameData(frame1, A, schema);
 
 				//write frame data to hdfs
 				FrameWriter writer = FrameWriterFactory.createFrameWriter(oinfo);
@@ -393,12 +391,12 @@ public class FrameConverterTest extends AutomatedTestBase
 	 * @param data
 	 * @param lschema
 	 */
-	private void initFrameData(FrameBlock frame, double[][] data, List<ValueType> lschema) {
-		Object[] row1 = new Object[lschema.size()];
+	private void initFrameData(FrameBlock frame, double[][] data, ValueType[] lschema) {
+		Object[] row1 = new Object[lschema.length];
 		for( int i=0; i<rows; i++ ) {
-			for( int j=0; j<lschema.size(); j++ )
-				data[i][j] = UtilFunctions.objectToDouble(lschema.get(j), 
-						row1[j] = UtilFunctions.doubleToObject(lschema.get(j), data[i][j]));
+			for( int j=0; j<lschema.length; j++ )
+				data[i][j] = UtilFunctions.objectToDouble(lschema[j], 
+						row1[j] = UtilFunctions.doubleToObject(lschema[j], data[i][j]));
 			frame.appendRow(row1);
 		}
 	}
@@ -428,10 +426,10 @@ public class FrameConverterTest extends AutomatedTestBase
 	private void verifyFrameMatrixData(FrameBlock frame, MatrixBlock matrix) {
 		for ( int i=0; i<frame.getNumRows(); i++ )
 			for( int j=0; j<frame.getNumColumns(); j++ )	{
-				Object val1 = UtilFunctions.doubleToObject(frame.getSchema().get(j),
-								UtilFunctions.objectToDouble(frame.getSchema().get(j), frame.get(i, j)));
-				Object val2 = UtilFunctions.doubleToObject(frame.getSchema().get(j), matrix.getValue(i, j));
-				if(( UtilFunctions.compareTo(frame.getSchema().get(j), val1, val2)) != 0)
+				Object val1 = UtilFunctions.doubleToObject(frame.getSchema()[j],
+								UtilFunctions.objectToDouble(frame.getSchema()[j], frame.get(i, j)));
+				Object val2 = UtilFunctions.doubleToObject(frame.getSchema()[j], matrix.getValue(i, j));
+				if(( UtilFunctions.compareTo(frame.getSchema()[j], val1, val2)) != 0)
 					Assert.fail("Frame value for cell ("+ i + "," + j + ") is " + val1 + 
 							", is not same as matrix value " + val2);
 			}
@@ -455,6 +453,7 @@ public class FrameConverterTest extends AutomatedTestBase
 	{
 		SparkExecutionContext sec = (SparkExecutionContext) ExecutionContextFactory.createContext();		
 		JavaSparkContext sc = sec.getSparkContext();
+		ValueType[] lschema = schema.toArray(new ValueType[0]);
 		
 		MapReduceTool.deleteFileIfExistOnHDFS(fnameOut);
 		
@@ -483,7 +482,7 @@ public class FrameConverterTest extends AutomatedTestBase
 				OutputInfo oinfo = OutputInfo.BinaryBlockOutputInfo;
 				JavaPairRDD<LongWritable,Text> rddIn = sc.hadoopFile(fnameIn, iinfo.inputFormatClass, iinfo.inputKeyClass, iinfo.inputValueClass);
 				JavaPairRDD<LongWritable, FrameBlock> rddOut = FrameRDDConverterUtils
-						.textCellToBinaryBlock(sc, rddIn, mc, schema)
+						.textCellToBinaryBlock(sc, rddIn, mc, lschema)
 						.mapToPair(new LongFrameToLongWritableFrameFunction());
 				rddOut.saveAsHadoopFile(fnameOut, LongWritable.class, FrameBlock.class, oinfo.outputFormatClass);
 				break;
@@ -519,8 +518,8 @@ public class FrameConverterTest extends AutomatedTestBase
 
 				//Create DataFrame 
 				SQLContext sqlContext = new SQLContext(sc);
-				StructType dfSchema = FrameRDDConverterUtils.convertFrameSchemaToDFSchema(schema, false);
-				JavaRDD<Row> rowRDD = FrameRDDConverterUtils.csvToRowRDD(sc, fnameIn, separator, schema);
+				StructType dfSchema = FrameRDDConverterUtils.convertFrameSchemaToDFSchema(lschema, false);
+				JavaRDD<Row> rowRDD = FrameRDDConverterUtils.csvToRowRDD(sc, fnameIn, separator, lschema);
 				DataFrame df = sqlContext.createDataFrame(rowRDD, dfSchema);
 				
 				JavaPairRDD<LongWritable, FrameBlock> rddOut = FrameRDDConverterUtils
@@ -535,7 +534,7 @@ public class FrameConverterTest extends AutomatedTestBase
 				JavaPairRDD<Long, FrameBlock> rddIn = sc
 						.hadoopFile(fnameIn, iinfo.inputFormatClass, LongWritable.class, FrameBlock.class)
 				 		.mapToPair(new LongWritableFrameToLongFrameFunction());
-				DataFrame df = FrameRDDConverterUtils.binaryBlockToDataFrame(new SQLContext(sc), rddIn, mc, schema);
+				DataFrame df = FrameRDDConverterUtils.binaryBlockToDataFrame(new SQLContext(sc), rddIn, mc, lschema);
 				
 				//Convert back DataFrame to binary block for comparison using original binary to converted DF and back to binary 
 				JavaPairRDD<LongWritable, FrameBlock> rddOut = FrameRDDConverterUtils

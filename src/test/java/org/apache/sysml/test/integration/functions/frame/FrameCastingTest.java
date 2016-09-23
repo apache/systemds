@@ -19,9 +19,6 @@
 
 package org.apache.sysml.test.integration.functions.frame;
 
-import java.util.Arrays;
-import java.util.List;
-
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -102,12 +99,11 @@ public class FrameCastingTest extends AutomatedTestBase
 			if( ctype == CastType.F2M ) 
 			{
 				//construct input schema
-				List<ValueType> lschema1 = Arrays.asList(schema);
-				FrameBlock frame1 = new FrameBlock(lschema1);
-				Object[] row1 = new Object[lschema1.size()];
+				FrameBlock frame1 = new FrameBlock(schema);
+				Object[] row1 = new Object[schema.length];
 				for( int i=0; i<rows; i++ ) {
-					for( int j=0; j<lschema1.size(); j++ )
-						row1[j] = UtilFunctions.doubleToObject(lschema1.get(j), A[i][j]);
+					for( int j=0; j<schema.length; j++ )
+						row1[j] = UtilFunctions.doubleToObject(schema[j], A[i][j]);
 					frame1.appendRow(row1);
 				}
 				
@@ -122,7 +118,7 @@ public class FrameCastingTest extends AutomatedTestBase
 			else if( ctype == CastType.M2F_S )
 			{
 				MatrixBlock mb = DataConverter.convertToMatrixBlock(A);
-				frame = DataConverter.convertToFrameBlock(mb, Arrays.asList(schema));	
+				frame = DataConverter.convertToFrameBlock(mb, schema);	
 			}
 			
 			//check basic meta data
@@ -130,10 +126,10 @@ public class FrameCastingTest extends AutomatedTestBase
 				Assert.fail("Wrong number of rows: "+frame.getNumRows()+", expected: "+rows);
 		
 			//check correct values
-			List<ValueType> lschema = frame.getSchema();
+			ValueType[] lschema = frame.getSchema();
 			for( int i=0; i<rows; i++ ) 
-				for( int j=0; j<lschema.size(); j++ )	{
-					double tmp = UtilFunctions.objectToDouble(lschema.get(j), frame.get(i, j));
+				for( int j=0; j<lschema.length; j++ )	{
+					double tmp = UtilFunctions.objectToDouble(lschema[j], frame.get(i, j));
 					if( tmp != A[i][j] )
 						Assert.fail("Wrong get value for cell ("+i+","+j+"): "+tmp+", expected: "+A[i][j]);
 				}		

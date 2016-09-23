@@ -21,7 +21,6 @@ package org.apache.sysml.runtime.transform;
 
 import java.io.IOException;
 import java.util.Iterator;
-import java.util.List;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -50,7 +49,7 @@ public class OmitAgent extends Encoder
 		super(list, clen);
 	}
 	
-	public OmitAgent(JSONObject parsedSpec, List<String> colnames, int clen) 
+	public OmitAgent(JSONObject parsedSpec, String[] colnames, int clen) 
 		throws JSONException 
 	{
 		super(null, clen);

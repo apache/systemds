@@ -41,7 +41,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Locale;
 import java.util.Random;
 import java.util.StringTokenizer;
@@ -1637,13 +1636,13 @@ public class TestUtils
 	 * @throws IOException 
 	 * @throws DMLRuntimeException 
 	 */
-	public static void writeTestFrame(String file, double[][] data, List<ValueType> schema, OutputInfo oi, boolean isR) 
+	public static void writeTestFrame(String file, double[][] data, ValueType[] schema, OutputInfo oi, boolean isR) 
 			throws DMLRuntimeException, IOException 
 	{
 		FrameWriter writer = FrameWriterFactory.createFrameWriter(oi);
 		FrameBlock frame = new FrameBlock(schema);
 		initFrameData(frame, data, schema, data.length);
-		writer.writeFrameToHDFS(frame, file, data.length, schema.size());
+		writer.writeFrameToHDFS(frame, file, data.length, schema.length);
 	}
 	
 	/**
@@ -1658,7 +1657,7 @@ public class TestUtils
 	 * @throws IOException 
 	 * @throws DMLRuntimeException 
 	 */
-	public static void writeTestFrame(String file, double[][] data, List<ValueType> schema, OutputInfo oi)
+	public static void writeTestFrame(String file, double[][] data, ValueType[] schema, OutputInfo oi)
 		throws DMLRuntimeException, IOException
 	{
 		writeTestFrame(file, data, schema, oi, false);
@@ -1670,13 +1669,13 @@ public class TestUtils
 	 * @param data
 	 * @param lschema
 	 */
-	public static void initFrameData(FrameBlock frame, double[][] data, List<ValueType> lschema, int rows) {
-		Object[] row1 = new Object[lschema.size()];
+	public static void initFrameData(FrameBlock frame, double[][] data, ValueType[] lschema, int rows) {
+		Object[] row1 = new Object[lschema.length];
 		for( int i=0; i<rows; i++ ) {
-			for( int j=0; j<lschema.size(); j++ ) {
-				data[i][j] = UtilFunctions.objectToDouble(lschema.get(j), 
-						row1[j] = UtilFunctions.doubleToObject(lschema.get(j), data[i][j]));
-				if(row1[j] != null && lschema.get(j) == ValueType.STRING)
+			for( int j=0; j<lschema.length; j++ ) {
+				data[i][j] = UtilFunctions.objectToDouble(lschema[j], 
+						row1[j] = UtilFunctions.doubleToObject(lschema[j], data[i][j]));
+				if(row1[j] != null && lschema[j] == ValueType.STRING)
 					row1[j] = "Str" + row1[j];
 			}
 			frame.appendRow(row1);

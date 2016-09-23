@@ -59,7 +59,7 @@ public class RecodeAgent extends Encoder
 	private HashMap<Integer, HashMap<String, Long>> _rcdMaps  = new HashMap<Integer, HashMap<String, Long>>();
 	private HashMap<Integer, HashMap<String,String>> _finalMaps = null;
 	
-	public RecodeAgent(JSONObject parsedSpec, List<String> colnames, int clen)
+	public RecodeAgent(JSONObject parsedSpec, String[] colnames, int clen)
 		throws JSONException 
 	{
 		super(null, clen);

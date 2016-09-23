@@ -52,7 +52,7 @@ public class DecoderDummycode extends Decoder
 					if( in.quickGetValue(i, k-1) != 0 ) {
 						int col = _colList[j] - 1;
 						out.set(i, col, UtilFunctions.doubleToObject(
-								out.getSchema().get(col), k-_clPos[j]+1));
+								out.getSchema()[col], k-_clPos[j]+1));
 					}		
 		return out;
 	}
@@ -63,8 +63,8 @@ public class DecoderDummycode extends Decoder
 		_cuPos = new int[_colList.length]; //col upper pos 
 		for( int j=0, off=0; j<_colList.length; j++ ) {
 			int colID = _colList[j];
-			int ndist = (int)meta.getColumnMetadata()
-					.get(colID-1).getNumDistinct();
+			int ndist = (int)meta.getColumnMetadata()[colID-1]
+					.getNumDistinct();
 			_clPos[j] = off + colID;
 			_cuPos[j] = _clPos[j] + ndist;
 			off += ndist - 1;

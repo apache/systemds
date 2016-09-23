@@ -180,40 +180,65 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		
 		ConvolutionParameters params = new ConvolutionParameters(N, C, H, W, K, R, S, stride_h, stride_w, pad_h, pad_w, _numThreads);
 		if (instOpcode.equalsIgnoreCase("maxpooling")) {
-			// Is eligible for REUSE_NONZEROED_OUTPUT but cannot guarantee that previous output has been rmvar-ed
-			// without somewhat expensive HashMap checks
-			outputBlock = getDenseOutputBlock(ec, N, C*P*Q, true);
-			params.setReuseNonZeroedOutput(_reuseNonZeroedOutput);
+			if(matBlock.isEmptyBlock()) {
+				outputBlock = new MatrixBlock(N, C*P*Q, true, 0);
+			}
+			else {
+				// Is eligible for REUSE_NONZEROED_OUTPUT but cannot guarantee that previous output has been rmvar-ed
+				// without somewhat expensive HashMap checks
+				outputBlock = getDenseOutputBlock(ec, N, C*P*Q, true);
+				params.setReuseNonZeroedOutput(_reuseNonZeroedOutput);
+			}
 			LibMatrixDNN.maxpooling(matBlock, outputBlock, params);
 		}
 		else if (instOpcode.equalsIgnoreCase("maxpooling_backward")) {
 			MatrixBlock dout = ec.getMatrixInput(_in2.getName());
-			// Is eligible for REUSE_NONZEROED_OUTPUT but cannot guarantee that previous output has been rmvar-ed
-			// without somewhat expensive HashMap checks
-			outputBlock = getDenseOutputBlock(ec, N, C*H*W, false);
-			params.setReuseNonZeroedOutput(_reuseNonZeroedOutput);
+			if(matBlock.isEmptyBlock() || dout.isEmptyBlock()) {
+				outputBlock = new MatrixBlock(N, C*H*W, true, 0);
+			}
+			else {
+				// Is eligible for REUSE_NONZEROED_OUTPUT but cannot guarantee that previous output has been rmvar-ed
+				// without somewhat expensive HashMap checks
+				outputBlock = getDenseOutputBlock(ec, N, C*H*W, false);
+				params.setReuseNonZeroedOutput(_reuseNonZeroedOutput);
+			}
 			LibMatrixDNN.maxpooling_backward(matBlock, dout, outputBlock, params);
 			ec.releaseMatrixInput(_in2.getName());
 		}
 		else if (instOpcode.equalsIgnoreCase("conv2d")) {
 			MatrixBlock filter = ec.getMatrixInput(_in2.getName());
-			outputBlock = getDenseOutputBlock(ec, N, K*P*Q, false);
-			params.setReuseNonZeroedOutput(_reuseNonZeroedOutput);
-			LibMatrixDNN.conv2d(matBlock, filter, outputBlock, params);
+			if(filter.isEmptyBlock() || matBlock.isEmptyBlock()) {
+				outputBlock = new MatrixBlock(N, K*P*Q, true, 0);
+			}
+			else {
+				outputBlock = getDenseOutputBlock(ec, N, K*P*Q, false);
+				params.setReuseNonZeroedOutput(_reuseNonZeroedOutput);
+				LibMatrixDNN.conv2d(matBlock, filter, outputBlock, params);
+			}
 			ec.releaseMatrixInput(_in2.getName());
 		}
 		else if (instOpcode.equalsIgnoreCase("conv2d_backward_filter")) {
 			MatrixBlock dout = ec.getMatrixInput(_in2.getName());
-			outputBlock = getDenseOutputBlock(ec, K, C*R*S, false);
-			params.setReuseNonZeroedOutput(_reuseNonZeroedOutput);
-			LibMatrixDNN.conv2d_backward_filter(matBlock, dout, outputBlock, params);
+			if(dout.isEmptyBlock() || matBlock.isEmptyBlock()) {
+				outputBlock = new MatrixBlock(K, C*R*S, true, 0);
+			}
+			else {
+				outputBlock = getDenseOutputBlock(ec, K, C*R*S, false);
+				params.setReuseNonZeroedOutput(_reuseNonZeroedOutput);
+				LibMatrixDNN.conv2d_backward_filter(matBlock, dout, outputBlock, params);
+			}
 			ec.releaseMatrixInput(_in2.getName());
 		}
 		else if (instOpcode.equalsIgnoreCase("conv2d_backward_data")) {
 			MatrixBlock dout = ec.getMatrixInput(_in2.getName());
-			outputBlock = getDenseOutputBlock(ec, N, C * H * W, false);
-			params.setReuseNonZeroedOutput(_reuseNonZeroedOutput);
-			LibMatrixDNN.conv2d_backward_data(matBlock, dout, outputBlock, params);
+			if(dout.isEmptyBlock() || matBlock.isEmptyBlock()) {
+				outputBlock = new MatrixBlock(N, C * H * W, true, 0);
+			}
+			else {
+				outputBlock = getDenseOutputBlock(ec, N, C * H * W, false);
+				params.setReuseNonZeroedOutput(_reuseNonZeroedOutput);
+				LibMatrixDNN.conv2d_backward_data(matBlock, dout, outputBlock, params);
+			}
 			ec.releaseMatrixInput(_in2.getName());
 		}
 		else {

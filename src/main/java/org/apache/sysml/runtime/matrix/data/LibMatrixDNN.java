@@ -331,12 +331,14 @@ public class LibMatrixDNN {
 			}
 		}
 		else if(!ret.isInSparseFormat() && elem.isInSparseFormat()) {
-			Iterator<IJV> iter = elem.sparseBlock.getIterator();
-			int numCol = ret.getNumColumns();
-			while(iter.hasNext()) {
-				IJV ijv = iter.next();
-				int index = ijv.getI()*numCol + ijv.getJ();
-				ret.denseBlock[index] += ijv.getV(); 
+			if(!elem.isEmptyBlock()) {
+				Iterator<IJV> iter = elem.sparseBlock.getIterator();
+				int numCol = ret.getNumColumns();
+				while(iter.hasNext()) {
+					IJV ijv = iter.next();
+					int index = ijv.getI()*numCol + ijv.getJ();
+					ret.denseBlock[index] += ijv.getV(); 
+				}
 			}
 		}
 		else {
@@ -360,11 +362,13 @@ public class LibMatrixDNN {
 			}
 		}
 		else if(!ret.isInSparseFormat() && elem.isInSparseFormat()) {
-			Iterator<IJV> iter = elem.sparseBlock.getIterator();
-			while(iter.hasNext()) {
-				IJV ijv = iter.next();
-				int index = ijv.getJ()*numRow + ijv.getI();
-				ret.denseBlock[index] += ijv.getV(); 
+			if(!elem.isEmptyBlock()) {
+				Iterator<IJV> iter = elem.sparseBlock.getIterator();
+				while(iter.hasNext()) {
+					IJV ijv = iter.next();
+					int index = ijv.getJ()*numRow + ijv.getI();
+					ret.denseBlock[index] += ijv.getV(); 
+				}
 			}
 		}
 		else {
@@ -411,8 +415,8 @@ public class LibMatrixDNN {
 			loopedConvBwdFilterMatMultTime.addAndGet(t4-t3);
 			loopedConvBwdFilterIm2ColTime.addAndGet(t2-t1);
 		}
-		
-		elementWiseInPlaceTransposedAddition(partialRetBlock, temp);
+		if(!temp.isEmptyBlock())
+			elementWiseInPlaceTransposedAddition(partialRetBlock, temp);
 		return partialRetBlock;
 	}
 	
@@ -430,11 +434,6 @@ public class LibMatrixDNN {
 		if(input.getNumRows() != params.N || input.getNumColumns() != params.C*params.H*params.W || 
 				filter.getNumRows() != params.K || filter.getNumColumns() != params.C*params.R*params.S) {
 			throw new DMLRuntimeException("Incorrect input to conv2d");
-		}
-		
-		// Convert filter (which is relatively small matrix) to dense
-		if(params.input2.isInSparseFormat()) {
-			params.input2.sparseToDense();
 		}
 		
 		if(DMLScript.STATISTICS) {
@@ -479,19 +478,26 @@ public class LibMatrixDNN {
 			loopedConvMatMultTime.addAndGet(t3 - t2);
 		}
 		
-		if(matMultOutBlock.isInSparseFormat()) {
-			Iterator<IJV> iter = matMultOutBlock.sparseBlock.getIterator();
-			final int outOffset = n*params.K*params.P*params.Q;
-			while(iter.hasNext()) {
-				IJV ijv = iter.next();
-				int k = ijv.getI();
-				int p = ijv.getJ() / params.Q;
-				int q = ijv.getJ() % params.Q;
-				params.output.denseBlock[outOffset + k*params.P*params.Q + p*params.Q + q] = ijv.getV();
-			}
+		int destPos = n*params.K*params.P*params.Q;
+		int length = params.K*params.P*params.Q;
+		if(params.reuseNonZeroedOutput && matMultOutBlock.isEmptyBlock()) {
+			Arrays.fill(params.output.denseBlock, destPos, destPos + length, 0);
 		}
-		else
-			System.arraycopy(matMultOutBlock.denseBlock, 0, params.output.denseBlock, n*params.K*params.P*params.Q, params.K*params.P*params.Q);
+		else if(!matMultOutBlock.isEmptyBlock()) {
+			if(matMultOutBlock.isInSparseFormat()) {
+				Iterator<IJV> iter = matMultOutBlock.sparseBlock.getIterator();
+				final int outOffset = n*params.K*params.P*params.Q;
+				while(iter.hasNext()) {
+					IJV ijv = iter.next();
+					int k = ijv.getI();
+					int p = ijv.getJ() / params.Q;
+					int q = ijv.getJ() % params.Q;
+					params.output.denseBlock[outOffset + k*params.P*params.Q + p*params.Q + q] = ijv.getV();
+				}
+			}
+			else
+				System.arraycopy(matMultOutBlock.denseBlock, 0, params.output.denseBlock, destPos, length);
+		}
 	}
 	
 	
@@ -583,6 +589,7 @@ public class LibMatrixDNN {
 		if (!params.input1.isInSparseFormat())
 			throw new DMLRuntimeException("Incorrect usage: Call optimized versions");
 		
+		// params.input2.isEmptyBlock() check is done by the caller
 		Iterator<IJV> iter = params.input2.sparseBlock.getIterator(n, n+1);
 		int [] tensorIndexes = new int[3];
 		
@@ -599,12 +606,13 @@ public class LibMatrixDNN {
 			start_index_h = Math.max(start_index_h, 0);
 			int maxIndex = getMaxIndexSparse(start_index_h, end_index_h, q, inputOffset, n, c, params.input1, params);
 			outputArray[maxIndex] += ijv.getV();
-		}	
+		}
 		
 	}
 	
 	private static void doPoolingBackwardDenseSparse(int n, double [] inputArray, 
 			MatrixBlock dout, double [] outputArray, ConvolutionParameters params) throws DMLRuntimeException {
+		// dout.isEmptyBlock() check is done by the caller
 		Iterator<IJV> iter = dout.sparseBlock.getIterator(n, n+1);
 		int [] tensorIndexes = new int[3];
 		
@@ -648,6 +656,7 @@ public class LibMatrixDNN {
 		if(!input.isInSparseFormat())
 			throw new DMLRuntimeException("Incorrect usage: Only sparse format supported");
 		
+		// input.isEmptyBlock() check is done by the caller
 		Iterator<IJV> iter = input.sparseBlock.getIterator(n, n+1);
 		int [] tensorIndexes = new int[3];
 		
@@ -784,15 +793,17 @@ public class LibMatrixDNN {
 			if(zeroOutSparseOutput)
 				Arrays.fill(outputArray, 0);
 			
-			Iterator<IJV> iter = input.sparseBlock.getIterator(inputN, inputN+1);
-			int [] tensorIndexes = new int[3];
-			while(iter.hasNext()) {
-				IJV ijv = iter.next();
-				computeTensorIndexes(ijv.getJ(), tensorIndexes, params.P, params.Q);
-				int k = tensorIndexes[0];
-				int p = tensorIndexes[1];
-				int q = tensorIndexes[2];
-				outputArray[outputOffset + p*params.Q*params.K + q*params.K + k] = ijv.getV();
+			if(!input.isEmptyBlock()) {
+				Iterator<IJV> iter = input.sparseBlock.getIterator(inputN, inputN+1);
+				int [] tensorIndexes = new int[3];
+				while(iter.hasNext()) {
+					IJV ijv = iter.next();
+					computeTensorIndexes(ijv.getJ(), tensorIndexes, params.P, params.Q);
+					int k = tensorIndexes[0];
+					int p = tensorIndexes[1];
+					int q = tensorIndexes[2];
+					outputArray[outputOffset + p*params.Q*params.K + q*params.K + k] = ijv.getV();
+				}
 			}
 		}
 	}
@@ -961,7 +972,8 @@ public class LibMatrixDNN {
 			doCol2IMDenseInput(0, outputN, inputArray, outputArray, params);
 		}
 		else {
-			doCol2IMSparseInput(0, outputN, input.getSparseBlockIterator(), outputArray, params);
+			if(!input.isEmptyBlock())
+				doCol2IMSparseInput(0, outputN, input.getSparseBlockIterator(), outputArray, params);
 		}
 	}
 	

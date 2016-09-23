@@ -646,7 +646,7 @@ public abstract class CommonSyntacticValidator {
 			}
 
 			// built-in read, rand ...
-			DataExpression dbife = DataExpression.getDataExpression(functionName, paramExpressions, fileName, line, col, line, col);
+			DataExpression dbife = DataExpression.getDataExpression(functionName, paramExpressions, fileName, line, col, line, col, errorListener);
 			if (dbife != null){
 				f.execute(dbife);
 				return true;

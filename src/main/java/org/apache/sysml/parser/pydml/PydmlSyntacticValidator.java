@@ -19,14 +19,6 @@
 
 package org.apache.sysml.parser.pydml;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ErrorNode;
@@ -34,89 +26,19 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.lang.StringUtils;
 import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.conf.ConfigurationManager;
-import org.apache.sysml.parser.AssignmentStatement;
-import org.apache.sysml.parser.BinaryExpression;
-import org.apache.sysml.parser.BuiltinFunctionExpression;
-import org.apache.sysml.parser.ConditionalPredicate;
-import org.apache.sysml.parser.DMLProgram;
-import org.apache.sysml.parser.DataIdentifier;
-import org.apache.sysml.parser.DoubleIdentifier;
-import org.apache.sysml.parser.Expression;
+import org.apache.sysml.parser.*;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
-import org.apache.sysml.parser.ExternalFunctionStatement;
-import org.apache.sysml.parser.ForStatement;
-import org.apache.sysml.parser.FunctionCallIdentifier;
-import org.apache.sysml.parser.FunctionStatement;
-import org.apache.sysml.parser.IfStatement;
-import org.apache.sysml.parser.ImportStatement;
-import org.apache.sysml.parser.IntIdentifier;
-import org.apache.sysml.parser.IndexedIdentifier;
-import org.apache.sysml.parser.IterablePredicate;
-import org.apache.sysml.parser.LanguageException;
-import org.apache.sysml.parser.ParForStatement;
-import org.apache.sysml.parser.ParameterExpression;
-import org.apache.sysml.parser.ParseException;
-import org.apache.sysml.parser.PathStatement;
-import org.apache.sysml.parser.Statement;
-import org.apache.sysml.parser.StatementBlock;
-import org.apache.sysml.parser.StringIdentifier;
-import org.apache.sysml.parser.WhileStatement;
 import org.apache.sysml.parser.common.CommonSyntacticValidator;
 import org.apache.sysml.parser.common.CustomErrorListener;
 import org.apache.sysml.parser.common.ExpressionInfo;
 import org.apache.sysml.parser.common.StatementInfo;
 import org.apache.sysml.parser.dml.DmlParser.MatrixMulExpressionContext;
 import org.apache.sysml.parser.dml.DmlSyntacticValidator;
-import org.apache.sysml.parser.pydml.PydmlParser.AddSubExpressionContext;
-import org.apache.sysml.parser.pydml.PydmlParser.AssignmentStatementContext;
-import org.apache.sysml.parser.pydml.PydmlParser.AtomicExpressionContext;
-import org.apache.sysml.parser.pydml.PydmlParser.BooleanAndExpressionContext;
-import org.apache.sysml.parser.pydml.PydmlParser.BooleanNotExpressionContext;
-import org.apache.sysml.parser.pydml.PydmlParser.BooleanOrExpressionContext;
-import org.apache.sysml.parser.pydml.PydmlParser.BuiltinFunctionExpressionContext;
-import org.apache.sysml.parser.pydml.PydmlParser.CommandlineParamExpressionContext;
-import org.apache.sysml.parser.pydml.PydmlParser.CommandlinePositionExpressionContext;
-import org.apache.sysml.parser.pydml.PydmlParser.ConstDoubleIdExpressionContext;
-import org.apache.sysml.parser.pydml.PydmlParser.ConstFalseExpressionContext;
-import org.apache.sysml.parser.pydml.PydmlParser.ConstIntIdExpressionContext;
-import org.apache.sysml.parser.pydml.PydmlParser.ConstStringIdExpressionContext;
-import org.apache.sysml.parser.pydml.PydmlParser.ConstTrueExpressionContext;
-import org.apache.sysml.parser.pydml.PydmlParser.DataIdExpressionContext;
-import org.apache.sysml.parser.pydml.PydmlParser.DataIdentifierContext;
-import org.apache.sysml.parser.pydml.PydmlParser.ExpressionContext;
-import org.apache.sysml.parser.pydml.PydmlParser.ExternalFunctionDefExpressionContext;
-import org.apache.sysml.parser.pydml.PydmlParser.ForStatementContext;
-import org.apache.sysml.parser.pydml.PydmlParser.FunctionCallAssignmentStatementContext;
-import org.apache.sysml.parser.pydml.PydmlParser.FunctionCallMultiAssignmentStatementContext;
-import org.apache.sysml.parser.pydml.PydmlParser.FunctionStatementContext;
-import org.apache.sysml.parser.pydml.PydmlParser.IfStatementContext;
-import org.apache.sysml.parser.pydml.PydmlParser.ElifBranchContext;
-import org.apache.sysml.parser.pydml.PydmlParser.IfdefAssignmentStatementContext;
-import org.apache.sysml.parser.pydml.PydmlParser.IgnoreNewLineContext;
-import org.apache.sysml.parser.pydml.PydmlParser.ImportStatementContext;
-import org.apache.sysml.parser.pydml.PydmlParser.IndexedExpressionContext;
-import org.apache.sysml.parser.pydml.PydmlParser.InternalFunctionDefExpressionContext;
-import org.apache.sysml.parser.pydml.PydmlParser.IterablePredicateColonExpressionContext;
-import org.apache.sysml.parser.pydml.PydmlParser.IterablePredicateSeqExpressionContext;
-import org.apache.sysml.parser.pydml.PydmlParser.MatrixDataTypeCheckContext;
-import org.apache.sysml.parser.pydml.PydmlParser.Ml_typeContext;
-import org.apache.sysml.parser.pydml.PydmlParser.ModIntDivExpressionContext;
-import org.apache.sysml.parser.pydml.PydmlParser.MultDivExpressionContext;
-import org.apache.sysml.parser.pydml.PydmlParser.ParForStatementContext;
-import org.apache.sysml.parser.pydml.PydmlParser.ParameterizedExpressionContext;
-import org.apache.sysml.parser.pydml.PydmlParser.PathStatementContext;
-import org.apache.sysml.parser.pydml.PydmlParser.PowerExpressionContext;
-import org.apache.sysml.parser.pydml.PydmlParser.ProgramrootContext;
-import org.apache.sysml.parser.pydml.PydmlParser.RelationalExpressionContext;
-import org.apache.sysml.parser.pydml.PydmlParser.SimpleDataIdentifierExpressionContext;
-import org.apache.sysml.parser.pydml.PydmlParser.StatementContext;
-import org.apache.sysml.parser.pydml.PydmlParser.StrictParameterizedExpressionContext;
-import org.apache.sysml.parser.pydml.PydmlParser.StrictParameterizedKeyValueStringContext;
-import org.apache.sysml.parser.pydml.PydmlParser.TypedArgNoAssignContext;
-import org.apache.sysml.parser.pydml.PydmlParser.UnaryExpressionContext;
-import org.apache.sysml.parser.pydml.PydmlParser.ValueDataTypeCheckContext;
-import org.apache.sysml.parser.pydml.PydmlParser.WhileStatementContext;
+import org.apache.sysml.parser.pydml.PydmlParser.*;
+
+import java.io.File;
+import java.util.*;
 
 /**
  * TODO: Refactor duplicated parser code dml/pydml (entire package).
@@ -959,9 +881,11 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 			namespace = DMLProgram.DEFAULT_NAMESPACE;
 		}
 		else if(namespace.equals(DMLProgram.DEFAULT_NAMESPACE) && functionName.equals("range")) {
-			if(paramExpression.size() != 3) {
-				notifyErrorListeners("The builtin function \'" + functionName + "\' accepts exactly 3 arguments (from, to, increment)", fnName);
+			if (paramExpression.size() < 2) {
+				notifyErrorListeners("The builtin function \'" + functionName + "\' has 2 arguments without default values (from, to, increment=1.0)", fnName);
 				return null;
+			} else if (paramExpression.size() > 3) {
+				notifyErrorListeners("The builtin function \'" + functionName + "\' accepts 3 arguments (from, to, increment=1.0)", fnName);
 			}
 			functionName = "seq";
 			namespace = DMLProgram.DEFAULT_NAMESPACE;

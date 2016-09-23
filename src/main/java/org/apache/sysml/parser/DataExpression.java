@@ -29,17 +29,18 @@ import java.util.Map.Entry;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.wink.json4j.JSONArray;
-import org.apache.wink.json4j.JSONObject;
 import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.DataGenOp;
 import org.apache.sysml.parser.LanguageException.LanguageErrorCodes;
+import org.apache.sysml.parser.common.CustomErrorListener;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.util.LocalFileUtils;
 import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.utils.JSONHelper;
+import org.apache.wink.json4j.JSONArray;
+import org.apache.wink.json4j.JSONObject;
 
 
 public class DataExpression extends DataIdentifier 
@@ -133,7 +134,7 @@ public class DataExpression extends DataIdentifier
 
 
 	public static DataExpression getDataExpression(String functionName, ArrayList<ParameterExpression> passedParamExprs, 
-				String filename, int blp, int bcp, int elp, int ecp) throws LanguageException 
+				String filename, int blp, int bcp, int elp, int ecp, CustomErrorListener errorListener) throws LanguageException
 	{	
 		if (functionName == null || passedParamExprs == null)
 			return null;
@@ -159,13 +160,15 @@ public class DataExpression extends DataIdentifier
 			
 			// validate the filename is the first parameter
 			if (passedParamExprs.size() < 1){
-				dataExpr.raiseValidateError("read method must have at least filename parameter", false);
+				errorListener.validationError(blp, bcp, "read method must have at least filename parameter");
+				return null;
 			}
 			
 			ParameterExpression pexpr = (passedParamExprs.size() == 0) ? null : passedParamExprs.get(0);
 			
 			if ( (pexpr != null) &&  (!(pexpr.getName() == null) || (pexpr.getName() != null && pexpr.getName().equalsIgnoreCase(DataExpression.IO_FILENAME)))){
-				dataExpr.raiseValidateError("first parameter to read statement must be filename");
+				errorListener.validationError(blp, bcp, "first parameter to read statement must be filename");
+				return null;
 			} else if( pexpr != null ){
 				dataExpr.addVarParam(DataExpression.IO_FILENAME, pexpr.getExpr());
 			}
@@ -176,7 +179,8 @@ public class DataExpression extends DataIdentifier
 				Expression currExpr = passedParamExprs.get(i).getExpr();
 				
 				if (dataExpr.getVarParam(currName) != null){
-					dataExpr.raiseValidateError("attempted to add IOStatement parameter " + currName + " more than once");
+					errorListener.validationError(blp, bcp, "attempted to add IOStatement parameter " + currName + " more than once");
+					return null;
 				}
 				// verify parameter names for read function
 				boolean isValidName = false;
@@ -185,7 +189,8 @@ public class DataExpression extends DataIdentifier
 						isValidName = true;
 				}
 				if (!isValidName){
-					dataExpr.raiseValidateError("attempted to add invalid read statement parameter " + currName);
+					errorListener.validationError(blp, bcp, "attempted to add invalid read statement parameter " + currName);
+					return null;
 				}	
 				dataExpr.addVarParam(currName, currExpr);
 			}				
@@ -201,7 +206,8 @@ public class DataExpression extends DataIdentifier
 				String pname = currExpr.getName();
 				Expression pexpr = currExpr.getExpr();
 				if (pname == null){
-					dataExpr.raiseValidateError("for Rand Statement all arguments must be named parameters");	
+					errorListener.validationError(blp, bcp, "for rand statement, all arguments must be named parameters");
+					return null;
 				}
 				dataExpr.addRandExprParam(pname, pexpr); 
 			}
@@ -223,16 +229,21 @@ public class DataExpression extends DataIdentifier
 
 			// check whether named or unnamed parameters are used
 			if (passedParamExprs.size() < 3){
-				dataExpr.raiseValidateError("for matrix statement, must specify at least 3 arguments (in order): data, rows, cols");
+				errorListener.validationError(blp, bcp, "for matrix statement, must specify at least 3 arguments: data, rows, cols");
+				return null;
 			}
 			
 			if (unnamedParamCount > 1){
 				
-				if (namedParamCount > 0)
-					dataExpr.raiseValidateError("for matrix statement, cannot mix named and unnamed parameters");
+				if (namedParamCount > 0) {
+					errorListener.validationError(blp, bcp, "for matrix statement, cannot mix named and unnamed parameters");
+					return null;
+				}
 				
-				if (unnamedParamCount < 3)
-					dataExpr.raiseValidateError("for matrix statement, must specify at least 3 arguments (in order): data, rows, cols");
+				if (unnamedParamCount < 3) {
+					errorListener.validationError(blp, bcp, "for matrix statement, must specify at least 3 arguments: data, rows, cols");
+					return null;
+				}
 				
 
 				// assume: data, rows, cols, [byRow], [dimNames]
@@ -246,31 +257,33 @@ public class DataExpression extends DataIdentifier
 				if (unnamedParamCount == 5)
 					dataExpr.addMatrixExprParam(DataExpression.RAND_DIMNAMES,passedParamExprs.get(4).getExpr());
 				
-				if (unnamedParamCount > 5)
-					dataExpr.raiseValidateError("for matrix statement, at most 5 arguments supported (in order): data, rows, cols, byrow, dimname");
-								   
+				if (unnamedParamCount > 5) {
+					errorListener.validationError(blp, bcp, "for matrix statement, at most 5 arguments supported: data, rows, cols, byrow, dimname");
+					return null;
+				}
 				
 			} else {
 				// handle first parameter, which is data and may be unnamed
 				ParameterExpression firstParam = passedParamExprs.get(0);
 				if (firstParam.getName() != null && !firstParam.getName().equals(DataExpression.RAND_DATA)){
 					// throw exception -- must be filename as first parameter
-					dataExpr.raiseValidateError("matrix method must have data parameter as first parameter or unnamed parameter");
+					errorListener.validationError(blp, bcp, "matrix method must have data parameter as first parameter or unnamed parameter");
+					return null;
 				} else {
 					dataExpr.addMatrixExprParam(DataExpression.RAND_DATA, passedParamExprs.get(0).getExpr());
 				}
 				
 				for (int i=1; i<passedParamExprs.size(); i++){
 					if (passedParamExprs.get(i).getName() == null){
-						// throw exception -- cannot mix named and unnamed parameters
-						dataExpr.raiseValidateError("for matrix statement, cannot mix named and unnamed parameters, only data parameter can be unnammed");
+						errorListener.validationError(blp, bcp, "for matrix statement, cannot mix named and unnamed parameters, only data parameter can be unnammed");
+						return null;
 					} else {
-						dataExpr.addMatrixExprParam(passedParamExprs.get(i).getName(), passedParamExprs.get(i).getExpr()); 	
+						dataExpr.addMatrixExprParam(passedParamExprs.get(i).getName(), passedParamExprs.get(i).getExpr());
 					}
 				}
 			}
 			dataExpr.setMatrixDefault();
-		} // else if (functionName.equals("matrix")){
+		}
 		
 		if (dataExpr != null) {
 			dataExpr.setAllPositions(filename, blp, bcp, elp, ecp);

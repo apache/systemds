@@ -27,6 +27,7 @@ import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
@@ -54,10 +55,11 @@ public class RecodeAgent extends Encoder
 
 	private int[] _mvrcdList = null;
 	private int[] _fullrcdList = null;
-
-	// HashMap< columnID, HashMap<distinctValue, count> >
+	
+	//recode maps and custom map for partial recode maps 
 	private HashMap<Integer, HashMap<String, Long>> _rcdMaps  = new HashMap<Integer, HashMap<String, Long>>();
 	private HashMap<Integer, HashMap<String,String>> _finalMaps = null;
+	private HashMap<Integer, HashSet<Object>> _rcdMapsPart = null;
 	
 	public RecodeAgent(JSONObject parsedSpec, String[] colnames, int clen)
 		throws JSONException 
@@ -90,6 +92,10 @@ public class RecodeAgent extends Encoder
 	
 	public HashMap<Integer, HashMap<String,Long>> getCPRecodeMaps() { 
 		return _rcdMaps; 
+	}
+	
+	public HashMap<Integer, HashSet<Object>> getCPRecodeMapsPartial() { 
+		return _rcdMapsPart; 
 	}
 	
 	public HashMap<Integer, HashMap<String,String>> getRecodeMaps() {
@@ -400,7 +406,7 @@ public class RecodeAgent extends Encoder
 	public void build(FrameBlock in) {
 		if( !isApplicable() )
 			return;		
-		
+
 		Iterator<String[]> iter = in.getStringRowIterator();
 		while( iter.hasNext() ) {
 			String[] row = iter.next(); 
@@ -413,8 +419,37 @@ public class RecodeAgent extends Encoder
 				HashMap<String,Long> map = _rcdMaps.get(colID);
 				String key = row[colID-1];
 				if( key!=null && !key.isEmpty() && !map.containsKey(key) )
-					map.put(key, new Long(map.size()+1));
+					map.put(key, Long.valueOf(map.size()+1));
 			}
+		}
+	}
+	
+	/**
+	 * 
+	 * @param in
+	 */
+	public void buildPartial(FrameBlock in) {
+		if( !isApplicable() )
+			return;		
+
+		//ensure allocated partial recode map
+		if( _rcdMapsPart == null )
+			_rcdMapsPart = new HashMap<Integer, HashSet<Object>>();
+		
+		//construct partial recode map (tokens w/o codes)
+		//iterate over columns for sequential access
+		for( int j=0; j<_colList.length; j++ ) {
+			int colID = _colList[j]; //1-based
+			//allocate column map if necessary
+			if( !_rcdMapsPart.containsKey(colID) ) 
+				_rcdMapsPart.put(colID, new HashSet<Object>());
+			HashSet<Object> map = _rcdMapsPart.get(colID);
+			//probe and build column map
+			for( int i=0; i<in.getNumRows(); i++ )
+				map.add(in.get(i, colID-1));
+			//cleanup unnecessary entries once
+			map.remove(null);
+			map.remove("");
 		}
 	}
 	

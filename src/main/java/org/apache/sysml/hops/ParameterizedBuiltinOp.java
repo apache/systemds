@@ -1136,7 +1136,8 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 		if( (_op == ParamBuiltinOp.TRANSFORMAPPLY && REMOTE==ExecType.MR)
 			|| _op == ParamBuiltinOp.TRANSFORMDECODE && REMOTE==ExecType.MR
 			|| _op == ParamBuiltinOp.TRANSFORMMETA 
-			||  _op == ParamBuiltinOp.TOSTRING) {
+			|| _op == ParamBuiltinOp.TOSTRING 
+			|| _op == ParamBuiltinOp.CDF || _op == ParamBuiltinOp.INVCDF) {
 			_etype = ExecType.CP;
 		}
 		

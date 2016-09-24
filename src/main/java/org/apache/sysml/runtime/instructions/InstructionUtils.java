@@ -233,9 +233,7 @@ public class InstructionUtils
 	 * @return
 	 */
 	public static MRINSTRUCTION_TYPE getMRType( String str ) {
-		String opcode = getOpCode(str);
-		MRINSTRUCTION_TYPE mrtype = MRInstructionParser.String2MRInstructionType.get( opcode ); 
-		return mrtype;
+		return MRInstructionParser.String2MRInstructionType.get( getOpCode(str) ); 
 	}
 	
 	/**
@@ -244,9 +242,7 @@ public class InstructionUtils
 	 * @return
 	 */
 	public static SPINSTRUCTION_TYPE getSPType( String str ) {
-		String opcode = getOpCode(str);
-		SPINSTRUCTION_TYPE sptype = SPInstructionParser.String2SPInstructionType.get( opcode ); 
-		return sptype;
+		return SPInstructionParser.String2SPInstructionType.get( getOpCode(str) ); 
 	}
 	
 	/**
@@ -255,22 +251,16 @@ public class InstructionUtils
 	 * @return
 	 */
 	public static CPINSTRUCTION_TYPE getCPType( String str ) {
-		String opcode = getOpCode(str);
-		CPINSTRUCTION_TYPE cptype = CPInstructionParser.String2CPInstructionType.get( opcode ); 
-		return cptype;
+		return CPInstructionParser.String2CPInstructionType.get( getOpCode(str) ); 
 	}
 	
 	/**
 	 * 
 	 * @param str
 	 * @return
-	 * @throws DMLUnsupportedOperationException
 	 */
-	public static GPUINSTRUCTION_TYPE getGPUType( String str ) 
-	{
-		String opcode = getOpCode(str);
-		GPUINSTRUCTION_TYPE cptype = GPUInstructionParser.String2GPUInstructionType.get( opcode ); 
-		return cptype;
+	public static GPUINSTRUCTION_TYPE getGPUType( String str ) {
+		return GPUInstructionParser.String2GPUInstructionType.get( getOpCode(str) ); 
 	}
 	
 	/**

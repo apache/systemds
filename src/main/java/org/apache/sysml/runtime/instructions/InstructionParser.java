@@ -40,22 +40,28 @@ public class InstructionParser
 			|| execType.equalsIgnoreCase(ExecType.CP_FILE.toString()) ) 
 		{
 			CPINSTRUCTION_TYPE cptype = InstructionUtils.getCPType(str); 
+			if( cptype == null )
+				throw new DMLRuntimeException("Unknown CP instruction: " + str);
 			return CPInstructionParser.parseSingleInstruction (cptype, str);
 		}
 		else if ( execType.equalsIgnoreCase(ExecType.SPARK.toString()) ) 
 		{
 			SPINSTRUCTION_TYPE sptype = InstructionUtils.getSPType(str); 
+			if( sptype == null )
+				throw new DMLRuntimeException("Unknown SPARK instruction: " + str);
 			return SPInstructionParser.parseSingleInstruction (sptype, str);
 		}
 		else if ( execType.equalsIgnoreCase(ExecType.GPU.toString()) ) 
 		{
-			GPUINSTRUCTION_TYPE cptype = InstructionUtils.getGPUType(str); 
-			return GPUInstructionParser.parseSingleInstruction (cptype, str);
+			GPUINSTRUCTION_TYPE gputype = InstructionUtils.getGPUType(str); 
+			if( gputype == null )
+				throw new DMLRuntimeException("Unknown GPU instruction: " + str);
+			return GPUInstructionParser.parseSingleInstruction (gputype, str);
 		}
 		else if ( execType.equalsIgnoreCase("MR") ) {
 			MRINSTRUCTION_TYPE mrtype = InstructionUtils.getMRType(str); 
-			if ( mrtype == null )
-				throw new DMLRuntimeException("Can not determine MRType for instruction: " + str);
+			if( mrtype == null )
+				throw new DMLRuntimeException("Unknown MR instruction: " + str);
 			return MRInstructionParser.parseSingleInstruction (mrtype, str);
 		}
 		else {

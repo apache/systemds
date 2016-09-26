@@ -64,6 +64,11 @@ public class CorrMatrixBlock implements Externalizable
 		return _corr;
 	}
 	
+	public void set(MatrixBlock value, MatrixBlock corr) {
+		_value = value;
+		_corr = corr;
+	}
+	
 	/**
 	 * Redirects the default java serialization via externalizable to our default 
 	 * hadoop writable serialization for efficient deserialization. 

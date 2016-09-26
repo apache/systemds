@@ -225,7 +225,9 @@ public class RDDAggregateUtils
 		public CorrMatrixBlock call(MatrixBlock arg0) 
 			throws Exception 
 		{
-			return new CorrMatrixBlock(arg0);
+			//deep copy to allow update in-place
+			return new CorrMatrixBlock(
+					new MatrixBlock(arg0));
 		}	
 	}
 	
@@ -254,7 +256,8 @@ public class RDDAggregateUtils
 			//aggregate other input and maintain corrections 
 			//(existing value and corr are used in place)
 			OperationsOnMatrixValues.incrementalAggregation(value, corr, arg1, _op, false);
-			return new CorrMatrixBlock(value, corr);
+			arg0.set(value, corr);
+			return arg0;
 		}	
 	}
 	
@@ -285,7 +288,8 @@ public class RDDAggregateUtils
 			//aggregate other input and maintain corrections
 			//(existing value and corr are used in place)
 			OperationsOnMatrixValues.incrementalAggregation(value1, corr, value2, _op, false);
-			return new CorrMatrixBlock(value1, corr);
+			arg0.set(value1, corr);
+			return arg0;
 		}	
 	}
 

@@ -210,13 +210,25 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			JavaPairRDD<MatrixIndexes, MatrixBlock> out = 
 					target.flatMapToPair(new RDDMapGroupedAggFunction(groups, _optr, 
 							ngroups, mc1.getRowsPerBlock(), mc1.getColsPerBlock()));
-			out = RDDAggregateUtils.sumByKeyStable(out);
 			
-			//updated characteristics and handle outputs
-			mcOut.set(ngroups, mc1.getCols(), mc1.getRowsPerBlock(), mc1.getColsPerBlock(), -1);
-			sec.setRDDHandleForVariable(output.getName(), out);			
-			sec.addLineageRDD( output.getName(), targetVar );
-			sec.addLineageBroadcast( output.getName(), groupsVar );	
+			//single-block aggregation
+			if( ngroups <= mc1.getRowsPerBlock() && mc1.getCols() <= mc1.getColsPerBlock() ) {
+				MatrixBlock out2 = RDDAggregateUtils.sumStable(out);
+				
+				//put output block into symbol table (no lineage because single block)
+				//this also includes implicit maintenance of matrix characteristics
+				sec.setMatrixOutput(output.getName(), out2);
+			}
+			//multi-block aggregation
+			else {
+				out = RDDAggregateUtils.sumByKeyStable(out);
+				
+				//updated characteristics and handle outputs
+				mcOut.set(ngroups, mc1.getCols(), mc1.getRowsPerBlock(), mc1.getColsPerBlock(), -1);
+				sec.setRDDHandleForVariable(output.getName(), out);			
+				sec.addLineageRDD( output.getName(), targetVar );
+				sec.addLineageBroadcast( output.getName(), groupsVar );	
+			}
 		}
 		else if ( opcode.equalsIgnoreCase("groupedagg") ) 
 		{	

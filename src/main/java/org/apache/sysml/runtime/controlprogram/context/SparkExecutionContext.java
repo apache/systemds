@@ -236,7 +236,7 @@ public class SparkExecutionContext extends ExecutionContext
 		// Set warning if spark.driver.maxResultSize is not set. It needs to be set before starting Spark Context for CP collect 
 		String strDriverMaxResSize = _spctx.getConf().get("spark.driver.maxResultSize", "1g");
 		long driverMaxResSize = UtilFunctions.parseMemorySize(strDriverMaxResSize); 
-		if (driverMaxResSize != 0 && driverMaxResSize<OptimizerUtils.getLocalMemBudget())
+		if (driverMaxResSize != 0 && driverMaxResSize<OptimizerUtils.getLocalMemBudget() && !DMLScript.USE_LOCAL_SPARK_CONFIG)
 			LOG.warn("Configuration parameter spark.driver.maxResultSize set to " + UtilFunctions.formatMemorySize(driverMaxResSize) + "."
 					+ " You can set it through Spark default configuration setting either to 0 (unlimited) or to available memory budget of size " 
 					+ UtilFunctions.formatMemorySize((long)OptimizerUtils.getLocalMemBudget()) + ".");

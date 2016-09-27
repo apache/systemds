@@ -1391,18 +1391,14 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 				dataType = paramCtx.paramType.dataType().getText();
 			}
 
-			if(dataType.equals("matrix")) {
-				// matrix
+			//check and assign data type
+			checkValidDataType(dataType, paramCtx.start);
+			if( dataType.equals("matrix") )
 				dataId.setDataType(DataType.MATRIX);
-			}
-			else if(dataType.equals("scalar")) {
-				// scalar
+			else if( dataType.equals("frame") )
+				dataId.setDataType(DataType.FRAME);
+			else if( dataType.equals("scalar") )
 				dataId.setDataType(DataType.SCALAR);
-			}
-			else {
-				notifyErrorListeners("invalid datatype " + dataType, paramCtx.start);
-				return null;
-			}
 
 			valueType = paramCtx.paramType.valueType().getText();
 			if(valueType.equals("int")) {
@@ -1574,24 +1570,20 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 
 	@Override
 	public void exitMatrixDataTypeCheck(MatrixDataTypeCheckContext ctx) {
-		if(		ctx.ID().getText().equals("matrix")
-				|| ctx.ID().getText().equals("scalar")
-				) {
-			// Do nothing
-		}
-		else if(ctx.ID().getText().equals("Matrix"))
+		checkValidDataType(ctx.ID().getText(), ctx.start);
+		
+		//additional error handling (pydml-specific)
+		String datatype = ctx.ID().getText();
+		if(datatype.equals("Matrix"))
 			notifyErrorListeners("incorrect datatype (Hint: use matrix instead of Matrix)", ctx.start);
-		else if(ctx.ID().getText().equals("Scalar"))
+		else if(datatype.equals("Frame"))
+			notifyErrorListeners("incorrect datatype (Hint: use frame instead of Frame)", ctx.start);
+		else if(datatype.equals("Scalar"))
 			notifyErrorListeners("incorrect datatype (Hint: use scalar instead of Scalar)", ctx.start);
-		else if(		ctx.ID().getText().equals("int")
-				|| ctx.ID().getText().equals("str")
-				|| ctx.ID().getText().equals("bool")
-				|| ctx.ID().getText().equals("float")
-				) {
-			notifyErrorListeners("expected datatype but found a valuetype (Hint: use matrix or scalar instead of " + ctx.ID().getText() + ")", ctx.start);
-		}
-		else {
-			notifyErrorListeners("incorrect datatype (expected matrix or scalar)", ctx.start);
+		else if( datatype.equals("int") || datatype.equals("str")
+			|| datatype.equals("bool") || datatype.equals("float") ) {
+			notifyErrorListeners("expected datatype but found a valuetype "
+					+ "(Hint: use matrix, frame or scalar instead of " + datatype + ")", ctx.start);
 		}
 	}
 

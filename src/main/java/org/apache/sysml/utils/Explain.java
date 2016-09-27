@@ -1146,7 +1146,7 @@ public class Explain
 						FunctionOp fop = (FunctionOp) h;
 						String fkey = DMLProgram.constructFunctionKey(fop.getFunctionNamespace(), fop.getFunctionName());
 						//prevent redundant call edges
-						if( !lfset.contains(fkey) )
+						if( !lfset.contains(fkey) && !fop.getFunctionNamespace().equals(DMLProgram.INTERNAL_NAMESPACE) )
 						{
 							//recursively explain function call dag
 							if( !fstack.contains(fkey) ) {

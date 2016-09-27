@@ -740,4 +740,19 @@ public abstract class CommonSyntacticValidator {
 	// End of Helper Functions for exit*FunctionCall*AssignmentStatement
 	// -----------------------------------------------------------------
 
+	/**
+	 * Indicates if the given data type string is a valid data type. 
+	 * 
+	 * @param datatype
+	 * @param start
+	 */
+	protected void checkValidDataType(String datatype, Token start) {
+		boolean validMatrixType = 
+				datatype.equals("matrix") || datatype.equals("Matrix") || 
+				datatype.equals("frame") || datatype.equals("Frame") ||
+				datatype.equals("scalar") || datatype.equals("Scalar");
+		if(!validMatrixType	) {
+			notifyErrorListeners("incorrect datatype (expected matrix, frame or scalar)", start);
+		}
+	}
 }

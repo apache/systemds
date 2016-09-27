@@ -24,6 +24,7 @@ options(digits=22)
 library("Matrix")
 
 A=read.csv(paste(args[1], "A.csv", sep=""), header = FALSE, stringsAsFactors=FALSE)
+A[1,101]=346.9
 B=read.csv(paste(args[1], "B.csv", sep=""), header = FALSE, stringsAsFactors=FALSE)
 if(args[3] == "rbind") {
 	C=rbind(A, B)

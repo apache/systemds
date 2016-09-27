@@ -20,6 +20,7 @@
 #-------------------------------------------------------------
 
 A=read($1, data_type="frame", rows=$2, cols=$3, format="binary")
+A[1,101]=346.9
 B=read($4, data_type="frame", rows=$5, cols=$6, format="binary")
 if ($8 == "rbind") {
 	C=rbind(A, B)

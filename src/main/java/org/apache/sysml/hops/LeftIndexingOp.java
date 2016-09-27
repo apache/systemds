@@ -193,7 +193,8 @@ public class LeftIndexingOp  extends Hop
 				//insert cast to matrix if necessary (for reuse broadcast runtime)
 				Lop rightInput = right.constructLops();
 				if (isRightHandSideScalar()) {
-					rightInput = new UnaryCP(rightInput, OperationTypes.CAST_AS_MATRIX, DataType.MATRIX, ValueType.DOUBLE);
+					rightInput = new UnaryCP(rightInput, (left.getDataType()==DataType.MATRIX?OperationTypes.CAST_AS_MATRIX:OperationTypes.CAST_AS_FRAME), 
+											left.getDataType(), right.getValueType());
 					long bsize = ConfigurationManager.getBlocksize();
 					rightInput.getOutputParameters().setDimensions( 1, 1, bsize, bsize, -1);
 				} 

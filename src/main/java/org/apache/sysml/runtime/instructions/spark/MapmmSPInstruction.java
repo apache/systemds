@@ -30,11 +30,13 @@ import org.apache.spark.api.java.function.PairFunction;
 import scala.Tuple2;
 
 import org.apache.sysml.hops.AggBinaryOp.SparkAggType;
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.lops.MapMult;
 import org.apache.sysml.lops.MapMult.CacheType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.functionobjects.Multiply;
 import org.apache.sysml.runtime.functionobjects.Plus;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
@@ -125,8 +127,11 @@ public class MapmmSPInstruction extends BinarySPInstruction
 		
 		//execute mapmult instruction
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
-		if( requiresFlatMapFunction(_type, mcBc) ) 
+		if( requiresFlatMapFunction(_type, mcBc) ) {
+			if( requiresRepartitioning(_type, mcRdd, mcBc, in1.partitions().size()) )
+				in1 = in1.repartition(getNumRepartitioning(_type, mcRdd, mcBc, in1.partitions().size()));
 			out = in1.flatMapToPair( new RDDFlatMapMMFunction(_type, in2) );
+		}
 		else if( preservesPartitioning(mcRdd, _type) )
 			out = in1.mapPartitionsToPair(new RDDMapMMPartitionFunction(_type, in2), true);
 		else
@@ -175,6 +180,8 @@ public class MapmmSPInstruction extends BinarySPInstruction
 	}
 	
 	/**
+	 * Indicates if there is a need to apply a flatmap rdd operation because a single 
+	 * input block creates multiple output blocks.
 	 * 
 	 * @param type
 	 * @param mcBc
@@ -187,7 +194,51 @@ public class MapmmSPInstruction extends BinarySPInstruction
 	}
 	
 	/**
+	 * Indicates if there is a need to repartition the input RDD in order to increase the
+	 * degree of parallelism or reduce the output partition size (e.g., Spark still has a
+	 * 2GB limitation of partitions)
 	 * 
+	 * @param type
+	 * @param mcRdd
+	 * @param mcBc
+	 * @param numPartitions
+	 * @return
+	 */
+	private static boolean requiresRepartitioning( CacheType type, MatrixCharacteristics mcRdd, MatrixCharacteristics mcBc, int numPartitions ) {
+		//note: as repartitioning requires data shuffling, we try to be very conservative here
+		//approach: we repartition, if there is a "outer-product-like" mm (single block common dimension),
+		//the size of output partitions (assuming dense) exceeds a size of 1GB 
+		
+		boolean isLeft = (type == CacheType.LEFT);
+		boolean isOuter = isLeft ? 
+				(mcRdd.getRows() <= mcRdd.getRowsPerBlock()) :
+				(mcRdd.getCols() <= mcRdd.getColsPerBlock());
+		boolean isLargeOutput = (OptimizerUtils.estimatePartitionedSizeExactSparsity(isLeft?mcBc.getRows():mcRdd.getRows(),
+				isLeft?mcRdd.getCols():mcBc.getCols(), isLeft?mcBc.getRowsPerBlock():mcRdd.getRowsPerBlock(),
+				isLeft?mcRdd.getColsPerBlock():mcBc.getColsPerBlock(), 1.0) / numPartitions) > 1024*1024*1024; 
+		return isOuter && isLargeOutput && mcRdd.dimsKnown() && mcBc.dimsKnown();
+	}
+
+	/**
+	 * Computes the number of target partitions for repartitioning input rdds in case of 
+	 * outer-product-like mm. 
+	 * 
+	 * @param type
+	 * @param mcRdd
+	 * @param mcBc
+	 * @param numPartitions
+	 * @return
+	 */
+	private static int getNumRepartitioning( CacheType type, MatrixCharacteristics mcRdd, MatrixCharacteristics mcBc, int numPartitions ) {
+		boolean isLeft = (type == CacheType.LEFT);
+		long sizeOutput = (OptimizerUtils.estimatePartitionedSizeExactSparsity(isLeft?mcBc.getRows():mcRdd.getRows(),
+				isLeft?mcRdd.getCols():mcBc.getCols(), isLeft?mcBc.getRowsPerBlock():mcRdd.getRowsPerBlock(),
+				isLeft?mcRdd.getColsPerBlock():mcBc.getColsPerBlock(), 1.0)); 
+		long numParts = sizeOutput / InfrastructureAnalyzer.getHDFSBlockSize();
+		return (int)Math.min(numParts, (isLeft?mcRdd.getNumColBlocks():mcRdd.getNumRowBlocks()));
+	}
+	
+	/**
 	 * 
 	 */
 	private static class RDDMapMMFunction implements PairFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock> 

@@ -110,7 +110,7 @@ trait BaseSystemMLClassifier extends BaseSystemMLEstimator {
     val isSingleNode = false
     val ml = new MLContext(df.rdd.sparkContext)
     val mcXin = new MatrixCharacteristics()
-    val Xin = RDDConverterUtils.dataFrameToBinaryBlock(sc, df.asInstanceOf[DataFrame], mcXin, false, true)
+    val Xin = RDDConverterUtils.dataFrameToBinaryBlock(sc, df.asInstanceOf[DataFrame].select("features"), mcXin, false, true)
     val revLabelMapping = new java.util.HashMap[Int, String]
     val yin = PredictionUtils.fillLabelMapping(df, revLabelMapping)
     val ret = getTrainingScript(isSingleNode)
@@ -142,7 +142,7 @@ trait BaseSystemMLClassifierModel extends BaseSystemMLEstimatorModel {
     val isSingleNode = false
     val ml = new MLContext(sc)
     val mcXin = new MatrixCharacteristics()
-    val Xin = RDDConverterUtils.dataFrameToBinaryBlock(df.rdd.sparkContext, df.asInstanceOf[DataFrame], mcXin, false, true)
+    val Xin = RDDConverterUtils.dataFrameToBinaryBlock(df.rdd.sparkContext, df.asInstanceOf[DataFrame].select("features"), mcXin, false, true)
     val script = getPredictionScript(mloutput, isSingleNode)
     val Xin_bin = new BinaryBlockMatrix(Xin, mcXin)
     val modelPredict = ml.execute(script._1.in(script._2, Xin_bin))

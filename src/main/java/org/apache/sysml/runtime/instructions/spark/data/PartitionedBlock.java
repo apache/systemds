@@ -305,13 +305,13 @@ public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 	{
 		DataInput dis = is;
 		
-		if( is instanceof ObjectInputStream ) {
+		int code = readHeader(dis);
+		if( is instanceof ObjectInputStream && code == 0) {	// Apply only for MatrixBlock
 			//fast deserialize of dense/sparse blocks
 			ObjectInputStream ois = (ObjectInputStream)is;
 			dis = new FastBufferedDataInputStream(ois);
 		}
-		
-		readHeaderAndPayload(dis);
+		readPayload(dis, code);
 	}
 	
 	/**
@@ -324,7 +324,8 @@ public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 	public void writeExternal(ObjectOutput os) 
 		throws IOException
 	{
-		if( os instanceof ObjectOutputStream ) {
+		if( os instanceof ObjectOutputStream 
+				&& CacheBlockFactory.getCode(_partBlocks[0]) == 0) {	// Apply only for MatrixBlock
 			//fast serialize of dense/sparse blocks
 			ObjectOutputStream oos = (ObjectOutputStream)os;
 			FastBufferedDataOutputStream fos = new FastBufferedDataOutputStream(oos);
@@ -356,13 +357,13 @@ public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 		for( CacheBlock block : _partBlocks )
 			block.write(dos);
 	}
-
+	
 	/**
 	 * 
 	 * @param din
 	 * @throws IOException 
 	 */
-	private void readHeaderAndPayload(DataInput dis) 
+	private int readHeader(DataInput dis) 
 		throws IOException
 	{
 		_rlen = dis.readLong();
@@ -374,6 +375,19 @@ public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 		int code = dis.readByte();
 		
 		_partBlocks = new CacheBlock[len];
+		
+		return code;
+	}
+
+	/**
+	 * 
+	 * @param din
+	 * @throws IOException 
+	 */
+	private void readPayload(DataInput dis, int code) 
+		throws IOException
+	{
+		int len = _partBlocks.length;
 		for( int i=0; i<len; i++ ) {
 			_partBlocks[i] = CacheBlockFactory.newInstance(code);
 			_partBlocks[i].readFields(dis);

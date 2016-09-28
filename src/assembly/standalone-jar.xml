@@ -68,7 +68,7 @@
 	<dependencySets>
 		<dependencySet>
 			<includes>
-				<include>*:antlr*</include>
+				<include>*:antlr4-runtime*</include>
 				<include>*:wink-json4j*</include>
 			</includes>
 			<scope>compile</scope>

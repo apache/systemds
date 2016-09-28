@@ -306,7 +306,8 @@ public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 		DataInput dis = is;
 		
 		int code = readHeader(dis);
-		if( is instanceof ObjectInputStream && code == 0) {	// Apply only for MatrixBlock
+		if( is instanceof ObjectInputStream && code == 0) {	// Apply only for MatrixBlock at this point as a temporary workaround
+															// We will generalize this code by adding UTF functionality to support Frame
 			//fast deserialize of dense/sparse blocks
 			ObjectInputStream ois = (ObjectInputStream)is;
 			dis = new FastBufferedDataInputStream(ois);
@@ -325,7 +326,8 @@ public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 		throws IOException
 	{
 		if( os instanceof ObjectOutputStream 
-				&& CacheBlockFactory.getCode(_partBlocks[0]) == 0) {	// Apply only for MatrixBlock
+				&& CacheBlockFactory.getCode(_partBlocks[0]) == 0) {// Apply only for MatrixBlock at this point as a temporary workaround
+																	// We will generalize this code by adding UTF functionality to support Frame 
 			//fast serialize of dense/sparse blocks
 			ObjectOutputStream oos = (ObjectOutputStream)os;
 			FastBufferedDataOutputStream fos = new FastBufferedDataOutputStream(oos);

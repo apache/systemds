@@ -960,10 +960,10 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 		}
 		else if(namespace.equals(DMLProgram.DEFAULT_NAMESPACE) && functionName.equals("range")) {
 			if (paramExpression.size() < 2) {
-				notifyErrorListeners("The builtin function \'" + functionName + "\' has 2 arguments without default values (from, to, increment=1.0)", fnName);
+				notifyErrorListeners("The builtin function \'" + functionName + "\' accepts 3 arguments (from, to, increment), with the first 2 lacking default values", fnName);
 				return null;
 			} else if (paramExpression.size() > 3) {
-				notifyErrorListeners("The builtin function \'" + functionName + "\' accepts 3 arguments (from, to, increment=1.0)", fnName);
+				notifyErrorListeners("The builtin function \'" + functionName + "\' accepts 3 arguments (from, to, increment)", fnName);
 			}
 			functionName = "seq";
 			namespace = DMLProgram.DEFAULT_NAMESPACE;

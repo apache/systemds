@@ -1370,7 +1370,8 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 		}
 		ctx.info.from = ctx.from.info.expr;
 		ctx.info.to = ctx.to.info.expr;
-		ctx.info.increment = ctx.increment.info.expr;
+		if(ctx.increment != null && ctx.increment.info != null)
+			ctx.info.increment = ctx.increment.info.expr;
 	}
 
 

@@ -138,13 +138,14 @@ if (intercept_status == 2)  # scale-&-shift X columns to mean 0, variance 1
 # tssX_A = t(SHIFT/SCALE TRANSFORM) %*% A   --- is rewritten as:
 # tssX_A = diag (scale_X) %*% A + shift_X %*% A [D, ];
 
-# Convert "Y_vec" into indicator matrice:
+# Convert "Y_vec" into indicator matrix:
+max_y = max (Y_vec);
 if (min (Y_vec) <= 0) { 
     # Category labels "0", "-1" etc. are converted into the largest label
-    max_y = max (Y_vec);
     Y_vec  = Y_vec  + (- Y_vec  + max_y + 1) * (Y_vec <= 0);
+    max_y = max_y + 1;
 }
-Y = table (seq (1, N, 1), Y_vec);
+Y = table (seq (1, N, 1), Y_vec, N, max_y);
 K = ncol (Y) - 1;   # The number of  non-baseline categories
 
 lambda = (scale_lambda %*% matrix (1, rows = 1, cols = K)) * regularization;

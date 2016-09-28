@@ -19,14 +19,6 @@
 
 package org.apache.sysml.parser.pydml;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ErrorNode;
@@ -50,8 +42,8 @@ import org.apache.sysml.parser.FunctionCallIdentifier;
 import org.apache.sysml.parser.FunctionStatement;
 import org.apache.sysml.parser.IfStatement;
 import org.apache.sysml.parser.ImportStatement;
-import org.apache.sysml.parser.IntIdentifier;
 import org.apache.sysml.parser.IndexedIdentifier;
+import org.apache.sysml.parser.IntIdentifier;
 import org.apache.sysml.parser.IterablePredicate;
 import org.apache.sysml.parser.LanguageException;
 import org.apache.sysml.parser.ParForStatement;
@@ -84,6 +76,7 @@ import org.apache.sysml.parser.pydml.PydmlParser.ConstStringIdExpressionContext;
 import org.apache.sysml.parser.pydml.PydmlParser.ConstTrueExpressionContext;
 import org.apache.sysml.parser.pydml.PydmlParser.DataIdExpressionContext;
 import org.apache.sysml.parser.pydml.PydmlParser.DataIdentifierContext;
+import org.apache.sysml.parser.pydml.PydmlParser.ElifBranchContext;
 import org.apache.sysml.parser.pydml.PydmlParser.ExpressionContext;
 import org.apache.sysml.parser.pydml.PydmlParser.ExternalFunctionDefExpressionContext;
 import org.apache.sysml.parser.pydml.PydmlParser.ForStatementContext;
@@ -91,7 +84,6 @@ import org.apache.sysml.parser.pydml.PydmlParser.FunctionCallAssignmentStatement
 import org.apache.sysml.parser.pydml.PydmlParser.FunctionCallMultiAssignmentStatementContext;
 import org.apache.sysml.parser.pydml.PydmlParser.FunctionStatementContext;
 import org.apache.sysml.parser.pydml.PydmlParser.IfStatementContext;
-import org.apache.sysml.parser.pydml.PydmlParser.ElifBranchContext;
 import org.apache.sysml.parser.pydml.PydmlParser.IfdefAssignmentStatementContext;
 import org.apache.sysml.parser.pydml.PydmlParser.IgnoreNewLineContext;
 import org.apache.sysml.parser.pydml.PydmlParser.ImportStatementContext;
@@ -117,6 +109,14 @@ import org.apache.sysml.parser.pydml.PydmlParser.TypedArgNoAssignContext;
 import org.apache.sysml.parser.pydml.PydmlParser.UnaryExpressionContext;
 import org.apache.sysml.parser.pydml.PydmlParser.ValueDataTypeCheckContext;
 import org.apache.sysml.parser.pydml.PydmlParser.WhileStatementContext;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * TODO: Refactor duplicated parser code dml/pydml (entire package).
@@ -959,9 +959,11 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 			namespace = DMLProgram.DEFAULT_NAMESPACE;
 		}
 		else if(namespace.equals(DMLProgram.DEFAULT_NAMESPACE) && functionName.equals("range")) {
-			if(paramExpression.size() != 3) {
-				notifyErrorListeners("The builtin function \'" + functionName + "\' accepts exactly 3 arguments (from, to, increment)", fnName);
+			if (paramExpression.size() < 2) {
+				notifyErrorListeners("The builtin function \'" + functionName + "\' accepts 3 arguments (from, to, increment), with the first 2 lacking default values", fnName);
 				return null;
+			} else if (paramExpression.size() > 3) {
+				notifyErrorListeners("The builtin function \'" + functionName + "\' accepts 3 arguments (from, to, increment)", fnName);
 			}
 			functionName = "seq";
 			namespace = DMLProgram.DEFAULT_NAMESPACE;

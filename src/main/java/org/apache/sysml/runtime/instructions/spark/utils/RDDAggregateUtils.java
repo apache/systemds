@@ -58,11 +58,14 @@ public class RDDAggregateUtils
 		//stable sum of all blocks with correction block per function instance
 		if( TREE_AGGREGATION ) {
 			return in.values().treeReduce( 
-					new SumSingleBlockFunction() );	
+					new SumSingleBlockFunction(true) );	
 		}
 		else { //DEFAULT
-			return in.values().reduce( 
-					new SumSingleBlockFunction() );
+			//reduce-all aggregate via fold instead of reduce to allow 
+			//for update in-place w/o deep copy of left-hand-side blocks
+			return in.values().fold(
+					new MatrixBlock(), 
+					new SumSingleBlockFunction(false));
 		}
 	}
 	
@@ -141,7 +144,11 @@ public class RDDAggregateUtils
 	public static MatrixBlock aggStable( JavaPairRDD<MatrixIndexes, MatrixBlock> in, AggregateOperator aop )
 	{
 		//stable aggregate of all blocks with correction block per function instance
-		return in.values().reduce( 
+		
+		//reduce-all aggregate via fold instead of reduce to allow 
+		//for update in-place w/o deep copy of left-hand-side blocks
+		return in.values().fold(
+				new MatrixBlock(),
 				new AggregateSingleBlockFunction(aop) );
 	}
 	
@@ -256,8 +263,7 @@ public class RDDAggregateUtils
 			//aggregate other input and maintain corrections 
 			//(existing value and corr are used in place)
 			OperationsOnMatrixValues.incrementalAggregation(value, corr, arg1, _op, false);
-			arg0.set(value, corr);
-			return arg0;
+			return arg0.set(value, corr);
 		}	
 	}
 	
@@ -288,8 +294,7 @@ public class RDDAggregateUtils
 			//aggregate other input and maintain corrections
 			//(existing value and corr are used in place)
 			OperationsOnMatrixValues.incrementalAggregation(value1, corr, value2, _op, false);
-			arg0.set(value1, corr);
-			return arg0;
+			return arg0.set(value1, corr);
 		}	
 	}
 
@@ -528,27 +533,35 @@ public class RDDAggregateUtils
 		
 		private AggregateOperator _op = null;
 		private MatrixBlock _corr = null;
+		private boolean _deep = false;
 		
-		public SumSingleBlockFunction()
-		{
+		public SumSingleBlockFunction(boolean deep) {
 			_op = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.NONE);	
-			_corr = null;
+			_deep = deep;
 		}
 		
 		@Override
 		public MatrixBlock call(MatrixBlock arg0, MatrixBlock arg1)
 			throws Exception 
 		{
+			//prepare combiner block
+			if( arg0.getNumRows() <= 0 || arg0.getNumColumns() <= 0 ) {
+				arg0.copy(arg1);
+				return arg0;
+			}
+			else if( arg1.getNumRows() <= 0 || arg1.getNumColumns() <= 0 ) {
+				return arg0;
+			}
+			
 			//create correction block (on demand)
-			if( _corr == null ){
+			if( _corr == null ) {
 				_corr = new MatrixBlock(arg0.getNumRows(), arg0.getNumColumns(), false);
 			}
 			
-			//copy one input to output
-			MatrixBlock out = new MatrixBlock(arg0);
-			
-			//aggregate other input
-			OperationsOnMatrixValues.incrementalAggregation(out, _corr, arg1, _op, false);
+			//aggregate other input (in-place if possible)
+			MatrixBlock out = _deep ? new MatrixBlock(arg0) : arg0;
+			OperationsOnMatrixValues.incrementalAggregation(
+					out, _corr, arg1, _op, false);
 			
 			return out;
 		}
@@ -601,35 +614,33 @@ public class RDDAggregateUtils
 		private AggregateOperator _op = null;
 		private MatrixBlock _corr = null;
 		
-		public AggregateSingleBlockFunction( AggregateOperator op )
-		{
+		public AggregateSingleBlockFunction( AggregateOperator op ) {
 			_op = op;	
-			_corr = null;
 		}
 		
 		@Override
 		public MatrixBlock call(MatrixBlock arg0, MatrixBlock arg1)
 			throws Exception 
 		{
-			//copy one first input
-			MatrixBlock out = new MatrixBlock(arg0); 
+			//prepare combiner block
+			if( arg0.getNumRows() <= 0 || arg0.getNumColumns() <= 0) {
+				arg0.copy(arg1);
+				return arg0;
+			}
+			else if( arg1.getNumRows() <= 0 || arg1.getNumColumns() <= 0 ) {
+				return arg0;
+			}
 			
 			//create correction block (on demand)
-			if( _corr == null ){
+			if( _op.correctionExists && _corr == null ) {
 				_corr = new MatrixBlock(arg0.getNumRows(), arg0.getNumColumns(), false);
 			}
 			
-			//aggregate second input
-			if(_op.correctionExists) {
-				OperationsOnMatrixValues.incrementalAggregation(
-						out, _corr, arg1, _op, true);
-			}
-			else {
-				OperationsOnMatrixValues.incrementalAggregation(
-						out, null, arg1, _op, true);
-			}
+			//aggregate second input (in-place)
+			OperationsOnMatrixValues.incrementalAggregation(
+				arg0, _op.correctionExists ? _corr : null, arg1, _op, true);
 			
-			return out;
+			return arg0;
 		}
 	}
 	

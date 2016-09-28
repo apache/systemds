@@ -111,7 +111,7 @@ public class CovarianceSPInstruction extends BinarySPInstruction
 		{
 			cmobj = in1.join( in2 )
 					   .values().map(new RDDCOVFunction(cop))
-			           .reduce(new RDDCOVReduceFunction(cop));
+			           .fold(new CM_COV_Object(), new RDDCOVReduceFunction(cop));
 		}
 		else //with weights
 		{
@@ -119,7 +119,7 @@ public class CovarianceSPInstruction extends BinarySPInstruction
 			cmobj = in1.join( in2 )
 					   .join( in3 )
 					   .values().map(new RDDCOVWeightsFunction(cop))
-			           .reduce(new RDDCOVReduceFunction(cop));
+			           .fold(new CM_COV_Object(), new RDDCOVReduceFunction(cop));
 		}
 
 		//create scalar output (no lineage information required)
@@ -196,13 +196,9 @@ public class CovarianceSPInstruction extends BinarySPInstruction
 		public CM_COV_Object call(CM_COV_Object arg0, CM_COV_Object arg1) 
 			throws Exception 
 		{
-			CM_COV_Object out = new CM_COV_Object();
-			
 			//execute cov combine operations
-			_op.fn.execute(out, arg0);
-			_op.fn.execute(out, arg1);
-			
-			return out;
+			_op.fn.execute(arg0, arg1);			
+			return arg0;
 		}
 	}
 }

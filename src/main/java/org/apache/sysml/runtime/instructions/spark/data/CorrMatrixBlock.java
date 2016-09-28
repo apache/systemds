@@ -64,9 +64,10 @@ public class CorrMatrixBlock implements Externalizable
 		return _corr;
 	}
 	
-	public void set(MatrixBlock value, MatrixBlock corr) {
+	public CorrMatrixBlock set(MatrixBlock value, MatrixBlock corr) {
 		_value = value;
 		_corr = corr;
+		return this;
 	}
 	
 	/**

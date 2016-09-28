@@ -28,8 +28,6 @@ import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.IndexingOp;
 import org.apache.sysml.hops.LeftIndexingOp;
 import org.apache.sysml.hops.LiteralOp;
-import org.apache.sysml.parser.Expression.DataType;
-import org.apache.sysml.parser.Expression.ValueType;
 
 /**
  * Rule: Indexing vectorization. This rewrite rule set simplifies
@@ -138,7 +136,7 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 				//apply rewrite if found candidates
 				if( ihops.size() > 1 ){
 					//new row indexing operator
-					IndexingOp newRix = new IndexingOp("tmp", DataType.MATRIX, ValueType.DOUBLE, input, 
+					IndexingOp newRix = new IndexingOp("tmp", input.getDataType(), input.getValueType(), input, 
 							            ihop0.getInput().get(1), ihop0.getInput().get(1), new LiteralOp(1), 
 							            HopRewriteUtils.createValueHop(input, false), true, false); 
 					HopRewriteUtils.setOutputParameters(newRix, -1, -1, input.getRowsInBlock(), input.getColsInBlock(), -1);
@@ -177,7 +175,7 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 				//apply rewrite if found candidates
 				if( ihops.size() > 1 ){
 					//new row indexing operator
-					IndexingOp newRix = new IndexingOp("tmp", DataType.MATRIX, ValueType.DOUBLE, input, 
+					IndexingOp newRix = new IndexingOp("tmp", input.getDataType(), input.getValueType(), input, 
 							         new LiteralOp(1), HopRewriteUtils.createValueHop(input, true),
 				                    ihop0.getInput().get(3), ihop0.getInput().get(3), false, true); 
 					HopRewriteUtils.setOutputParameters(newRix, -1, -1, input.getRowsInBlock(), input.getColsInBlock(), -1);
@@ -240,7 +238,7 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 					Hop rowExpr = ihop0.getInput().get(2); //keep before reset
 					
 					//new row indexing operator
-					IndexingOp newRix = new IndexingOp("tmp1", DataType.MATRIX, ValueType.DOUBLE, input, 
+					IndexingOp newRix = new IndexingOp("tmp1", input.getDataType(), input.getValueType(), input, 
 							            rowExpr, rowExpr, new LiteralOp(1), 
 							            HopRewriteUtils.createValueHop(input, false), true, false); 
 					HopRewriteUtils.setOutputParameters(newRix, -1, -1, input.getRowsInBlock(), input.getColsInBlock(), -1);
@@ -271,7 +269,7 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 						ihop0parentsPos.add(posp);
 					}
 					
-					LeftIndexingOp newLix = new LeftIndexingOp("tmp2", DataType.MATRIX, ValueType.DOUBLE, input, ihop0, 
+					LeftIndexingOp newLix = new LeftIndexingOp("tmp2", input.getDataType(), input.getValueType(), input, ihop0, 
 													rowExpr, rowExpr, new LiteralOp(1), 
 													HopRewriteUtils.createValueHop(input, false), true, false); 
 					HopRewriteUtils.setOutputParameters(newLix, -1, -1, input.getRowsInBlock(), input.getColsInBlock(), -1);
@@ -314,7 +312,7 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 					Hop colExpr = ihop0.getInput().get(4); //keep before reset
 					
 					//new row indexing operator
-					IndexingOp newRix = new IndexingOp("tmp1", DataType.MATRIX, ValueType.DOUBLE, input, 
+					IndexingOp newRix = new IndexingOp("tmp1", input.getDataType(), input.getValueType(), input, 
 							        new LiteralOp(1), HopRewriteUtils.createValueHop(input, true),            
 									colExpr, colExpr, false, true); 
 					HopRewriteUtils.setOutputParameters(newRix, -1, -1, input.getRowsInBlock(), input.getColsInBlock(), -1);
@@ -345,7 +343,7 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 						ihop0parentsPos.add(posp);
 					}
 					
-					LeftIndexingOp newLix = new LeftIndexingOp("tmp2", DataType.MATRIX, ValueType.DOUBLE, input, ihop0, 
+					LeftIndexingOp newLix = new LeftIndexingOp("tmp2", input.getDataType(), input.getValueType(), input, ihop0, 
 							                        new LiteralOp(1), HopRewriteUtils.createValueHop(input, true), 
 													colExpr, colExpr, false, true); 
 					HopRewriteUtils.setOutputParameters(newLix, -1, -1, input.getRowsInBlock(), input.getColsInBlock(), -1);

@@ -325,9 +325,7 @@ public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 	public void writeExternal(ObjectOutput os) 
 		throws IOException
 	{
-		if( os instanceof ObjectOutputStream 
-				&& CacheBlockFactory.getCode(_partBlocks[0]) == 0) {// Apply only for MatrixBlock at this point as a temporary workaround
-																	// We will generalize this code by adding UTF functionality to support Frame 
+		if( os instanceof ObjectOutputStream ) {
 			//fast serialize of dense/sparse blocks
 			ObjectOutputStream oos = (ObjectOutputStream)os;
 			FastBufferedDataOutputStream fos = new FastBufferedDataOutputStream(oos);

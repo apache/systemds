@@ -19,9 +19,13 @@
 
 package org.apache.sysml.runtime.controlprogram.caching;
 
+import java.io.ByteArrayInputStream;
+import java.io.DataInput;
+import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.IOException;
 
+import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.util.LocalFileUtils;
 
@@ -34,13 +38,14 @@ public class ByteBuffer
 {
 	private boolean _serialized;	
 	private boolean _shallow;
-	private long _size;
+	private boolean _matrix;
+	private int _size;
 	
 	protected byte[]     _bdata = null; //sparse matrix
 	protected CacheBlock _cdata = null; //dense matrix/frame
 	
 	public ByteBuffer( long size ) {
-		_size = size;
+		_size = (int)size;
 		_serialized = false;
 	}
 	
@@ -53,6 +58,7 @@ public class ByteBuffer
 		throws IOException
 	{	
 		_shallow = cb.isShallowSerialize();
+		_matrix = (cb instanceof MatrixBlock);
 		
 		try
 		{
@@ -60,9 +66,9 @@ public class ByteBuffer
 			{
 				//deep serialize (for compression)
 				if( CacheableData.CACHING_BUFFER_PAGECACHE )
-					_bdata = PageCache.getPage((int)_size);
+					_bdata = PageCache.getPage(_size);
 				if( _bdata==null )
-					_bdata = new byte[(int)_size];
+					_bdata = new byte[_size];
 				DataOutput dout = new CacheDataOutput(_bdata);
 				cb.write(dout);
 			}
@@ -89,9 +95,10 @@ public class ByteBuffer
 	{
 		CacheBlock ret = null;
 		
-		if( !_shallow ) { //sparse matrix 
-			CacheDataInput din = new CacheDataInput(_bdata);
-			ret = new MatrixBlock();
+		if( !_shallow ) { //sparse matrix / string frame
+			DataInput din = _matrix ? new CacheDataInput(_bdata) :
+				new DataInputStream(new ByteArrayInputStream(_bdata));
+			ret = _matrix ? new MatrixBlock() : new FrameBlock();
 			ret.readFields(din);
 		}
 		else { //dense matrix/frame

@@ -629,25 +629,104 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	////////
 	// CacheBlock implementation
 	
+	@Override
 	public long getInMemorySize() {
-		return 1;
+		//frame block header
+		long size = 16 + 4; //object, num rows
+		
+		//schema array (overhead and int entries)
+		int clen = getNumColumns();
+		size += 8 + 32 + clen * 4;
+		
+		//colname array (overhead and string entries)
+		size += 8 + 32;
+		for( int j=0; j<clen; j++ )
+			size += getInMemoryStringSize(_colnames[j]);
+		
+		//meta data array (overhead and entries)
+		size += 8 + 32;
+		for( int j=0; j<clen; j++ ) {
+			size += 16 + 8 + 8 //object, long num distinct, ref mv 
+				+ getInMemoryStringSize(_colmeta[j].getMvValue());
+		}
+		
+		//data array (overhead and entries)
+		size += 8 + 32 + clen * (16+4+8+32);
+		for( int j=0; j<clen; j++ ) {
+			switch( _schema[j] ) {
+				case BOOLEAN: size += _numRows; break;
+				case INT:
+				case DOUBLE: size += 8*_numRows; break;
+				case STRING: 
+					StringArray arr = (StringArray)_coldata[j];
+					for( int i=0; i<_numRows; i++ )
+						size += getInMemoryStringSize(arr.get(i));
+					break;
+				default: //not applicable	
+			}
+		}
+		
+		return size;
 	}
 	
 	@Override
 	public long getExactSerializedSize() {
-		//TODO implement getExactSizeOnDisk();
-		return 1;
+		//header: 2xint, boolean
+		long size = 9;
+		
+		//column sizes
+		boolean isDefaultMeta = isColNamesDefault()
+				&& isColumnMetadataDefault();
+		for( int j=0; j<getNumColumns(); j++ ) {
+			size += 1; //column schema
+			if( !isDefaultMeta ) {
+				size += IOUtilFunctions.getUTFSize(_colnames[j]);
+				size += 8;
+				size += IOUtilFunctions.getUTFSize(_colmeta[j].getMvValue());
+			}
+			switch( _schema[j] ) {
+				case BOOLEAN: size += _numRows; break;
+				case INT:
+				case DOUBLE: size += 8*_numRows; break;
+				case STRING: 
+					StringArray arr = (StringArray)_coldata[j];
+					for( int i=0; i<_numRows; i++ )
+						size += IOUtilFunctions.getUTFSize(arr.get(i));
+					break;
+				default: //not applicable	
+			}
+		}
+		
+		return size;
 	}
 	
 	@Override
 	public boolean isShallowSerialize() {
-		//shallow serialize since frames always dense
-		return true;
+		//shallow serialize if non-string schema because a frame block
+		//is always dense but strings have large array overhead per cell
+		boolean ret = true;
+		for( int j=0; j<_schema.length && ret; j++ )
+			ret &= (_schema[j] != ValueType.STRING);
+		
+		return ret;
 	}
 	
 	@Override
 	public void compactEmptyBlock() {
 		//do nothing
+	}
+	
+	/**
+	 * Returns the in-memory size in bytes of the given string value. 
+	 * 
+	 * @param value
+	 * @return
+	 */
+	private long getInMemoryStringSize(String value) {
+		if( value == null )
+			return 0;
+		return 16 + 4 + 8 //object, hash, array ref
+			+ 32 + value.length();     //char array 
 	}
 	
 	///////

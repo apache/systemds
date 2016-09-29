@@ -285,6 +285,29 @@ public class IOUtilFunctions
 	}
 	
 	/**
+	 * Returns the serialized size in bytes of the given string value,
+	 * following the modified UTF-8 specification as used by Java's
+	 * DataInput/DataOutput.
+	 * 
+	 * see java docs: docs/api/java/io/DataInput.html#modified-utf-8
+	 * 
+	 * @param value
+	 * @return
+	 */
+	public static int getUTFSize(String value) {
+		if( value == null )
+			return 2;
+		//size in modified UTF-8 as used by DataInput/DataOutput
+		int size = 2; //length in bytes
+		for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            size += ( c>=0x0001 && c<=0x007F) ? 1 :
+            	(c >= 0x0800) ? 3 : 2;
+        }
+		return size;
+	}
+	
+	/**
 	 * 
 	 * @param input
 	 * @return

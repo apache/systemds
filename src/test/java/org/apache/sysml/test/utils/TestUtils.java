@@ -754,12 +754,13 @@ public class TestUtils
 	 * @param cols
 	 * @param epsilon
 	 */
-	public static void compareFrames(String[][] expectedMatrix, String[][] actualMatrix, int rows, int cols ) {
+	public static void compareFrames(String[][] expectedFrame, String[][] actualFrame, int rows, int cols ) {
 		int countErrors = 0;
 		for (int i = 0; i < rows; i++) {
 			for (int j = 0; j < cols; j++) {
-				if( !(expectedMatrix[i][j].equals(actualMatrix[i][j]) || (expectedMatrix[i][j]+".0").equals(actualMatrix[i][j])) ) {
-					System.out.println(expectedMatrix[i][j] +" vs actual: "+actualMatrix[i][j]+" at "+i+" "+j);
+				if( !( (expectedFrame[i][j]==null && actualFrame[i][j]==null) ||
+					expectedFrame[i][j].equals(actualFrame[i][j]) || (expectedFrame[i][j]+".0").equals(actualFrame[i][j])) ) {
+					System.out.println(expectedFrame[i][j] +" vs actual: "+actualFrame[i][j]+" at "+i+" "+j);
 					countErrors++;
 				}
 			}

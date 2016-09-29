@@ -19,10 +19,14 @@
 
 package org.apache.sysml.runtime.util;
 
+import java.io.BufferedInputStream;
+import java.io.DataInput;
+import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
@@ -101,13 +105,15 @@ public class LocalFileUtils
 		throws IOException
 	{
 		FileInputStream fis = new FileInputStream( filePathAndName );
-		FastBufferedDataInputStream in = new FastBufferedDataInputStream(fis, BUFFER_SIZE);
-		
+		DataInput in  = !(ret instanceof MatrixBlock) ? 
+				new DataInputStream(new BufferedInputStream(fis, BUFFER_SIZE)) :
+				new FastBufferedDataInputStream(fis, BUFFER_SIZE);		
 		try {
 			ret.readFields(in);
 		}
 		finally {
-			IOUtilFunctions.closeSilently(in);
+			IOUtilFunctions.closeSilently(
+					(InputStream)in);
 		}
 			
 		return ret;

@@ -227,6 +227,8 @@ public class LazyWriteBuffer
 	}
 	
 	/**
+	 * Print current status of buffer pool, including all entries.
+	 * NOTE: use only for debugging or testing.  
 	 * 
 	 */
 	public static void printStatus( String position )
@@ -248,6 +250,33 @@ public class LazyWriteBuffer
 			
 			System.out.println("\tWB: buffer element ("+count+"): "+fname+", "+bbuff.getSize()+", "+bbuff.isShallow());
 			count--;
+		}
+	}
+	
+	/**
+	 * Evicts all buffer pool entries. 
+	 * NOTE: use only for debugging or testing.  
+	 * @throws IOException 
+	 * 
+	 */
+	public static void forceEviction() 
+		throws IOException 
+	{
+		//evict all matrices and frames
+		while( !_mQueue.isEmpty() )
+		{
+			//remove first entry from eviction queue
+			Entry<String, ByteBuffer> entry = _mQueue.removeFirst();
+			ByteBuffer tmp = entry.getValue();
+			
+			if( tmp != null ) {
+				//wait for pending serialization
+				tmp.checkSerialized();
+				
+				//evict matrix
+				tmp.evictBuffer(entry.getKey());
+				tmp.freeMemory();
+			}
 		}
 	}
 	

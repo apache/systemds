@@ -423,9 +423,11 @@ public class UtilFunctions
 	 * @param in
 	 * @return
 	 */
-	public static Object objectToObject(ValueType vt, Object in ) {
+	public static Object objectToObject(ValueType vt, Object in) {
 		if( in instanceof Double && vt == ValueType.DOUBLE 
-			|| in instanceof Long && vt == ValueType.INT )
+			|| in instanceof Long && vt == ValueType.INT
+			|| in instanceof Boolean && vt == ValueType.BOOLEAN
+			|| in instanceof String && vt == ValueType.STRING )
 			return in; //quick path to avoid double parsing
 		else
 			return stringToObject(vt, objectToString(in) );

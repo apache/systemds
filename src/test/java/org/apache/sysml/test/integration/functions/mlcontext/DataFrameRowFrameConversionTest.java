@@ -41,11 +41,11 @@ import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
 
 
-public class DataFrameFrameConversionTest extends AutomatedTestBase 
+public class DataFrameRowFrameConversionTest extends AutomatedTestBase 
 {
 	private final static String TEST_DIR = "functions/mlcontext/";
 	private final static String TEST_NAME = "DataFrameConversion";
-	private final static String TEST_CLASS_DIR = TEST_DIR + DataFrameFrameConversionTest.class.getSimpleName() + "/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + DataFrameRowFrameConversionTest.class.getSimpleName() + "/";
 
 	private final static int  rows1 = 2245;
 	private final static int  cols1 = 745;

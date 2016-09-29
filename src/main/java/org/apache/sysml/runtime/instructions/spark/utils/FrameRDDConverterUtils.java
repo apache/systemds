@@ -37,6 +37,8 @@ import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
+import org.apache.spark.mllib.linalg.Vector;
+import org.apache.spark.mllib.linalg.VectorUDT;
 import org.apache.spark.sql.DataFrame;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
@@ -328,12 +330,15 @@ public class FrameRDDConverterUtils
 	{
 		//determine unknown dimensions if required
 		if( !mc.dimsKnown() ) { //nnz are irrelevant here
-			JavaRDD<Row> tmp = df.javaRDD();
-			long rlen = tmp.count();
-			long clen = df.columns().length - (containsID?1:0);
+			int colVect = getColVectFromDFSchema(df.schema(), containsID);
+			int off = (containsID ? 1 : 0);
+			long rlen = df.count();
+			long clen = df.columns().length - off + ((colVect >= 0) ? 
+					((Vector)df.first().get(off+colVect)).size() - 1 : 0);
 			mc.set(rlen, clen, mc.getRowsPerBlock(), mc.getColsPerBlock(), -1);
 		}
 		
+		//append or reuse row index column
 		JavaPairRDD<Row, Long> prepinput = containsID ?
 				df.javaRDD().mapToPair(new DataFrameExtractIDFunction()) :
 				df.javaRDD().zipWithIndex(); //zip row index
@@ -341,11 +346,11 @@ public class FrameRDDConverterUtils
 		//convert data frame to frame schema (prepare once)
 		String[] colnames = new String[(int)mc.getCols()];
 		ValueType[] fschema = new ValueType[(int)mc.getCols()];
-		convertDFSchemaToFrameSchema(df.schema(), colnames, fschema, containsID);
+		int colVect = convertDFSchemaToFrameSchema(df.schema(), colnames, fschema, containsID);
 				
 		//convert rdd to binary block rdd
 		return prepinput.mapPartitionsToPair(
-				new DataFrameToBinaryBlockFunction(mc, colnames, fschema, containsID));
+				new DataFrameToBinaryBlockFunction(mc, colnames, fschema, containsID, colVect));
 	}
 
 	/**
@@ -413,29 +418,68 @@ public class FrameRDDConverterUtils
 	}
 	
 	/**
+	 * NOTE: regarding the support of vector columns, we make the following 
+	 * schema restriction: single vector column, which allows inference of
+	 * the vector length without data access and covers the common case. 
 	 * 
 	 * @param dfschema
 	 * @param containsID
-	 * @return
+	 * @return 0-based column index of vector column, -1 if no vector. 
 	 */
-	public static void convertDFSchemaToFrameSchema(StructType dfschema, String[] colnames, 
+	public static int convertDFSchemaToFrameSchema(StructType dfschema, String[] colnames, 
 			ValueType[] fschema, boolean containsID)
 	{
+		//basic meta data
+		int off = containsID ? 1 : 0;
+		boolean containsVect = false;
+		int lenVect = fschema.length - (dfschema.fields().length - off) + 1;
+		int colVect = -1;
+		
+		//process individual columns
+		for( int i=off, pos=0; i<dfschema.fields().length; i++ ) {
+			StructField structType = dfschema.apply(i);
+			colnames[pos] = structType.name();
+			if(structType.dataType() == DataTypes.DoubleType 
+				|| structType.dataType() == DataTypes.FloatType)
+				fschema[pos++] = ValueType.DOUBLE;
+			else if(structType.dataType() == DataTypes.LongType 
+				|| structType.dataType() == DataTypes.IntegerType)
+				fschema[pos++] = ValueType.INT;
+			else if(structType.dataType() == DataTypes.BooleanType)
+				fschema[pos++] = ValueType.BOOLEAN;
+			else if(structType.dataType() instanceof VectorUDT) {
+				if( containsVect )
+					throw new RuntimeException("Found invalid second vector column.");
+				String name = colnames[pos];
+				colVect = pos;
+				for( int j=0; j<lenVect; j++ ) {
+					colnames[pos] = name+"v"+j;
+					fschema[pos++] = ValueType.DOUBLE;
+				}
+				containsVect = true;
+			}
+			else
+				fschema[pos++] = ValueType.STRING;
+		}
+		
+		return colVect;
+	}
+	
+	/**
+	 * 
+	 * @param dfschema
+	 * @param containsID
+	 * @return 0-based column index of vector column, -1 if no vector.
+	 */
+	private static int getColVectFromDFSchema(StructType dfschema, boolean containsID) {
 		int off = containsID ? 1 : 0;
 		for( int i=off; i<dfschema.fields().length; i++ ) {
 			StructField structType = dfschema.apply(i);
-			colnames[i-off] = structType.name();
-			if(structType.dataType() == DataTypes.DoubleType 
-				|| structType.dataType() == DataTypes.FloatType)
-				fschema[i-off] = ValueType.DOUBLE;
-			else if(structType.dataType() == DataTypes.LongType 
-				|| structType.dataType() == DataTypes.IntegerType)
-				fschema[i-off] = ValueType.INT;
-			else if(structType.dataType() == DataTypes.BooleanType)
-				fschema[i-off] = ValueType.BOOLEAN;
-			else
-				fschema[i-off] = ValueType.STRING;
+			if(structType.dataType() instanceof VectorUDT)
+				return i-off;
 		}
+		
+		return -1;
 	}
 	
 	/* 
@@ -790,14 +834,16 @@ public class FrameRDDConverterUtils
 		private String[] _colnames = null;
 		private ValueType[] _schema = null;
 		private boolean _containsID = false;
+		private int _colVect = -1;
 		private int _maxRowsPerBlock = -1;
 		
 		public DataFrameToBinaryBlockFunction(MatrixCharacteristics mc, String[] colnames, 
-				ValueType[] schema, boolean containsID) {
+				ValueType[] schema, boolean containsID, int colVect) {
 			_clen = mc.getCols();
 			_colnames = colnames;
 			_schema = schema;
 			_containsID = containsID;
+			_colVect = colVect;
 			_maxRowsPerBlock = Math.max((int) (FrameBlock.BUFFER_SIZE/_clen), 1);
 		}
 		
@@ -826,9 +872,17 @@ public class FrameRDDConverterUtils
 				
 				//process row data
 				int off = _containsID ? 1 : 0;
-				for(int i=off; i<row.size(); i++) {
-					tmprow[i-off] = UtilFunctions.objectToObject(
-							_schema[i-off], row.get(i));
+				for(int i=off, pos=0; i<row.size(); i++) {
+					if( i-off == _colVect ) {
+						Vector vect = (Vector) row.get(i);
+						for( int j=0; j<vect.size(); j++ )
+							tmprow[pos++] = vect.apply(j);
+					}
+					else {
+						tmprow[pos] = UtilFunctions.objectToObject(
+							_schema[pos], row.get(i));
+						pos++;
+					}
 				}
 				fb.appendRow(tmprow);
 			}

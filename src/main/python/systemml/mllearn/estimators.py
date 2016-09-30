@@ -180,10 +180,69 @@ class BaseSystemMLRegressor(BaseSystemMLEstimator):
 
 
 class LogisticRegression(BaseSystemMLClassifier):
+    """
+    Performs both binomial and multinomial logistic regression.
+
+    Examples
+    --------
+    
+    Scikit-learn way
+    
+    >>> from sklearn import datasets, neighbors
+    >>> from systemml.mllearn import LogisticRegression
+    >>> from pyspark.sql import SQLContext
+    >>> sqlCtx = SQLContext(sc)
+    >>> digits = datasets.load_digits()
+    >>> X_digits = digits.data
+    >>> y_digits = digits.target + 1
+    >>> n_samples = len(X_digits)
+    >>> X_train = X_digits[:.9 * n_samples]
+    >>> y_train = y_digits[:.9 * n_samples]
+    >>> X_test = X_digits[.9 * n_samples:]
+    >>> y_test = y_digits[.9 * n_samples:]
+    >>> logistic = LogisticRegression(sqlCtx)
+    >>> print('LogisticRegression score: %f' % logistic.fit(X_train, y_train).score(X_test, y_test))
+    
+    MLPipeline way
+    
+    >>> from pyspark.ml import Pipeline
+    >>> from systemml.mllearn import LogisticRegression
+    >>> from pyspark.ml.feature import HashingTF, Tokenizer
+    >>> from pyspark.sql import SQLContext
+    >>> sqlCtx = SQLContext(sc)
+    >>> training = sqlCtx.createDataFrame([
+    >>>     (0L, "a b c d e spark", 1.0),
+    >>>     (1L, "b d", 2.0),
+    >>>     (2L, "spark f g h", 1.0),
+    >>>     (3L, "hadoop mapreduce", 2.0),
+    >>>     (4L, "b spark who", 1.0),
+    >>>     (5L, "g d a y", 2.0),
+    >>>     (6L, "spark fly", 1.0),
+    >>>     (7L, "was mapreduce", 2.0),
+    >>>     (8L, "e spark program", 1.0),
+    >>>     (9L, "a e c l", 2.0),
+    >>>     (10L, "spark compile", 1.0),
+    >>>     (11L, "hadoop software", 2.0)
+    >>> ], ["id", "text", "label"])
+    >>> tokenizer = Tokenizer(inputCol="text", outputCol="words")
+    >>> hashingTF = HashingTF(inputCol="words", outputCol="features", numFeatures=20)
+    >>> lr = LogisticRegression(sqlCtx)
+    >>> pipeline = Pipeline(stages=[tokenizer, hashingTF, lr])
+    >>> model = pipeline.fit(training)
+    >>> test = sqlCtx.createDataFrame([
+    >>>     (12L, "spark i j k"),
+    >>>     (13L, "l m n"),
+    >>>     (14L, "mapreduce spark"),
+    >>>     (15L, "apache hadoop")], ["id", "text"])
+    >>> prediction = model.transform(test)
+    >>> prediction.show()
+    
+    """
+    
     def __init__(self, sqlCtx, penalty='l2', fit_intercept=True, max_iter=100, max_inner_iter=0, tol=0.000001, C=1.0, solver='newton-cg', transferUsingDF=False):
         """
         Performs both binomial and multinomial logistic regression.
-
+        
         Parameters
         ----------
         sqlCtx: PySpark SQLContext
@@ -216,10 +275,39 @@ class LogisticRegression(BaseSystemMLClassifier):
 
 
 class LinearRegression(BaseSystemMLRegressor):
-
+    """
+    Performs linear regression to model the relationship between one numerical response variable and one or more explanatory (feature) variables.
+    
+    Examples
+    --------
+    
+    >>> import numpy as np
+    >>> from sklearn import datasets
+    >>> from systemml.mllearn import LinearRegression
+    >>> from pyspark.sql import SQLContext
+    >>> # Load the diabetes dataset
+    >>> diabetes = datasets.load_diabetes()
+    >>> # Use only one feature
+    >>> diabetes_X = diabetes.data[:, np.newaxis, 2]
+    >>> # Split the data into training/testing sets
+    >>> diabetes_X_train = diabetes_X[:-20]
+    >>> diabetes_X_test = diabetes_X[-20:]
+    >>> # Split the targets into training/testing sets
+    >>> diabetes_y_train = diabetes.target[:-20]
+    >>> diabetes_y_test = diabetes.target[-20:]
+    >>> # Create linear regression object
+    >>> regr = LinearRegression(sqlCtx, solver='newton-cg')
+    >>> # Train the model using the training sets
+    >>> regr.fit(diabetes_X_train, diabetes_y_train)
+    >>> # The mean square error
+    >>> print("Residual sum of squares: %.2f" % np.mean((regr.predict(diabetes_X_test) - diabetes_y_test) ** 2))
+    
+    """
+    
+    
     def __init__(self, sqlCtx, fit_intercept=True, max_iter=100, tol=0.000001, C=1.0, solver='newton-cg', transferUsingDF=False):
         """
-        Performs linear regression to model the relationship between one numerical response variable and one or more explanatory (feature) variables..
+        Performs linear regression to model the relationship between one numerical response variable and one or more explanatory (feature) variables.
 
         Parameters
         ----------
@@ -252,6 +340,29 @@ class LinearRegression(BaseSystemMLRegressor):
 
 
 class SVM(BaseSystemMLClassifier):
+    """
+    Performs both binary-class and multiclass SVM (Support Vector Machines).
+
+    Examples
+    --------
+    
+    >>> from sklearn import datasets, neighbors
+    >>> from systemml.mllearn import SVM
+    >>> from pyspark.sql import SQLContext
+    >>> sqlCtx = SQLContext(sc)
+    >>> digits = datasets.load_digits()
+    >>> X_digits = digits.data
+    >>> y_digits = digits.target 
+    >>> n_samples = len(X_digits)
+    >>> X_train = X_digits[:.9 * n_samples]
+    >>> y_train = y_digits[:.9 * n_samples]
+    >>> X_test = X_digits[.9 * n_samples:]
+    >>> y_test = y_digits[.9 * n_samples:]
+    >>> svm = SVM(sqlCtx, is_multi_class=True)
+    >>> print('LogisticRegression score: %f' % svm.fit(X_train, y_train).score(X_test, y_test))
+     
+    """
+
 
     def __init__(self, sqlCtx, fit_intercept=True, max_iter=100, tol=0.000001, C=1.0, is_multi_class=False, transferUsingDF=False):
         """
@@ -282,10 +393,35 @@ class SVM(BaseSystemMLClassifier):
 
 
 class NaiveBayes(BaseSystemMLClassifier):
+    """
+    Performs Naive Bayes.
 
+    Examples
+    --------
+    
+    >>> from sklearn.datasets import fetch_20newsgroups
+    >>> from sklearn.feature_extraction.text import TfidfVectorizer
+    >>> from systemml.mllearn import NaiveBayes
+    >>> from sklearn import metrics
+    >>> from pyspark.sql import SQLContext
+    >>> sqlCtx = SQLContext(sc)
+    >>> categories = ['alt.atheism', 'talk.religion.misc', 'comp.graphics', 'sci.space']
+    >>> newsgroups_train = fetch_20newsgroups(subset='train', categories=categories)
+    >>> newsgroups_test = fetch_20newsgroups(subset='test', categories=categories)
+    >>> vectorizer = TfidfVectorizer()
+    >>> # Both vectors and vectors_test are SciPy CSR matrix
+    >>> vectors = vectorizer.fit_transform(newsgroups_train.data)
+    >>> vectors_test = vectorizer.transform(newsgroups_test.data)
+    >>> nb = NaiveBayes(sqlCtx)
+    >>> nb.fit(vectors, newsgroups_train.target)
+    >>> pred = nb.predict(vectors_test)
+    >>> metrics.f1_score(newsgroups_test.target, pred, average='weighted')
+
+    """
+    
     def __init__(self, sqlCtx, laplace=1.0, transferUsingDF=False):
         """
-        Performs both binary-class and multiclass SVM (Support Vector Machines).
+        Performs Naive Bayes.
 
         Parameters
         ----------

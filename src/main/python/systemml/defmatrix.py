@@ -309,41 +309,24 @@ def eval(outputs, outputDF=False, execute=True):
 
 ###############################################################################
 
-# DESIGN DECISIONS:
-# 1. Until eval() method is invoked, we create an AST (not exposed to the user) that consist of unevaluated operations and data required by those operations.
-#    As an anology, a spark user can treat eval() method similar to calling RDD.persist() followed by RDD.count().
-# 2. The AST consist of two kinds of nodes: either of type matrix or of type DMLOp.
-#    Both these classes expose _visit method, that helps in traversing the AST in DFS manner.
-# 3. A matrix object can either be evaluated or not.
-#    If evaluated, the attribute 'data' is set to one of the supported types (for example: NumPy array or DataFrame). In this case, the attribute 'op' is set to None.
-#    If not evaluated, the attribute 'op' which refers to one of the intermediate node of AST and if of type DMLOp.  In this case, the attribute 'data' is set to None.
-# 5. DMLOp has an attribute 'inputs' which contains list of matrix objects or DMLOp.
-# 6. To simplify the traversal, every matrix object is considered immutable and an matrix operations creates a new matrix object.
-#    As an example:
-#    - m1 = sml.matrix(np.ones((3,3))) creates a matrix object backed by 'data=(np.ones((3,3))'.
-#    - m1 = m1 * 2 will create a new matrix object which is now backed by 'op=DMLOp( ... )' whose input is earlier created matrix object.
-# 7. Left indexing (implemented in __setitem__ method) is a special case, where Python expects the existing object to be mutated.
-#    To ensure the above property, we make deep copy of existing object and point any references to the left-indexed matrix to the newly created object.
-#    Then the left-indexed matrix is set to be backed by DMLOp consisting of following pydml:
-#    left-indexed-matrix = new-deep-copied-matrix
-#    left-indexed-matrix[index] = value
-# 8. Please use m.printAST() and/or  type `m` for debugging. Here is a sample session:
-# >>> npm = np.ones((3,3))
-# >>> m1 = sml.matrix(npm + 3)
-# >>> m2 = sml.matrix(npm + 5)
-# >>> m3 = m1 + m2
-# >>> m3
-# mVar2 = load(" ", format="csv")
-# mVar1 = load(" ", format="csv")
-# mVar3 = mVar1 + mVar2
-# save(mVar3, " ")
-# >>> m3.printAST()
-# - [mVar3] (op).
-#   - [mVar1] (data).
-#   - [mVar2] (data).
 class matrix(object):
     """
-    matrix class is a python wrapper that implements basic matrix operator.
+    matrix class is a python wrapper that implements basic matrix operators, matrix functions
+    as well as converters to common Python types (for example: Numpy arrays, PySpark DataFrame
+    and Pandas DataFrame). 
+    
+    The operators supported are:
+    
+    1. Arithmetic operators: +, -, *, /, //, %, ** as well as dot (i.e. matrix multiplication)
+    2. Indexing in the matrix
+    3. Relational/Boolean operators: <, <=, >, >=, ==, !=, &, |
+    
+    In addition, following functions are supported for matrix:
+    
+    1. transpose
+    2. Aggregation functions: sum, mean, max, min, argmin, argmax, cumsum
+    3. Global statistical built-In functions: exp, log, abs, sqrt, round, floor, ceil, sin, cos, tan, asin, acos, atan, sign, solve
+    
     Note: an evaluated matrix contains a data field computed by eval method as DataFrame or NumPy array.
 
     Examples
@@ -366,23 +349,54 @@ class matrix(object):
     mVar4 = mVar1 * mVar3
     mVar5 = 1.0 - mVar4
     save(mVar5, " ")
-
-    <SystemML.defmatrix.matrix object>
     >>> m2.eval()
     >>> m2
     # This matrix (mVar4) is backed by NumPy array. To fetch the NumPy array, invoke toNumPyArray() method.
-    <SystemML.defmatrix.matrix object>
     >>> m4
     # This matrix (mVar5) is backed by below given PyDML script (which is not yet evaluated). To fetch the data of this matrix, invoke toNumPyArray() or toDataFrame() or toPandas() methods.
     mVar4 = load(" ", format="csv")
     mVar5 = 1.0 - mVar4
     save(mVar5, " ")
-
-    <SystemML.defmatrix.matrix object>
     >>> m4.sum(axis=1).toNumPy()
     array([[-60.],
            [-60.],
            [-60.]])
+    
+    Design Decisions:
+    
+    1. Until eval() method is invoked, we create an AST (not exposed to the user) that consist of unevaluated operations and data required by those operations.
+       As an anology, a spark user can treat eval() method similar to calling RDD.persist() followed by RDD.count().
+    2. The AST consist of two kinds of nodes: either of type matrix or of type DMLOp.
+       Both these classes expose _visit method, that helps in traversing the AST in DFS manner.
+    3. A matrix object can either be evaluated or not.
+       If evaluated, the attribute 'data' is set to one of the supported types (for example: NumPy array or DataFrame). In this case, the attribute 'op' is set to None.
+       If not evaluated, the attribute 'op' which refers to one of the intermediate node of AST and if of type DMLOp.  In this case, the attribute 'data' is set to None.
+    5. DMLOp has an attribute 'inputs' which contains list of matrix objects or DMLOp.
+    6. To simplify the traversal, every matrix object is considered immutable and an matrix operations creates a new matrix object.
+       As an example: 
+       `m1 = sml.matrix(np.ones((3,3)))` creates a matrix object backed by 'data=(np.ones((3,3))'.
+       `m1 = m1 * 2` will create a new matrix object which is now backed by 'op=DMLOp( ... )' whose input is earlier created matrix object.
+    7. Left indexing (implemented in __setitem__ method) is a special case, where Python expects the existing object to be mutated.
+       To ensure the above property, we make deep copy of existing object and point any references to the left-indexed matrix to the newly created object.
+       Then the left-indexed matrix is set to be backed by DMLOp consisting of following pydml:
+       left-indexed-matrix = new-deep-copied-matrix
+       left-indexed-matrix[index] = value
+    8. Please use m.printAST() and/or  type `m` for debugging. Here is a sample session:
+    
+       >>> npm = np.ones((3,3))
+       >>> m1 = sml.matrix(npm + 3)
+       >>> m2 = sml.matrix(npm + 5)
+       >>> m3 = m1 + m2
+       >>> m3
+       mVar2 = load(" ", format="csv")
+       mVar1 = load(" ", format="csv")
+       mVar3 = mVar1 + mVar2
+       save(mVar3, " ")
+       >>> m3.printAST()
+       - [mVar3] (op).
+         - [mVar1] (data).
+         - [mVar2] (data).    
+    
     """
     # Global variable that is used to keep track of intermediate matrix variables in the DML script
     systemmlVarID = 0
@@ -502,7 +516,21 @@ class matrix(object):
 
     def printAST(self, numSpaces = 0):
         """
-        Used for debugging purposes
+        Please use m.printAST() and/or  type `m` for debugging. Here is a sample session:
+        
+        >>> npm = np.ones((3,3))
+        >>> m1 = sml.matrix(npm + 3)
+        >>> m2 = sml.matrix(npm + 5)
+        >>> m3 = m1 + m2
+        >>> m3
+        mVar2 = load(" ", format="csv")
+        mVar1 = load(" ", format="csv")
+        mVar3 = mVar1 + mVar2
+        save(mVar3, " ")
+        >>> m3.printAST()
+        - [mVar3] (op).
+          - [mVar1] (data).
+          - [mVar2] (data).
         """
         head = ''.join([ ' ' ]*numSpaces + [ '- [', self.ID, '] ' ])
         if self.data is not None:
@@ -529,7 +557,7 @@ class matrix(object):
             print('# This matrix (' + self.ID + ') is backed by PySpark DataFrame. To fetch the DataFrame, invoke toDataFrame() method.')
         else:
             print('# This matrix (' + self.ID + ') is backed by NumPy array. To fetch the NumPy array, invoke toNumPyArray() method.')
-        return '<SystemML.defmatrix.matrix object>'
+        return ''
 
     ######################### Arithmetic operators ######################################
 

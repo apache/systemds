@@ -285,6 +285,38 @@ public class IOUtilFunctions
 	}
 	
 	/**
+	 * Returns the number of non-zero entries but avoids the expensive 
+	 * string to double parsing. This function is guaranteed to never
+	 * underestimate.
+	 * 
+	 * @param cols
+	 * @return
+	 */
+	public static int countNnz(String[] cols) {
+		return countNnz(cols, 0, cols.length);
+	}
+	
+	/**
+	 * Returns the number of non-zero entries but avoids the expensive 
+	 * string to double parsing. This function is guaranteed to never
+	 * underestimate.
+	 * 
+	 * @param cols
+	 * @param pos
+	 * @param len
+	 * @return
+	 */
+	public static int countNnz(String[] cols, int pos, int len) {
+		int lnnz = 0;
+		for( int i=pos; i<pos+len; i++ ) {
+			String col = cols[i];
+			lnnz += (!col.isEmpty() && !col.equals("0") 
+					&& !col.equals("0.0")) ? 1 : 0;
+		}
+		return lnnz;
+	}
+	
+	/**
 	 * Returns the serialized size in bytes of the given string value,
 	 * following the modified UTF-8 specification as used by Java's
 	 * DataInput/DataOutput.

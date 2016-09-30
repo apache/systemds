@@ -112,7 +112,7 @@ public class TaggedTripleIndexes extends TaggedFirstSecondIndexes
 	
 	@Override
 	public int hashCode() {
-		 return UtilFunctions.longHashFunc((first<<32)+(second<<16)+third+tag+MatrixIndexes.ADD_PRIME1)%MatrixIndexes.DIVIDE_PRIME;
+		 return UtilFunctions.longHashCode((first<<32)+(second<<16)+third+tag+UtilFunctions.ADD_PRIME1)%UtilFunctions.DIVIDE_PRIME;
 	}
 	
 	public static class Comparator implements RawComparator<TaggedTripleIndexes>
@@ -135,16 +135,10 @@ public class TaggedTripleIndexes extends TaggedFirstSecondIndexes
 	   */
 	  public static class FirstTwoIndexesPartitioner implements Partitioner<TaggedTripleIndexes, MatrixBlock>{
 	    @Override
-	    public int getPartition(TaggedTripleIndexes key, MatrixBlock value, 
-	                            int numPartitions) {
-	   
-	    	return UtilFunctions.longHashFunc((key.getFirstIndex()*127)
-	    			+key.getSecondIndex()+MatrixIndexes.ADD_PRIME1)
-	    			%MatrixIndexes.DIVIDE_PRIME%numPartitions;
-	    	/*return UtilFunctions.longHashFunc(((key.getFirstIndex()+MatrixIndexes.ADD_PRIME2)<<32)
-	    			+key.getSecondIndex()+MatrixIndexes.ADD_PRIME1)
-	    			%MatrixIndexes.DIVIDE_PRIME%numPartitions;*/
-	     // return UtilFunctions.longHashFunc(key.getFirstIndex()*127 + key.getSecondIndex())%10007%numPartitions;
+	    public int getPartition(TaggedTripleIndexes key, MatrixBlock value, int numPartitions) {	   
+	    	return UtilFunctions.longHashCode((key.getFirstIndex()*127)
+	    			+key.getSecondIndex()+UtilFunctions.ADD_PRIME1)
+	    			%UtilFunctions.DIVIDE_PRIME%numPartitions;
 	    }
 
 		@Override

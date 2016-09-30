@@ -42,9 +42,34 @@ public class UtilFunctions
 	//(same epsilon as used for matrix index cast in R)
 	public static double DOUBLE_EPS = Math.pow(2, -53);
 	
+	//prime numbers for old hash function (divide prime close to max int, 
+	//because it determines the max hash domain size
+	public static final long ADD_PRIME1 = 99991;
+	public static final long ADD_PRIME2 = 853;
+	public static final int DIVIDE_PRIME = 1405695061; 
 	
-	public static int longHashFunc(long v) {
+	public static int longHashCode(long v) {
 		return (int)(v^(v>>>32));
+	}
+	
+	@Deprecated
+	public static int longlongHashCodeOld(long key1, long key2) {
+		return UtilFunctions.longHashCode((key1<<32)+key2+ADD_PRIME1)%DIVIDE_PRIME;
+	}
+	
+	/**
+	 * Returns the hash code for a long-long pair. This is the default
+	 * hash function for the keys of a distributed matrix in MR/Spark.
+	 * 
+	 * @param key1
+	 * @param key2
+	 * @return
+	 */
+	public static int longlongHashCode(long key1, long key2) {
+		//basic hash mixing of two longs hashes (similar to
+		//Arrays.hashCode(long[]) but w/o array creation/copy)
+		int h = (int)(key1 ^ (key1 >>> 32));
+		return h*31 + (int)(key2 ^ (key2 >>> 32));
 	}
 	
 	public static int nextIntPow2( int in ) {

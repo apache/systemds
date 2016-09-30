@@ -126,7 +126,7 @@ public class TaggedFirstSecondIndexes implements WritableComparable<TaggedFirstS
 	
 	@Override
 	public int hashCode() {
-		 return UtilFunctions.longHashFunc((first<<32)+second+tag+MatrixIndexes.ADD_PRIME1)%MatrixIndexes.DIVIDE_PRIME;
+		 return UtilFunctions.longHashCode((first<<32)+second+tag+UtilFunctions.ADD_PRIME1)%UtilFunctions.DIVIDE_PRIME;
 	}
 	
 	/** A Comparator optimized for TaggedFirstSecondIndexes. */ 
@@ -153,7 +153,7 @@ public class TaggedFirstSecondIndexes implements WritableComparable<TaggedFirstS
 	    @Override
 	    public int getPartition(TaggedFirstSecondIndexes key, Writable value, int numPartitions) 
 	    {
-	      return UtilFunctions.longHashFunc(key.getFirstIndex()*127)%10007%numPartitions;
+	      return UtilFunctions.longHashCode(key.getFirstIndex()*127)%10007%numPartitions;
 	    }
 
 		@Override

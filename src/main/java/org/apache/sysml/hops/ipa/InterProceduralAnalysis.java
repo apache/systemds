@@ -24,6 +24,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -34,6 +35,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.hops.AggUnaryOp;
 import org.apache.sysml.hops.BinaryOp;
 import org.apache.sysml.hops.DataGenOp;
 import org.apache.sysml.hops.DataOp;
@@ -146,7 +148,7 @@ public class InterProceduralAnalysis
 	}
 	
 	/**
-	 * Public interface of IPA - everything else is meant for internal use only.
+	 * Public interface to perform IPA over a given DML program.
 	 * 
 	 * @param dmlt
 	 * @param dmlp
@@ -204,10 +206,13 @@ public class InterProceduralAnalysis
 			&& OptimizerUtils.isSparkExecutionMode() )
 		{
 			//remove unnecessary checkpoint before update 
-			removeUnnecessaryCheckpoints(dmlp);
+			removeCheckpointBeforeUpdate(dmlp);
 			
 			//move necessary checkpoint after update
 			moveCheckpointAfterUpdate(dmlp);
+			
+			//remove unnecessary checkpoint read-{write|uagg}
+			removeCheckpointReadWrite(dmlp);
 		}
 		
 		//step 7: remove constant binary ops
@@ -1109,7 +1114,7 @@ public class InterProceduralAnalysis
 	 * @param dmlp
 	 * @throws HopsException 
 	 */
-	private void removeUnnecessaryCheckpoints(DMLProgram dmlp) 
+	private void removeCheckpointBeforeUpdate(DMLProgram dmlp) 
 		throws HopsException
 	{
 		//approach: scan over top-level program (guaranteed to be unconditional),
@@ -1255,6 +1260,29 @@ public class InterProceduralAnalysis
 	
 	/**
 	 * 
+	 * @param dmlp
+	 * @throws HopsException
+	 */
+	private void removeCheckpointReadWrite(DMLProgram dmlp) 
+		throws HopsException
+	{
+		List<StatementBlock> sbs = dmlp.getStatementBlocks();
+		
+		if( sbs.size()==1 & !(sbs.get(0) instanceof IfStatementBlock 
+			|| sbs.get(0) instanceof WhileStatementBlock 
+			|| sbs.get(0) instanceof ForStatementBlock) ) 
+		{
+			//recursively process all dag roots
+			if( sbs.get(0).get_hops()!=null ) {
+				Hop.resetVisitStatus(sbs.get(0).get_hops());
+				for( Hop root : sbs.get(0).get_hops() )
+					rRemoveCheckpointReadWrite(root);
+			}
+		}
+	}
+	
+	/**
+	 * 
 	 * @param roots
 	 * @return
 	 */
@@ -1293,6 +1321,34 @@ public class InterProceduralAnalysis
 		for( Hop c : hop.getInput() )
 			rCollectCheckpoints(c, checkpoints);
 	
+		hop.setVisited(Hop.VisitStatus.DONE);
+	}
+	
+	/**
+	 * 
+	 * @param hop
+	 */
+	public static void rRemoveCheckpointReadWrite(Hop hop)
+	{
+		if( hop.getVisited()==VisitStatus.DONE )
+			return;
+
+		//remove checkpoint on pread if only consumed by pwrite or uagg
+		if( (hop instanceof DataOp && ((DataOp)hop).getDataOpType()==DataOpTypes.PERSISTENTWRITE)
+			|| hop instanceof AggUnaryOp )	
+		{
+			Hop c0 = hop.getInput().get(0);
+			if( c0.requiresCheckpoint() && c0.getParent().size() == 1
+				&& c0 instanceof DataOp && ((DataOp)c0).getDataOpType()==DataOpTypes.PERSISTENTREAD )
+			{
+				hop.getInput().get(0).setRequiresCheckpoint(false);
+			}
+		}
+		
+		//recursively process children
+		for( Hop c : hop.getInput() )
+			rRemoveCheckpointReadWrite(c);
+		
 		hop.setVisited(Hop.VisitStatus.DONE);
 	}
 	

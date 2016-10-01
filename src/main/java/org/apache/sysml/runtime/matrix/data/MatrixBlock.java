@@ -1574,16 +1574,22 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			if( a instanceof SparseBlockMCSR 
 				&& a.isEmpty(rix) ) //special case MCSR append
 			{
-				for( int j=0; j<src.clen; j++ ) {
-					double val = src.denseBlock[ix+j];
-					if( val != 0 ) {
-						a.allocate(rix, estimatedNNzsPerRow, clen);
-						a.append(rix, cl+j, val); 
+				//count nnz per row (fits likely in L1 cache)
+				int lnnz = 0;
+				for( int j=0; j<src.clen; j++ )
+					lnnz += (src.denseBlock[ix+j]!=0) ? 1 : 0;
+					
+				//allocate row once and copy values
+				if( lnnz > 0 ) {	
+					a.allocate(rix, lnnz);
+					for( int j=0; j<src.clen; j++ ) {
+						double val = src.denseBlock[ix+j];
+						if( val != 0 )
+							a.append(rix, cl+j, val); 
 					}
+					if( awareDestNZ )
+						nonZeros += lnnz;
 				}
-			
-				if( awareDestNZ && !a.isEmpty(rix) )
-					nonZeros += a.size(rix);
 			}
 			else if( awareDestNZ ) //general case (w/ awareness NNZ)
 			{

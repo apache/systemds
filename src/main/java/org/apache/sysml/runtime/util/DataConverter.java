@@ -807,8 +807,7 @@ public class DataConverter
 									c[j][i] = a[aix+j];
 						}
 				frame.reset();
-				for( int j=0; j<n; j++ )
-					frame.appendColumn(c[j]);
+				frame.appendColumns(c);
 			}
 			else { 
 				// general case

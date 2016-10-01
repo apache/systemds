@@ -44,11 +44,13 @@ import org.apache.sysml.hops.FunctionOp.FunctionType;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.DataGenMethod;
 import org.apache.sysml.hops.Hop.DataOpTypes;
+import org.apache.sysml.hops.Hop.OpOp1;
 import org.apache.sysml.hops.Hop.OpOp2;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.Hop.VisitStatus;
 import org.apache.sysml.hops.LiteralOp;
+import org.apache.sysml.hops.UnaryOp;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.hops.recompile.Recompiler;
 import org.apache.sysml.parser.DMLProgram;
@@ -1337,11 +1339,22 @@ public class InterProceduralAnalysis
 		if( (hop instanceof DataOp && ((DataOp)hop).getDataOpType()==DataOpTypes.PERSISTENTWRITE)
 			|| hop instanceof AggUnaryOp )	
 		{
+			//(pwrite|uagg) - pread
 			Hop c0 = hop.getInput().get(0);
 			if( c0.requiresCheckpoint() && c0.getParent().size() == 1
 				&& c0 instanceof DataOp && ((DataOp)c0).getDataOpType()==DataOpTypes.PERSISTENTREAD )
 			{
-				hop.getInput().get(0).setRequiresCheckpoint(false);
+				c0.setRequiresCheckpoint(false);
+			}
+			
+			//(pwrite|uagg) - frame/matri cast - pread
+			if( c0 instanceof UnaryOp && c0.getParent().size() == 1 
+				&& (((UnaryOp)c0).getOp()==OpOp1.CAST_AS_FRAME || ((UnaryOp)c0).getOp()==OpOp1.CAST_AS_MATRIX ) 
+				&& c0.getInput().get(0).requiresCheckpoint() && c0.getInput().get(0).getParent().size() == 1
+				&& c0.getInput().get(0) instanceof DataOp 
+				&& ((DataOp)c0.getInput().get(0)).getDataOpType()==DataOpTypes.PERSISTENTREAD )
+			{
+				c0.getInput().get(0).setRequiresCheckpoint(false);
 			}
 		}
 		

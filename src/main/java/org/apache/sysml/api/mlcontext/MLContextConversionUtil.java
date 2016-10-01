@@ -62,6 +62,7 @@ import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
+import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
@@ -350,35 +351,30 @@ public class MLContextConversionUtil {
 	 * @return the {@code DataFrame} frame converted to a converted to a
 	 *         {@code FrameObject}
 	 */
-	public static FrameObject dataFrameToFrameObject(String variableName, DataFrame dataFrame,
-			FrameMetadata frameMetadata) {
+	public static FrameObject dataFrameToFrameObject(String variableName, DataFrame dataFrame, FrameMetadata frameMetadata) 
+	{
 		try {
-			if (frameMetadata == null) {
+			//setup meta data and java spark context
+			if (frameMetadata == null)
 				frameMetadata = new FrameMetadata();
-			}
-
+			boolean containsID = isDataFrameWithIDColumn(frameMetadata);
 			JavaSparkContext javaSparkContext = MLContextUtil
 					.getJavaSparkContext((MLContext) MLContextProxy.getActiveMLContextForAPI());
-			boolean containsID = isDataFrameWithIDColumn(frameMetadata);
 			MatrixCharacteristics mc = frameMetadata.asMatrixCharacteristics();
-			if (mc == null) {
+			if( mc == null )
 				mc = new MatrixCharacteristics();
-				long rows = dataFrame.count();
-				int cols = dataFrame.columns().length - ((containsID)?1:0);
-				mc.setDimension(rows, cols);
-				frameMetadata.setMatrixCharacteristics(mc);
-			}
 			
-			String[] colnames = new String[(int)mc.getCols()];
-			ValueType[] fschema = new ValueType[(int)mc.getCols()];
-			FrameRDDConverterUtils.convertDFSchemaToFrameSchema(dataFrame.schema(), colnames, fschema, containsID);	
-			frameMetadata.setFrameSchema(new FrameSchema(Arrays.asList(fschema)));
-
-			JavaPairRDD<Long, FrameBlock> binaryBlock = FrameRDDConverterUtils.dataFrameToBinaryBlock(javaSparkContext,
-					dataFrame, mc, containsID);
-
+			//convert data frame and obtain column names / schema
+			//TODO extend frame schema by column names (right now dropped)
+			Pair<String[], ValueType[]> ret = new Pair<String[], ValueType[]>(); 
+			JavaPairRDD<Long, FrameBlock> binaryBlock = FrameRDDConverterUtils
+				.dataFrameToBinaryBlock(javaSparkContext, dataFrame, mc, containsID, ret);
+			frameMetadata.setFrameSchema(new FrameSchema(Arrays.asList(ret.getValue())));
+			frameMetadata.setMatrixCharacteristics(mc); //required due to meta data copy
+			
 			return MLContextConversionUtil.binaryBlocksToFrameObject(variableName, binaryBlock, frameMetadata);
-		} catch (DMLRuntimeException e) {
+		} 
+		catch (DMLRuntimeException e) {
 			throw new MLContextException("Exception converting DataFrame to FrameObject", e);
 		}
 	}

@@ -450,7 +450,7 @@ public class ScriptExecutor {
 					.toArray(new String[0]);
 			String[] outputs = (script.getOutputVariables() == null) ? new String[0]
 					: script.getOutputVariables().toArray(new String[0]);
-			RewriteRemovePersistentReadWrite rewrite = new RewriteRemovePersistentReadWrite(inputs, outputs);
+			RewriteRemovePersistentReadWrite rewrite = new RewriteRemovePersistentReadWrite(inputs, outputs, script.getSymbolTable());
 			ProgramRewriter programRewriter = new ProgramRewriter(rewrite);
 			try {
 				programRewriter.rewriteProgramHopDAGs(dmlProgram);

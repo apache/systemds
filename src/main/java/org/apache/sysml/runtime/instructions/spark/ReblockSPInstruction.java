@@ -179,36 +179,20 @@ public class ReblockSPInstruction extends UnarySPInstruction
 		}
 		else if(iinfo == InputInfo.BinaryBlockInputInfo) 
 		{
-			/// HACK ALERT: Workaround for MLContext 
-			if(mc.getRowsPerBlock() == mcOut.getRowsPerBlock() && mc.getColsPerBlock() == mcOut.getColsPerBlock()) {
-				if(mo.getRDDHandle() != null) {
-					JavaPairRDD<MatrixIndexes, MatrixBlock> out = (JavaPairRDD<MatrixIndexes, MatrixBlock>) mo.getRDDHandle().getRDD();
-					
-					//put output RDD handle into symbol table
-					sec.setRDDHandleForVariable(output.getName(), out);
-					sec.addLineageRDD(output.getName(), input1.getName());
-					return;
-				}
-				else {
-					throw new DMLRuntimeException("Input RDD is not accessible through buffer pool for ReblockSPInstruction:" + iinfo);
-				}
-			}
-			else 
-			{
-				//BINARY BLOCK <- BINARY BLOCK (different sizes)
-				JavaPairRDD<MatrixIndexes, MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable(input1.getName());
-				
-				JavaPairRDD<MatrixIndexes, MatrixBlock> out = 
-						in1.flatMapToPair(new ExtractBlockForBinaryReblock(mc, mcOut));
-				out = RDDAggregateUtils.mergeByKey( out );
-				
-				//put output RDD handle into symbol table
-				sec.setRDDHandleForVariable(output.getName(), out);
-				sec.addLineageRDD(output.getName(), input1.getName());
-			}
+			//BINARY BLOCK <- BINARY BLOCK (different sizes)
+			JavaPairRDD<MatrixIndexes, MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable(input1.getName());
+			
+			JavaPairRDD<MatrixIndexes, MatrixBlock> out = 
+					in1.flatMapToPair(new ExtractBlockForBinaryReblock(mc, mcOut));
+			out = RDDAggregateUtils.mergeByKey( out );
+			
+			//put output RDD handle into symbol table
+			sec.setRDDHandleForVariable(output.getName(), out);
+			sec.addLineageRDD(output.getName(), input1.getName());
 		}
 		else {
-			throw new DMLRuntimeException("The given InputInfo is not implemented for ReblockSPInstruction:" + iinfo);
+			throw new DMLRuntimeException("The given InputInfo is not implemented "
+					+ "for ReblockSPInstruction:" + InputInfo.inputInfoToString(iinfo));
 		}
 	}
 	
@@ -264,7 +248,8 @@ public class ReblockSPInstruction extends UnarySPInstruction
 			csvInstruction.processInstruction(sec);
 		}
 		else {
-			throw new DMLRuntimeException("The given InputInfo is not implemented for ReblockSPInstruction:" + iinfo);
+			throw new DMLRuntimeException("The given InputInfo is not implemented "
+					+ "for ReblockSPInstruction: " + InputInfo.inputInfoToString(iinfo));
 		}
 	}
 }

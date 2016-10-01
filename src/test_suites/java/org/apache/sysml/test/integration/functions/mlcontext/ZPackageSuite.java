@@ -29,6 +29,7 @@ import org.junit.runners.Suite;
 	DataFrameMatrixConversionTest.class,
 	DataFrameRowFrameConversionTest.class,
 	DataFrameVectorFrameConversionTest.class,
+	DataFrameVectorScriptTest.class,
 	FrameTest.class,
 	GNMFTest.class
 })

@@ -34,9 +34,19 @@ public enum FrameFormat {
 	 * (I J V) format (sparse). I and J represent frame coordinates and V
 	 * represents the value. The I J and V values are space-separated.
 	 */
-	IJV;
+	IJV,
+
+	/**
+	 * DataFrame without a row index.
+	 */
+	DF,
+
+	/**
+	 * DataFrame with a row index.
+	 */
+	DF_WITH_INDEX;
 
 	public boolean hasIDColumn() {
-		return false;
+		return this == DF_WITH_INDEX;
 	}
 }

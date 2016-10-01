@@ -1605,7 +1605,7 @@ public class MLContext {
 		
 		//rewrite persistent reads/writes
 		if(inputSymbolTable != null) {
-			RewriteRemovePersistentReadWrite rewrite = new RewriteRemovePersistentReadWrite(inputs, outputs);
+			RewriteRemovePersistentReadWrite rewrite = new RewriteRemovePersistentReadWrite(inputs, outputs, inputSymbolTable);
 			ProgramRewriter rewriter2 = new ProgramRewriter(rewrite);
 			rewriter2.rewriteProgramHopDAGs(prog);
 		}

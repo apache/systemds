@@ -42,6 +42,7 @@ import org.junit.runners.Suite;
 	LargeCompressionTest.class,
 	LargeMatrixVectorMultTest.class,
 	LargeParMatrixVectorMultTest.class,
+	LargeParUnaryAggregateTest.class,
 	LargeVectorMatrixMultTest.class,
 	ParCompressionTest.class,
 	ParMatrixMultChainTest.class,

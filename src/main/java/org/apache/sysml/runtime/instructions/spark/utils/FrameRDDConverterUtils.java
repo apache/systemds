@@ -320,10 +320,27 @@ public class FrameRDDConverterUtils
 	 * @param mc
 	 * @param containsID
 	 * @return
-	 * @throws DMLRuntimeException
+	 * @throws DMLRuntimeException 
 	 */
 	public static JavaPairRDD<Long, FrameBlock> dataFrameToBinaryBlock(JavaSparkContext sc,
 			DataFrame df, MatrixCharacteristics mc, boolean containsID) 
+		throws DMLRuntimeException 
+	{
+		return dataFrameToBinaryBlock(sc, df, mc, containsID, new Pair<String[], ValueType[]>());
+	}
+	
+	/**
+	 * 
+	 * @param sc
+	 * @param df
+	 * @param mc
+	 * @param containsID
+	 * @param out
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static JavaPairRDD<Long, FrameBlock> dataFrameToBinaryBlock(JavaSparkContext sc,
+			DataFrame df, MatrixCharacteristics mc, boolean containsID, Pair<String[],ValueType[]> out) 
 		throws DMLRuntimeException 
 	{
 		//determine unknown dimensions if required
@@ -345,7 +362,8 @@ public class FrameRDDConverterUtils
 		String[] colnames = new String[(int)mc.getCols()];
 		ValueType[] fschema = new ValueType[(int)mc.getCols()];
 		int colVect = convertDFSchemaToFrameSchema(df.schema(), colnames, fschema, containsID);
-				
+		out.set(colnames, fschema); //make schema available
+		
 		//convert rdd to binary block rdd
 		return prepinput.mapPartitionsToPair(
 				new DataFrameToBinaryBlockFunction(mc, colnames, fschema, containsID, colVect));

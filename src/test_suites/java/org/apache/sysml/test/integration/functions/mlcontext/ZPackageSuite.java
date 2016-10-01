@@ -26,9 +26,12 @@ import org.junit.runners.Suite;
  *  won't run two of them at once. */
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
+	DataFrameMatrixConversionTest.class,
+	DataFrameRowFrameConversionTest.class,
+	DataFrameVectorFrameConversionTest.class,
+	FrameTest.class,
 	GNMFTest.class
 })
-
 
 /** This class is just a holder for the above JUnit annotations. */
 public class ZPackageSuite {

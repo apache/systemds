@@ -27,8 +27,10 @@ import org.junit.runners.Suite;
  *  they should not be run in parallel. */
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-  org.apache.sysml.test.integration.mlcontext.MLContextTest.class,
-  org.apache.sysml.test.integration.mlcontext.MLContextFrameTest.class
+  org.apache.sysml.test.integration.mlcontext.MLContextFrameTest.class,
+  org.apache.sysml.test.integration.mlcontext.MLContextMultipleScriptsTest.class,
+  org.apache.sysml.test.integration.mlcontext.MLContextScratchCleanupTest.class,
+  org.apache.sysml.test.integration.mlcontext.MLContextTest.class
 })
 
 

@@ -271,24 +271,33 @@ public class DataFrameVectorScriptTest extends AutomatedTestBase
 			
 			//create input data frame
 			DataFrame df = createDataFrame(sqlctx, mbA, containsID, schema);
-			FrameMetadata meta = new FrameMetadata(containsID ? FrameFormat.DF_WITH_INDEX : 
+
+			// Create full frame metadata, and empty frame metadata
+			FrameMetadata meta = new FrameMetadata(containsID ? FrameFormat.DF_WITH_INDEX :
 				FrameFormat.DF, mc2.getRows(), mc2.getCols());
-			
+			FrameMetadata metaEmpty = new FrameMetadata();
+
 			//create mlcontext
 			ml = new MLContext(sc);
 			ml.setExplain(true);
 			
-			//run script and obtain result
+			//run scripts and obtain result
 			Script script1 = dml(
-					//"Xf = read($Xffile); Xm = as.matrix(Xf); write(Xm, $Xmfile);")
 					"Xm = as.matrix(Xf);")
 				.in("Xf", df, meta).out("Xm");
-			Matrix Xm = ml.execute(script1).getMatrix("Xm");
-			MatrixBlock mbB = Xm.toBinaryBlockMatrix().getMatrixBlock();
-			
+			Script script2 = dml(
+					"Xm = as.matrix(Xf);")
+					.in("Xf", df, metaEmpty).out("Xm");  // empty metadata
+			Matrix Xm1 = ml.execute(script1).getMatrix("Xm");
+			Matrix Xm2 = ml.execute(script2).getMatrix("Xm");
+			MatrixBlock mbB1 = Xm1.toBinaryBlockMatrix().getMatrixBlock();
+			MatrixBlock mbB2 = Xm2.toBinaryBlockMatrix().getMatrixBlock();
+
 			//compare frame blocks
-			double[][] B = DataConverter.convertToDoubleMatrix(mbB);
-			TestUtils.compareMatrices(A, B, rows1, cols, eps);
+			double[][] B1 = DataConverter.convertToDoubleMatrix(mbB1);
+			double[][] B2 = DataConverter.convertToDoubleMatrix(mbB2);
+			TestUtils.compareMatrices(A, B1, rows1, cols, eps);
+			TestUtils.compareMatrices(A, B2, rows1, cols, eps);
 		}
 		catch( Exception ex ) {
 			ex.printStackTrace();

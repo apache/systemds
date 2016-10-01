@@ -357,6 +357,7 @@ public class MLContextConversionUtil {
 			//setup meta data and java spark context
 			if (frameMetadata == null)
 				frameMetadata = new FrameMetadata();
+			determineFrameFormatIfNeeded(dataFrame, frameMetadata);
 			boolean containsID = isDataFrameWithIDColumn(frameMetadata);
 			JavaSparkContext javaSparkContext = MLContextUtil
 					.getJavaSparkContext((MLContext) MLContextProxy.getActiveMLContextForAPI());
@@ -488,6 +489,33 @@ public class MLContextConversionUtil {
 			throw new MLContextException("DataFrame format not recognized as an accepted SystemML MatrixFormat");
 		}
 		matrixMetadata.setMatrixFormat(mf);
+	}
+
+	/**
+	 * If the FrameFormat of the DataFrame has not been explicitly specified,
+	 * attempt to determine the proper FrameFormat.
+	 *
+	 * @param dataFrame
+	 *            the Spark {@code DataFrame}
+	 * @param frameMetadata
+	 *            the frame metadata, if available
+	 */
+	public static void determineFrameFormatIfNeeded(DataFrame dataFrame, FrameMetadata frameMetadata) {
+		FrameFormat frameFormat = frameMetadata.getFrameFormat();
+		if (frameFormat != null) {
+			return;
+		}
+
+		StructType schema = dataFrame.schema();
+		boolean hasID = false;
+		try {
+			schema.fieldIndex(RDDConverterUtils.DF_ID_COLUMN);
+			hasID = true;
+		} catch (IllegalArgumentException iae) {
+		}
+
+		FrameFormat ff = hasID ? FrameFormat.DF_WITH_INDEX : FrameFormat.DF;
+		frameMetadata.setFrameFormat(ff);
 	}
 
 	/**

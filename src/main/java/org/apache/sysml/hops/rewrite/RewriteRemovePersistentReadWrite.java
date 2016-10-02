@@ -140,9 +140,11 @@ public class RewriteRemovePersistentReadWrite extends HopRewriteRule
 							&& _inputsMeta.get(dop.getName()) instanceof MatrixFormatMetaData) {
 							MatrixFormatMetaData meta = (MatrixFormatMetaData)_inputsMeta.get(dop.getName());
 							MatrixCharacteristics mc = meta.getMatrixCharacteristics();
-							if( meta.getInputInfo() == InputInfo.BinaryBlockInputInfo
-								&& mc.getRowsPerBlock() == dop.getRowsInBlock() 
-								&& mc.getColsPerBlock() == dop.getColsInBlock() )
+							boolean matchingBlksz = mc.getRowsPerBlock() == dop.getRowsInBlock() 
+									&& mc.getColsPerBlock() == dop.getColsInBlock();
+							//binary matrix w/ matching dims and frames do not require reblock
+							if( meta.getInputInfo() == InputInfo.BinaryBlockInputInfo 
+								&& (matchingBlksz || dop.getDataType() == DataType.FRAME))
 							{
 								dop.setRequiresReblock(false);
 							}

@@ -609,6 +609,12 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 		else if(functionName.equals("mean")) {
 			return axis == 0 ? "colMeans" : "rowMeans";
 		}
+		else if(functionName.equals("var")) {
+			return axis == 0 ? "colVars" : "rowVars";
+		}
+		else if(functionName.equals("sd")) {
+			return axis == 0 ? "colSds" : "rowSds";
+		}
 		else if(functionName.equals("avg")) {
 			return axis == 0 ? "colMeans" : "rowMeans";
 		}
@@ -674,7 +680,8 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 		else if(functionName.equals("sum") || functionName.equals("mean") || functionName.equals("avg") ||
 				functionName.equals("min") || functionName.equals("max")  ||
 				functionName.equals("argmax") || functionName.equals("argmin") ||
-				functionName.equals("cumsum") || functionName.equals("transpose") || functionName.equals("trace")) {
+				functionName.equals("cumsum") || functionName.equals("transpose") || functionName.equals("trace") ||
+				functionName.equals("var") || functionName.equals("sd")) {
 			// 0 maps row-wise computation and 1 maps to column-wise computation
 
 			// can mean sum of all cells or row-wise or columnwise sum
@@ -808,6 +815,20 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 			paramExpression.get(1).setName("cols");
 			paramExpression.get(2).setName("sparsity");
 			paramExpression.add(new ParameterExpression("pdf", new StringIdentifier("normal", fileName, line, col, line, col)));
+			functionName = "rand";
+			namespace = DMLProgram.DEFAULT_NAMESPACE;
+		}
+		else if(namespace.equals("random") && functionName.equals("poisson")) {
+			if(paramExpression.size() != 4) {
+				String qualifiedName = namespace + namespaceResolutionOp() + functionName;
+				notifyErrorListeners("The builtin function \'" + qualifiedName + "\' accepts exactly 3 arguments (number of rows, number of columns, sparsity, lambda)", fnName);
+				return null;
+			}
+			paramExpression.get(0).setName("rows");
+			paramExpression.get(1).setName("cols");
+			paramExpression.get(2).setName("sparsity");
+			paramExpression.get(3).setName("lambda");
+			paramExpression.add(new ParameterExpression("pdf", new StringIdentifier("poisson", fileName, line, col, line, col)));
 			functionName = "rand";
 			namespace = DMLProgram.DEFAULT_NAMESPACE;
 		}

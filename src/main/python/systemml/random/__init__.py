@@ -20,28 +20,22 @@
 #-------------------------------------------------------------
 
 """
-===================
-SystemML Algorithms
-===================
-
+========================
+Random Number Generation
+========================
 
 ==================== =========================================================
-Classification Algorithms
+Univariate distributions
 ==============================================================================
-LogisticRegression   Performs binomial and multinomial logistic regression
-SVM                  Performs both binary-class and multi-class SVM
-NaiveBayes           Multinomial naive bayes classifier
-==================== =========================================================
-
-==================== =========================================================
-Regression Algorithms
-==============================================================================
-LinearRegression     Performs linear regression
+normal               Normal / Gaussian distribution.
+poisson              Poisson distribution.
+uniform              Uniform distribution.
 ==================== =========================================================
 
 
 """
 
-from .estimators import *
 
-__all__ = estimators.__all__
+from .sampling import *
+
+__all__ = sampling.__all__

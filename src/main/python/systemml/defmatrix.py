@@ -20,7 +20,7 @@
 #-------------------------------------------------------------
 
 trigFn = [ 'exp', 'log', 'abs', 'sqrt', 'round', 'floor', 'ceil', 'sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'sign' ]
-__all__ = [ 'setSparkContext', 'matrix', 'eval', 'solve' ] + trigFn
+__all__ = [ 'setSparkContext', 'matrix', 'eval', 'solve', 'DMLOp' ] + trigFn
 
 
 from pyspark import SparkContext
@@ -324,7 +324,7 @@ class matrix(object):
     In addition, following functions are supported for matrix:
     
     1. transpose
-    2. Aggregation functions: sum, mean, max, min, argmin, argmax, cumsum
+    2. Aggregation functions: sum, mean, var, sd, max, min, argmin, argmax, cumsum
     3. Global statistical built-In functions: exp, log, abs, sqrt, round, floor, ceil, sin, cos, tan, asin, acos, atan, sign, solve
     
     Note: an evaluated matrix contains a data field computed by eval method as DataFrame or NumPy array.
@@ -655,31 +655,106 @@ class matrix(object):
     ######################### Aggregation functions ######################################
 
     def sum(self, axis=None):
+        """
+        Compute the sum along the specified axis
+        
+        Parameters
+        ----------
+        axis : int, optional
+        """
         return self._aggFn('sum', axis)
 
     def mean(self, axis=None):
+        """
+        Compute the arithmetic mean along the specified axis
+        
+        Parameters
+        ----------
+        axis : int, optional
+        """
         return self._aggFn('mean', axis)
 
+    def var(self, axis=None):
+        """
+        Compute the variance along the specified axis
+        
+        Parameters
+        ----------
+        axis : int, optional
+        """
+        return self._aggFn('var', axis)
+
+    def sd(self, axis=None):
+        """
+        Compute the standard deviation along the specified axis
+        
+        Parameters
+        ----------
+        axis : int, optional
+        """
+        return self._aggFn('sd', axis)
+
     def max(self, axis=None):
+        """
+        Compute the maximum value along the specified axis
+        
+        Parameters
+        ----------
+        axis : int, optional
+        """
         return self._aggFn('max', axis)
 
     def min(self, axis=None):
+        """
+        Compute the minimum value along the specified axis
+        
+        Parameters
+        ----------
+        axis : int, optional
+        """
         return self._aggFn('min', axis)
 
     def argmin(self, axis=None):
+        """
+        Returns the indices of the minimum values along an axis.
+        
+        Parameters
+        ----------
+        axis : int, optional  (only axis=1, i.e. rowIndexMax is supported in this version)
+        """
         return self._aggFn('argmin', axis)
 
     def argmax(self, axis=None):
+        """
+        Returns the indices of the maximum values along an axis.
+        
+        Parameters
+        ----------
+        axis : int, optional (only axis=1, i.e. rowIndexMax is supported in this version)
+        """
         return self._aggFn('argmax', axis)
 
     def cumsum(self, axis=None):
+        """
+        Returns the indices of the maximum values along an axis.
+        
+        Parameters
+        ----------
+        axis : int, optional (only axis=0, i.e. cumsum along the rows is supported in this version)
+        """
         return self._aggFn('cumsum', axis)
 
-    def transpose(self, axis=None):
-        return self._aggFn('transpose', axis)
+    def transpose(self):
+        """
+        Transposes the matrix.
+        """
+        return self._aggFn('transpose', None)
 
-    def trace(self, axis=None):
-        return self._aggFn('trace', axis)
+    def trace(self):
+        """
+        Return the sum of the cells of the main diagonal square matrix
+        """
+        return self._aggFn('trace', None)
 
     def _aggFn(self, fnName, axis):
         """

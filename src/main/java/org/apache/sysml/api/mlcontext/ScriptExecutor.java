@@ -294,6 +294,7 @@ public class ScriptExecutor {
 	 * 
 	 * @param script
 	 *            the DML or PYDML script to execute
+	 * @return the results as a MLResults object
 	 */
 	public MLResults execute(Script script) {
 		this.script = script;
@@ -631,7 +632,7 @@ public class ScriptExecutor {
 	 * redundant initialize (e.g., multiple scripts from one MLContext) clears existing 
 	 * files from the scratch space and buffer pool.
 	 *  
-	 * @param init
+	 * @param init {@code true} if should initialize, {@code false} otherwise
 	 */
 	public void setInit(boolean init) {
 		this.init = init;

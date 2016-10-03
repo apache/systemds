@@ -748,6 +748,7 @@ public final class MLContextUtil {
 	 *            the title to display for the inputs
 	 * @param map
 	 *            the map of inputs
+	 * @param symbolTable the symbol table
 	 * @return the script inputs represented as a String
 	 */
 	public static String displayInputs(String name, Map<String, Object> map, LocalVariableMap symbolTable) {

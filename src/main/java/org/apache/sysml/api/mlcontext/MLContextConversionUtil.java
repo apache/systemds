@@ -860,6 +860,7 @@ public class MLContextConversionUtil {
 	 * 
 	 * @param frameObject
 	 *            the {@code FrameObject}
+	 * @param delimiter the delimiter
 	 * @return the {@code FrameObject} converted to a {@code JavaRDD<String>}
 	 */
 	public static JavaRDD<String> frameObjectToJavaRDDStringCSV(FrameObject frameObject, String delimiter) {
@@ -986,6 +987,7 @@ public class MLContextConversionUtil {
 	 * 
 	 * @param frameObject
 	 *            the {@code FrameObject}
+	 * @param delimiter the delimiter
 	 * @return the {@code FrameObject} converted to a {@code RDD<String>}
 	 */
 	public static RDD<String> frameObjectToRDDStringCSV(FrameObject frameObject, String delimiter) {
@@ -1075,6 +1077,7 @@ public class MLContextConversionUtil {
 	 * 
 	 * @param frameObject
 	 *            the {@code FrameObject}
+	 * @param delimiter the delimiter
 	 * @return the {@code FrameObject} converted to a {@code List<String>}
 	 */
 	public static List<String> frameObjectToListStringCSV(FrameObject frameObject, String delimiter) {
@@ -1218,6 +1221,7 @@ public class MLContextConversionUtil {
 	 *            the {@code MatrixObject}
 	 * @param sparkExecutionContext
 	 *            the Spark execution context
+	 * @param isVectorDF is the DataFrame a vector DataFrame?
 	 * @return the {@code MatrixObject} converted to a {@code DataFrame}
 	 */
 	public static DataFrame matrixObjectToDataFrame(MatrixObject matrixObject,

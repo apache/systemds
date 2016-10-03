@@ -162,7 +162,7 @@ public class DMLScript
 	 * Used to set master UUID on all nodes (in parfor remote_mr, where DMLScript passed) 
 	 * in order to simplify cleanup of scratch_space and local working dirs.
 	 * 
-	 * @param uuid
+	 * @param uuid master UUID to set on all nodes
 	 */
 	public static void setUUID(String uuid) 
 	{
@@ -185,9 +185,9 @@ public class DMLScript
 	/**
 	 * Default DML script invocation (e.g., via 'hadoop jar SystemML.jar -f Test.dml')
 	 * 
-	 * @param args
-	 * @throws IOException
-	 * @throws DMLException
+	 * @param args command-line arguments
+	 * @throws IOException if an IOException occurs
+	 * @throws DMLException if a DMLException occurs
 	 */
 	public static void main(String[] args) 
 		throws IOException, DMLException
@@ -212,16 +212,6 @@ public class DMLScript
 		return executeScript( conf, args );
 	}
 	
-	/**
-	 * This version of executeScript() is invoked from RJaqlUdf (from BigR).
-	 *  
-	 * @param conf
-	 * @param args
-	 * @param suppress
-	 * @return
-	 * @throws DMLException
-	 * @throws ParseException
-	 */
 	public static String executeScript( Configuration conf, String[] args, boolean suppress) 
 		throws DMLException
 	{
@@ -238,11 +228,11 @@ public class DMLScript
 	 * Single entry point for all public invocation alternatives (e.g.,
 	 * main, executeScript, JaqlUdf etc)
 	 * 
-	 * @param conf
-	 * @param args
-	 * @return
-	 * @throws DMLException 
-	 * @throws ParseException 
+	 * @param conf Hadoop configuration
+	 * @param args arguments
+	 * @return true if success, false otherwise
+	 * @throws DMLException if DMLException occurs
+	 * @throws ParseException if ParseException occurs
 	 */
 	public static boolean executeScript( Configuration conf, String[] args ) 
 		throws DMLException
@@ -391,12 +381,6 @@ public class DMLScript
 	// private internal utils (argument parsing)
 	////////
 
-	/**
-	 * 
-	 * @param hasNamedArgs
-	 * @param args
-	 * @throws LanguageException
-	 */
 	protected static Map<String,String> createArgumentsMap(boolean hasNamedArgs, String[] args)
 		throws LanguageException
 	{			
@@ -450,14 +434,6 @@ public class DMLScript
 		return argMap;
 	}
 	
-	/**
-	 * 
-	 * @param argname
-	 * @param script
-	 * @return
-	 * @throws IOException 
-	 * @throws LanguageException 
-	 */
 	protected static String readDMLScript( String argname, String script ) 
 		throws IOException, LanguageException
 	{
@@ -775,12 +751,6 @@ public class DMLScript
 		}
 	}
 
-	/**
-	 * @throws ParseException 
-	 * @throws IOException 
-	 * @throws DMLRuntimeException 
-	 * 
-	 */
 	public static void initHadoopExecution( DMLConfig config ) 
 		throws IOException, ParseException, DMLRuntimeException
 	{
@@ -865,12 +835,6 @@ public class DMLScript
 			throw new DMLRuntimeException("Invalid (non-trustworthy) hdfs working directory.");
 	}
 	
-	/**
-	 * 
-	 * @param config
-	 * @throws IOException
-	 * @throws ParseException
-	 */
 	public static void cleanupHadoopExecution( DMLConfig config ) 
 		throws IOException, ParseException
 	{

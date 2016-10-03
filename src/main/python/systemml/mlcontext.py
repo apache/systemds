@@ -26,11 +26,10 @@ import os
 try:
     import py4j.java_gateway
     from py4j.java_gateway import JavaObject
+    from pyspark import SparkContext
+    import pyspark.mllib.common
 except ImportError:
-    raise ImportError('Unable to import JavaObject from py4j.java_gateway. Hint: Make sure you are running with pyspark')
-
-from pyspark import SparkContext
-import pyspark.mllib.common
+    raise ImportError('Unable to import `pyspark`. Hint: Make sure you are running with PySpark.')
 
 from .converters import *
 
@@ -106,7 +105,7 @@ class Matrix(object):
     """
     def __init__(self, javaMatrix, sc):
         self._java_matrix = javaMatrix
-        self.sc = sc
+        self._sc = sc
 
     def __repr__(self):
         return "Matrix"
@@ -124,7 +123,7 @@ class Matrix(object):
             for each column in the matrix.
         """
         jdf = self._java_matrix.toDF()
-        df = _java2py(self.sc, jdf)
+        df = _java2py(self._sc, jdf)
         return df
 
     def toNumPy(self):
@@ -136,7 +135,7 @@ class Matrix(object):
         NumPy Array
             A NumPy Array representing the Matrix object.
         """
-        np_array = convertToNumPyArr(self.sc, self._java_matrix.toBinaryBlockMatrix().getMatrixBlock())
+        np_array = convertToNumPyArr(self._sc, self._java_matrix.toBinaryBlockMatrix().getMatrixBlock())
         return np_array
 
 
@@ -154,7 +153,7 @@ class MLResults(object):
     """
     def __init__(self, results, sc):
         self._java_results = results
-        self.sc = sc
+        self._sc = sc
 
     def __repr__(self):
         return "MLResults"
@@ -166,7 +165,7 @@ class MLResults(object):
         outputs: string, list of strings
             Output variables as defined inside the DML script.
         """
-        outs = [_java2py(self.sc, self._java_results.get(out)) for out in outputs]
+        outs = [_java2py(self._sc, self._java_results.get(out)) for out in outputs]
         if len(outs) == 1:
             return outs[0]
         return outs
@@ -189,6 +188,9 @@ class Script(object):
         self.scriptType = scriptType
         self._input = {}
         self._output = []
+
+    def __repr__(self):
+        return "Script"
 
     def input(self, *args, **kwargs):
         """
@@ -257,7 +259,9 @@ class MLContext(object):
         scriptString = script.scriptString
         if script.scriptType == "dml":
             if scriptString.endswith(".dml"):
-                if os.path.exists(scriptString):
+                if scriptString.startswith("http"):
+                    script_java = self._sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.dmlFromUrl(scriptString)
+                elif os.path.exists(scriptString):
                     script_java = self._sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.dmlFromFile(scriptString)
                 else:
                     raise ValueError("path: %s does not exist" % scriptString)
@@ -265,7 +269,9 @@ class MLContext(object):
                 script_java = self._sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.dml(scriptString)
         elif script.scriptType == "pydml":
             if scriptString.endswith(".pydml"):
-                if os.path.exists(scriptString):
+                if scriptString.startswith("http"):
+                    script_java = self._sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.pydmlFromUrl(scriptString)
+                elif os.path.exists(scriptString):
                     script_java = self._sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.pydmlFromFile(scriptString)
                 else:
                     raise ValueError("path: %s does not exist" % scriptString)

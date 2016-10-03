@@ -19,18 +19,30 @@
 # under the License.
 #
 #-------------------------------------------------------------
-from sklearn import datasets, neighbors
-from systemml.mllearn import LogisticRegression, LinearRegression, SVM, NaiveBayes
-from pyspark.sql import SQLContext
-from pyspark.context import SparkContext
+
+# To run:
+#   - Python 2: `PYSPARK_PYTHON=python2 spark-submit --master local[*] --driver-class-path SystemML.jar test_mllearn.py`
+#   - Python 3: `PYSPARK_PYTHON=python3 spark-submit --master local[*] --driver-class-path SystemML.jar test_mllearn.py`
+
+# Make the `systemml` package importable
+import os
+import sys
+path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../")
+sys.path.insert(0, path)
+
 import unittest
-from pyspark.ml.evaluation import MulticlassClassificationEvaluator
-from pyspark.ml import Pipeline
-from pyspark.ml.feature import HashingTF, Tokenizer
+
 import numpy as np
+from pyspark.context import SparkContext
+from pyspark.ml import Pipeline
+from pyspark.ml.evaluation import MulticlassClassificationEvaluator
+from pyspark.ml.feature import HashingTF, Tokenizer
+from pyspark.sql import SQLContext
+from sklearn import datasets, metrics, neighbors
 from sklearn.datasets import fetch_20newsgroups
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn import metrics
+
+from systemml.mllearn import LinearRegression, LogisticRegression, NaiveBayes, SVM
 
 sc = SparkContext()
 sqlCtx = SQLContext(sc)

@@ -31,6 +31,7 @@ import org.junit.runners.Suite;
 	FullIntegerDivisionTest.class,
 	FullMatrixMultiplicationTest.class,
 	FullMatrixMultiplicationTransposeSelfTest.class,
+	FullMatrixMultiplicationTransposeSelf2Test.class,
 	FullMinMaxComparisonTest.class,
 	FullPowerTest.class,
 	FullPPredMatrixTest.class,

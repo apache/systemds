@@ -73,6 +73,7 @@ import org.apache.sysml.runtime.instructions.spark.RmmSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.SPInstruction;
 import org.apache.sysml.runtime.instructions.spark.SPInstruction.SPINSTRUCTION_TYPE;
 import org.apache.sysml.runtime.instructions.spark.TernarySPInstruction;
+import org.apache.sysml.runtime.instructions.spark.Tsmm2SPInstruction;
 import org.apache.sysml.runtime.instructions.spark.TsmmSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.QuantileSortSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.UaggOuterChainSPInstruction;
@@ -117,7 +118,8 @@ public class SPInstructionParser extends InstructionParser
 		//binary aggregate operators (matrix multiplication operators)
 		String2SPInstructionType.put( "mapmm"      , SPINSTRUCTION_TYPE.MAPMM);
 		String2SPInstructionType.put( "mapmmchain" , SPINSTRUCTION_TYPE.MAPMMCHAIN);
-		String2SPInstructionType.put( "tsmm"       , SPINSTRUCTION_TYPE.TSMM);
+		String2SPInstructionType.put( "tsmm"       , SPINSTRUCTION_TYPE.TSMM); //single-pass tsmm
+		String2SPInstructionType.put( "tsmm2"      , SPINSTRUCTION_TYPE.TSMM2); //multi-pass tsmm
 		String2SPInstructionType.put( "cpmm"   	   , SPINSTRUCTION_TYPE.CPMM);
 		String2SPInstructionType.put( "rmm"        , SPINSTRUCTION_TYPE.RMM);
 		String2SPInstructionType.put( "pmm"        , SPINSTRUCTION_TYPE.PMM);
@@ -310,6 +312,8 @@ public class SPInstructionParser extends InstructionParser
 				return MapmmChainSPInstruction.parseInstruction(str);
 			case TSMM:
 				return TsmmSPInstruction.parseInstruction(str);
+			case TSMM2:
+				return Tsmm2SPInstruction.parseInstruction(str);	
 			case PMM:
 				return PmmSPInstruction.parseInstruction(str);
 			case ZIPMM:

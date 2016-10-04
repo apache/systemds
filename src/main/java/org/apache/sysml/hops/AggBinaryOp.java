@@ -78,6 +78,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		PMAPMM,   //partitioned map-side matrix-matrix multiplication (sp)
 		PMM,      //permutation matrix multiplication using distributed cache, for left input (mr/cp)
 		TSMM,     //transpose-self matrix multiplication (cp/mr/sp)
+		TSMM2,    //transpose-self matrix multiplication, 2-pass w/o shuffle (sp)
 		ZIPMM,    //zip matrix multiplication (sp)
 		MM        //in-memory matrix multiplication (cp)
 	};
@@ -200,7 +201,8 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 				switch( _method )
 				{
 					case TSMM:
-						constructSparkLopsTSMM( mmtsj );
+					case TSMM2:	
+						constructSparkLopsTSMM( mmtsj, _method==MMultMethod.TSMM2 );
 						break;
 					case MAPMM_L:
 					case MAPMM_R:
@@ -564,7 +566,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		}
 		
 		Lop matmultCP = new MMTSJ(getInput().get(mmtsj.isLeft()?1:0).constructLops(),
-				                 getDataType(), getValueType(), et, mmtsj, k);
+				                 getDataType(), getValueType(), et, mmtsj, false, k);
 	
 		matmultCP.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 		setLineNumbers( matmultCP );
@@ -734,11 +736,12 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 	 * @throws HopsException
 	 * @throws LopsException
 	 */
-	private void constructSparkLopsTSMM(MMTSJType mmtsj) 
+	private void constructSparkLopsTSMM(MMTSJType mmtsj, boolean multiPass) 
 		throws HopsException, LopsException
 	{
 		Hop input = getInput().get(mmtsj.isLeft()?1:0);
-		MMTSJ tsmm = new MMTSJ(input.constructLops(), getDataType(), getValueType(), ExecType.SPARK, mmtsj);
+		MMTSJ tsmm = new MMTSJ(input.constructLops(), getDataType(), 
+				getValueType(), ExecType.SPARK, mmtsj, multiPass);
 		setOutputDimensions(tsmm);
 		setLineNumbers(tsmm);
 		setLops(tsmm);
@@ -1886,13 +1889,30 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 			}
 		}
 		
-		// Step 5: check for unknowns
+		// Step 5: check for TSMM2 (2 pass w/o suffle, preferred over CPMM/RMM)
+		if( mmtsj != MMTSJType.NONE && m1_rows >=0 && m1_cols>=0 
+			&& m2_rows >= 0 && m2_cols>=0 )
+		{
+			double mSize = (mmtsj == MMTSJType.LEFT) ? 
+					OptimizerUtils.estimateSizeExactSparsity(m2_rows, m2_cols-m2_cpb, 1.0) : 
+					OptimizerUtils.estimateSizeExactSparsity(m1_rows-m1_rpb, m1_cols, 1.0);	
+			double mSizeP = (mmtsj == MMTSJType.LEFT) ? 
+					OptimizerUtils.estimatePartitionedSizeExactSparsity(m2_rows, m2_cols-m2_cpb, m2_rpb, m2_cpb, 1.0) : 
+					OptimizerUtils.estimatePartitionedSizeExactSparsity(m1_rows-m1_rpb, m1_cols, m1_rpb, m1_cpb, 1.0); 
+			if( mSizeP < memBudgetExec && mSize+mSizeP < memBudgetLocal 
+				&& ((mmtsj == MMTSJType.LEFT) ? m2_cols<=2*m2_cpb : m1_rows<=2*m1_rpb) //4 output blocks
+				&& mSizeP < 2L*1024*1024*1024) { //2GB limitation as single broadcast
+				return MMultMethod.TSMM2;
+			}
+		}
+		
+		// Step 6: check for unknowns
 		// If the dimensions are unknown at compilation time, simply assume 
 		// the worst-case scenario and produce the most robust plan -- which is CPMM
 		if ( m1_rows == -1 || m1_cols == -1 || m2_rows == -1 || m2_cols == -1 )
 			return MMultMethod.CPMM;
 
-		// Step 6: check for ZIPMM
+		// Step 7: check for ZIPMM
 		// If t(X)%*%y -> t(t(y)%*%X) rewrite and ncol(X)<blocksize
 		if( tmmRewrite && m1_rows >= 0 && m1_rows <= m1_rpb  //blocksize constraint left
 			&& m2_cols >= 0 && m2_cols <= m2_cpb )           //blocksize constraint right	
@@ -1900,7 +1920,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 			return MMultMethod.ZIPMM;
 		}
 			
-		// Step 7: Decide CPMM vs RMM based on io costs
+		// Step 8: Decide CPMM vs RMM based on io costs
 		//estimate shuffle costs weighted by parallelism
 		//TODO currently we reuse the mr estimates, these need to be fine-tune for our spark operators
 		double rmm_costs = getRMMCostEstimate(m1_rows, m1_cols, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb);

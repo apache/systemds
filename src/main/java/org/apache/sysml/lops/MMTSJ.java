@@ -32,8 +32,6 @@ import org.apache.sysml.parser.Expression.*;
  */
 public class MMTSJ extends Lop 
 {
-
-	
 	public enum MMTSJType {
 		NONE,
 		LEFT,
@@ -45,20 +43,27 @@ public class MMTSJ extends Lop
 	}
 	
 	private MMTSJType _type = null;
+	private boolean _multiPass = false;
 	private int _numThreads = 1;
 
-	public MMTSJ(Lop input1, DataType dt, ValueType vt, ExecType et, MMTSJType type) 
-	{
-		this(input1, dt, vt, et, type, -1);
+	public MMTSJ(Lop input1, DataType dt, ValueType vt, ExecType et, MMTSJType type) {
+		this(input1, dt, vt, et, type, false, -1);
 	}
 	
-	public MMTSJ(Lop input1, DataType dt, ValueType vt, ExecType et, MMTSJType type, int k) 
-	{
+	public MMTSJ(Lop input1, DataType dt, ValueType vt, ExecType et, MMTSJType type, boolean multiPass) {
+		this(input1, dt, vt, et, type, multiPass, -1);
+	}
+	
+	public MMTSJ(Lop input1, DataType dt, ValueType vt, ExecType et, MMTSJType type, boolean multiPass, int k) {
 		super(Lop.Type.MMTSJ, dt, vt);		
 		addInput(input1);
 		input1.addOutput(this);
 		_type = type;
+		_multiPass = multiPass;
 		_numThreads = k;
+		
+		if( multiPass && et != ExecType.SPARK )
+			throw new RuntimeException("Multipass tsmm only supported for exec type SPARK.");
 		 
 		boolean breaksAlignment = true; //if result keys (matrix indexes) different 
 		boolean aligner = false; //if groups multiple inputs by key (e.g., group)
@@ -103,7 +108,7 @@ public class MMTSJ extends Lop
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( "tsmm" );
+		sb.append( _multiPass ? "tsmm2" : "tsmm" );
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( getInputs().get(0).prepInputOperand(input_index1));
 		sb.append( OPERAND_DELIMITOR );

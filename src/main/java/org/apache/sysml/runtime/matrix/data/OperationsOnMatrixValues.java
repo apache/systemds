@@ -291,13 +291,17 @@ public class OperationsOnMatrixValues
 			value1.aggregateBinaryOperations(indexes1, value1, indexes2, value2, valueOut, op);
 	}
 
-	public static void performAggregateBinaryIgnoreIndexes(
+	public static MatrixValue performAggregateBinaryIgnoreIndexes(
 			MatrixValue value1, MatrixValue value2,
 			MatrixValue valueOut, AggregateBinaryOperator op) 
 	throws DMLRuntimeException {
 			
 		//perform on the value
-		value1.aggregateBinaryOperations(value1, value2, valueOut, op);
+		if( value2 instanceof CompressedMatrixBlock )
+			value2.aggregateBinaryOperations(value1, value2, valueOut, op);
+		else
+			value1.aggregateBinaryOperations(value1, value2, valueOut, op);
+		return valueOut;
 	}
 	
 	/**

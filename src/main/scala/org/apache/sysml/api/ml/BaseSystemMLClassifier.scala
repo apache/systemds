@@ -101,6 +101,7 @@ trait BaseSystemMLClassifier extends BaseSystemMLEstimator {
     val ml = new MLContext(sc)
     val revLabelMapping = new java.util.HashMap[Int, String]
     PredictionUtils.fillLabelMapping(y_mb, revLabelMapping)
+    y_mb.recomputeNonZeros();
     val ret = getTrainingScript(isSingleNode)
     val script = ret._1.in(ret._2, X_mb).in(ret._3, y_mb)
     (ml.execute(script), revLabelMapping)

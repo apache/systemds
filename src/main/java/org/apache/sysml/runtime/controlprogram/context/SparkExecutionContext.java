@@ -149,6 +149,16 @@ public class SparkExecutionContext extends ExecutionContext
 	}
 	
 	/**
+	 * Indicates if the spark context has been created or has
+	 * been passed in from outside.
+	 * 
+	 * @return
+	 */
+	public synchronized static boolean isSparkContextCreated() {
+		return (_spctx != null);
+	}
+	
+	/**
 	 * 
 	 */
 	public static void resetSparkContextStatic() {
@@ -1236,9 +1246,15 @@ public class SparkExecutionContext extends ExecutionContext
 	public void repartitionAndCacheMatrixObject( String var ) 
 		throws DMLRuntimeException
 	{
-		//get input rdd and default storage level
 		MatrixObject mo = getMatrixObject(var);
 		MatrixCharacteristics mcIn = mo.getMatrixCharacteristics();
+		
+		//double check size to avoid unnecessary spark context creation
+		if( !OptimizerUtils.exceedsCachingThreshold(mo.getNumColumns(), (double)
+				OptimizerUtils.estimateSizeExactSparsity(mcIn)) )
+			return;	
+		
+		//get input rdd and default storage level
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in = (JavaPairRDD<MatrixIndexes, MatrixBlock>) 
 				getRDDHandleForMatrixObject(mo, InputInfo.BinaryBlockInputInfo);
 		
@@ -1285,6 +1301,12 @@ public class SparkExecutionContext extends ExecutionContext
 	{
 		//get input rdd and default storage level
 		MatrixObject mo = getMatrixObject(var);
+		
+		//double check size to avoid unnecessary spark context creation
+		if( !OptimizerUtils.exceedsCachingThreshold(mo.getNumColumns(), (double)
+				OptimizerUtils.estimateSizeExactSparsity(mo.getMatrixCharacteristics())) )
+			return;	
+		
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in = (JavaPairRDD<MatrixIndexes, MatrixBlock>) 
 				getRDDHandleForMatrixObject(mo, InputInfo.BinaryBlockInputInfo);
 		
@@ -1588,12 +1610,13 @@ public class SparkExecutionContext extends ExecutionContext
 		public SparkClusterConfig() 
 		{
 			SparkConf sconf = new SparkConf();
+			_confOnly = true;
 			
-			//parse version and config //TODO avoid spark context creation if possible
-			JavaSparkContext jsc = getSparkContextStatic();
-			_legacyVersion = (UtilFunctions.compareVersion(jsc.version(), "1.6.0") < 0
+			//parse version and config
+			String sparkVersion = getSparkVersionString();
+			_legacyVersion = (UtilFunctions.compareVersion(sparkVersion, "1.6.0") < 0
 					|| sconf.getBoolean("spark.memory.useLegacyMode", false) );
-			
+	
 			//obtain basic spark configurations
 			if( _legacyVersion )
 				analyzeSparkConfiguationLegacy(sconf);
@@ -1714,7 +1737,7 @@ public class SparkExecutionContext extends ExecutionContext
 			if( numExecutors > 1 && (defaultPar > 1 || numCoresPerExec > 1) ) {
 				_numExecutors = numExecutors;
 				_defaultPar = (defaultPar>1) ? defaultPar : numExecutors * numCoresPerExec;
-				_confOnly = true;
+				_confOnly &= true;
 			}
 			else {
 				//get default parallelism (total number of executors and cores)
@@ -1723,8 +1746,24 @@ public class SparkExecutionContext extends ExecutionContext
 				JavaSparkContext jsc = getSparkContextStatic();
 				_numExecutors = Math.max(jsc.sc().getExecutorMemoryStatus().size() - 1, 1);  
 				_defaultPar = jsc.defaultParallelism();
-				_confOnly = false; //implies env info refresh w/ spark context 
+				_confOnly &= false; //implies env info refresh w/ spark context 
 			}
+		}
+		
+		/**
+		 * Obtains the spark version string. If the spark context has been created,
+		 * we simply get it from the context; otherwise, we use Spark internal 
+		 * constants to avoid creating the spark context just for the version. 
+		 * 
+		 * @return
+		 */
+		private String getSparkVersionString() {
+			//check for existing spark context
+			if( isSparkContextCreated() ) 
+				return getSparkContextStatic().version();
+			
+			//use spark internal constant to avoid context creation
+			return org.apache.spark.package$.MODULE$.SPARK_VERSION();
 		}
 		
 		@Override

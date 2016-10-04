@@ -80,8 +80,10 @@ public class LocalParWorker extends ParWorker implements Runnable
 		// monitoring start
 		Timing time1 = ( _monitor ? new Timing(true) : null ); 
 		
-		//setup fair scheduler pool for worker thread
-		if( OptimizerUtils.isSparkExecutionMode() ) {
+		//setup fair scheduler pool for worker thread, but avoid unnecessary
+		//spark context creation (if data cached already created)
+		if( OptimizerUtils.isSparkExecutionMode() 
+			&& SparkExecutionContext.isSparkContextCreated() ) {
 			SparkExecutionContext sec = (SparkExecutionContext)_ec;
 			sec.setThreadLocalSchedulerPool("parforPool"+_workerID);
 		}
@@ -141,7 +143,8 @@ public class LocalParWorker extends ParWorker implements Runnable
 		}	
 
 		//setup fair scheduler pool for worker thread
-		if( OptimizerUtils.isSparkExecutionMode() ) {
+		if( OptimizerUtils.isSparkExecutionMode() 
+			&& SparkExecutionContext.isSparkContextCreated() ) {
 			SparkExecutionContext sec = (SparkExecutionContext)_ec;
 			sec.cleanupThreadLocalSchedulerPool();
 		}

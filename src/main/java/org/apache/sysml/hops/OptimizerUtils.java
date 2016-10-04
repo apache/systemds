@@ -939,6 +939,19 @@ public class OptimizerUtils
 	}
 	
 	/**
+	 * Indicates if the given matrix characteristics exceed the threshold for 
+	 * caching, i.e., the matrix should be cached.
+	 * 
+	 * @param dim2
+	 * @param outMem
+	 * @return
+	 */
+	public static boolean exceedsCachingThreshold(long dim2, double outMem) {
+		return !(dim2 > 1 && outMem < getLocalMemBudget()
+			|| dim2 == 1 && outMem < getLocalMemBudget()/3);
+	}
+	
+	/**
 	 * Wrapper over internal filename construction for external usage. 
 	 * 
 	 * @return
@@ -1494,7 +1507,5 @@ public class OptimizerUtils
 		
 		valMemo.put(root.getHopID(), ret);
 		return ret;
-	}
-	
-		
+	}		
 }

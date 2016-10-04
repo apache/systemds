@@ -596,7 +596,7 @@ public class LibMatrixReorg
 		//check for empty inputs 
 		//(the semantics of removeEmpty are that for an empty m-by-n matrix, the output 
 		//is an empty 1-by-n or m-by-1 matrix because we don't allow matrices with dims 0)
-		if( in.isEmptyBlock(false) ) {
+		if( in.isEmptyBlock(false) && select == null  ) {
 			if( rows )
 				ret.reset(1, in.clen, in.sparse);
 			else //cols
@@ -1947,6 +1947,8 @@ public class LibMatrixReorg
 		rlen2 = Math.max(rlen2, 1); //ensure valid output
 		boolean sp = MatrixBlock.evalSparseFormatInMemory(rlen2, n, in.nonZeros);
 		ret.reset(rlen2, n, sp);
+		if( in.isEmptyBlock(false) )
+			return ret;
 		
 		if( in.sparse ) //* <- SPARSE
 		{
@@ -2055,7 +2057,9 @@ public class LibMatrixReorg
 		clen2 = Math.max(clen2, 1); //ensure valid output
 		boolean sp = MatrixBlock.evalSparseFormatInMemory(m, clen2, in.nonZeros);
 		ret.reset(m, clen2, sp);
-			
+		if( in.isEmptyBlock(false) )
+			return ret;
+		
 		if( in.sparse ) //* <- SPARSE 
 		{
 			//note: output dense or sparse

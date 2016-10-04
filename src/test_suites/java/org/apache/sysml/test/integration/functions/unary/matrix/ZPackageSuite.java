@@ -48,6 +48,7 @@ import org.junit.runners.Suite;
 	NegationTest.class,
 	PrintTest.class,
 	QRSolverTest.class,
+	RemoveEmptySelTest.class,
 	RemoveEmptyTest.class,
 	ReplaceTest.class,
 	RoundTest.class,

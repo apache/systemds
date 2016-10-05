@@ -3694,9 +3694,21 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		else //SPARSE
 		{
 			//adjust sparse rows if required
-			if( !this.isEmptyBlock(false) || !that.isEmptyBlock(false) )
+			if( !this.isEmptyBlock(false) || !that.isEmptyBlock(false) ) {
 				result.allocateSparseRowsBlock();
 			
+				//allocate sparse rows once for cbind
+				if( cbind && result.getSparseBlock() instanceof SparseBlockMCSR ) {
+					SparseBlock sblock = result.getSparseBlock();
+					for( int i=0; i<result.rlen; i++ ) {
+						int lnnz = (int)(this.recomputeNonZeros(i, i, 0, this.clen-1)
+							+ that.recomputeNonZeros(i, i, 0, that.clen-1));
+						sblock.allocate(i, lnnz);
+					}
+				}
+			}
+			
+			//core append operation
 			result.appendToSparse(this, 0, 0);			
 			if( cbind )
 				result.appendToSparse(that, 0, clen);

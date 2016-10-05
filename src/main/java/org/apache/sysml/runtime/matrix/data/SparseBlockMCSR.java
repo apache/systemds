@@ -232,8 +232,13 @@ public class SparseBlockMCSR extends SparseBlock
 
 	@Override
 	public void set(int r, SparseRow row, boolean deep) {
-		_rows[r] = (deep && row != null) ? 
-				new SparseRow(row) : row;
+		//copy values into existing row to avoid allocation
+		if( _rows[r] != null && _rows[r].capacity() >= row.size() && deep )
+			_rows[r].copy(row);
+		//set new sparse row (incl allocation if required)
+		else 
+			_rows[r] = (deep && row != null) ? 
+					new SparseRow(row) : row;		
 	}
 	
 	@Override

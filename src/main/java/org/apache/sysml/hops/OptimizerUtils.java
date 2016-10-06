@@ -52,6 +52,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.matrix.data.SparseBlock;
 import org.apache.sysml.runtime.matrix.data.SparseRow;
+import org.apache.sysml.runtime.util.IndexRange;
 import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.yarn.ropt.YarnClusterAnalyzer;
 
@@ -681,6 +682,10 @@ public class OptimizerUtils
 	// Memory Estimates   //
 	////////////////////////
 	
+	public static long estimateSize(MatrixCharacteristics mc) {
+		return estimateSizeExactSparsity(mc);
+	}
+	
 	/**
 	 * 
 	 * @param mc
@@ -875,6 +880,38 @@ public class OptimizerUtils
 		return bsize;
 	}
 	
+	/**
+	 * Indicates if the given indexing range is block aligned, i.e., it does not require
+	 * global aggregation of blocks.
+	 * 
+	 * @param mc
+	 * @param ixrange
+	 * @return
+	 */
+	public static boolean isIndexingRangeBlockAligned(IndexRange ixrange, MatrixCharacteristics mc) {
+		long rl = ixrange.rowStart;
+		long ru = ixrange.rowEnd;
+		long cl = ixrange.colStart;
+		long cu = ixrange.colEnd;
+		long brlen = mc.getNumRowBlocks();
+		long bclen = mc.getNumColBlocks();
+		return isIndexingRangeBlockAligned(rl, ru, cl, cu, brlen, bclen);
+	}
+	
+	/**
+	 * Indicates if the given indexing range is block aligned, i.e., it does not require
+	 * global aggregation of blocks.
+	 * 
+	 * @param mc
+	 * @param ixrange
+	 * @return
+	 */
+	public static boolean isIndexingRangeBlockAligned(long rl, long ru, long cl, long cu, long brlen, long bclen) {
+		return rl != -1 && ru != -1 && cl != -1 && cu != -1
+				&&((rl-1)%brlen == 0 && (cl-1)%bclen == 0 
+				|| (rl-1)/brlen == (ru-1)/brlen && (cl-1)%bclen == 0 
+				|| (rl-1)%brlen == 0 && (cl-1)/bclen == (cu-1)/bclen);
+	}
 	/**
 	 * Returns false if dimensions known to be invalid; other true
 	 * 

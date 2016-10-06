@@ -21,7 +21,9 @@ package org.apache.sysml.runtime.instructions.spark;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
+import org.apache.spark.HashPartitioner;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
@@ -29,6 +31,7 @@ import org.apache.spark.api.java.function.PairFunction;
 import scala.Tuple2;
 
 import org.apache.sysml.hops.AggBinaryOp.SparkAggType;
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
@@ -101,23 +104,70 @@ public class MatrixIndexingSPInstruction  extends IndexingSPInstruction
 			
 			//execute right indexing operation (partitioning-preserving if possible)
 			JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
-			JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
-			if( isPartitioningPreservingRightIndexing(mcIn, ixrange) ) {
-				out = in1.mapPartitionsToPair(
-						new SliceBlockPartitionFunction(ixrange, mcOut), true);
-			}
-			else{
-				out = in1.filter(new IsBlockInRange(rl, ru, cl, cu, mcOut))
-			             .flatMapToPair(new SliceBlock(ixrange, mcOut));
+			
+			if( isSingleBlockLookup(mcIn, ixrange) ) {
+				//single block output via lookup (on partitioned inputs, this allows for single partition
+				//access to avoid a full scan of the input; note that this is especially important for 
+				//out-of-core datasets as entire partitions are read, not just keys as in the in-memory setting.
+				long rix = UtilFunctions.computeBlockIndex(ixrange.rowStart, mcIn.getRowsPerBlock());
+				long cix = UtilFunctions.computeBlockIndex(ixrange.colStart, mcIn.getColsPerBlock());
+				List<MatrixBlock> list = in1.lookup(new MatrixIndexes(rix, cix));
+				if( list.size() != 1 )
+					throw new DMLRuntimeException("Block lookup returned "+list.size()+" blocks (expected 1).");
 				
-				//aggregation if required 
-				if( _aggType != SparkAggType.NONE )
-					out = RDDAggregateUtils.mergeByKey(out);
-			}
+				MatrixBlock tmp = list.get(0);
+				MatrixBlock mbout = (tmp.getNumRows()==mcOut.getRows() && tmp.getNumColumns()==mcOut.getCols()) ? 
+						tmp : tmp.sliceOperations( //reference full block or slice out sub-block
+						UtilFunctions.computeCellInBlock(ixrange.rowStart, mcIn.getRowsPerBlock()), 
+						UtilFunctions.computeCellInBlock(ixrange.rowEnd, mcIn.getRowsPerBlock()), 
+						UtilFunctions.computeCellInBlock(ixrange.colStart, mcIn.getColsPerBlock()), 
+						UtilFunctions.computeCellInBlock(ixrange.colEnd, mcIn.getColsPerBlock()), new MatrixBlock());
 				
-			//put output RDD handle into symbol table
-			sec.setRDDHandleForVariable(output.getName(), out);
-			sec.addLineageRDD(output.getName(), input1.getName());
+				sec.setMatrixOutput(output.getName(), mbout);
+			}
+			//TODO: alternative for multi-block-lookup required as the join does prune out-of-core partitions
+			/* 
+			else if( isMultiBlockLookup(in1, mcIn, mcOut, ixrange) ) {
+				List<Tuple2<MatrixIndexes, Boolean>> filter = new ArrayList<Tuple2<MatrixIndexes,Boolean>>();
+				long rlix = UtilFunctions.computeBlockIndex(ixrange.rowStart, mcIn.getRowsPerBlock());
+				long ruix = UtilFunctions.computeBlockIndex(ixrange.rowEnd, mcIn.getRowsPerBlock());
+				long clix = UtilFunctions.computeBlockIndex(ixrange.colStart, mcIn.getColsPerBlock());
+				long cuix = UtilFunctions.computeBlockIndex(ixrange.colEnd, mcIn.getColsPerBlock());
+				for( long r=rlix; r<=ruix; r++ )
+					for( long c=clix; c<=cuix; c++ )
+						filter.add(new Tuple2<MatrixIndexes,Boolean>(new MatrixIndexes(r,c), true));
+				
+				//lookup via data-query join 
+				JavaPairRDD<MatrixIndexes,Boolean> filterRDD = sec.getSparkContext().parallelizePairs(filter);
+				JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1.join(filterRDD)
+						.mapToPair(new SliceBlock2(ixrange, mcOut));
+				MatrixBlock mbout = SparkExecutionContext.toMatrixBlock(out, (int)mcOut.getRows(), 
+						(int)mcOut.getCols(), mcOut.getRowsPerBlock(), mcOut.getColsPerBlock(), -1);
+
+				sec.setMatrixOutput(output.getName(), mbout);
+			}
+			*/
+			else {
+				//rdd output for general case
+				JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
+				if( isPartitioningPreservingRightIndexing(mcIn, ixrange) ) {
+					out = in1.mapPartitionsToPair(
+							new SliceBlockPartitionFunction(ixrange, mcOut), true);
+				}
+				else {
+					out = in1.filter(new IsBlockInRange(rl, ru, cl, cu, mcOut))
+				             .flatMapToPair(new SliceBlock(ixrange, mcOut));
+					
+					//aggregation if required 
+					boolean aligned = OptimizerUtils.isIndexingRangeBlockAligned(ixrange, mcIn);
+					if( _aggType != SparkAggType.NONE && !aligned ) 
+						out = RDDAggregateUtils.mergeByKey(out);
+				}
+					
+				//put output RDD handle into symbol table
+				sec.setRDDHandleForVariable(output.getName(), out);
+				sec.addLineageRDD(output.getName(), input1.getName());	
+			}
 		}
 		//left indexing
 		else if ( opcode.equalsIgnoreCase("leftIndex") || opcode.equalsIgnoreCase("mapLeftIndex"))
@@ -192,11 +242,35 @@ public class MatrixIndexingSPInstruction  extends IndexingSPInstruction
 	 * @param ixrange
 	 * @return
 	 */
-	private boolean isPartitioningPreservingRightIndexing(MatrixCharacteristics mcIn, IndexRange ixrange)
-	{
+	private static boolean isPartitioningPreservingRightIndexing(MatrixCharacteristics mcIn, IndexRange ixrange) {
 		return ( mcIn.dimsKnown() &&
 				(ixrange.rowStart==1 && ixrange.rowEnd==mcIn.getRows() && mcIn.getCols()<=mcIn.getColsPerBlock() )   //1-1 column block indexing
 			  ||(ixrange.colStart==1 && ixrange.colEnd==mcIn.getCols() && mcIn.getRows()<=mcIn.getRowsPerBlock() )); //1-1 row block indexing
+	}
+	
+	/**
+	 * 
+	 * @param mcIn
+	 * @param ixrange
+	 * @return
+	 */
+	private static boolean isSingleBlockLookup(MatrixCharacteristics mcIn, IndexRange ixrange) {
+		return UtilFunctions.computeBlockIndex(ixrange.rowStart, mcIn.getRowsPerBlock())
+			== UtilFunctions.computeBlockIndex(ixrange.rowEnd, mcIn.getRowsPerBlock())
+			&& UtilFunctions.computeBlockIndex(ixrange.colStart, mcIn.getColsPerBlock())
+			== UtilFunctions.computeBlockIndex(ixrange.colEnd, mcIn.getColsPerBlock());
+	}
+	
+	/**
+	 * 
+	 */
+	@SuppressWarnings("unused")
+	private static boolean isMultiBlockLookup(JavaPairRDD<?,?> in, MatrixCharacteristics mcIn, MatrixCharacteristics mcOut, IndexRange ixrange) {
+		return (in.rdd().partitioner().get() instanceof HashPartitioner)  //existing partitioner
+			&& OptimizerUtils.estimatePartitionedSizeExactSparsity(mcIn)  //out-of-core dataset
+			   > SparkExecutionContext.getDataMemoryBudget(true, true)
+			&& OptimizerUtils.isIndexingRangeBlockAligned(ixrange, mcIn) //no block aggregation
+			&& OptimizerUtils.estimateSize(mcOut) < OptimizerUtils.getLocalMemBudget()/2; //outputs fits in memory
 	}
 	
 	
@@ -361,11 +435,38 @@ public class MatrixIndexingSPInstruction  extends IndexingSPInstruction
 			throws Exception 
 		{	
 			IndexedMatrixValue in = SparkUtils.toIndexedMatrixBlock(kv);
-			
 			ArrayList<IndexedMatrixValue> outlist = new ArrayList<IndexedMatrixValue>();
 			OperationsOnMatrixValues.performSlice(in, _ixrange, _brlen, _bclen, outlist);
-			
 			return SparkUtils.fromIndexedMatrixBlock(outlist);
+		}		
+	}
+
+	/**
+	 * Equivalent to SliceBlock except a different function signature.
+	 */
+	@SuppressWarnings("unused")
+	private static class SliceBlock2 implements PairFunction<Tuple2<MatrixIndexes,Tuple2<MatrixBlock,Boolean>>, MatrixIndexes, MatrixBlock> 
+	{
+		private static final long serialVersionUID = 7481889252529447770L;
+		
+		private IndexRange _ixrange;
+		private int _brlen; 
+		private int _bclen;
+		
+		public SliceBlock2(IndexRange ixrange, MatrixCharacteristics mcOut) {
+			_ixrange = ixrange;
+			_brlen = mcOut.getRowsPerBlock();
+			_bclen = mcOut.getColsPerBlock();
+		}
+
+		@Override
+		public Tuple2<MatrixIndexes, MatrixBlock> call(Tuple2<MatrixIndexes, Tuple2<MatrixBlock,Boolean>> kv) 
+			throws Exception 
+		{	
+			IndexedMatrixValue in = new IndexedMatrixValue(kv._1(), kv._2()._1());
+			ArrayList<IndexedMatrixValue> outlist = new ArrayList<IndexedMatrixValue>();
+			OperationsOnMatrixValues.performSlice(in, _ixrange, _brlen, _bclen, outlist);
+			return SparkUtils.fromIndexedMatrixBlock(outlist.get(0));
 		}		
 	}
 	

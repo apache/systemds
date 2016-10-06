@@ -53,6 +53,13 @@ limitations under the License.
     * [Read/Write Built-In Functions](dml-language-reference.html#readwrite-built-in-functions)
     * [Data Pre-Processing Built-In Functions](dml-language-reference.html#data-pre-processing-built-in-functions)
     * [Other Built-In Functions](dml-language-reference.html#other-built-in-functions)
+  * [Frames](dml-language-reference.html#frames)
+    * [Creating Frames](dml-language-reference.html#creating-frames)
+    * [Appending Frames](dml-language-reference.html#appending-frames)
+    * [Indexing Frames](dml-language-reference.html#indexing-frames)
+    * [Casting Frames](dml-language-reference.html#casting-frames)
+    * [Transforming Frames](dml-language-reference.html#transforming-frames)
+    * [Manipulating Frames](dml-language-reference.html#manipulating-frames)
   * [Modules](dml-language-reference.html#modules)
   * [Reserved Keywords](dml-language-reference.html#reserved-keywords)
   * [Invocation of SystemML](dml-language-reference.html#invocation-of-systemml)
@@ -99,7 +106,7 @@ As seen in above example, there is no formal declaration of a variable. A variab
 
 ### Data Types
 
-Three data types (frame, matrix and scalar) and four value types (double, integer, string, and boolean) are supported. Matrices are 2-dimensional, and support the double value type (i.e., the cells in a matrix are of type double). The frame data type denotes the tabular data, potentially containing columns of value type numeric, string, and boolean, This data type currently supports a single operation, transform(), which transforms the given tabular data with arbitrary value types into a matrix of doubles. SystemML supports type polymorphism for both data type (primarily, matrix and scalar types) and value type during evaluation. For example:
+Three data types (frame, matrix and scalar) and four value types (double, integer, string, and boolean) are supported. Matrices are 2-dimensional, and support the double value type (i.e., the cells in a matrix are of type double). The frame data type denotes the tabular data, potentially containing columns of value type numeric, string, and boolean.  Frame functions are described in [Frames](dml-language-reference.html#frames) and  [Data Pre-Processing Built-In Functions](dml-language-reference.html#data-pre-processing-built-in-functions).  SystemML supports type polymorphism for both data type (primarily, matrix and scalar types) and value type during evaluation. For example:
 
     # Spoiler alert: matrix() is a built-in function to
     # create matrix, which will be discussed later
@@ -1448,6 +1455,243 @@ toString() | Formats a Matrix object into a string. <br/> "rows" & "cols" : numb
 print() | Prints the value of a scalar variable x. This built-in takes an optional string parameter. | Input: (&lt;scalar&gt;) | print("hello") <br/> print("hello" + "world") <br/> print("value of x is " + x )
 stop() | Halts the execution of DML program by printing the message that is passed in as the argument. <br/> Note that the use of stop() is not allowed inside a parfor loop. |  Input: (&lt;scalar&gt;) | stop("Inputs to DML program are invalid") <br/> stop("Class labels must be either -1 or +1")
 order() | Sort a column of the matrix X in decreasing/increasing order and return either index (index.return=TRUE) or data (index.return=FALSE). | Input: (target=X, by=column, decreasing, index.return) | order(X, by=1, decreasing=FALSE, index.return=FALSE)
+
+
+## Frames
+
+The `frame` data type represents tabular data.  In contrast to a `matrix`, whose element values are of type `double`, a `frame` can be associated with a schema to specify additional value types.  Frames can be read from and written to files and also support both left and right indexing.    Built-in functions are provided to convert between frames and matrices.  Advanced transform operations can also be applied.  Note that frames are only supported in spark and single node modes (i.e., -exec hybrid_spark, -exec singlenode).
+
+### Creating Frames
+
+To create a `frame`, specify <code>data_type="frame"</code> when reading data from a file.  Input formats csv, text, and binary are supported.
+
+    A = read("fileA", data_type="frame", rows=10, cols=8)
+    B = read("dataB", data_type="frame", rows=3, cols=3, format="csv");
+
+A schema can be specified when creating a `frame`.  A schema is a string containing a value type per column.  The supported value types for a schema are `string`, `double`, `int`, `boolean`.  The default value type is `string` for all columns if no schema specified.
+
+    tableSchema = "string,double,int,boolean"
+    C = read("tableC", data_type="frame", schema=tableSchema, rows=1600, cols=4, format="csv");
+
+Note the schema definition needs to match the data, i.e., the number of value types and column size must be the same and greater than zero.
+
+### Appending Frames
+
+Built-In functions **cbind()** and **rbind()** are supported for frames for adding columns or rows to an existing frame.
+
+**Table F1**: Frame Append Built-In Functions
+
+Function | Description | Parameters | Example
+-------- | ----------- | ---------- | -------
+cbind() | Column-wise frame concatenation. Concatenates the second frame as additional columns to the first frame | Input: (X &lt;frame&gt;, Y &lt;frame&gt;) <br/>Output: &lt;frame&gt; <br/> X and Y are frames, where the number of rows in X and the number of rows in Y are the same. | A = read("file1", data_type="frame", rows=2, cols=3, format="binary") <br/> B = read("file2", data_type="frame", rows=2, cols=3, format="binary") <br/> C = cbind(A, B) <br/> # Dimensions of C: 2 X 6
+rbind() | Row-wise frame concatenation. Concatenates the second frame as additional rows to the first frame | Input: (X &lt;fame&gt;, Y &lt;frame&gt;) <br/>Output: &lt;frame&gt; <br/> X and Y are frames, where the number of columns in X and the number of columns in Y are the same. | A = read("file1", data_type="frame", rows=2, cols=3, format="binary") <br/> B = read("file2", data_type="frame", rows=2, cols=3, format="binary") <br/> C = rbind(A, B) <br/> # Dimensions of C: 4 X 3
+
+### Indexing Frames
+
+Similar to matrices, frames support both right and left indexing.
+
+    A = read("inputA", data_type="frame", rows=10, cols=10, format="binary")
+    B = A[4:5, 6:7]
+    C = A[1, ]
+    D = A[, 3]
+    E = A[, 1:2]
+
+    F = read("inputF", data_type="frame", rows=10, cols=10, format="binary")
+    F[4:5, 6:7] = G
+    F[1, ] = H
+    F[, 3] = I
+    F[, 1:2] = J
+
+### Casting Frames
+
+Frames support converting between matrices and scalars using **as.frame()**, **as.matrix()** and **as.scalar()**.
+
+**Table F2**: Casting Built-In Functions
+
+Function | Description | Parameters | Example
+-------- | ----------- | ---------- | -------
+as.frame(&lt;matrix&gt;) | Matrix is cast to frame | Input: (&lt;matrix&gt;) <br/> Output: &lt;frame&gt; | A = read("inA") <br/> B = as.frame(A)
+as.frame(&lt;scalar&gt;) | Scalar is cast to 1x1 frame | Input: (&lt;scalar&gt;) <br/> Output: &lt;frame&gt; | A = read("inputA", data_type="scalar", value_type="string") <br/> B = as.frame(A)
+as.matrix(&lt;frame&gt;) | Frame is cast to matrix | Input: (&lt;frame&gt;) <br/> Output: &lt;matrix&gt; | B = read("inB") <br/> C = as.frame(B)
+as.scalar(&lt;frame&gt;) | 1x1 Frame is cast to scalar | Input: (&lt;frame&gt;) <br/> Output: &lt;scalar&gt; | B = read("inputB", data_type="frame", schema="string", rows=1, cols=1) <br/> C = as.scalar(B)
+
+### Transforming Frames
+
+Frames support additional [Data Pre-Processing Built-In Functions](dml-language-reference.html#data-pre-processing-built-in-functions) as shown below.
+
+Function | Description | Parameters | Example
+-------- | ----------- | ---------- | -------
+transformencode() | Transforms a frame into a matrix using specification | Input:<br/> target = &lt;frame&gt; <br/> spec = &lt;json specification&gt; <br/> Outputs: &lt;matrix&gt;, &lt;frame&gt;|[tranformencode](dml-language-reference.html#tranformencode)
+transformdecode() | Transforms a matrix into a frame using specification | Input:<br/> target = &lt;matrix&gt; <br/> spec = &lt;json specification&gt; <br/> meta = &lt;frame&gt; <br/> Output: &lt;frame&gt; |[tranformdecode](dml-language-reference.html#tranformdecode)
+transformapply() | Transforms a frame into a matrix using specification |  Input:<br/> target = &lt;frame&gt; <br/> spec = &lt;json specification&gt; <br/> meta = &lt;frame&gt; <br/> Output: &lt;matrix&gt; | [tranformapply](dml-language-reference.html#tranformapply)
+
+The following examples use [`homes.csv`](files/dml-language-reference/homes.csv) data set.
+
+**Table F3**: The [`homes.csv`](files/dml-language-reference/homes.csv) data set
+
+zipcode | district | sqft | numbedrooms | numbathrooms | floors | view  | saleprice | askingprice
+--------|----------|------|-------------|--------------|--------|-------|-----------|------------
+95141   | west     | 1373 | 7           | 1            | 3      | FALSE | 695       | 698
+91312   | south    | 3261 | 6           | 2            | 2      | FALSE | 902       | 906
+94555   | north    | 1835 | 3           | 3            | 3      | TRUE  | 888       | 892
+95141   | east     | 2833 | 6           | 2.5          | 2      | TRUE  | 927       | 932
+96334   | south    | 2742 | 6           | 2.5          | 2      | FALSE | 872       | 876
+96334   | north    | 2195 | 5           | 2.5          | 2      | FALSE | 799       | 803
+98755   | north    | 3469 | 7           | 2.5          | 2      | FALSE | 958       | 963
+96334   | west     | 1685 | 7           | 1.5          | 2      | TRUE  | 757       | 760
+95141   | west     | 2238 | 4           | 3            | 3      | FALSE | 894       | 899
+91312   | west     | 1245 | 4           | 1            | 1      | FALSE | 547       | 549
+98755   | south    | 3702 | 7           | 3            | 1      | FALSE | 959       | 964
+98755   | north    | 1865 | 7           | 1            | 2      | TRUE  | 742       | 745
+94555   | north    | 3837 | 3           | 1            | 1      | FALSE | 839       | 842
+91312   | west     | 2139 | 3           | 1            | 3      | TRUE  | 820       | 824
+95141   | north    | 3824 | 4           | 3            | 1      | FALSE | 954       | 958
+98755   | east     | 2858 | 5           | 1.5          | 1      | FALSE | 759       | 762
+91312   | south    | 1827 | 7           | 3            | 1      | FALSE | 735       | 738
+91312   | south    | 3557 | 2           | 2.5          | 1      | FALSE | 888       | 892
+91312   | south    | 2553 | 2           | 2.5          | 2      | TRUE  | 884       | 889
+96334   | west     | 1682 | 3           | 1.5          | 1      | FALSE | 625       | 628
+
+
+The metadata file [`homes.csv.mtd`](files/dml-language-reference/homes.csv.mtd) looks as follows:
+
+	{
+	    "data_type": "frame",
+	    "format": "csv",
+	    "header": true,
+	}
+
+#### tranformencode
+
+This example replaces values in specific columns to create a recoded matrix with associated frame identifying the mapping between original and substituted values.  An example transformation specification file [`homes.tfspec_recode2.json`](files/dml-language-reference/homes.tfspec_recode2.json) is given below:
+
+	{
+	     "recode": [ "zipcode", "district", "view" ]
+	}
+
+The following DML utilizes the `transformencode()` function.
+
+    F1 = read("/user/ml/homes.csv", data_type="frame", format="csv");
+    jspec = read(/user/ml/homes.tfspec_recode2.json, data_type="scalar", value_type="string");
+    [X, M] = transformencode(target=F1, spec=jspec);
+    print(toString(X));
+    if(1==1){}
+    print(toString(M));
+
+The transformed matrix X and output M are as follows.
+
+    1.000 1.000 1373.000 7.000 1.000 3.000 1.000 695.000 698.000
+    2.000 2.000 3261.000 6.000 2.000 2.000 1.000 902.000 906.000
+    3.000 3.000 1835.000 3.000 3.000 3.000 2.000 888.000 892.000
+    1.000 4.000 2833.000 6.000 2.500 2.000 2.000 927.000 932.000
+    4.000 2.000 2742.000 6.000 2.500 2.000 1.000 872.000 876.000
+    4.000 3.000 2195.000 5.000 2.500 2.000 1.000 799.000 803.000
+    5.000 3.000 3469.000 7.000 2.500 2.000 1.000 958.000 963.000
+    4.000 1.000 1685.000 7.000 1.500 2.000 2.000 757.000 760.000
+    1.000 1.000 2238.000 4.000 3.000 3.000 1.000 894.000 899.000
+    2.000 1.000 1245.000 4.000 1.000 1.000 1.000 547.000 549.000
+    5.000 2.000 3702.000 7.000 3.000 1.000 1.000 959.000 964.000
+    5.000 3.000 1865.000 7.000 1.000 2.000 2.000 742.000 745.000
+    3.000 3.000 3837.000 3.000 1.000 1.000 1.000 839.000 842.000
+    2.000 1.000 2139.000 3.000 1.000 3.000 2.000 820.000 824.000
+    1.000 3.000 3824.000 4.000 3.000 1.000 1.000 954.000 958.000
+    5.000 4.000 2858.000 5.000 1.500 1.000 1.000 759.000 762.000
+    2.000 2.000 1827.000 7.000 3.000 1.000 1.000 735.000 738.000
+    2.000 2.000 3557.000 2.000 2.500 1.000 1.000 888.000 892.000
+    2.000 2.000 2553.000 2.000 2.500 2.000 2.000 884.000 889.000
+    4.000 1.000 1682.000 3.000 1.500 1.000 1.000 625.000 628.000
+
+
+    # FRAME: nrow = 5, ncol = 9
+    # zipcode district sqft numbedrooms numbathrooms floors view saleprice askingprice
+    # STRING STRING STRING STRING STRING STRING STRING STRING STRING
+    96334·4 south·2 FALSE·1
+    95141·1 east·4 TRUE·2
+    98755·5 north·3
+    94555·3 west·1
+    91312·2
+
+#### tranformdecode
+
+This example takes the outputs from the tranformencode example and reconstructs the original data using the same transformation specification.
+
+    F1 = read("/user/ml/homes.csv", data_type="frame", format="csv");
+    jspec = read(/user/ml/homes.tfspec_recode2.json, data_type="scalar", value_type="string");
+    [X, M] = transformencode(target=F1, spec=jspec);
+    F2 = transformdecode(target=X, spec=jspec, meta=M);
+    print(toString(F2));
+
+    # FRAME: nrow = 20, ncol = 9
+    # C1 C2 C3 C4 C5 C6 C7 C8 C9
+    # STRING STRING STRING STRING STRING STRING STRING STRING STRING
+    95141 west  1373.0 7.0 1.0 3.0 FALSE 695.0 698.0
+    91312 south 3261.0 6.0 2.0 2.0 FALSE 902.0 906.0
+    94555 north 1835.0 3.0 3.0 3.0 TRUE  888.0 892.0
+    95141 east  2833.0 6.0 2.5 2.0 TRUE  927.0 932.0
+    96334 south 2742.0 6.0 2.5 2.0 FALSE 872.0 876.0
+    96334 north 2195.0 5.0 2.5 2.0 FALSE 799.0 803.0
+    98755 north 3469.0 7.0 2.5 2.0 FALSE 958.0 963.0
+    96334 west  1685.0 7.0 1.5 2.0 TRUE  757.0 760.0
+    95141 west  2238.0 4.0 3.0 3.0 FALSE 894.0 899.0
+    91312 west  1245.0 4.0 1.0 1.0 FALSE 547.0 549.0
+    98755 south 3702.0 7.0 3.0 1.0 FALSE 959.0 964.0
+    98755 north 1865.0 7.0 1.0 2.0 TRUE  742.0 745.0
+    94555 north 3837.0 3.0 1.0 1.0 FALSE 839.0 842.0
+    91312 west  2139.0 3.0 1.0 3.0 TRUE  820.0 824.0
+    95141 north 3824.0 4.0 3.0 1.0 FALSE 954.0 958.0
+    98755 east  2858.0 5.0 1.5 1.0 FALSE 759.0 762.0
+    91312 south 1827.0 7.0 3.0 1.0 FALSE 735.0 738.0
+    91312 south 3557.0 2.0 2.5 1.0 FALSE 888.0 892.0
+    91312 south 2553.0 2.0 2.5 2.0 TRUE  884.0 889.0
+    96334 west  1682.0 3.0 1.5 1.0 FALSE 625.0 628.0
+
+#### tranformapply
+
+This example uses tranformapply with the input and second output from the tranformencode example for the [`homes.tfspec_bin2.json`](files/dml-language-reference/homes.tfspec_bin2.json) transformation specification.
+
+    {
+     "recode": [ zipcode, "district", "view" ], "bin": [
+     { "name": "saleprice"  , "method": "equi-width", "numbins": 3 }
+     ,{ "name": "sqft", "method": "equi-width", "numbins": 4 }]
+    }
+    
+    F1 = read("/user/ml/homes.csv", data_type="frame", format="csv");
+    jspec = read(/user/ml/homes.tfspec_bin2.json, data_type="scalar", value_type="string");
+    [X, M] = transformencode(target=F1, spec=jspec);
+    X2 = transformapply(target=F1, spec=jspec, meta=M);
+    print(toString(X2));
+    
+    1.000 1.000 1.000 7.000 1.000 3.000 1.000 1.000 698.000
+    2.000 2.000 1.000 6.000 2.000 2.000 1.000 1.000 906.000
+    3.000 3.000 1.000 3.000 3.000 3.000 2.000 1.000 892.000
+    1.000 4.000 1.000 6.000 2.500 2.000 2.000 1.000 932.000
+    4.000 2.000 1.000 6.000 2.500 2.000 1.000 1.000 876.000
+    4.000 3.000 1.000 5.000 2.500 2.000 1.000 1.000 803.000
+    5.000 3.000 1.000 7.000 2.500 2.000 1.000 1.000 963.000
+    4.000 1.000 1.000 7.000 1.500 2.000 2.000 1.000 760.000
+    1.000 1.000 1.000 4.000 3.000 3.000 1.000 1.000 899.000
+    2.000 1.000 1.000 4.000 1.000 1.000 1.000 1.000 549.000
+    5.000 2.000 1.000 7.000 3.000 1.000 1.000 1.000 964.000
+    5.000 3.000 1.000 7.000 1.000 2.000 2.000 1.000 745.000
+    3.000 3.000 1.000 3.000 1.000 1.000 1.000 1.000 842.000
+    2.000 1.000 1.000 3.000 1.000 3.000 2.000 1.000 824.000
+    1.000 3.000 1.000 4.000 3.000 1.000 1.000 1.000 958.000
+    5.000 4.000 1.000 5.000 1.500 1.000 1.000 1.000 762.000
+    2.000 2.000 1.000 7.000 3.000 1.000 1.000 1.000 738.000
+    2.000 2.000 1.000 2.000 2.500 1.000 1.000 1.000 892.000
+    2.000 2.000 1.000 2.000 2.500 2.000 2.000 1.000 889.000
+    4.000 1.000 1.000 3.000 1.500 1.000 1.000 1.000 628.000
+
+
+### Manipulating Frames
+
+Additional built-in functions that can be applied to frames are shown below.
+
+**Table F3**: Additional Built-In Functions
+
+Function | Description | Parameters | Example
+-------- | ----------- | ---------- | -------
+nrow(), <br/> ncol(), <br/> length() | Return the number of rows, number of columns, or number of items in frame respectively. | Input: frame <br/> Output: scalar | M = read("inM") <br/> F = as.frame(M) <br/> r = nrow(F) <br/> c = ncol(F) <br/> s = length(F)
 
 
 * * *

@@ -24,7 +24,6 @@ import java.util.HashMap;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.ParameterizedBuiltinFunctionExpression;
 import org.apache.sysml.parser.Statement;
-import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
@@ -288,7 +287,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 			
 			//compute transformdecode
 			Decoder decoder = DecoderFactory.createDecoder(getParameterMap().get("spec"), colnames, null, meta);
-			FrameBlock fbout = decoder.decode(data, new FrameBlock(meta.getNumColumns(), ValueType.STRING));
+			FrameBlock fbout = decoder.decode(data, new FrameBlock(decoder.getSchema()));
 			
 			//release locks
 			ec.setFrameOutput(output.getName(), fbout);

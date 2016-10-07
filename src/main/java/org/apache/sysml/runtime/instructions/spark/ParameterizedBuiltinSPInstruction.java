@@ -486,7 +486,7 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			//construct decoder and decode individual matrix blocks
 			Decoder decoder = DecoderFactory.createDecoder(params.get("spec"), colnames, null, meta);
 			JavaPairRDD<Long,FrameBlock> out = in.mapToPair(
-					new RDDTransformDecodeFunction(decoder, meta.getNumColumns(), mc.getRowsPerBlock()));
+					new RDDTransformDecodeFunction(decoder, mc.getRowsPerBlock()));
 			
 			//set output and maintain lineage/output characteristics
 			sec.setRDDHandleForVariable(output.getName(), out);
@@ -494,6 +494,7 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			ec.releaseFrameInput(params.get("meta"));
 			sec.getMatrixCharacteristics(output.getName()).set(mc.getRows(), 
 				meta.getNumColumns(), mc.getRowsPerBlock(), mc.getColsPerBlock(), -1);
+			sec.getFrameObject(output.getName()).setSchema(decoder.getSchema());
 		}
 		else {
 			throw new DMLRuntimeException("Unknown parameterized builtin opcode: "+opcode);
@@ -827,12 +828,10 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 		private static final long serialVersionUID = -4797324742568170756L;
 		
 		private Decoder _decoder = null;
-		private int _clen = -1;
 		private int _brlen = -1;
 		
-		public RDDTransformDecodeFunction(Decoder decoder, int clen, int brlen) {
+		public RDDTransformDecodeFunction(Decoder decoder, int brlen) {
 			_decoder = decoder;
-			_clen = clen;
 			_brlen = brlen;
 		}
 
@@ -842,7 +841,7 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 		{
 			long rix = UtilFunctions.computeCellIndex(in._1().getRowIndex(), _brlen, 0);
 			return new Tuple2<Long, FrameBlock>(rix, 
-					_decoder.decode(in._2(), new FrameBlock(_clen, ValueType.STRING)));
+					_decoder.decode(in._2(), new FrameBlock(_decoder.getSchema())));
 		}
 	}
 	

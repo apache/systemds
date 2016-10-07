@@ -38,12 +38,12 @@ public class DecoderComposite extends Decoder
 	
 	private List<Decoder> _decoders = null;
 	
-	protected DecoderComposite(List<ValueType> schema, List<Decoder> decoders) {
+	protected DecoderComposite(ValueType[] schema, List<Decoder> decoders) {
 		super(schema, null);
 		_decoders = decoders;
 	}
 	
-	protected DecoderComposite(List<ValueType> schema, Decoder[] decoders) {
+	protected DecoderComposite(ValueType[] schema, Decoder[] decoders) {
 		super(schema, null);
 		_decoders = Arrays.asList(decoders);
 	}

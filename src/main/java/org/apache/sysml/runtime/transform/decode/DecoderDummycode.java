@@ -19,8 +19,6 @@
 
 package org.apache.sysml.runtime.transform.decode;
 
-import java.util.List;
-
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -38,7 +36,7 @@ public class DecoderDummycode extends Decoder
 	private int[] _clPos = null;
 	private int[] _cuPos = null;
 	
-	protected DecoderDummycode(List<ValueType> schema, int[] dcCols) {
+	protected DecoderDummycode(ValueType[] schema, int[] dcCols) {
 		//dcCols refers to column IDs in output (non-dc)
 		super(schema, dcCols);
 	}

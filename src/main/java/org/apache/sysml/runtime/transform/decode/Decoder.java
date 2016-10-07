@@ -20,7 +20,6 @@
 package org.apache.sysml.runtime.transform.decode;
 
 import java.io.Serializable;
-import java.util.List;
 
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
@@ -35,12 +34,20 @@ public abstract class Decoder implements Serializable
 {	
 	private static final long serialVersionUID = -1732411001366177787L;
 	
-	protected List<ValueType> _schema = null;
+	protected ValueType[] _schema = null;
 	protected int[] _colList = null;
 		
-	protected Decoder( List<ValueType> schema, int[] colList ) {
+	protected Decoder( ValueType[] schema, int[] colList ) {
 		_schema = schema;
 		_colList = colList;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public ValueType[] getSchema() {
+		return _schema;
 	}
 	
 	/**

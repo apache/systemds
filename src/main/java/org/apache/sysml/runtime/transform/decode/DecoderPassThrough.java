@@ -19,8 +19,6 @@
 
 package org.apache.sysml.runtime.transform.decode;
 
-import java.util.List;
-
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -38,7 +36,7 @@ public class DecoderPassThrough extends Decoder
 	private int[] _dcCols = null;
 	private int[] _srcCols = null;
 	
-	protected DecoderPassThrough(List<ValueType> schema, int[] ptCols, int[] dcCols) {
+	protected DecoderPassThrough(ValueType[] schema, int[] ptCols, int[] dcCols) {
 		super(schema, ptCols);
 		_dcCols = dcCols;
 	}
@@ -52,7 +50,7 @@ public class DecoderPassThrough extends Decoder
 				int tgtColID = _colList[j];
 				double val = in.quickGetValue(i, srcColID-1);
 				out.set(i, tgtColID-1, UtilFunctions.doubleToObject(
-						_schema.get(tgtColID-1), val));
+						_schema[tgtColID-1], val));
 			}
 		}
 		return out;

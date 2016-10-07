@@ -1057,14 +1057,6 @@
 			<version>1.4</version>
 		</dependency>
 
-		<!-- Support faster ArraysUtil in runtime.transform.meta previously provided through spark-sql_2.10:1.4.1 -->
-		<dependency>
-		    <groupId>org.jodd</groupId>
-		    <artifactId>jodd-core</artifactId>
-		    <version>3.7</version>
-		    <scope>provided</scope>
-		</dependency>
-
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>

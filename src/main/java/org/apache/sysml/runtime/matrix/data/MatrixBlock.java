@@ -353,8 +353,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		
 		//check max size constraint (16GB dense), since java arrays are limited to 2^(32-1) elements)
 		if( limit > Integer.MAX_VALUE ) {
+			String execType = OptimizerUtils.isSparkExecutionMode() ? "SPARK" : "MR";
 			throw new RuntimeException("Dense in-memory matrix block ("+rlen+"x"+clen+") exceeds supported size of "+Integer.MAX_VALUE+" elements (16GB). " +
-					                   "Please, reduce the JVM heapsize to execute this in MR.");
+					                   "Please, report this issue and reduce the JVM heapsize to execute this operation in "+execType+".");
 		}
 		
 		//allocate block if non-existing or too small (guaranteed to be 0-initialized),

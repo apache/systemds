@@ -1440,7 +1440,7 @@ public class OptimizerRuleBased extends Optimizer
 			
 			//ensure local memory constraint (for spark more conservative in order to 
 			//prevent unnecessary guarded collect)
-			double mem = OptimizerUtils.isSparkExecutionMode() ? _lm/2 : _lm;
+			double mem = (OptimizerUtils.isSparkExecutionMode() && !n.isCPOnly()) ? _lm/2 : _lm;
 			kMax = Math.min( kMax, (int)Math.floor( mem / M ) );
 			kMax = Math.max( kMax, 1);
 			

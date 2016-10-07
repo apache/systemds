@@ -31,8 +31,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 
-import jodd.util.ArraysUtil;
-
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.sysml.api.jmlc.Connection;
@@ -128,7 +126,7 @@ public class TfMetaUtils
 			colList = new int[attrs.size()];
 			for(int i=0; i < colList.length; i++) {
 				colList[i] = ids ? UtilFunctions.toInt(attrs.get(i)) : 
-					(ArraysUtil.indexOf(colnames, attrs.get(i)) + 1);
+					(ArrayUtils.indexOf(colnames, attrs.get(i)) + 1);
 				if( colList[i] <= 0 ) {
 					throw new RuntimeException("Specified column '" + 
 						attrs.get(i)+"' does not exist.");

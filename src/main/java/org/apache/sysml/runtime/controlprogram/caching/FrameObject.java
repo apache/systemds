@@ -264,7 +264,7 @@ public class FrameObject extends CacheableData<FrameBlock>
 		throws IOException, DMLRuntimeException 
 	{
 		OutputInfo oinfo = OutputInfo.stringToOutputInfo(ofmt);
-		FrameWriter writer = FrameWriterFactory.createFrameWriter(oinfo);
+		FrameWriter writer = FrameWriterFactory.createFrameWriter(oinfo, fprop);
 		writer.writeFrameToHDFS(_data, fname,  getNumRows(), getNumColumns());
 	}
 

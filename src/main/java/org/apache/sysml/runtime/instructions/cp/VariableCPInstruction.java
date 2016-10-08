@@ -748,7 +748,7 @@ public class VariableCPInstruction extends CPInstruction
 		if( input1.getDataType() == DataType.SCALAR ) {
 			writeScalarToHDFS(ec, fname);
 		}
-		else if( input1.getDataType() == DataType.MATRIX ){
+		else if( input1.getDataType() == DataType.MATRIX ) {
 			String outFmt = input3.getName();
 			if (outFmt.equalsIgnoreCase("matrixmarket")) 
 				writeMMFile(ec, fname);
@@ -763,7 +763,7 @@ public class VariableCPInstruction extends CPInstruction
 		else if( input1.getDataType() == DataType.FRAME ) {
 			String outFmt = input3.getName();
 			FrameObject mo = ec.getFrameObject(input1.getName());
-			mo.exportData(fname, outFmt);
+			mo.exportData(fname, outFmt, _formatProperties);
 		}
 	}
 	

@@ -34,6 +34,7 @@ import org.junit.runners.Suite;
 	TransformFrameApplyTest.class,
 	TransformFrameEncodeApplyTest.class,
 	TransformFrameEncodeDecodeTest.class,
+	TransformFrameEncodeDecodeTokenTest.class,
 	TransformReadMetaTest.class,
 	TransformTest.class,
 })

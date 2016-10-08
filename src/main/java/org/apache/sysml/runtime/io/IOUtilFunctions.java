@@ -163,7 +163,8 @@ public class IOUtilFunctions
 		int from = 0, to = 0; 
 		int len = str.length();
 		while( from < len  ) { // for all tokens
-			if( str.charAt(from) == CSV_QUOTE_CHAR ) {
+			if( str.charAt(from) == CSV_QUOTE_CHAR 
+				&& str.indexOf(CSV_QUOTE_CHAR, from+1) > 0 ) {
 				to = str.indexOf(CSV_QUOTE_CHAR, from+1);
 				// handle escaped inner quotes, e.g. "aa""a"
 				while( to+1 < len && str.charAt(to+1)==CSV_QUOTE_CHAR )
@@ -209,7 +210,8 @@ public class IOUtilFunctions
 		int len = str.length();
 		int pos = 0;
 		while( from < len  ) { // for all tokens
-			if( str.charAt(from) == CSV_QUOTE_CHAR ) {
+			if( str.charAt(from) == CSV_QUOTE_CHAR
+				&& str.indexOf(CSV_QUOTE_CHAR, from+1) > 0 ) {
 				to = str.indexOf(CSV_QUOTE_CHAR, from+1);
 				// handle escaped inner quotes, e.g. "aa""a"
 				while( to+1 < len && str.charAt(to+1)==CSV_QUOTE_CHAR )
@@ -256,7 +258,8 @@ public class IOUtilFunctions
 		int from = 0, to = 0; 
 		int len = str.length();
 		while( from < len  ) { // for all tokens
-			if( str.charAt(from) == CSV_QUOTE_CHAR ) {
+			if( str.charAt(from) == CSV_QUOTE_CHAR
+				&& str.indexOf(CSV_QUOTE_CHAR, from+1) > 0 ) {
 				to = str.indexOf(CSV_QUOTE_CHAR, from+1);
 				// handle escaped inner quotes, e.g. "aa""a"
 				while( to+1 < len && str.charAt(to+1)==CSV_QUOTE_CHAR ) 

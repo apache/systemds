@@ -35,92 +35,40 @@ import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
 import org.apache.sysml.utils.Statistics;
 
-public class TransformFrameEncodeDecodeTest extends AutomatedTestBase 
+/**
+ * This test is similar to TransformFrameEncodeDecode test but specifically
+ * tests for various problematic tokens such as ", ', etc.
+ * 
+ */
+public class TransformFrameEncodeDecodeTokenTest extends AutomatedTestBase 
 {
 	private final static String TEST_NAME1 = "TransformFrameEncodeDecode";
 	private final static String TEST_DIR = "functions/transform/";
-	private final static String TEST_CLASS_DIR = TEST_DIR + TransformFrameEncodeDecodeTest.class.getSimpleName() + "/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + TransformFrameEncodeDecodeTokenTest.class.getSimpleName() + "/";
 	
 	//dataset and transform tasks without missing values
-	private final static String DATASET1 	= "homes3/homes.csv";
-	private final static String SPEC1 		= "homes3/homes.tfspec_recode.json"; 
-	private final static String SPEC1b 		= "homes3/homes.tfspec_recode2.json"; 
-	private final static String SPEC2 		= "homes3/homes.tfspec_dummy.json";
-	private final static String SPEC2b 		= "homes3/homes.tfspec_dummy2.json";
-	
-	public enum TransformType {
-		RECODE,
-		DUMMY,
-		BIN,
-		IMPUTE,
-		OMIT,
-	}
+	private final static String DATASET1 	= "20news/20news_subset.csv";
+	private final static String SPEC1 		= "20news/20news.tfspec_recode.json";
 	
 	@Override
 	public void setUp()  {
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME1, 
-			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "y" }) );
+		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "F2" }) );
 	}
 	
 	@Test
-	public void testHomesRecodeIDsSingleNodeCSV() {
-		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", TransformType.RECODE, false);
+	public void test20newsRecodeSingleNodeCSV() {
+		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv");
 	}
 	
 	@Test
-	public void testHomesRecodeIDsSparkCSV() {
-		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", TransformType.RECODE, false);
+	public void test20newsRecodeSparkCSV() {
+		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv");
 	}
 	
 	@Test
-	public void testHomesRecodeIDsHybridCSV() {
-		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "csv", TransformType.RECODE, false);
-	}
-	
-	@Test
-	public void testHomesDummycodeIDsSingleNodeCSV() {
-		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", TransformType.DUMMY, false);
-	}
-	
-	@Test
-	public void testHomesDummycodeIDsSparkCSV() {
-		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", TransformType.DUMMY, false);
-	}
-	
-	@Test
-	public void testHomesDummycodeIDsHybridCSV() {
-		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "csv", TransformType.DUMMY, false);
-	}
-	
-	@Test
-	public void testHomesRecodeColnamesSingleNodeCSV() {
-		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", TransformType.RECODE, true);
-	}
-	
-	@Test
-	public void testHomesRecodeColnamesSparkCSV() {
-		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", TransformType.RECODE, true);
-	}
-	
-	@Test
-	public void testHomesRecodeColnamesHybridCSV() {
-		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "csv", TransformType.RECODE, true);
-	}
-	
-	@Test
-	public void testHomesDummycodeColnamesSingleNodeCSV() {
-		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", TransformType.DUMMY, true);
-	}
-	
-	@Test
-	public void testHomesDummycodeColnamesSparkCSV() {
-		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", TransformType.DUMMY, true);
-	}
-	
-	@Test
-	public void testHomesDummycodeColnamesHybridCSV() {
-		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "csv", TransformType.DUMMY, true);
+	public void test20newsRecodeHybridCSV() {
+		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "csv");
 	}
 	
 	/**
@@ -129,7 +77,7 @@ public class TransformFrameEncodeDecodeTest extends AutomatedTestBase
 	 * @param ofmt
 	 * @param dataset
 	 */
-	private void runTransformTest( RUNTIME_PLATFORM rt, String ofmt, TransformType type, boolean colnames )
+	private void runTransformTest( RUNTIME_PLATFORM rt, String ofmt )
 	{
 		//set runtime platform
 		RUNTIME_PLATFORM rtold = rtplatform;
@@ -139,14 +87,6 @@ public class TransformFrameEncodeDecodeTest extends AutomatedTestBase
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK)
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-
-		//set transform specification
-		String SPEC = null; String DATASET = null;
-		switch( type ) {
-			case RECODE: SPEC = colnames?SPEC1b:SPEC1; DATASET = DATASET1; break;
-			case DUMMY:  SPEC = colnames?SPEC2b:SPEC2; DATASET = DATASET1; break;
-			default: throw new RuntimeException("Unsupported transform type for encode/decode test.");
-		}
 
 		if( !ofmt.equals("csv") )
 			throw new RuntimeException("Unsupported test output format");
@@ -158,19 +98,20 @@ public class TransformFrameEncodeDecodeTest extends AutomatedTestBase
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
 			programArgs = new String[]{"-explain","-nvargs", 
-				"DATA=" + HOME + "input/" + DATASET,
-				"TFSPEC=" + HOME + "input/" + SPEC,
-				"TFDATA=" + output("tfout"), "SEP=,",
-				"OFMT=" + ofmt, "OSEP=\",\"" };
+				"DATA=" + HOME + "input/" + DATASET1,
+				"TFSPEC=" + HOME + "input/" + SPEC1,
+				"TFDATA=" + output("tfout"), "SEP= ",
+				"OFMT=" + ofmt, "OSEP= " };
 	
 			OptimizerUtils.ALLOW_FRAME_CSV_REBLOCK = true;
 			runTest(true, false, null, -1); 
 			
 			//read input/output and compare
 			FrameReader reader1 = FrameReaderFactory.createFrameReader(InputInfo.CSVInputInfo, 
-					new CSVFileFormatProperties(true, ",", false));
-			FrameBlock fb1 = reader1.readFrameFromHDFS(HOME + "input/" + DATASET, -1L, -1L);
-			FrameReader reader2 = FrameReaderFactory.createFrameReader(InputInfo.CSVInputInfo);
+					new CSVFileFormatProperties(false, " ", false));
+			FrameBlock fb1 = reader1.readFrameFromHDFS(HOME + "input/" + DATASET1, -1L, -1L);
+			FrameReader reader2 = FrameReaderFactory.createFrameReader(InputInfo.CSVInputInfo,
+					new CSVFileFormatProperties(false, " ", false));
 			FrameBlock fb2 = reader2.readFrameFromHDFS(output("tfout"), -1L, -1L);
 			String[][] R1 = DataConverter.convertToStringFrame(fb1);
 			String[][] R2 = DataConverter.convertToStringFrame(fb2);

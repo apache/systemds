@@ -24,6 +24,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.broadcast.Broadcast;
@@ -114,7 +116,7 @@ public class Tsmm2SPInstruction extends UnarySPInstruction
 		int outputDim = (int) (_type.isLeft() ? mc.getCols() : mc.getRows());
 		if( OptimizerUtils.estimateSize(outputDim, outputDim) <= 32*1024*1024 ) { //default: <=32MB
 			//output large blocks and reduceAll to avoid skew on combineByKey
-			JavaPairRDD<MatrixIndexes,MatrixBlock> tmp2 = in.mapToPair(
+			JavaRDD<MatrixBlock> tmp2 = in.map(
 					new RDDTSMM2ExtFunction(bpmb, _type, outputDim, (int)mc.getRowsPerBlock()));
 			MatrixBlock out = RDDAggregateUtils.sumStable(tmp2);
 		      
@@ -192,7 +194,7 @@ public class Tsmm2SPInstruction extends UnarySPInstruction
 	 * Same semantics as RDDTSMM2Function but output single consolidated block.
 	 * 
 	 */
-	private static class RDDTSMM2ExtFunction implements PairFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock> 
+	private static class RDDTSMM2ExtFunction implements Function<Tuple2<MatrixIndexes, MatrixBlock>, MatrixBlock> 
 	{
 		private static final long serialVersionUID = 3284059592407517911L;
 		
@@ -214,7 +216,7 @@ public class Tsmm2SPInstruction extends UnarySPInstruction
 		}
 
 		@Override
-		public Tuple2<MatrixIndexes, MatrixBlock> call(Tuple2<MatrixIndexes, MatrixBlock> arg0)
+		public MatrixBlock call(Tuple2<MatrixIndexes, MatrixBlock> arg0)
 			throws Exception 
 		{
 			MatrixIndexes ixin = arg0._1();
@@ -247,7 +249,7 @@ public class Tsmm2SPInstruction extends UnarySPInstruction
 						(int)(ixout2.getRowIndex()-1)*_blen, (int)(ixout2.getRowIndex()-1)*_blen+out3.getNumColumns()-1, out3, true);
 			}
 			
-			return new Tuple2<MatrixIndexes,MatrixBlock>(new MatrixIndexes(1,1), out);
+			return out;
 		}
 	}
 	

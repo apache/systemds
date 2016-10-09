@@ -20,6 +20,7 @@
 package org.apache.sysml.runtime.instructions.spark;
 
 import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
 
 import scala.Tuple2;
@@ -91,14 +92,14 @@ public class AggregateTernarySPInstruction extends ComputationSPInstruction
 		
 		//execute aggregate ternary operation
 		AggregateBinaryOperator aggop = (AggregateBinaryOperator) _optr;
-		JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
+		JavaRDD<MatrixBlock> out = null;
 		if( in3 != null ) { //3 inputs
-			out = in1.join( in2 ).join( in3 )
-				     .mapValues(new RDDAggregateTernaryFunction(aggop));
+			out = in1.join( in2 ).join( in3 ).values()
+				     .map(new RDDAggregateTernaryFunction(aggop));
 		}
 		else { //2 inputs (third is literal 1)
-			out = in1.join( in2 )
-					 .mapValues(new RDDAggregateTernaryFunction2(aggop));				
+			out = in1.join( in2 ).values()
+					 .map(new RDDAggregateTernaryFunction2(aggop));				
 		}
 				
 		//aggregate and create output (no lineage because scalar)	   
@@ -136,7 +137,7 @@ public class AggregateTernarySPInstruction extends ComputationSPInstruction
 			
 			//create output matrix block (w/ correction)
 			MatrixBlock out = new MatrixBlock(2,1,false);
-			out.setValue(0, 0, ret.getDoubleValue());
+			out.quickSetValue(0, 0, ret.getDoubleValue());
 			return out;
 		}
 	}
@@ -169,7 +170,7 @@ public class AggregateTernarySPInstruction extends ComputationSPInstruction
 			
 			//create output matrix block (w/ correction)
 			MatrixBlock out = new MatrixBlock(2,1,false);
-			out.setValue(0, 0, ret.getDoubleValue());
+			out.quickSetValue(0, 0, ret.getDoubleValue());
 			return out;
 		}
 	}

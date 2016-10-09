@@ -361,16 +361,17 @@ public class RandSPInstruction extends UnarySPInstruction
 		JavaPairRDD<MatrixIndexes, Tuple2<Long, Long>> seedsRDD = null;
 		Well1024a bigrand = LibMatrixDatagen.setupSeedsForRand(lSeed);
 		long[] nnz = LibMatrixDatagen.computeNNZperBlock(rows, cols, rowsInBlock, colsInBlock, sparsity);
+		double totalSize = OptimizerUtils.estimatePartitionedSizeExactSparsity( rows, cols, rowsInBlock, 
+			colsInBlock, rows*cols*sparsity); //overestimate for on disk, ensures hdfs block per partition
 		double hdfsBlkSize = InfrastructureAnalyzer.getHDFSBlockSize();
 		long numBlocks = nnz.length;
 		long numColBlocks = (long)Math.ceil((double)cols/(double)colsInBlock);
-					
+				
 		//a) in-memory seed rdd construction 
 		if( numBlocks < INMEMORY_NUMBLOCKS_THRESHOLD )
 		{
 			ArrayList<Tuple2<MatrixIndexes, Tuple2<Long, Long>>> seeds = 
 					new ArrayList<Tuple2<MatrixIndexes, Tuple2<Long, Long>>>();
-			double partSize = 0;
 			for( long i=0; i<numBlocks; i++ ) {
 				long r = 1 + i/numColBlocks;
 				long c = 1 + i%numColBlocks;
@@ -378,20 +379,18 @@ public class RandSPInstruction extends UnarySPInstruction
 				Long seedForBlock = bigrand.nextLong();
 				seeds.add(new Tuple2<MatrixIndexes, Tuple2<Long, Long>>(indx, 
 						new Tuple2<Long, Long>(seedForBlock, nnz[(int)i])));
-				partSize += nnz[(int)i] * 8 + 16;
 			}
 			
 			//for load balancing: degree of parallelism such that ~128MB per partition
-			int numPartitions = (int) Math.max(Math.min(partSize/hdfsBlkSize, numBlocks), 1);
+			int numPartitions = (int) Math.max(Math.min(totalSize/hdfsBlkSize, numBlocks), 1);
 				
 			//create seeds rdd 
-			seedsRDD = JavaPairRDD.fromJavaRDD(sec.getSparkContext().parallelize(seeds, numPartitions));				
+			seedsRDD = sec.getSparkContext().parallelizePairs(seeds, numPartitions);				
 		}
 		//b) file-based seed rdd construction (for robustness wrt large number of blocks)
 		else
 		{
 			String path = LibMatrixDatagen.generateUniqueSeedPath(dir);
-			double partSize = 0;
 			
 			try
 			{
@@ -409,7 +408,6 @@ public class RandSPInstruction extends UnarySPInstruction
 					sb.append(nnz[(int)i]);
 					pw.println(sb.toString());
 					sb.setLength(0);
-					partSize += nnz[(int)i] * 8 + 16;
 				}
 				pw.close();
 				fsOut.close();
@@ -419,7 +417,7 @@ public class RandSPInstruction extends UnarySPInstruction
 			}
 			
 			//for load balancing: degree of parallelism such that ~128MB per partition
-			int numPartitions = (int) Math.max(Math.min(partSize/hdfsBlkSize, numBlocks), 1);
+			int numPartitions = (int) Math.max(Math.min(totalSize/hdfsBlkSize, numBlocks), 1);
 			
 			//create seeds rdd 
 			seedsRDD = sec.getSparkContext()
@@ -464,23 +462,23 @@ public class RandSPInstruction extends UnarySPInstruction
 		
 		//step 1: offset generation 
 		JavaRDD<Double> offsetsRDD = null;
-		double hdfsBlkSize = InfrastructureAnalyzer.getHDFSBlockSize();
 		long nnz = (long) Math.abs(Math.round((seq_to - seq_from)/seq_incr)) + 1;
+		double totalSize = OptimizerUtils.estimatePartitionedSizeExactSparsity( nnz, 1, rowsInBlock, 
+				colsInBlock, nnz); //overestimate for on disk, ensures hdfs block per partition
+		double hdfsBlkSize = InfrastructureAnalyzer.getHDFSBlockSize();
 		long numBlocks = (long)Math.ceil(((double)nnz)/rowsInBlock);
 	
 		//a) in-memory offset rdd construction 
 		if( numBlocks < INMEMORY_NUMBLOCKS_THRESHOLD )
 		{
 			ArrayList<Double> offsets = new ArrayList<Double>();
-			double partSize = 0;
 			for( long i=0; i<numBlocks; i++ ) {
 				double off = seq_from + seq_incr*i*rowsInBlock;
 				offsets.add(off);
-				partSize += rowsInBlock * 8 +16;
 			}
 				
 			//for load balancing: degree of parallelism such that ~128MB per partition
-			int numPartitions = (int) Math.max(Math.min(partSize/hdfsBlkSize, numBlocks), 1);
+			int numPartitions = (int) Math.max(Math.min(totalSize/hdfsBlkSize, numBlocks), 1);
 				
 			//create offset rdd
 			offsetsRDD = sec.getSparkContext().parallelize(offsets, numPartitions);
@@ -489,7 +487,6 @@ public class RandSPInstruction extends UnarySPInstruction
 		else
 		{
 			String path = LibMatrixDatagen.generateUniqueSeedPath(dir);
-			double partSize = 0;
 			
 			try
 			{
@@ -499,7 +496,6 @@ public class RandSPInstruction extends UnarySPInstruction
 				for( long i=0; i<numBlocks; i++ ) {
 					double off = seq_from + seq_incr*i*rowsInBlock;
 					pw.println(off);
-					partSize += rowsInBlock * 8 +16;
 				}
 				pw.close();
 				fsOut.close();
@@ -509,7 +505,7 @@ public class RandSPInstruction extends UnarySPInstruction
 			}
 			
 			//for load balancing: degree of parallelism such that ~128MB per partition
-			int numPartitions = (int) Math.max(Math.min(partSize/hdfsBlkSize, numBlocks), 1);
+			int numPartitions = (int) Math.max(Math.min(totalSize/hdfsBlkSize, numBlocks), 1);
 			
 			//create seeds rdd 
 			offsetsRDD = sec.getSparkContext()

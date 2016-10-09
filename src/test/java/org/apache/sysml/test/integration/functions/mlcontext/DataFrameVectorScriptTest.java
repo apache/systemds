@@ -46,6 +46,7 @@ import org.apache.sysml.api.mlcontext.Script;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -265,7 +266,8 @@ public class DataFrameVectorScriptTest extends AutomatedTestBase
 			MatrixCharacteristics mc2 = unknownDims ? new MatrixCharacteristics() : new MatrixCharacteristics(mc1);
 			
 			//setup spark context
-			SparkConf conf = new SparkConf().setAppName("MLContextFrameTest").setMaster("local");
+			SparkConf conf = SparkExecutionContext.createSystemMLSparkConf()
+					.setAppName("MLContextFrameTest").setMaster("local");
 			sc = new JavaSparkContext(conf);
 			SQLContext sqlctx = new SQLContext(sc);
 			

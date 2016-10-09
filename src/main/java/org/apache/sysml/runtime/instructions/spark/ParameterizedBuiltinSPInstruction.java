@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
@@ -206,13 +207,10 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			CPOperand ngrpOp = new CPOperand(params.get(Statement.GAGG_NUM_GROUPS));
 			int ngroups = (int)sec.getScalarInput(ngrpOp.getName(), ngrpOp.getValueType(), ngrpOp.isLiteral()).getLongValue();
 			
-			//execute map grouped aggregate
-			JavaPairRDD<MatrixIndexes, MatrixBlock> out = 
-					target.flatMapToPair(new RDDMapGroupedAggFunction(groups, _optr, 
-							ngroups, mc1.getRowsPerBlock(), mc1.getColsPerBlock()));
-			
 			//single-block aggregation
 			if( ngroups <= mc1.getRowsPerBlock() && mc1.getCols() <= mc1.getColsPerBlock() ) {
+				//execute map grouped aggregate
+				JavaRDD<MatrixBlock> out = target.map(new RDDMapGroupedAggFunction2(groups, _optr, ngroups));
 				MatrixBlock out2 = RDDAggregateUtils.sumStable(out);
 				
 				//put output block into symbol table (no lineage because single block)
@@ -221,6 +219,11 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			}
 			//multi-block aggregation
 			else {
+				//execute map grouped aggregate
+				JavaPairRDD<MatrixIndexes, MatrixBlock> out = 
+						target.flatMapToPair(new RDDMapGroupedAggFunction(groups, _optr, 
+								ngroups, mc1.getRowsPerBlock(), mc1.getColsPerBlock()));
+				
 				out = RDDAggregateUtils.sumByKeyStable(out);
 				
 				//updated characteristics and handle outputs
@@ -683,6 +686,37 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			
 			//output all result blocks
 			return SparkUtils.fromIndexedMatrixBlock(outlist);
+		}
+	}
+
+	/**
+	 * Similar to RDDMapGroupedAggFunction but single output block.
+	 */
+	public static class RDDMapGroupedAggFunction2 implements Function<Tuple2<MatrixIndexes,MatrixBlock>,MatrixBlock> 
+	{
+		private static final long serialVersionUID = -6820599604299797661L;
+		
+		private PartitionedBroadcast<MatrixBlock> _pbm = null;
+		private Operator _op = null;
+		private int _ngroups = -1;
+		
+		public RDDMapGroupedAggFunction2(PartitionedBroadcast<MatrixBlock> pbm, Operator op, int ngroups) {
+			_pbm = pbm;
+			_op = op;
+			_ngroups = ngroups;
+		}
+
+		@Override
+		public MatrixBlock call(Tuple2<MatrixIndexes, MatrixBlock> arg0)
+			throws Exception 
+		{
+			//get all inputs
+			MatrixIndexes ix = arg0._1();
+			MatrixBlock target = arg0._2();		
+			MatrixBlock groups = _pbm.getBlock((int)ix.getRowIndex(), 1);
+			
+			//execute map grouped aggregate operations
+			return groups.groupedAggOperations(target, null, new MatrixBlock(), _ngroups, _op);
 		}
 	}
 	

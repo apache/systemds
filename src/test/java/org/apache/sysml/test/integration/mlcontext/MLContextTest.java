@@ -67,6 +67,7 @@ import org.apache.sysml.api.mlcontext.MatrixMetadata;
 import org.apache.sysml.api.mlcontext.Script;
 import org.apache.sysml.api.mlcontext.ScriptExecutor;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.junit.After;
@@ -92,7 +93,8 @@ public class MLContextTest extends AutomatedTestBase {
 	@BeforeClass
 	public static void setUpClass() {
 		if (conf == null)
-			conf = new SparkConf().setAppName("MLContextTest").setMaster("local");
+			conf = SparkExecutionContext.createSystemMLSparkConf()
+				.setAppName("MLContextTest").setMaster("local");
 		if (sc == null)
 			sc = new JavaSparkContext(conf);
 		ml = new MLContext(sc);

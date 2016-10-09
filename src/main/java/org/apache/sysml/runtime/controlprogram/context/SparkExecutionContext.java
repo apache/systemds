@@ -218,7 +218,8 @@ public class SparkExecutionContext extends ExecutionContext
 		{
 			if(DMLScript.USE_LOCAL_SPARK_CONFIG) {
 				// For now set 4 cores for integration testing :)
-				SparkConf conf = new SparkConf().setMaster("local[*]").setAppName("My local integration test app");
+				SparkConf conf = createSystemMLSparkConf()
+						.setMaster("local[*]").setAppName("My local integration test app");
 				// This is discouraged in spark but have added only for those testcase that cannot stop the context properly
 				// conf.set("spark.driver.allowMultipleContexts", "true");
 				conf.set("spark.ui.enabled", "false");
@@ -227,18 +228,7 @@ public class SparkExecutionContext extends ExecutionContext
 			else //default cluster setup
 			{
 				//setup systemml-preferred spark configuration (w/o user choice)
-				SparkConf conf = new SparkConf();
-				
-				//always set unlimited result size (required for cp collect)
-				conf.set("spark.driver.maxResultSize", "0");
-				
-				//always use the fair scheduler (for single jobs, it's equivalent to fifo
-				//but for concurrent jobs in parfor it ensures better data locality because
-				//round robin assignment mitigates the problem of 'sticky slots')
-				if( FAIR_SCHEDULER_MODE ) {
-					conf.set("spark.scheduler.mode", "FAIR");
-				}
-				
+				SparkConf conf = createSystemMLSparkConf();
 				_spctx = new JavaSparkContext(conf);
 			}
 		}
@@ -261,6 +251,33 @@ public class SparkExecutionContext extends ExecutionContext
 			Statistics.setSparkCtxCreateTime(System.nanoTime()-t0);
 		}
 	}	
+	
+	/**
+	 * Sets up a SystemML-preferred Spark configuration based on the implicit
+	 * default configuration (as passed via configurations from outside).
+	 * 
+	 * @return
+	 */
+	public static SparkConf createSystemMLSparkConf() {
+		SparkConf conf = new SparkConf();
+		
+		//always set unlimited result size (required for cp collect)
+		conf.set("spark.driver.maxResultSize", "0");
+		
+		//always use the fair scheduler (for single jobs, it's equivalent to fifo
+		//but for concurrent jobs in parfor it ensures better data locality because
+		//round robin assignment mitigates the problem of 'sticky slots')
+		if( FAIR_SCHEDULER_MODE ) {
+			conf.set("spark.scheduler.mode", "FAIR");
+		}
+		
+		//increase scheduler delay (usually more robust due to better data locality)
+		if( !conf.contains("spark.locality.wait") ) { //default 3s
+			conf.set("spark.locality.wait", "5s");
+		}
+		
+		return conf;
+	}
 	
 	/**
 	 * Spark instructions should call this for all matrix inputs except broadcast
@@ -1609,7 +1626,7 @@ public class SparkExecutionContext extends ExecutionContext
 	
 		public SparkClusterConfig() 
 		{
-			SparkConf sconf = new SparkConf();
+			SparkConf sconf = createSystemMLSparkConf();
 			_confOnly = true;
 			
 			//parse version and config
@@ -1687,7 +1704,7 @@ public class SparkExecutionContext extends ExecutionContext
 		 */
 		public void analyzeSparkConfiguationLegacy(SparkConf conf)  {
 			//ensure allocated spark conf
-			SparkConf sconf = (conf == null) ? new SparkConf() : conf;
+			SparkConf sconf = (conf == null) ? createSystemMLSparkConf() : conf;
 			
 			//parse absolute executor memory
 			_memExecutor = UtilFunctions.parseMemorySize(
@@ -1709,7 +1726,7 @@ public class SparkExecutionContext extends ExecutionContext
 		 */
 		public void analyzeSparkConfiguation(SparkConf conf) {
 			//ensure allocated spark conf
-			SparkConf sconf = (conf == null) ? new SparkConf() : conf;
+			SparkConf sconf = (conf == null) ? createSystemMLSparkConf() : conf;
 			
 			//parse absolute executor memory, incl fixed cut off
 			_memExecutor = UtilFunctions.parseMemorySize(

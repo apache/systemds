@@ -20,6 +20,7 @@
 package org.apache.sysml.runtime.instructions.spark.utils;
 
 import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
 import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
@@ -53,17 +54,26 @@ public class RDDAggregateUtils
 	 * @param in
 	 * @return
 	 */
-	public static MatrixBlock sumStable( JavaPairRDD<MatrixIndexes, MatrixBlock> in )
+	public static MatrixBlock sumStable( JavaPairRDD<MatrixIndexes, MatrixBlock> in ) {
+		return sumStable( in.values() );
+	}
+	
+	/**
+	 * 
+	 * @param in
+	 * @return
+	 */
+	public static MatrixBlock sumStable( JavaRDD<MatrixBlock> in )
 	{
 		//stable sum of all blocks with correction block per function instance
 		if( TREE_AGGREGATION ) {
-			return in.values().treeReduce( 
+			return in.treeReduce( 
 					new SumSingleBlockFunction(true) );	
 		}
 		else { //DEFAULT
 			//reduce-all aggregate via fold instead of reduce to allow 
 			//for update in-place w/o deep copy of left-hand-side blocks
-			return in.values().fold(
+			return in.fold(
 					new MatrixBlock(), 
 					new SumSingleBlockFunction(false));
 		}
@@ -136,18 +146,30 @@ public class RDDAggregateUtils
 	}
 	
 	/**
+	 * Single block aggregation over pair rdds with corrections for numerical stability.
 	 * 
 	 * @param in
 	 * @param aop
 	 * @return
 	 */
-	public static MatrixBlock aggStable( JavaPairRDD<MatrixIndexes, MatrixBlock> in, AggregateOperator aop )
+	public static MatrixBlock aggStable( JavaPairRDD<MatrixIndexes, MatrixBlock> in, AggregateOperator aop ) {
+		return aggStable( in.values(), aop );
+	}
+	
+	/**
+	 * Single block aggregation over rdds with corrections for numerical stability.
+	 * 
+	 * @param in
+	 * @param aop
+	 * @return
+	 */
+	public static MatrixBlock aggStable( JavaRDD<MatrixBlock> in, AggregateOperator aop )
 	{
 		//stable aggregate of all blocks with correction block per function instance
 		
 		//reduce-all aggregate via fold instead of reduce to allow 
 		//for update in-place w/o deep copy of left-hand-side blocks
-		return in.values().fold(
+		return in.fold(
 				new MatrixBlock(),
 				new AggregateSingleBlockFunction(aop) );
 	}

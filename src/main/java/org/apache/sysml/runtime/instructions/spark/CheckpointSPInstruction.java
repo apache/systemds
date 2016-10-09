@@ -102,8 +102,9 @@ public class CheckpointSPInstruction extends UnarySPInstruction
 		if( !in.getStorageLevel().equals( _level ) ) 
 		{
 			//investigate issue of unnecessarily large number of partitions
+			//(trigger coalesce if intended number of partitions exceeded by 20%)
 			int numPartitions = getNumCoalescePartitions(mcIn, in);
-			boolean coalesce = ( numPartitions < in.partitions().size() );
+			boolean coalesce = ( 1.2*numPartitions < in.partitions().size() );
 			
 			//checkpoint pre-processing rdd operations
 			if( coalesce ) {

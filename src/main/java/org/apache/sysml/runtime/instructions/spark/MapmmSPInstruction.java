@@ -24,6 +24,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
 
@@ -125,25 +127,10 @@ public class MapmmSPInstruction extends BinarySPInstruction
 		if( !_outputEmpty )
 			in1 = in1.filter(new FilterNonEmptyBlocksFunction());
 		
-		//execute mapmult instruction
-		JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
-		if( requiresFlatMapFunction(_type, mcBc) ) {
-			if( requiresRepartitioning(_type, mcRdd, mcBc, in1.partitions().size()) )
-				in1 = in1.repartition(getNumRepartitioning(_type, mcRdd, mcBc, in1.partitions().size()));
-			out = in1.flatMapToPair( new RDDFlatMapMMFunction(_type, in2) );
-		}
-		else if( preservesPartitioning(mcRdd, _type) )
-			out = in1.mapPartitionsToPair(new RDDMapMMPartitionFunction(_type, in2), true);
-		else
-			out = in1.mapToPair( new RDDMapMMFunction(_type, in2) );
-		
-		//empty output block filter
-		if( !_outputEmpty )
-			out = out.filter(new FilterNonEmptyBlocksFunction());
-		
-		//perform aggregation if necessary and put output into symbol table
+		//execute mapmm and aggregation if necessary and put output into symbol table
 		if( _aggtype == SparkAggType.SINGLE_BLOCK )
 		{
+			JavaRDD<MatrixBlock> out = in1.map(new RDDMapMMFunction2(_type, in2));
 			MatrixBlock out2 = RDDAggregateUtils.sumStable(out);
 			
 			//put output block into symbol table (no lineage because single block)
@@ -152,6 +139,21 @@ public class MapmmSPInstruction extends BinarySPInstruction
 		}
 		else //MULTI_BLOCK or NONE
 		{
+			JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
+			if( requiresFlatMapFunction(_type, mcBc) ) {
+				if( requiresRepartitioning(_type, mcRdd, mcBc, in1.partitions().size()) )
+					in1 = in1.repartition(getNumRepartitioning(_type, mcRdd, mcBc, in1.partitions().size()));
+				out = in1.flatMapToPair( new RDDFlatMapMMFunction(_type, in2) );
+			}
+			else if( preservesPartitioning(mcRdd, _type) )
+				out = in1.mapPartitionsToPair(new RDDMapMMPartitionFunction(_type, in2), true);
+			else
+				out = in1.mapToPair( new RDDMapMMFunction(_type, in2) );
+			
+			//empty output block filter
+			if( !_outputEmpty )
+				out = out.filter(new FilterNonEmptyBlocksFunction());
+			
 			if( _aggtype == SparkAggType.MULTI_BLOCK )
 				out = RDDAggregateUtils.sumByKeyStable(out);
 		
@@ -288,12 +290,60 @@ public class MapmmSPInstruction extends BinarySPInstruction
 						ixIn, blkIn, new MatrixIndexes(ixIn.getColumnIndex(),1), right, ixOut, blkOut, _op);					
 			}
 			
-			
 			//output new tuple
 			return new Tuple2<MatrixIndexes, MatrixBlock>(ixOut, blkOut);
 		}
 	}
 
+	/**
+	 * Similar to RDDMapMMFunction but with single output block 
+	 */
+	private static class RDDMapMMFunction2 implements Function<Tuple2<MatrixIndexes, MatrixBlock>, MatrixBlock> 
+	{
+		private static final long serialVersionUID = -2753453898072910182L;
+		
+		private CacheType _type = null;
+		private AggregateBinaryOperator _op = null;
+		private PartitionedBroadcast<MatrixBlock> _pbc = null;
+		
+		public RDDMapMMFunction2( CacheType type, PartitionedBroadcast<MatrixBlock> binput )
+		{
+			_type = type;
+			_pbc = binput;
+			
+			//created operator for reuse
+			AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
+			_op = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), agg);
+		}
+		
+		@Override
+		public MatrixBlock call( Tuple2<MatrixIndexes, MatrixBlock> arg0 ) 
+			throws Exception 
+		{
+			MatrixIndexes ixIn = arg0._1();
+			MatrixBlock blkIn = arg0._2();
+			
+			if( _type == CacheType.LEFT )
+			{
+				//get the right hand side matrix
+				MatrixBlock left = _pbc.getBlock(1, (int)ixIn.getRowIndex());
+				
+				//execute matrix-vector mult
+				return (MatrixBlock) OperationsOnMatrixValues.performAggregateBinaryIgnoreIndexes( 
+						left, blkIn, new MatrixBlock(), _op);						
+			}
+			else //if( _type == CacheType.RIGHT )
+			{
+				//get the right hand side matrix
+				MatrixBlock right = _pbc.getBlock((int)ixIn.getColumnIndex(), 1);
+				
+				//execute matrix-vector mult
+				return (MatrixBlock) OperationsOnMatrixValues.performAggregateBinaryIgnoreIndexes(
+						blkIn, right, new MatrixBlock(), _op);
+			}
+		}
+	}
+	
 	/**
 	 * 
 	 */

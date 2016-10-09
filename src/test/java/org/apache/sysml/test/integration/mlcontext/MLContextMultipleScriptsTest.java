@@ -30,6 +30,7 @@ import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.api.mlcontext.MLContext;
 import org.apache.sysml.api.mlcontext.Matrix;
 import org.apache.sysml.api.mlcontext.Script;
+import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.utils.TestUtils;
 import org.junit.After;
@@ -91,7 +92,8 @@ public class MLContextMultipleScriptsTest extends AutomatedTestBase
 		DMLScript.rtplatform = platform;
 		
 		//create mlcontext
-		SparkConf conf = new SparkConf().setAppName("MLContextFrameTest").setMaster("local");
+		SparkConf conf = SparkExecutionContext.createSystemMLSparkConf()
+				.setAppName("MLContextFrameTest").setMaster("local");
 		JavaSparkContext sc = new JavaSparkContext(conf);
 		MLContext ml = new MLContext(sc);
 		ml.setExplain(true);

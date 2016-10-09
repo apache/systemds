@@ -20,6 +20,7 @@
 package org.apache.sysml.runtime.instructions.spark;
 
 import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFunction;
 
@@ -104,32 +105,31 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction
 		//execute unary aggregate operation
 		AggregateUnaryOperator auop = (AggregateUnaryOperator)_optr;
 		AggregateOperator aggop = _aop;
-		if( _aggtype == SparkAggType.NONE ) {
-			//in case of no block aggregation, we always drop the correction as well as
-			//use a partitioning-preserving mapvalues 
-			out = out.mapValues(new RDDUAggValueFunction(auop, mc.getRowsPerBlock(), mc.getColsPerBlock()));
-		}
-		else {
-			//in case of single/multi-block aggregation, we always keep the correction
-			out = out.mapToPair(new RDDUAggFunction(auop, mc.getRowsPerBlock(), mc.getColsPerBlock()));			
-		}
-		
 		
 		//perform aggregation if necessary and put output into symbol table
 		if( _aggtype == SparkAggType.SINGLE_BLOCK )
 		{
-			MatrixBlock out2 = RDDAggregateUtils.aggStable(out, aggop);
+			JavaRDD<MatrixBlock> out2 = out.map(
+					new RDDUAggFunction2(auop, mc.getRowsPerBlock(), mc.getColsPerBlock()));
+			MatrixBlock out3 = RDDAggregateUtils.aggStable(out2, aggop);
 			
 			//drop correction after aggregation
-			out2.dropLastRowsOrColums(aggop.correctionLocation);
+			out3.dropLastRowsOrColums(aggop.correctionLocation);
 			
 			//put output block into symbol table (no lineage because single block)
 			//this also includes implicit maintenance of matrix characteristics
-			sec.setMatrixOutput(output.getName(), out2);
+			sec.setMatrixOutput(output.getName(), out3);
 		}
 		else //MULTI_BLOCK or NONE
 		{
-			if( _aggtype == SparkAggType.MULTI_BLOCK ) {
+			if( _aggtype == SparkAggType.NONE ) {
+				//in case of no block aggregation, we always drop the correction as well as
+				//use a partitioning-preserving mapvalues 
+				out = out.mapValues(new RDDUAggValueFunction(auop, mc.getRowsPerBlock(), mc.getColsPerBlock()));
+			}
+			else if( _aggtype == SparkAggType.MULTI_BLOCK ) {
+				//in case of multi-block aggregation, we always keep the correction
+				out = out.mapToPair(new RDDUAggFunction(auop, mc.getRowsPerBlock(), mc.getColsPerBlock()));			
 				out = RDDAggregateUtils.aggByKeyStable(out, aggop);
 	
 				//drop correction after aggregation if required (aggbykey creates 
@@ -208,6 +208,33 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction
 			
 			//output new tuple
 			return new Tuple2<MatrixIndexes, MatrixBlock>(ixOut, blkOut);
+		}
+	}
+
+	/**
+	 * Similar to RDDUAggFunction but single output block.
+	 */
+	private static class RDDUAggFunction2 implements Function<Tuple2<MatrixIndexes, MatrixBlock>, MatrixBlock> 
+	{
+		private static final long serialVersionUID = 2672082409287856038L;
+		
+		private AggregateUnaryOperator _op = null;
+		private int _brlen = -1;
+		private int _bclen = -1;
+		
+		public RDDUAggFunction2( AggregateUnaryOperator op, int brlen, int bclen ) {
+			_op = op;
+			_brlen = brlen;
+			_bclen = bclen;
+		}
+		
+		@Override
+		public MatrixBlock call( Tuple2<MatrixIndexes, MatrixBlock> arg0 ) 
+			throws Exception 
+		{
+			//unary aggregate operation (always keep the correction)
+			return (MatrixBlock) arg0._2.aggregateUnaryOperations(
+					_op, new MatrixBlock(), _brlen, _bclen, arg0._1());
 		}
 	}
 	

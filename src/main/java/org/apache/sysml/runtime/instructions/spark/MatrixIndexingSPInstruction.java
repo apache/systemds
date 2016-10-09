@@ -20,15 +20,21 @@
 package org.apache.sysml.runtime.instructions.spark;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 
 import org.apache.spark.HashPartitioner;
+import org.apache.spark.Partitioner;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
+import org.apache.spark.rdd.PartitionPruningRDD;
 
+import scala.Function1;
 import scala.Tuple2;
+import scala.reflect.ClassManifestFactory;
+import scala.runtime.AbstractFunction1;
 
 import org.apache.sysml.hops.AggBinaryOp.SparkAggType;
 import org.apache.sysml.hops.OptimizerUtils;
@@ -125,28 +131,27 @@ public class MatrixIndexingSPInstruction  extends IndexingSPInstruction
 				
 				sec.setMatrixOutput(output.getName(), mbout);
 			}
-			//TODO: alternative for multi-block-lookup required as the join does prune out-of-core partitions
-			/* 
 			else if( isMultiBlockLookup(in1, mcIn, mcOut, ixrange) ) {
-				List<Tuple2<MatrixIndexes, Boolean>> filter = new ArrayList<Tuple2<MatrixIndexes,Boolean>>();
+				//create list of all required matrix indexes
+				List<MatrixIndexes> filter = new ArrayList<MatrixIndexes>();
 				long rlix = UtilFunctions.computeBlockIndex(ixrange.rowStart, mcIn.getRowsPerBlock());
 				long ruix = UtilFunctions.computeBlockIndex(ixrange.rowEnd, mcIn.getRowsPerBlock());
 				long clix = UtilFunctions.computeBlockIndex(ixrange.colStart, mcIn.getColsPerBlock());
 				long cuix = UtilFunctions.computeBlockIndex(ixrange.colEnd, mcIn.getColsPerBlock());
 				for( long r=rlix; r<=ruix; r++ )
 					for( long c=clix; c<=cuix; c++ )
-						filter.add(new Tuple2<MatrixIndexes,Boolean>(new MatrixIndexes(r,c), true));
+						filter.add( new MatrixIndexes(r,c) );
 				
-				//lookup via data-query join 
-				JavaPairRDD<MatrixIndexes,Boolean> filterRDD = sec.getSparkContext().parallelizePairs(filter);
-				JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1.join(filterRDD)
-						.mapToPair(new SliceBlock2(ixrange, mcOut));
+				//wrap PartitionPruningRDD around input to exploit pruning for out-of-core datasets
+				JavaPairRDD<MatrixIndexes,MatrixBlock> out = createPartitionPruningRDD(in1, filter);
+				out = out.filter(new IsBlockInRange(rl, ru, cl, cu, mcOut)) //filter unnecessary blocks 
+						 .mapToPair(new SliceBlock2(ixrange, mcOut));       //slice relevant blocks
+				
+				//collect output without shuffle to avoid side-effects with custom PartitionPruningRDD
 				MatrixBlock mbout = SparkExecutionContext.toMatrixBlock(out, (int)mcOut.getRows(), 
 						(int)mcOut.getCols(), mcOut.getRowsPerBlock(), mcOut.getColsPerBlock(), -1);
-
 				sec.setMatrixOutput(output.getName(), mbout);
 			}
-			*/
 			else {
 				//rdd output for general case
 				JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
@@ -249,6 +254,9 @@ public class MatrixIndexingSPInstruction  extends IndexingSPInstruction
 	}
 	
 	/**
+	 * Indicates if the given index range only covers a single blocks of the inputs matrix.
+	 * In this case, we perform a key lookup which is very efficient in case of existing
+	 * partitioner, especially for out-of-core datasets.
 	 * 
 	 * @param mcIn
 	 * @param ixrange
@@ -262,9 +270,12 @@ public class MatrixIndexingSPInstruction  extends IndexingSPInstruction
 	}
 	
 	/**
+	 * Indicates if the given index range and input matrix exhibit the following properties:
+	 * (1) existing hash partitioner, (2) out-of-core input matrix (larger than aggregated memory), 
+	 * (3) aligned indexing range (which does not required aggregation), and (4) the output fits 
+	 * twice in memory (in order to collect the result). 
 	 * 
 	 */
-	@SuppressWarnings("unused")
 	private static boolean isMultiBlockLookup(JavaPairRDD<?,?> in, MatrixCharacteristics mcIn, MatrixCharacteristics mcOut, IndexRange ixrange) {
 		return (in.rdd().partitioner().get() instanceof HashPartitioner)  //existing partitioner
 			&& OptimizerUtils.estimatePartitionedSizeExactSparsity(mcIn)  //out-of-core dataset
@@ -444,8 +455,7 @@ public class MatrixIndexingSPInstruction  extends IndexingSPInstruction
 	/**
 	 * Equivalent to SliceBlock except a different function signature.
 	 */
-	@SuppressWarnings("unused")
-	private static class SliceBlock2 implements PairFunction<Tuple2<MatrixIndexes,Tuple2<MatrixBlock,Boolean>>, MatrixIndexes, MatrixBlock> 
+	private static class SliceBlock2 implements PairFunction<Tuple2<MatrixIndexes,MatrixBlock>, MatrixIndexes, MatrixBlock> 
 	{
 		private static final long serialVersionUID = 7481889252529447770L;
 		
@@ -460,10 +470,10 @@ public class MatrixIndexingSPInstruction  extends IndexingSPInstruction
 		}
 
 		@Override
-		public Tuple2<MatrixIndexes, MatrixBlock> call(Tuple2<MatrixIndexes, Tuple2<MatrixBlock,Boolean>> kv) 
+		public Tuple2<MatrixIndexes, MatrixBlock> call(Tuple2<MatrixIndexes, MatrixBlock> kv) 
 			throws Exception 
 		{	
-			IndexedMatrixValue in = new IndexedMatrixValue(kv._1(), kv._2()._1());
+			IndexedMatrixValue in = new IndexedMatrixValue(kv._1(), kv._2());
 			ArrayList<IndexedMatrixValue> outlist = new ArrayList<IndexedMatrixValue>();
 			OperationsOnMatrixValues.performSlice(in, _ixrange, _brlen, _bclen, outlist);
 			return SparkUtils.fromIndexedMatrixBlock(outlist.get(0));
@@ -512,6 +522,52 @@ public class MatrixIndexingSPInstruction  extends IndexingSPInstruction
 				assert(outlist.size() == 1); //1-1 row/column block indexing
 				return SparkUtils.fromIndexedMatrixBlock(outlist.get(0));
 			}			
+		}
+	}
+	
+	/**
+	 * Wraps the input RDD into a PartitionPruningRDD, which acts as a filter
+	 * of required partitions. The distinct set of required partitions is determined
+	 * via the partitioner of the input RDD.
+	 * 
+	 * @param in
+	 * @param filter
+	 * @return
+	 */
+	private JavaPairRDD<MatrixIndexes,MatrixBlock> createPartitionPruningRDD( 
+			JavaPairRDD<MatrixIndexes,MatrixBlock> in, List<MatrixIndexes> filter )
+	{
+		//build hashset of required partition ids
+		HashSet<Integer> flags = new HashSet<Integer>();
+		Partitioner partitioner = in.rdd().partitioner().get();
+		for( MatrixIndexes key : filter )
+			flags.add(partitioner.getPartition(key));
+
+		//create partition pruning rdd
+		Function1<Object,Object> f = new PartitionPruningFunction(flags);
+		PartitionPruningRDD<Tuple2<MatrixIndexes, MatrixBlock>> ppRDD = 
+				PartitionPruningRDD.create(in.rdd(), f);
+
+		//wrap output into java pair rdd
+		return new JavaPairRDD<MatrixIndexes,MatrixBlock>(ppRDD, 
+				ClassManifestFactory.fromClass(MatrixIndexes.class), 
+				ClassManifestFactory.fromClass(MatrixBlock.class));
+	}
+	
+	/**
+	 * Filter function required to create a PartitionPruningRDD.
+	 */
+	private static class PartitionPruningFunction extends AbstractFunction1<Object,Object>
+	{
+		private HashSet<Integer> _filterFlags = null;
+
+		public PartitionPruningFunction(HashSet<Integer> flags) {
+			_filterFlags = flags;
+		}
+
+		@Override
+		public Boolean apply(Object partIndex) {
+			return _filterFlags.contains((Integer)partIndex);
 		}
 	}
 }

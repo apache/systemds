@@ -32,9 +32,9 @@ import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.BooleanObject;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.spark.data.RDDObject;
-import org.apache.sysml.runtime.instructions.spark.functions.CopyBlockFunction;
 import org.apache.sysml.runtime.instructions.spark.functions.CopyFrameBlockFunction;
 import org.apache.sysml.runtime.instructions.spark.functions.CreateSparseBlockFunction;
+import org.apache.sysml.runtime.instructions.spark.utils.SparkUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
@@ -101,10 +101,11 @@ public class CheckpointSPInstruction extends UnarySPInstruction
 		JavaPairRDD<?,?> out = null;
 		if( !in.getStorageLevel().equals( _level ) ) 
 		{
-			//investigate issue of unnecessarily large number of partitions
-			//(trigger coalesce if intended number of partitions exceeded by 20%)
+			//(trigger coalesce if intended number of partitions exceeded by 20%
+			//and not hash partitioned to avoid losing the existing partitioner)
 			int numPartitions = getNumCoalescePartitions(mcIn, in);
-			boolean coalesce = ( 1.2*numPartitions < in.partitions().size() );
+			boolean coalesce = ( 1.2*numPartitions < in.partitions().size() 
+					&& !SparkUtils.isHashPartitioned(in) );
 			
 			//checkpoint pre-processing rdd operations
 			if( coalesce ) {
@@ -115,8 +116,8 @@ public class CheckpointSPInstruction extends UnarySPInstruction
 				//since persist is an in-place marker for a storage level, we 
 				//apply a narrow shallow copy to allow for short-circuit collects 
 				if( input1.getDataType() == DataType.MATRIX )
-					out = ((JavaPairRDD<MatrixIndexes,MatrixBlock>)in)
-						.mapValues(new CopyBlockFunction(false));
+					out = SparkUtils.copyBinaryBlockMatrix(
+						(JavaPairRDD<MatrixIndexes,MatrixBlock>)in, false);
 				else if( input1.getDataType() == DataType.FRAME)
 					out = ((JavaPairRDD<Long,FrameBlock>)in)
 						.mapValues(new CopyFrameBlockFunction(false));	

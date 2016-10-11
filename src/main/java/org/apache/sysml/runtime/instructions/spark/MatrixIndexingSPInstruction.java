@@ -24,7 +24,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 
-import org.apache.spark.HashPartitioner;
 import org.apache.spark.Partitioner;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
@@ -277,8 +276,8 @@ public class MatrixIndexingSPInstruction  extends IndexingSPInstruction
 	 * 
 	 */
 	private static boolean isMultiBlockLookup(JavaPairRDD<?,?> in, MatrixCharacteristics mcIn, MatrixCharacteristics mcOut, IndexRange ixrange) {
-		return (in.rdd().partitioner().get() instanceof HashPartitioner)  //existing partitioner
-			&& OptimizerUtils.estimatePartitionedSizeExactSparsity(mcIn)  //out-of-core dataset
+		return SparkUtils.isHashPartitioned(in)                          //existing partitioner
+			&& OptimizerUtils.estimatePartitionedSizeExactSparsity(mcIn) //out-of-core dataset
 			   > SparkExecutionContext.getDataMemoryBudget(true, true)
 			&& OptimizerUtils.isIndexingRangeBlockAligned(ixrange, mcIn) //no block aggregation
 			&& OptimizerUtils.estimateSize(mcOut) < OptimizerUtils.getLocalMemBudget()/2; //outputs fits in memory

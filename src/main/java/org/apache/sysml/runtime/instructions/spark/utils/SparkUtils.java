@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.apache.spark.HashPartitioner;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
@@ -36,6 +37,7 @@ import org.apache.sysml.lops.Checkpoint;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.spark.functions.CopyBinaryCellFunction;
 import org.apache.sysml.runtime.instructions.spark.functions.CopyBlockFunction;
+import org.apache.sysml.runtime.instructions.spark.functions.CopyBlockPairFunction;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -169,6 +171,47 @@ public class SparkUtils
 	 */
 	public static Pair<Long,FrameBlock> toIndexedFrameBlock( Long ix, FrameBlock fb ) {
 		return new Pair<Long,FrameBlock>(ix, fb);
+	}
+	
+	/**
+	 * Indicates if the input RDD is hash partitioned, i.e., it has a partitioner
+	 * of type {@code org.apache.spark.HashPartitioner}.
+	 * 
+	 * @param in
+	 * @return
+	 */
+	public static boolean isHashPartitioned(JavaPairRDD<?,?> in) {
+		return !in.rdd().partitioner().isEmpty()
+			&& in.rdd().partitioner().get() instanceof HashPartitioner;
+	}
+	
+	/**
+	 * Creates a partitioning-preserving deep copy of the input matrix RDD, where 
+	 * the indexes and values are copied.
+	 * 
+	 * @param in
+	 * @return
+	 */
+	public static JavaPairRDD<MatrixIndexes,MatrixBlock> copyBinaryBlockMatrix(
+			JavaPairRDD<MatrixIndexes,MatrixBlock> in) {
+		return copyBinaryBlockMatrix(in, true);
+	}
+	
+	/**
+	 * Creates a partitioning-preserving copy of the input matrix RDD. If a deep copy is 
+	 * requested, indexes and values are copied, otherwise they are simply passed through.
+	 * 
+	 * @param in
+	 * @param deep
+	 * @return
+	 */
+	public static JavaPairRDD<MatrixIndexes,MatrixBlock> copyBinaryBlockMatrix(
+			JavaPairRDD<MatrixIndexes,MatrixBlock> in, boolean deep) 
+	{
+		if( !deep ) //pass through of indexes and blocks
+			return in.mapValues(new CopyBlockFunction(false));
+		else //requires key access, so use mappartitions
+			return in.mapPartitionsToPair(new CopyBlockPairFunction(deep), true);
 	}
 
 	/**
@@ -374,8 +417,8 @@ public class SparkUtils
 		JavaPairRDD<MatrixIndexes, MatrixBlock> ret = null;
 		
 		if( !input.getStorageLevel().equals(DEFAULT_TMP) ) {
-			ret = input.mapValues(new CopyBlockFunction(false))
-					   .persist(DEFAULT_TMP);
+			ret = SparkUtils.copyBinaryBlockMatrix(input, false)
+					.persist(DEFAULT_TMP);
 		}
 		
 		return ret;

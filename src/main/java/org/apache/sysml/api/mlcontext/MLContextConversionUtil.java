@@ -50,10 +50,10 @@ import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysml.runtime.instructions.spark.functions.ConvertStringToLongTextPair;
-import org.apache.sysml.runtime.instructions.spark.functions.CopyBlockPairFunction;
 import org.apache.sysml.runtime.instructions.spark.functions.CopyTextInputFunction;
 import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDConverterUtils;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils;
+import org.apache.sysml.runtime.instructions.spark.utils.SparkUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
@@ -238,10 +238,15 @@ public class MLContextConversionUtil {
 	 */
 	public static MatrixObject binaryBlocksToMatrixObject(String variableName,
 			JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlocks, MatrixMetadata matrixMetadata) {
+		return binaryBlocksToMatrixObject(variableName, binaryBlocks, matrixMetadata, true);
+	}
+	
+	private static MatrixObject binaryBlocksToMatrixObject(String variableName,
+			JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlocks, MatrixMetadata matrixMetadata, boolean copy) {
 
 		MatrixCharacteristics mc = (matrixMetadata != null) ?
 			matrixMetadata.asMatrixCharacteristics() : new MatrixCharacteristics();
-		JavaPairRDD<MatrixIndexes, MatrixBlock> javaPairRdd = binaryBlocks.mapToPair(new CopyBlockPairFunction());
+		JavaPairRDD<MatrixIndexes, MatrixBlock> javaPairRdd = SparkUtils.copyBinaryBlockMatrix(binaryBlocks, copy);
 		
 		MatrixObject matrixObject = new MatrixObject(ValueType.DOUBLE, OptimizerUtils.getUniqueTempFileName(),
 				new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
@@ -322,7 +327,7 @@ public class MLContextConversionUtil {
 	{
 		matrixMetadata = (matrixMetadata!=null) ? matrixMetadata : new MatrixMetadata();
 		JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlock = dataFrameToMatrixBinaryBlocks(dataFrame, matrixMetadata);
-		return binaryBlocksToMatrixObject(variableName, binaryBlock, matrixMetadata);
+		return binaryBlocksToMatrixObject(variableName, binaryBlock, matrixMetadata, false);
 	}
 
 	/**

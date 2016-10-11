@@ -301,7 +301,8 @@ public class RDDConverterUtils
 		
 		//construct or reuse row ids
 		JavaPairRDD<Row, Long> prepinput = containsID ?
-				df.javaRDD().mapToPair(new DataFrameExtractIDFunction()) :
+				df.javaRDD().mapToPair(new DataFrameExtractIDFunction(
+					df.schema().fieldIndex(DF_ID_COLUMN))) :
 				df.javaRDD().zipWithIndex(); //zip row index
 		
 		//convert csv rdd to binary block rdd (w/ partial blocks)
@@ -1075,10 +1076,16 @@ public class RDDConverterUtils
 	{
 		private static final long serialVersionUID = 7438855241666363433L;
 
+		private int _index = -1;
+		
+		public DataFrameExtractIDFunction(int index) {
+			_index = index;
+		}
+
 		@Override
 		public Tuple2<Row, Long> call(Row arg0) throws Exception {
 			//extract 1-based IDs and convert to 0-based positions
-			long id = UtilFunctions.toLong(UtilFunctions.getDouble(arg0.get(0)));
+			long id = UtilFunctions.toLong(UtilFunctions.getDouble(arg0.get(_index)));
 			if( id <= 0 ) {
 				throw new DMLRuntimeException("ID Column '" + DF_ID_COLUMN 
 						+ "' expected to be 1-based, but found value: "+id);

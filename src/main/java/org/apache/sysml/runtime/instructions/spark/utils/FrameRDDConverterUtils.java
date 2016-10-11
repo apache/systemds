@@ -355,7 +355,8 @@ public class FrameRDDConverterUtils
 		
 		//append or reuse row index column
 		JavaPairRDD<Row, Long> prepinput = containsID ?
-				df.javaRDD().mapToPair(new DataFrameExtractIDFunction()) :
+				df.javaRDD().mapToPair(new DataFrameExtractIDFunction(
+					df.schema().fieldIndex(RDDConverterUtils.DF_ID_COLUMN))) :
 				df.javaRDD().zipWithIndex(); //zip row index
 
 		//convert data frame to frame schema (prepare once)

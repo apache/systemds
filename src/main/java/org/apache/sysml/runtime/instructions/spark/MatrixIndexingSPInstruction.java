@@ -19,6 +19,7 @@
 
 package org.apache.sysml.runtime.instructions.spark;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -556,8 +557,10 @@ public class MatrixIndexingSPInstruction  extends IndexingSPInstruction
 	/**
 	 * Filter function required to create a PartitionPruningRDD.
 	 */
-	private static class PartitionPruningFunction extends AbstractFunction1<Object,Object>
+	private static class PartitionPruningFunction extends AbstractFunction1<Object,Object> implements Serializable
 	{
+		private static final long serialVersionUID = -9114299718258329951L;
+
 		private HashSet<Integer> _filterFlags = null;
 
 		public PartitionPruningFunction(HashSet<Integer> flags) {

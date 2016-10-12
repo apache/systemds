@@ -39,13 +39,13 @@ public class ByteBuffer
 	private boolean _serialized;	
 	private boolean _shallow;
 	private boolean _matrix;
-	private int _size;
+	private long _size;
 	
 	protected byte[]     _bdata = null; //sparse matrix
 	protected CacheBlock _cdata = null; //dense matrix/frame
 	
 	public ByteBuffer( long size ) {
-		_size = (int)size;
+		_size = size;
 		_serialized = false;
 	}
 	
@@ -66,9 +66,9 @@ public class ByteBuffer
 			{
 				//deep serialize (for compression)
 				if( CacheableData.CACHING_BUFFER_PAGECACHE )
-					_bdata = PageCache.getPage(_size);
+					_bdata = PageCache.getPage((int)_size);
 				if( _bdata==null )
-					_bdata = new byte[_size];
+					_bdata = new byte[(int)_size];
 				DataOutput dout = new CacheDataOutput(_bdata);
 				cb.write(dout);
 			}

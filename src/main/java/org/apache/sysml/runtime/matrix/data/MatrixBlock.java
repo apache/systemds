@@ -3953,8 +3953,19 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			result.quickSetValue(rl, cl, src.quickGetValue(0, 0));
 		}		
 		else { //general case
+			//handle csr sparse blocks separately to avoid repeated shifting on column-wise access
+			if( !result.isEmptyBlock(false) && result.sparse && result.sparseBlock instanceof SparseBlockCSR ) {
+				SparseBlockCSR sblock = (SparseBlockCSR) result.sparseBlock;
+				if( src.sparse )
+					sblock.setIndexRange(rl, ru+1, cl, cu+1, src.getSparseBlock());
+				else //dense
+					sblock.setIndexRange(rl, ru+1, cl, cu+1, src.getDenseBlock(), 0, src.getNumRows()*src.getNumColumns());
+				result.nonZeros = sblock.size();
+			}
 			//copy submatrix into result
-			result.copy(rl, ru, cl, cu, src, true);
+			else {
+				result.copy(rl, ru, cl, cu, src, true);
+			}
 		}
 
 		return result;

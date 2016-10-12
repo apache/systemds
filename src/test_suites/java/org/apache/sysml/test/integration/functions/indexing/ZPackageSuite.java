@@ -30,6 +30,7 @@ import org.junit.runners.Suite;
 	LeftIndexingSparseDenseTest.class,
 	LeftIndexingSparseSparseTest.class,
 	LeftIndexingTest.class,
+	LeftIndexingUpdateInPlaceTest.class,
 	RightIndexingMatrixTest.class,
 	RightIndexingVectorTest.class,
 	

@@ -410,6 +410,153 @@ public class SparseBlockCSR extends SparseBlock
 			}
 		incrPtr(r+1, lnnz);
 	}
+	
+	/**
+	 * Inserts a sorted row-major array of non-zero values into the row and column 
+	 * range [rl,ru) and [cl,cu). Note: that this is a CSR-specific method to address 
+	 * performance issues due to repeated re-shifting on update-in-place.
+	 * 
+	 * @param rl  lower row index, starting at 0, inclusive
+	 * @param ru  upper row index, starting at 0, exclusive
+	 * @param cl  lower column index, starting at 0, inclusive
+	 * @param cu  upper column index, starting at 0, exclusive
+	 * @param v   right-hand-side dense block
+	 * @param vix right-hand-side dense block index
+	 * @param vlen right-hand-side dense block value length 
+	 */
+	public void setIndexRange(int rl, int ru, int cl, int cu, double[] v, int vix, int vlen) {
+		//step 1: determine output nnz
+		int nnz = _size - (int)size(rl, ru, cl, cu);
+		if( v != null )
+			for( int i=vix; i<vix+vlen; i++ )
+				nnz += (v[i]!=0) ? 1: 0;
+		
+		//step 2: reallocate if necessary
+		if( _values.length < nnz )
+			resize(nnz);
+		
+		//step 3: insert and overwrite index range
+		//total shift can be negative or positive and w/ internal skew
+		
+		//step 3a: forward pass: compact (delete index range)
+		int pos = pos(rl);
+		for( int r=rl; r<ru; r++ ) {
+			int rpos = pos(r);
+			int rlen = size(r);
+			_ptr[r] = pos;
+			for( int k=rpos; k<rpos+rlen; k++ )
+				if( _indexes[k]<cl || cu<=_indexes[k] ) {
+					_indexes[pos] = _indexes[k];
+					_values[pos++] = _values[k];
+				}
+		}
+		shiftLeftByN(pos(ru), pos(ru)-pos);
+		decrPtr(ru, pos(ru)-pos);
+		
+		//step 3b: backward pass: merge (insert index range)
+		int tshift1 = nnz - _size; //always non-negative
+		if( v == null || tshift1==0 ) //early abort
+			return;
+		shiftRightByN(pos(ru), tshift1);
+		incrPtr(ru, tshift1);
+		pos = pos(ru)-1;
+		int clen2 = cu-cl;
+		for( int r=ru-1; r>=rl; r-- ) {
+			int rpos = pos(r);
+			int rlen = size(r) - tshift1;
+			//copy lhs right
+			int k = -1;
+			for( k=rpos+rlen-1; k>=rpos && _indexes[k]>=cu; k-- ) {
+				_indexes[pos] = _indexes[k];
+				_values[pos--] = _values[k];
+			}
+			//copy rhs
+			int voff = vix + (r-rl) * clen2; 
+			for( int k2=clen2-1; k2>=0 & vlen>voff; k2-- ) 
+				if( v[voff+k2] != 0 ) {
+					_indexes[pos] = cl + k2;
+					_values[pos--] = v[voff+k2];
+					tshift1--;
+				}
+			//copy lhs left
+			for( ; k>=rpos; k-- ) {
+				_indexes[pos] = _indexes[k];
+				_values[pos--] = _values[k];
+			}
+			_ptr[r] = pos+1; 
+		}
+	}
+	
+	/**
+	 * Inserts a sparse block into the row and column range [rl,ru) and [cl,cu). 
+	 * Note: that this is a CSR-specific method to address  performance issues 
+	 * due to repeated re-shifting on update-in-place.
+	 * 
+	 * @param rl  lower row index, starting at 0, inclusive
+	 * @param ru  upper row index, starting at 0, exclusive
+	 * @param cl  lower column index, starting at 0, inclusive
+	 * @param cu  upper column index, starting at 0, exclusive
+	 * @param sb  right-hand-side sparse block
+	 */
+	public void setIndexRange(int rl, int ru, int cl, int cu, SparseBlock sb) {
+		//step 1: determine output nnz
+		int nnz = (int) (_size - size(rl, ru, cl, cu) 
+				+ ((sb!=null) ? sb.size() : 0));
+		
+		//step 2: reallocate if necessary
+		if( _values.length < nnz )
+			resize(nnz);
+		
+		//step 3: insert and overwrite index range (backwards)
+		//total shift can be negative or positive and w/ internal skew
+		
+		//step 3a: forward pass: compact (delete index range)
+		int pos = pos(rl);
+		for( int r=rl; r<ru; r++ ) {
+			int rpos = pos(r);
+			int rlen = size(r);
+			_ptr[r] = pos;
+			for( int k=rpos; k<rpos+rlen; k++ )
+				if( _indexes[k]<cl || cu<=_indexes[k] ) {
+					_indexes[pos] = _indexes[k];
+					_values[pos++] = _values[k];
+				}
+		}
+		shiftLeftByN(pos(ru), pos(ru)-pos);
+		decrPtr(ru, pos(ru)-pos);
+		
+		//step 3b: backward pass: merge (insert index range)
+		int tshift1 = nnz - _size; //always non-negative
+		if( sb == null || tshift1==0 ) //early abort
+			return;
+		shiftRightByN(pos(ru), tshift1);
+		incrPtr(ru, tshift1);
+		pos = pos(ru)-1;
+		for( int r=ru-1; r>=rl; r-- ) {
+			int rpos = pos(r);
+			int rlen = size(r) - tshift1;
+			//copy lhs right
+			int k = -1;
+			for( k=rpos+rlen-1; k>=rpos && _indexes[k]>=cu; k-- ) {
+				_indexes[pos] = _indexes[k];
+				_values[pos--] = _values[k];
+			}
+			//copy rhs
+			int r2 = r-rl; 
+			int r2pos = sb.pos(r2);
+			for( int k2=r2pos+sb.size(r2)-1; k2>=r2pos; k2-- ) {
+				_indexes[pos] = cl + sb.indexes(r2)[k2];
+				_values[pos--] = sb.values(r2)[k2];
+				tshift1--;
+			}
+			//copy lhs left
+			for( ; k>=rpos; k-- ) {
+				_indexes[pos] = _indexes[k];
+				_values[pos--] = _values[k];
+			}
+			_ptr[r] = pos+1; 
+		}
+	} 
 
 	@Override
 	public void deleteIndexRange(int r, int cl, int cu) {
@@ -634,12 +781,30 @@ public class SparseBlockCSR extends SparseBlock
 		_size--;
 	}
 
+	/**
+	 * 
+	 * @param ix
+	 * @param n
+	 */
 	private void shiftRightByN(int ix, int n) 
 	{		
 		//overlapping array copy (shift rhs values right by 1)
 		System.arraycopy(_indexes, ix, _indexes, ix+n, _size-ix);
 		System.arraycopy(_values, ix, _values, ix+n, _size-ix);
 		_size += n;
+	}
+	
+	/**
+	 * 
+	 * @param ix
+	 * @param n
+	 */
+	private void shiftLeftByN(int ix, int n)
+	{
+		//overlapping array copy (shift rhs values left by n)
+		System.arraycopy(_indexes, ix, _indexes, ix-n, _size-ix);
+		System.arraycopy(_values, ix, _values, ix-n, _size-ix);
+		_size -= n;
 	}
 	
 	/**

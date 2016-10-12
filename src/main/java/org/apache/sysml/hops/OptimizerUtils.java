@@ -893,8 +893,8 @@ public class OptimizerUtils
 		long ru = ixrange.rowEnd;
 		long cl = ixrange.colStart;
 		long cu = ixrange.colEnd;
-		long brlen = mc.getNumRowBlocks();
-		long bclen = mc.getNumColBlocks();
+		long brlen = mc.getRowsPerBlock();
+		long bclen = mc.getColsPerBlock();
 		return isIndexingRangeBlockAligned(rl, ru, cl, cu, brlen, bclen);
 	}
 	

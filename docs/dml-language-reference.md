@@ -59,7 +59,6 @@ limitations under the License.
     * [Indexing Frames](dml-language-reference.html#indexing-frames)
     * [Casting Frames](dml-language-reference.html#casting-frames)
     * [Transforming Frames](dml-language-reference.html#transforming-frames)
-    * [Manipulating Frames](dml-language-reference.html#manipulating-frames)
   * [Modules](dml-language-reference.html#modules)
   * [Reserved Keywords](dml-language-reference.html#reserved-keywords)
   * [Invocation of SystemML](dml-language-reference.html#invocation-of-systemml)
@@ -622,7 +621,7 @@ matrix() | Matrix constructor (assigning all the cells to numeric literals). | I
  | Matrix constructor (initializing using string). | Input: (&lt;initialization string&gt;, rows=&lt;value&gt;, cols=&lt;value&gt;) <br/> Output: matrix | A = matrix("4 3 2 5 7 8", rows=3, cols=2) <br/> Creates a matrix: [ [4, 3], [2, 5], [7, 8] ]
 min() <br/> max() | Return the minimum/maximum cell value in matrix | Input: matrix <br/> Output: scalar | min(X) <br/> max(Y)
 min() <br/> max() | Return the minimum/maximum cell values of two matrices, matrix and scalar, or scalar value of two scalars. | Input: matrices or scalars <br/> Output: matrix or scalar | With x,y, z as scalars, and X, Y, Z as matrices: <br/> Z = min (X, Y) <br/> Z = min (X, y) <br/> z = min(x,y)
-nrow(), <br/> ncol(), <br/> length() | Return the number of rows, number of columns, or number of cells in matrix respectively. | Input: matrix <br/> Output: scalar | nrow(X)
+nrow(), <br/> ncol(), <br/> length() | Return the number of rows, number of columns, or number of cells in matrix or frame respectively. | Input: matrix or frame <br/> Output: scalar | nrow(X) <br/> ncol(F) <br/> length(X)
 prod() | Return the product of all cells in matrix | Input: matrix <br/> Output: scalarj | prod(X)
 rand() | Generates a random matrix | Input: (rows=&lt;value&gt;, cols=&lt;value&gt;, min=&lt;value&gt;, max=&lt;value&gt;, sparsity=&lt;value&gt;, pdf=&lt;string&gt;, seed=&lt;value&gt;) <br/> rows/cols: Number of rows/cols (expression) <br/> min/max: Min/max value for cells (either constant value, or variable that evaluates to constant value) <br/> sparsity: fraction of non-zero cells (constant value) <br/> pdf: "uniform" (min, max) distribution, or "normal" (0,1) distribution; or "poisson" (lambda=1) distribution. string; default value is "uniform". Note that, for the Poisson distribution, users can provide the mean/lambda parameter as follows: <br/> rand(rows=1000,cols=1000, pdf="poisson", lambda=2.5). <br/> The default value for lambda is 1. <br/> seed: Every invocation of rand() internally generates a random seed with which the cell values are generated. One can optionally provide a seed when repeatability is desired.  <br/> Output: matrix | X = rand(rows=10, cols=20, min=0, max=1, pdf="uniform", sparsity=0.2) <br/> The example generates a 10 x 20 matrix, with cell values uniformly chosen at random between 0 and 1, and approximately 20% of cells will have non-zero values.
 rbind() | Row-wise matrix concatenation. Concatenates the second matrix as additional rows to the first matrix | Input: (X &lt;matrix&gt;, Y &lt;matrix&gt;) <br/>Output: &lt;matrix&gt; <br/> X and Y are matrices, where the number of columns in X and the number of columns in Y are the same. | A = matrix(1, rows=2,cols=3) <br/> B = matrix(2, rows=2,cols=3) <br/> C = rbind(A,B) <br/> print("Dimensions of C: " + nrow(C) + " X " + ncol(C)) <br/> Output: <br/> Dimensions of C: 4 X 3
@@ -1451,7 +1450,7 @@ Note that the metadata generated during the training phase (located at `/user/ml
 Function | Description | Parameters | Example
 -------- | ----------- | ---------- | -------
 append() | Append a string to another string separated by "\n" <br/> Limitation: The string may grow up to 1 MByte. | Input: (&lt;string&gt;, &lt;string&gt;) <br/> Output: &lt;string&gt; | s = "iter=" + i <br/> i = i + 1 <br/> s = append(s, "iter=" + i) <br/> write(s, "s.out")
-toString() | Formats a Matrix object into a string. <br/> "rows" & "cols" : number of rows and columns to print<br/> "decimal" : number of digits after the decimal<br/>"sparse" : set to true to print in sparse format, i.e. _RowIndex_ _ColIndex_ _Value_<br/>"sep" and "linesep" : inter-element separator and the line separator strings| Input : (&lt;matrix&gt;,<br/> &nbsp;&nbsp;rows=100,<br/> &nbsp;&nbsp;cols=100,<br/> &nbsp;&nbsp;decimal=3,<br/> &nbsp;&nbsp;sparse=FALSE,<br/> &nbsp;&nbsp;sep=" ",<br/> &nbsp;&nbsp;linesep="\n") <br/> Output: &lt;string&gt; | X = matrix(seq(1, 9), rows=3, cols=3)<br/>str = toString(X, sep=" \| ")
+toString() | Formats a Matrix or Frame object into a string. <br/> "rows" & "cols" : number of rows and columns to print<br/> "decimal" : number of digits after the decimal<br/>"sparse" : set to true to print Matrix object in sparse format, i.e. _RowIndex_ _ColIndex_ _Value_<br/>"sep" and "linesep" : inter-element separator and the line separator strings| Input : (&lt;matrix&gt; or &lt;frame&gt;,<br/> &nbsp;&nbsp;rows=100,<br/> &nbsp;&nbsp;cols=100,<br/> &nbsp;&nbsp;decimal=3,<br/> &nbsp;&nbsp;sparse=FALSE,<br/> &nbsp;&nbsp;sep=" ",<br/> &nbsp;&nbsp;linesep="\n") <br/> Output: &lt;string&gt; | X = matrix(seq(1, 9), rows=3, cols=3)<br/>str = toString(X, sep=" \| ") <br/><br/>F = as.frame(X)<br/>print(toString(F, rows=2, cols=2))
 print() | Prints the value of a scalar variable x. This built-in takes an optional string parameter. | Input: (&lt;scalar&gt;) | print("hello") <br/> print("hello" + "world") <br/> print("value of x is " + x )
 stop() | Halts the execution of DML program by printing the message that is passed in as the argument. <br/> Note that the use of stop() is not allowed inside a parfor loop. |  Input: (&lt;scalar&gt;) | stop("Inputs to DML program are invalid") <br/> stop("Class labels must be either -1 or +1")
 order() | Sort a column of the matrix X in decreasing/increasing order and return either index (index.return=TRUE) or data (index.return=FALSE). | Input: (target=X, by=column, decreasing, index.return) | order(X, by=1, decreasing=FALSE, index.return=FALSE)
@@ -1779,18 +1778,6 @@ The following example uses <code>transformapply()</code> with the input matrix a
     2.000 2.000 1.000 2.000 2.500 1.000 1.000 1.000 892.000
     2.000 2.000 1.000 2.000 2.500 2.000 2.000 1.000 889.000
     4.000 1.000 1.000 3.000 1.500 1.000 1.000 1.000 628.000
-
-
-### Manipulating Frames
-
-Additional built-in functions that can be applied to frames are shown below.
-
-**Table F3**: Additional Built-In Functions
-
-Function | Description | Parameters | Example
--------- | ----------- | ---------- | -------
-nrow(), <br/> ncol() | Return the number of rows or number of columns in frame. | Input: frame <br/> Output: scalar | M = read("inM") <br/> F = as.frame(M) <br/> r = nrow(F) <br/> c = ncol(F)
-toString() | Formats a <code>frame</code> object into a string. <br/> "rows" and "cols" : number of rows and columns to print<br/> "decimal" : number of digits after the decimal for <code>double</code> columns<br/>"sep" and "linesep" : inter-element separator and the line separator strings| Input : (&lt;frame&gt;,<br/> &nbsp;&nbsp;rows=100,<br/> &nbsp;&nbsp;cols=100,<br/> &nbsp;&nbsp;decimal=3,<br/> &nbsp;&nbsp;sep=" ",<br/> &nbsp;&nbsp;linesep="\n") <br/> Output: &lt;string&gt; | X = matrix(seq(1, 9), rows=3, cols=3)<br/>F = as.frame(X)<br/>str = toString(F, sep=" \| ")
 
 
 * * *

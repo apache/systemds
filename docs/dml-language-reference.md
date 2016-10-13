@@ -1474,6 +1474,33 @@ This example shows creating a frame with <code>schema="string,double,int,boolean
     tableSchema = "string,double,int,boolean";
     C = read("tableC", data_type="frame", schema=tableSchema, rows=1600, cols=4, format="csv");
 
+*Note: the header line in frame CSV files is sensitive to white spaces.* <br/>
+For example, CSV1 with header <code>ID,FirstName,LastName</code> results in three columns with tokens between separators.  In contrast, CSV2 with header <code>ID, FirstName,LastName</code> also results in three columns but the second column has a space preceding <code> FirstName</code>.  This extra space is significant when referencing the second column by name in transform specifications as described in [Transforming Frames](dml-language-reference.html#transforming-frames).
+
+<div class="codetabs2">
+
+<div data-lang="CSV1" markdown="1">
+	ID,FirstName,LastName
+	1,FirstName1,LastName1
+	2,FirstName2,LastName2
+</div>
+
+<div data-lang="CSV2" markdown="1">
+	ID, FirstName,LastName
+	1,FirstName1,LastName1
+	2,FirstName2,LastName2
+</div>
+
+<div data-lang="CSV MTD" markdown="1">
+	{
+	    "data_type": "frame",
+	    "format": "csv",
+	    "header": true
+	}
+</div>
+
+</div>
+
 ### Appending Frames
 
 Built-In functions <code>cbind()</code> and <code>rbind()</code> are supported for frames to add columns or rows to an existing frame.
@@ -1702,6 +1729,46 @@ The transformed matrix X and output M are as follows.
     98755·5 north·3
     94555·3 west·1
     91312·2
+
+<br/>
+As mentioned in [Creating Frames](dml-language-reference.html#creating-frames), the header line in frame CSV files is sensitive to white space.  The tabs below show compatible transform specifications for the given CSV header.  Note the extra (possibly inadvertent) space before the <code> district</code> column in CSV2 impacts the transform specification.  More specifically,  transform spec1 does not match the header in CSV2.  To match, either remove the extra space before <code> district</code> in CSV2 or use spec2 which quotes the <code> district</code> token name to include the extra space.
+
+<div class="codetabs2">
+
+<div data-lang="CSV1" markdown="1">
+	zipcode,district,sqft,numbedrooms,numbathrooms,floors,view,saleprice,askingprice
+	95141,west,1373,7,1,3,FALSE,695,698
+    91312,south,3261,6,2,2,FALSE,902,906
+</div>
+
+<div data-lang="CSV2" markdown="1">
+	zipcode, district,sqft,numbedrooms,numbathrooms,floors,view,saleprice,askingprice
+	95141,west,1373,7,1,3,FALSE,695,698
+    91312,south,3261,6,2,2,FALSE,902,906
+</div>
+
+<div data-lang="spec1" markdown="1">
+	{
+	     ids:false, recode: [ zipcode, district, view ]
+	}
+</div>
+
+<div data-lang="spec2" markdown="1">
+	{
+	     ids:false, recode: [ zipcode, " district", view ]
+	}
+</div>
+
+<div data-lang="CSV MTD" markdown="1">
+	{
+	    "data_type": "frame",
+	    "format": "csv",
+	    "header": true
+	}
+</div>
+
+</div>
+<br/>
 
 #### transformdecode
 

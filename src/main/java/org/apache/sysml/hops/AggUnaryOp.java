@@ -488,8 +488,9 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 	/**
 	 * 
 	 * @return
+	 * @throws HopsException 
 	 */
-	private boolean isTernaryAggregateRewriteApplicable() 
+	private boolean isTernaryAggregateRewriteApplicable() throws HopsException 
 	{
 		boolean ret = false;
 		
@@ -500,7 +501,9 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 		{
 			Hop input1 = getInput().get(0);
 			if( input1.getParent().size() == 1 && //sum single consumer
-				input1 instanceof BinaryOp && ((BinaryOp)input1).getOp()==OpOp2.MULT )
+				input1 instanceof BinaryOp && ((BinaryOp)input1).getOp()==OpOp2.MULT
+				// As unary agg instruction is not implemented in MR and since MR is in maintenance mode, postponed it.
+				&& input1.optFindExecType() != ExecType.MR) 
 			{
 				Hop input11 = input1.getInput().get(0);
 				Hop input12 = input1.getInput().get(1);
@@ -675,8 +678,11 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 
 		//create new ternary aggregate operator 
 		int k = OptimizerUtils.getConstrainedNumThreads( _maxNumThreads );
+		// The execution type of a unary aggregate instruction should depend on the execution type of inputs to avoid OOM
+		// Since we only support matrix-vector and not vector-matrix, checking the execution type of input1 should suffice.
+		ExecType et_input = input1.optFindExecType();
 		ret = new TernaryAggregate(in1, in2, in3, Aggregate.OperationTypes.KahanSum, 
-				Binary.OperationTypes.MULTIPLY, DataType.SCALAR, ValueType.DOUBLE, et, k);
+				Binary.OperationTypes.MULTIPLY, DataType.SCALAR, ValueType.DOUBLE, et_input, k);
 		
 		return ret;
 	}

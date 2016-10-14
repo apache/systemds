@@ -315,7 +315,7 @@ public class DataFrameVectorFrameConversionTest extends AutomatedTestBase
 		for( int i=0; i<mb.getNumRows(); i++ ) {
 			Object[] row = new Object[clen];
 			if( containsID )
-				row[0] = i+1;
+				row[0] = (double)i+1;
 			for( int j=0, j2=0; j<mb.getNumColumns(); j++, j2++ ) {
 				if( schema[j2] != ValueType.OBJECT ) {
 					row[j2+off] = UtilFunctions

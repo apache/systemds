@@ -704,7 +704,7 @@ public class FrameRDDConverterUtils
 				String row = tmp._1().toString().trim();
 				long rowix = tmp._2();
 				if(_hasHeader && rowix == 0) { //Skip header
-					_colnames = IOUtilFunctions.splitCSV(row, _delim);
+					_colnames = row.split(_delim);
 					continue;
 				}
 				if( row.startsWith(TfUtils.TXMTD_MVPREFIX) ) {

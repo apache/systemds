@@ -691,14 +691,23 @@ public class SparseBlockCSR extends SparseBlock
 	///////////////////////////
 	// private helper methods
 	
+	private int newCapacity(int minsize) {
+		//compute new size until minsize reached
+		double tmpCap = _values.length;
+		while( tmpCap < minsize ) {
+			tmpCap *= (tmpCap <= 1024) ? 
+					RESIZE_FACTOR1 : RESIZE_FACTOR2;
+		}
+			
+		return (int)Math.min(tmpCap, Integer.MAX_VALUE);
+	}
+	
 	/**
 	 * 
 	 */
 	private void resize() {
-		//compute new size
-		double tmpCap = _values.length * RESIZE_FACTOR1;
-		int newCap = (int)Math.min(tmpCap, Integer.MAX_VALUE);
-		
+		//resize by at least by 1
+		int newCap = newCapacity(_values.length+1);
 		resizeCopy(newCap);
 	}
 	
@@ -707,12 +716,7 @@ public class SparseBlockCSR extends SparseBlock
 	 * @param minsize
 	 */
 	private void resize(int minsize) {
-		//compute new size until minsize reached
-		double tmpCap = _values.length;
-		while( tmpCap < minsize )
-			tmpCap *= RESIZE_FACTOR1;
-		int newCap = (int)Math.min(tmpCap, Integer.MAX_VALUE);
-		
+		int newCap = newCapacity(minsize);
 		resizeCopy(newCap);
 	}
 	
@@ -734,8 +738,7 @@ public class SparseBlockCSR extends SparseBlock
 	 */
 	private void resizeAndInsert(int ix, int c, double v) {
 		//compute new size
-		double tmpCap = _values.length * RESIZE_FACTOR1;
-		int newCap = (int)Math.min(tmpCap, Integer.MAX_VALUE);
+		int newCap = newCapacity(_values.length+1);
 		
 		int[] oldindexes = _indexes;
 		double[] oldvalues = _values;

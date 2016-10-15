@@ -32,7 +32,7 @@ Use maven infrastructure to create a project release package and publish
 to staging release location (https://dist.apache.org/repos/dist/dev/incubator/systemml/)
 and maven staging release repository.
 
---release-prepare --releaseVersion="1.0.0" --developmentVersion="1.1.0-SNAPSHOT" [--releaseRc="rc1"] [--tag="v1.0.0"] [--gitCommitHash="a874b73"]
+--release-prepare --releaseVersion="0.11.0-incubating" --developmentVersion="0.11.0-SNAPSHOT" [--releaseRc="rc1"] [--tag="v0.11.0-incubating"] [--gitCommitHash="a874b73"]
 This form execute maven release:prepare and upload the release candidate distribution
 to the staging release location.
 
@@ -57,12 +57,12 @@ GPG_PASSPHRASE - Passphrase for GPG key used to sign release
 
 EXAMPLES
 
-release-build.sh --release-prepare --releaseVersion="1.0.0" --developmentVersion="1.1.0-SNAPSHOT"
-release-build.sh --release-prepare --releaseVersion="1.0.0" --developmentVersion="1.1.0-SNAPSHOT" --releaseRc="rc1" --tag="v1.0.0"
-release-build.sh --release-prepare --releaseVersion="1.0.0" --developmentVersion="1.1.0-SNAPSHOT" --releaseRc="rc1" --tag="v1.0.0"  --gitCommitHash="a874b73" --dryRun
+release-build.sh --release-prepare --releaseVersion="0.11.0-incubating" --developmentVersion="0.12.0-SNAPSHOT"
+release-build.sh --release-prepare --releaseVersion="0.11.0-incubating" --developmentVersion="0.12.0-SNAPSHOT" --releaseRc="rc1" --tag="v0.11.0-incubating-rc1"
+release-build.sh --release-prepare --releaseVersion="0.11.0-incubating" --developmentVersion="0.12.0-SNAPSHOT" --releaseRc="rc1" --tag="v0.11.0-incubating-rc1"  --gitCommitHash="a874b73" --dryRun
 
 release-build.sh --release-publish --gitCommitHash="a874b73"
-release-build.sh --release-publish --gitTag="v1.0.0rc1"
+release-build.sh --release-publish --gitTag="v0.11.0-incubating-rc1"
 
 release-build.sh --release-snapshot
 release-build.sh --release-snapshot --gitCommitHash="a874b73"

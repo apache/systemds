@@ -29,31 +29,18 @@ public class DMLException extends Exception
 	
 	private static final long serialVersionUID = 1L;
 
-	
-    /**
-     * @see java.lang.Exception#Exception()
-     */
     public DMLException() {
         super();
     }
     
-    /**
-     * @see java.lang.Exception#Exception(String)
-     */
     public DMLException(String message) {
         super(message);
     }
     
-    /**
-     * @see java.lang.Exception#Exception(Throwable)
-     */
     public DMLException(Throwable cause) {
         super(cause);
     }
     
-    /**
-     * @see java.lang.Exception#Exception(String, Throwable)
-     */
     public DMLException(String message, Throwable cause) {
         super(message, cause);
     }

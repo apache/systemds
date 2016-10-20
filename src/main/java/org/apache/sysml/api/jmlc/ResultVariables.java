@@ -72,7 +72,7 @@ public class ResultVariables
 	 * 
 	 * @param varname output variable name
 	 * @return matrix as a two-dimensional double array
-	 * @throws DMLException
+	 * @throws DMLException if DMLException occurs
 	 */
 	public double[][] getMatrix(String varname) 
 		throws DMLException
@@ -101,7 +101,7 @@ public class ResultVariables
 	 * 
 	 * @param varname output variable name
 	 * @return frame as a two-dimensional string array
-	 * @throws DMLException
+	 * @throws DMLException if DMLException occurs
 	 */
 	public String[][] getFrame(String varname) 
 		throws DMLException
@@ -130,7 +130,7 @@ public class ResultVariables
 	 * @param varname
 	 *            output variable name
 	 * @return double value
-	 * @throws DMLException
+	 * @throws DMLException if DMLException occurs
 	 */
 	public double getDouble(String varname) throws DMLException {
 		ScalarObject sObj = getScalarObject(varname);
@@ -143,7 +143,7 @@ public class ResultVariables
 	 * @param varname
 	 *            output variable name
 	 * @return boolean value
-	 * @throws DMLException
+	 * @throws DMLException if DMLException occurs
 	 */
 	public boolean getBoolean(String varname) throws DMLException {
 		ScalarObject sObj = getScalarObject(varname);
@@ -156,7 +156,7 @@ public class ResultVariables
 	 * @param varname
 	 *            output variable name
 	 * @return long value
-	 * @throws DMLException
+	 * @throws DMLException if DMLException occurs
 	 */
 	public long getLong(String varname) throws DMLException {
 		ScalarObject sObj = getScalarObject(varname);
@@ -169,7 +169,7 @@ public class ResultVariables
 	 * @param varname
 	 *            output variable name
 	 * @return string value
-	 * @throws DMLException
+	 * @throws DMLException if DMLException occurs
 	 */
 	public String getString(String varname) throws DMLException {
 		ScalarObject sObj = getScalarObject(varname);
@@ -182,7 +182,7 @@ public class ResultVariables
 	 * @param varname
 	 *            output variable name
 	 * @return ScalarObject
-	 * @throws DMLException
+	 * @throws DMLException if DMLException occurs
 	 */
 	public ScalarObject getScalarObject(String varname) throws DMLException {
 		if (!_out.containsKey(varname))

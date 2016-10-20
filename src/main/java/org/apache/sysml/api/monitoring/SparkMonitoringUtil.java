@@ -266,9 +266,9 @@ public class SparkMonitoringUtil {
 	
 	/**
 	 * Useful to avoid passing large String through Py4J
-	 * @param fileName
-	 * @throws DMLRuntimeException
-	 * @throws IOException
+	 * @param fileName the file name
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
+	 * @throws IOException if IOException occurs
 	 */
 	public void saveRuntimeInfoInJSONFormat(String fileName) throws DMLRuntimeException, IOException {
 		String json = getRuntimeInfoInJSONFormat();

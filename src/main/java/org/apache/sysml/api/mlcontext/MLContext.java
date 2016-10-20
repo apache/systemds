@@ -253,6 +253,7 @@ public class MLContext {
 	 *
 	 * @param script
 	 *            The DML or PYDML Script object to execute.
+	 * @return the results as a MLResults object
 	 */
 	public MLResults execute(Script script) {
 		ScriptExecutor scriptExecutor = new ScriptExecutor(sparkMonitoringUtil);
@@ -272,6 +273,7 @@ public class MLContext {
 	 *            the DML or PYDML Script object
 	 * @param scriptExecutor
 	 *            the ScriptExecutor that defines the script execution pathway
+	 * @return the results as a MLResults object
 	 */
 	public MLResults execute(Script script, ScriptExecutor scriptExecutor) {
 		try {
@@ -481,6 +483,7 @@ public class MLContext {
 	/**
 	 * Used internally by MLContextProxy.
 	 *
+	 * @return InternalProxy object used by MLContextProxy
 	 */
 	public InternalProxy getInternalProxy() {
 		return internalProxy;

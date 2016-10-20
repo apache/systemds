@@ -40,26 +40,14 @@ public class MLContextProxy
 	
 	private static boolean _active = false;
 	
-	/**
-	 * 
-	 * @param flag
-	 */
 	public static void setActive(boolean flag) {
 		_active = flag;
 	}
 	
-	/**
-	 * 
-	 * @return
-	 */
 	public static boolean isActive() {
 		return _active;
 	}
 
-	/**
-	 * 
-	 * @param tmp
-	 */
 	public static ArrayList<Instruction> performCleanupAfterRecompilation(ArrayList<Instruction> tmp) 
 	{
 		if(org.apache.sysml.api.MLContext.getActiveMLContext() != null) {
@@ -70,12 +58,6 @@ public class MLContextProxy
 		return tmp;
 	}
 
-	/**
-	 * 
-	 * @param source
-	 * @param targetname
-	 * @throws LanguageException 
-	 */
 	public static void setAppropriateVarsForRead(Expression source, String targetname) 
 		throws LanguageException 
 	{

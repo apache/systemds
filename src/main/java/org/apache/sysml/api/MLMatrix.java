@@ -115,6 +115,11 @@ public class MLMatrix extends DataFrame {
 	
 	/**
 	 * Convenient method to write a MLMatrix.
+	 * 
+	 * @param filePath the file path
+	 * @param format the format
+	 * @throws IOException if IOException occurs
+	 * @throws DMLException if DMLException occurs
 	 */
 	public void write(String filePath, String format) throws IOException, DMLException {
 		ml.reset();
@@ -145,10 +150,9 @@ public class MLMatrix extends DataFrame {
 	
 	/**
 	 * Gets or computes the number of rows.
-	 * @return
-	 * @throws ParseException 
-	 * @throws DMLException 
-	 * @throws IOException 
+	 * @return the number of rows
+	 * @throws IOException if IOException occurs
+	 * @throws DMLException if DMLException occurs
 	 */
 	public long numRows() throws IOException, DMLException {
 		if(mc.rowsKnown()) {
@@ -161,10 +165,9 @@ public class MLMatrix extends DataFrame {
 	
 	/**
 	 * Gets or computes the number of columns.
-	 * @return
-	 * @throws ParseException 
-	 * @throws DMLException 
-	 * @throws IOException 
+	 * @return the number of columns
+	 * @throws IOException if IOException occurs
+	 * @throws DMLException if DMLException occurs
 	 */
 	public long numCols() throws IOException, DMLException {
 		if(mc.colsKnown()) {

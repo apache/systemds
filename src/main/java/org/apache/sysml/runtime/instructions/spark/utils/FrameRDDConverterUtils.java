@@ -508,6 +508,15 @@ public class FrameRDDConverterUtils
 		JavaRDD<String> dataRdd = sc.textFile(fnameIn);
 		return dataRdd.map(new RowGenerator(schema, delim));
 	}
+	
+	/* 
+	 * It will return JavaRDD<Row> based on csv data.
+	 */
+	public static JavaRDD<Row> csvToRowRDD(JavaSparkContext sc, JavaRDD<String> dataRdd, String delim, ValueType[] schema)
+	{
+		// Convert each line to a java rdd.
+		return dataRdd.map(new RowGenerator(schema, delim));
+	}
 
 	/* 
 	 * Row Generator class based on individual line in CSV file.

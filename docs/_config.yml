@@ -17,3 +17,6 @@ SYSTEMML_VERSION: 0.10.x
 analytics_on: true
 analytics_provider: google_universal
 analytics_google_universal_tracking_id : UA-71553733-1
+
+# if FEEDBACK_LINKS is true, render feedback links
+FEEDBACK_LINKS: true

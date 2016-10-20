@@ -71,6 +71,17 @@
                                 <li><a href="troubleshooting-guide.html">Troubleshooting Guide</a></li>
                             </ul>
                         </li>
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Issue Tracking<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><b>JIRA:</b></li>
+                                <li><a href="https://issues.apache.org/jira/browse/SYSTEMML">SystemML JIRA</a></li>
+                                {% if site.FEEDBACK_LINKS == true %}
+                                <li><a href="#" id="feedback-link-improvement" title="Click to file a JIRA improvement about this page.">Improve this Page</a></li>
+                                <li><a href="#" id="feedback-link-bug" title="Click to file a JIRA bug about this page.">Fix this Page</a></li>
+                                {% endif %}
+                            </ul>
+                        </li>
                     </ul>
                 </nav>
             </div>
@@ -87,10 +98,103 @@
 
         </div> <!-- /container -->
 
+        {% if site.FEEDBACK_LINKS == true %}
+        <div style="display: none;">
+            <!-- Use GET method so that if a user is not already logged on to JIRA, after the user logs in, the
+                 user will be redirected to the form that pre-populates the fields based on the URL parameters -->
+            <form name="feedback" action="https://issues.apache.org/jira/secure/CreateIssueDetails!init.jspa" method="GET" id="feedback">
+                <input name="pid" type="hidden" value="12319522" /> <!-- SystemML Project ID -->
+                <input name="priority" type="hidden" value="4" /> <!-- Minor -->
+                <input name="components" type="hidden" value="12328679" /> <!-- Documentation -->
+                <input id="feedback-issuetype" name="issuetype" type="hidden" value="" />
+                <input id="feedback-summary" name="summary" type="hidden" value="" />
+                <input id="feedback-description" name="description" type="hidden" value="" />
+                <input type="submit" value="Submit" />
+            </form>
+        </div>
+        {% endif %}
+
         <script src="js/vendor/jquery-1.12.0.min.js"></script>
         <script src="js/vendor/bootstrap.min.js"></script>
         <script src="js/vendor/anchor.min.js"></script>
         <script src="js/main.js"></script>
+        {% if site.FEEDBACK_LINKS == true %}
+        <script type="text/javascript">
+            function getPageTitle() {
+                {% if page.displayTitle %}
+                var displayTitle = "{{ page.displayTitle | xml_escape }}";
+                // return title rather than displayTitle if displayTitle contains HTML
+                if (displayTitle.indexOf("&lt;") != -1) {
+                    return "{{ page.title }}";
+                } else {
+                    return displayTitle;
+                }
+                {% else %}
+                return pageTitle = "{{ page.title }}";
+                {% endif %}
+            }
+
+            function getPageName() {
+                var pageName = document.location.pathname;
+                pageName = pageName.replace("/", "");
+                pageName = pageName.replace(".html", ".md");
+                if (pageName == "") {
+                    pageName = "index.md";
+                }
+                if (pageName.indexOf(".md") == -1) {
+                    pageName = pageName + ".md";
+                }
+                return pageName;
+            }
+
+            function getSection() {
+                var hash = window.location.hash;
+                if (hash == "") {
+                    return "";
+                }
+                var section = $(hash).text();
+                return section;
+            }
+
+            function getPageTitleDisplay() {
+                return "Page Title: " + getPageTitle() + "\r\n";
+            }
+
+            function getPageNameDisplay() {
+                return "Page Name: " + getPageName() + "\r\n";
+            }
+
+            function getSectionDisplay() {
+                var section = getSection();
+                if (section == "") {
+                    return "";
+                }
+                return "Section: " + section + "\r\n";
+            }
+
+            $(document).ready(function() {
+                $('#feedback-link-improvement').click(function(e) {
+                    e.preventDefault();
+                    var issueSummary = "ADD DOCUMENTATION IMPROVEMENT SUMMARY HERE";
+                    var issueDescription = getPageNameDisplay() + getPageTitleDisplay() + getSectionDisplay() + "ADD DOCUMENTATION IMPROVEMENT DESCRIPTION HERE";
+                    $('#feedback-summary').val(issueSummary);
+                    $('#feedback-description').val(issueDescription);
+                    $('#feedback-issuetype').val(4); <!-- Improvement Issue -->
+                    $('#feedback').submit();
+                });
+                $('#feedback-link-bug').click(function(e) {
+                    e.preventDefault();
+                    var issueSummary = "ADD DOCUMENTATION BUG SUMMARY HERE";
+                    var issueDescription = getPageNameDisplay() + getPageTitleDisplay() + getSectionDisplay() + "ADD DOCUMENTATION BUG DESCRIPTION HERE";
+                    $('#feedback-summary').val(issueSummary);
+                    $('#feedback-description').val(issueDescription);
+                    $('#feedback-issuetype').val(1); <!-- Bug Issue -->
+                    $('#feedback').submit();
+                });
+            });
+        </script>
+        {% endif %}
+
 
 {% if site.analytics_on == true %}
 {% case site.analytics_provider %}

@@ -93,7 +93,7 @@ V_filter = U_prime %*% R;
 V_prime = projection_matrix %*% V;
 
 # filter for already recommended items
-V_prime = V_prime == 0);
+V_prime = V_prime == 0;
 
 # removes already recommended items and creating user2item matrix
 V_filter = V_prime * V_filter; 

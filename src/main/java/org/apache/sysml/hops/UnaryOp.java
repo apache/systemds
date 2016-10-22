@@ -694,7 +694,7 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 
 		//ensure cp exec type for single-node operations
 		if( _op == OpOp1.PRINT || _op == OpOp1.STOP 
-			|| _op == OpOp1.INVERSE || _op == OpOp1.EIGEN || _op == OpOp1.CHOLESKY )
+			|| _op == OpOp1.INVERSE || _op == OpOp1.EIGEN || _op == OpOp1.CHOLESKY || _op == OpOp1.SVD)
 		{
 			_etype = ExecType.CP;
 		}

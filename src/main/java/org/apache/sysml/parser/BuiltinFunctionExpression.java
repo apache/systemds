@@ -200,6 +200,35 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			eigenOut2.setBlockDimensions(getFirstExpr().getOutput().getRowsInBlock(), getFirstExpr().getOutput().getColumnsInBlock());
 			
 			break;
+
+		case SVD:
+			checkNumParameters(1);
+			checkMatrixParam(getFirstExpr());
+
+			// setup output properties
+			DataIdentifier svdOut1 = (DataIdentifier) getOutputs()[0];
+			DataIdentifier svdOut2 = (DataIdentifier) getOutputs()[1];
+			DataIdentifier svdOut3 = (DataIdentifier) getOutputs()[2];
+
+			// Output 1
+			svdOut1.setDataType(DataType.MATRIX);
+			svdOut1.setValueType(ValueType.DOUBLE);
+			svdOut1.setDimensions(getFirstExpr().getOutput().getDim1(), getFirstExpr().getOutput().getDim1());
+			svdOut1.setBlockDimensions(getFirstExpr().getOutput().getRowsInBlock(), getFirstExpr().getOutput().getColumnsInBlock());
+
+			// Output 2
+			svdOut2.setDataType(DataType.MATRIX);
+			svdOut2.setValueType(ValueType.DOUBLE);
+			svdOut2.setDimensions(getFirstExpr().getOutput().getDim1(), 1);
+			svdOut2.setBlockDimensions(getFirstExpr().getOutput().getRowsInBlock(), getFirstExpr().getOutput().getColumnsInBlock());
+
+			// Output 3
+			svdOut3.setDataType(DataType.MATRIX);
+			svdOut3.setValueType(ValueType.DOUBLE);
+			svdOut3.setDimensions(getFirstExpr().getOutput().getDim1(), getFirstExpr().getOutput().getDim2());
+			svdOut3.setBlockDimensions(getFirstExpr().getOutput().getRowsInBlock(), getFirstExpr().getOutput().getColumnsInBlock());
+
+			break;
 		
 		default: //always unconditional
 			raiseValidateError("Unknown Builtin Function opcode: " + _opcode, false);
@@ -1079,8 +1108,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setDimensions(inA.getDim1(), inA.getDim2());
 			output.setBlockDimensions(inA.getRowsInBlock(), inA.getColumnsInBlock());
 			break;
-		}	
-			
+		}
+
 		case OUTER:
 			Identifier id2 = this.getSecondExpr().getOutput();
 			
@@ -1148,7 +1177,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			else {
 				// always unconditional (because unsupported operation)
 				BuiltinFunctionOp op = getOpCode();
-				if( op==BuiltinFunctionOp.EIGEN || op==BuiltinFunctionOp.LU || op==BuiltinFunctionOp.QR )
+				if( op==BuiltinFunctionOp.EIGEN || op==BuiltinFunctionOp.LU || op==BuiltinFunctionOp.QR || op==BuiltinFunctionOp.SVD)
 					raiseValidateError("Function "+op+" needs to be called with multi-return assignment.", false, LanguageErrorCodes.INVALID_PARAMETERS);
 				else
 					raiseValidateError("Unsupported function "+op, false, LanguageErrorCodes.INVALID_PARAMETERS);
@@ -1174,6 +1203,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		case QR:
 		case LU:
 		case EIGEN:
+		case SVD:
 			return true;
 		default:
 			return false;
@@ -1645,6 +1675,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			bifop = Expression.BuiltinFunctionOp.INVERSE;
 		else if (functionName.equals("cholesky"))
 			bifop = Expression.BuiltinFunctionOp.CHOLESKY;
+		else if (functionName.equals("svd"))
+			bifop = Expression.BuiltinFunctionOp.SVD;
 		else if (functionName.equals("sample"))
 			bifop = Expression.BuiltinFunctionOp.SAMPLE;
 		else if ( functionName.equals("outer") )

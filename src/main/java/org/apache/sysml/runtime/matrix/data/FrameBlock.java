@@ -1078,8 +1078,17 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		for( int i=0; i<getNumRows(); i++ ) {
 			Object val = ldata.get(i);
 			if( val != null ) {
-				String[] tmp = IOUtilFunctions.splitCSV(
-						val.toString(), Lop.DATATYPE_PREFIX);
+//				String[] tmp = IOUtilFunctions.splitCSV(
+//						val.toString(), Lop.DATATYPE_PREFIX);
+				// Instead of using splitCSV which is forcing string with RFC-4180 format, using simple using Lop.DATATYPE_PREFIX separator 
+				// As separator Lop.DATATYPE_PREFIX which is unicode, very limited chance that someone could use it in regular string.
+				// In case someone uses Lop.DATATYPE_PREFIX in the string, there will be more possible issues as well.
+				// We will evaluate if we can go with this approach or we should handle converting input string into RFC-4180 compatible format
+				// so that IOUntilFunctions.splitCSV() will not fail.
+				String[] tmp = 	new String[2];
+				int pos = val.toString().indexOf(Lop.DATATYPE_PREFIX, 0);
+				tmp[0] = val.toString().substring(0, pos);
+				tmp[1] = val.toString().substring(pos+1);
 				map.put(tmp[0], Long.parseLong(tmp[1]));
 			}
 		}

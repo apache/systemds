@@ -584,6 +584,8 @@ public class MLContextFrameTest extends AutomatedTestBase {
 				.in("A", dataFrameA,
 						new FrameMetadata(FrameFormat.CSV, dataFrameA.count(), (long) dataFrameA.columns().length))
 				.out("tA").out("tAM");
+		ml.setExplain(true);
+		ml.setExplainLevel(ExplainLevel.RECOMPILE_HOPS);
 		MLResults results = ml.execute(script);
 
 		double[][] matrixtA = results.getMatrixAs2DDoubleArray("tA");

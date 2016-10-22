@@ -1060,9 +1060,12 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	// transform specific functionality
 	
 	/**
-	 * 
-	 * @param col
-	 * @return
+	 * This function will split every Recode map in the column using delimiter Lop.DATATYPE_PREFIX, 
+	 * as Recode map generated earlier in the form of Code+Lop.DATATYPE_PREFIX+Token and store it in a map 
+	 * which contains token and code for every unique tokens.
+	 *
+	 * @param col	is the column # from frame data which contains Recode map generated earlier.
+	 * @return map of token and code for every element in the input column of a frame containing Recode map
 	 */
 	public HashMap<String,Long> getRecodeMap(int col) {
 		//probe cache for existing map
@@ -1080,16 +1083,13 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			if( val != null ) {
 //				String[] tmp = IOUtilFunctions.splitCSV(
 //						val.toString(), Lop.DATATYPE_PREFIX);
-				// Instead of using splitCSV which is forcing string with RFC-4180 format, using simple using Lop.DATATYPE_PREFIX separator 
-				// As separator Lop.DATATYPE_PREFIX which is unicode, very limited chance that someone could use it in regular string.
-				// In case someone uses Lop.DATATYPE_PREFIX in the string, there will be more possible issues as well.
-				// We will evaluate if we can go with this approach or we should handle converting input string into RFC-4180 compatible format
-				// so that IOUntilFunctions.splitCSV() will not fail.
+
+				// Instead of using splitCSV which is forcing string with RFC-4180 format, using Lop.DATATYPE_PREFIX separator to split token and code 
 				String[] tmp = 	new String[2];
 				int pos = val.toString().indexOf(Lop.DATATYPE_PREFIX, 0);
 				tmp[0] = val.toString().substring(0, pos);
 				tmp[1] = val.toString().substring(pos+1);
-				map.put(tmp[0], Long.parseLong(tmp[1]));
+				map.put(tmp[1], Long.parseLong(tmp[0]));
 			}
 		}
 		

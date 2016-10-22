@@ -167,6 +167,12 @@ public class FunctionOp extends Hop
 				long outputValues = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).getDim1(), 1, 1.0);
 				return outputVectors+outputValues; 
 			}
+			else if ( getFunctionName().equalsIgnoreCase("svd") ) {
+				long outputU = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(0).getDim1(), getOutputs().get(0).getDim2(), 1.0);
+				long outputSigma = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).getDim1(), getOutputs().get(1).getDim2(), 1.0);
+				long outputV = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(2).getDim1(), getOutputs().get(2).getDim2(), 1.0);
+				return outputU+outputSigma+outputV;
+			}
 			else
 				throw new RuntimeException("Invalid call of computeOutputMemEstimate in FunctionOp.");
 		}
@@ -195,6 +201,10 @@ public class FunctionOp extends Hop
 				double interOutput = OptimizerUtils.estimateSizeExactSparsity(getInput().get(0).getDim1(), getInput().get(0).getDim2(), 1.0) 
 						+ 3*OptimizerUtils.estimateSizeExactSparsity(getInput().get(0).getDim1(), 1, 1.0); 
 				//System.out.println("EigenInter " + interOutput/1024/1024);
+				return interOutput;
+			}
+			else if ( getFunctionName().equalsIgnoreCase("svd")) {
+				double interOutput = OptimizerUtils.estimateSizeExactSparsity(1, getInput().get(0).getDim2(), 1.0);
 				return interOutput;
 			}
 			else

@@ -1010,6 +1010,7 @@ public abstract class Hop
 		NOT, ABS, SIN, COS, TAN, ASIN, ACOS, ATAN, SIGN, SQRT, LOG, EXP, 
 		CAST_AS_SCALAR, CAST_AS_MATRIX, CAST_AS_FRAME, CAST_AS_DOUBLE, CAST_AS_INT, CAST_AS_BOOLEAN,
 		PRINT, EIGEN, NROW, NCOL, LENGTH, ROUND, IQM, STOP, CEIL, FLOOR, MEDIAN, INVERSE, CHOLESKY,
+		SVD,
 		//cumulative sums, products, extreme values
 		CUMSUM, CUMPROD, CUMMIN, CUMMAX,
 		//fused ML-specific operators for performance 

@@ -2476,6 +2476,7 @@ public class DMLTranslator
 		case QR:
 		case LU:
 		case EIGEN:
+		case SVD:
 			
 			// Number of outputs = size of targetList = #of identifiers in source.getOutputs
 			String[] outputNames = new String[targetList.size()]; 

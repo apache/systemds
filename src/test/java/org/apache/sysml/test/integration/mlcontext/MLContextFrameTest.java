@@ -560,6 +560,48 @@ public class MLContextFrameTest extends AutomatedTestBase {
 		dataFrame_tAM.show();
 	}
 
+	@Test
+	public void testTransform() {
+		System.out.println("MLContextFrameTest - transform");
+		
+		Row[] rowsA = {RowFactory.create("\"`@(\"(!&",2,"20news-bydate-train/comp.os.ms-windows.misc/9979"),
+				RowFactory.create("\"`@(\"\"(!&\"",3,"20news-bydate-train/comp.os.ms-windows.misc/9979")};
+
+		JavaRDD<Row> javaRddRowA = sc. parallelize( Arrays.asList(rowsA)); 
+
+		SQLContext sqlContext = new SQLContext(sc);
+
+		List<StructField> fieldsA = new ArrayList<StructField>();
+		fieldsA.add(DataTypes.createStructField("featureName", DataTypes.StringType, true));
+		fieldsA.add(DataTypes.createStructField("featureValue", DataTypes.IntegerType, true));
+		fieldsA.add(DataTypes.createStructField("id", DataTypes.StringType, true));
+		StructType schemaA = DataTypes.createStructType(fieldsA);
+		DataFrame dataFrameA = sqlContext.createDataFrame(javaRddRowA, schemaA);
+
+		String dmlString = "[tA, tAM] = transformencode (target = A, spec = \"{ids: false ,recode: [ featureName, id ]}\");";
+
+		Script script = dml(dmlString)
+				.in("A", dataFrameA,
+						new FrameMetadata(FrameFormat.CSV, dataFrameA.count(), (long) dataFrameA.columns().length))
+				.out("tA").out("tAM");
+		ml.setExplain(true);
+		ml.setExplainLevel(ExplainLevel.RECOMPILE_HOPS);
+		MLResults results = ml.execute(script);
+
+		double[][] matrixtA = results.getMatrixAs2DDoubleArray("tA");
+		Assert.assertEquals(1.0, matrixtA[0][2], 0.0);
+
+		DataFrame dataFrame_tA = results.getMatrix("tA").toDF();
+		System.out.println("Number of matrix tA rows = " + dataFrame_tA.count());
+		dataFrame_tA.printSchema();
+		dataFrame_tA.show();
+		
+		DataFrame dataFrame_tAM = results.getFrame("tAM").toDF();
+		System.out.println("Number of frame tAM rows = " + dataFrame_tAM.count());
+		dataFrame_tAM.printSchema();
+		dataFrame_tAM.show();
+	}
+
 	// NOTE: the ordering of the frame values seem to come out differently here
 	// than in the scala shell,
 	// so this should be investigated or explained.

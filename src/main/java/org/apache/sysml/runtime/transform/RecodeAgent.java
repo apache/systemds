@@ -543,10 +543,10 @@ public class RecodeAgent extends Encoder
 	}
 	
 	/**
-	 * 
-	 * @param token
-	 * @param code
-	 * @return
+	 * Returns the Recode map entry which consists of concatenation of code, delimiter and token. 
+	 * @param token	is part of Recode map
+	 * @param code  is code for token 
+	 * @return the concatenation of code and token with delimiter in between
 	 */
 	public static String constructRecodeMapEntry(String token, Long code) {
 		return token + Lop.DATATYPE_PREFIX + code.toString();

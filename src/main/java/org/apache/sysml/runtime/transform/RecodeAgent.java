@@ -549,7 +549,7 @@ public class RecodeAgent extends Encoder
 	 * @return the concatenation of code and token with delimiter in between
 	 */
 	public static String constructRecodeMapEntry(String token, Long code) {
-		return code.toString() + Lop.DATATYPE_PREFIX + token;
+		return token + Lop.DATATYPE_PREFIX + code.toString();
 	}
 }
  

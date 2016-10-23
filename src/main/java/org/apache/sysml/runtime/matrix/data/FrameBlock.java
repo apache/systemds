@@ -1086,10 +1086,10 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 
 				// Instead of using splitCSV which is forcing string with RFC-4180 format, using Lop.DATATYPE_PREFIX separator to split token and code 
 				String[] tmp = 	new String[2];
-				int pos = val.toString().indexOf(Lop.DATATYPE_PREFIX, 0);
+				int pos = val.toString().lastIndexOf(Lop.DATATYPE_PREFIX);
 				tmp[0] = val.toString().substring(0, pos);
 				tmp[1] = val.toString().substring(pos+1);
-				map.put(tmp[1], Long.parseLong(tmp[0]));
+				map.put(tmp[0], Long.parseLong(tmp[1]));
 			}
 		}
 		

@@ -138,8 +138,12 @@
                 var pageName = document.location.pathname;
                 pageName = pageName.replace("/", "");
                 pageName = pageName.replace(".html", ".md");
-                if (pageName == "") {
+                if (pageName == "") { // no page name
                     pageName = "index.md";
+                } else if (pageName.indexOf("/", pageName.length - 1) !== -1) { // ends with slash
+                    pageName = "index.md";
+                } else if (pageName.lastIndexOf("/") !== -1) { // has slashes
+                    pageName = pageName.split("/").pop();
                 }
                 if (pageName.indexOf(".md") == -1) {
                     pageName = pageName + ".md";

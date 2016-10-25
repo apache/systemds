@@ -1,0 +1,84 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# This script performs Singular Value Decomposition of matrix X of shape
+# (m x n) with m >> n
+# X = U S V^T
+# It returns matrix V and vector S. matrix U is computed if computeU=True
+#
+# The algorithm implemented here is presented in the following paper
+# A Distributed and Incremental SVD Algorithm for Agglomerative Data Analysis
+# on Large Networks, M. A. Iwen, B. W. Ong, arXiv:1601.07010 [math.NA]
+
+
+# INPUT PARAMETERS:
+# -----------------------------------------------------------------------------
+# NAME   TYPE   DEFAULT  MEANING
+# -----------------------------------------------------------------------------
+# X      matrix  ---     input matrix to be factorized
+# q      Int     ---     the input matrix is divided into q number of blocks
+# -----------------------------------------------------------------------------
+
+# OUTPUT:
+# -----------------------------------------------------------------------------
+# NAME   TYPE    MEANING
+# -----------------------------------------------------------------------------
+# U      matrix  left singular matrix
+# S      matrix  vector containing singular values
+# V      matrix  right singular matrix
+# -----------------------------------------------------------------------------
+
+SingularValueDecomposition = function(matrix[double] X, int q)
+  return(matrix[double] S, matrix[double] V) {
+  Xt = t(X)
+  c = ncol(Xt)
+  r = nrow(Xt)
+
+  Ni = as.integer(c/q)
+  if (Ni < r) {
+    # TODO figure out optimal value of q
+    print("q too small")
+  }
+  B = matrix(0, rows=r, cols=r*q)
+
+  parfor (i in 1:q, check=0) {
+    c1 = 1+(i-1)*Ni
+    c2 = i*Ni
+    # TODO check if the last matrix is just one colum
+    if (c2 > c) {
+      c2 = c
+    }
+
+    Xi = Xt[,c1:c2]
+    [Ui, Si, Vi] = svd(Xi)
+    USi = Ui %*% diag(Si)
+    B[,1+(i-1)*r:i*r] = USi
+  }
+  # NOTE left singular matrix of B is the left singular matrix of X^T which
+  # becomes right singular matrix of X
+  [V, S, temp] = svd(B)
+}
+
+[S, V] = SingularValueDecomposition(X, q)
+if (computeU) {
+  # TODO add default value for computeU somehow
+  U = X %*% V %*% diag(1/S)
+}

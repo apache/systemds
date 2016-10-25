@@ -69,6 +69,7 @@
 		<scala.version>2.10.5</scala.version>
 		<scala.binary.version>2.10</scala.binary.version>
 		<scala.test.version>2.2.6</scala.test.version>
+		<maven.build.timestamp.format>yyyy-MM-dd HH:mm:ss z</maven.build.timestamp.format>
 		<!-- OS-specific JVM arguments for running integration tests -->
 		<integrationTestExtraJVMArgs />
 	</properties>
@@ -470,6 +471,9 @@
 								<manifest>
 									<mainClass>org.apache.sysml.api.DMLScript</mainClass>
 								</manifest>
+								<manifestEntries>
+									<Build-Time>${maven.build.timestamp}</Build-Time>
+								</manifestEntries>
 							</archive>
 						</configuration>
 					</execution>

@@ -454,15 +454,18 @@ userParam=value | User-defined parameter to invoke the package. | Yes | Any non-
     mean = function (matrix[double] A) return (double m) {
         m = sum(A)/nrow(A)
     }
+
     # example of a UDF defined in DML with multiple return values
     minMax = function( matrix[double] M) return (double minVal, double maxVal) {
         minVal = min(M);
         maxVal = max(M);
     }
+
     # example of an external UDF
-    eigen = externalFunction(matrix[double] A)
-    return (matrix[double] evec, matrix[double] eval)
-    implemented in (classname="org.apache.sysml.packagesupport.JLapackEigenWrapper")
+    time = externalFunction(Integer i) return (Double B)
+           implemented in (classname="org.apache.sysml.udf.lib.TimeWrapper", exectype="mem");
+    t = time(1);
+    print("Time: " + t);
 
 A UDF invocation specifies the function identifier, variable identifiers for calling parameters, and the variables to be populated by the returned values from the function. The syntax for function calls is as follows.
 

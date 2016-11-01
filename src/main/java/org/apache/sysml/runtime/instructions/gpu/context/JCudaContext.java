@@ -22,6 +22,8 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysml.utils.Statistics;
@@ -34,7 +36,6 @@ import jcuda.runtime.JCuda;
 import jcuda.jcudnn.cudnnHandle;
 import jcuda.jcusparse.JCusparse;
 import jcuda.jcusparse.cusparseHandle;
-
 import static jcuda.jcudnn.JCudnn.cudnnCreate;
 import static jcuda.jcublas.JCublas2.cublasCreate;
 import static jcuda.jcublas.JCublas2.cublasDestroy;
@@ -62,10 +63,10 @@ public class JCudaContext extends GPUContext {
 	public static long totalNumBytes = 0;
 	public static AtomicLong availableNumBytesWithoutUtilFactor = new AtomicLong(0);
 	// Fraction of available memory to use. The available memory is computer when the JCudaContext is created
-	// to handle the tradeoff on calling cudaMemGetInfo too often. 
-	public static double GPU_MEMORY_UTILIZATION_FACTOR = 0.9; 
-	public static boolean REFRESH_AVAILABLE_MEMORY_EVERY_TIME = true;
-	
+	// to handle the tradeoff on calling cudaMemGetInfo too often.
+	public boolean REFRESH_AVAILABLE_MEMORY_EVERY_TIME = ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.REFRESH_AVAILABLE_MEMORY_EVERY_TIME);
+	// Invoke cudaMemGetInfo to get available memory information. Useful if GPU is shared among multiple application.
+	public double GPU_MEMORY_UTILIZATION_FACTOR = ConfigurationManager.getDMLConfig().getDoubleValue(DMLConfig.GPU_MEMORY_UTILIZATION_FACTOR);
 	static {
 		long start = System.nanoTime();
 		JCuda.setExceptionsEnabled(true);
@@ -98,7 +99,7 @@ public class JCudaContext extends GPUContext {
 	}
 	
 	
-	public JCudaContext() {
+	public JCudaContext() throws DMLRuntimeException {
 		if(isGPUContextCreated) {
 			// Wait until it is deleted. This case happens during multi-threaded testing.
 			// This also allows for multi-threaded execute calls
@@ -139,6 +140,8 @@ public class JCudaContext extends GPUContext {
         }
         LOG.info("Total GPU memory: " + (totalNumBytes*(1e-6)) + " MB");
         LOG.info("Available GPU memory: " + (availableNumBytesWithoutUtilFactor.get()*(1e-6)) + " MB");
+        
+        LibMatrixCUDA.kernels = new JCudaKernels();
 	}
 
 	@Override

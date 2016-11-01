@@ -553,9 +553,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 		
 		ExecType et = ExecType.CP;
-//		if(DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR || getMemEstimate() < OptimizerUtils.GPU_MEMORY_BUDGET)) {
-		//TODO: Fix me. Currently forcing the instruction to GPU if gpu flag is set
-		if(DMLScript.USE_ACCELERATOR) {
+		if(DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR || getMemEstimate() < OptimizerUtils.GPU_MEMORY_BUDGET)) {
 			et = ExecType.GPU;
 		}
 		

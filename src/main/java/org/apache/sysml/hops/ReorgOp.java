@@ -21,6 +21,7 @@ package org.apache.sysml.hops;
 
 import java.util.ArrayList;
 
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.Hop.MultiThreadedHop;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
@@ -132,6 +133,9 @@ public class ReorgOp extends Hop implements MultiThreadedHop
 					setLops(lin); //if input of size 1x1, avoid unnecessary transpose
 				else { //general case
 					int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
+					if(DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR || getMemEstimate() < OptimizerUtils.GPU_MEMORY_BUDGET)) {
+						et = ExecType.GPU;
+					}
 					Transform transform1 = new Transform( lin, 
 							HopsTransf2Lops.get(op), getDataType(), getValueType(), et, k);
 					setOutputDimensions(transform1);

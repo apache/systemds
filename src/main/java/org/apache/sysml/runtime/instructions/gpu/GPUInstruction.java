@@ -28,7 +28,7 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 
 public abstract class GPUInstruction extends Instruction 
 {
-	public enum GPUINSTRUCTION_TYPE { AggregateBinary, Convolution, MMTSJ }; 
+	public enum GPUINSTRUCTION_TYPE { AggregateBinary, Convolution, MMTSJ, Reorg, ArithmeticBinary }; 
 	
 	protected GPUINSTRUCTION_TYPE _gputype;
 	protected Operator _optr;

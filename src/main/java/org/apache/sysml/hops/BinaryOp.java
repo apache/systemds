@@ -19,6 +19,7 @@
 
 package org.apache.sysml.hops;
 
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.lops.Aggregate;
@@ -569,7 +570,10 @@ public class BinaryOp extends Hop
 			else //general case
 				ot = HopsOpOp2LopsU.get(op);
 			
-			
+			if(DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR || getMemEstimate() < OptimizerUtils.GPU_MEMORY_BUDGET) 
+					&& (op == OpOp2.MULT || op == OpOp2.PLUS || op == OpOp2.MINUS || op == OpOp2.DIV || op == OpOp2.POW) ) {
+				et = ExecType.GPU;
+			}
 			Unary unary1 = new Unary(getInput().get(0).constructLops(),
 						   getInput().get(1).constructLops(), ot, getDataType(), getValueType(), et);
 		
@@ -584,6 +588,11 @@ public class BinaryOp extends Hop
 			ExecType et = optFindExecType();
 			if ( et == ExecType.CP ) 
 			{
+				if(DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR || getMemEstimate() < OptimizerUtils.GPU_MEMORY_BUDGET) 
+						&& (op == OpOp2.MULT || op == OpOp2.PLUS || op == OpOp2.MINUS || op == OpOp2.DIV || op == OpOp2.POW)) {
+					et = ExecType.GPU;
+				}
+				
 				Binary binary = new Binary(getInput().get(0).constructLops(), getInput().get(1).constructLops(), HopsOpOp2LopsB.get(op),
 						getDataType(), getValueType(), et);
 				

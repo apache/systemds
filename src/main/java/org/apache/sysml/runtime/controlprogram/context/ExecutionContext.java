@@ -297,12 +297,15 @@ public class ExecutionContext
 		if( mo.getGPUObject() == null ) {
 			mo.setGPUObject(GPUContext.createGPUObject(mo));
 		}
+		boolean acquired = false;
 		if( !mo.getGPUObject().isAllocated ) {
 			mo.acquireRead();
-			mo.release();
-			//FIXME: after release the matrix block might get evicted
+			acquired = true;
 		}
 		mo.getGPUObject().acquireDeviceRead();
+		if(acquired) {
+			mo.release();
+		}
 		return mo;
 	}
 	

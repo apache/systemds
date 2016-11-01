@@ -94,6 +94,7 @@ public abstract class AutomatedTestBase
 	
 	// By default: TEST_GPU is set to false to allow developers without Nvidia GPU to run integration test suite 
 	public static final boolean TEST_GPU = false;
+	public static final double GPU_TOLERANCE = 1e-9;
 	
 	protected ScriptType scriptType;
 	

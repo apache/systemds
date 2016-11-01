@@ -71,6 +71,11 @@ public class DMLConfig
 	public static final String CP_PARALLEL_MATRIXMULT = "cp.parallel.matrixmult";
 	public static final String CP_PARALLEL_TEXTIO   = "cp.parallel.textio";
 	public static final String COMPRESSED_LINALG    = "compressed.linalg";
+	// Fraction of available memory to use. The available memory is computer when the JCudaContext is created
+	// to handle the tradeoff on calling cudaMemGetInfo too often.
+	public static final String GPU_MEMORY_UTILIZATION_FACTOR    = "gpu.memory.util.factor";
+	// Invoke cudaMemGetInfo to get available memory information. Useful if GPU is shared among multiple application. 
+	public static final String REFRESH_AVAILABLE_MEMORY_EVERY_TIME    = "gpu.memory.refresh";
 
 	// supported prefixes for custom map/reduce configurations
 	public static final String PREFIX_MAPRED = "mapred";
@@ -102,6 +107,8 @@ public class DMLConfig
 		_defaultVals.put(CP_PARALLEL_MATRIXMULT, "true" );
 		_defaultVals.put(CP_PARALLEL_TEXTIO,     "true" );
 		_defaultVals.put(COMPRESSED_LINALG,      "false" );
+		_defaultVals.put(GPU_MEMORY_UTILIZATION_FACTOR,      "0.9" );
+		_defaultVals.put(REFRESH_AVAILABLE_MEMORY_EVERY_TIME,      "true" );
 	}
 	
 	public DMLConfig()
@@ -236,6 +243,10 @@ public class DMLConfig
 		return Boolean.parseBoolean( getTextValue(tagName) );
 	}
 	
+	public double getDoubleValue( String tagName )
+	{
+		return Double.parseDouble( getTextValue(tagName) );
+	}
 	
 	/**
 	 * Method to get the string value of an element identified by a tag name

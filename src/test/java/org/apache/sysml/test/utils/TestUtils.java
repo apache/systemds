@@ -66,6 +66,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.runtime.util.UtilFunctions;
+import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.BinaryMatrixCharacteristics;
 
 
@@ -713,6 +714,9 @@ public class TestUtils
 		if (v1.equals(v2))
 			return true;
 
+		if(AutomatedTestBase.TEST_GPU) {
+			return Math.abs(v1 - v2) <= Math.max(t, AutomatedTestBase.GPU_TOLERANCE);
+		}
 		return Math.abs(v1 - v2) <= t;
 	}
 

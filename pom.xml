@@ -713,25 +713,6 @@
 							</execution>
 
 							<execution>
-								<id>create-standalone-jar</id>
-								<phase>package</phase>
-								<goals>
-									<goal>single</goal>
-								</goals>
-								<configuration>
-									<descriptors>
-										<descriptor>src/assembly/standalone-jar.xml</descriptor>
-									</descriptors>
-									<archive>
-										<index>true</index>
-										<manifest>
-											<mainClass>org.apache.sysml.api.DMLScript</mainClass>
-										</manifest>
-									</archive>
-								</configuration>
-							</execution>
-
-							<execution>
 								<id>create-binary-standalone-distribution-assembly</id>
 								<phase>package</phase>
 								<goals>
@@ -828,6 +809,44 @@
 								<goals>
 									<goal>jar</goal>
 								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+
+
+		<profile>
+			<!-- Profile to create standalone jar.
+				Execute with `mvn clean package -P standalone-jar` -->
+			<id>standalone-jar</id>
+			<build>
+				<plugins>
+					<plugin>
+						<artifactId>maven-assembly-plugin</artifactId>
+						<version>2.4</version><!--$NO-MVN-MAN-VER$-->
+						<configuration>
+							<tarLongFileMode>gnu</tarLongFileMode>
+						</configuration>
+						<executions>
+							<execution>
+								<id>create-standalone-jar</id>
+								<phase>package</phase>
+								<goals>
+									<goal>single</goal>
+								</goals>
+								<configuration>
+									<descriptors>
+										<descriptor>src/assembly/standalone-jar.xml</descriptor>
+									</descriptors>
+									<archive>
+										<index>true</index>
+										<manifest>
+											<mainClass>org.apache.sysml.api.DMLScript</mainClass>
+										</manifest>
+									</archive>
+								</configuration>
 							</execution>
 						</executions>
 					</plugin>

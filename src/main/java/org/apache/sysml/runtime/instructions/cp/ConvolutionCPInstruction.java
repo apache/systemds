@@ -188,8 +188,8 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 				// without somewhat expensive HashMap checks
 				outputBlock = getDenseOutputBlock(ec, N, C*P*Q, true);
 				params.setReuseNonZeroedOutput(_reuseNonZeroedOutput);
+				LibMatrixDNN.maxpooling(matBlock, outputBlock, params);
 			}
-			LibMatrixDNN.maxpooling(matBlock, outputBlock, params);
 		}
 		else if (instOpcode.equalsIgnoreCase("maxpooling_backward")) {
 			MatrixBlock dout = ec.getMatrixInput(_in2.getName());
@@ -201,8 +201,8 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 				// without somewhat expensive HashMap checks
 				outputBlock = getDenseOutputBlock(ec, N, C*H*W, false);
 				params.setReuseNonZeroedOutput(_reuseNonZeroedOutput);
+				LibMatrixDNN.maxpooling_backward(matBlock, dout, outputBlock, params);
 			}
-			LibMatrixDNN.maxpooling_backward(matBlock, dout, outputBlock, params);
 			ec.releaseMatrixInput(_in2.getName());
 		}
 		else if (instOpcode.equalsIgnoreCase("conv2d")) {

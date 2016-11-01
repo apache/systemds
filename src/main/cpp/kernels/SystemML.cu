@@ -155,3 +155,18 @@ __global__ void binCellScalarOp(double* A, double scalar, double* C, int rlenA, 
 			C[index] = binaryOp(A[index], scalar, op);
 	}
 }
+
+
+/**
+ * Sets all elements (fills) of a double array of given length with a given scalar value
+ * @param A         array to be filled
+ * @param scalar    value to fill array with
+ * @param lenA      length of array A
+ */
+extern "C"
+__global__ void fill(double* A, double scalar, int lenA) {
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+	if (index < lenA){
+	    A[index] = scalar;
+	}
+}

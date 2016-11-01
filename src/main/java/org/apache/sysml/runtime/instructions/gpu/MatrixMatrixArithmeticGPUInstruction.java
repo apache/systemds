@@ -50,10 +50,25 @@ public class MatrixMatrixArithmeticGPUInstruction extends ArithmeticBinaryGPUIns
 		//TODO: make hop level changes for this
 		boolean isLeftTransposed = false;
 		boolean isRightTransposed = false;
-		int rlen = isLeftTransposed ? (int) in1.getNumColumns() : (int) in1.getNumRows();
-		int clen = isLeftTransposed ? (int) in1.getNumRows() : (int) in1.getNumColumns();
-		
-		ec.setMetaData(_output.getName(), rlen, clen);
+		// int rlen = isLeftTransposed ? (int) in1.getNumColumns() : (int) in1.getNumRows();
+		// int clen = isLeftTransposed ? (int) in1.getNumRows() : (int) in1.getNumColumns();
+
+		long rlen1 = in1.getNumRows();
+		long clen1 = in1.getNumColumns();
+		long rlen2 = in2.getNumRows();
+		long clen2 = in2.getNumColumns();
+
+		// Assume ordinary binary op
+		long rlen = rlen1;
+		long clen = clen1;
+
+		// Outer binary op ( [100,1] + [1,100] or [100,100] + [100,1]
+		if (rlen1 != rlen2 || clen1 != clen2){
+			rlen = rlen1 > rlen2 ? rlen1 : rlen2;
+			clen = clen1 > clen2 ? clen1 : clen2;
+		}
+
+		ec.setMetaData(_output.getName(), (int)rlen, (int)clen);
 		
 		BinaryOperator bop = (BinaryOperator) _optr;
 		LibMatrixCUDA.bincellOp(ec, in1, in2, _output.getName(), isLeftTransposed, isRightTransposed, bop);

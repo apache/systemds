@@ -19,6 +19,8 @@
 
 package org.apache.sysml.runtime.matrix.data;
 
+import static jcuda.jcublas.cublasOperation.CUBLAS_OP_N;
+import static jcuda.jcublas.cublasOperation.CUBLAS_OP_T;
 import static jcuda.jcudnn.JCudnn.cudnnConvolutionBackwardData;
 import static jcuda.jcudnn.JCudnn.cudnnConvolutionBackwardFilter;
 import static jcuda.jcudnn.JCudnn.cudnnConvolutionForward;
@@ -47,11 +49,13 @@ import static jcuda.jcusparse.JCusparse.cusparseDcsrgemm;
 import static jcuda.jcusparse.JCusparse.cusparseDcsrmv;
 import static jcuda.jcusparse.cusparseOperation.CUSPARSE_OPERATION_NON_TRANSPOSE;
 import static jcuda.jcusparse.cusparseOperation.CUSPARSE_OPERATION_TRANSPOSE;
+import static jcuda.runtime.JCuda.cudaDeviceSynchronize;
 import static jcuda.runtime.JCuda.cudaFree;
 import static jcuda.runtime.JCuda.cudaMalloc;
 import static jcuda.runtime.JCuda.cudaMemcpy;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice;
 
+import jcuda.runtime.JCuda;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -64,12 +68,12 @@ import org.apache.sysml.runtime.functionobjects.GreaterThan;
 import org.apache.sysml.runtime.functionobjects.GreaterThanEquals;
 import org.apache.sysml.runtime.functionobjects.LessThan;
 import org.apache.sysml.runtime.functionobjects.LessThanEquals;
+import org.apache.sysml.runtime.functionobjects.Minus;
+import org.apache.sysml.runtime.functionobjects.Multiply;
 import org.apache.sysml.runtime.functionobjects.Multiply2;
 import org.apache.sysml.runtime.functionobjects.NotEquals;
 import org.apache.sysml.runtime.functionobjects.Or;
 import org.apache.sysml.runtime.functionobjects.Plus;
-import org.apache.sysml.runtime.functionobjects.Minus;
-import org.apache.sysml.runtime.functionobjects.Multiply;
 import org.apache.sysml.runtime.functionobjects.Power;
 import org.apache.sysml.runtime.functionobjects.Power2;
 import org.apache.sysml.runtime.functionobjects.ValueFunction;
@@ -97,9 +101,6 @@ import jcuda.jcudnn.cudnnPoolingDescriptor;
 import jcuda.jcudnn.cudnnTensorDescriptor;
 import jcuda.jcusparse.JCusparse;
 import jcuda.jcusparse.cusparseHandle;
-import jcuda.runtime.JCuda;
-import static jcuda.jcublas.cublasOperation.CUBLAS_OP_N;
-import static jcuda.jcublas.cublasOperation.CUBLAS_OP_T;
 
 //FIXME move could to respective instructions, this is not a block library
 public class LibMatrixCUDA {
@@ -484,11 +485,15 @@ public class LibMatrixCUDA {
 			LOG.debug(" GPU Dense-Sparse Matrix Multiplication (Converted to Sparse-Sparse)");
 			// Convert left to CSR and do cuSparse matmul
 			long t0 = System.nanoTime();
-			CSRPointer A = JCudaObject.denseToSparseUtil(cusparseHandle, (int)left.getNumRows(), (int)right.getNumColumns(), ADense);
+			int rowsA = (int)left.getNumRows();
+			int colsA = (int)left.getNumColumns();
+			Pointer AT = JCudaObject.transpose(ADense, rowsA, colsA, colsA, rowsA);
+			CSRPointer A = JCudaObject.columnMajorDenseToRowMajorSparse(cusparseHandle, rowsA, colsA, AT);
 			Statistics.cudaConversionTime.addAndGet(System.nanoTime() - t0);
 			Statistics.cudaConversionCount.addAndGet(1);
 			sparseSparseMatmult(output, transA, transB, m, n, k, A, B);
 			A.deallocate();
+			cudaFree(AT);
 		} else {
 			LOG.debug(" GPU Dense-Sparse Matrix Multiplication (Converted to Dense-Dense)");
 			// Convert right to dense and do a cuBlas matmul
@@ -539,11 +544,15 @@ public class LibMatrixCUDA {
 				LOG.debug(" GPU Sparse-Dense Matrix Multiplication (Converted to Sparse-Sparse)");
 				// Convert right to CSR and do cuSparse matmul
 				long t0 = System.nanoTime();
-				CSRPointer B = JCudaObject.denseToSparseUtil(cusparseHandle, (int)right.getNumRows(), (int)right.getNumColumns(), BDense);
+				int rowsB = (int)right.getNumRows();
+				int colsB = (int)right.getNumColumns();
+				Pointer BT = JCudaObject.transpose(BDense, rowsB, colsB, colsB, rowsB);
+				CSRPointer B = JCudaObject.columnMajorDenseToRowMajorSparse(cusparseHandle, rowsB, colsB, BT);
 				Statistics.cudaConversionTime.addAndGet(System.nanoTime() - t0);
 				Statistics.cudaConversionCount.addAndGet(1);
 				sparseSparseMatmult(output, transA, transB, m, n, k, A, B);
 				B.deallocate();
+				cudaFree(BT);
 			} else {					
 				LOG.debug(" GPU Sparse-Dense Matrix Multiplication (Converted to Dense-Dense)");
 				// Convert left to dense and do a cuBlas matmul
@@ -583,7 +592,7 @@ public class LibMatrixCUDA {
 		double[] alpha = { 1 };
 		double[] beta = { 0 };
 		cusparseDcsrmv(cusparseHandle, transA, m, k, (int)A.nnz, Pointer.to(alpha), A.descr, A.val, A.rowPtr, A.colInd, B_dense, Pointer.to(beta), C_dense);
-		
+		cudaDeviceSynchronize(); 	// Since cusparseDcsrmv is asynchronously executed
 		((JCudaObject)(output.getGPUObject())).setDenseMatrixCudaPointer(C_dense);
 		output.getGPUObject().setDeviceModify(size);
 	}
@@ -671,6 +680,7 @@ public class LibMatrixCUDA {
 				A.descr, (int)A.nnz, A.val, A.rowPtr, A.colInd,
 				B.descr, (int)B.nnz, B.val, B.rowPtr, B.colInd,
 				C.descr, C.val, C.rowPtr, C.colInd);
+        cudaDeviceSynchronize();
 	}
 
 	/**
@@ -1115,11 +1125,24 @@ public class LibMatrixCUDA {
 		boolean isEmpty1 = isSparseAndEmpty(in1);
 		boolean isSparse2 = isInSparseFormat(in2);
 		boolean isEmpty2 = isSparseAndEmpty(in2);
-		if(isEmpty1) {
+
+		if (isEmpty1 && isEmpty2){
+			MatrixObject out = ec.getMatrixObject(outputName);
+			ec.allocateGPUMatrixObject(outputName);
+			// When both inputs are empty, the output is empty too (except in the case of division)
+			if (op.fn instanceof Divide) {
+				((JCudaObject) out.getGPUObject()).allocateAndFillDense(Double.NaN);
+			} else {
+				((JCudaObject) out.getGPUObject()).allocateSparseAndEmpty();
+			}
+		}
+		// Check for M1 * M2 when M1 is empty; if M2 is a vector then fallback to general case
+		else if(isEmpty1 && in2.getNumColumns() != 1 && in2.getNumRows() != 1) {
 			// C = empty_in1 op in2 ==> becomes ==> C = 0.0 op in2
 			bincellOp(ec, in2, outputName, isRightTransposed, new LeftScalarOperator(op.fn, 0.0));
 		}
-		else if(isEmpty2) {
+		// Check for M1 * M2 when M2 is empty; if M1 is a vector then fallback to general case
+		else if(isEmpty2 && in1.getNumColumns() != 1 && in1.getNumRows() != 1) {
 			// C = in1 op empty_in2 ==> becomes ==> C = in1 op 0.0
 			bincellOp(ec, in1, outputName, isLeftTransposed, new RightScalarOperator(op.fn, 0.0));
 		}
@@ -1147,6 +1170,7 @@ public class LibMatrixCUDA {
 		    int maxClen = Math.max(clenA, clenB);
 		    int vecStatusA = getVectorStatus(in1);
 		    int vecStatusB = getVectorStatus(in2);
+
 			kernels.launchKernel("binCellOp",
 					ExecutionConfig.getConfigForSimpleMatrixOperations(maxRlen, maxClen), 
 					A, B, C, maxRlen, maxClen, vecStatusA, vecStatusB, getBinaryOp(op.fn));
@@ -1378,6 +1402,7 @@ public class LibMatrixCUDA {
 			JCusparse.cusparseDcsrgeam(cusparseHandle, m, n, alphaPtr, A.descr, (int)A.nnz, A.val, A.rowPtr, A.colInd, betaPtr, 
 					B.descr, (int)B.nnz, B.val, B.rowPtr, B.colInd, 
 					C.descr, C.val, C.rowPtr, C.colInd);
+            cudaDeviceSynchronize();
 		}
 		else {
 			// Dense-Dense dgeam

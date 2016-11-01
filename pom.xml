@@ -70,6 +70,7 @@
 		<scala.binary.version>2.10</scala.binary.version>
 		<scala.test.version>2.2.6</scala.test.version>
 		<maven.build.timestamp.format>yyyy-MM-dd HH:mm:ss z</maven.build.timestamp.format>
+		<enableGPU>false</enableGPU>
 		<!-- OS-specific JVM arguments for running integration tests -->
 		<integrationTestExtraJVMArgs />
 	</properties>
@@ -109,6 +110,13 @@
 			</excludes>
 			<targetPath>scripts</targetPath>
 		</resource>
+		<resource>
+			<directory>src/main/cpp/kernels</directory>
+			<excludes>
+				<exclude>*.cu</exclude>
+			</excludes>
+			<targetPath>kernels</targetPath>
+		</resource>
 	</resources>
 
 		<plugins>
@@ -119,14 +127,15 @@
 				<version>1.1.1</version>
 				<executions>
 					<execution>
-						<phase>pre-integration-test</phase>
+						<phase>prepare-package</phase>
 						<goals>
 							<goal>java</goal>
 						</goals>
 						<configuration>
 							<mainClass>org.apache.sysml.utils.InstallDependencyForIntegrationTests</mainClass>
 							<arguments>
-								<argument>${skipTests}</argument>
+								<argument>true</argument> <!-- <argument>${skipTests}</argument> -->
+								<argument>${enableGPU}</argument>
 							</arguments>
 						</configuration>
 					</execution>

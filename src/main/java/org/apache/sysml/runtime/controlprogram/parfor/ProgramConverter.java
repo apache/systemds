@@ -75,6 +75,7 @@ import org.apache.sysml.runtime.instructions.cp.IntObject;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.instructions.cp.StringObject;
 import org.apache.sysml.runtime.instructions.cp.VariableCPInstruction;
+import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
 import org.apache.sysml.runtime.instructions.mr.MRInstruction;
 import org.apache.sysml.runtime.instructions.spark.SPInstruction;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -517,7 +518,8 @@ public class ProgramConverter
 		
 		try
 		{
-			if( oInst instanceof CPInstruction || oInst instanceof SPInstruction || oInst instanceof MRInstruction )
+			if( oInst instanceof CPInstruction || oInst instanceof SPInstruction || oInst instanceof MRInstruction 
+					|| oInst instanceof GPUInstruction )
 			{
 				if( oInst instanceof FunctionCallCPInstruction && cpFunctions )
 				{

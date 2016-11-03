@@ -691,7 +691,8 @@ public class StatementBlock extends LiveVariableAnalysis
 								+ source.getOutput().getDim1() + " rows and " + source.getOutput().getDim2() + " cols ", conditional);
 					}
 					
-					((IndexedIdentifier)target).setDimensions(targetSize._row, targetSize._col);		
+					// Commenting this since "z[2, 2] =  2.5" doesnot change the dimension of z
+					// ((IndexedIdentifier)target).setDimensions(targetSize._row, targetSize._col);		
 				}
 				
 				ids.addVariable(target.getName(), target);

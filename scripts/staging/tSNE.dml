@@ -22,21 +22,15 @@
 # This script performs dimensionality reduction using tSNE algorithm based on
 # the paper: Visualizing Data using t-SNE, Maaten et. al.
 
-#X = read($X)
+X = read($INPUT)
 
-X = read("hdfs://rr-dense1.softlayer.com/user/iyounus/data/mnist_train.csv")
-#X = read("hdfs://rr-dense1.softlayer.com/user/iyounus/data/mnist_train.csv")
+ndim = ifdef($NDIM, 2)
+perplexity = ifdef($PERPLEXITY, 30)
+lr = ifdef($LR, 300.)
+momentum = ifdef($M, 0.9)
+iter = ifdef($ITERS, 1000)
 
-# X = read("file:///home/iyounus/MNIST/mnist_train.csv")
-# X = read("hdfs:///user/iyounus/data/mnist_test_no_labels.csv")
-# X = read("hdfs:///user/iyounus/data/mnist2500_X.csv")
-
-
-ndim = ifdef($ndim, 2)
-perplexity = ifdef($perplexity, 30)
-lr = ifdef($rate, 300.)
-momentum = ifdef($momentum, 0.9)
-iter = ifdef($iterations, 1000)
+output = ifdef($OUT, "/user/iyounus/data/Y.csv")
 
 print("starting....")
 
@@ -152,5 +146,5 @@ tsne = function(matrix[double] X, int reduced_dims, int perplexity,
 # [Y, C] = tsne(X, ndim, perplexity, lr, momentum, iter)
 P = x2p(X, perplexity)
 
-# write(Y, "")
+write(P, output)
 # write(C, "")

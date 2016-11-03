@@ -77,7 +77,7 @@ Here is an example:
 	$ git clone https://github.com/apache/incubator-systemml.git
 	$ cd incubator-systemml
 	$ git tag -l
-	$ git checkout tags/0.10.0-incubating-rc1 -b 0.10.0-incubating-rc1
+	$ git checkout tags/0.11.0-incubating-rc1 -b 0.11.0-incubating-rc1
 	$ mvn -Dmaven.repo.local=$HOME/.m2/temp-repo clean package -P distribution
 
 
@@ -102,43 +102,35 @@ The build artifacts should be downloaded from [https://dist.apache.org/repos/dis
 this OS X example.
 
 	# download artifacts
-	wget -r -nH -nd -np -R index.html* https://dist.apache.org/repos/dist/dev/incubator/systemml/0.10.0-incubating-rc1/
+	wget -r -nH -nd -np -R index.html* https://dist.apache.org/repos/dist/dev/incubator/systemml/0.11.0-incubating-rc1/
 
 	# verify standalone tar.gz works
-	tar -xvzf systemml-0.10.0-incubating-standalone.tar.gz
-	cd systemml-0.10.0-incubating-standalone
+	tar -xvzf systemml-0.11.0-incubating-standalone.tar.gz
+	cd systemml-0.11.0-incubating-standalone
 	echo "print('hello world');" > hello.dml
 	./runStandaloneSystemML.sh hello.dml
 	cd ..
 
 	# verify main jar works
 	mkdir lib
-	cp -R systemml-0.10.0-incubating-standalone/lib/* lib/
-	rm lib/systemml-0.10.0-incubating.jar
-	java -cp ./lib/*:systemml-0.10.0-incubating.jar org.apache.sysml.api.DMLScript -s "print('hello world');"
-
-	# verify standalone jar works
-	java -jar systemml-0.10.0-incubating-standalone.jar -s "print('hello world');"
+	cp -R systemml-0.11.0-incubating-standalone/lib/* lib/
+	rm lib/systemml-0.11.0-incubating.jar
+	java -cp ./lib/*:systemml-0.11.0-incubating.jar org.apache.sysml.api.DMLScript -s "print('hello world');"
 
 	# verify src works
-	tar -xvzf systemml-0.10.0-incubating-src.tar.gz
-	cd systemml-0.10.0-incubating-src
+	tar -xvzf systemml-0.11.0-incubating-src.tar.gz
+	cd systemml-0.11.0-incubating-src
 	mvn clean package -P distribution
 	cd target/
-	java -cp ./lib/*:systemml-0.10.0-incubating.jar org.apache.sysml.api.DMLScript -s "print('hello world');"
+	java -cp ./lib/*:systemml-0.11.0-incubating.jar org.apache.sysml.api.DMLScript -s "print('hello world');"
 	java -cp ./lib/*:SystemML.jar org.apache.sysml.api.DMLScript -s "print('hello world');"
-	java -jar systemml-0.10.0-incubating-standalone.jar -s "print('hello world');"
+	java -jar systemml-0.11.0-incubating-standalone.jar -s "print('hello world');"
 	cd ..
 	cd ..
-
-	# verify in-memory jar works
-	echo "import org.apache.sysml.api.jmlc.*;public class JMLCEx {public static void main(String[] args) throws Exception {Connection conn = new Connection();PreparedScript script = conn.prepareScript(\"print('hello world');\", new String[]{}, new String[]{}, false);script.executeScript();}}" > JMLCEx.java
-	javac -cp systemml-0.10.0-incubating-inmemory.jar JMLCEx.java
-	java -cp .:systemml-0.10.0-incubating-inmemory.jar JMLCEx
 
 	# verify distrib tar.gz works
-	tar -xvzf systemml-0.10.0-incubating.tar.gz
-	cd systemml-0.10.0-incubating
+	tar -xvzf systemml-0.11.0-incubating.tar.gz
+	cd systemml-0.11.0-incubating
 	java -cp ../lib/*:SystemML.jar org.apache.sysml.api.DMLScript -s "print('hello world');"
 
 	# verify spark batch mode
@@ -158,40 +150,32 @@ sanity check on OS X after building the artifacts manually.
 	cd target
 
 	# verify main jar works
-	java -cp ./lib/*:systemml-0.10.0-incubating.jar org.apache.sysml.api.DMLScript -s "print('hello world');"
+	java -cp ./lib/*:systemml-0.11.0-incubating.jar org.apache.sysml.api.DMLScript -s "print('hello world');"
 
 	# verify SystemML.jar works
 	java -cp ./lib/*:SystemML.jar org.apache.sysml.api.DMLScript -s "print('hello world');"
 
-	# verify standalone jar works
-	java -jar systemml-0.10.0-incubating-standalone.jar -s "print('hello world');"
-
 	# verify src works
-	tar -xvzf systemml-0.10.0-incubating-src.tar.gz
-	cd systemml-0.10.0-incubating-src
+	tar -xvzf systemml-0.11.0-incubating-src.tar.gz
+	cd systemml-0.11.0-incubating-src
 	mvn clean package -P distribution
 	cd target/
-	java -cp ./lib/*:systemml-0.10.0-incubating.jar org.apache.sysml.api.DMLScript -s "print('hello world');"
+	java -cp ./lib/*:systemml-0.11.0-incubating.jar org.apache.sysml.api.DMLScript -s "print('hello world');"
 	java -cp ./lib/*:SystemML.jar org.apache.sysml.api.DMLScript -s "print('hello world');"
-	java -jar systemml-0.10.0-incubating-standalone.jar -s "print('hello world');"
+	java -jar systemml-0.11.0-incubating-standalone.jar -s "print('hello world');"
 	cd ..
 	cd ..
-
-	# verify in-memory jar works
-	echo "import org.apache.sysml.api.jmlc.*;public class JMLCEx {public static void main(String[] args) throws Exception {Connection conn = new Connection();PreparedScript script = conn.prepareScript(\"print('hello world');\", new String[]{}, new String[]{}, false);script.executeScript();}}" > JMLCEx.java
-	javac -cp systemml-0.10.0-incubating-inmemory.jar JMLCEx.java
-	java -cp .:systemml-0.10.0-incubating-inmemory.jar JMLCEx
 
 	# verify standalone tar.gz works
-	tar -xvzf systemml-0.10.0-incubating-standalone.tar.gz
-	cd systemml-0.10.0-incubating-standalone
+	tar -xvzf systemml-0.11.0-incubating-standalone.tar.gz
+	cd systemml-0.11.0-incubating-standalone
 	echo "print('hello world');" > hello.dml
 	./runStandaloneSystemML.sh hello.dml
 	cd ..
 
 	# verify distrib tar.gz works
-	tar -xvzf systemml-0.10.0-incubating.tar.gz
-	cd systemml-0.10.0-incubating
+	tar -xvzf systemml-0.11.0-incubating.tar.gz
+	cd systemml-0.11.0-incubating
 	java -cp ../lib/*:SystemML.jar org.apache.sysml.api.DMLScript -s "print('hello world');"
 
 	# verify spark batch mode
@@ -227,8 +211,8 @@ The project should be built using the `src` (tar.gz and zip) artifacts.
 In addition, the test suite should be run using an `src` artifact and
 the tests should pass.
 
-	tar -xvzf systemml-0.10.0-incubating-src.tar.gz
-	cd systemml-0.10.0-incubating-src
+	tar -xvzf systemml-0.11.0-incubating-src.tar.gz
+	cd systemml-0.11.0-incubating-src
 	mvn clean package -P distribution
 	mvn verify
 
@@ -244,8 +228,8 @@ standalone distributions.
 Here is an example based on the [Standalone Guide](http://apache.github.io/incubator-systemml/standalone-guide.html)
 demonstrating the execution of an algorithm (on OS X).
 
-	$ tar -xvzf systemml-0.10.0-incubating-standalone.tar.gz
-	$ cd systemml-0.10.0-incubating-standalone
+	$ tar -xvzf systemml-0.11.0-incubating-standalone.tar.gz
+	$ cd systemml-0.11.0-incubating-standalone
 	$ wget -P data/ http://archive.ics.uci.edu/ml/machine-learning-databases/haberman/haberman.data
 	$ echo '{"rows": 306, "cols": 4, "format": "csv"}' > data/haberman.data.mtd
 	$ echo '1,1,1,2' > data/types.csv
@@ -261,8 +245,8 @@ Verify that SystemML runs algorithms on Spark locally.
 
 Here is an example of running the `Univar-Stats.dml` algorithm on random generated data.
 
-	$ tar -xvzf systemml-0.10.0-incubating.tar.gz
-	$ cd systemml-0.10.0-incubating
+	$ tar -xvzf systemml-0.11.0-incubating.tar.gz
+	$ cd systemml-0.11.0-incubating
 	$ export SPARK_HOME=/Users/deroneriksson/spark-1.5.1-bin-hadoop2.6
 	$ $SPARK_HOME/bin/spark-submit SystemML.jar -f scripts/datagen/genRandData4Univariate.dml -exec hybrid_spark -args 1000000 100 10 1 2 3 4 uni.mtx
 	$ echo '1' > uni-types.csv

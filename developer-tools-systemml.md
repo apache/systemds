@@ -35,12 +35,12 @@ IntelliJ can be used since it provides great support for mixed Java and Scala pr
 ### Import SystemML project to IntelliJ
 
  1. Download IntelliJ and install the Scala plug-in for IntelliJ.
- 2. Go to "File -> Import Project", locate the spark source directory, and select "Maven Project".
+ 2. Go to "File -> Import Project", locate the systemml source directory, and select "Maven Project".
  3. In the Import wizard, it's fine to leave settings at their default. However it is usually useful to enable "Import Maven projects automatically", since changes to the project structure will automatically update the IntelliJ project.
 
 ## Eclipse
 
-Eclipse [Luna SR2](https://eclipse.org/downloads/packages/release/luna/sr2) can be used for an integrated development development environment with SystemML code.  Maven integration is required which is included in the [Eclipse IDE for Java Developers](https://eclipse.org/downloads/packages/eclipse-ide-java-developers/lunasr2) package.
+Eclipse [Luna SR2](https://eclipse.org/downloads/packages/release/luna/sr2) can be used for an integrated development environment with SystemML code.  Maven integration is required which is included in the [Eclipse IDE for Java Developers](https://eclipse.org/downloads/packages/eclipse-ide-java-developers/lunasr2) package.
 
 To get started in Eclipse, import SystemML's pom.xml file as an existing Maven project.  After import is completed, the resulting Eclipse installation should include two maven connectors.
 
@@ -56,7 +56,7 @@ An additional Maven connector is required for working with Scala code in Eclipse
 ![Maven Scala Integration](img/developer-tools/maven-scala.png "Maven Scala Integration")
 
 ![Installed Maven Connectors](img/developer-tools/maven-connectors.png "Installed Maven Connectors")
-<br></br>
+
 The [Scala IDE 4.0.0 plugin for Eclipse](http://scala-ide.org/download/prev-stable.html) is known to work for mixed Java and Scala development in [Eclipse IDE for Java Developers Luna SR2](https://eclipse.org/downloads/packages/eclipse-ide-java-developers/lunasr2).  <b>Release 4.0.0</b> of the Scala IDE for Eclipse plugin can be downloaded [here](http://download.scala-ide.org/sdk/lithium/e44/scala211/stable/site_assembly-20150305-1905.zip) and then installed through Eclipse's 'Install New Software' menu item.  Only the Scala IDE and ScalaTest components are needed.
 
 ![Scala IDE Components](img/developer-tools/scala-components.png "Scala IDE Components")
@@ -80,16 +80,16 @@ The lifecycle mappings are stored in a workspace metadata file as specified in E
 
 ## Troubleshooting
 
-Please see below how to resolve some compilation issues that might occur after importing the SystemML project:
+Please see below tips for resolving some compilation issues that might occur after importing the SystemML project.
 
-##### `invalid cross-compiled libraries` error
-Since Scala IDE bundles the latest versions (2.10.5 and 2.11.6 at this point), you need do add one  in Eclipse Preferences -> Scala -> Installations by pointing to the lib/ directory of your Scala 2.10.4 distribution. Once this is done, select all Spark projects and right-click, choose Scala -> Set Scala Installation and point to the 2.10.4 installation. This should clear all errors about invalid cross-compiled libraries. A clean build should succeed now.
+##### `Invalid cross-compiled libraries` error
+Since Scala IDE bundles the latest versions (2.10.5 and 2.11.6 at this point), you need to add one in Eclipse Preferences -> Scala -> Installations by pointing to the <code>lib</code> directory of your Scala 2.10.4 distribution. Once this is done, select SystemML project, right-click, choose Scala -> Set Scala Installation and point to the 2.10.4 installation. This should clear all errors about invalid cross-compiled libraries. A clean build should succeed now.
 
-##### `incompatible scala version ` error
-Change IDE scala version `project->propertiest->scala compiler -> scala installation`  to  `Fixed scala Installation: 2.10.5`
+##### `Incompatible scala version ` error
+Change IDE Scala version `Project->Properties->Scala Compiler -> Scala Installation`  to   `Fixed Scala Installation: 2.10.5`
 
 ##### `Not found type * ` error
-Run command `mvn package`, and do `project -> refresh`
+Run command `mvn package`, and do `Project -> Refresh`
 
-##### `maketplace not found ` error for Eclipse Luna
-Except scala IDE pulgin install, please make sure get update from "http://alchim31.free.fr/m2e-scala/update-site" to update maven connector for scala.
+##### `Marketplace not found ` error for Eclipse Luna
+Except for Scala IDE plugin install, please make sure to get update from "http://alchim31.free.fr/m2e-scala/update-site" to update maven connector for Scala.

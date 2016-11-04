@@ -124,7 +124,6 @@ this OS X example.
 	cd target/
 	java -cp ./lib/*:systemml-0.11.0-incubating.jar org.apache.sysml.api.DMLScript -s "print('hello world');"
 	java -cp ./lib/*:SystemML.jar org.apache.sysml.api.DMLScript -s "print('hello world');"
-	java -jar systemml-0.11.0-incubating-standalone.jar -s "print('hello world');"
 	cd ..
 	cd ..
 
@@ -162,7 +161,6 @@ sanity check on OS X after building the artifacts manually.
 	cd target/
 	java -cp ./lib/*:systemml-0.11.0-incubating.jar org.apache.sysml.api.DMLScript -s "print('hello world');"
 	java -cp ./lib/*:SystemML.jar org.apache.sysml.api.DMLScript -s "print('hello world');"
-	java -jar systemml-0.11.0-incubating-standalone.jar -s "print('hello world');"
 	cd ..
 	cd ..
 

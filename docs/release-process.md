@@ -96,7 +96,7 @@ The test suite can be run using:
 <a href="#release-candidate-checklist">Up to Checklist</a>
 
 Validate that all of the binary artifacts can execute, including those artifacts packaged
-in other artifacts (in the tar.gz and zip artifacts).
+in other artifacts (in the tgz and zip artifacts).
 
 The build artifacts should be downloaded from [https://dist.apache.org/repos/dist/dev/incubator/systemml/](https://dist.apache.org/repos/dist/dev/incubator/systemml/) and these artifacts should be tested, as in
 this OS X example.
@@ -104,8 +104,8 @@ this OS X example.
 	# download artifacts
 	wget -r -nH -nd -np -R index.html* https://dist.apache.org/repos/dist/dev/incubator/systemml/0.11.0-incubating-rc1/
 
-	# verify standalone tar.gz works
-	tar -xvzf systemml-0.11.0-incubating-standalone.tar.gz
+	# verify standalone tgz works
+	tar -xvzf systemml-0.11.0-incubating-standalone.tgz
 	cd systemml-0.11.0-incubating-standalone
 	echo "print('hello world');" > hello.dml
 	./runStandaloneSystemML.sh hello.dml
@@ -118,7 +118,7 @@ this OS X example.
 	java -cp ./lib/*:systemml-0.11.0-incubating.jar org.apache.sysml.api.DMLScript -s "print('hello world');"
 
 	# verify src works
-	tar -xvzf systemml-0.11.0-incubating-src.tar.gz
+	tar -xvzf systemml-0.11.0-incubating-src.tgz
 	cd systemml-0.11.0-incubating-src
 	mvn clean package -P distribution
 	cd target/
@@ -127,8 +127,8 @@ this OS X example.
 	cd ..
 	cd ..
 
-	# verify distrib tar.gz works
-	tar -xvzf systemml-0.11.0-incubating.tar.gz
+	# verify distrib tgz works
+	tar -xvzf systemml-0.11.0-incubating.tgz
 	cd systemml-0.11.0-incubating
 	java -cp ../lib/*:SystemML.jar org.apache.sysml.api.DMLScript -s "print('hello world');"
 
@@ -155,7 +155,7 @@ sanity check on OS X after building the artifacts manually.
 	java -cp ./lib/*:SystemML.jar org.apache.sysml.api.DMLScript -s "print('hello world');"
 
 	# verify src works
-	tar -xvzf systemml-0.11.0-incubating-src.tar.gz
+	tar -xvzf systemml-0.11.0-incubating-src.tgz
 	cd systemml-0.11.0-incubating-src
 	mvn clean package -P distribution
 	cd target/
@@ -164,15 +164,15 @@ sanity check on OS X after building the artifacts manually.
 	cd ..
 	cd ..
 
-	# verify standalone tar.gz works
-	tar -xvzf systemml-0.11.0-incubating-standalone.tar.gz
+	# verify standalone tgz works
+	tar -xvzf systemml-0.11.0-incubating-standalone.tgz
 	cd systemml-0.11.0-incubating-standalone
 	echo "print('hello world');" > hello.dml
 	./runStandaloneSystemML.sh hello.dml
 	cd ..
 
-	# verify distrib tar.gz works
-	tar -xvzf systemml-0.11.0-incubating.tar.gz
+	# verify distrib tgz works
+	tar -xvzf systemml-0.11.0-incubating.tgz
 	cd systemml-0.11.0-incubating
 	java -cp ../lib/*:SystemML.jar org.apache.sysml.api.DMLScript -s "print('hello world');"
 
@@ -205,11 +205,11 @@ For more information, see:
 
 <a href="#release-candidate-checklist">Up to Checklist</a>
 
-The project should be built using the `src` (tar.gz and zip) artifacts.
+The project should be built using the `src` (tgz and zip) artifacts.
 In addition, the test suite should be run using an `src` artifact and
 the tests should pass.
 
-	tar -xvzf systemml-0.11.0-incubating-src.tar.gz
+	tar -xvzf systemml-0.11.0-incubating-src.tgz
 	cd systemml-0.11.0-incubating-src
 	mvn clean package -P distribution
 	mvn verify
@@ -219,14 +219,14 @@ the tests should pass.
 
 <a href="#release-candidate-checklist">Up to Checklist</a>
 
-The standalone tar.gz and zip artifacts contain `runStandaloneSystemML.sh` and `runStandaloneSystemML.bat`
+The standalone tgz and zip artifacts contain `runStandaloneSystemML.sh` and `runStandaloneSystemML.bat`
 files. Verify that one or more algorithms can be run on a single node using these
 standalone distributions.
 
 Here is an example based on the [Standalone Guide](http://apache.github.io/incubator-systemml/standalone-guide.html)
 demonstrating the execution of an algorithm (on OS X).
 
-	$ tar -xvzf systemml-0.11.0-incubating-standalone.tar.gz
+	$ tar -xvzf systemml-0.11.0-incubating-standalone.tgz
 	$ cd systemml-0.11.0-incubating-standalone
 	$ wget -P data/ http://archive.ics.uci.edu/ml/machine-learning-databases/haberman/haberman.data
 	$ echo '{"rows": 306, "cols": 4, "format": "csv"}' > data/haberman.data.mtd
@@ -243,7 +243,7 @@ Verify that SystemML runs algorithms on Spark locally.
 
 Here is an example of running the `Univar-Stats.dml` algorithm on random generated data.
 
-	$ tar -xvzf systemml-0.11.0-incubating.tar.gz
+	$ tar -xvzf systemml-0.11.0-incubating.tgz
 	$ cd systemml-0.11.0-incubating
 	$ export SPARK_HOME=/Users/deroneriksson/spark-1.5.1-bin-hadoop2.6
 	$ $SPARK_HOME/bin/spark-submit SystemML.jar -f scripts/datagen/genRandData4Univariate.dml -exec hybrid_spark -args 1000000 100 10 1 2 3 4 uni.mtx

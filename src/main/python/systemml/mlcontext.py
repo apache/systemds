@@ -87,6 +87,7 @@ def _py2java(sc, obj):
     if isinstance(obj, Matrix):
         obj = obj._java_matrix
     # TODO: Port this private PySpark function.
+    # TODO: Handle Numpy Array
     obj = pyspark.mllib.common._py2java(sc, obj)
     return obj
 

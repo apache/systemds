@@ -22,7 +22,9 @@
 from .mlcontext import *
 from .defmatrix import *
 from .converters import *
+from .pushdown import *
 
 __all__ = mlcontext.__all__
 __all__ += defmatrix.__all__
 __all__ += converters.__all__
+__all__ += pushdown.__all__

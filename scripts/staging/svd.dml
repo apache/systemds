@@ -46,6 +46,13 @@
 # V      matrix  right singular matrix
 # -----------------------------------------------------------------------------
 
+X = read($INPUT)
+
+q = ifdef($Q, 10)
+computeU = ifdef($COMPUTEU, FALSE)
+outdir = ifdef($OUTDIR, "hdfs://rr-dense1/user/iyounus/data/")
+ofmt = ifdef($OFMT, "CSV")
+
 SingularValueDecomposition = function(matrix[double] X, int q)
   return(matrix[double] S, matrix[double] V) {
   Xt = t(X)
@@ -59,15 +66,15 @@ SingularValueDecomposition = function(matrix[double] X, int q)
   }
   B = matrix(0, rows=r, cols=r*q)
 
-  parfor (i in 1:q, check=0) {
+  parfor (i in 1:q, mode=REMOTE_SPARK, check=0) {
     c1 = 1+(i-1)*Ni
     c2 = i*Ni
     # TODO check if the last matrix is just one colum
     if (c2 > c) {
       c2 = c
     }
-
     Xi = Xt[,c1:c2]
+    # TODO pad zeros to Si if necessary
     [Ui, Si, Vi] = svd(Xi)
     USi = Ui %*% diag(Si)
     B[,1+(i-1)*r:i*r] = USi
@@ -82,3 +89,7 @@ if (computeU) {
   # TODO add default value for computeU somehow
   U = X %*% V %*% diag(1/S)
 }
+
+write(S, outdir + "singular_values.csv", ofmt)
+write(V, outdir + "right_singular_matrix.csv", ofmt)
+

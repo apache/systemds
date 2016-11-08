@@ -69,11 +69,7 @@ public class RewriteRemoveUnnecessaryCasts extends HopRewriteRule
 		
 		return root;
 	}
-	
-	/**
-	 * 
-	 * @param hop
-	 */
+
 	@SuppressWarnings("unchecked")
 	private void rule_RemoveUnnecessaryCasts( Hop hop )
 	{

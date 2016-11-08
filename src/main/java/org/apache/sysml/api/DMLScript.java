@@ -504,11 +504,6 @@ public class DMLScript
 		return dmlScriptStr;
 	}
 	
-	/**
-	 * 
-	 * @param platform
-	 * @return
-	 */
 	private static RUNTIME_PLATFORM parseRuntimePlatform( String platform )
 	{
 		RUNTIME_PLATFORM lrtplatform = null;
@@ -529,10 +524,6 @@ public class DMLScript
 		return lrtplatform;
 	}
 	
-	/**
-	 * 
-	 * @param conf
-	 */
 	private static void setLoggingProperties( Configuration conf )
 	{
 		String debug = conf.get("systemml.logging");
@@ -557,14 +548,20 @@ public class DMLScript
 	////////
 
 	/**
-	 * run: The running body of DMLScript execution. This method should be called after execution properties have been correctly set,
+	 * The running body of DMLScript execution. This method should be called after execution properties have been correctly set,
 	 * and customized parameters have been put into _argVals
-	 * @throws ParseException 
-	 * @throws IOException 
-	 * @throws DMLRuntimeException 
-	 * @throws HopsException 
-	 * @throws LanguageException 
-	 * @throws LopsException 
+	 * 
+	 * @param dmlScriptStr DML script string
+	 * @param fnameOptConfig configuration file
+	 * @param argVals map of argument values
+	 * @param allArgs arguments
+	 * @param parsePyDML true if PYDML, false if DML
+	 * @throws ParseException if ParseException occurs
+	 * @throws IOException if IOException occurs
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
+	 * @throws LanguageException if LanguageException occurs
+	 * @throws HopsException if HopsException occurs
+	 * @throws LopsException if LopsException occurs
 	 */
 	private static void execute(String dmlScriptStr, String fnameOptConfig, Map<String,String> argVals, String[] allArgs, boolean parsePyDML)
 		throws ParseException, IOException, DMLRuntimeException, LanguageException, HopsException, LopsException 
@@ -694,19 +691,20 @@ public class DMLScript
 	}		
 	
 	/**
-	 * launchDebugger: Launcher for DML debugger. This method should be called after 
-	 * execution and debug properties have been correctly set, and customized parameters 
-	 * have been put into _argVals
-	 * @param  dmlScriptStr DML script contents (including new lines)
-	 * @param  fnameOptConfig Full path of configuration file for SystemML
-	 * @param  argVals Key-value pairs defining arguments of DML script
-	 * @throws ParseException 
-	 * @throws IOException 
-	 * @throws DMLRuntimeException 
-	 * @throws DMLDebuggerException
-	 * @throws HopsException 
-	 * @throws LanguageException 
-	 * @throws LopsException
+	 * Launcher for DML debugger. This method should be called after 
+	 * execution and debug properties have been correctly set, and customized parameters
+	 * 
+	 * @param dmlScriptStr DML script contents (including new lines)
+	 * @param fnameOptConfig Full path of configuration file for SystemML
+	 * @param argVals Key-value pairs defining arguments of DML script
+	 * @param parsePyDML true if PYDML, false if DML
+	 * @throws ParseException if ParseException occurs
+	 * @throws IOException if IOException occurs
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
+	 * @throws DMLDebuggerException if DMLDebuggerException occurs
+	 * @throws LanguageException if LanguageException occurs
+	 * @throws HopsException if HopsException occurs
+	 * @throws LopsException if LopsException occurs
 	 */
 	private static void launchDebugger(String dmlScriptStr, String fnameOptConfig, Map<String,String> argVals, boolean parsePyDML)
 		throws ParseException, IOException, DMLRuntimeException, DMLDebuggerException, LanguageException, HopsException, LopsException 
@@ -776,12 +774,6 @@ public class DMLScript
 		}
 	}
 	
-	/**
-	 * 
-	 * @param config 
-	 * @throws IOException
-	 * @throws DMLRuntimeException 
-	 */
 	private static void checkSecuritySetup(DMLConfig config) 
 		throws IOException, DMLRuntimeException
 	{
@@ -882,12 +874,6 @@ public class DMLScript
 	// private internal helper functionalities
 	////////
 
-	/**
-	 * 
-	 * @param fnameScript
-	 * @param fnameOptConfig
-	 * @param argVals
-	 */
 	private static void printInvocationInfo(String fnameScript, String fnameOptConfig, Map<String,String> argVals)
 	{		
 		LOG.debug("****** args to DML Script ******\n" + "UUID: " + getUUID() + "\n" + "SCRIPT PATH: " + fnameScript + "\n" 
@@ -912,10 +898,6 @@ public class DMLScript
 		}
 	}
 	
-	/**
-	 * 
-	 * @return
-	 */
 	private static String getDateTime() 
 	{
 		DateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
@@ -923,10 +905,6 @@ public class DMLScript
 		return dateFormat.format(date);
 	}
 
-	/**
-	 * 
-	 * @throws DMLException
-	 */
 	private static void cleanSystemMLWorkspace() 
 		throws DMLException
 	{

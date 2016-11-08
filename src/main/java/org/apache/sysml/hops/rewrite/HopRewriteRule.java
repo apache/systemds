@@ -41,10 +41,10 @@ public abstract class HopRewriteRule
 	/**
 	 * Handle a generic (last-level) hop DAG with multiple roots.
 	 * 
-	 * @param roots
-	 * @param state
-	 * @return
-	 * @throws HopsException
+	 * @param roots high-level operator roots
+	 * @param state program rewrite status
+	 * @return list of high-level operators
+	 * @throws HopsException if HopsException occurs
 	 */
 	public abstract ArrayList<Hop> rewriteHopDAGs( ArrayList<Hop> roots, ProgramRewriteStatus state ) 
 		throws HopsException;
@@ -52,10 +52,10 @@ public abstract class HopRewriteRule
 	/**
 	 * Handle a predicate hop DAG with exactly one root.
 	 * 
-	 * @param root
-	 * @param state
-	 * @return
-	 * @throws HopsException
+	 * @param root high-level operator root
+	 * @param state program rewrite status
+	 * @return high-level operator
+	 * @throws HopsException if HopsException occurs
 	 */
 	public abstract Hop rewriteHopDAG( Hop root, ProgramRewriteStatus state ) 
 		throws HopsException;

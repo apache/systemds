@@ -235,7 +235,7 @@ public class DMLDebuggerInterface
 	/**
 	 * Read, process and return command from debugger CLI
 	 * @return CommandLine Current debug command (enter by user)
-	 * @throws DMLDebuggerException
+	 * @throws DMLDebuggerException if DMLDebuggerException occurs
 	 */
 	public CommandLine getDebuggerCommand()
 		throws DMLDebuggerException

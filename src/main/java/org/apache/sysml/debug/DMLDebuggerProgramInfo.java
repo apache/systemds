@@ -108,7 +108,8 @@ public class DMLDebuggerProgramInfo
 	 * Access breakpoint instruction at specified line number in program block (if valid)
 	 * @param pb Current program block 
 	 * @param lineNumber Location for inserting breakpoint
-	 * @param status Current breakpoint status   
+	 * @param op Breakpoint operation
+	 * @param status Current breakpoint status
 	 */
 	private void accessProgramBlockBreakpoint(ProgramBlock pb, int lineNumber, int op, BPINSTRUCTION_STATUS status) 
 	{		
@@ -156,6 +157,7 @@ public class DMLDebuggerProgramInfo
 	 * Access breakpoint instruction at specified line number in set of instructions (if valid)
 	 * @param instructions Instructions for current program block
 	 * @param lineNumber Location for inserting breakpoint
+	 * @param op Breakpoint operation
 	 * @param status Current breakpoint status
 	 */
 	private void accesBreakpointInstruction(ArrayList<Instruction> instructions, int lineNumber, int op, BPINSTRUCTION_STATUS status) 

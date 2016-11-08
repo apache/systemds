@@ -662,7 +662,7 @@ public class ReorgOp extends Hop implements MultiThreadedHop
 
 	/**
 	 * This will check if there is sufficient memory locally (twice the size of second matrix, for original and sort data), and remotely (size of second matrix (sorted data)).  
-	 * @return
+	 * @return true if sufficient memory locally
 	 */
 	private boolean isSortSPRewriteApplicable() 
 	{

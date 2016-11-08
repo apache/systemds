@@ -62,13 +62,6 @@ public class GraphBuilder
 	
 	private static final boolean IGNORE_UNBOUND_UPDATED_VARS = true;
 	
-	/**
-	 * 
-	 * @param prog
-	 * @return
-	 * @throws DMLRuntimeException
-	 * @throws HopsException 
-	 */
 	public static GDFGraph constructGlobalDataFlowGraph( Program prog, Summary summary )
 		throws DMLRuntimeException, HopsException
 	{
@@ -91,13 +84,6 @@ public class GraphBuilder
 		return graph;
 	}
 	
-	/**
-	 * 
-	 * @param pb
-	 * @param roots
-	 * @throws DMLRuntimeException
-	 * @throws HopsException
-	 */
 	@SuppressWarnings("unchecked")
 	private static void constructGDFGraph( ProgramBlock pb, HashMap<String, GDFNode> roots ) 
 		throws DMLRuntimeException, HopsException
@@ -185,14 +171,6 @@ public class GraphBuilder
 		}
 	}
 	
-	/**
-	 * 
-	 * @param hop
-	 * @param pb
-	 * @param lmemo
-	 * @param roots 
-	 * @return
-	 */
 	private static GDFNode constructGDFGraph( Hop hop, ProgramBlock pb, HashMap<Long, GDFNode> lmemo, HashMap<String, GDFNode> roots )
 	{
 		if( lmemo.containsKey(hop.getHopID()) )
@@ -226,13 +204,6 @@ public class GraphBuilder
 		return gnode;
 	}
 	
-	/**
-	 * 
-	 * @param fpb
-	 * @param fsb
-	 * @param roots
-	 * @return
-	 */
 	private static GDFNode constructForPredicateNode(ForProgramBlock fpb, ForStatementBlock fsb, HashMap<String, GDFNode> roots)
 	{
 		HashMap<Long, GDFNode> memo = new HashMap<Long, GDFNode>();
@@ -249,14 +220,6 @@ public class GraphBuilder
 		return pred;
 	}
 	
-	/**
-	 * 
-	 * @param fpb
-	 * @param fsb
-	 * @param roots
-	 * @return
-	 * @throws DMLRuntimeException 
-	 */
 	private static HashMap<String, GDFNode> constructLoopInputNodes( ProgramBlock fpb, StatementBlock fsb, HashMap<String, GDFNode> roots ) 
 		throws DMLRuntimeException
 	{
@@ -299,13 +262,6 @@ public class GraphBuilder
 		return ret;
 	}
 	
-	/**
-	 * 
-	 * @param ifRoots
-	 * @param elseRoots
-	 * @param roots
-	 * @param pb
-	 */
 	private static void reconcileMergeIfProgramBlockOutputs( HashMap<String, GDFNode> ifRoots, HashMap<String, GDFNode> elseRoots, HashMap<String, GDFNode> roots, IfProgramBlock pb )
 	{
 		//merge same variable names, different data
@@ -325,14 +281,6 @@ public class GraphBuilder
 		}
 	}
 	
-	/**
-	 * 
-	 * @param sb
-	 * @param loop
-	 * @param loutputs
-	 * @param roots
-	 * @param pb
-	 */
 	private static void constructLoopOutputCrossBlockNodes(StatementBlock sb, GDFLoopNode loop, HashMap<String, GDFNode> loutputs, HashMap<String, GDFNode> roots, ProgramBlock pb)
 	{
 		//iterate over all output (updated) variables

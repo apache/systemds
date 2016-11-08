@@ -103,11 +103,6 @@ public class RewriteRemovePersistentReadWrite extends HopRewriteRule
 		return root;
 	}
 	
-	/**
-	 * 
-	 * @param hop
-	 * @throws HopsException 
-	 */
 	private void rule_RemovePersistentDataOp( Hop hop ) 
 		throws HopsException
 	{

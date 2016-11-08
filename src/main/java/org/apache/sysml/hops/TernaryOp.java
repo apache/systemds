@@ -164,8 +164,8 @@ public class TernaryOp extends Hop
 	/**
 	 * Method to construct LOPs when op = CENTRAILMOMENT.
 	 * 
-	 * @throws HopsException
-	 * @throws LopsException
+	 * @throws HopsException if HopsException occurs
+	 * @throws LopsException if LopsException occurs
 	 */
 	private void constructLopsCentralMoment() 
 		throws HopsException, LopsException 
@@ -218,8 +218,8 @@ public class TernaryOp extends Hop
 	/**
 	 * Method to construct LOPs when op = COVARIANCE.
 	 * 
-	 * @throws HopsException
-	 * @throws LopsException
+	 * @throws HopsException if HopsException occurs
+	 * @throws LopsException if LopsException occurs
 	 */
 	private void constructLopsCovariance()
 		throws HopsException, LopsException 
@@ -276,8 +276,8 @@ public class TernaryOp extends Hop
 	/**
 	 * Method to construct LOPs when op = QUANTILE | INTERQUANTILE.
 	 * 
-	 * @throws HopsException
-	 * @throws LopsException
+	 * @throws HopsException if HopsException occurs
+	 * @throws LopsException if LopsException occurs
 	 */
 	private void constructLopsQuantile() throws HopsException, LopsException {
 		
@@ -358,8 +358,8 @@ public class TernaryOp extends Hop
 	/**
 	 * Method to construct LOPs when op = CTABLE.
 	 * 
-	 * @throws HopsException
-	 * @throws LopsException
+	 * @throws HopsException if HopsException occurs
+	 * @throws LopsException if LopsException occurs
 	 */
 	private void constructLopsCtable() throws HopsException, LopsException {
 		
@@ -628,12 +628,7 @@ public class TernaryOp extends Hop
 			}
 		}
 	}
-	
-	/**
-	 * 
-	 * @throws HopsException
-	 * @throws LopsException
-	 */
+
 	private void constructLopsPlusMult() 
 		throws HopsException, LopsException 
 	{
@@ -966,22 +961,13 @@ public class TernaryOp extends Hop
 		
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	private boolean isSequenceRewriteApplicable() 
 	{
 		return    isSequenceRewriteApplicable(true)
 			   || isSequenceRewriteApplicable(false);
 	}
-	
-	/**
-	 * 
-	 * @param left
-	 * @return
-	 */
+
 	private boolean isSequenceRewriteApplicable( boolean left ) 
 	{
 		boolean ret = false;
@@ -1034,7 +1020,7 @@ public class TernaryOp extends Hop
 	 * Used for (1) constructing CP lops (hop-lop rewrite), and (2) in order to determine
 	 * if dag split after removeEmpty necessary (#2 is precondition for #1). 
 	 * 
-	 * @return
+	 * @return true if ignore zero rewrite
 	 */
 	public boolean isMatrixIgnoreZeroRewriteApplicable() 
 	{

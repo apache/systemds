@@ -89,13 +89,6 @@ public class RewriteRemoveReadAfterWrite extends HopRewriteRule
 		return root;
 	}
 
-	/**
-	 * 
-	 * @param hop
-	 * @param pWrites
-	 * @param pReads
-	 * @throws HopsException
-	 */
 	private void collectPersistentReadWriteOps(Hop hop, HashMap<String,Hop> pWrites, HashMap<String,Hop> pReads) 
 		throws HopsException 
 	{

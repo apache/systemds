@@ -41,12 +41,7 @@ public class MemoTable
 	{
 		_memo = new HashMap<Long, MatrixCharacteristics>();
 	}
-	
-	/**
-	 * 
-	 * @param hops
-	 * @param status
-	 */
+
 	public void init( ArrayList<Hop> hops, RecompileStatus status)
 	{
 		//check existing status
@@ -61,12 +56,7 @@ public class MemoTable
 		for( Hop hop : hops )
 			rinit(hop, status);
 	}
-	
-	/**
-	 * 
-	 * @param hop
-	 * @param status
-	 */
+
 	public void init( Hop hop, RecompileStatus status)
 	{
 		//check existing status
@@ -80,12 +70,7 @@ public class MemoTable
 		hop.resetVisitStatus();
 		rinit(hop, status);
 	}
-	
-	/**
-	 * 
-	 * @param hops
-	 * @param status
-	 */
+
 	public void extract( ArrayList<Hop> hops, RecompileStatus status)
 	{
 		//check existing status
@@ -108,23 +93,11 @@ public class MemoTable
 		}
 	}
 
-	/**
-	 * 
-	 * @param hopID
-	 * @param dim1
-	 * @param dim2
-	 * @param nnz
-	 */
 	public void memoizeStatistics( long hopID, long dim1, long dim2, long nnz )
 	{
 		_memo.put(hopID, new MatrixCharacteristics(dim1, dim2, -1, -1, nnz));
 	}
-		
-	/**
-	 * 
-	 * @param inputs
-	 * @return
-	 */
+
 	public MatrixCharacteristics[] getAllInputStats( ArrayList<Hop> inputs )
 	{
 		if( inputs == null )
@@ -160,11 +133,6 @@ public class MemoTable
 		return ret;
 	}
 
-	/**
-	 * 
-	 * @param input
-	 * @return
-	 */
 	public MatrixCharacteristics getAllInputStats( Hop input )
 	{
 		if( input == null )
@@ -193,12 +161,7 @@ public class MemoTable
 		
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @param h
-	 * @return
-	 */
+
 	public boolean hasInputStatistics(Hop h) 
 	{
 		boolean ret = false;
@@ -220,12 +183,7 @@ public class MemoTable
 		
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @param hop
-	 * @param status
-	 */
+
 	private void rinit(Hop hop, RecompileStatus status) 
 	{
 		if( hop.getVisited() == VisitStatus.DONE )

@@ -96,14 +96,14 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 	 * Note: unnecessary row or column indexing then later removed via
 	 * dynamic rewrites
 	 * 
-	 * @param sb
-	 * @param csb
-	 * @param from
-	 * @param to
-	 * @param increment
-	 * @param itervar
-	 * @return
-	 * @throws HopsException
+	 * @param sb statement block?
+	 * @param csb statement boock?
+	 * @param from high-level operator?
+	 * @param to high-level operator?
+	 * @param increment high-level operator?
+	 * @param itervar ?
+	 * @return statement block
+	 * @throws HopsException if HopsException occurs
 	 */
 	private StatementBlock vectorizeScalarAggregate( StatementBlock sb, StatementBlock csb, Hop from, Hop to, Hop increment, String itervar ) 
 		throws HopsException
@@ -205,14 +205,14 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 	 * Note: unnecessary row or column indexing then later removed via
 	 * dynamic rewrites
 	 * 
-	 * @param sb
-	 * @param csb
-	 * @param from
-	 * @param to
-	 * @param increment
-	 * @param itervar
-	 * @return
-	 * @throws HopsException
+	 * @param sb ?
+	 * @param csb ?
+	 * @param from ?
+	 * @param to ?
+	 * @param increment ?
+	 * @param itervar ?
+	 * @return statement block
+	 * @throws HopsException if HopsException occurs
 	 */
 	private StatementBlock vectorizeElementwiseBinary( StatementBlock sb, StatementBlock csb, Hop from, Hop to, Hop increment, String itervar ) 
 		throws HopsException
@@ -309,14 +309,14 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 	 * Note: unnecessary row or column indexing then later removed via
 	 * dynamic rewrites
 	 * 
-	 * @param sb
-	 * @param csb
-	 * @param from
-	 * @param to
-	 * @param increment
-	 * @param itervar
-	 * @return
-	 * @throws HopsException
+	 * @param sb ?
+	 * @param csb ?
+	 * @param from ?
+	 * @param to ?
+	 * @param increment ?
+	 * @param itervar ?
+	 * @return statement block
+	 * @throws HopsException if HopsException occurs
 	 */
 	private StatementBlock vectorizeElementwiseUnary( StatementBlock sb, StatementBlock csb, Hop from, Hop to, Hop increment, String itervar )
 		throws HopsException

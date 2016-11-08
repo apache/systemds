@@ -127,11 +127,6 @@ public class RewriteSplitDagUnknownCSVRead extends StatementBlockRewriteRule
 		return ret;
 	}
 	
-	/**
-	 * 
-	 * @param roots
-	 * @param cand
-	 */
 	private void collectCSVReadHopsUnknownSize( ArrayList<Hop> roots, ArrayList<Hop> cand )
 	{
 		if( roots == null )
@@ -142,11 +137,6 @@ public class RewriteSplitDagUnknownCSVRead extends StatementBlockRewriteRule
 			collectCSVReadHopsUnknownSize(root, cand);
 	}
 	
-	/**
-	 * 
-	 * @param root
-	 * @param cand
-	 */
 	private void collectCSVReadHopsUnknownSize( Hop hop, ArrayList<Hop> cand )
 	{
 		if( hop.getVisited() == VisitStatus.DONE )

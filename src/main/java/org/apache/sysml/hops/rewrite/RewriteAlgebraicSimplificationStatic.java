@@ -115,7 +115,9 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 	 * come before constant folding while the other simplifications should come after constant
 	 * folding. Hence, not applied yet.
 	 * 
-	 * @throws HopsException
+	 * @param hop high-level operator
+	 * @param descendFirst if process children recursively first
+	 * @throws HopsException if HopsException occurs
 	 */
 	private void rule_AlgebraicSimplification(Hop hop, boolean descendFirst) 
 		throws HopsException 
@@ -173,10 +175,6 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		hop.setVisited(Hop.VisitStatus.DONE);
 	}
 	
-	/**
-	 * 
-	 * @param hi
-	 */
 	private Hop removeUnnecessaryVectorizeOperation(Hop hi)
 	{
 		//applies to all binary matrix operations, if one input is unnecessarily vectorized 
@@ -245,10 +243,11 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 	 * X/1 or X*1 or 1*X or X-0 -> X
 	 * -1*X or X*-1-> -X		
 	 * 
-	 * @param parent
-	 * @param hi
-	 * @param pos
-	 * @throws HopsException
+	 * @param parent parent high-level operator
+	 * @param hi high-level operator
+	 * @param pos position
+	 * @return high-level operator
+	 * @throws HopsException if HopsException occurs
 	 */
 	private Hop removeUnnecessaryBinaryOperation( Hop parent, Hop hi, int pos ) 
 		throws HopsException
@@ -338,9 +337,9 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 	 * rand*7 -> rand(min*7,max*7); rand+7 -> rand(min+7,max+7); rand-7 -> rand(min+(-7),max+(-7))
 	 * 7*rand -> rand(min*7,max*7); 7+rand -> rand(min+7,max+7); 
 	 * 
-	 * @param hi
-	 * @return
-	 * @throws HopsException
+	 * @param hi high-order operaton
+	 * @return high-level operator
+	 * @throws HopsException if HopsException occurs
 	 */
 	private Hop fuseDatagenAndBinaryOperation( Hop hi ) 
 		throws HopsException
@@ -434,12 +433,6 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		return hi;
 	}
 	
-	/**
-	 * 
-	 * @param hi
-	 * @return
-	 * @throws HopsException
-	 */
 	private Hop fuseDatagenAndMinusOperation( Hop hi ) 
 		throws HopsException
 	{
@@ -500,7 +493,12 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 	 * At the same time this servers as a canonicalization for more complex rewrites. 
 	 * 
 	 * X+X -> X*2, X*X -> X^2, (X>0)-(X<0) -> sign(X)
-	 * @throws HopsException 
+	 * 
+	 * @param parent parent high-level operator
+	 * @param hi high-level operator
+	 * @param pos position
+	 * @return high-level operator
+	 * @throws HopsException if HopsException occurs
 	 */
 	private Hop simplifyBinaryToUnaryOperation( Hop parent, Hop hi, int pos ) 
 		throws HopsException
@@ -571,11 +569,9 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 	 * U%*%V-eps into the common representation U%*%V+s which simplifies 
 	 * subsequent rewrites (e.g., wdivmm or wcemm with epsilon).   
 	 * 
-	 * @param parent
-	 * @param hi
-	 * @param pos
-	 * @return
-	 * @throws HopsException
+	 * @param hi high-level operator
+	 * @return high-level operator
+	 * @throws HopsException if HopsException occurs
 	 */
 	private Hop canonicalizeMatrixMultScalarAdd( Hop hi ) 
 		throws HopsException
@@ -616,12 +612,11 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 	 * rewrite in order to apply it before splitting dags which would hide the table information
 	 * if dimensions are not specified.
 	 * 
-	 * 
-	 * @param parent
-	 * @param hi
-	 * @param pos
-	 * @return
-	 * @throws HopsException
+	 * @param parent parent high-level operator
+	 * @param hi high-level operator
+	 * @param pos position
+	 * @return high-level operator
+	 * @throws HopsException if HopsException occurs
 	 */
 	private Hop simplifyReverseOperation( Hop parent, Hop hi, int pos ) 
 		throws HopsException
@@ -654,12 +649,6 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		return hi;
 	}
 	
-	
-	/**
-	 * 
-	 * @param hi
-	 * @return
-	 */
 	private Hop simplifyMultiBinaryToBinaryOperation( Hop hi )
 	{
 		//pattern: 1-(X*Y) --> X 1-* Y (avoid intermediate)
@@ -692,10 +681,10 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 	 * (X+Y*X) -> (1+Y)*X,    (Y*X+X) -> (Y+1)*X
 	 * 
 	 * 
-	 * @param parent
-	 * @param hi
-	 * @param pos
-	 * @return
+	 * @param parent parent high-level operator
+	 * @param hi high-level operator
+	 * @param pos position
+	 * @return high-level operator
 	 */
 	private Hop simplifyDistributiveBinaryOperation( Hop parent, Hop hi, int pos )
 	{
@@ -777,10 +766,10 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 	 * eagerly, which would loose additional rewrite potential. This rewrite has two goals
 	 * (1) enable XtwXv, and increase piggybacking potential by creating bushy trees.
 	 * 
-	 * @param parent
-	 * @param hi
-	 * @param pos
-	 * @return
+	 * @param parent parent high-level operator
+	 * @param hi high-level operator
+	 * @param pos position
+	 * @return high-level operator
 	 */
 	private Hop simplifyBushyBinaryOperation( Hop parent, Hop hi, int pos )
 	{
@@ -856,13 +845,6 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		return hi;
 	}
 	
-	/**
-	 * 
-	 * @param parent
-	 * @param hi
-	 * @param pos
-	 * @return
-	 */
 	private Hop simplifyUnaryAggReorgOperation( Hop parent, Hop hi, int pos )
 	{
 		if(   hi instanceof AggUnaryOp && ((AggUnaryOp)hi).getDirection()==Direction.RowCol  //full uagg
@@ -885,14 +867,6 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		return hi;
 	}
 	
-	/**
-	 * 
-	 * @param parent
-	 * @param hi
-	 * @param pos
-	 * @return
-	 * @throws HopsException
-	 */
 	private Hop simplifyBinaryMatrixScalarOperation( Hop parent, Hop hi, int pos ) 
 		throws HopsException
 	{
@@ -931,13 +905,6 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		return hi;
 	}
 	
-	/**
-	 * 
-	 * @param parent
-	 * @param hi
-	 * @param pos
-	 * @return
-	 */
 	private Hop pushdownUnaryAggTransposeOperation( Hop parent, Hop hi, int pos )
 	{
 		if( hi instanceof AggUnaryOp && hi.getParent().size()==1 
@@ -975,14 +942,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		
 		return hi;
 	}
-	/**
-	 * 
-	 * @param parent
-	 * @param hi
-	 * @param pos
-	 * @return
-	 * @throws HopsException
-	 */
+
 	private Hop pushdownSumBinaryMult(Hop parent, Hop hi, int pos ) throws HopsException {
 		//pattern:  sum(lamda*X) -> lamda*sum(X)
 		if( hi instanceof AggUnaryOp && ((AggUnaryOp)hi).getDirection()==Direction.RowCol
@@ -1011,13 +971,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		}
 		return hi;
 	}
-	/**
-	 * 
-	 * @param parent
-	 * @param hi
-	 * @param pos
-	 * @return
-	 */
+
 	private Hop simplifyUnaryPPredOperation( Hop parent, Hop hi, int pos )
 	{
 		if( hi instanceof UnaryOp && hi.getDataType()==DataType.MATRIX  //unaryop
@@ -1044,13 +998,6 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		return hi;
 	}
 	
-	/**
-	 * 
-	 * @param parent
-	 * @param hi
-	 * @param pos
-	 * @return
-	 */
 	private Hop simplifyTransposedAppend( Hop parent, Hop hi, int pos )
 	{
 		//e.g., t(cbind(t(A),t(B))) --> rbind(A,B), t(rbind(t(A),t(B))) --> cbind(A,B)		
@@ -1093,8 +1040,10 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 	 * (1-X)*X -> sprop(X)
 	 * 1/(1+exp(-X)) -> sigmoid(X)
 	 * 
-	 * @param hi
-	 * @throws HopsException 
+	 * @param parent parent high-level operator
+	 * @param hi high-level operator
+	 * @param pos position
+	 * @throws HopsException if HopsException occurs
 	 */
 	private Hop fuseBinarySubDAGToUnaryOperation( Hop parent, Hop hi, int pos ) 
 		throws HopsException
@@ -1322,15 +1271,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		
 		return hi;
 	}
-	
-	
-	/**
-	 * 
-	 * @param parent
-	 * @param hi
-	 * @param pos
-	 * @return
-	 */
+
 	private Hop simplifyTraceMatrixMult(Hop parent, Hop hi, int pos)
 	{
 		if( hi instanceof AggUnaryOp && ((AggUnaryOp)hi).getOp()==AggOp.TRACE ) //trace()
@@ -1375,14 +1316,6 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		return hi;
 	}
 	
-	/**
-	 * 
-	 * @param parent
-	 * @param hi
-	 * @param pos
-	 * @return
-	 * @throws HopsException 
-	 */
 	private Hop simplifySlicedMatrixMult(Hop parent, Hop hi, int pos) 
 		throws HopsException
 	{
@@ -1424,15 +1357,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		
 		return hi;
 	}
-	
-	/**
-	 * 
-	 * @param parent
-	 * @param hi
-	 * @param pos
-	 * @return
-	 * @throws HopsException
-	 */
+
 	private Hop simplifyConstantSort(Hop parent, Hop hi, int pos) 
 		throws HopsException
 	{
@@ -1528,11 +1453,11 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 	/**
 	 * Patterns: t(t(A)%*%t(B)+C) -> B%*%A+t(C)
 	 * 
-	 * @param parent
-	 * @param hi
-	 * @param pos
-	 * @return
-	 * @throws HopsException
+	 * @param parent parent high-level operator
+	 * @param hi high-level operator
+	 * @param pos position
+	 * @return high-level operator
+	 * @throws HopsException if HopsException occurs
 	 */
 	private Hop simplifyTransposeAggBinBinaryChains(Hop parent, Hop hi, int pos) 
 		throws HopsException
@@ -1572,9 +1497,10 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 	/**
 	 * Pattners: t(t(X)) -> X, rev(rev(X)) -> X
 	 * 
-	 * @param parent
-	 * @param hi
-	 * @param pos
+	 * @param parent parent high-level operator
+	 * @param hi high-level operator
+	 * @param pos position
+	 * @return high-level operator
 	 */
 	private Hop removeUnnecessaryReorgOperation(Hop parent, Hop hi, int pos)
 	{
@@ -1604,15 +1530,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		
 		return hi;
 	}
-	
-	/**
-	 * 
-	 * @param parent
-	 * @param hi
-	 * @param pos
-	 * @return
-	 * @throws HopsException 
-	 */
+
 	private Hop removeUnnecessaryMinus(Hop parent, Hop hi, int pos) 
 		throws HopsException
 	{
@@ -1644,12 +1562,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		
 		return hi;
 	}
-	
-	/**
-	 * 
-	 * @param hi
-	 * @return
-	 */
+
 	private Hop simplifyGroupedAggregate(Hop hi)
 	{
 		if( hi instanceof ParameterizedBuiltinOp && ((ParameterizedBuiltinOp)hi).getOp()==ParamBuiltinOp.GROUPEDAGG  ) //aggregate
@@ -1680,15 +1593,6 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		return hi;
 	}
 	
-	
-	/**
-	 * 
-	 * @param parent
-	 * @param hi
-	 * @param pos
-	 * @return
-	 * @throws HopsException
-	 */
 	private Hop fuseMinusNzBinaryOperation(Hop parent, Hop hi, int pos) 
 		throws HopsException
 	{
@@ -1727,14 +1631,6 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		return hi;
 	}
 	
-	/**
-	 * 
-	 * @param parent
-	 * @param hi
-	 * @param pos
-	 * @return
-	 * @throws HopsException
-	 */
 	private Hop fuseLogNzUnaryOperation(Hop parent, Hop hi, int pos) 
 		throws HopsException
 	{
@@ -1771,14 +1667,6 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		return hi;
 	}
 
-	/**
-	 * 
-	 * @param parent
-	 * @param hi
-	 * @param pos
-	 * @return
-	 * @throws HopsException
-	 */
 	private Hop fuseLogNzBinaryOperation(Hop parent, Hop hi, int pos) 
 		throws HopsException
 	{
@@ -1816,14 +1704,6 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		return hi;
 	}
 
-	/**
-	 * 
-	 * @param parent
-	 * @param hi
-	 * @param pos
-	 * @return
-	 * @throws HopsException
-	 */
 	private Hop simplifyOuterSeqExpand(Hop parent, Hop hi, int pos) 
 		throws HopsException
 	{
@@ -1876,14 +1756,6 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		return hi;
 	}
 	
-	/**
-	 * 
-	 * @param parent
-	 * @param hi
-	 * @param pos
-	 * @return
-	 * @throws HopsException
-	 */
 	private Hop simplifyTableSeqExpand(Hop parent, Hop hi, int pos) 
 		throws HopsException
 	{
@@ -1935,11 +1807,11 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 	 * NOTE: currently disabled since this rewrite is INVALID in the
 	 * presence of NaNs (because (NaN!=NaN) is true). 
 	 * 
-	 * @param parent
-	 * @param hi
-	 * @param pos
-	 * @return
-	 * @throws HopsException
+	 * @param parent parent high-level operator
+	 * @param hi high-level operator
+	 * @param pos position
+	 * @return high-level operator
+	 * @throws HopsException if HopsException occurs
 	 */
 	@SuppressWarnings("unused")
 	private Hop removeUnecessaryPPred(Hop parent, Hop hi, int pos) 

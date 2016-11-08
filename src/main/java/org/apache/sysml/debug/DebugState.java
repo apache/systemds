@@ -58,7 +58,7 @@ public class DebugState
 	/**
 	 * Getter for current frame's program counter
 	 * @return Current frame program counter
-	 * @throws DMLRuntimeException 
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public DMLProgramCounter getPC() throws DMLRuntimeException {
 		if(!DMLScript.ENABLE_DEBUG_MODE) {
@@ -88,14 +88,15 @@ public class DebugState
 	
 	/**
 	 * Setter for current frame's local variables
-	 * @param Current frame local variables
+	 * 
+	 * @param vars local variables
 	 */
 	public void setVariables(LocalVariableMap vars) {
 		frameVariables = vars;
 	}
 	
 	/**
-	 * Is runtime ready to accept next command
+	 * Is runtime ready to accept next command?
 	 * @return  true if the user interface can accept next command
 	 */
 	public boolean canAcceptNextCommand() {
@@ -177,7 +178,9 @@ public class DebugState
 	}
 
 	/**
-	 * Display a full DML stack trace for a runtime exception 
+	 * Display a full DML stack trace for a runtime exception.
+	 * 
+	 * @param e the exception
 	 */
 	public void getDMLStackTrace(Exception e) {		
 		System.err.format("Runtime exception raised %s\n", e.toString());

@@ -162,10 +162,11 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 	 * Core dynamic programming enumeration algorithm
 	 * for global data flow optimization.
 	 * 
-	 * @param node
-	 * @param maxCosts
-	 * @return
-	 * @throws DMLRuntimeException 
+	 * @param node the GDF node
+	 * @param memo the memo structure
+	 * @param maxCosts max costs
+	 * @return the plan set
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static PlanSet enumOpt( GDFNode node, MemoStructure memo, double maxCosts )
 		throws DMLRuntimeException
@@ -203,13 +204,6 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 		return P;
 	}
 	
-	/**
-	 * 
-	 * @param node
-	 * @param memo 
-	 * @return 
-	 * @throws DMLRuntimeException 
-	 */
 	private static PlanSet enumNodePlans( GDFNode node, MemoStructure memo, double maxCosts ) 
 		throws DMLRuntimeException
 	{
@@ -307,11 +301,6 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 		return new PlanSet(plans);
 	}
 	
-	/**
-	 * 
-	 * @param node
-	 * @param plans
-	 */
 	private static void enumHopNodePlans(GDFNode node, ArrayList<Plan> plans)
 	{ 
 		ExecType CLUSTER = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
@@ -339,10 +328,6 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 		}
 	}
 	
-	/**
-	 * 
-	 * @param plans
-	 */
 	private static void pruneInvalidPlans( PlanSet plans )
 	{
 		ArrayList<Plan> valid = new ArrayList<Plan>();
@@ -386,12 +371,6 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 		plans.setPlans( valid );
 	}
 	
-	/**
-	 * 
-	 * @param plans
-	 * @param maxCosts 
-	 * @throws DMLRuntimeException 
-	 */
 	private static void pruneSuboptimalPlans( PlanSet plans, double maxCosts ) 
 		throws DMLRuntimeException
 	{
@@ -437,12 +416,6 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 		plans.setPlans(optimal);
 	}
 	
-	/**
-	 * 
-	 * @param p
-	 * @return
-	 * @throws DMLRuntimeException 
-	 */
 	private static double costRuntimePlan(Plan p) 
 		throws DMLRuntimeException
 	{

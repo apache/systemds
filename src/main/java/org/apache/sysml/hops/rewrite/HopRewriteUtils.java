@@ -65,12 +65,6 @@ import org.apache.sysml.runtime.util.UtilFunctions;
 public class HopRewriteUtils 
 {
 
-
-	/**
-	 * 
-	 * @param op
-	 * @return
-	 */
 	public static boolean isValueTypeCast( OpOp1 op )
 	{
 		return (   op == OpOp1.CAST_AS_BOOLEAN 
@@ -80,13 +74,7 @@ public class HopRewriteUtils
 	
 	//////////////////////////////////
 	// literal handling
-	
-	/**
-	 * 
-	 * @param op
-	 * @return
-	 * @throws HopsException
-	 */
+
 	public static boolean getBooleanValue( LiteralOp op )
 		throws HopsException
 	{
@@ -119,13 +107,7 @@ public class HopRewriteUtils
 		
 		return false;
 	}
-	
-	/**
-	 * 
-	 * @param op
-	 * @return
-	 * @throws HopsException
-	 */
+
 	public static double getDoubleValue( LiteralOp op )
 		throws HopsException
 	{
@@ -139,11 +121,6 @@ public class HopRewriteUtils
 		}
 	}
 	
-	/**
-	 * 
-	 * @param op
-	 * @return
-	 */
 	public static double getDoubleValueSafe( LiteralOp op )
 	{
 		try
@@ -170,6 +147,10 @@ public class HopRewriteUtils
 	 * Note: For comparisons, this is *only* to be used in situations
 	 * in which the value is absolutely guaranteed to be an integer.
 	 * Otherwise, a safer alternative is `getDoubleValue`.
+	 * 
+	 * @param op literal operator
+	 * @return long value of literator op
+	 * @throws HopsException if HopsException occurs
 	 */
 	public static long getIntValue( LiteralOp op )
 		throws HopsException
@@ -184,11 +165,6 @@ public class HopRewriteUtils
 		}
 	}
 	
-	/**
-	 * 
-	 * @param op
-	 * @return
-	 */
 	public static long getIntValueSafe( LiteralOp op )
 	{
 		try
@@ -209,12 +185,6 @@ public class HopRewriteUtils
 		return Long.MAX_VALUE;
 	}
 	
-	/**
-	 * 
-	 * @param op
-	 * @return
-	 * @throws HopsException
-	 */
 	public static ScalarObject getScalarObject( LiteralOp op )
 	{
 		ScalarObject ret = null;
@@ -294,13 +264,6 @@ public class HopRewriteUtils
 		child.getParent().add( parent );
 	}
 	
-	/**
-	 * 
-	 * @param input
-	 * @param value
-	 * @return
-	 * @throws HopsException
-	 */
 	public static Hop createDataGenOp( Hop input, double value ) 
 		throws HopsException
 	{		
@@ -334,11 +297,11 @@ public class HopRewriteUtils
 	/**
 	 * Assumes that min and max are literal ops, needs to be checked from outside.
 	 * 
-	 * @param inputGen
-	 * @param scale
-	 * @param intercept
-	 * @return
-	 * @throws HopsException
+	 * @param inputGen input data gen op
+	 * @param scale the scale
+	 * @param shift the shift
+	 * @return data gen op
+	 * @throws HopsException if HopsException occurs
 	 */
 	public static DataGenOp copyDataGenOp( DataGenOp inputGen, double scale, double shift ) 
 		throws HopsException
@@ -477,21 +440,10 @@ public class HopRewriteUtils
 		return datagen;
 	}
 	
-	/**
-	 * 
-	 * @param input
-	 * @return
-	 */
 	public static ReorgOp createTranspose(Hop input) {
 		return createReorg(input, ReOrgOp.TRANSPOSE);
 	}
 	
-	/**
-	 * 
-	 * @param input
-	 * @param rop
-	 * @return
-	 */
 	public static ReorgOp createReorg(Hop input, ReOrgOp rop)
 	{
 		ReorgOp transpose = new ReorgOp(input.getName(), input.getDataType(), input.getValueType(), rop, input);
@@ -502,13 +454,6 @@ public class HopRewriteUtils
 		return transpose;
 	}
 	
-	/**
-	 * 
-	 * @param input
-	 * @param type
-	 * @return
-	 * @throws HopsException 
-	 */
 	public static UnaryOp createUnary(Hop input, OpOp1 type) 
 		throws HopsException
 	{
@@ -521,11 +466,6 @@ public class HopRewriteUtils
 		return unary;
 	}
 	
-	/**
-	 * 
-	 * @param input
-	 * @return
-	 */
 	public static BinaryOp createMinus(Hop input)
 	{
 		BinaryOp minus = new BinaryOp(input.getName(), input.getDataType(), input.getValueType(), OpOp2.MINUS, new LiteralOp(0), input);
@@ -536,13 +476,6 @@ public class HopRewriteUtils
 		return minus;
 	}
 	
-	/**
-	 * 
-	 * @param input1
-	 * @param input2
-	 * @param op
-	 * @return
-	 */
 	public static BinaryOp createBinary(Hop input1, Hop input2, OpOp2 op)
 	{
 		BinaryOp bop = new BinaryOp(input1.getName(), input1.getDataType(), 
@@ -554,22 +487,10 @@ public class HopRewriteUtils
 		return bop;
 	}
 	
-	/**
-	 * 
-	 * @param input
-	 * @return
-	 */
 	public static AggUnaryOp createSum( Hop input ) {
 		return createAggUnaryOp(input, AggOp.SUM, Direction.RowCol);
 	}
 	
-	/**
-	 * 
-	 * @param input
-	 * @param op
-	 * @param dir
-	 * @return
-	 */
 	public static AggUnaryOp createAggUnaryOp( Hop input, AggOp op, Direction dir )
 	{
 		DataType dt = (dir==Direction.RowCol) ? DataType.SCALAR : input.getDataType();
@@ -582,12 +503,6 @@ public class HopRewriteUtils
 		return auop;
 	}
 	
-	/**
-	 * 
-	 * @param left
-	 * @param right
-	 * @return
-	 */
 	public static AggBinaryOp createMatrixMultiply(Hop left, Hop right)
 	{
 		AggBinaryOp mmult = new AggBinaryOp(left.getName(), left.getDataType(), left.getValueType(), OpOp2.MULT, AggOp.SUM, left, right);
@@ -647,14 +562,6 @@ public class HopRewriteUtils
 		return datagen;
 	}
 	
-	/**
-	 * 
-	 * @param mleft
-	 * @param smid
-	 * @param mright
-	 * @param op
-	 * @return
-	 */
 	public static TernaryOp createTernaryOp(Hop mleft, Hop smid, Hop mright, OpOp3 op) {
 		TernaryOp ternOp = new TernaryOp("tmp", DataType.MATRIX, ValueType.DOUBLE, op, mleft, smid, mright);
 		ternOp.setRowsInBlock(mleft.getRowsInBlock());
@@ -701,26 +608,11 @@ public class HopRewriteUtils
 		dest.setAllPositions(src.getBeginLine(), src.getBeginColumn(), src.getEndLine(), src.getEndColumn());
 	}
 	
-	/**
-	 * 
-	 * @param hop
-	 * @param brlen
-	 * @param bclen
-	 * @param src
-	 */
 	public static void updateHopCharacteristics( Hop hop, long brlen, long bclen, Hop src )
 	{
 		updateHopCharacteristics(hop, brlen, bclen, new MemoTable(), src);
 	}
 	
-	/**
-	 * 
-	 * @param hop
-	 * @param brlen
-	 * @param bclen
-	 * @param memo
-	 * @param src
-	 */
 	public static void updateHopCharacteristics( Hop hop, long brlen, long bclen, MemoTable memo, Hop src )
 	{
 		//update block sizes and dimensions  
@@ -754,11 +646,6 @@ public class HopRewriteUtils
 				&& hop1.getDim2() == hop2.getDim2());
 	}
 	
-	/**
-	 * 
-	 * @param hop
-	 * @return
-	 */
 	public static boolean isSingleBlock( Hop hop ) {
 		return isSingleBlock(hop, true)
 			&& isSingleBlock(hop, false);
@@ -769,9 +656,9 @@ public class HopRewriteUtils
 	 * Checks our BLOCKSIZE CONSTRAINT, w/ awareness of forced single node
 	 * execution mode.
 	 * 
-	 * @param hop
-	 * @param cols
-	 * @return
+	 * @param hop high-level operator
+	 * @param cols true if cols
+	 * @return true if single block
 	 */
 	public static boolean isSingleBlock( Hop hop, boolean cols )
 	{
@@ -786,11 +673,6 @@ public class HopRewriteUtils
 				    : (hop.getDim1()>0 && hop.getDim1()<=hop.getRowsInBlock());
 	}
 	
-	/**
-	 * 
-	 * @param hop
-	 * @return
-	 */
 	public static boolean isOuterProductLikeMM( Hop hop ) {
 		return hop instanceof AggBinaryOp
 			&& hop.getInput().get(0).getDim1() > hop.getInput().get(0).getDim2()
@@ -830,34 +712,17 @@ public class HopRewriteUtils
 		return ret;
 	}
 	
-	/**
-	 * 
-	 * @param hop
-	 * @return
-	 */
 	public static boolean isTransposeOperation(Hop hop)
 	{
 		return (hop instanceof ReorgOp && ((ReorgOp)hop).getOp()==ReOrgOp.TRANSPOSE);
 	}
 	
-	/**
-	 * 
-	 * @param hop1
-	 * @param hop2
-	 * @return
-	 */
 	public static boolean isTransposeOfItself(Hop hop1, Hop hop2)
 	{
 		return hop1 instanceof ReorgOp && ((ReorgOp)hop1).getOp()==ReOrgOp.TRANSPOSE && hop1.getInput().get(0) == hop2
 			|| hop2 instanceof ReorgOp && ((ReorgOp)hop2).getOp()==ReOrgOp.TRANSPOSE && hop2.getInput().get(0) == hop1;	
 	}
 	
-	/**
-	 * 
-	 * @param pred
-	 * @param hop
-	 * @return
-	 */
 	public static boolean isNonZeroIndicator(Hop pred, Hop hop )
 	{
 		if( pred instanceof BinaryOp && ((BinaryOp)pred).getOp()==OpOp2.NOTEQUAL
@@ -871,11 +736,6 @@ public class HopRewriteUtils
 		return false;
 	}
 	
-	/**
-	 * 
-	 * @param hop
-	 * @return
-	 */
 	public static boolean isFullColumnIndexing(LeftIndexingOp hop)
 	{
 		boolean colPred = hop.getColLowerEqualsUpper();  //single col
@@ -887,11 +747,6 @@ public class HopRewriteUtils
 				&& ru instanceof LiteralOp && getDoubleValueSafe((LiteralOp)ru)==hop.getDim1();
 	}
 	
-	/**
-	 * 
-	 * @param hop
-	 * @return
-	 */
 	public static boolean isFullRowIndexing(LeftIndexingOp hop)
 	{
 		boolean rowPred = hop.getRowLowerEqualsUpper();  //single row
@@ -903,22 +758,12 @@ public class HopRewriteUtils
 				&& cu instanceof LiteralOp && getDoubleValueSafe((LiteralOp)cu)==hop.getDim2();
 	}
 	
-	/**
-	 * 
-	 * @param hop
-	 * @return
-	 */
 	public static boolean isScalarMatrixBinaryMult( Hop hop ) {
 		return hop instanceof BinaryOp && ((BinaryOp)hop).getOp()==OpOp2.MULT
 			&& ((hop.getInput().get(0).getDataType()==DataType.SCALAR && hop.getInput().get(1).getDataType()==DataType.MATRIX)
 			|| (hop.getInput().get(0).getDataType()==DataType.MATRIX && hop.getInput().get(1).getDataType()==DataType.SCALAR));
 	}
 	
-	/**
-	 * 
-	 * @param hop
-	 * @return
-	 */
 	public static boolean isBasic1NSequence(Hop hop)
 	{
 		boolean ret = false;
@@ -937,11 +782,6 @@ public class HopRewriteUtils
 		return ret;
 	}
 	
-	/**
-	 * 
-	 * @param hop
-	 * @return
-	 */
 	public static boolean isBasicN1Sequence(Hop hop)
 	{
 		boolean ret = false;
@@ -960,12 +800,6 @@ public class HopRewriteUtils
 		return ret;
 	}
 	
-	/**
-	 * 
-	 * @param hop
-	 * @return
-	 * @throws HopsException
-	 */
 	public static double getBasic1NSequenceMax(Hop hop) 
 		throws HopsException
 	{
@@ -982,12 +816,6 @@ public class HopRewriteUtils
 		throw new HopsException("Failed to retrieve 'to' argument from basic 1-N sequence.");
 	}
 	
-	/**
-	 * 
-	 * @param hop
-	 * @return
-	 * @throws HopsException
-	 */
 	public static LiteralOp getBasic1NSequenceMaxLiteral(Hop hop) 
 		throws HopsException
 	{
@@ -1005,13 +833,6 @@ public class HopRewriteUtils
 	}
 	
 	
-	/**
-	 * 
-	 * @param hop
-	 * @param inclTransient
-	 * @param inclPersistent
-	 * @return
-	 */
 	public static boolean hasOnlyWriteParents( Hop hop, boolean inclTransient, boolean inclPersistent )
 	{
 		boolean ret = true;
@@ -1032,11 +853,6 @@ public class HopRewriteUtils
 		return ret;
 	}
 	
-	/**
-	 * 
-	 * @param hop
-	 * @return
-	 */
 	public static boolean hasTransformParents( Hop hop )
 	{
 		boolean ret = false;
@@ -1054,11 +870,6 @@ public class HopRewriteUtils
 		return ret;
 	}
 	
-	/**
-	 * 
-	 * @param hop
-	 * @return
-	 */
 	public static boolean alwaysRequiresReblock(Hop hop)
 	{
 		return (    hop instanceof DataOp 
@@ -1066,12 +877,6 @@ public class HopRewriteUtils
 				 && ((DataOp)hop).getInputFormatType()!=FileFormatTypes.BINARY);
 	}
 	
-	/**
-	 * 
-	 * @param root
-	 * @param var
-	 * @return
-	 */
 	public static boolean rHasSimpleReadChain(Hop root, String var)
 	{
 		if( root.getVisited()==VisitStatus.DONE )
@@ -1098,13 +903,6 @@ public class HopRewriteUtils
 		return ret;
 	}
 	
-	/**
-	 * 
-	 * @param root
-	 * @param var
-	 * @param includeMetaOp
-	 * @return
-	 */
 	public static boolean rContainsRead(Hop root, String var, boolean includeMetaOp)
 	{
 		if( root.getVisited()==VisitStatus.DONE )
@@ -1187,9 +985,9 @@ public class HopRewriteUtils
 	 * of matrix cells. Note that this methods throws a RuntimeException
 	 * if either hop has unknown dimensions. 
 	 * 
-	 * @param hop1
-	 * @param hop2
-	 * @return 0 if sizes are equal, <0 for hop1<hop2, >0 for hop1>hop2.  
+	 * @param hop1 high-level operator 1
+	 * @param hop2 high-level operator 2
+	 * @return 0 if sizes are equal, &lt;0 for hop1&lt;hop2, &gt;0 for hop1&gt;hop2.
 	 */
 	public static int compareSize( Hop hop1, Hop hop2 ) {
 		long size1 = hop1.getDim1() * hop1.getDim2();

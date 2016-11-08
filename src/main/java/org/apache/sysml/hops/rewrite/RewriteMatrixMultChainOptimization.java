@@ -86,6 +86,9 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 	/**
 	 * rule_OptimizeMMChains(): This method recurses through all Hops in the DAG
 	 * to find chains that need to be optimized.
+	 * 
+	 * @param hop high-level operator
+	 * @throws HopsException if HopsException occurs
 	 */
 	private void rule_OptimizeMMChains(Hop hop) 
 		throws HopsException 
@@ -115,6 +118,9 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 	 * links among the Hops that are involved in mmChain. (Step-3) Find the
 	 * optimal ordering (dynamic programming) (Step-4) Relink the hops in
 	 * mmChain.
+	 * 
+	 * @param hop high-level operator
+	 * @throws HopsException if HopsException occurs
 	 */
 	private void optimizeMMChain( Hop hop ) throws HopsException 
 	{
@@ -321,11 +327,6 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 		}
 	}
 
-	/**
-	 * 
-	 * @param operators
-	 * @throws HopsException
-	 */
 	private void clearLinksWithinChain ( Hop hop, ArrayList<Hop> operators ) 
 		throws HopsException 
 	{
@@ -350,11 +351,11 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 	 * If all dimensions are known it returns true; othrewise the mmchain rewrite
 	 * should be ended without modifications.
 	 * 
-	 * @param hop
-	 * @param chain
-	 * @param dimArray
-	 * @return
-	 * @throws HopsException
+	 * @param hop high-level operator
+	 * @param chain list of high-level operators
+	 * @param dimArray dimension array
+	 * @return true if all dimensions known
+	 * @throws HopsException if HopsException occurs
 	 */
 	private boolean getDimsArray( Hop hop, ArrayList<Hop> chain, double[] dimsArray ) 
 		throws HopsException 
@@ -394,13 +395,6 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 		return dimsKnown;
 	}
 
-	
-	/**
-	 * 
-	 * @param p
-	 * @param h
-	 * @return
-	 */
 	private int inputCount ( Hop p, Hop h ) {
 		int count = 0;
 		for ( int i=0; i < p.getInput().size(); i++ )
@@ -409,11 +403,6 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 		return count;
 	}
 	
-	/**
-	 * 
-	 * @param hop
-	 * @param level
-	 */
 	private void logTraceHop( Hop hop, int level )
 	{
 		if( LOG.isTraceEnabled() ) {

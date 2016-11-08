@@ -43,10 +43,10 @@ public class GDFCrossBlockNode extends GDFNode
 	/**
 	 * Constructor PLAIN crossblocknode
 	 * 
-	 * @param hop
-	 * @param pb
-	 * @param input
-	 * @param name
+	 * @param hop high-level operator
+	 * @param pb program block
+	 * @param input GDF node
+	 * @param name the name
 	 */
 	public GDFCrossBlockNode( Hop hop, ProgramBlock pb, GDFNode input, String name )
 	{
@@ -62,11 +62,11 @@ public class GDFCrossBlockNode extends GDFNode
 	/**
 	 * Constructor MERGE crossblocknode
 	 * 
-	 * @param hop
-	 * @param pb
-	 * @param input1
-	 * @param input2
-	 * @param name
+	 * @param hop high-level operator
+	 * @param pb program block
+	 * @param input1 GDF node 1
+	 * @param input2 GDF node 2
+	 * @param name the name
 	 */
 	public GDFCrossBlockNode( Hop hop, ProgramBlock pb, GDFNode input1, GDFNode input2, String name )
 	{

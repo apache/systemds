@@ -74,12 +74,6 @@ public class CostEstimationWrapper
 		}
 	}
 	
-	/**
-	 * 
-	 * @param rtprog
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	public static double getTimeEstimate(Program rtprog, ExecutionContext ec) 
 		throws DMLRuntimeException
 	{
@@ -93,13 +87,6 @@ public class CostEstimationWrapper
 		return costs;
 	}
 	
-	/**
-	 * 
-	 * @param pb
-	 * @param ec
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	public static double getTimeEstimate(ProgramBlock pb, ExecutionContext ec, boolean recursive) 
 		throws DMLRuntimeException
 	{
@@ -113,16 +100,6 @@ public class CostEstimationWrapper
 		return costs;
 	}
 	
-	/**
-	 * 
-	 * @param hops
-	 * @param ec
-	 * @return
-	 * @throws DMLRuntimeException
-	 * @throws HopsException
-	 * @throws LopsException
-	 * @throws IOException
-	 */
 	public static double getTimeEstimate( ArrayList<Hop> hops, ExecutionContext ec ) 
 		throws DMLRuntimeException, HopsException, LopsException, IOException
 	{
@@ -136,13 +113,7 @@ public class CostEstimationWrapper
 		
 		return costs;
 	}
-	
-	/**
-	 * 
-	 * @param type
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	private static CostEstimator createCostEstimator( CostType type ) 
 		throws DMLRuntimeException
 	{

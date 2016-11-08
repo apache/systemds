@@ -40,12 +40,6 @@ public class HopDagValidator
 {
 	private static final Log LOG = LogFactory.getLog(HopDagValidator.class.getName());
 	
-	/**
-	 * 
-	 * @param roots
-	 * @throws HopsException 
-	 * @throws DMLRuntimeException 
-	 */
 	public static void validateHopDag(ArrayList<Hop> roots) 
 		throws HopsException
 	{
@@ -67,11 +61,6 @@ public class HopDagValidator
 		}
 	}
 	
-	/**
-	 * 
-	 * @param root
-	 * @throws HopsException 
-	 */
 	public static void validateHopDag(Hop root) 
 		throws HopsException
 	{
@@ -93,11 +82,6 @@ public class HopDagValidator
 		}
 	}
 	
-	/**
-	 * 
-	 * @param hop
-	 * @throws HopsException
-	 */
 	private static void rValidateHop( Hop hop ) 
 		throws HopsException
 	{

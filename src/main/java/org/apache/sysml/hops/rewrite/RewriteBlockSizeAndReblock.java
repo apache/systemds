@@ -240,10 +240,6 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 		hop.setVisited(Hop.VisitStatus.DONE);
 	}
 	
-	/**
-	 * 
-	 * @return
-	 */
 	private static boolean isReblockValid() {
 		return ( DMLScript.rtplatform != RUNTIME_PLATFORM.SINGLE_NODE);
 	}

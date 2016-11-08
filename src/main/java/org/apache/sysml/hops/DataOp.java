@@ -62,8 +62,19 @@ public class DataOp extends Hop
 	}
 	
 	/**
-	 *  READ operation for Matrix w/ dim1, dim2. 
+	 * READ operation for Matrix w/ dim1, dim2. 
 	 * This constructor does not support any expression in parameters
+	 * 
+	 * @param l ?
+	 * @param dt data type
+	 * @param vt value type
+	 * @param dop data operator type
+	 * @param fname file name
+	 * @param dim1 dimension 1
+	 * @param dim2 dimension 2
+	 * @param nnz number of non-zeros
+	 * @param rowsPerBlock rows per block
+	 * @param colsPerBlock cols per block
 	 */
 	public DataOp(String l, DataType dt, ValueType vt, DataOpTypes dop,
 			String fname, long dim1, long dim2, long nnz, long rowsPerBlock, long colsPerBlock) {
@@ -90,6 +101,12 @@ public class DataOp extends Hop
 	/**
 	 * READ operation for Matrix
 	 * This constructor supports expressions in parameters
+	 * 
+	 * @param l ?
+	 * @param dt data type
+	 * @param vt value type
+	 * @param dop data operator type
+	 * @param inputParameters input parameters
 	 */
 	public DataOp(String l, DataType dt, ValueType vt, 
 			DataOpTypes dop, HashMap<String, Hop> inputParameters) {
@@ -147,6 +164,13 @@ public class DataOp extends Hop
 	/**
 	 *  WRITE operation for Matrix
 	 *  This constructor supports expression in parameters
+	 * 
+	 * @param l ?
+	 * @param dt data type
+	 * @param vt value type
+	 * @param dop data operator type
+	 * @param in high-level operator
+	 * @param inputParameters input parameters
 	 */
 	public DataOp(String l, DataType dt, ValueType vt, 
 		DataOpTypes dop, Hop in, HashMap<String, Hop> inputParameters) {

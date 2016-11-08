@@ -69,13 +69,6 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 		return root;
 	}
 
-
-	/**
-	 * 
-	 * @param hop
-	 * @param descendFirst
-	 * @throws HopsException
-	 */
 	private void rule_IndexingVectorization( Hop hop ) 
 		throws HopsException 
 	{
@@ -104,8 +97,8 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 	 * Note: unnecessary row or column indexing then later removed via
 	 * dynamic rewrites
 	 * 
-	 * @param hop
-	 * @throws HopsException 
+	 * @param hop high-level operator
+	 * @throws HopsException if HopsException occurs
 	 */
 	@SuppressWarnings("unused")
 	private void vectorizeRightIndexing( Hop hop )
@@ -197,11 +190,6 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 		}
 	}
 	
-	/**
-	 * 
-	 * @param hop
-	 * @throws HopsException
-	 */
 	@SuppressWarnings("unchecked")
 	private void vectorizeLeftIndexing( Hop hop )
 		throws HopsException

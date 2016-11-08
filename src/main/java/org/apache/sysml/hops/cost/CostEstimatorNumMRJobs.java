@@ -22,9 +22,6 @@ package org.apache.sysml.hops.cost;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.Instruction;
 
-/**
- * 
- */
 public class CostEstimatorNumMRJobs extends CostEstimator
 {
 

@@ -96,13 +96,6 @@ public class RewriteCommonSubexpressionElimination extends HopRewriteRule
 		return root;
 	}
 	
-	/**
-	 * 
-	 * @param dataops
-	 * @param literalops
-	 * @return
-	 * @throws HopsException
-	 */
 	private int rule_CommonSubexpressionElimination_MergeLeafs( Hop hop, HashMap<String, Hop> dataops, HashMap<String, Hop> literalops ) 
 		throws HopsException 
 	{
@@ -163,13 +156,6 @@ public class RewriteCommonSubexpressionElimination extends HopRewriteRule
 		return ret;
 	}
 
-	/**
-	 * 
-	 * @param dataops
-	 * @param literalops
-	 * @return
-	 * @throws HopsException
-	 */
 	private int rule_CommonSubexpressionElimination( Hop hop ) 
 		throws HopsException 
 	{

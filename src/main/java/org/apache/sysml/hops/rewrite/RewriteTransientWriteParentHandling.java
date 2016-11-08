@@ -54,13 +54,6 @@ public class RewriteTransientWriteParentHandling extends HopRewriteRule
 		return root;
 	}
 
-	
-	/**
-	 * 
-	 * @param hop
-	 * @param sbHops
-	 * @throws HopsException
-	 */
 	private void rule_RehangTransientWriteParents(Hop hop, ArrayList<Hop> sbHops) 
 		throws HopsException 
 	{

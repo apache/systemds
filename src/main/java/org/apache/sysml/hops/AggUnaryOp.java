@@ -448,13 +448,7 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 		
 		return _etype;
 	}
-	
-	/**
-	 * 
-	 * @param input
-	 * @param dir
-	 * @return
-	 */
+
 	private boolean requiresAggregation( Hop input, Direction dir ) 
 	{
 		if( !ALLOW_UNARYAGG_WO_FINAL_AGG )
@@ -466,13 +460,7 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 	
 		return !noAggRequired;
 	}
-	
 
-	/**
-	 * 
-	 * @param agg
-	 * @return
-	 */
 	private SparkAggType getSparkUnaryAggregationType( boolean agg )
 	{
 		if( !agg )
@@ -484,12 +472,7 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 		else
 			return SparkAggType.MULTI_BLOCK;
 	}
-	
-	/**
-	 * 
-	 * @return
-	 * @throws HopsException 
-	 */
+
 	private boolean isTernaryAggregateRewriteApplicable() throws HopsException 
 	{
 		boolean ret = false;
@@ -536,11 +519,7 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 			|| opOp2 == OpOp2.GREATER || opOp2 == OpOp2.GREATEREQUAL
 			|| opOp2 == OpOp2.EQUAL || opOp2 == OpOp2.NOTEQUAL);
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	private boolean isUnaryAggregateOuterRewriteApplicable() 
 	{
 		boolean ret = false;
@@ -576,7 +555,7 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 	
 	/**
 	 * This will check if there is sufficient memory locally (twice the size of second matrix, for original and sort data), and remotely (size of second matrix (sorted data)).  
-	 * @return
+	 * @return true if sufficient memory
 	 */
 	private boolean isUnaryAggregateOuterSPRewriteApplicable() 
 	{
@@ -623,7 +602,7 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 	 * It needs to be Outer, aggregator type SUM, RowIndexMin, RowIndexMax and 6 operators <, <=, >, >=, == and !=
 	 *   
 	 *   
-	 * @return
+	 * @return true if unary aggregate outer
 	 */
 	private boolean isUnaryAggregateOuterCPRewriteApplicable() 
 	{
@@ -637,14 +616,7 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 
 		return ret;
 	}
-	
-	
-	/**
-	 * 
-	 * @return
-	 * @throws HopsException
-	 * @throws LopsException
-	 */
+
 	private Lop constructLopsTernaryAggregateRewrite(ExecType et) 
 		throws HopsException, LopsException
 	{

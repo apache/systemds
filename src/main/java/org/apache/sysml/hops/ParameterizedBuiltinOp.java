@@ -84,6 +84,12 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 
 	/**
 	 * Creates a new HOP for a function call
+	 * 
+	 * @param l ?
+	 * @param dt data type
+	 * @param vt value type
+	 * @param op the ParamBuiltinOp
+	 * @param inputParameters map of input parameters
 	 */
 	public ParameterizedBuiltinOp(String l, DataType dt, ValueType vt,
 			ParamBuiltinOp op, HashMap<String, Hop> inputParameters) {
@@ -113,8 +119,8 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 	
 	/**
 	 * Returns a parameters by its name. Returns null if not present  
-	 * @param val
-	 * @return
+	 * @param val name
+	 * @return high-level operator
 	 */
 	public Hop getInputParameter(String val){
 		Integer index = getParamIndexMap().get(val);
@@ -420,13 +426,6 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 		}
 	}
 
-	/**
-	 * 
-	 * @param inputlops
-	 * @param et
-	 * @throws HopsException
-	 * @throws LopsException
-	 */
 	private void constructLopsRemoveEmpty(HashMap<String, Lop> inputlops, ExecType et) 
 		throws HopsException, LopsException 
 	{
@@ -785,14 +784,7 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 			//NOTE: in contrast to mr, replication and aggregation handled instruction-local
 		}
 	}
-	
-	/**
-	 * 
-	 * @param inputlops
-	 * @param et
-	 * @throws HopsException
-	 * @throws LopsException
-	 */
+
 	private void constructLopsRExpand(HashMap<String, Lop> inputlops, ExecType et) 
 		throws HopsException, LopsException 
 	{
@@ -910,7 +902,7 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 									+ linesep.length() * numRows;					// Length for line separator chars
 				}
 				
-				/**
+				/*
 				 * For JVM
 				 * 8 + // object header used by the VM
 				 * 8 + // 64-bit reference to char array (value)
@@ -1285,11 +1277,7 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 		
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	@Override
 	public boolean isTransposeSafe()
 	{
@@ -1311,11 +1299,7 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 		
 		return ret;	
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public boolean isCountFunction()
 	{
 		boolean ret = false;
@@ -1339,7 +1323,7 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 	
 	/**
 	 * Only applies to REPLACE.
-	 * @return
+	 * @return true if non-zero replace arguments
 	 */
 	private boolean isNonZeroReplaceArguments()
 	{
@@ -1361,11 +1345,7 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 		
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public boolean isTargetDiagInput()
 	{
 		Hop targetHop = getTargetHop();
@@ -1378,7 +1358,7 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 
 	/**
 	 * This will check if there is sufficient memory locally (twice the size of second matrix, for original and sort data), and remotely (size of second matrix (sorted data)).  
-	 * @return
+	 * @return true if sufficient memory locally
 	 */
 	private boolean isRemoveEmptyBcSP()	// TODO find if 2 x size needed. 
 	{

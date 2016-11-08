@@ -61,11 +61,6 @@ public class RewriteInjectSparkPReadCheckpointing extends HopRewriteRule
 		return root;
 	}
 
-	/**
-	 * 
-	 * @param hop
-	 * @throws HopsException
-	 */
 	private void rInjectCheckpointAfterPRead( Hop hop ) 
 		throws HopsException 
 	{

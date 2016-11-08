@@ -66,11 +66,6 @@ public class PlanSet
 		return _plans.isEmpty();	
 	}
 
-	/**
-	 * 
-	 * @param pc
-	 * @return
-	 */
 	public PlanSet crossProductChild(PlanSet pc) 
 	{
 		//check for empty child plan set (return current plan set)
@@ -97,11 +92,6 @@ public class PlanSet
 		return new PlanSet(Pnew);
 	}
 
-	/**
-	 * 
-	 * @param node
-	 * @return
-	 */
 	public PlanSet selectChild( GDFNode node )
 	{
 		String varname = (node.getNodeType()==NodeType.HOP_NODE) ? node.getHop().getName() :
@@ -118,11 +108,6 @@ public class PlanSet
 		return new PlanSet(Pnew);
 	}
 	
-	/**
-	 * 
-	 * @param ps
-	 * @return
-	 */
 	public PlanSet union( PlanSet ps )
 	{
 		ArrayList<Plan> Pnew = new ArrayList<Plan>(_plans);  
@@ -132,10 +117,6 @@ public class PlanSet
 		return new PlanSet(Pnew);
 	}
 	
-	/**
-	 * 
-	 * @return
-	 */
 	public Plan getPlanWithMinCosts()
 	{
 		//init global optimal plan and costs

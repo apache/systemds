@@ -30,7 +30,7 @@ import org.apache.sysml.hops.Hop.DataOpTypes;
 
 /**
  * Rule: CompressedReblock: If config compressed.linalg is enabled, we
- * inject compression hooks after pread of matrices w/ both dims > 1.
+ * inject compression hooks after pread of matrices w/ both dims &gt; 1.
  */
 public class RewriteCompressedReblock extends HopRewriteRule
 {
@@ -61,11 +61,6 @@ public class RewriteCompressedReblock extends HopRewriteRule
 		return root;
 	}
 
-	/**
-	 * 
-	 * @param hop
-	 * @throws HopsException
-	 */
 	private void rule_CompressedReblock(Hop hop) 
 		throws HopsException 
 	{

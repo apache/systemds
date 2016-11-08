@@ -110,50 +110,26 @@ public class CompilerConfig
 		_imap = (HashMap<ConfigType, Integer>) conf._imap.clone();
 	}
 	
-	/**
-	 * 
-	 * @param key
-	 * @param value
-	 */
 	public void set( ConfigType key, boolean value ) {
 		_bmap.put(key, value);
 	}
 	
-	/**
-	 * 
-	 * @param key
-	 * @param value
-	 */
 	public void set( ConfigType key, int value ) {
 		_imap.put(key, value);
 	}
 	
-	/**
-	 * 
-	 * @param key
-	 * @return
-	 */
 	public boolean getBool( ConfigType key ) {
 		if( _bmap.containsKey(key) )
 			return _bmap.get(key);
 		return false;
 	}
 	
-	/**
-	 * 
-	 * @param key
-	 * @return
-	 */
 	public int getInt( ConfigType key ) {
 		if( _imap.containsKey(key) )
 			return _imap.get(key);
 		return -1;
 	}
 	
-	
-	/**
-	 * 
-	 */
 	public CompilerConfig clone() {
 		return new CompilerConfig(this);
 	}

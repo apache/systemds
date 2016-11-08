@@ -87,13 +87,6 @@ public class RewriteMarkLoopVariablesUpdateInPlace extends StatementBlockRewrite
 		return ret;
 	}
 	
-	/**
-	 * 
-	 * @param sbs
-	 * @param varname
-	 * @return
-	 * @throws HopsException 
-	 */
 	private boolean rIsApplicableForUpdateInPlace( ArrayList<StatementBlock> sbs, String varname ) 
 		throws HopsException
 	{
@@ -131,12 +124,6 @@ public class RewriteMarkLoopVariablesUpdateInPlace extends StatementBlockRewrite
 		return ret;
 	}
 	
-	/**
-	 * 
-	 * @param hop
-	 * @param varname
-	 * @return
-	 */
 	private boolean isApplicableForUpdateInPlace( Hop hop, String varname )
 	{
 		if( !hop.getName().equals(varname) )

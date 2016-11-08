@@ -62,9 +62,6 @@ import org.apache.sysml.runtime.matrix.operators.CMOperator.AggregateOperationTy
 import org.apache.sysml.yarn.ropt.MRJobResourceInstruction;
 import org.apache.sysml.yarn.ropt.YarnClusterAnalyzer;
 
-/**
- * 
- */
 public class CostEstimatorStaticRuntime extends CostEstimator
 {
 	
@@ -314,13 +311,6 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 		       reduceCosts + hdfsWriteCosts; 
 	}		
 	
-	/**
-	 * 
-	 * @param inst
-	 * @param stats
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	private Object[] extractMRInstStatistics( String inst, VarStats[] stats ) 
 		throws DMLRuntimeException
 	{
@@ -474,11 +464,6 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	// Utilities       //
 	/////////////////////	
 	
-	/**
-	 * 
-	 * @param inputVars
-	 * @return
-	 */
 	private byte[] getInputIndexes(String[] inputVars)
 	{
 		byte[] inIx = new byte[inputVars.length];
@@ -487,18 +472,6 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 		return inIx;
 	}
 	
-	/**
-	 * 
-	 * @param inIx
-	 * @param retIx
-	 * @param rdInst
-	 * @param mapInst
-	 * @param shfInst
-	 * @param aggInst
-	 * @param otherInst
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	private byte[] getMapOutputIndexes( byte[] inIx, byte[] retIx, String rdInst, String mapInst, String shfInst, String aggInst, String otherInst ) 
 		throws DMLRuntimeException
 	{
@@ -567,15 +540,6 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 		return ret;
 	}
 	
-	/**
-	 * 
-	 * @param vs
-	 * @param inputIx
-	 * @param blocksize
-	 * @param maxPMap
-	 * @param jobtype
-	 * @return
-	 */
 	private int computeNumMapTasks( VarStats[] vs, byte[] inputIx, double blocksize, int maxPMap, JobType jobtype )
 	{
 		//special cases
@@ -599,13 +563,6 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 		return Math.max(1, Math.min( (int)Math.ceil(mapInputSize/blocksize),numBlocks ));
 	}
 	
-	/**
-	 * 
-	 * @param vs
-	 * @param mapOutIx
-	 * @param jobtype
-	 * @return
-	 */
 	private int computeNumReduceTasks( VarStats[] vs, byte[] mapOutIx, JobType jobtype )
 	{
 		int ret = -1;
@@ -639,12 +596,6 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 		return Math.max(1, ret);
 	}
 
-	/**
-	 * 
-	 * @param inst
-	 * @return
-	 * @throws DMLRuntimeException 
-	 */
 	private int getDistcacheIndex(String inst) 
 		throws DMLRuntimeException
 	{
@@ -671,10 +622,10 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	 * Returns the estimated read time from HDFS. 
 	 * NOTE: Does not handle unknowns.
 	 * 
-	 * @param dm
-	 * @param dn
-	 * @param ds
-	 * @return
+	 * @param dm rows?
+	 * @param dn columns?
+	 * @param ds sparsity factor?
+	 * @return estimated HDFS read time
 	 */
 	private double getHDFSReadTime( long dm, long dn, double ds )
 	{
@@ -689,13 +640,6 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 		return ret;
 	}
 	
-	/**
-	 * 
-	 * @param dm
-	 * @param dn
-	 * @param ds
-	 * @return
-	 */
 	private double getHDFSWriteTime( long dm, long dn, double ds )
 	{
 		boolean sparse = MatrixBlock.evalSparseFormatOnDisk(dm, dn, (long)(ds*dm*dn));
@@ -751,10 +695,10 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	 * Returns the estimated read time from local FS. 
 	 * NOTE: Does not handle unknowns.
 	 * 
-	 * @param dm
-	 * @param dn
-	 * @param ds
-	 * @return
+	 * @param dm rows?
+	 * @param dn columns?
+	 * @param ds sparsity factor?
+	 * @return estimated local file system read time
 	 */
 	private double getFSReadTime( long dm, long dn, double ds )
 	{
@@ -769,13 +713,6 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 		return ret;
 	}
 
-	/**
-	 * 
-	 * @param dm
-	 * @param dn
-	 * @param ds
-	 * @return
-	 */
 	private double getFSWriteTime( long dm, long dn, double ds )
 	{
 		boolean sparse = MatrixBlock.evalSparseFormatOnDisk(dm, dn, (long)(ds*dm*dn));
@@ -795,14 +732,6 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	// Operation Costs //
 	/////////////////////
 	
-	/**
-	 * 
-	 * @param inst
-	 * @param vs
-	 * @param args
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	private double getInstTimeEstimate(String opcode, VarStats[] vs, String[] args, ExecType et) 
 		throws DMLRuntimeException
 	{
@@ -820,18 +749,20 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	 * 
 	 * NOTE: Does not handle unknowns.
 	 * 
-	 * @param opcode
-	 * @param d1m
-	 * @param d1n
-	 * @param d1s
-	 * @param d2m
-	 * @param d2n
-	 * @param d2s
-	 * @param d3m
-	 * @param d3n
-	 * @param d3s
-	 * @return
-	 * @throws DMLRuntimeException 
+	 * @param opcode instruction opcode
+	 * @param inMR ?
+	 * @param d1m ?
+	 * @param d1n ?
+	 * @param d1s ?
+	 * @param d2m ?
+	 * @param d2n ?
+	 * @param d2s ?
+	 * @param d3m ?
+	 * @param d3n ?
+	 * @param d3s ?
+	 * @param args ?
+	 * @return estimated instruction execution time
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private double getInstTimeEstimate( String opcode, boolean inMR, long d1m, long d1n, double d1s, long d2m, long d2n, double d2s, long d3m, long d3n, double d3s, String[] args ) throws DMLRuntimeException
 	{
@@ -844,22 +775,6 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 		return time;
 	}
 	
-	/**
-	 * 
-	 * @param optype
-	 * @param d1m
-	 * @param d1n
-	 * @param d1s
-	 * @param d2m
-	 * @param d2n
-	 * @param d2s
-	 * @param d3m
-	 * @param d3n
-	 * @param d3s
-	 * @param args
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	private double getNFLOP( String optype, boolean inMR, long d1m, long d1n, double d1s, long d2m, long d2n, double d2s, long d3m, long d3n, double d3s, String[] args ) 
 		throws DMLRuntimeException
 	{

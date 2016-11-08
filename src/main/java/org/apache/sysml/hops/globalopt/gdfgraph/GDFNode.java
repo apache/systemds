@@ -123,7 +123,7 @@ public class GDFNode
 	 * MR configurations. This for examples excludes Literals or
 	 * any purely scalar operation.
 	 * 
-	 * @return
+	 * @return true if requires MR enumeration
 	 */
 	public boolean requiresMREnumeration()
 	{
@@ -145,11 +145,6 @@ public class GDFNode
 		return ret;
 	}
 	
-	/**
-	 * 
-	 * @param format
-	 * @return
-	 */
 	public boolean isValidInputFormatForOperation( FileFormatTypes format )
 	{
 		return (   _hop instanceof UnaryOp && format!=FileFormatTypes.CSV
@@ -158,11 +153,6 @@ public class GDFNode
 				|| format==FileFormatTypes.BINARY ); //any op
 	}
 	
-	/**
-	 * 
-	 * @param deps
-	 * @return
-	 */
 	public String explain(String deps) 
 	{
 		String ldeps = (deps!=null) ? deps : "";

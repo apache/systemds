@@ -277,9 +277,9 @@ public class IndexingOp extends Hop
 	 * Indicates if the lbound:rbound expressions is of the form
 	 * "(c * (i - 1) + 1) : (c * i)", where we could use c as a tight size estimate.
 	 * 
-	 * @param lbound
-	 * @param ubound
-	 * @return
+	 * @param lbound lower bound high-level operator
+	 * @param ubound uppser bound high-level operator
+	 * @return true if block indexing expression
 	 */
 	private boolean isBlockIndexingExpression(Hop lbound, Hop ubound) 
 	{
@@ -326,7 +326,7 @@ public class IndexingOp extends Hop
 	 * Indicates if the right indexing ranging is block aligned, i.e., it does not require
 	 * aggregation across blocks due to shifting.
 	 * 
-	 * @return
+	 * @return true if block aligned
 	 */
 	private boolean isBlockAligned() {
 		Hop input1 = getInput().get(0); //original matrix
@@ -344,13 +344,7 @@ public class IndexingOp extends Hop
 		
 		return OptimizerUtils.isIndexingRangeBlockAligned(rl, ru, cl, cu, brlen, bclen);
 	}
-	
-	/**
-	 * 
-	 * @param lbound
-	 * @param ubound
-	 * @return
-	 */
+
 	private long getBlockIndexingExpressionSize(Hop lbound, Hop ubound) 
 	{
 		//NOTE: ensure consistency with isBlockIndexingExpression
@@ -393,17 +387,7 @@ public class IndexingOp extends Hop
 		
 		return _etype;
 	}
-	
-	/**
-	 * 
-	 * @param singleRow
-	 * @param singleCol
-	 * @param m1_dim1
-	 * @param m1_dim2
-	 * @param m2_dim1
-	 * @param m2_dim2
-	 * @return
-	 */
+
 	private static IndexingMethod optFindIndexingMethod( boolean singleRow, boolean singleCol, long m1_dim1, long m1_dim2, long m2_dim1, long m2_dim2 )
 	{
 		if(    singleRow && m1_dim2 == m2_dim2 && m2_dim2!=-1

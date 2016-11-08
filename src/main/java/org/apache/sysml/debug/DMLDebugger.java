@@ -50,7 +50,10 @@ public class DMLDebugger
 	private volatile boolean quit=false;
 	
 	/**
-	 * Constructor for DML debugger CLI
+	 * Constructor for DML debugger CLI.
+	 * 
+	 * @param p the DML debugger program info
+	 * @param dmlScript the DML script string
 	 */
 	public DMLDebugger(DMLDebuggerProgramInfo p, String dmlScript) 
 	{
@@ -115,7 +118,7 @@ public class DMLDebugger
 	
 	/** 
 	 * Get debug function command from debugger CLI
-	 * @throws DMLDebuggerException
+	 * @throws DMLDebuggerException if DMLDebuggerException occurs
 	 */
 	private void getCommand() throws DMLDebuggerException
 	{

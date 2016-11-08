@@ -88,24 +88,13 @@ public class RewriteConstantFolding extends HopRewriteRule
 
 		return rule_ConstantFolding(root);
 	}
-	
 
-	/**
-	 * 
-	 * @param hop
-	 * @throws HopsException
-	 */
 	private Hop rule_ConstantFolding( Hop hop ) 
 		throws HopsException 
 	{
 		return rConstantFoldingExpression(hop);
 	}
-	
-	/**
-	 * 
-	 * @param root
-	 * @throws HopsException
-	 */
+
 	private Hop rConstantFoldingExpression( Hop root ) 
 		throws HopsException
 	{
@@ -189,11 +178,12 @@ public class RewriteConstantFolding extends HopRewriteRule
 	 * we use the same compilation and runtime for constant folding as we would 
 	 * use for actual instruction execution. 
 	 * 
-	 * @return
-	 * @throws IOException 
-	 * @throws LopsException 
-	 * @throws DMLRuntimeException 
-	 * @throws HopsException 
+	 * @param bop high-level operator
+	 * @return literal op
+	 * @throws LopsException if LopsException occurs
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
+	 * @throws IOException if IOException occurs
+	 * @throws HopsException if HopsException occurs
 	 */
 	private LiteralOp evalScalarOperation( Hop bop ) 
 		throws LopsException, DMLRuntimeException, IOException, HopsException
@@ -246,11 +236,6 @@ public class RewriteConstantFolding extends HopRewriteRule
 		return literal;
 	}
 	
-	/**
-	 * 
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	private static ProgramBlock getProgramBlock() 
 		throws DMLRuntimeException
 	{
@@ -259,10 +244,6 @@ public class RewriteConstantFolding extends HopRewriteRule
 		return _tmpPB;
 	}
 	
-	/**
-	 * 
-	 * @return
-	 */
 	private static ExecutionContext getExecutionContext()
 	{
 		if( _tmpEC == null )
@@ -270,11 +251,6 @@ public class RewriteConstantFolding extends HopRewriteRule
 		return _tmpEC;
 	}
 	
-	/**
-	 * 
-	 * @param hop
-	 * @return
-	 */
 	private boolean isApplicableBinaryOp( Hop hop )
 	{
 		ArrayList<Hop> in = hop.getInput();
@@ -288,11 +264,6 @@ public class RewriteConstantFolding extends HopRewriteRule
 		//messes up the explain runtime output due to introduced \n 
 	}
 	
-	/**
-	 * 
-	 * @param hop
-	 * @return
-	 */
 	private boolean isApplicableUnaryOp( Hop hop )
 	{
 		ArrayList<Hop> in = hop.getInput();
@@ -303,12 +274,6 @@ public class RewriteConstantFolding extends HopRewriteRule
 				&& hop.getDataType() == DataType.SCALAR);
 	}
 	
-	/**
-	 * 
-	 * @param hop
-	 * @return
-	 * @throws HopsException
-	 */
 	private boolean isApplicableFalseConjunctivePredicate( Hop hop ) 
 		throws HopsException
 	{
@@ -319,12 +284,6 @@ public class RewriteConstantFolding extends HopRewriteRule
 				   ||(in.get(1) instanceof LiteralOp && !((LiteralOp)in.get(1)).getBooleanValue())) );			
 	}
 	
-	/**
-	 * 
-	 * @param hop
-	 * @return
-	 * @throws HopsException
-	 */
 	private boolean isApplicableTrueDisjunctivePredicate( Hop hop ) 
 		throws HopsException
 	{

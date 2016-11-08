@@ -19,10 +19,6 @@
 
 package org.apache.sysml.hops.cost;
 
-/**
- * 
- * 
- */
 public class VarStats 
 {	
 
@@ -44,10 +40,6 @@ public class VarStats
 		_inmem = inmem;
 	}
 	
-	/**
-	 * 
-	 * @return
-	 */
 	public double getSparsity()
 	{
 		return (_nnz<0) ? 1.0 : (double)_nnz/_rlen/_clen;

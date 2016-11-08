@@ -220,11 +220,6 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 		return ret;
 	}
 	
-	/**
-	 * 
-	 * @param roots
-	 * @param cand
-	 */
 	private void collectDataDependentOperators( ArrayList<Hop> roots, ArrayList<Hop> cand )
 	{
 		if( roots == null )
@@ -234,12 +229,7 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 		for( Hop root : roots )
 			rCollectDataDependentOperators(root, cand);
 	}
-	
-	/**
-	 * 
-	 * @param root
-	 * @param cand
-	 */
+
 	private void rCollectDataDependentOperators( Hop hop, ArrayList<Hop> cand )
 	{
 		if( hop.getVisited() == VisitStatus.DONE )
@@ -329,11 +319,6 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 		hop.setVisited(VisitStatus.DONE);
 	}
 
-	/**
-	 * 
-	 * @param hop
-	 * @return
-	 */
 	private boolean hasTransientWriteParents( Hop hop )
 	{
 		for( Hop p : hop.getParent() )
@@ -341,12 +326,7 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 				return true;
 		return false;
 	}
-	
-	/**
-	 * 
-	 * @param hop
-	 * @return
-	 */
+
 	private Hop getFirstTransientWriteParent( Hop hop )
 	{
 		for( Hop p : hop.getParent() )
@@ -354,16 +334,7 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 				return p;
 		return null;
 	}
-	
-	/**
-	 * 
-	 * @param rootsSB1
-	 * @param rootsSB2
-	 * @param candChilds 
-	 * @param cand 
-	 * @param sb2in 
-	 * @param sb1out 
-	 */
+
 	private void handleReplicatedOperators( ArrayList<Hop> rootsSB1, ArrayList<Hop> rootsSB2, VariableSet sb1out, VariableSet sb2in )
 	{
 		//step 1: create probe set SB1
@@ -413,14 +384,7 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 			rootsSB1.add(twrite);
 		}
 	}
-	
-	/**
-	 * 
-	 * @param hop
-	 * @param probeSet
-	 * @param candChilds 
-	 * @param cand 
-	 */
+
 	private void rAddHopsToProbeSet( Hop hop, HashSet<Hop> probeSet )
 	{
 		if( hop.getVisited() == VisitStatus.DONE )
@@ -441,14 +405,12 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 	}
 	
 	/**
-	 * 
-	 * 
 	 * NOTE: candset is a set of parent-child pairs because a parent might have 
 	 * multiple references to replicated hops.
 	 * 
-	 * @param hop
-	 * @param probeSet
-	 * @param candSet
+	 * @param hop high-level operator
+	 * @param probeSet probe set?
+	 * @param candSet candidate set?
 	 */
 	private void rProbeAndAddHopsToCandidateSet( Hop hop, HashSet<Hop> probeSet, HashSet<Pair<Hop,Hop>> candSet )
 	{
@@ -470,11 +432,6 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 		hop.setVisited(VisitStatus.DONE);	
 	}
 	
-	/**
-	 * 
-	 * @param cand
-	 * @param candChilds
-	 */
 	private void collectCandidateChildOperators( ArrayList<Hop> cand, HashSet<Hop> candChilds )
 	{
 		Hop.resetVisitStatus(cand);
@@ -489,13 +446,6 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 		Hop.resetVisitStatus(cand);
 	}
 	
-	/**
-	 * 
-	 * @param hop
-	 * @param cand
-	 * @param candChilds
-	 * @param collect
-	 */
 	private void rCollectCandidateChildOperators( Hop hop, ArrayList<Hop> cand, HashSet<Hop> candChilds, boolean collect )
 	{
 		if( hop.getVisited() == VisitStatus.DONE )

@@ -398,17 +398,6 @@ public class LeftIndexingOp  extends Hop
 		return _etype;
 	}
 
-	
-	/**
-	 * 
-	 * @param m1_dim1
-	 * @param m1_dim2
-	 * @param m1_rpb
-	 * @param m1_cpb
-	 * @param m2_dim1
-	 * @param m2_dim2
-	 * @return
-	 */
 	private LeftIndexingMethod getOptMethodLeftIndexingMethod( long m2_dim1, long m2_dim2, 
 			long m2_rpb, long m2_cpb, long m2_nnz, boolean isScalar) 
 	{
@@ -449,10 +438,7 @@ public class LeftIndexingOp  extends Hop
 		else
 			setNnz(-1);
 	}
-	
-	/**
-	 * 
-	 */
+
 	private void checkAndModifyRecompilationStatus()
 	{
 		// disable recompile for LIX and second input matrix (under certain conditions)

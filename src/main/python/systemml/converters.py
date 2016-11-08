@@ -25,6 +25,7 @@ import numpy as np
 import pandas as pd
 from pyspark.context import SparkContext
 from scipy.sparse import coo_matrix, spmatrix
+from .classloader import *
 
 SUPPORTED_TYPES = (np.ndarray, pd.DataFrame, spmatrix)
 
@@ -67,6 +68,7 @@ def convertToMatrixBlock(sc, src):
         buf1 = bytearray(data.tostring())
         buf2 = bytearray(row.tostring())
         buf3 = bytearray(col.tostring())
+        createJavaObject(sc, 'dummy')
         return sc._jvm.org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt.convertSciPyCOOToMB(buf1, buf2, buf3, numRows, numCols, nnz)
     elif isinstance(sc, SparkContext):
         src = np.asarray(src)
@@ -74,6 +76,7 @@ def convertToMatrixBlock(sc, src):
         numRows = src.shape[0]
         arr = src.ravel().astype(np.float64)
         buf = bytearray(arr.tostring())
+        createJavaObject(sc, 'dummy')
         return sc._jvm.org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt.convertPy4JArrayToMB(buf, numRows, numCols)
     else:
         raise TypeError('sc needs to be of type SparkContext') # TODO: We can generalize this by creating py4j gateway ourselves
@@ -83,6 +86,7 @@ def convertToNumPyArr(sc, mb):
     if isinstance(sc, SparkContext):
         numRows = mb.getNumRows()
         numCols = mb.getNumColumns()
+        createJavaObject(sc, 'dummy')
         buf = sc._jvm.org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt.convertMBtoPy4JDenseArr(mb)
         return np.frombuffer(buf, count=numRows*numCols, dtype=np.float64).reshape((numRows, numCols))
     else:

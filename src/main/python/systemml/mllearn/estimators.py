@@ -28,6 +28,7 @@ from pyspark.sql import DataFrame
 import sklearn as sk
 
 from ..converters import *
+from ..classloader import *
 
 def assemble(sqlCtx, pdf, inputCols, outputCol):
     tmpDF = sqlCtx.createDataFrame(pdf, list(pdf.columns))
@@ -256,6 +257,7 @@ class LogisticRegression(BaseSystemMLClassifier):
         """
         self.sqlCtx = sqlCtx
         self.sc = sqlCtx._sc
+        createJavaObject(self.sc, 'dummy')
         self.uid = "logReg"
         self.estimator = self.sc._jvm.org.apache.sysml.api.ml.LogisticRegression(self.uid, self.sc._jsc.sc())
         self.estimator.setMaxOuterIter(max_iter)
@@ -323,6 +325,7 @@ class LinearRegression(BaseSystemMLRegressor):
         """
         self.sqlCtx = sqlCtx
         self.sc = sqlCtx._sc
+        createJavaObject(self.sc, 'dummy')
         self.uid = "lr"
         if solver == 'newton-cg' or solver == 'direct-solve':
             self.estimator = self.sc._jvm.org.apache.sysml.api.ml.LinearRegression(self.uid, self.sc._jsc.sc(), solver)
@@ -380,6 +383,7 @@ class SVM(BaseSystemMLClassifier):
         self.sqlCtx = sqlCtx
         self.sc = sqlCtx._sc
         self.uid = "svm"
+        createJavaObject(self.sc, 'dummy')
         self.estimator = self.sc._jvm.org.apache.sysml.api.ml.SVM(self.uid, self.sc._jsc.sc(), is_multi_class)
         self.estimator.setMaxIter(max_iter)
         if C <= 0:
@@ -431,6 +435,7 @@ class NaiveBayes(BaseSystemMLClassifier):
         self.sqlCtx = sqlCtx
         self.sc = sqlCtx._sc
         self.uid = "nb"
+        createJavaObject(self.sc, 'dummy')
         self.estimator = self.sc._jvm.org.apache.sysml.api.ml.NaiveBayes(self.uid, self.sc._jsc.sc())
         self.estimator.setLaplace(laplace)
         self.transferUsingDF = transferUsingDF

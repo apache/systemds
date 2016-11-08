@@ -35,7 +35,6 @@ import unittest
 import numpy as np
 from pyspark.context import SparkContext
 from pyspark.ml import Pipeline
-from pyspark.ml.evaluation import MulticlassClassificationEvaluator
 from pyspark.ml.feature import HashingTF, Tokenizer
 from pyspark.sql import SQLContext
 from sklearn import datasets, metrics, neighbors
@@ -104,6 +103,7 @@ class TestMLLearn(unittest.TestCase):
             ("apache hadoop", 2.0)], ["text", "label"])
         result = model.transform(test)
         predictionAndLabels = result.select("prediction", "label")
+        from pyspark.ml.evaluation import MulticlassClassificationEvaluator
         evaluator = MulticlassClassificationEvaluator()
         score = evaluator.evaluate(predictionAndLabels)
         self.failUnless(score == 1.0)

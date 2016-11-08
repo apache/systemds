@@ -32,6 +32,7 @@ except ImportError:
     raise ImportError('Unable to import `pyspark`. Hint: Make sure you are running with PySpark.')
 
 from .converters import *
+from .classloader import *
 
 def dml(scriptString):
     """
@@ -84,10 +85,13 @@ def _java2py(sc, obj):
 
 def _py2java(sc, obj):
     """ Convert Python object to Java. """
-    if isinstance(obj, Matrix):
-        obj = obj._java_matrix
-    # TODO: Port this private PySpark function.
-    obj = pyspark.mllib.common._py2java(sc, obj)
+    if isinstance(obj, SUPPORTED_TYPES):
+        obj = convertToMatrixBlock(sc, obj)
+    else:
+        if isinstance(obj, Matrix):
+            obj = obj._java_matrix
+        # TODO: Port this private PySpark function.
+        obj = pyspark.mllib.common._py2java(sc, obj)
     return obj
 
 
@@ -235,8 +239,8 @@ class MLContext(object):
         if not isinstance(sc, SparkContext):
             raise ValueError("Expected sc to be a SparkContext, got " % sc)
         self._sc = sc
-        self._ml = sc._jvm.org.apache.sysml.api.mlcontext.MLContext(sc._jsc)
-
+        self._ml = createJavaObject(sc, 'mlcontext')
+        
     def __repr__(self):
         return "MLContext"
 

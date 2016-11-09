@@ -499,7 +499,6 @@
 					</execution>
 				</executions>
 			</plugin>
-
 		</plugins>
 
 	</build>
@@ -743,7 +742,7 @@
 							</execution-->
 						</executions>
 					</plugin>
-
+					
 					<plugin>
 						<artifactId>maven-gpg-plugin</artifactId>
 						<version>1.6</version>
@@ -816,6 +815,29 @@
 							</execution>
 						</executions>
 					</plugin>
+					
+					<plugin>
+				        <groupId>org.codehaus.mojo</groupId>
+				        <artifactId>exec-maven-plugin</artifactId>
+				        <version>1.1</version>
+				        <executions>
+				        	<execution>
+					            <id>generate-python-package</id>
+					            <phase>verify</phase>
+					            <goals>
+					              <goal>exec</goal>
+					            </goals>
+					            <configuration>
+					              <executable>python</executable>
+					              <workingDirectory>src/main/python</workingDirectory>
+					              <arguments>
+					                <argument>setup.py</argument>
+					                <argument>sdist</argument>
+					              </arguments>
+					            </configuration>
+					          </execution>
+				        </executions>
+			      	</plugin>
 				</plugins>
 			</build>
 		</profile>

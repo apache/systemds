@@ -20,6 +20,7 @@
 #-------------------------------------------------------------
 
 import os
+import shutil
 from setuptools import find_packages, setup
 import time
 
@@ -32,13 +33,28 @@ REQUIRED_PACKAGES = [
     'scipy >= %s' % scipy_version
 ]
 
+python_dir = 'systemml'
+java_dir='systemml-java'
+java_dir_full_path = os.path.join(python_dir, java_dir)
+if os.path.exists(java_dir_full_path):
+    shutil.rmtree(java_dir_full_path, True)
+os.mkdir(java_dir_full_path)
+root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd())))
+shutil.copyfile(os.path.join(root_dir, 'target', 'SystemML.jar'), java_dir_full_path)
+shutil.copytree(os.path.join(root_dir, 'scripts', 'algorithms'), java_dir_full_path)
+
 PACKAGE_DATA = []
-for path, subdirs, files in os.walk('systemml/systemml-java'):
+for path, subdirs, files in os.walk(java_dir_full_path):
     for name in files:
         PACKAGE_DATA = PACKAGE_DATA + [ os.path.join(path, name).replace('./', '') ]
 
+shutil.copyfile(os.path.join(root_dir, 'LICENSE'), python_dir)
+shutil.copyfile(os.path.join(root_dir, 'DISCLAIMER'), python_dir)
+shutil.copyfile(os.path.join(root_dir, 'NOTICE'), python_dir)
+PACKAGE_DATA = PACKAGE_DATA + [os.path.join(python_dir, 'LICENSE'), os.path.join(python_dir, 'DISCLAIMER'), os.path.join(python_dir, 'NOTICE')]
+
 setup(
-    name='systemml',
+    name='systemml-incubating',
     version=VERSION,
     description='Apache SystemML is a distributed and declarative machine learning platform.',
     long_description='''

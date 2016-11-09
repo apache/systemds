@@ -24,10 +24,6 @@ import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.lops.compile.JobType;
 import org.apache.sysml.parser.Expression.*;
 
-
-/**
- * 
- */
 public class CumulativeSplitAggregate extends Lop 
 {
 
@@ -41,13 +37,6 @@ public class CumulativeSplitAggregate extends Lop
 		init(input, dt, vt, ExecType.MR);
 	}
 	
-	/**
-	 * 
-	 * @param input
-	 * @param dt
-	 * @param vt
-	 * @param et
-	 */
 	private void init(Lop input, DataType dt, ValueType vt, ExecType et) {
 		this.addInput(input);
 		input.addOutput(this);

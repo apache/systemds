@@ -39,7 +39,7 @@ import org.apache.sysml.lops.Lop;
  * 
  * compare() method is designed to respect the above two requirements.
  *  
- * @param <N>
+ * @param <N> class extending Lop
  */
 public class LopComparator<N extends Lop>
 		implements Comparator<N> 

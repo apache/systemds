@@ -25,9 +25,6 @@ import org.apache.sysml.lops.compile.JobType;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 
-/**
- * 
- */
 public class WeightedSquaredLoss extends Lop 
 {
 	public static final String OPCODE = "mapwsloss";
@@ -65,10 +62,6 @@ public class WeightedSquaredLoss extends Lop
 		setupLopProperties(et);
 	}
 	
-	/**
-	 * 
-	 * @param et
-	 */
 	private void setupLopProperties( ExecType et )
 	{
 		if( et == ExecType.MR )

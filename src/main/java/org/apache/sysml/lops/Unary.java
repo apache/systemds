@@ -57,10 +57,13 @@ public class Unary extends Lop
 	/**
 	 * Constructor to perform a unary operation with 2 inputs
 	 * 
-	 * @param input
-	 * @param op
+	 * @param input1 low-level operator 1
+	 * @param input2 low-level operator 2
+	 * @param op operation type
+	 * @param dt data type
+	 * @param vt value type
+	 * @param et execution type
 	 */
-
 	public Unary(Lop input1, Lop input2, OperationTypes op, DataType dt, ValueType vt, ExecType et) {
 		super(Lop.Type.UNARY, dt, vt);
 		init(input1, input2, op, dt, vt, et);
@@ -109,9 +112,13 @@ public class Unary extends Lop
 	/**
 	 * Constructor to perform a unary operation with 1 input.
 	 * 
-	 * @param input1
-	 * @param op
-	 * @throws LopsException 
+	 * @param input1 low-level operator 1
+	 * @param op operation type
+	 * @param dt data type
+	 * @param vt value type
+	 * @param et execution type
+	 * @param numThreads number of threads
+	 * @throws LopsException if LopsException occurs
 	 */
 	public Unary(Lop input1, OperationTypes op, DataType dt, ValueType vt, ExecType et, int numThreads) 
 		throws LopsException 
@@ -175,23 +182,12 @@ public class Unary extends Lop
 			return "Operation: " + operation + " " + "Label: N/A";
 	}
 
-	/**
-	 * 
-	 * @return
-	 * @throws LopsException
-	 */
 	private String getOpcode() 
 		throws LopsException 
 	{
 		return getOpcode(operation);
 	}
-	
-	/**
-	 * 
-	 * @param op
-	 * @return
-	 * @throws LopsException
-	 */
+
 	public static String getOpcode(OperationTypes op) 
 		throws LopsException 
 	{
@@ -339,11 +335,6 @@ public class Unary extends Lop
 		}
 	}
 	
-	/**
-	 * 
-	 * @param op
-	 * @return
-	 */
 	public static boolean isCumulativeOp(OperationTypes op) {
 		return op==OperationTypes.CUMSUM
 			|| op==OperationTypes.CUMPROD

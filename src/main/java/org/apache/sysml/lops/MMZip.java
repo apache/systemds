@@ -33,11 +33,6 @@ public class MMZip extends Lop
 {
 	private boolean _tRewrite = true;
 	
-	/**
-	 * 
-	 * @param input
-	 * @param op
-	 */
 	public MMZip(Lop input1, Lop input2, DataType dt, ValueType vt, boolean tRewrite, ExecType et) 
 	{
 		//handle inputs and outputs

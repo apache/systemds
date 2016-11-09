@@ -30,18 +30,6 @@ public class PMapMult extends Lop
 {	
 	public static final String OPCODE = "pmapmm";
 
-	/**
-	 * 
-	 * @param input1
-	 * @param input2
-	 * @param dt
-	 * @param vt
-	 * @param rightCache
-	 * @param emptyBlocks
-	 * @param aggregate
-	 * @param et
-	 * @throws LopsException
-	 */
 	public PMapMult(Lop input1, Lop input2, DataType dt, ValueType vt) 
 		throws LopsException 
 	{

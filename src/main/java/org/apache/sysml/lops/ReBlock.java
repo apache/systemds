@@ -37,12 +37,6 @@ public class ReBlock extends Lop
 	
 	private boolean _outputEmptyBlocks = true;
 	
-	/**
-	 * Constructor to perform a reblock operation. 
-	 * @param input
-	 * @param op
-	 */
-	
 	private Long _rows_per_block;
 	private Long _cols_per_block;
 

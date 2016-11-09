@@ -45,11 +45,13 @@ public class MapMultChain extends Lop
 	/**
 	 * Constructor to setup a map mult chain without weights
 	 * 
-	 * @param input
-	 * @param op
-	 * @return 
-	 * @throws LopsException
-	 */	
+	 * @param input1 low-level operator 1
+	 * @param input2 low-level operator 2
+	 * @param dt data type
+	 * @param vt value type
+	 * @param et execution type
+	 * @throws LopsException if LopsException occurs
+	 */
 	public MapMultChain(Lop input1, Lop input2, DataType dt, ValueType vt, ExecType et) 
 		throws LopsException 
 	{
@@ -67,11 +69,15 @@ public class MapMultChain extends Lop
 	/**
 	 * Constructor to setup a map mult chain with weights
 	 * 
-	 * @param input
-	 * @param op
-	 * @return 
-	 * @throws LopsException
-	 */	
+	 * @param input1 low-level operator 1
+	 * @param input2 low-level operator 2
+	 * @param input3 low-level operator 3
+	 * @param chain chain type
+	 * @param dt data type
+	 * @param vt value type
+	 * @param et execution type
+	 * @throws LopsException if LopsException occurs
+	 */
 	public MapMultChain(Lop input1, Lop input2, Lop input3, ChainType chain, DataType dt, ValueType vt, ExecType et) 
 		throws LopsException 
 	{
@@ -88,10 +94,6 @@ public class MapMultChain extends Lop
 		setupLopProperties(et);
 	}
 
-	/**
-	 * 
-	 * @param et
-	 */
 	private void setupLopProperties( ExecType et )
 	{
 		if( et == ExecType.MR )

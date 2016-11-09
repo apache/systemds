@@ -26,9 +26,6 @@ import org.apache.sysml.lops.compile.JobType;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 
-/**
- * 
- */
 public class WeightedCrossEntropyR extends Lop 
 {
 
@@ -59,11 +56,6 @@ public class WeightedCrossEntropyR extends Lop
 		setupLopProperties(et);
 	}
 	
-	/**
-	 * 
-	 * @param et
-	 * @throws LopsException 
-	 */
 	private void setupLopProperties( ExecType et ) 
 		throws LopsException
 	{

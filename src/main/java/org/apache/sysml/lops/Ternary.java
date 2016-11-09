@@ -119,7 +119,7 @@ public class Ternary extends Lop
 
 	/**
 	 * method to get operation type
-	 * @return
+	 * @return operation type
 	 */
 	 
 	public OperationTypes getOperationType()
@@ -332,11 +332,6 @@ public class Ternary extends Lop
 		return sb.toString();
 	}
 
-	/**
-	 * 
-	 * @param type
-	 * @return
-	 */
 	public static String getOpcode(OperationTypes type)
 	{
 		switch( type ) 
@@ -352,11 +347,6 @@ public class Ternary extends Lop
 		}
 	}
 	
-	/**
-	 * 
-	 * @param opcode
-	 * @return
-	 */
 	public static OperationTypes getOperationType(String opcode)
 	{
 		OperationTypes op = null;

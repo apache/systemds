@@ -31,10 +31,6 @@ import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 
-
-/**
- *
- */
 public class FunctionCallCP extends Lop  
 {	
 	private String _fnamespace;

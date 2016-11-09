@@ -84,13 +84,13 @@ public class RunMRJobs
 	 * required. 
 	 * 
 	 * Furthermore, this wrapper also provides a hook for runtime piggybacking to intercept
-	 * concurrent job submissions in order to collect and merge instructions.   
+	 * concurrent job submissions in order to collect and merge instructions.
 	 * 
-	 * @param inst
-	 * @param ec
-	 * @return
+	 * @param inst instruction
+	 * @param ec execution context
+	 * @return job status
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-
 	public static JobReturn prepareAndSubmitJob( MRJobInstruction inst, ExecutionContext ec )
 		throws DMLRuntimeException 
 	{
@@ -155,10 +155,9 @@ public class RunMRJobs
 	/**
 	 * Submits an MR job instruction, without modifying any state of that instruction.
 	 * 
-	 * @param inst
-	 * @param ec
-	 * @return
-	 * @throws DMLRuntimeException
+	 * @param inst instruction
+	 * @return job status
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static JobReturn submitJob(MRJobInstruction inst ) 
 		throws DMLRuntimeException 
@@ -379,13 +378,6 @@ public class RunMRJobs
 		throw new DMLRuntimeException("Unexpected Job Type: " + inst.getJobType());
 	}
 
-	/**
-	 * 
-	 * @param inst
-	 * @param inputMatrices
-	 * @param pb
-	 * @throws DMLRuntimeException
-	 */
 	private static void checkEmptyInputs( MRJobInstruction inst, MatrixObject[] inputMatrices ) 
 		throws DMLRuntimeException
 	{
@@ -409,11 +401,11 @@ public class RunMRJobs
 	 * (e.g., ##mVar2## or ##Var5##). The replacement is a HDFS filename for matrix 
 	 * variables, and is the actual value (stored in symbol table) for scalar variables.
 	 * 
-	 * @param inst
-	 * @param varName
-	 * @param map
-	 * @return
-	 * @throws DMLRuntimeException
+	 * @param inst instruction
+	 * @param varName variable name
+	 * @param map local variable map
+	 * @return string variable name
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private static String getVarNameReplacement(String inst, String varName, LocalVariableMap map) throws DMLRuntimeException {
 		Data val = map.get(varName);
@@ -435,10 +427,10 @@ public class RunMRJobs
 	/** 
 	 * Replaces ALL placeholder strings (such as ##mVar2## and ##Var5##) in a single instruction.
 	 *  
-	 * @param inst
-	 * @param map
-	 * @return
-	 * @throws DMLRuntimeException
+	 * @param inst string instruction
+	 * @param map local variable map
+	 * @return string instruction after replacement
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private static String updateInstLabels(String inst, LocalVariableMap map) throws DMLRuntimeException {
 		if ( inst.contains(Lop.VARIABLE_NAME_PLACEHOLDER) ) {
@@ -457,10 +449,10 @@ public class RunMRJobs
 	 * Takes a delimited string of instructions, and replaces ALL placeholder labels 
 	 * (such as ##mVar2## and ##Var5##) in ALL instructions.
 	 *  
-	 * @param instList
-	 * @param labelValueMapping
-	 * @return
-	 * @throws DMLRuntimeException
+	 * @param instList instruction list as string
+	 * @param labelValueMapping local variable map
+	 * @return instruction list after replacement
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static String updateLabels (String instList, LocalVariableMap labelValueMapping) throws DMLRuntimeException {
 
@@ -480,12 +472,6 @@ public class RunMRJobs
 	}
 
 	
-	/**
-	 * 
-	 * @param inputMatrices
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	private static long[] getNNZ( MatrixObject[] inputMatrices ) 
 		throws DMLRuntimeException
 	{
@@ -503,15 +489,6 @@ public class RunMRJobs
 		return ret;
 	}
 	
-	/**
-	 * 
-	 * @param inst
-	 * @param shuffleInst
-	 * @param inputMatrices
-	 * @param outputMatrices
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	private static JobReturn executeInMemoryReblockOperations( MRJobInstruction inst, String shuffleInst, MatrixObject[] inputMatrices, MatrixObject[] outputMatrices ) 
 		throws DMLRuntimeException
 	{

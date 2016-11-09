@@ -52,18 +52,10 @@ public class ParameterizedBuiltin extends Lop
 	/**
 	 * Creates a new builtin function LOP.
 	 * 
-	 * @param target
-	 *            target identifier
-	 * @param params
-	 *            parameter list
-	 * @param inputParameters
-	 *            list of input LOPs
-	 * @param function
-	 *            builtin function
-	 * @param numRows
-	 *            number of resulting rows
-	 * @param numCols
-	 *            number of resulting columns
+	 * @param paramLops map of parameter lops
+	 * @param op operation type
+	 * @param dt data type
+	 * @param vt value type
 	 */
 	public ParameterizedBuiltin(HashMap<String, Lop> paramLops, OperationTypes op, DataType dt, ValueType vt) 
 	{
@@ -496,11 +488,6 @@ public class ParameterizedBuiltin extends Lop
 		return sb.toString();
 	}
 	
-	/**
-	 * 
-	 * @param params
-	 * @return
-	 */
 	private static String compileGenericParamMap(HashMap<String, Lop> params) {
 		StringBuilder sb = new StringBuilder();		
 		for ( Entry<String, Lop> e : params.entrySet() ) {

@@ -24,11 +24,6 @@ import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.lops.compile.JobType;
 import org.apache.sysml.parser.Expression.*;
 
-
-/**
- * 
- * 
- */
 public class TernaryAggregate extends Lop 
 {
 	
@@ -44,12 +39,7 @@ public class TernaryAggregate extends Lop
 	public TernaryAggregate(Lop input1, Lop input2, Lop input3, Aggregate.OperationTypes aggOp, Binary.OperationTypes binOp, DataType dt, ValueType vt, ExecType et ) {
 		this(input1, input2, input3, aggOp, binOp, dt, vt, et, 1);
 	}
-	
-	/**
-	 * @param et 
-	 * @param input - input lop
-	 * @param op - operation type
-	 */
+
 	public TernaryAggregate(Lop input1, Lop input2, Lop input3, Aggregate.OperationTypes aggOp, Binary.OperationTypes binOp, DataType dt, ValueType vt, ExecType et, int k ) 
 	{
 		super(Lop.Type.TernaryAggregate, dt, vt);

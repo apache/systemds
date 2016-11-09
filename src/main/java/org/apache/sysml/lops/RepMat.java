@@ -36,11 +36,13 @@ public class RepMat extends Lop
 	/**
 	 * Constructor to setup a partial Matrix-Vector Multiplication
 	 * 
-	 * @param input
-	 * @param op
-	 * @return 
-	 * @throws LopsException
-	 */	
+	 * @param input1 low-level operator 1
+	 * @param input2 low-level operator 2
+	 * @param repCols ?
+	 * @param dt data type
+	 * @param vt value type
+	 * @throws LopsException if LopsException occurs
+	 */
 	public RepMat(Lop input1, Lop input2, boolean repCols, DataType dt, ValueType vt) 
 		throws LopsException 
 	{

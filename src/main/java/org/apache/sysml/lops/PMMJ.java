@@ -25,9 +25,6 @@ import org.apache.sysml.lops.compile.JobType;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 
-/**
- *
- */
 public class PMMJ extends Lop 
 {
 	
@@ -45,11 +42,16 @@ public class PMMJ extends Lop
 	/**
 	 * Constructor to setup a Permutation Matrix Multiplication
 	 * 
-	 * @param input
-	 * @param op
-	 * @return 
-	 * @throws LopsException
-	 */	
+	 * @param pminput permutation matrix input lop
+	 * @param rightinput right lop
+	 * @param nrow number of rows?
+	 * @param dt data type
+	 * @param vt value type
+	 * @param partitioned true if partitioned
+	 * @param emptyBlocks true if output empty blocks
+	 * @param et execution type
+	 * @throws LopsException if LopsException occurs
+	 */
 	public PMMJ(Lop pminput, Lop rightinput, Lop nrow, DataType dt, ValueType vt, boolean partitioned, boolean emptyBlocks, ExecType et) 
 		throws LopsException 
 	{

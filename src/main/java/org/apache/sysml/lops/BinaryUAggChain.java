@@ -41,11 +41,16 @@ public class BinaryUAggChain extends Lop
 	/**
 	 * Constructor to setup a map mult chain without weights
 	 * 
-	 * @param input
-	 * @param op
-	 * @return 
-	 * @throws LopsException
-	 */	
+	 * 
+	 * @param input1 low-level operator
+	 * @param bop binary operation type
+	 * @param uaop aggregate operation type
+	 * @param uadir partial aggregate direction type
+	 * @param dt data type
+	 * @param vt value type
+	 * @param et execution type
+	 * @throws LopsException if LopsException occurs
+	 */
 	public BinaryUAggChain(Lop input1, Binary.OperationTypes bop, Aggregate.OperationTypes uaop, PartialAggregate.DirectionTypes uadir, DataType dt, ValueType vt, ExecType et) 
 		throws LopsException 
 	{

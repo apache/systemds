@@ -50,11 +50,17 @@ public class BinaryM extends Lop
 	
 	/**
 	 * Constructor to perform a binary operation.
-	 * @param input
-	 * @param op
-	 * @throws DMLRuntimeException 
+	 * 
+	 * @param input1 low-level operator 1
+	 * @param input2 low-level operator 2
+	 * @param op operation type
+	 * @param dt data type
+	 * @param vt value type
+	 * @param et exec type
+	 * @param partitioned true if partitioned
+	 * @param colVector true if colVector
+	 * @throws LopsException if LopsException occurs
 	 */
-
 	public BinaryM(Lop input1, Lop input2, OperationTypes op, DataType dt, ValueType vt, ExecType et, boolean partitioned, boolean colVector ) throws LopsException {
 		super(Lop.Type.Binary, dt, vt);
 		
@@ -93,7 +99,7 @@ public class BinaryM extends Lop
 
 	/**
 	 * method to get operation type
-	 * @return
+	 * @return operation type
 	 */
 	 
 	public OperationTypes getOperationType()

@@ -53,10 +53,11 @@ public class UnaryCP extends Lop
 	/**
 	 * Constructor to perform a scalar operation
 	 * 
-	 * @param input
-	 * @param op
+	 * @param input low-level operator 1
+	 * @param op operation type
+	 * @param dt data type
+	 * @param vt value type
 	 */
-
 	public UnaryCP(Lop input, OperationTypes op, DataType dt, ValueType vt) {
 		super(Lop.Type.UnaryCP, dt, vt);
 		operation = op;

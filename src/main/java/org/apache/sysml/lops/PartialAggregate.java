@@ -100,10 +100,12 @@ public class PartialAggregate extends Lop
 	/**
 	 * Constructor to setup a partial aggregate operation.
 	 * 
-	 * @param input
-	 * @param op
-	 * @return 
-	 * @throws LopsException
+	 * @param input low-level operator
+	 * @param op aggregate operation type
+	 * @param direct partial aggregate directon type
+	 * @param dt data type
+	 * @param vt value type
+	 * @param et execution type
 	 */
 	private void init(Lop input,
 			Aggregate.OperationTypes op,
@@ -162,6 +164,9 @@ public class PartialAggregate extends Lop
 	 * Computed information is encoded in the PartialAgg instruction so that the
 	 * appropriate aggregate operator is used at runtime (see:
 	 * dml.runtime.matrix.operator.AggregateOperator.java and dml.runtime.matrix)
+	 * 
+	 * @return correct location
+	 * @throws LopsException if LopsException occurs
 	 */
 	public CorrectionLocationType getCorrectionLocation() 
 		throws LopsException 
@@ -335,12 +340,6 @@ public class PartialAggregate extends Lop
 		return sb.toString();
 	}
 
-	/**
-	 * 
-	 * @param op
-	 * @param dir
-	 * @return
-	 */
 	public static String getOpcode(Aggregate.OperationTypes op, DirectionTypes dir) 
 	{
 		switch( op )

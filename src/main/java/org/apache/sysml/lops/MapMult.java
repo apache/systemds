@@ -52,11 +52,15 @@ public class MapMult extends Lop
 	/**
 	 * Constructor to setup a partial Matrix-Vector Multiplication for MR
 	 * 
-	 * @param input
-	 * @param op
-	 * @return 
-	 * @throws LopsException
-	 */	
+	 * @param input1 low-level operator 1
+	 * @param input2 low-level operator 2
+	 * @param dt data type
+	 * @param vt value type
+	 * @param rightCache true if right cache, false if left cache
+	 * @param partitioned true if partitioned, false if not partitioned
+	 * @param emptyBlocks true if output empty blocks
+	 * @throws LopsException if LopsException occurs
+	 */
 	public MapMult(Lop input1, Lop input2, DataType dt, ValueType vt, boolean rightCache, boolean partitioned, boolean emptyBlocks ) 
 		throws LopsException 
 	{
@@ -85,15 +89,15 @@ public class MapMult extends Lop
 	/**
 	 * Constructor to setup a partial Matrix-Vector Multiplication for Spark
 	 * 
-	 * @param input1
-	 * @param input2
-	 * @param dt
-	 * @param vt
-	 * @param rightCache
-	 * @param emptyBlocks
-	 * @param aggregate
-	 * @param et
-	 * @throws LopsException
+	 * @param input1 low-level operator 1
+	 * @param input2 low-level operator 2
+	 * @param dt data type
+	 * @param vt value type
+	 * @param rightCache true if right cache, false if left cache
+	 * @param partitioned true if partitioned, false if not partitioned
+	 * @param emptyBlocks true if output empty blocks
+	 * @param aggtype spark aggregation type
+	 * @throws LopsException if LopsException occurs
 	 */
 	public MapMult(Lop input1, Lop input2, DataType dt, ValueType vt, boolean rightCache, boolean partitioned, boolean emptyBlocks, SparkAggType aggtype) 
 		throws LopsException 

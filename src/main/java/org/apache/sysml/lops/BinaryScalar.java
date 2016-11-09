@@ -47,6 +47,13 @@ public class BinaryScalar extends Lop
 
 	/**
 	 * This overloaded constructor is used for setting exec type in case of spark backend
+	 * 
+	 * @param input1 low-level operator 1
+	 * @param input2 low-level operator 2
+	 * @param op operation type
+	 * @param dt data type
+	 * @param vt value type
+	 * @param et exec type
 	 */
 	public BinaryScalar(Lop input1, Lop input2, OperationTypes op, DataType dt, ValueType vt, ExecType et) 
 	{
@@ -66,10 +73,13 @@ public class BinaryScalar extends Lop
 	
 	/**
 	 * Constructor to perform a scalar operation
-	 * @param input
-	 * @param op
+	 * 
+	 * @param input1 low-level operator 1
+	 * @param input2 low-level operator 2
+	 * @param op operation type
+	 * @param dt data type
+	 * @param vt value type
 	 */
-
 	public BinaryScalar(Lop input1, Lop input2, OperationTypes op, DataType dt, ValueType vt) 
 	{
 		super(Lop.Type.BinaryCP, dt, vt);		
@@ -131,11 +141,6 @@ public class BinaryScalar extends Lop
 		}
 	}
 	
-	/**
-	 * 
-	 * @param op
-	 * @return
-	 */
 	public static String getOpcode( OperationTypes op )
 	{
 		switch ( op ) 

@@ -25,11 +25,6 @@ import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.lops.compile.JobType;
 import org.apache.sysml.parser.Expression.*;
 
-
-/**
- * 
- * 
- */
 public class CumulativePartialAggregate extends Lop 
 {
 	
@@ -51,13 +46,6 @@ public class CumulativePartialAggregate extends Lop
 		init(input, dt, vt, et);
 	}
 	
-	/**
-	 * 
-	 * @param input
-	 * @param dt
-	 * @param vt
-	 * @param et
-	 */
 	private void init(Lop input, DataType dt, ValueType vt, ExecType et) 
 	{
 		this.addInput(input);
@@ -90,10 +78,6 @@ public class CumulativePartialAggregate extends Lop
 		return "CumulativePartialAggregate";
 	}
 	
-	/**
-	 * 
-	 * @return
-	 */
 	private String getOpcode() 
 	{
 		switch( _op ) {

@@ -25,9 +25,6 @@ import org.apache.sysml.lops.compile.JobType;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 
-/**
- * 
- */
 public class WeightedSigmoid extends Lop 
 {
 
@@ -60,10 +57,6 @@ public class WeightedSigmoid extends Lop
 		setupLopProperties(et);
 	}
 	
-	/**
-	 * 
-	 * @param et
-	 */
 	private void setupLopProperties( ExecType et )
 	{
 		if( et == ExecType.MR )

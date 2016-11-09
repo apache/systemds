@@ -35,8 +35,12 @@ public class CentralMoment extends Lop
 	 * Constructor to perform central moment.
 	 * input1 <- data (weighted or unweighted)
 	 * input2 <- order (integer: 0, 2, 3, or 4)
+	 * 
+	 * @param input1 low-level operator 1
+	 * @param input2 low-level operator 2
+	 * @param input3 low-level operator 3
+	 * @param et execution type
 	 */
-
 	private void init(Lop input1, Lop input2, Lop input3, ExecType et) {
 		this.addInput(input1);
 		this.addInput(input2);

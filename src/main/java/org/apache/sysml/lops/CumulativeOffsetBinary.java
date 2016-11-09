@@ -25,11 +25,6 @@ import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.lops.compile.JobType;
 import org.apache.sysml.parser.Expression.*;
 
-
-/**
- * 
- * 
- */
 public class CumulativeOffsetBinary extends Lop 
 {
 	
@@ -59,13 +54,6 @@ public class CumulativeOffsetBinary extends Lop
 		init(data, offsets, dt, vt, et);
 	}
 	
-	/**
-	 * 
-	 * @param input
-	 * @param dt
-	 * @param vt
-	 * @param et
-	 */
 	private void init(Lop input1, Lop input2, DataType dt, ValueType vt, ExecType et) 
 	{
 		this.addInput(input1);
@@ -99,11 +87,6 @@ public class CumulativeOffsetBinary extends Lop
 		return "CumulativeOffsetBinary";
 	}
 
-	/**
-	 * 
-	 * @param op
-	 * @throws LopsException
-	 */
 	private void checkSupportedOperations(OperationTypes op) 
 		throws LopsException
 	{

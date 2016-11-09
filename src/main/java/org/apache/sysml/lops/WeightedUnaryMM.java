@@ -26,9 +26,6 @@ import org.apache.sysml.lops.compile.JobType;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 
-/**
- * 
- */
 public class WeightedUnaryMM extends Lop 
 {
 	public static final String OPCODE = "mapwumm";
@@ -60,10 +57,6 @@ public class WeightedUnaryMM extends Lop
 		setupLopProperties(et);
 	}
 	
-	/**
-	 * 
-	 * @param et
-	 */
 	private void setupLopProperties( ExecType et )
 	{
 		if( et == ExecType.MR )

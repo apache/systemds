@@ -47,11 +47,16 @@ public class UAggOuterChain extends Lop
 	/**
 	 * Constructor to setup a unaryagg outer chain
 	 * 
-	 * @param input
-	 * @param op
-	 * @return 
-	 * @throws LopsException
-	 */	
+	 * @param input1 low-level operator 1
+	 * @param input2 low-level operator 2
+	 * @param uaop aggregate operation type
+	 * @param uadir partial aggregate direction type
+	 * @param bop binary operation type
+	 * @param dt data type
+	 * @param vt value type
+	 * @param et execution type
+	 * @throws LopsException if LopsException occurs
+	 */
 	public UAggOuterChain(Lop input1, Lop input2, Aggregate.OperationTypes uaop, PartialAggregate.DirectionTypes uadir, Binary.OperationTypes bop, DataType dt, ValueType vt, ExecType et) 
 		throws LopsException 
 	{

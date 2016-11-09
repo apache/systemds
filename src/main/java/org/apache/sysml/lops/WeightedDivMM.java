@@ -26,9 +26,6 @@ import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 
-/**
- * 
- */
 public class WeightedDivMM extends Lop 
 {
 	public static final String OPCODE = "mapwdivmm";
@@ -102,10 +99,6 @@ public class WeightedDivMM extends Lop
 		setupLopProperties(et);
 	}
 	
-	/**
-	 * 
-	 * @param et
-	 */
 	private void setupLopProperties( ExecType et )
 	{
 		if( et == ExecType.MR )

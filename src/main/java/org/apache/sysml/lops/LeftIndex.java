@@ -32,14 +32,16 @@ public class LeftIndex extends Lop
 	/**
 	 * Constructor to setup a LeftIndexing operation.
 	 * Example: A[i:j, k:l] = B;
-	 *      
 	 * 
-	 * @param input
-	 * @param op
-	 * @return 
-	 * @throws LopsException
+	 * @param lhsMatrix left matrix lop
+	 * @param rhsMatrix right matrix lop
+	 * @param rowL row lower lop
+	 * @param rowU row upper lop
+	 * @param colL column lower lop
+	 * @param colU column upper lop
+	 * @param et execution type
+	 * @throws LopsException if LopsException occurs
 	 */
-	
 	private void init(Lop lhsMatrix, Lop rhsMatrix, Lop rowL, Lop rowU, Lop colL, Lop colU, ExecType et) throws LopsException {
 		/*
 		 * A[i:j, k:l] = B;

@@ -39,10 +39,12 @@ public class Group extends Lop
 	
 	/**
 	 * Constructor to create a grouping operation.
-	 * @param input
-	 * @param op
+	 * 
+	 * @param input low-level operator
+	 * @param op group operation type
+	 * @param dt data type
+	 * @param vt value type
 	 */
-
 	public Group(Lop input, Group.OperationTypes op, DataType dt, ValueType vt) 
 	{
 		super(Lop.Type.Grouping, dt, vt);		

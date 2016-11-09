@@ -46,11 +46,14 @@ public class MMCJ extends Lop
 		
 	/**
 	 * Constructor to perform a cross product operation.
-	 * @param et 
-	 * @param input
-	 * @param op
+	 * 
+	 * @param input1 low-level operator 1
+	 * @param input2 low-level operator 2
+	 * @param dt data type
+	 * @param vt value type
+	 * @param type cross production operation type (aggregate or no aggregate)
+	 * @param et execution type
 	 */
-
 	public MMCJ(Lop input1, Lop input2, DataType dt, ValueType vt, MMCJType type, ExecType et) 
 	{
 		super(Lop.Type.MMCJ, dt, vt);		
@@ -80,15 +83,6 @@ public class MMCJ extends Lop
 		}
 	}
 
-	/**
-	 * 
-	 * @param input1
-	 * @param input2
-	 * @param dt
-	 * @param vt
-	 * @param aggtype
-	 * @param et
-	 */
 	public MMCJ(Lop input1, Lop input2, DataType dt, ValueType vt, SparkAggType aggtype, ExecType et) 
 	{
 		this(input1, input2, dt, vt, MMCJType.NO_AGG, et);

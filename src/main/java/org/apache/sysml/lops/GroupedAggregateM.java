@@ -53,13 +53,6 @@ public class GroupedAggregateM extends Lop
 		_cacheType = partitioned ? CacheType.RIGHT_PART : CacheType.RIGHT;
 	}
 
-	/**
-	 * 
-	 * @param inputParameterLops
-	 * @param dt
-	 * @param vt
-	 * @param et
-	 */
 	private void init(HashMap<String, Lop> inputParameterLops, 
 			DataType dt, ValueType vt, ExecType et) 
 	{

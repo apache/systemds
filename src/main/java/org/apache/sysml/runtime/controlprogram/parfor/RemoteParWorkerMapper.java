@@ -113,7 +113,7 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 		//print heaver hitter per task
 		JobConf job = ConfigurationManager.getCachedJobConf();
 		if( DMLScript.STATISTICS && !InfrastructureAnalyzer.isLocalMode(job) )
-			LOG.info("\nSystemML Statistics:\nHeavy hitter instructions (name, time, count):\n" + Statistics.getHeavyHitters(10));	
+			LOG.info("\nSystemML Statistics:\nHeavy hitter instructions (name, time, count):\n" + Statistics.getHeavyHitters(DMLScript.STATISTICS_COUNT));
 	}
 
 	/**

@@ -100,6 +100,7 @@ public class DMLScript
 	
 	public static RUNTIME_PLATFORM rtplatform = OptimizerUtils.getDefaultExecutionMode();
 	public static boolean STATISTICS = false; //default statistics
+	public static int STATISTICS_COUNT = 10;	//default statistics count
 	public static boolean ENABLE_DEBUG_MODE = false; //default debug mode
 	public static boolean USE_LOCAL_SPARK_CONFIG = false; //set default local spark configuration - used for local testing
 	public static String DML_FILE_PATH_ANTLR_PARSER = null;
@@ -133,7 +134,7 @@ public class DMLScript
 			//+ "			Optional <flags> that is supported for this mode is optimize=(on|off)\n"
 			+ "   -exec: <mode> (optional) execution mode (hadoop, singlenode, [hybrid], hybrid_spark)\n"
 			+ "   -explain: <type> (optional) explain plan (hops, [runtime], recompile_hops, recompile_runtime)\n"
-			+ "   -stats: (optional) monitor and report caching/recompilation statistics\n"
+			+ "   -stats: <count> (optional) monitor and report caching/recompilation statistics, default count is 10\n"
 			+ "   -clean: (optional) cleanup all SystemML working directories (FS, DFS).\n"
 			+ "         All other flags are ignored in this mode. \n"
 			+ "   -config: (optional) use config file <config_filename> (default: use parameter\n"
@@ -285,8 +286,11 @@ public class DMLScript
 					if( args.length > (i+1) && !args[i+1].startsWith("-") )
 						EXPLAIN = Explain.parseExplainType(args[++i]);
 				}
-				else if( args[i].equalsIgnoreCase("-stats") )
+				else if( args[i].equalsIgnoreCase("-stats") ) {
 					STATISTICS = true;
+					if (args.length > (i + 1) && !args[i + 1].startsWith("-"))
+						STATISTICS_COUNT = Integer.parseInt(args[++i]);
+				}
 				else if ( args[i].equalsIgnoreCase("-exec")) {
 					rtplatform = parseRuntimePlatform(args[++i]);
 					if( rtplatform==null ) 

@@ -215,8 +215,8 @@ public abstract class Instruction
 	/**
 	 * This method should be used to execute the instruction. 
 	 * 
-	 * @param ec
-	 * @throws DMLRuntimeException
+	 * @param ec execution context
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public abstract void processInstruction(ExecutionContext ec) 
 		throws DMLRuntimeException;

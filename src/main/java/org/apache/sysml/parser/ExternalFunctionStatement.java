@@ -73,7 +73,8 @@ public class ExternalFunctionStatement extends FunctionStatement
 	/**
 	 * Validates all attributes and attribute values.
 	 * 
-	 * @throws LanguageException
+	 * @param sb statement block
+	 * @throws LanguageException if LanguageException occurs
 	 */
 	public void validateParameters(StatementBlock sb) //always unconditional  
 		throws LanguageException 

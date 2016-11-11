@@ -140,13 +140,6 @@ public abstract class Statement
 		raiseValidateError(msg, conditional, null);
 	}
 	
-	/**
-	* 
-	* @param msg
-	* @param conditional
-	* @param code
-	* @throws LanguageException
-	*/
 	public void raiseValidateError( String msg, boolean conditional, String errorCode ) 
 		throws LanguageException
 	{

@@ -44,6 +44,8 @@ public class InstallDependencyForIntegrationTests {
 
 	/**
 	 * Runs an R script in the old or the new way
+	 * 
+	 * @param newWay if true, run R script the new way
 	 */
 	@SuppressWarnings("unused")
 	protected static void runRScript(boolean newWay) {
@@ -125,8 +127,8 @@ public class InstallDependencyForIntegrationTests {
 	 * Prints out an R script.
 	 * </p>
 	 * 
-	 * @param dmlScriptfile
-	 *            filename of RL script
+	 * @param dmlScriptFile
+	 *            filename of R script
 	 */
 	public static void printRScript(String dmlScriptFile) {
 		try {

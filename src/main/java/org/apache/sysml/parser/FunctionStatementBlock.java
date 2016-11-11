@@ -42,7 +42,7 @@ public class FunctionStatementBlock extends StatementBlock
 	 *    default values start, they keep going to the right
 	 *    
 	 *    2)  The other parameters for External Functions
-	 * @throws IOException 
+	 * 
 	 */
 	@Override
 	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String,ConstIdentifier> constVars, boolean conditional) 

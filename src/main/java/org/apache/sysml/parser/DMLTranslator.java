@@ -88,8 +88,10 @@ public class DMLTranslator
 	/**
 	 * Validate parse tree
 	 * 
-	 * @throws LanguageException
-	 * @throws IOException 
+	 * @param dmlp dml program
+	 * @throws LanguageException if LanguageException occurs
+	 * @throws ParseException if ParseException occurs
+	 * @throws IOException if IOException occurs
 	 */
 	public void validateParseTree(DMLProgram dmlp) 
 		throws LanguageException, ParseException, IOException 
@@ -224,7 +226,9 @@ public class DMLTranslator
 	/**
 	 * Construct Hops from parse tree
 	 * 
-	 * @throws ParseException
+	 * @param dmlp dml program
+	 * @throws ParseException if ParseException occurs
+	 * @throws LanguageException if LanguageException occurs
 	 */
 	public void constructHops(DMLProgram dmlp) 
 		throws ParseException, LanguageException 
@@ -245,14 +249,7 @@ public class DMLTranslator
 			constructHops(current);
 		}
 	}
-		
-	/**
-	 * 
-	 * @param dmlp
-	 * @throws ParseException
-	 * @throws LanguageException
-	 * @throws HopsException
-	 */
+
 	public void rewriteHopsDAG(DMLProgram dmlp) 
 		throws ParseException, LanguageException, HopsException 
 	{
@@ -296,13 +293,7 @@ public class DMLTranslator
 			constructLops(current);
 		}
 	}
-	
-	/**
-	 * 
-	 * @param sb
-	 * @throws HopsException
-	 * @throws LopsException
-	 */
+
 	public void constructLops(StatementBlock sb) 
 		throws HopsException, LopsException 
 	{	
@@ -1220,9 +1211,9 @@ public class DMLTranslator
 	/**
 	 * Constructs Hops for a given ForStatementBlock or ParForStatementBlock, respectively.
 	 * 
-	 * @param sb
-	 * @throws ParseException
-	 * @throws LanguageException
+	 * @param sb for statement block
+	 * @throws ParseException if ParseException occurs
+	 * @throws LanguageException if LanguageException occurs
 	 */
 	public void constructHopsForForControlBlock(ForStatementBlock sb) 
 		throws ParseException, LanguageException 
@@ -1362,8 +1353,8 @@ public class DMLTranslator
 	 * 
 	 * Method used for both ForStatementBlock and ParForStatementBlock.
 	 * 
-	 * @param passedSB
-	 * @throws ParseException
+	 * @param fsb for statement block
+	 * @throws ParseException if ParseException occurs
 	 */
 	public void constructHopsForIterablePredicate(ForStatementBlock fsb) 
 		throws ParseException 
@@ -1444,7 +1435,11 @@ public class DMLTranslator
 	 * Construct Hops from parse tree : Process Expression in an assignment
 	 * statement
 	 * 
-	 * @throws ParseException
+	 * @param source source expression
+	 * @param target data identifier
+	 * @param hops map of high-level operators
+	 * @return high-level operator
+	 * @throws ParseException if ParseException occurs
 	 */
 	private Hop processExpression(Expression source, DataIdentifier target, HashMap<String, Hop> hops) throws ParseException {
 		if (source.getKind() == Expression.Kind.BinaryOp) {
@@ -1532,10 +1527,10 @@ public class DMLTranslator
 	/**
 	 * Constructs the Hops for arbitrary expressions that eventually evaluate to an INT scalar. 
 	 * 
-	 * @param source 
-	 * @param hops
-	 * @return
-	 * @throws ParseException
+	 * @param source source expression
+	 * @param hops map of high-level operators
+	 * @return high-level operator
+	 * @throws ParseException if ParseException occurs
 	 */
 	private Hop processTempIntExpression( Expression source,  HashMap<String, Hop> hops ) 
 		throws ParseException
@@ -1704,7 +1699,11 @@ public class DMLTranslator
 	 * Construct Hops from parse tree : Process Binary Expression in an
 	 * assignment statement
 	 * 
-	 * @throws ParseException
+	 * @param source binary expression
+	 * @param target data identifier
+	 * @param hops map of high-level operators
+	 * @return high-level operator
+	 * @throws ParseException if ParseException occurs
 	 */
 	private Hop processBinaryExpression(BinaryExpression source, DataIdentifier target, HashMap<String, Hop> hops)
 		throws ParseException 
@@ -1794,14 +1793,6 @@ public class DMLTranslator
 		return currBop;
 	}
 
-	/**
-	 * 
-	 * @param source
-	 * @param target
-	 * @param hops
-	 * @return
-	 * @throws ParseException
-	 */
 	private Hop processBooleanExpression(BooleanExpression source, DataIdentifier target, HashMap<String, Hop> hops)
 			throws ParseException 
 	{
@@ -1898,14 +1889,6 @@ public class DMLTranslator
 		return new ParameterizedBuiltinOp(name, dt, vt, ParameterizedBuiltinFunctionExpression.pbHopMap.get(op), paramHops);
 	}
 	
-	/**
-	 * 
-	 * @param source
-	 * @param targetList
-	 * @param hops
-	 * @return
-	 * @throws ParseException
-	 */
 	private Hop processMultipleReturnParameterizedBuiltinFunctionExpression(ParameterizedBuiltinFunctionExpression source, ArrayList<DataIdentifier> targetList,
 			HashMap<String, Hop> hops) throws ParseException 
 	{
@@ -1950,8 +1933,12 @@ public class DMLTranslator
 	 * Construct Hops from parse tree : Process ParameterizedBuiltinFunction Expression in an
 	 * assignment statement
 	 * 
-	 * @throws ParseException
-	 * @throws HopsException 
+	 * @param source parameterized built-in function
+	 * @param target data identifier
+	 * @param hops map of high-level operators
+	 * @return high-level operator
+	 * @throws ParseException if ParseException occurs
+	 * @throws HopsException if HopsException occurs
 	 */
 	private Hop processParameterizedBuiltinFunctionExpression(ParameterizedBuiltinFunctionExpression source, DataIdentifier target,
 			HashMap<String, Hop> hops) throws ParseException, HopsException {
@@ -2073,8 +2060,12 @@ public class DMLTranslator
 	 * Construct Hops from parse tree : Process ParameterizedExpression in a
 	 * read/write/rand statement
 	 * 
-	 * @throws ParseException
-	 * @throws HopsException 
+	 * @param source data expression
+	 * @param target data identifier
+	 * @param hops map of high-level operators
+	 * @return high-level operator
+	 * @throws ParseException if ParseException occurs
+	 * @throws HopsException if HopsException occurs
 	 */
 	private Hop processDataExpression(DataExpression source, DataIdentifier target,
 			HashMap<String, Hop> hops) throws ParseException, HopsException {
@@ -2157,6 +2148,12 @@ public class DMLTranslator
 	 * Construct HOps from parse tree: process BuiltinFunction Expressions in 
 	 * MultiAssignment Statements. For all other builtin function expressions,
 	 * <code>processBuiltinFunctionExpression()</code> is used.
+	 * 
+	 * @param source built-in function expression
+	 * @param targetList list of data identifiers
+	 * @param hops map of high-level operators
+	 * @return high-level operator
+	 * @throws ParseException if ParseException occurs
 	 */
 	private Hop processMultipleReturnBuiltinFunctionExpression(BuiltinFunctionExpression source, ArrayList<DataIdentifier> targetList,
 			HashMap<String, Hop> hops) throws ParseException {
@@ -2215,8 +2212,12 @@ public class DMLTranslator
 	 * Construct Hops from parse tree : Process BuiltinFunction Expression in an
 	 * assignment statement
 	 * 
-	 * @throws ParseException
-	 * @throws HopsException 
+	 * @param source built-in function expression
+	 * @param target data identifier
+	 * @param hops map of high-level operators
+	 * @return high-level operator
+	 * @throws ParseException if ParseException occurs
+	 * @throws HopsException if HopsException occurs
 	 */
 	private Hop processBuiltinFunctionExpression(BuiltinFunctionExpression source, DataIdentifier target,
 			HashMap<String, Hop> hops) throws ParseException, HopsException {
@@ -2961,12 +2962,6 @@ public class DMLTranslator
 		h.setColsInBlock(source.getColsInBlock());
 	}
 
-	/**
-	 * 
-	 * @param prog
-	 * @param pWrites
-	 * @throws LanguageException 
-	 */
 	private boolean prepareReadAfterWrite( DMLProgram prog, HashMap<String, DataIdentifier> pWrites ) 
 		throws LanguageException
 	{
@@ -2985,11 +2980,6 @@ public class DMLTranslator
 		return ret;
 	}
 	
-	/**
-	 * 
-	 * @param sb
-	 * @param pWrites
-	 */
 	private boolean prepareReadAfterWrite( StatementBlock sb, HashMap<String, DataIdentifier> pWrites )
 	{
 		boolean ret = false;

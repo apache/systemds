@@ -83,10 +83,6 @@ public class OrderWrapper extends PackageFunction
 		}
 	}
 
-	/**
-	 * 
-	 *
-	 */
 	private static class AscRowComparator implements Comparator<double[]> 
 	{
 		private int _col = -1;
@@ -102,11 +98,7 @@ public class OrderWrapper extends PackageFunction
 			return (arg0[_col] < arg1[_col] ? -1 : (arg0[_col] == arg1[_col] ? 0 : 1));
 		}		
 	}
-	
-	/**
-	 * 
-	 * 
-	 */
+
 	private static class DescRowComparator implements Comparator<double[]> 
 	{
 		private int _col = -1;

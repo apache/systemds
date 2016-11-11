@@ -59,13 +59,7 @@ public class DMLAppMaster
 			Logger.getLogger("org.apache.sysml.yarn").setLevel((Level) Level.DEBUG);
 		}
 	}
-	
-	/**
-	 * 
-	 * @param args
-	 * @throws YarnException 
-	 * @throws IOException 
-	 */
+
 	public void runApplicationMaster( String[] args ) 
 		throws YarnException, IOException
 	{
@@ -132,11 +126,7 @@ public class DMLAppMaster
 			LOG.debug("Unregistered the SystemML application master");
 		}
 	}
-	
-	/**
-	 * 
-	 * @param msg
-	 */
+
 	private void writeMessageToHDFSWorkingDir(String msg)
 	{
 		//construct working directory (consistent with client)
@@ -160,8 +150,8 @@ public class DMLAppMaster
 	/**
 	 * Main entrance for starting the SystemML app master.
 	 * 
-	 * @param args
-	 * @throws Exception
+	 * @param args arguments
+	 * @throws Exception if Exception occurs
 	 */
 	public static void main(String[] args) 
 		throws Exception 

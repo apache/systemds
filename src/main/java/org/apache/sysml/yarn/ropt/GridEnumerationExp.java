@@ -39,10 +39,6 @@ public class GridEnumerationExp extends GridEnumeration
 		_factor = DEFAULT_FACTOR;
 	}
 	
-	/**
-	 * 
-	 * @param steps
-	 */
 	public void setFactor( double factor )
 	{
 		_factor = factor;

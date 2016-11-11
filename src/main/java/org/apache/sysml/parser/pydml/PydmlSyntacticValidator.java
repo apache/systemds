@@ -19,6 +19,14 @@
 
 package org.apache.sysml.parser.pydml;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ErrorNode;
@@ -58,8 +66,6 @@ import org.apache.sysml.parser.common.CommonSyntacticValidator;
 import org.apache.sysml.parser.common.CustomErrorListener;
 import org.apache.sysml.parser.common.ExpressionInfo;
 import org.apache.sysml.parser.common.StatementInfo;
-import org.apache.sysml.parser.dml.DmlParser.MatrixMulExpressionContext;
-import org.apache.sysml.parser.dml.DmlSyntacticValidator;
 import org.apache.sysml.parser.pydml.PydmlParser.AddSubExpressionContext;
 import org.apache.sysml.parser.pydml.PydmlParser.AssignmentStatementContext;
 import org.apache.sysml.parser.pydml.PydmlParser.AtomicExpressionContext;
@@ -109,14 +115,6 @@ import org.apache.sysml.parser.pydml.PydmlParser.TypedArgNoAssignContext;
 import org.apache.sysml.parser.pydml.PydmlParser.UnaryExpressionContext;
 import org.apache.sysml.parser.pydml.PydmlParser.ValueDataTypeCheckContext;
 import org.apache.sysml.parser.pydml.PydmlParser.WhileStatementContext;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * TODO: Refactor duplicated parser code dml/pydml (entire package).
@@ -438,9 +436,9 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 	 * Increment lower indices by 1 when translating from PyDML
 	 * (0-based indexing) to DML (1-based indexing).
 	 *
-	 * @param expr
-	 * @param ctx
-	 * @return
+	 * @param expr expression 
+	 * @param ctx antlr rule context
+	 * @return expression
 	 */
 	private Expression incrementByOne(Expression expr, ParserRuleContext ctx) {
 		// Addition and subtraction operator same as DML
@@ -575,7 +573,7 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 	// -----------------------------------------------------------------
 
 	/** Similar to the "axis" argument in numpy.
-	 * @param ctx
+	 * @param ctx parameter expression
 	 * @return 0 (along rows), 1 (along column) or -1 (for error)
 	 */
 	private int getAxis(ParameterExpression ctx) {
@@ -653,12 +651,12 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 
 	/**
 	 * Check function name, namespace, parameters (#params & possible values) and produce useful messages/hints
-	 * @param ctx
-	 * @param namespace
-	 * @param functionName
-	 * @param paramExpression
-	 * @param fnName
-	 * @return
+	 * @param ctx antlr rule context
+	 * @param namespace Namespace of the function
+	 * @param functionName Name of the builtin function
+	 * @param paramExpression Array of parameter names and values
+	 * @param fnName Token of the builtin function identifier
+	 * @return common syntax format for runtime
 	 */
 	private ConvertedDMLSyntax convertPythonBuiltinFunctionToDMLSyntax(ParserRuleContext ctx, String namespace, String functionName, ArrayList<ParameterExpression> paramExpression,
 			Token fnName) {
@@ -1094,7 +1092,7 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 	 * For Pydml, matrix multiply is invoked using dot (A, B). This is taken from numpy.dot
 	 * For Dml, it is invoked using "%*%". The dot function call in pydml is converted to a
 	 * {@link BinaryExpression} equivalent to what is done in
-	 * {@link DmlSyntacticValidator#exitMatrixMulExpression(MatrixMulExpressionContext)}
+	 * DmlSyntacticValidator's exitMatrixMulExpression(MatrixMulExpressionContext).
 	 */
 	@Override
 	protected Expression handleLanguageSpecificFunction(ParserRuleContext ctx, String functionName, ArrayList<ParameterExpression> paramExpression){

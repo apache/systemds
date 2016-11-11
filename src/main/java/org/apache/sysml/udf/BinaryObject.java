@@ -33,7 +33,7 @@ public class BinaryObject extends FunctionParameter
 	/**
 	 * constructor that takes object as param
 	 * 
-	 * @param o
+	 * @param o object
 	 */
 	public BinaryObject(Object o) {
 		super( FunctionParameterType.Object );
@@ -43,7 +43,7 @@ public class BinaryObject extends FunctionParameter
 	/**
 	 * Method to retrieve object.
 	 * 
-	 * @return
+	 * @return object
 	 */
 	public Object getObject() {
 		return _o;

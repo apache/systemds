@@ -95,19 +95,11 @@ public class Explain
 	
 	//////////////
 	// public explain interface
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public static String explainMemoryBudget() {
 		return explainMemoryBudget(new ExplainCounts());
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public static String explainMemoryBudget(ExplainCounts counts)
 	{
 		StringBuilder sb = new StringBuilder();
@@ -141,20 +133,12 @@ public class Explain
 		
 		return sb.toString();		 
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public static String explainDegreeOfParallelism()
 	{
 		return explainDegreeOfParallelism(new ExplainCounts());
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public static String explainDegreeOfParallelism(ExplainCounts counts)
 	{
 		int lk = InfrastructureAnalyzer.getLocalParallelism();
@@ -192,17 +176,7 @@ public class Explain
 		
 		return sb.toString();		 
 	}
-	
-	/**
-	 * 
-	 * @param prog
-	 * @param rtprog
-	 * @param type
-	 * @return
-	 * @throws LanguageException 
-	 * @throws DMLRuntimeException 
-	 * @throws HopsException 
-	 */
+
 	public static String explain(DMLProgram prog, Program rtprog, ExplainType type) 
 		throws HopsException, DMLRuntimeException, LanguageException
 	{
@@ -223,15 +197,6 @@ public class Explain
 		return null;
 	}
 
-
-	/**
-	 * 
-	 * @param dmlp
-	 * @return
-	 * @throws LanguageException 
-	 * @throws HopsException 
-	 * @throws DMLRuntimeException 
-	 */
 	public static String explain(DMLProgram prog) 
 		throws HopsException, DMLRuntimeException, LanguageException 
 	{
@@ -278,14 +243,7 @@ public class Explain
 	
 		return sb.toString();
 	}
-	
 
-	/**
-	 * 
-	 * @param rtprog
-	 * @return
-	 * @throws HopsException 
-	 */
 	public static String explain( Program rtprog ) 
 		throws HopsException 
 	{
@@ -346,79 +304,38 @@ public class Explain
 		return sb.toString();	
 	}
 
-	/**
-	 * 
-	 * @param pb
-	 * @return
-	 */
 	public static String explain( ProgramBlock pb )
 	{
 		return explainProgramBlock(pb, 0);
 	}
-	
-	/**
-	 * 
-	 * @param inst
-	 * @return
-	 */
+
 	public static String explain( ArrayList<Instruction> inst )
 	{
 		return explainInstructions(inst, 0);
 	}
-	
-	/**
-	 * 
-	 * @param inst
-	 * @param level
-	 * @return
-	 */
+
 	public static String explain( ArrayList<Instruction> inst, int level )
 	{
 		return explainInstructions(inst, level);
 	}
-	
-	/**
-	 * 
-	 * @param inst
-	 * @return
-	 */
+
 	public static String explain( Instruction inst )
 	{
 		return explainGenericInstruction(inst, 0);
 	}
-	
-	/**
-	 * 
-	 * @param sb
-	 * @return
-	 * @throws DMLRuntimeException 
-	 * @throws HopsException 
-	 */
+
 	public static String explain( StatementBlock sb ) 
 		throws HopsException, DMLRuntimeException
 	{
 		return explainStatementBlock(sb, 0);
 	}
-	
-	/**
-	 * 
-	 * @param hops
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static String explainHops( ArrayList<Hop> hops ) 
 		throws DMLRuntimeException
 	{
 		return explainHops(hops, 0);
 	}
-	
-	/**
-	 * 
-	 * @param hops
-	 * @param level
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static String explainHops( ArrayList<Hop> hops, int level ) 
 		throws DMLRuntimeException
 	{
@@ -431,25 +348,13 @@ public class Explain
 		
 		return sb.toString();		
 	}
-	
-	/**
-	 * 
-	 * @param hop
-	 * @return
-	 * @throws DMLRuntimeException 
-	 */
+
 	public static String explain( Hop hop ) 
 		throws DMLRuntimeException
 	{
 		return explain(hop, 0);
 	}
-	
-	/**
-	 * 
-	 * @param hop
-	 * @return
-	 * @throws DMLRuntimeException 
-	 */
+
 	public static String explain( Hop hop, int level ) 
 		throws DMLRuntimeException
 	{
@@ -459,26 +364,13 @@ public class Explain
 		
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @param gdfnodes
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static String explainGDFNodes( ArrayList<GDFNode> gdfnodes ) 
 		throws DMLRuntimeException
 	{
 		return explainGDFNodes(gdfnodes, 0);
 	}
-	
-	/**
-	 * 
-	 * @param gdfnodes
-	 * @param level
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static String explainGDFNodes( ArrayList<GDFNode> gdfnodes, int level ) 
 		throws DMLRuntimeException
 	{
@@ -495,8 +387,8 @@ public class Explain
 	 * Counts the number of compiled MRJob/Spark instructions in the
 	 * given runtime program.
 	 * 
-	 * @param rtprog
-	 * @return
+	 * @param rtprog runtime program
+	 * @return counts
 	 */
 	public static ExplainCounts countDistributedOperations( Program rtprog )
 	{		
@@ -508,13 +400,7 @@ public class Explain
 				
 		return counts;		
 	}
-	
-	/**
-	 * 
-	 * @param arg
-	 * @return
-	 * @throws DMLException
-	 */
+
 	public static ExplainType parseExplainType( String arg ) 
 		throws DMLException
 	{
@@ -537,12 +423,7 @@ public class Explain
 		
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @param level
-	 * @return
-	 */
+
 	public static String getIdentation( int level ) {
 		return createOffset(level);
 	}
@@ -637,12 +518,12 @@ public class Explain
 	}
 
 	/**
-	 * Do a post-order traverse through the HopDag and explain each Hop
+	 * Do a post-order traverse through the Hop DAG and explain each Hop
 	 * 
-	 * @param hop
-	 * @param level
-	 * @return
-	 * @throws DMLRuntimeException
+	 * @param hop high-level operator
+	 * @param level offset
+	 * @return string explanation of Hop DAG
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private static String explainHop(Hop hop, int level) 
 		throws DMLRuntimeException 
@@ -731,10 +612,11 @@ public class Explain
 	 * Do a post-order traverse through the GDFNode DAG and explain each GDFNode.
 	 * Note: nodes referring to literalops are suppressed.
 	 * 
-	 * @param hop
-	 * @param level
-	 * @return
-	 * @throws DMLRuntimeException
+	 * @param gnode GDF node
+	 * @param level offset
+	 * @param memo memoization table
+	 * @return string explanation
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private static String explainGDFNode(GDFNode gnode, int level, HashSet<Long> memo) 
 		throws DMLRuntimeException 
@@ -823,12 +705,6 @@ public class Explain
 	//////////////
 	// internal explain RUNTIME
 
-	/**
-	 * 
-	 * @param pb
-	 * @param level
-	 * @return
-	 */
 	private static String explainProgramBlock( ProgramBlock pb, int level ) 
 	{
 		StringBuilder sb = new StringBuilder();
@@ -901,13 +777,7 @@ public class Explain
 		
 		return sb.toString();
 	}
-	
-	/**
-	 * 
-	 * @param instSet
-	 * @param level
-	 * @return
-	 */
+
 	private static String explainInstructions( ArrayList<Instruction> instSet, int level )
 	{
 		StringBuilder sb = new StringBuilder();
@@ -924,12 +794,7 @@ public class Explain
 		
 		return sb.toString();
 	}
-	
-	/**
-	 * 
-	 * @param inst
-	 * @return
-	 */
+
 	private static String explainGenericInstruction( Instruction inst, int level )
 	{
 		String tmp = null;
@@ -946,13 +811,7 @@ public class Explain
 		
 		return tmp;
 	}
-	
-	/**
-	 * 
-	 * @param inst
-	 * @param level
-	 * @return
-	 */
+
 	private static String explainMRJobInstruction( MRJobInstruction inst, int level )
 	{		
 		String instruction = "MR-Job[\n";
@@ -974,12 +833,7 @@ public class Explain
 		
 		return instruction;
 	}
-	
-	/**
-	 * 
-	 * @param mem
-	 * @return
-	 */
+
 	@SuppressWarnings("unused")
 	private static String showMem(double mem, boolean units) 
 	{
@@ -987,12 +841,7 @@ public class Explain
 			return "MAX";
 		return OptimizerUtils.toMB(mem) + (units?"MB":"");
 	}
-	
-	/**
-	 * 
-	 * @param level
-	 * @return
-	 */
+
 	private static String createOffset( int level )
 	{
 		StringBuilder sb = new StringBuilder();
@@ -1000,15 +849,7 @@ public class Explain
 			sb.append("--");
 		return sb.toString();
 	}
-	
-	/**
-	 * 
-	 * @param rtprog
-	 * @param counts
-	 * @param MR
-	 * @param CP
-	 * @param SP
-	 */
+
 	private static void countCompiledInstructions( Program rtprog, ExplainCounts counts, boolean MR, boolean CP, boolean SP )
 	{
 		//analyze DML-bodied functions
@@ -1024,11 +865,11 @@ public class Explain
 	 * Recursively counts the number of compiled MRJob instructions in the
 	 * given runtime program block. 
 	 * 
-	 * @param pb
-	 * @param counts
-	 * @param MR
-	 * @param CP
-	 * @param SP
+	 * @param pb program block
+	 * @param counts explain countst
+	 * @param MR if true, count Hadoop instructions
+	 * @param CP if true, count CP instructions
+	 * @param SP if true, count Spark instructions
 	 */
 	private static void countCompiledInstructions(ProgramBlock pb, ExplainCounts counts, boolean MR, boolean CP, boolean SP) 
 	{
@@ -1069,16 +910,7 @@ public class Explain
 			countCompiledInstructions(pb.getInstructions(), counts, MR, CP, SP);
 		}
 	}
-	
-	/**
-	 * 
-	 * @param instSet
-	 * @param counts
-	 * @param MR
-	 * @param CP
-	 * @param SP
-	 * @return
-	 */
+
 	private static int countCompiledInstructions( ArrayList<Instruction> instSet, ExplainCounts counts, boolean MR, boolean CP, boolean SP )
 	{
 		int ret = 0;
@@ -1099,16 +931,7 @@ public class Explain
 		
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @param sb
-	 * @param fstack
-	 * @param lfset
-	 * @param level
-	 * @return
-	 * @throws HopsException
-	 */
+
 	private static String explainFunctionCallDag(StatementBlock sb, HashSet<String> fstack, HashSet<String> lfset, int level) 
 		throws HopsException 
 	{

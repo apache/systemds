@@ -393,11 +393,6 @@ public class ParForStatementBlock extends ForStatementBlock
 		return vs;
 	}
 	
-	/**
-	 * 
-	 * @param sb
-	 * @return
-	 */
 	public ArrayList<String> getReadOnlyParentVars() 
 	{
 		ArrayList<String> ret = new ArrayList<String>();
@@ -418,8 +413,8 @@ public class ParForStatementBlock extends ForStatementBlock
 	 * Row-wise or column wise partitioning is only suggested if we see pure row-wise or
 	 * column-wise access patterns.
 	 * 
-	 * @param var
-	 * @return
+	 * @param var variables
+	 * @return partition format
 	 */
 	public PDataPartitionFormat determineDataPartitionFormat(String var) 
 	{
@@ -467,10 +462,10 @@ public class ParForStatementBlock extends ForStatementBlock
 	 * This method recursively determines candidates for output,data,anti dependencies. 
 	 * Candidates are defined as writes to non-local variables.
 	 * 
-	 * @param asb
-	 * @param C
-	 * @param sCount
-	 * @throws LanguageException 
+	 * @param asb list of statement blocks
+	 * @param C set of candidates
+	 * @param sCount statement count
+	 * @throws LanguageException if LanguageException occurs
 	 */
 	private void rDetermineCandidates(ArrayList<StatementBlock> asb, HashSet<Candidate> C, Integer sCount) 
 		throws LanguageException 
@@ -533,9 +528,10 @@ public class ParForStatementBlock extends ForStatementBlock
 	 * This method recursively determines partitioning candidates for input variables. 
 	 * Candidates are defined as index reads of non-local variables.
 	 * 
-	 * @param asb
-	 * @param C
-	 * @throws LanguageException 
+	 * @param var variables
+	 * @param asb list of statement blocks
+	 * @param C list of partition formats
+	 * @throws LanguageException if LanguageException occurs
 	 */
 	private void rDeterminePartitioningCandidates(String var, ArrayList<StatementBlock> asb, List<PDataPartitionFormat> C) 
 		throws LanguageException 
@@ -586,13 +582,7 @@ public class ParForStatementBlock extends ForStatementBlock
 				}
 			}
 	}
-	
-	/**
-	 * 
-	 * @param var
-	 * @param datsRead
-	 * @param C
-	 */
+
 	private void rDeterminePartitioningCandidates(String var, List<DataIdentifier> datsRead, List<PDataPartitionFormat> C)
 	{
 		if( datsRead != null )
@@ -687,12 +677,12 @@ public class ParForStatementBlock extends ForStatementBlock
 	 * (undetected dependency) but potentially false positives (misdetected dependency) can appear.  
 	 * 
 	 * 
-	 * @param c
-	 * @param cdt
-	 * @param asb
-	 * @param sCount
-	 * @param dep
-	 * @throws LanguageException
+	 * @param c candidate
+	 * @param cdt candidate data type
+	 * @param asb list of statement blocks
+	 * @param sCount statement count
+	 * @param dep array of boolean potential output dependencies
+	 * @throws LanguageException if LanguageException occurs
 	 */
 	private void rCheckCandidates(Candidate c, DataType cdt, ArrayList<StatementBlock> asb, 
 			                      Integer sCount, boolean[] dep) 
@@ -851,9 +841,9 @@ public class ParForStatementBlock extends ForStatementBlock
 	/**
 	 * Get all target/source DataIdentifiers of the given statement.
 	 * 
-	 * @param s
-	 * @param target 
-	 * @return
+	 * @param s statement
+	 * @param target if true, get targets
+	 * @return list of data identifiers
 	 */
 	private List<DataIdentifier> getDataIdentifiers(Statement s, boolean target) 
 	{
@@ -988,12 +978,6 @@ public class ParForStatementBlock extends ForStatementBlock
 		return ret;
 	}
 	
-	/**
-	 * 
-	 * @param sbs
-	 * @param flag
-	 * @throws LanguageException
-	 */
 	private void rDetermineBounds( ArrayList<StatementBlock> sbs, boolean flag ) 
 		throws LanguageException
 	{
@@ -1004,10 +988,9 @@ public class ParForStatementBlock extends ForStatementBlock
 	/**
 	 * Determines the lower/upper bounds of all nested for/parfor indexes.
 	 * 
-	 * @param sbs
+	 * @param sb statement block
 	 * @param flag indicates that method is already in subtree of THIS.
-	 * @return
-	 * @throws LanguageException 
+	 * @throws LanguageException if LanguageException occurs
 	 */
 	private void rDetermineBounds( StatementBlock sb, boolean flag ) 
 		throws LanguageException
@@ -1102,12 +1085,6 @@ public class ParForStatementBlock extends ForStatementBlock
 		}
 	}
 	
-	/**
-	 * 
-	 * @param cParent
-	 * @param cChild
-	 * @return
-	 */
 	private boolean rIsParent( ArrayList<StatementBlock> cParent, StatementBlock cChild)
 	{
 		for( StatementBlock sb : cParent  ) 
@@ -1116,13 +1093,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		
 		return false;
 	}
-		
-	/**
-	 * 
-	 * @param cParent
-	 * @param cChild
-	 * @return
-	 */
+
 	private boolean rIsParent( StatementBlock cParent, StatementBlock cChild)
 	{
 		boolean ret = false;
@@ -1168,10 +1139,10 @@ public class ParForStatementBlock extends ForStatementBlock
 	 * dynamic lower, upper, and increment expressions, and (2) therefore potentially large 
 	 * overheads in the general case.
 	 * 
-	 * @param dat1
-	 * @param dat2
-	 * @return
-	 * @throws LanguageException
+	 * @param dat1 data identifier 1
+	 * @param dat2 data identifier 2
+	 * @return true if "anti or data dependency"
+	 * @throws LanguageException if LanguageException occurs
 	 */
 	private boolean runBanerjeeGCDTest(DataIdentifier dat1, DataIdentifier dat2) 
 		throws LanguageException 
@@ -1344,9 +1315,9 @@ public class ParForStatementBlock extends ForStatementBlock
 	 * Runs a constant check for a single data identifier (target of assignment). If constant, then every
 	 * iteration writes to the same cell. 
 	 * 
-	 * @param dat1
-	 * @return
-	 * @throws LanguageException
+	 * @param dat1 data identifier
+	 * @return true if dependency
+	 * @throws LanguageException if LanguageException occurs
 	 */
 	private boolean runConstantCheck(DataIdentifier dat1) 
 		throws LanguageException 
@@ -1393,10 +1364,10 @@ public class ParForStatementBlock extends ForStatementBlock
 	 * Runs an equality check for two data identifiers. If equal, there there are no
 	 * inter-iteration (loop-carried) but only intra-iteration dependencies.
 	 * 
-	 * @param dat1
-	 * @param dat2
-	 * @return
-	 * @throws LanguageException
+	 * @param dat1 data identifier 1
+	 * @param dat2 data identifier 2
+	 * @return true if equal data identifiers
+	 * @throws LanguageException if LanguageException occurs
 	 */
 	private boolean runEqualsCheck(DataIdentifier dat1, DataIdentifier dat2) 
 		throws LanguageException 
@@ -1456,9 +1427,9 @@ public class ParForStatementBlock extends ForStatementBlock
 	 * This is the Euclid's algorithm for GCD (greatest common denominator), 
 	 * required for the GCD test.
 	 * 
-	 * @param a
-	 * @param b
-	 * @return
+	 * @param a first value
+	 * @param b second value
+	 * @return greatest common denominator
 	 */
 	private long determineGCD(long a, long b) 
 	{
@@ -1472,9 +1443,9 @@ public class ParForStatementBlock extends ForStatementBlock
 	 * Creates or reuses a linear function for a given data identifier, where identifiers with equal
 	 * names and matrix subscripts result in exactly the same linear function.
 	 * 
-	 * @param dat
-	 * @return
-	 * @throws LanguageException
+	 * @param dat data identifier
+	 * @return linear function
+	 * @throws LanguageException if LanguageException occurs
 	 */
 	private LinearFunction getLinearFunction(DataIdentifier dat)
 		throws LanguageException
@@ -1761,8 +1732,8 @@ public class ParForStatementBlock extends ForStatementBlock
 	 * where data identifiers with equal name and matrix subscripts results in equal
 	 * functionIDs.
 	 * 
-	 * @param dat
-	 * @return
+	 * @param dat indexed identifier
+	 * @return string function id
 	 */
 	private String getFunctionID( IndexedIdentifier dat )
 	{
@@ -1793,7 +1764,7 @@ public class ParForStatementBlock extends ForStatementBlock
 	/**
 	 * Removes all zero intercepts created by recursive computation.
 	 * 
-	 * @param f1
+	 * @param f1 linear function
 	 */
 	private void cleanupFunction( LinearFunction f1 )
 	{
@@ -1812,8 +1783,8 @@ public class ParForStatementBlock extends ForStatementBlock
 	 * Simply verification check of created linear functions, mainly used for
 	 * robustness purposes.
 	 * 
-	 * @param f1
-	 * @throws LanguageException
+	 * @param f1 linear function
+	 * @throws LanguageException if LanguageException occurs
 	 */
 	private void verifyFunction(LinearFunction f1)
 		throws LanguageException
@@ -1844,8 +1815,8 @@ public class ParForStatementBlock extends ForStatementBlock
 	 * Tries to obtain consistent linear functions by forcing the same variable ordering for
 	 * efficient comparison: f2 is modified in a way that it matches the sequence of variables in f1.		
 	 * 
-	 * @param f1
-	 * @param f2
+	 * @param f1 linear function 1
+	 * @param f2 linear function 2
 	 */
 	private void forceConsistency(LinearFunction f1, LinearFunction f2) 
 	{
@@ -1890,9 +1861,9 @@ public class ParForStatementBlock extends ForStatementBlock
 	 * Recursively creates a linear function for a single BinaryExpression, where PLUS, MINUS, MULT
 	 * are allowed as operators.
 	 * 
-	 * @param be
-	 * @return
-	 * @throws LanguageException
+	 * @param be binary expression
+	 * @return linear function
+	 * @throws LanguageException if LanguageException occurs
 	 */
 	private LinearFunction rParseBinaryExpression(BinaryExpression be) 
 		throws LanguageException
@@ -1988,11 +1959,6 @@ public class ParForStatementBlock extends ForStatementBlock
 		return ret;
 	}
 
-	/**
-	 * 
-	 * @param expr
-	 * @return
-	 */
 	private Long parseLongConstant(Expression expr)
 	{
 		Long ret = null;

@@ -64,7 +64,7 @@ import org.apache.sysml.runtime.util.MapReduceTool;
 /**
  * NOTES:
  *   * Security: By default, submitted applications are ran as user 'yarn'. 
- *     In order to allow for security and relative filenames on hdfs (/user/<username>/.), 
+ *     In order to allow for security and relative filenames on hdfs (/user/&lt;username&gt;/.), 
  *     we can configure the LinuxContainerExecutor in yarn-site.xml, which runs the
  *     application as the user who submits the application.
  *   * SystemML.jar file dependency: We need to submit the SystemML.jar along with the
@@ -120,9 +120,9 @@ public class DMLYarnClient
 	 * Protected since only supposed to be accessed via proxy in same package.
 	 * This is to ensure robustness in case of missing yarn libraries.
 	 * 
-	 * @param dmlScriptStr
-	 * @param conf
-	 * @param args
+	 * @param dmlScriptStr script string
+	 * @param conf dml configuration
+	 * @param args arguments
 	 */
 	protected DMLYarnClient(String dmlScriptStr, DMLConfig conf, String[] args)
 	{
@@ -142,7 +142,8 @@ public class DMLYarnClient
 	 *	  exception we fall back to run CP directly in the client process.
 	 * 
 	 * @return true if dml program successfully executed as yarn app master
-	 * @throws IOException 
+	 * @throws IOException if IOException occurs
+	 * @throws DMLScriptException if DMLScriptException occurs
 	 */
 	protected boolean launchDMLYarnAppmaster() 
 		throws IOException, DMLScriptException
@@ -260,15 +261,7 @@ public class DMLYarnClient
 		
 		return ret;
 	}
-	
-	/**
-	 * 	
-	 * @param appId
-	 * @throws ParseException
-	 * @throws IOException
-	 * @throws DMLRuntimeException
-	 * @throws InterruptedException 
-	 */
+
 	@SuppressWarnings("deprecation")
 	private void copyResourcesToHdfsWorkingDir( YarnConfiguration yconf, String hdfsWD ) 
 		throws ParseException, IOException, DMLRuntimeException, InterruptedException 
@@ -318,6 +311,7 @@ public class DMLYarnClient
 	}
 	
 	/**
+	 * Obtain the local jar file name from the system environment
 	 * 
 	 * @return null if the constant does not exists
 	 */
@@ -357,9 +351,9 @@ public class DMLYarnClient
 	 * jar to a temporary jar and later copy it to hdfs.
 	 * 
 	 * @param dir
-	 * @return
-	 * @throws IOException
-	 * @throws InterruptedException
+	 * @return jar name
+	 * @throws IOException if IOException occurs
+	 * @throws InterruptedException if InterruptedException occurs
 	 */
 	private String createJar( String dir ) 
 		throws IOException, InterruptedException
@@ -398,13 +392,7 @@ public class DMLYarnClient
 		
 		return jarname;
 	}
-	
-	/**
-	 * 
-	 * @param args
-	 * @param conf
-	 * @return
-	 */
+
 	private String constructAMCommand( String[] args, DMLConfig conf )
 	{
 		//start command
@@ -458,15 +446,7 @@ public class DMLYarnClient
 	
 		return command.toString();
 	}
-	
-	/**
-	 * 
-	 * @param yconf
-	 * @param path
-	 * @param lpath
-	 * @return
-	 * @throws IOException
-	 */
+
 	private Map<String, LocalResource> constructLocalResourceMap(YarnConfiguration yconf) 
 		throws IOException 
 	{
@@ -484,13 +464,7 @@ public class DMLYarnClient
 		rMap.put(DML_JAR_NAME, resource);
 		return rMap;
 	}
-	
-	/**
-	 * 
-	 * @param yconf
-	 * @return
-	 * @throws IOException
-	 */
+
 	private Map<String, String> constructEnvionmentMap(YarnConfiguration yconf) 
 		throws IOException
 	{
@@ -536,14 +510,7 @@ public class DMLYarnClient
 		
 		return eMap;
 	}	
-	
-	/**
-	 * 
-	 * @param conf
-	 * @param yconf
-	 * @param appId
-	 * @return
-	 */
+
 	private String readMessageToHDFSWorkingDir(DMLConfig conf, YarnConfiguration yconf, ApplicationId appId)
 	{
 		String ret = null;
@@ -570,12 +537,7 @@ public class DMLYarnClient
 		
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @param heapsize
-	 * @return
-	 */
+
 	public static long computeMemoryAllocation( long heapsize )
 	{
 		long ret = heapsize;

@@ -96,8 +96,7 @@ public class RelationalExpression extends Expression
 	}
 
 	/**
-	 * Validate parse tree : Process Relational Expression  
-	 * @throws LanguageException 
+	 * Validate parse tree : Process Relational Expression
 	 */
 	@Override
 	public void validateExpression(HashMap<String,DataIdentifier> ids, HashMap<String, ConstIdentifier> constVars, boolean conditional) 
@@ -172,8 +171,10 @@ public class RelationalExpression extends Expression
 	
 	/**
 	 * This is same as the function from BuiltinFunctionExpression which is called by ppred
-	 * @param expr1
-	 * @param expr2
+	 * 
+	 * @param expr1 expression 1
+	 * @param expr2 expression 2
+	 * @param allowsMV ?
 	 * @throws LanguageException
 	 */
 	private void checkMatchingDimensions(Expression expr1, Expression expr2, boolean allowsMV) 

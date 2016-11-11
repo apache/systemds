@@ -92,9 +92,6 @@ public class StatementBlock extends LiveVariableAnalysis
 		
 	}
 	
-	/**
-	 * replace statement 
-	 */
 	public void replaceStatement(int index, Statement passedStmt){
 		this._statements.set(index, passedStmt);
 		
@@ -246,12 +243,6 @@ public class StatementBlock extends LiveVariableAnalysis
 	}
    
 
-    /**
-     * 
-     * @param fblock
-     * @param prog
-     * @return
-     */
     private boolean rIsInlineableFunction( FunctionStatementBlock fblock, DMLProgram prog )
     {
     	boolean ret = true;
@@ -533,17 +524,6 @@ public class StatementBlock extends LiveVariableAnalysis
 		return newStatements;
 	}
 	
-	/**
-	 * 
-	 * @param dmlProg
-	 * @param ids
-	 * @param constVars
-	 * @param conditional
-	 * @return
-	 * @throws LanguageException
-	 * @throws ParseException
-	 * @throws IOException
-	 */
 	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String, ConstIdentifier> constVars, boolean conditional) 
 		throws LanguageException, ParseException, IOException 
 	{
@@ -971,25 +951,12 @@ public class StatementBlock extends LiveVariableAnalysis
 	///////////////////////////////////////////////////////////////
 	// validate error handling (consistent for all expressions)
 	
-	/**
-	* 
-	* @param msg
-	* @param conditional
-	* @throws LanguageException
-	*/
 	public void raiseValidateError( String msg, boolean conditional ) 
 		throws LanguageException
 	{
 		raiseValidateError(msg, conditional, null);
 	}
 	
-	/**
-	* 
-	* @param msg
-	* @param conditional
-	* @param code
-	* @throws LanguageException
-	*/
 	public void raiseValidateError( String msg, boolean conditional, String errorCode ) 
 		throws LanguageException
 	{

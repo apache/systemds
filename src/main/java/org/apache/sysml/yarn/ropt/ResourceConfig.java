@@ -56,10 +56,6 @@ public class ResourceConfig
 		addProgramBlocks(prog, init);
 	}
 	
-	/**
-	 * 
-	 * @return
-	 */
 	public long getCPResource()
 	{
 		return (long)_cpres;
@@ -103,21 +99,12 @@ public class ResourceConfig
 			_mrres.set(i, (long)res[i][0]);
 	}
 
-	
-	/**
-	 * 
-	 * @return
-	 */
 	public long getMaxMRResource()
 	{
 		double val = Collections.max(_mrres);
 		return (long)val;
 	}
 	
-	/**
-	 * 
-	 * @return
-	 */
 	public String serialize() 
 	{
 		StringBuilder ret = new StringBuilder();
@@ -154,26 +141,14 @@ public class ResourceConfig
 		
 		return new ResourceConfig(cp, mr);
 	}
-	
-	/**
-	 * 
-	 * @param pbs
-	 * @param init
-	 * @throws HopsException 
-	 */
+
 	private void addProgramBlocks( ArrayList<ProgramBlock> pbs, long init ) 
 		throws HopsException
 	{
 		for( ProgramBlock pb : pbs )
 			addProgramBlock(pb, init);
 	}
-	
-	/**
-	 * 
-	 * @param pb
-	 * @param init
-	 * @throws HopsException 
-	 */
+
 	private void addProgramBlock( ProgramBlock pb, long init ) 
 		throws HopsException
 	{

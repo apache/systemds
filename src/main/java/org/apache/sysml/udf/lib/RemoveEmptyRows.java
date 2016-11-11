@@ -42,10 +42,6 @@ import org.apache.sysml.udf.Matrix;
 import org.apache.sysml.udf.PackageFunction;
 import org.apache.sysml.udf.Matrix.ValueType;
 
-/**
- * 
- *
- */
 @Deprecated
 public class RemoveEmptyRows extends PackageFunction 
 {	

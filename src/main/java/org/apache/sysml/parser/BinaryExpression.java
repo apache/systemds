@@ -102,7 +102,7 @@ public class BinaryExpression extends Expression
 	 * Validate parse tree : Process Binary Expression in an assignment
 	 * statement
 	 * 
-	 * @throws LanguageException
+	 * @throws LanguageException if LanguageException occurs
 	 */
 	@Override
 	public void validateExpression(HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> constVars, boolean conditional)

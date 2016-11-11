@@ -217,11 +217,7 @@ public class Statistics
 	public static void incrementTotalLix() {
 		lTotalLix.incrementAndGet();
 	}
-	
-	/**
-	 * 
-	 * @param count
-	 */
+
 	public static void resetNoOfCompiledJobs( int count )
 	{
 		//reset both mr/sp for multiple tests within one jvm
@@ -235,11 +231,7 @@ public class Statistics
 			setNoOfCompiledSPInst(0);
 		}
 	}
-	
-	/**
-	 * 
-	 * @param count
-	 */
+
 	public static void resetNoOfExecutedJobs( int count )
 	{
 		//reset both mr/sp for multiple tests within one jvm
@@ -353,7 +345,7 @@ public class Statistics
 	/**
 	 * Returns the total time of run in nanoseconds.
 	 * 
-	 * @return
+	 * @return run time in nanoseconds
 	 */
 	public static long getRunTime() {
 		return execEndTime - execStartTime;
@@ -394,10 +386,7 @@ public class Statistics
 		cudaFromDevCount.set(0);
 		cudaEvictionCount.set(0);
 	}
-	
-	/**
-	 * 
-	 */
+
 	public static void resetJITCompileTime(){
 		jitCompileTime = -1 * getJITCompileTime();
 	}
@@ -409,19 +398,12 @@ public class Statistics
 	public static void resetJVMgcCount(){
 		jvmGCTime = -1 * getJVMgcCount();
 	}
-	
-	/**
-	 * 
-	 */
+
 	public static void resetCPHeavyHitters(){
 		_cpInstTime.clear();
 		_cpInstCounts.clear();
 	}
-	
-	/**
-	 * 
-	 * @param ns
-	 */
+
 	public static void setSparkCtxCreateTime(long ns) {
 		sparkCtxCreateTime = ns;
 	}
@@ -497,12 +479,7 @@ public class Statistics
 	{
 		return _cpInstTime.keySet();
 	}
-	
-	/**
-	 * 
-	 * @param num
-	 * @return
-	 */
+
 	@SuppressWarnings("unchecked")
 	public static String getHeavyHitters( int num )
 	{
@@ -537,7 +514,7 @@ public class Statistics
 	/**
 	 * Returns the total time of asynchronous JIT compilation in milliseconds.
 	 * 
-	 * @return
+	 * @return JIT compile time
 	 */
 	public static long getJITCompileTime(){
 		long ret = -1; //unsupported
@@ -615,7 +592,7 @@ public class Statistics
 	/**
 	 * Prints statistics.
 	 * 
-	 * @return
+	 * @return statistics as string
 	 */
 	public static String display() 
 	{

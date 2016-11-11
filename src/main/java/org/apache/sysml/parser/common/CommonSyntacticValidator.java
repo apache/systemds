@@ -51,7 +51,6 @@ import org.apache.sysml.parser.PrintStatement;
 import org.apache.sysml.parser.RelationalExpression;
 import org.apache.sysml.parser.Statement;
 import org.apache.sysml.parser.StringIdentifier;
-import org.apache.sysml.parser.dml.DmlParser.BuiltinFunctionExpressionContext;
 import org.apache.sysml.parser.dml.DmlSyntacticValidator;
 import org.apache.sysml.parser.pydml.PydmlSyntacticValidator;
 
@@ -580,36 +579,38 @@ public abstract class CommonSyntacticValidator {
 
 	/**
 	 * Converts PyDML/DML built in functions to a common format for the runtime.
-	 * @param ctx
+	 * @param ctx antlr rule context
 	 * @param namespace Namespace of the function
 	 * @param functionName Name of the builtin function
 	 * @param paramExpression Array of parameter names and values
 	 * @param fnName Token of the built in function identifier
-	 * @return
+	 * @return common syntax format for runtime
 	 */
 	protected abstract ConvertedDMLSyntax convertToDMLSyntax(ParserRuleContext ctx, String namespace, String functionName, ArrayList<ParameterExpression> paramExpression,
 			Token fnName);
 
 	/**
-	 * Function overridden for DML & PyDML that handles any language specific builtin functions
-	 * @param ctx
-	 * @param functionName
-	 * @param paramExpressions
-	 * @return  instance of {@link Expression}
+	 * Function overridden for DML &amp; PyDML that handles any language specific builtin functions
+	 * @param ctx antlr rule context
+	 * @param functionName Name of the builtin function
+	 * @param paramExpressions Array of parameter names and values
+	 * @return instance of {@link Expression}
 	 */
 	protected abstract Expression handleLanguageSpecificFunction(ParserRuleContext ctx, String functionName, ArrayList<ParameterExpression> paramExpressions);
 
 	/** Checks for builtin functions and does Action 'f'.
-	 * <br/>
+	 * <p>
 	 * Constructs the
 	 * appropriate {@link AssignmentStatement} from
-	 * {@link CommonSyntacticValidator#functionCallAssignmentStatementHelper(ParserRuleContext, Set, Set, Expression, StatementInfo, Token, Token, String, String, ArrayList, boolean)
+	 * {@link CommonSyntacticValidator#functionCallAssignmentStatementHelper(ParserRuleContext, Set, Set, Expression, StatementInfo, Token, Token, String, String, ArrayList, boolean)}
 	 * or Assign to {@link Expression} from
-	 * {@link DmlSyntacticValidator#exitBuiltinFunctionExpression(BuiltinFunctionExpressionContext)}
-	 *
-	 * @param ctx
-	 * @param functionName
-	 * @param paramExpressions
+	 * DmlSyntacticValidator's exitBuiltinFunctionExpression(BuiltinFunctionExpressionContext).
+	 * </p>
+	 * 
+	 * @param ctx antlr rule context
+	 * @param functionName Name of the builtin function
+	 * @param paramExpressions Array of parameter names and values
+	 * @param f action to perform
 	 * @return true if a builtin function was found
 	 */
 	protected boolean buildForBuiltInFunction(ParserRuleContext ctx, String functionName, ArrayList<ParameterExpression> paramExpressions, Action f) {
@@ -724,7 +725,7 @@ public abstract class CommonSyntacticValidator {
 
 	/**
 	 * To allow for different actions in
-	 * {@link CommonSyntacticValidator#functionCallAssignmentStatementHelper(ParserRuleContext, Set, Set, Expression, StatementInfo, Token, Token, String, String, ArrayList)}
+	 * {@link CommonSyntacticValidator#functionCallAssignmentStatementHelper(ParserRuleContext, Set, Set, Expression, StatementInfo, Token, Token, String, String, ArrayList, boolean)}
 	 */
 	public static interface Action {
 		public void execute(Expression e);
@@ -743,8 +744,8 @@ public abstract class CommonSyntacticValidator {
 	/**
 	 * Indicates if the given data type string is a valid data type. 
 	 * 
-	 * @param datatype
-	 * @param start
+	 * @param datatype data type (matrix, frame, or scalar)
+	 * @param start antlr token
 	 */
 	protected void checkValidDataType(String datatype, Token start) {
 		boolean validMatrixType = 

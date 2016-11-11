@@ -63,8 +63,8 @@ public class ParameterBuilder
 			PrintWriter pw = new PrintWriter(out);
 			String content;
 			Pattern unresolvedVars = Pattern.compile(_RS + ".*" + _RS);
-			/**
-			 * sothat variables, which were not assigned, are replaced by an
+			/*
+			 * so that variables, which were not assigned, are replaced by an
 			 * empty string
 			 */
 			while ((content = in.readLine()) != null) {

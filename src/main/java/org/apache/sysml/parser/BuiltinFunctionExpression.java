@@ -310,8 +310,9 @@ public class BuiltinFunctionExpression extends DataIdentifier
 	 * Validate parse tree : Process BuiltinFunction Expression in an assignment
 	 * statement
 	 * 
-	 * @throws LanguageException
+	 * @throws LanguageException if LanguageException occurs
 	 */
+	@Override
 	public void validateExpression(HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> constVars, boolean conditional)
 			throws LanguageException {
 		
@@ -1224,21 +1225,10 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		}
 	}
 
-	/**
-	 * 
-	 * @param expr
-	 * @return
-	 */
 	private boolean isConstant(Expression expr) {
 		return ( expr != null && expr instanceof ConstIdentifier );
 	}
 	
-	/**
-	 * 
-	 * @param expr
-	 * @return
-	 * @throws LanguageException
-	 */
 	private double getDoubleValue(Expression expr) 
 		throws LanguageException 
 	{
@@ -1334,11 +1324,6 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		return result;
 	}
 
-	/**
-	 * 
-	 * @param count
-	 * @throws LanguageException
-	 */
 	protected void checkNumParameters(int count) //always unconditional
 		throws LanguageException 
 	{
@@ -1356,11 +1341,6 @@ public class BuiltinFunctionExpression extends DataIdentifier
        	}
 	}
 
-	/**
-	 * 
-	 * @param e
-	 * @throws LanguageException
-	 */
 	protected void checkMatrixParam(Expression e) //always unconditional
 		throws LanguageException 
 	{
@@ -1369,11 +1349,6 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		}
 	}
 	
-	/**
-	 * 
-	 * @param e
-	 * @throws LanguageException
-	 */
 	protected void checkMatrixFrameParam(Expression e) //always unconditional
 		throws LanguageException 
 	{
@@ -1382,11 +1357,6 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		}
 	}
 	
-	/**
-	 * 
-	 * @param e
-	 * @throws LanguageException
-	 */
 	protected void checkMatrixScalarParam(Expression e) //always unconditional
 		throws LanguageException 
 	{
@@ -1395,11 +1365,6 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		}
 	}
 	
-	/**
-	 * 
-	 * @param e
-	 * @throws LanguageException
-	 */
 	private void checkScalarParam(Expression e) //always unconditional
 		throws LanguageException 
 	{
@@ -1408,11 +1373,6 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		}
 	}
 	
-	/**
-	 * 
-	 * @param e
-	 * @throws LanguageException
-	 */
 	private void checkScalarFrameParam(Expression e) //always unconditional
 		throws LanguageException 
 	{
@@ -1420,13 +1380,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			raiseValidateError("Expecting scalar parameter for function " + this.getOpCode(), false, LanguageErrorCodes.UNSUPPORTED_PARAMETERS);
 		}
 	}
-	
-	/**
-	 * 
-	 * @param e
-	 * @param vt
-	 * @throws LanguageException
-	 */
+
 	private void checkValueTypeParam(Expression e, ValueType vt) //always unconditional
 		throws LanguageException 
 	{
@@ -1443,11 +1397,6 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		return (e.getOutput().getDim1() != -1 && e.getOutput().getDim2() != -1);
 	}
 	
-	/**
-	 * 
-	 * @param e
-	 * @throws LanguageException
-	 */
 	private void check1DMatrixParam(Expression e) //always unconditional
 		throws LanguageException 
 	{	
@@ -1461,24 +1410,12 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		}
 	}
 
-	/**
-	 * 
-	 * @param expr1
-	 * @param expr2
-	 * @throws LanguageException
-	 */
 	private void checkMatchingDimensions(Expression expr1, Expression expr2) 
 		throws LanguageException 
 	{
 		checkMatchingDimensions(expr1, expr2, false);
 	}
 	
-	/**
-	 * 
-	 * @param expr1
-	 * @param expr2
-	 * @throws LanguageException
-	 */
 	private void checkMatchingDimensions(Expression expr1, Expression expr2, boolean allowsMV) 
 		throws LanguageException 
 	{
@@ -1501,10 +1438,6 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		}
 	}
 	
-	/**
-	 * 
-	 * @throws LanguageException
-	 */
 	private void checkMatchingDimensionsQuantile() 
 		throws LanguageException 
 	{

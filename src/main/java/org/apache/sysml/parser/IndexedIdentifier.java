@@ -71,14 +71,6 @@ public class IndexedIdentifier extends DataIdentifier
    		_origDim2 = -1L;
 	}
 	
-	/**
-	 * 	
-	 * @param ids
-	 * @param currConstVars
-	 * @param conditional
-	 * @return
-	 * @throws LanguageException
-	 */
 	public IndexPair calculateIndexedDimensions(HashMap<String,DataIdentifier> ids, HashMap<String, ConstIdentifier> currConstVars, boolean conditional) 
 		throws LanguageException 
 	{	

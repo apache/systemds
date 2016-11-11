@@ -138,7 +138,9 @@ public class DataIdentifier extends Identifier
 	/**
 	 * Method to specify if an expression returns multiple outputs.
 	 * This method must be overridden by all child classes.
-	 * @return
+	 * 
+	 * @return true if expression returns multiple outputs
+	 * @throws LanguageException if LanguageException occurs
 	 */
 	public boolean multipleReturns() throws LanguageException {
 		throw new LanguageException("multipleReturns() must be overridden in the subclass.");

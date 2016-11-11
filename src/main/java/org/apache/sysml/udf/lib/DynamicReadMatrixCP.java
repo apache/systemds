@@ -30,10 +30,6 @@ import org.apache.sysml.udf.PackageFunction;
 import org.apache.sysml.udf.Scalar;
 import org.apache.sysml.udf.Matrix.ValueType;
 
-/**
- * 
- *
- */
 public class DynamicReadMatrixCP extends PackageFunction 
 {	
 	

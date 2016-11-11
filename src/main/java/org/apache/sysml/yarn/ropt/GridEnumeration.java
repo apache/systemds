@@ -43,12 +43,6 @@ public abstract class GridEnumeration
 		_max = max;
 	}
 	
-	/**
-	 * 
-	 * @return
-	 * @throws HopsException 
-	 * @throws DMLException
-	 */
 	public abstract ArrayList<Long> enumerateGridPoints() 
 		throws DMLRuntimeException, HopsException; 
 }

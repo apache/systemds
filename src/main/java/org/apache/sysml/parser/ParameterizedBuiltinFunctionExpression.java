@@ -183,8 +183,6 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 	/**
 	 * Validate parse tree : Process BuiltinFunction Expression in an assignment
 	 * statement
-	 * 
-	 * @throws LanguageException
 	 */
 	@Override
 	public void validateExpression(HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> constVars, boolean conditional)
@@ -379,12 +377,6 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		output.setDimensions(-1, -1);
 	}
 	
-	/**
-	 * 
-	 * @param output
-	 * @param conditional
-	 * @throws LanguageException
-	 */
 	private void validateTransformDecode(DataIdentifier output, boolean conditional) 
 		throws LanguageException 
 	{
@@ -401,12 +393,6 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		output.setDimensions(-1, -1);
 	}
 	
-	/**
-	 * 
-	 * @param output
-	 * @param conditional
-	 * @throws LanguageException
-	 */
 	private void validateTransformMeta(DataIdentifier output, boolean conditional) 
 		throws LanguageException 
 	{
@@ -422,12 +408,6 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		output.setDimensions(-1, -1);
 	}
 	
-	/**
-	 * 
-	 * @param output
-	 * @param conditional
-	 * @throws LanguageException
-	 */
 	private void validateTransformEncode(DataIdentifier output1, DataIdentifier output2, boolean conditional) 
 		throws LanguageException 
 	{
@@ -558,12 +538,6 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		
 	}
 	
-	/**
-	 * 
-	 * @param output
-	 * @param conditional
-	 * @throws LanguageException
-	 */
 	private void validateGroupedAgg(DataIdentifier output, boolean conditional) 
 		throws LanguageException 
 	{
@@ -753,12 +727,6 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		return;
 	}
 	
-	/**
-	 * 
-	 * @param output
-	 * @param conditional
-	 * @throws LanguageException
-	 */
 	private void validateCastAsString(DataIdentifier output, boolean conditional) 
 		throws LanguageException 
 	{
@@ -784,15 +752,6 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		output.setDimensions(0, 0);
 	}
 
-
-	/**
-	 * 
-	 * @param fname
-	 * @param pname
-	 * @param dt
-	 * @param conditional
-	 * @throws LanguageException
-	 */
 	private void checkDataType( String fname, String pname, DataType dt, boolean conditional ) 
 		throws LanguageException 
 	{
@@ -802,17 +761,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		else if( data.getOutput().getDataType() != dt )
 			raiseValidateError("Input to "+fname+"::"+pname+" must be of type '"+dt.toString()+"'. It is of type '"+data.getOutput().getDataType()+"'.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);		
 	}
-	
 
-	/**
-	 * 
-	 * @param fname
-	 * @param pname
-	 * @param dt
-	 * @param vt
-	 * @param conditional
-	 * @throws LanguageException
-	 */
 	private void checkDataValueType( String fname, String pname, DataType dt, ValueType vt, boolean conditional ) 
 		throws LanguageException 
 	{

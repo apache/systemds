@@ -102,7 +102,7 @@ public class MLContext {
 	/**
 	 * The number of heavy hitters that are printed as part of the statistics option
 	 */
-	private int statisticsHeavyHitters = 10;
+	private int statisticsMaxHeavyHitters = 10;
 
 	/**
 	 * The level and type of program explanation that should be displayed if
@@ -265,7 +265,7 @@ public class MLContext {
 		scriptExecutor.setExplain(explain);
 		scriptExecutor.setExplainLevel(explainLevel);
 		scriptExecutor.setStatistics(statistics);
-		scriptExecutor.setStatisticsMaxHeavyHitters(statisticsHeavyHitters);
+		scriptExecutor.setStatisticsMaxHeavyHitters(statisticsMaxHeavyHitters);
 		scriptExecutor.setInit(scriptHistoryStrings.isEmpty());
 		return execute(script, scriptExecutor);
 	}
@@ -519,9 +519,14 @@ public class MLContext {
 		this.statistics = statistics;
 	}
 
+	/**
+	 * Sets the maximum number of heavy hitters that are printed out as part of the statistics.
+	 *
+	 * @param maxHeavyHitters maximum number of heavy hitters to print
+	 */
 	public void setStatisticsMaxHeavyHitters(int maxHeavyHitters) {
 		DMLScript.STATISTICS_COUNT = maxHeavyHitters;
-		this.statisticsHeavyHitters = maxHeavyHitters;
+		this.statisticsMaxHeavyHitters = maxHeavyHitters;
 	}
 
 	/**

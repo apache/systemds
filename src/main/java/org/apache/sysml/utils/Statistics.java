@@ -590,11 +590,19 @@ public class Statistics
 	}
 
 	/**
-	 * Prints statistics.
-	 * 
+	 * Returns statistics of the DML program that was recently completed as a string
+	 * @return statistics as a string
+	 */
+	public static String display() {
+		return display(DMLScript.STATISTICS_COUNT);
+	}
+
+	/**
+	 * Returns statistics as a string
+	 * @param maxHeavyHitters The maximum number of heavy hitters that are printed
 	 * @return statistics as string
 	 */
-	public static String display() 
+	public static String display(int maxHeavyHitters)
 	{
 		StringBuilder sb = new StringBuilder();
 		
@@ -673,7 +681,7 @@ public class Statistics
 			sb.append("Total JIT compile time:\t\t" + ((double)getJITCompileTime())/1000 + " sec.\n");
 			sb.append("Total JVM GC count:\t\t" + getJVMgcCount() + ".\n");
 			sb.append("Total JVM GC time:\t\t" + ((double)getJVMgcTime())/1000 + " sec.\n");
-			sb.append("Heavy hitter instructions (name, time, count):\n" + getHeavyHitters(DMLScript.STATISTICS_COUNT));
+			sb.append("Heavy hitter instructions (name, time, count):\n" + getHeavyHitters(maxHeavyHitters));
 		}
 		
 		return sb.toString();

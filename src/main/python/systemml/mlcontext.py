@@ -305,6 +305,17 @@ class MLContext(object):
         self._ml.setStatistics(bool(statistics))
         return self
 
+    def setStatisticsMaxHeavyHitters(self, maxHeavyHitters):
+        """
+        The maximum number of heavy hitters that are printed as part of the statistics.
+
+        Parameters
+        ----------
+        maxHeavyHitters: int
+        """
+        self._ml.setStatisticsMaxHeavyHitters(maxHeavyHitters)
+        return self
+
     def setExplain(self, explain):
         """
         Explanation about the program. Mainly intended for developers.

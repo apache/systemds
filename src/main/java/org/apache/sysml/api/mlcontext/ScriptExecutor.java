@@ -118,6 +118,7 @@ public class ScriptExecutor {
 	protected boolean explain = false;
 	protected boolean statistics = false;
 	protected ExplainLevel explainLevel;
+	protected int statisticsMaxHeavyHitters = 10;
 
 	/**
 	 * ScriptExecutor constructor.
@@ -326,7 +327,7 @@ public class ScriptExecutor {
 		script.setResults(mlResults);
 
 		if (statistics) {
-			System.out.println(Statistics.display());
+			System.out.println(Statistics.display(statisticsMaxHeavyHitters));
 		}
 
 		return mlResults;
@@ -626,7 +627,11 @@ public class ScriptExecutor {
 	public void setStatistics(boolean statistics) {
 		this.statistics = statistics;
 	}
-	
+
+	public void setStatisticsMaxHeavyHitters(int maxHeavyHitters) {
+		this.statisticsMaxHeavyHitters = maxHeavyHitters;
+	}
+
 	/**
 	 * Whether or not to initialize the scratch_space, bufferpool, etc. Note that any 
 	 * redundant initialize (e.g., multiple scripts from one MLContext) clears existing 

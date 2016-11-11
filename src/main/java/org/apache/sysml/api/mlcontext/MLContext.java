@@ -100,6 +100,11 @@ public class MLContext {
 	private boolean statistics = false;
 
 	/**
+	 * The number of heavy hitters that are printed as part of the statistics option
+	 */
+	private int statisticsMaxHeavyHitters = 10;
+
+	/**
 	 * The level and type of program explanation that should be displayed if
 	 * explain is set to true.
 	 */
@@ -260,6 +265,7 @@ public class MLContext {
 		scriptExecutor.setExplain(explain);
 		scriptExecutor.setExplainLevel(explainLevel);
 		scriptExecutor.setStatistics(statistics);
+		scriptExecutor.setStatisticsMaxHeavyHitters(statisticsMaxHeavyHitters);
 		scriptExecutor.setInit(scriptHistoryStrings.isEmpty());
 		return execute(script, scriptExecutor);
 	}
@@ -511,6 +517,16 @@ public class MLContext {
 	public void setStatistics(boolean statistics) {
 		DMLScript.STATISTICS = statistics;
 		this.statistics = statistics;
+	}
+
+	/**
+	 * Sets the maximum number of heavy hitters that are printed out as part of the statistics.
+	 *
+	 * @param maxHeavyHitters maximum number of heavy hitters to print
+	 */
+	public void setStatisticsMaxHeavyHitters(int maxHeavyHitters) {
+		DMLScript.STATISTICS_COUNT = maxHeavyHitters;
+		this.statisticsMaxHeavyHitters = maxHeavyHitters;
 	}
 
 	/**

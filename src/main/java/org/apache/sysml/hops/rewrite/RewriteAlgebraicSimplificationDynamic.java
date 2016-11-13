@@ -530,7 +530,9 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 							// All other valid column aggregations over a row vector will result
 							// in the row vector itself.
 							// Therefore, remove unnecessary col aggregation for 1 row.
-							HopRewriteUtils.removeChildReference(parent, hi);
+							HopRewriteUtils.removeChildReferenceByPos(parent, hi, pos);
+							if( hi.getParent().isEmpty() ) //no remaining consumers
+								HopRewriteUtils.removeChildReference(hi, input);
 							HopRewriteUtils.addChildReference(parent, input, pos);
 							parent.refreshSizeInformation();
 
@@ -610,7 +612,9 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 							// All other valid row aggregations over a column vector will result
 							// in the column vector itself.
 							// Therefore, remove unnecessary row aggregation for 1 col
-							HopRewriteUtils.removeChildReference(parent, hi);
+							HopRewriteUtils.removeChildReferenceByPos(parent, hi, pos);
+							if( hi.getParent().isEmpty() ) //no remaining consumers
+								HopRewriteUtils.removeChildReference(hi, input);
 							HopRewriteUtils.addChildReference(parent, input, pos);
 							parent.refreshSizeInformation();
 

@@ -35,7 +35,6 @@ import org.apache.spark.sql.types.StructType;
 import scala.Tuple2;
 
 import org.apache.sysml.hops.OptimizerUtils;
-import org.apache.sysml.parser.ParseException;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.spark.functions.GetMIMBFromRow;
 import org.apache.sysml.runtime.instructions.spark.functions.GetMLBlock;

@@ -80,7 +80,7 @@ return(matrix[double] P) {
 
     itr = itr + 1
   }
-  print(itr)
+
   P = P + t(P)
   P = P / sum(P)
   print("x2p finishing....")
@@ -133,7 +133,7 @@ tsne = function(matrix[double] X, int reduced_dims, int perplexity,
   }
 
 # [Y, C] = tsne(X, ndim, perplexity, lr, momentum, iter)
-# X = X[1:30000,]
+
 X = X/(pmax(X) - pmin(X))
 P = x2p(X, perplexity)
 

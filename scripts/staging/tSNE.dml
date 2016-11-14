@@ -70,24 +70,14 @@ return(matrix[double] P) {
     P = P/sum_Pi
     Hdiff = H - logU
 
-    for(i in 1:n) {
-      h = as.scalar(Hdiff[i,1])
-      if (h > 0.) {
-        betamin[i,1] = beta[i,1]
-        if (as.scalar(betamax[i,1]) == INF) {
-          beta[i,1] = beta[i,1] * 2.
-          } else {
-            beta[i,1] = (beta[i,1] + betamax[i,1]) / 2.
-          }
-      } else {
-        betamax[i,1] = beta[i,1]
-        if (as.scalar(betamin[i,1]) == 0.) {
-          beta[i,1] = beta[i,1] / 2.
-          } else {
-            beta[i,1] = (beta[i,1] + betamin[i,1]) / 2.
-          }
-      }
-    }
+    Hpos = (Hdiff >= 0)
+    Hneg = (Hdiff <  0)
+    betamin = Hneg*betamin + Hpos*beta
+    betamax = Hpos*betamax + Hneg*beta
+    beta = 2*Hpos*(betamax == INF)*beta +
+             Hpos*(betamax != INF)*(beta + betamax)/2 +
+             Hneg*(beta + betamin)/2
+
     itr = itr + 1
   }
   print(itr)
@@ -95,7 +85,6 @@ return(matrix[double] P) {
   P = P / sum(P)
   print("x2p finishing....")
 }
-
 
 tsne = function(matrix[double] X, int reduced_dims, int perplexity,
   double lr, double momentum, int max_iter)
@@ -144,6 +133,8 @@ tsne = function(matrix[double] X, int reduced_dims, int perplexity,
   }
 
 # [Y, C] = tsne(X, ndim, perplexity, lr, momentum, iter)
+# X = X[1:30000,]
+X = X/(pmax(X) - pmin(X))
 P = x2p(X, perplexity)
 
 write(P, output)

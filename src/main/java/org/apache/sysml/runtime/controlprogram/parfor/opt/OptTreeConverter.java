@@ -125,15 +125,7 @@ public class OptTreeConverter
 		
 		return tree;
 	}
-	
-	/**
-	 * 
-	 * @param ck
-	 * @param cm
-	 * @param pfpb
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static OptTree createOptTree( int ck, double cm, ParForProgramBlock pfpb ) 
 		throws DMLRuntimeException
 	{
@@ -165,14 +157,6 @@ public class OptTreeConverter
 		return tree;
 	}
 
-	/**
-	 * 
-	 * @param pb
-	 * @param vars
-	 * @param topLevel
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	public static OptNode rCreateOptNode( ProgramBlock pb, LocalVariableMap vars, boolean topLevel, boolean storeObjs ) 
 		throws DMLRuntimeException 
 	{
@@ -285,16 +269,7 @@ public class OptTreeConverter
 			
 		return node;
 	}
-	
 
-
-	/**
-	 * 
-	 * @param instset
-	 * @param vars
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	public static ArrayList<OptNode> createOptNodes (ArrayList<Instruction> instset, LocalVariableMap vars, boolean storeObjs) 
 		throws DMLRuntimeException
 	{
@@ -303,14 +278,7 @@ public class OptTreeConverter
 			tmp.add( createOptNode(inst,vars,storeObjs) );
 		return tmp;
 	}
-	
-	/**
-	 * 
-	 * @param inst
-	 * @param vars
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static OptNode createOptNode( Instruction inst, LocalVariableMap vars, boolean storeObjs ) 
 		throws DMLRuntimeException
 	{
@@ -348,17 +316,7 @@ public class OptTreeConverter
 		
 		return node;
 	}
-	
-	/**
-	 * 
-	 * @param sb
-	 * @param pb
-	 * @param vars
-	 * @param topLevel
-	 * @return
-	 * @throws DMLRuntimeException
-	 * @throws HopsException
-	 */
+
 	public static OptNode rCreateAbstractOptNode( StatementBlock sb, ProgramBlock pb, LocalVariableMap vars, boolean topLevel, Set<String> memo ) 
 		throws DMLRuntimeException, HopsException 
 	{
@@ -547,14 +505,6 @@ public class OptTreeConverter
 		return node;
 	}
 
-	/**
-	 * 
-	 * @param hops
-	 * @param vars
-	 * @return
-	 * @throws DMLRuntimeException 
-	 * @throws HopsException 
-	 */
 	public static ArrayList<OptNode> createAbstractOptNodes(ArrayList<Hop> hops, LocalVariableMap vars, Set<String> memo ) 
 		throws DMLRuntimeException, HopsException 
 	{
@@ -570,15 +520,7 @@ public class OptTreeConverter
 		
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @param hop
-	 * @param vars
-	 * @return
-	 * @throws DMLRuntimeException  
-	 * @throws HopsException 
-	 */
+
 	public static ArrayList<OptNode> rCreateAbstractOptNodes(Hop hop, LocalVariableMap vars, Set<String> memo) 
 		throws DMLRuntimeException, HopsException 
 	{
@@ -671,11 +613,6 @@ public class OptTreeConverter
 		return ret;
 	}
 
-	/**
-	 * 
-	 * @param pb
-	 * @return
-	 */
 	public static boolean rContainsMRJobInstruction( ProgramBlock pb, boolean inclFunctions )
 	{
 		boolean ret = false;
@@ -728,22 +665,12 @@ public class OptTreeConverter
 
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @param pb
-	 * @return
-	 */
+
 	public static boolean containsMRJobInstruction( ProgramBlock pb, boolean inclCPFile, boolean inclSpark )
 	{
 		return containsMRJobInstruction(pb.getInstructions(), inclCPFile, inclSpark);
 	}
-	
-	/**
-	 * 
-	 * @param pb
-	 * @return
-	 */
+
 	public static boolean containsMRJobInstruction( ArrayList<Instruction> instSet, boolean inclCPFile, boolean inclSpark )
 	{
 		boolean ret = false;
@@ -759,12 +686,7 @@ public class OptTreeConverter
 
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @param pb
-	 * @return
-	 */
+
 	public static boolean containsFunctionCallInstruction( ProgramBlock pb )
 	{
 		boolean ret = false;
@@ -777,16 +699,7 @@ public class OptTreeConverter
 
 		return ret;
 	}	
-	
-	
-	/**
-	 * 
-	 * @param inst
-	 * @param on
-	 * @param vars
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	private static OptNodeStatistics analyzeStatistics(Instruction inst, OptNode on, LocalVariableMap vars) 
 		throws DMLRuntimeException 
 	{
@@ -884,14 +797,6 @@ public class OptTreeConverter
 		return ret; //null if not reqistered for profiling
 	}
 
-	/**
-	 * 
-	 * @param parent
-	 * @param n
-	 * @param pbOld
-	 * @param pbNew
-	 * @throws DMLRuntimeException 
-	 */
 	public static void replaceProgramBlock(OptNode parent, OptNode n, ProgramBlock pbOld, ProgramBlock pbNew, boolean rtMap) 
 		throws DMLRuntimeException
 	{
@@ -939,13 +844,7 @@ public class OptTreeConverter
 		else
 			_hlMap.replaceMapping(pbNew, n);
 	}
-	
-	/**
-	 * 
-	 * @param pbs
-	 * @param pbOld
-	 * @param pbNew
-	 */
+
 	public static void replaceProgramBlock(ArrayList<ProgramBlock> pbs, ProgramBlock pbOld, ProgramBlock pbNew)
 	{
 		int len = pbs.size();
@@ -972,15 +871,7 @@ public class OptTreeConverter
 	{
 		return _rtMap;
 	}
-	
-	/**
-	 * 
-	 * @param pRoot
-	 * @param hlNodeID
-	 * @param newRtNode
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static OptNode exchangeTemporary(OptNode pRoot, long hlNodeID, OptNode newRtNode) 
 		throws DMLRuntimeException 
 	{
@@ -1014,12 +905,7 @@ public class OptTreeConverter
 		
 		return pRoot;
 	}
-	
-	/**
-	 * 
-	 * @param hlNodeID
-	 * @throws DMLRuntimeException
-	 */
+
 	public static void revertTemporaryChange( long hlNodeID ) 
 		throws DMLRuntimeException 
 	{
@@ -1046,14 +932,6 @@ public class OptTreeConverter
 		_tmpChildOld = null;
 	}
 
-	/**
-	 * 
-	 * @param pRoot
-	 * @param hlNodeID
-	 * @param newRtNode
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	public static OptNode exchangePermanently(OptNode pRoot, long hlNodeID, OptNode newRtNode) 
 		throws DMLRuntimeException 
 	{

@@ -77,10 +77,6 @@ public class ReaderColumnSelectionSparse extends ReaderColumnSelection
 		}
 	}
 
-	/**
-	 * 
-	 * @return
-	 */
 	private DblArray getNextRow() 
 	{
 		if(_lastRow == _numRows-1)

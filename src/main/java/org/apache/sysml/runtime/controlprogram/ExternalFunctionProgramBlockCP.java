@@ -46,7 +46,7 @@ import org.apache.sysml.udf.Matrix;
  * 
  * Furthermore, it extends ExternalFunctionProgramBlock with a base directory in order
  * to make it parallelizable, even in case of different JVMs. For this purpose every
- * external function must implement a <SET_BASE_DIR> method. 
+ * external function must implement a &lt;SET_BASE_DIR&gt; method. 
  * 
  *
  */
@@ -61,8 +61,12 @@ public class ExternalFunctionProgramBlockCP extends ExternalFunctionProgramBlock
 	 * functions. Remaining parameters will just be passed to constructor for
 	 * function program block.
 	 * 
-	 * @param eFuncStat
-	 * @throws DMLRuntimeException 
+	 * @param prog runtime program
+	 * @param inputParams list of input data identifiers
+	 * @param outputParams list of output data identifiers
+	 * @param otherParams map of other parameters
+	 * @param baseDir base directory
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public ExternalFunctionProgramBlockCP(Program prog,
 			ArrayList<DataIdentifier> inputParams,
@@ -83,7 +87,6 @@ public class ExternalFunctionProgramBlockCP extends ExternalFunctionProgramBlock
 	/**
 	 * Method to be invoked to execute instructions for the external function
 	 * invocation
-	 * @throws DMLRuntimeException 
 	 */
 	@Override
 	public void execute(ExecutionContext ec) throws DMLRuntimeException 

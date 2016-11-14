@@ -52,18 +52,7 @@ public class RemoteParForSpark
 {
 	
 	protected static final Log LOG = LogFactory.getLog(RemoteParForSpark.class.getName());
-	
-	/**
-	 * 
-	 * @param pfid
-	 * @param program
-	 * @param tasks
-	 * @param ec
-	 * @param enableCPCaching
-	 * @param numMappers
-	 * @return
-	 * @throws DMLRuntimeException 
-	 */
+
 	public static RemoteParForJobReturn runJob(long pfid, String program, List<Task> tasks, ExecutionContext ec,
 			                                   boolean cpCaching, int numMappers) 
 		throws DMLRuntimeException  

@@ -50,20 +50,11 @@ public class CostFunction
 		_multiDim  = multiDim; 
 	}
 
-	/**
-	 * 
-	 * @return
-	 */
 	public boolean isMultiDim()
 	{
 		return _multiDim;
 	}
-	
-	/**
-	 * 
-	 * @param in
-	 * @return
-	 */
+
 	public double estimate( double in )
 	{
 		double costs = 0;
@@ -89,12 +80,7 @@ public class CostFunction
 		
 		return costs;
 	}
-	
-	/**
-	 * 
-	 * @param in
-	 * @return
-	 */
+
 	public double estimate( double[] in )  
 	{
 		double costs = 0;
@@ -125,11 +111,7 @@ public class CostFunction
 		
 		return costs;
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public double[] getParams()
 	{
 		return _params;
@@ -153,12 +135,7 @@ public class CostFunction
 		
 		return sb.toString();		
 	}
-	
-	/**
-	 * 
-	 * @param cost
-	 * @return
-	 */
+
 	private double correctEstimate( double cost )
 	{
 		double ret = cost;

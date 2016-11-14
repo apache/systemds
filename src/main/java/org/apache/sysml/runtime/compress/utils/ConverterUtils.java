@@ -35,8 +35,8 @@ public class ConverterUtils
 	 * Copy col group instance with deep copy of column indices but
 	 * shallow copy of actual contents;
 	 * 
-	 * @param group
-	 * @return
+	 * @param group column group
+	 * @return column group (deep copy of indices but shallow copy of contents)
 	 */
 	public static ColGroup copyColGroup(ColGroup group)
 	{
@@ -63,12 +63,7 @@ public class ConverterUtils
 		
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @param vector
-	 * @return
-	 */
+
 	public static double[] getDenseVector( MatrixBlock vector )
 	{
 		if( vector.isInSparseFormat() )
@@ -76,12 +71,7 @@ public class ConverterUtils
 		else 
 			return vector.getDenseBlock();
 	}
-	
-	/**
-	 * 
-	 * @param group
-	 * @return
-	 */
+
 	public static MatrixBlock getUncompressedColBlock( ColGroup group )
 	{
 		MatrixBlock ret = null;

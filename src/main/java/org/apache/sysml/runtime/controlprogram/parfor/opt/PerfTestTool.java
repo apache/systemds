@@ -248,10 +248,6 @@ public class PerfTestTool
 		}
 	}
 
-	/**
-	 * 
-	 * @throws DMLRuntimeException
-	 */
 	public static void lazyInit() 
 		throws DMLRuntimeException
 	{
@@ -277,12 +273,6 @@ public class PerfTestTool
 			throw new DMLRuntimeException("Performance test results have not been loaded completely.");
 	}
 
-	/**
-	 * 
-	 * @param opStr
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	public static boolean isRegisteredInstruction(String opStr)
 		throws DMLRuntimeException 
 	{
@@ -292,13 +282,7 @@ public class PerfTestTool
 		//determine if inst registered
 		return _regInst_NamesID.containsKey(opStr);
 	}
-	
-	/**
-	 * 
-	 * @param instName
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static CostFunction getCostFunction( String instName, TestMeasure measure, TestVariable variable, DataFormat dataformat )
 		throws DMLRuntimeException
 	{		
@@ -314,24 +298,13 @@ public class PerfTestTool
 		}
 		return tmp;
 	}
-	
-	/**
-	 * 
-	 * @param measure
-	 * @param variable
-	 * @param dataformat
-	 * @return
-	 */
+
 	public CostFunction getInvariantCostFunction( TestMeasure measure, TestVariable[] variable, DataFormat dataformat )
 	{
 		//TODO: implement for additional rewrites
 		throw new RuntimeException("Not implemented yet.");
 	}
 
-	/**
-	 * 
-	 * @return
-	 */
 	@SuppressWarnings("all")
 	public static boolean runTest()
 	{
@@ -376,9 +349,6 @@ public class PerfTestTool
 		return ret;
 	}
 
-	/**
-	 * 
-	 */
 	private static void registerTestConfigurations()
 	{
 		//reset ID Sequence for consistent IDs
@@ -424,11 +394,7 @@ public class PerfTestTool
 		_defaultConf = defaultConf;
 		//_MRConf = mrConf;
 	}
-	
-	/**
-	 * 
-	 * @throws DMLRuntimeException
-	 */
+
 	private static void registerInstructions() 
 		throws DMLRuntimeException
 	{
@@ -516,12 +482,7 @@ public class PerfTestTool
 		return mrinst;
 	}
 */
-	
-	/**
-	 * 
-	 * @param def
-	 * @return
-	 */
+
 	private static int registerTestDef( PerfTestDef def )
 	{
 		int ID = (int)_seqTestDef.getNextID();
@@ -530,30 +491,13 @@ public class PerfTestTool
 		
 		return ID;
 	}
-	
-	/**
-	 * 
-	 * @param iname
-	 * @param inst
-	 * @param testDefIDs
-	 * @param vectors
-	 * @param schema
-	 */
+
 	private static void registerInstruction( String iname, Instruction inst, Integer[] testDefIDs, boolean vectors, IOSchema schema )
 	{
 		int ID = (int)_seqInst.getNextID();
 		registerInstruction(ID, iname, inst, testDefIDs, vectors, schema);
 	}
-	
-	/**
-	 * 
-	 * @param ID
-	 * @param iname
-	 * @param inst
-	 * @param testDefIDs
-	 * @param vector
-	 * @param schema
-	 */
+
 	private static void registerInstruction( int ID, String iname, Instruction inst, Integer[] testDefIDs, boolean vector, IOSchema schema )
 	{
 		_regInst.put( ID, inst );
@@ -564,14 +508,6 @@ public class PerfTestTool
 		_regInst_IDIOSchema.put( ID, schema );
 	}
 
-	/**
-	 * 
-	 * @param instID
-	 * @param measure
-	 * @param variable
-	 * @param dataformat
-	 * @return
-	 */
 	private static int getMappedTestDefID( int instID, TestMeasure measure, TestVariable variable, DataFormat dataformat )
 	{
 		int ret = -1;
@@ -590,29 +526,13 @@ public class PerfTestTool
 		
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @param measure
-	 * @param lvariable
-	 * @param dataformat
-	 * @param pvariable
-	 * @return
-	 */
+
 	@SuppressWarnings("unused")
 	private static int getTestDefID( TestMeasure measure, TestVariable lvariable, DataFormat dataformat, InternalTestVariable pvariable )
 	{
 		return getTestDefID(measure, lvariable, dataformat, new InternalTestVariable[]{pvariable});
 	}
-	
-	/**
-	 * 
-	 * @param measure
-	 * @param lvariable
-	 * @param dataformat
-	 * @param pvariables
-	 * @return
-	 */
+
 	private static int getTestDefID( TestMeasure measure, TestVariable lvariable, DataFormat dataformat, InternalTestVariable[] pvariables )
 	{
 		int ret = -1;
@@ -642,42 +562,23 @@ public class PerfTestTool
 		return ret;
 	}
 
-	/**
-	 * 
-	 * @param instName
-	 * @return
-	 */
 	private static int getInstructionID( String instName )
 	{
 		Integer ret = _regInst_NamesID.get( instName );
 		return ( ret!=null )? ret : -1;
 	}
 
-	/**
-	 * 
-	 * @return
-	 */
 	@SuppressWarnings("unused")
 	private static Integer[] getAllTestDefs()
 	{
 		return _regTestDef.keySet().toArray(new Integer[0]);
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	private static Integer[] getDefaultTestDefs()
 	{
 		return _defaultConf;
 	}
-	
-	/**
-	 * 
-	 * @param v
-	 * @param IDs
-	 * @return
-	 */
+
 	@SuppressWarnings("unused")
 	private static Integer[] changeToMuliDimTestDefs( TestVariable v, Integer[] IDs )
 	{
@@ -712,12 +613,7 @@ public class PerfTestTool
 		
 		return tmp;
 	}
-	
-	/**
-	 * 
-	 * @throws DMLRuntimeException
-	 * @throws IOException
-	 */
+
 	private static void executeTest( ) 
 		throws DMLRuntimeException, IOException
 	{
@@ -810,21 +706,7 @@ public class PerfTestTool
 			}
 		}
 	}
-	
-	/**
-	 * 
-	 * @param m
-	 * @param v
-	 * @param df
-	 * @param varValue
-	 * @param pb
-	 * @param vectors
-	 * @param schema
-	 * 
-	 * @return
-	 * @throws DMLRuntimeException
-	 * @throws IOException
-	 */
+
 	private static double executeTestCase1D( TestMeasure m, InternalTestVariable v, DataFormat df, double varValue, ProgramBlock pb, boolean vectors, IOSchema schema, ExecutionContext ec ) 
 		throws DMLRuntimeException, IOException
 	{
@@ -935,19 +817,7 @@ public class PerfTestTool
 		
 		return value;
 	}
-	
-	/**
-	 * 
-	 * @param m
-	 * @param v
-	 * @param df
-	 * @param varValue
-	 * @param pb
-	 * @param schema
-	 * @return
-	 * @throws DMLRuntimeException
-	 * @throws IOException
-	 */
+
 	private static double executeTestCaseMD( TestMeasure m, InternalTestVariable[] v, DataFormat df, double[] varValue, ProgramBlock pb, IOSchema schema, ExecutionContext ec ) 
 		throws DMLRuntimeException, IOException
 	{
@@ -1006,14 +876,7 @@ public class PerfTestTool
 		
 		return value;
 	}
-	
-	/**
-	 * 
-	 * @param measure
-	 * @param pb
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static double executeGenericProgramBlock( TestMeasure measure, ProgramBlock pb, ExecutionContext ec ) 
 		throws DMLRuntimeException
 	{
@@ -1056,13 +919,6 @@ public class PerfTestTool
 		return value;
 	}
 
-	/**
-	 * 
-	 * @param min
-	 * @param max
-	 * @param num
-	 * @return
-	 */
 	public static LinkedList<Double> generateSequence( double min, double max, double num )
 	{
 		LinkedList<Double> data = new LinkedList<Double>();
@@ -1073,17 +929,7 @@ public class PerfTestTool
 		
 		return data;
 	}
-	
-	/**
-	 * 
-	 * @param fname
-	 * @param datasize
-	 * @param sparsity
-	 * @param df
-	 * @return
-	 * @throws IOException
-	 * @throws CacheException 
-	 */
+
 	public static MatrixObject generateInputDataset(String fname, double datasize, double sparsity, DataFormat df) 
 		throws IOException, CacheException
 	{
@@ -1121,18 +967,7 @@ public class PerfTestTool
 		
 		return mo;
 	}
-	
-	/**
-	 * 
-	 * @param fname
-	 * @param dim1
-	 * @param dim2
-	 * @param sparsity
-	 * @param df
-	 * @return
-	 * @throws IOException
-	 * @throws CacheException
-	 */
+
 	public static MatrixObject generateInputDataset(String fname, double dim1, double dim2, double sparsity, DataFormat df) 
 		throws IOException, CacheException
 	{		
@@ -1173,16 +1008,7 @@ public class PerfTestTool
 		
 		return mo;
 	}
-	
-	/**
-	 * 
-	 * @param fname
-	 * @param datasize
-	 * @param df
-	 * @return
-	 * @throws IOException
-	 * @throws CacheException
-	 */
+
 	public static MatrixObject generateEmptyResult(String fname, double datasize, DataFormat df ) 
 		throws IOException, CacheException
 	{
@@ -1206,17 +1032,7 @@ public class PerfTestTool
 		
 		return mo;
 	}
-	
-	/**
-	 * 
-	 * @param fname
-	 * @param dim1
-	 * @param dim2
-	 * @param df
-	 * @return
-	 * @throws IOException
-	 * @throws CacheException
-	 */
+
 	public static MatrixObject generateEmptyResult(String fname, double dim1, double dim2, DataFormat df ) 
 		throws IOException, CacheException
 	{
@@ -1246,6 +1062,14 @@ public class PerfTestTool
 	/**
 	 * NOTE: This is a copy of TestUtils.generateTestMatrix, it was replicated in order to prevent
 	 * dependency of SystemML.jar to our test package.
+	 * 
+	 * @param rows number of rows
+	 * @param cols number of columns
+	 * @param min minimum value
+	 * @param max maximum value
+	 * @param sparsity sparsity as a percentage
+	 * @param seed random seed value (-1 if use System time)
+	 * @return matrix as 2D double array
 	 */
 	public static double[][] generateTestMatrix(int rows, int cols, double min, double max, double sparsity, long seed) {
 		double[][] matrix = new double[rows][cols];
@@ -1266,14 +1090,6 @@ public class PerfTestTool
 		return matrix;
 	}
 
-
-	/**
-	 * 
-	 * @param fname
-	 * @throws DMLRuntimeException
-	 * @throws XMLStreamException
-	 * @throws IOException
-	 */
 	public static void externalReadProfile( String fname ) 
 		throws DMLRuntimeException, XMLStreamException, IOException
 	{
@@ -1287,13 +1103,6 @@ public class PerfTestTool
 		readProfile( fname );
 	}
 
-	/**
-	 * 
-	 * @param dirname
-	 * @return
-	 * @throws IOException
-	 * @throws DMLRuntimeException 
-	 */
 	@SuppressWarnings("all")
 	private static HashMap<Integer,Long> writeResults( String dirname ) 
 		throws IOException, DMLRuntimeException 
@@ -1421,19 +1230,7 @@ public class PerfTestTool
 		
 		return map;
 	}
-	
-	/**
-	 * 
-	 * @param dmlname
-	 * @param dmltmpname
-	 * @param dir
-	 * @param models
-	 * @param rows
-	 * @param cols
-	 * @throws IOException
-	 * @throws ParseException
-	 * @throws DMLException
-	 */
+
 	private static void computeRegressionModels( String dmlname, String dmltmpname, String dir, int models, int rows, int cols ) 
 		throws IOException, ParseException, DMLException
 	{
@@ -1481,13 +1278,7 @@ public class PerfTestTool
 		// execute DML script
 		DMLScript.main(new String[] { "-f", dmltmpname });
 	}
-	
-	/**
-	 * 
-	 * @param dname
-	 * @param IDMapping
-	 * @throws IOException
-	 */
+
 	private static void readRegressionModels( String dname, HashMap<Integer,Long> IDMapping ) 
 		throws IOException
 	{
@@ -1527,11 +1318,6 @@ public class PerfTestTool
 		}
 	}
 
-	/**
-	 * 
-	 * @param vars
-	 * @return
-	 */
 	private static String serializeTestVariables( InternalTestVariable[] vars )
 	{
 		StringBuilder sb = new StringBuilder();
@@ -1543,12 +1329,7 @@ public class PerfTestTool
 		}
 		return sb.toString();
 	}
-	
-	/**
-	 * 
-	 * @param vars
-	 * @return
-	 */
+
 	private static InternalTestVariable[] parseTestVariables(String vars)
 	{
 		StringTokenizer st = new StringTokenizer(vars, XML_ELEMENT_DELIMITER);
@@ -1557,12 +1338,7 @@ public class PerfTestTool
 			v[i] = InternalTestVariable.valueOf(st.nextToken());
 		return v;
 	}
-	
-	/**
-	 * 
-	 * @param vals
-	 * @return
-	 */
+
 	private static String serializeParams( double[] vals )
 	{
 		StringBuilder sb = new StringBuilder();
@@ -1574,12 +1350,7 @@ public class PerfTestTool
 		}
 		return sb.toString();
 	}
-	
-	/**
-	 * 
-	 * @param valStr
-	 * @return
-	 */
+
 	private static double[] parseParams( String valStr )
 	{
 		StringTokenizer st = new StringTokenizer(valStr, XML_ELEMENT_DELIMITER);
@@ -1588,13 +1359,7 @@ public class PerfTestTool
 			params[i] = Double.parseDouble(st.nextToken());
 		return params;
 	}
-	
-	/**
-	 * 
-	 * @param fname
-	 * @throws XMLStreamException
-	 * @throws IOException
-	 */
+
 	private static void readProfile( String fname ) 
 		throws XMLStreamException, IOException
 	{
@@ -1661,8 +1426,10 @@ public class PerfTestTool
 	/**
 	 * StAX for efficient streaming XML writing.
 	 * 
-	 * @throws IOException
-	 * @throws XMLStreamException 
+	 * @param dname directory name
+	 * @param fname file name
+	 * @throws IOException if IOException occurs
+	 * @throws XMLStreamException if XMLStreamException occurs
 	 */
 	private static void writeProfile( String dname, String fname ) 
 		throws IOException, XMLStreamException 
@@ -1734,7 +1501,7 @@ public class PerfTestTool
 	/**
 	 * Main for invoking the actual performance test in order to produce profile.xml
 	 * 
-	 * @param args
+	 * @param args string arguments to main() method
 	 */
 	public static void main(String[] args)
 	{

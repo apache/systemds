@@ -22,7 +22,7 @@ package org.apache.sysml.runtime.compress.utils;
 import java.util.Arrays;
 
 /**
- * This class provides a memory-efficient replacement for ArrayList<Integer> for
+ * This class provides a memory-efficient replacement for {@code ArrayList<Integer>} for
  * restricted use cases.
  * 
  */
@@ -40,18 +40,10 @@ public class IntArrayList
 		_size = 0;
 	}
 
-	/**
-	 * 
-	 * @return
-	 */
 	public int size() {
 		return _size;
 	}
 
-	/**
-	 * 
-	 * @param value
-	 */
 	public void appendValue(int value) {
 		// embedded value (no array allocation)
 		if( _size == 0 ) {
@@ -74,10 +66,6 @@ public class IntArrayList
 		_size++;
 	}
 
-	/**
-	 * 
-	 * @return
-	 */
 	public int[] extractValues() {
 		if( _size == 1 )
 			return new int[] { _val0 };
@@ -85,9 +73,6 @@ public class IntArrayList
 			return Arrays.copyOfRange(_data, 0, _size);
 	}
 
-	/**
-	 * 
-	 */
 	private void resize() {
 		// check for integer overflow on resize
 		if( _data.length > Integer.MAX_VALUE / RESIZE_FACTOR )

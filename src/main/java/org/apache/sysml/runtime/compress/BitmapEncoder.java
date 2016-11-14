@@ -22,7 +22,6 @@ package org.apache.sysml.runtime.compress;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.compress.utils.DblArray;
 import org.apache.sysml.runtime.compress.utils.DblArrayIntListHashMap;
 import org.apache.sysml.runtime.compress.utils.DoubleIntListHashMap;
@@ -49,7 +48,6 @@ public class BitmapEncoder
 	 * @param rawblock
 	 *            an uncompressed matrix block; can be dense or sparse
 	 * @return uncompressed bitmap representation of the columns
-	 * @throws DMLRuntimeException 
 	 */
 	public static UncompressedBitmap extractBitmap(int[] colIndices, MatrixBlock rawblock) 
 	{
@@ -73,13 +71,6 @@ public class BitmapEncoder
 		}
 	}
 
-	/**
-	 * 
-	 * @param colIndices
-	 * @param rawblock
-	 * @param sampleIndexes
-	 * @return
-	 */
 	public static UncompressedBitmap extractBitmapFromSample(int[] colIndices,
 			MatrixBlock rawblock, int[] sampleIndexes) 
 	{
@@ -248,13 +239,6 @@ public class BitmapEncoder
 		return encodedBlocks;
 	}
 
-	/**
-	 * 
-	 * @param colIndex
-	 * @param rawblock
-	 * @return
-	 * @throws DMLRuntimeException 
-	 */
 	private static UncompressedBitmap extractBitmap(int colIndex, MatrixBlock rawblock, boolean skipZeros) 
 	{
 		//probe map for distinct items (for value or value groups)
@@ -327,14 +311,7 @@ public class BitmapEncoder
 		
 		return new UncompressedBitmap(distinctVals);
 	}
-	
-	/**
-	 * 
-	 * @param colIndex
-	 * @param rawblock
-	 * @param sampleIndexes
-	 * @return
-	 */
+
 	private static UncompressedBitmap extractBitmap(int colIndex, MatrixBlock rawblock, int[] sampleIndexes, boolean skipZeros) 
 	{
 		//note: general case only because anyway binary search for small samples
@@ -361,14 +338,7 @@ public class BitmapEncoder
 
 		return new UncompressedBitmap(distinctVals);
 	}
-	
-	/**
-	 * 
-	 * @param colIndices
-	 * @param rawblock
-	 * @param rowReader
-	 * @return
-	 */
+
 	private static UncompressedBitmap extractBitmap(int[] colIndices,
 			MatrixBlock rawblock, ReaderColumnSelection rowReader) 
 	{

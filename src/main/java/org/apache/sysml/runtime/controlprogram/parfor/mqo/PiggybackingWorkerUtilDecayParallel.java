@@ -125,12 +125,7 @@ public class PiggybackingWorkerUtilDecayParallel extends PiggybackingWorker
 			}
 		}
 	}
-	
-	
-	/**
-	 * 
-	 * 
-	 */
+
 	public class MRJobSubmitTask implements Runnable
 	{
 		private MergedMRJobInstruction _minst = null;

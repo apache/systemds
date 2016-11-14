@@ -40,7 +40,7 @@ public class DMLScriptException extends DMLRuntimeException
 	/**
 	 * This is the only valid constructor for DMLScriptException.
 	 * 
-	 * @param string
+	 * @param msg message
 	 */
 	public DMLScriptException(String msg) {
 		super(msg);

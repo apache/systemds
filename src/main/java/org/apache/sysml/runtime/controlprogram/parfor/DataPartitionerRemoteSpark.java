@@ -96,16 +96,7 @@ public class DataPartitionerRemoteSpark extends DataPartitioner
 			Statistics.maintainCPHeavyHitters(jobname, System.nanoTime()-t0);
 		}
 	}
-	
-	/**
-	 * 
-	 * @param rlen
-	 * @param clen
-	 * @param brlen
-	 * @param bclen
-	 * @param numRed
-	 * @return
-	 */
+
 	private long determineNumReducers(long rlen, long clen, int brlen, int bclen, long numRed)
 	{
 		//set the number of mappers and reducers 

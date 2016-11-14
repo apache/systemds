@@ -128,8 +128,8 @@ public class ProgramBlock
 	/**
 	 * Executes this program block (incl recompilation if required).
 	 * 
-	 * @param ec
-	 * @throws DMLRuntimeException
+	 * @param ec execution context
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public void execute(ExecutionContext ec) 
 		throws DMLRuntimeException 
@@ -171,10 +171,13 @@ public class ProgramBlock
 	/**
 	 * Executes given predicate instructions (incl recompilation if required)
 	 * 
-	 * @param inst
-	 * @param hops
-	 * @param ec
-	 * @throws DMLRuntimeException 
+	 * @param inst list of instructions
+	 * @param hops high-level operator
+	 * @param requiresRecompile true if requires recompile
+	 * @param retType value type of the return type
+	 * @param ec execution context
+	 * @return scalar object
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public ScalarObject executePredicate(ArrayList<Instruction> inst, Hop hops, boolean requiresRecompile, ValueType retType, ExecutionContext ec) 
 		throws DMLRuntimeException
@@ -205,12 +208,6 @@ public class ProgramBlock
 		return executePredicateInstructions(tmp, retType, ec);
 	}
 
-	/**
-	 * 
-	 * @param inst
-	 * @param ec
-	 * @throws DMLRuntimeException
-	 */
 	protected void executeInstructions(ArrayList<Instruction> inst, ExecutionContext ec) 
 		throws DMLRuntimeException 
 	{
@@ -224,13 +221,7 @@ public class ProgramBlock
 			executeSingleInstruction(currInst, ec);
 		}
 	}
-	
-	/**
-	 * 
-	 * @param inst
-	 * @param ec
-	 * @throws DMLRuntimeException
-	 */
+
 	protected ScalarObject executePredicateInstructions(ArrayList<Instruction> inst, ValueType retType, ExecutionContext ec) 
 		throws DMLRuntimeException 
 	{
@@ -282,13 +273,7 @@ public class ProgramBlock
 			
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * 
-	 * @param currInst
-	 * @throws DMLRuntimeException 
-	 */
+
 	private void executeSingleInstruction( Instruction currInst, ExecutionContext ec ) 
 		throws DMLRuntimeException
 	{	
@@ -339,14 +324,7 @@ public class ProgramBlock
 			}
 		}
 	}
-	
 
-	/**
-	 *  
-	 * @param ec
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	protected UpdateType[] prepareUpdateInPlaceVariables(ExecutionContext ec, long tid) 
 		throws DMLRuntimeException
 	{
@@ -377,13 +355,7 @@ public class ProgramBlock
 		
 		return flags;
 	}
-	
-	/**
-	 * 
-	 * @param ec
-	 * @param flags
-	 * @throws DMLRuntimeException
-	 */
+
 	protected void resetUpdateInPlaceVariableFlags(ExecutionContext ec, UpdateType[] flags) 
 		throws DMLRuntimeException
 	{
@@ -398,23 +370,12 @@ public class ProgramBlock
 				mo.setUpdateType(flags[i]);
 			}
 	}
-	
-	/**
-	 * 
-	 * @param inst
-	 * @return
-	 */
+
 	private boolean isRemoveVariableInstruction(Instruction inst)
 	{
 		return ( inst instanceof VariableCPInstruction && ((VariableCPInstruction)inst).isRemoveVariable() );
 	}
-	
-	/**
-	 * 
-	 * @param lastInst
-	 * @param vars
-	 * @throws DMLRuntimeException
-	 */
+
 	private void checkSparsity( Instruction lastInst, LocalVariableMap vars )
 		throws DMLRuntimeException
 	{

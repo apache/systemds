@@ -38,18 +38,7 @@ public class PlanningCoCoder
 	private final static float GROUPABILITY_THRESHOLD = 0.00064f;
 	private final static float PARTITION_WEIGHT = 0.05F; //higher values lead to more grouping
 	private final static float PARTITION_SIZE = PARTITION_WEIGHT * GROUPABILITY_THRESHOLD;
-	
-	/**
-	 * 
-	 * @param sizeEstimator
-	 * @param availCols
-	 * @param colsCardinalities
-	 * @param compressedSize
-	 * @param numRows
-	 * @param sparsity
-	 * @return
-	 * @throws DMLRuntimeException 
-	 */
+
 	public static List<int[]> findCocodesByPartitioning(CompressedSizeEstimator sizeEstimator, List<Integer> availCols, 
 			List<Integer> colsCardinalities, List<Long> compressedSize, int numRows, double sparsity, int k) 
 		throws DMLRuntimeException 
@@ -88,15 +77,7 @@ public class PlanningCoCoder
 			
 		return retGroups;
 	}
-	
-	/**
-	 * 
-	 * @param bins
-	 * @param groupColsInfo
-	 * @param estim
-	 * @param rlen
-	 * @return
-	 */
+
 	private static List<int[]> getCocodingGroupsBruteForce(TreeMap<Float, List<List<Integer>>> bins, HashMap<Integer, GroupableColInfo> groupColsInfo, CompressedSizeEstimator estim, int rlen) 
 	{
 		List<int[]> retGroups = new ArrayList<int[]>();		
@@ -116,17 +97,7 @@ public class PlanningCoCoder
 		
 		return retGroups;
 	}
-	
-	/**
-	 * 
-	 * @param bins
-	 * @param groupColsInfo
-	 * @param estim
-	 * @param rlen
-	 * @param k
-	 * @return
-	 * @throws DMLRuntimeException 
-	 */
+
 	private static List<int[]> getCocodingGroupsBruteForce(TreeMap<Float, List<List<Integer>>> bins, HashMap<Integer, GroupableColInfo> groupColsInfo, CompressedSizeEstimator estim, int rlen, int k) 
 		throws DMLRuntimeException 
 	{
@@ -160,6 +131,10 @@ public class PlanningCoCoder
 	 * pairs of column groups into larger groups. Each phase of the greedy
 	 * algorithm considers all combinations of pairs to merge.
 	 * 
+	 * @param sizeEstimator compressed size estimator
+	 * @param numRowsWeight number of rows weight
+	 * @param singltonGroups planning co-coding groups
+	 * @return
 	 */
 	private static PlanningCoCodingGroup[] findCocodesBruteForce(
 			CompressedSizeEstimator sizeEstimator, float numRowsWeight,
@@ -235,24 +210,12 @@ public class PlanningCoCoder
 		return colGroups;
 	}
 
-	/**
-	 * 
-	 * @param numRows
-	 * @param sparsity
-	 * @return
-	 */
 	private static float computeWeightForCoCoding(int numRows, double sparsity) {
 		//we use a constant partition size (independent of the number of rows
 		//in order to ensure constant compression speed independent of blocking)
 		return PARTITION_SIZE;
 	}
-	
-	/**
-	 * 
-	 * @param arr
-	 * @param val
-	 * @return
-	 */
+
 	private static int findInArray(Object[] arr, Object val) {
 		for (int i = 0; i < arr.length; i++) {
 			if (arr[i].equals(val)) {
@@ -261,10 +224,7 @@ public class PlanningCoCoder
 		}
 		return -1;
 	}
-	
-	/**
-	 * 
-	 */
+
 	protected static class GroupableColInfo {
 		float cardRatio;
 		long size;
@@ -274,10 +234,7 @@ public class PlanningCoCoder
 			size = lsize;
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class CocodeTask implements Callable<PlanningCoCodingGroup[]> 
 	{
 		private CompressedSizeEstimator _estim = null;

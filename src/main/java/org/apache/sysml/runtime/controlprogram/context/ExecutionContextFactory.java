@@ -24,11 +24,6 @@ import org.apache.sysml.runtime.controlprogram.Program;
 
 public class ExecutionContextFactory 
 {
-	
-	/**
-	 * 
-	 * @return
-	 */
 	public static ExecutionContext createContext()
 	{
 		return createContext( null );
@@ -38,12 +33,7 @@ public class ExecutionContextFactory
 	{
 		return createContext(true, prog);
 	}
-	
-	/**
-	 * 
-	 * @param platform
-	 * @return
-	 */
+
 	public static ExecutionContext createContext( boolean allocateVars, Program prog )
 	{
 		ExecutionContext ec = null;

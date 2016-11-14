@@ -171,14 +171,6 @@ public class ForProgramBlock extends ProgramBlock
 		}
 	}
 
-	/**
-	 * 
-	 * @param pos
-	 * @param instructions
-	 * @param ec
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	protected IntObject executePredicateInstructions( int pos, ArrayList<Instruction> instructions, ExecutionContext ec ) 
 		throws DMLRuntimeException
 	{

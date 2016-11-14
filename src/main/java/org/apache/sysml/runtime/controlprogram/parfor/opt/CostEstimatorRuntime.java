@@ -78,72 +78,26 @@ public class CostEstimatorRuntime extends CostEstimator
 		
 		return getLeafNodeEstimate(measure, node);
 	}
-	
-	/**
-	 * 
-	 * @param measure
-	 * @param instName
-	 * @param datasize
-	 * @param sparsity
-	 * @param dataformat
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public double getEstimate( TestMeasure measure, String instName, double datasize, double sparsity, DataFormat dataformat ) 
 		throws DMLRuntimeException
 	{
 		return getEstimate(measure, instName, datasize, sparsity, DEFAULT_EST_PARALLELISM, dataformat);
 	}
-	
-	/**
-	 * 
-	 * @param measure
-	 * @param instName
-	 * @param datasize
-	 * @param sparsity
-	 * @param parallelism
-	 * @param dataformat
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public double getEstimate( TestMeasure measure, String instName, double datasize, double sparsity, double parallelism, DataFormat dataformat ) 
 		throws DMLRuntimeException
 	{
 		double dim = Math.sqrt( datasize );		
 		return getEstimate(measure, instName, dim, dim, dim, sparsity, parallelism, dataformat);
 	}
-	
-	/**
-	 * 
-	 * @param measure
-	 * @param instName
-	 * @param dim1
-	 * @param dim2
-	 * @param dim3
-	 * @param sparsity
-	 * @param dataformat
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public double getEstimate( TestMeasure measure, String instName, double dim1, double dim2, double dim3, double sparsity, DataFormat dataformat ) 
 		throws DMLRuntimeException
 	{
 		return getEstimate(measure, instName, dim1, dim2, dim3, sparsity, DEFAULT_EST_PARALLELISM, dataformat);
 	}
-	
-	/**
-	 * 
-	 * @param measure
-	 * @param instName
-	 * @param dim1
-	 * @param dim2
-	 * @param dim3
-	 * @param sparsity
-	 * @param parallelism
-	 * @param dataformat
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public double getEstimate( TestMeasure measure, String instName, double dim1, double dim2, double dim3, double sparsity, double parallelism, DataFormat dataformat )
 		throws DMLRuntimeException
 	{
@@ -219,16 +173,6 @@ public class CostEstimatorRuntime extends CostEstimator
 		return ret;
 	}
 
-	/**
-	 * 
-	 * @param f1
-	 * @param f2
-	 * @param x1
-	 * @param d1
-	 * @param x2
-	 * @param d2
-	 * @return
-	 */
 	private static double aggregate( CostFunction f1, CostFunction f2, double x1, double d1, double x2, double d2 )
 	{
 		double val11 = f1.estimate(x1);
@@ -246,16 +190,6 @@ public class CostEstimatorRuntime extends CostEstimator
 		return ret;
 	}
 
-	/**
-	 * 
-	 * @param f1
-	 * @param f2
-	 * @param x1
-	 * @param d1
-	 * @param x2
-	 * @param d2
-	 * @return
-	 */
 	private static double aggregate( CostFunction f1, CostFunction f2, double[] x1, double[] d1, double x2, double d2 )
 	{
 		double val11 = f1.estimate(x1);

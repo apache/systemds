@@ -47,12 +47,7 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator
 	private int[] _sampleRows = null;
 	private RandomDataGenerator _rng = null;
 	private int _numRows = -1;
-	
-	/**
-	 * 
-	 * @param data
-	 * @param sampleRows
-	 */
+
 	public CompressedSizeEstimatorSample(MatrixBlock data, int[] sampleRows) {
 		super(data);
 		_sampleRows = sampleRows;
@@ -61,17 +56,13 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator
 				_data.getNumColumns() : _data.getNumRows();
 	}
 
-	/**
-	 * 
-	 * @param mb
-	 * @param sampleSize
-	 */
 	public CompressedSizeEstimatorSample(MatrixBlock mb, int sampleSize) {
 		this(mb, null);
 		_sampleRows = getSortedUniformSample(_numRows, sampleSize);
 	}
 
 	/**
+	 * set the sample rows (assumed to be sorted)
 	 * 
 	 * @param sampleRows, assumed to be sorted
 	 */
@@ -79,10 +70,6 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator
 		_sampleRows = sampleRows;
 	}
 
-	/**
-	 * 
-	 * @param sampleSize
-	 */
 	public void resampleRows(int sampleSize) {
 		_sampleRows = getSortedUniformSample(_numRows, sampleSize);
 	}
@@ -148,23 +135,11 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator
 				getRLESize(fact.numVals, fact.numRuns, ubm.getNumColumns()),
 				getOLESize(fact.numVals, fact.numOffs, fact.numSegs, ubm.getNumColumns()));
 	}
-	
-	/**
-	 * 
-	 * @param colIndexes
-	 * @return
-	 */
+
 	private int getNumDistinctValues(int[] colIndexes) {
 		return haasAndStokes(colIndexes);
 	}
 
-	/**
-	 * 
-	 * @param sampleUncompressedBitmap
-	 * @param sampleSize
-	 * @param totalNumRows
-	 * @return
-	 */
 	private int getNumRuns(UncompressedBitmap sampleUncompressedBitmap,
 			int sampleSize, int totalNumRows) {
 		int numVals = sampleUncompressedBitmap.getNumValues();
@@ -328,11 +303,6 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator
 		return Math.round(numRuns);
 	}
 
-	/**
-	 * 
-	 * @param colIndexes
-	 * @return
-	 */
 	private int haasAndStokes(int[] colIndexes) {
 		ReaderColumnSelection reader =  new ReaderColumnSelectionDenseSample(_data, 
 				colIndexes, _sampleRows, !CompressedMatrixBlock.MATERIALIZE_ZEROS);
@@ -342,8 +312,8 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator
 	/**
 	 * TODO remove, just for local debugging.
 	 * 
-	 * @param colIndexes
-	 * @return
+	 * @param colIndexes column indexes
+	 * @return exact number of district values
 	 */
 	@SuppressWarnings("unused")
 	private int getExactNumDistinctValues(int[] colIndexes) {
@@ -360,9 +330,9 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator
 	/**
 	 * Returns a sorted array of n integers, drawn uniformly from the range [0,range).
 	 * 
-	 * @param range
-	 * @param smplSize
-	 * @return
+	 * @param range the range
+	 * @param smplSize sample size
+	 * @return sorted array of integers
 	 */
 	private int[] getSortedUniformSample(int range, int smplSize) {
 		if (smplSize == 0)
@@ -381,11 +351,11 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator
 	 * M. Charikar, S. Chaudhuri, R. Motwani, and V. R. Narasayya, Towards
 	 * estimation error guarantees for distinct values, PODS'00.
 	 * 
-	 * @param nRows
-	 * @param sampleSize
+	 * @param nRows number of rows
+	 * @param sampleSize sample size
 	 * @param sampleRowsReader
-	 *            : a reader for the sampled rows
-	 * @return
+	 *             a reader for the sampled rows
+	 * @return error estimator
 	 */
 	@SuppressWarnings("unused")
 	private static int guaranteedErrorEstimator(int nRows, int sampleSize,
@@ -409,10 +379,10 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator
 	 * Sampling-Based Estimation of the Number of Distinct Values of an
 	 * Attribute. VLDB'95, Section 3.2.
 	 * 
-	 * @param nRows
-	 * @param sampleSize
-	 * @param sampleRowsReader
-	 * @return
+	 * @param nRows number of rows
+	 * @param sampleSize sample size
+	 * @param sampleRowsReader reader
+	 * @return estimator
 	 */
 	@SuppressWarnings("unused")
 	private static int shlosserEstimator(int nRows, int sampleSize,
@@ -422,14 +392,6 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator
 				getValCounts(sampleRowsReader));
 	}
 
-	/**
-	 * 
-	 * @param nRows
-	 * @param sampleSize
-	 * @param sampleRowsReader
-	 * @param valsCount
-	 * @return
-	 */
 	private static int shlosserEstimator(int nRows, int sampleSize,
 			ReaderColumnSelection sampleRowsReader,
 			HashMap<DblArray, Integer> valsCount) 
@@ -455,10 +417,10 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator
 	 * Sampling-Based Estimation of the Number of Distinct Values of an
 	 * Attribute. VLDB'95, Section 4.3.
 	 * 
-	 * @param nRows
-	 * @param sampleSize
-	 * @param sampleRowsReader
-	 * @return
+	 * @param nRows number of rows
+	 * @param sampleSize sample size
+	 * @param sampleRowsReader row reader
+	 * @return estimator
 	 */
 	@SuppressWarnings("unused")
 	private static int smoothedJackknifeEstimator(int nRows, int sampleSize,
@@ -468,14 +430,6 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator
 				getValCounts(sampleRowsReader));
 	}
 
-	/**
-	 * 
-	 * @param nRows
-	 * @param sampleSize
-	 * @param sampleRowsReader
-	 * @param valsCount
-	 * @return
-	 */
 	private static int smoothedJackknifeEstimator(int nRows, int sampleSize,
 			ReaderColumnSelection sampleRowsReader,
 			HashMap<DblArray, Integer> valsCount) 
@@ -559,10 +513,10 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator
 	 * Sampling-Based Estimation of the Number of Distinct Values of an
 	 * Attribute. VLDB'95, Section 5.2, recommended estimator by the authors
 	 * 
-	 * @param nRows
-	 * @param sampleSize
-	 * @param sampleRowsReader
-	 * @return
+	 * @param nRows number of rows
+	 * @param sampleSize sampel size
+	 * @param sampleRowsReader row reader
+	 * @return estimator
 	 */
 	@SuppressWarnings("unused")
 	private static int shlosserJackknifeEstimator(int nRows, int sampleSize,
@@ -611,10 +565,10 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator
 	 * 
 	 * The hybrid estimator given by Eq. 33 in Section 6
 	 * 
-	 * @param nRows
-	 * @param sampleSize
-	 * @param sampleRowsReader
-	 * @return
+	 * @param nRows number of rows
+	 * @param sampleSize sample size
+	 * @param sampleRowsReader row reader
+	 * @return estimator
 	 */
 	private static int haasAndStokes(int nRows, int sampleSize,
 			ReaderColumnSelection sampleRowsReader) 
@@ -720,11 +674,6 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator
 		return estimate < 1 ? 1 : estimate;
 	}
 
-	/**
-	 * 
-	 * @param sampleRowsReader
-	 * @return
-	 */
 	private static HashMap<DblArray, Integer> getValCounts(
 			ReaderColumnSelection sampleRowsReader) 
 	{
@@ -741,11 +690,6 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator
 		return valsCount;
 	}
 
-	/**
-	 * 
-	 * @param valsCount
-	 * @return
-	 */
 	private static int[] getFreqCounts(HashMap<DblArray, Integer> valsCount) 
 	{
 		int maxCount = 0;

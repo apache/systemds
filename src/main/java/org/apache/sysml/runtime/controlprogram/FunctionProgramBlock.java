@@ -124,11 +124,7 @@ public class FunctionProgramBlock extends ProgramBlock
 		// check return values
 		checkOutputParameters(ec.getVariables());
 	}
-	
-	/**
-	 * 
-	 * @param vars
-	 */
+
 	protected void checkOutputParameters( LocalVariableMap vars )
 	{
 		for( DataIdentifier diOut : _outputParams )

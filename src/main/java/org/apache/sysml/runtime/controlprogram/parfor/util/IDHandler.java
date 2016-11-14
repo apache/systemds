@@ -34,12 +34,6 @@ import java.net.InetAddress;
 public class IDHandler 
 {
 
-	
-	/**
-	 * 
-	 * @param taskID
-	 * @return
-	 */
 	public static long extractUncheckedLongID( String taskID )
 	{
 		//in: e.g., task_local_0002_m_000009 or jobID + ...
@@ -64,11 +58,6 @@ public class IDHandler
 		return value;
 	}
 
-	/**
-	 * 
-	 * @param taskID
-	 * @return
-	 */
 	public static int extractIntID( String taskID )
 	{
 		int maxlen = (int)(Math.log10(Integer.MAX_VALUE));
@@ -76,25 +65,14 @@ public class IDHandler
 		return intVal;		
 		
 	}
-	
-	/**
-	 * 
-	 * @param taskID
-	 * @return
-	 */
+
 	public static long extractLongID( String taskID )
 	{
 		int maxlen = (int)(Math.log10(Long.MAX_VALUE));
 		long longVal = extractID( taskID, maxlen );
 		return longVal;
 	}
-	
-	/**
-	 * 
-	 * @param part1
-	 * @param part2
-	 * @return
-	 */
+
 	public static long concatIntIDsToLong( int part1, int part2 )
 	{
 		//big-endian version (in java uses only big endian)
@@ -107,11 +85,13 @@ public class IDHandler
 		
 		return value;
 	}
-	
+
 	/**
+	 * Extract int ID from long value
 	 * 
-	 * @param part 1 for first 4 bytes, 2 for second 4 bytes
-	 * @return
+	 * @param val long value
+	 * @param part if part is 1, use first 4 bytes. if part is 2, use second 4 bytes!
+	 * @return return int id, or -1 if part is not 1 or 2!
 	 */
 	public static int extractIntIDFromLong( long val, int part )
 	{
@@ -125,9 +105,9 @@ public class IDHandler
 	}
 	
 	/**
-	 * Creates a unique identifier with the pattern <process_id>_<host_ip>.
+	 * Creates a unique identifier with the pattern &lt;process_id&gt;_&lt;host_ip&gt;.
 	 * 
-	 * @return
+	 * @return distributed unique id
 	 */
 	public static String createDistributedUniqueID() 
 	{
@@ -154,12 +134,6 @@ public class IDHandler
 		return uuid;
 	}
 
-	/**
-	 * 
-	 * @param taskID
-	 * @param maxlen
-	 * @return
-	 */
 	private static long extractID( String taskID, int maxlen )
 	{
 		//in: e.g., task_local_0002_m_000009 or task_201203111647_0898_m_000001

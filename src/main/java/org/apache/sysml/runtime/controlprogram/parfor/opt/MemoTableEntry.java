@@ -22,10 +22,6 @@ package org.apache.sysml.runtime.controlprogram.parfor.opt;
 
 import org.apache.sysml.runtime.controlprogram.ProgramBlock;
 
-/**
- * 
- * 
- */
 public class MemoTableEntry 
 {
 

@@ -19,7 +19,6 @@
 
 package org.apache.sysml.runtime.controlprogram.context;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -32,7 +31,6 @@ import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.Program;
-import org.apache.sysml.runtime.controlprogram.caching.CacheException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
@@ -187,13 +185,7 @@ public class ExecutionContext
 		
 		return (FrameObject) dat;
 	}
-	
-	/**
-	 * 
-	 * @param varname
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public CacheableData<?> getCacheableData(String varname) 
 		throws DMLRuntimeException
 	{
@@ -207,12 +199,7 @@ public class ExecutionContext
 		
 		return (CacheableData<?>) dat;
 	}
-	
-	/**
-	 * 
-	 * @param varname
-	 * @throws DMLRuntimeException
-	 */
+
 	public void releaseCacheableData(String varname) 
 		throws DMLRuntimeException
 	{
@@ -230,9 +217,9 @@ public class ExecutionContext
 	/**
 	 * Pins a matrix variable into memory and returns the internal matrix block.
 	 * 
-	 * @param varName
-	 * @return
-	 * @throws DMLRuntimeException
+	 * @param varName variable name
+	 * @return matrix block
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public MatrixBlock getMatrixInput(String varName) 
 		throws DMLRuntimeException 
@@ -271,10 +258,11 @@ public class ExecutionContext
 	/**
 	 * Allocates a sparse matrix in CSR format on the GPU.
 	 * Assumes that mat.getNumRows() returns a valid number
-	 * @param varName
-	 * @param nnz	number of non zeroes
-	 * @return
-	 * @throws DMLRuntimeException
+	 * 
+	 * @param varName variable name
+	 * @param nnz number of non zeroes
+	 * @return matrix object
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public MatrixObject getSparseMatrixOutputForGPUInstruction(String varName, long nnz)
 		throws DMLRuntimeException
@@ -287,9 +275,9 @@ public class ExecutionContext
 	
 	/**
 	 * Allocates the {@link GPUObject} for a given LOPS Variable (eg. _mVar3)
-	 * @param varName
-	 * @return
-	 * @throws DMLRuntimeException
+	 * @param varName variable name
+	 * @return matrix object
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public MatrixObject allocateGPUMatrixObject(String varName) throws DMLRuntimeException {
 		MatrixObject mo = getMatrixObject(varName);
@@ -321,8 +309,8 @@ public class ExecutionContext
 	/**
 	 * Unpins a currently pinned matrix variable. 
 	 * 
-	 * @param varName
-	 * @throws DMLRuntimeException
+	 * @param varName variable name
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public void releaseMatrixInput(String varName) 
 		throws DMLRuntimeException 
@@ -341,9 +329,9 @@ public class ExecutionContext
 	/**
 	 * Pins a frame variable into memory and returns the internal frame block.
 	 * 
-	 * @param varName
-	 * @return
-	 * @throws DMLRuntimeException
+	 * @param varName variable name
+	 * @return frame block
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public FrameBlock getFrameInput(String varName) 
 		throws DMLRuntimeException 
@@ -355,8 +343,8 @@ public class ExecutionContext
 	/**
 	 * Unpins a currently pinned frame variable. 
 	 * 
-	 * @param varName
-	 * @throws DMLRuntimeException
+	 * @param varName variable name
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public void releaseFrameInput(String varName) 
 		throws DMLRuntimeException 
@@ -411,13 +399,7 @@ public class ExecutionContext
 		}
 		mo.getGPUObject().releaseOutput();
 	}
-	
-	/**
-	 * 
-	 * @param varName
-	 * @param outputData
-	 * @throws DMLRuntimeException
-	 */
+
 	public void setMatrixOutput(String varName, MatrixBlock outputData) 
 			throws DMLRuntimeException 
 	{
@@ -426,14 +408,7 @@ public class ExecutionContext
 	    mo.release();
 	    setVariable(varName, mo);
 	}
-	
-	/**
-	 * 
-	 * @param varName
-	 * @param outputData
-	 * @param inplace
-	 * @throws DMLRuntimeException
-	 */
+
 	public void setMatrixOutput(String varName, MatrixBlock outputData, UpdateType flag) 
 		throws DMLRuntimeException 
 	{
@@ -446,13 +421,7 @@ public class ExecutionContext
 		//default case
 		setMatrixOutput(varName, outputData);
 	}
-	
-	/**
-	 * 
-	 * @param varName
-	 * @param outputData
-	 * @throws DMLRuntimeException
-	 */
+
 	public void setFrameOutput(String varName, FrameBlock outputData) 
 		throws DMLRuntimeException 
 	{
@@ -475,6 +444,9 @@ public class ExecutionContext
 	 * parfor shared inputs that are passed to functions.
 	 * 
 	 * The function returns the OLD "clean up" state of matrix objects.
+	 * 
+	 * @param varList variable list
+	 * @return map of old cleanup state of matrix objects
 	 */
 	public HashMap<String,Boolean> pinVariables(ArrayList<String> varList) 
 	{
@@ -519,7 +491,10 @@ public class ExecutionContext
 	 *    unpinVariables(varList, oldStatus);
 	 *    </code>
 	 * 
-	 * i.e., a call to unpinVariables() is preceded by pinVariables(). 
+	 * i.e., a call to unpinVariables() is preceded by pinVariables().
+	 * 
+	 * @param varList variable list
+	 * @param varsState variable state
 	 */
 	public void unpinVariables(ArrayList<String> varList, HashMap<String,Boolean> varsState)
 	{
@@ -535,7 +510,7 @@ public class ExecutionContext
 	/**
 	 * NOTE: No order guaranteed, so keep same list for pin and unpin. 
 	 * 
-	 * @return
+	 * @return variable list as strings
 	 */
 	public ArrayList<String> getVarList()
 	{
@@ -544,13 +519,6 @@ public class ExecutionContext
 		return varlist;
 	}
 
-	
-	/**
-	 * 
-	 * @param mo
-	 * @throws CacheException
-	 * @throws IOException
-	 */
 	public void cleanupMatrixObject(MatrixObject mo) 
 		throws DMLRuntimeException 
 	{
@@ -592,24 +560,14 @@ public class ExecutionContext
 			_dbState.prevPC = new DMLProgramCounter(DMLProgram.DEFAULT_NAMESPACE, "main", 0, 0); //initialize previous pc
 		}
 	}
-	
-	/**
-	 * 
-	 * @param index
-	 * @throws DMLRuntimeException 
-	 */
+
 	public void updateDebugState( int index ) throws DMLRuntimeException 
 	{
 		if(DMLScript.ENABLE_DEBUG_MODE) {
 			_dbState.getPC().setProgramBlockNumber(index);
 		}
 	}
-	
-	/**
-	 * 
-	 * @param currInst
-	 * @throws DMLRuntimeException 
-	 */
+
 	public void updateDebugState( Instruction currInst ) throws DMLRuntimeException
 	{
 		if (DMLScript.ENABLE_DEBUG_MODE) {
@@ -624,10 +582,7 @@ public class ExecutionContext
 			suspendIfAskedInDebugMode(currInst);	
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	public void clearDebugProgramCounters()
 	{
 		if(DMLScript.ENABLE_DEBUG_MODE) {
@@ -666,9 +621,9 @@ public class ExecutionContext
 	 * In this function, if the user has issued one of the step instructions or
 	 * has enabled suspend flag in previous instruction (through breakpoint),
 	 * then it will wait until user issues a new debugger command.
-	 * @param currInst
-	 * @param ec
-	 * @throws DMLRuntimeException 
+	 * 
+	 * @param currInst current instruction
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	@SuppressWarnings("deprecation")
 	private void suspendIfAskedInDebugMode(Instruction currInst ) throws DMLRuntimeException {

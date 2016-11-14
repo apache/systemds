@@ -50,41 +50,22 @@ public class FrameObject extends CacheableData<FrameBlock>
 	private static final long serialVersionUID = 1755082174281927785L;
 
 	private ValueType[] _schema = null;
-	
-	/**
-	 * 
-	 */
+
 	protected FrameObject() {
 		super(DataType.FRAME, ValueType.STRING);
 	}
-	
-	/**
-	 * 
-	 * @param fname
-	 */
+
 	public FrameObject(String fname) {
 		this();
 		setFileName(fname);
 	}
-	
-	/**
-	 * 
-	 * @param fname
-	 * @param meta
-	 */
+
 	public FrameObject(String fname, MetaData meta) {
 		this();
 		setFileName(fname);
 		setMetaData(meta);
 	}
-	
-	/**
-	 * 
-	 * @param fname
-	 * @param meta
-	 * @param schema
-	 * 
-	 */
+
 	public FrameObject(String fname, MetaData meta, ValueType[] schema) {
 		this();
 		setFileName(fname);
@@ -95,7 +76,7 @@ public class FrameObject extends CacheableData<FrameBlock>
 	/**
 	 * Copy constructor that copies meta data but NO data.
 	 * 
-	 * @param fo
+	 * @param fo frame object
 	 */
 	public FrameObject(FrameObject fo) {
 		super(fo);
@@ -107,10 +88,11 @@ public class FrameObject extends CacheableData<FrameBlock>
 	}
 
 	/**
+	 * Obtain schema of value types
 	 * 
 	 * @param cl column lower bound, inclusive
 	 * @param cu column upper bound, inclusive
-	 * @return
+	 * @return schema of value types
 	 */
 	public ValueType[] getSchema(int cl, int cu) {
 		return (_schema!=null && _schema.length>cu) ? Arrays.copyOfRange(_schema, cl, cu+1) :
@@ -121,8 +103,8 @@ public class FrameObject extends CacheableData<FrameBlock>
 	 * Creates a new collection which contains the schema of the current
 	 * frame object concatenated with the schema of the passed frame object.
 	 * 
-	 * @param fo
-	 * @return
+	 * @param fo frame object
+	 * @return schema of value types
 	 */
 	public ValueType[] mergeSchemas(FrameObject fo) {
 		return (ValueType[]) ArrayUtils.addAll(
@@ -165,20 +147,12 @@ public class FrameObject extends CacheableData<FrameBlock>
 		//update schema information
 		_schema = _data.getSchema();
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public long getNumRows() {
 		MatrixCharacteristics mc = getMatrixCharacteristics();
 		return mc.getRows();
 	}
 
-	/**
-	 * 
-	 * @return
-	 */
 	public long getNumColumns() {
 		MatrixCharacteristics mc = getMatrixCharacteristics();
 		return mc.getCols();

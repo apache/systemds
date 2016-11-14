@@ -193,8 +193,9 @@ public class TaskPartitionerFactoring extends TaskPartitioner
 	 * 
 	 * NOTE: x can be set to different values, but the original paper argues for x=2.
 	 * 
-	 * @param R
-	 * @return
+	 * @param R ?
+	 * @param P ?
+	 * @return next batch task size
 	 */
 	protected long determineNextBatchSize(long R, int P) 
 	{

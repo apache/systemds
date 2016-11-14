@@ -109,10 +109,11 @@ public class OptimizationWrapper
 	 * 
 	 * NOTE: currently note used at all.
 	 * 
-	 * @param prog
-	 * @param rtprog
-	 * @throws DMLRuntimeException 
-	 * @throws LanguageException 
+	 * @param prog dml program
+	 * @param rtprog runtime program
+	 * @param monitor ?
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
+	 * @throws LanguageException if LanguageException occurs
 	 */
 	public static void optimize(DMLProgram prog, Program rtprog, boolean monitor) 
 		throws DMLRuntimeException, LanguageException 
@@ -150,10 +151,12 @@ public class OptimizationWrapper
 	 * 
 	 * NOTE: this is the default way to invoke parfor optimizers.
 	 * 
-	 * @param type
-	 * @param sb
-	 * @param pb
-	 * @throws DMLRuntimeException
+	 * @param type ?
+	 * @param sb parfor statement block
+	 * @param pb parfor program block
+	 * @param ec execution context
+	 * @param monitor ?
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void optimize( POptMode type, ParForStatementBlock sb, ParForProgramBlock pb, ExecutionContext ec, boolean monitor ) 
 		throws DMLRuntimeException
@@ -177,11 +180,7 @@ public class OptimizationWrapper
 		if( monitor )
 			StatisticMonitor.putPFStat( pb.getID() , Stat.OPT_T, timeVal);
 	}
-	
-	/**
-	 * 
-	 * @param optLogLevel
-	 */
+
 	public static void setLogLevel( Level optLogLevel )
 	{
 		if( !LDEBUG ){ //set log level if not overwritten by internal flag
@@ -189,17 +188,7 @@ public class OptimizationWrapper
 			      .setLevel( optLogLevel );
 		}
 	}
-	
-	/**
-	 * 
-	 * @param type
-	 * @param ck
-	 * @param cm
-	 * @param sb
-	 * @param pb
-	 * @throws DMLRuntimeException
-	 * @throws  
-	 */
+
 	@SuppressWarnings("unused")
 	private static void optimize( POptMode otype, int ck, double cm, ParForStatementBlock sb, ParForProgramBlock pb, ExecutionContext ec, boolean monitor ) 
 		throws DMLRuntimeException
@@ -348,12 +337,6 @@ public class OptimizationWrapper
 		}
 	}
 
-	/**
-	 * 
-	 * @param prog
-	 * @param rtprog
-	 * @throws LanguageException 
-	 */
 	private static void findParForProgramBlocks( DMLProgram prog, Program rtprog, 
 			HashMap<Long, ParForStatementBlock> sbs, HashMap<Long, ParForProgramBlock> pbs ) 
 		throws LanguageException
@@ -384,12 +367,7 @@ public class OptimizationWrapper
 			rfindParForProgramBlocks(sb, pb, sbs, pbs);
 		}	
 	}
-	
-	/**
-	 * 
-	 * @param sb
-	 * @param pb
-	 */
+
 	private static void rfindParForProgramBlocks( StatementBlock sb, ProgramBlock pb,
 			HashMap<Long, ParForStatementBlock> sbs, HashMap<Long, ParForProgramBlock> pbs )
 	{
@@ -440,13 +418,7 @@ public class OptimizationWrapper
 				rfindParForProgramBlocks(isbs2.get(i), ipbs2.get(i), sbs, pbs);								
 		}
 	}
-	
-	/**
-	 * 
-	 * @param otype
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	private static Optimizer createOptimizer( POptMode otype ) 
 		throws DMLRuntimeException
 	{
@@ -479,12 +451,6 @@ public class OptimizationWrapper
 		return opt;
 	}
 
-	/**
-	 * 
-	 * @param cmtype
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	private static CostEstimator createCostEstimator( CostModelType cmtype ) 
 		throws DMLRuntimeException
 	{
@@ -504,11 +470,7 @@ public class OptimizationWrapper
 		
 		return est;
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	private static ProgramRewriter createProgramRewriterWithRuleSets()
 	{
 		//create hop rewrite set

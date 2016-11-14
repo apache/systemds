@@ -33,10 +33,6 @@ import org.apache.sysml.runtime.util.LocalFileUtils;
 
 import scala.Tuple2;
 
-/**
- * 
- * 
- */
 public class RemoteParForSparkWorker extends ParWorker implements PairFlatMapFunction<Task, Long, String> 
 {
 	
@@ -88,13 +84,7 @@ public class RemoteParForSparkWorker extends ParWorker implements PairFlatMapFun
 			
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @param ID
-	 * @throws DMLRuntimeException 
-	 * @throws IOException 
-	 */
+
 	private void configureWorker( long ID ) 
 		throws DMLRuntimeException, IOException
 	{

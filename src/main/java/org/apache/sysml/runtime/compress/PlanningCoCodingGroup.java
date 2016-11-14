@@ -38,6 +38,8 @@ public class PlanningCoCodingGroup
 	/**
 	 * Constructor for a one-column group; i.e. do not co-code a given column.
 	 * 
+	 * @param col column
+	 * @param info groupable column info
 	 */
 	public PlanningCoCodingGroup(int col, GroupableColInfo info) {
 		_colIndexes = new int[]{col};
@@ -50,6 +52,7 @@ public class PlanningCoCodingGroup
 	 * 
 	 * @param grp1   first group of columns to merge
 	 * @param grp2   second group to merge
+	 * @param bitmapSizeEstimator bitmap size estimator
 	 * @param numRowsWeight numRows x sparsity
 	 */
 	public PlanningCoCodingGroup(PlanningCoCodingGroup grp1, PlanningCoCodingGroup grp2,
@@ -88,6 +91,8 @@ public class PlanningCoCodingGroup
 	}
 
 	/**
+	 * Obtain estimated compressed size of the grouped columns.
+	 * 
 	 * @return estimated compressed size of the grouped columns
 	 */
 	public long getEstSize() {

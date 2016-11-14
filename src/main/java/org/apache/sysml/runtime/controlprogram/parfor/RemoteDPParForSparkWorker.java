@@ -44,9 +44,6 @@ import org.apache.sysml.runtime.util.LocalFileUtils;
 
 import scala.Tuple2;
 
-/**
- * 
- */
 public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapFunction<Iterator<Tuple2<Long, Iterable<Writable>>>, Long, String> 
 {
 	private static final long serialVersionUID = 30223759283155139L;
@@ -142,13 +139,7 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 		
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @param ID
-	 * @throws DMLRuntimeException 
-	 * @throws IOException 
-	 */
+
 	private void configureWorker( long ID ) 
 		throws DMLRuntimeException, IOException
 	{
@@ -187,9 +178,9 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 	 * Note it reuses the instance attribute _partition - multiple calls
 	 * will overwrite the result.
 	 * 
-	 * @param valueList
-	 * @return
-	 * @throws IOException 
+	 * @param valueList iterable writables
+	 * @return matrix block
+	 * @throws IOException if IOException occurs
 	 */
 	private MatrixBlock collectBinaryBlock( Iterable<Writable> valueList ) 
 		throws IOException 
@@ -241,9 +232,9 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 	 * Note it reuses the instance attribute _partition - multiple calls
 	 * will overwrite the result.
 	 * 
-	 * @param valueList
-	 * @return
-	 * @throws IOException 
+	 * @param valueList iterable writables
+	 * @return matrix block
+	 * @throws IOException if IOException occurs
 	 */
 	private MatrixBlock collectBinaryCellInput( Iterable<Writable> valueList ) 
 		throws IOException 
@@ -288,12 +279,7 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 		
 		return partition;
 	}
-	
-	/**
-	 * 
-	 * @param sort
-	 * @throws IOException
-	 */
+
 	private void cleanupCollectedMatrixPartition(MatrixBlock partition, boolean sort) 
 		throws IOException
 	{

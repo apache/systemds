@@ -54,20 +54,7 @@ public class RemoteDPParForSpark
 {
 	
 	protected static final Log LOG = LogFactory.getLog(RemoteDPParForSpark.class.getName());
-	
-	/**
-	 * 
-	 * @param pfid
-	 * @param program
-	 * @param taskFile
-	 * @param resultFile
-	 * @param enableCPCaching 
-	 * @param mode
-	 * @param numMappers
-	 * @param replication
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static RemoteParForJobReturn runJob(long pfid, String itervar, String matrixvar, String program, String resultFile, MatrixObject input, 
 			                                   ExecutionContext ec,
 			                                   PDataPartitionFormat dpf, OutputInfo oi, boolean tSparseCol, //config params

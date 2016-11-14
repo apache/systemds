@@ -73,12 +73,6 @@ public class PlanningBinPacker
 		return packFirstFit(shuffledItems, shuffledWeights);
 	}
 
-	/**
-	 * 
-	 * @param items
-	 * @param itemWeights
-	 * @return
-	 */
 	private TreeMap<Float, List<List<Integer>>> packFirstFit(List<Integer> items, List<Float> itemWeights) 
 	{
 		// when searching for a bin, the first bin in the list is used
@@ -123,7 +117,7 @@ public class PlanningBinPacker
 	/**
 	 * NOTE: upper bound is 11/9 OPT + 6/9 (~1.22 OPT)
 	 * 
-	 * @return
+	 * @return sorted map of ?
 	 */
 	public TreeMap<Float, List<List<Integer>>> packFirstFitDescending() {
 		// sort items descending based on their weights
@@ -149,27 +143,18 @@ public class PlanningBinPacker
 	/**
 	 * NOTE: upper bound is 71/60 OPT + 6/9 (~1.18 OPT)
 	 * 
-	 * @return
+	 * @return sorted map of ?
 	 */
 	public TreeMap<Float, List<List<Integer>>> packModifiedFirstFitDescending() {
 		throw new UnsupportedOperationException("Not implemented yet!");
 	}
 
-	/**
-	 * 
-	 * @return
-	 */
 	private List<List<Integer>> createBinList() {
 		List<List<Integer>> binList = new ArrayList<List<Integer>>();
 		binList.add(new ArrayList<Integer>());
 		return binList;
 	}
 
-	/**
-	 * 
-	 * @param item
-	 * @return
-	 */
 	private List<List<Integer>> createBinList(int item) {
 		List<List<Integer>> binList = new ArrayList<List<Integer>>();
 		List<Integer> bin = new ArrayList<Integer>();
@@ -178,11 +163,6 @@ public class PlanningBinPacker
 		return binList;
 	}
 
-	/**
-	 * 
-	 * @param bin
-	 * @return
-	 */
 	private List<List<Integer>> createBinList(List<Integer> bin) {
 		List<List<Integer>> binList = new ArrayList<List<Integer>>();
 		binList.add(bin);

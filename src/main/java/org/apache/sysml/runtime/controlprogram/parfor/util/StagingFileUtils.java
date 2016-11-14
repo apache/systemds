@@ -38,13 +38,7 @@ public class StagingFileUtils
 {
 	
 	public static final int CELL_BUFFER_SIZE = 100000;
-	
-	/**
-	 * 
-	 * @param fname
-	 * @param buffer
-	 * @throws IOException
-	 */
+
 	public static void writeCellListToLocal( String fname, LinkedList<Cell> buffer ) 
 		throws IOException
 	{
@@ -164,13 +158,7 @@ public class StagingFileUtils
 		if( in != null )
 			in.close();		
 	}
-	
-	/**
-	 * 
-	 * @param fname
-	 * @return
-	 * @throws IOException
-	 */
+
 	public static LinkedList<Cell> readCellListFromLocal( String fname ) 
 		throws IOException
 	{

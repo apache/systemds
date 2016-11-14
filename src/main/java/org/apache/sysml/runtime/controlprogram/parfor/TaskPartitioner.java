@@ -59,7 +59,8 @@ public abstract class TaskPartitioner
 	/**
 	 * Creates and returns set of all tasks for given problem at once.
 	 * 
-	 * @return
+	 * @return list of tasks
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public abstract List<Task> createTasks()
 		throws DMLRuntimeException;
@@ -68,16 +69,14 @@ public abstract class TaskPartitioner
 	 * Creates set of all tasks for given problem, but streams them directly
 	 * into task queue. This allows for more tasks than fitting in main memory.
 	 * 
-	 * @return
+	 * 
+	 * @param queue queue of takss
+	 * @return ?
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public abstract long createTasks( LocalTaskQueue<Task> queue )
 		throws DMLRuntimeException;
 
-	
-	/**
-	 * 
-	 * @return
-	 */
 	public long getNumIterations() {
 		return _numIter;
 	}

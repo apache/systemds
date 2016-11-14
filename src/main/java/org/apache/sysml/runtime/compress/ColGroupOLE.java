@@ -97,9 +97,6 @@ public class ColGroupOLE extends ColGroupBitmap
 		}
 	}
 
-	/**
-	 * Constructor for internal use.
-	 */
 	public ColGroupOLE(int[] colIndices, int numRows, boolean zeros, double[] values, char[] bitmaps, int[] bitmapOffs) {
 		super(CompressionType.OLE_BITMAP, colIndices, numRows, zeros, values);
 		_data = bitmaps;
@@ -467,11 +464,7 @@ public class ColGroupOLE extends ColGroupBitmap
 				computeColMxx(result, builtin);
 		}
 	}
-	
-	/**
-	 * 
-	 * @param result
-	 */
+
 	private void computeSum(MatrixBlock result, KahanFunction kplus)
 	{
 		KahanObject kbuff = new KahanObject(result.quickGetValue(0, 0), result.quickGetValue(0, 1));
@@ -499,11 +492,7 @@ public class ColGroupOLE extends ColGroupBitmap
 		result.quickSetValue(0, 0, kbuff._sum);
 		result.quickSetValue(0, 1, kbuff._correction);
 	}
-	
-	/**
-	 * 
-	 * @param result
-	 */
+
 	private void computeRowSums(MatrixBlock result, KahanFunction kplus, int rl, int ru)
 	{
 		KahanObject kbuff = new KahanObject(0, 0);
@@ -537,11 +526,7 @@ public class ColGroupOLE extends ColGroupBitmap
 			}
 		}
 	}
-	
-	/**
-	 * 
-	 * @param result
-	 */
+
 	private void computeColSums(MatrixBlock result, KahanFunction kplus)
 	{
 		KahanObject kbuff = new KahanObject(0, 0);
@@ -569,12 +554,7 @@ public class ColGroupOLE extends ColGroupBitmap
 			}
 		}
 	}
-	
-	
-	/**
-	 * 
-	 * @param result
-	 */
+
 	private void computeRowMxx(MatrixBlock result, Builtin builtin, int rl, int ru)
 	{
 		//NOTE: zeros handled once for all column groups outside
@@ -606,8 +586,8 @@ public class ColGroupOLE extends ColGroupBitmap
 	/**
 	 * Utility function of sparse-unsafe operations.
 	 * 
-	 * @return
-	 * @throws DMLRuntimeException
+	 * @return zero indicator vector
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private boolean[] computeZeroIndicatorVector()
 		throws DMLRuntimeException 
@@ -681,11 +661,11 @@ public class ColGroupOLE extends ColGroupBitmap
 	/**
 	 * Scans to given row_lower position by exploiting any existing 
 	 * skip list and scanning segment length fields. Returns array 
-	 * of positions for all values;
+	 * of positions for all values.
 	 * 
-	 * @param numVals
-	 * @param rl
-	 * @return
+	 * @param numVals number of values
+	 * @param rl row lower position
+	 * @return array of positions for all values
 	 */
 	private int[] skipScan(int numVals, int rl) {
 		int[] ret = new int[numVals];
@@ -708,13 +688,7 @@ public class ColGroupOLE extends ColGroupBitmap
 		
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @param k
-	 * @param rl
-	 * @return
-	 */
+
 	private int skipScanVal(int k, int rl) {
 		final int blksz = BitmapEncoder.BITMAP_BLOCK_SZ;
 		

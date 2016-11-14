@@ -45,30 +45,20 @@ public class PerfTestMemoryObserver implements Runnable
 		_maxMem   = -1; 
 		_stopped  = false;			
 	}
-		
-	/**
-	 * 
-	 */
+
 	public void measureStartMem()
 	{
 		forceGC();
 		_startMem =  Runtime.getRuntime().totalMemory()
 		           - Runtime.getRuntime().freeMemory();
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public long getMaxMemConsumption()
 	{
 		long val = _maxMem - _startMem;
 		return (val < 0) ? 0 : val; 
 	}
-	
-	/**
-	 * 
-	 */
+
 	public void setStopped()
 	{
 		_stopped = true;
@@ -95,22 +85,14 @@ public class PerfTestMemoryObserver implements Runnable
 			throw new RuntimeException("Error measuring Java memory usage", ex);
 		}
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public static double getUsedMemory()
 	{
 		forceGC();
 		return  ( Runtime.getRuntime().totalMemory()
 		           - Runtime.getRuntime().freeMemory() );
 	}
-	
-	/** 
-	 * 
-	 * @param force
-	 */
+
 	private static void forceGC()
 	{
 		//request gc until weak reference is eliminated by gc

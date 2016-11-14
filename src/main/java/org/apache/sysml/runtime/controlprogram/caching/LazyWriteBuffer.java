@@ -30,10 +30,6 @@ import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.util.LocalFileUtils;
 
-/**
- * 
- * 
- */
 public class LazyWriteBuffer 
 {
 	public enum RPolicy {
@@ -59,13 +55,7 @@ public class LazyWriteBuffer
 		long maxMem = InfrastructureAnalyzer.getLocalMaxMemory();
 		_limit = (long)(CacheableData.CACHING_BUFFER_SIZE * maxMem);
 	}
-	
-	/**
-	 * 
-	 * @param fname
-	 * @param mb
-	 * @throws IOException
-	 */
+
 	public static void writeBlock( String fname, CacheBlock cb ) 
 		throws IOException
 	{	
@@ -125,11 +115,7 @@ public class LazyWriteBuffer
 				CacheStatistics.incrementFSWrites();
 		}	
 	}
-	
-	/**
-	 * 
-	 * @param fname
-	 */
+
 	public static void deleteBlock( String fname )
 	{
 		boolean requiresDelete = true;
@@ -149,13 +135,7 @@ public class LazyWriteBuffer
 		if( requiresDelete )
 			_fClean.deleteFile(fname);
 	}
-	
-	/**
-	 * 
-	 * @param fname
-	 * @return
-	 * @throws IOException
-	 */
+
 	public static CacheBlock readBlock( String fname, boolean matrix ) 
 		throws IOException
 	{
@@ -193,10 +173,7 @@ public class LazyWriteBuffer
 		
 		return cb;
 	}
-		
-	/**
-	 * 
-	 */
+
 	public static void init() {
 		_mQueue = new EvictionQueue();
 		_fClean = new FileCleaner();
@@ -204,10 +181,7 @@ public class LazyWriteBuffer
 		if( CacheableData.CACHING_BUFFER_PAGECACHE )
 			PageCache.init();
 	}
-	
-	/**
-	 * 
-	 */
+
 	public static void cleanup() {
 		if( _mQueue != null )
 			_mQueue.clear();
@@ -216,11 +190,7 @@ public class LazyWriteBuffer
 		if( CacheableData.CACHING_BUFFER_PAGECACHE )
 			PageCache.clear();
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public static long getWriteBufferSize() {
 		long maxMem = InfrastructureAnalyzer.getLocalMaxMemory();
 		return (long)(CacheableData.CACHING_BUFFER_SIZE * maxMem);
@@ -230,6 +200,7 @@ public class LazyWriteBuffer
 	 * Print current status of buffer pool, including all entries.
 	 * NOTE: use only for debugging or testing.  
 	 * 
+	 * @param position the position
 	 */
 	public static void printStatus( String position )
 	{
@@ -255,9 +226,9 @@ public class LazyWriteBuffer
 	
 	/**
 	 * Evicts all buffer pool entries. 
-	 * NOTE: use only for debugging or testing.  
-	 * @throws IOException 
+	 * NOTE: use only for debugging or testing.
 	 * 
+	 * @throws IOException if IOException occurs
 	 */
 	public static void forceEviction() 
 		throws IOException 

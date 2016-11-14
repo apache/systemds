@@ -223,11 +223,6 @@ public class ResultMergeLocalMemory extends ResultMerge
 		return moNew;		
 	}
 
-	/**
-	 * 
-	 * @param output
-	 * @return
-	 */
 	private double[][] createCompareMatrix( MatrixBlock output )
 	{
 		double[][] ret = null;
@@ -240,16 +235,7 @@ public class ResultMergeLocalMemory extends ResultMerge
 		
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @param varName
-	 * @param vt
-	 * @param metadata
-	 * @param data
-	 * @return
-	 * @throws DMLRuntimeException 
-	 */
+
 	private MatrixObject createNewMatrixObject( MatrixBlock data ) 
 		throws DMLRuntimeException
 	{
@@ -289,9 +275,10 @@ public class ResultMergeLocalMemory extends ResultMerge
 	 * NOTE: similar to converters, but not directly applicable as we are interested in combining
 	 * two objects with each other; not unary transformation.
 	 * 
-	 * @param out
-	 * @param in
-	 * @throws DMLRuntimeException 
+	 * @param out output matrix block
+	 * @param in input matrix block
+	 * @param appendOnly ?
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private void merge( MatrixBlock out, MatrixBlock in, boolean appendOnly ) 
 		throws DMLRuntimeException

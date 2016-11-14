@@ -30,27 +30,22 @@ import org.apache.sysml.runtime.DMLRuntimeException;
  */
 public interface CacheBlock extends Writable 
 {
-	/**
-	 * 
-	 * @return
-	 */
+
 	public int getNumRows();
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public int getNumColumns();
 	
 	/**
 	 * Get the in-memory size in bytes of the cache block.
-	 * @return
+	 * 
+	 * @return in-memory size in bytes of cache block
 	 */
 	public long getInMemorySize();
 	
 	/**
 	 * Get the exact serialized size in bytes of the cache block.
-	 * @return
+	 * 
+	 * @return exact serialized size in bytes of cache block
 	 */
 	public long getExactSerializedSize();
 
@@ -59,7 +54,7 @@ public interface CacheBlock extends Writable
 	 * which is generally true if in-memory size and serialized size
 	 * are almost identical allowing to avoid unnecessary deep serialize. 
 	 * 
-	 * @return
+	 * @return true if shallow serialized
 	 */
 	public boolean isShallowSerialize();
 	
@@ -72,13 +67,13 @@ public interface CacheBlock extends Writable
 	 * Slice a sub block out of the current block and write into the given output block.
 	 * This method returns the passed instance if not null.
 	 * 
-	 * @param rl
-	 * @param ru
-	 * @param cl
-	 * @param cu
-	 * @param block
-	 * @return
-	 * @throws DMLRuntimeException
+	 * @param rl row lower
+	 * @param ru row upper
+	 * @param cl column lower
+	 * @param cu column upper
+	 * @param block cache block
+	 * @return sub-block of cache block
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public CacheBlock sliceOperations(int rl, int ru, int cl, int cu, CacheBlock block) 
 		throws DMLRuntimeException;
@@ -87,9 +82,9 @@ public interface CacheBlock extends Writable
 	 * Merge the given block into the current block. Both blocks needs to be of equal 
 	 * dimensions and contain disjoint non-zero cells.
 	 * 
-	 * @param that
-	 * @param appendOnly
-	 * @throws DMLRuntimeException
+	 * @param that cache block
+	 * @param appendOnly ?
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public void merge(CacheBlock that, boolean appendOnly) 
 		throws DMLRuntimeException;

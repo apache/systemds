@@ -26,10 +26,6 @@ import java.util.Map;
 
 import org.apache.sysml.runtime.controlprogram.parfor.opt.PerfTestTool.TestMeasure;
 
-/**
- * 
- * 
- */
 public class MemoTable 
 {
 	
@@ -42,12 +38,6 @@ public class MemoTable
 		_memo = new HashMap<Long, Collection<MemoTableEntry>>();
 	}
 
-	/**
-	 * 
-	 * @param ID
-	 * @param e
-	 * @param keepOnlyMin
-	 */
 	public void putMemoTableEntry( long ID, MemoTableEntry e, boolean keepOnlyMin )
 	{
 		//create memo structure on demand
@@ -76,11 +66,7 @@ public class MemoTable
 		else
 			entries.add(e);
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public boolean hasCandidates()
 	{
 		for( Collection<MemoTableEntry> entries : _memo.values() )
@@ -88,11 +74,7 @@ public class MemoTable
 				return true;
 		return false;	
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public Collection<MemoTableEntry> getCandidates()
 	{
 		Collection<MemoTableEntry> C = new LinkedList<MemoTableEntry>();
@@ -103,33 +85,17 @@ public class MemoTable
 		
 		return C;	
 	}
-	
-	/**
-	 * 
-	 * @param ID
-	 * @return
-	 */
+
 	public MemoTableEntry getMinTimeEntry( long ID )
 	{
 		return getMin( ID, TestMeasure.EXEC_TIME );
 	}
-	
-	/**
-	 * 
-	 * @param ID
-	 * @return
-	 */
+
 	public MemoTableEntry getMinMemEntry( long ID )
 	{
 		return getMin( ID, TestMeasure.MEMORY_USAGE );
 	}
-	
-	/**
-	 * 
-	 * @param ID
-	 * @param measure
-	 * @return
-	 */
+
 	private MemoTableEntry getMin( long ID, TestMeasure measure )
 	{
 		MemoTableEntry minObj = null;

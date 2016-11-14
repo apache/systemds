@@ -113,7 +113,7 @@ import org.apache.sysml.yarn.ropt.YarnClusterAnalyzer;
  * 
  * NEW FUNCTIONALITIES (not for BI 2.0 release)
  * TODO: reduction variables (operations: +=, -=, /=, *=, min, max)
- * TODO: papply(A,1:2,FUN) language construct (compiled to ParFOR) via DML function repository => modules OK, but second-order functions required
+ * TODO: papply(A,1:2,FUN) language construct (compiled to ParFOR) via DML function repository =&gt; modules OK, but second-order functions required
  *
  */
 public class ParForProgramBlock extends ForProgramBlock 
@@ -154,8 +154,8 @@ public class ParForProgramBlock extends ForProgramBlock
 		 * Note: Robust version of valueOf in order to return NONE without exception
 		 * if misspelled or non-existing and for case-insensitivity.
 		 * 
-		 * @param s
-		 * @return
+		 * @param s data partition format as string
+		 * @return data partition format
 		 */
 		public static PDataPartitionFormat parsePDataPartitionFormat(String s) {
 			if (s.equalsIgnoreCase("ROW_WISE"))
@@ -303,9 +303,11 @@ public class ParForProgramBlock extends ForProgramBlock
 	 * ParForProgramBlock constructor. It reads the specified parameter settings, where defaults for non-specified parameters
 	 * have been set in ParForStatementBlock.validate(). Furthermore, it generates the IDs for the ParWorkers.
 	 * 
-	 * @param prog
-	 * @param iterPred
-	 * @throws DMLRuntimeException 
+	 * @param ID parfor program block id
+	 * @param prog runtime program
+	 * @param iterPredVars ?
+	 * @param params map of parameters
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public ParForProgramBlock(int ID, Program prog, String[] iterPredVars, HashMap<String,String> params) 
 		throws DMLRuntimeException  
@@ -678,13 +680,13 @@ public class ParForProgramBlock extends ForProgramBlock
 	 * This execution mode allows for arbitrary nested local parallelism and nested invocations of MR jobs. See
 	 * below for details of the realization.
 	 * 
-	 * @param ec
-	 * @param itervar
-	 * @param from
-	 * @param to
-	 * @param incr
-	 * @throws DMLRuntimeException
-	 * @throws InterruptedException 
+	 * @param ec execution context
+	 * @param itervar ?
+	 * @param from ?
+	 * @param to ?
+	 * @param incr ?
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
+	 * @throws InterruptedException if InterruptedException occurs
 	 */
 	private void executeLocalParFor( ExecutionContext ec, IntObject itervar, IntObject from, IntObject to, IntObject incr ) 
 		throws DMLRuntimeException, InterruptedException
@@ -809,17 +811,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			}
 		}
 	}	
-	
-	/**
-	 * 
-	 * @param ec
-	 * @param itervar
-	 * @param from
-	 * @param to
-	 * @param incr
-	 * @throws DMLRuntimeException
-	 * @throws IOException 
-	 */
+
 	private void executeRemoteMRParFor( ExecutionContext ec, IntObject itervar, IntObject from, IntObject to, IntObject incr ) 
 		throws DMLRuntimeException, IOException
 	{
@@ -907,17 +899,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_NUMITERS, numExecutedIterations);
 		}			
 	}	
-	
-	/**
-	 * 
-	 * @param ec
-	 * @param itervar
-	 * @param from
-	 * @param to
-	 * @param incr
-	 * @throws DMLRuntimeException
-	 * @throws IOException
-	 */
+
 	private void executeRemoteMRParForDP( ExecutionContext ec, IntObject itervar, IntObject from, IntObject to, IntObject incr ) 
 		throws DMLRuntimeException, IOException
 	{
@@ -990,16 +972,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_NUMITERS, numExecutedIterations);
 		}			
 	}
-	
-	/**
-	 * 
-	 * @param ec
-	 * @param itervar
-	 * @param from
-	 * @param to
-	 * @param incr
-	 * @throws DMLRuntimeException 
-	 */
+
 	private void executeRemoteSparkParFor(ExecutionContext ec, IntObject itervar, IntObject from, IntObject to, IntObject incr) 
 		throws DMLRuntimeException
 	{
@@ -1126,12 +1099,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_NUMITERS, numExecutedIterations);
 		}			
 	}
-	
-	/**
-	 * 
-	 * @param ec
-	 * @throws DMLRuntimeException 
-	 */
+
 	private void handleDataPartitioning( ExecutionContext ec ) 
 		throws DMLRuntimeException
 	{
@@ -1196,12 +1164,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			}
 		}
 	}
-	
-	/**
-	 * 
-	 * @param ec
-	 * @throws DMLRuntimeException
-	 */
+
 	private void handleSparkRepartitioning( ExecutionContext ec ) 
 		throws DMLRuntimeException
 	{
@@ -1213,12 +1176,7 @@ public class ParForProgramBlock extends ForProgramBlock
 				sec.repartitionAndCacheMatrixObject(var);
 		}
 	}
-	
-	/**
-	 * 
-	 * @param ec
-	 * @throws DMLRuntimeException
-	 */
+
 	private void handleSparkEagerCaching( ExecutionContext ec ) 
 		throws DMLRuntimeException
 	{
@@ -1233,9 +1191,11 @@ public class ParForProgramBlock extends ForProgramBlock
 	
 	/**
 	 * Cleanup result variables of parallel workers after result merge.
-	 * @param in 
-	 * @param out 
-	 * @throws DMLRuntimeException 
+	 * 
+	 * @param ec execution context
+	 * @param out output matrix
+	 * @param in array of input matrix objects
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private void cleanWorkerResultVariables(ExecutionContext ec, MatrixObject out, MatrixObject[] in) 
 		throws DMLRuntimeException
@@ -1255,9 +1215,9 @@ public class ParForProgramBlock extends ForProgramBlock
 	 * NOTE: parfor gives no guarantees on the values of those objects - hence
 	 * we return -1 for sclars and empty matrix objects.
 	 * 
-	 * @param out
-	 * @param sb
-	 * @throws DMLRuntimeException 
+	 * @param out local variable map
+	 * @param sb statement block
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private void createEmptyUnscopedVariables( LocalVariableMap out, StatementBlock sb ) 
 		throws DMLRuntimeException
@@ -1301,11 +1261,7 @@ public class ParForProgramBlock extends ForProgramBlock
 					out.put(var, dataObj);
 			}
 	}
-	
-	/**
-	 * 
-	 * @throws CacheException
-	 */
+
 	private void exportMatricesToHDFS( ExecutionContext ec ) 
 		throws CacheException 
 	{
@@ -1341,13 +1297,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			}
 		}
 	}
-	
-	/**
-	 * 
-	 * @param ec
-	 * @param varState
-	 * @throws DMLRuntimeException
-	 */
+
 	private void cleanupSharedVariables( ExecutionContext ec, HashMap<String,Boolean> varState ) 
 		throws DMLRuntimeException 
 	{
@@ -1381,15 +1331,11 @@ public class ParForProgramBlock extends ForProgramBlock
 	 * anyway on the next write. In case of recycling the deep copies of program blocks are recycled from previous 
 	 * executions of this parfor.
 	 * 
-	 * 
-	 * @param pwID
-	 * @param queue
-	 * @param ec
-	 * @return
-	 * @throws InstantiationException
-	 * @throws IllegalAccessException
-	 * @throws DMLRuntimeException
-	 * @throws CloneNotSupportedException
+	 * @param pwID parworker id
+	 * @param queue task queue
+	 * @param ec execution context
+	 * @return local parworker
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private LocalParWorker createParallelWorker(long pwID, LocalTaskQueue<Task> queue, ExecutionContext ec) 
 		throws DMLRuntimeException
@@ -1443,11 +1389,11 @@ public class ParForProgramBlock extends ForProgramBlock
 	/**
 	 * Creates a new task partitioner according to the specified runtime parameter.
 	 * 
-	 * @param from
-	 * @param to
-	 * @param incr
-	 * @return
-	 * @throws DMLRuntimeException
+	 * @param from ?
+	 * @param to ?
+	 * @param incr ?
+	 * @return task partitioner
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private TaskPartitioner createTaskPartitioner( IntObject from, IntObject to, IntObject incr ) 
 		throws DMLRuntimeException
@@ -1493,11 +1439,11 @@ public class ParForProgramBlock extends ForProgramBlock
 	/**
 	 * Creates a new data partitioner according to the specified runtime parameter.
 	 * 
-	 * @param dpf
-	 * @param dataPartitioner
-	 * @param ec 
-	 * @return
-	 * @throws DMLRuntimeException 
+	 * @param dpf data partition format
+	 * @param dataPartitioner data partitioner
+	 * @param ec execution context
+	 * @return data partitioner
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private DataPartitioner createDataPartitioner(PDataPartitionFormat dpf, PDataPartitioner dataPartitioner, ExecutionContext ec) 
 		throws DMLRuntimeException 
@@ -1533,16 +1479,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		
 		return dp;
 	}
-	
-	/**
-	 * 
-	 * @param prm
-	 * @param out
-	 * @param in
-	 * @param fname
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	private ResultMerge createResultMerge( PResultMerge prm, MatrixObject out, MatrixObject[] in, String fname, ExecutionContext ec ) 
 		throws DMLRuntimeException 
 	{
@@ -1593,9 +1530,9 @@ public class ParForProgramBlock extends ForProgramBlock
 	 * Recompile program block hierarchy to forced CP if MR instructions or functions.
 	 * Returns true if recompile was necessary and possible
 	 * 
-	 * @param tid
-	 * @return
-	 * @throws DMLRuntimeException
+	 * @param tid thread id
+	 * @return true if recompile was necessary and possible
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private boolean checkMRAndRecompileToCP(long tid) 
 		throws DMLRuntimeException
@@ -1616,28 +1553,14 @@ public class ParForProgramBlock extends ForProgramBlock
 		Recompiler.recompileProgramBlockHierarchy2Forced(_childBlocks, tid, fnStack, ExecType.CP);
 		return true;
 	}
-	
-	/**
-	 * 
-	 * @param tid
-	 * @throws DMLRuntimeException
-	 */
+
 	private void releaseForcedRecompile(long tid) 
 		throws DMLRuntimeException
 	{
 		HashSet<String> fnStack = new HashSet<String>();
 		Recompiler.recompileProgramBlockHierarchy2Forced(_childBlocks, tid, fnStack, null);
 	}
-	
-	
-	/**
-	 * 
-	 * @param fname
-	 * @param tasks
-	 * @return
-	 * @throws DMLRuntimeException
-	 * @throws IOException
-	 */
+
 	private String writeTasksToFile(String fname, List<Task> tasks, int maxDigits)
 		throws DMLRuntimeException, IOException
 	{
@@ -1668,15 +1591,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		
 		return fname;
 	}
-	
-	/**
-	 * 
-	 * @param fname
-	 * @param queue
-	 * @return
-	 * @throws DMLRuntimeException
-	 * @throws IOException
-	 */
+
 	private String writeTasksToFile(String fname, LocalTaskQueue<Task> queue, int maxDigits)
 		throws DMLRuntimeException, IOException
 	{
@@ -1715,16 +1630,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		String ret = t.toCompactString(maxDigits) + (flagFirst?" ":"") + "\n";
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @param expIters
-	 * @param expTasks
-	 * @param numIters
-	 * @param numTasks
-	 * @param results
-	 * @throws DMLRuntimeException
-	 */
+
 	private void consolidateAndCheckResults(ExecutionContext ec, long expIters, long expTasks, long numIters, long numTasks, LocalVariableMap [] results) 
 		throws DMLRuntimeException
 	{
@@ -1821,7 +1727,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	 * 
 	 * TODO The optimizer should explicitly decide about parallel result merge and its degree of parallelism.
 	 * 
-	 * @return
+	 * @return true if ?
 	 */
 	private boolean checkParallelRemoteResultMerge()
 	{
@@ -1830,11 +1736,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			    && ( _resultMerge == PResultMerge.REMOTE_MR
 			       ||_resultMerge == PResultMerge.REMOTE_SPARK) );
 	}
-	
-	/**
-	 * 
-	 * @param IDPrefix
-	 */
+
 	private void setParForProgramBlockIDs(int IDPrefix)
 	{
 		_IDPrefix = IDPrefix;
@@ -1869,24 +1771,11 @@ public class ParForProgramBlock extends ForProgramBlock
 		}
 	}
 
-	/**
-	 * 
-	 * @param from
-	 * @param to
-	 * @param incr
-	 */
 	private long computeNumIterations( IntObject from, IntObject to, IntObject incr )
 	{
 		return (long)Math.ceil(((double)(to.getLongValue() - from.getLongValue() + 1)) / incr.getLongValue()); 
 	}
-	
-	/**
-	 * 
-	 * @param iterVarName
-	 * @param from
-	 * @param to
-	 * @param incr
-	 */
+
 	private void updateIterablePredicateVars(String iterVarName, IntObject from, IntObject to, IntObject incr) 
 	{
 		_numIterations = computeNumIterations(from, to, incr); 
@@ -1900,10 +1789,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		_iterablePredicateVars[2] = to.getStringValue();
 		_iterablePredicateVars[3] = incr.getStringValue();
 	}
-	
-	/**
-	 * 
-	 */
+
 	private void resetIterablePredicateVars()
 	{
 		//reset of modified for optimization (opt!=NONE)
@@ -1915,7 +1801,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	 * NOTE: Only required for remote parfor. Hence, there is no need to transfer DMLConfig to
 	 * the remote workers (MR job) since nested remote parfor is not supported.
  	 * 
-	 * @return
+	 * @return task file name
 	 */
 	private String constructTaskFileName()
 	{
@@ -1935,7 +1821,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	 * NOTE: Only required for remote parfor. Hence, there is no need to transfer DMLConfig to
 	 * the remote workers (MR job) since nested remote parfor is not supported.
 	 * 
-	 * @return
+	 * @return result file name
 	 */
 	private String constructResultFileName()
 	{
@@ -1951,10 +1837,6 @@ public class ParForProgramBlock extends ForProgramBlock
 		return sb.toString();   
 	}
 
-	/**
-	 * 
-	 * @return
-	 */
 	private String constructResultMergeFileName()
 	{
 		String scratchSpaceLoc = ConfigurationManager.getScratchSpace();
@@ -1972,11 +1854,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		
 		return sb.toString();   		
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	private String constructDataPartitionsFileName()
 	{
 		String scratchSpaceLoc = ConfigurationManager.getScratchSpace();
@@ -1995,10 +1873,6 @@ public class ParForProgramBlock extends ForProgramBlock
 		return sb.toString();   		
 	}
 
-	/**
-	 * 
-	 * @return
-	 */
 	private long getMinMemory(ExecutionContext ec)
 	{
 		long ret = -1;

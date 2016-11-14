@@ -56,13 +56,7 @@ import org.apache.sysml.utils.Statistics;
  */
 public class RemoteParForUtils 
 {
-	
-	/**
-	 * 
-	 * @param reporter
-	 * @param deltaTasks
-	 * @param deltaIterations
-	 */
+
 	public static void incrementParForMRCounters(Reporter reporter, long deltaTasks, long deltaIterations)
 	{
 		//report parfor counters
@@ -94,16 +88,7 @@ public class RemoteParForUtils
 			CacheStatistics.reset();
 		}
 	}
-	
-	/**
-	 * 
-	 * @param workerID
-	 * @param vars
-	 * @param resultVars
-	 * @param out
-	 * @throws DMLRuntimeException
-	 * @throws IOException
-	 */
+
 	public static void exportResultVariables( long workerID, LocalVariableMap vars, ArrayList<String> resultVars, OutputCollector<Writable, Writable> out ) 
 			throws DMLRuntimeException, IOException
 	{
@@ -113,13 +98,13 @@ public class RemoteParForUtils
 	/**
 	 * For remote MR parfor workers.
 	 * 
-	 * @param workerID
-	 * @param vars
-	 * @param resultVars
-	 * @param rvarFnames
-	 * @param out
-	 * @throws DMLRuntimeException
-	 * @throws IOException
+	 * @param workerID worker id
+	 * @param vars local variable map
+	 * @param resultVars list of result variables
+	 * @param rvarFnames ?
+	 * @param out output collector
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
+	 * @throws IOException if IOException occurs
 	 */
 	public static void exportResultVariables( long workerID, LocalVariableMap vars, ArrayList<String> resultVars, 
 			                                  HashMap<String,String> rvarFnames, OutputCollector<Writable, Writable> out ) 
@@ -169,12 +154,12 @@ public class RemoteParForUtils
 	/**
 	 * For remote Spark parfor workers. This is a simplified version compared to MR.
 	 * 
-	 * @param workerID
-	 * @param vars
-	 * @param resultVars
-	 * @param rvarFnames
-	 * @throws DMLRuntimeException
-	 * @throws IOException
+	 * @param workerID worker id
+	 * @param vars local variable map
+	 * @param resultVars list of result variables
+	 * @return list of result variables
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
+	 * @throws IOException if IOException occurs
 	 */
 	public static ArrayList<String> exportResultVariables( long workerID, LocalVariableMap vars, ArrayList<String> resultVars) 
 		throws DMLRuntimeException, IOException
@@ -230,14 +215,7 @@ public class RemoteParForUtils
 			LocalFileUtils.cleanupWorkingDirectory();
 		}
 	}
-	
-	/**
-	 * 
-	 * @param out
-	 * @return
-	 * @throws DMLRuntimeException
-	 * @throws IOException
-	 */
+
 	public static LocalVariableMap[] getResults( List<Tuple2<Long,String>> out, Log LOG ) 
 		throws DMLRuntimeException
 	{

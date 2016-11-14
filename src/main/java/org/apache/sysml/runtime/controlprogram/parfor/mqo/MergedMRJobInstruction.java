@@ -52,13 +52,7 @@ public class MergedMRJobInstruction
 		outIxOffs.put(instID, outIxOffset);
 		outIxLens.put(instID, outIxLen);
 	}
-	
-	/**
-	 * 
-	 * @param instID
-	 * @param allRet
-	 * @return
-	 */
+
 	public JobReturn constructJobReturn( long instID, JobReturn retAll )
 	{
 		//get output offset and len

@@ -38,9 +38,6 @@ import org.apache.sysml.runtime.matrix.data.OutputInfo;
 
 import scala.Tuple2;
 
-/**
- * 
- */
 public class DataPartitionerRemoteSparkReducer implements VoidFunction<Tuple2<Long, Iterable<Writable>>> 
 {
 	

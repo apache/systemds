@@ -86,11 +86,12 @@ public class DataPartitionerLocal extends DataPartitioner
 	private int _par = -1;
 	
 	/**
+	 * DataPartitionerLocal constructor.
 	 * 
-	 * @param dpf
-	 * @param n
+	 * @param dpf data partitionformat
+	 * @param n ?
 	 * @param par -1 for serial otherwise number of threads, can be ignored by implementation
-	 * @throws DMLRuntimeException
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public DataPartitionerLocal(PDataPartitionFormat dpf, int n, int par) 
 		throws DMLRuntimeException 
@@ -133,18 +134,6 @@ public class DataPartitionerLocal extends DataPartitioner
 		LocalFileUtils.cleanupWorkingDirectory(fnameStaging);
 	}
 
-
-
-
-	/**
-	 * 
-	 * @param fname
-	 * @param fnameStaging
-	 * @param fnameNew
-	 * @param brlen
-	 * @param bclen
-	 * @throws DMLRuntimeException
-	 */
 	private void partitionTextCell( String fname, String fnameStaging, String fnameNew, long rlen, long clen, int brlen, int bclen ) 
 		throws DMLRuntimeException
 	{
@@ -239,15 +228,6 @@ public class DataPartitionerLocal extends DataPartitioner
 		}
 	}	
 
-	/**
-	 * 
-	 * @param fname
-	 * @param fnameStaging
-	 * @param fnameNew
-	 * @param brlen
-	 * @param bclen
-	 * @throws DMLRuntimeException
-	 */
 	@SuppressWarnings("deprecation")
 	private void partitionBinaryCell( String fname, String fnameStaging, String fnameNew, long rlen, long clen, int brlen, int bclen ) 
 		throws DMLRuntimeException
@@ -337,16 +317,7 @@ public class DataPartitionerLocal extends DataPartitioner
 				throw new DMLRuntimeException("Unable to partition binary cell matrix.", e);
 		}
 	}	
-	
-	/**
-	 * 
-	 * @param fname
-	 * @param fnameStaging
-	 * @param fnameNew
-	 * @param brlen
-	 * @param bclen
-	 * @throws DMLRuntimeException
-	 */
+
 	@SuppressWarnings("deprecation")
 	private void partitionBinaryBlock( String fname, String fnameStaging, String fnameNew, long rlen, long clen, int brlen, int bclen ) 
 		throws DMLRuntimeException
@@ -425,15 +396,6 @@ public class DataPartitionerLocal extends DataPartitioner
 		}
 	}
 
-	/**
-	 * 
-	 * @param fname
-	 * @param fnameStaging
-	 * @param fnameNew
-	 * @param brlen
-	 * @param bclen
-	 * @throws DMLRuntimeException
-	 */
 	@SuppressWarnings("deprecation")
 	private void partitionBinaryBlock2BinaryCell( String fname, String fnameStaging, String fnameNew, long rlen, long clen, int brlen, int bclen ) 
 		throws DMLRuntimeException
@@ -541,18 +503,6 @@ public class DataPartitionerLocal extends DataPartitioner
 		}
 	}
 
-	
-	/**
-	 * 
-	 * @param dir
-	 * @param mb
-	 * @param row_offset
-	 * @param col_offset
-	 * @param brlen
-	 * @param bclen
-	 * @throws DMLRuntimeException
-	 * @throws IOException
-	 */
 	private void appendBlockToStagingArea( String dir, MatrixBlock mb, long row_offset, long col_offset, long brlen, long bclen ) 
 		throws DMLRuntimeException, IOException
 	{
@@ -602,16 +552,7 @@ public class DataPartitionerLocal extends DataPartitioner
 			LocalFileUtils.writeMatrixBlockToLocal(pfname, mb);
 		}
 	}
-	
-	/**
-	 * 
-	 * @param dir
-	 * @param buffer
-	 * @param brlen
-	 * @param bclen
-	 * @throws DMLRuntimeException
-	 * @throws IOException
-	 */
+
 	private void appendCellBufferToStagingArea( String dir, LinkedList<Cell> buffer, int brlen, int bclen ) 
 		throws DMLRuntimeException, IOException
 	{
@@ -775,24 +716,14 @@ public class DataPartitionerLocal extends DataPartitioner
 	// Helper methods for local fs //
 	//         read/write          //
 	/////////////////////////////////
-	
-	/**
-	 * 
-	 * @param dir
-	 * @return
-	 */
+
 	private long getKeyFromFilePath( String dir )
 	{
 		String[] dirparts = dir.split("/");
 		long key = Long.parseLong( dirparts[dirparts.length-1] );
 		return key;
 	}
-	
-	/**
-	 * 
-	 * @param fname
-	 * @return
-	 */
+
 	private long getKey2FromFileName( String fname )
 	{
 		return Long.parseLong( fname.split("_")[1] );

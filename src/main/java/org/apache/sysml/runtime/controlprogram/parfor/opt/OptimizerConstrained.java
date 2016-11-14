@@ -220,12 +220,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 	///////
 	//REWRITE set data partitioner
 	///
-	
-	/**
-	 * 
-	 * @param n
-	 * @throws DMLRuntimeException 
-	 */
+
 	@Override
 	protected boolean rewriteSetDataPartitioner(OptNode n, LocalVariableMap vars, HashMap<String,PDataPartitionFormat> partitionedMatrices) 
 		throws DMLRuntimeException
@@ -250,14 +245,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 	///////
 	//REWRITE set execution strategy
 	///
-	
-	/**
-	 * 
-	 * 
-	 * @param n
-	 * @param M
-	 * @throws DMLRuntimeException 
-	 */
+
 	@Override
 	protected boolean rewriteSetExecutionStategy(OptNode n, double M0, double M, double M2, boolean flagLIX) 
 		throws DMLRuntimeException
@@ -283,16 +271,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 	///////
 	//REWRITE set degree of parallelism
 	///
-		
-	/**
-	 * 
-	 * @param n
-	 * @param M
-	 * @param kMax
-	 * @param mMax  (per node)
-	 * @param nested
-	 * @throws DMLRuntimeException 
-	 */
+
 	@Override
 	protected void rewriteSetDegreeOfParallelism(OptNode n, double M, boolean flagNested)
 		throws DMLRuntimeException 
@@ -313,12 +292,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 	///////
 	//REWRITE set task partitioner
 	///
-	
-	/**
-	 * 
-	 * @param n
-	 * @param partitioner
-	 */
+
 	@Override
 	protected void rewriteSetTaskPartitioner(OptNode pn, boolean flagNested, boolean flagLIX) 
 	{
@@ -349,13 +323,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 	///////
 	//REWRITE set result merge
 	///
-	
-	/**
-	 *
-	 * 
-	 * @param n
-	 * @throws DMLRuntimeException 
-	 */
+
 	@Override
 	protected void rewriteSetResultMerge( OptNode n, LocalVariableMap vars, boolean inLocal ) 
 		throws DMLRuntimeException
@@ -376,16 +344,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 	///////
 	//REWRITE set fused data partitioning / execution
 	///
-	
-	/**
-	 * 
-	 * @param pn
-	 * @param flagLIX
-	 * @param partitionedMatrices
-	 * @param vars
-	 * @param emode
-	 * @throws DMLRuntimeException
-	 */
+
 	protected void rewriteSetFusedDataPartitioningExecution(OptNode pn, double M, boolean flagLIX, HashMap<String, PDataPartitionFormat> partitionedMatrices, LocalVariableMap vars, PExecMode emode) 
 		throws DMLRuntimeException
 	{
@@ -428,12 +387,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 		else 
 			super.rewriteSetFusedDataPartitioningExecution(pn, M, flagLIX, partitionedMatrices, vars);
 	}
-	
-	/**
-	 * 
-	 * @param pn
-	 * @return
-	 */
+
 	private PExecMode getPExecMode( OptNode pn )
 	{
 		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter

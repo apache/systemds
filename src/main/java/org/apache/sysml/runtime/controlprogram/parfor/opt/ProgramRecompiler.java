@@ -60,22 +60,8 @@ import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 
-/**
- * 
- */
 public class ProgramRecompiler 
 {
-	
-	/**
-	 * 
-	 * @param rtprog
-	 * @param sbs
-	 * @return
-	 * @throws IOException 
-	 * @throws DMLRuntimeException 
-	 * @throws LopsException 
-	 * @throws HopsException 
-	 */
 	public static ArrayList<ProgramBlock> generatePartitialRuntimeProgram(Program rtprog, ArrayList<StatementBlock> sbs) 
 		throws LopsException, DMLRuntimeException, IOException, HopsException
 	{
@@ -103,12 +89,12 @@ public class ProgramRecompiler
 	 * otherwise, we release the forced exec type and recompile again. Hence, 
 	 * any changes can be exactly reverted with the same access behavior.
 	 * 
-	 * @param sb
-	 * @param pb
-	 * @param var
-	 * @param ec
-	 * @param force
-	 * @throws DMLRuntimeException
+	 * @param sb statement block
+	 * @param pb program block
+	 * @param var variable
+	 * @param ec execution context
+	 * @param force if true, set and recompile the respective indexing hops
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void rFindAndRecompileIndexingHOP( StatementBlock sb, ProgramBlock pb, String var, ExecutionContext ec, boolean force )
 		throws DMLRuntimeException
@@ -212,15 +198,7 @@ public class ProgramRecompiler
 			}
 		}
 	}
-	
-	/**
-	 * 
-	 * @param prog
-	 * @param parforSB
-	 * @param vars
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static LocalVariableMap getReusableScalarVariables( DMLProgram prog, StatementBlock parforSB, LocalVariableMap vars ) 
 		throws DMLRuntimeException
 	{
@@ -282,13 +260,7 @@ public class ProgramRecompiler
 			}	
 		}
 	}
-	
-	/**
-	 * 
-	 * @param pred
-	 * @param vars
-	 * @throws DMLRuntimeException
-	 */
+
 	private static void replacePredicateLiterals( Hop pred, LocalVariableMap vars )
 		throws DMLRuntimeException
 	{
@@ -304,11 +276,11 @@ public class ProgramRecompiler
 	 * In case of invariant variables we can reuse partitioned matrices and propagate constants
 	 * for better size estimation.
 	 * 
-	 * @param prog
-	 * @param parforSB
-	 * @param var
-	 * @return
-	 * @throws DMLRuntimeException
+	 * @param prog dml program
+	 * @param parforSB parfor statement block
+	 * @param var variable
+	 * @return true if can reuse variable
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static boolean isApplicableForReuseVariable( DMLProgram prog, StatementBlock parforSB, String var )
 		throws DMLRuntimeException
@@ -320,14 +292,7 @@ public class ProgramRecompiler
 		
 		return  ret;	
 	}
-	
-	/**
-	 * 
-	 * @param sb
-	 * @param parforSB
-	 * @param var
-	 * @throws DMLRuntimeException
-	 */
+
 	private static boolean isApplicableForReuseVariable( StatementBlock sb, StatementBlock parforSB, String var )
 			throws DMLRuntimeException
 	{
@@ -363,12 +328,7 @@ public class ProgramRecompiler
 		
 		return  ret && !sb.variablesUpdated().containsVariable(var);	
 	}
-	
-	/**
-	 * 
-	 * @param pb
-	 * @return
-	 */
+
 	public static boolean containsAtLeastOneFunction( ProgramBlock pb )
 	{
 		if( pb instanceof IfProgramBlock )
@@ -405,15 +365,7 @@ public class ProgramRecompiler
 		
 		return false;	
 	}
-	
-	/**
-	 * 
-	 * @param hop
-	 * @param in
-	 * @param force
-	 * @return
-	 * @throws DMLRuntimeException 
-	 */
+
 	private static ArrayList<Instruction> rFindAndRecompileIndexingHOP( Hop hop, ArrayList<Instruction> in, String var, ExecutionContext ec, boolean force ) 
 		throws DMLRuntimeException
 	{
@@ -443,14 +395,7 @@ public class ProgramRecompiler
 		
 		return tmp;
 	}
-	
-	
-	/**
-	 * 
-	 * @param hop
-	 * @param var
-	 * @return
-	 */
+
 	private static boolean rFindAndSetCPIndexingHOP(Hop hop, String var) 
 	{
 		boolean ret = false;
@@ -520,14 +465,7 @@ public class ProgramRecompiler
 
 	///////
 	// additional general-purpose functionalities
-	
-	/**
-	 * 
-	 * @param iterVar
-	 * @param offset
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	protected static ArrayList<Instruction> createNestedParallelismToInstructionSet(String iterVar, String offset) 
 		throws DMLRuntimeException 
 	{
@@ -555,12 +493,7 @@ public class ProgramRecompiler
 	/////////////////////////////////
 	// experimental functionality
 	//////////
-	
-	/**
-	 * 
-	 * @param n
-	 * @throws DMLRuntimeException
-	 */
+
 	protected static void recompilePartialPlan( OptNode n ) 
 		throws DMLRuntimeException 
 	{
@@ -610,9 +543,9 @@ public class ProgramRecompiler
 	 * NOTE: need to recompile complete programblock because (1) many to many relationships
 	 * between hops and instructions and (2) due to changed internal variable names 
 	 * 
-	 * @param n
-	 * @return
-	 * @throws DMLRuntimeException
+	 * @param n internal representation of a plan alternative for program blocks and instructions
+	 * @return program block
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	protected static ProgramBlock recompile( OptNode n ) 
 		throws DMLRuntimeException 
@@ -678,13 +611,6 @@ public class ProgramRecompiler
 		return pbNew;
 	}
 
-
-	/**
-	 * 
-	 * @param hlNodeID
-	 * @param pbNew
-	 * @throws DMLRuntimeException
-	 */
 	protected static void exchangeProgram(long hlNodeID, ProgramBlock pbNew) 
 		throws DMLRuntimeException 
 	{

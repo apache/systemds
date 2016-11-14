@@ -48,12 +48,7 @@ public class ByteBuffer
 		_size = size;
 		_serialized = false;
 	}
-	
-	/**
-	 * 
-	 * @param mb
-	 * @throws IOException
-	 */
+
 	public void serializeBlock( CacheBlock cb ) 
 		throws IOException
 	{	
@@ -84,12 +79,7 @@ public class ByteBuffer
 		
 		_serialized = true;
 	}
-	
-	/**
-	 * 
-	 * @return
-	 * @throws IOException
-	 */
+
 	public CacheBlock deserializeBlock() 
 		throws IOException
 	{
@@ -107,12 +97,7 @@ public class ByteBuffer
 		
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @param fname
-	 * @throws IOException
-	 */
+
 	public void evictBuffer( String fname ) 
 		throws IOException
 	{
@@ -129,16 +114,12 @@ public class ByteBuffer
 	/**
 	 * Returns the buffer size in bytes.
 	 * 
-	 * @return
+	 * @return buffer size in bytes
 	 */
 	public long getSize() {
 		return _size;
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public boolean isShallow() {
 		return _shallow;
 	}
@@ -155,10 +136,7 @@ public class ByteBuffer
 			_cdata = null;
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	public void checkSerialized()
 	{
 		//check if already serialized
@@ -176,9 +154,9 @@ public class ByteBuffer
 	 * This call is consistent with 'serializeBlock' and allows for internal optimization
 	 * according to dense/sparse representation.
 	 * 
-	 * @param size
-	 * @param mb
-	 * @return
+	 * @param size the size
+	 * @param cb cache block
+	 * @return true if valid capacity
 	 */
 	public static boolean isValidCapacity( long size, CacheBlock cb )
 	{

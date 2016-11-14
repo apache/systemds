@@ -33,11 +33,6 @@ import org.apache.sysml.runtime.matrix.data.Pair;
  */
 public class CacheBlockFactory 
 {
-	/**
-	 * 
-	 * @param code
-	 * @return
-	 */
 	public static CacheBlock newInstance(int code) {
 		switch( code ) {
 			case 0: return new MatrixBlock();
@@ -45,12 +40,7 @@ public class CacheBlockFactory
 		}
 		throw new RuntimeException("Unsupported cache block type: "+code);
 	}
-	
-	/**
-	 * 
-	 * @param block
-	 * @return
-	 */
+
 	public static int getCode(CacheBlock block) {
 		if( block instanceof MatrixBlock )
 			return 0;
@@ -58,12 +48,7 @@ public class CacheBlockFactory
 			return 1;
 		throw new RuntimeException("Unsupported cache block type: "+block.getClass().getName());
 	}
-	
-	/**
-	 * 
-	 * @param block
-	 * @return
-	 */
+
 	public static ArrayList<?> getPairList(CacheBlock block) {
 		int code = getCode(block);
 		switch( code ) {

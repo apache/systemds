@@ -56,10 +56,7 @@ public class DataPartitionerRemoteMapper
 	{
 		
 	}
-	
-	/**
-	 * 
-	 */
+
 	@Override
 	public void map(Writable key, Writable value, OutputCollector<Writable, Writable> out, Reporter reporter) 
 		throws IOException
@@ -67,9 +64,6 @@ public class DataPartitionerRemoteMapper
 		_mapper.processKeyValue(key, value, out, reporter);		
 	}
 
-	/**
-	 * 
-	 */
 	@Override
 	public void configure(JobConf job)
 	{
@@ -102,10 +96,7 @@ public class DataPartitionerRemoteMapper
 		else
 			throw new RuntimeException("Unable to configure mapper with unknown input info: "+ii.toString());
 	}
-	
-	/**
-	 * 
-	 */
+
 	@Override
 	public void close() 
 		throws IOException 
@@ -407,10 +398,7 @@ public class DataPartitionerRemoteMapper
 			}
 		}	
 	}
-	
-	/**
-	 * 
-	 */
+
 	private class DataPartitionerMapperBinaryblock2Binarycell extends DataPartitionerMapper
 	{
 		private JobConf _cachedJobConf = null;

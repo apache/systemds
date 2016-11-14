@@ -69,9 +69,6 @@ public class DataPartitionerRemoteReducer
 		_reducer.processKeyValueList(key, valueList, out, reporter);
 	}
 
-	/**
-	 * 
-	 */
 	public void configure(JobConf job)
 	{
 		String fnameNew = MRJobConfiguration.getPartitioningFilename( job );
@@ -86,10 +83,7 @@ public class DataPartitionerRemoteReducer
 		else
 			throw new RuntimeException("Unable to configure reducer with unknown output info: "+oi.toString());	
 	}
-	
-	/**
-	 * 
-	 */
+
 	@Override
 	public void close() throws IOException 
 	{

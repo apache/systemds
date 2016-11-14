@@ -68,51 +68,36 @@ public abstract class Optimizer
 		_numTotalPlans     = 0;
 		_numEvaluatedPlans = 0;
 	}
-	
+
 	/**
+	 * Optimize
 	 * 
-	 * @param plan
+	 * @param sb parfor statement block
+	 * @param pb parfor program block
+	 * @param plan  complete plan of a top-level parfor
+	 * @param est cost estimator
+	 * @param ec execution context
 	 * @return true if plan changed, false otherwise
-	 * @throws DMLRuntimeException 
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public abstract boolean optimize(ParForStatementBlock sb, ParForProgramBlock pb, OptTree plan, CostEstimator est, ExecutionContext ec) 
 		throws DMLRuntimeException;	
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public abstract PlanInputType getPlanInputType();
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public abstract CostModelType getCostModelType();
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public abstract POptMode getOptMode();
 	
 	
 	///////
 	//methods for evaluating the overall properties and costing  
 
-	/**
-	 *
-	 * @return
-	 */
 	public long getNumTotalPlans()
 	{
 		return _numTotalPlans;
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public long getNumEvaluatedPlans()
 	{
 		return _numEvaluatedPlans;
@@ -127,6 +112,10 @@ public abstract class Optimizer
 	
 	/**
 	 * Enum node plans (only for current opt node)
+	 * 
+	 * @param n internal representation of a plan alternative for program blocks and instructions
+	 * @param lck ?
+	 * @return collection of optimization nodes
 	 */
 	protected Collection<OptNode> enumPlans( OptNode n, double lck )
 	{
@@ -137,11 +126,6 @@ public abstract class Optimizer
 		return plans;
 	}
 
-	/**
-	 * 
-	 * @param n
-	 * @return
-	 */
 	private Collection<OptNode> enumerateExecTypes( OptNode n )
 	{
 		Collection<OptNode> dTypes = new LinkedList<OptNode>();

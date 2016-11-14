@@ -28,13 +28,6 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
  */
 public class LinearAlgebraUtils {
 
-	/**
-	 * 
-	 * @param a
-	 * @param b
-	 * @param len
-	 * @return
-	 */
 	public static double dotProduct(double[] a, double[] b, final int len) 
 	{
 		double val = 0;
@@ -61,16 +54,7 @@ public class LinearAlgebraUtils {
 		// scalar result
 		return val;
 	}
-	
-	/**
-	 * 
-	 * @param a
-	 * @param b
-	 * @param ai
-	 * @param bi
-	 * @param len
-	 * @return
-	 */
+
 	public static double dotProduct( double[] a, double[] b, int ai, int bi, final int len )
 	{
 		double val = 0;
@@ -98,15 +82,7 @@ public class LinearAlgebraUtils {
 		//scalar result
 		return val; 
 	}
-	
-	/**
-	 * 
-	 * @param a
-	 * @param c
-	 * @param ai
-	 * @param ci
-	 * @param len
-	 */
+
 	public static void vectAdd( double[] a, double[] c, int ai, int ci, final int len )
 	{
 		final int bn = len%8;
@@ -131,16 +107,7 @@ public class LinearAlgebraUtils {
 			c[ ci+7 ] += a[ ai+7 ];
 		}
 	}
-	
-	/**
-	 * 
-	 * @param aval
-	 * @param b
-	 * @param c
-	 * @param bix
-	 * @param ci
-	 * @param len
-	 */
+
 	public static void vectAdd( final double aval, double[] c, char[] bix, final int bi, final int ci, final int len )
 	{
 		final int bn = len%8;
@@ -162,14 +129,7 @@ public class LinearAlgebraUtils {
 			c[ ci+bix[j+7] ] += aval;
 		}
 	}
-	
-	/**
-	 * 
-	 * @param aval
-	 * @param c
-	 * @param ci
-	 * @param len
-	 */
+
 	public static void vectAdd( final double aval, double[] c, final int ci, final int len )
 	{
 		final int bn = len%8;
@@ -191,17 +151,7 @@ public class LinearAlgebraUtils {
 			c[ ci+j+7 ] += aval;
 		}
 	}
-	
-	/**
-	 * 
-	 * @param aval
-	 * @param b
-	 * @param c
-	 * @param bix
-	 * @param bi
-	 * @param ci
-	 * @param len
-	 */
+
 	public static void vectMultiplyAdd( final double aval, double[] b, double[] c, int[] bix, final int bi, final int ci, final int len )
 	{
 		final int bn = (len-bi)%8;
@@ -223,16 +173,7 @@ public class LinearAlgebraUtils {
 			c[ ci+bix[j+7] ] += aval * b[ j+7 ];
 		}
 	}
-	
-	/**
-	 * 
-	 * @param aval
-	 * @param b
-	 * @param c
-	 * @param bi
-	 * @param ci
-	 * @param len
-	 */
+
 	public static void vectMultiplyAdd( final double aval, double[] b, double[] c, int bi, int ci, final int len )
 	{
 		final int bn = len%8;
@@ -258,15 +199,6 @@ public class LinearAlgebraUtils {
 		}
 	}
 
-	/**
-	 * 
-	 * @param a
-	 * @param aix
-	 * @param ai
-	 * @param ai2
-	 * @param len
-	 * @return
-	 */
 	public static double vectSum( double[] a, char[] bix, final int ai, final int bi, final int len )
 	{
 		double val = 0;
@@ -291,14 +223,7 @@ public class LinearAlgebraUtils {
 		
 		return val;
 	}
-	
-	/**
-	 * 
-	 * @param a
-	 * @param ai
-	 * @param len
-	 * @return
-	 */
+
 	public static double vectSum( double[] a, int ai, final int len )
 	{
 		double val = 0;
@@ -323,11 +248,7 @@ public class LinearAlgebraUtils {
 		
 		return val;
 	}
-	
-	/**
-	 * 
-	 * @param ret
-	 */
+
 	public static void copyUpperToLowerTriangle( MatrixBlock ret )
 	{
 		double[] c = ret.getDenseBlock();
@@ -339,13 +260,7 @@ public class LinearAlgebraUtils {
 			for( int j=i+1, lix=j*n+i; j<n; j++, lix+=n )
 				c[ lix ] = c[ uix+j ];
 	}
-	
-	/**
-	 * 
-	 * @param ret
-	 * @param tmp
-	 * @param ix
-	 */
+
 	public static void copyNonZerosToRowCol( MatrixBlock ret, MatrixBlock tmp, int ix )
 	{
 		for(int i=0; i<tmp.getNumColumns(); i++) {
@@ -358,9 +273,10 @@ public class LinearAlgebraUtils {
 	}
 	
 	/**
+	 * Obtain the index of the closest element in a to the value x.
 	 * 
-	 * @param a
-	 * @param x
+	 * @param a array of ints
+	 * @param x value
 	 * @return the index of the closest element in a to the value x
 	 */
 	public static int getClosestK(int[] a, int x) {

@@ -177,13 +177,7 @@ public class IfProgramBlock extends ProgramBlock
 			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating if exit instructions ", e);
 		}
 	}
-	
-	/**
-	 * 
-	 * @param ec
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	private BooleanObject executePredicate(ExecutionContext ec) 
 		throws DMLRuntimeException 
 	{

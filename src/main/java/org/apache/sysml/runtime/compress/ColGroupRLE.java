@@ -77,9 +77,6 @@ public class ColGroupRLE extends ColGroupBitmap
 		createCompressedBitmaps(numVals, totalLen, lbitmaps);
 	}
 
-	/**
-	 * Constructor for internal use.
-	 */
 	public ColGroupRLE(int[] colIndices, int numRows, boolean zeros, double[] values, char[] bitmaps, int[] bitmapOffs) {
 		super(CompressionType.RLE_BITMAP, colIndices, numRows, zeros, values);
 		_data = bitmaps;
@@ -476,11 +473,7 @@ public class ColGroupRLE extends ColGroupBitmap
 				computeColMxx(result, builtin);
 		}
 	}
-	
-	/**
-	 * 
-	 * @param result
-	 */
+
 	private void computeSum(MatrixBlock result, KahanFunction kplus)
 	{
 		KahanObject kbuff = new KahanObject(result.quickGetValue(0, 0), result.quickGetValue(0, 1));
@@ -508,11 +501,7 @@ public class ColGroupRLE extends ColGroupBitmap
 		result.quickSetValue(0, 0, kbuff._sum);
 		result.quickSetValue(0, 1, kbuff._correction);
 	}
-	
-	/**
-	 * 
-	 * @param result
-	 */
+
 	private void computeRowSums(MatrixBlock result, KahanFunction kplus, int rl, int ru)
 	{
 		KahanObject kbuff = new KahanObject(0, 0);
@@ -542,11 +531,7 @@ public class ColGroupRLE extends ColGroupBitmap
 			}
 		}
 	}
-	
-	/**
-	 * 
-	 * @param result
-	 */
+
 	private void computeColSums(MatrixBlock result, KahanFunction kplus)
 	{
 		KahanObject kbuff = new KahanObject(0, 0);
@@ -575,12 +560,7 @@ public class ColGroupRLE extends ColGroupBitmap
 			}
 		}
 	}
-	
 
-	/**
-	 * 
-	 * @param result
-	 */
 	private void computeRowMxx(MatrixBlock result, Builtin builtin, int rl, int ru)
 	{
 		//NOTE: zeros handled once for all column groups outside
@@ -665,10 +645,10 @@ public class ColGroupRLE extends ColGroupBitmap
 	 * fields. Returns array of positions for all values and modifies
 	 * given array of start positions for all values too. 
 	 * 
-	 * @param numVals
-	 * @param rl
-	 * @param astart
-	 * @return
+	 * @param numVals number of values
+	 * @param rl lower row position
+	 * @param astart start positions
+	 * @return array of positions for all values
 	 */
 	private int[] skipScan(int numVals, int rl, int[] astart) {
 		int[] apos = new int[numVals]; 
@@ -694,13 +674,7 @@ public class ColGroupRLE extends ColGroupBitmap
 		
 		return apos;
 	}
-	
-	/**
-	 * 
-	 * @param k
-	 * @param rl
-	 * @return
-	 */
+
 	private Pair<Integer,Integer> skipScanVal(int k, int rl) {
 		int apos = 0; 
 		int astart = 0;

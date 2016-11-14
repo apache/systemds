@@ -54,7 +54,7 @@ public class Timing
 	 * Measures and returns the time since the last start() or stop() invocation and
 	 * restarts the measurement.
 	 * 
-	 * @return
+	 * @return duration between start and stop
 	 */
 	public double stop()
 	{

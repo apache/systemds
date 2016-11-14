@@ -29,10 +29,6 @@ import org.apache.sysml.runtime.controlprogram.parfor.opt.Optimizer.CostModelTyp
 import org.apache.sysml.runtime.controlprogram.parfor.opt.PerfTestTool.TestMeasure;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 
-/**
- * 
- * 
- */
 public class CostEstimatorHops extends CostEstimator
 {
 	

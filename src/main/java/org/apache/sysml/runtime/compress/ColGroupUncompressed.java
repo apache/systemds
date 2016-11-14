@@ -65,7 +65,7 @@ public class ColGroupUncompressed extends ColGroup
 	 * @param rawblock
 	 *            the uncompressed block; uncompressed data must be present at
 	 *            the time that the constructor is called
-	 * @throws DMLRuntimeException
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	@SuppressWarnings("unused")
 	public ColGroupUncompressed(List<Integer> colIndicesList, MatrixBlock rawblock) 
@@ -148,8 +148,7 @@ public class ColGroupUncompressed extends ColGroup
 	 *            column mapping for this column group
 	 * @param numRows
 	 *            number of rows in the column, for passing to the superclass
-	 * @param colContents
-	 *            uncompressed cell values
+	 * @param data matrix block
 	 */
 	public ColGroupUncompressed(int[] colIndices, int numRows, MatrixBlock data) 
 	{

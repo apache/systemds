@@ -195,13 +195,7 @@ public class CacheDataInput implements DataInput, MatrixBlockDataInput
 		
 		return nnz;
 	}
-	
-	/**
-	 * 
-	 * @param a
-	 * @param off
-	 * @return
-	 */
+
 	private static int baToInt( byte[] ba, final int off )
 	{
 		//shift and add 4 bytes into single int
@@ -210,13 +204,7 @@ public class CacheDataInput implements DataInput, MatrixBlockDataInput
 			   ((ba[off+2] & 0xFF) <<  8) +
 			   ((ba[off+3] & 0xFF) <<  0);
 	}
-	
-	/**
-	 * 
-	 * @param a
-	 * @param off
-	 * @return
-	 */
+
 	private static long baToLong( byte[] ba, final int off )
 	{
 		//shift and add 8 bytes into single long

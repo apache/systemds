@@ -167,20 +167,7 @@ public class ResultMergeRemoteMR extends ResultMerge
 		
 		return moNew;		
 	}
-	
-	/**
-	 * 
-	 * @param fname 	null if no comparison required
-	 * @param fnameNew
-	 * @param srcFnames
-	 * @param ii
-	 * @param oi
-	 * @param rlen
-	 * @param clen
-	 * @param brlen
-	 * @param bclen
-	 * @throws DMLRuntimeException
-	 */
+
 	@SuppressWarnings({ "unused", "deprecation" })
 	protected void executeMerge(String fname, String fnameNew, String[] srcFnames, InputInfo ii, OutputInfo oi, long rlen, long clen, int brlen, int bclen)
 			throws DMLRuntimeException 

@@ -23,7 +23,7 @@ import org.apache.sysml.runtime.instructions.cp.IntObject;
 
 /**
  * Factoring with maximum constraint (e.g., if LIX matrix out-of-core and we need
- * to bound the maximum number of iterations per map task -> memory bounds) 
+ * to bound the maximum number of iterations per map task -&gt; memory bounds) 
  */
 public class TaskPartitionerFactoringCmax extends TaskPartitionerFactoring
 {

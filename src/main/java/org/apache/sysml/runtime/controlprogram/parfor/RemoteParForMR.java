@@ -66,20 +66,7 @@ public class RemoteParForMR
 {
 	
 	protected static final Log LOG = LogFactory.getLog(RemoteParForMR.class.getName());
-	
-	/**
-	 * 
-	 * @param pfid
-	 * @param program
-	 * @param taskFile
-	 * @param resultFile
-	 * @param _enableCPCaching 
-	 * @param mode
-	 * @param numMappers
-	 * @param replication
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static RemoteParForJobReturn runJob(long pfid, String program, String taskFile, String resultFile, MatrixObject colocatedDPMatrixObj, //inputs
 			                                   boolean enableCPCaching, int numMappers, int replication, int max_retry, long minMem, boolean jvmReuse)  //opt params
 		throws DMLRuntimeException
@@ -258,10 +245,11 @@ public class RemoteParForMR
 	 * (the RemoteParWorkerMapper ensures uniqueness of those files independent of the 
 	 * runtime implementation). 
 	 * 
-	 * @param job 
-	 * @param fname
-	 * @return
-	 * @throws DMLRuntimeException
+	 * @param job job configuration
+	 * @param fname file name
+	 * @return array of local variable maps
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
+	 * @throws IOException if IOException occurs
 	 */
 	@SuppressWarnings("deprecation")
 	public static LocalVariableMap [] readResultFile( JobConf job, String fname )

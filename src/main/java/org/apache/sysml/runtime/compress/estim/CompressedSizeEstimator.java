@@ -34,26 +34,10 @@ public abstract class CompressedSizeEstimator
 		_data = data;
 	}
 
-	/**
-	 * 
-	 * @param colIndexes
-	 * @return
-	 */
 	public abstract CompressedSizeInfo estimateCompressedColGroupSize(int[] colIndexes);
 
-	/**
-	 * 
-	 * @param ubm
-	 * @return
-	 */
 	public abstract CompressedSizeInfo estimateCompressedColGroupSize(UncompressedBitmap ubm);
 
-	/**
-	 * 
-	 * @param ubm
-	 * @param inclRLE
-	 * @return
-	 */
 	protected SizeEstimationFactors computeSizeEstimationFactors(UncompressedBitmap ubm, boolean inclRLE) {
 		int numVals = ubm.getNumValues();
 		int numRuns = 0;
@@ -85,10 +69,10 @@ public abstract class CompressedSizeEstimator
 	 * Estimates the number of bytes needed to encode this column group
 	 * in RLE encoding format.
 	 * 
-	 * @param numVals
-	 * @param numRuns
-	 * @param numCols
-	 * @return
+	 * @param numVals number of value tuples
+	 * @param numRuns number of runs
+	 * @param numCols number of columns
+	 * @return number of bytes to encode column group in RLE format
 	 */
 	protected static long getRLESize(int numVals, int numRuns, int numCols) {
 		int ret = 0;
@@ -105,11 +89,11 @@ public abstract class CompressedSizeEstimator
 	 * Estimates the number of bytes needed to encode this column group 
 	 * in OLE format.
 	 * 
-	 * @param numVals
-	 * @param numOffs
-	 * @param numSeqs
-	 * @param numCols
-	 * @return
+	 * @param numVals number of value tuples
+	 * @param numOffs number of offsets
+	 * @param numSeqs number of segment headers
+	 * @param numCols number of columns
+	 * @return number of bytes to encode column group in RLE format
 	 */
 	protected static long getOLESize(int numVals, float numOffs, int numSeqs, int numCols) {
 		int ret = 0;
@@ -123,10 +107,7 @@ public abstract class CompressedSizeEstimator
 		ret += 2 * numSeqs;
 		return ret;
 	}
-	
-	/**
-	 * 
-	 */
+
 	protected static class SizeEstimationFactors {
  		protected int numVals;   //num value tuples
  		protected int numSegs;   //num OLE segments 

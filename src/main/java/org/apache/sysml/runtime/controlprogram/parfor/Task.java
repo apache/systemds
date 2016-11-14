@@ -86,11 +86,7 @@ public class Task implements Serializable
 	{
 		return _iterations.size();
 	}
-	
-	/**
-	 * 
-	 * @param task
-	 */
+
 	public void mergeTask( Task task )
 	{
 		//check for set iteration type
@@ -114,11 +110,7 @@ public class Task implements Serializable
 	{
 		return toFormatedString();
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public String toFormatedString()
 	{
 		StringBuilder sb = new StringBuilder();
@@ -141,11 +133,7 @@ public class Task implements Serializable
 		sb.append("})");
 		return sb.toString();
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public String toCompactString()
 	{
 		StringBuilder sb = new StringBuilder( );
@@ -172,11 +160,7 @@ public class Task implements Serializable
 		
 		return sb.toString();
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public String toCompactString( int maxDigits )
 	{
 		StringBuilder sb = new StringBuilder( );
@@ -207,12 +191,7 @@ public class Task implements Serializable
 		
 		return sb.toString();
 	}
-	
-	/**
-	 * 
-	 * @param stask
-	 * @return
-	 */
+
 	public static Task parseCompactString( String stask )
 	{
 		StringTokenizer st = new StringTokenizer( stask.trim(), "." );		

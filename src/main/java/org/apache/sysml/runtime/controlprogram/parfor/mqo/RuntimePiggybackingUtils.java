@@ -36,8 +36,8 @@ public class RuntimePiggybackingUtils
 	 * the cluster utilization since the binary compatible API returns
 	 * always a constant of 1 for occupied slots.
 	 * 
-	 * @return
-	 * @throws IOException 
+	 * @return cluster utilization (percentage of currently used resources to maximum resources)
+	 * @throws IOException if IOException occurs
 	 */
 	public static double getCurrentClusterUtilization() 
 		throws IOException

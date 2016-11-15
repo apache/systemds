@@ -52,7 +52,8 @@ import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDConverterUtils;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils;
 import org.apache.sysml.test.integration.AutomatedTestBase;
-import org.apache.sysml.test.integration.mlcontext.MLContextTest.CommaSeparatedValueStringToRow;
+import org.apache.sysml.test.integration.mlcontext.MLContextTest.CommaSeparatedValueStringToDoubleArrayRow;
+
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -76,6 +77,7 @@ public class MLContextFrameTest extends AutomatedTestBase {
 	private static SparkConf conf;
 	private static JavaSparkContext sc;
 	private static MLContext ml;
+	private static String CSV_DELIM = ",";
 
 	@BeforeClass
 	public static void setUpClass() {
@@ -233,8 +235,8 @@ public class MLContextFrameTest extends AutomatedTestBase {
 			JavaRDD<String> javaRDDB = sc.parallelize(listB);
 
 			if (inputType == IO_TYPE.DATAFRAME) {
-				JavaRDD<Row> javaRddRowA = javaRDDA.map(new MLContextTest.CommaSeparatedValueStringToRow());
-				JavaRDD<Row> javaRddRowB = javaRDDB.map(new MLContextTest.CommaSeparatedValueStringToRow());
+				JavaRDD<Row> javaRddRowA = FrameRDDConverterUtils.csvToRowRDD(sc, javaRDDA, CSV_DELIM, schemaA);
+				JavaRDD<Row> javaRddRowB = FrameRDDConverterUtils.csvToRowRDD(sc, javaRDDB, CSV_DELIM, schemaB);
 
 				// Create DataFrame
 				SQLContext sqlContext = new SQLContext(sc);
@@ -401,16 +403,16 @@ public class MLContextFrameTest extends AutomatedTestBase {
 			List<Row> listAOut = dataFrameA.collectAsList();
 
 			Row row1 = listAOut.get(0);
-			Assert.assertEquals("Mistmatch with expected value", Long.valueOf(1), row1.get(0));
-			Assert.assertEquals("Mistmatch with expected value", "Str2", row1.get(1));
-			Assert.assertEquals("Mistmatch with expected value", 3.0, row1.get(2));
-			Assert.assertEquals("Mistmatch with expected value", true, row1.get(3));
+			Assert.assertEquals("Mismatch with expected value", Long.valueOf(1), row1.get(0));
+			Assert.assertEquals("Mismatch with expected value", "Str2", row1.get(1));
+			Assert.assertEquals("Mismatch with expected value", 3.0, row1.get(2));
+			Assert.assertEquals("Mismatch with expected value", true, row1.get(3));
 			
 			Row row2 = listAOut.get(1);
-			Assert.assertEquals("Mistmatch with expected value", Long.valueOf(4), row2.get(0));
-			Assert.assertEquals("Mistmatch with expected value", "Str12", row2.get(1));
-			Assert.assertEquals("Mistmatch with expected value", 13.0, row2.get(2));
-			Assert.assertEquals("Mistmatch with expected value", true, row2.get(3));
+			Assert.assertEquals("Mismatch with expected value", Long.valueOf(4), row2.get(0));
+			Assert.assertEquals("Mismatch with expected value", "Str12", row2.get(1));
+			Assert.assertEquals("Mismatch with expected value", 13.0, row2.get(2));
+			Assert.assertEquals("Mismatch with expected value", true, row2.get(3));
 
 			DataFrame dataFrameC = mlResults.getDataFrame("C").drop(RDDConverterUtils.DF_ID_COLUMN);
 			StructType dfschemaC = dataFrameC.schema(); 
@@ -422,12 +424,12 @@ public class MLContextFrameTest extends AutomatedTestBase {
 			List<Row> listCOut = dataFrameC.collectAsList();
 
 			Row row3 = listCOut.get(0);
-			Assert.assertEquals("Mistmatch with expected value", "Str12", row3.get(0));
-			Assert.assertEquals("Mistmatch with expected value", 13.0, row3.get(1));
+			Assert.assertEquals("Mismatch with expected value", "Str12", row3.get(0));
+			Assert.assertEquals("Mismatch with expected value", 13.0, row3.get(1));
 
 			Row row4 = listCOut.get(1);
-			Assert.assertEquals("Mistmatch with expected value", "Str25", row4.get(0));
-			Assert.assertEquals("Mistmatch with expected value", 26.0, row4.get(1));
+			Assert.assertEquals("Mismatch with expected value", "Str25", row4.get(0));
+			Assert.assertEquals("Mismatch with expected value", 26.0, row4.get(1));
 		} else {
 			String[][] frameA = mlResults.getFrameAs2DStringArray("A");
 			Assert.assertEquals("Str2", frameA[0][1]);
@@ -481,14 +483,15 @@ public class MLContextFrameTest extends AutomatedTestBase {
 		dataA.add("Test2,5.0");
 		dataA.add("Test3,6.0");
 		JavaRDD<String> javaRddStringA = sc.parallelize(dataA);
+		ValueType[] schema = { ValueType.STRING, ValueType.DOUBLE };
 
 		List<String> dataB = new ArrayList<String>();
 		dataB.add("1.0");
 		dataB.add("2.0");
 		JavaRDD<String> javaRddStringB = sc.parallelize(dataB);
 
-		JavaRDD<Row> javaRddRowA = javaRddStringA.map(new CommaSeparatedValueStringToRow());
-		JavaRDD<Row> javaRddRowB = javaRddStringB.map(new CommaSeparatedValueStringToRow());
+		JavaRDD<Row> javaRddRowA = FrameRDDConverterUtils.csvToRowRDD(sc, javaRddStringA, CSV_DELIM, schema);
+		JavaRDD<Row> javaRddRowB = javaRddStringB.map(new CommaSeparatedValueStringToDoubleArrayRow());
 
 		SQLContext sqlContext = new SQLContext(sc);
 

@@ -686,6 +686,9 @@
                                 <exclude>src/test/scripts/functions/jmlc/tfmtd_example2/column.names</exclude>
                                 <exclude>src/test/scripts/functions/jmlc/tfmtd_frame_example/tfmtd_frame</exclude>
 								<exclude>src/test/scripts/functions/transform/input/homes/homesNAN.csv.colnames</exclude>
+								<!-- Exclude data files -->
+								<exclude>src/test/resources/*_data/*</exclude>
+								<exclude>src/test/resources/*_data.*</exclude>
 							</excludes>
 						</configuration>
 					</plugin>

@@ -47,8 +47,8 @@ object CoxExample {
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////                      Read Data                      ////////////////////////
     /////////////////////////////////////////////////////////////////////////////////////////////////////
-    val x = sc.textFile("src" + separator + "test" + separator + "resources" + separator + "Cox" + separator + "X")
-    val y = sc.textFile("src" + separator + "test" + separator + "resources" + separator + "Cox" + separator + "Y")
+    val x = sc.textFile("src" + separator + "test" + separator + "resources" + separator + "Cox_data" + separator + "X")
+    val y = sc.textFile("src" + separator + "test" + separator + "resources" + separator + "Cox_data" + separator + "Y")
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////                   Data Preparation                  ////////////////////////

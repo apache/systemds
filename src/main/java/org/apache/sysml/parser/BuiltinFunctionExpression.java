@@ -1102,7 +1102,20 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setDimensions(id.getDim1(), id2.getDim2());
 			output.setBlockDimensions(id.getRowsInBlock(), id.getColumnsInBlock()); 
 			break;
-			
+		
+		case BIAS_ADD:
+		{
+			Identifier input_id = getFirstExpr().getOutput();
+			Expression input = _args[0];
+			Expression bias = _args[1];
+			output.setDataType(DataType.MATRIX);
+			output.setValueType(ValueType.DOUBLE);
+			output.setDimensions(input_id.getDim1(), input_id.getDim2());
+			output.setBlockDimensions(input.getOutput().getRowsInBlock(), input.getOutput().getColumnsInBlock());
+			checkMatrixParam(input);
+			checkMatrixParam(bias);
+			break;
+		}
 		case CONV2D:
 		case CONV2D_BACKWARD_FILTER:
 		case CONV2D_BACKWARD_DATA:
@@ -1600,6 +1613,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			bifop = Expression.BuiltinFunctionOp.EIGEN;
 		else if (functionName.equals("conv2d"))
 			 bifop = Expression.BuiltinFunctionOp.CONV2D;
+		else if (functionName.equals("bias_add"))
+			 bifop = Expression.BuiltinFunctionOp.BIAS_ADD;
 		else if (functionName.equals("conv2d_backward_filter"))
 			 bifop = Expression.BuiltinFunctionOp.CONV2D_BACKWARD_FILTER;
 		else if (functionName.equals("conv2d_backward_data"))

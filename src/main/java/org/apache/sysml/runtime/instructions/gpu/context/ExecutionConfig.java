@@ -19,8 +19,12 @@
 
 package org.apache.sysml.runtime.instructions.gpu.context;
 
+import java.util.HashMap;
+
 import org.apache.sysml.runtime.DMLRuntimeException;
 
+import jcuda.driver.CUdevice;
+import jcuda.driver.CUdevice_attribute;
 import jcuda.driver.CUstream;
 
 /**
@@ -36,8 +40,7 @@ public class ExecutionConfig {
 	public int sharedMemBytes = 0;
 	public CUstream stream = null;
 	
-//	private static HashMap<Integer, Integer> maxBlockDimXForDevice = new HashMap<Integer, Integer>();
-//	private static HashMap<Integer, Integer> maxBlockDimYForDevice = new HashMap<Integer, Integer>();
+	private static HashMap<Integer, Integer> maxBlockDimForDevice = new HashMap<Integer, Integer>();
 	
 	/**
 	 * Use this for simple vector operations and use following in the kernel 
@@ -53,7 +56,7 @@ public class ExecutionConfig {
 	 */
 	public static ExecutionConfig getConfigForSimpleVectorOperations(int numCells) throws DMLRuntimeException {
 		int deviceNumber = 0;
-		int blockDimX = getMaxBlockDimX(deviceNumber);
+		int blockDimX = getMaxBlockDim(deviceNumber);
 		int gridDimX = (int)Math.ceil((double)numCells / blockDimX);
 		return new ExecutionConfig(gridDimX, blockDimX);
 	}
@@ -73,9 +76,10 @@ public class ExecutionConfig {
 	 */
 	public static ExecutionConfig getConfigForSimpleMatrixOperations(int rlen, int clen) throws DMLRuntimeException {
 		int deviceNumber = 0;
-		int blockDimX = (int) Math.min(getMaxBlockDimX(deviceNumber), rlen);
+		int maxBlockDim = getMaxBlockDim(deviceNumber);
+		int blockDimX = (int) Math.min(maxBlockDim, rlen);
 		int gridDimX = (int)Math.ceil((double)rlen / blockDimX);
-		int blockDimY = (int)Math.min(getMaxBlockDimY(deviceNumber), clen);
+		int blockDimY = (int)Math.min(Math.ceil(((double)maxBlockDim)/blockDimX), clen);
 		int gridDimY = (int)Math.ceil((double)clen / blockDimY);
 		return new ExecutionConfig(gridDimX, gridDimY, blockDimX, blockDimY);
 	}
@@ -99,39 +103,19 @@ public class ExecutionConfig {
      * @return The maximum block dimension, in x-direction
 	 * @throws DMLRuntimeException 
      */
-    private static int getMaxBlockDimX(int deviceNumber) throws DMLRuntimeException {
-    	return 32;
+    private static int getMaxBlockDim(int deviceNumber) throws DMLRuntimeException {
+//    	return 32;
     	// TODO: Use JCudaDriver.cuOccupancyMaxPotentialBlockSize to chose the block size that maximizes occupancy
-//    	Integer ret = maxBlockDimXForDevice.get(deviceNumber);
-//    	if(ret == null) {
-//    		CUdevice device = new CUdevice();
-//            JCudaKernels.checkResult(cuDeviceGet(device, deviceNumber));
-//            int maxBlockDimX[] =  {0};
-//            cuDeviceGetAttribute(maxBlockDimX, CUdevice_attribute.CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_X, device);
-//            maxBlockDimXForDevice.put(deviceNumber, maxBlockDimX[0]);
-//            return maxBlockDimX[0];
-//    	}
-//        return ret;
+    	Integer ret = maxBlockDimForDevice.get(deviceNumber);
+    	if(ret == null) {
+    		CUdevice device = new CUdevice();
+            JCudaKernels.checkResult(jcuda.driver.JCudaDriver.cuDeviceGet(device, deviceNumber));
+            int maxBlockDimX[] =  {0};
+            jcuda.driver.JCudaDriver.cuDeviceGetAttribute(maxBlockDimX, CUdevice_attribute.CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_X, device);
+            maxBlockDimForDevice.put(deviceNumber, maxBlockDimX[0]);
+            return maxBlockDimX[0];
+    	}
+        return ret;
     }
     
-    /**
-     * Get the CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Y of the given device
-     * 
-     * @return The maximum block dimension, in y-direction
-	 * @throws DMLRuntimeException 
-     */
-    private static int getMaxBlockDimY(int deviceNumber) throws DMLRuntimeException {
-    	return 32;
-    	// TODO: Use JCudaDriver.cuOccupancyMaxPotentialBlockSize to chose the block size that maximizes occupancy
-//    	Integer ret = maxBlockDimYForDevice.get(deviceNumber);
-//    	if(ret == null) {
-//    		CUdevice device = new CUdevice();
-//            JCudaKernels.checkResult(cuDeviceGet(device, deviceNumber));
-//            int maxBlockDimY[] =  {0};
-//            cuDeviceGetAttribute(maxBlockDimY, CUdevice_attribute.CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Y, device);
-//            maxBlockDimYForDevice.put(deviceNumber, maxBlockDimY[0]);
-//            return maxBlockDimY[0];
-//    	}
-//        return ret;
     }
-}

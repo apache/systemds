@@ -31,6 +31,7 @@ import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.LibMatrixDNN.ConvolutionParameters;
 
 public class ConvolutionOp extends Hop  implements MultiThreadedHop
@@ -98,6 +99,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 			case DIRECT_CONV2D:
 			case DIRECT_CONV2D_BACKWARD_DATA:
 			case DIRECT_CONV2D_BACKWARD_FILTER:
+			case BIAS_ADD:
 			{	
 				//TODO: Fix me. Currently forcing the instruction to GPU if gpu flag is set
 				if(DMLScript.USE_ACCELERATOR) {
@@ -182,6 +184,9 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 				|| op == ConvOp.DIRECT_CONV2D_BACKWARD_DATA) {
 			expectedNumInputs = 14;
 		}
+		else if(op == ConvOp.BIAS_ADD) {
+			expectedNumInputs = 2;
+		}
 		
 		if(inputs.size() != expectedNumInputs) {
 			throw new HopsException("Incorrect number of inputs for " + op.name());
@@ -229,6 +234,17 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	{
 		// [numRows, numCols, NNZ] 
 		long[] ret = null;
+		
+		if(op == ConvOp.BIAS_ADD) {
+			MatrixCharacteristics[] mc = memo.getAllInputStats(getInput());
+			if( mc[0].rowsKnown() && mc[0].colsKnown() ) {
+				ret = new long[3];
+				ret[0] = mc[0].getRows();
+				ret[1] = mc[0].getCols();
+				ret[2] = -1;
+				return ret;
+			}
+		}
 	
 		ConvolutionParameters params;
 		try {
@@ -397,6 +413,13 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	@Override
 	public void refreshSizeInformation()
 	{
+		if(op == ConvOp.BIAS_ADD) {
+			Hop input1 = getInput().get(0);
+			setDim1(input1.getDim1());
+			setDim2(input1.getDim2());
+			return;
+		}
+		
 		ConvolutionParameters params;
 		try {
 			params = parseInput();

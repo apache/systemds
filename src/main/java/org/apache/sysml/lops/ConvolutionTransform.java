@@ -31,7 +31,8 @@ public class ConvolutionTransform extends Lop
 	
 	public enum OperationTypes {
 		MAX_POOLING, MAX_POOLING_BACKWARD,
-		DIRECT_CONV2D, DIRECT_CONV2D_BACKWARD_FILTER, DIRECT_CONV2D_BACKWARD_DATA
+		DIRECT_CONV2D, DIRECT_CONV2D_BACKWARD_FILTER, DIRECT_CONV2D_BACKWARD_DATA,
+		BIAS_ADD
 	};
 	
 	private OperationTypes operation = null;
@@ -109,6 +110,9 @@ public class ConvolutionTransform extends Lop
 		
 		case DIRECT_CONV2D:
 			return "conv2d";
+		
+		case BIAS_ADD:
+			return "bias_add";
 			
 		case DIRECT_CONV2D_BACKWARD_FILTER:
 			return "conv2d_backward_filter";
@@ -119,6 +123,33 @@ public class ConvolutionTransform extends Lop
 		default:
 			throw new UnsupportedOperationException(this.printErrorLocation() + "Instruction is not defined for Transform operation " + operation);
 				
+		}
+	}
+	
+	public String getInstructions(String input, String bias, String output) throws LopsException {
+		if(operation == OperationTypes.BIAS_ADD) {
+			StringBuilder sb = new StringBuilder();
+			sb.append( getExecType() );
+			
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( getOpcode() );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( getInputs().get(0).prepInputOperand(input));
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( getInputs().get(0).prepInputOperand(bias));
+			//output
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( this.prepOutputOperand(output));
+			
+			//append degree of parallelism
+			if( getExecType()==ExecType.CP ) {
+				sb.append( OPERAND_DELIMITOR );
+				sb.append( numThreads );
+			}
+			return sb.toString();
+		}
+		else {
+			throw new LopsException("The operation is not supported with two operands:" + operation.name());
 		}
 	}
 	

@@ -23,12 +23,9 @@ import java.util.ArrayList;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.functionobjects.SwapIndex;
-import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
-import org.apache.sysml.runtime.instructions.cp.ConvolutionCPInstruction;
 import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysml.runtime.util.ConvolutionUtils;
@@ -43,6 +40,17 @@ public class ConvolutionGPUInstruction extends GPUInstruction
 	private ArrayList<CPOperand> _filter_shape;
 	private ArrayList<CPOperand> _stride = new ArrayList<CPOperand>();
 	private ArrayList<CPOperand> _padding = new ArrayList<CPOperand>();
+	
+	public ConvolutionGPUInstruction(CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr) throws DMLRuntimeException {
+		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), opcode, istr);
+		if(!opcode.equals("bias_add")) {
+			throw new DMLRuntimeException("Incorrect usage. Expected the opcode to be bias_add, but found " + opcode);
+		}
+		_input1 = in1;
+		_input2 = in2;
+		_gputype = GPUINSTRUCTION_TYPE.Convolution;
+		_output = out;
+	}
 	
 	public ConvolutionGPUInstruction(CPOperand in1, CPOperand in2, CPOperand out, String opcode,
 			String istr, ArrayList<CPOperand> stride,
@@ -121,32 +129,39 @@ public class ConvolutionGPUInstruction extends GPUInstruction
 			return new ConvolutionGPUInstruction(in1, null, out, opcode, str, stride,
 					padding, input_shape, filter_shape);
 		}
+		else if( opcode.equalsIgnoreCase("bias_add") ) {
+			InstructionUtils.checkNumFields(parts, 3);
+			CPOperand in1 = new CPOperand(parts[1]);
+			CPOperand in2 = new CPOperand(parts[2]);
+			CPOperand out = new CPOperand(parts[3]);
+			return new ConvolutionGPUInstruction(in1, in2, out, opcode, str);
+		}
 		else {
 			throw new DMLRuntimeException("Unknown opcode while parsing a ConvolutionGPUInstruction: " + str);	
 		}
 	}
 	
-	private boolean isSparse(ExecutionContext ec, String var) throws DMLRuntimeException {
-		MatrixObject mo = ec.getMatrixObject(var);
-		return LibMatrixCUDA.isInSparseFormat(mo);
+	public void processBiasInstruction(ExecutionContext ec) throws DMLRuntimeException {
+		Statistics.incrementNoOfExecutedGPUInst();
+		MatrixObject input = ec.getMatrixInputForGPUInstruction(_input1.getName());
+		MatrixObject bias = ec.getMatrixInputForGPUInstruction(_input2.getName());
+		
+		MatrixObject out = ec.getDenseMatrixOutputForGPUInstruction(_output.getName());
+		ec.setMetaData(_output.getName(), input.getNumRows(), input.getNumColumns());
+		LibMatrixCUDA.bias_add(input, bias, out);
+		// release inputs/outputs
+		ec.releaseMatrixInputForGPUInstruction(_input1.getName());
+		ec.releaseMatrixInputForGPUInstruction(_input2.getName());
+		ec.releaseMatrixOutputForGPUInstruction(_output.getName());
 	}
 	
 	@Override
 	public void processInstruction(ExecutionContext ec) 
 			throws DMLRuntimeException 
 	{
-		// TODO: Fix Me. Currently calling CP if data is sparse
-		if (instOpcode.equalsIgnoreCase("maxpooling")) {
-			if(	isSparse(ec, _input1.getName())) {
-				ConvolutionCPInstruction.parseInstruction(this.toString() + Instruction.OPERAND_DELIM + InfrastructureAnalyzer.getLocalParallelism()).processInstruction(ec);
-				return;
-			}
-		}
-		else {
-			if(	isSparse(ec, _input1.getName()) || isSparse(ec, _input2.getName())) {
-				ConvolutionCPInstruction.parseInstruction(this.toString() + Instruction.OPERAND_DELIM + InfrastructureAnalyzer.getLocalParallelism()).processInstruction(ec);
-				return;
-			}
+		if (instOpcode.equalsIgnoreCase("bias_add")) {
+			processBiasInstruction(ec);
+			return;
 		}
 		
 		Statistics.incrementNoOfExecutedGPUInst();

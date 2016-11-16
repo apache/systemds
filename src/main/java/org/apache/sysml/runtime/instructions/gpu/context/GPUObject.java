@@ -41,7 +41,6 @@ public abstract class GPUObject
 	AtomicLong timestamp = new AtomicLong(0);
 	
 	protected boolean isInSparseFormat = false;
-	public boolean isAllocated = false;
 	protected MatrixObject mat = null;
 	
 	protected GPUObject(MatrixObject mat2)  {
@@ -52,9 +51,7 @@ public abstract class GPUObject
 		return isInSparseFormat;
 	}
 	
-	public boolean isAllocated() {
-		return isAllocated;
-	}
+	public abstract boolean isAllocated();
 	
 	public abstract void acquireDeviceRead() throws DMLRuntimeException;
 	/**
@@ -86,7 +83,7 @@ public abstract class GPUObject
 	 * @param numElemToAllocate number of elements in dense matrix, -1 for unknown or sparse matrix
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	abstract void allocateMemoryOnDevice(int numElemToAllocate) throws DMLRuntimeException;
+	abstract void allocateMemoryOnDevice(long numElemToAllocate) throws DMLRuntimeException;
 	abstract void deallocateMemoryOnDevice() throws DMLRuntimeException;
 	abstract long getSizeOnDevice() throws DMLRuntimeException;
 	

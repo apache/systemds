@@ -23,6 +23,7 @@ import java.util.HashMap;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.gpu.AggregateBinaryGPUInstruction;
 import org.apache.sysml.runtime.instructions.gpu.ArithmeticBinaryGPUInstruction;
+import org.apache.sysml.runtime.instructions.gpu.BuiltinUnaryGPUInstruction;
 import org.apache.sysml.runtime.instructions.gpu.ConvolutionGPUInstruction;
 import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
 import org.apache.sysml.runtime.instructions.gpu.GPUInstruction.GPUINSTRUCTION_TYPE;
@@ -39,6 +40,7 @@ public class GPUInstructionParser  extends InstructionParser
 		String2GPUInstructionType.put( "conv2d_backward_data",   GPUINSTRUCTION_TYPE.Convolution);
 		String2GPUInstructionType.put( "maxpooling",             GPUINSTRUCTION_TYPE.Convolution);
 		String2GPUInstructionType.put( "maxpooling_backward",    GPUINSTRUCTION_TYPE.Convolution);
+		String2GPUInstructionType.put( "bias_add",    			 GPUINSTRUCTION_TYPE.Convolution);
 		String2GPUInstructionType.put( "ba+*",                   GPUINSTRUCTION_TYPE.AggregateBinary);
 		String2GPUInstructionType.put( "tsmm",                   GPUINSTRUCTION_TYPE.MMTSJ);
 		String2GPUInstructionType.put( "r'",                   	 GPUINSTRUCTION_TYPE.Reorg);
@@ -57,6 +59,9 @@ public class GPUInstructionParser  extends InstructionParser
 		String2GPUInstructionType.put( "-nz"  , GPUINSTRUCTION_TYPE.ArithmeticBinary); //special - case
 		String2GPUInstructionType.put( "+*"  , GPUINSTRUCTION_TYPE.ArithmeticBinary); 
 		String2GPUInstructionType.put( "-*"  , GPUINSTRUCTION_TYPE.ArithmeticBinary); 
+		
+		
+		String2GPUInstructionType.put( "sel+"  , GPUINSTRUCTION_TYPE.BuiltinUnary);
 	}
 	
 	public static GPUInstruction parseSingleInstruction (String str ) 
@@ -85,7 +90,10 @@ public class GPUInstructionParser  extends InstructionParser
 		switch(gputype) {
 			case AggregateBinary:
 				return AggregateBinaryGPUInstruction.parseInstruction(str);
-				
+			
+			case BuiltinUnary:
+				return BuiltinUnaryGPUInstruction.parseInstruction(str);
+			
 			case Convolution:
 				return ConvolutionGPUInstruction.parseInstruction(str);
 				

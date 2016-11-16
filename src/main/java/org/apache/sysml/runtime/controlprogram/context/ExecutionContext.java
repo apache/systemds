@@ -298,7 +298,7 @@ public class ExecutionContext
 			mo.setGPUObject(GPUContext.createGPUObject(mo));
 		}
 		boolean acquired = false;
-		if( !mo.getGPUObject().isAllocated ) {
+		if( !mo.getGPUObject().isAllocated() ) {
 			mo.acquireRead();
 			acquired = true;
 		}
@@ -397,7 +397,7 @@ public class ExecutionContext
 	
 	public void releaseMatrixOutputForGPUInstruction(String varName) throws DMLRuntimeException {
 		MatrixObject mo = getMatrixObject(varName);
-		if(mo.getGPUObject() == null || !mo.getGPUObject().isAllocated) {
+		if(mo.getGPUObject() == null || !mo.getGPUObject().isAllocated()) {
 			throw new DMLRuntimeException("No output is allocated on GPU");
 		}
 		mo.getGPUObject().releaseOutput();

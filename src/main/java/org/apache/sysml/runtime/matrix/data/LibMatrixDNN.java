@@ -709,6 +709,62 @@ public class LibMatrixDNN {
 		}
 		return maxIndex;
 	}
+	
+	public static void bias_add(MatrixBlock input, MatrixBlock bias, MatrixBlock outputBlock, int numThreads) throws DMLRuntimeException {
+		// Keeping it single-threaded as memory-bound operation. TODO: explore optimization potential for multithreaded implementation
+		
+		int N = input.getNumRows();
+		int K = bias.getNumRows();
+		int PQ = input.getNumColumns() / K;
+		double [] outputArray = outputBlock.getDenseBlock();
+		if(input.isEmptyBlock()) {
+			fillBias(bias, outputArray, N, K, PQ);
+		}
+		else {
+			fillBias(bias, outputArray, N, K, PQ);
+			int numOutCols = input.getNumColumns();
+			if(input.isInSparseFormat()) {
+				Iterator<IJV> iter = input.sparseBlock.getIterator();
+				while(iter.hasNext()) {
+					IJV ijv = iter.next();
+					int i = ijv.getI();
+					int j = ijv.getJ();
+					outputArray[i*numOutCols + j] += ijv.getV();
+				}
+			}
+			else {
+				double [] inputArr = input.getDenseBlock();
+				for(int i = 0; i < inputArr.length; i++) {
+					outputArray[i] += inputArr[i];
+				}
+			}
+		}
+	}
+	
+	private static void fillBias(MatrixBlock bias, double [] outputArray, int N, int K, int PQ) {
+		if(bias.isInSparseFormat()) {
+			Iterator<IJV> iter = bias.sparseBlock.getIterator();
+			while(iter.hasNext()) {
+				IJV ijv = iter.next();
+				int k = ijv.getI();
+				double val = ijv.getV();
+				for(int n = 0;  n < N; n++) {
+					int fromIndex = n*K*PQ + k*PQ;
+					Arrays.fill(outputArray, fromIndex, fromIndex + PQ, val);
+				}
+			}
+		}
+		else {
+			double [] biasArr = bias.getDenseBlock(); 
+			for(int n = 0;  n < N; n++) {
+				for(int k = 0; k < K; k++) {
+					int fromIndex = n*K*PQ + k*PQ;
+					double val = biasArr[k];
+					Arrays.fill(outputArray, fromIndex, fromIndex + PQ, val);
+				}
+			}
+		}
+	}
 
 	public static void maxpooling(MatrixBlock input, MatrixBlock outputBlock, ConvolutionParameters params) throws DMLRuntimeException {
 		params.input1 = input;

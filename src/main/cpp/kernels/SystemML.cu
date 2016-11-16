@@ -104,6 +104,16 @@ __global__ void dense_matrix_copy(double* A,  double* ret, int rlen, int clen) {
 	}
 }
 
+extern "C"
+__global__ void relu(double* A,  double* ret, int rlen, int clen) {
+	int ix = blockIdx.x * blockDim.x + threadIdx.x;
+	int iy = blockIdx.y * blockDim.y + threadIdx.y;
+	if(ix < rlen && iy < clen) {
+		int index = ix * clen + iy;
+		ret[index] = max(0.0, A[index]);
+	}
+}
+
 // Compares the value and set
 extern "C"
 __global__ void compareAndSet(double* A,  double* ret, int rlen, int clen, double compareVal, double tol, double ifEqualsVal, double ifLessThanVal, double ifGreaterThanVal) {

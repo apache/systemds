@@ -94,5 +94,18 @@ conv2d <- function(X, W, C, Hin, Win, Hf, Wf, strideh, stridew, padh, padw) {
 }
 
 output = conv2d(x, w, numChannels,  imgSize, imgSize, filterSize, filterSize, stride, stride, pad, pad);
+Hout = as.integer((imgSize + 2 * pad - filterSize) / stride + 1)
+Wout = Hout
+
+b=matrix(seq(1, numFilters), numFilters, 1, byrow=TRUE) 
+for(k in 0:(numFilters-1)) {
+	for(i in 1:nrow(output)) {
+		start = k*Hout*Hout;
+		for(j in 1:(Hout*Hout)) {
+			output[i,start+j] = output[i,start+j] + b[k+1,1]
+		}
+	}
+}
+
 
 writeMM(as(output,"CsparseMatrix"), paste(args[8], "B", sep=""))

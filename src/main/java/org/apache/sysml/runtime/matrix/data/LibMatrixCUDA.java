@@ -21,6 +21,7 @@ package org.apache.sysml.runtime.matrix.data;
 
 import static jcuda.jcublas.cublasOperation.CUBLAS_OP_N;
 import static jcuda.jcublas.cublasOperation.CUBLAS_OP_T;
+import static jcuda.jcudnn.JCudnn.cudnnActivationForward;
 import static jcuda.jcudnn.JCudnn.cudnnConvolutionBackwardData;
 import static jcuda.jcudnn.JCudnn.cudnnConvolutionBackwardFilter;
 import static jcuda.jcudnn.JCudnn.cudnnConvolutionForward;
@@ -54,8 +55,7 @@ import static jcuda.runtime.JCuda.cudaFree;
 import static jcuda.runtime.JCuda.cudaMalloc;
 import static jcuda.runtime.JCuda.cudaMemcpy;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice;
-
-import jcuda.runtime.JCuda;
+import static jcuda.jcudnn.cudnnActivationMode.CUDNN_ACTIVATION_RELU;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -86,6 +86,7 @@ import org.apache.sysml.runtime.matrix.operators.LeftScalarOperator;
 import org.apache.sysml.runtime.matrix.operators.RightScalarOperator;
 import org.apache.sysml.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysml.utils.Statistics;
+import static jcuda.jcudnn.JCudnn.cudnnAddTensor;
 
 import jcuda.Pointer;
 import jcuda.Sizeof;
@@ -117,6 +118,13 @@ public class LibMatrixCUDA {
 	public static void conv2d(MatrixObject image, MatrixObject filter, MatrixObject outputBlock, int N, int C, int H, int W,
 			int K, int R, int S, int pad_h, int pad_w, int stride_h, int stride_w, int P, int Q)
 			throws DMLRuntimeException {
+		if(isInSparseFormat(image)) {
+			((JCudaObject)image.getGPUObject()).sparseToDense();
+		}
+		if(isInSparseFormat(filter)) {
+			((JCudaObject)filter.getGPUObject()).sparseToDense();
+		}
+		
 		cudnnTensorDescriptor srcTensorDesc = null;
 		cudnnTensorDescriptor dstTensorDesc = null;
 		cudnnFilterDescriptor filterDesc = null;
@@ -247,10 +255,57 @@ public class LibMatrixCUDA {
 		return poolingDesc;
 	}
 	
+	public static void bias_add(MatrixObject input, MatrixObject bias, MatrixObject outputBlock) throws DMLRuntimeException {
+		if(isInSparseFormat(input)) {
+			((JCudaObject)input.getGPUObject()).sparseToDense();
+		}
+		if(isInSparseFormat(bias)) {
+			((JCudaObject)bias.getGPUObject()).sparseToDense();
+		}
+		Pointer alpha = null;
+		Pointer beta = null;
+		cudnnTensorDescriptor biasTensorDesc = null;
+		cudnnTensorDescriptor dstTensorDesc = null;
+		try {
+			int N = (int) input.getNumRows();
+			int K = (int) bias.getNumRows();
+			int PQ = (int) input.getNumColumns() / K;
+			alpha = pointerTo(1.0); // TODO
+			beta = pointerTo(1.0);
+			
+			// Allocate descriptors
+			biasTensorDesc = allocateTensorDescriptor(1, K, 1, 1);
+			dstTensorDesc = allocateTensorDescriptor(N, K, PQ, 1);
+			Pointer imagePointer = ((JCudaObject)input.getGPUObject()).jcudaDenseMatrixPtr; 
+			Pointer biasPointer = ((JCudaObject)bias.getGPUObject()).jcudaDenseMatrixPtr;
+			Pointer outputPointer = ((JCudaObject)outputBlock.getGPUObject()).jcudaDenseMatrixPtr;
+			// TODO: Avoid memcpy by allowing update in-place bias_add
+			cudaMemcpy(outputPointer, imagePointer, N*K*PQ*Sizeof.DOUBLE, jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToDevice);
+			cudnnAddTensor(cudnnHandle, alpha, biasTensorDesc, biasPointer, beta, dstTensorDesc, outputPointer);
+		}
+		finally {
+			if(alpha != null)
+				cudaFree(alpha);
+			if(beta != null)
+				cudaFree(beta);
+			if(biasTensorDesc != null)
+				cudnnDestroyTensorDescriptor(biasTensorDesc);
+			if(dstTensorDesc != null)
+				cudnnDestroyTensorDescriptor(dstTensorDesc);
+		}
+		
+	}
+	
 	public static void conv2d_backward_filter(MatrixObject image, MatrixObject dout,
 			MatrixObject outputBlock, int N, int C, int H, int W, int K, int R,
 			int S, int pad_h, int pad_w, int stride_h, int stride_w, int P,
 			int Q) throws DMLRuntimeException {
+		if(isInSparseFormat(image)) {
+			((JCudaObject)image.getGPUObject()).sparseToDense();
+		}
+		if(isInSparseFormat(dout)) {
+			((JCudaObject)dout.getGPUObject()).sparseToDense();
+		}
 		Pointer alpha = null;
 		Pointer beta = null;
 		cudnnTensorDescriptor xTensorDesc = null;
@@ -309,7 +364,65 @@ public class LibMatrixCUDA {
 			if(workSpace != null && sizeInBytes != 0)
 				cudaFree(workSpace);
 		}
+	}
+	
+	private static long numDoublesIn2GB = 125000000;
+	
+	public static void relu(ExecutionContext ec, MatrixObject in, String outputName) throws DMLRuntimeException {
+		if(isInSparseFormat(in)) {
+			// TODO: FIXME: Implement sparse relu kernel
+			((JCudaObject)in.getGPUObject()).sparseToDense();
+		}
 		
+		cudnnTensorDescriptor srcTensorDesc = null;
+		cudnnTensorDescriptor dstTensorDesc = null;
+		Pointer alpha = null;
+		Pointer beta = null;
+		
+		try {
+			alpha = pointerTo(1.0f);
+			beta = pointerTo(0.0f);
+			int N = (int) in.getNumRows();
+			int H = (int) in.getNumColumns();
+			int W = 1;
+			if(H % 2 == 0) {
+				H /= 2;
+				W = H;
+			}
+			Pointer srcData = ((JCudaObject)in.getGPUObject()).jcudaDenseMatrixPtr;
+			
+			MatrixObject output = ec.getMatrixObject(outputName);
+			ec.getDenseMatrixOutputForGPUInstruction(outputName);	// Allocated the dense output matrix
+			Pointer dstData = ((JCudaObject)output.getGPUObject()).jcudaDenseMatrixPtr;
+			
+			if(N*H*W >= numDoublesIn2GB) {
+				// Invokes relu(double* A,  double* ret, int rlen, int clen)
+				kernels.launchKernel("relu",
+						ExecutionConfig.getConfigForSimpleMatrixOperations(N, (int) H*W), 
+						srcData, dstData, N, (int) H*W);
+			}
+			else {
+				// Allocate descriptors
+				srcTensorDesc = allocateTensorDescriptor(N, 1, H, W);
+				dstTensorDesc = allocateTensorDescriptor(N, 1, H, W);
+				
+	            cudnnActivationForward(cudnnHandle, CUDNN_ACTIVATION_RELU, 
+	                alpha, srcTensorDesc, srcData, 
+	                beta, dstTensorDesc, dstData);
+			}
+		}
+		finally {
+			
+			if(alpha != null)
+				cudaFree(alpha);
+			if(beta != null)
+				cudaFree(beta);
+			
+			if(srcTensorDesc != null)
+				cudnnDestroyTensorDescriptor(srcTensorDesc);
+			if(dstTensorDesc != null)
+				cudnnDestroyTensorDescriptor(dstTensorDesc);
+		}
 	}
 
 	/**
@@ -347,10 +460,10 @@ public class LibMatrixCUDA {
 	    int lda = (int) (isLeftTransposed ? m : k);
 	    int ldc = m;
 	
-	    if(!left.getGPUObject().isAllocated)
-	            throw new DMLRuntimeException("Input is not allocated:" + left.getGPUObject().isAllocated);
-	    if(!output.getGPUObject().isAllocated)
-	            throw new DMLRuntimeException("Output is not allocated:" + output.getGPUObject().isAllocated);
+	    if(!left.getGPUObject().isAllocated())
+	            throw new DMLRuntimeException("Input is not allocated:" + left.getGPUObject().isAllocated());
+	    if(!output.getGPUObject().isAllocated())
+	            throw new DMLRuntimeException("Output is not allocated:" + output.getGPUObject().isAllocated());
 	
 	    Pointer A = ((JCudaObject)left.getGPUObject()).jcudaDenseMatrixPtr;
 	    Pointer C = ((JCudaObject)output.getGPUObject()).jcudaDenseMatrixPtr;
@@ -796,6 +909,12 @@ public class LibMatrixCUDA {
 			MatrixObject output, int N, int C, int H, int W, int K, int R,
 			int S, int pad_h, int pad_w, int stride_h, int stride_w, int P,
 			int Q) throws DMLRuntimeException {
+		if(isInSparseFormat(dout)) {
+			((JCudaObject)dout.getGPUObject()).sparseToDense();
+		}
+		if(isInSparseFormat(filter)) {
+			((JCudaObject)filter.getGPUObject()).sparseToDense();
+		}
 		Pointer alpha = null;
 		Pointer beta = null;
 		cudnnTensorDescriptor dyDesc = null;
@@ -879,6 +998,9 @@ public class LibMatrixCUDA {
 			MatrixObject outputBlock, int N, int C, int H, int W, int K, int R,
 			int S, int pad_h, int pad_w, int stride_h, int stride_w, int P,
 			int Q) throws DMLRuntimeException {
+		if(isInSparseFormat(image)) {
+			((JCudaObject)image.getGPUObject()).sparseToDense();
+		}
 		Pointer alpha = null;
 		Pointer beta = null;
 		cudnnTensorDescriptor xDesc = null;
@@ -942,6 +1064,12 @@ public class LibMatrixCUDA {
 			MatrixObject outputBlock, int N, int C, int H, int W, int K, int R,
 			int S, int pad_h, int pad_w, int stride_h, int stride_w, int P,
 			int Q) throws DMLRuntimeException {
+		if(isInSparseFormat(image)) {
+			((JCudaObject)image.getGPUObject()).sparseToDense();
+		}
+		if(isInSparseFormat(dout)) {
+			((JCudaObject)dout.getGPUObject()).sparseToDense();
+		}
 		Pointer alpha = null;
 		Pointer beta = null;
 		cudnnTensorDescriptor xDesc = null;

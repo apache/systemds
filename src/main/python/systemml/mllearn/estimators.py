@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-__all__ = ['LinearRegression', 'LogisticRegression', 'SVM', 'NaiveBayes']
+__all__ = ['LinearRegression', 'LogisticRegression', 'SVM', 'NaiveBayes', 'Barista']
 
 import numpy as np
 from pyspark.ml import Estimator
@@ -45,6 +45,10 @@ def assemble(sqlCtx, pdf, inputCols, outputCol):
 class BaseSystemMLEstimator(Estimator):
     features_col = 'features'
     label_col = 'label'
+<<<<<<< Upstream, based on upstream/master
+=======
+    do_visualize = False
+>>>>>>> 5ff7f89 [SYSTEMML-692][WIP] Added initial version of DML generator for Caffe proto
     
     def set_features_col(self, colName):
         """
@@ -75,6 +79,7 @@ class BaseSystemMLEstimator(Estimator):
     
     def fit_df(self, X):
         self.X = X
+<<<<<<< Upstream, based on upstream/master
         self._fit_df()
         self.X = None
         return self
@@ -89,6 +94,44 @@ class BaseSystemMLEstimator(Estimator):
         self.X = X
         self.y = y
         self._fit_numpy()
+=======
+        if self.do_visualize:
+            self.end_visualize = False
+            self.sc._jvm.org.apache.sysml.udf.lib.BaristaVisualizeWrapper.clear()
+            t1 = threading.Thread(target=self._fit_df)
+            t1.start()
+            t2 = threading.Thread(target=self._visualize)
+            t2.start()
+            t1.join()
+            self.end_visualize = True
+            t2.join()
+        else:
+            self._fit_df()
+        self.X = None
+        return self
+    
+    def _fit_numpy(self):
+        try:
+            self.model = self.estimator.fit(convertToMatrixBlock(self.sc, self.X), convertToMatrixBlock(self.sc, self.y))
+        except Py4JError:
+            traceback.print_exc()
+                    
+    def fit_numpy(self, X, y):
+        self.X = X
+        self.y = y
+        if self.do_visualize:
+            self.end_visualize = False
+            self.sc._jvm.org.apache.sysml.udf.lib.BaristaVisualizeWrapper.clear()
+            t1 = threading.Thread(target=self._fit_numpy)
+            t1.start()
+            t2 = threading.Thread(target=self._visualize)
+            t2.start()
+            t1.join()
+            self.end_visualize = True
+            t2.join()
+        else:
+            self._fit_numpy()
+>>>>>>> 5ff7f89 [SYSTEMML-692][WIP] Added initial version of DML generator for Caffe proto
         self.X = None
         self.y = None
         return self
@@ -493,4 +536,179 @@ class NaiveBayes(BaseSystemMLClassifier):
         self.estimator = self.sc._jvm.org.apache.sysml.api.ml.NaiveBayes(self.uid, self.sc._jsc.sc())
         self.estimator.setLaplace(laplace)
         self.transferUsingDF = transferUsingDF
+<<<<<<< Upstream, based on upstream/master
         self.setOutputRawPredictionsToFalse = False
+=======
+        self.setOutputRawPredictionsToFalse = False
+
+class Barista(BaseSystemMLClassifier):
+    """
+    Performs training/prediction for a given caffe network.
+    
+    Examples
+    --------
+    
+    >>> from systemml.mllearn import Barista
+    >>> from pyspark.sql import SQLContext
+    >>> sqlCtx = SQLContext(sc)
+    >>> from mlxtend.data import mnist_data
+    >>> import numpy as np
+    >>> from sklearn.utils import shuffle
+    >>> X, y = mnist_data()
+    >>> X, y = shuffle(X, y)
+    >>> numClasses = np.unique(y).shape[0]
+    >>> imgShape = (1, 28, 28)
+    >>> import urllib
+    >>> urllib.urlretrieve('https://raw.githubusercontent.com/niketanpansare/model_zoo/master/caffe/vision/lenet/mnist/lenet.proto', 'lenet.proto')
+    >>> urllib.urlretrieve('https://raw.githubusercontent.com/niketanpansare/model_zoo/master/caffe/vision/lenet/mnist/lenet_solver.proto', 'lenet_solver.proto')
+    >>> barista = Barista(sqlCtx, numClasses, 'lenet_solver.proto', 'lenet.proto', imgShape)
+    >>> barista.fit(X, y)
+    
+    """
+    
+    def __init__(self, sqlCtx, num_classes, solver_file_path, network_path, image_shape=(1, 28, 28), max_iter=10000, validation_percentage=0.2, display=100, normalize_input=False, transferUsingDF=False):
+        """
+        Performs training/prediction for a given caffe network. 
+
+        Parameters
+        ----------
+        sqlCtx: PySpark SQLContext
+        numClasses: number of classes
+        solverFilePath: caffe solver file path
+        networkPath: caffe network file path
+        imageShape: 3-tuple (number of channels of input image, input image height, input image width)
+        """
+        self.sqlCtx = sqlCtx
+        self.sc = sqlCtx._sc
+        self.uid = "barista"
+        self.model = None
+        solver = self.sc._jvm.org.apache.sysml.api.dl.Utils.readCaffeSolver(solver_file_path)
+        self.estimator = self.sc._jvm.org.apache.sysml.api.dl.Barista(num_classes, self.sc._jsc.sc(), solver, network_path, image_shape[0], image_shape[1], image_shape[2])
+        self.estimator.setMaxIter(max_iter)
+        self.estimator.setValidationPercentage(validation_percentage)
+        self.estimator.setDisplay(display)
+        self.estimator.setNormalizeInput(normalize_input)
+        self.transferUsingDF = transferUsingDF
+        self.setOutputRawPredictionsToFalse = False
+        self.vis_layers = []
+        self.vis_vartypes = []
+        self.vis_aggFn = []
+        self.vis_refresh = 5
+    
+    def load(self, outputDir, format='binary', sep='/'):
+        """
+        Load a pretrained model.
+        
+        Parameters
+        ----------
+        outputDir: Directory to load the model from
+        format: optional format (default: 'binary')
+        sep: seperator to use (default: '/')
+        """
+        self.model = self.estimator.load(outputDir, format, sep)
+        csvLines = list(self.sc.textFile(outputDir + sep + 'labels.txt').collect())
+        self.labelMap = {}
+        self.le = None
+        for i in range(len(csvLines)):
+            elem = csvLines[i].split(',', 1)
+            self.labelMap[int(elem[0])] = elem[1]
+        # self.encode(classes) # Giving incorrect results
+        return self
+    
+    def visualize(self, layerName=None, varType='weight', aggFn='mean'):
+        """
+        Use this to visualize the training procedure (requires validation_percentage to be non-zero).
+        When one provides no argument to this method, we visualize training and validation loss.
+        
+        Parameters
+        ----------
+        layerName: Name of the layer in the Caffe prototype
+        varType: should be either 'weight', 'bias', 'dweight', 'dbias', 'output' or 'doutput'
+        aggFn: should be either 'sum', 'mean', 'var' or 'sd'
+        """
+        self.do_visualize = True
+        valid_vis_var_types = ['weight', 'bias', 'dweight', 'dbias', 'output', 'doutput']
+        valid_vis_aggFn = [ 'sum', 'mean', 'var', 'sd' ]
+        if layerName is not None and varType is not None and aggFn is not None:
+            # Visualize other values
+            if varType not in valid_vis_var_types:
+                raise ValueError('The second argument should be either weight, bias, dweight, dbias, output or doutput')
+            if aggFn not in valid_vis_aggFn:
+                raise ValueError('The third argument should be either sum, mean, var, sd.')
+            if len(self.vis_layers) == 0:
+                self.estimator.visualizeLoss()
+            self.vis_layers = self.vis_layers + [ layerName ]
+            self.vis_vartypes = self.vis_vartypes + [ varType ]
+            self.vis_aggFn = self.vis_aggFn + [ aggFn ]
+            self.estimator.visualizeLayer(layerName, varType, aggFn)
+        else:
+            self.estimator.visualizeLoss()
+        return self
+    
+    
+    def _visualize(self):
+        import matplotlib.pyplot as plt
+        plt.ion()
+        num_plots = 2 + len(self.vis_layers)
+        fig, ax1 = plt.subplots(int(math.ceil(float(num_plots)/2.0)), 2, sharex=True)
+        ax = ax1.flatten()
+        self.lines = dict()
+        self.lines['validation_loss'], = ax[0].plot([0.0], [0.0], label='validation', linestyle='-', marker='o', color='b')
+        self.lines['validation_accuracy'], = ax[1].plot([0.0], [0.0], label='validation', linestyle='-', marker='o', color='b')
+        self.lines['training_loss'], = ax[0].plot([0.0], [0.0], label='training', linestyle='-', marker='x', color='r')
+        self.lines['training_accuracy'], = ax[1].plot([0.0], [0.0], label='training', linestyle='-', marker='x', color='r')
+        ax[0].set_title('Loss per iteration')
+        ax[1].set_title('Accuracy per iteration')
+        ax[0].legend()
+        ax[1].legend(loc='lower right')
+        layer_names = ['validation_loss', 'validation_accuracy', 'training_loss', 'training_accuracy']
+        for i in range(len(self.vis_layers)):
+            lab = str(self.vis_aggFn[i] + '_' + self.vis_vartypes[i] + '_' + self.vis_layers[i])
+            self.lines[lab], = ax[2 + i].plot([0.0], [0.0], linestyle='-', marker='+', color='b')
+            ax[2 + i].set_title(self.vis_aggFn[i] + '(' +  self.vis_layers[i] + '.' + self.vis_vartypes[i] + ') per iter')
+        while not self.end_visualize:
+            # Refresh the visualization
+            for layer_name in self.lines:
+                self.set_vis_data(self.lines[layer_name], layer_name)
+            for i in range(len(ax)):
+                ax[i].relim()
+                ax[i].autoscale_view(True,True,True)
+            fig.canvas.draw()
+            time.sleep(self.vis_refresh)
+    
+    def set_vis_data(self, line, lab):
+        x1 = list(self.sc._jvm.org.apache.sysml.udf.lib.BaristaVisualizeWrapper.getX(lab))
+        y1 = list(self.sc._jvm.org.apache.sysml.udf.lib.BaristaVisualizeWrapper.getY(lab))
+        while len(x1) < len(y1):
+            y1.pop()
+        line.set_data(np.asarray(x1), np.asarray(y1))
+    
+    def set_refresh(self, duration=5):
+        """
+        Sets how often should the visualization be refreshed.
+        
+        Parameters
+        ----------
+        duration: duration in seconds (default: 5 seconds)
+        """
+        self.vis_refresh = duration
+    
+    def save(self, outputDir, format='binary', sep='/'):
+        """
+        Save a trained model.
+        
+        Parameters
+        ----------
+        outputDir: Directory to save the model to
+        format: optional format (default: 'binary')
+        sep: seperator to use (default: '/')
+        """
+        if self.model != None:
+            self.model.save(outputDir, format, sep)
+            labelMapping = dict(enumerate(list(self.le.classes_), 1))
+            rdd = sc.parallelize([ str(k) + ',' + str(labelMapping[k]) for k in labelMapping ])
+            rdd.saveAsTextFile(outputDir + sep + 'labels.txt')
+        else:
+            raise Exception('Cannot save as you need to train the model first using fit')
+        return self
+>>>>>>> 5ff7f89 [SYSTEMML-692][WIP] Added initial version of DML generator for Caffe proto

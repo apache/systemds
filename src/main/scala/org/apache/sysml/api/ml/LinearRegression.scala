@@ -73,10 +73,10 @@ class LinearRegression(override val uid: String, val sc: SparkContext, val solve
   }
   
   def fit(X_mb: MatrixBlock, y_mb: MatrixBlock): LinearRegressionModel = 
-    new LinearRegressionModel("lr")(fit(X_mb, y_mb, sc), sc)
+    new LinearRegressionModel("lr")(baseFit(X_mb, y_mb, sc), sc)
     
   def fit(df: ScriptsUtils.SparkDataType): LinearRegressionModel = 
-    new LinearRegressionModel("lr")(fit(df, sc), sc)
+    new LinearRegressionModel("lr")(baseFit(df, sc), sc)
   
 }
 
@@ -90,8 +90,8 @@ class LinearRegressionModel(override val uid: String)(val mloutput: MLResults, v
   def getPredictionScript(mloutput: MLResults, isSingleNode:Boolean): (Script, String) =
     PredictionUtils.getGLMPredictionScript(mloutput.getBinaryBlockMatrix("beta_out"), isSingleNode)
   
-  def transform(df: ScriptsUtils.SparkDataType): DataFrame = transform(df, mloutput, sc, "means")
+  def transform(df: ScriptsUtils.SparkDataType): DataFrame = baseTransform(df, mloutput, sc, "means")
   
-  def transform(X: MatrixBlock): MatrixBlock =  transform(X, mloutput, sc, "means")
+  def transform(X: MatrixBlock): MatrixBlock =  baseTransform(X, mloutput, sc, "means")
   
 }

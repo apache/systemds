@@ -26,6 +26,13 @@ from pyspark.ml import Estimator
 from pyspark.ml.feature import VectorAssembler
 from pyspark.sql import DataFrame
 import sklearn as sk
+from sklearn.metrics import accuracy_score, r2_score
+from py4j.protocol import Py4JError
+import traceback
+from sklearn.preprocessing import LabelEncoder
+import threading
+import time
+import math
 
 from ..converters import *
 from ..classloader import *
@@ -36,10 +43,10 @@ def assemble(sqlCtx, pdf, inputCols, outputCol):
     return assembler.transform(tmpDF)
 
 class BaseSystemMLEstimator(Estimator):
-    featuresCol = 'features'
-    labelCol = 'label'
-
-    def setFeaturesCol(self, colName):
+    features_col = 'features'
+    label_col = 'label'
+    
+    def set_features_col(self, colName):
         """
         Sets the default column name for features of PySpark DataFrame.
 
@@ -47,9 +54,9 @@ class BaseSystemMLEstimator(Estimator):
         ----------
         colName: column name for features (default: 'features')
         """
-        self.featuresCol = colName
+        self.features_col = colName
 
-    def setLabelCol(self, colName):
+    def set_label_col(self, colName):
         """
         Sets the default column name for features of PySpark DataFrame.
 
@@ -57,8 +64,35 @@ class BaseSystemMLEstimator(Estimator):
         ----------
         colName: column name for features (default: 'label')
         """
-        self.labelCol = colName
+        self.label_col = colName
 
+    
+    def _fit_df(self):
+        try:
+            self.model = self.estimator.fit(self.X._jdf)
+        except Py4JError:
+            traceback.print_exc()
+    
+    def fit_df(self, X):
+        self.X = X
+        self._fit_df()
+        self.X = None
+        return self
+    
+    def _fit_numpy(self):
+        try:
+            self.model = self.estimator.fit(convertToMatrixBlock(self.sc, self.X), convertToMatrixBlock(self.sc, self.y))
+        except Py4JError:
+            traceback.print_exc()
+                    
+    def fit_numpy(self, X, y):
+        self.X = X
+        self.y = y
+        self._fit_numpy()
+        self.X = None
+        self.y = None
+        return self
+        
     # Returns a model after calling fit(df) on Estimator object on JVM
     def _fit(self, X):
         """
@@ -66,11 +100,10 @@ class BaseSystemMLEstimator(Estimator):
 
         Parameters
         ----------
-        X: PySpark DataFrame that contain the columns featuresCol (default: 'features') and labelCol (default: 'label')
+        X: PySpark DataFrame that contain the columns features_col (default: 'features') and label_col (default: 'label')
         """
-        if hasattr(X, '_jdf') and self.featuresCol in X.columns and self.labelCol in X.columns:
-            self.model = self.estimator.fit(X._jdf)
-            return self
+        if hasattr(X, '_jdf') and self.features_col in X.columns and self.label_col in X.columns:
+            return self.fit_df(X)
         else:
             raise Exception('Incorrect usage: Expected dataframe as input with features/label as columns')
 
@@ -86,6 +119,7 @@ class BaseSystemMLEstimator(Estimator):
         if y is None:
             return self._fit(X)
         elif y is not None and isinstance(X, SUPPORTED_TYPES) and isinstance(y, SUPPORTED_TYPES):
+            y = self.encode(y)
             if self.transferUsingDF:
                 pdfX = convertToPandasDF(X)
                 pdfY = convertToPandasDF(y)
@@ -94,14 +128,14 @@ class BaseSystemMLEstimator(Estimator):
                 if pdfX.shape[0] != pdfY.shape[0]:
                     raise Exception('Number of rows of X and y should match')
                 colNames = pdfX.columns
-                pdfX[self.labelCol] = pdfY[pdfY.columns[0]]
-                df = assemble(self.sqlCtx, pdfX, colNames, self.featuresCol).select(self.featuresCol, self.labelCol)
-                self.model = self.estimator.fit(df._jdf)
+                pdfX[self.label_col] = pdfY[pdfY.columns[0]]
+                df = assemble(self.sqlCtx, pdfX, colNames, self.features_col).select(self.features_col, self.label_col)
+                self.fit_df(df)
             else:
                 numColsy = getNumCols(y)
                 if numColsy != 1:
                     raise Exception('Expected y to be a column vector')
-                self.model = self.estimator.fit(convertToMatrixBlock(self.sc, X), convertToMatrixBlock(self.sc, y))
+                self.fit_numpy(X, y)
             if self.setOutputRawPredictionsToFalse:
                 self.model.setOutputRawPredictions(False)
             return self
@@ -110,7 +144,7 @@ class BaseSystemMLEstimator(Estimator):
 
     def transform(self, X):
         return self.predict(X)
-
+    
     # Returns either a DataFrame or MatrixBlock after calling transform(X:MatrixBlock, y:MatrixBlock) on Model object on JVM
     def predict(self, X):
         """
@@ -123,26 +157,29 @@ class BaseSystemMLEstimator(Estimator):
         if isinstance(X, SUPPORTED_TYPES):
             if self.transferUsingDF:
                 pdfX = convertToPandasDF(X)
-                df = assemble(self.sqlCtx, pdfX, pdfX.columns, self.featuresCol).select(self.featuresCol)
+                df = assemble(self.sqlCtx, pdfX, pdfX.columns, self.features_col).select(self.features_col)
                 retjDF = self.model.transform(df._jdf)
                 retDF = DataFrame(retjDF, self.sqlCtx)
                 retPDF = retDF.sort('__INDEX').select('prediction').toPandas()
                 if isinstance(X, np.ndarray):
-                    return retPDF.as_matrix().flatten()
+                    return self.decode(retPDF.as_matrix().flatten())
                 else:
-                    return retPDF
+                    return self.decode(retPDF)
             else:
-                retNumPy = convertToNumPyArr(self.sc, self.model.transform(convertToMatrixBlock(self.sc, X)))
+                try:
+                    retNumPy = self.decode(convertToNumPyArr(self.sc, self.model.transform(convertToMatrixBlock(self.sc, X))))
+                except Py4JError:
+                    traceback.print_exc()
                 if isinstance(X, np.ndarray):
                     return retNumPy
                 else:
                     return retNumPy # TODO: Convert to Pandas
         elif hasattr(X, '_jdf'):
-            if self.featuresCol in X.columns:
+            if self.features_col in X.columns:
                 # No need to assemble as input DF is likely coming via MLPipeline
                 df = X
             else:
-                assembler = VectorAssembler(inputCols=X.columns, outputCol=self.featuresCol)
+                assembler = VectorAssembler(inputCols=X.columns, outputCol=self.features_col)
                 df = assembler.transform(X)
             retjDF = self.model.transform(df._jdf)
             retDF = DataFrame(retjDF, self.sqlCtx)
@@ -154,6 +191,17 @@ class BaseSystemMLEstimator(Estimator):
 
 class BaseSystemMLClassifier(BaseSystemMLEstimator):
 
+    def encode(self, y):
+        self.le = LabelEncoder()
+        self.le.fit(y)
+        return self.le.transform(y) + 1
+        
+    def decode(self, y):
+        if self.le is not None:
+            return self.le.inverse_transform(np.asarray(y - 1, dtype=int))
+        else:
+            return [ self.labelMap[int(i)] for i in y ]
+        
     def score(self, X, y):
         """
         Scores the predicted value with ground truth 'y'
@@ -163,11 +211,17 @@ class BaseSystemMLClassifier(BaseSystemMLEstimator):
         X: NumPy ndarray, Pandas DataFrame, scipy sparse matrix
         y: NumPy ndarray, Pandas DataFrame, scipy sparse matrix
         """
-        return sk.metrics.accuracy_score(y, self.predict(X))
+        return accuracy_score(y, self.predict(X))
 
 
 class BaseSystemMLRegressor(BaseSystemMLEstimator):
 
+    def encode(self, y):
+        return y
+        
+    def decode(self, y):
+        return y
+    
     def score(self, X, y):
         """
         Scores the predicted value with ground truth 'y'
@@ -177,7 +231,7 @@ class BaseSystemMLRegressor(BaseSystemMLEstimator):
         X: NumPy ndarray, Pandas DataFrame, scipy sparse matrix
         y: NumPy ndarray, Pandas DataFrame, scipy sparse matrix
         """
-        return sk.metrics.r2_score(y, self.predict(X), multioutput='variance_weighted')
+        return r2_score(y, self.predict(X), multioutput='variance_weighted')
 
 
 class LogisticRegression(BaseSystemMLClassifier):

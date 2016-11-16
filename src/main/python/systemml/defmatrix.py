@@ -42,9 +42,13 @@ def setSparkContext(sc):
     matrix.sqlContext = SQLContext(sc)
     matrix.ml = MLContext(matrix.sc)
 
+
 def checkIfMLContextIsSet():
     if matrix.ml is None:
-        raise Exception('Expected setSparkContext(sc) to be called.')
+        if SparkContext._active_spark_context is not None:
+            setSparkContext(SparkContext._active_spark_context)
+        else:
+            raise Exception('Expected setSparkContext(sc) to be called, where sc is active SparkContext.')
 
 ########################## AST related operations ##################################
 

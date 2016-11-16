@@ -46,9 +46,6 @@ import org.apache.sysml.runtime.matrix.data.OperationsOnMatrixValues;
 import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateUnaryOperator;
 
-/**
- * 
- */
 public class AggregateUnarySPInstruction extends UnarySPInstruction
 {
 	
@@ -60,13 +57,7 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction
 		_aggtype = aggtype;
 		_aop = aop;
 	}
-	
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static AggregateUnarySPInstruction parseInstruction(String str)
 		throws DMLRuntimeException 
 	{
@@ -144,13 +135,7 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction
 			sec.addLineageRDD(output.getName(), input1.getName());
 		}		
 	}
-	
-	/**
-	 * 
-	 * @param sec
-	 * @param auop
-	 * @throws DMLRuntimeException
-	 */
+
 	protected void updateUnaryAggOutputMatrixCharacteristics(SparkExecutionContext sec) 
 		throws DMLRuntimeException
 	{
@@ -174,9 +159,6 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction
 		}
 	}
 
-	/**
-	 * 
-	 */
 	private static class RDDUAggFunction implements PairFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock> 
 	{
 		private static final long serialVersionUID = 2672082409287856038L;
@@ -237,10 +219,7 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction
 					_op, new MatrixBlock(), _brlen, _bclen, arg0._1());
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class RDDUAggValueFunction implements Function<MatrixBlock, MatrixBlock> 
 	{
 		private static final long serialVersionUID = 5352374590399929673L;

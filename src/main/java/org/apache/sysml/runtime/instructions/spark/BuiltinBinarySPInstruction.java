@@ -40,13 +40,7 @@ public abstract class BuiltinBinarySPInstruction extends BinarySPInstruction
 		super(op, in1, in2, out, opcode, istr);
 		_sptype = SPINSTRUCTION_TYPE.BuiltinBinary;
 	}
-	
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static BuiltinBinarySPInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{

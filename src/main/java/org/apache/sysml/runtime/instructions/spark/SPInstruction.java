@@ -29,10 +29,6 @@ import org.apache.sysml.runtime.instructions.SPInstructionParser;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.utils.Statistics;
 
-/**
- * 
- * 
- */
 public abstract class SPInstruction extends Instruction 
 {
 	

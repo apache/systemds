@@ -45,12 +45,14 @@ public class MMTSJGPUInstruction extends GPUInstruction
         CPOperand _output;
 
         /**
+         * MMTSJGPUInstruction constructor.
+         * 
          * @param op	operator
          * @param in1	input
-         * @param type	left/right, left-> A' %*% A, right-> A %*% A'
+         * @param type	left/right, left-&gt; A' %*% A, right-&gt; A %*% A'
          * @param out	output
-         * @param opcode
-         * @param istr
+         * @param opcode the opcode
+         * @param istr ?
          */
         public MMTSJGPUInstruction(Operator op, CPOperand in1, MMTSJType type, CPOperand out,  String opcode, String istr)
         {
@@ -63,9 +65,9 @@ public class MMTSJGPUInstruction extends GPUInstruction
 
         /**
          * parse MMTSJ GPU instruction
-         * @param str
-         * @return
-         * @throws DMLRuntimeException
+         * @param str instruction string
+         * @return MMTSJGPUInstruction object
+         * @throws DMLRuntimeException if DMLRuntimeException occurs
          */
         public static MMTSJGPUInstruction parseInstruction ( String str )
         	throws DMLRuntimeException
@@ -87,7 +89,7 @@ public class MMTSJGPUInstruction extends GPUInstruction
         /**
          * process MMTSJ GPU instruction 
          * @param ec	execution context
-         * @throws DMLRuntimeException
+         * @throws DMLRuntimeException if DMLRuntimeException occurs
          */
         @Override
         public void processInstruction(ExecutionContext ec)
@@ -114,7 +116,7 @@ public class MMTSJGPUInstruction extends GPUInstruction
 
         /**
          * returns left/right depending on the type of MMTSJ instruction
-         * @return _type
+         * @return MMTSJType object
          */
         public MMTSJType getMMTSJType()
         {

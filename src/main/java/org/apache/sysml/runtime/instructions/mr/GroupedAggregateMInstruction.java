@@ -47,13 +47,7 @@ public class GroupedAggregateMInstruction extends BinaryMRInstructionBase implem
 		super(op, in1, in2, out);
 		_ngroups = ngroups;
 	}
-	
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static GroupedAggregateMInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{

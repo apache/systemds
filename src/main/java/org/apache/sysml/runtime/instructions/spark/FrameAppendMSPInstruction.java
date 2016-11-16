@@ -74,22 +74,14 @@ public class FrameAppendMSPInstruction extends AppendMSPInstruction
 			sec.getFrameObject(input1.getName()).mergeSchemas(
 			sec.getFrameObject(input2.getName())));
 	}
-	
-	/** 
-	 * 
-	 * @param cbind
-	 * @return
-	 */
+
 	private boolean preservesPartitioning( boolean cbind )
 	{
 		//Partitions for input1 will be preserved in case of cbind, 
 		// where as in case of rbind partitions will not be preserved.
 		return cbind;
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class MapSideAppendPartitionFunction implements  PairFlatMapFunction<Iterator<Tuple2<Long,FrameBlock>>, Long, FrameBlock> 
 	{
 		private static final long serialVersionUID = -3997051891171313830L;

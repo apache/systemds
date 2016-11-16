@@ -60,9 +60,6 @@ import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.QuaternaryOperator;
 
-/**
- * 
- */
 public class QuaternarySPInstruction extends ComputationSPInstruction 
 {
 	
@@ -80,12 +77,6 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 		_cacheV = cacheV;
 	}
 
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	public static QuaternarySPInstruction parseInstruction( String str ) 
 		throws DMLRuntimeException 
 	{
@@ -327,13 +318,7 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 			updateOutputMatrixCharacteristics(sec, qop);
 		}
 	}
-	
-	/**
-	 * 
-	 * @param sec
-	 * @param qop
-	 * @throws DMLRuntimeException 
-	 */
+
 	private void updateOutputMatrixCharacteristics(SparkExecutionContext sec, QuaternaryOperator qop) 
 		throws DMLRuntimeException
 	{
@@ -352,10 +337,7 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 			mcOut.set(mcTmp.getRows(), mcTmp.getCols(), mcIn1.getRowsPerBlock(), mcIn1.getColsPerBlock());		
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	private abstract static class RDDQuaternaryBaseFunction implements Serializable
 	{
 		private static final long serialVersionUID = -3175397651350954930L;
@@ -379,10 +361,7 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 			return in;
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class RDDQuaternaryFunction1 extends RDDQuaternaryBaseFunction //one rdd input
 		implements PairFlatMapFunction<Iterator<Tuple2<MatrixIndexes, MatrixBlock>>, MatrixIndexes, MatrixBlock>
 	{
@@ -428,10 +407,7 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 			
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class RDDQuaternaryFunction2 extends RDDQuaternaryBaseFunction //two rdd input
 		implements PairFunction<Tuple2<MatrixIndexes, Tuple2<MatrixBlock,MatrixBlock>>, MatrixIndexes, MatrixBlock>
 	{
@@ -464,10 +440,7 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 			return new Tuple2<MatrixIndexes,MatrixBlock>(ixOut, blkOut);
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class RDDQuaternaryFunction3 extends RDDQuaternaryBaseFunction //three rdd input
 		implements PairFunction<Tuple2<MatrixIndexes, Tuple2<Tuple2<MatrixBlock,MatrixBlock>,MatrixBlock>>, MatrixIndexes, MatrixBlock>
 	{

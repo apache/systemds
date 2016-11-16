@@ -54,13 +54,6 @@ public class AggregateBinaryGPUInstruction extends GPUInstruction
 		_isRightTransposed = rightTranspose;
 	}
 
-	
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	public static AggregateBinaryGPUInstruction parseInstruction( String str ) 
 		throws DMLRuntimeException 
 	{
@@ -109,26 +102,13 @@ public class AggregateBinaryGPUInstruction extends GPUInstruction
 		ec.releaseMatrixInputForGPUInstruction(_input2.getName());
 		ec.releaseMatrixOutputForGPUInstruction(_output.getName());
 	}
-	
-	/**
-	 * 
-	 * @param m1
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	@SuppressWarnings("unused")
 	private MatrixBlock transpose(MatrixBlock m1) throws DMLRuntimeException {
 		ReorgOperator r_op = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), 1);
 		return (MatrixBlock) (m1.reorgOperations(r_op, new MatrixBlock(), 0, 0, 0));
 	}
-	
-	/**
-	 * 
-	 * @param ec
-	 * @param var
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	@SuppressWarnings("unused")
 	private boolean isSparse(ExecutionContext ec, String var) throws DMLRuntimeException {
 		MatrixObject mo = ec.getMatrixObject(var);

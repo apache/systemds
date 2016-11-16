@@ -79,19 +79,6 @@ public class FrameRDDConverterUtils
 	//=====================================
 	// CSV <--> Binary block
 
-	/**
-	 * 
-	 * @param sc
-	 * @param input
-	 * @param mc
-	 * @param schema
-	 * @param hasHeader
-	 * @param delim
-	 * @param fill
-	 * @param fillValue
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	public static JavaPairRDD<Long, FrameBlock> csvToBinaryBlock(JavaSparkContext sc,
 			JavaPairRDD<LongWritable, Text> input, MatrixCharacteristics mc, ValueType[] schema,
 			boolean hasHeader, String delim, boolean fill, double fillValue) 
@@ -124,20 +111,7 @@ public class FrameRDDConverterUtils
 		
 		return out;
 	}
-	
-	/**
-	 * 
-	 * @param sc
-	 * @param input
-	 * @param mcOut
-	 * @param schema
-	 * @param hasHeader
-	 * @param delim
-	 * @param fill
-	 * @param fillValue
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static JavaPairRDD<Long, FrameBlock> csvToBinaryBlock(JavaSparkContext sc,
 			JavaRDD<String> input, MatrixCharacteristics mcOut, ValueType[] schema,
 			boolean hasHeader, String delim, boolean fill, double fillValue) 
@@ -150,15 +124,7 @@ public class FrameRDDConverterUtils
 		//convert to binary block
 		return csvToBinaryBlock(sc, prepinput, mcOut, schema, hasHeader, delim, fill, fillValue);
 	}
-	
-	/**
-	 * 
-	 * @param in
-	 * @param mcIn
-	 * @param props
-	 * @param strict
-	 * @return
-	 */
+
 	public static JavaRDD<String> binaryBlockToCsv(JavaPairRDD<Long,FrameBlock> in, 
 			MatrixCharacteristics mcIn, CSVFileFormatProperties props, boolean strict)
 	{
@@ -177,16 +143,7 @@ public class FrameRDDConverterUtils
 	
 	//=====================================
 	// Text cell <--> Binary block
-	
-	/**
-	 * 
-	 * @param sc
-	 * @param input
-	 * @param mcOut
-	 * @param schema
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static JavaPairRDD<Long, FrameBlock> textCellToBinaryBlock(JavaSparkContext sc,
 			JavaPairRDD<LongWritable, Text> in, MatrixCharacteristics mcOut, ValueType[] schema ) 
 		throws DMLRuntimeException  
@@ -199,15 +156,6 @@ public class FrameRDDConverterUtils
 		return textCellToBinaryBlockLongIndex(sc, input, mcOut, schema);
 	}
 
-	/**
-	 * 
-	 * @param sc
-	 * @param input
-	 * @param mcOut
-	 * @param schema
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	public static JavaPairRDD<Long, FrameBlock> textCellToBinaryBlockLongIndex(JavaSparkContext sc,
 			JavaPairRDD<Long, Text> input, MatrixCharacteristics mc, ValueType[] schema ) 
 		throws DMLRuntimeException  
@@ -226,14 +174,6 @@ public class FrameRDDConverterUtils
 		return FrameRDDAggregateUtils.mergeByKey( output ); 
 	}
 
-	/**
-	 * 
-	 * @param input
-	 * @param mcIn
-	 * @param format
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	public static JavaRDD<String> binaryBlockToTextCell(JavaPairRDD<Long, FrameBlock> input, MatrixCharacteristics mcIn) 
 		throws DMLRuntimeException 
 	{
@@ -244,14 +184,6 @@ public class FrameRDDConverterUtils
 	//=====================================
 	// Matrix block <--> Binary block
 
-	/**
-	 * 
-	 * @param sc
-	 * @param input
-	 * @param mcIn
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	public static JavaPairRDD<LongWritable, FrameBlock> matrixBlockToBinaryBlock(JavaSparkContext sc,
 			JavaPairRDD<MatrixIndexes, MatrixBlock> input, MatrixCharacteristics mcIn)
 		throws DMLRuntimeException 
@@ -261,14 +193,6 @@ public class FrameRDDConverterUtils
 			.mapToPair(new LongFrameToLongWritableFrameFunction());
 	}
 
-	/**
-	 * 
-	 * @param sc
-	 * @param input
-	 * @param mcIn
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	public static JavaPairRDD<Long, FrameBlock> matrixBlockToBinaryBlockLongIndex(JavaSparkContext sc,
 			JavaPairRDD<MatrixIndexes, MatrixBlock> input, MatrixCharacteristics mcIn)
 		throws DMLRuntimeException 
@@ -291,14 +215,6 @@ public class FrameRDDConverterUtils
 		return in.mapToPair(new MatrixToFrameBlockFunction(mc));
 	}
 
-	/**
-	 * 
-	 * @param in
-	 * @param mcIn
-	 * @param props
-	 * @param strict
-	 * @return
-	 */
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlockToMatrixBlock(JavaPairRDD<Long,FrameBlock> input, 
 			MatrixCharacteristics mcIn, MatrixCharacteristics mcOut) 
 	{
@@ -313,32 +229,13 @@ public class FrameRDDConverterUtils
 	//=====================================
 	// DataFrame <--> Binary block
 
-	/**
-	 * 
-	 * @param sc
-	 * @param df
-	 * @param mc
-	 * @param containsID
-	 * @return
-	 * @throws DMLRuntimeException 
-	 */
 	public static JavaPairRDD<Long, FrameBlock> dataFrameToBinaryBlock(JavaSparkContext sc,
 			DataFrame df, MatrixCharacteristics mc, boolean containsID) 
 		throws DMLRuntimeException 
 	{
 		return dataFrameToBinaryBlock(sc, df, mc, containsID, new Pair<String[], ValueType[]>());
 	}
-	
-	/**
-	 * 
-	 * @param sc
-	 * @param df
-	 * @param mc
-	 * @param containsID
-	 * @param out
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static JavaPairRDD<Long, FrameBlock> dataFrameToBinaryBlock(JavaSparkContext sc,
 			DataFrame df, MatrixCharacteristics mc, boolean containsID, Pair<String[],ValueType[]> out) 
 		throws DMLRuntimeException 
@@ -370,14 +267,6 @@ public class FrameRDDConverterUtils
 				new DataFrameToBinaryBlockFunction(mc, colnames, fschema, containsID, colVect));
 	}
 
-	/**
-	 * 
-	 * @param in
-	 * @param mcIn
-	 * @param props
-	 * @param strict
-	 * @return
-	 */
 	public static DataFrame binaryBlockToDataFrame(SQLContext sqlctx, JavaPairRDD<Long,FrameBlock> in, 
 			MatrixCharacteristics mc, ValueType[] schema)
 	{
@@ -401,10 +290,9 @@ public class FrameRDDConverterUtils
 	/**
 	 * This function will convert Frame schema into DataFrame schema 
 	 * 
-	 *  @param	schema
-	 *  		Frame schema in the form of List<ValueType>
-	 *  @return
-	 *  		Returns the DataFrame schema (StructType)
+	 * @param fschema frame schema
+	 * @param containsID true if contains ID column
+	 * @return Spark StructType of StructFields representing schema
 	 */
 	public static StructType convertFrameSchemaToDFSchema(ValueType[] fschema, boolean containsID)
 	{
@@ -439,9 +327,11 @@ public class FrameRDDConverterUtils
 	 * schema restriction: single vector column, which allows inference of
 	 * the vector length without data access and covers the common case. 
 	 * 
-	 * @param dfschema
-	 * @param containsID
-	 * @return 0-based column index of vector column, -1 if no vector. 
+	 * @param dfschema schema as StructType
+	 * @param colnames column names
+	 * @param fschema array of SystemML ValueTypes
+	 * @param containsID if true, contains ID column
+	 * @return 0-based column index of vector column, -1 if no vector.
 	 */
 	public static int convertDFSchemaToFrameSchema(StructType dfschema, String[] colnames, 
 			ValueType[] fschema, boolean containsID)
@@ -483,9 +373,10 @@ public class FrameRDDConverterUtils
 	}
 	
 	/**
+	 * Obtain column vector from DataFrame schema
 	 * 
-	 * @param dfschema
-	 * @param containsID
+	 * @param dfschema schema as StructType
+	 * @param containsID if true, contains ID column
 	 * @return 0-based column index of vector column, -1 if no vector.
 	 */
 	private static int getColVectFromDFSchema(StructType dfschema, boolean containsID) {
@@ -548,8 +439,8 @@ public class FrameRDDConverterUtils
 	 * Check if the rdd is already sorted in order to avoid unnecessary
 	 * sampling, shuffle, and sort per partition.
 	 * 
-	 * @param in
-	 * @return
+	 * @param in JavaPairRDD of FrameBlocks
+	 * @return true if RDD is sorted
 	 */
 	private static boolean isSorted(JavaPairRDD<Long, FrameBlock> in) {		
 		//check sorted partitions (returns max key if true; -1 otherwise)
@@ -564,9 +455,6 @@ public class FrameRDDConverterUtils
 		return true;
 	}
 
-	/**
-	 * 
-	 */
 	private static class SortingAnalysisFunction implements FlatMapFunction<Iterator<Long>,Long> 
 	{
 		private static final long serialVersionUID = -5789003262381127469L;
@@ -589,10 +477,7 @@ public class FrameRDDConverterUtils
 	
 	/////////////////////////////////
 	// CSV-SPECIFIC FUNCTIONS
-	
-	/**
-	 * 
-	 */
+
 	private static class StringToSerTextFunction implements PairFunction<String, LongWritable, Text> 
 	{
 		private static final long serialVersionUID = 8683232211035837695L;
@@ -602,10 +487,7 @@ public class FrameRDDConverterUtils
 			return new Tuple2<LongWritable,Text>(new SerLongWritable(1L), new SerText(arg0));
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	public static class LongWritableToSerFunction implements PairFunction<Tuple2<LongWritable,FrameBlock>,LongWritable,FrameBlock> 
 	{
 		private static final long serialVersionUID = 2286037080400222528L;
@@ -615,10 +497,7 @@ public class FrameRDDConverterUtils
 			return new Tuple2<LongWritable,FrameBlock>(new SerLongWritable(arg0._1.get()), arg0._2);
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	public static class LongWritableTextToLongTextFunction implements PairFunction<Tuple2<LongWritable,Text>,Long,Text> 
 	{
 		private static final long serialVersionUID = -5408386071466175348L;
@@ -628,10 +507,7 @@ public class FrameRDDConverterUtils
 			return new Tuple2<Long,Text>(new Long(arg0._1.get()), arg0._2);
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	public static class LongFrameToLongWritableFrameFunction implements PairFunction<Tuple2<Long,FrameBlock>,LongWritable,FrameBlock> 
 	{
 		private static final long serialVersionUID = -1467314923206783333L;
@@ -642,9 +518,6 @@ public class FrameRDDConverterUtils
 		}
 	}
 
-	/**
-	 * 
-	 */
 	public static class LongWritableFrameToLongFrameFunction implements PairFunction<Tuple2<LongWritable,FrameBlock>,Long,FrameBlock> 
 	{
 		private static final long serialVersionUID = -1232439643533739078L;
@@ -654,10 +527,7 @@ public class FrameRDDConverterUtils
 			return new Tuple2<Long, FrameBlock>(arg0._1.get(), arg0._2);
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class TextToStringFunction implements Function<Text,String> 
 	{
 		private static final long serialVersionUID = -2744814934501782747L;
@@ -768,14 +638,7 @@ public class FrameRDDConverterUtils
 		
 			return fb;
 		}
-		
-		/**
-		 * 
-		 * @param ix
-		 * @param fb
-		 * @param ret
-		 * @throws DMLRuntimeException
-		 */
+
 		private void flushBlocksToList( Long ix, FrameBlock fb, ArrayList<Tuple2<Long,FrameBlock>> ret ) 
 			throws DMLRuntimeException
 		{			
@@ -783,10 +646,7 @@ public class FrameRDDConverterUtils
 				ret.add(new Tuple2<Long,FrameBlock>(ix, fb));
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class BinaryBlockToCSVFunction implements FlatMapFunction<Tuple2<Long,FrameBlock>,String> 
 	{
 		private static final long serialVersionUID = 8020608184930291069L;
@@ -918,14 +778,7 @@ public class FrameRDDConverterUtils
 		
 			return ret;
 		}
-		
-		/**
-		 * 
-		 * @param ix
-		 * @param fb
-		 * @param ret
-		 * @throws DMLRuntimeException
-		 */
+
 		private static void flushBlocksToList( Long ix, FrameBlock fb, ArrayList<Tuple2<Long,FrameBlock>> ret ) 
 			throws DMLRuntimeException
 		{			
@@ -934,9 +787,6 @@ public class FrameRDDConverterUtils
 		}
 	}
 
-	/**
-	 * 
-	 */
 	private static class BinaryBlockToDataFrameFunction implements FlatMapFunction<Tuple2<Long,FrameBlock>,Row> 
 	{
 		private static final long serialVersionUID = 8093340778966667460L;
@@ -984,14 +834,6 @@ public class FrameRDDConverterUtils
 			_bufflen = (int) Math.min(_rlen*_clen, FrameBlock.BUFFER_SIZE);
 		}
 
-
-		/**
-		 * 
-		 * @param rbuff
-		 * @param ret
-		 * @throws IOException 
-		 * @throws DMLRuntimeException 
-		 */
 		protected void flushBufferToList( FrameReblockBuffer rbuff,  ArrayList<Tuple2<Long,FrameBlock>> ret ) 
 			throws IOException, DMLRuntimeException
 		{
@@ -1001,11 +843,7 @@ public class FrameRDDConverterUtils
 			ret.addAll(SparkUtils.fromIndexedFrameBlock(rettmp));
 		}
 	}
-	
-	
-	/**
-	 * 
-	 */
+
 	private static class TextToBinaryBlockFunction extends CellToBinaryBlockFunction implements PairFlatMapFunction<Iterator<Text>,Long,FrameBlock> 
 	{
 		private static final long serialVersionUID = -2042208027876880588L;
@@ -1108,8 +946,8 @@ public class FrameRDDConverterUtils
 		 * Computes an output row block size that ensures matrix block alignment 
 		 * and contains at most FrameBlock.BUFFER_SIZE cells per block.
 		 * 
-		 * @param mc
-		 * @return
+		 * @param mc matrix characteristics
+		 * @return block size
 		 */
 		public static int computeBlockSize(MatrixCharacteristics mc) {
 			int brlen = mc.getRowsPerBlock();
@@ -1121,9 +959,6 @@ public class FrameRDDConverterUtils
 		}
 	}
 
-	/**
-	 * 
-	 */
 	private static class MatrixToFrameBlockFunction implements PairFunction<Tuple2<MatrixIndexes,MatrixBlock>,Long,FrameBlock>
 	{
 		private static final long serialVersionUID = 3716019666116660815L;
@@ -1144,10 +979,6 @@ public class FrameRDDConverterUtils
 		}
 	}
 
-	
-	/**
-	 * 
-	 */
 	private static class BinaryBlockToMatrixBlockFunction implements PairFlatMapFunction<Tuple2<Long,FrameBlock>,MatrixIndexes, MatrixBlock> 
 	{
 		private static final long serialVersionUID = -2654986510471835933L;

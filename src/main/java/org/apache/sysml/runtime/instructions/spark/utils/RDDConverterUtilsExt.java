@@ -88,8 +88,8 @@ public class RDDConverterUtilsExt
 	 * import org.apache.spark.api.java.JavaSparkContext
 	 * import org.apache.spark.mllib.linalg.distributed.MatrixEntry
 	 * import org.apache.spark.mllib.linalg.distributed.CoordinateMatrix
-	 * val matRDD = sc.textFile("ratings.text").map(_.split(" ")).map(x => new MatrixEntry(x(0).toLong, x(1).toLong, x(2).toDouble)).filter(_.value != 0).cache
-	 * require(matRDD.filter(x => x.i == 0 || x.j == 0).count == 0, "Expected 1-based ratings file")
+	 * val matRDD = sc.textFile("ratings.text").map(_.split(" ")).map(x =&gt; new MatrixEntry(x(0).toLong, x(1).toLong, x(2).toDouble)).filter(_.value != 0).cache
+	 * require(matRDD.filter(x =&gt; x.i == 0 || x.j == 0).count == 0, "Expected 1-based ratings file")
 	 * val nnz = matRDD.count
 	 * val numRows = matRDD.map(_.i).max
 	 * val numCols = matRDD.map(_.j).max
@@ -98,12 +98,12 @@ public class RDDConverterUtilsExt
 	 * val binBlocks = RDDConverterUtilsExt.coordinateMatrixToBinaryBlock(new JavaSparkContext(sc), coordinateMatrix, mc, true)
 	 * </code></pre>
 	 * 
-	 * @param sc
-	 * @param input
-	 * @param mcIn
-	 * @param outputEmptyBlocks
-	 * @return
-	 * @throws DMLRuntimeException
+	 * @param sc java spark context
+	 * @param input coordinate matrix
+	 * @param mcIn matrix characteristics
+	 * @param outputEmptyBlocks if true, inject empty blocks if necessary
+	 * @return matrix as {@code JavaPairRDD<MatrixIndexes, MatrixBlock>}
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> coordinateMatrixToBinaryBlock(JavaSparkContext sc,
 			CoordinateMatrix input, MatrixCharacteristics mcIn, boolean outputEmptyBlocks) throws DMLRuntimeException 
@@ -276,11 +276,12 @@ public class RDDConverterUtilsExt
 		}
 		
 	}
-	
+
 	/**
 	 * Add element indices as new column to DataFrame
-	 * Note: Element indices start from 1
+	 * 
 	 * @param df input data frame
+	 * @param sqlContext SQL context
 	 * @param nameOfCol name of index column
 	 * @return new data frame
 	 */
@@ -404,14 +405,7 @@ public class RDDConverterUtilsExt
 		
 			return ret;
 		}
-		
-		/**
-		 * 
-		 * @param rbuff
-		 * @param ret
-		 * @throws IOException 
-		 * @throws DMLRuntimeException 
-		 */
+
 		private void flushBufferToList( ReblockBuffer rbuff,  ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret ) 
 			throws IOException, DMLRuntimeException
 		{

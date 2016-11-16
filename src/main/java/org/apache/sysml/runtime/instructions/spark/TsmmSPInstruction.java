@@ -36,9 +36,6 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 
 import scala.Tuple2;
 
-/**
- * 
- */
 public class TsmmSPInstruction extends UnarySPInstruction 
 {
 	
@@ -51,12 +48,6 @@ public class TsmmSPInstruction extends UnarySPInstruction
 		_type = type;
 	}
 
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	public static TsmmSPInstruction parseInstruction( String str ) 
 		throws DMLRuntimeException 
 	{
@@ -93,10 +84,7 @@ public class TsmmSPInstruction extends UnarySPInstruction
 		//this also includes implicit maintenance of matrix characteristics
 		sec.setMatrixOutput(output.getName(), out);
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class RDDTSMMFunction implements Function<Tuple2<MatrixIndexes,MatrixBlock>, MatrixBlock> 
 	{
 		private static final long serialVersionUID = 2935770425858019666L;

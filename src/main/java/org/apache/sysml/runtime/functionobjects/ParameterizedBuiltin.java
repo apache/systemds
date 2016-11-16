@@ -211,12 +211,12 @@ public class ParameterizedBuiltin extends ValueFunction
 	/**
 	 * Helper function to compute distribution-specific cdf (both lowertail and uppertail) and inverse cdf.
 	 * 
-	 * @param dcode
-	 * @param params
-	 * @param inverse
-	 * @return
-	 * @throws MathArithmeticException
-	 * @throws DMLRuntimeException
+	 * @param dcode probablility distribution code
+	 * @param params map of parameters
+	 * @param inverse true if inverse
+	 * @return cdf or inverse cdf
+	 * @throws MathArithmeticException if MathArithmeticException occurs
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private double computeFromDistribution (ProbabilityDistributionCode dcode, HashMap<String,String> params, boolean inverse ) throws MathArithmeticException, DMLRuntimeException {
 		

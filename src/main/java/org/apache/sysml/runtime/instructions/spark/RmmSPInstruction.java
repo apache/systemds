@@ -44,9 +44,6 @@ import org.apache.sysml.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-/**
- * 
- */
 public class RmmSPInstruction extends BinarySPInstruction 
 {
 	
@@ -56,12 +53,6 @@ public class RmmSPInstruction extends BinarySPInstruction
 		_sptype = SPINSTRUCTION_TYPE.RMM;		
 	}
 
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	public static RmmSPInstruction parseInstruction( String str ) 
 		throws DMLRuntimeException 
 	{
@@ -112,10 +103,6 @@ public class RmmSPInstruction extends BinarySPInstruction
 		sec.addLineageRDD(output.getName(), input2.getName());
 	}
 
-
-	/**
-	 * 
-	 */
 	private static class RmmReplicateFunction implements PairFlatMapFunction<Tuple2<MatrixIndexes, MatrixBlock>, TripleIndexes, MatrixBlock> 
 	{
 		private static final long serialVersionUID = 3577072668341033932L;
@@ -169,10 +156,6 @@ public class RmmSPInstruction extends BinarySPInstruction
 		}
 	}
 
-	/**
-	 * 
-	 * 
-	 */
 	private static class RmmMultiplyFunction implements PairFunction<Tuple2<TripleIndexes, Tuple2<MatrixBlock,MatrixBlock>>, MatrixIndexes, MatrixBlock> 
 	{
 		private static final long serialVersionUID = -5772410117511730911L;

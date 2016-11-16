@@ -54,13 +54,7 @@ public class StringInitCPInstruction extends UnaryCPInstruction
 	public long getCols() {
 		return _clen;
 	}
-	
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static StringInitCPInstruction parseInstruction(String str) 
 		throws DMLRuntimeException 
 	{

@@ -41,9 +41,6 @@ import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.operators.CMOperator;
 import org.apache.sysml.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
 
-/**
- * 
- */
 public class CentralMomentSPInstruction extends UnarySPInstruction
 {
 	
@@ -52,13 +49,7 @@ public class CentralMomentSPInstruction extends UnarySPInstruction
 	{
 		super(op, in1, in2, in3, out, opcode, str);
 	}
-	
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static CentralMomentSPInstruction parseInstruction(String str)
 		throws DMLRuntimeException 
 	{
@@ -147,9 +138,6 @@ public class CentralMomentSPInstruction extends UnarySPInstruction
 		ec.setScalarOutput(output.getName(), ret);
 	}
 
-	/**
-	 * 
-	 */
 	private static class RDDCMFunction implements Function<MatrixBlock, CM_COV_Object> 
 	{
 		private static final long serialVersionUID = 2293839116041610644L;
@@ -168,10 +156,7 @@ public class CentralMomentSPInstruction extends UnarySPInstruction
 			return arg0.cmOperations(_op);
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class RDDCMWeightsFunction implements Function<Tuple2<MatrixBlock,MatrixBlock>, CM_COV_Object> 
 	{
 		private static final long serialVersionUID = -8949715516574052497L;

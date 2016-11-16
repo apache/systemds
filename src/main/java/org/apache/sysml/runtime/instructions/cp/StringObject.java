@@ -74,10 +74,6 @@ public class StringObject extends ScalarObject
 		return _value;
 	}
 
-	/**
-	 * 
-	 * @param len
-	 */
 	public static void checkMaxStringLength( long len ) 
 		throws DMLRuntimeException
 	{

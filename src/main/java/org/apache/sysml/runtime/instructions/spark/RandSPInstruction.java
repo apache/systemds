@@ -198,12 +198,6 @@ public class RandSPInstruction extends UnarySPInstruction
 		this.sparsity = sparsity;
 	}
 
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	public static RandSPInstruction parseInstruction(String str) 
 		throws DMLRuntimeException 
 	{
@@ -326,12 +320,7 @@ public class RandSPInstruction extends UnarySPInstruction
 				throw new DMLRuntimeException("Invalid datagen method: "+method); 
 		}
 	}
-	
-	/**
-	 * 
-	 * @param sec
-	 * @throws DMLRuntimeException
-	 */
+
 	private void generateRandData(SparkExecutionContext sec) 
 		throws DMLRuntimeException
 	{
@@ -440,12 +429,7 @@ public class RandSPInstruction extends UnarySPInstruction
 		}
 		sec.setRDDHandleForVariable(output.getName(), out);
 	}
-	
-	/**
-	 * 
-	 * @param sec
-	 * @throws DMLRuntimeException
-	 */
+
 	private void generateSequence(SparkExecutionContext sec) 
 		throws DMLRuntimeException
 	{
@@ -533,8 +517,8 @@ public class RandSPInstruction extends UnarySPInstruction
 	/**
 	 * Helper function to construct a sample.
 	 * 
-	 * @param sec
-	 * @throws DMLRuntimeException
+	 * @param sec spark execution context
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private void generateSample(SparkExecutionContext sec) 
 		throws DMLRuntimeException 
@@ -700,7 +684,7 @@ public class RandSPInstruction extends UnarySPInstruction
 	}
 	
 	/**
-	 * Function to convert JavaRDD of Doubles to JavaPairRDD<MatrixIndexes, MatrixCell>
+	 * Function to convert JavaRDD of Doubles to {@code JavaPairRDD<MatrixIndexes, MatrixCell>}
 	 *
 	 */
 	private static class Double2MatrixCell implements PairFunction<Tuple2<Double, Long>, MatrixIndexes, MatrixCell>
@@ -734,10 +718,7 @@ public class RandSPInstruction extends UnarySPInstruction
 			return new Tuple2<Double,Double>( r.nextDouble(), t );
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class ExtractSeedTuple implements PairFunction<String, MatrixIndexes, Tuple2<Long,Long>> {
 		private static final long serialVersionUID = 3973794676854157101L;
 
@@ -754,10 +735,7 @@ public class RandSPInstruction extends UnarySPInstruction
 			return new Tuple2<MatrixIndexes, Tuple2<Long, Long>>(ix,seed);
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class ExtractOffsetTuple implements Function<String, Double> {
 		private static final long serialVersionUID = -3980257526545002552L;
 
@@ -766,10 +744,7 @@ public class RandSPInstruction extends UnarySPInstruction
 			return Double.parseDouble(arg);
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class GenerateRandomBlock implements PairFunction<Tuple2<MatrixIndexes, Tuple2<Long, Long> >, MatrixIndexes, MatrixBlock> 
 	{
 		private static final long serialVersionUID = 1616346120426470173L;
@@ -821,10 +796,7 @@ public class RandSPInstruction extends UnarySPInstruction
 			return new Tuple2<MatrixIndexes, MatrixBlock>(kv._1, blk);
 		}
 	}
-	
-	/**
-	 *
-	 */
+
 	private static class GenerateSequenceBlock implements PairFunction<Double, MatrixIndexes, MatrixBlock> 
 	{
 		private static final long serialVersionUID = 5779681055705756965L;
@@ -863,7 +835,13 @@ public class RandSPInstruction extends UnarySPInstruction
 	}
 	
 	/**
-	 * This will check if there is sufficient memory locally.  
+	 * This will check if there is sufficient memory locally.
+	 * 
+	 * @param lRows number of rows
+	 * @param lCols number of columns
+	 * @param sparsity sparsity ratio
+	 * @param min minimum value
+	 * @param max maximum value
 	 * @return
 	 */
 	private boolean isMemAvail(long lRows, long lCols, double sparsity, double min, double max) 

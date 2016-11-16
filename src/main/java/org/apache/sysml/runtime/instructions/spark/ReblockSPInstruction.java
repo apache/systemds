@@ -114,13 +114,7 @@ public class ReblockSPInstruction extends UnarySPInstruction
 		else if( input1.getDataType() == DataType.FRAME )
 			processFrameReblockInstruction(sec, iinfo);
 	}
-	
-	/**
-	 * 
-	 * @param sec
-	 * @param iinfo
-	 * @throws DMLRuntimeException
-	 */
+
 	@SuppressWarnings("unchecked")
 	protected void processMatrixReblockInstruction(SparkExecutionContext sec, InputInfo iinfo) 
 		throws DMLRuntimeException
@@ -195,13 +189,7 @@ public class ReblockSPInstruction extends UnarySPInstruction
 					+ "for ReblockSPInstruction:" + InputInfo.inputInfoToString(iinfo));
 		}
 	}
-	
-	/**
-	 * 
-	 * @param sec
-	 * @param iinfo
-	 * @throws DMLRuntimeException
-	 */
+
 	@SuppressWarnings("unchecked")
 	protected void processFrameReblockInstruction(SparkExecutionContext sec, InputInfo iinfo) 
 		throws DMLRuntimeException

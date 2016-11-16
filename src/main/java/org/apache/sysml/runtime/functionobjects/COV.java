@@ -61,12 +61,12 @@ public class COV extends ValueFunction
 	/**
 	 * General case for arbitrary weights w2
 	 * 
-	 * @param in1
-	 * @param u
-	 * @param v
-	 * @param w2
-	 * @return
-	 * @throws DMLRuntimeException
+	 * @param in1 input data
+	 * @param u ?
+	 * @param v ?
+	 * @param w2 ?
+	 * @return result
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public Data execute(Data in1, double u, double v, double w2) 
 		throws DMLRuntimeException 
@@ -94,6 +94,11 @@ public class COV extends ValueFunction
 	
 	/**
 	 * Special case for weights w2==1
+	 * 
+	 * @param in1 ?
+	 * @param u ?
+	 * @param v ?
+	 * @return result
 	 */
 	public Data execute(Data in1, double u, double v) 
 		throws DMLRuntimeException 

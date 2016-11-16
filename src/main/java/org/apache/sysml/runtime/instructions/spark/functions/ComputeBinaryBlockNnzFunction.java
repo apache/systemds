@@ -24,9 +24,6 @@ import org.apache.spark.api.java.function.Function;
 
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
-/**
- * 
- */
 public class ComputeBinaryBlockNnzFunction implements Function<MatrixBlock,MatrixBlock> 
 {
 	private static final long serialVersionUID = -8396410450821999936L;

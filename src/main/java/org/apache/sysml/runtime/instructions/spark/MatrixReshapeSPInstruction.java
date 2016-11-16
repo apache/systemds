@@ -41,10 +41,6 @@ import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-/**
- * 
- * 
- */
 public class MatrixReshapeSPInstruction extends UnarySPInstruction
 {	
 	
@@ -61,13 +57,7 @@ public class MatrixReshapeSPInstruction extends UnarySPInstruction
 		_opCols = in3;
 		_opByRow = in4;
 	}
-	
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static MatrixReshapeSPInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{

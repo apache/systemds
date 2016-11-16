@@ -37,10 +37,6 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-/**
- * 
- * 
- */
 public class DataPartitionCPInstruction extends UnaryCPInstruction
 {	
 	
@@ -52,13 +48,7 @@ public class DataPartitionCPInstruction extends UnaryCPInstruction
 		_cptype = CPINSTRUCTION_TYPE.MMTSJ;
 		_pformat = pformat;
 	}
-	
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static DataPartitionCPInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{

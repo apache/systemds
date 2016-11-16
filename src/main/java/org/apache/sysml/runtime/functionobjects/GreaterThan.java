@@ -53,7 +53,7 @@ public class GreaterThan extends ValueFunction
 	/**
 	 * execute() method that returns double is required since current map-reduce
 	 * runtime can only produce matrices of doubles. This method is used on MR
-	 * side to perform comparisons on matrices like A>B and A>2.5
+	 * side to perform comparisons on matrices like A&gt;B and A&gt;2.5
 	 */	
 	@Override
 	public double execute(double in1, double in2) {

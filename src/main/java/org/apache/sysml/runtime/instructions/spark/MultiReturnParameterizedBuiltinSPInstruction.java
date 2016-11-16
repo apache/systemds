@@ -82,13 +82,7 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 	public CPOperand getOutput(int i) {
 		return _outputs.get(i);
 	}
-	
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static MultiReturnParameterizedBuiltinSPInstruction parseInstruction( String str ) 
 		throws DMLRuntimeException 
 	{
@@ -183,12 +177,7 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 			throw new RuntimeException(ex);
 		}
 	}
-	
-	/**
-	 * 
-	 * @param encoder
-	 * @return
-	 */
+
 	private boolean containsMVImputeEncoder(Encoder encoder) {
 		if( encoder instanceof EncoderComposite )
 			for( Encoder cencoder : ((EncoderComposite)encoder).getEncoders() )
@@ -196,12 +185,7 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 					return true;
 		return false;	
 	}
-	
-	/**
-	 * 
-	 * @param encoder
-	 * @return
-	 */
+
 	private MVImputeAgent getMVImputeEncoder(Encoder encoder) {
 		if( encoder instanceof EncoderComposite )
 			for( Encoder cencoder : ((EncoderComposite)encoder).getEncoders() )
@@ -294,10 +278,7 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 			return ret;
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class MaxAcc implements AccumulatorParam<Long>, Serializable 
 	{
 		private static final long serialVersionUID = -3739727823287550826L;
@@ -317,10 +298,7 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 			return Math.max(arg0, arg1);	
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	public static class TransformEncodeBuild2Function implements PairFlatMapFunction<Iterator<Tuple2<Long, FrameBlock>>, Integer, ColumnMetadata>
 	{
 		private static final long serialVersionUID = 6336375833412029279L;
@@ -364,10 +342,7 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 			return ret;
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	public static class TransformEncodeGroup2Function implements FlatMapFunction<Tuple2<Integer, Iterable<ColumnMetadata>>, String>
 	{
 		private static final long serialVersionUID = 702100641492347459L;

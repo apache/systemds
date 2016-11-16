@@ -68,8 +68,8 @@ public class RowMatrixBlock implements Externalizable
 	 * Redirects the default java serialization via externalizable to our default 
 	 * hadoop writable serialization for efficient deserialization. 
 	 * 
-	 * @param is
-	 * @throws IOException
+	 * @param is object input
+	 * @throws IOException if IOException occurs
 	 */
 	public void readExternal(ObjectInput is) 
 		throws IOException
@@ -89,8 +89,8 @@ public class RowMatrixBlock implements Externalizable
 	 * Redirects the default java serialization via externalizable to our default 
 	 * hadoop writable serialization for efficient serialization. 
 	 * 
-	 * @param is
-	 * @throws IOException
+	 * @param os object output
+	 * @throws IOException if IOException occurs
 	 */
 	public void writeExternal(ObjectOutput os) 
 		throws IOException
@@ -108,11 +108,6 @@ public class RowMatrixBlock implements Externalizable
 		}
 	}
 
-	/**
-	 * 
-	 * @param dos
-	 * @throws IOException
-	 */
 	private void writeHeaderAndPayload(DataOutput dos) 
 		throws IOException 
 	{
@@ -120,12 +115,7 @@ public class RowMatrixBlock implements Externalizable
 		dos.writeInt(_row);
 		_value.write(dos);
 	}
-	
-	/**
-	 * 
-	 * @param dis
-	 * @throws IOException 
-	 */
+
 	private void readHeaderAndPayload(DataInput dis) 
 		throws IOException 
 	{

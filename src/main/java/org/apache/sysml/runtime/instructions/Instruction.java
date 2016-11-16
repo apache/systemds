@@ -73,8 +73,12 @@ public abstract class Instruction
 	}
 	
 	/**
-	 * Setter for instruction line number 
-	 * @param ln Exact (or approximate) DML script line number
+	 * Setter for instruction line/column number 
+	 * 
+	 * @param beginLine beginning line position
+	 * @param endLine ending line position
+	 * @param beginCol beginning column position
+	 * @param endCol ending column position
 	 */
 	public void setLocation ( int beginLine, int endLine,  int beginCol, int endCol) {
 		this.beginLine = beginLine;
@@ -168,11 +172,7 @@ public abstract class Instruction
 		else
 			return getOpcode();
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public boolean requiresLabelUpdate()
 	{
 		return instString.contains( Lop.VARIABLE_NAME_PLACEHOLDER );
@@ -183,9 +183,9 @@ public abstract class Instruction
 	 * should overwrite this method in order to update (1) the in-memory instruction
 	 * and (2) the instruction string 
 	 * 
-	 * @param pattern
-	 * @param replace
-	 * @throws DMLRuntimeException 
+	 * @param pattern ?
+	 * @param replace ?
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public void updateInstructionThreadID(String pattern, String replace) 
 		throws DMLRuntimeException
@@ -198,9 +198,9 @@ public abstract class Instruction
 	 * Overwriting methods should first call the super method and subsequently do
 	 * their custom setup.
 	 * 
-	 * @param ec
-	 * @return
-	 * @throws DMLRuntimeException 
+	 * @param ec execution context
+	 * @return instruction
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public Instruction preprocessInstruction(ExecutionContext ec)
 		throws DMLRuntimeException
@@ -226,7 +226,8 @@ public abstract class Instruction
 	 * Overwriting methods should first do their custom tear down and subsequently 
 	 * call the super method.
 	 * 
-	 * @param ec
+	 * @param ec execution context
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public void postprocessInstruction(ExecutionContext ec)
 		throws DMLRuntimeException

@@ -157,13 +157,7 @@ public class CheckpointSPInstruction extends UnarySPInstruction
 		}
 		sec.setVariable( output.getName(), cd);
 	}
-	
-	/**
-	 * 
-	 * @param mc
-	 * @param in
-	 * @return
-	 */
+
 	public static int getNumCoalescePartitions(MatrixCharacteristics mc, JavaPairRDD<?,?> in)
 	{
 		if( mc.dimsKnown(true) ) {

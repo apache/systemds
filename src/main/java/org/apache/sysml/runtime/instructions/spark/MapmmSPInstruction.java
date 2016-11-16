@@ -77,12 +77,6 @@ public class MapmmSPInstruction extends BinarySPInstruction
 		_aggtype = aggtype;
 	}
 
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	public static MapmmSPInstruction parseInstruction( String str ) 
 		throws DMLRuntimeException 
 	{
@@ -166,13 +160,7 @@ public class MapmmSPInstruction extends BinarySPInstruction
 			updateBinaryMMOutputMatrixCharacteristics(sec, true);
 		}
 	}
-	
-	/**
-	 * 
-	 * @param mcIn
-	 * @param type
-	 * @return
-	 */
+
 	private static boolean preservesPartitioning( MatrixCharacteristics mcIn, CacheType type )
 	{
 		if( type == CacheType.LEFT )
@@ -185,9 +173,9 @@ public class MapmmSPInstruction extends BinarySPInstruction
 	 * Indicates if there is a need to apply a flatmap rdd operation because a single 
 	 * input block creates multiple output blocks.
 	 * 
-	 * @param type
-	 * @param mcBc
-	 * @return
+	 * @param type cache type
+	 * @param mcBc matrix characteristics
+	 * @return true if single input block creates multiple output blocks
 	 */
 	private static boolean requiresFlatMapFunction( CacheType type, MatrixCharacteristics mcBc)
 	{
@@ -200,11 +188,11 @@ public class MapmmSPInstruction extends BinarySPInstruction
 	 * degree of parallelism or reduce the output partition size (e.g., Spark still has a
 	 * 2GB limitation of partitions)
 	 * 
-	 * @param type
-	 * @param mcRdd
-	 * @param mcBc
-	 * @param numPartitions
-	 * @return
+	 * @param type cache type
+	 * @param mcRdd rdd matrix characteristics
+	 * @param mcBc ?
+	 * @param numPartitions number of partitions
+	 * @return true need to repartition input RDD
 	 */
 	private static boolean requiresRepartitioning( CacheType type, MatrixCharacteristics mcRdd, MatrixCharacteristics mcBc, int numPartitions ) {
 		//note: as repartitioning requires data shuffling, we try to be very conservative here
@@ -223,13 +211,13 @@ public class MapmmSPInstruction extends BinarySPInstruction
 
 	/**
 	 * Computes the number of target partitions for repartitioning input rdds in case of 
-	 * outer-product-like mm. 
+	 * outer-product-like mm.
 	 * 
-	 * @param type
-	 * @param mcRdd
-	 * @param mcBc
-	 * @param numPartitions
-	 * @return
+	 * @param type cache type
+	 * @param mcRdd rdd matrix characteristics
+	 * @param mcBc ?
+	 * @param numPartitions number of partitions
+	 * @return number of target partitions for repartitioning
 	 */
 	private static int getNumRepartitioning( CacheType type, MatrixCharacteristics mcRdd, MatrixCharacteristics mcBc, int numPartitions ) {
 		boolean isLeft = (type == CacheType.LEFT);
@@ -239,10 +227,7 @@ public class MapmmSPInstruction extends BinarySPInstruction
 		long numParts = sizeOutput / InfrastructureAnalyzer.getHDFSBlockSize();
 		return (int)Math.min(numParts, (isLeft?mcRdd.getNumColBlocks():mcRdd.getNumRowBlocks()));
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class RDDMapMMFunction implements PairFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock> 
 	{
 		private static final long serialVersionUID = 8197406787010296291L;
@@ -343,10 +328,7 @@ public class MapmmSPInstruction extends BinarySPInstruction
 			}
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class RDDMapMMPartitionFunction implements PairFlatMapFunction<Iterator<Tuple2<MatrixIndexes, MatrixBlock>>, MatrixIndexes, MatrixBlock> 
 	{
 		private static final long serialVersionUID = 1886318890063064287L;
@@ -412,11 +394,7 @@ public class MapmmSPInstruction extends BinarySPInstruction
 			}			
 		}
 	}
-	
-	/**
-	 * 
-	 * 
-	 */
+
 	private static class RDDFlatMapMMFunction implements PairFlatMapFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock> 
 	{
 		private static final long serialVersionUID = -6076256569118957281L;

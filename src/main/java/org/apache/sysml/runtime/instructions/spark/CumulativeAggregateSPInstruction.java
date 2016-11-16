@@ -37,9 +37,6 @@ import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.OperationsOnMatrixValues;
 import org.apache.sysml.runtime.matrix.operators.AggregateUnaryOperator;
 
-/**
- * 
- */
 public class CumulativeAggregateSPInstruction extends AggregateUnarySPInstruction 
 {
 	
@@ -49,12 +46,6 @@ public class CumulativeAggregateSPInstruction extends AggregateUnarySPInstructio
 		_sptype = SPINSTRUCTION_TYPE.CumsumAggregate;		
 	}
 
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	public static CumulativeAggregateSPInstruction parseInstruction( String str ) 
 		throws DMLRuntimeException 
 	{
@@ -93,11 +84,7 @@ public class CumulativeAggregateSPInstruction extends AggregateUnarySPInstructio
 		sec.setRDDHandleForVariable(output.getName(), out);	
 		sec.addLineageRDD(output.getName(), input1.getName());
 	}
-	
-	/**
-	 * 
-	 * 
-	 */
+
 	private static class RDDCumAggFunction implements PairFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock> 
 	{
 		private static final long serialVersionUID = 11324676268945117L;

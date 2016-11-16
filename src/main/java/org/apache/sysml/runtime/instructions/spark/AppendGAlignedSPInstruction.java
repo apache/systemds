@@ -92,10 +92,7 @@ public class AppendGAlignedSPInstruction extends BinarySPInstruction
 		sec.addLineageRDD(output.getName(), input1.getName());
 		sec.addLineageRDD(output.getName(), input2.getName());
 	}
-	
-	/**
-	 * 
-	 */
+
 	public static class ShiftColumnIndex implements PairFunction<Tuple2<MatrixIndexes,MatrixBlock>, MatrixIndexes,MatrixBlock> 
 	{
 		private static final long serialVersionUID = -5185023611319654242L;

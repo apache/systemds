@@ -31,17 +31,17 @@ public interface IDistributedCacheConsumer
 	/**
 	 * Determines if given index is only used via distributed cache. 
 	 * 
-	 * @param inst
-	 * @param index
-	 * @return
+	 * @param inst instruction
+	 * @param index ?
+	 * @return true if given index is only used via distributed cache.
 	 */
 	public boolean isDistCacheOnlyIndex( String inst, byte index );
 	
 	/**
 	 * Adds all indexes that are used via distributed cache to the output. 
 	 * 
-	 * @param inst
-	 * @param indexes
+	 * @param inst instruction
+	 * @param indexes ?
 	 */
 	public void addDistCacheIndex( String inst, ArrayList<Byte> indexes );
 }

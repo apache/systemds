@@ -33,10 +33,6 @@ import org.apache.sysml.runtime.matrix.data.MatrixValue;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.QuaternaryOperator;
 
-/**
- * 
- * 
- */
 public class QuaternaryCPInstruction extends ComputationCPInstruction
 {
 	
@@ -52,12 +48,6 @@ public class QuaternaryCPInstruction extends ComputationCPInstruction
 		_numThreads = k;
 	}
 
-	/**
-	 * 
-	 * @param inst
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	public static QuaternaryCPInstruction parseInstruction(String inst) 
 		throws DMLRuntimeException
 	{	

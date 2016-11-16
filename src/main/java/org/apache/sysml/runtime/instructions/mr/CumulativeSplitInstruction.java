@@ -30,10 +30,6 @@ import org.apache.sysml.runtime.matrix.data.MatrixValue;
 import org.apache.sysml.runtime.matrix.mapred.CachedValueMap;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 
-/**
- * 
- * 
- */
 public class CumulativeSplitInstruction extends UnaryInstruction 
 {
 	

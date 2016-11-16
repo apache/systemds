@@ -84,10 +84,7 @@ public class BinUaggChainSPInstruction extends UnarySPInstruction
 		sec.setRDDHandleForVariable(output.getName(), out);	
 		sec.addLineageRDD(output.getName(), input1.getName());
 	}
-	
-	/**
-	 * 
-	 */
+
 	public static class RDDBinUaggChainFunction implements Function<MatrixBlock,MatrixBlock> 
 	{
 		private static final long serialVersionUID = 886065328623752520L;

@@ -50,9 +50,6 @@ public class OuterVectorBinaryOpFunction implements PairFlatMapFunction<Tuple2<M
 		return new OuterVectorBinaryOpIterator(arg0);
 	}
 
-	/**
-	 * 
-	 */
 	private class OuterVectorBinaryOpIterator implements Iterable<Tuple2<MatrixIndexes, MatrixBlock>>, Iterator<Tuple2<MatrixIndexes, MatrixBlock>>
 	{
 		private Tuple2<MatrixIndexes, MatrixBlock> _currBlk = null;

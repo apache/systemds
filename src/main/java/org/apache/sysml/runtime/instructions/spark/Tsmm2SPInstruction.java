@@ -52,9 +52,6 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 
 import scala.Tuple2;
 
-/**
- * 
- */
 public class Tsmm2SPInstruction extends UnarySPInstruction 
 {
 	private MMTSJType _type = null;
@@ -66,12 +63,6 @@ public class Tsmm2SPInstruction extends UnarySPInstruction
 		_type = type;
 	}
 
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	public static Tsmm2SPInstruction parseInstruction( String str ) 
 		throws DMLRuntimeException 
 	{
@@ -135,10 +126,7 @@ public class Tsmm2SPInstruction extends UnarySPInstruction
 			sec.addLineageRDD(output.getName(), input1.getName());	
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class RDDTSMM2Function implements PairFlatMapFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock> 
 	{
 		private static final long serialVersionUID = 2935770425858019666L;
@@ -252,10 +240,7 @@ public class Tsmm2SPInstruction extends UnarySPInstruction
 			return out;
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class ShiftTSMMIndexesFunction implements PairFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock> 
 	{
 		private static final long serialVersionUID = -3858454295795680100L;
@@ -280,9 +265,10 @@ public class Tsmm2SPInstruction extends UnarySPInstruction
 	/**
 	 * Helper function to setup output dimensions.
 	 * 
-	 * @param in
-	 * @return
-	 * @throws DMLRuntimeException 
+	 * @param in input matrix block
+	 * @param out output matrix block
+	 * @return matrix block
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private static MatrixBlock transpose(MatrixBlock in, MatrixBlock out) throws DMLRuntimeException {
 		if( out == null )

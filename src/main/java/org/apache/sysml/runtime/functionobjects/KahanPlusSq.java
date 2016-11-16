@@ -43,6 +43,8 @@ public class KahanPlusSq extends KahanFunction implements Serializable {
 
     /**
      * Get the KahanPlusSq singleton object.
+     * 
+     * @return KahanPlusSq singleton object
      */
     public static KahanPlusSq getKahanPlusSqFnObject() {
         if (singleObj == null)

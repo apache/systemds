@@ -34,13 +34,7 @@ public class PlusMultInstruction extends BinaryInstruction
 	public PlusMultInstruction(Operator op, byte in1, byte in2, byte out, String istr) {
 		super(op, in1, in2, out, istr);
 	}
-	
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static PlusMultInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{	

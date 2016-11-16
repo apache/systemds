@@ -258,15 +258,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction
 			ec.releaseMatrixInputForGPUInstruction(_input2.getName());
 		ec.releaseMatrixOutputForGPUInstruction(_output.getName());
 	}
-	
-	/**
-	 * 
-	 * @param ec
-	 * @param aL
-	 * @param index
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	private int getScalarInput(ExecutionContext ec, ArrayList<CPOperand> aL, int index) 
 		throws DMLRuntimeException 
 	{

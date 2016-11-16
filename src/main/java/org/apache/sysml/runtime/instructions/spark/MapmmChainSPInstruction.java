@@ -39,9 +39,6 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-/**
- * 
- */
 public class MapmmChainSPInstruction extends SPInstruction 
 {
 		
@@ -80,12 +77,6 @@ public class MapmmChainSPInstruction extends SPInstruction
 		_chainType = type;
 	}
 
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	public static MapmmChainSPInstruction parseInstruction( String str ) 
 		throws DMLRuntimeException 
 	{

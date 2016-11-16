@@ -41,9 +41,6 @@ import org.apache.sysml.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-/**
- * 
- */
 public class AggregateTernarySPInstruction extends ComputationSPInstruction
 {
 	
@@ -107,10 +104,7 @@ public class AggregateTernarySPInstruction extends ComputationSPInstruction
 		DoubleObject ret = new DoubleObject(tmp.getValue(0, 0));
 		sec.setVariable(output.getName(), ret);
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class RDDAggregateTernaryFunction 
 		implements Function<Tuple2<Tuple2<MatrixBlock,MatrixBlock>,MatrixBlock>, MatrixBlock>
 	{
@@ -141,10 +135,7 @@ public class AggregateTernarySPInstruction extends ComputationSPInstruction
 			return out;
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class RDDAggregateTernaryFunction2 
 		implements Function<Tuple2<MatrixBlock,MatrixBlock>, MatrixBlock>
 	{

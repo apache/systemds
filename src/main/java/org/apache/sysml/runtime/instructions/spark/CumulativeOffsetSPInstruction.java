@@ -74,13 +74,7 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction
 		
 		_initValue = init;
 	}
-	
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static CumulativeOffsetSPInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{
@@ -123,12 +117,7 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction
 		sec.addLineageRDD(output.getName(), input1.getName());
 		sec.addLineageRDD(output.getName(), input2.getName());
 	}
-	
-	
-	/**
-	 * 
-	 * 
-	 */
+
 	private static class RDDCumSplitFunction implements PairFlatMapFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock> 
 	{
 		private static final long serialVersionUID = -8407407527406576965L;
@@ -181,10 +170,7 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction
 			return ret;
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class RDDCumOffsetFunction implements Function<Tuple2<MatrixBlock, MatrixBlock>, MatrixBlock> 
 	{
 		private static final long serialVersionUID = -5804080263258064743L;

@@ -60,8 +60,9 @@ public class Mean extends ValueFunction
 	 * Simplified version of execute(Data in1, double in2) 
 	 * without exception handling and casts.
 	 * 
-	 * @param in1
-	 * @param in2
+	 * @param in1 Kahan object input
+	 * @param in2 double input
+	 * @param count the count to divide by
 	 */
 	public void execute2(KahanObject in1, double in2, double count) 
 	{

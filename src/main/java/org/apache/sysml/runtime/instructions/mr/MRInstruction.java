@@ -65,34 +65,13 @@ public abstract class MRInstruction extends Instruction
 		//do nothing (not applicable for MR instructions)
 	}
 
-	/**
-	 * 
-	 * @param valueClass
-	 * @param cachedValues
-	 * @param tempValue
-	 * @param zeroInput
-	 * @param blockRowFactor
-	 * @param blockColFactor
-	 * @throws DMLRuntimeException
-	 */
 	public abstract void processInstruction(Class<? extends MatrixValue> valueClass, CachedValueMap cachedValues, 
 			IndexedMatrixValue tempValue, IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor) 
 		throws DMLRuntimeException;
 
-	
-	/**
-	 * 
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	public abstract byte[] getInputIndexes() 
 		throws DMLRuntimeException;
 
-	/**
-	 * 
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	public abstract byte[] getAllIndexes() 
 		throws DMLRuntimeException;
 }

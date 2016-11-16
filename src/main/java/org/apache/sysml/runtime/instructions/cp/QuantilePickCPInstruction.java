@@ -51,13 +51,7 @@ public class QuantilePickCPInstruction extends BinaryCPInstruction
 		_type = type;
 		_inmem = inmem;
 	}
-	
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static QuantilePickCPInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{

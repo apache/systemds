@@ -42,10 +42,6 @@ import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 
-
-/**
- * 
- */
 public class UaggOuterChainInstruction extends BinaryInstruction implements IDistributedCacheConsumer
 {	
 	//operators
@@ -59,15 +55,7 @@ public class UaggOuterChainInstruction extends BinaryInstruction implements IDis
 	
 	private double[] _bv = null;
 	private int[] _bvi = null;
-	
-	/**
-	 * 
-	 * @param bop
-	 * @param uaggop
-	 * @param in1
-	 * @param out
-	 * @param istr
-	 */
+
 	public UaggOuterChainInstruction(BinaryOperator bop, AggregateUnaryOperator uaggop, AggregateOperator aggop, byte in1, byte in2, byte out, String istr)
 	{
 		super(null, in1, in2, out, istr);
@@ -82,13 +70,7 @@ public class UaggOuterChainInstruction extends BinaryInstruction implements IDis
 		mrtype = MRINSTRUCTION_TYPE.UaggOuterChain;
 		instString = istr;
 	}
-	
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static UaggOuterChainInstruction parseInstruction( String str ) 
 		throws DMLRuntimeException 
 	{		
@@ -112,12 +94,7 @@ public class UaggOuterChainInstruction extends BinaryInstruction implements IDis
 	
 		return new UaggOuterChainInstruction(bop, uaggop, aop, in1, in2, out, str);
 	}
-	
-	/**
-	 * 
-	 * @param mcIn
-	 * @param mcOut
-	 */
+
 	public void computeOutputCharacteristics(MatrixCharacteristics mcIn1, MatrixCharacteristics mcIn2, MatrixCharacteristics mcOut)
 	{
 		if( _uaggOp.indexFn instanceof ReduceAll )

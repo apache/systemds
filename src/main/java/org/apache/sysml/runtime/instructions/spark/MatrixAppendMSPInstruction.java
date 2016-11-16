@@ -81,13 +81,7 @@ public class MatrixAppendMSPInstruction extends AppendMSPInstruction
 		sec.addLineageRDD(output.getName(), input1.getName());
 		sec.addLineageBroadcast(output.getName(), input2.getName());
 	}
-	
-	/**
-	 * 
-	 * @param mcIn1
-	 * @param mcIn2
-	 * @return
-	 */
+
 	private boolean preservesPartitioning( MatrixCharacteristics mcIn1, MatrixCharacteristics mcIn2, boolean cbind )
 	{
 		long ncblksIn1 = cbind ?
@@ -100,10 +94,7 @@ public class MatrixAppendMSPInstruction extends AppendMSPInstruction
 		//mappend is partitioning-preserving if in-block append (e.g., common case of colvector append)
 		return (ncblksIn1 == ncblksOut);
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class MapSideAppendFunction implements  PairFlatMapFunction<Tuple2<MatrixIndexes,MatrixBlock>, MatrixIndexes, MatrixBlock> 
 	{
 		private static final long serialVersionUID = 2738541014432173450L;
@@ -195,10 +186,7 @@ public class MatrixAppendMSPInstruction extends AppendMSPInstruction
 			return ret;
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class MapSideAppendPartitionFunction implements  PairFlatMapFunction<Iterator<Tuple2<MatrixIndexes,MatrixBlock>>, MatrixIndexes, MatrixBlock> 
 	{
 		private static final long serialVersionUID = 5767240739761027220L;

@@ -54,13 +54,7 @@ public class ZipmmSPInstruction extends BinarySPInstruction
 		
 		_tRewrite = tRewrite;
 	}
-	
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static ZipmmSPInstruction parseInstruction( String str ) 
 		throws DMLRuntimeException 
 	{
@@ -112,10 +106,6 @@ public class ZipmmSPInstruction extends BinarySPInstruction
 		sec.setMatrixOutput(output.getName(), out2);	
 	}
 
-	/**
-	 * 
-	 *
-	 */
 	private static class ZipMultiplyFunction implements Function<Tuple2<MatrixBlock,MatrixBlock>, MatrixBlock> 
 	{
 		private static final long serialVersionUID = -6669267794926220287L;

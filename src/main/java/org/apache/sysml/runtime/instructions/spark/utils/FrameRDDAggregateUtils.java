@@ -28,10 +28,7 @@ import org.apache.sysml.runtime.matrix.data.FrameBlock;
 
 public class FrameRDDAggregateUtils 
 {
-	/**
-	 * @param: in
-	 * @return: 
-	 */
+
 	public static JavaPairRDD<Long, FrameBlock> mergeByKey( JavaPairRDD<Long, FrameBlock> in )
 	{
 		//use combine by key to avoid unnecessary deep block copies, i.e.
@@ -41,10 +38,7 @@ public class FrameRDDAggregateUtils
 			    new MergeBlocksFunction(false), 
 			    new MergeBlocksFunction(false) );
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class CreateBlockCombinerFunction implements Function<FrameBlock, FrameBlock> 
 	{
 		private static final long serialVersionUID = -4445167244905540494L;
@@ -57,10 +51,7 @@ public class FrameRDDAggregateUtils
 			return new FrameBlock(arg0);
 		}	
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class MergeBlocksFunction implements Function2<FrameBlock, FrameBlock, FrameBlock> 
 	{		
 		private static final long serialVersionUID = 7807210434431147007L;

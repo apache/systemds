@@ -503,11 +503,7 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			throw new DMLRuntimeException("Unknown parameterized builtin opcode: "+opcode);
 		}
 	}
-	
 
-	/**
-	 * 
-	 */
 	public static class RDDReplaceFunction implements Function<MatrixBlock, MatrixBlock> 
 	{
 		private static final long serialVersionUID = 6576713401901671659L;
@@ -528,10 +524,7 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			return (MatrixBlock) arg0.replaceOperations(new MatrixBlock(), _pattern, _replacement);
 		}		
 	}
-	
-	/**
-	 * 
-	 */
+
 	public static class RDDRemoveEmptyFunction implements PairFlatMapFunction<Tuple2<MatrixIndexes,Tuple2<MatrixBlock, MatrixBlock>>,MatrixIndexes,MatrixBlock> 
 	{
 		private static final long serialVersionUID = 4906304771183325289L;
@@ -565,10 +558,7 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			return SparkUtils.fromIndexedMatrixBlock(out);
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	public static class RDDRemoveEmptyFunctionInMem implements PairFlatMapFunction<Tuple2<MatrixIndexes,MatrixBlock>,MatrixIndexes,MatrixBlock> 
 	{
 		private static final long serialVersionUID = 4906304771183325289L;
@@ -610,10 +600,7 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			return SparkUtils.fromIndexedMatrixBlock(out);
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	public static class RDDRExpandFunction implements PairFlatMapFunction<Tuple2<MatrixIndexes,MatrixBlock>,MatrixIndexes,MatrixBlock> 
 	{
 		private static final long serialVersionUID = -6153643261956222601L;
@@ -719,10 +706,7 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			return groups.groupedAggOperations(target, null, new MatrixBlock(), _ngroups, _op);
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	public static class CreateMatrixCell implements Function<WeightedCell, MatrixCell> 
 	{
 		private static final long serialVersionUID = -5783727852453040737L;
@@ -775,9 +759,6 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 		}
 	}
 
-	/**
-	 * 
-	 */
 	public static class RDDTransformApplyFunction implements PairFunction<Tuple2<Long,FrameBlock>,Long,FrameBlock> 
 	{
 		private static final long serialVersionUID = 5759813006068230916L;
@@ -811,10 +792,7 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 					DataConverter.convertToFrameBlock(tmp));
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	public static class RDDTransformApplyOffsetFunction implements PairFunction<Tuple2<Long,FrameBlock>,Long,Long> 
 	{
 		private static final long serialVersionUID = 3450977356721057440L;
@@ -853,10 +831,7 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			return new Tuple2<Long, Long>(key, rmRows);
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	public static class RDDTransformDecodeFunction implements PairFunction<Tuple2<MatrixIndexes,MatrixBlock>,Long,FrameBlock> 
 	{
 		private static final long serialVersionUID = -4797324742568170756L;
@@ -907,14 +882,7 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			return new Tuple2<MatrixIndexes, MatrixBlock>(new MatrixIndexes(inIx.getRowIndex(), 1), out);
 		}
 	}
-	
-	/**
-	 * 
-	 * @param mc1
-	 * @param mcOut
-	 * @param out
-	 * @throws DMLRuntimeException
-	 */
+
 	public void setOutputCharacteristicsForGroupedAgg(MatrixCharacteristics mc1, MatrixCharacteristics mcOut, JavaPairRDD<MatrixIndexes, MatrixCell> out) 
 		throws DMLRuntimeException 
 	{

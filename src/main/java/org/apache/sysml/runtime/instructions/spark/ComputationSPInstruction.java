@@ -51,24 +51,12 @@ public abstract class ComputationSPInstruction extends SPInstruction {
 		return output.getName();
 	}
 
-	/**
-	 * 
-	 * @param sec
-	 * @throws DMLRuntimeException 
-	 */
 	protected void updateUnaryOutputMatrixCharacteristics(SparkExecutionContext sec) 
 		throws DMLRuntimeException
 	{
 		updateUnaryOutputMatrixCharacteristics(sec, input1.getName(), output.getName());
 	}
-	
-	/**
-	 * 
-	 * @param sec
-	 * @param nameIn
-	 * @param nameOut
-	 * @throws DMLRuntimeException
-	 */
+
 	protected void updateUnaryOutputMatrixCharacteristics(SparkExecutionContext sec, String nameIn, String nameOut) 
 		throws DMLRuntimeException
 	{
@@ -81,12 +69,7 @@ public abstract class ComputationSPInstruction extends SPInstruction {
 				mcOut.set(mc1.getRows(), mc1.getCols(), mc1.getRowsPerBlock(), mc1.getColsPerBlock());
 		}
 	}
-	
-	/**
-	 * 
-	 * @param sec
-	 * @throws DMLRuntimeException
-	 */
+
 	protected void updateBinaryOutputMatrixCharacteristics(SparkExecutionContext sec) 
 		throws DMLRuntimeException
 	{

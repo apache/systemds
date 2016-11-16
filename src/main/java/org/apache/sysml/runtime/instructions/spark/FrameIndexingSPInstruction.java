@@ -174,25 +174,13 @@ public class FrameIndexingSPInstruction  extends IndexingSPInstruction
 		else
 			throw new DMLRuntimeException("Invalid opcode (" + opcode +") encountered in FrameIndexingSPInstruction.");		
 	}
-		
-	/**
-	 * 
-	 * @param mcIn
-	 * @param ixrange
-	 * @return
-	 */
+
 	private boolean isPartitioningPreservingRightIndexing(MatrixCharacteristics mcIn, IndexRange ixrange)
 	{
 		return ( mcIn.dimsKnown() &&
 			(ixrange.rowStart==1 && ixrange.rowEnd==mcIn.getRows() ));   //Entire Column/s			 
 	}
-	
-	
-	/**
-	 * 
-	 * @param mcOut
-	 * @throws DMLRuntimeException
-	 */
+
 	private static void checkValidOutputDimensions(MatrixCharacteristics mcOut) 
 		throws DMLRuntimeException
 	{
@@ -200,10 +188,7 @@ public class FrameIndexingSPInstruction  extends IndexingSPInstruction
 			throw new DMLRuntimeException("FrameIndexingSPInstruction: The updated output dimensions are invalid: " + mcOut);
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class SliceRHSForLeftIndexing implements PairFlatMapFunction<Tuple2<Long,FrameBlock>, Long, FrameBlock> 
 	{
 		private static final long serialVersionUID = 5724800998701216440L;
@@ -232,10 +217,7 @@ public class FrameIndexingSPInstruction  extends IndexingSPInstruction
 			return SparkUtils.fromIndexedFrameBlock(out);
 		}		
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class ZeroOutLHS implements PairFlatMapFunction<Tuple2<Long,FrameBlock>, Long,FrameBlock> 
 	{
 		private static final long serialVersionUID = -2672267231152496854L;
@@ -290,10 +272,7 @@ public class FrameIndexingSPInstruction  extends IndexingSPInstruction
 			return SparkUtils.fromIndexedFrameBlock(out);
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class LeftIndexPartitionFunction implements PairFlatMapFunction<Iterator<Tuple2<Long,FrameBlock>>, Long, FrameBlock> 
 	{
 		private static final long serialVersionUID = -911940376947364915L;
@@ -313,10 +292,7 @@ public class FrameIndexingSPInstruction  extends IndexingSPInstruction
 		{
 			return new LeftIndexPartitionIterator(arg0);
 		}
-		
-		/**
-		 * 
-		 */
+
 		private class LeftIndexPartitionIterator extends LazyIterableIterator<Tuple2<Long, FrameBlock>>
 		{
 			public LeftIndexPartitionIterator(Iterator<Tuple2<Long, FrameBlock>> in) {
@@ -371,10 +347,7 @@ public class FrameIndexingSPInstruction  extends IndexingSPInstruction
 			}
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class SliceBlock implements PairFunction<Tuple2<Long, FrameBlock>, Long, FrameBlock> 
 	{
 		private static final long serialVersionUID = -5270171193018691692L;
@@ -407,9 +380,6 @@ public class FrameIndexingSPInstruction  extends IndexingSPInstruction
 		}		
 	}
 
-	/**
-	 * 
-	 */
 	private static class SliceBlockPartitionFunction implements PairFlatMapFunction<Iterator<Tuple2<Long, FrameBlock>>, Long, FrameBlock> 
 	{
 		private static final long serialVersionUID = -1655390518299307588L;

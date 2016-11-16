@@ -191,12 +191,7 @@ public class ReorgSPInstruction extends UnarySPInstruction
 		sec.setRDDHandleForVariable(output.getName(), out);
 		sec.addLineageRDD(output.getName(), input1.getName());
 	}
-	
-	/**
-	 * 
-	 * @param sec
-	 * @throws DMLRuntimeException
-	 */
+
 	private void updateReorgMatrixCharacteristics(SparkExecutionContext sec) 
 		throws DMLRuntimeException
 	{
@@ -228,10 +223,7 @@ public class ReorgSPInstruction extends UnarySPInstruction
 				mcOut.setNonZeros(mc1.getNonZeros());
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class RDDDiagV2MFunction implements PairFlatMapFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock> 
 	{
 		private static final long serialVersionUID = 31065772250744103L;
@@ -275,10 +267,7 @@ public class ReorgSPInstruction extends UnarySPInstruction
 			return ret;
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class RDDRevFunction implements PairFlatMapFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock> 
 	{
 		private static final long serialVersionUID = 1183373828539843938L;
@@ -307,9 +296,6 @@ public class ReorgSPInstruction extends UnarySPInstruction
 		}
 	}
 
-	/**
-	 *
-	 */
 	private static class ExtractColumn implements Function<MatrixBlock, MatrixBlock>  
 	{
 		private static final long serialVersionUID = -1472164797288449559L;

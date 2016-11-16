@@ -47,9 +47,6 @@ import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
-/**
- * 
- */
 public class PmmSPInstruction extends BinarySPInstruction 
 {
 	
@@ -65,12 +62,6 @@ public class PmmSPInstruction extends BinarySPInstruction
 		_nrow = nrow;
 	}
 
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	public static PmmSPInstruction parseInstruction( String str ) 
 		throws DMLRuntimeException 
 	{
@@ -121,11 +112,7 @@ public class PmmSPInstruction extends BinarySPInstruction
 		//update output statistics if not inferred
 		updateBinaryMMOutputMatrixCharacteristics(sec, false);
 	}
-	
-	/**
-	 * 
-	 * 
-	 */
+
 	private static class RDDPMMFunction implements PairFlatMapFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock> 
 	{
 		private static final long serialVersionUID = -1696560050436469140L;

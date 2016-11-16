@@ -39,9 +39,6 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.operators.COVOperator;
 
-/**
- * 
- */
 public class CovarianceSPInstruction extends BinarySPInstruction
 {
 	
@@ -56,13 +53,7 @@ public class CovarianceSPInstruction extends BinarySPInstruction
 	{
 		super(op, in, in2, out, opcode, istr);
 	}
-	
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static CovarianceSPInstruction parseInstruction(String str)
 		throws DMLRuntimeException 
 	{
@@ -128,9 +119,6 @@ public class CovarianceSPInstruction extends BinarySPInstruction
 		ec.setScalarOutput(output.getName(), ret);
 	}
 
-	/**
-	 * 
-	 */
 	private static class RDDCOVFunction implements Function<Tuple2<MatrixBlock,MatrixBlock>, CM_COV_Object>
 	{
 		private static final long serialVersionUID = -9088449969750217519L;
@@ -152,10 +140,7 @@ public class CovarianceSPInstruction extends BinarySPInstruction
 			return input1.covOperations(_op, input2);
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class RDDCOVWeightsFunction implements Function<Tuple2<Tuple2<MatrixBlock,MatrixBlock>,MatrixBlock>, CM_COV_Object> 
 	{
 		private static final long serialVersionUID = 1945166819152577077L;
@@ -178,10 +163,7 @@ public class CovarianceSPInstruction extends BinarySPInstruction
 			return input1.covOperations(_op, input2, weights);
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class RDDCOVReduceFunction implements Function2<CM_COV_Object, CM_COV_Object, CM_COV_Object>
 	{
 		private static final long serialVersionUID = 1118102911706607118L;

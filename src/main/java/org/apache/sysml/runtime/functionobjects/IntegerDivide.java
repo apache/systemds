@@ -69,9 +69,9 @@ public class IntegerDivide extends ValueFunction
 	 * or +-INFINITY devision result, the overall output is NOT cast to
 	 * int in order to prevent the special double values.
 	 * 
-	 * @param in1
-	 * @param in2
-	 * @return
+	 * @param in1 double input 1
+	 * @param in2 double input 2
+	 * @return result
 	 */
 	private double executeIntDiv( double in1, double in2 )
 	{

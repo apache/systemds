@@ -61,10 +61,7 @@ public class MatrixAppendRSPInstruction extends AppendRSPInstruction
 		sec.addLineageRDD(output.getName(), input1.getName());
 		sec.addLineageRDD(output.getName(), input2.getName());		
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class ReduceSideAppendFunction implements Function<Tuple2<MatrixBlock, MatrixBlock>, MatrixBlock> 
 	{
 		private static final long serialVersionUID = -6763904972560309095L;

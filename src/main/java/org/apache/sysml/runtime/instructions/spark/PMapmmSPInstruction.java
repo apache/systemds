@@ -65,12 +65,6 @@ public class PMapmmSPInstruction extends BinarySPInstruction
 		_sptype = SPINSTRUCTION_TYPE.MAPMM;
 	}
 
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	public static PMapmmSPInstruction parseInstruction( String str ) 
 		throws DMLRuntimeException 
 	{
@@ -145,9 +139,6 @@ public class PMapmmSPInstruction extends BinarySPInstruction
 		updateBinaryMMOutputMatrixCharacteristics(sec, true);
 	}
 
-	/**
-	 * 
-	 */
 	private static class PMapMMRebaseBlocksFunction implements PairFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock> 
 	{
 		private static final long serialVersionUID = 98051757210704132L;
@@ -167,12 +158,7 @@ public class PMapmmSPInstruction extends BinarySPInstruction
 			return new Tuple2<MatrixIndexes,MatrixBlock>(ixout, arg0._2());
 		}
 	}
-	
-	
-	/**
-	 * 
-	 * 
-	 */
+
 	private static class PMapMMFunction implements PairFlatMapFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock> 
 	{
 		private static final long serialVersionUID = -4520080421816885321L;

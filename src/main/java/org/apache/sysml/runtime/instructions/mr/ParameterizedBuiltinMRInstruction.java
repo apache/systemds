@@ -70,12 +70,7 @@ public class ParameterizedBuiltinMRInstruction extends UnaryInstruction
 		_cast = cast;
 		_ignore = ignore;
 	}
-	
-	/**
-	 * 
-	 * @param mcIn
-	 * @param mcOut
-	 */
+
 	public void computeOutputCharacteristics(MatrixCharacteristics mcIn, MatrixCharacteristics mcOut)
 	{
 		if( _opcode.equalsIgnoreCase("replace") ) {
@@ -90,13 +85,7 @@ public class ParameterizedBuiltinMRInstruction extends UnaryInstruction
 				mcOut.set(mcIn.getRows(), lmax, mcIn.getRowsPerBlock(), mcIn.getColsPerBlock());	
 		}
 	}
-	
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static ParameterizedBuiltinMRInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{

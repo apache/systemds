@@ -38,9 +38,9 @@ public interface MatrixBlockDataOutput
 	/**
 	 * Writes the double array of a dense block to the data output. 
 	 * 
-	 * @param len
-	 * @param varr
-	 * @throws IOException
+	 * @param len ?
+	 * @param varr ?
+	 * @throws IOException if IOException occurs
 	 */
 	public void writeDoubleArray(int len, double[] varr) 
 		throws IOException;
@@ -48,9 +48,9 @@ public interface MatrixBlockDataOutput
 	/**
 	 * Writes the sparse rows array of a sparse block to the data output.
 	 * 
-	 * @param rlen
-	 * @param rows
-	 * @throws IOException
+	 * @param rlen ?
+	 * @param rows sparse block
+	 * @throws IOException if IOException occurs
 	 */
 	public void writeSparseRows(int rlen, SparseBlock rows) 
 		throws IOException;

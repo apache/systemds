@@ -31,11 +31,6 @@ import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
-
-/**
- * 
- * 
- */
 public class MatrixReshapeMRInstruction extends UnaryInstruction
 {	
 	
@@ -63,13 +58,7 @@ public class MatrixReshapeMRInstruction extends UnaryInstruction
 	{
 		_mcIn = mcIn;
 	}
-	
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static MatrixReshapeMRInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{

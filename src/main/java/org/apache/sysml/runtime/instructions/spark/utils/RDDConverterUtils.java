@@ -71,16 +71,7 @@ import org.apache.sysml.runtime.util.UtilFunctions;
 public class RDDConverterUtils 
 {
 	public static final String DF_ID_COLUMN = "__INDEX";
-	
-	/**
-	 * 
-	 * @param sc
-	 * @param input
-	 * @param mcOut
-	 * @param outputEmptyBlocks
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> textCellToBinaryBlock(JavaSparkContext sc,
 			JavaPairRDD<LongWritable, Text> input, MatrixCharacteristics mcOut, boolean outputEmptyBlocks) 
 		throws DMLRuntimeException  
@@ -101,15 +92,6 @@ public class RDDConverterUtils
 		return out;
 	}
 
-	/**
-	 * 
-	 * @param sc
-	 * @param input
-	 * @param mcOut
-	 * @param outputEmptyBlocks
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> binaryCellToBinaryBlock(JavaSparkContext sc,
 			JavaPairRDD<MatrixIndexes, MatrixCell> input, MatrixCharacteristics mcOut, boolean outputEmptyBlocks) 
 		throws DMLRuntimeException 
@@ -132,10 +114,10 @@ public class RDDConverterUtils
 
 	/**
 	 * Converter from binary block rdd to rdd of labeled points. Note that the input needs to be 
-	 * reblocked to satisfy the 'clen <= bclen' constraint.
+	 * reblocked to satisfy the 'clen &lt;= bclen' constraint.
 	 * 
-	 * @param in
-	 * @return
+	 * @param in matrix as {@code JavaPairRDD<MatrixIndexes, MatrixBlock>}
+	 * @return JavaRDD of labeled points
 	 */
 	public static JavaRDD<LabeledPoint> binaryBlockToLabeledPoints(JavaPairRDD<MatrixIndexes, MatrixBlock> in) 
 	{
@@ -147,25 +129,11 @@ public class RDDConverterUtils
 		return pointrdd;
 	}
 
-	/**
-	 * 
-	 * @param in
-	 * @param mc
-	 * @return
-	 */
 	public static JavaRDD<String> binaryBlockToTextCell(JavaPairRDD<MatrixIndexes, MatrixBlock> in, MatrixCharacteristics mc) {
 		return in.flatMap(new ConvertMatrixBlockToIJVLines(
 				mc.getRowsPerBlock(), mc.getColsPerBlock()));
 	}
-	
-	/**
-	 * 
-	 * @param in
-	 * @param mcIn
-	 * @param props
-	 * @param strict
-	 * @return
-	 */
+
 	public static JavaRDD<String> binaryBlockToCsv(JavaPairRDD<MatrixIndexes,MatrixBlock> in, MatrixCharacteristics mcIn, CSVFileFormatProperties props, boolean strict)
 	{
 		JavaPairRDD<MatrixIndexes,MatrixBlock> input = in;
@@ -190,19 +158,7 @@ public class RDDConverterUtils
 	
 		return out;
 	}
-	
-	/**
-	 * 
-	 * @param sc
-	 * @param lines
-	 * @param mcOut
-	 * @param hasHeader
-	 * @param delim
-	 * @param fill
-	 * @param missingValue
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> csvToBinaryBlock(JavaSparkContext sc,
 			JavaPairRDD<LongWritable, Text> input, MatrixCharacteristics mc, 
 			boolean hasHeader, String delim, boolean fill, double fillValue) 
@@ -246,15 +202,15 @@ public class RDDConverterUtils
 	 * val Abin = RDDConverterUtils.csvToBinaryBlock(new JavaSparkContext(sc), A, Amc, false, ",", false, 0)
 	 * </code></pre>
 	 * 
-	 * @param sc 
-	 * @param input
-	 * @param mcOut
-	 * @param hasHeader
-	 * @param delim
-	 * @param fill
-	 * @param fillValue
-	 * @return
-	 * @throws DMLRuntimeException
+	 * @param sc java spark context
+	 * @param input rdd of strings
+	 * @param mcOut matrix characteristics
+	 * @param hasHeader if true, has header
+	 * @param delim delimiter as a string
+	 * @param fill if true, fill in empty values with fillValue
+	 * @param fillValue fill value used to fill empty values
+	 * @return matrix as {@code JavaPairRDD<MatrixIndexes, MatrixBlock>}
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> csvToBinaryBlock(JavaSparkContext sc,
 			JavaRDD<String> input, MatrixCharacteristics mcOut, 
@@ -268,18 +224,7 @@ public class RDDConverterUtils
 		//convert to binary block
 		return csvToBinaryBlock(sc, prepinput, mcOut, hasHeader, delim, fill, fillValue);
 	}
-	
-	/**
-	 * 
-	 * @param sc
-	 * @param df
-	 * @param mcOut
-	 * @param containsID
-	 * @param isVector
-	 * @param columns
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> dataFrameToBinaryBlock(JavaSparkContext sc,
 			DataFrame df, MatrixCharacteristics mc, boolean containsID, boolean isVector) 
 	{
@@ -316,16 +261,7 @@ public class RDDConverterUtils
 		
 		return out;
 	}
-	
-	/**
-	 * 
-	 * @param sqlContext
-	 * @param in
-	 * @param mc
-	 * @param toVector
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static DataFrame binaryBlockToDataFrame(SQLContext sqlctx, 
 			JavaPairRDD<MatrixIndexes, MatrixBlock> in, MatrixCharacteristics mc, boolean toVector)  
 	{
@@ -350,23 +286,12 @@ public class RDDConverterUtils
 		//rdd to data frame conversion
 		return sqlctx.createDataFrame(rowsRDD.rdd(), DataTypes.createStructType(fields));
 	}
-	
-	/**
-	 * 
-	 * @param in
-	 * @return
-	 */
+
 	public static JavaPairRDD<LongWritable, Text> stringToSerializableText(JavaPairRDD<Long,String> in)
 	{
 		return in.mapToPair(new TextToSerTextFunction());
 	}
 
-	/**
-	 * 
-	 * @param in
-	 * @param mc
-	 * @return
-	 */
 	private static boolean requiresSparseAllocation(JavaPairRDD<?,?> in, MatrixCharacteristics mc) {
 		//if nnz unknown or sparse, pick the robust sparse representation
 		if( !mc.nnzKnown() || (mc.nnzKnown() && MatrixBlock.evalSparseFormatInMemory(
@@ -383,28 +308,14 @@ public class RDDConverterUtils
 		double blksz = Math.min(mc.getRows(), mc.getRowsPerBlock());
 		return partsize/rowsize/blksz < MatrixBlock.SPARSITY_TURN_POINT;
 	}
-	
-	/**
-	 * 
-	 * @param vect
-	 * @param isVector
-	 * @return
-	 */
+
 	private static int countNnz(Object vect, boolean isVector, int off) {
 		if( isVector ) //note: numNonzeros scans entries but handles sparse/dense
 			return ((Vector) vect).numNonzeros();
 		else 
 			return countNnz(vect, isVector, off, ((Row)vect).length()-off);
 	}
-	
-	/**
-	 * 
-	 * @param vect
-	 * @param isVector
-	 * @param pos
-	 * @param len
-	 * @return
-	 */
+
 	private static int countNnz(Object vect, boolean isVector, int pos, int len ) {
 		int lnnz = 0;
 		if( isVector ) {
@@ -424,7 +335,7 @@ public class RDDConverterUtils
 	// BINARYBLOCK-SPECIFIC FUNCTIONS
 
 	/**
-	 * This function converts a binary block input (<X,y>) into mllib's labeled points. Note that
+	 * This function converts a binary block input (&lt;X,y&gt;) into mllib's labeled points. Note that
 	 * this function requires prior reblocking if the number of columns is larger than the column
 	 * block size. 
 	 */
@@ -488,14 +399,6 @@ public class RDDConverterUtils
 			_bufflen = (int) Math.min(_rlen*_clen, BUFFER_SIZE);
 		}
 
-
-		/**
-		 * 
-		 * @param rbuff
-		 * @param ret
-		 * @throws IOException 
-		 * @throws DMLRuntimeException 
-		 */
 		protected void flushBufferToList( ReblockBuffer rbuff,  ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret ) 
 			throws IOException, DMLRuntimeException
 		{
@@ -505,10 +408,7 @@ public class RDDConverterUtils
 			ret.addAll(SparkUtils.fromIndexedMatrixBlock(rettmp));
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class TextToBinaryBlockFunction extends CellToBinaryBlockFunction implements PairFlatMapFunction<Iterator<Text>,MatrixIndexes,MatrixBlock> 
 	{
 		private static final long serialVersionUID = 4907483236186747224L;
@@ -552,10 +452,7 @@ public class RDDConverterUtils
 			return ret;
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class TextToSerTextFunction implements PairFunction<Tuple2<Long,String>,LongWritable,Text> 
 	{
 		private static final long serialVersionUID = 2286037080400222528L;
@@ -569,10 +466,7 @@ public class RDDConverterUtils
 			return new Tuple2<LongWritable,Text>(slarg, starg);
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class StringToSerTextFunction implements PairFunction<String, LongWritable, Text> 
 	{
 		private static final long serialVersionUID = 2286037080400222528L;
@@ -633,9 +527,6 @@ public class RDDConverterUtils
 	/////////////////////////////////
 	// CSV-SPECIFIC FUNCTIONS
 
-	/**
-	 * 
-	 */
 	private static class CSVAnalysisFunction implements Function<Text,String> 
 	{
 		private static final long serialVersionUID = 2310303223289674477L;
@@ -794,10 +685,7 @@ public class RDDConverterUtils
 				}	
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class BinaryBlockToCSVFunction implements FlatMapFunction<Tuple2<MatrixIndexes,MatrixBlock>,String> 
 	{
 		private static final long serialVersionUID = 1891768410987528573L;
@@ -845,10 +733,7 @@ public class RDDConverterUtils
 			return ret;
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class SliceBinaryBlockToRowsFunction implements PairFlatMapFunction<Tuple2<MatrixIndexes,MatrixBlock>,Long,Tuple2<Long,MatrixBlock>> 
 	{
 		private static final long serialVersionUID = 7192024840710093114L;
@@ -880,10 +765,7 @@ public class RDDConverterUtils
 		}
 		
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class ConcatenateBlocksFunction implements PairFunction<Tuple2<Long, Iterable<Tuple2<Long,MatrixBlock>>>,MatrixIndexes,MatrixBlock>
 	{
 		private static final long serialVersionUID = -7879603125149650097L;
@@ -927,9 +809,6 @@ public class RDDConverterUtils
 	/////////////////////////////////
 	// DATAFRAME-SPECIFIC FUNCTIONS
 
-	/**
-	 * 
-	 */
 	private static class DataFrameToBinaryBlockFunction implements PairFlatMapFunction<Iterator<Tuple2<Row,Long>>,MatrixIndexes,MatrixBlock> 
 	{
 		private static final long serialVersionUID = 653447740362447236L;
@@ -1038,10 +917,7 @@ public class RDDConverterUtils
 				}	
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class DataFrameAnalysisFunction implements Function<Row,Row>  
 	{	
 		private static final long serialVersionUID = 5705371332119770215L;
@@ -1069,9 +945,6 @@ public class RDDConverterUtils
 		}
 	}
 
-	/**
-	 * 
-	 */
 	protected static class DataFrameExtractIDFunction implements PairFunction<Row, Row,Long> 
 	{
 		private static final long serialVersionUID = 7438855241666363433L;
@@ -1093,10 +966,7 @@ public class RDDConverterUtils
 			return new Tuple2<Row,Long>(arg0, id-1);
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class ConvertRowBlocksToRows implements Function<Tuple2<Long, Iterable<Tuple2<Long, MatrixBlock>>>, Row> {
 		
 		private static final long serialVersionUID = 4441184411670316972L;

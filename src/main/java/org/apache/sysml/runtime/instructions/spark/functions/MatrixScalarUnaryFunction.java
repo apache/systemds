@@ -24,9 +24,6 @@ import org.apache.spark.api.java.function.Function;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.ScalarOperator;
 
-/**
- * 
- */
 public class MatrixScalarUnaryFunction implements Function<MatrixBlock,MatrixBlock> 
 {	
 	

@@ -49,24 +49,11 @@ public abstract class ComputationCPInstruction extends CPInstruction
 	public String getOutputVariableName() {
 		return output.getName();
 	}
-	
-	/**
-	 * 
-	 * @param in1
-	 * @param out
-	 * @return
-	 */
+
 	protected boolean checkGuardedRepresentationChange( MatrixBlock in1, MatrixBlock out ) {
 		return checkGuardedRepresentationChange(in1, null, out);
 	}
-	
-	/**
-	 * 
-	 * @param in1
-	 * @param in2
-	 * @param out
-	 * @return
-	 */
+
 	protected boolean checkGuardedRepresentationChange( MatrixBlock in1, MatrixBlock in2, MatrixBlock out )
 	{
 		double memDense = OptimizerUtils.estimateSize(out.getNumRows(), out.getNumColumns());

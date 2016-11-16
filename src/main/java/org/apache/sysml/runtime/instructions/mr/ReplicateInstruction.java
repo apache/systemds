@@ -29,10 +29,6 @@ import org.apache.sysml.runtime.matrix.data.MatrixValue;
 import org.apache.sysml.runtime.matrix.mapred.CachedValueMap;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 
-/**
- * 
- * 
- */
 public class ReplicateInstruction extends UnaryMRInstructionBase 
 {
 	
@@ -48,12 +44,7 @@ public class ReplicateInstruction extends UnaryMRInstructionBase
 		_repCols = repCols;
 		_lenM = lenM;
 	}
-	
-	/**
-	 * 
-	 * @param mcIn
-	 * @param mcOut
-	 */
+
 	public void computeOutputDimension(MatrixCharacteristics mcIn, MatrixCharacteristics mcOut)
 	{
 		if( _repCols )
@@ -61,13 +52,7 @@ public class ReplicateInstruction extends UnaryMRInstructionBase
 		else
 			mcOut.set(_lenM, mcIn.getCols(), mcIn.getRowsPerBlock(), mcIn.getColsPerBlock(), mcIn.getRows());
 	}
-	
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static ReplicateInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{
@@ -85,9 +70,6 @@ public class ReplicateInstruction extends UnaryMRInstructionBase
 		return new ReplicateInstruction(in, out, repCols, len, str);
 	}
 
-	/**
-	 * 
-	 */
 	@Override
 	public void processInstruction(Class<? extends MatrixValue> valueClass, CachedValueMap cachedValues, 
 			IndexedMatrixValue tempValue, IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor)

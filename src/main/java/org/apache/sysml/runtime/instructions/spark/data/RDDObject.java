@@ -36,11 +36,7 @@ public class RDDObject extends LineageObject
 		_rddHandle = rddvar;
 		_varName = varName;
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public JavaPairRDD<?,?> getRDD()
 	{
 		return _rddHandle;
@@ -78,7 +74,7 @@ public class RDDObject extends LineageObject
 	 * in both cases, we can directly read the file instead of collecting
 	 * the given rdd.
 	 * 
-	 * @return
+	 * @return true if rdd is an hdfs file or a checkpoint over an hdfs file
 	 */
 	public boolean allowsShortCircuitRead()
 	{
@@ -91,21 +87,13 @@ public class RDDObject extends LineageObject
 		
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public boolean allowsShortCircuitCollect()
 	{
 		return ( isCheckpointRDD() && getLineageChilds().size() == 1
 			     && getLineageChilds().get(0) instanceof RDDObject );
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public boolean rHasCheckpointRDDChilds()
 	{
 		//probe for checkpoint rdd

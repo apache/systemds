@@ -109,14 +109,7 @@ public class ExtractBlockForBinaryReblock implements PairFlatMapFunction<Tuple2<
 		}
 		return retVal;
 	}
-	
-	/**
-	 * 
-	 * @param blockIndex
-	 * @param isIn
-	 * @param isRow
-	 * @return
-	 */
+
 	private long getEndGlobalIndex(long blockIndex, boolean isIn, boolean isRow) 
 	{
 		//determine dimension and block sizes

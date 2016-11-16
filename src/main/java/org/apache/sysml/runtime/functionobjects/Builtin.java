@@ -108,23 +108,13 @@ public class Builtin extends ValueFunction
 	public BuiltinCode getBuiltinCode() {
 		return bFunc;
 	}
-	
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 */
+
 	public static Builtin getBuiltinFnObject (String str) 
 	{
 		BuiltinCode code = String2BuiltinCode.get(str);
 		return getBuiltinFnObject( code );
 	}
-	
-	/**
-	 * 
-	 * @param code
-	 * @return
-	 */
+
 	public static Builtin getBuiltinFnObject(BuiltinCode code) 
 	{	
 		if ( code == null ) 
@@ -444,9 +434,9 @@ public class Builtin extends ValueFunction
 	/**
 	 * Simplified version without exception handling
 	 * 
-	 * @param in1
-	 * @param in2
-	 * @return
+	 * @param in1 double 1
+	 * @param in2 double 2
+	 * @return result
 	 */
 	public double execute2(double in1, double in2) 
 	{

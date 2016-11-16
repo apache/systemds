@@ -34,21 +34,13 @@ public class BroadcastObject<T extends CacheBlock> extends LineageObject
 		_bcHandle = new SoftReference<PartitionedBroadcast<T>>(bvar);
 		_varName = varName;
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	@SuppressWarnings("rawtypes")
 	public PartitionedBroadcast getBroadcast()
 	{
 		return _bcHandle.get();
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public boolean isValid() 
 	{
 		//check for evicted soft reference

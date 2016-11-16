@@ -28,7 +28,7 @@ import org.apache.sysml.runtime.controlprogram.caching.CacheBlock;
 /**
  * This class is a wrapper around an array of broadcasts of partitioned matrix/frame blocks,
  * which is required due to 2GB limitations of Spark's broadcast handling. Without this
- * partitioning of Broadcast<PartitionedBlock> into Broadcast<PartitionedBlock>[],
+ * partitioning of {@code Broadcast<PartitionedBlock>} into {@code Broadcast<PartitionedBlock>[]},
  * we got java.lang.IllegalArgumentException: Size exceeds Integer.MAX_VALUE issue.
  * Despite various jiras, this issue still showed up in Spark 1.4/1.5. 
  * 
@@ -53,11 +53,7 @@ public class PartitionedBroadcast<T extends CacheBlock> implements Serializable
 	public Broadcast<PartitionedBlock<T>>[] getBroadcasts() {
 		return _pbc;
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public int getNumRowBlocks() {
 		return _pbc[0].value().getNumRowBlocks();
 	}
@@ -65,26 +61,12 @@ public class PartitionedBroadcast<T extends CacheBlock> implements Serializable
 	public int getNumColumnBlocks() {
 		return _pbc[0].value().getNumColumnBlocks();
 	}
-	
-	/**
-	 * 
-	 * @param rlen
-	 * @param clen
-	 * @param brlen
-	 * @param bclen
-	 * @return
-	 */
+
 	public static int computeBlocksPerPartition(long rlen, long clen, long brlen, long bclen) {
 		return (int) Math.floor( BROADCAST_PARTSIZE /  
 				Math.min(rlen, brlen) / Math.min(clen, bclen));
 	}
-	/**
-	 * 
-	 * @param rowIndex
-	 * @param colIndex
-	 * @return
-	 * @throws DMLRuntimeException 
-	 */
+
 	public T getBlock(int rowIndex, int colIndex) 
 		throws DMLRuntimeException 
 	{

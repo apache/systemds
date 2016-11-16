@@ -91,17 +91,23 @@ public class JCudaObject extends GPUObject {
 			allocateMatDescrPointer();
 		}
 		
-		public long nnz;		/** Number of non zeroes	 									*/
-		public Pointer val;		/** double array of non zero values 							*/
-		public Pointer rowPtr;	/** integer array of start of all rows and end of last row + 1 	*/
-		public Pointer colInd;	/** integer array of nnz values' column indices					*/
-		public cusparseMatDescr descr;	/** descriptor of matrix, only CUSPARSE_MATRIX_TYPE_GENERAL supported	*/
+		/** Number of non zeroes	 									*/
+		public long nnz;
+		/** double array of non zero values 							*/
+		public Pointer val;
+		/** integer array of start of all rows and end of last row + 1 	*/
+		public Pointer rowPtr;
+		/** integer array of nnz values' column indices					*/
+		public Pointer colInd;
+		/** descriptor of matrix, only CUSPARSE_MATRIX_TYPE_GENERAL supported	*/
+		public cusparseMatDescr descr;
 		
 		/** 
 		 * Check for ultra sparsity
-		 * @param rows
-		 * @param cols
-		 * @return
+		 * 
+		 * @param rows number of rows
+		 * @param cols number of columns
+		 * @return true if ultra sparse
 		 */
 		public boolean isUltraSparse(int rows, int cols) {
 			double sp = ((double)nnz/rows/cols);
@@ -121,7 +127,7 @@ public class JCudaObject extends GPUObject {
 		 * Size of pointers is not needed and is not added in
 		 * @param nnz2	number of non zeroes
 		 * @param rows	number of rows 
-		 * @return
+		 * @return size estimate
 		 */
 		public static long estimateSize(long nnz2, long rows) {
 			long sizeofValArray = (Sizeof.DOUBLE) * nnz2;
@@ -144,7 +150,7 @@ public class JCudaObject extends GPUObject {
 		 * @param nnz2	number of non-zeroes
 		 * @param rows 	number of rows
 		 * @return a {@link CSRPointer} instance that encapsulates the CSR matrix on GPU
-		 * @throws DMLRuntimeException 
+		 * @throws DMLRuntimeException if DMLRuntimeException occurs
 		 */
 		public static CSRPointer allocateEmpty(long nnz2, long rows) throws DMLRuntimeException {
 			CSRPointer r = new CSRPointer();
@@ -167,7 +173,6 @@ public class JCudaObject extends GPUObject {
 		 * @param rowPtr	integer array of row pointers
 		 * @param colInd	integer array of column indices
 		 * @param values	double array of non zero values
-		 * @return a {@link CSRPointer} instance that encapsulates the CSR matrix on GPU
 		 */
 		public static void copyToDevice(CSRPointer dest, int rows, long nnz, int[] rowPtr, int[] colInd, double[] values) {
 			CSRPointer r = dest;
@@ -210,8 +215,8 @@ public class JCudaObject extends GPUObject {
 		 * @param m			Rows in A
 		 * @param n			Columns in B
 		 * @param k			Columns in A / Rows in B
-		 * @return
-		 * @throws DMLRuntimeException
+		 * @return a {@link CSRPointer} instance that encapsulates the CSR matrix on GPU
+		 * @throws DMLRuntimeException if DMLRuntimeException occurs
 		 */
 		public static CSRPointer allocateForMatrixMultiply(cusparseHandle handle, CSRPointer A, int transA, CSRPointer B, int transB, int m, int n, int k) 
 				throws DMLRuntimeException{
@@ -269,7 +274,7 @@ public class JCudaObject extends GPUObject {
 		 * @param rows		number of rows in this CSR matrix
 		 * @param cols		number of columns in this CSR matrix
 		 * @return			A {@link Pointer} to the allocated dense matrix (in column-major format)
-		 * @throws DMLRuntimeException
+		 * @throws DMLRuntimeException if DMLRuntimeException occurs
 		 */
 		public Pointer toDenseMatrix(cusparseHandle cusparseHandle, cublasHandle cublasHandle, int rows, int cols) throws DMLRuntimeException {
 			long size = rows * cols * Sizeof.DOUBLE;
@@ -295,8 +300,10 @@ public class JCudaObject extends GPUObject {
 		}
 	};
 	
-	public Pointer jcudaDenseMatrixPtr = null;		/** Pointer to dense matrix */
-	public CSRPointer jcudaSparseMatrixPtr = null;	/** Pointer to sparse matrix */
+	/** Pointer to dense matrix */
+	public Pointer jcudaDenseMatrixPtr = null;
+	/** Pointer to sparse matrix */
+	public CSRPointer jcudaSparseMatrixPtr = null;
 
 	public long numBytes;
 
@@ -308,9 +315,9 @@ public class JCudaObject extends GPUObject {
 	 * Allocates temporary space on the device.
 	 * Does not update bookkeeping.
 	 * The caller is responsible for freeing up after usage.
-	 * @param size
-	 * @return
-	 * @throws DMLRuntimeException
+	 * @param size size to allocate
+	 * @return jcuda Pointer
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static Pointer allocate(long size) throws DMLRuntimeException{
 		Pointer A = new Pointer();
@@ -326,7 +333,7 @@ public class JCudaObject extends GPUObject {
 	 * Allocate necessary memory on the GPU for this {@link JCudaObject} instance.
 	 * @param isInput if the block is input, isSparse argument is ignored
 	 * @param isSparse if the block is sparse
-	 * @throws DMLRuntimeException
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private void prepare(boolean isInput, boolean isSparse) throws DMLRuntimeException {
 		if(jcudaDenseMatrixPtr != null || jcudaSparseMatrixPtr != null) {
@@ -516,8 +523,8 @@ public class JCudaObject extends GPUObject {
 	
 	/** 
 	 * Thin wrapper over {@link #evict(long)}
-	 * @param size
-	 * @throws DMLRuntimeException
+	 * @param size size to check
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	static void ensureFreeSpace(long size) throws DMLRuntimeException {
 		if(size >= getAvailableMemory()) {
@@ -686,6 +693,8 @@ public class JCudaObject extends GPUObject {
 	
 	/**
 	 * Convenience method to directly examine the Sparse matrix on GPU
+	 * 
+	 * @return CSR (compressed sparse row) pointer
 	 */
 	public CSRPointer getSparseMatrixCudaPointer() {
 		return jcudaSparseMatrixPtr;
@@ -694,7 +703,7 @@ public class JCudaObject extends GPUObject {
 	/**
 	 * Convenience method to directly set the sparse matrix on GPU
 	 * Needed for operations like {@link JCusparse#cusparseDcsrgemm(cusparseHandle, int, int, int, int, int, cusparseMatDescr, int, Pointer, Pointer, Pointer, cusparseMatDescr, int, Pointer, Pointer, Pointer, cusparseMatDescr, Pointer, Pointer, Pointer)}
-	 * @param jcudaSparseMatrixPtr
+	 * @param jcudaSparseMatrixPtr CSR (compressed sparse row) pointer
 	 */
 	public void setSparseMatrixCudaPointer(CSRPointer jcudaSparseMatrixPtr) {
 		this.jcudaSparseMatrixPtr = jcudaSparseMatrixPtr;
@@ -712,11 +721,13 @@ public class JCudaObject extends GPUObject {
 	 * Convenience method to convert a CSR matrix to a dense matrix on the GPU
 	 * Since the allocated matrix is temporary, bookkeeping is not updated.
 	 * Caller is responsible for deallocating memory on GPU.
-	 * @param rows
-	 * @param cols
-	 * @param densePtr	[in] dense matrix pointer on the GPU in row major
-	 * @return
-	 * @throws DMLRuntimeException
+	 * 
+	 * @param cusparseHandle ?
+	 * @param rows number of rows
+	 * @param cols number of columns
+	 * @param densePtr [in] dense matrix pointer on the GPU in row major
+	 * @return CSR (compressed sparse row) pointer
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static CSRPointer denseToSparse(cusparseHandle cusparseHandle, int rows, int cols, Pointer densePtr) throws DMLRuntimeException {		
 		cusparseMatDescr matDescr = CSRPointer.getDefaultCuSparseMatrixDescriptor();

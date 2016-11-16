@@ -43,11 +43,11 @@ public class ReorgCPInstruction extends UnaryCPInstruction
  	/**
  	 * for opcodes r' and rdiag
  	 * 
- 	 * @param op
- 	 * @param in
- 	 * @param out
- 	 * @param opcode
- 	 * @param istr
+ 	 * @param op operator
+ 	 * @param in cp input operand
+ 	 * @param out cp output operand
+ 	 * @param opcode the opcode
+ 	 * @param istr ?
  	 */
 	public ReorgCPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String istr){
 		super(op, in, out, opcode, istr);
@@ -57,14 +57,14 @@ public class ReorgCPInstruction extends UnaryCPInstruction
 	/**
 	 * for opcode rsort
 	 * 
-	 * @param op
-	 * @param in
-	 * @param col
-	 * @param desc
-	 * @param ixret
-	 * @param out
-	 * @param opcode
-	 * @param istr
+	 * @param op operator
+	 * @param in cp input operand
+	 * @param col ?
+	 * @param desc ?
+	 * @param ixret ?
+	 * @param out cp output operand
+	 * @param opcode the opcode
+	 * @param istr ?
 	 */
 	public ReorgCPInstruction(Operator op, CPOperand in, CPOperand col, CPOperand desc, CPOperand ixret, CPOperand out, String opcode, String istr){
 		this(op, in, out, opcode, istr);

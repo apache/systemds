@@ -74,10 +74,7 @@ public class FrameAppendRSPInstruction extends AppendRSPInstruction
 			sec.getFrameObject(input1.getName()).mergeSchemas(
 			sec.getFrameObject(input2.getName())));
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class ReduceSideColumnsFunction implements Function<Tuple2<FrameBlock, FrameBlock>, FrameBlock> 
 	{
 		private static final long serialVersionUID = -97824903649667646L;
@@ -99,9 +96,6 @@ public class FrameAppendRSPInstruction extends AppendRSPInstruction
 		}
 	}
 
-	/**
-	 * 
-	 */
 	private static class ReduceSideAppendRowsFunction implements PairFunction<Tuple2<Long, FrameBlock>, Long, FrameBlock> 
 	{
 		private static final long serialVersionUID = 1723795153048336791L;
@@ -120,9 +114,6 @@ public class FrameAppendRSPInstruction extends AppendRSPInstruction
 		}
 	}
 
-	/**
-	 * 
-	 */
 	private static class ReduceSideAppendAlignFunction implements PairFunction<Tuple2<Long, FrameBlock>, Long, FrameBlock> 
 	{
 		private static final long serialVersionUID = 5850400295183766409L;

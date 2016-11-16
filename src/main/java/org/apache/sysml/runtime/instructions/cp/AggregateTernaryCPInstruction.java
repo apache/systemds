@@ -38,12 +38,6 @@ public class AggregateTernaryCPInstruction extends ComputationCPInstruction
 		_cptype = CPINSTRUCTION_TYPE.AggregateTernary;
 	}
 
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	public static AggregateTernaryCPInstruction parseInstruction( String str ) 
 		throws DMLRuntimeException 
 	{

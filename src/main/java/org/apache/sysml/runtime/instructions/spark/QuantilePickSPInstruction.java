@@ -57,13 +57,7 @@ public class QuantilePickSPInstruction extends BinarySPInstruction
 		_type = type;
 		//inmem ignored here
 	}
-	
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static QuantilePickSPInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{
@@ -166,14 +160,7 @@ public class QuantilePickSPInstruction extends BinarySPInstruction
 				throw new DMLRuntimeException("Unsupported qpick operation type: "+_type);
 		}
 	}
-	
-	/**
-	 * 
-	 * @param in
-	 * @param key
-	 * @param brlen
-	 * @return
-	 */
+
 	private double lookupKey(JavaPairRDD<MatrixIndexes,MatrixBlock> in, long key, int brlen)
 	{
 		long rix = UtilFunctions.computeBlockIndex(key, brlen);
@@ -182,12 +169,7 @@ public class QuantilePickSPInstruction extends BinarySPInstruction
 		List<MatrixBlock> val = in.lookup(new MatrixIndexes(rix,1));
 		return val.get(0).quickGetValue((int)pos, 0);
 	}
-	
-	/**
-	 * 
-	 * @param in
-	 * @return
-	 */
+
 	private double sumWeights(JavaPairRDD<MatrixIndexes,MatrixBlock> in)
 	{
 		JavaPairRDD<MatrixIndexes,MatrixBlock> tmp = in
@@ -197,9 +179,6 @@ public class QuantilePickSPInstruction extends BinarySPInstruction
 		return val.quickGetValue(0, 0);
 	}
 
-	/**
-	 * 
-	 */
 	private static class FilterFunction implements Function<Tuple2<MatrixIndexes,MatrixBlock>, Boolean> 
 	{
 		private static final long serialVersionUID = -8249102381116157388L;
@@ -222,10 +201,7 @@ public class QuantilePickSPInstruction extends BinarySPInstruction
 			return (rowIndex>=_minRowIndex && rowIndex<=_maxRowIndex);
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class ExtractAndSumFunction implements PairFunction<Tuple2<MatrixIndexes,MatrixBlock>,MatrixIndexes,MatrixBlock> 
 	{
 		private static final long serialVersionUID = -584044441055250489L;
@@ -268,10 +244,7 @@ public class QuantilePickSPInstruction extends BinarySPInstruction
 			return new Tuple2<MatrixIndexes,MatrixBlock>(new MatrixIndexes(1,1), ret);
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class ExtractAndSumWeightsFunction implements Function<MatrixBlock,MatrixBlock> 
 	{
 		private static final long serialVersionUID = 7169831202450745373L;

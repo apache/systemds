@@ -41,10 +41,6 @@ import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 
-
-/**
- * 
- */
 public class FunctionCallCPInstruction extends CPInstruction 
 {	
 	private String _functionName;
@@ -74,10 +70,7 @@ public class FunctionCallCPInstruction extends CPInstruction
 		_boundOutputParamNames = boundOutParamNames;
 		
 	}
-		
-	/**
-	 * 
-	 */
+
 	public static FunctionCallCPInstruction parseInstruction(String str) 
 		throws DMLRuntimeException 
 	{	
@@ -255,11 +248,7 @@ public class FunctionCallCPInstruction extends CPInstruction
 	{
 		return _boundOutputParamNames;
 	}
-	
-	/**
-	 * 
-	 * @param fname
-	 */
+
 	public void setFunctionName(String fname)
 	{
 		//update instruction string
@@ -271,11 +260,6 @@ public class FunctionCallCPInstruction extends CPInstruction
 		instOpcode = fname;
 	}
 
-	/**
-	 * 
-	 * @param pattern
-	 * @param replace
-	 */
 	public String updateInstStringFunctionName(String pattern, String replace)
 	{
 		//split current instruction

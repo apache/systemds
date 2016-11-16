@@ -46,13 +46,7 @@ public class MultiReturnParameterizedBuiltinCPInstruction extends ComputationCPI
 	public CPOperand getOutput(int i) {
 		return _outputs.get(i);
 	}
-	
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static MultiReturnParameterizedBuiltinCPInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{

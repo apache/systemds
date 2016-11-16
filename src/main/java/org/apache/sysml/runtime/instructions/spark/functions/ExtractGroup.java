@@ -48,15 +48,7 @@ public abstract class ExtractGroup implements Serializable
 		_ngroups = ngroups;
 		_op = op;
 	}
-	
-	/**
-	 * 
-	 * @param ix
-	 * @param group
-	 * @param target
-	 * @return
-	 * @throws Exception 
-	 */
+
 	protected Iterable<Tuple2<MatrixIndexes, WeightedCell>> execute(MatrixIndexes ix, MatrixBlock group, MatrixBlock target) throws Exception
 	{
 		//sanity check matching block dimensions
@@ -107,10 +99,7 @@ public abstract class ExtractGroup implements Serializable
 		
 		return groupValuePairs;	
 	}
-	
-	/**
-	 * 
-	 */
+
 	public static class ExtractGroupJoin extends ExtractGroup implements PairFlatMapFunction<Tuple2<MatrixIndexes,Tuple2<MatrixBlock, MatrixBlock>>, MatrixIndexes, WeightedCell> 
 	{
 		private static final long serialVersionUID = 8890978615936560266L;
@@ -131,10 +120,7 @@ public abstract class ExtractGroup implements Serializable
 			return execute(ix, group, target);
 		}	
 	}
-	
-	/**
-	 * 
-	 */
+
 	public static class ExtractGroupBroadcast extends ExtractGroup implements PairFlatMapFunction<Tuple2<MatrixIndexes,MatrixBlock>, MatrixIndexes, WeightedCell> 
 	{
 		private static final long serialVersionUID = 5709955602290131093L;

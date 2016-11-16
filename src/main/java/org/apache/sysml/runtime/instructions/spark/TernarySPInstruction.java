@@ -75,12 +75,6 @@ public class TernarySPInstruction extends ComputationSPInstruction
 		_ignoreZeros = ignoreZeros;
 	}
 
-	/**
-	 * 
-	 * @param inst
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	public static TernarySPInstruction parseInstruction(String inst) 
 		throws DMLRuntimeException
 	{	
@@ -252,10 +246,7 @@ public class TernarySPInstruction extends ComputationSPInstruction
 		if(setLineage3)
 			sec.addLineageRDD(output.getName(), input3.getName());
 	}	
-	
-	/**
-	 *
-	 */
+
 	private static class ExpandScalarCtableOperation implements PairFlatMapFunction<Tuple2<MatrixIndexes,MatrixBlock>, MatrixIndexes, Double> 
 	{
 		private static final long serialVersionUID = -12552669148928288L;

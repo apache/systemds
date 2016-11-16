@@ -59,19 +59,19 @@ public abstract class GPUObject
 	public abstract void acquireDeviceRead() throws DMLRuntimeException;
 	/**
 	 * To signal intent that a matrix block will be written to on the GPU
-	 * @throws DMLRuntimeException
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public abstract void acquireDeviceModifyDense() throws DMLRuntimeException;
 	/**
 	 * To signal intent that a sparse matrix block will be written to on the GPU
-	 * @throws DMLRuntimeException
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public abstract void acquireDeviceModifySparse() throws DMLRuntimeException;
 	
 	/**
 	 * If memory on GPU has been allocated from elsewhere, this method 
 	 * updates the internal bookkeeping
-	 * @param numBytes
+	 * @param numBytes number of bytes
 	 */
 	public abstract void setDeviceModify(long numBytes);
 	
@@ -83,8 +83,8 @@ public abstract class GPUObject
 	// package-level visibility as these methods are guarded by underlying GPUContext
 	/**
 	 * Allocates memory on the GPU
-	 * @param numElemToAllocate		number of elements in dense matrix, -1 for unknown or sparse matrix
-	 * @throws DMLRuntimeException	
+	 * @param numElemToAllocate number of elements in dense matrix, -1 for unknown or sparse matrix
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	abstract void allocateMemoryOnDevice(int numElemToAllocate) throws DMLRuntimeException;
 	abstract void deallocateMemoryOnDevice() throws DMLRuntimeException;
@@ -95,10 +95,10 @@ public abstract class GPUObject
 	/**
 	 * Copies a matrix block (dense or sparse) from GPU Memory to Host memory.
 	 * A {@link MatrixBlock} instance is allocated, data from the GPU is copied in,
-	 * the current one in Host memory is deallocated by calling {@link MatrixObject#acquireModify(MatrixBlock)}
+	 * the current one in Host memory is deallocated by calling MatrixObject's acquireHostModify(MatrixBlock) (??? does not exist)
 	 * and overwritten with the newly allocated instance.
 	 * TODO : re-examine this to avoid spurious allocations of memory for optimizations
-	 * @throws DMLRuntimeException
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	abstract void copyFromDeviceToHost() throws DMLRuntimeException; // Called by export()
 	
@@ -107,9 +107,8 @@ public abstract class GPUObject
 	 * number of (read) locks that have been obtained on it (reverse order). It repeatedly frees up 
 	 * blocks on which there are zero locks until the required size has been freed up.  
 	 * // TODO: update it with hybrid policy
-	 * @param GPUSize 				Desired size to be freed up on the GPU
-	 * @throws DMLRuntimeException 	If no blocks to free up or if not enough blocks with zero locks on them.	 
-	 * @return 
+	 * @param GPUSize Desired size to be freed up on the GPU
+	 * @throws DMLRuntimeException If no blocks to free up or if not enough blocks with zero locks on them.	 
 	 */
 	protected static void evict(final long GPUSize) throws DMLRuntimeException {
         if(GPUContext.allocatedPointers.size() == 0) {

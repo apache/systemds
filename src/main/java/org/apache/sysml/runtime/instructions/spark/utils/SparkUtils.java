@@ -51,40 +51,19 @@ public class SparkUtils
 {	
 	//internal configuration
 	public static final StorageLevel DEFAULT_TMP = Checkpoint.DEFAULT_STORAGE_LEVEL;
-	
-	/**
-	 * 
-	 * @param in
-	 * @return
-	 */
+
 	public static IndexedMatrixValue toIndexedMatrixBlock( Tuple2<MatrixIndexes,MatrixBlock> in ) {
 		return new IndexedMatrixValue(in._1(), in._2());
 	}
-	
-	/**
-	 * 
-	 * @param ix
-	 * @param mb
-	 * @return
-	 */
+
 	public static IndexedMatrixValue toIndexedMatrixBlock( MatrixIndexes ix, MatrixBlock mb ) {
 		return new IndexedMatrixValue(ix, mb);
 	}
-	
-	/**
-	 * 
-	 * @param in
-	 * @return
-	 */
+
 	public static Tuple2<MatrixIndexes,MatrixBlock> fromIndexedMatrixBlock( IndexedMatrixValue in ){
 		return new Tuple2<MatrixIndexes,MatrixBlock>(in.getIndexes(), (MatrixBlock)in.getValue());
 	}
-	
-	/**
-	 * 
-	 * @param in
-	 * @return
-	 */
+
 	public static ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> fromIndexedMatrixBlock( ArrayList<IndexedMatrixValue> in )
 	{
 		ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
@@ -93,21 +72,11 @@ public class SparkUtils
 		
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @param in
-	 * @return
-	 */
+
 	public static Pair<MatrixIndexes,MatrixBlock> fromIndexedMatrixBlockToPair( IndexedMatrixValue in ){
 		return new Pair<MatrixIndexes,MatrixBlock>(in.getIndexes(), (MatrixBlock)in.getValue());
 	}
-	
-	/**
-	 * 
-	 * @param in
-	 * @return
-	 */
+
 	public static ArrayList<Pair<MatrixIndexes,MatrixBlock>> fromIndexedMatrixBlockToPair( ArrayList<IndexedMatrixValue> in )
 	{
 		ArrayList<Pair<MatrixIndexes,MatrixBlock>> ret = new ArrayList<Pair<MatrixIndexes,MatrixBlock>>();
@@ -116,22 +85,11 @@ public class SparkUtils
 		
 		return ret;
 	}
-	
-	
-	/**
-	 * 
-	 * @param in
-	 * @return
-	 */
+
 	public static Tuple2<Long,FrameBlock> fromIndexedFrameBlock( Pair<Long, FrameBlock> in ){
 		return new Tuple2<Long, FrameBlock>(in.getKey(), in.getValue());
 	}
-	
-	/**
-	 * 
-	 * @param in
-	 * @return
-	 */
+
 	public static ArrayList<Tuple2<Long,FrameBlock>> fromIndexedFrameBlock( ArrayList<Pair<Long, FrameBlock>> in )
 	{
 		ArrayList<Tuple2<Long, FrameBlock>> ret = new ArrayList<Tuple2<Long, FrameBlock>>();
@@ -140,35 +98,18 @@ public class SparkUtils
 		
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @param in
-	 * @return
-	 */
+
 	public static ArrayList<Pair<Long,Long>> toIndexedLong( List<Tuple2<Long, Long>> in ) {
 		ArrayList<Pair<Long, Long>> ret = new ArrayList<Pair<Long, Long>>();
 		for( Tuple2<Long, Long> e : in )
 			ret.add(new Pair<Long,Long>(e._1(), e._2()));
 		return ret;
 	}
-	
-	
-	/**
-	 * 
-	 * @param in
-	 * @return
-	 */
+
 	public static Pair<Long,FrameBlock> toIndexedFrameBlock( Tuple2<Long,FrameBlock> in ) {
 		return new Pair<Long,FrameBlock>(in._1(), in._2());
 	}
-	
-	/**
-	 * 
-	 * @param ix
-	 * @param mb
-	 * @return
-	 */
+
 	public static Pair<Long,FrameBlock> toIndexedFrameBlock( Long ix, FrameBlock fb ) {
 		return new Pair<Long,FrameBlock>(ix, fb);
 	}
@@ -177,8 +118,8 @@ public class SparkUtils
 	 * Indicates if the input RDD is hash partitioned, i.e., it has a partitioner
 	 * of type {@code org.apache.spark.HashPartitioner}.
 	 * 
-	 * @param in
-	 * @return
+	 * @param in input JavaPairRDD
+	 * @return true if input is hash partitioned
 	 */
 	public static boolean isHashPartitioned(JavaPairRDD<?,?> in) {
 		return !in.rdd().partitioner().isEmpty()
@@ -189,8 +130,8 @@ public class SparkUtils
 	 * Creates a partitioning-preserving deep copy of the input matrix RDD, where 
 	 * the indexes and values are copied.
 	 * 
-	 * @param in
-	 * @return
+	 * @param in matrix as {@code JavaPairRDD<MatrixIndexes,MatrixBlock>}
+	 * @return matrix as {@code JavaPairRDD<MatrixIndexes,MatrixBlock>}
 	 */
 	public static JavaPairRDD<MatrixIndexes,MatrixBlock> copyBinaryBlockMatrix(
 			JavaPairRDD<MatrixIndexes,MatrixBlock> in) {
@@ -201,9 +142,9 @@ public class SparkUtils
 	 * Creates a partitioning-preserving copy of the input matrix RDD. If a deep copy is 
 	 * requested, indexes and values are copied, otherwise they are simply passed through.
 	 * 
-	 * @param in
-	 * @param deep
-	 * @return
+	 * @param in matrix as {@code JavaPairRDD<MatrixIndexes,MatrixBlock>}
+	 * @param deep if true, perform deep copy
+	 * @return matrix as {@code JavaPairRDD<MatrixIndexes,MatrixBlock>}
 	 */
 	public static JavaPairRDD<MatrixIndexes,MatrixBlock> copyBinaryBlockMatrix(
 			JavaPairRDD<MatrixIndexes,MatrixBlock> in, boolean deep) 
@@ -214,13 +155,6 @@ public class SparkUtils
 			return in.mapPartitionsToPair(new CopyBlockPairFunction(deep), true);
 	}
 
-	/**
-	 * 
-	 * @param mb
-	 * @param blen
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	public static MatrixBlock[] partitionIntoRowBlocks( MatrixBlock mb, int blen ) 
 		throws DMLRuntimeException
 	{
@@ -238,14 +172,7 @@ public class SparkUtils
 		
 		return partBlocks;
 	}
-	
-	/**
-	 * 
-	 * @param mb
-	 * @param brlen
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static MatrixBlock[] partitionIntoColumnBlocks( MatrixBlock mb, int blen ) 
 		throws DMLRuntimeException
 	{
@@ -363,13 +290,7 @@ public class SparkUtils
 		
 		return retVal;
 	}
-	
-	/**
-	 * 
-	 * @param sc
-	 * @param mc
-	 * @return
-	 */
+
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> getEmptyBlockRDD( JavaSparkContext sc, MatrixCharacteristics mc )
 	{
 		//create all empty blocks
@@ -389,12 +310,7 @@ public class SparkUtils
 		//create rdd of in-memory list
 		return sc.parallelizePairs(list);
 	}
-	
-	/**
-	 * 
-	 * @param input
-	 * @return
-	 */
+
 	public static JavaPairRDD<MatrixIndexes, MatrixCell> cacheBinaryCellRDD(JavaPairRDD<MatrixIndexes, MatrixCell> input)
 	{
 		JavaPairRDD<MatrixIndexes, MatrixCell> ret = null;
@@ -406,12 +322,7 @@ public class SparkUtils
 		
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @param input
-	 * @return
-	 */
+
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> cacheBinaryBlockRDD(JavaPairRDD<MatrixIndexes, MatrixBlock> input)
 	{
 		JavaPairRDD<MatrixIndexes, MatrixBlock> ret = null;
@@ -427,9 +338,8 @@ public class SparkUtils
 	/**
 	 * Utility to compute dimensions and non-zeros in a given RDD of binary cells.
 	 * 
-	 * @param rdd
-	 * @param computeNNZ
-	 * @return
+	 * @param input matrix as {@code JavaPairRDD<MatrixIndexes, MatrixCell>}
+	 * @return matrix characteristics
 	 */
 	public static MatrixCharacteristics computeMatrixCharacteristics(JavaPairRDD<MatrixIndexes, MatrixCell> input) 
 	{
@@ -444,11 +354,10 @@ public class SparkUtils
 	/**
 	 * Utility to compute dimensions and non-zeros in the given RDD of matrix blocks.
 	 * 
-	 * @param rdd
-	 * @param rpb
-	 * @param cpb
-	 * @param computeNNZ
-	 * @return
+	 * @param input matrix as {@code JavaPairRDD<MatrixIndexes, MatrixBlock>}
+	 * @param brlen number of rows in a block
+	 * @param bclen number of columns in a block
+	 * @return matrix characteristics
 	 */
 	public static MatrixCharacteristics computeMatrixCharacteristics(JavaPairRDD<MatrixIndexes, MatrixBlock> input, int brlen, int bclen) 
 	{
@@ -459,10 +368,7 @@ public class SparkUtils
 		
 		return ret;
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class AnalyzeCellMatrixCharacteristics implements Function<Tuple2<MatrixIndexes,MatrixCell>, MatrixCharacteristics> 
 	{
 		private static final long serialVersionUID = 8899395272683723008L;
@@ -477,10 +383,7 @@ public class SparkUtils
 			return new MatrixCharacteristics(rix, cix, 0, 0, nnz);
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class AnalyzeBlockMatrixCharacteristics implements Function<Tuple2<MatrixIndexes,MatrixBlock>, MatrixCharacteristics> 
 	{
 		private static final long serialVersionUID = -1857049501217936951L;
@@ -504,10 +407,7 @@ public class SparkUtils
 			return new MatrixCharacteristics(rlen, clen, _brlen, _bclen, nnz);
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class AggregateMatrixCharacteristics implements Function2<MatrixCharacteristics, MatrixCharacteristics, MatrixCharacteristics> 
 	{
 		private static final long serialVersionUID = 4263886749699779994L;
@@ -530,8 +430,9 @@ public class SparkUtils
 	
 	/**
 	 * Utility to compute number of non-zeros from the given RDD of MatrixCells
-	 * @param rdd
-	 * @return
+	 * 
+	 * @param rdd matrix as {@code JavaPairRDD<MatrixIndexes, MatrixCell>}
+	 * @return number of non-zeros
 	 */
 	public static long computeNNZFromCells(JavaPairRDD<MatrixIndexes, MatrixCell> rdd) {
 		long nnz = rdd.values().filter(
@@ -547,8 +448,9 @@ public class SparkUtils
 	
 	/**
 	 * Utility to compute number of non-zeros from the given RDD of MatrixBlocks
-	 * @param rdd
-	 * @return
+	 * 
+	 * @param rdd matrix as {@code JavaPairRDD<MatrixIndexes, MatrixBlock>}
+	 * @return number of non-zeros
 	 */
 	public static long computeNNZFromBlocks(JavaPairRDD<MatrixIndexes, MatrixBlock> rdd) {
 		long nnz = rdd.values().aggregate(	0L, 

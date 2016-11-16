@@ -649,12 +649,12 @@ public class VariableCPInstruction extends CPInstruction
 	
 	/**
 	 * Handler for mvvar instructions.
-	 * Example: mvvar <srcvar> <destFile> <format>
+	 * Example: mvvar &lt;srcvar&gt; &lt;destFile&gt; &lt;format&gt;
 	 * Move the file pointed by srcvar to destFile. 
 	 * Currently, applicable only when format=binaryblock.
 	 *  
-	 * @param ec
-	 * @throws DMLRuntimeException
+	 * @param ec execution context
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	@SuppressWarnings("rawtypes")
 	private void processMoveInstruction(ExecutionContext ec) throws DMLRuntimeException {
@@ -706,10 +706,10 @@ public class VariableCPInstruction extends CPInstruction
 	
 	/**
 	 * Handler for cpvar instructions.
-	 * Example: cpvar <srcvar> <destvar>
+	 * Example: cpvar &lt;srcvar&gt; &lt;destvar&gt;
 	 * 
-	 * @param ec
-	 * @throws DMLRuntimeException 
+	 * @param ec execution context
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private void processCopyInstruction(ExecutionContext ec) throws DMLRuntimeException {
 		// get source variable 
@@ -737,7 +737,8 @@ public class VariableCPInstruction extends CPInstruction
 	 * The default behavior is to write out the specified matrix from the instruction, in 
 	 * the format given by the corresponding symbol table entry.
 	 * 
-	 * @throws DMLRuntimeException 
+	 * @param ec execution context
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private void processWriteInstruction(ExecutionContext ec) 
 		throws DMLRuntimeException 
@@ -771,9 +772,9 @@ public class VariableCPInstruction extends CPInstruction
 	 * Remove variable instruction externalized as a static function in order to allow various 
 	 * cleanup procedures to use the same codepath as the actual rmVar instruction
 	 * 
-	 * @param ec
-	 * @param varname
-	 * @throws DMLRuntimeException
+	 * @param ec execution context
+	 * @param varname variable name
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void processRemoveVariableInstruction( ExecutionContext ec, String varname ) 
 		throws DMLRuntimeException
@@ -793,8 +794,9 @@ public class VariableCPInstruction extends CPInstruction
 	/**
 	 * Helper function to write CSV files to HDFS.
 	 * 
-	 * @param ec
-	 * @throws DMLRuntimeException
+	 * @param ec execution context
+	 * @param fname file name
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private void writeCSVFile(ExecutionContext ec, String fname) 
 		throws DMLRuntimeException 
@@ -832,8 +834,10 @@ public class VariableCPInstruction extends CPInstruction
 	
 	/**
 	 * Helper function to write MM files to HDFS.
-	 * @param ec
-	 * @throws DMLRuntimeException
+	 * 
+	 * @param ec execution context
+	 * @param fname file name
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private void writeMMFile(ExecutionContext ec, String fname) 
 		throws DMLRuntimeException 
@@ -866,7 +870,10 @@ public class VariableCPInstruction extends CPInstruction
 	}
 	/**
 	 * Helper function to write scalars to HDFS based on its value type.
-	 * @throws DMLRuntimeException 
+	 * 
+	 * @param ec execution context
+	 * @param fname file name
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private void writeScalarToHDFS(ExecutionContext ec, String fname) 
 		throws DMLRuntimeException 
@@ -1070,11 +1077,7 @@ public class VariableCPInstruction extends CPInstruction
 			instString = sb.toString();
 		}
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public boolean isVariableCastInstruction()
 	{
 		return ( opcode == VariableOperationCode.CastAsScalarVariable  ||

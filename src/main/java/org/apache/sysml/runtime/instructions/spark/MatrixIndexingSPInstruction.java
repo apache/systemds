@@ -227,12 +227,7 @@ public class MatrixIndexingSPInstruction  extends IndexingSPInstruction
 		else
 			throw new DMLRuntimeException("Invalid opcode (" + opcode +") encountered in MatrixIndexingSPInstruction.");		
 	}
-		
-	/**
-	 * 
-	 * @param mcOut
-	 * @throws DMLRuntimeException
-	 */
+
 	private static void checkValidOutputDimensions(MatrixCharacteristics mcOut) 
 		throws DMLRuntimeException
 	{
@@ -240,13 +235,7 @@ public class MatrixIndexingSPInstruction  extends IndexingSPInstruction
 			throw new DMLRuntimeException("MatrixIndexingSPInstruction: The updated output dimensions are invalid: " + mcOut);
 		}
 	}
-	
-	/**
-	 * 
-	 * @param mcIn
-	 * @param ixrange
-	 * @return
-	 */
+
 	private static boolean isPartitioningPreservingRightIndexing(MatrixCharacteristics mcIn, IndexRange ixrange) {
 		return ( mcIn.dimsKnown() &&
 				(ixrange.rowStart==1 && ixrange.rowEnd==mcIn.getRows() && mcIn.getCols()<=mcIn.getColsPerBlock() )   //1-1 column block indexing
@@ -258,9 +247,9 @@ public class MatrixIndexingSPInstruction  extends IndexingSPInstruction
 	 * In this case, we perform a key lookup which is very efficient in case of existing
 	 * partitioner, especially for out-of-core datasets.
 	 * 
-	 * @param mcIn
-	 * @param ixrange
-	 * @return
+	 * @param mcIn matrix characteristics
+	 * @param ixrange index range
+	 * @return true if index range covers a single block of the input matrix
 	 */
 	private static boolean isSingleBlockLookup(MatrixCharacteristics mcIn, IndexRange ixrange) {
 		return UtilFunctions.computeBlockIndex(ixrange.rowStart, mcIn.getRowsPerBlock())
@@ -275,6 +264,11 @@ public class MatrixIndexingSPInstruction  extends IndexingSPInstruction
 	 * (3) aligned indexing range (which does not required aggregation), and (4) the output fits 
 	 * twice in memory (in order to collect the result). 
 	 * 
+	 * @param in input matrix
+	 * @param mcIn input matrix characteristics
+	 * @param mcOut output matrix characteristics
+	 * @param ixrange index range
+	 * @return true if index range requires a multi-block lookup
 	 */
 	private static boolean isMultiBlockLookup(JavaPairRDD<?,?> in, MatrixCharacteristics mcIn, MatrixCharacteristics mcOut, IndexRange ixrange) {
 		return SparkUtils.isHashPartitioned(in)                          //existing partitioner
@@ -283,11 +277,7 @@ public class MatrixIndexingSPInstruction  extends IndexingSPInstruction
 			&& OptimizerUtils.isIndexingRangeBlockAligned(ixrange, mcIn) //no block aggregation
 			&& OptimizerUtils.estimateSize(mcOut) < OptimizerUtils.getLocalMemBudget()/2; //outputs fits in memory
 	}
-	
-	
-	/**
-	 * 
-	 */
+
 	private static class SliceRHSForLeftIndexing implements PairFlatMapFunction<Tuple2<MatrixIndexes,MatrixBlock>, MatrixIndexes, MatrixBlock> 
 	{
 		private static final long serialVersionUID = 5724800998701216440L;
@@ -316,10 +306,7 @@ public class MatrixIndexingSPInstruction  extends IndexingSPInstruction
 			return SparkUtils.fromIndexedMatrixBlock(out);
 		}		
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class ZeroOutLHS implements PairFunction<Tuple2<MatrixIndexes,MatrixBlock>, MatrixIndexes,MatrixBlock> 
 	{
 		private static final long serialVersionUID = -3581795160948484261L;
@@ -353,10 +340,7 @@ public class MatrixIndexingSPInstruction  extends IndexingSPInstruction
 			return new Tuple2<MatrixIndexes, MatrixBlock>(kv._1, zeroBlk);
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class LeftIndexPartitionFunction implements PairFlatMapFunction<Iterator<Tuple2<MatrixIndexes,MatrixBlock>>, MatrixIndexes, MatrixBlock> 
 	{
 		private static final long serialVersionUID = 1757075506076838258L;
@@ -380,10 +364,7 @@ public class MatrixIndexingSPInstruction  extends IndexingSPInstruction
 		{
 			return new LeftIndexPartitionIterator(arg0);
 		}
-		
-		/**
-		 * 
-		 */
+
 		private class LeftIndexPartitionIterator extends LazyIterableIterator<Tuple2<MatrixIndexes, MatrixBlock>>
 		{
 			public LeftIndexPartitionIterator(Iterator<Tuple2<MatrixIndexes, MatrixBlock>> in) {
@@ -424,9 +405,6 @@ public class MatrixIndexingSPInstruction  extends IndexingSPInstruction
 		}
 	}
 
-	/**
-	 * 
-	 */
 	private static class SliceBlock implements PairFlatMapFunction<Tuple2<MatrixIndexes,MatrixBlock>, MatrixIndexes, MatrixBlock> 
 	{
 		private static final long serialVersionUID = 5733886476413136826L;
@@ -479,10 +457,7 @@ public class MatrixIndexingSPInstruction  extends IndexingSPInstruction
 			return SparkUtils.fromIndexedMatrixBlock(outlist.get(0));
 		}		
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class SliceBlockPartitionFunction implements PairFlatMapFunction<Iterator<Tuple2<MatrixIndexes,MatrixBlock>>, MatrixIndexes, MatrixBlock> 
 	{
 		private static final long serialVersionUID = -8111291718258309968L;
@@ -530,9 +505,9 @@ public class MatrixIndexingSPInstruction  extends IndexingSPInstruction
 	 * of required partitions. The distinct set of required partitions is determined
 	 * via the partitioner of the input RDD.
 	 * 
-	 * @param in
-	 * @param filter
-	 * @return
+	 * @param in input matrix as {@code JavaPairRDD<MatrixIndexes,MatrixBlock>}
+	 * @param filter partition filter
+	 * @return matrix as {@code JavaPairRDD<MatrixIndexes,MatrixBlock>}
 	 */
 	private JavaPairRDD<MatrixIndexes,MatrixBlock> createPartitionPruningRDD( 
 			JavaPairRDD<MatrixIndexes,MatrixBlock> in, List<MatrixIndexes> filter )

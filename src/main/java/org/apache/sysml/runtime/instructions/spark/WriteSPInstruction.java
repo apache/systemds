@@ -159,15 +159,7 @@ public class WriteSPInstruction extends SPInstruction
 			throw new DMLRuntimeException("Failed to process write instruction", ex);
 		}
 	}
-	
-	/**
-	 * 
-	 * @param sec
-	 * @param fname
-	 * @param oi
-	 * @throws DMLRuntimeException
-	 * @throws IOException 
-	 */
+
 	protected void processMatrixWriteInstruction(SparkExecutionContext sec, String fname, OutputInfo oi) 
 		throws DMLRuntimeException, IOException
 	{
@@ -272,14 +264,6 @@ public class WriteSPInstruction extends SPInstruction
 		MapReduceTool.writeMetaDataFile (fname + ".mtd", ValueType.DOUBLE, mc, oi, formatProperties);	
 	}
 
-	/**
-	 * 
-	 * @param sec
-	 * @param fname
-	 * @param oi
-	 * @throws DMLRuntimeException 
-	 * @throws IOException 
-	 */
 	@SuppressWarnings("unchecked")
 	protected void processFrameWriteInstruction(SparkExecutionContext sec, String fname, OutputInfo oi, ValueType[] schema) 
 		throws DMLRuntimeException, IOException
@@ -314,14 +298,7 @@ public class WriteSPInstruction extends SPInstruction
 		// write meta data file
 		MapReduceTool.writeMetaDataFile(fname + ".mtd", input1.getValueType(), schema, DataType.FRAME, mc, oi, formatProperties);	
 	}
-	
-	/**
-	 * 
-	 * @param rdd
-	 * @param fname
-	 * @param inSingleFile
-	 * @throws DMLRuntimeException
-	 */
+
 	private void customSaveTextFile(JavaRDD<String> rdd, String fname, boolean inSingleFile) 
 		throws DMLRuntimeException 
 	{

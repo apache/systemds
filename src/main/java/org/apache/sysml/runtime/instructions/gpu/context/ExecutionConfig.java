@@ -80,7 +80,7 @@ public class ExecutionConfig {
 		int maxBlockDim = getMaxBlockDim(deviceNumber);
 		int blockDimX = (int) Math.min(maxBlockDim, rlen);
 		int gridDimX = (int)Math.ceil((double)rlen / blockDimX);
-		int blockDimY = (int)Math.min(Math.ceil(((double)maxBlockDim)/blockDimX), clen);
+		int blockDimY = (int)Math.min(Math.floor(((double)maxBlockDim)/blockDimX), clen);
 		int gridDimY = (int)Math.ceil((double)clen / blockDimY);
 		return new ExecutionConfig(gridDimX, gridDimY, blockDimX, blockDimY);
 	}

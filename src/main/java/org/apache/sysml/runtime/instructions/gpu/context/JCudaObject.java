@@ -90,7 +90,7 @@ public class JCudaObject extends GPUObject {
 		private static final double ULTRA_SPARSITY_TURN_POINT = 0.0004;
 
 		/**
-		 * Default constructor to help with Factory method {@link #allocateCSRMatrix(long, long, long)}
+		 * Default constructor to help with Factory method {@link #allocateEmpty(long, long)}
 		 */
 		private CSRPointer() {
 			val = new Pointer();
@@ -170,9 +170,10 @@ public class JCudaObject extends GPUObject {
 				return r;
 			}
 			ensureFreeSpace(getDoubleSizeOf(nnz2) + getIntSizeOf(rows + 1) + getIntSizeOf(nnz2));
-			r.val = allocate(getDoubleSizeOf(nnz2));
-			r.rowPtr = allocate(getIntSizeOf(rows + 1));
-			r.colInd = allocate(getIntSizeOf(nnz2));
+			// increment the cudaCount by 1 for the allocation of all 3 arrays
+			r.val = allocate(getDoubleSizeOf(nnz2), 0);
+			r.rowPtr = allocate(getIntSizeOf(rows + 1), 0);
+			r.colInd = allocate(getIntSizeOf(nnz2), 1);
 			return r;
 		}
 		
@@ -245,7 +246,8 @@ public class JCudaObject extends GPUObject {
 		private static void step1AllocateRowPointers(cusparseHandle handle, CSRPointer C, int rowsC) throws DMLRuntimeException {
 			cusparseSetPointerMode(handle, cusparsePointerMode.CUSPARSE_POINTER_MODE_HOST);
             cudaDeviceSynchronize();
-			C.rowPtr = allocate(getIntSizeOf((long)rowsC+1));
+			// Do not increment the cudaCount of allocations on GPU
+			C.rowPtr = allocate(getIntSizeOf((long)rowsC+1), 0);
 		}
 		
 		/**
@@ -321,8 +323,9 @@ public class JCudaObject extends GPUObject {
 		 * @throws DMLRuntimeException
 		 */
 		private static void step3AllocateValNInd(cusparseHandle handle, CSRPointer C) throws DMLRuntimeException {
-			C.val = allocate(getDoubleSizeOf(C.nnz));
-			C.colInd = allocate(getIntSizeOf(C.nnz));
+			// Increment cudaCount by one when all three arrays of CSR sparse array are allocated
+			C.val = allocate(getDoubleSizeOf(C.nnz), 0);
+			C.colInd = allocate(getIntSizeOf(C.nnz), 1);
 		}
 
 		// ==============================================================================================
@@ -444,11 +447,12 @@ public class JCudaObject extends GPUObject {
 	 * Allocates temporary space on the device.
 	 * Does not update bookkeeping.
 	 * The caller is responsible for freeing up after usage.
-	 * @param size size to allocate
+	 * @param size   			Size of data (in bytes) to allocate
+	 * @param statsCount	amount to increment the cudaAllocCount by
 	 * @return jcuda Pointer
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static Pointer allocate(long size) throws DMLRuntimeException{
+	public static Pointer allocate(long size, int statsCount) throws DMLRuntimeException{
 		Pointer A = new Pointer();
 		ensureFreeSpace(size);
 		long t0 = System.nanoTime();
@@ -456,8 +460,18 @@ public class JCudaObject extends GPUObject {
 		// Set all elements to 0 since newly allocated space will contain garbage
 		cudaMemset(A, 0, size);
 		Statistics.cudaAllocTime.getAndAdd(System.nanoTime() - t0);
-		Statistics.cudaAllocCount.getAndAdd(1);
+		Statistics.cudaAllocCount.getAndAdd(statsCount);
 		return A;
+	}
+
+	/**
+	 * Convenience method for {@link #allocate(long, int)}, defaults statsCount to 1.
+	 * @param size size of data (in bytes) to allocate
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static Pointer allocate(long size) throws DMLRuntimeException {
+		return allocate(size, 1);
 	}
 
 	/**
@@ -503,6 +517,9 @@ public class JCudaObject extends GPUObject {
 		return isEmptyAndSparseAndAllocated;
 	}
 
+
+    long thisThread = Thread.currentThread().getId();
+
 	/**
 	 * Allocate necessary memory on the GPU for this {@link JCudaObject} instance.
 	 * 
@@ -522,13 +539,9 @@ public class JCudaObject extends GPUObject {
 				mat.setDirty(true);
 				// Don't copy just allocate
 				if (isSparse){
-					long sparseSize = CSRPointer.estimateSize(mat.getNnz(), mat.getNumRows());
-					ensureFreeSpace(sparseSize);
-					allocateMemoryOnDevice(-1);
+					allocateSparseMatrixOnDevice();
 				} else { 	// Dense block, size = numRows * numCols
-					long size = mat.getNumRows() * mat.getNumColumns();
-					ensureFreeSpace(getDoubleSizeOf(size));
-					allocateMemoryOnDevice(size);
+					allocateDenseMatrixOnDevice();
 				}
 				synchronized(evictionLock) {
 					GPUContext.allocatedPointers.add(this);
@@ -624,24 +637,14 @@ public class JCudaObject extends GPUObject {
 		if(!isAllocated())
 			throw new CacheException("Attempting to release an input before allocating it");
 	}
-	
-	/**
-	 * releases output allocated on GPU
-	 * @throws CacheException if data is not allocated
-	 */
-	public synchronized void releaseOutput() throws CacheException {
-		updateReleaseLocks();
-		isDeviceCopyModified = true;
-		if(!isAllocated())
-			throw new CacheException("Attempting to release an output before allocating it");
-	}
 
+	/**
 	@Override
 	void allocateMemoryOnDevice(long numElemToAllocate) throws DMLRuntimeException {
 		if(!isAllocated()) {
 			long start = System.nanoTime();
 			if(numElemToAllocate == -1 && LibMatrixCUDA.isInSparseFormat(mat)) {
-				setSparseMatrixCudaPointer(CSRPointer.allocateEmpty(mat.getNnz(), mat.getNumRows())); 
+				setSparseMatrixCudaPointer(CSRPointer.allocateEmpty(mat.getNnz(), mat.getNumRows()));
 				numBytes = CSRPointer.estimateSize(mat.getNnz(), mat.getNumRows());
 				JCudaContext.availableNumBytesWithoutUtilFactor.addAndGet(-numBytes);
 				isInSparseFormat = true;
@@ -662,13 +665,52 @@ public class JCudaObject extends GPUObject {
 				cudaMalloc(jcudaDenseMatrixPtr,  numBytes);
 				JCudaContext.availableNumBytesWithoutUtilFactor.addAndGet(-numBytes);
 			}
-			
+
 			Statistics.cudaAllocTime.addAndGet(System.nanoTime()-start);
 			Statistics.cudaAllocCount.addAndGet(1);
 
 		}
 	}
-	
+	 */
+
+	@Override
+	void allocateDenseMatrixOnDevice() throws DMLRuntimeException {
+		assert !isAllocated() : "Internal error - trying to allocated dense matrix to a JCudaObject that is already allocated";
+		long rows = mat.getNumRows();
+		long cols = mat.getNumColumns();
+		assert rows > 0 : "Internal error - invalid number of rows when allocating dense matrix";
+		assert cols > 0 : "Internal error - invalid number of columns when allocating dense matrix;";
+        long size = getDoubleSizeOf(rows * cols);
+		Pointer tmp = allocate(size);
+		setDenseMatrixCudaPointer(tmp);
+		setDeviceModify(size);
+	}
+
+	@Override
+	void allocateSparseMatrixOnDevice() throws DMLRuntimeException {
+		assert !isAllocated() : "Internal error = trying to allocated sparse matrix to a JCudaObject that is already allocated";
+		long rows = mat.getNumRows();
+		long nnz = mat.getNnz();
+		assert rows > 0 : "Internal error - invalid number of rows when allocating a sparse matrix";
+		assert nnz > 0 : "Internal error - invalid number of non zeroes when allocating a sparse matrix";
+		CSRPointer tmp = CSRPointer.allocateEmpty(nnz, rows);
+		setSparseMatrixCudaPointer(tmp);
+		long size = CSRPointer.estimateSize(nnz, rows);
+		setDeviceModify(size);
+	}
+
+	/**
+	 * releases output allocated on GPU
+	 * @throws CacheException if data is not allocated
+	 */
+    @Override
+	public synchronized void releaseOutput() throws CacheException {
+		updateReleaseLocks();
+		isDeviceCopyModified = true;
+		if(!isAllocated())
+			throw new CacheException("Attempting to release an output before allocating it");
+	}
+
 	@Override
 	public void setDeviceModify(long numBytes) {
 		this.numLocks.addAndGet(1);
@@ -765,8 +807,7 @@ public class JCudaObject extends GPUObject {
 				colInd = csrBlock.indexes();
 				values = csrBlock.values();	
 			}
-			ensureFreeSpace(CSRPointer.estimateSize(mat.getNnz(), mat.getNumRows()));
-			allocateMemoryOnDevice(-1);
+			allocateSparseMatrixOnDevice();
 			synchronized(evictionLock) {
 				GPUContext.allocatedPointers.add(this);
 			}
@@ -787,8 +828,7 @@ public class JCudaObject extends GPUObject {
 				data = new double[tmp.getNumRows()*tmp.getNumColumns()];
 			
 			// Copy dense block
-			ensureFreeSpace(getDoubleSizeOf(data.length));
-			allocateMemoryOnDevice(data.length);
+			allocateDenseMatrixOnDevice();
 			synchronized(evictionLock) {
 				GPUContext.allocatedPointers.add(this);
 			}

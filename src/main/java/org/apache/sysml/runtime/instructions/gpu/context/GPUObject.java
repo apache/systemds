@@ -78,12 +78,9 @@ public abstract class GPUObject
 	public abstract void releaseOutput() throws CacheException;
 	
 	// package-level visibility as these methods are guarded by underlying GPUContext
-	/**
-	 * Allocates memory on the GPU
-	 * @param numElemToAllocate number of elements in dense matrix, -1 for unknown or sparse matrix
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
-	 */
-	abstract void allocateMemoryOnDevice(long numElemToAllocate) throws DMLRuntimeException;
+
+	abstract void allocateDenseMatrixOnDevice() throws DMLRuntimeException;
+	abstract void allocateSparseMatrixOnDevice() throws DMLRuntimeException;
 	abstract void deallocateMemoryOnDevice() throws DMLRuntimeException;
 	abstract long getSizeOnDevice() throws DMLRuntimeException;
 	

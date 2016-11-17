@@ -42,10 +42,6 @@ import org.apache.sysml.runtime.matrix.data.PartialBlock;
 import org.apache.sysml.runtime.matrix.data.TaggedAdaptivePartialBlock;
 import org.apache.sysml.runtime.util.MapReduceTool;
 
-/**
- * 
- * 
- */
 public class ReblockMapper extends MapperBase 
 	implements Mapper<Writable, Writable, Writable, Writable>
 {
@@ -172,15 +168,7 @@ public class ReblockMapper extends MapperBase
 		//apply reblock instructions and output
 		processReblockInMapperAndOutput(index, out);
 	}
-	
-	/**
-	 * 
-	 * @param index
-	 * @param indexBuffer
-	 * @param partialBuffer
-	 * @param out
-	 * @throws IOException
-	 */
+
 	protected void processReblockInMapperAndOutput(int index, OutputCollector<Writable, Writable> out) 
 		throws IOException
 	{

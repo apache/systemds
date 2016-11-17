@@ -99,9 +99,6 @@ public class WriterBinaryBlockParallel extends WriterBinaryBlock
 		}
 	}
 
-	/**
-	 * 
-	 */
 	private class WriteFileTask implements Callable<Object> 
 	{
 		private Path _path = null;

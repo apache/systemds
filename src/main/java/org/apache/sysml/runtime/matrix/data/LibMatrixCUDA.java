@@ -246,7 +246,7 @@ public class LibMatrixCUDA {
 	 * @param pad_w		horizontal padding
 	 * @param stride_h	pooling vertical stride
 	 * @param stride_w	pooling horizontal stride
-	 * @return
+	 * @return cudnn pooling descriptor
 	 */
 	private static cudnnPoolingDescriptor allocatePoolingDescriptor(int R, int S, int pad_h, int pad_w, int stride_h, int stride_w) {
 		cudnnPoolingDescriptor poolingDesc = new cudnnPoolingDescriptor();
@@ -426,11 +426,13 @@ public class LibMatrixCUDA {
 	}
 
 	/**
-	 * Performs tsmm, A %*% A' or A' %*% A, on GPU by exploiting cublasDsyrk(...) 
-	 * @param left	input matrix, as in a tsmm expression like A %*% A' or A' %*% A, we just need to check whether the left one is transposed or not, I named it 'left'
-	 * @param output
-	 * @param isLeftTransposed
-	 * @throws DMLRuntimeException
+	 * Performs tsmm, A %*% A' or A' %*% A, on GPU by exploiting cublasDsyrk(...)
+	 * 
+	 * @param ec execution context
+	 * @param left input matrix, as in a tsmm expression like A %*% A' or A' %*% A, we just need to check whether the left one is transposed or not, I named it 'left'
+	 * @param outputName output matrix name
+	 * @param isLeftTransposed if true, left transposed
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void matmultTSMM(ExecutionContext ec, MatrixObject left, String outputName,
             boolean isLeftTransposed) throws DMLRuntimeException {
@@ -505,7 +507,7 @@ public class LibMatrixCUDA {
 	 * @param isLeftTransposed1		op for A, transposed or not
 	 * @param isRightTransposed1	op for B, tranposed or not
 	 * @return	output of matrix multiply
-	 * @throws DMLRuntimeException
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static MatrixObject matmult(ExecutionContext ec, MatrixObject left1, MatrixObject right1, String outputName,
 			boolean isLeftTransposed1, boolean isRightTransposed1) throws DMLRuntimeException {
@@ -544,7 +546,7 @@ public class LibMatrixCUDA {
 	 * @param right					Matrix B on host
 	 * @param isLeftTransposed		op for A, tranposed or not
 	 * @param isRightTransposed		op for B, transposed or not
-	 * @throws DMLRuntimeException
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	protected static void eitherSparseMatmult(MatrixObject output, MatrixObject left, MatrixObject right,
 			boolean isLeftTransposed, boolean isRightTransposed) throws DMLRuntimeException {
@@ -574,19 +576,19 @@ public class LibMatrixCUDA {
 	
 	/**
 	 * C = op(A) * op(B) where A is dense and B is sparse
-	 * If B is ultrasparse, A is converted to a sparse matrix and {@link #sparseSparseMatmult(MatrixObject, int, int, int, int, int, CSRPointer, CSRPointer)} is invoked
-	 * otherwise B is converted to a dense matrix and {@link #denseDenseMatmult(MatrixObject, int, int, int, int, boolean, boolean, Pointer, Pointer)} is invoked.
-	 * @param output
-	 * @param right
-	 * @param left
-	 * @param isLeftTransposed
-	 * @param isRightTransposed
-	 * @param transA
-	 * @param transB
-	 * @param m
-	 * @param n
-	 * @param k
-	 * @throws DMLRuntimeException
+	 * If B is ultrasparse, A is converted to a sparse matrix and {@code sparseSparseMatmult(MatrixObject, int, int, int, int, int, CSRPointer, CSRPointer)} is invoked
+	 * otherwise B is converted to a dense matrix and {@code denseDenseMatmult(Pointer, int, int, int, int, boolean, boolean, Pointer, Pointer)} is invoked.
+	 * @param output ?
+	 * @param right ?
+	 * @param left ?
+	 * @param isLeftTransposed ?
+	 * @param isRightTransposed ?
+	 * @param transA ?
+	 * @param transB ?
+	 * @param m ?
+	 * @param n ?
+	 * @param k ?
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	protected static void denseSparseMatmult(MatrixObject output, MatrixObject right, MatrixObject left,
 			boolean isLeftTransposed, boolean isRightTransposed, int transA, int transB, int m, int n, int k)
@@ -626,19 +628,19 @@ public class LibMatrixCUDA {
 
 	/**
 	 * * C = op(A) * op(B) where A is sparse and B is dense
-	 * If A is ultrasparse, B is converted to a sparse matrix and {@link #sparseSparseMatmult(MatrixObject, int, int, int, int, int, CSRPointer, CSRPointer)} is invoked
-	 * otherwise A is converted to a dense matrix and {@link #denseDenseMatmult(MatrixObject, int, int, int, int, boolean, boolean, Pointer, Pointer)} is invoked.
-	 * @param output
-	 * @param left
-	 * @param right
-	 * @param isLeftTransposed
-	 * @param isRightTransposed
-	 * @param transA
-	 * @param transB
-	 * @param m
-	 * @param n
-	 * @param k
-	 * @throws DMLRuntimeException
+	 * If A is ultrasparse, B is converted to a sparse matrix and {@code sparseSparseMatmult(MatrixObject, int, int, int, int, int, CSRPointer, CSRPointer)} is invoked
+	 * otherwise A is converted to a dense matrix and {@code denseDenseMatmult(Pointer, int, int, int, int, boolean, boolean, Pointer, Pointer)} is invoked.
+	 * @param output ?
+	 * @param left ?
+	 * @param right ?
+	 * @param isLeftTransposed ?
+	 * @param isRightTransposed ?
+	 * @param transA ?
+	 * @param transB ?
+	 * @param m ?
+	 * @param n ?
+	 * @param k ?
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	protected static void sparseDenseMatmult(MatrixObject output, MatrixObject left, MatrixObject right,
 			boolean isLeftTransposed, boolean isRightTransposed, int transA, int transB, int m, int n, int k)
@@ -693,7 +695,7 @@ public class LibMatrixCUDA {
 	 * @param transA	op for A, tranposed or not
 	 * @param m			number of rows in A (not op(A))
 	 * @param k			number of cols in A or number of rows in B (not op(A) or op(B))
-	 * @throws DMLRuntimeException
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	protected static void sparseMatrixDenseVectorMult(MatrixObject output, CSRPointer A, Pointer B_dense, int transA,
 			int m, int k) throws DMLRuntimeException {
@@ -713,12 +715,12 @@ public class LibMatrixCUDA {
 	/**
 	 * Sparse C = Sparse op(A) * Sparse op(B)
 	 * Reroutes call to sparse matrix-vector mult if needed
-	 * @param output
-	 * @param left
-	 * @param right
-	 * @param isLeftTransposed
-	 * @param isRightTransposed
-	 * @throws DMLRuntimeException
+	 * @param output ?
+	 * @param left ?
+	 * @param right ?
+	 * @param isLeftTransposed ?
+	 * @param isRightTransposed ?
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	protected static void bothSparseMatmult(MatrixObject output, MatrixObject left, MatrixObject right,
 			boolean isLeftTransposed, boolean isRightTransposed) throws DMLRuntimeException {
@@ -758,7 +760,7 @@ public class LibMatrixCUDA {
 	 * @param k			number of rows in B, (cols in B is assumed to be 1)		
 	 * @param A			left sparse matrix on GPU
 	 * @param B			right sparse vector on GPU
-	 * @throws DMLRuntimeException
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	protected static void sparseMatrixVectorMult(MatrixObject output, int transA, int m, int n, int k,
 			CSRPointer A, CSRPointer B) throws DMLRuntimeException {
@@ -778,7 +780,7 @@ public class LibMatrixCUDA {
 	 * @param k			number of cols in op(A) or rows in op(B)
 	 * @param A			left sparse matrix on GPU
 	 * @param B			right sparse matrix on GPU
-	 * @throws DMLRuntimeException
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	protected static void sparseSparseMatmult(MatrixObject output, int transA, int transB, int m, int n, int k,
 			CSRPointer A, CSRPointer B) throws DMLRuntimeException {
@@ -804,8 +806,7 @@ public class LibMatrixCUDA {
 	 * @param right1				right matrix B on host (in row-major order)
 	 * @param isLeftTransposed1 	op for A, transposed or not
 	 * @param isRightTransposed1	op for B, transposed or not
-	 * @return
-	 * @throws DMLRuntimeException
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	protected static void denseDenseMatmult(MatrixObject output, MatrixObject left1, MatrixObject right1,
 			boolean isLeftTransposed1, boolean isRightTransposed1) throws DMLRuntimeException {
@@ -839,7 +840,7 @@ public class LibMatrixCUDA {
 	 * @param isRightTransposed1	op for B, transposed or not
 	 * @param leftPtr			A allocated on the GPU in row-major format
 	 * @param rightPtr			B allocated on the GPU in row-major format
-	 * @throws DMLRuntimeException
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void denseDenseMatmult(Pointer output, int leftRows1, int leftCols1, int rightRows1,
 			int rightCols1, boolean isLeftTransposed1, boolean isRightTransposed1, Pointer leftPtr, Pointer rightPtr)
@@ -977,8 +978,8 @@ public class LibMatrixCUDA {
 	
 	/**
 	 * performs maxpooling on GPU by exploiting cudnnPoolingForward(...)
-	 * @param image
-	 * @param outputBlock
+	 * @param image image as matrix object
+	 * @param outputBlock output matrix
 	 * @param N				batch size
 	 * @param C				number of channels
 	 * @param H				height of image
@@ -992,7 +993,7 @@ public class LibMatrixCUDA {
 	 * @param stride_w		vertical stride
 	 * @param P				(H - R + 1 + 2*pad_h)/stride_h
 	 * @param Q				(W - S + 1 + 2*pad_w)/stride_w
-	 * @throws DMLRuntimeException
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void maxpooling(MatrixObject image,
 			MatrixObject outputBlock, int N, int C, int H, int W, int K, int R,
@@ -1042,9 +1043,9 @@ public class LibMatrixCUDA {
 	
 	/**
 	 * performs maxpoolingBackward on GPU by exploiting cudnnPoolingBackward(...)
-	 * @param image
+	 * @param image image as matrix object
 	 * @param dout			delta matrix, output of previous layer
-	 * @param outputBlock
+	 * @param outputBlock output matrix
 	 * @param N				batch size
 	 * @param C				number of channels
 	 * @param H				height of image
@@ -1058,7 +1059,7 @@ public class LibMatrixCUDA {
 	 * @param stride_w		vertical stride
 	 * @param P				(H - R + 1 + 2*pad_h)/stride_h
 	 * @param Q				(W - S + 1 + 2*pad_w)/stride_w
-	 * @throws DMLRuntimeException
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void maxpooling_backward(MatrixObject image, MatrixObject dout,
 			MatrixObject outputBlock, int N, int C, int H, int W, int K, int R,
@@ -1140,12 +1141,12 @@ public class LibMatrixCUDA {
 	/**
 	 * Performs elementwise matrix-scalar operation specified by op
 	 * 
-	 * @param ec
-	 * @param in
-	 * @param outputName
-	 * @param isInputTransposed
-	 * @param op
-	 * @throws DMLRuntimeException
+	 * @param ec execution context
+	 * @param in input matrix
+	 * @param outputName output matrix name
+	 * @param isInputTransposed true if input transposed
+	 * @param op scalar operator
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void bincellOp(ExecutionContext ec, MatrixObject in, String outputName, boolean isInputTransposed, ScalarOperator op) throws DMLRuntimeException {
 		double constant = op.getConstant();
@@ -1409,15 +1410,14 @@ public class LibMatrixCUDA {
 	/**
 	 * Performs elementwise operation specified by op of two input matrices in1 and in2
 	 * 
-	 * 
-	 * @param ec
-	 * @param in1
-	 * @param in2
-	 * @param outputName
-	 * @param isLeftTransposed
-	 * @param isRightTransposed
-	 * @param op
-	 * @throws DMLRuntimeException
+	 * @param ec execution context
+	 * @param in1 input matrix 1
+	 * @param in2 input matrix 2
+	 * @param outputName output matrix name
+	 * @param isLeftTransposed true if left-transposed
+	 * @param isRightTransposed true if right-transposed
+	 * @param op binary operator
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void bincellOp(ExecutionContext ec, MatrixObject in1, MatrixObject in2, 
 			String outputName, boolean isLeftTransposed, boolean isRightTransposed, BinaryOperator op) throws DMLRuntimeException {
@@ -1545,10 +1545,10 @@ public class LibMatrixCUDA {
 	/**
 	 * Transposes the input matrix using cublasDgeam
 	 * 
-	 * @param ec
-	 * @param in
-	 * @param outputName
-	 * @throws DMLRuntimeException
+	 * @param ec execution context
+	 * @param in input matrix
+	 * @param outputName output matrix name
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void transpose(ExecutionContext ec, MatrixObject in, String outputName) throws DMLRuntimeException {
 		// C = alpha* op( A ) + beta* op ( B )

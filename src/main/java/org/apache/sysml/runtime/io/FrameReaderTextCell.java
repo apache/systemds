@@ -47,17 +47,7 @@ import org.apache.sysml.runtime.util.UtilFunctions;
  */
 public class FrameReaderTextCell extends FrameReader
 {
-	/**
-	 * 
-	 * @param fname
-	 * @param schema
-	 * @param names
-	 * @param rlen
-	 * @param clen
-	 * @return
-	 * @throws DMLRuntimeException 
-	 * @throws IOException 
-	 */
+
 	@Override
 	public final FrameBlock readFrameFromHDFS(String fname, ValueType[] schema, String[] names, long rlen, long clen)
 		throws IOException, DMLRuntimeException
@@ -81,31 +71,11 @@ public class FrameReaderTextCell extends FrameReader
 		return ret;
 	}
 
-	/**
-	 * 
-	 * @param is
-	 * @param rlen
-	 * @param clen
-	 * @return
-	 * @throws IOException
-	 * @throws DMLRuntimeException
-	 */
 	public final FrameBlock readFrameFromInputStream(InputStream is, long rlen, long clen) 
 		throws IOException, DMLRuntimeException {
 		return readFrameFromInputStream(is, getDefSchema(clen), getDefColNames(clen), rlen, clen);
 	}
-	
-	/**
-	 * 
-	 * @param is
-	 * @param schema
-	 * @param names
-	 * @param rlen
-	 * @param clen
-	 * @return
-	 * @throws DMLRuntimeException 
-	 * @throws IOException 
-	 */
+
 	public final FrameBlock readFrameFromInputStream(InputStream is, ValueType[] schema, String[] names, long rlen, long clen) 
 		throws IOException, DMLRuntimeException 
 	{
@@ -119,19 +89,7 @@ public class FrameReaderTextCell extends FrameReader
 		
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @param path
-	 * @param job
-	 * @param fs
-	 * @param dest
-	 * @param schema
-	 * @param names
-	 * @param rlen
-	 * @param clen
-	 * @throws IOException
-	 */
+
 	protected void readTextCellFrameFromHDFS( Path path, JobConf job, FileSystem fs, FrameBlock dest, 
 			ValueType[] schema, String[] names, long rlen, long clen)
 		throws IOException
@@ -149,16 +107,6 @@ public class FrameReaderTextCell extends FrameReader
 		}
 	}
 
-	/**
-	 * 
-	 * @param split
-	 * @param dest
-	 * @param schema
-	 * @param names
-	 * @param rlen
-	 * @param clen
-	 * @throws IOException
-	 */
 	protected final void readTextCellFrameFromInputSplit( InputSplit split, TextInputFormat informat, JobConf job, FrameBlock dest)
 		throws IOException
 	{
@@ -205,20 +153,6 @@ public class FrameReaderTextCell extends FrameReader
 		}		
 	}
 
-	
-	/**
-	 * 
-	 * @param path
-	 * @param job
-	 * @param fs
-	 * @param dest
-	 * @param schema
-	 * @param names
-	 * @param rlen
-	 * @param clen
-	 * @return
-	 * @throws IOException
-	 */
 	protected final void readRawTextCellFrameFromHDFS( Path path, JobConf job, FileSystem fs, FrameBlock dest, 
 			ValueType[] schema, String[] names, long rlen, long clen)
 		throws IOException
@@ -229,18 +163,7 @@ public class FrameReaderTextCell extends FrameReader
 		//actual read
 		readRawTextCellFrameFromInputStream(inputStream, dest, schema, names, rlen, clen);
 	}
-	
-	/**
-	 * 
-	 * @param is
-	 * @param dest
-	 * @param schema
-	 * @param names
-	 * @param rlen
-	 * @param clen
-	 * @return
-	 * @throws IOException
-	 */
+
 	protected final void readRawTextCellFrameFromInputStream( InputStream is, FrameBlock dest, ValueType[] schema, String[] names, long rlen, long clen)
 		throws IOException
 	{

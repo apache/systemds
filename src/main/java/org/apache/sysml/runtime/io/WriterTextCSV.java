@@ -42,9 +42,6 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.SparseBlock;
 import org.apache.sysml.runtime.util.MapReduceTool;
 
-/**
- * 
- */
 public class WriterTextCSV extends MatrixWriter
 {
 	//blocksize for string concatenation in order to prevent write OOM 
@@ -93,32 +90,14 @@ public class WriterTextCSV extends MatrixWriter
 
 		IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, path);
 	}
-	
-	/**
-	 * 
-	 * @param path
-	 * @param job
-	 * @param fs
-	 * @param src
-	 * @param csvprops
-	 * @throws IOException 
-	 */
+
 	protected void writeCSVMatrixToHDFS(Path path, JobConf job, FileSystem fs, MatrixBlock src, CSVFileFormatProperties csvprops) 
 		throws IOException 
 	{
 		//sequential write csv file
 		writeCSVMatrixToFile(path, job, fs, src, 0, (int)src.getNumRows(), csvprops);
 	}
-	
-	/**
-	 * 
-	 * @param fileName
-	 * @param src
-	 * @param rlen
-	 * @param clen
-	 * @param nnz
-	 * @throws IOException
-	 */
+
 	protected final void writeCSVMatrixToFile( Path path, JobConf job, FileSystem fs, MatrixBlock src, int rl, int ru, CSVFileFormatProperties props )
 		throws IOException
 	{
@@ -267,12 +246,12 @@ public class WriterTextCSV extends MatrixWriter
 	 * 
 	 * This method is invoked from CP-write instruction.
 	 * 
-	 * @param srcFileName
-	 * @param destFileName
-	 * @param csvprop
-	 * @param rlen
-	 * @param clen
-	 * @throws IOException
+	 * @param srcFileName source file name
+	 * @param destFileName destination file name
+	 * @param csvprop CSV file format properties
+	 * @param rlen number of rows
+	 * @param clen number of columns
+	 * @throws IOException if IOException occurs
 	 */
 	public final void mergeCSVPartFiles(String srcFileName, String destFileName, CSVFileFormatProperties csvprop, long rlen, long clen) 
 		throws IOException 
@@ -343,16 +322,7 @@ public class WriterTextCSV extends MatrixWriter
 					+ ": No such file or directory");
 		}
 	}
-		
-	/**
-	 * 
-	 * @param srcFileName
-	 * @param destFileName
-	 * @param csvprop
-	 * @param rlen
-	 * @param clen
-	 * @throws IOException
-	 */
+
 	@SuppressWarnings("unchecked")
 	public final void addHeaderToCSV(String srcFileName, String destFileName, long rlen, long clen) 
 		throws IOException 

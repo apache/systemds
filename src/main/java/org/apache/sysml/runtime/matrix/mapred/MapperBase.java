@@ -162,7 +162,7 @@ public abstract class MapperBase extends MRBaseForCommonInstructions
 	 * Determines if empty blocks can be discarded on map input. Conceptually, this is true
 	 * if the individual instruction don't need to output empty blocks and if they are sparsesafe.
 	 * 
-	 * @return
+	 * @return true if empty blocks can be discarded on map input
 	 */
 	public boolean allowsFilterEmptyInputBlocks()
 	{

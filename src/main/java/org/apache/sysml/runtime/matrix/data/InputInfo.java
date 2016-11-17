@@ -134,12 +134,7 @@ public class InputInfo implements Serializable
 			return CSVInputInfo;
 		return null;
 	}
-	
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 */
+
 	public static InputInfo stringExternalToInputInfo(String str) {
 		if( DataExpression.FORMAT_TYPE_VALUE_TEXT.equals(str) )
 			return InputInfo.TextCellInputInfo;

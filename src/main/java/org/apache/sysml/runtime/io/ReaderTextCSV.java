@@ -78,23 +78,6 @@ public class ReaderTextCSV extends MatrixReader
 		return ret;
 	}
 
-	/**
-	 * 
-	 * @param path
-	 * @param job
-	 * @param fs
-	 * @param dest
-	 * @param rlen
-	 * @param clen
-	 * @param brlen
-	 * @param bclen
-	 * @param hasHeader
-	 * @param delim
-	 * @param fill
-	 * @param fillValue
-	 * @return
-	 * @throws IOException
-	 */
 	@SuppressWarnings("unchecked")
 	private MatrixBlock readCSVMatrixFromHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock dest, 
 			long rlen, long clen, int brlen, int bclen, boolean hasHeader, String delim, boolean fill, double fillValue )
@@ -208,19 +191,7 @@ public class ReaderTextCSV extends MatrixReader
 		
 		return dest;
 	}
-	
-	/**
-	 * 
-	 * @param files
-	 * @param job
-	 * @param fs
-	 * @param hasHeader
-	 * @param delim
-	 * @param fill
-	 * @param fillValue
-	 * @return
-	 * @throws IOException
-	 */
+
 	private MatrixBlock computeCSVSize ( List<Path> files, JobConf job, FileSystem fs, boolean hasHeader, String delim, boolean fill, double fillValue) 
 		throws IOException 
 	{		

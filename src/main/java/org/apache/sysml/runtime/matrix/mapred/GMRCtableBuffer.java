@@ -61,15 +61,7 @@ public class GMRCtableBuffer
 			_mapBuffer = new HashMap<Byte, CTableMap>();
 		_collector = collector;
 	}
-	
-	/**
-	 * 
-	 * @param resultIndexes
-	 * @param resultsNonZeros
-	 * @param resultDimsUnknown
-	 * @param resultsMaxRowDims
-	 * @param resultsMaxColDims
-	 */
+
 	public void setMetadataReferences(byte[] resultIndexes, long[] resultsNonZeros, byte[] resultDimsUnknown, long[] resultsMaxRowDims, long[] resultsMaxColDims)
 	{
 		_resultIndexes = resultIndexes;
@@ -79,10 +71,6 @@ public class GMRCtableBuffer
 		_resultMaxColDims = resultsMaxColDims;
 	}
 
-	/**
-	 * 
-	 * @return
-	 */
 	public int getBufferSize()
 	{
 		if ( _mapBuffer != null ) {
@@ -106,11 +94,7 @@ public class GMRCtableBuffer
 			return 0;
 		}
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public HashMap<Byte, CTableMap> getMapBuffer()
 	{
 		return _mapBuffer;
@@ -120,12 +104,7 @@ public class GMRCtableBuffer
 	{
 		return _blockBuffer;
 	}
-	
-	/**
-	 * 
-	 * @param reporter
-	 * @throws RuntimeException
-	 */
+
 	@SuppressWarnings("deprecation")
 	public void flushBuffer( Reporter reporter ) 
 		throws RuntimeException 

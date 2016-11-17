@@ -66,10 +66,6 @@ public class BinaryBlockSerialization implements Serialization
 		return new MatrixBlockSerializer();
 	}
 
-	/**
-	 * 
-	 * 
-	 */
 	public static class MatrixBlockDeserializer implements Deserializer<MatrixBlock>
 	{
 		private FastBufferedDataInputStream _in = null; 
@@ -107,11 +103,7 @@ public class BinaryBlockSerialization implements Serialization
 				_in.close();
 		}
 	}
-	
-	/**
-	 * 
-	 * 
-	 */
+
 	public static class MatrixBlockSerializer implements Serializer<MatrixBlock>
 	{
 		private FastBufferedDataOutputStream _out = null;

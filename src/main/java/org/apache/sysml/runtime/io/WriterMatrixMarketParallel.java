@@ -38,9 +38,6 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.util.MapReduceTool;
 
-/**
- * 
- */
 public class WriterMatrixMarketParallel extends WriterMatrixMarket
 {
 	@Override
@@ -99,11 +96,7 @@ public class WriterMatrixMarketParallel extends WriterMatrixMarket
 			}
 		}
 	}
-	
-	/**
-	 * 
-	 * 
-	 */
+
 	private class WriteMMTask implements Callable<Object> 
 	{
 		private JobConf _job = null;

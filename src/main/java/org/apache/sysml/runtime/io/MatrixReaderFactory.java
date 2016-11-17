@@ -27,18 +27,9 @@ import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.SparseBlock;
 
-/**
- * 
- * 
- */
 public class MatrixReaderFactory 
 {
-	/**
-	 * 
-	 * @param iinfo
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static MatrixReader createMatrixReader( InputInfo iinfo ) 
 		throws DMLRuntimeException
 	{
@@ -73,13 +64,7 @@ public class MatrixReaderFactory
 		
 		return reader;
 	}
-	
-	/**
-	 * 
-	 * @param props
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static MatrixReader createMatrixReader( ReadProperties props ) 
 		throws DMLRuntimeException
 	{

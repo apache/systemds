@@ -37,10 +37,6 @@ import org.apache.sysml.runtime.matrix.data.PartialBlock;
 import org.apache.sysml.runtime.matrix.data.TaggedAdaptivePartialBlock;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
-/**
- * 
- * 
- */
 public class ReblockBuffer 
 {
 	
@@ -76,13 +72,7 @@ public class ReblockBuffer
 		_brlen = brlen;
 		_bclen = bclen;
 	}
-	
-	/**
-	 * 
-	 * @param r
-	 * @param c
-	 * @param v
-	 */
+
 	public void appendCell( long r, long c, double v )
 	{
 		long tmp = Double.doubleToRawLongBits(v);
@@ -91,16 +81,7 @@ public class ReblockBuffer
 		_buff[_count][2] = tmp;
 		_count++;
 	}
-	
-	/**
-	 * 
-	 * @param r_offset
-	 * @param c_offset
-	 * @param inBlk
-	 * @param index
-	 * @param out
-	 * @throws IOException
-	 */
+
 	public void appendBlock(long r_offset, long c_offset, MatrixBlock inBlk, byte index, OutputCollector<Writable, Writable> out ) 
 		throws IOException
 	{
@@ -155,13 +136,7 @@ public class ReblockBuffer
 	{
 		return _bufflen;
 	}
-	
-	/**
-	 * 
-	 * @param index
-	 * @param out
-	 * @throws IOException
-	 */
+
 	public void flushBuffer( byte index, OutputCollector<Writable, Writable> out ) 
 		throws IOException
 	{
@@ -250,13 +225,7 @@ public class ReblockBuffer
 		
 		_count = 0;
 	}
-	
-	/**
-	 * 
-	 * @param outList
-	 * @throws IOException
-	 * @throws DMLRuntimeException 
-	 */
+
 	public void flushBufferToBinaryBlocks( ArrayList<IndexedMatrixValue> outList ) 
 		throws IOException, DMLRuntimeException
 	{
@@ -315,15 +284,7 @@ public class ReblockBuffer
 		
 		_count = 0;
 	}
-	
-	/**
-	 * 
-	 * @param out
-	 * @param key
-	 * @param value
-	 * @param block
-	 * @throws IOException
-	 */
+
 	private static void outputBlock( OutputCollector<Writable, Writable> out, MatrixIndexes key, TaggedAdaptivePartialBlock value, MatrixBlock block ) 
 		throws IOException
 	{
@@ -339,15 +300,7 @@ public class ReblockBuffer
 		value.getBaseObject().set(block);
 		out.collect(key, value);
 	}
-	
-	/**
-	 * 
-	 * @param out
-	 * @param key
-	 * @param value
-	 * @throws IOException
-	 * @throws DMLRuntimeException 
-	 */
+
 	private static void outputBlock( ArrayList<IndexedMatrixValue> out, MatrixIndexes key, MatrixBlock value ) 
 		throws IOException, DMLRuntimeException
 	{

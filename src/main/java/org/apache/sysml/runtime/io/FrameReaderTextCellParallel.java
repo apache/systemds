@@ -43,18 +43,7 @@ import org.apache.sysml.runtime.matrix.data.FrameBlock;
  */
 public class FrameReaderTextCellParallel extends FrameReaderTextCell
 {	
-	/**
-	 * 
-	 * @param path
-	 * @param job
-	 * @param fs
-	 * @param dest
-	 * @param schema
-	 * @param names
-	 * @param rlen
-	 * @param clen
-	 * @throws IOException
-	 */
+
 	@Override
 	protected void readTextCellFrameFromHDFS( Path path, JobConf job, FileSystem fs, FrameBlock dest, 
 			ValueType[] schema, String[] names, long rlen, long clen)
@@ -87,10 +76,7 @@ public class FrameReaderTextCellParallel extends FrameReaderTextCell
 			throw new IOException("Failed parallel read of text cell input.", e);
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	public class ReadTask implements Callable<Object> 
 	{
 		private InputSplit _split = null;

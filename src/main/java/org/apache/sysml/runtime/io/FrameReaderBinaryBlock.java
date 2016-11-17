@@ -38,17 +38,7 @@ import org.apache.sysml.runtime.matrix.data.FrameBlock;
  */
 public class FrameReaderBinaryBlock extends FrameReader
 {
-	/**
-	 * 
-	 * @param fname
-	 * @param schema
-	 * @param names
-	 * @param rlen
-	 * @param clen
-	 * @return
-	 * @throws DMLRuntimeException 
-	 * @throws IOException 
-	 */
+
 	@Override
 	public final FrameBlock readFrameFromHDFS(String fname, ValueType[] schema, String[] names, long rlen, long clen) 
 		throws IOException, DMLRuntimeException 
@@ -71,19 +61,7 @@ public class FrameReaderBinaryBlock extends FrameReader
 		
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @param path
-	 * @param job
-	 * @param fs 
-	 * @param dest
-	 * @param rlen
-	 * @param clen
-	 * 
-	 * @throws IOException
-	 * @throws DMLRuntimeException 
-	 */
+
 	protected void readBinaryBlockFrameFromHDFS( Path path, JobConf job, FileSystem fs, FrameBlock dest, long rlen, long clen )
 		throws IOException, DMLRuntimeException
 	{
@@ -91,17 +69,8 @@ public class FrameReaderBinaryBlock extends FrameReader
 		for( Path lpath : getSequenceFilePaths(fs, path) ) //1..N files 
 			readBinaryBlockFrameFromSequenceFile(lpath, job, fs, dest);
 	}
-	
-	/**
-	 * 
-	 * @param path
-	 * @param job
-	 * @param fs
-	 * @param dest
-	 * @throws IOException
-	 * @throws DMLRuntimeException
-	 */
-	@SuppressWarnings({ "deprecation", "resource" })
+
+	@SuppressWarnings({ "deprecation" })
 	protected final void readBinaryBlockFrameFromSequenceFile( Path path, JobConf job, FileSystem fs, FrameBlock dest )
 		throws IOException, DMLRuntimeException
 	{
@@ -143,9 +112,9 @@ public class FrameReaderBinaryBlock extends FrameReader
 	/**
 	 * Specific functionality of FrameReaderBinaryBlock, mostly used for testing.
 	 * 
-	 * @param fname
-	 * @return
-	 * @throws IOException 
+	 * @param fname file name
+	 * @return frame block
+	 * @throws IOException if IOException occurs
 	 */
 	@SuppressWarnings("deprecation")
 	public FrameBlock readFirstBlock(String fname) throws IOException 

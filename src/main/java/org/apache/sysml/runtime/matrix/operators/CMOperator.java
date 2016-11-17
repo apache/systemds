@@ -89,11 +89,7 @@ public class CMOperator extends Operator
 		}
 		return AggregateOperationTypes.INVALID;
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public boolean isPartialAggregateOperator()
 	{
 		boolean ret = false;

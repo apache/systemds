@@ -39,15 +39,21 @@ public class CompactOutputFormat<K extends Writable, V extends Writable> extends
 	
 	static final String FINAL_SYNC_ATTRIBUTE = "final.sync";
 
-	  /**
-	   * Set the requirement for a final sync before the stream is closed.
-	   */
+	 /**
+	 * Set the requirement for a final sync before the stream is closed.
+	 * 
+	 * @param conf job configuration
+	 * @param newValue true if do a final sync before the stream is closed
+	 */
 	  public static void setFinalSync(JobConf conf, boolean newValue) {
 	    conf.setBoolean(FINAL_SYNC_ATTRIBUTE, newValue);
 	  }
 
 	  /**
 	   * Does the user want a final sync at close?
+	   * 
+	   * @param conf job configuration
+	   * @return true if final sync at close
 	   */
 	  public static boolean getFinalSync(JobConf conf) {
 	    return conf.getBoolean(FINAL_SYNC_ATTRIBUTE, false);

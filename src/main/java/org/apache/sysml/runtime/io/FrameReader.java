@@ -42,50 +42,22 @@ import org.apache.sysml.runtime.util.UtilFunctions;
  */
 public abstract class FrameReader 
 {
-	/**
-	 * 
-	 * @param fname
-	 * @param schema
-	 * @param names
-	 * @param rlen
-	 * @param clen
-	 * @return
-	 */
+
 	public abstract FrameBlock readFrameFromHDFS( String fname, ValueType[] schema, String[] names, long rlen, long clen)
 		throws IOException, DMLRuntimeException;
-	
-	/**
-	 * 
-	 * @param fname
-	 * @param schema
-	 * @param rlen
-	 * @param clen
-	 * @return
-	 */
+
 	public FrameBlock readFrameFromHDFS( String fname, ValueType[] schema, long rlen, long clen )
 		throws IOException, DMLRuntimeException
 	{
 		return readFrameFromHDFS(fname, schema, getDefColNames(schema.length), rlen, clen);
 	}
-	
-	/**
-	 * 
-	 * @param fname
-	 * @param rlen
-	 * @param clen
-	 * @return
-	 */
+
 	public FrameBlock readFrameFromHDFS( String fname, long rlen, long clen )
 		throws IOException, DMLRuntimeException
 	{
 		return readFrameFromHDFS(fname, getDefSchema(clen), getDefColNames(clen), rlen, clen);
 	}
-	
-	/**
-	 * 
-	 * @param iNumColumns
-	 * @return
-	 */
+
 	public ValueType[] getDefSchema( long clen )
 		throws IOException, DMLRuntimeException
 	{
@@ -93,11 +65,6 @@ public abstract class FrameReader
 		return UtilFunctions.nCopies(lclen, ValueType.STRING);
 	}
 
-	/**
-	 * 
-	 * @param iNumColumns
-	 * @return
-	 */
 	public String[] getDefColNames( long clen )
 		throws IOException, DMLRuntimeException
 	{
@@ -105,13 +72,6 @@ public abstract class FrameReader
 			FrameBlock.createColNames((int)clen);
 	}
 
-	/**
-	 * 
-	 * @param fs
-	 * @param file
-	 * @return
-	 * @throws IOException
-	 */
 	public static Path[] getSequenceFilePaths( FileSystem fs, Path file ) 
 		throws IOException
 	{
@@ -138,11 +98,12 @@ public abstract class FrameReader
 	 * NOTE: mallocDense controls if the output matrix blocks is fully allocated, this can be redundant
 	 * if binary block read and single block. 
 	 * 
-	 * @param schema
-	 * @param names
-	 * @return
-	 * @throws DMLRuntimeException 
-	 * @throws IOException 
+	 * @param schema schema as array of ValueTypes
+	 * @param names column names
+	 * @param nrow number of rows
+	 * @return frame block
+	 * @throws IOException if IOException occurs
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	protected static FrameBlock createOutputFrameBlock(ValueType[] schema, String[] names, long nrow)
 		throws IOException, DMLRuntimeException
@@ -156,37 +117,19 @@ public abstract class FrameReader
 		ret.ensureAllocatedColumns((int)nrow);
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @param schema
-	 * @param ncol
-	 * @return
-	 */
+
 	protected static ValueType[] createOutputSchema(ValueType[] schema, long ncol) {
 		if( schema.length==1 && ncol > 1 )
 			return UtilFunctions.nCopies((int)ncol, schema[0]);
 		return schema;
 	}
-	
-	/**
-	 * 
-	 * @param names
-	 * @param ncol
-	 * @return
-	 */
+
 	protected static String[] createOutputNames(String[] names, long ncol) {
 		if( names.length != ncol )
 			return FrameBlock.createColNames((int)ncol);
 		return names;
 	}
-	
-	/**
-	 * 
-	 * @param fs
-	 * @param path
-	 * @throws IOException 
-	 */
+
 	protected static void checkValidInputFile(FileSystem fs, Path path) 
 		throws IOException
 	{

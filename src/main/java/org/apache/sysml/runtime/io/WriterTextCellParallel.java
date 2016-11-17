@@ -40,17 +40,7 @@ import org.apache.sysml.runtime.util.MapReduceTool;
 
 public class WriterTextCellParallel extends WriterTextCell
 {
-	/**
-	 * 
-	 * @param path
-	 * @param job
-	 * @param src
-	 * @param rlen
-	 * @param clen
-	 * @param brlen
-	 * @param bclen
-	 * @throws IOException
-	 */
+
 	@Override
 	protected void writeTextCellMatrixToHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock src, long rlen, long clen )
 		throws IOException
@@ -106,11 +96,6 @@ public class WriterTextCellParallel extends WriterTextCell
 		}
 	}
 
-	
-	/**
-	 * 
-	 * 
-	 */
 	private class WriteTextTask implements Callable<Object> 
 	{
 		private JobConf _job = null;

@@ -111,22 +111,6 @@ public class ReaderTextCSVParallel extends MatrixReader
 		return ret;
 	}
 
-	/**
-	 * 
-	 * @param path
-	 * @param job
-	 * @param dest
-	 * @param rlen
-	 * @param clen
-	 * @param brlen
-	 * @param bclen
-	 * @param hasHeader
-	 * @param delim
-	 * @param fill
-	 * @param fillValue
-	 * @return
-	 * @throws IOException
-	 */
 	private void readCSVMatrixFromHDFS(InputSplit[] splits, Path path, JobConf job, 
 			MatrixBlock dest, long rlen, long clen, int brlen, int bclen, 
 			boolean hasHeader, String delim, boolean fill, double fillValue) 
@@ -166,16 +150,6 @@ public class ReaderTextCSVParallel extends MatrixReader
 		}
 	}
 
-	/**
-	 * 
-	 * @param path
-	 * @param job
-	 * @param hasHeader
-	 * @param delim
-	 * @return
-	 * @throws IOException
-	 * @throws DMLRuntimeException 
-	 */
 	private MatrixBlock computeCSVSizeAndCreateOutputMatrixBlock(
 			InputSplit[] splits, Path path, JobConf job, boolean hasHeader,
 			String delim, long estnnz) throws IOException, DMLRuntimeException 
@@ -234,10 +208,6 @@ public class ReaderTextCSVParallel extends MatrixReader
 		return createOutputMatrixBlock(nrow, ncol, nrow, ncol, estnnz, true, true);
 	}
 
-	/**
-	 * 
-	 * 
-	 */
 	private static class SplitOffsetInfos {
 		// offset & length info per split
 		private int[] offsetPerSplit = null;
@@ -265,10 +235,6 @@ public class ReaderTextCSVParallel extends MatrixReader
 		}
 	}
 
-	/**
-	 * 
-	 * 
-	 */
 	private static class CountRowsTask implements Callable<Object> 
 	{
 		private InputSplit _split = null;
@@ -330,10 +296,6 @@ public class ReaderTextCSVParallel extends MatrixReader
 		}
 	}
 
-	/**
-	 * 
-	 * 
-	 */
 	private static class CSVReadTask implements Callable<Object> 
 	{
 		private InputSplit _split = null;

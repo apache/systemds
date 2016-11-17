@@ -95,21 +95,7 @@ public class ReaderTextCell extends MatrixReader
 		
 		return ret;
 	}
-	
 
-	/**
-	 * 
-	 * @param path
-	 * @param job
-	 * @param dest
-	 * @param rlen
-	 * @param clen
-	 * @param brlen
-	 * @param bclen
-	 * @throws IOException
-	 * @throws IllegalAccessException
-	 * @throws InstantiationException
-	 */
 	private void readTextCellMatrixFromHDFS( Path path, JobConf job, MatrixBlock dest, long rlen, long clen, int brlen, int bclen )
 		throws IOException
 	{
@@ -172,20 +158,6 @@ public class ReaderTextCell extends MatrixReader
 		}
 	}
 
-	
-	/**
-	 * 
-	 * @param path
-	 * @param job
-	 * @param dest
-	 * @param rlen
-	 * @param clen
-	 * @param brlen
-	 * @param bclen
-	 * @throws IOException
-	 * @throws IllegalAccessException
-	 * @throws InstantiationException
-	 */
 	private void readRawTextCellMatrixFromHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock dest, long rlen, long clen, int brlen, int bclen, boolean matrixMarket )
 		throws IOException
 	{
@@ -195,20 +167,7 @@ public class ReaderTextCell extends MatrixReader
 		//actual read
 		readRawTextCellMatrixFromInputStream(inputStream, dest, rlen, clen, brlen, bclen, matrixMarket);
 	}
-	
-	/**
-	 * 
-	 * @param is
-	 * @param dest
-	 * @param rlen
-	 * @param clen
-	 * @param brlen
-	 * @param bclen
-	 * @param matrixMarket
-	 * @throws IOException
-	 * @throws IllegalAccessException
-	 * @throws InstantiationException
-	 */
+
 	private void readRawTextCellMatrixFromInputStream( InputStream is, MatrixBlock dest, long rlen, long clen, int brlen, int bclen, boolean matrixMarket )
 			throws IOException
 	{

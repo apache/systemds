@@ -51,11 +51,7 @@ public class IOUtilFunctions
 	private static final Log LOG = LogFactory.getLog(UtilFunctions.class.getName());
 
 	private static final char CSV_QUOTE_CHAR = '"';
-	
-	/**
-	 * 
-	 * @param io
-	 */
+
 	public static void closeSilently( Closeable io ) {
 		try {
 			if( io != null )
@@ -66,10 +62,6 @@ public class IOUtilFunctions
 		}
 	}
 
-	/**
-	 * 
-	 * @param rr
-	 */
 	public static void closeSilently( RecordReader<?,?> rr ) 
 	{
 		try {
@@ -80,24 +72,13 @@ public class IOUtilFunctions
            LOG.error("Failed to close record reader.", ex);
 		}
 	}
-	
-	/**
-	 * 
-	 * @param br
-	 */
+
 	public static double parseDoubleParallel( String str ) 
 	{
 		//return FloatingDecimal.parseDouble(str);
 		return Double.parseDouble(str);
 	}
 
-	/**
-	 * 
-	 * @param row
-	 * @param fill
-	 * @param emptyFound
-	 * @throws IOException
-	 */
 	public static void checkAndRaiseErrorCSVEmptyField(String row, boolean fill, boolean emptyFound) 
 		throws IOException
 	{
@@ -106,15 +87,7 @@ public class IOUtilFunctions
 			+ "Use \"fill\" option to read delimited files with empty fields:" + ((row!=null)?row:""));
 		}
 	}
-	
-	/**
-	 * 
-	 * @param fname
-	 * @param line
-	 * @param parts
-	 * @param ncol
-	 * @throws IOException 
-	 */
+
 	public static void checkAndRaiseErrorCSVNumColumns(String fname, String line, String[] parts, long ncol) 
 		throws IOException
 	{
@@ -131,9 +104,9 @@ public class IOUtilFunctions
 	 * NOTE: This method is meant as a faster drop-in replacement of the regular 
 	 * string split.
 	 * 
-	 * @param str
-	 * @param delim
-	 * @return
+	 * @param str string to split
+	 * @param delim delimiter
+	 * @return string array
 	 */
 	public static String[] split(String str, String delim)
 	{
@@ -148,9 +121,9 @@ public class IOUtilFunctions
 	 * 
 	 * NOTE: use StringEscapeUtils.unescapeCsv(tmp) if needed afterwards.
 	 * 
-	 * @param str
-	 * @param delim
-	 * @return
+	 * @param str string to split
+	 * @param delim delimiter
+	 * @return string array
 	 */
 	public static String[] splitCSV(String str, String delim)
 	{
@@ -191,14 +164,7 @@ public class IOUtilFunctions
 		// return tokens
 		return tokens.toArray(new String[0]);
 	}
-	
-	/**
-	 * 
-	 * @param str
-	 * @param delim
-	 * @param tokens
-	 * @return
-	 */
+
 	public static String[] splitCSV(String str, String delim, String[] tokens)
 	{
 		// check for empty input
@@ -243,9 +209,9 @@ public class IOUtilFunctions
 	 * Counts the number of tokens defined by the given delimiter, respecting 
 	 * the rules for quotes and escapes defined in RFC4180.
 	 * 
-	 * @param str
-	 * @param delim
-	 * @return
+	 * @param str string
+	 * @param delim delimiter
+	 * @return number of tokens split by the given delimiter
 	 */
 	public static int countTokensCSV(String str, String delim)
 	{
@@ -292,8 +258,8 @@ public class IOUtilFunctions
 	 * string to double parsing. This function is guaranteed to never
 	 * underestimate.
 	 * 
-	 * @param cols
-	 * @return
+	 * @param cols string array
+	 * @return number of non-zeros
 	 */
 	public static int countNnz(String[] cols) {
 		return countNnz(cols, 0, cols.length);
@@ -304,10 +270,10 @@ public class IOUtilFunctions
 	 * string to double parsing. This function is guaranteed to never
 	 * underestimate.
 	 * 
-	 * @param cols
-	 * @param pos
-	 * @param len
-	 * @return
+	 * @param cols string array
+	 * @param pos starting array index
+	 * @param len ending array index
+	 * @return number of non-zeros
 	 */
 	public static int countNnz(String[] cols, int pos, int len) {
 		int lnnz = 0;
@@ -326,8 +292,8 @@ public class IOUtilFunctions
 	 * 
 	 * see java docs: docs/api/java/io/DataInput.html#modified-utf-8
 	 * 
-	 * @param value
-	 * @return
+	 * @param value string value
+	 * @return string size for modified UTF-8 specifiecation
 	 */
 	public static int getUTFSize(String value) {
 		if( value == null )
@@ -341,25 +307,13 @@ public class IOUtilFunctions
         }
 		return size;
 	}
-	
-	/**
-	 * 
-	 * @param input
-	 * @return
-	 * @throws IOException
-	 */
+
 	public static InputStream toInputStream(String input) throws IOException {
 		if( input == null ) 
 			return null;
 		return new ByteArrayInputStream(input.getBytes("UTF-8"));
 	}
-	
-	/**
-	 * 
-	 * @param input
-	 * @return
-	 * @throws IOException
-	 */
+
 	public static String toString(InputStream input) throws IOException {
 		if( input == null )
 			return null;
@@ -371,11 +325,6 @@ public class IOUtilFunctions
 		return bos.toString("UTF-8");
 	}
 
-	/**
-	 * 
-	 * @param splits
-	 * @return
-	 */
 	public static InputSplit[] sortInputSplits(InputSplit[] splits) {
 		if (splits[0] instanceof FileSplit) {
 			// The splits do not always arrive in order by file name.
@@ -398,12 +347,12 @@ public class IOUtilFunctions
 	 * Counts the number of columns in a given collection of csv file splits. This primitive aborts 
 	 * if a row with more than 0 columns is found and hence is robust against empty file splits etc.
 	 * 
-	 * @param splits
-	 * @param informat
-	 * @param job
-	 * @param delim
-	 * @return
-	 * @throws IOException 
+	 * @param splits input splits
+	 * @param informat input format
+	 * @param job job configruation
+	 * @param delim delimiter
+	 * @return the number of columns in the collection of csv file splits
+	 * @throws IOException if IOException occurs
 	 */
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public static int countNumColumnsCSV(InputSplit[] splits, InputFormat informat, JobConf job, String delim ) 

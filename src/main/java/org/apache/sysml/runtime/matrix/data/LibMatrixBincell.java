@@ -77,10 +77,10 @@ public class LibMatrixBincell
 	/**
 	 * matrix-scalar, scalar-matrix binary operations.
 	 * 
-	 * @param m1
-	 * @param ret
-	 * @param op
-	 * @throws DMLRuntimeException
+	 * @param m1 input matrix
+	 * @param ret result matrix
+	 * @param op scalar operator
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void bincellOp(MatrixBlock m1, MatrixBlock ret, ScalarOperator op) 
 		throws DMLRuntimeException
@@ -106,10 +106,11 @@ public class LibMatrixBincell
 	/**
 	 * matrix-matrix binary operations, MM, MV
 	 * 
-	 * @param m1
-	 * @param m2
-	 * @param ret
-	 * @throws DMLRuntimeException
+	 * @param m1 input matrix 1
+	 * @param m2 input matrix 2
+	 * @param ret result matrix
+	 * @param op binary operator
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void bincellOp(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op) 
 		throws DMLRuntimeException
@@ -129,10 +130,10 @@ public class LibMatrixBincell
 	/**
 	 * NOTE: operations in place always require m1 and m2 to be of equal dimensions
 	 * 
-	 * @param m1ret
-	 * @param m2
-	 * @param op
-	 * @throws DMLRuntimeException
+	 * @param m1ret result matrix
+	 * @param m2 matrix block
+	 * @param op binary operator
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void bincellOpInPlace(MatrixBlock m1ret, MatrixBlock m2, BinaryOperator op) 
 		throws DMLRuntimeException
@@ -148,13 +149,7 @@ public class LibMatrixBincell
 		if( m1ret.isEmptyBlock(false) )
 			m1ret.examSparsity();
 	}
-	
-	/**
-	 * 
-	 * @param m1
-	 * @param m2
-	 * @return
-	 */
+
 	public static BinaryAccessType getBinaryAccessType(MatrixBlock m1, MatrixBlock m2)
 	{
 		int rlen1 = m1.rlen;
@@ -173,15 +168,7 @@ public class LibMatrixBincell
 		else
 			return BinaryAccessType.INVALID;
 	}
-	
-	
-	
-	/**
-	 * 
-	 * @param m1
-	 * @param m2
-	 * @return
-	 */
+
 	public static boolean isValidDimensionsBinary(MatrixBlock m1, MatrixBlock m2)
 	{
 		int rlen1 = m1.rlen;
@@ -200,13 +187,7 @@ public class LibMatrixBincell
 				|| (clen1 == clen2 && rlen1 > 1 && rlen2 == 1) //MVr
 				|| (clen1 == 1 && rlen2 == 1 ) );              //VV
 	}
-	
-	/**
-	 * 
-	 * @param op
-	 * @param rhs
-	 * @return
-	 */
+
 	public static boolean isSparseSafeDivide(BinaryOperator op, MatrixBlock rhs)
 	{
 		//if rhs is fully dense, there cannot be a /0 and hence DIV becomes sparse safe
@@ -217,14 +198,6 @@ public class LibMatrixBincell
 	// private sparse-safe/sparse-unsafe implementations
 	///////////////////////////////////
 
-	/**
-	 * 
-	 * @param m1
-	 * @param m2
-	 * @param ret
-	 * @param op
-	 * @throws DMLRuntimeException
-	 */
 	private static void safeBinary(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op) 
 		throws DMLRuntimeException 
 	{
@@ -458,15 +431,7 @@ public class LibMatrixBincell
 			}
 		}
 	}
-	
-	/**
-	 * 
-	 * @param m1
-	 * @param m2
-	 * @param ret
-	 * @param op
-	 * @throws DMLRuntimeException 
-	 */
+
 	private static void safeBinaryMVDense(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op) 
 		throws DMLRuntimeException 
 	{
@@ -544,15 +509,7 @@ public class LibMatrixBincell
 		
 		ret.nonZeros = nnz;
 	}
-	
-	/**
-	 * 
-	 * @param m1
-	 * @param m2
-	 * @param ret
-	 * @param op
-	 * @throws DMLRuntimeException 
-	 */
+
 	private static void safeBinaryMVSparse(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op) 
 		throws DMLRuntimeException 
 	{
@@ -661,15 +618,7 @@ public class LibMatrixBincell
 		
 		//no need to recomputeNonZeros since maintained in append value
 	}
-	
-	/**
-	 * 
-	 * @param m1
-	 * @param m2
-	 * @param ret
-	 * @param op
-	 * @throws DMLRuntimeException 
-	 */
+
 	private static void safeBinaryMVGeneric(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op) 
 		throws DMLRuntimeException 
 	{
@@ -784,12 +733,12 @@ public class LibMatrixBincell
 	
 	/**
 	 * 
-	 * This will do cell wise operation for <,<=, >, >=, == and != operators. 
+	 * This will do cell wise operation for &lt;, &lt;=, &gt;, &gt;=, == and != operators.
 	 * 
-	 * @param mbLeft
-	 * @param mbRight
-	 * @param mbOut
-	 * @param bOp
+	 * @param mbLeft left matrix
+	 * @param mbRight right matrix
+	 * @param mbOut output matrix
+	 * @param bOp binary operator
 	 * 
 	 */
 	private static void performBinOuterOperation(MatrixBlock mbLeft, MatrixBlock mbRight, MatrixBlock mbOut, BinaryOperator bOp) 
@@ -850,18 +799,7 @@ public class LibMatrixBincell
 		mbOut.setNonZeros(lNNZ);		
 		mbOut.examSparsity();
 	}
-			
 
-	
-	
-	/**
-	 * 
-	 * @param m1
-	 * @param m2
-	 * @param ret
-	 * @param op
-	 * @throws DMLRuntimeException
-	 */
 	private static void unsafeBinary(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op) 
 		throws DMLRuntimeException 
 	{
@@ -946,14 +884,7 @@ public class LibMatrixBincell
 			}
 		}
 	}
-	
-	/**
-	 * 
-	 * @param m1
-	 * @param m2
-	 * @param op
-	 * @throws DMLRuntimeException
-	 */
+
 	private static void safeBinaryScalar(MatrixBlock m1, MatrixBlock ret, ScalarOperator op)
 		throws DMLRuntimeException
 	{
@@ -1020,10 +951,10 @@ public class LibMatrixBincell
 	/**
 	 * Since this operation is sparse-unsafe, ret should always be passed in dense representation.
 	 * 
-	 * @param m1
-	 * @param m2
-	 * @param op
-	 * @throws DMLRuntimeException
+	 * @param m1 input matrix
+	 * @param m2 result matrix
+	 * @param op scalar operator
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private static void unsafeBinaryScalar(MatrixBlock m1, MatrixBlock ret, ScalarOperator op)
 		throws DMLRuntimeException
@@ -1076,13 +1007,6 @@ public class LibMatrixBincell
 		}
 	}
 
-	/**
-	 * 
-	 * @param m1
-	 * @param ret
-	 * @param op
-	 * @throws DMLRuntimeException 
-	 */
 	private static void denseBinaryScalar(MatrixBlock m1, MatrixBlock ret, ScalarOperator op) 
 		throws DMLRuntimeException 
 	{
@@ -1101,14 +1025,7 @@ public class LibMatrixBincell
 		}
 		ret.nonZeros = nnz;
 	}
-	
-	/**
-	 * 
-	 * @param m1ret
-	 * @param m2
-	 * @param op
-	 * @throws DMLRuntimeException
-	 */
+
 	private static void safeBinaryInPlace(MatrixBlock m1ret, MatrixBlock m2, BinaryOperator op) 
 		throws DMLRuntimeException 
 	{
@@ -1221,14 +1138,7 @@ public class LibMatrixBincell
 				}	
 		}
 	}
-	
-	/**
-	 * 
-	 * @param m1ret
-	 * @param m2
-	 * @param op
-	 * @throws DMLRuntimeException
-	 */
+
 	private static void unsafeBinaryInPlace(MatrixBlock m1ret, MatrixBlock m2, BinaryOperator op) throws DMLRuntimeException 
 	{
 		int rlen = m1ret.rlen;
@@ -1275,18 +1185,20 @@ public class LibMatrixBincell
 	}
 	
 	/**
-	 * * like a merge sort
+	 * like a merge sort
 	 * 
-	 * @param op
-	 * @param values1
-	 * @param cols1
-	 * @param size1
-	 * @param values2
-	 * @param cols2
-	 * @param size2
-	 * @param resultRow
-	 * @param result
-	 * @throws DMLRuntimeException
+	 * @param op binary operator
+	 * @param values1 array of double values
+	 * @param cols1 ?
+	 * @param pos1 ?
+	 * @param size1 ?
+	 * @param values2 array of double values
+	 * @param cols2 ?
+	 * @param pos2 ?
+	 * @param size2 ?
+	 * @param resultRow ?
+	 * @param result matrix block
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private static void mergeForSparseBinary(BinaryOperator op, double[] values1, int[] cols1, int pos1, int size1, 
 				double[] values2, int[] cols2, int pos2, int size2, int resultRow, MatrixBlock result) 
@@ -1319,19 +1231,7 @@ public class LibMatrixBincell
 		appendLeftForSparseBinary(op, values1, cols1, pos1, size1, p1, resultRow, result);
 		appendRightForSparseBinary(op, values2, cols2, pos2, size2, p2, resultRow, result);
 	}
-	
-	/**
-	 * 
-	 * @param op
-	 * @param values1
-	 * @param cols1
-	 * @param pos1
-	 * @param size1
-	 * @param pos
-	 * @param resultRow
-	 * @param result
-	 * @throws DMLRuntimeException
-	 */
+
 	private static void appendLeftForSparseBinary(BinaryOperator op, double[] values1, int[] cols1, int pos1, int size1, 
 				int pos, int resultRow, MatrixBlock result) 
 		throws DMLRuntimeException
@@ -1341,19 +1241,7 @@ public class LibMatrixBincell
 			result.appendValue(resultRow, cols1[j], v);
 		}
 	}
-	
-	/**
-	 * 
-	 * @param op
-	 * @param values2
-	 * @param cols2
-	 * @param pos2
-	 * @param size2
-	 * @param pos
-	 * @param resultRow
-	 * @param result
-	 * @throws DMLRuntimeException
-	 */
+
 	private static void appendRightForSparseBinary(BinaryOperator op, double[] values2, int[] cols2, int pos2, int size2, 
 		int pos, int resultRow, MatrixBlock result) throws DMLRuntimeException
 	{

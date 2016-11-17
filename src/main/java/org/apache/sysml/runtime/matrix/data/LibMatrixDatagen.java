@@ -40,9 +40,6 @@ import org.apache.sysml.runtime.util.PRNGenerator;
 import org.apache.sysml.runtime.util.PoissonPRNGenerator;
 import org.apache.sysml.runtime.util.UniformPRNGenerator;
 
-/**
- *  
- */
 public class LibMatrixDatagen 
 {
 	private static final Log LOG = LogFactory.getLog(LibMatrixDatagen.class.getName());
@@ -56,39 +53,19 @@ public class LibMatrixDatagen
 	private LibMatrixDatagen() {
 		//prevent instantiation via private constructor
 	}
-	
-	/**
-	 * 
-	 * @param min
-	 * @param max
-	 * @param sparsity
-	 * @param pdf
-	 * @return
-	 */
+
 	public static boolean isShortcutRandOperation( double min, double max, double sparsity, String pdf )
 	{
 		return pdf.equalsIgnoreCase(RAND_PDF_UNIFORM)
 			   && (  ( min == 0.0 && max == 0.0 ) //all zeros
 				   ||( sparsity==1.0d && min == max )); //equal values
 	}
-	
-	/**
-	 * 
-	 * @param seq_from
-	 * @param seq_to
-	 * @param seq_incr
-	 * @return
-	 */
+
 	public static double updateSeqIncr(double seq_from, double seq_to, double seq_incr) {
 		//handle default 1 to -1 for special case of from>to
 		return (seq_from>seq_to && seq_incr==1)? -1 : seq_incr;
 	}
-	
-	/**
-	 * 
-	 * @param basedir
-	 * @return
-	 */
+
 	public static String generateUniqueSeedPath( String basedir ) {
 		return basedir + "tmp" + _seqRandInput.getNextID() + ".randinput";
 	}
@@ -101,8 +78,8 @@ public class LibMatrixDatagen
 	 * This function is invoked from both CP (RandCPInstruction.processInstruction()) 
 	 * as well as MR (RandMR.java while setting up the Rand job).
 	 * 
-	 * @param seed
-	 * @return
+	 * @param seed seed for random generator
+	 * @return Well1024a pseudo-random number generator
 	 */
 	public static Well1024a setupSeedsForRand(long seed) 
 	{
@@ -119,17 +96,7 @@ public class LibMatrixDatagen
 		
 		return bigrand;
 	}
-	
-	/**
-	 * 
-	 * @param nrow
-	 * @param ncol
-	 * @param brlen
-	 * @param bclen
-	 * @param sparsity
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static long[] computeNNZperBlock(long nrow, long ncol, int brlen, int bclen, double sparsity) 
 		throws DMLRuntimeException 
 	{
@@ -212,20 +179,6 @@ public class LibMatrixDatagen
 		return ret;
 	}
 
-    /**
-     * 
-     * @param pdf
-     * @param r
-     * @param c
-     * @param rpb
-     * @param cpb
-     * @param sp
-     * @param min
-     * @param max
-     * @param distParams
-     * @return
-     * @throws DMLRuntimeException
-     */
     public static RandomMatrixGenerator createRandomMatrixGenerator(String pdf, int r, int c, int rpb, int cpb, double sp, double min, double max, String distParams) 
     	throws DMLRuntimeException
     {
@@ -264,18 +217,13 @@ public class LibMatrixDatagen
 	 * distribution N(0,1). The range of generated values will always be
 	 * (-Inf,+Inf).
 	 * 
-	 * @param rows
-	 * @param cols
-	 * @param rowsInBlock
-	 * @param colsInBlock
-	 * @param sparsity
-	 * @param min
-	 * @param max
-	 * @param bigrand
-	 * @param bSeed
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+     * @param out output matrix block
+     * @param rgen random matrix generator
+     * @param nnzInBlocks number of non-zeros in blocks
+     * @param bigrand Well1024a pseudo-random number generator
+     * @param bSeed seed for random generator
+     * @throws DMLRuntimeException if DMLRuntimeException occurs
+     */
 	public static void generateRandomMatrix( MatrixBlock out, RandomMatrixGenerator rgen, long[] nnzInBlocks, 
 							Well1024a bigrand, long bSeed ) 
 		throws DMLRuntimeException
@@ -352,17 +300,14 @@ public class LibMatrixDatagen
 	 * distribution N(0,1). The range of generated values will always be
 	 * (-Inf,+Inf).
 	 * 
-	 * @param rows
-	 * @param cols
-	 * @param rowsInBlock
-	 * @param colsInBlock
-	 * @param sparsity
-	 * @param min
-	 * @param max
-	 * @param bigrand
-	 * @param bSeed
-	 * @return
-	 * @throws DMLRuntimeException
+	 * 
+     * @param out output matrix block
+     * @param rgen random matrix generator
+     * @param nnzInBlocks number of non-zeros in blocks
+     * @param bigrand Well1024a pseudo-random number generator
+     * @param bSeed seed for random generator
+     * @param k ?
+     * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void generateRandomMatrix( MatrixBlock out, RandomMatrixGenerator rgen, long[] nnzInBlocks, 
 			Well1024a bigrand, long bSeed, int k ) 
@@ -471,11 +416,11 @@ public class LibMatrixDatagen
 	 * For example, seq(0,1,0.5) generates (0.0 0.5 1.0) 
 	 *      whereas seq(0,1,0.6) generates (0.0 0.6) but not (0.0 0.6 1.0)
 	 * 
-	 * @param from
-	 * @param to
-	 * @param incr
-	 * @return
-	 * @throws DMLRuntimeException
+	 * @param out output matrix block
+	 * @param from lower end point
+	 * @param to upper end point
+	 * @param incr increment value
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void generateSequence(MatrixBlock out, double from, double to, double incr) 
 		throws DMLRuntimeException 
@@ -506,11 +451,14 @@ public class LibMatrixDatagen
 	/**
      * Generates a sample of size <code>size</code> from a range of values [1,range].
      * <code>replace</code> defines if sampling is done with or without replacement.
-     * 
-     * @param ec
-     * @return
-     * @throws DMLRuntimeException
-     */
+	 * 
+	 * @param out output matrix block
+	 * @param range range upper bound
+	 * @param size sample size
+	 * @param replace if true, sample with replacement
+	 * @param seed seed for random generator
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
+	 */
 	public static void generateSample(MatrixBlock out, long range, int size, boolean replace, long seed)
 		throws DMLRuntimeException 
 	{
@@ -558,13 +506,6 @@ public class LibMatrixDatagen
 		out.examSparsity();
 	}
 
-	/**
-	 * 
-	 * @param bigrand
-	 * @param nrb
-	 * @param ncb
-	 * @return
-	 */
 	private static long[] generateSeedsForCP(Well1024a bigrand, int nrb, int ncb)
 	{
 		int numBlocks = nrb * ncb;
@@ -574,18 +515,7 @@ public class LibMatrixDatagen
 		
 		return seeds;
 	}
-	
-	/**
-	 * 
-	 * @param seeds
-	 * @param rl
-	 * @param ru
-	 * @param cl
-	 * @param cu
-	 * @param nrb
-	 * @param ncb
-	 * @return
-	 */
+
 	private static long[] sliceSeedsForCP(long[] seeds, int rl, int ru, int cl, int cu, int nrb, int ncb)
 	{
 		int numBlocks = (ru-rl) * (cu-cl);
@@ -595,19 +525,7 @@ public class LibMatrixDatagen
 		
 		return lseeds;
 	}
-	
-	/**
-	 * 
-	 * @param invokedFromCP
-	 * @param rl
-	 * @param ru
-	 * @param out
-	 * @param rgen
-	 * @param nnzInBlocks
-	 * @param bSeed
-	 * @param seeds
-	 * @throws DMLRuntimeException
-	 */
+
 	private static void genRandomNumbers(boolean invokedFromCP, int rl, int ru, int cl, int cu, MatrixBlock out, RandomMatrixGenerator rgen, long[] nnzInBlocks, long bSeed, long[] seeds) 
 		throws DMLRuntimeException 
 	{
@@ -731,14 +649,7 @@ public class LibMatrixDatagen
 			} // cbj
 		} // rbi	
 	}
-	
-	/**
-	 * 
-	 * @param rows
-	 * @param cols
-	 * @param sp
-	 * @throws DMLRuntimeException
-	 */
+
 	private static void checkMatrixDimensionsAndSparsity(int rows, int cols, double sp) 
 		throws DMLRuntimeException
 	{
@@ -761,12 +672,7 @@ public class LibMatrixDatagen
         } while (bits - val + (n-1) < 0L);
         return val;
     }
-    
 
-	/**
-	 * 
-	 * 
-	 */
 	private static class RandTask implements Callable<Object> 
 	{
 		private int _rl = -1;

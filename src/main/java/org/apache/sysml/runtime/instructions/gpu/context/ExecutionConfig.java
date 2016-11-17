@@ -50,9 +50,9 @@ public class ExecutionConfig {
 	 * 
 	 * This tries to schedule as minimum grids as possible.
 	 * 
-	 * @param numCells
-	 * @return
-	 * @throws DMLRuntimeException
+	 * @param numCells number of cells
+	 * @return execution configuration
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static ExecutionConfig getConfigForSimpleVectorOperations(int numCells) throws DMLRuntimeException {
 		int deviceNumber = 0;
@@ -70,9 +70,10 @@ public class ExecutionConfig {
 	 * 
 	 * This tries to schedule as minimum grids as possible.
 	 * 
-	 * @param numCells
-	 * @return
-	 * @throws DMLRuntimeException
+	 * @param rlen number of rows
+	 * @param clen number of columns
+	 * @return execution configuration
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static ExecutionConfig getConfigForSimpleMatrixOperations(int rlen, int clen) throws DMLRuntimeException {
 		int deviceNumber = 0;
@@ -99,10 +100,11 @@ public class ExecutionConfig {
 	
 	/**
      * Get the CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_X of the given device
-     * 
-     * @return The maximum block dimension, in x-direction
-	 * @throws DMLRuntimeException 
-     */
+	 * 
+	 * @param deviceNumber device number of the given device
+	 * @return The maximum block dimension, in x-direction
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
+	 */
     private static int getMaxBlockDim(int deviceNumber) throws DMLRuntimeException {
 //    	return 32;
     	// TODO: Use JCudaDriver.cuOccupancyMaxPotentialBlockSize to chose the block size that maximizes occupancy

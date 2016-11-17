@@ -73,19 +73,7 @@ public class ReaderBinaryBlock extends MatrixReader
 		
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @param fname
-	 * @param rlen
-	 * @param clen
-	 * @param brlen
-	 * @param bclen
-	 * @param estnnz
-	 * @return
-	 * @throws IOException
-	 * @throws DMLRuntimeException
-	 */
+
 	public ArrayList<IndexedMatrixValue> readIndexedMatrixBlocksFromHDFS(String fname, long rlen, long clen, int brlen, int bclen) 
 		throws IOException, DMLRuntimeException 
 	{
@@ -118,18 +106,16 @@ public class ReaderBinaryBlock extends MatrixReader
 	 * if the read matrix was create by CP or when jobs directly write to large output files 
 	 * (e.g., parfor matrix partitioning).
 	 * 
-	 * @param path
-	 * @param job
-	 * @param fs 
-	 * @param dest
-	 * @param rlen
-	 * @param clen
-	 * @param brlen
-	 * @param bclen
-	 * @throws IOException
-	 * @throws IllegalAccessException
-	 * @throws InstantiationException
-	 * @throws DMLRuntimeException 
+	 * @param path file path
+	 * @param job job configuration
+	 * @param fs file system
+	 * @param dest matrix block
+	 * @param rlen number of rows
+	 * @param clen number of columns
+	 * @param brlen number of rows in block
+	 * @param bclen number of columns in block
+	 * @throws IOException if IOException occurs
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	@SuppressWarnings("deprecation")
 	private static void readBinaryBlockMatrixFromHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock dest, long rlen, long clen, int brlen, int bclen )
@@ -201,21 +187,7 @@ public class ReaderBinaryBlock extends MatrixReader
 			dest.sortSparseRows();
 		}
 	}
-	
-	/**
-	 * 
-	 * @param path
-	 * @param job
-	 * @param fs
-	 * @param dest
-	 * @param rlen
-	 * @param clen
-	 * @param brlen
-	 * @param bclen
-	 * @throws IOException
-	 * @throws IllegalAccessException
-	 * @throws InstantiationException
-	 */
+
 	@SuppressWarnings("deprecation")
 	private void readBinaryBlockMatrixBlocksFromHDFS( Path path, JobConf job, FileSystem fs, Collection<IndexedMatrixValue> dest, long rlen, long clen, int brlen, int bclen )
 		throws IOException

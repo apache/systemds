@@ -66,7 +66,7 @@ public class BinaryOperator  extends Operator implements Serializable
 	 * This is used in order to use a common code path for consistency between 
 	 * compiler and runtime.
 	 * 
-	 * @return
+	 * @return binary operator type for a function object
 	 */
 	public OpOp2 getBinaryOperatorOpOp2()
 	{

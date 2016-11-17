@@ -52,23 +52,11 @@ public abstract class MMCJMRCache
 	protected String _filePrefix = null;
 	protected int _fileN = -1;
 
-	/**
-	 * 
-	 * @return
-	 */
 	public HashMap<MatrixIndexes,Integer> getBufferMap()
 	{
 		return _bufferMap;
 	}
-	
-	/**
-	 * 
-	 * @param buffCapacity
-	 * @param valueClass
-	 * @param buffMap
-	 * @throws IllegalAccessException
-	 * @throws InstantiationException
-	 */
+
 	@SuppressWarnings("unchecked")
 	protected void allocateBuffer( int buffCapacity, Class<? extends MatrixValue> valueClass, boolean buffMap ) 
 		throws IllegalAccessException, InstantiationException
@@ -82,11 +70,7 @@ public abstract class MMCJMRCache
 	
 		//System.out.println("allocated buffer: "+_bufferCapacity);
 	}
-	
-	/**
-	 * 
-	 * @param fname
-	 */
+
 	protected void constructLocalFilePrefix(String fname)
 	{
 		//get random localdir (to spread load across available disks)
@@ -99,22 +83,13 @@ public abstract class MMCJMRCache
 		String uniqueSubDir = MapReduceTool.getGloballyUniqueName(_job);
 		_filePrefix = new Path(hadoopLocalDir, uniqueSubDir + fname).toString();
 	}
-	
-	/**
-	 * 
-	 * @param fileCursor
-	 * @return
-	 */
+
 	protected Path getFilePath( int fileCursor )
 	{
 		Path path = new Path( _filePrefix + fileCursor );
 		return path;
 	}
-	
-	/**
-	 * 
-	 * @throws IOException
-	 */
+
 	protected void loadBuffer() 
 		throws IOException
 	{
@@ -129,11 +104,7 @@ public abstract class MMCJMRCache
 			_bufferSize = LocalFileUtils.readBlockSequenceFromLocal(path.toString(), _buffer, _bufferMap);
 		}
 	}
-	
-	/**
-	 * 
-	 * @throws IOException
-	 */
+
 	protected void writeBuffer() 
 		throws IOException 
 	{
@@ -146,11 +117,6 @@ public abstract class MMCJMRCache
 		LocalFileUtils.writeBlockSequenceToLocal(path.toString(), _buffer, _bufferSize);
 	}
 
-
-	/**
-	 * 
-	 * @throws IOException
-	 */
 	protected void deleteAllWorkingFiles() 
 		throws IOException
 	{

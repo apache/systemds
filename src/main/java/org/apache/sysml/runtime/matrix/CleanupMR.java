@@ -105,14 +105,7 @@ public class CleanupMR
 		
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @param path
-	 * @param numTasks
-	 * @throws DMLRuntimeException
-	 * @throws IOException
-	 */
+
 	private static void writeCleanupTasksToFile(Path path, int numTasks)
 		throws DMLRuntimeException, IOException
 	{

@@ -43,9 +43,6 @@ import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.util.IndexRange;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
-/**
- * 
- */
 @SuppressWarnings({"rawtypes","unchecked"}) //allow generic native arrays
 public class FrameBlock implements Writable, CacheBlock, Externalizable  
 {
@@ -84,7 +81,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * the schema (column types and names) but a deep copy for meta data 
 	 * and actual column data.
 	 * 
-	 * @param that
+	 * @param that frame block
 	 */
 	public FrameBlock(FrameBlock that) {
 		this(that.getSchema(), that.getColumnNames(false));
@@ -130,16 +127,12 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	/**
 	 * Get the number of rows of the frame block.
 	 * 
-	 * @return 
+	 * @return number of rows
 	 */
 	public int getNumRows() {
 		return _numRows;
 	}
-	
-	/**
-	 * 
-	 * @param numRows
-	 */
+
 	public void setNumRows(int numRows) {
 		_numRows = numRows;
 	}
@@ -148,7 +141,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * Get the number of columns of the frame block, that is
 	 * the number of columns defined in the schema.
 	 * 
-	 * @return
+	 * @return number of columns
 	 */
 	public int getNumColumns() {
 		return (_schema != null) ? _schema.length : 0;
@@ -157,7 +150,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	/**
 	 * Returns the schema of the frame block.
 	 * 
-	 * @return
+	 * @return schema as array of ValueTypes
 	 */
 	public ValueType[] getSchema() {
 		return _schema;
@@ -166,7 +159,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	/**
 	 * Sets the schema of the frame block.
 	 * 
-	 * @return
+	 * @param schema schema as array of ValueTypes
 	 */
 	public void setSchema(ValueType[] schema) {
 		_schema = schema;
@@ -176,7 +169,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * Returns the column names of the frame block. This method 
 	 * allocates default column names if required.
 	 * 
-	 * @return
+	 * @return column names
 	 */
 	public String[] getColumnNames() {
 		return getColumnNames(true);
@@ -186,8 +179,8 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * Returns the column names of the frame block. This method 
 	 * allocates default column names if required.
 	 * 
-	 * @param alloc
-	 * @return
+	 * @param alloc if true, create column names
+	 * @return array of column names
 	 */
 	public String[] getColumnNames(boolean alloc) {
 		if( _colnames == null && alloc )
@@ -199,74 +192,43 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * Returns the column name for the requested column. This 
 	 * method allocates default column names if required.
 	 * 
-	 * @param c
-	 * @return
+	 * @param c column index
+	 * @return column name
 	 */
 	public String getColumnName(int c) {
 		if( _colnames == null )
 			_colnames = createColNames(getNumColumns());
 		return _colnames[c];
 	}
-	
-	/**
-	 * 
-	 * @param colnames
-	 */
+
 	public void setColumnNames(String[] colnames) {
 		_colnames = colnames;
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public ColumnMetadata[] getColumnMetadata() {
 		return _colmeta;
 	}
-	
-	/**
-	 * 
-	 * @param c
-	 * @return
-	 */
+
 	public ColumnMetadata getColumnMetadata(int c) {
 		return _colmeta[c];
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public boolean isColumnMetadataDefault() {
 		boolean ret = true;
 		for( int j=0; j<getNumColumns() && ret; j++ )
 			ret &= isColumnMetadataDefault(j);
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @param c
-	 * @return
-	 */
+
 	public boolean isColumnMetadataDefault(int c) {
 		return _colmeta[c].getMvValue() == null
 			&& _colmeta[c].getNumDistinct() == 0;
 	}
-	
-	/**
-	 * 
-	 * @param colmeta
-	 */
+
 	public void setColumnMetadata(ColumnMetadata[] colmeta) {
 		System.arraycopy(colmeta, 0, _colmeta, 0, _colmeta.length);
 	}
-	
-	/**
-	 * 
-	 * @param c
-	 * @param colmeta
-	 */
+
 	public void setColumnMetadata(int c, ColumnMetadata colmeta) {
 		_colmeta[c] = colmeta;
 	}
@@ -275,7 +237,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * Creates a mapping from column names to column IDs, i.e., 
 	 * 1-based column indexes
 	 * 
-	 * @return
+	 * @return map of column name keys and id values
 	 */
 	public Map<String,Integer> getColumnNameIDMap() {
 		Map<String, Integer> ret = new HashMap<String, Integer>();
@@ -287,6 +249,8 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	/**
 	 * Allocate column data structures if necessary, i.e., if schema specified
 	 * but not all column data structures created yet.
+	 * 
+	 * @param numRows number of rows
 	 */
 	public void ensureAllocatedColumns(int numRows) {
 		//early abort if already allocated
@@ -315,67 +279,40 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	/**
 	 * Checks for matching column sizes in case of existing columns.
 	 * 		
-	 * @param newlen
+	 * @param newlen number of rows to compare with existing number of rows
 	 */
 	public void ensureColumnCompatibility(int newlen) {
 		if( _coldata!=null && _coldata.length > 0 && _numRows != newlen )
 			throw new RuntimeException("Mismatch in number of rows: "+newlen+" (expected: "+_numRows+")");
 	}
-	
-	/**
-	 * 
-	 * @param size
-	 * @return
-	 */
+
 	public static String[] createColNames(int size) {
 		return createColNames(0, size);
 	}
-	
-	/**
-	 * 
-	 * @param size
-	 * @return
-	 */
+
 	public static String[] createColNames(int off, int size) {
 		String[] ret = new String[size];
 		for( int i=off+1; i<=off+size; i++ )
 			ret[i-off-1] = createColName(i);
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @param i
-	 * @return
-	 */
+
 	public static String createColName(int i) {
 		return "C" + i;
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public boolean isColNamesDefault() {
 		boolean ret = (_colnames != null);
 		for( int j=0; j<getNumColumns() && ret; j++ )
 			ret &= isColNameDefault(j);
 		return ret;	
 	}
-	
-	/**
-	 * 
-	 * @param i
-	 * @return
-	 */
+
 	public boolean isColNameDefault(int i) {
 		return _colnames==null 
 			|| _colnames[i].equals("C"+(i+1));
 	}
-	
-	/**
-	 * 
-	 */
+
 	public void recomputeColumnCardinality() {
 		for( int j=0; j<getNumColumns(); j++ ) {
 			int card = 0;
@@ -393,7 +330,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * 
 	 * @param r	row index, 0-based
 	 * @param c	column index, 0-based
-	 * @return
+	 * @return object of the value at specified position
 	 */
 	public Object get(int r, int c) {
 		return _coldata[c].get(r);
@@ -403,19 +340,14 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * Sets the value in position (r,c), where the input is assumed
 	 * to be a boxed object consistent with the schema definition.
 	 * 
-	 * @param r
-	 * @param c
-	 * @param val
+	 * @param r row index
+	 * @param c column index
+	 * @param val value to set at specified position
 	 */
 	public void set(int r, int c, Object val) {
 		_coldata[c].set(r, UtilFunctions.objectToObject(_schema[c], val));
 	}
 
-	/**
-	 * 
-	 * @param nrow
-	 * @param clearMeta
-	 */
 	public void reset(int nrow, boolean clearMeta) {
 		if( clearMeta ) {
 			_schema = null;
@@ -432,9 +364,6 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		}
 	}
 
-	/**
-	 * 
-	 */
 	public void reset() {
 		reset(0, true);
 	}
@@ -444,7 +373,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * Append a row to the end of the data frame, where all row fields
 	 * are boxed objects according to the schema.
 	 * 
-	 * @param row
+	 * @param row array of objects
 	 */
 	public void appendRow(Object[] row) {
 		ensureAllocatedColumns(0);
@@ -457,7 +386,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * Append a row to the end of the data frame, where all row fields
 	 * are string encoded.
 	 * 
-	 * @param row
+	 * @param row array of strings
 	 */
 	public void appendRow(String[] row) {
 		ensureAllocatedColumns(0);
@@ -471,7 +400,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * the data frame. The given array is wrapped but not copied 
 	 * and hence might be updated in the future.
 	 * 
-	 * @param col
+	 * @param col array of strings
 	 */
 	public void appendColumn(String[] col) {
 		ensureColumnCompatibility(col.length);
@@ -488,7 +417,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * the data frame. The given array is wrapped but not copied 
 	 * and hence might be updated in the future.
 	 * 
-	 * @param col
+	 * @param col array of booleans
 	 */
 	public void appendColumn(boolean[] col) {
 		ensureColumnCompatibility(col.length);
@@ -505,7 +434,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * the data frame. The given array is wrapped but not copied 
 	 * and hence might be updated in the future.
 	 * 
-	 * @param col
+	 * @param col array of longs
 	 */
 	public void appendColumn(long[] col) {
 		ensureColumnCompatibility(col.length);
@@ -522,7 +451,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * the data frame. The given array is wrapped but not copied 
 	 * and hence might be updated in the future.
 	 * 
-	 * @param col
+	 * @param col array of doubles
 	 */
 	public void appendColumn(double[] col) {
 		ensureColumnCompatibility(col.length);
@@ -539,7 +468,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * in order to avoid repeated allocation with appendColumns. The given 
 	 * array is wrapped but not copied and hence might be updated in the future.
 	 * 
-	 * @param cols
+	 * @param cols 2d array of doubles
 	 */
 	public void appendColumns(double[][] cols) {
 		int ncol = cols.length;
@@ -554,12 +483,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		_coldata = empty ? tmpData : ArrayUtils.addAll(_coldata, tmpData);		
 		_numRows = cols[0].length;
 	}
-	
-	/**
-	 * 
-	 * @param c
-	 * @return
-	 */
+
 	public Object getColumn(int c) {
 		switch(_schema[c]) {
 			case STRING:  return ((StringArray)_coldata[c])._data; 
@@ -574,7 +498,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * Get a row iterator over the frame where all fields are encoded
 	 * as strings independent of their value types.  
 	 * 
-	 * @return
+	 * @return string array iterator
 	 */
 	public Iterator<String[]> getStringRowIterator() {
 		return new StringRowIterator(0, _numRows);
@@ -584,9 +508,9 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * Get a row iterator over the frame where all fields are encoded
 	 * as strings independent of their value types.  
 	 * 
-	 * @param rl
-	 * @param ru
-	 * @return
+	 * @param rl lower row index
+	 * @param ru upper row index
+	 * @return string array iterator
 	 */
 	public Iterator<String[]> getStringRowIterator(int rl, int ru) {
 		return new StringRowIterator(rl, ru);
@@ -596,7 +520,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * Get a row iterator over the frame where all fields are encoded
 	 * as boxed objects according to their value types.  
 	 * 
-	 * @return
+	 * @return object array iterator
 	 */
 	public Iterator<Object[]> getObjectRowIterator() {
 		return new ObjectRowIterator(0, _numRows);
@@ -606,9 +530,9 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * Get a row iterator over the frame where all fields are encoded
 	 * as boxed objects according to their value types.  
 	 * 
-	 * @param rl
-	 * @param ru
-	 * @return
+	 * @param rl lower row index
+	 * @param ru upper row index
+	 * @return object array iterator
 	 */
 	public Iterator<Object[]> getObjectRowIterator(int rl, int ru) {
 		return new ObjectRowIterator(rl, ru);
@@ -781,8 +705,8 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	/**
 	 * Returns the in-memory size in bytes of the given string value. 
 	 * 
-	 * @param value
-	 * @return
+	 * @param value string value
+	 * @return in-memory size of string value
 	 */
 	private long getInMemoryStringSize(String value) {
 		if( value == null )
@@ -801,17 +725,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 				(int)ixrange.rowStart, (int)ixrange.rowEnd, 
 				(int)ixrange.colStart, (int)ixrange.colEnd, ret);
 	}
-	
-	/**
-	 * 
-	 * @param rhsFrame
-	 * @param rl
-	 * @param ru
-	 * @param cl
-	 * @param cu
-	 * @param ret
-	 * @return
-	 */
+
 	public FrameBlock leftIndexingOperations(FrameBlock rhsFrame, int rl, int ru, int cl, int cu, FrameBlock ret)
 		throws DMLRuntimeException
 	{
@@ -849,14 +763,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @param ixrange
-	 * @param ret
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public FrameBlock sliceOperations(IndexRange ixrange, FrameBlock ret) 
 		throws DMLRuntimeException
 	{
@@ -873,8 +780,9 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * @param ru row upper index, inclusive, 0-based
 	 * @param cl column lower index, inclusive, 0-based
 	 * @param cu column upper index, inclusive, 0-based
-	 * @param ret
-	 * @return
+	 * @param retCache cache block
+	 * @return frame block
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public FrameBlock sliceOperations(int rl, int ru, int cl, int cu, CacheBlock retCache) 
 		throws DMLRuntimeException
@@ -961,10 +869,11 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * are appended column-wise (same number of rows), while for rbind the 
 	 * frames are appended row-wise (same number of columns).   
 	 * 
-	 * @param that
-	 * @param ret
-	 * @param cbind
-	 * @return
+	 * @param that frame block to append to current frame block
+	 * @param ret frame block to return, can be null
+	 * @param cbind if true, column append
+	 * @return frame block
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public FrameBlock appendOperations( FrameBlock that, FrameBlock ret, boolean cbind )
 		throws DMLRuntimeException
@@ -1018,24 +927,11 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @param src
-	 * @throws DMLRuntimeException 
-	 */
+
 	public void copy(FrameBlock src) {
 		copy(0, src.getNumRows()-1, 0, src.getNumColumns()-1, src);
 	}
 
-	/**
-	 * 
-	 * @param rl
-	 * @param ru
-	 * @param cl
-	 * @param cu
-	 * @param src
-	 */
 	public void copy(int rl, int ru, int cl, int cu, FrameBlock src) 
 	{
 		//allocate columns if necessary
@@ -1106,12 +1002,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	{
 		merge((FrameBlock)that);
 	}
-	
-	/**
-	 * 
-	 * @param that
-	 * @throws DMLRuntimeException 
-	 */
+
 	public void merge(FrameBlock that) 
 		throws DMLRuntimeException
 	{
@@ -1151,15 +1042,15 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	/**
 	 * This function ZERO OUT the data in the slicing window applicable for this block.
 	 * 
-	 * 
-	 * @param result
-	 * @param range
-	 * @param complementary
-	 * @param iRowStartSrc
-	 * @param iRowStartDest
-	 * @param brlen
-	 * @param iMaxRowsToCopy
-	 * 
+	 * @param result frame block
+	 * @param range index range
+	 * @param complementary ?
+	 * @param iRowStartSrc ?
+	 * @param iRowStartDest ?
+	 * @param brlen ?
+	 * @param iMaxRowsToCopy ?
+	 * @return frame block
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public FrameBlock zeroOutOperations(FrameBlock result, IndexRange range, boolean complementary, int iRowStartSrc, int iRowStartDest, int brlen, int iMaxRowsToCopy)
 			throws DMLRuntimeException 
@@ -1209,10 +1100,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	
 	///////
 	// row iterators (over strings and boxed objects)
-	
-	/**
-	 * 
-	 */
+
 	private abstract class RowIterator<T> implements Iterator<T[]> {
 		protected T[] _curRow = null;
 		protected int _curPos = -1;
@@ -1236,10 +1124,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		
 		protected abstract T[] createRow(int size);
 	}
-	
-	/**
-	 * 
-	 */
+
 	private class StringRowIterator extends RowIterator<String> {
 		public StringRowIterator(int rl, int ru) {
 			super(rl, ru);
@@ -1260,11 +1145,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			return _curRow;
 		}
 	}
-	
-	
-	/**
-	 * 
-	 */
+
 	private class ObjectRowIterator extends RowIterator<Object> {
 		public ObjectRowIterator(int rl, int ru) {
 			super(rl, ru);
@@ -1307,10 +1188,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		public abstract Array clone();
 		public abstract Array slice(int rl, int ru);
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class StringArray extends Array<String> {
 		private String[] _data = null;
 		
@@ -1359,10 +1237,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			return new StringArray(Arrays.copyOfRange(_data,rl,ru+1));
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class BooleanArray extends Array<Boolean> {
 		private boolean[] _data = null;
 		
@@ -1412,10 +1287,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			return new BooleanArray(Arrays.copyOfRange(_data,rl,ru+1));
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class LongArray extends Array<Long> {
 		private long[] _data = null;
 		
@@ -1465,10 +1337,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			return new LongArray(Arrays.copyOfRange(_data,rl,ru+1));
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class DoubleArray extends Array<Double> {
 		private double[] _data = null;
 		
@@ -1518,10 +1387,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			return new DoubleArray(Arrays.copyOfRange(_data,rl,ru+1));
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	public static class ColumnMetadata implements Serializable {
 		private static final long serialVersionUID = -90094082422100311L;
 		

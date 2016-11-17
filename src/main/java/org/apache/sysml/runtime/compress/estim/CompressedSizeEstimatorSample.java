@@ -64,7 +64,7 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator
 	/**
 	 * set the sample rows (assumed to be sorted)
 	 * 
-	 * @param sampleRows, assumed to be sorted
+	 * @param sampleRows sample rows, assumed to be sorted
 	 */
 	public void setSampleRows(int[] sampleRows) {
 		_sampleRows = sampleRows;
@@ -514,7 +514,7 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator
 	 * Attribute. VLDB'95, Section 5.2, recommended estimator by the authors
 	 * 
 	 * @param nRows number of rows
-	 * @param sampleSize sampel size
+	 * @param sampleSize sample size
 	 * @param sampleRowsReader row reader
 	 * @return estimator
 	 */

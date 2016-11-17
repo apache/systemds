@@ -51,19 +51,7 @@ public class FrameReaderTextCSV extends FrameReader
 	public FrameReaderTextCSV(CSVFileFormatProperties props) {
 		_props = props;
 	}
-	
 
-	/**
-	 * 
-	 * @param fname
-	 * @param schema
-	 * @param names
-	 * @param rlen
-	 * @param clen
-	 * @return
-	 * @throws DMLRuntimeException 
-	 * @throws IOException 
-	 */
 	@Override
 	public final FrameBlock readFrameFromHDFS(String fname, ValueType[] schema, String[] names,
 			long rlen, long clen)
@@ -96,19 +84,6 @@ public class FrameReaderTextCSV extends FrameReader
 		return ret;
 	}
 
-	/**
-	 * 
-	 * @param path
-	 * @param job
-	 * @param fs
-	 * @param dest
-	 * @param schema
-	 * @param names
-	 * @param rlen
-	 * @param clen
-	 * @return
-	 * @throws IOException 
-	 */
 	protected void readCSVFrameFromHDFS( Path path, JobConf job, FileSystem fs, 
 			FrameBlock dest, ValueType[] schema, String[] names, long rlen, long clen) 
 		throws IOException
@@ -120,23 +95,7 @@ public class FrameReaderTextCSV extends FrameReader
 		for( int i=0; i<splits.length; i++ )
 			readCSVFrameFromInputSplit(splits[i], informat, job, dest, schema, names, rlen, clen, 0, i==0);
 	}
-	
-	
-	
-	/**
-	 * 
-	 * @param path
-	 * @param job
-	 * @param fs
-	 * @param dest
-	 * @param rlen
-	 * @param clen
-	 * @param hasHeader
-	 * @param delim
-	 * @param fill
-	 * @return
-	 * @throws IOException
-	 */
+
 	protected final void readCSVFrameFromInputSplit( InputSplit split, TextInputFormat informat, JobConf job, 
 			FrameBlock dest, ValueType[] schema, String[] names, long rlen, long clen, int rl, boolean first)
 		throws IOException
@@ -205,18 +164,7 @@ public class FrameReaderTextCSV extends FrameReader
 			IOUtilFunctions.closeSilently(reader);
 		}
 	}
-	
-	/**
-	 * 
-	 * @param files
-	 * @param fs
-	 * @param schema
-	 * @param names
-	 * @param hasHeader
-	 * @param delim
-	 * @return
-	 * @throws IOException
-	 */
+
 	protected Pair<Integer,Integer> computeCSVSize( Path path, JobConf job, FileSystem fs) 
 		throws IOException 
 	{	

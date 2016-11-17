@@ -48,7 +48,7 @@ public class QuaternaryOperator extends Operator
 	/**
 	 * wsloss
 	 * 
-	 * @param wt
+	 * @param wt Weights type
 	 */
 	public QuaternaryOperator( WeightsType wt ) {
 		wtype1 = wt;
@@ -57,7 +57,7 @@ public class QuaternaryOperator extends Operator
 	/**
 	 * wsigmoid 
 	 * 
-	 * @param wt
+	 * @param wt WSigmoid type
 	 */
 	public QuaternaryOperator( WSigmoidType wt ) {
 		wtype2 = wt;
@@ -67,7 +67,7 @@ public class QuaternaryOperator extends Operator
 	/**
 	 * wdivmm
 	 * 
-	 * @param wt
+	 * @param wt WDivMM type
 	 */
 	public QuaternaryOperator( WDivMMType wt ) {
 		wtype3 = wt;
@@ -76,7 +76,8 @@ public class QuaternaryOperator extends Operator
 	/**
 	 * wdivmm w/epsilon
 	 * 
-	 * @param wt
+	 * @param wt WDivMM type
+	 * @param epsilon the epsilon value
 	 */
 	public QuaternaryOperator( WDivMMType wt, double epsilon) {
 		wtype3 = wt;
@@ -86,7 +87,7 @@ public class QuaternaryOperator extends Operator
 	/**
 	 * wcemm
 	 * 
-	 * @param wt
+	 * @param wt WCeMM type
 	 */
 	public QuaternaryOperator( WCeMMType wt ) {
 		wtype4 = wt;
@@ -95,7 +96,8 @@ public class QuaternaryOperator extends Operator
 	/**
 	 * wcemm w/epsilon
 	 * 
-	 * @param wt
+	 * @param wt WCeMM type
+	 * @param epsilon the epsilon value
 	 */
 	public QuaternaryOperator( WCeMMType wt, double epsilon) {
 		wtype4 = wt;
@@ -105,8 +107,8 @@ public class QuaternaryOperator extends Operator
 	/**
 	 * wumm
 	 * 
-	 * @param wt
-	 * @param op
+	 * @param wt WUMM type
+	 * @param op operator type
 	 */
 	public QuaternaryOperator( WUMMType wt, String op ) {
 		wtype5 = wt;
@@ -118,11 +120,7 @@ public class QuaternaryOperator extends Operator
 		else
 			fn = Builtin.getBuiltinFnObject(op);
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public boolean hasFourInputs() {
 		return (wtype1 != null && wtype1.hasFourInputs())
 			|| (wtype3 != null && wtype3.hasFourInputs())
@@ -130,6 +128,7 @@ public class QuaternaryOperator extends Operator
 	}
 	
 	/**
+	 * Obtain epsilon value
 	 * 
 	 * @return epsilon
 	 */

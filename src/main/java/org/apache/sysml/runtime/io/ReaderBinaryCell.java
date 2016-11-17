@@ -32,10 +32,6 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixCell;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 
-/**
- * 
- * 
- */
 public class ReaderBinaryCell extends MatrixReader
 {
 
@@ -64,18 +60,6 @@ public class ReaderBinaryCell extends MatrixReader
 		return ret;
 	}
 
-	/**
-	 * 
-	 * @param path
-	 * @param job
-	 * @param fs
-	 * @param dest
-	 * @param rlen
-	 * @param clen
-	 * @param brlen
-	 * @param bclen
-	 * @throws IOException
-	 */
 	@SuppressWarnings("deprecation")
 	private void readBinaryCellMatrixFromHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock dest, long rlen, long clen, int brlen, int bclen )
 		throws IOException

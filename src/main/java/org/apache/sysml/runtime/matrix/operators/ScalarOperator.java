@@ -68,9 +68,9 @@ public abstract class ScalarOperator extends Operator
 	/**
 	 * Apply the scalar operator over a given input value.
 	 * 
-	 * @param in
-	 * @return
-	 * @throws DMLRuntimeException
+	 * @param in input value
+	 * @return result
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public abstract double executeScalar(double in) 
 		throws DMLRuntimeException;
@@ -79,7 +79,7 @@ public abstract class ScalarOperator extends Operator
 	 * Indicates if the function is statically sparse safe, i.e., it is always
 	 * sparse safe independent of the given constant.
 	 * 
-	 * @return
+	 * @return true if function statically sparse safe
 	 */
 	protected boolean isSparseSafeStatic() {
 		return ( fn instanceof Multiply || fn instanceof Multiply2 

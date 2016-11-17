@@ -336,8 +336,8 @@ public class JCudaObject extends GPUObject {
 		 * @param B			Sparse Matrix B on GPU
 		 * @param m			Rows in A
 		 * @param n			Columns in Bs
-		 * @return
-		 * @throws DMLRuntimeException
+		 * @return CSR (compressed sparse row) pointer
+		 * @throws DMLRuntimeException if DMLRuntimeException occurs
 		 */
 		public static CSRPointer allocateForDgeam(cusparseHandle handle, CSRPointer A, CSRPointer B, int m, int n) 
 				throws DMLRuntimeException{
@@ -463,7 +463,8 @@ public class JCudaObject extends GPUObject {
 	/**
 	 * Allocates a sparse and empty {@link JCudaObject}
 	 * This is the result of operations that are both non zero matrices.
-	 * @throws DMLRuntimeException
+	 * 
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public void allocateSparseAndEmpty() throws DMLRuntimeException{
 		setSparseMatrixCudaPointer(CSRPointer.allocateEmpty(0, mat.getNumRows()));
@@ -474,8 +475,9 @@ public class JCudaObject extends GPUObject {
 	/**
 	 * Allocates a dense matrix of size obtained from the attached matrix metadata
 	 * and fills it up with a single value
+	 * 
 	 * @param v value to fill up the dense matrix
-	 * @throws DMLRuntimeException
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public void allocateAndFillDense(double v) throws DMLRuntimeException {
 		long rows = mat.getNumRows();
@@ -492,7 +494,8 @@ public class JCudaObject extends GPUObject {
 	/**
 	 * If this {@link JCudaObject} is sparse and empty
 	 * Being allocated is a prerequisite to being sparse and empty.
-	 * @return
+	 * 
+	 * @return true if sparse and empty
 	 */
 	public boolean isSparseAndEmpty() {
 		boolean isSparseAndAllocated = isAllocated()&& LibMatrixCUDA.isInSparseFormat(mat);
@@ -502,6 +505,7 @@ public class JCudaObject extends GPUObject {
 
 	/**
 	 * Allocate necessary memory on the GPU for this {@link JCudaObject} instance.
+	 * 
 	 * @param isInput if the block is input, isSparse argument is ignored
 	 * @param isSparse if the block is sparse
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
@@ -923,7 +927,8 @@ public class JCudaObject extends GPUObject {
 	/**
 	 * Convenience method to directly set the dense matrix pointer on GPU
 	 * Make sure to call {@link #setDeviceModify(long)} after this to set appropriate state, if you are not sure what you are doing.
-	 * @param densePtr
+	 * 
+	 * @param densePtr dense pointer
 	 */
 	public synchronized void setDenseMatrixCudaPointer(Pointer densePtr){
 		this.jcudaDenseMatrixPtr = densePtr;
@@ -937,7 +942,7 @@ public class JCudaObject extends GPUObject {
 	/**
 	 * Converts this JCudaObject from dense to sparse format.
 	 * 
-	 * @throws DMLRuntimeException
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public void denseToSparse() throws DMLRuntimeException {
 		cusparseHandle cusparseHandle = LibMatrixCUDA.cusparseHandle;
@@ -963,7 +968,7 @@ public class JCudaObject extends GPUObject {
 	 * @param lda		rows in input matrix
 	 * @param ldc		columns in output matrix
 	 * @return			transposed matrix
-	 * @throws DMLRuntimeException
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static Pointer transpose(Pointer densePtr, int m, int n, int lda, int ldc) throws DMLRuntimeException {
 		Pointer alpha = LibMatrixCUDA.pointerTo(1.0);
@@ -978,7 +983,7 @@ public class JCudaObject extends GPUObject {
 
 	/**
 	 * Convenience method. Converts Row Major Dense Matrix --> Column Major Dense Matrix
-	 * @throws DMLRuntimeException
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private void convertDensePtrFromRowMajorToColumnMajor() throws DMLRuntimeException {
 		int m = toIntExact(mat.getNumRows());
@@ -1011,7 +1016,7 @@ public class JCudaObject extends GPUObject {
 	/**
 	 * Convert sparse to dense (Performs transpose, use sparseToColumnMajorDense if the kernel can deal with column major format)
 	 * 
-	 * @throws DMLRuntimeException
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public void sparseToDense() throws DMLRuntimeException {
 		if(jcudaSparseMatrixPtr == null || !isAllocated())
@@ -1025,7 +1030,7 @@ public class JCudaObject extends GPUObject {
 	/**
 	 * More efficient method to convert sparse to dense but returns dense in column major format
 	 * 
-	 * @throws DMLRuntimeException
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public void sparseToColumnMajorDense() throws DMLRuntimeException {
 		if(jcudaSparseMatrixPtr == null || !isAllocated())
@@ -1095,8 +1100,9 @@ public class JCudaObject extends GPUObject {
 	 * @param A Pointer to memory on device (GPU), assumed to point to a double array
 	 * @param rows rows in matrix A
      * @param cols columns in matrix A
-	 A
-	 * @throws DMLRuntimeException */
+	 * @return the debug string
+	 * @throws DMLRuntimeException  if DMLRuntimeException occurs
+	 */
 	public static String debugString(Pointer A, long rows, long cols) throws DMLRuntimeException {
 		StringBuffer sb = new StringBuffer();
         int len = toIntExact(rows * cols);

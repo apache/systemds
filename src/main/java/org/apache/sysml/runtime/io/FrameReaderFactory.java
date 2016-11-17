@@ -26,18 +26,9 @@ import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 
-/**
- * 
- * 
- */
 public class FrameReaderFactory 
 {
-	/**
-	 * 
-	 * @param iinfo
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static FrameReader createFrameReader( InputInfo iinfo ) 
 		throws DMLRuntimeException
 	{
@@ -46,13 +37,7 @@ public class FrameReaderFactory
 		
 		return createFrameReader(iinfo, props);
 	}
-	
-	/**
-	 * 
-	 * @param props
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static FrameReader createFrameReader( ReadProperties rprops ) 
 		throws DMLRuntimeException
 	{
@@ -67,13 +52,6 @@ public class FrameReaderFactory
 		return createFrameReader(iinfo, props);
 	}
 
-	
-	/**
-	 * 
-	 * @param props
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	public static FrameReader createFrameReader( InputInfo iinfo, FileFormatProperties props ) 
 		throws DMLRuntimeException
 	{

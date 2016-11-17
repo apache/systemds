@@ -53,19 +53,6 @@ public class FrameReaderTextCSVParallel extends FrameReaderTextCSV
 		super(props);
 	}
 
-	/**
-	 * 
-	 * @param path
-	 * @param job
-	 * @param fs
-	 * @param dest
-	 * @param schema
-	 * @param names
-	 * @param rlen
-	 * @param clen
-	 * @return
-	 * @throws IOException 
-	 */
 	@Override
 	protected void readCSVFrameFromHDFS( Path path, JobConf job, FileSystem fs, 
 			FrameBlock dest, ValueType[] schema, String[] names, long rlen, long clen) 
@@ -142,11 +129,7 @@ public class FrameReaderTextCSVParallel extends FrameReaderTextCSV
 		
 		return new Pair<Integer,Integer>(nrow, ncol);
 	}
-	
-	/**
-	 * 
-	 * 
-	 */
+
 	private static class CountRowsTask implements Callable<Long> 
 	{
 		private InputSplit _split = null;
@@ -190,10 +173,6 @@ public class FrameReaderTextCSVParallel extends FrameReaderTextCSV
 		}
 	}
 
-	/**
-	 * 
-	 * 
-	 */
 	private class ReadRowsTask implements Callable<Object> 
 	{
 		private InputSplit _split = null;

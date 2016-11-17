@@ -407,8 +407,7 @@ public class MRJobConfiguration
 	 * Unique working dirs required for thread-safe submission of parallel jobs;
 	 * otherwise job.xml and other files might be overridden (in local mode).
 	 * 
-	 * @param job
-	 * @param mode
+	 * @param job job configuration
 	 */
 	public static void setUniqueWorkingDir( JobConf job )
 	{
@@ -455,11 +454,7 @@ public class MRJobConfiguration
 	{
 		return job.get(MRConfigurationNames.MR_JOBTRACKER_STAGING_ROOT_DIR);
 	}
-	
-	/**
-	 * 
-	 * @param job
-	 */
+
 	public static void setStagingDir( JobConf job )
 	{
 		String dir = DMLConfig.LOCAL_MR_MODE_STAGING_DIR + 
@@ -921,13 +916,7 @@ public class MRJobConfiguration
 		String str=job.get(CM_N_COV_INSTRUCTIONS_CONFIG);
 		return MRInstructionParser.parseCM_N_COVInstructions(str);
 	}
-	
-	/**
-	 * 
-	 * @param job
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static GroupedAggregateInstruction[] getGroupedAggregateInstructions(JobConf job) 
 		throws DMLRuntimeException
 	{
@@ -1126,20 +1115,7 @@ public class MRJobConfiguration
 		
 		setUpMultipleInputs(job, inputIndexes, inputs, inputInfos, brlens, bclens, distCacheOnly, setConverter, target);
 	}
-	
-	/**
-	 * 
-	 * @param job
-	 * @param inputIndexes
-	 * @param inputs
-	 * @param inputInfos
-	 * @param brlens
-	 * @param bclens
-	 * @param distCacheOnly
-	 * @param setConverter
-	 * @param target
-	 * @throws Exception
-	 */
+
 	public static void setUpMultipleInputs(JobConf job, byte[] inputIndexes, String[] inputs, InputInfo[] inputInfos, 
 			int[] brlens, int[] bclens, boolean[] distCacheOnly, boolean setConverter, ConvertTarget target) 
 		throws Exception
@@ -1214,16 +1190,13 @@ public class MRJobConfiguration
 	 * input infos. Note that any mapper instruction before reblock can work on binary block
 	 * if it can work on binary cell as well.
 	 * 
-	 * @param job
-	 * @param inputIndexes
-	 * @param inputs
-	 * @param inputInfos
-	 * @param inBlockRepresentation
-	 * @param brlens
-	 * @param bclens
-	 * @param setConverter
-	 * @param forCMJob
-	 * @throws Exception
+	 * @param job job configuration
+	 * @param inputIndexes array of byte indexes
+	 * @param inputs array of input string
+	 * @param inputInfos array of input infos
+	 * @param brlens array of block row lengths
+	 * @param bclens array of block column lengths
+	 * @throws Exception if Exception occurs
 	 */
 	public static void setUpMultipleInputsReblock(JobConf job, byte[] inputIndexes, String[] inputs, InputInfo[] inputInfos, 
 												  int[] brlens, int[] bclens) 
@@ -1311,12 +1284,7 @@ public class MRJobConfiguration
 		setUpMultipleOutputs(job, resultIndexes, resultDimsUnknwon, outputs, 
 				outputInfos, inBlockRepresentation, false);
 	}
-	
-	/**
-	 * 
-	 * @param job
-	 * @return
-	 */
+
 	public static String setUpSortPartitionFilename( JobConf job ) 
 	{
 		String pfname = constructPartitionFilename();
@@ -1324,12 +1292,7 @@ public class MRJobConfiguration
 		
 		return pfname;
 	}
-	
-	/**
-	 * 
-	 * @param job
-	 * @return
-	 */
+
 	public static String getSortPartitionFilename( JobConf job )
 	{
 		return job.get( SORT_PARTITION_FILENAME );
@@ -1381,19 +1344,19 @@ public class MRJobConfiguration
 	 * NOTE: this method needs to be in-sync with MRBaseForCommonInstructions.processOneInstruction,
 	 * otherwise, the latter will potentially fail with missing dimension information.
 	 * 
-	 * @param job
-	 * @param inputIndexes
-	 * @param dataGenInstructions
-	 * @param instructionsInMapper
-	 * @param reblockInstructions
-	 * @param aggInstructionsInReducer
-	 * @param aggBinInstructions
-	 * @param otherInstructionsInReducer
-	 * @param resultIndexes
-	 * @param mapOutputIndexes
-	 * @param forMMCJ
-	 * @return
-	 * @throws DMLRuntimeException
+	 * @param job job configuration
+	 * @param inputIndexes array of byte indexes
+	 * @param dataGenInstructions data gen instructions as a string
+	 * @param instructionsInMapper instruction in mapper as a string
+	 * @param reblockInstructions reblock instructions as a string
+	 * @param aggInstructionsInReducer aggregate instructions in reducer as a string
+	 * @param aggBinInstructions binary aggregate instructions as a string
+	 * @param otherInstructionsInReducer other instructions in reducer as a string
+	 * @param resultIndexes array of byte result indexes
+	 * @param mapOutputIndexes set of map output indexes
+	 * @param forMMCJ ?
+	 * @return reducer groups
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static MatrixChar_N_ReducerGroups computeMatrixCharacteristics(JobConf job, byte[] inputIndexes, String dataGenInstructions,
 			String instructionsInMapper, String reblockInstructions, String aggInstructionsInReducer, String aggBinInstructions, 
@@ -1925,8 +1888,8 @@ public class MRJobConfiguration
 	 * Set all configurations with prefix mapred or mapreduce that exist in the given
 	 * DMLConfig into the given JobConf.
 	 * 
-	 * @param job
-	 * @param config
+	 * @param job job configuration
+	 * @param config dml configuration
 	 */
 	public static void setupCustomMRConfigurations( JobConf job, DMLConfig config ) {
 		Map<String,String> map = config.getCustomMRConfig();

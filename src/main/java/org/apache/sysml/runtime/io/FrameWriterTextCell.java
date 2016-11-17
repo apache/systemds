@@ -38,13 +38,7 @@ import org.apache.sysml.runtime.util.MapReduceTool;
  */
 public class FrameWriterTextCell extends FrameWriter
 {
-	/**
-	 * @param src
-	 * @param fname
-	 * @return
-	 * @throws IOException 
-	 * @throws DMLRuntimeException 
-	 */
+
 	@Override
 	public final void writeFrameToHDFS( FrameBlock src, String fname, long rlen, long clen )
 		throws IOException, DMLRuntimeException 
@@ -66,15 +60,6 @@ public class FrameWriterTextCell extends FrameWriter
 		writeTextCellFrameToHDFS(path, job, src, src.getNumRows(), src.getNumColumns());
 	}
 
-	/**
-	 * 
-	 * @param path
-	 * @param job
-	 * @param src
-	 * @param rlen
-	 * @param clen
-	 * @throws IOException
-	 */
 	protected void writeTextCellFrameToHDFS( Path path, JobConf job, FrameBlock src, long rlen, long clen )
 		throws IOException
 	{
@@ -87,14 +72,14 @@ public class FrameWriterTextCell extends FrameWriter
 	/**
 	 * Internal primitive to write a row range of a frame to a single text file, 
 	 * which is used for both single- and multi-threaded writers (for consistency). 
-	 *  
-	 * @param path
-	 * @param job
-	 * @param fs
-	 * @param src
-	 * @param rl
-	 * @param ru
-	 * @throws IOException 
+	 * 
+	 * @param path file path
+	 * @param job job configuration
+	 * @param fs file system
+	 * @param src frame block
+	 * @param rl lower row
+	 * @param ru upper row
+	 * @throws IOException if IOException occurs
 	 */
 	protected final void writeTextCellFrameToFile( Path path, JobConf job, FileSystem fs, FrameBlock src, int rl, int ru ) 
 		throws IOException

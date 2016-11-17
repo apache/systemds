@@ -146,8 +146,8 @@ public class MatrixIndexes implements WritableComparable<MatrixIndexes>, RawComp
 	 * Redirects the default java serialization via externalizable to our default 
 	 * hadoop writable serialization for consistency/maintainability. 
 	 * 
-	 * @param is
-	 * @throws IOException
+	 * @param is object input
+	 * @throws IOException if IOException occurs
 	 */
 	public void readExternal(ObjectInput is) 
 		throws IOException
@@ -160,8 +160,8 @@ public class MatrixIndexes implements WritableComparable<MatrixIndexes>, RawComp
 	 * Redirects the default java serialization via externalizable to our default 
 	 * hadoop writable serialization for consistency/maintainability. 
 	 * 
-	 * @param is
-	 * @throws IOException
+	 * @param os object output
+	 * @throws IOException if IOException occurs
 	 */
 	public void writeExternal(ObjectOutput os) 
 		throws IOException

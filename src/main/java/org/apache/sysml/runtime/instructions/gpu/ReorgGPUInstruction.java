@@ -38,11 +38,11 @@ public class ReorgGPUInstruction extends GPUInstruction
  	/**
  	 * for opcodes r'
  	 * 
- 	 * @param op
- 	 * @param in
- 	 * @param out
- 	 * @param opcode
- 	 * @param istr
+ 	 * @param op operator
+ 	 * @param in input operand
+ 	 * @param out output operand
+ 	 * @param opcode the opcode
+ 	 * @param istr instruction string
  	 */
 	public ReorgGPUInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String istr) {
 		super(op, opcode, istr);

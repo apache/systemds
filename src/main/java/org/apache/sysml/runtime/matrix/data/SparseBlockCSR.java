@@ -69,6 +69,8 @@ public class SparseBlockCSR extends SparseBlock
 	
 	/**
 	 * Copy constructor sparse block abstraction. 
+	 * 
+	 * @param sblock sparse block to copy
 	 */
 	public SparseBlockCSR(SparseBlock sblock)
 	{
@@ -110,7 +112,7 @@ public class SparseBlockCSR extends SparseBlock
 	
 	/**
 	 * Copy constructor old sparse row representation. 
-	 * @param rows
+	 * @param rows array of sparse rows
 	 * @param nnz number of non-zeroes
 	 */
 	public SparseBlockCSR(SparseRow[] rows, int nnz)
@@ -137,6 +139,8 @@ public class SparseBlockCSR extends SparseBlock
 	
 	/**
 	 * Copy constructor for COO representation
+	 * 
+	 * @param rows number of rows
 	 * @param rowInd	row indices
 	 * @param colInd	column indices
 	 * @param values	non zero values
@@ -177,10 +181,10 @@ public class SparseBlockCSR extends SparseBlock
 	 * Get the estimated in-memory size of the sparse block in CSR 
 	 * with the given dimensions w/o accounting for overallocation. 
 	 * 
-	 * @param nrows
-	 * @param ncols
-	 * @param sparsity
-	 * @return
+	 * @param nrows number of rows
+	 * @param ncols number of columns
+	 * @param sparsity sparsity ratio
+	 * @return memory estimate
 	 */
 	public static long estimateMemory(long nrows, long ncols, double sparsity) {
 		double lnnz = Math.max(INIT_CAPACITY, Math.ceil(sparsity*nrows*ncols));
@@ -701,41 +705,24 @@ public class SparseBlockCSR extends SparseBlock
 			
 		return (int)Math.min(tmpCap, Integer.MAX_VALUE);
 	}
-	
-	/**
-	 * 
-	 */
+
 	private void resize() {
 		//resize by at least by 1
 		int newCap = newCapacity(_values.length+1);
 		resizeCopy(newCap);
 	}
-	
-	/**
-	 * 
-	 * @param minsize
-	 */
+
 	private void resize(int minsize) {
 		int newCap = newCapacity(minsize);
 		resizeCopy(newCap);
 	}
-	
-	/**
-	 * 
-	 * @param capacity
-	 */
+
 	private void resizeCopy(int capacity) {
 		//reallocate arrays and copy old values
 		_indexes = Arrays.copyOf(_indexes, capacity);
 		_values = Arrays.copyOf(_values, capacity);
 	}
-	
-	/**
-	 * 
-	 * @param ix
-	 * @param c
-	 * @param v
-	 */
+
 	private void resizeAndInsert(int ix, int c, double v) {
 		//compute new size
 		int newCap = newCapacity(_values.length+1);
@@ -756,13 +743,7 @@ public class SparseBlockCSR extends SparseBlock
 		//insert new value
 		insert(ix, c, v);
 	}
-	
-	/**
-	 * 
-	 * @param ix
-	 * @param c
-	 * @param v
-	 */
+
 	private void shiftRightAndInsert(int ix, int c, double v)  {		
 		//overlapping array copy (shift rhs values right by 1)
 		System.arraycopy(_indexes, ix, _indexes, ix+1, _size-ix);
@@ -771,11 +752,7 @@ public class SparseBlockCSR extends SparseBlock
 		//insert new value
 		insert(ix, c, v);
 	}
-	
-	/**
-	 * 
-	 * @param index
-	 */
+
 	private void shiftLeftAndDelete(int ix)
 	{
 		//overlapping array copy (shift rhs values left by 1)
@@ -784,11 +761,6 @@ public class SparseBlockCSR extends SparseBlock
 		_size--;
 	}
 
-	/**
-	 * 
-	 * @param ix
-	 * @param n
-	 */
 	private void shiftRightByN(int ix, int n) 
 	{		
 		//overlapping array copy (shift rhs values right by 1)
@@ -796,12 +768,7 @@ public class SparseBlockCSR extends SparseBlock
 		System.arraycopy(_values, ix, _values, ix+n, _size-ix);
 		_size += n;
 	}
-	
-	/**
-	 * 
-	 * @param ix
-	 * @param n
-	 */
+
 	private void shiftLeftByN(int ix, int n)
 	{
 		//overlapping array copy (shift rhs values left by n)
@@ -809,51 +776,27 @@ public class SparseBlockCSR extends SparseBlock
 		System.arraycopy(_values, ix, _values, ix-n, _size-ix);
 		_size -= n;
 	}
-	
-	/**
-	 * 
-	 * @param ix
-	 * @param c
-	 * @param v
-	 */
+
 	private void insert(int ix, int c, double v) {
 		_indexes[ix] = c;
 		_values[ix] = v;
 		_size++;	
 	}
-	
-	/**
-	 * 
-	 * @param rl
-	 */
+
 	private void incrPtr(int rl) {
 		incrPtr(rl, 1);
 	}
-	
-	/**
-	 * 
-	 * @param rl
-	 * @param cnt
-	 */
+
 	private void incrPtr(int rl, int cnt) {
 		int rlen = numRows();
 		for( int i=rl; i<rlen+1; i++ )
 			_ptr[i]+=cnt;
 	}
-	
-	/**
-	 * 
-	 * @param rl
-	 */
+
 	private void decrPtr(int rl) {
 		decrPtr(rl, 1);
 	}
-	
-	/**
-	 * 
-	 * @param rl
-	 * @param cnt
-	 */
+
 	private void decrPtr(int rl, int cnt) {
 		int rlen = numRows();
 		for( int i=rl; i<rlen+1; i++ )
@@ -863,7 +806,7 @@ public class SparseBlockCSR extends SparseBlock
 	/**
 	 * Get raw access to underlying array of row pointers
 	 * For use in GPU code
-	 * @return
+	 * @return array of row pointers
 	 */
 	public int[] rowPointers() {
 		return _ptr;
@@ -872,7 +815,7 @@ public class SparseBlockCSR extends SparseBlock
 	/** 
 	 * Get raw access to underlying array of column indices
 	 * For use in GPU code
-	 * @return
+	 * @return array of column indexes
 	 */
 	public int[] indexes() {
 		return _indexes;
@@ -881,7 +824,7 @@ public class SparseBlockCSR extends SparseBlock
 	/**
 	 * Get raw access to underlying array of values
 	 * For use in GPU code
-	 * @return
+	 * @return array of values
 	 */
 	public double[] values() {
 		return _values;

@@ -360,14 +360,7 @@ public class CSVWriteReducer extends ReduceBase implements Reducer<TaggedFirstSe
 			int length = bytes.limit();
 		    out.write(bytes.array(), 0, length);
 		}
-		
-		/**
-		 * 
-		 * @param buffer
-		 * @param sparse
-		 * @param delim
-		 * @param len
-		 */
+
 		private static void appendZero( StringBuilder buffer, boolean sparse, String delim, boolean alwaysDelim, int len )
 		{
 			if( len <= 0 )

@@ -43,15 +43,7 @@ import org.apache.sysml.runtime.util.MapReduceTool;
  */
 public class FrameWriterTextCellParallel extends FrameWriterTextCell
 {
-	/**
-	 * 
-	 * @param path
-	 * @param job
-	 * @param src
-	 * @param rlen
-	 * @param clen
-	 * @throws IOException
-	 */
+
 	@Override
 	protected void writeTextCellFrameToHDFS( Path path, JobConf job, FrameBlock src, long rlen, long clen )
 		throws IOException
@@ -97,10 +89,7 @@ public class FrameWriterTextCellParallel extends FrameWriterTextCell
 			throw new IOException("Failed parallel write of text output.", e);
 		}
 	}	
-	
-	/**
-	 * 
-	 */
+
 	private class WriteFileTask implements Callable<Object> 
 	{
 		private Path _path = null;

@@ -89,10 +89,10 @@ public class LibCommonsMath
 	/**
 	 * Function to solve a given system of equations.
 	 * 
-	 * @param in1
-	 * @param in2
-	 * @return
-	 * @throws DMLRuntimeException
+	 * @param in1 matrix object 1
+	 * @param in2 matrix object 2
+	 * @return matrix block
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private static MatrixBlock computeSolve(MatrixObject in1, MatrixObject in2) 
 		throws DMLRuntimeException 
@@ -116,9 +116,9 @@ public class LibCommonsMath
 	/**
 	 * Function to perform QR decomposition on a given matrix.
 	 * 
-	 * @param in
-	 * @return
-	 * @throws DMLRuntimeException
+	 * @param in matrix object
+	 * @return array of matrix blocks
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private static MatrixBlock[] computeQR(MatrixObject in) 
 		throws DMLRuntimeException 
@@ -140,9 +140,9 @@ public class LibCommonsMath
 	/**
 	 * Function to perform LU decomposition on a given matrix.
 	 * 
-	 * @param in
-	 * @return
-	 * @throws DMLRuntimeException
+	 * @param in matrix object
+	 * @return array of matrix blocks
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private static MatrixBlock[] computeLU(MatrixObject in) 
 		throws DMLRuntimeException 
@@ -171,9 +171,9 @@ public class LibCommonsMath
 	 * Function to perform Eigen decomposition on a given matrix.
 	 * Input must be a symmetric matrix.
 	 * 
-	 * @param in
-	 * @return
-	 * @throws DMLRuntimeException
+	 * @param in matrix object
+	 * @return array of matrix blocks
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private static MatrixBlock[] computeEigen(MatrixObject in)
 		throws DMLRuntimeException 
@@ -220,9 +220,9 @@ public class LibCommonsMath
 	/**
 	 * Function to compute matrix inverse via matrix decomposition.
 	 * 
-	 * @param in
-	 * @return
-	 * @throws DMLRuntimeException
+	 * @param in commons-math3 Array2DRowRealMatrix
+	 * @return matrix block
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private static MatrixBlock computeMatrixInverse(Array2DRowRealMatrix in) 
 		throws DMLRuntimeException 
@@ -241,9 +241,9 @@ public class LibCommonsMath
 	 * Function to compute Cholesky decomposition of the given input matrix. 
 	 * The input must be a real symmetric positive-definite matrix.
 	 * 
-	 * @param in
-	 * @return
-	 * @throws DMLRuntimeException
+	 * @param in commons-math3 Array2DRowRealMatrix
+	 * @return matrix block
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private static MatrixBlock computeCholesky(Array2DRowRealMatrix in) 
 		throws DMLRuntimeException 

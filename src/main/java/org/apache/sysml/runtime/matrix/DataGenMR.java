@@ -78,24 +78,20 @@ public class DataGenMR
 	/**
 	 * <p>Starts a Rand MapReduce job which will produce one or more random objects.</p>
 	 * 
-	 * @param numRows number of rows for each random object
-	 * @param numCols number of columns for each random object
-	 * @param blockRowSize number of rows in a block for each random object
-	 * @param blockColSize number of columns in a block for each random object
-	 * @param minValue minimum of the random values for each random object
-	 * @param maxValue maximum of the random values for each random object
-	 * @param sparsity sparsity for each random object
-	 * @param pdf probability density function for each random object
+	 * @param inst MR job instruction
+	 * @param dataGenInstructions array of data gen instructions
+	 * @param instructionsInMapper instructions in mapper
+	 * @param aggInstructionsInReducer aggregate instructions in reducer
+	 * @param otherInstructionsInReducer other instructions in reducer
+	 * @param numReducers number of reducers
 	 * @param replication file replication
-	 * @param inputs input file for each random object
+	 * @param resultIndexes result indexes for each random object
+	 * @param dimsUnknownFilePrefix file path prefix when dimensions unknown
 	 * @param outputs output file for each random object
 	 * @param outputInfos output information for each random object
-	 * @param instructionsInMapper instruction for each random object
-	 * @param resultIndexes result indexes for each random object
 	 * @return matrix characteristics for each random object
-	 * @throws Exception if an error occurred in the MapReduce phase
+	 * @throws Exception if Exception occurs
 	 */
-	
 	public static JobReturn runJob(MRJobInstruction inst, String[] dataGenInstructions, 
 			String instructionsInMapper, String aggInstructionsInReducer, String otherInstructionsInReducer, 
 			int numReducers, int replication, byte[] resultIndexes, String dimsUnknownFilePrefix, 

@@ -39,9 +39,6 @@ import org.apache.sysml.runtime.matrix.data.IJV;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.util.MapReduceTool;
 
-/**
- * 
- */
 public class WriterMatrixMarket extends MatrixWriter
 {
 	@Override
@@ -80,32 +77,14 @@ public class WriterMatrixMarket extends MatrixWriter
 
 		IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, path);
 	}
-	
-	/**
-	 * 
-	 * @param fileName
-	 * @param src
-	 * @param rlen
-	 * @param clen
-	 * @param nnz
-	 * @throws IOException
-	 */
+
 	protected void writeMatrixMarketMatrixToHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock src )
 		throws IOException
 	{
 		//sequential write
 		writeMatrixMarketMatrixToFile(path, job, fs, src, 0, src.getNumRows());
 	}
-	
-	/**
-	 * 
-	 * @param path
-	 * @param job
-	 * @param src
-	 * @param rl
-	 * @param ru
-	 * @throws IOException
-	 */
+
 	protected final void writeMatrixMarketMatrixToFile( Path path, JobConf job, FileSystem fs, MatrixBlock src, int rl, int ru )
 		throws IOException
 	{
@@ -181,16 +160,7 @@ public class WriterMatrixMarket extends MatrixWriter
 			IOUtilFunctions.closeSilently(br);
 		}
 	}
-	
-	/**
-	 * 
-	 * @param srcFileName
-	 * @param fileName
-	 * @param rlen
-	 * @param clen
-	 * @param nnz
-	 * @throws IOException
-	 */
+
 	public final void mergeTextcellToMatrixMarket( String srcFileName, String fileName, long rlen, long clen, long nnz )
 		throws IOException
 	{

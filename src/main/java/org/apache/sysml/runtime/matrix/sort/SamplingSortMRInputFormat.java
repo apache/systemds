@@ -73,17 +73,19 @@ extends SequenceFileInputFormat<K,V>
 			reporter.setStatus(split.toString());
 		return new SequenceFileRecordReader<K,V>(job, (FileSplit) split);
     }
-	
-	  /**
-	   * Use the input splits to take samples of the input and generate sample
-	   * keys. By default reads 100,000 keys from 10 locations in the input, sorts
-	   * them and picks N-1 keys to generate N equally sized partitions.
-	   * @param conf the job to sample
-	   * @param partFile where to write the output file to
-	   * @throws IOException if something goes wrong
-	 * @throws IllegalAccessException 
-	 * @throws InstantiationException 
-	   */
+
+	/**
+	 * Use the input splits to take samples of the input and generate sample
+	 * keys. By default reads 100,000 keys from 10 locations in the input, sorts
+	 * them and picks N-1 keys to generate N equally sized partitions.
+	 * 
+	 * @param conf the job to sample
+	 * @param partFile where to write the output file to
+	 * @return index value
+	 * @throws IOException if something goes wrong
+	 * @throws InstantiationException if InstantiationException occurs
+	 * @throws IllegalAccessException if IllegalAccessException occurs
+	 */
 	@SuppressWarnings({ "unchecked", "unused", "deprecation" })
 	public static int writePartitionFile(JobConf conf, Path partFile) 
 	  throws IOException, InstantiationException, IllegalAccessException

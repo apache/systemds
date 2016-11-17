@@ -37,6 +37,8 @@ public class SparseBlockMCSR extends SparseBlock
 	
 	/**
 	 * Copy constructor sparse block abstraction. 
+	 * 
+	 * @param sblock sparse block to copy
 	 */
 	public SparseBlockMCSR(SparseBlock sblock)
 	{
@@ -65,6 +67,9 @@ public class SparseBlockMCSR extends SparseBlock
 	
 	/**
 	 * Copy constructor old sparse row representation. 
+	 * 
+	 * @param rows array of sparse rows
+	 * @param deep if true, deep copy
 	 */
 	public SparseBlockMCSR(SparseRow[] rows, boolean deep) {
 		if( deep ) {
@@ -85,10 +90,10 @@ public class SparseBlockMCSR extends SparseBlock
 	 * Get the estimated in-memory size of the sparse block in MCSR 
 	 * with the given dimensions w/o accounting for overallocation. 
 	 * 
-	 * @param nrows
-	 * @param ncols
-	 * @param sparsity
-	 * @return
+	 * @param nrows number of rows
+	 * @param ncols number of columns
+	 * @param sparsity sparsity ratio
+	 * @return memory estimate
 	 */
 	public static long estimateMemory(long nrows, long ncols, double sparsity) {
 		double cnnz = Math.max(SparseRow.initialCapacity, Math.ceil(sparsity*ncols));
@@ -326,7 +331,7 @@ public class SparseBlockMCSR extends SparseBlock
 	}
 	
 	/**
-	 * Helper function for MCSR -> {COO, CSR}
+	 * Helper function for MCSR -&gt; {COO, CSR}
 	 * @return the underlying array of {@link SparseRow}
 	 */
 	public SparseRow[] getRows() {

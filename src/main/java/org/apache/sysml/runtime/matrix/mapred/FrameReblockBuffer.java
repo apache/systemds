@@ -33,10 +33,6 @@ import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
-/**
- * 
- * 
- */
 public class FrameReblockBuffer
 {
 	
@@ -55,27 +51,11 @@ public class FrameReblockBuffer
 	
 	private ValueType[] _schema;
 
-
-	/**
-	 * @param rlen
-	 * @param clen
-	 * @param schema
-	 * @return
-	 * 
-	 */
 	public FrameReblockBuffer( long rlen, long clen, ValueType[] schema )
 	{
 		this( DEFAULT_BUFFER_SIZE, rlen, clen, schema );
 	}
-	
-	/**
-	 * @param buffersize
-	 * @param rlen
-	 * @param clen
-	 * @param schema
-	 * @return
-	 * 
-	 */
+
 	public FrameReblockBuffer( int buffersize,  long rlen, long clen, ValueType[] schema )
 	{
 		_bufflen = buffersize;
@@ -102,13 +82,7 @@ public class FrameReblockBuffer
 	{
 		return _bufflen;
 	}
-	
-	/**
-	 * 
-	 * @param r
-	 * @param c
-	 * @param obj
-	 */
+
 	public void appendCell( long r, long c, Object obj )
 	{
 		_buff[_count].setRow((int)r);
@@ -116,15 +90,7 @@ public class FrameReblockBuffer
 		_buff[_count].setObjVal(obj);
 		_count++;
 	}
-	
-	/**
-	 * 
-	 * @param r_offset
-	 * @param c_offset
-	 * @param inBlk
-	 * @param out
-	 * @throws IOException
-	 */
+
 	public void appendBlock(long r_offset, long c_offset, FrameBlock inBlk, OutputCollector<Long, Writable> out ) 
 		throws IOException
 	{
@@ -146,13 +112,7 @@ public class FrameReblockBuffer
 				}
 		}
 	}
-	
 
-	/**
-	 * 
-	 * @param out
-	 * @throws IOException
-	 */
 	public void flushBuffer( OutputCollector<Long, Writable> out ) 
 		throws IOException
 	{
@@ -193,13 +153,7 @@ public class FrameReblockBuffer
 			
 		_count = 0;
 	}
-	
-	/**
-	 * 
-	 * @param outList
-	 * @throws IOException
-	 * @throws DMLRuntimeException 
-	 */
+
 	public void flushBufferToBinaryBlocks( ArrayList<Pair<Long, FrameBlock>> outList ) 
 		throws IOException, DMLRuntimeException
 	{
@@ -248,14 +202,7 @@ public class FrameReblockBuffer
 		
 		_count = 0;
 	}
-	
-	/**
-	 * 
-	 * @param out
-	 * @param key
-	 * @param block
-	 * @throws IOException
-	 */
+
 	private static void outputBlock( OutputCollector<Long, Writable> out, Long key, FrameBlock block ) 
 		throws IOException
 	{
@@ -266,15 +213,7 @@ public class FrameReblockBuffer
 		//output block
 		out.collect(key, block);
 	}
-	
-	/**
-	 * 
-	 * @param out
-	 * @param key
-	 * @param value
-	 * @throws IOException
-	 * @throws DMLRuntimeException 
-	 */
+
 	private static void outputBlock( ArrayList<Pair<Long, FrameBlock>> out, Long key, FrameBlock value ) 
 		throws IOException, DMLRuntimeException
 	{

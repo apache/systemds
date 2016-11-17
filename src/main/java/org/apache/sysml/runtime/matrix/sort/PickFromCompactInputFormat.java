@@ -367,10 +367,7 @@ public class PickFromCompactInputFormat extends FileInputFormat<MatrixIndexes, M
 			return (progress>=0 && progress<=1) ? progress : 1.0f;
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	public static class PickRecordReader implements RecordReader<MatrixIndexes, MatrixCell>
 	{
 		private boolean valueIsWeight=true;

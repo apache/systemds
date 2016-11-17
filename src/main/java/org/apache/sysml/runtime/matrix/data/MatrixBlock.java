@@ -158,7 +158,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * @param rl number of rows
 	 * @param cl number of columns
 	 * @param nnz number of non zeroes
-	 * @param sparseBlock sparse block
+	 * @param sblock sparse block
 	 */
 	public MatrixBlock(int rl, int cl, long nnz, SparseBlock sblock) {
 		this(rl, cl, true, nnz);
@@ -1158,7 +1158,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * @param ru 	row upper index, 0-based, inclusive
 	 * @param cl 	column lower index, 0-based, inclusive
 	 * @param cu 	column upper index, 0-based, inclusive
-	 * @return
+	 * @return the number of non-zero values
 	 */
 	public long recomputeNonZeros(int rl, int ru, int cl, int cu)
 	{

@@ -18,20 +18,6 @@
  */
 package org.apache.sysml.runtime.instructions.gpu.context;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.HashMap;
-
-import org.apache.sysml.runtime.DMLRuntimeException;
-
-import jcuda.Pointer;
-import jcuda.driver.CUcontext;
-import jcuda.driver.CUdevice;
-import jcuda.driver.CUfunction;
-import jcuda.driver.CUmodule;
-import jcuda.driver.CUresult;
-import jcuda.runtime.JCuda;
 import static jcuda.driver.JCudaDriver.cuCtxCreate;
 import static jcuda.driver.JCudaDriver.cuCtxGetCurrent;
 import static jcuda.driver.JCudaDriver.cuDeviceGet;
@@ -41,13 +27,28 @@ import static jcuda.driver.JCudaDriver.cuModuleGetFunction;
 import static jcuda.driver.JCudaDriver.cuModuleLoadDataEx;
 import static jcuda.driver.JCudaDriver.cuModuleUnload;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.HashMap;
+
+import org.apache.sysml.runtime.DMLRuntimeException;
+
+import jcuda.CudaException;
+import jcuda.Pointer;
+import jcuda.driver.CUcontext;
+import jcuda.driver.CUdevice;
+import jcuda.driver.CUfunction;
+import jcuda.driver.CUmodule;
+import jcuda.driver.CUresult;
+
 /**
  * Utility class that allows LibMatrixCUDA as well as JCudaObject to invoke custom CUDA kernels.
  * 
  * The utility org.apache.sysml.runtime.instructions.gpu.context.JCudaKernels simplifies the launching of the kernels. 
  * For example: to launch a kernel 
- * <code> copyUpperToLowerTriangleDense<<1,1,32,32>>(jcudaDenseMatrixPtr, dim, dim*dim) </code>, the user has to call:
- * <code> kernels.launchKernel("copyUpperToLowerTriangleDense", new ExecutionConfig(1,1,32,32), jcudaDenseMatrixPtr, dim, dim*dim) </code>
+ * {@code copyUpperToLowerTriangleDense<<1,1,32,32>>(jcudaDenseMatrixPtr, dim, dim*dim) }, the user has to call:
+ * {@code kernels.launchKernel("copyUpperToLowerTriangleDense", new ExecutionConfig(1,1,32,32), jcudaDenseMatrixPtr, dim, dim*dim) }
  */
 public class JCudaKernels {
 
@@ -59,7 +60,7 @@ public class JCudaKernels {
 	 * Loads the kernels in the file ptxFileName. Though cubin files are also supported, we will stick with
 	 * ptx file as they are target-independent similar to Java's .class files.
 	 * 
-	 * @throws DMLRuntimeException
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public JCudaKernels() throws DMLRuntimeException {
 		shutdown();
@@ -74,9 +75,8 @@ public class JCudaKernels {
      * current CUDA context. If no active CUDA context exists, then it will 
      * try to create one, for the device which is specified by the current 
      * deviceNumber.
-	 * @throws DMLRuntimeException 
      * 
-     * @throws CudaException If it is neither possible to attach to an 
+	 * @throws DMLRuntimeException If it is neither possible to attach to an 
      * existing context, nor to create a new context.
      */
     private static void initCUDA() throws DMLRuntimeException {
@@ -116,21 +116,15 @@ public class JCudaKernels {
 		if(module != null)
 			cuModuleUnload(module);
 	}
-	
-	
+
 	/**
 	 * Setups the kernel parameters and launches the kernel using cuLaunchKernel API. 
 	 * This function currently supports two dimensional grid and blocks.
 	 * 
 	 * @param name name of the kernel
-	 * @param gridDimX
-	 * @param gridDimY
-	 * @param blockDimX
-	 * @param blockDimY
-	 * @param sharedMemBytes
-	 * @param stream set to null until streams are supported
+	 * @param config execution configuration
 	 * @param arguments can be of type Pointer, long, double, float and int
-	 * @throws DMLRuntimeException
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public void launchKernel(String name, ExecutionConfig config, Object ... arguments) throws DMLRuntimeException {
 		CUfunction function = kernels.get(name);

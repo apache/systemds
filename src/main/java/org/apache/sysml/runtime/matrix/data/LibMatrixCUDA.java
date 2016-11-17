@@ -382,13 +382,9 @@ public class LibMatrixCUDA {
 		try {
 			alpha = pointerTo(1.0f);
 			beta = pointerTo(0.0f);
-			int N = (int) in.getNumRows();
-			int H = (int) in.getNumColumns();
-			int W = 1;
-			if(H % 2 == 0) {
-				H /= 2;
-				W = H;
-			}
+			long N = in.getNumRows();
+			long H = in.getNumColumns();
+			long W = 1;
 			Pointer srcData = ((JCudaObject)in.getGPUObject()).jcudaDenseMatrixPtr;
 			
 			MatrixObject output = ec.getMatrixObject(outputName);
@@ -398,13 +394,13 @@ public class LibMatrixCUDA {
 			if(N*H*W >= numDoublesIn2GB) {
 				// Invokes relu(double* A,  double* ret, int rlen, int clen)
 				kernels.launchKernel("relu",
-						ExecutionConfig.getConfigForSimpleMatrixOperations(N, (int) H*W), 
-						srcData, dstData, N, (int) H*W);
+						ExecutionConfig.getConfigForSimpleMatrixOperations((int)N, (int) (H*W)), 
+						srcData, dstData, (int)N, (int) H*W);
 			}
 			else {
 				// Allocate descriptors
-				srcTensorDesc = allocateTensorDescriptor(N, 1, H, W);
-				dstTensorDesc = allocateTensorDescriptor(N, 1, H, W);
+				srcTensorDesc = allocateTensorDescriptor((int)N, 1, (int)H, (int)W);
+				dstTensorDesc = allocateTensorDescriptor((int)N, 1, (int)H, (int)W);
 				
 	            cudnnActivationForward(cudnnHandle, CUDNN_ACTIVATION_RELU, 
 	                alpha, srcTensorDesc, srcData, 

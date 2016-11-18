@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-__all__ = [ 'setSparkContext', 'matrix', 'eval', 'solve', 'DMLOp' ]
+__all__ = [ 'setSparkContext', 'matrix', 'eval', 'solve', 'DMLOp', 'set_max_depth' ]
 
 from pyspark import SparkContext
 from pyspark.sql import DataFrame, SQLContext
@@ -62,9 +62,11 @@ class DMLOp(object):
         self.depth = 1
         for m in self.inputs:
             m.referenced = m.referenced + [ self ]
-            if isinstance(m, DMLOp):
-                self.depth = max(self.depth, m.depth + 1)
+            if isinstance(m, matrix) and m.op is not None:
+                self.depth = max(self.depth, m.op.depth + 1)
 
+    MAX_DEPTH = 0
+    
     def _visit(self, execute=True):
         matrix.dml = matrix.dml + self.dml
 
@@ -79,7 +81,6 @@ class DMLOp(object):
 # This helps to provide dml containing output ID in construct_intermediate_node
 OUTPUT_ID = '$$OutputID$$'
 
-MAX_DEPTH = 0
 def set_max_depth(depth):
     """
     This method allows users to set the depth of lazy SystemML DAG.
@@ -93,7 +94,7 @@ def set_max_depth(depth):
     if depth < 0:
         raise ValueError('depth should be greater than or equal to 0')
     else:
-        MAX_DEPTH = depth
+        DMLOp.MAX_DEPTH = depth
     
 def construct_intermediate_node(inputs, dml):
     """
@@ -107,8 +108,8 @@ def construct_intermediate_node(inputs, dml):
     dmlOp = DMLOp(inputs)
     out = matrix(None, op=dmlOp)
     dmlOp.dml = [out.ID if x==OUTPUT_ID else x for x in dml]
-    if MAX_DEPTH > 0 and dmlOp.depth >= MAX_DEPTH:
-        eval(out)
+    if DMLOp.MAX_DEPTH > 0 and out.op.depth >= DMLOp.MAX_DEPTH:
+        out.eval()
     return out
 
 def reset():

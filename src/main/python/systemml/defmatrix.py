@@ -552,6 +552,12 @@ class matrix(object):
     
     __array_priority__ = 10.2
     
+    def __array__(self, dtype=np.float64):
+        if self.eval_data is None or not isinstance(self.eval_data, SUPPORTED_TYPES):
+            # Only warn if there is an unevaluated operation (which could potentially generate large matrix or if data is non-supported singlenode formats)
+            print '[WARN]: Conversion from SystemML matrix to NumPy array'
+        return np.array(self.toNumPyArray(), dtype)
+    
     def astype(self, t):
         # TODO: Throw error if incorrect type
         return self

@@ -20,11 +20,11 @@
 	xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2 http://maven.apache.org/xsd/assembly-1.1.2.xsd">
-	<!-- Assembly file for the "standalone" tar.gz and zip SystemML releases for running on a standalone machine. -->
+	<!-- Assembly file for the "standalone" tgz and zip SystemML releases for running on a standalone machine. -->
 	<id>standalone</id>
 
 	<formats>
-		<format>tar.gz</format>
+		<format>tgz</format>
 		<format>zip</format>
 	</formats>
 

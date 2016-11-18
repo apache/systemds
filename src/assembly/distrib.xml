@@ -24,7 +24,7 @@
 	<id>distrib</id>
 
 	<formats>
-		<format>tar.gz</format>
+		<format>tgz</format>
 		<format>zip</format>
 	</formats>
 

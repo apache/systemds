@@ -674,11 +674,11 @@
 		</profile>
 
 		<profile>
-			<!-- Need to ignore doclint warnings for javadocs generated on Java 8 until warnings are fixed -->
-			<id>ignore-doclint-warnings-for-javadocs-on-java-8</id>
-			<activation>
+			<!-- Can be used to ignore doclint javadoc issues -->
+			<id>ignore-doclint</id>
+			<!-- <activation>
 				<jdk>[1.8,)</jdk>
-			</activation>
+			</activation> -->
 			<properties>
 				<javadoc.opts>-Xdoclint:none</javadoc.opts>
 			</properties>

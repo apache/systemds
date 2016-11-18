@@ -27,9 +27,6 @@ import java.util.TreeMap;
 
 import org.apache.sysml.runtime.matrix.data.Pair;
 
-/**
- * 
- */
 public class TfOffsetMap implements Serializable
 {
 	private static final long serialVersionUID = 8949124761287236703L;
@@ -53,19 +50,10 @@ public class TfOffsetMap implements Serializable
 		_rmRows = shift;
 	}
 
-	/**
-	 * 
-	 * @param oldKey
-	 * @return
-	 */
 	public long getOffset(long oldKey) {
 		return _map.get(oldKey);
 	}	
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public long getNumRmRows() {
 		return _rmRows;
 	}

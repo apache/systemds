@@ -91,11 +91,11 @@ public class DecoderRecode extends Decoder
 	}
 	
 	/**
-	 * Parses a line of <token, ID, count> into <token, ID> pairs, where 
+	 * Parses a line of &lt;token, ID, count&gt; into &lt;token, ID&gt; pairs, where 
 	 * quoted tokens (potentially including separators) are supported.
 	 * 
-	 * @param entry
-	 * @param pair
+	 * @param entry entry line (token, ID, count)
+	 * @param pair token-ID pair
 	 */
 	public static void parseRecodeMapEntry(String entry, Pair<String,String> pair) {
 		int ixq = entry.lastIndexOf('"');

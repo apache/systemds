@@ -145,9 +145,6 @@ public class RecodeAgent extends Encoder
 	/**
 	 * Method to output transformation metadata from the mappers. 
 	 * This information is collected and merged by the reducers.
-	 * 
-	 * @param out
-	 * @throws IOException
 	 */
 	@Override
 	public void mapOutputTransformationMetadata(OutputCollector<IntWritable, DistinctValue> out, int taskID, TfUtils agents) throws IOException {
@@ -202,12 +199,13 @@ public class RecodeAgent extends Encoder
 	 * - just mv imputed (w/ global_mode)	(write .impute)
 	 * - both recoded and mv imputed		(write .map, .ndistinct, .mode, .impute)
 	 * 
-	 * @param map
-	 * @param outputDir
-	 * @param colID
-	 * @param fs
-	 * @param mvagent
-	 * @throws IOException
+	 * @param map recode maps
+	 * @param outputDir output directory
+	 * @param colID column id
+	 * @param fs file system
+	 * @param agents ?
+	 * @param fromCP ?
+	 * @throws IOException if IOException occurs
 	 */
 	private void writeMetadata(HashMap<String,Long> map, String outputDir, int colID, FileSystem fs, TfUtils agents, boolean fromCP) throws IOException {
 		// output recode maps and mode
@@ -304,10 +302,6 @@ public class RecodeAgent extends Encoder
 	
 	/** 
 	 * Method to merge map output transformation metadata.
-	 * 
-	 * @param values
-	 * @return
-	 * @throws IOException 
 	 */
 	@Override
 	public void mergeAndOutputTransformationMetadata(Iterator<DistinctValue> values, String outputDir, int colID, FileSystem fs, TfUtils agents) throws IOException {
@@ -335,9 +329,6 @@ public class RecodeAgent extends Encoder
 	
 	/**
 	 * Method to load recode maps of all attributes, at once.
-	 * 
-	 * @param job
-	 * @throws IOException
 	 */
 	@Override
 	public void loadTxMtd(JobConf job, FileSystem fs, Path txMtdDir, TfUtils agents) throws IOException {
@@ -374,12 +365,6 @@ public class RecodeAgent extends Encoder
 		}
 	}	
 
-	/**
-	 * 
-	 * @param colID
-	 * @param key
-	 * @return
-	 */
 	private String lookupRCDMap(int colID, String key) {
 		if( _finalMaps!=null )
 			return _finalMaps.get(colID).get(key);
@@ -423,11 +408,7 @@ public class RecodeAgent extends Encoder
 			}
 		}
 	}
-	
-	/**
-	 * 
-	 * @param in
-	 */
+
 	public void buildPartial(FrameBlock in) {
 		if( !isApplicable() )
 			return;		
@@ -455,9 +436,6 @@ public class RecodeAgent extends Encoder
 	
 	/**
 	 * Method to apply transformations.
-	 * 
-	 * @param words
-	 * @return
 	 */
 	@Override
 	public String[] apply(String[] words) 
@@ -530,7 +508,7 @@ public class RecodeAgent extends Encoder
 	 * Construct the recodemaps from the given input frame for all 
 	 * columns registered for recode.
 	 * 
-	 * @param frame
+	 * @param meta frame block
 	 */
 	public void initMetaData( FrameBlock meta ) {
 		if( meta == null || meta.getNumRows()<=0 )

@@ -226,12 +226,6 @@ public class MapReduceTool
 		}
 	}
 
-	/**
-	 * 
-	 * @param dir
-	 * @return
-	 * @throws IOException
-	 */
 	public static String getSubDirs(String dir) 
 		throws IOException 
 	{
@@ -246,12 +240,6 @@ public class MapReduceTool
 		return sb.toString();
 	}
 
-	/**
-	 * 
-	 * @param dir
-	 * @return
-	 * @throws IOException
-	 */
 	public static String getSubDirsIgnoreLogs(String dir) 
 		throws IOException 
 	{
@@ -272,9 +260,9 @@ public class MapReduceTool
 	/**
 	 * Returns the size of a file or directory on hdfs in bytes.
 	 * 
-	 * @param path
-	 * @return
-	 * @throws IOException
+	 * @param path file system path
+	 * @return file size
+	 * @throws IOException if IOException occurs
 	 */
 	public static long getFilesizeOnHDFS( Path path ) 
 		throws IOException
@@ -475,20 +463,7 @@ public class MapReduceTool
 			throw new IOException("Error creating and writing metadata JSON file", e);
 		}
 	}
-	
-	/**
-	 * 
-	 * @param mtdfile
-	 * @param vt
-	 * @param schema
-	 * @param dt
-	 * @param mc
-	 * @param outinfo
-	 * @param formatProperties
-	 * @return
-	 * @throws JSONException 
-	 * @throws DMLRuntimeException 
-	 */
+
 	public static String metaDataToString(String mtdfile, ValueType vt, ValueType[] schema, DataType dt, MatrixCharacteristics mc, 
 			OutputInfo outinfo, FileFormatProperties formatProperties) throws JSONException, DMLRuntimeException
 	{
@@ -646,25 +621,14 @@ public class MapReduceTool
 	    currentStream.close();
 		return new double[] {ret, (average ? -1 : readValue.get()), (average ? -1 : cum_weight)};
 	}
-	
-	/**
-	 * 
-	 * @param name
-	 * @return
-	 */
+
 	public static int extractNumberFromOutputFile(String name)
 	{
 		int i=name.indexOf("part-");
 		assert(i>=0);
 		return Integer.parseInt(name.substring(i+5));
 	}
-	
-	/**
-	 * 
-	 * @param dir
-	 * @param permissions
-	 * @throws IOException
-	 */
+
 	public static void createDirIfNotExistOnHDFS(String dir, String permissions) 
 		throws IOException
 	{
@@ -689,15 +653,7 @@ public class MapReduceTool
 		//NOTE: we depend on the configured umask, setting umask in job or fspermission has no effect
 		//similarly setting MRConfigurationNames.DFS_DATANODE_DATA_DIR_PERM as no effect either.
 	}
-	
-	
-	/**
-	 * 
-	 * @param filename
-	 * @param overwrite
-	 * @return
-	 * @throws IOException
-	 */
+
 	public static FSDataOutputStream getHDFSDataOutputStream(String filename, boolean overwrite) 
 		throws IOException
 	{

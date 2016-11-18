@@ -229,12 +229,7 @@ public class MVImputeAgent extends Encoder
 			}
 		}
 	}
-	
-	/**
-	 * 
-	 * @param parsedSpec
-	 * @throws JSONException
-	 */
+
 	private void parseMethodsAndReplacments(JSONObject parsedSpec) throws JSONException {
 		JSONArray mvspec = (JSONArray) parsedSpec.get(TfUtils.TXMETHOD_IMPUTE);
 		_mvMethodList = new MVMethod[mvspec.size()];
@@ -447,9 +442,6 @@ public class MVImputeAgent extends Encoder
 	/**
 	 * Method to output transformation metadata from the mappers. 
 	 * This information is collected and merged by the reducers.
-	 * 
-	 * @param out
-	 * @throws IOException
 	 */
 	@Override
 	public void mapOutputTransformationMetadata(OutputCollector<IntWritable, DistinctValue> out, int taskID, TfUtils agents) throws IOException {
@@ -496,12 +488,11 @@ public class MVImputeAgent extends Encoder
 	 * Applicable when running on SPARK.
 	 * Helper function to output transformation metadata into shuffle.
 	 * 
-	 * @param iw
-	 * @param dv
-	 * @param list
-	 * @throws IOException
+	 * @param iw integer value
+	 * @param dv distinct value
+	 * @param list list of integer-distinct value pairs
+	 * @throws IOException if IOException occurs
 	 */
-	
 	private void addDV(Integer iw, DistinctValue dv, ArrayList<Pair<Integer, DistinctValue>> list) throws IOException {
 		if ( dv != null )	
 			list.add( new Pair<Integer, DistinctValue>(iw, dv) );	
@@ -638,11 +629,7 @@ public class MVImputeAgent extends Encoder
 	}
 	
 	/** 
-	 * Method to merge map output transformation metadata.
-	 * 
-	 * @param values
-	 * @return
-	 * @throws IOException 
+	 * Method to merge map output transformation metadata. 
 	 */
 	@Override
 	public void mergeAndOutputTransformationMetadata(Iterator<DistinctValue> values, String outputDir, int colID, FileSystem fs, TfUtils agents) throws IOException {
@@ -872,9 +859,6 @@ public class MVImputeAgent extends Encoder
 
 	/**
 	 * Method to load transform metadata for all attributes
-	 * 
-	 * @param job
-	 * @throws IOException
 	 */
 	@Override
 	public void loadTxMtd(JobConf job, FileSystem fs, Path tfMtdDir, TfUtils agents) throws IOException {
@@ -1027,12 +1011,7 @@ public class MVImputeAgent extends Encoder
 		}
 		return out;
 	}
-	
-	/**
-	 * 
-	 * @param meta
-	 * @param rcList
-	 */
+
 	public void initMetaData(FrameBlock meta) {
 		//init replacement lists, replace recoded values to
 		//apply mv imputation potentially after recoding
@@ -1050,11 +1029,7 @@ public class MVImputeAgent extends Encoder
 			}
 		}
 	}
-	
-	/**
-	 * 
-	 * @param rcList
-	 */
+
 	public void initRecodeIDList(List<Integer> rcList) {
 		_rcList = rcList;
 	}
@@ -1062,8 +1037,8 @@ public class MVImputeAgent extends Encoder
 	/**
 	 * Exposes the internal histogram after build.
 	 * 
-	 * @param colID
-	 * @return
+	 * @param colID column ID
+	 * @return histogram (map of string keys and long values)
 	 */
 	public HashMap<String,Long> getHistogram( int colID ) {
 		return _hist.get(colID);

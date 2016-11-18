@@ -30,13 +30,7 @@ import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
  */
 public class SortUtils 
 {
-	/**
-	 * 
-	 * @param start
-	 * @param end
-	 * @param indexes
-	 * @return
-	 */
+
 	public static boolean isSorted(int start, int end, int[] indexes)
 	{
 		boolean ret = true;
@@ -47,15 +41,7 @@ public class SortUtils
     		}
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @param iStart
-	 * @param iEnd
-	 * @param dVals
-	 * 
-	 * @return true/false, if its sorted or not.
-	 */
+
 	public static boolean isSorted(int iStart, int iEnd, double[] dVals)
 	{
 		boolean ret = true;
@@ -71,10 +57,10 @@ public class SortUtils
 	 * In-place sort of two arrays, only indexes is used for comparison and values
 	 * of same position are sorted accordingly. 
 	 * 
-     * @param start
-     * @param end
-     * @param indexes
-     * @param values
+     * @param start starting index
+     * @param end ending index
+     * @param indexes array of indexes to sort by
+     * @param values double array of values to sort
      */
     public static void sortByIndex(int start, int end, int[] indexes, double[] values) 
     {
@@ -180,10 +166,11 @@ public class SortUtils
 	 * In-place sort of three arrays, only first indexes is used for comparison and second
 	 * indexes as well as values of same position are sorted accordingly. 
 	 * 
-     * @param start
-     * @param end
-     * @param indexes
-     * @param values
+     * @param start starting index
+     * @param end ending index
+     * @param indexes ?
+     * @param indexes2 ?
+     * @param values ?
      */
     public static void sortByIndex(int start, int end, int[] indexes, int[] indexes2, double[] values) 
     {
@@ -303,13 +290,6 @@ public class SortUtils
         }
     }
 
-    /**
-     * 
-     * @param start
-     * @param end
-     * @param values
-     * @param valuesXXX
-     */
     public static void sortByValue(int start, int end, double[] values, int[] indexes) 
     {
         double tempVal;
@@ -415,10 +395,10 @@ public class SortUtils
 	 * In-place sort of two arrays, only indexes is used for comparison and values
 	 * of same position are sorted accordingly. 
 	 * 
-     * @param start
-     * @param end
-     * @param indexes
-     * @param values
+     * @param start start index
+     * @param end end index
+     * @param values double array of values to sort
+     * @param indexes int array of indexes to sort by
      */
     public static void sortByValueStable(int start, int end, double[] values, int[] indexes) 
     {    
@@ -440,31 +420,13 @@ public class SortUtils
 		}
     }
 
-      
-    
-    /**
-     * 
-     * @param array
-     * @param a
-     * @param b
-     * @param c
-     * @return
-     */
     private static int med3(int[] array, int a, int b, int c) 
     {
         int x = array[a], y = array[b], z = array[c];
         return x < y ? (y < z ? b : (x < z ? c : a)) : (y > z ? b : (x > z ? c
                 : a));
     }
-    
-    /**
-     * 
-     * @param array
-     * @param a
-     * @param b
-     * @param c
-     * @return
-     */
+
     private static int med3(double[] array, int a, int b, int c) 
     {
         double x = array[a], y = array[b], z = array[c];

@@ -61,9 +61,9 @@ public class UtilFunctions
 	 * Returns the hash code for a long-long pair. This is the default
 	 * hash function for the keys of a distributed matrix in MR/Spark.
 	 * 
-	 * @param key1
-	 * @param key2
-	 * @return
+	 * @param key1 first long key
+	 * @param key2 second long key
+	 * @return hash code
 	 */
 	public static int longlongHashCode(long key1, long key2) {
 		//basic hash mixing of two longs hashes (similar to
@@ -82,9 +82,9 @@ public class UtilFunctions
 	 * Computes the 1-based block index based on the global cell index and block size meta
 	 * data. See computeCellIndex for the inverse operation.
 	 * 
-	 * @param cellIndex
-	 * @param blockSize
-	 * @return
+	 * @param cellIndex global cell index
+	 * @param blockSize block size
+	 * @return 1-based block index
 	 */
 	public static long computeBlockIndex(long cellIndex, int blockSize) {
 		return (cellIndex-1)/blockSize + 1;
@@ -94,9 +94,9 @@ public class UtilFunctions
 	 * Computes the 0-based cell-in-block index based on the global cell index and block
 	 * size meta data. See computeCellIndex for the inverse operation.
 	 * 
-	 * @param cellIndex
-	 * @param blockSize
-	 * @return
+	 * @param cellIndex global cell index
+	 * @param blockSize block size
+	 * @return 0-based cell-in-block index
 	 */
 	public static int computeCellInBlock(long cellIndex, int blockSize) {
 		return (int) ((cellIndex-1)%blockSize);
@@ -108,10 +108,10 @@ public class UtilFunctions
 	 * 
 	 * NOTE: this is equivalent to cellIndexCalculation.
 	 * 
-	 * @param blockIndex
-	 * @param blockSize
-	 * @param cellInBlock
-	 * @return
+	 * @param blockIndex block index
+	 * @param blockSize block size
+	 * @param cellInBlock 0-based cell-in-block index
+	 * @return global 1-based cell index
 	 */
 	public static long computeCellIndex( long blockIndex, int blockSize, int cellInBlock ) {
 		return (blockIndex-1)*blockSize + 1 + cellInBlock;
@@ -122,10 +122,10 @@ public class UtilFunctions
 	 * meta data. For boundary blocks, the actual block size is less or equal than the block 
 	 * size meta data; otherwise they are identical.  
 	 *  
-	 * @param len
-	 * @param blockIndex
-	 * @param blockSize
-	 * @return
+	 * @param len matrix dimension
+	 * @param blockIndex block index
+	 * @param blockSize block size metadata
+	 * @return actual block size
 	 */
 	public static int computeBlockSize( long len, long blockIndex, long blockSize ) {
 		long remain = len - (blockIndex-1)*blockSize;
@@ -142,18 +142,7 @@ public class UtilFunctions
 	{
 		return (point>=s && point<=f);
 	}
-	
-	/**
-	 * 
-	 * @param ix
-	 * @param brlen
-	 * @param bclen
-	 * @param rl
-	 * @param ru
-	 * @param cl
-	 * @param cu
-	 * @return
-	 */
+
 	public static boolean isInBlockRange( MatrixIndexes ix, int brlen, int bclen, long rl, long ru, long cl, long cu )
 	{
 		long bRLowerIndex = (ix.getRowIndex()-1)*brlen + 1;
@@ -171,16 +160,7 @@ public class UtilFunctions
 			return true;
 		}
 	}
-	
-	/**
-	 * 
-	 * @param ix
-	 * @param brlen
-	 * @param bclen
-	 * @param rl
-	 * @param ru
-	 * @return
-	 */
+
 	public static boolean isInFrameBlockRange( Long ix, int brlen, long rl, long ru )
 	{
 		if(rl > ix+brlen-1 || ru < ix)
@@ -188,30 +168,14 @@ public class UtilFunctions
 		else
 			return true;
 	}
-	
-	/**
-	 * 
-	 * @param ix
-	 * @param brlen
-	 * @param bclen
-	 * @param ixrange
-	 * @return
-	 */
+
 	public static boolean isInBlockRange( MatrixIndexes ix, int brlen, int bclen, IndexRange ixrange )
 	{
 		return isInBlockRange(ix, brlen, bclen, 
 				ixrange.rowStart, ixrange.rowEnd, 
 				ixrange.colStart, ixrange.colEnd);
 	}
-	
-	/**
-	 * 
-	 * @param ix
-	 * @param brlen
-	 * @param bclen
-	 * @param ixrange
-	 * @return
-	 */
+
 	public static boolean isInFrameBlockRange( Long ix, int brlen, int bclen, IndexRange ixrange )
 	{
 		return isInFrameBlockRange(ix, brlen, ixrange.rowStart, ixrange.rowEnd);
@@ -289,10 +253,10 @@ public class UtilFunctions
 
 	/**
 	 * JDK8 floating decimal double parsing, which is generally faster
-	 * than <JDK8 parseDouble and works well in multi-threaded tasks.
+	 * than &lt;JDK8 parseDouble and works well in multi-threaded tasks.
 	 * 
-	 * @param str
-	 * @return
+	 * @param str string to parse to double
+	 * @return double value
 	 */
 	public static double parseToDouble(String str)
 	{
@@ -344,23 +308,10 @@ public class UtilFunctions
 		return ((pval + factor-1) / factor) * factor;
 	}
 
-	/**
-	 * 
-	 * @param vt
-	 * @param in
-	 * @return
-	 */
 	public static Object doubleToObject(ValueType vt, double in) {
 		return doubleToObject(vt, in, true);
 	}
-	
-	/**
-	 * 
-	 * @param vt
-	 * @param in
-	 * @param sparse
-	 * @return
-	 */
+
 	public static Object doubleToObject(ValueType vt, double in, boolean sparse) {
 		if( in == 0 && sparse) return null;
 		switch( vt ) {
@@ -371,13 +322,7 @@ public class UtilFunctions
 			default: throw new RuntimeException("Unsupported value type: "+vt);
 		}
 	}
-	
-	/**
-	 * 
-	 * @param vt
-	 * @param in
-	 * @return
-	 */
+
 	public static Object stringToObject(ValueType vt, String in) {
 		if( in == null )  return null;
 		switch( vt ) {
@@ -388,13 +333,7 @@ public class UtilFunctions
 			default: throw new RuntimeException("Unsupported value type: "+vt);
 		}
 	}
-	
-	/**
-	 * 
-	 * @param vt
-	 * @param in
-	 * @return
-	 */
+
 	public static double objectToDouble(ValueType vt, Object in) {
 		if( in == null )  return 0;
 		switch( vt ) {
@@ -405,22 +344,17 @@ public class UtilFunctions
 			default: throw new RuntimeException("Unsupported value type: "+vt);
 		}
 	}
-	
-	/**
-	 * 
-	 * @param in
-	 * @return
-	 */
+
 	public static String objectToString( Object in ) {
 		return (in !=null) ? in.toString() : null;
 	}
 	
 	/**
+	 * Convert object to string
 	 * 
-	 * @param in
-	 * @param ignoreNull	
-	 * 		If this flag has set, it will ignore null. This flag is mainly used in merge functionality to override data with "null" data.
-	 * @return
+	 * @param in object
+	 * @param ignoreNull If this flag has set, it will ignore null. This flag is mainly used in merge functionality to override data with "null" data.
+	 * @return string representation of object
 	 */
 	public static String objectToString( Object in, boolean ignoreNull ) {
 		String strReturn = objectToString(in); 
@@ -441,13 +375,7 @@ public class UtilFunctions
 		else
 			return strReturn;
 	}
-	
-	/**
-	 * 
-	 * @param vt
-	 * @param in
-	 * @return
-	 */
+
 	public static Object objectToObject(ValueType vt, Object in) {
 		if( in instanceof Double && vt == ValueType.DOUBLE 
 			|| in instanceof Long && vt == ValueType.INT
@@ -457,13 +385,7 @@ public class UtilFunctions
 		else
 			return stringToObject(vt, objectToString(in) );
 	}
-	
-	/**
-	 * 
-	 * @param vt
-	 * @param in
-	 * @return
-	 */
+
 	public static Object objectToObject(ValueType vt, Object in, boolean ignoreNull ) {
 		String str = objectToString(in, ignoreNull);
 		if (str==null || vt == ValueType.STRING)
@@ -471,15 +393,7 @@ public class UtilFunctions
 		else
 			return stringToObject(vt, str); 
 	}	
-	
-	/**
-	 * 
-	 * @param vt
-	 * @param in1
-	 * @param in2
-	 * 
-	 * @return
-	 */
+
 	public static int compareTo(ValueType vt, Object in1, Object in2) {
 		if(in1 == null && in2 == null) return 0;
 		else if(in1 == null) return -1;
@@ -498,9 +412,9 @@ public class UtilFunctions
 	 * Compares two version strings of format x.y.z, where x is major,
 	 * y is minor, and z is maintenance release.
 	 * 
-	 * @param version1
-	 * @param version2
-	 * @return
+	 * @param version1 first version string
+	 * @param version2 second version string
+	 * @return 1 if version1 greater, -1 if version2 greater, 0 if equal
 	 */
 	public static int compareVersion( String version1, String version2 ) {
 		String[] partsv1 = version1.split("\\.");
@@ -569,8 +483,8 @@ public class UtilFunctions
 	 * Parses a memory size with optional g/m/k quantifiers into its
 	 * number representation.
 	 * 
-	 * @param arg
-	 * @return
+	 * @param arg memory size as readable string
+	 * @return byte count of memory size
 	 */
 	public static long parseMemorySize(String arg) {
 		if ( arg.endsWith("g") || arg.endsWith("G") )
@@ -587,8 +501,8 @@ public class UtilFunctions
 	 * Format a memory size with g/m/k quantifiers into its
 	 * number representation.
 	 * 
-	 * @param arg
-	 * @return
+	 * @param arg byte count of memory size
+	 * @return memory size as readable string
 	 */
 	public static String formatMemorySize(long arg) {
 		if (arg >= 1024 * 1024 * 1024)
@@ -602,11 +516,12 @@ public class UtilFunctions
 	}
 	
 	/**
+	 * Obtain sequence list
 	 * 
 	 * @param low   lower bound (inclusive)
 	 * @param up    upper bound (inclusive)
 	 * @param incr  increment 
-	 * @return
+	 * @return list of integers
 	 */
 	public static List<Integer> getSequenceList(int low, int up, int incr) {
 		ArrayList<Integer> ret = new ArrayList<Integer>();
@@ -618,8 +533,8 @@ public class UtilFunctions
 	/**
 	 * Returns the schema based on Json object
 	 * 
-	 * @param schemaObject
-	 * @return
+	 * @param schemaObject schema object
+	 * @return schema as a list of value types
 	 */
 	public static List<ValueType> getSchemaType(Object schemaObject)
 	{
@@ -634,8 +549,9 @@ public class UtilFunctions
 	/**
 	 * This function will return datatype, if its Matrix or Frame
 	 * 
-	 *  @param	str
-	 *  		Instruction string to execute
+	 * @param str Instruction string to execute
+	 * @param index parts index
+	 * @return data type
 	 */
 	public static DataType getDataType(String str, int index)
 	{
@@ -644,22 +560,12 @@ public class UtilFunctions
 	
 		return in1.getDataType();
 	}
-	
-	/**
-	 * 
-	 * @param obj
-	 * @return
-	 */
+
 	public static double getDouble(Object obj) {
 		return (obj instanceof Double) ? (Double)obj :
 			Double.parseDouble(obj.toString());
 	}
-	
-	/**
-	 * 
-	 * @param obj
-	 * @return
-	 */
+
 	public static boolean isNonZero(Object obj) {
 		if( obj instanceof Double ) 
 			return ((Double) obj) != 0;
@@ -669,38 +575,20 @@ public class UtilFunctions
 			return (!sobj.equals("0") && !sobj.equals("0.0"));
 		}
 	}
-	
-	/**
-	 * 
-	 * @param n
-	 * @param vt
-	 * @return
-	 */
+
 	public static ValueType[] nCopies(int n, ValueType vt) {
 		ValueType[] ret = new ValueType[n];
 		Arrays.fill(ret, vt);
 		return ret;
 	}
 
-	/**
-	 * 
-	 * @param schema
-	 * @param vt
-	 * @return
-	 */
 	public static int frequency(ValueType[] schema, ValueType vt) {
 		int count = 0;
 		for( ValueType tmp : schema )
 			count += tmp.equals(vt) ? 1 : 0;
 		return count;
 	}
-	
-	/**
-	 * 
-	 * @param schema1
-	 * @param schema2
-	 * @return
-	 */
+
 	public static ValueType[] copyOf(ValueType[] schema1, ValueType[] schema2) {
 		return (ValueType[]) ArrayUtils.addAll(schema1, schema2);
 	}

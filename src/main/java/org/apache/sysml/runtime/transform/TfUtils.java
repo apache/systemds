@@ -225,8 +225,8 @@ public class TfUtils implements Serializable{
 	/**
 	 * Prepare NA strings so that they can be sent to workers via JobConf.
 	 * A "dummy" string is added at the end to handle the case of empty strings.
-	 * @param na
-	 * @return
+	 * @param na NA string
+	 * @return NA string concatenated with NA string separator concatenated with "dummy"
 	 */
 	public static String prepNAStrings(String na) {
 		return na  + DataExpression.DELIM_NA_STRING_SEP + "dummy";
@@ -327,8 +327,9 @@ public class TfUtils implements Serializable{
 	/**
 	 * Function that checks if the given string is one of NA strings.
 	 * 
-	 * @param w
-	 * @return
+	 * @param NAstrings array of NA strings
+	 * @param w string to check
+	 * @return true if w is a NAstring
 	 */
 	public static boolean isNA(String[] NAstrings, String w) {
 		if(NAstrings == null)
@@ -353,9 +354,9 @@ public class TfUtils implements Serializable{
 	/**
 	 * Process a given row to construct transformation metadata.
 	 * 
-	 * @param line
-	 * @return
-	 * @throws IOException
+	 * @param line string to break into words
+	 * @return string array of words from the line
+	 * @throws IOException if IOException occurs
 	 */
 	public String[] prepareTfMtd(String line) throws IOException {
 		String[] words = getWords(line);
@@ -431,9 +432,8 @@ public class TfUtils implements Serializable{
 	/**
 	 * Function to apply transformation metadata on a given row.
 	 * 
-	 * @param words
-	 * @param optimizeMaps
-	 * @return
+	 * @param words string array of words
+	 * @return string array of transformed words
 	 */
 	public String[] apply( String[] words ) {
 		words = getMVImputeAgent().apply(words);
@@ -535,6 +535,10 @@ public class TfUtils implements Serializable{
 	 * counters/offsets file, which was generated from either GenTfMtdMR
 	 * or AssignRowIDMR job.
 	 * 
+	 * @param job job configuration
+	 * @param offset file offset
+	 * @return part file id (ie, 00001, 00002, etc)
+	 * @throws IOException if IOException occurs
 	 */
 	public String getPartFileID(JobConf job, long offset) throws IOException
 	{

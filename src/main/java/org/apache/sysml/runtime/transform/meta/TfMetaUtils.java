@@ -50,12 +50,7 @@ import org.apache.wink.json4j.JSONObject;
 
 public class TfMetaUtils 
 {
-	/**
-	 * 
-	 * @param spec
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static boolean isIDSpecification(String spec) throws DMLRuntimeException {
 		try {
 			JSONObject jSpec = new JSONObject(spec);
@@ -65,26 +60,11 @@ public class TfMetaUtils
 			throw new DMLRuntimeException(ex);
 		}
 	}
-	
-	/**
-	 * 
-	 * @param spec
-	 * @param colnames
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static boolean containsOmitSpec(String spec, String[] colnames) throws DMLRuntimeException {
 		return (TfMetaUtils.parseJsonIDList(spec, colnames, TfUtils.TXMETHOD_OMIT).length > 0);	
 	}
-	
-	/**
-	 * 
-	 * @param spec
-	 * @param colnames
-	 * @param group
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static int[] parseJsonIDList(String spec, String[] colnames, String group) 
 		throws DMLRuntimeException 
 	{
@@ -100,11 +80,11 @@ public class TfMetaUtils
 	/**
 	 * TODO consolidate external and internal json spec definitions
 	 * 
-	 * @param spec
-	 * @param colnames
-	 * @param group
-	 * @return
-	 * @throws JSONException
+	 * @param spec transform specification as json string
+	 * @param colnames column names
+	 * @param group ?
+	 * @return list of column ids
+	 * @throws JSONException if JSONException occurs
 	 */
 	public static int[] parseJsonIDList(JSONObject spec, String[] colnames, String group) 
 		throws JSONException
@@ -139,14 +119,7 @@ public class TfMetaUtils
 		
 		return colList;
 	}
-	
-	/**
-	 * 
-	 * @param spec
-	 * @param group
-	 * @return
-	 * @throws JSONException
-	 */
+
 	public static int[] parseJsonObjectIDList(JSONObject spec, String[] colnames, String group) 
 		throws JSONException
 	{
@@ -181,8 +154,8 @@ public class TfMetaUtils
 	 * @param spec      transform specification as json string
 	 * @param metapath  hdfs file path to meta data directory
 	 * @param colDelim  separator for processing column names in the meta data file 'column.names'
-	 * @return FrameBlock object representing transform metadata
-	 * @throws IOException
+	 * @return frame block
+	 * @throws IOException if IOException occurs
 	 */
 	public static FrameBlock readTransformMetaDataFromFile(String spec, String metapath, String colDelim) 
 		throws IOException 
@@ -235,8 +208,8 @@ public class TfMetaUtils
 	 * @param spec      transform specification as json string
 	 * @param metapath  resource path to meta data directory
 	 * @param colDelim  separator for processing column names in the meta data file 'column.names'
-	 * @return FrameBlock object representing transform metadata
-	 * @throws IOException
+	 * @return frame block
+	 * @throws IOException if IOException occurs
 	 */
 	public static FrameBlock readTransformMetaDataFromPath(String spec, String metapath, String colDelim) 
 		throws IOException 
@@ -286,12 +259,14 @@ public class TfMetaUtils
 	/**
 	 * Converts transform meta data into an in-memory FrameBlock object.
 	 * 
-	 * @param rows
-	 * @param recodeIDs
-	 * @param colnames
-	 * @param meta
-	 * @return
-	 * @throws IOException
+	 * @param rows number of rows
+	 * @param colnames column names
+	 * @param rcIDs recode IDs
+	 * @param binIDs binning IDs
+	 * @param meta ?
+	 * @param mvmeta ?
+	 * @return frame block
+	 * @throws IOException if IOException occurs
 	 */
 	private static FrameBlock convertToTransformMetaDataFrame(int rows, String[] colnames, List<Integer> rcIDs, List<Integer> binIDs, 
 			HashMap<String,String> meta, HashMap<String,String> mvmeta) 
@@ -354,10 +329,10 @@ public class TfMetaUtils
 	 * Parses the given json specification and extracts a list of column ids
 	 * that are subject to recoding.
 	 * 
-	 * @param spec
-	 * @param coltypes
-	 * @return
-	 * @throws IOException
+	 * @param spec transform specification as json string
+	 * @param colnames column names
+	 * @return list of column ids
+	 * @throws IOException if IOException occurs
 	 */
 	@SuppressWarnings("unchecked")
 	private static List<Integer> parseRecodeColIDs(String spec, String[] colnames) 
@@ -383,13 +358,7 @@ public class TfMetaUtils
 		
 		return specRecodeIDs;
 	}
-	
-	/**
-	 * 
-	 * @param spec
-	 * @return
-	 * @throws IOException
-	 */
+
 	public static List<Integer> parseBinningColIDs(String spec, String[] colnames) 
 		throws IOException 
 	{
@@ -401,13 +370,7 @@ public class TfMetaUtils
 			throw new IOException(ex);
 		}
 	}
-	
-	/**
-	 * 
-	 * @param jSpec
-	 * @return
-	 * @throws IOException
-	 */
+
 	public static List<Integer> parseBinningColIDs(JSONObject jSpec, String[] colnames) 
 		throws IOException 
 	{

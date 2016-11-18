@@ -28,10 +28,6 @@ import java.io.InputStream;
 import org.apache.sysml.runtime.matrix.data.MatrixBlockDataInput;
 import org.apache.sysml.runtime.matrix.data.SparseBlock;
 
-/**
- * 
- * 
- */
 public class FastBufferedDataInputStream extends FilterInputStream implements DataInput, MatrixBlockDataInput
 {
 	
@@ -251,13 +247,7 @@ public class FastBufferedDataInputStream extends FilterInputStream implements Da
 		
 		return nnz;
 	}
-	
-	/**
-	 * 
-	 * @param a
-	 * @param off
-	 * @return
-	 */
+
 	private static int baToInt( byte[] ba, final int off )
 	{
 		//shift and add 4 bytes into single int
@@ -266,13 +256,7 @@ public class FastBufferedDataInputStream extends FilterInputStream implements Da
 			   ((ba[off+2] & 0xFF) <<  8) +
 			   ((ba[off+3] & 0xFF) <<  0);
 	}
-	
-	/**
-	 * 
-	 * @param a
-	 * @param off
-	 * @return
-	 */
+
 	private static long baToLong( byte[] ba, final int off )
 	{
 		//shift and add 8 bytes into single long

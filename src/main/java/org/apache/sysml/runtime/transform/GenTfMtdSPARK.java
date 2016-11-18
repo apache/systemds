@@ -51,6 +51,20 @@ public class GenTfMtdSPARK
 	 * Spark code to Generate Transform Metadata based on the given transformation
 	 * specification file (JSON format).
 	 * 
+	 * @param sec spark execution context
+	 * @param inputRDD input rdd
+	 * @param tfMtdPath transform metadata path
+	 * @param spec JSON transform specification
+	 * @param partOffsetsFile ?
+	 * @param prop csv file format properties
+	 * @param numCols number of columns
+	 * @param headerLine header line
+	 * @return number of rows
+	 * @throws IOException if IOException occurs
+	 * @throws ClassNotFoundException if ClassNotFoundException occurs
+	 * @throws InterruptedException if InterruptedException occurs
+	 * @throws IllegalArgumentException if IllegalArgumentException occurs
+	 * @throws JSONException if JSONException occurs
 	 */
 	public static long runSparkJob(SparkExecutionContext sec, JavaRDD<Tuple2<LongWritable, Text>> inputRDD, 
 									String tfMtdPath, String spec, String partOffsetsFile, 
@@ -213,12 +227,7 @@ public class GenTfMtdSPARK
 			return numRows;
 		}
 	}
-	
-	/**
-	 * 
-	 * @param in
-	 * @return
-	 */
+
 	public static List<Tuple2<Integer,DistinctValue>> toTuple2List(List<Pair<Integer,DistinctValue>> in) {
 		ArrayList<Tuple2<Integer,DistinctValue>> ret = new ArrayList<Tuple2<Integer,DistinctValue>>();
 		for( Pair<Integer,DistinctValue> e : in )

@@ -41,11 +41,7 @@ public abstract class Decoder implements Serializable
 		_schema = schema;
 		_colList = colList;
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public ValueType[] getSchema() {
 		return _schema;
 	}
@@ -53,16 +49,12 @@ public abstract class Decoder implements Serializable
 	/**
 	 * Block decode API converting a matrix block into a frame block.
 	 * 
-	 * @param in
-	 * @param out
+	 * @param in input matrix block
+	 * @param out output frame block
 	 * 
 	 * @return returns given output frame block for convenience
 	 */
 	public abstract FrameBlock decode(MatrixBlock in, FrameBlock out);
-	
-	/**
-	 * 
-	 * @param meta
-	 */
+
 	public abstract void initMetaData(FrameBlock meta);
 }

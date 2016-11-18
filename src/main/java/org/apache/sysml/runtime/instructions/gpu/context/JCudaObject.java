@@ -467,8 +467,8 @@ public class JCudaObject extends GPUObject {
 	/**
 	 * Convenience method for {@link #allocate(long, int)}, defaults statsCount to 1.
 	 * @param size size of data (in bytes) to allocate
-	 * @return
-	 * @throws DMLRuntimeException
+	 * @return jcuda pointer
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static Pointer allocate(long size) throws DMLRuntimeException {
 		return allocate(size, 1);

@@ -73,14 +73,7 @@ public class BinAgent extends Encoder
 	{
 		this(parsedSpec, colnames, clen, false);
 	}
-	
-	/**
-	 * 
-	 * @param parsedSpec
-	 * @param clen
-	 * @throws JSONException
-	 * @throws IOException 
-	 */
+
 	public BinAgent(JSONObject parsedSpec, String[] colnames, int clen, boolean colsOnly) 
 		throws JSONException, IOException 
 	{
@@ -157,9 +150,6 @@ public class BinAgent extends Encoder
 	/**
 	 * Method to output transformation metadata from the mappers. 
 	 * This information is collected and merged by the reducers.
-	 * 
-	 * @param out
-	 * @throws IOException
 	 */
 	@Override
 	public void mapOutputTransformationMetadata(OutputCollector<IntWritable, DistinctValue> out, int taskID, TfUtils agents) throws IOException {
@@ -209,10 +199,6 @@ public class BinAgent extends Encoder
 
 	/** 
 	 * Method to merge map output transformation metadata.
-	 * 
-	 * @param values
-	 * @return
-	 * @throws IOException 
 	 */
 	@Override
 	public void mergeAndOutputTransformationMetadata(Iterator<DistinctValue> values, String outputDir, int colID, FileSystem fs, TfUtils agents) throws IOException {
@@ -278,9 +264,6 @@ public class BinAgent extends Encoder
 
 	/**
 	 * Method to load transform metadata for all attributes
-	 * 
-	 * @param job
-	 * @throws IOException
 	 */
 	@Override
 	public void loadTxMtd(JobConf job, FileSystem fs, Path txMtdDir, TfUtils agents) throws IOException {
@@ -329,9 +312,6 @@ public class BinAgent extends Encoder
 	
 	/**
 	 * Method to apply transformations.
-	 * 
-	 * @param words
-	 * @return
 	 */
 	@Override
 	public String[] apply(String[] words) {

@@ -36,14 +36,7 @@ import org.apache.wink.json4j.JSONObject;
 
 public class DecoderFactory 
 {
-	/**
-	 * 
-	 * @param spec
-	 * @param schema
-	 * @param meta
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	@SuppressWarnings("unchecked")
 	public static Decoder createDecoder(String spec, String[] colnames, ValueType[] schema, FrameBlock meta) 
 		throws DMLRuntimeException 

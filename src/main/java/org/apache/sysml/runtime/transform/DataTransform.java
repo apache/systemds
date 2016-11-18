@@ -90,11 +90,11 @@ public class DataTransform
 	/**
 	 * Method to read the header line from the input data file.
 	 * 
-	 * @param fs
-	 * @param prop
-	 * @param smallestFile
-	 * @return
-	 * @throws IOException
+	 * @param fs file system
+	 * @param prop csv file format properties
+	 * @param smallestFile file name
+	 * @return header line
+	 * @throws IOException if IOException occurs
 	 */
 	private static String readHeaderLine(FileSystem fs, CSVFileFormatProperties prop, String smallestFile) throws IOException {
 		String line = null;
@@ -125,13 +125,13 @@ public class DataTransform
 	 * corresponding column IDs. The mapping is used to prepare the
 	 * specification file in <code>processSpecFile()</code>.
 	 * 
-	 * @param fs
-	 * @param prop
-	 * @param headerLine
-	 * @param smallestFile
-	 * @return
-	 * @throws IllegalArgumentException
-	 * @throws IOException
+	 * @param fs file system
+	 * @param prop csv file format properties
+	 * @param headerLine header line
+	 * @param smallestFile file name
+	 * @return map of column names and their column IDs
+	 * @throws IllegalArgumentException if IllegalArgumentException occurs
+	 * @throws IOException if IOException occurs
 	 */
 	private static HashMap<String, Integer> processColumnNames(FileSystem fs, CSVFileFormatProperties prop, String headerLine, String smallestFile) throws IllegalArgumentException, IOException {
 		HashMap<String, Integer> colNames = new HashMap<String,Integer>();
@@ -150,10 +150,10 @@ public class DataTransform
 	 * In-place permutation of list, mthd, and cst arrays based on indices,
 	 * by navigating through cycles in the permutation. 
 	 * 
-	 * @param list
-	 * @param mthd
-	 * @param cst
-	 * @param indices
+	 * @param list ?
+	 * @param mthd ?
+	 * @param cst ?
+	 * @param indices ?
 	 */
 	private static void inplacePermute(int[] list, byte[] mthd, Object[] cst, Integer[] indices) 
 	{
@@ -193,16 +193,16 @@ public class DataTransform
 	 * specification with corresponding column Ids. This file is sent to all the
 	 * relevant MR jobs.
 	 * 
-	 * @param fs
-	 * @param inputPath
-	 * @param smallestFile
-	 * @param colNames
-	 * @param prop
-	 * @param specFileWithNames
-	 * @return
-	 * @throws IllegalArgumentException
-	 * @throws IOException
-	 * @throws JSONException 
+	 * @param fs file system
+	 * @param inputPath input file path
+	 * @param smallestFile file name
+	 * @param colNames column names
+	 * @param prop csv file format properties
+	 * @param specFileWithNames ?
+	 * @return specification as a JSONObject
+	 * @throws IllegalArgumentException if IllegalArgumentException occurs
+	 * @throws IOException if IOException occurs
+	 * @throws JSONException if JSONException occurs
 	 */
 	private static String processSpecFile(FileSystem fs, String inputPath, String smallestFile, HashMap<String,Integer> colNames, CSVFileFormatProperties prop, String specWithNames) throws IllegalArgumentException, IOException, JSONException {
 		JSONObject inputSpec = new JSONObject(specWithNames);
@@ -621,11 +621,11 @@ public class DataTransform
 	 * temporary location, then MR tasks fail due to changing timestamps on
 	 * txMtdPath.
 	 * 
-	 * @param fs
-	 * @param tmpPath
-	 * @param txMtdPath
-	 * @throws IllegalArgumentException
-	 * @throws IOException
+	 * @param fs file system
+	 * @param tmpPath temporary location (directory) of transformation metadata files
+	 * @param txMtdPath directory where to place transformation metadata files
+	 * @throws IllegalArgumentException if IllegalArgumentException occurs
+	 * @throws IOException if IOException occurs
 	 */
 	private static void moveFilesFromTmp(FileSystem fs, String tmpPath, String txMtdPath) throws IllegalArgumentException, IOException 
 	{
@@ -646,15 +646,15 @@ public class DataTransform
 	 * Helper function to determine the number of columns after applying
 	 * transformations. Note that dummycoding changes the number of columns.
 	 * 
-	 * @param fs
-	 * @param header
-	 * @param delim
-	 * @param tfMtdPath
-	 * @return
-	 * @throws IllegalArgumentException
-	 * @throws IOException
-	 * @throws DMLRuntimeException
-	 * @throws JSONException 
+	 * @param fs file system
+	 * @param header header line
+	 * @param delim delimiter
+	 * @param tfMtdPath transform metadata path
+	 * @return number of columns after applying transformations
+	 * @throws IllegalArgumentException if IllegalArgumentException occurs
+	 * @throws IOException if IOException occurs
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
+	 * @throws JSONException  if JSONException occurs
 	 */
 	private static int getNumColumnsTf(FileSystem fs, String header, String delim, String tfMtdPath) throws IllegalArgumentException, IOException, DMLRuntimeException, JSONException {
 		String[] columnNames = Pattern.compile(Pattern.quote(delim)).split(header, -1);
@@ -702,16 +702,16 @@ public class DataTransform
 	/**
 	 * Main method to create and/or apply transformation metdata using MapReduce.
 	 * 
-	 * @param jobinst
-	 * @param inputMatrices
-	 * @param shuffleInst
-	 * @param otherInst
-	 * @param resultIndices
-	 * @param outputMatrices
-	 * @param numReducers
-	 * @param replication
-	 * @return
-	 * @throws Exception
+	 * @param jobinst MR job instruction
+	 * @param inputs array of input matrices
+	 * @param shuffleInst shuffle instructions
+	 * @param otherInst other instructions
+	 * @param resultIndices byte array of result indices
+	 * @param outputs array of output matrices
+	 * @param numReducers number of reducers
+	 * @param replication ?
+	 * @return MR job result
+	 * @throws Exception if IOException occurs
 	 */
 	public static JobReturn mrDataTransform(MRJobInstruction jobinst, MatrixObject[] inputs, String shuffleInst, String otherInst, byte[] resultIndices, MatrixObject[] outputs, int numReducers, int replication) throws Exception {
 		
@@ -959,14 +959,14 @@ public class DataTransform
 	 * Main method to create and/or apply transformation metdata in-memory, on a
 	 * single node.
 	 * 
-	 * @param inst
-	 * @param inputMatrices
-	 * @param outputMatrices
-	 * @return
-	 * @throws IOException
-	 * @throws DMLRuntimeException 
-	 * @throws JSONException 
-	 * @throws IllegalArgumentException 
+	 * @param inst parameterized built-in CP instruction
+	 * @param inputs array of input data
+	 * @param outputs array of output matrices
+	 * @return MR job result
+	 * @throws IOException if IOException occurs
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
+	 * @throws IllegalArgumentException if IllegalArgumentException occurs
+	 * @throws JSONException if JSONException occurs
 	 */
 	public static JobReturn cpDataTransform(ParameterizedBuiltinCPInstruction inst, CacheableData<?>[] inputs, MatrixObject[] outputs) throws IOException, DMLRuntimeException, IllegalArgumentException, JSONException {
 		TransformOperands oprnds = new TransformOperands(inst.getParameterMap(), inputs[0]);
@@ -1043,11 +1043,11 @@ public class DataTransform
 	 * Helper function to fetch and sort the list of part files under the given
 	 * input directory.
 	 * 
-	 * @param input
-	 * @param fs
-	 * @return
-	 * @throws FileNotFoundException
-	 * @throws IOException
+	 * @param input input directory
+	 * @param fs file system
+	 * @return list of paths to input file parts
+	 * @throws FileNotFoundException if FileNotFoundException occurs
+	 * @throws IOException if IOException occurs
 	 */
 	@SuppressWarnings("unchecked")
 	private static ArrayList<Path> collectInputFiles(String input, FileSystem fs) throws FileNotFoundException, IOException 
@@ -1121,21 +1121,23 @@ public class DataTransform
 	/**
 	 * Main method to create and/or apply transformation metdata in-memory, on a single node.
 	 * 
-	 * @param job
-	 * @param fs
-	 * @param inputPath
-	 * @param ncols
-	 * @param prop
-	 * @param specFileWithIDs
-	 * @param tfMtdPath
-	 * @param applyTxPath
-	 * @param isApply
-	 * @param outputPath
-	 * @param headerLine
-	 * @throws IOException
-	 * @throws DMLRuntimeException 
-	 * @throws JSONException 
-	 * @throws IllegalArgumentException 
+	 * @param job job configuration
+	 * @param fs file system
+	 * @param inputPath path to input files
+	 * @param ncols number of columns
+	 * @param prop csv file format properties
+	 * @param specWithIDs JSON transform specification with IDs
+	 * @param tfMtdPath transform metadata path
+	 * @param isApply ?
+	 * @param result output matrix
+	 * @param headerLine header line
+	 * @param isBB true if binary block
+	 * @param isCSV true if CSV
+	 * @return MR job result
+	 * @throws IOException if IOException occurs
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
+	 * @throws IllegalArgumentException if IllegalArgumentException occurs
+	 * @throws JSONException if JSONException occurs
 	 */
 	private static JobReturn performTransform(JobConf job, FileSystem fs, String inputPath, int ncols, CSVFileFormatProperties prop, String specWithIDs, String tfMtdPath, boolean isApply, MatrixObject result, String headerLine, boolean isBB, boolean isCSV ) throws IOException, DMLRuntimeException, IllegalArgumentException, JSONException {
 		

@@ -81,10 +81,6 @@ public class DummycodeAgent extends Encoder
 	/**
 	 * Method to output transformation metadata from the mappers. 
 	 * This information is collected and merged by the reducers.
-	 * 
-	 * @param out
-	 * @throws IOException
-	 * 
 	 */
 	@Override
 	public void mapOutputTransformationMetadata(OutputCollector<IntWritable, DistinctValue> out, int taskID, TfUtils agents) throws IOException {
@@ -123,13 +119,12 @@ public class DummycodeAgent extends Encoder
 	 * Recoded columns are of type nominal, binner columns are of type ordinal, dummycoded columns are of type 
 	 * dummycoded, and the remaining are of type scale.
 	 * 
-	 * @param fs
-	 * @param txMtdDir
-	 * @param numCols
-	 * @param ra
-	 * @param ba
-	 * @return Number of columns in the transformed data
-	 * @throws IOException
+	 * @param fs file system
+	 * @param txMtdDir path to transform metadata directory
+	 * @param numCols number of columns
+	 * @param agents ?
+	 * @return ?
+	 * @throws IOException if IOException occurs
 	 */
 	public int genDcdMapsAndColTypes(FileSystem fs, String txMtdDir, int numCols, TfUtils agents) throws IOException {
 		
@@ -189,8 +184,8 @@ public class DummycodeAgent extends Encoder
 	/**
 	 * Given a dummycoded column id, find the corresponding original column ID.
 	 *  
-	 * @param colID
-	 * @return
+	 * @param colID dummycoded column ID
+	 * @return original column ID, -1 if not found
 	 */
 	public int mapDcdColumnID(int colID) 
 	{
@@ -394,8 +389,8 @@ public class DummycodeAgent extends Encoder
 	/**
 	 * Method to apply transformations.
 	 * 
-	 * @param words
-	 * @return
+	 * @param words array of strings
+	 * @return array of transformed strings
 	 */
 	@Override
 	public String[] apply(String[] words) 

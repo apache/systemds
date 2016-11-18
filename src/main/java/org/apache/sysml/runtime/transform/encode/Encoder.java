@@ -64,24 +64,14 @@ public abstract class Encoder implements Serializable
 	public int getNumCols() {
 		return _clen;
 	}
-	
-	
-	/**
-	 * 
-	 * @param attrs
-	 */
+
 	public int initColList(JSONArray attrs) {
 		_colList = new int[attrs.size()];
 		for(int i=0; i < _colList.length; i++) 
 			_colList[i] = UtilFunctions.toInt(attrs.get(i));	
 		return _colList.length;
 	}
-	
-	/**
-	 * 
-	 * @param attrs
-	 * @return
-	 */
+
 	public int initColList(int[] colList) {
 		_colList = colList;
 		return _colList.length;
@@ -91,7 +81,7 @@ public abstract class Encoder implements Serializable
 	 * Indicates if this encoder is applicable, i.e, if there is at 
 	 * least one column to encode. 
 	 * 
-	 * @return
+	 * @return true if at least one column to encode
 	 */
 	public boolean isApplicable()  {
 		return (_colList != null && _colList.length > 0);
@@ -101,6 +91,8 @@ public abstract class Encoder implements Serializable
 	 * Indicates if this encoder is applicable for the given column ID,
 	 * i.e., if it is subject to this transformation.
 	 * 
+	 * @param colID column ID
+	 * @return true if encoder is applicable for given column
 	 */
 	public int isApplicable(int colID) {
 		if(_colList == null)
@@ -112,9 +104,9 @@ public abstract class Encoder implements Serializable
 	/**
 	 * Block encode: build and apply (transform encode).
 	 * 
-	 * @param in
-	 * @param out
-	 * @return
+	 * @param in input frame block
+	 * @param out output matrix block
+	 * @return output matrix block
 	 */
 	public abstract MatrixBlock encode(FrameBlock in, MatrixBlock out);
 
@@ -122,7 +114,7 @@ public abstract class Encoder implements Serializable
 	 * Build the transform meta data for the given block input. This call modifies
 	 * and keeps meta data as encoder state.
 	 * 
-	 * @param in
+	 * @param in input frame block
 	 */
 	public abstract void build(FrameBlock in);
 	
@@ -130,9 +122,9 @@ public abstract class Encoder implements Serializable
 	 * Encode input data blockwise according to existing transform meta
 	 * data (transform apply).
 	 * 
-	 * @param in
-	 * @param out
-	 * @return
+	 * @param in input frame block
+	 * @param out output matrix block
+	 * @return output matrix block
 	 */
 	public abstract MatrixBlock apply(FrameBlock in, MatrixBlock out);
 	
@@ -141,22 +133,23 @@ public abstract class Encoder implements Serializable
 	 * data (transform apply).
 	 * TODO remove once file-based transform removed
 	 * 
-	 * @param in
-	 * @return
+	 * @param in input data as string array
+	 * @return encoded data as string array
 	 */
 	public abstract String[] apply(String[] in);
 
 	/**
 	 * Construct a frame block out of the transform meta data.
 	 * 
-	 * @return
+	 * @param out output frame block
+	 * @return output frame block?
 	 */
 	public abstract FrameBlock getMetaData(FrameBlock out);
 
 	/**
 	 * Sets up the required meta data for a subsequent call to apply.
 	 * 
-	 * @param meta
+	 * @param meta frame block
 	 */
 	public abstract void initMetaData(FrameBlock meta);
 	

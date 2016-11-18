@@ -40,39 +40,16 @@ import org.apache.wink.json4j.JSONObject;
 
 public class EncoderFactory 
 {
-	/**
-	 * 
-	 * @param spec
-	 * @param clen
-	 * @return
-	 * @throws DMLRuntimeException 
-	 */
+
 	public static Encoder createEncoder(String spec, String[] colnames, int clen, FrameBlock meta) throws DMLRuntimeException {
 		return createEncoder(spec, colnames, UtilFunctions.nCopies(clen, ValueType.STRING), meta);
 	}
-	
-	/**
-	 * 
-	 * @param spec
-	 * @param schema
-	 * @param clen
-	 * @param meta
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static Encoder createEncoder(String spec, String[] colnames, ValueType[] schema, int clen, FrameBlock meta) throws DMLRuntimeException {
 		ValueType[] lschema = (schema==null) ? UtilFunctions.nCopies(clen, ValueType.STRING) : schema;
 		return createEncoder(spec, colnames, lschema, meta);
 	}
-	
-	
-	/**
-	 * 
-	 * @param spec
-	 * @param schema
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	@SuppressWarnings("unchecked")
 	public static Encoder createEncoder(String spec,  String[] colnames, ValueType[] schema, FrameBlock meta) 
 		throws DMLRuntimeException 

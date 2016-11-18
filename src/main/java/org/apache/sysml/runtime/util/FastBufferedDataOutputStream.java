@@ -319,26 +319,14 @@ public class FastBufferedDataOutputStream extends FilterOutputStream implements 
 		for( int i=lrlen; i<rlen; i++ )
 			writeInt( 0 );
 	}
-	
-	/**
-	 * 
-	 * @param val
-	 * @param ba
-	 * @param off
-	 */
+
 	private static void shortToBa( final int val, byte[] ba, final int off )
 	{
 		//shift and mask out 2 bytes
 		ba[ off+0 ] = (byte)((val >>>  8) & 0xFF);
 		ba[ off+1 ] = (byte)((val >>>  0) & 0xFF);
 	}
-	
-	/**
-	 * 
-	 * @param val
-	 * @param ba
-	 * @param off
-	 */
+
 	private static void intToBa( final int val, byte[] ba, final int off )
 	{
 		//shift and mask out 4 bytes
@@ -347,13 +335,7 @@ public class FastBufferedDataOutputStream extends FilterOutputStream implements 
 		ba[ off+2 ] = (byte)((val >>>  8) & 0xFF);
 		ba[ off+3 ] = (byte)((val >>>  0) & 0xFF);
 	}
-	
-	/**
-	 * 
-	 * @param val
-	 * @param ba
-	 * @param off
-	 */
+
 	private static void longToBa( final long val, byte[] ba, final int off )
 	{
 		//shift and mask out 8 bytes

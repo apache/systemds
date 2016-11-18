@@ -50,7 +50,7 @@ DML and PyDML scripts can be invoked in a variety of ways. Suppose that we have 
 
 	print('hello ' + $1)
 
-One way to begin working with SystemML is to [download a standalone tar.gz or zip distribution of SystemML](http://systemml.apache.org/download.html)
+One way to begin working with SystemML is to [download a standalone distribution of SystemML](http://systemml.apache.org/download.html)
 and use the `runStandaloneSystemML.sh` and `runStandaloneSystemML.bat` scripts to run SystemML in standalone
 mode. The name of the DML or PyDML script
 is passed as the first argument to these scripts, along with a variety of arguments.

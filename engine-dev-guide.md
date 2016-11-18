@@ -33,7 +33,7 @@ To build SystemML, run:
 
     mvn clean package
 
-To build the SystemML distributions (`.tar.gz`, `.zip`, etc.), run:
+To build the SystemML distributions, run:
 
     mvn clean package -P distribution
 

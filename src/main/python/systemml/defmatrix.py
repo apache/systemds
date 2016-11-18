@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-__all__ = [ 'setSparkContext', 'matrix', 'eval', 'solve', 'DMLOp', 'set_max_depth' ]
+__all__ = [ 'setSparkContext', 'matrix', 'eval', 'solve', 'DMLOp', 'set_max_depth', 'debug_array_conversion' ]
 
 from pyspark import SparkContext
 from pyspark.sql import DataFrame, SQLContext
@@ -292,6 +292,14 @@ def eval(outputs, outputDF=False, execute=True):
     populate_outputs(outputs, results, outputDF)
     reset_output_flag(outputs)
 
+
+def debug_array_conversion(throwError):
+    matrix.THROW_ARRAY_CONVERSION_ERROR = throwError
+    
+def _get_new_var_id():
+    matrix.systemmlVarID += 1
+    return 'mVar' + str(matrix.systemmlVarID)
+
 ###############################################################################
 
 class matrix(object):
@@ -408,12 +416,11 @@ class matrix(object):
         ----------
         data: NumPy ndarray, Pandas DataFrame, scipy sparse matrix or PySpark DataFrame. (data cannot be None for external users, 'data=None' is used internally for lazy evaluation).
         """
-        self.dtype = np.float64
+        self.dtype = np.double
         check_MLContext()
         self.visited = False
-        matrix.systemmlVarID += 1
         self.output = False
-        self.ID = 'mVar' + str(matrix.systemmlVarID)
+        self.ID = _get_new_var_id()
         self.referenced = []
         # op refers to the node of Abstract Syntax Tree created internally for lazy evaluation
         self.op = op
@@ -551,11 +558,20 @@ class matrix(object):
     ######################### NumPy related methods ######################################
     
     __array_priority__ = 10.2
+    ndim = 2
     
-    def __array__(self, dtype=np.float64):
+    THROW_ARRAY_CONVERSION_ERROR = False
+    
+    def __array__(self, dtype=np.double):
         if self.eval_data is None or not isinstance(self.eval_data, SUPPORTED_TYPES):
             # Only warn if there is an unevaluated operation (which could potentially generate large matrix or if data is non-supported singlenode formats)
-            print '[WARN]: Conversion from SystemML matrix to NumPy array'
+            import inspect
+            frame,filename,line_number,function_name,lines,index = inspect.stack()[1]
+            msg = 'Conversion from SystemML matrix to NumPy array (occurs in ' + str(filename) + ':' + str(line_number) + ' ' + function_name + ")"
+            if matrix.THROW_ARRAY_CONVERSION_ERROR:
+                raise Exception('[ERROR]:' + msg)
+            else:
+                print '[WARN]:' + msg
         return np.array(self.toNumPyArray(), dtype)
     
     def astype(self, t):
@@ -569,10 +585,18 @@ class matrix(object):
         raise NotImplementedError('Reshaping is not implemented')
     
     def get_shape(self):
-        if self._shape is not None:
-            return self._shape
-        else:
-            raise NotImplementedError('get_shape is not implemented')
+        if self._shape is None:
+            lhsStr, inputs = _matricize(self, [])
+            rlen_ID = _get_new_var_id()
+            clen_ID = _get_new_var_id()
+            multiline_dml = [rlen_ID, ' = ', lhsStr, '.shape(0)\n']
+            multiline_dml = multiline_dml + [clen_ID, ' = ', lhsStr, '.shape(1)\n']
+            multiline_dml = multiline_dml + [OUTPUT_ID, ' = full(0, rows=2, cols=1)\n']
+            multiline_dml = multiline_dml + [ OUTPUT_ID, '[0,0] = ', rlen_ID, '\n' ]
+            multiline_dml = multiline_dml + [ OUTPUT_ID, '[1,0] = ', clen_ID, '\n' ]
+            ret = construct_intermediate_node(inputs, multiline_dml).toNumPyArray()
+            self._shape = tuple(np.array(ret, dtype=int).flatten())
+        return self._shape 
     
     shape = property(fget=get_shape, fset=set_shape)
     

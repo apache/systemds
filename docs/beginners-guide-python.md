@@ -46,7 +46,7 @@ Before you get started on SystemML, make sure that your environment is set up an
 
 ### Install Java (need Java 8) and Apache Spark
 
-If you already have a Apache Spark installation, you can skip this step.
+If you already have an Apache Spark installation, you can skip this step.
   
 <div class="codetabs">
 <div data-lang="OSX" markdown="1">
@@ -70,8 +70,6 @@ brew install apache-spark16
 
 ### Install SystemML
 
-#### Step 1: Install SystemML Python package 
-
 We are working towards uploading the python package on pypi. Until then, please use following commands: 
 
 ```bash
@@ -83,6 +81,7 @@ pip install src/main/python/dist/systemml-incubating-0.11.0.dev1.tar.gz
 
 The above commands will install Python package and place the corresponding Java binaries (along with algorithms) into the installed location.
 To find the location of the downloaded Java binaries, use the following command:
+
 ```bash
 python -c 'import imp; import os; print os.path.join(imp.find_module("systemml")[1], "systemml-java")'
 ```
@@ -92,24 +91,16 @@ or download them from [SystemML website](http://systemml.apache.org/download.htm
 or build them from the [source](https://github.com/apache/incubator-systemml).
 
 To uninstall SystemML, please use following command:
+
 ```bash
 pip uninstall systemml-incubating
 ```
 
 ### Start Pyspark shell
 
-<div class="codetabs">
-<div data-lang="OSX" markdown="1">
 ```bash
 pyspark --master local[*]
 ```
-</div>
-<div data-lang="Linux" markdown="1">
-```bash
-pyspark --master local[*]
-```
-</div>
-</div>
 
 ## Matrix operations
 
@@ -333,7 +324,7 @@ from sklearn import datasets, neighbors
 from pyspark.sql import DataFrame, SQLContext
 import systemml as sml
 import pandas as pd
-import os
+import os, imp
 sqlCtx = SQLContext(sc)
 digits = datasets.load_digits()
 X_digits = digits.data
@@ -343,7 +334,8 @@ n_samples = len(X_digits)
 X_df = sqlCtx.createDataFrame(pd.DataFrame(X_digits[:.9 * n_samples]))
 y_df = sqlCtx.createDataFrame(pd.DataFrame(y_digits[:.9 * n_samples]))
 ml = sml.MLContext(sc)
-script = os.path.join(os.environ['SYSTEMML_HOME'], 'scripts', 'algorithms', 'MultiLogReg.dml')
-script = sml.dml(script).input(X=X_df, Y_vec=y_df).output("B_out")
+# Get the path of MultiLogReg.dml
+scriptPath = os.path.join(imp.find_module("systemml")[1], 'systemml-java', 'scripts', 'algorithms', 'MultiLogReg.dml')
+script = sml.dml(scriptPath).input(X=X_df, Y_vec=y_df).output("B_out")
 beta = ml.execute(script).get('B_out').toNumPy()
 ```

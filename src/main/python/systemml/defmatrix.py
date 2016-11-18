@@ -19,12 +19,11 @@
 #
 #-------------------------------------------------------------
 
-trigFn = [ 'exp', 'log', 'abs', 'sqrt', 'round', 'floor', 'ceil', 'sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'sign' ]
-__all__ = [ 'setSparkContext', 'matrix', 'eval', 'solve', 'DMLOp' ] + trigFn
-
+__all__ = [ 'setSparkContext', 'matrix', 'eval', 'solve', 'DMLOp' ]
 
 from pyspark import SparkContext
 from pyspark.sql import DataFrame, SQLContext
+import numpy as np
 
 from . import MLContext, pydml
 from .converters import *
@@ -43,7 +42,7 @@ def setSparkContext(sc):
     matrix.ml = MLContext(matrix.sc)
 
 
-def checkIfMLContextIsSet():
+def check_MLContext():
     if matrix.ml is None:
         if SparkContext._active_spark_context is not None:
             setSparkContext(SparkContext._active_spark_context)
@@ -60,24 +59,43 @@ class DMLOp(object):
         self.inputs = inputs
         self.dml = dml
         self.ID = None
+        self.depth = 1
         for m in self.inputs:
             m.referenced = m.referenced + [ self ]
+            if isinstance(m, DMLOp):
+                self.depth = max(self.depth, m.depth + 1)
 
     def _visit(self, execute=True):
         matrix.dml = matrix.dml + self.dml
 
-    # Don't use this method instead use matrix's printAST()
-    def printAST(self, numSpaces):
+    # Don't use this method instead use matrix's print_ast()
+    def print_ast(self, numSpaces):
         ret = []
         for m in self.inputs:
-            ret = [ m.printAST(numSpaces+2) ]
+            ret = [ m.print_ast(numSpaces+2) ]
         return ''.join(ret)
 
 # Special object used internally to specify the placeholder which will be replaced by output ID
-# This helps to provide dml containing output ID in constructIntermediateNode
+# This helps to provide dml containing output ID in construct_intermediate_node
 OUTPUT_ID = '$$OutputID$$'
 
-def constructIntermediateNode(inputs, dml):
+MAX_DEPTH = 0
+def set_max_depth(depth):
+    """
+    This method allows users to set the depth of lazy SystemML DAG.
+    Setting this to 1 ensures that every operation is evaluated (which can turn off many optimization).
+    Setting this to 0 ensures that SystemML will never implicitly evaluate the DAG, but will require user to call eval or toPandas/toNumPyArray/... explicitly.  
+
+    Parameters
+    ----------
+    depth: Should be greater than equal to 0.
+    """
+    if depth < 0:
+        raise ValueError('depth should be greater than or equal to 0')
+    else:
+        MAX_DEPTH = depth
+    
+def construct_intermediate_node(inputs, dml):
     """
     Convenient utility to create an intermediate node of AST.
 
@@ -89,6 +107,8 @@ def constructIntermediateNode(inputs, dml):
     dmlOp = DMLOp(inputs)
     out = matrix(None, op=dmlOp)
     dmlOp.dml = [out.ID if x==OUTPUT_ID else x for x in dml]
+    if MAX_DEPTH > 0 and dmlOp.depth >= MAX_DEPTH:
+        eval(out)
     return out
 
 def reset():
@@ -102,7 +122,7 @@ def reset():
     matrix.dml = []
     matrix.script = pydml('')
 
-def performDFS(outputs, execute):
+def perform_dfs(outputs, execute):
     """
     Traverses the forest of nodes rooted at outputs nodes and returns the DML script to execute
     """
@@ -116,50 +136,55 @@ def performDFS(outputs, execute):
 
 ########################## Utility functions ##################################
 
-
-def binaryOp(lhs, rhs, opStr):
+def _log_base(val, base):
+    if not isinstance(val, str):
+        raise ValueError('The val to _log_base should be of type string')
+    return '(log(' + val + ')/log(' + str(base) + '))' 
+    
+def _matricize(lhs, inputs):
     """
-    Common function called by all the binary operators in matrix class
+    Utility fn to convert the supported types to matrix class or to string (if float or int)
+    and return the string to be passed to DML as well as inputs
     """
-    inputs = []
+    if isinstance(lhs, SUPPORTED_TYPES):
+        lhs = matrix(lhs)
     if isinstance(lhs, matrix):
         lhsStr = lhs.ID
-        inputs = [lhs]
+        inputs = inputs + [lhs]
     elif isinstance(lhs, float) or isinstance(lhs, int):
         lhsStr = str(lhs)
     else:
         raise TypeError('Incorrect type')
-    if isinstance(rhs, matrix):
-        rhsStr = rhs.ID
-        inputs = inputs + [rhs]
-    elif isinstance(rhs, float) or isinstance(rhs, int):
-        rhsStr = str(rhs)
-    else:
-        raise TypeError('Incorrect type')
-    return constructIntermediateNode(inputs, [OUTPUT_ID, ' = ', lhsStr, opStr, rhsStr, '\n'])
-
-def getValue(obj):
-    if isinstance(obj, matrix):
-        return obj.ID
-    elif isinstance(obj, float) or isinstance(obj, int):
-        return str(obj)
-    else:
-        raise TypeError('Unsupported type for ' + s)
+    return lhsStr, inputs
+    
+def binary_op(lhs, rhs, opStr):
+    """
+    Common function called by all the binary operators in matrix class
+    """
+    inputs = []
+    lhsStr, inputs = _matricize(lhs, inputs)
+    rhsStr, inputs = _matricize(rhs, inputs)
+    return construct_intermediate_node(inputs, [OUTPUT_ID, ' = ', lhsStr, opStr, rhsStr, '\n'])
 
 def binaryMatrixFunction(X, Y, fnName):
     """
     Common function called by supported PyDML built-in function that has two arguments.
     """
-    return constructIntermediateNode([X, Y], [OUTPUT_ID, ' = ', fnName,'(', getValue(X), ', ', getValue(Y), ')\n'])
+    inputs = []
+    lhsStr, inputs = _matricize(X, inputs)
+    rhsStr, inputs = _matricize(Y, inputs)
+    return construct_intermediate_node(inputs, [OUTPUT_ID, ' = ', fnName,'(', lhsStr, ', ', rhsStr, ')\n'])
 
 def unaryMatrixFunction(X, fnName):
     """
     Common function called by supported PyDML built-in function that has one argument.
     """
-    return constructIntermediateNode([X], [OUTPUT_ID, ' = ', fnName,'(', getValue(X), ')\n'])
+    inputs = []
+    lhsStr, inputs = _matricize(X, inputs)
+    return construct_intermediate_node(inputs, [OUTPUT_ID, ' = ', fnName,'(', lhsStr, ')\n'])
 
 # utility function that converts 1:3 into DML string
-def convertSeqToDML(s):
+def convert_seq_to_dml(s):
     ret = []
     if s is None:
         return ''
@@ -182,14 +207,14 @@ def convertSeqToDML(s):
 def getIndexingDML(index):
     ret = [ '[' ]
     if isinstance(index, tuple) and len(index) == 1:
-        ret = ret + [ convertSeqToDML(index[0]), ',' ]
+        ret = ret + [ convert_seq_to_dml(index[0]), ',' ]
     elif isinstance(index, tuple) and len(index) == 2:
-        ret = ret + [ convertSeqToDML(index[0]), ',', convertSeqToDML(index[1]) ]
+        ret = ret + [ convert_seq_to_dml(index[0]), ',', convert_seq_to_dml(index[1]) ]
     else:
         raise TypeError('matrix indexes can only be tuple of length 2. For example: m[1,1], m[0:1,], m[:, 0:1]')
     return ret + [ ']' ]
 
-def convertOutputsToList(outputs):
+def convert_outputs_to_list(outputs):
     if isinstance(outputs, matrix):
         return [ outputs ]
     elif isinstance(outputs, list):
@@ -200,68 +225,23 @@ def convertOutputsToList(outputs):
     else:
         raise TypeError('Only matrix or list of matrix allowed')
 
-def resetOutputFlag(outputs):
+def reset_output_flag(outputs):
     for m in outputs:
         m.output = False
 
-def populateOutputs(outputs, results, outputDF):
+def populate_outputs(outputs, results, outputDF):
     """
     Set the attribute 'data' of the matrix by fetching it from MLResults class
     """
     for m in outputs:
         if outputDF:
-            m.data = results.get(m.ID).toDF()
+            m.eval_data = results.get(m.ID).toDF()
         else:
-            m.data = results.get(m.ID).toNumPy()
+            m.eval_data = results.get(m.ID).toNumPy()
 
 ###############################################################################
 
 ########################## Global user-facing functions #######################
-
-def exp(X):
-    return unaryMatrixFunction(X, 'exp')
-
-def log(X, y=None):
-    if y is None:
-        return unaryMatrixFunction(X, 'log')
-    else:
-        return binaryMatrixFunction(X, y, 'log')
-
-def abs(X):
-    return unaryMatrixFunction(X, 'abs')
-
-def sqrt(X):
-    return unaryMatrixFunction(X, 'sqrt')
-
-def round(X):
-    return unaryMatrixFunction(X, 'round')
-
-def floor(X):
-    return unaryMatrixFunction(X, 'floor')
-
-def ceil(X):
-    return unaryMatrixFunction(X, 'ceil')
-
-def sin(X):
-    return unaryMatrixFunction(X, 'sin')
-
-def cos(X):
-    return unaryMatrixFunction(X, 'cos')
-
-def tan(X):
-    return unaryMatrixFunction(X, 'tan')
-
-def asin(X):
-    return unaryMatrixFunction(X, 'asin')
-
-def acos(X):
-    return unaryMatrixFunction(X, 'acos')
-
-def atan(X):
-    return unaryMatrixFunction(X, 'atan')
-
-def sign(X):
-    return unaryMatrixFunction(X, 'sign')
 
 def solve(A, b):
     """
@@ -300,16 +280,16 @@ def eval(outputs, outputDF=False, execute=True):
     outputs: list of matrices or a matrix object
     outputDF: back the data of matrix as PySpark DataFrame
     """
-    checkIfMLContextIsSet()
+    check_MLContext()
     reset()
-    outputs = convertOutputsToList(outputs)
-    matrix.script.scriptString = performDFS(outputs, execute)
+    outputs = convert_outputs_to_list(outputs)
+    matrix.script.scriptString = perform_dfs(outputs, execute)
     if not execute:
-        resetOutputFlag(outputs)
+        reset_output_flag(outputs)
         return matrix.script.scriptString
     results = matrix.ml.execute(matrix.script)
-    populateOutputs(outputs, results, outputDF)
-    resetOutputFlag(outputs)
+    populate_outputs(outputs, results, outputDF)
+    reset_output_flag(outputs)
 
 ###############################################################################
 
@@ -385,7 +365,7 @@ class matrix(object):
        Then the left-indexed matrix is set to be backed by DMLOp consisting of following pydml:
        left-indexed-matrix = new-deep-copied-matrix
        left-indexed-matrix[index] = value
-    8. Please use m.printAST() and/or  type `m` for debugging. Here is a sample session:
+    8. Please use m.print_ast() and/or  type `m` for debugging. Here is a sample session:
     
        >>> npm = np.ones((3,3))
        >>> m1 = sml.matrix(npm + 3)
@@ -396,7 +376,7 @@ class matrix(object):
        mVar1 = load(" ", format="csv")
        mVar3 = mVar1 + mVar2
        save(mVar3, " ")
-       >>> m3.printAST()
+       >>> m3.print_ast()
        - [mVar3] (op).
          - [mVar1] (data).
          - [mVar2] (data).    
@@ -418,7 +398,7 @@ class matrix(object):
     # Contains list of nodes visited in Abstract Syntax Tree. This helps to avoid computation of matrix objects
     # that have been previously evaluated.
     visited = []
-
+    
     def __init__(self, data, op=None):
         """
         Constructs a lazy matrix
@@ -427,7 +407,8 @@ class matrix(object):
         ----------
         data: NumPy ndarray, Pandas DataFrame, scipy sparse matrix or PySpark DataFrame. (data cannot be None for external users, 'data=None' is used internally for lazy evaluation).
         """
-        checkIfMLContextIsSet()
+        self.dtype = np.float64
+        check_MLContext()
         self.visited = False
         matrix.systemmlVarID += 1
         self.output = False
@@ -435,7 +416,10 @@ class matrix(object):
         self.referenced = []
         # op refers to the node of Abstract Syntax Tree created internally for lazy evaluation
         self.op = op
-        self.data = data
+        self.eval_data = data
+        self._shape = None
+        if isinstance(data, SUPPORTED_TYPES):
+            self._shape = data.shape
         if not (isinstance(data, SUPPORTED_TYPES) or hasattr(data, '_jdf') or (data is None and op is not None)):
             raise TypeError('Unsupported input type')
 
@@ -449,47 +433,47 @@ class matrix(object):
         """
         This is a convenience function that calls the global eval method and then converts the matrix object into Pandas DataFrame.
         """
-        if self.data is None:
+        if self.eval_data is None:
             self.eval()
-        return convertToPandasDF(self.data)
+        return convertToPandasDF(self.eval_data)
 
     def toNumPyArray(self):
         """
         This is a convenience function that calls the global eval method and then converts the matrix object into NumPy array.
         """
-        if self.data is None:
+        if self.eval_data is None:
             self.eval()
-        if isinstance(self.data, DataFrame):
-            self.data = self.data.toPandas().as_matrix()
+        if isinstance(self.eval_data, DataFrame):
+            self.eval_data = self.eval_data.toPandas().as_matrix()
         # Always keep default format as NumPy array if possible
-        return self.data
+        return self.eval_data
 
     def toDataFrame(self):
         """
         This is a convenience function that calls the global eval method and then converts the matrix object into DataFrame.
         """
-        if self.data is None:
+        if self.eval_data is None:
             self.eval(outputDF=True)
-        if not isinstance(self.data, DataFrame):
-            self.data = matrix.sqlContext.createDataFrame(self.toPandas())
-        return self.data
+        if not isinstance(self.eval_data, DataFrame):
+            self.eval_data = matrix.sqlContext.createDataFrame(self.toPandas())
+        return self.eval_data
 
-    def _markAsVisited(self):
+    def _mark_as_visited(self):
         self.visited = True
         # for cleanup
         matrix.visited = matrix.visited + [ self ]
         return self
 
-    def _registerAsInput(self, execute):
+    def _register_as_input(self, execute):
         # TODO: Remove this when automatic registration of frame is resolved
         matrix.dml = [ self.ID,  ' = load(\" \", format=\"csv\")\n'] + matrix.dml
-        if isinstance(self.data, DataFrame) and execute:
-            matrix.script.input(self.ID, self.data)
+        if isinstance(self.eval_data, DataFrame) and execute:
+            matrix.script.input(self.ID, self.eval_data)
         elif execute:
-            matrix.script.input(self.ID, convertToMatrixBlock(matrix.sc, self.data))
+            matrix.script.input(self.ID, convertToMatrixBlock(matrix.sc, self.eval_data))
         return self
 
-    def _registerAsOutput(self, execute):
+    def _register_as_output(self, execute):
         # TODO: Remove this when automatic registration of frame is resolved
         matrix.dml = matrix.dml + ['save(',  self.ID, ', \" \")\n']
         if execute:
@@ -504,9 +488,9 @@ class matrix(object):
         """
         if self.visited:
             return self
-        self._markAsVisited()
-        if self.data is not None:
-            self._registerAsInput(execute)
+        self._mark_as_visited()
+        if self.eval_data is not None:
+            self._register_as_input(execute)
         elif self.op is not None:
             # Traverse the AST
             for m in self.op.inputs:
@@ -514,13 +498,13 @@ class matrix(object):
             self.op._visit(execute=execute)
         else:
             raise Exception('Expected either op or data to be set')
-        if self.data is None and self.output:
-            self._registerAsOutput(execute)
+        if self.eval_data is None and self.output:
+            self._register_as_output(execute)
         return self
 
-    def printAST(self, numSpaces = 0):
+    def print_ast(self, numSpaces = 0):
         """
-        Please use m.printAST() and/or  type `m` for debugging. Here is a sample session:
+        Please use m.print_ast() and/or  type `m` for debugging. Here is a sample session:
         
         >>> npm = np.ones((3,3))
         >>> m1 = sml.matrix(npm + 3)
@@ -531,18 +515,18 @@ class matrix(object):
         mVar1 = load(" ", format="csv")
         mVar3 = mVar1 + mVar2
         save(mVar3, " ")
-        >>> m3.printAST()
+        >>> m3.print_ast()
         - [mVar3] (op).
           - [mVar1] (data).
           - [mVar2] (data).
         """
         head = ''.join([ ' ' ]*numSpaces + [ '- [', self.ID, '] ' ])
-        if self.data is not None:
+        if self.eval_data is not None:
             out = head + '(data).\n'
         elif self.op is not None:
             ret = [ head, '(op).\n' ]
             for m in self.op.inputs:
-                ret = ret + [ m.printAST(numSpaces + 2) ]
+                ret = ret + [ m.print_ast(numSpaces + 2) ]
             out = ''.join(ret)
         else:
             raise ValueError('Either op or data needs to be set')
@@ -555,66 +539,257 @@ class matrix(object):
         """
         This function helps to debug matrix class and also examine the generated PyDML script
         """
-        if self.data is None:
+        if self.eval_data is None:
             print('# This matrix (' + self.ID + ') is backed by below given PyDML script (which is not yet evaluated). To fetch the data of this matrix, invoke toNumPyArray() or toDataFrame() or toPandas() methods.\n' + eval([self], execute=False))
-        elif isinstance(self.data, DataFrame):
+        elif isinstance(self.eval_data, DataFrame):
             print('# This matrix (' + self.ID + ') is backed by PySpark DataFrame. To fetch the DataFrame, invoke toDataFrame() method.')
         else:
             print('# This matrix (' + self.ID + ') is backed by NumPy array. To fetch the NumPy array, invoke toNumPyArray() method.')
         return ''
-
+    
+    ######################### NumPy related methods ######################################
+    
+    __array_priority__ = 10.2
+    
+    def astype(self, t):
+        # TODO: Throw error if incorrect type
+        return self
+    
+    def asfptype(self):
+        return self
+        
+    def set_shape(self,shape):
+        raise NotImplementedError('Reshaping is not implemented')
+    
+    def get_shape(self):
+        if self._shape is not None:
+            return self._shape
+        else:
+            raise NotImplementedError('get_shape is not implemented')
+    
+    shape = property(fget=get_shape, fset=set_shape)
+    
+    def __numpy_ufunc__(self, func, method, pos, inputs, **kwargs):
+        """
+        This function enables systemml matrix to be compatible with NumPy's ufuncs.
+        """
+        if method != '__call__' or kwargs:
+            return NotImplemented
+        if func in matrix._numpy_to_systeml_mapping:
+            fn = matrix._numpy_to_systeml_mapping[func]
+        else:
+            return NotImplemented
+        if len(inputs) == 2:
+            return fn(inputs[0], inputs[1])
+        elif  len(inputs) == 1:
+            return fn(inputs[0])
+        else:
+            raise ValueError('Unsupported number of inputs')
+        
     ######################### Arithmetic operators ######################################
 
+    def negative(self):
+        lhsStr, inputs = _matricize(self, [])
+        return construct_intermediate_node(inputs, [OUTPUT_ID, ' = -', lhsStr, '\n'])
+                
+    def remainder(self, other):
+        inputs = []
+        lhsStr, inputs = _matricize(self, inputs)
+        rhsStr, inputs = _matricize(other, inputs)
+        return construct_intermediate_node(inputs, [OUTPUT_ID, ' = floor(', lhsStr, '/', rhsStr, ') * ', rhsStr, '\n'])
+    
+    def ldexp(self, other):
+        inputs = []
+        lhsStr, inputs = _matricize(self, inputs)
+        rhsStr, inputs = _matricize(other, inputs)
+        return construct_intermediate_node(inputs, [OUTPUT_ID, ' = ', lhsStr, '* (2**', rhsStr, ')\n'])
+        
+    def mod(self, other):
+        inputs = []
+        lhsStr, inputs = _matricize(self, inputs)
+        rhsStr, inputs = _matricize(other, inputs)
+        return construct_intermediate_node(inputs, [OUTPUT_ID, ' = ', lhsStr, ' - floor(', lhsStr, '/', rhsStr, ') * ', rhsStr, '\n'])
+    
+    def logaddexp(self, other):
+        inputs = []
+        lhsStr, inputs = _matricize(self, inputs)
+        rhsStr, inputs = _matricize(other, inputs)
+        return construct_intermediate_node(inputs, [OUTPUT_ID, ' = log(exp(', lhsStr, ') + exp(', rhsStr, '))\n'])
+    
+    def logaddexp2(self, other):
+        inputs = []
+        lhsStr, inputs = _matricize(self, inputs)
+        rhsStr, inputs = _matricize(other, inputs)
+        opStr =  _log_base('2**' + lhsStr + '2**' + rhsStr, 2)
+        return construct_intermediate_node(inputs, [OUTPUT_ID, ' = ', opStr, '\n'])
+
+    def log1p(self):
+        inputs = []
+        lhsStr, inputs = _matricize(self, inputs)
+        return construct_intermediate_node(inputs, [OUTPUT_ID, ' = log(1 + ', lhsStr, ')\n'])
+        
+    def exp(self):
+        return unaryMatrixFunction(self, 'exp')
+
+    def exp2(self):
+        inputs = []
+        lhsStr, inputs = _matricize(self, inputs)
+        return construct_intermediate_node(inputs, [OUTPUT_ID, ' = 2**', lhsStr, '\n'])
+    
+    def square(self):
+        inputs = []
+        lhsStr, inputs = _matricize(self, inputs)
+        return construct_intermediate_node(inputs, [OUTPUT_ID, ' = ', lhsStr, '**2\n'])    
+    
+    def reciprocal(self):
+        inputs = []
+        lhsStr, inputs = _matricize(self, inputs)
+        return construct_intermediate_node(inputs, [OUTPUT_ID, ' = 1/', lhsStr, '\n'])
+        
+    def expm1(self):
+        inputs = []
+        lhsStr, inputs = _matricize(self, inputs)
+        return construct_intermediate_node(inputs, [OUTPUT_ID, ' = exp(', lhsStr, ') - 1\n'])
+    
+    def ones_like(self):
+        inputs = []
+        lhsStr, inputs = _matricize(self, inputs)
+        rlen = lhsStr + '.shape(axis=0)'
+        clen = lhsStr + '.shape(axis=1)'
+        return construct_intermediate_node(inputs, [OUTPUT_ID, ' = full(1, rows=', rlen, ', cols=', clen, ')\n'])
+    
+    def zeros_like(self):
+        inputs = []
+        lhsStr, inputs = _matricize(self, inputs)
+        rlen = lhsStr + '.shape(axis=0)'
+        clen = lhsStr + '.shape(axis=1)'
+        return construct_intermediate_node(inputs, [OUTPUT_ID, ' = full(0, rows=', rlen, ', cols=', clen, ')\n'])    
+    
+    def log2(self):
+        return self.log(2)
+    
+    def log10(self):
+        return self.log(10)
+        
+    def log(self, y=None):
+        if y is None:
+            return unaryMatrixFunction(self, 'log')
+        else:
+            return binaryMatrixFunction(self, y, 'log')
+
+    def abs(self):
+        return unaryMatrixFunction(self, 'abs')
+
+    def sqrt(self):
+        return unaryMatrixFunction(self, 'sqrt')
+
+    def round(self):
+        return unaryMatrixFunction(self, 'round')
+
+    def floor(self):
+        return unaryMatrixFunction(self, 'floor')
+
+    def ceil(self):
+        return unaryMatrixFunction(self, 'ceil')
+
+    def sin(self):
+        return unaryMatrixFunction(self, 'sin')
+
+    def cos(self):
+        return unaryMatrixFunction(self, 'cos')
+
+    def tan(self):
+        return unaryMatrixFunction(self, 'tan')
+
+    def arcsin(self):
+        return self.asin()
+
+    def arccos(self):
+        return self.acos()
+
+    def arctan(self):
+        return self.atan()
+    
+    def asin(self):
+        return unaryMatrixFunction(self, 'asin')
+
+    def acos(self):
+        return unaryMatrixFunction(self, 'acos')
+
+    def atan(self):
+        return unaryMatrixFunction(self, 'atan')
+
+    def rad2deg(self):
+        """
+        Convert angles from radians to degrees.
+        """
+        inputs = []
+        lhsStr, inputs = _matricize(self, inputs)
+        # 180/pi = 57.2957795131
+        return construct_intermediate_node(inputs, [OUTPUT_ID, ' = ', lhsStr, '*57.2957795131\n'])
+    
+    def deg2rad(self):
+        """
+        Convert angles from degrees to radians.
+        """
+        inputs = []
+        lhsStr, inputs = _matricize(self, inputs)
+        # pi/180 = 0.01745329251
+        return construct_intermediate_node(inputs, [OUTPUT_ID, ' = ', lhsStr, '*0.01745329251\n'])    
+    
+    def sign(self):
+        return unaryMatrixFunction(self, 'sign')    
+
     def __add__(self, other):
-        return binaryOp(self, other, ' + ')
+        return binary_op(self, other, ' + ')
 
     def __sub__(self, other):
-        return binaryOp(self, other, ' - ')
+        return binary_op(self, other, ' - ')
 
     def __mul__(self, other):
-        return binaryOp(self, other, ' * ')
+        return binary_op(self, other, ' * ')
 
     def __floordiv__(self, other):
-        return binaryOp(self, other, ' // ')
+        return binary_op(self, other, ' // ')
 
     def __div__(self, other):
         """
         Performs division (Python 2 way).
         """
-        return binaryOp(self, other, ' / ')
+        return binary_op(self, other, ' / ')
 
     def __truediv__(self, other):
         """
         Performs division (Python 3 way).
         """
-        return binaryOp(self, other, ' / ')
+        return binary_op(self, other, ' / ')
 
     def __mod__(self, other):
-        return binaryOp(self, other, ' % ')
+        return binary_op(self, other, ' % ')
 
     def __pow__(self, other):
-        return binaryOp(self, other, ' ** ')
+        return binary_op(self, other, ' ** ')
 
     def __radd__(self, other):
-        return binaryOp(other, self, ' + ')
+        return binary_op(other, self, ' + ')
 
     def __rsub__(self, other):
-        return binaryOp(other, self, ' - ')
+        return binary_op(other, self, ' - ')
 
     def __rmul__(self, other):
-        return binaryOp(other, self, ' * ')
+        return binary_op(other, self, ' * ')
 
     def __rfloordiv__(self, other):
-        return binaryOp(other, self, ' // ')
+        return binary_op(other, self, ' // ')
 
     def __rdiv__(self, other):
-        return binaryOp(other, self, ' / ')
+        return binary_op(other, self, ' / ')
 
     def __rmod__(self, other):
-        return binaryOp(other, self, ' % ')
+        return binary_op(other, self, ' % ')
 
     def __rpow__(self, other):
-        return binaryOp(other, self, ' ** ')
+        return binary_op(other, self, ' ** ')
 
     def dot(self, other):
         """
@@ -632,30 +807,35 @@ class matrix(object):
     ######################### Relational/Boolean operators ######################################
 
     def __lt__(self, other):
-        return binaryOp(other, self, ' < ')
+        return binary_op(self, other, ' < ')
 
     def __le__(self, other):
-        return binaryOp(other, self, ' <= ')
+        return binary_op(self, other, ' <= ')
 
     def __gt__(self, other):
-        return binaryOp(other, self, ' > ')
+        return binary_op(self, other, ' > ')
 
     def __ge__(self, other):
-        return binaryOp(other, self, ' >= ')
+        return binary_op(self, other,' >= ')
 
     def __eq__(self, other):
-        return binaryOp(other, self, ' == ')
+        return binary_op(self, other, ' == ')
 
     def __ne__(self, other):
-        return binaryOp(other, self, ' != ')
-
+        return binary_op(self, other, ' != ')
+    
     # TODO: Cast the output back into scalar and return boolean results
     def __and__(self, other):
-        return binaryOp(other, self, ' & ')
+        return binary_op(other, self, ' & ')
 
     def __or__(self, other):
-        return binaryOp(other, self, ' | ')
+        return binary_op(other, self, ' | ')
 
+    def logical_not(self):
+        inputs = []
+        lhsStr, inputs = _matricize(self, inputs)
+        return construct_intermediate_node(inputs, [OUTPUT_ID, ' = !', lhsStr, '\n'])
+    
     ######################### Aggregation functions ######################################
 
     def sum(self, axis=None):
@@ -698,25 +878,37 @@ class matrix(object):
         """
         return self._aggFn('sd', axis)
 
-    def max(self, axis=None):
+    def max(self, other=None, axis=None):
         """
         Compute the maximum value along the specified axis
         
         Parameters
         ----------
+        other: matrix or numpy array (& other supported types) or scalar
         axis : int, optional
         """
-        return self._aggFn('max', axis)
+        if other is not None and axis is not None:
+            raise ValueError('Both axis and other cannot be not None')
+        elif other is None and axis is not None:
+            return self._aggFn('max', axis)
+        else:
+            return binaryMatrixFunction(self, other, 'max')
 
-    def min(self, axis=None):
+    def min(self, other=None, axis=None):
         """
         Compute the minimum value along the specified axis
         
         Parameters
         ----------
+        other: matrix or numpy array (& other supported types) or scalar
         axis : int, optional
         """
-        return self._aggFn('min', axis)
+        if other is not None and axis is not None:
+            raise ValueError('Both axis and other cannot be not None')
+        elif other is None and axis is not None:
+            return self._aggFn('min', axis)
+        else:
+            return binaryMatrixFunction(self, other, 'min')
 
     def argmin(self, axis=None):
         """
@@ -764,13 +956,13 @@ class matrix(object):
         """
         Common function that is called for functions that have axis as parameter.
         """
-        dmlOp = DMLOp([self])
-        out = matrix(None, op=dmlOp)
+        dml_script = ''
+        lhsStr, inputs = _matricize(self, [])
         if axis is None:
-            dmlOp.dml = [out.ID, ' = ', fnName, '(', self.ID, ')\n']
+            dml_script = [OUTPUT_ID, ' = ', fnName, '(', lhsStr, ')\n']
         else:
-            dmlOp.dml = [out.ID, ' = ', fnName, '(', self.ID, ', axis=', str(axis) ,')\n']
-        return out
+            dml_script = [OUTPUT_ID, ' = ', fnName, '(', lhsStr, ', axis=', str(axis) ,')\n']
+        return construct_intermediate_node(inputs, dml_script)
 
     ######################### Indexing operators ######################################
 
@@ -778,19 +970,17 @@ class matrix(object):
         """
         Implements evaluation of right indexing operations such as m[1,1], m[0:1,], m[:, 0:1]
         """
-        dmlOp = DMLOp([self])
-        out = matrix(None, op=dmlOp)
-        dmlOp.dml = [out.ID, ' = ', self.ID ] + getIndexingDML(index) + [ '\n' ]
-        return out
+        print '__getitem__'
+        return construct_intermediate_node([self], [OUTPUT_ID, ' = ', self.ID ] + getIndexingDML(index) + [ '\n' ])
 
     # Performs deep copy if the matrix is backed by data
     def _prepareForInPlaceUpdate(self):
-        temp = matrix(self.data, op=self.op)
+        temp = matrix(self.eval_data, op=self.op)
         for op in self.referenced:
             op.inputs = [temp if x.ID==self.ID else x for x in op.inputs]
         self.ID, temp.ID = temp.ID, self.ID # Copy even the IDs as the IDs might be used to create DML
         self.op = DMLOp([temp], dml=[self.ID, " = ", temp.ID])
-        self.data = None
+        self.eval_data = None
         temp.referenced = self.referenced + [ self.op ]
         self.referenced = []
 
@@ -804,3 +994,6 @@ class matrix(object):
         if isinstance(value, matrix):
             value.referenced = value.referenced + [ self.op ]
         self.op.dml = self.op.dml + [ '\n', self.ID ] + getIndexingDML(index) + [ ' = ',  getValue(value), '\n']
+
+    # Not implemented: conj, hyperbolic/inverse-hyperbolic functions(i.e. sinh, arcsinh, cosh, ...), bitwise operator, xor operator, isreal, iscomplex, isfinite, isinf, isnan, copysign, nextafter, modf, frexp, trunc  
+    _numpy_to_systeml_mapping = {np.add: __add__, np.subtract: __sub__, np.multiply: __mul__, np.divide: __div__, np.logaddexp: logaddexp, np.true_divide: __truediv__, np.floor_divide: __floordiv__, np.negative: negative, np.power: __pow__, np.remainder: remainder, np.mod: mod, np.fmod: __mod__, np.absolute: abs, np.rint: round, np.sign: sign, np.exp: exp, np.exp2: exp2, np.log: log, np.log2: log2, np.log10: log10, np.expm1: expm1, np.log1p: log1p, np.sqrt: sqrt, np.square: square, np.reciprocal: reciprocal, np.ones_like: ones_like, np.zeros_like: zeros_like, np.sin: sin, np.cos: cos, np.tan: tan, np.arcsin: arcsin, np.arccos: arccos, np.arctan: arctan, np.deg2rad: deg2rad, np.rad2deg: rad2deg, np.greater: __gt__, np.greater_equal: __ge__, np.less: __lt__, np.less_equal: __le__, np.not_equal: __ne__, np.equal: __eq__, np.logical_not: logical_not, np.logical_and: __and__, np.logical_or: __or__, np.maximum: max, np.minimum: min, np.signbit: sign, np.ldexp: ldexp}

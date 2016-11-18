@@ -815,7 +815,7 @@
 				        <version>1.1</version>
 				        <executions>
 				        	<execution>
-					            <id>generate-python-package</id>
+					            <id>generate-python-package-1</id>
 					            <phase>pre-integration-test</phase>
 					            <goals>
 					              <goal>exec</goal>
@@ -828,15 +828,8 @@
 					              </arguments>
 					            </configuration>
 					          </execution>
-				        </executions>
-			      	</plugin>
-					<plugin>
-				        <groupId>org.codehaus.mojo</groupId>
-				        <artifactId>exec-maven-plugin</artifactId>
-				        <version>1.1</version>
-				        <executions>
-				        	<execution>
-					            <id>generate-python-package</id>
+					          <execution>
+					            <id>generate-python-package-2</id>
 					            <phase>post-integration-test</phase>
 					            <goals>
 					              <goal>exec</goal>

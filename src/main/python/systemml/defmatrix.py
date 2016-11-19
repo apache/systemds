@@ -30,7 +30,7 @@ from .converters import *
 
 def setSparkContext(sc):
     """
-    Before using the matrix, the user needs to invoke this function.
+    Before using the matrix, the user needs to invoke this function if SparkContext is not previously created in the session.
 
     Parameters
     ----------
@@ -81,20 +81,18 @@ class DMLOp(object):
 # This helps to provide dml containing output ID in construct_intermediate_node
 OUTPUT_ID = '$$OutputID$$'
 
-def set_max_depth(depth):
+def set_lazy(isLazy):
     """
-    This method allows users to set the depth of lazy SystemML DAG.
-    Setting this to 1 ensures that every operation is evaluated (which can turn off many optimization).
-    Setting this to 0 ensures that SystemML will never implicitly evaluate the DAG, but will require user to call eval or toPandas/toNumPyArray/... explicitly.  
-
+    This method allows users to set whether the matrix operations should be executed in lazy manner.
+    
     Parameters
     ----------
-    depth: Should be greater than equal to 0.
+    isLazy: True if matrix operations should be evaluated in lazy manner.
     """
-    if depth < 0:
-        raise ValueError('depth should be greater than or equal to 0')
+    if isLazy:
+        DMLOp.MAX_DEPTH = 0
     else:
-        DMLOp.MAX_DEPTH = depth
+        DMLOp.MAX_DEPTH = 1
     
 def construct_intermediate_node(inputs, dml):
     """

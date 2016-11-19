@@ -22,72 +22,111 @@ limitations under the License.
 {% endcomment %}
 -->
 
+* This will become a table of contents (this text will be scraped).
+{:toc}
 
-systemml package[](#systemml-package "Permalink to this headline")
-===================================================================
+<br/>
 
-Subpackages[](#subpackages "Permalink to this headline")
----------------------------------------------------------
+## Introduction
 
--   [systemml.mllearn package](systemml.mllearn.html)
-    -   [Submodules](systemml.mllearn.html#submodules)
-    -   [systemml.mllearn.estimators
-        module](systemml.mllearn.html#module-systemml.mllearn.estimators)
-    -   [Module contents](systemml.mllearn.html#module-systemml.mllearn)
-        -   [SystemML
-            Algorithms](systemml.mllearn.html#systemml-algorithms)
--   [systemml.random package](systemml.random.html)
-    -   [Submodules](systemml.random.html#submodules)
-    -   [systemml.random.sampling
-        module](systemml.random.html#module-systemml.random.sampling)
-    -   [Module contents](systemml.random.html#module-systemml.random)
-        -   [Random Number
-            Generation](systemml.random.html#random-number-generation)
+SystemML enables flexible, scalable machine learning. This flexibility is achieved through the specification of a high-level declarative machine learning language that comes in two flavors, 
+one with an R-like syntax (DML) and one with a Python-like syntax (PyDML).
 
-Submodules[](#submodules "Permalink to this headline")
--------------------------------------------------------
+Algorithm scripts written in DML and PyDML can be run on Hadoop, on Spark, or in Standalone mode. 
+No script modifications are required to change between modes. SystemML automatically performs advanced optimizations 
+based on data and cluster characteristics, so much of the need to manually tweak algorithms is largely reduced or eliminated.
+To understand more about DML and PyDML, we recommend that you read [Beginner's Guide to DML and PyDML](https://apache.github.io/incubator-systemml/beginners-guide-to-dml-and-pydml.html).
 
-systemml.classloader module[](#module-systemml.classloader "Permalink to this headline")
------------------------------------------------------------------------------------------
+For convenience of Python users, SystemML exposes several language-level APIs that allow Python users to use SystemML
+and its algorithms without the need to know DML or PyDML. We explain these APIs in the below sections.
 
- `systemml.classloader.createJavaObject`(*sc*, *obj\_type*)[](#systemml.classloader.createJavaObject "Permalink to this definition")
-:   Performs appropriate check if SystemML.jar is available and returns
-    the handle to MLContext object on JVM
+## matrix API
 
-    sc: SparkContext
-    :   SparkContext
+The matrix class allows users to perform linear algebra operations in SystemML using a NumPy-like interface.
+This class supports several arithmetic operators (such as +, -, *, /, ^, etc) and also supports most of NumPy's universal functions (i.e. ufuncs).
 
-    obj\_type: Type of object to create ('mlcontext' or 'dummy')
+The current version of NumPy explicitly disables overriding ufunc, but this should be enabled in next release. 
+Until then to test above code, please use:
 
-systemml.converters module[](#module-systemml.converters "Permalink to this headline")
----------------------------------------------------------------------------------------
+```bash
+git clone https://github.com/niketanpansare/numpy.git
+cd numpy
+python setup.py install
+```
 
- `systemml.converters.getNumCols`(*numPyArr*)[](#systemml.converters.getNumCols "Permalink to this definition")
-:   
+This will enable NumPy's functions to invoke matrix class:
 
- `systemml.converters.convertToMatrixBlock`(*sc*, *src*)[](#systemml.converters.convertToMatrixBlock "Permalink to this definition")
-:   
+```python
+import systemml as sml
+import numpy as np
+m1 = sml.matrix(np.ones((3,3)) + 2)
+m2 = sml.matrix(np.ones((3,3)) + 3)
+np.add(m1, m2)
+``` 
 
- `systemml.converters.convertToNumPyArr`(*sc*, *mb*)[](#systemml.converters.convertToNumPyArr "Permalink to this definition")
-:   
+The matrix class doesnot support following ufuncs:
 
- `systemml.converters.convertToPandasDF`(*X*)[](#systemml.converters.convertToPandasDF "Permalink to this definition")
-:   
+- Complex number related ufunc (for example: `conj`)
+- Hyperbolic/inverse-hyperbolic functions (for example: sinh, arcsinh, cosh, ...)
+- Bitwise operators
+- Xor operator
+- Infinite/Nan-checking (for example: isreal, iscomplex, isfinite, isinf, isnan)
+- Other ufuncs: copysign, nextafter, modf, frexp, trunc.
 
- `systemml.converters.convertToLabeledDF`(*sqlCtx*, *X*, *y=None*)[](#systemml.converters.convertToLabeledDF "Permalink to this definition")
-:   
+This class also supports several input/output formats such as NumPy arrays, Pandas DataFrame, SciPy sparse matrix and PySpark DataFrame.
 
-systemml.defmatrix module[](#module-systemml.defmatrix "Permalink to this headline")
--------------------------------------------------------------------------------------
+By default, the operations are evaluated lazily to avoid conversion overhead and also to maximize optimization scope.
+To disable lazy evaluation, please us `set_lazy` method:
 
- `systemml.defmatrix.setSparkContext`(*sc*)[](#systemml.defmatrix.setSparkContext "Permalink to this definition")
-:   Before using the matrix, the user needs to invoke this function.
+```python
+>>> import systemml as sml
+>>> import numpy as np
+>>> m1 = sml.matrix(np.ones((3,3)) + 2)
 
-    sc: SparkContext
-    :   SparkContext
+Welcome to Apache SystemML!
 
- *class*`systemml.defmatrix.matrix`(*data*, *op=None*)[](#systemml.defmatrix.matrix "Permalink to this definition")
-:   Bases: `object`{.xref .py .py-class .docutils .literal}
+>>> m2 = sml.matrix(np.ones((3,3)) + 3)
+>>> np.add(m1, m2) + m1
+# This matrix (mVar4) is backed by below given PyDML script (which is not yet evaluated). To fetch the data of this matrix, invoke toNumPyArray() or toDataFrame() or toPandas() methods.
+mVar2 = load(" ", format="csv")
+mVar1 = load(" ", format="csv")
+mVar3 = mVar1 + mVar2
+mVar4 = mVar3 + mVar1
+save(mVar4, " ")
+
+
+>>> sml.set_lazy(False)
+>>> m1 = sml.matrix(np.ones((3,3)) + 2)
+>>> m2 = sml.matrix(np.ones((3,3)) + 3)
+>>> np.add(m1, m2) + m1
+# This matrix (mVar8) is backed by NumPy array. To fetch the NumPy array, invoke toNumPyArray() method.
+``` 
+
+### Usage:
+
+```python
+import systemml as sml
+import numpy as np
+m1 = sml.matrix(np.ones((3,3)) + 2)
+m2 = sml.matrix(np.ones((3,3)) + 3)
+m2 = m1 * (m2 + m1)
+m4 = 1.0 - m2
+m4.sum(axis=1).toNumPyArray()
+```
+
+Output:
+
+```bash
+array([[-60.],
+       [-60.],
+       [-60.]])
+```
+
+
+### Reference Documentation:
+
+ *class*`systemml.defmatrix.matrix`(*data*, *op=None*)
+:   Bases: `object`
 
     matrix class is a python wrapper that implements basic matrix
     operators, matrix functions as well as converters to common Python
@@ -196,65 +235,59 @@ systemml.defmatrix module[](#module-systemml.defmatrix "Permalink to this headli
               - [mVar1] (data).
               - [mVar2] (data).    
 
- `THROW_ARRAY_CONVERSION_ERROR`*= False*[](#systemml.defmatrix.matrix.THROW_ARRAY_CONVERSION_ERROR "Permalink to this definition")
+ `abs`()
 :   
 
- `abs`()[](#systemml.defmatrix.matrix.abs "Permalink to this definition")
+ `acos`()
 :   
 
- `acos`()[](#systemml.defmatrix.matrix.acos "Permalink to this definition")
+ `arccos`()
 :   
 
- `arccos`()[](#systemml.defmatrix.matrix.arccos "Permalink to this definition")
+ `arcsin`()
 :   
 
- `arcsin`()[](#systemml.defmatrix.matrix.arcsin "Permalink to this definition")
+ `arctan`()
 :   
 
- `arctan`()[](#systemml.defmatrix.matrix.arctan "Permalink to this definition")
-:   
-
- `argmax`(*axis=None*)[](#systemml.defmatrix.matrix.argmax "Permalink to this definition")
+ `argmax`(*axis=None*)
 :   Returns the indices of the maximum values along an axis.
 
     axis : int, optional (only axis=1, i.e. rowIndexMax is supported
     in this version)
 
- `argmin`(*axis=None*)[](#systemml.defmatrix.matrix.argmin "Permalink to this definition")
+ `argmin`(*axis=None*)
 :   Returns the indices of the minimum values along an axis.
 
     axis : int, optional (only axis=1, i.e. rowIndexMax is supported
     in this version)
 
- `asfptype`()[](#systemml.defmatrix.matrix.asfptype "Permalink to this definition")
+ `asfptype`()
 :   
 
- `asin`()[](#systemml.defmatrix.matrix.asin "Permalink to this definition")
+ `asin`()
 :   
 
- `astype`(*t*)[](#systemml.defmatrix.matrix.astype "Permalink to this definition")
+ `astype`(*t*)
 :   
 
- `atan`()[](#systemml.defmatrix.matrix.atan "Permalink to this definition")
+ `atan`()
 :   
 
- `ceil`()[](#systemml.defmatrix.matrix.ceil "Permalink to this definition")
+ `ceil`()
 :   
 
- `cos`()[](#systemml.defmatrix.matrix.cos "Permalink to this definition")
+ `cos`()
 :   
 
- `cumsum`(*axis=None*)[](#systemml.defmatrix.matrix.cumsum "Permalink to this definition")
+ `cumsum`(*axis=None*)
 :   Returns the indices of the maximum values along an axis.
 
     axis : int, optional (only axis=0, i.e. cumsum along the rows is
     supported in this version)
 
- `deg2rad`()[](#systemml.defmatrix.matrix.deg2rad "Permalink to this definition")
+ `deg2rad`()
 :   Convert angles from degrees to radians.
-
- `dml`*= []*[](#systemml.defmatrix.matrix.dml "Permalink to this definition")
-:   
 
  `dot`(*other*)[](#systemml.defmatrix.matrix.dot "Permalink to this definition")
 :   Numpy way of performing matrix multiplication
@@ -317,9 +350,6 @@ systemml.defmatrix module[](#module-systemml.defmatrix "Permalink to this headli
 
     other: matrix or numpy array (& other supported types) or scalar
     axis : int, optional
-
- `ml`*= None*[](#systemml.defmatrix.matrix.ml "Permalink to this definition")
-:   
 
  `mod`(*other*)[](#systemml.defmatrix.matrix.mod "Permalink to this definition")
 :   
@@ -423,9 +453,6 @@ systemml.defmatrix module[](#module-systemml.defmatrix "Permalink to this headli
 
     axis : int, optional
 
- `visited`*= []*[](#systemml.defmatrix.matrix.visited "Permalink to this definition")
-:   
-
  `zeros_like`()[](#systemml.defmatrix.matrix.zeros_like "Permalink to this definition")
 :   
 
@@ -460,32 +487,103 @@ systemml.defmatrix module[](#module-systemml.defmatrix "Permalink to this headli
         >>> print('Residual sum of squares: %.2f' % np.mean((y_predicted - y_test) ** 2))
         Residual sum of squares: 25282.12
 
- *class*`systemml.defmatrix.DMLOp`(*inputs*, *dml=None*)[](#systemml.defmatrix.DMLOp "Permalink to this definition")
-:   Bases: `object`{.xref .py .py-class .docutils .literal}
+ `print_ast`(*numSpaces*)[](#systemml.defmatrix.DMLOp.print_ast "Permalink to this definition")
+:   
 
-    Represents an intermediate node of Abstract syntax tree created to
-    generate the PyDML script
+ `systemml.defmatrix.set_lazy`(*isLazy*)[](#systemml.defmatrix.set_max_depth "Permalink to this definition")
+:   This method allows users to set whether the matrix operations should be executed in lazy manner.
 
-     `MAX_DEPTH`*= 0*[](#systemml.defmatrix.DMLOp.MAX_DEPTH "Permalink to this definition")
-    :   
-
-     `print_ast`(*numSpaces*)[](#systemml.defmatrix.DMLOp.print_ast "Permalink to this definition")
-    :   
-
- `systemml.defmatrix.set_max_depth`(*depth*)[](#systemml.defmatrix.set_max_depth "Permalink to this definition")
-:   This method allows users to set the depth of lazy SystemML DAG.
-    Setting this to 1 ensures that every operation is evaluated (which
-    can turn off many optimization). Setting this to 0 ensures that
-    SystemML will never implicitly evaluate the DAG, but will require
-    user to call eval or toPandas/toNumPyArray/... explicitly.
-
-    depth: Should be greater than equal to 0.
+    isLazy: True if matrix operations should be evaluated in lazy manner.
 
  `systemml.defmatrix.debug_array_conversion`(*throwError*)[](#systemml.defmatrix.debug_array_conversion "Permalink to this definition")
 :   
 
-systemml.mlcontext module[](#systemml-mlcontext-module "Permalink to this headline")
--------------------------------------------------------------------------------------
+ `systemml.random.sampling.normal`(*loc=0.0*, *scale=1.0*, *size=(1*, *1)*, *sparsity=1.0*)(#systemml.random.sampling.normal "Permalink to this definition")
+:   Draw random samples from a normal (Gaussian) distribution.
+
+    loc: Mean ('centre') of the distribution. scale: Standard deviation
+    (spread or 'width') of the distribution. size: Output shape (only
+    tuple of length 2, i.e. (m, n), supported). sparsity: Sparsity
+    (between 0.0 and 1.0).
+
+        >>> import systemml as sml
+        >>> import numpy as np
+        >>> sml.setSparkContext(sc)
+        >>> from systemml import random
+        >>> m1 = sml.random.normal(loc=3, scale=2, size=(3,3))
+        >>> m1.toNumPyArray()
+        array([[ 3.48857226,  6.17261819,  2.51167259],
+               [ 3.60506708, -1.90266305,  3.97601633],
+               [ 3.62245706,  5.9430881 ,  2.53070413]])
+
+ `systemml.random.sampling.uniform`(*low=0.0*, *high=1.0*, *size=(1*, *1)*, *sparsity=1.0*)(#systemml.random.sampling.uniform "Permalink to this definition")
+:   Draw samples from a uniform distribution.
+
+    low: Lower boundary of the output interval. high: Upper boundary of
+    the output interval. size: Output shape (only tuple of length 2,
+    i.e. (m, n), supported). sparsity: Sparsity (between 0.0 and 1.0).
+
+        >>> import systemml as sml
+        >>> import numpy as np
+        >>> sml.setSparkContext(sc)
+        >>> from systemml import random
+        >>> m1 = sml.random.uniform(size=(3,3))
+        >>> m1.toNumPyArray()
+        array([[ 0.54511396,  0.11937437,  0.72975775],
+               [ 0.14135946,  0.01944448,  0.52544478],
+               [ 0.67582422,  0.87068849,  0.02766852]])
+
+ `systemml.random.sampling.poisson`(*lam=1.0*, *size=(1*, *1)*, *sparsity=1.0*)(#systemml.random.sampling.poisson "Permalink to this definition")
+:   Draw samples from a Poisson distribution.
+
+    lam: Expectation of interval, should be \> 0. size: Output shape
+    (only tuple of length 2, i.e. (m, n), supported). sparsity: Sparsity
+    (between 0.0 and 1.0).
+
+        >>> import systemml as sml
+        >>> import numpy as np
+        >>> sml.setSparkContext(sc)
+        >>> from systemml import random
+        >>> m1 = sml.random.poisson(lam=1, size=(3,3))
+        >>> m1.toNumPyArray()
+        array([[ 1.,  0.,  2.],
+               [ 1.,  0.,  0.],
+               [ 0.,  0.,  0.]])
+
+
+
+## MLContext API
+
+The Spark MLContext API offers a programmatic interface for interacting with SystemML from Spark using languages such as Scala, Java, and Python. 
+As a result, it offers a convenient way to interact with SystemML from the Spark Shell and from Notebooks such as Jupyter and Zeppelin.
+
+### Usage
+
+The below example demonstrates how to invoke the algorithm [scripts/algorithms/MultiLogReg.dml](https://github.com/apache/incubator-systemml/blob/master/scripts/algorithms/MultiLogReg.dml)
+using Python [MLContext API](https://apache.github.io/incubator-systemml/spark-mlcontext-programming-guide).
+
+```python
+from sklearn import datasets, neighbors
+from pyspark.sql import DataFrame, SQLContext
+import systemml as sml
+import pandas as pd
+import os, imp
+sqlCtx = SQLContext(sc)
+digits = datasets.load_digits()
+X_digits = digits.data
+y_digits = digits.target + 1
+n_samples = len(X_digits)
+# Split the data into training/testing sets and convert to PySpark DataFrame
+X_df = sqlCtx.createDataFrame(pd.DataFrame(X_digits[:.9 * n_samples]))
+y_df = sqlCtx.createDataFrame(pd.DataFrame(y_digits[:.9 * n_samples]))
+ml = sml.MLContext(sc)
+# Get the path of MultiLogReg.dml
+scriptPath = os.path.join(imp.find_module("systemml")[1], 'systemml-java', 'scripts', 'algorithms', 'MultiLogReg.dml')
+script = sml.dml(scriptPath).input(X=X_df, Y_vec=y_df).output("B_out")
+beta = ml.execute(script).get('B_out').toNumPy()
+```
+
+### Reference documentation
 
  *class*`systemml.mlcontext.MLResults`(*results*, *sc*)[](#systemml.mlcontext.MLResults "Permalink to this definition")
 :   Bases: `object`{.xref .py .py-class .docutils .literal}
@@ -601,134 +699,36 @@ systemml.mlcontext module[](#systemml-mlcontext-module "Permalink to this headli
  `systemml.mlcontext.convertToLabeledDF`(*sqlCtx*, *X*, *y=None*)[](#systemml.mlcontext.convertToLabeledDF "Permalink to this definition")
 :   
 
-Module contents[](#module-systemml "Permalink to this headline")
------------------------------------------------------------------
 
- *class*`systemml.MLResults`(*results*, *sc*)[](#systemml.MLResults "Permalink to this definition")
-:   Bases: `object`{.xref .py .py-class .docutils .literal}
+## mllearn API
 
-    Wrapper around a Java ML Results object.
+### Usage
 
-    results: JavaObject
-    :   A Java MLResults object as returned by calling ml.execute().
-    sc: SparkContext
-    :   SparkContext
+```python
+# Scikit-learn way
+from sklearn import datasets, neighbors
+from systemml.mllearn import LogisticRegression
+from pyspark.sql import SQLContext
+sqlCtx = SQLContext(sc)
+digits = datasets.load_digits()
+X_digits = digits.data
+y_digits = digits.target 
+n_samples = len(X_digits)
+X_train = X_digits[:.9 * n_samples]
+y_train = y_digits[:.9 * n_samples]
+X_test = X_digits[.9 * n_samples:]
+y_test = y_digits[.9 * n_samples:]
+logistic = LogisticRegression(sqlCtx)
+print('LogisticRegression score: %f' % logistic.fit(X_train, y_train).score(X_test, y_test))
+```
 
- `get`(*\*outputs*)[](#systemml.MLResults.get "Permalink to this definition")
-:   outputs: string, list of strings
-    :   Output variables as defined inside the DML script.
+Output:
 
- *class*`systemml.MLContext`(*sc*)[](#systemml.MLContext "Permalink to this definition")
-:   Bases: `object`{.xref .py .py-class .docutils .literal}
+```bash
+LogisticRegression score: 0.922222
+```
 
-    Wrapper around the new SystemML MLContext.
-
-    sc: SparkContext
-    :   SparkContext
-
- `execute`(*script*)[](#systemml.MLContext.execute "Permalink to this definition")
-:   Execute a DML / PyDML script.
-
-    script: Script instance
-    :   Script instance defined with the appropriate input and
-        output variables.
-
-    ml\_results: MLResults
-    :   MLResults instance.
-
- `setExplain`(*explain*)[](#systemml.MLContext.setExplain "Permalink to this definition")
-:   Explanation about the program. Mainly intended for developers.
-
-    explain: boolean
-
- `setExplainLevel`(*explainLevel*)[](#systemml.MLContext.setExplainLevel "Permalink to this definition")
-:   Set explain level.
-
-    explainLevel: string
-    :   Can be one of 'hops', 'runtime', 'recompile\_hops',
-        'recompile\_runtime' or in the above in upper case.
-
- `setStatistics`(*statistics*)[](#systemml.MLContext.setStatistics "Permalink to this definition")
-:   Whether or not to output statistics (such as execution time,
-    elapsed time) about script executions.
-
-    statistics: boolean
-
- `setStatisticsMaxHeavyHitters`(*maxHeavyHitters*)[](#systemml.MLContext.setStatisticsMaxHeavyHitters "Permalink to this definition")
-:   The maximum number of heavy hitters that are printed as part of
-    the statistics.
-
-    maxHeavyHitters: int
-
- *class*`systemml.Script`(*scriptString*, *scriptType='dml'*)[](#systemml.Script "Permalink to this definition")
-:   Bases: `object`{.xref .py .py-class .docutils .literal}
-
-    Instance of a DML/PyDML Script.
-
-    scriptString: string
-    :   Can be either a file path to a DML script or a DML script
-        itself.
-    scriptType: string
-    :   Script language, either 'dml' for DML (R-like) or 'pydml' for
-        PyDML (Python-like).
-
- `input`(*\*args*, *\*\*kwargs*)[](#systemml.Script.input "Permalink to this definition")
-:   args: name, value tuple
-    :   where name is a string, and currently supported value
-        formats are double, string, dataframe, rdd, and list of such
-        object.
-    kwargs: dict of name, value pairs
-    :   To know what formats are supported for name and value, look
-        above.
-
- `output`(*\*names*)[](#systemml.Script.output "Permalink to this definition")
-:   names: string, list of strings
-    :   Output variables as defined inside the DML script.
-
-`systemml.dml`(*scriptString*)[](#systemml.dml "Permalink to this definition")
-:   Create a dml script object based on a string.
-
-scriptString: string
-:   Can be a path to a dml script or a dml script itself.
-
-script: Script instance
-:   Instance of a script object.
-
-`systemml.pydml`(*scriptString*)[](#systemml.pydml "Permalink to this definition")
-:   Create a pydml script object based on a string.
-
-scriptString: string
-:   Can be a path to a pydml script or a pydml script itself.
-
-script: Script instance
-:   Instance of a script object.
-
-
- `systemml.getNumCols`(*numPyArr*)[](#systemml.getNumCols "Permalink to this definition")
-:   
-
- `systemml.convertToMatrixBlock`(*sc*, *src*)[](#systemml.convertToMatrixBlock "Permalink to this definition")
-:   
-
- `systemml.convertToNumPyArr`(*sc*, *mb*)[](#systemml.convertToNumPyArr "Permalink to this definition")
-:   
-
- `systemml.convertToPandasDF`(*X*)[](#systemml.convertToPandasDF "Permalink to this definition")
-:   
-
- `systemml.convertToLabeledDF`(*sqlCtx*, *X*, *y=None*)[](#systemml.convertToLabeledDF "Permalink to this definition")
-:   
-
-
-
-systemml.mllearn package(#systemml-mllearn-package "Permalink to this headline")
-===================================================================================
-
-Submodules(#submodules "Permalink to this headline")
--------------------------------------------------------
-
-systemml.mllearn.estimators module(#module-systemml.mllearn.estimators "Permalink to this headline")
--------------------------------------------------------------------------------------------------------
+### Reference documentation
 
  *class*`systemml.mllearn.estimators.LinearRegression`(*sqlCtx*, *fit\_intercept=True*, *max\_iter=100*, *tol=1e-06*, *C=1.0*, *solver='newton-cg'*, *transferUsingDF=False*)(#systemml.mllearn.estimators.LinearRegression "Permalink to this definition")
 :   Bases: `systemml.mllearn.estimators.BaseSystemMLRegressor`{.xref .py
@@ -862,294 +862,77 @@ systemml.mllearn.estimators module(#module-systemml.mllearn.estimators "Permalin
         >>> pred = nb.predict(vectors_test)
         >>> metrics.f1_score(newsgroups_test.target, pred, average='weighted')
 
-Module contents(#module-systemml.mllearn "Permalink to this headline")
--------------------------------------------------------------------------
 
-### SystemML Algorithms(#systemml-algorithms "Permalink to this headline")
+## Utility classes (used internally)
 
-Classification Algorithms
+systemml.classloader module[](#module-systemml.classloader "Permalink to this headline")
+-----------------------------------------------------------------------------------------
 
-LogisticRegression
+ `systemml.classloader.createJavaObject`(*sc*, *obj\_type*)[](#systemml.classloader.createJavaObject "Permalink to this definition")
+:   Performs appropriate check if SystemML.jar is available and returns
+    the handle to MLContext object on JVM
 
-Performs binomial and multinomial logistic regression
+    sc: SparkContext
+    :   SparkContext
 
-SVM
+    obj\_type: Type of object to create ('mlcontext' or 'dummy')
 
-Performs both binary-class and multi-class SVM
+systemml.converters module[](#module-systemml.converters "Permalink to this headline")
+---------------------------------------------------------------------------------------
 
-NaiveBayes
+ `systemml.converters.getNumCols`(*numPyArr*)[](#systemml.converters.getNumCols "Permalink to this definition")
+:   
 
-Multinomial naive bayes classifier
+ `systemml.converters.convertToMatrixBlock`(*sc*, *src*)[](#systemml.converters.convertToMatrixBlock "Permalink to this definition")
+:   
 
-Regression Algorithms
+ `systemml.converters.convertToNumPyArr`(*sc*, *mb*)[](#systemml.converters.convertToNumPyArr "Permalink to this definition")
+:   
 
-LinearRegression
+ `systemml.converters.convertToPandasDF`(*X*)[](#systemml.converters.convertToPandasDF "Permalink to this definition")
+:   
 
-Performs linear regression
+ `systemml.converters.convertToLabeledDF`(*sqlCtx*, *X*, *y=None*)[](#systemml.converters.convertToLabeledDF "Permalink to this definition")
+:  
 
- *class*`systemml.mllearn.LinearRegression`(*sqlCtx*, *fit\_intercept=True*, *max\_iter=100*, *tol=1e-06*, *C=1.0*, *solver='newton-cg'*, *transferUsingDF=False*)(#systemml.mllearn.LinearRegression "Permalink to this definition")
-:   Bases: `systemml.mllearn.estimators.BaseSystemMLRegressor`{.xref .py
-    .py-class .docutils .literal}
+systemml.defmatrix module[](#module-systemml.converters "Permalink to this headline")
+---------------------------------------------------------------------------------------
 
-    Performs linear regression to model the relationship between one
-    numerical response variable and one or more explanatory (feature)
-    variables.
+ *class*`systemml.defmatrix.DMLOp`(*inputs*, *dml=None*)[](#systemml.defmatrix.DMLOp "Permalink to this definition")
+:   Bases: `object`{.xref .py .py-class .docutils .literal}
 
-        >>> import numpy as np
-        >>> from sklearn import datasets
-        >>> from systemml.mllearn import LinearRegression
-        >>> from pyspark.sql import SQLContext
-        >>> # Load the diabetes dataset
-        >>> diabetes = datasets.load_diabetes()
-        >>> # Use only one feature
-        >>> diabetes_X = diabetes.data[:, np.newaxis, 2]
-        >>> # Split the data into training/testing sets
-        >>> diabetes_X_train = diabetes_X[:-20]
-        >>> diabetes_X_test = diabetes_X[-20:]
-        >>> # Split the targets into training/testing sets
-        >>> diabetes_y_train = diabetes.target[:-20]
-        >>> diabetes_y_test = diabetes.target[-20:]
-        >>> # Create linear regression object
-        >>> regr = LinearRegression(sqlCtx, solver='newton-cg')
-        >>> # Train the model using the training sets
-        >>> regr.fit(diabetes_X_train, diabetes_y_train)
-        >>> # The mean square error
-        >>> print("Residual sum of squares: %.2f" % np.mean((regr.predict(diabetes_X_test) - diabetes_y_test) ** 2))
-
- *class*`systemml.mllearn.LogisticRegression`(*sqlCtx*, *penalty='l2'*, *fit\_intercept=True*, *max\_iter=100*, *max\_inner\_iter=0*, *tol=1e-06*, *C=1.0*, *solver='newton-cg'*, *transferUsingDF=False*)(#systemml.mllearn.LogisticRegression "Permalink to this definition")
-:   Bases: `systemml.mllearn.estimators.BaseSystemMLClassifier`{.xref
-    .py .py-class .docutils .literal}
-
-    Performs both binomial and multinomial logistic regression.
-
-    Scikit-learn way
-
-        >>> from sklearn import datasets, neighbors
-        >>> from systemml.mllearn import LogisticRegression
-        >>> from pyspark.sql import SQLContext
-        >>> sqlCtx = SQLContext(sc)
-        >>> digits = datasets.load_digits()
-        >>> X_digits = digits.data
-        >>> y_digits = digits.target + 1
-        >>> n_samples = len(X_digits)
-        >>> X_train = X_digits[:.9 * n_samples]
-        >>> y_train = y_digits[:.9 * n_samples]
-        >>> X_test = X_digits[.9 * n_samples:]
-        >>> y_test = y_digits[.9 * n_samples:]
-        >>> logistic = LogisticRegression(sqlCtx)
-        >>> print('LogisticRegression score: %f' % logistic.fit(X_train, y_train).score(X_test, y_test))
-
-    MLPipeline way
-
-        >>> from pyspark.ml import Pipeline
-        >>> from systemml.mllearn import LogisticRegression
-        >>> from pyspark.ml.feature import HashingTF, Tokenizer
-        >>> from pyspark.sql import SQLContext
-        >>> sqlCtx = SQLContext(sc)
-        >>> training = sqlCtx.createDataFrame([
-        >>>     (0L, "a b c d e spark", 1.0),
-        >>>     (1L, "b d", 2.0),
-        >>>     (2L, "spark f g h", 1.0),
-        >>>     (3L, "hadoop mapreduce", 2.0),
-        >>>     (4L, "b spark who", 1.0),
-        >>>     (5L, "g d a y", 2.0),
-        >>>     (6L, "spark fly", 1.0),
-        >>>     (7L, "was mapreduce", 2.0),
-        >>>     (8L, "e spark program", 1.0),
-        >>>     (9L, "a e c l", 2.0),
-        >>>     (10L, "spark compile", 1.0),
-        >>>     (11L, "hadoop software", 2.0)
-        >>> ], ["id", "text", "label"])
-        >>> tokenizer = Tokenizer(inputCol="text", outputCol="words")
-        >>> hashingTF = HashingTF(inputCol="words", outputCol="features", numFeatures=20)
-        >>> lr = LogisticRegression(sqlCtx)
-        >>> pipeline = Pipeline(stages=[tokenizer, hashingTF, lr])
-        >>> model = pipeline.fit(training)
-        >>> test = sqlCtx.createDataFrame([
-        >>>     (12L, "spark i j k"),
-        >>>     (13L, "l m n"),
-        >>>     (14L, "mapreduce spark"),
-        >>>     (15L, "apache hadoop")], ["id", "text"])
-        >>> prediction = model.transform(test)
-        >>> prediction.show()
-
- *class*`systemml.mllearn.SVM`(*sqlCtx*, *fit\_intercept=True*, *max\_iter=100*, *tol=1e-06*, *C=1.0*, *is\_multi\_class=False*, *transferUsingDF=False*)(#systemml.mllearn.SVM "Permalink to this definition")
-:   Bases: `systemml.mllearn.estimators.BaseSystemMLClassifier`{.xref
-    .py .py-class .docutils .literal}
-
-    Performs both binary-class and multiclass SVM (Support Vector
-    Machines).
-
-        >>> from sklearn import datasets, neighbors
-        >>> from systemml.mllearn import SVM
-        >>> from pyspark.sql import SQLContext
-        >>> sqlCtx = SQLContext(sc)
-        >>> digits = datasets.load_digits()
-        >>> X_digits = digits.data
-        >>> y_digits = digits.target 
-        >>> n_samples = len(X_digits)
-        >>> X_train = X_digits[:.9 * n_samples]
-        >>> y_train = y_digits[:.9 * n_samples]
-        >>> X_test = X_digits[.9 * n_samples:]
-        >>> y_test = y_digits[.9 * n_samples:]
-        >>> svm = SVM(sqlCtx, is_multi_class=True)
-        >>> print('LogisticRegression score: %f' % svm.fit(X_train, y_train).score(X_test, y_test))
-
- *class*`systemml.mllearn.NaiveBayes`(*sqlCtx*, *laplace=1.0*, *transferUsingDF=False*)(#systemml.mllearn.NaiveBayes "Permalink to this definition")
-:   Bases: `systemml.mllearn.estimators.BaseSystemMLClassifier`{.xref
-    .py .py-class .docutils .literal}
-
-    Performs Naive Bayes.
-
-        >>> from sklearn.datasets import fetch_20newsgroups
-        >>> from sklearn.feature_extraction.text import TfidfVectorizer
-        >>> from systemml.mllearn import NaiveBayes
-        >>> from sklearn import metrics
-        >>> from pyspark.sql import SQLContext
-        >>> sqlCtx = SQLContext(sc)
-        >>> categories = ['alt.atheism', 'talk.religion.misc', 'comp.graphics', 'sci.space']
-        >>> newsgroups_train = fetch_20newsgroups(subset='train', categories=categories)
-        >>> newsgroups_test = fetch_20newsgroups(subset='test', categories=categories)
-        >>> vectorizer = TfidfVectorizer()
-        >>> # Both vectors and vectors_test are SciPy CSR matrix
-        >>> vectors = vectorizer.fit_transform(newsgroups_train.data)
-        >>> vectors_test = vectorizer.transform(newsgroups_test.data)
-        >>> nb = NaiveBayes(sqlCtx)
-        >>> nb.fit(vectors, newsgroups_train.target)
-        >>> pred = nb.predict(vectors_test)
-        >>> metrics.f1_score(newsgroups_test.target, pred, average='weighted')
+    Represents an intermediate node of Abstract syntax tree created to
+    generate the PyDML script
 
 
+## Troubleshooting Python APIs
 
-systemml.random package(#systemml-random-package "Permalink to this headline")
-=================================================================================
+#### Unable to load SystemML.jar into current pyspark session.
 
-Submodules(#submodules "Permalink to this headline")
--------------------------------------------------------
+While using SystemML's Python package through pyspark or notebook (SparkContext is not previously created in the session), the
+below method is not required. However, if the user wishes to use SystemML through spark-submit and has not previously invoked 
 
-systemml.random.sampling module(#module-systemml.random.sampling "Permalink to this headline")
--------------------------------------------------------------------------------------------------
+ `systemml.defmatrix.setSparkContext`(*sc*)
+:   Before using the matrix, the user needs to invoke this function if SparkContext is not previously created in the session.
 
- `systemml.random.sampling.normal`(*loc=0.0*, *scale=1.0*, *size=(1*, *1)*, *sparsity=1.0*)(#systemml.random.sampling.normal "Permalink to this definition")
-:   Draw random samples from a normal (Gaussian) distribution.
+    sc: SparkContext
+    :   SparkContext
 
-    loc: Mean ('centre') of the distribution. scale: Standard deviation
-    (spread or 'width') of the distribution. size: Output shape (only
-    tuple of length 2, i.e. (m, n), supported). sparsity: Sparsity
-    (between 0.0 and 1.0).
+Example:
 
-        >>> import systemml as sml
-        >>> import numpy as np
-        >>> sml.setSparkContext(sc)
-        >>> from systemml import random
-        >>> m1 = sml.random.normal(loc=3, scale=2, size=(3,3))
-        >>> m1.toNumPyArray()
-        array([[ 3.48857226,  6.17261819,  2.51167259],
-               [ 3.60506708, -1.90266305,  3.97601633],
-               [ 3.62245706,  5.9430881 ,  2.53070413]])
+```python
+import systemml as sml
+import numpy as np
+sml.setSparkContext(sc)
+m1 = sml.matrix(np.ones((3,3)) + 2)
+m2 = sml.matrix(np.ones((3,3)) + 3)
+m2 = m1 * (m2 + m1)
+m4 = 1.0 - m2
+m4.sum(axis=1).toNumPyArray()
+```
 
- `systemml.random.sampling.uniform`(*low=0.0*, *high=1.0*, *size=(1*, *1)*, *sparsity=1.0*)(#systemml.random.sampling.uniform "Permalink to this definition")
-:   Draw samples from a uniform distribution.
+If SystemML was not installed via pip, you may have to download SystemML.jar and provide it to pyspark via `--driver-class-path` and `--jars`. 
 
-    low: Lower boundary of the output interval. high: Upper boundary of
-    the output interval. size: Output shape (only tuple of length 2,
-    i.e. (m, n), supported). sparsity: Sparsity (between 0.0 and 1.0).
+#### matrix API is running slow when set_lazy(False) or when eval() is called often.
 
-        >>> import systemml as sml
-        >>> import numpy as np
-        >>> sml.setSparkContext(sc)
-        >>> from systemml import random
-        >>> m1 = sml.random.uniform(size=(3,3))
-        >>> m1.toNumPyArray()
-        array([[ 0.54511396,  0.11937437,  0.72975775],
-               [ 0.14135946,  0.01944448,  0.52544478],
-               [ 0.67582422,  0.87068849,  0.02766852]])
-
- `systemml.random.sampling.poisson`(*lam=1.0*, *size=(1*, *1)*, *sparsity=1.0*)(#systemml.random.sampling.poisson "Permalink to this definition")
-:   Draw samples from a Poisson distribution.
-
-    lam: Expectation of interval, should be \> 0. size: Output shape
-    (only tuple of length 2, i.e. (m, n), supported). sparsity: Sparsity
-    (between 0.0 and 1.0).
-
-        >>> import systemml as sml
-        >>> import numpy as np
-        >>> sml.setSparkContext(sc)
-        >>> from systemml import random
-        >>> m1 = sml.random.poisson(lam=1, size=(3,3))
-        >>> m1.toNumPyArray()
-        array([[ 1.,  0.,  2.],
-               [ 1.,  0.,  0.],
-               [ 0.,  0.,  0.]])
-
-Module contents(#module-systemml.random "Permalink to this headline")
-------------------------------------------------------------------------
-
-### Random Number Generation(#random-number-generation "Permalink to this headline")
-
-Univariate distributions
-
-normal
-
-Normal / Gaussian distribution.
-
-poisson
-
-Poisson distribution.
-
-uniform
-
-Uniform distribution.
-
- `systemml.random.normal`(*loc=0.0*, *scale=1.0*, *size=(1*, *1)*, *sparsity=1.0*)(#systemml.random.normal "Permalink to this definition")
-:   Draw random samples from a normal (Gaussian) distribution.
-
-    loc: Mean ('centre') of the distribution. scale: Standard deviation
-    (spread or 'width') of the distribution. size: Output shape (only
-    tuple of length 2, i.e. (m, n), supported). sparsity: Sparsity
-    (between 0.0 and 1.0).
-
-        >>> import systemml as sml
-        >>> import numpy as np
-        >>> sml.setSparkContext(sc)
-        >>> from systemml import random
-        >>> m1 = sml.random.normal(loc=3, scale=2, size=(3,3))
-        >>> m1.toNumPyArray()
-        array([[ 3.48857226,  6.17261819,  2.51167259],
-               [ 3.60506708, -1.90266305,  3.97601633],
-               [ 3.62245706,  5.9430881 ,  2.53070413]])
-
- `systemml.random.uniform`(*low=0.0*, *high=1.0*, *size=(1*, *1)*, *sparsity=1.0*)(#systemml.random.uniform "Permalink to this definition")
-:   Draw samples from a uniform distribution.
-
-    low: Lower boundary of the output interval. high: Upper boundary of
-    the output interval. size: Output shape (only tuple of length 2,
-    i.e. (m, n), supported). sparsity: Sparsity (between 0.0 and 1.0).
-
-        >>> import systemml as sml
-        >>> import numpy as np
-        >>> sml.setSparkContext(sc)
-        >>> from systemml import random
-        >>> m1 = sml.random.uniform(size=(3,3))
-        >>> m1.toNumPyArray()
-        array([[ 0.54511396,  0.11937437,  0.72975775],
-               [ 0.14135946,  0.01944448,  0.52544478],
-               [ 0.67582422,  0.87068849,  0.02766852]])
-
- `systemml.random.poisson`(*lam=1.0*, *size=(1*, *1)*, *sparsity=1.0*)(#systemml.random.poisson "Permalink to this definition")
-:   Draw samples from a Poisson distribution.
-
-    lam: Expectation of interval, should be \> 0. size: Output shape
-    (only tuple of length 2, i.e. (m, n), supported). sparsity: Sparsity
-    (between 0.0 and 1.0).
-
-        >>> import systemml as sml
-        >>> import numpy as np
-        >>> sml.setSparkContext(sc)
-        >>> from systemml import random
-        >>> m1 = sml.random.poisson(lam=1, size=(3,3))
-        >>> m1.toNumPyArray()
-        array([[ 1.,  0.,  2.],
-               [ 1.,  0.,  0.],
-               [ 0.,  0.,  0.]])
-
+This is a known issue. The matrix API is slow in this scenario due to slow Py4J conversion from Java MatrixObject or Java RDD to Python NumPy or DataFrame. 

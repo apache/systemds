@@ -563,6 +563,12 @@ class matrix(object):
     THROW_ARRAY_CONVERSION_ERROR = False
     
     def __array__(self, dtype=np.double):
+        """
+        As per NumPy from Python,
+        This method is called to obtain an ndarray object when needed. You should always guarantee this returns an actual ndarray object.
+        
+        Using this method, you get back a ndarray object, and subsequent operations on the returned ndarray object will be singlenode.
+        """
         if self.eval_data is None or not isinstance(self.eval_data, SUPPORTED_TYPES):
             # Only warn if there is an unevaluated operation (which could potentially generate large matrix or if data is non-supported singlenode formats)
             import inspect

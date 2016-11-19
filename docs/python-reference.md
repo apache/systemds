@@ -509,39 +509,39 @@ systemml.mlcontext module[](#systemml-mlcontext-module "Permalink to this headli
     sc: SparkContext
     :   SparkContext
 
-     `execute`(*script*)[](#systemml.mlcontext.MLContext.execute "Permalink to this definition")
-    :   Execute a DML / PyDML script.
+ `execute`(*script*)[](#systemml.mlcontext.MLContext.execute "Permalink to this definition")
+:   Execute a DML / PyDML script.
 
-        script: Script instance
-        :   Script instance defined with the appropriate input and
-            output variables.
+    script: Script instance
+    :   Script instance defined with the appropriate input and
+        output variables.
 
-        ml\_results: MLResults
-        :   MLResults instance.
+    ml\_results: MLResults
+    :   MLResults instance.
 
-     `setExplain`(*explain*)[](#systemml.mlcontext.MLContext.setExplain "Permalink to this definition")
-    :   Explanation about the program. Mainly intended for developers.
+ `setExplain`(*explain*)[](#systemml.mlcontext.MLContext.setExplain "Permalink to this definition")
+:   Explanation about the program. Mainly intended for developers.
 
-        explain: boolean
+    explain: boolean
 
-     `setExplainLevel`(*explainLevel*)[](#systemml.mlcontext.MLContext.setExplainLevel "Permalink to this definition")
-    :   Set explain level.
+ `setExplainLevel`(*explainLevel*)[](#systemml.mlcontext.MLContext.setExplainLevel "Permalink to this definition")
+:   Set explain level.
 
-        explainLevel: string
-        :   Can be one of â€œhopsâ€, â€œruntimeâ€, â€œrecompile\_hopsâ€,
-            â€œrecompile\_runtimeâ€ or in the above in upper case.
+    explainLevel: string
+    :   Can be one of 'hops', 'runtime', 'recompile\_hops',
+        'recompile\_runtime' or in the above in upper case.
 
-     `setStatistics`(*statistics*)[](#systemml.mlcontext.MLContext.setStatistics "Permalink to this definition")
-    :   Whether or not to output statistics (such as execution time,
-        elapsed time) about script executions.
+ `setStatistics`(*statistics*)[](#systemml.mlcontext.MLContext.setStatistics "Permalink to this definition")
+:   Whether or not to output statistics (such as execution time,
+    elapsed time) about script executions.
 
-        statistics: boolean
+    statistics: boolean
 
-     `setStatisticsMaxHeavyHitters`(*maxHeavyHitters*)[](#systemml.mlcontext.MLContext.setStatisticsMaxHeavyHitters "Permalink to this definition")
-    :   The maximum number of heavy hitters that are printed as part of
-        the statistics.
+ `setStatisticsMaxHeavyHitters`(*maxHeavyHitters*)[](#systemml.mlcontext.MLContext.setStatisticsMaxHeavyHitters "Permalink to this definition")
+:   The maximum number of heavy hitters that are printed as part of
+    the statistics.
 
-        maxHeavyHitters: int
+    maxHeavyHitters: int
 
  *class*`systemml.mlcontext.Script`(*scriptString*, *scriptType='dml'*)[](#systemml.mlcontext.Script "Permalink to this definition")
 :   Bases: `object`{.xref .py .py-class .docutils .literal}
@@ -552,21 +552,21 @@ systemml.mlcontext module[](#systemml-mlcontext-module "Permalink to this headli
     :   Can be either a file path to a DML script or a DML script
         itself.
     scriptType: string
-    :   Script language, either â€œdmlâ€ for DML (R-like) or â€œpydmlâ€ for
+    :   Script language, either 'dml' for DML (R-like) or 'pydml' for
         PyDML (Python-like).
 
-     `input`(*\*args*, *\*\*kwargs*)[](#systemml.mlcontext.Script.input "Permalink to this definition")
-    :   args: name, value tuple
-        :   where name is a string, and currently supported value
-            formats are double, string, dataframe, rdd, and list of such
-            object.
-        kwargs: dict of name, value pairs
-        :   To know what formats are supported for name and value, look
-            above.
+ `input`(*\*args*, *\*\*kwargs*)[](#systemml.mlcontext.Script.input "Permalink to this definition")
+:   args: name, value tuple
+    :   where name is a string, and currently supported value
+        formats are double, string, dataframe, rdd, and list of such
+        object.
+    kwargs: dict of name, value pairs
+    :   To know what formats are supported for name and value, look
+        above.
 
-     `output`(*\*names*)[](#systemml.mlcontext.Script.output "Permalink to this definition")
-    :   names: string, list of strings
-        :   Output variables as defined inside the DML script.
+ `output`(*\*names*)[](#systemml.mlcontext.Script.output "Permalink to this definition")
+:   names: string, list of strings
+    :   Output variables as defined inside the DML script.
 
  `systemml.mlcontext.dml`(*scriptString*)[](#systemml.mlcontext.dml "Permalink to this definition")
 :   Create a dml script object based on a string.
@@ -614,9 +614,9 @@ Module contents[](#module-systemml "Permalink to this headline")
     sc: SparkContext
     :   SparkContext
 
-     `get`(*\*outputs*)[](#systemml.MLResults.get "Permalink to this definition")
-    :   outputs: string, list of strings
-        :   Output variables as defined inside the DML script.
+ `get`(*\*outputs*)[](#systemml.MLResults.get "Permalink to this definition")
+:   outputs: string, list of strings
+    :   Output variables as defined inside the DML script.
 
  *class*`systemml.MLContext`(*sc*)[](#systemml.MLContext "Permalink to this definition")
 :   Bases: `object`{.xref .py .py-class .docutils .literal}
@@ -626,39 +626,39 @@ Module contents[](#module-systemml "Permalink to this headline")
     sc: SparkContext
     :   SparkContext
 
-     `execute`(*script*)[](#systemml.MLContext.execute "Permalink to this definition")
-    :   Execute a DML / PyDML script.
+ `execute`(*script*)[](#systemml.MLContext.execute "Permalink to this definition")
+:   Execute a DML / PyDML script.
 
-        script: Script instance
-        :   Script instance defined with the appropriate input and
-            output variables.
+    script: Script instance
+    :   Script instance defined with the appropriate input and
+        output variables.
 
-        ml\_results: MLResults
-        :   MLResults instance.
+    ml\_results: MLResults
+    :   MLResults instance.
 
-     `setExplain`(*explain*)[](#systemml.MLContext.setExplain "Permalink to this definition")
-    :   Explanation about the program. Mainly intended for developers.
+ `setExplain`(*explain*)[](#systemml.MLContext.setExplain "Permalink to this definition")
+:   Explanation about the program. Mainly intended for developers.
 
-        explain: boolean
+    explain: boolean
 
-     `setExplainLevel`(*explainLevel*)[](#systemml.MLContext.setExplainLevel "Permalink to this definition")
-    :   Set explain level.
+ `setExplainLevel`(*explainLevel*)[](#systemml.MLContext.setExplainLevel "Permalink to this definition")
+:   Set explain level.
 
-        explainLevel: string
-        :   Can be one of â€œhopsâ€, â€œruntimeâ€, â€œrecompile\_hopsâ€,
-            â€œrecompile\_runtimeâ€ or in the above in upper case.
+    explainLevel: string
+    :   Can be one of 'hops', 'runtime', 'recompile\_hops',
+        'recompile\_runtime' or in the above in upper case.
 
-     `setStatistics`(*statistics*)[](#systemml.MLContext.setStatistics "Permalink to this definition")
-    :   Whether or not to output statistics (such as execution time,
-        elapsed time) about script executions.
+ `setStatistics`(*statistics*)[](#systemml.MLContext.setStatistics "Permalink to this definition")
+:   Whether or not to output statistics (such as execution time,
+    elapsed time) about script executions.
 
-        statistics: boolean
+    statistics: boolean
 
-     `setStatisticsMaxHeavyHitters`(*maxHeavyHitters*)[](#systemml.MLContext.setStatisticsMaxHeavyHitters "Permalink to this definition")
-    :   The maximum number of heavy hitters that are printed as part of
-        the statistics.
+ `setStatisticsMaxHeavyHitters`(*maxHeavyHitters*)[](#systemml.MLContext.setStatisticsMaxHeavyHitters "Permalink to this definition")
+:   The maximum number of heavy hitters that are printed as part of
+    the statistics.
 
-        maxHeavyHitters: int
+    maxHeavyHitters: int
 
  *class*`systemml.Script`(*scriptString*, *scriptType='dml'*)[](#systemml.Script "Permalink to this definition")
 :   Bases: `object`{.xref .py .py-class .docutils .literal}
@@ -669,443 +669,40 @@ Module contents[](#module-systemml "Permalink to this headline")
     :   Can be either a file path to a DML script or a DML script
         itself.
     scriptType: string
-    :   Script language, either â€œdmlâ€ for DML (R-like) or â€œpydmlâ€ for
+    :   Script language, either 'dml' for DML (R-like) or 'pydml' for
         PyDML (Python-like).
 
-     `input`(*\*args*, *\*\*kwargs*)[](#systemml.Script.input "Permalink to this definition")
-    :   args: name, value tuple
-        :   where name is a string, and currently supported value
-            formats are double, string, dataframe, rdd, and list of such
-            object.
-        kwargs: dict of name, value pairs
-        :   To know what formats are supported for name and value, look
-            above.
+ `input`(*\*args*, *\*\*kwargs*)[](#systemml.Script.input "Permalink to this definition")
+:   args: name, value tuple
+    :   where name is a string, and currently supported value
+        formats are double, string, dataframe, rdd, and list of such
+        object.
+    kwargs: dict of name, value pairs
+    :   To know what formats are supported for name and value, look
+        above.
 
-     `output`(*\*names*)[](#systemml.Script.output "Permalink to this definition")
-    :   names: string, list of strings
-        :   Output variables as defined inside the DML script.
+ `output`(*\*names*)[](#systemml.Script.output "Permalink to this definition")
+:   names: string, list of strings
+    :   Output variables as defined inside the DML script.
 
- `systemml.dml`(*scriptString*)[](#systemml.dml "Permalink to this definition")
+`systemml.dml`(*scriptString*)[](#systemml.dml "Permalink to this definition")
 :   Create a dml script object based on a string.
 
-    scriptString: string
-    :   Can be a path to a dml script or a dml script itself.
+scriptString: string
+:   Can be a path to a dml script or a dml script itself.
 
-    script: Script instance
-    :   Instance of a script object.
+script: Script instance
+:   Instance of a script object.
 
- `systemml.pydml`(*scriptString*)[](#systemml.pydml "Permalink to this definition")
+`systemml.pydml`(*scriptString*)[](#systemml.pydml "Permalink to this definition")
 :   Create a pydml script object based on a string.
 
-    scriptString: string
-    :   Can be a path to a pydml script or a pydml script itself.
+scriptString: string
+:   Can be a path to a pydml script or a pydml script itself.
 
-    script: Script instance
-    :   Instance of a script object.
+script: Script instance
+:   Instance of a script object.
 
- `systemml.setSparkContext`(*sc*)[](#systemml.setSparkContext "Permalink to this definition")
-:   Before using the matrix, the user needs to invoke this function.
-
-    sc: SparkContext
-    :   SparkContext
-
- *class*`systemml.matrix`(*data*, *op=None*)[](#systemml.matrix "Permalink to this definition")
-:   Bases: `object`{.xref .py .py-class .docutils .literal}
-
-    matrix class is a python wrapper that implements basic matrix
-    operators, matrix functions as well as converters to common Python
-    types (for example: Numpy arrays, PySpark DataFrame and Pandas
-    DataFrame).
-
-    The operators supported are:
-
-    1.  Arithmetic operators: +, -, *, /, //, %, \** as well as dot
-        (i.e. matrix multiplication)
-    2.  Indexing in the matrix
-    3.  Relational/Boolean operators: \<, \<=, \>, \>=, ==, !=, &, |
-
-    In addition, following functions are supported for matrix:
-
-    1.  transpose
-    2.  Aggregation functions: sum, mean, var, sd, max, min, argmin,
-        argmax, cumsum
-    3.  Global statistical built-In functions: exp, log, abs, sqrt,
-        round, floor, ceil, sin, cos, tan, asin, acos, atan, sign, solve
-
-    Note: an evaluated matrix contains a data field computed by eval
-    method as DataFrame or NumPy array.
-
-        >>> import SystemML as sml
-        >>> import numpy as np
-        >>> sml.setSparkContext(sc)
-
-    Welcome to Apache SystemML!
-
-        >>> m1 = sml.matrix(np.ones((3,3)) + 2)
-        >>> m2 = sml.matrix(np.ones((3,3)) + 3)
-        >>> m2 = m1 * (m2 + m1)
-        >>> m4 = 1.0 - m2
-        >>> m4
-        # This matrix (mVar5) is backed by below given PyDML script (which is not yet evaluated). To fetch the data of this matrix, invoke toNumPyArray() or toDataFrame() or toPandas() methods.
-        mVar1 = load(" ", format="csv")
-        mVar2 = load(" ", format="csv")
-        mVar3 = mVar2 + mVar1
-        mVar4 = mVar1 * mVar3
-        mVar5 = 1.0 - mVar4
-        save(mVar5, " ")
-        >>> m2.eval()
-        >>> m2
-        # This matrix (mVar4) is backed by NumPy array. To fetch the NumPy array, invoke toNumPyArray() method.
-        >>> m4
-        # This matrix (mVar5) is backed by below given PyDML script (which is not yet evaluated). To fetch the data of this matrix, invoke toNumPyArray() or toDataFrame() or toPandas() methods.
-        mVar4 = load(" ", format="csv")
-        mVar5 = 1.0 - mVar4
-        save(mVar5, " ")
-        >>> m4.sum(axis=1).toNumPy()
-        array([[-60.],
-               [-60.],
-               [-60.]])
-
-    Design Decisions:
-
-    1.  Until eval() method is invoked, we create an AST (not exposed to
-        the user) that consist of unevaluated operations and data
-        required by those operations. As an anology, a spark user can
-        treat eval() method similar to calling RDD.persist() followed by
-        RDD.count().
-    2.  The AST consist of two kinds of nodes: either of type matrix or
-        of type DMLOp. Both these classes expose \_visit method, that
-        helps in traversing the AST in DFS manner.
-    3.  A matrix object can either be evaluated or not. If evaluated,
-        the attribute 'data' is set to one of the supported types (for
-        example: NumPy array or DataFrame). In this case, the attribute
-        'op' is set to None. If not evaluated, the attribute 'op' which
-        refers to one of the intermediate node of AST and if of type
-        DMLOp. In this case, the attribute 'data' is set to None.
-
-    5.  DMLOp has an attribute 'inputs' which contains list of matrix
-        objects or DMLOp.
-
-    6.  To simplify the traversal, every matrix object is considered
-        immutable and an matrix operations creates a new matrix object.
-        As an example: m1 = sml.matrix(np.ones((3,3))) creates a matrix
-        object backed by 'data=(np.ones((3,3))'. m1 = m1 \* 2 will
-        create a new matrix object which is now backed by 'op=DMLOp( ...
-        )' whose input is earlier created matrix object.
-
-    7.  Left indexing (implemented in \_\_setitem\_\_ method) is a
-        special case, where Python expects the existing object to be
-        mutated. To ensure the above property, we make deep copy of
-        existing object and point any references to the left-indexed
-        matrix to the newly created object. Then the left-indexed matrix
-        is set to be backed by DMLOp consisting of following pydml:
-        left-indexed-matrix = new-deep-copied-matrix
-        left-indexed-matrix[index] = value
-
-    8.  Please use m.print\_ast() and/or type m for debugging. Here is a
-        sample session:
-
-            >>> npm = np.ones((3,3))
-            >>> m1 = sml.matrix(npm + 3)
-            >>> m2 = sml.matrix(npm + 5)
-            >>> m3 = m1 + m2
-            >>> m3
-            mVar2 = load(" ", format="csv")
-            mVar1 = load(" ", format="csv")
-            mVar3 = mVar1 + mVar2
-            save(mVar3, " ")
-            >>> m3.print_ast()
-            - [mVar3] (op).
-              - [mVar1] (data).
-              - [mVar2] (data).    
-
-     `THROW_ARRAY_CONVERSION_ERROR`*= False*[](#systemml.matrix.THROW_ARRAY_CONVERSION_ERROR "Permalink to this definition")
-    :   
-
-     `abs`()[](#systemml.matrix.abs "Permalink to this definition")
-    :   
-
-     `acos`()[](#systemml.matrix.acos "Permalink to this definition")
-    :   
-
-     `arccos`()[](#systemml.matrix.arccos "Permalink to this definition")
-    :   
-
-     `arcsin`()[](#systemml.matrix.arcsin "Permalink to this definition")
-    :   
-
-     `arctan`()[](#systemml.matrix.arctan "Permalink to this definition")
-    :   
-
-     `argmax`(*axis=None*)[](#systemml.matrix.argmax "Permalink to this definition")
-    :   Returns the indices of the maximum values along an axis.
-
-        axis : int, optional (only axis=1, i.e. rowIndexMax is supported
-        in this version)
-
-     `argmin`(*axis=None*)[](#systemml.matrix.argmin "Permalink to this definition")
-    :   Returns the indices of the minimum values along an axis.
-
-        axis : int, optional (only axis=1, i.e. rowIndexMax is supported
-        in this version)
-
-     `asfptype`()[](#systemml.matrix.asfptype "Permalink to this definition")
-    :   
-
-     `asin`()[](#systemml.matrix.asin "Permalink to this definition")
-    :   
-
-     `astype`(*t*)[](#systemml.matrix.astype "Permalink to this definition")
-    :   
-
-     `atan`()[](#systemml.matrix.atan "Permalink to this definition")
-    :   
-
-     `ceil`()[](#systemml.matrix.ceil "Permalink to this definition")
-    :   
-
-     `cos`()[](#systemml.matrix.cos "Permalink to this definition")
-    :   
-
-     `cumsum`(*axis=None*)[](#systemml.matrix.cumsum "Permalink to this definition")
-    :   Returns the indices of the maximum values along an axis.
-
-        axis : int, optional (only axis=0, i.e. cumsum along the rows is
-        supported in this version)
-
-     `deg2rad`()[](#systemml.matrix.deg2rad "Permalink to this definition")
-    :   Convert angles from degrees to radians.
-
-     `dml`*= []*[](#systemml.matrix.dml "Permalink to this definition")
-    :   
-
-     `dot`(*other*)[](#systemml.matrix.dot "Permalink to this definition")
-    :   Numpy way of performing matrix multiplication
-
-     `eval`(*outputDF=False*)[](#systemml.matrix.eval "Permalink to this definition")
-    :   This is a convenience function that calls the global eval method
-
-     `exp`()[](#systemml.matrix.exp "Permalink to this definition")
-    :   
-
-     `exp2`()[](#systemml.matrix.exp2 "Permalink to this definition")
-    :   
-
-     `expm1`()[](#systemml.matrix.expm1 "Permalink to this definition")
-    :   
-
-     `floor`()[](#systemml.matrix.floor "Permalink to this definition")
-    :   
-
-     `get_shape`()[](#systemml.matrix.get_shape "Permalink to this definition")
-    :   
-
-     `ldexp`(*other*)[](#systemml.matrix.ldexp "Permalink to this definition")
-    :   
-
-     `log`(*y=None*)[](#systemml.matrix.log "Permalink to this definition")
-    :   
-
-     `log10`()[](#systemml.matrix.log10 "Permalink to this definition")
-    :   
-
-     `log1p`()[](#systemml.matrix.log1p "Permalink to this definition")
-    :   
-
-     `log2`()[](#systemml.matrix.log2 "Permalink to this definition")
-    :   
-
-     `logaddexp`(*other*)[](#systemml.matrix.logaddexp "Permalink to this definition")
-    :   
-
-     `logaddexp2`(*other*)[](#systemml.matrix.logaddexp2 "Permalink to this definition")
-    :   
-
-     `logical_not`()[](#systemml.matrix.logical_not "Permalink to this definition")
-    :   
-
-     `max`(*other=None*, *axis=None*)[](#systemml.matrix.max "Permalink to this definition")
-    :   Compute the maximum value along the specified axis
-
-        other: matrix or numpy array (& other supported types) or scalar
-        axis : int, optional
-
-     `mean`(*axis=None*)[](#systemml.matrix.mean "Permalink to this definition")
-    :   Compute the arithmetic mean along the specified axis
-
-        axis : int, optional
-
-     `min`(*other=None*, *axis=None*)[](#systemml.matrix.min "Permalink to this definition")
-    :   Compute the minimum value along the specified axis
-
-        other: matrix or numpy array (& other supported types) or scalar
-        axis : int, optional
-
-     `ml`*= None*[](#systemml.matrix.ml "Permalink to this definition")
-    :   
-
-     `mod`(*other*)[](#systemml.matrix.mod "Permalink to this definition")
-    :   
-
-     `ndim`*= 2*[](#systemml.matrix.ndim "Permalink to this definition")
-    :   
-
-     `negative`()[](#systemml.matrix.negative "Permalink to this definition")
-    :   
-
-     `ones_like`()[](#systemml.matrix.ones_like "Permalink to this definition")
-    :   
-
-     `print_ast`(*numSpaces=0*)[](#systemml.matrix.print_ast "Permalink to this definition")
-    :   Please use m.print\_ast() and/or type m for debugging. Here is a
-        sample session:
-
-            >>> npm = np.ones((3,3))
-            >>> m1 = sml.matrix(npm + 3)
-            >>> m2 = sml.matrix(npm + 5)
-            >>> m3 = m1 + m2
-            >>> m3
-            mVar2 = load(" ", format="csv")
-            mVar1 = load(" ", format="csv")
-            mVar3 = mVar1 + mVar2
-            save(mVar3, " ")
-            >>> m3.print_ast()
-            - [mVar3] (op).
-              - [mVar1] (data).
-              - [mVar2] (data).
-
-     `rad2deg`()[](#systemml.matrix.rad2deg "Permalink to this definition")
-    :   Convert angles from radians to degrees.
-
-     `reciprocal`()[](#systemml.matrix.reciprocal "Permalink to this definition")
-    :   
-
-     `remainder`(*other*)[](#systemml.matrix.remainder "Permalink to this definition")
-    :   
-
-     `round`()[](#systemml.matrix.round "Permalink to this definition")
-    :   
-
-     `script`*= None*[](#systemml.matrix.script "Permalink to this definition")
-    :   
-
-     `sd`(*axis=None*)[](#systemml.matrix.sd "Permalink to this definition")
-    :   Compute the standard deviation along the specified axis
-
-        axis : int, optional
-
-     `set_shape`(*shape*)[](#systemml.matrix.set_shape "Permalink to this definition")
-    :   
-
-     `shape`[](#systemml.matrix.shape "Permalink to this definition")
-    :   
-
-     `sign`()[](#systemml.matrix.sign "Permalink to this definition")
-    :   
-
-     `sin`()[](#systemml.matrix.sin "Permalink to this definition")
-    :   
-
-     `sqrt`()[](#systemml.matrix.sqrt "Permalink to this definition")
-    :   
-
-     `square`()[](#systemml.matrix.square "Permalink to this definition")
-    :   
-
-     `sum`(*axis=None*)[](#systemml.matrix.sum "Permalink to this definition")
-    :   Compute the sum along the specified axis
-
-        axis : int, optional
-
-     `systemmlVarID`*= 0*[](#systemml.matrix.systemmlVarID "Permalink to this definition")
-    :   
-
-     `tan`()[](#systemml.matrix.tan "Permalink to this definition")
-    :   
-
-     `toDataFrame`()[](#systemml.matrix.toDataFrame "Permalink to this definition")
-    :   This is a convenience function that calls the global eval method
-        and then converts the matrix object into DataFrame.
-
-     `toNumPyArray`()[](#systemml.matrix.toNumPyArray "Permalink to this definition")
-    :   This is a convenience function that calls the global eval method
-        and then converts the matrix object into NumPy array.
-
-     `toPandas`()[](#systemml.matrix.toPandas "Permalink to this definition")
-    :   This is a convenience function that calls the global eval method
-        and then converts the matrix object into Pandas DataFrame.
-
-     `trace`()[](#systemml.matrix.trace "Permalink to this definition")
-    :   Return the sum of the cells of the main diagonal square matrix
-
-     `transpose`()[](#systemml.matrix.transpose "Permalink to this definition")
-    :   Transposes the matrix.
-
-     `var`(*axis=None*)[](#systemml.matrix.var "Permalink to this definition")
-    :   Compute the variance along the specified axis
-
-        axis : int, optional
-
-     `visited`*= []*[](#systemml.matrix.visited "Permalink to this definition")
-    :   
-
-     `zeros_like`()[](#systemml.matrix.zeros_like "Permalink to this definition")
-    :   
-
- `systemml.eval`(*outputs*, *outputDF=False*, *execute=True*)[](#systemml.eval "Permalink to this definition")
-:   Executes the unevaluated DML script and computes the matrices
-    specified by outputs.
-
-    outputs: list of matrices or a matrix object outputDF: back the data
-    of matrix as PySpark DataFrame
-
- `systemml.solve`(*A*, *b*)[](#systemml.solve "Permalink to this definition")
-:   Computes the least squares solution for system of linear equations A
-    %\*% x = b
-
-        >>> import numpy as np
-        >>> from sklearn import datasets
-        >>> import SystemML as sml
-        >>> from pyspark.sql import SQLContext
-        >>> diabetes = datasets.load_diabetes()
-        >>> diabetes_X = diabetes.data[:, np.newaxis, 2]
-        >>> X_train = diabetes_X[:-20]
-        >>> X_test = diabetes_X[-20:]
-        >>> y_train = diabetes.target[:-20]
-        >>> y_test = diabetes.target[-20:]
-        >>> sml.setSparkContext(sc)
-        >>> X = sml.matrix(X_train)
-        >>> y = sml.matrix(y_train)
-        >>> A = X.transpose().dot(X)
-        >>> b = X.transpose().dot(y)
-        >>> beta = sml.solve(A, b).toNumPy()
-        >>> y_predicted = X_test.dot(beta)
-        >>> print('Residual sum of squares: %.2f' % np.mean((y_predicted - y_test) ** 2))
-        Residual sum of squares: 25282.12
-
- *class*`systemml.DMLOp`(*inputs*, *dml=None*)[](#systemml.DMLOp "Permalink to this definition")
-:   Bases: `object`{.xref .py .py-class .docutils .literal}
-
-    Represents an intermediate node of Abstract syntax tree created to
-    generate the PyDML script
-
-     `MAX_DEPTH`*= 0*[](#systemml.DMLOp.MAX_DEPTH "Permalink to this definition")
-    :   
-
-     `print_ast`(*numSpaces*)[](#systemml.DMLOp.print_ast "Permalink to this definition")
-    :   
-
- `systemml.set_max_depth`(*depth*)[](#systemml.set_max_depth "Permalink to this definition")
-:   This method allows users to set the depth of lazy SystemML DAG.
-    Setting this to 1 ensures that every operation is evaluated (which
-    can turn off many optimization). Setting this to 0 ensures that
-    SystemML will never implicitly evaluate the DAG, but will require
-    user to call eval or toPandas/toNumPyArray/... explicitly.
-
-    depth: Should be greater than equal to 0.
-
- `systemml.debug_array_conversion`(*throwError*)[](#systemml.debug_array_conversion "Permalink to this definition")
-:   
 
  `systemml.getNumCols`(*numPyArr*)[](#systemml.getNumCols "Permalink to this definition")
 :   
@@ -1436,8 +1033,8 @@ systemml.random.sampling module(#module-systemml.random.sampling "Permalink to t
  `systemml.random.sampling.normal`(*loc=0.0*, *scale=1.0*, *size=(1*, *1)*, *sparsity=1.0*)(#systemml.random.sampling.normal "Permalink to this definition")
 :   Draw random samples from a normal (Gaussian) distribution.
 
-    loc: Mean (â€œcentreâ€) of the distribution. scale: Standard deviation
-    (spread or â€œwidthâ€) of the distribution. size: Output shape (only
+    loc: Mean ('centre') of the distribution. scale: Standard deviation
+    (spread or 'width') of the distribution. size: Output shape (only
     tuple of length 2, i.e. (m, n), supported). sparsity: Sparsity
     (between 0.0 and 1.0).
 
@@ -1507,8 +1104,8 @@ Uniform distribution.
  `systemml.random.normal`(*loc=0.0*, *scale=1.0*, *size=(1*, *1)*, *sparsity=1.0*)(#systemml.random.normal "Permalink to this definition")
 :   Draw random samples from a normal (Gaussian) distribution.
 
-    loc: Mean (â€œcentreâ€) of the distribution. scale: Standard deviation
-    (spread or â€œwidthâ€) of the distribution. size: Output shape (only
+    loc: Mean ('centre') of the distribution. scale: Standard deviation
+    (spread or 'width') of the distribution. size: Output shape (only
     tuple of length 2, i.e. (m, n), supported). sparsity: Sparsity
     (between 0.0 and 1.0).
 
@@ -1555,7 +1152,4 @@ Uniform distribution.
         array([[ 1.,  0.,  2.],
                [ 1.,  0.,  0.],
                [ 0.,  0.,  0.]])
-
-
-
 

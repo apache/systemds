@@ -138,7 +138,7 @@ array([[-60.],
     1.  Arithmetic operators: +, -, *, /, //, %, \** as well as dot
         (i.e. matrix multiplication)
     2.  Indexing in the matrix
-    3.  Relational/Boolean operators: \<, \<=, \>, \>=, ==, !=, &, |
+    3.  Relational/Boolean operators: \<, \<=, \>, \>=, ==, !=, &, \|
 
     In addition, following functions are supported for matrix:
 
@@ -865,8 +865,7 @@ LogisticRegression score: 0.922222
 
 ## Utility classes (used internally)
 
-systemml.classloader module[](#module-systemml.classloader "Permalink to this headline")
------------------------------------------------------------------------------------------
+### systemml.classloader 
 
  `systemml.classloader.createJavaObject`(*sc*, *obj\_type*)[](#systemml.classloader.createJavaObject "Permalink to this definition")
 :   Performs appropriate check if SystemML.jar is available and returns
@@ -877,8 +876,7 @@ systemml.classloader module[](#module-systemml.classloader "Permalink to this he
 
     obj\_type: Type of object to create ('mlcontext' or 'dummy')
 
-systemml.converters module[](#module-systemml.converters "Permalink to this headline")
----------------------------------------------------------------------------------------
+### systemml.converters
 
  `systemml.converters.getNumCols`(*numPyArr*)[](#systemml.converters.getNumCols "Permalink to this definition")
 :   
@@ -895,8 +893,7 @@ systemml.converters module[](#module-systemml.converters "Permalink to this head
  `systemml.converters.convertToLabeledDF`(*sqlCtx*, *X*, *y=None*)[](#systemml.converters.convertToLabeledDF "Permalink to this definition")
 :  
 
-systemml.defmatrix module[](#module-systemml.converters "Permalink to this headline")
----------------------------------------------------------------------------------------
+### Other classes from systemml.defmatrix
 
  *class*`systemml.defmatrix.DMLOp`(*inputs*, *dml=None*)[](#systemml.defmatrix.DMLOp "Permalink to this definition")
 :   Bases: `object`{.xref .py .py-class .docutils .literal}

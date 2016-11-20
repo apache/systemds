@@ -76,7 +76,7 @@ We are working towards uploading the python package on pypi. Until then, please 
 git checkout https://github.com/apache/incubator-systemml.git
 cd incubator-systemml
 mvn post-integration-test -P distribution -DskipTests
-pip install src/main/python/dist/systemml-incubating-0.11.0.dev1.tar.gz
+pip install src/main/python/dist/systemml-incubating-0.12.0.dev1.tar.gz
 ```
 
 The above commands will install Python package and place the corresponding Java binaries (along with algorithms) into the installed location.

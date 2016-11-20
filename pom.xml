@@ -437,7 +437,7 @@
 									<directory>src/main/python/dist</directory>
 								</fileset>
 								<fileset>
-									<directory>src/main/python/systemml.egg-info</directory>
+									<directory>src/main/python/systemml_incubating.egg-info</directory>
 								</fileset>
 								<fileset>
 									<directory>src/main/python/systemml/systemml-java</directory>

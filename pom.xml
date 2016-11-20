@@ -435,21 +435,12 @@
 								</fileset>
 								<fileset>
 									<directory>src/main/python/dist</directory>
-									<includes>
-										<include>**/*</include>
-									</includes>
 								</fileset>
 								<fileset>
 									<directory>src/main/python/systemml.egg-info</directory>
-									<includes>
-										<include>**/*</include>
-									</includes>
 								</fileset>
 								<fileset>
 									<directory>src/main/python/systemml/systemml-java</directory>
-									<includes>
-										<include>**/*</include>
-									</includes>
 								</fileset>
 							</filesets>
 						</configuration>

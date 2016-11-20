@@ -20,7 +20,7 @@
 #-------------------------------------------------------------
 include LICENSE
 include NOTICE
-include systemml/systemml-java/SystemML.jar
+include systemml/systemml-java *
 include DISCLAIMER
 include systemml/systemml-java/scripts/sparkDML.sh
 recursive-include systemml/systemml-java/scripts/algorithms *

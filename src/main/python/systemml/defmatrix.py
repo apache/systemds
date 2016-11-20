@@ -19,13 +19,21 @@
 #
 #-------------------------------------------------------------
 
-__all__ = [ 'setSparkContext', 'matrix', 'eval', 'solve', 'DMLOp', 'set_max_depth', 'debug_array_conversion' ]
+__all__ = [ 'setSparkContext', 'matrix', 'eval', 'solve', 'DMLOp', 'set_lazy', 'debug_array_conversion', 'load' ]
 
-from pyspark import SparkContext
-from pyspark.sql import DataFrame, SQLContext
 import numpy as np
+import pandas as pd
+from scipy.sparse import coo_matrix, spmatrix
+try:
+    import py4j.java_gateway
+    from py4j.java_gateway import JavaObject
+    from pyspark import SparkContext
+    from pyspark.sql import DataFrame, SQLContext
+    import pyspark.mllib.common
+except ImportError:
+    raise ImportError('Unable to import `pyspark`. Hint: Make sure you are running with PySpark.')
 
-from . import MLContext, pydml
+from . import MLContext, pydml, _java2py, Matrix
 from .converters import *
 
 def setSparkContext(sc):
@@ -110,6 +118,17 @@ def construct_intermediate_node(inputs, dml):
         out.eval()
     return out
 
+def load(file, format='csv'):
+    """
+    Allows user to load a matrix from filesystem
+
+    Parameters
+    ----------
+    file: filepath
+    format: can be csv, text or binary or mm
+    """
+    return construct_intermediate_node([], [OUTPUT_ID, ' = load(\"', file, '\", format=\"', format, '\")\n'])
+    
 def reset():
     """
     Resets the visited status of matrix and the operators in the generated AST.
@@ -227,16 +246,7 @@ def convert_outputs_to_list(outputs):
 def reset_output_flag(outputs):
     for m in outputs:
         m.output = False
-
-def populate_outputs(outputs, results, outputDF):
-    """
-    Set the attribute 'data' of the matrix by fetching it from MLResults class
-    """
-    for m in outputs:
-        if outputDF:
-            m.eval_data = results.get(m.ID).toDF()
-        else:
-            m.eval_data = results.get(m.ID).toNumPy()
+    
 
 ###############################################################################
 
@@ -270,14 +280,14 @@ def solve(A, b):
     """
     return binaryMatrixFunction(A, b, 'solve')
 
-def eval(outputs, outputDF=False, execute=True):
+def eval(outputs, execute=True):
     """
     Executes the unevaluated DML script and computes the matrices specified by outputs.
 
     Parameters
     ----------
     outputs: list of matrices or a matrix object
-    outputDF: back the data of matrix as PySpark DataFrame
+    execute: specified whether to execute the unevaluated operation or just return the script.
     """
     check_MLContext()
     reset()
@@ -287,7 +297,8 @@ def eval(outputs, outputDF=False, execute=True):
         reset_output_flag(outputs)
         return matrix.script.scriptString
     results = matrix.ml.execute(matrix.script)
-    populate_outputs(outputs, results, outputDF)
+    for m in outputs:
+        m.eval_data = results._java_results.get(m.ID)
     reset_output_flag(outputs)
 
 
@@ -429,28 +440,42 @@ class matrix(object):
         if not (isinstance(data, SUPPORTED_TYPES) or hasattr(data, '_jdf') or (data is None and op is not None)):
             raise TypeError('Unsupported input type')
 
-    def eval(self, outputDF=False):
+    def eval(self):
         """
         This is a convenience function that calls the global eval method
         """
-        eval([self], outputDF=False)
-
+        eval([self])
+        
     def toPandas(self):
         """
         This is a convenience function that calls the global eval method and then converts the matrix object into Pandas DataFrame.
         """
-        if self.eval_data is None:
-            self.eval()
-        return convertToPandasDF(self.eval_data)
+        self.eval()
+        if isinstance(self.eval_data, py4j.java_gateway.JavaObject):
+            self.eval_data = _java2py(SparkContext._active_spark_context, self.eval_data)
+        if isinstance(self.eval_data, Matrix):
+            self.eval_data = self.eval_data.toNumPy()
+        self.eval_data = convertToPandasDF(self.eval_data)
+        return self.eval_data
 
     def toNumPyArray(self):
         """
         This is a convenience function that calls the global eval method and then converts the matrix object into NumPy array.
         """
-        if self.eval_data is None:
-            self.eval()
-        if isinstance(self.eval_data, DataFrame):
+        self.eval()
+        if isinstance(self.eval_data, py4j.java_gateway.JavaObject):
+            self.eval_data = _java2py(SparkContext._active_spark_context, self.eval_data)
+        if isinstance(self.eval_data, Matrix):
+            self.eval_data = self.eval_data.toNumPy()
+            return self.eval_data
+        if isinstance(self.eval_data, pd.DataFrame):
+            self.eval_data = self.eval_data.as_matrix()
+        elif isinstance(self.eval_data, DataFrame):
             self.eval_data = self.eval_data.toPandas().as_matrix()
+        elif isinstance(self.eval_data, spmatrix):
+            self.eval_data = self.eval_data.toarray()
+        elif isinstance(self.eval_data, Matrix):
+            self.eval_data = self.eval_data.toNumPy()
         # Always keep default format as NumPy array if possible
         return self.eval_data
 
@@ -458,10 +483,14 @@ class matrix(object):
         """
         This is a convenience function that calls the global eval method and then converts the matrix object into DataFrame.
         """
-        if self.eval_data is None:
-            self.eval(outputDF=True)
-        if not isinstance(self.eval_data, DataFrame):
-            self.eval_data = matrix.sqlContext.createDataFrame(self.toPandas())
+        if isinstance(self.eval_data, DataFrame):
+            return self.eval_data
+        if isinstance(self.eval_data, py4j.java_gateway.JavaObject):
+            self.eval_data = _java2py(SparkContext._active_spark_context, self.eval_data)
+        if isinstance(self.eval_data, Matrix):
+            self.eval_data = self.eval_data.toDF()
+            return self.eval_data
+        self.eval_data = matrix.sqlContext.createDataFrame(self.toPandas())
         return self.eval_data
 
     def _mark_as_visited(self):
@@ -473,10 +502,10 @@ class matrix(object):
     def _register_as_input(self, execute):
         # TODO: Remove this when automatic registration of frame is resolved
         matrix.dml = [ self.ID,  ' = load(\" \", format=\"csv\")\n'] + matrix.dml
-        if isinstance(self.eval_data, DataFrame) and execute:
-            matrix.script.input(self.ID, self.eval_data)
-        elif execute:
+        if isinstance(self.eval_data, SUPPORTED_TYPES) and execute:
             matrix.script.input(self.ID, convertToMatrixBlock(matrix.sc, self.eval_data))
+        elif execute:
+            matrix.script.input(self.ID, self.toDataFrame())
         return self
 
     def _register_as_output(self, execute):
@@ -484,7 +513,7 @@ class matrix(object):
         matrix.dml = matrix.dml + ['save(',  self.ID, ', \" \")\n']
         if execute:
             matrix.script.output(self.ID)
-
+        
     def _visit(self, execute=True):
         """
         This function is called for two scenarios:
@@ -547,10 +576,8 @@ class matrix(object):
         """
         if self.eval_data is None:
             print('# This matrix (' + self.ID + ') is backed by below given PyDML script (which is not yet evaluated). To fetch the data of this matrix, invoke toNumPyArray() or toDataFrame() or toPandas() methods.\n' + eval([self], execute=False))
-        elif isinstance(self.eval_data, DataFrame):
-            print('# This matrix (' + self.ID + ') is backed by PySpark DataFrame. To fetch the DataFrame, invoke toDataFrame() method.')
         else:
-            print('# This matrix (' + self.ID + ') is backed by NumPy array. To fetch the NumPy array, invoke toNumPyArray() method.')
+            print('# This matrix (' + self.ID + ') is backed by ' + str(type(self.eval_data)) + '. To fetch the DataFrame or NumPy array, invoke toDataFrame() or toNumPyArray() method respectively.')
         return ''
     
     ######################### NumPy related methods ######################################
@@ -567,7 +594,7 @@ class matrix(object):
         
         Using this method, you get back a ndarray object, and subsequent operations on the returned ndarray object will be singlenode.
         """
-        if self.eval_data is None or not isinstance(self.eval_data, SUPPORTED_TYPES):
+        if not isinstance(self.eval_data, SUPPORTED_TYPES):
             # Only warn if there is an unevaluated operation (which could potentially generate large matrix or if data is non-supported singlenode formats)
             import inspect
             frame,filename,line_number,function_name,lines,index = inspect.stack()[1]

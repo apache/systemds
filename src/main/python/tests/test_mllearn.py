@@ -54,10 +54,10 @@ class TestMLLearn(unittest.TestCase):
         X_digits = digits.data
         y_digits = digits.target
         n_samples = len(X_digits)
-        X_train = X_digits[:.9 * n_samples]
-        y_train = y_digits[:.9 * n_samples]
-        X_test = X_digits[.9 * n_samples:]
-        y_test = y_digits[.9 * n_samples:]
+        X_train = X_digits[:int(.9 * n_samples)]
+        y_train = y_digits[:int(.9 * n_samples)]
+        X_test = X_digits[int(.9 * n_samples):]
+        y_test = y_digits[int(.9 * n_samples):]
         logistic = LogisticRegression(sqlCtx)
         score = logistic.fit(X_train, y_train).score(X_test, y_test)
         self.failUnless(score > 0.9)
@@ -67,10 +67,10 @@ class TestMLLearn(unittest.TestCase):
         X_digits = digits.data
         y_digits = digits.target
         n_samples = len(X_digits)
-        X_train = X_digits[:.9 * n_samples]
-        y_train = y_digits[:.9 * n_samples]
-        X_test = X_digits[.9 * n_samples:]
-        y_test = y_digits[.9 * n_samples:]
+        X_train = X_digits[:int(.9 * n_samples)]
+        y_train = y_digits[:int(.9 * n_samples)]
+        X_test = X_digits[int(.9 * n_samples):]
+        y_test = y_digits[int(.9 * n_samples):]
         # Convert to DataFrame for i/o: current way to transfer data
         logistic = LogisticRegression(sqlCtx, transferUsingDF=True)
         score = logistic.fit(X_train, y_train).score(X_test, y_test)
@@ -137,10 +137,10 @@ class TestMLLearn(unittest.TestCase):
         X_digits = digits.data
         y_digits = digits.target
         n_samples = len(X_digits)
-        X_train = X_digits[:.9 * n_samples]
-        y_train = y_digits[:.9 * n_samples]
-        X_test = X_digits[.9 * n_samples:]
-        y_test = y_digits[.9 * n_samples:]
+        X_train = X_digits[:int(.9 * n_samples)]
+        y_train = y_digits[:int(.9 * n_samples)]
+        X_test = X_digits[int(.9 * n_samples):]
+        y_test = y_digits[int(.9 * n_samples):]
         svm = SVM(sqlCtx, is_multi_class=True)
         score = svm.fit(X_train, y_train).score(X_test, y_test)
         self.failUnless(score > 0.9)
@@ -150,10 +150,10 @@ class TestMLLearn(unittest.TestCase):
         X_digits = digits.data
         y_digits = digits.target
         n_samples = len(X_digits)
-        X_train = X_digits[:.9 * n_samples]
-        y_train = y_digits[:.9 * n_samples]
-        X_test = X_digits[.9 * n_samples:]
-        y_test = y_digits[.9 * n_samples:]
+        X_train = X_digits[:int(.9 * n_samples)]
+        y_train = y_digits[:int(.9 * n_samples)]
+        X_test = X_digits[int(.9 * n_samples):]
+        y_test = y_digits[int(.9 * n_samples):]
         svm = SVM(sqlCtx, is_multi_class=True, transferUsingDF=True)
         score = svm.fit(X_train, y_train).score(X_test, y_test)
         self.failUnless(score > 0.9)
@@ -163,10 +163,10 @@ class TestMLLearn(unittest.TestCase):
         X_digits = digits.data
         y_digits = digits.target
         n_samples = len(X_digits)
-        X_train = X_digits[:.9 * n_samples]
-        y_train = y_digits[:.9 * n_samples]
-        X_test = X_digits[.9 * n_samples:]
-        y_test = y_digits[.9 * n_samples:]
+        X_train = X_digits[:int(.9 * n_samples)]
+        y_train = y_digits[:int(.9 * n_samples)]
+        X_test = X_digits[int(.9 * n_samples):]
+        y_test = y_digits[int(.9 * n_samples):]
         nb = NaiveBayes(sqlCtx)
         score = nb.fit(X_train, y_train).score(X_test, y_test)
         self.failUnless(score > 0.85)

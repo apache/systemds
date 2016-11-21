@@ -32,11 +32,11 @@ from pyspark.context import SparkContext
 sc = SparkContext()
 
 dim = 5
-m1 = np.array(np.random.randint(100, size=dim*dim) + 1, dtype=np.double)
+m1 = np.array(np.random.randint(100, size=dim*dim) + 1.01, dtype=np.double)
 m1.shape = (dim, dim)
 m2 = np.array(np.random.randint(5, size=dim*dim) + 1, dtype=np.double)
 m2.shape = (dim, dim)
-s = 3.0
+s = 3.02
 
 class TestAPI(unittest.TestCase):
 

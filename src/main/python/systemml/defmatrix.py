@@ -493,6 +493,18 @@ class matrix(object):
         self.eval_data = matrix.sqlContext.createDataFrame(self.toPandas())
         return self.eval_data
 
+    def save(self, file, format='csv'):
+        """
+        Allows user to save a matrix to filesystem
+    
+        Parameters
+        ----------
+        file: filepath
+        format: can be csv, text or binary or mm
+        """
+        tmp = construct_intermediate_node([self], ['save(', self.ID , ',\"', file, '\", format=\"', format, '\")\n'])
+        construct_intermediate_node([tmp], [OUTPUT_ID, ' = full(0, rows=1, cols=1)\n']).eval()
+    
     def _mark_as_visited(self):
         self.visited = True
         # for cleanup

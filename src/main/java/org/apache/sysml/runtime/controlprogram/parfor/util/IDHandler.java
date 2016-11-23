@@ -122,9 +122,8 @@ public class IDHandler
 		    //get ip address
 		    InetAddress addr = InetAddress.getLocalHost();
 		    String host = addr.getHostAddress();
-		    //addr.getHostName()
-		    
-			uuid = pid + "_" + host;
+		    	
+		    uuid = pid + "_" + host;
 		}
 		catch(Exception ex)
 		{

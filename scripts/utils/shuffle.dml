@@ -19,38 +19,24 @@
 #
 #-------------------------------------------------------------
 
-# Utility script to append 1 matrix to another and apply row range
-# indexing. This is used for R cbind() like functionality returning
-# the head() of the result.
+# Utility script to shuffle input dataset
 #
 # Parameters:
-#    x    : (input) 1st data set
-#    y    : (input) 2nd data set
-#    n    : (input) number of rows to return, i.e.: 1:n
+#    x    : (input) data set
 #    o    : (output) 
-#    ofmt : (default "csv"); format of output
+#    ofmt : (default "csv") format of output
 #
 # Example:
-#   hadoop jar SystemML.jar -f algorithms/utils/cbind.dml -nvargs x="/tmp/M.mtx" y="/tmp/M1.mtx" n=100 o="/tmp/o.mtx"
+#   hadoop jar SystemML.jar -f algorithms/utils/shuffle.dml -nvargs x="/tmp/M.mtx" o="/tmp/o.mtx"
 #
 
 ofmt = ifdef ($ofmt, "csv");
 
 x = read ($x);
-y = read ($y);
-
-if ($n == nrow(x))
-{
-
-   xp = x;
-   yp = y;
-} 
-else 
-{
-   xp = x[1:$n,];
-   yp = y[1:$n,];
-}
-
-o = append (xp, yp);
+num_col = ncol(x)
+# Random vector used to shuffle the dataset
+y = rand(rows=nrow(x), cols=1, min=0, max=1, pdf="uniform")
+x = order(target = cbind(x, y), by = num_col + 1)
+o = x[,1:num_col]
 
 write (o, $o, format=ofmt);

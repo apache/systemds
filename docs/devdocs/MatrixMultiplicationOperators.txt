@@ -1,3 +1,7 @@
+NOTE: This information has been moved to docs/engine-dev-guide.md by:
+"[SYSTEMML-1120] Move matrix multiplication operators docs to Engine Dev Guide".
+It should be removed in the future.
+
 #####################################################################
 # TITLE: An Overview of Matrix Multiplication Operators in SystemML #
 # DATE MODIFIED: 03/18/2016                                         #

@@ -57,8 +57,13 @@ public class PythonTestRunner extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testMatrix() throws DMLRuntimeException, IOException, InterruptedException  {
-		runPythonTest("test_matrix.py");
+	public void testMatrixBinaryOp() throws DMLRuntimeException, IOException, InterruptedException  {
+		runPythonTest("test_matrix_binary_op.py");
+	}
+	
+	@Test
+	public void testMatrixAggFn() throws DMLRuntimeException, IOException, InterruptedException  {
+		runPythonTest("test_matrix_agg_fn.py");
 	}
 	
 	@Test

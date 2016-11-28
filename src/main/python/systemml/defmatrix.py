@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-__all__ = [ 'setSparkContext', 'matrix', 'eval', 'solve', 'DMLOp', 'set_lazy', 'debug_array_conversion', 'load' ]
+__all__ = [ 'setSparkContext', 'matrix', 'eval', 'solve', 'DMLOp', 'set_lazy', 'debug_array_conversion', 'load', 'full', 'seq' ]
 
 import numpy as np
 import pandas as pd
@@ -128,7 +128,18 @@ def load(file, format='csv'):
     format: can be csv, text or binary or mm
     """
     return construct_intermediate_node([], [OUTPUT_ID, ' = load(\"', file, '\", format=\"', format, '\")\n'])
-    
+
+def full(shape, fill_value):
+    """
+    Return a new array of given shape filled with fill_value.
+
+    Parameters
+    ----------
+    shape: tuple of length 2
+    fill_value: float or int
+    """
+    return construct_intermediate_node([], [OUTPUT_ID, ' = full(', str(fill_value), ', rows=', str(shape[0]), ', cols=', str(shape[1]), ')\n'])    
+
 def reset():
     """
     Resets the visited status of matrix and the operators in the generated AST.
@@ -201,6 +212,25 @@ def unaryMatrixFunction(X, fnName):
     lhsStr, inputs = _matricize(X, inputs)
     return construct_intermediate_node(inputs, [OUTPUT_ID, ' = ', fnName,'(', lhsStr, ')\n'])
 
+def seq(start=None, stop=None, step=1):
+    """
+    Creates a single column vector with values starting from <start>, to <stop>, in increments of <step>.
+    Note: Unlike Numpy's arange which returns a row-vector, this returns a column vector.
+    Also, Unlike Numpy's arange which doesnot include stop, this method includes stop in the interval.
+    
+    Parameters
+    ----------
+    start: int or float [Optional: default = 0]
+    stop: int or float
+    step : int float [Optional: default = 1]
+    """
+    if start is None and stop is None:
+        raise ValueError('Both start and stop cannot be None')
+    elif start is not None and stop is None:
+        stop = start
+        start = 0
+    return construct_intermediate_node([], [OUTPUT_ID, ' = seq(', str(start), ',', str(stop), ',',  str(step), ')\n'])
+    
 # utility function that converts 1:3 into DML string
 def convert_seq_to_dml(s):
     ret = []
@@ -659,7 +689,19 @@ class matrix(object):
             return fn(inputs[0])
         else:
             raise ValueError('Unsupported number of inputs')
-        
+
+    def hstack(self, other):
+        """
+        Stack matrices horizontally (column wise). Invokes cbind internally.
+        """
+        return binaryMatrixFunction(self, other, 'cbind')
+    
+    def vstack(self, other):
+        """
+        Stack matrices vertically (row wise). Invokes rbind internally.
+        """
+        return binaryMatrixFunction(self, other, 'rbind')
+            
     ######################### Arithmetic operators ######################################
 
     def negative(self):
@@ -910,8 +952,69 @@ class matrix(object):
         lhsStr, inputs = _matricize(self, inputs)
         return construct_intermediate_node(inputs, [OUTPUT_ID, ' = !', lhsStr, '\n'])
     
+    def remove_empty(self, axis=None):
+        """
+        Removes all empty rows or columns from the input matrix target X according to specified axis.
+        
+        Parameters
+        ----------
+        axis : int (0 or 1)
+        """
+        if axis is None:
+            raise ValueError('axis is a mandatory argument for remove_empty')
+        if axis == 0:
+            return self._parameterized_helper_fn(self, 'removeEmpty',  { 'target':self, 'margin':'rows' })
+        elif axis == 1:
+            return self._parameterized_helper_fn(self, 'removeEmpty',  { 'target':self, 'margin':'cols' })
+        else:
+            raise ValueError('axis for remove_empty needs to be either 0 or 1.')
+    
+    def replace(self, pattern=None, replacement=None):
+        """
+        Removes all empty rows or columns from the input matrix target X according to specified axis.
+        
+        Parameters
+        ----------
+        pattern : float or int
+        replacement : float or int
+        """
+        if pattern is None or not isinstance(pattern, (float, int)):
+            raise ValueError('pattern should be of type float or int')
+        if replacement is None or not isinstance(replacement, (float, int)):
+            raise ValueError('replacement should be of type float or int')
+        return self._parameterized_helper_fn(self, 'replace',  { 'target':self, 'pattern':pattern, 'replacement':replacement })
+    
+    def _parameterized_helper_fn(self, fnName, **kwargs):
+        """
+        Helper to invoke parameterized builtin function
+        """
+        dml_script = ''
+        lhsStr, inputs = _matricize(self, [])
+        dml_script = [OUTPUT_ID, ' = ', fnName, '(', lhsStr ]
+        first_arg = True
+        for key in kwargs:
+            if first_arg:
+                first_arg = False
+            else:
+                dml_script = dml_script + [ ', ' ]
+            v = kwargs[key]
+            if isinstance(v, str):
+                dml_script = dml_script + [key, '=\"', v, '\"' ]
+            elif isinstance(v, matrix):
+                dml_script = dml_script + [key, '=', v.ID]
+            else:
+                dml_script = dml_script + [key, '=', str(v) ]
+        dml_script = dml_script + [ ')\n' ]
+        return construct_intermediate_node(inputs, dml_script)
+            
     ######################### Aggregation functions ######################################
 
+    def prod(self):
+        """
+        Return the product of all cells in matrix
+        """
+        return self._aggFn('prod', None)
+        
     def sum(self, axis=None):
         """
         Compute the sum along the specified axis
@@ -941,7 +1044,48 @@ class matrix(object):
         axis : int, optional
         """
         return self._aggFn('var', axis)
-
+        
+    def kurtosis(self, axis=0):
+        """
+        Compute the kurtosis along the specified axis
+        
+        Parameters
+        ----------
+        axis : int, optional
+            Axis along which the kurtosis is calculated. Default is 0. If None, compute over the whole matrix.
+        """
+        return self._moment_helper(3, axis)
+    
+    def skew(self, axis=0):
+        """
+        Compute the skewness along the specified axis
+        
+        Parameters
+        ----------
+        axis : int, optional
+            Axis along which the skewness is calculated. Default is 0. If None, compute over the whole matrix.
+        """
+        return self._moment_helper(4, axis)
+    
+    def _moment_helper(self, k, axis=0):
+        dml_script = ''
+        lhsStr, inputs = _matricize(self, [])
+        dml_script = [OUTPUT_ID, ' = moment(', lhsStr, ', ', str(k), ')\n' ]
+        dml_script = [OUTPUT_ID, ' = moment(', lhsStr, ', ', str(k), ')\n' ]
+        if axis is None:
+            dml_script = [OUTPUT_ID, ' = moment(full(', lhsStr, ', rows=length(', lhsStr, '), cols=1), ', str(k), ')\n' ]
+        elif axis == 0:
+            dml_script = [OUTPUT_ID, ' = full(0, rows=nrow(', lhsStr, '), cols=1)\n' ]
+            dml_script = dml_script + [ 'parfor(i in 1:nrow(', lhsStr, '), check=0):\n' ]
+            dml_script = dml_script + [ '\t', OUTPUT_ID, '[i-1, 0] = moment(full(', lhsStr, '[i-1,], rows=ncol(', lhsStr, '), cols=1), ', str(k), ')\n\n' ]
+        elif axis == 1:
+            dml_script = [OUTPUT_ID, ' = full(0, rows=1, cols=ncol(', lhsStr, '))\n' ]
+            dml_script = dml_script + [ 'parfor(i in 1:ncol(', lhsStr, '), check=0):\n' ]
+            dml_script = dml_script + [ '\t', OUTPUT_ID, '[0, i-1] = moment(', lhsStr, '[,i-1], ', str(k), ')\n\n' ]
+        else:
+            raise ValueError('Incorrect axis:' + axis)
+        return construct_intermediate_node(inputs, dml_script)
+        
     def sd(self, axis=None):
         """
         Compute the standard deviation along the specified axis

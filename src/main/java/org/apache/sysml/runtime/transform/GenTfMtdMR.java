@@ -44,8 +44,6 @@ import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
 
 public class GenTfMtdMR {
 
-	public static final String DELIM = ",";
-
 	public static long runJob(String inputPath, String txMtdPath, String specWithIDs, String smallestFile, String partOffsetsFile, CSVFileFormatProperties inputDataProperties, long numCols, int replication, String headerLine) throws IOException, ClassNotFoundException, InterruptedException {
 		JobConf job = new JobConf(GenTfMtdMR.class);
 		job.setJobName("GenTfMTD");

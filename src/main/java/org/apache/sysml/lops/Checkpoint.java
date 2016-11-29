@@ -45,7 +45,6 @@ public class Checkpoint extends Lop
 	public static final StorageLevel DEFAULT_STORAGE_LEVEL = StorageLevel.MEMORY_AND_DISK();
 	public static final StorageLevel SER_STORAGE_LEVEL = StorageLevel.MEMORY_AND_DISK_SER();
 	public static final boolean CHECKPOINT_SPARSE_CSR = true; 
-	public static final String STORAGE_LEVEL = "storage.level"; 
 
 	private StorageLevel _storageLevel;
 	

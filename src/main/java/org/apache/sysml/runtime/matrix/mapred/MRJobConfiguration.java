@@ -232,17 +232,6 @@ public class MRJobConfiguration
 	 */
 	public static final String NUM_NONZERO_CELLS="nonzeros";
 	
-	/*
-	 * Counter group for determining the dimensions of result matrix. It is 
-	 * useful in operations like ctable and groupedAgg, in which the dimensions 
-	 * of result matrix are known only after computing the matrix.
-	 */
-	public static final String MAX_ROW_DIMENSION = "maxrows";
-	public static final String MAX_COL_DIMENSION = "maxcols";
-	
-	public static final String PARFOR_NUMTASKS="numtasks";
-	public static final String PARFOR_NUMITERATOINS="numiterations";
-	
 	public static final String TF_NUM_COLS 		= "transform.num.columns";
 	public static final String TF_HAS_HEADER 	= "transform.has.header";
 	public static final String TF_DELIM 		= "transform.field.delimiter";

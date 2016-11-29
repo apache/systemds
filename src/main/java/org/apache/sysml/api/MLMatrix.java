@@ -21,8 +21,6 @@ package org.apache.sysml.api;
 import java.io.IOException;
 import java.util.List;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.rdd.RDD;
 import org.apache.spark.sql.DataFrame;
@@ -66,7 +64,6 @@ import scala.Tuple2;
  */
 public class MLMatrix extends DataFrame {
 	private static final long serialVersionUID = -7005940673916671165L;
-	protected static final Log LOG = LogFactory.getLog(DMLScript.class.getName());
 	
 	protected MatrixCharacteristics mc = null;
 	protected MLContext ml = null;

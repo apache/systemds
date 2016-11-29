@@ -24,13 +24,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
-
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.mr.AggregateBinaryInstruction;
 import org.apache.sysml.runtime.instructions.mr.CSVReblockInstruction;
@@ -48,8 +45,6 @@ import org.apache.sysml.runtime.matrix.data.TaggedMatrixValue;
 @SuppressWarnings("rawtypes")
 public abstract class MapperBase extends MRBaseForCommonInstructions
 {
-	
-	protected static final Log LOG = LogFactory.getLog(MapperBase.class);
 	
 	//the indexes that this particular input matrix file represents
 	protected ArrayList<Byte> representativeMatrixes=null;

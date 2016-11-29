@@ -105,14 +105,9 @@ public class PerfTestTool
 	public static final long    MAX_DATASIZE           = 1000000; 
 	public static final long    DEFAULT_DATASIZE       = 500000;//(MAX_DATASIZE-MIN_DATASIZE)/2;
 	public static final long    DATASIZE_MR_SCALE      = 20;
-	public static final double  MIN_DIMSIZE            = 1;
-	public static final double  MAX_DIMSIZE            = 1000; 
 	public static final double  MIN_SPARSITY           = 0.1;
 	public static final double  MAX_SPARSITY           = 1.0;
 	public static final double  DEFAULT_SPARSITY       = 0.5;//(MAX_SPARSITY-MIN_SPARSITY)/2;
-	public static final double  MIN_SORT_IO_MEM        = 10;
-	public static final double  MAX_SORT_IO_MEM        = 500;
-	public static final double  DEFAULT_SORT_IO_MEM    = 256; //BI: default 256MB, hadoop: default 100MB
 	
 	//internal parameters
 	private static final boolean READ_STATS_ON_STARTUP  = false;

@@ -91,7 +91,6 @@ public class OptimizerUtils
 	public static final long INT_SIZE = 4;
 	public static final long CHAR_SIZE = 1;
 	public static final long BOOLEAN_SIZE = 1;
-	public static final double BIT_SIZE = (double)1/8;
 	public static final double INVALID_SIZE = -1d; // memory estimate not computed
 
 	//constants for valid CP matrix dimension sizes / nnz (dense/sparse)

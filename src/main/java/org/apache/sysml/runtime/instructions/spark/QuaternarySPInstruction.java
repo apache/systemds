@@ -374,7 +374,7 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 		}
 	
 		@Override
-		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<MatrixIndexes, MatrixBlock>> arg)
+		public LazyIterableIterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<MatrixIndexes, MatrixBlock>> arg)
 			throws Exception 
 		{
 			return new RDDQuaternaryPartitionIterator(arg);

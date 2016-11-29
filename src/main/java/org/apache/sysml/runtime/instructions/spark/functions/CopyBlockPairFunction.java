@@ -51,7 +51,7 @@ public class CopyBlockPairFunction implements PairFlatMapFunction<Iterator<Tuple
 	}
 
 	@Override
-	public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<MatrixIndexes, MatrixBlock>> arg0) 
+	public LazyIterableIterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<MatrixIndexes, MatrixBlock>> arg0) 
 		throws Exception 
 	{	
 		return new CopyBlockPairIterator(arg0);

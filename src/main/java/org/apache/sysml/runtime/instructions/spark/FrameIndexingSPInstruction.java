@@ -287,7 +287,7 @@ public class FrameIndexingSPInstruction  extends IndexingSPInstruction
 		}
 
 		@Override
-		public Iterable<Tuple2<Long, FrameBlock>> call(Iterator<Tuple2<Long, FrameBlock>> arg0)
+		public LazyIterableIterator<Tuple2<Long, FrameBlock>> call(Iterator<Tuple2<Long, FrameBlock>> arg0)
 			throws Exception 
 		{
 			return new LeftIndexPartitionIterator(arg0);
@@ -391,7 +391,7 @@ public class FrameIndexingSPInstruction  extends IndexingSPInstruction
 		}
 
 		@Override
-		public Iterable<Tuple2<Long, FrameBlock>> call(Iterator<Tuple2<Long, FrameBlock>> arg0)
+		public LazyIterableIterator<Tuple2<Long, FrameBlock>> call(Iterator<Tuple2<Long, FrameBlock>> arg0)
 			throws Exception 
 		{
 			return new SliceBlockPartitionIterator(arg0);

@@ -37,7 +37,7 @@ Btmp1 = table (IA, VA);
 Btmp2 = as.matrix(as.data.frame.matrix(Btmp1));
 
 #remove first row and column (0 values, see missing removeEmpty)
-B = Btmp1[2:nrow(Btmp2),2:ncol(Btmp2)];
+B = Btmp2[2:nrow(Btmp2),2:ncol(Btmp2)];
 
 writeMM(as(B, "CsparseMatrix"), paste(args[2], "B", sep="")); 
 

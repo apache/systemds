@@ -32,7 +32,7 @@ sys.path.insert(0, path)
 import unittest
 import systemml as sml
 import numpy as np
-from scipy.stats import kurtosis, skew
+from scipy.stats import kurtosis, skew, moment
 from pyspark.context import SparkContext
 sc = SparkContext()
 
@@ -75,23 +75,21 @@ class TestMatrixAggFn(unittest.TestCase):
     def test_seq(self):
         self.assertTrue(np.allclose(sml.seq(3), np.arange(3+1).reshape(4, 1)))
         
-    # TODO: The moments from SystemML and Numpy are not matching.
-    #def test_var1(self):
-    #    self.assertTrue(np.allclose(sml.matrix(m1).var(), m1.var()))
+    def test_var1(self):
+        print(str(np.array(sml.matrix(m1).var())) + " " + str(np.array(m1.var(ddof=1))))
+        self.assertTrue(np.allclose(sml.matrix(m1).var(), m1.var(ddof=1)))
 
-    #def test_var2(self):
-    #    self.assertTrue(np.allclose(sml.matrix(m1).var(axis=0), m1.var(axis=0).reshape(1, dim)))
+    def test_var2(self):
+        self.assertTrue(np.allclose(sml.matrix(m1).var(axis=0), m1.var(axis=0, ddof=1).reshape(1, dim)))
     
-    #def test_var3(self):
-    #    self.assertTrue(np.allclose(sml.matrix(m1).var(axis=1), m1.var(axis=1).reshape(dim, 1)))
+    def test_var3(self):
+        self.assertTrue(np.allclose(sml.matrix(m1).var(axis=1), m1.var(axis=1, ddof=1).reshape(dim, 1)))
     
-    # def test_kurtosis1(self):
-    #    print(str(np.array(sml.matrix(m1).kurtosis(axis=None))) + " " + str(kurtosis(m1, axis=None)))
-    #    self.assertTrue(np.allclose(sml.matrix(m1).kurtosis(axis=None), kurtosis(m1, axis=None)))
+    def test_moment3(self):
+        self.assertTrue(np.allclose(sml.matrix(m1).moment(moment=3, axis=None), moment(m1, moment=3, axis=None)))
         
-    #def test_skew1(self):
-    #    print(str(np.array(sml.matrix(m1).skew(axis=None))) + " " + str(skew(m1, axis=None)))
-    #    self.assertTrue(np.allclose(sml.matrix(m1).skew(axis=None), skew(m1, axis=None)))
+    def test_moment4(self):
+        self.assertTrue(np.allclose(sml.matrix(m1).moment(moment=4, axis=None), moment(m1, moment=4, axis=None)))
 
 if __name__ == "__main__":
     unittest.main()

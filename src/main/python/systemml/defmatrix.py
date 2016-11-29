@@ -1037,7 +1037,8 @@ class matrix(object):
 
     def var(self, axis=None):
         """
-        Compute the variance along the specified axis
+        Compute the variance along the specified axis.
+        We assume that delta degree of freedom is 1 (unlike NumPy which assumes ddof=0).
         
         Parameters
         ----------
@@ -1045,28 +1046,25 @@ class matrix(object):
         """
         return self._aggFn('var', axis)
         
-    def kurtosis(self, axis=0):
+    def moment(self, moment=1, axis=None):
         """
-        Compute the kurtosis along the specified axis
+        Calculates the nth moment about the mean
         
         Parameters
         ----------
+        moment : int
+            can be 1, 2, 3 or 4
         axis : int, optional
-            Axis along which the kurtosis is calculated. Default is 0. If None, compute over the whole matrix.
         """
-        return self._moment_helper(3, axis)
-    
-    def skew(self, axis=0):
-        """
-        Compute the skewness along the specified axis
+        if moment == 1:
+            return self.mean(axis)
+        elif moment == 2:
+            return self.var(axis)
+        elif moment == 3 or moment == 4:
+            return self._moment_helper(moment, axis)
+        else:
+            raise ValueError('The specified moment is not supported:' + str(moment))
         
-        Parameters
-        ----------
-        axis : int, optional
-            Axis along which the skewness is calculated. Default is 0. If None, compute over the whole matrix.
-        """
-        return self._moment_helper(4, axis)
-    
     def _moment_helper(self, k, axis=0):
         dml_script = ''
         lhsStr, inputs = _matricize(self, [])

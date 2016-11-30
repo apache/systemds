@@ -404,8 +404,8 @@ public class Recompiler
 		ArrayList<Instruction> newInst = null;
 
 		//need for synchronization as we do temp changes in shared hops/lops
-		synchronized( hops ) 
-		{	
+		synchronized( hops )
+		{
 			LOG.debug ("\n**************** Optimizer (Recompile) *************\nMemory Budget = " + 
 					   OptimizerUtils.toMB(OptimizerUtils.getLocalMemBudget()) + " MB");
 
@@ -426,7 +426,7 @@ public class Recompiler
 			// generate runtime instructions (incl piggybacking)
 			newInst = dag.getJobs(null, ConfigurationManager.getDMLConfig());
 		}
-		
+
 		// replace thread ids in new instructions
 		if( tid != 0 ) //only in parfor context
 			newInst = ProgramConverter.createDeepCopyInstructionSet(newInst, tid, -1, null, null, null, false, false);
@@ -1220,11 +1220,11 @@ public class Recompiler
 			ForProgramBlock pbTmp = (ForProgramBlock)pb;	
 			ForStatementBlock sbTmp = (ForStatementBlock) pbTmp.getStatementBlock();
 			//recompile predicate
-			if( sbTmp!=null &&!(et==ExecType.CP && !OptTreeConverter.containsMRJobInstruction(pbTmp.getFromInstructions(), true, true)) )			
+			if( sbTmp!=null && sbTmp.getFromHops() != null && !(et==ExecType.CP && !OptTreeConverter.containsMRJobInstruction(pbTmp.getFromInstructions(), true, true)) )
 				pbTmp.setFromInstructions( Recompiler.recompileHopsDag2Forced(sbTmp.getFromHops(), tid, et) );				
-			if( sbTmp!=null &&!(et==ExecType.CP && !OptTreeConverter.containsMRJobInstruction(pbTmp.getToInstructions(), true, true)) )			
+			if( sbTmp!=null && sbTmp.getToHops() != null && !(et==ExecType.CP && !OptTreeConverter.containsMRJobInstruction(pbTmp.getToInstructions(), true, true)) )
 				pbTmp.setToInstructions( Recompiler.recompileHopsDag2Forced(sbTmp.getToHops(), tid, et) );				
-			if( sbTmp!=null &&!(et==ExecType.CP && !OptTreeConverter.containsMRJobInstruction(pbTmp.getIncrementInstructions(), true, true)) )			
+			if( sbTmp!=null && sbTmp.getIncrementHops() != null && !(et==ExecType.CP && !OptTreeConverter.containsMRJobInstruction(pbTmp.getIncrementInstructions(), true, true)) )
 				pbTmp.setIncrementInstructions( Recompiler.recompileHopsDag2Forced(sbTmp.getIncrementHops(), tid, et) );				
 			//recompile body
 			for( ProgramBlock pb2 : pbTmp.getChildBlocks() )

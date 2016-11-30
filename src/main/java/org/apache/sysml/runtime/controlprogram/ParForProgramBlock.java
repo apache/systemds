@@ -147,8 +147,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		COLUMN_WISE,
 		COLUMN_BLOCK_WISE,
 		COLUMN_BLOCK_WISE_N,
-		BLOCK_WISE_M_N,
-		UNSPECIFIED;
+		BLOCK_WISE_M_N;
 
 		/**
 		 * Note: Robust version of valueOf in order to return NONE without exception

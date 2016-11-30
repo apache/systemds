@@ -23,7 +23,7 @@ public class FileFormatProperties
 {
 	
 	
-	public enum FileFormat { PARTITIONED, CSV, NATIVE };
+	public enum FileFormat { CSV, NATIVE };
 	
 	FileFormat fmt;
 	

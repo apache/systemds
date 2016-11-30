@@ -72,11 +72,8 @@ import org.apache.sysml.runtime.util.UtilFunctions;
 public class RDDConverterUtilsExt 
 {
 	public enum RDDConverterTypes {
-		TEXT_TO_MATRIX_CELL, 
-		MATRIXENTRY_TO_MATRIXCELL,
-		TEXT_TO_DOUBLEARR, 
-		ROW_TO_DOUBLEARR, 
-		VECTOR_TO_DOUBLEARR
+		TEXT_TO_MATRIX_CELL,
+		MATRIXENTRY_TO_MATRIXCELL
 	}
 	
 	

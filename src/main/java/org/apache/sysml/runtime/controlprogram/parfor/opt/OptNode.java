@@ -78,7 +78,6 @@ public class OptNode
 	}
 	
 	public enum ParamType{
-		OPTYPE,
 		OPSTRING,
 		TASK_PARTITIONER,
 		TASK_SIZE,

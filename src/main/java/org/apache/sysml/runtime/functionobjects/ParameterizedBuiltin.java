@@ -45,7 +45,7 @@ public class ParameterizedBuiltin extends ValueFunction
 	private static final long serialVersionUID = -5966242955816522697L;
 	
 	public enum ParameterizedBuiltinCode { 
-		INVALID, CDF, INVCDF, RMEMPTY, REPLACE, REXPAND, 
+		CDF, INVCDF, RMEMPTY, REPLACE, REXPAND,
 		TRANSFORM, TRANSFORMAPPLY, TRANSFORMDECODE };
 	public enum ProbabilityDistributionCode { 
 		INVALID, NORMAL, EXP, CHISQ, F, T };

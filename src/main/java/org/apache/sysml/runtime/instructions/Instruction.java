@@ -32,11 +32,10 @@ import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 public abstract class Instruction 
 {
 	public enum INSTRUCTION_TYPE { 
-		CONTROL_PROGRAM, 
-		MAPREDUCE, 
-		EXTERNAL_LIBRARY, 
-		MAPREDUCE_JOB, 
-		BREAKPOINT, 
+		CONTROL_PROGRAM,
+		MAPREDUCE,
+		MAPREDUCE_JOB,
+		BREAKPOINT,
 		SPARK,
 		GPU
 	};

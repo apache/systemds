@@ -35,7 +35,7 @@ public abstract class Expression
 	 * parameterized built-in function operator, data operator, relational operator, external built-in function operator, function call operator), data, or literal.
 	 */
 	public enum Kind {
-		UnaryOp, BinaryOp, BooleanOp, BuiltinFunctionOp, ParameterizedBuiltinFunctionOp, DataOp, Data, Literal, RelationalOp, ExtBuiltinFunctionOp, FunctionCallOp
+		BinaryOp, BooleanOp, BuiltinFunctionOp, ParameterizedBuiltinFunctionOp, DataOp, Data, RelationalOp, FunctionCallOp
 	};
 
 	/**
@@ -67,7 +67,6 @@ public abstract class Expression
 		ACOS,
 		ASIN,
 		ATAN,
-		AVG,
 		CAST_AS_BOOLEAN,
 		CAST_AS_DOUBLE,
 		CAST_AS_FRAME,
@@ -156,7 +155,7 @@ public abstract class Expression
 	 * Data operators.
 	 */
 	public enum DataOp {
-		READ, WRITE, RAND, MATRIX, INVALID	
+		READ, WRITE, RAND, MATRIX
 	}
 
 	/**
@@ -198,7 +197,7 @@ public abstract class Expression
 	 * Format types (text, binary, matrix market, csv, unknown).
 	 */
 	public enum FormatType {
-		TEXT, BINARY, MM, CSV, UNKNOWN
+		TEXT, BINARY, MM, CSV
 	};
 	
 	protected static final Log LOG = LogFactory.getLog(Expression.class.getName());

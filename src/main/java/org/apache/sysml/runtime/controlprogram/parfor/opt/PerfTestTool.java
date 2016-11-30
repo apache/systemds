@@ -188,11 +188,7 @@ public class PerfTestTool
 		DIM1_SIZE,
 		DIM2_SIZE,
 		DIM3_SIZE,
-		SPARSITY,	
-		NUM_THREADS,
-		NUM_MAPPERS,
-		NUM_REDUCERS,
-		
+		SPARSITY,
 		SORT_IO_MEM
 	}
 	
@@ -200,7 +196,6 @@ public class PerfTestTool
 	{
 		NONE_NONE,
 		NONE_UNARY,
-		UNARY_NONE,
 		UNARY_UNARY,
 		BINARY_NONE,
 		BINARY_UNARY

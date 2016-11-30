@@ -165,13 +165,6 @@ public abstract class Expression
 	public enum FunctCallOp {
 		INTERNAL, EXTERNAL
 	};
-	
-	/**
-	 * External built-in function operators.
-	 */
-	public enum ExtBuiltinFunctionOp {
-		EIGEN, CHOLESKY
-	};
 
 	/**
 	 * Data types (matrix, scalar, frame, object, unknown).

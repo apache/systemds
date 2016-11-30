@@ -78,15 +78,6 @@ public class LibMatrixDNN {
 		LoopedIm2ColConv2d, LoopedIm2ColConv2dBwdFilter, LoopedIm2ColConv2dBwdData
 	}
 	
-	public static class TemporaryConvolutionData {
-		public int [] minIndexArrR;
-		public int [] minIndexArrS;
-		public int [] maxIndexArrR;
-		public int [] maxIndexArrS;
-		int minCommonIndexS;
-		int maxCommonIndexS;
-	}
-	
 	private static AtomicLong conv2dSparseCount = new AtomicLong(0);
 	private static AtomicLong conv2dDenseCount = new AtomicLong(0);
 	private static AtomicLong conv2dBwdFilterSparseCount = new AtomicLong(0);
@@ -159,8 +150,6 @@ public class LibMatrixDNN {
 		
 		MatrixBlock input1; MatrixBlock input2; MatrixBlock output;
 		boolean reuseNonZeroedOutput = false;
-		
-		public TemporaryConvolutionData tmpData;
 		
 		private int convertToInt(long val) throws DMLRuntimeException {
 			if( val > Integer.MAX_VALUE ) {

@@ -47,11 +47,9 @@ public class Statistics
 {	
 	private static long compileStartTime = 0;
 	private static long compileEndTime = 0;
-	public static long compileTime = 0;
 	
 	private static long execStartTime = 0;
 	private static long execEndTime = 0;
-	public static long execTime = 0;
 
 	// number of compiled/executed MR jobs
 	private static int iNoOfExecutedMRJobs = 0;

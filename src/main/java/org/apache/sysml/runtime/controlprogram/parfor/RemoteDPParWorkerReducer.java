@@ -69,8 +69,7 @@ public class RemoteDPParWorkerReducer extends ParWorker
 	private boolean _tSparseCol = false;
 		
 	//MR ParWorker attributes  
-	protected String  _stringID       = null; 
-	protected HashMap<String, String> _rvarFnames = null; 
+	protected String  _stringID       = null;
 
 	//cached collector/reporter
 	protected OutputCollector<Writable, Writable> _out = null;

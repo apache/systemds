@@ -231,6 +231,9 @@ public class MRJobConfiguration
 	 * group name for the counters on number of output nonZeros
 	 */
 	public static final String NUM_NONZERO_CELLS="nonzeros";
+
+	public static final String PARFOR_NUMTASKS="numtasks"; // TODO investigate unused constant
+	public static final String PARFOR_NUMITERATOINS="numiterations"; // TODO investigate unused constant
 	
 	public static final String TF_NUM_COLS 		= "transform.num.columns";
 	public static final String TF_HAS_HEADER 	= "transform.has.header";

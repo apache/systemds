@@ -27,6 +27,8 @@ import org.apache.sysml.parser.Expression.*;
 
 public class AppendCP extends Lop
 {
+	public static final String OPCODE = "append"; // TODO investigate unused constant
+
 	private boolean _cbind = true;
 	
 	public AppendCP(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt, boolean cbind) 

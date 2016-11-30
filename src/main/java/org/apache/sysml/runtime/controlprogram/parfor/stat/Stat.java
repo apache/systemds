@@ -26,6 +26,8 @@ package org.apache.sysml.runtime.controlprogram.parfor.stat;
  */
 public enum Stat
 {
+	//parfor parser statistics
+	PARSE_T, // TODO investigate unused enum constant
 	//parfor optimizer statistics
 	OPT_T,
 	OPT_OPTIMIZER,

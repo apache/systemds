@@ -33,18 +33,25 @@ public class InterestingProperties
 	
 	public enum Location {
 		MEM,
+		HDFS_CACHE,
 		HDFS
 	}
 	
 	public enum Format {
 		ANY,
 		BINARY_BLOCK,
-		TEXT_CELL
+		BINARY_CELL,
+		TEXT_CELL,
+		TEXT_MM,
+		TEXT_CSV
 	}
 	
 	public enum Partitioning {
 		NONE,
+		ROW_WISE,
 		COL_WISE
+		//ROW_BLOCK_WISE,
+		//COL_BLOCK_WISE,
 	}
 	
 	//supported interesting properties

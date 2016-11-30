@@ -53,7 +53,8 @@ public class Matrix extends FunctionParameter
 	private MatrixObject _mo;
 
 	public enum ValueType {
-		Double
+		Double,
+		Integer
 	};
 	
 	/**

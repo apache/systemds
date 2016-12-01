@@ -39,7 +39,7 @@ import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.mllib.linalg.Vector;
 import org.apache.spark.mllib.linalg.VectorUDT;
-import org.apache.spark.sql.DataFrame;
+import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.SQLContext;
@@ -230,14 +230,14 @@ public class FrameRDDConverterUtils
 	// DataFrame <--> Binary block
 
 	public static JavaPairRDD<Long, FrameBlock> dataFrameToBinaryBlock(JavaSparkContext sc,
-			DataFrame df, MatrixCharacteristics mc, boolean containsID) 
+			Dataset<Row> df, MatrixCharacteristics mc, boolean containsID) 
 		throws DMLRuntimeException 
 	{
 		return dataFrameToBinaryBlock(sc, df, mc, containsID, new Pair<String[], ValueType[]>());
 	}
 
 	public static JavaPairRDD<Long, FrameBlock> dataFrameToBinaryBlock(JavaSparkContext sc,
-			DataFrame df, MatrixCharacteristics mc, boolean containsID, Pair<String[],ValueType[]> out) 
+			Dataset<Row> df, MatrixCharacteristics mc, boolean containsID, Pair<String[],ValueType[]> out) 
 		throws DMLRuntimeException 
 	{
 		//determine unknown dimensions if required
@@ -267,7 +267,7 @@ public class FrameRDDConverterUtils
 				new DataFrameToBinaryBlockFunction(mc, colnames, fschema, containsID, colVect));
 	}
 
-	public static DataFrame binaryBlockToDataFrame(SQLContext sqlctx, JavaPairRDD<Long,FrameBlock> in, 
+	public static Dataset<Row> binaryBlockToDataFrame(SQLContext sqlctx, JavaPairRDD<Long,FrameBlock> in, 
 			MatrixCharacteristics mc, ValueType[] schema)
 	{
 		if( !mc.colsKnown() )

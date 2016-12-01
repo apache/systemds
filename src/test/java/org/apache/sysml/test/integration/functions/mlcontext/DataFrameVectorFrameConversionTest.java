@@ -27,7 +27,7 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.mllib.linalg.DenseVector;
 import org.apache.spark.mllib.linalg.VectorUDT;
-import org.apache.spark.sql.DataFrame;
+import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.SQLContext;
@@ -271,7 +271,7 @@ public class DataFrameVectorFrameConversionTest extends AutomatedTestBase
 			SQLContext sqlctx = new SQLContext(sc);
 			
 			//create input data frame
-			DataFrame df = createDataFrame(sqlctx, mbA, containsID, schema);
+			Dataset<Row> df = createDataFrame(sqlctx, mbA, containsID, schema);
 			
 			//dataframe - frame conversion
 			JavaPairRDD<Long,FrameBlock> out = FrameRDDConverterUtils.dataFrameToBinaryBlock(sc, df, mc2, containsID);
@@ -304,7 +304,7 @@ public class DataFrameVectorFrameConversionTest extends AutomatedTestBase
 	 * @throws DMLRuntimeException 
 	 */
 	@SuppressWarnings("resource")
-	private DataFrame createDataFrame(SQLContext sqlctx, MatrixBlock mb, boolean containsID, ValueType[] schema) 
+	private Dataset<Row> createDataFrame(SQLContext sqlctx, MatrixBlock mb, boolean containsID, ValueType[] schema) 
 		throws DMLRuntimeException
 	{
 		//create in-memory list of rows

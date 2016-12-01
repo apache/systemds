@@ -40,7 +40,7 @@ import org.apache.spark.mllib.linalg.VectorUDT;
 import org.apache.spark.mllib.linalg.Vectors;
 import org.apache.spark.mllib.linalg.distributed.CoordinateMatrix;
 import org.apache.spark.mllib.linalg.distributed.MatrixEntry;
-import org.apache.spark.sql.DataFrame;
+import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.SQLContext;
@@ -128,7 +128,7 @@ public class RDDConverterUtilsExt
 		return coordinateMatrixToBinaryBlock(new JavaSparkContext(sc), input, mcIn, true);
 	}
 
-	public static DataFrame stringDataFrameToVectorDataFrame(SQLContext sqlContext, DataFrame inputDF)
+	public static Dataset<Row> stringDataFrameToVectorDataFrame(SQLContext sqlContext, Dataset<Row> inputDF)
 			throws DMLRuntimeException {
 
 		StructField[] oldSchema = inputDF.schema().fields();
@@ -184,14 +184,14 @@ public class RDDConverterUtilsExt
 		//output DF
 		JavaRDD<Row> newRows = inputDF.rdd().toJavaRDD().zipWithIndex().map(new StringToVector());
 		// DataFrame outDF = sqlContext.createDataFrame(newRows, new StructType(newSchema)); //TODO investigate why it doesn't work
-		DataFrame outDF = sqlContext.createDataFrame(newRows.rdd(),
+		Dataset<Row> outDF = sqlContext.createDataFrame(newRows.rdd(),
 				DataTypes.createStructType(newSchema));
 
 		return outDF;
 	}
 
 	
-	public static DataFrame projectColumns(DataFrame df, ArrayList<String> columns) throws DMLRuntimeException {
+	public static Dataset<Row> projectColumns(Dataset<Row> df, ArrayList<String> columns) throws DMLRuntimeException {
 		ArrayList<String> columnToSelect = new ArrayList<String>();
 		for(int i = 1; i < columns.size(); i++) {
 			columnToSelect.add(columns.get(i));
@@ -295,7 +295,7 @@ public class RDDConverterUtilsExt
 	 * @param nameOfCol name of index column
 	 * @return new data frame
 	 */
-	public static DataFrame addIDToDataFrame(DataFrame df, SQLContext sqlContext, String nameOfCol) {
+	public static Dataset<Row> addIDToDataFrame(Dataset<Row> df, SQLContext sqlContext, String nameOfCol) {
 		StructField[] oldSchema = df.schema().fields();
 		StructField[] newSchema = new StructField[oldSchema.length + 1];
 		for(int i = 0; i < oldSchema.length; i++) {

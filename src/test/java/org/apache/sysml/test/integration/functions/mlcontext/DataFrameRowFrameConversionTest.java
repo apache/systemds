@@ -21,7 +21,8 @@ package org.apache.sysml.test.integration.functions.mlcontext;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.sql.DataFrame;
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SQLContext;
 import org.junit.Test;
 import org.apache.sysml.api.DMLScript;
@@ -221,7 +222,7 @@ public class DataFrameRowFrameConversionTest extends AutomatedTestBase
 			JavaPairRDD<Long,FrameBlock> in = SparkExecutionContext.toFrameJavaPairRDD(sc, fbA);
 			
 			//frame - dataframe - frame conversion
-			DataFrame df = FrameRDDConverterUtils.binaryBlockToDataFrame(sqlctx, in, mc1, schema);
+			Dataset<Row> df = FrameRDDConverterUtils.binaryBlockToDataFrame(sqlctx, in, mc1, schema);
 			JavaPairRDD<Long,FrameBlock> out = FrameRDDConverterUtils.dataFrameToBinaryBlock(sc, df, mc2, true);
 			
 			//get output frame block

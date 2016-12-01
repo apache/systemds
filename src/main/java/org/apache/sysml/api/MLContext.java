@@ -35,7 +35,8 @@ import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.rdd.RDD;
-import org.apache.spark.sql.DataFrame;
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SQLContext;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.api.jmlc.JMLCUtils;
@@ -263,7 +264,7 @@ public class MLContext {
 	 * @param df the DataFrame
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public void registerInput(String varName, DataFrame df) throws DMLRuntimeException {
+	public void registerInput(String varName, Dataset<Row> df) throws DMLRuntimeException {
 		registerInput(varName, df, false);
 	}
 	
@@ -278,7 +279,7 @@ public class MLContext {
 	 * @param df the DataFrame
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public void registerFrameInput(String varName, DataFrame df) throws DMLRuntimeException {
+	public void registerFrameInput(String varName, Dataset<Row> df) throws DMLRuntimeException {
 		registerFrameInput(varName, df, false);
 	}
 	
@@ -292,7 +293,7 @@ public class MLContext {
 	 * @param containsID false if the DataFrame has an column ID which denotes the row ID.
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public void registerInput(String varName, DataFrame df, boolean containsID) throws DMLRuntimeException {
+	public void registerInput(String varName, Dataset<Row> df, boolean containsID) throws DMLRuntimeException {
 		int blksz = ConfigurationManager.getBlocksize();
 		MatrixCharacteristics mcOut = new MatrixCharacteristics(-1, -1, blksz, blksz);
 		JavaPairRDD<MatrixIndexes, MatrixBlock> rdd = RDDConverterUtils
@@ -309,7 +310,7 @@ public class MLContext {
 	 * @param containsID false if the DataFrame has an column ID which denotes the row ID.
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public void registerFrameInput(String varName, DataFrame df, boolean containsID) throws DMLRuntimeException {
+	public void registerFrameInput(String varName, Dataset<Row> df, boolean containsID) throws DMLRuntimeException {
 		int blksz = ConfigurationManager.getBlocksize();
 		MatrixCharacteristics mcOut = new MatrixCharacteristics(-1, -1, blksz, blksz);
 		JavaPairRDD<Long, FrameBlock> rdd = FrameRDDConverterUtils.dataFrameToBinaryBlock(new JavaSparkContext(_sc), df, mcOut, containsID);

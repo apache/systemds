@@ -21,7 +21,8 @@ package org.apache.sysml.test.integration.functions.mlcontext;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.sql.DataFrame;
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SQLContext;
 import org.junit.Test;
 import org.apache.sysml.api.DMLScript;
@@ -196,7 +197,7 @@ public class DataFrameMatrixConversionTest extends AutomatedTestBase
 			JavaPairRDD<MatrixIndexes,MatrixBlock> in = SparkExecutionContext.toMatrixJavaPairRDD(sc, mbA, blksz, blksz);
 			
 			//matrix - dataframe - matrix conversion
-			DataFrame df = RDDConverterUtils.binaryBlockToDataFrame(sqlctx, in, mc1, vector);
+			Dataset<Row> df = RDDConverterUtils.binaryBlockToDataFrame(sqlctx, in, mc1, vector);
 			df = ( rows==rows3 ) ? df.repartition(rows) : df;
 			JavaPairRDD<MatrixIndexes,MatrixBlock> out = RDDConverterUtils.dataFrameToBinaryBlock(sc, df, mc2, true, vector);
 			

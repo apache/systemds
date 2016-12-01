@@ -40,7 +40,7 @@ import org.apache.spark.mllib.linalg.Vector;
 import org.apache.spark.mllib.linalg.VectorUDT;
 import org.apache.spark.mllib.linalg.Vectors;
 import org.apache.spark.mllib.regression.LabeledPoint;
-import org.apache.spark.sql.DataFrame;
+import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.SQLContext;
@@ -226,7 +226,7 @@ public class RDDConverterUtils
 	}
 
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> dataFrameToBinaryBlock(JavaSparkContext sc,
-			DataFrame df, MatrixCharacteristics mc, boolean containsID, boolean isVector) 
+			Dataset<Row> df, MatrixCharacteristics mc, boolean containsID, boolean isVector) 
 	{
 		//determine unknown dimensions and sparsity if required
 		if( !mc.dimsKnown(true) ) {
@@ -262,7 +262,7 @@ public class RDDConverterUtils
 		return out;
 	}
 
-	public static DataFrame binaryBlockToDataFrame(SQLContext sqlctx, 
+	public static Dataset<Row> binaryBlockToDataFrame(SQLContext sqlctx, 
 			JavaPairRDD<MatrixIndexes, MatrixBlock> in, MatrixCharacteristics mc, boolean toVector)  
 	{
 		if( !mc.colsKnown() )

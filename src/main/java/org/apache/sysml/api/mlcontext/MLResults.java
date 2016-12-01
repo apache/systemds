@@ -23,7 +23,8 @@ import java.util.Set;
 
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.rdd.RDD;
-import org.apache.spark.sql.DataFrame;
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Row;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
@@ -283,7 +284,7 @@ public class MLResults {
 	 *            the name of the output
 	 * @return the output as a {@code DataFrame}
 	 */
-	public DataFrame getDataFrame(String outputName) {
+	public Dataset<Row> getDataFrame(String outputName) {
 		if (isMatrixObject(outputName)) {
 			MatrixObject mo = getMatrixObject(outputName);
 			return MLContextConversionUtil.matrixObjectToDataFrame(mo, sparkExecutionContext, false);
@@ -349,7 +350,7 @@ public class MLResults {
 	 * @return the output as a {@code DataFrame} of doubles or vectors with an
 	 *         ID column
 	 */
-	public DataFrame getDataFrame(String outputName, boolean isVectorDF) {
+	public Dataset<Row> getDataFrame(String outputName, boolean isVectorDF) {
 		if (isFrameObject(outputName)) {
 			throw new MLContextException("This method currently supports only matrices");
 		}
@@ -375,7 +376,7 @@ public class MLResults {
 	 *            the name of the output
 	 * @return the output as a {@code DataFrame} of doubles with an ID column
 	 */
-	public DataFrame getDataFrameDoubleWithIDColumn(String outputName) {
+	public Dataset<Row> getDataFrameDoubleWithIDColumn(String outputName) {
 		if (isFrameObject(outputName)) {
 			throw new MLContextException("This method currently supports only matrices");
 		}
@@ -401,7 +402,7 @@ public class MLResults {
 	 *            the name of the output
 	 * @return the output as a {@code DataFrame} of vectors with an ID column
 	 */
-	public DataFrame getDataFrameVectorWithIDColumn(String outputName) {
+	public Dataset<Row> getDataFrameVectorWithIDColumn(String outputName) {
 		if (isFrameObject(outputName)) {
 			throw new MLContextException("This method currently supports only matrices");
 		}
@@ -427,12 +428,12 @@ public class MLResults {
 	 *            the name of the output
 	 * @return the output as a {@code DataFrame} of doubles with no ID column
 	 */
-	public DataFrame getDataFrameDoubleNoIDColumn(String outputName) {
+	public Dataset<Row> getDataFrameDoubleNoIDColumn(String outputName) {
 		if (isFrameObject(outputName)) {
 			throw new MLContextException("This method currently supports only matrices");
 		}
 		MatrixObject mo = getMatrixObject(outputName);
-		DataFrame df = MLContextConversionUtil.matrixObjectToDataFrame(mo, sparkExecutionContext, false);
+		Dataset<Row> df = MLContextConversionUtil.matrixObjectToDataFrame(mo, sparkExecutionContext, false);
 		return df.drop(RDDConverterUtils.DF_ID_COLUMN);
 	}
 
@@ -454,12 +455,12 @@ public class MLResults {
 	 *            the name of the output
 	 * @return the output as a {@code DataFrame} of vectors with no ID column
 	 */
-	public DataFrame getDataFrameVectorNoIDColumn(String outputName) {
+	public Dataset<Row> getDataFrameVectorNoIDColumn(String outputName) {
 		if (isFrameObject(outputName)) {
 			throw new MLContextException("This method currently supports only matrices");
 		}
 		MatrixObject mo = getMatrixObject(outputName);
-		DataFrame df = MLContextConversionUtil.matrixObjectToDataFrame(mo, sparkExecutionContext, true);
+		Dataset<Row> df = MLContextConversionUtil.matrixObjectToDataFrame(mo, sparkExecutionContext, true);
 		return df.drop(RDDConverterUtils.DF_ID_COLUMN);
 	}
 

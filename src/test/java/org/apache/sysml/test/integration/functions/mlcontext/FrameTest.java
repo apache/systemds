@@ -31,7 +31,7 @@ import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.sql.DataFrame;
+import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SQLContext;
 import org.apache.spark.sql.types.StructType;
@@ -221,7 +221,7 @@ public class FrameTest extends AutomatedTestBase
 		SparkContext sc = mlCtx.getSparkContext();
 		JavaSparkContext jsc = new JavaSparkContext(sc);
 		
-		DataFrame dfA = null, dfB = null; 
+		Dataset<Row> dfA = null, dfB = null; 
 		if(bFromDataFrame)
 		{
 			//Create DataFrame for input A 
@@ -280,7 +280,7 @@ public class FrameTest extends AutomatedTestBase
 				JavaRDD<String> aOut = out.getStringFrameRDD("A", format, new CSVFileFormatProperties());
 				aOut.saveAsTextFile(fName);
 			} else {
-				DataFrame df = out.getDataFrameRDD("A", jsc);
+				Dataset<Row> df = out.getDataFrameRDD("A", jsc);
 				
 				//Convert back DataFrame to binary block for comparison using original binary to converted DF and back to binary 
 				MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, -1, -1, -1);
@@ -301,7 +301,7 @@ public class FrameTest extends AutomatedTestBase
 				JavaRDD<String> aOut = out.getStringFrameRDD("C", format, new CSVFileFormatProperties());
 				aOut.saveAsTextFile(fName);
 			} else {
-				DataFrame df = out.getDataFrameRDD("C", jsc);
+				Dataset<Row> df = out.getDataFrameRDD("C", jsc);
 				
 				//Convert back DataFrame to binary block for comparison using original binary to converted DF and back to binary 
 				MatrixCharacteristics mc = new MatrixCharacteristics(cRows, cCols, -1, -1, -1);

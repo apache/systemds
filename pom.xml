@@ -65,9 +65,9 @@
 	<properties>
 		<hadoop.version>2.4.1</hadoop.version>
 		<antlr.version>4.5.3</antlr.version>
-		<spark.version>1.6.0</spark.version>
-		<scala.version>2.10.5</scala.version>
-		<scala.binary.version>2.10</scala.binary.version>
+		<spark.version>2.0.2</spark.version>
+		<scala.version>2.11.8</scala.version>
+		<scala.binary.version>2.11</scala.binary.version>
 		<scala.test.version>2.2.6</scala.test.version>
 		<maven.build.timestamp.format>yyyy-MM-dd HH:mm:ss z</maven.build.timestamp.format>
 		<enableGPU>false</enableGPU>

@@ -1106,7 +1106,7 @@ public class JCudaObject extends GPUObject {
 		ensureFreeSpace(getIntSizeOf(rows + 1));
 		
 		long t1 = System.nanoTime();
-		cudaMalloc(nnzPerRowPtr, getIntSizeOf(cols));
+		cudaMalloc(nnzPerRowPtr, getIntSizeOf(rows));
 		cudaMalloc(nnzTotalDevHostPtr, getIntSizeOf(1));
 		Statistics.cudaAllocTime.addAndGet(System.nanoTime() - t1);
 		Statistics.cudaAllocCount.addAndGet(2);		

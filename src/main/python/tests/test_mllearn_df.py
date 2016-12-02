@@ -21,8 +21,8 @@
 #-------------------------------------------------------------
 
 # To run:
-#   - Python 2: `PYSPARK_PYTHON=python2 spark-submit --master local[*] --driver-class-path SystemML.jar test_mllearn.py`
-#   - Python 3: `PYSPARK_PYTHON=python3 spark-submit --master local[*] --driver-class-path SystemML.jar test_mllearn.py`
+#   - Python 2: `PYSPARK_PYTHON=python2 spark-submit --master local[*] --driver-class-path SystemML.jar test_mllearn_df.py`
+#   - Python 3: `PYSPARK_PYTHON=python3 spark-submit --master local[*] --driver-class-path SystemML.jar test_mllearn_df.py`
 
 # Make the `systemml` package importable
 import os
@@ -50,7 +50,7 @@ sqlCtx = SQLContext(sc)
 # ~/spark-1.6.1-scala-2.11/bin/spark-submit --master local[*] --driver-class-path SystemML.jar test.py
 class TestMLLearn(unittest.TestCase):
 
-    def testLogisticSK2(self):
+    def test_logistic_sk2(self):
         digits = datasets.load_digits()
         X_digits = digits.data
         y_digits = digits.target
@@ -64,7 +64,7 @@ class TestMLLearn(unittest.TestCase):
         score = logistic.fit(X_train, y_train).score(X_test, y_test)
         self.failUnless(score > 0.9)
 
-    def testLinearRegressionSK2(self):
+    def test_linear_regression_sk2(self):
         diabetes = datasets.load_diabetes()
         diabetes_X = diabetes.data[:, np.newaxis, 2]
         diabetes_X_train = diabetes_X[:-20]
@@ -76,7 +76,7 @@ class TestMLLearn(unittest.TestCase):
         score = regr.score(diabetes_X_test, diabetes_y_test)
         self.failUnless(score > 0.4) # TODO: Improve r2-score (may be I am using it incorrectly)
 
-    def testSVMSK2(self):
+    def test_svm_sk2(self):
         digits = datasets.load_digits()
         X_digits = digits.data
         y_digits = digits.target
@@ -89,7 +89,7 @@ class TestMLLearn(unittest.TestCase):
         score = svm.fit(X_train, y_train).score(X_test, y_test)
         self.failUnless(score > 0.9)
 
-    #def testNaiveBayesSK2(self):
+    #def test_naive_bayes_sk2(self):
     #    categories = ['alt.atheism', 'talk.religion.misc', 'comp.graphics', 'sci.space']
     #    newsgroups_train = fetch_20newsgroups(subset='train', categories=categories)
     #    newsgroups_test = fetch_20newsgroups(subset='test', categories=categories)

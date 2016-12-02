@@ -148,6 +148,10 @@ array([[-60.],
     3.  Global statistical built-In functions: exp, log, abs, sqrt,
         round, floor, ceil, sin, cos, tan, asin, acos, atan, sign, solve
 
+    For all the above functions, we always return a two dimensional matrix, especially for aggregation functions with axis. 
+    For example: Assuming m1 is a matrix of (3, n), NumPy returns a 1d vector of dimension (3,) for operation m1.sum(axis=1)
+    whereas SystemML returns a 2d matrix of dimension (3, 1).
+    
     Note: an evaluated matrix contains a data field computed by eval
     method as DataFrame or NumPy array.
 
@@ -230,7 +234,7 @@ array([[-60.],
             mVar1 = load(" ", format="csv")
             mVar3 = mVar1 + mVar2
             save(mVar3, " ")
-            >>> m3.print_ast()
+            >>> m3._print_ast()
             - [mVar3] (op).
               - [mVar1] (data).
               - [mVar2] (data).    
@@ -363,7 +367,7 @@ array([[-60.],
  `ones_like`()[](#systemml.defmatrix.matrix.ones_like "Permalink to this definition")
 :   
 
- `print_ast`(*numSpaces=0*)[](#systemml.defmatrix.matrix.print_ast "Permalink to this definition")
+ `_print_ast`(*numSpaces=0*)[](#systemml.defmatrix.matrix._print_ast "Permalink to this definition")
 :   Please use m.print\_ast() and/or type m for debugging. Here is a
     sample session:
 
@@ -376,7 +380,7 @@ array([[-60.],
         mVar1 = load(" ", format="csv")
         mVar3 = mVar1 + mVar2
         save(mVar3, " ")
-        >>> m3.print_ast()
+        >>> m3._print_ast()
         - [mVar3] (op).
           - [mVar1] (data).
           - [mVar2] (data).
@@ -420,7 +424,7 @@ array([[-60.],
 :   
 
  `sum`(*axis=None*)[](#systemml.defmatrix.matrix.sum "Permalink to this definition")
-:   Compute the sum along the specified axis
+:   Compute the sum along the specified axis. 
 
     axis : int, optional
 
@@ -487,7 +491,7 @@ array([[-60.],
         >>> print('Residual sum of squares: %.2f' % np.mean((y_predicted - y_test) ** 2))
         Residual sum of squares: 25282.12
 
- `print_ast`(*numSpaces*)[](#systemml.defmatrix.DMLOp.print_ast "Permalink to this definition")
+ `_print_ast`(*numSpaces*)[](#systemml.defmatrix.DMLOp._print_ast "Permalink to this definition")
 :   
 
  `systemml.defmatrix.set_lazy`(*isLazy*)[](#systemml.defmatrix.set_max_depth "Permalink to this definition")
@@ -932,4 +936,21 @@ If SystemML was not installed via pip, you may have to download SystemML.jar and
 
 #### matrix API is running slow when set_lazy(False) or when eval() is called often.
 
-This is a known issue. The matrix API is slow in this scenario due to slow Py4J conversion from Java MatrixObject or Java RDD to Python NumPy or DataFrame. 
+This is a known issue. The matrix API is slow in this scenario due to slow Py4J conversion from Java MatrixObject or Java RDD to Python NumPy or DataFrame.
+To resolve this for now, we recommend writing the matrix to FileSystemML and using `load` function.
+
+#### maximum recursion depth exceeded
+
+SystemML matrix is backed by lazy evaluation and uses a recursive Depth First Search (DFS).
+Python can throw `RuntimeError: maximum recursion depth exceeded` when the recursion of DFS exceeds beyond the limit 
+set by Python. There are two ways to address it:
+
+1. Increase the limit in Python:
+ 
+	```python
+	import sys
+	some_large_number = 2000
+	sys.setrecursionlimit(some_large_number)
+	```
+
+2. Evaluate the intermeditate matrix to cut-off large recursion.

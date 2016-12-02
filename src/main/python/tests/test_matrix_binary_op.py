@@ -20,8 +20,8 @@
 #-------------------------------------------------------------
 
 # To run:
-#   - Python 2: `PYSPARK_PYTHON=python2 spark-submit --master local[*] --driver-class-path SystemML.jar test_mlcontext.py`
-#   - Python 3: `PYSPARK_PYTHON=python3 spark-submit --master local[*] --driver-class-path SystemML.jar test_mlcontext.py`
+#   - Python 2: `PYSPARK_PYTHON=python2 spark-submit --master local[*] --driver-class-path SystemML.jar test_matrix_binary_op.py`
+#   - Python 3: `PYSPARK_PYTHON=python3 spark-submit --master local[*] --driver-class-path SystemML.jar test_matrix_binary_op.py`
 
 # Make the `systemml` package importable
 import os

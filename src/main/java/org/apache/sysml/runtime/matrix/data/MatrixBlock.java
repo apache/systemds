@@ -1088,7 +1088,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		denseBlock = null;
 	}
 
-	void sparseToDense() 
+	public void sparseToDense() 
 		throws DMLRuntimeException 
 	{	
 		//set target representation

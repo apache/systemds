@@ -21,8 +21,8 @@
 #-------------------------------------------------------------
 
 # To run:
-#   - Python 2: `PYSPARK_PYTHON=python2 spark-submit --master local[*] --driver-class-path SystemML.jar test_mllearn.py`
-#   - Python 3: `PYSPARK_PYTHON=python3 spark-submit --master local[*] --driver-class-path SystemML.jar test_mllearn.py`
+#   - Python 2: `PYSPARK_PYTHON=python2 spark-submit --master local[*] --driver-class-path SystemML.jar test_mllearn_numpy.py`
+#   - Python 3: `PYSPARK_PYTHON=python3 spark-submit --master local[*] --driver-class-path SystemML.jar test_mllearn_numpy.py`
 
 # Make the `systemml` package importable
 import os
@@ -49,7 +49,7 @@ sqlCtx = SQLContext(sc)
 # Currently not integrated with JUnit test
 # ~/spark-1.6.1-scala-2.11/bin/spark-submit --master local[*] --driver-class-path SystemML.jar test.py
 class TestMLLearn(unittest.TestCase):
-    def testLogistic(self):
+    def test_logistic(self):
         digits = datasets.load_digits()
         X_digits = digits.data
         y_digits = digits.target
@@ -62,7 +62,7 @@ class TestMLLearn(unittest.TestCase):
         score = logistic.fit(X_train, y_train).score(X_test, y_test)
         self.failUnless(score > 0.9)
     
-    def testLogisticMLPipeline1(self):
+    def test_logistic_mlpipeline(self):
         training = sqlCtx.createDataFrame([
             ("a b c d e spark", 1.0),
             ("b d", 2.0),
@@ -94,7 +94,7 @@ class TestMLLearn(unittest.TestCase):
         score = evaluator.evaluate(predictionAndLabels)
         self.failUnless(score == 1.0)
 
-    def testLinearRegression(self):
+    def test_linear_regression(self):
         diabetes = datasets.load_diabetes()
         diabetes_X = diabetes.data[:, np.newaxis, 2]
         diabetes_X_train = diabetes_X[:-20]
@@ -106,7 +106,7 @@ class TestMLLearn(unittest.TestCase):
         score = regr.score(diabetes_X_test, diabetes_y_test)
         self.failUnless(score > 0.4) # TODO: Improve r2-score (may be I am using it incorrectly)
 
-    def testSVM(self):
+    def test_svm(self):
         digits = datasets.load_digits()
         X_digits = digits.data
         y_digits = digits.target
@@ -119,7 +119,7 @@ class TestMLLearn(unittest.TestCase):
         score = svm.fit(X_train, y_train).score(X_test, y_test)
         self.failUnless(score > 0.9)
 
-    def testNaiveBayes(self):
+    def test_naive_bayes(self):
         digits = datasets.load_digits()
         X_digits = digits.data
         y_digits = digits.target
@@ -132,7 +132,7 @@ class TestMLLearn(unittest.TestCase):
         score = nb.fit(X_train, y_train).score(X_test, y_test)
         self.failUnless(score > 0.8)
         
-    #def testNaiveBayesSK2(self):
+    #def test_naive_bayes1(self):
     #    categories = ['alt.atheism', 'talk.religion.misc', 'comp.graphics', 'sci.space']
     #    newsgroups_train = fetch_20newsgroups(subset='train', categories=categories)
     #    newsgroups_test = fetch_20newsgroups(subset='test', categories=categories)

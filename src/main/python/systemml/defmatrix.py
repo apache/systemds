@@ -78,11 +78,11 @@ class DMLOp(object):
     def _visit(self, execute=True):
         matrix.dml = matrix.dml + self.dml
 
-    # Don't use this method instead use matrix's print_ast()
-    def print_ast(self, numSpaces):
+    # Don't use this method instead use matrix's _print_ast()
+    def _print_ast(self, numSpaces):
         ret = []
         for m in self.inputs:
-            ret = [ m.print_ast(numSpaces+2) ]
+            ret = [ m._print_ast(numSpaces+2) ]
         return ''.join(ret)
 
 # Special object used internally to specify the placeholder which will be replaced by output ID
@@ -359,6 +359,10 @@ class matrix(object):
     2. Aggregation functions: sum, mean, var, sd, max, min, argmin, argmax, cumsum
     3. Global statistical built-In functions: exp, log, abs, sqrt, round, floor, ceil, sin, cos, tan, asin, acos, atan, sign, solve
     
+    For all the above functions, we always return a two dimensional matrix, especially for aggregation functions with axis. 
+    For example: Assuming m1 is a matrix of (3, n), NumPy returns a 1d vector of dimension (3,) for operation m1.sum(axis=1)
+    whereas SystemML returns a 2d matrix of dimension (3, 1).
+    
     Note: an evaluated matrix contains a data field computed by eval method as DataFrame or NumPy array.
 
     Examples
@@ -413,7 +417,7 @@ class matrix(object):
        Then the left-indexed matrix is set to be backed by DMLOp consisting of following pydml:
        left-indexed-matrix = new-deep-copied-matrix
        left-indexed-matrix[index] = value
-    8. Please use m.print_ast() and/or  type `m` for debugging. Here is a sample session:
+    8. Please use m._print_ast() and/or  type `m` for debugging. Here is a sample session:
     
        >>> npm = np.ones((3,3))
        >>> m1 = sml.matrix(npm + 3)
@@ -424,7 +428,7 @@ class matrix(object):
        mVar1 = load(" ", format="csv")
        mVar3 = mVar1 + mVar2
        save(mVar3, " ")
-       >>> m3.print_ast()
+       >>> m3._print_ast()
        - [mVar3] (op).
          - [mVar1] (data).
          - [mVar2] (data).    
@@ -579,9 +583,9 @@ class matrix(object):
             self._register_as_output(execute)
         return self
 
-    def print_ast(self, numSpaces = 0):
+    def _print_ast(self, numSpaces = 0):
         """
-        Please use m.print_ast() and/or  type `m` for debugging. Here is a sample session:
+        Please use m._print_ast() and/or  type `m` for debugging. Here is a sample session:
         
         >>> npm = np.ones((3,3))
         >>> m1 = sml.matrix(npm + 3)
@@ -592,7 +596,7 @@ class matrix(object):
         mVar1 = load(" ", format="csv")
         mVar3 = mVar1 + mVar2
         save(mVar3, " ")
-        >>> m3.print_ast()
+        >>> m3._print_ast()
         - [mVar3] (op).
           - [mVar1] (data).
           - [mVar2] (data).
@@ -603,7 +607,7 @@ class matrix(object):
         elif self.op is not None:
             ret = [ head, '(op).\n' ]
             for m in self.op.inputs:
-                ret = ret + [ m.print_ast(numSpaces + 2) ]
+                ret = ret + [ m._print_ast(numSpaces + 2) ]
             out = ''.join(ret)
         else:
             raise ValueError('Either op or data needs to be set')
@@ -676,6 +680,14 @@ class matrix(object):
     def __numpy_ufunc__(self, func, method, pos, inputs, **kwargs):
         """
         This function enables systemml matrix to be compatible with NumPy's ufuncs.
+        
+        Parameters
+        ----------
+        func:  ufunc object that was called.
+        method: string indicating which Ufunc method was called (one of "__call__", "reduce", "reduceat", "accumulate", "outer", "inner").
+        pos: index of self in inputs.
+        inputs:  tuple of the input arguments to the ufunc
+        kwargs: dictionary containing the optional input arguments of the ufunc.
         """
         if method != '__call__' or kwargs:
             return NotImplemented

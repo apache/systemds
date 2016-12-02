@@ -257,19 +257,20 @@ public class RDDConverterUtilsExt
 	public static byte [] convertMBtoPy4JDenseArr(MatrixBlock mb) throws DMLRuntimeException {
 		byte [] ret = null;
 		if(mb.isInSparseFormat()) {
+			mb.sparseToDense();
+//			throw new DMLRuntimeException("Sparse to dense conversion is not yet implemented");
+		}
+		
+		double [] denseBlock = mb.getDenseBlock();
+		if(denseBlock == null) {
 			throw new DMLRuntimeException("Sparse to dense conversion is not yet implemented");
 		}
-		else {
-			double [] denseBlock = mb.getDenseBlock();
-			if(denseBlock == null) {
-				throw new DMLRuntimeException("Sparse to dense conversion is not yet implemented");
-			}
-			int times = Double.SIZE / Byte.SIZE;
-			ret = new byte[denseBlock.length * times];
-			for(int i=0;i < denseBlock.length;i++){
-		        ByteBuffer.wrap(ret, i*times, times).order(ByteOrder.nativeOrder()).putDouble(denseBlock[i]);
-			}
+		int times = Double.SIZE / Byte.SIZE;
+		ret = new byte[denseBlock.length * times];
+		for(int i=0;i < denseBlock.length;i++){
+	        ByteBuffer.wrap(ret, i*times, times).order(ByteOrder.nativeOrder()).putDouble(denseBlock[i]);
 		}
+		
 		return ret;
 	}
 	

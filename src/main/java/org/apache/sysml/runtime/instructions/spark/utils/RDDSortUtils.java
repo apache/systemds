@@ -199,10 +199,10 @@ public class RDDSortUtils
 		private static final long serialVersionUID = 6888003502286282876L;
 
 		@Override
-		public Iterable<Double> call(MatrixBlock arg0) 
+		public Iterator<Double> call(MatrixBlock arg0) 
 			throws Exception 
 		{
-			return DataConverter.convertToDoubleList(arg0);
+			return DataConverter.convertToDoubleList(arg0).iterator();
 		}		
 	}
 
@@ -211,7 +211,7 @@ public class RDDSortUtils
 		private static final long serialVersionUID = 2132672563825289022L;
 
 		@Override
-		public Iterable<DoublePair> call(Tuple2<MatrixBlock,MatrixBlock> arg0) 
+		public Iterator<DoublePair> call(Tuple2<MatrixBlock,MatrixBlock> arg0) 
 			throws Exception 
 		{
 			ArrayList<DoublePair> ret = new ArrayList<DoublePair>(); 
@@ -224,7 +224,7 @@ public class RDDSortUtils
 						mb2.quickGetValue(i, 0)));
 			}
 			
-			return ret;
+			return ret.iterator();
 		}		
 	}
 	
@@ -240,7 +240,7 @@ public class RDDSortUtils
 		}
 		
 		@Override
-		public Iterable<Tuple2<ValueIndexPair,Double>> call(Tuple2<MatrixIndexes,MatrixBlock> arg0) 
+		public Iterator<Tuple2<ValueIndexPair,Double>> call(Tuple2<MatrixIndexes,MatrixBlock> arg0) 
 			throws Exception 
 		{
 			ArrayList<Tuple2<ValueIndexPair,Double>> ret = new ArrayList<Tuple2<ValueIndexPair,Double>>(); 
@@ -254,7 +254,7 @@ public class RDDSortUtils
 						new ValueIndexPair(val,ixoffset+i+1), val));
 			}
 			
-			return ret;
+			return ret.iterator();
 		}		
 	}
 
@@ -308,7 +308,7 @@ public class RDDSortUtils
 			_brlen = brlen;
 		}
 		
-		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<Double,Long>> arg0) 
+		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<Double,Long>> arg0) 
 			throws Exception 
 		{
 			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
@@ -339,7 +339,7 @@ public class RDDSortUtils
 			if( mb!=null && mb.getNonZeros() != 0 )
 				ret.add(new Tuple2<MatrixIndexes,MatrixBlock>(ix,mb));
 			
-			return ret;
+			return ret.iterator();
 		}
 	}
 
@@ -356,7 +356,7 @@ public class RDDSortUtils
 			_brlen = brlen;
 		}
 		
-		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<DoublePair,Long>> arg0) 
+		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<DoublePair,Long>> arg0) 
 			throws Exception
 		{
 			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
@@ -388,7 +388,7 @@ public class RDDSortUtils
 			if( mb!=null && mb.getNonZeros() != 0 )
 				ret.add(new Tuple2<MatrixIndexes,MatrixBlock>(ix,mb));
 			
-			return ret;
+			return ret.iterator();
 		}
 	}
 
@@ -405,7 +405,7 @@ public class RDDSortUtils
 			_brlen = brlen;
 		}
 		
-		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<ValueIndexPair,Long>> arg0) 
+		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<ValueIndexPair,Long>> arg0) 
 			throws Exception
 		{
 			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
@@ -436,7 +436,7 @@ public class RDDSortUtils
 			if( mb!=null && mb.getNonZeros() != 0 )
 				ret.add(new Tuple2<MatrixIndexes,MatrixBlock>(ix,mb));
 			
-			return ret;
+			return ret.iterator();
 		}
 	}
 
@@ -453,7 +453,7 @@ public class RDDSortUtils
 			_brlen = brlen;
 		}
 		
-		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<Long,Long>> arg0) 
+		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<Long,Long>> arg0) 
 			throws Exception
 		{
 			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
@@ -484,7 +484,7 @@ public class RDDSortUtils
 			if( mb!=null && mb.getNonZeros() != 0 )
 				ret.add(new Tuple2<MatrixIndexes,MatrixBlock>(ix,mb));
 			
-			return ret;
+			return ret.iterator();
 		}
 	}
 	
@@ -502,7 +502,7 @@ public class RDDSortUtils
 		}
 
 		@Override
-		public Iterable<Tuple2<MatrixIndexes, RowMatrixBlock>> call(Iterator<Tuple2<MatrixIndexes, Tuple2<MatrixBlock, MatrixBlock>>> arg0)
+		public ShuffleMatrixIterator call(Iterator<Tuple2<MatrixIndexes, Tuple2<MatrixBlock, MatrixBlock>>> arg0)
 			throws Exception 
 		{
 			return new ShuffleMatrixIterator(arg0);
@@ -591,7 +591,7 @@ public class RDDSortUtils
 		}
 
 		@Override
-		public Iterable<Tuple2<MatrixIndexes, RowMatrixBlock>> call(Iterator<Tuple2<MatrixIndexes, MatrixBlock>> arg0)
+		public ShuffleMatrixIterator call(Iterator<Tuple2<MatrixIndexes, MatrixBlock>> arg0)
 			throws Exception 
 		{
 			return new ShuffleMatrixIterator(arg0);

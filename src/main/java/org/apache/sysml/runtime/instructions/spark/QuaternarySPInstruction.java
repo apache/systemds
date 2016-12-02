@@ -548,7 +548,7 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 		}
 		
 		@Override
-		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call( Tuple2<MatrixIndexes, MatrixBlock> arg0 ) 
+		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call( Tuple2<MatrixIndexes, MatrixBlock> arg0 ) 
 			throws Exception 
 		{
 			LinkedList<Tuple2<MatrixIndexes, MatrixBlock>> ret = new LinkedList<Tuple2<MatrixIndexes, MatrixBlock>>();
@@ -579,7 +579,7 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 			}
 			
 			//output list of new tuples
-			return ret;
+			return ret.iterator();
 		}
 	}
 }

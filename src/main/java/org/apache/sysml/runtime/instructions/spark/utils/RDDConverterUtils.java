@@ -344,7 +344,7 @@ public class RDDConverterUtils
 		private static final long serialVersionUID = -6590259914203201585L;
 
 		@Override
-		public Iterable<LabeledPoint> call(MatrixBlock arg0) 
+		public Iterator<LabeledPoint> call(MatrixBlock arg0) 
 			throws Exception 
 		{
 			ArrayList<LabeledPoint> ret = new ArrayList<LabeledPoint>();
@@ -368,7 +368,7 @@ public class RDDConverterUtils
 				}
 			}
 			
-			return ret;
+			return ret.iterator();
 		}
 	}
 	
@@ -418,7 +418,7 @@ public class RDDConverterUtils
 		}
 
 		@Override
-		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Text> arg0) 
+		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Text> arg0) 
 			throws Exception 
 		{
 			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
@@ -449,7 +449,7 @@ public class RDDConverterUtils
 			//final flush buffer
 			flushBufferToList(rbuff, ret);
 		
-			return ret;
+			return ret.iterator();
 		}
 	}
 
@@ -493,7 +493,7 @@ public class RDDConverterUtils
 		}
 
 		@Override
-		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<MatrixIndexes,MatrixCell>> arg0) 
+		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<MatrixIndexes,MatrixCell>> arg0) 
 			throws Exception 
 		{
 			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
@@ -520,7 +520,7 @@ public class RDDConverterUtils
 			//final flush buffer
 			flushBufferToList(rbuff, ret);
 		
-			return ret;
+			return ret.iterator();
 		}
 	}
 	
@@ -597,7 +597,7 @@ public class RDDConverterUtils
 		}
 
 		@Override
-		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<Text,Long>> arg0) 
+		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<Text,Long>> arg0) 
 			throws Exception 
 		{
 			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
@@ -654,7 +654,7 @@ public class RDDConverterUtils
 			//flush last blocks
 			flushBlocksToList(ix, mb, ret);
 		
-			return ret;
+			return ret.iterator();
 		}
 		
 		// Creates new state of empty column blocks for current global row index.
@@ -697,7 +697,7 @@ public class RDDConverterUtils
 		}
 
 		@Override
-		public Iterable<String> call(Tuple2<MatrixIndexes, MatrixBlock> arg0)
+		public Iterator<String> call(Tuple2<MatrixIndexes, MatrixBlock> arg0)
 			throws Exception 
 		{
 			MatrixIndexes ix = arg0._1();
@@ -730,7 +730,7 @@ public class RDDConverterUtils
 	    		sb.setLength(0); //reset
     		}
 			
-			return ret;
+			return ret.iterator();
 		}
 	}
 
@@ -745,7 +745,7 @@ public class RDDConverterUtils
 		}
 		
 		@Override
-		public Iterable<Tuple2<Long,Tuple2<Long,MatrixBlock>>> call(Tuple2<MatrixIndexes, MatrixBlock> arg0) 
+		public Iterator<Tuple2<Long,Tuple2<Long,MatrixBlock>>> call(Tuple2<MatrixIndexes, MatrixBlock> arg0) 
 			throws Exception 
 		{
 			ArrayList<Tuple2<Long,Tuple2<Long,MatrixBlock>>> ret = 
@@ -761,7 +761,7 @@ public class RDDConverterUtils
 						new Tuple2<Long,MatrixBlock>(ix.getColumnIndex(),tmpBlk)));
 			}
 			
-			return ret;
+			return ret.iterator();
 		}
 		
 	}
@@ -834,7 +834,7 @@ public class RDDConverterUtils
 		}
 		
 		@Override
-		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<Row, Long>> arg0) 
+		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<Row, Long>> arg0) 
 			throws Exception 
 		{
 			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
@@ -886,7 +886,7 @@ public class RDDConverterUtils
 			//flush last blocks
 			flushBlocksToList(ix, mb, ret);
 		
-			return ret;		
+			return ret.iterator();
 		}
 		
 		// Creates new state of empty column blocks for current global row index.

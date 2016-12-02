@@ -297,13 +297,13 @@ public class MatrixIndexingSPInstruction  extends IndexingSPInstruction
 		}
 
 		@Override
-		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Tuple2<MatrixIndexes, MatrixBlock> rightKV) 
+		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Tuple2<MatrixIndexes, MatrixBlock> rightKV) 
 			throws Exception 
 		{
 			IndexedMatrixValue in = SparkUtils.toIndexedMatrixBlock(rightKV);			
 			ArrayList<IndexedMatrixValue> out = new ArrayList<IndexedMatrixValue>();
 			OperationsOnMatrixValues.performShift(in, _ixrange, _brlen, _bclen, _rlen, _clen, out);
-			return SparkUtils.fromIndexedMatrixBlock(out);
+			return SparkUtils.fromIndexedMatrixBlock(out).iterator();
 		}		
 	}
 
@@ -420,13 +420,13 @@ public class MatrixIndexingSPInstruction  extends IndexingSPInstruction
 		}
 
 		@Override
-		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Tuple2<MatrixIndexes, MatrixBlock> kv) 
+		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Tuple2<MatrixIndexes, MatrixBlock> kv) 
 			throws Exception 
 		{	
 			IndexedMatrixValue in = SparkUtils.toIndexedMatrixBlock(kv);
 			ArrayList<IndexedMatrixValue> outlist = new ArrayList<IndexedMatrixValue>();
 			OperationsOnMatrixValues.performSlice(in, _ixrange, _brlen, _bclen, outlist);
-			return SparkUtils.fromIndexedMatrixBlock(outlist);
+			return SparkUtils.fromIndexedMatrixBlock(outlist).iterator();
 		}		
 	}
 

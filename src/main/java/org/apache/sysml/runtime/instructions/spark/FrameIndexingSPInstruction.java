@@ -208,13 +208,13 @@ public class FrameIndexingSPInstruction  extends IndexingSPInstruction
 		}
 
 		@Override
-		public Iterable<Tuple2<Long, FrameBlock>> call(Tuple2<Long, FrameBlock> rightKV) 
+		public Iterator<Tuple2<Long, FrameBlock>> call(Tuple2<Long, FrameBlock> rightKV) 
 			throws Exception 
 		{
 			Pair<Long,FrameBlock> in = SparkUtils.toIndexedFrameBlock(rightKV);			
 			ArrayList<Pair<Long,FrameBlock>> out = new ArrayList<Pair<Long,FrameBlock>>();
 			OperationsOnMatrixValues.performShift(in, _ixrange, _brlen, _bclen, _rlen, _clen, out);
-			return SparkUtils.fromIndexedFrameBlock(out);
+			return SparkUtils.fromIndexedFrameBlock(out).iterator();
 		}		
 	}
 
@@ -237,7 +237,7 @@ public class FrameIndexingSPInstruction  extends IndexingSPInstruction
 		}
 		
 		@Override
-		public Iterable<Tuple2<Long, FrameBlock>> call(Tuple2<Long, FrameBlock> kv) 
+		public Iterator<Tuple2<Long, FrameBlock>> call(Tuple2<Long, FrameBlock> kv) 
 			throws Exception 
 		{
 			ArrayList<Pair<Long,FrameBlock>> out = new ArrayList<Pair<Long,FrameBlock>>();
@@ -269,7 +269,7 @@ public class FrameIndexingSPInstruction  extends IndexingSPInstruction
 				curBlockRange.rowStart =  lGblStartRow + _brlen;
 				iRowStartDest = UtilFunctions.computeCellInBlock(iRowStartDest+iMaxRowsToCopy+1, _brlen);
 			}
-			return SparkUtils.fromIndexedFrameBlock(out);
+			return SparkUtils.fromIndexedFrameBlock(out).iterator();
 		}
 	}
 

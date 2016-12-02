@@ -113,7 +113,7 @@ m1 = sml.matrix(np.ones((3,3)) + 2)
 m2 = sml.matrix(np.ones((3,3)) + 3)
 m2 = m1 * (m2 + m1)
 m4 = 1.0 - m2
-m4.sum(axis=1).toNumPyArray()
+m4.sum(axis=1).toNumPy()
 ```
 
 Output:
@@ -147,7 +147,7 @@ X = sml.matrix(X_train)
 y = sml.matrix(y_train)
 A = X.transpose().dot(X)
 b = X.transpose().dot(y)
-beta = sml.solve(A, b).toNumPyArray()
+beta = sml.solve(A, b).toNumPy()
 y_predicted = X_test.dot(beta)
 print('Residual sum of squares: %.2f' % np.mean((y_predicted - y_test) ** 2)) 
 ```

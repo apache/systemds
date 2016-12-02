@@ -374,7 +374,7 @@ class matrix(object):
     >>> m2 = m1 * (m2 + m1)
     >>> m4 = 1.0 - m2
     >>> m4
-    # This matrix (mVar5) is backed by below given PyDML script (which is not yet evaluated). To fetch the data of this matrix, invoke toNumPyArray() or toDataFrame() or toPandas() methods.
+    # This matrix (mVar5) is backed by below given PyDML script (which is not yet evaluated). To fetch the data of this matrix, invoke toNumPy() or toDF() or toPandas() methods.
     mVar1 = load(" ", format="csv")
     mVar2 = load(" ", format="csv")
     mVar3 = mVar2 + mVar1
@@ -383,9 +383,9 @@ class matrix(object):
     save(mVar5, " ")
     >>> m2.eval()
     >>> m2
-    # This matrix (mVar4) is backed by NumPy array. To fetch the NumPy array, invoke toNumPyArray() method.
+    # This matrix (mVar4) is backed by NumPy array. To fetch the NumPy array, invoke toNumPy() method.
     >>> m4
-    # This matrix (mVar5) is backed by below given PyDML script (which is not yet evaluated). To fetch the data of this matrix, invoke toNumPyArray() or toDataFrame() or toPandas() methods.
+    # This matrix (mVar5) is backed by below given PyDML script (which is not yet evaluated). To fetch the data of this matrix, invoke toNumPy() or toDF() or toPandas() methods.
     mVar4 = load(" ", format="csv")
     mVar5 = 1.0 - mVar4
     save(mVar5, " ")
@@ -488,7 +488,7 @@ class matrix(object):
         self.eval_data = convertToPandasDF(self.eval_data)
         return self.eval_data
 
-    def toNumPyArray(self):
+    def toNumPy(self):
         """
         This is a convenience function that calls the global eval method and then converts the matrix object into NumPy array.
         """
@@ -509,7 +509,7 @@ class matrix(object):
         # Always keep default format as NumPy array if possible
         return self.eval_data
 
-    def toDataFrame(self):
+    def toDF(self):
         """
         This is a convenience function that calls the global eval method and then converts the matrix object into DataFrame.
         """
@@ -547,7 +547,7 @@ class matrix(object):
         if isinstance(self.eval_data, SUPPORTED_TYPES) and execute:
             matrix.script.input(self.ID, convertToMatrixBlock(matrix.sc, self.eval_data))
         elif execute:
-            matrix.script.input(self.ID, self.toDataFrame())
+            matrix.script.input(self.ID, self.toDF())
         return self
 
     def _register_as_output(self, execute):
@@ -617,9 +617,9 @@ class matrix(object):
         This function helps to debug matrix class and also examine the generated PyDML script
         """
         if self.eval_data is None:
-            print('# This matrix (' + self.ID + ') is backed by below given PyDML script (which is not yet evaluated). To fetch the data of this matrix, invoke toNumPyArray() or toDataFrame() or toPandas() methods.\n' + eval([self], execute=False))
+            print('# This matrix (' + self.ID + ') is backed by below given PyDML script (which is not yet evaluated). To fetch the data of this matrix, invoke toNumPy() or toDF() or toPandas() methods.\n' + eval([self], execute=False))
         else:
-            print('# This matrix (' + self.ID + ') is backed by ' + str(type(self.eval_data)) + '. To fetch the DataFrame or NumPy array, invoke toDataFrame() or toNumPyArray() method respectively.')
+            print('# This matrix (' + self.ID + ') is backed by ' + str(type(self.eval_data)) + '. To fetch the DataFrame or NumPy array, invoke toDF() or toNumPy() method respectively.')
         return ''
     
     ######################### NumPy related methods ######################################
@@ -645,7 +645,7 @@ class matrix(object):
                 raise Exception('[ERROR]:' + msg)
             else:
                 print '[WARN]:' + msg
-        return np.array(self.toNumPyArray(), dtype)
+        return np.array(self.toNumPy(), dtype)
     
     def astype(self, t):
         # TODO: Throw error if incorrect type
@@ -667,7 +667,7 @@ class matrix(object):
             multiline_dml = multiline_dml + [OUTPUT_ID, ' = full(0, rows=2, cols=1)\n']
             multiline_dml = multiline_dml + [ OUTPUT_ID, '[0,0] = ', rlen_ID, '\n' ]
             multiline_dml = multiline_dml + [ OUTPUT_ID, '[1,0] = ', clen_ID, '\n' ]
-            ret = construct_intermediate_node(inputs, multiline_dml).toNumPyArray()
+            ret = construct_intermediate_node(inputs, multiline_dml).toNumPy()
             self._shape = tuple(np.array(ret, dtype=int).flatten())
         return self._shape 
     
@@ -1212,4 +1212,4 @@ class matrix(object):
         self.op.dml = self.op.dml + [ '\n', self.ID ] + getIndexingDML(index) + [ ' = ',  getValue(value), '\n']
 
     # Not implemented: conj, hyperbolic/inverse-hyperbolic functions(i.e. sinh, arcsinh, cosh, ...), bitwise operator, xor operator, isreal, iscomplex, isfinite, isinf, isnan, copysign, nextafter, modf, frexp, trunc  
-    _numpy_to_systeml_mapping = {np.add: __add__, np.subtract: __sub__, np.multiply: __mul__, np.divide: __div__, np.logaddexp: logaddexp, np.true_divide: __truediv__, np.floor_divide: __floordiv__, np.negative: negative, np.power: __pow__, np.remainder: remainder, np.mod: mod, np.fmod: __mod__, np.absolute: abs, np.rint: round, np.sign: sign, np.exp: exp, np.exp2: exp2, np.log: log, np.log2: log2, np.log10: log10, np.expm1: expm1, np.log1p: log1p, np.sqrt: sqrt, np.square: square, np.reciprocal: reciprocal, np.ones_like: ones_like, np.zeros_like: zeros_like, np.sin: sin, np.cos: cos, np.tan: tan, np.arcsin: arcsin, np.arccos: arccos, np.arctan: arctan, np.deg2rad: deg2rad, np.rad2deg: rad2deg, np.greater: __gt__, np.greater_equal: __ge__, np.less: __lt__, np.less_equal: __le__, np.not_equal: __ne__, np.equal: __eq__, np.logical_not: logical_not, np.logical_and: __and__, np.logical_or: __or__, np.maximum: max, np.minimum: min, np.signbit: sign, np.ldexp: ldexp}
+    _numpy_to_systeml_mapping = {np.add: __add__, np.subtract: __sub__, np.multiply: __mul__, np.divide: __div__, np.logaddexp: logaddexp, np.true_divide: __truediv__, np.floor_divide: __floordiv__, np.negative: negative, np.power: __pow__, np.remainder: remainder, np.mod: mod, np.fmod: __mod__, np.absolute: abs, np.rint: round, np.sign: sign, np.exp: exp, np.exp2: exp2, np.log: log, np.log2: log2, np.log10: log10, np.expm1: expm1, np.log1p: log1p, np.sqrt: sqrt, np.square: square, np.reciprocal: reciprocal, np.ones_like: ones_like, np.zeros_like: zeros_like, np.sin: sin, np.cos: cos, np.tan: tan, np.arcsin: arcsin, np.arccos: arccos, np.arctan: arctan, np.deg2rad: deg2rad, np.rad2deg: rad2deg, np.greater: __gt__, np.greater_equal: __ge__, np.less: __lt__, np.less_equal: __le__, np.not_equal: __ne__, np.equal: __eq__, np.logical_not: logical_not, np.logical_and: __and__, np.logical_or: __or__, np.maximum: max, np.minimum: min, np.signbit: sign, np.ldexp: ldexp, np.dot:dot}

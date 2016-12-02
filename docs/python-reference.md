@@ -87,7 +87,7 @@ Welcome to Apache SystemML!
 
 >>> m2 = sml.matrix(np.ones((3,3)) + 3)
 >>> np.add(m1, m2) + m1
-# This matrix (mVar4) is backed by below given PyDML script (which is not yet evaluated). To fetch the data of this matrix, invoke toNumPyArray() or toDataFrame() or toPandas() methods.
+# This matrix (mVar4) is backed by below given PyDML script (which is not yet evaluated). To fetch the data of this matrix, invoke toNumPy() or toDF() or toPandas() methods.
 mVar2 = load(" ", format="csv")
 mVar1 = load(" ", format="csv")
 mVar3 = mVar1 + mVar2
@@ -99,7 +99,7 @@ save(mVar4, " ")
 >>> m1 = sml.matrix(np.ones((3,3)) + 2)
 >>> m2 = sml.matrix(np.ones((3,3)) + 3)
 >>> np.add(m1, m2) + m1
-# This matrix (mVar8) is backed by NumPy array. To fetch the NumPy array, invoke toNumPyArray() method.
+# This matrix (mVar8) is backed by NumPy array. To fetch the NumPy array, invoke toNumPy() method.
 ``` 
 
 ### Usage:
@@ -111,7 +111,7 @@ m1 = sml.matrix(np.ones((3,3)) + 2)
 m2 = sml.matrix(np.ones((3,3)) + 3)
 m2 = m1 * (m2 + m1)
 m4 = 1.0 - m2
-m4.sum(axis=1).toNumPyArray()
+m4.sum(axis=1).toNumPy()
 ```
 
 Output:
@@ -162,7 +162,7 @@ array([[-60.],
         >>> m2 = m1 * (m2 + m1)
         >>> m4 = 1.0 - m2
         >>> m4
-        # This matrix (mVar5) is backed by below given PyDML script (which is not yet evaluated). To fetch the data of this matrix, invoke toNumPyArray() or toDataFrame() or toPandas() methods.
+        # This matrix (mVar5) is backed by below given PyDML script (which is not yet evaluated). To fetch the data of this matrix, invoke toNumPy() or toDF() or toPandas() methods.
         mVar1 = load(" ", format="csv")
         mVar2 = load(" ", format="csv")
         mVar3 = mVar2 + mVar1
@@ -171,9 +171,9 @@ array([[-60.],
         save(mVar5, " ")
         >>> m2.eval()
         >>> m2
-        # This matrix (mVar4) is backed by NumPy array. To fetch the NumPy array, invoke toNumPyArray() method.
+        # This matrix (mVar4) is backed by NumPy array. To fetch the NumPy array, invoke toNumPy() method.
         >>> m4
-        # This matrix (mVar5) is backed by below given PyDML script (which is not yet evaluated). To fetch the data of this matrix, invoke toNumPyArray() or toDataFrame() or toPandas() methods.
+        # This matrix (mVar5) is backed by below given PyDML script (which is not yet evaluated). To fetch the data of this matrix, invoke toNumPy() or toDF() or toPandas() methods.
         mVar4 = load(" ", format="csv")
         mVar5 = 1.0 - mVar4
         save(mVar5, " ")
@@ -430,11 +430,11 @@ array([[-60.],
  `tan`()[](#systemml.defmatrix.matrix.tan "Permalink to this definition")
 :   
 
- `toDataFrame`()[](#systemml.defmatrix.matrix.toDataFrame "Permalink to this definition")
+ `toDF`()[](#systemml.defmatrix.matrix.toDF "Permalink to this definition")
 :   This is a convenience function that calls the global eval method
     and then converts the matrix object into DataFrame.
 
- `toNumPyArray`()[](#systemml.defmatrix.matrix.toNumPyArray "Permalink to this definition")
+ `toNumPy`()[](#systemml.defmatrix.matrix.toNumPy "Permalink to this definition")
 :   This is a convenience function that calls the global eval method
     and then converts the matrix object into NumPy array.
 
@@ -511,7 +511,7 @@ array([[-60.],
         >>> sml.setSparkContext(sc)
         >>> from systemml import random
         >>> m1 = sml.random.normal(loc=3, scale=2, size=(3,3))
-        >>> m1.toNumPyArray()
+        >>> m1.toNumPy()
         array([[ 3.48857226,  6.17261819,  2.51167259],
                [ 3.60506708, -1.90266305,  3.97601633],
                [ 3.62245706,  5.9430881 ,  2.53070413]])
@@ -528,7 +528,7 @@ array([[-60.],
         >>> sml.setSparkContext(sc)
         >>> from systemml import random
         >>> m1 = sml.random.uniform(size=(3,3))
-        >>> m1.toNumPyArray()
+        >>> m1.toNumPy()
         array([[ 0.54511396,  0.11937437,  0.72975775],
                [ 0.14135946,  0.01944448,  0.52544478],
                [ 0.67582422,  0.87068849,  0.02766852]])
@@ -545,7 +545,7 @@ array([[-60.],
         >>> sml.setSparkContext(sc)
         >>> from systemml import random
         >>> m1 = sml.random.poisson(lam=1, size=(3,3))
-        >>> m1.toNumPyArray()
+        >>> m1.toNumPy()
         array([[ 1.,  0.,  2.],
                [ 1.,  0.,  0.],
                [ 0.,  0.,  0.]])
@@ -925,7 +925,7 @@ m1 = sml.matrix(np.ones((3,3)) + 2)
 m2 = sml.matrix(np.ones((3,3)) + 3)
 m2 = m1 * (m2 + m1)
 m4 = 1.0 - m2
-m4.sum(axis=1).toNumPyArray()
+m4.sum(axis=1).toNumPy()
 ```
 
 If SystemML was not installed via pip, you may have to download SystemML.jar and provide it to pyspark via `--driver-class-path` and `--jars`. 

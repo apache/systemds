@@ -71,7 +71,7 @@ def normal(loc=0.0, scale=1.0, size=(1,1), sparsity=1.0):
     >>> sml.setSparkContext(sc)
     >>> from systemml import random
     >>> m1 = sml.random.normal(loc=3, scale=2, size=(3,3))
-    >>> m1.toNumPyArray()
+    >>> m1.toNumPy()
     array([[ 3.48857226,  6.17261819,  2.51167259],
            [ 3.60506708, -1.90266305,  3.97601633],
            [ 3.62245706,  5.9430881 ,  2.53070413]])
@@ -107,7 +107,7 @@ def uniform(low=0.0, high=1.0, size=(1,1), sparsity=1.0):
     >>> sml.setSparkContext(sc)
     >>> from systemml import random
     >>> m1 = sml.random.uniform(size=(3,3))
-    >>> m1.toNumPyArray()
+    >>> m1.toNumPy()
     array([[ 0.54511396,  0.11937437,  0.72975775],
            [ 0.14135946,  0.01944448,  0.52544478],
            [ 0.67582422,  0.87068849,  0.02766852]])
@@ -142,7 +142,7 @@ def poisson(lam=1.0, size=(1,1), sparsity=1.0):
     >>> sml.setSparkContext(sc)
     >>> from systemml import random
     >>> m1 = sml.random.poisson(lam=1, size=(3,3))
-    >>> m1.toNumPyArray()
+    >>> m1.toNumPy()
     array([[ 1.,  0.,  2.],
            [ 1.,  0.,  0.],
            [ 0.,  0.,  0.]])

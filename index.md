@@ -70,6 +70,8 @@ PyDML is a high-level Python-like declarative language for machine learning.
 An introduction to the basics of DML and PyDML.
 * [Beginner's Guide for Python users](beginners-guide-python) -
 Beginner's Guide for Python users.
+* [Reference Guide for Python users](python-reference) -
+Reference Guide for Python users.
 
 ## ML Algorithms
 

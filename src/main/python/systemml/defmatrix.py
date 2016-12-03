@@ -78,7 +78,6 @@ class DMLOp(object):
     def _visit(self, execute=True):
         matrix.dml = matrix.dml + self.dml
 
-    # Don't use this method instead use matrix's _print_ast()
     def _print_ast(self, numSpaces):
         ret = []
         for m in self.inputs:
@@ -417,7 +416,7 @@ class matrix(object):
        Then the left-indexed matrix is set to be backed by DMLOp consisting of following pydml:
        left-indexed-matrix = new-deep-copied-matrix
        left-indexed-matrix[index] = value
-    8. Please use m._print_ast() and/or  type `m` for debugging. Here is a sample session:
+    8. Please use m.print_ast() and/or  type `m` for debugging. Here is a sample session:
     
        >>> npm = np.ones((3,3))
        >>> m1 = sml.matrix(npm + 3)
@@ -428,7 +427,7 @@ class matrix(object):
        mVar1 = load(" ", format="csv")
        mVar3 = mVar1 + mVar2
        save(mVar3, " ")
-       >>> m3._print_ast()
+       >>> m3.print_ast()
        - [mVar3] (op).
          - [mVar1] (data).
          - [mVar2] (data).    
@@ -583,9 +582,9 @@ class matrix(object):
             self._register_as_output(execute)
         return self
 
-    def _print_ast(self, numSpaces = 0):
+    def print_ast(self):
         """
-        Please use m._print_ast() and/or  type `m` for debugging. Here is a sample session:
+        Please use m.print_ast() and/or  type `m` for debugging. Here is a sample session:
         
         >>> npm = np.ones((3,3))
         >>> m1 = sml.matrix(npm + 3)
@@ -596,11 +595,14 @@ class matrix(object):
         mVar1 = load(" ", format="csv")
         mVar3 = mVar1 + mVar2
         save(mVar3, " ")
-        >>> m3._print_ast()
+        >>> m3.print_ast()
         - [mVar3] (op).
           - [mVar1] (data).
           - [mVar2] (data).
         """
+        return self._print_ast(0)
+    
+    def _print_ast(self, numSpaces):
         head = ''.join([ ' ' ]*numSpaces + [ '- [', self.ID, '] ' ])
         if self.eval_data is not None:
             out = head + '(data).\n'
@@ -648,7 +650,7 @@ class matrix(object):
             if matrix.THROW_ARRAY_CONVERSION_ERROR:
                 raise Exception('[ERROR]:' + msg)
             else:
-                print '[WARN]:' + msg
+                print('[WARN]:' + msg)
         return np.array(self.toNumPy(), dtype)
     
     def astype(self, t):
@@ -1198,7 +1200,6 @@ class matrix(object):
         """
         Implements evaluation of right indexing operations such as m[1,1], m[0:1,], m[:, 0:1]
         """
-        print '__getitem__'
         return construct_intermediate_node([self], [OUTPUT_ID, ' = ', self.ID ] + getIndexingDML(index) + [ '\n' ])
 
     # Performs deep copy if the matrix is backed by data

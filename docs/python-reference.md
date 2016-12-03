@@ -234,7 +234,7 @@ array([[-60.],
             mVar1 = load(" ", format="csv")
             mVar3 = mVar1 + mVar2
             save(mVar3, " ")
-            >>> m3._print_ast()
+            >>> m3.print_ast()
             - [mVar3] (op).
               - [mVar1] (data).
               - [mVar2] (data).    
@@ -367,7 +367,7 @@ array([[-60.],
  `ones_like`()[](#systemml.defmatrix.matrix.ones_like "Permalink to this definition")
 :   
 
- `_print_ast`(*numSpaces=0*)[](#systemml.defmatrix.matrix._print_ast "Permalink to this definition")
+ `print_ast`()[](#systemml.defmatrix.matrix.print_ast "Permalink to this definition")
 :   Please use m.print\_ast() and/or type m for debugging. Here is a
     sample session:
 
@@ -380,7 +380,7 @@ array([[-60.],
         mVar1 = load(" ", format="csv")
         mVar3 = mVar1 + mVar2
         save(mVar3, " ")
-        >>> m3._print_ast()
+        >>> m3.print_ast()
         - [mVar3] (op).
           - [mVar1] (data).
           - [mVar2] (data).
@@ -490,9 +490,6 @@ array([[-60.],
         >>> y_predicted = X_test.dot(beta)
         >>> print('Residual sum of squares: %.2f' % np.mean((y_predicted - y_test) ** 2))
         Residual sum of squares: 25282.12
-
- `_print_ast`(*numSpaces*)[](#systemml.defmatrix.DMLOp._print_ast "Permalink to this definition")
-:   
 
  `systemml.defmatrix.set_lazy`(*isLazy*)[](#systemml.defmatrix.set_max_depth "Permalink to this definition")
 :   This method allows users to set whether the matrix operations should be executed in lazy manner.

@@ -391,7 +391,7 @@ sparsity: Sparsity (between 0.0 and 1.0).</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">sml</span><span class="o">.</span><span class="n">setSparkContext</span><span class="p">(</span><span class="n">sc</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">systemml</span> <span class="k">import</span> <span class="n">random</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">m1</span> <span class="o">=</span> <span class="n">sml</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">m1</span><span class="o">.</span><span class="n">toNumPyArray</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m1</span><span class="o">.</span><span class="n">toNumPy</span><span class="p">()</span>
 <span class="go">array([[ 3.48857226,  6.17261819,  2.51167259],</span>
 <span class="go">       [ 3.60506708, -1.90266305,  3.97601633],</span>
 <span class="go">       [ 3.62245706,  5.9430881 ,  2.53070413]])</span>
@@ -412,7 +412,7 @@ sparsity: Sparsity (between 0.0 and 1.0).</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">sml</span><span class="o">.</span><span class="n">setSparkContext</span><span class="p">(</span><span class="n">sc</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">systemml</span> <span class="k">import</span> <span class="n">random</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">m1</span> <span class="o">=</span> <span class="n">sml</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">m1</span><span class="o">.</span><span class="n">toNumPyArray</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m1</span><span class="o">.</span><span class="n">toNumPy</span><span class="p">()</span>
 <span class="go">array([[ 0.54511396,  0.11937437,  0.72975775],</span>
 <span class="go">       [ 0.14135946,  0.01944448,  0.52544478],</span>
 <span class="go">       [ 0.67582422,  0.87068849,  0.02766852]])</span>
@@ -432,7 +432,7 @@ sparsity: Sparsity (between 0.0 and 1.0).</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">sml</span><span class="o">.</span><span class="n">setSparkContext</span><span class="p">(</span><span class="n">sc</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">systemml</span> <span class="k">import</span> <span class="n">random</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">m1</span> <span class="o">=</span> <span class="n">sml</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="n">lam</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">m1</span><span class="o">.</span><span class="n">toNumPyArray</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m1</span><span class="o">.</span><span class="n">toNumPy</span><span class="p">()</span>
 <span class="go">array([[ 1.,  0.,  2.],</span>
 <span class="go">       [ 1.,  0.,  0.],</span>
 <span class="go">       [ 0.,  0.,  0.]])</span>
@@ -479,7 +479,7 @@ sparsity: Sparsity (between 0.0 and 1.0).</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">sml</span><span class="o">.</span><span class="n">setSparkContext</span><span class="p">(</span><span class="n">sc</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">systemml</span> <span class="k">import</span> <span class="n">random</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">m1</span> <span class="o">=</span> <span class="n">sml</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">m1</span><span class="o">.</span><span class="n">toNumPyArray</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m1</span><span class="o">.</span><span class="n">toNumPy</span><span class="p">()</span>
 <span class="go">array([[ 3.48857226,  6.17261819,  2.51167259],</span>
 <span class="go">       [ 3.60506708, -1.90266305,  3.97601633],</span>
 <span class="go">       [ 3.62245706,  5.9430881 ,  2.53070413]])</span>
@@ -500,7 +500,7 @@ sparsity: Sparsity (between 0.0 and 1.0).</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">sml</span><span class="o">.</span><span class="n">setSparkContext</span><span class="p">(</span><span class="n">sc</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">systemml</span> <span class="k">import</span> <span class="n">random</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">m1</span> <span class="o">=</span> <span class="n">sml</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">m1</span><span class="o">.</span><span class="n">toNumPyArray</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m1</span><span class="o">.</span><span class="n">toNumPy</span><span class="p">()</span>
 <span class="go">array([[ 0.54511396,  0.11937437,  0.72975775],</span>
 <span class="go">       [ 0.14135946,  0.01944448,  0.52544478],</span>
 <span class="go">       [ 0.67582422,  0.87068849,  0.02766852]])</span>
@@ -520,7 +520,7 @@ sparsity: Sparsity (between 0.0 and 1.0).</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">sml</span><span class="o">.</span><span class="n">setSparkContext</span><span class="p">(</span><span class="n">sc</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">systemml</span> <span class="k">import</span> <span class="n">random</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">m1</span> <span class="o">=</span> <span class="n">sml</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="n">lam</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">m1</span><span class="o">.</span><span class="n">toNumPyArray</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m1</span><span class="o">.</span><span class="n">toNumPy</span><span class="p">()</span>
 <span class="go">array([[ 1.,  0.,  2.],</span>
 <span class="go">       [ 1.,  0.,  0.],</span>
 <span class="go">       [ 0.,  0.,  0.]])</span>
@@ -607,7 +607,7 @@ and Pandas DataFrame).</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">m2</span> <span class="o">=</span> <span class="n">m1</span> <span class="o">*</span> <span class="p">(</span><span class="n">m2</span> <span class="o">+</span> <span class="n">m1</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">m4</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">m2</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">m4</span>
-<span class="go"># This matrix (mVar5) is backed by below given PyDML script (which is not yet evaluated). To fetch the data of this matrix, invoke toNumPyArray() or toDataFrame() or toPandas() methods.</span>
+<span class="go"># This matrix (mVar5) is backed by below given PyDML script (which is not yet evaluated). To fetch the data of this matrix, invoke toNumPy() or toDF() or toPandas() methods.</span>
 <span class="go">mVar1 = load(&quot; &quot;, format=&quot;csv&quot;)</span>
 <span class="go">mVar2 = load(&quot; &quot;, format=&quot;csv&quot;)</span>
 <span class="go">mVar3 = mVar2 + mVar1</span>
@@ -616,9 +616,9 @@ and Pandas DataFrame).</p>
 <span class="go">save(mVar5, &quot; &quot;)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">m2</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">m2</span>
-<span class="go"># This matrix (mVar4) is backed by NumPy array. To fetch the NumPy array, invoke toNumPyArray() method.</span>
+<span class="go"># This matrix (mVar4) is backed by NumPy array. To fetch the NumPy array, invoke toNumPy() method.</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">m4</span>
-<span class="go"># This matrix (mVar5) is backed by below given PyDML script (which is not yet evaluated). To fetch the data of this matrix, invoke toNumPyArray() or toDataFrame() or toPandas() methods.</span>
+<span class="go"># This matrix (mVar5) is backed by below given PyDML script (which is not yet evaluated). To fetch the data of this matrix, invoke toNumPy() or toDF() or toPandas() methods.</span>
 <span class="go">mVar4 = load(&quot; &quot;, format=&quot;csv&quot;)</span>
 <span class="go">mVar5 = 1.0 - mVar4</span>
 <span class="go">save(mVar5, &quot; &quot;)</span>
@@ -780,14 +780,14 @@ left-indexed-matrix[index] = value</p>
 <dd></dd></dl>
 
 <dl class="method">
-<dt id="systemml.defmatrix.matrix.toDataFrame">
-<code class="descname">toDataFrame</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#matrix.toDataFrame"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.defmatrix.matrix.toDataFrame" title="Permalink to this definition">¶</a></dt>
+<dt id="systemml.defmatrix.matrix.toDF">
+<code class="descname">toDF</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#matrix.toDF"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.defmatrix.matrix.toDF" title="Permalink to this definition">¶</a></dt>
 <dd><p>This is a convenience function that calls the global eval method and then converts the matrix object into DataFrame.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="systemml.defmatrix.matrix.toNumPyArray">
-<code class="descname">toNumPyArray</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#matrix.toNumPyArray"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.defmatrix.matrix.toNumPyArray" title="Permalink to this definition">¶</a></dt>
+<dt id="systemml.defmatrix.matrix.toNumPy">
+<code class="descname">toNumPy</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#matrix.toNumPy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.defmatrix.matrix.toNumPy" title="Permalink to this definition">¶</a></dt>
 <dd><p>This is a convenience function that calls the global eval method and then converts the matrix object into NumPy array.</p>
 </dd></dl>
 
@@ -1282,7 +1282,7 @@ and Pandas DataFrame).</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">m2</span> <span class="o">=</span> <span class="n">m1</span> <span class="o">*</span> <span class="p">(</span><span class="n">m2</span> <span class="o">+</span> <span class="n">m1</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">m4</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">m2</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">m4</span>
-<span class="go"># This matrix (mVar5) is backed by below given PyDML script (which is not yet evaluated). To fetch the data of this matrix, invoke toNumPyArray() or toDataFrame() or toPandas() methods.</span>
+<span class="go"># This matrix (mVar5) is backed by below given PyDML script (which is not yet evaluated). To fetch the data of this matrix, invoke toNumPy() or toDF() or toPandas() methods.</span>
 <span class="go">mVar1 = load(&quot; &quot;, format=&quot;csv&quot;)</span>
 <span class="go">mVar2 = load(&quot; &quot;, format=&quot;csv&quot;)</span>
 <span class="go">mVar3 = mVar2 + mVar1</span>
@@ -1291,9 +1291,9 @@ and Pandas DataFrame).</p>
 <span class="go">save(mVar5, &quot; &quot;)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">m2</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">m2</span>
-<span class="go"># This matrix (mVar4) is backed by NumPy array. To fetch the NumPy array, invoke toNumPyArray() method.</span>
+<span class="go"># This matrix (mVar4) is backed by NumPy array. To fetch the NumPy array, invoke toNumPy() method.</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">m4</span>
-<span class="go"># This matrix (mVar5) is backed by below given PyDML script (which is not yet evaluated). To fetch the data of this matrix, invoke toNumPyArray() or toDataFrame() or toPandas() methods.</span>
+<span class="go"># This matrix (mVar5) is backed by below given PyDML script (which is not yet evaluated). To fetch the data of this matrix, invoke toNumPy() or toDF() or toPandas() methods.</span>
 <span class="go">mVar4 = load(&quot; &quot;, format=&quot;csv&quot;)</span>
 <span class="go">mVar5 = 1.0 - mVar4</span>
 <span class="go">save(mVar5, &quot; &quot;)</span>
@@ -1455,14 +1455,14 @@ left-indexed-matrix[index] = value</p>
 <dd></dd></dl>
 
 <dl class="method">
-<dt id="systemml.matrix.toDataFrame">
-<code class="descname">toDataFrame</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#matrix.toDataFrame"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.matrix.toDataFrame" title="Permalink to this definition">¶</a></dt>
+<dt id="systemml.matrix.toDF">
+<code class="descname">toDF</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#matrix.toDF"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.matrix.toDF" title="Permalink to this definition">¶</a></dt>
 <dd><p>This is a convenience function that calls the global eval method and then converts the matrix object into DataFrame.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="systemml.matrix.toNumPyArray">
-<code class="descname">toNumPyArray</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#matrix.toNumPyArray"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.matrix.toNumPyArray" title="Permalink to this definition">¶</a></dt>
+<dt id="systemml.matrix.toNumPy">
+<code class="descname">toNumPy</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#matrix.toNumPy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.matrix.toNumPy" title="Permalink to this definition">¶</a></dt>
 <dd><p>This is a convenience function that calls the global eval method and then converts the matrix object into NumPy array.</p>
 </dd></dl>
 

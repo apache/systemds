@@ -433,6 +433,15 @@
 										<include>original-*.jar</include>
 									</includes>
 								</fileset>
+								<fileset>
+									<directory>src/main/python/dist</directory>
+								</fileset>
+								<fileset>
+									<directory>src/main/python/systemml_incubating.egg-info</directory>
+								</fileset>
+								<fileset>
+									<directory>src/main/python/systemml/systemml-java</directory>
+								</fileset>
 							</filesets>
 						</configuration>
 					</execution>

@@ -23,7 +23,7 @@ import os
 from setuptools import find_packages, setup
 import time
 
-VERSION = '0.11.0.dev1'
+VERSION = '0.12.0.dev1'
 RELEASED_DATE = str(time.strftime("%m/%d/%Y"))
 numpy_version = '1.8.2'
 scipy_version = '0.15.1'

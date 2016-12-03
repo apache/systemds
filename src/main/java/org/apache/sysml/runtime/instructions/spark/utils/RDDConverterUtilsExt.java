@@ -47,6 +47,7 @@ import org.apache.spark.sql.SQLContext;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
@@ -201,9 +202,16 @@ public class RDDConverterUtilsExt
 		return df.select(columns.get(0), scala.collection.JavaConversions.asScalaBuffer(columnToSelect).toList());
 	}
 	
+	public static MatrixBlock convertPy4JArrayToMB(byte [] data, long rlen, long clen) throws DMLRuntimeException {
+		return convertPy4JArrayToMB(data, (int)rlen, (int)clen, false);
+	}
 	
 	public static MatrixBlock convertPy4JArrayToMB(byte [] data, int rlen, int clen) throws DMLRuntimeException {
 		return convertPy4JArrayToMB(data, rlen, clen, false);
+	}
+	
+	public static MatrixBlock convertSciPyCOOToMB(byte [] data, byte [] row, byte [] col, long rlen, long clen, long nnz) throws DMLRuntimeException {
+		return convertSciPyCOOToMB(data, row, col, (int)rlen, (int)clen, (int)nnz);
 	}
 	
 	public static MatrixBlock convertSciPyCOOToMB(byte [] data, byte [] row, byte [] col, int rlen, int clen, int nnz) throws DMLRuntimeException {
@@ -222,6 +230,10 @@ public class RDDConverterUtilsExt
 			mb.setValue(rowIndex, colIndex, val); // TODO: Improve the performance
 		}
 		return mb;
+	}
+	
+	public static MatrixBlock convertPy4JArrayToMB(byte [] data, long rlen, long clen, boolean isSparse) throws DMLRuntimeException {
+		return convertPy4JArrayToMB(data, (int) rlen, (int) clen, isSparse);
 	}
 	
 	public static MatrixBlock convertPy4JArrayToMB(byte [] data, int rlen, int clen, boolean isSparse) throws DMLRuntimeException {
@@ -245,19 +257,20 @@ public class RDDConverterUtilsExt
 	public static byte [] convertMBtoPy4JDenseArr(MatrixBlock mb) throws DMLRuntimeException {
 		byte [] ret = null;
 		if(mb.isInSparseFormat()) {
+			mb.sparseToDense();
+//			throw new DMLRuntimeException("Sparse to dense conversion is not yet implemented");
+		}
+		
+		double [] denseBlock = mb.getDenseBlock();
+		if(denseBlock == null) {
 			throw new DMLRuntimeException("Sparse to dense conversion is not yet implemented");
 		}
-		else {
-			double [] denseBlock = mb.getDenseBlock();
-			if(denseBlock == null) {
-				throw new DMLRuntimeException("Sparse to dense conversion is not yet implemented");
-			}
-			int times = Double.SIZE / Byte.SIZE;
-			ret = new byte[denseBlock.length * times];
-			for(int i=0;i < denseBlock.length;i++){
-		        ByteBuffer.wrap(ret, i*times, times).order(ByteOrder.nativeOrder()).putDouble(denseBlock[i]);
-			}
+		int times = Double.SIZE / Byte.SIZE;
+		ret = new byte[denseBlock.length * times];
+		for(int i=0;i < denseBlock.length;i++){
+	        ByteBuffer.wrap(ret, i*times, times).order(ByteOrder.nativeOrder()).putDouble(denseBlock[i]);
 		}
+		
 		return ret;
 	}
 	

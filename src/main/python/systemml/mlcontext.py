@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-__all__ = ['MLResults', 'MLContext', 'Script', 'dml', 'pydml']
+__all__ = ['MLResults', 'MLContext', 'Script', 'dml', 'pydml', '_java2py', 'Matrix']
 
 import os
 
@@ -288,7 +288,10 @@ class MLContext(object):
             # representing `script_java.in`, and then call it with the arguments.  This is in
             # lieu of adding a new `input` method on the JVM side, as that would complicate use
             # from Scala/Java.
-            py4j.java_gateway.get_method(script_java, "in")(key, _py2java(self._sc, val))
+            if isinstance(val, py4j.java_gateway.JavaObject):
+                py4j.java_gateway.get_method(script_java, "in")(key, val)
+            else:
+                py4j.java_gateway.get_method(script_java, "in")(key, _py2java(self._sc, val))
         for val in script._output:
             script_java.out(val)
         return MLResults(self._ml.execute(script_java), self._sc)

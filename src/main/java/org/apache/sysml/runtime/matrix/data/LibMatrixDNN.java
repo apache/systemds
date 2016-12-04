@@ -18,13 +18,11 @@
  */
 package org.apache.sysml.runtime.matrix.data;
 
-import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -40,42 +38,12 @@ import org.apache.sysml.runtime.util.ConvolutionUtils;
 
 public class LibMatrixDNN {
 	protected static final Log LOG =  LogFactory.getLog(LibMatrixDNN.class.getName());
-	private static boolean DISPLAY_STATISTICS = false;
+	private static boolean DISPLAY_STATISTICS = true;
 	
 	public static boolean TEST_SPARSE_INPUT = false;
 	public static boolean TEST_SPARSE_FILTER = false;
 	
 	public static final boolean ALLOW_MULTI_THREADED_OPS = true;
-	// Using hashmap to avoid any performance impacts of multimap
-	private static final ConcurrentHashMap<Integer, SoftReference<double[]>> non_zeroed_double_arr = new ConcurrentHashMap<Integer, SoftReference<double[]>>();
-	private static final int NON_ZEROED_DOUBLE_ARR_THRESHOLD = 100;
-	public static void cacheReuseableData(double[] arr) {
-		if(arr != null && arr.length >= NON_ZEROED_DOUBLE_ARR_THRESHOLD) {
-			// Put the last recently removed arrays into the NON_ZEROED_DOUBLE_ARR as 
-			// it has lower probability of being garbage collected
-			// new Integer(arr.length) can be avoided here as autoboxing will do the trick
-			non_zeroed_double_arr.put(arr.length, new SoftReference<double[]>(arr));
-		}
-	}
-	private static boolean warnedSingleThread = false;
-	private static void warnSingleThreaded() {
-		if(!warnedSingleThread) {
-			throw new RuntimeException("WARN: Single thread execution in LibMatrixDNN");
-			// LOG.warn("WARN: Single thread execution in LibMatrixDNN");
-			// warnedSingleThread = true;
-		}
-	}
-	public static double[] getReuseableData(long length) {
-		if(length >= NON_ZEROED_DOUBLE_ARR_THRESHOLD) {
-			// Explicit "new Integer" required here for HashMap.remove
-			SoftReference<double[]> arr = non_zeroed_double_arr.remove(new Integer((int) length));
-			if(arr != null) {
-				return arr.get();
-			}
-		}
-		return null;
-	}
-	
 	enum TaskType {
 		MaxPooling_Forward, MaxPooling_Backward, 
 		LoopedIm2ColConv2d, LoopedIm2ColConv2dBwdFilter, LoopedIm2ColConv2dBwdData
@@ -161,8 +129,6 @@ public class LibMatrixDNN {
 		public AtomicLong outputNNZ = new AtomicLong(-1);
 		
 		MatrixBlock input1; MatrixBlock input2; MatrixBlock output;
-		boolean reuseNonZeroedOutput = false;
-		
 		public TemporaryConvolutionData tmpData;
 		
 		private int convertToInt(long val) throws DMLRuntimeException {
@@ -232,10 +198,6 @@ public class LibMatrixDNN {
 			this.numThreads = numThreads;
 		}
 		
-		public void setReuseNonZeroedOutput(boolean reuseNonZeroedOutput) {
-			this.reuseNonZeroedOutput = reuseNonZeroedOutput;
-		}
-
 		public boolean isOutputThreadSafe() {
 			return output.isThreadSafe();
 		}
@@ -267,7 +229,6 @@ public class LibMatrixDNN {
 			}
 		}
 		
-		params.reuseNonZeroedOutput = true;
 		runConvTask(1, TaskType.LoopedIm2ColConv2dBwdData, params);
 	}
 	
@@ -292,7 +253,6 @@ public class LibMatrixDNN {
 			}
 		}
 		
-		params.reuseNonZeroedOutput = true;
 		runConvTask(1, TaskType.LoopedIm2ColConv2dBwdFilter, params);
 	}
 	
@@ -425,7 +385,6 @@ public class LibMatrixDNN {
 			filter.denseToSparse();
 		}
 		
-		params.reuseNonZeroedOutput = true;
 		runConvTask(1, TaskType.LoopedIm2ColConv2d, params);
 	}
 	
@@ -449,10 +408,7 @@ public class LibMatrixDNN {
 		// This is not required in Native implementation
 		int destPos = n*params.K*params.P*params.Q;
 		int length = params.K*params.P*params.Q;
-		if(params.reuseNonZeroedOutput && matMultOutBlock.isEmptyBlock()) {
-			Arrays.fill(params.output.denseBlock, destPos, destPos + length, 0);
-		}
-		else if(!matMultOutBlock.isEmptyBlock()) {
+		if(!matMultOutBlock.isEmptyBlock()) {
 			if(matMultOutBlock.isInSparseFormat()) {
 				// NOTE: Potential bottlenc to copy sparse matmult back to dense output
 				Iterator<IJV> iter = matMultOutBlock.sparseBlock.getIterator();
@@ -844,7 +800,6 @@ public class LibMatrixDNN {
 	
 	private static void runSequentialConvTask(int NSize, int Z, TaskType type, ConvolutionParameters params) throws DMLRuntimeException {
 		ConvTask task = new ConvTask(0, NSize, 0, Z, type, params);
-		warnSingleThreaded();
 		try {
 			task.call();
 		} catch (Exception e) {

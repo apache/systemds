@@ -101,10 +101,6 @@ public class Statistics
 	private static AtomicLong lTotalLix = new AtomicLong(0);
 	private static AtomicLong lTotalLixUIP = new AtomicLong(0);
 	
-	
-	private static AtomicLong denseBlockAllocationTime = new AtomicLong(0);
-	private static AtomicLong sparseBlockAllocationTime = new AtomicLong(0);
-	
 	public static long cudaInitTime = 0;
 	public static long cudaLibrariesInitTime = 0;
 	public static AtomicLong cudaConversionTime = new AtomicLong(0);	// Measures time spent in converting between sparse block types
@@ -118,13 +114,6 @@ public class Statistics
 	public static AtomicLong cudaToDevCount = new AtomicLong(0);
 	public static AtomicLong cudaFromDevCount = new AtomicLong(0);
 	public static AtomicLong cudaEvictionCount = new AtomicLong(0);
-	
-	public static void incrementAllocationTime(long allocationTime, boolean isSparse) {
-		if(isSparse)
-			sparseBlockAllocationTime.addAndGet(allocationTime);
-		else
-			denseBlockAllocationTime.addAndGet(allocationTime);
-	}
 	
 	public static synchronized void setNoOfExecutedMRJobs(int iNoOfExecutedMRJobs) {
 		Statistics.iNoOfExecutedMRJobs = iNoOfExecutedMRJobs;
@@ -371,9 +360,6 @@ public class Statistics
 		resetJVMgcTime();
 		resetJVMgcCount();
 		resetCPHeavyHitters();
-		
-		denseBlockAllocationTime.set(0);
-		sparseBlockAllocationTime.set(0);
 		
 		cudaInitTime = 0;
 		cudaLibrariesInitTime = 0;
@@ -650,10 +636,6 @@ public class Statistics
 			sb.append("Cache hits (Mem, WB, FS, HDFS):\t" + CacheStatistics.displayHits() + ".\n");
 			sb.append("Cache writes (WB, FS, HDFS):\t" + CacheStatistics.displayWrites() + ".\n");
 			sb.append("Cache times (ACQr/m, RLS, EXP):\t" + CacheStatistics.displayTime() + " sec.\n");
-			if(DMLScript.REUSE_NONZEROED_OUTPUT) {
-				sb.append("Allocation time (Dense/Sparse):\t" + String.format("%.3f", denseBlockAllocationTime.doubleValue()/1000000000) 
-						+ "/" + String.format("%.3f", sparseBlockAllocationTime.doubleValue()/1000000000)  + " sec.\n");
-			}
 			sb.append("HOP DAGs recompiled (PRED, SB):\t" + getHopRecompiledPredDAGs() + "/" + getHopRecompiledSBDAGs() + ".\n");
 			sb.append("HOP DAGs recompile time:\t" + String.format("%.3f", ((double)getHopRecompileTime())/1000000000) + " sec.\n");
 			if( getFunRecompiles()>0 ) {

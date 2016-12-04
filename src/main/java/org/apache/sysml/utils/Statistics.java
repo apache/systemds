@@ -39,6 +39,7 @@ import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.MRJobInstruction;
 import org.apache.sysml.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.apache.sysml.runtime.instructions.spark.SPInstruction;
+import org.apache.sysml.runtime.matrix.data.LibMatrixDNN;
 
 /**
  * This class captures all statistics.
@@ -385,6 +386,7 @@ public class Statistics
 		cudaToDevCount.set(0);
 		cudaFromDevCount.set(0);
 		cudaEvictionCount.set(0);
+		LibMatrixDNN.resetStatistics();
 	}
 
 	public static void resetJITCompileTime(){
@@ -681,6 +683,7 @@ public class Statistics
 			sb.append("Total JIT compile time:\t\t" + ((double)getJITCompileTime())/1000 + " sec.\n");
 			sb.append("Total JVM GC count:\t\t" + getJVMgcCount() + ".\n");
 			sb.append("Total JVM GC time:\t\t" + ((double)getJVMgcTime())/1000 + " sec.\n");
+			LibMatrixDNN.appendStatistics(sb);
 			sb.append("Heavy hitter instructions (name, time, count):\n" + getHeavyHitters(maxHeavyHitters));
 		}
 		

@@ -1045,7 +1045,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	////////
 	// basic block handling functions	
 
-	private void denseToSparse() 
+	void denseToSparse() 
 	{	
 		//set target representation
 		sparse = true;

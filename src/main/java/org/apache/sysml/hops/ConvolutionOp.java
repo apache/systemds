@@ -32,7 +32,7 @@ import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.data.LibMatrixDNN.ConvolutionParameters;
+import org.apache.sysml.runtime.matrix.data.ConvolutionParameters;
 
 public class ConvolutionOp extends Hop  implements MultiThreadedHop
 {	

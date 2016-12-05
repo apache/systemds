@@ -777,6 +777,11 @@ public class LibMatrixDNN {
 					task.n2 = n+1;
 					task.call();
 				}
+				if(type == TaskType.LoopedIm2ColConv2dBwdFilter) {
+					for(MatrixBlock partialRetBlock : partialRetBlocks) {
+						elementWiseInPlaceAddition(params.output, partialRetBlock);
+					}
+				}
 			} catch (Exception e) {
 				throw new DMLRuntimeException("Error while executing single-threaded " + type.name(), e);
 			}

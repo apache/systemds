@@ -23,11 +23,13 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
@@ -620,7 +622,7 @@ public class LibMatrixDNN {
 		}
 		
 		params.outputNNZ.set(0);
-		runConvTask(params.C, TaskType.MaxPooling_Forward, params);
+		runConvTask(TaskType.MaxPooling_Forward, params);
 		outputBlock.setNonZeros(params.outputNNZ.get());
 	}
 
@@ -700,90 +702,84 @@ public class LibMatrixDNN {
 	}
 	
 	// ----------------------------------------------------------------------------------------------------------------
+	private static void addMatrixBlocks(int poolSize, TaskType type, ConvolutionParameters params, 
+			ConcurrentLinkedQueue<MatrixBlock> im2ColOutBlocks, ConcurrentLinkedQueue<MatrixBlock> doutReshapedBlocks,
+			ConcurrentLinkedQueue<MatrixBlock> partialRetBlocks) {
+		for(int i = 0; i < poolSize; i++) {
+			if(type == TaskType.LoopedIm2ColConv2d || type == TaskType.LoopedIm2ColConv2dBwdFilter) {
+				MatrixBlock im2ColOutBlock = new MatrixBlock(params.C*params.R*params.S, params.P*params.Q, false);
+				im2ColOutBlock.allocateDenseBlock(true);
+				im2ColOutBlocks.add(im2ColOutBlock);
+			}
+			
+			if(type == TaskType.LoopedIm2ColConv2dBwdFilter) {
+				MatrixBlock partialRetBlock = new MatrixBlock(params.K, params.C*params.R*params.S, false);
+				partialRetBlock.allocateDenseBlock(true);
+				partialRetBlocks.add(partialRetBlock);
+			}
+			
+			if(type == TaskType.LoopedIm2ColConv2dBwdData || type == TaskType.LoopedIm2ColConv2dBwdFilter) {
+				MatrixBlock doutReshapedBlock = new MatrixBlock(params.P*params.Q, params.K, false);
+				doutReshapedBlock.allocateDenseBlock(true);
+				doutReshapedBlocks.add(doutReshapedBlock);
+			}
+		}
+	}
 	// Methods to execute convolution-related tasks using multiple threads.
 	private static void runConvTask(TaskType type, ConvolutionParameters params) throws DMLRuntimeException {
-		runConvTask(1, type, params);
-	}
-	
-	private static void runConvTask(int Z, TaskType type, ConvolutionParameters params) throws DMLRuntimeException {
 		int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
-		if (ALLOW_MULTI_THREADED_OPS && params.isOutputThreadSafe() && constrainedNumThreads > 1)
-			runParallelConvTask(constrainedNumThreads, params.N, Z, type, params);
-		else {
-			ConvTask task = new ConvTask(0, params.N, 0, Z, type, params);
+		ConcurrentLinkedQueue<MatrixBlock> im2ColOutBlocks = new ConcurrentLinkedQueue<MatrixBlock>();
+		ConcurrentLinkedQueue<MatrixBlock> doutReshapedBlocks = new ConcurrentLinkedQueue<MatrixBlock>();
+		ConcurrentLinkedQueue<MatrixBlock> partialRetBlocks = new ConcurrentLinkedQueue<MatrixBlock>();
+		if (ALLOW_MULTI_THREADED_OPS && params.isOutputThreadSafe() && constrainedNumThreads > 1) {
+			int poolSize = Math.min(constrainedNumThreads, params.N);
+			addMatrixBlocks(poolSize, type, params, im2ColOutBlocks, doutReshapedBlocks, partialRetBlocks);
+			ArrayList<ConvTask> tasks = new ArrayList<ConvTask>();
+			int NSize = params.N - poolSize;
+			if(NSize >= constrainedNumThreads) {
+				for(int n = 0; n < params.N; n++) 
+					tasks.add(new ConvTask(n, n+1, type, params, im2ColOutBlocks, doutReshapedBlocks, partialRetBlocks));
+			}
+			else {
+				int numNTasks = (int) Math.ceil(((double) NSize) / constrainedNumThreads);
+				for (int n = 0; n < NSize; n += numNTasks) {
+					tasks.add(new ConvTask(n, Math.min(NSize, n+numNTasks), type, params, im2ColOutBlocks, doutReshapedBlocks, partialRetBlocks));
+				}
+				for (int n = NSize; n < params.N; n++)
+					tasks.add(new ConvTask(n, n+1, type, params, im2ColOutBlocks, doutReshapedBlocks, partialRetBlocks));
+			}
+			
+			ExecutorService pool = Executors.newFixedThreadPool( poolSize );
+			List<Future<Object>> taskret;
 			try {
-				task.call();
+				taskret = pool.invokeAll(tasks);
+				pool.shutdown();
+				for( Future<Object> task : taskret ) {
+					task.get();
+				}
+				if(type == TaskType.LoopedIm2ColConv2dBwdFilter) {
+					for(MatrixBlock partialRetBlock : partialRetBlocks) {
+						elementWiseInPlaceAddition(params.output, partialRetBlock);
+					}
+				}
+			} catch (InterruptedException e) {
+				throw new DMLRuntimeException("Error while executing multi-threaded " + type.name(), e);
+			} catch (ExecutionException e) {
+				throw new DMLRuntimeException("Error while executing multi-threaded " + type.name(), e);
+			}
+		}
+		else {
+			addMatrixBlocks(1, type, params, im2ColOutBlocks, doutReshapedBlocks, partialRetBlocks);
+			ConvTask task = new ConvTask(0, 0, type, params, im2ColOutBlocks, doutReshapedBlocks, partialRetBlocks);
+			try {
+				for(int n = 0; n < params.N; n++) {
+					task.n1 = n;
+					task.n2 = n+1;
+					task.call();
+				}
 			} catch (Exception e) {
 				throw new DMLRuntimeException("Error while executing single-threaded " + type.name(), e);
 			}
-		}
-	}
-	
-	private static int [] getTaskSize(int constrainedNumThreads, int maxNumTaskSize1, int maxNumTaskSize2) {
-		int taskSize1 = 1; int taskSize2 = 1;
-		// Why this heuristics ? To reduce the impact of the thread-creation overhead in case of small tasks
-		int approxNumTasksToCreate = 3*constrainedNumThreads;
-		while((maxNumTaskSize1*maxNumTaskSize2)/(taskSize1*taskSize2) > approxNumTasksToCreate) {
-			// Possibility of creating too many tasks, increase taskSize2
-			taskSize2 *= 2;
-			if(taskSize2 >= maxNumTaskSize2) {
-				taskSize2 = maxNumTaskSize2;
-				break;
-			}
-		}
-		while((maxNumTaskSize1*maxNumTaskSize2)/(taskSize1*taskSize2) > approxNumTasksToCreate) {
-			// Possibility of creating too many tasks, increase taskSize1
-			taskSize1 *= 2;
-			if(taskSize1 >= maxNumTaskSize1) {
-				taskSize1 = maxNumTaskSize1;
-				break;
-			}
-		}
-		int [] ret = new int[2];
-		ret[0] = taskSize1;
-		ret[1] = taskSize2;
-		return ret;
-	}
-	
-	private static void runParallelConvTask(int constrainedNumThreads, int NSize, int Z, TaskType type, ConvolutionParameters params) throws DMLRuntimeException {
-		// --------------------------------------------------------------------------------
-		// Logic to ensure efficient load balancing
-		ArrayList<ConvTask> tasks = new ArrayList<ConvTask>();
-		if(NSize >= constrainedNumThreads || Z == 1) {
-			int numNTasks = (int) Math.ceil(((double) NSize) / constrainedNumThreads);
-			for (int n = 0; n < NSize; n += numNTasks) {
-				tasks.add(new ConvTask(n, Math.min(NSize, n+numNTasks), 0, Z, type, params));
-			}
-		}
-		else {
-			int [] taskSizes = getTaskSize(constrainedNumThreads, NSize, Z);
-			for (int n = 0; n < NSize; n += taskSizes[0]) {
-				for (int z = 0; z < Z; z += taskSizes[1]) {
-					tasks.add(new ConvTask(n, Math.min(NSize, n+taskSizes[0]), z, Math.min(Z, z+taskSizes[1]), type, params));
-				}
-			}
-			LOG.debug("Reduce number of tasks from " + (NSize*Z)  + "(" + NSize + "," + Z + ") to " + tasks.size());
-		}
-		// --------------------------------------------------------------------------------
-
-		ExecutorService pool = Executors.newFixedThreadPool( Math.min(constrainedNumThreads, tasks.size()) );
-		List<Future<Object>> taskret;
-		try {
-			taskret = pool.invokeAll(tasks);
-			pool.shutdown();
-			for( Future<Object> task : taskret ) {
-				switch(type) {
-					case LoopedIm2ColConv2dBwdFilter:
-						elementWiseInPlaceAddition(params.output, (MatrixBlock) task.get());
-						break;
-					default:
-						task.get();
-				}
-			}
-		} catch (InterruptedException e) {
-			throw new DMLRuntimeException("Error while executing multi-threaded " + type.name(), e);
-		} catch (ExecutionException e) {
-			throw new DMLRuntimeException("Error while executing multi-threaded " + type.name(), e);
 		}
 	}
 	// ----------------------------------------------------------------------------------------------------------------
@@ -792,64 +788,69 @@ public class LibMatrixDNN {
 	 * The ConvTask allows the convolution operations (such s conv2d, conv2d_backward, maxpooling, etc)
 	 * to be executed in multi-thread manner.
 	 * 
-	 * ConvTask is parameterized with two parameters: (n, z), where n usually refers to the image 
-	 * and z can refer to channel, number of filters, etc.
 	 */
 	private static class ConvTask implements Callable<Object> {
-		int n1; int n2; int z1; int z2; 
+		public int n1; public int n2; 
 		ConvolutionParameters params;
 		TaskType type;
-		public ConvTask(int n1, int n2, int z1, int z2, TaskType type, ConvolutionParameters params) {
+		ConcurrentLinkedQueue<MatrixBlock> im2ColOutBlocks;
+		ConcurrentLinkedQueue<MatrixBlock> partialRetBlocks;
+		ConcurrentLinkedQueue<MatrixBlock> doutReshapedBlocks;
+		public ConvTask(int n1, int n2, TaskType type, ConvolutionParameters params, 
+				ConcurrentLinkedQueue<MatrixBlock> im2ColOutBlocks,
+				ConcurrentLinkedQueue<MatrixBlock> doutReshapedBlocks,
+				ConcurrentLinkedQueue<MatrixBlock> partialRetBlocks) {
 			this.n1 = n1;
 			this.n2 = n2;
-			this.z1 = z1;
-			this.z2 = z2;
 			this.type = type;
 			this.params = params;
+			this.im2ColOutBlocks = im2ColOutBlocks;
+			this.partialRetBlocks = partialRetBlocks;
+			this.doutReshapedBlocks = doutReshapedBlocks;
 		}
 		
 		@Override
 		public Object call() throws DMLRuntimeException {
 			switch(type) {
 				case MaxPooling_Forward:
-					for (int n = n1; n < n2; n++) {
-						for (int z = z1; z < z2; z++) {
-							doPooling(n, z, params);
+				{
+					for(int n = n1; n < n2; n++) {
+						for (int c = 0; c < params.C; c++) {
+							doPooling(n, c, params);
 						}
 					}
 					break;
+				}
 				case MaxPooling_Backward:
-					for (int n = n1; n < n2; n++) {
+					for(int n = n1; n < n2; n++) 
 						doPoolingBackward(n, params);
-					}
 					break;
 				case LoopedIm2ColConv2d:
-					MatrixBlock im2ColOutBlock = new MatrixBlock(params.C*params.R*params.S, params.P*params.Q, false);
-					im2ColOutBlock.allocateDenseBlock(true);
-					for (int n = n1; n < n2; n++) {
+				{	
+					MatrixBlock im2ColOutBlock = im2ColOutBlocks.remove();
+					for(int n = n1; n < n2; n++) 
 						doLoopedIm2ColConv2d(n, im2ColOutBlock, params);
-					}
+					im2ColOutBlocks.add(im2ColOutBlock);
 					break;
+				}
 				case LoopedIm2ColConv2dBwdFilter:
 				{
-					MatrixBlock im2ColOutBlock1 = new MatrixBlock(params.C*params.R*params.S, params.P*params.Q, false);
-					im2ColOutBlock1.allocateDenseBlock(true);
-					MatrixBlock partialRetBlock = new MatrixBlock(params.K, params.C*params.R*params.S, false);
-					partialRetBlock.allocateDenseBlock(true);
-					MatrixBlock dout_reshaped = new MatrixBlock(params.P*params.Q, params.K, false);
-					dout_reshaped.allocateDenseBlock(true);
-					for (int n = n1; n < n2; n++) {
-						partialRetBlock = doLoopedIm2ColConv2dBwdFilter(n, im2ColOutBlock1, dout_reshaped, partialRetBlock, params);
-					}
-					return partialRetBlock;
+					MatrixBlock im2ColOutBlock = im2ColOutBlocks.remove();
+					MatrixBlock partialRetBlock = partialRetBlocks.remove();
+					MatrixBlock doutReshapedBlock = doutReshapedBlocks.remove();
+					for(int n = n1; n < n2; n++) 
+						partialRetBlock = doLoopedIm2ColConv2dBwdFilter(n, im2ColOutBlock, doutReshapedBlock, partialRetBlock, params);
+					im2ColOutBlocks.add(im2ColOutBlock);
+					partialRetBlocks.add(partialRetBlock);
+					doutReshapedBlocks.add(doutReshapedBlock);
+					break;
 				}
 				case LoopedIm2ColConv2dBwdData:
 				{
-					MatrixBlock dout_reshaped = new MatrixBlock(params.P*params.Q, params.K, false);
-					dout_reshaped.allocateDenseBlock(true);
-					for (int n = n1; n < n2; n++) {
-						doLoopedIm2ColConv2dBwdData(n, dout_reshaped, params);
-					}
+					MatrixBlock doutReshapedBlock = doutReshapedBlocks.remove();
+					for(int n = n1; n < n2; n++) 
+						doLoopedIm2ColConv2dBwdData(n, doutReshapedBlock, params);
+					doutReshapedBlocks.add(doutReshapedBlock);
 					break;
 				}
 				default:

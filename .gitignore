@@ -66,6 +66,8 @@ Gemfile.lock
 # Python
 **/systemml.egg-info/
 **/__pycache__
+src/main/python/systemml/project-info.py
+src/main/python/systemml/systemml-java
 
 # Spark
 **/metastore_db

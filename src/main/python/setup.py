@@ -19,12 +19,23 @@
 #
 #-------------------------------------------------------------
 
+from __future__ import print_function
 import os
+import sys
 from setuptools import find_packages, setup
 import time
 
-VERSION = '0.12.0.dev1'
-RELEASED_DATE = str(time.strftime("%m/%d/%Y"))
+try:
+    exec(open('systemml/project-info.py').read())
+except IOError:
+    print("Could not read project-info.py. Will use default values.", file=sys.stderr)
+    BUILD_DATE_TIME = str(time.strftime("%Y%m%d.%H%M%S"))
+    __project_artifact_id__ = 'systemml'
+    __project_version__ = BUILD_DATE_TIME
+ARTIFACT_NAME = __project_artifact_id__
+PROJECT_VERSION = __project_version__
+ARTIFACT_VERSION = PROJECT_VERSION + '.dev0'
+
 numpy_version = '1.8.2'
 scipy_version = '0.15.1'
 REQUIRED_PACKAGES = [
@@ -43,8 +54,8 @@ for path, subdirs, files in os.walk(java_dir_full_path):
 PACKAGE_DATA = PACKAGE_DATA + [os.path.join(python_dir, 'LICENSE'), os.path.join(python_dir, 'DISCLAIMER'), os.path.join(python_dir, 'NOTICE')]
 
 setup(
-    name='systemml-incubating',
-    version=VERSION,
+    name=ARTIFACT_NAME,
+    version=ARTIFACT_VERSION,
     description='Apache SystemML is a distributed and declarative machine learning platform.',
     long_description='''
 
@@ -56,8 +67,7 @@ setup(
     Apache SystemML provides declarative large-scale machine learning (ML) that aims at
     flexible specification of ML algorithms and automatic generation of hybrid runtime
     plans ranging from single-node, in-memory computations, to distributed computations on Apache Hadoop and Apache Spark.
-
-    Note: This is not a released version and was built with SNAPSHOT available on the date''' + RELEASED_DATE,
+    ''',
     url='http://systemml.apache.org/',
     author='Apache SystemML',
     author_email='dev@systemml.incubator.apache.org',

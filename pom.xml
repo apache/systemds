@@ -120,28 +120,6 @@
 	</resources>
 
 		<plugins>
-
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>exec-maven-plugin</artifactId>
-				<version>1.1.1</version>
-				<executions>
-					<execution>
-						<phase>prepare-package</phase>
-						<goals>
-							<goal>java</goal>
-						</goals>
-						<configuration>
-							<mainClass>org.apache.sysml.utils.InstallDependencyForIntegrationTests</mainClass>
-							<arguments>
-								<argument>true</argument> <!-- <argument>${skipTests}</argument> -->
-								<argument>${enableGPU}</argument>
-							</arguments>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
-
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-dependency-plugin</artifactId>
@@ -289,7 +267,6 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-resources-plugin</artifactId>
-				<version>2.4</version>
 				<executions>
 					<execution>
 						<id>copy-resources</id>
@@ -433,14 +410,35 @@
 										<include>original-*.jar</include>
 									</includes>
 								</fileset>
+							</filesets>
+						</configuration>
+					</execution>
+					<execution>
+						<id>clean-python-files</id>
+						<phase>clean</phase>
+						<goals>
+							<goal>clean</goal>
+						</goals>
+						<configuration>
+							<excludeDefaultDirectories>true</excludeDefaultDirectories>
+							<filesets>
 								<fileset>
 									<directory>src/main/python/dist</directory>
 								</fileset>
 								<fileset>
-									<directory>src/main/python/systemml_incubating.egg-info</directory>
+									<directory>src/main/python/systemml.egg-info</directory>
 								</fileset>
 								<fileset>
 									<directory>src/main/python/systemml/systemml-java</directory>
+								</fileset>
+								<fileset>
+									<directory>src/main/python/systemml/__pycache__</directory>
+								</fileset>
+								<fileset>
+									<directory>src/main/python/systemml</directory>
+									<includes>
+										<include>project-info.py</include>
+									</includes>
 								</fileset>
 							</filesets>
 						</configuration>
@@ -516,10 +514,29 @@
 					</execution>
 				</executions>
 			</plugin>
+
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>exec-maven-plugin</artifactId>
+				<version>1.5.0</version>
+				<executions>
+					<execution>
+						<phase>prepare-package</phase>
+						<goals>
+							<goal>java</goal>
+						</goals>
+						<configuration>
+							<mainClass>org.apache.sysml.utils.InstallDependencyForIntegrationTests</mainClass>
+							<arguments>
+								<argument>true</argument> <!-- <argument>${skipTests}</argument> -->
+								<argument>${enableGPU}</argument>
+							</arguments>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
 		</plugins>
-
 	</build>
-
 
 	<profiles>
 		<profile>
@@ -819,41 +836,68 @@
 						</executions>
 					</plugin>
 					<plugin>
-				        <groupId>org.codehaus.mojo</groupId>
-				        <artifactId>exec-maven-plugin</artifactId>
-				        <version>1.1</version>
-				        <executions>
-				        	<execution>
-					            <id>generate-python-package-1</id>
-					            <phase>pre-integration-test</phase>
-					            <goals>
-					              <goal>exec</goal>
-					            </goals>
-					            <configuration>
-					              <executable>python</executable>
-					              <workingDirectory>src/main/python</workingDirectory>
-					              <arguments>
-					                <argument>pre_setup.py</argument>
-					              </arguments>
-					            </configuration>
-					          </execution>
-					          <execution>
-					            <id>generate-python-package-2</id>
-					            <phase>post-integration-test</phase>
-					            <goals>
-					              <goal>exec</goal>
-					            </goals>
-					            <configuration>
-					              <executable>python</executable>
-					              <workingDirectory>src/main/python</workingDirectory>
-					              <arguments>
-					                <argument>setup.py</argument>
-					                <argument>sdist</argument>
-					              </arguments>
-					            </configuration>
-					          </execution>
-				        </executions>
-			      	</plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-resources-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>copy-project-info-for-python</id>
+								<phase>prepare-package</phase>
+								<goals>
+									<goal>copy-resources</goal>
+								</goals>
+								<configuration>
+									<overwrite>true</overwrite>
+									<outputDirectory>${basedir}/src/main/python/systemml</outputDirectory>
+									<resources>
+										<resource>
+											<directory>${basedir}/src/main/resources/python</directory>
+											<includes>
+												<include>project-info.py</include>
+											</includes>
+											<filtering>true</filtering>
+										</resource>
+									</resources>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<groupId>org.codehaus.mojo</groupId>
+						<artifactId>exec-maven-plugin</artifactId>
+						<version>1.5.0</version>
+						<executions>
+							<execution>
+								<id>generate-python-package-1</id>
+								<phase>package</phase>
+								<goals>
+									<goal>exec</goal>
+								</goals>
+								<configuration>
+									<executable>python</executable>
+									<workingDirectory>src/main/python</workingDirectory>
+									<arguments>
+										<argument>pre_setup.py</argument>
+									</arguments>
+								</configuration>
+							</execution>
+							<execution>
+								<id>generate-python-package-2</id>
+								<phase>package</phase>
+								<goals>
+									<goal>exec</goal>
+								</goals>
+								<configuration>
+									<executable>python</executable>
+									<workingDirectory>src/main/python</workingDirectory>
+									<arguments>
+										<argument>setup.py</argument>
+										<argument>sdist</argument>
+										<argument>--dist-dir=../../../target</argument>
+									</arguments>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
 				</plugins>
 			</build>
 		</profile>

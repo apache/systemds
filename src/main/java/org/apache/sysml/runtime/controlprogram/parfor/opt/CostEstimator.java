@@ -46,7 +46,7 @@ public abstract class CostEstimator
 	public static final long   FACTOR_NUM_ITERATIONS   = 10; //default problem size
 	public static final double DEFAULT_TIME_ESTIMATE   = 5;  //default execution time: 5ms
 	public static final double DEFAULT_MEM_ESTIMATE_CP = 1024; //default memory consumption: 1KB 
-	public static final double DEFAULT_MEM_ESTIMATE_MR = 10*1024*1024; //default memory consumption: 20MB 
+	public static final double DEFAULT_MEM_ESTIMATE_MR = 10*1024*1024; //default memory consumption: 20MB // TODO investigate unused constant
 	
 	
 	/**

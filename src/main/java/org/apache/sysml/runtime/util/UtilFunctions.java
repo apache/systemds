@@ -45,7 +45,6 @@ public class UtilFunctions
 	//prime numbers for old hash function (divide prime close to max int, 
 	//because it determines the max hash domain size
 	public static final long ADD_PRIME1 = 99991;
-	public static final long ADD_PRIME2 = 853;
 	public static final int DIVIDE_PRIME = 1405695061; 
 	
 	public static int longHashCode(long v) {

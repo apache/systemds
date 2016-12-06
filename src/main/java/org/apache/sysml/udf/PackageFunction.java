@@ -22,9 +22,6 @@ package org.apache.sysml.udf;
 import java.io.Serializable;
 import java.util.ArrayList;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
 
 /**
@@ -33,9 +30,7 @@ import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
  * 
  */
 public abstract class PackageFunction implements Serializable 
-{	
-	protected static final Log LOG = LogFactory.getLog(PackageFunction.class.getName());
-	
+{
 	private static final long serialVersionUID = 3274150928865462856L;
 	
 	private ArrayList<FunctionParameter> _function_inputs; // function inputs

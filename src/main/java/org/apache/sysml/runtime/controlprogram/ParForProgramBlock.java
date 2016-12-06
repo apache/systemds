@@ -221,7 +221,6 @@ public class ParForProgramBlock extends ForProgramBlock
 	public static final int     MAX_RETRYS_ON_ERROR         = 1;
 	public static final boolean FORCE_CP_ON_REMOTE_MR       = true; // compile body to CP if exec type forced to MR
 	public static final boolean LIVEVAR_AWARE_EXPORT        = true; //export only read variables according to live variable analysis
- 	public static final boolean LIVEVAR_AWARE_CLEANUP       = true; //cleanup pinned variables according to live variable analysis
 	public static final boolean RESET_RECOMPILATION_FLAGs   = true;
  	
  	public static final String PARFOR_FNAME_PREFIX          = "/parfor/"; 

@@ -108,7 +108,6 @@ public class ProgramConverter
 	public static final String LEVELIN           = "\u23a8"; //variant of left curly bracket; "\u007b"; //"{";
 	public static final String LEVELOUT          = "\u23ac"; //variant of right curly bracket; "\u007d"; //"}";	
 	public static final String EMPTY             = "null";
-	public static final String EXT_FUNCTION      = "extfunct";
 	
 	//public static final String CP_ROOT_THREAD_SEPARATOR = "/";//File.separator;
 	public static final String CP_ROOT_THREAD_ID = "_t0";       
@@ -148,8 +147,7 @@ public class ProgramConverter
 	public static final String NOT_SUPPORTED_MR_PARFOR           = "Not supported: Nested ParFOR REMOTE_MR due to possible deadlocks." +
 			                                                       "(LOCAL can be used for innner ParFOR)";
 	public static final String NOT_SUPPORTED_PB                  = "Not supported: type of program block";
-	public static final String NOT_SUPPORTED_EXECUTION_CONTEXT   = "Parsing of external system execution context not supported yet.";
-	
+	public static final String NOT_SUPPORTED_EXECUTION_CONTEXT   = "Parsing of external system execution context not supported yet."; // TODO investigate unused constant
 	
 	////////////////////////////////
 	// CREATION of DEEP COPIES

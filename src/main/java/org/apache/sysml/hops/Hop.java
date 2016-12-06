@@ -54,8 +54,6 @@ public abstract class Hop
 	protected static final Log LOG =  LogFactory.getLog(Hop.class.getName());
 	
 	public static final long CPThreshold = 2000;
-	protected static final boolean BREAKONSCALARS = false;
-	protected static final boolean SPLITLARGEMATRIXMULT = true;
 
 	public enum VisitStatus {
 		DONE, 

@@ -22,7 +22,7 @@ package org.apache.sysml.test.integration.applications.dml;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.test.integration.applications.GLMTest;
 
 @RunWith(value = Parameterized.class)
@@ -41,4 +41,16 @@ public class GLMDMLTest extends GLMTest {
 		testGLM(ScriptType.DML);
 	}
 
+	@Test
+	public void testGLMDmlDisableSparseNCaching() {
+		try {
+			DMLScript.DISABLE_SPARSE = true;
+			DMLScript.DISABLE_CACHING = true;
+			testGLM(ScriptType.DML);
+		}
+		finally {
+			DMLScript.DISABLE_SPARSE = false;
+			DMLScript.DISABLE_CACHING = false;
+		}
+	}
 }

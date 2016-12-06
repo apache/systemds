@@ -358,7 +358,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		
 		//account for potential final dense-sparse transformation (worst-case sparse representation)
 		if( dim2 >= 2 ) //vectors always dense
-			ret = OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, MatrixBlock.SPARSITY_TURN_POINT);
+			ret = OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, MatrixBlock.getSparsityTurnPoint());
 		
 		return ret;
 	}

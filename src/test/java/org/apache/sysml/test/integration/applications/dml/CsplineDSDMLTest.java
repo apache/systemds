@@ -22,7 +22,7 @@ package org.apache.sysml.test.integration.applications.dml;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.test.integration.applications.CsplineDSTest;
 
 @RunWith(value = Parameterized.class)
@@ -36,6 +36,20 @@ public class CsplineDSDMLTest extends CsplineDSTest {
 	@Test
 	public void testCsplineDSDml() {
 		testCsplineDS(ScriptType.DML);
+	}
+	
+	
+	@Test
+	public void testCsplineDSDmlDisableSparseNCaching() {
+		try {
+			DMLScript.DISABLE_SPARSE = true;
+			DMLScript.DISABLE_CACHING = true;
+			testCsplineDS(ScriptType.DML);
+		}
+		finally {
+			DMLScript.DISABLE_SPARSE = false;
+			DMLScript.DISABLE_CACHING = false;
+		}
 	}
 
 }

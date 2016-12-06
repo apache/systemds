@@ -20,7 +20,7 @@
 package org.apache.sysml.test.integration.applications.dml;
 
 import org.junit.Test;
-
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.test.integration.applications.HITSTest;
 
 public class HITSDMLTest extends HITSTest {
@@ -35,4 +35,17 @@ public class HITSDMLTest extends HITSTest {
 		testHits(ScriptType.DML);
 	}
 
+	@Test
+	public void testHitsDmlDisableSparseNCaching() {
+		try {
+			DMLScript.DISABLE_SPARSE = true;
+			DMLScript.DISABLE_CACHING = true;
+			testHits(ScriptType.DML);
+		}
+		finally {
+			DMLScript.DISABLE_SPARSE = false;
+			DMLScript.DISABLE_CACHING = false;
+		}
+	}
+	
 }

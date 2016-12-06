@@ -109,8 +109,19 @@ public class DMLScript
 	public static boolean USE_ACCELERATOR = false;
 	public static boolean FORCE_ACCELERATOR = false;
 	
+	// ------------------------------------------------------------------------
+	// We have identified two performance bugs that frequently occurs in deep learning script.
+	//
+	// First, we repeatedly perform unnecessary conversion to sparse format.
+	// Also, the operations such as matrix multiplication (including BLAS and CuBLAS) are 
+	// optimized for dense.
+	//
+	// Second, even with large memory budget, we sometimes spend almost 20-30% time in caching.
+	// These two bugs are tracked in SYSTEMML-1140 and should be addressed before SystemML 1.0 release.
+	// We are keeping this flag for performance debugging until SYSTEMML-1140is resolved.
 	public static boolean DISABLE_SPARSE = false;
 	public static boolean DISABLE_CACHING = false;
+	// ------------------------------------------------------------------------
 	
 	// flag that indicates whether or not to suppress any prints to stdout
 	public static boolean _suppressPrint2Stdout = false;
@@ -136,8 +147,6 @@ public class DMLScript
 			//+ "   -debug: <flags> (optional) run in debug mode\n"
 			//+ "			Optional <flags> that is supported for this mode is optimize=(on|off)\n"
 			+ "   -exec: <mode> (optional) execution mode (hadoop, singlenode, [hybrid], hybrid_spark)\n"
-			+ "   -disable-sparse: disable sparse operations\n"
-			+ "   -disable-caching: disable SystemML's multi-level cache\n"
 			+ "   -explain: <type> (optional) explain plan (hops, [runtime], recompile_hops, recompile_runtime)\n"
 			+ "   -stats: <count> (optional) monitor and report caching/recompilation statistics, default heavy hitter count is 10\n"
 			+ "   -clean: (optional) cleanup all SystemML working directories (FS, DFS).\n"
@@ -273,8 +282,6 @@ public class DMLScript
 		//parse arguments and set execution properties
 		RUNTIME_PLATFORM oldrtplatform = rtplatform; //keep old rtplatform
 		ExplainType oldexplain = EXPLAIN; //keep old explain
-		boolean oldDisableSparse = DISABLE_SPARSE;
-		boolean oldDisableCaching = DISABLE_CACHING;
 		
 		// Reset global flags to avoid errors in test suite
 		ENABLE_DEBUG_MODE = false;
@@ -292,12 +299,6 @@ public class DMLScript
 					EXPLAIN = ExplainType.RUNTIME;
 					if( args.length > (i+1) && !args[i+1].startsWith("-") )
 						EXPLAIN = Explain.parseExplainType(args[++i]);
-				}
-				else if( args[i].equalsIgnoreCase("-disable-caching") ) { 
-					DISABLE_CACHING = true;
-				}
-				else if( args[i].equalsIgnoreCase("-disable-sparse") ) { 
-					DISABLE_SPARSE = true;
 				}
 				else if( args[i].equalsIgnoreCase("-stats") ) {
 					STATISTICS = true;
@@ -389,8 +390,6 @@ public class DMLScript
 			//reset runtime platform and visualize flag
 			rtplatform = oldrtplatform;
 			EXPLAIN = oldexplain;
-			DISABLE_SPARSE = oldDisableSparse;
-			DISABLE_CACHING = oldDisableCaching;
 		}
 		
 		return true;

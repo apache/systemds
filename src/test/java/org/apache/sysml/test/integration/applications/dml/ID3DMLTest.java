@@ -22,7 +22,7 @@ package org.apache.sysml.test.integration.applications.dml;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.test.integration.applications.ID3Test;
 
 @RunWith(value = Parameterized.class)
@@ -38,4 +38,16 @@ public class ID3DMLTest extends ID3Test {
 		testID3(ScriptType.DML);
 	}
 
+	@Test
+	public void testID3DmlDisableSparseNCaching() {
+		try {
+			DMLScript.DISABLE_SPARSE = true;
+			DMLScript.DISABLE_CACHING = true;
+			testID3(ScriptType.DML);
+		}
+		finally {
+			DMLScript.DISABLE_SPARSE = false;
+			DMLScript.DISABLE_CACHING = false;
+		}
+	}
 }

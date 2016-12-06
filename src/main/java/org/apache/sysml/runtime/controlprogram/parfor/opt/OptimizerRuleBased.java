@@ -1628,7 +1628,7 @@ public class OptimizerRuleBased extends Optimizer
 			
 			if(    dat !=null && dat instanceof MatrixObject 
 				&& moDpf == PDataPartitionFormat.COLUMN_WISE	
-				&& ((MatrixObject)dat).getSparsity()<= MatrixBlock.SPARSITY_TURN_POINT  //check for sparse matrix
+				&& ((MatrixObject)dat).getSparsity()<= MatrixBlock.getSparsityTurnPoint()  //check for sparse matrix
 				&& rIsTransposeSafePartition(pn, moVarname) ) //tranpose-safe
 			{
 				pfpb.setTransposeSparseColumnVector( true );

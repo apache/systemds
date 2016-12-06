@@ -461,7 +461,7 @@ public class OptimizerUtils
 
 	public static boolean checkSparseBlockCSRConversion( MatrixCharacteristics mcIn ) {
 		return Checkpoint.CHECKPOINT_SPARSE_CSR
-			&& OptimizerUtils.getSparsity(mcIn) < MatrixBlock.SPARSITY_TURN_POINT;
+			&& OptimizerUtils.getSparsity(mcIn) < MatrixBlock.getSparsityTurnPoint();
 	}
 	
 	/**

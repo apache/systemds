@@ -142,8 +142,8 @@ public class Conv2DTest extends AutomatedTestBase
 		synchronized(LibMatrixDNN.class) {
 			try
 			{
-				LibMatrixDNN.TEST_SPARSE_INPUT = true;
-				LibMatrixDNN.TEST_SPARSE_FILTER = true;
+				LibMatrixDNN.TEST_SPARSE_INPUT = sparse;
+				LibMatrixDNN.TEST_SPARSE_FILTER = sparse;
 				
 			    TestConfiguration config = getTestConfiguration(TEST_NAME);
 			    if(et == ExecType.SPARK) {

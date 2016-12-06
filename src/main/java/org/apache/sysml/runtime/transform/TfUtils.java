@@ -55,11 +55,10 @@ public class TfUtils implements Serializable{
 	private static final long serialVersionUID = 526252850872633125L;
 
 	protected enum ColumnTypes { 
-		SCALE, 
-		NOMINAL, 
-		ORDINAL, 
-		DUMMYCODED, 
-		INVALID;
+		SCALE,
+		NOMINAL,
+		ORDINAL,
+		DUMMYCODED;
 	
 		protected byte toID() { 
 			switch(this) {

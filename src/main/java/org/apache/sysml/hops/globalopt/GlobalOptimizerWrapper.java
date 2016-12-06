@@ -49,7 +49,7 @@ public class GlobalOptimizerWrapper
 	//supported optimizers
 	public enum GlobalOptimizerType{
 		ENUMERATE_DP,
-		TRANSFORM,
+		TRANSFORM
 	}
 	
 	//internal parameters

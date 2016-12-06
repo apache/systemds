@@ -43,8 +43,7 @@ public class CostEstimationWrapper
 	
 	public enum CostType { 
 		NUM_MRJOBS, //based on number of MR jobs, [number MR jobs]
-		STATIC, // based on FLOPS, read/write, etc, [time in sec]      
-		DYNAMIC // based on dynamic offline performance profile, [time in sec]
+		STATIC // based on FLOPS, read/write, etc, [time in sec]
 	};
 	
 	private static final boolean LDEBUG = false; //internal local debug level

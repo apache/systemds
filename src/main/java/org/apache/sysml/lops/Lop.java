@@ -51,7 +51,6 @@ public abstract class Lop
 		Append,                                             //CP/MR append (column append)
 		CombineUnary, CombineBinary, CombineTernary,        //MR combine (stitch together)
 		CentralMoment, CoVariance, GroupedAgg, GroupedAggM,
-		ConvolutionTransform,
 		Transform, DataPartition, RepMat,                   //CP/MR reorganization, partitioning, replication
 		ParameterizedBuiltin,                               //CP/MR parameterized ops (name/value)
 		FunctionCallCP, 									//CP function calls 
@@ -66,11 +65,11 @@ public abstract class Lop
 	 * Lop types
 	 */
 	public enum SimpleInstType {
-		Scalar, Variable, File
+		Scalar
 	};
 
 	public enum VisitStatus {
-		DONE, VISITING, NOTVISITED
+		DONE, NOTVISITED
 	}
 	
 

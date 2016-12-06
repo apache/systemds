@@ -56,9 +56,8 @@ public abstract class Hop
 	public static final long CPThreshold = 2000;
 
 	public enum VisitStatus {
-		DONE, 
-		VISITING, 
-		NOTVISITED,
+		DONE,
+		NOTVISITED
 	}
 	
 	/**
@@ -1061,7 +1060,7 @@ public abstract class Hop
 
 	// Operations that require 3 operands
 	public enum OpOp3 {
-		QUANTILE, INTERQUANTILE, CTABLE, CENTRALMOMENT, COVARIANCE, INVALID, PLUS_MULT, MINUS_MULT
+		QUANTILE, INTERQUANTILE, CTABLE, CENTRALMOMENT, COVARIANCE, PLUS_MULT, MINUS_MULT
 	};
 	
 	// Operations that require 4 operands
@@ -1070,8 +1069,7 @@ public abstract class Hop
 		WSIGMOID, //weighted sigmoid mm
 		WDIVMM, //weighted divide mm
 		WCEMM, //weighted cross entropy mm
-		WUMM, //weighted unary mm 
-		INVALID 
+		WUMM //weighted unary mm
 	};
 	
 	

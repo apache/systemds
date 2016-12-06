@@ -35,12 +35,11 @@ public class BinaryScalar extends Lop
 {	
 	
 	public enum OperationTypes {
-		ADD, SUBTRACT, SUBTRACTRIGHT, MULTIPLY, DIVIDE, MODULUS, INTDIV,
+		ADD, SUBTRACT, MULTIPLY, DIVIDE, MODULUS, INTDIV,
 		LESS_THAN, LESS_THAN_OR_EQUALS, GREATER_THAN, GREATER_THAN_OR_EQUALS, EQUALS, NOT_EQUALS,
 		AND, OR, 
 		LOG,POW,MAX,MIN,PRINT,
 		IQSIZE,
-		Over,
 	}
 	
 	OperationTypes operation;

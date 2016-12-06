@@ -74,7 +74,7 @@ public class BinaryOp extends Hop
 	
 	public static AppendMethod FORCED_APPEND_METHOD = null;
 	public enum AppendMethod { 
-		CP_APPEND, //in-memory general case append
+		CP_APPEND, //in-memory general case append // TODO investigate unused enum constant
 		MR_MAPPEND, //map-only append (rhs must be vector and fit in mapper mem)
 		MR_RAPPEND, //reduce-only append (output must have at most one column block)
 		MR_GAPPEND, //map-reduce general case append (map-extend, aggregate)

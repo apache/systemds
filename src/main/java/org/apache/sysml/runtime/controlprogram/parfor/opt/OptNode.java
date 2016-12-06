@@ -78,7 +78,7 @@ public class OptNode
 	}
 	
 	public enum ParamType{
-		OPTYPE,
+		OPTYPE, // TODO investigate unused enum constant
 		OPSTRING,
 		TASK_PARTITIONER,
 		TASK_SIZE,

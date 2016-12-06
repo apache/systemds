@@ -165,11 +165,11 @@ public abstract class Expression
 	public enum FunctCallOp {
 		INTERNAL, EXTERNAL
 	};
-	
+
 	/**
 	 * External built-in function operators.
 	 */
-	public enum ExtBuiltinFunctionOp {
+	public enum ExtBuiltinFunctionOp { // TODO investigate unused enum
 		EIGEN, CHOLESKY
 	};
 

@@ -1103,14 +1103,6 @@ public abstract class Hop
 		TOSTRING
 	};
 
-	/**
-	 * Functions that are built in, but whose execution takes place in an
-	 * external library
-	 */
-	public enum ExtBuiltInOp {
-		EIGEN, CHOLESKY
-	};
-
 	public enum FileFormatTypes {
 		TEXT, BINARY, MM, CSV
 	};

@@ -125,8 +125,6 @@ public class LibMatrixDNN {
 	}
 	// ------------------------------------------------------------------------------------------------
 	
-	
-	
 	public static void conv2d_backward_data(MatrixBlock filter, MatrixBlock dout, MatrixBlock outputBlock, ConvolutionParameters params) throws DMLRuntimeException {
 		params.input1 = filter;
 		params.input2 = dout;

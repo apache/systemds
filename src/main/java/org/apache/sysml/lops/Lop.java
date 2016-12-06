@@ -100,11 +100,6 @@ public abstract class Lop
 	private VisitStatus _visited = VisitStatus.NOTVISITED;
 
 	protected Lop.Type type;
-	
-	/**
-	 * transient indicator
-	 */
-	protected boolean hasTransientParameters = false;
 
 	/**
 	 * handle to all inputs and outputs.

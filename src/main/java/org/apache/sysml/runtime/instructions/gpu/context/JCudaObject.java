@@ -517,9 +517,6 @@ public class JCudaObject extends GPUObject {
 		return isEmptyAndSparseAndAllocated;
 	}
 
-
-    long thisThread = Thread.currentThread().getId();
-
 	/**
 	 * Allocate necessary memory on the GPU for this {@link JCudaObject} instance.
 	 * 

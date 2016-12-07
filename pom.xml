@@ -579,8 +579,7 @@
 			<build>
 				<pluginManagement>
 					<plugins>
-						<!-- Prevent m2e warnings about the use of maven-remote-resources-plugin
-                        in the Maven archetype that we currently use for this project. -->
+						<!-- Prevent m2e warnings in Eclipse. -->
 						<plugin>
 							<groupId>org.eclipse.m2e</groupId>
 							<artifactId>lifecycle-mapping</artifactId>
@@ -592,7 +591,7 @@
 											<pluginExecutionFilter>
 												<groupId>org.apache.maven.plugins</groupId>
 												<artifactId>maven-remote-resources-plugin</artifactId>
-												<versionRange>[1.0,)</versionRange>
+												<versionRange>[1.4,)</versionRange>
 												<goals>
 													<goal>process</goal>
 												</goals>
@@ -609,6 +608,22 @@
 												<versionRange>[3.0.0,)</versionRange>
 												<goals>
 													<goal>clean</goal>
+												</goals>
+											</pluginExecutionFilter>
+											<action>
+												<ignore>
+												</ignore>
+											</action>
+										</pluginExecution>
+										<pluginExecution>
+											<pluginExecutionFilter>
+												<groupId>net.alchim31.maven</groupId>
+												<artifactId>scala-maven-plugin</artifactId>
+												<versionRange>[3.2.2,)</versionRange>
+												<goals>
+													<goal>add-source</goal>
+													<goal>compile</goal>
+													<goal>testCompile</goal>
 												</goals>
 											</pluginExecutionFilter>
 											<action>

@@ -26,15 +26,15 @@ from setuptools import find_packages, setup
 import time
 
 try:
-    exec(open('systemml/project-info.py').read())
+    exec(open('systemml/project_info.py').read())
 except IOError:
-    print("Could not read project-info.py. Will use default values.", file=sys.stderr)
+    print("Could not read project_info.py. Will use default values.", file=sys.stderr)
     BUILD_DATE_TIME = str(time.strftime("%Y%m%d.%H%M%S"))
     __project_artifact_id__ = 'systemml'
-    __project_version__ = BUILD_DATE_TIME
+    __project_version__ = BUILD_DATE_TIME + '.dev0'
 ARTIFACT_NAME = __project_artifact_id__
-PROJECT_VERSION = __project_version__
-ARTIFACT_VERSION = PROJECT_VERSION + '.dev0'
+ARTIFACT_VERSION = __project_version__
+ARTIFACT_VERSION_SHORT = ARTIFACT_VERSION.split("-")[0]
 
 numpy_version = '1.8.2'
 scipy_version = '0.15.1'
@@ -55,7 +55,7 @@ PACKAGE_DATA = PACKAGE_DATA + [os.path.join(python_dir, 'LICENSE'), os.path.join
 
 setup(
     name=ARTIFACT_NAME,
-    version=ARTIFACT_VERSION,
+    version=ARTIFACT_VERSION_SHORT,
     description='Apache SystemML is a distributed and declarative machine learning platform.',
     long_description='''
 

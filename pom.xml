@@ -414,6 +414,8 @@
 						</configuration>
 					</execution>
 					<execution>
+						<!-- NOTE: We don't clean up systemml.egg-info since this makes it difficult
+							to uninstall a dev version after a maven clean -->
 						<id>clean-python-files</id>
 						<phase>clean</phase>
 						<goals>
@@ -426,9 +428,6 @@
 									<directory>src/main/python/dist</directory>
 								</fileset>
 								<fileset>
-									<directory>src/main/python/systemml.egg-info</directory>
-								</fileset>
-								<fileset>
 									<directory>src/main/python/systemml/systemml-java</directory>
 								</fileset>
 								<fileset>
@@ -437,7 +436,7 @@
 								<fileset>
 									<directory>src/main/python/systemml</directory>
 									<includes>
-										<include>project-info.py</include>
+										<include>project_info.py</include>
 									</includes>
 								</fileset>
 							</filesets>
@@ -852,7 +851,7 @@
 										<resource>
 											<directory>${basedir}/src/main/resources/python</directory>
 											<includes>
-												<include>project-info.py</include>
+												<include>project_info.py</include>
 											</includes>
 											<filtering>true</filtering>
 										</resource>
@@ -893,6 +892,20 @@
 										<argument>setup.py</argument>
 										<argument>sdist</argument>
 										<argument>--dist-dir=../../../target</argument>
+									</arguments>
+								</configuration>
+							</execution>
+							<execution>
+								<id>generate-python-package-3</id>
+								<phase>package</phase>
+								<goals>
+									<goal>exec</goal>
+								</goals>
+								<configuration>
+									<executable>python</executable>
+									<workingDirectory>src/main/python</workingDirectory>
+									<arguments>
+										<argument>post_setup.py</argument>
 									</arguments>
 								</configuration>
 							</execution>

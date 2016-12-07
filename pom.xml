@@ -664,6 +664,8 @@
 								<exclude>**/*.ipynb</exclude>
 								<!-- Generated antlr files -->
 								<exclude>src/main/java/*.tokens</exclude>
+								<!-- Generated python files -->
+								<exclude>src/main/python/systemml.egg-info/**</exclude>
 								<!-- Test Validation files -->
 								<exclude>src/test/scripts/functions/external/kMeans/kMeansWrapperOutput</exclude>
 								<exclude>src/test/scripts/functions/external/kMeans2/kMeansWrapperOutput1</exclude>

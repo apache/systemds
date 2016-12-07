@@ -19,16 +19,18 @@
 #
 #-------------------------------------------------------------
 
-import os, shutil
-import fnmatch
-python_dir = 'systemml'
-java_dir='systemml-java'
-java_dir_full_path = os.path.join(python_dir, java_dir)
-if os.path.exists(java_dir_full_path):
-    shutil.rmtree(java_dir_full_path, True)
-os.mkdir(java_dir_full_path)
+from __future__ import print_function
+import os
+import sys
+
+try:
+    exec(open('systemml/project_info.py').read())
+except IOError:
+    print("Could not read project_info.py.", file=sys.stderr)
+    sys.exit
+ARTIFACT_NAME = __project_artifact_id__
+ARTIFACT_VERSION = __project_version__
+ARTIFACT_VERSION_SHORT = ARTIFACT_VERSION.split("-")[0]
+
 root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd())))
-for file in os.listdir(os.path.join(root_dir, 'target')):
-    if fnmatch.fnmatch(file, 'systemml-*-incubating-SNAPSHOT.jar'):
-        shutil.copyfile(os.path.join(root_dir, 'target', file), os.path.join(java_dir_full_path, file))
-shutil.copytree(os.path.join(root_dir, 'scripts'), os.path.join(java_dir_full_path, 'scripts'))
+os.rename(os.path.join(root_dir, 'target', ARTIFACT_NAME + '-' + ARTIFACT_VERSION_SHORT + '.tar.gz'), os.path.join(root_dir, 'target', ARTIFACT_NAME + '-' + ARTIFACT_VERSION + '-python.tgz'))

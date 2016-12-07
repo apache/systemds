@@ -75,8 +75,8 @@ We are working towards uploading the python package on pypi. Until then, please 
 ```bash
 git checkout https://github.com/apache/incubator-systemml.git
 cd incubator-systemml
-mvn post-integration-test -P distribution -DskipTests
-pip install src/main/python/dist/systemml-incubating-0.12.0.dev1.tar.gz
+mvn clean package -P distribution
+pip install target/systemml-0.12.0-incubating-SNAPSHOT-python.tgz
 ```
 
 The above commands will install Python package and place the corresponding Java binaries (along with algorithms) into the installed location.
@@ -214,10 +214,10 @@ digits = datasets.load_digits()
 X_digits = digits.data
 y_digits = digits.target 
 n_samples = len(X_digits)
-X_train = X_digits[:.9 * n_samples]
-y_train = y_digits[:.9 * n_samples]
-X_test = X_digits[.9 * n_samples:]
-y_test = y_digits[.9 * n_samples:]
+X_train = X_digits[:int(.9 * n_samples)]
+y_train = y_digits[:int(.9 * n_samples)]
+X_test = X_digits[int(.9 * n_samples):]
+y_test = y_digits[int(.9 * n_samples):]
 logistic = LogisticRegression(sqlCtx)
 print('LogisticRegression score: %f' % logistic.fit(X_train, y_train).score(X_test, y_test))
 ```
@@ -245,13 +245,13 @@ X_digits = digits.data
 y_digits = digits.target
 n_samples = len(X_digits)
 # Split the data into training/testing sets and convert to PySpark DataFrame
-df_train = sml.convertToLabeledDF(sqlContext, X_digits[:.9 * n_samples], y_digits[:.9 * n_samples])
-X_test = sqlCtx.createDataFrame(pd.DataFrame(X_digits[.9 * n_samples:]))
+df_train = sml.convertToLabeledDF(sqlContext, X_digits[:int(.9 * n_samples)], y_digits[:int(.9 * n_samples)])
+X_test = sqlCtx.createDataFrame(pd.DataFrame(X_digits[int(.9 * n_samples):]))
 logistic = LogisticRegression(sqlCtx)
 logistic.fit(df_train)
 y_predicted = logistic.predict(X_test)
 y_predicted = y_predicted.select('prediction').toPandas().as_matrix().flatten()
-y_test = y_digits[.9 * n_samples:]
+y_test = y_digits[int(.9 * n_samples):]
 print('LogisticRegression score: %f' % accuracy_score(y_test, y_predicted))
 ```
 
@@ -331,8 +331,8 @@ X_digits = digits.data
 y_digits = digits.target + 1
 n_samples = len(X_digits)
 # Split the data into training/testing sets and convert to PySpark DataFrame
-X_df = sqlCtx.createDataFrame(pd.DataFrame(X_digits[:.9 * n_samples]))
-y_df = sqlCtx.createDataFrame(pd.DataFrame(y_digits[:.9 * n_samples]))
+X_df = sqlCtx.createDataFrame(pd.DataFrame(X_digits[:int(.9 * n_samples)]))
+y_df = sqlCtx.createDataFrame(pd.DataFrame(y_digits[:int(.9 * n_samples)]))
 ml = sml.MLContext(sc)
 # Get the path of MultiLogReg.dml
 scriptPath = os.path.join(imp.find_module("systemml")[1], 'systemml-java', 'scripts', 'algorithms', 'MultiLogReg.dml')

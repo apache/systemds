@@ -166,8 +166,12 @@ public abstract class AutomatedTestBase
 	 */
 	private static final File CONFIG_TEMPLATE_FILE = new File(CONFIG_DIR, "SystemML-config.xml");
 	
-	/** Location under which we create local temporary directories for test cases. */
-	private static final String LOCAL_TEMP_ROOT_DIR = "target/testTemp";
+	/**
+	 * Location under which we create local temporary directories for test cases.
+	 * To adjust where testTemp is located, use -Dsystemml.testTemp.root.dir=<new location>.  This is necessary
+	 * if any parent directories are public-protected.
+	 */
+	private static final String LOCAL_TEMP_ROOT_DIR = System.getProperty("systemml.testTemp.root.dir","target/testTemp");
 	private static final File LOCAL_TEMP_ROOT = new File(LOCAL_TEMP_ROOT_DIR);
 	
 	/** Base directory for generated IN, OUT, EXPECTED test data artifacts instead of SCRIPT_DIR. */

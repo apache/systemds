@@ -48,7 +48,7 @@ limitations under the License.
   * [Regression Scoring and Prediction](algorithms-regression.html#regression-scoring-and-prediction)
   
 * [Matrix Factorization](algorithms-matrix-factorization.html)
-  * [Principle Component Analysis](algorithms-matrix-factorization.html#principle-component-analysis)
+  * [Principal Component Analysis](algorithms-matrix-factorization.html#principal-component-analysis)
   * [Matrix Completion via Alternating Minimizations](algorithms-matrix-factorization.html#matrix-completion-via-alternating-minimizations)
 
 * [Survival Analysis](algorithms-survival-analysis.html)

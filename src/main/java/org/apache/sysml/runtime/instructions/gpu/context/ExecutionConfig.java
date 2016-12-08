@@ -39,9 +39,24 @@ public class ExecutionConfig {
 	public int blockDimZ = 1;
 	public int sharedMemBytes = 0;
 	public CUstream stream = null;
+
+
 	
 	private static HashMap<Integer, Integer> maxBlockDimForDevice = new HashMap<Integer, Integer>();
-	
+
+	/**
+	 * Convenience constructor for setting the number of blocks, number of threads and the
+	 * shared memory size
+	 * @param gridDimX
+	 * @param blockDimX
+	 * @param sharedMemBytes
+	 */
+	public ExecutionConfig(int gridDimX, int blockDimX, int sharedMemBytes) {
+		this.gridDimX = gridDimX;
+		this.blockDimX = blockDimX;
+		this.sharedMemBytes = sharedMemBytes;
+	}
+
 	/**
 	 * Use this for simple vector operations and use following in the kernel 
 	 * <code> 

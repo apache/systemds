@@ -88,14 +88,14 @@ public class AggregateBinaryGPUInstruction extends GPUInstruction
 		
 		//get inputs
 		MatrixObject m1 = ec.getMatrixInputForGPUInstruction(_input1.getName());
-        MatrixObject m2 = ec.getMatrixInputForGPUInstruction(_input2.getName());
-        
-        //compute matrix multiplication
-        int rlen = (int) (_isLeftTransposed ? m1.getNumColumns() : m1.getNumRows());
-        int clen = (int) (_isRightTransposed ? m2.getNumRows() : m2.getNumColumns());
-        
-        ec.setMetaData(_output.getName(), rlen, clen);
-        LibMatrixCUDA.matmult(ec, m1, m2, _output.getName(), _isLeftTransposed, _isRightTransposed);
+		MatrixObject m2 = ec.getMatrixInputForGPUInstruction(_input2.getName());
+
+		//compute matrix multiplication
+		int rlen = (int) (_isLeftTransposed ? m1.getNumColumns() : m1.getNumRows());
+		int clen = (int) (_isRightTransposed ? m2.getNumRows() : m2.getNumColumns());
+
+		ec.setMetaData(_output.getName(), rlen, clen);
+		LibMatrixCUDA.matmult(ec, m1, m2, _output.getName(), _isLeftTransposed, _isRightTransposed);
         
 		//release inputs/outputs
 		ec.releaseMatrixInputForGPUInstruction(_input1.getName());

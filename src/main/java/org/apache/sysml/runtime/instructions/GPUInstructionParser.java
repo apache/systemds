@@ -29,6 +29,7 @@ import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
 import org.apache.sysml.runtime.instructions.gpu.GPUInstruction.GPUINSTRUCTION_TYPE;
 import org.apache.sysml.runtime.instructions.gpu.MMTSJGPUInstruction;
 import org.apache.sysml.runtime.instructions.gpu.ReorgGPUInstruction;
+import org.apache.sysml.runtime.instructions.gpu.context.AggregateUnaryGPUInstruction;
 
 public class GPUInstructionParser  extends InstructionParser 
 {
@@ -62,6 +63,8 @@ public class GPUInstructionParser  extends InstructionParser
 		
 		
 		String2GPUInstructionType.put( "sel+"  , GPUINSTRUCTION_TYPE.BuiltinUnary);
+
+		String2GPUInstructionType.put( "uak+"	 , GPUINSTRUCTION_TYPE.AggregateUnary);
 	}
 	
 	public static GPUInstruction parseSingleInstruction (String str ) 
@@ -88,6 +91,9 @@ public class GPUInstructionParser  extends InstructionParser
 			throw new DMLRuntimeException("The instruction is not GPU-enabled:" + str);
 		
 		switch(gputype) {
+			case AggregateUnary:
+				return AggregateUnaryGPUInstruction.parseInstruction(str);
+
 			case AggregateBinary:
 				return AggregateBinaryGPUInstruction.parseInstruction(str);
 			

@@ -2246,6 +2246,24 @@ public class MLContextTest extends AutomatedTestBase {
 		ml.execute(script);
 	}
 
+	@Test
+	public void testDisplayBooleanDML() {
+		System.out.println("MLContextTest - display boolean DML");
+		String s = "print(b);";
+		Script script = dml(s).in("b", true);
+		setExpectedStdOut("TRUE");
+		ml.execute(script);
+	}
+
+	@Test
+	public void testDisplayBooleanPYDML() {
+		System.out.println("MLContextTest - display boolean PYDML");
+		String s = "print(b)";
+		Script script = pydml(s).in("b", true);
+		setExpectedStdOut("True");
+		ml.execute(script);
+	}
+
 	// NOTE: Uncomment these tests once they work
 
 	// @SuppressWarnings({ "rawtypes", "unchecked" })

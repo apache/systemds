@@ -46,6 +46,7 @@ import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.util.GenericOptionsParser;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.apache.sysml.api.mlcontext.ScriptType;
 import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
@@ -105,6 +106,12 @@ public class DMLScript
 	public static boolean USE_LOCAL_SPARK_CONFIG = false; //set default local spark configuration - used for local testing
 	public static String DML_FILE_PATH_ANTLR_PARSER = null;
 	public static ExplainType EXPLAIN = ExplainType.NONE; //default explain
+	/**
+	 * Global variable indicating the script type (DML or PYDML). Can be used
+	 * for DML/PYDML-specific tasks, such as outputting booleans in the correct
+	 * case (TRUE/FALSE for DML and True/False for PYDML).
+	 */
+	public static ScriptType SCRIPT_TYPE = ScriptType.DML;
 	
 	public static boolean USE_ACCELERATOR = false;
 	public static boolean FORCE_ACCELERATOR = false;
@@ -584,6 +591,8 @@ public class DMLScript
 	private static void execute(String dmlScriptStr, String fnameOptConfig, Map<String,String> argVals, String[] allArgs, boolean parsePyDML)
 		throws ParseException, IOException, DMLRuntimeException, LanguageException, HopsException, LopsException 
 	{	
+		SCRIPT_TYPE = parsePyDML ? ScriptType.PYDML : ScriptType.DML;
+
 		//print basic time and environment info
 		printStartExecInfo( dmlScriptStr );
 		

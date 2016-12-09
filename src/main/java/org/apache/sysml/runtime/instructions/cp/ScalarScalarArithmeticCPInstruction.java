@@ -54,9 +54,19 @@ public class ScalarScalarArithmeticCPInstruction extends ArithmeticBinaryCPInstr
 		if( input1.getValueType() == ValueType.STRING 
 			 || input2.getValueType() == ValueType.STRING ) 
 		{
+			String val1 = null;
+			if (so1 instanceof BooleanObject) {
+				val1 = ((BooleanObject) so1).getLanguageSpecificBooleanStringValue();
+			} else {
+				val1 = so1.getStringValue();
+			}
+			String val2 = null;
+			if (so2 instanceof BooleanObject) {
+				val2 = ((BooleanObject) so2).getLanguageSpecificBooleanStringValue();
+			} else {
+				val2 = so2.getStringValue();
+			}
 			//pre-check (for robustness regarding too long strings)
-			String val1 = so1.getStringValue();
-			String val2 = so2.getStringValue();
 			// This line was commented out because of the addition of 
 			// the built-in function toString.
 			// The toString function adds its own memory estimation

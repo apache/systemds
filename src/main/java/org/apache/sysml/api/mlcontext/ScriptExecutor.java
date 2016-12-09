@@ -302,6 +302,8 @@ public class ScriptExecutor {
 		checkScriptHasTypeAndString();
 		script.setScriptExecutor(this);
 		setScriptStringInSparkMonitor();
+		// Set global variable indicating the script type
+		DMLScript.SCRIPT_TYPE = script.getScriptType();
 
 		// main steps in script execution
 		parseScript();

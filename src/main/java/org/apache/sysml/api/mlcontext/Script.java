@@ -506,7 +506,7 @@ public class Script {
 					String quotedString = MLContextUtil.quotedString((String) inValue);
 					sb.append(" = " + quotedString + ";\n");
 				} else if (MLContextUtil.isBasicType(inValue)) {
-					sb.append(" = read('', data_type='scalar');\n");
+					sb.append(" = read('', data_type='scalar', value_type='" + MLContextUtil.getBasicTypeString(inValue) + "');\n");
 				} else if (MLContextUtil.doesSymbolTableContainFrameObject(symbolTable, in)) {
 					sb.append(" = read('', data_type='frame');\n");
 				} else {
@@ -517,7 +517,7 @@ public class Script {
 					String quotedString = MLContextUtil.quotedString((String) inValue);
 					sb.append(" = " + quotedString + "\n");
 				} else if (MLContextUtil.isBasicType(inValue)) {
-					sb.append(" = load('', data_type='scalar')\n");
+					sb.append(" = load('', data_type='scalar', value_type='" + MLContextUtil.getBasicTypeString(inValue) + "')\n");
 				} else if (MLContextUtil.doesSymbolTableContainFrameObject(symbolTable, in)) {
 					sb.append(" = load('', data_type='frame')\n");
 				} else {

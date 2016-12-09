@@ -49,10 +49,6 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction
 		super(op, in1, in2, out, opcode, istr);
 	}
 
-	public BinarySPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String opcode, String istr ){
-		super(op, in1, in2, in3, out, opcode, istr);
-	}
-
 	protected static String parseBinaryInstruction(String instr, CPOperand in1, CPOperand in2, CPOperand out)
 		throws DMLRuntimeException
 	{	

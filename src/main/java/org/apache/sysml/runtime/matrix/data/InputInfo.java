@@ -53,14 +53,7 @@ public class InputInfo implements Serializable
 		inputKeyClass=keyCls;
 		inputValueClass=valueCls;
 	}
-	public InputInfo(Class<? extends InputFormat> formatCls, 
-			Class<? extends Writable> keyCls, Class<? extends Writable> valueCls, MetaData md)
-	{
-		inputFormatClass=formatCls;
-		inputKeyClass=keyCls;
-		inputValueClass=valueCls;
-		metadata=md;
-	}
+
 	public void setMetaData(MetaData md)
 	{
 		metadata=md;

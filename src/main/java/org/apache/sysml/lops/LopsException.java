@@ -31,10 +31,6 @@ public class LopsException extends DMLException
 		super(message);
 	}
 
-	public LopsException(Exception e) {
-		super(e);
-	}
-	
 	public LopsException(String message, Throwable cause) {
 	    super(message, cause);
 	}

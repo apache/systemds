@@ -54,13 +54,7 @@ public class ConvolutionTransform extends Lop
 		init(input, op, dt, vt, et);
 		numThreads = k;
 	}
-	
-	public ConvolutionTransform(Lop input, ConvolutionTransform.OperationTypes op, DataType dt, ValueType vt) 
-	{
-		super(Lop.Type.Transform, dt, vt);		
-		init(input, op, dt, vt, ExecType.MR);
-	}
-	
+
 	private void init (Lop input, ConvolutionTransform.OperationTypes op, DataType dt, ValueType vt, ExecType et) 
 	{
 		operation = op;

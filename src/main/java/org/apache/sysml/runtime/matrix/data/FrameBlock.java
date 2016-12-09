@@ -1401,11 +1401,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			_ndistinct = ndistinct;
 			_mvValue = mvval;
 		}
-		public ColumnMetadata(ColumnMetadata that) {
-			_ndistinct = that._ndistinct;
-			_mvValue = that._mvValue;
-		}
-		
+
 		public long getNumDistinct() {
 			return _ndistinct;
 		}		

@@ -54,12 +54,7 @@ public class ReblockBuffer
 	private long _clen = -1;
 	private int _brlen = -1;
 	private int _bclen = -1;
-	
-	public ReblockBuffer( long rlen, long clen, int brlen, int bclen )
-	{
-		this( DEFAULT_BUFFER_SIZE, rlen, clen, brlen, bclen );
-	}
-	
+
 	public ReblockBuffer( int buffersize, long rlen, long clen, int brlen, int bclen  )
 	{
 		_bufflen = buffersize;

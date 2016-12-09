@@ -79,10 +79,6 @@ public abstract class MatrixValue implements WritableComparable
 		//do nothing
 	}
 
-	public MatrixValue(MatrixValue that) {
-		copy(that);
-	}
-
 	public abstract int getNumRows();
 	public abstract int getNumColumns();
 	public abstract long getNonZeros();

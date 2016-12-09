@@ -59,12 +59,6 @@ public class IndexedMatrixValue implements Serializable
 		_value = b;
 	}
 
-	public IndexedMatrixValue(IndexedMatrixValue that)
-	{
-		this(that._indexes, that._value); 
-	}
-
-	
 	public MatrixIndexes getIndexes()
 	{
 		return _indexes;

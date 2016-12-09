@@ -34,32 +34,7 @@ public abstract class Identifier extends Expression
 	protected long _columns_in_block;
 	protected long _nnz;
 	protected FormatType _formatType;
-		
-	public Identifier(Identifier i)
-	{
-		_dataType = i.getDataType();
-		_valueType = i.getValueType();
-		if( i instanceof IndexedIdentifier ) {
-			IndexedIdentifier ixi = (IndexedIdentifier)i; 
-			_dim1 = ixi.getOrigDim1();
-			_dim2 = ixi.getOrigDim2();
-		}
-		else {
-			_dim1 = i.getDim1();
-			_dim2 = i.getDim2();
-		}
-		_rows_in_block = i.getRowsInBlock();
-		_columns_in_block = i.getColumnsInBlock();
-		_nnz = i.getNnz();
-		_formatType = i.getFormatType();
-		
-		// copy position information
-		setBeginLine(i.getBeginLine());
-		setBeginColumn(i.getBeginColumn());
-		setEndLine(i.getEndLine());
-		setEndColumn(i.getEndColumn());
-	}
-	
+
 	public Identifier()
 	{
 		_dim1 = -1;

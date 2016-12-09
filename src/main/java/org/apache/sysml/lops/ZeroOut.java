@@ -59,13 +59,6 @@ public class ZeroOut  extends Lop
 			this.lps.setProperties(inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob);
 		}
 	}
-	
-	public ZeroOut(
-			Lop input, Lop rowL, Lop rowU, Lop colL, Lop colU, long rowDim, long colDim, DataType dt, ValueType vt)
-			throws LopsException {
-		super(Lop.Type.ZeroOut, dt, vt);
-		init(input, rowL, rowU, colL, colU,  rowDim, colDim, dt, vt, ExecType.MR);
-	}
 
 	public ZeroOut(
 			Lop input, Lop rowL, Lop rowU, Lop colL, Lop colU, long rowDim, long colDim, DataType dt, ValueType vt, ExecType et)

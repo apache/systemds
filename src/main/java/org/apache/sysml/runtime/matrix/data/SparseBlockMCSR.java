@@ -64,24 +64,7 @@ public class SparseBlockMCSR extends SparseBlock
 			}
 		}
 	}
-	
-	/**
-	 * Copy constructor old sparse row representation. 
-	 * 
-	 * @param rows array of sparse rows
-	 * @param deep if true, deep copy
-	 */
-	public SparseBlockMCSR(SparseRow[] rows, boolean deep) {
-		if( deep ) {
-			_rows = new SparseRow[rows.length];
-			for( int i=0; i<_rows.length; i++ )
-				_rows[i] = new SparseRow(rows[i]);
-		}
-		else {
-			_rows = rows;	
-		}
-	}
-	
+
 	public SparseBlockMCSR(int rlen, int clen) {
 		_rows = new SparseRow[rlen];
 	}

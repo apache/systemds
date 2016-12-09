@@ -44,17 +44,6 @@ public class Aggregate extends Lop
  
 	private boolean isCorrectionUsed = false;
 	private CorrectionLocationType correctionLocation = CorrectionLocationType.INVALID;
-
-	/**
-	 * @param input input lop
-	 * @param op operation type
-	 * @param dt data type
-	 * @param vt value type
-	 */
-	public Aggregate(Lop input, Aggregate.OperationTypes op, DataType dt, ValueType vt ) {
-		super(Lop.Type.Aggregate, dt, vt);
-		init ( input, op, dt, vt, ExecType.MR );
-	}
 	
 	public Aggregate(Lop input, Aggregate.OperationTypes op, DataType dt, ValueType vt, ExecType et ) {
 		super(Lop.Type.Aggregate, dt, vt);

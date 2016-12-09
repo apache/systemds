@@ -59,11 +59,7 @@ public class DummycodeAgent extends Encoder
 	private int[] _domainSizes = null;			// length = #of dummycoded columns
 	private int[] _dcdColumnMap = null;			// to help in translating between original and dummycoded column IDs
 	private long _dummycodedLength = 0;			// #of columns after dummycoded
-	
-	public DummycodeAgent(int[] list, int clen) {
-		super(list, clen);
-	}
-	
+
 	public DummycodeAgent(JSONObject parsedSpec, String[] colnames, int clen) throws JSONException {
 		super(null, clen);
 		

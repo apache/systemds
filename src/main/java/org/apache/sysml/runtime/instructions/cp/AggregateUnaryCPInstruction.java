@@ -42,10 +42,6 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 		this(op, in, null, null, out, opcode, istr);
 	}
 	
-	public AggregateUnaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr){
-		this(op, in1, in2, null, out, opcode, istr);
-	}
-	
 	public AggregateUnaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String opcode, String istr){
 		super(op, in1, in2, in3, out, opcode, istr);
 		_cptype = CPINSTRUCTION_TYPE.AggregateUnary;		

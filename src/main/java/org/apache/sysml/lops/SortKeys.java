@@ -44,11 +44,6 @@ public class SortKeys extends Lop
 	public OperationTypes getOpType() {
 		return operation;
 	}
-	
-	public SortKeys(Lop input, OperationTypes op, DataType dt, ValueType vt) {
-		super(Lop.Type.SortKeys, dt, vt);		
-		init(input, null, op, ExecType.MR);
-	}
 
 	public SortKeys(Lop input, OperationTypes op, DataType dt, ValueType vt, ExecType et) {
 		super(Lop.Type.SortKeys, dt, vt);		

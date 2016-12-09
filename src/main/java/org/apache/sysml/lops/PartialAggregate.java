@@ -72,14 +72,6 @@ public class PartialAggregate extends Lop
 	}
 
 	public PartialAggregate( Lop input, Aggregate.OperationTypes op,
-			PartialAggregate.DirectionTypes direct, DataType dt, ValueType vt, ExecType et)
-		throws LopsException 
-	{
-		super(Lop.Type.PartialAggregate, dt, vt);
-		init(input, op, direct, dt, vt, et);
-	}
-	
-	public PartialAggregate( Lop input, Aggregate.OperationTypes op,
 			PartialAggregate.DirectionTypes direct, DataType dt, ValueType vt, ExecType et, int k)
 		throws LopsException 
 	{

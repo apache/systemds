@@ -33,9 +33,4 @@ public class TaggedMatrixCell extends TaggedMatrixValue
         tag=-1;
      	base=new MatrixCell();
 	}
-
-	public TaggedMatrixCell(TaggedMatrixCell value) {
-		tag=value.getTag();
-		base=new MatrixCell(value.base);
-	}
 }

@@ -135,14 +135,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		_varParams = varParams;
 		this.setAllPositions(filename, blp, bcp, elp, ecp);
 	}
-   
-	public ParameterizedBuiltinFunctionExpression(String filename, int blp, int bcp, int elp, int ecp) {
-		_kind = Kind.ParameterizedBuiltinFunctionOp;
-		_opcode = ParameterizedBuiltinFunctionOp.INVALID;
-		_varParams = new HashMap<String,Expression>();
-		this.setAllPositions(filename, blp, bcp, elp, ecp);
-	}
-    
+
 	public Expression rewriteExpression(String prefix) throws LanguageException {
 		
 		HashMap<String,Expression> newVarParams = new HashMap<String,Expression>();

@@ -47,15 +47,6 @@ public class AssignmentStatement extends Statement
 		return retVal;
 	}
 	
-	
-	public AssignmentStatement(DataIdentifier t, Expression s) {
-
-		_targetList = new ArrayList<DataIdentifier>();
-		_targetList.add(t);
-		_source = s;
-	}
-	
-	
 	public AssignmentStatement(DataIdentifier t, Expression s, int beginLine, int beginCol, int endLine, int endCol) 
 		throws LanguageException
 	{	

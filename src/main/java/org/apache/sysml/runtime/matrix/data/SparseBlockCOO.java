@@ -102,35 +102,7 @@ public class SparseBlockCOO extends SparseBlock
 			}	
 		}
 	}
-	
-	/**
-	 * Copy constructor old sparse row representation. 
-	 * 
-	 * @param rows array of sparse rows
-	 * @param nnz number of non-zeros
-	 */
-	public SparseBlockCOO(SparseRow[] rows, int nnz)
-	{
-		_rlen = rows.length;
-		
-		_rindexes = new int[nnz];
-		_cindexes = new int[nnz];
-		_values = new double[nnz];
-		_size = nnz;
-		
-		for( int i=0, pos=0; i<_rlen; i++ ) {
-			int alen = rows[i].size();
-			int[] aix = rows[i].indexes();
-			double[] avals = rows[i].values();
-			for( int j=0; j<alen; j++ ) {
-				_rindexes[pos] = i;
-				_cindexes[pos] = aix[j];
-				_values[pos] = avals[j];
-				pos++;
-			}
-		}
-	}
-		
+
 	/**
 	 * Get the estimated in-memory size of the sparse block in COO 
 	 * with the given dimensions w/o accounting for overallocation. 

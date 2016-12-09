@@ -29,15 +29,4 @@ public class DMLDebuggerException extends DMLException
 	
 	private static final long serialVersionUID = 1L;
 
-	public DMLDebuggerException(String string) {
-		super(string);
-	}
-	
-	public DMLDebuggerException(Exception e) {
-		super(e);
-	}
-
-	public DMLDebuggerException(String string, Exception ex){
-		super(string,ex);
-	}
 }

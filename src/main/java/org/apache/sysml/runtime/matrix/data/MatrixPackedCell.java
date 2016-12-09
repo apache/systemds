@@ -37,21 +37,7 @@ public class MatrixPackedCell extends MatrixCell
 
 	private double[] extras=null;
 	private int extra_size=0;
-	
-	public MatrixPackedCell(double v, int n)
-	{
-		value=v;
-		checkAndAllocateSpace(n);
-	}
-	
-	public MatrixPackedCell(MatrixPackedCell that)
-	{
-		this.value=that.value;
-		checkAndAllocateSpace(that.extra_size);
-		for(int i=0; i<extra_size; i++)
-			extras[i]=that.extras[i];
-	}
-	
+
 	public MatrixPackedCell() {
 		super();
 	}

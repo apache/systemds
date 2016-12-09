@@ -72,16 +72,7 @@ public class FrameObject extends CacheableData<FrameBlock>
 		setMetaData(meta);
 		setSchema(schema);
 	}
-	
-	/**
-	 * Copy constructor that copies meta data but NO data.
-	 * 
-	 * @param fo frame object
-	 */
-	public FrameObject(FrameObject fo) {
-		super(fo);
-	}
-	
+
 	@Override
 	public ValueType[] getSchema() {
 		return _schema;

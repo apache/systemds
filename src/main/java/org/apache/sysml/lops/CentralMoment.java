@@ -65,17 +65,9 @@ public class CentralMoment extends Lop
 			lps.setProperties(inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob);
 		}
 	}
-	
-	public CentralMoment(Lop input1, Lop input2, DataType dt, ValueType vt) {
-		this(input1, input2, null, dt, vt, ExecType.MR);
-	}
 
 	public CentralMoment(Lop input1, Lop input2, DataType dt, ValueType vt, ExecType et) {
 		this(input1, input2, null, dt, vt, et);
-	}
-
-	public CentralMoment(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt) {
-		this(input1, input2, input3, dt, vt, ExecType.MR);
 	}
 
 	public CentralMoment(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt, ExecType et) {

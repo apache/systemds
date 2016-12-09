@@ -57,33 +57,6 @@ public class DMLProgramCounter {
 	}
 
 	/**
-	 * Parameterized constructor for DML pc without line number information
-	 * @param name Current namespace 
-	 * @param fn  Current function name in namespace
-	 * @param blockNum Current program block within function
-	 * @param instNum Current instruction within program block
-	 * @param instID Current instruction unique identifier
-	 */
-	public DMLProgramCounter(String name, String fn, int blockNum, int instNum, long instID) {
-		this(name, fn, blockNum, instNum);
-		this.instID = instID; 
-	}
-
-	/**
-	 * Fully parameterized constructor for DML pc
-	 * @param name Current namespace 
-	 * @param fn  Current function name in namespace
-	 * @param blockNum Current program block within function
-	 * @param instNum Current instruction within program block
-	 * @param instID Current instruction unique identifier
-	 * @param lineNum Current line number
-	 */
-	public DMLProgramCounter(String name, String fn, int blockNum, int instNum, long instID, int lineNum) {
-		this(name, fn, blockNum, instNum, instID);
-		lineNumber = lineNum;
-	}
-	
-	/**
 	 * Getter for namespace field
 	 * @return Current pc's namespace
 	 */

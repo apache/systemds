@@ -35,10 +35,6 @@ public class TernaryAggregate extends Lop
 	
 	//optional attribute for cp
 	private int _numThreads = -1;
-	
-	public TernaryAggregate(Lop input1, Lop input2, Lop input3, Aggregate.OperationTypes aggOp, Binary.OperationTypes binOp, DataType dt, ValueType vt, ExecType et ) {
-		this(input1, input2, input3, aggOp, binOp, dt, vt, et, 1);
-	}
 
 	public TernaryAggregate(Lop input1, Lop input2, Lop input3, Aggregate.OperationTypes aggOp, Binary.OperationTypes binOp, DataType dt, ValueType vt, ExecType et, int k ) 
 	{

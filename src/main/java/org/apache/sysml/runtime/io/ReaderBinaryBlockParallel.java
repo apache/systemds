@@ -138,7 +138,7 @@ public class ReaderBinaryBlockParallel extends ReaderBinaryBlock
 		}
 
 		@Override
-		@SuppressWarnings({ "deprecation", "resource" })
+		@SuppressWarnings({ "deprecation" })
 		public Object call() throws Exception 
 		{
 			boolean sparse = _dest.isInSparseFormat();

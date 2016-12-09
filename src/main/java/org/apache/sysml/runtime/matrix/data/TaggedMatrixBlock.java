@@ -32,10 +32,4 @@ public class TaggedMatrixBlock extends TaggedMatrixValue
         tag=-1;
      	base=new MatrixBlock();
 	}
-
-	public TaggedMatrixBlock(TaggedMatrixBlock that) {
-		tag=that.getTag();
-		base=new MatrixBlock();
-		base.copy(that.getBaseObject());
-	}
 }

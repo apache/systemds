@@ -60,22 +60,7 @@ public class MultiAssignmentStatement extends Statement
 		_targetList = tList;
 		_source = s;
 	}
-	
-	// NOTE: f is not used -- however, error is thrown "methods have same erasure" if not included in signature
-	public MultiAssignmentStatement(ArrayList<ArrayList<Expression>> exprListList, Expression s, int f){
-		
-		_source = s;
-		
-		_targetList = new ArrayList<DataIdentifier>();
-		for (ArrayList<Expression> exprList : exprListList){
-			Expression expr = exprList.get(0);
-			if( expr instanceof IndexedIdentifier )
-				_targetList.add((IndexedIdentifier)expr);
-			else
-				_targetList.add(new DataIdentifier(expr.toString()));
-		}
-	}
-	
+
 	public ArrayList<DataIdentifier> getTargetList(){
 		return _targetList;
 	}

@@ -57,11 +57,7 @@ public class TaggedFirstSecondIndexes implements WritableComparable<TaggedFirstS
 		tag=t;
 		
 	}
-	public TaggedFirstSecondIndexes(TaggedFirstSecondIndexes other) {
-		setIndexes(other.first, other.second);
-		setTag(other.tag);
-	}
-	
+
 	public String toString()
 	{
 		return "("+first+", "+second+") tag: "+tag;

@@ -32,21 +32,6 @@ import org.apache.sysml.parser.Expression.ValueType;
 public class CoVariance extends Lop 
 {
 
-	
-	/**
-	 * Constructor to perform covariance.
-	 * input1 &lt;- data 
-	 * (prior to this lop, input vectors need to attached together using CombineBinary or CombineTertiary) 
-	 * 
-	 * @param input1 low-level operator
-	 * @param dt data type
-	 * @param vt value type
-	 * @throws LopsException if LopsException occurs
-	 */
-	public CoVariance(Lop input1, DataType dt, ValueType vt) throws LopsException {
-		this(input1, dt, vt, ExecType.MR);
-	}
-
 	public CoVariance(Lop input1, DataType dt, ValueType vt, ExecType et) throws LopsException {
 		super(Lop.Type.CoVariance, dt, vt);
 		init(input1, null, null, et);

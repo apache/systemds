@@ -55,16 +55,6 @@ public class MatrixCell extends MatrixValue implements WritableComparable, Seria
 		value=0;
 	}
 
-	public MatrixCell(MatrixCell that)
-	{
-		this.value=that.value;
-	}
-	
-	public MatrixCell(MatrixValue that) {
-		if(that instanceof MatrixCell)
-			this.value=((MatrixCell)that).value;
-	}
-
 	public MatrixCell(double v) {
 		value=v;
 	}

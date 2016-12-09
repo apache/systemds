@@ -113,10 +113,6 @@ public class ApplyTfCSVSPARK {
 
 		TfUtils _tfmapper = null;
 		
-		ApplyTfCSVMap(boolean hasHeader, String delim, String naStrings, String specFile, String tmpPath, String tfMtdPath, long numCols, String headerLine, Broadcast<TfUtils> tf) throws IllegalArgumentException, IOException, JSONException {
-			_tfmapper = tf.getValue();
-		}
-		
 		ApplyTfCSVMap(Broadcast<TfUtils> tf) throws IllegalArgumentException, IOException, JSONException {
 			_tfmapper = tf.getValue();
 		}

@@ -50,7 +50,11 @@ public class TripleIndexes implements WritableComparable<TripleIndexes>, Seriali
 		second=i2;
 		third=i3;
 	}
-
+	
+	public TripleIndexes(TripleIndexes that)
+	{
+		setIndexes(that);
+	}
 	public void setIndexes(TripleIndexes that) {
 		
 		this.first=that.first;

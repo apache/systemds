@@ -31,7 +31,12 @@ public class TaggedMatrixIndexes extends Tagged<MatrixIndexes>
 	public TaggedMatrixIndexes(MatrixIndexes ix, byte t) {
 		super(ix, t);
 	}
-
+	
+	public TaggedMatrixIndexes(TaggedMatrixIndexes that) {
+		tag = that.tag;
+		base = that.base;
+	}
+	
 	@Override
 	public String toString() {
 		return "k: "+base+", tag: "+tag;

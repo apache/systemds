@@ -22,6 +22,12 @@ package org.apache.sysml.runtime.matrix.data;
 
 public class TaggedAdaptivePartialBlock extends Tagged<AdaptivePartialBlock>
 {
+	
+	public TaggedAdaptivePartialBlock(AdaptivePartialBlock b, byte t) 
+	{
+		super(b, t);
+	}
+
 	public TaggedAdaptivePartialBlock()
 	{        
         tag = -1;

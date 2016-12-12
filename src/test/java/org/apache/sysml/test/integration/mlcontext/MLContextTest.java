@@ -2264,6 +2264,78 @@ public class MLContextTest extends AutomatedTestBase {
 		ml.execute(script);
 	}
 
+	@Test
+	public void testDisplayBooleanNotDML() {
+		System.out.println("MLContextTest - display boolean 'not' DML");
+		String s = "print(!b);";
+		Script script = dml(s).in("b", true);
+		setExpectedStdOut("FALSE");
+		ml.execute(script);
+	}
+
+	@Test
+	public void testDisplayBooleanNotPYDML() {
+		System.out.println("MLContextTest - display boolean 'not' PYDML");
+		String s = "print(!b)";
+		Script script = pydml(s).in("b", true);
+		setExpectedStdOut("False");
+		ml.execute(script);
+	}
+
+	@Test
+	public void testDisplayIntegerAddDML() {
+		System.out.println("MLContextTest - display integer add DML");
+		String s = "print(i+j);";
+		Script script = dml(s).in("i", 5).in("j", 6);
+		setExpectedStdOut("11");
+		ml.execute(script);
+	}
+
+	@Test
+	public void testDisplayIntegerAddPYDML() {
+		System.out.println("MLContextTest - display integer add PYDML");
+		String s = "print(i+j)";
+		Script script = pydml(s).in("i", 5).in("j", 6);
+		setExpectedStdOut("11");
+		ml.execute(script);
+	}
+
+	@Test
+	public void testDisplayStringConcatenationDML() {
+		System.out.println("MLContextTest - display string concatenation DML");
+		String s = "print(str1+str2);";
+		Script script = dml(s).in("str1", "hello").in("str2", "goodbye");
+		setExpectedStdOut("hellogoodbye");
+		ml.execute(script);
+	}
+
+	@Test
+	public void testDisplayStringConcatenationPYDML() {
+		System.out.println("MLContextTest - display string concatenation PYDML");
+		String s = "print(str1+str2)";
+		Script script = pydml(s).in("str1", "hello").in("str2", "goodbye");
+		setExpectedStdOut("hellogoodbye");
+		ml.execute(script);
+	}
+
+	@Test
+	public void testDisplayDoubleAddDML() {
+		System.out.println("MLContextTest - display double add DML");
+		String s = "print(i+j);";
+		Script script = dml(s).in("i", 5.1).in("j", 6.2);
+		setExpectedStdOut("11.3");
+		ml.execute(script);
+	}
+
+	@Test
+	public void testDisplayDoubleAddPYDML() {
+		System.out.println("MLContextTest - display double add PYDML");
+		String s = "print(i+j)";
+		Script script = pydml(s).in("i", 5.1).in("j", 6.2);
+		setExpectedStdOut("11.3");
+		ml.execute(script);
+	}
+
 	// NOTE: Uncomment these tests once they work
 
 	// @SuppressWarnings({ "rawtypes", "unchecked" })

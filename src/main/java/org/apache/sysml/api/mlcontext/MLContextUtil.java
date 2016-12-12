@@ -50,6 +50,7 @@ import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.parser.ParseException;
+import org.apache.sysml.parser.Statement;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
@@ -307,12 +308,38 @@ public final class MLContextUtil {
 	}
 
 	/**
+	 * Obtain the SystemML scalar value type string equivalent of an accepted
+	 * basic type (Integer, Boolean, Double, String)
+	 * 
+	 * @param object
+	 *            the object type to be examined
+	 * @return a String representing the type as a SystemML scalar value type
+	 */
+	public static String getBasicTypeString(Object object) {
+		if (!isBasicType(object)) {
+			throw new MLContextException("Type (" + object.getClass() + ") not a recognized basic type");
+		}
+		Class<? extends Object> clazz = object.getClass();
+		if (clazz.equals(Integer.class)) {
+			return Statement.INT_VALUE_TYPE;
+		} else if (clazz.equals(Boolean.class)) {
+			return Statement.BOOLEAN_VALUE_TYPE;
+		} else if (clazz.equals(Double.class)) {
+			return Statement.DOUBLE_VALUE_TYPE;
+		} else if (clazz.equals(String.class)) {
+			return Statement.STRING_VALUE_TYPE;
+		} else {
+			return null;
+		}
+	}
+
+	/**
 	 * Is the object one of the supported complex data types? (JavaRDD, RDD,
 	 * DataFrame, BinaryBlockMatrix, Matrix, double[][], MatrixBlock, URL)
 	 * 
 	 * @param object
 	 *            the object type to be examined
-	 * @return {@code true} if type is a complexe data type; otherwise
+	 * @return {@code true} if type is a complex data type; otherwise
 	 *         {@code false}.
 	 */
 	public static boolean isComplexType(Object object) {

@@ -31,10 +31,6 @@ public abstract class PRNGenerator
 	public PRNGenerator() {
 		seed = -1;
 	}
-	
-	public PRNGenerator(long sd) {
-		seed = sd;
-	}
-	
+
 	public abstract double nextDouble() ;
 }

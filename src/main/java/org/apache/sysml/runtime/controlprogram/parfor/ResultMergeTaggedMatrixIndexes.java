@@ -46,13 +46,7 @@ public class ResultMergeTaggedMatrixIndexes implements WritableComparable<Result
 	{
 		_ix = new MatrixIndexes();
 	}
-	
-	public ResultMergeTaggedMatrixIndexes(long r, long c, byte tag)
-	{
-		_ix = new MatrixIndexes(r, c);
-		_tag = tag;
-	}
-	
+
 	public MatrixIndexes getIndexes()
 	{
 		return _ix;

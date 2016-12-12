@@ -64,10 +64,6 @@ public class BinAgent extends Encoder
 	private double[][] _binMins = null;
 	private double[][] _binMaxs = null;
 	
-	public BinAgent(int clen) {
-		super( null, clen );
-	}
-	
 	public BinAgent(JSONObject parsedSpec, String[] colnames, int clen) 
 		throws JSONException, IOException 
 	{

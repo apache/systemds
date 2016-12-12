@@ -43,19 +43,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	private ConvolutionOp() {
 		//default constructor for clone
 	}
-	
-	public ConvolutionOp(String l, DataType dt, ValueType vt, ConvOp o, Hop inp)
-	{
-		super(l, dt, vt);
-		op = o;
-		getInput().add(0, inp);
-		inp.getParent().add(this);
-		
-		//compute unknown dims and nnz
-		refreshSizeInformation();
-	}
-	
-	
+
 	public ConvolutionOp(String l, DataType dt, ValueType vt, ConvOp o, ArrayList<Hop> inp) 
 	{
 		super(l, dt, vt);

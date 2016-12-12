@@ -47,11 +47,7 @@ public final class MatrixIndexingCPFileInstruction extends IndexingCPInstruction
 	public MatrixIndexingCPFileInstruction(Operator op, CPOperand in, CPOperand rl, CPOperand ru, CPOperand cl, CPOperand cu, CPOperand out, String opcode, String istr) {
 		super( op, in, rl, ru, cl, cu, out, opcode, istr );
 	}
-	
-	public MatrixIndexingCPFileInstruction(Operator op, CPOperand lhsInput, CPOperand rhsInput, CPOperand rl, CPOperand ru, CPOperand cl, CPOperand cu, CPOperand out, String opcode, String istr) {
-		super( op, lhsInput, rhsInput, rl, ru, cl, cu, out, opcode, istr);
-	}
-	
+
 	public static MatrixIndexingCPFileInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{		

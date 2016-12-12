@@ -68,12 +68,7 @@ public class Unary extends Lop
 		super(Lop.Type.UNARY, dt, vt);
 		init(input1, input2, op, dt, vt, et);
 	}
-	
-	public Unary(Lop input1, Lop input2, OperationTypes op, DataType dt, ValueType vt) {
-		super(Lop.Type.UNARY, dt, vt);
-		init(input1, input2, op, dt, vt, ExecType.MR);
-	}
-	
+
 	private void init(Lop input1, Lop input2, OperationTypes op, DataType dt, ValueType vt, ExecType et) {
 		operation = op;
 
@@ -127,14 +122,7 @@ public class Unary extends Lop
 		init(input1, op, dt, vt, et);
 		_numThreads = numThreads;
 	}
-	
-	public Unary(Lop input1, OperationTypes op, DataType dt, ValueType vt) 
-		throws LopsException 
-	{
-		super(Lop.Type.UNARY, dt, vt);
-		init(input1, op, dt, vt, ExecType.MR);
-	}
-	
+
 	private void init(Lop input1, OperationTypes op, DataType dt, ValueType vt, ExecType et) 
 		throws LopsException 
 	{

@@ -60,10 +60,6 @@ public class WriteSPInstruction extends SPInstruction
 	//scalars might occur for transform
 	// TODO remove once transform over frames supported
 	private boolean isInputMatrixBlock = true; 
-	
-	public WriteSPInstruction(String opcode, String istr) {
-		super(opcode, istr);
-	}
 
 	public WriteSPInstruction(CPOperand in1, CPOperand in2, CPOperand in3, String opcode, String str) {
 		super(opcode, str);

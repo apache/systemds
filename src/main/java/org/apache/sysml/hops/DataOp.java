@@ -144,23 +144,6 @@ public class DataOp extends Hop
 			setInputFormatType(FileFormatTypes.BINARY);
 	}
 	
-	// CHECKPOINT operation
-	// This constructor does not support any expression in parameters
-	public DataOp(String l, DataType dt, ValueType vt, Hop in,
-			LiteralOp level, DataOpTypes dop, String fname) {
-		super(l, dt, vt);
-		_dataop = dop;
-		getInput().add(0, in);
-		getInput().add(1, level);
-		in.getParent().add(this);
-		level.getParent().add(this);
-		_fileName = fname;
-
-		if (dop == DataOpTypes.TRANSIENTWRITE || dop == DataOpTypes.FUNCTIONOUTPUT )
-			setInputFormatType(FileFormatTypes.BINARY);
-	}
-	
-	
 	/**
 	 *  WRITE operation for Matrix
 	 *  This constructor supports expression in parameters

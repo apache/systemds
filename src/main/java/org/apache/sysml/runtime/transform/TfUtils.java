@@ -174,16 +174,7 @@ public class TfUtils implements Serializable{
 		init (headerLine, hasHeader, delim, naStrings, spec, ncol, offsetFile, tmpPath, null);
 		_tfMtdDir = tfMtdDir;
 	}
-	
-	//called from cp frame transformapply
-	public TfUtils(JSONObject spec, long inNcol) 
-		throws IOException, JSONException 
-	{
-		//TODO recodemaps handover
-		_numInputCols = (int)inNcol;
-		createAgents(spec, new String[]{});
-	}
-	
+
 	protected static boolean checkValidInputFile(FileSystem fs, Path path, boolean err)
 			throws IOException {
 		// check non-existing file

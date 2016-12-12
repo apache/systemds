@@ -103,11 +103,6 @@ public class SparkExecutionContext extends ExecutionContext
 				  .setLevel((Level) Level.DEBUG);
 		}
 	}
-	
-	protected SparkExecutionContext(Program prog) {
-		//protected constructor to force use of ExecutionContextFactory
-		this( true, prog );
-	}
 
 	protected SparkExecutionContext(boolean allocateVars, Program prog) 
 	{

@@ -39,12 +39,7 @@ public class NormalPRNGenerator extends PRNGenerator
 	public NormalPRNGenerator() {
 		super();
 	}
-	
-	public NormalPRNGenerator(long sd) {
-		super();
-		setSeed(sd);
-	}
-	
+
 	/*public NormalPRNGenerator(Random random) {
 		init(random);
 	}*/

@@ -19,14 +19,12 @@
 
 package org.apache.sysml.parser;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.debug.DMLBreakpointManager;
 import org.apache.sysml.parser.Expression.DataOp;
 
- 
 public class OutputStatement extends Statement
 {
 		
@@ -57,63 +55,7 @@ public class OutputStatement extends Statement
 		_paramsExpr = new DataExpression(op, new HashMap<String,Expression>(),
 				filename, blp, bcp, elp, ecp);
 	}
-	
-	/**
-	 * Called by the parser.
-	 * 
-	 * @param fname function name
-	 * @param fci function call identifier
-	 * @param filename file name
-	 * @param blp beginning line position
-	 * @param bcp beginning column position
-	 * @param elp ending line position
-	 * @param ecp ending column position
-	 * @throws LanguageException if LanguageException occurs
-	 */
-	public OutputStatement(String fname, FunctionCallIdentifier fci, 
-			String filename, int blp, int bcp, int elp, int ecp) 
-		throws LanguageException 
-	{		
-		setAllPositions(filename, blp, bcp, elp, ecp);
-		DataOp op = Expression.DataOp.WRITE;
-		ArrayList<ParameterExpression> passedExprs = fci.getParamExprs();
-		_paramsExpr = new DataExpression(op, new HashMap<String,Expression>(),
-				filename, blp, bcp, elp, ecp);
-		
-		//check number parameters and proceed only if this will not cause errors
-		if (passedExprs.size() < 2)
-			raiseValidateError("write method must specify both variable to write to file, and filename to write variable to");
-		else
-		{
-			ParameterExpression firstParam = passedExprs.get(0);
-			if (firstParam.getName() != null || (!(firstParam.getExpr() instanceof DataIdentifier)))
-				raiseValidateError("first argument to write method must be name of variable to be written out");
-			else
-				_id = (DataIdentifier)firstParam.getExpr();
-			
-			ParameterExpression secondParam = passedExprs.get(1);
-			if (secondParam.getName() != null || (secondParam.getName() != null && secondParam.getName().equals(DataExpression.IO_FILENAME)))
-				raiseValidateError("second argument to write method must be filename of file variable written to");
-			else
-				addExprParam(DataExpression.IO_FILENAME, secondParam.getExpr(), false);
-				
-			for (int i = 2; i< passedExprs.size(); i++){
-				ParameterExpression currParam = passedExprs.get(i);
-				addExprParam(currParam.getName(), currParam.getExpr(), false);
-			}
-			if (fname.equals("writeMM")){
-				StringIdentifier writeMMExpr = new StringIdentifier(DataExpression.FORMAT_TYPE_VALUE_MATRIXMARKET,
-						this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-				addExprParam(DataExpression.FORMAT_TYPE, writeMMExpr, false);
-			}
-			else if (fname.equals("write.csv")){
-				StringIdentifier delimitedExpr = new StringIdentifier(DataExpression.FORMAT_TYPE_VALUE_CSV,
-						this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-				addExprParam(DataExpression.FORMAT_TYPE, delimitedExpr, false);
-			}
-		}
-	}
-	
+
 	public void setExprParam(String name, Expression value) {
 		_paramsExpr.addVarParam(name, value);
 	}

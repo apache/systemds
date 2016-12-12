@@ -613,13 +613,6 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		public CompressionStatistics() {
 			//do nothing
 		}
-		
-		public CompressionStatistics(double t1, double t2, double t3, double t4){
-			timePhase1 = t1;
-			timePhase2 = t2;
-			timePhase3 = t3;
-			timePhase4 = t4;
-		}
 	} 
 
 	@Override

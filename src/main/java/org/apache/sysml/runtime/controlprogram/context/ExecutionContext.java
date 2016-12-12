@@ -74,19 +74,6 @@ public class ExecutionContext
 		//protected constructor to force use of ExecutionContextFactory
 		this( true, null );
 	}
-	
-	protected ExecutionContext(Program prog)
-	{
-		//protected constructor to force use of ExecutionContextFactory
-		this( true, prog );
-	}
-	
-	protected ExecutionContext(LocalVariableMap vars)
-	{
-		//protected constructor to force use of ExecutionContextFactory
-		this( false, null);
-		_variables = vars;
-	}
 
 	protected ExecutionContext( boolean allocateVariableMap, Program prog )
 	{

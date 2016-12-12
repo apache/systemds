@@ -37,12 +37,7 @@ public class NumItemsByEachReducerMetaData extends MatrixDimensionsMetaData
 		partitionOfZero=part0;
 		numberOfZero=num0;
 	}
-	
-	public NumItemsByEachReducerMetaData(MatrixCharacteristics mc, long[] nums) {
-		super(mc);
-		numItems=nums;
-	}
-	
+
 	public long[] getNumItemsArray()
 	{
 		return numItems;

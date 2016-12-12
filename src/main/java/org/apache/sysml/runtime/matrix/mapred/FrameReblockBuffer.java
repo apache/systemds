@@ -51,11 +51,6 @@ public class FrameReblockBuffer
 	
 	private ValueType[] _schema;
 
-	public FrameReblockBuffer( long rlen, long clen, ValueType[] schema )
-	{
-		this( DEFAULT_BUFFER_SIZE, rlen, clen, schema );
-	}
-
 	public FrameReblockBuffer( int buffersize,  long rlen, long clen, ValueType[] schema )
 	{
 		_bufflen = buffersize;

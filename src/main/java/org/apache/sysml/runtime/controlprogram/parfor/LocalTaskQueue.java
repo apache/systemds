@@ -106,18 +106,6 @@ public class LocalTaskQueue<T>
 		_closedInput = true;
 		notifyAll(); //notify all waiting readers
 	}
-	
-	/**
-	 * Synchronized read of the current number of tasks in the queue.
-	 * 
-	 * @return number of tasks in queue
-	 * @throws InterruptedException if InterruptedException occurs
-	 */
-	public synchronized int size()
-		throws InterruptedException
-	{
-		return _data.size();
-	}
 
 	@Override
 	public synchronized String toString() 

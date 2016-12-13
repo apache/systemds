@@ -154,19 +154,7 @@ public class DebugState
 			return null;
 		return callStack.pop();		
 	}
-	
-	/**
-	 * Get stack frame at indicated location (if any)
-	 * @param location Frame position in call stack
-	 * @return Stack frame at specified location
-	 */
-	protected DMLFrame getFrame(int location) {
-		if (location < 0 || location >= callStack.size()) {
-			return null;
-		}
-		return callStack.elementAt(location);
-	}
-	
+
 	/**
 	 * Get current call stack (if any) 
 	 * @return Stack callStack 

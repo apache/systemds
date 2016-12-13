@@ -50,7 +50,6 @@ import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyze
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.spark.CheckpointSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.SPInstruction;
-import org.apache.sysml.runtime.instructions.spark.data.BlockPartitioner;
 import org.apache.sysml.runtime.instructions.spark.data.BroadcastObject;
 import org.apache.sysml.runtime.instructions.spark.data.LineageObject;
 import org.apache.sysml.runtime.instructions.spark.data.PartitionedBlock;
@@ -610,17 +609,6 @@ public class SparkExecutionContext extends ExecutionContext
 		return bret;
 	}
 
-	public BlockPartitioner getPartitionerForRDDVariable(String varname) 
-		throws DMLRuntimeException
-	{
-		//get input rdd and matrix characteristics
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in = getBinaryBlockRDDHandleForVariable(varname);
-		MatrixCharacteristics mc = getMatrixCharacteristics(varname);
-		
-		//create tile-based matrix partitioner
-		return new BlockPartitioner(mc, in.partitions().size());
-	}
-	
 	/**
 	 * Keep the output rdd of spark rdd operations as meta data of matrix/frame 
 	 * objects in the symbol table.

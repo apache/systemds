@@ -70,10 +70,6 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator
 		_sampleRows = sampleRows;
 	}
 
-	public void resampleRows(int sampleSize) {
-		_sampleRows = getSortedUniformSample(_numRows, sampleSize);
-	}
-
 	@Override
 	public CompressedSizeInfo estimateCompressedColGroupSize(int[] colIndexes) 
 	{

@@ -88,28 +88,7 @@ public class LocalFileUtils
 	public static MatrixBlock readMatrixBlockFromLocal(String filePathAndName, MatrixBlock reuse) throws IOException {
 		return (MatrixBlock) readWritableFromLocal(filePathAndName, reuse);
 	}
-	
-	/** Reads a frame block from local file system.
-	 * 
-	 * @param filePathAndName file to read
-	 * @return frame block
-	 * @throws IOException if IOException occurs
-	 */
-	public static FrameBlock readFrameBlockFromLocal(String filePathAndName) throws IOException {
-		return (FrameBlock) readWritableFromLocal(filePathAndName, new FrameBlock());
-	}
-	
-	/** Reads a frame block from local file system.
-	 * 
-	 * @param filePathAndName file to read
-	 * @param reuse frame block to reuse
-	 * @return frame block
-	 * @throws IOException if IOException occurs
-	 */
-	public static FrameBlock readFrameBlockFromLocal(String filePathAndName, FrameBlock reuse) throws IOException {
-		return (FrameBlock) readWritableFromLocal(filePathAndName, reuse);
-	}
-	
+
 	/** Reads a matrix/frame block from local file system.
 	 * 
 	 * @param filePathAndName file to read
@@ -157,17 +136,7 @@ public class LocalFileUtils
 	public static void writeMatrixBlockToLocal(String filePathAndName, MatrixBlock mb) throws IOException {
 		writeWritableToLocal(filePathAndName, mb);
 	}
-	
-	/** Writes a matrix block to local file system.
-	 * 
-	 * @param filePathAndName file to write
-	 * @param fb frame block
-	 * @throws IOException if IOException occurs
-	 */
-	public static void writeFrameBlockToLocal(String filePathAndName, FrameBlock fb) throws IOException {
-		writeWritableToLocal(filePathAndName, fb);
-	}
-	
+
 	/** Writes a matrix/frame block to local file system.
 	 * 
 	 * @param filePathAndName file to write
@@ -431,14 +400,6 @@ public class LocalFileUtils
 		count += dir.delete() ? 1 : 0;
 		
 		return count;
-	}
-
-	public static String getWorkingDir() 
-		throws DMLRuntimeException
-	{
-		if( _workingDir == null )
-			createWorkingDirectory();
-		return _workingDir;
 	}
 
 	public static String getWorkingDir( String category ) 

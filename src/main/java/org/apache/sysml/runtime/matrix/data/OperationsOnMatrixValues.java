@@ -58,13 +58,7 @@ public class OperationsOnMatrixValues
 	{
 		valueIn.unaryOperations(op, valueOut);
 	}
-	
-	public static void performUnaryIgnoreIndexesInPlace(MatrixValue valueIn, UnaryOperator op) 
-		throws DMLRuntimeException
-	{
-		valueIn.unaryOperationsInPlace(op);
-	}
-	
+
 	public static void performReorg(MatrixIndexes indexesIn, MatrixValue valueIn, MatrixIndexes indexesOut, 
 			         MatrixValue valueOut, ReorgOperator op, int startRow, int startColumn, int length) 
 		throws DMLRuntimeException

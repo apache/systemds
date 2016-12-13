@@ -981,27 +981,7 @@ public class VariableCPInstruction extends CPInstruction
 	public static Instruction prepareCreateMatrixVariableInstruction(String varName, String fileName, boolean fNameOverride, String format) throws DMLRuntimeException {
 		return parseInstruction(getBasicCreateVarString(varName, fileName, fNameOverride, DataType.MATRIX, format));
 	}
-	
-	public static Instruction prepareCreateVariableInstruction(String varName, String fileName, boolean fNameOverride, DataType dt, String format, MatrixCharacteristics mc) throws DMLRuntimeException {
-		StringBuilder sb = new StringBuilder();
-		sb.append(getBasicCreateVarString(varName, fileName, fNameOverride, dt, format));
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(mc.getRows());
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(mc.getCols());
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(mc.getRowsPerBlock());
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(mc.getColsPerBlock());
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(mc.getNonZeros());
-		
-		String str = sb.toString();
 
-		return parseInstruction(str);
-	}	
-	
 	public static Instruction prepareCreateVariableInstruction(String varName, String fileName, boolean fNameOverride, DataType dt, String format, MatrixCharacteristics mc, UpdateType update) throws DMLRuntimeException {
 		StringBuilder sb = new StringBuilder();
 		sb.append(getBasicCreateVarString(varName, fileName, fNameOverride, dt, format));

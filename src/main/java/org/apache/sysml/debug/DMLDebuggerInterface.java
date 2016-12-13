@@ -179,12 +179,6 @@ public class DMLDebuggerInterface
 		System.out.flush();
 	}
 	
-	public void writeToStandardError(String errStr) {
-		System.err.print(errStr);
-		System.err.flush();
-	}
-
-	
 	public void writelnToStandardError(String errStr) {
 		System.err.println(errStr);
 		System.err.flush();

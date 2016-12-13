@@ -20,11 +20,9 @@
 package org.apache.sysml.runtime.instructions.spark;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.functionobjects.Not;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.matrix.operators.Operator;
-import org.apache.sysml.runtime.matrix.operators.SimpleOperator;
 
 public abstract class UnarySPInstruction extends ComputationSPInstruction
 {
@@ -89,13 +87,5 @@ public abstract class UnarySPInstruction extends ComputationSPInstruction
 			throw new DMLRuntimeException("Unexpected number of operands in the instruction: " + instr);
 		}
 		return opcode;
-	}
-	
-	static SimpleOperator getSimpleUnaryOperator(String opcode)
-			throws DMLRuntimeException {
-		if (opcode.equalsIgnoreCase("!"))
-			return new SimpleOperator(Not.getNotFnObject());
-
-		throw new DMLRuntimeException("Unknown unary operator " + opcode);
 	}
 }

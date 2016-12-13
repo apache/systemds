@@ -132,13 +132,6 @@ public class PartialAggregator extends MMCJMRCache
 		return nonZeros;
 	}
 
-	public void close() 
-		throws IOException
-	{
-		if( !memOnly )
-			super.deleteAllWorkingFiles();
-	}
-
 	private void aggregateToBufferHelp(MatrixIndexes indexes, MatrixValue value, boolean leftcached) 
 		throws DMLRuntimeException 
 	{

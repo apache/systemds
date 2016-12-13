@@ -323,23 +323,6 @@ public class ProgramConverter
 		return tmpPB;
 	}
 
-	public static ForProgramBlock createShallowCopyParForProgramBlock(ParForProgramBlock pfpb, Program prog ) 
-		throws DMLRuntimeException
-	{
-		ParForProgramBlock tmpPB = new ParForProgramBlock(prog,pfpb.getIterablePredicateVars(),pfpb.getParForParams());
-		
-		tmpPB.setStatementBlock( pfpb.getStatementBlock() );
-		tmpPB.setResultVariables( pfpb.getResultVariables() );
-		
-		tmpPB.setFromInstructions( pfpb.getFromInstructions() );
-		tmpPB.setToInstructions( pfpb.getToInstructions() );
-		tmpPB.setIncrementInstructions( pfpb.getIncrementInstructions() );
-		tmpPB.setExitInstructions( pfpb.getExitInstructions() );
-		tmpPB.setChildBlocks( pfpb.getChildBlocks() );
-		
-		return tmpPB;
-	}
-
 	public static ParForProgramBlock createDeepCopyParForProgramBlock(ParForProgramBlock pfpb, long pid, int IDPrefix, Program prog, HashSet<String> fnStack, HashSet<String> fnCreated, boolean plain, boolean forceDeepCopy) 
 		throws DMLRuntimeException
 	{

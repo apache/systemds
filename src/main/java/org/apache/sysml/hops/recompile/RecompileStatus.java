@@ -19,10 +19,8 @@
 
 package org.apache.sysml.hops.recompile;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 
-import org.apache.sysml.parser.VariableSet;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 
 public class RecompileStatus 
@@ -39,20 +37,7 @@ public class RecompileStatus
 	{
 		return _lastTWrites;
 	}
-	
-	public void clearStatus()
-	{
-		_lastTWrites.clear();
-	}
-	
-	public void clearStatus(VariableSet vars)
-	{
-		ArrayList<String> lvars = new ArrayList<String>(vars.getVariableNames());
-		for( String var : lvars ) {
-			_lastTWrites.remove(var);
-		}
-	}
-	
+
 	@Override
 	public Object clone()
 	{

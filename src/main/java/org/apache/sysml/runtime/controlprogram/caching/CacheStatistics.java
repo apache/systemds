@@ -51,7 +51,6 @@ public class CacheStatistics
 	}
 	
 	//hit statistics (for acquire read)
-	private static AtomicLong _numHitsTotal  = null;
 	private static AtomicLong _numHitsMem    = null;
 	private static AtomicLong _numHitsFSBuff = null;
 	private static AtomicLong _numHitsFS     = null;
@@ -75,7 +74,6 @@ public class CacheStatistics
 	
 	public static void reset()
 	{
-		_numHitsTotal = new AtomicLong(0);
 		_numHitsMem = new AtomicLong(0);
 		_numHitsFSBuff = new AtomicLong(0);
 		_numHitsFS = new AtomicLong(0);
@@ -90,22 +88,7 @@ public class CacheStatistics
 		_ctimeRelease = new AtomicLong(0);
 		_ctimeExport = new AtomicLong(0);
 	}
-	
-	public static void incrementTotalHits()
-	{
-		_numHitsTotal.incrementAndGet();
-	}
-	
-	public static void incrementTotalHits(int delta)
-	{
-		_numHitsTotal.addAndGet(delta);
-	}
-	
-	public static long getTotalHits()
-	{
-		return _numHitsTotal.get();
-	}
-	
+
 	public static void incrementMemHits()
 	{
 		_numHitsMem.incrementAndGet();

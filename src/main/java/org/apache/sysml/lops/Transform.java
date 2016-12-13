@@ -272,30 +272,4 @@ public class Transform extends Lop
 		
 		return sb.toString();
 	}
-
-	public static Transform constructTransformLop(Lop input1, OperationTypes op, DataType dt, ValueType vt) {
-		
-		for (Lop lop  : input1.getOutputs()) {
-			if ( lop.type == Lop.Type.Transform ) {
-				return (Transform)lop;
-			}
-		}
-		Transform retVal = new Transform(input1, op, dt, vt);
-		retVal.setAllPositions(input1.getBeginLine(), input1.getBeginColumn(), input1.getEndLine(), input1.getEndColumn());
-		return retVal;
-	}
-
-	public static Transform constructTransformLop(Lop input1, OperationTypes op, DataType dt, ValueType vt, ExecType et) {
-		
-		for (Lop lop  : input1.getOutputs()) {
-			if ( lop.type == Lop.Type.Transform ) {
-				return (Transform)lop;
-			}
-		}
-		Transform retVal = new  Transform(input1, op, dt, vt, et);
-		retVal.setAllPositions(input1.getBeginLine(), input1.getBeginColumn(), input1.getEndLine(), input1.getEndColumn());
-		return retVal; 
-	}
-
- 
 }

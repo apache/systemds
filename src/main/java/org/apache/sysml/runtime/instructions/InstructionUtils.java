@@ -212,13 +212,7 @@ public class InstructionUtils
 		Builtin.BuiltinCode bfc = Builtin.String2BuiltinCode.get(opcode);
 		return (bfc != null);
 	}
-	
-	public static boolean isOperand(String str) {
-		//note: split required for empty tokens
-		String[] parts = str.split(Instruction.DATATYPE_PREFIX);
-		return (parts.length > 1);
-	}
-	
+
 	/**
 	 * Evaluates if at least one instruction of the given instruction set
 	 * used the distributed cache; this call can also be used for individual
@@ -425,22 +419,6 @@ public class InstructionUtils
 		}
 
 		return agg;
-	}
-
-	public static AggregateUnaryOperator parseCumulativeAggregateUnaryOperator(UnaryOperator uop)
-	{
-		Builtin f = (Builtin)uop.fn;
-		
-		if( f.getBuiltinCode()==BuiltinCode.CUMSUM ) 
-			return parseCumulativeAggregateUnaryOperator("ucumack+") ;
-		else if( f.getBuiltinCode()==BuiltinCode.CUMPROD ) 
-			return parseCumulativeAggregateUnaryOperator("ucumac*") ;
-		else if( f.getBuiltinCode()==BuiltinCode.CUMMIN ) 
-			return parseCumulativeAggregateUnaryOperator("ucumacmin") ;
-		else if( f.getBuiltinCode()==BuiltinCode.CUMMAX ) 
-			return parseCumulativeAggregateUnaryOperator("ucumacmax" ) ;
-		
-		throw new RuntimeException("Unsupported cumulative aggregate unary operator: "+f.getBuiltinCode());
 	}
 
 	public static AggregateUnaryOperator parseBasicCumulativeAggregateUnaryOperator(UnaryOperator uop)

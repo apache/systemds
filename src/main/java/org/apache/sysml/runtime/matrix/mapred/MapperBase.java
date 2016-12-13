@@ -40,7 +40,6 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.MatrixValue;
 import org.apache.sysml.runtime.matrix.data.Pair;
-import org.apache.sysml.runtime.matrix.data.TaggedMatrixValue;
 
 @SuppressWarnings("rawtypes")
 public abstract class MapperBase extends MRBaseForCommonInstructions
@@ -397,31 +396,5 @@ public abstract class MapperBase extends MRBaseForCommonInstructions
 		} catch (Exception e) {
 			throw new IOException(e);
 		}
-	}
-	
-	protected void processMapOutputToReducer(int index, MatrixIndexes indexBuffer, 
-			TaggedMatrixValue taggedValueBuffer, OutputCollector<Writable, Writable> out) throws IOException
-	{
-			
-		for(byte output: outputIndexes.get(index))
-		{
-			ArrayList<IndexedMatrixValue> results= cachedValues.get(output);
-			if(results==null)
-				continue;
-			for(IndexedMatrixValue result: results)
-			{
-				if(result==null)
-					continue;
-				indexBuffer.setIndexes(result.getIndexes());
-				////////////////////////////////////////
-			//	taggedValueBuffer.getBaseObject().copy(result.getValue());
-				taggedValueBuffer.setBaseObject(result.getValue());
-				////////////////////////////////////////
-				taggedValueBuffer.setTag(output);
-				out.collect(indexBuffer, taggedValueBuffer);
-			//	System.out.println("map output: "+indexBuffer+"\n"+taggedValueBuffer);
-			}
-			
-		}	
 	}
 }

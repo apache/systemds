@@ -39,12 +39,4 @@ public class TaggedMatrixValue extends Tagged<MatrixValue>
 		else
 			return new TaggedMatrixBlock();
 	}
-	
-	public static  TaggedMatrixValue createObject(MatrixValue b, byte t)
-	{
-		if(b instanceof MatrixCell)
-			return new TaggedMatrixCell((MatrixCell)b, t);
-		else
-			return new TaggedMatrixBlock((MatrixBlock)b, t);
-	}
 }

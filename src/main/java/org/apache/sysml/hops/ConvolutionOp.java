@@ -119,51 +119,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	public void setOp(ConvOp op) {
 		this.op = op;
 	}
-	
-	public static Lop constructFusedConvolutionLops(ExecType et, 
-			ArrayList<Hop> inputs, 
-			ConvOp op, ConvolutionOp primaryOp,
-			long rlen, long clen) throws HopsException, LopsException {
-		int expectedNumInputs = 13;
-		if(op == ConvOp.MAX_POOLING_BACKWARD 
-				|| op == ConvOp.DIRECT_CONV2D 
-				|| op == ConvOp.DIRECT_CONV2D_BACKWARD_FILTER
-				|| op == ConvOp.DIRECT_CONV2D_BACKWARD_DATA) {
-			expectedNumInputs = 14;
-		}
-		
-		if(inputs.size() != expectedNumInputs) {
-			throw new HopsException("Incorrect number of inputs for " + op.name());
-		}
-		
-		Lop in = inputs.get(0).constructLops();
-		int numThreads = et == ExecType.CP ? OptimizerUtils.getConstrainedNumThreads(primaryOp.getMaxNumThreads()) : 1;
-		ConvolutionTransform transform1 = new ConvolutionTransform( in, 
-				HopsConv2Lops.get(op), primaryOp.getDataType(), primaryOp.getValueType(), et, numThreads);
-		
-		// setOutputDimensions(transform1);
-		transform1.getOutputParameters().setDimensions(
-				rlen, clen, primaryOp.getRowsInBlock(), primaryOp.getColsInBlock(), -1, primaryOp.getUpdateType());
-		
-		// setLineNumbers(transform1);
-		transform1.setAllPositions(primaryOp.getBeginLine(), primaryOp.getBeginColumn(), primaryOp.getEndLine(), primaryOp.getEndColumn());
-		
-		in.addOutput(transform1);
-		
-		// stride1, stride2, padding1, padding2  
-		// input_shape1, input_shape2, input_shape3, input_shape4, 
-		// filter_shape1, filter_shape2, filter_shape3, filter_shape4
-		for( int i=1; i < inputs.size(); i++ )
-		{
-			Lop ltmp = inputs.get(i).constructLops();
-			transform1.addInput(ltmp);
-			//if(i == 1 && expectedNumInputs == 14)
-				ltmp.addOutput(transform1);
-		}
-		transform1.setLevel(); //force order of added lops
-		return transform1;
-	}
-	
+
 	public Lop constructConvolutionLops(ExecType et, ArrayList<Hop> inputs) throws HopsException, LopsException {
 		int expectedNumInputs = 13;
 		if(op == ConvOp.MAX_POOLING_BACKWARD 
@@ -383,14 +339,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		}
 		return params;
 	}
-	
-	long getExtractedVal(long val1, long val2) {
-		if(val1 == -1 || val2 == -1) {
-			return -1;
-		}
-		return val1*val2;
-	}
-	
+
 	public static long getExtractedVal(long val1, long val2, long val3) {
 		if(val1 == -1 || val2 == -1 || val3 == -1) {
 			return -1;

@@ -57,15 +57,7 @@ public class LocalParWorker extends ParWorker implements Runnable
 		_stopped   = false;
 		_max_retry = max_retry;
 	}
-	
-	/**
-	 * Sets the status to stopped such that execution will be aborted as soon as the
-	 * current task is finished.
-	 */
-	public void setStopped() {
-		_stopped = true;
-	}
-	
+
 	public void setFunctionNames(Collection<String> fnNames) {
 		_fnNames = fnNames;
 	}

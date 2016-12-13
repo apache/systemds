@@ -70,14 +70,7 @@ public class SparseRow implements Serializable
 		values = Arrays.copyOf(that.values, cap);
 		indexes = Arrays.copyOf(that.indexes, cap);
 	}
-	
-	public void truncate(int newsize)
-	{
-		if( newsize>size || newsize<0 )
-			throw new RuntimeException("truncate size: "+newsize+" should <= size: "+size+" and >=0");
-		size = newsize;
-	}
-	
+
 	public int size() {
 		return size;
 	}
@@ -289,16 +282,6 @@ public class SparseRow implements Serializable
 			return index;
 		else 
 			return -1;
-	}
-
-	public void delete(int col)
-	{
-		//search for existing col index
-		int index = Arrays.binarySearch(indexes, 0, size, col);
-		if( index >= 0 ) {
-			//shift following entries left by 1
-			shiftLeftAndDelete(index);
-		}
 	}
 
 	public void deleteIndexRange(int lowerCol, int upperCol)

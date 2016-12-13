@@ -33,7 +33,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
@@ -83,7 +82,6 @@ import org.apache.sysml.runtime.matrix.data.IdenticalConverter;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixCell;
-import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.MatrixValue;
 import org.apache.sysml.runtime.matrix.data.MultipleOutputCommitter;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
@@ -266,39 +264,7 @@ public class MRJobConfiguration
 	{
 		return job.getInt(MRConfigurationNames.IO_FILE_BUFFER_SIZE, 4096);
 	}
-	
-	public static final int getJVMMaxMemSize(JobConf job)
-	{
-		String str=job.get(MRConfigurationNames.MR_CHILD_JAVA_OPTS);
-		int start=str.indexOf("-Xmx");
-		if(start<0)
-			return 209715200; //default 200MB
-		str=str.substring(start+4);
-		int i=0;
-		for(; i<str.length() && str.charAt(i)<='9' && str.charAt(i)>='0'; i++);
-		int ret=Integer.parseInt(str.substring(0, i));
-		if(i>=str.length())
-			return ret;
-		
-		switch(str.charAt(i))
-		{
-		case 'k':
-		case 'K':
-			ret=ret*1024;
-			break;
-		case 'm':
-		case 'M':
-			ret=ret*1048576;
-			break;
-		case 'g':
-		case 'G':
-			ret=ret*1073741824;
-			break;
-			default:
-		}
-		return ret;
-	}
-	
+
 	public static void setMMCJCacheSize(JobConf job, long size)
 	{
 		job.setLong(MMCJ_CACHE_SIZE, size);
@@ -447,13 +413,6 @@ public class MRJobConfiguration
 		return job.get(MRConfigurationNames.MR_JOBTRACKER_STAGING_ROOT_DIR);
 	}
 
-	public static void setStagingDir( JobConf job )
-	{
-		String dir = DMLConfig.LOCAL_MR_MODE_STAGING_DIR + 
-		             Lop.FILE_SEPARATOR + Lop.PROCESS_PREFIX + DMLScript.getUUID() + Lop.FILE_SEPARATOR;
-		job.set( MRConfigurationNames.MR_JOBTRACKER_STAGING_ROOT_DIR, dir );
-	}
-
 	public static void setInputInfo(JobConf job, byte input, InputInfo inputinfo, 
 			int brlen, int bclen, ConvertTarget target)
 	{
@@ -522,21 +481,7 @@ public class MRJobConfiguration
 		} 
 		return outputConverter;
 	}
-	
-	@SuppressWarnings("unchecked")
-	public static Class<Writable> getInputKeyClass(JobConf job, byte input)
-	{
-		return (Class<Writable>) job.getClass(INPUT_KEY_CLASS_PREFIX_CONFIG+input, 
-				MatrixIndexes.class);
-	}
-	
-	@SuppressWarnings("unchecked")
-	public static Class<Writable> getInputValueClass(JobConf job, byte input)
-	{
-		return (Class<Writable>) job.getClass(INPUT_VALUE_CLASS_PREFIX_CONFIG+input, 
-				DoubleWritable.class);
-	}
-	
+
 	public static MRInstruction[] getInstructionsInReducer(JobConf job) throws DMLRuntimeException
 	{
 		String str=job.get(INSTRUCTIONS_IN_REDUCER_CONFIG);
@@ -756,12 +701,7 @@ public class MRJobConfiguration
 	{
 		return InputInfo.stringToInputInfo( job.get(RESULTMERGE_INPUT_INFO_CONFIG) );
 	}
-	
-	public static String getResultMergeStagingDir( JobConf job )
-	{
-		return job.get(RESULTMERGE_STAGING_DIR_CONFIG) + job.get(MRConfigurationNames.MR_TASK_ID);
-	}
-	
+
 	public static long[] getResultMergeMatrixCharacteristics( JobConf job )
 	{
 		long[] ret = new long[4];
@@ -1039,12 +979,7 @@ public class MRJobConfiguration
 	{
 		return job.getLong(INPUT_MATRIX_NUM_NNZ_PREFIX_CONFIG+matrixIndex, 1);
 	}
-	
-	public static void handleRecordReaderInstrucion(JobConf job, String recordReaderInstruction, String[] inputs, InputInfo[] inputInfos)
-	{
-		//do nothing, not used currently
-	}
-	
+
 	public static void setupDistCacheInputs(JobConf job, String indices, String pathsString, ArrayList<String> paths) {
 		job.set(DISTCACHE_INPUT_INDICES, indices);
 		job.set(DISTCACHE_INPUT_PATHS, pathsString);
@@ -1061,11 +996,7 @@ public class MRJobConfiguration
 	public static String getDistCacheInputIndices(JobConf job) {
 		return job.get(DISTCACHE_INPUT_INDICES);
 	}
-	
-	public static String getDistCacheInputPaths(JobConf job) {
-		return job.get(DISTCACHE_INPUT_PATHS);
-	}
-	
+
 	private static String getCSVString(PDataPartitionFormat[] formats) {
 		if ( formats == null || formats.length == 0 )
 			return "";
@@ -1228,12 +1159,7 @@ public class MRJobConfiguration
 			paths.add(p);
 		}
 	}
-	
-	
-	public static void updateResultDimsUnknown (JobConf job, byte[] updDimsUnknown) {
-		job.set(RESULT_DIMS_UNKNOWN_CONFIG, MRJobConfiguration.getIndexesString(updDimsUnknown));
-	}
-	
+
 	public static void setUpMultipleOutputs(JobConf job, byte[] resultIndexes, byte[] resultDimsUnknown, String[] outputs, 
 			OutputInfo[] outputInfos, boolean inBlockRepresentation, boolean mayContainCtable) 
 	throws Exception

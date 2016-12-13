@@ -37,10 +37,6 @@ public abstract class SparseBlockFactory
 		}
 	}
 
-	public static SparseBlock copySparseBlock( SparseBlock.Type type, SparseBlock sblock ) {
-		return copySparseBlock(type, sblock, false);
-	}
-
 	public static SparseBlock copySparseBlock( SparseBlock.Type type, SparseBlock sblock, boolean forceCopy )
 	{
 		//sanity check for empty inputs

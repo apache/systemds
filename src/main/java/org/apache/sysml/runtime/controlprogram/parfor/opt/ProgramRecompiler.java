@@ -25,15 +25,14 @@ import java.util.ArrayList;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.Hop;
+import org.apache.sysml.hops.Hop.VisitStatus;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.IndexingOp;
 import org.apache.sysml.hops.OptimizerUtils;
-import org.apache.sysml.hops.Hop.VisitStatus;
 import org.apache.sysml.hops.recompile.Recompiler;
-import org.apache.sysml.lops.LopProperties;
 import org.apache.sysml.lops.Lop;
+import org.apache.sysml.lops.LopProperties;
 import org.apache.sysml.lops.LopsException;
-import org.apache.sysml.lops.compile.Dag;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.DMLTranslator;
 import org.apache.sysml.parser.ForStatement;
@@ -47,13 +46,10 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.ForProgramBlock;
 import org.apache.sysml.runtime.controlprogram.IfProgramBlock;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
-import org.apache.sysml.runtime.controlprogram.ParForProgramBlock;
 import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.ProgramBlock;
 import org.apache.sysml.runtime.controlprogram.WhileProgramBlock;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
-import org.apache.sysml.runtime.controlprogram.parfor.opt.OptNode.NodeType;
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.cp.ArithmeticBinaryCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.Data;
@@ -486,157 +482,4 @@ public class ProgramRecompiler
 		
 		return tmp;
 	}
-	
-	
-	
-	
-	/////////////////////////////////
-	// experimental functionality
-	//////////
-
-	protected static void recompilePartialPlan( OptNode n ) 
-		throws DMLRuntimeException 
-	{
-		//NOTE: need to recompile complete programblock because (1) many to many relationships
-		//between hops and instructions and (2) due to changed internal variable names 
-		
-		try
-		{
-			//get parent program and statement block
-			OptTreePlanMappingAbstract map = OptTreeConverter.getAbstractPlanMapping();
-			long pid = map.getMappedParentID(n.getID());
-			Object[] o = map.getMappedProg(pid);
-			StatementBlock sbOld = (StatementBlock) o[0];
-			ProgramBlock pbOld = (ProgramBlock) o[1];
-			
-			//get changed node and set type appropriately
-			Hop hop = (Hop) map.getMappedHop(n.getID());
-			hop.setForcedExecType(n.getExecType().toLopsExecType()); 
-			hop.setLops(null); //to enable fresh construction
-		
-			//get all hops of statement and construct new instructions
-			Dag<Lop> dag = new Dag<Lop>();
-			for( Hop hops : sbOld.get_hops() )
-			{
-				hops.resetVisitStatus();
-				Recompiler.rClearLops(hops);
-				Lop lops = hops.constructLops();
-				lops.addToDag(dag);
-			}
-			
-			//construct new instructions
-			ArrayList<Instruction> newInst = dag.getJobs(sbOld, ConfigurationManager.getDMLConfig());
-			
-			
-			//exchange instructions
-			pbOld.getInstructions().clear();
-			pbOld.getInstructions().addAll(newInst);
-		}
-		catch(Exception ex)
-		{
-			throw new DMLRuntimeException(ex);
-		}
-	}
-
-	
-	/**
-	 * NOTE: need to recompile complete programblock because (1) many to many relationships
-	 * between hops and instructions and (2) due to changed internal variable names 
-	 * 
-	 * @param n internal representation of a plan alternative for program blocks and instructions
-	 * @return program block
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
-	 */
-	protected static ProgramBlock recompile( OptNode n ) 
-		throws DMLRuntimeException 
-	{
-		ProgramBlock pbNew = null;
-		
-		try
-		{
-			if( n.getNodeType() == NodeType.HOP )
-			{
-				//get parent program and statement block
-				OptTreePlanMappingAbstract map = OptTreeConverter.getAbstractPlanMapping();
-				long pid = map.getMappedParentID(n.getID());
-				Object[] o = map.getMappedProg(pid);
-				StatementBlock sbOld = (StatementBlock) o[0];
-				ProgramBlock pbOld = (ProgramBlock) o[1];
-				LopProperties.ExecType oldtype = null;
-				
-				//get changed node and set type appropriately
-				Hop hop = (Hop) map.getMappedHop(n.getID());
-				hop.setForcedExecType(n.getExecType().toLopsExecType()); 
-				hop.setLops(null); //to enable fresh construction
-			
-				//get all hops of statement and construct new lops
-				Dag<Lop> dag = new Dag<Lop>();
-				for( Hop hops : sbOld.get_hops() )
-				{
-					hops.resetVisitStatus();
-					Recompiler.rClearLops(hops);
-					Lop lops = hops.constructLops();
-					lops.addToDag(dag);
-				}
-				
-				//construct new instructions
-				ArrayList<Instruction> newInst = dag.getJobs(sbOld, ConfigurationManager.getDMLConfig());
-				
-				//exchange instructions
-				pbNew = new ProgramBlock(pbOld.getProgram());
-				pbNew.setInstructions(newInst);
-				
-				//reset type global repository
-				hop.setForcedExecType(oldtype);
-				
-			}
-			else if( n.getNodeType() == NodeType.PARFOR )
-			{	
-				//no recompilation required
-				OptTreePlanMappingAbstract map = OptTreeConverter.getAbstractPlanMapping();
-				ParForProgramBlock pb = (ParForProgramBlock)map.getMappedProg(n.getID())[1];
-				pbNew = ProgramConverter.createShallowCopyParForProgramBlock(pb, pb.getProgram());
-				((ParForProgramBlock)pbNew).setExecMode(n.getExecType().toParForExecMode());
-			}
-			else
-			{
-				throw new DMLRuntimeException("Unexpected node type.");
-			}
-		}
-		catch(Exception ex)
-		{
-			throw new DMLRuntimeException(ex);
-		}
-		
-		return pbNew;
-	}
-
-	protected static void exchangeProgram(long hlNodeID, ProgramBlock pbNew) 
-		throws DMLRuntimeException 
-	{
-		OptTreePlanMappingAbstract map = OptTreeConverter.getAbstractPlanMapping();
-		OptNode node = map.getOptNode(hlNodeID);
-		
-		if( node.getNodeType() == NodeType.HOP )
-		{
-			long pid = map.getMappedParentID(hlNodeID);
-			Object[] o = map.getMappedProg(pid);
-			ProgramBlock pbOld = (ProgramBlock) o[1];
-			
-			//exchange instructions (save version)
-			pbOld.getInstructions().clear();
-			pbOld.getInstructions().addAll( pbNew.getInstructions() );
-		}
-		else if( node.getNodeType() == NodeType.PARFOR )
-		{
-			ParForProgramBlock pbOld = (ParForProgramBlock) map.getMappedProg(node.getID())[1];
-			pbOld.setExecMode(((ParForProgramBlock)pbNew).getExecMode());
-			//TODO extend as required
-		}
-		else
-		{
-			throw new DMLRuntimeException("Unexpected node type: "+node.getNodeType());
-		}
-	}
-	
 }

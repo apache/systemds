@@ -909,13 +909,6 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 		throw new RuntimeException("Should never come here");
 	}
 
-	public void printMe() {
-		//System.out.println("***** INSTRUCTION BLOCK *****");
-		for (Instruction i : this._inst) {
-			i.printMe();
-		}
-	}
-	
 	public HashMap<String,String> getOtherParams() {
 		return _otherParams;
 	}
@@ -934,24 +927,6 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 	
 	private Collection<String> _skipInReblock = new HashSet<String>();
 	private Collection<String> _skipOutReblock = new HashSet<String>();
-	
-	public void setSkippedReblockLists( Collection<String> varsIn, Collection<String> varsOut )
-	{
-		_skipInReblock.clear();
-		_skipOutReblock.clear();
-		
-		if( varsIn!=null || varsOut!=null )
-		{
-			if( varsIn != null )
-				_skipInReblock.addAll(varsIn);		
-			if( varsOut != null )
-				_skipOutReblock.addAll(varsOut);
-		
-			 //regenerate instructions
-			createInstructions();
-		}
-	}
-	
 	
 	@Override
 	public ArrayList<Instruction> getInstructions()

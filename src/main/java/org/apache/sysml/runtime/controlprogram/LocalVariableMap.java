@@ -19,17 +19,15 @@
 
 package org.apache.sysml.runtime.controlprogram;
 
+import java.util.HashMap;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.StringTokenizer;
+
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysml.runtime.instructions.cp.Data;
-import org.apache.sysml.runtime.instructions.spark.data.LineageObject;
-
-import java.util.HashMap;
-import java.util.StringTokenizer;
-import java.util.Map.Entry;
-import java.util.Set;
 
 /**
  * Replaces <code>HashMap&lang;String, Data&rang;</code> as the table of
@@ -85,13 +83,6 @@ public class LocalVariableMap implements Cloneable
 		localMap.put( name, val );
 	}
 
-	public void putAll( LocalVariableMap vars )
-	{
-		if( vars == this || vars == null )
-			return;
-		localMap.putAll (vars.localMap);
-	}
-
 	public Data remove( String name )
 	{
 		return localMap.remove( name );
@@ -105,31 +96,6 @@ public class LocalVariableMap implements Cloneable
 	public boolean hasReferences( Data d )
 	{
 		return localMap.containsValue(d);
-	}
-
-	public boolean hasReferences( LineageObject bo )
-	{
-		for( Data tmpdat : localMap.values() ) 
-			if ( tmpdat instanceof MatrixObject ) {
-				MatrixObject mo = (MatrixObject)tmpdat; 
-				if( mo.getBroadcastHandle()==bo || mo.getRDDHandle()==bo )
-					return true;
-			}
-		return false;
-	}
-
-	public int getNumReferences( Data d, boolean earlyAbort )
-	{
-		if ( d == null )
-			return 0;
-		
-		int refCount = 0;		
-		for( Data tmpdat : localMap.values() ) 
-			if ( tmpdat == d ) 
-				if( ++refCount > 1 && earlyAbort )
-					return refCount;
-	
-		return refCount;		
 	}
 
 	public String serialize() 

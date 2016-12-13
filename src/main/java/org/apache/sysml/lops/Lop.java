@@ -627,10 +627,6 @@ public abstract class Lop
 	public String printErrorLocation(){
 		return "ERROR: line " + _beginLine + ", column " + _beginColumn + " -- ";
 	}
-	
-	public String printWarningLocation(){
-		return "WARNING: line " + _beginLine + ", column " + _beginColumn + " -- ";
-	}
 
 	//TODO: Leo This might get confused with Rand.getInstructions
 	public String getInstructions(String input, String rowl, String rowu,

@@ -79,11 +79,6 @@ public abstract class LiveVariableAnalysis
 	public abstract VariableSet initializebackwardLV(VariableSet loPassed) throws LanguageException;
 	public abstract VariableSet analyze(VariableSet loPassed) throws LanguageException;
 	
-	
-	public void updateLiveVariablesIn(VariableSet liveIn){
-		 updateLiveVariables(_liveIn,liveIn);
-	}
-	
 	public void updateLiveVariablesOut(VariableSet liveOut){
 		 updateLiveVariables(_liveOut,liveOut);
 	}

@@ -45,9 +45,5 @@ public class RandNPair
 	public void compute(Random r) {
 		compute(r.nextDouble(), r.nextDouble());
 	}
-	
-	public void compute(long seed) {
-		compute(new Random(seed));
-	}
 
 }

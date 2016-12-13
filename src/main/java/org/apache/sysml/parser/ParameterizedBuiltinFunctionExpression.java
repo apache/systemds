@@ -168,11 +168,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 	public void addVarParam(String name, Expression value){
 		_varParams.put(name, value);
 	}
-	
-	public void removeVarParam(String name) {
-		_varParams.remove(name);
-	}
-	
+
 	/**
 	 * Validate parse tree : Process BuiltinFunction Expression in an assignment
 	 * statement

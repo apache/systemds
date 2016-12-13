@@ -86,10 +86,6 @@ public abstract class CommonSyntacticValidator {
 		functions = (null != prepFunctions) ? prepFunctions : new HashSet<String>();
 	}
 
-	protected void notifyErrorListeners(String message, int line, int charPositionInLine) {
-		errorListener.validationError(line, charPositionInLine, message);
-	}
-
 	protected void notifyErrorListeners(String message, Token op) {
 		errorListener.validationError(op.getLine(), op.getCharPositionInLine(), message);
 	}
@@ -156,19 +152,6 @@ public abstract class CommonSyntacticValidator {
 			notifyErrorListeners("Namespace Conflict: '" + namespace + "' already defined as " + sources.get(namespace), ctx.start);
 		}
 	}
-	
-	protected boolean validateBuiltinFunctions(String function) {
-		String functionName = function.replaceAll(" ", "").trim();
-		if(functionName.equals("write") || functionName.equals(DMLProgram.DEFAULT_NAMESPACE + namespaceResolutionOp() + "write")) {
-			return validateBuiltinWriteFunction(function);
-		}
-		return true;
-	}
-
-	protected boolean validateBuiltinWriteFunction(String function) {
-		return true;
-	}
-
 
 	protected void setFileLineColumn(Expression expr, ParserRuleContext ctx) {
 		String txt = ctx.getText();

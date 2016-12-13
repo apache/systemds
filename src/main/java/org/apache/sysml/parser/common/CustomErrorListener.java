@@ -317,14 +317,6 @@ public class CustomErrorListener extends BaseErrorListener {
 	}
 
 	/**
-	 * Clear the list of parse issues.
-	 * 
-	 */
-	public void clearParseIssues() {
-		parseIssues.clear();
-	}
-
-	/**
 	 * Generate a message displaying information about the parse issues that
 	 * occurred.
 	 * 

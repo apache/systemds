@@ -25,9 +25,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Set;
 
-import org.apache.sysml.lops.LopProperties;
 import org.apache.sysml.lops.Lop;
-
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 
@@ -55,17 +53,7 @@ public class OptNode
 		CP,
 		MR,
 		SPARK;
-		
-		public LopProperties.ExecType toLopsExecType() {
-			switch( this ) {
-				case CP: 	return LopProperties.ExecType.CP;
-				case MR: 	return LopProperties.ExecType.MR;
-				case SPARK: return LopProperties.ExecType.SPARK;
-			}
-			
-			return null;
-		}
-		
+
 		public ParForProgramBlock.PExecMode toParForExecMode() {
 			switch( this ) {
 				case CP: 	return ParForProgramBlock.PExecMode.LOCAL;
@@ -257,30 +245,6 @@ public class OptNode
 					_childs.set(i, newNode);
 					ret = true;
 				}
-		
-		return ret;
-	}
-
-	public boolean containsNode( OptNode qn )
-	{
-		boolean ret = (this == qn);
-		if( !ret && !isLeaf() )
-			for( OptNode n : _childs ) {
-				ret |= n.containsNode(qn);
-				if( ret ) break; //early abort
-			}
-		
-		return ret;
-	}
-
-	public boolean containsNode( NodeType type )
-	{
-		boolean ret = (_ntype == type);
-		if( !ret && !isLeaf() )
-			for( OptNode n : _childs ) {
-				ret |= n.containsNode(type);
-				if( ret ) break; //early abort
-			}
 		
 		return ret;
 	}
@@ -625,24 +589,5 @@ public class OptNode
 
 		return max;
 	}
-
-	@SuppressWarnings("unchecked")
-	public OptNode createShallowClone()
-	{
-		OptNode n = new OptNode(_ntype,_etype);
-		n.setID(_id);
-		n.setK(_k);		
-		if( _childs != null )
-			n.setChilds( (ArrayList<OptNode>)_childs.clone() );
-		if( _params != null )
-			n.setParams((HashMap<ParamType,String>)_params.clone());
-		return n;
-	}
-
-	public OptNode createDeepClone()
-	{
-		throw new RuntimeException("not implemented yet");
-	}
-
 
 }

@@ -69,20 +69,6 @@ public class RDDAggregateUtils
 		}
 	}
 
-	public static JavaPairRDD<MatrixIndexes, MatrixBlock> sumByKey( JavaPairRDD<MatrixIndexes, MatrixBlock> in )
-	{
-		//sum of blocks per key, w/o exploitation of correction blocks
-		return in.reduceByKey(
-				new SumMultiBlockFunction());
-	}
-
-	public static JavaPairRDD<MatrixIndexes, Double> sumCellsByKey( JavaPairRDD<MatrixIndexes, Double> in )
-	{
-		//sum of blocks per key, w/o exploitation of corrections
-		return in.reduceByKey(
-				new SumDoubleCellsFunction());
-	}
-
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> sumByKeyStable( JavaPairRDD<MatrixIndexes, MatrixBlock> in )
 	{
 		//stable sum of blocks per key, by passing correction blocks along with aggregates 		
@@ -142,13 +128,6 @@ public class RDDAggregateUtils
 		return in.fold(
 				new MatrixBlock(),
 				new AggregateSingleBlockFunction(aop) );
-	}
-
-	public static JavaPairRDD<MatrixIndexes, MatrixBlock> aggByKey( JavaPairRDD<MatrixIndexes, MatrixBlock> in, AggregateOperator aop )
-	{
-		//aggregate of blocks per key, w/o exploitation of correction blocks
-		return in.reduceByKey(
-				new AggregateMultiBlockFunction(aop));
 	}
 
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> aggByKeyStable( JavaPairRDD<MatrixIndexes, MatrixBlock> in, AggregateOperator aop )
@@ -507,41 +486,6 @@ public class RDDAggregateUtils
 			return out;
 		}
 	}
-	
-	/**
-	 * This aggregate function uses kahan+ with corrections to aggregate input blocks; it is meant for 
-	 * reducebykey operations where we CANNOT reuse the same correction block independent of the input
-	 * block indexes. Note that this aggregation function does not apply to embedded corrections.
-	 * 
-	 */
-	private static class SumMultiBlockFunction implements Function2<MatrixBlock, MatrixBlock, MatrixBlock> 
-	{
-		private static final long serialVersionUID = -4015979658416853324L;
-
-		private AggregateOperator _op = null;
-		private MatrixBlock _corr = null;
-		
-		public SumMultiBlockFunction()
-		{
-			_op = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.NONE);	
-			_corr = new MatrixBlock();
-		}
-		
-		@Override
-		public MatrixBlock call(MatrixBlock arg0, MatrixBlock arg1)
-			throws Exception 
-		{
-			//copy one input to output
-			MatrixBlock out = new MatrixBlock(arg0);
-			
-			//aggregate other input
-			_corr.reset(out.getNumRows(), out.getNumColumns());
-			OperationsOnMatrixValues.incrementalAggregation(out, _corr, arg1, _op, false);
-			
-			return out;
-		}
-	}
-	
 
 	/**
 	 * Note: currently we always include the correction and use a subsequent maptopair to
@@ -582,46 +526,6 @@ public class RDDAggregateUtils
 				arg0, _op.correctionExists ? _corr : null, arg1, _op, true);
 			
 			return arg0;
-		}
-	}
-	
-	/**
-	 * Note: currently we always include the correction and use a subsequent maptopair to
-	 * drop them at the end because during aggregation we dont know if we produce an
-	 * intermediate or the final aggregate. 
-	 */
-	private static class AggregateMultiBlockFunction implements Function2<MatrixBlock, MatrixBlock, MatrixBlock> 
-	{
-		private static final long serialVersionUID = -3672377410407066396L;
-
-		private AggregateOperator _op = null;
-		private MatrixBlock _corr = null;
-		
-		public AggregateMultiBlockFunction( AggregateOperator op )
-		{
-			_op = op;	
-			_corr = new MatrixBlock();
-		}
-		
-		@Override
-		public MatrixBlock call(MatrixBlock arg0, MatrixBlock arg1)
-			throws Exception 
-		{
-			//copy one first input
-			MatrixBlock out = new MatrixBlock(arg0); 
-			
-			//aggregate second input
-			_corr.reset(out.getNumRows(), out.getNumColumns());
-			if(_op.correctionExists) {
-				OperationsOnMatrixValues.incrementalAggregation(
-						out, _corr, arg1, _op, true);
-			}
-			else {
-				OperationsOnMatrixValues.incrementalAggregation(
-						out, null, arg1, _op, true);
-			}
-			
-			return out;
 		}
 	}
 
@@ -668,15 +572,5 @@ public class RDDAggregateUtils
 			return ret;
 		}
 
-	}
-
-	private static class SumDoubleCellsFunction implements Function2<Double, Double, Double> 
-	{
-		private static final long serialVersionUID = -8167625566734873796L;
-
-		@Override
-		public Double call(Double v1, Double v2) throws Exception {
-			return v1 + v2;
-		}	
 	}
 }

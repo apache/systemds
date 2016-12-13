@@ -269,49 +269,7 @@ public class Builtin extends ValueFunction
 		// cloning is not supported for singleton classes
 		throw new CloneNotSupportedException();
 	}
-	
-	public boolean checkArity(int _arity) throws DMLRuntimeException {
-		switch (bFunc) {
-		case ABS:
-		case SIN:
-		case COS:
-		case TAN:
-		case ASIN:
-		case ACOS:
-		case ATAN:
-		case SIGN:	
-		case SQRT:
-		case EXP:
-		case PLOGP:
-		case NROW:
-		case NCOL:
-		case LENGTH:
-		case ROUND:
-		case PRINT:
-		case MAXINDEX:
-		case MININDEX:
-		case STOP:
-		case CEIL:
-		case FLOOR:
-		case CUMSUM:
-		case INVERSE:
-		case SPROP:	
-		case SIGMOID:
-		case SELP:
-			return (_arity == 1);
-		
-		case LOG:
-		case LOG_NZ:
-			return (_arity == 1 || _arity == 2);
-			
-		case MAX:
-		case MIN:
-			return (_arity == 2);
-		default:
-			throw new DMLRuntimeException("checkNumberOfOperands(): Unknown opcode: " + bFunc);
-		}
-	}
-	
+
 	public double execute (double in) 
 		throws DMLRuntimeException 
 	{

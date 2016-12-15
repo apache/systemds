@@ -26,7 +26,19 @@ import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
 
 public class LopProperties 
 {
-	
+	/**
+	 * Execution types:
+	 *
+	 * <ul>
+	 * <li>CP - Control Program (single JVM)</li>
+	 * <li>CP_FILE - ?</li>
+	 * <li>MR - Apache Hadoop</li>
+	 * <li>SPARK - Apache Spark</li>
+	 * <li>GPU - Execute on a GPU</li>
+	 * <li>INVALID - Invalid execution type</li>
+	 * </ul>
+	 *
+	 */
 	public enum ExecType { CP, CP_FILE, MR, SPARK, GPU, INVALID };
 	public enum ExecLocation {INVALID, RecordReader, Map, MapOrReduce, MapAndReduce, Reduce, Data, ControlProgram };
 

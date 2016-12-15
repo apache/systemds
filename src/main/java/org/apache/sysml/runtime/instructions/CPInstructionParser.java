@@ -23,8 +23,8 @@ package org.apache.sysml.runtime.instructions;
 import java.util.HashMap;
 
 import org.apache.sysml.lops.DataGen;
-import org.apache.sysml.lops.UnaryCP;
 import org.apache.sysml.lops.LopProperties.ExecType;
+import org.apache.sysml.lops.UnaryCP;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.cp.AggregateBinaryCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.AggregateTernaryCPInstruction;
@@ -34,8 +34,10 @@ import org.apache.sysml.runtime.instructions.cp.ArithmeticBinaryCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.BooleanBinaryCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.BooleanUnaryCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.BuiltinBinaryCPInstruction;
+import org.apache.sysml.runtime.instructions.cp.BuiltinMultipleCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.BuiltinUnaryCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.CPInstruction;
+import org.apache.sysml.runtime.instructions.cp.CPInstruction.CPINSTRUCTION_TYPE;
 import org.apache.sysml.runtime.instructions.cp.CentralMomentCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.CompressionCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.ConvolutionCPInstruction;
@@ -62,7 +64,6 @@ import org.apache.sysml.runtime.instructions.cp.StringInitCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.TernaryCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.UaggOuterChainCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.VariableCPInstruction;
-import org.apache.sysml.runtime.instructions.cp.CPInstruction.CPINSTRUCTION_TYPE;
 import org.apache.sysml.runtime.instructions.cpfile.MatrixIndexingCPFileInstruction;
 import org.apache.sysml.runtime.instructions.cpfile.ParameterizedBuiltinCPFileInstruction;
 
@@ -178,6 +179,7 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "sigmoid", CPINSTRUCTION_TYPE.BuiltinUnary);
 		String2CPInstructionType.put( "sel+", CPINSTRUCTION_TYPE.BuiltinUnary);
 		
+		String2CPInstructionType.put( "printf" , CPINSTRUCTION_TYPE.BuiltinMultiple);
 		
 		// Parameterized Builtin Functions
 		String2CPInstructionType.put( "cdf"	 		, CPINSTRUCTION_TYPE.ParameterizedBuiltin);
@@ -331,7 +333,8 @@ public class CPInstructionParser extends InstructionParser
 				
 			case BuiltinUnary:
 				return BuiltinUnaryCPInstruction.parseInstruction(str);
-				
+			case BuiltinMultiple:
+				return BuiltinMultipleCPInstruction.parseInstruction(str);
 			case Reorg:
 				return ReorgCPInstruction.parseInstruction(str);
 				

@@ -1694,7 +1694,7 @@ This example replaces values in specific columns to create a recoded matrix with
 The following DML utilizes the `transformencode()` function.
 
     F1 = read("/user/ml/homes.csv", data_type="frame", format="csv");
-    jspec = read(/user/ml/homes.tfspec_recode2.json, data_type="scalar", value_type="string");
+    jspec = read("/user/ml/homes.tfspec_recode2.json", data_type="scalar", value_type="string");
     [X, M] = transformencode(target=F1, spec=jspec);
     print(toString(X));
     if(1==1){}
@@ -1780,7 +1780,7 @@ The <code>transformdecode()</code> function can be used to transform a <code>mat
 The next example takes the outputs from the [transformencode](dml-language-reference.html#transformencode) example and reconstructs the original data using the same transformation specification. 
 
     F1 = read("/user/ml/homes.csv", data_type="frame", format="csv");
-    jspec = read(/user/ml/homes.tfspec_recode2.json, data_type="scalar", value_type="string");
+    jspec = read("/user/ml/homes.tfspec_recode2.json", data_type="scalar", value_type="string");
     [X, M] = transformencode(target=F1, spec=jspec);
     F2 = transformdecode(target=X, spec=jspec, meta=M);
     print(toString(F2));
@@ -1823,7 +1823,7 @@ The following example uses <code>transformapply()</code> with the input matrix a
     }
     
     F1 = read("/user/ml/homes.csv", data_type="frame", format="csv");
-    jspec = read(/user/ml/homes.tfspec_bin2.json, data_type="scalar", value_type="string");
+    jspec = read("/user/ml/homes.tfspec_bin2.json", data_type="scalar", value_type="string");
     [X, M] = transformencode(target=F1, spec=jspec);
     X2 = transformapply(target=F1, spec=jspec, meta=M);
     print(toString(X2));

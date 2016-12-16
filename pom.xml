@@ -487,6 +487,9 @@
 								</manifest>
 								<manifestEntries>
 									<Build-Time>${maven.build.timestamp}</Build-Time>
+									<Group-Id>${project.groupId}</Group-Id>
+									<Artifact-Id>${project.artifactId}</Artifact-Id>
+									<Version>${project.version}</Version>
 								</manifestEntries>
 							</archive>
 						</configuration>

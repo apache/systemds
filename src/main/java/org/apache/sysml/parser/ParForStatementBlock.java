@@ -876,7 +876,11 @@ public class ParForStatementBlock extends ForStatementBlock
 		else if (s instanceof PrintStatement)
 		{
 			PrintStatement s2 = (PrintStatement)s;
-			ret = rGetDataIdentifiers(s2.getExpression());
+			ret = new ArrayList<DataIdentifier>();
+			for (Expression expression : s2.getExpressions()) {
+				List<DataIdentifier> dataIdentifiers = rGetDataIdentifiers(expression);
+				ret.addAll(dataIdentifiers);
+			}
 		}
 		
 		//potentially extend this list with other Statements if required

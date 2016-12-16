@@ -2336,6 +2336,177 @@ public class MLContextTest extends AutomatedTestBase {
 		ml.execute(script);
 	}
 
+	@Test
+	public void testPrintFormattingStringSubstitution() {
+		System.out.println("MLContextTest - print formatting string substitution");
+		Script script = dml("print('hello %s', 'world');");
+		setExpectedStdOut("hello world");
+		ml.execute(script);
+	}
+
+	@Test
+	public void testPrintFormattingStringSubstitutions() {
+		System.out.println("MLContextTest - print formatting string substitutions");
+		Script script = dml("print('%s %s', 'hello', 'world');");
+		setExpectedStdOut("hello world");
+		ml.execute(script);
+	}
+
+	@Test
+	public void testPrintFormattingStringSubstitutionAlignment() {
+		System.out.println("MLContextTest - print formatting string substitution alignment");
+		Script script = dml("print(\"'%10s' '%-10s'\", \"hello\", \"world\");");
+		setExpectedStdOut("'     hello' 'world     '");
+		ml.execute(script);
+	}
+
+	@Test
+	public void testPrintFormattingStringSubstitutionVariables() {
+		System.out.println("MLContextTest - print formatting string substitution variables");
+		Script script = dml("a='hello'; b='world'; print('%s %s', a, b);");
+		setExpectedStdOut("hello world");
+		ml.execute(script);
+	}
+
+	@Test
+	public void testPrintFormattingIntegerSubstitution() {
+		System.out.println("MLContextTest - print formatting integer substitution");
+		Script script = dml("print('int %d', 42);");
+		setExpectedStdOut("int 42");
+		ml.execute(script);
+	}
+
+	@Test
+	public void testPrintFormattingIntegerSubstitutions() {
+		System.out.println("MLContextTest - print formatting integer substitutions");
+		Script script = dml("print('%d %d', 42, 43);");
+		setExpectedStdOut("42 43");
+		ml.execute(script);
+	}
+
+	@Test
+	public void testPrintFormattingIntegerSubstitutionAlignment() {
+		System.out.println("MLContextTest - print formatting integer substitution alignment");
+		Script script = dml("print(\"'%10d' '%-10d'\", 42, 43);");
+		setExpectedStdOut("'        42' '43        '");
+		ml.execute(script);
+	}
+
+	@Test
+	public void testPrintFormattingIntegerSubstitutionVariables() {
+		System.out.println("MLContextTest - print formatting integer substitution variables");
+		Script script = dml("a=42; b=43; print('%d %d', a, b);");
+		setExpectedStdOut("42 43");
+		ml.execute(script);
+	}
+
+	@Test
+	public void testPrintFormattingDoubleSubstitution() {
+		System.out.println("MLContextTest - print formatting double substitution");
+		Script script = dml("print('double %f', 42.0);");
+		setExpectedStdOut("double 42.000000");
+		ml.execute(script);
+	}
+
+	@Test
+	public void testPrintFormattingDoubleSubstitutions() {
+		System.out.println("MLContextTest - print formatting double substitutions");
+		Script script = dml("print('%f %f', 42.42, 43.43);");
+		setExpectedStdOut("42.420000 43.430000");
+		ml.execute(script);
+	}
+
+	@Test
+	public void testPrintFormattingDoubleSubstitutionAlignment() {
+		System.out.println("MLContextTest - print formatting double substitution alignment");
+		Script script = dml("print(\"'%10.2f' '%-10.2f'\", 42.53, 43.54);");
+		setExpectedStdOut("'     42.53' '43.54     '");
+		ml.execute(script);
+	}
+
+	@Test
+	public void testPrintFormattingDoubleSubstitutionVariables() {
+		System.out.println("MLContextTest - print formatting double substitution variables");
+		Script script = dml("a=12.34; b=56.78; print('%f %f', a, b);");
+		setExpectedStdOut("12.340000 56.780000");
+		ml.execute(script);
+	}
+
+	@Test
+	public void testPrintFormattingBooleanSubstitution() {
+		System.out.println("MLContextTest - print formatting boolean substitution");
+		Script script = dml("print('boolean %b', TRUE);");
+		setExpectedStdOut("boolean true");
+		ml.execute(script);
+	}
+
+	@Test
+	public void testPrintFormattingBooleanSubstitutions() {
+		System.out.println("MLContextTest - print formatting boolean substitutions");
+		Script script = dml("print('%b %b', TRUE, FALSE);");
+		setExpectedStdOut("true false");
+		ml.execute(script);
+	}
+
+	@Test
+	public void testPrintFormattingBooleanSubstitutionAlignment() {
+		System.out.println("MLContextTest - print formatting boolean substitution alignment");
+		Script script = dml("print(\"'%10b' '%-10b'\", TRUE, FALSE);");
+		setExpectedStdOut("'      true' 'false     '");
+		ml.execute(script);
+	}
+
+	@Test
+	public void testPrintFormattingBooleanSubstitutionVariables() {
+		System.out.println("MLContextTest - print formatting boolean substitution variables");
+		Script script = dml("a=TRUE; b=FALSE; print('%b %b', a, b);");
+		setExpectedStdOut("true false");
+		ml.execute(script);
+	}
+
+	@Test
+	public void testPrintFormattingMultipleTypes() {
+		System.out.println("MLContextTest - print formatting multiple types");
+		Script script = dml("a='hello'; b=3; c=4.5; d=TRUE; print('%s %d %f %b', a, b, c, d);");
+		setExpectedStdOut("hello 3 4.500000 true");
+		ml.execute(script);
+	}
+
+	@Test
+	public void testPrintFormattingMultipleExpressions() {
+		System.out.println("MLContextTest - print formatting multiple expressions");
+		Script script = dml("a='hello'; b='goodbye'; c=4; d=3; e=3.0; f=5.0; g=FALSE; print('%s %d %f %b', (a+b), (c-d), (e*f), !g);");
+		setExpectedStdOut("hellogoodbye 1 15.000000 true");
+		ml.execute(script);
+	}
+
+	@Test
+	public void testPrintFormattingForLoop() {
+		System.out.println("MLContextTest - print formatting for loop");
+		Script script = dml("for (i in 1:3) { print('int value %d', i); }");
+		// check that one of the lines is returned
+		setExpectedStdOut("int value 3");
+		ml.execute(script);
+	}
+
+	@Test
+	public void testPrintFormattingParforLoop() {
+		System.out.println("MLContextTest - print formatting parfor loop");
+		Script script = dml("parfor (i in 1:3) { print('int value %d', i); }");
+		// check that one of the lines is returned
+		setExpectedStdOut("int value 3");
+		ml.execute(script);
+	}
+
+	@Test
+	public void testPrintFormattingForLoopMultiply() {
+		System.out.println("MLContextTest - print formatting for loop multiply");
+		Script script = dml("a = 5.0; for (i in 1:3) { print('%d %f', i, a * i); }");
+		// check that one of the lines is returned
+		setExpectedStdOut("3 15.000000");
+		ml.execute(script);
+	}
+
 	// NOTE: Uncomment these tests once they work
 
 	// @SuppressWarnings({ "rawtypes", "unchecked" })

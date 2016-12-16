@@ -19,6 +19,8 @@
 
 package org.apache.sysml.runtime.instructions.cp;
 
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang.builder.ToStringStyle;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.Expression.*;
 import org.apache.sysml.runtime.instructions.Instruction;
@@ -114,5 +116,10 @@ public class CPOperand
 		_name = o.getName();
 		_valueType = o.getValueType();
 		_dataType = o.getDataType();
+	}
+
+	@Override
+	public String toString() {
+		return ToStringBuilder.reflectionToString(this, ToStringStyle.SHORT_PREFIX_STYLE);
 	}
 }

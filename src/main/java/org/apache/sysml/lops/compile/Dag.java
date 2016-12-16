@@ -230,13 +230,7 @@ public class Dag<N extends Lop>
 		nodes.add(node);
 		return true;
 	}
-	
-	public ArrayList<Instruction> getJobs(DMLConfig config)
-			throws LopsException, IOException, DMLRuntimeException 
-	{
-		return getJobs(null, config);
-	}
-	
+
 	/**
 	 * Method to compile a dag generically
 	 * 

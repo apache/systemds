@@ -78,10 +78,6 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 		_sptype = SPINSTRUCTION_TYPE.MultiReturnBuiltin;
 		_outputs = outputs;
 	}
-	
-	public CPOperand getOutput(int i) {
-		return _outputs.get(i);
-	}
 
 	public static MultiReturnParameterizedBuiltinSPInstruction parseInstruction( String str ) 
 		throws DMLRuntimeException 

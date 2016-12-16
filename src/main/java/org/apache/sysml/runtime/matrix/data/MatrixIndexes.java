@@ -107,17 +107,6 @@ public class MatrixIndexes implements WritableComparable<MatrixIndexes>, RawComp
 	public String toString() {
 		return "("+_row+", "+_col+")";
 	}
-	
-	public int compareWithOrder(MatrixIndexes other, boolean leftcached) {
-		if( !leftcached )
-			return compareTo(other);
-		
-		if( _col != other._col)
-			return (_col > other._col ? 1 : -1);
-		else if( _row != other._row)
-			return (_row>other._row ? 1 : -1);
-		return 0;
-	}
 
 	////////////////////////////////////////////////////
 	// implementation of Writable read/write

@@ -91,21 +91,7 @@ public class StatementBlock extends LiveVariableAnalysis
 		this._endColumn		= s.getEndColumn();
 		
 	}
-	
-	public void replaceStatement(int index, Statement passedStmt){
-		this._statements.set(index, passedStmt);
-		
-		if (index == 0){
-			this._beginLine 	= passedStmt.getBeginLine(); 
-			this._beginColumn 	= passedStmt.getBeginColumn();
-		}
-		
-		else if (index == this._statements.size() -1){
-			this._endLine 		= passedStmt.getEndLine();
-			this._endColumn		= passedStmt.getEndColumn();	
-		}
-	}
-	
+
 	public void addStatementBlock(StatementBlock s){
 		for (int i = 0; i < s.getNumStatements(); i++){
 			_statements.add(s.getStatement(i));

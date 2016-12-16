@@ -19,8 +19,8 @@
 
 package org.apache.sysml.runtime.instructions.cp;
 
-import org.apache.sysml.lops.Lop;
-import org.apache.sysml.parser.Expression.*;
+import org.apache.sysml.parser.Expression.DataType;
+import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.instructions.Instruction;
 
 
@@ -83,12 +83,6 @@ public class CPOperand
 	public void setLiteral(boolean literal) {
 		_isLiteral = literal;
 	}
-	
-	public void split_by_value_type_prefix ( String str ) {
-		String[] opr = str.split(Lop.VALUETYPE_PREFIX);
-		_name = opr[0];
-		_valueType = ValueType.valueOf(opr[1]);
-	}
 
 	public void split(String str){
 		String[] opr = str.split(Instruction.VALUETYPE_PREFIX);
@@ -109,10 +103,5 @@ public class CPOperand
 			_valueType = ValueType.valueOf(opr[1]);
 		}
 	}
-	
-	public void copy(CPOperand o){
-		_name = o.getName();
-		_valueType = o.getValueType();
-		_dataType = o.getDataType();
-	}
+
 }

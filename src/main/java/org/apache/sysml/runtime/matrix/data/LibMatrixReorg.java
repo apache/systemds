@@ -508,22 +508,7 @@ public class LibMatrixReorg
 		
 		return out;
 	}
-	
-	/**
-	 * CP rmempty operation (single input, single output matrix) 
-	 * 
-	 * @param in input matrix
-	 * @param ret output matrix
-	 * @param rows ?
-	 * @return matrix block
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
-	 */
-	public static MatrixBlock rmempty(MatrixBlock in, MatrixBlock ret, boolean rows) 
-		throws DMLRuntimeException
-	{
-		return rmempty(in, ret, rows, null);
-	}
-		
+
 	/**
 	 * CP rmempty operation (single input, single output matrix) 
 	 * 

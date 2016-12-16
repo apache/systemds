@@ -227,25 +227,6 @@ public class DMLScript
 		}
 	} 
 
-	public static boolean executeScript( String[] args ) 
-		throws DMLException
-	{
-		Configuration conf = new Configuration(ConfigurationManager.getCachedJobConf());
-		return executeScript( conf, args );
-	}
-	
-	public static String executeScript( Configuration conf, String[] args, boolean suppress) 
-		throws DMLException
-	{
-		_suppressPrint2Stdout = suppress;
-		try {
-			boolean ret = executeScript(conf, args);
-			return Boolean.toString(ret);
-		} catch(DMLScriptException e) {
-			return e.getMessage();
-		}
-	}
-	
 	/**
 	 * Single entry point for all public invocation alternatives (e.g.,
 	 * main, executeScript, JaqlUdf etc)

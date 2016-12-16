@@ -79,19 +79,6 @@ public class CostEstimatorRuntime extends CostEstimator
 		return getLeafNodeEstimate(measure, node);
 	}
 
-	public double getEstimate( TestMeasure measure, String instName, double datasize, double sparsity, DataFormat dataformat ) 
-		throws DMLRuntimeException
-	{
-		return getEstimate(measure, instName, datasize, sparsity, DEFAULT_EST_PARALLELISM, dataformat);
-	}
-
-	public double getEstimate( TestMeasure measure, String instName, double datasize, double sparsity, double parallelism, DataFormat dataformat ) 
-		throws DMLRuntimeException
-	{
-		double dim = Math.sqrt( datasize );		
-		return getEstimate(measure, instName, dim, dim, dim, sparsity, parallelism, dataformat);
-	}
-
 	public double getEstimate( TestMeasure measure, String instName, double dim1, double dim2, double dim3, double sparsity, DataFormat dataformat ) 
 		throws DMLRuntimeException
 	{

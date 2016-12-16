@@ -46,20 +46,6 @@ public class DMLBreakpointManager {
 	}
 
 	/**
-	 * Returns size of active DML breakpoints
-	 * @return size Size of active breakpoints
-	 */
-	public static int getBreakpointsSize() 
-	{	
-		int size = 0;
-		for (Integer lineNumber : breakpoints.keySet()) {
-			if (breakpoints.get(lineNumber).getBPInstructionStatus() != BPINSTRUCTION_STATUS.INVISIBLE)
-				size++;
-		}
-		return size;
-	}
-	
-	/**
 	 * Returns breakpoint instruction at a particular line number (if any)
 	 * @param lineNumber Location of breakpoint
 	 * @return Breakpoint instruction at indicated line number (if any)
@@ -70,52 +56,6 @@ public class DMLBreakpointManager {
 		return breakpoints.get(lineNumber);
 	}
 
-	/**
-	 * Returns breakpoint instruction with given breakpoint id
-	 * @param location Breakpoint id
-	 * @return Breakpoint instruction at indicated id
-	 */
-	public static BreakPointInstruction getBreakpointAtIndex(int location) {
-		int index = 1;
-		for (Integer lineNumber : breakpoints.keySet()) {
-			if (index++ == location) {
-				return breakpoints.get(lineNumber);
-			}
-		}
-		return null;
-	}
-	
-	/**
-	 * Returns breakpoint line number with given breakpoint id 
-	 * @param location Breakpoint id
-	 * @return Breakpoint instruction line number (-1 if not found)   
-	 */
-	public static int getBreakpointLineNumber(int location) {
-		int index = 1;
-		for (Integer lineNumber : breakpoints.keySet()) {
-			if (index++ == location) {
-				return lineNumber;
-			}
-		}
-		return -1;
-	}
-	
-	/**
-	 * Returns breakpoint identifier with given line number 
-	 * @param lineNum Line number Location of breakpoint in DML script
-	 * @return Breakpoint id within all breakpoints (-1 if not found)
-	 */
-	public static int getBreakpointID(int lineNum) {
-		int bpID=1;
-		for (Integer lineNumber : breakpoints.keySet()) {
-			if (lineNum == lineNumber) {
-				return bpID;
-			}
-			bpID++;
-		}
-		return -1;
-	}
-	
 	/**
 	 * Insert a breakpoint instruction into list of existing breakpoints.
 	 * 
@@ -156,20 +96,7 @@ public class DMLBreakpointManager {
 			System.out.format("Breakpoint updated at %s, line %d.\n", breakpoints.get(lineNumber).getBPInstructionLocation(), lineNumber);
 		}
 	}
-	
-	/**
-	 * Updates breakpoint status for a given breakpoint id 
-	 * @param location Breakpoint identifier
-	 * @param status Current breakpoint status  
-	 */
-	public static void updateBreakpointID(int location, BPINSTRUCTION_STATUS status) {
-		int lineNumber = getBreakpointLineNumber(location);
-		if (lineNumber != -1) {			
-			breakpoints.get(lineNumber).setBPInstructionStatus(status);
-			System.out.format("Breakpoint updated at %s, line %d.\n", breakpoints.get(lineNumber).getBPInstructionLocation(), lineNumber);
-		}
-	}
-	
+
 	/**
 	 * Removes breakpoint instruction at given line number 
 	 * @param lineNumber Location for inserting breakpoint
@@ -180,16 +107,5 @@ public class DMLBreakpointManager {
 			breakpoints.get(lineNumber).setBPInstructionStatus(status);
 			System.out.format("Breakpoint deleted at %s, line %d.\n", breakpoints.get(lineNumber).getBPInstructionLocation(), lineNumber);
 		}
-	}
-
-	/**
-	 * Removes breakpoint instruction at given location  
-	 * @param location Breakpoint instruction id
-	 * @param status Current breakpoint status
-	 */	
-	public static void removeBreakpointIndex(int location, BPINSTRUCTION_STATUS status) {
-		int lineNumber = getBreakpointLineNumber(location);
-		if (lineNumber != -1)
-			breakpoints.get(lineNumber).setBPInstructionStatus(status);
 	}
 }

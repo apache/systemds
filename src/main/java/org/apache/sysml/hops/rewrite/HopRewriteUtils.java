@@ -234,14 +234,7 @@ public class HopRewriteUtils
 		parent.getInput().remove( posChild );
 		child.getParent().remove( parent );
 	}
-	
-	public static void removeChildReferenceByPos( Hop parent, Hop child, int posChild, int posParent )
-	{
-		//remove child reference
-		parent.getInput().remove( posChild );
-		child.getParent().remove( posParent );
-	}
-	
+
 	public static void removeAllChildReferences( Hop parent )
 	{
 		//remove parent reference from all childs
@@ -799,23 +792,7 @@ public class HopRewriteUtils
 		
 		return ret;
 	}
-	
-	public static double getBasic1NSequenceMax(Hop hop) 
-		throws HopsException
-	{
-		if( hop instanceof DataGenOp )
-		{
-			DataGenOp dgop = (DataGenOp) hop;
-			if( dgop.getOp() == DataGenMethod.SEQ ){
-				Hop to = dgop.getInput().get(dgop.getParamIndex(Statement.SEQ_TO));
-				if( to instanceof LiteralOp )
-					return getDoubleValueSafe((LiteralOp)to);
-			}
-		}
-		
-		throw new HopsException("Failed to retrieve 'to' argument from basic 1-N sequence.");
-	}
-	
+
 	public static LiteralOp getBasic1NSequenceMaxLiteral(Hop hop) 
 		throws HopsException
 	{

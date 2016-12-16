@@ -25,11 +25,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.TreeMap;
 import java.util.Map.Entry;
+import java.util.TreeMap;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.compress.utils.LinearAlgebraUtils;
 import org.apache.sysml.runtime.functionobjects.Builtin;
 import org.apache.sysml.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -323,17 +322,6 @@ public abstract class ColGroupBitmap extends ColGroup
 		}
 		
 		return val;
-	}
-
-	protected final void sumAllValues(double[] b, double[] c)
-	{
-		final int numVals = getNumValues();
-		final int numCols = getNumCols();
-		
-		//vectMultiplyAdd over cols instead of dotProduct over vals because
-		//usually more values than columns
-		for( int i=0, off=0; i<numCols; i++, off+=numVals )
-			LinearAlgebraUtils.vectMultiplyAdd(b[i], _values, c, off, 0, numVals);
 	}
 
 	protected final double mxxValues(int bitmapIx, Builtin builtin)

@@ -118,17 +118,7 @@ public class StatisticMonitor
 		stats.addLast(s);
 		
 	}
-	
-	/**
-	 * Cleans up the whole repository by discarding all collected information.
-	 */
-	public static void cleanUp()
-	{
-		_mapPwPf.clear();
-		_pfstats.clear();
-		_pwstats.clear();
-	}
-	
+
 	/**
 	 * Globally disables statistic monitor for the currently activ JVM.
 	 */

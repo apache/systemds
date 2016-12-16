@@ -56,10 +56,6 @@ public class OutputStatement extends Statement
 				filename, blp, bcp, elp, ecp);
 	}
 
-	public void setExprParam(String name, Expression value) {
-		_paramsExpr.addVarParam(name, value);
-	}
-	
 	public static boolean isValidParamName(String key){
 		for (String paramName : WRITE_VALID_PARAM_NAMES)
 			if (paramName.equals(key))

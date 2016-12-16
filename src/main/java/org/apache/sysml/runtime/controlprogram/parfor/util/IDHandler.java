@@ -33,44 +33,12 @@ import java.net.InetAddress;
  */
 public class IDHandler 
 {
-
-	public static long extractUncheckedLongID( String taskID )
-	{
-		//in: e.g., task_local_0002_m_000009 or jobID + ...
-		//out: e.g., 2000009
-
-		//generic parsing for flexible taskID formats
-		char[] c = taskID.toCharArray(); //all chars
-		long value = 1; //1 catch leading zeros as well
-		for( int i=0; i<c.length; i++ )
-		{
-			if( c[i] >= 48 && c[i]<=57 )  //'0'-'9'
-			{
-				long newVal = (c[i]-48);
-				
-				if( (Long.MAX_VALUE-value*10) < newVal ) 
-					throw new RuntimeException("WARNING: extractLongID will produced numeric overflow "+value);
-				
-				value = value*10 + newVal;
-			}
-		}
-		
-		return value;
-	}
-
 	public static int extractIntID( String taskID )
 	{
 		int maxlen = (int)(Math.log10(Integer.MAX_VALUE));
 		int intVal = (int)extractID( taskID, maxlen );
 		return intVal;		
 		
-	}
-
-	public static long extractLongID( String taskID )
-	{
-		int maxlen = (int)(Math.log10(Long.MAX_VALUE));
-		long longVal = extractID( taskID, maxlen );
-		return longVal;
 	}
 
 	public static long concatIntIDsToLong( int part1, int part2 )

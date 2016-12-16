@@ -37,7 +37,6 @@ import org.apache.sysml.lops.Checkpoint;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.lops.compile.Dag;
-import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
@@ -51,7 +50,6 @@ import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.matrix.data.SparseBlock;
-import org.apache.sysml.runtime.matrix.data.SparseRow;
 import org.apache.sysml.runtime.util.IndexRange;
 import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.yarn.ropt.YarnClusterAnalyzer;
@@ -735,37 +733,7 @@ public class OptimizerUtils
 	{
 		return estimateSizeExactSparsity(0, 0, 0.0d);
 	}
-	
-	/**
-	 * Estimates the memory footprint of a SparseRow with <code>clen</code>
-	 * columns and <code>sp</code> sparsity. This method accounts for the
-	 * overhead incurred by extra cells allocated (but not used) for SparseRow.
-	 * It assumes that non-zeros are uniformly distributed in the matrix --
-	 * i.e., #estimated nnz in a given SparseRow = clen*sp.
-	 * 
-	 * @param clen number of cols
-	 * @param sp sparsity
-	 * @return estimated size in bytes
-	 */
-	public static long estimateRowSize(long clen, double sp) 
-	{	
-		if ( sp == 0 )
-			return 0;
-		
-		int basicSize = 28;
-		int cellSize = 12; // every cell takes 12 (8+4) bytes
-		if ( sp == 1 ) {
-			return clen * cellSize; 
-		}
-		long  numCells = SparseRow.initialCapacity;
-		if ( (long) (sp*clen) > numCells ) {
-			numCells = (long) (sp*clen);
-		}
-		long allocatedCells = (long)Math.pow(2, Math.ceil(Math.log(numCells)/Math.log(2)) );
-		long rowSize = basicSize +  allocatedCells * cellSize;
-		return rowSize;
-	}
-	
+
 	public static long estimateSizeTextOutput( long rows, long cols, long nnz, OutputInfo oinfo )
 	{
 		long bsize = MatrixBlock.estimateSizeOnDisk(rows, cols, nnz);
@@ -897,16 +865,6 @@ public class OptimizerUtils
 	 */
 	public static String getUniqueTempFileName() {
 		return new Dag<Lop>().getNextUniqueFilename();
-	}
-	
-	/**
-	 * Wrapper over internal varname construction for external usage.
-	 * 
-	 * @param dt data type
-	 * @return unique variable name
-	 */
-	public static String getUniqueVariableName(DataType dt) {
-		return Dag.getNextUniqueVarname(dt);
 	}
 
 	public static boolean allowsToFilterEmptyBlockOutputs( Hop hop ) 

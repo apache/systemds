@@ -19,9 +19,6 @@
 
 package org.apache.sysml.yarn.ropt;
 
-import org.apache.sysml.conf.ConfigurationManager;
-import org.apache.sysml.hops.OptimizerUtils;
-
 public class YarnOptimizerUtils 
 {
 	public enum GridEnumType{
@@ -29,43 +26,6 @@ public class YarnOptimizerUtils
 		EXP_GRID,
 		MEM_EQUI_GRID,
 		HYBRID_MEM_EXP_GRID,
-	}
-
-	public static double getRemoteMemBudgetMap(long jobLookupId)
-	{
-		return getRemoteMemBudgetMap(false, jobLookupId);
-	}
-
-	public static double getRemoteMemBudgetMap(boolean substractSortBuffer, long jobLookupId)
-	{
-		double ret = YarnClusterAnalyzer.getRemoteMaxMemoryMap(jobLookupId);
-		if( substractSortBuffer )
-			ret -= YarnClusterAnalyzer.getRemoteMaxMemorySortBuffer();
-		return ret * OptimizerUtils.MEM_UTIL_FACTOR;
-	}
-
-	public static double getRemoteMemBudgetReduce(long jobLookupId)
-	{
-		double ret = YarnClusterAnalyzer.getRemoteMaxMemoryReduce(jobLookupId);
-		return ret * OptimizerUtils.MEM_UTIL_FACTOR;
-	}
-	
-	/**
-	 * Returns the number of reducers that potentially run in parallel.
-	 * This is either just the configured value (SystemML config) or
-	 * the minimum of configured value and available reduce slots. 
-	 * 
-	 * @param configOnly if true, return number or reducers from SystemML configuration
-	 * @param jobLookupId hadoop job id
-	 * @return number of reducers
-	 */
-	public static int getNumReducers(boolean configOnly, long jobLookupId)
-	{
-		int ret = ConfigurationManager.getNumReducers();
-		if( !configOnly )
-			ret = Math.min(ret,YarnClusterAnalyzer.getRemoteParallelReduceTasks(jobLookupId));
-		
-		return ret;
 	}
 
 	public static long toB( long mb )

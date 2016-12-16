@@ -30,9 +30,9 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Map.Entry;
 import java.util.Random;
 import java.util.StringTokenizer;
-import java.util.Map.Entry;
 
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLOutputFactory;
@@ -43,10 +43,6 @@ import javax.xml.stream.XMLStreamWriter;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
-import au.com.bytecode.opencsv.CSVReader;
-import au.com.bytecode.opencsv.CSVWriter;
-
 import org.apache.sysml.api.DMLException;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
@@ -54,10 +50,10 @@ import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.MMTSJ.MMTSJType;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.DataIdentifier;
-import org.apache.sysml.parser.ExternalFunctionStatement;
-import org.apache.sysml.parser.ParseException;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
+import org.apache.sysml.parser.ExternalFunctionStatement;
+import org.apache.sysml.parser.ParseException;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.ExternalFunctionProgramBlockCP;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
@@ -83,8 +79,10 @@ import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
-import org.apache.sysml.runtime.util.LocalFileUtils;
 import org.apache.sysml.runtime.util.MapReduceTool;
+
+import au.com.bytecode.opencsv.CSVReader;
+import au.com.bytecode.opencsv.CSVWriter;
 
 /**
  * DML Instructions Performance Test Tool: 
@@ -287,12 +285,6 @@ public class PerfTestTool
 			tmp = _profile.get(instID).get(tdefID);
 		}
 		return tmp;
-	}
-
-	public CostFunction getInvariantCostFunction( TestMeasure measure, TestVariable[] variable, DataFormat dataformat )
-	{
-		//TODO: implement for additional rewrites
-		throw new RuntimeException("Not implemented yet.");
 	}
 
 	@SuppressWarnings("all")
@@ -920,44 +912,6 @@ public class PerfTestTool
 		return data;
 	}
 
-	public static MatrixObject generateInputDataset(String fname, double datasize, double sparsity, DataFormat df) 
-		throws IOException, CacheException
-	{
-		int dim = (int)Math.sqrt( datasize );
-		
-		//create random test data
-		double[][] d = generateTestMatrix(dim, dim, 1, 100, sparsity, 7);
-		
-		//create matrix block
-		MatrixBlock mb = null;
-		switch( df ) 
-		{
-			case DENSE:
-				mb = new MatrixBlock(dim,dim,false);
-				break;
-			case SPARSE:
-				mb = new MatrixBlock(dim,dim,true, (int)(sparsity*dim*dim));
-				break;
-		}
-		
-		//insert data
-		for(int i=0; i < dim; i++)
-			for(int j=0; j < dim; j++)
-				if( d[i][j]!=0 )
-					mb.setValue(i, j, d[i][j]);	
-		
-		MapReduceTool.deleteFileIfExistOnHDFS(fname);
-
-		MatrixCharacteristics mc = new MatrixCharacteristics(dim, dim, ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize());
-		MatrixFormatMetaData md = new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
-		MatrixObject mo = new MatrixObject(ValueType.DOUBLE,fname,md);
-		mo.acquireModify(mb);
-		mo.release();
-		mo.exportData(); //write to HDFS
-		
-		return mo;
-	}
-
 	public static MatrixObject generateInputDataset(String fname, double dim1, double dim2, double sparsity, DataFormat df) 
 		throws IOException, CacheException
 	{		
@@ -995,30 +949,6 @@ public class PerfTestTool
 		mo.acquireModify(mb);
 		mo.release();
 		mo.exportData(); //write to HDFS
-		
-		return mo;
-	}
-
-	public static MatrixObject generateEmptyResult(String fname, double datasize, DataFormat df ) 
-		throws IOException, CacheException
-	{
-		int dim = (int)Math.sqrt( datasize );
-		
-		/*
-		MatrixBlock mb = null;
-		switch( df ) 
-		{
-			case DENSE:
-				mb = new MatrixBlock(dim,dim,false);
-				break;
-			case SPARSE:
-				mb = new MatrixBlock(dim,dim,true);
-				break;
-		}*/
-	
-		MatrixCharacteristics mc = new MatrixCharacteristics(dim, dim, ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize());
-		MatrixFormatMetaData md = new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
-		MatrixObject mo = new MatrixObject(ValueType.DOUBLE,fname,md);
 		
 		return mo;
 	}
@@ -1078,19 +1008,6 @@ public class PerfTestTool
 		}
 
 		return matrix;
-	}
-
-	public static void externalReadProfile( String fname ) 
-		throws DMLRuntimeException, XMLStreamException, IOException
-	{
-		//validate external name (security issue)
-		if( !LocalFileUtils.validateExternalFilename(fname, false) )
-			throw new DMLRuntimeException("Invalid (non-trustworthy) external profile filename.");
-		
-		//register internals and read external profile
-		registerTestConfigurations();
-		registerInstructions();
-		readProfile( fname );
 	}
 
 	@SuppressWarnings("all")

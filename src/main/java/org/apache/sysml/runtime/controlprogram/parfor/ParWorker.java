@@ -107,12 +107,6 @@ public abstract class ParWorker
 		return _numIters;
 	}
 
-	public void resetExecutedTasks()
-	{
-		_numTasks = 0;
-		_numIters = 0;
-	}
-
 	protected void pinResultVariables()
 	{
 		for( String var : _resultVars )

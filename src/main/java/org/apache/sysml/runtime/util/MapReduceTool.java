@@ -84,21 +84,7 @@ public class MapReduceTool
 		// remove all the leading 0s
 		return String.valueOf(Long.parseLong(nodePrefix));
 	}
-	
-	@Deprecated
-	public static String getUniqueKeyPerTaskWithLeadingZros(JobConf job, boolean inMapper) {
-		String nodePrefix = job.get(MRConfigurationNames.MR_TASK_ATTEMPT_ID);
-		int i;
-		if (inMapper)
-			i = nodePrefix.indexOf("_m_");
-		else
-			i = nodePrefix.indexOf("_r_");
-		int j = nodePrefix.lastIndexOf("_");
-		nodePrefix = nodePrefix.substring(i + 3, j);
-		return nodePrefix;
-	}
 
-	
 	public static int getUniqueTaskId(JobConf job) {
 		//TODO: investigate ID pattern, required for parallel jobs
 		/*String nodePrefix = job.get(MRConfigurationNames.MR_TASK_ATTEMPT_ID); 
@@ -154,13 +140,6 @@ public class MapReduceTool
 			//System.err.println("Deleting " + outpath + " ... ");
 			fs.delete(outpath, true);
 		}
-	}
-
-	public static boolean isHDFSDirectory(String dir) throws IOException {
-		FileSystem fs = FileSystem.get(_rJob);
-		Path pth = new Path(dir);
-		FileStatus fstat = fs.getFileStatus(pth);
-		return fstat.isDirectory();
 	}
 
 	public static boolean isHDFSFileEmpty(String dir) throws IOException {
@@ -226,37 +205,6 @@ public class MapReduceTool
 		}
 	}
 
-	public static String getSubDirs(String dir) 
-		throws IOException 
-	{
-		FileSystem fs = FileSystem.get(_rJob); 
-		FileStatus[] files = fs.listStatus(new Path(dir));
-		StringBuilder sb = new StringBuilder();
-		for (FileStatus file : files) {
-			if ( sb.length()>0 )
-				sb.append(",");
-			sb.append(file.getPath().toString());
-		}
-		return sb.toString();
-	}
-
-	public static String getSubDirsIgnoreLogs(String dir) 
-		throws IOException 
-	{
-		FileSystem fs = FileSystem.get(_rJob);
-		FileStatus[] files = fs.listStatus(new Path(dir));
-		StringBuilder sb = new StringBuilder();
-		for (FileStatus file : files) {
-			String name = file.getPath().toString();
-			if (name.contains("_logs"))
-				continue;
-			if( sb.length()>0 )
-				sb.append(",");
-			sb.append(name);
-		}
-		return sb.toString();
-	}
-	
 	/**
 	 * Returns the size of a file or directory on hdfs in bytes.
 	 * 
@@ -620,13 +568,6 @@ public class MapReduceTool
 	    }
 	    currentStream.close();
 		return new double[] {ret, (average ? -1 : readValue.get()), (average ? -1 : cum_weight)};
-	}
-
-	public static int extractNumberFromOutputFile(String name)
-	{
-		int i=name.indexOf("part-");
-		assert(i>=0);
-		return Integer.parseInt(name.substring(i+5));
 	}
 
 	public static void createDirIfNotExistOnHDFS(String dir, String permissions) 

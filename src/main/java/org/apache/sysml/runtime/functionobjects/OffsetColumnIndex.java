@@ -43,12 +43,7 @@ public class OffsetColumnIndex extends IndexFunction
 		//	singleObj = new OffsetColumnIndex(offset);
 		//return singleObj;
 	}
-	
-	public void setOutputSize(int rows, int columns){
-		numRowsInOutput = rows;
-		numColumnsInOutput = columns;
-	}
-	
+
 	public void setOffset(int offset){
 		this.offset = offset;
 	}

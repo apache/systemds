@@ -44,8 +44,4 @@ public class UniformPRNGenerator extends PRNGenerator {
 	public double nextDouble() {
 		return runif.nextDouble();
 	}
-
-	public int nextInt(int n) {
-		return runif.nextInt(n);
-	}
 }

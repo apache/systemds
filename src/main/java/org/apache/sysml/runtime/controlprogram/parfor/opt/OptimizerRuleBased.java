@@ -535,12 +535,6 @@ public class OptimizerRuleBased extends Optimizer
 		return mem;
 	}
 
-	protected static LopProperties.ExecType getRIXExecType( MatrixObject mo, PDataPartitionFormat dpf ) 
-		throws DMLRuntimeException
-	{
-		return getRIXExecType(mo, dpf, false);
-	}
-
 	protected static LopProperties.ExecType getRIXExecType( MatrixObject mo, PDataPartitionFormat dpf, boolean withSparsity ) 
 		throws DMLRuntimeException
 	{
@@ -577,37 +571,6 @@ public class OptimizerRuleBased extends Optimizer
 			return LopProperties.ExecType.CP;
 		else
 			return LopProperties.ExecType.CP_FILE;
-	}
-
-	public static PDataPartitionFormat decideBlockWisePartitioning( MatrixObject mo, PDataPartitionFormat dpf ) 
-		throws DMLRuntimeException
-	{
-		long rlen = mo.getNumRows();
-		long clen = mo.getNumColumns();
-		long brlen = mo.getNumRowsPerBlock();
-		long bclen = mo.getNumColumnsPerBlock();
-		long k = InfrastructureAnalyzer.getRemoteParallelMapTasks();
-		
-		PDataPartitionFormat ret = dpf;
-		if( getRIXExecType(mo, dpf)==LopProperties.ExecType.CP )
-		if( ret == PDataPartitionFormat.ROW_WISE )
-		{
-			if( rlen/brlen > 4*k && //note: average sparsity, read must deal with it
-				getRIXExecType(mo, PDataPartitionFormat.ROW_BLOCK_WISE, false)==LopProperties.ExecType.CP )
-			{
-				ret = PDataPartitionFormat.ROW_BLOCK_WISE;				
-			}
-		}
-		else if( ret == PDataPartitionFormat.COLUMN_WISE )
-		{
-			if( clen/bclen > 4*k && //note: average sparsity, read must deal with it
-				getRIXExecType(mo, PDataPartitionFormat.COLUMN_BLOCK_WISE, false)==LopProperties.ExecType.CP )
-			{
-				ret = PDataPartitionFormat.COLUMN_BLOCK_WISE;				
-			}
-		}
-				
-		return ret;	
 	}
 
 	public static boolean allowsBinaryCellPartitions( MatrixObject mo, PDataPartitionFormat dpf ) 
@@ -3550,12 +3513,7 @@ public class OptimizerRuleBased extends Optimizer
 		{
 			this.hopCandidate = hopCandidate;
 		}
-		
-		ProgramBlock getProgramBlock()
-		{
-			return pb;
-		}
-		
+
 		int getLocation()
 		{
 			return this.iLocation;

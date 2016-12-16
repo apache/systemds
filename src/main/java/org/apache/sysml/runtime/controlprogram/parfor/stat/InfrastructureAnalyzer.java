@@ -135,20 +135,6 @@ public class InfrastructureAnalyzer
 		_remoteParReduce = preduce;
 	}
 	
-	/**
-	 * Gets the totals number of available map and reduce slots.
-	 * 
-	 * @return number of available remote parallel task slots
-	 */
-	public static int getRemoteParallelTasks()
-	{
-		if( _remoteParMap == -1 )
-			analyzeHadoopCluster();
-		
-		return _remoteParMap + _remoteParReduce;
-	}
-	
-	
 	///////
 	//methods for obtaining memory properties
 	
@@ -202,20 +188,7 @@ public class InfrastructureAnalyzer
 	{
 		_remoteJVMMaxMemReduce = remoteMem;
 	}
-	
-	/**
-	 * Gets the maximum memory requirement [in bytes] of a given hadoop job.
-	 * 
-	 * @param job job configuration
-	 * @return remote max memory of hadoop job
-	 */
-	public static long getRemoteMaxMemory( JobConf job )
-	{
-		return (1024*1024) * Math.max(
-				               job.getMemoryForMapTask(),
-				               job.getMemoryForReduceTask() );			
-	}
-	
+
 	/**
 	 * Gets the maximum sort buffer memory requirement [in bytes] of a hadoop task.
 	 * 

@@ -2962,15 +2962,6 @@ public class DMLTranslator
 		h.setColsInBlock(id.getColumnsInBlock());
 	}
 
-	public void setIdentifierParams(Hop h, Hop source) {
-
-		h.setDim1(source.getDim1());
-		h.setDim2(source.getDim2());
-		h.setNnz(source.getNnz());
-		h.setRowsInBlock(source.getRowsInBlock());
-		h.setColsInBlock(source.getColsInBlock());
-	}
-
 	private boolean prepareReadAfterWrite( DMLProgram prog, HashMap<String, DataIdentifier> pWrites ) 
 		throws LanguageException
 	{

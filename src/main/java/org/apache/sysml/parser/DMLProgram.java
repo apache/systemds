@@ -67,11 +67,7 @@ public class DMLProgram
 	public HashMap<String,DMLProgram> getNamespaces(){
 		return _namespaces;
 	}
-	
-	public void addStatementBlock(StatementBlock b, int pos) {
-		_blocks.add(pos,b) ;
-	}
-	
+
 	public void addStatementBlock(StatementBlock b){
 		_blocks.add(b);
 	}
@@ -142,10 +138,6 @@ public class DMLProgram
 	
 	public StatementBlock getStatementBlock(int i){
 		return _blocks.get(i);
-	}
-	
-	public void setStatementBlock(int i, StatementBlock sb) {
-		 _blocks.set(i, sb);
 	}
 
 	public void mergeStatementBlocks(){

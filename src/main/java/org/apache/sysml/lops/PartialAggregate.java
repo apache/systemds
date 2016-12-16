@@ -135,12 +135,7 @@ public class PartialAggregate extends Lop
 	{
 		_dropCorr = true;
 	}
-	
-	public static CorrectionLocationType decodeCorrectionLocation(String loc) 
-	{
-		return CorrectionLocationType.valueOf(loc);
-	}
-	
+
 	/**
 	 * This method computes the location of "correction" terms in the output
 	 * produced by PartialAgg instruction.

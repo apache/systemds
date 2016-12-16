@@ -1299,12 +1299,7 @@ public class Recompiler
 		for( Hop hop : hops ) //for all hop roots
 			extractDAGOutputStatistics(hop, vars, overwrite);
 	}
-	
-	public static void extractDAGOutputStatistics(Hop hop, LocalVariableMap vars)
-	{
-		extractDAGOutputStatistics(hop, vars, true);
-	}
-	
+
 	public static void extractDAGOutputStatistics(Hop hop, LocalVariableMap vars, boolean overwrite)
 	{
 		if(    hop instanceof DataOp && ((DataOp)hop).getDataOpType()==DataOpTypes.TRANSIENTWRITE ) //for all writes to symbol table

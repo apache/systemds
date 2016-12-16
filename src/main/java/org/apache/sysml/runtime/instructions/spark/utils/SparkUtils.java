@@ -21,7 +21,6 @@
 package org.apache.sysml.runtime.instructions.spark.utils;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import org.apache.spark.HashPartitioner;
@@ -30,9 +29,6 @@ import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.storage.StorageLevel;
-
-import scala.Tuple2;
-
 import org.apache.sysml.lops.Checkpoint;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.spark.functions.CopyBinaryCellFunction;
@@ -46,6 +42,8 @@ import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.util.UtilFunctions;
+
+import scala.Tuple2;
 
 public class SparkUtils 
 {	
@@ -110,10 +108,6 @@ public class SparkUtils
 		return new Pair<Long,FrameBlock>(in._1(), in._2());
 	}
 
-	public static Pair<Long,FrameBlock> toIndexedFrameBlock( Long ix, FrameBlock fb ) {
-		return new Pair<Long,FrameBlock>(ix, fb);
-	}
-	
 	/**
 	 * Indicates if the input RDD is hash partitioned, i.e., it has a partitioner
 	 * of type {@code org.apache.spark.HashPartitioner}.
@@ -155,42 +149,6 @@ public class SparkUtils
 			return in.mapPartitionsToPair(new CopyBlockPairFunction(deep), true);
 	}
 
-	public static MatrixBlock[] partitionIntoRowBlocks( MatrixBlock mb, int blen ) 
-		throws DMLRuntimeException
-	{
-		//in-memory rowblock partitioning (according to bclen of rdd)
-		int lrlen = mb.getNumRows();
-		int numBlocks = (int)Math.ceil((double)lrlen/blen);				
-		MatrixBlock[] partBlocks = new MatrixBlock[numBlocks];
-		for( int i=0; i<numBlocks; i++ )
-		{
-			MatrixBlock tmp = new MatrixBlock();
-			mb.sliceOperations(i*blen, Math.min((i+1)*blen, lrlen)-1, 
-					0, mb.getNumColumns()-1, tmp);
-			partBlocks[i] = tmp;
-		}			
-		
-		return partBlocks;
-	}
-
-	public static MatrixBlock[] partitionIntoColumnBlocks( MatrixBlock mb, int blen ) 
-		throws DMLRuntimeException
-	{
-		//in-memory colblock partitioning (according to brlen of rdd)
-		int lclen = mb.getNumColumns();
-		int numBlocks = (int)Math.ceil((double)lclen/blen);				
-		MatrixBlock[] partBlocks = new MatrixBlock[numBlocks];
-		for( int i=0; i<numBlocks; i++ )
-		{
-			MatrixBlock tmp = new MatrixBlock();
-			mb.sliceOperations(0, mb.getNumRows()-1, 
-					i*blen, Math.min((i+1)*blen, lclen)-1,  tmp);
-			partBlocks[i] = tmp;
-		}
-		
-		return partBlocks;
-	}
-	
 	// This returns RDD with identifier as well as location
 	public static String getStartLineFromSparkDebugInfo(String line) throws DMLRuntimeException {
 		// To remove: (2)  -- Assumption: At max, 9 RDDs as input to transformation/action
@@ -210,85 +168,6 @@ public class SparkUtils
 			return retVal + "+- ";
 		else
 			return retVal + "|" + twoSpaces;
-	}
-			
-	
-	// len = {clen or rlen}, blen = {brlen or bclen}
-	public static long getStartGlobalIndex(long blockIndex, int blen, long len) {
-		return UtilFunctions.computeCellIndex(blockIndex, blen, 0);
-	}
-	
-	public static JavaPairRDD<MatrixIndexes, MatrixBlock> getRDDWithEmptyBlocks(JavaSparkContext sc, 
-			JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlocksWithoutEmptyBlocks,
-			long numRows, long numColumns, int brlen, int bclen) throws DMLRuntimeException {
-		JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlocksWithEmptyBlocks = null;
-		// ----------------------------------------------------------------------------
-		// Now take care of empty blocks
-		// This is done as non-rdd operation due to complexity involved in "not in" operations
-		// Since this deals only with keys and not blocks, it might not be that bad.
-		List<MatrixIndexes> indexes = binaryBlocksWithoutEmptyBlocks.keys().collect();
-		ArrayList<Tuple2<MatrixIndexes, MatrixBlock> > emptyBlocksList = getEmptyBlocks(indexes, numRows, numColumns, brlen, bclen);
-		if(emptyBlocksList != null && emptyBlocksList.size() > 0) {
-			// Empty blocks needs to be inserted
-			binaryBlocksWithEmptyBlocks = JavaPairRDD.fromJavaRDD(sc.parallelize(emptyBlocksList))
-					.union(binaryBlocksWithoutEmptyBlocks);
-		}
-		else {
-			binaryBlocksWithEmptyBlocks = binaryBlocksWithoutEmptyBlocks;
-		}
-		// ----------------------------------------------------------------------------
-		return binaryBlocksWithEmptyBlocks;
-	}
-	
-	private static ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> getEmptyBlocks(List<MatrixIndexes> nonEmptyIndexes, long rlen, long clen, int brlen, int bclen) throws DMLRuntimeException {
-		long numBlocksPerRow = (long) Math.ceil((double)rlen / brlen);
-		long numBlocksPerCol = (long) Math.ceil((double)clen / bclen);
-		long expectedNumBlocks = numBlocksPerRow*numBlocksPerCol;
-		
-		if(expectedNumBlocks == nonEmptyIndexes.size()) {
-			return null; // no empty blocks required: sanity check
-		}
-		else if(expectedNumBlocks < nonEmptyIndexes.size()) {
-			throw new DMLRuntimeException("Error: Incorrect number of indexes in ReblockSPInstruction:" + nonEmptyIndexes.size());
-		}
-		
-		// ----------------------------------------------------------------------------
-		// Add empty blocks: Performs a "not-in" operation
-		Collections.sort(nonEmptyIndexes); // sort in ascending order first wrt rows and then wrt columns
-		ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> retVal = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
-		int index = 0;
-		for(long row = 1; row <=  Math.ceil((double)rlen / brlen); row++) {
-			for(long col = 1; col <=  Math.ceil((double)clen / bclen); col++) {
-				boolean matrixBlockExists = false;
-				if(nonEmptyIndexes.size() > index) {
-					matrixBlockExists = (nonEmptyIndexes.get(index).getRowIndex() == row) && (nonEmptyIndexes.get(index).getColumnIndex() == col);
-				}
-				if(matrixBlockExists) {
-					index++; // No need to add empty block
-				}
-				else {
-					// ------------------------------------------------------------------
-					//	Compute local block size: 
-					// Example: For matrix: 1500 X 1100 with block length 1000 X 1000
-					// We will have four local block sizes (1000X1000, 1000X100, 500X1000 and 500X1000)
-					long blockRowIndex = row;
-					long blockColIndex = col;
-					int emptyBlk_lrlen = UtilFunctions.computeBlockSize(rlen, blockRowIndex, brlen);
-					int emptyBlk_lclen = UtilFunctions.computeBlockSize(clen, blockColIndex, bclen);
-					// ------------------------------------------------------------------
-					
-					MatrixBlock emptyBlk = new MatrixBlock(emptyBlk_lrlen, emptyBlk_lclen, true);
-					retVal.add(new Tuple2<MatrixIndexes, MatrixBlock>(new MatrixIndexes(blockRowIndex, blockColIndex), emptyBlk));
-				}
-			}
-		}
-		// ----------------------------------------------------------------------------
-		
-		if(index != nonEmptyIndexes.size()) {
-			throw new DMLRuntimeException("Unexpected error while adding empty blocks");
-		}
-		
-		return retVal;
 	}
 
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> getEmptyBlockRDD( JavaSparkContext sc, MatrixCharacteristics mc )
@@ -323,18 +202,6 @@ public class SparkUtils
 		return ret;
 	}
 
-	public static JavaPairRDD<MatrixIndexes, MatrixBlock> cacheBinaryBlockRDD(JavaPairRDD<MatrixIndexes, MatrixBlock> input)
-	{
-		JavaPairRDD<MatrixIndexes, MatrixBlock> ret = null;
-		
-		if( !input.getStorageLevel().equals(DEFAULT_TMP) ) {
-			ret = SparkUtils.copyBinaryBlockMatrix(input, false)
-					.persist(DEFAULT_TMP);
-		}
-		
-		return ret;
-	}
-	
 	/**
 	 * Utility to compute dimensions and non-zeros in a given RDD of binary cells.
 	 * 
@@ -346,24 +213,6 @@ public class SparkUtils
 		// compute dimensions and nnz in single pass
 		MatrixCharacteristics ret = input
 				.map(new AnalyzeCellMatrixCharacteristics())
-				.reduce(new AggregateMatrixCharacteristics());
-		
-		return ret;
-	}
-	
-	/**
-	 * Utility to compute dimensions and non-zeros in the given RDD of matrix blocks.
-	 * 
-	 * @param input matrix as {@code JavaPairRDD<MatrixIndexes, MatrixBlock>}
-	 * @param brlen number of rows in a block
-	 * @param bclen number of columns in a block
-	 * @return matrix characteristics
-	 */
-	public static MatrixCharacteristics computeMatrixCharacteristics(JavaPairRDD<MatrixIndexes, MatrixBlock> input, int brlen, int bclen) 
-	{
-		// compute dimensions and nnz in single pass
-		MatrixCharacteristics ret = input
-				.map(new AnalyzeBlockMatrixCharacteristics(brlen, bclen))
 				.reduce(new AggregateMatrixCharacteristics());
 		
 		return ret;
@@ -384,30 +233,6 @@ public class SparkUtils
 		}
 	}
 
-	private static class AnalyzeBlockMatrixCharacteristics implements Function<Tuple2<MatrixIndexes,MatrixBlock>, MatrixCharacteristics> 
-	{
-		private static final long serialVersionUID = -1857049501217936951L;
-		
-		private int _brlen = -1; 
-		private int _bclen = -1; 
-		
-		public AnalyzeBlockMatrixCharacteristics(int brlen, int bclen) {
-			_brlen = brlen;
-			_bclen = bclen;
-		}
-		
-		@Override
-		public MatrixCharacteristics call(Tuple2<MatrixIndexes, MatrixBlock> arg0) 
-			throws Exception 
-		{
-			MatrixBlock block = arg0._2();
-			long rlen = (arg0._1().getRowIndex()-1)*_brlen + block.getNumRows();
-			long clen = (arg0._1().getColumnIndex()-1)*_bclen + block.getNumColumns();
-			long nnz = block.getNonZeros();
-			return new MatrixCharacteristics(rlen, clen, _brlen, _bclen, nnz);
-		}
-	}
-
 	private static class AggregateMatrixCharacteristics implements Function2<MatrixCharacteristics, MatrixCharacteristics, MatrixCharacteristics> 
 	{
 		private static final long serialVersionUID = 4263886749699779994L;
@@ -424,28 +249,7 @@ public class SparkUtils
 					arg0.getNonZeros() + arg1.getNonZeros() ); //sum
 		}	
 	}
-	
-	////////////////////////////
-	//TODO MB: to be cleaned up but still used
-	
-	/**
-	 * Utility to compute number of non-zeros from the given RDD of MatrixCells
-	 * 
-	 * @param rdd matrix as {@code JavaPairRDD<MatrixIndexes, MatrixCell>}
-	 * @return number of non-zeros
-	 */
-	public static long computeNNZFromCells(JavaPairRDD<MatrixIndexes, MatrixCell> rdd) {
-		long nnz = rdd.values().filter(
-						new Function<MatrixCell,Boolean>() {
-							private static final long serialVersionUID = -6550193680630537857L;
-							@Override
-							public Boolean call(MatrixCell v1) throws Exception {
-								return (v1.getValue() != 0);
-							}
-						}).count();
-		return nnz;
-	}
-	
+
 	/**
 	 * Utility to compute number of non-zeros from the given RDD of MatrixBlocks
 	 * 

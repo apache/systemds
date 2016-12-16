@@ -246,14 +246,6 @@ public class TfUtils implements Serializable{
 		_da = new DummycodeAgent(spec, _outputColumnNames, _numInputCols);
 	}
 	
-	public void setupAgents(OmitAgent oa, MVImputeAgent mia, RecodeAgent ra, BinAgent ba, DummycodeAgent da)  {
-		_oa = oa;
-		_mia = mia;
-		_ra = ra;
-		_ba = ba;
-		_da = da;
-	}
-	
 	private void parseColumnNames() {
 		_outputColumnNames = _delim.split(_headerLine, -1);
 		for(int i=0; i < _outputColumnNames.length; i++)

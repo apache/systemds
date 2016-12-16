@@ -19,21 +19,16 @@
 
 package org.apache.sysml.hops.cost;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.StringTokenizer;
 import java.util.Map.Entry;
+import java.util.StringTokenizer;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.conf.ConfigurationManager;
-import org.apache.sysml.hops.Hop;
-import org.apache.sysml.hops.HopsException;
-import org.apache.sysml.hops.recompile.Recompiler;
 import org.apache.sysml.lops.Lop;
-import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.ExternalFunctionProgramBlock;
@@ -102,24 +97,6 @@ public abstract class CostEstimator
 				
 		//get cost estimate
 		return rGetTimeEstimate(pb, stats, new HashSet<String>(), recursive);
-	}
-
-	public double getTimeEstimate( ArrayList<Hop> hops, LocalVariableMap vars, HashMap<String,VarStats> stats ) 
-		throws DMLRuntimeException, HopsException, LopsException, IOException
-	{
-		double costs = 0;
-		
-		ArrayList<Instruction> linst = Recompiler.recompileHopsDag(null, hops, vars, null, false, 0);
-		ProgramBlock pb = new ProgramBlock(null);
-		pb.setInstructions(linst);
-		
-		//obtain stats from symboltable (e.g., during recompile)
-		maintainVariableStatistics(vars, stats);
-		
-		//get cost estimate
-		costs = rGetTimeEstimate(pb, stats, new HashSet<String>(), true);
-		
-		return costs;
 	}
 
 	private double rGetTimeEstimate(ProgramBlock pb, HashMap<String,VarStats> stats, HashSet<String> memoFunc, boolean recursive) 

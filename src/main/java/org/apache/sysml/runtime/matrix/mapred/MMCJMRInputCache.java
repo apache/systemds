@@ -113,13 +113,6 @@ public class MMCJMRInputCache extends MMCJMRCache
 		return _buffer[lpos];
 	}
 
-	public void resetCache() 
-		throws IOException
-	{
-		//by default don't reset buffersize (e.g., for aggregator)
-		resetCache(false);
-	}
-
 	public void resetCache(boolean fullreset) 
 		throws IOException
 	{

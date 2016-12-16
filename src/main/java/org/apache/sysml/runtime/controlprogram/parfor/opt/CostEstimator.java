@@ -178,22 +178,6 @@ public abstract class CostEstimator
 		return val;
 	}
 
-	public double computeLocalParBound(OptTree plan, OptNode n) 
-	{
-		return Math.floor(rComputeLocalValueBound(plan.getRoot(), n, plan.getCK()));		
-	}
-
-	public double computeLocalMemoryBound(OptTree plan, OptNode n) 
-	{
-		return rComputeLocalValueBound(plan.getRoot(), n, plan.getCM());
-	}
-
-	public double getMinMemoryUsage(OptNode pn) 
-	{
-		// TODO implement for DP enum optimizer
-		throw new RuntimeException("Not implemented yet.");
-	}
-
 	protected double getDefaultEstimate(TestMeasure measure) 
 	{
 		double val = -1;
@@ -239,43 +223,4 @@ public abstract class CostEstimator
 		ret /= len; //weighting
 		return ret;
 	}
-
-	protected double rComputeLocalValueBound( OptNode current, OptNode node, double currentVal )
-	{
-		if( current == node ) //found node
-			return currentVal;
-		else if( current.isLeaf() ) //node not here
-			return -1; 
-		else
-		{
-			switch( current.getNodeType() )
-			{
-				case GENERIC:
-				case FUNCCALL:
-				case IF:
-				case WHILE:
-				case FOR:
-					for( OptNode c : current.getChilds() ) 
-					{
-						double lval = rComputeLocalValueBound(c, node, currentVal);
-						if( lval > 0 )
-							return lval;
-					}
-					break;
-				case PARFOR:
-					for( OptNode c : current.getChilds() ) 
-					{
-						double lval = rComputeLocalValueBound(c, node, currentVal/current.getK());
-						if( lval > 0 )
-							return lval;
-					}
-					break;
-				default:
-					//do nothing
-			}
-		}
-			
-		return -1;
-	}
-
 }

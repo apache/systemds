@@ -145,41 +145,7 @@ public class DMLConfig
 	{
 		_xmlRoot = root;
 	}
-	
-	public void merge(DMLConfig otherConfig) 
-		throws ParseException
-	{
-		if (otherConfig == null) 
-			return;
-	
-		try {
-			// for each element in otherConfig, either overwrite existing value OR add to defaultConfig
-			NodeList otherConfigNodeList = otherConfig._xmlRoot.getChildNodes();
-			if (otherConfigNodeList != null && otherConfigNodeList.getLength() > 0){
-				for (int i=0; i<otherConfigNodeList.getLength(); i++){
-					org.w3c.dom.Node optionalConfigNode = otherConfigNodeList.item(i);
-					
-					if (optionalConfigNode.getNodeType() == org.w3c.dom.Node.ELEMENT_NODE){
-					
-						// try to find optional config node in default config node
-						String paramName = optionalConfigNode.getNodeName();
-						String paramValue = ((Element)optionalConfigNode).getFirstChild().getNodeValue();
-					
-						if (_xmlRoot.getElementsByTagName(paramName) != null)
-							LOG.info("Updating " + paramName + " with value " + paramValue);
-						else 
-							LOG.info("Defining new attribute" + paramName + " with value " + paramValue);
-						DMLConfig.setTextValue(_xmlRoot, paramName, paramValue);
-					}
-					
-				}
-			} // end if (otherConfigNodeList != null && otherConfigNodeList.getLength() > 0){
-		} catch (Exception e){
-			LOG.error("Failed in merge default config file with optional config file",e);
-			throw new ParseException("ERROR: error merging config file " + otherConfig._fileName + " with " + _fileName);
-		}
-	}
-	
+
 	/**
 	 * Method to parse configuration
 	 * @throws ParserConfigurationException
@@ -458,23 +424,7 @@ public class DMLConfig
 			elem.getFirstChild().setNodeValue(String.valueOf(mrMem));
 		}
 	}
-	
-	@SuppressWarnings("deprecation")
-	public void makeQualifiedScratchSpacePath() 
-		throws IOException
-	{
-		NodeList list2 = _xmlRoot.getElementsByTagName(SCRATCH_SPACE);
-		if (list2 != null && list2.getLength() > 0) {
-			Element elem = (Element) list2.item(0);
-			
-			FileSystem fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
-			String fname = elem.getFirstChild().getNodeValue();
-			Path path = new Path(fname).makeQualified(fs);
-			
-			elem.getFirstChild().setNodeValue(path.toString());
-		}
-	}
-	
+
 	public static String getDefaultTextValue( String key ) {
 		return _defaultVals.get( key );
 	}

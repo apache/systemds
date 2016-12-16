@@ -100,32 +100,7 @@ public class IfStatement extends Statement
 		if (!_elseBody.isEmpty())
 			_elseBody = StatementBlock.mergeStatementBlocks(_elseBody);
 	}
-	
-	public VariableSet variablesReadIfBody() {
-		
-		return null;
-		
-	}
-	
-	public VariableSet variablesReadElseBody() {
-		
-		LOG.warn("WARNING: line " + this.getBeginLine() + ", column " + this.getBeginColumn() + " --  should not call variablesReadElseBody from IfStatement ");
-		return null;
-	}
-	
-	public  VariableSet variablesUpdatedIfBody() {
-		
-		LOG.warn("WARNING: line " + this.getBeginLine() + ", column " + this.getBeginColumn() + " --  should not call variablesUpdatedIfBody from IfStatement ");
-		return null;
-	}
-	
-	public  VariableSet variablesUpdatedElseBody() {
-		
-		LOG.warn("WARNING: line " + this.getBeginLine() + ", column " + this.getBeginColumn() + " --  should not call variablesUpdatedElseBody from IfStatement ");
-		return null;
-	}
-	
-	
+
 	public String toString(){
 		StringBuilder sb = new StringBuilder();
 		sb.append("if ( ");
@@ -143,11 +118,6 @@ public class IfStatement extends Statement
 			sb.append("}\n");
 		}
 		return sb.toString();
-	}
-
-	
-	public VariableSet variablesKill() {
-		return new VariableSet();
 	}
 
 	@Override

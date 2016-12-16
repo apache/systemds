@@ -32,16 +32,15 @@ import org.apache.sysml.lops.Checkpoint;
 import org.apache.sysml.lops.Compression;
 import org.apache.sysml.lops.Data;
 import org.apache.sysml.lops.Lop;
+import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.lops.ReBlock;
 import org.apache.sysml.lops.UnaryCP;
-import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
-import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -225,11 +224,7 @@ public abstract class Hop
 	public void setRequiresCompression(boolean flag) {
 		_requiresCompression = flag;
 	}
-	
-	public boolean requiresCompression() {
-		return _requiresCompression;
-	}
-	
+
 	public boolean hasMatrixInputWithDifferentBlocksizes()
 	{
 		for( Hop c : getInput() ) {
@@ -728,22 +723,6 @@ public abstract class Hop
 	 */
 	protected abstract long[] inferOutputCharacteristics( MemoTable memo );
 
-	
-	
-	/**
-	 * This function is used only for sanity check.
-	 * Returns true if estimates for all the hops in the DAG rooted at the current 
-	 * hop are computed. Returns false if any of the hops have INVALID estimate.
-	 * 
-	 * @return true if estimates computed for all hops rooted at current hop
-	 */
-	public boolean checkEstimates() {
-		boolean childStatus = true;
-		for (Hop h : this.getInput())
-			childStatus = childStatus && h.checkEstimates();
-		return childStatus && (_memEstimate != OptimizerUtils.INVALID_SIZE);
-	}
-	
 	/**
 	 * Recursively computes memory estimates for all the Hops in the DAG rooted at the 
 	 * current hop pointed by <code>this</code>.
@@ -808,17 +787,6 @@ public abstract class Hop
 
 	public ArrayList<Hop> getInput() {
 		return _input;
-	}
-
-	/**
-	 * Create bidirectional links
-	 * 
-	 * @param h high-level operator
-	 */
-	public void addInput( Hop h )
-	{
-		_input.add(h);
-		h._parent.add(this);
 	}
 
 	public long getRowsInBlock() {
@@ -934,22 +902,6 @@ public abstract class Hop
 		this.setVisited(VisitStatus.DONE);
 	}
 
-	public void checkParentChildPointers( ) 
-		throws HopsException
-	{
-		if( getVisited() == VisitStatus.DONE )
-			return;
-		
-		for( Hop in : getInput() )
-		{
-			if( !in.getParent().contains(this) )
-				throw new HopsException("Parent-Child pointers incorrect.");
-			in.checkParentChildPointers();
-		}
-		
-		setVisited(VisitStatus.DONE);
-	}
-	
 	public void printMe() throws HopsException {
 		if (LOG.isDebugEnabled()) {
 			StringBuilder s = new StringBuilder(""); 
@@ -1387,11 +1339,7 @@ public abstract class Hop
 		HopsOpOp2String.put(OpOp2.RBIND, "rbind");
 		HopsOpOp2String.put(OpOp2.SOLVE, "solve");
 	}
-	
-	public static String getOpOp2String( OpOp2 op ) {
-		return HopsOpOp2String.get(op);
-	}
-	
+
 	protected static final HashMap<Hop.OpOp3, String> HopsOpOp3String;
 	static {
 		HopsOpOp3String = new HashMap<Hop.OpOp3, String>();
@@ -1454,33 +1402,6 @@ public abstract class Hop
 		HopsData2String.put(DataOpTypes.TRANSIENTWRITE, "TWrite");
 		HopsData2String.put(DataOpTypes.TRANSIENTREAD, "TRead");
 	}
-	
-	public static boolean isFunction(OpOp2 op)
-	{
-		return op == OpOp2.MIN || op == OpOp2.MAX ||
-		op == OpOp2.LOG;// || op == OpOp2.CONCAT; //concat is || in Netezza
-	}
-	
-	public static boolean isSupported(OpOp2 op)
-	{
-		return op != OpOp2.INVALID && op != OpOp2.QUANTILE &&
-		op != OpOp2.INTERQUANTILE && op != OpOp2.IQM;
-	}
-	
-	public static boolean isFunction(OpOp1 op)
-	{
-		return op == OpOp1.SIN || op == OpOp1.TAN || op == OpOp1.COS ||
-		op == OpOp1.ABS || op == OpOp1.EXP || op == OpOp1.LOG ||
-		op == OpOp1.ROUND || op == OpOp1.SQRT;
-	}
-	
-	public static boolean isBooleanOperation(OpOp2 op)
-	{
-		return op == OpOp2.AND || op == OpOp2.EQUAL ||
-		op == OpOp2.GREATER || op == OpOp2.GREATEREQUAL ||
-		op == OpOp2.LESS || op == OpOp2.LESSEQUAL ||
-		op == OpOp2.OR;
-	}
 
 	public static OpOp2 getOpOp2ForOuterVectorOperation(String op) 
 	{
@@ -1505,17 +1426,7 @@ public abstract class Hop
 		
 		return null;		
 	}
-	
-	public static ValueType getResultValueType(ValueType vt1, ValueType vt2)
-	{
-		if(vt1 == ValueType.STRING || vt2  == ValueType.STRING)
-			return ValueType.STRING;
-		else if(vt1 == ValueType.DOUBLE || vt2 == ValueType.DOUBLE)
-			return ValueType.DOUBLE;
-		else
-			return ValueType.INT;
-	}
-	
+
 	/////////////////////////////////////
 	// methods for dynamic re-compilation
 	/////////////////////////////////////
@@ -1534,12 +1445,7 @@ public abstract class Hop
 	{
 		_requiresRecompile = true;
 	}
-	
-	public void unsetRequiresRecompile()
-	{
-		_requiresRecompile = false;
-	}
-	
+
 	/**
 	 * Update the output size information for this hop.
 	 */
@@ -1778,21 +1684,6 @@ public abstract class Hop
 		return ret;
 	}
 
-	public String constructBaseDir()
-	{
-		StringBuilder sb = new StringBuilder();
-		sb.append( ConfigurationManager.getScratchSpace() );
-		sb.append( Lop.FILE_SEPARATOR );
-		sb.append( Lop.PROCESS_PREFIX );
-		sb.append( DMLScript.getUUID() );
-		sb.append( Lop.FILE_SEPARATOR );
-		sb.append( Lop.FILE_SEPARATOR );
-		sb.append( ProgramConverter.CP_ROOT_THREAD_ID );
-		sb.append( Lop.FILE_SEPARATOR );
-	
-		return sb.toString();
-	}
-	
 	/**
 	 * Clones the attributes of that and copies it over to this.
 	 * 
@@ -1871,11 +1762,7 @@ public abstract class Hop
 	public String printErrorLocation(){
 		return "ERROR: line " + _beginLine + ", column " + _beginColumn + " -- ";
 	}
-	
-	public String printWarningLocation(){
-		return "WARNING: line " + _beginLine + ", column " + _beginColumn + " -- ";
-	}
-	
+
 	/**
 	 * Sets the linenumbers of this hop to a given lop.
 	 * 

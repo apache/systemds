@@ -25,8 +25,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 
-import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
@@ -86,69 +84,6 @@ public class FrameReblockBuffer
 		_count++;
 	}
 
-	public void appendBlock(long r_offset, long c_offset, FrameBlock inBlk, OutputCollector<Long, Writable> out ) 
-		throws IOException
-	{
-		{
-			int rlen = inBlk.getNumRows();
-			int clen = inBlk.getNumColumns();
-			for( int i=0; i<rlen; i++ )
-				for( int j=0; j<clen; j++ )
-				{
-					Object obj = inBlk.get(i ,  j );
-					if( obj != null )
-					{
-						appendCell(r_offset+i, c_offset+j, obj);
-						
-						//check and flush if required
-						if( _count ==_bufflen )
-							flushBuffer(out);
-					}
-				}
-		}
-	}
-
-	public void flushBuffer( OutputCollector<Long, Writable> out ) 
-		throws IOException
-	{
-		if( _count == 0 )
-			return;
-		
-		//Step 1) sort reblock buffer (blockwise, no in-block sorting!)
-		Arrays.sort( _buff, 0 ,_count, new FrameReblockBufferComparator() );
-		
-		//Step 2) output blocks 
-		Long tmpIx = -1L;
-		//create intermediate blocks
-		FrameBlock tmpBlock = new FrameBlock();
-		
-		//put values into block and output
-		long cbi = -1, cbj = -1; //current block indexes
-		for( int i=0; i<_count; i++ )
-		{
-			long bi = UtilFunctions.computeBlockIndex(_buff[i].getRow(), _brlen);
-			long bj = UtilFunctions.computeBlockIndex(_buff[i].getCol(), _bclen);
-			
-			//output block and switch to next index pair
-			if( bi != cbi || bj != cbj ) {
-				outputBlock(out, tmpIx, tmpBlock);
-				cbi = bi;
-				cbj = bj;					
-				tmpIx = bi;
-				tmpBlock.reset(Math.min(_brlen, (int)(_rlen-(bi-1)*_brlen)), true);
-			}
-			
-			int ci = UtilFunctions.computeCellInBlock(_buff[i].getRow(), _brlen);
-			int cj = UtilFunctions.computeCellInBlock(_buff[i].getCol(), _bclen);
-			tmpBlock.set(ci, cj, _buff[i].getObjVal());
-		}
-		
-		//output last block 
-		outputBlock(out, tmpIx, tmpBlock);
-			
-		_count = 0;
-	}
-
 	public void flushBufferToBinaryBlocks( ArrayList<Pair<Long, FrameBlock>> outList ) 
 		throws IOException, DMLRuntimeException
 	{
@@ -196,17 +131,6 @@ public class FrameReblockBuffer
 			outputBlock(outList, tmpIx, tmpBlock);
 		
 		_count = 0;
-	}
-
-	private static void outputBlock( OutputCollector<Long, Writable> out, Long key, FrameBlock block ) 
-		throws IOException
-	{
-		//skip output of unassigned blocks
-		if( key == -1)
-			return;
-		
-		//output block
-		out.collect(key, block);
 	}
 
 	private static void outputBlock( ArrayList<Pair<Long, FrameBlock>> out, Long key, FrameBlock value ) 

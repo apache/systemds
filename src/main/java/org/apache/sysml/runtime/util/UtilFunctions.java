@@ -24,16 +24,12 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.lang.ArrayUtils;
-import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
-import org.apache.sysml.runtime.instructions.InstructionUtils;
-import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.NumItemsByEachReducerMetaData;
 import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
-import org.apache.wink.json4j.JSONArray;
 
 public class UtilFunctions 
 {
@@ -50,12 +46,7 @@ public class UtilFunctions
 	public static int longHashCode(long v) {
 		return (int)(v^(v>>>32));
 	}
-	
-	@Deprecated
-	public static int longlongHashCodeOld(long key1, long key2) {
-		return UtilFunctions.longHashCode((key1<<32)+key2+ADD_PRIME1)%DIVIDE_PRIME;
-	}
-	
+
 	/**
 	 * Returns the hash code for a long-long pair. This is the default
 	 * hash function for the keys of a distributed matrix in MR/Spark.
@@ -129,17 +120,6 @@ public class UtilFunctions
 	public static int computeBlockSize( long len, long blockIndex, long blockSize ) {
 		long remain = len - (blockIndex-1)*blockSize;
 		return (int)Math.min(blockSize, remain);
-	}
-	
-	//all boundaries are inclusive
-	public static boolean isOverlap(long s1, long f1, long s2, long f2)
-	{
-		return !(f2<s1 || f1<s2);
-	}
-	
-	public static boolean isIn(long point, long s, long f)
-	{
-		return (point>=s && point<=f);
 	}
 
 	public static boolean isInBlockRange( MatrixIndexes ix, int brlen, int bclen, long rl, long ru, long cl, long cu )
@@ -436,17 +416,7 @@ public class UtilFunctions
 				return false;
 		return true;
 	}
-	
-	public static boolean isSimpleDoubleNumber( String str )
-	{
-		//true if all chars numeric or - or .
-		byte[] c = str.getBytes();
-		for( int i=0; i<c.length; i++ )
-			if( (c[i] < 48 || c[i] > 57) && !(c[i]==45 || c[i]==46) )
-				return false;
-		return true;
-	}
-	
+
 	public static byte max( byte[] array )
 	{
 		byte ret = Byte.MIN_VALUE;
@@ -468,16 +438,6 @@ public class UtilFunctions
 		return "\"" + s + "\"";
 	}
 
-	public static String toString(int[] list) {
-		StringBuilder sb = new StringBuilder();
-		sb.append(list[0]);
-		for(int i=1; i<list.length; i++) {
-			sb.append(",");
-			sb.append(list[i]);
-		}
-		return sb.toString();
-	}
-	
 	/**
 	 * Parses a memory size with optional g/m/k quantifiers into its
 	 * number representation.
@@ -527,37 +487,6 @@ public class UtilFunctions
 		for( int i=low; i<=up; i+=incr )
 			ret.add(i);
 		return ret;
-	}
-
-	/**
-	 * Returns the schema based on Json object
-	 * 
-	 * @param schemaObject schema object
-	 * @return schema as a list of value types
-	 */
-	public static List<ValueType> getSchemaType(Object schemaObject)
-	{
-		JSONArray schemaJsonArr = (JSONArray)schemaObject;
-		ValueType[] schemaArray = new ValueType[schemaJsonArr.size()];
-		
-		for(int i=0; i < schemaJsonArr.length(); i++)
-				schemaArray[i] = ValueType.valueOf((String)schemaJsonArr.get(0));
-		return Arrays.asList(schemaArray);
-	}
-	
-	/**
-	 * This function will return datatype, if its Matrix or Frame
-	 * 
-	 * @param str Instruction string to execute
-	 * @param index parts index
-	 * @return data type
-	 */
-	public static DataType getDataType(String str, int index)
-	{
-		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
-		CPOperand in1 = new CPOperand(parts[index]);
-	
-		return in1.getDataType();
 	}
 
 	public static double getDouble(Object obj) {

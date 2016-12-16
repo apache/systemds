@@ -19,20 +19,13 @@
 
 package org.apache.sysml.runtime.controlprogram.parfor.opt;
 
-import java.util.Collection;
-import java.util.LinkedList;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
-import org.apache.sysml.hops.Hop;
 import org.apache.sysml.parser.ParForStatementBlock;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.POptMode;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysml.runtime.controlprogram.parfor.opt.OptNode.ExecType;
-import org.apache.sysml.runtime.controlprogram.parfor.opt.OptNode.NodeType;
 
 
 /**
@@ -102,58 +95,5 @@ public abstract class Optimizer
 	{
 		return _numEvaluatedPlans;
 	}
-	
-	
-	
-	
-	
-	///////
-	//methods for common basic primitives
-	
-	/**
-	 * Enum node plans (only for current opt node)
-	 * 
-	 * @param n internal representation of a plan alternative for program blocks and instructions
-	 * @param lck ?
-	 * @return collection of optimization nodes
-	 */
-	protected Collection<OptNode> enumPlans( OptNode n, double lck )
-	{
-		Collection<OptNode> plans = enumerateExecTypes( n );
-		
-		//TODO additional enumerations / potential rewrites go here
-			
-		return plans;
-	}
 
-	private Collection<OptNode> enumerateExecTypes( OptNode n )
-	{
-		Collection<OptNode> dTypes = new LinkedList<OptNode>();
-		boolean genAlternatives = false;
-		
-		//determine if alternatives should be generated
-		if( n.isLeaf() ) //hop
-		{
-			Hop hop = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
-			if( hop.allowsAllExecTypes() )
-				genAlternatives = true;
-		}
-		else if( n.getNodeType()==NodeType.PARFOR ) //parfor pb
-		{
-			genAlternatives = true;
-		}
-
-		//generate alternatives
-		if( genAlternatives )
-		{
-			OptNode c1 = n.createShallowClone();
-			OptNode c2 = n.createShallowClone();
-			c1.setExecType(ExecType.CP);
-			c2.setExecType(ExecType.MR);
-			dTypes.add( c1 );
-			dTypes.add( c2 );
-		}
-		
-		return dTypes;	
-	}
 }

@@ -41,7 +41,7 @@ public abstract class BuiltinUnaryGPUInstruction  extends GPUInstruction {
 	{
 		super(op, opcode, istr);
 		_gputype = GPUINSTRUCTION_TYPE.BuiltinUnary;
-		_arity = _arity;
+		this._arity = _arity;
 		_input = in;
         _output = out;
 	}

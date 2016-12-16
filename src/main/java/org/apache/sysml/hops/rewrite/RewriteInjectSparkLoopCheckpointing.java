@@ -28,6 +28,7 @@ import org.apache.sysml.hops.Hop.DataOpTypes;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.parser.DataIdentifier;
 import org.apache.sysml.parser.ForStatementBlock;
+import org.apache.sysml.parser.IndexedIdentifier;
 import org.apache.sysml.parser.StatementBlock;
 import org.apache.sysml.parser.VariableSet;
 import org.apache.sysml.parser.WhileStatementBlock;
@@ -96,11 +97,13 @@ public class RewriteInjectSparkLoopCheckpointing extends StatementBlockRewriteRu
 				for( String var : candidates ) 
 				{
 					DataIdentifier dat = read.getVariable(var);
+					long dim1 = (dat instanceof IndexedIdentifier) ? ((IndexedIdentifier)dat).getOrigDim1() : dat.getDim1();
+					long dim2 = (dat instanceof IndexedIdentifier) ? ((IndexedIdentifier)dat).getOrigDim2() : dat.getDim2();
 					DataOp tread = new DataOp(var, DataType.MATRIX, ValueType.DOUBLE, DataOpTypes.TRANSIENTREAD, 
-							            dat.getFilename(), dat.getDim1(), dat.getDim2(), dat.getNnz(), blocksize, blocksize);
+							            dat.getFilename(), dim1, dim2, dat.getNnz(), blocksize, blocksize);
 					tread.setRequiresCheckpoint( true );
 					DataOp twrite = new DataOp(var, DataType.MATRIX, ValueType.DOUBLE, tread, DataOpTypes.TRANSIENTWRITE, null);
-					HopRewriteUtils.setOutputParameters(twrite, dat.getDim1(), dat.getDim2(), blocksize, blocksize, dat.getNnz());					
+					HopRewriteUtils.setOutputParameters(twrite, dim1, dim2, blocksize, blocksize, dat.getNnz());					
 					hops.add(twrite);
 					livein.addVariable(var, read.getVariable(var));
 					liveout.addVariable(var, read.getVariable(var));

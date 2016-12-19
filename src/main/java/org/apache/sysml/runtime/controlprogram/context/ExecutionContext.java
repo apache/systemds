@@ -236,6 +236,24 @@ public class ExecutionContext
 		return mo;
 	}
 
+    /**
+     * Allocates a sparse matrix in CSR format on the GPU.
+     * Assumes that mat.getNumRows() returns a valid number
+     * 
+     * @param varName variable name
+     * @param nnz number of non zeroes
+     * @return matrix object
+     * @throws DMLRuntimeException if DMLRuntimeException occurs
+     */
+    public MatrixObject getSparseMatrixOutputForGPUInstruction(String varName, long nnz)
+        throws DMLRuntimeException
+    {
+        MatrixObject mo = allocateGPUMatrixObject(varName);
+        mo.getMatrixCharacteristics().setNonZeros(nnz);
+        mo.getGPUObject().acquireDeviceModifySparse();
+        return mo;
+    } 
+
 	/**
 	 * Allocates the {@link GPUObject} for a given LOPS Variable (eg. _mVar3)
 	 * @param varName variable name

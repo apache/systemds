@@ -29,6 +29,7 @@ import java.util.Map;
 import org.apache.commons.logging.Log;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.parser.common.CommonSyntacticValidator;
 import org.apache.sysml.parser.common.CustomErrorListener.ParseIssue;
@@ -59,6 +60,9 @@ public abstract class AParserWrapper
 	public static AParserWrapper createParser(boolean pydml)
 	{
 		AParserWrapper ret = null;
+		
+		// Always enable sparse before parsing phase (works for all the APIs).
+		DMLScript.DISABLE_SPARSE = false;
 		
 		//create the parser instance
 		if( pydml )

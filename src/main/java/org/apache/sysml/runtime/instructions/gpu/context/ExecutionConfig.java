@@ -47,9 +47,9 @@ public class ExecutionConfig {
 	/**
 	 * Convenience constructor for setting the number of blocks, number of threads and the
 	 * shared memory size
-	 * @param gridDimX
-	 * @param blockDimX
-	 * @param sharedMemBytes
+	 * @param gridDimX					Number of blocks (for CUDA Kernel)
+	 * @param blockDimX					Number of threads per block (for CUDA Kernel)
+	 * @param sharedMemBytes		Amount of Shared memory (for CUDA Kernel)
 	 */
 	public ExecutionConfig(int gridDimX, int blockDimX, int sharedMemBytes) {
 		this.gridDimX = gridDimX;

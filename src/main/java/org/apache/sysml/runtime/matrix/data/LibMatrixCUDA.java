@@ -915,7 +915,7 @@ public class LibMatrixCUDA {
 	 * @param in1			input matrix
 	 * @param output	output matrix/scalar name
 	 * @param op			Instance of {@link AggregateUnaryOperator} which encapsulates the direction of reduction/aggregation and the reduction operation.
-	 * @throws DMLRuntimeException
+	 * @throws DMLRuntimeException if {@link DMLRuntimeException} occurs
 	 */
 	public static void unaryAggregate(ExecutionContext ec, MatrixObject in1, String output, AggregateUnaryOperator op)
 					throws DMLRuntimeException {

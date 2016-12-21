@@ -24,7 +24,7 @@
 # NAME   TYPE   DEFAULT  MEANING
 # -----------------------------------------------------------------------------
 # X      matrix  ---     input matrix to be factorized
-# k      Int     1000    smalles column block of input matrix
+# q      Int     1000    smalles column block of input matrix
 # OUTDIR String  ---     output directory to save the results
 # OFMT   String  CSV     output format
 # -----------------------------------------------------------------------------
@@ -38,7 +38,7 @@
 # -----------------------------------------------------------------------------
 
 X = read($X);
-k = ifdef($k, 1000);
+q = ifdef($q, 1000);
 # k is used for the base case in the recursive algorithm.
 # If X has very large number of rows, choose k to be smaller
 # to fit the base case on single machine.
@@ -60,11 +60,11 @@ QfromH = function(Matrix[double] H)
     }
 }
 
-QR_recursive = function(Matrix[double] A)
+QR_recursive = function(Matrix[double] A, int q)
   return(Matrix[double] Q, Matrix[double] R) {
     n = ncol(A)
-    print(n)
-    if (n <= k) {
+
+    if (n <= q) {
       [H, R] = qr(A)
       Q = QfromH(H)
       R = R[1:n, 1:n]
@@ -74,10 +74,10 @@ QR_recursive = function(Matrix[double] A)
       A1 = A[,1:k]
       A2 = A[,k+1:n]
 
-      [Q1, R11] = QR_recursive(A1)
+      [Q1, R11] = QR_recursive(A1, q)
       R12 = t(Q1) %*% A2
       A2 = A2 - Q1 %*% R12
-      [Q2, R22] = QR_recursive(A2)
+      [Q2, R22] = QR_recursive(A2, q)
 
       R21 = matrix(0, rows = nrow(R22), cols = ncol(R11))
       Q = cbind(Q1, Q2)
@@ -85,7 +85,7 @@ QR_recursive = function(Matrix[double] A)
     }
 }
 
-[Q, R] = QR_recursive(X)
+[Q, R] = QR_recursive(X, q)
 
 write(Q, outdir + "Q.csv", ofmt)
 write(R, outdir + "R.csv", ofmt)

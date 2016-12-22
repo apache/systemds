@@ -33,7 +33,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.hadoop.io.Writable;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.Expression.ValueType;
@@ -405,10 +405,10 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	public void appendColumn(String[] col) {
 		ensureColumnCompatibility(col.length);
 		String[] colnames = getColumnNames(); //before schema modification
-		_colnames = ArrayUtils.add(colnames, createColName(_schema.length));
-		_schema = ArrayUtils.add(_schema, ValueType.STRING);
+		_colnames = (String[]) ArrayUtils.add(colnames, createColName(_schema.length));
+		_schema = (ValueType[]) ArrayUtils.add(_schema, ValueType.STRING);
 		_coldata = (_coldata==null) ? new Array[]{new StringArray(col)} :
-			ArrayUtils.add(_coldata, new StringArray(col));
+			(Array[]) ArrayUtils.add(_coldata, new StringArray(col));
 		_numRows = col.length;
 	}
 	
@@ -422,10 +422,10 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	public void appendColumn(boolean[] col) {
 		ensureColumnCompatibility(col.length);
 		String[] colnames = getColumnNames(); //before schema modification
-		_schema = ArrayUtils.add(_schema, ValueType.BOOLEAN);
-		_colnames = ArrayUtils.add(colnames, createColName(_schema.length));
+		_schema = (ValueType[]) ArrayUtils.add(_schema, ValueType.BOOLEAN);
+		_colnames = (String[]) ArrayUtils.add(colnames, createColName(_schema.length));
 		_coldata = (_coldata==null) ? new Array[]{new BooleanArray(col)} :
-			ArrayUtils.add(_coldata, new BooleanArray(col));	
+			(Array[]) ArrayUtils.add(_coldata, new BooleanArray(col));	
 		_numRows = col.length;
 	}
 	
@@ -439,10 +439,10 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	public void appendColumn(long[] col) {
 		ensureColumnCompatibility(col.length);
 		String[] colnames = getColumnNames(); //before schema modification
-		_schema = ArrayUtils.add(_schema, ValueType.INT);
-		_colnames = ArrayUtils.add(colnames, createColName(_schema.length));
+		_schema = (ValueType[]) ArrayUtils.add(_schema, ValueType.INT);
+		_colnames = (String[]) ArrayUtils.add(colnames, createColName(_schema.length));
 		_coldata = (_coldata==null) ? new Array[]{new LongArray(col)} :
-			ArrayUtils.add(_coldata, new LongArray(col));
+			(Array[]) ArrayUtils.add(_coldata, new LongArray(col));
 		_numRows = col.length;
 	}
 	
@@ -456,10 +456,10 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	public void appendColumn(double[] col) {
 		ensureColumnCompatibility(col.length);
 		String[] colnames = getColumnNames(); //before schema modification
-		_schema = ArrayUtils.add(_schema, ValueType.DOUBLE);
-		_colnames = ArrayUtils.add(colnames, createColName(_schema.length));
+		_schema = (ValueType[]) ArrayUtils.add(_schema, ValueType.DOUBLE);
+		_colnames = (String[]) ArrayUtils.add(colnames, createColName(_schema.length));
 		_coldata = (_coldata==null) ? new Array[]{new DoubleArray(col)} :
-			ArrayUtils.add(_coldata, new DoubleArray(col));
+			(Array[]) ArrayUtils.add(_coldata, new DoubleArray(col));
 		_numRows = col.length;
 	}
 	
@@ -477,10 +477,10 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		Array[] tmpData = new Array[ncol];
 		for( int j=0; j<ncol; j++ )
 			tmpData[j] = new DoubleArray(cols[j]);
-		_colnames = empty ? null : ArrayUtils.addAll(getColumnNames(), 
+		_colnames = empty ? null : (String[]) ArrayUtils.addAll(getColumnNames(), 
 				createColNames(getNumColumns(), ncol)); //before schema modification
-		_schema = empty ? tmpSchema : ArrayUtils.addAll(_schema, tmpSchema); 
-		_coldata = empty ? tmpData : ArrayUtils.addAll(_coldata, tmpData);		
+		_schema = empty ? tmpSchema : (ValueType[]) ArrayUtils.addAll(_schema, tmpSchema); 
+		_coldata = empty ? tmpData : (Array[]) ArrayUtils.addAll(_coldata, tmpData);		
 		_numRows = cols[0].length;
 	}
 
@@ -892,12 +892,12 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			ret._numRows = _numRows;
 			
 			//concatenate schemas (w/ deep copy to prevent side effects)
-			ret._schema = ArrayUtils.addAll(_schema, that._schema);
-			ret._colnames = ArrayUtils.addAll(getColumnNames(), that.getColumnNames());
-			ret._colmeta = ArrayUtils.addAll(_colmeta, that._colmeta);
+			ret._schema = (ValueType[]) ArrayUtils.addAll(_schema, that._schema);
+			ret._colnames = (String[]) ArrayUtils.addAll(getColumnNames(), that.getColumnNames());
+			ret._colmeta = (ColumnMetadata[]) ArrayUtils.addAll(_colmeta, that._colmeta);
 			
 			//concatenate column data (w/ deep copy to prevent side effects)
-			ret._coldata = ArrayUtils.addAll(_coldata, that._coldata);
+			ret._coldata = (Array[]) ArrayUtils.addAll(_coldata, that._coldata);
 			for( int i=0; i<ret._coldata.length; i++ )
 				ret._coldata[i] = ret._coldata[i].clone();
 		}

@@ -145,8 +145,11 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 				else { //general case		
 					int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 					if(DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR || getMemEstimate() < OptimizerUtils.GPU_MEMORY_BUDGET) && (_op == AggOp.SUM)) {
-						et = ExecType.GPU;
-						k = 1;
+						// Only implemented methods for GPU
+						if (_op == AggOp.SUM && _direction == Direction.RowCol) {
+							et = ExecType.GPU;
+							k = 1;
+						}
 					}
 					agg1 = new PartialAggregate(input.constructLops(), 
 							HopsAgg2Lops.get(_op), HopsDirection2Lops.get(_direction), getDataType(),getValueType(), et, k);

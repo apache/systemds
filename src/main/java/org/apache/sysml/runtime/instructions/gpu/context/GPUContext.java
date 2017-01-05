@@ -30,11 +30,22 @@ public abstract class GPUContext {
 
 	public static ArrayList<GPUObject> allocatedPointers = new ArrayList<GPUObject>(); 
 	protected static GPUContext currContext;
-	protected GPUContext() { }
-	
 	public static volatile Boolean isGPUContextCreated = false;
-	
+
+	protected GPUContext() {}
+
+	/**
+	 * Gets device memory available for SystemML operations
+	 * @return
+	 */
 	public abstract long getAvailableMemory();
+
+	/**
+	 * Ensures that all the CUDA cards on the current system are
+	 * of the minimum required compute capability.
+	 * (The minimum required compute capability is hard coded in {@link JCudaContext}.
+	 */
+	public abstract void ensureComputeCapability() throws DMLRuntimeException;
 	
 	/**
 	 * Creation / Destruction of GPUContext and related handles
@@ -46,6 +57,7 @@ public abstract class GPUContext {
 		if(currContext == null && DMLScript.USE_ACCELERATOR) {
 			synchronized(isGPUContextCreated) {
 				currContext = new JCudaContext();
+				currContext.ensureComputeCapability();
 				OptimizerUtils.GPU_MEMORY_BUDGET = ((JCudaContext)currContext).getAvailableMemory();
 				isGPUContextCreated = true;
 			}

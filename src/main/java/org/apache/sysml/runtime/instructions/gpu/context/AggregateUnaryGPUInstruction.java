@@ -87,6 +87,13 @@ public class AggregateUnaryGPUInstruction extends GPUInstruction {
     int rlen = (int)in1.getNumRows();
     int clen = (int)in1.getNumColumns();
 
+    IndexFunction indexFunction = ((AggregateUnaryOperator) _optr).indexFn;
+    if (indexFunction instanceof ReduceRow){  // COL{SUM, MAX...}
+      ec.setMetaData(_output.getName(), 1, clen);
+    } else if (indexFunction instanceof ReduceCol) { // ROW{SUM, MAX,...}
+      ec.setMetaData(_output.getName(), rlen, 1);
+    }
+
     LibMatrixCUDA.unaryAggregate(ec, in1, _output.getName(), (AggregateUnaryOperator)_optr);
 
     //release inputs/outputs
@@ -95,7 +102,6 @@ public class AggregateUnaryGPUInstruction extends GPUInstruction {
     // If the unary aggregate is a row reduction or a column reduction, it results in a vector
     // which needs to be released. Otherwise a scala is produced and it is copied back to the host
     // and set in the execution context by invoking the setScalarOutput
-    IndexFunction indexFunction = ((AggregateUnaryOperator) _optr).indexFn;
     if (indexFunction instanceof ReduceRow || indexFunction instanceof ReduceCol) {
       ec.releaseMatrixOutputForGPUInstruction(_output.getName());
     }

@@ -36,6 +36,7 @@ import jcuda.runtime.JCuda;
 import jcuda.jcudnn.cudnnHandle;
 import jcuda.jcusparse.JCusparse;
 import jcuda.jcusparse.cusparseHandle;
+import jcuda.runtime.cudaDeviceProp;
 import static jcuda.jcudnn.JCudnn.cudnnCreate;
 import static jcuda.jcublas.JCublas2.cublasCreate;
 import static jcuda.jcublas.JCublas2.cublasDestroy;
@@ -44,6 +45,8 @@ import static jcuda.jcusparse.JCusparse.cusparseDestroy;
 import static jcuda.jcusparse.JCusparse.cusparseCreate;
 import static jcuda.driver.JCudaDriver.cuInit;
 import static jcuda.driver.JCudaDriver.cuDeviceGetCount;
+import static jcuda.runtime.JCuda.cudaGetDeviceProperties;
+import static jcuda.runtime.JCuda.cudaGetDeviceCount;
 import static jcuda.runtime.JCuda.cudaMemGetInfo;
 import static jcuda.runtime.cudaError.cudaSuccess;
 
@@ -55,7 +58,13 @@ import static jcuda.runtime.cudaError.cudaSuccess;
  *
  */
 public class JCudaContext extends GPUContext {
-	
+
+	// The minimum CUDA Compute capability needed for SystemML.
+	// After compute capability 3.0, 2^31 - 1 blocks and 1024 threads per block are supported.
+	// If SystemML needs to run on an older card, this logic can be revisited.
+	final int MAJOR_REQUIRED = 3;
+	final int MINOR_REQUIRED = 0;
+
 	private static final Log LOG = LogFactory.getLog(JCudaContext.class.getName());
 	
 	public static boolean DEBUG = false;
@@ -82,7 +91,8 @@ public class JCudaContext extends GPUContext {
         LOG.info("Total number of GPUs on the machine: " + deviceCount);
         Statistics.cudaInitTime = System.nanoTime() - start;
 	}
-	
+
+	@Override
 	public long getAvailableMemory() {
 		if(REFRESH_AVAILABLE_MEMORY_EVERY_TIME) {
 			long free [] = { 0 };
@@ -96,6 +106,30 @@ public class JCudaContext extends GPUContext {
 	        }
 		}
 		return (long) (availableNumBytesWithoutUtilFactor.get()*GPU_MEMORY_UTILIZATION_FACTOR);
+	}
+
+	@Override
+	public void ensureComputeCapability() throws DMLRuntimeException {
+		int[] devices =  {-1};
+		cudaGetDeviceCount(devices);
+		if (devices[0] == -1){
+			throw new DMLRuntimeException("Call to cudaGetDeviceCount returned 0 devices");
+		}
+		boolean isComputeCapable = true;
+		for (int i=0; i<devices[0]; i++) {
+			cudaDeviceProp properties = new cudaDeviceProp();
+			cudaGetDeviceProperties(properties, i);
+			int major = properties.major;
+			int minor = properties.minor;
+			if (major < MAJOR_REQUIRED) {
+				isComputeCapable = false;
+			} else if (major == MAJOR_REQUIRED && minor < MINOR_REQUIRED) {
+				isComputeCapable = false;
+			}
+		}
+		if (!isComputeCapable) {
+			throw new DMLRuntimeException("One of the CUDA cards on the system has compute capability lower than " + MAJOR_REQUIRED + "." + MINOR_REQUIRED);
+		}
 	}
 	
 	

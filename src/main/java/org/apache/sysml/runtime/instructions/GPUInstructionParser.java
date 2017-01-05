@@ -36,17 +36,23 @@ public class GPUInstructionParser  extends InstructionParser
 	public static final HashMap<String, GPUINSTRUCTION_TYPE> String2GPUInstructionType;
 	static {
 		String2GPUInstructionType = new HashMap<String, GPUINSTRUCTION_TYPE>();
+
+		// Neural Network Operators
 		String2GPUInstructionType.put( "conv2d",                 GPUINSTRUCTION_TYPE.Convolution);
 		String2GPUInstructionType.put( "conv2d_backward_filter", GPUINSTRUCTION_TYPE.Convolution);
 		String2GPUInstructionType.put( "conv2d_backward_data",   GPUINSTRUCTION_TYPE.Convolution);
 		String2GPUInstructionType.put( "maxpooling",             GPUINSTRUCTION_TYPE.Convolution);
 		String2GPUInstructionType.put( "maxpooling_backward",    GPUINSTRUCTION_TYPE.Convolution);
 		String2GPUInstructionType.put( "bias_add",    			 GPUINSTRUCTION_TYPE.Convolution);
+
+		// Matrix Multiply Operators
 		String2GPUInstructionType.put( "ba+*",                   GPUINSTRUCTION_TYPE.AggregateBinary);
 		String2GPUInstructionType.put( "tsmm",                   GPUINSTRUCTION_TYPE.MMTSJ);
+
+		// Reorg/Transpose
 		String2GPUInstructionType.put( "r'",                   	 GPUINSTRUCTION_TYPE.Reorg);
 	
-		// 
+		// Binary Cellwise
 		String2GPUInstructionType.put( "+"    , GPUINSTRUCTION_TYPE.ArithmeticBinary);
 		String2GPUInstructionType.put( "-"    , GPUINSTRUCTION_TYPE.ArithmeticBinary);
 		String2GPUInstructionType.put( "*"    , GPUINSTRUCTION_TYPE.ArithmeticBinary);
@@ -64,7 +70,12 @@ public class GPUInstructionParser  extends InstructionParser
 		
 		String2GPUInstructionType.put( "sel+"  , GPUINSTRUCTION_TYPE.BuiltinUnary);
 
+		// Aggregate Unary
+		String2GPUInstructionType.put( "ua+"	 , GPUINSTRUCTION_TYPE.AggregateUnary);
 		String2GPUInstructionType.put( "uak+"	 , GPUINSTRUCTION_TYPE.AggregateUnary);
+		String2GPUInstructionType.put( "uar+"	 , GPUINSTRUCTION_TYPE.AggregateUnary);
+		String2GPUInstructionType.put( "uark+"	 , GPUINSTRUCTION_TYPE.AggregateUnary);
+
 	}
 	
 	public static GPUInstruction parseSingleInstruction (String str ) 

@@ -183,7 +183,20 @@ __global__ void fill(double* A, double scalar, int lenA) {
 }
 
 
-
+/**
+ * Does a reduce (sum) over all elements of the array.
+ * This method has been adapted from the Reduction sample in the NVIDIA CUDA Samples (v8.0)
+ * and the Reduction example available through jcuda.org
+ * When invoked initially, all blocks partly compute the reduction operation over the entire array
+ * and writes it to the output/temporary array. A second invokation needs to happen to get the
+ * reduced value.
+ * The number of threads, blocks and amount of shared memory is calculated in a specific way.
+ * Please refer to the NVIDIA CUDA Sample or the SystemML code that invokes this method to see
+ * how its done.
+ * @param g_idata   input data stored in device memory (of size n)
+ * @param g_odata   output/temporary array stode in device memory (of size n)
+ * @param n         size of the input and temporary/output arrays
+ */
 extern "C"
 __global__ void reduce(double *g_idata, double *g_odata, unsigned int n)
 {
@@ -237,3 +250,65 @@ __global__ void reduce(double *g_idata, double *g_odata, unsigned int n)
     if (tid == 0)
         g_odata[blockIdx.x] = sdata[0];
 }
+
+
+/**
+ * Does a reduce (sum) over each row of the array.
+ * The intuition for this kernel is that each block does a reduction over a single row.
+ * The maximum numver
+ * @param g_idata   input matrix stored in device memory
+ * @param g_odata   output vector of size [rows * 1] in device memory
+ * @param rows      number of rows in input matrix
+ * @param cols      number of columns in input matrix
+ */
+extern "C"
+__global__ void reduce_row(double *g_idata, double *g_odata, unsigned int rows, unsigned int cols)
+{
+    extern __shared__ double sdata[];
+
+    // one block per row
+    if (blockIdx.x >= rows) {
+        return;
+    }
+
+    unsigned int block = blockIdx.x;
+    unsigned int tid = threadIdx.x;
+    unsigned int i = tid;
+    unsigned int block_offset = block * cols;
+
+    double mySum = 0;
+    while (i < cols){
+        mySum += g_idata[block_offset + i];
+        i += blockDim.x;
+    }
+
+    // each thread puts its local sum into shared memory
+    sdata[tid] = mySum;
+    __syncthreads();
+
+
+    // do reduction in shared mem
+    if (blockDim.x >= 512) { if (tid < 256) { sdata[tid] = mySum = mySum + sdata[tid + 256]; } __syncthreads(); }
+    if (blockDim.x >= 256) { if (tid < 128) { sdata[tid] = mySum = mySum + sdata[tid + 128]; } __syncthreads(); }
+    if (blockDim.x >= 128) { if (tid <  64) { sdata[tid] = mySum = mySum + sdata[tid +  64]; } __syncthreads(); }
+
+    if (tid < 32)
+    {
+        // now that we are using warp-synchronous programming (below)
+        // we need to declare our shared memory volatile so that the compiler
+        // doesn't reorder stores to it and induce incorrect behavior.
+        volatile double* smem = sdata;
+        if (blockDim.x >=  64) { smem[tid] = mySum = mySum + smem[tid + 32]; }
+        if (blockDim.x >=  32) { smem[tid] = mySum = mySum + smem[tid + 16]; }
+        if (blockDim.x >=  16) { smem[tid] = mySum = mySum + smem[tid +  8]; }
+        if (blockDim.x >=   8) { smem[tid] = mySum = mySum + smem[tid +  4]; }
+        if (blockDim.x >=   4) { smem[tid] = mySum = mySum + smem[tid +  2]; }
+        if (blockDim.x >=   2) { smem[tid] = mySum = mySum + smem[tid +  1]; }
+    }
+
+    // write result for this block to global mem
+    if (tid == 0)
+        g_odata[block] = sdata[0];
+}
+
+

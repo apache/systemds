@@ -90,6 +90,10 @@ import jcuda.jcusparse.cusparseHandle;
 //FIXME move could to respective instructions, this is not a block library
 public class LibMatrixCUDA {
 
+	// Assume Compute Capability 3.0
+	public static final int MAX_THREADS = 1024;				// For compute capability > 3.0
+	public static final int MAX_BLOCKS = 2147483647;	// 2^31 - 1 For compute capability > 3.0
+
 	public static cudnnHandle cudnnHandle;
 	public static cublasHandle cublasHandle;
 	public static cusparseHandle cusparseHandle;
@@ -992,138 +996,143 @@ public class LibMatrixCUDA {
 		assert opIndex != -1 : "Internal Error - Incorrect type of operation set for aggregate unary GPU instruction";
 
 
-		//TODO - care about reductionDirection & opIndex
-
 		int rlen = (int)in1.getNumRows();
 		int clen = (int)in1.getNumColumns();
 		if (isSparse){
-			long nnz = in1.getNnz();
-			assert nnz > 0 : "Internal Error - number of non zeroes set to " + nnz + " in Aggregate Binary for GPU";
-			MatrixObject out = ec.getSparseMatrixOutputForGPUInstruction(output, nnz);
-			throw new DMLRuntimeException("Internal Error - Not implemented");
+			// The strategy for the time being is to convert sparse to dense
+			// until a sparse specific kernel is written.
+			((JCudaObject)in1.getGPUObject()).sparseToDense();
+			// long nnz = in1.getNnz();
+			// assert nnz > 0 : "Internal Error - number of non zeroes set to " + nnz + " in Aggregate Binary for GPU";
+			// MatrixObject out = ec.getSparseMatrixOutputForGPUInstruction(output, nnz);
+			// throw new DMLRuntimeException("Internal Error - Not implemented");
 
-		} else {
-			Pointer out = null;
-			if (reductionDirection == REDUCTION_ALL || reductionDirection == REDUCTION_DIAG) {
-				// Scalar output
-				out = new Pointer();
-				cudaMalloc(out, Sizeof.DOUBLE);
-			} else {
-				// Matrix output
-				MatrixObject out1 = ec.getDenseMatrixOutputForGPUInstruction(output);
-				out = ((JCudaObject) out1.getGPUObject()).jcudaDenseMatrixPtr;
+		}
+
+		Pointer out = null;
+		if (reductionDirection == REDUCTION_COL || reductionDirection == REDUCTION_ROW) {
+			// Matrix output
+			MatrixObject out1 = ec.getDenseMatrixOutputForGPUInstruction(output);
+			out = ((JCudaObject) out1.getGPUObject()).jcudaDenseMatrixPtr;
+		}
+
+		Pointer in = ((JCudaObject)in1.getGPUObject()).jcudaDenseMatrixPtr;
+		int size = rlen * clen;
+
+		// For scalars, set the scalar output in the Execution Context object
+		switch (opIndex){
+			case OP_PLUS: {
+				switch(reductionDirection) {
+					case REDUCTION_ALL : {
+						double result = reduceAll(in, size);
+						ec.setScalarOutput(output, new DoubleObject(result));
+						break;
+					}
+					case REDUCTION_COL : {
+						reduceRow(in, out, rlen, clen);
+						break;
+					}
+					case REDUCTION_DIAG :
+					case REDUCTION_ROW :
+						throw new DMLRuntimeException("Internal Error - Row, Column and Diag summation not implemented yet");
+				}
+				break;
 			}
-
-			Pointer in = ((JCudaObject)in1.getGPUObject()).jcudaDenseMatrixPtr;
-			int size = rlen * clen;
-
-			// For scalars, set the scalar output in the Execution Context object
-			switch (opIndex){
-				case OP_PLUS: {
-					switch(reductionDirection) {
-						case REDUCTION_ALL : {
-							double result = reduce_single(in, size);
-							ec.setScalarOutput(output, new DoubleObject(result));
-							break;
-						}
-						case REDUCTION_DIAG :
-						case REDUCTION_COL :
-						case REDUCTION_ROW :
-							throw new DMLRuntimeException("Internal Error - Row, Column and Diag summation not implemented yet");
-					}
-					break;
+			case OP_PLUS_SQ : {
+				switch(reductionDirection) {
+					case REDUCTION_ALL:
+					case REDUCTION_COL:
+					case REDUCTION_ROW:
+						throw new DMLRuntimeException("Internal Error - All, Row & Column summation square of matrix not implemented yet for GPU");
+					default:
+						throw new DMLRuntimeException("Internal Error - Unsupported reduction direction for summation squared");
 				}
-				case OP_PLUS_SQ : {
-					switch(reductionDirection) {
-						case REDUCTION_ALL:
-						case REDUCTION_COL:
-						case REDUCTION_ROW:
-							throw new DMLRuntimeException("Internal Error - All, Row & Column summation square of matrix not implemented yet for GPU");
-						default:
-							throw new DMLRuntimeException("Internal Error - Unsupported reduction direction for summation squared");
-					}
-					// break;
-				}
-				case OP_MEAN:{
-					switch(reductionDirection) {
-						case REDUCTION_ALL:
-						case REDUCTION_COL:
-						case REDUCTION_ROW:
-							throw new DMLRuntimeException("Internal Error - All, Row & Column mean of matrix not implemented yet for GPU ");
-						default:
-							throw new DMLRuntimeException("Internal Error - Unsupported reduction direction for mean");
-					}
-					// break;
-				}
-				case OP_VARIANCE : {
-					switch(reductionDirection) {
-						case REDUCTION_ALL:
-						case REDUCTION_COL:
-						case REDUCTION_ROW:
-							throw new DMLRuntimeException("Internal Error - All, Row & Column variance of matrix not implemented yet for GPU ");
-						default:
-							throw new DMLRuntimeException("Internal Error - Unsupported reduction direction for variance");
-					}
-					// break;
-				}
-				case OP_MULTIPLY : {
-					switch (reductionDirection) {
-						case REDUCTION_ALL:
-							throw new DMLRuntimeException("Internal Error - All element multiplication of matrix not implemented yet for GPU ");
-						default:
-							throw new DMLRuntimeException("Internal Error - Unsupported reduction direction for multiplication");
-					}
-					// break;
-				}
-				case OP_MAX :{
-					switch(reductionDirection) {
-						case REDUCTION_ALL:
-						case REDUCTION_COL:
-						case REDUCTION_ROW:
-							throw new DMLRuntimeException("Internal Error - All, Row & Column max of matrix not implemented yet for GPU ");
-						default:
-							throw new DMLRuntimeException("Internal Error - Unsupported reduction direction for max");
-					}
-					// break;
-				}
-				case OP_MIN :{
-					switch(reductionDirection) {
-						case REDUCTION_ALL:
-						case REDUCTION_COL:
-						case REDUCTION_ROW:
-							throw new DMLRuntimeException("Internal Error - All, Row & Column min of matrix not implemented yet for GPU ");
-						default:
-							throw new DMLRuntimeException("Internal Error - Unsupported reduction direction for min");
-					}
-					// break;
-				}
-				case OP_MAXINDEX : {
-					switch(reductionDirection) {
-						case REDUCTION_COL:
-							throw new DMLRuntimeException("Internal Error - Column maxindex of matrix not implemented yet for GPU ");
-						default:
-							throw new DMLRuntimeException("Internal Error - Unsupported reduction direction for maxindex");
-					}
-					// break;
-				}
-				case OP_MININDEX : {
-					switch(reductionDirection) {
-						case REDUCTION_COL:
-							throw new DMLRuntimeException("Internal Error - Column minindex of matrix not implemented yet for GPU ");
-						default:
-							throw new DMLRuntimeException("Internal Error - Unsupported reduction direction for minindex");
-					}
-					// break;
-				}
-				default : throw new DMLRuntimeException("Internal Error - Invalid GPU Unary aggregate function!");
+				// break;
 			}
-
+			case OP_MEAN:{
+				switch(reductionDirection) {
+					case REDUCTION_ALL:
+					case REDUCTION_COL:
+					case REDUCTION_ROW:
+						throw new DMLRuntimeException("Internal Error - All, Row & Column mean of matrix not implemented yet for GPU ");
+					default:
+						throw new DMLRuntimeException("Internal Error - Unsupported reduction direction for mean");
+				}
+				// break;
+			}
+			case OP_VARIANCE : {
+				switch(reductionDirection) {
+					case REDUCTION_ALL:
+					case REDUCTION_COL:
+					case REDUCTION_ROW:
+						throw new DMLRuntimeException("Internal Error - All, Row & Column variance of matrix not implemented yet for GPU ");
+					default:
+						throw new DMLRuntimeException("Internal Error - Unsupported reduction direction for variance");
+				}
+				// break;
+			}
+			case OP_MULTIPLY : {
+				switch (reductionDirection) {
+					case REDUCTION_ALL:
+						throw new DMLRuntimeException("Internal Error - All element multiplication of matrix not implemented yet for GPU ");
+					default:
+						throw new DMLRuntimeException("Internal Error - Unsupported reduction direction for multiplication");
+				}
+				// break;
+			}
+			case OP_MAX :{
+				switch(reductionDirection) {
+					case REDUCTION_ALL:
+					case REDUCTION_COL:
+					case REDUCTION_ROW:
+						throw new DMLRuntimeException("Internal Error - All, Row & Column max of matrix not implemented yet for GPU ");
+					default:
+						throw new DMLRuntimeException("Internal Error - Unsupported reduction direction for max");
+				}
+				// break;
+			}
+			case OP_MIN :{
+				switch(reductionDirection) {
+					case REDUCTION_ALL:
+					case REDUCTION_COL:
+					case REDUCTION_ROW:
+						throw new DMLRuntimeException("Internal Error - All, Row & Column min of matrix not implemented yet for GPU ");
+					default:
+						throw new DMLRuntimeException("Internal Error - Unsupported reduction direction for min");
+				}
+				// break;
+			}
+			case OP_MAXINDEX : {
+				switch(reductionDirection) {
+					case REDUCTION_COL:
+						throw new DMLRuntimeException("Internal Error - Column maxindex of matrix not implemented yet for GPU ");
+					default:
+						throw new DMLRuntimeException("Internal Error - Unsupported reduction direction for maxindex");
+				}
+				// break;
+			}
+			case OP_MININDEX : {
+				switch(reductionDirection) {
+					case REDUCTION_COL:
+						throw new DMLRuntimeException("Internal Error - Column minindex of matrix not implemented yet for GPU ");
+					default:
+						throw new DMLRuntimeException("Internal Error - Unsupported reduction direction for minindex");
+				}
+				// break;
+			}
+			default : throw new DMLRuntimeException("Internal Error - Invalid GPU Unary aggregate function!");
 		}
 	}
 
-
-	private static double reduce_single(Pointer in, int n) throws DMLRuntimeException {
-		int[] tmp = getThreadsBlocksAndSharedMem(n);
+	/**
+	 * Do a simple reduction, the output of which is a single value
+	 * @param in	{@link Pointer} to matrix in device memory
+	 * @param n		size of array
+	 * @return	the reduced value
+	 * @throws DMLRuntimeException
+	 */
+	private static double reduceAll(Pointer in, int n) throws DMLRuntimeException {
+		int[] tmp = getKernelParamsForReduceAll(n);
 		int blocks = tmp[0], threads = tmp[1], sharedMem = tmp[2];
 
 		Pointer tempOut = JCudaObject.allocate(n * Sizeof.DOUBLE);
@@ -1132,7 +1141,7 @@ public class LibMatrixCUDA {
 		cudaDeviceSynchronize();
 		int s = n;
 		while (s > 1) {
-			tmp = getThreadsBlocksAndSharedMem(n);
+			tmp = getKernelParamsForReduceAll(n);
 			blocks = tmp[0]; threads = tmp[1]; sharedMem = tmp[2];
 			kernels.launchKernel("reduce", new ExecutionConfig(blocks, threads, sharedMem),
 							tempOut, tempOut, s);
@@ -1145,10 +1154,29 @@ public class LibMatrixCUDA {
 		return result[0];
 	}
 
+	/**
+	 * Do a reduction by row. Data is reduced per row and the
+	 * resulting vector is calculated.
+	 * @param in		{@link Pointer} to input matrix in device memory (size - rows * columns)
+	 * @param out		{@link Pointer} to output matrix in device memory (size - rows * 1)
+	 * @param rows	number of rows in input matrix
+	 * @param cols	number of columns in input matrix
+	 * @throws DMLRuntimeException
+	 */
+	private static void reduceRow(Pointer in, Pointer out, int rows, int cols) throws DMLRuntimeException {
+		int[] tmp = getKernelParamsForReduceByRow(rows, cols);
+		int blocks = tmp[0], threads = tmp[1], sharedMem = tmp[2];
+		kernels.launchKernel("reduce_row", new ExecutionConfig(blocks, threads, sharedMem),
+						in, out, rows, cols);
+		cudaDeviceSynchronize();
+	}
 
-	private static int[] getThreadsBlocksAndSharedMem(int n){
-		final int MAX_THREADS = 1024;
-		final int MAX_BLOCKS = 65535;
+	/**
+	 * Get threads, blocks and shared memory for a reduce all operation
+	 * @param n size of input array
+	 * @return integer array containing {blocks, threads, shared memory}
+	 */
+	private static int[] getKernelParamsForReduceAll(int n){
 		int threads = (n < MAX_THREADS*2) ? nextPow2((n + 1)/ 2) : MAX_THREADS;
 
 		int blocks = (n + (threads * 2 - 1)) / (threads * 2);
@@ -1161,6 +1189,22 @@ public class LibMatrixCUDA {
 		return new int[] {blocks, threads, sharedMemSize};
 	}
 
+	/**
+	 * Get threads, blocks and shared memory for a reduce by row operation
+	 * @param rows number of rows in input matrix
+	 * @param cols number of columns in input matrix
+	 * @return integer array containing {blocks, threads, shared memory}
+	 */
+	private static int[] getKernelParamsForReduceByRow(int rows, int cols) {
+		final int WARP_SIZE = 32;
+		int threads = Math.min(cols, WARP_SIZE);
+		int blocks = rows;
+		int sharedMemSize = threads * Sizeof.DOUBLE;
+		if (threads <= 32){
+			sharedMemSize *=2;
+		}
+		return new int[] {blocks, threads, sharedMemSize};
+	}
 
 	private static int nextPow2(int x)
 	{

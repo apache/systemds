@@ -146,7 +146,7 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 					int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 					if(DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR || getMemEstimate() < OptimizerUtils.GPU_MEMORY_BUDGET) && (_op == AggOp.SUM)) {
 						// Only implemented methods for GPU
-						if (_op == AggOp.SUM && _direction == Direction.RowCol) {
+						if (_op == AggOp.SUM && (_direction == Direction.RowCol || _direction == Direction.Row)){
 							et = ExecType.GPU;
 							k = 1;
 						}

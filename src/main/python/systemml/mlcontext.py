@@ -342,3 +342,11 @@ class MLContext(object):
         """
         self._ml.setExplainLevel(explainLevel)
         return self
+
+    def version(self):
+        """Display the project version."""
+        return self._ml.version()
+
+    def buildTime(self):
+        """Display the project build time."""
+        return self._ml.buildTime()

@@ -60,6 +60,7 @@ forward = function(matrix[double] X, matrix[double] W, matrix[double] b,
    */
   N = nrow(X)
   F = nrow(W)
+  # TODO: We should eliminate this in a seperate PR
   Hout = as.integer((Hin + 2 * padh - Hf) / strideh + 1)
   Wout = as.integer((Win + 2 * padw - Wf) / stridew + 1)
   
@@ -68,9 +69,7 @@ forward = function(matrix[double] X, matrix[double] W, matrix[double] b,
                stride=[strideh,stridew], padding=[padh,padw])
 
   # Add bias term to each output filter
-  # Note: Biases vector b is replicated to (F, Hout*Wout) first.
-  ones = matrix(1, rows=1, cols=Hout*Wout)
-  out = out + matrix(b %*% ones, rows=1, cols=F*Hout*Wout)
+  out = bias_add(out, b)
 }
 
 backward = function(matrix[double] dout, int Hout, int Wout,

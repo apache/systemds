@@ -19,6 +19,8 @@
 #
 #-------------------------------------------------------------
 
+update_nesterov = externalFunction(matrix[double] X, matrix[double] dX, double lr, double mu, matrix[double] v) return (matrix[double] X, matrix[double] v) implemented in (classname="org.apache.sysml.udf.lib.SGDNesterovUpdate",exectype="mem");
+
 /*
  * Stochastic Gradient Descent with Nesterov momentum (SGD-Nesterov) optimizer.
  */
@@ -55,9 +57,10 @@ update = function(matrix[double] X, matrix[double] dX, double lr, double mu, mat
    *  - v: Updated velocity of the parameters X, of same shape as
    *      input v.
    */
-  v_prev = v
-  v = mu * v - lr * dX  # update velocity
-  X = X - mu * v_prev + (1 + mu) * v  # update position, including momentum
+  # v_prev = v
+  # v = mu * v - lr * dX  # update velocity
+  # X = X - mu * v_prev + (1 + mu) * v  # update position, including momentum
+  [X, v] = update_nesterov(X, dX, lr, mu, v);
 }
 
 init = function(matrix[double] X) return (matrix[double] v) {

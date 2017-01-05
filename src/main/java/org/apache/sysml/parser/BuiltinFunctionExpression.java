@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.parser.LanguageException.LanguageErrorCodes;
 import org.apache.sysml.runtime.util.ConvolutionUtils;
 
@@ -1105,6 +1106,9 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		
 		case BIAS_ADD:
 		{
+			// Disable sparse for Deep Learning related script at parsing phase.
+			DMLScript.DISABLE_SPARSE = true;
+						
 			Identifier input_id = getFirstExpr().getOutput();
 			Expression input = _args[0];
 			Expression bias = _args[1];
@@ -1123,6 +1127,9 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		case AVG_POOL:
 		case MAX_POOL_BACKWARD:
 		{
+			// Disable sparse for Deep Learning related script at parsing phase.
+			DMLScript.DISABLE_SPARSE = true;
+			
 			// At DML level:
 			// output = conv2d(input, filter, input_shape=[1, 3, 2, 2], filter_shape=[1, 3, 2, 2], 
 			// strides=[1, 1], padding=[1,1])

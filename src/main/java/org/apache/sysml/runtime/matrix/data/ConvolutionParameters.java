@@ -19,8 +19,6 @@
 
 package org.apache.sysml.runtime.matrix.data;
 
-import java.util.concurrent.atomic.AtomicLong;
-
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.util.ConvolutionUtils;
 
@@ -33,9 +31,10 @@ public class ConvolutionParameters {
 	public int K; public int R; public int S; public int stride_h; public int stride_w; public int pad_h; public int pad_w;
 	public int P; public int Q; public int numThreads;
 	
-	public AtomicLong outputNNZ = new AtomicLong(-1);
 	
 	MatrixBlock input1; MatrixBlock input2; MatrixBlock output;
+	
+	public int [] start_indexes_h, end_indexes_h, start_indexes_w, end_indexes_w; 
 	
 	private int convertToInt(long val) throws DMLRuntimeException {
 		if( val > Integer.MAX_VALUE ) {

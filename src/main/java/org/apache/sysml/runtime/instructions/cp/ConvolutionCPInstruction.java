@@ -20,6 +20,7 @@
 package org.apache.sysml.runtime.instructions.cp;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
@@ -89,7 +90,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
-		if (opcode.equalsIgnoreCase("maxpooling")) {
+		if (opcode.equalsIgnoreCase("maxpooling") || opcode.equalsIgnoreCase("relu_maxpooling")) {
 			InstructionUtils.checkNumFields(parts, 15);
 			// stride1, stride2, padding1, padding2
 			// input_shape1, input_shape2, input_shape3, input_shape4,
@@ -231,12 +232,14 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		int Q = (int) ConvolutionUtils.getQ(W, S, stride_w, pad_w);
 		
 		ConvolutionParameters params = new ConvolutionParameters(N, C, H, W, K, R, S, stride_h, stride_w, pad_h, pad_w, _numThreads);
-		if (instOpcode.equalsIgnoreCase("maxpooling")) {
+		if (instOpcode.equalsIgnoreCase("maxpooling") || instOpcode.equalsIgnoreCase("relu_maxpooling")) {
 			if(matBlock.isEmptyBlock()) {
 				outputBlock = new MatrixBlock(N, C*P*Q, true, 0);
 			}
 			else {
 				outputBlock = getDenseOutputBlock(ec, N, C*P*Q);
+				if(instOpcode.equalsIgnoreCase("maxpooling"))
+					Arrays.fill(outputBlock.getDenseBlock(), -Double.MAX_VALUE);
 				LibMatrixDNN.maxpooling(matBlock, outputBlock, params);
 			}
 		}

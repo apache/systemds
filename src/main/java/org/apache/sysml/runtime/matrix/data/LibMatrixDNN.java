@@ -379,7 +379,29 @@ public class LibMatrixDNN {
 		if (params.output.isInSparseFormat())
 			throw new DMLRuntimeException("Sparse maxpooling_backward is not supported");
 
+		fillIndexesArray(params);
 		runConvTask(TaskType.MaxPooling_Backward, params);
+	}
+	
+	private static void fillIndexesArray(ConvolutionParameters params) {
+		params.start_indexes_h = new int[params.P];
+		params.end_indexes_h = new int[params.P];
+		params.start_indexes_w = new int[params.Q];
+		params.end_indexes_w = new int[params.Q];
+		for (int p = 0; p < params.P; p++) {
+			int start_index_h = p * params.stride_h - params.pad_h;
+			final int end_index_h = Math.min(start_index_h + params.R, params.H);
+			start_index_h = Math.max(start_index_h, 0);
+			params.start_indexes_h[p] = start_index_h;
+			params.end_indexes_h[p] = end_index_h;
+		}
+		for (int q = 0; q < params.Q; q++) {
+			int start_index_w = Math.max(q * params.stride_w - params.pad_w, 0);
+			int end_index_w = Math.min(start_index_w + params.S, params.W);
+			start_index_w = Math.max(start_index_w, 0);
+			params.start_indexes_w[q] = start_index_w;
+			params.end_indexes_w[q] = end_index_w;
+		}
 	}
 	
 	private static void doPoolingBackward(int n, ConvolutionParameters params) throws DMLRuntimeException {
@@ -419,10 +441,7 @@ public class LibMatrixDNN {
 					double inVal = doutArray[n*params.C*params.P*params.Q + c*params.P*params.Q +  p * params.Q + q];
 					if(inVal != 0) {
 						final int inputOffset = n*params.C*params.H*params.W + c*params.H*params.W;
-						int start_index_h = p * params.stride_h - params.pad_h;
-						final int end_index_h = Math.min(start_index_h + params.R, params.H);
-						start_index_h = Math.max(start_index_h, 0);
-						int maxIndex = getMaxIndexSparse(start_index_h, end_index_h, q, inputOffset, n, c, params.input1, params);
+						int maxIndex = getMaxIndexSparse(p, q, inputOffset, n, c, params.input1, params);
 						outputArray[maxIndex] += inVal;
 					}
 				}
@@ -446,10 +465,7 @@ public class LibMatrixDNN {
 			int q = tensorIndexes[2];
 			
 			final int inputOffset = n*params.C*params.H*params.W + c*params.H*params.W;
-			int start_index_h = p * params.stride_h - params.pad_h;
-			final int end_index_h = Math.min(start_index_h + params.R, params.H);
-			start_index_h = Math.max(start_index_h, 0);
-			int maxIndex = getMaxIndexSparse(start_index_h, end_index_h, q, inputOffset, n, c, params.input1, params);
+			int maxIndex = getMaxIndexSparse(p, q, inputOffset, n, c, params.input1, params);
 			outputArray[maxIndex] += ijv.getV();
 		}
 		
@@ -469,10 +485,7 @@ public class LibMatrixDNN {
 			int q = tensorIndexes[2];
 			
 			final int inputOffset = n*params.C*params.H*params.W + c*params.H*params.W;
-			int start_index_h = p * params.stride_h - params.pad_h;
-			final int end_index_h = Math.min(start_index_h + params.R, params.H);
-			start_index_h = Math.max(start_index_h, 0);
-			int maxIndex = getMaxIndex(start_index_h, end_index_h, q, inputOffset, inputArray, params);
+			int maxIndex = getMaxIndex(p, q, inputOffset, inputArray, params);
 			outputArray[maxIndex] += ijv.getV();
 		}
 	}
@@ -484,20 +497,15 @@ public class LibMatrixDNN {
 			final int outputOffset = n*params.C*params.P*params.Q + c*params.P*params.Q;
 			
 			for (int p = 0; p < params.P; p++) {
-				int start_index_h = p * params.stride_h - params.pad_h;
-				final int end_index_h = Math.min(start_index_h + params.R, params.H);
-				start_index_h = Math.max(start_index_h, 0);
-				
 				for (int q = 0; q < params.Q; q++) {
-					int maxIndex = getMaxIndex(start_index_h, end_index_h, q, inputOffset, inputArray, params);
+					int maxIndex = getMaxIndex(p, q, inputOffset, inputArray, params);
 					outputArray[maxIndex] += doutArray[outputOffset +  p * params.Q + q];
 				}
 			}
 		}
 	}
 	
-	private static int getMaxIndexSparse(int start_index_h, int end_index_h, 
-			int q, int inputOffset, int n, int c, MatrixBlock input, ConvolutionParameters params) throws DMLRuntimeException {
+	private static int getMaxIndexSparse(int p, int q, int inputOffset, int n, int c, MatrixBlock input, ConvolutionParameters params) throws DMLRuntimeException {
 		if(!input.isInSparseFormat())
 			throw new DMLRuntimeException("Incorrect usage: Only sparse format supported");
 		
@@ -505,9 +513,10 @@ public class LibMatrixDNN {
 		Iterator<IJV> iter = input.sparseBlock.getIterator(n, n+1);
 		int [] tensorIndexes = new int[3];
 		
-		int start_index_w = Math.max(q * params.stride_w - params.pad_w, 0);
-		int end_index_w = Math.min(start_index_w + params.S, params.W);
-		start_index_w = Math.max(start_index_w, 0);
+		int start_index_h = params.start_indexes_h[p];
+		int end_index_h = params.end_indexes_h[p];
+		int start_index_w = params.start_indexes_w[q];
+		int end_index_w = params.end_indexes_w[q];
 		
 		int maxIndex = inputOffset +  start_index_h*params.W + start_index_w; 
 		double maxVal = -Double.MAX_VALUE;
@@ -532,11 +541,11 @@ public class LibMatrixDNN {
 		return maxIndex;
 	}
 	
-	private static int getMaxIndex(int start_index_h, int end_index_h, 
-			int q, int inputOffset, double [] inputArray, ConvolutionParameters params) {
-		int start_index_w = q * params.stride_w - params.pad_w;
-		int end_index_w = Math.min(start_index_w + params.S, params.W);
-		start_index_w = Math.max(start_index_w, 0);
+	private static int getMaxIndex(int p, int q, int inputOffset, double [] inputArray, ConvolutionParameters params) {
+		int start_index_h = params.start_indexes_h[p];
+		int end_index_h = params.end_indexes_h[p];
+		int start_index_w = params.start_indexes_w[q];
+		int end_index_w = params.end_indexes_w[q];
 		
 		int maxIndex = inputOffset +  start_index_h*params.W + start_index_w; 
 		double maxVal = -Double.MAX_VALUE;
@@ -619,12 +628,11 @@ public class LibMatrixDNN {
 			throw new DMLRuntimeException("Incorrect input dimensions in maxpooling:" + input.getNumRows() + " " + input.getNumColumns() + " " + params.N + " " + params.K*params.P*params.Q);
 		}
 		
-		params.outputNNZ.set(0);
+		fillIndexesArray(params);
 		runConvTask(TaskType.MaxPooling_Forward, params);
-		outputBlock.setNonZeros(params.outputNNZ.get());
 	}
 
-	private static void doPooling(int n, int c, ConvolutionParameters params) throws DMLRuntimeException {
+	private static void doPooling(int n, ConvolutionParameters params) throws DMLRuntimeException {
 		double [] inputArray = null;
 		if (!params.input1.isInSparseFormat())
 			inputArray = params.input1.getDenseBlock();
@@ -634,32 +642,40 @@ public class LibMatrixDNN {
 		else
 			throw new DMLRuntimeException("Expected the output to be allocated in dense format");
 		
-		long tmpNNZ = 0;
-		for (int p = 0; p < params.P; p++) {
-			for (int q = 0; q < params.Q; q++) {
-				int start_index_h = p * params.stride_h - params.pad_h;
-				int start_index_w = q * params.stride_w - params.pad_w;
-				int end_index_h = Math.min(start_index_h + params.R, params.H);
-				int end_index_w = Math.min(start_index_w + params.S, params.W);
-				start_index_h = Math.max(start_index_h, 0);
-				start_index_w = Math.max(start_index_w, 0);
-				int out_index = n*params.C*params.P*params.Q + c*params.P*params.Q +  p * params.Q + q;
-				outputArray[out_index] = -Double.MAX_VALUE;
-				for (int h = start_index_h; h < end_index_h; h++) {
-					for (int w = start_index_w; w < end_index_w; w++) {
-						double inVal = -1;
-						if(inputArray != null)
-							inVal = inputArray[n*params.C*params.H*params.W + c*params.H*params.W +  h*params.W + w];
-						else
-							inVal = params.input1.quickGetValue(n, c*params.H*params.W +  h*params.W + w);
-						outputArray[out_index] = Math.max(outputArray[out_index], inVal);
-						if(outputArray[out_index] != 0)
-							tmpNNZ++;
+		final int inOffset = n*params.C*params.H*params.W;
+		int out_index = n*params.C*params.P*params.Q;
+		final int HW = params.H*params.W;
+		
+		if(inputArray != null) {
+			for (int c = 0; c < params.C; c++) {
+				final int inOffset1 = inOffset + c*HW;
+				for (int p = 0; p < params.P; p++) {
+					for (int q = 0; q < params.Q; q++, out_index++) {
+						for (int h = params.start_indexes_h[p]; h < params.end_indexes_h[p]; h++) {
+							for (int w = params.start_indexes_w[q]; w < params.end_indexes_w[q]; w++) {
+								outputArray[out_index] = Math.max(outputArray[out_index], inputArray[inOffset1 +  h*params.W + w]);
+							}
+						}
 					}
 				}
 			}
 		}
-		params.outputNNZ.addAndGet(tmpNNZ);
+		else {
+			// TODO: Optimize sparse maxpooling
+			// Low priority after adding fused relu_maxpooling operator as output of conv2d expected to be dense
+			for (int c = 0; c < params.C; c++) {
+				for (int p = 0; p < params.P; p++) {
+					for (int q = 0; q < params.Q; q++, out_index++) {
+						for (int h = params.start_indexes_h[p]; h < params.end_indexes_h[p]; h++) {
+							for (int w = params.start_indexes_w[q]; w < params.end_indexes_w[q]; w++) {
+								double inVal = params.input1.quickGetValue(n, c*HW +  h*params.W + w);
+								outputArray[out_index] = Math.max(outputArray[out_index], inVal);
+							}
+						}
+					}
+				}
+			}
+		}
 	}
 	
 	private static void doRotate180(int inputN, int outputN, MatrixBlock input, 
@@ -818,9 +834,7 @@ public class LibMatrixDNN {
 				case MaxPooling_Forward:
 				{
 					for(int n = n1; n < n2; n++) {
-						for (int c = 0; c < params.C; c++) {
-							doPooling(n, c, params);
-						}
+						doPooling(n, params);
 					}
 					break;
 				}

@@ -25,6 +25,7 @@ import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.Hop.MultiThreadedHop;
 import org.apache.sysml.lops.ConvolutionTransform;
+import org.apache.sysml.lops.ConvolutionTransform.OperationTypes;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.lops.LopProperties.ExecType;
@@ -136,10 +137,18 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 			throw new HopsException("Incorrect number of inputs for " + op.name());
 		}
 		
-		Lop in = inputs.get(0).constructLops();
+		Lop in = null;
+		OperationTypes lopOp = HopsConv2Lops.get(op);
 		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
-		ConvolutionTransform transform1 = new ConvolutionTransform( in, 
-				HopsConv2Lops.get(op), getDataType(), getValueType(), et, k);
+		if(op == ConvOp.MAX_POOLING && et == ExecType.CP && inputs.get(0) instanceof UnaryOp
+				&& ((UnaryOp) inputs.get(0)).getOp() == OpOp1.SELP) {
+			in = inputs.get(0).getInput().get(0).constructLops();
+			lopOp = OperationTypes.RELU_MAX_POOLING;
+		}
+		else {
+			in = inputs.get(0).constructLops();
+		}
+		ConvolutionTransform transform1 = new ConvolutionTransform( in, lopOp, getDataType(), getValueType(), et, k);
 		setOutputDimensions(transform1);
 		setLineNumbers(transform1);
 		in.addOutput(transform1);

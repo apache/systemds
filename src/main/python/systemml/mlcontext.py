@@ -350,3 +350,7 @@ class MLContext(object):
     def buildTime(self):
         """Display the project build time."""
         return self._ml.buildTime()
+
+    def info(self):
+        """Display the project information."""
+        return self._ml.info().toString()

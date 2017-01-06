@@ -83,6 +83,7 @@ public class SGDNesterovUpdate extends PackageFunction {
 			double [] updatedVData = updatedVMB.getDenseBlock();
 			multiplyByConstant(v, mu, updatedVData);
 			multiplyByConstant(dX, -lr, updatedVData);
+			updatedVMB.setNonZeros(-1); // rather than updatedVMB.recomputeNonZeros();
 			updatedV.setMatrixDoubleArray(updatedVMB, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
 			
 			// X = X - mu * v_prev + (1 + mu) * v
@@ -92,6 +93,7 @@ public class SGDNesterovUpdate extends PackageFunction {
 			copy(X, updatedXData);
 			multiplyByConstant(v, -mu, updatedXData);
 			multiplyByConstant(updatedVData, 1+mu, updatedXData);
+			updatedXMB.setNonZeros(-1); // rather than updatedXMB.recomputeNonZeros();
 			updatedX.setMatrixDoubleArray(updatedXMB, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
 			
 			((Matrix) getFunctionInput(0)).getMatrixObject().release();

@@ -38,11 +38,10 @@
 # -----------------------------------------------------------------------------
 
 X = read($X);
-k = ifdef($q, 1000);
+k = ifdef($k, 1000);
 # k is used for the base case in the recursive algorithm.
 # If X has very large number of rows, choose k to be smaller
 # to fit the base case on single machine.
-outdir = ifdef($OUTDIR, "hdfs://rr-dense1/user/iyounus/data/")
 ofmt = ifdef($OFMT, "CSV")
 
 QfromH = function(Matrix[double] H)
@@ -87,5 +86,5 @@ QR_recursive = function(Matrix[double] A, int nb)
 
 [Q, R] = QR_recursive(X, k)
 
-write(Q, outdir + "Q.csv", ofmt)
-write(R, outdir + "R.csv", ofmt)
+write(Q, $OUTDIR + "Q.csv", ofmt)
+write(R, $OUTDIR + "R.csv", ofmt)

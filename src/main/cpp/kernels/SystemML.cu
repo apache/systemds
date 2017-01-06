@@ -254,8 +254,12 @@ __global__ void reduce(double *g_idata, double *g_odata, unsigned int n)
 
 /**
  * Does a reduce (sum) over each row of the array.
+ * This kernel must be launched with as many blocks as there are rows.
  * The intuition for this kernel is that each block does a reduction over a single row.
- * The maximum numver
+ * The maximum number of blocks that can launched (as of compute capability 3.0) is 2^31 - 1
+ * This works out fine for SystemML, since the maximum elements in a Java array can be 2^31 - c (some small constant)
+ * If the matrix is "fat" and "short", i.e. there are small number of rows and a large number of columns,
+ * there could be under-utilization of the hardware.
  * @param g_idata   input matrix stored in device memory
  * @param g_odata   output vector of size [rows * 1] in device memory
  * @param rows      number of rows in input matrix
@@ -312,3 +316,32 @@ __global__ void reduce_row(double *g_idata, double *g_odata, unsigned int rows, 
 }
 
 
+/**
+ * Does a column wise reduction.
+ * The intuition is that there are as many global threads as there are columns
+ *  Each global thread is responsible for a single element in the output vector
+ * This of course leads to a under-utilization of the GPU resources.
+ * For cases, where the number of columns is small, there can be unused SMs
+ * @param g_idata   input matrix stored in device memory
+ * @param g_odata   output vector of size [1 * cols] in device memory
+ * @param rows      number of rows in input matrix
+ * @param cols      number of columns in input matrix
+ */
+extern "C"
+__global__ void reduce_col(double *g_idata, double *g_odata, unsigned int rows, unsigned int cols)
+{
+    unsigned int global_tid = blockIdx.x * blockDim.x + threadIdx.x;
+    if (global_tid >= cols) {
+        return;
+    }
+
+    unsigned int i = global_tid;
+    unsigned int grid_size = cols;
+    double val = 0;
+
+    while (i < rows * cols) {
+      val += g_idata[i];
+      i += grid_size;
+    }
+    g_odata[global_tid] = val;
+}

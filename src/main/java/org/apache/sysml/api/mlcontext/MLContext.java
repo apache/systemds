@@ -100,7 +100,8 @@ public class MLContext {
 	private boolean statistics = false;
 
 	/**
-	 * The number of heavy hitters that are printed as part of the statistics option
+	 * The number of heavy hitters that are printed as part of the statistics
+	 * option
 	 */
 	private int statisticsMaxHeavyHitters = 10;
 
@@ -109,6 +110,11 @@ public class MLContext {
 	 * explain is set to true.
 	 */
 	private ExplainLevel explainLevel = null;
+
+	/**
+	 * Project information such as the version and the build time.
+	 */
+	private ProjectInfo projectInfo = null;
 
 	private List<String> scriptHistoryStrings = new ArrayList<String>();
 	private Map<String, Script> scripts = new LinkedHashMap<String, Script>();
@@ -381,8 +387,8 @@ public class MLContext {
 				}
 			}
 		}
-		throw new MLContextException("Failed to parse explain level: "+ explainLevel + " " +
-				"(valid types: hops, runtime, recompile_hops, recompile_runtime).");
+		throw new MLContextException("Failed to parse explain level: " + explainLevel + " "
+				+ "(valid types: hops, runtime, recompile_hops, recompile_runtime).");
 	}
 
 	/**
@@ -399,14 +405,15 @@ public class MLContext {
 				// Do not check metadata file for registered reads
 				exp.setCheckMetadata(false);
 
-				//Value retured from getVarParam is of type stringidentifier at runtime, but at compile type its Expression
-				//Could not find better way to compare this condition.
-				Expression datatypeExp = ((DataExpression)source).getVarParam("data_type");
+				// Value retured from getVarParam is of type stringidentifier at
+				// runtime, but at compile type its Expression
+				// Could not find better way to compare this condition.
+				Expression datatypeExp = ((DataExpression) source).getVarParam("data_type");
 				String datatype = "matrix";
-				if(datatypeExp != null)
+				if (datatypeExp != null)
 					datatype = datatypeExp.toString();
 
-				if(datatype.compareToIgnoreCase("frame") != 0) {
+				if (datatype.compareToIgnoreCase("frame") != 0) {
 					MatrixObject mo = getMatrixObject(target);
 					if (mo != null) {
 						int blp = source.getBeginLine();
@@ -419,28 +426,29 @@ public class MLContext {
 								new IntIdentifier(mo.getNumColumns(), source.getFilename(), blp, bcp, elp, ecp));
 						exp.addVarParam(DataExpression.READNUMNONZEROPARAM,
 								new IntIdentifier(mo.getNnz(), source.getFilename(), blp, bcp, elp, ecp));
-						exp.addVarParam(DataExpression.DATATYPEPARAM, new StringIdentifier("matrix", source.getFilename(),
-								blp, bcp, elp, ecp));
-						exp.addVarParam(DataExpression.VALUETYPEPARAM, new StringIdentifier("double", source.getFilename(),
-								blp, bcp, elp, ecp));
+						exp.addVarParam(DataExpression.DATATYPEPARAM,
+								new StringIdentifier("matrix", source.getFilename(), blp, bcp, elp, ecp));
+						exp.addVarParam(DataExpression.VALUETYPEPARAM,
+								new StringIdentifier("double", source.getFilename(), blp, bcp, elp, ecp));
 
 						if (mo.getMetaData() instanceof MatrixFormatMetaData) {
 							MatrixFormatMetaData metaData = (MatrixFormatMetaData) mo.getMetaData();
 							if (metaData.getOutputInfo() == OutputInfo.CSVOutputInfo) {
-								exp.addVarParam(DataExpression.FORMAT_TYPE, new StringIdentifier(
-										DataExpression.FORMAT_TYPE_VALUE_CSV, source.getFilename(), blp, bcp, elp, ecp));
+								exp.addVarParam(DataExpression.FORMAT_TYPE,
+										new StringIdentifier(DataExpression.FORMAT_TYPE_VALUE_CSV, source.getFilename(),
+												blp, bcp, elp, ecp));
 							} else if (metaData.getOutputInfo() == OutputInfo.TextCellOutputInfo) {
-								exp.addVarParam(DataExpression.FORMAT_TYPE, new StringIdentifier(
-										DataExpression.FORMAT_TYPE_VALUE_TEXT, source.getFilename(), blp, bcp, elp, ecp));
+								exp.addVarParam(DataExpression.FORMAT_TYPE,
+										new StringIdentifier(DataExpression.FORMAT_TYPE_VALUE_TEXT,
+												source.getFilename(), blp, bcp, elp, ecp));
 							} else if (metaData.getOutputInfo() == OutputInfo.BinaryBlockOutputInfo) {
-								exp.addVarParam(
-										DataExpression.ROWBLOCKCOUNTPARAM,
-										new IntIdentifier(mo.getNumRowsPerBlock(), source.getFilename(), blp, bcp, elp, ecp));
-								exp.addVarParam(DataExpression.COLUMNBLOCKCOUNTPARAM,
-										new IntIdentifier(mo.getNumColumnsPerBlock(), source.getFilename(), blp, bcp, elp,
-												ecp));
-								exp.addVarParam(DataExpression.FORMAT_TYPE, new StringIdentifier(
-										DataExpression.FORMAT_TYPE_VALUE_BINARY, source.getFilename(), blp, bcp, elp, ecp));
+								exp.addVarParam(DataExpression.ROWBLOCKCOUNTPARAM, new IntIdentifier(
+										mo.getNumRowsPerBlock(), source.getFilename(), blp, bcp, elp, ecp));
+								exp.addVarParam(DataExpression.COLUMNBLOCKCOUNTPARAM, new IntIdentifier(
+										mo.getNumColumnsPerBlock(), source.getFilename(), blp, bcp, elp, ecp));
+								exp.addVarParam(DataExpression.FORMAT_TYPE,
+										new StringIdentifier(DataExpression.FORMAT_TYPE_VALUE_BINARY,
+												source.getFilename(), blp, bcp, elp, ecp));
 							} else {
 								throw new MLContextException("Unsupported format through MLContext");
 							}
@@ -480,7 +488,7 @@ public class MLContext {
 		public ArrayList<Instruction> performCleanupAfterRecompilation(ArrayList<Instruction> instructions) {
 			if (executingScript == null || executingScript.getOutputVariables() == null)
 				return instructions;
-			
+
 			Set<String> outputVariableNames = executingScript.getOutputVariables();
 			return JMLCUtils.cleanupRuntimeInstructions(instructions, outputVariableNames.toArray(new String[0]));
 		}
@@ -520,9 +528,11 @@ public class MLContext {
 	}
 
 	/**
-	 * Sets the maximum number of heavy hitters that are printed out as part of the statistics.
+	 * Sets the maximum number of heavy hitters that are printed out as part of
+	 * the statistics.
 	 *
-	 * @param maxHeavyHitters maximum number of heavy hitters to print
+	 * @param maxHeavyHitters
+	 *            maximum number of heavy hitters to print
 	 */
 	public void setStatisticsMaxHeavyHitters(int maxHeavyHitters) {
 		DMLScript.STATISTICS_COUNT = maxHeavyHitters;
@@ -575,20 +585,50 @@ public class MLContext {
 
 		// cleanup scratch space and buffer pool
 		try {
-			DMLScript.cleanupHadoopExecution(
-					ConfigurationManager.getDMLConfig());
-		}
-		catch(Exception ex) {
+			DMLScript.cleanupHadoopExecution(ConfigurationManager.getDMLConfig());
+		} catch (Exception ex) {
 			throw new MLContextException("Failed to cleanup working directories.", ex);
 		}
-		
+
 		// clear local status, but do not stop sc as it
 		// may be used or stopped externally
-		for (Script script : scripts.values()) 
+		for (Script script : scripts.values())
 			script.clearAll();
 		scripts.clear();
 		scriptHistoryStrings.clear();
 		resetConfig();
 		sc = null;
 	}
+
+	/**
+	 * Obtain information about the project such as version and build time from
+	 * the manifest in the SystemML jar file.
+	 * 
+	 * @return information about the project
+	 */
+	public ProjectInfo info() {
+		if (projectInfo == null) {
+			projectInfo = new ProjectInfo();
+		}
+		return projectInfo;
+	}
+
+	/**
+	 * Obtain the SystemML version number.
+	 * 
+	 * @return the SystemML version number
+	 */
+	public String version() {
+		return info().version();
+	}
+
+	/**
+	 * Obtain the SystemML jar file build time.
+	 * 
+	 * @return the SystemML jar file build time
+	 */
+	public String buildTime() {
+		return info().buildTime();
+	}
+
 }

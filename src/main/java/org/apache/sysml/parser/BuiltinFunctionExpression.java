@@ -1105,12 +1105,11 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		
 		case BIAS_ADD:
 		{
-			Identifier input_id = getFirstExpr().getOutput();
 			Expression input = _args[0];
 			Expression bias = _args[1];
 			output.setDataType(DataType.MATRIX);
 			output.setValueType(ValueType.DOUBLE);
-			output.setDimensions(input_id.getDim1(), input_id.getDim2());
+			output.setDimensions(input.getOutput().getDim1(), input.getOutput().getDim2());
 			output.setBlockDimensions(input.getOutput().getRowsInBlock(), input.getOutput().getColumnsInBlock());
 			checkMatrixParam(input);
 			checkMatrixParam(bias);

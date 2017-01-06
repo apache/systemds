@@ -181,13 +181,11 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		
 		if(op == ConvOp.BIAS_ADD) {
 			MatrixCharacteristics[] mc = memo.getAllInputStats(getInput());
-			if( mc[0].rowsKnown() && mc[0].colsKnown() ) {
-				ret = new long[3];
-				ret[0] = mc[0].getRows();
-				ret[1] = mc[0].getCols();
-				ret[2] = -1;
-				return ret;
-			}
+			ret = new long[3];
+			ret[0] = mc[0].rowsKnown() ? mc[0].getRows() : -1;
+			ret[1] = mc[0].colsKnown() ? mc[0].getCols() : -1;
+			ret[2] = -1;
+			return ret;
 		}
 	
 		ConvolutionParameters params;

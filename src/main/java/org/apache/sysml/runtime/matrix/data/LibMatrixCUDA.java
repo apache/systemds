@@ -56,6 +56,7 @@ import static jcuda.runtime.JCuda.cudaMalloc;
 import static jcuda.runtime.JCuda.cudaMemcpy;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice;
+import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToDevice;
 import static jcuda.jcudnn.cudnnActivationMode.CUDNN_ACTIVATION_RELU;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -1721,6 +1722,37 @@ public class LibMatrixCUDA {
 		kernels.launchKernel("dense_matrix_copy",
 				ExecutionConfig.getConfigForSimpleMatrixOperations(rlen, clen),
 				src, dest, rlen, clen);
+	}
+	
+	/**
+	 * Performs daxpy operation
+	 * 
+	 * @param ec
+	 * @param in1
+	 * @param in2
+	 * @param outputName
+	 * @param constant
+	 * @throws DMLRuntimeException
+	 */
+	public static void axpy(ExecutionContext ec, MatrixObject in1, MatrixObject in2,
+			String outputName,  double constant) throws DMLRuntimeException {
+		if(isInSparseFormat(in1)) 
+			((JCudaObject)in1.getGPUObject()).sparseToDense();
+		if(isInSparseFormat(in2)) 
+			((JCudaObject)in2.getGPUObject()).sparseToDense();
+		Pointer A = ((JCudaObject)in1.getGPUObject()).jcudaDenseMatrixPtr;
+		Pointer B = ((JCudaObject)in2.getGPUObject()).jcudaDenseMatrixPtr;
+		MatrixObject out = ec.getMatrixObject(outputName);
+		ec.getDenseMatrixOutputForGPUInstruction(outputName);	// Allocated the dense output matrix
+	    Pointer C = ((JCudaObject)out.getGPUObject()).jcudaDenseMatrixPtr;
+	    Pointer alphaPtr = pointerTo(constant);
+	    long n = (in1.getNumRows()*in1.getNumColumns());
+	    // C <- A + alpha*B 
+	    // becomes
+	    // C <- A
+	    // C <- alpha*B + C
+	    cudaMemcpy(C, A, n*((long)jcuda.Sizeof.DOUBLE), cudaMemcpyDeviceToDevice);
+	    JCublas2.cublasDaxpy(cublasHandle, (int) n, alphaPtr, B, 1, C, 1);
 	}
 
 	/**

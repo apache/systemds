@@ -19,6 +19,7 @@
 
 package org.apache.sysml.hops;
 
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.lops.Aggregate;
@@ -635,10 +636,14 @@ public class TernaryOp extends Hop
 		if ( _op != OpOp3.PLUS_MULT && _op != OpOp3.MINUS_MULT )
 			throw new HopsException("Unexpected operation: " + _op + ", expecting " + OpOp3.PLUS_MULT + " or" +  OpOp3.MINUS_MULT);
 		
-		ExecType et = optFindExecType();
+		ExecType et = null;
+		if(DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR || getMemEstimate() < OptimizerUtils.GPU_MEMORY_BUDGET) )
+			et = ExecType.GPU;
+		else
+			et = optFindExecType();
 		PlusMult plusmult = null;
 		
-		if( et == ExecType.CP || et == ExecType.SPARK ) {
+		if( et == ExecType.CP || et == ExecType.SPARK || et == ExecType.GPU ) {
 			plusmult = new PlusMult(
 					getInput().get(0).constructLops(),
 					getInput().get(1).constructLops(),

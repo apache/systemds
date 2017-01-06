@@ -45,7 +45,7 @@ public class PlusMult extends Lop
 		boolean aligner = false;
 		boolean definesMRJob = false;
 		
-		if ( et == ExecType.CP ||  et == ExecType.SPARK ){
+		if ( et == ExecType.CP ||  et == ExecType.SPARK || et == ExecType.GPU ){
 			lps.addCompatibility(JobType.INVALID);
 			lps.setProperties( inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
 		}

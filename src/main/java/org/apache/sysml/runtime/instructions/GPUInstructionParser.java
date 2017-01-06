@@ -26,6 +26,7 @@ import org.apache.sysml.runtime.instructions.gpu.ArithmeticBinaryGPUInstruction;
 import org.apache.sysml.runtime.instructions.gpu.BuiltinUnaryGPUInstruction;
 import org.apache.sysml.runtime.instructions.gpu.ConvolutionGPUInstruction;
 import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
+import org.apache.sysml.runtime.instructions.gpu.MatrixMatrixAxpyGPUInstruction;
 import org.apache.sysml.runtime.instructions.gpu.GPUInstruction.GPUINSTRUCTION_TYPE;
 import org.apache.sysml.runtime.instructions.gpu.MMTSJGPUInstruction;
 import org.apache.sysml.runtime.instructions.gpu.ReorgGPUInstruction;
@@ -121,7 +122,11 @@ public class GPUInstructionParser  extends InstructionParser
 				return ReorgGPUInstruction.parseInstruction(str);
 				
 			case ArithmeticBinary:
-				return ArithmeticBinaryGPUInstruction.parseInstruction(str);
+				String opcode = InstructionUtils.getOpCode(str);
+				if( opcode.equals("+*") || opcode.equals("-*")  )
+					return MatrixMatrixAxpyGPUInstruction.parseInstruction(str);
+				else
+					return ArithmeticBinaryGPUInstruction.parseInstruction(str);
 				
 			default: 
 				throw new DMLRuntimeException("Invalid GPU Instruction Type: " + gputype );

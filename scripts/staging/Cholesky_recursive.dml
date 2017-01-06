@@ -39,7 +39,6 @@
 X = read($X);
 k = ifdef($k, 1000);
 # k is used for the base case in the recursive algorithm.
-outdir = ifdef($OUTDIR, "")
 ofmt = ifdef($OFMT, "CSV")
 
 U_triangular_inv = function(Matrix[double] U)
@@ -99,4 +98,4 @@ U_triangular_inv = function(Matrix[double] U)
 
 L = Choleskey_recursive(X, k)
 
-write(L, outdir + "L.csv", ofmt)
+write(L, $outdir + "L_30k.csv", ofmt)

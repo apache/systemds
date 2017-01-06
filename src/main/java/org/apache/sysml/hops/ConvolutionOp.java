@@ -140,7 +140,11 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		Lop in = null; Lop in2 = null;
 		OperationTypes lopOp = HopsConv2Lops.get(op);
 		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
+<<<<<<< Upstream, based on upstream/master
 		ArrayList<Hop> inputs1 = inputs;
+=======
+
+>>>>>>> 95a417f [SYSTEMML-769] [WIP] Support for automatic detection of native BLAS and GPU backend
 		if(op == ConvOp.MAX_POOLING && et == ExecType.CP && inputs.get(0) instanceof UnaryOp
 				&& ((UnaryOp) inputs.get(0)).getOp() == OpOp1.SELP) {
 			in = inputs.get(0).getInput().get(0).constructLops();

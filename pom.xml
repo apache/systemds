@@ -83,14 +83,6 @@
             <enabled>true</enabled>
           </releases>
         </repository>
-        <repository>
-            <id>mavenized-jcuda-mvn-repo</id>
-            <url>https://raw.github.com/niketanpansare/mavenized-jcuda/mvn-repo/</url>
-            <snapshots>
-                <enabled>true</enabled>
-                <updatePolicy>always</updatePolicy>
-            </snapshots>
-        </repository>
     </repositories>
 
 	<build>
@@ -1005,50 +997,21 @@
 
 	<dependencies>
 	
-		<!-- For GPU backend
-			Use org.mystic:mavenized-jcuda until Alan puts org.jcuda:*
-		 -->
 		<dependency>
-			<groupId>org.mystic</groupId>
-            <artifactId>mavenized-jcuda</artifactId>
-            <version>0.7.5b</version>
-            <type>jar</type>
-            <scope>provided</scope>
-            <exclusions>
+			<groupId>org.systemml</groupId>
+			<artifactId>accelerator</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+			<scope>system</scope>
+			<!-- Useful for pip install -->
+			<systemPath>${project.basedir}/src/test/config/local_jars/systemml-accelerator.jar</systemPath>
+			<exclusions>
 		        <exclusion>
 		            <groupId>*</groupId>
 		            <artifactId>*</artifactId>
 		        </exclusion>
 		    </exclusions>
 		</dependency>
-		<!-- Since there is no mvn repo for jcuda
-		<dependency>
-			<groupId>org.jcuda</groupId>
-			<artifactId>jcuda</artifactId>
-			<version>0.7.5b</version>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.jcuda</groupId>
-			<artifactId>jcublas</artifactId>
-			<version>0.7.5b</version>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.jcuda</groupId>
-			<artifactId>jcusparse</artifactId>
-			<version>0.7.5b</version>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.jcuda</groupId>
-			<artifactId>jcudnn</artifactId>
-			<version>0.7.5</version>
-			<scope>provided</scope>
-		</dependency>
-		 -->
-		<!-- ************************* -->
-	
+			
 		<dependency>
 			<groupId>org.apache.spark</groupId>
 			<artifactId>spark-core_${scala.binary.version}</artifactId>

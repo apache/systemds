@@ -156,6 +156,11 @@ public class LibMatrixDNN {
 			}
 		}
 		
+		if(DMLScript.isNativeEnabled(params.numThreads) && !dout.isInSparseFormat() && !filter.isInSparseFormat()) {
+			LibMatrixNative.conv2d_backward_data(filter, dout, outputBlock, params);
+			return;
+		}
+		
 		runConvTask(TaskType.LoopedIm2ColConv2dBwdData, params);
 	}
 	
@@ -188,6 +193,8 @@ public class LibMatrixDNN {
 				conv2dBwdFilterDenseCount.addAndGet(1);
 			}
 		}
+		
+		// Note: no native implementation for conv2d_backward_filter
 		
 		runConvTask(TaskType.LoopedIm2ColConv2dBwdFilter, params);
 	}
@@ -330,6 +337,11 @@ public class LibMatrixDNN {
 		}
 		if(!filter.isInSparseFormat() && TEST_SPARSE_FILTER) {
 			filter.denseToSparse();
+		}
+		
+		if(DMLScript.isNativeEnabled(params.numThreads) && !input.isInSparseFormat() && !filter.isInSparseFormat()) {
+			LibMatrixNative.conv2d(input, filter, outputBlock, params);
+			return;
 		}
 		
 		runConvTask(TaskType.LoopedIm2ColConv2d, params);

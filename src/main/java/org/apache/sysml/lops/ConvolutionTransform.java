@@ -108,7 +108,7 @@ public class ConvolutionTransform extends Lop
 				
 		case MAX_POOLING:
 			return "maxpooling";
-			
+		
 		case RELU_MAX_POOLING:
 			return "relu_maxpooling";
 			

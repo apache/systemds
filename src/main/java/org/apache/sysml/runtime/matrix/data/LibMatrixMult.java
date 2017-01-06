@@ -30,6 +30,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import org.apache.commons.math3.util.FastMath;
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.lops.MapMultChain.ChainType;
 import org.apache.sysml.lops.WeightedCrossEntropy.WCeMMType;
 import org.apache.sysml.lops.WeightedDivMM.WDivMMType;
@@ -195,6 +196,11 @@ public class LibMatrixMult
 			|| 2L * m1.rlen * m1.clen * m2.clen < PAR_MINFLOP_THRESHOLD ) 
 		{ 
 			matrixMult(m1, m2, ret);
+			return;
+		}
+		
+		if(DMLScript.isNativeEnabled(k) && !m1.isInSparseFormat() && !m2.isInSparseFormat()) {
+			LibMatrixNative.matrixMult(m1, m2, ret, k);
 			return;
 		}
 		

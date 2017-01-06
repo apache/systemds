@@ -21,7 +21,6 @@ package org.apache.sysml.runtime.instructions;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.apache.sysml.api.monitoring.Location;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.DataIdentifier;

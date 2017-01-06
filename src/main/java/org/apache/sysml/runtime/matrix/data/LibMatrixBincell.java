@@ -1019,9 +1019,19 @@ public class LibMatrixBincell
 		//compute scalar operation, incl nnz maintenance
 		int limit = m1.rlen*m1.clen;
 		int nnz = 0;
-		for( int i=0; i<limit; i++ ) {
-			c[i] = op.executeScalar( a[i] );
-			nnz += (c[i] != 0) ? 1 : 0;
+		if(op.fn instanceof Multiply) {
+			double constant = op.getConstant();
+			if(constant != 0) {
+				for( int i=0; i<limit; i++ )
+					c[i] = constant * a[i];
+				nnz = (int) m1.nonZeros;
+			}
+		}
+		else {
+			for( int i=0; i<limit; i++ ) {
+				c[i] = op.executeScalar( a[i] );
+				nnz += (c[i] != 0) ? 1 : 0;
+			}
 		}
 		ret.nonZeros = nnz;
 	}

@@ -106,7 +106,7 @@ public abstract class AutomatedTestBase
 	// loads after this class and that the JVM's current working directory
 	// is the root of this project.
 	static {
-		
+		DMLScript.USE_ACCELERATOR = DMLScript.USE_ACCELERATOR && TEST_GPU; 
 		String osname = System.getProperty("os.name").toLowerCase();
 		if (osname.contains("win")) {
 			System.err.printf("AutomatedTestBase has detected a Windows OS and is overriding\n"
@@ -125,7 +125,10 @@ public abstract class AutomatedTestBase
 			}
 			else {
 				System.setProperty("java.library.path", cwd + File.separator
-					+ "\\src\\test\\config\\hadoop_bin_windows\\bin");
+					+ "\\src\\test\\config\\hadoop_bin_windows\\bin"
+					// Useful for testing native implementation using MKL
+					// + File.pathSeparator + "C:\\Program Files (x86)\\IntelSWTools\\compilers_and_libraries_2017\\windows\\redist\\intel64_win\\mkl"
+					);
 			}
 			
 
@@ -1211,9 +1214,6 @@ public abstract class AutomatedTestBase
 		}
 		//use optional config file since default under SystemML/DML
 		args.add("-config="+ getCurConfigFile().getPath());
-		
-		if(TEST_GPU)
-			args.add("-gpu");
 		
 		// program-specific parameters
 		if ( newWay ) {

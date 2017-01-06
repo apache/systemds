@@ -25,6 +25,7 @@ import static jcuda.jcudnn.JCudnn.cudnnActivationForward;
 import static jcuda.jcudnn.JCudnn.cudnnConvolutionBackwardData;
 import static jcuda.jcudnn.JCudnn.cudnnConvolutionBackwardFilter;
 import static jcuda.jcudnn.JCudnn.cudnnConvolutionForward;
+import static jcuda.jcudnn.JCudnn.cudnnCreateActivationDescriptor;
 import static jcuda.jcudnn.JCudnn.cudnnCreateConvolutionDescriptor;
 import static jcuda.jcudnn.JCudnn.cudnnCreateFilterDescriptor;
 import static jcuda.jcudnn.JCudnn.cudnnCreatePoolingDescriptor;
@@ -38,12 +39,14 @@ import static jcuda.jcudnn.JCudnn.cudnnGetConvolutionBackwardFilterWorkspaceSize
 import static jcuda.jcudnn.JCudnn.cudnnGetConvolutionForwardWorkspaceSize;
 import static jcuda.jcudnn.JCudnn.cudnnPoolingBackward;
 import static jcuda.jcudnn.JCudnn.cudnnPoolingForward;
+import static jcuda.jcudnn.JCudnn.cudnnSetActivationDescriptor;
 import static jcuda.jcudnn.JCudnn.cudnnSetConvolution2dDescriptor;
 import static jcuda.jcudnn.JCudnn.cudnnSetFilter4dDescriptor;
 import static jcuda.jcudnn.JCudnn.cudnnSetPooling2dDescriptor;
 import static jcuda.jcudnn.JCudnn.cudnnSetTensor4dDescriptor;
 import static jcuda.jcudnn.cudnnConvolutionMode.CUDNN_CROSS_CORRELATION;
 import static jcuda.jcudnn.cudnnDataType.CUDNN_DATA_DOUBLE;
+import static jcuda.jcudnn.cudnnNanPropagation.CUDNN_PROPAGATE_NAN;
 import static jcuda.jcudnn.cudnnPoolingMode.CUDNN_POOLING_MAX;
 import static jcuda.jcudnn.cudnnTensorFormat.CUDNN_TENSOR_NCHW;
 import static jcuda.jcusparse.JCusparse.cusparseDcsrgemm;
@@ -58,8 +61,10 @@ import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToDevice;
 import static jcuda.jcudnn.cudnnActivationMode.CUDNN_ACTIVATION_RELU;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
@@ -71,12 +76,14 @@ import org.apache.sysml.runtime.instructions.gpu.context.JCudaObject;
 import org.apache.sysml.runtime.instructions.gpu.context.JCudaObject.CSRPointer;
 import org.apache.sysml.runtime.matrix.operators.*;
 import org.apache.sysml.utils.Statistics;
+import org.apache.sysml.utils.accelerator.JCudaHelper;
 import jcuda.Pointer;
 import jcuda.Sizeof;
 import jcuda.jcublas.JCublas2;
 import jcuda.jcublas.cublasFillMode;
 import jcuda.jcublas.cublasHandle;
 import jcuda.jcublas.cublasOperation;
+import jcuda.jcudnn.cudnnActivationDescriptor;
 import jcuda.jcudnn.cudnnConvolutionDescriptor;
 import jcuda.jcudnn.cudnnConvolutionFwdPreference;
 import jcuda.jcudnn.cudnnFilterDescriptor;
@@ -96,6 +103,13 @@ public class LibMatrixCUDA {
 	public static cudnnHandle cudnnHandle;
 	public static cublasHandle cublasHandle;
 	public static cusparseHandle cusparseHandle;
+	static {
+		if(DMLScript.USE_ACCELERATOR) {
+			cudnnHandle = JCudaHelper.getCudnnHandle();
+			cublasHandle = JCudaHelper.getCublasHandle();
+			cusparseHandle = JCudaHelper.getCusparseHandle();
+		}
+	}
 	public static JCudaKernels kernels; // Used to launch custom kernels
 
     private static final Log LOG = LogFactory.getLog(LibMatrixCUDA.class.getName());
@@ -217,7 +231,7 @@ public class LibMatrixCUDA {
 	private static cudnnFilterDescriptor allocateFilterDescriptor(int K, int C, int R, int S) {
 		cudnnFilterDescriptor filterDesc = new cudnnFilterDescriptor();
 		cudnnCreateFilterDescriptor(filterDesc);
-		cudnnSetFilter4dDescriptor(filterDesc, CUDNN_DATA_DOUBLE, K, C, R, S);
+		cudnnSetFilter4dDescriptor(filterDesc, CUDNN_DATA_DOUBLE, CUDNN_TENSOR_NCHW, K, C, R, S);
 		return filterDesc;
 	}
 
@@ -234,7 +248,7 @@ public class LibMatrixCUDA {
 	private static cudnnPoolingDescriptor allocatePoolingDescriptor(int R, int S, int pad_h, int pad_w, int stride_h, int stride_w) {
 		cudnnPoolingDescriptor poolingDesc = new cudnnPoolingDescriptor();
 		cudnnCreatePoolingDescriptor(poolingDesc);
-		cudnnSetPooling2dDescriptor(poolingDesc, CUDNN_POOLING_MAX, R, S, pad_h, pad_w, stride_h, stride_w);
+		cudnnSetPooling2dDescriptor(poolingDesc, CUDNN_POOLING_MAX, CUDNN_PROPAGATE_NAN, R, S, pad_h, pad_w, stride_h, stride_w);
 		return poolingDesc;
 	}
 
@@ -423,8 +437,11 @@ public class LibMatrixCUDA {
 				// Allocate descriptors
 				srcTensorDesc = allocateTensorDescriptor((int)N, 1, (int)H, (int)W);
 				dstTensorDesc = allocateTensorDescriptor((int)N, 1, (int)H, (int)W);
-
-	            cudnnActivationForward(cudnnHandle, CUDNN_ACTIVATION_RELU,
+				cudnnActivationDescriptor activationDescriptor = new cudnnActivationDescriptor();
+				cudnnCreateActivationDescriptor(activationDescriptor);
+				double dummy = -1;
+				cudnnSetActivationDescriptor(activationDescriptor, CUDNN_ACTIVATION_RELU, CUDNN_PROPAGATE_NAN, dummy);
+				cudnnActivationForward(cudnnHandle, activationDescriptor,
 	                alpha, srcTensorDesc, srcData,
 	                beta, dstTensorDesc, dstData);
 			}

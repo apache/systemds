@@ -26,27 +26,10 @@ import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
-import org.apache.sysml.utils.Statistics;
-
-import jcuda.driver.JCudaDriver;
-import jcuda.jcublas.JCublas2;
-import jcuda.jcublas.cublasHandle;
-import jcuda.jcudnn.JCudnn;
-import jcuda.runtime.JCuda;
-import jcuda.jcudnn.cudnnHandle;
-import jcuda.jcusparse.JCusparse;
-import jcuda.jcusparse.cusparseHandle;
 import jcuda.runtime.cudaDeviceProp;
-import static jcuda.jcudnn.JCudnn.cudnnCreate;
-import static jcuda.jcublas.JCublas2.cublasCreate;
-import static jcuda.jcublas.JCublas2.cublasDestroy;
-import static jcuda.jcudnn.JCudnn.cudnnDestroy;
-import static jcuda.jcusparse.JCusparse.cusparseDestroy;
-import static jcuda.jcusparse.JCusparse.cusparseCreate;
-import static jcuda.driver.JCudaDriver.cuInit;
-import static jcuda.driver.JCudaDriver.cuDeviceGetCount;
 import static jcuda.runtime.JCuda.cudaGetDeviceProperties;
 import static jcuda.runtime.JCuda.cudaGetDeviceCount;
+
 import static jcuda.runtime.JCuda.cudaMemGetInfo;
 import static jcuda.runtime.cudaError.cudaSuccess;
 
@@ -76,23 +59,7 @@ public class JCudaContext extends GPUContext {
 	public boolean REFRESH_AVAILABLE_MEMORY_EVERY_TIME = ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.REFRESH_AVAILABLE_MEMORY_EVERY_TIME);
 	// Invoke cudaMemGetInfo to get available memory information. Useful if GPU is shared among multiple application.
 	public double GPU_MEMORY_UTILIZATION_FACTOR = ConfigurationManager.getDMLConfig().getDoubleValue(DMLConfig.GPU_MEMORY_UTILIZATION_FACTOR);
-	static {
-		long start = System.nanoTime();
-		JCuda.setExceptionsEnabled(true);
-		JCudnn.setExceptionsEnabled(true);
-		JCublas2.setExceptionsEnabled(true);
-		JCusparse.setExceptionsEnabled(true);
-		JCudaDriver.setExceptionsEnabled(true);
-		cuInit(0); // Initialize the driver
-		// Obtain the number of devices
-        int deviceCountArray[] = { 0 };
-        cuDeviceGetCount(deviceCountArray);
-        int deviceCount = deviceCountArray[0];
-        LOG.info("Total number of GPUs on the machine: " + deviceCount);
-        Statistics.cudaInitTime = System.nanoTime() - start;
-	}
 
-	@Override
 	public long getAvailableMemory() {
 		if(REFRESH_AVAILABLE_MEMORY_EVERY_TIME) {
 			long free [] = { 0 };
@@ -151,18 +118,6 @@ public class JCudaContext extends GPUContext {
 		}
 		GPUContext.currContext = this;
 		
-		long start = System.nanoTime();
-		LibMatrixCUDA.cudnnHandle = new cudnnHandle();
-		cudnnCreate(LibMatrixCUDA.cudnnHandle);
-		LibMatrixCUDA.cublasHandle = new cublasHandle();
-		cublasCreate(LibMatrixCUDA.cublasHandle);
-		// For cublas v2, cublasSetPointerMode tells Cublas whether to expect scalar arguments on device or on host
-		// This applies to arguments like "alpha" in Dgemm, and "y" in Ddot.
-		// cublasSetPointerMode(LibMatrixCUDA.cublasHandle, cublasPointerMode.CUBLAS_POINTER_MODE_DEVICE); 
-		LibMatrixCUDA.cusparseHandle = new cusparseHandle();
-		cusparseCreate(LibMatrixCUDA.cusparseHandle);
-		Statistics.cudaLibrariesInitTime = System.nanoTime() - start;
-		
 		long free [] = { 0 };
         long total [] = { 0 };
         if(cudaMemGetInfo(free, total) == cudaSuccess) {
@@ -177,20 +132,14 @@ public class JCudaContext extends GPUContext {
         
         LibMatrixCUDA.kernels = new JCudaKernels();
 	}
-
+	
 	@Override
 	public void destroy() throws DMLRuntimeException {
 		if(currContext != null) {
 			synchronized(isGPUContextCreated) {
-				cudnnDestroy(LibMatrixCUDA.cudnnHandle);
-				cublasDestroy(LibMatrixCUDA.cublasHandle);
-				cusparseDestroy(LibMatrixCUDA.cusparseHandle);
 				currContext = null;
 				isGPUContextCreated = false;
 			}
-		}
-		else if(LibMatrixCUDA.cudnnHandle != null || LibMatrixCUDA.cublasHandle != null) {
-			throw new DMLRuntimeException("Error while destroying the GPUContext");
 		}
 	}
 

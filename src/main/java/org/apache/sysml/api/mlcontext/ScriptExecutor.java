@@ -275,6 +275,7 @@ public class ScriptExecutor {
 	 * primary methods:
 	 * 
 	 * <ol>
+	 * <li>{@link #setup(Script)}</li>
 	 * <li>{@link #parseScript()}</li>
 	 * <li>{@link #liveVariableAnalysis()}</li>
 	 * <li>{@link #validateScript()}</li>
@@ -298,14 +299,9 @@ public class ScriptExecutor {
 	 * @return the results as a MLResults object
 	 */
 	public MLResults execute(Script script) {
-		this.script = script;
-		checkScriptHasTypeAndString();
-		script.setScriptExecutor(this);
-		setScriptStringInSparkMonitor();
-		// Set global variable indicating the script type
-		DMLScript.SCRIPT_TYPE = script.getScriptType();
 
 		// main steps in script execution
+		setup(script);
 		parseScript();
 		liveVariableAnalysis();
 		validateScript();
@@ -333,6 +329,23 @@ public class ScriptExecutor {
 		}
 
 		return mlResults;
+	}
+
+	/**
+	 * Sets the script in the ScriptExecutor, checks that the script has a type
+	 * and string, sets the ScriptExecutor in the script, sets the script string
+	 * in the Spark Monitor, and globally sets the script type.
+	 * 
+	 * @param script
+	 *            the DML or PYDML script to execute
+	 */
+	protected void setup(Script script) {
+		this.script = script;
+		checkScriptHasTypeAndString();
+		script.setScriptExecutor(this);
+		setScriptStringInSparkMonitor();
+		// Set global variable indicating the script type
+		DMLScript.SCRIPT_TYPE = script.getScriptType();
 	}
 
 	/**

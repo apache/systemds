@@ -59,6 +59,8 @@ public abstract class Lop
 		SortKeys, PickValues,
 		Checkpoint, 										//Spark persist into storage level
 		PlusMult, MinusMult,								//CP
+		/** CP operation on a variable number of operands */
+		MULTIPLE_CP
 	};
 
 	/**
@@ -353,7 +355,7 @@ public abstract class Lop
 	}
  
 	/**
-	 * Method to get the execution type (CP or MR) of LOP
+	 * Method to get the execution type (CP, CP_FILE, MR, SPARK, GPU, INVALID) of LOP
 	 * 
 	 * @return execution type
 	 */

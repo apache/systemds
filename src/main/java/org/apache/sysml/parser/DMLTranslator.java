@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -30,6 +31,7 @@ import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.AggBinaryOp;
 import org.apache.sysml.hops.AggUnaryOp;
 import org.apache.sysml.hops.BinaryOp;
+import org.apache.sysml.hops.ConvolutionOp;
 import org.apache.sysml.hops.DataGenOp;
 import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.FunctionOp;
@@ -48,25 +50,25 @@ import org.apache.sysml.hops.IndexingOp;
 import org.apache.sysml.hops.LeftIndexingOp;
 import org.apache.sysml.hops.LiteralOp;
 import org.apache.sysml.hops.MemoTable;
+import org.apache.sysml.hops.MultipleOp;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.ParameterizedBuiltinOp;
 import org.apache.sysml.hops.ReorgOp;
 import org.apache.sysml.hops.TernaryOp;
 import org.apache.sysml.hops.UnaryOp;
 import org.apache.sysml.hops.ipa.InterProceduralAnalysis;
-import org.apache.sysml.hops.rewrite.ProgramRewriter;
 import org.apache.sysml.hops.recompile.Recompiler;
+import org.apache.sysml.hops.rewrite.HopRewriteUtils;
+import org.apache.sysml.hops.rewrite.ProgramRewriter;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopsException;
+import org.apache.sysml.parser.Expression.BuiltinFunctionOp;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.FormatType;
 import org.apache.sysml.parser.Expression.ParameterizedBuiltinFunctionOp;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.parser.PrintStatement.PRINTTYPE;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.hops.ConvolutionOp;
-import org.apache.sysml.hops.rewrite.HopRewriteUtils;
-import org.apache.sysml.parser.Expression.BuiltinFunctionOp;
 
 
 public class DMLTranslator 
@@ -1014,27 +1016,57 @@ public class DMLTranslator
 			}
 
 			if (current instanceof PrintStatement) {
-				PrintStatement ps = (PrintStatement) current;
-				Expression source = ps.getExpression();
-				PRINTTYPE ptype = ps.getType();
-				
 				DataIdentifier target = createTarget();
 				target.setDataType(DataType.SCALAR);
 				target.setValueType(ValueType.STRING);
-				target.setAllPositions(current.getFilename(), current.getBeginLine(), target.getBeginColumn(), current.getEndLine(),  current.getEndColumn());
-				
-				Hop ae = processExpression(source, target, ids);
-			
+				target.setAllPositions(current.getFilename(), current.getBeginLine(), target.getBeginColumn(),
+						current.getEndLine(), current.getEndColumn());
+
+				PrintStatement ps = (PrintStatement) current;
+				PRINTTYPE ptype = ps.getType();
+
 				try {
-					Hop.OpOp1 op = (ptype == PRINTTYPE.PRINT ? Hop.OpOp1.PRINT : Hop.OpOp1.STOP);
-					Hop printHop = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), op, ae);
-					printHop.setAllPositions(current.getBeginLine(), current.getBeginColumn(), current.getEndLine(), current.getEndColumn());
-					output.add(printHop);
-				} catch ( HopsException e ) {
+					if (ptype == PRINTTYPE.PRINT) {
+						Hop.OpOp1 op = Hop.OpOp1.PRINT;
+						Expression source = ps.getExpressions().get(0);
+						Hop ae = processExpression(source, target, ids);
+						Hop printHop = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), op,
+								ae);
+						printHop.setAllPositions(current.getBeginLine(), current.getBeginColumn(), current.getEndLine(),
+								current.getEndColumn());
+						output.add(printHop);
+					} else if (ptype == PRINTTYPE.STOP) {
+						Hop.OpOp1 op = Hop.OpOp1.STOP;
+						Expression source = ps.getExpressions().get(0);
+						Hop ae = processExpression(source, target, ids);
+						Hop stopHop = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), op,
+								ae);
+						stopHop.setAllPositions(current.getBeginLine(), current.getBeginColumn(), current.getEndLine(),
+								current.getEndColumn());
+						output.add(stopHop);
+					} else if (ptype == PRINTTYPE.PRINTF) {
+						Hop.MultipleOperandOperation printfOperation = Hop.MultipleOperandOperation.PRINTF;
+						List<Expression> expressions = ps.getExpressions();
+						Hop[] inHops = new Hop[expressions.size()];
+						// process the expressions (function parameters) that
+						// make up the printf-styled print statement
+						// into Hops so that these can be passed to the printf
+						// Hop (ie, MultipleOp) as input Hops
+						for (int j = 0; j < expressions.size(); j++) {
+							Hop inHop = processExpression(expressions.get(j), target, ids);
+							inHops[j] = inHop;
+						}
+						target.setValueType(ValueType.STRING);
+						Hop printfHop = new MultipleOp(target.getName(), target.getDataType(), target.getValueType(),
+								printfOperation, inHops);
+						output.add(printfHop);
+					}
+
+				} catch (HopsException e) {
 					throw new LanguageException(e);
 				}
 			}
-	
+
 			if (current instanceof AssignmentStatement) {
 	
 				AssignmentStatement as = (AssignmentStatement) current;

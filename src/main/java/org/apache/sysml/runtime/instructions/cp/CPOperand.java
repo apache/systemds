@@ -19,6 +19,8 @@
 
 package org.apache.sysml.runtime.instructions.cp;
 
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang.builder.ToStringStyle;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.instructions.Instruction;
@@ -102,6 +104,17 @@ public class CPOperand
 			_name = opr[0];
 			_valueType = ValueType.valueOf(opr[1]);
 		}
+	}
+
+	public void copy(CPOperand o){
+		_name = o.getName();
+		_valueType = o.getValueType();
+		_dataType = o.getDataType();
+	}
+
+	@Override
+	public String toString() {
+		return ToStringBuilder.reflectionToString(this, ToStringStyle.SHORT_PREFIX_STYLE);
 	}
 
 }

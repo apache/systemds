@@ -22,6 +22,7 @@ package org.apache.sysml.parser.common;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -486,23 +487,57 @@ public abstract class CommonSyntacticValidator {
 
 	protected void setPrintStatement(ParserRuleContext ctx, String functionName,
 			ArrayList<ParameterExpression> paramExpression, StatementInfo thisinfo) {
-		if(paramExpression.size() != 1) {
-			notifyErrorListeners(functionName + "() has only one parameter", ctx.start);
+		int numParams = paramExpression.size();
+		if (numParams == 0) {
+			notifyErrorListeners(functionName + "() must have more than 0 parameters", ctx.start);
 			return;
-		}
-		Expression expr = paramExpression.get(0).getExpr();
-		if(expr == null) {
-			notifyErrorListeners("cannot process " + functionName + "() function", ctx.start);
-			return;
-		}
-		try {
-			int line = ctx.start.getLine();
-			int col = ctx.start.getCharPositionInLine();
-			thisinfo.stmt = new PrintStatement(functionName, expr, line, col, line, col);
-			setFileLineColumn(thisinfo.stmt, ctx);
-		} catch (LanguageException e) {
-			notifyErrorListeners("cannot process " + functionName + "() function", ctx.start);
-			return;
+		} else if (numParams == 1) {
+			Expression expr = paramExpression.get(0).getExpr();
+			if(expr == null) {
+				notifyErrorListeners("cannot process " + functionName + "() function", ctx.start);
+				return;
+			}
+			try {
+				int line = ctx.start.getLine();
+				int col = ctx.start.getCharPositionInLine();
+				ArrayList<Expression> expList = new ArrayList<Expression>();
+				expList.add(expr);
+				thisinfo.stmt = new PrintStatement(functionName, expList, line, col, line, col);
+				setFileLineColumn(thisinfo.stmt, ctx);
+			} catch (LanguageException e) {
+				notifyErrorListeners("cannot process " + functionName + "() function", ctx.start);
+				return;
+			}
+		} else if (numParams > 1) {
+			if ("stop".equals(functionName)) {
+				notifyErrorListeners("stop() function cannot have more than 1 parameter", ctx.start);
+				return;
+			}
+
+			Expression firstExp = paramExpression.get(0).getExpr();
+			if (firstExp == null) {
+				notifyErrorListeners("cannot process " + functionName + "() function", ctx.start);
+				return;
+			}
+			if (!(firstExp instanceof StringIdentifier)) {
+				notifyErrorListeners("printf-style functionality requires first print parameter to be a string", ctx.start);
+				return;
+			}
+			try {
+				int line = ctx.start.getLine();
+				int col = ctx.start.getCharPositionInLine();
+
+				List<Expression> expressions = new ArrayList<Expression>();
+				for (ParameterExpression pe : paramExpression) {
+					Expression expression = pe.getExpr();
+					expressions.add(expression);
+				}
+				thisinfo.stmt = new PrintStatement(functionName, expressions, line, col, line, col);
+				setFileLineColumn(thisinfo.stmt, ctx);
+			} catch (LanguageException e) {
+				notifyErrorListeners("cannot process " + functionName + "() function", ctx.start);
+				return;
+			}
 		}
 	}
 

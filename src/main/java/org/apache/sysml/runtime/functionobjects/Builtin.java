@@ -49,7 +49,7 @@ public class Builtin extends ValueFunction
 
 	private static final long serialVersionUID = 3836744687789840574L;
 	
-	public enum BuiltinCode { SIN, COS, TAN, ASIN, ACOS, ATAN, LOG, LOG_NZ, MIN, MAX, ABS, SIGN, SQRT, EXP, PLOGP, PRINT, NROW, NCOL, LENGTH, ROUND, MAXINDEX, MININDEX, STOP, CEIL, FLOOR, CUMSUM, CUMPROD, CUMMIN, CUMMAX, INVERSE, SPROP, SIGMOID, SELP };
+	public enum BuiltinCode { SIN, COS, TAN, ASIN, ACOS, ATAN, LOG, LOG_NZ, MIN, MAX, ABS, SIGN, SQRT, EXP, PLOGP, PRINT, PRINTF, NROW, NCOL, LENGTH, ROUND, MAXINDEX, MININDEX, STOP, CEIL, FLOOR, CUMSUM, CUMPROD, CUMMIN, CUMMAX, INVERSE, SPROP, SIGMOID, SELP };
 	public BuiltinCode bFunc;
 	
 	private static final boolean FASTMATH = true;
@@ -76,6 +76,7 @@ public class Builtin extends ValueFunction
 		String2BuiltinCode.put( "exp"    , BuiltinCode.EXP);
 		String2BuiltinCode.put( "plogp"  , BuiltinCode.PLOGP);
 		String2BuiltinCode.put( "print"  , BuiltinCode.PRINT);
+		String2BuiltinCode.put( "printf"  , BuiltinCode.PRINTF);
 		String2BuiltinCode.put( "nrow"   , BuiltinCode.NROW);
 		String2BuiltinCode.put( "ncol"   , BuiltinCode.NCOL);
 		String2BuiltinCode.put( "length" , BuiltinCode.LENGTH);
@@ -96,7 +97,7 @@ public class Builtin extends ValueFunction
 	// We should create one object for every builtin function that we support
 	private static Builtin sinObj = null, cosObj = null, tanObj = null, asinObj = null, acosObj = null, atanObj = null;
 	private static Builtin logObj = null, lognzObj = null, minObj = null, maxObj = null, maxindexObj = null, minindexObj=null;
-	private static Builtin absObj = null, signObj = null, sqrtObj = null, expObj = null, plogpObj = null, printObj = null;
+	private static Builtin absObj = null, signObj = null, sqrtObj = null, expObj = null, plogpObj = null, printObj = null, printfObj;
 	private static Builtin nrowObj = null, ncolObj = null, lengthObj = null, roundObj = null, ceilObj=null, floorObj=null; 
 	private static Builtin inverseObj=null, cumsumObj=null, cumprodObj=null, cumminObj=null, cummaxObj=null;
 	private static Builtin stopObj = null, spropObj = null, sigmoidObj = null, selpObj = null;
@@ -195,6 +196,11 @@ public class Builtin extends ValueFunction
 			if ( printObj == null )
 				printObj = new Builtin(BuiltinCode.PRINT);
 			return printObj;
+		case PRINTF:
+			if (printfObj == null) {
+				printfObj = new Builtin(BuiltinCode.PRINTF);
+			}
+			return printfObj;
 		case NROW:
 			if ( nrowObj == null )
 				nrowObj = new Builtin(BuiltinCode.NROW);
@@ -450,12 +456,16 @@ public class Builtin extends ValueFunction
 		}
 	}
 
-	// currently, it is used only for PRINT and STOP
+	// currently, it is used only for PRINT, PRINTF and STOP
 	public String execute (String in1) 
 		throws DMLRuntimeException 
 	{
 		switch (bFunc) {
 		case PRINT:
+			if (!DMLScript.suppressPrint2Stdout())
+				System.out.println(in1);
+			return null;
+		case PRINTF:
 			if (!DMLScript.suppressPrint2Stdout())
 				System.out.println(in1);
 			return null;

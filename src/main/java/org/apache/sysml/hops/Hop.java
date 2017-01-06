@@ -34,6 +34,7 @@ import org.apache.sysml.lops.Data;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.lops.LopsException;
+import org.apache.sysml.lops.MultipleCP;
 import org.apache.sysml.lops.ReBlock;
 import org.apache.sysml.lops.UnaryCP;
 import org.apache.sysml.parser.Expression.DataType;
@@ -1024,6 +1025,10 @@ public abstract class Hop
 		WUMM //weighted unary mm
 	};
 	
+	// Operations that require a variable number of operands
+	public enum MultipleOperandOperation {
+		PRINTF
+	}
 	
 	public enum AggOp {
 		SUM, SUM_SQ, MIN, MAX, TRACE, PROD, MEAN, VAR, MAXINDEX, MININDEX
@@ -1259,6 +1264,18 @@ public abstract class Hop
 		HopsOpOp1LopsUS.put(OpOp1.STOP, org.apache.sysml.lops.UnaryCP.OperationTypes.STOP);
 	}
 
+	/**
+	 * Maps from a multiple (variable number of operands) Hop operation type to
+	 * the corresponding Lop operation type. This is called in the MultipleOp
+	 * constructLops() method that is used to construct the Lops that correspond
+	 * to a Hop.
+	 */
+	protected static final HashMap<MultipleOperandOperation, MultipleCP.OperationType> MultipleOperandOperationHopTypeToLopType;
+	static {
+		MultipleOperandOperationHopTypeToLopType = new HashMap<MultipleOperandOperation, MultipleCP.OperationType>();
+		MultipleOperandOperationHopTypeToLopType.put(MultipleOperandOperation.PRINTF, MultipleCP.OperationType.PRINTF);
+	}
+
 	protected static final HashMap<Hop.OpOp1, String> HopsOpOp12String;
 	static {
 		HopsOpOp12String = new HashMap<OpOp1, String>();	
@@ -1287,7 +1304,7 @@ public abstract class Hop
 		HopsOpOp12String.put(OpOp1.SPROP, "sprop");
 		HopsOpOp12String.put(OpOp1.SIGMOID, "sigmoid");
 	}
-	
+
 	protected static final HashMap<Hop.ParamBuiltinOp, org.apache.sysml.lops.ParameterizedBuiltin.OperationTypes> HopsParameterizedBuiltinLops;
 	static {
 		HopsParameterizedBuiltinLops = new HashMap<Hop.ParamBuiltinOp, org.apache.sysml.lops.ParameterizedBuiltin.OperationTypes>();

@@ -22,6 +22,7 @@ package org.apache.sysml.parser;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -727,18 +728,19 @@ public class StatementBlock extends LiveVariableAnalysis
 			}
 				
 			else if(current instanceof ForStatement || current instanceof IfStatement || current instanceof WhileStatement ){
-				raiseValidateError("control statement (CVStatement, ELStatement, WhileStatement, IfStatement, ForStatement) should not be in genreric statement block.  Likely a parsing error", conditional);
+				raiseValidateError("control statement (WhileStatement, IfStatement, ForStatement) should not be in generic statement block. Likely a parsing error", conditional);
 			}
-				
-			else if (current instanceof PrintStatement){
+
+			else if (current instanceof PrintStatement) {
 				PrintStatement pstmt = (PrintStatement) current;
-				Expression expr = pstmt.getExpression();	
-				expr.validateExpression(ids.getVariables(), currConstVars, conditional);
-				
-				// check that variables referenced in print statement expression are scalars
-				if (expr.getOutput().getDataType() != Expression.DataType.SCALAR){
-				   raiseValidateError("print statement can only print scalars", conditional);
+				List<Expression> expressions = pstmt.getExpressions();
+				for (Expression expression : expressions) {
+					expression.validateExpression(ids.getVariables(), currConstVars, conditional);
+					if (expression.getOutput().getDataType() != Expression.DataType.SCALAR) {
+						raiseValidateError("print statement can only print scalars", conditional);
+					}
 				}
+
 			}
 			
 			// no work to perform for PathStatement or ImportStatement

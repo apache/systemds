@@ -1029,12 +1029,16 @@ public class LibMatrixCUDA {
 						ec.setScalarOutput(output, new DoubleObject(result));
 						break;
 					}
-					case REDUCTION_COL : {
+					case REDUCTION_COL : {	// The names are a bit misleading, REDUCTION_COL refers to the direction (reduce all elements in a column)
 						reduceRow(in, out, rlen, clen);
 						break;
 					}
+					case REDUCTION_ROW : {
+						reduceCol(in, out, rlen, clen);
+						break;
+					}
+
 					case REDUCTION_DIAG :
-					case REDUCTION_ROW :
 						throw new DMLRuntimeException("Internal Error - Row, Column and Diag summation not implemented yet");
 				}
 				break;
@@ -1172,6 +1176,14 @@ public class LibMatrixCUDA {
 		cudaDeviceSynchronize();
 	}
 
+	private static void reduceCol(Pointer in, Pointer out, int rows, int cols) throws DMLRuntimeException {
+		int[] tmp = getKernelParamsForReduceByCol(rows, cols);
+		int blocks = tmp[0], threads = tmp[1], sharedMem = tmp[2];
+		kernels.launchKernel("reduce_col", new ExecutionConfig(blocks, threads, sharedMem),
+						in, out, rows, cols);
+		cudaDeviceSynchronize();
+	}
+
 	/**
 	 * Get threads, blocks and shared memory for a reduce all operation
 	 * @param n size of input array
@@ -1206,6 +1218,18 @@ public class LibMatrixCUDA {
 		}
 		return new int[] {blocks, threads, sharedMemSize};
 	}
+
+	private static int[] getKernelParamsForReduceByCol(int rows, int cols) {
+		int threads = Math.min(cols, MAX_THREADS);
+		int blocks = cols/1024;
+		if (cols % 1024 != 0) blocks++;
+		int sharedMemSize = threads * Sizeof.DOUBLE;
+		if (threads <= 32){
+			sharedMemSize *=2;
+		}
+		return new int[] {blocks, threads, sharedMemSize};
+	}
+
 
 	private static int nextPow2(int x)
 	{

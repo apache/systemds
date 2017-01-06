@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.Random;
 
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheException;
 import org.apache.sysml.runtime.matrix.data.IJV;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
@@ -79,48 +78,40 @@ public class SGDNesterovUpdate extends PackageFunction {
 			MatrixBlock v = ((Matrix) getFunctionInput(4)).getMatrixObject().acquireRead();
 			
 			// v = mu * v - lr * dX
-			double [] updatedVData = new double[v.getNumRows()*v.getNumColumns()];
+			updatedV = new Matrix( "tmp_" + rand.nextLong(), v.getNumRows(), v.getNumColumns(), ValueType.Double );
+			MatrixBlock updatedVMB = allocateDenseMatrixBlock(updatedV);
+			double [] updatedVData = updatedVMB.getDenseBlock();
 			multiplyByConstant(v, mu, updatedVData);
 			multiplyByConstant(dX, -lr, updatedVData);
-			updatedV = new Matrix( "tmp_" + rand.nextLong(), v.getNumRows(), v.getNumColumns(), ValueType.Double );
-			setMatrixDoubleArray(updatedV, updatedVData);
+			updatedV.setMatrixDoubleArray(updatedVMB, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
 			
 			// X = X - mu * v_prev + (1 + mu) * v
-			double [] updatedXData = new double[X.getNumRows()*X.getNumColumns()];
+			updatedX = new Matrix( "tmp_" + rand.nextLong(), X.getNumRows(), X.getNumColumns(), ValueType.Double );
+			MatrixBlock updatedXMB = allocateDenseMatrixBlock(updatedX);
+			double [] updatedXData = updatedXMB.getDenseBlock();
 			copy(X, updatedXData);
 			multiplyByConstant(v, -mu, updatedXData);
 			multiplyByConstant(updatedVData, 1+mu, updatedXData);
-			updatedX = new Matrix( "tmp_" + rand.nextLong(), X.getNumRows(), X.getNumColumns(), ValueType.Double );
-			setMatrixDoubleArray(updatedX, updatedXData);
+			updatedX.setMatrixDoubleArray(updatedXMB, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
 			
 			((Matrix) getFunctionInput(0)).getMatrixObject().release();
 			((Matrix) getFunctionInput(1)).getMatrixObject().release();
 			((Matrix) getFunctionInput(4)).getMatrixObject().release();
 		} catch (CacheException e) {
 			throw new RuntimeException("Exception while executing SGDNesterovUpdate", e);
-		} catch (DMLRuntimeException e) {
-			throw new RuntimeException("Exception while executing SGDNesterovUpdate", e);
 		} catch (IOException e) {
 			throw new RuntimeException("Exception while executing SGDNesterovUpdate", e);
 		}
 	}
 	
-	private void setMatrixDoubleArray(Matrix mat, double [] data) throws IOException, DMLRuntimeException {
-		// updatedX.setMatrixDoubleArray(updatedXData);
+	private MatrixBlock allocateDenseMatrixBlock(Matrix mat) {
 		int rows = (int) mat.getNumRows();
 		int cols = (int) mat.getNumCols();
 		MatrixBlock mb = new MatrixBlock(rows, cols, false);
-		
-		try { 
-			//copy data to mb (can be used because we create a dense matrix)
-			mb.init( data, rows, cols );
-		} 
-		catch (Exception e){} //can never happen
-		
-		//check and convert internal representation
-		mb.examSparsity();
-		mat.setMatrixDoubleArray(mb, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
+		mb.allocateDenseBlock();
+		return mb;
 	}
+	
 	
 	// out += constant*in
 	private void multiplyByConstant(double [] in, double constant, double [] out) {

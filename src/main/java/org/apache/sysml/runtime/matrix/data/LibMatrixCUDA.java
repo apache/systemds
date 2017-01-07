@@ -1025,16 +1025,16 @@ public class LibMatrixCUDA {
 			case OP_PLUS: {
 				switch(reductionDirection) {
 					case REDUCTION_ALL : {
-						double result = reduceAll(in, size);
+						double result = reduceAll("reduce_sum", in, size);
 						ec.setScalarOutput(output, new DoubleObject(result));
 						break;
 					}
 					case REDUCTION_COL : {	// The names are a bit misleading, REDUCTION_COL refers to the direction (reduce all elements in a column)
-						reduceRow(in, out, rlen, clen);
+						reduceRow("reduce_row", in, out, rlen, clen);
 						break;
 					}
 					case REDUCTION_ROW : {
-						reduceCol(in, out, rlen, clen);
+						reduceCol("reduce_col", in, out, rlen, clen);
 						break;
 					}
 
@@ -1056,7 +1056,12 @@ public class LibMatrixCUDA {
 			}
 			case OP_MEAN:{
 				switch(reductionDirection) {
-					case REDUCTION_ALL:
+					case REDUCTION_ALL: {
+						double result = reduceAll("reduce_sum", in, size);
+						double mean = result / size;
+						ec.setScalarOutput(output, new DoubleObject(mean));
+						break;
+					}
 					case REDUCTION_COL:
 					case REDUCTION_ROW:
 						throw new DMLRuntimeException("Internal Error - All, Row & Column mean of matrix not implemented yet for GPU ");
@@ -1087,7 +1092,11 @@ public class LibMatrixCUDA {
 			}
 			case OP_MAX :{
 				switch(reductionDirection) {
-					case REDUCTION_ALL:
+					case REDUCTION_ALL: {
+						double result = reduceAll("reduce_max", in, size);
+						ec.setScalarOutput(output, new DoubleObject(result));
+						break;
+					}
 					case REDUCTION_COL:
 					case REDUCTION_ROW:
 						throw new DMLRuntimeException("Internal Error - All, Row & Column max of matrix not implemented yet for GPU ");
@@ -1098,7 +1107,11 @@ public class LibMatrixCUDA {
 			}
 			case OP_MIN :{
 				switch(reductionDirection) {
-					case REDUCTION_ALL:
+					case REDUCTION_ALL: {
+						double result = reduceAll("reduce_min", in, size);
+						ec.setScalarOutput(output, new DoubleObject(result));
+						break;
+					}
 					case REDUCTION_COL:
 					case REDUCTION_ROW:
 						throw new DMLRuntimeException("Internal Error - All, Row & Column min of matrix not implemented yet for GPU ");
@@ -1131,24 +1144,25 @@ public class LibMatrixCUDA {
 
 	/**
 	 * Do a simple reduction, the output of which is a single value
-	 * @param in	{@link Pointer} to matrix in device memory
-	 * @param n		size of array
+	 * @param kernelFunction 	name of the kernel function to invoke
+	 * @param in							{@link Pointer} to matrix in device memory
+	 * @param n								size of array
 	 * @return	the reduced value
 	 * @throws DMLRuntimeException
 	 */
-	private static double reduceAll(Pointer in, int n) throws DMLRuntimeException {
+	private static double reduceAll(String kernelFunction, Pointer in, int n) throws DMLRuntimeException {
 		int[] tmp = getKernelParamsForReduceAll(n);
 		int blocks = tmp[0], threads = tmp[1], sharedMem = tmp[2];
 
 		Pointer tempOut = JCudaObject.allocate(n * Sizeof.DOUBLE);
-		kernels.launchKernel("reduce", new ExecutionConfig(blocks, threads, sharedMem),
+		kernels.launchKernel(kernelFunction, new ExecutionConfig(blocks, threads, sharedMem),
 						in, tempOut, n);
 		cudaDeviceSynchronize();
 		int s = n;
 		while (s > 1) {
 			tmp = getKernelParamsForReduceAll(n);
 			blocks = tmp[0]; threads = tmp[1]; sharedMem = tmp[2];
-			kernels.launchKernel("reduce", new ExecutionConfig(blocks, threads, sharedMem),
+			kernels.launchKernel(kernelFunction, new ExecutionConfig(blocks, threads, sharedMem),
 							tempOut, tempOut, s);
 			s = (s + (threads*2-1)) / (threads*2);
 		}
@@ -1162,21 +1176,32 @@ public class LibMatrixCUDA {
 	/**
 	 * Do a reduction by row. Data is reduced per row and the
 	 * resulting vector is calculated.
-	 * @param in		{@link Pointer} to input matrix in device memory (size - rows * columns)
-	 * @param out		{@link Pointer} to output matrix in device memory (size - rows * 1)
-	 * @param rows	number of rows in input matrix
-	 * @param cols	number of columns in input matrix
+	 * @param kernelFunction 	name of the kernel function to invoke
+	 * @param in							{@link Pointer} to input matrix in device memory (size - rows * columns)
+	 * @param out							{@link Pointer} to output matrix in device memory (size - rows * 1)
+	 * @param rows						number of rows in input matrix
+	 * @param cols						number of columns in input matrix
 	 * @throws DMLRuntimeException
 	 */
-	private static void reduceRow(Pointer in, Pointer out, int rows, int cols) throws DMLRuntimeException {
+	private static void reduceRow(String kernelFunction, Pointer in, Pointer out, int rows, int cols) throws DMLRuntimeException {
 		int[] tmp = getKernelParamsForReduceByRow(rows, cols);
 		int blocks = tmp[0], threads = tmp[1], sharedMem = tmp[2];
-		kernels.launchKernel("reduce_row", new ExecutionConfig(blocks, threads, sharedMem),
+		kernels.launchKernel(kernelFunction, new ExecutionConfig(blocks, threads, sharedMem),
 						in, out, rows, cols);
 		cudaDeviceSynchronize();
 	}
 
-	private static void reduceCol(Pointer in, Pointer out, int rows, int cols) throws DMLRuntimeException {
+	/**
+	 * Do a reduction by column. Data is reduced per column and the
+	 * resulting vector is calculated.
+	 * @param kernelFunction 	name of the kernel function to invoke
+	 * @param in							{@link Pointer} to input matrix in device memory (size - rows * columns)
+	 * @param out							{@link Pointer} to output matrix in device memory (size - 1 * cols)
+	 * @param rows						number of rows in input matrix
+	 * @param cols						number of columns in input matrix
+	 * @throws DMLRuntimeException
+	 */
+	private static void reduceCol(String kernelFunction, Pointer in, Pointer out, int rows, int cols) throws DMLRuntimeException {
 		int[] tmp = getKernelParamsForReduceByCol(rows, cols);
 		int blocks = tmp[0], threads = tmp[1], sharedMem = tmp[2];
 		kernels.launchKernel("reduce_col", new ExecutionConfig(blocks, threads, sharedMem),
@@ -1747,7 +1772,7 @@ public class LibMatrixCUDA {
 				ExecutionConfig.getConfigForSimpleMatrixOperations(rlen, clen),
 				src, dest, rlen, clen);
 	}
-	
+
 	/**
 	 * Performs daxpy operation
 	 * 
@@ -1760,9 +1785,9 @@ public class LibMatrixCUDA {
 	 */
 	public static void axpy(ExecutionContext ec, MatrixObject in1, MatrixObject in2,
 			String outputName,  double constant) throws DMLRuntimeException {
-		if(isInSparseFormat(in1)) 
+		if(isInSparseFormat(in1))
 			((JCudaObject)in1.getGPUObject()).sparseToDense();
-		if(isInSparseFormat(in2)) 
+		if(isInSparseFormat(in2))
 			((JCudaObject)in2.getGPUObject()).sparseToDense();
 		Pointer A = ((JCudaObject)in1.getGPUObject()).jcudaDenseMatrixPtr;
 		Pointer B = ((JCudaObject)in2.getGPUObject()).jcudaDenseMatrixPtr;
@@ -1771,7 +1796,7 @@ public class LibMatrixCUDA {
 	    Pointer C = ((JCudaObject)out.getGPUObject()).jcudaDenseMatrixPtr;
 	    Pointer alphaPtr = pointerTo(constant);
 	    long n = (in1.getNumRows()*in1.getNumColumns());
-	    // C <- A + alpha*B 
+	    // C <- A + alpha*B
 	    // becomes
 	    // C <- A
 	    // C <- alpha*B + C

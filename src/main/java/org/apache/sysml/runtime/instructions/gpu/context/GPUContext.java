@@ -36,7 +36,8 @@ public abstract class GPUContext {
 
 	/**
 	 * Gets device memory available for SystemML operations
-	 * @return
+	 * 
+	 * @return available memory
 	 */
 	public abstract long getAvailableMemory();
 
@@ -44,6 +45,8 @@ public abstract class GPUContext {
 	 * Ensures that all the CUDA cards on the current system are
 	 * of the minimum required compute capability.
 	 * (The minimum required compute capability is hard coded in {@link JCudaContext}.
+	 * 
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public abstract void ensureComputeCapability() throws DMLRuntimeException;
 	

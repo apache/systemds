@@ -1751,12 +1751,12 @@ public class LibMatrixCUDA {
 	/**
 	 * Performs daxpy operation
 	 * 
-	 * @param ec
-	 * @param in1
-	 * @param in2
-	 * @param outputName
-	 * @param constant
-	 * @throws DMLRuntimeException
+	 * @param ec execution context
+	 * @param in1 input matrix 1
+	 * @param in2 input matrix 2
+	 * @param outputName output matrix name
+	 * @param constant pointer constant
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void axpy(ExecutionContext ec, MatrixObject in1, MatrixObject in2,
 			String outputName,  double constant) throws DMLRuntimeException {

@@ -140,7 +140,15 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 					if( optype == null )
 						throw new HopsException("Unknown UnaryCP lop type for UnaryOp operation type '"+_op+"'");
 					
-					UnaryCP unary1 = new UnaryCP(input.constructLops(), optype, getDataType(), getValueType());
+					UnaryCP unary1 = null;
+					if((_op == Hop.OpOp1.NROW || _op == Hop.OpOp1.NCOL || _op == Hop.OpOp1.LENGTH) &&
+						input instanceof UnaryOp && ((UnaryOp) input).getOp() == OpOp1.SELP) {
+						// Dimensions does not change during sel+ operation.
+						// This case is helpful to avoid unnecessary sel+ operation for fused maxpooling.
+						unary1 = new UnaryCP(input.getInput().get(0).constructLops(), optype, getDataType(), getValueType());
+					}
+					else
+						unary1 = new UnaryCP(input.constructLops(), optype, getDataType(), getValueType());
 					setOutputDimensions(unary1);
 					setLineNumbers(unary1);
 

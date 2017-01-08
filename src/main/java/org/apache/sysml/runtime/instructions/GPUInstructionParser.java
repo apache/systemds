@@ -78,7 +78,9 @@ public class GPUInstructionParser  extends InstructionParser
 		String2GPUInstructionType.put( "uark+"	 , GPUINSTRUCTION_TYPE.AggregateUnary);
 		String2GPUInstructionType.put( "uac+"	 , GPUINSTRUCTION_TYPE.AggregateUnary);
 		String2GPUInstructionType.put( "uack+"	 , GPUINSTRUCTION_TYPE.AggregateUnary);
-
+		String2GPUInstructionType.put( "uamean"	 , GPUINSTRUCTION_TYPE.AggregateUnary);
+		String2GPUInstructionType.put( "uamax"	 , GPUINSTRUCTION_TYPE.AggregateUnary);
+		String2GPUInstructionType.put( "uamin"	 , GPUINSTRUCTION_TYPE.AggregateUnary);
 	}
 	
 	public static GPUInstruction parseSingleInstruction (String str ) 

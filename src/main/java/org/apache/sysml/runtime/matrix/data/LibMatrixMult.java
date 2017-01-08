@@ -38,6 +38,7 @@ import org.apache.sysml.lops.WeightedSigmoid.WSigmoidType;
 import org.apache.sysml.lops.WeightedSquaredLoss.WeightsType;
 import org.apache.sysml.lops.WeightedUnaryMM.WUMMType;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.CPPUtil;
 import org.apache.sysml.runtime.functionobjects.SwapIndex;
 import org.apache.sysml.runtime.functionobjects.ValueFunction;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
@@ -190,17 +191,17 @@ public class LibMatrixMult
 			return;
 		}
 		
+		if(DMLScript.isNativeEnabled(k) && !m1.isInSparseFormat() && !m2.isInSparseFormat() && m1.rlen != 1 && m2.clen != 1) {
+			LibMatrixNative.matrixMult(m1, m2, ret, k > 0 ? k : CPPUtil.maxNumThreads);
+			return;
+		}
+		
 		//check too high additional vector-matrix memory requirements (fallback to sequential)
 		//check too small workload in terms of flops (fallback to sequential too)
 		if( m1.rlen == 1 && (8L * m2.clen * k > MEM_OVERHEAD_THRESHOLD || !LOW_LEVEL_OPTIMIZATION || m2.clen==1 || m1.isUltraSparse() || m2.isUltraSparse()) 
 			|| 2L * m1.rlen * m1.clen * m2.clen < PAR_MINFLOP_THRESHOLD ) 
 		{ 
 			matrixMult(m1, m2, ret);
-			return;
-		}
-		
-		if(DMLScript.isNativeEnabled(k) && !m1.isInSparseFormat() && !m2.isInSparseFormat()) {
-			LibMatrixNative.matrixMult(m1, m2, ret, k);
 			return;
 		}
 		

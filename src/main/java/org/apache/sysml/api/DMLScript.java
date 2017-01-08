@@ -373,6 +373,7 @@ public class DMLScript
 	}
 	
 	public static boolean isNativeEnabled(int numThreads) {
+		// This logic disables native calls in parallel construct. For example: parfor.
 		return ENABLE_NATIVE_BLAS && CPPUtil.isLibraryLoaded() && (numThreads <= 0 || numThreads >= CPPUtil.maxNumThreads); 
 	}
 	

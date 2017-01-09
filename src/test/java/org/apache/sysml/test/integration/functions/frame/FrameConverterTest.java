@@ -98,6 +98,19 @@ public class FrameConverterTest extends AutomatedTestBase
 		schemaMixedLarge = (ValueType[]) schemaMixedLargeList.toArray(schemaMixedLarge);
 	}
 	
+	private static List<ValueType> schemaMixedLargeListDFrame = null;
+	static {
+		schemaMixedLargeListDFrame = new ArrayList<ValueType>(schemaMixedLargeListStr.subList(0, 300));
+		schemaMixedLargeListDFrame.addAll(schemaMixedLargeListDble.subList(0, 300));
+		schemaMixedLargeListDFrame.addAll(schemaMixedLargeListInt.subList(0, 300));
+		schemaMixedLargeListDFrame.addAll(schemaMixedLargeListBool.subList(0, 300));
+	}
+	
+	private static ValueType[] schemaMixedLargeDFrame = new ValueType[schemaMixedLargeListDFrame.size()];
+	static {
+		schemaMixedLargeDFrame = (ValueType[]) schemaMixedLargeListDFrame.toArray(schemaMixedLargeDFrame);
+	}
+	
 	private enum ConvType {
 		CSV2BIN,
 		BIN2CSV,
@@ -189,14 +202,16 @@ public class FrameConverterTest extends AutomatedTestBase
 	
 	@Test
 	public void testFrameMixedDFrameBinSpark()  {
-		runFrameConverterTest(schemaMixedLarge, ConvType.DFRM2BIN);
+		// TODO https://issues.apache.org/jira/browse/SPARK-16845
+		runFrameConverterTest(schemaMixedLargeDFrame, ConvType.DFRM2BIN);
 	}
-		
+	
 	@Test
 	public void testFrameMixedBinDFrameSpark()  {
-		runFrameConverterTest(schemaMixedLarge, ConvType.BIN2DFRM);
+		// TODO https://issues.apache.org/jira/browse/SPARK-16845
+		runFrameConverterTest(schemaMixedLargeDFrame, ConvType.BIN2DFRM);
 	}
-		
+	
 	/**
 	 * 
 	 * @param schema

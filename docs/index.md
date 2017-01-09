@@ -42,13 +42,11 @@ To download SystemML, visit the [downloads](http://systemml.apache.org/download)
 
 ## Running SystemML
 
+* **[Beginner's Guide For Python Users](beginners-guide-python)** - Beginner's Guide for Python users.
 * **[Spark MLContext](spark-mlcontext-programming-guide)** - Spark MLContext is a programmatic API
 for running SystemML from Spark via Scala, Python, or Java.
-  * See the [Spark MLContext Programming Guide](spark-mlcontext-programming-guide) with the
-  following examples:
-    * [**Spark Shell (Scala)**](spark-mlcontext-programming-guide#spark-shell-example---new-api)
-    * [**Zeppelin Notebook (Scala)**](spark-mlcontext-programming-guide#zeppelin-notebook-example---linear-regression-algorithm---old-api)
-    * [**Jupyter Notebook (PySpark)**](spark-mlcontext-programming-guide#jupyter-pyspark-notebook-example---poisson-nonnegative-matrix-factorization---old-api)
+  * [**Spark Shell Example (Scala)**](spark-mlcontext-programming-guide#spark-shell-example)
+  * [**Jupyter Notebook Example (PySpark)**](spark-mlcontext-programming-guide#jupyter-pyspark-notebook-example---poisson-nonnegative-matrix-factorization)
 * **[Spark Batch](spark-batch-mode)** - Algorithms are automatically optimized to run across Spark clusters.
   * See [Invoking SystemML in Spark Batch Mode](spark-batch-mode) for detailed information.
 * **[Hadoop Batch](hadoop-batch-mode)** - Algorithms are automatically optimized when distributed across Hadoop clusters.
@@ -62,16 +60,13 @@ machine in R-like and Python-like declarative languages.
 
 ## Language Guides
 
+* [Python API Reference](python-reference) - API Reference Guide for Python users.
 * [DML Language Reference](dml-language-reference) -
 DML is a high-level R-like declarative language for machine learning.
 * **PyDML Language Reference** **(Coming Soon)** -
 PyDML is a high-level Python-like declarative language for machine learning.
 * [Beginner's Guide to DML and PyDML](beginners-guide-to-dml-and-pydml) -
 An introduction to the basics of DML and PyDML.
-* [Beginner's Guide for Python users](beginners-guide-python) -
-Beginner's Guide for Python users.
-* [Reference Guide for Python users](python-reference) -
-Reference Guide for Python users.
 
 ## ML Algorithms
 

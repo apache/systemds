@@ -21,8 +21,4 @@
 include LICENSE
 include NOTICE
 include DISCLAIMER
-include systemml/systemml-java/scripts/sparkDML.sh
 recursive-include systemml/systemml-java *
-recursive-include systemml/systemml-java/scripts/algorithms *
-recursive-include systemml/systemml-java/scripts/datagen *
-recursive-include systemml/systemml-java/scripts/utils *

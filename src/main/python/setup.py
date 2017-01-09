@@ -51,7 +51,9 @@ PACKAGE_DATA = []
 for path, subdirs, files in os.walk(java_dir_full_path):
     for name in files:
         PACKAGE_DATA = PACKAGE_DATA + [ os.path.join(path, name).replace('./', '') ]
-PACKAGE_DATA = PACKAGE_DATA + [os.path.join(python_dir, 'LICENSE'), os.path.join(python_dir, 'DISCLAIMER'), os.path.join(python_dir, 'NOTICE')]
+PACKAGE_DATA = PACKAGE_DATA + [os.path.join(python_dir, 'LICENSE'),
+                               os.path.join(python_dir, 'DISCLAIMER'),
+                               os.path.join(python_dir, 'NOTICE')]
 
 setup(
     name=ARTIFACT_NAME,
@@ -59,14 +61,16 @@ setup(
     description='Apache SystemML is a distributed and declarative machine learning platform.',
     long_description='''
 
-    Apache SystemML is an effort undergoing incubation at the Apache Software Foundation (ASF), sponsored by the Apache Incubator PMC.
+    Apache SystemML is an effort undergoing incubation at the Apache Software Foundation (ASF),
+    sponsored by the Apache Incubator PMC.
     While incubation status is not necessarily a reflection of the completeness
     or stability of the code, it does indicate that the project has yet to be
     fully endorsed by the ASF.
 
     Apache SystemML provides declarative large-scale machine learning (ML) that aims at
     flexible specification of ML algorithms and automatic generation of hybrid runtime
-    plans ranging from single-node, in-memory computations, to distributed computations on Apache Hadoop and Apache Spark.
+    plans ranging from single-node, in-memory computations, to distributed computations on Apache
+    Hadoop and Apache Spark.
     ''',
     url='http://systemml.apache.org/',
     author='Apache SystemML',

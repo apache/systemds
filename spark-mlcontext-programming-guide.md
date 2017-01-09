@@ -35,14 +35,10 @@ such as Scala, Java, and Python. As a result, it offers a convenient way to inte
 Shell and from Notebooks such as Jupyter and Zeppelin.
 
 **NOTE: A new MLContext API has been redesigned for future SystemML releases. The old API is available
-in all versions of SystemML but will be deprecated and removed, so please migrate to the new API.**
+in previous versions of SystemML but is deprecated and will be removed soon, so please migrate to the new API.**
 
 
-# Spark Shell Example - NEW API
-
-**NOTE: The new MLContext API will be available in future SystemML releases. It can be used
-by building the project using Maven ('mvn clean package', or 'mvn clean package -P distribution').
-For SystemML version 0.10.0 and earlier, please see the documentation regarding the old API.**
+# Spark Shell Example
 
 ## Start Spark Shell with SystemML
 
@@ -1644,25 +1640,8 @@ scala> for (i <- 1 to 5) {
 
 # Jupyter (PySpark) Notebook Example - Poisson Nonnegative Matrix Factorization
 
-Similar to the Scala API, SystemML also provides a Python MLContext API.  In addition to the
-regular `SystemML.jar` file, you'll need to install the Python API as follows:
-
-  * Latest release:
-    * Python 2:
-
-      ```
-      pip install systemml
-      # Bleeding edge: pip install git+git://github.com/apache/incubator-systemml.git#subdirectory=src/main/python
-      ```
-
-    * Python 3:
-
-      ```
-      pip3 install systemml
-      # Bleeding edge: pip3 install git+git://github.com/apache/incubator-systemml.git#subdirectory=src/main/python
-      ```
-  * Don't forget to download the `SystemML.jar` file, which can be found in the latest release, or
-  in a nightly build.
+Similar to the Scala API, SystemML also provides a Python MLContext API.  Before usage, you'll need
+**[to install it first](beginners-guide-python#download--setup)**.
 
 Here, we'll explore the use of SystemML via PySpark in a [Jupyter notebook](http://jupyter.org/).
 This Jupyter notebook example can be nicely viewed in a rendered state
@@ -1671,17 +1650,18 @@ and can be [downloaded here](https://raw.githubusercontent.com/apache/incubator-
 
 From the directory with the downloaded notebook, start Jupyter with PySpark:
 
-  * Python 2:
-
-    ```
-    PYSPARK_DRIVER_PYTHON=jupyter PYSPARK_DRIVER_PYTHON_OPTS="notebook" pyspark --master local[*] --driver-class-path SystemML.jar --jars SystemML.jar
-    ```
-
-  * Python 3:
-
-    ```
-    PYSPARK_PYTHON=python3 PYSPARK_DRIVER_PYTHON=jupyter PYSPARK_DRIVER_PYTHON_OPTS="notebook" pyspark --master local[*] --driver-class-path SystemML.jar --jars SystemML.jar
-    ```
+<div class="codetabs">
+<div data-lang="Python 2" markdown="1">
+```bash
+PYSPARK_DRIVER_PYTHON=jupyter PYSPARK_DRIVER_PYTHON_OPTS="notebook" pyspark
+```
+</div>
+<div data-lang="Python 3" markdown="1">
+```bash
+PYSPARK_PYTHON=python3 PYSPARK_DRIVER_PYTHON=jupyter PYSPARK_DRIVER_PYTHON_OPTS="notebook" pyspark
+```
+</div>
+</div>
 
 This will open Jupyter in a browser:
 
@@ -1796,6 +1776,9 @@ plt.title('PNMF Training Loss')
 ---
 
 # Spark Shell Example - OLD API
+
+### ** **NOTE: This API is old and has been deprecated.** **
+**Please use the [new MLContext API](spark-mlcontext-programming-guide#spark-shell-example) instead.**
 
 ## Start Spark Shell with SystemML
 
@@ -2216,10 +2199,12 @@ val (min, max, mean) = minMaxMean(sysMlMatrix, numRows, numCols, ml)
 
 </div>
 
-
-* * *
+---
 
 # Zeppelin Notebook Example - Linear Regression Algorithm - OLD API
+
+### ** **NOTE: This API is old and has been deprecated.** **
+**Please use the [new MLContext API](spark-mlcontext-programming-guide#spark-shell-example) instead.**
 
 Next, we'll consider an example of a SystemML linear regression algorithm run from Spark through an Apache Zeppelin notebook.
 Instructions to clone and build Zeppelin can be found at the [GitHub Apache Zeppelin](https://github.com/apache/incubator-zeppelin)
@@ -2701,9 +2686,12 @@ Training time per iter: 0.2334166666666667 seconds
 {% endhighlight %}
 
 
-* * *
+---
 
 # Jupyter (PySpark) Notebook Example - Poisson Nonnegative Matrix Factorization - OLD API
+
+### ** **NOTE: This API is old and has been deprecated.** **
+**Please use the [new MLContext API](spark-mlcontext-programming-guide#jupyter-pyspark-notebook-example---poisson-nonnegative-matrix-factorization) instead.**
 
 Here, we'll explore the use of SystemML via PySpark in a [Jupyter notebook](http://jupyter.org/).
 This Jupyter notebook example can be nicely viewed in a rendered state

@@ -158,11 +158,11 @@ public class ConvolutionGPUInstruction extends GPUInstruction
 	public void processReLUBackwardInstruction(ExecutionContext ec) throws DMLRuntimeException {
 		Statistics.incrementNoOfExecutedGPUInst();
 		MatrixObject input = ec.getMatrixInputForGPUInstruction(_input1.getName());
-		MatrixObject bias = ec.getMatrixInputForGPUInstruction(_input2.getName());
+		MatrixObject dout = ec.getMatrixInputForGPUInstruction(_input2.getName());
 		
 		MatrixObject out = ec.getDenseMatrixOutputForGPUInstruction(_output.getName());
 		ec.setMetaData(_output.getName(), input.getNumRows(), input.getNumColumns());
-		LibMatrixCUDA.bias_add(input, bias, out);
+		LibMatrixCUDA.relu_backward(input, dout, out);
 		// release inputs/outputs
 		ec.releaseMatrixInputForGPUInstruction(_input1.getName());
 		ec.releaseMatrixInputForGPUInstruction(_input2.getName());

@@ -46,8 +46,8 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 	public ConvolutionCPInstruction(CPOperand in, CPOperand in2, CPOperand out, String opcode, String istr, int numThreads) throws DMLRuntimeException {
 		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, out,
 				opcode, istr);
-		if(!opcode.equals("bias_add")) {
-			throw new DMLRuntimeException("Incorrect usage. Expected the opcode to be bias_add, but found " + opcode);
+		if( !(opcode.equals("bias_add") || opcode.equals("relu_backward")) ) {
+			throw new DMLRuntimeException("Incorrect usage. Expected the opcode to be bias_add or relu_backward, but found " + opcode);
 		}
 		_in2 = in2;
 		_cptype = CPINSTRUCTION_TYPE.Convolution;
@@ -153,7 +153,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			return new ConvolutionCPInstruction(in, in2, out, opcode, str, stride,
 					padding, input_shape, filter_shape, k);
 		} 
-		else if (opcode.equalsIgnoreCase("bias_add")) {
+		else if (opcode.equalsIgnoreCase("bias_add") || opcode.equals("relu_backward")) {
 			InstructionUtils.checkNumFields(parts, 4);
 			in.split(parts[1]);
 			CPOperand in2 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
@@ -172,6 +172,26 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		return (int) ec.getScalarInput(aL.get(index).getName(),
 				aL.get(index).getValueType(), aL.get(index).isLiteral())
 				.getLongValue();
+	}
+	
+	public void processReluBackwardInstruction(ExecutionContext ec) throws DMLRuntimeException {
+		// (X > 0) * dout
+		MatrixBlock outputBlock = null;
+		MatrixBlock input = ec.getMatrixInput(input1.getName());
+		MatrixBlock dout = ec.getMatrixInput(_in2.getName());
+		
+		if(input.isEmptyBlock() || dout.isEmptyBlock()) {
+			outputBlock = new MatrixBlock(input.getNumRows(), input.getNumColumns(), true, 0);
+		}
+		else {
+			outputBlock = getDenseOutputBlock(ec, input.getNumRows(), input.getNumColumns());
+			LibMatrixDNN.relu_backward(input, dout, outputBlock, _numThreads);
+		}
+		
+		// release inputs/outputs
+		ec.releaseMatrixInput(input1.getName());
+		ec.releaseMatrixInput(_in2.getName());
+		ec.setMatrixOutput(getOutputVariableName(), outputBlock);
 	}
 	
 	public void processBiasInstruction(ExecutionContext ec) throws DMLRuntimeException {
@@ -208,6 +228,10 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			throws DMLRuntimeException {
 		if (instOpcode.equalsIgnoreCase("bias_add")) {
 			processBiasInstruction(ec);
+			return;
+		}
+		else if (instOpcode.equalsIgnoreCase("relu_backward")) {
+			processReluBackwardInstruction(ec);
 			return;
 		}
 		

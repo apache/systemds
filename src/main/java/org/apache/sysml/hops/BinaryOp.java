@@ -36,6 +36,7 @@ import org.apache.sysml.lops.CentralMoment;
 import org.apache.sysml.lops.CoVariance;
 import org.apache.sysml.lops.CombineBinary;
 import org.apache.sysml.lops.CombineUnary;
+import org.apache.sysml.lops.ConvolutionTransform;
 import org.apache.sysml.lops.Data;
 import org.apache.sysml.lops.DataPartition;
 import org.apache.sysml.lops.Group;
@@ -593,7 +594,22 @@ public class BinaryOp extends Hop
 					et = ExecType.GPU;
 				}
 				
-				Binary binary = new Binary(getInput().get(0).constructLops(), getInput().get(1).constructLops(), HopsOpOp2LopsB.get(op),
+				Lop binary = null;
+				
+				boolean isLeftXGt = (getInput().get(0) instanceof BinaryOp) && ((BinaryOp) getInput().get(0)).getOp() == OpOp2.GREATER;
+				Hop potentialZero = isLeftXGt ? ((BinaryOp) getInput().get(0)).getInput().get(1) : null;
+				
+				boolean isLeftXGt0 = isLeftXGt && potentialZero != null
+						&& potentialZero instanceof LiteralOp && ((LiteralOp) potentialZero).getDoubleValue() == 0;
+						
+				if(op == OpOp2.MULT && isLeftXGt0 && 
+					!getInput().get(0).isVector() && !getInput().get(1).isVector()) {
+					binary = new ConvolutionTransform(getInput().get(0).getInput().get(0).constructLops(), 
+									getInput().get(1).constructLops(),
+									ConvolutionTransform.OperationTypes.RELU_BACKWARD, getDataType(), getValueType(), et, -1);
+				}
+				else
+					binary = new Binary(getInput().get(0).constructLops(), getInput().get(1).constructLops(), HopsOpOp2LopsB.get(op),
 						getDataType(), getValueType(), et);
 				
 				setOutputDimensions(binary);

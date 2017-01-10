@@ -57,7 +57,8 @@ public class LibMatrixDNN {
 	enum TaskType {
 		MaxPooling_Forward, MaxPooling_Backward, 
 		// Alternate approaches that we tried but the performance was unsatisfactory be included: direct, non-looped im2col
-		LoopedIm2ColConv2d, LoopedIm2ColConv2dBwdFilter, LoopedIm2ColConv2dBwdData
+		LoopedIm2ColConv2d, LoopedIm2ColConv2dBwdFilter, LoopedIm2ColConv2dBwdData,
+		BiasAdd, ReluBackward
 	}
 	
 	// ------------------------------------------------------------------------------------------------
@@ -564,21 +565,108 @@ public class LibMatrixDNN {
 		return maxIndex;
 	}
 	
-	public static void bias_add(MatrixBlock input, MatrixBlock bias, MatrixBlock outputBlock, int numThreads) throws DMLRuntimeException {
-		// Keeping it single-threaded as memory-bound operation. TODO: explore optimization potential for multithreaded implementation
+	public static void relu_backward(MatrixBlock input, MatrixBlock dout, MatrixBlock outputBlock, int numThreads) throws DMLRuntimeException {
+		int N = input.getNumRows();
+		ConvolutionParameters params = new ConvolutionParameters(N, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, numThreads);
+		params.input1 = input;
+		params.input2 = dout;
+		params.output = outputBlock;
+		if(input.getNumRows() != dout.getNumRows() || input.getNumColumns() != dout.getNumColumns()) {
+			throw new DMLRuntimeException("Incorrect dimensions for relu_backward:" + 
+				input.getNumRows() + " != " + dout.getNumRows() + " || " + input.getNumColumns() + " != " + dout.getNumColumns());
+		}
+		runConvTask(TaskType.ReluBackward, params);
+	}
+	
+	private static void doReluBackward(int n, ConvolutionParameters params) throws DMLRuntimeException {
+		// (X > 0) * dout
+		double [] outputArray = params.output.getDenseBlock();
+		int numOutCols = params.input1.getNumColumns();
 		
+		if(!params.input1.isInSparseFormat() && !params.input2.isInSparseFormat()) {
+			double [] inputArr = params.input1.getDenseBlock();
+			double [] doutArr = params.input2.getDenseBlock();
+			for(int i = n*numOutCols; i < (n+1)*numOutCols; i++) {
+				outputArray[i] = inputArr[i] > 0 ? doutArr[i] : 0;
+			}
+		}
+		else {
+			// Perform (X > 0)
+			if(params.input1.isInSparseFormat()) {
+				Iterator<IJV> iter = params.input1.sparseBlock.getIterator(n, n+1);
+				while(iter.hasNext()) {
+					IJV ijv = iter.next();
+					int i = ijv.getI();
+					int j = ijv.getJ();
+					outputArray[i*numOutCols + j] = ijv.getV() > 0 ? 1 : 0;
+				}
+			}
+			else {
+				double [] inputArr = params.input1.getDenseBlock();
+				for(int i = n*numOutCols; i < (n+1)*numOutCols; i++) {
+					outputArray[i] = inputArr[i] > 0 ? 1 : 0;
+				}
+			}
+			// Then perform (X > 0) * dout
+			if(params.input2.isInSparseFormat()) {
+				Iterator<IJV> iter = params.input2.sparseBlock.getIterator(n, n+1);
+				while(iter.hasNext()) {
+					IJV ijv = iter.next();
+					int i = ijv.getI();
+					int j = ijv.getJ();
+					outputArray[i*numOutCols + j] *= ijv.getV();
+				}
+			}
+			else {
+				double [] doutArr = params.input2.getDenseBlock();
+				for(int i = n*numOutCols; i < (n+1)*numOutCols; i++) {
+					outputArray[i] *= doutArr[i];
+				}
+			}
+		}
+	}
+	
+	public static void bias_add(MatrixBlock input, MatrixBlock bias, MatrixBlock outputBlock, int numThreads) throws DMLRuntimeException {
 		int N = input.getNumRows();
 		int K = bias.getNumRows();
 		int PQ = input.getNumColumns() / K;
-		double [] outputArray = outputBlock.getDenseBlock();
+		
+		ConvolutionParameters params = new ConvolutionParameters(N, PQ, -1, -1, K, -1, -1, -1, -1, -1, -1, numThreads);
+		params.input1 = input;
+		params.input2 = bias;
+		params.output = outputBlock;
+		
 		if(input.isEmptyBlock()) {
-			fillBias(bias, outputArray, N, K, PQ);
+			double [] outputArray = outputBlock.getDenseBlock();
+			for(int n = 0;  n < N; n++) 
+				fillBias(bias, outputArray, n, N, K, PQ);
 		}
 		else {
-			fillBias(bias, outputArray, N, K, PQ);
-			int numOutCols = input.getNumColumns();
-			if(input.isInSparseFormat()) {
-				Iterator<IJV> iter = input.sparseBlock.getIterator();
+			runConvTask(TaskType.BiasAdd, params);
+		}
+	}
+	
+	private static void doBiasAdd(int n, ConvolutionParameters params) throws DMLRuntimeException {
+		double [] outputArray = params.output.getDenseBlock();
+		int PQ = params.C;
+		int numOutCols = params.input1.getNumColumns();
+		
+		if(!params.input1.isInSparseFormat() && !params.input2.isInSparseFormat()) {
+			double [] inputArr = params.input1.getDenseBlock();
+			double [] biasArr = params.input2.getDenseBlock();
+			int K = params.K;
+			final int inputOffset = n*K*PQ;
+			for(int k = 0; k < K; k++) {
+				int offset = inputOffset + k*PQ;
+				for(int pq = 0; pq < PQ; pq++) {
+					outputArray[offset + pq] = inputArr[offset + pq] + biasArr[k];
+				}
+			}
+		}
+		else {
+			fillBias(params.input2, outputArray, n, params.N, params.K, PQ);
+			if(params.input1.isInSparseFormat()) {
+				Iterator<IJV> iter = params.input1.sparseBlock.getIterator(n, n+1);
 				while(iter.hasNext()) {
 					IJV ijv = iter.next();
 					int i = ijv.getI();
@@ -587,35 +675,32 @@ public class LibMatrixDNN {
 				}
 			}
 			else {
-				double [] inputArr = input.getDenseBlock();
-				for(int i = 0; i < inputArr.length; i++) {
+				double [] inputArr = params.input1.getDenseBlock();
+				for(int i = n*numOutCols; i < (n+1)*numOutCols; i++) {
 					outputArray[i] += inputArr[i];
 				}
 			}
 		}
+		
 	}
 	
-	private static void fillBias(MatrixBlock bias, double [] outputArray, int N, int K, int PQ) {
+	private static void fillBias(MatrixBlock bias, double [] outputArray, int n, int N, int K, int PQ) {
 		if(bias.isInSparseFormat()) {
 			Iterator<IJV> iter = bias.sparseBlock.getIterator();
 			while(iter.hasNext()) {
 				IJV ijv = iter.next();
 				int k = ijv.getI();
 				double val = ijv.getV();
-				for(int n = 0;  n < N; n++) {
-					int fromIndex = n*K*PQ + k*PQ;
-					Arrays.fill(outputArray, fromIndex, fromIndex + PQ, val);
-				}
+				int fromIndex = n*K*PQ + k*PQ;
+				Arrays.fill(outputArray, fromIndex, fromIndex + PQ, val);
 			}
 		}
 		else {
-			double [] biasArr = bias.getDenseBlock(); 
-			for(int n = 0;  n < N; n++) {
-				for(int k = 0; k < K; k++) {
-					int fromIndex = n*K*PQ + k*PQ;
-					double val = biasArr[k];
-					Arrays.fill(outputArray, fromIndex, fromIndex + PQ, val);
-				}
+			double [] biasArr = bias.getDenseBlock();
+			for(int k = 0; k < K; k++) {
+				int fromIndex = n*K*PQ + k*PQ;
+				double val = biasArr[k];
+				Arrays.fill(outputArray, fromIndex, fromIndex + PQ, val);
 			}
 		}
 	}
@@ -841,6 +926,14 @@ public class LibMatrixDNN {
 				case MaxPooling_Backward:
 					for(int n = n1; n < n2; n++) 
 						doPoolingBackward(n, params);
+					break;
+				case BiasAdd:
+					for(int n = n1; n < n2; n++) 
+						doBiasAdd(n, params);
+					break;
+				case ReluBackward:
+					for(int n = n1; n < n2; n++) 
+						doReluBackward(n, params);
 					break;
 				case LoopedIm2ColConv2d:
 				{	

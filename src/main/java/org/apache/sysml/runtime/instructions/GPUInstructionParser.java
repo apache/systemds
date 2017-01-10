@@ -39,6 +39,7 @@ public class GPUInstructionParser  extends InstructionParser
 		String2GPUInstructionType = new HashMap<String, GPUINSTRUCTION_TYPE>();
 
 		// Neural Network Operators
+		String2GPUInstructionType.put( "relu_backward",          GPUINSTRUCTION_TYPE.Convolution);
 		String2GPUInstructionType.put( "conv2d",                 GPUINSTRUCTION_TYPE.Convolution);
 		String2GPUInstructionType.put( "conv2d_backward_filter", GPUINSTRUCTION_TYPE.Convolution);
 		String2GPUInstructionType.put( "conv2d_backward_data",   GPUINSTRUCTION_TYPE.Convolution);

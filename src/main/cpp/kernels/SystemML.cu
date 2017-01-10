@@ -20,7 +20,7 @@
 /**********************************
 When updating a kernel or adding a new one,
 please compile the ptx file and commit it:
-nvcc -ptx SystemML.cu
+nvcc -ptx -arch=sm_30 SystemML.cu
 ***********************************/
 
 #include <cfloat>
@@ -113,6 +113,16 @@ __global__ void relu(double* A,  double* ret, int rlen, int clen) {
 	if(ix < rlen && iy < clen) {
 		int index = ix * clen + iy;
 		ret[index] = max(0.0, A[index]);
+	}
+}
+
+extern "C"
+__global__ void relu_backward(double* X,  double* dout, double* ret, int rlen, int clen) {
+	int ix = blockIdx.x * blockDim.x + threadIdx.x;
+	int iy = blockIdx.y * blockDim.y + threadIdx.y;
+	if(ix < rlen && iy < clen) {
+		int index = ix * clen + iy;
+		ret[index] = X[index] > 0 ?  dout[index] : 0;
 	}
 }
 

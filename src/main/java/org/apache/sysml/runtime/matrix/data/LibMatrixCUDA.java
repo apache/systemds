@@ -42,6 +42,7 @@ import static jcuda.jcudnn.JCudnn.cudnnSetConvolution2dDescriptor;
 import static jcuda.jcudnn.JCudnn.cudnnSetFilter4dDescriptor;
 import static jcuda.jcudnn.JCudnn.cudnnSetPooling2dDescriptor;
 import static jcuda.jcudnn.JCudnn.cudnnSetTensor4dDescriptor;
+import static jcuda.jcudnn.JCudnn.cudnnActivationBackward;
 import static jcuda.jcudnn.cudnnConvolutionMode.CUDNN_CROSS_CORRELATION;
 import static jcuda.jcudnn.cudnnDataType.CUDNN_DATA_DOUBLE;
 import static jcuda.jcudnn.cudnnPoolingMode.CUDNN_POOLING_MAX;
@@ -244,6 +245,23 @@ public class LibMatrixCUDA {
 		return poolingDesc;
 	}
 
+	public static void relu_backward(MatrixObject input, MatrixObject dout, MatrixObject outputBlock) throws DMLRuntimeException {
+		if(isInSparseFormat(input)) {
+			((JCudaObject)input.getGPUObject()).sparseToDense();
+		}
+		if(isInSparseFormat(dout)) {
+			((JCudaObject)dout.getGPUObject()).sparseToDense();
+		}
+		long rows = input.getNumRows();
+		long cols = input.getNumColumns();
+		Pointer imagePointer = ((JCudaObject)input.getGPUObject()).jcudaDenseMatrixPtr;
+		Pointer doutPointer = ((JCudaObject)dout.getGPUObject()).jcudaDenseMatrixPtr;
+		Pointer outputPointer = ((JCudaObject)outputBlock.getGPUObject()).jcudaDenseMatrixPtr;
+		kernels.launchKernel("relu_backward",
+				ExecutionConfig.getConfigForSimpleMatrixOperations((int)rows, (int)cols),
+				imagePointer, doutPointer, outputPointer, (int)rows, (int)cols);
+	}
+	
 	public static void bias_add(MatrixObject input, MatrixObject bias, MatrixObject outputBlock) throws DMLRuntimeException {
 		if(isInSparseFormat(input)) {
 			((JCudaObject)input.getGPUObject()).sparseToDense();

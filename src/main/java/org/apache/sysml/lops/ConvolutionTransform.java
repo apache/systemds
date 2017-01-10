@@ -30,7 +30,7 @@ public class ConvolutionTransform extends Lop
 
 	
 	public enum OperationTypes {
-		MAX_POOLING, MAX_POOLING_BACKWARD, RELU_MAX_POOLING,
+		MAX_POOLING, MAX_POOLING_BACKWARD, RELU_MAX_POOLING, RELU_BACKWARD,
 		DIRECT_CONV2D, DIRECT_CONV2D_BACKWARD_FILTER, DIRECT_CONV2D_BACKWARD_DATA,
 		BIAS_ADD
 	};
@@ -53,6 +53,16 @@ public class ConvolutionTransform extends Lop
 		super(Lop.Type.Transform, dt, vt);		
 		init(input, op, dt, vt, et);
 		numThreads = k;
+	}
+	
+	public ConvolutionTransform(Lop input1, Lop input2, ConvolutionTransform.OperationTypes op, DataType dt, ValueType vt, ExecType et, int k) 
+	{
+		super(Lop.Type.Transform, dt, vt);		
+		init(input1, op, dt, vt, et);
+		numThreads = k;
+		this.addInput(input2);
+		input2.addOutput(this);
+		setLevel();
 	}
 
 	private void init (Lop input, ConvolutionTransform.OperationTypes op, DataType dt, ValueType vt, ExecType et) 
@@ -102,6 +112,9 @@ public class ConvolutionTransform extends Lop
 		case RELU_MAX_POOLING:
 			return "relu_maxpooling";
 			
+		case RELU_BACKWARD:
+			return "relu_backward";
+			
 		case MAX_POOLING_BACKWARD:
 			return "maxpooling_backward";
 		
@@ -124,7 +137,7 @@ public class ConvolutionTransform extends Lop
 	}
 	
 	public String getInstructions(String input, String bias, String output) throws LopsException {
-		if(operation == OperationTypes.BIAS_ADD) {
+		if(operation == OperationTypes.BIAS_ADD || operation == OperationTypes.RELU_BACKWARD) {
 			StringBuilder sb = new StringBuilder();
 			sb.append( getExecType() );
 			

@@ -602,7 +602,7 @@ public class BinaryOp extends Hop
 				boolean isLeftXGt0 = isLeftXGt && potentialZero != null
 						&& potentialZero instanceof LiteralOp && ((LiteralOp) potentialZero).getDoubleValue() == 0;
 						
-				if(op == OpOp2.MULT && isLeftXGt0 && et == ExecType.CP && 
+				if(op == OpOp2.MULT && isLeftXGt0 && 
 					!getInput().get(0).isVector() && !getInput().get(1).isVector()) {
 					binary = new ConvolutionTransform(getInput().get(0).getInput().get(0).constructLops(), 
 									getInput().get(1).constructLops(),

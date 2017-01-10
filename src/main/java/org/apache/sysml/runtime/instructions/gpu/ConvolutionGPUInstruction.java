@@ -43,8 +43,8 @@ public class ConvolutionGPUInstruction extends GPUInstruction
 	
 	public ConvolutionGPUInstruction(CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr) throws DMLRuntimeException {
 		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), opcode, istr);
-		if(!opcode.equals("bias_add")) {
-			throw new DMLRuntimeException("Incorrect usage. Expected the opcode to be bias_add, but found " + opcode);
+		if(!(opcode.equals("bias_add") || opcode.equals("relu_backward"))) {
+			throw new DMLRuntimeException("Incorrect usage. Expected the opcode to be bias_add or relu_backward, but found " + opcode);
 		}
 		_input1 = in1;
 		_input2 = in2;

@@ -32,10 +32,6 @@ limitations under the License.
 The [systemml-accelerator](https://github.com/niketanpansare/systemml-accelerator) packages system-dependent libraries
 to simplify deployment. It can be used to allow SystemML to use native BLAS as well as use hardware accelerators (such as Nvidia's GPU).
 
-If you are [installing SystemML using pip](https://apache.github.io/incubator-systemml/beginners-guide-python#install-systemml), 
-no additional action is required. If you intend to use SystemML in any other way, you have to ensure that `systemml-accelerator.jar`
-is available.
-
 ## Using native BLAS
 
 By default, SystemML implements all its matrix operations in Java. This simplifies deployment especially in a distributed environment.
@@ -127,7 +123,8 @@ scala> ml.execute(script)
 </div>
 </div>
 
-The above script should output either .
+The above script should output either 
+
 ```bash
 accelerator.BLASHelper: Found BLAS: (mkl/openblas)
 or
@@ -146,6 +143,7 @@ Note: if `systemml-accelerator.jar` is not included via `--jars` (for spark-shel
 	Please check the line `Number of Native Calls` in SystemML's statistics.
  
 3. How to check if OpenBLAS or Intel MKL is installed on Linux ?
+
 	```bash
 	ldconfig -v -N | grep libopenblas
 	ldconfig -v -N | grep libmkl_rt
@@ -153,6 +151,7 @@ Note: if `systemml-accelerator.jar` is not included via `--jars` (for spark-shel
 
 4. I have installed Intel MKL with default configuration. How do I ensure that it is available to SystemML ?
 	On Linux/Mac, you can either add the library path to either `LD_LIBRARY_PATH` or pass it to java via `java.library.path`.
+	
 	```bash
 	export LD_LIBRARY_PATH=/opt/intel/mkl/lib/intel64:$LD_LIBRARY_PATH
 	```
@@ -164,12 +163,14 @@ Note: if `systemml-accelerator.jar` is not included via `--jars` (for spark-shel
 5. How to resolve the error message `OMP: Error #13: Assertion failure at kmp_csupport.c(538).` or `undefined symbol: omp_get_num_procs` ?
 	The above error message suggests that GNU OpenMP required for MKL cannot be found. 
 	To resolve this issue, please add a soft link to the GNU OpenMP shared library (i.e. libgomp):
+	
 	```bash  
 	ldconfig -v -N | grep libgomp
 	sudo ln -s /lib64/libgomp.so.1 /usr/lib64/libgomp.so
 	```
 	
 	Alternatively, you can preload the OpenMP library in your session by appending the following lines to your bash profile:
+	
 	```bash  
 	export MKL_THREADING_LAYER=GNU
 	export LD_PRELOAD=/usr/lib64/libgomp.so.1

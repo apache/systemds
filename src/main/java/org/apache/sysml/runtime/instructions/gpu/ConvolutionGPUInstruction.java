@@ -129,7 +129,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction
 			return new ConvolutionGPUInstruction(in1, null, out, opcode, str, stride,
 					padding, input_shape, filter_shape);
 		}
-		else if( opcode.equalsIgnoreCase("bias_add") ) {
+		else if( opcode.equalsIgnoreCase("bias_add") || opcode.equalsIgnoreCase("relu_backward") ) {
 			InstructionUtils.checkNumFields(parts, 3);
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);
@@ -155,12 +155,30 @@ public class ConvolutionGPUInstruction extends GPUInstruction
 		ec.releaseMatrixOutputForGPUInstruction(_output.getName());
 	}
 	
+	public void processReLUBackwardInstruction(ExecutionContext ec) throws DMLRuntimeException {
+		Statistics.incrementNoOfExecutedGPUInst();
+		MatrixObject input = ec.getMatrixInputForGPUInstruction(_input1.getName());
+		MatrixObject bias = ec.getMatrixInputForGPUInstruction(_input2.getName());
+		
+		MatrixObject out = ec.getDenseMatrixOutputForGPUInstruction(_output.getName());
+		ec.setMetaData(_output.getName(), input.getNumRows(), input.getNumColumns());
+		LibMatrixCUDA.bias_add(input, bias, out);
+		// release inputs/outputs
+		ec.releaseMatrixInputForGPUInstruction(_input1.getName());
+		ec.releaseMatrixInputForGPUInstruction(_input2.getName());
+		ec.releaseMatrixOutputForGPUInstruction(_output.getName());
+	}
+	
 	@Override
 	public void processInstruction(ExecutionContext ec) 
 			throws DMLRuntimeException 
 	{
 		if (instOpcode.equalsIgnoreCase("bias_add")) {
 			processBiasInstruction(ec);
+			return;
+		}
+		else if (instOpcode.equalsIgnoreCase("relu_backward")) {
+			processReLUBackwardInstruction(ec);
 			return;
 		}
 		

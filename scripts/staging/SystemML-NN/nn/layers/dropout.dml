@@ -42,12 +42,12 @@ forward = function(matrix[double] X, double p, int seed)
    *  - out: Ouptuts, of same shape as X.
    *  - mask: Dropout mask used to compute the output.
    */
-  # TODO: Replace 0.5 by p when DataOp is supported for rand.
-  if (seed == -1) {
+  if (seed == -1 & p == 0.5) {
     mask = rand(rows=nrow(X), cols=ncol(X), min=1, max=1, sparsity=0.5)
   }
   else {
-    mask = rand(rows=nrow(X), cols=ncol(X), min=1, max=1, sparsity=0.5, seed=seed)
+    seed = as.integer(floor(as.scalar(rand(rows=1, cols=1, min=1, max=100000))))
+    mask = rand(rows=nrow(X), cols=ncol(X), min=0, max=1, seed=seed) <= p 
   }
   out = X * mask / p
 }

@@ -220,6 +220,7 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "rsort"      , CPINSTRUCTION_TYPE.Reorg);
 
 		// Opcodes related to convolutions
+		String2CPInstructionType.put( "relu_backward"      , CPINSTRUCTION_TYPE.Convolution);
 		String2CPInstructionType.put( "relu_maxpooling"      , CPINSTRUCTION_TYPE.Convolution);
 		String2CPInstructionType.put( "maxpooling"      , CPINSTRUCTION_TYPE.Convolution);
 		String2CPInstructionType.put( "maxpooling_backward"      , CPINSTRUCTION_TYPE.Convolution);

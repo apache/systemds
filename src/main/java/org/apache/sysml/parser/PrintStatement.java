@@ -95,7 +95,7 @@ public class PrintStatement extends Statement
 	
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append(_type + " (");
+		sb.append(_type + "(");
 		if ((_type == PRINTTYPE.PRINT) || (_type == PRINTTYPE.STOP)) {
 			sb.append(expressions.get(0).toString());
 		} else if (_type == PRINTTYPE.PRINTF) {

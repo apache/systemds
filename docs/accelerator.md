@@ -132,23 +132,22 @@ Note: if `systemml-accelerator.jar` is not included via `--jars` (for spark-shel
 
 - How to find whether Native BLAS was available to SystemML ?
 
-	Please check whether the logs contains following message
-	 
-	```bash
-	INFO accelerator.BLASHelper: Successfully loaded systemml library with (openblas | mkl)
-	```
+  Please check whether the logs contains following message
+   
+  ```bash
+  INFO accelerator.BLASHelper: Successfully loaded systemml library with (openblas | mkl)
+  ```
 
 - How to find whether Native BLAS was used by SystemML for my DML script ?
 
-	Please check the line `Number of Native Calls` in SystemML's statistics.
+  Please check the line `Number of Native Calls` in SystemML's statistics.
  
 - How to check if OpenBLAS or Intel MKL is installed on Linux ?
 
-	```bash
-	ldconfig -v -N | grep libopenblas
-	
-	ldconfig -v -N | grep libmkl_rt
-	``` 
+  ```bash
+  ldconfig -v -N | grep libopenblas
+  ldconfig -v -N | grep libmkl_rt
+  ``` 
 
 - I have installed OpenBLAS on Linux, but it is not getting picked up. What do I do  ?
 
@@ -167,31 +166,29 @@ Note: if `systemml-accelerator.jar` is not included via `--jars` (for spark-shel
 
 - I have installed Intel MKL with default configuration. How do I ensure that it is available to SystemML ?
 
-	On Linux/Mac, you can either add the library path to either `LD_LIBRARY_PATH` or pass it to java via `java.library.path`.
+  On Linux/Mac, you can either add the library path to either `LD_LIBRARY_PATH` or pass it to java via `java.library.path`.
+  
+  ```bash
+  export LD_LIBRARY_PATH=/opt/intel/mkl/lib/intel64:$LD_LIBRARY_PATH
+  ```
 	
-	```bash
-	export LD_LIBRARY_PATH=/opt/intel/mkl/lib/intel64:$LD_LIBRARY_PATH
-	```
-	
-	On Windows, you can similarly add the library path 
-	`C:\Program Files (x86)\IntelSWTools\compilers_and_libraries_2017.0.109\windows\redist\intel64_win\mkl`
-	to the environment variable `PATH` or pass it to java via `java.library.path`.
+  On Windows, you can similarly add the library path 
+  `C:\Program Files (x86)\IntelSWTools\compilers_and_libraries_2017.0.109\windows\redist\intel64_win\mkl`
+  to the environment variable `PATH` or pass it to java via `java.library.path`.
 
 - How to resolve the error message `OMP: Error #13: Assertion failure at kmp_csupport.c(538).` or `undefined symbol: omp_get_num_procs` ?
 
-	The above error message suggests that GNU OpenMP required for MKL cannot be found. 
-	To resolve this issue, please add a soft link to the GNU OpenMP shared library (i.e. libgomp):
+  The above error message suggests that GNU OpenMP required for MKL cannot be found. 
+  To resolve this issue, please add a soft link to the GNU OpenMP shared library (i.e. libgomp):
+  
+  ```bash
+  ldconfig -v -N | grep libgomp
+  sudo ln -s /lib64/libgomp.so.1 /usr/lib64/libgomp.so
+  ```
 	
-	```bash
-	ldconfig -v -N | grep libgomp
+  Alternatively, you can preload the OpenMP library in your session by appending the following lines to your bash profile:
 	
-	sudo ln -s /lib64/libgomp.so.1 /usr/lib64/libgomp.so
-	```
-	
-	Alternatively, you can preload the OpenMP library in your session by appending the following lines to your bash profile:
-	
-	```bash  
-	export MKL_THREADING_LAYER=GNU
-	
-	export LD_PRELOAD=/usr/lib64/libgomp.so.1
-	```
+  ```bash  
+  export MKL_THREADING_LAYER=GNU
+  export LD_PRELOAD=/usr/lib64/libgomp.so.1
+  ```

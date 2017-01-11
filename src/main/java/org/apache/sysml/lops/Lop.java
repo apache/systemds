@@ -647,8 +647,14 @@ public abstract class Lop
 		throw new LopsException(this.printErrorLocation() + "Should never be invoked in Baseclass");
 	}
 	
-	// For pooling backward
 	public String getInstructions(String input, String dout, String stride1, String stride2, String padding1, String padding2, 
+			String input_shape1, String input_shape2, String input_shape3, String input_shape4,
+			String filter_shape1, String filter_shape2, String filter_shape3, String filter_shape4,
+			String output) throws LopsException {
+		throw new LopsException(this.printErrorLocation() + "Should never be invoked in Baseclass");
+	}
+	
+	public String getInstructions(String input, String bias, String dout, String stride1, String stride2, String padding1, String padding2, 
 			String input_shape1, String input_shape2, String input_shape3, String input_shape4,
 			String filter_shape1, String filter_shape2, String filter_shape3, String filter_shape4,
 			String output) throws LopsException {

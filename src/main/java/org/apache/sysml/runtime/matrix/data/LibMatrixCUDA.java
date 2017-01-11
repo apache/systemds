@@ -126,10 +126,6 @@ public class LibMatrixCUDA {
 			dstTensorDesc = allocateTensorDescriptor(N, K, P, Q);
 			filterDesc = allocateFilterDescriptor(K, C, R, S);
 
-			// Allocate data
-			// (Pointer) gpuCtx.prepare(image, true, true);
-			// (Pointer) gpuCtx.prepare(filter, true, true);
-
 			Pointer imagePointer = ((JCudaObject)image.getGPUObject()).jcudaDenseMatrixPtr;
 			Pointer filterPointer = ((JCudaObject)filter.getGPUObject()).jcudaDenseMatrixPtr;
 			Pointer dstPointer = ((JCudaObject)outputBlock.getGPUObject()).jcudaDenseMatrixPtr;
@@ -245,10 +241,10 @@ public class LibMatrixCUDA {
 	/**
 	 * This method computes the backpropagation errors for previous layer of relu operation
 	 * 
-	 * @param input
-	 * @param dout
-	 * @param outputBlock
-	 * @throws DMLRuntimeException
+	 * @param input input image
+	 * @param dout  next layer error propogation
+	 * @param outputBlock output
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void reluBackward(MatrixObject input, MatrixObject dout, MatrixObject outputBlock) throws DMLRuntimeException {
 		if(isInSparseFormat(input)) {
@@ -273,10 +269,10 @@ public class LibMatrixCUDA {
 	 * output = input + matrix(bias %*% ones, rows=1, cols=F*Hout*Wout)
 	 * This operation is often followed by conv2d and hence we have introduced bias_add(input, bias) built-in function
 	 * 
-	 * @param input
-	 * @param bias
-	 * @param outputBlock
-	 * @throws DMLRuntimeException
+	 * @param input input image
+	 * @param bias bias
+	 * @param outputBlock output
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void biasAdd(MatrixObject input, MatrixObject bias, MatrixObject outputBlock) throws DMLRuntimeException {
 		if(isInSparseFormat(input)) {
@@ -320,7 +316,7 @@ public class LibMatrixCUDA {
 	 * @param stride_w stride width
 	 * @param P output activation height
 	 * @param Q output activation width
-	 * @throws DMLRuntimeException
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void conv2dBackwardFilter(MatrixObject image, MatrixObject dout,
 			MatrixObject outputBlock, int N, int C, int H, int W, int K, int R,
@@ -501,8 +497,8 @@ public class LibMatrixCUDA {
 	 * Hence, we compute only the upper triangular matrix and copy this partial
 	 * result down to lower triangular matrix once.
 	 *
-	 * @param ret
-	 * @throws DMLRuntimeException
+	 * @param ret upper triangular matrix
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private static void copyUpperToLowerTriangle(MatrixObject ret) throws DMLRuntimeException {
 		if(isInSparseFormat(ret)) {
@@ -1185,7 +1181,7 @@ public class LibMatrixCUDA {
 	 * @param in							{@link Pointer} to matrix in device memory
 	 * @param n								size of array
 	 * @return	the reduced value
-	 * @throws DMLRuntimeException
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private static double reduceAll(String kernelFunction, Pointer in, int n) throws DMLRuntimeException {
 		int[] tmp = getKernelParamsForReduceAll(n);
@@ -1218,7 +1214,7 @@ public class LibMatrixCUDA {
 	 * @param out							{@link Pointer} to output matrix in device memory (size - rows * 1)
 	 * @param rows						number of rows in input matrix
 	 * @param cols						number of columns in input matrix
-	 * @throws DMLRuntimeException
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private static void reduceRow(String kernelFunction, Pointer in, Pointer out, int rows, int cols) throws DMLRuntimeException {
 		int[] tmp = getKernelParamsForReduceByRow(rows, cols);
@@ -1236,7 +1232,7 @@ public class LibMatrixCUDA {
 	 * @param out							{@link Pointer} to output matrix in device memory (size - 1 * cols)
 	 * @param rows						number of rows in input matrix
 	 * @param cols						number of columns in input matrix
-	 * @throws DMLRuntimeException
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private static void reduceCol(String kernelFunction, Pointer in, Pointer out, int rows, int cols) throws DMLRuntimeException {
 		int[] tmp = getKernelParamsForReduceByCol(rows, cols);
@@ -1328,7 +1324,7 @@ public class LibMatrixCUDA {
 	 * @param stride_w stride width
 	 * @param P output activation height
 	 * @param Q output activation width
-	 * @throws DMLRuntimeException
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void conv2dBackwardData(MatrixObject filter, MatrixObject dout,
 			MatrixObject output, int N, int C, int H, int W, int K, int R,
@@ -1632,12 +1628,12 @@ public class LibMatrixCUDA {
 	/**
 	 * Utility to launch binCellScalarOp kernel
 	 *
-	 * @param ec
-	 * @param in
-	 * @param outputName
-	 * @param isInputTransposed
-	 * @param op
-	 * @throws DMLRuntimeException
+	 * @param ec execution context
+	 * @param in input matrix
+	 * @param outputName output variable name
+	 * @param isInputTransposed true if input is transposed
+	 * @param op operator
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private static void launchBinCellOpKernel(ExecutionContext ec, MatrixObject in, String outputName, boolean isInputTransposed,
 			ScalarOperator op) throws DMLRuntimeException {
@@ -1665,14 +1661,14 @@ public class LibMatrixCUDA {
 	/**
 	 * Utility to launch binCellOp kernel
 	 *
-	 * @param ec
-	 * @param in1
-	 * @param in2
-	 * @param outputName
-	 * @param isLeftTransposed
-	 * @param isRightTransposed
-	 * @param op
-	 * @throws DMLRuntimeException
+	 * @param ec execution context
+	 * @param in1 left input matrix
+	 * @param in2 right input matrix
+	 * @param outputName output variable name
+	 * @param isLeftTransposed true if left matrix is transposed
+	 * @param isRightTransposed true if right matrix is transposed
+	 * @param op operator
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private static void launchBinCellOpKernel(ExecutionContext ec, MatrixObject in1, MatrixObject in2,
 			String outputName, boolean isLeftTransposed, boolean isRightTransposed, BinaryOperator op) throws DMLRuntimeException {
@@ -1759,10 +1755,10 @@ public class LibMatrixCUDA {
 	/**
 	 * Performs a deep device copy of input matrix
 	 *
-	 * @param ec
-	 * @param src
-	 * @param outputName
-	 * @throws DMLRuntimeException
+	 * @param ec execution context
+	 * @param src source matrix
+	 * @param outputName destination variable name
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private static void deviceCopy(ExecutionContext ec, MatrixObject src, String outputName) throws DMLRuntimeException {
 		if(isInSparseFormat(src)) {
@@ -1821,11 +1817,11 @@ public class LibMatrixCUDA {
 	/**
 	 * Performs a deep copy of input device double pointer corresponding to matrix
 	 *
-	 * @param src
-	 * @param dest
-	 * @param rlen
-	 * @param clen
-	 * @throws DMLRuntimeException
+	 * @param src source matrix
+	 * @param dest destination matrix
+	 * @param rlen number of rows
+	 * @param clen number of columns
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private static void deviceCopy(Pointer src, Pointer dest, int rlen, int clen) throws DMLRuntimeException {
 		kernels.launchKernel("dense_matrix_copy",
@@ -1933,15 +1929,15 @@ public class LibMatrixCUDA {
 	 * C = alpha* op( A ) + beta* op ( B )
 	 * where op = transpose or not (specified by isLeftTransposed and isRightTransposed).
 	 *
-	 * @param ec
-	 * @param in1
-	 * @param in2
-	 * @param outputName
-	 * @param isLeftTransposed
-	 * @param isRightTransposed
-	 * @param alpha
-	 * @param beta
-	 * @throws DMLRuntimeException
+	 * @param ec execution context
+	 * @param in1 left input matrix
+	 * @param in2 right input matrix
+	 * @param outputName output variable name
+	 * @param isLeftTransposed true if left matrix is transposed
+	 * @param isRightTransposed true if right matrix is transposed
+	 * @param alpha alpha
+	 * @param beta beta
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private static void dgeam(ExecutionContext ec, MatrixObject in1, MatrixObject in2, String outputName,
 			boolean isLeftTransposed, boolean isRightTransposed, double alpha, double beta) throws DMLRuntimeException {

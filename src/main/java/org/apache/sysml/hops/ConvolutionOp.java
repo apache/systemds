@@ -137,13 +137,26 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 			throw new HopsException("Incorrect number of inputs for " + op.name());
 		}
 		
-		Lop in = null;
+		Lop in = null; Lop in2 = null;
 		OperationTypes lopOp = HopsConv2Lops.get(op);
 		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
+		ArrayList<Hop> inputs1 = inputs;
 		if(op == ConvOp.MAX_POOLING && et == ExecType.CP && inputs.get(0) instanceof UnaryOp
 				&& ((UnaryOp) inputs.get(0)).getOp() == OpOp1.SELP) {
 			in = inputs.get(0).getInput().get(0).constructLops();
 			lopOp = OperationTypes.RELU_MAX_POOLING;
+		}
+		else if(op == ConvOp.BIAS_ADD && et == ExecType.CP && inputs.get(0) instanceof ConvolutionOp
+				&& ((ConvolutionOp) inputs.get(0)).getOp() == ConvOp.DIRECT_CONV2D) {
+			lopOp = OperationTypes.DIRECT_CONV2D_BIAS_ADD;
+			
+			// the first lop is image 
+			in = inputs.get(0).getInput().get(0).constructLops();
+			// the second lop is bias
+			in2 = inputs.get(1).constructLops();
+			
+			// Use the inputs from conv2d rather than bias_add
+			inputs1 = inputs.get(0).getInput();
 		}
 		else {
 			in = inputs.get(0).constructLops();
@@ -153,15 +166,19 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		setLineNumbers(transform1);
 		in.addOutput(transform1);
 		
+		if(in2 != null) {
+			transform1.addInput(in2);
+			in2.addOutput(transform1);
+		}
+		
 		// stride1, stride2, padding1, padding2  
 		// input_shape1, input_shape2, input_shape3, input_shape4, 
 		// filter_shape1, filter_shape2, filter_shape3, filter_shape4
-		for( int i=1; i < inputs.size(); i++ )
+		for( int i=1; i < inputs1.size(); i++ )
 		{
-			Lop ltmp = inputs.get(i).constructLops();
+			Lop ltmp = inputs1.get(i).constructLops();
 			transform1.addInput(ltmp);
-			//if(i == 1 && expectedNumInputs == 14)
-				ltmp.addOutput(transform1);
+			ltmp.addOutput(transform1);
 		}
 		transform1.setLevel(); //force order of added lops
 		return transform1;

@@ -21,7 +21,6 @@ package org.apache.sysml.runtime.instructions.cp;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -36,7 +35,8 @@ import org.apache.sysml.runtime.util.ConvolutionUtils;
 
 public class ConvolutionCPInstruction extends UnaryCPInstruction {
 	
-	private CPOperand _in2; // used for pooling backward
+	private CPOperand _in2;
+	private CPOperand _in3; 
 	private ArrayList<CPOperand> _input_shape;
 	private ArrayList<CPOperand> _filter_shape;
 	private ArrayList<CPOperand> _stride = new ArrayList<CPOperand>();
@@ -75,6 +75,22 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, out,
 				opcode, istr);
 		_in2 = in2;
+		_cptype = CPINSTRUCTION_TYPE.Convolution;
+		_stride = stride;
+		_padding = padding;
+		_input_shape = input_shape;
+		_filter_shape = filter_shape;
+		_numThreads = numThreads;
+	}
+	
+	public ConvolutionCPInstruction(CPOperand in, CPOperand in2, CPOperand in3, CPOperand out, String opcode,
+			String istr, ArrayList<CPOperand> stride,
+			ArrayList<CPOperand> padding, ArrayList<CPOperand> input_shape,
+			ArrayList<CPOperand> filter_shape, int numThreads) {
+		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, out,
+				opcode, istr);
+		_in2 = in2;
+		_in3 = in3;
 		_cptype = CPINSTRUCTION_TYPE.Convolution;
 		_stride = stride;
 		_padding = padding;
@@ -152,7 +168,40 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 
 			return new ConvolutionCPInstruction(in, in2, out, opcode, str, stride,
 					padding, input_shape, filter_shape, k);
-		} 
+		}
+		else if (opcode.equalsIgnoreCase("conv2d_bias_add")) {
+			InstructionUtils.checkNumFields(parts, 17);
+			// dout, stride1, stride2, padding1, padding2
+			// input_shape1, input_shape2, input_shape3, input_shape4,
+			// filter_shape1, filter_shape2, filter_shape3, filter_shape4, k
+			in.split(parts[1]);
+			CPOperand in2 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
+			in2.split(parts[2]);
+			CPOperand in3 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
+			in3.split(parts[3]);
+			out.split(parts[16]);
+
+			ArrayList<CPOperand> stride = new ArrayList<CPOperand>();
+			ArrayList<CPOperand> padding = new ArrayList<CPOperand>();
+			ArrayList<CPOperand> input_shape = new ArrayList<CPOperand>();
+			ArrayList<CPOperand> filter_shape = new ArrayList<CPOperand>();
+			stride.add(new CPOperand(parts[4]));
+			stride.add(new CPOperand(parts[5]));
+			padding.add(new CPOperand(parts[6]));
+			padding.add(new CPOperand(parts[7]));
+			input_shape.add(new CPOperand(parts[8]));
+			input_shape.add(new CPOperand(parts[9]));
+			input_shape.add(new CPOperand(parts[10]));
+			input_shape.add(new CPOperand(parts[11]));
+			filter_shape.add(new CPOperand(parts[12]));
+			filter_shape.add(new CPOperand(parts[13]));
+			filter_shape.add(new CPOperand(parts[14]));
+			filter_shape.add(new CPOperand(parts[15]));
+			int k = Integer.parseInt(parts[17]);
+
+			return new ConvolutionCPInstruction(in, in2, in3, out, opcode, str, stride,
+					padding, input_shape, filter_shape, k);
+		}
 		else if (opcode.equalsIgnoreCase("bias_add") || opcode.equals("relu_backward")) {
 			InstructionUtils.checkNumFields(parts, 4);
 			in.split(parts[1]);
@@ -194,7 +243,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		ec.setMatrixOutput(getOutputVariableName(), outputBlock);
 	}
 	
-	public void processBiasInstruction(ExecutionContext ec) throws DMLRuntimeException {
+	public void processBiasAddInstruction(ExecutionContext ec) throws DMLRuntimeException {
 		MatrixBlock outputBlock = null;
 		MatrixBlock input = ec.getMatrixInput(input1.getName());
 		MatrixBlock bias = ec.getMatrixInput(_in2.getName());
@@ -227,7 +276,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 	public void processInstruction(ExecutionContext ec)
 			throws DMLRuntimeException {
 		if (instOpcode.equalsIgnoreCase("bias_add")) {
-			processBiasInstruction(ec);
+			processBiasAddInstruction(ec);
 			return;
 		}
 		else if (instOpcode.equalsIgnoreCase("relu_backward")) {
@@ -287,6 +336,21 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 				outputBlock = getDenseOutputBlock(ec, N, K*P*Q);
 				LibMatrixDNN.conv2d(matBlock, filter, outputBlock, params);
 			}
+			ec.releaseMatrixInput(_in2.getName());
+		}
+		else if (instOpcode.equalsIgnoreCase("conv2d_bias_add")) {
+			MatrixBlock filter = ec.getMatrixInput(_in3.getName());
+			MatrixBlock bias = ec.getMatrixInput(_in2.getName());
+			if((filter.isEmptyBlock() || matBlock.isEmptyBlock()) && bias.isEmptyBlock()) {
+				outputBlock = new MatrixBlock(N, K*P*Q, true, 0);
+			}
+			else {
+				outputBlock = getDenseOutputBlock(ec, N, K*P*Q);
+				if(!bias.isEmptyBlock())
+					params.bias = bias;
+				LibMatrixDNN.conv2d(matBlock, filter, outputBlock, params);
+			}
+			ec.releaseMatrixInput(_in3.getName());
 			ec.releaseMatrixInput(_in2.getName());
 		}
 		else if (instOpcode.equalsIgnoreCase("conv2d_backward_filter")) {

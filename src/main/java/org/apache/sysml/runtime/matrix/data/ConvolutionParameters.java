@@ -34,6 +34,7 @@ public class ConvolutionParameters {
 	
 	MatrixBlock input1; MatrixBlock input2; MatrixBlock output;
 	
+	public MatrixBlock bias;
 	public int [] start_indexes_h, end_indexes_h, start_indexes_w, end_indexes_w; 
 	
 	private int convertToInt(long val) throws DMLRuntimeException {

@@ -32,7 +32,7 @@ public class ConvolutionTransform extends Lop
 	public enum OperationTypes {
 		MAX_POOLING, MAX_POOLING_BACKWARD, RELU_MAX_POOLING, RELU_BACKWARD,
 		DIRECT_CONV2D, DIRECT_CONV2D_BACKWARD_FILTER, DIRECT_CONV2D_BACKWARD_DATA,
-		BIAS_ADD
+		BIAS_ADD, DIRECT_CONV2D_BIAS_ADD
 	};
 	
 	private OperationTypes operation = null;
@@ -121,6 +121,9 @@ public class ConvolutionTransform extends Lop
 		case DIRECT_CONV2D:
 			return "conv2d";
 		
+		case DIRECT_CONV2D_BIAS_ADD:
+			return "conv2d_bias_add";
+		
 		case BIAS_ADD:
 			return "bias_add";
 			
@@ -163,66 +166,57 @@ public class ConvolutionTransform extends Lop
 		}
 	}
 	
-	//CP instructions
-	// stride1, stride2, padding1, padding2  
-	// input_shape1, input_shape2, input_shape3, input_shape4, 
-	// filter_shape1, filter_shape2, filter_shape3, filter_shape4,
+	// Used by maxpool
 	public String getInstructions(String input, String stride1, String stride2, String padding1, String padding2, 
 			String input_shape1, String input_shape2, String input_shape3, String input_shape4,
 			String filter_shape1, String filter_shape2, String filter_shape3, String filter_shape4,
 			String output) throws LopsException {
-		//only used for im2col and col2im
 		StringBuilder sb = new StringBuilder();
-		sb.append( getExecType() );
-		
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( getOpcode() );
-		sb.append( OPERAND_DELIMITOR );
+		appendOpcode(sb);
 		sb.append( getInputs().get(0).prepInputOperand(input));
-		
-		//rows, cols, byrow
-		String[] inputX = new String[]{stride1, stride2, padding1, padding2, 
-			 input_shape1, input_shape2, input_shape3, input_shape4,
-			 filter_shape1, filter_shape2, filter_shape3, filter_shape4};
-		for( int i=1; i<=(inputX.length); i++ ) {
-			Lop ltmp = getInputs().get(i);
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( ltmp.prepScalarInputOperand(getExecType()));
-		}
-		
-		//output
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( this.prepOutputOperand(output));
-		
-		//append degree of parallelism
-		if( getExecType()==ExecType.CP ) {
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( numThreads );
-		}
-		
+		appendOperands(1, 13, output, sb);
 		return sb.toString();
 	}
 	
+	// Used by conv2d*, maxpool_bwd
 	public String getInstructions(String input, String dout, String stride1, String stride2, String padding1, String padding2, 
 			String input_shape1, String input_shape2, String input_shape3, String input_shape4,
 			String filter_shape1, String filter_shape2, String filter_shape3, String filter_shape4,
 			String output) throws LopsException {
-		//only used for im2col and col2im
 		StringBuilder sb = new StringBuilder();
+		appendOpcode(sb);
+		sb.append( getInputs().get(0).prepInputOperand(input));
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( getInputs().get(1).prepInputOperand(dout));
+		appendOperands(2, 14, output, sb);
+		return sb.toString();
+	}
+	
+	// Used by fused conv2d+bias_add
+	public String getInstructions(String input, String bias, String filter, String stride1, String stride2, String padding1, String padding2, 
+			String input_shape1, String input_shape2, String input_shape3, String input_shape4,
+			String filter_shape1, String filter_shape2, String filter_shape3, String filter_shape4,
+			String output) throws LopsException {
+		StringBuilder sb = new StringBuilder();
+		appendOpcode(sb);
+		sb.append( getInputs().get(0).prepInputOperand(input));
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( getInputs().get(1).prepInputOperand(bias));
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( getInputs().get(2).prepInputOperand(filter));
+		appendOperands(3, 15, output, sb);
+		return sb.toString();
+	}
+	
+	public void appendOpcode(StringBuilder sb) {
 		sb.append( getExecType() );
-		
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( getOpcode() );
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( getInputs().get(0).prepInputOperand(input));
-		
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( getInputs().get(1).prepInputOperand(dout));
-		
-		String[] inputX = new String[]{input, dout, stride1, stride2, padding1, padding2, 
-			 input_shape1, input_shape2, input_shape3, input_shape4,
-			 filter_shape1, filter_shape2, filter_shape3, filter_shape4};
-		for( int i=2; i < inputX.length; i++ ) {
+	}
+	
+	public void appendOperands(int startInputIndex, int endInputIndex, String output, StringBuilder sb) {
+		for( int i=startInputIndex; i < endInputIndex; i++ ) {
 			Lop ltmp = getInputs().get(i);
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( ltmp.prepScalarInputOperand(getExecType()));
@@ -237,8 +231,6 @@ public class ConvolutionTransform extends Lop
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( numThreads );
 		}
-		
-		return sb.toString();
 	}
 
 }

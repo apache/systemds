@@ -132,8 +132,8 @@ public class LibMatrixDNN {
 	 * @param filter filter used in conv2d 
 	 * @param dout errors from next layer
 	 * @param outputBlock  output errors
-	 * @param params
-	 * @throws DMLRuntimeException
+	 * @param params convolution parameters
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void conv2dBackwardData(MatrixBlock filter, MatrixBlock dout, MatrixBlock outputBlock, ConvolutionParameters params) throws DMLRuntimeException {
 		params.input1 = filter;
@@ -162,11 +162,11 @@ public class LibMatrixDNN {
 	/**
 	 * This method computes the backpropogation errors for filter of convolution operation
 	 * 
-	 * @param image input image 
+	 * @param input input image 
 	 * @param dout errors from next layer
 	 * @param outputBlock  output errors
-	 * @param params 
-	 * @throws DMLRuntimeException
+	 * @param params convolution parameters
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void conv2dBackwardFilter(MatrixBlock input, MatrixBlock dout, MatrixBlock outputBlock, ConvolutionParameters params) throws DMLRuntimeException {
 		params.input1 = input;
@@ -194,9 +194,9 @@ public class LibMatrixDNN {
 	
 	/**
 	 * Performs the operation: ret += elem
-	 * @param ret
-	 * @param elem
-	 * @throws DMLRuntimeException
+	 * @param ret left and output matrix
+	 * @param elem right matrix
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private static void elementWiseInPlaceAddition(MatrixBlock ret, MatrixBlock elem) throws DMLRuntimeException {
 		if(ret.getNumRows() != elem.getNumRows() || ret.getNumColumns() != elem.getNumColumns()) {
@@ -225,9 +225,10 @@ public class LibMatrixDNN {
 	
 	/**
 	 * Performs the operation: ret += t(elem)
-	 * @param ret
-	 * @param elem
-	 * @throws DMLRuntimeException
+	 * @param ret left and output matrix
+	 * @param elem right untransposed matrix
+	 * @param params convolution parameters
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private static void elementWiseInPlaceTransposedAddition(MatrixBlock ret, MatrixBlock elem) throws DMLRuntimeException {
 		if(ret.getNumRows() != elem.getNumColumns() || ret.getNumColumns() != elem.getNumRows()) {
@@ -376,11 +377,11 @@ public class LibMatrixDNN {
 	/**
 	 * This method computes the backpropogation errors for previous layer of maxpooling operation
 	 * 
-	 * @param input
-	 * @param dout
-	 * @param outputBlock
-	 * @param params
-	 * @throws DMLRuntimeException
+	 * @param input input matrix
+	 * @param dout dout matrix
+	 * @param outputBlock output matrix
+	 * @param params convolution parameters
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void maxpoolingBackward(MatrixBlock input, MatrixBlock dout, MatrixBlock outputBlock, ConvolutionParameters params) throws DMLRuntimeException {
 		params.input1 = input;
@@ -594,11 +595,11 @@ public class LibMatrixDNN {
 	/**
 	 * This method computes the backpropagation errors for previous layer of relu operation
 	 * 
-	 * @param input
-	 * @param dout
-	 * @param outputBlock
-	 * @param numThreads
-	 * @throws DMLRuntimeException
+	 * @param input input matrix
+	 * @param dout errors from next layer
+	 * @param outputBlock output matrix
+	 * @param numThreads number of threads
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void reluBackward(MatrixBlock input, MatrixBlock dout, MatrixBlock outputBlock, int numThreads) throws DMLRuntimeException {
 		int N = input.getNumRows();
@@ -668,11 +669,11 @@ public class LibMatrixDNN {
 	 * output = input + matrix(bias %*% ones, rows=1, cols=F*Hout*Wout)
 	 * This operation is often followed by conv2d and hence we have introduced bias_add(input, bias) built-in function
 	 * 
-	 * @param input
-	 * @param bias
-	 * @param outputBlock
-	 * @param numThreads
-	 * @throws DMLRuntimeException
+	 * @param input input matrix
+	 * @param bias bias matrix
+	 * @param outputBlock output matrix
+	 * @param numThreads number of threads
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void biasAdd(MatrixBlock input, MatrixBlock bias, MatrixBlock outputBlock, int numThreads) throws DMLRuntimeException {
 		int N = input.getNumRows();
@@ -1004,6 +1005,8 @@ public class LibMatrixDNN {
 					for(int n = n1; n < n2; n++) 
 						doLoopedIm2ColConv2d(n, im2ColOutBlock, params);
 					im2ColOutBlocks.add(im2ColOutBlock);
+					if(params.bias != null)
+						addBias(n1, n2, params);
 					break;
 				}
 				case LoopedIm2ColConv2dBwdFilter:
@@ -1030,6 +1033,37 @@ public class LibMatrixDNN {
 					throw new DMLRuntimeException("Unsupported ConvTask:" + type.name());
 			}
 			return null;
+		}
+	}
+	
+	private static void addBias(int n1, int n2, ConvolutionParameters params) {
+		int PQ = params.P*params.Q;
+		int K = params.K;
+		double [] outputArr = params.output.getDenseBlock();
+		if(!params.bias.isInSparseFormat()) {
+			double [] biasArr = params.bias.getDenseBlock();
+			int index = n1*K*PQ;
+			for(int n = n1; n < n2; n++) {
+				for(int k = 0; k < K; k++) {
+					for(int pq = 0; pq < PQ; pq++, index++) {
+						outputArr[index] += biasArr[k];
+					}
+				}
+			}
+		}
+		else {
+			Iterator<IJV> iter = params.bias.getSparseBlockIterator();
+			while(iter.hasNext()) {
+				IJV ijv = iter.next();
+				int k = ijv.getI();
+				double val = ijv.getV();
+				for(int n = n1; n < n2; n++) {
+					int index = n*K*PQ + k*PQ;
+					for(int pq = 0; pq < PQ; pq++, index++) {
+						outputArr[index] += val;
+					}
+				}
+			}
 		}
 	}
 		

@@ -116,13 +116,29 @@ __global__ void relu(double* A,  double* ret, int rlen, int clen) {
 	}
 }
 
+// This method computes the backpropagation errors for previous layer of relu operation
 extern "C"
-__global__ void relu_backward(double* X,  double* dout, double* ret, int rlen, int clen) {
+__global__ void reluBackward(double* X,  double* dout, double* ret, int rlen, int clen) {
 	int ix = blockIdx.x * blockDim.x + threadIdx.x;
 	int iy = blockIdx.y * blockDim.y + threadIdx.y;
 	if(ix < rlen && iy < clen) {
 		int index = ix * clen + iy;
 		ret[index] = X[index] > 0 ?  dout[index] : 0;
+	}
+}
+
+// Performs the operation corresponding to the DML script:
+// ones = matrix(1, rows=1, cols=Hout*Wout)		
+// output = input + matrix(bias %*% ones, rows=1, cols=F*Hout*Wout)
+// This operation is often followed by conv2d and hence we have introduced bias_add(input, bias) built-in function
+extern "C"
+__global__ void biasAdd(double* input,  double* bias, double* ret, int rlen, int clen, int PQ) {
+	int ix = blockIdx.x * blockDim.x + threadIdx.x;
+	int iy = blockIdx.y * blockDim.y + threadIdx.y;
+	if(ix < rlen && iy < clen) {
+		int index = ix * clen + iy;
+		int biasIndex = iy / PQ;
+		ret[index] = input[index] + bias[biasIndex];
 	}
 }
 

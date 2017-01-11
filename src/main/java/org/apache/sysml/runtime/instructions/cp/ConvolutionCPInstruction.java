@@ -185,7 +185,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		}
 		else {
 			outputBlock = getDenseOutputBlock(ec, input.getNumRows(), input.getNumColumns());
-			LibMatrixDNN.relu_backward(input, dout, outputBlock, _numThreads);
+			LibMatrixDNN.reluBackward(input, dout, outputBlock, _numThreads);
 		}
 		
 		// release inputs/outputs
@@ -213,7 +213,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		else {
 			// As we always fill the output first with bias
 			outputBlock = getDenseOutputBlock(ec, input.getNumRows(), input.getNumColumns());
-			LibMatrixDNN.bias_add(input, bias, outputBlock, _numThreads);
+			LibMatrixDNN.biasAdd(input, bias, outputBlock, _numThreads);
 		}
 		
 		// release inputs/outputs
@@ -274,7 +274,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			}
 			else {
 				outputBlock = getDenseOutputBlock(ec, N, C*H*W);
-				LibMatrixDNN.maxpooling_backward(matBlock, dout, outputBlock, params);
+				LibMatrixDNN.maxpoolingBackward(matBlock, dout, outputBlock, params);
 			}
 			ec.releaseMatrixInput(_in2.getName());
 		}
@@ -296,7 +296,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			}
 			else {
 				outputBlock = getDenseOutputBlock(ec, K, C*R*S);
-				LibMatrixDNN.conv2d_backward_filter(matBlock, dout, outputBlock, params);
+				LibMatrixDNN.conv2dBackwardFilter(matBlock, dout, outputBlock, params);
 			}
 			ec.releaseMatrixInput(_in2.getName());
 		}
@@ -307,7 +307,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			}
 			else {
 				outputBlock = getDenseOutputBlock(ec, N, C * H * W);
-				LibMatrixDNN.conv2d_backward_data(matBlock, dout, outputBlock, params);
+				LibMatrixDNN.conv2dBackwardData(matBlock, dout, outputBlock, params);
 			}
 			ec.releaseMatrixInput(_in2.getName());
 		}

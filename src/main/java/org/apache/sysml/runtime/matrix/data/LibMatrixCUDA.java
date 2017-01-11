@@ -42,7 +42,6 @@ import static jcuda.jcudnn.JCudnn.cudnnSetConvolution2dDescriptor;
 import static jcuda.jcudnn.JCudnn.cudnnSetFilter4dDescriptor;
 import static jcuda.jcudnn.JCudnn.cudnnSetPooling2dDescriptor;
 import static jcuda.jcudnn.JCudnn.cudnnSetTensor4dDescriptor;
-import static jcuda.jcudnn.JCudnn.cudnnActivationBackward;
 import static jcuda.jcudnn.cudnnConvolutionMode.CUDNN_CROSS_CORRELATION;
 import static jcuda.jcudnn.cudnnDataType.CUDNN_DATA_DOUBLE;
 import static jcuda.jcudnn.cudnnPoolingMode.CUDNN_POOLING_MAX;
@@ -72,8 +71,6 @@ import org.apache.sysml.runtime.instructions.gpu.context.JCudaObject;
 import org.apache.sysml.runtime.instructions.gpu.context.JCudaObject.CSRPointer;
 import org.apache.sysml.runtime.matrix.operators.*;
 import org.apache.sysml.utils.Statistics;
-import static jcuda.jcudnn.JCudnn.cudnnAddTensor;
-
 import jcuda.Pointer;
 import jcuda.Sizeof;
 import jcuda.jcublas.JCublas2;
@@ -245,7 +242,15 @@ public class LibMatrixCUDA {
 		return poolingDesc;
 	}
 
-	public static void relu_backward(MatrixObject input, MatrixObject dout, MatrixObject outputBlock) throws DMLRuntimeException {
+	/**
+	 * This method computes the backpropagation errors for previous layer of relu operation
+	 * 
+	 * @param input
+	 * @param dout
+	 * @param outputBlock
+	 * @throws DMLRuntimeException
+	 */
+	public static void reluBackward(MatrixObject input, MatrixObject dout, MatrixObject outputBlock) throws DMLRuntimeException {
 		if(isInSparseFormat(input)) {
 			((JCudaObject)input.getGPUObject()).sparseToDense();
 		}
@@ -257,53 +262,67 @@ public class LibMatrixCUDA {
 		Pointer imagePointer = ((JCudaObject)input.getGPUObject()).jcudaDenseMatrixPtr;
 		Pointer doutPointer = ((JCudaObject)dout.getGPUObject()).jcudaDenseMatrixPtr;
 		Pointer outputPointer = ((JCudaObject)outputBlock.getGPUObject()).jcudaDenseMatrixPtr;
-		kernels.launchKernel("relu_backward",
+		kernels.launchKernel("reluBackward",
 				ExecutionConfig.getConfigForSimpleMatrixOperations((int)rows, (int)cols),
 				imagePointer, doutPointer, outputPointer, (int)rows, (int)cols);
 	}
 	
-	public static void bias_add(MatrixObject input, MatrixObject bias, MatrixObject outputBlock) throws DMLRuntimeException {
+	/**
+	 * Performs the operation corresponding to the DML script:
+	 * ones = matrix(1, rows=1, cols=Hout*Wout)		
+	 * output = input + matrix(bias %*% ones, rows=1, cols=F*Hout*Wout)
+	 * This operation is often followed by conv2d and hence we have introduced bias_add(input, bias) built-in function
+	 * 
+	 * @param input
+	 * @param bias
+	 * @param outputBlock
+	 * @throws DMLRuntimeException
+	 */
+	public static void biasAdd(MatrixObject input, MatrixObject bias, MatrixObject outputBlock) throws DMLRuntimeException {
 		if(isInSparseFormat(input)) {
 			((JCudaObject)input.getGPUObject()).sparseToDense();
 		}
 		if(isInSparseFormat(bias)) {
 			((JCudaObject)bias.getGPUObject()).sparseToDense();
 		}
-		Pointer alpha = null;
-		Pointer beta = null;
-		cudnnTensorDescriptor biasTensorDesc = null;
-		cudnnTensorDescriptor dstTensorDesc = null;
-		try {
-			int N = (int) input.getNumRows();
-			int K = (int) bias.getNumRows();
-			int PQ = (int) input.getNumColumns() / K;
-			alpha = pointerTo(1.0); // TODO
-			beta = pointerTo(1.0);
-
-			// Allocate descriptors
-			biasTensorDesc = allocateTensorDescriptor(1, K, 1, 1);
-			dstTensorDesc = allocateTensorDescriptor(N, K, PQ, 1);
-			Pointer imagePointer = ((JCudaObject)input.getGPUObject()).jcudaDenseMatrixPtr;
-			Pointer biasPointer = ((JCudaObject)bias.getGPUObject()).jcudaDenseMatrixPtr;
-			Pointer outputPointer = ((JCudaObject)outputBlock.getGPUObject()).jcudaDenseMatrixPtr;
-			// TODO: Avoid memcpy by allowing update in-place bias_add
-			cudaMemcpy(outputPointer, imagePointer, N*K*PQ*Sizeof.DOUBLE, jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToDevice);
-			cudnnAddTensor(cudnnHandle, alpha, biasTensorDesc, biasPointer, beta, dstTensorDesc, outputPointer);
+		long rows = input.getNumRows();
+		long cols = input.getNumColumns();
+		long K = bias.getNumRows();
+		long PQ = cols / K;
+		if(bias.getNumColumns() != 1 || cols % K != 0) {
+			throw new DMLRuntimeException("Incorrect inputs for bias_add: input[" + rows + " X " + cols + "] and bias[" + K + " X " + bias.getNumColumns() + "]");
 		}
-		finally {
-			if(alpha != null)
-				cudaFree(alpha);
-			if(beta != null)
-				cudaFree(beta);
-			if(biasTensorDesc != null)
-				cudnnDestroyTensorDescriptor(biasTensorDesc);
-			if(dstTensorDesc != null)
-				cudnnDestroyTensorDescriptor(dstTensorDesc);
-		}
+		Pointer imagePointer = ((JCudaObject)input.getGPUObject()).jcudaDenseMatrixPtr;
+		Pointer biasPointer = ((JCudaObject)bias.getGPUObject()).jcudaDenseMatrixPtr;
+		Pointer outputPointer = ((JCudaObject)outputBlock.getGPUObject()).jcudaDenseMatrixPtr;
+		kernels.launchKernel("biasAdd",
+				ExecutionConfig.getConfigForSimpleMatrixOperations((int)rows, (int)cols),
+				imagePointer, biasPointer, outputPointer, (int)rows, (int)cols, (int) PQ);
 
 	}
 
-	public static void conv2d_backward_filter(MatrixObject image, MatrixObject dout,
+	/**
+	 * This method computes the backpropogation errors for filter of convolution operation
+	 * 
+	 * @param image input image 
+	 * @param dout errors from next layer
+	 * @param outputBlock  output errors
+	 * @param N number of images
+	 * @param C number of channels
+	 * @param H height
+	 * @param W width
+	 * @param K number of filters
+	 * @param R filter height
+	 * @param S filter width
+	 * @param pad_h pad height
+	 * @param pad_w pad width
+	 * @param stride_h stride height 
+	 * @param stride_w stride width
+	 * @param P output activation height
+	 * @param Q output activation width
+	 * @throws DMLRuntimeException
+	 */
+	public static void conv2dBackwardFilter(MatrixObject image, MatrixObject dout,
 			MatrixObject outputBlock, int N, int C, int H, int W, int K, int R,
 			int S, int pad_h, int pad_w, int stride_h, int stride_w, int P,
 			int Q) throws DMLRuntimeException {
@@ -1290,7 +1309,28 @@ public class LibMatrixCUDA {
 	//********************************************************************/
 
 
-	public static void conv2d_backward_data(MatrixObject filter, MatrixObject dout,
+	/**
+	 * This method computes the backpropogation errors for previous layer of convolution operation
+	 * 
+	 * @param filter filter used in conv2d 
+	 * @param dout errors from next layer
+	 * @param output  output errors
+	 * @param N number of images
+	 * @param C number of channels
+	 * @param H height
+	 * @param W width
+	 * @param K number of filters
+	 * @param R filter height
+	 * @param S filter width
+	 * @param pad_h pad height
+	 * @param pad_w pad width
+	 * @param stride_h stride height 
+	 * @param stride_w stride width
+	 * @param P output activation height
+	 * @param Q output activation width
+	 * @throws DMLRuntimeException
+	 */
+	public static void conv2dBackwardData(MatrixObject filter, MatrixObject dout,
 			MatrixObject output, int N, int C, int H, int W, int K, int R,
 			int S, int pad_h, int pad_w, int stride_h, int stride_w, int P,
 			int Q) throws DMLRuntimeException {
@@ -1426,7 +1466,9 @@ public class LibMatrixCUDA {
 	}
 
 	/**
-	 * performs maxpoolingBackward on GPU by exploiting cudnnPoolingBackward(...)
+	 * Performs maxpoolingBackward on GPU by exploiting cudnnPoolingBackward(...)
+	 * This method computes the backpropogation errors for previous layer of maxpooling operation
+	 * 
 	 * @param image image as matrix object
 	 * @param dout			delta matrix, output of previous layer
 	 * @param outputBlock output matrix
@@ -1445,7 +1487,7 @@ public class LibMatrixCUDA {
 	 * @param Q				(W - S + 1 + 2*pad_w)/stride_w
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static void maxpooling_backward(MatrixObject image, MatrixObject dout,
+	public static void maxpoolingBackward(MatrixObject image, MatrixObject dout,
 			MatrixObject outputBlock, int N, int C, int H, int W, int K, int R,
 			int S, int pad_h, int pad_w, int stride_h, int stride_w, int P,
 			int Q) throws DMLRuntimeException {

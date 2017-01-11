@@ -126,7 +126,16 @@ public class LibMatrixDNN {
 	}
 	// ------------------------------------------------------------------------------------------------
 	
-	public static void conv2d_backward_data(MatrixBlock filter, MatrixBlock dout, MatrixBlock outputBlock, ConvolutionParameters params) throws DMLRuntimeException {
+	/**
+	 * This method computes the backpropogation errors for previous layer of convolution operation
+	 * 
+	 * @param filter filter used in conv2d 
+	 * @param dout errors from next layer
+	 * @param outputBlock  output errors
+	 * @param params
+	 * @throws DMLRuntimeException
+	 */
+	public static void conv2dBackwardData(MatrixBlock filter, MatrixBlock dout, MatrixBlock outputBlock, ConvolutionParameters params) throws DMLRuntimeException {
 		params.input1 = filter;
 		params.input2 = dout;
 		params.output = outputBlock;
@@ -150,7 +159,16 @@ public class LibMatrixDNN {
 		runConvTask(TaskType.LoopedIm2ColConv2dBwdData, params);
 	}
 	
-	public static void conv2d_backward_filter(MatrixBlock input, MatrixBlock dout, MatrixBlock outputBlock, ConvolutionParameters params) throws DMLRuntimeException {
+	/**
+	 * This method computes the backpropogation errors for filter of convolution operation
+	 * 
+	 * @param image input image 
+	 * @param dout errors from next layer
+	 * @param outputBlock  output errors
+	 * @param params 
+	 * @throws DMLRuntimeException
+	 */
+	public static void conv2dBackwardFilter(MatrixBlock input, MatrixBlock dout, MatrixBlock outputBlock, ConvolutionParameters params) throws DMLRuntimeException {
 		params.input1 = input;
 		params.input2 = dout;
 		params.output = outputBlock;
@@ -355,8 +373,16 @@ public class LibMatrixDNN {
 		// -----------------------------------------------------------------------------
 	}
 	
-	
-	public static void maxpooling_backward(MatrixBlock input, MatrixBlock dout, MatrixBlock outputBlock, ConvolutionParameters params) throws DMLRuntimeException {
+	/**
+	 * This method computes the backpropogation errors for previous layer of maxpooling operation
+	 * 
+	 * @param input
+	 * @param dout
+	 * @param outputBlock
+	 * @param params
+	 * @throws DMLRuntimeException
+	 */
+	public static void maxpoolingBackward(MatrixBlock input, MatrixBlock dout, MatrixBlock outputBlock, ConvolutionParameters params) throws DMLRuntimeException {
 		params.input1 = input;
 		params.input2 = dout;
 		params.output = outputBlock;
@@ -565,7 +591,16 @@ public class LibMatrixDNN {
 		return maxIndex;
 	}
 	
-	public static void relu_backward(MatrixBlock input, MatrixBlock dout, MatrixBlock outputBlock, int numThreads) throws DMLRuntimeException {
+	/**
+	 * This method computes the backpropagation errors for previous layer of relu operation
+	 * 
+	 * @param input
+	 * @param dout
+	 * @param outputBlock
+	 * @param numThreads
+	 * @throws DMLRuntimeException
+	 */
+	public static void reluBackward(MatrixBlock input, MatrixBlock dout, MatrixBlock outputBlock, int numThreads) throws DMLRuntimeException {
 		int N = input.getNumRows();
 		ConvolutionParameters params = new ConvolutionParameters(N, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, numThreads);
 		params.input1 = input;
@@ -626,7 +661,20 @@ public class LibMatrixDNN {
 		}
 	}
 	
-	public static void bias_add(MatrixBlock input, MatrixBlock bias, MatrixBlock outputBlock, int numThreads) throws DMLRuntimeException {
+	
+	/**
+	 * Performs the operation corresponding to the DML script:
+	 * ones = matrix(1, rows=1, cols=Hout*Wout)		
+	 * output = input + matrix(bias %*% ones, rows=1, cols=F*Hout*Wout)
+	 * This operation is often followed by conv2d and hence we have introduced bias_add(input, bias) built-in function
+	 * 
+	 * @param input
+	 * @param bias
+	 * @param outputBlock
+	 * @param numThreads
+	 * @throws DMLRuntimeException
+	 */
+	public static void biasAdd(MatrixBlock input, MatrixBlock bias, MatrixBlock outputBlock, int numThreads) throws DMLRuntimeException {
 		int N = input.getNumRows();
 		int K = bias.getNumRows();
 		int PQ = input.getNumColumns() / K;
@@ -636,17 +684,28 @@ public class LibMatrixDNN {
 		params.input2 = bias;
 		params.output = outputBlock;
 		
+		if(!input.isInSparseFormat() && TEST_SPARSE_INPUT) {
+			input.denseToSparse();
+		}
+		if(!bias.isInSparseFormat() && TEST_SPARSE_FILTER) {
+			bias.denseToSparse();
+		}
+		
+		if(bias.getNumColumns() != 1 || input.getNumColumns() % K != 0) {
+			throw new DMLRuntimeException("Incorrect inputs for bias_add: input[" + N + " X " + input.getNumColumns()  + "] and bias[" + K + " X " + bias.getNumColumns() + "]");
+		}
+		
 		if(input.isEmptyBlock()) {
 			double [] outputArray = outputBlock.getDenseBlock();
 			for(int n = 0;  n < N; n++) 
-				fillBias(bias, outputArray, n, N, K, PQ);
+				fillBias(bias, outputArray, n, n+1, N, K, PQ);
 		}
 		else {
 			runConvTask(TaskType.BiasAdd, params);
 		}
 	}
 	
-	private static void doBiasAdd(int n, ConvolutionParameters params) throws DMLRuntimeException {
+	private static void doBiasAdd(int n1, int n2, ConvolutionParameters params) throws DMLRuntimeException {
 		double [] outputArray = params.output.getDenseBlock();
 		int PQ = params.C;
 		int numOutCols = params.input1.getNumColumns();
@@ -655,18 +714,19 @@ public class LibMatrixDNN {
 			double [] inputArr = params.input1.getDenseBlock();
 			double [] biasArr = params.input2.getDenseBlock();
 			int K = params.K;
-			final int inputOffset = n*K*PQ;
-			for(int k = 0; k < K; k++) {
-				int offset = inputOffset + k*PQ;
-				for(int pq = 0; pq < PQ; pq++) {
-					outputArray[offset + pq] = inputArr[offset + pq] + biasArr[k];
+			int index = n1*K*PQ;
+			for(int n = n1; n < n2; n++) {
+				for(int k = 0; k < K; k++) {
+					for(int pq = 0; pq < PQ; pq++, index++) {
+						outputArray[index] = inputArr[index] + biasArr[k];
+					}
 				}
 			}
 		}
 		else {
-			fillBias(params.input2, outputArray, n, params.N, params.K, PQ);
+			fillBias(params.input2, outputArray, n1, n2, params.N, params.K, PQ);
 			if(params.input1.isInSparseFormat()) {
-				Iterator<IJV> iter = params.input1.sparseBlock.getIterator(n, n+1);
+				Iterator<IJV> iter = params.input1.sparseBlock.getIterator(n1, n2);
 				while(iter.hasNext()) {
 					IJV ijv = iter.next();
 					int i = ijv.getI();
@@ -676,7 +736,7 @@ public class LibMatrixDNN {
 			}
 			else {
 				double [] inputArr = params.input1.getDenseBlock();
-				for(int i = n*numOutCols; i < (n+1)*numOutCols; i++) {
+				for(int i = n1*numOutCols; i < n2*numOutCols; i++) {
 					outputArray[i] += inputArr[i];
 				}
 			}
@@ -684,23 +744,27 @@ public class LibMatrixDNN {
 		
 	}
 	
-	private static void fillBias(MatrixBlock bias, double [] outputArray, int n, int N, int K, int PQ) {
+	private static void fillBias(MatrixBlock bias, double [] outputArray, int n1, int n2, int N, int K, int PQ) {
 		if(bias.isInSparseFormat()) {
 			Iterator<IJV> iter = bias.sparseBlock.getIterator();
 			while(iter.hasNext()) {
 				IJV ijv = iter.next();
 				int k = ijv.getI();
 				double val = ijv.getV();
-				int fromIndex = n*K*PQ + k*PQ;
-				Arrays.fill(outputArray, fromIndex, fromIndex + PQ, val);
+				for(int n = n1; n < n2; n++) {
+					int fromIndex = n*K*PQ + k*PQ;
+					Arrays.fill(outputArray, fromIndex, fromIndex + PQ, val);
+				}
 			}
 		}
 		else {
 			double [] biasArr = bias.getDenseBlock();
-			for(int k = 0; k < K; k++) {
-				int fromIndex = n*K*PQ + k*PQ;
-				double val = biasArr[k];
-				Arrays.fill(outputArray, fromIndex, fromIndex + PQ, val);
+			for(int n = n1; n < n2; n++) {
+				for(int k = 0; k < K; k++) {
+					int fromIndex = n*K*PQ + k*PQ;
+					double val = biasArr[k];
+					Arrays.fill(outputArray, fromIndex, fromIndex + PQ, val);
+				}
 			}
 		}
 	}
@@ -928,8 +992,7 @@ public class LibMatrixDNN {
 						doPoolingBackward(n, params);
 					break;
 				case BiasAdd:
-					for(int n = n1; n < n2; n++) 
-						doBiasAdd(n, params);
+					doBiasAdd(n1, n2, params);
 					break;
 				case ReluBackward:
 					for(int n = n1; n < n2; n++) 

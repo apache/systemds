@@ -148,7 +148,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction
 		
 		ec.setMetaData(_output.getName(), input.getNumRows(), input.getNumColumns());
 		MatrixObject out = ec.getDenseMatrixOutputForGPUInstruction(_output.getName());
-		LibMatrixCUDA.bias_add(input, bias, out);
+		LibMatrixCUDA.biasAdd(input, bias, out);
 		// release inputs/outputs
 		ec.releaseMatrixInputForGPUInstruction(_input1.getName());
 		ec.releaseMatrixInputForGPUInstruction(_input2.getName());
@@ -162,7 +162,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction
 		
 		MatrixObject out = ec.getDenseMatrixOutputForGPUInstruction(_output.getName());
 		ec.setMetaData(_output.getName(), input.getNumRows(), input.getNumColumns());
-		LibMatrixCUDA.relu_backward(input, dout, out);
+		LibMatrixCUDA.reluBackward(input, dout, out);
 		// release inputs/outputs
 		ec.releaseMatrixInputForGPUInstruction(_input1.getName());
 		ec.releaseMatrixInputForGPUInstruction(_input2.getName());
@@ -231,7 +231,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction
 			
 			ec.setMetaData(_output.getName(), K, C * R * S);
 			MatrixObject out = ec.getDenseMatrixOutputForGPUInstruction(_output.getName());
-			LibMatrixCUDA.conv2d_backward_filter(image, dout, out, N, C, H, W,
+			LibMatrixCUDA.conv2dBackwardFilter(image, dout, out, N, C, H, W,
 					K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
 			// TODO: For now always copy the device data to host
 			// ec.gpuCtx.copyDeviceToHost(outputBlock);
@@ -249,7 +249,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction
 			
 			ec.setMetaData(_output.getName(), N, C * H * W);
 			MatrixObject out = ec.getDenseMatrixOutputForGPUInstruction(_output.getName());
-			LibMatrixCUDA.conv2d_backward_data(filter, dout, out, N, C, H, W,
+			LibMatrixCUDA.conv2dBackwardData(filter, dout, out, N, C, H, W,
 					K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
 		}
 		else if (instOpcode.equalsIgnoreCase("maxpooling")) {
@@ -278,7 +278,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction
 			
 			ec.setMetaData(_output.getName(), N, C * H * W);
 			MatrixObject out = ec.getDenseMatrixOutputForGPUInstruction(_output.getName());
-			LibMatrixCUDA.maxpooling_backward(image, dout, out, N, C, H, W,
+			LibMatrixCUDA.maxpoolingBackward(image, dout, out, N, C, H, W,
 					K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
 		}
 		else {

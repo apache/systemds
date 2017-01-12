@@ -89,6 +89,10 @@ public class CPPUtil {
 	public static native void matrixMultDenseDense(double [] m1, double [] m2, double [] ret, int m1rlen, int m1clen, int m2clen, int numThreads);
 	public static native void conv2dDense(double [] input, double [] filter, double [] ret, int N, int C, int H, int W, 
 			int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q);
+	public static native void conv2dBiasAddDense(double [] input, double [] bias, double [] filter, double [] ret, int N, int C, int H, int W, 
+			int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q);
 	public static native void conv2dBackwardDataDense(double [] filter, double [] dout, double [] ret, int N, int C, int H, int W, 
+			int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q);
+	public static native void conv2dBackwardFilterDense(double [] input, double [] dout, double [] ret, int N, int C, int H, int W, 
 			int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q);
 }

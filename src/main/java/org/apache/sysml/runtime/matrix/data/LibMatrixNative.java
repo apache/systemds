@@ -45,6 +45,18 @@ public class LibMatrixNative {
 		ret.examSparsity();
 	}
 	
+	public static void conv2dBiasAdd(MatrixBlock input, MatrixBlock bias, MatrixBlock filter, MatrixBlock outputBlock, ConvolutionParameters params) throws DMLRuntimeException {
+		if(!input.isInSparseFormat() && !filter.isInSparseFormat()) {
+			Statistics.numNativeCalls.addAndGet(1);
+			CPPUtil.conv2dBiasAddDense(input.denseBlock, bias.denseBlock, filter.denseBlock, outputBlock.denseBlock, 
+					params.N, params.C, params.H, params.W, params.K, params.R, params.S, params.stride_h, params.stride_w, params.pad_h, 
+					params.pad_w, params.P, params.Q);
+		}
+		else {
+			throw new DMLRuntimeException("Sparse native conv2d is not supported");
+		}
+	}
+	
 	public static void conv2d(MatrixBlock input, MatrixBlock filter, MatrixBlock outputBlock, ConvolutionParameters params) throws DMLRuntimeException {
 		if(!input.isInSparseFormat() && !filter.isInSparseFormat()) {
 			Statistics.numNativeCalls.addAndGet(1);
@@ -57,7 +69,7 @@ public class LibMatrixNative {
 		}
 	}
 	
-	public static void conv2d_backward_data(MatrixBlock filter, MatrixBlock dout, MatrixBlock outputBlock, ConvolutionParameters params)  throws DMLRuntimeException {
+	public static void conv2dBackwardData(MatrixBlock filter, MatrixBlock dout, MatrixBlock outputBlock, ConvolutionParameters params)  throws DMLRuntimeException {
 		if(!dout.isInSparseFormat() && !filter.isInSparseFormat()) {
 			Statistics.numNativeCalls.addAndGet(1);
 			CPPUtil.conv2dBackwardDataDense(filter.denseBlock, dout.denseBlock, outputBlock.denseBlock, 
@@ -69,4 +81,15 @@ public class LibMatrixNative {
 		}
 	} 
 	
+	public static void conv2dBackwardFilter(MatrixBlock input, MatrixBlock dout, MatrixBlock outputBlock, ConvolutionParameters params)  throws DMLRuntimeException {
+		if(!dout.isInSparseFormat() && !input.isInSparseFormat()) {
+			Statistics.numNativeCalls.addAndGet(1);
+			CPPUtil.conv2dBackwardFilterDense(input.denseBlock, dout.denseBlock, outputBlock.denseBlock, 
+					params.N, params.C, params.H, params.W, params.K, params.R, params.S, params.stride_h, params.stride_w, params.pad_h, 
+					params.pad_w, params.P, params.Q);
+		}
+		else {
+			throw new DMLRuntimeException("Sparse native conv2d_backward_data is not supported");
+		}
+	}
 }

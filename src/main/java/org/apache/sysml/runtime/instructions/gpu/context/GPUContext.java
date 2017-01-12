@@ -51,12 +51,11 @@ public abstract class GPUContext {
 	public abstract void ensureComputeCapability() throws DMLRuntimeException;
 	
 	/**
-	 * Creation / Destruction of GPUContext and related handles
-	 * 
+	 * Singleton Factory method for creation of {@link GPUContext}
 	 * @return GPU context
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static GPUContext createGPUContext() throws DMLRuntimeException {
+	public static GPUContext getGPUContext() throws DMLRuntimeException {
 		if(currContext == null && DMLScript.USE_ACCELERATOR) {
 			synchronized(isGPUContextCreated) {
 				currContext = new JCudaContext();

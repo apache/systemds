@@ -74,7 +74,7 @@ public class DMLConfig
 	// Fraction of available memory to use. The available memory is computer when the JCudaContext is created
 	// to handle the tradeoff on calling cudaMemGetInfo too often.
 	public static final String GPU_MEMORY_UTILIZATION_FACTOR    = "gpu.memory.util.factor";
-	// Invoke cudaMemGetInfo to get available memory information. Useful if GPU is shared among multiple application. 
+	// Invoke cudaMemGetInfo to get available memory information. Useful if GPU is shared among multiple application.
 	public static final String REFRESH_AVAILABLE_MEMORY_EVERY_TIME    = "gpu.memory.refresh";
 
 	// supported prefixes for custom map/reduce configurations

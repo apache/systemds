@@ -1767,15 +1767,26 @@ public class DataExpression extends DataIdentifier
 		sb.append(_opcode.toString());
 		sb.append("(");
 
+		boolean first = true;
 		for(Entry<String,Expression> e : _varParams.entrySet()) {
 			String key = e.getKey();
 			Expression expr = e.getValue();
-			sb.append(",");
+			if (!first) {
+				sb.append(", ");
+			} else {
+				first = false;
+			}
 			sb.append(key);
 			sb.append("=");
-			sb.append(expr);
+			if (expr instanceof StringIdentifier) {
+				sb.append("\"");
+				sb.append(expr);
+				sb.append("\"");
+			} else {
+				sb.append(expr);
+			}
 		}
-		sb.append(" )");
+		sb.append(")");
 		return sb.toString();
 	}
 

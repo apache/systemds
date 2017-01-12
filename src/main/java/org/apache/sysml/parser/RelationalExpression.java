@@ -198,11 +198,24 @@ public class RelationalExpression extends Expression
 			}
 		}
 	}
-	
-	
+
 	public String toString(){
-		return "(" + _left.toString() + " " + _opcode.toString() + " " + _right.toString() + ")";
+		String leftString;
+		String rightString;
+		if (_left instanceof StringIdentifier) {
+			leftString = "\"" + _left.toString() + "\"";
+		} else {
+			leftString = _left.toString();
+		}
+		if (_right instanceof StringIdentifier) {
+			rightString = "\"" + _right.toString() + "\"";
+		} else {
+			rightString = _right.toString();
+		}
+		return "(" + leftString + " " + _opcode.toString() + " "
+				+ rightString + ")";
 	}
+
 	@Override
 	public VariableSet variablesRead() {
 		VariableSet result = new VariableSet();

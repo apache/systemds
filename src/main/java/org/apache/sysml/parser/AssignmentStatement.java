@@ -131,7 +131,13 @@ public class AssignmentStatement extends Statement
 			sb.append(_targetList.get(i).toString());
 		}
 		sb.append(" = ");
-		sb.append(_source.toString());
+		if (_source instanceof StringIdentifier) {
+			sb.append("\"");
+			sb.append(_source.toString());
+			sb.append("\"");
+		} else {
+			sb.append(_source.toString());
+		}
 		sb.append(";");
 		
 		return sb.toString();

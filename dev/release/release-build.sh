@@ -256,9 +256,9 @@ if [[ "$RELEASE_PREPARE" == "true" ]]; then
 
         cd svn-release-staging/$RELEASE_VERSION-$RELEASE_RC/
         rm -f *.asc
-        for i in *.jar *.zip *.gz; do gpg --output $i.asc --detach-sig --armor $i; done
+        for i in *.jar *.zip *.gz *.tgz; do gpg --output $i.asc --detach-sig --armor $i; done
         rm -f *.md5
-        for i in *.jar *.zip *.gz; do openssl md5 -hex $i | sed 's/MD5(\([^)]*\))= \([0-9a-f]*\)/\2 *\1/' > $i.md5; done
+        for i in *.jar *.zip *.gz *.tgz; do openssl md5 -hex $i | sed 's/MD5(\([^)]*\))= \([0-9a-f]*\)/\2 *\1/' > $i.md5; done
 
         cd .. #exit $RELEASE_VERSION-$RELEASE_RC/
 

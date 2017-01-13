@@ -296,7 +296,7 @@ public class LibMatrixDNN {
 			loopedConvBwdFilterIm2ColTime.addAndGet(t2-t1);
 		}
 		if(!temp.isEmptyBlock())
-			elementWiseInPlaceTransposedAddition(partialRetBlock, temp);
+			elementWiseInPlaceAddition(partialRetBlock, temp);
 		return partialRetBlock;
 	}
 	
@@ -877,7 +877,7 @@ public class LibMatrixDNN {
 			}
 			
 			if(type == TaskType.LoopedIm2ColConv2dBwdFilter) {
-				MatrixBlock partialRetBlock = new MatrixBlock(params.K, params.C*params.R*params.S, false);
+				MatrixBlock partialRetBlock = new MatrixBlock(params.C*params.R*params.S, params.K, false);
 				partialRetBlock.allocateDenseBlock(true);
 				partialRetBlocks.add(partialRetBlock);
 			}
@@ -923,7 +923,7 @@ public class LibMatrixDNN {
 				}
 				if(type == TaskType.LoopedIm2ColConv2dBwdFilter) {
 					for(MatrixBlock partialRetBlock : partialRetBlocks) {
-						elementWiseInPlaceAddition(params.output, partialRetBlock);
+						elementWiseInPlaceTransposedAddition(params.output, partialRetBlock);
 					}
 				}
 			} catch (InterruptedException e) {
@@ -943,7 +943,7 @@ public class LibMatrixDNN {
 				}
 				if(type == TaskType.LoopedIm2ColConv2dBwdFilter) {
 					for(MatrixBlock partialRetBlock : partialRetBlocks) {
-						elementWiseInPlaceAddition(params.output, partialRetBlock);
+						elementWiseInPlaceTransposedAddition(params.output, partialRetBlock);
 					}
 				}
 			} catch (Exception e) {

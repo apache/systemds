@@ -101,8 +101,9 @@ public class Statistics
 	private static AtomicLong lTotalLix = new AtomicLong(0);
 	private static AtomicLong lTotalLixUIP = new AtomicLong(0);
 	
+	public static AtomicLong numNativeCalls = new AtomicLong(0);
+	
 	public static long cudaInitTime = 0;
-	public static long cudaLibrariesInitTime = 0;
 	public static AtomicLong cudaConversionTime = new AtomicLong(0);	// Measures time spent in converting between sparse block types
 	public static AtomicLong cudaConversionCount = new AtomicLong(0);
 	public static AtomicLong cudaAllocTime = new AtomicLong(0);
@@ -362,7 +363,6 @@ public class Statistics
 		resetCPHeavyHitters();
 		
 		cudaInitTime = 0;
-		cudaLibrariesInitTime = 0;
 		cudaAllocTime.set(0);
 		cudaDeAllocTime.set(0);
 		cudaToDevTime.set(0);
@@ -611,9 +611,12 @@ public class Statistics
 			sb.append("Number of executed MR Jobs:\t" + getNoOfExecutedMRJobs() + ".\n");	
 		}
 		
+		if(DMLScript.ENABLE_NATIVE_BLAS && DMLScript.STATISTICS ) {
+			sb.append("Number of Native Calls:\t\t" + numNativeCalls.get() + "\n");
+		}
+		
 		if( DMLScript.USE_ACCELERATOR && DMLScript.STATISTICS ) {
-			sb.append("CUDA/CuLibraries init time:\t" + String.format("%.3f", cudaInitTime*1e-9) + "/"
-					+ String.format("%.3f", cudaLibrariesInitTime*1e-9) + " sec.\n");
+			sb.append("CUDA init time:\t" + String.format("%.3f", cudaInitTime*1e-9) + " sec.\n");
 			sb.append("Number of executed GPU inst:\t" + getNoOfExecutedGPUInst() + ".\n");
 			sb.append("GPU mem tx time (alloc/dealloc/conversion/toDev/fromDev):\t" 
 					+ String.format("%.3f", cudaAllocTime.get()*1e-9) + "/"

@@ -194,4 +194,3 @@ public class Conv2DTest extends AutomatedTestBase
 		}
 	}
 }
-

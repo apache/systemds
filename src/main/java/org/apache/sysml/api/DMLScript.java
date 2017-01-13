@@ -66,6 +66,7 @@ import org.apache.sysml.parser.LanguageException;
 import org.apache.sysml.parser.ParseException;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLScriptException;
+import org.apache.sysml.runtime.controlprogram.CPPUtil;
 import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.caching.CacheStatistics;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
@@ -129,6 +130,9 @@ public class DMLScript
 	public static boolean DISABLE_SPARSE = false;
 	public static boolean DISABLE_CACHING = false;
 	// ------------------------------------------------------------------------
+	// Native BLAS is enabled by default and we fall back to Java BLAS whenever the library is not available 
+	// or whenever operation is not supported (eg: sparse matrix multiplication). 
+	public static final boolean ENABLE_NATIVE_BLAS = true;
 	
 	// flag that indicates whether or not to suppress any prints to stdout
 	public static boolean _suppressPrint2Stdout = false;
@@ -148,8 +152,6 @@ public class DMLScript
 			//+ "   -s: <filename> will be interpreted as a DML script string \n"
 			+ "   -python: (optional) parses Python-like DML\n"
 			+ "   -debug: (optional) run in debug mode\n"
-			+ "   -gpu: <flags> (optional) use acceleration whenever possible. Current version only supports CUDA.\n"
-			+ "			Supported <flags> for this mode is force=(true|false)\n"
 			// Later add optional flags to indicate optimizations turned on or off. Currently they are turned off.
 			//+ "   -debug: <flags> (optional) run in debug mode\n"
 			//+ "			Optional <flags> that is supported for this mode is optimize=(on|off)\n"
@@ -269,7 +271,7 @@ public class DMLScript
 		
 		//parse arguments and set execution properties
 		RUNTIME_PLATFORM oldrtplatform = rtplatform; //keep old rtplatform
-		ExplainType oldexplain = EXPLAIN; //keep old explain
+		ExplainType oldexplain = EXPLAIN; //keep old explain	
 		
 		// Reset global flags to avoid errors in test suite
 		ENABLE_DEBUG_MODE = false;
@@ -305,23 +307,6 @@ public class DMLScript
 				else if( args[i].equalsIgnoreCase("-debug") ) {					
 					ENABLE_DEBUG_MODE = true;
 				}
-				else if( args[i].equalsIgnoreCase("-gpu") ) {	
-					USE_ACCELERATOR = true;
-					if( args.length > (i+1) && !args[i+1].startsWith("-") ) {
-						String flag = args[++i];
-						if(flag.startsWith("force=")) {
-							String [] flagOptions = flag.split("=");
-							if(flagOptions.length == 2)
-								FORCE_ACCELERATOR = Boolean.parseBoolean(flagOptions[1]);
-							else
-								throw new DMLRuntimeException("Unsupported \"force\" option for -gpu:" + flag);
-						}
-						else {
-							throw new DMLRuntimeException("Unsupported flag for -gpu:" + flag);
-						}
-					}
-					GPUContext.createGPUContext(); // Set GPU memory budget
-				}
 				else if( args[i].equalsIgnoreCase("-python") ) {
 					parsePyDML = true;
 				}
@@ -336,6 +321,10 @@ public class DMLScript
 					return false;
 				}
 			}
+			
+			USE_ACCELERATOR = CPPUtil.isGPUAvailable();
+			if(USE_ACCELERATOR)
+				GPUContext.createGPUContext(); // Set GPU memory budget
 			
 			//set log level
 			if (!ENABLE_DEBUG_MODE)
@@ -381,6 +370,11 @@ public class DMLScript
 		}
 		
 		return true;
+	}
+	
+	public static boolean isNativeEnabled(int numThreads) {
+		// This logic disables native calls in parallel construct. For example: parfor.
+		return ENABLE_NATIVE_BLAS && CPPUtil.isLibraryLoaded() && (numThreads <= 0 || numThreads >= CPPUtil.maxNumThreads); 
 	}
 	
 	///////////////////////////////

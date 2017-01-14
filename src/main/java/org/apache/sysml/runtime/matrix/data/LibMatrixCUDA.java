@@ -1332,7 +1332,8 @@ public class LibMatrixCUDA {
 	 */
 	private static int[] getKernelParamsForReduceByRow(int rows, int cols) throws DMLRuntimeException {
 		final int WARP_SIZE = getWarpSize();
-		int threads = Math.min(cols, WARP_SIZE);
+		final int MAX_THREADS = getMaxThreads();
+		int threads = (cols < MAX_THREADS *2) ? nextPow2((cols + 1)/ 2) : MAX_THREADS;
 		int blocks = rows;
 		int sharedMemSize = threads * Sizeof.DOUBLE;
 		if (threads <= WARP_SIZE){

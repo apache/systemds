@@ -643,7 +643,7 @@ public class JCudaObject extends GPUObject {
 			if(numElemToAllocate == -1 && LibMatrixCUDA.isInSparseFormat(mat)) {
 				setSparseMatrixCudaPointer(CSRPointer.allocateEmpty(mat.getNnz(), mat.getNumRows()));
 				numBytes = CSRPointer.estimateSize(mat.getNnz(), mat.getNumRows());
-				JCudaContext.availableNumBytesWithoutUtilFactor.addAndGet(-numBytes);
+				JCudaContext.deviceMemBytes.addAndGet(-numBytes);
 				isInSparseFormat = true;
 				//throw new DMLRuntimeException("Sparse format not implemented");
 			} else if(numElemToAllocate == -1) {
@@ -651,7 +651,7 @@ public class JCudaObject extends GPUObject {
 				setDenseMatrixCudaPointer(new Pointer());
 				numBytes = mat.getNumRows()*getDoubleSizeOf(mat.getNumColumns());
 				cudaMalloc(jcudaDenseMatrixPtr, numBytes);
-				JCudaContext.availableNumBytesWithoutUtilFactor.addAndGet(-numBytes);
+				JCudaContext.deviceMemBytes.addAndGet(-numBytes);
 			}
 			else {
 				// Called for dense output
@@ -660,7 +660,7 @@ public class JCudaObject extends GPUObject {
 				if(numElemToAllocate <= 0 || numBytes <= 0)
 					throw new DMLRuntimeException("Cannot allocate dense matrix object with " + numElemToAllocate + " elements and size " + numBytes);
 				cudaMalloc(jcudaDenseMatrixPtr,  numBytes);
-				JCudaContext.availableNumBytesWithoutUtilFactor.addAndGet(-numBytes);
+				JCudaContext.deviceMemBytes.addAndGet(-numBytes);
 			}
 
 			Statistics.cudaAllocTime.addAndGet(System.nanoTime()-start);
@@ -712,7 +712,7 @@ public class JCudaObject extends GPUObject {
 	public void setDeviceModify(long numBytes) {
 		this.numLocks.addAndGet(1);
 		this.numBytes = numBytes;
-		JCudaContext.availableNumBytesWithoutUtilFactor.addAndGet(-numBytes);
+		((JCudaContext)GPUContext.currContext).getAndAddAvailableMemory(-numBytes);
 	}
 
 	@Override
@@ -720,14 +720,14 @@ public class JCudaObject extends GPUObject {
 		if(jcudaDenseMatrixPtr != null) {
 			long start = System.nanoTime();
 			cudaFree(jcudaDenseMatrixPtr);
-			JCudaContext.availableNumBytesWithoutUtilFactor.addAndGet(numBytes);
+			((JCudaContext)GPUContext.currContext).getAndAddAvailableMemory(numBytes);
 			Statistics.cudaDeAllocTime.addAndGet(System.nanoTime()-start);
 			Statistics.cudaDeAllocCount.addAndGet(1);
 		}
 		if (jcudaSparseMatrixPtr != null) {
 			long start = System.nanoTime();
 			jcudaSparseMatrixPtr.deallocate();
-			JCudaContext.availableNumBytesWithoutUtilFactor.addAndGet(numBytes);
+			((JCudaContext)GPUContext.currContext).getAndAddAvailableMemory(numBytes);
 			Statistics.cudaDeAllocTime.addAndGet(System.nanoTime()-start);
 			Statistics.cudaDeAllocCount.addAndGet(1);
 		}

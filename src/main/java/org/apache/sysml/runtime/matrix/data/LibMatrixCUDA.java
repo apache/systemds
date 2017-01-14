@@ -65,9 +65,7 @@ import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.functionobjects.*;
 import org.apache.sysml.runtime.instructions.cp.DoubleObject;
-import org.apache.sysml.runtime.instructions.gpu.context.ExecutionConfig;
-import org.apache.sysml.runtime.instructions.gpu.context.JCudaKernels;
-import org.apache.sysml.runtime.instructions.gpu.context.JCudaObject;
+import org.apache.sysml.runtime.instructions.gpu.context.*;
 import org.apache.sysml.runtime.instructions.gpu.context.JCudaObject.CSRPointer;
 import org.apache.sysml.runtime.matrix.operators.*;
 import org.apache.sysml.utils.Statistics;
@@ -90,15 +88,68 @@ import jcuda.jcusparse.cusparseHandle;
 public class LibMatrixCUDA {
 
 	// Assume Compute Capability 3.0
-	public static final int MAX_THREADS = 1024;				// For compute capability > 3.0
-	public static final int MAX_BLOCKS = 2147483647;	// 2^31 - 1 For compute capability > 3.0
+	// MAX BLOCKS is 2^31 - 1 For compute capability > 3.0
+	// MAX_THREADS is 1024 For compute capability > 3.0
+	private static int _MAX_THREADS = -1;
+	private static int _MAX_BLOCKS  = -1;
+	private static int _WARP_SIZE 	= -1;
+
+	/**
+	 * Utility function to get maximum number of threads supported by the active CUDA device.
+	 * This is put into a singleton style method because the GPUContext is not fully initialized when
+	 * the LibMatrixCUDA class is loaded. If the {@link GPUContext#getGPUContext()} is invoked in a
+	 * static block in this class, it will access the {@link JCudaContext} instance when it is not
+	 * properly initialized. Due to the proper checks in place, a deadlock occurs.
+	 * @return max threads
+	 * @throws DMLRuntimeException if exception occurs
+	 */
+	static int getMaxThreads() throws DMLRuntimeException{
+		if (_MAX_THREADS == -1){
+			_MAX_THREADS = JCudaContext.getMaxThreadsPerBlock();
+		}
+		return _MAX_THREADS;
+	}
+
+	/**
+	 * Utility function to get maximum number of blocks supported by the active CUDA device.
+	 * This is put into a singleton style method because the GPUContext is not fully initialized when
+	 * the LibMatrixCUDA class is loaded. If the {@link GPUContext#getGPUContext()} is invoked in a
+	 * static block in this class, it will access the {@link JCudaContext} instance when it is not
+	 * properly initialized. Due to the proper checks in place, a deadlock occurs.
+	 * @return max blocks
+	 * @throws DMLRuntimeException if exception occurs
+	 */
+	static int getMaxBlocks() throws DMLRuntimeException{
+		if (_MAX_BLOCKS == -1){
+			_MAX_BLOCKS = JCudaContext.getMaxBlocks();
+		}
+		return _MAX_BLOCKS;
+	}
+
+	/**
+	 * Utility function to get the warp size supported by the active CUDA device.
+	 * This is put into a singleton style method because the GPUContext is not fully initialized when
+	 * the LibMatrixCUDA class is loaded. If the {@link GPUContext#getGPUContext()} is invoked in a
+	 * static block in this class, it will access the {@link JCudaContext} instance when it is not
+	 * properly initialized. Due to the proper checks in place, a deadlock occurs.
+	 * @return warp size
+	 * @throws DMLRuntimeException if exception occurs
+	 */
+	static int getWarpSize() throws DMLRuntimeException {
+		if (_WARP_SIZE == -1) {
+			_WARP_SIZE = JCudaContext.getWarpSize();
+		}
+		return _WARP_SIZE;
+	}
+
+
 
 	public static cudnnHandle cudnnHandle;
 	public static cublasHandle cublasHandle;
 	public static cusparseHandle cusparseHandle;
 	public static JCudaKernels kernels; // Used to launch custom kernels
 
-    private static final Log LOG = LogFactory.getLog(LibMatrixCUDA.class.getName());
+	private static final Log LOG = LogFactory.getLog(LibMatrixCUDA.class.getName());
 
 	private static int CONVOLUTION_PREFERENCE = cudnnConvolutionFwdPreference.CUDNN_CONVOLUTION_FWD_NO_WORKSPACE;
 
@@ -240,7 +291,7 @@ public class LibMatrixCUDA {
 
 	/**
 	 * This method computes the backpropagation errors for previous layer of relu operation
-	 * 
+	 *
 	 * @param input input image
 	 * @param dout  next layer error propogation
 	 * @param outputBlock output
@@ -262,13 +313,13 @@ public class LibMatrixCUDA {
 				ExecutionConfig.getConfigForSimpleMatrixOperations((int)rows, (int)cols),
 				imagePointer, doutPointer, outputPointer, (int)rows, (int)cols);
 	}
-	
+
 	/**
 	 * Performs the operation corresponding to the DML script:
-	 * ones = matrix(1, rows=1, cols=Hout*Wout)		
+	 * ones = matrix(1, rows=1, cols=Hout*Wout)
 	 * output = input + matrix(bias %*% ones, rows=1, cols=F*Hout*Wout)
 	 * This operation is often followed by conv2d and hence we have introduced bias_add(input, bias) built-in function
-	 * 
+	 *
 	 * @param input input image
 	 * @param bias bias
 	 * @param outputBlock output
@@ -299,8 +350,8 @@ public class LibMatrixCUDA {
 
 	/**
 	 * This method computes the backpropogation errors for filter of convolution operation
-	 * 
-	 * @param image input image 
+	 *
+	 * @param image input image
 	 * @param dout errors from next layer
 	 * @param outputBlock  output errors
 	 * @param N number of images
@@ -312,7 +363,7 @@ public class LibMatrixCUDA {
 	 * @param S filter width
 	 * @param pad_h pad height
 	 * @param pad_w pad width
-	 * @param stride_h stride height 
+	 * @param stride_h stride height
 	 * @param stride_w stride width
 	 * @param P output activation height
 	 * @param Q output activation width
@@ -1063,11 +1114,11 @@ public class LibMatrixCUDA {
 						break;
 					}
 					case REDUCTION_COL : {	// The names are a bit misleading, REDUCTION_COL refers to the direction (reduce all elements in a column)
-						reduceRow("reduce_row", in, out, rlen, clen);
+						reduceRow("reduce_row_sum", in, out, rlen, clen);
 						break;
 					}
 					case REDUCTION_ROW : {
-						reduceCol("reduce_col", in, out, rlen, clen);
+						reduceCol("reduce_col_sum", in, out, rlen, clen);
 						break;
 					}
 
@@ -1101,7 +1152,7 @@ public class LibMatrixCUDA {
 					default:
 						throw new DMLRuntimeException("Internal Error - Unsupported reduction direction for mean");
 				}
-				// break;
+				break;
 			}
 			case OP_VARIANCE : {
 				switch(reductionDirection) {
@@ -1130,13 +1181,18 @@ public class LibMatrixCUDA {
 						ec.setScalarOutput(output, new DoubleObject(result));
 						break;
 					}
-					case REDUCTION_COL:
-					case REDUCTION_ROW:
-						throw new DMLRuntimeException("Internal Error - All, Row & Column max of matrix not implemented yet for GPU ");
+					case REDUCTION_COL: {
+						reduceRow("reduce_row_max", in, out, rlen, clen);
+						break;
+					}
+					case REDUCTION_ROW: {
+						reduceCol("reduce_col_max", in, out, rlen, clen);
+						break;
+					}
 					default:
 						throw new DMLRuntimeException("Internal Error - Unsupported reduction direction for max");
 				}
-				// break;
+				break;
 			}
 			case OP_MIN :{
 				switch(reductionDirection) {
@@ -1145,13 +1201,18 @@ public class LibMatrixCUDA {
 						ec.setScalarOutput(output, new DoubleObject(result));
 						break;
 					}
-					case REDUCTION_COL:
-					case REDUCTION_ROW:
-						throw new DMLRuntimeException("Internal Error - All, Row & Column min of matrix not implemented yet for GPU ");
+					case REDUCTION_COL: {
+						reduceRow("reduce_row_min", in, out, rlen, clen);
+						break;
+					}
+					case REDUCTION_ROW: {
+						reduceCol("reduce_col_min", in, out, rlen, clen);
+						break;
+					}
 					default:
 						throw new DMLRuntimeException("Internal Error - Unsupported reduction direction for min");
 				}
-				// break;
+				break;
 			}
 			case OP_MAXINDEX : {
 				switch(reductionDirection) {
@@ -1237,7 +1298,7 @@ public class LibMatrixCUDA {
 	private static void reduceCol(String kernelFunction, Pointer in, Pointer out, int rows, int cols) throws DMLRuntimeException {
 		int[] tmp = getKernelParamsForReduceByCol(rows, cols);
 		int blocks = tmp[0], threads = tmp[1], sharedMem = tmp[2];
-		kernels.launchKernel("reduce_col", new ExecutionConfig(blocks, threads, sharedMem),
+		kernels.launchKernel(kernelFunction, new ExecutionConfig(blocks, threads, sharedMem),
 						in, out, rows, cols);
 		cudaDeviceSynchronize();
 	}
@@ -1247,14 +1308,17 @@ public class LibMatrixCUDA {
 	 * @param n size of input array
 	 * @return integer array containing {blocks, threads, shared memory}
 	 */
-	private static int[] getKernelParamsForReduceAll(int n){
-		int threads = (n < MAX_THREADS*2) ? nextPow2((n + 1)/ 2) : MAX_THREADS;
+	private static int[] getKernelParamsForReduceAll(int n) throws DMLRuntimeException{
+		final int MAX_THREADS = getMaxThreads();
+		final int MAX_BLOCKS = getMaxBlocks();
+		final int WARP_SIZE = getWarpSize();
+		int threads = (n < MAX_THREADS *2) ? nextPow2((n + 1)/ 2) : MAX_THREADS;
 
 		int blocks = (n + (threads * 2 - 1)) / (threads * 2);
 		blocks = Math.min(MAX_BLOCKS, blocks);
 
 		int sharedMemSize = threads * Sizeof.DOUBLE;
-		if (threads <= 32){
+		if (threads <= WARP_SIZE){
 			sharedMemSize *= 2;
 		}
 		return new int[] {blocks, threads, sharedMemSize};
@@ -1266,23 +1330,27 @@ public class LibMatrixCUDA {
 	 * @param cols number of columns in input matrix
 	 * @return integer array containing {blocks, threads, shared memory}
 	 */
-	private static int[] getKernelParamsForReduceByRow(int rows, int cols) {
-		final int WARP_SIZE = 32;
-		int threads = Math.min(cols, WARP_SIZE);
+	private static int[] getKernelParamsForReduceByRow(int rows, int cols) throws DMLRuntimeException {
+		final int WARP_SIZE = getWarpSize();
+		final int MAX_THREADS = getMaxThreads();
+		int threads = (cols < MAX_THREADS *2) ? nextPow2((cols + 1)/ 2) : MAX_THREADS;
 		int blocks = rows;
 		int sharedMemSize = threads * Sizeof.DOUBLE;
-		if (threads <= 32){
+		if (threads <= WARP_SIZE){
 			sharedMemSize *=2;
 		}
 		return new int[] {blocks, threads, sharedMemSize};
 	}
 
-	private static int[] getKernelParamsForReduceByCol(int rows, int cols) {
+	private static int[] getKernelParamsForReduceByCol(int rows, int cols) throws DMLRuntimeException {
+		final int MAX_THREADS = getMaxThreads();
+		final int MAX_BLOCKS = getMaxBlocks();
+		final int WARP_SIZE = getWarpSize();
 		int threads = Math.min(cols, MAX_THREADS);
-		int blocks = cols/1024;
-		if (cols % 1024 != 0) blocks++;
+		int blocks = cols/MAX_THREADS;
+		if (cols % MAX_THREADS != 0) blocks++;
 		int sharedMemSize = threads * Sizeof.DOUBLE;
-		if (threads <= 32){
+		if (threads <= WARP_SIZE){
 			sharedMemSize *=2;
 		}
 		return new int[] {blocks, threads, sharedMemSize};
@@ -1307,8 +1375,8 @@ public class LibMatrixCUDA {
 
 	/**
 	 * This method computes the backpropogation errors for previous layer of convolution operation
-	 * 
-	 * @param filter filter used in conv2d 
+	 *
+	 * @param filter filter used in conv2d
 	 * @param dout errors from next layer
 	 * @param output  output errors
 	 * @param N number of images
@@ -1320,7 +1388,7 @@ public class LibMatrixCUDA {
 	 * @param S filter width
 	 * @param pad_h pad height
 	 * @param pad_w pad width
-	 * @param stride_h stride height 
+	 * @param stride_h stride height
 	 * @param stride_w stride width
 	 * @param P output activation height
 	 * @param Q output activation width
@@ -1464,7 +1532,7 @@ public class LibMatrixCUDA {
 	/**
 	 * Performs maxpoolingBackward on GPU by exploiting cudnnPoolingBackward(...)
 	 * This method computes the backpropogation errors for previous layer of maxpooling operation
-	 * 
+	 *
 	 * @param image image as matrix object
 	 * @param dout			delta matrix, output of previous layer
 	 * @param outputBlock output matrix
@@ -1831,7 +1899,7 @@ public class LibMatrixCUDA {
 
 	/**
 	 * Performs daxpy operation
-	 * 
+	 *
 	 * @param ec execution context
 	 * @param in1 input matrix 1
 	 * @param in2 input matrix 2

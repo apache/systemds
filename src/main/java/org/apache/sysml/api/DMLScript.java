@@ -320,7 +320,7 @@ public class DMLScript
 							throw new DMLRuntimeException("Unsupported flag for -gpu:" + flag);
 						}
 					}
-					GPUContext.createGPUContext(); // Set GPU memory budget
+					GPUContext.getGPUContext(); // creates the singleton GPU context object. Return value ignored.
 				}
 				else if( args[i].equalsIgnoreCase("-python") ) {
 					parsePyDML = true;

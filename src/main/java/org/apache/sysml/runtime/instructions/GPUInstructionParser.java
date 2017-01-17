@@ -73,12 +73,13 @@ public class GPUInstructionParser  extends InstructionParser
 		String2GPUInstructionType.put( "sel+"  , GPUINSTRUCTION_TYPE.BuiltinUnary);
 
 		// Aggregate Unary
-		String2GPUInstructionType.put( "ua+"	 , GPUINSTRUCTION_TYPE.AggregateUnary);		// Sum
-		String2GPUInstructionType.put( "uak+"	 , GPUINSTRUCTION_TYPE.AggregateUnary);		// Sum
-		String2GPUInstructionType.put( "uar+"	 , GPUINSTRUCTION_TYPE.AggregateUnary);		// Row Sum
+		String2GPUInstructionType.put( "ua+"	 	 , GPUINSTRUCTION_TYPE.AggregateUnary);	// Sum
+		String2GPUInstructionType.put( "uak+"	   , GPUINSTRUCTION_TYPE.AggregateUnary);	// Sum
+		String2GPUInstructionType.put( "uar+"		 , GPUINSTRUCTION_TYPE.AggregateUnary);	// Row Sum
 		String2GPUInstructionType.put( "uark+"	 , GPUINSTRUCTION_TYPE.AggregateUnary);	// Row Sum
-		String2GPUInstructionType.put( "uac+"	 , GPUINSTRUCTION_TYPE.AggregateUnary);		// Col Sum
+		String2GPUInstructionType.put( "uac+"	 	 , GPUINSTRUCTION_TYPE.AggregateUnary);	// Col Sum
 		String2GPUInstructionType.put( "uack+"	 , GPUINSTRUCTION_TYPE.AggregateUnary);	// Col Sum
+		String2GPUInstructionType.put( "ua*"	 	 , GPUINSTRUCTION_TYPE.AggregateUnary);	// Multiplication
 		String2GPUInstructionType.put( "uamean"	 , GPUINSTRUCTION_TYPE.AggregateUnary);	// Mean
 		String2GPUInstructionType.put( "uarmean" , GPUINSTRUCTION_TYPE.AggregateUnary);	// Row Mean
 		String2GPUInstructionType.put( "uacmean" , GPUINSTRUCTION_TYPE.AggregateUnary);	// Col Mean
@@ -88,6 +89,9 @@ public class GPUInstructionParser  extends InstructionParser
 		String2GPUInstructionType.put( "uamin"	 , GPUINSTRUCTION_TYPE.AggregateUnary);	// Min
 		String2GPUInstructionType.put( "uarmin"	 , GPUINSTRUCTION_TYPE.AggregateUnary);	// Row Min
 		String2GPUInstructionType.put( "uacmin"	 , GPUINSTRUCTION_TYPE.AggregateUnary);	// Col Min
+		String2GPUInstructionType.put( "uasqk+"	 , GPUINSTRUCTION_TYPE.AggregateUnary);	// Sum of Squares
+		String2GPUInstructionType.put( "uarsqk+" , GPUINSTRUCTION_TYPE.AggregateUnary);	// Row Sum of Squares
+		String2GPUInstructionType.put( "uacsqk+" , GPUINSTRUCTION_TYPE.AggregateUnary);	// Col Sum of Squares
 
 	}
 	

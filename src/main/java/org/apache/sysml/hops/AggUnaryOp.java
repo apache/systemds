@@ -146,10 +146,12 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 					int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 					if(DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR || getMemEstimate() < OptimizerUtils.GPU_MEMORY_BUDGET)) {
 						// Only implemented methods for GPU
-						if ((_op == AggOp.SUM && (_direction == Direction.RowCol || _direction == Direction.Row || _direction == Direction.Col))
-										|| (_op == AggOp.MAX && (_direction == Direction.RowCol || _direction == Direction.Row || _direction == Direction.Col))
-										|| (_op == AggOp.MIN && (_direction == Direction.RowCol || _direction == Direction.Row || _direction == Direction.Col))
-										|| (_op == AggOp.MEAN && (_direction == Direction.RowCol))){
+						if (			 (_op == AggOp.SUM 			&& (_direction == Direction.RowCol || _direction == Direction.Row || _direction == Direction.Col))
+										|| (_op == AggOp.SUM_SQ 	&& (_direction == Direction.RowCol || _direction == Direction.Row || _direction == Direction.Col))
+										|| (_op == AggOp.MAX 			&& (_direction == Direction.RowCol || _direction == Direction.Row || _direction == Direction.Col))
+										|| (_op == AggOp.MIN 			&& (_direction == Direction.RowCol || _direction == Direction.Row || _direction == Direction.Col))
+										|| (_op == AggOp.MEAN 		&& (_direction == Direction.RowCol || _direction == Direction.Row || _direction == Direction.Col))
+										|| (_op == AggOp.PROD 		&& (_direction == Direction.RowCol))){
 							et = ExecType.GPU;
 							k = 1;
 						}

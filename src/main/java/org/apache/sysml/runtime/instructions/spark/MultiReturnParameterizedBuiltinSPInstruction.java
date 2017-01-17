@@ -210,7 +210,7 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 		}
 		
 		@Override
-		public Iterable<Tuple2<Integer, Object>> call(Iterator<Tuple2<Long, FrameBlock>> iter)
+		public Iterator<Tuple2<Integer, Object>> call(Iterator<Tuple2<Long, FrameBlock>> iter)
 			throws Exception 
 		{
 			//build meta data (e.g., recode maps)
@@ -226,7 +226,7 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 					ret.add(new Tuple2<Integer,Object>(e1.getKey(), token));
 			_raEncoder.getCPRecodeMapsPartial().clear();
 		
-			return ret;
+			return ret.iterator();
 		}
 	}
 	
@@ -249,7 +249,7 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 		}
 		
 		@Override
-		public Iterable<String> call(Tuple2<Integer, Iterable<Object>> arg0)
+		public Iterator<String> call(Tuple2<Integer, Iterable<Object>> arg0)
 			throws Exception 
 		{
 			String colID = String.valueOf(arg0._1());
@@ -271,7 +271,7 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 			}
 			_accMax.add(rowID-1);
 			
-			return ret;
+			return ret.iterator();
 		}
 	}
 
@@ -306,7 +306,7 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 		}
 		
 		@Override
-		public Iterable<Tuple2<Integer, ColumnMetadata>> call(Iterator<Tuple2<Long, FrameBlock>> iter)
+		public Iterator<Tuple2<Integer, ColumnMetadata>> call(Iterator<Tuple2<Long, FrameBlock>> iter)
 			throws Exception 
 		{
 			//build meta data (e.g., histograms and means)
@@ -335,7 +335,7 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 				}
 			}
 			
-			return ret;
+			return ret.iterator();
 		}
 	}
 
@@ -350,7 +350,7 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 		}
 
 		@Override
-		public Iterable<String> call(Tuple2<Integer, Iterable<ColumnMetadata>> arg0)
+		public Iterator<String> call(Tuple2<Integer, Iterable<ColumnMetadata>> arg0)
 				throws Exception 
 		{
 			int colix = arg0._1();
@@ -392,7 +392,7 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 					ret.add("-2 " + colix + " " + iter.next().getMvValue());
 			}
 			
-			return ret;
+			return ret.iterator();
 		}
 	}
 }

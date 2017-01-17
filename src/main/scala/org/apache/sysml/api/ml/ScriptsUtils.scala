@@ -27,7 +27,7 @@ import org.apache.sysml.runtime.DMLRuntimeException
 object ScriptsUtils {
   var systemmlHome = System.getenv("SYSTEMML_HOME")
 		  
-  type SparkDataType = org.apache.spark.sql.DataFrame // org.apache.spark.sql.Dataset[_]
+  type SparkDataType = org.apache.spark.sql.Dataset[_] // org.apache.spark.sql.DataFrame for Spark 1.x
 
   /**
    * set SystemML home

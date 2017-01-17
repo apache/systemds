@@ -20,6 +20,7 @@
 package org.apache.sysml.runtime.instructions.spark;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
@@ -258,7 +259,7 @@ public class TernarySPInstruction extends ComputationSPInstruction
 		}
 
 		@Override
-		public Iterable<Tuple2<MatrixIndexes, Double>> call(Tuple2<MatrixIndexes, MatrixBlock> arg0) 
+		public Iterator<Tuple2<MatrixIndexes, Double>> call(Tuple2<MatrixIndexes, MatrixBlock> arg0) 
 			throws Exception 
 		{
 			MatrixIndexes ix = arg0._1();
@@ -279,7 +280,7 @@ public class TernarySPInstruction extends ComputationSPInstruction
 					retVal.add(new Tuple2<MatrixIndexes,Double>(p.getKey(), p.getValue()));
 			}
 			
-			return retVal;
+			return retVal.iterator();
 		}
 	}
 	
@@ -460,7 +461,7 @@ public class TernarySPInstruction extends ComputationSPInstruction
 		
 		@SuppressWarnings("deprecation")
 		@Override
-		public Iterable<Tuple2<MatrixIndexes, Double>> call(CTableMap ctableMap)
+		public Iterator<Tuple2<MatrixIndexes, Double>> call(CTableMap ctableMap)
 				throws Exception {
 			ArrayList<Tuple2<MatrixIndexes, Double>> retVal = new ArrayList<Tuple2<MatrixIndexes, Double>>();
 			
@@ -472,7 +473,7 @@ public class TernarySPInstruction extends ComputationSPInstruction
 				// retVal.add(new Tuple2<MatrixIndexes, MatrixCell>(blockIndexes, cell));
 				retVal.add(new Tuple2<MatrixIndexes, Double>(new MatrixIndexes(i, j), v));
 			}
-			return retVal;
+			return retVal.iterator();
 		}
 		
 	}

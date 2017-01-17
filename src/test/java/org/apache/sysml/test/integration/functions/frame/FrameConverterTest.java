@@ -30,7 +30,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.sql.DataFrame;
+import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SQLContext;
 import org.apache.spark.sql.types.StructType;
@@ -96,6 +96,19 @@ public class FrameConverterTest extends AutomatedTestBase
 	private static ValueType[] schemaMixedLarge = new ValueType[schemaMixedLargeList.size()];
 	static {
 		schemaMixedLarge = (ValueType[]) schemaMixedLargeList.toArray(schemaMixedLarge);
+	}
+	
+	private static List<ValueType> schemaMixedLargeListDFrame = null;
+	static {
+		schemaMixedLargeListDFrame = new ArrayList<ValueType>(schemaMixedLargeListStr.subList(0, 300));
+		schemaMixedLargeListDFrame.addAll(schemaMixedLargeListDble.subList(0, 300));
+		schemaMixedLargeListDFrame.addAll(schemaMixedLargeListInt.subList(0, 300));
+		schemaMixedLargeListDFrame.addAll(schemaMixedLargeListBool.subList(0, 300));
+	}
+	
+	private static ValueType[] schemaMixedLargeDFrame = new ValueType[schemaMixedLargeListDFrame.size()];
+	static {
+		schemaMixedLargeDFrame = (ValueType[]) schemaMixedLargeListDFrame.toArray(schemaMixedLargeDFrame);
 	}
 	
 	private enum ConvType {
@@ -189,14 +202,16 @@ public class FrameConverterTest extends AutomatedTestBase
 	
 	@Test
 	public void testFrameMixedDFrameBinSpark()  {
-		runFrameConverterTest(schemaMixedLarge, ConvType.DFRM2BIN);
+		// TODO https://issues.apache.org/jira/browse/SPARK-16845
+		runFrameConverterTest(schemaMixedLargeDFrame, ConvType.DFRM2BIN);
 	}
-		
+	
 	@Test
 	public void testFrameMixedBinDFrameSpark()  {
-		runFrameConverterTest(schemaMixedLarge, ConvType.BIN2DFRM);
+		// TODO https://issues.apache.org/jira/browse/SPARK-16845
+		runFrameConverterTest(schemaMixedLargeDFrame, ConvType.BIN2DFRM);
 	}
-		
+	
 	/**
 	 * 
 	 * @param schema
@@ -520,7 +535,7 @@ public class FrameConverterTest extends AutomatedTestBase
 				SQLContext sqlContext = new SQLContext(sc);
 				StructType dfSchema = FrameRDDConverterUtils.convertFrameSchemaToDFSchema(lschema, false);
 				JavaRDD<Row> rowRDD = FrameRDDConverterUtils.csvToRowRDD(sc, fnameIn, separator, lschema);
-				DataFrame df = sqlContext.createDataFrame(rowRDD, dfSchema);
+				Dataset<Row> df = sqlContext.createDataFrame(rowRDD, dfSchema);
 				
 				JavaPairRDD<LongWritable, FrameBlock> rddOut = FrameRDDConverterUtils
 						.dataFrameToBinaryBlock(sc, df, mc, false/*, columns*/)
@@ -534,7 +549,7 @@ public class FrameConverterTest extends AutomatedTestBase
 				JavaPairRDD<Long, FrameBlock> rddIn = sc
 						.hadoopFile(fnameIn, iinfo.inputFormatClass, LongWritable.class, FrameBlock.class)
 				 		.mapToPair(new LongWritableFrameToLongFrameFunction());
-				DataFrame df = FrameRDDConverterUtils.binaryBlockToDataFrame(new SQLContext(sc), rddIn, mc, lschema);
+				Dataset<Row> df = FrameRDDConverterUtils.binaryBlockToDataFrame(new SQLContext(sc), rddIn, mc, lschema);
 				
 				//Convert back DataFrame to binary block for comparison using original binary to converted DF and back to binary 
 				JavaPairRDD<LongWritable, FrameBlock> rddOut = FrameRDDConverterUtils

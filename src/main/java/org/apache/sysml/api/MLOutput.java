@@ -24,7 +24,8 @@ import java.util.Map;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.sql.DataFrame;
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SQLContext;
 import org.apache.spark.sql.types.StructType;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -91,7 +92,7 @@ public class MLOutput {
 	 * @return the DataFrame
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public DataFrame getDF(SQLContext sqlContext, String varName) throws DMLRuntimeException {
+	public Dataset<Row> getDF(SQLContext sqlContext, String varName) throws DMLRuntimeException {
 		if(sqlContext == null) {
 			throw new DMLRuntimeException("SQLContext is not created.");
 		}
@@ -111,7 +112,7 @@ public class MLOutput {
 	 * @return the DataFrame
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public DataFrame getDF(SQLContext sqlContext, String varName, boolean outputVector) throws DMLRuntimeException {
+	public Dataset<Row> getDF(SQLContext sqlContext, String varName, boolean outputVector) throws DMLRuntimeException {
 		if(sqlContext == null) {
 			throw new DMLRuntimeException("SQLContext is not created.");
 		}
@@ -137,7 +138,7 @@ public class MLOutput {
 	 * @return the DataFrame
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public DataFrame getDF(SQLContext sqlContext, String varName, MatrixCharacteristics mc) 
+	public Dataset<Row> getDF(SQLContext sqlContext, String varName, MatrixCharacteristics mc) 
 		throws DMLRuntimeException 
 	{
 		if(sqlContext == null)
@@ -173,7 +174,7 @@ public class MLOutput {
 		
 	}
 	
-	public DataFrame getDataFrameRDD(String varName, JavaSparkContext jsc) throws DMLRuntimeException {
+	public Dataset<Row> getDataFrameRDD(String varName, JavaSparkContext jsc) throws DMLRuntimeException {
 		JavaPairRDD<Long, FrameBlock> binaryRDD = getFrameBinaryBlockedRDD(varName);
 		MatrixCharacteristics mcIn = getMatrixCharacteristics(varName);
 		return FrameRDDConverterUtils.binaryBlockToDataFrame(new SQLContext(jsc), binaryRDD, mcIn, null);

@@ -23,10 +23,11 @@ import java.util.List;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.rdd.RDD;
-import org.apache.spark.sql.DataFrame;
+import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SQLContext;
-import org.apache.spark.sql.SQLContext.QueryExecution;
+import org.apache.spark.sql.execution.QueryExecution;
+import org.apache.spark.sql.catalyst.encoders.RowEncoder;
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan;
 import org.apache.spark.sql.types.StructType;
 import org.apache.sysml.hops.OptimizerUtils;
@@ -62,26 +63,26 @@ import scala.Tuple2;
  result.write("Result_small.mtx", "text")
  
  */
-public class MLMatrix extends DataFrame {
+public class MLMatrix extends Dataset<Row> {
 	private static final long serialVersionUID = -7005940673916671165L;
 	
 	protected MatrixCharacteristics mc = null;
 	protected MLContext ml = null;
 	
 	protected MLMatrix(SQLContext sqlContext, LogicalPlan logicalPlan, MLContext ml) {
-		super(sqlContext, logicalPlan);
+		super(sqlContext, logicalPlan, RowEncoder.apply(null));
 		this.ml = ml;
 	}
 
 	protected MLMatrix(SQLContext sqlContext, QueryExecution queryExecution, MLContext ml) {
-		super(sqlContext, queryExecution);
+		super(sqlContext.sparkSession(), queryExecution, RowEncoder.apply(null));
 		this.ml = ml;
 	}
 	
 	// Only used internally to set a new MLMatrix after one of matrix operations.
 	// Not to be used externally.
-	protected MLMatrix(DataFrame df, MatrixCharacteristics mc, MLContext ml) throws DMLRuntimeException {
-		super(df.sqlContext(), df.logicalPlan());
+	protected MLMatrix(Dataset<Row> df, MatrixCharacteristics mc, MLContext ml) throws DMLRuntimeException {
+		super(df.sqlContext(), df.logicalPlan(), RowEncoder.apply(null));
 		this.mc = mc;
 		this.ml = ml;
 	}

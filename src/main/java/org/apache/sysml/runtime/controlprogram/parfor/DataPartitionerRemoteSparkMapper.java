@@ -20,12 +20,12 @@
 package org.apache.sysml.runtime.controlprogram.parfor;
 
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.hadoop.io.Writable;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
-
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import org.apache.sysml.runtime.controlprogram.parfor.util.PairWritableBlock;
@@ -73,7 +73,7 @@ public class DataPartitionerRemoteSparkMapper extends ParWorker implements PairF
 
 
 	@Override
-	public Iterable<Tuple2<Long, Writable>> call(Tuple2<MatrixIndexes, MatrixBlock> arg0) 
+	public Iterator<Tuple2<Long, Writable>> call(Tuple2<MatrixIndexes, MatrixBlock> arg0) 
 		throws Exception 
 	{	
 		List<Tuple2<Long, Writable>> ret = new LinkedList<Tuple2<Long, Writable>>();
@@ -148,7 +148,7 @@ public class DataPartitionerRemoteSparkMapper extends ParWorker implements PairF
 				throw new DMLRuntimeException("Unsupported partition format: "+_dpf);
 		}
 		
-		return ret;
+		return ret.iterator();
 	}
 	
 }

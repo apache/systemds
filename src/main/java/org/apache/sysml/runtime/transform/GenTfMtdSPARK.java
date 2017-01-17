@@ -175,7 +175,7 @@ public class GenTfMtdSPARK
 
 		@SuppressWarnings("unchecked")
 		@Override
-		public Iterable<Long> call(Tuple2<Integer, Iterable<DistinctValue>> t)
+		public Iterator<Long> call(Tuple2<Integer, Iterable<DistinctValue>> t)
 				throws Exception {
 			
 			int colID = t._1();
@@ -224,7 +224,7 @@ public class GenTfMtdSPARK
 				numRows.add(0L);
 			}
 			
-			return numRows;
+			return numRows.iterator();
 		}
 	}
 

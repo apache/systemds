@@ -21,6 +21,7 @@ package org.apache.sysml.runtime.instructions.spark;
 
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import org.apache.spark.api.java.JavaPairRDD;
@@ -145,7 +146,7 @@ public class Tsmm2SPInstruction extends UnarySPInstruction
 		}
 
 		@Override
-		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Tuple2<MatrixIndexes, MatrixBlock> arg0)
+		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Tuple2<MatrixIndexes, MatrixBlock> arg0)
 			throws Exception 
 		{
 			List<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
@@ -174,7 +175,7 @@ public class Tsmm2SPInstruction extends UnarySPInstruction
 				ret.add(new Tuple2<MatrixIndexes,MatrixBlock>(ixout3, out3));
 			}
 			
-			return ret;
+			return ret.iterator();
 		}
 	}
 

@@ -40,7 +40,8 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.mllib.linalg.VectorUDT;
 import org.apache.spark.rdd.RDD;
-import org.apache.spark.sql.DataFrame;
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Row;
 import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
@@ -79,7 +80,7 @@ public final class MLContextUtil {
 	 * Complex data types supported by the MLContext API
 	 */
 	@SuppressWarnings("rawtypes")
-	public static final Class[] COMPLEX_DATA_TYPES = { JavaRDD.class, RDD.class, DataFrame.class,
+	public static final Class[] COMPLEX_DATA_TYPES = { JavaRDD.class, RDD.class, Dataset.class,
 			BinaryBlockMatrix.class, BinaryBlockFrame.class, Matrix.class, Frame.class, (new double[][] {}).getClass(),
 			MatrixBlock.class, URL.class };
 
@@ -491,8 +492,8 @@ public final class MLContextUtil {
 		} else if (value instanceof FrameBlock) {
 			FrameBlock frameBlock = (FrameBlock) value;
 			return MLContextConversionUtil.frameBlockToFrameObject(name, frameBlock, (FrameMetadata) metadata);
-		} else if (value instanceof DataFrame) {
-			DataFrame dataFrame = (DataFrame) value;
+		} else if (value instanceof Dataset<?>) {
+			Dataset<Row> dataFrame = (Dataset<Row>) value;
 
 			if (hasMatrixMetadata) {
 				return MLContextConversionUtil.dataFrameToMatrixObject(name, dataFrame, (MatrixMetadata) metadata);
@@ -578,7 +579,7 @@ public final class MLContextUtil {
 	 * @return {@code true} if the DataFrame appears to be a matrix,
 	 *         {@code false} otherwise
 	 */
-	public static boolean doesDataFrameLookLikeMatrix(DataFrame df) {
+	public static boolean doesDataFrameLookLikeMatrix(Dataset<Row> df) {
 		StructType schema = df.schema();
 		StructField[] fields = schema.fields();
 		if (fields == null) {

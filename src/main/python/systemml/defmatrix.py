@@ -894,6 +894,12 @@ class matrix(object):
         """
         return binary_op(self, other, ' / ')
 
+    def __rtruediv__(self, other):
+        """
+        Performs division (Python 3 way).
+        """
+        return binary_op(other, self, ' / ')
+
     def __mod__(self, other):
         return binary_op(self, other, ' % ')
 

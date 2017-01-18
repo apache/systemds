@@ -141,12 +141,12 @@ while [ "${1+defined}" ]; do
 done
 
 
-for env in GPG_PASSPHRASE; do
-  if [ -z "${!env}" ]; then
-    echo "ERROR: $env must be set to run this script"
-    exit_with_usage
-  fi
-done
+if [[ -z "$GPG_PASSPHRASE" ]]; then
+    echo 'The environment variable GPG_PASSPHRASE is not set. Enter the passphrase to'
+    echo 'unlock the GPG signing key that will be used to sign the release!'
+    echo
+    stty -echo && printf "GPG passphrase: " && read GPG_PASSPHRASE && printf '\n' && stty echo
+fi
 
 if [[ "$RELEASE_PREPARE" == "true" && -z "$RELEASE_VERSION" ]]; then
     echo "ERROR: --releaseVersion must be passed as an argument to run this script"
@@ -245,7 +245,7 @@ if [[ "$RELEASE_PREPARE" == "true" ]]; then
     cd $RELEASE_WORK_DIR/incubator-systemml
 
     # Build and prepare the release
-    $MVN $PUBLISH_PROFILES release:clean release:prepare $DRY_RUN -Dgpg.passphrase="$GPG_PASSPHRASE" -DskipTests -Darguments="-DskipTests" -DreleaseVersion="$RELEASE_VERSION" -DdevelopmentVersion="$DEVELOPMENT_VERSION" -Dtag="$RELEASE_TAG"
+    $MVN $PUBLISH_PROFILES release:clean release:prepare $DRY_RUN -Darguments="-Dgpg.passphrase=\"$GPG_PASSPHRASE\" -DskipTests" -DreleaseVersion="$RELEASE_VERSION" -DdevelopmentVersion="$DEVELOPMENT_VERSION" -Dtag="$RELEASE_TAG"
 
     cd $RELEASE_WORK_DIR
 

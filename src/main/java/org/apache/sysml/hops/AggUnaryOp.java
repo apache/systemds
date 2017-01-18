@@ -151,6 +151,7 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 										|| (_op == AggOp.MAX 			&& (_direction == Direction.RowCol || _direction == Direction.Row || _direction == Direction.Col))
 										|| (_op == AggOp.MIN 			&& (_direction == Direction.RowCol || _direction == Direction.Row || _direction == Direction.Col))
 										|| (_op == AggOp.MEAN 		&& (_direction == Direction.RowCol || _direction == Direction.Row || _direction == Direction.Col))
+										|| (_op == AggOp.VAR 		&& (_direction == Direction.RowCol || _direction == Direction.Row || _direction == Direction.Col))
 										|| (_op == AggOp.PROD 		&& (_direction == Direction.RowCol))){
 							et = ExecType.GPU;
 							k = 1;

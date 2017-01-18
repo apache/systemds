@@ -50,7 +50,8 @@ class ExternalUDFRegistration {
     val header = scriptHeader.toString() 
     if(!header.equals("")) {
 			script.setScriptString(scriptHeader + "\n" + script.getScriptString());
-			System.out.println(script.getScriptString)
+			// Useful for debugging:
+			// System.out.println(script.getScriptString)
     }
   }
   

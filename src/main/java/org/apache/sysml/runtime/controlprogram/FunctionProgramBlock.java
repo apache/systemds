@@ -34,7 +34,8 @@ import org.apache.sysml.utils.Statistics;
 
 public class FunctionProgramBlock extends ProgramBlock 
 {
-	
+	public String _functionName;
+	public String _namespace;
 	protected ArrayList<ProgramBlock> _childBlocks;
 	protected ArrayList<DataIdentifier> _inputParams;
 	protected ArrayList<DataIdentifier> _outputParams;

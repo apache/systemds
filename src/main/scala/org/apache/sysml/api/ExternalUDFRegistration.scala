@@ -30,9 +30,12 @@ import org.apache.sysml.udf.PackageFunction
 import org.apache.sysml.udf.FunctionParameter
 import org.apache.sysml.udf.lib.GenericFunction
 import org.apache.sysml.udf.Scalar.ScalarValueType
+import java.util.HashMap
 
 object ExternalUDFRegistration {
-
+  val fnMapping: HashMap[String, Function0[Array[FunctionParameter]]] = new HashMap[String, Function0[Array[FunctionParameter]]]()
+  val fnSignatureMapping: HashMap[String, Array[String]] = new HashMap[String, Array[String]]()
+  val udfMapping:HashMap[String, GenericFunction] = new HashMap[String, GenericFunction]();
 }
 
 /**
@@ -40,13 +43,15 @@ object ExternalUDFRegistration {
  */
 class ExternalUDFRegistration {
   var ml:MLContext = null
-  def setMLContext(ml1:MLContext) = { this.ml = ml }
+  def setMLContext(ml1:org.apache.sysml.api.mlcontext.MLContext) = { this.ml = ml }
   
   val scriptHeader:StringBuilder = new StringBuilder
   def addHeaders(script:Script): Unit = {
     val header = scriptHeader.toString() 
-    if(!header.equals(""))
+    if(!header.equals("")) {
 			script.setScriptString(scriptHeader + "\n" + script.getScriptString());
+			System.out.println(script.getScriptString)
+    }
   }
   
   def getType(t: String):String = {
@@ -68,19 +73,21 @@ class ExternalUDFRegistration {
 //    println(getType(typeOf[RT].toString()))
 //  }
    
-   def register[A1: TypeTag, RT: TypeTag](ml: MLContext, name: String, func: Function1[A1, RT]): Unit = {
-    val udf = new GenericFunction(Array(typeOf[A1].toString(), typeOf[RT].toString()));
+   def register[A1: TypeTag, RT: TypeTag](name: String, func: Function1[A1, RT]): Unit = {
     val anonfun0 = new Function0[Array[FunctionParameter]] {
        def apply(): Array[FunctionParameter] = {
+         val udf = ExternalUDFRegistration.udfMapping.get(name);
          return convertReturnToOutput(func.apply(udf.getInput(typeOf[A1].toString(), 0).asInstanceOf[A1]))
        }
     }
-    udf.setScalaUDF(anonfun0)
+    ExternalUDFRegistration.fnSignatureMapping.put(name, Array(typeOf[A1].toString(), typeOf[RT].toString()))
+    ExternalUDFRegistration.fnMapping.put(name, anonfun0);
     scriptHeader.append(name + " = externalFunction(")
-    scriptHeader.append(getType(typeOf[A1].toString()))
+    scriptHeader.append(getType(typeOf[A1].toString()) + " input1")
     scriptHeader.append(") return (")
     // TODO: Support multiple return types
-    
+    scriptHeader.append(getType(typeOf[RT].toString())  + " output1")
+    scriptHeader.append(") implemented in (classname=\"org.apache.sysml.udf.lib.GenericFunction\", exectype=\"mem\");\n")
   }
   
   def convertReturnToOutput(ret:Any): Array[FunctionParameter] = {

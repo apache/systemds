@@ -123,7 +123,7 @@ public class MLContext {
 	/**
 	 * Allows users to register external scala UDFs.
 	 */
-	private ExternalUDFRegistration udf = null;
+	public ExternalUDFRegistration udf = null;
 
 	/**
 	 * The different explain levels supported by SystemML.

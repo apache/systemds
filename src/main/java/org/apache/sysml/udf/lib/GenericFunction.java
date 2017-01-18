@@ -1,31 +1,42 @@
 package org.apache.sysml.udf.lib;
 
 import java.io.IOException;
-import java.util.ArrayList;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.sysml.api.ExternalUDFRegistration;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.udf.FunctionParameter;
 import org.apache.sysml.udf.Matrix;
 import org.apache.sysml.udf.PackageFunction;
 import org.apache.sysml.udf.Scalar;
+
 import scala.Function0;
 
 public class GenericFunction extends PackageFunction {
 	private static final long serialVersionUID = -195996547505886575L;
 	String [] fnSignature;
 	FunctionParameter [] returnVals;
-	Function0<FunctionParameter []> scalaUDF; 
+	Function0<FunctionParameter []> scalaUDF;
+	public String _functionName;
+	public String _namespace;
 	
-	public GenericFunction(String [] fnSignature) {
-		this.fnSignature = fnSignature;
-	}
-	public void setScalaUDF(Function0<FunctionParameter []> scalaUDF) {
-		this.scalaUDF = scalaUDF;
+	public void initialize() {
+		if(_namespace != null && !_namespace.equals(".defaultNS")) {
+			throw new RuntimeException("Expected the function in default namespace");
+		}
+		if(_functionName == null) {
+			throw new RuntimeException("Expected the function name to be set");
+		}
+		if(fnSignature == null) {
+			fnSignature = ExternalUDFRegistration.fnSignatureMapping().get(_functionName);
+			scalaUDF = ExternalUDFRegistration.fnMapping().get(_functionName);
+			ExternalUDFRegistration.udfMapping().put(_functionName, this);
+		}
 	}
 	
 	@Override
 	public int getNumFunctionOutputs() {
+		initialize();
 		String retSignature = fnSignature[fnSignature.length -1];
 		if(!retSignature.startsWith("("))
 			return 1;
@@ -36,6 +47,7 @@ public class GenericFunction extends PackageFunction {
 
 	@Override
 	public FunctionParameter getFunctionOutput(int pos) {
+		initialize();
 		if(returnVals == null || returnVals.length <= pos)
 			throw new RuntimeException("Incorrect number of outputs or function not executed");
 		return returnVals[pos];
@@ -43,21 +55,9 @@ public class GenericFunction extends PackageFunction {
 
 	@Override
 	public void execute() {
+		initialize();
 		returnVals = scalaUDF.apply();
 	}
-	
-//	public Object constructOutput(Object ret) throws DMLRuntimeException, IOException {
-//		if(ret instanceof Integer)
-//			return new Scalar(ScalarValueType.Integer, String.valueOf(ret));
-//		else if(ret instanceof Double)
-//			return new Scalar(ScalarValueType.Double, String.valueOf(ret));
-//		else if(ret instanceof String)
-//			return new Scalar(ScalarValueType.Text, String.valueOf(ret));
-//		else if(ret instanceof Boolean)
-//			return new Scalar(ScalarValueType.Boolean, String.valueOf(ret));
-//		else if(ret instanceof Boolean)
-//			
-//	}
 	
 	public Object getInput(String type, int pos) throws DMLRuntimeException, IOException {
 		if(type.equals("Int") || type.equals("java.lang.Integer")) {

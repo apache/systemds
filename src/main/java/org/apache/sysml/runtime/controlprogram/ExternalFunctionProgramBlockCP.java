@@ -100,6 +100,8 @@ public class ExternalFunctionProgramBlockCP extends ExternalFunctionProgramBlock
 		{
 			try {
 				inst = (ExternalFunctionInvocationInstruction)_inst.get(i);
+				inst._namespace = _namespace;
+				inst._functionName = _functionName;
 				executeInstruction( ec, inst );
 			}
 			catch (Exception e){

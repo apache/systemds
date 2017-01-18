@@ -167,6 +167,8 @@ public class FunctionCallCPInstruction extends CPInstruction
 		
 		// execute the function block
 		try {
+			fpb._functionName = this._functionName;
+			fpb._namespace = this._namespace;
 			fpb.execute(fn_ec);
 		}
 		catch (DMLScriptException e) {

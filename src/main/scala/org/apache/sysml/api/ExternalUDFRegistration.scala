@@ -67,7 +67,33 @@ class ExternalUDFRegistration {
       case _ => throw new RuntimeException("Unsupported type of parameter: " + t)
     }
   }
-   
+  
+  def getReturnType(t: String):String = {
+    if(t.startsWith("(")) {
+      val t1 = t.substring(1, t.length()-1).split(",").map(_.trim)
+      val ret = new StringBuilder
+      for(i <- 0 until t1.length) {
+        if(i != 0) ret.append(", ")
+        ret.append(getType(t1(i)) + " output" + i)
+      }
+      ret.toString
+    }
+    else
+      getType(t) + " output0"
+  }
+  
+  def appendHead(name:String): Unit = {
+    scriptHeader.append(name + " = externalFunction(")
+  }
+  def appendTail(typeRet:String): Unit = {
+    scriptHeader.append(") return (")
+    scriptHeader.append(getReturnType(typeRet))
+    scriptHeader.append(") implemented in (classname=\"org.apache.sysml.udf.lib.GenericFunction\", exectype=\"mem\");\n")
+  }
+  
+  // ------------------------------------------------------------------------------------------
+  // Overloaded register function for 1 to 10 inputs:
+  
    // zero-input function unsupported by SystemML
 //  def register[RT: TypeTag](name: String, func: Function0[RT]): Unit = {
 //    println(getType(typeOf[RT].toString()))
@@ -82,21 +108,276 @@ class ExternalUDFRegistration {
     }
     ExternalUDFRegistration.fnSignatureMapping.put(name, Array(typeOf[A1].toString(), typeOf[RT].toString()))
     ExternalUDFRegistration.fnMapping.put(name, anonfun0);
-    scriptHeader.append(name + " = externalFunction(")
-    scriptHeader.append(getType(typeOf[A1].toString()) + " input1")
-    scriptHeader.append(") return (")
-    // TODO: Support multiple return types
-    scriptHeader.append(getType(typeOf[RT].toString())  + " output1")
-    scriptHeader.append(") implemented in (classname=\"org.apache.sysml.udf.lib.GenericFunction\", exectype=\"mem\");\n")
+    appendHead(name)
+    scriptHeader.append(getType(typeOf[A1].toString()) + " input0")
+    appendTail(typeOf[RT].toString())
   }
+  
+  def register[A1: TypeTag, A2: TypeTag, RT: TypeTag](name: String, func: Function2[A1, A2, RT]): Unit = {
+    val anonfun0 = new Function0[Array[FunctionParameter]] {
+       def apply(): Array[FunctionParameter] = {
+         val udf = ExternalUDFRegistration.udfMapping.get(name);
+         return convertReturnToOutput(func.apply(udf.getInput(typeOf[A1].toString(), 0).asInstanceOf[A1],
+             udf.getInput(typeOf[A2].toString(), 1).asInstanceOf[A2]))
+       }
+    }
+    ExternalUDFRegistration.fnSignatureMapping.put(name, Array(typeOf[A1].toString(), typeOf[A2].toString(), typeOf[RT].toString()))
+    ExternalUDFRegistration.fnMapping.put(name, anonfun0);
+    appendHead(name)
+    scriptHeader.append(getType(typeOf[A1].toString()) + " input0, ")
+    scriptHeader.append(getType(typeOf[A2].toString()) + " input1")
+    appendTail(typeOf[RT].toString())
+  }
+  
+  def register[A1: TypeTag, A2: TypeTag, A3: TypeTag, RT: TypeTag](name: String, func: Function3[A1, A2, A3, RT]): Unit = {
+    val anonfun0 = new Function0[Array[FunctionParameter]] {
+       def apply(): Array[FunctionParameter] = {
+         val udf = ExternalUDFRegistration.udfMapping.get(name);
+         return convertReturnToOutput(func.apply(udf.getInput(typeOf[A1].toString(), 0).asInstanceOf[A1],
+             udf.getInput(typeOf[A2].toString(), 1).asInstanceOf[A2], 
+             udf.getInput(typeOf[A3].toString(), 2).asInstanceOf[A3]))
+       }
+    }
+    ExternalUDFRegistration.fnSignatureMapping.put(name, Array(
+        typeOf[A1].toString(), typeOf[A2].toString(), typeOf[A3].toString(), 
+        typeOf[RT].toString()))
+    ExternalUDFRegistration.fnMapping.put(name, anonfun0);
+    appendHead(name)
+    scriptHeader.append(getType(typeOf[A1].toString()) + " input0, ")
+    scriptHeader.append(getType(typeOf[A2].toString()) + " input1, ")
+    scriptHeader.append(getType(typeOf[A3].toString()) + " input2")
+    appendTail(typeOf[RT].toString())
+  }
+  
+  def register[A1: TypeTag, A2: TypeTag, A3: TypeTag, A4: TypeTag, RT: TypeTag](name: String, func: Function4[A1, A2, A3, A4, RT]): Unit = {
+    val anonfun0 = new Function0[Array[FunctionParameter]] {
+       def apply(): Array[FunctionParameter] = {
+         val udf = ExternalUDFRegistration.udfMapping.get(name);
+         return convertReturnToOutput(func.apply(udf.getInput(typeOf[A1].toString(), 0).asInstanceOf[A1],
+             udf.getInput(typeOf[A2].toString(), 1).asInstanceOf[A2], 
+             udf.getInput(typeOf[A3].toString(), 2).asInstanceOf[A3],
+             udf.getInput(typeOf[A4].toString(), 3).asInstanceOf[A4]))
+       }
+    }
+    ExternalUDFRegistration.fnSignatureMapping.put(name, Array(
+        typeOf[A1].toString(), typeOf[A2].toString(), typeOf[A3].toString(), typeOf[A4].toString(), 
+        typeOf[RT].toString()))
+    ExternalUDFRegistration.fnMapping.put(name, anonfun0);
+    appendHead(name)
+    scriptHeader.append(getType(typeOf[A1].toString()) + " input0, ")
+    scriptHeader.append(getType(typeOf[A2].toString()) + " input1, ")
+    scriptHeader.append(getType(typeOf[A3].toString()) + " input2, ")
+    scriptHeader.append(getType(typeOf[A4].toString()) + " input3")
+    appendTail(typeOf[RT].toString())
+  }
+  
+  def register[A1: TypeTag, A2: TypeTag, A3: TypeTag, A4: TypeTag, A5: TypeTag, RT: TypeTag](name: String, 
+      func: Function5[A1, A2, A3, A4, A5, RT]): Unit = {
+    val anonfun0 = new Function0[Array[FunctionParameter]] {
+       def apply(): Array[FunctionParameter] = {
+         val udf = ExternalUDFRegistration.udfMapping.get(name);
+         return convertReturnToOutput(func.apply(udf.getInput(typeOf[A1].toString(), 0).asInstanceOf[A1],
+             udf.getInput(typeOf[A2].toString(), 1).asInstanceOf[A2], 
+             udf.getInput(typeOf[A3].toString(), 2).asInstanceOf[A3],
+             udf.getInput(typeOf[A4].toString(), 3).asInstanceOf[A4], 
+             udf.getInput(typeOf[A5].toString(), 4).asInstanceOf[A5]))
+       }
+    }
+    ExternalUDFRegistration.fnSignatureMapping.put(name, Array(
+        typeOf[A1].toString(), typeOf[A2].toString(), typeOf[A3].toString(), typeOf[A4].toString(),
+        typeOf[A5].toString(),
+        typeOf[RT].toString()))
+    ExternalUDFRegistration.fnMapping.put(name, anonfun0);
+    appendHead(name)
+    scriptHeader.append(getType(typeOf[A1].toString()) + " input0, ")
+    scriptHeader.append(getType(typeOf[A2].toString()) + " input1, ")
+    scriptHeader.append(getType(typeOf[A3].toString()) + " input2, ")
+    scriptHeader.append(getType(typeOf[A4].toString()) + " input3, ")
+    scriptHeader.append(getType(typeOf[A5].toString()) + " input4")
+    appendTail(typeOf[RT].toString())
+  }
+  
+  def register[A1: TypeTag, A2: TypeTag, A3: TypeTag, A4: TypeTag, A5: TypeTag, A6: TypeTag, RT: TypeTag](name: String, 
+      func: Function6[A1, A2, A3, A4, A5, A6, RT]): Unit = {
+    val anonfun0 = new Function0[Array[FunctionParameter]] {
+       def apply(): Array[FunctionParameter] = {
+         val udf = ExternalUDFRegistration.udfMapping.get(name);
+         return convertReturnToOutput(func.apply(udf.getInput(typeOf[A1].toString(), 0).asInstanceOf[A1],
+             udf.getInput(typeOf[A2].toString(), 1).asInstanceOf[A2], 
+             udf.getInput(typeOf[A3].toString(), 2).asInstanceOf[A3],
+             udf.getInput(typeOf[A4].toString(), 3).asInstanceOf[A4], 
+             udf.getInput(typeOf[A5].toString(), 4).asInstanceOf[A5], 
+             udf.getInput(typeOf[A6].toString(), 5).asInstanceOf[A6]))
+       }
+    }
+    ExternalUDFRegistration.fnSignatureMapping.put(name, Array(
+        typeOf[A1].toString(), typeOf[A2].toString(), typeOf[A3].toString(), typeOf[A4].toString(),
+        typeOf[A5].toString(), typeOf[A6].toString(),
+        typeOf[RT].toString()))
+    ExternalUDFRegistration.fnMapping.put(name, anonfun0);
+    appendHead(name)
+    scriptHeader.append(getType(typeOf[A1].toString()) + " input0, ")
+    scriptHeader.append(getType(typeOf[A2].toString()) + " input1, ")
+    scriptHeader.append(getType(typeOf[A3].toString()) + " input2, ")
+    scriptHeader.append(getType(typeOf[A4].toString()) + " input3, ")
+    scriptHeader.append(getType(typeOf[A5].toString()) + " input4, ")
+    scriptHeader.append(getType(typeOf[A6].toString()) + " input5")
+    appendTail(typeOf[RT].toString())
+  }
+  
+  def register[A1: TypeTag, A2: TypeTag, A3: TypeTag, A4: TypeTag, A5: TypeTag, A6: TypeTag, A7: TypeTag, RT: TypeTag](name: String, 
+      func: Function7[A1, A2, A3, A4, A5, A6, A7, RT]): Unit = {
+    val anonfun0 = new Function0[Array[FunctionParameter]] {
+       def apply(): Array[FunctionParameter] = {
+         val udf = ExternalUDFRegistration.udfMapping.get(name);
+         return convertReturnToOutput(func.apply(udf.getInput(typeOf[A1].toString(), 0).asInstanceOf[A1],
+             udf.getInput(typeOf[A2].toString(), 1).asInstanceOf[A2], 
+             udf.getInput(typeOf[A3].toString(), 2).asInstanceOf[A3],
+             udf.getInput(typeOf[A4].toString(), 3).asInstanceOf[A4], 
+             udf.getInput(typeOf[A5].toString(), 4).asInstanceOf[A5], 
+             udf.getInput(typeOf[A6].toString(), 5).asInstanceOf[A6],
+             udf.getInput(typeOf[A7].toString(), 6).asInstanceOf[A7]))
+       }
+    }
+    ExternalUDFRegistration.fnSignatureMapping.put(name, Array(
+        typeOf[A1].toString(), typeOf[A2].toString(), typeOf[A3].toString(), typeOf[A4].toString(),
+        typeOf[A5].toString(), typeOf[A6].toString(), typeOf[A7].toString(),
+        typeOf[RT].toString()))
+    ExternalUDFRegistration.fnMapping.put(name, anonfun0);
+    appendHead(name)
+    scriptHeader.append(getType(typeOf[A1].toString()) + " input0, ")
+    scriptHeader.append(getType(typeOf[A2].toString()) + " input1, ")
+    scriptHeader.append(getType(typeOf[A3].toString()) + " input2, ")
+    scriptHeader.append(getType(typeOf[A4].toString()) + " input3, ")
+    scriptHeader.append(getType(typeOf[A5].toString()) + " input4, ")
+    scriptHeader.append(getType(typeOf[A6].toString()) + " input5, ")
+    scriptHeader.append(getType(typeOf[A7].toString()) + " input6")
+    appendTail(typeOf[RT].toString())
+  }
+  
+  def register[A1: TypeTag, A2: TypeTag, A3: TypeTag, A4: TypeTag, A5: TypeTag, A6: TypeTag, A7: TypeTag, 
+    A8: TypeTag, RT: TypeTag](name: String, 
+      func: Function8[A1, A2, A3, A4, A5, A6, A7, A8, RT]): Unit = {
+    val anonfun0 = new Function0[Array[FunctionParameter]] {
+       def apply(): Array[FunctionParameter] = {
+         val udf = ExternalUDFRegistration.udfMapping.get(name);
+         return convertReturnToOutput(func.apply(udf.getInput(typeOf[A1].toString(), 0).asInstanceOf[A1],
+             udf.getInput(typeOf[A2].toString(), 1).asInstanceOf[A2], 
+             udf.getInput(typeOf[A3].toString(), 2).asInstanceOf[A3],
+             udf.getInput(typeOf[A4].toString(), 3).asInstanceOf[A4], 
+             udf.getInput(typeOf[A5].toString(), 4).asInstanceOf[A5], 
+             udf.getInput(typeOf[A6].toString(), 5).asInstanceOf[A6],
+             udf.getInput(typeOf[A7].toString(), 6).asInstanceOf[A7], 
+             udf.getInput(typeOf[A8].toString(), 7).asInstanceOf[A8]))
+       }
+    }
+    ExternalUDFRegistration.fnSignatureMapping.put(name, Array(
+        typeOf[A1].toString(), typeOf[A2].toString(), typeOf[A3].toString(), typeOf[A4].toString(),
+        typeOf[A5].toString(), typeOf[A6].toString(), typeOf[A7].toString(), typeOf[A8].toString(),
+        typeOf[RT].toString()))
+    ExternalUDFRegistration.fnMapping.put(name, anonfun0);
+    appendHead(name)
+    scriptHeader.append(getType(typeOf[A1].toString()) + " input0, ")
+    scriptHeader.append(getType(typeOf[A2].toString()) + " input1, ")
+    scriptHeader.append(getType(typeOf[A3].toString()) + " input2, ")
+    scriptHeader.append(getType(typeOf[A4].toString()) + " input3, ")
+    scriptHeader.append(getType(typeOf[A5].toString()) + " input4, ")
+    scriptHeader.append(getType(typeOf[A6].toString()) + " input5, ")
+    scriptHeader.append(getType(typeOf[A7].toString()) + " input6, ")
+    scriptHeader.append(getType(typeOf[A8].toString()) + " input7")
+    appendTail(typeOf[RT].toString())
+  }
+  
+  def register[A1: TypeTag, A2: TypeTag, A3: TypeTag, A4: TypeTag, A5: TypeTag, A6: TypeTag, A7: TypeTag, 
+    A8: TypeTag, A9: TypeTag, RT: TypeTag](name: String, 
+      func: Function9[A1, A2, A3, A4, A5, A6, A7, A8, A9, RT]): Unit = {
+    val anonfun0 = new Function0[Array[FunctionParameter]] {
+       def apply(): Array[FunctionParameter] = {
+         val udf = ExternalUDFRegistration.udfMapping.get(name);
+         return convertReturnToOutput(func.apply(udf.getInput(typeOf[A1].toString(), 0).asInstanceOf[A1],
+             udf.getInput(typeOf[A2].toString(), 1).asInstanceOf[A2], 
+             udf.getInput(typeOf[A3].toString(), 2).asInstanceOf[A3],
+             udf.getInput(typeOf[A4].toString(), 3).asInstanceOf[A4], 
+             udf.getInput(typeOf[A5].toString(), 4).asInstanceOf[A5], 
+             udf.getInput(typeOf[A6].toString(), 5).asInstanceOf[A6],
+             udf.getInput(typeOf[A7].toString(), 6).asInstanceOf[A7], 
+             udf.getInput(typeOf[A8].toString(), 7).asInstanceOf[A8], 
+             udf.getInput(typeOf[A9].toString(), 8).asInstanceOf[A9]))
+       }
+    }
+    ExternalUDFRegistration.fnSignatureMapping.put(name, Array(
+        typeOf[A1].toString(), typeOf[A2].toString(), typeOf[A3].toString(), typeOf[A4].toString(),
+        typeOf[A5].toString(), typeOf[A6].toString(), typeOf[A7].toString(), typeOf[A8].toString(),
+        typeOf[A9].toString(),
+        typeOf[RT].toString()))
+    ExternalUDFRegistration.fnMapping.put(name, anonfun0);
+    appendHead(name)
+    scriptHeader.append(getType(typeOf[A1].toString()) + " input0, ")
+    scriptHeader.append(getType(typeOf[A2].toString()) + " input1, ")
+    scriptHeader.append(getType(typeOf[A3].toString()) + " input2, ")
+    scriptHeader.append(getType(typeOf[A4].toString()) + " input3, ")
+    scriptHeader.append(getType(typeOf[A5].toString()) + " input4, ")
+    scriptHeader.append(getType(typeOf[A6].toString()) + " input5, ")
+    scriptHeader.append(getType(typeOf[A7].toString()) + " input6, ")
+    scriptHeader.append(getType(typeOf[A8].toString()) + " input7, ")
+    scriptHeader.append(getType(typeOf[A9].toString()) + " input8")
+    appendTail(typeOf[RT].toString())
+  }
+  
+  def register[A1: TypeTag, A2: TypeTag, A3: TypeTag, A4: TypeTag, A5: TypeTag, A6: TypeTag, A7: TypeTag, 
+    A8: TypeTag, A9: TypeTag, A10: TypeTag, RT: TypeTag](name: String, 
+      func: Function10[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, RT]): Unit = {
+    val anonfun0 = new Function0[Array[FunctionParameter]] {
+       def apply(): Array[FunctionParameter] = {
+         val udf = ExternalUDFRegistration.udfMapping.get(name);
+         return convertReturnToOutput(func.apply(udf.getInput(typeOf[A1].toString(), 0).asInstanceOf[A1],
+             udf.getInput(typeOf[A2].toString(), 1).asInstanceOf[A2], 
+             udf.getInput(typeOf[A3].toString(), 2).asInstanceOf[A3],
+             udf.getInput(typeOf[A4].toString(), 3).asInstanceOf[A4], 
+             udf.getInput(typeOf[A5].toString(), 4).asInstanceOf[A5], 
+             udf.getInput(typeOf[A6].toString(), 5).asInstanceOf[A6],
+             udf.getInput(typeOf[A7].toString(), 6).asInstanceOf[A7], 
+             udf.getInput(typeOf[A8].toString(), 7).asInstanceOf[A8], 
+             udf.getInput(typeOf[A9].toString(), 8).asInstanceOf[A9],
+             udf.getInput(typeOf[A10].toString(), 9).asInstanceOf[A10]))
+       }
+    }
+    ExternalUDFRegistration.fnSignatureMapping.put(name, Array(
+        typeOf[A1].toString(), typeOf[A2].toString(), typeOf[A3].toString(), typeOf[A4].toString(),
+        typeOf[A5].toString(), typeOf[A6].toString(), typeOf[A7].toString(), typeOf[A8].toString(),
+        typeOf[A9].toString(), typeOf[A10].toString(),
+        typeOf[RT].toString()))
+    ExternalUDFRegistration.fnMapping.put(name, anonfun0);
+    appendHead(name)
+    scriptHeader.append(getType(typeOf[A1].toString()) + " input0, ")
+    scriptHeader.append(getType(typeOf[A2].toString()) + " input1, ")
+    scriptHeader.append(getType(typeOf[A3].toString()) + " input2, ")
+    scriptHeader.append(getType(typeOf[A4].toString()) + " input3, ")
+    scriptHeader.append(getType(typeOf[A5].toString()) + " input4, ")
+    scriptHeader.append(getType(typeOf[A6].toString()) + " input5, ")
+    scriptHeader.append(getType(typeOf[A7].toString()) + " input6, ")
+    scriptHeader.append(getType(typeOf[A8].toString()) + " input7, ")
+    scriptHeader.append(getType(typeOf[A9].toString()) + " input8, ")
+    scriptHeader.append(getType(typeOf[A10].toString()) + " input9")
+    appendTail(typeOf[RT].toString())
+  }
+  
+  // ------------------------------------------------------------------------------------------
   
   def convertReturnToOutput(ret:Any): Array[FunctionParameter] = {
     ret match {
        case x:Tuple1[Any] => Array(convertToOutput(x._1))
        case x:Tuple2[Any, Any] => Array(convertToOutput(x._1), convertToOutput(x._2))
-//       case x:Tuple3[B1, B2, B3] => Array(convertToOutput(x._1), convertToOutput(x._2))
-//       case x:Tuple4[B1, B2, B3, B4] => Array(convertToOutput(x._1), convertToOutput(x._2))
-//       case x:Tuple5[B1, B2, B3, B4, B5] => Array(convertToOutput(x._1), convertToOutput(x._2))
+       case x:Tuple3[Any, Any, Any] => Array(convertToOutput(x._1), convertToOutput(x._2), convertToOutput(x._3))
+       case x:Tuple4[Any, Any, Any, Any] => Array(convertToOutput(x._1), convertToOutput(x._2), convertToOutput(x._3), convertToOutput(x._4))
+       case x:Tuple5[Any, Any, Any, Any, Any] => Array(convertToOutput(x._1), convertToOutput(x._2), convertToOutput(x._3), convertToOutput(x._4), convertToOutput(x._5))
+       case x:Tuple6[Any, Any, Any, Any, Any, Any] => Array(convertToOutput(x._1), convertToOutput(x._2), convertToOutput(x._3), convertToOutput(x._4), convertToOutput(x._5), convertToOutput(x._6))
+       case x:Tuple7[Any, Any, Any, Any, Any, Any, Any] => Array(convertToOutput(x._1), convertToOutput(x._2), convertToOutput(x._3), convertToOutput(x._4), convertToOutput(x._5), convertToOutput(x._6), convertToOutput(x._7))
+       case x:Tuple8[Any, Any, Any, Any, Any, Any, Any, Any] => Array(convertToOutput(x._1), convertToOutput(x._2), convertToOutput(x._3), convertToOutput(x._4), convertToOutput(x._5), convertToOutput(x._6), convertToOutput(x._7), convertToOutput(x._8))
+       case x:Tuple9[Any, Any, Any, Any, Any, Any, Any, Any, Any] => Array(convertToOutput(x._1), convertToOutput(x._2), convertToOutput(x._3), convertToOutput(x._4), convertToOutput(x._5), convertToOutput(x._6), convertToOutput(x._7), 
+                                                                 convertToOutput(x._8), convertToOutput(x._9))
+       case x:Tuple10[Any, Any, Any, Any, Any, Any, Any, Any, Any, Any] => Array(convertToOutput(x._1), convertToOutput(x._2), convertToOutput(x._3), convertToOutput(x._4), convertToOutput(x._5), convertToOutput(x._6), convertToOutput(x._7), 
+                                                                 convertToOutput(x._8), convertToOutput(x._9), convertToOutput(x._10))                                                          
        case _ => Array(convertToOutput(ret))
      }
   }

@@ -122,6 +122,7 @@ public class MLContext {
 	
 	/**
 	 * Allows users to register external scala UDFs.
+	 * The design is explained in ExternalUDFRegistration.scala.
 	 */
 	public ExternalUDFRegistration udf = null;
 

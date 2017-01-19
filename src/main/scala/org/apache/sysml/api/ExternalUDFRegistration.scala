@@ -32,6 +32,64 @@ import org.apache.sysml.udf.lib.GenericFunction
 import org.apache.sysml.udf.Scalar.ScalarValueType
 import java.util.HashMap
 
+/*
+ * Design of Scala external UDF functionality:
+ * Two main classes in that enable this functionality are as follows:
+ * 1. ExternalUDFRegistration: We have overloaded the register method to allow for registration
+ * of scala UDFs with 10 arguments. Each of these functions examine the input types to check
+ * if they are supported (see getType). If input types are supported, then it creates a header of format:
+ * 
+ * fnName = externalFunction(input arguments) return (output arguments) implemented in (classname="org.apache.sysml.udf.lib.GenericFunction",exectype="mem")
+ * 
+ * This header is appended in MLContext before execution of the script.
+ * 
+ * In addition, it populates two global data structures: fnMapping (which stores a zero-argument anonymous
+ * function) and fnSignatureMapping (useful for computing the number of return values).
+ * These data structures are used by GenericFunction.
+ * 
+ * The secret sauce of this approach is conversion of arbitrary Scala UDF into a zero-argument anonymous UDF
+ * stored in ExternalUDFRegistration's fnMapping data structure (similar to execute) :)
+ * 
+ * 2. GenericFunction
+ * This generic class is called by SystemML for any registered Scala UDF. This class first inserts itself into
+ * ExternalUDFRegistration's udfMapping data structure and then invokes the zero-argument anonymous
+ * function corresponding to the user specified Scala UDF.
+ *  
+ * 
+ * The current implementation allows the functions registered with one MLContext 
+ * to be visible to other MLContext as well as ExternalUDFRegistration's fnMapping, fnSignatureMapping and udfMapping
+ * fields are static. This is necessary to simplify the integration with existing external UDF function framework.
+ * 
+ * Usage:
+ * scala> import org.apache.sysml.api.mlcontext._
+ * scala> import org.apache.sysml.api.mlcontext.ScriptFactory._
+ * scala> val ml = new MLContext(sc)
+ * scala> 
+ * scala> // Demonstrates how to pass a simple scala UDF to SystemML
+ * scala> def addOne(x:Double):Double = x + 1
+ * scala> ml.udf.register("addOne", addOne)
+ * scala> val script1 = dml("v = addOne(2.0); print(v)")
+ * scala> ml.execute(script1)
+ * scala> 
+ * scala> // Demonstrates operation on local matrices (double[][])
+ * scala> def addOneToDiagonal(x:Array[Array[Double]]):Array[Array[Double]] = {  for(i <- 0 to x.length-1) x(i)(i) = x(i)(i) + 1; x }
+ * scala> ml.udf.register("addOneToDiagonal", addOneToDiagonal)
+ * scala> val script2 = dml("m1 = matrix(0, rows=3, cols=3); m2 = addOneToDiagonal(m1); print(toString(m2));")
+ * scala> ml.execute(script2)
+ * scala> 
+ * scala> // Demonstrates multi-return function
+ * scala> def multiReturnFn(x:Double):(Double, Int) = (x + 1, (x * 2).toInt)
+ * scala> ml.udf.register("multiReturnFn", multiReturnFn)
+ * scala> val script3 = dml("[v1, v2] = multiReturnFn(2.0); print(v1)")
+ * scala> ml.execute(script3)
+ * scala> 
+ * scala> // Demonstrates multi-argument multi-return function
+ * scala> def multiArgReturnFn(x:Double, y:Int):(Double, Int) = (x + 1, (x * y).toInt)
+ * scala> ml.udf.register("multiArgReturnFn", multiArgReturnFn _)
+ * scala> val script4 = dml("[v1, v2] = multiArgReturnFn(2.0, 1); print(v2)")
+ * scala> ml.execute(script4)
+ */
+
 object ExternalUDFRegistration {
   val fnMapping: HashMap[String, Function0[Array[FunctionParameter]]] = new HashMap[String, Function0[Array[FunctionParameter]]]()
   val fnSignatureMapping: HashMap[String, Array[String]] = new HashMap[String, Array[String]]()
@@ -100,6 +158,12 @@ class ExternalUDFRegistration {
 //    println(getType(typeOf[RT].toString()))
 //  }
    
+  def unregister(name: String): Unit = {
+    ExternalUDFRegistration.fnSignatureMapping.remove(name)
+    ExternalUDFRegistration.fnMapping.remove(name)
+    ExternalUDFRegistration.udfMapping.remove(name)
+  }
+  
    def register[A1: TypeTag, RT: TypeTag](name: String, func: Function1[A1, RT]): Unit = {
     val anonfun0 = new Function0[Array[FunctionParameter]] {
        def apply(): Array[FunctionParameter] = {

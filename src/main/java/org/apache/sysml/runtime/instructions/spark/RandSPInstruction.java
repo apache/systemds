@@ -245,7 +245,10 @@ public class RandSPInstruction extends UnarySPInstruction
 	        	maxValue = Double.valueOf(s[6]).doubleValue();
 	        }
 	        
-	        double sparsity = Double.parseDouble(s[7]);
+	        double sparsity = -1;
+	        if (!s[7].contains( Lop.VARIABLE_NAME_PLACEHOLDER)) {
+	        	sparsity = Double.valueOf(s[7]);
+	        }
 			
 	        long seed = DataGenOp.UNSPECIFIED_SEED;
 			if (!s[8].contains( Lop.VARIABLE_NAME_PLACEHOLDER)) {

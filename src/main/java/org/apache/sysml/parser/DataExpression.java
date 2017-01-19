@@ -1162,10 +1162,7 @@ public class DataExpression extends DataIdentifier
 				raiseValidateError("for Rand statement " + RAND_MIN + " has incorrect value type", conditional);
 			}
 			
-			//parameters w/o support for variable inputs (requires double/int or string constants)
-			if (!(getVarParam(RAND_SPARSITY) instanceof DoubleIdentifier || getVarParam(RAND_SPARSITY) instanceof IntIdentifier)) {
-				raiseValidateError("for Rand statement " + RAND_SPARSITY + " has incorrect value type", conditional);
-			}
+			// Since sparsity can be arbitrary expression (SYSTEMML-515), no validation check for DoubleIdentifier/IntIdentifier required.
 			
 			if (!(getVarParam(RAND_PDF) instanceof StringIdentifier)) {
 				raiseValidateError("for Rand statement " + RAND_PDF + " has incorrect value type", conditional);

@@ -199,12 +199,11 @@ public class DataGen extends Lop
 		sb.append(iLop.prepScalarLabel());
 		sb.append(OPERAND_DELIMITOR);
 		
-		iLop = _inputParams.get(DataExpression.RAND_SPARSITY.toString()); //no variable support
+		iLop = _inputParams.get(DataExpression.RAND_SPARSITY.toString());
 		if (iLop.isVariable())
-			throw new LopsException(printErrorLocation()
-					+ "Parameter " + DataExpression.RAND_SPARSITY
-					+ " must be a literal for a Rand operation.");
-		sb.append(iLop.getOutputParameters().getLabel()); 
+			sb.append(iLop.prepScalarLabel());
+		else
+			sb.append(iLop.getOutputParameters().getLabel()); 
 		sb.append(OPERAND_DELIMITOR);
 		
 		iLop = _inputParams.get(DataExpression.RAND_SEED.toString());		
@@ -442,9 +441,9 @@ public class DataGen extends Lop
 		
 		iLop = _inputParams.get(DataExpression.RAND_SPARSITY.toString()); //no variable support
 		if (iLop.isVariable())
-			throw new LopsException(this.printErrorLocation() + "Parameter " 
-					+ DataExpression.RAND_SPARSITY + " must be a literal for a Rand operation.");
-		sb.append( iLop.getOutputParameters().getLabel() );
+			sb.append(iLop.prepScalarLabel());
+		else
+			sb.append( iLop.getOutputParameters().getLabel() );
 		sb.append( OPERAND_DELIMITOR );
 		
 		iLop = _inputParams.get(DataExpression.RAND_SEED.toString()); 

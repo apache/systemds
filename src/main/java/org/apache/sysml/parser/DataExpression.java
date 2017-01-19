@@ -29,6 +29,8 @@ import java.util.Map.Entry;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.DataGenOp;
@@ -1163,9 +1165,10 @@ public class DataExpression extends DataIdentifier
 			}
 			
 			//parameters w/o support for variable inputs (requires double/int or string constants)
-			if (!(getVarParam(RAND_SPARSITY) instanceof DoubleIdentifier || getVarParam(RAND_SPARSITY) instanceof IntIdentifier)) {
-				raiseValidateError("for Rand statement " + RAND_SPARSITY + " has incorrect value type", conditional);
-			}
+//			if(!(getVarParam(RAND_SPARSITY) instanceof DoubleIdentifier || getVarParam(RAND_SPARSITY) instanceof IntIdentifier
+//					|| getVarParam(RAND_SPARSITY) instanceof DataIdentifier)) {
+//				raiseValidateError("for Rand statement " + RAND_SPARSITY + " has incorrect value type", conditional);
+//			}
 			
 			if (!(getVarParam(RAND_PDF) instanceof StringIdentifier)) {
 				raiseValidateError("for Rand statement " + RAND_PDF + " has incorrect value type", conditional);

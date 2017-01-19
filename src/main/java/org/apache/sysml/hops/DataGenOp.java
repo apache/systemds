@@ -100,8 +100,10 @@ public class DataGenOp extends Hop implements MultiThreadedHop
 			_paramIndexMap.put(s, index);
 			index++;
 		}
-		if ( mthd == DataGenMethod.RAND )
-			_sparsity = Double.valueOf(((LiteralOp)inputParameters.get(DataExpression.RAND_SPARSITY)).getName());
+		
+		Hop sparsityOp = inputParameters.get(DataExpression.RAND_SPARSITY);
+		if ( mthd == DataGenMethod.RAND && sparsityOp instanceof LiteralOp)
+			_sparsity = Double.valueOf(((LiteralOp)sparsityOp).getName());
 		
 		//generate base dir
 		String scratch = ConfigurationManager.getScratchSpace();
@@ -199,7 +201,7 @@ public class DataGenOp extends Hop implements MultiThreadedHop
 	{		
 		double ret = 0;
 		
-		if ( _op == DataGenMethod.RAND ) {
+		if ( _op == DataGenMethod.RAND && _sparsity != -1 ) {
 			if( hasConstantValue(0.0) ) { //if empty block
 				ret = OptimizerUtils.estimateSizeEmptyBlock(dim1, dim2);
 			}
@@ -237,7 +239,7 @@ public class DataGenOp extends Hop implements MultiThreadedHop
 		{
 			long dim1 = computeDimParameterInformation(getInput().get(_paramIndexMap.get(DataExpression.RAND_ROWS)), memo);
 			long dim2 = computeDimParameterInformation(getInput().get(_paramIndexMap.get(DataExpression.RAND_COLS)), memo);
-			long nnz = (long)(_sparsity * dim1 * dim2);
+			long nnz = _sparsity >= 0 ? (long)(_sparsity * dim1 * dim2) : -1;
 			if( dim1>0 && dim2>0 )
 				return new long[]{ dim1, dim2, nnz };
 		}
@@ -355,6 +357,8 @@ public class DataGenOp extends Hop implements MultiThreadedHop
 			_nnz = 0;
 		else if ( dimsKnown() && _sparsity>=0 ) //general case
 			_nnz = (long) (_sparsity * _dim1 * _dim2);
+		else
+			_nnz = -1;
 	}
 	
 

@@ -441,9 +441,9 @@ public class DataGen extends Lop
 		
 		iLop = _inputParams.get(DataExpression.RAND_SPARSITY.toString()); //no variable support
 		if (iLop.isVariable())
-			throw new LopsException(this.printErrorLocation() + "Parameter " 
-					+ DataExpression.RAND_SPARSITY + " must be a literal for a Rand operation (Hint: This is not fixed in MR as it is in maintenance mode).");
-		sb.append( iLop.getOutputParameters().getLabel() );
+			sb.append(iLop.prepScalarLabel());
+		else
+			sb.append( iLop.getOutputParameters().getLabel() );
 		sb.append( OPERAND_DELIMITOR );
 		
 		iLop = _inputParams.get(DataExpression.RAND_SEED.toString()); 

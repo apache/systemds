@@ -426,8 +426,10 @@ public class LibMatrixMult
 			int blklen = (int)(Math.ceil((double)ret.rlen/(2*k)));
 			for( int i=0; i<2*k & i*blklen<ret.rlen; i++ )
 				tasks.add(new MatrixMultTransposeTask(m1, ret, leftTranspose, i*blklen, Math.min((i+1)*blklen, ret.rlen)));
-			pool.invokeAll(tasks);	
+			List<Future<Object>> rtasks = pool.invokeAll(tasks);	
 			pool.shutdown();
+			for( Future<Object> rtask : rtasks )
+				rtask.get(); //error handling
 		}
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
@@ -1753,24 +1755,23 @@ public class LibMatrixMult
 				
 					//1) Unrolled inner loop, for better ILP
 					//2) Blocked execution, for less cache trashing in parallel exec 
-					//   (smaller block sizes would be slightly better, but consistent as is)
-					//3) Single write in inner loop (transient intermediates)
-					int blocksize = 64;
-					for( int bi = rl; bi<ru; bi+=blocksize )
-						for( int bj = bi; bj<m; bj+=blocksize ) 
-						{
-							final int bimin = Math.min(ru, bi+blocksize);
-							final int bjmin = Math.min(m, bj+blocksize);	
-							
-							for(int i = bi, ix1 = bi*n, ix3 = bi*m; i < bimin; i++, ix1+=n, ix3+=m)
-							{
-								final int bjmax = Math.max(i,bj);
-								for(int j = bjmax, ix2 = bjmax*n; j <bjmin; j++, ix2+=n) //from i due to symmetry
-								{
-									c[ ix3+j ] = dotProduct(a, a, ix1, ix2, n);	
+					//   (we block such that lhs, rhs, and output roughly fit into L2, output in L1)
+					//3) Asymmetric block sizes and exploitation of result symmetry
+					int blocksizeK = 1024; //two memory pages for sufficiently long scans
+					int blocksizeIJ = L2_CACHESIZE / 8 / blocksizeK / 2 - 1; //15
+				
+					//blocked execution over IKJ (lhs/rhs in L2, output in L1)
+					for( int bi = rl; bi<ru; bi+=blocksizeIJ ) 
+						for( int bk = 0, bimin = Math.min(ru, bi+blocksizeIJ); bk<n; bk+=blocksizeK )
+							for( int bj = bi, bklen = Math.min(blocksizeK, n-bk); bj<m; bj+=blocksizeIJ ) {
+								//core tsmm block operation (15x15 vectors of length 1K elements)
+								int bjmin = Math.min(m, bj+blocksizeIJ);	
+								for(int i=bi, ix1=bi*n+bk, ix3=bi*m; i<bimin; i++, ix1+=n, ix3+=m) {
+									final int bjmax = Math.max(i,bj); //from i due to symmetry
+									for(int j=bjmax, ix2=bjmax*n+bk; j <bjmin; j++, ix2+=n) 
+										c[ ix3+j ] += dotProduct(a, a, ix1, ix2, bklen);	
 								}
 							}
-						}
 				}
 			}
 			else
@@ -3653,11 +3654,11 @@ public class LibMatrixMult
 
 	private static class MatrixMultTransposeTask implements Callable<Object> 
 	{
-		private MatrixBlock _m1  = null;
-		private MatrixBlock _ret = null;
-		private boolean _left = true;
-		private int _rl = -1;
-		private int _ru = -1;
+		private final MatrixBlock _m1;
+		private final MatrixBlock _ret;
+		private final boolean _left;
+		private final int _rl;
+		private final int _ru;
 
 		protected MatrixMultTransposeTask( MatrixBlock m1, MatrixBlock ret, boolean left, int rl, int ru )
 		{
@@ -3675,7 +3676,7 @@ public class LibMatrixMult
 				matrixMultTransposeSelfSparse(_m1, _ret, _left, _rl, _ru);
 			else
 				matrixMultTransposeSelfDense(_m1, _ret, _left, _rl, _ru);
-				
+			
 			return null;
 		}
 	}

@@ -103,14 +103,19 @@ class ExternalUDFRegistration {
   var ml:MLContext = null
   def setMLContext(ml1:org.apache.sysml.api.mlcontext.MLContext) = { this.ml = ml }
   
-  val scriptHeader:StringBuilder = new StringBuilder
-  def addHeaders(script:Script): Unit = {
-    val header = scriptHeader.toString() 
-    if(!header.equals("")) {
-			script.setScriptString(scriptHeader + "\n" + script.getScriptString());
-			// Useful for debugging:
-			// System.out.println(script.getScriptString)
+  val scriptHeaders:HashMap[String,StringBuilder] = new HashMap[String,StringBuilder]()
+  def getExternalHeaders(): String = {
+    val it = scriptHeaders.entrySet().iterator();
+    val ret = new StringBuilder
+    while (it.hasNext()) {
+      val header = it.next().getValue.toString() 
+      if(!header.equals("")) {
+        ret.append(header + "\n")
+      }
     }
+    // Useful for debugging:
+    // System.out.println(ret.toString)
+    ret.toString()
   }
   
   def getType(t: String):String = {
@@ -141,13 +146,19 @@ class ExternalUDFRegistration {
       getType(t) + " output0"
   }
   
-  def appendHead(name:String): Unit = {
-    scriptHeader.append(name + " = externalFunction(")
-  }
-  def appendTail(typeRet:String): Unit = {
-    scriptHeader.append(") return (")
-    scriptHeader.append(getReturnType(typeRet))
-    scriptHeader.append(") implemented in (classname=\"org.apache.sysml.udf.lib.GenericFunction\", exectype=\"mem\");\n")
+  def createExternalFunctionHeader(name:String, typeInput:Array[String]): Unit = {
+    if(scriptHeaders.containsKey(name)) scriptHeaders.remove(name)
+    val header:StringBuilder = new StringBuilder()
+    header.append(name + " = externalFunction(")
+    header.append(getType(typeInput(0)) + " input0")
+    for(i <- 1 until typeInput.length -1) {
+      header.append(", " + getType(typeInput(i)) + " input" + i)
+    }
+    header.append(") return (")
+    header.append(getReturnType( typeInput(typeInput.length -1) ))
+    header.append(") implemented in (classname=\"org.apache.sysml.udf.lib.GenericFunction\", exectype=\"mem\");\n")
+    scriptHeaders.put(name, header)
+    ExternalUDFRegistration.fnSignatureMapping.put(name, typeInput)
   }
   
   // ------------------------------------------------------------------------------------------
@@ -162,6 +173,7 @@ class ExternalUDFRegistration {
     ExternalUDFRegistration.fnSignatureMapping.remove(name)
     ExternalUDFRegistration.fnMapping.remove(name)
     ExternalUDFRegistration.udfMapping.remove(name)
+    scriptHeaders.remove(name)
   }
   
    def register[A1: TypeTag, RT: TypeTag](name: String, func: Function1[A1, RT]): Unit = {
@@ -171,11 +183,8 @@ class ExternalUDFRegistration {
          return convertReturnToOutput(func.apply(udf.getInput(typeOf[A1].toString(), 0).asInstanceOf[A1]))
        }
     }
-    ExternalUDFRegistration.fnSignatureMapping.put(name, Array(typeOf[A1].toString(), typeOf[RT].toString()))
-    ExternalUDFRegistration.fnMapping.put(name, anonfun0);
-    appendHead(name)
-    scriptHeader.append(getType(typeOf[A1].toString()) + " input0")
-    appendTail(typeOf[RT].toString())
+    createExternalFunctionHeader(name, Array(typeOf[A1].toString(), typeOf[RT].toString()))
+    ExternalUDFRegistration.fnMapping.put(name, anonfun0)
   }
   
   def register[A1: TypeTag, A2: TypeTag, RT: TypeTag](name: String, func: Function2[A1, A2, RT]): Unit = {
@@ -186,12 +195,8 @@ class ExternalUDFRegistration {
              udf.getInput(typeOf[A2].toString(), 1).asInstanceOf[A2]))
        }
     }
-    ExternalUDFRegistration.fnSignatureMapping.put(name, Array(typeOf[A1].toString(), typeOf[A2].toString(), typeOf[RT].toString()))
-    ExternalUDFRegistration.fnMapping.put(name, anonfun0);
-    appendHead(name)
-    scriptHeader.append(getType(typeOf[A1].toString()) + " input0, ")
-    scriptHeader.append(getType(typeOf[A2].toString()) + " input1")
-    appendTail(typeOf[RT].toString())
+    createExternalFunctionHeader(name, Array(typeOf[A1].toString(), typeOf[A2].toString(), typeOf[RT].toString()))
+    ExternalUDFRegistration.fnMapping.put(name, anonfun0)
   }
   
   def register[A1: TypeTag, A2: TypeTag, A3: TypeTag, RT: TypeTag](name: String, func: Function3[A1, A2, A3, RT]): Unit = {
@@ -203,15 +208,10 @@ class ExternalUDFRegistration {
              udf.getInput(typeOf[A3].toString(), 2).asInstanceOf[A3]))
        }
     }
-    ExternalUDFRegistration.fnSignatureMapping.put(name, Array(
+    createExternalFunctionHeader(name, Array(
         typeOf[A1].toString(), typeOf[A2].toString(), typeOf[A3].toString(), 
         typeOf[RT].toString()))
-    ExternalUDFRegistration.fnMapping.put(name, anonfun0);
-    appendHead(name)
-    scriptHeader.append(getType(typeOf[A1].toString()) + " input0, ")
-    scriptHeader.append(getType(typeOf[A2].toString()) + " input1, ")
-    scriptHeader.append(getType(typeOf[A3].toString()) + " input2")
-    appendTail(typeOf[RT].toString())
+    ExternalUDFRegistration.fnMapping.put(name, anonfun0)
   }
   
   def register[A1: TypeTag, A2: TypeTag, A3: TypeTag, A4: TypeTag, RT: TypeTag](name: String, func: Function4[A1, A2, A3, A4, RT]): Unit = {
@@ -224,16 +224,10 @@ class ExternalUDFRegistration {
              udf.getInput(typeOf[A4].toString(), 3).asInstanceOf[A4]))
        }
     }
-    ExternalUDFRegistration.fnSignatureMapping.put(name, Array(
+    createExternalFunctionHeader(name, Array(
         typeOf[A1].toString(), typeOf[A2].toString(), typeOf[A3].toString(), typeOf[A4].toString(), 
         typeOf[RT].toString()))
-    ExternalUDFRegistration.fnMapping.put(name, anonfun0);
-    appendHead(name)
-    scriptHeader.append(getType(typeOf[A1].toString()) + " input0, ")
-    scriptHeader.append(getType(typeOf[A2].toString()) + " input1, ")
-    scriptHeader.append(getType(typeOf[A3].toString()) + " input2, ")
-    scriptHeader.append(getType(typeOf[A4].toString()) + " input3")
-    appendTail(typeOf[RT].toString())
+    ExternalUDFRegistration.fnMapping.put(name, anonfun0)
   }
   
   def register[A1: TypeTag, A2: TypeTag, A3: TypeTag, A4: TypeTag, A5: TypeTag, RT: TypeTag](name: String, 
@@ -248,18 +242,11 @@ class ExternalUDFRegistration {
              udf.getInput(typeOf[A5].toString(), 4).asInstanceOf[A5]))
        }
     }
-    ExternalUDFRegistration.fnSignatureMapping.put(name, Array(
+    createExternalFunctionHeader(name, Array(
         typeOf[A1].toString(), typeOf[A2].toString(), typeOf[A3].toString(), typeOf[A4].toString(),
         typeOf[A5].toString(),
         typeOf[RT].toString()))
-    ExternalUDFRegistration.fnMapping.put(name, anonfun0);
-    appendHead(name)
-    scriptHeader.append(getType(typeOf[A1].toString()) + " input0, ")
-    scriptHeader.append(getType(typeOf[A2].toString()) + " input1, ")
-    scriptHeader.append(getType(typeOf[A3].toString()) + " input2, ")
-    scriptHeader.append(getType(typeOf[A4].toString()) + " input3, ")
-    scriptHeader.append(getType(typeOf[A5].toString()) + " input4")
-    appendTail(typeOf[RT].toString())
+    ExternalUDFRegistration.fnMapping.put(name, anonfun0)
   }
   
   def register[A1: TypeTag, A2: TypeTag, A3: TypeTag, A4: TypeTag, A5: TypeTag, A6: TypeTag, RT: TypeTag](name: String, 
@@ -275,19 +262,11 @@ class ExternalUDFRegistration {
              udf.getInput(typeOf[A6].toString(), 5).asInstanceOf[A6]))
        }
     }
-    ExternalUDFRegistration.fnSignatureMapping.put(name, Array(
+    createExternalFunctionHeader(name, Array(
         typeOf[A1].toString(), typeOf[A2].toString(), typeOf[A3].toString(), typeOf[A4].toString(),
         typeOf[A5].toString(), typeOf[A6].toString(),
         typeOf[RT].toString()))
-    ExternalUDFRegistration.fnMapping.put(name, anonfun0);
-    appendHead(name)
-    scriptHeader.append(getType(typeOf[A1].toString()) + " input0, ")
-    scriptHeader.append(getType(typeOf[A2].toString()) + " input1, ")
-    scriptHeader.append(getType(typeOf[A3].toString()) + " input2, ")
-    scriptHeader.append(getType(typeOf[A4].toString()) + " input3, ")
-    scriptHeader.append(getType(typeOf[A5].toString()) + " input4, ")
-    scriptHeader.append(getType(typeOf[A6].toString()) + " input5")
-    appendTail(typeOf[RT].toString())
+    ExternalUDFRegistration.fnMapping.put(name, anonfun0)
   }
   
   def register[A1: TypeTag, A2: TypeTag, A3: TypeTag, A4: TypeTag, A5: TypeTag, A6: TypeTag, A7: TypeTag, RT: TypeTag](name: String, 
@@ -304,20 +283,11 @@ class ExternalUDFRegistration {
              udf.getInput(typeOf[A7].toString(), 6).asInstanceOf[A7]))
        }
     }
-    ExternalUDFRegistration.fnSignatureMapping.put(name, Array(
+    createExternalFunctionHeader(name, Array(
         typeOf[A1].toString(), typeOf[A2].toString(), typeOf[A3].toString(), typeOf[A4].toString(),
         typeOf[A5].toString(), typeOf[A6].toString(), typeOf[A7].toString(),
         typeOf[RT].toString()))
-    ExternalUDFRegistration.fnMapping.put(name, anonfun0);
-    appendHead(name)
-    scriptHeader.append(getType(typeOf[A1].toString()) + " input0, ")
-    scriptHeader.append(getType(typeOf[A2].toString()) + " input1, ")
-    scriptHeader.append(getType(typeOf[A3].toString()) + " input2, ")
-    scriptHeader.append(getType(typeOf[A4].toString()) + " input3, ")
-    scriptHeader.append(getType(typeOf[A5].toString()) + " input4, ")
-    scriptHeader.append(getType(typeOf[A6].toString()) + " input5, ")
-    scriptHeader.append(getType(typeOf[A7].toString()) + " input6")
-    appendTail(typeOf[RT].toString())
+    ExternalUDFRegistration.fnMapping.put(name, anonfun0)
   }
   
   def register[A1: TypeTag, A2: TypeTag, A3: TypeTag, A4: TypeTag, A5: TypeTag, A6: TypeTag, A7: TypeTag, 
@@ -336,21 +306,11 @@ class ExternalUDFRegistration {
              udf.getInput(typeOf[A8].toString(), 7).asInstanceOf[A8]))
        }
     }
-    ExternalUDFRegistration.fnSignatureMapping.put(name, Array(
+    createExternalFunctionHeader(name, Array(
         typeOf[A1].toString(), typeOf[A2].toString(), typeOf[A3].toString(), typeOf[A4].toString(),
         typeOf[A5].toString(), typeOf[A6].toString(), typeOf[A7].toString(), typeOf[A8].toString(),
         typeOf[RT].toString()))
-    ExternalUDFRegistration.fnMapping.put(name, anonfun0);
-    appendHead(name)
-    scriptHeader.append(getType(typeOf[A1].toString()) + " input0, ")
-    scriptHeader.append(getType(typeOf[A2].toString()) + " input1, ")
-    scriptHeader.append(getType(typeOf[A3].toString()) + " input2, ")
-    scriptHeader.append(getType(typeOf[A4].toString()) + " input3, ")
-    scriptHeader.append(getType(typeOf[A5].toString()) + " input4, ")
-    scriptHeader.append(getType(typeOf[A6].toString()) + " input5, ")
-    scriptHeader.append(getType(typeOf[A7].toString()) + " input6, ")
-    scriptHeader.append(getType(typeOf[A8].toString()) + " input7")
-    appendTail(typeOf[RT].toString())
+    ExternalUDFRegistration.fnMapping.put(name, anonfun0)
   }
   
   def register[A1: TypeTag, A2: TypeTag, A3: TypeTag, A4: TypeTag, A5: TypeTag, A6: TypeTag, A7: TypeTag, 
@@ -370,23 +330,12 @@ class ExternalUDFRegistration {
              udf.getInput(typeOf[A9].toString(), 8).asInstanceOf[A9]))
        }
     }
-    ExternalUDFRegistration.fnSignatureMapping.put(name, Array(
+    createExternalFunctionHeader(name, Array(
         typeOf[A1].toString(), typeOf[A2].toString(), typeOf[A3].toString(), typeOf[A4].toString(),
         typeOf[A5].toString(), typeOf[A6].toString(), typeOf[A7].toString(), typeOf[A8].toString(),
         typeOf[A9].toString(),
         typeOf[RT].toString()))
-    ExternalUDFRegistration.fnMapping.put(name, anonfun0);
-    appendHead(name)
-    scriptHeader.append(getType(typeOf[A1].toString()) + " input0, ")
-    scriptHeader.append(getType(typeOf[A2].toString()) + " input1, ")
-    scriptHeader.append(getType(typeOf[A3].toString()) + " input2, ")
-    scriptHeader.append(getType(typeOf[A4].toString()) + " input3, ")
-    scriptHeader.append(getType(typeOf[A5].toString()) + " input4, ")
-    scriptHeader.append(getType(typeOf[A6].toString()) + " input5, ")
-    scriptHeader.append(getType(typeOf[A7].toString()) + " input6, ")
-    scriptHeader.append(getType(typeOf[A8].toString()) + " input7, ")
-    scriptHeader.append(getType(typeOf[A9].toString()) + " input8")
-    appendTail(typeOf[RT].toString())
+    ExternalUDFRegistration.fnMapping.put(name, anonfun0)
   }
   
   def register[A1: TypeTag, A2: TypeTag, A3: TypeTag, A4: TypeTag, A5: TypeTag, A6: TypeTag, A7: TypeTag, 
@@ -407,24 +356,12 @@ class ExternalUDFRegistration {
              udf.getInput(typeOf[A10].toString(), 9).asInstanceOf[A10]))
        }
     }
-    ExternalUDFRegistration.fnSignatureMapping.put(name, Array(
+    createExternalFunctionHeader(name, Array(
         typeOf[A1].toString(), typeOf[A2].toString(), typeOf[A3].toString(), typeOf[A4].toString(),
         typeOf[A5].toString(), typeOf[A6].toString(), typeOf[A7].toString(), typeOf[A8].toString(),
         typeOf[A9].toString(), typeOf[A10].toString(),
         typeOf[RT].toString()))
-    ExternalUDFRegistration.fnMapping.put(name, anonfun0);
-    appendHead(name)
-    scriptHeader.append(getType(typeOf[A1].toString()) + " input0, ")
-    scriptHeader.append(getType(typeOf[A2].toString()) + " input1, ")
-    scriptHeader.append(getType(typeOf[A3].toString()) + " input2, ")
-    scriptHeader.append(getType(typeOf[A4].toString()) + " input3, ")
-    scriptHeader.append(getType(typeOf[A5].toString()) + " input4, ")
-    scriptHeader.append(getType(typeOf[A6].toString()) + " input5, ")
-    scriptHeader.append(getType(typeOf[A7].toString()) + " input6, ")
-    scriptHeader.append(getType(typeOf[A8].toString()) + " input7, ")
-    scriptHeader.append(getType(typeOf[A9].toString()) + " input8, ")
-    scriptHeader.append(getType(typeOf[A10].toString()) + " input9")
-    appendTail(typeOf[RT].toString())
+    ExternalUDFRegistration.fnMapping.put(name, anonfun0)
   }
   
   // ------------------------------------------------------------------------------------------

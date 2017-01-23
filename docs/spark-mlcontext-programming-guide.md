@@ -1652,19 +1652,19 @@ val ml = new MLContext(sc)
 
 // Demonstrates how to pass a simple scala UDF to SystemML
 def addOne(x:Double):Double = x + 1
-ml.udf.register("addOne", addOne)
+ml.udf.register("addOne", addOne _)
 val script1 = dml("v = addOne(2.0); print(v)")
 ml.execute(script1)
 
 // Demonstrates operation on local matrices (double[][])
 def addOneToDiagonal(x:Array[Array[Double]]):Array[Array[Double]] = {  for(i <- 0 to x.length-1) x(i)(i) = x(i)(i) + 1; x }
-ml.udf.register("addOneToDiagonal", addOneToDiagonal)
+ml.udf.register("addOneToDiagonal", addOneToDiagonal _)
 val script2 = dml("m1 = matrix(0, rows=3, cols=3); m2 = addOneToDiagonal(m1); print(toString(m2));")
 ml.execute(script2)
 
 // Demonstrates multi-return function
 def multiReturnFn(x:Double):(Double, Int) = (x + 1, (x * 2).toInt)
-ml.udf.register("multiReturnFn", multiReturnFn)
+ml.udf.register("multiReturnFn", multiReturnFn _)
 val script3 = dml("[v1, v2] = multiReturnFn(2.0); print(v1)")
 ml.execute(script3)
 

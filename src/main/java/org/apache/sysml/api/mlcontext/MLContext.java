@@ -298,7 +298,6 @@ public class MLContext {
 	 */
 	public MLResults execute(Script script, ScriptExecutor scriptExecutor) {
 		try {
-			udf.addHeaders(script);
 			executingScript = script;
 
 			Long time = new Long((new Date()).getTime());
@@ -306,6 +305,7 @@ public class MLContext {
 				script.setName(time.toString());
 			}
 
+			scriptExecutor.udf = udf;
 			MLResults results = scriptExecutor.execute(script);
 
 			String history = MLContextUtil.createHistoryForScript(script, time);

@@ -108,19 +108,28 @@ public class OutputStatement extends Statement
 	public VariableSet initializebackwardLV(VariableSet lo){
 		return lo;
 	}
-	
-	public String toString(){
+
+	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		 sb.append(Statement.OUTPUTSTATEMENT + " ( " );
-		 sb.append( _id.toString() + ", " +  _paramsExpr.getVarParam(DataExpression.IO_FILENAME).toString());
-		 for (String key : _paramsExpr.getVarParams().keySet()){
-			 if (!key.equals(DataExpression.IO_FILENAME))
-				 sb.append(", " + key + "=" + _paramsExpr.getVarParam(key));
-		 }
-		 sb.append(" );");
-		 return sb.toString(); 
+		sb.append(Statement.OUTPUTSTATEMENT + "(");
+		sb.append("id=" + _id.toString());
+		for (String key : _paramsExpr.getVarParams().keySet()) {
+			sb.append(", ");
+			sb.append(key);
+			sb.append("=");
+			Expression exp = _paramsExpr.getVarParam(key);
+			if (exp instanceof StringIdentifier) {
+				sb.append("\"");
+				sb.append(exp.toString());
+				sb.append("\"");
+			} else {
+				sb.append(exp.toString());
+			}
+		}
+		sb.append(");");
+		return sb.toString();
 	}
-	
+
 	@Override
 	public VariableSet variablesRead() {
 		VariableSet result = new VariableSet();

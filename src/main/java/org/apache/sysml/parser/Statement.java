@@ -28,7 +28,7 @@ public abstract class Statement
 	
 	protected static final Log LOG = LogFactory.getLog(Statement.class.getName());
 	
-	public static final String OUTPUTSTATEMENT = "write";
+	public static final String OUTPUTSTATEMENT = "WRITE";
 					
 	// parameter names for seq()
 	public static final String SEQ_FROM = "from"; 

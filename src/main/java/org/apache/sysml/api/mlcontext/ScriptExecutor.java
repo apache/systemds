@@ -25,7 +25,6 @@ import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.api.jmlc.JMLCUtils;
 import org.apache.sysml.api.mlcontext.MLContext.ExplainLevel;
 import org.apache.sysml.api.monitoring.SparkMonitoringUtil;
 import org.apache.sysml.conf.ConfigurationManager;
@@ -373,12 +372,12 @@ public class ScriptExecutor {
 	}
 
 	/**
-	 * Remove rmvar instructions so as to maintain registered outputs after the
-	 * program terminates.
+	 * Delete 'remove variable' instructions so as to maintain the values in the
+	 * symbol table, which are useful when working interactively in an
+	 * environment such as the Spark Shell.
 	 */
 	protected void cleanupRuntimeProgram() {
-		JMLCUtils.cleanupRuntimeProgram(runtimeProgram, (script.getOutputVariables() == null) ? new String[0] : script
-				.getOutputVariables().toArray(new String[0]));
+		MLContextUtil.deleteRemoveVariableInstructions(runtimeProgram);
 	}
 
 	/**

@@ -23,6 +23,7 @@ import java.io.IOException;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.sysml.api.ExternalUDFRegistration;
+import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.udf.FunctionParameter;
 import org.apache.sysml.udf.Matrix;
@@ -40,7 +41,7 @@ public class GenericFunction extends PackageFunction {
 	public String _namespace;
 	
 	public void initialize() {
-		if(_namespace != null && !_namespace.equals(".defaultNS")) {
+		if(_namespace != null && !_namespace.equals(DMLProgram.DEFAULT_NAMESPACE)) {
 			throw new RuntimeException("Expected the function in default namespace");
 		}
 		if(_functionName == null) {

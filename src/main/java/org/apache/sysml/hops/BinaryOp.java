@@ -603,7 +603,8 @@ public class BinaryOp extends Hop
 						&& potentialZero instanceof LiteralOp && ((LiteralOp) potentialZero).getDoubleValue() == 0;
 						
 				if(op == OpOp2.MULT && isLeftXGt0 && 
-					!getInput().get(0).isVector() && !getInput().get(1).isVector()) {
+					!getInput().get(0).isVector() && !getInput().get(1).isVector()
+					&& getInput().get(0).dimsKnown() && getInput().get(1).dimsKnown()) {
 					binary = new ConvolutionTransform(getInput().get(0).getInput().get(0).constructLops(), 
 									getInput().get(1).constructLops(),
 									ConvolutionTransform.OperationTypes.RELU_BACKWARD, getDataType(), getValueType(), et, -1);

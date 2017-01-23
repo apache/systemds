@@ -95,16 +95,29 @@ public class PrintStatement extends Statement
 	
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append(_type + " (");
+		sb.append(_type + "(");
 		if ((_type == PRINTTYPE.PRINT) || (_type == PRINTTYPE.STOP)) {
-			sb.append(expressions.get(0).toString());
+			Expression expression = expressions.get(0);
+			if (expression instanceof StringIdentifier) {
+				sb.append("\"");
+				sb.append(expression.toString());
+				sb.append("\"");
+			} else {
+				sb.append(expression.toString());
+			}
 		} else if (_type == PRINTTYPE.PRINTF) {
 			for (int i = 0; i < expressions.size(); i++) {
 				if (i > 0) {
 					sb.append(", ");
 				}
 				Expression expression = expressions.get(i);
-				sb.append(expression.toString());
+				if (expression instanceof StringIdentifier) {
+					sb.append("\"");
+					sb.append(expression.toString());
+					sb.append("\"");
+				} else {
+					sb.append(expression.toString());
+				}
 			}
 		}
 

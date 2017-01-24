@@ -1636,45 +1636,6 @@ scala> for (i <- 1 to 5) {
 
 </div>
 
-## Passing Scala UDF to SystemML
-
-SystemML allows the users to pass a Scala UDF (with input/output types supported by SystemML)
-to the DML script via MLContext. The restrictions for the supported Scala UDFs are as follows:
-
-1. Only types specified by DML language is supported for parameters and return types (i.e. Int, Double, Boolean, String, double[][]).
-2. At minimum, the function should have 1 argument and 1 return value.
-3. At max, the function can have 10 arguments and 10 return values. 
-
-{% highlight scala %}
-import org.apache.sysml.api.mlcontext._
-import org.apache.sysml.api.mlcontext.ScriptFactory._
-val ml = new MLContext(sc)
-
-// Demonstrates how to pass a simple scala UDF to SystemML
-def addOne(x:Double):Double = x + 1
-ml.udf.register("addOne", addOne _)
-val script1 = dml("v = addOne(2.0); print(v)")
-ml.execute(script1)
-
-// Demonstrates operation on local matrices (double[][])
-def addOneToDiagonal(x:Array[Array[Double]]):Array[Array[Double]] = {  for(i <- 0 to x.length-1) x(i)(i) = x(i)(i) + 1; x }
-ml.udf.register("addOneToDiagonal", addOneToDiagonal _)
-val script2 = dml("m1 = matrix(0, rows=3, cols=3); m2 = addOneToDiagonal(m1); print(toString(m2));")
-ml.execute(script2)
-
-// Demonstrates multi-return function
-def multiReturnFn(x:Double):(Double, Int) = (x + 1, (x * 2).toInt)
-ml.udf.register("multiReturnFn", multiReturnFn _)
-val script3 = dml("[v1, v2] = multiReturnFn(2.0); print(v1)")
-ml.execute(script3)
-
-// Demonstrates multi-argument multi-return function
-def multiArgReturnFn(x:Double, y:Int):(Double, Int) = (x + 1, (x * y).toInt)
-ml.udf.register("multiArgReturnFn", multiArgReturnFn _)
-val script4 = dml("[v1, v2] = multiArgReturnFn(2.0, 1); print(v2)")
-ml.execute(script4)
-{% endhighlight %}
-
 ---
 
 # Jupyter (PySpark) Notebook Example - Poisson Nonnegative Matrix Factorization

@@ -31,7 +31,6 @@ import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.api.MLContextProxy;
-import org.apache.sysml.api.ExternalUDFRegistration;
 import org.apache.sysml.api.jmlc.JMLCUtils;
 import org.apache.sysml.api.monitoring.SparkMonitoringUtil;
 import org.apache.sysml.conf.ConfigurationManager;
@@ -119,12 +118,6 @@ public class MLContext {
 
 	private List<String> scriptHistoryStrings = new ArrayList<String>();
 	private Map<String, Script> scripts = new LinkedHashMap<String, Script>();
-	
-	/**
-	 * Allows users to register external scala UDFs.
-	 * The design is explained in ExternalUDFRegistration.scala.
-	 */
-	public ExternalUDFRegistration udf = null;
 
 	/**
 	 * The different explain levels supported by SystemML.
@@ -224,8 +217,6 @@ public class MLContext {
 		}
 
 		this.sc = sc;
-		this.udf = new ExternalUDFRegistration();
-		this.udf.setMLContext(this);
 		MLContextUtil.verifySparkVersionSupported(sc);
 		// by default, run in hybrid Spark mode for optimal performance
 		DMLScript.rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK;
@@ -305,7 +296,6 @@ public class MLContext {
 				script.setName(time.toString());
 			}
 
-			scriptExecutor.udf = udf;
 			MLResults results = scriptExecutor.execute(script);
 
 			String history = MLContextUtil.createHistoryForScript(script, time);

@@ -387,7 +387,7 @@
 
 					<excludes>
 						<exclude>**/slowtest/**</exclude>
-						<include>**/integration/functions/data/*Test*.java</include>
+						<exclude>**/integration/functions/data/*Test*.java</exclude>
 					</excludes>
 
 				</configuration>

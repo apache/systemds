@@ -1325,12 +1325,15 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 		int col = ctx.start.getCharPositionInLine();
 
 		DataIdentifier iterVar = new DataIdentifier(ctx.iterVar.getText());
+		ArrayList<DataIdentifier> iterVars = new ArrayList<DataIdentifier>(); 
+		iterVars.add(iterVar);
+		
 		HashMap<String, String> parForParamValues = null;
 		Expression incrementExpr = null; //1/-1
 		if(ctx.iterPred.info.increment != null) {
 			incrementExpr = ctx.iterPred.info.increment;
 		}
-		IterablePredicate predicate = new IterablePredicate(iterVar, ctx.iterPred.info.from, ctx.iterPred.info.to, incrementExpr, parForParamValues, currentFile, line, col, line, col);
+		IterablePredicate predicate = new IterablePredicate(iterVars, ctx.iterPred.info.from, ctx.iterPred.info.to, incrementExpr, parForParamValues, currentFile, line, col, line, col, false);
 		forStmt.setPredicate(predicate);
 
 		if(ctx.body.size() > 0) {
@@ -1350,6 +1353,9 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 		int col = ctx.start.getCharPositionInLine();
 
 		DataIdentifier iterVar = new DataIdentifier(ctx.iterVar.getText());
+		ArrayList<DataIdentifier> iterVars = new ArrayList<DataIdentifier>(); 
+		iterVars.add(iterVar);
+		
 		HashMap<String, String> parForParamValues = new HashMap<String, String>();
 		if(ctx.parForParams != null && ctx.parForParams.size() > 0) {
 			for(StrictParameterizedExpressionContext parForParamCtx : ctx.parForParams) {
@@ -1361,7 +1367,7 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 		if( ctx.iterPred.info.increment != null ) {
 			incrementExpr = ctx.iterPred.info.increment;
 		}
-		IterablePredicate predicate = new IterablePredicate(iterVar, ctx.iterPred.info.from, ctx.iterPred.info.to, incrementExpr, parForParamValues, currentFile, line, col, line, col);
+		IterablePredicate predicate = new IterablePredicate(iterVars, ctx.iterPred.info.from, ctx.iterPred.info.to, incrementExpr, parForParamValues, currentFile, line, col, line, col, false);
 		parForStmt.setPredicate(predicate);
 		if(ctx.body.size() > 0) {
 			for(StatementContext stmtCtx : ctx.body) {

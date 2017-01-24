@@ -64,25 +64,27 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 		if( sb instanceof ForStatementBlock )
 		{
 			ForStatementBlock fsb = (ForStatementBlock) sb;
-			ForStatement fs = (ForStatement) fsb.getStatement(0);
-			Hop from = fsb.getFromHops();
-			Hop to = fsb.getToHops();
-			Hop incr = fsb.getIncrementHops();
-			String iterVar = fsb.getIterPredicate().getIterVar().getName();
-			
-			if( fs.getBody()!=null && fs.getBody().size()==1 ) //single child block
-			{
-				StatementBlock csb = (StatementBlock) fs.getBody().get(0);
-				if( !(   csb instanceof WhileStatementBlock  //last level block
-					  || csb instanceof IfStatementBlock 
-					  || csb instanceof ForStatementBlock ) )
+			if(fsb.getIterPredicate().getIterVar().size() == 1) {
+				ForStatement fs = (ForStatement) fsb.getStatement(0);
+				Hop from = fsb.getFromHops();
+				Hop to = fsb.getToHops();
+				Hop incr = fsb.getIncrementHops();
+				String iterVar = fsb.getIterPredicate().getIterVar().get(0).getName();
+				
+				if( fs.getBody()!=null && fs.getBody().size()==1 ) //single child block
 				{
-					//auto vectorization pattern
-					sb = vectorizeScalarAggregate(sb, csb, from, to, incr, iterVar);           //e.g., for(i){s = s + as.scalar(X[i,2])}
-					sb = vectorizeElementwiseBinary(sb, csb, from, to, incr, iterVar);
-					sb = vectorizeElementwiseUnary(sb, csb, from, to, incr, iterVar);
-				}	
-			}	
+					StatementBlock csb = (StatementBlock) fs.getBody().get(0);
+					if( !(   csb instanceof WhileStatementBlock  //last level block
+						  || csb instanceof IfStatementBlock 
+						  || csb instanceof ForStatementBlock ) )
+					{
+						//auto vectorization pattern
+						sb = vectorizeScalarAggregate(sb, csb, from, to, incr, iterVar);           //e.g., for(i){s = s + as.scalar(X[i,2])}
+						sb = vectorizeElementwiseBinary(sb, csb, from, to, incr, iterVar);
+						sb = vectorizeElementwiseUnary(sb, csb, from, to, incr, iterVar);
+					}	
+				}
+			}
 		}	
 		
 		//if no rewrite applied sb is the original for loop otherwise a last level statement block

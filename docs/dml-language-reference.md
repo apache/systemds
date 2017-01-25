@@ -357,51 +357,73 @@ The syntax and semantics of a `parfor` (parallel `for`) statement are equivalent
 	}
 
 	<parfor_paramslist> ::= <,<parfor_parameter>>*
-	<parfor_parameter> ::= check = <dependency_analysis>
-	||= par = <degree_of_parallelism>
-	||= mode = <execution_mode>
-	||= taskpartitioner = <task_partitioning_algorithm>
-	||= tasksize = <task_size>
-	||= datapartitioner = <data_partitioning_mode>
-	||= resultmerge = <result_merge_mode>
-	||= opt = <optimization_mode>
+	<parfor_parameter> ::
+	   = check = <dependency_analysis>
+	|| = par = <degree_of_parallelism>
+	|| = mode = <execution_mode>
+	|| = taskpartitioner = <task_partitioning_algorithm>
+	|| = tasksize = <task_size>
+	|| = datapartitioner = <data_partitioning_mode>
+	|| = resultmerge = <result_merge_mode>
+	|| = opt = <optimization_mode>
+	|| = log = <log_level>
+	|| = profile = <monitor>
 
-	<dependency_analysis>         is one of the following tokens: 0 1
-	<degree_of_parallelism>       is an arbitrary integer number
-	<execution_mode>              is one of the following tokens: LOCAL REMOTE_MR
-	<task_partitioning_algorithm> is one of the following tokens: FIXED NAIVE STATIC FACTORING FACTORING_CMIN FACTORING_CMAX
-	<task_size>                   is an arbitrary integer number
-	<data_partitioning_mode>      is one of the following tokens: NONE LOCAL REMOTE_MR
-	<result_merge_mode>           is one of the following tokens: LOCAL_MEM LOCAL_FILE LOCAL_AUTOMATIC REMOTE_MR
-	<optimization_mode>           is one of the following tokens: NONE CONSTRAINED RULEBASED HEURISTIC GREEDY FULL_DP
+	<dependency_analysis>         0 1
+	<degree_of_parallelism>       arbitrary integer number
+	<execution_mode>              LOCAL REMOTE_MR REMOTE_MR_DP REMOTE_SPARK REMOTE_SPARK_DP
+	<task_partitioning_algorithm> FIXED NAIVE STATIC FACTORING FACTORING_CMIN FACTORING_CMAX
+	<task_size>                   arbitrary integer number
+	<data_partitioning_mode>      NONE LOCAL REMOTE_MR REMOTE_SPARK
+	<result_merge_mode>           LOCAL_MEM LOCAL_FILE LOCAL_AUTOMATIC REMOTE_MR REMOTE_SPARK
+	<optimization_mode>           NONE RULEBASED CONSTRAINED HEURISTIC GREEDY FULL_DP
+	<log_level>                   ALL TRACE DEBUG INFO WARN ERROR FATAL OFF
+	<monitor>                     0 1
 
-If any of these parameters is not specified, the following respective defaults are used: `check = 1`, `par = [number of virtual processors on master node]`, `mode = LOCAL`, `taskpartitioner = FIXED`, `tasksize = 1`, `datapartitioner = NONE`, `resultmerge = LOCAL_AUTOMATIC`, `opt = RULEBASED`.
+
+If any of these parameters is not specified, the following respective defaults are used:
+
+**Table 2**: Parfor default parameter values
+
+Parameter Name  | Default Value
+--------------- | -------------
+check           | 1
+par             | [number of virtual processors on master node]
+mode            | LOCAL
+taskpartitioner | FIXED
+tasksize        | 1
+datapartitioner | NONE
+resultmerge     | LOCAL_AUTOMATIC
+opt             | RULEBASED
+log             | INFO
+profile         | 0
+
 
 Of particular note is the `check` parameter. SystemML's `parfor` statement by default (`check = 1`) performs dependency analysis in an
 attempt to guarantee result correctness for parallel execution. For example, the following `parfor` statement is **incorrect** because
-the iterations do not act independently, so they are not parallizable. The iterations incorrectly try to increment the same `sum` variable.
+the iterations do not act independently, so they are not parallelizable. The iterations incorrectly try to increment the same `sum` variable.
 
 	sum = 0
 	parfor(i in 1:3) {
-	    sum = sum + i; # not parallizable - generates error
+	    sum = sum + i; # not parallelizable - generates error
 	}
 	print(sum)
 
 SystemML's `parfor` dependency analysis can occasionally result in false positives, as in the following example. This example creates a 2x30
-matrix. It then utilizes a `parfor` loop to write 10 2x3 matrices into the 2x30 matrix. This `parfor` statement is parallizable and correct,
+matrix. It then utilizes a `parfor` loop to write 10 2x3 matrices into the 2x30 matrix. This `parfor` statement is parallelizable and correct,
 but the dependency analysis generates a false positive dependency error for the variable `ms`.
 
 	ms = matrix(0, rows=2, cols=3*10)
-	parfor (v in 1:10) { # parallizable - false positive
+	parfor (v in 1:10) { # parallelizable - false positive
 	    mv = matrix(v, rows=2, cols=3)
 	    ms[,(v-1)*3+1:v*3] = mv
 	}
 
-If a false positive arises but you are certain that the `parfor` is parallizable, the `parfor` dependency check can be disabled via
+If a false positive arises but you are certain that the `parfor` is parallelizable, the `parfor` dependency check can be disabled via
 the `check = 0` option.
 
 	ms = matrix(0, rows=2, cols=3*10)
-	parfor (v in 1:10, check=0) { # parallizable
+	parfor (v in 1:10, check=0) { # parallelizable
 	    mv = matrix(v, rows=2, cols=3)
 	    ms[,(v-1)*3+1:v*3] = mv
 	}
@@ -437,7 +459,7 @@ The syntax for the UDF function declaration for functions defined in external pa
     implemented in ([userParam=value]*)
 
 
-**Table 2**: Parameters for UDF Function Definition Statements
+**Table 3**: Parameters for UDF Function Definition Statements
 
 Parameter Name | Description | Optional | Permissible Values
 -------------- | ----------- | -------- | ------------------
@@ -613,7 +635,7 @@ The builtin function `sum` operates on a matrix (say A of dimensionality (m x n)
 
 ### Matrix Construction, Manipulation, and Aggregation Built-In Functions
 
-**Table 3**: Matrix Construction, Manipulation, and Aggregation Built-In Functions
+**Table 4**: Matrix Construction, Manipulation, and Aggregation Built-In Functions
 
 Function | Description | Parameters | Example
 -------- | ----------- | ---------- | -------
@@ -637,7 +659,7 @@ sum() | Sum of all cells in matrix | Input: matrix <br/> Output: scalar | sum(X)
 
 ### Matrix and/or Scalar Comparison Built-In Functions
 
-**Table 4**: Matrix and/or Scalar Comparison Built-In Functions
+**Table 5**: Matrix and/or Scalar Comparison Built-In Functions
 
 Function | Description | Parameters | Example
 -------- | ----------- | ---------- | -------
@@ -648,7 +670,7 @@ ppred() | "parallel predicate".<br/> The relational operator specified in the th
 
 ### Casting Built-In Functions
 
-**Table 5**: Casting Built-In Functions
+**Table 6**: Casting Built-In Functions
 
 Function | Description | Parameters | Example
 -------- | ----------- | ---------- | -------
@@ -658,7 +680,7 @@ as.double(), <br/> as.integer(), <br/> as.logical() | A variable is cast as the 
 
 ### Statistical Built-In Functions
 
-**Table 6**: Statistical Built-In Functions
+**Table 7**: Statistical Built-In Functions
 
 Function | Description | Parameters | Example
 -------- | ----------- | ---------- | -------
@@ -667,9 +689,9 @@ var() <br/> sd() | Return the variance/stdDev value of all cells in matrix | Inp
 moment() | Returns the kth central moment of values in a column matrix V, where k = 2, 3, or 4. It can be used to compute statistical measures like Variance, Kurtosis, and Skewness. This function also takes an optional weights parameter W. | Input: (X &lt;(n x 1) matrix&gt;, [W &lt;(n x 1) matrix&gt;),] k &lt;scalar&gt;) <br/> Output: &lt;scalar&gt; | A = rand(rows=100000,cols=1, pdf="normal") <br/> print("Variance from our (standard normal) random generator is approximately " + moment(A,2))
 colSums() <br/> colMeans() <br/> colVars() <br/> colSds() <br/> colMaxs() <br/> colMins() | Column-wise computations -- for each column, compute the sum/mean/variance/stdDev/max/min of cell values | Input: matrix <br/> Output: (1 x n) matrix | colSums(X) <br/> colMeans(X) <br/> colVars(X) <br/> colSds(X) <br/> colMaxs(X) <br/>colMins(X)
 cov() | Returns the covariance between two 1-dimensional column matrices X and Y. The function takes an optional weights parameter W. All column matrices X, Y, and W (when specified) must have the exact same dimension. | Input: (X &lt;(n x 1) matrix&gt;, Y &lt;(n x 1) matrix&gt; [, W &lt;(n x 1) matrix&gt;)]) <br/> Output: &lt;scalar&gt; | cov(X,Y) <br/> cov(X,Y,W)
-table() | Returns the contingency table of two vectors A and B. The resulting table F consists of max(A) rows and max(B) columns. <br/> More precisely, F[i,j] = \\|{ k \\| A[k] = i and B[k] = j, 1 ≤ k ≤ n }\\|, where A and B are two n-dimensional vectors. <br/> This function supports multiple other variants, which can be found below, at the end of this Table 6. | Input: (&lt;(n x 1) matrix&gt;, &lt;(n x 1) matrix&gt;), [&lt;(n x 1) matrix&gt;]) <br/> Output: &lt;matrix&gt; | F = table(A, B) <br/> F = table(A, B, C) <br/> And, several other forms (see below Table 6.)
-cdf()<br/> pnorm()<br/> pexp()<br/> pchisq()<br/> pf()<br/> pt()<br/> icdf()<br/> qnorm()<br/> qexp()<br/> qchisq()<br/> qf()<br/> qt() | p=cdf(target=q, ...) returns the cumulative probability P[X &lt;= q]. <br/> q=icdf(target=p, ...) returns the inverse cumulative probability i.e., it returns q such that the given target p = P[X&lt;=q]. <br/> For more details, please see the section "Probability Distribution Functions" below Table 6. | Input: (target=&lt;scalar&gt;, dist="...", ...) <br/> Output: &lt;scalar&gt; | p = cdf(target=q, dist="normal", mean=1.5, sd=2); is same as p=pnorm(target=q, mean=1.5, sd=2); <br/> q=icdf(target=p, dist="normal") is same as q=qnorm(target=p, mean=0,sd=1) <br/> More examples can be found in the section "Probability Distribution Functions" below Table 6.
-aggregate() | Splits/groups the values from X according to the corresponding values from G, and then applies the function fn on each group. <br/> The result F is a column matrix, in which each row contains the value computed from a distinct group in G. More specifically, F[k,1] = fn( {X[i,1] \\| 1&lt;=i&lt;=n and G[i,1] = k} ), where n = nrow(X) = nrow(G). <br/> Note that the distinct values in G are used as row indexes in the result matrix F. Therefore, nrow(F) = max(G). It is thus recommended that the values in G are consecutive and start from 1. <br/> This function supports multiple other variants, which can be found below, at the end of this Table 6. | Input:<br/> (target = X &lt;(n x 1) matrix, or matrix&gt;,<br/> &nbsp;&nbsp;&nbsp;groups = G &lt;(n x 1) matrix&gt;,<br/> &nbsp;&nbsp;&nbsp;fn= "..." <br/> &nbsp;&nbsp;&nbsp;[,weights= W&lt;(n x 1) matrix&gt;] <br/> &nbsp;&nbsp;&nbsp;[,ngroups=N] )<br/>Output: F &lt;matrix&gt; <br/> Note: X is a (n x 1) matrix unless ngroups is specified with no weights, in which case X is a regular (n x m) matrix.<br/> The parameter fn takes one of the following functions: "count", "sum", "mean", "variance", "centralmoment". In the case of central moment, one must also provide the order of the moment that need to be computed (see example). | F = aggregate(target=X, groups=G, fn= "..." [,weights = W]) <br/> F = aggregate(target=X, groups=G1, fn= "sum"); <br/> F = aggregate(target=Y, groups=G2, fn= "mean", weights=W); <br/> F = aggregate(target=Z, groups=G3, fn= "centralmoment", order= "2"); <br/> And, several other forms (see below Table 6.)
+table() | Returns the contingency table of two vectors A and B. The resulting table F consists of max(A) rows and max(B) columns. <br/> More precisely, F[i,j] = \\|{ k \\| A[k] = i and B[k] = j, 1 ≤ k ≤ n }\\|, where A and B are two n-dimensional vectors. <br/> This function supports multiple other variants, which can be found below, at the end of this Table 7. | Input: (&lt;(n x 1) matrix&gt;, &lt;(n x 1) matrix&gt;), [&lt;(n x 1) matrix&gt;]) <br/> Output: &lt;matrix&gt; | F = table(A, B) <br/> F = table(A, B, C) <br/> And, several other forms (see below Table 7.)
+cdf()<br/> pnorm()<br/> pexp()<br/> pchisq()<br/> pf()<br/> pt()<br/> icdf()<br/> qnorm()<br/> qexp()<br/> qchisq()<br/> qf()<br/> qt() | p=cdf(target=q, ...) returns the cumulative probability P[X &lt;= q]. <br/> q=icdf(target=p, ...) returns the inverse cumulative probability i.e., it returns q such that the given target p = P[X&lt;=q]. <br/> For more details, please see the section "Probability Distribution Functions" below Table 7. | Input: (target=&lt;scalar&gt;, dist="...", ...) <br/> Output: &lt;scalar&gt; | p = cdf(target=q, dist="normal", mean=1.5, sd=2); is same as p=pnorm(target=q, mean=1.5, sd=2); <br/> q=icdf(target=p, dist="normal") is same as q=qnorm(target=p, mean=0,sd=1) <br/> More examples can be found in the section "Probability Distribution Functions" below Table 7.
+aggregate() | Splits/groups the values from X according to the corresponding values from G, and then applies the function fn on each group. <br/> The result F is a column matrix, in which each row contains the value computed from a distinct group in G. More specifically, F[k,1] = fn( {X[i,1] \\| 1&lt;=i&lt;=n and G[i,1] = k} ), where n = nrow(X) = nrow(G). <br/> Note that the distinct values in G are used as row indexes in the result matrix F. Therefore, nrow(F) = max(G). It is thus recommended that the values in G are consecutive and start from 1. <br/> This function supports multiple other variants, which can be found below, at the end of this Table 7. | Input:<br/> (target = X &lt;(n x 1) matrix, or matrix&gt;,<br/> &nbsp;&nbsp;&nbsp;groups = G &lt;(n x 1) matrix&gt;,<br/> &nbsp;&nbsp;&nbsp;fn= "..." <br/> &nbsp;&nbsp;&nbsp;[,weights= W&lt;(n x 1) matrix&gt;] <br/> &nbsp;&nbsp;&nbsp;[,ngroups=N] )<br/>Output: F &lt;matrix&gt; <br/> Note: X is a (n x 1) matrix unless ngroups is specified with no weights, in which case X is a regular (n x m) matrix.<br/> The parameter fn takes one of the following functions: "count", "sum", "mean", "variance", "centralmoment". In the case of central moment, one must also provide the order of the moment that need to be computed (see example). | F = aggregate(target=X, groups=G, fn= "..." [,weights = W]) <br/> F = aggregate(target=X, groups=G1, fn= "sum"); <br/> F = aggregate(target=Y, groups=G2, fn= "mean", weights=W); <br/> F = aggregate(target=Z, groups=G3, fn= "centralmoment", order= "2"); <br/> And, several other forms (see below Table 7.)
 interQuartileMean() | Returns the mean of all x in X such that x&gt;quantile(X, 0.25) and x&lt;=quantile(X, 0.75). X, W are column matrices (vectors) of the same size. W contains the weights for data in X. | Input: (X &lt;(n x 1) matrix&gt; [, W &lt;(n x 1) matrix&gt;)]) <br/> Output: &lt;scalar&gt; | interQuartileMean(X) <br/> interQuartileMean(X, W)
 quantile () | The p-quantile for a random variable X is the value x such that Pr[X&lt;x] &lt;= p and Pr[X&lt;= x] &gt;= p <br/> let n=nrow(X), i=ceiling(p*n), quantile() will return X[i]. p is a scalar (0&lt;p&lt;1) that specifies the quantile to be computed. Optionally, a weight vector may be provided for X. | Input: (X &lt;(n x 1) matrix&gt;, [W &lt;(n x 1) matrix&gt;),] p &lt;scalar&gt;) <br/> Output: &lt;scalar&gt; | quantile(X, p) <br/> quantile(X, W, p)
 quantile () | Returns a column matrix with list of all quantiles requested in P. | Input: (X &lt;(n x 1) matrix&gt;, [W &lt;(n x 1) matrix&gt;),] P &lt;(q x 1) matrix&gt;) <br/> Output: matrix | quantile(X, P) <br/> quantile(X, W, P)
@@ -688,7 +710,7 @@ outer(vector1, vector2, "op") | Applies element wise binary operation "op" (for 
 The built-in function table() supports different types of input parameters. These variations are described below:
 
   * Basic form: `F=table(A,B)`
-    As described above in Table 6.
+    As described above in Table 7.
   * Weighted form: `F=table(A,B,W)`
     Users can provide an optional third parameter C with the same dimensions as of A and B. In this case, the output F[i,j] = ∑kC[k], where A[k] = i and B[k] = j (1 ≤ k ≤ n).
   * Scalar form
@@ -706,11 +728,11 @@ The built-in function table() supports different types of input parameters. Thes
 The built-in function aggregate() supports different types of input parameters. These variations are described below:
 
   * Basic form: `F=aggregate(target=X, groups=G, fn="sum")`
-    As described above in Table 6.
+    As described above in Table 7.
   * Weighted form: `F=aggregate(target=X, groups=G, weights=W, fn="sum")`
     Users can provide an optional parameter W with the same dimensions as of A and B. In this case, fn computes the weighted statistics over values from X, which are grouped by values from G.
   * Specified Output Size
-As noted in Table 6, the number of rows in the output matrix F is equal to the maximum value in the grouping matrix G. Therefore, the dimensions of F are known only after its execution is complete. When needed, users can precisely control the size of the output matrix via an additional argument, `ngroups`, as shown below: <br/>
+As noted in Table 7, the number of rows in the output matrix F is equal to the maximum value in the grouping matrix G. Therefore, the dimensions of F are known only after its execution is complete. When needed, users can precisely control the size of the output matrix via an additional argument, `ngroups`, as shown below: <br/>
     `F = aggregate(target=X, groups=G, fn="sum", ngroups=10);` <br/>
 The output F will have exactly 10 rows and 1 column. F may be a truncated or padded (with zeros) version of the output produced by `aggregate(target=X, groups=G, fn="sum")` – depending on the values of `ngroups` and `max(G)`. For example, if `max(G) < ngroups` then the last (`ngroups-max(G)`) rows will have zeros.
 
@@ -797,7 +819,7 @@ is same as
 
 ### Mathematical and Trigonometric Built-In Functions
 
-**Table 7**: Mathematical and Trigonometric Built-In Functions
+**Table 8**: Mathematical and Trigonometric Built-In Functions
 
 Function | Description | Parameters | Example
 -------- | ----------- | ---------- | -------
@@ -808,7 +830,7 @@ sign() | Returns a matrix representing the signs of the input matrix elements, w
 
 ### Linear Algebra Built-In Functions
 
-**Table 8**: Linear Algebra Built-In Functions
+**Table 9**: Linear Algebra Built-In Functions
 
 Function | Description | Parameters | Example
 -------- | ----------- | ---------- | -------
@@ -862,10 +884,10 @@ can span multiple part files.
 
 The binary format can only be read and written by SystemML.
 
-Let's look at a matrix and examples of its data represented in the supported formats with corresponding metadata. In Table 9, we have
+Let's look at a matrix and examples of its data represented in the supported formats with corresponding metadata. In the table below, we have
 a matrix consisting of 4 rows and 3 columns.
 
-**Table 9**: Matrix
+**Table 10**: Matrix
 
 <table>
 	<tr>
@@ -981,7 +1003,7 @@ that contains the scalar value 2.0.
 Metadata is represented as an MTD file that contains a single JSON object with the attributes described below.
 
 
-**Table 10**: MTD attributes
+**Table 11**: MTD attributes
 
 Parameter Name | Description | Optional | Permissible values | Data type valid for
 -------------- | ----------- | -------- | ------------------ | -------------------
@@ -999,7 +1021,7 @@ In addition, when reading or writing CSV files, the metadata may contain one or 
 Note that this metadata can be specified as parameters to the `read` and `write` function calls.
 
 
-**Table 11**: Additional MTD attributes when reading/writing CSV files
+**Table 12**: Additional MTD attributes when reading/writing CSV files
 
 Parameter Name | Description | Optional | Permissible values | Data type valid for
 -------------- | ----------- | -------- | ------------------ | -------------------
@@ -1073,7 +1095,7 @@ Additionally, `readMM()` and `read.csv()` are supported and can be used instead 
 #### Write Built-In Function
 
 The `write` method is used to persist `scalar` and `matrix` data to files in the local file system or HDFS. The syntax of `write` is shown below.
-The parameters are described in Table 12. Note that the set of supported parameters for `write` is NOT the same as for `read`.
+The parameters are described in Table 13. Note that the set of supported parameters for `write` is NOT the same as for `read`.
 SystemML writes an MTD file for the written data.
 
     write(identifier, "outputfile", [additional parameters])
@@ -1081,13 +1103,13 @@ SystemML writes an MTD file for the written data.
 The user can use constant string concatenation in the `"outputfile"` parameter to give the full path of the file, where `+` is used as the concatenation operator.
 
 
-**Table 12**: Parameters for `write()` method
+**Table 13**: Parameters for `write()` method
 
 Parameter Name | Description | Optional | Permissible Values
 -------------- | ----------- | -------- | ------------------
 `identifier` | Variable whose data is to be written to a file. Data can be `matrix` or `scalar`. | No | Any variable name
 `"outputfile"` | The path to the data file in the file system | No | Any valid filename
-`[additional parameters]` | See Tables 10 and 11 | |
+`[additional parameters]` | See Tables 11 and 12 | |
 
 ##### **Examples**
 
@@ -1180,7 +1202,7 @@ The transformations are specified to operate on individual columns. The set of a
 
 The following table indicates which transformations can be used simultaneously on a single column.
 
-**Table 13**: Data transformations that can be used simultaneously.
+**Table 14**: Data transformations that can be used simultaneously.
 
 <div style="float:left">
 <table>
@@ -1304,7 +1326,7 @@ The `transform()` function returns the actual transformed data in the form of a 
 
 As an example of the `transform()` function, consider the following [`data.csv`](files/dml-language-reference/data.csv) file that represents a sample of homes data.
 
-**Table 14**: The [`data.csv`](files/dml-language-reference/data.csv) homes data set
+**Table 15**: The [`data.csv`](files/dml-language-reference/data.csv) homes data set
 
 zipcode | district | sqft | numbedrooms | numbathrooms | floors | view  | saleprice | askingprice
 --------|----------|------|-------------|--------------|--------|-------|-----------|------------
@@ -1448,7 +1470,7 @@ Note that the metadata generated during the training phase (located at `/user/ml
 
 ### Other Built-In Functions
 
-**Table 15**: Other Built-In Functions
+**Table 16**: Other Built-In Functions
 
 Function | Description | Parameters | Example
 -------- | ----------- | ---------- | -------

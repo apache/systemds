@@ -601,11 +601,6 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 		func.setConfiguration(configFile);
 		func.setBaseDir(_baseDir);
 		
-		if(className.equals("org.apache.sysml.udf.lib.GenericFunction")) {
-			((org.apache.sysml.udf.lib.GenericFunction)func)._functionName = this._functionName;
-			((org.apache.sysml.udf.lib.GenericFunction)func)._namespace = this._namespace;
-		}
-		
 		//executes function
 		func.execute();
 		

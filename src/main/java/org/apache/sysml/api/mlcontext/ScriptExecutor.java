@@ -25,7 +25,6 @@ import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.api.ExternalUDFRegistration;
 import org.apache.sysml.api.jmlc.JMLCUtils;
 import org.apache.sysml.api.mlcontext.MLContext.ExplainLevel;
 import org.apache.sysml.api.monitoring.SparkMonitoringUtil;
@@ -120,7 +119,6 @@ public class ScriptExecutor {
 	protected boolean statistics = false;
 	protected ExplainLevel explainLevel;
 	protected int statisticsMaxHeavyHitters = 10;
-	public ExternalUDFRegistration udf;
 
 	/**
 	 * ScriptExecutor constructor.
@@ -452,12 +450,6 @@ public class ScriptExecutor {
 					inputParameters, script.getScriptType());
 
 			String scriptExecutionString = script.getScriptExecutionString();
-			if(udf != null) {
-				// Append the headers from Scala UDF.
-				String externalHeaders = udf.getExternalHeaders();
-				if(!externalHeaders.equals(""))
-					scriptExecutionString = externalHeaders + scriptExecutionString;
-			}
 			dmlProgram = parser.parse(null, scriptExecutionString, inputParametersStringMaps);
 		} catch (ParseException e) {
 			throw new MLContextException("Exception occurred while parsing script", e);

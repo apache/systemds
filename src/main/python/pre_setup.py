@@ -30,6 +30,6 @@ if os.path.exists(java_dir_full_path):
 os.mkdir(java_dir_full_path)
 root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd())))
 for file in os.listdir(os.path.join(root_dir, 'target')):
-    if fnmatch.fnmatch(file, 'systemml-*-incubating-SNAPSHOT.jar'):
+    if fnmatch.fnmatch(file, 'systemml-*-incubating-SNAPSHOT.jar') or fnmatch.fnmatch(file, 'systemml-*-incubating.jar'):
         shutil.copyfile(os.path.join(root_dir, 'target', file),
                         os.path.join(java_dir_full_path, file))

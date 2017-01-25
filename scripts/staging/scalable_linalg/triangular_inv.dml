@@ -45,9 +45,7 @@ L_triangular_inv = function(Matrix[double] L)
       A12 = matrix(0, rows=nrow(A11), cols=ncol(A22))
       A21 = -A22 %*% L21 %*% A11
 
-      A1 = cbind(A11, A12)
-      A2 = cbind(A21, A22)
-      A = rbind(A1, A2)
+      A = rbind(cbind(A11, A12), cbind(A21, A22))
     }
   }
 
@@ -62,6 +60,7 @@ U_triangular_inv = function(Matrix[double] U)
       A = matrix(0, rows=2, cols=2)
       A[1,1] = U[2,2]
       A[2,2] = U[1,1]
+
       A[1,2] = -U[1,2]
       A = A/(as.scalar(U[1,1] * U[2,2]))
     } else {
@@ -76,8 +75,6 @@ U_triangular_inv = function(Matrix[double] U)
       A12 = -A11 %*% U12 %*% A22
       A21 = matrix(0, rows=nrow(A22), cols=ncol(A11))
 
-      A1 = cbind(A11, A12)
-      A2 = cbind(A21, A22)
-      A = rbind(A1, A2)
+      A = rbind(cbind(A11, A12), cbind(A21, A22))
     }
   }

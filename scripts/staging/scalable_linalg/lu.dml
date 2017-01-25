@@ -20,27 +20,32 @@
 #-------------------------------------------------------------
 
 source("scalable_linalg/triangular_inv.dml") as inv
-source("utils.dml") as utils
 
-eps = 1e-8
+LU = function(Matrix[double] A, int nb)
+  return(Matrix[double] P, Matrix[double] L, Matrix[double] U) {
+    n = ncol(A)
+    if (n <= nb) {
+      [P, L, U] = lu(A)
+    } else {
+      k = as.integer(floor(n/2))
+      A11 = A[1:k,1:k]
+      A12 = A[1:k,k+1:n]
+      A21 = A[k+1:n,1:k]
+      A22 = A[k+1:n,k+1:n]
 
-N = 1000
-A = rand(rows=N, cols=N, min=-1.0, max=1.0, pdf="uniform")
+      [P11, L11, U11] = LU(A11, nb)
+      L11inv = inv::L_triangular_inv(L11)
+      U11inv = inv::U_triangular_inv(U11)
+      U12 = L11inv %*% (P11 %*% A12)
+      A22 = A22 - A21 %*% U11inv %*% U12
+      [P22, L22, U22] = LU(A22, nb)
+      L21 = P22 %*% A21 %*% U11inv
 
-# create lower/upper triangular matrices using lu deomposition
-[P,L,U] = lu(A)
+      Z12 = matrix(0, rows=nrow(A11), cols=ncol(A22))
+      Z21 = matrix(0, rows=nrow(A22), cols=ncol(A11))
 
-# calculate inverse
-Linv = inv::L_triangular_inv(L)
-Uinv = inv::U_triangular_inv(U)
-
-LLinv = L %*% Linv
-UUinv = U %*% Uinv
-
-# trace of product must be equal to N
-test = utils::check_equal(N, trace(LLinv), eps)
-test = utils::check_equal(N, trace(UUinv), eps)
-
-# check for diagonal matrix
-test = utils::check_equal(sum(LLinv), trace(LLinv), 1e-12)
-test = utils::check_equal(sum(UUinv), trace(UUinv), 1e-12)
+      L = rbind(cbind(L11, Z12), cbind(L21, L22))
+      U = rbind(cbind(U11, U12), cbind(Z21, U22))
+      P = rbind(cbind(P11, Z12), cbind(Z21, P22))
+    }
+}

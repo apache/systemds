@@ -19,28 +19,18 @@
 #
 #-------------------------------------------------------------
 
-source("scalable_linalg/triangular_inv.dml") as inv
+source("scalable_linalg/lu.dml") as decomp
 source("utils.dml") as utils
 
-eps = 1e-8
-
 N = 1000
+
+# create symmetric random matrix
 A = rand(rows=N, cols=N, min=-1.0, max=1.0, pdf="uniform")
 
-# create lower/upper triangular matrices using lu deomposition
-[P,L,U] = lu(A)
+[P, L, U] = decomp::LU(A, 100)
 
-# calculate inverse
-Linv = inv::L_triangular_inv(L)
-Uinv = inv::U_triangular_inv(U)
+# check if PA = LU. Frobenius norm of PA - LU must be zero
+diff = P %*% A - L %*% U
+frobenius_norm = sum(diff * diff)
 
-LLinv = L %*% Linv
-UUinv = U %*% Uinv
-
-# trace of product must be equal to N
-test = utils::check_equal(N, trace(LLinv), eps)
-test = utils::check_equal(N, trace(UUinv), eps)
-
-# check for diagonal matrix
-test = utils::check_equal(sum(LLinv), trace(LLinv), 1e-12)
-test = utils::check_equal(sum(UUinv), trace(UUinv), 1e-12)
+eq = utils::check_equal(0.0, frobenius_norm, 1e-9)

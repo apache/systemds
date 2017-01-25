@@ -19,28 +19,21 @@
 #
 #-------------------------------------------------------------
 
-source("scalable_linalg/triangular_inv.dml") as inv
-source("utils.dml") as utils
 
-eps = 1e-8
+rel_error = function(double true_val, double approx)
+  return(double err) {
+    err = abs(true_val - approx)/max(abs(true_val), 1e-9)
+  }
 
-N = 1000
-A = rand(rows=N, cols=N, min=-1.0, max=1.0, pdf="uniform")
+check_equal = function(double x1, double x2, double eps)
+  return (boolean eq) {
+    #eps = 1e-9
+    eq = TRUE
+    diff = abs(x1 - x2)
+    largest = max(abs(x1), abs(x2))
 
-# create lower/upper triangular matrices using lu deomposition
-[P,L,U] = lu(A)
-
-# calculate inverse
-Linv = inv::L_triangular_inv(L)
-Uinv = inv::U_triangular_inv(U)
-
-LLinv = L %*% Linv
-UUinv = U %*% Uinv
-
-# trace of product must be equal to N
-test = utils::check_equal(N, trace(LLinv), eps)
-test = utils::check_equal(N, trace(UUinv), eps)
-
-# check for diagonal matrix
-test = utils::check_equal(sum(LLinv), trace(LLinv), 1e-12)
-test = utils::check_equal(sum(UUinv), trace(UUinv), 1e-12)
+    if (diff > largest * eps) {
+      print("ERROR: values are not equal " + x1 + ", " + x2)
+      eq = FALSE
+    }
+  }

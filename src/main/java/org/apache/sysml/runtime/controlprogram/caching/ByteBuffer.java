@@ -36,10 +36,10 @@ import org.apache.sysml.runtime.util.LocalFileUtils;
  */
 public class ByteBuffer
 {
-	private boolean _serialized;	
-	private boolean _shallow;
-	private boolean _matrix;
-	private long _size;
+	private volatile boolean _serialized;	
+	private volatile boolean _shallow;
+	private volatile boolean _matrix;
+	private final long _size;
 	
 	protected byte[]     _bdata = null; //sparse matrix
 	protected CacheBlock _cdata = null; //dense matrix/frame

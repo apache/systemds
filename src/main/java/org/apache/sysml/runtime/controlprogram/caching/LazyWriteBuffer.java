@@ -38,7 +38,7 @@ public class LazyWriteBuffer
 	}
 	
 	//global size limit in bytes
-	private static long _limit; 
+	private static final long _limit; 
 	
 	//current size in bytes
 	private static long _size;  

@@ -25,7 +25,7 @@
 		<version>18</version>
 	</parent>
 	<groupId>org.apache.systemml</groupId>
-	<version>0.13.0-incubating-SNAPSHOT</version>
+	<version>0.12.1-incubating-SNAPSHOT</version>
 	<artifactId>systemml</artifactId>
 	<packaging>jar</packaging>
 	<name>SystemML</name>

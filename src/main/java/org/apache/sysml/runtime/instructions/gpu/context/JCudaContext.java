@@ -167,7 +167,7 @@ public class JCudaContext extends GPUContext {
 
 	/**
 	 * Gets the device properties for the active GPU (set with cudaSetDevice())
-	 * @return
+	 * @return the device properties
 	 */
 	public static cudaDeviceProp getGPUProperties() {
 		int[] device = {-1};
@@ -178,7 +178,7 @@ public class JCudaContext extends GPUContext {
 	/**
 	 * Gets the device properties
 	 * @param device the device number (on a machine with more than 1 GPU)
-	 * @return
+	 * @return the device properties
 	 */
 	public static cudaDeviceProp getGPUProperties(int device){
 		if (deviceProperties[device] == null) {
@@ -192,7 +192,7 @@ public class JCudaContext extends GPUContext {
 
 	/**
 	 * Gets the maximum number of threads per block for "active" GPU
-	 * @return
+	 * @return the maximum number of threads per block
 	 */
 	public static int getMaxThreadsPerBlock() {
 		cudaDeviceProp deviceProps = getGPUProperties();
@@ -201,7 +201,7 @@ public class JCudaContext extends GPUContext {
 
 	/**
 	 * Gets the maximum number of blocks supported by the active cuda device
-	 * @return
+	 * @return the maximum number of blocks supported
 	 */
 	public static int getMaxBlocks() {
 		cudaDeviceProp deviceProp = getGPUProperties();
@@ -210,7 +210,7 @@ public class JCudaContext extends GPUContext {
 
 	/**
 	 * Gets the shared memory per block supported by the active cuda device
-	 * @return
+	 * @return the shared memory per block
 	 */
 	public static long getMaxSharedMemory() {
 		cudaDeviceProp deviceProp = getGPUProperties();
@@ -219,7 +219,7 @@ public class JCudaContext extends GPUContext {
 
 	/**
 	 * Gets the warp size supported by the active cuda device
-	 * @return
+	 * @return the warp size
 	 */
 	public static int getWarpSize() {
 		cudaDeviceProp deviceProp = getGPUProperties();
@@ -229,7 +229,7 @@ public class JCudaContext extends GPUContext {
 	/**
 	 * Gets the available memory and then adds value to it
 	 * @param v the value to add
-	 * @return
+	 * @return the current available memory before adding value to it
 	 */
 	public long getAndAddAvailableMemory(long v){
 		return deviceMemBytes.getAndAdd(v);

@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Random;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.spark.Accumulator;
@@ -82,7 +83,7 @@ public class WriteSPInstruction extends SPInstruction
 		
 		// All write instructions have 3 parameters, except in case of delimited/csv file.
 		// Write instructions for csv files also include three additional parameters (hasHeader, delimiter, sparse)
-		if ( parts.length != 4 && parts.length != 8 ) {
+		if ( parts.length != 5 && parts.length != 9 ) {
 			throw new DMLRuntimeException("Invalid number of operands in write instruction: " + str);
 		}
 		
@@ -103,6 +104,13 @@ public class WriteSPInstruction extends SPInstruction
 			
 			boolean isInputMB = Boolean.parseBoolean(parts[7]);
 			inst.setInputMatrixBlock(isInputMB);
+		} else {
+			FileFormatProperties ffp = new FileFormatProperties();
+			String description = parts[4];
+			if (StringUtils.isNotBlank(description)) {
+				ffp.setDescription(description);
+			}
+			inst.setFormatProperties(ffp);
 		}
 		return inst;		
 	}

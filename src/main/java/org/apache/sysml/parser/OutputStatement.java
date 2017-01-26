@@ -35,7 +35,8 @@ public class OutputStatement extends Statement
 																DataExpression.FORMAT_TYPE, 
 																DataExpression.DELIM_DELIMITER, 
 																DataExpression.DELIM_HAS_HEADER_ROW, 
-																DataExpression.DELIM_SPARSE};
+																DataExpression.DELIM_SPARSE,
+																DataExpression.DESCRIPTIONPARAM};
 
 	public DataIdentifier getIdentifier(){
 		return _id;

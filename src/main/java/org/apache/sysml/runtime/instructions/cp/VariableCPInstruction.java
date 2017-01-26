@@ -274,8 +274,8 @@ public class VariableCPInstruction extends CPInstruction
 		else if ( voc == VariableOperationCode.Write ) {
 			// All write instructions have 3 parameters, except in case of delimited/csv file.
 			// Write instructions for csv files also include three additional parameters (hasHeader, delimiter, sparse)
-			if ( parts.length != 4 && parts.length != 7 )
-				throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
+			if ( parts.length != 5 && parts.length != 8 )
+				throw new DMLRuntimeException("Invalid number of operands in write instruction: " + str);
 		}
 		else {
 			_arity = getArity(voc);
@@ -412,7 +412,18 @@ public class VariableCPInstruction extends CPInstruction
 				String delim = parts[5];
 				boolean sparse = Boolean.parseBoolean(parts[6]);
 				FileFormatProperties formatProperties = new CSVFileFormatProperties(hasHeader, delim, sparse);
+				String description = parts[7];
+				if (StringUtils.isNotBlank(description)) {
+					formatProperties.setDescription(description);
+				}
 				inst.setFormatProperties(formatProperties);
+			} else {
+				FileFormatProperties ffp = new FileFormatProperties();
+				String description = parts[4];
+				if (StringUtils.isNotBlank(description)) {
+					ffp.setDescription(description);
+				}
+				inst.setFormatProperties(ffp);
 			}
 			return inst;
 			
@@ -758,7 +769,7 @@ public class VariableCPInstruction extends CPInstruction
 			else {
 				// Default behavior
 				MatrixObject mo = ec.getMatrixObject(input1.getName());
-				mo.exportData(fname, outFmt);
+				mo.exportData(fname, outFmt, _formatProperties);
 			}
 		}
 		else if( input1.getDataType() == DataType.FRAME ) {

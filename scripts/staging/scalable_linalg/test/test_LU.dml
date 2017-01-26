@@ -32,5 +32,6 @@ A = rand(rows=N, cols=N, min=-1.0, max=1.0, pdf="uniform")
 # check if PA = LU. Frobenius norm of PA - LU must be zero
 diff = P %*% A - L %*% U
 frobenius_norm = sum(diff * diff)
-
-eq = utils::check_equal(0.0, frobenius_norm, 1e-9)
+if (frobenius_norm > 1e-6) {
+  print("ERROR: test fails for LU decomposition")
+}

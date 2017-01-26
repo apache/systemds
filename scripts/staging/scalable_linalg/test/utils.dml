@@ -27,13 +27,12 @@ rel_error = function(double true_val, double approx)
 
 check_equal = function(double x1, double x2, double eps)
   return (boolean eq) {
-    #eps = 1e-9
     eq = TRUE
     diff = abs(x1 - x2)
-    largest = max(abs(x1), abs(x2))
+    largest = max(abs(x2), abs(x2))
 
-    if (diff > largest * eps) {
-      print("ERROR: values are not equal " + x1 + ", " + x2)
+    if (diff > largest*eps) {
+      print("ERROR: vlaues not equal: " + x1 + " != " + x2 )
       eq = FALSE
     }
   }

@@ -20,8 +20,8 @@
 	xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2 http://maven.apache.org/xsd/assembly-1.1.2.xsd">
-	<!-- Assembly file for the "standalone" tgz and zip SystemML releases for running on a standalone machine. -->
-	<id>standalone</id>
+	<!-- Assembly file for the binary tgz and zip SystemML releases for running standalone. -->
+	<id>bin</id>
 
 	<formats>
 		<format>tgz</format>
@@ -29,7 +29,7 @@
 	</formats>
 
 	<includeBaseDirectory>true</includeBaseDirectory>
-	<baseDirectory>${artifactId}-${version}-standalone</baseDirectory>
+	<baseDirectory>${artifactId}-${version}-bin</baseDirectory>
 
 	<fileSets>
 		<fileSet>
@@ -76,7 +76,7 @@
 		</fileSet>
 
 		<fileSet>
-			<directory>${basedir}/src/assembly/standalone</directory>
+			<directory>${basedir}/src/assembly/bin</directory>
 			<includes>
 				<include>LICENSE</include>
 				<include>NOTICE</include>
@@ -92,14 +92,6 @@
 			<outputDirectory>.</outputDirectory>
 		</fileSet>
 	</fileSets>
-
-	<!--files>
-		<file>
-			<source>target/${artifactId}-${project.version}-standalone.jar</source>
-			<outputDirectory>.</outputDirectory>
-			<destName>SystemML-standalone.jar</destName>
-		</file>
-	</files-->
 
 	<!-- Include all the libraries needed to run in standalone mode. -->
 	<dependencySets>

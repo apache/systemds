@@ -60,7 +60,7 @@ trait HasTol extends Params {
   final def getTol: Double = $(tol)
 }
 trait HasRegParam extends Params {
-  final val regParam: DoubleParam = new DoubleParam(this, "tol", "the convergence tolerance for iterative algorithms")
+  final val regParam: DoubleParam = new DoubleParam(this, "regParam", "regularization parameter")
   setDefault(regParam, 0.000001)
   final def getRegParam: Double = $(regParam)
 }

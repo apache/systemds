@@ -55,7 +55,7 @@ def createJavaObject(sc, obj_type):
         jar_file_name = '_ignore.jar'
         java_dir = os.path.join(imp.find_module("systemml")[1], "systemml-java")
         for file in os.listdir(java_dir):
-            if fnmatch.fnmatch(file, 'systemml-*-incubating-SNAPSHOT.jar'):
+            if fnmatch.fnmatch(file, 'systemml-*-incubating-SNAPSHOT.jar') or fnmatch.fnmatch(file, 'systemml-*-incubating.jar'):
                 jar_file_name = os.path.join(java_dir, file)
         err_msg = 'Unable to load SystemML.jar into current pyspark session.'
         hint = 'Provide the following argument to pyspark: --driver-class-path '

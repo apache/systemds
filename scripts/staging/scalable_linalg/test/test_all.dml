@@ -19,25 +19,14 @@
 #
 #-------------------------------------------------------------
 
-source("scalable_linalg/lu.dml") as decomp
+source("test_inverse.dml") as test1
+source("test_LU.dml") as test2
+source("test_QR.dml") as test3
+source("test_Cholesky.dml") as test4
 
-test_LU = function() {
-  print("Testing LU Decomposition.")
-  eps = 1e-8
-  n = 1000
-  b = 100 # smallest block size
+print("Testing Scalable Linalg")
 
-  # create random square matrix
-  A = rand(rows=n, cols=n, min=-1.0, max=1.0, pdf="uniform")
-
-  [P, L, U] = decomp::LU(A, b)
-
-  # check if PA = LU. Frobenius norm of (PA - LU) must be close to zero
-  diff = P %*% A - L %*% U
-  frobenius_norm = sum(diff * diff)
-  if (frobenius_norm > eps) {
-    print("ERROR: LU decomposition does not reproduce original matrix")
-  }
-}
-
-tmp = test_LU()
+tmp = test1::test_inverse()
+tmp = test2::test_LU()
+tmp = test3::test_QR()
+tmp = test4::test_Cholesky()

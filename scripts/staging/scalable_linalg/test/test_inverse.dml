@@ -20,27 +20,43 @@
 #-------------------------------------------------------------
 
 source("scalable_linalg/triangular_inv.dml") as inv
-source("utils.dml") as utils
 
-eps = 1e-8
+test_inverse = function() {
 
-N = 1000
-A = rand(rows=N, cols=N, min=-1.0, max=1.0, pdf="uniform")
+  eps = 1e-8
+  n = 1000
 
-# create lower/upper triangular matrices using lu deomposition
-[P,L,U] = lu(A)
+  A = rand(rows=n, cols=n, min=-1.0, max=1.0, pdf="uniform")
 
-# calculate inverse
-Linv = inv::L_triangular_inv(L)
-Uinv = inv::U_triangular_inv(U)
+  # create lower/upper triangular matrices using lu deomposition
+  [P,L,U] = lu(A)
 
-LLinv = L %*% Linv
-UUinv = U %*% Uinv
+  # calculate inverse
+  Linv = inv::L_triangular_inv(L)
+  Uinv = inv::U_triangular_inv(U)
 
-# trace of product must be equal to N
-test = utils::check_equal(N, trace(LLinv), eps)
-test = utils::check_equal(N, trace(UUinv), eps)
+  # these products should produce identity matrices
+  LLinv = L %*% Linv
+  UUinv = U %*% Uinv
 
-# check for diagonal matrix
-test = utils::check_equal(sum(LLinv), trace(LLinv), 1e-12)
-test = utils::check_equal(sum(UUinv), trace(UUinv), 1e-12)
+  # create identity matrix
+  ones = matrix(1.0, n, 1);
+  I = diag(ones);
+
+  # check if LL^-1 = I. Frobenius norm of (I - LL^-1) must be close to zero
+  diff = I - LLinv
+  frobenius_norm = sum(diff * diff)
+  if (frobenius_norm > eps) {
+    print("ERROR: inverse of lower triangular matrix fails")
+  }
+
+  # check if UU^-1 = I. Frobenius norm of (I - UU^-1) must be close to zero
+  diff = I - UUinv
+  frobenius_norm = sum(diff * diff)
+
+  if (frobenius_norm > eps) {
+    print("ERROR: inverse of upper triangular matrix fails")
+  }
+}
+
+tmp = test_inverse()

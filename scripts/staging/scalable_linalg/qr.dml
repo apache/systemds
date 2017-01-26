@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-
+# calculate Q from Housholder matrix
 QfromH = function(Matrix[double] H)
   return(Matrix[double] Q) {
     m = nrow(H);

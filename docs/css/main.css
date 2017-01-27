@@ -5,6 +5,7 @@
 /* Overall */
 body {
   padding-top: 51px !important;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body #content {
@@ -38,25 +39,27 @@ a:hover code {
 
 /* Branding */
 .brand {
-  font-weight: bold !important;
+  font-weight: normal !important;
   padding-top: 0px;
   padding-bottom: 0px;
   max-width: 75%;
 }
 
 img.logo {
-  height: 100%;
-  margin-right: 0.2em;
+  height: 31px;
+  width: 32px;
+  margin-right: 10px;
   display: none;
+  margin-top: 10px;
+  margin-left: 10px;
 }
 
 /* Navigation Bar */
 .navbar {
-  background-color: #152935;
+  background-color: rgba(0, 0, 0, 0.9);
 }
 
 .navbar .container {
-  background-color: #152935;
   background-image: none;
 }
 
@@ -79,7 +82,7 @@ img.logo {
 }
 
 .navbar .projecttitle {
-  margin-top: 10px;
+  margin-top: 7px;
   height: 40px;
   white-space: nowrap;
 }
@@ -194,6 +197,12 @@ table {
 
 a {
   color: #0c8672;
+}
+
+#trademark {
+    font-size: 0.5em;
+    font-weight: 300;
+    vertical-align: middle;
 }
 
 /* Media queries */

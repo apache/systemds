@@ -739,7 +739,7 @@
 						</configuration>
 						<executions>
 							<execution>
-								<id>create-source-distribution-assembly</id>
+								<id>create-source-distribution</id>
 								<phase>package</phase>
 								<goals>
 									<goal>single</goal>
@@ -752,7 +752,7 @@
 							</execution>
 
 							<execution>
-								<id>create-binary-cluster-distribution-assembly</id>
+								<id>create-binary-distribution-without-libs</id>
 								<phase>package</phase>
 								<goals>
 									<goal>single</goal>
@@ -766,14 +766,14 @@
 							</execution>
 
 							<execution>
-								<id>create-binary-standalone-distribution-assembly</id>
+								<id>create-binary-distribution</id>
 								<phase>package</phase>
 								<goals>
 									<goal>single</goal>
 								</goals>
 								<configuration>
 									<descriptors>
-										<descriptor>src/assembly/standalone.xml</descriptor>
+										<descriptor>src/assembly/bin.xml</descriptor>
 									</descriptors>
 								</configuration>
 							</execution>

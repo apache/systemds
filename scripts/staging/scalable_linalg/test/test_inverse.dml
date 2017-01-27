@@ -22,9 +22,9 @@
 source("scalable_linalg/triangular_inv.dml") as inv
 
 test_inverse = function() {
-
-  eps = 1e-8
+  print("Testing inverse of triangular matrices")
   n = 1000
+  eps = n*n*1e-12
 
   A = rand(rows=n, cols=n, min=-1.0, max=1.0, pdf="uniform")
 
@@ -43,18 +43,18 @@ test_inverse = function() {
   ones = matrix(1.0, n, 1);
   I = diag(ones);
 
-  # check if LL^-1 = I. Frobenius norm of (I - LL^-1) must be close to zero
+  # check if LL^-1 = I. Infinity norm of (I - LL^-1) must be close to zero
   diff = I - LLinv
-  frobenius_norm = sum(diff * diff)
-  if (frobenius_norm > eps) {
+  sup_norm = max(abs(diff))
+  if (sup_norm > eps) {
     print("ERROR: inverse of lower triangular matrix fails")
   }
 
-  # check if UU^-1 = I. Frobenius norm of (I - UU^-1) must be close to zero
+  # check if UU^-1 = I. Inifinity norm of (I - UU^-1) must be close to zero
   diff = I - UUinv
-  frobenius_norm = sum(diff * diff)
+  sup_norm = max(abs(diff))
 
-  if (frobenius_norm > eps) {
+  if (sup_norm > eps) {
     print("ERROR: inverse of upper triangular matrix fails")
   }
 }

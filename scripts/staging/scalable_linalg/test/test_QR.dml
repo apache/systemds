@@ -23,20 +23,20 @@ source("scalable_linalg/qr.dml") as decomp
 
 test_QR = function() {
   print("Testing QR Decomposition.")
-  eps = 1e-8
   n = 1000
   m = 2000
   b = 100 # smallest block size
+  eps = n*m*1e-12 # for lareger matrices eps should be larger
 
   # create a symmetric random matrix
   A = rand(rows=m, cols=n, min=-1.0, max=1.0, pdf="uniform")
 
   [Q, R] = decomp::QR(A, b)
 
-  # check if A = QR. Frobenius norm of (A - QR) must be close to zero
+  # check if A = QR. Infinity norm of (A - QR) must be close to zero
   diff = A - Q %*% R
-  frobenius_norm = sum(diff * diff)
-  if (frobenius_norm > eps) {
+  sup_norm = max(abs(diff))
+  if (sup_norm > eps) {
     print("ERROR: QR decomposition does not reproduce original matrix")
   }
 }

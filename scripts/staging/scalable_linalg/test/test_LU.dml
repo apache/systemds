@@ -23,19 +23,20 @@ source("scalable_linalg/lu.dml") as decomp
 
 test_LU = function() {
   print("Testing LU Decomposition.")
-  eps = 1e-8
   n = 1000
   b = 100 # smallest block size
+  eps = n*n*1e-12 # for lareger matrices eps should be larger
 
   # create random square matrix
   A = rand(rows=n, cols=n, min=-1.0, max=1.0, pdf="uniform")
 
   [P, L, U] = decomp::LU(A, b)
 
-  # check if PA = LU. Frobenius norm of (PA - LU) must be close to zero
+  # check if PA = LU. Infinity norm of (PA - LU) must be close to zero
   diff = P %*% A - L %*% U
-  frobenius_norm = sum(diff * diff)
-  if (frobenius_norm > eps) {
+  sup_norm = max(abs(diff))
+  print(sup_norm)
+  if (sup_norm > eps) {
     print("ERROR: LU decomposition does not reproduce original matrix")
   }
 }

@@ -28,5 +28,5 @@ print("Testing Scalable Linalg")
 
 tmp = test1::test_inverse()
 tmp = test2::test_LU()
-tmp = test3::test_QR()
+#tmp = test3::test_QR()
 tmp = test4::test_Cholesky()

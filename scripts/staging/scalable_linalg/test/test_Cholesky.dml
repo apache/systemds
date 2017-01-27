@@ -23,9 +23,9 @@ source("scalable_linalg/cholesky.dml") as decomp
 
 test_Cholesky = function() {
   print("Testing Choleskey Decomposition.")
-  eps = 1e-8
   n = 1000
   b = 100 # smallest block size
+  eps = n*n*1e-12 # for lareger matrices eps should be larger
 
   # create a symmetric random matrix
   A = rand(rows=n, cols=n, min=-1.0, max=1.0, pdf="uniform")
@@ -33,11 +33,10 @@ test_Cholesky = function() {
 
   L = decomp::Choleskey(X, b)
 
-  # check if X = LL^T. Frobenius norm of (X - LL^T) must be close to zero
+  # check if X = LL^T. Infinity norm of (X - LL^T) must be close to zero
   diff = X - L %*% t(L)
-  frobenius_norm = sum(diff * diff)
-
-  if (frobenius_norm > eps) {
+  sup_norm = max(abs(diff))
+  if (sup_norm > eps) {
     print("ERROR: Cholesky decomposition does not reproduce original matrix")
   }
 }

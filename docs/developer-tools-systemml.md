@@ -82,14 +82,18 @@ The lifecycle mappings are stored in a workspace metadata file as specified in E
 
 Please see below tips for resolving some compilation issues that might occur after importing the SystemML project.
 
-##### `Invalid cross-compiled libraries` error
+### Invalid cross-compiled libraries error
+
 Since Scala IDE bundles the latest versions (2.10.5 and 2.11.6 at this point), you need to add one in Eclipse Preferences -> Scala -> Installations by pointing to the <code>lib</code> directory of your Scala 2.10.4 distribution. Once this is done, select SystemML project, right-click, choose Scala -> Set Scala Installation and point to the 2.10.4 installation. This should clear all errors about invalid cross-compiled libraries. A clean build should succeed now.
 
-##### `Incompatible scala version ` error
+### Incompatible Scala version error
+
 Change IDE Scala version `Project->Properties->Scala Compiler -> Scala Installation`  to   `Fixed Scala Installation: 2.10.5`
 
-##### `Not found type * ` error
+### Not found type error
+
 Run command `mvn package`, and do `Project -> Refresh`
 
-##### `Marketplace not found ` error for Eclipse Luna
+### Marketplace not found error for Eclipse Luna
+
 Except for Scala IDE plugin install, please make sure to get update from "http://alchim31.free.fr/m2e-scala/update-site" to update maven connector for Scala.

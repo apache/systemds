@@ -1,7 +1,7 @@
 ---
 layout: global
-title: Reference Guide for Python users
-description: Reference Guide for Python users
+title: Reference Guide for Python Users
+description: Reference Guide for Python Users
 ---
 <!--
 {% comment %}

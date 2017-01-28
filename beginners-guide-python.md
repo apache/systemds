@@ -1,7 +1,7 @@
 ---
 layout: global
-title: Beginner's Guide for Python users
-description: Beginner's Guide for Python users
+title: Beginner's Guide for Python Users
+description: Beginner's Guide for Python Users
 ---
 <!--
 {% comment %}

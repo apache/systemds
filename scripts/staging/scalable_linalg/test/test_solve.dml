@@ -22,23 +22,23 @@
 source("scalable_linalg/solve.dml") as lsq
 
 test_solve = function() {
-    n = 1000
-    m = 2000
-    b = 100
-    eps = 1e-9
+  print("Testing linear Solve function.")
+  n = 1000
+  m = 2000
+  b = 100
+  eps = 1e-9
 
-    # generate data for test
-    A = rand(rows=m, cols=n, min=-2, max=2)
-    x = rand(rows=n, cols=1, min=-5, max=5)
-    y = A %*% x
+  # generate data for test
+  A = rand(rows=m, cols=n, min=-2, max=2)
+  x = rand(rows=n, cols=1, min=-5, max=5)
+  y = A %*% x
+  x1 = lsq::Solve(A, y, b)
 
-    x1 = lsq::Solve(A, y, b)
-
-    diff = abs(x - x1)
-    sup_norm = max(diff)
-    if (sup_norm > eps) {
-      print("ERROR: least square solve fails")
-    }
+  diff = abs(x - x1)
+  sup_norm = max(diff)
+  if (sup_norm > eps) {
+    print("ERROR: least squares solve fails")
+  }
 }
 
 tmp = test_solve()

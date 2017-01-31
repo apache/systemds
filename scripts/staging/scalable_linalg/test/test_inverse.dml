@@ -1,0 +1,49 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+source("scalable_linalg/inverse.dml") as inv
+
+test_inverse = function() {
+  print("Testing inverse of square matrices")
+  n = 1000
+  b = 100 # smallest block size
+  eps = n*n*1e-12
+
+  A = rand(rows=n, cols=n, min=-1.0, max=1.0, pdf="uniform")
+
+  Ainv = inv::Inverse(A, b)
+
+  # this product should produce identity matrix
+  AAinv = A %*% Ainv
+
+  # create identity matrix
+  ones = matrix(1.0, n, 1);
+  I = diag(ones);
+
+  # check if AA^-1 = I. Infinity norm of (I - AA^-1) must be close to zero
+  diff = I - AAinv
+  sup_norm = max(abs(diff))
+  if (sup_norm > eps) {
+    print("ERROR: inverse of square matrix fails")
+  }
+}
+
+tmp = test_inverse()

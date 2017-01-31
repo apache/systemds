@@ -401,20 +401,26 @@ public class LibMatrixBincell
 			else if( skipEmpty && (m1.sparse || m2.sparse) ) 
 			{
 				SparseBlock a = m1.sparse ? m1.sparseBlock : m2.sparseBlock;
-				if( a != null ) {
-					MatrixBlock b = m1.sparse ? m2 : m1;
-					for( int i=0; i<a.numRows(); i++ ) {
-						if( a.isEmpty(i) ) continue;
-						int apos = a.pos(i);
-						int alen = a.size(i);
-						int[] aix = a.indexes(i);
-						double[] avals = a.values(i);
-						for(int k = apos; k < apos+alen; k++) {
-							double in2 = b.quickGetValue(i, aix[k]);
-							if( in2==0 ) continue;
-							double val = op.fn.execute(avals[k], in2);
-							ret.appendValue(i, aix[k], val);
-						}
+				if( a == null )
+					return;
+				
+				//prepare second input and allocate output
+				MatrixBlock b = m1.sparse ? m2 : m1;
+				ret.allocateDenseOrSparseBlock();
+				
+				for( int i=0; i<a.numRows(); i++ ) {
+					if( a.isEmpty(i) ) continue;
+					int apos = a.pos(i);
+					int alen = a.size(i);
+					int[] aix = a.indexes(i);
+					double[] avals = a.values(i);
+					if( ret.sparse && !b.sparse )
+						ret.sparseBlock.allocate(i, alen);
+					for(int k = apos; k < apos+alen; k++) {
+						double in2 = b.quickGetValue(i, aix[k]);
+						if( in2==0 ) continue;
+						double val = op.fn.execute(avals[k], in2);
+						ret.appendValue(i, aix[k], val);
 					}
 				}
 			}

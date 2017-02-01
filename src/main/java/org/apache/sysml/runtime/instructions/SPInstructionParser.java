@@ -50,6 +50,7 @@ import org.apache.sysml.runtime.instructions.spark.CastSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.CentralMomentSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.CheckpointSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.CompressionSPInstruction;
+import org.apache.sysml.runtime.instructions.spark.ConvolutionSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.CovarianceSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.CpmmSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.CumulativeAggregateSPInstruction;
@@ -132,6 +133,15 @@ public class SPInstructionParser extends InstructionParser
 		//ternary aggregate operators
 		String2SPInstructionType.put( "tak+*"      , SPINSTRUCTION_TYPE.AggregateTernary);
 		String2SPInstructionType.put( "tack+*"     , SPINSTRUCTION_TYPE.AggregateTernary);
+
+		// Neural network operators
+		String2SPInstructionType.put( "relu_backward",          SPINSTRUCTION_TYPE.Convolution);
+		String2SPInstructionType.put( "conv2d",                 SPINSTRUCTION_TYPE.Convolution);
+		String2SPInstructionType.put( "conv2d_backward_filter", SPINSTRUCTION_TYPE.Convolution);
+		String2SPInstructionType.put( "conv2d_backward_data",   SPINSTRUCTION_TYPE.Convolution);
+		String2SPInstructionType.put( "maxpooling",             SPINSTRUCTION_TYPE.Convolution);
+		String2SPInstructionType.put( "maxpooling_backward",    SPINSTRUCTION_TYPE.Convolution);
+		String2SPInstructionType.put( "bias_add",    			 SPINSTRUCTION_TYPE.Convolution);
 		
 		String2SPInstructionType.put( "rangeReIndex"   	, SPINSTRUCTION_TYPE.MatrixIndexing);
 		String2SPInstructionType.put( "leftIndex"   	, SPINSTRUCTION_TYPE.MatrixIndexing);
@@ -331,6 +341,9 @@ public class SPInstructionParser extends InstructionParser
 			case AggregateTernary:
 				return AggregateTernarySPInstruction.parseInstruction(str);
 				
+			case Convolution:
+				 return ConvolutionSPInstruction.parseInstruction(str);
+
 			case MatrixIndexing:
 				return IndexingSPInstruction.parseInstruction(str);
 				

@@ -21,7 +21,6 @@ package org.apache.sysml.hops;
 
 import java.util.ArrayList;
 
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.Hop.MultiThreadedHop;
 import org.apache.sysml.lops.ConvolutionTransform;
@@ -90,19 +89,11 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 			case DIRECT_CONV2D_BACKWARD_FILTER:
 			case BIAS_ADD:
 			{	
-				//TODO: Fix me. Currently forcing the instruction to GPU if gpu flag is set
-				if(DMLScript.USE_ACCELERATOR) {
-					et = ExecType.GPU;
-					setLops(constructConvolutionLops(et, inputs));
-					break;
-				}
-				else if(et == ExecType.CP) {
+				if(et == ExecType.CP || et == ExecType.GPU || et == ExecType.SPARK) {
 					setLops(constructConvolutionLops(et, inputs));
 					break;
 				}			
 				else {
-					// TODO: Add support for SPARK/MR backends once we are happy with the performance of
-					// single node Lenet script. 
 					throw new HopsException("Unimplemented ConvolutionOp for execution type: " + et.name());
 				}
 				// break;
@@ -290,11 +281,6 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		
 		checkAndSetForcedPlatform();
 		
-		//TODO: Remove this once memEstimate is fixed for these instructions 
-		if((op == ConvOp.MAX_POOLING || op == ConvOp.MAX_POOLING_BACKWARD) && DMLScript.USE_ACCELERATOR) {
-			return ExecType.GPU;
-		}
-	
 		ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
 		
 		if( _etypeForced != null ) 			
@@ -303,12 +289,10 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		}
 		else 
 		{	
-			// TODO: After adding Spark backend, uncomment this
 			if ( OptimizerUtils.isMemoryBasedOptLevel() ) {
-				_etype = findExecTypeByMemEstimate();
+				_etype = findGPUExecTypeByMemEstimate(findExecTypeByMemEstimate());
 			}
-			else 
-			{
+			else {
 				_etype = REMOTE;
 			}
 			
@@ -320,8 +304,6 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		if( ConfigurationManager.isDynamicRecompilation() && !dimsKnown(true) && _etype==REMOTE )
 			setRequiresRecompile();
 		
-		_etype = ExecType.CP;
-	
 		return _etype;
 	}
 	

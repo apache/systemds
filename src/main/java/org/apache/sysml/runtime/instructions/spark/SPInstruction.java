@@ -38,6 +38,7 @@ public abstract class SPInstruction extends Instruction
 		ParameterizedBuiltin, MAppend, RAppend, GAppend, GAlignedAppend, Rand, 
 		MatrixReshape, Ternary, Quaternary, CumsumAggregate, CumsumOffset, BinUaggChain, UaggOuterChain, 
 		Write, INVALID, 
+		Convolution
 	};
 	
 	protected SPINSTRUCTION_TYPE _sptype;

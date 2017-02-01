@@ -101,6 +101,7 @@ public class VariableCPInstruction extends CPInstruction
 	private CPOperand input1;
 	private CPOperand input2;
 	private CPOperand input3;
+	private CPOperand input4;
 	private CPOperand output;
 	private MetaData metadata;
 	private UpdateType _updateType;
@@ -282,7 +283,7 @@ public class VariableCPInstruction extends CPInstruction
 			InstructionUtils.checkNumFields ( parts, _arity ); // no output
 		}
 		
-		CPOperand in1=null, in2=null, in3=null, out=null;
+		CPOperand in1=null, in2=null, in3=null, in4=null, out=null;
 		
 		switch (voc) {
 		
@@ -412,18 +413,14 @@ public class VariableCPInstruction extends CPInstruction
 				String delim = parts[5];
 				boolean sparse = Boolean.parseBoolean(parts[6]);
 				FileFormatProperties formatProperties = new CSVFileFormatProperties(hasHeader, delim, sparse);
-				String description = parts[7];
-				if (StringUtils.isNotBlank(description)) {
-					formatProperties.setDescription(description);
-				}
 				inst.setFormatProperties(formatProperties);
+				in4 = new CPOperand(parts[7]); // description
+				inst.input4 = in4;
 			} else {
 				FileFormatProperties ffp = new FileFormatProperties();
-				String description = parts[4];
-				if (StringUtils.isNotBlank(description)) {
-					ffp.setDescription(description);
-				}
 				inst.setFormatProperties(ffp);
+				in4 = new CPOperand(parts[4]); // description
+				inst.input4 = in4;
 			}
 			return inst;
 			
@@ -756,6 +753,8 @@ public class VariableCPInstruction extends CPInstruction
 	{
 		//get filename (literal or variable expression)
 		String fname = ec.getScalarInput(input2.getName(), ValueType.STRING, input2.isLiteral()).getStringValue();
+		String desc = ec.getScalarInput(input4.getName(), ValueType.STRING, input4.isLiteral()).getStringValue();
+		_formatProperties.setDescription(desc);
 		
 		if( input1.getDataType() == DataType.SCALAR ) {
 			writeScalarToHDFS(ec, fname);

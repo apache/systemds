@@ -499,10 +499,11 @@ public class Data extends Lop
 			sb.append(OPERAND_DELIMITOR);
 			Lop descriptionLop = getInputParams().get(DataExpression.DESCRIPTIONPARAM);
 			if (descriptionLop != null) {
-				String descriptionValue = descriptionLop.getOutputParameters().getLabel();
-				sb.append(descriptionValue);
+				boolean descLiteral = (descriptionLop instanceof Data && ((Data) descriptionLop).isLiteral());
+				sb.append(prepOperand(descriptionLop.getOutputParameters().getLabel(), DataType.SCALAR,
+						ValueType.STRING, descLiteral));
 			} else {
-				sb.append("");
+				sb.append(prepOperand("", DataType.SCALAR, ValueType.STRING, true));
 			}
 		}
 

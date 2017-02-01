@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Random;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.spark.Accumulator;
@@ -56,6 +55,7 @@ public class WriteSPInstruction extends SPInstruction
 	private CPOperand input1 = null; 
 	private CPOperand input2 = null;
 	private CPOperand input3 = null;
+	private CPOperand input4 = null;
 	private FileFormatProperties formatProperties;
 	
 	//scalars might occur for transform
@@ -104,12 +104,14 @@ public class WriteSPInstruction extends SPInstruction
 			
 			boolean isInputMB = Boolean.parseBoolean(parts[7]);
 			inst.setInputMatrixBlock(isInputMB);
+
+			CPOperand in4 = new CPOperand(parts[8]);
+			inst.input4 = in4;
 		} else {
 			FileFormatProperties ffp = new FileFormatProperties();
-			String description = parts[4];
-			if (StringUtils.isNotBlank(description)) {
-				ffp.setDescription(description);
-			}
+
+			CPOperand in4 = new CPOperand(parts[4]);
+			inst.input4 = in4;
 			inst.setFormatProperties(ffp);
 		}
 		return inst;		
@@ -140,6 +142,9 @@ public class WriteSPInstruction extends SPInstruction
 
 		//get filename (literal or variable expression)
 		String fname = ec.getScalarInput(input2.getName(), ValueType.STRING, input2.isLiteral()).getStringValue();
+		String desc = ec.getScalarInput(input4.getName(), ValueType.STRING, input4.isLiteral()).getStringValue();
+		formatProperties.setDescription(desc);
+
 		ValueType[] schema = (input1.getDataType()==DataType.FRAME) ? 
 				sec.getFrameObject(input1.getName()).getSchema() : null;
 		

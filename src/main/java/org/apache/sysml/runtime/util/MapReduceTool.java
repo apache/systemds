@@ -29,6 +29,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -462,7 +463,8 @@ public class MapReduceTool
 		if (formatProperties != null) {
 			String description = formatProperties.getDescription();
 			if (StringUtils.isNotEmpty(description)) {
-				mtd.put(DataExpression.DESCRIPTIONPARAM, description);
+				String jsonDescription = StringEscapeUtils.escapeJson(description);
+				mtd.put(DataExpression.DESCRIPTIONPARAM, jsonDescription);
 			}
 		}
 

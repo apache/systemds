@@ -247,7 +247,7 @@ public final class MLContextUtil {
 			}
 		}
 		if (!supported) {
-			throw new MLContextException("Input name (\"" + value + "\") value type not supported: " + o.getClass());
+			throw new MLContextException("Input name (\"" + name + "\") value type not supported: " + o.getClass());
 		}
 	}
 

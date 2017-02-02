@@ -319,6 +319,12 @@ public class Script {
 	 * @return {@code this} Script object to allow chaining of methods
 	 */
 	public Script in(String name, Object value, Metadata metadata) {
+
+		if ((value != null) && (value instanceof Long)) {
+			// convert Long to Integer since Long not a supported value type
+			value = (int) (long) value;
+		}
+
 		MLContextUtil.checkInputValueType(name, value);
 		if (inputs == null) {
 			inputs = new LinkedHashMap<String, Object>();

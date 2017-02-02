@@ -34,21 +34,22 @@ import org.apache.sysml.udf.Scalar;
 import org.apache.sysml.udf.Matrix.ValueType;
 
 /**
- * Variant of cumsum:
- * Computes following two functions:
- * 
+ * Variant of cumsum:<br>
+ * Computes following two functions:<br>
+ * <pre>
+ * <code>
  * cumsum_prod = function (Matrix[double] X, Matrix[double] C, double start)  return (Matrix[double] Y)
  * # Computes the following recurrence in log-number of steps:
  * # Y [1, ] = X [1, ] + C [1, ] * start;
  * # Y [i+1, ] = X [i+1, ] + C [i+1, ] * Y [i, ]
  * {
- * 		Y = X; P = C; m = nrow(X); k = 1;
- * 		Y [1, ] = Y [1, ] + C [1, ] * start;
- * 		while (k < m) {
- * 			Y [k+1 : m, ] = Y [k+1 : m, ] + Y [1 : m-k, ] * P [k+1 : m, ];
- * 			P [k+1 : m, ] = P [1 : m-k, ] * P [k+1 : m, ];
- * 			k = 2 * k;
- * 		} 
+ * 	Y = X; P = C; m = nrow(X); k = 1;
+ * 	Y [1, ] = Y [1, ] + C [1, ] * start;
+ * 	while (k &lt; m) {
+ * 		Y [k+1 : m, ] = Y [k+1 : m, ] + Y [1 : m-k, ] * P [k+1 : m, ];
+ * 		P [k+1 : m, ] = P [1 : m-k, ] * P [k+1 : m, ];
+ * 		k = 2 * k;
+ * 	}
  * }
  * 
  * cumsum_prod_reverse = function (Matrix[double] X, Matrix[double] C, double start) return (Matrix[double] Y)
@@ -56,19 +57,24 @@ import org.apache.sysml.udf.Matrix.ValueType;
  * # Y [m, ] = X [m, ] + C [m, ] * start;
  * # Y [i-1, ] = X [i-1, ] + C [i-1, ] * Y [i, ]
  * {
- * 		Y = X; P = C; m = nrow(X); k = 1;
- * 		Y [m, ] = Y [m, ] + C [m, ] * start;
- * 		while (k < m) {
- * 			Y [1 : m-k, ] = Y [1 : m-k, ] + Y [k+1 : m, ] * P [1 : m-k, ];
- * 			P [1 : m-k, ] = P [k+1 : m, ] * P [1 : m-k, ];
- * 			k = 2 * k;
- * 		} 
+ * 	Y = X; P = C; m = nrow(X); k = 1;
+ * 	Y [m, ] = Y [m, ] + C [m, ] * start;
+ * 	while (k &lt; m) {
+ * 		Y [1 : m-k, ] = Y [1 : m-k, ] + Y [k+1 : m, ] * P [1 : m-k, ];
+ * 		P [1 : m-k, ] = P [k+1 : m, ] * P [1 : m-k, ];
+ * 		k = 2 * k;
+ * 	}
  * }
+ * </code>
+ * </pre>
  * 
- * The API of this external built-in function is as follows:
- * 
+ * The API of this external built-in function is as follows:<br>
+ * <pre>
+ * <code>
  * func = externalFunction(matrix[double] X, matrix[double] C,  double start, boolean isReverse) return (matrix[double] Y) 
  * implemented in (classname="org.apache.sysml.udf.lib.CumSumProd",exectype="mem");
+ * </code>
+ * </pre>
  */
 public class CumSumProd extends PackageFunction {
 

@@ -430,9 +430,19 @@
 									<directory>src/main/python/systemml/__pycache__</directory>
 								</fileset>
 								<fileset>
+									<directory>src/main/python/systemml/mllearn</directory>
+									<includes>
+										<include>*.pyc</include>
+									</includes>
+								</fileset>
+								<fileset>
+									<directory>src/main/python/systemml/mllearn/__pycache__</directory>
+								</fileset>
+								<fileset>
 									<directory>src/main/python/systemml</directory>
 									<includes>
 										<include>project_info.py</include>
+										<include>*.pyc</include>
 									</includes>
 								</fileset>
 							</filesets>

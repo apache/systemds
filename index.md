@@ -84,3 +84,4 @@ command-line interface.
 * [Contributing to SystemML](contributing-to-systemml) - Describes ways to contribute to SystemML.
 * [Engine Developer Guide](engine-dev-guide) - Guide for internal SystemML engine development.
 * [Troubleshooting Guide](troubleshooting-guide) - Troubleshoot various issues related to SystemML.
+* [Release Process](release-process) - Description of the SystemML release process.

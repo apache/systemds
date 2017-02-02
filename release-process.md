@@ -184,6 +184,26 @@ sanity check on OS X after building the artifacts manually.
 	hadoop jar SystemML.jar -s "print('hello world');"
 
 
+## Python Tests
+
+For Spark 1.*, the Python tests at (`src/main/python/tests`) can be executed in the following manner:
+
+	PYSPARK_PYTHON=python3 pyspark --driver-class-path SystemML.jar test_matrix_agg_fn.py
+	PYSPARK_PYTHON=python3 pyspark --driver-class-path SystemML.jar test_matrix_binary_op.py
+	PYSPARK_PYTHON=python3 pyspark --driver-class-path SystemML.jar test_mlcontext.py
+	PYSPARK_PYTHON=python3 pyspark --driver-class-path SystemML.jar test_mllearn_df.py
+	PYSPARK_PYTHON=python3 pyspark --driver-class-path SystemML.jar test_mllearn_numpy.py
+
+For Spark 2.*, pyspark can't be used to run the Python tests, so they can be executed using
+spark-submit:
+
+	spark-submit --driver-class-path SystemML.jar test_matrix_agg_fn.py
+	spark-submit --driver-class-path SystemML.jar test_matrix_binary_op.py
+	spark-submit --driver-class-path SystemML.jar test_mlcontext.py
+	spark-submit --driver-class-path SystemML.jar test_mllearn_df.py
+	spark-submit --driver-class-path SystemML.jar test_mllearn_numpy.py
+
+
 ## Check LICENSE and NOTICE Files
 
 <a href="#release-candidate-checklist">Up to Checklist</a>

@@ -112,8 +112,8 @@ class LogisticRegressionModel(override val uid: String)(
 object LogisticRegressionExample {
   import org.apache.spark.{ SparkConf, SparkContext }
   import org.apache.spark.sql.types._
-  import org.apache.spark.mllib.linalg.Vectors
-  import org.apache.spark.mllib.regression.LabeledPoint
+  import org.apache.spark.ml.linalg.Vectors
+  import org.apache.spark.ml.feature.LabeledPoint
 
   def main(args: Array[String]) = {
     val sparkConf: SparkConf = new SparkConf();

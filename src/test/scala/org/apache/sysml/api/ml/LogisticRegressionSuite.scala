@@ -21,13 +21,13 @@ package org.apache.sysml.api.ml
 
 import org.scalatest.FunSuite
 import org.scalatest.Matchers
-import org.apache.spark.mllib.linalg.Vectors
-import org.apache.spark.mllib.regression.LabeledPoint
+import org.apache.spark.ml.linalg.Vectors
+import org.apache.spark.ml.feature.LabeledPoint
 import org.apache.spark.ml.Pipeline
 import org.apache.spark.ml.evaluation.BinaryClassificationEvaluator
 import org.apache.spark.ml.feature.{HashingTF, Tokenizer}
 import org.apache.spark.ml.tuning.{ParamGridBuilder, CrossValidator}
-import org.apache.spark.mllib.linalg.Vector
+import org.apache.spark.ml.linalg.Vector
 import scala.reflect.runtime.universe._
 
 case class LabeledDocument[T:TypeTag](id: Long, text: String, label: Double)

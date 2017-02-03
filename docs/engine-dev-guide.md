@@ -86,6 +86,66 @@ This SystemML script can be debugged in Eclipse using a Debug Configuration such
 
 * * *
 
+## Python MLContext API
+
+When working with the Python MLContext API (see `src/main/python/systemml/mlcontext.py`) during development,
+it can be useful to install the Python MLContext API in editable mode (`-e`). This allows Python updates
+to take effect without requiring the SystemML python artifact to be built and installed.
+
+{% highlight bash %}
+mvn clean
+pip3 install -e src/main/python
+mvn clean package
+PYSPARK_PYTHON=python3 pyspark --driver-class-path target/SystemML.jar
+{% endhighlight %}
+
+<div class="codetabs">
+
+<div data-lang="Python 3" markdown="1">
+{% highlight python %}
+from systemml import MLContext, dml
+ml = MLContext(sc)
+script = dml("print('hello world')")
+ml.execute(script)
+{% endhighlight %}
+</div>
+
+<div data-lang="PySpark" markdown="1">
+{% highlight python %}
+Python 3.5.2 (default, Jul 28 2016, 21:28:07) 
+[GCC 4.2.1 Compatible Apple LLVM 7.0.2 (clang-700.1.81)] on darwin
+Type "help", "copyright", "credits" or "license" for more information.
+Using Spark's default log4j profile: org/apache/spark/log4j-defaults.properties
+Setting default log level to "WARN".
+To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).
+17/02/03 12:33:42 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
+17/02/03 12:33:56 WARN ObjectStore: Failed to get database global_temp, returning NoSuchObjectException
+Welcome to
+      ____              __
+     / __/__  ___ _____/ /__
+    _\ \/ _ \/ _ `/ __/  '_/
+   /__ / .__/\_,_/_/ /_/\_\   version 2.1.0
+      /_/
+
+Using Python version 3.5.2 (default, Jul 28 2016 21:28:07)
+SparkSession available as 'spark'.
+>>> from systemml import MLContext, dml
+>>> ml = MLContext(sc)
+
+Welcome to Apache SystemML!
+
+>>> script = dml("print('hello world')")
+>>> ml.execute(script)
+hello world
+MLResults
+{% endhighlight %}
+</div>
+
+</div>
+
+
+* * *
+
 ## Matrix Multiplication Operators
 
 In the following, we give an overview of backend-specific physical matrix multiplication operators in SystemML as well as their internally used matrix multiplication block operations.

@@ -116,6 +116,12 @@ public class MLContext {
 	 */
 	private ProjectInfo projectInfo = null;
 
+	/**
+	 * Whether or not all values should be maintained in the symbol table
+	 * after execution.
+	 */
+	private boolean maintainSymbolTable = false;
+
 	private List<String> scriptHistoryStrings = new ArrayList<String>();
 	private Map<String, Script> scripts = new LinkedHashMap<String, Script>();
 
@@ -273,6 +279,7 @@ public class MLContext {
 		scriptExecutor.setStatistics(statistics);
 		scriptExecutor.setStatisticsMaxHeavyHitters(statisticsMaxHeavyHitters);
 		scriptExecutor.setInit(scriptHistoryStrings.isEmpty());
+		scriptExecutor.setMaintainSymbolTable(maintainSymbolTable);
 		return execute(script, scriptExecutor);
 	}
 
@@ -357,6 +364,30 @@ public class MLContext {
 	 */
 	public void setExplain(boolean explain) {
 		this.explain = explain;
+	}
+
+
+	/**
+	 * Obtain whether or not all values should be maintained in the symbol table
+	 * after execution.
+	 * 
+	 * @return {@code true} if all values should be maintained in the symbol
+	 *         table, {@code false} otherwise
+	 */
+	public boolean isMaintainSymbolTable() {
+		return maintainSymbolTable;
+	}
+
+	/**
+	 * Set whether or not all values should be maintained in the symbol table
+	 * after execution.
+	 * 
+	 * @param maintainSymbolTable
+	 *            {@code true} if all values should be maintained in the symbol
+	 *            table, {@code false} otherwise
+	 */
+	public void setMaintainSymbolTable(boolean maintainSymbolTable) {
+		this.maintainSymbolTable = maintainSymbolTable;
 	}
 
 	/**

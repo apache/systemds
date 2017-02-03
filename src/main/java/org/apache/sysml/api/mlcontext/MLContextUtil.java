@@ -23,6 +23,7 @@ import java.io.FileNotFoundException;
 import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -52,14 +53,22 @@ import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.parser.ParseException;
 import org.apache.sysml.parser.Statement;
+import org.apache.sysml.runtime.controlprogram.ForProgramBlock;
+import org.apache.sysml.runtime.controlprogram.FunctionProgramBlock;
+import org.apache.sysml.runtime.controlprogram.IfProgramBlock;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
+import org.apache.sysml.runtime.controlprogram.Program;
+import org.apache.sysml.runtime.controlprogram.ProgramBlock;
+import org.apache.sysml.runtime.controlprogram.WhileProgramBlock;
 import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.cp.BooleanObject;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.DoubleObject;
 import org.apache.sysml.runtime.instructions.cp.IntObject;
 import org.apache.sysml.runtime.instructions.cp.StringObject;
+import org.apache.sysml.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
@@ -988,5 +997,72 @@ public final class MLContextUtil {
 	public static boolean doesSymbolTableContainMatrixObject(LocalVariableMap symbolTable, String variableName) {
 		return (symbolTable != null && symbolTable.keySet().contains(variableName)
 				&& symbolTable.get(variableName) instanceof MatrixObject);
+	}
+
+	/**
+	 * Delete the 'remove variable' instructions from a runtime program.
+	 * 
+	 * @param progam
+	 *            runtime program
+	 */
+	public static void deleteRemoveVariableInstructions(Program progam) {
+		Map<String, FunctionProgramBlock> fpbs = progam.getFunctionProgramBlocks();
+		if (fpbs != null && !fpbs.isEmpty()) {
+			for (Entry<String, FunctionProgramBlock> e : fpbs.entrySet()) {
+				FunctionProgramBlock fpb = e.getValue();
+				for (ProgramBlock pb : fpb.getChildBlocks()) {
+					deleteRemoveVariableInstructions(pb);
+				}
+			}
+		}
+
+		for (ProgramBlock pb : progam.getProgramBlocks()) {
+			deleteRemoveVariableInstructions(pb);
+		}
+	}
+
+	/**
+	 * Recursively traverse program block to delete 'remove variable'
+	 * instructions.
+	 * 
+	 * @param pb
+	 *            Program block
+	 */
+	private static void deleteRemoveVariableInstructions(ProgramBlock pb) {
+		if (pb instanceof WhileProgramBlock) {
+			WhileProgramBlock wpb = (WhileProgramBlock) pb;
+			for (ProgramBlock pbc : wpb.getChildBlocks())
+				deleteRemoveVariableInstructions(pbc);
+		} else if (pb instanceof IfProgramBlock) {
+			IfProgramBlock ipb = (IfProgramBlock) pb;
+			for (ProgramBlock pbc : ipb.getChildBlocksIfBody())
+				deleteRemoveVariableInstructions(pbc);
+			for (ProgramBlock pbc : ipb.getChildBlocksElseBody())
+				deleteRemoveVariableInstructions(pbc);
+		} else if (pb instanceof ForProgramBlock) {
+			ForProgramBlock fpb = (ForProgramBlock) pb;
+			for (ProgramBlock pbc : fpb.getChildBlocks())
+				deleteRemoveVariableInstructions(pbc);
+		} else {
+			ArrayList<Instruction> instructions = pb.getInstructions();
+			deleteRemoveVariableInstructions(instructions);
+		}
+	}
+
+	/**
+	 * Delete 'remove variable' instructions.
+	 * 
+	 * @param instructions
+	 *            list of instructions
+	 */
+	private static void deleteRemoveVariableInstructions(ArrayList<Instruction> instructions) {
+		for (int i = 0; i < instructions.size(); i++) {
+			Instruction linst = instructions.get(i);
+			if (linst instanceof VariableCPInstruction && ((VariableCPInstruction) linst).isRemoveVariable()) {
+				VariableCPInstruction varinst = (VariableCPInstruction) linst;
+				instructions.remove(varinst);
+				i--;
+			}
+		}
 	}
 }

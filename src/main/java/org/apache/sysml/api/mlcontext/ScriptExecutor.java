@@ -119,6 +119,7 @@ public class ScriptExecutor {
 	protected boolean statistics = false;
 	protected ExplainLevel explainLevel;
 	protected int statisticsMaxHeavyHitters = 10;
+	protected boolean maintainSymbolTable = false;
 
 	/**
 	 * ScriptExecutor constructor.
@@ -373,12 +374,19 @@ public class ScriptExecutor {
 	}
 
 	/**
-	 * Remove rmvar instructions so as to maintain registered outputs after the
-	 * program terminates.
+	 * If {@code maintainSymbolTable} is true, delete all 'remove variable'
+	 * instructions so as to maintain the values in the symbol table, which are
+	 * useful when working interactively in an environment such as the Spark
+	 * Shell. Otherwise, only delete 'remove variable' instructions for
+	 * registered outputs.
 	 */
 	protected void cleanupRuntimeProgram() {
-		JMLCUtils.cleanupRuntimeProgram(runtimeProgram, (script.getOutputVariables() == null) ? new String[0] : script
-				.getOutputVariables().toArray(new String[0]));
+		if (maintainSymbolTable) {
+			MLContextUtil.deleteRemoveVariableInstructions(runtimeProgram);
+		} else {
+			JMLCUtils.cleanupRuntimeProgram(runtimeProgram, (script.getOutputVariables() == null) ? new String[0]
+					: script.getOutputVariables().toArray(new String[0]));
+		}
 	}
 
 	/**
@@ -645,6 +653,29 @@ public class ScriptExecutor {
 
 	public void setStatisticsMaxHeavyHitters(int maxHeavyHitters) {
 		this.statisticsMaxHeavyHitters = maxHeavyHitters;
+	}
+
+	/**
+	 * Obtain whether or not all values should be maintained in the symbol table
+	 * after execution.
+	 * 
+	 * @return {@code true} if all values should be maintained in the symbol
+	 *         table, {@code false} otherwise
+	 */
+	public boolean isMaintainSymbolTable() {
+		return maintainSymbolTable;
+	}
+
+	/**
+	 * Set whether or not all values should be maintained in the symbol table
+	 * after execution.
+	 * 
+	 * @param maintainSymbolTable
+	 *            {@code true} if all values should be maintained in the symbol
+	 *            table, {@code false} otherwise
+	 */
+	public void setMaintainSymbolTable(boolean maintainSymbolTable) {
+		this.maintainSymbolTable = maintainSymbolTable;
 	}
 
 	/**

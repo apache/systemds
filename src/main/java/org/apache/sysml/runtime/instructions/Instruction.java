@@ -22,7 +22,6 @@ package org.apache.sysml.runtime.instructions;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import org.apache.sysml.api.monitoring.Location;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.DataIdentifier;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -111,16 +110,6 @@ public abstract class Instruction
 			this.endCol = oldInst.endCol;
 		}
 	}
-	
-	public Location getLocation() {
-		// Rather than exposing 4 different getter methods. Also Location doesnot contain any references to Spark libraries
-		if(beginLine == -1 || endLine == -1 || beginCol == -1 || endCol == -1) {
-			return null;
-		}
-		else
-			return new Location(beginLine, endLine, beginCol, endCol);
-	}
-	
 	
 	/**
 	 * Getter for instruction line number

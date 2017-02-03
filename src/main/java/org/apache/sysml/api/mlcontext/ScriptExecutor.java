@@ -27,7 +27,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.jmlc.JMLCUtils;
 import org.apache.sysml.api.mlcontext.MLContext.ExplainLevel;
-import org.apache.sysml.api.monitoring.SparkMonitoringUtil;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.HopsException;
@@ -108,7 +107,6 @@ import org.apache.sysml.utils.Statistics;
 public class ScriptExecutor {
 
 	protected DMLConfig config;
-	protected SparkMonitoringUtil sparkMonitoringUtil;
 	protected DMLProgram dmlProgram;
 	protected DMLTranslator dmlTranslator;
 	protected Program runtimeProgram;
@@ -138,32 +136,6 @@ public class ScriptExecutor {
 	public ScriptExecutor(DMLConfig config) {
 		this.config = config;
 		ConfigurationManager.setGlobalConfig(config);
-	}
-
-	/**
-	 * ScriptExecutor constructor, where a SparkMonitoringUtil object is passed
-	 * in.
-	 * 
-	 * @param sparkMonitoringUtil
-	 *            SparkMonitoringUtil object to monitor Spark
-	 */
-	public ScriptExecutor(SparkMonitoringUtil sparkMonitoringUtil) {
-		this();
-		this.sparkMonitoringUtil = sparkMonitoringUtil;
-	}
-
-	/**
-	 * ScriptExecutor constructor, where the configuration properties and a
-	 * SparkMonitoringUtil object are passed in.
-	 * 
-	 * @param config
-	 *            the configuration properties to use by the ScriptExecutor
-	 * @param sparkMonitoringUtil
-	 *            SparkMonitoringUtil object to monitor Spark
-	 */
-	public ScriptExecutor(DMLConfig config, SparkMonitoringUtil sparkMonitoringUtil) {
-		this.config = config;
-		this.sparkMonitoringUtil = sparkMonitoringUtil;
 	}
 
 	/**
@@ -318,7 +290,6 @@ public class ScriptExecutor {
 		cleanupRuntimeProgram();
 		createAndInitializeExecutionContext();
 		executeRuntimeProgram();
-		setExplainRuntimeProgramInSparkMonitor();
 		cleanupAfterExecution();
 
 		// add symbol table to MLResults
@@ -344,7 +315,6 @@ public class ScriptExecutor {
 		this.script = script;
 		checkScriptHasTypeAndString();
 		script.setScriptExecutor(this);
-		setScriptStringInSparkMonitor();
 		// Set global variable indicating the script type
 		DMLScript.SCRIPT_TYPE = script.getScriptType();
 	}
@@ -400,15 +370,6 @@ public class ScriptExecutor {
 		} catch (DMLRuntimeException e) {
 			throw new MLContextException("Exception occurred while executing runtime program", e);
 		}
-	}
-
-	/**
-	 * Obtain the SparkMonitoringUtil object.
-	 * 
-	 * @return the SparkMonitoringUtil object, if available
-	 */
-	public SparkMonitoringUtil getSparkMonitoringUtil() {
-		return sparkMonitoringUtil;
 	}
 
 	/**
@@ -497,41 +458,6 @@ public class ScriptExecutor {
 	public void setConfig(DMLConfig config) {
 		this.config = config;
 		ConfigurationManager.setGlobalConfig(config);
-	}
-
-	/**
-	 * Set the explanation of the runtime program in the SparkMonitoringUtil if
-	 * it exists.
-	 */
-	protected void setExplainRuntimeProgramInSparkMonitor() {
-		if (sparkMonitoringUtil != null) {
-			try {
-				String explainOutput = Explain.explain(runtimeProgram);
-				sparkMonitoringUtil.setExplainOutput(explainOutput);
-			} catch (HopsException e) {
-				throw new MLContextException("Exception occurred while explaining runtime program", e);
-			}
-		}
-
-	}
-
-	/**
-	 * Set the script string in the SparkMonitoringUtil if it exists.
-	 */
-	protected void setScriptStringInSparkMonitor() {
-		if (sparkMonitoringUtil != null) {
-			sparkMonitoringUtil.setDMLString(script.getScriptString());
-		}
-	}
-
-	/**
-	 * Set the SparkMonitoringUtil object.
-	 * 
-	 * @param sparkMonitoringUtil
-	 *            The SparkMonitoringUtil object
-	 */
-	public void setSparkMonitoringUtil(SparkMonitoringUtil sparkMonitoringUtil) {
-		this.sparkMonitoringUtil = sparkMonitoringUtil;
 	}
 
 	/**

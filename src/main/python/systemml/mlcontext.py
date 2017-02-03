@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-__all__ = ['MLResults', 'MLContext', 'Script', 'dml', 'pydml', '_java2py', 'Matrix']
+__all__ = ['MLResults', 'MLContext', 'Script', 'dml', 'pydml', 'dmlFromResource', 'pydmlFromResource', '_java2py', 'Matrix']
 
 import os
 
@@ -52,6 +52,24 @@ def dml(scriptString):
         raise ValueError("scriptString should be a string, got %s" % type(scriptString))
     return Script(scriptString, scriptType="dml")
 
+def dmlFromResource(resourcePath):
+    """
+    Create a dml script object based on a resource path.
+
+    Parameters
+    ----------
+    resourcePath: string
+        Path to a dml script on the classpath.
+
+    Returns
+    -------
+    script: Script instance
+        Instance of a script object.
+    """
+    if not isinstance(resourcePath, str):
+        raise ValueError("resourcePath should be a string, got %s" % type(resourcePath))
+    return Script(resourcePath, scriptType="dml", isResource=True)
+
 
 def pydml(scriptString):
     """
@@ -71,6 +89,23 @@ def pydml(scriptString):
         raise ValueError("scriptString should be a string, got %s" % type(scriptString))
     return Script(scriptString, scriptType="pydml")
 
+def pydmlFromResource(resourcePath):
+    """
+    Create a pydml script object based on a resource path.
+
+    Parameters
+    ----------
+    resourcePath: string
+        Path to a pydml script on the classpath.
+
+    Returns
+    -------
+    script: Script instance
+        Instance of a script object.
+    """
+    if not isinstance(resourcePath, str):
+        raise ValueError("resourcePath should be a string, got %s" % type(resourcePath))
+    return Script(resourcePath, scriptType="pydml", isResource=True)
 
 def _java2py(sc, obj):
     """ Convert Java object to Python. """
@@ -186,10 +221,14 @@ class Script(object):
 
     scriptType: string
         Script language, either "dml" for DML (R-like) or "pydml" for PyDML (Python-like).
+
+    isResource: boolean
+        If true, scriptString is a path to a resource on the classpath
     """
-    def __init__(self, scriptString, scriptType="dml"):
+    def __init__(self, scriptString, scriptType="dml", isResource=False):
         self.scriptString = scriptString
         self.scriptType = scriptType
+        self.isResource = isResource
         self._input = {}
         self._output = []
 
@@ -240,7 +279,7 @@ class MLContext(object):
             raise ValueError("Expected sc to be a SparkContext, got " % sc)
         self._sc = sc
         self._ml = createJavaObject(sc, 'mlcontext')
-        
+
     def __repr__(self):
         return "MLContext"
 
@@ -267,6 +306,8 @@ class MLContext(object):
                     script_java = self._sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.dmlFromUrl(scriptString)
                 elif os.path.exists(scriptString):
                     script_java = self._sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.dmlFromFile(scriptString)
+                elif script.isResource == True:
+                    script_java = self._sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.dmlFromResource(scriptString)
                 else:
                     raise ValueError("path: %s does not exist" % scriptString)
             else:
@@ -277,6 +318,8 @@ class MLContext(object):
                     script_java = self._sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.pydmlFromUrl(scriptString)
                 elif os.path.exists(scriptString):
                     script_java = self._sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.pydmlFromFile(scriptString)
+                elif script.isResource == True:
+                    script_java = self._sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.pydmlFromResource(scriptString)
                 else:
                     raise ValueError("path: %s does not exist" % scriptString)
             else:

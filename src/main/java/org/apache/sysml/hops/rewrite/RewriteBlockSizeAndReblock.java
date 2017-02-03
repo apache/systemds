@@ -73,7 +73,6 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 				// Donot reblock if the data is read as preblocked binary blocks.
 				canReblock = false;
 			}
-			System.out.println(">>" + canReblock + " " + dop.getDataOpType().name() + " " + dop.getInputFormatType().name());
 		}
 		if(canReblock)
 			rule_BlockSizeAndReblock(h, blockSize);

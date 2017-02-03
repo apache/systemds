@@ -1636,6 +1636,53 @@ scala> for (i <- 1 to 5) {
 
 </div>
 
+
+## Project Information
+
+SystemML project information such as version and build time can be obtained through the
+MLContext API. The project version can be obtained by `ml.version`. The build time can
+be obtained by `ml.buildTime`. The contents of the project manifest can be displayed
+using `ml.info`. Individual properties can be obtained using the `ml.info.property`
+method, as shown below.
+
+<div class="codetabs">
+
+<div data-lang="Scala" markdown="1">
+{% highlight scala %}
+print(ml.version)
+print(ml.buildTime)
+print(ml.info)
+print(ml.info.property("Main-Class"))
+{% endhighlight %}
+</div>
+
+<div data-lang="Spark Shell" markdown="1">
+{% highlight scala %}
+scala> print(ml.version)
+0.13.0-incubating-SNAPSHOT
+scala> print(ml.buildTime)
+2017-02-03 22:32:43 UTC
+scala> print(ml.info)
+Archiver-Version: Plexus Archiver
+Artifact-Id: systemml
+Build-Jdk: 1.8.0_60
+Build-Time: 2017-02-03 22:32:43 UTC
+Built-By: deroneriksson
+Created-By: Apache Maven 3.3.9
+Group-Id: org.apache.systemml
+Main-Class: org.apache.sysml.api.DMLScript
+Manifest-Version: 1.0
+Version: 0.13.0-incubating-SNAPSHOT
+
+scala> print(ml.info.property("Main-Class"))
+org.apache.sysml.api.DMLScript
+
+{% endhighlight %}
+</div>
+
+</div>
+
+
 ---
 
 # Jupyter (PySpark) Notebook Example - Poisson Nonnegative Matrix Factorization

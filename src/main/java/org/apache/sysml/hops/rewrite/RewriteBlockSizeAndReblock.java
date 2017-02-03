@@ -62,6 +62,7 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 		return roots;
 	}
 	
+	// ALternatively, we can move this to rule_BlockSizeAndReblock
 	private void applyRuleBlockSizeAndReblock(Hop h, int blockSize) throws HopsException {
 		boolean canReblock = true;
 		if ( h instanceof DataOp ) {

@@ -26,11 +26,13 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.spark.SparkContext;
+import org.apache.spark.executor.TaskMetrics;
 import org.apache.spark.scheduler.SparkListenerExecutorMetricsUpdate;
 import org.apache.spark.scheduler.SparkListenerStageCompleted;
 import org.apache.spark.scheduler.SparkListenerStageSubmitted;
 import org.apache.spark.storage.RDDInfo;
 import org.apache.spark.ui.jobs.StagesTab;
+import org.apache.spark.ui.jobs.UIData;
 import org.apache.spark.ui.jobs.UIData.TaskUIData;
 import org.apache.spark.ui.scope.RDDOperationGraphListener;
 import org.apache.sysml.api.MLContextProxy;
@@ -120,7 +122,7 @@ public class SparkListener extends RDDOperationGraphListener {
 			stageTaskMapping.put(stageID, new ArrayList<TaskUIData>());
 		}
 		
-		Option<org.apache.spark.ui.scope.RDDOperationGraph> rddOpGraph = Option.apply(org.apache.spark.ui.scope.RDDOperationGraph.makeOperationGraph(stageSubmitted.stageInfo()));
+		Option<org.apache.spark.ui.scope.RDDOperationGraph> rddOpGraph = Option.apply(org.apache.spark.ui.scope.RDDOperationGraph.makeOperationGraph(stageSubmitted.stageInfo(), Integer.MAX_VALUE));
 		
 		Iterator<RDDInfo> iter = stageSubmitted.stageInfo().rddInfos().toList().toIterator();
 		ArrayList<Integer> rddIDs = new ArrayList<Integer>();
@@ -174,7 +176,7 @@ public class SparkListener extends RDDOperationGraphListener {
 			if(stageTaskMapping.containsKey(stageID)) {
 				//Option<String> errorMessage = Option.apply(null); // TODO
 				//TaskUIData taskData = new TaskUIData(taskEnd.taskInfo(), Option.apply(taskEnd.taskMetrics()), errorMessage);
-				TaskUIData taskData = new TaskUIData(taskEnd.taskInfo(), null); //TODO
+				TaskUIData taskData = UIData.TaskUIData$.MODULE$.apply(taskEnd.taskInfo(), Option.<TaskMetrics>empty()); //TODO
 				stageTaskMapping.get(stageID).add(taskData);
 			}
 			else {

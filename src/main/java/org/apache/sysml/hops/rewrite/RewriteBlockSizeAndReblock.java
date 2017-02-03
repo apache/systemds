@@ -57,10 +57,28 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 		
 		//perform reblock and blocksize rewrite
 		for( Hop h : roots ) 
-			rule_BlockSizeAndReblock(h, ConfigurationManager.getBlocksize());
+			applyRuleBlockSizeAndReblock(h, ConfigurationManager.getBlocksize());
 		
 		return roots;
 	}
+	
+	private void applyRuleBlockSizeAndReblock(Hop h, int blockSize) throws HopsException {
+		boolean canReblock = true;
+		if ( h instanceof DataOp ) {
+			DataOp dop = (DataOp) h;
+			if( (dop.getDataOpType() == DataOp.DataOpTypes.PERSISTENTREAD 
+					|| dop.getDataOpType() == DataOp.DataOpTypes.TRANSIENTREAD
+					|| dop.getDataOpType() == DataOp.DataOpTypes.TRANSIENTWRITE)   
+					&& dop.getInputFormatType()==FileFormatTypes.BINARY) {
+				// Donot reblock if the data is read as preblocked binary blocks.
+				canReblock = false;
+			}
+			System.out.println(">>" + canReblock + " " + dop.getDataOpType().name() + " " + dop.getInputFormatType().name());
+		}
+		if(canReblock)
+			rule_BlockSizeAndReblock(h, blockSize);
+	}
+	
 
 	@Override
 	public Hop rewriteHopDAG(Hop root, ProgramRewriteStatus state) 
@@ -74,7 +92,7 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 			state.setBlocksize(ConfigurationManager.getBlocksize());
 		
 		//perform reblock and blocksize rewrite
-		rule_BlockSizeAndReblock(root, ConfigurationManager.getBlocksize());
+		applyRuleBlockSizeAndReblock(root, ConfigurationManager.getBlocksize());
 		
 		return root;
 	}

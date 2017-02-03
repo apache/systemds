@@ -2507,6 +2507,26 @@ public class MLContextTest extends AutomatedTestBase {
 		ml.execute(script);
 	}
 
+	@Test
+	public void testInputVariablesAddLongsDML() {
+		System.out.println("MLContextTest - input variables add longs DML");
+
+		String s = "print('x + y = ' + (x + y));";
+		Script script = dml(s).in("x", 3L).in("y", 4L);
+		setExpectedStdOut("x + y = 7");
+		ml.execute(script);
+	}
+
+	@Test
+	public void testInputVariablesAddLongsPYDML() {
+		System.out.println("MLContextTest - input variables add longs PYDML");
+
+		String s = "print('x + y = ' + (x + y))";
+		Script script = pydml(s).in("x", 3L).in("y", 4L);
+		setExpectedStdOut("x + y = 7");
+		ml.execute(script);
+	}
+
 	// NOTE: Uncomment these tests once they work
 
 	// @SuppressWarnings({ "rawtypes", "unchecked" })

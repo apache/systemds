@@ -141,7 +141,7 @@ val numRows = 10000
 val numCols = 1000
 val data = sc.parallelize(0 to numRows-1).map { _ => Row.fromSeq(Seq.fill(numCols)(Random.nextDouble)) }
 val schema = StructType((0 to numCols-1).map { i => StructField("C" + i, DoubleType, true) } )
-val df = sqlContext.createDataFrame(data, schema)
+val df = spark.createDataFrame(data, schema)
 {% endhighlight %}
 </div>
 
@@ -167,7 +167,7 @@ data: org.apache.spark.rdd.RDD[org.apache.spark.sql.Row] = MapPartitionsRDD[1] a
 
 scala> val schema = StructType((0 to numCols-1).map { i => StructField("C" + i, DoubleType, true) } )
 schema: org.apache.spark.sql.types.StructType = StructType(StructField(C0,DoubleType,true), StructField(C1,DoubleType,true), StructField(C2,DoubleType,true), StructField(C3,DoubleType,true), StructField(C4,DoubleType,true), StructField(C5,DoubleType,true), StructField(C6,DoubleType,true), StructField(C7,DoubleType,true), StructField(C8,DoubleType,true), StructField(C9,DoubleType,true), StructField(C10,DoubleType,true), StructField(C11,DoubleType,true), StructField(C12,DoubleType,true), StructField(C13,DoubleType,true), StructField(C14,DoubleType,true), StructField(C15,DoubleType,true), StructField(C16,DoubleType,true), StructField(C17,DoubleType,true), StructField(C18,DoubleType,true), StructField(C19,DoubleType,true), StructField(C20,DoubleType,true), StructField(C21,DoubleType,true), ...
-scala> val df = sqlContext.createDataFrame(data, schema)
+scala> val df = spark.createDataFrame(data, schema)
 df: org.apache.spark.sql.DataFrame = [C0: double, C1: double, C2: double, C3: double, C4: double, C5: double, C6: double, C7: double, C8: double, C9: double, C10: double, C11: double, C12: double, C13: double, C14: double, C15: double, C16: double, C17: double, C18: double, C19: double, C20: double, C21: double, C22: double, C23: double, C24: double, C25: double, C26: double, C27: double, C28: double, C29: double, C30: double, C31: double, C32: double, C33: double, C34: double, C35: double, C36: double, C37: double, C38: double, C39: double, C40: double, C41: double, C42: double, C43: double, C44: double, C45: double, C46: double, C47: double, C48: double, C49: double, C50: double, C51: double, C52: double, C53: double, C54: double, C55: double, C56: double, C57: double, C58: double, C5...
 
 {% endhighlight %}
@@ -1540,7 +1540,7 @@ val numRows = 10000
 val numCols = 1000
 val data = sc.parallelize(0 to numRows-1).map { _ => Row.fromSeq(Seq.fill(numCols)(Random.nextDouble)) }
 val schema = StructType((0 to numCols-1).map { i => StructField("C" + i, DoubleType, true) } )
-val df = sqlContext.createDataFrame(data, schema)
+val df = spark.createDataFrame(data, schema)
 val mm = new MatrixMetadata(numRows, numCols)
 val minMaxMeanScript = dml(minMaxMean).in("Xin", df, mm).out("minOut", "maxOut", "meanOut")
 val minMaxMeanScript = dml(minMaxMean).in("Xin", df, mm).out("minOut", "maxOut", "meanOut")
@@ -1561,7 +1561,7 @@ val numRows = 10000
 val numCols = 1000
 val data = sc.parallelize(0 to numRows-1).map { _ => Row.fromSeq(Seq.fill(numCols)(Random.nextDouble)) }
 val schema = StructType((0 to numCols-1).map { i => StructField("C" + i, DoubleType, true) } )
-val df = sqlContext.createDataFrame(data, schema)
+val df = spark.createDataFrame(data, schema)
 val mm = new MatrixMetadata(numRows, numCols)
 val bbm = new BinaryBlockMatrix(df, mm)
 val minMaxMeanScript = dml(minMaxMean).in("Xin", bbm).out("minOut", "maxOut", "meanOut")
@@ -1852,7 +1852,7 @@ data: org.apache.spark.rdd.RDD[org.apache.spark.sql.Row] = MapPartitionsRDD[1] a
 scala> val schema = StructType((0 to numCols-1).map { i => StructField("C" + i, DoubleType, true) } )
 schema: org.apache.spark.sql.types.StructType = StructType(StructField(C0,DoubleType,true), StructField(C1,DoubleType,true), StructField(C2,DoubleType,true), StructField(C3,DoubleType,true), StructField(C4,DoubleType,true), StructField(C5,DoubleType,true), StructField(C6,DoubleType,true), StructField(C7,DoubleType,true), StructField(C8,DoubleType,true), StructField(C9,DoubleType,true), StructField(C10,DoubleType,true), StructField(C11,DoubleType,true), StructField(C12,DoubleType,true), StructField(C13,DoubleType,true), StructField(C14,DoubleType,true), StructField(C15,DoubleType,true), StructField(C16,DoubleType,true), StructField(C17,DoubleType,true), StructField(C18,DoubleType,true), StructField(C19,DoubleType,true), StructField(C20,DoubleType,true), StructField(C21,DoubleType,true), ...
 
-scala> val df = sqlContext.createDataFrame(data, schema)
+scala> val df = spark.createDataFrame(data, schema)
 df: org.apache.spark.sql.DataFrame = [C0: double, C1: double, C2: double, C3: double, C4: double, C5: double, C6: double, C7: double, C8: double, C9: double, C10: double, C11: double, C12: double, C13: double, C14: double, C15: double, C16: double, C17: double, C18: double, C19: double, C20: double, C21: double, C22: double, C23: double, C24: double, C25: double, C26: double, C27: double, C28: double, C29: double, C30: double, C31: double, C32: double, C33: double, C34: double, C35: double, C36: double, C37: double, C38: double, C39: double, C40: double, C41: double, C42: double, C43: double, C44: double, C45: double, C46: double, C47: double, C48: double, C49: double, C50: double, C51: double, C52: double, C53: double, C54: double, C55: double, C56: double, C57: double, C58: double, C5...
 
 {% endhighlight %}
@@ -1867,7 +1867,7 @@ val numRows = 100000
 val numCols = 1000
 val data = sc.parallelize(0 to numRows-1).map { _ => Row.fromSeq(Seq.fill(numCols)(Random.nextDouble)) }
 val schema = StructType((0 to numCols-1).map { i => StructField("C" + i, DoubleType, true) } )
-val df = sqlContext.createDataFrame(data, schema)
+val df = spark.createDataFrame(data, schema)
 {% endhighlight %}
 </div>
 
@@ -1889,7 +1889,7 @@ scala> import org.apache.sysml.api.MLOutput
 import org.apache.sysml.api.MLOutput
 
 scala> def getScalar(outputs: MLOutput, symbol: String): Any =
-     | outputs.getDF(sqlContext, symbol).first()(1)
+     | outputs.getDF(spark.sqlContext, symbol).first()(1)
 getScalar: (outputs: org.apache.sysml.api.MLOutput, symbol: String)Any
 
 scala> def getScalarDouble(outputs: MLOutput, symbol: String): Double =
@@ -1907,7 +1907,7 @@ getScalarInt: (outputs: org.apache.sysml.api.MLOutput, symbol: String)Int
 {% highlight scala %}
 import org.apache.sysml.api.MLOutput
 def getScalar(outputs: MLOutput, symbol: String): Any =
-outputs.getDF(sqlContext, symbol).first()(1)
+outputs.getDF(spark.sqlContext, symbol).first()(1)
 def getScalarDouble(outputs: MLOutput, symbol: String): Double =
 getScalar(outputs, symbol).asInstanceOf[Double]
 def getScalarInt(outputs: MLOutput, symbol: String): Int =
@@ -2264,7 +2264,7 @@ The Spark `LinearDataGenerator` is used to generate test data for the Spark ML a
 {% highlight scala %}
 // Generate data
 import org.apache.spark.mllib.util.LinearDataGenerator
-import sqlContext.implicits._
+import spark.implicits._
 
 val numRows = 10000
 val numCols = 1000
@@ -2549,7 +2549,7 @@ This cell contains helper methods to return `Double` and `Int` values from outpu
 import org.apache.sysml.api.MLOutput
 
 def getScalar(outputs: MLOutput, symbol: String): Any =
-    outputs.getDF(sqlContext, symbol).first()(1)
+    outputs.getDF(spark.sqlContext, symbol).first()(1)
 
 def getScalarDouble(outputs: MLOutput, symbol: String): Double =
     getScalar(outputs, symbol).asInstanceOf[Double]
@@ -2638,7 +2638,7 @@ val outputs = ml.executeScript(linearReg)
 val trainingTime = (System.currentTimeMillis() - start).toDouble / 1000.0
 
 // Get outputs
-val B = outputs.getDF(sqlContext, "beta_out").sort("ID").drop("ID")
+val B = outputs.getDF(spark.sqlContext, "beta_out").sort("ID").drop("ID")
 val r2 = getScalarDouble(outputs, "R2")
 val iters = getScalarInt(outputs, "totalIters")
 val trainingTimePerIter = trainingTime / iters
@@ -2815,7 +2815,7 @@ outputs = ml.executeScript(pnmf, {"X": X_train, "maxiter": 100, "rank": 10}, ["W
 
 {% highlight python %}
 # Plot training loss over time
-losses = outputs.getDF(sqlContext, "losses")
+losses = outputs.getDF(spark.sqlContext, "losses")
 xy = losses.sort(losses.ID).map(lambda r: (r[0], r[1])).collect()
 x, y = zip(*xy)
 plt.plot(x, y)

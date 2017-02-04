@@ -494,7 +494,19 @@ public class Data extends Lop
 			}
 			
 		}
-		
+
+		if (operation == OperationTypes.WRITE) {
+			sb.append(OPERAND_DELIMITOR);
+			Lop descriptionLop = getInputParams().get(DataExpression.DESCRIPTIONPARAM);
+			if (descriptionLop != null) {
+				boolean descLiteral = (descriptionLop instanceof Data && ((Data) descriptionLop).isLiteral());
+				sb.append(prepOperand(descriptionLop.getOutputParameters().getLabel(), DataType.SCALAR,
+						ValueType.STRING, descLiteral));
+			} else {
+				sb.append(prepOperand("", DataType.SCALAR, ValueType.STRING, true));
+			}
+		}
+
 		return sb.toString();
 	}
 	

@@ -78,6 +78,7 @@ public class DataExpression extends DataIdentifier
 	public static final String DESCRIPTIONPARAM = "description";
 	public static final String AUTHORPARAM = "author";
 	public static final String SCHEMAPARAM = "schema";
+	public static final String CREATEDPARAM = "created";
 
 	// Parameter names relevant to reading/writing delimited/csv files
 	public static final String DELIM_DELIMITER = "sep";
@@ -100,6 +101,7 @@ public class DataExpression extends DataIdentifier
 	public static final String[] READ_VALID_MTD_PARAM_NAMES = 
 		{ IO_FILENAME, READROWPARAM, READCOLPARAM, READNUMNONZEROPARAM, FORMAT_TYPE,
 			ROWBLOCKCOUNTPARAM, COLUMNBLOCKCOUNTPARAM, DATATYPEPARAM, VALUETYPEPARAM, SCHEMAPARAM, DESCRIPTIONPARAM,
+			AUTHORPARAM, CREATEDPARAM,
 			// Parameters related to delimited/csv files.
 			DELIM_FILL_VALUE, DELIM_DELIMITER, DELIM_FILL, DELIM_HAS_HEADER_ROW, DELIM_NA_STRINGS
 		}; 
@@ -1836,7 +1838,10 @@ public class DataExpression extends DataIdentifier
 			{
 				// if the read method does not specify parameter value, then add MTD metadata file value to parameter list
 				if (getVarParam(key.toString()) == null){
-					if ( !key.toString().equalsIgnoreCase(DESCRIPTIONPARAM) ) {
+					if (( !key.toString().equalsIgnoreCase(DESCRIPTIONPARAM) ) &&
+							( !key.toString().equalsIgnoreCase(AUTHORPARAM) ) &&
+							( !key.toString().equalsIgnoreCase(CREATEDPARAM) ) )
+					{
 						StringIdentifier strId = new StringIdentifier(val.toString(),
 								this.getFilename(), this.getBeginLine(), this.getBeginColumn(), 
 								this.getEndLine(), this.getEndColumn());

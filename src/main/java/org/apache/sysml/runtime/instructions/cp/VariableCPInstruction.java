@@ -101,6 +101,7 @@ public class VariableCPInstruction extends CPInstruction
 	private CPOperand input1;
 	private CPOperand input2;
 	private CPOperand input3;
+	private CPOperand input4;
 	private CPOperand output;
 	private MetaData metadata;
 	private UpdateType _updateType;
@@ -274,15 +275,15 @@ public class VariableCPInstruction extends CPInstruction
 		else if ( voc == VariableOperationCode.Write ) {
 			// All write instructions have 3 parameters, except in case of delimited/csv file.
 			// Write instructions for csv files also include three additional parameters (hasHeader, delimiter, sparse)
-			if ( parts.length != 4 && parts.length != 7 )
-				throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
+			if ( parts.length != 5 && parts.length != 8 )
+				throw new DMLRuntimeException("Invalid number of operands in write instruction: " + str);
 		}
 		else {
 			_arity = getArity(voc);
 			InstructionUtils.checkNumFields ( parts, _arity ); // no output
 		}
 		
-		CPOperand in1=null, in2=null, in3=null, out=null;
+		CPOperand in1=null, in2=null, in3=null, in4=null, out=null;
 		
 		switch (voc) {
 		
@@ -413,6 +414,13 @@ public class VariableCPInstruction extends CPInstruction
 				boolean sparse = Boolean.parseBoolean(parts[6]);
 				FileFormatProperties formatProperties = new CSVFileFormatProperties(hasHeader, delim, sparse);
 				inst.setFormatProperties(formatProperties);
+				in4 = new CPOperand(parts[7]); // description
+				inst.input4 = in4;
+			} else {
+				FileFormatProperties ffp = new FileFormatProperties();
+				inst.setFormatProperties(ffp);
+				in4 = new CPOperand(parts[4]); // description
+				inst.input4 = in4;
 			}
 			return inst;
 			
@@ -745,6 +753,8 @@ public class VariableCPInstruction extends CPInstruction
 	{
 		//get filename (literal or variable expression)
 		String fname = ec.getScalarInput(input2.getName(), ValueType.STRING, input2.isLiteral()).getStringValue();
+		String desc = ec.getScalarInput(input4.getName(), ValueType.STRING, input4.isLiteral()).getStringValue();
+		_formatProperties.setDescription(desc);
 		
 		if( input1.getDataType() == DataType.SCALAR ) {
 			writeScalarToHDFS(ec, fname);
@@ -758,7 +768,7 @@ public class VariableCPInstruction extends CPInstruction
 			else {
 				// Default behavior
 				MatrixObject mo = ec.getMatrixObject(input1.getName());
-				mo.exportData(fname, outFmt);
+				mo.exportData(fname, outFmt, _formatProperties);
 			}
 		}
 		else if( input1.getDataType() == DataType.FRAME ) {

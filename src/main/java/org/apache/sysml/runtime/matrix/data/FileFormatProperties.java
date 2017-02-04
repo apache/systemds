@@ -22,16 +22,17 @@ package org.apache.sysml.runtime.matrix.data;
 public class FileFormatProperties 
 {
 	
+	private String description;
 	
 	public enum FileFormat { CSV, NATIVE };
 	
 	FileFormat fmt;
 	
-	FileFormatProperties() {
+	public FileFormatProperties() {
 		fmt = FileFormat.NATIVE;
 	}
 	
-	FileFormatProperties(FileFormat fmt) {
+	public FileFormatProperties(FileFormat fmt) {
 		this.fmt = fmt;
 	}
 	
@@ -42,4 +43,13 @@ public class FileFormatProperties
 	public FileFormat getFileFormat() {
 		return fmt;
 	}
+
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
+	}
+
 }

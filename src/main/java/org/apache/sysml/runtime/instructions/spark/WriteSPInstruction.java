@@ -55,6 +55,7 @@ public class WriteSPInstruction extends SPInstruction
 	private CPOperand input1 = null; 
 	private CPOperand input2 = null;
 	private CPOperand input3 = null;
+	private CPOperand input4 = null;
 	private FileFormatProperties formatProperties;
 	
 	//scalars might occur for transform
@@ -82,7 +83,7 @@ public class WriteSPInstruction extends SPInstruction
 		
 		// All write instructions have 3 parameters, except in case of delimited/csv file.
 		// Write instructions for csv files also include three additional parameters (hasHeader, delimiter, sparse)
-		if ( parts.length != 4 && parts.length != 8 ) {
+		if ( parts.length != 5 && parts.length != 9 ) {
 			throw new DMLRuntimeException("Invalid number of operands in write instruction: " + str);
 		}
 		
@@ -103,6 +104,15 @@ public class WriteSPInstruction extends SPInstruction
 			
 			boolean isInputMB = Boolean.parseBoolean(parts[7]);
 			inst.setInputMatrixBlock(isInputMB);
+
+			CPOperand in4 = new CPOperand(parts[8]);
+			inst.input4 = in4;
+		} else {
+			FileFormatProperties ffp = new FileFormatProperties();
+
+			CPOperand in4 = new CPOperand(parts[4]);
+			inst.input4 = in4;
+			inst.setFormatProperties(ffp);
 		}
 		return inst;		
 	}
@@ -132,6 +142,9 @@ public class WriteSPInstruction extends SPInstruction
 
 		//get filename (literal or variable expression)
 		String fname = ec.getScalarInput(input2.getName(), ValueType.STRING, input2.isLiteral()).getStringValue();
+		String desc = ec.getScalarInput(input4.getName(), ValueType.STRING, input4.isLiteral()).getStringValue();
+		formatProperties.setDescription(desc);
+
 		ValueType[] schema = (input1.getDataType()==DataType.FRAME) ? 
 				sec.getFrameObject(input1.getName()).getSchema() : null;
 		

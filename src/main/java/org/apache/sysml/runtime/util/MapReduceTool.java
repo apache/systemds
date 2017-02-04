@@ -25,7 +25,11 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -386,7 +390,7 @@ public class MapReduceTool
 		BufferedWriter br = new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
 
 		try {
-			String mtd = metaDataToString(mtdfile, vt, schema, dt, mc, outinfo, formatProperties);
+			String mtd = metaDataToString(vt, schema, dt, mc, outinfo, formatProperties);
 			br.write(mtd);
 			br.close();
 		} catch (Exception e) {
@@ -402,8 +406,7 @@ public class MapReduceTool
 		BufferedWriter br = new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
 
 		try {
-			String mtd = metaDataToString(mtdfile, vt, null, 
-				DataType.SCALAR, null, OutputInfo.TextCellOutputInfo, null);
+			String mtd = metaDataToString(vt, null, DataType.SCALAR, null, OutputInfo.TextCellOutputInfo, null);
 			br.write(mtd);
 			br.close();
 		} 
@@ -412,7 +415,7 @@ public class MapReduceTool
 		}
 	}
 
-	public static String metaDataToString(String mtdfile, ValueType vt, ValueType[] schema, DataType dt, MatrixCharacteristics mc, 
+	public static String metaDataToString(ValueType vt, ValueType[] schema, DataType dt, MatrixCharacteristics mc,
 			OutputInfo outinfo, FileFormatProperties formatProperties) throws JSONException, DMLRuntimeException
 	{
 		OrderedJSONObject mtd = new OrderedJSONObject(); // maintain order in output file
@@ -456,8 +459,24 @@ public class MapReduceTool
 			mtd.put(DataExpression.DELIM_HAS_HEADER_ROW, csvProperties.hasHeader());
 			mtd.put(DataExpression.DELIM_DELIMITER, csvProperties.getDelim());
 		}
-		mtd.put(DataExpression.DESCRIPTIONPARAM,
-			new OrderedJSONObject().put(DataExpression.AUTHORPARAM, "SystemML"));
+
+		if (formatProperties != null) {
+			String description = formatProperties.getDescription();
+			if (StringUtils.isNotEmpty(description)) {
+				String jsonDescription = StringEscapeUtils.escapeJson(description);
+				mtd.put(DataExpression.DESCRIPTIONPARAM, jsonDescription);
+			}
+		}
+
+		String userName = System.getProperty("user.name");
+		if (StringUtils.isNotEmpty(userName)) {
+			mtd.put(DataExpression.AUTHORPARAM, userName);
+		} else {
+			mtd.put(DataExpression.AUTHORPARAM, "SystemML");
+		}
+
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
+		mtd.put(DataExpression.CREATEDPARAM, sdf.format(new Date()));
 
 		return mtd.toString(4); // indent with 4 spaces	
 	}

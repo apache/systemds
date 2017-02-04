@@ -108,7 +108,7 @@ public class MLOutput {
 	 * Obtain the DataFrame
 	 * @param sqlContext the SQLContext
 	 * @param varName the variable name
-	 * @param outputVector if true, returns DataFrame with two column: ID and org.apache.spark.mllib.linalg.Vector
+	 * @param outputVector if true, returns DataFrame with two column: ID and org.apache.spark.ml.linalg.Vector
 	 * @return the DataFrame
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */

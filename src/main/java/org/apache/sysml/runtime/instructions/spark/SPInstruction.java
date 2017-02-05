@@ -76,6 +76,7 @@ public abstract class SPInstruction extends Instruction
 		return getOpcode();
 	}
 	
+	@SuppressWarnings("deprecation")
 	@Override
 	public Instruction preprocessInstruction(ExecutionContext ec)
 		throws DMLRuntimeException 
@@ -120,6 +121,7 @@ public abstract class SPInstruction extends Instruction
 	public abstract void processInstruction(ExecutionContext ec)
 			throws DMLRuntimeException;
 
+	@SuppressWarnings("deprecation")
 	@Override
 	public void postprocessInstruction(ExecutionContext ec)
 			throws DMLRuntimeException 

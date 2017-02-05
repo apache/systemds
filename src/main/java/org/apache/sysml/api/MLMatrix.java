@@ -62,7 +62,9 @@ import scala.Tuple2;
  val result = mat1.transpose() %*% mat2
  result.write("Result_small.mtx", "text")
  
+ * @deprecated This will be removed in SystemML 1.0. Please migrate to {@link org.apache.sysml.api.mlcontext.MLContext}
  */
+@Deprecated
 public class MLMatrix extends Dataset<Row> {
 	private static final long serialVersionUID = -7005940673916671165L;
 	

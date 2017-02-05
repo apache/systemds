@@ -48,6 +48,7 @@ public class MLContextProxy
 		return _active;
 	}
 
+	@SuppressWarnings("deprecation")
 	public static ArrayList<Instruction> performCleanupAfterRecompilation(ArrayList<Instruction> tmp) 
 	{
 		if(org.apache.sysml.api.MLContext.getActiveMLContext() != null) {
@@ -58,6 +59,7 @@ public class MLContextProxy
 		return tmp;
 	}
 
+	@SuppressWarnings("deprecation")
 	public static void setAppropriateVarsForRead(Expression source, String targetname) 
 		throws LanguageException 
 	{
@@ -68,6 +70,7 @@ public class MLContextProxy
 		}
 	}
 
+	@SuppressWarnings("deprecation")
 	public static Object getActiveMLContext() {
 		if (org.apache.sysml.api.MLContext.getActiveMLContext() != null) {
 			return org.apache.sysml.api.MLContext.getActiveMLContext();
@@ -85,6 +88,7 @@ public class MLContextProxy
 				+ "Hint: in Scala, 'val ml = new MLContext(sc)'", true);
 	}
 
+	@SuppressWarnings("deprecation")
 	public static void setInstructionForMonitoring(Instruction inst) {
 		Location loc = inst.getLocation();
 		if (loc == null) {
@@ -104,6 +108,7 @@ public class MLContextProxy
 		}
 	}
 	
+	@SuppressWarnings("deprecation")
 	public static void addRDDForInstructionForMonitoring(SPInstruction inst, Integer rddID) {
 		
 		if (org.apache.sysml.api.MLContext.getActiveMLContext() != null) {

@@ -42,7 +42,10 @@ import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 /**
  * This is a simple container object that returns the output of execute from MLContext 
  *
+ * @deprecated This will be removed in SystemML 1.0. Please migrate to {@link org.apache.sysml.api.mlcontext.MLContext}
+ * and {@link org.apache.sysml.api.mlcontext.MLResults}
  */
+@Deprecated
 public class MLOutput {
 	
 	Map<String, JavaPairRDD<?,?>> _outputs;

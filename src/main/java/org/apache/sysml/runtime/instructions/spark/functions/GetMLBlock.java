@@ -30,6 +30,7 @@ import org.apache.sysml.api.MLBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 
+@SuppressWarnings("deprecation")
 public class GetMLBlock implements Function<Tuple2<MatrixIndexes,MatrixBlock>, Row>, Serializable {
 
 	private static final long serialVersionUID = 8829736765002126985L;

@@ -62,6 +62,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 
+@SuppressWarnings("deprecation")
 public class FrameTest extends AutomatedTestBase 
 {
 	private final static String TEST_DIR = "functions/frame/";

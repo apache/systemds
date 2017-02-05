@@ -21,15 +21,14 @@ package org.apache.sysml.runtime.instructions.spark.utils;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
-import java.util.List;
-import java.util.Scanner;
 
 import org.apache.hadoop.io.Text;
-import org.apache.spark.Accumulator;
 import org.apache.spark.SparkContext;
+import org.apache.spark.SparkException;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
@@ -40,6 +39,7 @@ import org.apache.spark.ml.linalg.VectorUDT;
 import org.apache.spark.ml.linalg.Vectors;
 import org.apache.spark.mllib.linalg.distributed.CoordinateMatrix;
 import org.apache.spark.mllib.linalg.distributed.MatrixEntry;
+import org.apache.spark.mllib.util.NumericParser;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
@@ -47,15 +47,7 @@ import org.apache.spark.sql.SQLContext;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
-
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-
-import scala.Tuple2;
-
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.instructions.spark.functions.ConvertMatrixBlockToIJVLines;
-import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixCell;
@@ -63,7 +55,8 @@ import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.matrix.mapred.ReblockBuffer;
 import org.apache.sysml.runtime.util.FastStringTokenizer;
-import org.apache.sysml.runtime.util.UtilFunctions;
+
+import scala.Tuple2;
 
 /**
  * NOTE: These are experimental converter utils. Once thoroughly tested, they
@@ -361,5 +354,98 @@ public class RDDConverterUtilsExt
 			rbuff.flushBufferToBinaryBlocks(rettmp);
 			ret.addAll(SparkUtils.fromIndexedMatrixBlock(rettmp));
 		}
+	}
+
+	/**
+	 * Convert a dataframe of comma-separated string rows to a dataframe of
+	 * ml.linalg.Vector rows.
+	 * 
+	 * <p>
+	 * Example input rows:<br>
+	 * 
+	 * <code>
+	 * ((1.2, 4.3, 3.4))<br>
+	 * (1.2, 3.4, 2.2)<br>
+	 * [[1.2, 34.3, 1.2, 1.25]]<br>
+	 * [1.2, 3.4]<br>
+	 * </code>
+	 * 
+	 * @param sqlContext
+	 *            Spark SQL Context
+	 * @param inputDF
+	 *            dataframe of comma-separated row strings to convert to
+	 *            dataframe of ml.linalg.Vector rows
+	 * @return dataframe of ml.linalg.Vector rows
+	 * @throws DMLRuntimeException
+	 *             if DMLRuntimeException occurs
+	 */
+	public static Dataset<Row> stringDataFrameToVectorDataFrame(SQLContext sqlContext, Dataset<Row> inputDF)
+			throws DMLRuntimeException {
+
+		StructField[] oldSchema = inputDF.schema().fields();
+		StructField[] newSchema = new StructField[oldSchema.length];
+		for (int i = 0; i < oldSchema.length; i++) {
+			String colName = oldSchema[i].name();
+			newSchema[i] = DataTypes.createStructField(colName, new VectorUDT(), true);
+		}
+
+		// converter
+		class StringToVector implements Function<Tuple2<Row, Long>, Row> {
+			private static final long serialVersionUID = -4733816995375745659L;
+
+			@Override
+			public Row call(Tuple2<Row, Long> arg0) throws Exception {
+				Row oldRow = arg0._1;
+				int oldNumCols = oldRow.length();
+				if (oldNumCols > 1) {
+					throw new DMLRuntimeException("The row must have at most one column");
+				}
+
+				// parse the various strings. i.e
+				// ((1.2, 4.3, 3.4)) or (1.2, 3.4, 2.2)
+				// [[1.2, 34.3, 1.2, 1.2]] or [1.2, 3.4]
+				Object[] fields = new Object[oldNumCols];
+				ArrayList<Object> fieldsArr = new ArrayList<Object>();
+				for (int i = 0; i < oldRow.length(); i++) {
+					Object ci = oldRow.get(i);
+					if (ci == null) {
+						fieldsArr.add(null);
+					} else if (ci instanceof String) {
+						String cis = (String) ci;
+						StringBuffer sb = new StringBuffer(cis.trim());
+						for (int nid = 0; i < 2; i++) { // remove two level
+														// nesting
+							if ((sb.charAt(0) == '(' && sb.charAt(sb.length() - 1) == ')')
+									|| (sb.charAt(0) == '[' && sb.charAt(sb.length() - 1) == ']')) {
+								sb.deleteCharAt(0);
+								sb.setLength(sb.length() - 1);
+							}
+						}
+						// have the replace code
+						String ncis = "[" + sb.toString().replaceAll(" *, *", ",") + "]";
+
+						try {
+							// ncis [ ] will always result in double array return type
+							double[] doubles = (double[]) NumericParser.parse(ncis);
+							Vector dense = Vectors.dense(doubles);
+							fieldsArr.add(dense);
+						} catch (Exception e) { // can't catch SparkException here in Java apparently
+							throw new DMLRuntimeException("Error converting to double array. " + e.getMessage(), e);
+						}
+
+					} else {
+						throw new DMLRuntimeException("Only String is supported");
+					}
+				}
+				Row row = RowFactory.create(fieldsArr.toArray());
+				return row;
+			}
+		}
+
+		// output DF
+		JavaRDD<Row> newRows = inputDF.rdd().toJavaRDD().zipWithIndex().map(new StringToVector());
+		Dataset<Row> outDF = sqlContext.createDataFrame(newRows.rdd(), DataTypes.createStructType(newSchema));
+
+		return outDF;
 	}
 }

@@ -63,7 +63,6 @@ public class ReaderColumnSelectionSparse extends ReaderColumnSelection
 		if( data.getSparseBlock()!=null )
 		for( int i=0; i<colIndexes.length; i++ )
 			sparseCols[i] = data.getSparseBlock().get(colIndexes[i]);
-		Arrays.fill(sparsePos, 0);
 	}
 
 	@Override

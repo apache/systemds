@@ -46,8 +46,9 @@ public class CompressedSizeEstimatorExact extends CompressedSizeEstimator
 		SizeEstimationFactors fact = computeSizeEstimationFactors(ubm, true);
 		
 		//construct new size info summary
-		return new CompressedSizeInfo(fact.numVals,
+		return new CompressedSizeInfo(fact.numVals, fact.numOffs,
 				getRLESize(fact.numVals, fact.numRuns, ubm.getNumColumns()),
-				getOLESize(fact.numVals, fact.numOffs, fact.numSegs, ubm.getNumColumns()));
+				getOLESize(fact.numVals, fact.numOffs, fact.numSegs, ubm.getNumColumns()),
+				getDDCSize(fact.numVals, _numRows, ubm.getNumColumns()));
 	}
 }

@@ -21,103 +21,106 @@ package org.apache.sysml.runtime.compress.estim;
 
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.commons.math3.analysis.UnivariateFunction;
+import org.apache.commons.math3.analysis.solvers.UnivariateSolverUtils;
 import org.apache.commons.math3.distribution.ChiSquaredDistribution;
 import org.apache.commons.math3.random.RandomDataGenerator;
-import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.compress.BitmapEncoder;
 import org.apache.sysml.runtime.compress.ReaderColumnSelection;
 import org.apache.sysml.runtime.compress.CompressedMatrixBlock;
-import org.apache.sysml.runtime.compress.ReaderColumnSelectionDense;
-import org.apache.sysml.runtime.compress.ReaderColumnSelectionDenseSample;
-import org.apache.sysml.runtime.compress.ReaderColumnSelectionSparse;
 import org.apache.sysml.runtime.compress.UncompressedBitmap;
 import org.apache.sysml.runtime.compress.utils.DblArray;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
 public class CompressedSizeEstimatorSample extends CompressedSizeEstimator 
 {
-	private static final boolean CORRECT_NONZERO_ESTIMATE = false; //TODO enable for production
 	private final static double SHLOSSER_JACKKNIFE_ALPHA = 0.975;
-	public static final float HAAS_AND_STOKES_ALPHA1 = 0.9F; //0.9 recommended in paper
-	public static final float HAAS_AND_STOKES_ALPHA2 = 30F; //30 recommended in paper
-	public static final float HAAS_AND_STOKES_UJ2A_C = 50; //50 recommend in paper
+	public static final double HAAS_AND_STOKES_ALPHA1 = 0.9; //0.9 recommended in paper
+	public static final double HAAS_AND_STOKES_ALPHA2 = 30; //30 recommended in paper
+	public static final int HAAS_AND_STOKES_UJ2A_C = 50; //50 recommend in paper
+	public static final boolean HAAS_AND_STOKES_UJ2A_CUT2 = true; //cut frequency in half
+	public static final boolean HAAS_AND_STOKES_UJ2A_SOLVE = true; //true recommended
+	public static final int MAX_SOLVE_CACHE_SIZE = 64*1024; //global 2MB cache
+	//note: we use a relatively high ALPHA2 and the cut-in-half approach because it
+	//leads to moderate overestimation (compared to systematic underestimation) in
+	//order to follow a conservative approach
+	
+	private static final Log LOG = LogFactory.getLog(CompressedSizeEstimatorSample.class.getName());
 
-	private int[] _sampleRows = null;
-	private RandomDataGenerator _rng = null;
-	private int _numRows = -1;
-
-	public CompressedSizeEstimatorSample(MatrixBlock data, int[] sampleRows) {
+	private static ThreadLocal<RandomDataGenerator> _rng = new ThreadLocal<RandomDataGenerator>() {
+        protected RandomDataGenerator initialValue() { return new RandomDataGenerator(); }
+    };
+    
+    private int[] _sampleRows = null;
+    private HashMap<Integer, Double> _solveCache = null;
+	
+    
+	public CompressedSizeEstimatorSample(MatrixBlock data, int sampleSize) 
+		throws DMLRuntimeException 
+	{
 		super(data);
-		_sampleRows = sampleRows;
-		_rng = new RandomDataGenerator();
-		_numRows = CompressedMatrixBlock.TRANSPOSE_INPUT ? 
-				_data.getNumColumns() : _data.getNumRows();
-	}
-
-	public CompressedSizeEstimatorSample(MatrixBlock mb, int sampleSize) {
-		this(mb, null);
+		
+		//get sample of rows, incl eager extraction 
 		_sampleRows = getSortedUniformSample(_numRows, sampleSize);
-	}
-
-	/**
-	 * set the sample rows (assumed to be sorted)
-	 * 
-	 * @param sampleRows sample rows, assumed to be sorted
-	 */
-	public void setSampleRows(int[] sampleRows) {
-		_sampleRows = sampleRows;
+		if( SizeEstimatorFactory.EXTRACT_SAMPLE_ONCE ) {
+			MatrixBlock select = new MatrixBlock(_numRows, 1, false);
+			for( int i=0; i<sampleSize; i++ )
+				select.quickSetValue(_sampleRows[i], 0, 1);
+			_data = _data.removeEmptyOperations(new MatrixBlock(), 
+					!CompressedMatrixBlock.TRANSPOSE_INPUT, select);
+		}
+		
+		//establish estimator-local cache for numeric solve
+		_solveCache = new HashMap<Integer, Double>();
 	}
 
 	@Override
 	public CompressedSizeInfo estimateCompressedColGroupSize(int[] colIndexes) 
 	{
+		int sampleSize = _sampleRows.length;
+		int numCols = colIndexes.length;
+		int[] sampleRows = _sampleRows;
+		
 		//extract statistics from sample
-		UncompressedBitmap ubm = BitmapEncoder.extractBitmapFromSample(
-				colIndexes, _data, _sampleRows);
+		UncompressedBitmap ubm = SizeEstimatorFactory.EXTRACT_SAMPLE_ONCE ?
+				BitmapEncoder.extractBitmap(colIndexes, _data) :
+				BitmapEncoder.extractBitmapFromSample(colIndexes, _data, sampleRows);
 		SizeEstimationFactors fact = computeSizeEstimationFactors(ubm, false);
-
-		//estimate number of distinct values 
-		int totalCardinality = getNumDistinctValues(colIndexes);
-		totalCardinality = Math.max(totalCardinality, fact.numVals); //fix anomalies w/ large sample fraction
-		totalCardinality = Math.min(totalCardinality, _numRows); //fix anomalies w/ large sample fraction
+		
+		//estimate number of distinct values (incl fixes for anomalies w/ large sample fraction)
+		int totalCardinality = getNumDistinctValues(ubm, _numRows, sampleRows, _solveCache);
+		totalCardinality = Math.max(totalCardinality, fact.numVals);
+		totalCardinality = Math.min(totalCardinality, _numRows); 
 		
 		//estimate unseen values
-		// each unseen is assumed to occur only once (it did not show up in the sample because it is rare)
-		int unseen = Math.max(0, totalCardinality - fact.numVals);
-		int sampleSize = _sampleRows.length;
+		int unseenVals = totalCardinality - fact.numVals;
 		
-		//estimate number of offsets
-		double sparsity = OptimizerUtils.getSparsity(
-				_data.getNumRows(), _data.getNumColumns(), _data.getNonZeros());
-		
-		// expected value given that we don't store the zero values
-		float totalNumOffs = (float) (_numRows * (1 - Math.pow(1 - sparsity,colIndexes.length)));		
-		if( CORRECT_NONZERO_ESTIMATE ) {
-			long numZeros = sampleSize - fact.numOffs;
-			float C = Math.max(1-(float)fact.numSingle/sampleSize, (float)sampleSize/_numRows); 
-			totalNumOffs = _numRows - ((numZeros>0)? (float)_numRows/sampleSize*C*numZeros : 0);
-		}
-		
-		// For a single offset, the number of blocks depends on the value of
-		// that offset. small offsets (first group of rows in the matrix)
-		// require a small number of blocks and large offsets (last group of
-		// rows) require a large number of blocks. The unseen offsets are
-		// distributed over the entire offset range. A reasonable and fast
-		// estimate for the number of blocks is to use the arithmetic mean of
-		// the number of blocks used for the first index (=1) and that of the
-		// last index.
-		int numUnseenSeg = Math.round(unseen
-				* (2.0f * BitmapEncoder.BITMAP_BLOCK_SZ + _numRows) / 2
-				/ BitmapEncoder.BITMAP_BLOCK_SZ);
+		//estimate number of non-zeros (conservatively round up)
+		double C = Math.max(1 - (double)fact.numSingle/sampleSize, (double)sampleSize/_numRows); 
+		int numZeros = sampleSize - fact.numOffs; //>=0
+		int numNonZeros = (int)Math.ceil(_numRows - (double)_numRows/sampleSize * C * numZeros);
+		numNonZeros = Math.max(numNonZeros, totalCardinality); //handle anomaly of zi=0
+
+		if( totalCardinality<=0 || unseenVals<0 || numZeros<0 || numNonZeros<=0 )
+			LOG.warn("Invalid estimates detected for "+Arrays.toString(colIndexes)+": "
+					+totalCardinality+" "+unseenVals+" "+numZeros+" "+numNonZeros);
+			
+		// estimate number of segments and number of runs incl correction for
+		// empty segments and empty runs (via expected mean of offset value)
+		int numUnseenSeg = (int) (unseenVals * 
+			Math.ceil((double)_numRows/BitmapEncoder.BITMAP_BLOCK_SZ/2));
 		int totalNumSeg = fact.numSegs + numUnseenSeg;
-		int totalNumRuns = getNumRuns(ubm, sampleSize, _numRows) + unseen;
+		int totalNumRuns = getNumRuns(ubm, sampleSize, _numRows, sampleRows) + numUnseenSeg;
 
 		//construct new size info summary
-		return new CompressedSizeInfo(totalCardinality,
-				getRLESize(totalCardinality, totalNumRuns, colIndexes.length),
-				getOLESize(totalCardinality, totalNumOffs, totalNumSeg, colIndexes.length));
+		return new CompressedSizeInfo(totalCardinality, numNonZeros,
+				getRLESize(totalCardinality, totalNumRuns, numCols),
+				getOLESize(totalCardinality, numNonZeros, totalNumSeg, numCols),
+				getDDCSize(totalCardinality, _numRows, numCols));
 	}
 
 	@Override
@@ -127,47 +130,50 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator
 		SizeEstimationFactors fact = computeSizeEstimationFactors(ubm, true);
 		
 		//construct new size info summary
-		return new CompressedSizeInfo(fact.numVals,
+		return new CompressedSizeInfo(fact.numVals, fact.numOffs,
 				getRLESize(fact.numVals, fact.numRuns, ubm.getNumColumns()),
-				getOLESize(fact.numVals, fact.numOffs, fact.numSegs, ubm.getNumColumns()));
+				getOLESize(fact.numVals, fact.numOffs, fact.numSegs, ubm.getNumColumns()),
+				getDDCSize(fact.numVals, _numRows, ubm.getNumColumns()));
 	}
 
-	private int getNumDistinctValues(int[] colIndexes) {
-		return haasAndStokes(colIndexes);
+	private static int getNumDistinctValues(UncompressedBitmap ubm, int numRows, int[] sampleRows, 
+			HashMap<Integer, Double> solveCache) {
+		return haasAndStokes(ubm, numRows, sampleRows.length, solveCache);
 	}
 
-	private int getNumRuns(UncompressedBitmap sampleUncompressedBitmap,
-			int sampleSize, int totalNumRows) {
-		int numVals = sampleUncompressedBitmap.getNumValues();
+	private static int getNumRuns(UncompressedBitmap ubm,
+			int sampleSize, int totalNumRows, int[] sampleRows) {
+		int numVals = ubm.getNumValues();
 		// all values in the sample are zeros
 		if (numVals == 0)
 			return 0;
-		float numRuns = 0;
+		double numRuns = 0;
 		for (int vi = 0; vi < numVals; vi++) {
-			int[] offsets = sampleUncompressedBitmap.getOffsetsList(vi);
-			float offsetsRatio = ((float) offsets.length) / sampleSize;
-			float avgAdditionalOffsets = offsetsRatio * totalNumRows
+			int[] offsets = ubm.getOffsetsList(vi).extractValues();
+			int offsetsSize = ubm.getNumOffsets(vi);
+			double offsetsRatio = ((double) offsetsSize) / sampleSize;
+			double avgAdditionalOffsets = offsetsRatio * totalNumRows
 					/ sampleSize;
 			if (avgAdditionalOffsets < 1) {
 				// Ising-Stevens does not hold
 				// fall-back to using the expected number of offsets as an upper
 				// bound on the number of runs
-				numRuns += ((float) offsets.length) * totalNumRows / sampleSize;
+				numRuns += ((double) offsetsSize) * totalNumRows / sampleSize;
 				continue;
 			}
 			int intervalEnd, intervalSize;
-			float additionalOffsets;
+			double additionalOffsets;
 			// probability of an index being non-offset in current and previous
 			// interval respectively
-			float nonOffsetProb, prevNonOffsetProb = 1;
+			double nonOffsetProb, prevNonOffsetProb = 1;
 			boolean reachedSampleEnd = false;
 			// handling the first interval separately for simplicity
 			int intervalStart = -1;
-			if (_sampleRows[0] == 0) {
+			if (sampleRows[0] == 0) {
 				// empty interval
 				intervalStart = 0;
 			} else {
-				intervalEnd = _sampleRows[0];
+				intervalEnd = sampleRows[0];
 				intervalSize = intervalEnd - intervalStart - 1;
 				// expected value of a multivariate hypergeometric distribution
 				additionalOffsets = offsetsRatio * intervalSize;
@@ -188,7 +194,7 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator
 				// intervalStart will always be pointing at the current value
 				// in the separator block
 
-				if (offsetsPtrs < offsets.length
+				if (offsetsPtrs < offsetsSize
 						&& offsets[offsetsPtrs] == intervalStart) {
 					startedWithOffset = true;
 					offsetsPtrs++;
@@ -197,10 +203,10 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator
 					seenNonOffset = true;
 					endedWithOffset = false;
 				}
-				while (intervalStart + 1 == _sampleRows[ix]) {
-					intervalStart = _sampleRows[ix];
+				while (intervalStart + 1 == sampleRows[ix]) {
+					intervalStart = sampleRows[ix];
 					if (seenNonOffset) {
-						if (offsetsPtrs < offsets.length
+						if (offsetsPtrs < offsetsSize
 								&& offsets[offsetsPtrs] == intervalStart) {
 							withinSepRun = 1;
 							offsetsPtrs++;
@@ -210,7 +216,7 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator
 							withinSepRun = 0;
 							endedWithOffset = false;
 						}
-					} else if (offsetsPtrs < offsets.length
+					} else if (offsetsPtrs < offsetsSize
 							&& offsets[offsetsPtrs] == intervalStart) {
 						offsetsPtrs++;
 						endedWithOffset = true;
@@ -230,7 +236,7 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator
 				// runs within an interval of unknowns
 				if (reachedSampleEnd)
 					break;
-				intervalEnd = _sampleRows[ix];
+				intervalEnd = sampleRows[ix];
 				intervalSize = intervalEnd - intervalStart - 1;
 				// expected value of a multivariate hypergeometric distribution
 				additionalOffsets = offsetsRatio * intervalSize;
@@ -280,7 +286,7 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator
 			}
 			// additional runs resulting from x's on the boundaries of the
 			// separators
-			endedWithOffset = intervalStart == offsets[offsets.length - 1];
+			endedWithOffset = intervalStart == offsets[offsetsSize - 1];
 			if (seenNonOffset) {
 				if (startedWithOffset) {
 					numRuns += prevNonOffsetProb;
@@ -296,31 +302,7 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator
 					numRuns += prevNonOffsetProb * nonOffsetProb;
 			}
 		}
-		return Math.round(numRuns);
-	}
-
-	private int haasAndStokes(int[] colIndexes) {
-		ReaderColumnSelection reader =  new ReaderColumnSelectionDenseSample(_data, 
-				colIndexes, _sampleRows, !CompressedMatrixBlock.MATERIALIZE_ZEROS);
-		return haasAndStokes(_numRows, _sampleRows.length, reader);
-	}
-
-	/**
-	 * TODO remove, just for local debugging.
-	 * 
-	 * @param colIndexes column indexes
-	 * @return exact number of district values
-	 */
-	@SuppressWarnings("unused")
-	private int getExactNumDistinctValues(int[] colIndexes) {
-		HashSet<DblArray> distinctVals = new HashSet<DblArray>();
-		ReaderColumnSelection reader = (_data.isInSparseFormat() && CompressedMatrixBlock.TRANSPOSE_INPUT) ? 
-				new ReaderColumnSelectionSparse(_data, colIndexes, !CompressedMatrixBlock.MATERIALIZE_ZEROS) : 
-				new ReaderColumnSelectionDense(_data, colIndexes, !CompressedMatrixBlock.MATERIALIZE_ZEROS);
-		DblArray val = null;
-		while (null != (val = reader.nextRow()))
-			distinctVals.add(val);
-		return distinctVals.size();
+		return (int)Math.min(Math.round(numRuns), Integer.MAX_VALUE);
 	}
 
 	/**
@@ -330,10 +312,11 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator
 	 * @param smplSize sample size
 	 * @return sorted array of integers
 	 */
-	private int[] getSortedUniformSample(int range, int smplSize) {
+	private static int[] getSortedUniformSample(int range, int smplSize) {
 		if (smplSize == 0)
 			return new int[] {};
-		int[] sample = _rng.nextPermutation(range, smplSize);
+		RandomDataGenerator rng = _rng.get();
+		int[] sample = rng.nextPermutation(range, smplSize);
 		Arrays.sort(sample);
 		return sample;
 	}
@@ -380,22 +363,13 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator
 	 * @param sampleRowsReader reader
 	 * @return estimator
 	 */
-	@SuppressWarnings("unused")
-	private static int shlosserEstimator(int nRows, int sampleSize,
-			ReaderColumnSelection sampleRowsReader) 
-	{
-		return shlosserEstimator(nRows, sampleSize, sampleRowsReader,
-				getValCounts(sampleRowsReader));
-	}
-
-	private static int shlosserEstimator(int nRows, int sampleSize,
-			ReaderColumnSelection sampleRowsReader,
-			HashMap<DblArray, Integer> valsCount) 
+	private static int shlosserEstimator(UncompressedBitmap ubm, int nRows, int sampleSize) 
 	{
 		double q = ((double) sampleSize) / nRows;
 		double oneMinusQ = 1 - q;
 
-		int[] freqCounts = getFreqCounts(valsCount);
+		int numVals = ubm.getNumValues();
+		int[] freqCounts = getFreqCounts(ubm);
 
 		double numerSum = 0, denomSum = 0;
 		int iPlusOne = 1;
@@ -403,7 +377,7 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator
 			numerSum += Math.pow(oneMinusQ, iPlusOne) * freqCounts[i];
 			denomSum += iPlusOne * q * Math.pow(oneMinusQ, i) * freqCounts[i];
 		}
-		int estimate = (int) Math.round(valsCount.size() + freqCounts[0]
+		int estimate = (int) Math.round(numVals + freqCounts[0]
 				* numerSum / denomSum);
 		return estimate < 1 ? 1 : estimate;
 	}
@@ -418,25 +392,16 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator
 	 * @param sampleRowsReader row reader
 	 * @return estimator
 	 */
-	@SuppressWarnings("unused")
-	private static int smoothedJackknifeEstimator(int nRows, int sampleSize,
-			ReaderColumnSelection sampleRowsReader) 
+	private static int smoothedJackknifeEstimator(UncompressedBitmap ubm, int nRows, int sampleSize) 
 	{
-		return smoothedJackknifeEstimator(nRows, sampleSize, sampleRowsReader,
-				getValCounts(sampleRowsReader));
-	}
-
-	private static int smoothedJackknifeEstimator(int nRows, int sampleSize,
-			ReaderColumnSelection sampleRowsReader,
-			HashMap<DblArray, Integer> valsCount) 
-	{
-		int[] freqCounts = getFreqCounts(valsCount);
+		int numVals = ubm.getNumValues();
+		int[] freqCounts = getFreqCounts(ubm);
 		// all values in the sample are zeros
 		if (freqCounts.length == 0)
 			return 0;
 		// nRows is N and sampleSize is n
 
-		int d = valsCount.size();
+		int d = numVals;
 		double f1 = freqCounts[0];
 		int Nn = nRows * sampleSize;
 		double D0 = (d - f1 / sampleSize)
@@ -515,43 +480,31 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator
 	 * @return estimator
 	 */
 	@SuppressWarnings("unused")
-	private static int shlosserJackknifeEstimator(int nRows, int sampleSize,
-			ReaderColumnSelection sampleRowsReader) {
-		HashMap<DblArray, Integer> valsCount = getValCounts(sampleRowsReader);
-
+	private static int shlosserJackknifeEstimator(UncompressedBitmap ubm, int nRows, int sampleSize) 
+	{
+		int numVals = ubm.getNumValues();
+		CriticalValue cv = computeCriticalValue(sampleSize);
+		
 		// uniformity chi-square test
-		double nBar = ((double) sampleSize) / valsCount.size();
+		double nBar = ((double) sampleSize) / numVals;
 		// test-statistic
 		double u = 0;
-		for (int cnt : valsCount.values()) {
-			u += Math.pow(cnt - nBar, 2);
+		for( int i=0; i<numVals; i++ ) {
+			u += Math.pow(ubm.getNumOffsets(i) - nBar, 2);
 		}
 		u /= nBar;
-		if (sampleSize != usedSampleSize)
+		if (sampleSize != cv.usedSampleSize)
 			computeCriticalValue(sampleSize);
-		if (u < uniformityCriticalValue) {
-			// uniform
-			return smoothedJackknifeEstimator(nRows, sampleSize,
-					sampleRowsReader, valsCount);
-		} else {
-			return shlosserEstimator(nRows, sampleSize, sampleRowsReader,
-					valsCount);
-		}
+		if (u < cv.uniformityCriticalValue) // uniform
+			return smoothedJackknifeEstimator(ubm, nRows, sampleSize);
+		else 
+			return shlosserEstimator(ubm, nRows, sampleSize);
 	}
 
-	/*
-	 * In the shlosserSmoothedJackknifeEstimator as long as the sample size did
-	 * not change, we will have the same critical value each time the estimator
-	 * is used (given that alpha is the same). We cache the critical value to
-	 * avoid recomputing it in each call.
-	 */
-	private static double uniformityCriticalValue;
-	private static int usedSampleSize;
-	
-	private static void computeCriticalValue(int sampleSize) {
+	private static CriticalValue computeCriticalValue(int sampleSize) {
 		ChiSquaredDistribution chiSqr = new ChiSquaredDistribution(sampleSize - 1);
-		uniformityCriticalValue = chiSqr.inverseCumulativeProbability(SHLOSSER_JACKKNIFE_ALPHA);
-		usedSampleSize = sampleSize;
+		return new CriticalValue(
+			chiSqr.inverseCumulativeProbability(SHLOSSER_JACKKNIFE_ALPHA), sampleSize);
 	}
 
 	/**
@@ -563,115 +516,43 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator
 	 * 
 	 * @param nRows number of rows
 	 * @param sampleSize sample size
+	 * @param solveCache 
 	 * @param sampleRowsReader row reader
 	 * @return estimator
 	 */
-	private static int haasAndStokes(int nRows, int sampleSize,
-			ReaderColumnSelection sampleRowsReader) 
+	private static int haasAndStokes(UncompressedBitmap ubm, int nRows, int sampleSize, HashMap<Integer, Double> solveCache)
 	{
-		HashMap<DblArray, Integer> valsCount = getValCounts(sampleRowsReader);
+		//obtain value and frequency histograms
+		int numVals = ubm.getNumValues();
+		int[] freqCounts = getFreqCounts(ubm);
+	
 		// all values in the sample are zeros.
-		if (valsCount.size() == 0)
+		if( numVals == 0 )
 			return 1;
-		int[] freqCounts = getFreqCounts(valsCount);
-		float q = ((float) sampleSize) / nRows;
-		float _1MinusQ = 1 - q;
-		// Eq. 11
-		float duj1Fraction = ((float) sampleSize)
-				/ (sampleSize - _1MinusQ * freqCounts[0]);
-		float duj1 = duj1Fraction * valsCount.size();
-		// Eq. 16
-		float gamma = 0;
-		for (int i = 1; i <= freqCounts.length; i++) {
-			gamma += i * (i - 1) * freqCounts[i - 1];
-		}
-		gamma *= duj1 / sampleSize / sampleSize;
-		gamma += duj1 / nRows - 1;
-		gamma = Math.max(gamma, 0);
-		int estimate;
 		
-		if (gamma < HAAS_AND_STOKES_ALPHA1) {
-			// UJ2 - begining of page 1479
-		//	System.out.println("uj2");
-			estimate = (int) (duj1Fraction * (valsCount.size() - freqCounts[0]
-					* _1MinusQ * Math.log(_1MinusQ) * gamma / q));
-		} else if (gamma < HAAS_AND_STOKES_ALPHA2) {
-			// UJ2a - end of page 1998
-			//System.out.println("uj2a");
-			int numRemovedClasses = 0;
-			float updatedNumRows = nRows;
-			int updatedSampleSize = sampleSize;
-
-			for (Integer cnt : valsCount.values()) {
-				if (cnt > HAAS_AND_STOKES_UJ2A_C) {
-					numRemovedClasses++;
-					freqCounts[cnt - 1]--;
-					updatedSampleSize -= cnt;
-					/*
-					 * To avoid solving Eq. 20 numerically for the class size in
-					 * the full population (N_j), the current implementation
-					 * just scales cnt (n_j) by the sampling ratio (q).
-					 * Intuitively, the scaling should be fine since cnt is
-					 * large enough. Also, N_j in Eq. 20 is lower-bounded by cnt
-					 * which is already large enough to make the denominator in
-					 * Eq. 20 very close to 1.
-					 */
-					updatedNumRows -= ((float) cnt) / q;
-				}
-			}
-			if (updatedSampleSize == 0) {
-				// use uJ2a
-				
-				estimate = (int) (duj1Fraction * (valsCount.size() - freqCounts[0]
-						* (_1MinusQ) * Math.log(_1MinusQ) * gamma / q));
-			} else {
-				float updatedQ = ((float) updatedSampleSize) / updatedNumRows;
-				int updatedSampleCardinality = valsCount.size()
-						- numRemovedClasses;
-				float updatedDuj1Fraction = ((float) updatedSampleSize)
-						/ (updatedSampleSize - (1 - updatedQ) * freqCounts[0]);
-				float updatedDuj1 = updatedDuj1Fraction
-						* updatedSampleCardinality;
-				float updatedGamma = 0;
-				for (int i = 1; i <= freqCounts.length; i++) {
-					updatedGamma += i * (i - 1) * freqCounts[i - 1];
-				}
-				updatedGamma *= updatedDuj1 / updatedSampleSize
-						/ updatedSampleSize;
-				updatedGamma += updatedDuj1 / updatedNumRows - 1;
-				updatedGamma = Math.max(updatedGamma, 0);
-
-				estimate = (int) (updatedDuj1Fraction * (updatedSampleCardinality - freqCounts[0]
-						* (1 - updatedQ)
-						* Math.log(1 - updatedQ)
-						* updatedGamma / updatedQ))
-						+ numRemovedClasses;
-			}
-
-		} else {
-			// Sh3 - end of section 3
-			float fraq1Numer = 0;
-			float fraq1Denom = 0;
-			float fraq2Numer = 0;
-			float fraq2Denom = 0;
-			for (int i = 1; i <= freqCounts.length; i++) {
-				fraq1Numer += i * q * q * Math.pow(1 - q * q, i - 1)
-						* freqCounts[i - 1];
-				fraq1Denom += Math.pow(_1MinusQ, i) * (Math.pow(1 + q, i) - 1)
-						* freqCounts[i - 1];
-				fraq2Numer += Math.pow(_1MinusQ, i) * freqCounts[i - 1];
-				fraq2Denom += i * q * Math.pow(_1MinusQ, i - 1)
-						* freqCounts[i - 1];
-			}
-			estimate = (int) (valsCount.size() + freqCounts[0] * fraq1Numer
-					/ fraq1Denom * fraq2Numer * fraq2Numer / fraq2Denom
-					/ fraq2Denom);
-		}
-		return estimate < 1 ? 1 : estimate;
+		double q = ((double) sampleSize) / nRows;
+		double f1 = freqCounts[0];
+		
+		//compute basic Duj1 estimate
+		double duj1 = getDuj1Estimate(q, f1, sampleSize, numVals);
+		
+		//compute gamma based on Duj1
+		double gamma = getGammaSquared(duj1, freqCounts, sampleSize, nRows);
+		double d = -1;
+		
+		//core hybrid estimator based on gamma
+		if (gamma < HAAS_AND_STOKES_ALPHA1)
+			d = getDuj2Estimate(q, f1, sampleSize, numVals, gamma);
+		else if (gamma < HAAS_AND_STOKES_ALPHA2)
+			d = getDuj2aEstimate(q, freqCounts, sampleSize, numVals, gamma, nRows, solveCache);
+		else
+			d = getSh3Estimate(q, freqCounts, numVals);
+		
+		//round and ensure min value 1
+		return Math.max(1, (int)Math.round(d));
 	}
 
-	private static HashMap<DblArray, Integer> getValCounts(
-			ReaderColumnSelection sampleRowsReader) 
+	private static HashMap<DblArray, Integer> getValCounts(ReaderColumnSelection sampleRowsReader) 
 	{
 		HashMap<DblArray, Integer> valsCount = new HashMap<DblArray, Integer>();
 		DblArray val = null;
@@ -681,27 +562,179 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator
 			if (cnt == null)
 				cnt = 0;
 			cnt++;
-			valsCount.put(val, cnt);
+			valsCount.put(new DblArray(val), cnt);
 		}
 		return valsCount;
 	}
 
-	private static int[] getFreqCounts(HashMap<DblArray, Integer> valsCount) 
+	/**
+	 * Creates an inverted histogram, where freqCounts[i-1] indicates 
+	 * how many values occurred with a frequency i. Note that freqCounts[0]
+	 * represents the special values of the number of singletons. 
+	 * 
+	 * @param ubm uncompressed bitmap
+	 * @return frequency counts
+	 */
+	private static int[] getFreqCounts(UncompressedBitmap ubm) 
 	{
+		//determine max frequency
+		int numVals = ubm.getNumValues();
 		int maxCount = 0;
-		for (Integer c : valsCount.values()) {
-			if (c > maxCount)
-				maxCount = c;
-		}
-		
-		/*
-		 * freqCounts[i-1] = how many values occured with a frequecy i
-		 */
+		for( int i=0; i<numVals; i++ )
+			maxCount = Math.max(maxCount, ubm.getNumOffsets(i));
+			
+		//create frequency histogram
 		int[] freqCounts = new int[maxCount];
-		for (Integer c : valsCount.values()) {
-			freqCounts[c - 1]++;
-		}
+		for( int i=0; i<numVals; i++ )
+			freqCounts[ubm.getNumOffsets(i)-1] ++;
+
 		return freqCounts;
 
+	}
+
+	/**
+	 * Computes the "unsmoothed first-order jackknife estimator" (Eq 11).
+	 * 
+	 */
+	private static double getDuj1Estimate(double q, double f1, int n, int dn) {
+		return dn / (1 - ((1-q) * f1)/n);
+	}
+	
+	/**
+	 * Computes the "unsmoothed second-order jackknife estimator" (Eq 18b).
+	 * 
+	 */
+	private static double getDuj2Estimate(double q, double f1, int n, int dn, double gammaDuj1) {
+		return (dn - (1-q) * f1 * Math.log(1-q) * gammaDuj1 / q) / (1 - ((1-q) * f1)/n);
+	}
+	
+	/**
+	 * Computes the "unsmoothed second-order jackknife estimator" with additional  
+	 * stabilization procedure, which removes the classes whose frequency exceed c,
+	 * computes Duj2 over the reduced sample, and finally adds the removed frequencies.
+	 * 
+	 */
+	private static double getDuj2aEstimate(double q, int f[], int n, int dn, double gammaDuj1, int N, 
+			HashMap<Integer, Double> solveCache) {
+		int c = HAAS_AND_STOKES_UJ2A_CUT2 ? 
+			f.length/2+1 : HAAS_AND_STOKES_UJ2A_C+1;
+		
+		//compute adjusted sample size after removing classes that
+		//exceed a fixed frequency  c
+		int nB = 0, cardB = 0;
+		for( int i=c; i<=f.length; i++ ) 
+			if( f[i-1] != 0 ) {
+				nB += f[i-1] * i; //numVals times frequency 
+				cardB += f[i-1];
+			}
+		
+		//fallback to Duj2 over full sample if only high frequency columns
+		if( n - nB == 0 )
+			return getDuj2Estimate(q, f[0], n, dn, gammaDuj1);
+
+		//compute reduced population size via numeric solve
+		int updatedN = N; 
+		for( int i=c; i<=f.length; i++ )
+			if( f[i-1] != 0 )
+				updatedN -= f[i-1] * (!HAAS_AND_STOKES_UJ2A_SOLVE ? i/q :
+					getMethodOfMomentsEstimate(i, q, 1, N, solveCache));
+		
+		//remove classes that exceed a fixed frequency c
+		for( int i=c; i<=f.length; i++ )
+			f[i-1] = 0; 
+		
+		//compute duj2a over reduced sample
+		double updatedDuj1 = getDuj1Estimate(q, f[0], n-nB, dn-cardB);
+		double updatedGammaDuj1 = getGammaSquared(updatedDuj1, f, n-nB, updatedN);
+		double duj2 = getDuj2Estimate(q, f[0], n-nB, dn-cardB, updatedGammaDuj1);
+		return duj2 + cardB;		
+	}
+	
+	/**
+	 * Computed the "shlosser third-order estimator". (Eq 30b)
+	 * 
+	 * Note that this estimator can show anomalies with NaN as the results
+	 * due to terms such as Math.pow(1+q, i) which exceed Double.MAX_VALUE
+	 * even for moderately large i, e.g., q=0.05 at around 14K.
+	 * 
+	 */
+	private static double getSh3Estimate(double q, int[] f, double dn) {
+		double fraq11 = 0, fraq12 = 0, fraq21 = 0, fraq22 = 0;
+		for( int i=1; i<=f.length; i++ ) 
+			if( f[i-1] != 0 ) {
+				fraq11 += i * q*q * Math.pow(1 - q*q, i-1) * f[i-1];
+				//NOTE: numerically unstable due to Math.pow(1+q, i) overflows
+				//fraq12 += Math.pow(1 - q, i) * (Math.pow(1+q, i)-1) * f[i-1];
+				fraq12 += (Math.pow(1 - q*q, i) - Math.pow(1 - q, i)) * f[i-1];
+				fraq21 += Math.pow(1 - q, i) * f[i-1];
+				fraq22 += i * q * Math.pow(1 - q, i-1) * f[i-1];
+			}
+		return dn + f[0] * fraq11/fraq12 * Math.pow(fraq21/fraq22, 2); 
+	}
+	
+	/**
+	 * Computes the "squared coefficient of variation" based on a given 
+	 * initial estimate D (Eq 16).
+	 * 
+	 */
+	private static double getGammaSquared(double D, int[] f, int n, int N) {
+		double gamma = 0;
+		for( int i=1; i<=f.length; i++) 
+			if( f[i-1] != 0 )
+				gamma += i * (i-1) * f[i-1];
+		gamma *= D / n / n;
+		gamma += D / N - 1;
+		return Math.max(0, gamma);
+	}
+	
+	/**
+	 * Solves the method-of-moments estimate numerically. We use a cache
+	 * on the same observed instances in the sample as q is constant and
+	 * min/max are chosen conservatively.
+	 * 
+	 */
+	private static double getMethodOfMomentsEstimate(int nj, double q, double min, double max, 
+		HashMap<Integer, Double> solveCache) {
+		if( solveCache.containsKey(nj) )
+			return solveCache.get(nj);
+		
+		double est = UnivariateSolverUtils
+			.solve(new MethodOfMomentsFunction(nj, q), min, max, 1e-9);
+		
+		if( solveCache.size()<MAX_SOLVE_CACHE_SIZE )
+			solveCache.put(nj, est);
+		
+		return est;
+	}
+	
+	/*
+	 * In the shlosserSmoothedJackknifeEstimator as long as the sample size did
+	 * not change, we will have the same critical value each time the estimator
+	 * is used (given that alpha is the same). We cache the critical value to
+	 * avoid recomputing it in each call.
+	 */
+	private static class CriticalValue {
+		public final double uniformityCriticalValue;
+		public final int usedSampleSize;
+		
+		public CriticalValue(double cv, int size) {
+			uniformityCriticalValue = cv;
+			usedSampleSize = size;
+		} 
+	}
+	
+	private static class MethodOfMomentsFunction implements UnivariateFunction {
+		private final int _nj;
+		private final double _q;
+		
+		public MethodOfMomentsFunction(int nj, double q) {
+			_nj = nj;
+			_q = q;
+		}
+		
+		@Override
+		public double value(double x) {
+			return _q*x / (1-Math.pow(1-_q, x)) - _nj;
+		}
 	}
 }

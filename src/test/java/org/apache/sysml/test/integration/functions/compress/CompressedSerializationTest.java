@@ -49,9 +49,10 @@ public class CompressedSerializationTest extends AutomatedTestBase
 	}
 	
 	public enum ValueType {
-		RAND,
-		RAND_ROUND,
-		CONST,
+		RAND, //UC
+		CONST, //RLE
+		RAND_ROUND_OLE, //OLE
+		RAND_ROUND_DDC, //RLE
 	}
 	
 	@Override
@@ -75,13 +76,23 @@ public class CompressedSerializationTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testDenseRoundRandDataCompression() {
-		runCompressedSerializationTest(SparsityType.DENSE, ValueType.RAND_ROUND, true);
+	public void testDenseRoundRandDataOLECompression() {
+		runCompressedSerializationTest(SparsityType.DENSE, ValueType.RAND_ROUND_OLE, true);
 	}
 	
 	@Test
-	public void testSparseRoundRandDataCompression() {
-		runCompressedSerializationTest(SparsityType.SPARSE, ValueType.RAND_ROUND, true);
+	public void testSparseRoundRandDataOLECompression() {
+		runCompressedSerializationTest(SparsityType.SPARSE, ValueType.RAND_ROUND_OLE, true);
+	}
+	
+	@Test
+	public void testDenseRoundRandDataDDCCompression() {
+		runCompressedSerializationTest(SparsityType.DENSE, ValueType.RAND_ROUND_DDC, true);
+	}
+	
+	@Test
+	public void testSparseRoundRandDataDDCCompression() {
+		runCompressedSerializationTest(SparsityType.SPARSE, ValueType.RAND_ROUND_DDC, true);
 	}
 	
 	@Test
@@ -110,13 +121,13 @@ public class CompressedSerializationTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testDenseRoundRandDataNoCompression() {
-		runCompressedSerializationTest(SparsityType.DENSE, ValueType.RAND_ROUND, false);
+	public void testDenseRoundRandDataOLENoCompression() {
+		runCompressedSerializationTest(SparsityType.DENSE, ValueType.RAND_ROUND_OLE, false);
 	}
 	
 	@Test
-	public void testSparseRoundRandDataNoCompression() {
-		runCompressedSerializationTest(SparsityType.SPARSE, ValueType.RAND_ROUND, false);
+	public void testSparseRoundRandDataOLENoCompression() {
+		runCompressedSerializationTest(SparsityType.SPARSE, ValueType.RAND_ROUND_OLE, false);
 	}
 	
 	@Test
@@ -150,8 +161,10 @@ public class CompressedSerializationTest extends AutomatedTestBase
 			//generate input data
 			double min = (vtype==ValueType.CONST)? 10 : -10;
 			double[][] input = TestUtils.generateTestMatrix(rows, cols, min, 10, sparsity, 7);
-			if( vtype==ValueType.RAND_ROUND )
+			if( vtype==ValueType.RAND_ROUND_OLE || vtype==ValueType.RAND_ROUND_DDC ) {
+				CompressedMatrixBlock.ALLOW_DDC_ENCODING = (vtype==ValueType.RAND_ROUND_DDC);
 				input = TestUtils.round(input);
+			}
 			MatrixBlock mb = DataConverter.convertToMatrixBlock(input);
 			
 			//compress given matrix block
@@ -180,6 +193,9 @@ public class CompressedSerializationTest extends AutomatedTestBase
 		}
 		catch(Exception ex) {
 			throw new RuntimeException(ex);
+		}
+		finally {
+			CompressedMatrixBlock.ALLOW_DDC_ENCODING = true;
 		}
 	}
 }

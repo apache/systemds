@@ -45,9 +45,10 @@ public class BasicMatrixMultChainTest extends AutomatedTestBase
 	}
 	
 	public enum ValueType {
-		RAND,
-		RAND_ROUND,
-		CONST,
+		RAND, //UC
+		CONST, //RLE
+		RAND_ROUND_OLE, //OLE
+		RAND_ROUND_DDC, //RLE
 	}
 	
 	@Override
@@ -71,13 +72,23 @@ public class BasicMatrixMultChainTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testDenseRoundRandDataNoWeightsCompression() {
-		runMatrixMultChainTest(SparsityType.DENSE, ValueType.RAND_ROUND, ChainType.XtXv, true);
+	public void testDenseRoundRandDataOLENoWeightsCompression() {
+		runMatrixMultChainTest(SparsityType.DENSE, ValueType.RAND_ROUND_OLE, ChainType.XtXv, true);
 	}
 	
 	@Test
-	public void testSparseRoundRandDataNoWeightsCompression() {
-		runMatrixMultChainTest(SparsityType.SPARSE, ValueType.RAND_ROUND, ChainType.XtXv, true);
+	public void testSparseRoundRandDataOLENoWeightsCompression() {
+		runMatrixMultChainTest(SparsityType.SPARSE, ValueType.RAND_ROUND_OLE, ChainType.XtXv, true);
+	}
+	
+	@Test
+	public void testDenseRoundRandDataDDCNoWeightsCompression() {
+		runMatrixMultChainTest(SparsityType.DENSE, ValueType.RAND_ROUND_DDC, ChainType.XtXv, true);
+	}
+	
+	@Test
+	public void testSparseRoundRandDataDDCNoWeightsCompression() {
+		runMatrixMultChainTest(SparsityType.SPARSE, ValueType.RAND_ROUND_DDC, ChainType.XtXv, true);
 	}
 	
 	@Test
@@ -106,13 +117,23 @@ public class BasicMatrixMultChainTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testDenseRoundRandDataNoWeightsNoCompression() {
-		runMatrixMultChainTest(SparsityType.DENSE, ValueType.RAND_ROUND, ChainType.XtXv, false);
+	public void testDenseRoundRandDataOLENoWeightsNoCompression() {
+		runMatrixMultChainTest(SparsityType.DENSE, ValueType.RAND_ROUND_OLE, ChainType.XtXv, false);
 	}
 	
 	@Test
-	public void testSparseRoundRandDataNoWeightsNoCompression() {
-		runMatrixMultChainTest(SparsityType.SPARSE, ValueType.RAND_ROUND, ChainType.XtXv, false);
+	public void testSparseRoundRandDataOLENoWeightsNoCompression() {
+		runMatrixMultChainTest(SparsityType.SPARSE, ValueType.RAND_ROUND_OLE, ChainType.XtXv, false);
+	}
+	
+	@Test
+	public void testDenseRoundRandDataDDCNoWeightsNoCompression() {
+		runMatrixMultChainTest(SparsityType.DENSE, ValueType.RAND_ROUND_DDC, ChainType.XtXv, false);
+	}
+	
+	@Test
+	public void testSparseRoundRandDataDDCNoWeightsNoCompression() {
+		runMatrixMultChainTest(SparsityType.SPARSE, ValueType.RAND_ROUND_DDC, ChainType.XtXv, false);
 	}
 	
 	@Test
@@ -141,13 +162,23 @@ public class BasicMatrixMultChainTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testDenseRoundRandDataWeightsCompression() {
-		runMatrixMultChainTest(SparsityType.DENSE, ValueType.RAND_ROUND, ChainType.XtwXv, true);
+	public void testDenseRoundRandDataOLEWeightsCompression() {
+		runMatrixMultChainTest(SparsityType.DENSE, ValueType.RAND_ROUND_OLE, ChainType.XtwXv, true);
 	}
 	
 	@Test
-	public void testSparseRoundRandDataWeightsCompression() {
-		runMatrixMultChainTest(SparsityType.SPARSE, ValueType.RAND_ROUND, ChainType.XtwXv, true);
+	public void testSparseRoundRandDataOLEWeightsCompression() {
+		runMatrixMultChainTest(SparsityType.SPARSE, ValueType.RAND_ROUND_OLE, ChainType.XtwXv, true);
+	}
+	
+	@Test
+	public void testDenseRoundRandDataDDCWeightsCompression() {
+		runMatrixMultChainTest(SparsityType.DENSE, ValueType.RAND_ROUND_DDC, ChainType.XtwXv, true);
+	}
+	
+	@Test
+	public void testSparseRoundRandDataDDCWeightsCompression() {
+		runMatrixMultChainTest(SparsityType.SPARSE, ValueType.RAND_ROUND_DDC, ChainType.XtwXv, true);
 	}
 	
 	@Test
@@ -176,13 +207,13 @@ public class BasicMatrixMultChainTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testDenseRoundRandDataWeightsNoCompression() {
-		runMatrixMultChainTest(SparsityType.DENSE, ValueType.RAND_ROUND, ChainType.XtwXv, false);
+	public void testDenseRoundRandDataOLEWeightsNoCompression() {
+		runMatrixMultChainTest(SparsityType.DENSE, ValueType.RAND_ROUND_OLE, ChainType.XtwXv, false);
 	}
 	
 	@Test
-	public void testSparseRoundRandDataWeightsNoCompression() {
-		runMatrixMultChainTest(SparsityType.SPARSE, ValueType.RAND_ROUND, ChainType.XtwXv, false);
+	public void testSparseRoundRandDataOLEWeightsNoCompression() {
+		runMatrixMultChainTest(SparsityType.SPARSE, ValueType.RAND_ROUND_OLE, ChainType.XtwXv, false);
 	}
 	
 	@Test
@@ -214,8 +245,10 @@ public class BasicMatrixMultChainTest extends AutomatedTestBase
 			//generate input data
 			double min = (vtype==ValueType.CONST)? 10 : -10;
 			double[][] input = TestUtils.generateTestMatrix(rows, cols, min, 10, sparsity, 7);
-			if( vtype==ValueType.RAND_ROUND )
+			if( vtype==ValueType.RAND_ROUND_OLE || vtype==ValueType.RAND_ROUND_DDC ) {
+				CompressedMatrixBlock.ALLOW_DDC_ENCODING = (vtype==ValueType.RAND_ROUND_DDC);
 				input = TestUtils.round(input);
+			}
 			MatrixBlock mb = DataConverter.convertToMatrixBlock(input);
 			MatrixBlock vector1 = DataConverter.convertToMatrixBlock(
 					TestUtils.generateTestMatrix(cols, 1, 0, 1, 1.0, 3));
@@ -240,6 +273,9 @@ public class BasicMatrixMultChainTest extends AutomatedTestBase
 		}
 		catch(Exception ex) {
 			throw new RuntimeException(ex);
+		}
+		finally {
+			CompressedMatrixBlock.ALLOW_DDC_ENCODING = true;
 		}
 	}
 }

@@ -24,6 +24,7 @@ import java.util.HashMap;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.lops.LopProperties.ExecType;
+import org.apache.sysml.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
@@ -140,11 +141,11 @@ public class CompressedLinregCG extends AutomatedTestBase
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("w");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 		}
-		finally
-		{
+		finally {
 			rtplatform = platformOld;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 			InfrastructureAnalyzer.setLocalMaxMemory(memOld);		
+			CompressedMatrixBlock.ALLOW_DDC_ENCODING = true;
 		}
 	}
 

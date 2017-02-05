@@ -32,6 +32,7 @@ import org.apache.sysml.runtime.functionobjects.ReduceRow;
 import org.apache.sysml.runtime.matrix.data.LibMatrixAgg;
 import org.apache.sysml.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.SparseBlock.Type;
 import org.apache.sysml.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysml.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysml.runtime.util.SortUtils;
@@ -53,7 +54,7 @@ public class ColGroupUncompressed extends ColGroup
 	private MatrixBlock _data;
 
 	public ColGroupUncompressed() {
-		super(CompressionType.UNCOMPRESSED, (int[])null, -1);
+		super((int[])null, -1);
 	}
 	
 	/**
@@ -71,7 +72,7 @@ public class ColGroupUncompressed extends ColGroup
 	public ColGroupUncompressed(List<Integer> colIndicesList, MatrixBlock rawblock) 
 		throws DMLRuntimeException 
 	{
-		super(CompressionType.UNCOMPRESSED, colIndicesList, 
+		super(colIndicesList, 
 				CompressedMatrixBlock.TRANSPOSE_INPUT ? 
 				rawblock.getNumColumns() : rawblock.getNumRows());
 
@@ -97,7 +98,7 @@ public class ColGroupUncompressed extends ColGroup
 			return;
 		}
 		
-		// dense implementation for dense and sparse matrices to avoid linear search
+		//dense implementation for dense and sparse matrices to avoid linear search
 		int m = numRows;
 		int n = _colIndexes.length;
 		for( int i = 0; i < m; i++) {
@@ -109,6 +110,11 @@ public class ColGroupUncompressed extends ColGroup
 			}
 		}
 		_data.examSparsity();
+		
+		//convert sparse MCSR to read-optimized CSR representation
+		if( _data.isInSparseFormat() ) {
+			_data = new MatrixBlock(_data, Type.CSR, false);
+		}
 	}
 
 	/**
@@ -121,8 +127,7 @@ public class ColGroupUncompressed extends ColGroup
 	 */
 	public ColGroupUncompressed(ArrayList<ColGroup> groupsToDecompress) 
 	{
-		super(CompressionType.UNCOMPRESSED, 
-				mergeColIndices(groupsToDecompress),
+		super(mergeColIndices(groupsToDecompress),
 				groupsToDecompress.get(0)._numRows);
 
 		// Invert the list of column indices
@@ -152,10 +157,14 @@ public class ColGroupUncompressed extends ColGroup
 	 */
 	public ColGroupUncompressed(int[] colIndices, int numRows, MatrixBlock data) 
 	{
-		super(CompressionType.UNCOMPRESSED, colIndices, numRows);
+		super(colIndices, numRows);
 		_data = data;
 	}
 
+	@Override
+	public CompressionType getCompType() {
+		return CompressionType.UNCOMPRESSED;
+	}
 
 	/**
 	 * Access for superclass
@@ -276,6 +285,23 @@ public class ColGroupUncompressed extends ColGroup
 		LibMatrixMult.matrixMult(_data, shortVector, result, rl, ru);	
 	}
 	
+	public void rightMultByVector(MatrixBlock vector, MatrixBlock result, int k)
+			throws DMLRuntimeException 
+	{
+		// Pull out the relevant rows of the vector
+		int clen = _colIndexes.length;
+		
+		MatrixBlock shortVector = new MatrixBlock(clen, 1, false);
+		shortVector.allocateDenseBlock();
+		double[] b = shortVector.getDenseBlock();
+		for (int colIx = 0; colIx < clen; colIx++)
+			b[colIx] = vector.quickGetValue(_colIndexes[colIx], 0);
+		shortVector.recomputeNonZeros();
+		
+		// Multiply the selected columns by the appropriate parts of the vector
+		LibMatrixMult.matrixMult(_data, shortVector, result, k);	
+	}
+	
 	@Override
 	public void leftMultByRowVector(MatrixBlock vector, MatrixBlock result)
 			throws DMLRuntimeException 
@@ -377,8 +403,7 @@ public class ColGroupUncompressed extends ColGroup
 	}
 	
 	@Override
-	protected void countNonZerosPerRow(int[] rnnz, int rl, int ru)
-	{
+	protected void countNonZerosPerRow(int[] rnnz, int rl, int ru) {
 		for( int i=rl; i<ru; i++ )
 			rnnz[i-rl] += _data.recomputeNonZeros(i, i, 0, _data.getNumColumns()-1);
 	}

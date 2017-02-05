@@ -22,20 +22,16 @@ package org.apache.sysml.runtime.compress;
 import java.util.Arrays;
 import java.util.Iterator;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.compress.utils.ConverterUtils;
 import org.apache.sysml.runtime.compress.utils.LinearAlgebraUtils;
 import org.apache.sysml.runtime.functionobjects.Builtin;
-import org.apache.sysml.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysml.runtime.functionobjects.KahanFunction;
 import org.apache.sysml.runtime.functionobjects.KahanPlus;
-import org.apache.sysml.runtime.functionobjects.KahanPlusSq;
-import org.apache.sysml.runtime.functionobjects.ReduceAll;
-import org.apache.sysml.runtime.functionobjects.ReduceCol;
-import org.apache.sysml.runtime.functionobjects.ReduceRow;
 import org.apache.sysml.runtime.instructions.cp.KahanObject;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.apache.sysml.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysml.runtime.matrix.operators.ScalarOperator;
 
 /**
@@ -43,12 +39,14 @@ import org.apache.sysml.runtime.matrix.operators.ScalarOperator;
  * simple lists of offsets for each set of distinct values.
  * 
  */
-public class ColGroupOLE extends ColGroupBitmap 
+public class ColGroupOLE extends ColGroupOffset 
 {
 	private static final long serialVersionUID = -9157676271360528008L;
 
+	private static final Log LOG = LogFactory.getLog(ColGroupOLE.class.getName());
+	
 	public ColGroupOLE() {
-		super(CompressionType.OLE_BITMAP);
+		super();
 	}
 	
 	/**
@@ -64,14 +62,15 @@ public class ColGroupOLE extends ColGroupBitmap
 	 */
 	public ColGroupOLE(int[] colIndices, int numRows, UncompressedBitmap ubm) 
 	{
-		super(CompressionType.OLE_BITMAP, colIndices, numRows, ubm);
+		super(colIndices, numRows, ubm);
 
 		// compress the bitmaps
 		final int numVals = ubm.getNumValues();
 		char[][] lbitmaps = new char[numVals][];
 		int totalLen = 0;
 		for( int i=0; i<numVals; i++ ) {
-			lbitmaps[i] = BitmapEncoder.genOffsetBitmap(ubm.getOffsetsList(i));
+			lbitmaps[i] = BitmapEncoder.genOffsetBitmap(
+				ubm.getOffsetsList(i).extractValues(), ubm.getNumOffsets(i));
 			totalLen += lbitmaps[i].length;
 		}
 		
@@ -95,12 +94,23 @@ public class ColGroupOLE extends ColGroupBitmap
 				_skiplist[k] = bix;
 			}		
 		}
+		
+		//debug output
+		double ucSize = MatrixBlock.estimateSizeDenseInMemory(numRows, colIndices.length);
+		if( estimateInMemorySize() > ucSize )
+			LOG.warn("OLE group larger than UC dense: "+estimateInMemorySize()+" "+ucSize);
 	}
 
 	public ColGroupOLE(int[] colIndices, int numRows, boolean zeros, double[] values, char[] bitmaps, int[] bitmapOffs) {
-		super(CompressionType.OLE_BITMAP, colIndices, numRows, zeros, values);
+		super(colIndices, numRows, zeros, values);
 		_data = bitmaps;
 		_ptr = bitmapOffs;
+	}
+	
+
+	@Override
+	public CompressionType getCompType() {
+		return CompressionType.OLE_BITMAP;
 	}
 
 	@Override
@@ -251,7 +261,7 @@ public class ColGroupOLE extends ColGroupBitmap
 		}
 		
 		double[] rvalues = applyScalarOp(op, val0, getNumCols());		
-		char[] lbitmap = BitmapEncoder.genOffsetBitmap(loff);
+		char[] lbitmap = BitmapEncoder.genOffsetBitmap(loff, loff.length);
 		char[] rbitmaps = Arrays.copyOf(_data, _data.length+lbitmap.length);
 		System.arraycopy(lbitmap, 0, rbitmaps, _data.length, lbitmap.length);
 		int[] rbitmapOffs = Arrays.copyOf(_ptr, _ptr.length+1);
@@ -284,7 +294,7 @@ public class ColGroupOLE extends ColGroupBitmap
 			//best configuration aligns with L3 cache size (x*vcores*64K*8B < L3)
 			//x=4 leads to a good yet slightly conservative compromise for single-/
 			//multi-threaded and typical number of cores and L3 cache sizes
-			final int blksz2 = ColGroupBitmap.WRITE_CACHE_BLKSZ;
+			final int blksz2 = ColGroupOffset.WRITE_CACHE_BLKSZ;
 			
 			//step 1: prepare position and value arrays
 			int[] apos = skipScan(numVals, rl);
@@ -365,7 +375,7 @@ public class ColGroupOLE extends ColGroupBitmap
 		if( LOW_LEVEL_OPT && numVals > 1 && _numRows > blksz )
 		{
 			//cache blocking config (see matrix-vector mult for explanation)
-			final int blksz2 = ColGroupBitmap.READ_CACHE_BLKSZ;
+			final int blksz2 = ColGroupOffset.READ_CACHE_BLKSZ;
 			
 			//step 1: prepare position and value arrays
 			
@@ -426,46 +436,7 @@ public class ColGroupOLE extends ColGroupBitmap
 	}
 
 	@Override
-	public void unaryAggregateOperations(AggregateUnaryOperator op, MatrixBlock result) 
-		throws DMLRuntimeException 
-	{
-		unaryAggregateOperations(op, result, 0, getNumRows());
-	}
-	
-	@Override
-	public void unaryAggregateOperations(AggregateUnaryOperator op, MatrixBlock result, int rl, int ru) 
-		throws DMLRuntimeException 
-	{
-		//sum and sumsq (reduceall/reducerow over tuples and counts)
-		if( op.aggOp.increOp.fn instanceof KahanPlus || op.aggOp.increOp.fn instanceof KahanPlusSq ) 
-		{
-			KahanFunction kplus = (op.aggOp.increOp.fn instanceof KahanPlus) ?
-					KahanPlus.getKahanPlusFnObject() : KahanPlusSq.getKahanPlusSqFnObject();
-			
-			if( op.indexFn instanceof ReduceAll )
-				computeSum(result, kplus);
-			else if( op.indexFn instanceof ReduceCol )
-				computeRowSums(result, kplus, rl, ru);
-			else if( op.indexFn instanceof ReduceRow )
-				computeColSums(result, kplus);
-		}
-		//min and max (reduceall/reducerow over tuples only)
-		else if(op.aggOp.increOp.fn instanceof Builtin 
-				&& (((Builtin)op.aggOp.increOp.fn).getBuiltinCode()==BuiltinCode.MAX 
-				|| ((Builtin)op.aggOp.increOp.fn).getBuiltinCode()==BuiltinCode.MIN)) 
-		{		
-			Builtin builtin = (Builtin) op.aggOp.increOp.fn;
-
-			if( op.indexFn instanceof ReduceAll )
-				computeMxx(result, builtin);
-			else if( op.indexFn instanceof ReduceCol )
-				computeRowMxx(result, builtin, rl, ru);
-			else if( op.indexFn instanceof ReduceRow )
-				computeColMxx(result, builtin);
-		}
-	}
-
-	private void computeSum(MatrixBlock result, KahanFunction kplus)
+	protected final void computeSum(MatrixBlock result, KahanFunction kplus)
 	{
 		KahanObject kbuff = new KahanObject(result.quickGetValue(0, 0), result.quickGetValue(0, 1));
 		
@@ -493,41 +464,88 @@ public class ColGroupOLE extends ColGroupBitmap
 		result.quickSetValue(0, 1, kbuff._correction);
 	}
 
-	private void computeRowSums(MatrixBlock result, KahanFunction kplus, int rl, int ru)
+	@Override
+	protected final void computeRowSums(MatrixBlock result, KahanFunction kplus, int rl, int ru)
 	{
 		KahanObject kbuff = new KahanObject(0, 0);
-	
+		KahanPlus kplus2 = KahanPlus.getKahanPlusFnObject();
+		
 		final int blksz = BitmapEncoder.BITMAP_BLOCK_SZ;
 		final int numVals = getNumValues();
 		double[] c = result.getDenseBlock();
 		
-		//iterate over all values and their bitmaps
-		for (int k = 0; k < numVals; k++) 
+		if( ALLOW_CACHE_CONSCIOUS_ROWSUMS &&
+			LOW_LEVEL_OPT && numVals > 1 && _numRows > blksz )
 		{
-			//prepare value-to-add for entire value bitmap
-			int boff = _ptr[k];
-			int blen = len(k);
-			double val = sumValues(k);
+			final int blksz2 = ColGroupOffset.WRITE_CACHE_BLKSZ/2;
 			
-			//iterate over bitmap blocks and add values
-			if (val != 0) {
-				int slen;
-				int bix = skipScanVal(k, rl);
-				for( int off=bix*blksz; bix<blen && off<ru; bix+=slen+1, off+=blksz ) {
-					slen = _data[boff+bix];
-					for (int i = 1; i <= slen; i++) {
-						int rix = off + _data[boff+bix + i];
-						kbuff.set(c[2*rix], c[2*rix+1]);
-						kplus.execute2(kbuff, val);
-						c[2*rix] = kbuff._sum;
-						c[2*rix+1] = kbuff._correction;
+			//step 1: prepare position and value arrays
+			int[] apos = skipScan(numVals, rl);
+			double[] aval = sumAllValues(kplus, kbuff);
+					
+			//step 2: cache conscious row sums via horizontal scans 
+			for( int bi=rl; bi<ru; bi+=blksz2 ) 
+			{
+				int bimax = Math.min(bi+blksz2, ru);
+				
+				//horizontal segment scan, incl pos maintenance
+				for (int k = 0; k < numVals; k++) {
+					int boff = _ptr[k];
+					int blen = len(k);
+					double val = aval[k];
+					int bix = apos[k];
+					
+					for( int ii=bi; ii<bimax && bix<blen; ii+=blksz ) {
+						//prepare length, start, and end pos
+						int len = _data[boff+bix];
+						int pos = boff+bix+1;
+						
+						//compute partial results
+						for (int i = 0; i < len; i++) {
+							int rix = ii + _data[pos + i];
+							kbuff.set(c[2*rix], c[2*rix+1]);
+							kplus2.execute2(kbuff, val);
+							c[2*rix] = kbuff._sum;
+							c[2*rix+1] = kbuff._correction;
+						}
+						bix += len + 1;
+					}
+
+					apos[k] = bix;
+				}
+			}		
+		}
+		else
+		{
+			//iterate over all values and their bitmaps
+			for (int k = 0; k < numVals; k++) 
+			{
+				//prepare value-to-add for entire value bitmap
+				int boff = _ptr[k];
+				int blen = len(k);
+				double val = sumValues(k, kplus, kbuff);
+				
+				//iterate over bitmap blocks and add values
+				if (val != 0) {
+					int slen;
+					int bix = skipScanVal(k, rl);
+					for( int off=((rl+1)/blksz)*blksz; bix<blen && off<ru; bix+=slen+1, off+=blksz ) {
+						slen = _data[boff+bix];
+						for (int i = 1; i <= slen; i++) {
+							int rix = off + _data[boff+bix + i];
+							kbuff.set(c[2*rix], c[2*rix+1]);
+							kplus2.execute2(kbuff, val);
+							c[2*rix] = kbuff._sum;
+							c[2*rix+1] = kbuff._correction;
+						}
 					}
 				}
 			}
 		}
 	}
 
-	private void computeColSums(MatrixBlock result, KahanFunction kplus)
+	@Override
+	protected final void computeColSums(MatrixBlock result, KahanFunction kplus)
 	{
 		KahanObject kbuff = new KahanObject(0, 0);
 		
@@ -555,7 +573,8 @@ public class ColGroupOLE extends ColGroupBitmap
 		}
 	}
 
-	private void computeRowMxx(MatrixBlock result, Builtin builtin, int rl, int ru)
+	@Override
+	protected final void computeRowMxx(MatrixBlock result, Builtin builtin, int rl, int ru)
 	{
 		//NOTE: zeros handled once for all column groups outside
 		final int blksz = BitmapEncoder.BITMAP_BLOCK_SZ;
@@ -624,7 +643,7 @@ public class ColGroupOLE extends ColGroupBitmap
 	protected void countNonZerosPerRow(int[] rnnz, int rl, int ru)
 	{
 		final int blksz = BitmapEncoder.BITMAP_BLOCK_SZ;
-		final int blksz2 = ColGroupBitmap.WRITE_CACHE_BLKSZ;
+		final int blksz2 = ColGroupOffset.WRITE_CACHE_BLKSZ;
 		final int numVals = getNumValues();
 		final int numCols = getNumCols();
 		

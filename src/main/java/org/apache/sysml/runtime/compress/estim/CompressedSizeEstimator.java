@@ -20,6 +20,7 @@
 package org.apache.sysml.runtime.compress.estim;
 
 import org.apache.sysml.runtime.compress.BitmapEncoder;
+import org.apache.sysml.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysml.runtime.compress.UncompressedBitmap;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
@@ -29,9 +30,16 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 public abstract class CompressedSizeEstimator 
 {
 	protected MatrixBlock _data;
+	protected final int _numRows;
 
 	public CompressedSizeEstimator(MatrixBlock data) {
 		_data = data;
+		_numRows = CompressedMatrixBlock.TRANSPOSE_INPUT ? 
+				_data.getNumColumns() : _data.getNumRows();
+	}
+	
+	public int getNumRows() {
+		return _numRows;
 	}
 
 	public abstract CompressedSizeInfo estimateCompressedColGroupSize(int[] colIndexes);
@@ -47,15 +55,19 @@ public abstract class CompressedSizeEstimator
 		
 		//compute size estimation factors
 		for (int i = 0; i < numVals; i++) {
-			int[] list = ubm.getOffsetsList(i);
-			numOffs += list.length;
-			numSegs += list[list.length - 1] / BitmapEncoder.BITMAP_BLOCK_SZ + 1;
-			numSingle += (list.length==1) ? 1 : 0;
+			int[] list = ubm.getOffsetsList(i).extractValues();
+			int listSize = ubm.getNumOffsets(i);
+			numOffs += listSize;
+			numSegs += list[listSize - 1] / BitmapEncoder.BITMAP_BLOCK_SZ + 1;
+			numSingle += (listSize==1) ? 1 : 0;
 			if( inclRLE ) {
 				int lastOff = -2;
-				for (int j = 0; j < list.length; j++) {
-					if (list[j] != lastOff + 1)
-						numRuns++;
+				for (int j = 0; j < listSize; j++) {
+					if( list[j] != lastOff + 1 ) {
+						numRuns++; //new run
+						numRuns += (list[j]-lastOff) / //empty runs
+								BitmapEncoder.BITMAP_BLOCK_SZ;
+					}
 					lastOff = list[j];
 				}
 			}
@@ -105,6 +117,27 @@ public abstract class CompressedSizeEstimator
 		ret += 2 * numOffs;
 		//offset list seqment headers [1xchar]
 		ret += 2 * numSeqs;
+		return ret;
+	}
+	
+	/**
+	 * Estimates the number of bytes needed to encode this column group 
+	 * in DDC1 or DDC2 format.
+	 * 
+	 * @param numVals number of value tuples
+	 * @param numRows number of rows
+	 * @param numCols number of columns
+	 * @return number of bytes to encode column group in RLE format
+	 */
+	protected static long getDDCSize(int numVals, int numRows, int numCols) {
+		if( numVals > Character.MAX_VALUE-1 )
+			return Long.MAX_VALUE;
+		
+		int ret = 0;
+		//distinct value tuples [double per col]
+		ret += 8 * numVals * numCols;
+		//data [byte or char per row]
+		ret += ((numVals>255) ? 2 : 1) * numRows;
 		return ret;
 	}
 

@@ -20,7 +20,6 @@
 package org.apache.sysml.runtime.compress;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import org.apache.sysml.runtime.compress.utils.DblArray;
 import org.apache.sysml.runtime.compress.utils.DblArrayIntListHashMap;
@@ -100,8 +99,8 @@ public class BitmapEncoder
 	 *            the offsets of different bits
 	 * @return compressed version of said bitmap
 	 */
-	public static char[] genRLEBitmap(int[] offsets) {
-		if( offsets.length == 0 )
+	public static char[] genRLEBitmap(int[] offsets, int len) {
+		if( len == 0 )
 			return new char[0]; //empty list
 
 		// Use an ArrayList for correctness at the expense of temp space
@@ -139,7 +138,7 @@ public class BitmapEncoder
 		curRunLen = 1;
 
 		// Process the remaining offsets
-		for (int i = 1; i < offsets.length; i++) {
+		for (int i = 1; i < len; i++) {
 
 			int absOffset = offsets[i];
 
@@ -179,9 +178,8 @@ public class BitmapEncoder
 
 		// Convert wasteful ArrayList to packed array.
 		char[] ret = new char[buf.size()];
-		for (int i = 0; i < buf.size(); i++) {
+		for(int i = 0; i < buf.size(); i++ )
 			ret[i] = buf.get(i);
-		}
 		return ret;
 	}
 
@@ -194,21 +192,19 @@ public class BitmapEncoder
 	 *            the offsets of different bits
 	 * @return compressed version of said bitmap
 	 */
-	public static char[] genOffsetBitmap(int[] offsets) 
-	{
-		int lastOffset = offsets[offsets.length - 1];
+	public static char[] genOffsetBitmap(int[] offsets, int len) 
+	{ 
+		int lastOffset = offsets[len - 1];
 
 		// Build up the blocks
 		int numBlocks = (lastOffset / BITMAP_BLOCK_SZ) + 1;
 		// To simplify the logic, we make two passes.
 		// The first pass divides the offsets by block.
 		int[] blockLengths = new int[numBlocks];
-		Arrays.fill(blockLengths, 0);
 
-		for (int ix = 0; ix < offsets.length; ix++) {
+		for (int ix = 0; ix < len; ix++) {
 			int val = offsets[ix];
 			int blockForVal = val / BITMAP_BLOCK_SZ;
-
 			blockLengths[blockForVal]++;
 		}
 
@@ -238,7 +234,7 @@ public class BitmapEncoder
 
 		return encodedBlocks;
 	}
-
+	
 	private static UncompressedBitmap extractBitmap(int colIndex, MatrixBlock rawblock, boolean skipZeros) 
 	{
 		//probe map for distinct items (for value or value groups)

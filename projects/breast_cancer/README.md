@@ -131,7 +131,7 @@ References:
 ## Create a Histopath slide “lab” to view the slides (just driver):
   - `git clone https://github.com/openslide/openslide-python.git`
   - Host locally:
-    - `python3 path/to/openslide-python/examples/deepzoom/deepzoom_multiserver.py path/to/data/`
+    - `python3 path/to/openslide-python/examples/deepzoom/deepzoom_multiserver.py -Q 100 path/to/data/`
   - Host on server:
-    - `python3 path/to/openslide-python/examples/deepzoom/deepzoom_multiserver.py -l HOSTING_URL_HERE path/to/data/`
+    - `python3 path/to/openslide-python/examples/deepzoom/deepzoom_multiserver.py -Q 100 -l HOSTING_URL_HERE path/to/data/`
     - Open local browser to `HOSTING_URL_HERE:5000`.

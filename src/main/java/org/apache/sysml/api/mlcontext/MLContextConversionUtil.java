@@ -1100,7 +1100,9 @@ public class MLContextConversionUtil {
 					if (j > 0) {
 						sb.append(delimiter);
 					}
-					sb.append(fb.get(i, j));
+					if (fb.get(i, j) != null) {
+						sb.append(fb.get(i, j));
+					}
 				}
 				list.add(sb.toString());
 			}
@@ -1185,13 +1187,15 @@ public class MLContextConversionUtil {
 			for (int i = 0; i < rows; i++) {
 				sb = new StringBuilder();
 				for (int j = 0; j < cols; j++) {
-					sb = new StringBuilder();
-					sb.append(i + 1);
-					sb.append(" ");
-					sb.append(j + 1);
-					sb.append(" ");
-					sb.append(fb.get(i, j));
-					list.add(sb.toString());
+					if (fb.get(i, j) != null) {
+						sb = new StringBuilder();
+						sb.append(i + 1);
+						sb.append(" ");
+						sb.append(j + 1);
+						sb.append(" ");
+						sb.append(fb.get(i, j));
+						list.add(sb.toString());
+					}
 				}
 			}
 

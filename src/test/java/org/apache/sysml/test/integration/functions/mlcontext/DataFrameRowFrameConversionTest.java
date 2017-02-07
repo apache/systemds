@@ -216,6 +216,7 @@ public class DataFrameRowFrameConversionTest extends AutomatedTestBase
 			//setup spark context
 			sec = (SparkExecutionContext) ExecutionContextFactory.createContext();		
 			JavaSparkContext sc = sec.getSparkContext();
+			sc.getConf().set("spark.sql.codegen.wholeStage", "false");
 			SQLContext sqlctx = new SQLContext(sc);
 			
 			//get binary block input rdd

@@ -84,6 +84,7 @@ public class SparkListener extends RDDOperationGraphListener {
 	}
 	
 	
+	@SuppressWarnings("deprecation")
 	@Override
 	public void onJobEnd(org.apache.spark.scheduler.SparkListenerJobEnd jobEnd) {
 		super.onJobEnd(jobEnd);
@@ -110,6 +111,7 @@ public class SparkListener extends RDDOperationGraphListener {
 		}
 	}
 	
+	@SuppressWarnings("deprecation")
 	@Override
 	public void onStageSubmitted(SparkListenerStageSubmitted stageSubmitted) {
 		super.onStageSubmitted(stageSubmitted);

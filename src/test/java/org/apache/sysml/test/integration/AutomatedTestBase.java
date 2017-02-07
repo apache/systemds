@@ -78,6 +78,7 @@ import org.apache.sysml.utils.Statistics;
  * </ul>
  * 
  */
+@SuppressWarnings("deprecation")
 public abstract class AutomatedTestBase 
 {
 	

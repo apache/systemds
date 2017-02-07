@@ -20,3 +20,6 @@ analytics_google_universal_tracking_id : UA-71553733-1
 
 # if FEEDBACK_LINKS is true, render feedback links
 FEEDBACK_LINKS: true
+
+# if API_DOCS_MENU is true, render API docs menu
+API_DOCS_MENU: false

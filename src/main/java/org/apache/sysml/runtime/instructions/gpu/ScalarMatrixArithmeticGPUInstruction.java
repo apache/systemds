@@ -60,7 +60,7 @@ public class ScalarMatrixArithmeticGPUInstruction extends ArithmeticBinaryGPUIns
 		ScalarOperator sc_op = (ScalarOperator) _optr;
 		sc_op.setConstant(constant.getDoubleValue());
 		
-		LibMatrixCUDA.bincellOp(ec, in1, _output.getName(), isTransposed, sc_op);
+		LibMatrixCUDA.matrixScalarArithmetic(ec, in1, _output.getName(), isTransposed, sc_op);
 		
 		ec.releaseMatrixInputForGPUInstruction(mat.getName());
         ec.releaseMatrixOutputForGPUInstruction(_output.getName());

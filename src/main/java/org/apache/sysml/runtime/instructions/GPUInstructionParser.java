@@ -92,7 +92,9 @@ public class GPUInstructionParser  extends InstructionParser
 		String2GPUInstructionType.put( "uasqk+"	 , GPUINSTRUCTION_TYPE.AggregateUnary);	// Sum of Squares
 		String2GPUInstructionType.put( "uarsqk+" , GPUINSTRUCTION_TYPE.AggregateUnary);	// Row Sum of Squares
 		String2GPUInstructionType.put( "uacsqk+" , GPUINSTRUCTION_TYPE.AggregateUnary);	// Col Sum of Squares
-
+		String2GPUInstructionType.put( "uavar" 	 , GPUINSTRUCTION_TYPE.AggregateUnary);		// Variance
+		String2GPUInstructionType.put( "uarvar"  , GPUINSTRUCTION_TYPE.AggregateUnary);	// Row Variance
+		String2GPUInstructionType.put( "uacvar"  , GPUINSTRUCTION_TYPE.AggregateUnary);	// Col Variance
 	}
 	
 	public static GPUInstruction parseSingleInstruction (String str ) 

@@ -355,6 +355,29 @@ public class RDDConverterUtilsExt
 		}
 	}
 
+	/**
+	 * Convert a dataframe of comma-separated string rows to a dataframe of
+	 * ml.linalg.Vector rows.
+	 * 
+	 * <p>
+	 * Example input rows:<br>
+	 * 
+	 * <code>
+	 * ((1.2, 4.3, 3.4))<br>
+	 * (1.2, 3.4, 2.2)<br>
+	 * [[1.2, 34.3, 1.2, 1.25]]<br>
+	 * [1.2, 3.4]<br>
+	 * </code>
+	 * 
+	 * @param sqlContext
+	 *            Spark SQL Context
+	 * @param inputDF
+	 *            dataframe of comma-separated row strings to convert to
+	 *            dataframe of ml.linalg.Vector rows
+	 * @return dataframe of ml.linalg.Vector rows
+	 * @throws DMLRuntimeException
+	 *             if DMLRuntimeException occurs
+	 */
 	public static Dataset<Row> stringDataFrameToVectorDataFrame(SQLContext sqlContext, Dataset<Row> inputDF)
 			throws DMLRuntimeException {
 

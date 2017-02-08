@@ -2527,6 +2527,26 @@ public class MLContextTest extends AutomatedTestBase {
 		ml.execute(script);
 	}
 
+	@Test
+	public void testInputVariablesAddFloatsDML() {
+		System.out.println("MLContextTest - input variables add floats DML");
+
+		String s = "print('x + y = ' + (x + y));";
+		Script script = dml(s).in("x", 3F).in("y", 4F);
+		setExpectedStdOut("x + y = 7.0");
+		ml.execute(script);
+	}
+
+	@Test
+	public void testInputVariablesAddFloatsPYDML() {
+		System.out.println("MLContextTest - input variables add floats PYDML");
+
+		String s = "print('x + y = ' + (x + y))";
+		Script script = pydml(s).in("x", 3F).in("y", 4F);
+		setExpectedStdOut("x + y = 7.0");
+		ml.execute(script);
+	}
+
 	// NOTE: Uncomment these tests once they work
 
 	// @SuppressWarnings({ "rawtypes", "unchecked" })

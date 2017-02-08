@@ -54,10 +54,10 @@ public class PlanningCoCodingGroup
 	/**
 	 * Constructor for merging two disjoint groups of columns
 	 * 
-	 * @param grp1   first group of columns to merge
-	 * @param grp2   second group to merge
-	 * @param bitmapSizeEstimator bitmap size estimator
-	 * @param numRowsWeight numRows x sparsity
+	 * @param grp1   first column group to merge
+	 * @param grp2   second column group to merge
+	 * @param estim  bitmap size estimator
+	 * @param numRows number of rows
 	 */
 	public PlanningCoCodingGroup(PlanningCoCodingGroup grp1, PlanningCoCodingGroup grp2,
 			CompressedSizeEstimator estim, int numRows) 

@@ -71,7 +71,8 @@ public class IntArrayList
 	 * physically larger than the actual length of the offset lists. Use size() 
 	 * to obtain the actual length.
 	 * 
-	 * @return
+	 * @return integer array of offsets, the physical array length
+	 * may be larger than the length of the offset list 
 	 */
 	public int[] extractValues() {
 		if( _size == 1 )

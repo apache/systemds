@@ -94,9 +94,9 @@ public class BitmapEncoder
 	 * <b>NOTE: This method must be kept in sync with {@link BitmapDecoderRLE}
 	 * !</b>
 	 * 
-	 * @param offsets
-	 *            uncompressed contents of the bitmap, expressed as a list of
-	 *            the offsets of different bits
+	 * @param offsets  uncompressed offset list
+	 * @param len  logical length of the given offset list
+	 *            
 	 * @return compressed version of said bitmap
 	 */
 	public static char[] genRLEBitmap(int[] offsets, int len) {
@@ -187,9 +187,9 @@ public class BitmapEncoder
 	 * Encodes the bitmap in blocks of offsets. Within each block, the bits are
 	 * stored as absolute offsets from the start of the block.
 	 * 
-	 * @param offsets
-	 *            uncompressed contents of the bitmap, expressed as a list of
-	 *            the offsets of different bits
+	 * @param offsets  uncompressed offset list
+	 * @param len  logical length of the given offset list
+	 * 
 	 * @return compressed version of said bitmap
 	 */
 	public static char[] genOffsetBitmap(int[] offsets, int len) 

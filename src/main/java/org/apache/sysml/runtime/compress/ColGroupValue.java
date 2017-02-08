@@ -56,7 +56,7 @@ public abstract class ColGroupValue extends ColGroup
 	}
 	
 	/**
-	 * Main constructor. Stores the headers for the individual bitmaps.
+	 * Stores the headers for the individual bitmaps.
 	 * 
 	 * @param colIndices
 	 *            indices (within the block) of the columns included in this
@@ -296,7 +296,7 @@ public abstract class ColGroupValue extends ColGroup
 	 * @param result output matrix block
 	 * @param rl row lower index, inclusive
 	 * @param ru row upper index, exclusive
-	 * @throws DMLRuntimeException
+	 * @throws DMLRuntimeException on invalid inputs
 	 */
 	public abstract void unaryAggregateOperations(AggregateUnaryOperator op, MatrixBlock result, int rl, int ru)
 		throws DMLRuntimeException;

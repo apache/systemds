@@ -88,12 +88,12 @@ public abstract class ColGroupOffset extends ColGroupValue
 	/**
 	 * Constructor for subclass methods that need to create shallow copies
 	 * 
-	 * @param type compression type
 	 * @param colIndices
 	 *            raw column index information
 	 * @param numRows
 	 *            number of rows in the block
-	 * @param zeros ?
+	 * @param zeros
+	 * 			  indicator if column group contains zero values
 	 * @param values
 	 *            set of distinct values for the block (associated bitmaps are
 	 *            kept in the subclass)

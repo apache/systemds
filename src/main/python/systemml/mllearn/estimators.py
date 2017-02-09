@@ -45,10 +45,7 @@ def assemble(sqlCtx, pdf, inputCols, outputCol):
 class BaseSystemMLEstimator(Estimator):
     features_col = 'features'
     label_col = 'label'
-<<<<<<< Upstream, based on upstream/master
-=======
     do_visualize = False
->>>>>>> 5ff7f89 [SYSTEMML-692][WIP] Added initial version of DML generator for Caffe proto
     
     def set_features_col(self, colName):
         """
@@ -79,22 +76,6 @@ class BaseSystemMLEstimator(Estimator):
     
     def fit_df(self, X):
         self.X = X
-<<<<<<< Upstream, based on upstream/master
-        self._fit_df()
-        self.X = None
-        return self
-    
-    def _fit_numpy(self):
-        try:
-            self.model = self.estimator.fit(convertToMatrixBlock(self.sc, self.X), convertToMatrixBlock(self.sc, self.y))
-        except Py4JError:
-            traceback.print_exc()
-                    
-    def fit_numpy(self, X, y):
-        self.X = X
-        self.y = y
-        self._fit_numpy()
-=======
         if self.do_visualize:
             self.end_visualize = False
             self.sc._jvm.org.apache.sysml.udf.lib.BaristaVisualizeWrapper.clear()
@@ -131,7 +112,6 @@ class BaseSystemMLEstimator(Estimator):
             t2.join()
         else:
             self._fit_numpy()
->>>>>>> 5ff7f89 [SYSTEMML-692][WIP] Added initial version of DML generator for Caffe proto
         self.X = None
         self.y = None
         return self
@@ -536,9 +516,6 @@ class NaiveBayes(BaseSystemMLClassifier):
         self.estimator = self.sc._jvm.org.apache.sysml.api.ml.NaiveBayes(self.uid, self.sc._jsc.sc())
         self.estimator.setLaplace(laplace)
         self.transferUsingDF = transferUsingDF
-<<<<<<< Upstream, based on upstream/master
-        self.setOutputRawPredictionsToFalse = False
-=======
         self.setOutputRawPredictionsToFalse = False
 
 class Barista(BaseSystemMLClassifier):
@@ -711,4 +688,3 @@ class Barista(BaseSystemMLClassifier):
         else:
             raise Exception('Cannot save as you need to train the model first using fit')
         return self
->>>>>>> 5ff7f89 [SYSTEMML-692][WIP] Added initial version of DML generator for Caffe proto

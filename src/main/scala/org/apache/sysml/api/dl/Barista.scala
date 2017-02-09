@@ -47,8 +47,12 @@ import org.apache.sysml.api.mlcontext._
 import org.apache.sysml.api.mlcontext.ScriptFactory._
 import org.apache.sysml.api.ml._
 import java.util.Random
+import org.apache.commons.logging.Log
+import org.apache.commons.logging.LogFactory
 
 object Barista  {
+  val LOG = LogFactory.getLog(classOf[Barista].getName())
+  
   def main(args:Array[String]):Unit = {
     val b = load(10, null, args(0), args(1), 3, 224, 224)
     System.out.println(b.getTrainingScript(true)._1.getScriptString)
@@ -69,7 +73,8 @@ object Barista  {
   // ------------------------------------------------------------------------
   var numTabs = 0
   
-  var prefix = "nn";
+  
+  var prefix = Utils.getPrefix()
 	val layerDir = prefix + fileSep + "layers" + fileSep;
 	val optimDir = prefix + fileSep + "optim" + fileSep;
   val alreadyImported:HashSet[String] = new HashSet[String]

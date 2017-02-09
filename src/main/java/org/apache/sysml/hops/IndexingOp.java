@@ -402,7 +402,6 @@ public class IndexingOp extends Hop
 	@Override
 	public void refreshSizeInformation()
 	{
-		Hop input1 = getInput().get(0); //original matrix
 		Hop input2 = getInput().get(1); //inpRowL
 		Hop input3 = getInput().get(2); //inpRowU
 		Hop input4 = getInput().get(3); //inpColL
@@ -421,9 +420,11 @@ public class IndexingOp extends Hop
 		//set dimension information
 		if( _rowLowerEqualsUpper ) //ROWS
 			setDim1(1);
-		else if( allRows ) 
-			setDim1(input1.getDim1());
-		else if( constRowRange ){
+		else if( allRows ) {
+			//input3 guaranteed to be a unaryop-nrow
+			setDim1(input3.getInput().get(0).getDim1());
+		}
+		else if( constRowRange ) {
 			setDim1( HopRewriteUtils.getIntValueSafe((LiteralOp)input3)
 					-HopRewriteUtils.getIntValueSafe((LiteralOp)input2)+1 );
 		}
@@ -433,9 +434,11 @@ public class IndexingOp extends Hop
 		
 		if( _colLowerEqualsUpper ) //COLS
 			setDim2(1);
-		else if( allCols ) 
-			setDim2(input1.getDim2());
-		else if( constColRange ){
+		else if( allCols ) {
+			//input5 guaranteed to be a unaryop-ncol
+			setDim2(input5.getInput().get(0).getDim2());
+		}
+		else if( constColRange ) {
 			setDim2( HopRewriteUtils.getIntValueSafe((LiteralOp)input5)
 					-HopRewriteUtils.getIntValueSafe((LiteralOp)input4)+1 );
 		}

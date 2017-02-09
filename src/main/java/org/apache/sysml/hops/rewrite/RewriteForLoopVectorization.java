@@ -179,11 +179,14 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 			Hop ix = cast.getInput().get(0);
 			int aggOpPos = HopRewriteUtils.getValidOpPos(bop.getOp(), MAP_SCALAR_AGGREGATE_SOURCE_OPS);
 			AggOp aggOp = MAP_SCALAR_AGGREGATE_TARGET_OPS[aggOpPos];
+			
 			//replace cast with sum
-			AggUnaryOp newSum = new AggUnaryOp(cast.getName(), DataType.SCALAR, ValueType.DOUBLE, aggOp, Direction.RowCol, ix);
+			AggUnaryOp newSum = new AggUnaryOp(cast.getName(), DataType.SCALAR, ValueType.DOUBLE, 
+					aggOp, Direction.RowCol, ix);
 			HopRewriteUtils.removeChildReference(cast, ix);
 			HopRewriteUtils.removeChildReference(bop, cast);
 			HopRewriteUtils.addChildReference(bop, newSum, leftScalar?1:0 );
+			
 			//modify indexing expression according to loop predicate from-to
 			//NOTE: any redundant index operations are removed via dynamic algebraic simplification rewrites
 			int index1 = rowIx ? 1 : 3;
@@ -193,8 +196,14 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 			HopRewriteUtils.removeChildReferenceByPos(ix, ix.getInput().get(index2), index2);
 			HopRewriteUtils.addChildReference(ix, to, index2);
 			
+			//update indexing size information
+			if( rowIx )
+				((IndexingOp)ix).setRowLowerEqualsUpper(false);
+			else
+				((IndexingOp)ix).setColLowerEqualsUpper(false);	
+			ix.refreshSizeInformation();
+			
 			ret = csb;
-			//ret.liveIn().removeVariable(itervar);
 			LOG.debug("Applied vectorizeScalarSumForLoop.");
 		}
 		

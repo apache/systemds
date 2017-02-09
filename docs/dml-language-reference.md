@@ -933,7 +933,8 @@ Below, we have examples of this matrix in the CSV, Matrix Market, IJV, and Binar
 	    "format": "csv",
 	    "header": false,
 	    "sep": ",",
-	    "description": { "author": "SystemML" }
+	    "author": "SystemML",
+	    "created": "2017-01-01 00:00:01 PST"
 	}
 </div>
 
@@ -965,7 +966,8 @@ Below, we have examples of this matrix in the CSV, Matrix Market, IJV, and Binar
 	    "cols": 3,
 	    "nnz": 6,
 	    "format": "text",
-	    "description": { "author": "SystemML" }
+	    "author": "SystemML",
+	    "created": "2017-01-01 00:00:01 PST"
 	}
 </div>
 
@@ -983,7 +985,8 @@ Below, we have examples of this matrix in the CSV, Matrix Market, IJV, and Binar
 	    "cols_in_block": 1000,
 	    "nnz": 6,
 	    "format": "binary",
-	    "description": { "author": "SystemML" }
+	    "author": "SystemML",
+	    "created": "2017-01-01 00:00:01 PST"
 	}
 </div>
 
@@ -992,12 +995,13 @@ Below, we have examples of this matrix in the CSV, Matrix Market, IJV, and Binar
 As another example, here we see the content of the MTD file `scalar.mtd` associated with a scalar data file `scalar`
 that contains the scalar value 2.0.
 
-    {
-        "data_type": "scalar",
-        "value_type": "double",
-        "format": "text",
-        "description": { "author": "SystemML" }
-    }
+	{
+	    "data_type": "scalar",
+	    "value_type": "double",
+	    "format": "text",
+	    "author": "SystemML",
+	    "created": "2017-01-01 00:00:01 PST"
+	}
 
 
 Metadata is represented as an MTD file that contains a single JSON object with the attributes described below.
@@ -1015,6 +1019,8 @@ Parameter Name | Description | Optional | Permissible values | Data type valid f
 `nnz` | Number of non-zero values | Yes | any integer &gt; `0` | `matrix`
 `format` | Data file format | Yes. Default value is `text` | `csv`, `mm`, `text`, `binary` | `matrix`, `scalar`. Formats `csv` and `mm` are applicable only to matrices
 `description` | Description of the data | Yes | Any valid JSON string or object | `matrix`, `scalar`
+`author` | User that created the metadata file, defaults to `SystemML` | N/A | N/A | N/A
+`created` | Date/time when metadata file was written | N/A | N/A | N/A
 
 
 In addition, when reading or writing CSV files, the metadata may contain one or more of the following five attributes.
@@ -1126,7 +1132,8 @@ Example content of `out/file.ijv.mtd`:
         "cols": 8,
         "nnz": 4,
         "format": "text",
-        "description": { "author": "SystemML" }
+        "author": "SystemML",
+        "created": "2017-01-01 00:00:01 PST"
     }
 
 Write `V` to `out/file` in `binary` format:
@@ -1144,7 +1151,8 @@ Example content of `out/file.mtd`:
         "rows_in_block": 1000,
         "cols_in_block": 1000,
         "format": "binary",
-        "description": { "author": "SystemML" }
+        "author": "SystemML",
+        "created": "2017-01-01 00:00:01 PST"
     }
 
 Write `V` to `n.csv` in `csv` format with column headers, `";"` as delimiter, and zero values are not written.
@@ -1162,7 +1170,8 @@ Example content of `n.csv.mtd`:
         "format": "csv",
         "header": true,
         "sep": ";",
-        "description": { "author": "SystemML" }
+        "author": "SystemML",
+        "created": "2017-01-01 00:00:01 PST"
     }
 
 Write `x` integer value to file `out/scalar_i`
@@ -1175,7 +1184,8 @@ Example content of `out/scalar_i.mtd`:
         "data_type": "scalar",
         "value_type": "int",
         "format": "text",
-        "description": { "author": "SystemML" }
+        "author": "SystemML",
+        "created": "2017-01-01 00:00:01 PST"
     }
 
 Unlike `read`, the `write` function does not need a constant string expression, so the following example will work:
@@ -1186,6 +1196,26 @@ Unlike `read`, the `write` function does not need a constant string expression, 
     file = "A" + i + ".mtx";
     write(A, dir + file, format="csv");
 
+The `description` parameter can be used to attach a description to the metadata:
+
+	A = matrix("1 2 3 4", rows=2, cols=2)
+	write(A, "mymatrix.csv", format="csv", description="my matrix")
+
+This will generate the following `mymatrix.csv.mtd` metadata file:
+
+	{
+	    "data_type": "matrix",
+	    "value_type": "double",
+	    "rows": 2,
+	    "cols": 2,
+	    "nnz": 4,
+	    "format": "csv",
+	    "header": false,
+	    "sep": ",",
+	    "description": "my matrix",
+	    "author": "SystemML",
+	    "created": "2017-01-01 00:00:01 PST"
+	}
 
 ### Data Pre-Processing Built-In Functions
 

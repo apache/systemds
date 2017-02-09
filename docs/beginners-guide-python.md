@@ -71,8 +71,23 @@ brew install apache-spark16
 
 ### Install SystemML
 
-We are working towards uploading the python package on PyPi. Until then, please use following
-commands: 
+To install released SystemML, please use following commands:
+
+<div class="codetabs">
+<div data-lang="Python 2" markdown="1">
+```bash
+pip install systemml
+```
+</div>
+<div data-lang="Python 3" markdown="1">
+```bash
+pip3 install systemml
+```
+</div>
+</div>
+
+
+If you want to try out the bleeding edge version, please use following commands: 
 
 <div class="codetabs">
 <div data-lang="Python 2" markdown="1">

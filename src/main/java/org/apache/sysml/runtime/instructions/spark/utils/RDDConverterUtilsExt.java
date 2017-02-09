@@ -28,6 +28,7 @@ import java.util.Iterator;
 
 import org.apache.hadoop.io.Text;
 import org.apache.spark.SparkContext;
+import org.apache.spark.SparkException;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
@@ -407,7 +408,9 @@ public class RDDConverterUtilsExt
 				ArrayList<Object> fieldsArr = new ArrayList<Object>();
 				for (int i = 0; i < oldRow.length(); i++) {
 					Object ci = oldRow.get(i);
-					if (ci instanceof String) {
+					if (ci == null) {
+						fieldsArr.add(null);
+					} else if (ci instanceof String) {
 						String cis = (String) ci;
 						StringBuffer sb = new StringBuffer(cis.trim());
 						for (int nid = 0; i < 2; i++) { // remove two level
@@ -421,10 +424,14 @@ public class RDDConverterUtilsExt
 						// have the replace code
 						String ncis = "[" + sb.toString().replaceAll(" *, *", ",") + "]";
 
-						// [ ] will always result in double array
-						double[] doubles = (double[]) NumericParser.parse(ncis);
-						Vector dense = Vectors.dense(doubles);
-						fieldsArr.add(dense);
+						try {
+							// ncis [ ] will always result in double array return type
+							double[] doubles = (double[]) NumericParser.parse(ncis);
+							Vector dense = Vectors.dense(doubles);
+							fieldsArr.add(dense);
+						} catch (Exception e) { // can't catch SparkException here in Java apparently
+							throw new DMLRuntimeException("Error converting to double array. " + e.getMessage(), e);
+						}
 
 					} else {
 						throw new DMLRuntimeException("Only String is supported");

@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysml.test.integration.mlcontext;
+package org.apache.sysml.test.integration.conversion;
 
 import static org.junit.Assert.assertTrue;
 
@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.spark.SparkConf;
+import org.apache.spark.SparkException;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
@@ -101,6 +102,46 @@ public class RDDConverterUtilsExtTest extends AutomatedTestBase {
 		for (Row row : outputList) {
 			assertTrue("Expected results don't contain: " + row, expectedResults.contains(row.toString()));
 		}
+	}
+
+	@Test
+	public void testStringDataFrameToVectorDataFrameNull() throws DMLRuntimeException {
+		List<String> list = new ArrayList<String>();
+		list.add("[1.2, 3.4]");
+		list.add(null);
+		JavaRDD<String> javaRddString = sc.parallelize(list);
+		JavaRDD<Row> javaRddRow = javaRddString.map(new StringToRow());
+		SQLContext sqlContext = new SQLContext(sc);
+		List<StructField> fields = new ArrayList<StructField>();
+		fields.add(DataTypes.createStructField("C1", DataTypes.StringType, true));
+		StructType schema = DataTypes.createStructType(fields);
+		Dataset<Row> inDF = sqlContext.createDataFrame(javaRddRow, schema);
+		Dataset<Row> outDF = RDDConverterUtilsExt.stringDataFrameToVectorDataFrame(sqlContext, inDF);
+
+		List<String> expectedResults = new ArrayList<String>();
+		expectedResults.add("[[1.2,3.4]]");
+		expectedResults.add("[null]");
+
+		List<Row> outputList = outDF.collectAsList();
+		for (Row row : outputList) {
+			assertTrue("Expected results don't contain: " + row, expectedResults.contains(row.toString()));
+		}
+	}
+
+	@Test(expected = SparkException.class)
+	public void testStringDataFrameToVectorDataFrameNonNumbers() throws DMLRuntimeException {
+		List<String> list = new ArrayList<String>();
+		list.add("[cheeseburger,fries]");
+		JavaRDD<String> javaRddString = sc.parallelize(list);
+		JavaRDD<Row> javaRddRow = javaRddString.map(new StringToRow());
+		SQLContext sqlContext = new SQLContext(sc);
+		List<StructField> fields = new ArrayList<StructField>();
+		fields.add(DataTypes.createStructField("C1", DataTypes.StringType, true));
+		StructType schema = DataTypes.createStructType(fields);
+		Dataset<Row> inDF = sqlContext.createDataFrame(javaRddRow, schema);
+		Dataset<Row> outDF = RDDConverterUtilsExt.stringDataFrameToVectorDataFrame(sqlContext, inDF);
+		// trigger evaluation to throw exception
+		outDF.collectAsList();
 	}
 
 	@After

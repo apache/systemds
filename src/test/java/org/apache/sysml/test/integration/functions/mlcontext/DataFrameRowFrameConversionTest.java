@@ -48,9 +48,9 @@ public class DataFrameRowFrameConversionTest extends AutomatedTestBase
 	private final static String TEST_NAME = "DataFrameConversion";
 	private final static String TEST_CLASS_DIR = TEST_DIR + DataFrameRowFrameConversionTest.class.getSimpleName() + "/";
 
-	private final static int  rows1 = 2245;
-	private final static int  cols1 = 745;
-	private final static int  cols2 = 1264;
+	private final static int  rows1 = 1045;
+	private final static int  cols1 = 545;
+	private final static int  cols2 = 864;
 	private final static double sparsity1 = 0.9;
 	private final static double sparsity2 = 0.1;
 	private final static double eps=0.0000000001;

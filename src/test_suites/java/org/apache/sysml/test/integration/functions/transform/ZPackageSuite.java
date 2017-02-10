@@ -26,10 +26,12 @@ import org.junit.runners.Suite;
  *  won't run two of them at once. */
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
+	FrameCSVReadWriteTest.class,
 	RunTest.class,
 	ScalingTest.class,
 	TransformAndApplyTest.class,
 	TransformCSVFrameEncodeDecodeTest.class,
+	TransformCSVFrameEncodeReadTest.class,
 	TransformEncodeDecodeTest.class,
 	TransformFrameApplyTest.class,
 	TransformFrameEncodeApplyTest.class,

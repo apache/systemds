@@ -117,13 +117,12 @@ public class IOUtilFunctions
 	
 	/**
 	 * Splits a string by a specified delimiter into all tokens, including empty
-	 * while respecting the rules for quotes and escapes defined in RFC4180.
-	 * 
-	 * NOTE: use StringEscapeUtils.unescapeCsv(tmp) if needed afterwards.
+	 * while respecting the rules for quotes and escapes defined in RFC4180,
+	 * with robustness for various special cases.
 	 * 
 	 * @param str string to split
 	 * @param delim delimiter
-	 * @return string array
+	 * @return string array of tokens
 	 */
 	public static String[] splitCSV(String str, String delim)
 	{
@@ -135,6 +134,7 @@ public class IOUtilFunctions
 		ArrayList<String> tokens = new ArrayList<String>();
 		int from = 0, to = 0; 
 		int len = str.length();
+		int dlen = delim.length();
 		while( from < len  ) { // for all tokens
 			if( str.charAt(from) == CSV_QUOTE_CHAR 
 				&& str.indexOf(CSV_QUOTE_CHAR, from+1) > 0 ) {
@@ -143,8 +143,11 @@ public class IOUtilFunctions
 				while( to+1 < len && str.charAt(to+1)==CSV_QUOTE_CHAR )
 					to = str.indexOf(CSV_QUOTE_CHAR, to+2); // to + ""
 				to += 1; // last "
+				// handle remaining non-quoted characters "aa"a 
+				if( to<len-1 && !str.regionMatches(to, delim, 0, dlen) )
+					to = str.indexOf(delim, to+1);
 			}
-			else if(str.regionMatches(from, delim, 0, delim.length())) {
+			else if( str.regionMatches(from, delim, 0, dlen) ) {
 				to = from; // empty string
 			}
 			else { // default: unquoted non-empty
@@ -165,6 +168,16 @@ public class IOUtilFunctions
 		return tokens.toArray(new String[0]);
 	}
 
+	/**
+	 * Splits a string by a specified delimiter into all tokens, including empty
+	 * while respecting the rules for quotes and escapes defined in RFC4180,
+	 * with robustness for various special cases.
+	 * 
+	 * @param str string to split
+	 * @param delim delimiter
+	 * @param string array for tokens, length needs to match the number of tokens 
+	 * @return string array of tokens
+	 */
 	public static String[] splitCSV(String str, String delim, String[] tokens)
 	{
 		// check for empty input
@@ -174,6 +187,7 @@ public class IOUtilFunctions
 		// scan string and create individual tokens
 		int from = 0, to = 0; 
 		int len = str.length();
+		int dlen = delim.length();
 		int pos = 0;
 		while( from < len  ) { // for all tokens
 			if( str.charAt(from) == CSV_QUOTE_CHAR
@@ -183,8 +197,11 @@ public class IOUtilFunctions
 				while( to+1 < len && str.charAt(to+1)==CSV_QUOTE_CHAR )
 					to = str.indexOf(CSV_QUOTE_CHAR, to+2); // to + ""
 				to += 1; // last "
+				// handle remaining non-quoted characters "aa"a 
+				if( to<len-1 && !str.regionMatches(to, delim, 0, dlen) )
+					to = str.indexOf(delim, to+1);
 			}
-			else if(str.regionMatches(from, delim, 0, delim.length())) {
+			else if( str.regionMatches(from, delim, 0, dlen) ) {
 				to = from; // empty string
 			}
 			else { // default: unquoted non-empty
@@ -207,9 +224,10 @@ public class IOUtilFunctions
 	
 	/**
 	 * Counts the number of tokens defined by the given delimiter, respecting 
-	 * the rules for quotes and escapes defined in RFC4180.
+	 * the rules for quotes and escapes defined in RFC4180,
+	 * with robustness for various special cases.
 	 * 
-	 * @param str string
+	 * @param str string to split
 	 * @param delim delimiter
 	 * @return number of tokens split by the given delimiter
 	 */
@@ -223,6 +241,7 @@ public class IOUtilFunctions
 		int numTokens = 0;
 		int from = 0, to = 0; 
 		int len = str.length();
+		int dlen = delim.length();
 		while( from < len  ) { // for all tokens
 			if( str.charAt(from) == CSV_QUOTE_CHAR
 				&& str.indexOf(CSV_QUOTE_CHAR, from+1) > 0 ) {
@@ -231,8 +250,11 @@ public class IOUtilFunctions
 				while( to+1 < len && str.charAt(to+1)==CSV_QUOTE_CHAR ) 
 					to = str.indexOf(CSV_QUOTE_CHAR, to+2); // to + ""
 				to += 1; // last "
+				// handle remaining non-quoted characters "aa"a 
+				if( to<len-1 && !str.regionMatches(to, delim, 0, dlen) )
+					to = str.indexOf(delim, to+1);
 			}
-			else if(str.regionMatches(from, delim, 0, delim.length())) {
+			else if( str.regionMatches(from, delim, 0, dlen) ) {
 				to = from; // empty string
 			}
 			else { // default: unquoted non-empty
@@ -366,11 +388,11 @@ public class IOUtilFunctions
 					informat.getRecordReader(splits[i], job, Reporter.NULL);
 			try {
 				if( reader.next(key, value) ) {
+					if( value.toString().startsWith(TfUtils.TXMTD_MVPREFIX) )
+						reader.next(key, value);
+					if( value.toString().startsWith(TfUtils.TXMTD_NDPREFIX) )
+						reader.next(key, value);
 					String row = value.toString().trim();
-					if( row.startsWith(TfUtils.TXMTD_MVPREFIX) )
-						reader.next(key, value);
-					if( row.startsWith(TfUtils.TXMTD_NDPREFIX) )
-						reader.next(key, value);
 					if( !row.isEmpty() )
 						ncol = IOUtilFunctions.countTokensCSV(row, delim);
 				}

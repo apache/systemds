@@ -97,9 +97,13 @@ public class PMapmmSPInstruction extends BinarySPInstruction
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = sec.getBinaryBlockRDDHandleForVariable( input2.getName() ); 
 		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());		
 		
+		// This avoids errors such as java.lang.UnsupportedOperationException: Cannot change storage level of an RDD after it was already assigned a level
+		// Ideally, we should ensure that we donot redundantly call persist on the same RDD.
+		StorageLevel pmapmmStorageLevel = StorageLevel.MEMORY_AND_DISK();
+		
 		//cache right hand side because accessed many times
 		in2 = in2.repartition(sec.getSparkContext().defaultParallelism())
-				 .persist(StorageLevel.MEMORY_AND_DISK());
+				 .persist(pmapmmStorageLevel);
 		
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
 		for( int i=0; i<mc1.getRows(); i+=NUM_ROWBLOCKS*mc1.getRowsPerBlock() ) 
@@ -117,7 +121,7 @@ public class PMapmmSPInstruction extends BinarySPInstruction
 			JavaPairRDD<MatrixIndexes,MatrixBlock> rdd2 = in2
 					.flatMapToPair(new PMapMMFunction(bpmb, i/mc1.getRowsPerBlock()));
 			rdd2 = RDDAggregateUtils.sumByKeyStable(rdd2);
-			rdd2.persist(StorageLevel.MEMORY_ONLY())
+			rdd2.persist(pmapmmStorageLevel)
 			    .count();
 			bpmb.unpersist(false);
 			
@@ -128,7 +132,7 @@ public class PMapmmSPInstruction extends BinarySPInstruction
 		}
 		
 		//cache final result
-		out = out.persist(StorageLevel.MEMORY_AND_DISK());
+		out = out.persist(pmapmmStorageLevel);
 		out.count();
 		
 		//put output RDD handle into symbol table

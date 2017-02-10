@@ -627,7 +627,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 				else 
 				{
 					if (id.getDim1() != id.getDim2()) {
-						raiseValidateError("Invoking diag on matrix with dimensions ("
+						raiseValidateError("diag can either: (1) create diagonal matrix from (n x 1) matrix, or (2) take diagonal from a square matrix. "
+								+ "Error invoking diag on matrix with dimensions ("
 								+ id.getDim1() + "," + id.getDim2()
 								+ ") in " + this.toString(), conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 					}

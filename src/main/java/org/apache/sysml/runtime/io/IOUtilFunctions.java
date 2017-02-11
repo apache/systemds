@@ -27,6 +27,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -127,42 +128,7 @@ public class IOUtilFunctions
 	 */
 	public static String[] splitCSV(String str, String delim)
 	{
-		// check for empty input
-		if( str == null || str.isEmpty() )
-			return new String[]{""};
-		
-		// scan string and create individual tokens
-		ArrayList<String> tokens = new ArrayList<String>();
-		int from = 0, to = 0; 
-		int len = str.length();
-		while( from < len  ) { // for all tokens
-			if( str.charAt(from) == CSV_QUOTE_CHAR 
-				&& str.indexOf(CSV_QUOTE_CHAR, from+1) > 0 ) {
-				to = str.indexOf(CSV_QUOTE_CHAR, from+1);
-				// handle escaped inner quotes, e.g. "aa""a"
-				while( to+1 < len && str.charAt(to+1)==CSV_QUOTE_CHAR )
-					to = str.indexOf(CSV_QUOTE_CHAR, to+2); // to + ""
-				to += 1; // last "
-			}
-			else if(str.regionMatches(from, delim, 0, delim.length())) {
-				to = from; // empty string
-			}
-			else { // default: unquoted non-empty
-				to = str.indexOf(delim, from+1);
-			}
-			
-			// slice out token and advance position
-			to = (to >= 0) ? to : len;
-			tokens.add(str.substring(from, to));
-			from = to + delim.length();
-		}
-		
-		// handle empty string at end
-		if( from == len )
-			tokens.add("");
-			
-		// return tokens
-		return tokens.toArray(new String[0]);
+		return splitCSV(str, delim, null);
 	}
 
 	public static String[] splitCSV(String str, String delim, String[] tokens)
@@ -170,41 +136,32 @@ public class IOUtilFunctions
 		// check for empty input
 		if( str == null || str.isEmpty() )
 			return new String[]{""};
-		
-		// scan string and create individual tokens
-		int from = 0, to = 0; 
-		int len = str.length();
-		int pos = 0;
-		while( from < len  ) { // for all tokens
-			if( str.charAt(from) == CSV_QUOTE_CHAR
-				&& str.indexOf(CSV_QUOTE_CHAR, from+1) > 0 ) {
-				to = str.indexOf(CSV_QUOTE_CHAR, from+1);
-				// handle escaped inner quotes, e.g. "aa""a"
-				while( to+1 < len && str.charAt(to+1)==CSV_QUOTE_CHAR )
-					to = str.indexOf(CSV_QUOTE_CHAR, to+2); // to + ""
-				to += 1; // last "
-			}
-			else if(str.regionMatches(from, delim, 0, delim.length())) {
-				to = from; // empty string
-			}
-			else { // default: unquoted non-empty
-				to = str.indexOf(delim, from+1);
-			}
-			
-			// slice out token and advance position
-			to = (to >= 0) ? to : len;
-			tokens[pos++] = str.substring(from, to);
-			from = to + delim.length();
+
+		if(tokens == null)
+			return parseCSVLine(str, delim);
+		else {
+			String [] retTokens = parseCSVLine(str, delim);
+			for (int i=0; i<retTokens.length; ++i)
+				tokens[i] = retTokens[i];
+			return tokens;
 		}
-		
-		// handle empty string at end
-		if( from == len )
-			tokens[pos] = "";
-			
-		// return tokens
-		return tokens;
 	}
-	
+
+	/**
+	 * Parses the line based on delimiter
+	 *
+	 * @param line   Input string to be parsed.
+	 * @param delim Delimiter used to separate the field.
+	 * @return  It returns tokens parsed based on delimiter separator
+	 */
+	public static String[] parseCSVLine(String line, String delim) {
+		// Create a pattern to match breaks
+		Pattern pattern = Pattern.compile(delim + "(?=([^\"]*\"[^\"]*\")*(?![^\"]*\"))");
+		// Split input with the pattern
+		return pattern.split(line);
+	}
+
+
 	/**
 	 * Counts the number of tokens defined by the given delimiter, respecting 
 	 * the rules for quotes and escapes defined in RFC4180.

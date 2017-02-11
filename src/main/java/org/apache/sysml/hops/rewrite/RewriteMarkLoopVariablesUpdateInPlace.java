@@ -63,9 +63,12 @@ public class RewriteMarkLoopVariablesUpdateInPlace extends StatementBlockRewrite
 		{
 			ArrayList<String> candidates = new ArrayList<String>(); 
 			VariableSet updated = sb.variablesUpdated();
+			VariableSet liveout = sb.liveOut();
 			
 			for( String varname : updated.getVariableNames() ) {
-				if( updated.getVariable(varname).getDataType()==DataType.MATRIX) {
+				if( updated.getVariable(varname).getDataType()==DataType.MATRIX
+					&& liveout.containsVariable(varname) ) //exclude local vars 
+				{
 					if( sb instanceof WhileStatementBlock ) {
 						WhileStatement wstmt = (WhileStatement) sb.getStatement(0);
 						if( rIsApplicableForUpdateInPlace(wstmt.getBody(), varname) )

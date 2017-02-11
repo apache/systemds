@@ -1570,7 +1570,8 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				hnew = new QuaternaryOp(hi.getName(), DataType.MATRIX, ValueType.DOUBLE, 
 						  OpOp4.WSIGMOID, W, Y, tX, false, false);
 				HopRewriteUtils.setOutputBlocksizes(hnew, W.getRowsInBlock(), W.getColsInBlock());
-
+				hnew.refreshSizeInformation();
+				
 				appliedPattern = true;
 				LOG.debug("Applied simplifyWeightedSigmoid1 (line "+hi.getBeginLine()+")");	
 			}
@@ -1599,7 +1600,8 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				hnew = new QuaternaryOp(hi.getName(), DataType.MATRIX, ValueType.DOUBLE, 
 						  OpOp4.WSIGMOID, W, Y, tX, false, true);
 				HopRewriteUtils.setOutputBlocksizes(hnew, W.getRowsInBlock(), W.getColsInBlock());
-
+				hnew.refreshSizeInformation();
+				
 				appliedPattern = true;
 				LOG.debug("Applied simplifyWeightedSigmoid2 (line "+hi.getBeginLine()+")");	
 			}
@@ -1625,7 +1627,8 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				hnew = new QuaternaryOp(hi.getName(), DataType.MATRIX, ValueType.DOUBLE, 
 						  OpOp4.WSIGMOID, W, Y, tX, true, false);
 				HopRewriteUtils.setOutputBlocksizes(hnew, W.getRowsInBlock(), W.getColsInBlock());
-
+				hnew.refreshSizeInformation();
+				
 				appliedPattern = true;
 				LOG.debug("Applied simplifyWeightedSigmoid3 (line "+hi.getBeginLine()+")");	
 			}			
@@ -1658,7 +1661,8 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 					hnew = new QuaternaryOp(hi.getName(), DataType.MATRIX, ValueType.DOUBLE, 
 							  OpOp4.WSIGMOID, W, Y, tX, true, true);
 					HopRewriteUtils.setOutputBlocksizes(hnew, W.getRowsInBlock(), W.getColsInBlock());
-	
+					hnew.refreshSizeInformation();
+					
 					appliedPattern = true;
 					LOG.debug("Applied simplifyWeightedSigmoid4 (line "+hi.getBeginLine()+")");	
 				}
@@ -1715,6 +1719,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 					hnew = new QuaternaryOp(hi.getName(), DataType.MATRIX, ValueType.DOUBLE, 
 							  OpOp4.WDIVMM, W, U, V, new LiteralOp(-1), 1, mult, false);
 					HopRewriteUtils.setOutputBlocksizes(hnew, W.getRowsInBlock(), W.getColsInBlock());
+					hnew.refreshSizeInformation();
 					
 					//add output transpose for efficient target indexing (redundant t() removed by other rewrites)
 					hnew = HopRewriteUtils.createTranspose(hnew);
@@ -1749,6 +1754,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 					hnew = new QuaternaryOp(hi.getName(), DataType.MATRIX, ValueType.DOUBLE, 
 							  OpOp4.WDIVMM, W, U, V, X, 3, false, false); // 3=>DIV_LEFT_EPS
 					HopRewriteUtils.setOutputBlocksizes(hnew, W.getRowsInBlock(), W.getColsInBlock());
+					hnew.refreshSizeInformation();
 					
 					//add output transpose for efficient target indexing (redundant t() removed by other rewrites)
 					hnew = HopRewriteUtils.createTranspose(hnew);
@@ -1781,7 +1787,8 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 					hnew = new QuaternaryOp(hi.getName(), DataType.MATRIX, ValueType.DOUBLE, 
 							  OpOp4.WDIVMM, W, U, V, new LiteralOp(-1), 2, mult, false);
 					HopRewriteUtils.setOutputBlocksizes(hnew, W.getRowsInBlock(), W.getColsInBlock());
-
+					hnew.refreshSizeInformation();
+					
 					appliedPattern = true;
 					LOG.debug("Applied simplifyWeightedDivMM2 (line "+hi.getBeginLine()+")");	
 				}
@@ -1812,7 +1819,8 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 					hnew = new QuaternaryOp(hi.getName(), DataType.MATRIX, ValueType.DOUBLE, 
 							  OpOp4.WDIVMM, W, U, V, X, 4, false, false); // 4=>DIV_RIGHT_EPS
 					HopRewriteUtils.setOutputBlocksizes(hnew, W.getRowsInBlock(), W.getColsInBlock());
-
+					hnew.refreshSizeInformation();
+					
 					appliedPattern = true;
 					LOG.debug("Applied simplifyWeightedDivMM2e (line "+hi.getBeginLine()+")");	
 				}
@@ -1842,6 +1850,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 					hnew = new QuaternaryOp(hi.getName(), DataType.MATRIX, ValueType.DOUBLE, 
 							  OpOp4.WDIVMM, X, U, V, new LiteralOp(-1), 1, true, true);
 					HopRewriteUtils.setOutputBlocksizes(hnew, W.getRowsInBlock(), W.getColsInBlock());
+					hnew.refreshSizeInformation();
 					
 					//add output transpose for efficient target indexing (redundant t() removed by other rewrites)
 					hnew = HopRewriteUtils.createTranspose(hnew);
@@ -1875,7 +1884,8 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 					hnew = new QuaternaryOp(hi.getName(), DataType.MATRIX, ValueType.DOUBLE, 
 							  OpOp4.WDIVMM, X, U, V, new LiteralOp(-1), 2, true, true);
 					HopRewriteUtils.setOutputBlocksizes(hnew, W.getRowsInBlock(), W.getColsInBlock());
-
+					hnew.refreshSizeInformation();
+					
 					appliedPattern = true;
 					LOG.debug("Applied simplifyWeightedDivMM4 (line "+hi.getBeginLine()+")");	
 				}
@@ -1905,6 +1915,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 					hnew = new QuaternaryOp(hi.getName(), DataType.MATRIX, ValueType.DOUBLE, 
 							  OpOp4.WDIVMM, W, U, V, X, 1, true, true);
 					HopRewriteUtils.setOutputBlocksizes(hnew, W.getRowsInBlock(), W.getColsInBlock());
+					hnew.refreshSizeInformation();
 					
 					//add output transpose for efficient target indexing (redundant t() removed by other rewrites)
 					hnew = HopRewriteUtils.createTranspose(hnew);
@@ -1938,7 +1949,8 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 					hnew = new QuaternaryOp(hi.getName(), DataType.MATRIX, ValueType.DOUBLE, 
 							  OpOp4.WDIVMM, W, U, V, X, 2, true, true);
 					HopRewriteUtils.setOutputBlocksizes(hnew, W.getRowsInBlock(), W.getColsInBlock());
-
+					hnew.refreshSizeInformation();
+					
 					appliedPattern = true;
 					LOG.debug("Applied simplifyWeightedDivMM6 (line "+hi.getBeginLine()+")");	
 				}
@@ -1968,7 +1980,8 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			hnew = new QuaternaryOp(hi.getName(), DataType.MATRIX, ValueType.DOUBLE, 
 					  OpOp4.WDIVMM, W, U, V, new LiteralOp(-1), 0, true, false);
 			HopRewriteUtils.setOutputBlocksizes(hnew, W.getRowsInBlock(), W.getColsInBlock());
-
+			hnew.refreshSizeInformation();
+			
 			appliedPattern = true;
 			LOG.debug("Applied simplifyWeightedDivMM7 (line "+hi.getBeginLine()+")");	
 		}
@@ -2093,7 +2106,8 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			hnew = new QuaternaryOp(hi.getName(), DataType.MATRIX, ValueType.DOUBLE, 
 					  OpOp4.WUMM, W, U, V, mult, op, null);
 			HopRewriteUtils.setOutputBlocksizes(hnew, W.getRowsInBlock(), W.getColsInBlock());
-
+			hnew.refreshSizeInformation();
+			
 			appliedPattern = true;
 			LOG.debug("Applied simplifyWeightedUnaryMM1 (line "+hi.getBeginLine()+")");	
 		}
@@ -2145,7 +2159,8 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				hnew = new QuaternaryOp(hi.getName(), DataType.MATRIX, ValueType.DOUBLE, 
 						  OpOp4.WUMM, W, U, V, mult, null, op);
 				HopRewriteUtils.setOutputBlocksizes(hnew, W.getRowsInBlock(), W.getColsInBlock());
-	
+				hnew.refreshSizeInformation();
+				
 				appliedPattern = true;
 				LOG.debug("Applied simplifyWeightedUnaryMM2 (line "+hi.getBeginLine()+")");	
 			}

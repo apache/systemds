@@ -26,20 +26,17 @@ import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.parfor.opt.OptNode.NodeType;
 import org.apache.sysml.runtime.controlprogram.parfor.opt.Optimizer.CostModelType;
-import org.apache.sysml.runtime.controlprogram.parfor.opt.PerfTestTool.TestMeasure;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 
 public class CostEstimatorHops extends CostEstimator
 {
-	
-	public static long DEFAULT_MEM_MR = -1;
-	public static long DEFAULT_MEM_SP = 20*1024*1024;
+	public static double DEFAULT_MEM_MR = -1;
+	public static double DEFAULT_MEM_SP = 20*1024*1024;
 	
 	private OptTreePlanMappingAbstract _map = null;
 	
-	static
-	{
-		DEFAULT_MEM_MR = 20*1024*1024; //20MB
+	static {
+		DEFAULT_MEM_MR = DEFAULT_MEM_ESTIMATE_MR; //20MB
 		if( InfrastructureAnalyzer.isLocalMode() )
 			DEFAULT_MEM_MR = DEFAULT_MEM_MR + InfrastructureAnalyzer.getRemoteMaxMemorySortBuffer();
 	}
@@ -65,7 +62,7 @@ public class CostEstimatorHops extends CostEstimator
 		double value = h.getMemEstimate();
 		
 		//handle specific cases 
-		long DEFAULT_MEM_REMOTE = OptimizerUtils.isSparkExecutionMode() ? 
+		double DEFAULT_MEM_REMOTE = OptimizerUtils.isSparkExecutionMode() ? 
 								DEFAULT_MEM_SP : DEFAULT_MEM_MR;
 		
 		if( value >= DEFAULT_MEM_REMOTE )   	  

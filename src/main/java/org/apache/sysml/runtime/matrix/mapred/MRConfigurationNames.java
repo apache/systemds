@@ -37,7 +37,6 @@ public abstract class MRConfigurationNames {
 	public static final String DFS_REPLICATION = "dfs.replication"; // hdfs-default.xml
 	public static final String IO_FILE_BUFFER_SIZE = "io.file.buffer.size"; // core-default.xml
 	public static final String IO_SERIALIZATIONS = "io.serializations"; // core-default.xml
-	public static final String MR_APPLICATION_CLASSPATH = "mapreduce.application.classpath"; // mapred-default.xml // TODO investigate unused constant
 	public static final String MR_CHILD_JAVA_OPTS = "mapred.child.java.opts"; // mapred-default.xml
 	public static final String MR_FRAMEWORK_NAME = "mapreduce.framework.name"; // mapred-default.xml
 	public static final String MR_JOBTRACKER_STAGING_ROOT_DIR = "mapreduce.jobtracker.staging.root.dir"; // mapred-default.xml

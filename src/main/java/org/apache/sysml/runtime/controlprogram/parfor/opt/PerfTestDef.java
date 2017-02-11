@@ -19,9 +19,9 @@
 
 package org.apache.sysml.runtime.controlprogram.parfor.opt;
 
-import org.apache.sysml.runtime.controlprogram.parfor.opt.PerfTestTool.DataFormat;
+import org.apache.sysml.runtime.controlprogram.parfor.opt.CostEstimator.DataFormat;
+import org.apache.sysml.runtime.controlprogram.parfor.opt.CostEstimator.TestMeasure;
 import org.apache.sysml.runtime.controlprogram.parfor.opt.PerfTestTool.InternalTestVariable;
-import org.apache.sysml.runtime.controlprogram.parfor.opt.PerfTestTool.TestMeasure;
 import org.apache.sysml.runtime.controlprogram.parfor.opt.PerfTestTool.TestVariable;
 
 /**
@@ -31,10 +31,9 @@ import org.apache.sysml.runtime.controlprogram.parfor.opt.PerfTestTool.TestVaria
  * and an instruction.
  *
  */
+@Deprecated
 public class PerfTestDef 
 {
-
-	
 	//logical properties
 	private TestMeasure    _measure;
 	private TestVariable   _lvariable;

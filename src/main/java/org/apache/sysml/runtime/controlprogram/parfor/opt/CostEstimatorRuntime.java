@@ -23,8 +23,6 @@ package org.apache.sysml.runtime.controlprogram.parfor.opt;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.controlprogram.parfor.opt.PerfTestTool.DataFormat;
-import org.apache.sysml.runtime.controlprogram.parfor.opt.PerfTestTool.TestMeasure;
 import org.apache.sysml.runtime.controlprogram.parfor.opt.PerfTestTool.TestVariable;
 
 /**
@@ -39,6 +37,7 @@ import org.apache.sysml.runtime.controlprogram.parfor.opt.PerfTestTool.TestVaria
  * TODO: inst names as constants in perftesttool
  * TODO: complexity corrections for sparse matrices
  */
+@SuppressWarnings("deprecation")
 public class CostEstimatorRuntime extends CostEstimator
 {	
 	

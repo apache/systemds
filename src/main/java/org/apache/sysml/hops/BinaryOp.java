@@ -74,22 +74,24 @@ public class BinaryOp extends Hop
 	private boolean outer = false;
 	
 	public static AppendMethod FORCED_APPEND_METHOD = null;
+	
+	
 	public enum AppendMethod { 
-		CP_APPEND, //in-memory general case append // TODO investigate unused enum constant
+		CP_APPEND, //in-memory general case append (implicitly selected for CP)
 		MR_MAPPEND, //map-only append (rhs must be vector and fit in mapper mem)
 		MR_RAPPEND, //reduce-only append (output must have at most one column block)
 		MR_GAPPEND, //map-reduce general case append (map-extend, aggregate)
 		SP_GAlignedAppend // special case for general case in Spark where left.getCols() % left.getColsPerBlock() == 0
 	};
 	
-	private enum MMBinaryMethod{
-		CP_BINARY,
+	private enum MMBinaryMethod {
+		CP_BINARY, //(implicitly selected for CP) 
 		MR_BINARY_R, //both mm, mv 
 		MR_BINARY_M, //only mv (mr/spark)
 		MR_BINARY_OUTER_M,
 		MR_BINARY_OUTER_R, //only vv 
 		MR_BINARY_UAGG_CHAIN, //(mr/spark)
-	}
+	};
 	
 	private BinaryOp() {
 		//default constructor for clone

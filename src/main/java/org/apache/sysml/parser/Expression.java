@@ -166,13 +166,6 @@ public abstract class Expression
 	};
 
 	/**
-	 * External built-in function operators.
-	 */
-	public enum ExtBuiltinFunctionOp { // TODO investigate unused enum
-		EIGEN, CHOLESKY
-	};
-
-	/**
 	 * Data types (matrix, scalar, frame, object, unknown).
 	 */
 	public enum DataType {

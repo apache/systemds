@@ -147,7 +147,6 @@ public class ProgramConverter
 	public static final String NOT_SUPPORTED_MR_PARFOR           = "Not supported: Nested ParFOR REMOTE_MR due to possible deadlocks." +
 			                                                       "(LOCAL can be used for innner ParFOR)";
 	public static final String NOT_SUPPORTED_PB                  = "Not supported: type of program block";
-	public static final String NOT_SUPPORTED_EXECUTION_CONTEXT   = "Parsing of external system execution context not supported yet."; // TODO investigate unused constant
 	
 	////////////////////////////////
 	// CREATION of DEEP COPIES

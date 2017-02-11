@@ -64,6 +64,8 @@ import org.apache.sysml.runtime.controlprogram.caching.LazyWriteBuffer;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
+import org.apache.sysml.runtime.controlprogram.parfor.opt.CostEstimator.DataFormat;
+import org.apache.sysml.runtime.controlprogram.parfor.opt.CostEstimator.TestMeasure;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDHandler;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
@@ -95,6 +97,7 @@ import au.com.bytecode.opencsv.CSVWriter;
  * 
  * 
  */
+@Deprecated
 public class PerfTestTool 
 {
 	
@@ -159,12 +162,6 @@ public class PerfTestTool
 	private static boolean    _flagReadData = false; 
 	private static HashMap<Integer,HashMap<Integer,CostFunction>> _profile = null;
 	
-	public enum TestMeasure //logical test measure
-	{
-		EXEC_TIME,
-		MEMORY_USAGE	
-	}
-	
 	public enum TestVariable //logical test variable
 	{
 		DATA_SIZE,
@@ -192,12 +189,6 @@ public class PerfTestTool
 		UNARY_UNARY,
 		BINARY_NONE,
 		BINARY_UNARY
-	}
-	
-	public enum DataFormat //logical data format
-	{
-		DENSE,
-		SPARSE
 	}
 	
 	public enum TestConstants //logical test constants

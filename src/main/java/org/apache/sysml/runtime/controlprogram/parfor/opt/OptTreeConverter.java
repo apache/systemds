@@ -57,11 +57,11 @@ import org.apache.sysml.runtime.controlprogram.ProgramBlock;
 import org.apache.sysml.runtime.controlprogram.WhileProgramBlock;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysml.runtime.controlprogram.parfor.opt.CostEstimator.DataFormat;
 import org.apache.sysml.runtime.controlprogram.parfor.opt.OptNode.ExecType;
 import org.apache.sysml.runtime.controlprogram.parfor.opt.OptNode.NodeType;
 import org.apache.sysml.runtime.controlprogram.parfor.opt.OptNode.ParamType;
 import org.apache.sysml.runtime.controlprogram.parfor.opt.Optimizer.PlanInputType;
-import org.apache.sysml.runtime.controlprogram.parfor.opt.PerfTestTool.DataFormat;
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.MRJobInstruction;
 import org.apache.sysml.runtime.instructions.cp.ComputationCPInstruction;
@@ -82,6 +82,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
  * NOTE: currently only one abstract and one runtime plan at a time.
  * This implies that only one parfor optimization can happen at a time.
  */
+@SuppressWarnings("deprecation")
 public class OptTreeConverter 
 {		
 	

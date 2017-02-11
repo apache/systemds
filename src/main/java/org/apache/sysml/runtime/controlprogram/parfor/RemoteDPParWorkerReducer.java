@@ -20,7 +20,6 @@
 package org.apache.sysml.runtime.controlprogram.parfor;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Iterator;
 
 import org.apache.hadoop.io.LongWritable;
@@ -70,7 +69,6 @@ public class RemoteDPParWorkerReducer extends ParWorker
 		
 	//MR ParWorker attributes  
 	protected String  _stringID       = null;
-	protected HashMap<String, String> _rvarFnames = null; // TODO investigate unused field
 
 	//cached collector/reporter
 	protected OutputCollector<Writable, Writable> _out = null;

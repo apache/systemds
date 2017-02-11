@@ -32,8 +32,7 @@ public class CMOperator extends Operator
 	public enum AggregateOperationTypes {
 		SUM,
 		COUNT,
-		MEAN,
-		CM, // TODO investigate unused enum constant
+		MEAN, //a.k.a. CM
 		CM2,
 		CM3,
 		CM4,

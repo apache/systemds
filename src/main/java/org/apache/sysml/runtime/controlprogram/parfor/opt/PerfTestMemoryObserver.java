@@ -30,6 +30,7 @@ import java.lang.ref.WeakReference;
  * Protocol: (1) measure start, (2) start thread, (3) *do some work*, (4) join thread, (5) get max memory.
  *  
  */
+@Deprecated
 public class PerfTestMemoryObserver implements Runnable
 {
 	

@@ -22,6 +22,7 @@ package org.apache.sysml.runtime.instructions;
 
 import java.util.HashMap;
 
+import org.apache.sysml.lops.AppendCP;
 import org.apache.sysml.lops.DataGen;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.lops.UnaryCP;
@@ -240,7 +241,7 @@ public class CPInstructionParser extends InstructionParser
 		// User-defined function Opcodes
 		String2CPInstructionType.put( "extfunct"   	, CPINSTRUCTION_TYPE.External);
 
-		String2CPInstructionType.put( "append", CPINSTRUCTION_TYPE.Append);
+		String2CPInstructionType.put( AppendCP.OPCODE, CPINSTRUCTION_TYPE.Append);
 		
 		// data generation opcodes
 		String2CPInstructionType.put( DataGen.RAND_OPCODE   , CPINSTRUCTION_TYPE.Rand);

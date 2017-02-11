@@ -89,10 +89,10 @@ import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
 import org.apache.sysml.runtime.controlprogram.parfor.ResultMergeLocalFile;
+import org.apache.sysml.runtime.controlprogram.parfor.opt.CostEstimator.TestMeasure;
 import org.apache.sysml.runtime.controlprogram.parfor.opt.OptNode.ExecType;
 import org.apache.sysml.runtime.controlprogram.parfor.opt.OptNode.NodeType;
 import org.apache.sysml.runtime.controlprogram.parfor.opt.OptNode.ParamType;
-import org.apache.sysml.runtime.controlprogram.parfor.opt.PerfTestTool.TestMeasure;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.cp.Data;
@@ -148,11 +148,10 @@ import org.apache.sysml.yarn.ropt.YarnClusterAnalyzer;
  */
 public class OptimizerRuleBased extends Optimizer
 {
-	
 	public static final double PROB_SIZE_THRESHOLD_REMOTE = 100; //wrt # top-level iterations (min)
 	public static final double PROB_SIZE_THRESHOLD_PARTITIONING = 2; //wrt # top-level iterations (min)
 	public static final double PROB_SIZE_THRESHOLD_MB = 256*1024*1024; //wrt overall memory consumption (min)
-	public static final int MAX_REPLICATION_FACTOR_PARTITIONING = 5; // TODO investigate unused constant
+	public static final int MAX_REPLICATION_FACTOR_PARTITIONING = 5;
 	public static final int MAX_REPLICATION_FACTOR_EXPORT = 7;    
 	public static final boolean ALLOW_REMOTE_NESTED_PARALLELISM = false;
 	public static final boolean APPLY_REWRITE_NESTED_PARALLELISM = false;
@@ -1079,7 +1078,7 @@ public class OptimizerRuleBased extends Optimizer
 			replication = (int)Math.min( _N, _rnk );
 			
 			//account for internal max constraint (note hadoop will warn if max > 10)
-			replication = (int)Math.min( replication, MAX_REPLICATION_FACTOR_EXPORT );
+			replication = (int)Math.min( replication, MAX_REPLICATION_FACTOR_PARTITIONING );
 			
 			//account for remaining hdfs capacity
 			try {

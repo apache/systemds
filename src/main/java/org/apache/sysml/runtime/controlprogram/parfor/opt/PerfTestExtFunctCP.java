@@ -33,6 +33,7 @@ import org.apache.sysml.udf.Matrix.ValueType;
  * measure the general behavior of package support.
  *
  */
+@Deprecated
 public class PerfTestExtFunctCP extends PackageFunction 
 {	
 	

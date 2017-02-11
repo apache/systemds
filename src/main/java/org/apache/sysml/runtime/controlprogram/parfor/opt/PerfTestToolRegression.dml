@@ -21,6 +21,7 @@
 
 
 #PerfTestTool: DML template for estimation cost functions.
+#Deprecated in SystemML 0.13
 
 dynRead = externalFunction(Matrix[Double] d, String fname, Integer m, Integer n) 
 return (Matrix[Double] D) 

@@ -27,7 +27,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.parfor.opt.OptNode.ParamType;
-import org.apache.sysml.runtime.controlprogram.parfor.opt.PerfTestTool.TestMeasure;
 
 /**
  * Base class for all potential cost estimators
@@ -36,18 +35,25 @@ import org.apache.sysml.runtime.controlprogram.parfor.opt.PerfTestTool.TestMeasu
  * 
  */
 public abstract class CostEstimator 
-{
-	
+{	
 	protected static final Log LOG = LogFactory.getLog(CostEstimator.class.getName());
-    
-	
+    	
 	//default parameters
 	public static final double DEFAULT_EST_PARALLELISM = 1.0; //default degree of parallelism: serial
 	public static final long   FACTOR_NUM_ITERATIONS   = 10; //default problem size
 	public static final double DEFAULT_TIME_ESTIMATE   = 5;  //default execution time: 5ms
 	public static final double DEFAULT_MEM_ESTIMATE_CP = 1024; //default memory consumption: 1KB 
-	public static final double DEFAULT_MEM_ESTIMATE_MR = 10*1024*1024; //default memory consumption: 20MB // TODO investigate unused constant
+	public static final double DEFAULT_MEM_ESTIMATE_MR = 20*1024*1024; //default memory consumption: 20MB 
+
+	public enum TestMeasure {
+		EXEC_TIME,
+		MEMORY_USAGE	
+	}
 	
+	public enum DataFormat {
+		DENSE,
+		SPARSE
+	}
 	
 	/**
 	 * Main leaf node estimation method - to be overwritten by specific cost estimators

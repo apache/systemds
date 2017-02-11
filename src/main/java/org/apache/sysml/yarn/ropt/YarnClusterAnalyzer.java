@@ -61,7 +61,6 @@ public class YarnClusterAnalyzer
 	public static long _remoteJVMMaxMemMap    = -1;
 	public static long _remoteJVMMaxMemReduce = -1;
 	public static long _remoteMRSortMem = -1;
-	public static boolean _localJT      = false; // TODO investigate unused field
 	public static long _blocksize       = -1;
 	
 	// Map from StatementBlock.ID to remoteJVMMaxMem (in bytes)

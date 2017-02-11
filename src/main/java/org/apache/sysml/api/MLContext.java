@@ -41,7 +41,6 @@ import org.apache.spark.sql.SQLContext;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.api.jmlc.JMLCUtils;
 import org.apache.sysml.api.mlcontext.ScriptType;
-import org.apache.sysml.api.monitoring.SparkMonitoringUtil;
 import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.conf.ConfigurationManager;
@@ -75,7 +74,6 @@ import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysml.runtime.instructions.spark.functions.ConvertStringToLongTextPair;
 import org.apache.sysml.runtime.instructions.spark.functions.CopyTextInputFunction;
-import org.apache.sysml.runtime.instructions.spark.functions.SparkListener;
 import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDConverterUtils;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils;
 import org.apache.sysml.runtime.instructions.spark.utils.SparkUtils;
@@ -206,19 +204,6 @@ public class MLContext {
 	private Program _rtprog = null;
 	
 	private Map<String, String> _additionalConfigs = new HashMap<String, String>();
-	
-	// --------------------------------------------------
-	// _monitorUtils is set only when MLContext(sc, true)
-	private SparkMonitoringUtil _monitorUtils = null;
-	
-	/**
-	 * Experimental API. Not supported in Python MLContext API.
-	 * @return SparkMonitoringUtil the Spark monitoring util
-	 */
-	public SparkMonitoringUtil getMonitoringUtil() {
-		return _monitorUtils;
-	}
-	// --------------------------------------------------
 	
 	/**
 	 * Create an associated MLContext for given spark session.
@@ -1219,56 +1204,6 @@ public class MLContext {
 	}
 	
 	// -------------------------------- Utility methods ends ----------------------------------------------------------
-		
-	
-	// -------------------------------- Experimental API begins ----------------------------------------------------------
-	/**
-	 * Experimental api:
-	 * Setting monitorPerformance to true adds additional overhead of storing state. So, use it only if necessary.
-	 * @param sc SparkContext
-	 * @param monitorPerformance if true, monitor performance, otherwise false
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
-	 */
-	public MLContext(SparkContext sc, boolean monitorPerformance) throws DMLRuntimeException {
-		initializeSpark(sc, monitorPerformance, false);
-	}
-	
-	/**
-	 * Experimental api:
-	 * Setting monitorPerformance to true adds additional overhead of storing state. So, use it only if necessary.
-	 * @param sc JavaSparkContext
-	 * @param monitorPerformance if true, monitor performance, otherwise false
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
-	 */
-	public MLContext(JavaSparkContext sc, boolean monitorPerformance) throws DMLRuntimeException {
-		initializeSpark(sc.sc(), monitorPerformance, false);
-	}
-	
-	/**
-	 * Experimental api:
-	 * Setting monitorPerformance to true adds additional overhead of storing state. So, use it only if necessary.
-	 * @param sc SparkContext
-	 * @param monitorPerformance if true, monitor performance, otherwise false
-	 * @param setForcedSparkExecType set forced spark exec type
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
-	 */
-	public MLContext(SparkContext sc, boolean monitorPerformance, boolean setForcedSparkExecType) throws DMLRuntimeException {
-		initializeSpark(sc, monitorPerformance, setForcedSparkExecType);
-	}
-	
-	/**
-	 * Experimental api:
-	 * Setting monitorPerformance to true adds additional overhead of storing state. So, use it only if necessary.
-	 * @param sc JavaSparkContext
-	 * @param monitorPerformance if true, monitor performance, otherwise false
-	 * @param setForcedSparkExecType set forced spark exec type
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
-	 */
-	public MLContext(JavaSparkContext sc, boolean monitorPerformance, boolean setForcedSparkExecType) throws DMLRuntimeException {
-		initializeSpark(sc.sc(), monitorPerformance, setForcedSparkExecType);
-	}
-	
-	// -------------------------------- Experimental API ends ----------------------------------------------------------
 	
 	// -------------------------------- Private methods begins ----------------------------------------------------------
 	private boolean isRegisteredAsInput(String varName) {
@@ -1347,20 +1282,8 @@ public class MLContext {
 			DMLScript.rtplatform = RUNTIME_PLATFORM.SPARK;
 		else
 			DMLScript.rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK;
-		
-		if(monitorPerformance) {
-			initializeSparkListener(sc);
-		}
 	}
 	
-	private void initializeSparkListener(SparkContext sc) throws DMLRuntimeException {
-		if(compareVersion(sc.version(), "1.4.0")  < 0 ) {
-			throw new DMLRuntimeException("Expected spark version >= 1.4.0 for monitoring MLContext performance");
-		}
-		SparkListener sparkListener = new SparkListener(sc);
-		_monitorUtils = new SparkMonitoringUtil(sparkListener);
-		sc.addSparkListener(sparkListener);
-	}
 	
 	/**
 	 * Execute a script stored in a string.
@@ -1502,9 +1425,6 @@ public class MLContext {
 			
 			// Set active MLContext.
 			_activeMLContext = this;
-			if(_monitorUtils != null) {
-				_monitorUtils.resetMonitoringData();
-			}
 			
 			if( OptimizerUtils.isSparkExecutionMode() ) {
 				// Depending on whether registerInput/registerOutput was called initialize the variables 
@@ -1589,9 +1509,6 @@ public class MLContext {
 		
 		//read dml script string
 		String dmlScriptStr = DMLScript.readDMLScript( isFile?"-f":"-s", dmlScriptFilePath);
-		if(_monitorUtils != null) {
-			_monitorUtils.setDMLString(dmlScriptStr);
-		}
 		
 		//simplified compilation chain
 		_rtprog = null;
@@ -1652,9 +1569,6 @@ public class MLContext {
 		
 		//core execute runtime program	
 		_rtprog.execute( ec );
-		
-		if(_monitorUtils != null)
-			_monitorUtils.setExplainOutput(Explain.explain(_rtprog));
 		
 		return ec;
 	}

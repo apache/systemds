@@ -1263,9 +1263,7 @@ public class SparkExecutionContext extends ExecutionContext
 		
 		if( parentLineage == null || parentLineage.getRDD() == null )
 			return;
-		
-		MLContextProxy.addRDDForInstructionForMonitoring(inst, parentLineage.getRDD().id());
-		
+	
 		JavaPairRDD<?, ?> out = parentLineage.getRDD();
 		JavaPairRDD<?, ?> in1 = null; 
 		JavaPairRDD<?, ?> in2 = null;
@@ -1342,29 +1340,6 @@ public class SparkExecutionContext extends ExecutionContext
 			else {
 				outDebugString += "\n" + outLines[i];
 			}
-		}
-		
-		
-		Object mlContextObj = MLContextProxy.getActiveMLContext();
-		if (mlContextObj != null) {
-			if (mlContextObj instanceof org.apache.sysml.api.MLContext) {
-				org.apache.sysml.api.MLContext mlCtx = (org.apache.sysml.api.MLContext) mlContextObj;
-				if (mlCtx.getMonitoringUtil() != null) {
-					mlCtx.getMonitoringUtil().setLineageInfo(inst, outDebugString);
-				} else {
-					throw new DMLRuntimeException("The method setLineageInfoForExplain should be called only through MLContext");
-				}
-			} else if (mlContextObj instanceof org.apache.sysml.api.mlcontext.MLContext) {
-				org.apache.sysml.api.mlcontext.MLContext mlCtx = (org.apache.sysml.api.mlcontext.MLContext) mlContextObj;
-				if (mlCtx.getSparkMonitoringUtil() != null) {
-					mlCtx.getSparkMonitoringUtil().setLineageInfo(inst, outDebugString);
-				} else {
-					throw new DMLRuntimeException("The method setLineageInfoForExplain should be called only through MLContext");
-				}
-			}
-			
-		} else {
-			throw new DMLRuntimeException("The method setLineageInfoForExplain should be called only through MLContext");
 		}
 		
 	}

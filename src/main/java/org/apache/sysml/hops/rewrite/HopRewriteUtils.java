@@ -60,6 +60,7 @@ import org.apache.sysml.runtime.instructions.cp.DoubleObject;
 import org.apache.sysml.runtime.instructions.cp.IntObject;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.instructions.cp.StringObject;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class HopRewriteUtils 
@@ -670,6 +671,11 @@ public class HopRewriteUtils
 		return hop instanceof AggBinaryOp
 			&& hop.getInput().get(0).getDim1() > hop.getInput().get(0).getDim2()
 			&& hop.getInput().get(1).getDim1() < hop.getInput().get(1).getDim2();
+	}
+	
+	public static boolean isSparse( Hop hop ) {
+		return hop.dimsKnown(true) //dims and nnz known
+			&& MatrixBlock.evalSparseFormatInMemory(hop.getDim1(), hop.getDim2(), hop.getNnz());
 	}
 	
 	public static boolean isEqualValue( LiteralOp hop1, LiteralOp hop2 ) 

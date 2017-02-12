@@ -29,7 +29,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
@@ -157,26 +156,25 @@ public class InterProceduralAnalysis
 	 * @throws ParseException if ParseException occurs
 	 * @throws LanguageException if LanguageException occurs
 	 */
-	@SuppressWarnings("unchecked")
 	public void analyzeProgram( DMLProgram dmlp ) 
 		throws HopsException, ParseException, LanguageException
 	{
+		FunctionCallGraph fgraph = new FunctionCallGraph(dmlp);
+		
 		//step 1: get candidates for statistics propagation into functions (if required)
 		Map<String, Integer> fcandCounts = new HashMap<String, Integer>();
 		Map<String, FunctionOp> fcandHops = new HashMap<String, FunctionOp>();
 		Map<String, Set<Long>> fcandSafeNNZ = new HashMap<String, Set<Long>>(); 
-		Set<String> allFCandKeys = new HashSet<String>();
 		if( !dmlp.getFunctionStatementBlocks().isEmpty() ) {
 			for ( StatementBlock sb : dmlp.getStatementBlocks() ) //get candidates (over entire program)
 				getFunctionCandidatesForStatisticPropagation( sb, fcandCounts, fcandHops );
-			allFCandKeys.addAll(fcandCounts.keySet()); //cp before pruning
 			pruneFunctionCandidatesForStatisticPropagation( fcandCounts, fcandHops );	
 			determineFunctionCandidatesNNZPropagation( fcandHops, fcandSafeNNZ );
 			DMLTranslator.resetHopsDAGVisitStatus( dmlp );
 		}
 		
 		//step 2: get unary dimension-preserving non-candidate functions
-		Collection<String> unaryFcandTmp = CollectionUtils.subtract(allFCandKeys, fcandCounts.keySet());
+		Collection<String> unaryFcandTmp = fgraph.getReachableFunctions(fcandCounts.keySet());
 		HashSet<String> unaryFcands = new HashSet<String>();
 		if( !unaryFcandTmp.isEmpty() && UNARY_DIMS_PRESERVING_FUNS ) {
 			for( String tmp : unaryFcandTmp )
@@ -194,12 +192,12 @@ public class InterProceduralAnalysis
 		
 		//step 4: remove unused functions (e.g., inlined or never called)
 		if( REMOVE_UNUSED_FUNCTIONS ) {
-			removeUnusedFunctions( dmlp, allFCandKeys );
+			removeUnusedFunctions( dmlp, fgraph );
 		}
 		
 		//step 5: flag functions with loops for 'recompile-on-entry'
 		if( FLAG_FUNCTION_RECOMPILE_ONCE ) {
-			flagFunctionsForRecompileOnce( dmlp );
+			flagFunctionsForRecompileOnce( dmlp, fgraph );
 		}
 		
 		//step 6: set global data flow properties
@@ -871,22 +869,21 @@ public class InterProceduralAnalysis
 	// REMOVE UNUSED FUNCTIONS
 	//////
 
-	public void removeUnusedFunctions( DMLProgram dmlp, Set<String> fcandKeys )
+	public void removeUnusedFunctions( DMLProgram dmlp, FunctionCallGraph fgraph )
 		throws LanguageException
 	{
 		Set<String> fnamespaces = dmlp.getNamespaces().keySet();
-		for( String fnspace : fnamespaces  )
-		{
+		for( String fnspace : fnamespaces  ) {
 			HashMap<String, FunctionStatementBlock> fsbs = dmlp.getFunctionStatementBlocks(fnspace);
 			Iterator<Entry<String, FunctionStatementBlock>> iter = fsbs.entrySet().iterator();
-			while( iter.hasNext() )
-			{
+			while( iter.hasNext() ) {
 				Entry<String, FunctionStatementBlock> e = iter.next();
-				String fname = e.getKey();
-				String fKey = DMLProgram.constructFunctionKey(fnspace, fname);
-				//probe function candidates, remove if no candidate
-				if( !fcandKeys.contains(fKey) )
+				if( !fgraph.isReachableFunction(fnspace, e.getKey()) ) {
 					iter.remove();
+					if( LOG.isDebugEnabled() )
+						LOG.debug("IPA: Removed unused function: " + 
+							DMLProgram.constructFunctionKey(fnspace, e.getKey()));
+				}
 			}
 		}
 	}
@@ -902,17 +899,20 @@ public class InterProceduralAnalysis
 	 * @param dmlp the DML program
 	 * @throws LanguageException if LanguageException occurs
 	 */
-	public void flagFunctionsForRecompileOnce( DMLProgram dmlp ) 
+	public void flagFunctionsForRecompileOnce( DMLProgram dmlp, FunctionCallGraph fgraph ) 
 		throws LanguageException
 	{
 		for (String namespaceKey : dmlp.getNamespaces().keySet())
 			for (String fname : dmlp.getFunctionStatementBlocks(namespaceKey).keySet())
 			{
 				FunctionStatementBlock fsblock = dmlp.getFunctionStatementBlock(namespaceKey,fname);
-				if( rFlagFunctionForRecompileOnce( fsblock, false ) ) 
+				if( !fgraph.isRecursiveFunction(namespaceKey, fname) &&
+					rFlagFunctionForRecompileOnce( fsblock, false ) ) 
 				{
 					fsblock.setRecompileOnce( true ); 
-					LOG.debug("IPA: FUNC flagged for recompile-once: " + DMLProgram.constructFunctionKey(namespaceKey, fname));
+					if( LOG.isDebugEnabled() )
+						LOG.debug("IPA: FUNC flagged for recompile-once: " + 
+							DMLProgram.constructFunctionKey(namespaceKey, fname));
 				}
 			}
 	}

@@ -107,6 +107,14 @@ public class DMLProgram
 		return namespaceProgram._functionBlocks;
 	}
 	
+	public boolean hasFunctionStatementBlocks() {
+		boolean ret = false;
+		for( DMLProgram nsProg : _namespaces.values() )
+			ret |= !nsProg._functionBlocks.isEmpty();
+		
+		return ret;
+	}
+	
 	public ArrayList<FunctionStatementBlock> getFunctionStatementBlocks() 
 		throws LanguageException
 	{

@@ -21,12 +21,12 @@ package org.apache.sysml.utils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 
 import org.apache.sysml.api.DMLException;
-import org.apache.sysml.hops.FunctionOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.VisitStatus;
 import org.apache.sysml.hops.HopsException;
@@ -35,6 +35,7 @@ import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.globalopt.gdfgraph.GDFLoopNode;
 import org.apache.sysml.hops.globalopt.gdfgraph.GDFNode;
 import org.apache.sysml.hops.globalopt.gdfgraph.GDFNode.NodeType;
+import org.apache.sysml.hops.ipa.FunctionCallGraph;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.ForStatement;
@@ -206,32 +207,28 @@ public class Explain
 		sb.append("\nPROGRAM\n");
 						
 		// Explain functions (if exists)
-		boolean firstFunction = true;
-		for (String namespace : prog.getNamespaces().keySet()) {
-			for (String fname : prog.getFunctionStatementBlocks(namespace).keySet()) {
-				if (firstFunction) {
-					sb.append("--FUNCTIONS\n");
-					firstFunction = false;
+		if( prog.hasFunctionStatementBlocks() ) {
+			sb.append("--FUNCTIONS\n");
+			
+			//show function call graph
+			sb.append("----FUNCTION CALL GRAPH\n");
+			sb.append("------MAIN PROGRAM\n");
+			FunctionCallGraph fgraph = new FunctionCallGraph(prog);
+			sb.append(explainFunctionCallGraph(fgraph, new HashSet<String>(), null, 3));
+		
+			//show individual functions
+			for (String namespace : prog.getNamespaces().keySet()) {
+				for (String fname : prog.getFunctionStatementBlocks(namespace).keySet()) {
+					FunctionStatementBlock fsb = prog.getFunctionStatementBlock(namespace, fname);
+					FunctionStatement fstmt = (FunctionStatement) fsb.getStatement(0);
 					
-					//show function call dag
-					sb.append("----FUNCTION CALL DAG\n");
-					sb.append("------MAIN PROGRAM\n");
-					HashSet<String> fstack = new HashSet<String>();
-					HashSet<String> lfset = new HashSet<String>();
-					for( StatementBlock sblk : prog.getStatementBlocks() )
-						sb.append(explainFunctionCallDag(sblk, fstack, lfset, 3));
-				}
-				
-				//show individual functions
-				FunctionStatementBlock fsb = prog.getFunctionStatementBlock(namespace, fname);
-				FunctionStatement fstmt = (FunctionStatement) fsb.getStatement(0);
-				
-				if (fstmt instanceof ExternalFunctionStatement)
-					sb.append("----EXTERNAL FUNCTION " + namespace + "::" + fname + "\n");
-				else {
-					sb.append("----FUNCTION " + namespace + "::" + fname + " [recompile="+fsb.isRecompileOnce()+"]\n");
-					for (StatementBlock current : fstmt.getBody())
-						sb.append(explainStatementBlock(current, 3));
+					if (fstmt instanceof ExternalFunctionStatement)
+						sb.append("----EXTERNAL FUNCTION " + namespace + "::" + fname + "\n");
+					else {
+						sb.append("----FUNCTION " + namespace + "::" + fname + " [recompile="+fsb.isRecompileOnce()+"]\n");
+						for (StatementBlock current : fstmt.getBody())
+							sb.append(explainStatementBlock(current, 3));
+					}
 				}
 			}
 		}
@@ -267,17 +264,15 @@ public class Explain
 		{
 			sb.append("--FUNCTIONS\n");
 			
-			//show function call dag
+			//show function call graph
 			if( !rtprog.getProgramBlocks().isEmpty() &&
 				rtprog.getProgramBlocks().get(0).getStatementBlock() != null )
 			{
-				sb.append("----FUNCTION CALL DAG\n");
+				sb.append("----FUNCTION CALL GRAPH\n");
 				sb.append("------MAIN PROGRAM\n");
 				DMLProgram prog = rtprog.getProgramBlocks().get(0).getStatementBlock().getDMLProg();
-				HashSet<String> fstack = new HashSet<String>();
-				HashSet<String> lfset = new HashSet<String>();
-				for( StatementBlock sblk : prog.getStatementBlocks() )
-					sb.append(explainFunctionCallDag(sblk, fstack, lfset, 3));
+				FunctionCallGraph fgraph = new FunctionCallGraph(prog);
+				sb.append(explainFunctionCallGraph(fgraph, new HashSet<String>(), null, 3));
 			}
 			
 			//show individual functions
@@ -932,68 +927,22 @@ public class Explain
 		return ret;
 	}
 
-	private static String explainFunctionCallDag(StatementBlock sb, HashSet<String> fstack, HashSet<String> lfset, int level) 
+	private static String explainFunctionCallGraph(FunctionCallGraph fgraph, HashSet<String> fstack, String fkey, int level) 
 		throws HopsException 
 	{
 		StringBuilder builder = new StringBuilder();
-		
-		if (sb instanceof WhileStatementBlock) {
-			WhileStatement ws = (WhileStatement)sb.getStatement(0);
-			for (StatementBlock current : ws.getBody())
-				builder.append(explainFunctionCallDag(current, fstack, lfset, level));
-		} 
-		else if (sb instanceof IfStatementBlock) {
-			IfStatement ifs = (IfStatement) sb.getStatement(0);
-			for (StatementBlock current : ifs.getIfBody())
-				builder.append(explainFunctionCallDag(current, fstack, lfset, level));
-			for (StatementBlock current : ifs.getElseBody())
-				builder.append(explainFunctionCallDag(current, fstack, lfset, level));
-		} 
-		else if (sb instanceof ForStatementBlock) {
-			ForStatement fs = (ForStatement)sb.getStatement(0);
-			for (StatementBlock current : fs.getBody())
-				builder.append(explainFunctionCallDag(current, fstack, lfset, level));
-		} 
-		else if (sb instanceof FunctionStatementBlock) {
-			FunctionStatement fsb = (FunctionStatement) sb.getStatement(0);
-			for (StatementBlock current : fsb.getBody())
-				builder.append(explainFunctionCallDag(current, fstack, lfset, level));
-		} 
-		else {
-			// For generic StatementBlock
-			ArrayList<Hop> hopsDAG = sb.get_hops();
-			if( hopsDAG != null && !hopsDAG.isEmpty() ) {
-				//function ops can only occur as root nodes of the dag
-				for( Hop h : hopsDAG )
-					if( h instanceof FunctionOp ){
-						FunctionOp fop = (FunctionOp) h;
-						String fkey = DMLProgram.constructFunctionKey(fop.getFunctionNamespace(), fop.getFunctionName());
-						//prevent redundant call edges
-						if( !lfset.contains(fkey) && !fop.getFunctionNamespace().equals(DMLProgram.INTERNAL_NAMESPACE) )
-						{
-							//recursively explain function call dag
-							if( !fstack.contains(fkey) ) {
-								fstack.add(fkey);
-								String offset = createOffset(level);
-								builder.append(offset + "--" + fkey + "\n");
-								FunctionStatementBlock fsb = sb.getDMLProg()
-										.getFunctionStatementBlock(fop.getFunctionNamespace(), fop.getFunctionName());
-								FunctionStatement fs = (FunctionStatement) fsb.getStatement(0);
-								HashSet<String> lfset2 = new HashSet<String>(); 
-								for( StatementBlock csb : fs.getBody() )
-									builder.append(explainFunctionCallDag(csb, fstack, lfset2, level+1));
-								fstack.remove(fkey);
-							}
-							//recursive function call
-							else {
-								String offset = createOffset(level);
-								builder.append(offset + "-->" + fkey + " (recursive)\n");
-							}
-							
-							//mark as visited for current function call context
-							lfset.add( fkey );
-						}
-					}
+		String offset = createOffset(level);
+		Collection<String> cfkeys = fgraph.getCalledFunctions(fkey);
+		if( cfkeys != null ) {
+			for( String cfkey : cfkeys ) {
+				if( fstack.contains(cfkey) && fgraph.isRecursiveFunction(cfkey) )
+					builder.append(offset + "--" + cfkey + " (recursive)\n");
+				else {
+					fstack.add(cfkey);
+					builder.append(offset + "--" + cfkey + "\n");
+					builder.append(explainFunctionCallGraph(fgraph, fstack, cfkey, level+1));
+					fstack.remove(cfkey);
+				}
 			}
 		}
 

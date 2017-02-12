@@ -345,6 +345,9 @@ public class Statistics
 		hopRecompilePred.set(0);
 		hopRecompileSB.set(0);
 		
+		funRecompiles.set(0);
+		funRecompileTime.set(0);
+		
 		parforOptCount = 0;
 		parforOptTime = 0;
 		parforInitTime = 0;

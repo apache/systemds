@@ -84,8 +84,6 @@ import jcuda.jcudnn.cudnnTensorDescriptor;
 import jcuda.jcusparse.JCusparse;
 import jcuda.jcusparse.cusparseHandle;
 
-import java.util.Vector;
-
 //FIXME move could to respective instructions, this is not a block library
 public class LibMatrixCUDA {
 
@@ -992,12 +990,6 @@ public class LibMatrixCUDA {
 	//****************  UNARY AGGREGATE Functions ************************/
 	//********************************************************************/
 
-	/**
-	 * Direction of reduction for aggregate binary operations
-	 */
-	private enum ReductionDirection{
-		ALL, ROW, COL, DIAG;
-	};
 
 	/**
 	 * Entry point to perform Unary aggregate operations on the GPU.
@@ -1436,7 +1428,7 @@ public class LibMatrixCUDA {
 		final int MAX_BLOCKS = getMaxBlocks();
 		final int WARP_SIZE = getWarpSize();
 		int threads = Math.min(cols, MAX_THREADS);
-		int blocks = cols/MAX_THREADS;
+		int blocks = Math.min(cols/MAX_THREADS, MAX_BLOCKS);
 		if (cols % MAX_THREADS != 0) blocks++;
 		int sharedMemSize = threads * Sizeof.DOUBLE;
 		if (threads <= WARP_SIZE){
@@ -2232,6 +2224,7 @@ public class LibMatrixCUDA {
 	 * @param rlen	row length
 	 * @param clen	column length
 	 */
+	@SuppressWarnings("unused")
 	private static void debugPrintMatrix(Pointer in, int rlen, int clen){
 		double[] data = new double[rlen * clen];
 		cudaMemcpy(Pointer.to(data), in, rlen*clen*Sizeof.DOUBLE, cudaMemcpyDeviceToHost);

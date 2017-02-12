@@ -1292,7 +1292,7 @@ public class SparkExecutionContext extends ExecutionContext
 	// The most expensive operation here is rdd.toDebugString() which can be a major hit because
 	// of unrolling lazy evaluation of Spark. Hence, it is guarded against it along with flag 'PRINT_EXPLAIN_WITH_LINEAGE' which is 
 	// enabled only through MLContext. This way, it doesnot affect our performance evaluation through non-MLContext path
-	@SuppressWarnings("deprecation")
+	@SuppressWarnings("unused")
 	private void setLineageInfoForExplain(SPInstruction inst, 
 			JavaPairRDD<?, ?> out, 
 			JavaPairRDD<?, ?> in1, String in1Name, 

@@ -51,33 +51,64 @@ public class TransformCSVFrameEncodeReadTest extends AutomatedTestBase
 	
 	@Test
 	public void testFrameReadMetaSingleNodeCSV() {
-		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", false);
+		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", false, false);
 	}
 	
 	@Test
 	public void testFrameReadMetaSparkCSV() {
-		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", false);
+		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", false, false);
 	}
 	
 	@Test
 	public void testFrameReadMetaHybridCSV() {
-		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "csv", false);
+		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "csv", false, false);
 	}
 	
 	@Test
 	public void testFrameParReadMetaSingleNodeCSV() {
-		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", true);
+		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", false, true);
 	}
 	
 	@Test
 	public void testFrameParReadMetaSparkCSV() {
-		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", true);
+		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", false, true);
 	}
 	
 	@Test
 	public void testFrameParReadMetaHybridCSV() {
-		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "csv", true);
+		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "csv", false, true);
 	}
+
+	@Test
+	public void testFrameReadSubMetaSingleNodeCSV() {
+		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", true, false);
+	}
+	
+	@Test
+	public void testFrameReadSubMetaSparkCSV() {
+		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", true, false);
+	}
+	
+	@Test
+	public void testFrameReadSubMetaHybridCSV() {
+		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "csv", true, false);
+	}
+	
+	@Test
+	public void testFrameParReadSubMetaSingleNodeCSV() {
+		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", true, true);
+	}
+	
+	@Test
+	public void testFrameParReadSubMetaSparkCSV() {
+		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", true, true);
+	}
+	
+	@Test
+	public void testFrameParReadSubMetaHybridCSV() {
+		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "csv", true, true);
+	}
+
 	
 	/**
 	 * 
@@ -85,7 +116,7 @@ public class TransformCSVFrameEncodeReadTest extends AutomatedTestBase
 	 * @param ofmt
 	 * @param dataset
 	 */
-	private void runTransformTest( RUNTIME_PLATFORM rt, String ofmt, boolean parRead )
+	private void runTransformTest( RUNTIME_PLATFORM rt, String ofmt, boolean subset, boolean parRead )
 	{
 		//set runtime platform
 		RUNTIME_PLATFORM rtold = rtplatform;
@@ -104,9 +135,10 @@ public class TransformCSVFrameEncodeReadTest extends AutomatedTestBase
 			getAndLoadTestConfiguration(TEST_NAME1);
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
+			int nrows = subset ? 4 : 13;
 			fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
 			programArgs = new String[]{"-explain", "-stats","-args", 
-				HOME + "input/" + DATASET, output("R") };
+				HOME + "input/" + DATASET, String.valueOf(nrows), output("R") };
 	
 			OptimizerUtils.ALLOW_FRAME_CSV_REBLOCK = true;
 			runTest(true, false, null, -1); 

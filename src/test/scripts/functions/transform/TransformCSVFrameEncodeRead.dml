@@ -24,6 +24,7 @@ jspec = "{\"ids\": true, \"recode\": [1,2,3]}";
 
 [X, M] = transformencode(target=F1, spec=jspec);
 
+M = M[1:$2,]
 print(toString(M))
-write(M, $2, format="csv");
+write(M, $3, format="csv");
 

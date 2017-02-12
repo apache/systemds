@@ -382,19 +382,21 @@ public class IOUtilFunctions
 	{
 		LongWritable key = new LongWritable();
 		Text value = new Text();
-		int ncol = -1;
+		int ncol = -1; 
 		for( int i=0; i<splits.length && ncol<=0; i++ ) {
 			RecordReader<LongWritable, Text> reader = 
 					informat.getRecordReader(splits[i], job, Reporter.NULL);
 			try {
 				if( reader.next(key, value) ) {
+					boolean hasValue = true;
 					if( value.toString().startsWith(TfUtils.TXMTD_MVPREFIX) )
-						reader.next(key, value);
+						hasValue = reader.next(key, value);
 					if( value.toString().startsWith(TfUtils.TXMTD_NDPREFIX) )
-						reader.next(key, value);
+						hasValue = reader.next(key, value);
 					String row = value.toString().trim();
-					if( !row.isEmpty() )
+					if( hasValue && !row.isEmpty() ) {
 						ncol = IOUtilFunctions.countTokensCSV(row, delim);
+					}
 				}
 			}
 			finally {

@@ -111,16 +111,16 @@ class LogisticRegressionModel(override val uid: String)(
  */
 object LogisticRegressionExample {
   import org.apache.spark.{ SparkConf, SparkContext }
+  import org.apache.spark.sql._
   import org.apache.spark.sql.types._
   import org.apache.spark.ml.linalg.Vectors
   import org.apache.spark.ml.feature.LabeledPoint
 
   def main(args: Array[String]) = {
-    val sparkConf: SparkConf = new SparkConf();
-    val sc: SparkContext = new SparkContext("local", "TestLocal", sparkConf);
-    val sqlContext = new org.apache.spark.sql.SQLContext(sc);
+    val sparkSession = SparkSession.builder().master("local").appName("TestLocal").getOrCreate();
+    val sc: SparkContext = sparkSession.sparkContext;
 
-    import sqlContext.implicits._
+    import sparkSession.implicits._
     val training = sc.parallelize(Seq(
       LabeledPoint(1.0, Vectors.dense(1.0, 0.0, 3.0)),
       LabeledPoint(1.0, Vectors.dense(1.0, 0.4, 2.1)),
@@ -130,7 +130,7 @@ object LogisticRegressionExample {
       LabeledPoint(1.0, Vectors.dense(1.0, 0.0, 2.3))))
     val lr = new LogisticRegression("log", sc)
     val lrmodel = lr.fit(training.toDF)
-    // lrmodel.mloutput.getDF(sqlContext, "B_out").show()
+    // lrmodel.mloutput.getDF(sparkSession, "B_out").show()
 
     val testing = sc.parallelize(Seq(
       LabeledPoint(1.0, Vectors.dense(1.0, 0.0, 3.0)),

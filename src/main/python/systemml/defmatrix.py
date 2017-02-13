@@ -28,7 +28,7 @@ try:
     import py4j.java_gateway
     from py4j.java_gateway import JavaObject
     from pyspark import SparkContext
-    from pyspark.sql import DataFrame, SQLContext
+    from pyspark.sql import DataFrame, SparkSession
     import pyspark.mllib.common
 except ImportError:
     raise ImportError('Unable to import `pyspark`. Hint: Make sure you are running with PySpark.')
@@ -46,7 +46,7 @@ def setSparkContext(sc):
         SparkContext
     """
     matrix.sc = sc
-    matrix.sqlContext = SQLContext(sc)
+    matrix.sparkSession = SparkSession.builder.getOrCreate()
     matrix.ml = MLContext(matrix.sc)
 
 
@@ -290,7 +290,7 @@ def solve(A, b):
     >>> import numpy as np
     >>> from sklearn import datasets
     >>> import SystemML as sml
-    >>> from pyspark.sql import SQLContext
+    >>> from pyspark.sql import SparkSession
     >>> diabetes = datasets.load_diabetes()
     >>> diabetes_X = diabetes.data[:, np.newaxis, 2]
     >>> X_train = diabetes_X[:-20]
@@ -523,7 +523,7 @@ class matrix(object):
         if isinstance(self.eval_data, Matrix):
             self.eval_data = self.eval_data.toDF()
             return self.eval_data
-        self.eval_data = matrix.sqlContext.createDataFrame(self.toPandas())
+        self.eval_data = matrix.sparkSession.createDataFrame(self.toPandas())
         return self.eval_data
 
     def save(self, file, format='csv'):

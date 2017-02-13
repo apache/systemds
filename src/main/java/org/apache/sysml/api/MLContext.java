@@ -37,7 +37,7 @@ import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.rdd.RDD;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
-import org.apache.spark.sql.SQLContext;
+import org.apache.spark.sql.SparkSession;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.api.jmlc.JMLCUtils;
 import org.apache.sysml.api.mlcontext.ScriptType;
@@ -101,9 +101,9 @@ import org.apache.sysml.utils.Statistics;
  * <p>
  * Create input DataFrame from CSV file and potentially perform some feature transformation
  * <pre><code>
- * scala&gt; val W = sqlContext.load("com.databricks.spark.csv", Map("path" -&gt; "W.csv", "header" -&gt; "false"))
- * scala&gt; val H = sqlContext.load("com.databricks.spark.csv", Map("path" -&gt; "H.csv", "header" -&gt; "false"))
- * scala&gt; val V = sqlContext.load("com.databricks.spark.csv", Map("path" -&gt; "V.csv", "header" -&gt; "false"))
+ * scala&gt; val W = sparkSession.load("com.databricks.spark.csv", Map("path" -&gt; "W.csv", "header" -&gt; "false"))
+ * scala&gt; val H = sparkSession.load("com.databricks.spark.csv", Map("path" -&gt; "H.csv", "header" -&gt; "false"))
+ * scala&gt; val V = sparkSession.load("com.databricks.spark.csv", Map("path" -&gt; "V.csv", "header" -&gt; "false"))
  * </code></pre>
  * <p>
  * Create MLContext
@@ -1578,7 +1578,7 @@ public class MLContext {
 	// TODO: Add additional create to provide sep, missing values, etc. for CSV
 	/**
 	 * Experimental API: Might be discontinued in future release
-	 * @param sqlContext the SQLContext
+	 * @param sparkSession the Spark Session
 	 * @param filePath the file path
 	 * @param format the format
 	 * @return the MLMatrix
@@ -1586,12 +1586,12 @@ public class MLContext {
 	 * @throws DMLException if DMLException occurs
 	 * @throws ParseException if ParseException occurs
 	 */
-	public MLMatrix read(SQLContext sqlContext, String filePath, String format) throws IOException, DMLException, ParseException {
+	public MLMatrix read(SparkSession sparkSession, String filePath, String format) throws IOException, DMLException, ParseException {
 		this.reset();
 		this.registerOutput("output");
 		MLOutput out = this.executeScript("output = read(\"" + filePath + "\", format=\"" + format + "\"); " + MLMatrix.writeStmt);
 		JavaPairRDD<MatrixIndexes, MatrixBlock> blocks = out.getBinaryBlockedRDD("output");
 		MatrixCharacteristics mcOut = out.getMatrixCharacteristics("output");
-		return MLMatrix.createMLMatrix(this, sqlContext, blocks, mcOut);
+		return MLMatrix.createMLMatrix(this, sparkSession, blocks, mcOut);
 	}	
 }

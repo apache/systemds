@@ -28,6 +28,7 @@ import org.apache.spark.ml.evaluation.BinaryClassificationEvaluator
 import org.apache.spark.ml.feature.{HashingTF, Tokenizer}
 import org.apache.spark.ml.tuning.{ParamGridBuilder, CrossValidator}
 import org.apache.spark.ml.linalg.Vector
+import org.apache.spark.sql._
 import scala.reflect.runtime.universe._
 
 case class LabeledDocument[T:TypeTag](id: Long, text: String, label: Double)
@@ -40,9 +41,9 @@ class LogisticRegressionSuite extends FunSuite with WrapperSparkContext with Mat
   
   test("run logistic regression with default") {
     //Make sure system ml home set when run wrapper
-    val newsqlContext = new org.apache.spark.sql.SQLContext(sc);
+    val newSparkSession = SparkSession.builder().master("local").appName("TestLocal").getOrCreate();
 
-    import newsqlContext.implicits._
+    import newSparkSession.implicits._
     val training = sc.parallelize(Seq(
       LabeledPoint(1.0, Vectors.dense(1.0, 0.0, 3.0)),
       LabeledPoint(1.0, Vectors.dense(1.0, 0.4, 2.1)),
@@ -62,8 +63,8 @@ class LogisticRegressionSuite extends FunSuite with WrapperSparkContext with Mat
   
   test("test logistic regression with mlpipeline"){
     //Make sure system ml home set when run wrapper
-    val newsqlContext = new org.apache.spark.sql.SQLContext(sc);
-    import newsqlContext.implicits._
+    val newSparkSession = SparkSession.builder().master("local").appName("TestLocal").getOrCreate();
+    import newSparkSession.implicits._
     val training = sc.parallelize(Seq(
 	     LabeledDocument(0L, "a b c d e spark", 1.0),
 	     LabeledDocument(1L, "b d", 2.0),

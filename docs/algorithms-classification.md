@@ -1236,8 +1236,7 @@ val prediction = model.transform(X_test_df)
 SystemML Language Reference for details.
 
 **probabilities**: Location (on HDFS) to store class membership
-    probabilities for a held-out test set. Note that this is an
-    optional argument.
+    probabilities for a held-out test set.
 
 **accuracy**: Location (on HDFS) to store the training accuracy during
     learning and testing accuracy from a held-out test set

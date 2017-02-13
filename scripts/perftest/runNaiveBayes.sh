@@ -35,6 +35,6 @@ echo "NaiveBayes train on "$1": "$ttrain >> times.txt
 
 #predict
 tstart=$SECONDS
-${CMD} -f ../algorithms/naive-bayes-predict.dml $DASH-explain $DASH-stats $DASH-nvargs X=$1_test Y=$2_test prior=${BASE}/prior conditionals=${BASE}/conditionals fmt="csv"
+${CMD} -f ../algorithms/naive-bayes-predict.dml $DASH-explain $DASH-stats $DASH-nvargs X=$1_test Y=$2_test prior=${BASE}/prior conditionals=${BASE}/conditionals fmt="csv" probabilities=${BASE}/probabilities
 tpredict=$(($SECONDS - $tstart - 3))
 echo "NaiveBayes predict on "$1": "$tpredict >> times.txt

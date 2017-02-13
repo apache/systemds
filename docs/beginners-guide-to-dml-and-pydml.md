@@ -283,14 +283,15 @@ is 0-based.*
 </div>
 
 <div data-lang="m.txt.mtd" markdown="1">
-	{ 
-	    "data_type": "matrix"
-	    ,"value_type": "double"
-	    ,"rows": 4
-	    ,"cols": 3
-	    ,"nnz": 6
-	    ,"format": "text"
-	    ,"description": { "author": "SystemML" } 
+	{
+	    "data_type": "matrix",
+	    "value_type": "double",
+	    "rows": 4,
+	    "cols": 3,
+	    "nnz": 6,
+	    "format": "text",
+	    "author": "SystemML",
+	    "created": "2017-01-01 00:00:01 PST"
 	}
 </div>
 
@@ -313,16 +314,17 @@ is 0-based.*
 </div>
 
 <div data-lang="m.csv.mtd" markdown="1">
-	{ 
-	    "data_type": "matrix"
-	    ,"value_type": "double"
-	    ,"rows": 4
-	    ,"cols": 3
-	    ,"nnz": 6
-	    ,"format": "csv"
-	    ,"header": false
-	    ,"sep": ","
-	    ,"description": { "author": "SystemML" } 
+	{
+	    "data_type": "matrix",
+	    "value_type": "double",
+	    "rows": 4,
+	    "cols": 3,
+	    "nnz": 6,
+	    "format": "csv",
+	    "header": false,
+	    "sep": ",",
+	    "author": "SystemML",
+	    "created": "2017-01-01 00:00:01 PST"
 	}
 </div>
 
@@ -331,16 +333,17 @@ is 0-based.*
 </div>
 
 <div data-lang="m.binary.mtd" markdown="1">
-	{ 
-	    "data_type": "matrix"
-	    ,"value_type": "double"
-	    ,"rows": 4
-	    ,"cols": 3
-	    ,"rows_in_block": 1000
-	    ,"cols_in_block": 1000
-	    ,"nnz": 6
-	    ,"format": "binary"
-	    ,"description": { "author": "SystemML" } 
+	{
+	    "data_type": "matrix",
+	    "value_type": "double",
+	    "rows": 4,
+	    "cols": 3,
+	    "rows_in_block": 1000,
+	    "cols_in_block": 1000,
+	    "nnz": 6,
+	    "format": "binary",
+	    "author": "SystemML",
+	    "created": "2017-01-01 00:00:01 PST"
 	}
 </div>
 

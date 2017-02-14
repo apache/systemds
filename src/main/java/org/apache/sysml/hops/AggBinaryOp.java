@@ -437,17 +437,12 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 			checkAndSetInvalidCPDimsAndSize();
 		}
 		
-		//spark-specific decision refinement (execute binary aggregate w/ left spark input and 
+		//spark-specific decision refinement (execute binary aggregate w/ left or right spark input and 
 		//single parent also in spark because it's likely cheap and reduces data transfer)
-		if( _etype == ExecType.CP && _etypeForced != ExecType.CP	
-			&& !(getInput().get(0) instanceof ReorgOp && ((ReorgOp)getInput().get(0)).getOp()==ReOrgOp.TRANSPOSE)
-			&& !(getInput().get(0) instanceof DataOp)  //input is not checkpoint
-			&& getInput().get(0).getParent().size()==1 //bagg is only parent	
-			&& !getInput().get(0).areDimsBelowThreshold() 
-			&& getInput().get(0).optFindExecType() == ExecType.SPARK
-			&& getInput().get(0).getOutputMemEstimate()>getOutputMemEstimate() )    
+		if( _etype == ExecType.CP && _etypeForced != ExecType.CP &&
+			(isApplicableForTransitiveSparkExecType(true) || isApplicableForTransitiveSparkExecType(false)) )    
 		{
-			//pull unary aggregate into spark 
+			//pull binary aggregate into spark 
 			_etype = ExecType.SPARK;
 		}
 		
@@ -457,6 +452,18 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		}
 		
 		return _etype;
+	}
+	
+	private boolean isApplicableForTransitiveSparkExecType(boolean left) 
+		throws HopsException 
+	{
+		int index = left ? 0 : 1;
+		return !(getInput().get(index) instanceof DataOp && ((DataOp)getInput().get(index)).requiresCheckpoint())  
+			&& !(getInput().get(index) instanceof ReorgOp && ((ReorgOp)getInput().get(index)).getOp()==ReOrgOp.TRANSPOSE)
+			&& getInput().get(index).getParent().size()==1 //bagg is only parent	
+			&& !getInput().get(index).areDimsBelowThreshold() 
+			&& getInput().get(index).optFindExecType() == ExecType.SPARK
+			&& getInput().get(index).getOutputMemEstimate()>getOutputMemEstimate();
 	}
 	
 	/**

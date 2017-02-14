@@ -51,7 +51,7 @@ else
 {
    OX1 = X[,1:y-1]
    OX2 = X[,y+1:ncol(X)]
-   OX = append (OX1, OX2)
+   OX = cbind (OX1, OX2)
    OY = X[,y]
 }
 

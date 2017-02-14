@@ -51,7 +51,7 @@ num_features = ncol(X)
 
 if (intercept == 1) {
  ones  = Rand(rows=num_samples, cols=1, min=1, max=1, pdf="uniform");
- X = append(X, ones);
+ X = cbind(X, ones);
 }
 
 iter_class = 1
@@ -60,7 +60,7 @@ Y_local = 2 * ppred(Y, iter_class, "==") - 1
 w_class = Rand(rows=num_features, cols=1, min=0, max=0, pdf="uniform")
 if (intercept == 1) {
  zero_matrix = Rand(rows=1, cols=1, min=0.0, max=0.0);
- w_class = t(append(t(w_class), zero_matrix));
+ w_class = t(cbind(t(w_class), zero_matrix));
 }
 
 g_old = t(X) %*% Y_local
@@ -123,7 +123,7 @@ while(iter_class <= num_classes){
  w_class = Rand(rows=ncol(X), cols=1, min=0, max=0, pdf="uniform")
  if (intercept == 1) {
  	zero_matrix = Rand(rows=1, cols=1, min=0.0, max=0.0);
- 	w_class = t(append(t(w_class), zero_matrix));
+ 	w_class = t(cbind(t(w_class), zero_matrix));
  }
  
  g_old = t(X) %*% Y_local
@@ -177,7 +177,7 @@ while(iter_class <= num_classes){
   iter = iter + 1
  }
 
- w = append(w, w_class) 
+ w = cbind(w, w_class) 
  iter_class = iter_class + 1
 }
 

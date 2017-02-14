@@ -28,7 +28,7 @@ maxiter = $5;
 
 if( intercept == 1 ){
    ones = matrix(1, nrow(X), 1); 
-   X = append(X, ones);
+   X = cbind(X, ones);
 }
 
 r = -(t(X) %*% y);

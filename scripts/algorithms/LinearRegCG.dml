@@ -110,7 +110,7 @@ zero_cell = matrix (0, rows = 1, cols = 1);
 m_ext = m;
 if (intercept_status == 1 | intercept_status == 2)  # add the intercept column
 {
-    X = append (X, ones_n);
+    X = cbind (X, ones_n);
     m_ext = ncol (X);
 }
 
@@ -274,7 +274,7 @@ if (fileO != " ") {
 print ("Writing the output matrix...");
 
 if (intercept_status == 2) {
-    beta_out = append (beta, beta_unscaled);
+    beta_out = cbind (beta, beta_unscaled);
 } else {
     beta_out = beta;
 }

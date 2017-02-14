@@ -117,9 +117,9 @@ for (i in 1:K){
 
 V_top_indices = V_top_indices * (V_top_values > 0);
 
-# append users as a first column
-V_top_indices = append (X[,1], V_top_indices);
-V_top_values = append (X[,1], V_top_values);
+# cbind users as a first column
+V_top_indices = cbind (X[,1], V_top_indices);
+V_top_values = cbind (X[,1], V_top_values);
 
 # writing top K elements
 write (V_top_indices, fileY, format = fmtO);

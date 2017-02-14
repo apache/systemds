@@ -82,7 +82,7 @@ num_features = ncol(X)
 
 if (intercept == 1) {
 	ones  = matrix(1, rows=num_samples, cols=1);
-	X = append(X, ones);
+	X = cbind(X, ones);
 }
 
 num_rows_in_w = num_features
@@ -97,7 +97,7 @@ parfor(iter_class in 1:num_classes){
 	w_class = matrix(0, rows=num_features, cols=1)
 	if (intercept == 1) {
 		zero_matrix = matrix(0, rows=1, cols=1);
-		w_class = t(append(t(w_class), zero_matrix));
+		w_class = t(cbind(t(w_class), zero_matrix));
 	}
  
 	g_old = t(X) %*% Y_local
@@ -164,7 +164,7 @@ parfor(iter_class in 1:num_classes){
 extra_model_params = matrix(0, rows=2, cols=ncol(w))
 extra_model_params[1, 1] = intercept
 extra_model_params[2, 1] = dimensions
-w = t(append(t(w), t(extra_model_params)))
+w = t(cbind(t(w), t(extra_model_params)))
 write(w, $model, format=cmdLine_fmt)
 
 debug_str = "# Class, Iter, Obj"

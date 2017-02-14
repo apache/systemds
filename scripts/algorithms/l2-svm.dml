@@ -86,7 +86,7 @@ dimensions = ncol(X)
 
 if (intercept == 1) {
 	ones  = matrix(1, rows=num_samples, cols=1)
-	X = append(X, ones);
+	X = cbind(X, ones);
 }
 
 num_rows_in_w = dimensions
@@ -157,7 +157,7 @@ extra_model_params[2,1] = negative_label
 extra_model_params[3,1] = intercept
 extra_model_params[4,1] = dimensions
 
-w = t(append(t(w), t(extra_model_params)))
+w = t(cbind(t(w), t(extra_model_params)))
 write(w, $model, format=cmdLine_fmt)
 
 logFile = $Log

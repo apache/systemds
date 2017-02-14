@@ -184,7 +184,7 @@ ones_r = 1 + zeros_r;
 
 if (intercept_status == 1 | intercept_status == 2)  # add the intercept column
 {
-    X = append (X, ones_r);
+    X = cbind (X, ones_r);
     num_features = ncol (X);
 }
 
@@ -234,7 +234,7 @@ if (max_iteration_CG == 0) {
 if (distribution_type == 2 & ncol(Y) == 1)
 {
     is_Y_negative = ppred (Y, bernoulli_No_label, "==");
-    Y = append (1 - is_Y_negative, is_Y_negative);
+    Y = cbind (1 - is_Y_negative, is_Y_negative);
     count_Y_negative = sum (is_Y_negative);
     if (count_Y_negative == 0) {
         stop ("GLM Input Error: all Y-values encode Bernoulli YES-label, none encode NO-label");
@@ -445,7 +445,7 @@ if (termination_code == 1) {
 ssX_beta = diag (scale_X) %*% beta;
 ssX_beta [num_features, ] = ssX_beta [num_features, ] + t(shift_X) %*% beta;
 if (intercept_status == 2) {
-    beta_out = append (ssX_beta, beta);
+    beta_out = cbind (ssX_beta, beta);
 } else {
     beta_out = ssX_beta;
 }

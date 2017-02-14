@@ -67,5 +67,5 @@ if ($addNoise == TRUE) {
     Y = Y + noise
 }
 
-Z = append(X,Y)
+Z = cbind(X,Y)
 write(Z, $output, format=$format)

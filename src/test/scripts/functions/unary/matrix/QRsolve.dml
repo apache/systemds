@@ -30,7 +30,7 @@ b = read($2);
 m = nrow(A);
 n = ncol(A);
 
-Ab = append(A,b);
+Ab = cbind(A,b);
 
 [Hb,Rb] = qr(Ab);
 

@@ -348,7 +348,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 			
 				# sort cur feature by impurity
 				cur_distinct_values = seq (1, nrow (cur_label_counts));
-				cur_distinct_values_impurity = append (cur_distinct_values, impurity);
+				cur_distinct_values_impurity = cbind (cur_distinct_values, impurity);
 				cur_feature_sorted = order (target = cur_distinct_values_impurity, by = 2, decreasing = FALSE);
 				P = table (cur_distinct_values, cur_feature_sorted); # permutation matrix
 				label_counts_sorted = P %*% cur_label_counts;
@@ -587,14 +587,14 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 	##### PREPARE MODEL FOR LARGE NODES
 	if (num_cur_nodes_large > 0) {
 		cur_Q_large = removeEmpty (target = cur_Q_large, margin = "cols");
-		if (as.scalar (cur_Q_large[1,1]) != 0) Q_large = append (Q_large, cur_Q_large);
+		if (as.scalar (cur_Q_large[1,1]) != 0) Q_large = cbind (Q_large, cur_Q_large);
 		cur_NC_large = removeEmpty (target = cur_NC_large, margin = "cols");
-		if (as.scalar (cur_NC_large[1,1]) != 0) NC_large = append (NC_large, cur_NC_large);
+		if (as.scalar (cur_NC_large[1,1]) != 0) NC_large = cbind (NC_large, cur_NC_large);
 	
 		cur_F_large = removeEmpty (target = cur_F_large, margin = "cols");
-		if (as.scalar (cur_F_large[1,1]) != 0) F_large = append (F_large, cur_F_large);
+		if (as.scalar (cur_F_large[1,1]) != 0) F_large = cbind (F_large, cur_F_large);
 		cur_S_large = removeEmpty (target = cur_S_large, margin = "cols");
-		if (as.scalar (cur_S_large[1,1]) != 0) S_large = append (S_large, cur_S_large);	
+		if (as.scalar (cur_S_large[1,1]) != 0) S_large = cbind (S_large, cur_S_large);	
 			
 		num_cur_nodes_large_pre = 2 * num_cur_nodes_large;
 		if (as.scalar (cur_Q_large[1,1]) == 0) {
@@ -760,7 +760,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 						}
 						# sort cur feature by impurity
 						cur_distinct_values = seq (1, nrow (cur_label_counts));
-						cur_distinct_values_impurity = append (cur_distinct_values, impurity);
+						cur_distinct_values_impurity = cbind (cur_distinct_values, impurity);
 						cur_feature_sorted = order (target = cur_distinct_values_impurity, by = 2, decreasing = FALSE);
 						P = table (cur_distinct_values, cur_feature_sorted); # permutation matrix
 						label_counts_sorted = P %*% cur_label_counts;
@@ -979,10 +979,10 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 			}
 		
 			cur_Q = removeEmpty (target = cur_Q, margin = "cols");
-			Q = append (Q, cur_Q);
-			NC = append (NC, cur_NC);
-			F = append (F, cur_F);
-			S = append (S, cur_S);
+			Q = cbind (Q, cur_Q);
+			NC = cbind (NC, cur_NC);
+			F = cbind (F, cur_F);
+			S = cbind (S, cur_S);
 		
 			num_cur_nodes_pre = 2 * num_cur_nodes;
 			if (as.scalar (cur_Q[1,1]) == 0) {
@@ -1002,14 +1002,14 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 	##### PREPARE MODEL FOR SMALL NODES	
 	if (num_cur_nodes_small > 0) {	# small nodes already processed
 		cur_Q_small = removeEmpty (target = cur_Q_small, margin = "cols");
-		if (as.scalar (cur_Q_small[1,1]) != 0)  Q_small = append (Q_small, cur_Q_small);
+		if (as.scalar (cur_Q_small[1,1]) != 0)  Q_small = cbind (Q_small, cur_Q_small);
 		cur_NC_small = removeEmpty (target = cur_NC_small, margin = "cols");
-		if (as.scalar (cur_NC_small[1,1]) != 0)  NC_small = append (NC_small, cur_NC_small);
+		if (as.scalar (cur_NC_small[1,1]) != 0)  NC_small = cbind (NC_small, cur_NC_small);
 	
 		cur_F_small = removeEmpty (target = cur_F_small, margin = "cols");  
-		if (as.scalar (cur_F_small[1,1]) != 0)  F_small = append (F_small, cur_F_small);
+		if (as.scalar (cur_F_small[1,1]) != 0)  F_small = cbind (F_small, cur_F_small);
 		cur_S_small = removeEmpty (target = cur_S_small, margin = "cols"); 		
-		if (as.scalar (cur_S_small[1,1]) != 0)  S_small = append (S_small, cur_S_small);
+		if (as.scalar (cur_S_small[1,1]) != 0)  S_small = cbind (S_small, cur_S_small);
 
 		num_cur_nodes_small = 0; # reset
 	} 
@@ -1155,7 +1155,7 @@ if (no_large_internal_node) {
 } else if (no_small_internal_node) {
 	M1 = M1_large;
 } else {
-	M1 = append (M1_large, M1_small);
+	M1 = cbind (M1_large, M1_small);
 }
 
 if (no_large_leaf_node) {
@@ -1163,10 +1163,10 @@ if (no_large_leaf_node) {
 } else if (no_small_internal_node) {
 	M2 = M2_large;
 } else {
-	M2 = append (M2_large, M2_small);
+	M2 = cbind (M2_large, M2_small);
 }
 
-M = append (M1, M2);
+M = cbind (M1, M2);
 M = t (order (target = t (M), by = 1));
 
 # removing redundant subtrees

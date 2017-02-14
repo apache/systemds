@@ -118,7 +118,7 @@ T = ceil (T / num_bins);
 # print ("min(T) " + min(T) + " max(T) " + max(T));
 Y[,1] = T;
 
-O = append (Y, X);
+O = cbind (Y, X);
 write (O, fileO, format = fmtO);
 
 if (type == "cox") {

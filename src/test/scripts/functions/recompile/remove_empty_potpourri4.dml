@@ -27,7 +27,7 @@ D = matrix(3, rows=1000, cols=1);
 
 if(1==1){}
 
-tmp = append(X [, 1 : 2], B) * (C * (1 - D));
+tmp = cbind(X [, 1 : 2], B) * (C * (1 - D));
 E = removeEmpty (target = tmp, margin = "rows");
 
 X = removeEmpty (target = X * C, margin = "rows");

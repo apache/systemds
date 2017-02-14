@@ -101,7 +101,7 @@ Y = read (fileY);
 
 if (distribution_type == 2 & ncol(Y) == 1) {
 	is_Y_negative = (Y == bernoulli_No_label);
-	Y = append (1 - is_Y_negative, is_Y_negative);
+	Y = cbind (1 - is_Y_negative, is_Y_negative);
 	count_Y_negative = sum (is_Y_negative);
 	if (count_Y_negative == 0) {
 		stop ("StepGLM Input Error: all Y-values encode Bernoulli YES-label, none encode NO-label");
@@ -175,7 +175,7 @@ if (dir == "forward") {
 			if (as.scalar(columns_fixed[1,i]) == 0) {	
         
 				# Construct the feature matrix
-				X = append (X_global, X_orig[,i]);
+				X = cbind (X_global, X_orig[,i]);
         
 				[AIC_2] = glm (X, Y, intercept_status, num_features, columns_fixed_ordered, " ");
 				AICs[1,i] = AIC_2;
@@ -191,16 +191,16 @@ if (dir == "forward") {
 			}
 		}
     
-		# Append best found features (i.e., columns) to X_global
+		# cbind best found features (i.e., columns) to X_global
 		if (as.scalar(columns_fixed[1,column_best]) == 0) { # new best feature found
 			print ("Best AIC " + AIC_best + " achieved with feature: " + column_best);
 			columns_fixed[1,column_best] = 1;
-			columns_fixed_ordered = append (columns_fixed_ordered, as.matrix(column_best));
+			columns_fixed_ordered = cbind (columns_fixed_ordered, as.matrix(column_best));
 			if (ncol(columns_fixed_ordered) == num_features) { # all features examined
-				X_global = append (X_global, X_orig[,column_best]);
+				X_global = cbind (X_global, X_orig[,column_best]);
 				continue = FALSE;
 			} else {
-				X_global = append (X_global, X_orig[,column_best]);
+				X_global = cbind (X_global, X_orig[,column_best]);
 			}
 		} else {
 		continue = FALSE;
@@ -262,7 +262,7 @@ glm = function (Matrix[Double] X, Matrix[Double] Y, Int intercept_status, Double
     # Introduce the intercept, shift and rescale the columns of X if needed
                   
     if (intercept_status == 1 | intercept_status == 2) { # add the intercept column
-		X = append (X, ones_r);
+		X = cbind (X, ones_r);
         num_features = ncol (X);
 	}
                   
@@ -484,7 +484,7 @@ glm = function (Matrix[Double] X, Matrix[Double] Y, Int intercept_status, Double
 				ssX_beta = diag (scale_X) %*% beta;
                 ssX_beta [num_features, ] = ssX_beta [num_features, ] + t(shift_X) %*% beta;
 				if (intercept_status == 2) {
-					beta_out = append (ssX_beta, beta);
+					beta_out = cbind (ssX_beta, beta);
                 } else {
 					beta_out = ssX_beta;
                 }
@@ -568,7 +568,7 @@ glm = function (Matrix[Double] X, Matrix[Double] Y, Int intercept_status, Double
 		
 				if (intercept_status != 0) {
 		
-					Selected_ext = append (Selected, as.matrix (last));			
+					Selected_ext = cbind (Selected, as.matrix (last));			
 					P1 = table (seq (1, ncol (Selected_ext)), t(Selected_ext)); 
 
 					if (intercept_status == 2) {
@@ -580,8 +580,8 @@ glm = function (Matrix[Double] X, Matrix[Double] Y, Int intercept_status, Double
 				
 						if (max_selected < num_features_orig) {
 						
-							P2_ssX_beta = append (P2_ssX_beta, matrix (0, rows=1, cols=(num_features_orig - max_selected)));
-							P2_beta = append (P2_beta, matrix (0, rows=1, cols=(num_features_orig - max_selected)));
+							P2_ssX_beta = cbind (P2_ssX_beta, matrix (0, rows=1, cols=(num_features_orig - max_selected)));
+							P2_beta = cbind (P2_beta, matrix (0, rows=1, cols=(num_features_orig - max_selected)));
 							
 							P2_ssX_beta[1, num_features_orig+1] = P2_ssX_beta[1, max_selected + 1]; 
 							P2_ssX_beta[1, max_selected + 1] = 0;
@@ -590,7 +590,7 @@ glm = function (Matrix[Double] X, Matrix[Double] Y, Int intercept_status, Double
 							P2_beta[1, max_selected + 1] = 0;
 
 						}
-						beta_out = append (t(P2_ssX_beta), t(P2_beta));
+						beta_out = cbind (t(P2_ssX_beta), t(P2_beta));
 				
 					} else {
 			
@@ -598,7 +598,7 @@ glm = function (Matrix[Double] X, Matrix[Double] Y, Int intercept_status, Double
 						P2_beta = colSums (P1_beta);
 				
 						if (max_selected < num_features_orig) {
-							P2_beta = append (P2_beta, matrix (0, rows=1, cols=(num_features_orig - max_selected)));
+							P2_beta = cbind (P2_beta, matrix (0, rows=1, cols=(num_features_orig - max_selected)));
 							P2_beta[1, num_features_orig+1] = P2_beta[1, max_selected + 1] ; 
 							P2_beta[1, max_selected + 1] = 0;
 						}
@@ -612,7 +612,7 @@ glm = function (Matrix[Double] X, Matrix[Double] Y, Int intercept_status, Double
 					P2_beta = colSums (P1_beta);	
 
 					if (max_selected < num_features_orig) {
-						P2_beta = append (P2_beta, matrix (0, rows=1, cols=(num_features_orig - max_selected)));
+						P2_beta = cbind (P2_beta, matrix (0, rows=1, cols=(num_features_orig - max_selected)));
 					}		
 
 					beta_out = t(P2_beta);	

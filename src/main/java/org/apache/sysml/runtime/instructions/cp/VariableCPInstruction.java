@@ -22,7 +22,12 @@ package org.apache.sysml.runtime.instructions.cp;
 import java.io.IOException;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.LocalFileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.UnaryCP;
 import org.apache.sysml.parser.Expression.DataType;
@@ -37,6 +42,7 @@ import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.io.WriterMatrixMarket;
 import org.apache.sysml.runtime.io.WriterTextCSV;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -892,6 +898,14 @@ public class VariableCPInstruction extends CPInstruction
 			ScalarObject scalar = ec.getScalarInput(input1.getName(), input1.getValueType(), input1.isLiteral());
 			MapReduceTool.writeObjectToHDFS(scalar.getValue(), fname);
 			MapReduceTool.writeScalarMetaDataFile(fname +".mtd", input1.getValueType());
+
+			JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
+			FileSystem fs = FileSystem.get(job);
+			if (fs instanceof LocalFileSystem) {
+				Path path = new Path(fname);
+				IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, path);
+			}
+
 		} catch ( IOException e ) {
 			throw new DMLRuntimeException(e);
 		}

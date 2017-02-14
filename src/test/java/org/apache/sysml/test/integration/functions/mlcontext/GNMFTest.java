@@ -57,6 +57,8 @@ import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.utils.TestUtils;
+import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -256,6 +258,24 @@ public class GNMFTest extends AutomatedTestBase
 			DMLScript.rtplatform = oldRT;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = oldConfig;
 		}
+	}
+	
+	@After
+	public void tearDown() {
+		super.tearDown();
+	}
+
+	@AfterClass
+	public static void tearDownClass() {
+		// stop spark context to allow single jvm tests (otherwise the
+		// next test that tries to create a SparkContext would fail)
+		sc.stop();
+		sc = null;
+		conf = null;
+
+		// clear status mlcontext and spark exec context
+		ml.close();
+		ml = null;
 	}
 	
 	public static class StringToMatrixEntry implements Function<String, MatrixEntry> {

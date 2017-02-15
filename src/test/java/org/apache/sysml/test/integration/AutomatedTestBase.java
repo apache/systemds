@@ -719,13 +719,11 @@ public abstract class AutomatedTestBase
 		TestUtils.writeTestScalar(baseDirectory + EXPECTED_DIR + cacheDir + name, value);
 		expectedFiles.add(baseDirectory + EXPECTED_DIR + cacheDir + name);
 	}
-	
-	@SuppressWarnings("deprecation")
+
 	protected static HashMap<CellIndex, Double> readDMLMatrixFromHDFS(String fileName) {
 		return TestUtils.readDMLMatrixFromHDFS(baseDirectory + OUTPUT_DIR + fileName);
 	}
 
-	@SuppressWarnings("deprecation")
 	public HashMap<CellIndex, Double> readRMatrixFromFS(String fileName) {
 		System.out.println("R script out: " + baseDirectory + EXPECTED_DIR + cacheDir + fileName);
 		return TestUtils.readRMatrixFromFS(baseDirectory + EXPECTED_DIR + cacheDir + fileName);

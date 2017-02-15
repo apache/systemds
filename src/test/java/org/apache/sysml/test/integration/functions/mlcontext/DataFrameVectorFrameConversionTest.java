@@ -30,12 +30,11 @@ import org.apache.spark.ml.linalg.VectorUDT;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
-import org.apache.spark.sql.SQLContext;
+import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
-import org.junit.Test;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.conf.ConfigurationManager;
@@ -53,6 +52,7 @@ import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
+import org.junit.Test;
 
 
 public class DataFrameVectorFrameConversionTest extends AutomatedTestBase 
@@ -268,10 +268,10 @@ public class DataFrameVectorFrameConversionTest extends AutomatedTestBase
 			//setup spark context
 			sec = (SparkExecutionContext) ExecutionContextFactory.createContext();		
 			JavaSparkContext sc = sec.getSparkContext();
-			SQLContext sqlctx = new SQLContext(sc);
+			SparkSession sparkSession = SparkSession.builder().sparkContext(sc.sc()).getOrCreate();
 			
 			//create input data frame
-			Dataset<Row> df = createDataFrame(sqlctx, mbA, containsID, schema);
+			Dataset<Row> df = createDataFrame(sparkSession, mbA, containsID, schema);
 			
 			//dataframe - frame conversion
 			JavaPairRDD<Long,FrameBlock> out = FrameRDDConverterUtils.dataFrameToBinaryBlock(sc, df, mc2, containsID);
@@ -294,17 +294,9 @@ public class DataFrameVectorFrameConversionTest extends AutomatedTestBase
 			DMLScript.rtplatform = oldPlatform;
 		}
 	}
-	
-	/**
-	 * 
-	 * @param sqlctx
-	 * @param mb
-	 * @param schema
-	 * @return
-	 * @throws DMLRuntimeException 
-	 */
+
 	@SuppressWarnings("resource")
-	private Dataset<Row> createDataFrame(SQLContext sqlctx, MatrixBlock mb, boolean containsID, ValueType[] schema) 
+	private Dataset<Row> createDataFrame(SparkSession sparkSession, MatrixBlock mb, boolean containsID, ValueType[] schema) 
 		throws DMLRuntimeException
 	{
 		//create in-memory list of rows
@@ -350,8 +342,8 @@ public class DataFrameVectorFrameConversionTest extends AutomatedTestBase
 		StructType dfSchema = DataTypes.createStructType(fields);
 				
 		//create rdd and data frame
-		JavaSparkContext sc = new JavaSparkContext(sqlctx.sparkContext());
+		JavaSparkContext sc = new JavaSparkContext(sparkSession.sparkContext());
 		JavaRDD<Row> rowRDD = sc.parallelize(list);
-		return sqlctx.createDataFrame(rowRDD, dfSchema);
+		return sparkSession.createDataFrame(rowRDD, dfSchema);
 	}
 }

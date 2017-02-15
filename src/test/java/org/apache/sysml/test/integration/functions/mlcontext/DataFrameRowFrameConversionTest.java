@@ -23,8 +23,7 @@ import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
-import org.apache.spark.sql.SQLContext;
-import org.junit.Test;
+import org.apache.spark.sql.SparkSession;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.conf.ConfigurationManager;
@@ -40,6 +39,7 @@ import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
+import org.junit.Test;
 
 
 public class DataFrameRowFrameConversionTest extends AutomatedTestBase 
@@ -216,15 +216,16 @@ public class DataFrameRowFrameConversionTest extends AutomatedTestBase
 			//setup spark context
 			sec = (SparkExecutionContext) ExecutionContextFactory.createContext();		
 			JavaSparkContext sc = sec.getSparkContext();
+			SparkSession sparkSession = SparkSession.builder().sparkContext(sc.sc()).getOrCreate();
+
 			sc.getConf().set("spark.memory.offHeap.enabled", "false");
-			SQLContext sqlctx = new SQLContext(sc);
-			sqlctx.setConf("spark.sql.codegen.wholeStage", "false");
-			
+			sparkSession.conf().set("spark.sql.codegen.wholeStage", "false");
+
 			//get binary block input rdd
 			JavaPairRDD<Long,FrameBlock> in = SparkExecutionContext.toFrameJavaPairRDD(sc, fbA);
 			
 			//frame - dataframe - frame conversion
-			Dataset<Row> df = FrameRDDConverterUtils.binaryBlockToDataFrame(sqlctx, in, mc1, schema);
+			Dataset<Row> df = FrameRDDConverterUtils.binaryBlockToDataFrame(sparkSession, in, mc1, schema);
 			JavaPairRDD<Long,FrameBlock> out = FrameRDDConverterUtils.dataFrameToBinaryBlock(sc, df, mc2, true);
 			
 			//get output frame block

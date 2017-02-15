@@ -32,7 +32,7 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
-import org.apache.spark.sql.SQLContext;
+import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.types.StructType;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
@@ -532,10 +532,10 @@ public class FrameConverterTest extends AutomatedTestBase
 				OutputInfo oinfo = OutputInfo.BinaryBlockOutputInfo;
 
 				//Create DataFrame 
-				SQLContext sqlContext = new SQLContext(sc);
+				SparkSession sparkSession = SparkSession.builder().sparkContext(sc.sc()).getOrCreate();
 				StructType dfSchema = FrameRDDConverterUtils.convertFrameSchemaToDFSchema(lschema, false);
 				JavaRDD<Row> rowRDD = FrameRDDConverterUtils.csvToRowRDD(sc, fnameIn, separator, lschema);
-				Dataset<Row> df = sqlContext.createDataFrame(rowRDD, dfSchema);
+				Dataset<Row> df = sparkSession.createDataFrame(rowRDD, dfSchema);
 				
 				JavaPairRDD<LongWritable, FrameBlock> rddOut = FrameRDDConverterUtils
 						.dataFrameToBinaryBlock(sc, df, mc, false/*, columns*/)
@@ -549,7 +549,8 @@ public class FrameConverterTest extends AutomatedTestBase
 				JavaPairRDD<Long, FrameBlock> rddIn = sc
 						.hadoopFile(fnameIn, iinfo.inputFormatClass, LongWritable.class, FrameBlock.class)
 				 		.mapToPair(new LongWritableFrameToLongFrameFunction());
-				Dataset<Row> df = FrameRDDConverterUtils.binaryBlockToDataFrame(new SQLContext(sc), rddIn, mc, lschema);
+				SparkSession sparkSession = SparkSession.builder().sparkContext(sc.sc()).getOrCreate();
+				Dataset<Row> df = FrameRDDConverterUtils.binaryBlockToDataFrame(sparkSession, rddIn, mc, lschema);
 				
 				//Convert back DataFrame to binary block for comparison using original binary to converted DF and back to binary 
 				JavaPairRDD<LongWritable, FrameBlock> rddOut = FrameRDDConverterUtils

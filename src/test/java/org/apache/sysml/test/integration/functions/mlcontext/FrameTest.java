@@ -33,7 +33,7 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
-import org.apache.spark.sql.SQLContext;
+import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.types.StructType;
 import org.apache.sysml.api.DMLException;
 import org.apache.sysml.api.DMLScript;
@@ -68,7 +68,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 
-@SuppressWarnings("deprecation")
 public class FrameTest extends AutomatedTestBase 
 {
 	private final static String TEST_DIR = "functions/frame/";
@@ -238,15 +237,16 @@ public class FrameTest extends AutomatedTestBase
 		if(bFromDataFrame)
 		{
 			//Create DataFrame for input A 
-			SQLContext sqlContext = new SQLContext(sc);
+			SparkSession sparkSession = SparkSession.builder().sparkContext(sc.sc()).getOrCreate();
 			StructType dfSchemaA = FrameRDDConverterUtils.convertFrameSchemaToDFSchema(schema, false);
+
 			JavaRDD<Row> rowRDDA = FrameRDDConverterUtils.csvToRowRDD(sc, input("A"), DataExpression.DEFAULT_DELIM_DELIMITER, schema);
-			dfA = sqlContext.createDataFrame(rowRDDA, dfSchemaA);
+			dfA = sparkSession.createDataFrame(rowRDDA, dfSchemaA);
 			
 			//Create DataFrame for input B 
 			StructType dfSchemaB = FrameRDDConverterUtils.convertFrameSchemaToDFSchema(schemaB, false);
 			JavaRDD<Row> rowRDDB = FrameRDDConverterUtils.csvToRowRDD(sc, input("B"), DataExpression.DEFAULT_DELIM_DELIMITER, schemaB);
-			dfB = sqlContext.createDataFrame(rowRDDB, dfSchemaB);
+			dfB = sparkSession.createDataFrame(rowRDDB, dfSchemaB);
 		}
 
 		try 

@@ -20,20 +20,19 @@
 package org.apache.sysml.runtime.instructions.spark;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
-import org.apache.spark.Accumulator;
-import org.apache.spark.AccumulatorParam;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.broadcast.Broadcast;
+import org.apache.spark.util.AccumulatorV2;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -124,7 +123,7 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 			Encoder encoderBuild = EncoderFactory.createEncoder(spec, colnames,
 					fo.getSchema(), (int)fo.getNumColumns(), null);
 			
-			Accumulator<Long> accMax = sec.getSparkContext().accumulator(0L, new MaxAcc()); 
+			MaxLongAccumulator accMax = registerMaxLongAccumulator(sec.getSparkContext()); 
 			JavaRDD<String> rcMaps = in
 					.mapPartitionsToPair(new TransformEncodeBuildFunction(encoderBuild))
 					.distinct().groupByKey()
@@ -190,6 +189,54 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 		return null;	
 	}
 	
+	private static MaxLongAccumulator registerMaxLongAccumulator(JavaSparkContext sc) {
+		MaxLongAccumulator acc = new MaxLongAccumulator(Long.MIN_VALUE);
+		sc.sc().register(acc, "max");
+		return acc;
+	}
+	
+
+	private static class MaxLongAccumulator extends AccumulatorV2<Long,Long>
+	{
+		private static final long serialVersionUID = -3739727823287550826L;
+
+		private long _value = Long.MIN_VALUE;
+		
+		public MaxLongAccumulator(long value) {
+			_value = value;
+		}
+
+		@Override
+		public void add(Long arg0) {
+			_value = Math.max(_value, arg0);
+		}
+
+		@Override
+		public AccumulatorV2<Long, Long> copy() {
+			return new MaxLongAccumulator(_value);
+		}
+
+		@Override
+		public boolean isZero() {
+			return _value == Long.MIN_VALUE;
+		}
+
+		@Override
+		public void merge(AccumulatorV2<Long, Long> arg0) {
+			_value = Math.max(_value, arg0.value());
+		}
+
+		@Override
+		public void reset() {
+			_value = Long.MIN_VALUE;
+		}
+
+		@Override
+		public Long value() {
+			return _value;
+		}
+	}
+	
 	/**
 	 * This function pre-aggregates distinct values of recoded columns per partition
 	 * (part of distributed recode map construction, used for recoding, binning and 
@@ -242,9 +289,9 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 	{
 		private static final long serialVersionUID = -1034187226023517119L;
 
-		private Accumulator<Long> _accMax = null;
+		private MaxLongAccumulator _accMax = null;
 		
-		public TransformEncodeGroupFunction( Accumulator<Long> accMax ) {
+		public TransformEncodeGroupFunction( MaxLongAccumulator accMax ) {
 			_accMax = accMax;
 		}
 		
@@ -272,26 +319,6 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 			_accMax.add(rowID-1);
 			
 			return ret.iterator();
-		}
-	}
-
-	private static class MaxAcc implements AccumulatorParam<Long>, Serializable 
-	{
-		private static final long serialVersionUID = -3739727823287550826L;
-
-		@Override
-		public Long addInPlace(Long arg0, Long arg1) {
-			return Math.max(arg0, arg1);
-		}
-
-		@Override
-		public Long zero(Long arg0) {
-			return arg0;
-		}
-
-		@Override
-		public Long addAccumulator(Long arg0, Long arg1) {
-			return Math.max(arg0, arg1);	
 		}
 	}
 

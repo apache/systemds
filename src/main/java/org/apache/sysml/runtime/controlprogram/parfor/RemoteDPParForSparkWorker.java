@@ -24,10 +24,9 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 import org.apache.hadoop.io.Writable;
-import org.apache.spark.Accumulator;
 import org.apache.spark.TaskContext;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
-
+import org.apache.spark.util.LongAccumulator;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
@@ -61,10 +60,10 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 	private boolean _tSparseCol = false;
 	private PDataPartitionFormat _dpf = null;
 	
-	private Accumulator<Integer> _aTasks = null;
-	private Accumulator<Integer> _aIters = null;
+	private LongAccumulator _aTasks = null;
+	private LongAccumulator _aIters = null;
 	
-	public RemoteDPParForSparkWorker(String program, String inputVar, String iterVar, boolean cpCaching, MatrixCharacteristics mc, boolean tSparseCol, PDataPartitionFormat dpf, OutputInfo oinfo, Accumulator<Integer> atasks, Accumulator<Integer> aiters) 
+	public RemoteDPParForSparkWorker(String program, String inputVar, String iterVar, boolean cpCaching, MatrixCharacteristics mc, boolean tSparseCol, PDataPartitionFormat dpf, OutputInfo oinfo, LongAccumulator atasks, LongAccumulator aiters) 
 		throws DMLRuntimeException
 	{
 		//keep inputs (unfortunately, spark does not expose task ids and it would be implementation-dependent

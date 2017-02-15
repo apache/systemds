@@ -23,9 +23,9 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.spark.Accumulator;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.util.LongAccumulator;
 
 import scala.Tuple2;
 
@@ -73,8 +73,8 @@ public class RemoteDPParForSpark
 		InputInfo ii = InputInfo.BinaryBlockInputInfo;
 				
 		//initialize accumulators for tasks/iterations
-		Accumulator<Integer> aTasks = sc.accumulator(0);
-		Accumulator<Integer> aIters = sc.accumulator(0);
+		LongAccumulator aTasks = sc.sc().longAccumulator("tasks");
+		LongAccumulator aIters = sc.sc().longAccumulator("iterations");
 		
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryBlockRDDHandleForVariable(matrixvar);
 		DataPartitionerRemoteSparkMapper dpfun = new DataPartitionerRemoteSparkMapper(mc, ii, oi, dpf);
@@ -88,8 +88,8 @@ public class RemoteDPParForSpark
 		
 		//de-serialize results
 		LocalVariableMap[] results = RemoteParForUtils.getResults(out, LOG);
-		int numTasks = aTasks.value(); //get accumulator value
-		int numIters = aIters.value(); //get accumulator value
+		int numTasks = aTasks.value().intValue(); //get accumulator value
+		int numIters = aIters.value().intValue(); //get accumulator value
 		
 		//create output symbol table entries
 		RemoteParForJobReturn ret = new RemoteParForJobReturn(true, numTasks, numIters, results);

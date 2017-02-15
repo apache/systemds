@@ -25,9 +25,9 @@ import java.util.Random;
 
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.mapred.SequenceFileOutputFormat;
-import org.apache.spark.Accumulator;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.util.LongAccumulator;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -203,12 +203,12 @@ public class WriteSPInstruction extends SPInstruction
 		else if( oi == OutputInfo.CSVOutputInfo ) 
 		{
 			JavaRDD<String> out = null;
-			Accumulator<Double> aNnz = null;
+			LongAccumulator aNnz = null;
 			
 			if ( isInputMatrixBlock ) {
 				//piggyback nnz computation on actual write
 				if( !mc.nnzKnown() ) {
-					aNnz = sec.getSparkContext().accumulator(0L);
+					aNnz = sec.getSparkContext().sc().longAccumulator("nnz");
 					in1 = in1.mapValues(new ComputeBinaryBlockNnzFunction(aNnz));
 				}	
 				
@@ -252,9 +252,9 @@ public class WriteSPInstruction extends SPInstruction
 		}
 		else if( oi == OutputInfo.BinaryBlockOutputInfo ) {
 			//piggyback nnz computation on actual write
-			Accumulator<Double> aNnz = null;
+			LongAccumulator aNnz = null;
 			if( !mc.nnzKnown() ) {
-				aNnz = sec.getSparkContext().accumulator(0L);
+				aNnz = sec.getSparkContext().sc().longAccumulator("nnz");
 				in1 = in1.mapValues(new ComputeBinaryBlockNnzFunction(aNnz));
 			}
 			

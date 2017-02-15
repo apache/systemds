@@ -777,13 +777,14 @@ public class SparkExecutionContext extends ExecutionContext
 			//determine target sparse/dense representation
 			long lnnz = (nnz >= 0) ? nnz : (long)rlen * clen;
 			boolean sparse = MatrixBlock.evalSparseFormatInMemory(rlen, clen, lnnz);
-						
+			
 			//create output matrix block (w/ lazy allocation)
-			out = new MatrixBlock(rlen, clen, sparse);
+			out = new MatrixBlock(rlen, clen, sparse, lnnz);
 			
 			List<Tuple2<MatrixIndexes,MatrixBlock>> list = rdd.collect();
 			
 			//copy blocks one-at-a-time into output matrix block
+			long aNnz = 0; 
 			for( Tuple2<MatrixIndexes,MatrixBlock> keyval : list )
 			{
 				//unpack index-block pair
@@ -796,21 +797,26 @@ public class SparkExecutionContext extends ExecutionContext
 				int rows = block.getNumRows();
 				int cols = block.getNumColumns();
 				
+				//append block
 				if( sparse ) { //SPARSE OUTPUT
-					//append block to sparse target in order to avoid shifting
-					//note: this append requires a final sort of sparse rows
-					out.appendToSparse(block, row_offset, col_offset);
+					//append block to sparse target in order to avoid shifting, where
+					//we use a shallow row copy in case of MCSR and single column blocks
+					//note: this append requires, for multiple column blocks, a final sort 
+					out.appendToSparse(block, row_offset, col_offset, clen>bclen);
 				}
 				else { //DENSE OUTPUT
 					out.copy( row_offset, row_offset+rows-1, 
 							  col_offset, col_offset+cols-1, block, false );	
 				}
+				
+				//incremental maintenance nnz
+				aNnz += block.getNonZeros();
 			}
 			
 			//post-processing output matrix
-			if( sparse )
+			if( sparse && clen>bclen )
 				out.sortSparseRows();
-			out.recomputeNonZeros();
+			out.setNonZeros(aNnz);
 			out.examSparsity();
 		}
 		

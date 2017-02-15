@@ -695,7 +695,11 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		}
 	}
 
-	public void appendToSparse( MatrixBlock that, int rowoffset, int coloffset ) 
+	public void appendToSparse( MatrixBlock that, int rowoffset, int coloffset ) {
+		appendToSparse(that, rowoffset, coloffset, true);
+	}
+	
+	public void appendToSparse( MatrixBlock that, int rowoffset, int coloffset, boolean deep ) 
 	{
 		if( that==null || that.isEmptyBlock(false) )
 			return; //nothing to append
@@ -713,7 +717,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 					
 				//single block append (avoid re-allocations)
 				if( sparseBlock.isEmpty(aix) && coloffset==0 ) { 
-					sparseBlock.set(aix, b.get(i), true);
+					sparseBlock.set(aix, b.get(i), deep);
 				}
 				else { //general case
 					int pos = b.pos(i);

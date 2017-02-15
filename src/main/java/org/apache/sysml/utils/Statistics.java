@@ -464,9 +464,12 @@ public class Statistics
 		_cpInstCounts.put(key, newCnt);
 	}
 	
-	public static Set<String> getCPHeavyHitterOpCodes()
-	{
+	public static Set<String> getCPHeavyHitterOpCodes() {
 		return _cpInstTime.keySet();
+	}
+	
+	public static long getCPHeavyHitterCount(String opcode) {
+		return _cpInstCounts.get(opcode);
 	}
 
 	@SuppressWarnings("unchecked")

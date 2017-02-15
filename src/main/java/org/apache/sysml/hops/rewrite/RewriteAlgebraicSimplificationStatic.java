@@ -148,6 +148,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
  			hi = simplifyUnaryAggReorgOperation(hop, hi, i);     //e.g., sum(t(X)) -> sum(X)
  			hi = simplifyBinaryMatrixScalarOperation(hop, hi, i);//e.g., as.scalar(X*s) -> as.scalar(X)*s;
  			hi = pushdownUnaryAggTransposeOperation(hop, hi, i); //e.g., colSums(t(X)) -> t(rowSums(X))
+ 			hi = pushdownCSETransposeScalarOperation(hop, hi, i);//e.g., a=t(X), b=t(X^2) -> a=t(X), b=t(X)^2 for CSE t(X)
  			hi = pushdownSumBinaryMult(hop, hi, i);              //e.g., sum(lamda*X) -> lamda*sum(X)
  			hi = simplifyUnaryPPredOperation(hop, hi, i);        //e.g., abs(ppred()) -> ppred(), others: round, ceil, floor
  			hi = simplifyTransposedAppend(hop, hi, i);           //e.g., t(cbind(t(A),t(B))) -> rbind(A,B);
@@ -938,6 +939,41 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			HopRewriteUtils.addChildReference(parent, trans, pos); //by def, same size
 			
 			hi = trans;	
+		}
+		
+		return hi;
+	}
+	
+	private Hop pushdownCSETransposeScalarOperation( Hop parent, Hop hi, int pos )
+	{
+		// a=t(X), b=t(X^2) -> a=t(X), b=t(X)^2 for CSE t(X)
+		// probed at root node of b in above example
+		// (with support for left or right scalar operations)
+		if( HopRewriteUtils.isTransposeOperation(hi) && hi.getParent().size()==1
+			&& HopRewriteUtils.isBinaryMatrixScalarOperation(hi.getInput().get(0))
+			&& hi.getInput().get(0).getParent().size()==1) 
+		{
+			int Xpos = hi.getInput().get(0).getInput().get(0).getDataType().isMatrix() ? 0 : 1;
+			Hop X = hi.getInput().get(0).getInput().get(Xpos);
+			BinaryOp binary = (BinaryOp) hi.getInput().get(0);
+			
+			if( HopRewriteUtils.containsTransposeOperation(X.getParent()) 
+				&& !HopRewriteUtils.isValidOp(binary.getOp(), new OpOp2[]{OpOp2.CENTRALMOMENT, OpOp2.QUANTILE})) 
+			{
+				//clear existing wiring
+				HopRewriteUtils.removeChildReferenceByPos(parent, hi, pos);	
+				HopRewriteUtils.removeChildReference(hi, binary);
+				HopRewriteUtils.removeChildReference(binary, X);
+				
+				//re-wire operators
+				HopRewriteUtils.addChildReference(parent, binary, pos);
+				HopRewriteUtils.addChildReference(binary, hi, Xpos);
+				HopRewriteUtils.addChildReference(hi, X);
+				//note: common subexpression later eliminated by dedicated rewrite
+		
+				hi = binary;
+				LOG.debug("Applied pushdownCSETransposeScalarOperation (line "+hi.getBeginLine()+").");
+			}	
 		}
 		
 		return hi;

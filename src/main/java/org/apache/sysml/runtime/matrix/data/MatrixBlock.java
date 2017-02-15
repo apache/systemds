@@ -4843,11 +4843,18 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		throws DMLRuntimeException 
 	{
 		double sum_wt = 0;
-		for (int i=0; i < getNumRows(); i++ )
-			sum_wt += quickGetValue(i, 1);
-		if ( Math.floor(sum_wt) < sum_wt ) {
-			throw new DMLRuntimeException("Unexpected error while computing quantile -- weights must be integers.");
+		for (int i=0; i < getNumRows(); i++ ) {
+			double tmp = quickGetValue(i, 1);
+			sum_wt += tmp;		
+			
+			// test all values not just final sum_wt to ensure that non-integer weights
+			// don't cancel each other out; integer weights are required by all quantiles, etc
+			if( Math.floor(tmp) < tmp ) {
+				throw new DMLRuntimeException("Wrong input data, quantile weights "
+						+ "are expected to be integers but found '"+tmp+"'.");
+			}
 		}
+		
 		return sum_wt;
 	}
 

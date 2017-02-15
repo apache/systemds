@@ -81,8 +81,8 @@ class_prior = class_counts / numRows;
 
 # Compute accuracy on training set
 ones = matrix(1, rows=numRows, cols=1)
-D_w_ones = append(D, ones)
-model = append(class_conditionals, class_prior)
+D_w_ones = cbind(D, ones)
+model = cbind(class_conditionals, class_prior)
 log_probs = D_w_ones %*% t(log(model))
 pred = rowIndexMax(log_probs)
 acc = sum(pred == C) / numRows * 100
@@ -93,7 +93,7 @@ write(acc_str, $accuracy)
 
 extra_model_params = matrix(0, rows=1, cols=1)
 extra_model_params[1, 1] = numFeatures
-class_prior = t(append(t(class_prior), extra_model_params))
+class_prior = t(cbind(t(class_prior), extra_model_params))
 
 # write out the model
 write(class_prior, $prior, format=cmdLine_fmt);

@@ -401,7 +401,7 @@ glm_means_and_vars =
     # MULTINOMIAL LOGIT DISTRIBUTION
         elt = exp (linear_terms);
         ones_pts = matrix (1, rows = num_points, cols = 1);
-        elt = append (elt, ones_pts);
+        elt = cbind (elt, ones_pts);
         ones_ctg = matrix (1, rows = ncol (elt), cols = 1);
         means = elt / (rowSums (elt) %*% t(ones_ctg));
         vars  = means * (means %*% (1 - diag (ones_ctg)));

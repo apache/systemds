@@ -56,7 +56,7 @@ else
 {
     OX1 = X[,1:S-1]
     OX2 = X[,S+N:nc]
-    OX = append (OX1, OX2)
+    OX = cbind (OX1, OX2)
     OY = X[,S:S+N-1]
 }
 

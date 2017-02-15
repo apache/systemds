@@ -31,9 +31,9 @@ while( iter <= 3 )
    if( $5==1 )
    {
       vx = matrix(1,rows=nrow(V),cols=1)*iter;
-      V = append(V, vx);
+      V = cbind(V, vx);
       rx = matrix(0,rows=1,cols=1);
-      R = append(R, rx);
+      R = cbind(R, rx);
    }
 
    #repeated opt for each while iteration

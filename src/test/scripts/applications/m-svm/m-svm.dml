@@ -56,7 +56,7 @@ if(check_X == 0){
 
 	if (intercept == 1) {
  		ones  = matrix(1, rows=num_samples, cols=1);
- 		X = append(X, ones);
+ 		X = cbind(X, ones);
 	}
 
 	num_rows_in_w = num_features
@@ -71,7 +71,7 @@ if(check_X == 0){
 		w_class = matrix(0, rows=num_features, cols=1)
 		if (intercept == 1) {
 			zero_matrix = matrix(0, rows=1, cols=1);
- 			w_class = t(append(t(w_class), zero_matrix));
+ 			w_class = t(cbind(t(w_class), zero_matrix));
  		}
  
 		g_old = t(X) %*% Y_local

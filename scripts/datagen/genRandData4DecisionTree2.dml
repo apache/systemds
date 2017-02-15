@@ -37,5 +37,5 @@ XCF = read (XCatFile);
 specJson = read(transformSpec, data_type="scalar", value_type="string");
 X_cat_transformed = transform (target = XCF, spec = specJson, transformPath = transformPath);
 
-X = append (X_scale, X_cat_transformed);
+X = cbind (X_scale, X_cat_transformed);
 write (X, XFile, format = fmt);

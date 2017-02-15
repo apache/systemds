@@ -21,5 +21,5 @@
 
 A=read($1, rows=$2, cols=$3, format="text")
 B=read($4, rows=$2, cols=$5, format="text")
-C=append(A, B)
+C=cbind(A, B)
 write(C, $6, format="text")

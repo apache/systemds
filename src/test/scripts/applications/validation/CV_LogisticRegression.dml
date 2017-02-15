@@ -70,11 +70,11 @@ parfor( i in 1:k )
    yi = y * vPxi;  #  Create the labels for the TEST set
    nXi = X - Xi;   #  Create the TRAINING set with (k-1)/k of the rows
    nyi = y - yi;   #  Create the labels for the TRAINING set
-   Xyi = append(Xi,yi); #keep alignment on removeEmpty
+   Xyi = cbind(Xi,yi); #keep alignment on removeEmpty
    Xyi = removeEmpty( target=Xyi, margin="rows" );
    Xi = Xyi[ , 1:n];
    yi = Xyi[ , n+1];   
-   nXyi = append(nXi,nyi); #keep alignment on removeEmpty
+   nXyi = cbind(nXi,nyi); #keep alignment on removeEmpty
    nXyi = removeEmpty( target=nXyi, margin="rows" );
    nXi = nXyi[ , 1:n];
    nyi = nXyi[ , n+1];
@@ -118,10 +118,10 @@ logisticRegression = function (Matrix[double] X, Matrix[double] y, Integer in_in
   if (intercept == 1) {
    num_samples = nrow(X);
    ones  = Rand(rows=num_samples, cols=1, min=1, max=1, pdf="uniform");
-   X = append(X, ones);
+   X = cbind(X, ones);
    zero_matrix = Rand(rows=1, cols=1, min=0.0, max=0.0);
-   w = t(append(t(w), zero_matrix));
-   zeros_D = t(append(t(zeros_D), zero_matrix));
+   w = t(cbind(t(w), zero_matrix));
+   zeros_D = t(cbind(t(zeros_D), zero_matrix));
   }
   
   N = nrow(X)

@@ -163,11 +163,11 @@ if (2 + n_group_cols + n_stratum_cols > ncol (X)) {
 if (GI_1_1 == 0 & SI_1_1 == 0) {
 	Is = TE;
 } else if (GI_1_1 == 0) {
-	Is = append (TE, SI);
+	Is = cbind (TE, SI);
 } else if (SI_1_1 == 0) {
-	Is = append (TE, GI);
+	Is = cbind (TE, GI);
 } else {
-	Is = append (TE, append (GI, SI));
+	Is = cbind (TE, cbind (GI, SI));
 }
 X = X %*% table (Is, seq (1, 2 + n_group_cols + n_stratum_cols), ncol (X), 2 + n_group_cols + n_stratum_cols);	
 
@@ -201,9 +201,9 @@ if (n_group_cols > 0) {
 		Gi = matrix (1, rows = num_records, cols = 1);
 	}
 	if (n_stratum_cols > 0) {
-		X = append (append (X[,1:2],Gi), X[,(3 + g):ncol (X)]);
+		X = cbind (cbind (X[,1:2],Gi), X[,(3 + g):ncol (X)]);
 	} else { # no strata
-		X = append (X[,1:2],Gi);
+		X = cbind (X[,1:2],Gi);
 	}
 }
 
@@ -237,16 +237,16 @@ if (n_stratum_cols > 0) {
 	} else { # there is only one stratum
 		Si = matrix (1, rows = num_records, cols = 1);
 	}
-	X = append (X[,1:3],Si);
+	X = cbind (X[,1:3],Si);
 }
 
 if (n_group_cols == 0 & n_stratum_cols == 0) {
-	X = append (X, matrix (1, rows = num_records, cols = 2));
+	X = cbind (X, matrix (1, rows = num_records, cols = 2));
 	SB = matrix (1, rows = 1, cols = 1);	
 } else if (n_group_cols == 0) {	
-	X = append (X[,1:2], append (matrix (1, rows = num_records, cols = 1), X[,3]));
+	X = cbind (X[,1:2], cbind (matrix (1, rows = num_records, cols = 1), X[,3]));
 } else if (n_stratum_cols == 0) {
-	X = append (X, matrix (1, rows = num_records, cols = 1));
+	X = cbind (X, matrix (1, rows = num_records, cols = 1));
 	SB = matrix (1, rows = 1, cols = 1);
 }
 
@@ -586,21 +586,21 @@ M = replace (target = M, pattern = "Infinity", replacement = "NaN");
 
 # pull out non-empty rows from TEST
 if (n_group_cols > 0 & n_stratum_cols > 0) {
-	M = append (append (G_cols, S_cols), M);
+	M = cbind (cbind (G_cols, S_cols), M);
 	if (test_type != "none") {
-		TEST = append (G_cols_original, TEST);
+		TEST = cbind (G_cols_original, TEST);
 	}
 } else if (n_group_cols > 0) {
-	M = append (G_cols, M);
+	M = cbind (G_cols, M);
 	if (test_type != "none") {	
-		TEST = append (G_cols_original, TEST);
+		TEST = cbind (G_cols_original, TEST);
 	}
 } else if (n_stratum_cols > 0) {
-	M = append (S_cols, M);
+	M = cbind (S_cols, M);
 }
 
 # pull out non-empty columns from KM
-KM = t (append (t (KM), KM_cols_select) * KM_cols_select);
+KM = t (cbind (t (KM), KM_cols_select) * KM_cols_select);
 KM = removeEmpty (target = KM, margin = "cols");
 KM = removeEmpty (target = KM, margin = "rows");
 KM = KM[1:(nrow (KM) - 1),];

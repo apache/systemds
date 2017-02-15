@@ -100,7 +100,7 @@ D = ncol (X);
 # Introduce the intercept, shift and rescale the columns of X if needed
 if (intercept_status == 1 | intercept_status == 2)  # add the intercept column
 {
-    X = append (X, matrix (1, rows = N, cols = 1));
+    X = cbind (X, matrix (1, rows = N, cols = 1));
     D = ncol (X);
 }
 
@@ -152,7 +152,7 @@ lambda = (scale_lambda %*% matrix (1, rows = 1, cols = K)) * regularization;
 delta = 0.5 * sqrt (D) / max (sqrt (rowSums_X_sq));
 
 B = matrix (0, rows = D, cols = K);     ### LT = X %*% (SHIFT/SCALE TRANSFORM) %*% B;
-                                        ### LT = append (LT, matrix (0, rows = N, cols = 1));
+                                        ### LT = cbind (LT, matrix (0, rows = N, cols = 1));
                                         ### LT = LT - rowMaxs (LT) %*% matrix (1, rows = 1, cols = K+1);
 P = matrix (1, rows = N, cols = K+1);   ### exp_LT = exp (LT);
 P = P / (K + 1);                        ### P =  exp_LT / (rowSums (exp_LT) %*% matrix (1, rows = 1, cols = K+1));
@@ -253,7 +253,7 @@ while (! converge)
         ssX_B_new = B_new;
     }
     
-    LT = append ((X %*% ssX_B_new), matrix (0, rows = N, cols = 1));
+    LT = cbind ((X %*% ssX_B_new), matrix (0, rows = N, cols = 1));
     if (fileLog != " ") {
         log_str = append (log_str, "LINEAR_TERM_MIN,"  + iter + "," + min (LT));
         log_str = append (log_str, "LINEAR_TERM_MAX,"  + iter + "," + max (LT));

@@ -36,7 +36,7 @@ if (intercept_status == 2) {
     X = (X + ones_n %*% shift_X_cols);
 }
 
-X = append (X, ones_n);
+X = cbind (X, ones_n);
 
 if(1==1){ }
 

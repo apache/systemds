@@ -27,25 +27,26 @@ import org.junit.runners.Suite;
  *  they should not be run in parallel. */
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-	
-  // .applications.dml package
-  org.apache.sysml.test.integration.applications.dml.ApplyTransformDMLTest.class,
-  org.apache.sysml.test.integration.applications.dml.ArimaDMLTest.class,
-  org.apache.sysml.test.integration.applications.dml.CsplineCGDMLTest.class,
-  org.apache.sysml.test.integration.applications.dml.CsplineDSDMLTest.class,
-  org.apache.sysml.test.integration.applications.dml.GLMDMLTest.class,
-  org.apache.sysml.test.integration.applications.dml.GNMFDMLTest.class,
-  org.apache.sysml.test.integration.applications.dml.HITSDMLTest.class,
-  org.apache.sysml.test.integration.applications.dml.ID3DMLTest.class,
-  org.apache.sysml.test.integration.applications.dml.L2SVMDMLTest.class,
-  org.apache.sysml.test.integration.applications.dml.LinearLogRegDMLTest.class,
-  org.apache.sysml.test.integration.applications.dml.LinearRegressionDMLTest.class,
-  org.apache.sysml.test.integration.applications.dml.MDABivariateStatsDMLTest.class,
-  org.apache.sysml.test.integration.applications.dml.MultiClassSVMDMLTest.class,
-  org.apache.sysml.test.integration.applications.dml.NaiveBayesDMLTest.class,
-  org.apache.sysml.test.integration.applications.dml.NaiveBayesParforDMLTest.class,
-  org.apache.sysml.test.integration.applications.dml.PageRankDMLTest.class,
-  org.apache.sysml.test.integration.applications.dml.WelchTDMLTest.class,
+
+        // .applications.dml package
+        org.apache.sysml.test.integration.applications.dml.ApplyTransformDMLTest.class,
+        org.apache.sysml.test.integration.applications.dml.ArimaDMLTest.class,
+        org.apache.sysml.test.integration.applications.dml.CsplineCGDMLTest.class,
+        org.apache.sysml.test.integration.applications.dml.CsplineDSDMLTest.class,
+        org.apache.sysml.test.integration.applications.dml.GLMDMLTest.class,
+        org.apache.sysml.test.integration.applications.dml.GNMFDMLTest.class,
+        org.apache.sysml.test.integration.applications.dml.HITSDMLTest.class,
+        org.apache.sysml.test.integration.applications.dml.ID3DMLTest.class,
+        org.apache.sysml.test.integration.applications.dml.KNNDMLTest.class,
+        org.apache.sysml.test.integration.applications.dml.L2SVMDMLTest.class,
+        org.apache.sysml.test.integration.applications.dml.LinearLogRegDMLTest.class,
+        org.apache.sysml.test.integration.applications.dml.LinearRegressionDMLTest.class,
+        org.apache.sysml.test.integration.applications.dml.MDABivariateStatsDMLTest.class,
+        org.apache.sysml.test.integration.applications.dml.MultiClassSVMDMLTest.class,
+        org.apache.sysml.test.integration.applications.dml.NaiveBayesDMLTest.class,
+        org.apache.sysml.test.integration.applications.dml.NaiveBayesParforDMLTest.class,
+        org.apache.sysml.test.integration.applications.dml.PageRankDMLTest.class,
+        org.apache.sysml.test.integration.applications.dml.WelchTDMLTest.class,
 
   // .applications.pydml package
   org.apache.sysml.test.integration.applications.pydml.ApplyTransformPyDMLTest.class,

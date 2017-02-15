@@ -28,7 +28,6 @@ import java.util.Iterator;
 
 import org.apache.hadoop.io.Text;
 import org.apache.spark.SparkContext;
-import org.apache.spark.SparkException;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
@@ -44,6 +43,7 @@ import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.SQLContext;
+import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
@@ -221,11 +221,11 @@ public class RDDConverterUtilsExt
 	 * Add element indices as new column to DataFrame
 	 * 
 	 * @param df input data frame
-	 * @param sqlContext SQL context
+	 * @param sparkSession the Spark Session
 	 * @param nameOfCol name of index column
 	 * @return new data frame
 	 */
-	public static Dataset<Row> addIDToDataFrame(Dataset<Row> df, SQLContext sqlContext, String nameOfCol) {
+	public static Dataset<Row> addIDToDataFrame(Dataset<Row> df, SparkSession sparkSession, String nameOfCol) {
 		StructField[] oldSchema = df.schema().fields();
 		StructField[] newSchema = new StructField[oldSchema.length + 1];
 		for(int i = 0; i < oldSchema.length; i++) {
@@ -234,7 +234,7 @@ public class RDDConverterUtilsExt
 		newSchema[oldSchema.length] = DataTypes.createStructField(nameOfCol, DataTypes.DoubleType, false);
 		// JavaRDD<Row> newRows = df.rdd().toJavaRDD().map(new AddRowID());
 		JavaRDD<Row> newRows = df.rdd().toJavaRDD().zipWithIndex().map(new AddRowID());
-		return sqlContext.createDataFrame(newRows, new StructType(newSchema));
+		return sparkSession.createDataFrame(newRows, new StructType(newSchema));
 	}
 	
 	
@@ -378,8 +378,41 @@ public class RDDConverterUtilsExt
 	 * @return dataframe of ml.linalg.Vector rows
 	 * @throws DMLRuntimeException
 	 *             if DMLRuntimeException occurs
+	 *             
+	 * @deprecated This will be removed in SystemML 1.0. Please migrate to {@code
+	 * RDDConverterUtilsExt.stringDataFrameToVectorDataFrame(SparkSession, Dataset<Row>) }
 	 */
+	@Deprecated
 	public static Dataset<Row> stringDataFrameToVectorDataFrame(SQLContext sqlContext, Dataset<Row> inputDF)
+			throws DMLRuntimeException {
+		SparkSession sparkSession = sqlContext.sparkSession();
+		return stringDataFrameToVectorDataFrame(sparkSession, inputDF);
+	}
+	
+	/**
+	 * Convert a dataframe of comma-separated string rows to a dataframe of
+	 * ml.linalg.Vector rows.
+	 * 
+	 * <p>
+	 * Example input rows:<br>
+	 * 
+	 * <code>
+	 * ((1.2, 4.3, 3.4))<br>
+	 * (1.2, 3.4, 2.2)<br>
+	 * [[1.2, 34.3, 1.2, 1.25]]<br>
+	 * [1.2, 3.4]<br>
+	 * </code>
+	 * 
+	 * @param sparkSession
+	 *            Spark Session
+	 * @param inputDF
+	 *            dataframe of comma-separated row strings to convert to
+	 *            dataframe of ml.linalg.Vector rows
+	 * @return dataframe of ml.linalg.Vector rows
+	 * @throws DMLRuntimeException
+	 *             if DMLRuntimeException occurs
+	 */
+	public static Dataset<Row> stringDataFrameToVectorDataFrame(SparkSession sparkSession, Dataset<Row> inputDF)
 			throws DMLRuntimeException {
 
 		StructField[] oldSchema = inputDF.schema().fields();
@@ -444,8 +477,7 @@ public class RDDConverterUtilsExt
 
 		// output DF
 		JavaRDD<Row> newRows = inputDF.rdd().toJavaRDD().zipWithIndex().map(new StringToVector());
-		Dataset<Row> outDF = sqlContext.createDataFrame(newRows.rdd(), DataTypes.createStructType(newSchema));
-
+		Dataset<Row> outDF = sparkSession.createDataFrame(newRows.rdd(), DataTypes.createStructType(newSchema));
 		return outDF;
 	}
 }

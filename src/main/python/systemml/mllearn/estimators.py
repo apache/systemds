@@ -37,8 +37,8 @@ import math
 from ..converters import *
 from ..classloader import *
 
-def assemble(sqlCtx, pdf, inputCols, outputCol):
-    tmpDF = sqlCtx.createDataFrame(pdf, list(pdf.columns))
+def assemble(sparkSession, pdf, inputCols, outputCol):
+    tmpDF = sparkSession.createDataFrame(pdf, list(pdf.columns))
     assembler = VectorAssembler(inputCols=list(inputCols), outputCol=outputCol)
     return assembler.transform(tmpDF)
 
@@ -129,7 +129,7 @@ class BaseSystemMLEstimator(Estimator):
                     raise Exception('Number of rows of X and y should match')
                 colNames = pdfX.columns
                 pdfX[self.label_col] = pdfY[pdfY.columns[0]]
-                df = assemble(self.sqlCtx, pdfX, colNames, self.features_col).select(self.features_col, self.label_col)
+                df = assemble(self.sparkSession, pdfX, colNames, self.features_col).select(self.features_col, self.label_col)
                 self.fit_df(df)
             else:
                 numColsy = getNumCols(y)
@@ -157,9 +157,9 @@ class BaseSystemMLEstimator(Estimator):
         if isinstance(X, SUPPORTED_TYPES):
             if self.transferUsingDF:
                 pdfX = convertToPandasDF(X)
-                df = assemble(self.sqlCtx, pdfX, pdfX.columns, self.features_col).select(self.features_col)
+                df = assemble(self.sparkSession, pdfX, pdfX.columns, self.features_col).select(self.features_col)
                 retjDF = self.model.transform(df._jdf)
-                retDF = DataFrame(retjDF, self.sqlCtx)
+                retDF = DataFrame(retjDF, self.sparkSession)
                 retPDF = retDF.sort('__INDEX').select('prediction').toPandas()
                 if isinstance(X, np.ndarray):
                     return self.decode(retPDF.as_matrix().flatten())
@@ -182,7 +182,7 @@ class BaseSystemMLEstimator(Estimator):
                 assembler = VectorAssembler(inputCols=X.columns, outputCol=self.features_col)
                 df = assembler.transform(X)
             retjDF = self.model.transform(df._jdf)
-            retDF = DataFrame(retjDF, self.sqlCtx)
+            retDF = DataFrame(retjDF, self.sparkSession)
             # Return DF
             return retDF.sort('__INDEX')
         else:
@@ -245,8 +245,8 @@ class LogisticRegression(BaseSystemMLClassifier):
     
     >>> from sklearn import datasets, neighbors
     >>> from systemml.mllearn import LogisticRegression
-    >>> from pyspark.sql import SQLContext
-    >>> sqlCtx = SQLContext(sc)
+    >>> from pyspark.sql import SparkSession
+    >>> sparkSession = SparkSession.builder.getOrCreate()
     >>> digits = datasets.load_digits()
     >>> X_digits = digits.data
     >>> y_digits = digits.target + 1
@@ -255,7 +255,7 @@ class LogisticRegression(BaseSystemMLClassifier):
     >>> y_train = y_digits[:.9 * n_samples]
     >>> X_test = X_digits[.9 * n_samples:]
     >>> y_test = y_digits[.9 * n_samples:]
-    >>> logistic = LogisticRegression(sqlCtx)
+    >>> logistic = LogisticRegression(sparkSession)
     >>> print('LogisticRegression score: %f' % logistic.fit(X_train, y_train).score(X_test, y_test))
     
     MLPipeline way
@@ -263,9 +263,9 @@ class LogisticRegression(BaseSystemMLClassifier):
     >>> from pyspark.ml import Pipeline
     >>> from systemml.mllearn import LogisticRegression
     >>> from pyspark.ml.feature import HashingTF, Tokenizer
-    >>> from pyspark.sql import SQLContext
-    >>> sqlCtx = SQLContext(sc)
-    >>> training = sqlCtx.createDataFrame([
+    >>> from pyspark.sql import SparkSession
+    >>> sparkSession = SparkSession.builder.getOrCreate()
+    >>> training = sparkSession.createDataFrame([
     >>>     (0L, "a b c d e spark", 1.0),
     >>>     (1L, "b d", 2.0),
     >>>     (2L, "spark f g h", 1.0),
@@ -281,10 +281,10 @@ class LogisticRegression(BaseSystemMLClassifier):
     >>> ], ["id", "text", "label"])
     >>> tokenizer = Tokenizer(inputCol="text", outputCol="words")
     >>> hashingTF = HashingTF(inputCol="words", outputCol="features", numFeatures=20)
-    >>> lr = LogisticRegression(sqlCtx)
+    >>> lr = LogisticRegression(sparkSession)
     >>> pipeline = Pipeline(stages=[tokenizer, hashingTF, lr])
     >>> model = pipeline.fit(training)
-    >>> test = sqlCtx.createDataFrame([
+    >>> test = sparkSession.createDataFrame([
     >>>     (12L, "spark i j k"),
     >>>     (13L, "l m n"),
     >>>     (14L, "mapreduce spark"),
@@ -294,13 +294,13 @@ class LogisticRegression(BaseSystemMLClassifier):
     
     """
     
-    def __init__(self, sqlCtx, penalty='l2', fit_intercept=True, max_iter=100, max_inner_iter=0, tol=0.000001, C=1.0, solver='newton-cg', transferUsingDF=False):
+    def __init__(self, sparkSession, penalty='l2', fit_intercept=True, max_iter=100, max_inner_iter=0, tol=0.000001, C=1.0, solver='newton-cg', transferUsingDF=False):
         """
         Performs both binomial and multinomial logistic regression.
         
         Parameters
         ----------
-        sqlCtx: PySpark SQLContext
+        sparkSession: PySpark SparkSession
         penalty: Only 'l2' supported
         fit_intercept: Specifies whether to add intercept or not (default: True)
         max_iter: Maximum number of outer (Fisher scoring) iterations (default: 100)
@@ -309,8 +309,8 @@ class LogisticRegression(BaseSystemMLClassifier):
         C: 1/regularization parameter (default: 1.0)
         solver: Only 'newton-cg' solver supported
         """
-        self.sqlCtx = sqlCtx
-        self.sc = sqlCtx._sc
+        self.sparkSession = sparkSession
+        self.sc = sparkSession._sc
         createJavaObject(self.sc, 'dummy')
         self.uid = "logReg"
         self.estimator = self.sc._jvm.org.apache.sysml.api.ml.LogisticRegression(self.uid, self.sc._jsc.sc())
@@ -340,7 +340,7 @@ class LinearRegression(BaseSystemMLRegressor):
     >>> import numpy as np
     >>> from sklearn import datasets
     >>> from systemml.mllearn import LinearRegression
-    >>> from pyspark.sql import SQLContext
+    >>> from pyspark.sql import SparkSession
     >>> # Load the diabetes dataset
     >>> diabetes = datasets.load_diabetes()
     >>> # Use only one feature
@@ -352,7 +352,7 @@ class LinearRegression(BaseSystemMLRegressor):
     >>> diabetes_y_train = diabetes.target[:-20]
     >>> diabetes_y_test = diabetes.target[-20:]
     >>> # Create linear regression object
-    >>> regr = LinearRegression(sqlCtx, solver='newton-cg')
+    >>> regr = LinearRegression(sparkSession, solver='newton-cg')
     >>> # Train the model using the training sets
     >>> regr.fit(diabetes_X_train, diabetes_y_train)
     >>> # The mean square error
@@ -361,13 +361,13 @@ class LinearRegression(BaseSystemMLRegressor):
     """
     
     
-    def __init__(self, sqlCtx, fit_intercept=True, max_iter=100, tol=0.000001, C=1.0, solver='newton-cg', transferUsingDF=False):
+    def __init__(self, sparkSession, fit_intercept=True, max_iter=100, tol=0.000001, C=1.0, solver='newton-cg', transferUsingDF=False):
         """
         Performs linear regression to model the relationship between one numerical response variable and one or more explanatory (feature) variables.
 
         Parameters
         ----------
-        sqlCtx: PySpark SQLContext
+        sparkSession: PySpark SparkSession
         fit_intercept: Specifies whether to add intercept or not (default: True)
         max_iter: Maximum number of conjugate gradient iterations, or 0 if no maximum limit provided (default: 100)
         tol: Tolerance used in the convergence criterion (default: 0.000001)
@@ -377,8 +377,8 @@ class LinearRegression(BaseSystemMLRegressor):
         'direct-solve' solver is more efficient when the number of features is relatively small (m < 1000) and
         input matrix X is either tall or fairly dense; otherwise 'newton-cg' solver is more efficient.
         """
-        self.sqlCtx = sqlCtx
-        self.sc = sqlCtx._sc
+        self.sparkSession = sparkSession
+        self.sc = sparkSession._sc
         createJavaObject(self.sc, 'dummy')
         self.uid = "lr"
         if solver == 'newton-cg' or solver == 'direct-solve':
@@ -405,8 +405,8 @@ class SVM(BaseSystemMLClassifier):
     
     >>> from sklearn import datasets, neighbors
     >>> from systemml.mllearn import SVM
-    >>> from pyspark.sql import SQLContext
-    >>> sqlCtx = SQLContext(sc)
+    >>> from pyspark.sql import SparkSession
+    >>> sparkSession = SparkSession.builder.getOrCreate()
     >>> digits = datasets.load_digits()
     >>> X_digits = digits.data
     >>> y_digits = digits.target 
@@ -415,27 +415,27 @@ class SVM(BaseSystemMLClassifier):
     >>> y_train = y_digits[:.9 * n_samples]
     >>> X_test = X_digits[.9 * n_samples:]
     >>> y_test = y_digits[.9 * n_samples:]
-    >>> svm = SVM(sqlCtx, is_multi_class=True)
+    >>> svm = SVM(sparkSession, is_multi_class=True)
     >>> print('LogisticRegression score: %f' % svm.fit(X_train, y_train).score(X_test, y_test))
      
     """
 
 
-    def __init__(self, sqlCtx, fit_intercept=True, max_iter=100, tol=0.000001, C=1.0, is_multi_class=False, transferUsingDF=False):
+    def __init__(self, sparkSession, fit_intercept=True, max_iter=100, tol=0.000001, C=1.0, is_multi_class=False, transferUsingDF=False):
         """
         Performs both binary-class and multiclass SVM (Support Vector Machines).
 
         Parameters
         ----------
-        sqlCtx: PySpark SQLContext
+        sparkSession: PySpark SparkSession
         fit_intercept: Specifies whether to add intercept or not (default: True)
         max_iter: Maximum number iterations (default: 100)
         tol: Tolerance used in the convergence criterion (default: 0.000001)
         C: 1/regularization parameter (default: 1.0)
         is_multi_class: Specifies whether to use binary-class SVM or multi-class SVM algorithm (default: False)
         """
-        self.sqlCtx = sqlCtx
-        self.sc = sqlCtx._sc
+        self.sparkSession = sparkSession
+        self.sc = sparkSession._sc
         self.uid = "svm"
         createJavaObject(self.sc, 'dummy')
         self.estimator = self.sc._jvm.org.apache.sysml.api.ml.SVM(self.uid, self.sc._jsc.sc(), is_multi_class)
@@ -461,8 +461,8 @@ class NaiveBayes(BaseSystemMLClassifier):
     >>> from sklearn.feature_extraction.text import TfidfVectorizer
     >>> from systemml.mllearn import NaiveBayes
     >>> from sklearn import metrics
-    >>> from pyspark.sql import SQLContext
-    >>> sqlCtx = SQLContext(sc)
+    >>> from pyspark.sql import SparkSession
+    >>> sparkSession = SparkSession.builder.getOrCreate(sc)
     >>> categories = ['alt.atheism', 'talk.religion.misc', 'comp.graphics', 'sci.space']
     >>> newsgroups_train = fetch_20newsgroups(subset='train', categories=categories)
     >>> newsgroups_test = fetch_20newsgroups(subset='test', categories=categories)
@@ -470,24 +470,24 @@ class NaiveBayes(BaseSystemMLClassifier):
     >>> # Both vectors and vectors_test are SciPy CSR matrix
     >>> vectors = vectorizer.fit_transform(newsgroups_train.data)
     >>> vectors_test = vectorizer.transform(newsgroups_test.data)
-    >>> nb = NaiveBayes(sqlCtx)
+    >>> nb = NaiveBayes(sparkSession)
     >>> nb.fit(vectors, newsgroups_train.target)
     >>> pred = nb.predict(vectors_test)
     >>> metrics.f1_score(newsgroups_test.target, pred, average='weighted')
 
     """
     
-    def __init__(self, sqlCtx, laplace=1.0, transferUsingDF=False):
+    def __init__(self, sparkSession, laplace=1.0, transferUsingDF=False):
         """
         Performs Naive Bayes.
 
         Parameters
         ----------
-        sqlCtx: PySpark SQLContext
+        sparkSession: PySpark SparkSession
         laplace: Laplace smoothing specified by the user to avoid creation of 0 probabilities (default: 1.0)
         """
-        self.sqlCtx = sqlCtx
-        self.sc = sqlCtx._sc
+        self.sparkSession = sparkSession
+        self.sc = sparkSession._sc
         self.uid = "nb"
         createJavaObject(self.sc, 'dummy')
         self.estimator = self.sc._jvm.org.apache.sysml.api.ml.NaiveBayes(self.uid, self.sc._jsc.sc())

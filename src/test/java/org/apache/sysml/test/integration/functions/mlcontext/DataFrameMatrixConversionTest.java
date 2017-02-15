@@ -23,8 +23,7 @@ import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
-import org.apache.spark.sql.SQLContext;
-import org.junit.Test;
+import org.apache.spark.sql.SparkSession;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.conf.ConfigurationManager;
@@ -38,6 +37,7 @@ import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
+import org.junit.Test;
 
 
 public class DataFrameMatrixConversionTest extends AutomatedTestBase 
@@ -191,13 +191,13 @@ public class DataFrameMatrixConversionTest extends AutomatedTestBase
 			//setup spark context
 			sec = (SparkExecutionContext) ExecutionContextFactory.createContext();		
 			JavaSparkContext sc = sec.getSparkContext();
-			SQLContext sqlctx = new SQLContext(sc);
+			SparkSession sparkSession = SparkSession.builder().sparkContext(sc.sc()).getOrCreate();
 			
 			//get binary block input rdd
 			JavaPairRDD<MatrixIndexes,MatrixBlock> in = SparkExecutionContext.toMatrixJavaPairRDD(sc, mbA, blksz, blksz);
 			
 			//matrix - dataframe - matrix conversion
-			Dataset<Row> df = RDDConverterUtils.binaryBlockToDataFrame(sqlctx, in, mc1, vector);
+			Dataset<Row> df = RDDConverterUtils.binaryBlockToDataFrame(sparkSession, in, mc1, vector);
 			df = ( rows==rows3 ) ? df.repartition(rows) : df;
 			JavaPairRDD<MatrixIndexes,MatrixBlock> out = RDDConverterUtils.dataFrameToBinaryBlock(sc, df, mc2, true, vector);
 			

@@ -21,27 +21,21 @@ package org.apache.sysml.api.ml
 
 import org.scalatest.{ BeforeAndAfterAll, Suite }
 import org.apache.spark.{ SparkConf, SparkContext }
-import org.apache.spark.sql.SQLContext
+import org.apache.spark.sql.SparkSession
 
 trait WrapperSparkContext extends BeforeAndAfterAll { self: Suite =>
   @transient var sc: SparkContext = _
-  @transient var sqlContext: SQLContext = _
+  @transient var sparkSession: SparkSession = _
 
   override def beforeAll() {
     super.beforeAll()
-    val conf = new SparkConf()
-      .setMaster("local[2]")
-      .setAppName("MLlibUnitTest")
-    sc = new SparkContext(conf)
-    //SQLContext.clearActive()
-    sqlContext = new SQLContext(sc)
-    //SQLContext.setActive(sqlContext)
+    sparkSession = SparkSession.builder().master("local[2]").appName("MLlibUnitTest").getOrCreate();
+    sc = sparkSession.sparkContext;
   }
 
   override def afterAll() {
     try {
-      sqlContext = null
-      //SQLContext.clearActive()
+      sparkSession = null
       if (sc != null) {
         sc.stop()
       }

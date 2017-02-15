@@ -43,12 +43,9 @@ import org.apache.spark.ml.feature.LabeledPoint;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
-import org.apache.spark.sql.SQLContext;
+import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
-
-import scala.Tuple2;
-
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -67,6 +64,8 @@ import org.apache.sysml.runtime.matrix.mapred.ReblockBuffer;
 import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.runtime.util.FastStringTokenizer;
 import org.apache.sysml.runtime.util.UtilFunctions;
+
+import scala.Tuple2;
 
 public class RDDConverterUtils 
 {
@@ -262,7 +261,7 @@ public class RDDConverterUtils
 		return out;
 	}
 
-	public static Dataset<Row> binaryBlockToDataFrame(SQLContext sqlctx, 
+	public static Dataset<Row> binaryBlockToDataFrame(SparkSession sparkSession,
 			JavaPairRDD<MatrixIndexes, MatrixBlock> in, MatrixCharacteristics mc, boolean toVector)  
 	{
 		if( !mc.colsKnown() )
@@ -284,7 +283,7 @@ public class RDDConverterUtils
 		}
 		
 		//rdd to data frame conversion
-		return sqlctx.createDataFrame(rowsRDD.rdd(), DataTypes.createStructType(fields));
+		return sparkSession.createDataFrame(rowsRDD.rdd(), DataTypes.createStructType(fields));
 	}
 
 	public static JavaPairRDD<LongWritable, Text> stringToSerializableText(JavaPairRDD<Long,String> in)

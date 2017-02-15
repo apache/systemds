@@ -32,7 +32,7 @@ import org.apache.spark.api.java.function.Function;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
-import org.apache.spark.sql.SQLContext;
+import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
@@ -85,12 +85,12 @@ public class RDDConverterUtilsExtTest extends AutomatedTestBase {
 		list.add("[1.2, 3.4]");
 		JavaRDD<String> javaRddString = sc.parallelize(list);
 		JavaRDD<Row> javaRddRow = javaRddString.map(new StringToRow());
-		SQLContext sqlContext = new SQLContext(sc);
+		SparkSession sparkSession = SparkSession.builder().sparkContext(sc.sc()).getOrCreate();
 		List<StructField> fields = new ArrayList<StructField>();
 		fields.add(DataTypes.createStructField("C1", DataTypes.StringType, true));
 		StructType schema = DataTypes.createStructType(fields);
-		Dataset<Row> inDF = sqlContext.createDataFrame(javaRddRow, schema);
-		Dataset<Row> outDF = RDDConverterUtilsExt.stringDataFrameToVectorDataFrame(sqlContext, inDF);
+		Dataset<Row> inDF = sparkSession.createDataFrame(javaRddRow, schema);
+		Dataset<Row> outDF = RDDConverterUtilsExt.stringDataFrameToVectorDataFrame(sparkSession, inDF);
 
 		List<String> expectedResults = new ArrayList<String>();
 		expectedResults.add("[[1.2,4.3,3.4]]");
@@ -111,12 +111,12 @@ public class RDDConverterUtilsExtTest extends AutomatedTestBase {
 		list.add(null);
 		JavaRDD<String> javaRddString = sc.parallelize(list);
 		JavaRDD<Row> javaRddRow = javaRddString.map(new StringToRow());
-		SQLContext sqlContext = new SQLContext(sc);
+		SparkSession sparkSession = SparkSession.builder().sparkContext(sc.sc()).getOrCreate();
 		List<StructField> fields = new ArrayList<StructField>();
 		fields.add(DataTypes.createStructField("C1", DataTypes.StringType, true));
 		StructType schema = DataTypes.createStructType(fields);
-		Dataset<Row> inDF = sqlContext.createDataFrame(javaRddRow, schema);
-		Dataset<Row> outDF = RDDConverterUtilsExt.stringDataFrameToVectorDataFrame(sqlContext, inDF);
+		Dataset<Row> inDF = sparkSession.createDataFrame(javaRddRow, schema);
+		Dataset<Row> outDF = RDDConverterUtilsExt.stringDataFrameToVectorDataFrame(sparkSession, inDF);
 
 		List<String> expectedResults = new ArrayList<String>();
 		expectedResults.add("[[1.2,3.4]]");
@@ -134,12 +134,12 @@ public class RDDConverterUtilsExtTest extends AutomatedTestBase {
 		list.add("[cheeseburger,fries]");
 		JavaRDD<String> javaRddString = sc.parallelize(list);
 		JavaRDD<Row> javaRddRow = javaRddString.map(new StringToRow());
-		SQLContext sqlContext = new SQLContext(sc);
+		SparkSession sparkSession = SparkSession.builder().sparkContext(sc.sc()).getOrCreate();
 		List<StructField> fields = new ArrayList<StructField>();
 		fields.add(DataTypes.createStructField("C1", DataTypes.StringType, true));
 		StructType schema = DataTypes.createStructType(fields);
-		Dataset<Row> inDF = sqlContext.createDataFrame(javaRddRow, schema);
-		Dataset<Row> outDF = RDDConverterUtilsExt.stringDataFrameToVectorDataFrame(sqlContext, inDF);
+		Dataset<Row> inDF = sparkSession.createDataFrame(javaRddRow, schema);
+		Dataset<Row> outDF = RDDConverterUtilsExt.stringDataFrameToVectorDataFrame(sparkSession, inDF);
 		// trigger evaluation to throw exception
 		outDF.collectAsList();
 	}

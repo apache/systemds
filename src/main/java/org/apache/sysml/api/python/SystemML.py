@@ -25,7 +25,7 @@ from py4j.protocol import Py4JJavaError, Py4JError
 import traceback
 import os
 from pyspark.context import SparkContext 
-from pyspark.sql import DataFrame, SQLContext
+from pyspark.sql import DataFrame, SparkSession
 from pyspark.rdd import RDD
 
 
@@ -59,7 +59,7 @@ class MLContext(object):
             setForcedSparkExecType = (args[1] if len(args) > 1 else False)
             self.sc = sc
             self.ml = sc._jvm.org.apache.sysml.api.MLContext(sc._jsc, monitorPerformance, setForcedSparkExecType)
-            self.sqlCtx = SQLContext(sc)
+            self.sparkSession = SparkSession.builder.getOrCreate()
         except Py4JError:
             traceback.print_exc()
 
@@ -212,41 +212,21 @@ class MLOutput(object):
 
     def getBinaryBlockedRDD(self, varName):
         raise Exception('Not supported in Python MLContext')
-        #try:
-        #    rdd = RDD(self.jmlOut.getBinaryBlockedRDD(varName), self.sc)
-        #    return rdd
-        #except Py4JJavaError:
-        #    traceback.print_exc()
 
     def getMatrixCharacteristics(self, varName):
         raise Exception('Not supported in Python MLContext')
-        #try:
-        #    chars = self.jmlOut.getMatrixCharacteristics(varName)
-        #    return chars
-        #except Py4JJavaError:
-        #    traceback.print_exc()
 
-    def getDF(self, sqlContext, varName):
+    def getDF(self, sparkSession, varName):
         try:
-            jdf = self.jmlOut.getDF(sqlContext._ssql_ctx, varName)
-            df = DataFrame(jdf, sqlContext)
+            jdf = self.jmlOut.getDF(sparkSession, varName)
+            df = DataFrame(jdf, sparkSession)
             return df
         except Py4JJavaError:
             traceback.print_exc()
-        
-    def getMLMatrix(self, sqlContext, varName):
+
+    def getMLMatrix(self, sparkSession, varName):
         raise Exception('Not supported in Python MLContext')
-        #try:
-        #    mlm = self.jmlOut.getMLMatrix(sqlContext._scala_SQLContext, varName)
-        #    return mlm
-        #except Py4JJavaError:
-        #    traceback.print_exc()
 
     def getStringRDD(self, varName, format):
         raise Exception('Not supported in Python MLContext')
-        #try:
-        #    rdd = RDD(self.jmlOut.getStringRDD(varName, format), self.sc)
-        #    return rdd
-        #except Py4JJavaError:
-        #    traceback.print_exc()
 

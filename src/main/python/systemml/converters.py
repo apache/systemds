@@ -36,7 +36,7 @@ def getNumCols(numPyArr):
         return numPyArr.shape[1]
 
 
-def convertToLabeledDF(sqlCtx, X, y=None):
+def convertToLabeledDF(sparkSession, X, y=None):
     from pyspark.ml.feature import VectorAssembler
     if y is not None:
         pd1 = pd.DataFrame(X)
@@ -49,7 +49,7 @@ def convertToLabeledDF(sqlCtx, X, y=None):
         inputColumns = ['C' + str(i) for i in pdf.columns]
         outputColumns = inputColumns
     assembler = VectorAssembler(inputCols=inputColumns, outputCol='features')
-    out = assembler.transform(sqlCtx.createDataFrame(pdf, outputColumns))
+    out = assembler.transform(sparkSession.createDataFrame(pdf, outputColumns))
     if y is not None:
         return out.select('features', 'label')
     else:

@@ -34,7 +34,7 @@ import org.apache.spark.rdd.RDD;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
-import org.apache.spark.sql.SQLContext;
+import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
@@ -53,7 +53,6 @@ import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDConverterUtils;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.mlcontext.MLContextTest.CommaSeparatedValueStringToDoubleArrayRow;
-
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -239,11 +238,11 @@ public class MLContextFrameTest extends AutomatedTestBase {
 				JavaRDD<Row> javaRddRowB = FrameRDDConverterUtils.csvToRowRDD(sc, javaRDDB, CSV_DELIM, schemaB);
 
 				// Create DataFrame
-				SQLContext sqlContext = new SQLContext(sc);
+				SparkSession sparkSession = SparkSession.builder().sparkContext(sc.sc()).getOrCreate();
 				StructType dfSchemaA = FrameRDDConverterUtils.convertFrameSchemaToDFSchema(schemaA, false);
-				Dataset<Row> dataFrameA = sqlContext.createDataFrame(javaRddRowA, dfSchemaA);
+				Dataset<Row> dataFrameA = sparkSession.createDataFrame(javaRddRowA, dfSchemaA);
 				StructType dfSchemaB = FrameRDDConverterUtils.convertFrameSchemaToDFSchema(schemaB, false);
-				Dataset<Row> dataFrameB = sqlContext.createDataFrame(javaRddRowB, dfSchemaB);
+				Dataset<Row> dataFrameB = sparkSession.createDataFrame(javaRddRowB, dfSchemaB);
 				if (script_type == SCRIPT_TYPE.DML)
 					script = dml("A[2:3,2:4]=B;C=A[2:3,2:3]").in("A", dataFrameA, fmA).in("B", dataFrameB, fmB).out("A")
 							.out("C");
@@ -493,18 +492,18 @@ public class MLContextFrameTest extends AutomatedTestBase {
 		JavaRDD<Row> javaRddRowA = FrameRDDConverterUtils.csvToRowRDD(sc, javaRddStringA, CSV_DELIM, schema);
 		JavaRDD<Row> javaRddRowB = javaRddStringB.map(new CommaSeparatedValueStringToDoubleArrayRow());
 
-		SQLContext sqlContext = new SQLContext(sc);
+		SparkSession sparkSession = SparkSession.builder().sparkContext(sc.sc()).getOrCreate();
 
 		List<StructField> fieldsA = new ArrayList<StructField>();
 		fieldsA.add(DataTypes.createStructField("1", DataTypes.StringType, true));
 		fieldsA.add(DataTypes.createStructField("2", DataTypes.DoubleType, true));
 		StructType schemaA = DataTypes.createStructType(fieldsA);
-		Dataset<Row> dataFrameA = sqlContext.createDataFrame(javaRddRowA, schemaA);
+		Dataset<Row> dataFrameA = sparkSession.createDataFrame(javaRddRowA, schemaA);
 
 		List<StructField> fieldsB = new ArrayList<StructField>();
 		fieldsB.add(DataTypes.createStructField("1", DataTypes.DoubleType, true));
 		StructType schemaB = DataTypes.createStructType(fieldsB);
-		Dataset<Row> dataFrameB = sqlContext.createDataFrame(javaRddRowB, schemaB);
+		Dataset<Row> dataFrameB = sparkSession.createDataFrame(javaRddRowB, schemaB);
 
 		String dmlString = "[tA, tAM] = transformencode (target = A, spec = \"{ids: true ,recode: [ 1, 2 ]}\");\n"
 				+ "C = tA %*% B;\n" + "M = s * C;";
@@ -530,14 +529,14 @@ public class MLContextFrameTest extends AutomatedTestBase {
 
 		JavaRDD<Row> javaRddRowA = sc. parallelize( Arrays.asList(rowsA)); 
 
-		SQLContext sqlContext = new SQLContext(sc);
+		SparkSession sparkSession = SparkSession.builder().sparkContext(sc.sc()).getOrCreate();
 
 		List<StructField> fieldsA = new ArrayList<StructField>();
 		fieldsA.add(DataTypes.createStructField("myID", DataTypes.StringType, true));
 		fieldsA.add(DataTypes.createStructField("FeatureName", DataTypes.StringType, true));
 		fieldsA.add(DataTypes.createStructField("FeatureValue", DataTypes.IntegerType, true));
 		StructType schemaA = DataTypes.createStructType(fieldsA);
-		Dataset<Row> dataFrameA = sqlContext.createDataFrame(javaRddRowA, schemaA);
+		Dataset<Row> dataFrameA = sparkSession.createDataFrame(javaRddRowA, schemaA);
 
 		String dmlString = "[tA, tAM] = transformencode (target = A, spec = \"{ids: false ,recode: [ myID, FeatureName ]}\");";
 
@@ -572,14 +571,14 @@ public class MLContextFrameTest extends AutomatedTestBase {
 
 		JavaRDD<Row> javaRddRowA = sc. parallelize( Arrays.asList(rowsA)); 
 
-		SQLContext sqlContext = new SQLContext(sc);
+		SparkSession sparkSession = SparkSession.builder().sparkContext(sc.sc()).getOrCreate();
 
 		List<StructField> fieldsA = new ArrayList<StructField>();
 		fieldsA.add(DataTypes.createStructField("featureName", DataTypes.StringType, true));
 		fieldsA.add(DataTypes.createStructField("featureValue", DataTypes.IntegerType, true));
 		fieldsA.add(DataTypes.createStructField("id", DataTypes.StringType, true));
 		StructType schemaA = DataTypes.createStructType(fieldsA);
-		Dataset<Row> dataFrameA = sqlContext.createDataFrame(javaRddRowA, schemaA);
+		Dataset<Row> dataFrameA = sparkSession.createDataFrame(javaRddRowA, schemaA);
 
 		String dmlString = "[tA, tAM] = transformencode (target = A, spec = \"{ids: false ,recode: [ featureName, id ]}\");";
 
@@ -622,7 +621,7 @@ public class MLContextFrameTest extends AutomatedTestBase {
 	// JavaRDD<Row> javaRddRowA = javaRddStringA.map(new
 	// CommaSeparatedValueStringToRow());
 	//
-	// SQLContext sqlContext = new SQLContext(sc);
+	// SparkSession sparkSession = SparkSession.builder().sparkContext(sc.sc()).getOrCreate();
 	//
 	// List<StructField> fieldsA = new ArrayList<StructField>();
 	// fieldsA.add(DataTypes.createStructField("1", DataTypes.StringType,
@@ -630,7 +629,7 @@ public class MLContextFrameTest extends AutomatedTestBase {
 	// fieldsA.add(DataTypes.createStructField("2", DataTypes.StringType,
 	// true));
 	// StructType schemaA = DataTypes.createStructType(fieldsA);
-	// DataFrame dataFrameA = sqlContext.createDataFrame(javaRddRowA, schemaA);
+	// DataFrame dataFrameA = sparkSession.createDataFrame(javaRddRowA, schemaA);
 	//
 	// String dmlString = "[tA, tAM] = transformencode (target = A, spec =
 	// \"{ids: true ,recode: [ 1, 2 ]}\");\n";

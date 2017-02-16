@@ -1795,8 +1795,9 @@ public class DMLTranslator
 			target = createTarget(source);
 			if(left.getDataType() == DataType.MATRIX || right.getDataType() == DataType.MATRIX) {
 				// Added to support matrix relational comparison
+				// (we support only matrices of value type double)
 				target.setDataType(DataType.MATRIX);
-				target.setValueType(ValueType.BOOLEAN);
+				target.setValueType(ValueType.DOUBLE);
 			}
 			else {
 				// Added to support scalar relational comparison

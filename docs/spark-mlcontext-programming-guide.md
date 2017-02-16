@@ -124,7 +124,7 @@ None
 
 ## DataFrame Example
 
-For demonstration purposes, we'll use Spark to create a `DataFrame` called `df` of random `double`s from 0 to 1 consisting of 10,000 rows and 1,000 columns.
+For demonstration purposes, we'll use Spark to create a `DataFrame` called `df` of random `double`s from 0 to 1 consisting of 10,000 rows and 100 columns.
 
 <div class="codetabs">
 
@@ -134,7 +134,7 @@ import org.apache.spark.sql._
 import org.apache.spark.sql.types.{StructType,StructField,DoubleType}
 import scala.util.Random
 val numRows = 10000
-val numCols = 1000
+val numCols = 100
 val data = sc.parallelize(0 to numRows-1).map { _ => Row.fromSeq(Seq.fill(numCols)(Random.nextDouble)) }
 val schema = StructType((0 to numCols-1).map { i => StructField("C" + i, DoubleType, true) } )
 val df = spark.createDataFrame(data, schema)
@@ -155,8 +155,8 @@ import scala.util.Random
 scala> val numRows = 10000
 numRows: Int = 10000
 
-scala> val numCols = 1000
-numCols: Int = 1000
+scala> val numCols = 100
+numCols: Int = 100
 
 scala> val data = sc.parallelize(0 to numRows-1).map { _ => Row.fromSeq(Seq.fill(numCols)(Random.nextDouble)) }
 data: org.apache.spark.rdd.RDD[org.apache.spark.sql.Row] = MapPartitionsRDD[1] at map at <console>:42
@@ -175,7 +175,7 @@ df: org.apache.spark.sql.DataFrame = [C0: double, C1: double, C2: double, C3: do
 We'll create a DML script to find the minimum, maximum, and mean values in a matrix. This
 script has one input variable, matrix `Xin`, and three output variables, `minOut`, `maxOut`, and `meanOut`.
 
-For performance, we'll specify metadata indicating that the matrix has 10,000 rows and 1,000 columns.
+For performance, we'll specify metadata indicating that the matrix has 10,000 rows and 100 columns.
 
 We'll create a DML script using the ScriptFactory `dml` method with the `minMaxMean` script String. The
 input variable is specified to be our `DataFrame` `df` with `MatrixMetadata` `mm`. The output
@@ -218,7 +218,7 @@ meanOut = mean(Xin)
 "
 
 scala> val mm = new MatrixMetadata(numRows, numCols)
-mm: org.apache.sysml.api.mlcontext.MatrixMetadata = rows: 10000, columns: 1000, non-zeros: None, rows per block: None, columns per block: None
+mm: org.apache.sysml.api.mlcontext.MatrixMetadata = rows: 10000, columns: 100, non-zeros: None, rows per block: None, columns per block: None
 
 scala> val minMaxMeanScript = dml(minMaxMean).in("Xin", df, mm).out("minOut", "maxOut", "meanOut")
 minMaxMeanScript: org.apache.sysml.api.mlcontext.Script =
@@ -929,7 +929,7 @@ Symbol Table:
   [1] (Double) meanOut: 0.5000954668004209
   [2] (Double) maxOut: 0.9999999956646207
   [3] (Double) minOut: 1.4149740823476975E-7
-  [4] (Matrix) Xin: Matrix: scratch_space/temp_1166464711339222, [10000 x 1000, nnz=10000000, blocks (1000 x 1000)], binaryblock, not-dirty
+  [4] (Matrix) Xin: Matrix: scratch_space/temp_1166464711339222, [10000 x 100, nnz=1000000, blocks (1000 x 1000)], binaryblock, not-dirty
 
 Script String:
 
@@ -980,7 +980,7 @@ Symbol Table:
   [1] (Double) meanOut: 0.5000954668004209
   [2] (Double) maxOut: 0.9999999956646207
   [3] (Double) minOut: 1.4149740823476975E-7
-  [4] (Matrix) Xin: Matrix: scratch_space/temp_1166464711339222, [10000 x 1000, nnz=10000000, blocks (1000 x 1000)], binaryblock, not-dirty
+  [4] (Matrix) Xin: Matrix: scratch_space/temp_1166464711339222, [10000 x 100, nnz=1000000, blocks (1000 x 1000)], binaryblock, not-dirty
 
 scala> minMaxMeanScript.clearAll
 
@@ -1129,7 +1129,7 @@ meanOut = mean(Xin)
 "
 
 scala> val mm = new MatrixMetadata(numRows, numCols)
-mm: org.apache.sysml.api.mlcontext.MatrixMetadata = rows: 10000, columns: 1000, non-zeros: None, rows per block: None, columns per block: None
+mm: org.apache.sysml.api.mlcontext.MatrixMetadata = rows: 10000, columns: 100, non-zeros: None, rows per block: None, columns per block: None
 
 scala> val minMaxMeanScript = dml(minMaxMean).in("Xin", df, mm).out("minOut", "maxOut", "meanOut")
 minMaxMeanScript: org.apache.sysml.api.mlcontext.Script =
@@ -1147,7 +1147,7 @@ scala> val (min, max, mean) = ml.execute(minMaxMeanScript).getTuple[Double, Doub
 PROGRAM
 --MAIN PROGRAM
 ----GENERIC (lines 1-8) [recompile=false]
-------(12) TRead Xin [10000,1000,1000,1000,10000000] [0,0,76 -> 76MB] [chkpt], CP
+------(12) TRead Xin [10000,100,1000,1000,1000000] [0,0,76 -> 76MB] [chkpt], CP
 ------(13) ua(minRC) (12) [0,0,-1,-1,-1] [76,0,0 -> 76MB], CP
 ------(21) TWrite minOut (13) [0,0,-1,-1,-1] [0,0,0 -> 0MB], CP
 ------(14) ua(maxRC) (12) [0,0,-1,-1,-1] [76,0,0 -> 76MB], CP
@@ -1523,7 +1523,7 @@ There are currently two mechanisms for this in SystemML: **(1) BinaryBlockMatrix
 If you have an input DataFrame, it can be converted to a BinaryBlockMatrix, and this BinaryBlockMatrix
 can be passed as an input rather than passing in the DataFrame as an input.
 
-For example, suppose we had a 10000x1000 matrix represented as a DataFrame, as we saw in an earlier example.
+For example, suppose we had a 10000x100 matrix represented as a DataFrame, as we saw in an earlier example.
 Now suppose we create two Script objects with the DataFrame as an input, as shown below. In the Spark Shell,
 when executing this code, you can see that each of the two Script object creations requires the
 time-consuming data conversion step.
@@ -1533,7 +1533,7 @@ import org.apache.spark.sql._
 import org.apache.spark.sql.types.{StructType,StructField,DoubleType}
 import scala.util.Random
 val numRows = 10000
-val numCols = 1000
+val numCols = 100
 val data = sc.parallelize(0 to numRows-1).map { _ => Row.fromSeq(Seq.fill(numCols)(Random.nextDouble)) }
 val schema = StructType((0 to numCols-1).map { i => StructField("C" + i, DoubleType, true) } )
 val df = spark.createDataFrame(data, schema)
@@ -1554,7 +1554,7 @@ import org.apache.spark.sql._
 import org.apache.spark.sql.types.{StructType,StructField,DoubleType}
 import scala.util.Random
 val numRows = 10000
-val numCols = 1000
+val numCols = 100
 val data = sc.parallelize(0 to numRows-1).map { _ => Row.fromSeq(Seq.fill(numCols)(Random.nextDouble)) }
 val schema = StructType((0 to numCols-1).map { i => StructField("C" + i, DoubleType, true) } )
 val df = spark.createDataFrame(data, schema)

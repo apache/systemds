@@ -518,6 +518,11 @@ public class YarnClusterAnalyzer
 	
 	public static void analyzeYarnCluster(boolean verbose) {
 		YarnConfiguration conf = new YarnConfiguration();
+		if (OptimizerUtils.isSparkExecutionMode()) {
+			// Work-around jersey issue in https://issues.apache.org/jira/browse/YARN-5271
+			// and https://issues.apache.org/jira/browse/SPARK-15343.
+			conf.set("yarn.timeline-service.enabled", "false");
+		}
 		YarnClient yarnClient = YarnClient.createYarnClient();
 		yarnClient.init(conf);
 		yarnClient.start();

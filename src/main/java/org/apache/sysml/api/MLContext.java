@@ -37,6 +37,7 @@ import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.rdd.RDD;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
+import org.apache.spark.sql.SQLContext;
 import org.apache.spark.sql.SparkSession;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.api.jmlc.JMLCUtils;
@@ -1593,5 +1594,20 @@ public class MLContext {
 		JavaPairRDD<MatrixIndexes, MatrixBlock> blocks = out.getBinaryBlockedRDD("output");
 		MatrixCharacteristics mcOut = out.getMatrixCharacteristics("output");
 		return MLMatrix.createMLMatrix(this, sparkSession, blocks, mcOut);
-	}	
+	}
+
+	/**
+	 * Experimental API: Might be discontinued in future release
+	 * @param sqlContext the SQL Context
+	 * @param filePath the file path
+	 * @param format the format
+	 * @return the MLMatrix
+	 * @throws IOException if IOException occurs
+	 * @throws DMLException if DMLException occurs
+	 * @throws ParseException if ParseException occurs
+	 */
+	public MLMatrix read(SQLContext sqlContext, String filePath, String format) throws IOException, DMLException, ParseException {
+		SparkSession sparkSession = sqlContext.sparkSession();
+		return read(sparkSession, filePath, format);
+	}
 }

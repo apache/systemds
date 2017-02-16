@@ -26,6 +26,7 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
+import org.apache.spark.sql.SQLContext;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.types.StructType;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -107,7 +108,24 @@ public class MLOutput {
 		}
 		throw new DMLRuntimeException("Variable " + varName + " not found in the output symbol table.");
 	}
-	
+
+	/**
+	 * Note, the output DataFrame has an additional column ID.
+	 * An easy way to get DataFrame without ID is by df.drop("__INDEX")
+	 * 
+	 * @param sqlContext the SQL Context
+	 * @param varName the variable name
+	 * @return the DataFrame
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
+	 */
+	public Dataset<Row> getDF(SQLContext sqlContext, String varName) throws DMLRuntimeException {
+		if (sqlContext == null) {
+			throw new DMLRuntimeException("SQLContext is not created");
+		}
+		SparkSession sparkSession = sqlContext.sparkSession();
+		return getDF(sparkSession, varName);
+	}
+
 	/**
 	 * Obtain the DataFrame
 	 * 
@@ -134,7 +152,24 @@ public class MLOutput {
 		}
 		
 	}
-	
+
+	/**
+	 * Obtain the DataFrame
+	 * 
+	 * @param sqlContext the SQL Context
+	 * @param varName the variable name
+	 * @param outputVector if true, returns DataFrame with two column: ID and org.apache.spark.ml.linalg.Vector
+	 * @return the DataFrame
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
+	 */
+	public Dataset<Row> getDF(SQLContext sqlContext, String varName, boolean outputVector) throws DMLRuntimeException {
+		if (sqlContext == null) {
+			throw new DMLRuntimeException("SQLContext is not created");
+		}
+		SparkSession sparkSession = sqlContext.sparkSession();
+		return getDF(sparkSession, varName, outputVector);
+	}
+
 	/**
 	 * This methods improves the performance of MLPipeline wrappers.
 	 * 
@@ -152,6 +187,25 @@ public class MLOutput {
 		}
 		JavaPairRDD<MatrixIndexes,MatrixBlock> binaryBlockRDD = getBinaryBlockedRDD(varName);
 		return RDDConverterUtils.binaryBlockToDataFrame(sparkSession, binaryBlockRDD, mc, true);
+	}
+
+	/**
+	 * This methods improves the performance of MLPipeline wrappers.
+	 * 
+	 * @param sqlContext the SQL Context
+	 * @param varName the variable name
+	 * @param mc the matrix characteristics
+	 * @return the DataFrame
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
+	 */
+	public Dataset<Row> getDF(SQLContext sqlContext, String varName, MatrixCharacteristics mc) 
+		throws DMLRuntimeException 
+	{
+		if (sqlContext == null) {
+			throw new DMLRuntimeException("SQLContext is not created");
+		}
+		SparkSession sparkSession = sqlContext.sparkSession();
+		return getDF(sparkSession, varName, mc);
 	}
 	
 	public JavaRDD<String> getStringRDD(String varName, String format) throws DMLRuntimeException {
@@ -201,5 +255,13 @@ public class MLOutput {
 			return new MLMatrix(sparkSession.createDataFrame(rdd.map(new GetMLBlock()).rdd(), schema), mc, ml);
 		}
 		throw new DMLRuntimeException("Variable " + varName + " not found in the output symbol table.");
+	}
+	
+	public MLMatrix getMLMatrix(MLContext ml, SQLContext sqlContext, String varName) throws DMLRuntimeException {
+		if (sqlContext == null) {
+			throw new DMLRuntimeException("SQLContext is not created");
+		}
+		SparkSession sparkSession = sqlContext.sparkSession();
+		return getMLMatrix(ml, sparkSession, varName);
 	}
 }

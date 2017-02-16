@@ -42,6 +42,7 @@ import org.apache.spark.ml.linalg.Vectors;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
+import org.apache.spark.sql.SQLContext;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
@@ -284,6 +285,14 @@ public class RDDConverterUtils
 		
 		//rdd to data frame conversion
 		return sparkSession.createDataFrame(rowsRDD.rdd(), DataTypes.createStructType(fields));
+	}
+
+	@Deprecated
+	public static Dataset<Row> binaryBlockToDataFrame(SQLContext sqlContext,
+			JavaPairRDD<MatrixIndexes, MatrixBlock> in, MatrixCharacteristics mc, boolean toVector)  
+	{
+		SparkSession sparkSession = sqlContext.sparkSession();
+		return binaryBlockToDataFrame(sparkSession, in, mc, toVector);
 	}
 
 	public static JavaPairRDD<LongWritable, Text> stringToSerializableText(JavaPairRDD<Long,String> in)

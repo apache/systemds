@@ -25,6 +25,7 @@ import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.rdd.RDD;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
+import org.apache.spark.sql.SQLContext;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.catalyst.encoders.RowEncoder;
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan;
@@ -76,11 +77,21 @@ public class MLMatrix extends Dataset<Row> {
 		this.ml = ml;
 	}
 
+	protected MLMatrix(SQLContext sqlContext, LogicalPlan logicalPlan, MLContext ml) {
+		super(sqlContext, logicalPlan, RowEncoder.apply(null));
+		this.ml = ml;
+	}
+
 	protected MLMatrix(SparkSession sparkSession, QueryExecution queryExecution, MLContext ml) {
 		super(sparkSession, queryExecution, RowEncoder.apply(null));
 		this.ml = ml;
 	}
-	
+
+	protected MLMatrix(SQLContext sqlContext, QueryExecution queryExecution, MLContext ml) {
+		super(sqlContext.sparkSession(), queryExecution, RowEncoder.apply(null));
+		this.ml = ml;
+	}
+
 	// Only used internally to set a new MLMatrix after one of matrix operations.
 	// Not to be used externally.
 	protected MLMatrix(Dataset<Row> df, MatrixCharacteristics mc, MLContext ml) throws DMLRuntimeException {
@@ -110,7 +121,12 @@ public class MLMatrix extends Dataset<Row> {
 		StructType schema = MLBlock.getDefaultSchemaForBinaryBlock();
 		return new MLMatrix(sparkSession.createDataFrame(rows.toJavaRDD(), schema), mc, ml);
 	}
-	
+
+	static MLMatrix createMLMatrix(MLContext ml, SQLContext sqlContext, JavaPairRDD<MatrixIndexes, MatrixBlock> blocks, MatrixCharacteristics mc) throws DMLRuntimeException {
+		SparkSession sparkSession = sqlContext.sparkSession();
+		return createMLMatrix(ml, sparkSession, blocks, mc);
+	}
+
 	/**
 	 * Convenient method to write a MLMatrix.
 	 * 

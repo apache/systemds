@@ -152,21 +152,22 @@ public class MatrixIndexingSPInstruction  extends IndexingSPInstruction
 						(int)mcOut.getCols(), mcOut.getRowsPerBlock(), mcOut.getColsPerBlock(), -1);
 				sec.setMatrixOutput(output.getName(), mbout);
 			}
-			else {
-				//rdd output for general case
+			else { //rdd output for general case
 				JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
+				
 				if( isPartitioningPreservingRightIndexing(mcIn, ixrange) ) {
 					out = in1.mapPartitionsToPair(
 							new SliceBlockPartitionFunction(ixrange, mcOut), true);
 				}
+				else if( _aggType == SparkAggType.NONE
+					|| OptimizerUtils.isIndexingRangeBlockAligned(ixrange, mcIn) ) {
+					out = in1.filter(new IsBlockInRange(rl, ru, cl, cu, mcOut))
+				             .mapToPair(new SliceSingleBlock(ixrange, mcOut));
+				}
 				else {
 					out = in1.filter(new IsBlockInRange(rl, ru, cl, cu, mcOut))
-				             .flatMapToPair(new SliceBlock(ixrange, mcOut));
-					
-					//aggregation if required 
-					boolean aligned = OptimizerUtils.isIndexingRangeBlockAligned(ixrange, mcIn);
-					if( _aggType != SparkAggType.NONE && !aligned ) 
-						out = RDDAggregateUtils.mergeByKey(out);
+				             .flatMapToPair(new SliceMultipleBlocks(ixrange, mcOut));
+					out = RDDAggregateUtils.mergeByKey(out);
 				}
 					
 				//put output RDD handle into symbol table
@@ -405,15 +406,62 @@ public class MatrixIndexingSPInstruction  extends IndexingSPInstruction
 		}
 	}
 
-	private static class SliceBlock implements PairFlatMapFunction<Tuple2<MatrixIndexes,MatrixBlock>, MatrixIndexes, MatrixBlock> 
+	private static class SliceSingleBlock implements PairFunction<Tuple2<MatrixIndexes,MatrixBlock>, MatrixIndexes, MatrixBlock> 
+	{
+		private static final long serialVersionUID = -6724027136506200924L;
+		
+		private final IndexRange _ixrange;
+		private final int _brlen; 
+		private final int _bclen;
+		
+		public SliceSingleBlock(IndexRange ixrange, MatrixCharacteristics mcOut) {
+			_ixrange = ixrange;
+			_brlen = mcOut.getRowsPerBlock();
+			_bclen = mcOut.getColsPerBlock();
+		}
+
+		@Override
+		public Tuple2<MatrixIndexes, MatrixBlock> call(Tuple2<MatrixIndexes, MatrixBlock> kv) 
+			throws Exception 
+		{	
+			//get inputs (guaranteed to fall into indexing range)
+			MatrixIndexes ix = kv._1();
+			MatrixBlock block = kv._2();
+			
+			//compute local index range 
+			long grix = UtilFunctions.computeCellIndex(ix.getRowIndex(), _brlen, 0);
+			long gcix = UtilFunctions.computeCellIndex(ix.getColumnIndex(), _bclen, 0);
+			int lrl = (int)((_ixrange.rowStart<grix) ? 0 : _ixrange.rowStart - grix);
+			int lcl = (int)((_ixrange.colStart<gcix) ? 0 : _ixrange.colStart - gcix);
+			int lru = (int)Math.min(block.getNumRows()-1, _ixrange.rowEnd - grix);
+			int lcu = (int)Math.min(block.getNumColumns()-1, _ixrange.colEnd - gcix);
+			
+			//compute output index
+			MatrixIndexes ixOut = new MatrixIndexes(
+				ix.getRowIndex() - (_ixrange.rowStart-1)/_brlen, 
+				ix.getColumnIndex() - (_ixrange.colStart-1)/_bclen);
+			
+			//create return matrix block (via shallow copy or slice)
+			if( lrl == 0 && lru == block.getNumRows()-1
+				&& lcl == 0 && lcu == block.getNumColumns()-1 ) {
+				return new Tuple2<MatrixIndexes, MatrixBlock>(ixOut, block);
+			}
+			else {
+				return new Tuple2<MatrixIndexes, MatrixBlock>(ixOut, 
+					block.sliceOperations(lrl, lru, lcl, lcu, new MatrixBlock()));
+			}
+		}		
+	}
+	
+	private static class SliceMultipleBlocks implements PairFlatMapFunction<Tuple2<MatrixIndexes,MatrixBlock>, MatrixIndexes, MatrixBlock> 
 	{
 		private static final long serialVersionUID = 5733886476413136826L;
 		
-		private IndexRange _ixrange;
-		private int _brlen; 
-		private int _bclen;
+		private final IndexRange _ixrange;
+		private final int _brlen; 
+		private final int _bclen;
 		
-		public SliceBlock(IndexRange ixrange, MatrixCharacteristics mcOut) {
+		public SliceMultipleBlocks(IndexRange ixrange, MatrixCharacteristics mcOut) {
 			_ixrange = ixrange;
 			_brlen = mcOut.getRowsPerBlock();
 			_bclen = mcOut.getColsPerBlock();

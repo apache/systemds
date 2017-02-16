@@ -26,15 +26,17 @@ import org.junit.runners.Suite;
  *  won't run two of them at once. */
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
+	IndexRangeBlockAlignmentTest.class,
+	Jdk7IssueRightIndexingTest.class,
 	LeftIndexingScalarTest.class,
 	LeftIndexingSparseDenseTest.class,
 	LeftIndexingSparseSparseTest.class,
 	LeftIndexingTest.class,
 	LeftIndexingUpdateInPlaceTest.class,
+	PyDMLImplicitSlicingBounds.class,
 	RightIndexingMatrixTest.class,
 	RightIndexingVectorTest.class,
-	
-	Jdk7IssueRightIndexingTest.class,
+	RowBatchRightIndexingTest.class,
 	UnboundedScalarRightIndexingTest.class,
 })
 

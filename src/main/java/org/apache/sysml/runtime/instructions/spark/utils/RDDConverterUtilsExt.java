@@ -236,7 +236,22 @@ public class RDDConverterUtilsExt
 		JavaRDD<Row> newRows = df.rdd().toJavaRDD().zipWithIndex().map(new AddRowID());
 		return sparkSession.createDataFrame(newRows, new StructType(newSchema));
 	}
-	
+
+	/**
+	 * Add element indices as new column to DataFrame
+	 * 
+	 * @param df input data frame
+	 * @param sqlContext the SQL Context
+	 * @param nameOfCol name of index column
+	 * @return new data frame
+	 * 
+	 * @deprecated This will be removed in SystemML 1.0.
+	 */
+	@Deprecated
+	public static Dataset<Row> addIDToDataFrame(Dataset<Row> df, SQLContext sqlContext, String nameOfCol) {
+		SparkSession sparkSession = sqlContext.sparkSession();
+		return addIDToDataFrame(df, sparkSession, nameOfCol);
+	}
 	
 	
 	private static class MatrixEntryToBinaryBlockFunction implements PairFlatMapFunction<Iterator<MatrixEntry>,MatrixIndexes,MatrixBlock> 

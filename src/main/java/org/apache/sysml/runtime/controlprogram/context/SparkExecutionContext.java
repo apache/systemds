@@ -35,6 +35,7 @@ import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.broadcast.Broadcast;
 import org.apache.spark.storage.RDDInfo;
 import org.apache.spark.storage.StorageLevel;
+import org.apache.spark.util.LongAccumulator;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.MLContextProxy;
 import org.apache.sysml.conf.ConfigurationManager;
@@ -55,6 +56,7 @@ import org.apache.sysml.runtime.instructions.spark.data.LineageObject;
 import org.apache.sysml.runtime.instructions.spark.data.PartitionedBlock;
 import org.apache.sysml.runtime.instructions.spark.data.PartitionedBroadcast;
 import org.apache.sysml.runtime.instructions.spark.data.RDDObject;
+import org.apache.sysml.runtime.instructions.spark.functions.ComputeBinaryBlockNnzFunction;
 import org.apache.sysml.runtime.instructions.spark.functions.CopyBinaryCellFunction;
 import org.apache.sysml.runtime.instructions.spark.functions.CopyFrameBlockPairFunction;
 import org.apache.sysml.runtime.instructions.spark.functions.CopyTextInputFunction;
@@ -966,8 +968,9 @@ public class SparkExecutionContext extends ExecutionContext
 	{
 		JavaPairRDD<MatrixIndexes,MatrixBlock> lrdd = (JavaPairRDD<MatrixIndexes, MatrixBlock>) rdd.getRDD();
 		
-		//recompute nnz 
-		long nnz = SparkUtils.computeNNZFromBlocks(lrdd);
+		//piggyback nnz maintenance on write
+		LongAccumulator aNnz = getSparkContextStatic().sc().longAccumulator("nnz");
+		lrdd = lrdd.mapValues(new ComputeBinaryBlockNnzFunction(aNnz));
 		
 		//save file is an action which also triggers nnz maintenance
 		lrdd.saveAsHadoopFile(path, 
@@ -976,7 +979,7 @@ public class SparkExecutionContext extends ExecutionContext
 				oinfo.outputFormatClass);
 		
 		//return nnz aggregate of all blocks
-		return nnz;
+		return aNnz.value();
 	}
 
 	@SuppressWarnings("unchecked")

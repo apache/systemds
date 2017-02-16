@@ -249,29 +249,4 @@ public class SparkUtils
 					arg0.getNonZeros() + arg1.getNonZeros() ); //sum
 		}	
 	}
-
-	/**
-	 * Utility to compute number of non-zeros from the given RDD of MatrixBlocks
-	 * 
-	 * @param rdd matrix as {@code JavaPairRDD<MatrixIndexes, MatrixBlock>}
-	 * @return number of non-zeros
-	 */
-	public static long computeNNZFromBlocks(JavaPairRDD<MatrixIndexes, MatrixBlock> rdd) {
-		long nnz = rdd.values().aggregate(	0L, 
-						new Function2<Long,MatrixBlock,Long>() {
-							private static final long serialVersionUID = 4907645080949985267L;
-							@Override
-							public Long call(Long v1, MatrixBlock v2) throws Exception {
-								return (v1 + v2.getNonZeros());
-							} 
-						}, 
-						new Function2<Long,Long,Long>() {
-							private static final long serialVersionUID = 333028431986883739L;
-							@Override
-							public Long call(Long v1, Long v2) throws Exception {
-								return v1+v2;
-							}
-						} );
-		return nnz;
-	}
 }

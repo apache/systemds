@@ -39,7 +39,6 @@ import org.apache.sysml.runtime.instructions.spark.functions.ComputeBinaryBlockN
 import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDConverterUtils;
 import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDConverterUtils.LongFrameToLongWritableFrameFunction;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils;
-import org.apache.sysml.runtime.instructions.spark.utils.SparkUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FileFormatProperties;
@@ -179,9 +178,12 @@ public class WriteSPInstruction extends SPInstruction
 		if(    oi == OutputInfo.MatrixMarketOutputInfo
 			|| oi == OutputInfo.TextCellOutputInfo     ) 
 		{
-			//recompute nnz if necessary (required for header if matrix market)
-			if ( isInputMatrixBlock && !mc.nnzKnown() )
-				mc.setNonZeros( SparkUtils.computeNNZFromBlocks(in1) );
+			//piggyback nnz maintenance on write
+			LongAccumulator aNnz = null;
+			if ( isInputMatrixBlock && !mc.nnzKnown() ) {
+				aNnz = sec.getSparkContext().sc().longAccumulator("nnz");
+				in1 = in1.mapValues(new ComputeBinaryBlockNnzFunction(aNnz));
+			}
 			
 			JavaRDD<String> header = null;				
 			if( oi == OutputInfo.MatrixMarketOutputInfo  ) {
@@ -199,6 +201,9 @@ public class WriteSPInstruction extends SPInstruction
 				customSaveTextFile(header.union(ijv), fname, true);
 			else
 				customSaveTextFile(ijv, fname, false);
+			
+			if ( isInputMatrixBlock && !mc.nnzKnown() )
+				mc.setNonZeros( aNnz.value() );
 		}
 		else if( oi == OutputInfo.CSVOutputInfo ) 
 		{

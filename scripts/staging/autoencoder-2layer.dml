@@ -27,35 +27,38 @@
 # Currently, tanh is set to be the activation function. 
 # By re-implementing 'func' DML-bodied function, one can change the activation.
 
-# INPUT Parameters:
-#------------------
-# X: A filename where the input is stored
-# H1: The number of neurons in the 1st hidden layer
-# H2: The number of neurons in the 2nd hidden layer
-# EPOCH: Number of epochs to train for
-# fmt: Output format ("text", "csv", "binary" etc.)
-# OBJ: Boolean-valued. If set to true, computes objective function value (squared-loss)
-#      at the end of each epoch. Note that, computing the full objective can take a lot
-#      of time. 
-# BATCH: (training parameter) Sets the mini-batch size
-# STEP: (training parameter) Sets the initial step size
-# DECAY: (training parameter) Sets the decay factor (decays step size after each epoch)
-# MOMENTUM: (training parameter) Sets the momentum parameter
+# INPUT PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME   	TYPE     DEFAULT  MEANING
+# ---------------------------------------------------------------------------------------------
+# X         String   ---      Filename where the input is stored
+# H1        Int      ---      Number of neurons in the 1st hidden layer
+# H2        Int      ---      Number of neurons in the 2nd hidden layer
+# EPOCH     Int      ---      Number of epochs to train for
+# fmt       String   'text'   Output format ("text", "csv", "binary" etc.)
+# OBJ       Boolean  FALSE    If TRUE, Computes objective function value (squared-loss)
+#                             at the end of each epoch. Note that, computing the full 
+#                             objective can take a lot of time. 
+# BATCH     Int      256      Mini-batch size (training parameter)
+# STEP      Double   1e-5     Initial step size (training parameter)
+# DECAY     Double   0.95     Decays step size after each epoch (training parameter)
+# MOMENTUM  Double   0.9      Momentum parameter (training parameter)
+# ---------------------------------------------------------------------------------------------
 #
-# All training parameters have defaults set (these are not mandatory).
-#
-# OUTPUT Parameters (all filenames):
-#----------------------------------
-# W1_out: To store weights between input layer and 1st hidden layer (part of encoder)
-# b1_out: To store bias between input layer and 1st hidden layer (part of encoder)
-# W2_out: To store weights between 1st hidden layer and 2nd hidden layer (part of encoder)
-# b2_out: To store bias between 1st hidden layer and 2nd hidden layer (part of encoder)
-# W3_out: To store weights between 2nd hidden layer and 3rd hidden layer (part of decoder)
-# b3_out: To store bias between 2nd hidden layer and 3rd hidden layer (part of decoder)
-# W4_out: To store weights between 3rd hidden layer and output layer (part of decoder)
-# b4_out: To store bias between 3rd hidden layer and output layer (part of decoder)
-# HIDDEN: (Optional) In case, the hidden (2nd) layer representation is needed
-#         for plotting or for downstream processing
+# OUTPUT PARAMETERS (all filenames):
+# ---------------------------------------------------------------------------------------------
+# NAME     TYPE   DEFAULT  MEANING
+# ---------------------------------------------------------------------------------------------
+# W1_out   String   ---   File to store weights between input layer and 1st hidden layer
+# b1_out   String   ---   File to store bias between input layer and 1st hidden layer
+# W2_out   String   ---   File to store weights between 1st hidden layer and 2nd hidden layer
+# b2_out   String   ---   File to store bias between 1st hidden layer and 2nd hidden layer
+# W3_out   String   ---   File to store weights between 2nd hidden layer and 3rd hidden layer
+# b3_out   String   ---   File to store bias between 2nd hidden layer and 3rd hidden layer
+# W4_out   String   ---   File to store weights between 3rd hidden layer and output layer
+# b4_out   String   ---   File to store bias between 3rd hidden layer and output layer
+# HIDDEN   String   " "   File to store the hidden (2nd) layer representation if needed
+# ---------------------------------------------------------------------------------------------
 #
 # INVOCATION:
 # -f autoencoder_2layer.dml --nvargs X=<input file> H1=500 H2=2 EPOCH=1 fmt="csv" 
@@ -174,7 +177,7 @@ upd_b3 = matrix(0, rows=nrow(b3), cols=ncol(b3))
 upd_W4 = matrix(0, rows=nrow(W4), cols=ncol(W4))
 upd_b4 = matrix(0, rows=nrow(b4), cols=ncol(b4))
 
-if(full_obj){
+if( full_obj ){
       [full_H1, full_H1_prime, full_H2, full_H2_prime, full_H3, full_H3_prime, full_Yhat, full_Yhat_prime, full_E] = feedForward(X, W1, b1, W2, b2, W3, b3, W4, b4, X)
       full_o = obj(full_E)
       print("EPOCHS=" + 0 + " OBJ (FULL DATA): " + full_o)
@@ -185,7 +188,7 @@ num_iters_per_epoch = ceil(n / batch_size)
 max_iterations = max_epochs * num_iters_per_epoch
 #print("num_iters_per_epoch=" + num_iters_per_epoch + " max_iterations=" + max_iterations)
 beg = 1
-while(iter < max_iterations){
+while( iter < max_iterations ){
       end = beg + batch_size - 1
       if(end > n) end = n
       X_batch = X[beg:end,]
@@ -219,9 +222,9 @@ while(iter < max_iterations){
       if(end == n) beg = 1
       else beg = end + 1
 
-      if(iter %% num_iters_per_epoch == 0) step = step * decay
+      if( iter %% num_iters_per_epoch == 0 ) step = step * decay
 
-      if(full_obj & iter %% num_iters_per_epoch == 0){
+      if( full_obj & iter %% num_iters_per_epoch == 0 ){
       	  [full_H1, full_H1_prime, full_H2, full_H2_prime, full_H3, full_H3_prime, full_Yhat, full_Yhat_prime, full_E] = feedForward(X, W1, b1, W2, b2, W3, b3, W4, b4, X)
           full_o = obj(full_E)
       	  epochs = iter %/% num_iters_per_epoch
@@ -238,7 +241,7 @@ write(b3, $b3_out, format=fmt)
 write(W4, $W4_out, format=fmt)
 write(b4, $b4_out, format=fmt)
 
-if(hfile != " "){
+if( hfile != " " ){
       [full_H1, full_H1_prime, full_H2, full_H2_prime, full_H3, full_H3_prime, full_Yhat, full_Yhat_prime, full_E] = feedForward(X, W1, b1, W2, b2, W3, b3, W4, b4, X)
       reordered_H = t(permut) %*% full_H2
       write(reordered_H, hfile, format=fmt)

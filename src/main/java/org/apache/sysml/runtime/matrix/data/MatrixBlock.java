@@ -33,7 +33,6 @@ import java.util.Iterator;
 
 import org.apache.commons.math3.random.Well1024a;
 import org.apache.hadoop.io.DataInputBuffer;
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.Hop.OpOp2;
 import org.apache.sysml.hops.OptimizerUtils;
@@ -92,9 +91,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	private static final long serialVersionUID = 7319972089143154056L;
 	
 	//sparsity nnz threshold, based on practical experiments on space consumption and performance
-	private static final double SPARSITY_TURN_POINT = 0.4;
+	public static final double SPARSITY_TURN_POINT = 0.4;
 	//sparsity threshold for ultra-sparse matrix operations (40nnz in a 1kx1k block)
-	private static final double ULTRA_SPARSITY_TURN_POINT = 0.00004; 
+	public static final double ULTRA_SPARSITY_TURN_POINT = 0.00004; 
 	//default sparse block type: modified compressed sparse rows, for efficient incremental construction
 	public static final SparseBlock.Type DEFAULT_SPARSEBLOCK = SparseBlock.Type.MCSR;
 	//default sparse block type for update in place: compressed sparse rows, to prevent serialization
@@ -183,18 +182,6 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	////////
 	// Initialization methods
 	// (reset, init, allocate, etc)
-	
-	public static double getSparsityTurnPoint() {
-		if(DMLScript.DISABLE_SPARSE)
-			return 1e-6;
-		return SPARSITY_TURN_POINT;
-	}
-	
-	public static double getUltraSparsityTurnPoint() {
-		if(DMLScript.DISABLE_SPARSE)
-			return 1e-9;
-		return ULTRA_SPARSITY_TURN_POINT;
-	}
 	
 	@Override
 	public void reset() {
@@ -904,7 +891,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	{
 		double sp = ((double)nonZeros/rlen)/clen;
 		//check for sparse representation in order to account for vectors in dense
-		return sparse && sp< getUltraSparsityTurnPoint() && nonZeros<40;
+		return sparse && sp<ULTRA_SPARSITY_TURN_POINT && nonZeros<40;
 	}
 
 	/**
@@ -1006,14 +993,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * @return true if matrix block shold be in sparse format in memory
 	 */
 	public static boolean evalSparseFormatInMemory( final long nrows, final long ncols, final long nnz )
-	{		
-//		// Extremely low getSparsityTurnPoint should disable sparse in most cases
-//		if(DMLScript.DISABLE_SPARSE)
-//			return false;
-		
+	{				
 		//evaluate sparsity threshold
 		double lsparsity = (double)nnz/nrows/ncols;
-		boolean lsparse = (lsparsity < getSparsityTurnPoint());
+		boolean lsparse = (lsparsity < SPARSITY_TURN_POINT);
 		
 		//compare size of sparse and dense representation in order to prevent
 		//that the sparse size exceed the dense size since we use the dense size
@@ -1038,7 +1021,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	{
 		//evaluate sparsity threshold
 		double lsparsity = ((double)nnz/nrows)/ncols;
-		boolean lsparse = (lsparsity < getSparsityTurnPoint());
+		boolean lsparse = (lsparsity < SPARSITY_TURN_POINT);
 		
 		double sizeUltraSparse = estimateSizeUltraSparseOnDisk( nrows, ncols, nnz );
 		double sizeSparse = estimateSizeSparseOnDisk(nrows, ncols, nnz);

@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.applications.dml;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.test.integration.applications.GNMFTest;
 
 @RunWith(value = Parameterized.class)
@@ -36,18 +35,5 @@ public class GNMFDMLTest extends GNMFTest {
 	@Test
 	public void testGNMFDml() {
 		testGNMF(ScriptType.DML);
-	}
-	
-	@Test
-	public void testGNMFDmlDisableSparseNCaching() {
-		try {
-			DMLScript.DISABLE_SPARSE = true;
-			DMLScript.DISABLE_CACHING = true;
-			testGNMF(ScriptType.DML);
-		}
-		finally {
-			DMLScript.DISABLE_SPARSE = false;
-			DMLScript.DISABLE_CACHING = false;
-		}
 	}
 }

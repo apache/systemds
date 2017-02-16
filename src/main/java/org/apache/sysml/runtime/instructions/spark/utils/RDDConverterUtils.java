@@ -305,7 +305,7 @@ public class RDDConverterUtils
 				mc.getNumRowBlocks(), mc.getColsPerBlock(), Math.ceil((double)mc.getNonZeros()/mc.getRows()));
 		double partsize = Math.ceil(datasize/in.partitions().size());
 		double blksz = Math.min(mc.getRows(), mc.getRowsPerBlock());
-		return partsize/rowsize/blksz < MatrixBlock.getSparsityTurnPoint();
+		return partsize/rowsize/blksz < MatrixBlock.SPARSITY_TURN_POINT;
 	}
 
 	private static int countNnz(Object vect, boolean isVector, int off) {

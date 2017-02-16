@@ -116,20 +116,6 @@ public class DMLScript
 	public static boolean USE_ACCELERATOR = false;
 	public static boolean FORCE_ACCELERATOR = false;
 	
-	// ------------------------------------------------------------------------
-	// We have identified two performance bugs that frequently occurs in deep learning script.
-	//
-	// First, we repeatedly perform unnecessary conversion to sparse format.
-	// Also, the operations such as matrix multiplication (including BLAS and CuBLAS) are 
-	// optimized for dense.
-	//
-	// Second, even with large memory budget, we sometimes spend almost 20-30% time in caching.
-	// These two bugs are tracked in SYSTEMML-1140 and should be addressed before SystemML 1.0 release.
-	// We are keeping this flag for performance debugging until SYSTEMML-1140is resolved.
-	public static boolean DISABLE_SPARSE = false;
-	public static boolean DISABLE_CACHING = false;
-	// ------------------------------------------------------------------------
-	
 	// flag that indicates whether or not to suppress any prints to stdout
 	public static boolean _suppressPrint2Stdout = false;
 	
@@ -673,11 +659,6 @@ public class DMLScript
 		try 
 		{  
 			initHadoopExecution( dmlconf );
-			
-			if(DISABLE_CACHING) {
-				//disable caching globally 
-				CacheableData.disableCaching();
-			}
 			
 			//run execute (w/ exception handling to ensure proper shutdown)
 			ec = ExecutionContextFactory.createContext(rtprog);

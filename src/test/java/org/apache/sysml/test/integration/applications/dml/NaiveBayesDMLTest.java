@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.applications.dml;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.test.integration.applications.NaiveBayesTest;
 
 @RunWith(value = Parameterized.class)
@@ -36,18 +35,5 @@ public class NaiveBayesDMLTest extends NaiveBayesTest {
 	@Test
 	public void testNaiveBayesDml() {
 		testNaiveBayes(ScriptType.DML);
-	}
-
-	@Test
-	public void testNaiveBayesDmlDisableSparseNCaching() {
-		try {
-			DMLScript.DISABLE_SPARSE = true;
-			DMLScript.DISABLE_CACHING = true;
-			testNaiveBayes(ScriptType.DML);
-		}
-		finally {
-			DMLScript.DISABLE_SPARSE = false;
-			DMLScript.DISABLE_CACHING = false;
-		}
 	}
 }

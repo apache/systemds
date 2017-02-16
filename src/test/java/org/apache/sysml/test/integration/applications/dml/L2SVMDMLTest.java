@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.applications.dml;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.test.integration.applications.L2SVMTest;
 
 @RunWith(value = Parameterized.class)
@@ -36,18 +35,5 @@ public class L2SVMDMLTest extends L2SVMTest {
 	@Test
 	public void testL2SVMDml() {
 		testL2SVM(ScriptType.DML);
-	}
-
-	@Test
-	public void testL2SVMDmlDisableSparseNCaching() {
-		try {
-			DMLScript.DISABLE_SPARSE = true;
-			DMLScript.DISABLE_CACHING = true;
-			testL2SVM(ScriptType.DML);
-		}
-		finally {
-			DMLScript.DISABLE_SPARSE = false;
-			DMLScript.DISABLE_CACHING = false;
-		}
 	}
 }

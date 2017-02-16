@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.applications.dml;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.test.integration.applications.LinearRegressionTest;
 
 @RunWith(value = Parameterized.class)
@@ -37,18 +36,4 @@ public class LinearRegressionDMLTest extends LinearRegressionTest {
 	public void testLinearRegressionDml() {
 		testLinearRegression(ScriptType.DML);
 	}
-	
-	@Test
-	public void testLinearRegressionDmlDisableSparseNCaching() {
-		try {
-			DMLScript.DISABLE_SPARSE = true;
-			DMLScript.DISABLE_CACHING = true;
-			testLinearRegression(ScriptType.DML);
-		}
-		finally {
-			DMLScript.DISABLE_SPARSE = false;
-			DMLScript.DISABLE_CACHING = false;
-		}
-	}
-
 }

@@ -981,7 +981,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 								if( d3s==1.0 )
 									return d3m * d3n * nflopRand + d3m * d3n * 8; //DENSE gen (incl allocate)    
 								else 
-									return (d3s>=MatrixBlock.getSparsityTurnPoint())? 
+									return (d3s>=MatrixBlock.SPARSITY_TURN_POINT)? 
 										    2 * d3m * d3n * nflopRand + d3m * d3n * 8: //DENSE gen (incl allocate)    
 									        3 * d3m * d3n * d3s * nflopRand + d3m * d3n * d3s * 24; //SPARSE gen (incl allocate)
 							}

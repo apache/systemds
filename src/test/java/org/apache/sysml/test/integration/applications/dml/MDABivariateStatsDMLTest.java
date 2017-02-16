@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.applications.dml;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.test.integration.applications.MDABivariateStatsTest;
 
 @RunWith(value = Parameterized.class)
@@ -37,18 +36,4 @@ public class MDABivariateStatsDMLTest extends MDABivariateStatsTest {
 	public void testMDABivariateStatsDml() {
 		testMDABivariateStats(ScriptType.DML);
 	}
-	
-	@Test
-	public void testMDABivariateStatsDmlDisableSparseNCaching() {
-		try {
-			DMLScript.DISABLE_SPARSE = true;
-			DMLScript.DISABLE_CACHING = true;
-			testMDABivariateStats(ScriptType.DML);
-		}
-		finally {
-			DMLScript.DISABLE_SPARSE = false;
-			DMLScript.DISABLE_CACHING = false;
-		}
-	}
-
 }

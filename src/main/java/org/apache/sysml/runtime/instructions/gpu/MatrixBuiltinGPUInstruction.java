@@ -40,16 +40,20 @@ public class MatrixBuiltinGPUInstruction extends BuiltinUnaryGPUInstruction {
 		Statistics.incrementNoOfExecutedGPUInst();
 		
 		String opcode = getOpcode();
-		//get input
-        MatrixObject mat = ec.getMatrixInputForGPUInstruction(_input.getName());
+		MatrixObject mat = ec.getMatrixInputForGPUInstruction(_input.getName());
+
+		ec.setMetaData(_output.getName(), mat.getNumRows(), mat.getNumColumns());
+
 		if(opcode.equals("sel+")) {
-			ec.setMetaData(_output.getName(), mat.getNumRows(), mat.getNumColumns());
 			LibMatrixCUDA.relu(ec, mat, _output.getName());
-			ec.releaseMatrixInputForGPUInstruction(_input.getName());
-			ec.releaseMatrixOutputForGPUInstruction(_output.getName());
+
+		} else if (opcode.equals("exp")) {
+			LibMatrixCUDA.exp(ec, mat, _output.getName());
 		}
 		else {
 			throw new DMLRuntimeException("Unsupported GPU operator:" + opcode);
 		}
+		ec.releaseMatrixInputForGPUInstruction(_input.getName());
+		ec.releaseMatrixOutputForGPUInstruction(_output.getName());
 	}
 }

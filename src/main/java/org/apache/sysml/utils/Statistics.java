@@ -101,8 +101,12 @@ public class Statistics
 	
 	public static long cudaInitTime = 0;
 	public static long cudaLibrariesInitTime = 0;
-	public static AtomicLong cudaConversionTime = new AtomicLong(0);	// Measures time spent in converting between sparse block types
-	public static AtomicLong cudaConversionCount = new AtomicLong(0);
+	public static AtomicLong cudaSparseToDenseTime = new AtomicLong(0);		// Measures time spent in converting sparse matrix block to dense
+	public static AtomicLong cudaSparseToDenseCount = new AtomicLong(0);
+	public static AtomicLong cudaDenseToSparseTime = new AtomicLong(0);		// Measures time spent in converting dense matrix block to sparse
+	public static AtomicLong cudaDenseToSparseCount = new AtomicLong(0);
+	public static AtomicLong cudaSparseConversionTime = new AtomicLong(0);	// Measures time spent in converting between sparse block types
+	public static AtomicLong cudaSparseConversionCount = new AtomicLong(0);
 	public static AtomicLong cudaAllocTime = new AtomicLong(0);
 	public static AtomicLong cudaDeAllocTime = new AtomicLong(0);
 	public static AtomicLong cudaToDevTime = new AtomicLong(0);
@@ -619,19 +623,26 @@ public class Statistics
 			sb.append("CUDA/CuLibraries init time:\t" + String.format("%.3f", cudaInitTime*1e-9) + "/"
 					+ String.format("%.3f", cudaLibrariesInitTime*1e-9) + " sec.\n");
 			sb.append("Number of executed GPU inst:\t" + getNoOfExecutedGPUInst() + ".\n");
-			sb.append("GPU mem tx time (alloc/dealloc/conversion/toDev/fromDev):\t" 
+			sb.append("GPU mem tx time  (alloc/dealloc/toDev/fromDev):\t"
 					+ String.format("%.3f", cudaAllocTime.get()*1e-9) + "/"
 					+ String.format("%.3f", cudaDeAllocTime.get()*1e-9) + "/"
-					+ String.format("%.3f", cudaConversionTime.get()*1e-9) + "/"
 					+ String.format("%.3f", cudaToDevTime.get()*1e-9) + "/"
 					+ String.format("%.3f", cudaFromDevTime.get()*1e-9)  + " sec.\n");
-			sb.append("GPU mem tx count (alloc/dealloc/conversion/toDev/fromDev/evict):\t" 
+			sb.append("GPU mem tx count (alloc/dealloc/toDev/fromDev/evict):\t"
 					+ cudaAllocCount.get() + "/"
 					+ cudaDeAllocCount.get() + "/"
-					+ cudaConversionCount.get() + "/"
+					+ cudaSparseConversionCount.get() + "/"
 					+ cudaToDevCount.get() + "/"
 					+ cudaFromDevCount.get() + "/"
 					+ cudaEvictionCount.get() + ".\n");
+			sb.append("GPU conversion time  (sparseConv/sp2dense/dense2sp):\t"
+					+ String.format("%.3f", cudaSparseConversionTime.get()*1e-9) + "/"
+					+ String.format("%.3f", cudaSparseToDenseTime.get()*1e-9) + "/"
+					+ String.format("%.3f", cudaDenseToSparseTime.get()*1e-9) + " sec.\n");
+			sb.append("GPU conversion count (sparseConv/sp2dense/dense2sp):\t"
+					+ cudaSparseConversionCount.get() + "/"
+					+ cudaSparseToDenseCount.get() + "/"
+					+ cudaDenseToSparseCount.get() + ".\n");
 		}
 		
 		//show extended caching/compilation statistics

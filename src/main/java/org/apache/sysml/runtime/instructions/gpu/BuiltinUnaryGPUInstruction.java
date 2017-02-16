@@ -35,7 +35,7 @@ public abstract class BuiltinUnaryGPUInstruction  extends GPUInstruction {
 
 	int _arity;
 	CPOperand _input;
-    CPOperand _output;
+	CPOperand _output;
 	
 	public BuiltinUnaryGPUInstruction(Operator op, CPOperand in, CPOperand out, int _arity, String opcode, String istr )
 	{

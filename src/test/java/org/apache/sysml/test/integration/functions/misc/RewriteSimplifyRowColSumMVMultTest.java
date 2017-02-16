@@ -115,7 +115,10 @@ public class RewriteSimplifyRowColSumMVMultTest extends AutomatedTestBase
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 			
 			//check matrix mult existence
-			Assert.assertTrue( Statistics.getCPHeavyHitterOpCodes().contains("ba+*") == rewrites );
+			String gpuBa = "gpu_ba+*";
+			String ba = "ba+*";
+			boolean isMatmultPresent = Statistics.getCPHeavyHitterOpCodes().contains(ba) ||  Statistics.getCPHeavyHitterOpCodes().contains(gpuBa);
+			Assert.assertTrue( isMatmultPresent == rewrites );
 		}
 		finally
 		{

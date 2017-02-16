@@ -51,13 +51,13 @@ import static jcuda.jcusparse.JCusparse.cusparseDcsrmv;
 import static jcuda.jcusparse.cusparseOperation.CUSPARSE_OPERATION_NON_TRANSPOSE;
 import static jcuda.jcusparse.cusparseOperation.CUSPARSE_OPERATION_TRANSPOSE;
 import static jcuda.runtime.JCuda.cudaDeviceSynchronize;
-import static jcuda.runtime.JCuda.cudaFree;
-import static jcuda.runtime.JCuda.cudaMalloc;
 import static jcuda.runtime.JCuda.cudaMemcpy;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToDevice;
 import static jcuda.jcudnn.cudnnActivationMode.CUDNN_ACTIVATION_RELU;
+import static org.apache.sysml.runtime.instructions.gpu.context.JCudaObject.allocate;
+import static org.apache.sysml.runtime.instructions.gpu.context.JCudaObject.cudaFreeHelper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -206,7 +206,7 @@ public class LibMatrixCUDA {
 								CONVOLUTION_PREFERENCE, sizeInBytesArray[0], algos);
 				cudnnGetConvolutionForwardWorkspaceSize(cudnnHandle, srcTensorDesc, filterDesc, convDesc, dstTensorDesc, algo, sizeInBytesArray);
 				if(sizeInBytesArray[0] != 0)
-					jcuda.runtime.JCuda.cudaMalloc(workSpace, sizeInBytesArray[0]);
+					workSpace = allocate(sizeInBytesArray[0]);
 				sizeInBytes = sizeInBytesArray[0];
 			}
 			else if(CONVOLUTION_PREFERENCE == cudnnConvolutionFwdPreference.CUDNN_CONVOLUTION_FWD_SPECIFY_WORKSPACE_LIMIT) {
@@ -230,9 +230,9 @@ public class LibMatrixCUDA {
 		finally {
 
 			if(alpha != null)
-				cudaFree(alpha);
+				cudaFreeHelper(alpha);
 			if(beta != null)
-				cudaFree(beta);
+				cudaFreeHelper(beta);
 
 			if(srcTensorDesc != null)
 				cudnnDestroyTensorDescriptor(srcTensorDesc);
@@ -243,7 +243,7 @@ public class LibMatrixCUDA {
 			if(convDesc != null)
 				cudnnDestroyConvolutionDescriptor(convDesc);
 			if(workSpace != null && sizeInBytes != 0)
-				cudaFree(workSpace);
+				cudaFreeHelper(workSpace);
 		}
 	}
 
@@ -421,9 +421,9 @@ public class LibMatrixCUDA {
 		}
 		finally {
 			if(alpha != null)
-				cudaFree(alpha);
+				cudaFreeHelper(alpha);
 			if(beta != null)
-				cudaFree(beta);
+				cudaFreeHelper(beta);
 			if(xTensorDesc != null)
 				cudnnDestroyTensorDescriptor(xTensorDesc);
 			if(doutTensorDesc != null)
@@ -435,7 +435,7 @@ public class LibMatrixCUDA {
 				cudnnDestroyConvolutionDescriptor(convDesc);
 
 			if(workSpace != null && sizeInBytes != 0)
-				cudaFree(workSpace);
+				cudaFreeHelper(workSpace);
 		}
 	}
 
@@ -483,9 +483,9 @@ public class LibMatrixCUDA {
 		finally {
 
 			if(alpha != null)
-				cudaFree(alpha);
+				cudaFreeHelper(alpha);
 			if(beta != null)
-				cudaFree(beta);
+				cudaFreeHelper(beta);
 
 			if(srcTensorDesc != null)
 				cudnnDestroyTensorDescriptor(srcTensorDesc);
@@ -678,11 +678,11 @@ public class LibMatrixCUDA {
 			int colsA = (int)left.getNumColumns();
 			Pointer AT = JCudaObject.transpose(ADense, rowsA, colsA, colsA, rowsA);
 			CSRPointer A = JCudaObject.columnMajorDenseToRowMajorSparse(cusparseHandle, rowsA, colsA, AT);
-			Statistics.cudaConversionTime.addAndGet(System.nanoTime() - t0);
-			Statistics.cudaConversionCount.addAndGet(1);
+			Statistics.cudaSparseConversionTime.addAndGet(System.nanoTime() - t0);
+			Statistics.cudaSparseConversionCount.addAndGet(1);
 			sparseSparseMatmult(output, transA, transB, m, n, k, A, B);
 			A.deallocate();
-			cudaFree(AT);
+			cudaFreeHelper(AT);
 		} else {
 			LOG.debug(" GPU Dense-Sparse Matrix Multiplication (Converted to Dense-Dense)");
 			// Convert right to dense and do a cuBlas matmul
@@ -696,7 +696,7 @@ public class LibMatrixCUDA {
 							(int) right.getNumColumns(), (int) right.getNumRows(),
 							isLeftTransposed, !isRightTransposed,
 							ADense, BDenseTransposed);
-			cudaFree(BDenseTransposed);
+			cudaFreeHelper(BDenseTransposed);
 		}
 	}
 
@@ -737,11 +737,11 @@ public class LibMatrixCUDA {
 				int colsB = (int)right.getNumColumns();
 				Pointer BT = JCudaObject.transpose(BDense, rowsB, colsB, colsB, rowsB);
 				CSRPointer B = JCudaObject.columnMajorDenseToRowMajorSparse(cusparseHandle, rowsB, colsB, BT);
-				Statistics.cudaConversionTime.addAndGet(System.nanoTime() - t0);
-				Statistics.cudaConversionCount.addAndGet(1);
+				Statistics.cudaSparseConversionTime.addAndGet(System.nanoTime() - t0);
+				Statistics.cudaSparseConversionCount.addAndGet(1);
 				sparseSparseMatmult(output, transA, transB, m, n, k, A, B);
 				B.deallocate();
-				cudaFree(BT);
+				cudaFreeHelper(BT);
 			} else {
 				LOG.debug(" GPU Sparse-Dense Matrix Multiplication (Converted to Dense-Dense)");
 				// Convert left to dense and do a cuBlas matmul
@@ -755,7 +755,7 @@ public class LibMatrixCUDA {
 								(int) right.getNumRows(), (int) right.getNumColumns(),
 								!isLeftTransposed, isRightTransposed,
 								ADenseTransposed, BDense);
-				cudaFree(ADenseTransposed);
+				cudaFreeHelper(ADenseTransposed);
 			}
 		}
 	}
@@ -1142,7 +1142,7 @@ public class LibMatrixCUDA {
 					default:
 						throw new DMLRuntimeException("Internal Error - Unsupported reduction direction for summation squared");
 				}
-				cudaFree(tmp);
+				cudaFreeHelper(tmp);
 				break;
 			}
 			case OP_MEAN:{
@@ -1255,7 +1255,7 @@ public class LibMatrixCUDA {
 						ScalarOperator divideOp = new RightScalarOperator(Divide.getDivideFnObject(), clen - 1);
 						matrixScalarOp(tmpRow, clen - 1, rlen, clen, out, divideOp);
 
-						cudaFree(tmpRow);
+						cudaFreeHelper(tmpRow);
 						break;
 					}
 					case REDUCTION_ROW: {
@@ -1272,14 +1272,14 @@ public class LibMatrixCUDA {
 						ScalarOperator divideOp = new RightScalarOperator(Divide.getDivideFnObject(), rlen - 1);
 						matrixScalarOp(tmpCol, rlen - 1, rlen, clen, out, divideOp);
 
-						cudaFree(tmpCol);
+						cudaFreeHelper(tmpCol);
 						break;
 					}
 					default:
 						throw new DMLRuntimeException("Internal Error - Unsupported reduction direction for variance");
 				}
-				cudaFree(tmp);
-				cudaFree(tmp2);
+				cudaFreeHelper(tmp);
+				cudaFreeHelper(tmp2);
 				break;
 			}
 			case OP_MAXINDEX : {
@@ -1343,7 +1343,7 @@ public class LibMatrixCUDA {
 		}
 		double[] result = {-1f};
 		cudaMemcpy(Pointer.to(result), tempOut, Sizeof.DOUBLE, cudaMemcpyDeviceToHost);
-		cudaFree(tempOut);
+		cudaFreeHelper(tempOut);
 
 		return result[0];
 	}
@@ -1527,9 +1527,9 @@ public class LibMatrixCUDA {
 		}
 		finally {
 			if(alpha != null)
-				cudaFree(alpha);
+				cudaFreeHelper(alpha);
 			if(beta != null)
-				cudaFree(beta);
+				cudaFreeHelper(beta);
 			if(dyDesc != null)
 				cudnnDestroyTensorDescriptor(dyDesc);
 			if(dxDesc != null)
@@ -1541,7 +1541,7 @@ public class LibMatrixCUDA {
 				cudnnDestroyConvolutionDescriptor(convDesc);
 
 			if(workSpace != null && sizeInBytes != 0)
-				cudaFree(workSpace);
+				cudaFreeHelper(workSpace);
 		}
 	}
 
@@ -1598,9 +1598,9 @@ public class LibMatrixCUDA {
 		}
 		finally {
 			if(alpha != null)
-				cudaFree(alpha);
+				cudaFreeHelper(alpha);
 			if(beta != null)
-				cudaFree(beta);
+				cudaFreeHelper(beta);
 			if(yDesc != null)
 				cudnnDestroyTensorDescriptor(yDesc);
 			if(xDesc != null)
@@ -1661,9 +1661,8 @@ public class LibMatrixCUDA {
 
 			// Calling PoolForward first, y is one of the inputs for poolBackward
 			// TODO: Remove calling poolForward after necessary changes at language level for poolBackward
-			Pointer y = new Pointer();
 			long numBytes = N*C*P*Q*Sizeof.DOUBLE;
-			cudaMalloc(y, numBytes);
+			Pointer y = allocate(numBytes);
 
 			// Allocate data
 			Pointer x = ((JCudaObject)image.getGPUObject()).jcudaDenseMatrixPtr;
@@ -1684,13 +1683,13 @@ public class LibMatrixCUDA {
 				throw new DMLRuntimeException("Could not executed cudnnPoolingBackward: " + jcuda.jcudnn.cudnnStatus.stringFor(status));
 			}
 
-			cudaFree(y);
+			cudaFreeHelper(y);
 		}
 		finally {
 			if(alpha != null)
-				cudaFree(alpha);
+				cudaFreeHelper(alpha);
 			if(beta != null)
-				cudaFree(beta);
+				cudaFreeHelper(beta);
 			if(yDesc != null)
 				cudnnDestroyTensorDescriptor(yDesc);
 			if(xDesc != null)
@@ -2216,6 +2215,40 @@ public class LibMatrixCUDA {
 		// C = alpha* op( A ) + beta* op ( B )
 		// = 1.0 * A^T + 0.0 * A^T
 		dgeam(ec, in, in, outputName, true, true, 1.0, 0.0);
+	}
+
+	/**
+	 * Performs an "exp" operation on a matrix on the GPU
+	 * @param ec	execution context
+	 * @param in1	input matrix
+	 * @param outputName	output matrix name
+	 * @throws DMLRuntimeException	if DMLRuntimeException occurs
+	 */
+	public static void exp(ExecutionContext ec, MatrixObject in1, String outputName) throws DMLRuntimeException {
+		JCudaObject in = ((JCudaObject)in1.getGPUObject());
+		boolean isSparseAndEmpty = in.isSparseAndEmpty();
+		boolean isSparse = in.isInSparseFormat();
+
+		if (isSparseAndEmpty) {
+			// e^0 = 1, create a dense block full of 1s
+			MatrixObject out = ec.getMatrixObject(outputName);
+			ec.allocateGPUMatrixObject(outputName);
+			((JCudaObject)(out.getGPUObject())).allocateAndFillDense(1);
+		} else {
+			// Sparse
+			if (isSparse) {
+				// If the input is in sparse format, convert it to dense.
+				// The output will always be dense, because for all x, exp(x) > 0
+				in.sparseToDense();
+			}
+			// Dense
+			MatrixObject out = ec.getDenseMatrixOutputForGPUInstruction(outputName);
+			Pointer output = ((JCudaObject)out.getGPUObject()).jcudaDenseMatrixPtr;
+			Pointer input = in.jcudaDenseMatrixPtr;
+			int size = (int)(in1.getNumColumns() * in1.getNumRows());
+			kernels.launchKernel("matrix_exp", ExecutionConfig.getConfigForSimpleVectorOperations(size),
+							input, output, size);
+		}
 	}
 
 	/**

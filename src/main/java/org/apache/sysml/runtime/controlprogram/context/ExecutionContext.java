@@ -66,9 +66,7 @@ public class ExecutionContext
 	
 	//debugging (optional)
 	protected DebugState _dbState = null;
-	
-	protected GPUContext _gpuCtx = null;
-	
+
 	protected ExecutionContext()
 	{
 		//protected constructor to force use of ExecutionContextFactory
@@ -101,8 +99,8 @@ public class ExecutionContext
 	}
 	
 	public void destroyGPUContext() throws DMLRuntimeException {
-		if(_gpuCtx != null)
-			_gpuCtx.destroy();
+		if(GPUContext.isGPUContextCreated)
+			GPUContext.getGPUContext().destroy();
 	}
 	
 	

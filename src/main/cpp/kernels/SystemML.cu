@@ -628,3 +628,18 @@ __global__ void reduce_col_mean(double *g_idata, double *g_odata, unsigned int r
     MeanOp aop(rows);
     reduce_col<SumOp, MeanOp>(g_idata, g_odata, rows, cols, op, aop, 0.0);
 }
+
+
+/**
+ * Do an exp over all the elements of a matrix
+ * @param A the input matrix (of length = size)
+ * @param C the pre-allocated output matrix (of length = size)
+ * @param siz the length of the input and output matrices
+ */
+extern "C"
+__global__ void matrix_exp(double *A, double *C, unsigned int size) {
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index < size){
+        C[index] = exp(A[index]);
+    }
+}

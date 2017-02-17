@@ -41,8 +41,15 @@
 				<exclude>perftest</exclude>
 				<exclude>staging/**/*</exclude>
 				<exclude>staging</exclude>
-				<!-- <exclude>*.sh</exclude> --> <!-- applies to sparkDML.sh -->
+				<exclude>sparkDML.sh</exclude>
 			</excludes>
+			<outputDirectory>scripts</outputDirectory>
+		</fileSet>
+		<fileSet>
+			<directory>${basedir}/target/scripts</directory>
+			<includes>
+				<include>sparkDML.sh</include>
+			</includes>
 			<outputDirectory>scripts</outputDirectory>
 		</fileSet>
 

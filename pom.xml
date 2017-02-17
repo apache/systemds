@@ -282,6 +282,27 @@
 							<outputDirectory>${basedir}/target/lib/hadoop/bin</outputDirectory>
 						</configuration>
 					</execution>
+					
+					<execution>
+						<id>copy-resources-filtered</id>
+						<phase>compile</phase>
+						<goals>
+							<goal>copy-resources</goal>
+						</goals>
+						<configuration>
+							<overwrite>true</overwrite>
+							<outputDirectory>${basedir}/target/scripts</outputDirectory>
+							<resources>
+								<resource>
+									<directory>${basedir}/src/main/resources/scripts</directory>
+									<includes>
+										<include>sparkDML.sh</include>
+									</includes>
+									<filtering>true</filtering>
+								</resource>
+							</resources>
+						</configuration>
+					</execution>
 				</executions>
 			</plugin>
 

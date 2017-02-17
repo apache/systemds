@@ -21,6 +21,7 @@ package org.apache.sysml.runtime.matrix.data;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -48,6 +49,7 @@ import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysml.runtime.instructions.cp.KahanObject;
 import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
+import org.apache.sysml.runtime.matrix.operators.AggregateTernaryOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysml.runtime.matrix.operators.CMOperator;
 import org.apache.sysml.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
@@ -388,64 +390,76 @@ public class LibMatrixAgg
 		return out;
 	}
 
-	public static double aggregateTernary(MatrixBlock in1, MatrixBlock in2, MatrixBlock in3)
+	public static MatrixBlock aggregateTernary(MatrixBlock in1, MatrixBlock in2, MatrixBlock in3, MatrixBlock ret, AggregateTernaryOperator op) 
+		throws DMLRuntimeException
 	{
 		//early abort if any block is empty
 		if( in1.isEmptyBlock(false) || in2.isEmptyBlock(false) || in3!=null&&in3.isEmptyBlock(false) ) {
-			return 0;
+			return ret;
 		}
-				
+		
 		//Timing time = new Timing(true);
 		
-		double val = -1;
+		//allocate output arrays (if required)
+		ret.reset(ret.rlen, ret.clen, false); //always dense
+		ret.allocateDenseBlock();
+		
+		IndexFunction ixFn = op.indexFn;
 		if( !in1.sparse && !in2.sparse && (in3==null||!in3.sparse) ) //DENSE
-			val = aggregateTernaryDense(in1, in2, in3, 0, in1.rlen);
+			aggregateTernaryDense(in1, in2, in3, ret, ixFn, 0, in1.rlen);
 		else //GENERAL CASE
-			val = aggregateTernaryGeneric(in1, in2, in3, 0, in1.rlen);
+			aggregateTernaryGeneric(in1, in2, in3, ret, ixFn, 0, in1.rlen);
+		
+		//cleanup output and change representation (if necessary)
+		ret.recomputeNonZeros();
+		ret.examSparsity();
 		
 		//System.out.println("tak+ ("+in1.rlen+","+in1.sparse+","+in2.sparse+","+in3.sparse+") in "+time.stop()+"ms.");
-		
-		return val;			
+	
+		return ret;
 	}
 
-	public static double aggregateTernary(MatrixBlock in1, MatrixBlock in2, MatrixBlock in3, int k) 
+	public static MatrixBlock aggregateTernary(MatrixBlock in1, MatrixBlock in2, MatrixBlock in3, MatrixBlock ret, AggregateTernaryOperator op, int k) 
 		throws DMLRuntimeException
 	{		
 		//fall back to sequential version if necessary
-		if( k <= 1 || in1.rlen/3 < PAR_NUMCELL_THRESHOLD ) {
-			return aggregateTernary(in1, in2, in3);
+		if( k <= 1 || in1.nonZeros+in2.nonZeros < PAR_NUMCELL_THRESHOLD || in1.rlen <= k/2 
+			|| (!(op.indexFn instanceof ReduceCol) &&  ret.clen*8*k > PAR_INTERMEDIATE_SIZE_THRESHOLD) ) {
+			return aggregateTernary(in1, in2, in3, ret, op);
 		}
 		
 		//early abort if any block is empty
 		if( in1.isEmptyBlock(false) || in2.isEmptyBlock(false) || in3!=null&&in3.isEmptyBlock(false) ) {
-			return 0;
+			return ret;
 		}
 			
 		//Timing time = new Timing(true);
 		
-		double val = -1;
 		try {
 			ExecutorService pool = Executors.newFixedThreadPool( k );
 			ArrayList<AggTernaryTask> tasks = new ArrayList<AggTernaryTask>();
 			int blklen = (int)(Math.ceil((double)in1.rlen/k));
+			IndexFunction ixFn = op.indexFn;
 			for( int i=0; i<k & i*blklen<in1.rlen; i++ )
-				tasks.add( new AggTernaryTask(in1, in2, in3, i*blklen, Math.min((i+1)*blklen, in1.rlen)));
-			pool.invokeAll(tasks);	
+				tasks.add( new AggTernaryTask(in1, in2, in3, ret, ixFn, i*blklen, Math.min((i+1)*blklen, in1.rlen)));
+			List<Future<MatrixBlock>> rtasks = pool.invokeAll(tasks);	
 			pool.shutdown();
-			//aggregate partial results
-			KahanObject kbuff = new KahanObject(0, 0);
-			KahanPlus kplus = KahanPlus.getKahanPlusFnObject();
-			for( AggTernaryTask task : tasks )
-				kplus.execute2(kbuff, task.getResult());
-			val = kbuff._sum;
+			//aggregate partial results and error handling
+			ret.copy(rtasks.get(0).get()); //for init
+			for( int i=1; i<rtasks.size(); i++ )
+				aggregateFinalResult(op.aggOp, ret, rtasks.get(i).get());
 		}
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
 		}
 		
-		//System.out.println("tak+ k="+k+" ("+in1.rlen+","+in1.sparse+","+in2.sparse+","+in3.sparse+") in "+time.stop()+"ms.");
+		//cleanup output and change representation (if necessary)
+		ret.recomputeNonZeros();
+		ret.examSparsity();
 		
-		return val;			
+		//System.out.println("tak+ k="+k+" ("+in1.rlen+","+in1.sparse+","+in2.sparse+","+in3.sparse+") in "+time.stop()+"ms.");	
+	
+		return ret;
 	}
 
 	public static void groupedAggregate(MatrixBlock groups, MatrixBlock target, MatrixBlock weights, MatrixBlock result, int numGroups, Operator op) 
@@ -642,49 +656,70 @@ public class LibMatrixAgg
 			out.binaryOperationsInPlace(laop.increOp, partout);
 	}
 
-	private static double aggregateTernaryDense(MatrixBlock in1, MatrixBlock in2, MatrixBlock in3, int rl, int ru)
+	private static void aggregateTernaryDense(MatrixBlock in1, MatrixBlock in2, MatrixBlock in3, MatrixBlock ret, IndexFunction ixFn, int rl, int ru)
 	{
 		//compute block operations
 		KahanObject kbuff = new KahanObject(0, 0);
 		KahanPlus kplus = KahanPlus.getKahanPlusFnObject();
 		
 		double[] a = in1.denseBlock;
-		double[] b = in2.denseBlock;
+		double[] b1 = in2.denseBlock;
+		double[] b2 = (in3!=null) ? in3.denseBlock : null; //if null, literal 1
 		final int n = in1.clen;
 		
-		if( in3 != null ) //3 inputs
-		{
-			double[] c = in3.denseBlock;
-			
-			for( int i=rl, ix=rl*n; i<ru; i++ ) 
-				for( int j=0; j<n; j++, ix++ ) {
-					double val = a[ix] * b[ix] * c[ix];
-					kplus.execute2( kbuff, val );
-				}
-		}
-		else //2 inputs (third: literal 1)
+		if( ixFn instanceof ReduceAll ) //tak+*
 		{
 			for( int i=rl, ix=rl*n; i<ru; i++ ) 
 				for( int j=0; j<n; j++, ix++ ) {
-					double val = a[ix] * b[ix];
+					double b2val = (b2 != null) ? b2[ix] : 1;
+					double val = a[ix] * b1[ix] * b2val;
 					kplus.execute2( kbuff, val );
 				}
+			ret.quickSetValue(0, 0, kbuff._sum);
+			ret.quickSetValue(0, 1, kbuff._correction);
 		}
-		
-		return kbuff._sum;
+		else //tack+*
+		{
+			double[] c = ret.getDenseBlock();
+			for( int i=rl, ix=rl*n; i<ru; i++ )
+				for( int j=0; j<n; j++, ix++ ) {
+					double b2val = (b2 != null) ? b2[ix] : 1;
+					double val = a[ix] * b1[ix] * b2val;
+					kbuff._sum = c[j];
+					kbuff._correction = c[j+n];
+					kplus.execute2(kbuff, val);
+					c[j] = kbuff._sum;
+					c[j+n] = kbuff._correction;
+				}
+		}
 	}
 
-	private static double aggregateTernaryGeneric(MatrixBlock in1, MatrixBlock in2, MatrixBlock in3, int rl, int ru)
+	private static void aggregateTernaryGeneric(MatrixBlock in1, MatrixBlock in2, MatrixBlock in3, MatrixBlock ret, IndexFunction ixFn, int rl, int ru)
 	{		
 		//compute block operations
 		KahanObject kbuff = new KahanObject(0, 0);
 		KahanPlus kplus = KahanPlus.getKahanPlusFnObject();
+		
+		//guaranteed to have at least one sparse input, sort by nnz, assume num cells if 
+		//(potentially incorrect) in dense representation, keep null at end via stable sort
+		MatrixBlock[] blocks = new MatrixBlock[]{in1, in2, in3};
+		Arrays.sort(blocks, new Comparator<MatrixBlock>() {
+			@Override
+			public int compare(MatrixBlock o1, MatrixBlock o2) {
+				long nnz1 = (o1!=null && o1.sparse) ? o1.nonZeros : Long.MAX_VALUE;
+				long nnz2 = (o2!=null && o2.sparse) ? o2.nonZeros : Long.MAX_VALUE;
+				return Long.compare(nnz1, nnz2);
+			}
+		});
+		MatrixBlock lin1 = blocks[0];
+		MatrixBlock lin2 = blocks[1];
+		MatrixBlock lin3 = blocks[2];
+		
+		SparseBlock a = lin1.sparseBlock;
 		final int n = in1.clen;
 		
-		if( in1.sparse )
+		if( ixFn instanceof ReduceAll ) //tak+*
 		{
-			SparseBlock a = in1.sparseBlock;
-			
 			for( int i=rl; i<ru; i++ )
 				if( !a.isEmpty(i) ) {
 					int apos = a.pos(i);
@@ -693,28 +728,40 @@ public class LibMatrixAgg
 					double[] avals = a.values(i);
 					for( int j=apos; j<apos+alen; j++ ) {
 						double val1 = avals[j];
-						double val2 = in2.quickGetValue(i, aix[j]);
+						double val2 = lin2.quickGetValue(i, aix[j]);
 						double val = val1 * val2;
-						if( val != 0 && in3 != null )
-							val *= in3.quickGetValue(i, aix[j]);
+						if( val != 0 && lin3 != null )
+							val *= lin3.quickGetValue(i, aix[j]);
 						kplus.execute2( kbuff, val );							
 					}
 				}	
+			ret.quickSetValue(0, 0, kbuff._sum);
+			ret.quickSetValue(0, 1, kbuff._correction);
 		}
-		else //generic case
+		else //tack+*
 		{
+			double[] c = ret.getDenseBlock();
 			for( int i=rl; i<ru; i++ )
-				for( int j=0; j<n; j++ ){
-					double val1 = in1.quickGetValue(i, j);
-					double val2 = in2.quickGetValue(i, j);
-					double val = val1 * val2;
-					if( in3 != null )
-						val *= in3.quickGetValue(i, j);
-					kplus.execute2( kbuff, val );		
-				}
+				if( !a.isEmpty(i) ) {
+					int apos = a.pos(i);
+					int alen = a.size(i);
+					int[] aix = a.indexes(i);
+					double[] avals = a.values(i);
+					for( int j=apos; j<apos+alen; j++ ) {
+						int colIx = aix[j];
+						double val1 = avals[j];
+						double val2 = lin2.quickGetValue(i, colIx);
+						double val = val1 * val2;
+						if( val != 0 && lin3 != null )
+							val *= lin3.quickGetValue(i, colIx);
+						kbuff._sum = c[colIx];
+						kbuff._correction = c[colIx+n];
+						kplus.execute2( kbuff, val );	
+						c[colIx] = kbuff._sum;
+						c[colIx+n] = kbuff._correction;	
+					}
+				}	
 		}
-	
-		return kbuff._sum;
 	}
 	
 
@@ -3492,37 +3539,43 @@ public class LibMatrixAgg
 		}		
 	}
 
-	private static class AggTernaryTask extends AggTask 
+	private static class AggTernaryTask implements Callable<MatrixBlock>
 	{
-		private MatrixBlock _in1  = null;
-		private MatrixBlock _in2  = null;
-		private MatrixBlock _in3  = null;
-		private double _ret = -1;
-		private int _rl = -1;
-		private int _ru = -1;
+		private final MatrixBlock _in1;
+		private final MatrixBlock _in2;
+		private final MatrixBlock _in3;
+		private MatrixBlock _ret = null;
+		private final IndexFunction _ixFn;
+		private final int _rl;
+		private final int _ru;
 
-		protected AggTernaryTask( MatrixBlock in1, MatrixBlock in2, MatrixBlock in3, int rl, int ru ) 
+		protected AggTernaryTask( MatrixBlock in1, MatrixBlock in2, MatrixBlock in3, MatrixBlock ret, IndexFunction ixFn, int rl, int ru ) 
 			throws DMLRuntimeException
 		{
 			_in1 = in1;	
 			_in2 = in2;	
-			_in3 = in3;				
+			_in3 = in3;		
+			_ret = ret;
+			_ixFn = ixFn;
 			_rl = rl;
 			_ru = ru;
 		}
 		
 		@Override
-		public Object call() throws DMLRuntimeException
+		public MatrixBlock call() throws DMLRuntimeException
 		{
-			if( !_in1.sparse && !_in2.sparse && (_in3==null||!_in3.sparse) ) //DENSE
-				_ret = aggregateTernaryDense(_in1, _in2, _in3, _rl, _ru);
-			else //GENERAL CASE
-				_ret = aggregateTernaryGeneric(_in1, _in2, _in3, _rl, _ru);
+			//thead-local allocation for partial aggregation
+			_ret = new MatrixBlock(_ret.rlen, _ret.clen, false);
+			_ret.allocateDenseBlock();
 			
-			return null;
-		}
-		
-		public double getResult() {
+			if( !_in1.sparse && !_in2.sparse && (_in3==null||!_in3.sparse) ) //DENSE
+				aggregateTernaryDense(_in1, _in2, _in3, _ret, _ixFn, _rl, _ru);
+			else //GENERAL CASE
+				aggregateTernaryGeneric(_in1, _in2, _in3, _ret, _ixFn, _rl, _ru);
+			
+			//recompute non-zeros of partial result
+			_ret.recomputeNonZeros();
+			
 			return _ret;
 		}
 	}

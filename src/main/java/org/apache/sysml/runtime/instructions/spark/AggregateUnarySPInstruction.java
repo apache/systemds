@@ -31,9 +31,6 @@ import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
-import org.apache.sysml.runtime.functionobjects.ReduceAll;
-import org.apache.sysml.runtime.functionobjects.ReduceCol;
-import org.apache.sysml.runtime.functionobjects.ReduceRow;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.spark.functions.AggregateDropCorrectionFunction;
@@ -130,33 +127,10 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction
 			}
 			
 			//put output RDD handle into symbol table
-			updateUnaryAggOutputMatrixCharacteristics(sec);
+			updateUnaryAggOutputMatrixCharacteristics(sec, auop.indexFn);
 			sec.setRDDHandleForVariable(output.getName(), out);	
 			sec.addLineageRDD(output.getName(), input1.getName());
 		}		
-	}
-
-	protected void updateUnaryAggOutputMatrixCharacteristics(SparkExecutionContext sec) 
-		throws DMLRuntimeException
-	{
-		AggregateUnaryOperator auop = (AggregateUnaryOperator)_optr;
-		
-		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
-		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
-		if(!mcOut.dimsKnown()) {
-			if(!mc1.dimsKnown()) {
-				throw new DMLRuntimeException("The output dimensions are not specified and cannot be inferred from input:" + mc1.toString() + " " + mcOut.toString());
-			}
-			else {
-				//infer statistics from input based on operator
-				if( auop.indexFn instanceof ReduceAll )
-					mcOut.set(1, 1, mc1.getRowsPerBlock(), mc1.getColsPerBlock());
-				else if (auop.indexFn instanceof ReduceCol)
-					mcOut.set(mc1.getRows(), 1, mc1.getRowsPerBlock(), mc1.getColsPerBlock());
-				else if (auop.indexFn instanceof ReduceRow)
-					mcOut.set(1, mc1.getCols(), mc1.getRowsPerBlock(), mc1.getColsPerBlock());
-			}
-		}
 	}
 
 	private static class RDDUAggFunction implements PairFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock> 

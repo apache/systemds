@@ -119,7 +119,7 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 			if ( et == ExecType.CP ) 
 			{
 				Lop agg1 = null;
-				if( isTernaryAggregateRewriteApplicable() ) {
+				if( isTernaryAggregateRewriteApplicable(et) ) {
 					agg1 = constructLopsTernaryAggregateRewrite(et);
 				}
 				else if( isUnaryAggregateOuterCPRewriteApplicable() )
@@ -245,7 +245,7 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 				DirectionTypes dir = HopsDirection2Lops.get(_direction);
 
 				//unary aggregate
-				if( isTernaryAggregateRewriteApplicable() ) 
+				if( isTernaryAggregateRewriteApplicable(et) ) 
 				{
 					Lop aggregate = constructLopsTernaryAggregateRewrite(et);
 					setOutputDimensions(aggregate); //0x0 (scalar)
@@ -488,14 +488,15 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 			return SparkAggType.MULTI_BLOCK;
 	}
 
-	private boolean isTernaryAggregateRewriteApplicable() throws HopsException 
+	private boolean isTernaryAggregateRewriteApplicable(ExecType et) 
+		throws HopsException 
 	{
 		boolean ret = false;
 		
 		//currently we support only sum over binary multiply but potentially 
 		//it can be generalized to any RC aggregate over two common binary operations
-		if( OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES &&
-			_direction == Direction.RowCol && _op == AggOp.SUM ) 
+		if( OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES && _op == AggOp.SUM &&
+			(_direction == Direction.RowCol || _direction == Direction.Col)  ) 
 		{
 			Hop input1 = getInput().get(0);
 			if( input1.getParent().size() == 1 && //sum single consumer
@@ -639,7 +640,6 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 		Hop input11 = input1.getInput().get(0);
 		Hop input12 = input1.getInput().get(1);
 		
-		Lop ret = null;
 		Lop in1 = null;
 		Lop in2 = null;
 		Lop in3 = null;
@@ -668,10 +668,10 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 		// The execution type of a unary aggregate instruction should depend on the execution type of inputs to avoid OOM
 		// Since we only support matrix-vector and not vector-matrix, checking the execution type of input1 should suffice.
 		ExecType et_input = input1.optFindExecType();
-		ret = new TernaryAggregate(in1, in2, in3, Aggregate.OperationTypes.KahanSum, 
-				Binary.OperationTypes.MULTIPLY, DataType.SCALAR, ValueType.DOUBLE, et_input, k);
+		DirectionTypes dir = HopsDirection2Lops.get(_direction);
 		
-		return ret;
+		return new TernaryAggregate(in1, in2, in3, Aggregate.OperationTypes.KahanSum, 
+				Binary.OperationTypes.MULTIPLY, dir, getDataType(), ValueType.DOUBLE, et_input, k);
 	}
 	
 	@Override

@@ -78,7 +78,8 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType = new HashMap<String, CPINSTRUCTION_TYPE>();
 
 		String2CPInstructionType.put( "ba+*"   	, CPINSTRUCTION_TYPE.AggregateBinary);
-		String2CPInstructionType.put( "tak+*"   	, CPINSTRUCTION_TYPE.AggregateTernary);
+		String2CPInstructionType.put( "tak+*"   , CPINSTRUCTION_TYPE.AggregateTernary);
+		String2CPInstructionType.put( "tack+*"  , CPINSTRUCTION_TYPE.AggregateTernary);
 		
 		String2CPInstructionType.put( "uak+"   	, CPINSTRUCTION_TYPE.AggregateUnary);
 		String2CPInstructionType.put( "uark+"   , CPINSTRUCTION_TYPE.AggregateUnary);

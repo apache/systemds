@@ -21,6 +21,10 @@ package org.apache.sysml.runtime.instructions.spark;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysml.runtime.functionobjects.IndexFunction;
+import org.apache.sysml.runtime.functionobjects.ReduceAll;
+import org.apache.sysml.runtime.functionobjects.ReduceCol;
+import org.apache.sysml.runtime.functionobjects.ReduceRow;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.operators.Operator;
@@ -85,6 +89,29 @@ public abstract class ComputationSPInstruction extends SPInstruction {
 				sec.getMatrixCharacteristics(output.getName()).set(mcIn1.getRows(), mcIn2.getCols(), mcIn1.getRowsPerBlock(), mcIn2.getColsPerBlock());
 			else
 				sec.getMatrixCharacteristics(output.getName()).set(mcIn1.getRows(), mcIn1.getCols(), mcIn1.getRowsPerBlock(), mcIn1.getRowsPerBlock());
+		}
+	}
+	
+	protected void updateUnaryAggOutputMatrixCharacteristics(SparkExecutionContext sec, IndexFunction ixFn) 
+		throws DMLRuntimeException
+	{
+		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
+		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
+		if( mcOut.dimsKnown() )
+			return;
+		
+		if(!mc1.dimsKnown()) {
+			throw new DMLRuntimeException("The output dimensions are not specified and "
+				+ "cannot be inferred from input:" + mc1.toString() + " " + mcOut.toString());
+		}
+		else {
+			//infer statistics from input based on operator
+			if( ixFn instanceof ReduceAll )
+				mcOut.set(1, 1, mc1.getRowsPerBlock(), mc1.getColsPerBlock());
+			else if( ixFn instanceof ReduceCol )
+				mcOut.set(mc1.getRows(), 1, mc1.getRowsPerBlock(), mc1.getColsPerBlock());
+			else if( ixFn instanceof ReduceRow )
+				mcOut.set(1, mc1.getCols(), mc1.getRowsPerBlock(), mc1.getColsPerBlock());
 		}
 	}
 }

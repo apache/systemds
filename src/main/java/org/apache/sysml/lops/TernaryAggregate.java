@@ -21,22 +21,24 @@ package org.apache.sysml.lops;
 
 import org.apache.sysml.lops.LopProperties.ExecLocation;
 import org.apache.sysml.lops.LopProperties.ExecType;
+import org.apache.sysml.lops.PartialAggregate.DirectionTypes;
 import org.apache.sysml.lops.compile.JobType;
 import org.apache.sysml.parser.Expression.*;
 
 public class TernaryAggregate extends Lop 
 {
-	
-	private static final String OPCODE = "tak+*";
+	public static final String OPCODE_RC = "tak+*";
+	public static final String OPCODE_C = "tack+*";
 	
 	//NOTE: currently only used for ta+*
 	//private Aggregate.OperationTypes _aggOp = null;
 	//private Binary.OperationTypes _binOp = null;
+	private DirectionTypes _direction;
 	
 	//optional attribute for cp
 	private int _numThreads = -1;
 
-	public TernaryAggregate(Lop input1, Lop input2, Lop input3, Aggregate.OperationTypes aggOp, Binary.OperationTypes binOp, DataType dt, ValueType vt, ExecType et, int k ) 
+	public TernaryAggregate(Lop input1, Lop input2, Lop input3, Aggregate.OperationTypes aggOp, Binary.OperationTypes binOp, DirectionTypes direction, DataType dt, ValueType vt, ExecType et, int k ) 
 	{
 		super(Lop.Type.TernaryAggregate, dt, vt);
 		
@@ -50,6 +52,7 @@ public class TernaryAggregate extends Lop
 		input2.addOutput(this);
 		input3.addOutput(this);
 		
+		_direction = direction;
 		_numThreads = k;
 		
 		boolean breaksAlignment = false;
@@ -60,9 +63,8 @@ public class TernaryAggregate extends Lop
 	}
 	
 	@Override
-	public String toString()
-	{
-		return "Operation: "+OPCODE;		
+	public String toString() {
+		return "Operation: "+getOpCode();
 	}
 	
 	@Override
@@ -72,7 +74,7 @@ public class TernaryAggregate extends Lop
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( OPCODE );
+		sb.append( getOpCode() );
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( getInputs().get(0).prepInputOperand(input1));
 		sb.append( OPERAND_DELIMITOR );
@@ -88,5 +90,13 @@ public class TernaryAggregate extends Lop
 		}
 		
 		return sb.toString();
+	}
+	
+	private String getOpCode() {
+		switch( _direction ) {
+			case RowCol: return OPCODE_RC;
+			case Col: return OPCODE_C;
+			default: throw new RuntimeException("Unsupported aggregation direction: "+_direction);
+		}
 	}
 }

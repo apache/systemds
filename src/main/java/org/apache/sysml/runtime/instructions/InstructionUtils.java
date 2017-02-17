@@ -48,6 +48,7 @@ import org.apache.sysml.runtime.functionobjects.Divide;
 import org.apache.sysml.runtime.functionobjects.Equals;
 import org.apache.sysml.runtime.functionobjects.GreaterThan;
 import org.apache.sysml.runtime.functionobjects.GreaterThanEquals;
+import org.apache.sysml.runtime.functionobjects.IndexFunction;
 import org.apache.sysml.runtime.functionobjects.IntegerDivide;
 import org.apache.sysml.runtime.functionobjects.KahanPlus;
 import org.apache.sysml.runtime.functionobjects.KahanPlusSq;
@@ -76,6 +77,7 @@ import org.apache.sysml.runtime.instructions.gpu.GPUInstruction.GPUINSTRUCTION_T
 import org.apache.sysml.runtime.instructions.mr.MRInstruction.MRINSTRUCTION_TYPE;
 import org.apache.sysml.runtime.instructions.spark.SPInstruction.SPINSTRUCTION_TYPE;
 import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
+import org.apache.sysml.runtime.matrix.operators.AggregateTernaryOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.LeftScalarOperator;
@@ -372,6 +374,20 @@ public class InstructionUtils
 		return aggun;
 	}
 
+	public static AggregateTernaryOperator parseAggregateTernaryOperator(String opcode) {
+		return parseAggregateTernaryOperator(opcode, 1);
+	}
+	
+	public static AggregateTernaryOperator parseAggregateTernaryOperator(String opcode, int numThreads) {
+		CorrectionLocationType corr = opcode.equalsIgnoreCase("tak+*") ? 
+				CorrectionLocationType.LASTCOLUMN : CorrectionLocationType.LASTROW;
+		AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, corr);
+		IndexFunction ixfun = opcode.equalsIgnoreCase("tak+*") ? 
+			ReduceAll.getReduceAllFnObject() : ReduceRow.getReduceRowFnObject();					
+		
+		return new AggregateTernaryOperator(Multiply.getMultiplyFnObject(), agg, ixfun, numThreads);
+	}
+	
 	public static AggregateOperator parseAggregateOperator(String opcode, String corrExists, String corrLoc)
 	{
 		AggregateOperator agg = null;

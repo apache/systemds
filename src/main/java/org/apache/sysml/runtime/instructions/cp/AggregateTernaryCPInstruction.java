@@ -21,18 +21,15 @@ package org.apache.sysml.runtime.instructions.cp;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysml.runtime.functionobjects.KahanPlus;
-import org.apache.sysml.runtime.functionobjects.Multiply;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.apache.sysml.runtime.matrix.operators.AggregateBinaryOperator;
-import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
+import org.apache.sysml.runtime.matrix.operators.AggregateTernaryOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
 public class AggregateTernaryCPInstruction extends ComputationCPInstruction
-{
-	public AggregateTernaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, 
-                                         CPOperand out, String opcode, String istr  )
+{	
+	public AggregateTernaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, 
+		CPOperand in3, CPOperand out, String opcode, String istr  )
 	{
 		super(op, in1, in2, in3, out, opcode, istr);
 		_cptype = CPINSTRUCTION_TYPE.AggregateTernary;
@@ -44,7 +41,7 @@ public class AggregateTernaryCPInstruction extends ComputationCPInstruction
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 		
-		if ( opcode.equalsIgnoreCase("tak+*")) {
+		if ( opcode.equalsIgnoreCase("tak+*") || opcode.equalsIgnoreCase("tack+*") ) {
 			InstructionUtils.checkNumFields( parts, 5 );
 			
 			CPOperand in1 = new CPOperand(parts[1]);
@@ -52,16 +49,13 @@ public class AggregateTernaryCPInstruction extends ComputationCPInstruction
 			CPOperand in3 = new CPOperand(parts[3]);
 			CPOperand out = new CPOperand(parts[4]);
 			int numThreads = Integer.parseInt(parts[5]);
-				
-			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject());
-			AggregateBinaryOperator op = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), agg, numThreads);
 			
+			AggregateTernaryOperator op = InstructionUtils.parseAggregateTernaryOperator(opcode, numThreads);
 			return new AggregateTernaryCPInstruction(op, in1, in2, in3, out, opcode, str);
 		} 
 		else {
-			throw new DMLRuntimeException("AggregateTertiaryInstruction.parseInstruction():: Unknown opcode " + opcode);
-		}
-		
+			throw new DMLRuntimeException("AggregateTernaryInstruction.parseInstruction():: Unknown opcode " + opcode);
+		}		
 	}
 	
 	@Override
@@ -73,14 +67,18 @@ public class AggregateTernaryCPInstruction extends ComputationCPInstruction
         MatrixBlock matBlock3 = input3.isLiteral() ? null : //matrix or literal 1
         						ec.getMatrixInput(input3.getName());
 			
-		AggregateBinaryOperator ab_op = (AggregateBinaryOperator) _optr;
-		ScalarObject ret = matBlock1.aggregateTernaryOperations(matBlock1, matBlock2, matBlock3, ab_op);
+		AggregateTernaryOperator ab_op = (AggregateTernaryOperator) _optr;
+		MatrixBlock ret = matBlock1.aggregateTernaryOperations(
+				matBlock1, matBlock2, matBlock3, new MatrixBlock(), ab_op, true);
 			
 		//release inputs/outputs
 		ec.releaseMatrixInput(input1.getName());
 		ec.releaseMatrixInput(input2.getName());
 		if( !input3.isLiteral() )
 			ec.releaseMatrixInput(input3.getName());
-		ec.setScalarOutput(output.getName(), ret);
+		if( output.getDataType().isScalar() )
+			ec.setScalarOutput(output.getName(), new DoubleObject(ret.quickGetValue(0, 0)));
+		else
+			ec.setMatrixOutput(output.getName(), ret);	
 	}
 }

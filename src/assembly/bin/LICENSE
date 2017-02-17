@@ -205,6 +205,9 @@
 The following components come under the Apache Software License 2.0.
 
 avro-1.7.4.jar
+avro-ipc-1.7.7-tests.jar
+avro-ipc-1.7.7.jar
+avro-mapred-1.7.7-hadoop2.jar
 commons-cli-1.2.jar
 commons-collections-3.2.1.jar
 commons-configuration-1.6.jar
@@ -232,6 +235,10 @@ jackson-core-asl-1.9.13.jar
 jackson-mapper-asl-1.9.13.jar
 log4j-1.2.15.jar
 opencsv-2.3.jar
+
+The following compile-scope dependencies come under the Apache Software License 2.0.
+
+Apache Wink :: JSON4J (http://www.apache.org/wink/wink-json4j/) org.apache.wink:wink-json4j:1.4
 
 The following windows-only components come under the Apache Software License 2.0.
 

@@ -58,7 +58,7 @@ public class MLContext {
 	/**
 	 * Minimum Spark version supported by SystemML.
 	 */
-	public static final String SYSTEMML_MINIMUM_SPARK_VERSION = "1.4.0";
+	public static final String SYSTEMML_MINIMUM_SPARK_VERSION = "2.1.0";
 
 	/**
 	 * SparkContext object.
@@ -211,12 +211,13 @@ public class MLContext {
 	 */
 	private void initMLContext(SparkContext sc, boolean monitorPerformance) {
 
+		MLContextUtil.verifySparkVersionSupported(sc);
+
 		if (activeMLContext == null) {
 			System.out.println(MLContextUtil.welcomeMessage());
 		}
 
 		this.sc = sc;
-		MLContextUtil.verifySparkVersionSupported(sc);
 		// by default, run in hybrid Spark mode for optimal performance
 		DMLScript.rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK;
 

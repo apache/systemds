@@ -169,7 +169,7 @@ public final class MLContextUtil {
 	public static void verifySparkVersionSupported(SparkContext sc) {
 		if (!MLContextUtil.isSparkVersionSupported(sc.version())) {
 			throw new MLContextException(
-					"SystemML requires Spark " + MLContext.SYSTEMML_MINIMUM_SPARK_VERSION + " or greater");
+					"This version of SystemML requires Spark " + MLContext.SYSTEMML_MINIMUM_SPARK_VERSION + " or greater.");
 		}
 	}
 
@@ -502,6 +502,7 @@ public final class MLContextUtil {
 			FrameBlock frameBlock = (FrameBlock) value;
 			return MLContextConversionUtil.frameBlockToFrameObject(name, frameBlock, (FrameMetadata) metadata);
 		} else if (value instanceof Dataset<?>) {
+			@SuppressWarnings("unchecked")
 			Dataset<Row> dataFrame = (Dataset<Row>) value;
 
 			if (hasMatrixMetadata) {

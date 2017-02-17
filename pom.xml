@@ -63,7 +63,7 @@
 	</mailingLists>
 
 	<properties>
-		<hadoop.version>2.4.1</hadoop.version>
+		<hadoop.version>2.6.0</hadoop.version>
 		<antlr.version>4.5.3</antlr.version>
 		<spark.version>2.1.0</spark.version>
 		<scala.version>2.11.8</scala.version>
@@ -1055,13 +1055,6 @@
 		</dependency>
 		 -->
 		<!-- ************************* -->
-	
-		<dependency>
-			<groupId>org.apache.spark</groupId>
-			<artifactId>spark-core_${scala.binary.version}</artifactId>
-			<version>${spark.version}</version>
-			<scope>provided</scope>
-		</dependency>
 
 		<dependency>
 			<groupId>org.apache.spark</groupId>
@@ -1069,23 +1062,6 @@
 			<version>${spark.version}</version>
 			<scope>provided</scope>
 		</dependency>
-
-		<!-- To support dataframe in mlcontext -->
-		<dependency>
-			<groupId>org.apache.spark</groupId>
-			<artifactId>spark-sql_${scala.binary.version}</artifactId>
-			<version>${spark.version}</version>
-			<scope>provided</scope>
-		</dependency>
-
-		<!-- Adding Gauva version 14.0.1 to workaround conflict between spark and hadoop dependency -->
-		<dependency>
-			<groupId>com.google.guava</groupId>
-			<artifactId>guava</artifactId>
-			<version>14.0.1</version>
-			<scope>provided</scope>
-		</dependency>
-
 		<dependency>
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-common</artifactId>
@@ -1115,12 +1091,6 @@
 			<artifactId>hadoop-client</artifactId>
 			<version>${hadoop.version}</version>
 			<scope>provided</scope>
-			<exclusions>
-				<exclusion>
-					<groupId>javax.servlet</groupId>
-					<artifactId>servlet-api</artifactId>
-				</exclusion>
-			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.hadoop</groupId>
@@ -1139,23 +1109,17 @@
 			<artifactId>hadoop-mapreduce-client-jobclient</artifactId>
 			<version>${hadoop.version}</version>
 			<scope>provided</scope>
-			<exclusions>
-				<exclusion>
-					<groupId>javax.servlet</groupId>
-					<artifactId>servlet-api</artifactId>
-				</exclusion>
-			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>commons-logging</groupId>
 			<artifactId>commons-logging</artifactId>
-			<version>1.1.1</version>
+			<version>1.1.3</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-math3</artifactId>
-			<version>3.1.1</version>
+			<version>3.4.1</version>
 			<scope>provided</scope>
 		</dependency>
 
@@ -1183,7 +1147,7 @@
 		<dependency>
 			<groupId>net.sf.opencsv</groupId>
 			<artifactId>opencsv</artifactId>
-			<version>1.8</version>
+			<version>2.3</version>
 			<scope>provided</scope>
 		</dependency>
 
@@ -1200,12 +1164,6 @@
 			<scope>provided</scope>
 		</dependency>
 
-		<dependency>
-			<groupId>stax</groupId>
-			<artifactId>stax-api</artifactId>
-			<version>1.0.1</version>
-			<scope>provided</scope>
-		</dependency>
 		<dependency>
 			<groupId>commons-collections</groupId>
 			<artifactId>commons-collections</artifactId>
@@ -1244,12 +1202,6 @@
 			<artifactId>hadoop-yarn-common</artifactId>
 			<version>${hadoop.version}</version>
 			<scope>provided</scope>
-			<exclusions>
-				<exclusion>
-					<groupId>javax.servlet</groupId>
-					<artifactId>servlet-api</artifactId>
-				</exclusion>
-			</exclusions>
 		</dependency>
 
 		<dependency>
@@ -1275,7 +1227,7 @@
 			<groupId>org.scala-lang</groupId>
 			<artifactId>scalap</artifactId>
 			<version>${scala.version}</version>
-		<scope>provided</scope>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.scalatest</groupId>

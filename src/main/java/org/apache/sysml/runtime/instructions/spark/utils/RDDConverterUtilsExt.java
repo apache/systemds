@@ -154,8 +154,10 @@ public class RDDConverterUtilsExt
 			double val = buf1.getDouble();
 			int rowIndex = buf2.getInt();
 			int colIndex = buf3.getInt();
-			mb.setValue(rowIndex, colIndex, val); // TODO: Improve the performance
+			mb.setValue(rowIndex, colIndex, val); 
 		}
+		mb.recomputeNonZeros();
+		mb.examSparsity();
 		return mb;
 	}
 	
@@ -169,7 +171,10 @@ public class RDDConverterUtilsExt
 			throw new DMLRuntimeException("Convertion to sparse format not supported");
 		}
 		else {
-			double [] denseBlock = new double[rlen*clen];
+			long limit = rlen*clen;
+			if( limit > Integer.MAX_VALUE )
+				throw new DMLRuntimeException("Dense NumPy array of size " + limit + " cannot be converted to MatrixBlock");
+			double [] denseBlock = new double[(int) limit];
 			ByteBuffer buf = ByteBuffer.wrap(data);
 			buf.order(ByteOrder.nativeOrder());
 			for(int i = 0; i < rlen*clen; i++) {
@@ -177,6 +182,7 @@ public class RDDConverterUtilsExt
 			}
 			mb.init( denseBlock, rlen, clen );
 		}
+		mb.recomputeNonZeros();
 		mb.examSparsity();
 		return mb;
 	}
@@ -185,17 +191,27 @@ public class RDDConverterUtilsExt
 		byte [] ret = null;
 		if(mb.isInSparseFormat()) {
 			mb.sparseToDense();
-//			throw new DMLRuntimeException("Sparse to dense conversion is not yet implemented");
 		}
 		
-		double [] denseBlock = mb.getDenseBlock();
-		if(denseBlock == null) {
-			throw new DMLRuntimeException("Sparse to dense conversion is not yet implemented");
-		}
+		long limit = mb.getNumRows()*mb.getNumColumns();
 		int times = Double.SIZE / Byte.SIZE;
-		ret = new byte[denseBlock.length * times];
-		for(int i=0;i < denseBlock.length;i++){
-	        ByteBuffer.wrap(ret, i*times, times).order(ByteOrder.nativeOrder()).putDouble(denseBlock[i]);
+		if( limit * times > Integer.MAX_VALUE )
+			throw new DMLRuntimeException("MatrixBlock of size " + limit + " cannot be converted to dense numpy array");
+		ret = new byte[(int) (limit * times)];
+		
+		double [] denseBlock = mb.getDenseBlock();
+		if(mb.isEmptyBlock()) {
+			for(int i=0;i < limit;i++){
+		        ByteBuffer.wrap(ret, i*times, times).order(ByteOrder.nativeOrder()).putDouble(0);
+			}
+		}
+		else if(denseBlock == null) {
+			throw new DMLRuntimeException("Error while dealing with empty blocks.");
+		}
+		else {
+			for(int i=0;i < denseBlock.length;i++){
+		        ByteBuffer.wrap(ret, i*times, times).order(ByteOrder.nativeOrder()).putDouble(denseBlock[i]);
+			}
 		}
 		
 		return ret;

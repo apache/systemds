@@ -134,8 +134,38 @@ class TestMLLearn(unittest.TestCase):
         deleteIfExists(os.path.join(os.getcwd(),'lingreg_y.csv'))
         deleteIfExists(os.path.join(os.getcwd(),'lingreg_B.csv'))
         deleteIfExists(os.path.join(os.getcwd(),'lingreg_predicted.csv'))
-        self.failUnless(np.allclose(commandline_y_predicted, mllearn_y_predicted, rtol=1)) # We may have to change this
-        
+        from sklearn.metrics import r2_score
+        self.failUnless(r2_score(commandline_y_predicted, mllearn_y_predicted) > 0.9) # Check whether commandline and mllearn prediction match wrt r2_score
+
+    def test_linear_regression_cg(self):
+        diabetes = datasets.load_diabetes()
+        diabetes_X = diabetes.data[:, np.newaxis, 2]
+        diabetes_X_train = diabetes_X[:-20]
+        diabetes_X_test = diabetes_X[-20:]
+        diabetes_y_train = diabetes.target[:-20]
+        diabetes_y_test = diabetes.target[-20:]
+        regr = LinearRegression(sparkSession, solver='newton-cg')
+        regr.fit(diabetes_X_train, diabetes_y_train)
+        mllearn_y_predicted = regr.predict(diabetes_X_test)
+        writeColVector(diabetes_X_test, 'lingreg_X_test.csv')
+        writeColVector(diabetes_X, 'lingreg_X.csv')
+        writeColVector(diabetes.target, 'lingreg_y.csv')
+        from systemml import MLContext, dmlFromResource
+        ml = MLContext(sc)
+        script = dmlFromResource('/scripts/algorithms/LinearRegCG.dml').input('$X',os.path.join(os.getcwd(),'lingreg_X.csv')).input('$Y', os.path.join(os.getcwd(),'lingreg_y.csv')).input('$B', os.path.join(os.getcwd(),'lingreg_B.csv')).input('$fmt', 'csv').input('$icpt', '1').input('$tol', '0.000001').input('$reg','1')
+        ml.execute(script)
+        script = dmlFromResource('/scripts/algorithms/GLM-predict.dml').input('$X',os.path.join(os.getcwd(),'lingreg_X_test.csv')).input('$M', os.path.join(os.getcwd(),'lingreg_predicted.csv')).input('$B', os.path.join(os.getcwd(),'lingreg_B.csv')).input('$fmt', 'csv').input('$icpt', '1').input('$tol', '0.000001').input('$reg','1')
+        ml.execute(script)
+        from numpy import genfromtxt
+        commandline_y_predicted = genfromtxt(os.path.join(os.getcwd(),'lingreg_predicted.csv'), delimiter=',').ravel()
+        deleteIfExists(os.path.join(os.getcwd(),'lingreg_X.csv'))
+        deleteIfExists(os.path.join(os.getcwd(),'lingreg_X_test.csv'))
+        deleteIfExists(os.path.join(os.getcwd(),'lingreg_y.csv'))
+        deleteIfExists(os.path.join(os.getcwd(),'lingreg_B.csv'))
+        deleteIfExists(os.path.join(os.getcwd(),'lingreg_predicted.csv'))
+        from sklearn.metrics import r2_score
+        self.failUnless(r2_score(commandline_y_predicted, mllearn_y_predicted) > 0.9) # Check whether commandline and mllearn prediction match wrt r2_score
+                
     def test_svm(self):
         digits = datasets.load_digits()
         X_digits = digits.data

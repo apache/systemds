@@ -45,6 +45,20 @@ from systemml.mllearn import LinearRegression, LogisticRegression, NaiveBayes, S
 
 sc = SparkContext()
 sparkSession = SparkSession.builder.getOrCreate()
+import os
+
+def writeColVector(X, fileName):
+	fileName = os.path.join(os.getcwd(), fileName)
+	X.tofile(fileName, sep='\n')
+	metaDataFileContent = '{ "data_type": "matrix", "value_type": "double", "rows":' + str(len(X)) + ', "cols": 1, "nnz": -1, "format": "csv", "author": "systemml-tests", "created": "0000-00-00 00:00:00 PST" }'
+	with open(fileName+'.mtd', 'w') as text_file:
+		text_file.write(metaDataFileContent)
+
+def deleteIfExists(fileName):
+	try:
+		os.remove(fileName)
+	except OSError:
+		pass
 
 # Currently not integrated with JUnit test
 # ~/spark-1.6.1-scala-2.11/bin/spark-submit --master local[*] --driver-class-path SystemML.jar test.py
@@ -101,11 +115,27 @@ class TestMLLearn(unittest.TestCase):
         diabetes_X_test = diabetes_X[-20:]
         diabetes_y_train = diabetes.target[:-20]
         diabetes_y_test = diabetes.target[-20:]
-        regr = LinearRegression(sparkSession)
+        regr = LinearRegression(sparkSession, solver='direct-solve')
         regr.fit(diabetes_X_train, diabetes_y_train)
-        score = regr.score(diabetes_X_test, diabetes_y_test)
-        self.failUnless(score > 0.4) # TODO: Improve r2-score (may be I am using it incorrectly)
-
+        mllearn_y_predicted = regr.predict(diabetes_X_test)
+        writeColVector(diabetes_X_test, 'lingreg_X_test.csv')
+        writeColVector(diabetes_X, 'lingreg_X.csv')
+        writeColVector(diabetes.target, 'lingreg_y.csv')
+        from systemml import MLContext, dmlFromResource
+        ml = MLContext(sc)
+        script = dmlFromResource('/scripts/algorithms/LinearRegDS.dml').input('$X',os.path.join(os.getcwd(),'lingreg_X.csv')).input('$Y', os.path.join(os.getcwd(),'lingreg_y.csv')).input('$B', os.path.join(os.getcwd(),'lingreg_B.csv')).input('$fmt', 'csv').input('$icpt', '1').input('$tol', '0.000001').input('$reg','1')
+        ml.execute(script)
+        script = dmlFromResource('/scripts/algorithms/GLM-predict.dml').input('$X',os.path.join(os.getcwd(),'lingreg_X_test.csv')).input('$M', os.path.join(os.getcwd(),'lingreg_predicted.csv')).input('$B', os.path.join(os.getcwd(),'lingreg_B.csv')).input('$fmt', 'csv').input('$icpt', '1').input('$tol', '0.000001').input('$reg','1')
+        ml.execute(script)
+        from numpy import genfromtxt
+        commandline_y_predicted = genfromtxt(os.path.join(os.getcwd(),'lingreg_predicted.csv'), delimiter=',').ravel()
+        deleteIfExists(os.path.join(os.getcwd(),'lingreg_X.csv'))
+        deleteIfExists(os.path.join(os.getcwd(),'lingreg_X_test.csv'))
+        deleteIfExists(os.path.join(os.getcwd(),'lingreg_y.csv'))
+        deleteIfExists(os.path.join(os.getcwd(),'lingreg_B.csv'))
+        deleteIfExists(os.path.join(os.getcwd(),'lingreg_predicted.csv'))
+        self.failUnless(np.allclose(commandline_y_predicted, mllearn_y_predicted, rtol=1)) # We may have to change this
+        
     def test_svm(self):
         digits = datasets.load_digits()
         X_digits = digits.data

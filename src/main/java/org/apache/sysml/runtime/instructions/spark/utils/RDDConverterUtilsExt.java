@@ -195,7 +195,7 @@ public class RDDConverterUtilsExt
 		
 		long limit = mb.getNumRows()*mb.getNumColumns();
 		int times = Double.SIZE / Byte.SIZE;
-		if( limit * times > Integer.MAX_VALUE )
+		if( limit > Integer.MAX_VALUE / times )
 			throw new DMLRuntimeException("MatrixBlock of size " + limit + " cannot be converted to dense numpy array");
 		ret = new byte[(int) (limit * times)];
 		

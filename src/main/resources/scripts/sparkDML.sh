@@ -114,7 +114,7 @@ $SPARK_HOME/bin/spark-submit \
      ${executor_memory} \
      ${executor_cores} \
      ${conf} \
-     ${SYSTEMML_HOME}/SystemML.jar \
+     ${SYSTEMML_HOME}/${project.artifactId}-${project.version}.jar \
          -f ${f} \
          -config=${SYSTEMML_HOME}/SystemML-config.xml \
          -exec hybrid_spark \

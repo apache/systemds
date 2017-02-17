@@ -40,8 +40,9 @@ from pyspark.sql import SparkSession
 from sklearn import datasets, metrics, neighbors
 from sklearn.datasets import fetch_20newsgroups
 from sklearn.feature_extraction.text import TfidfVectorizer
-
+from sklearn.metrics import accuracy_score, r2_score
 from systemml.mllearn import LinearRegression, LogisticRegression, NaiveBayes, SVM
+from sklearn import linear_model
 
 sc = SparkContext()
 sparkSession = SparkSession.builder.getOrCreate()
@@ -73,8 +74,11 @@ class TestMLLearn(unittest.TestCase):
         X_test = X_digits[int(.9 * n_samples):]
         y_test = y_digits[int(.9 * n_samples):]
         logistic = LogisticRegression(sparkSession)
-        score = logistic.fit(X_train, y_train).score(X_test, y_test)
-        self.failUnless(score > 0.9)
+        logistic.fit(X_train, y_train)
+        mllearn_predicted = logistic.predict(X_test)
+        sklearn_logistic = linear_model.LogisticRegression()
+        sklearn_logistic.fit(X_train, y_train)
+        self.failUnless(accuracy_score(sklearn_logistic.predict(X_test), mllearn_predicted) > 0.95) # We are comparable to a similar algorithm in scikit learn
     
     def test_logistic_mlpipeline(self):
         training = sparkSession.createDataFrame([
@@ -117,25 +121,10 @@ class TestMLLearn(unittest.TestCase):
         diabetes_y_test = diabetes.target[-20:]
         regr = LinearRegression(sparkSession, solver='direct-solve')
         regr.fit(diabetes_X_train, diabetes_y_train)
-        mllearn_y_predicted = regr.predict(diabetes_X_test)
-        writeColVector(diabetes_X_test, 'lingreg_X_test.csv')
-        writeColVector(diabetes_X, 'lingreg_X.csv')
-        writeColVector(diabetes.target, 'lingreg_y.csv')
-        from systemml import MLContext, dmlFromResource
-        ml = MLContext(sc)
-        script = dmlFromResource('/scripts/algorithms/LinearRegDS.dml').input('$X',os.path.join(os.getcwd(),'lingreg_X.csv')).input('$Y', os.path.join(os.getcwd(),'lingreg_y.csv')).input('$B', os.path.join(os.getcwd(),'lingreg_B.csv')).input('$fmt', 'csv').input('$icpt', '1').input('$tol', '0.000001').input('$reg','1')
-        ml.execute(script)
-        script = dmlFromResource('/scripts/algorithms/GLM-predict.dml').input('$X',os.path.join(os.getcwd(),'lingreg_X_test.csv')).input('$M', os.path.join(os.getcwd(),'lingreg_predicted.csv')).input('$B', os.path.join(os.getcwd(),'lingreg_B.csv')).input('$fmt', 'csv').input('$icpt', '1').input('$tol', '0.000001').input('$reg','1')
-        ml.execute(script)
-        from numpy import genfromtxt
-        commandline_y_predicted = genfromtxt(os.path.join(os.getcwd(),'lingreg_predicted.csv'), delimiter=',').ravel()
-        deleteIfExists(os.path.join(os.getcwd(),'lingreg_X.csv'))
-        deleteIfExists(os.path.join(os.getcwd(),'lingreg_X_test.csv'))
-        deleteIfExists(os.path.join(os.getcwd(),'lingreg_y.csv'))
-        deleteIfExists(os.path.join(os.getcwd(),'lingreg_B.csv'))
-        deleteIfExists(os.path.join(os.getcwd(),'lingreg_predicted.csv'))
-        from sklearn.metrics import r2_score
-        self.failUnless(r2_score(commandline_y_predicted, mllearn_y_predicted) > 0.9) # Check whether commandline and mllearn prediction match wrt r2_score
+        mllearn_predicted = regr.predict(diabetes_X_test)
+        sklearn_regr = linear_model.LinearRegression()
+        sklearn_regr.fit(diabetes_X_train, diabetes_y_train)
+        self.failUnless(r2_score(sklearn_regr.predict(diabetes_X_test), mllearn_predicted) > 0.95) # We are comparable to a similar algorithm in scikit learn
 
     def test_linear_regression_cg(self):
         diabetes = datasets.load_diabetes()
@@ -146,25 +135,10 @@ class TestMLLearn(unittest.TestCase):
         diabetes_y_test = diabetes.target[-20:]
         regr = LinearRegression(sparkSession, solver='newton-cg')
         regr.fit(diabetes_X_train, diabetes_y_train)
-        mllearn_y_predicted = regr.predict(diabetes_X_test)
-        writeColVector(diabetes_X_test, 'lingreg_X_test.csv')
-        writeColVector(diabetes_X, 'lingreg_X.csv')
-        writeColVector(diabetes.target, 'lingreg_y.csv')
-        from systemml import MLContext, dmlFromResource
-        ml = MLContext(sc)
-        script = dmlFromResource('/scripts/algorithms/LinearRegCG.dml').input('$X',os.path.join(os.getcwd(),'lingreg_X.csv')).input('$Y', os.path.join(os.getcwd(),'lingreg_y.csv')).input('$B', os.path.join(os.getcwd(),'lingreg_B.csv')).input('$fmt', 'csv').input('$icpt', '1').input('$tol', '0.000001').input('$reg','1')
-        ml.execute(script)
-        script = dmlFromResource('/scripts/algorithms/GLM-predict.dml').input('$X',os.path.join(os.getcwd(),'lingreg_X_test.csv')).input('$M', os.path.join(os.getcwd(),'lingreg_predicted.csv')).input('$B', os.path.join(os.getcwd(),'lingreg_B.csv')).input('$fmt', 'csv').input('$icpt', '1').input('$tol', '0.000001').input('$reg','1')
-        ml.execute(script)
-        from numpy import genfromtxt
-        commandline_y_predicted = genfromtxt(os.path.join(os.getcwd(),'lingreg_predicted.csv'), delimiter=',').ravel()
-        deleteIfExists(os.path.join(os.getcwd(),'lingreg_X.csv'))
-        deleteIfExists(os.path.join(os.getcwd(),'lingreg_X_test.csv'))
-        deleteIfExists(os.path.join(os.getcwd(),'lingreg_y.csv'))
-        deleteIfExists(os.path.join(os.getcwd(),'lingreg_B.csv'))
-        deleteIfExists(os.path.join(os.getcwd(),'lingreg_predicted.csv'))
-        from sklearn.metrics import r2_score
-        self.failUnless(r2_score(commandline_y_predicted, mllearn_y_predicted) > 0.9) # Check whether commandline and mllearn prediction match wrt r2_score
+        mllearn_predicted = regr.predict(diabetes_X_test)
+        sklearn_regr = linear_model.LinearRegression()
+        sklearn_regr.fit(diabetes_X_train, diabetes_y_train)
+        self.failUnless(r2_score(sklearn_regr.predict(diabetes_X_test), mllearn_predicted) > 0.95) # We are comparable to a similar algorithm in scikit learn
                 
     def test_svm(self):
         digits = datasets.load_digits()
@@ -176,8 +150,11 @@ class TestMLLearn(unittest.TestCase):
         X_test = X_digits[int(.9 * n_samples):]
         y_test = y_digits[int(.9 * n_samples):]
         svm = SVM(sparkSession, is_multi_class=True)
-        score = svm.fit(X_train, y_train).score(X_test, y_test)
-        self.failUnless(score > 0.9)
+        mllearn_predicted = svm.fit(X_train, y_train).predict(X_test)
+        from sklearn import linear_model, svm
+        clf = svm.LinearSVC()
+        sklearn_predicted = clf.fit(X_train, y_train).predict(X_test)
+        self.failUnless(accuracy_score(sklearn_predicted, mllearn_predicted) > 0.95 )
 
     def test_naive_bayes(self):
         digits = datasets.load_digits()
@@ -189,22 +166,26 @@ class TestMLLearn(unittest.TestCase):
         X_test = X_digits[int(.9 * n_samples):]
         y_test = y_digits[int(.9 * n_samples):]
         nb = NaiveBayes(sparkSession)
-        score = nb.fit(X_train, y_train).score(X_test, y_test)
-        self.failUnless(score > 0.8)
+        mllearn_predicted = nb.fit(X_train, y_train).predict(X_test)
+        from sklearn.naive_bayes import MultinomialNB
+        clf = MultinomialNB()
+        sklearn_predicted = clf.fit(X_train, y_train).predict(X_test)
+        self.failUnless(accuracy_score(sklearn_predicted, mllearn_predicted) > 0.95 )
         
-    #def test_naive_bayes1(self):
-    #    categories = ['alt.atheism', 'talk.religion.misc', 'comp.graphics', 'sci.space']
-    #    newsgroups_train = fetch_20newsgroups(subset='train', categories=categories)
-    #    newsgroups_test = fetch_20newsgroups(subset='test', categories=categories)
-    #    vectorizer = TfidfVectorizer()
-    #    # Both vectors and vectors_test are SciPy CSR matrix
-    #    vectors = vectorizer.fit_transform(newsgroups_train.data)
-    #    vectors_test = vectorizer.transform(newsgroups_test.data)
-    #    nb = NaiveBayes(sparkSession)
-    #    nb.fit(vectors, newsgroups_train.target)
-    #    pred = nb.predict(vectors_test)
-    #    score = metrics.f1_score(newsgroups_test.target, pred, average='weighted')
-    #    self.failUnless(score > 0.8)
+    def test_naive_bayes1(self):
+        categories = ['alt.atheism', 'talk.religion.misc', 'comp.graphics', 'sci.space']
+        newsgroups_train = fetch_20newsgroups(subset='train', categories=categories)
+        newsgroups_test = fetch_20newsgroups(subset='test', categories=categories)
+        vectorizer = TfidfVectorizer()
+        # Both vectors and vectors_test are SciPy CSR matrix
+        vectors = vectorizer.fit_transform(newsgroups_train.data)
+        vectors_test = vectorizer.transform(newsgroups_test.data)
+        nb = NaiveBayes(sparkSession)
+        mllearn_predicted = nb.fit(vectors, newsgroups_train.target).predict(vectors_test)
+        from sklearn.naive_bayes import MultinomialNB
+        clf = MultinomialNB()
+        sklearn_predicted = clf.fit(vectors, newsgroups_train.target).predict(vectors_test)
+        self.failUnless(accuracy_score(sklearn_predicted, mllearn_predicted) > 0.95 )
 
 
 if __name__ == '__main__':

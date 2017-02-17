@@ -83,8 +83,8 @@ efficient when the number of features $m$ is relatively small
 <div data-lang="Python" markdown="1">
 {% highlight python %}
 from systemml.mllearn import LinearRegression
-# C = 1/reg
-lr = LinearRegression(sqlCtx, fit_intercept=True, C=1.0, solver='direct-solve')
+# C = 1/reg (to disable regularization, use float("inf"))
+lr = LinearRegression(sqlCtx, fit_intercept=True, normalize=False, C=float("inf"), solver='direct-solve')
 # X_train, y_train and X_test can be NumPy matrices or Pandas DataFrame or SciPy Sparse Matrix
 y_test = lr.fit(X_train, y_train)
 # df_train is DataFrame that contains two columns: "features" (of type Vector) and "label". df_test is a DataFrame that contains the column "features"
@@ -125,8 +125,8 @@ y_test = lr.fit(df_train)
 <div data-lang="Python" markdown="1">
 {% highlight python %}
 from systemml.mllearn import LinearRegression
-# C = 1/reg
-lr = LinearRegression(sqlCtx, fit_intercept=True, max_iter=100, tol=0.000001, C=1.0, solver='newton-cg')
+# C = 1/reg (to disable regularization, use float("inf"))
+lr = LinearRegression(sqlCtx, fit_intercept=True, normalize=False, max_iter=100, tol=0.000001, C=float("inf"), solver='newton-cg')
 # X_train, y_train and X_test can be NumPy matrices or Pandas DataFrames or SciPy Sparse matrices
 y_test = lr.fit(X_train, y_train)
 # df_train is DataFrame that contains two columns: "features" (of type Vector) and "label". df_test is a DataFrame that contains the column "features"

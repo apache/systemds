@@ -228,7 +228,7 @@ X_test = diabetes_X[-20:]
 y_train = diabetes.target[:-20]
 y_test = diabetes.target[-20:]
 # Create linear regression object
-regr = LinearRegression(sqlCtx, fit_intercept=True, C=1, solver='direct-solve')
+regr = LinearRegression(sqlCtx, fit_intercept=True, C=float("inf"), solver='direct-solve')
 # Train the model using the training sets
 regr.fit(X_train, y_train)
 y_predicted = regr.predict(X_test)

@@ -294,7 +294,7 @@ class LogisticRegression(BaseSystemMLClassifier):
     
     """
     
-    def __init__(self, sparkSession, penalty='l2', fit_intercept=True, max_iter=100, max_inner_iter=0, tol=0.000001, C=1.0, solver='newton-cg', transferUsingDF=False):
+    def __init__(self, sparkSession, penalty='l2', fit_intercept=True, normalize=False,  max_iter=100, max_inner_iter=0, tol=0.000001, C=1.0, solver='newton-cg', transferUsingDF=False):
         """
         Performs both binomial and multinomial logistic regression.
         
@@ -303,10 +303,11 @@ class LogisticRegression(BaseSystemMLClassifier):
         sparkSession: PySpark SparkSession
         penalty: Only 'l2' supported
         fit_intercept: Specifies whether to add intercept or not (default: True)
+        normalize: This parameter is ignored when fit_intercept is set to False. (default: False)
         max_iter: Maximum number of outer (Fisher scoring) iterations (default: 100)
         max_inner_iter: Maximum number of inner (conjugate gradient) iterations, or 0 if no maximum limit provided (default: 0)
         tol: Tolerance used in the convergence criterion (default: 0.000001)
-        C: 1/regularization parameter (default: 1.0)
+        C: 1/regularization parameter (default: 1.0 similar to scikit-learn. To disable regularization, please use float("inf"))
         solver: Only 'newton-cg' solver supported
         """
         self.sparkSession = sparkSession
@@ -316,12 +317,11 @@ class LogisticRegression(BaseSystemMLClassifier):
         self.estimator = self.sc._jvm.org.apache.sysml.api.ml.LogisticRegression(self.uid, self.sc._jsc.sc())
         self.estimator.setMaxOuterIter(max_iter)
         self.estimator.setMaxInnerIter(max_inner_iter)
-        if C <= 0:
-            raise Exception('C has to be positive')
-        reg = 1.0 / C
+        reg = 0.0 if C == float("inf") else 1.0 / C
+        icpt = 2 if fit_intercept == True and normalize == True else int(fit_intercept)
         self.estimator.setRegParam(reg)
         self.estimator.setTol(tol)
-        self.estimator.setIcpt(int(fit_intercept))
+        self.estimator.setIcpt(icpt)
         self.transferUsingDF = transferUsingDF
         self.setOutputRawPredictionsToFalse = True
         if penalty != 'l2':
@@ -361,7 +361,7 @@ class LinearRegression(BaseSystemMLRegressor):
     """
     
     
-    def __init__(self, sparkSession, fit_intercept=True, max_iter=100, tol=0.000001, C=1.0, solver='newton-cg', transferUsingDF=False):
+    def __init__(self, sparkSession, fit_intercept=True, normalize=False, max_iter=100, tol=0.000001, C=float("inf"), solver='newton-cg', transferUsingDF=False):
         """
         Performs linear regression to model the relationship between one numerical response variable and one or more explanatory (feature) variables.
 
@@ -369,9 +369,10 @@ class LinearRegression(BaseSystemMLRegressor):
         ----------
         sparkSession: PySpark SparkSession
         fit_intercept: Specifies whether to add intercept or not (default: True)
+        normalize: If True, the regressors X will be normalized before regression. This parameter is ignored when fit_intercept is set to False. (default: False)
         max_iter: Maximum number of conjugate gradient iterations, or 0 if no maximum limit provided (default: 100)
         tol: Tolerance used in the convergence criterion (default: 0.000001)
-        C: 1/regularization parameter (default: 1.0)
+        C: 1/regularization parameter (default: float("inf") as scikit learn doesnot support regularization by default)
         solver: Supports either 'newton-cg' or 'direct-solve' (default: 'newton-cg').
         Depending on the size and the sparsity of the feature matrix, one or the other solver may be more efficient.
         'direct-solve' solver is more efficient when the number of features is relatively small (m < 1000) and
@@ -386,12 +387,11 @@ class LinearRegression(BaseSystemMLRegressor):
         else:
             raise Exception('Only newton-cg solver supported')
         self.estimator.setMaxIter(max_iter)
-        if C <= 0:
-            raise Exception('C has to be positive')
-        reg = 1.0 / C
+        reg = 0.0 if C == float("inf") else 1.0 / C
+        icpt = 2 if fit_intercept == True and normalize == True else int(fit_intercept)
         self.estimator.setRegParam(reg)
         self.estimator.setTol(tol)
-        self.estimator.setIcpt(int(fit_intercept))
+        self.estimator.setIcpt(icpt)
         self.transferUsingDF = transferUsingDF
         self.setOutputRawPredictionsToFalse = False
 
@@ -421,7 +421,7 @@ class SVM(BaseSystemMLClassifier):
     """
 
 
-    def __init__(self, sparkSession, fit_intercept=True, max_iter=100, tol=0.000001, C=1.0, is_multi_class=False, transferUsingDF=False):
+    def __init__(self, sparkSession, fit_intercept=True, normalize=False, max_iter=100, tol=0.000001, C=1.0, is_multi_class=False, transferUsingDF=False):
         """
         Performs both binary-class and multiclass SVM (Support Vector Machines).
 
@@ -429,9 +429,10 @@ class SVM(BaseSystemMLClassifier):
         ----------
         sparkSession: PySpark SparkSession
         fit_intercept: Specifies whether to add intercept or not (default: True)
+        normalize: This parameter is ignored when fit_intercept is set to False. (default: False)
         max_iter: Maximum number iterations (default: 100)
         tol: Tolerance used in the convergence criterion (default: 0.000001)
-        C: 1/regularization parameter (default: 1.0)
+        C: 1/regularization parameter (default: 1.0 similar to scikit-learn. To disable regularization, please use float("inf"))
         is_multi_class: Specifies whether to use binary-class SVM or multi-class SVM algorithm (default: False)
         """
         self.sparkSession = sparkSession
@@ -442,10 +443,11 @@ class SVM(BaseSystemMLClassifier):
         self.estimator.setMaxIter(max_iter)
         if C <= 0:
             raise Exception('C has to be positive')
-        reg = 1.0 / C
+        reg = 0.0 if C == float("inf") else 1.0 / C
+        icpt = 2 if fit_intercept == True and normalize == True else int(fit_intercept)
         self.estimator.setRegParam(reg)
         self.estimator.setTol(tol)
-        self.estimator.setIcpt(int(fit_intercept))
+        self.estimator.setIcpt(icpt)
         self.transferUsingDF = transferUsingDF
         self.setOutputRawPredictionsToFalse = False
 

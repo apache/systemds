@@ -731,7 +731,7 @@ LogisticRegression score: 0.922222
 
 ### Reference documentation
 
- *class*`systemml.mllearn.estimators.LinearRegression`(*sqlCtx*, *fit\_intercept=True*, *max\_iter=100*, *tol=1e-06*, *C=1.0*, *solver='newton-cg'*, *transferUsingDF=False*)(#systemml.mllearn.estimators.LinearRegression "Permalink to this definition")
+ *class*`systemml.mllearn.estimators.LinearRegression`(*sqlCtx*, *fit\_intercept=True*, *normalize=False*, *max\_iter=100*, *tol=1e-06*, *C=float("inf")*, *solver='newton-cg'*, *transferUsingDF=False*)(#systemml.mllearn.estimators.LinearRegression "Permalink to this definition")
 :   Bases: `systemml.mllearn.estimators.BaseSystemMLRegressor`{.xref .py
     .py-class .docutils .literal}
 
@@ -760,7 +760,7 @@ LogisticRegression score: 0.922222
         >>> # The mean square error
         >>> print("Residual sum of squares: %.2f" % np.mean((regr.predict(diabetes_X_test) - diabetes_y_test) ** 2))
 
- *class*`systemml.mllearn.estimators.LogisticRegression`(*sqlCtx*, *penalty='l2'*, *fit\_intercept=True*, *max\_iter=100*, *max\_inner\_iter=0*, *tol=1e-06*, *C=1.0*, *solver='newton-cg'*, *transferUsingDF=False*)(#systemml.mllearn.estimators.LogisticRegression "Permalink to this definition")
+ *class*`systemml.mllearn.estimators.LogisticRegression`(*sqlCtx*, *penalty='l2'*, *fit\_intercept=True*, *normalize=False*,  *max\_iter=100*, *max\_inner\_iter=0*, *tol=1e-06*, *C=1.0*, *solver='newton-cg'*, *transferUsingDF=False*)(#systemml.mllearn.estimators.LogisticRegression "Permalink to this definition")
 :   Bases: `systemml.mllearn.estimators.BaseSystemMLClassifier`{.xref
     .py .py-class .docutils .literal}
 
@@ -817,7 +817,7 @@ LogisticRegression score: 0.922222
         >>> prediction = model.transform(test)
         >>> prediction.show()
 
- *class*`systemml.mllearn.estimators.SVM`(*sqlCtx*, *fit\_intercept=True*, *max\_iter=100*, *tol=1e-06*, *C=1.0*, *is\_multi\_class=False*, *transferUsingDF=False*)(#systemml.mllearn.estimators.SVM "Permalink to this definition")
+ *class*`systemml.mllearn.estimators.SVM`(*sqlCtx*, *fit\_intercept=True*, *normalize=False*, *max\_iter=100*, *tol=1e-06*, *C=1.0*, *is\_multi\_class=False*, *transferUsingDF=False*)(#systemml.mllearn.estimators.SVM "Permalink to this definition")
 :   Bases: `systemml.mllearn.estimators.BaseSystemMLClassifier`{.xref
     .py .py-class .docutils .literal}
 

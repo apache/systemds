@@ -39,7 +39,7 @@ import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.ml.linalg.VectorUDT;
+import org.apache.spark.mllib.util.MLUtils;
 import org.apache.spark.rdd.RDD;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
@@ -502,8 +502,10 @@ public final class MLContextUtil {
 			FrameBlock frameBlock = (FrameBlock) value;
 			return MLContextConversionUtil.frameBlockToFrameObject(name, frameBlock, (FrameMetadata) metadata);
 		} else if (value instanceof Dataset<?>) {
+			@SuppressWarnings("unchecked")
 			Dataset<Row> dataFrame = (Dataset<Row>) value;
 
+			dataFrame = MLUtils.convertVectorColumnsToML(dataFrame);
 			if (hasMatrixMetadata) {
 				return MLContextConversionUtil.dataFrameToMatrixObject(name, dataFrame, (MatrixMetadata) metadata);
 			} else if (hasFrameMetadata) {
@@ -597,7 +599,8 @@ public final class MLContextUtil {
 		for (StructField field : fields) {
 			DataType dataType = field.dataType();
 			if ((dataType != DataTypes.DoubleType) && (dataType != DataTypes.IntegerType)
-					&& (dataType != DataTypes.LongType) && (!(dataType instanceof VectorUDT))) {
+					&& (dataType != DataTypes.LongType) && (!(dataType instanceof org.apache.spark.ml.linalg.VectorUDT))
+					&& (!(dataType instanceof org.apache.spark.mllib.linalg.VectorUDT)) ) {
 				// uncomment if we support arrays of doubles for matrices
 				// if (dataType instanceof ArrayType) {
 				// ArrayType arrayType = (ArrayType) dataType;

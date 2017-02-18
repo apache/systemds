@@ -29,6 +29,8 @@ print("")
 print("Starting grad checks.")
 print("---")
 
+tmp = grad_check::batch_norm(FALSE)
+tmp = grad_check::batch_norm(TRUE)
 tmp = grad_check::cross_entropy_loss()
 tmp = grad_check::l1_loss()
 tmp = grad_check::l2_loss()

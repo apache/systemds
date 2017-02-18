@@ -62,8 +62,8 @@ forward = function(matrix[double] X, matrix[double] ema_mean, matrix[double] ema
           # TRAIN
           if(nrow(ema_mean) == C*H*W) {
             # Regular normalization
-            ema_mean_out = ma_fraction*colMeans(X) + (1-ma_fraction)*ema_mean
-            ema_var_out = ma_fraction*colVars(X) + (1-ma_fraction)*ema_var
+            ema_mean_out = ma_fraction*t(colMeans(X)) + (1-ma_fraction)*ema_mean
+            ema_var_out = ma_fraction*t(colVars(X)) + (1-ma_fraction)*ema_var
           }
           else {
             # Per-channel batch normalization
@@ -76,8 +76,10 @@ forward = function(matrix[double] X, matrix[double] ema_mean, matrix[double] ema
           }
         }
         if(nrow(ema_mean) == C*H*W) {
-          m = ema_mean_out
-          v = ema_var_out
+          m = t(ema_mean_out)
+          v = t(ema_var_out)
+          gamma = t(gamma)
+          beta = t(beta)
         }
         else {
           # Could be replaced by bias_add
@@ -121,8 +123,9 @@ backward = function(matrix[double] dout, matrix[double] X, matrix[double] out, m
         if(nrow(ema_mean) == C*H*W) {
           dbeta = colSums(dout)
           dgamma = colSums(out*dout)
-          m = ema_mean
-          v = ema_var
+          m = t(ema_mean)
+          v = t(ema_var)
+          gamma = t(gamma)
         }
         else {
           dbeta = rowSums(matrix(colSums(dout), rows=C, cols=H*W))
@@ -150,6 +153,8 @@ init = function(int size) return (matrix[double] ema_mean, matrix[double] ema_va
    * Outputs:
    * - ema_mean: initial exponential moving average for mean (of dimension either [C, 1] or [C*H*W, 1])
    * - ema_var: initial exponential moving average for variance (of dimension either [C, 1] or [C*H*W, 1])
+   * - gamma: gamma (of dimension either [C, 1] or [C*H*W, 1])
+   * - beta: beta (of dimension either [C, 1] or [C*H*W, 1])
    */
    # Per-channel batch normalization
    ema_mean = matrix(0, rows=size, cols=1)

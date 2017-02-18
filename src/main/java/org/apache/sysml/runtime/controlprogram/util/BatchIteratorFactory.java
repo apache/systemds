@@ -40,33 +40,47 @@ public class BatchIteratorFactory {
 	
 	public static Iterable<Data> getBatchIterator(ExecutionContext ec, String[] iterablePredicateVars) throws DMLRuntimeException {
 		MatrixObject X = (MatrixObject) ec.getVariable( iterablePredicateVars[1] );
+		MatrixCharacteristics mcX = ec.getMatrixCharacteristics( iterablePredicateVars[1] );
 		long batchSize = 0;
 		try {
 			batchSize = Long.parseLong(iterablePredicateVars[3]); 
 		} catch(NumberFormatException e) {  
 			batchSize = ((ScalarObject) ec.getVariable( iterablePredicateVars[3] )).getLongValue();
 		}
-		
+		MatrixCharacteristics maxMCBatch = new MatrixCharacteristics(batchSize, X.getNumColumns(), ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize());
 		if(ec instanceof SparkExecutionContext) {
-			MatrixCharacteristics maxMCBatch = new MatrixCharacteristics(batchSize, X.getNumColumns(), ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize());
 			boolean canBatchFitInCP = canBatchFitInCP(maxMCBatch);
 			if(canBatchFitInPrefetchBudget(maxMCBatch)) {
-				LOG.warn("Prefetching is enabled"); // Setting LOG to warn for experiments. 
+				LOG.info("Prefetching is enabled"); // Setting LOG to warn for experiments. 
 				return (Iterable<Data>) (new SPPrefetchBatchIterator(ec, iterablePredicateVars, batchSize, canBatchFitInCP));
 			}
+			else if(canBatchAndXFitInCP(maxMCBatch, mcX)) {
+				warnIfSmallerPrefetchBudget(maxMCBatch);
+				return (Iterable<Data>) (new CPBatchIterator(ec, iterablePredicateVars, batchSize));
+			}
 			else {
-				long prefetchBudget = getPrefetchBudget(maxMCBatch);
-				if(prefetchBudget > 0) {
-					long MB = 1000000;
-					double requiredBudget = OptimizerUtils.estimateSize(maxMCBatch) *2 / MB;
-					LOG.warn("Prefetching is disabled as the required budget is less than specified budget. (Hint: To enable prefetching, please set " + DMLConfig.PREFETCH_MEM_BUDGET + " to " + requiredBudget + "mb.");
-				}
+				warnIfSmallerPrefetchBudget(maxMCBatch);
 				return (Iterable<Data>) (new SPBatchIterator(ec, iterablePredicateVars, batchSize, canBatchFitInCP));
 			}
 		}
 		else {
+			if(!canBatchAndXFitInCP(maxMCBatch, mcX)) 
+				LOG.warn("The memory budget provided is small. You should consider running with Spark backend.");
 			return (Iterable<Data>) (new CPBatchIterator(ec, iterablePredicateVars, batchSize));
 		}
+	}
+	
+	private static void warnIfSmallerPrefetchBudget(MatrixCharacteristics maxMCBatch) {
+		long prefetchBudget = getPrefetchBudget(maxMCBatch);
+		if(prefetchBudget > 0) {
+			long MB = 1000000;
+			double requiredBudget = OptimizerUtils.estimateSize(maxMCBatch) *2 / MB;
+			LOG.warn("Prefetching is disabled as the required budget is less than specified budget. (Hint: To enable prefetching, please set " + DMLConfig.PREFETCH_MEM_BUDGET + " to " + requiredBudget + "mb.");
+		}
+	}
+	
+	private static boolean canBatchAndXFitInCP(MatrixCharacteristics maxMCBatch, MatrixCharacteristics mcX) {
+		return (OptimizerUtils.estimateSize(maxMCBatch) + OptimizerUtils.estimateSize(mcX)) < OptimizerUtils.getLocalMemBudget()/2;
 	}
 	
 	private static boolean canBatchFitInCP(MatrixCharacteristics maxMCBatch) {

@@ -25,6 +25,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -76,40 +77,29 @@ public class FrameConverterTest extends AutomatedTestBase
 	private final static String TEST_NAME = "FrameConv";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FrameConverterTest.class.getSimpleName() + "/";
 
-
 	private final static int rows = 1593;
+	
 	private final static ValueType[] schemaStrings = new ValueType[]{ValueType.STRING, ValueType.STRING, ValueType.STRING};	
 	private final static ValueType[] schemaMixed = new ValueType[]{ValueType.STRING, ValueType.DOUBLE, ValueType.INT, ValueType.BOOLEAN};
 
-	private final static List<ValueType> schemaMixedLargeListStr = Collections.nCopies(600, ValueType.STRING);
-	private final static List<ValueType> schemaMixedLargeListDble  = Collections.nCopies(600, ValueType.DOUBLE);
-	private final static List<ValueType> schemaMixedLargeListInt  = Collections.nCopies(600, ValueType.INT);
-	private final static List<ValueType> schemaMixedLargeListBool  = Collections.nCopies(600, ValueType.BOOLEAN);
-	private static List<ValueType> schemaMixedLargeList = null;
-	static {
-		schemaMixedLargeList = new ArrayList<ValueType>(schemaMixedLargeListStr);
-		schemaMixedLargeList.addAll(schemaMixedLargeListDble);
-		schemaMixedLargeList.addAll(schemaMixedLargeListInt);
-		schemaMixedLargeList.addAll(schemaMixedLargeListBool);
-	}
-
-	private static ValueType[] schemaMixedLarge = new ValueType[schemaMixedLargeList.size()];
-	static {
-		schemaMixedLarge = (ValueType[]) schemaMixedLargeList.toArray(schemaMixedLarge);
-	}
+	private final static List<ValueType> schemaMixedLargeListStr = Collections.nCopies(200, ValueType.STRING);
+	private final static List<ValueType> schemaMixedLargeListDble  = Collections.nCopies(200, ValueType.DOUBLE);
+	private final static List<ValueType> schemaMixedLargeListInt  = Collections.nCopies(200, ValueType.INT);
+	private final static List<ValueType> schemaMixedLargeListBool  = Collections.nCopies(200, ValueType.BOOLEAN);
 	
-	private static List<ValueType> schemaMixedLargeListDFrame = null;
-	static {
-		schemaMixedLargeListDFrame = new ArrayList<ValueType>(schemaMixedLargeListStr.subList(0, 300));
-		schemaMixedLargeListDFrame.addAll(schemaMixedLargeListDble.subList(0, 300));
-		schemaMixedLargeListDFrame.addAll(schemaMixedLargeListInt.subList(0, 300));
-		schemaMixedLargeListDFrame.addAll(schemaMixedLargeListBool.subList(0, 300));
-	}
+	@SuppressWarnings("unchecked")
+	private static final List<ValueType> schemaMixedLargeList = new ArrayList<ValueType>(CollectionUtils.union(
+					CollectionUtils.union(schemaMixedLargeListStr, schemaMixedLargeListDble),
+					CollectionUtils.union(schemaMixedLargeListInt, schemaMixedLargeListBool)));
+	private static final ValueType[] schemaMixedLarge = schemaMixedLargeList.toArray(new ValueType[0]);
 	
-	private static ValueType[] schemaMixedLargeDFrame = new ValueType[schemaMixedLargeListDFrame.size()];
-	static {
-		schemaMixedLargeDFrame = (ValueType[]) schemaMixedLargeListDFrame.toArray(schemaMixedLargeDFrame);
-	}
+	@SuppressWarnings("unchecked")
+	private static final List<ValueType> schemaMixedLargeListDFrame = new ArrayList<ValueType>(CollectionUtils.union(
+					CollectionUtils.union(schemaMixedLargeListStr.subList(0, 100), schemaMixedLargeListDble.subList(0, 100)),
+					CollectionUtils.union(schemaMixedLargeListInt.subList(0, 100), schemaMixedLargeListBool.subList(0, 100))));
+	private static final ValueType[] schemaMixedLargeDFrame = schemaMixedLargeListDFrame.toArray(new ValueType[0]);
+	//NOTE: moderate number of columns to workaround https://issues.apache.org/jira/browse/SPARK-16845
+	
 	
 	private enum ConvType {
 		CSV2BIN,
@@ -202,13 +192,11 @@ public class FrameConverterTest extends AutomatedTestBase
 	
 	@Test
 	public void testFrameMixedDFrameBinSpark()  {
-		// TODO https://issues.apache.org/jira/browse/SPARK-16845
 		runFrameConverterTest(schemaMixedLargeDFrame, ConvType.DFRM2BIN);
 	}
 	
 	@Test
 	public void testFrameMixedBinDFrameSpark()  {
-		// TODO https://issues.apache.org/jira/browse/SPARK-16845
 		runFrameConverterTest(schemaMixedLargeDFrame, ConvType.BIN2DFRM);
 	}
 	

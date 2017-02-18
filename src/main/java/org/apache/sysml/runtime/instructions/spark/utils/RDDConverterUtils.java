@@ -185,10 +185,11 @@ public class RDDConverterUtils
 				prepinput.mapPartitionsToPair(new CSVToBinaryBlockFunction(
 						mc, sparse, hasHeader, delim, fill, fillValue));
 		
-		//aggregate partial matrix blocks
-		out = RDDAggregateUtils.mergeByKey( out ); 
-		
-		return out;
+		//aggregate partial matrix blocks (w/ preferred number of output 
+		//partitions as the data is likely smaller in binary block format,
+		//but also to bound the size of partitions for compressed inputs)
+		int parts = SparkUtils.getNumPreferredPartitions(mc, out);
+		return RDDAggregateUtils.mergeByKey(out, parts, false); 
 	}
 	
 	/**
@@ -256,10 +257,11 @@ public class RDDConverterUtils
 				prepinput.mapPartitionsToPair(
 					new DataFrameToBinaryBlockFunction(mc, sparse, containsID, isVector));
 		
-		//aggregate partial matrix blocks
-		out = RDDAggregateUtils.mergeByKey( out ); 
-		
-		return out;
+		//aggregate partial matrix blocks (w/ preferred number of output 
+		//partitions as the data is likely smaller in binary block format,
+		//but also to bound the size of partitions for compressed inputs)
+		int parts = SparkUtils.getNumPreferredPartitions(mc, out);
+		return RDDAggregateUtils.mergeByKey(out, parts, false); 
 	}
 
 	public static Dataset<Row> binaryBlockToDataFrame(SparkSession sparkSession,
@@ -312,7 +314,7 @@ public class RDDConverterUtils
 		double datasize = OptimizerUtils.estimatePartitionedSizeExactSparsity(mc);
 		double rowsize = OptimizerUtils.estimatePartitionedSizeExactSparsity(1, mc.getCols(),
 				mc.getNumRowBlocks(), mc.getColsPerBlock(), Math.ceil((double)mc.getNonZeros()/mc.getRows()));
-		double partsize = Math.ceil(datasize/in.partitions().size());
+		double partsize = Math.ceil(datasize/in.getNumPartitions());
 		double blksz = Math.min(mc.getRows(), mc.getRowsPerBlock());
 		return partsize/rowsize/blksz < MatrixBlock.SPARSITY_TURN_POINT;
 	}

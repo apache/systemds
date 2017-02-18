@@ -49,7 +49,6 @@ import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.instructions.cp.Data;
-import org.apache.sysml.runtime.instructions.spark.CheckpointSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.SPInstruction;
 import org.apache.sysml.runtime.instructions.spark.data.BroadcastObject;
 import org.apache.sysml.runtime.instructions.spark.data.LineageObject;
@@ -1181,8 +1180,8 @@ public class SparkExecutionContext extends ExecutionContext
 					((RDDObject)mo.getRDDHandle().getLineageChilds().get(0)).getRDD();
 			
 			//investigate issue of unnecessarily large number of partitions
-			int numPartitions = CheckpointSPInstruction.getNumCoalescePartitions(mcIn, in);
-			if( numPartitions < in.partitions().size() )
+			int numPartitions = SparkUtils.getNumPreferredPartitions(mcIn, in);
+			if( numPartitions < in.getNumPartitions() )
 				in = in.coalesce( numPartitions );
 		}
 		

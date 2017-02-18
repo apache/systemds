@@ -133,7 +133,7 @@ public class JCudaContext extends GPUContext {
 			long free[] = {0};
 			long total[] = {0};
 			if (cudaMemGetInfo(free, total) == cudaSuccess) {
-				long totalNumBytes = total[0];
+				//long totalNumBytes = total[0];
 				deviceMemBytes.set(free[0]);
 			} else {
 				throw new RuntimeException("ERROR: Unable to get memory information of the GPU.");

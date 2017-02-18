@@ -135,8 +135,8 @@ public class MapmmSPInstruction extends BinarySPInstruction
 		{
 			JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
 			if( requiresFlatMapFunction(_type, mcBc) ) {
-				if( requiresRepartitioning(_type, mcRdd, mcBc, in1.partitions().size()) )
-					in1 = in1.repartition(getNumRepartitioning(_type, mcRdd, mcBc, in1.partitions().size()));
+				if( requiresRepartitioning(_type, mcRdd, mcBc, in1.getNumPartitions()) )
+					in1 = in1.repartition(getNumRepartitioning(_type, mcRdd, mcBc, in1.getNumPartitions()));
 				out = in1.flatMapToPair( new RDDFlatMapMMFunction(_type, in2) );
 			}
 			else if( preservesPartitioning(mcRdd, _type) )

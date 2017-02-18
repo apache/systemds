@@ -155,13 +155,30 @@ public class RDDAggregateUtils
 	 * @param in matrix as {@code JavaPairRDD<MatrixIndexes, MatrixBlock>}
 	 * @return matrix as {@code JavaPairRDD<MatrixIndexes, MatrixBlock>}
 	 */
-	public static JavaPairRDD<MatrixIndexes, MatrixBlock> mergeByKey( JavaPairRDD<MatrixIndexes, MatrixBlock> in )
+	public static JavaPairRDD<MatrixIndexes, MatrixBlock> mergeByKey( JavaPairRDD<MatrixIndexes, MatrixBlock> in ) {
+		return mergeByKey(in, in.getNumPartitions(), true);
+	}
+	
+	/**
+	 * Merges disjoint data of all blocks per key.
+	 * 
+	 * Note: The behavior of this method is undefined for both sparse and dense data if the 
+	 * assumption of disjoint data is violated.
+	 * 
+	 * @param in matrix as {@code JavaPairRDD<MatrixIndexes, MatrixBlock>}
+	 * @param numPartitions number of output partitions
+	 * @param deepCopyCombiner indicator if the createCombiner functions needs to deep copy the input block
+	 * @return matrix as {@code JavaPairRDD<MatrixIndexes, MatrixBlock>}
+	 */
+	public static JavaPairRDD<MatrixIndexes, MatrixBlock> mergeByKey( JavaPairRDD<MatrixIndexes, MatrixBlock> in, 
+			int numPartitions, boolean deepCopyCombiner )
 	{
 		//use combine by key to avoid unnecessary deep block copies, i.e.
 		//create combiner block once and merge remaining blocks in-place.
- 		return in.combineByKey( new CreateBlockCombinerFunction(), 
+ 		return in.combineByKey( 
+ 				new CreateBlockCombinerFunction(deepCopyCombiner), 
 			    new MergeBlocksFunction(false), 
-			    new MergeBlocksFunction(false) );
+			    new MergeBlocksFunction(false), numPartitions );
 	}
 	
 	/**
@@ -251,13 +268,19 @@ public class RDDAggregateUtils
 	private static class CreateBlockCombinerFunction implements Function<MatrixBlock, MatrixBlock> 
 	{
 		private static final long serialVersionUID = 1987501624176848292L;
-
+		
+		private final boolean _deep;
+		
+		public CreateBlockCombinerFunction(boolean deep) {
+			_deep = deep;
+		}
+		
 		@Override
 		public MatrixBlock call(MatrixBlock arg0) 
 			throws Exception 
 		{
 			//create deep copy of given block
-			return new MatrixBlock(arg0);
+			return _deep ? new MatrixBlock(arg0) : arg0;
 		}	
 	}
 

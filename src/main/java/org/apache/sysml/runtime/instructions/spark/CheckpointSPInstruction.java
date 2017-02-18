@@ -27,7 +27,6 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
-import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.BooleanObject;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
@@ -103,8 +102,8 @@ public class CheckpointSPInstruction extends UnarySPInstruction
 		{
 			//(trigger coalesce if intended number of partitions exceeded by 20%
 			//and not hash partitioned to avoid losing the existing partitioner)
-			int numPartitions = getNumCoalescePartitions(mcIn, in);
-			boolean coalesce = ( 1.2*numPartitions < in.partitions().size() 
+			int numPartitions = SparkUtils.getNumPreferredPartitions(mcIn, in);
+			boolean coalesce = ( 1.2*numPartitions < in.getNumPartitions() 
 					&& !SparkUtils.isHashPartitioned(in) );
 			
 			//checkpoint pre-processing rdd operations
@@ -157,17 +156,4 @@ public class CheckpointSPInstruction extends UnarySPInstruction
 		}
 		sec.setVariable( output.getName(), cd);
 	}
-
-	public static int getNumCoalescePartitions(MatrixCharacteristics mc, JavaPairRDD<?,?> in)
-	{
-		if( mc.dimsKnown(true) ) {
-			double hdfsBlockSize = InfrastructureAnalyzer.getHDFSBlockSize();
-			double matrixPSize = OptimizerUtils.estimatePartitionedSizeExactSparsity(mc);
-			return (int) Math.max(Math.ceil(matrixPSize/hdfsBlockSize), 1);
-		}
-		else {
-			return in.partitions().size();
-		}
-	}
 }
-

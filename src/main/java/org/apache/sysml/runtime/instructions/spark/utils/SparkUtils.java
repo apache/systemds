@@ -29,8 +29,10 @@ import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.storage.StorageLevel;
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.lops.Checkpoint;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.instructions.spark.functions.CopyBinaryCellFunction;
 import org.apache.sysml.runtime.instructions.spark.functions.CopyBlockFunction;
 import org.apache.sysml.runtime.instructions.spark.functions.CopyBlockPairFunction;
@@ -62,12 +64,10 @@ public class SparkUtils
 		return new Tuple2<MatrixIndexes,MatrixBlock>(in.getIndexes(), (MatrixBlock)in.getValue());
 	}
 
-	public static ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> fromIndexedMatrixBlock( ArrayList<IndexedMatrixValue> in )
-	{
+	public static ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> fromIndexedMatrixBlock( ArrayList<IndexedMatrixValue> in ) {
 		ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
 		for( IndexedMatrixValue imv : in )
 			ret.add(fromIndexedMatrixBlock(imv));
-		
 		return ret;
 	}
 
@@ -75,12 +75,10 @@ public class SparkUtils
 		return new Pair<MatrixIndexes,MatrixBlock>(in.getIndexes(), (MatrixBlock)in.getValue());
 	}
 
-	public static ArrayList<Pair<MatrixIndexes,MatrixBlock>> fromIndexedMatrixBlockToPair( ArrayList<IndexedMatrixValue> in )
-	{
+	public static ArrayList<Pair<MatrixIndexes,MatrixBlock>> fromIndexedMatrixBlockToPair( ArrayList<IndexedMatrixValue> in ) {
 		ArrayList<Pair<MatrixIndexes,MatrixBlock>> ret = new ArrayList<Pair<MatrixIndexes,MatrixBlock>>();
 		for( IndexedMatrixValue imv : in )
 			ret.add(fromIndexedMatrixBlockToPair(imv));
-		
 		return ret;
 	}
 
@@ -88,12 +86,10 @@ public class SparkUtils
 		return new Tuple2<Long, FrameBlock>(in.getKey(), in.getValue());
 	}
 
-	public static ArrayList<Tuple2<Long,FrameBlock>> fromIndexedFrameBlock( ArrayList<Pair<Long, FrameBlock>> in )
-	{
+	public static ArrayList<Tuple2<Long,FrameBlock>> fromIndexedFrameBlock( ArrayList<Pair<Long, FrameBlock>> in ) {
 		ArrayList<Tuple2<Long, FrameBlock>> ret = new ArrayList<Tuple2<Long, FrameBlock>>();
 		for( Pair<Long, FrameBlock> ifv : in )
 			ret.add(fromIndexedFrameBlock(ifv));
-		
 		return ret;
 	}
 
@@ -118,6 +114,14 @@ public class SparkUtils
 	public static boolean isHashPartitioned(JavaPairRDD<?,?> in) {
 		return !in.rdd().partitioner().isEmpty()
 			&& in.rdd().partitioner().get() instanceof HashPartitioner;
+	}
+	
+	public static int getNumPreferredPartitions(MatrixCharacteristics mc, JavaPairRDD<?,?> in) {
+		if( !mc.dimsKnown(true) )
+			return in.getNumPartitions();
+		double hdfsBlockSize = InfrastructureAnalyzer.getHDFSBlockSize();
+		double matrixPSize = OptimizerUtils.estimatePartitionedSizeExactSparsity(mc);
+		return (int) Math.max(Math.ceil(matrixPSize/hdfsBlockSize), 1);
 	}
 	
 	/**

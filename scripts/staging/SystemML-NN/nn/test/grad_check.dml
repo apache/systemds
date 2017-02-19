@@ -357,6 +357,8 @@ batch_norm = function(boolean per_channel) {
 		print("Grad checking the batch normalization layer.")
 	}
 	[ ema_mean, ema_var, gamma, beta ] = batch_norm::init(size) 
+	# ema_mean = t(colMeans(X))
+	# ema_var = t(colVars(X))
 	
 	# Compute analytical gradients of loss wrt parameters
   	[out, ema_mean_out, ema_var_out] = batch_norm::forward(X, ema_mean, ema_var, C, H, W, gamma, beta, ma_fraction, eps, 'train')

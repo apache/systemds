@@ -897,6 +897,7 @@ public class InterProceduralAnalysis
 	 * TODO call it after construct lops
 	 * 
 	 * @param dmlp the DML program
+	 * @param fgraph the function call graph
 	 * @throws LanguageException if LanguageException occurs
 	 */
 	public void flagFunctionsForRecompileOnce( DMLProgram dmlp, FunctionCallGraph fgraph ) 

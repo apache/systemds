@@ -91,7 +91,7 @@ public class FunctionCallGraph
 	/**
 	 * Indicates if the given function is either directly or indirectly recursive.
 	 * An example of an indirect recursive function is foo2 in the following call
-	 * chain: foo1 -> foo2 -> foo1.  
+	 * chain: foo1 -&gt; foo2 -&gt; foo1.
 	 * 
 	 * @param fnamespace function namespace
 	 * @param fname function name
@@ -105,7 +105,7 @@ public class FunctionCallGraph
 	/**
 	 * Indicates if the given function is either directly or indirectly recursive.
 	 * An example of an indirect recursive function is foo2 in the following call
-	 * chain: foo1 -> foo2 -> foo1.  
+	 * chain: foo1 -&gt; foo2 -&gt; foo1.
 	 * 
 	 * @param fkey function key of calling function, null indicates the main program
 	 * @return true if the given function is recursive, false otherwise

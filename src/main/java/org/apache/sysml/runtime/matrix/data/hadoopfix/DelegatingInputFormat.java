@@ -43,7 +43,7 @@ import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
  * An {@link InputFormat} that delegates behaviour of paths to multiple other
  * InputFormats.
  * 
- * @see MultipleInputs#addInputPath(JobConf, Path, Class, Class)
+ * @see MultipleInputs#addInputPath(JobConf, Path, Class)
  */
 @SuppressWarnings("rawtypes")
 public class DelegatingInputFormat<K, V> implements InputFormat<K, V> {

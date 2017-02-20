@@ -69,17 +69,17 @@ public class MultipleCP extends Lop {
 	 * 
 	 * <ul>
 	 * <li>Execution type (CP, SPARK, etc.)
-	 * <li>Operand delimiter (&deg;)</li>
-	 * <li>Opcode (printf, etc.)</li>
-	 * <li>Operand delimiter (&deg;)</li>
+	 * <li>Operand delimiter (&deg;)
+	 * <li>Opcode (printf, etc.)
+	 * <li>Operand delimiter (&deg;)
 	 * <li>Variable number of inputs, each followed by an operand delimiter
-	 * (&deg;)</li>
+	 * (&deg;)
 	 * <ul>
 	 * <li>Input consists of (label &middot; data type &middot; value type
-	 * &middot; is literal)</li>
+	 * &middot; is literal)
 	 * </ul>
 	 * <li>Output consisting of (label &middot; data type &middot; value
-	 * type)</li>
+	 * type)
 	 * </ul>
 	 *
 	 * Example: <br>

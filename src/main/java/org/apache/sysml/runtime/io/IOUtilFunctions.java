@@ -175,7 +175,7 @@ public class IOUtilFunctions
 	 * 
 	 * @param str string to split
 	 * @param delim delimiter
-	 * @param string array for tokens, length needs to match the number of tokens 
+	 * @param tokens array for tokens, length needs to match the number of tokens
 	 * @return string array of tokens
 	 */
 	public static String[] splitCSV(String str, String delim, String[] tokens)

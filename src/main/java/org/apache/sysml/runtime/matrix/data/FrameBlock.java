@@ -756,8 +756,17 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		//copy data to output and partial overwrite w/ rhs
 		for( int j=0; j<getNumColumns(); j++ ) {
 			Array tmp = _coldata[j].clone();
-			if( j>=cl && j<=cu )
-				tmp.set(rl, ru, rhsFrame._coldata[j-cl]);
+			if( j>=cl && j<=cu ) {
+				//fast-path for homogeneous column schemas
+				if( _schema[j]==rhsFrame._schema[j-cl] )
+					tmp.set(rl, ru, rhsFrame._coldata[j-cl]);
+				//general-path for heterogeneous column schemas
+				else {
+					for( int i=rl; i<=ru; i++ )
+						tmp.set(i, UtilFunctions.objectToObject(
+							_schema[j], rhsFrame._coldata[j-cl].get(i-rl)));
+				}
+			}
 			ret._coldata[j] = tmp;
 		}
 		

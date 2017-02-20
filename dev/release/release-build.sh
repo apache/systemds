@@ -249,21 +249,25 @@ if [[ "$RELEASE_PREPARE" == "true" ]]; then
 
     # Build and prepare the release
     $MVN $PUBLISH_PROFILES release:clean release:prepare $DRY_RUN -Darguments="-Dgpg.passphrase=\"$GPG_PASSPHRASE\" -DskipTests" -DreleaseVersion="$RELEASE_VERSION" -DdevelopmentVersion="$DEVELOPMENT_VERSION" -Dtag="$RELEASE_TAG"
+    ## Rerunning mvn with clean and package goals, as release:prepare changes ordeer for some dependencies like unpack and shade.
+    $MVN $PUBLISH_PROFILES clean package $DRY_RUN -Darguments="-Dgpg.passphrase=\"$GPG_PASSPHRASE\" -DskipTests" -DreleaseVersion="$RELEASE_VERSION" -DdevelopmentVersion="$DEVELOPMENT_VERSION" -Dtag="$RELEASE_TAG"
 
     cd $RELEASE_WORK_DIR
 
     if [ -z "$DRY_RUN" ]; then
         svn co $RELEASE_STAGING_LOCATION svn-release-staging
         mkdir -p svn-release-staging/$RELEASE_VERSION-$RELEASE_RC
-        cp $RELEASE_WORK_DIR/incubator-systemml/target/systemml-* svn-release-staging/$RELEASE_VERSION-$RELEASE_RC/
+        cp $RELEASE_WORK_DIR/incubator-systemml/target/systemml-*-bin.* svn-release-staging/$RELEASE_VERSION-$RELEASE_RC/
+        cp $RELEASE_WORK_DIR/incubator-systemml/target/systemml-*-src.* svn-release-staging/$RELEASE_VERSION-$RELEASE_RC/
+        cp $RELEASE_WORK_DIR/incubator-systemml/target/systemml-*-python.* svn-release-staging/$RELEASE_VERSION-$RELEASE_RC/
 
         cd svn-release-staging/$RELEASE_VERSION-$RELEASE_RC/
         rm -f *.asc
-        for i in *.jar *.zip *.gz *.tgz; do gpg --output $i.asc --detach-sig --armor $i; done
+        for i in *.zip *.tgz; do gpg --output $i.asc --detach-sig --armor $i; done
         rm -f *.md5
-        for i in *.jar *.zip *.gz *.tgz; do openssl md5 -hex $i | sed 's/MD5(\([^)]*\))= \([0-9a-f]*\)/\2 *\1/' > $i.md5; done
+        for i in *.zip *.tgz; do openssl md5 -hex $i | sed 's/MD5(\([^)]*\))= \([0-9a-f]*\)/\2 *\1/' > $i.md5; done
         rm -f *.sha
-        for i in *.jar *.zip *.gz *.tgz; do shasum $i > $i.sha; done
+        for i in *.zip *.tgz; do shasum $i > $i.sha; done
 
         cd .. #exit $RELEASE_VERSION-$RELEASE_RC/
 

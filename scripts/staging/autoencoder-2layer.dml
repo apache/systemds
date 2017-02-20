@@ -197,7 +197,7 @@ while( iter < max_iterations ){
       [W1_grad, b1_grad, W2_grad, b2_grad, W3_grad, b3_grad, W4_grad, b4_grad] = grad(X_batch, H1, H1_prime, H2, H2_prime, H3, H3_prime, Yhat_prime, E, W1, W2, W3, W4)
 
       o = obj(E)
-      print("epochs=" + (iter / num_iters_per_epoch) + " BATCH beg=" + beg + " end=" + end + " obj=" + o)
+      print("epochs=%5.4f BATCH beg=%d end=%d obj=%f", (iter / num_iters_per_epoch), beg, end, o)
 
       #update
       local_step = step / nrow(X_batch)

@@ -110,7 +110,7 @@ Before you get started on SystemML, make sure that your environment is set up an
   5. **[OPTIONAL] Set `SYSTEMML_HOME` in your bash profile.**
   Add the following to `~/.bash_profile`, replacing `path/to/` with the location of the download in step 5.
   ```
-  export SYSTEMML_HOME=path/to/systemml-0.10.0-incubating
+  export SYSTEMML_HOME=path/to/systemml-0.13.0-incubating
   ```
   *Make sure to open a new tab in terminal so that you make sure the changes have been made.*
 

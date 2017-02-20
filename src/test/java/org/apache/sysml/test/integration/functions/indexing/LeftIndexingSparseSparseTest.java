@@ -111,27 +111,27 @@ public class LeftIndexingSparseSparseTest extends AutomatedTestBase
 	// ----
 	@Test
 	public void testSparseMapLeftIndexingLeftAlignedSP() {
-		runLeftIndexingSparseSparseTest(LixType.LEFT_ALIGNED, ExecType.SPARK, LeftIndexingMethod.SP_MLEFTINDEX);
+		runLeftIndexingSparseSparseTest(LixType.LEFT_ALIGNED, ExecType.SPARK, LeftIndexingMethod.SP_MLEFTINDEX_R);
 	}
 	
 	@Test
 	public void testSparseMapLeftIndexingLeft2AlignedSP() {
-		runLeftIndexingSparseSparseTest(LixType.LEFT2_ALIGNED, ExecType.SPARK, LeftIndexingMethod.SP_MLEFTINDEX);
+		runLeftIndexingSparseSparseTest(LixType.LEFT2_ALIGNED, ExecType.SPARK, LeftIndexingMethod.SP_MLEFTINDEX_R);
 	}
 	
 	@Test
 	public void testSparseMapLeftIndexingRightAlignedSP() {
-		runLeftIndexingSparseSparseTest(LixType.RIGHT_ALIGNED, ExecType.SPARK, LeftIndexingMethod.SP_MLEFTINDEX);
+		runLeftIndexingSparseSparseTest(LixType.RIGHT_ALIGNED, ExecType.SPARK, LeftIndexingMethod.SP_MLEFTINDEX_R);
 	}
 	
 	@Test
 	public void testSparseMapLeftIndexingRight2AlignedSP() {
-		runLeftIndexingSparseSparseTest(LixType.RIGHT2_ALIGNED, ExecType.SPARK, LeftIndexingMethod.SP_MLEFTINDEX);
+		runLeftIndexingSparseSparseTest(LixType.RIGHT2_ALIGNED, ExecType.SPARK, LeftIndexingMethod.SP_MLEFTINDEX_R);
 	}
 	
 	@Test
 	public void testSparseMapLeftIndexingCenteredSP() {
-		runLeftIndexingSparseSparseTest(LixType.CENTERED, ExecType.SPARK, LeftIndexingMethod.SP_MLEFTINDEX);
+		runLeftIndexingSparseSparseTest(LixType.CENTERED, ExecType.SPARK, LeftIndexingMethod.SP_MLEFTINDEX_R);
 	}
 	
 	@Test

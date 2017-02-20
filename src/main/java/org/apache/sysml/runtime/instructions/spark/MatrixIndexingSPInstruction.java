@@ -37,6 +37,7 @@ import scala.reflect.ClassManifestFactory;
 import scala.runtime.AbstractFunction1;
 
 import org.apache.sysml.hops.AggBinaryOp.SparkAggType;
+import org.apache.sysml.lops.LeftIndex.LixCacheType;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
@@ -57,34 +58,134 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.util.IndexRange;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
+/**
+ * This class implements the matrix indexing functionality inside CP.  
+ * Example instructions: 
+ *     rangeReIndex:mVar1:Var2:Var3:Var4:Var5:mVar6
+ *         input=mVar1, output=mVar6, 
+ *         bounds = (Var2,Var3,Var4,Var5)
+ *         rowindex_lower: Var2, rowindex_upper: Var3 
+ *         colindex_lower: Var4, colindex_upper: Var5
+ *     leftIndex:mVar1:mVar2:Var3:Var4:Var5:Var6:mVar7
+ *         triggered by "mVar1[Var3:Var4, Var5:Var6] = mVar2"
+ *         the result is stored in mVar7
+ *  
+ */
 public class MatrixIndexingSPInstruction  extends IndexingSPInstruction
 {
-	/*
-	 * This class implements the matrix indexing functionality inside CP.  
-	 * Example instructions: 
-	 *     rangeReIndex:mVar1:Var2:Var3:Var4:Var5:mVar6
-	 *         input=mVar1, output=mVar6, 
-	 *         bounds = (Var2,Var3,Var4,Var5)
-	 *         rowindex_lower: Var2, rowindex_upper: Var3 
-	 *         colindex_lower: Var4, colindex_upper: Var5
-	 *     leftIndex:mVar1:mVar2:Var3:Var4:Var5:Var6:mVar7
-	 *         triggered by "mVar1[Var3:Var4, Var5:Var6] = mVar2"
-	 *         the result is stored in mVar7
-	 *  
-	 */
+	private final LixCacheType _type;
 
 	public MatrixIndexingSPInstruction(Operator op, CPOperand in, CPOperand rl, CPOperand ru, CPOperand cl, CPOperand cu, 
 			                          CPOperand out, SparkAggType aggtype, String opcode, String istr)
 	{
 		super(op, in, rl, ru, cl, cu, out, aggtype, opcode, istr);
+		_type = LixCacheType.NONE;
 	}
 	
 	public MatrixIndexingSPInstruction(Operator op, CPOperand lhsInput, CPOperand rhsInput, CPOperand rl, CPOperand ru, CPOperand cl, CPOperand cu, 
-			                          CPOperand out, String opcode, String istr)
+			                          CPOperand out, LixCacheType type, String opcode, String istr)
 	{
 		super(op, lhsInput, rhsInput, rl, ru, cl, cu, out, opcode, istr);
+		_type = type;
 	}
 	
+	@Override
+	public void processInstruction(ExecutionContext ec)
+			throws DMLRuntimeException 
+	{	
+		SparkExecutionContext sec = (SparkExecutionContext)ec;
+		String opcode = getOpcode();
+		
+		//get indexing range
+		long rl = ec.getScalarInput(rowLower.getName(), rowLower.getValueType(), rowLower.isLiteral()).getLongValue();
+		long ru = ec.getScalarInput(rowUpper.getName(), rowUpper.getValueType(), rowUpper.isLiteral()).getLongValue();
+		long cl = ec.getScalarInput(colLower.getName(), colLower.getValueType(), colLower.isLiteral()).getLongValue();
+		long cu = ec.getScalarInput(colUpper.getName(), colUpper.getValueType(), colUpper.isLiteral()).getLongValue();
+		IndexRange ixrange = new IndexRange(rl, ru, cl, cu);
+		
+		//right indexing
+		if( opcode.equalsIgnoreCase("rangeReIndex") )
+		{
+			//update and check output dimensions
+			MatrixCharacteristics mcIn = sec.getMatrixCharacteristics(input1.getName());
+			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
+			mcOut.set(ru-rl+1, cu-cl+1, mcIn.getRowsPerBlock(), mcIn.getColsPerBlock());
+			checkValidOutputDimensions(mcOut);
+			
+			//execute right indexing operation (partitioning-preserving if possible)
+			JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
+			
+			if( isSingleBlockLookup(mcIn, ixrange) ) {
+				sec.setMatrixOutput(output.getName(), singleBlockIndexing(in1, mcIn, mcOut, ixrange));
+			}
+			else if( isMultiBlockLookup(in1, mcIn, mcOut, ixrange) ) {
+				sec.setMatrixOutput(output.getName(), multiBlockIndexing(in1, mcIn, mcOut, ixrange));
+			}
+			else { //rdd output for general case
+				JavaPairRDD<MatrixIndexes,MatrixBlock> out = generalCaseRightIndexing(in1, mcIn, mcOut, ixrange, _aggType);
+					
+				//put output RDD handle into symbol table
+				sec.setRDDHandleForVariable(output.getName(), out);
+				sec.addLineageRDD(output.getName(), input1.getName());	
+			}
+		}
+		//left indexing
+		else if ( opcode.equalsIgnoreCase("leftIndex") || opcode.equalsIgnoreCase("mapLeftIndex"))
+		{
+			String rddVar = (_type==LixCacheType.LEFT) ? input2.getName() : input1.getName();
+			String bcVar = (_type==LixCacheType.LEFT) ? input1.getName() : input2.getName();
+			JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( rddVar );
+			PartitionedBroadcast<MatrixBlock> broadcastIn2 = null;
+			JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = null;
+			JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
+			
+			//update and check output dimensions
+			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
+			MatrixCharacteristics mcLeft = ec.getMatrixCharacteristics(input1.getName());
+			mcOut.set(mcLeft.getRows(), mcLeft.getCols(), mcLeft.getRowsPerBlock(), mcLeft.getColsPerBlock());
+			checkValidOutputDimensions(mcOut);
+			
+			//note: always matrix rhs, scalars are preprocessed via cast to 1x1 matrix
+			MatrixCharacteristics mcRight = ec.getMatrixCharacteristics(input2.getName());
+				
+			//sanity check matching index range and rhs dimensions
+			if(!mcRight.dimsKnown()) {
+				throw new DMLRuntimeException("The right input matrix dimensions are not specified for MatrixIndexingSPInstruction");
+			}
+			if(!(ru-rl+1 == mcRight.getRows() && cu-cl+1 == mcRight.getCols())) {
+				throw new DMLRuntimeException("Invalid index range of leftindexing: ["+rl+":"+ru+","+cl+":"+cu+"] vs ["+mcRight.getRows()+"x"+mcRight.getCols()+"]." );
+			}
+			
+			if(opcode.equalsIgnoreCase("mapLeftIndex")) 
+			{
+				broadcastIn2 = sec.getBroadcastForVariable( bcVar );
+				
+				//partitioning-preserving mappartitions (key access required for broadcast loopkup)
+				out = in1.mapPartitionsToPair(
+						new LeftIndexPartitionFunction(broadcastIn2, ixrange, _type, mcOut), true);
+			}
+			else { //general case
+				// zero-out lhs
+				in1 = in1.mapToPair(new ZeroOutLHS(false, ixrange, mcLeft));
+				
+				// slice rhs, shift and merge with lhs
+				in2 = sec.getBinaryBlockRDDHandleForVariable( input2.getName() )
+					    .flatMapToPair(new SliceRHSForLeftIndexing(ixrange, mcLeft));
+				out = RDDAggregateUtils.mergeByKey(in1.union(in2));
+			}
+			
+			sec.setRDDHandleForVariable(output.getName(), out);
+			sec.addLineageRDD(output.getName(), rddVar);
+			if( broadcastIn2 != null)
+				sec.addLineageBroadcast(output.getName(), bcVar);
+			if(in2 != null) 
+				sec.addLineageRDD(output.getName(), input2.getName());
+		}
+		else
+			throw new DMLRuntimeException("Invalid opcode (" + opcode +") encountered in MatrixIndexingSPInstruction.");		
+	}
+
+
 	public static MatrixBlock inmemoryIndexing(JavaPairRDD<MatrixIndexes,MatrixBlock> in1, 
 			 MatrixCharacteristics mcIn, MatrixCharacteristics mcOut, IndexRange ixrange) throws DMLRuntimeException {
 		if( isSingleBlockLookup(mcIn, ixrange) ) {
@@ -141,7 +242,7 @@ public class MatrixIndexingSPInstruction  extends IndexingSPInstruction
 		return mbout;
 	}
 	
-	public static JavaPairRDD<MatrixIndexes,MatrixBlock> generalCaseRightIndexing(JavaPairRDD<MatrixIndexes,MatrixBlock> in1, 
+	private static JavaPairRDD<MatrixIndexes,MatrixBlock> generalCaseRightIndexing(JavaPairRDD<MatrixIndexes,MatrixBlock> in1, 
 			 MatrixCharacteristics mcIn, MatrixCharacteristics mcOut, IndexRange ixrange, SparkAggType aggType) {
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
 		
@@ -162,100 +263,6 @@ public class MatrixIndexingSPInstruction  extends IndexingSPInstruction
 		return out;
 	}
 	
-	@Override
-	public void processInstruction(ExecutionContext ec)
-			throws DMLRuntimeException 
-	{	
-		SparkExecutionContext sec = (SparkExecutionContext)ec;
-		String opcode = getOpcode();
-		
-		//get indexing range
-		long rl = ec.getScalarInput(rowLower.getName(), rowLower.getValueType(), rowLower.isLiteral()).getLongValue();
-		long ru = ec.getScalarInput(rowUpper.getName(), rowUpper.getValueType(), rowUpper.isLiteral()).getLongValue();
-		long cl = ec.getScalarInput(colLower.getName(), colLower.getValueType(), colLower.isLiteral()).getLongValue();
-		long cu = ec.getScalarInput(colUpper.getName(), colUpper.getValueType(), colUpper.isLiteral()).getLongValue();
-		IndexRange ixrange = new IndexRange(rl, ru, cl, cu);
-		
-		//right indexing
-		if( opcode.equalsIgnoreCase("rangeReIndex") )
-		{
-			//update and check output dimensions
-			MatrixCharacteristics mcIn = sec.getMatrixCharacteristics(input1.getName());
-			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
-			mcOut.set(ru-rl+1, cu-cl+1, mcIn.getRowsPerBlock(), mcIn.getColsPerBlock());
-			checkValidOutputDimensions(mcOut);
-			
-			//execute right indexing operation (partitioning-preserving if possible)
-			JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
-			
-			if( isSingleBlockLookup(mcIn, ixrange) ) {
-				sec.setMatrixOutput(output.getName(), singleBlockIndexing(in1, mcIn, mcOut, ixrange));
-			}
-			else if( isMultiBlockLookup(in1, mcIn, mcOut, ixrange) ) {
-				sec.setMatrixOutput(output.getName(), multiBlockIndexing(in1, mcIn, mcOut, ixrange));
-			}
-			else { //rdd output for general case
-				JavaPairRDD<MatrixIndexes,MatrixBlock> out = generalCaseRightIndexing(in1, mcIn, mcOut, ixrange, _aggType);
-					
-				//put output RDD handle into symbol table
-				sec.setRDDHandleForVariable(output.getName(), out);
-				sec.addLineageRDD(output.getName(), input1.getName());	
-			}
-		}
-		//left indexing
-		else if ( opcode.equalsIgnoreCase("leftIndex") || opcode.equalsIgnoreCase("mapLeftIndex"))
-		{
-			JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
-			PartitionedBroadcast<MatrixBlock> broadcastIn2 = null;
-			JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = null;
-			JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
-			
-			//update and check output dimensions
-			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
-			MatrixCharacteristics mcLeft = ec.getMatrixCharacteristics(input1.getName());
-			mcOut.set(mcLeft.getRows(), mcLeft.getCols(), mcLeft.getRowsPerBlock(), mcLeft.getColsPerBlock());
-			checkValidOutputDimensions(mcOut);
-			
-			//note: always matrix rhs, scalars are preprocessed via cast to 1x1 matrix
-			MatrixCharacteristics mcRight = ec.getMatrixCharacteristics(input2.getName());
-				
-			//sanity check matching index range and rhs dimensions
-			if(!mcRight.dimsKnown()) {
-				throw new DMLRuntimeException("The right input matrix dimensions are not specified for MatrixIndexingSPInstruction");
-			}
-			if(!(ru-rl+1 == mcRight.getRows() && cu-cl+1 == mcRight.getCols())) {
-				throw new DMLRuntimeException("Invalid index range of leftindexing: ["+rl+":"+ru+","+cl+":"+cu+"] vs ["+mcRight.getRows()+"x"+mcRight.getCols()+"]." );
-			}
-			
-			if(opcode.equalsIgnoreCase("mapLeftIndex")) 
-			{
-				broadcastIn2 = sec.getBroadcastForVariable( input2.getName() );
-				
-				//partitioning-preserving mappartitions (key access required for broadcast loopkup)
-				out = in1.mapPartitionsToPair(
-						new LeftIndexPartitionFunction(broadcastIn2, ixrange, mcOut), true);
-			}
-			else { //general case
-				// zero-out lhs
-				in1 = in1.mapToPair(new ZeroOutLHS(false, ixrange, mcLeft));
-				
-				// slice rhs, shift and merge with lhs
-				in2 = sec.getBinaryBlockRDDHandleForVariable( input2.getName() )
-					    .flatMapToPair(new SliceRHSForLeftIndexing(ixrange, mcLeft));
-				out = RDDAggregateUtils.mergeByKey(in1.union(in2));
-			}
-			
-			sec.setRDDHandleForVariable(output.getName(), out);
-			sec.addLineageRDD(output.getName(), input1.getName());
-			if( broadcastIn2 != null)
-				sec.addLineageBroadcast(output.getName(), input2.getName());
-			if(in2 != null) 
-				sec.addLineageRDD(output.getName(), input2.getName());
-		}
-		else
-			throw new DMLRuntimeException("Invalid opcode (" + opcode +") encountered in MatrixIndexingSPInstruction.");		
-	}
-
 	private static void checkValidOutputDimensions(MatrixCharacteristics mcOut) 
 		throws DMLRuntimeException
 	{
@@ -373,15 +380,17 @@ public class MatrixIndexingSPInstruction  extends IndexingSPInstruction
 	{
 		private static final long serialVersionUID = 1757075506076838258L;
 		
-		private PartitionedBroadcast<MatrixBlock> _binput;
-		private IndexRange _ixrange = null;
-		private int _brlen = -1;
-		private int _bclen = -1;
+		private final PartitionedBroadcast<MatrixBlock> _binput;
+		private final IndexRange _ixrange;
+		private final LixCacheType _type;
+		private final int _brlen;
+		private final int _bclen;
 		
-		public LeftIndexPartitionFunction(PartitionedBroadcast<MatrixBlock> binput, IndexRange ixrange, MatrixCharacteristics mc) 
+		public LeftIndexPartitionFunction(PartitionedBroadcast<MatrixBlock> binput, IndexRange ixrange, LixCacheType type, MatrixCharacteristics mc) 
 		{
 			_binput = binput;
 			_ixrange = ixrange;
+			_type = type;
 			_brlen = mc.getRowsPerBlock();
 			_bclen = mc.getColsPerBlock();
 		}
@@ -403,32 +412,53 @@ public class MatrixIndexingSPInstruction  extends IndexingSPInstruction
 			protected Tuple2<MatrixIndexes, MatrixBlock> computeNext(Tuple2<MatrixIndexes, MatrixBlock> arg) 
 				throws Exception 
 			{
-				if(!UtilFunctions.isInBlockRange(arg._1(), _brlen, _bclen, _ixrange)) {
+				if(_type==LixCacheType.RIGHT && !UtilFunctions.isInBlockRange(arg._1(), _brlen, _bclen, _ixrange)) {
 					return arg;
 				}
 				
-				// Calculate global index of left hand side block
-				long lhs_rl = Math.max(_ixrange.rowStart, (arg._1.getRowIndex()-1)*_brlen + 1);
-				long lhs_ru = Math.min(_ixrange.rowEnd, arg._1.getRowIndex()*_brlen);
-				long lhs_cl = Math.max(_ixrange.colStart, (arg._1.getColumnIndex()-1)*_bclen + 1);
-				long lhs_cu = Math.min(_ixrange.colEnd, arg._1.getColumnIndex()*_bclen);
-				
-				// Calculate global index of right hand side block
-				long rhs_rl = lhs_rl - _ixrange.rowStart + 1;
-				long rhs_ru = rhs_rl + (lhs_ru - lhs_rl);
-				long rhs_cl = lhs_cl - _ixrange.colStart + 1;
-				long rhs_cu = rhs_cl + (lhs_cu - lhs_cl);
-				
-				// Provide global zero-based index to sliceOperations
-				MatrixBlock slicedRHSMatBlock = _binput.sliceOperations(rhs_rl, rhs_ru, rhs_cl, rhs_cu, new MatrixBlock());
-				
-				// Provide local zero-based index to leftIndexingOperations
-				int lhs_lrl = UtilFunctions.computeCellInBlock(lhs_rl, _brlen);
-				int lhs_lru = UtilFunctions.computeCellInBlock(lhs_ru, _brlen);
-				int lhs_lcl = UtilFunctions.computeCellInBlock(lhs_cl, _bclen);
-				int lhs_lcu = UtilFunctions.computeCellInBlock(lhs_cu, _bclen);
-				MatrixBlock ret = arg._2.leftIndexingOperations(slicedRHSMatBlock, lhs_lrl, lhs_lru, lhs_lcl, lhs_lcu, new MatrixBlock(), UpdateType.COPY);
-				return new Tuple2<MatrixIndexes, MatrixBlock>(arg._1, ret);
+				if( _type == LixCacheType.LEFT ) 
+				{
+					// LixCacheType.LEFT guarantees aligned blocks, so for each rhs inputs block
+					// the the corresponding left block and perform blockwise left indexing
+					MatrixIndexes ix = arg._1();
+					MatrixBlock right = arg._2();
+
+					int rl = UtilFunctions.computeCellInBlock(_ixrange.rowStart, _brlen);
+					int ru = (int)Math.min(_ixrange.rowEnd, rl+right.getNumRows())-1;
+					int cl = UtilFunctions.computeCellInBlock(_ixrange.colStart, _brlen);
+					int cu = (int)Math.min(_ixrange.colEnd, cl+right.getNumColumns())-1;
+					
+					MatrixBlock left = _binput.getBlock((int)ix.getRowIndex(), (int)ix.getColumnIndex());
+					MatrixBlock tmp = left.leftIndexingOperations(right, 
+							rl, ru, cl, cu, new MatrixBlock(), UpdateType.COPY);
+					
+					return new Tuple2<MatrixIndexes, MatrixBlock>(ix, tmp);
+				}
+				else //LixCacheType.RIGHT
+				{
+					// Calculate global index of left hand side block
+					long lhs_rl = Math.max(_ixrange.rowStart, (arg._1.getRowIndex()-1)*_brlen + 1);
+					long lhs_ru = Math.min(_ixrange.rowEnd, arg._1.getRowIndex()*_brlen);
+					long lhs_cl = Math.max(_ixrange.colStart, (arg._1.getColumnIndex()-1)*_bclen + 1);
+					long lhs_cu = Math.min(_ixrange.colEnd, arg._1.getColumnIndex()*_bclen);
+					
+					// Calculate global index of right hand side block
+					long rhs_rl = lhs_rl - _ixrange.rowStart + 1;
+					long rhs_ru = rhs_rl + (lhs_ru - lhs_rl);
+					long rhs_cl = lhs_cl - _ixrange.colStart + 1;
+					long rhs_cu = rhs_cl + (lhs_cu - lhs_cl);
+					
+					// Provide global zero-based index to sliceOperations
+					MatrixBlock slicedRHSMatBlock = _binput.sliceOperations(rhs_rl, rhs_ru, rhs_cl, rhs_cu, new MatrixBlock());
+					
+					// Provide local zero-based index to leftIndexingOperations
+					int lhs_lrl = UtilFunctions.computeCellInBlock(lhs_rl, _brlen);
+					int lhs_lru = UtilFunctions.computeCellInBlock(lhs_ru, _brlen);
+					int lhs_lcl = UtilFunctions.computeCellInBlock(lhs_cl, _bclen);
+					int lhs_lcu = UtilFunctions.computeCellInBlock(lhs_cu, _bclen);
+					MatrixBlock ret = arg._2.leftIndexingOperations(slicedRHSMatBlock, lhs_lrl, lhs_lru, lhs_lcl, lhs_lcu, new MatrixBlock(), UpdateType.COPY);
+					return new Tuple2<MatrixIndexes, MatrixBlock>(arg._1, ret);
+				}
 			}
 		}
 	}

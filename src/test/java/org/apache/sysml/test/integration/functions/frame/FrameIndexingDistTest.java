@@ -98,7 +98,7 @@ public class FrameIndexingDistTest extends AutomatedTestBase
 	// Left Indexing Spark test cases
 	@Test
 	public void testMapLeftIndexingSP() throws DMLRuntimeException, IOException {
-		runTestLeftIndexing(ExecType.SPARK, LeftIndexingMethod.SP_MLEFTINDEX, schemaMixedLarge, IXType.LIX, true);
+		runTestLeftIndexing(ExecType.SPARK, LeftIndexingMethod.SP_MLEFTINDEX_R, schemaMixedLarge, IXType.LIX, true);
 	}
 	
 	@Test

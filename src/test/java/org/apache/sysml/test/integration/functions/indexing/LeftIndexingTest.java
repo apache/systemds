@@ -58,7 +58,7 @@ public class LeftIndexingTest extends AutomatedTestBase
 	
 	@Test
 	public void testMapLeftIndexingSP() {
-		runTestLeftIndexing(ExecType.SPARK, LeftIndexingMethod.SP_MLEFTINDEX);
+		runTestLeftIndexing(ExecType.SPARK, LeftIndexingMethod.SP_MLEFTINDEX_R);
 	}
 	
 	@Test

@@ -56,6 +56,7 @@ public class LeftIndexingSparseDenseTest extends AutomatedTestBase
 		RIGHT_ALIGNED,
 		RIGHT2_ALIGNED,
 		CENTERED,
+		SINGLE_BLOCK,
 	}
 	
 	@Override
@@ -84,27 +85,32 @@ public class LeftIndexingSparseDenseTest extends AutomatedTestBase
 	
 	@Test
 	public void testSparseMapLeftIndexingLeftAlignedSP() {
-		runLeftIndexingSparseSparseTest(LixType.LEFT_ALIGNED, ExecType.SPARK, LeftIndexingMethod.SP_MLEFTINDEX);
+		runLeftIndexingSparseSparseTest(LixType.LEFT_ALIGNED, ExecType.SPARK, LeftIndexingMethod.SP_MLEFTINDEX_R);
 	}
 	
 	@Test
 	public void testSparseMapLeftIndexingLeft2AlignedSP() {
-		runLeftIndexingSparseSparseTest(LixType.LEFT2_ALIGNED, ExecType.SPARK, LeftIndexingMethod.SP_MLEFTINDEX);
+		runLeftIndexingSparseSparseTest(LixType.LEFT2_ALIGNED, ExecType.SPARK, LeftIndexingMethod.SP_MLEFTINDEX_R);
 	}
 	
 	@Test
 	public void testSparseMapLeftIndexingRightAlignedSP() {
-		runLeftIndexingSparseSparseTest(LixType.RIGHT_ALIGNED, ExecType.SPARK, LeftIndexingMethod.SP_MLEFTINDEX);
+		runLeftIndexingSparseSparseTest(LixType.RIGHT_ALIGNED, ExecType.SPARK, LeftIndexingMethod.SP_MLEFTINDEX_R);
 	}
 	
 	@Test
 	public void testSparseMapLeftIndexingRight2AlignedSP() {
-		runLeftIndexingSparseSparseTest(LixType.RIGHT2_ALIGNED, ExecType.SPARK, LeftIndexingMethod.SP_MLEFTINDEX);
+		runLeftIndexingSparseSparseTest(LixType.RIGHT2_ALIGNED, ExecType.SPARK, LeftIndexingMethod.SP_MLEFTINDEX_R);
 	}
 	
 	@Test
 	public void testSparseMapLeftIndexingCenteredSP() {
-		runLeftIndexingSparseSparseTest(LixType.CENTERED, ExecType.SPARK, LeftIndexingMethod.SP_MLEFTINDEX);
+		runLeftIndexingSparseSparseTest(LixType.CENTERED, ExecType.SPARK, LeftIndexingMethod.SP_MLEFTINDEX_R);
+	}
+	
+	@Test
+	public void testSparseMapLeftIndexingSingleBlockSP() {
+		runLeftIndexingSparseSparseTest(LixType.SINGLE_BLOCK, ExecType.SPARK, LeftIndexingMethod.SP_MLEFTINDEX_R);
 	}
 	
 	// ----
@@ -131,6 +137,11 @@ public class LeftIndexingSparseDenseTest extends AutomatedTestBase
 	@Test
 	public void testSparseLeftIndexingCenteredSP() {
 		runLeftIndexingSparseSparseTest(LixType.CENTERED, ExecType.SPARK, LeftIndexingMethod.SP_GLEFTINDEX);
+	}
+	
+	@Test
+	public void testSparseLeftIndexingSingleBlockSP() {
+		runLeftIndexingSparseSparseTest(LixType.SINGLE_BLOCK, ExecType.SPARK, LeftIndexingMethod.SP_MLEFTINDEX_L);
 	}
 	
 	@Test
@@ -165,12 +176,15 @@ public class LeftIndexingSparseDenseTest extends AutomatedTestBase
 	public void runLeftIndexingSparseSparseTest(LixType type, ExecType et, LeftIndexingOp.LeftIndexingMethod indexingMethod) 
 	{
 		int cl = -1;
+		int lcols1 = cols1;
 		switch( type ){
 			case LEFT_ALIGNED: cl = 1; break;
 			case LEFT2_ALIGNED: cl = 2; break;
 			case RIGHT_ALIGNED: cl = cols1-cols2+1; break;
 			case RIGHT2_ALIGNED: cl = cols1-cols2; break;
 			case CENTERED: cl = (cols1-cols2)/2; break;
+			case SINGLE_BLOCK: cl = 3; lcols1=cols2+7; break;
+			
 		}
 		int cu = cl+cols2-1;
 		
@@ -215,10 +229,10 @@ public class LeftIndexingSparseDenseTest extends AutomatedTestBase
 				inputDir() + " " + cl + " " + cu + " " + expectedDir();
 			
 			//generate input data sets
-			double[][] A = getRandomMatrix(rows1, cols1, -1, 1, sparsity1, 1234);
-	        writeInputMatrixWithMTD("A", A, true);
+			double[][] A = getRandomMatrix(rows1, lcols1, -1, 1, sparsity1, 1234);
+			writeInputMatrixWithMTD("A", A, true);
 			double[][] B = getRandomMatrix(rows2, cols2, -1, 1, sparsity2, 5678);
-	        writeInputMatrixWithMTD("B", B, true);
+			writeInputMatrixWithMTD("B", B, true);
 	        
 	        runTest(true, false, null, 1); //REBLOCK
 			runRScript(true);
@@ -226,7 +240,7 @@ public class LeftIndexingSparseDenseTest extends AutomatedTestBase
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
 			HashMap<CellIndex, Double> rfile = readRMatrixFromFS("R");
 			TestUtils.compareMatrices(dmlfile, rfile, 0, "DML", "R");
-			checkDMLMetaDataFile("R", new MatrixCharacteristics(rows1,cols1,1,1));
+			checkDMLMetaDataFile("R", new MatrixCharacteristics(rows1,lcols1,1,1));
 		}
 		finally {
 			rtplatform = oldRTP;

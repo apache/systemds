@@ -23,6 +23,7 @@ import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.lops.Binary;
 import org.apache.sysml.lops.Group;
 import org.apache.sysml.lops.LeftIndex;
+import org.apache.sysml.lops.LeftIndex.LixCacheType;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.lops.RangeBasedReIndex;
@@ -39,8 +40,9 @@ public class LeftIndexingOp  extends Hop
 	public static LeftIndexingMethod FORCED_LEFT_INDEXING = null;
 	
 	public enum LeftIndexingMethod { 
-		SP_GLEFTINDEX, // general case
-		SP_MLEFTINDEX //map-only left index where we broadcast right hand side matrix
+		SP_GLEFTINDEX,   //general case
+		SP_MLEFTINDEX_R, //map-only left index, broadcast rhs
+		SP_MLEFTINDEX_L, //map-only left index, broadcast lhs
 	}
 	
 	public static String OPSTRING = "lix"; //"LeftIndexing";
@@ -186,9 +188,9 @@ public class LeftIndexingOp  extends Hop
 				Hop left = getInput().get(0);
 				Hop right = getInput().get(1);
 				
-				LeftIndexingMethod method = getOptMethodLeftIndexingMethod( right.getDim1(), right.getDim2(), 
-						right.getRowsInBlock(), right.getColsInBlock(), right.getNnz(), getDataType()==DataType.SCALAR );				
-				boolean isBroadcast = (method == LeftIndexingMethod.SP_MLEFTINDEX);
+				LeftIndexingMethod method = getOptMethodLeftIndexingMethod( 
+						left.getDim1(), left.getDim2(), left.getRowsInBlock(), left.getColsInBlock(), left.getNnz(),
+						right.getDim1(), right.getDim2(), right.getNnz(), right.getDataType() );
 
 				//insert cast to matrix if necessary (for reuse broadcast runtime)
 				Lop rightInput = right.constructLops();
@@ -203,7 +205,7 @@ public class LeftIndexingOp  extends Hop
 						left.constructLops(), rightInput, 
 						getInput().get(2).constructLops(), getInput().get(3).constructLops(), 
 						getInput().get(4).constructLops(), getInput().get(5).constructLops(), 
-						getDataType(), getValueType(), et, isBroadcast);
+						getDataType(), getValueType(), et, getSpLixCacheType(method));
 				
 				setOutputDimensions(leftIndexLop);
 				setLineNumbers(leftIndexLop);
@@ -238,6 +240,14 @@ public class LeftIndexingOp  extends Hop
 	private boolean isRightHandSideScalar() {
 		Hop rightHandSide = getInput().get(1);
 		return (rightHandSide.getDataType() == DataType.SCALAR);
+	}
+	
+	private LixCacheType getSpLixCacheType(LeftIndexingMethod method) {
+		switch( method ) {
+			case SP_MLEFTINDEX_L: return LixCacheType.LEFT;
+			case SP_MLEFTINDEX_R: return LixCacheType.RIGHT;
+			default: return LixCacheType.NONE;
+		}
 	}
 	
 	@Override
@@ -398,19 +408,33 @@ public class LeftIndexingOp  extends Hop
 		return _etype;
 	}
 
-	private LeftIndexingMethod getOptMethodLeftIndexingMethod( long m2_dim1, long m2_dim2, 
-			long m2_rpb, long m2_cpb, long m2_nnz, boolean isScalar) 
+	private static LeftIndexingMethod getOptMethodLeftIndexingMethod( 
+			long m1_dim1, long m1_dim2, long m1_rpb, long m1_cpb, long m1_nnz,
+			long m2_dim1, long m2_dim2, long m2_nnz, DataType rhsDt) 
 	{
 		if(FORCED_LEFT_INDEXING != null) {
 			return FORCED_LEFT_INDEXING;
 		}
 		
-		// broadcast-based left indexing has memory constraints but is more efficient  
-		// since it does not require shuffle 
-		if( isScalar || m2_dim1 >= 1 && m2_dim2 >= 1 // rhs dims known 	
-			&& OptimizerUtils.checkSparkBroadcastMemoryBudget(m2_dim1, m2_dim2, m2_rpb, m2_cpb, m2_nnz) )  
-		{
-			return LeftIndexingMethod.SP_MLEFTINDEX;
+		// broadcast-based left indexing w/o shuffle for scalar rhs
+		if( rhsDt == DataType.SCALAR ) {
+			return LeftIndexingMethod.SP_MLEFTINDEX_R;
+		}
+			
+		// broadcast-based left indexing w/o shuffle for small left/right inputs
+		if( m2_dim1 >= 1 && m2_dim2 >= 1 && m2_dim1 >= 1 && m2_dim2 >= 1 ) { //lhs/rhs known
+			boolean isAligned = (rhsDt == DataType.MATRIX) &&
+					((m1_dim1 == m2_dim1 && m1_dim2 <= m1_cpb) || (m1_dim2 == m2_dim2 && m1_dim1 <= m1_rpb));
+			boolean broadcastRhs = OptimizerUtils.checkSparkBroadcastMemoryBudget(m2_dim1, m2_dim2, m1_rpb, m1_cpb, m2_nnz);
+			double m1SizeP = OptimizerUtils.estimatePartitionedSizeExactSparsity(m1_dim1, m1_dim2, m1_rpb, m1_cpb, m1_nnz);
+			double m2SizeP = OptimizerUtils.estimatePartitionedSizeExactSparsity(m2_dim1, m2_dim2, m1_rpb, m1_cpb, m2_nnz);
+			
+			if( broadcastRhs ) {
+				if( isAligned && m1SizeP<m2SizeP ) //e.g., sparse-dense lix
+					return LeftIndexingMethod.SP_MLEFTINDEX_L;
+				else //all other cases, where rhs smaller than lhs
+					return LeftIndexingMethod.SP_MLEFTINDEX_R;
+			}
 		}
 		
 		// default general case

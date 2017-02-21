@@ -102,86 +102,64 @@ The build artifacts should be downloaded from [https://dist.apache.org/repos/dis
 this OS X example.
 
 	# download artifacts
-	wget -r -nH -nd -np -R index.html* https://dist.apache.org/repos/dist/dev/incubator/systemml/0.11.0-incubating-rc1/
+	wget -r -nH -nd -np -R 'index.html*' https://dist.apache.org/repos/dist/dev/incubator/systemml/0.13.0-incubating-rc1/
 
 	# verify standalone tgz works
-	tar -xvzf systemml-0.11.0-incubating-standalone.tgz
-	cd systemml-0.11.0-incubating-standalone
+	tar -xvzf systemml-0.13.0-incubating-bin.tgz
+	cd systemml-0.13.0-incubating-bin
 	echo "print('hello world');" > hello.dml
 	./runStandaloneSystemML.sh hello.dml
 	cd ..
 
-	# verify main jar works
-	mkdir lib
-	cp -R systemml-0.11.0-incubating-standalone/lib/* lib/
-	rm lib/systemml-0.11.0-incubating.jar
-	java -cp ./lib/*:systemml-0.11.0-incubating.jar org.apache.sysml.api.DMLScript -s "print('hello world');"
-
-	# verify src works
-	tar -xvzf systemml-0.11.0-incubating-src.tgz
-	cd systemml-0.11.0-incubating-src
-	mvn clean package -P distribution
-	cd target/
-	java -cp ./lib/*:systemml-0.11.0-incubating.jar org.apache.sysml.api.DMLScript -s "print('hello world');"
-	java -cp ./lib/*:SystemML.jar org.apache.sysml.api.DMLScript -s "print('hello world');"
-	cd ..
-	cd ..
-
-	# verify distrib tgz works
-	tar -xvzf systemml-0.11.0-incubating.tgz
-	cd systemml-0.11.0-incubating
-	java -cp ../lib/*:SystemML.jar org.apache.sysml.api.DMLScript -s "print('hello world');"
-
-	# verify spark batch mode
-	export SPARK_HOME=/Users/deroneriksson/spark-1.5.1-bin-hadoop2.6
-	$SPARK_HOME/bin/spark-submit SystemML.jar -s "print('hello world');" -exec hybrid_spark
-
-	# verify hadoop batch mode
-	hadoop jar SystemML.jar -s "print('hello world');"
-
-
-Here is an example of doing a basic
-sanity check on OS X after building the artifacts manually.
-
-	# build distribution artifacts
-	mvn clean package -P distribution
-
-	cd target
-
-	# verify main jar works
-	java -cp ./lib/*:systemml-0.11.0-incubating.jar org.apache.sysml.api.DMLScript -s "print('hello world');"
-
-	# verify SystemML.jar works
-	java -cp ./lib/*:SystemML.jar org.apache.sysml.api.DMLScript -s "print('hello world');"
-
-	# verify src works
-	tar -xvzf systemml-0.11.0-incubating-src.tgz
-	cd systemml-0.11.0-incubating-src
-	mvn clean package -P distribution
-	cd target/
-	java -cp ./lib/*:systemml-0.11.0-incubating.jar org.apache.sysml.api.DMLScript -s "print('hello world');"
-	java -cp ./lib/*:SystemML.jar org.apache.sysml.api.DMLScript -s "print('hello world');"
-	cd ..
-	cd ..
-
-	# verify standalone tgz works
-	tar -xvzf systemml-0.11.0-incubating-standalone.tgz
-	cd systemml-0.11.0-incubating-standalone
+	# verify standalon zip works
+	rm -rf systemml-0.13.0-incubating-bin
+	unzip systemml-0.13.0-incubating-bin.zip
+	cd systemml-0.13.0-incubating-bin
 	echo "print('hello world');" > hello.dml
 	./runStandaloneSystemML.sh hello.dml
 	cd ..
 
-	# verify distrib tgz works
-	tar -xvzf systemml-0.11.0-incubating.tgz
-	cd systemml-0.11.0-incubating
-	java -cp ../lib/*:SystemML.jar org.apache.sysml.api.DMLScript -s "print('hello world');"
+	# verify src works
+	tar -xvzf systemml-0.13.0-incubating-src.tgz
+	cd systemml-0.13.0-incubating-src
+	mvn clean package -P distribution
+	cd target/
+	java -cp "./lib/*:systemml-0.13.0-incubating.jar" org.apache.sysml.api.DMLScript -s "print('hello world');"
+	java -cp "./lib/*:SystemML.jar" org.apache.sysml.api.DMLScript -s "print('hello world');"
+	cd ../..
 
 	# verify spark batch mode
-	export SPARK_HOME=/Users/deroneriksson/spark-1.5.1-bin-hadoop2.6
-	$SPARK_HOME/bin/spark-submit SystemML.jar -s "print('hello world');" -exec hybrid_spark
+	export SPARK_HOME=~/spark-2.1.0-bin-hadoop2.7
+	cd systemml-0.13.0-incubating-bin/target/lib
+	$SPARK_HOME/bin/spark-submit systemml-0.13.0-incubating.jar -s "print('hello world');" -exec hybrid_spark
 
 	# verify hadoop batch mode
-	hadoop jar SystemML.jar -s "print('hello world');"
+	hadoop jar systemml-0.13.0-incubating.jar -s "print('hello world');"
+
+
+	# verify python artifact
+	# install numpy, pandas, scipy & set SPARK_HOME
+	pip install numpy
+	pip install pandas
+	pip install scipy
+	export SPARK_HOME=~/spark-2.1.0-bin-hadoop2.7
+	# get into the pyspark prompt
+	cd systemml-0.13.0
+	$SPARK_HOME/bin/pyspark --driver-class-path systemml-java/systemml-0.13.0-incubating.jar
+	# Use this program at the prompt:
+	import systemml as sml
+	import numpy as np
+	m1 = sml.matrix(np.ones((3,3)) + 2)
+	m2 = sml.matrix(np.ones((3,3)) + 3)
+	m2 = m1 * (m2 + m1)
+	m4 = 1.0 - m2
+	m4.sum(axis=1).toNumPy()
+
+	# This should be printed
+	# array([[-60.],
+	#       [-60.],
+	#       [-60.]])
+
 
 
 ## Python Tests
@@ -229,8 +207,8 @@ The project should be built using the `src` (tgz and zip) artifacts.
 In addition, the test suite should be run using an `src` artifact and
 the tests should pass.
 
-	tar -xvzf systemml-0.11.0-incubating-src.tgz
-	cd systemml-0.11.0-incubating-src
+	tar -xvzf systemml-0.13.0-incubating-src.tgz
+	cd systemml-0.13.0-incubating-src
 	mvn clean package -P distribution
 	mvn verify
 
@@ -246,13 +224,14 @@ standalone distributions.
 Here is an example based on the [Standalone Guide](http://apache.github.io/incubator-systemml/standalone-guide.html)
 demonstrating the execution of an algorithm (on OS X).
 
-	$ tar -xvzf systemml-0.11.0-incubating-standalone.tgz
-	$ cd systemml-0.11.0-incubating-standalone
-	$ wget -P data/ http://archive.ics.uci.edu/ml/machine-learning-databases/haberman/haberman.data
-	$ echo '{"rows": 306, "cols": 4, "format": "csv"}' > data/haberman.data.mtd
-	$ echo '1,1,1,2' > data/types.csv
-	$ echo '{"rows": 1, "cols": 4, "format": "csv"}' > data/types.csv.mtd
-	$ ./runStandaloneSystemML.sh scripts/algorithms/Univar-Stats.dml -nvargs X=data/haberman.data TYPES=data/types.csv STATS=data/univarOut.mtx CONSOLE_OUTPUT=TRUE
+	tar -xvzf systemml-0.13.0-incubating-bin.tgz
+	cd systemml-0.13.0-incubating-bin
+	wget -P data/ http://archive.ics.uci.edu/ml/machine-learning-databases/haberman/haberman.data
+	echo '{"rows": 306, "cols": 4, "format": "csv"}' > data/haberman.data.mtd
+	echo '1,1,1,2' > data/types.csv
+	echo '{"rows": 1, "cols": 4, "format": "csv"}' > data/types.csv.mtd
+	./runStandaloneSystemML.sh scripts/algorithms/Univar-Stats.dml -nvargs X=data/haberman.data TYPES=data/types.csv STATS=data/univarOut.mtx CONSOLE_OUTPUT=TRUE
+	cd ..
 
 
 ## Single-Node Spark
@@ -263,13 +242,13 @@ Verify that SystemML runs algorithms on Spark locally.
 
 Here is an example of running the `Univar-Stats.dml` algorithm on random generated data.
 
-	$ tar -xvzf systemml-0.11.0-incubating.tgz
-	$ cd systemml-0.11.0-incubating
-	$ export SPARK_HOME=/Users/deroneriksson/spark-1.5.1-bin-hadoop2.6
-	$ $SPARK_HOME/bin/spark-submit SystemML.jar -f scripts/datagen/genRandData4Univariate.dml -exec hybrid_spark -args 1000000 100 10 1 2 3 4 uni.mtx
-	$ echo '1' > uni-types.csv
-	$ echo '{"rows": 1, "cols": 1, "format": "csv"}' > uni-types.csv.mtd
-	$ $SPARK_HOME/bin/spark-submit SystemML.jar -f scripts/algorithms/Univar-Stats.dml -exec hybrid_spark -nvargs X=uni.mtx TYPES=uni-types.csv STATS=uni-stats.txt CONSOLE_OUTPUT=TRUE
+	cd systemml-0.13.0-incubating-bin/lib
+	export SPARK_HOME=~/spark-2.1.0-bin-hadoop2.7
+	$SPARK_HOME/bin/spark-submit systemml-0.13.0-incubating.jar -f ../scripts/datagen/genRandData4Univariate.dml -exec hybrid_spark -args 1000000 100 10 1 2 3 4 uni.mtx
+	echo '1' > uni-types.csv
+	echo '{"rows": 1, "cols": 1, "format": "csv"}' > uni-types.csv.mtd
+	$SPARK_HOME/bin/spark-submit systemml-0.13.0-incubating.jar -f ../scripts/algorithms/Univar-Stats.dml -exec hybrid_spark -nvargs X=uni.mtx TYPES=uni-types.csv STATS=uni-stats.txt CONSOLE_OUTPUT=TRUE
+	cd ..
 
 
 ## Single-Node Hadoop
@@ -280,7 +259,8 @@ Verify that SystemML runs algorithms on Hadoop locally.
 
 Based on the "Single-Node Spark" setup above, the `Univar-Stats.dml` algorithm could be run as follows:
 
-	$ hadoop jar SystemML.jar -f scripts/algorithms/Univar-Stats.dml -nvargs X=uni.mtx TYPES=uni-types.csv STATS=uni-stats.txt CONSOLE_OUTPUT=TRUE
+	cd systemml-0.13.0-incubating-bin/lib
+	hadoop jar systemml-0.13.0-incubating.jar -f ../scripts/algorithms/Univar-Stats.dml -nvargs X=uni.mtx TYPES=uni-types.csv STATS=uni-stats.txt CONSOLE_OUTPUT=TRUE
 
 
 ## Notebooks
@@ -313,5 +293,3 @@ has been approved.
 
 To be written. (What steps need to be done? How is the release deployed to the central maven repo? What updates need to
 happen to the main website, such as updating the Downloads page? Where do the release notes for the release go?)
-
-

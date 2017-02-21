@@ -20,9 +20,10 @@ package org.apache.sysml.runtime.instructions.spark;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 
 import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.api.java.function.PairFunction;
+import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.broadcast.Broadcast;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
@@ -32,6 +33,7 @@ import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.functionobjects.SwapIndex;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
+import org.apache.sysml.runtime.instructions.spark.data.LazyIterableIterator;
 import org.apache.sysml.runtime.instructions.spark.functions.ExtractBlockForBinaryReblock;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDAggregateUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -279,7 +281,7 @@ public class ConvolutionSPInstruction extends UnarySPInstruction {
 			int Q = (int) ConvolutionUtils.getQ(W, S, stride_w, pad_w);
 			
 			ConvolutionParameters params = new ConvolutionParameters(numRowsPerBlock, C, H, W, K, R, S, stride_h, stride_w, pad_h, pad_w, 1);
-			JavaPairRDD<MatrixIndexes,MatrixBlock> out = inputRDD.mapToPair(new RDDConv2dMapMMFunction(filterBroadcast, params, instOpcode, biasBroadcast));
+			JavaPairRDD<MatrixIndexes,MatrixBlock> out = inputRDD.mapPartitionsToPair(new RDDConv2dMapMMFunction(filterBroadcast, params, instOpcode, biasBroadcast), true);
 			
 			//put output RDD handle into symbol table
 			sec.setRDDHandleForVariable(output.getName(), out);
@@ -302,7 +304,8 @@ public class ConvolutionSPInstruction extends UnarySPInstruction {
 				.getLongValue();
 	}
 	
-	private static class RDDConv2dMapMMFunction implements PairFunction<Tuple2<MatrixIndexes,MatrixBlock>, MatrixIndexes, MatrixBlock> {
+	private static class RDDConv2dMapMMFunction implements PairFlatMapFunction<Iterator<Tuple2<MatrixIndexes, MatrixBlock>>, MatrixIndexes, MatrixBlock> {
+	// PairFunction<Tuple2<MatrixIndexes,MatrixBlock>, MatrixIndexes, MatrixBlock> {
 		private static final long serialVersionUID = -2106155380020232155L;
 		Broadcast<MatrixBlock> filterBroadcast = null;
 		Broadcast<MatrixBlock> biasBroadcast = null;
@@ -316,9 +319,7 @@ public class ConvolutionSPInstruction extends UnarySPInstruction {
 			this.biasBroadcast = biasBroadcast;
 		}
 		
-		@Override
-		public Tuple2<MatrixIndexes, MatrixBlock> call(Tuple2<MatrixIndexes, MatrixBlock> arg0) throws Exception {
-			MatrixBlock matBlock = arg0._2;
+		private MatrixBlock processRectangularBlock(MatrixBlock matBlock) throws Exception {
 			MatrixBlock outputBlock = null;
 			if(instOpcode.equalsIgnoreCase("conv2d")) {
 				MatrixBlock filter = filterBroadcast.getValue();
@@ -357,13 +358,32 @@ public class ConvolutionSPInstruction extends UnarySPInstruction {
 			else {
 				throw new RuntimeException("Not implemented");
 			}
-			return new Tuple2<MatrixIndexes, MatrixBlock>(arg0._1, outputBlock);
+			return outputBlock;
 		}
 		
 		private MatrixBlock getDenseOutputBlock(int numRows, int numCols) throws DMLRuntimeException {
 			MatrixBlock outputBlock = new MatrixBlock(numRows, numCols, false);
 			outputBlock.allocateDenseBlock();
 			return outputBlock;
+		}
+
+		@Override
+		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(
+				Iterator<Tuple2<MatrixIndexes, MatrixBlock>> arg0)
+				throws Exception {
+			return new MapsideConvolutionPartitionIterator(arg0);
+		}
+		
+		// Avoid materialization of partitions
+		private class MapsideConvolutionPartitionIterator extends LazyIterableIterator<Tuple2<MatrixIndexes, MatrixBlock>> {
+			public MapsideConvolutionPartitionIterator(Iterator<Tuple2<MatrixIndexes, MatrixBlock>> in) {
+				super(in);
+			}
+
+			@Override
+			protected Tuple2<MatrixIndexes, MatrixBlock> computeNext(Tuple2<MatrixIndexes, MatrixBlock> arg) throws Exception {
+				return new Tuple2<MatrixIndexes, MatrixBlock>(arg._1, processRectangularBlock(arg._2));
+			}
 		}
 		
 	}

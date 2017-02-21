@@ -77,7 +77,7 @@ public class PoolTest extends AutomatedTestBase
 	@Test
 	public void testMaxPool2DDense1SP() 
 	{
-		int numImg = 1; int imgSize = 6; int numChannels = 1;  int stride = 2; int pad = 0; int poolSize1 = 2; int poolSize2 = 2;
+		int numImg = 1; int imgSize = 50; int numChannels = 1;  int stride = 2; int pad = 0; int poolSize1 = 2; int poolSize2 = 2;
 		runPoolTest(ExecType.SPARK, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max");
 	}
 	

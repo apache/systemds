@@ -220,7 +220,7 @@ public class ConvolutionSPInstruction extends UnarySPInstruction {
 		MatrixCharacteristics mcRdd = sec.getMatrixCharacteristics(name);
 		if(mcRdd.getColsPerBlock() < mcRdd.getCols() || mcRdd.getRowsPerBlock() != 1) {
 			MatrixCharacteristics mcOut = new MatrixCharacteristics(mcRdd);
-			mcOut.setColsPerBlock(mcRdd.getColsPerBlock());
+			mcOut.setColsPerBlock((int)mcRdd.getCols());
 			mcOut.setRowsPerBlock(numRowsPerBlock); 
 			in1 = RDDAggregateUtils.mergeByKey(in1.flatMapToPair(new ExtractBlockForBinaryReblock(mcRdd, mcOut)));
 			// TODO: Inject checkpoint to avoid doing this repeated for validation set
@@ -285,9 +285,6 @@ public class ConvolutionSPInstruction extends UnarySPInstruction {
 			
 			long nnz = -1; // TODO: Handle nnz
 			long numCols = K*P*Q;
-			if (instOpcode.equalsIgnoreCase("maxpooling") || instOpcode.equalsIgnoreCase("relu_maxpooling")) {
-				numCols = C*P*Q;
-			}
 			sec.setMetaData(output.getName(), new MatrixDimensionsMetaData(new MatrixCharacteristics(mcRdd.getRows(), numCols, numRowsPerBlock, (int)numCols, nnz)));
 		}
 		else {

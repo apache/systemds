@@ -92,7 +92,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 				if(et == ExecType.CP || et == ExecType.GPU || et == ExecType.SPARK) {
 					setLops(constructConvolutionLops(et, inputs));
 					break;
-				}			
+				}
 				else {
 					throw new HopsException("Unimplemented ConvolutionOp for execution type: " + et.name());
 				}

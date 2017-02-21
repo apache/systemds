@@ -807,7 +807,7 @@ public class LibMatrixDNN {
 		params.output = outputBlock;
 		
 		if(input.getNumColumns() != params.C*params.H*params.W || input.getNumRows() != params.N) {
-			throw new DMLRuntimeException("Incorrect input dimensions in maxpooling:" + input.getNumRows() + " " + input.getNumColumns() + " " + params.N + " " + params.K*params.P*params.Q);
+			throw new DMLRuntimeException("Incorrect input dimensions in maxpooling:" + input.getNumRows() + " " + input.getNumColumns() + " " + params.N + " " + params.C*params.H*params.W);
 		}
 		
 		fillIndexesArray(params);

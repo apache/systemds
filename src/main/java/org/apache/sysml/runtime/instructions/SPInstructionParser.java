@@ -137,11 +137,8 @@ public class SPInstructionParser extends InstructionParser
 		// Neural network operators
 		String2SPInstructionType.put( "relu_backward",          SPINSTRUCTION_TYPE.Convolution);
 		String2SPInstructionType.put( "conv2d",                 SPINSTRUCTION_TYPE.Convolution);
-		String2SPInstructionType.put( "conv2d_backward_filter", SPINSTRUCTION_TYPE.Convolution);
-		String2SPInstructionType.put( "conv2d_backward_data",   SPINSTRUCTION_TYPE.Convolution);
+		String2SPInstructionType.put( "conv2d_bias_add", SPINSTRUCTION_TYPE.Convolution);
 		String2SPInstructionType.put( "maxpooling",             SPINSTRUCTION_TYPE.Convolution);
-		String2SPInstructionType.put( "maxpooling_backward",    SPINSTRUCTION_TYPE.Convolution);
-		String2SPInstructionType.put( "bias_add",    			 SPINSTRUCTION_TYPE.Convolution);
 		
 		String2SPInstructionType.put( "rangeReIndex"   	, SPINSTRUCTION_TYPE.MatrixIndexing);
 		String2SPInstructionType.put( "leftIndex"   	, SPINSTRUCTION_TYPE.MatrixIndexing);

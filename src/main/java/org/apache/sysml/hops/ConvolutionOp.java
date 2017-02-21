@@ -132,12 +132,12 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		OperationTypes lopOp = HopsConv2Lops.get(op);
 		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 		ArrayList<Hop> inputs1 = inputs;
-		if(op == ConvOp.MAX_POOLING && et == ExecType.CP && inputs.get(0) instanceof UnaryOp
+		if(op == ConvOp.MAX_POOLING && (et == ExecType.CP || et == ExecType.SPARK) && inputs.get(0) instanceof UnaryOp
 				&& ((UnaryOp) inputs.get(0)).getOp() == OpOp1.SELP) {
 			in = inputs.get(0).getInput().get(0).constructLops();
 			lopOp = OperationTypes.RELU_MAX_POOLING;
 		}
-		else if(op == ConvOp.BIAS_ADD && et == ExecType.CP && inputs.get(0) instanceof ConvolutionOp
+		else if(op == ConvOp.BIAS_ADD && (et == ExecType.CP || et == ExecType.SPARK) && inputs.get(0) instanceof ConvolutionOp
 				&& ((ConvolutionOp) inputs.get(0)).getOp() == ConvOp.DIRECT_CONV2D) {
 			lopOp = OperationTypes.DIRECT_CONV2D_BIAS_ADD;
 			

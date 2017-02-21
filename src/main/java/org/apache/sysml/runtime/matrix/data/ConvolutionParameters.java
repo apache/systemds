@@ -19,6 +19,8 @@
 
 package org.apache.sysml.runtime.matrix.data;
 
+import java.io.Serializable;
+
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.util.ConvolutionUtils;
 
@@ -26,7 +28,8 @@ import org.apache.sysml.runtime.util.ConvolutionUtils;
  * This class is container that stores parameters required for executing following operations:
  * conv2d, conv2d_backward_data, conv2d_backward_filter, maxpooling, maxpooling_backward 
  */
-public class ConvolutionParameters {
+public class ConvolutionParameters implements Serializable {
+	private static final long serialVersionUID = -212362627205772829L;
 	public int N; public int C; public int H; public int W;
 	public int K; public int R; public int S; public int stride_h; public int stride_w; public int pad_h; public int pad_w;
 	public int P; public int Q; public int numThreads;

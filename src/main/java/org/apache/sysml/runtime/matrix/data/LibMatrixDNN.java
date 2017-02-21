@@ -389,8 +389,9 @@ public class LibMatrixDNN {
 		}
 		// -----------------------------------------------------------------------------
 		
+		// Recomputing nnz is not required for each individual im2col as it is invoked by outer public methods (i.e. conv2d.
 		//post-processing: maintain nnz
-		params.output.recomputeNonZeros(); 
+		// params.output.recomputeNonZeros(); 
 	}
 	
 	/**

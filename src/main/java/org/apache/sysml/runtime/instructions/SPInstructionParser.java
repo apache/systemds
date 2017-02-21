@@ -135,10 +135,10 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( "tack+*"     , SPINSTRUCTION_TYPE.AggregateTernary);
 
 		// Neural network operators
-		String2SPInstructionType.put( "relu_backward",          SPINSTRUCTION_TYPE.Convolution);
 		String2SPInstructionType.put( "conv2d",                 SPINSTRUCTION_TYPE.Convolution);
 		String2SPInstructionType.put( "conv2d_bias_add", SPINSTRUCTION_TYPE.Convolution);
 		String2SPInstructionType.put( "maxpooling",             SPINSTRUCTION_TYPE.Convolution);
+		String2SPInstructionType.put( "relu_maxpooling",          SPINSTRUCTION_TYPE.Convolution);
 		
 		String2SPInstructionType.put( "rangeReIndex"   	, SPINSTRUCTION_TYPE.MatrixIndexing);
 		String2SPInstructionType.put( "leftIndex"   	, SPINSTRUCTION_TYPE.MatrixIndexing);

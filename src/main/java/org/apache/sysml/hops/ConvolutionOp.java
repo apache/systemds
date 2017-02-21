@@ -69,6 +69,10 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		return "" + HopsConv2Lops.get(op);
 	}
 
+	private boolean isEligibleForSpark() {
+		return (op == ConvOp.DIRECT_CONV2D || op == ConvOp.MAX_POOLING) ? true : false;
+	}
+	
 	@Override
 	public Lop constructLops()
 		throws HopsException, LopsException 
@@ -291,6 +295,8 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		{	
 			if ( OptimizerUtils.isMemoryBasedOptLevel() ) {
 				_etype = findGPUExecTypeByMemEstimate(findExecTypeByMemEstimate());
+				// TODO: Fix this after adding remaining spark instructions
+				_etype = !isEligibleForSpark() && _etype == REMOTE ?  ExecType.CP : _etype;
 			}
 			else {
 				_etype = REMOTE;

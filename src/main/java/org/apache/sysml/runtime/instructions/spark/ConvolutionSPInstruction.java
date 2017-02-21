@@ -281,14 +281,20 @@ public class ConvolutionSPInstruction extends UnarySPInstruction {
 			int Q = (int) ConvolutionUtils.getQ(W, S, stride_w, pad_w);
 			
 			ConvolutionParameters params = new ConvolutionParameters(numRowsPerBlock, C, H, W, K, R, S, stride_h, stride_w, pad_h, pad_w, 1);
-			JavaPairRDD<MatrixIndexes,MatrixBlock> out = inputRDD.mapPartitionsToPair(new RDDConv2dMapMMFunction(filterBroadcast, params, instOpcode, biasBroadcast), true);
+			JavaPairRDD<MatrixIndexes,MatrixBlock> out = inputRDD.mapPartitionsToPair(new RDDConv2dMapMMFunction(filterBroadcast, params, instOpcode, biasBroadcast, mcRdd.getRows()), true);
 			
 			//put output RDD handle into symbol table
 			sec.setRDDHandleForVariable(output.getName(), out);
 			sec.addLineageRDD(output.getName(), rddVar);
 			
 			long nnz = -1; // TODO: Handle nnz
-			long numCols = K*P*Q;
+			long numCols = ((long)K)*((long)P)*((long)Q);
+			if(instOpcode.equalsIgnoreCase("maxpooling") || instOpcode.equalsIgnoreCase("relu_maxpooling")) {
+				numCols = ((long)C)*((long)P)*((long)Q);
+			}
+			if(numCols > Integer.MAX_VALUE) {
+				throw new DMLRuntimeException("The current operator doesnot support large outputs.");
+			}
 			sec.setMetaData(output.getName(), 
 					new MatrixFormatMetaData(new MatrixCharacteristics(mcRdd.getRows(), numCols, numRowsPerBlock, (int)numCols, nnz), OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
 		}
@@ -311,12 +317,14 @@ public class ConvolutionSPInstruction extends UnarySPInstruction {
 		Broadcast<MatrixBlock> biasBroadcast = null;
 		ConvolutionParameters params = null;
 		String instOpcode = null;
+		long numRows = 0;
 		public RDDConv2dMapMMFunction(Broadcast<MatrixBlock> filterBroadcast, 
-				ConvolutionParameters params, String instOpcode, Broadcast<MatrixBlock> biasBroadcast) {
+				ConvolutionParameters params, String instOpcode, Broadcast<MatrixBlock> biasBroadcast, long numRows) {
 			this.filterBroadcast = filterBroadcast;
 			this.params = params;
 			this.instOpcode = instOpcode;
 			this.biasBroadcast = biasBroadcast;
+			this.numRows = numRows;
 		}
 		
 		private MatrixBlock processRectangularBlock(MatrixBlock matBlock) throws Exception {
@@ -382,7 +390,14 @@ public class ConvolutionSPInstruction extends UnarySPInstruction {
 
 			@Override
 			protected Tuple2<MatrixIndexes, MatrixBlock> computeNext(Tuple2<MatrixIndexes, MatrixBlock> arg) throws Exception {
-				return new Tuple2<MatrixIndexes, MatrixBlock>(arg._1, processRectangularBlock(arg._2));
+				if(arg._1.getRowIndex() > numRows || arg._1.getColumnIndex() != 1) {
+					throw new RuntimeException("Expected the inputs to be reblocked as rectangular RDD");
+				}
+				MatrixBlock out = processRectangularBlock(arg._2);
+				if(out.getNumRows() != 1) {
+					throw new RuntimeException("Expected the output to have 1 row");
+				}
+				return new Tuple2<MatrixIndexes, MatrixBlock>(arg._1, out);
 			}
 		}
 		

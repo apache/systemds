@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.log4j.Logger;
 import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.sysml.api.DMLScript;
@@ -59,6 +60,11 @@ public class MLContext {
 	 * Minimum Spark version supported by SystemML.
 	 */
 	public static final String SYSTEMML_MINIMUM_SPARK_VERSION = "2.1.0";
+
+	/**
+	 * Logger for MLContext
+	 */
+	public static Logger log = Logger.getLogger(MLContext.class);
 
 	/**
 	 * SparkContext object.
@@ -211,7 +217,11 @@ public class MLContext {
 	 */
 	private void initMLContext(SparkContext sc, boolean monitorPerformance) {
 
-		MLContextUtil.verifySparkVersionSupported(sc);
+		try {
+			MLContextUtil.verifySparkVersionSupported(sc);
+		} catch (MLContextException e) {
+			log.warn("Apache Spark " + SYSTEMML_MINIMUM_SPARK_VERSION + " or above is recommended for SystemML " + this.info().version());
+		}
 
 		if (activeMLContext == null) {
 			System.out.println(MLContextUtil.welcomeMessage());

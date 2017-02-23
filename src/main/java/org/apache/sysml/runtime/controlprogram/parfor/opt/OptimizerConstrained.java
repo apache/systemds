@@ -62,8 +62,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 {
 
 	@Override
-	public POptMode getOptMode()
-	{
+	public POptMode getOptMode() {
 		return POptMode.CONSTRAINED;
 	}
 

@@ -241,20 +241,7 @@ public class ParForStatementBlock extends ForStatementBlock
 					}
 					else //default case
 						params.put(key, _paramDefaults.get(key));
-				}
-			
-			//check for disabled parameters values
-			if( params.containsKey( OPT_MODE ) )
-			{
-				String optStr = params.get( OPT_MODE );
-				if(    optStr.equals(POptMode.HEURISTIC.toString()) 
-					|| optStr.equals(POptMode.GREEDY.toString()) 
-					|| optStr.equals(POptMode.FULL_DP.toString())   ) 
-				{ //always unconditional
-					raiseValidateError("Sorry, parfor optimization mode '"+optStr+"' is disabled for external usage.", false);
-				}
-			}
-			
+				}			
 		}
 		else
 		{

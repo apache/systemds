@@ -44,7 +44,6 @@ import org.apache.sysml.parser.ParForStatement;
 import org.apache.sysml.parser.ParForStatementBlock;
 import org.apache.sysml.parser.StatementBlock;
 import org.apache.sysml.parser.WhileStatement;
-import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.WhileStatementBlock;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.ForProgramBlock;
@@ -55,25 +54,17 @@ import org.apache.sysml.runtime.controlprogram.ParForProgramBlock;
 import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.ProgramBlock;
 import org.apache.sysml.runtime.controlprogram.WhileProgramBlock;
-import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysml.runtime.controlprogram.parfor.opt.CostEstimator.DataFormat;
 import org.apache.sysml.runtime.controlprogram.parfor.opt.OptNode.ExecType;
 import org.apache.sysml.runtime.controlprogram.parfor.opt.OptNode.NodeType;
 import org.apache.sysml.runtime.controlprogram.parfor.opt.OptNode.ParamType;
 import org.apache.sysml.runtime.controlprogram.parfor.opt.Optimizer.PlanInputType;
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.MRJobInstruction;
-import org.apache.sysml.runtime.instructions.cp.ComputationCPInstruction;
-import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.FunctionCallCPInstruction;
-import org.apache.sysml.runtime.instructions.cp.DataGenCPInstruction;
 import org.apache.sysml.runtime.instructions.cpfile.MatrixIndexingCPFileInstruction;
 import org.apache.sysml.runtime.instructions.cpfile.ParameterizedBuiltinCPFileInstruction;
 import org.apache.sysml.runtime.instructions.spark.SPInstruction;
-import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
-import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
 /**
  * Converter for creating an internal plan representation for a given runtime program
@@ -82,7 +73,6 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
  * NOTE: currently only one abstract and one runtime plan at a time.
  * This implies that only one parfor optimization can happen at a time.
  */
-@SuppressWarnings("deprecation")
 public class OptTreeConverter 
 {		
 	
@@ -689,98 +679,10 @@ public class OptTreeConverter
 	private static OptNodeStatistics analyzeStatistics(Instruction inst, OptNode on, LocalVariableMap vars) 
 		throws DMLRuntimeException 
 	{
-		OptNodeStatistics ret = null;
-		String instName = on.getInstructionName();
+		//since the performance test tool for offline profiling has been removed,
+		//we return default values
 		
-		if( PerfTestTool.isRegisteredInstruction(instName) )
-		{	
-			if( inst instanceof DataGenCPInstruction )
-			{
-				DataGenCPInstruction linst = (DataGenCPInstruction) inst;
-				DataFormat df = (   MatrixBlock.evalSparseFormatInMemory(linst.getRows(), linst.getCols(), (long)(linst.getSparsity()*linst.getRows()*linst.getCols())) ? 
-						            DataFormat.SPARSE : DataFormat.DENSE ); 
-				ret = new OptNodeStatistics(linst.getRows(), linst.getCols(), -1, -1, linst.getSparsity(), df);
-			}
-			else if ( inst instanceof FunctionCallCPInstruction )
-			{
-				FunctionCallCPInstruction linst = (FunctionCallCPInstruction)inst;
-				ArrayList<String> params = linst.getBoundInputParamNames();
-				ret = new OptNodeStatistics(); //default vals
-				
-				double maxSize = 0;
-				for( String param : params ) //use the largest input matrix
-				{
-					Data dat = vars.get(param);
-					if( dat!=null && dat.getDataType()==DataType.MATRIX )
-					{
-						MatrixObject mdat1 = (MatrixObject) dat;
-						MatrixCharacteristics mc1 = mdat1.getMatrixCharacteristics();
-						
-						if( mc1.getRows()*mc1.getCols() > maxSize )
-						{
-							ret.setDim1( mc1.getRows() );
-							ret.setDim2( mc1.getCols() );
-							ret.setSparsity( OptimizerUtils.getSparsity(ret.getDim1(), ret.getDim2(), mc1.getNonZeros()) ); //sparsity
-							ret.setDataFormat( MatrixBlock.evalSparseFormatInMemory(mc1.getRows(), mc1.getCols(), mc1.getNonZeros()) ? 
-									            DataFormat.SPARSE : DataFormat.DENSE ); 
-							maxSize = mc1.getRows()*mc1.getCols();
-						}
-					}
-				}
-			}
-			else if ( inst instanceof ComputationCPInstruction ) //needs to be last CP case
-			{
-				//AggregateBinaryCPInstruction, AggregateUnaryCPInstruction, 
-				//FunctionCallCPInstruction, ReorgCPInstruction
-				
-				ComputationCPInstruction linst = (ComputationCPInstruction) inst;
-				ret = new OptNodeStatistics(); //default
-				
-				if( linst.input1 != null && linst.input2 != null ) //binary
-				{
-					Data dat1 = vars.get( linst.input1.getName() );
-					Data dat2 = vars.get( linst.input2.getName() );
-					
-					if( dat1 != null )
-					{
-						MatrixObject mdat1 = (MatrixObject) dat1;
-						MatrixCharacteristics mc1 = ((MatrixFormatMetaData)mdat1.getMetaData()).getMatrixCharacteristics();
-						ret.setDim1( mc1.getRows() );
-						ret.setDim2( mc1.getCols() );
-						ret.setSparsity( OptimizerUtils.getSparsity(ret.getDim1(), ret.getDim2(), mc1.getNonZeros()) ); //sparsity
-						ret.setDataFormat( MatrixBlock.evalSparseFormatInMemory(mc1.getRows(), mc1.getCols(), mc1.getNonZeros())? DataFormat.SPARSE : DataFormat.DENSE); 
-					}
-					if( dat2 != null )
-					{
-						MatrixObject mdat2 = (MatrixObject) dat2;
-						MatrixCharacteristics mc2 = ((MatrixFormatMetaData)mdat2.getMetaData()).getMatrixCharacteristics();
-						ret.setDim3( mc2.getRows() );
-						ret.setDim4( mc2.getCols() );
-						ret.setDataFormat( MatrixBlock.evalSparseFormatInMemory(mc2.getRows(), mc2.getCols(), mc2.getNonZeros()) ? DataFormat.SPARSE : DataFormat.DENSE ); 
-					}
-				}
-				else //unary
-				{
-					if( linst.input1 != null ) 
-					{
-						Data dat1 = vars.get( linst.input1.getName() );
-						if( dat1 != null ) {
-							MatrixObject mdat1 = (MatrixObject) dat1;
-							MatrixCharacteristics mc1 = ((MatrixFormatMetaData)mdat1.getMetaData()).getMatrixCharacteristics();
-							ret.setDim1( mc1.getRows() );
-							ret.setDim2( mc1.getCols() );
-							ret.setSparsity( OptimizerUtils.getSparsity(ret.getDim1(), ret.getDim2(), mc1.getNonZeros()) ); //sparsity
-							ret.setDataFormat(MatrixBlock.evalSparseFormatInMemory(mc1.getRows(), mc1.getCols(), mc1.getNonZeros()) ? DataFormat.SPARSE : DataFormat.DENSE); 
-						}
-					}
-				}
-			}
-		}
-		
-		if( ret == null )
-			ret = new OptNodeStatistics(); //default values
-		
-		return ret; //null if not reqistered for profiling
+		return new OptNodeStatistics(); //default values
 	}
 
 	public static void replaceProgramBlock(OptNode parent, OptNode n, ProgramBlock pbOld, ProgramBlock pbNew, boolean rtMap) 

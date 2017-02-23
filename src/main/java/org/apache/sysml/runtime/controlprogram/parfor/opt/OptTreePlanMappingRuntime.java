@@ -26,8 +26,7 @@ import org.apache.sysml.runtime.controlprogram.ProgramBlock;
 import org.apache.sysml.runtime.instructions.Instruction;
 
 public class OptTreePlanMappingRuntime extends OptTreePlanMapping
-{
-	
+{	
 	private Map<Long, Object> _id_rtprog;
 
 	public OptTreePlanMappingRuntime()

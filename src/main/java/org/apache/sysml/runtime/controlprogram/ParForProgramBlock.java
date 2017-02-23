@@ -195,12 +195,10 @@ public class ParForProgramBlock extends ForProgramBlock
 	
 	//optimizer
 	public enum POptMode{
-		NONE,       //no optimization, use defaults and specified parameters
-		RULEBASED, //some simple rule-based rewritings (affects only parfor PB) - similar to HEURISTIC but no exec time estimates
+		NONE,        //no optimization, use defaults and specified parameters
+		RULEBASED,   //rule-based rewritings with memory constraints 
 		CONSTRAINED, //same as rule-based but with given params as constraints
-		HEURISTIC, //some simple cost-based rewritings (affects only parfor PB)
-		GREEDY,     //greedy cost-based optimization algorithm (potentially local optimum, affects all instructions)
-		FULL_DP,    //full cost-based optimization algorithm (global optimum, affects all instructions)				
+		HEURISTIC,   //smae as rule-based but with time-based cost estimates
 	}
 		
 	// internal parameters

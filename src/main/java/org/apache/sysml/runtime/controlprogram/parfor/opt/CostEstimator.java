@@ -184,17 +184,12 @@ public abstract class CostEstimator
 		return val;
 	}
 
-	protected double getDefaultEstimate(TestMeasure measure) 
-	{
-		double val = -1;
-		
-		switch( measure )
-		{
-			case EXEC_TIME: val = DEFAULT_TIME_ESTIMATE; break;
-			case MEMORY_USAGE: val = DEFAULT_MEM_ESTIMATE_CP; break;
-		}
-		
-		return val;
+	protected double getDefaultEstimate(TestMeasure measure)  {
+		switch( measure ) {
+			case EXEC_TIME:    return DEFAULT_TIME_ESTIMATE;
+			case MEMORY_USAGE: return DEFAULT_MEM_ESTIMATE_CP;
+		}		
+		return -1;
 	}
 
 	protected double getMaxEstimate( TestMeasure measure, ArrayList<OptNode> nodes, ExecType et ) 
@@ -202,11 +197,7 @@ public abstract class CostEstimator
 	{
 		double max = Double.MIN_VALUE; //smallest positive value
 		for( OptNode n : nodes )
-		{
-			double tmp = getEstimate( measure, n, et );
-			if( tmp > max )
-				max = tmp;
-		}
+			max = Math.max(max, getEstimate(measure, n, et));
 		return max;
 	}
 

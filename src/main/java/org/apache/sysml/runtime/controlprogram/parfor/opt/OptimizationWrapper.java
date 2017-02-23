@@ -76,7 +76,6 @@ public class OptimizationWrapper
 	
 	//internal parameters
 	public static final double PAR_FACTOR_INFRASTRUCTURE = 1.0;
-	private static final boolean ALLOW_RUNTIME_COSTMODEL = false;
 	private static final boolean CHECK_PLAN_CORRECTNESS = false; 
 	
 	static
@@ -146,12 +145,6 @@ public class OptimizationWrapper
 		Optimizer opt = createOptimizer( otype );
 		CostModelType cmtype = opt.getCostModelType();
 		LOG.trace("ParFOR Opt: Created optimizer ("+otype+","+opt.getPlanInputType()+","+opt.getCostModelType());
-		
-		if( cmtype == CostModelType.RUNTIME_METRICS  //TODO remove check when perftesttool supported
-			&& !ALLOW_RUNTIME_COSTMODEL )
-		{
-			throw new DMLRuntimeException("ParFOR Optimizer "+otype+" requires cost model "+cmtype+" that is not suported yet.");
-		}
 		
 		OptTree tree = null;
 		
@@ -243,7 +236,7 @@ public class OptimizationWrapper
 		}
 		
 		//create cost estimator
-		CostEstimator est = createCostEstimator( cmtype );
+		CostEstimator est = createCostEstimator( cmtype, ec.getVariables() );
 		LOG.trace("ParFOR Opt: Created cost estimator ("+cmtype+")");
 		
 		//core optimize
@@ -296,15 +289,6 @@ public class OptimizationWrapper
 			case CONSTRAINED:
 				opt = new OptimizerConstrained();
 				break;	
-		
-			//MB: removed unused and experimental prototypes
-			//case FULL_DP:
-			//	opt = new OptimizerDPEnum();
-			//	break;
-			//case GREEDY:
-			//	opt = new OptimizerGreedyEnum();
-			//	break;
-			
 			default:
 				throw new DMLRuntimeException("Undefined optimizer: '"+otype+"'.");
 		}
@@ -312,7 +296,7 @@ public class OptimizationWrapper
 		return opt;
 	}
 
-	private static CostEstimator createCostEstimator( CostModelType cmtype ) 
+	private static CostEstimator createCostEstimator( CostModelType cmtype, LocalVariableMap vars ) 
 		throws DMLRuntimeException
 	{
 		CostEstimator est = null;
@@ -320,10 +304,13 @@ public class OptimizationWrapper
 		switch( cmtype )
 		{
 			case STATIC_MEM_METRIC:
-				est = new CostEstimatorHops( OptTreeConverter.getAbstractPlanMapping() );
+				est = new CostEstimatorHops( 
+						OptTreeConverter.getAbstractPlanMapping() );
 				break;
 			case RUNTIME_METRICS:
-				est = new CostEstimatorRuntime();
+				est = new CostEstimatorRuntime( 
+						OptTreeConverter.getAbstractPlanMapping(), 
+						(LocalVariableMap)vars.clone() );
 				break;
 			default:
 				throw new DMLRuntimeException("Undefined cost model type: '"+cmtype+"'.");

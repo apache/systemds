@@ -42,8 +42,7 @@ public class CostEstimatorHops extends CostEstimator
 	}
 	
 	
-	public CostEstimatorHops( OptTreePlanMappingAbstract map )
-	{
+	public CostEstimatorHops( OptTreePlanMappingAbstract map ) {
 		_map = map;
 	}
 

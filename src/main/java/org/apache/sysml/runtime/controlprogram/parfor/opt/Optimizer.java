@@ -39,8 +39,6 @@ import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
  */
 public abstract class Optimizer 
 {
-
-	
 	protected static final Log LOG = LogFactory.getLog(Optimizer.class.getName());
 	
 	protected long _numTotalPlans     = -1;
@@ -86,14 +84,11 @@ public abstract class Optimizer
 	///////
 	//methods for evaluating the overall properties and costing  
 
-	public long getNumTotalPlans()
-	{
+	public long getNumTotalPlans() {
 		return _numTotalPlans;
 	}
 
-	public long getNumEvaluatedPlans()
-	{
+	public long getNumEvaluatedPlans() {
 		return _numEvaluatedPlans;
 	}
-
 }

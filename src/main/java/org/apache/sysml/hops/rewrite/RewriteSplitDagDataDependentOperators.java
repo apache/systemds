@@ -37,7 +37,6 @@ import org.apache.sysml.hops.LiteralOp;
 import org.apache.sysml.hops.ParameterizedBuiltinOp;
 import org.apache.sysml.hops.ReorgOp;
 import org.apache.sysml.hops.TernaryOp;
-import org.apache.sysml.hops.UnaryOp;
 import org.apache.sysml.hops.recompile.Recompiler;
 import org.apache.sysml.parser.DataIdentifier;
 import org.apache.sysml.parser.StatementBlock;
@@ -132,13 +131,9 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 						for( int i=0; i<parents.size(); i++ ) {
 							//prevent concurrent modification by index access
 							Hop parent = parents.get(i);
-							if( !candChilds.contains(parent) ) //anomaly filter
-							{
-								if( parent != twrite ) {
-									int pos = HopRewriteUtils.getChildReferencePos(parent, c);
-									HopRewriteUtils.removeChildReferenceByPos(parent, c, pos);
-									HopRewriteUtils.addChildReference(parent, tread, pos);
-								}
+							if( !candChilds.contains(parent) ) { //anomaly filter
+								if( parent != twrite )
+									HopRewriteUtils.replaceChildReference(parent, c, tread);
 								else
 									sb.get_hops().remove(parent);
 							}
@@ -163,11 +158,7 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 							//prevent concurrent modification by index access
 							Hop parent = parents.get(i);
 							if( !candChilds.contains(parent) ) //anomaly filter
-							{
-								int pos = HopRewriteUtils.getChildReferencePos(parent, c);
-								HopRewriteUtils.removeChildReferenceByPos(parent, c, pos);
-								HopRewriteUtils.addChildReference(parent, tread, pos);
-							}
+								HopRewriteUtils.replaceChildReference(parent, c, tread);
 						}
 						
 						//add data-dependent operator sub dag to first statement block
@@ -258,7 +249,7 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 			for( Hop p : hop.getParent() ) {
 				//list of operators without need for empty blocks to be extended as needed
 				noEmptyBlocks &= (   p instanceof AggBinaryOp && hop == p.getInput().get(0) 
-				                  || p instanceof UnaryOp && ((UnaryOp)p).getOp()==OpOp1.NROW);
+				                  || HopRewriteUtils.isUnary(p, OpOp1.NROW) );
 				onlyPMM &= (p instanceof AggBinaryOp && hop == p.getInput().get(0));
 			}
 			pbhop.setOutputEmptyBlocks(!noEmptyBlocks);

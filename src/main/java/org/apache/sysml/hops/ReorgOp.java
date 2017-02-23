@@ -256,7 +256,7 @@ public class ReorgOp extends Hop implements MultiThreadedHop
 						vinput = new IndexingOp("tmp1", getDataType(), getValueType(), input, new LiteralOp(1L), 
 								HopRewriteUtils.createValueHop(input, true), by, by, false, true);
 						vinput.refreshSizeInformation();
-						HopRewriteUtils.setOutputBlocksizes(vinput, getRowsInBlock(), getColsInBlock());
+						vinput.setOutputBlocksizes(getRowsInBlock(), getColsInBlock());
 						HopRewriteUtils.copyLineNumbers(this, vinput);	
 					}
 					
@@ -314,7 +314,7 @@ public class ReorgOp extends Hop implements MultiThreadedHop
 						
 						//generate table
 						TernaryOp table = new TernaryOp("tmp5", DataType.MATRIX, ValueType.DOUBLE, OpOp3.CTABLE, seq, voutput, new LiteralOp(1L) );
-						HopRewriteUtils.setOutputBlocksizes(table, getRowsInBlock(), getColsInBlock());
+						table.setOutputBlocksizes(getRowsInBlock(), getColsInBlock());
 						table.refreshSizeInformation();
 						table.setForcedExecType(ExecType.MR); //force MR 
 						HopRewriteUtils.copyLineNumbers(this, table);

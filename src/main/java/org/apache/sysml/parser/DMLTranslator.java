@@ -2899,9 +2899,9 @@ public class DMLTranslator
 	}
 	
 	private void setBlockSizeAndRefreshSizeInfo(Hop in, Hop out) {
-		HopRewriteUtils.setOutputBlocksizes(out, in.getRowsInBlock(), in.getColsInBlock());
-		HopRewriteUtils.copyLineNumbers(in, out);
+		out.setOutputBlocksizes(in.getRowsInBlock(), in.getColsInBlock());
 		out.refreshSizeInformation();
+		HopRewriteUtils.copyLineNumbers(in, out);
 	}
 
 	private ArrayList<Hop> getALHopsForConvOpPoolingCOL2IM(Hop first, BuiltinFunctionExpression source, int skip, HashMap<String, Hop> hops) throws ParseException {

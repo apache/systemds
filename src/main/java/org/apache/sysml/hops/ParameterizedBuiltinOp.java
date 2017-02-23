@@ -512,11 +512,11 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 				//step1: compute index vectors
 				Hop ppred0 = input;
 				if( !isPPredInput ) { //ppred only if required
-					ppred0 = new BinaryOp("tmp1", DataType.MATRIX, ValueType.DOUBLE, OpOp2.NOTEQUAL, input, new LiteralOp(0));
+					ppred0 = HopRewriteUtils.createBinary(input, new LiteralOp(0), OpOp2.NOTEQUAL);
 					HopRewriteUtils.updateHopCharacteristics(ppred0, brlen, bclen, memo, this);
 				}
 				
-				UnaryOp cumsum = new UnaryOp("tmp2", DataType.MATRIX, ValueType.DOUBLE, OpOp1.CUMSUM, ppred0); 
+				UnaryOp cumsum = HopRewriteUtils.createUnary(ppred0, OpOp1.CUMSUM); 
 				HopRewriteUtils.updateHopCharacteristics(cumsum, brlen, bclen, memo, this);
 			
 				Lop loutput = null;
@@ -524,14 +524,14 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 				double mbudget = OptimizerUtils.getRemoteMemBudgetMap(true);
 				if( _outputPermutationMatrix && mest < mbudget ) //SPECIAL CASE: SELECTION VECTOR
 				{
-					BinaryOp sel = new BinaryOp("tmp3", DataType.MATRIX, ValueType.DOUBLE, OpOp2.MULT, ppred0, cumsum);
+					BinaryOp sel = HopRewriteUtils.createBinary(ppred0, cumsum, OpOp2.MULT);
 					HopRewriteUtils.updateHopCharacteristics(sel, brlen, bclen, memo, this);
 					loutput = sel.constructLops();
 				}
 				else //GENERAL CASE: GENERAL PERMUTATION MATRIX
 				{
 					//max ensures non-zero entries and at least one output row
-					BinaryOp max = new BinaryOp("tmp3", DataType.MATRIX, ValueType.DOUBLE, OpOp2.MAX, cumsum, new LiteralOp(1));
+					BinaryOp max = HopRewriteUtils.createBinary(cumsum, new LiteralOp(1), OpOp2.MAX);
 					HopRewriteUtils.updateHopCharacteristics(max, brlen, bclen, memo, this);
 					
 					DataGenOp seq = HopRewriteUtils.createSeqDataGenOp(input);
@@ -541,7 +541,7 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 					//step 2: compute removeEmpty(rows) output via table, seq guarantees right column dimension
 					//note: weights always the input (even if isPPredInput) because input also includes 0s
 					TernaryOp table = new TernaryOp("tmp5", DataType.MATRIX, ValueType.DOUBLE, OpOp3.CTABLE, max, seq, input);
-					HopRewriteUtils.setOutputBlocksizes(table, brlen, bclen);
+					table.setOutputBlocksizes(brlen, bclen);
 					table.refreshSizeInformation();
 					table.setForcedExecType(ExecType.MR); //force MR 
 					HopRewriteUtils.copyLineNumbers(this, table);
@@ -581,23 +581,18 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 				
 				if(selectHop == null) {
 					//Step1: compute row/col non-empty indicators 
-					ppred0 = new BinaryOp("tmp1", DataType.MATRIX, ValueType.DOUBLE, OpOp2.NOTEQUAL, input, new LiteralOp(0));
-					HopRewriteUtils.setOutputBlocksizes(ppred0, brlen, bclen);
-					ppred0.refreshSizeInformation();
+					ppred0 = HopRewriteUtils.createBinary(input, new LiteralOp(0), OpOp2.NOTEQUAL);
 					ppred0.setForcedExecType(ExecType.MR); //always MR 
-					HopRewriteUtils.copyLineNumbers(this, ppred0);
 					
 					emptyInd = ppred0;
 					if( !((rmRows && clen == 1) || (!rmRows && rlen==1)) ){
-						emptyInd = new AggUnaryOp("tmp2", DataType.MATRIX, ValueType.DOUBLE, AggOp.MAX, rmRows?Direction.Row:Direction.Col, ppred0);
-						HopRewriteUtils.setOutputBlocksizes(emptyInd, brlen, bclen);
-						emptyInd.refreshSizeInformation();
+						emptyInd = HopRewriteUtils.createAggUnaryOp(ppred0, AggOp.MAX, rmRows?Direction.Row:Direction.Col);
 						emptyInd.setForcedExecType(ExecType.MR); //always MR
 						HopRewriteUtils.copyLineNumbers(this, emptyInd);
 					}
 				} else {
 					emptyInd = selectHop;
-					HopRewriteUtils.setOutputBlocksizes(emptyInd, brlen, bclen);
+					emptyInd.setOutputBlocksizes(brlen, bclen);
 					emptyInd.refreshSizeInformation();
 					emptyInd.setForcedExecType(ExecType.MR); //always MR
 					HopRewriteUtils.copyLineNumbers(this, emptyInd);
@@ -610,7 +605,7 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 					HopRewriteUtils.updateHopCharacteristics(cumsumInput, brlen, bclen, this);	
 				}
 			
-				UnaryOp cumsum = new UnaryOp("tmp3", DataType.MATRIX, ValueType.DOUBLE, OpOp1.CUMSUM, cumsumInput); 
+				UnaryOp cumsum = HopRewriteUtils.createUnary(cumsumInput, OpOp1.CUMSUM); 
 				HopRewriteUtils.updateHopCharacteristics(cumsum, brlen, bclen, this);
 			
 				Hop cumsumOutput = cumsum;
@@ -619,10 +614,10 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 					HopRewriteUtils.updateHopCharacteristics(cumsumOutput, brlen, bclen, this);	
 				}
 				
-				Hop maxDim = new AggUnaryOp("tmp4", DataType.SCALAR, ValueType.DOUBLE, AggOp.MAX, Direction.RowCol, cumsumOutput); //alternative: right indexing
+				Hop maxDim = HopRewriteUtils.createAggUnaryOp(cumsumOutput, AggOp.MAX, Direction.RowCol); //alternative: right indexing
 				HopRewriteUtils.updateHopCharacteristics(maxDim, brlen, bclen, this);
 				
-				BinaryOp offsets = new BinaryOp("tmp5", DataType.MATRIX, ValueType.DOUBLE, OpOp2.MULT, cumsumOutput, emptyInd);
+				BinaryOp offsets = HopRewriteUtils.createBinary(cumsumOutput, emptyInd, OpOp2.MULT);
 				HopRewriteUtils.updateHopCharacteristics(offsets, brlen, bclen, this);
 				
 				//Step 3: gather non-empty rows/cols into final results 
@@ -713,23 +708,17 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 			
 			if(selectHop == null) {
 				//Step1: compute row/col non-empty indicators 
-				ppred0 = new BinaryOp("tmp1", DataType.MATRIX, ValueType.DOUBLE, OpOp2.NOTEQUAL, input, new LiteralOp(0));
-				HopRewriteUtils.setOutputBlocksizes(ppred0, brlen, bclen);
-				ppred0.refreshSizeInformation();
+				ppred0 = HopRewriteUtils.createBinary(input, new LiteralOp(0), OpOp2.NOTEQUAL);
 				ppred0.setForcedExecType(ExecType.SPARK); //always Spark
-				HopRewriteUtils.copyLineNumbers(this, ppred0);
 				
 				emptyInd = ppred0;
 				if( !((rmRows && clen == 1) || (!rmRows && rlen==1)) ){
-					emptyInd = new AggUnaryOp("tmp2", DataType.MATRIX, ValueType.DOUBLE, AggOp.MAX, rmRows?Direction.Row:Direction.Col, ppred0);
-					HopRewriteUtils.setOutputBlocksizes(emptyInd, brlen, bclen);
-					emptyInd.refreshSizeInformation();
+					emptyInd = HopRewriteUtils.createAggUnaryOp(ppred0, AggOp.MAX, rmRows?Direction.Row:Direction.Col);
 					emptyInd.setForcedExecType(ExecType.SPARK); //always Spark
-					HopRewriteUtils.copyLineNumbers(this, emptyInd);
 				}
 			} else {
 				emptyInd = selectHop;
-				HopRewriteUtils.setOutputBlocksizes(emptyInd, brlen, bclen);
+				emptyInd.setOutputBlocksizes(brlen, bclen);
 				emptyInd.refreshSizeInformation();
 				emptyInd.setForcedExecType(ExecType.SPARK); //always Spark
 				HopRewriteUtils.copyLineNumbers(this, emptyInd);
@@ -742,7 +731,7 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 				HopRewriteUtils.updateHopCharacteristics(cumsumInput, brlen, bclen, this);
 			}
 		
-			UnaryOp cumsum = new UnaryOp("tmp3", DataType.MATRIX, ValueType.DOUBLE, OpOp1.CUMSUM, cumsumInput); 
+			UnaryOp cumsum = HopRewriteUtils.createUnary(cumsumInput, OpOp1.CUMSUM); 
 			HopRewriteUtils.updateHopCharacteristics(cumsum, brlen, bclen, this);
 		
 			Hop cumsumOutput = cumsum;
@@ -751,10 +740,10 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 				HopRewriteUtils.updateHopCharacteristics(cumsumOutput, brlen, bclen, this);	
 			}
 			
-			Hop maxDim = new AggUnaryOp("tmp4", DataType.SCALAR, ValueType.DOUBLE, AggOp.MAX, Direction.RowCol, cumsumOutput); //alternative: right indexing
+			Hop maxDim = HopRewriteUtils.createAggUnaryOp(cumsumOutput, AggOp.MAX, Direction.RowCol); //alternative: right indexing
 			HopRewriteUtils.updateHopCharacteristics(maxDim, brlen, bclen, this);
 			
-			BinaryOp offsets = new BinaryOp("tmp5", DataType.MATRIX, ValueType.DOUBLE, OpOp2.MULT, cumsumOutput, emptyInd);
+			BinaryOp offsets = HopRewriteUtils.createBinary(cumsumOutput, emptyInd, OpOp2.MULT);
 			HopRewriteUtils.updateHopCharacteristics(offsets, brlen, bclen, this);
 			
 			//Step 3: gather non-empty rows/cols into final results 

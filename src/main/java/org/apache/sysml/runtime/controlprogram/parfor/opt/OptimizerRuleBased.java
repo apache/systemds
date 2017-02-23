@@ -2589,7 +2589,7 @@ public class OptimizerRuleBased extends Optimizer
 					ret = true;
 					sharedVars.add(ch.getName());
 				}
-				else if(    ch instanceof ReorgOp && ((ReorgOp)ch).getOp()==ReOrgOp.TRANSPOSE 
+				else if( HopRewriteUtils.isTransposeOperation(ch)  
 					&& ch.getInput().get(0) instanceof DataOp && ch.getInput().get(0).getDataType() == DataType.MATRIX
 					&& inputVars.contains(ch.getInput().get(0).getName()) )
 					//&& !partitionedVars.contains(ch.getInput().get(0).getName()))
@@ -2707,8 +2707,7 @@ public class OptimizerRuleBased extends Optimizer
 				for( Hop in : h.getInput() ) {
 					if( in instanceof DataOp )
 						cand.add( in.getName() );
-					else if( in instanceof ReorgOp 
-						&& ((ReorgOp)in).getOp()==ReOrgOp.TRANSPOSE
+					else if( HopRewriteUtils.isTransposeOperation(in)
 						&& in.getInput().get(0) instanceof DataOp )
 						cand.add( in.getInput().get(0).getName() );
 				}

@@ -96,7 +96,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 		if(hop.getVisited() == Hop.VisitStatus.DONE)
 				return;
 		
-		if (  hop instanceof AggBinaryOp && ((AggBinaryOp) hop).isMatrixMultiply()
+		if (  HopRewriteUtils.isMatrixMultiply(hop)
 			  && !((AggBinaryOp)hop).hasLeftPMInput() 
 			  && hop.getVisited() != Hop.VisitStatus.DONE ) 
 		{
@@ -159,7 +159,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 			 *    (either within chain or outside the chain)
 			 */
 
-			if (    h instanceof AggBinaryOp && ((AggBinaryOp) h).isMatrixMultiply()
+			if (    HopRewriteUtils.isMatrixMultiply(h)
 			     && !((AggBinaryOp)hop).hasLeftPMInput() 
 				 && h.getVisited() != Hop.VisitStatus.DONE ) 
 			{

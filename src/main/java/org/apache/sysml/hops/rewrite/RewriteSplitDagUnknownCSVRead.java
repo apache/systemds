@@ -87,9 +87,7 @@ public class RewriteSplitDagUnknownCSVRead extends StatementBlockRewriteRule
 					for( int i=0; i<parents.size(); i++ )
 					{
 						Hop parent = parents.get(i);
-						int pos = HopRewriteUtils.getChildReferencePos(parent, reblock);
-						HopRewriteUtils.removeChildReferenceByPos(parent, reblock, pos);
-						HopRewriteUtils.addChildReference(parent, tread, pos);
+						HopRewriteUtils.replaceChildReference(parent, reblock, tread);
 					}
 					
 					//add reblock sub dag to first statement block

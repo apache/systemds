@@ -69,11 +69,8 @@ public class RewriteRemoveReadAfterWrite extends HopRewriteRule
 				//rewire read consumers to write input
 				Hop input = writes.get(rfname).getInput().get(0);
 				ArrayList<Hop> parents = (ArrayList<Hop>) rhop.getParent().clone();
-				for( Hop p : parents ) {
-					int pos = HopRewriteUtils.getChildReferencePos(p, rhop);
-					HopRewriteUtils.removeChildReferenceByPos(p, rhop, pos);
-					HopRewriteUtils.addChildReference(p, input, pos);
-				}
+				for( Hop p : parents )
+					HopRewriteUtils.replaceChildReference(p, rhop, input);
 			}
 		}
 		

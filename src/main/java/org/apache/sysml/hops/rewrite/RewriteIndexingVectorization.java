@@ -177,10 +177,8 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 					for( Hop c : ihops ) {
 						HopRewriteUtils.removeChildReference(c, input); //input data
 						HopRewriteUtils.addChildReference(c, newRix, 0);
-						HopRewriteUtils.removeChildReferenceByPos(c, c.getInput().get(3),3); //col lower expr
-						HopRewriteUtils.addChildReference(c, new LiteralOp(1), 3);
-						HopRewriteUtils.removeChildReferenceByPos(c, c.getInput().get(4),4); //col upper expr
-						HopRewriteUtils.addChildReference(c, new LiteralOp(1), 4);
+						HopRewriteUtils.replaceChildReference(c, c.getInput().get(3), new LiteralOp(1), 3); //col lower expr
+						HopRewriteUtils.replaceChildReference(c, c.getInput().get(4), new LiteralOp(1), 4); //col upper expr 
 						c.refreshSizeInformation();
 					}
 
@@ -239,10 +237,8 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 					//reset row index all candidates and refresh sizes (bottom-up)
 					for( int i=ihops.size()-1; i>=0; i-- ) {
 						Hop c = ihops.get(i);
-						HopRewriteUtils.removeChildReferenceByPos(c, c.getInput().get(2), 2); //row lower expr
-						HopRewriteUtils.addChildReference(c, new LiteralOp(1), 2);
-						HopRewriteUtils.removeChildReferenceByPos(c, c.getInput().get(3), 3); //row upper expr
-						HopRewriteUtils.addChildReference(c, new LiteralOp(1), 3);
+						HopRewriteUtils.replaceChildReference(c, c.getInput().get(2), new LiteralOp(1), 2); //row lower expr
+						HopRewriteUtils.replaceChildReference(c, c.getInput().get(3), new LiteralOp(1), 3); //row upper expr
 						((LeftIndexingOp)c).setRowLowerEqualsUpper(true);
 						c.refreshSizeInformation();
 					}
@@ -313,10 +309,8 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 					//reset col index all candidates and refresh sizes (bottom-up)
 					for( int i=ihops.size()-1; i>=0; i-- ) {
 						Hop c = ihops.get(i);
-						HopRewriteUtils.removeChildReferenceByPos(c, c.getInput().get(4), 4); //col lower expr
-						HopRewriteUtils.addChildReference(c, new LiteralOp(1), 4);
-						HopRewriteUtils.removeChildReferenceByPos(c, c.getInput().get(5), 5); //col upper expr
-						HopRewriteUtils.addChildReference(c, new LiteralOp(1), 5);
+						HopRewriteUtils.replaceChildReference(c, c.getInput().get(4), new LiteralOp(1), 4); //col lower expr
+						HopRewriteUtils.replaceChildReference(c, c.getInput().get(5), new LiteralOp(1), 5); //col upper expr
 						((LeftIndexingOp)c).setColLowerEqualsUpper(true);
 						c.refreshSizeInformation();
 					}

@@ -226,11 +226,8 @@ public class RewriteConstantFolding extends HopRewriteRule
 		ec.getVariables().removeAll();
 		
 		//set literal properties (scalar)
- 		literal.setDim1(0);
-		literal.setDim2(0);
-		literal.setRowsInBlock(-1);
-		literal.setColsInBlock(-1);
-		
+		HopRewriteUtils.setOutputParametersForScalar(literal);
+ 		
 		//System.out.println("Constant folded in "+time.stop()+"ms.");
 		
 		return literal;
@@ -278,8 +275,7 @@ public class RewriteConstantFolding extends HopRewriteRule
 		throws HopsException
 	{
 		ArrayList<Hop> in = hop.getInput();
-		return (   hop instanceof BinaryOp 
-				&& ((BinaryOp)hop).getOp()==OpOp2.AND
+		return (   HopRewriteUtils.isBinary(hop, OpOp2.AND)
 				&& ( (in.get(0) instanceof LiteralOp && !((LiteralOp)in.get(0)).getBooleanValue())   
 				   ||(in.get(1) instanceof LiteralOp && !((LiteralOp)in.get(1)).getBooleanValue())) );			
 	}
@@ -288,8 +284,7 @@ public class RewriteConstantFolding extends HopRewriteRule
 		throws HopsException
 	{
 		ArrayList<Hop> in = hop.getInput();
-		return (   hop instanceof BinaryOp 
-				&& ((BinaryOp)hop).getOp()==OpOp2.OR
+		return (   HopRewriteUtils.isBinary(hop, OpOp2.OR)
 				&& ( (in.get(0) instanceof LiteralOp && ((LiteralOp)in.get(0)).getBooleanValue())   
 				   ||(in.get(1) instanceof LiteralOp && ((LiteralOp)in.get(1)).getBooleanValue())) );			
 	}

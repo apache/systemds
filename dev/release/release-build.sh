@@ -249,6 +249,29 @@ if [[ "$RELEASE_PREPARE" == "true" ]]; then
 
     # Build and prepare the release
     $MVN $PUBLISH_PROFILES release:clean release:prepare $DRY_RUN -Darguments="-Dgpg.passphrase=\"$GPG_PASSPHRASE\" -DskipTests" -DreleaseVersion="$RELEASE_VERSION" -DdevelopmentVersion="$DEVELOPMENT_VERSION" -Dtag="$RELEASE_TAG"
+
+    # exit at this point to run followiing steps manually.
+    echo "WARNING: Set followinig enviornment variables and run rest of the steps for 'Release Prepare' " 
+    echo
+    echo "MVN=$MVN"
+    echo "PUBLISH_PROFILES=\"$PUBLISH_PROFILES\"" 
+    echo "DRY_RUN=$DRY_RUN"
+    echo "GPG_PASSPHRASE=$GPG_PASSPHRASE"
+    echo "RELEASE_VERSION=$RELEASE_VERSION"
+    echo "RELEASE_RC=$RELEASE_RC"
+    echo "DEVELOPMENT_VERSION=$DEVELOPMENT_VERSION"
+    echo "RELEASE_TAG=$RELEASE_TAG"
+    echo "RELEASE_WORK_DIR=$RELEASE_WORK_DIR"
+    echo "RELEASE_STAGING_LOCATION=$RELEASE_STAGING_LOCATION"
+    echo "BASE_DIR=$BASE_DIR"
+
+    exit 5
+
+    # Update dev/release/target/release/incubator-systemml/pom.xml  with similar to following contents which is for 0.13.0 RC1
+    #   Update <version>0.13.0-incubating</version>
+    #   Update <tag>v0.13.0-incubating-rc1</tag>
+
+    cd $RELEASE_WORK_DIR/incubator-systemml
     ## Rerunning mvn with clean and package goals, as release:prepare changes ordeer for some dependencies like unpack and shade.
     $MVN $PUBLISH_PROFILES clean package $DRY_RUN -Darguments="-Dgpg.passphrase=\"$GPG_PASSPHRASE\" -DskipTests" -DreleaseVersion="$RELEASE_VERSION" -DdevelopmentVersion="$DEVELOPMENT_VERSION" -Dtag="$RELEASE_TAG"
 

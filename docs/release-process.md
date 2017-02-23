@@ -129,7 +129,7 @@ this OS X example.
 	cd ../..
 
 	# verify spark batch mode
-	export SPARK_HOME=/Users/njindal/spark-2.1.0-bin-hadoop2.7
+	export SPARK_HOME=~/spark-2.1.0-bin-hadoop2.7
 	cd systemml-0.13.0-incubating-bin/target/lib
 	$SPARK_HOME/bin/spark-submit systemml-0.13.0-incubating.jar -s "print('hello world');" -exec hybrid_spark
 
@@ -142,12 +142,12 @@ this OS X example.
 	pip install numpy
 	pip install pandas
 	pip install scipy
-	export SPARK_HOME=/Users/njindal/spark-2.1.0-bin-hadoop2.7
+	export SPARK_HOME=~/spark-2.1.0-bin-hadoop2.7
 	# get into the pyspark prompt
 	cd systemml-0.13.0
 	$SPARK_HOME/bin/pyspark --driver-class-path systemml-java/systemml-0.13.0-incubating.jar
 	# Use this program at the prompt:
-	# import systemml as sml
+	import systemml as sml
 	import numpy as np
 	m1 = sml.matrix(np.ones((3,3)) + 2)
 	m2 = sml.matrix(np.ones((3,3)) + 3)
@@ -243,7 +243,7 @@ Verify that SystemML runs algorithms on Spark locally.
 Here is an example of running the `Univar-Stats.dml` algorithm on random generated data.
 
 	cd systemml-0.13.0-incubating-bin/lib
-	export SPARK_HOME=/Users/njindal/spark-2.1.0-bin-hadoop2.7
+	export SPARK_HOME=~/spark-2.1.0-bin-hadoop2.7
 	$SPARK_HOME/bin/spark-submit systemml-0.13.0-incubating.jar -f ../scripts/datagen/genRandData4Univariate.dml -exec hybrid_spark -args 1000000 100 10 1 2 3 4 uni.mtx
 	echo '1' > uni-types.csv
 	echo '{"rows": 1, "cols": 1, "format": "csv"}' > uni-types.csv.mtd

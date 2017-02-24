@@ -205,9 +205,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction
 		if (instOpcode.equalsIgnoreCase("conv2d")) {
 			MatrixObject image = ec.getMatrixInputForGPUInstruction(_input1.getName());
 			MatrixObject filter = ec.getMatrixInputForGPUInstruction(_input2.getName());
-			if( LibMatrixCUDA.isInSparseFormat(image) || LibMatrixCUDA.isInSparseFormat(filter) ) {
-				throw new DMLRuntimeException("Sparse convolution not implemented");
-			}
+
 			if(image.getNumRows() != N || image.getNumColumns() != C*H*W) 
 				throw new DMLRuntimeException("Incorrect dimensions for image in conv2d");
 			if(filter.getNumRows() != K || filter.getNumColumns() != C*R*S) 
@@ -221,8 +219,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction
 		else if (instOpcode.equalsIgnoreCase("conv2d_backward_filter")) {
 			MatrixObject image = ec.getMatrixInputForGPUInstruction(_input1.getName());
 			MatrixObject dout = ec.getMatrixInputForGPUInstruction(_input2.getName());
-			if(LibMatrixCUDA.isInSparseFormat(image) || LibMatrixCUDA.isInSparseFormat(dout))
-				throw new DMLRuntimeException("Sparse convolution_backward_filter not implemented");
+
 			if(image.getNumRows() != N || image.getNumColumns() != C*H*W) 
 				throw new DMLRuntimeException("Incorrect dimensions for image in conv2d_backward_filter");
 			if(dout.getNumRows() != N || dout.getNumColumns() != K*P*Q) 
@@ -239,8 +236,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction
 		else if (instOpcode.equalsIgnoreCase("conv2d_backward_data")) {
 			MatrixObject filter = ec.getMatrixInputForGPUInstruction(_input1.getName());
 			MatrixObject dout = ec.getMatrixInputForGPUInstruction(_input2.getName());
-			if(LibMatrixCUDA.isInSparseFormat(filter) || LibMatrixCUDA.isInSparseFormat(dout))
-				throw new DMLRuntimeException("Sparse convolution_backward_data not implemented");
+
 			if(filter.getNumRows() != K || filter.getNumColumns() != C*R*S) 
 				throw new DMLRuntimeException("Incorrect dimensions for filter in convolution_backward_data");
 			if(dout.getNumRows() != N || dout.getNumColumns() != K*P*Q) 
@@ -254,8 +250,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction
 		}
 		else if (instOpcode.equalsIgnoreCase("maxpooling")) {
 			MatrixObject image = ec.getMatrixInputForGPUInstruction(_input1.getName());
-			if(LibMatrixCUDA.isInSparseFormat(image))
-				throw new DMLRuntimeException("Sparse maxpooling not implemented");
+
 			if(image.getNumRows() != N || image.getNumColumns() != C*H*W) 
 				throw new DMLRuntimeException("Incorrect dimensions for image in maxpooling: " + 
 						image.getNumRows() + " != " +  N + " || " + image.getNumColumns() + " != " + C*H*W);
@@ -268,8 +263,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction
 		else if (instOpcode.equalsIgnoreCase("maxpooling_backward")) {
 			MatrixObject image = ec.getMatrixInputForGPUInstruction(_input1.getName());
 			MatrixObject dout = ec.getMatrixInputForGPUInstruction(_input2.getName());
-			if(LibMatrixCUDA.isInSparseFormat(image) || LibMatrixCUDA.isInSparseFormat(dout))
-				throw new DMLRuntimeException("Sparse maxpooling_backward_data not implemented");
+			
 			if(dout.getNumRows() != N || dout.getNumColumns() != C*P*Q) 
 				throw new DMLRuntimeException("Incorrect dimensions for dout in maxpooling_backward");
 			if(image.getNumRows() != N || image.getNumColumns() != C*H*W) 

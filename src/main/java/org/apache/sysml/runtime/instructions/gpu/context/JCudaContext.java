@@ -277,6 +277,7 @@ public class JCudaContext extends GPUContext {
 				cudnnDestroy(LibMatrixCUDA.cudnnHandle);
 				cublasDestroy(LibMatrixCUDA.cublasHandle);
 				cusparseDestroy(LibMatrixCUDA.cusparseHandle);
+				GPUContext.deallocExecutorService.shutdown();
 				currContext = null;
 				isGPUContextCreated = false;
 			}

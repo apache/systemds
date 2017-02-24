@@ -19,6 +19,7 @@
 
 package org.apache.sysml.runtime.instructions.gpu;
 
+import jcuda.runtime.JCuda;
 import org.apache.sysml.lops.runtime.RunMRJobs;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
@@ -28,7 +29,7 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 
 public abstract class GPUInstruction extends Instruction 
 {
-	public enum GPUINSTRUCTION_TYPE { AggregateUnary, AggregateBinary, Convolution, MMTSJ, Reorg, ArithmeticBinary, BuiltinUnary };
+	public enum GPUINSTRUCTION_TYPE { AggregateUnary, AggregateBinary, Convolution, MMTSJ, Reorg, ArithmeticBinary, BuiltinUnary, Builtin };
 	
 	protected GPUINSTRUCTION_TYPE _gputype;
 	protected Operator _optr;
@@ -83,4 +84,11 @@ public abstract class GPUInstruction extends Instruction
 	@Override 
 	public abstract void processInstruction(ExecutionContext ec)
 			throws DMLRuntimeException;
+
+	@Override
+	public void postprocessInstruction(ExecutionContext ec)
+					throws DMLRuntimeException
+	{
+		JCuda.cudaDeviceSynchronize();
+	}
 }

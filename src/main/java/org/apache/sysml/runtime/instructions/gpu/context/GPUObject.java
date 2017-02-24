@@ -18,16 +18,18 @@
  */
 package org.apache.sysml.runtime.instructions.gpu.context;
 
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
-
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.utils.Statistics;
+
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 //FIXME merge JCudaObject into GPUObject to avoid unnecessary complexity
 public abstract class GPUObject 
@@ -81,7 +83,7 @@ public abstract class GPUObject
 
 	abstract void allocateDenseMatrixOnDevice() throws DMLRuntimeException;
 	abstract void allocateSparseMatrixOnDevice() throws DMLRuntimeException;
-	abstract void deallocateMemoryOnDevice() throws DMLRuntimeException;
+	abstract void deallocateMemoryOnDevice(boolean synchronous) throws DMLRuntimeException;
 	abstract long getSizeOnDevice() throws DMLRuntimeException;
 	
 	abstract void copyFromHostToDevice() throws DMLRuntimeException;
@@ -99,82 +101,115 @@ public abstract class GPUObject
 	/**
 	 * Cycles through the sorted list of allocated {@link GPUObject} instances. Sorting is based on
 	 * number of (read) locks that have been obtained on it (reverse order). It repeatedly frees up 
-	 * blocks on which there are zero locks until the required size has been freed up.  
+	 * blocks on which there are zero locks until the required size has been freed up.
 	 * // TODO: update it with hybrid policy
 	 * @param GPUSize Desired size to be freed up on the GPU
 	 * @throws DMLRuntimeException If no blocks to free up or if not enough blocks with zero locks on them.	 
 	 */
 	protected static void evict(final long GPUSize) throws DMLRuntimeException {
-        if(GPUContext.allocatedPointers.size() == 0) {
-                throw new DMLRuntimeException("There is not enough memory on device for this matrix!");
-        }
-        
-        Statistics.cudaEvictionCount.addAndGet(1);
+		synchronized (GPUContext.syncObj) {
+			// Check for the completion of asynchronous cudaFree calls
+			try {
+				while (GPUSize > getAvailableMemory()) {
+					Future f = GPUContext.pendingDeallocates.poll();
+					if (f == null) {
+						break;
+					} else if (f.isDone()) {
+						continue;
+					} else {
+						f.get();
+					}
+				}
+			} catch (InterruptedException e) {
+				throw new DMLRuntimeException("There was an error with pending deallocates", e);
+			} catch (ExecutionException e) {
+				throw new DMLRuntimeException("There was an error with pending deallocates", e);
+			}
 
-        synchronized(evictionLock) {
-        	Collections.sort(GPUContext.allocatedPointers, new Comparator<GPUObject>() {
+			if (GPUSize <= getAvailableMemory())
+				return;
 
-        		@Override
-                public int compare(GPUObject p1, GPUObject p2) {
-                	long p1Val = p1.numLocks.get();
-                 	long p2Val = p2.numLocks.get();
+			if (GPUContext.allocatedPointers.size() == 0) {
+				throw new DMLRuntimeException("There is not enough memory on device for this matrix!");
+			}
 
-                	if(p1Val>0 && p2Val>0) {
-                		// Both are locked, so don't sort
-                        return 0;
-                	}
-                	else if(p1Val>0 || p2Val>0) {
-                		// Put the unlocked one to RHS
-                		return Long.compare(p2Val, p1Val);
-                    }
-                	else {
-                		// Both are unlocked
+			Statistics.cudaEvictionCount.addAndGet(1);
 
-                		if(evictionPolicy == EvictionPolicy.MIN_EVICT) {
-                			long p1Size = 0; long p2Size = 0;
-                          	try {
-                          		p1Size = p1.getSizeOnDevice() - GPUSize;
-                            	p2Size = p2.getSizeOnDevice() - GPUSize;
-                         	} catch (DMLRuntimeException e) {
-                         		throw new RuntimeException(e);
-                        	}
+			synchronized (evictionLock) {
+				Collections.sort(GPUContext.allocatedPointers, new Comparator<GPUObject>() {
 
-                          	if(p1Size>=0 && p2Size>=0 ) {
-                          		return Long.compare(p2Size, p1Size);
-                          	}
-                          	else {
-                          		return Long.compare(p1Size, p2Size);
-                          	}
-                     	}
-                		else if(evictionPolicy == EvictionPolicy.LRU || evictionPolicy == EvictionPolicy.LFU) {
-                			return Long.compare(p2.timestamp.get(), p1.timestamp.get());
-                    	}
-                     	else {
-                     		throw new RuntimeException("Unsupported eviction policy:" + evictionPolicy.name());
-                    	}
-                	}
-              	}
-        	});
+					@Override
+					public int compare(GPUObject p1, GPUObject p2) {
+						long p1Val = p1.numLocks.get();
+						long p2Val = p2.numLocks.get();
 
-        	while(GPUSize > getAvailableMemory() && GPUContext.allocatedPointers.size() > 0) {
-        		GPUObject toBeRemoved = GPUContext.allocatedPointers.get(GPUContext.allocatedPointers.size() - 1);
-               	if(toBeRemoved.numLocks.get() > 0) {
-               		throw new DMLRuntimeException("There is not enough memory on device for this matrix!");
-              	}
-               	if(toBeRemoved.isDeviceCopyModified) {
-               		toBeRemoved.copyFromDeviceToHost();
-            	}
-             	toBeRemoved.clearData();
-        	}
-        }
+						if (p1Val > 0 && p2Val > 0) {
+							// Both are locked, so don't sort
+							return 0;
+						} else if (p1Val > 0 || p2Val > 0) {
+							// Put the unlocked one to RHS
+							return Long.compare(p2Val, p1Val);
+						} else {
+							// Both are unlocked
+
+							if (evictionPolicy == EvictionPolicy.MIN_EVICT) {
+								long p1Size = 0;
+								long p2Size = 0;
+								try {
+									p1Size = p1.getSizeOnDevice() - GPUSize;
+									p2Size = p2.getSizeOnDevice() - GPUSize;
+								} catch (DMLRuntimeException e) {
+									throw new RuntimeException(e);
+								}
+
+								if (p1Size >= 0 && p2Size >= 0) {
+									return Long.compare(p2Size, p1Size);
+								} else {
+									return Long.compare(p1Size, p2Size);
+								}
+							} else if (evictionPolicy == EvictionPolicy.LRU || evictionPolicy == EvictionPolicy.LFU) {
+								return Long.compare(p2.timestamp.get(), p1.timestamp.get());
+							} else {
+								throw new RuntimeException("Unsupported eviction policy:" + evictionPolicy.name());
+							}
+						}
+					}
+				});
+
+				while (GPUSize > getAvailableMemory() && GPUContext.allocatedPointers.size() > 0) {
+					GPUObject toBeRemoved = GPUContext.allocatedPointers.get(GPUContext.allocatedPointers.size() - 1);
+					if (toBeRemoved.numLocks.get() > 0) {
+						throw new DMLRuntimeException("There is not enough memory on device for this matrix!");
+					}
+					if (toBeRemoved.isDeviceCopyModified) {
+						toBeRemoved.copyFromDeviceToHost();
+					}
+
+					toBeRemoved.clearData(true);
+				}
+			}
+		}
 	}
-	
+
+	/**
+	 * Asynchronously clears the data associated with this {@link GPUObject} instance
+	 * @throws CacheException ?
+	 */
 	public void clearData() throws CacheException {
+		clearData(false);
+	}
+
+	/**
+	 * Clears the data associated with this {@link GPUObject} instance
+	 * @param synchronous whether to be done synchronously or asynchronously
+	 * @throws CacheException ?
+	 */
+	public void clearData(boolean synchronous) throws CacheException {
 		synchronized(evictionLock) {
 			GPUContext.allocatedPointers.remove(this);
 		}
 		try {
-			deallocateMemoryOnDevice();
+			deallocateMemoryOnDevice(synchronous);
 		} catch (DMLRuntimeException e) {
 			throw new CacheException(e);
 		}

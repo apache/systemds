@@ -173,7 +173,7 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 				else //default unary 
 				{
 					int k = isCumulativeUnaryOperation() ? OptimizerUtils.getConstrainedNumThreads( _maxNumThreads ) : 1;
-					if(_op == OpOp1.SELP) {
+					if(_op == OpOp1.SELP || _op == OpOp1.EXP) {
 						et = findGPUExecTypeByMemEstimate(et);
 					}
 					Unary unary1 = new Unary(input.constructLops(), HopsOpOp1LopsU.get(_op), 

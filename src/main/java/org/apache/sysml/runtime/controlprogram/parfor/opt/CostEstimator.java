@@ -55,6 +55,8 @@ public abstract class CostEstimator
 		SPARSE
 	}
 	
+	protected boolean _inclCondPart = false;
+	
 	/**
 	 * Main leaf node estimation method - to be overwritten by specific cost estimators
 	 * 
@@ -88,6 +90,7 @@ public abstract class CostEstimator
 	 * 
 	 * @param measure ?
 	 * @param node internal representation of a plan alternative for program blocks and instructions
+	 * @param inclCondPart including conditional partitioning
 	 * @return estimate?
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
@@ -97,13 +100,26 @@ public abstract class CostEstimator
 		return getEstimate(measure, node, null);
 	}
 	
+	public double getEstimate( TestMeasure measure, OptNode node, boolean inclCondPart ) 
+		throws DMLRuntimeException
+	{
+		//temporarily change local flag and get estimate
+		boolean oldInclCondPart = _inclCondPart;
+		_inclCondPart = inclCondPart; 
+		double val = getEstimate(measure, node, null);
+		
+		//reset local flag and return
+		_inclCondPart = oldInclCondPart;
+		return val;
+	}
+	
 	/**
 	 * Main estimation method.
 	 * 
-	 * @param measure ?
-	 * @param node internal representation of a plan alternative for program blocks and instructions
+	 * @param measure estimate type (time or memory)
+	 * @param node plan opt tree node
 	 * @param et execution type
-	 * @return estimate?
+	 * @return estimate
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public double getEstimate( TestMeasure measure, OptNode node, ExecType et ) 
@@ -113,7 +129,9 @@ public abstract class CostEstimator
 		
 		if( node.isLeaf() )
 		{
-			if( et != null )
+			if( _inclCondPart && node.getParam(ParamType.DATA_PARTITION_COND_MEM) != null )
+				val = Double.parseDouble(node.getParam(ParamType.DATA_PARTITION_COND_MEM));
+			else if( et != null )
 				val = getLeafNodeEstimate(measure, node, et); //forced type
 			else 
 				val = getLeafNodeEstimate(measure, node); //default	

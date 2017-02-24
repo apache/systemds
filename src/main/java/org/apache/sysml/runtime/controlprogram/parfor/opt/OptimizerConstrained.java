@@ -80,7 +80,6 @@ public class OptimizerConstrained extends OptimizerRuleBased
 		LOG.debug("--- "+getOptMode()+" OPTIMIZER -------");
 
 		OptNode pn = plan.getRoot();
-		double M0 = -1, M1 = -1, M2 = -1; //memory consumption
 
 		//early abort for empty parfor body 
 		if( pn.isLeaf() )
@@ -100,35 +99,45 @@ public class OptimizerConstrained extends OptimizerRuleBased
 		ExecType oldET = pn.getExecType();
 		int oldK = pn.getK();
 		pn.setSerialParFor(); //for basic mem consumption 
-		M0 = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn);
+		double M0a = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn);
 		pn.setExecType(oldET);
 		pn.setK(oldK);
-		LOG.debug(getOptMode()+" OPT: estimated mem (serial exec) M="+toMB(M0) );
+		LOG.debug(getOptMode()+" OPT: estimated mem (serial exec) M="+toMB(M0a) );
 
 		//OPTIMIZE PARFOR PLAN
 
 		// rewrite 1: data partitioning (incl. log. recompile RIX)
 		HashMap<String, PDataPartitionFormat> partitionedMatrices = new HashMap<String,PDataPartitionFormat>();
-		rewriteSetDataPartitioner( pn, ec.getVariables(), partitionedMatrices );
-		M1 = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn); //reestimate
+		rewriteSetDataPartitioner( pn, ec.getVariables(), partitionedMatrices, OptimizerUtils.getLocalMemBudget() );
+		double M0b = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn); //reestimate
 
 		// rewrite 2: remove unnecessary compare matrix
 		rewriteRemoveUnnecessaryCompareMatrix(pn, ec);
 
 		// rewrite 3: rewrite result partitioning (incl. log/phy recompile LIX) 
-		boolean flagLIX = super.rewriteSetResultPartitioning( pn, M1, ec.getVariables() );
-		M1 = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn); //reestimate 
-		M2 = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn, LopProperties.ExecType.CP);
+		boolean flagLIX = super.rewriteSetResultPartitioning( pn, M0b, ec.getVariables() );
+		double M1 = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn); //reestimate 
 		LOG.debug(getOptMode()+" OPT: estimated new mem (serial exec) M="+toMB(M1) );
+		
+		//determine memory consumption for what-if: all-cp or partitioned
+		double M2 = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn, LopProperties.ExecType.CP);
 		LOG.debug(getOptMode()+" OPT: estimated new mem (serial exec, all CP) M="+toMB(M2) );
-
+		double M3 = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn, true);
+		LOG.debug(getOptMode()+" OPT: estimated new mem (cond partitioning) M="+toMB(M3) );
+		
 		// rewrite 4: execution strategy
 		PExecMode tmpmode = getPExecMode(pn); //keep old
-		boolean flagRecompMR = rewriteSetExecutionStategy( pn, M0, M1, M2, flagLIX );
+		boolean flagRecompMR = rewriteSetExecutionStategy( pn, M0a, M1, M2, M3, flagLIX );
 
 		//exec-type-specific rewrites
 		if( pn.getExecType() == ExecType.MR || pn.getExecType() == ExecType.SPARK )
 		{
+			if( M1 > _rm && M3 <= _rm  ) {
+				// rewrite 1: data partitioning (apply conditional partitioning)
+				rewriteSetDataPartitioner( pn, ec.getVariables(), partitionedMatrices, M3 );
+				M1 = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn); //reestimate 		
+			}
+			
 			if( flagRecompMR ){
 				//rewrite 5: set operations exec type
 				rewriteSetOperationsExecType( pn, flagRecompMR );
@@ -221,7 +230,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 	///
 
 	@Override
-	protected boolean rewriteSetDataPartitioner(OptNode n, LocalVariableMap vars, HashMap<String,PDataPartitionFormat> partitionedMatrices)
+	protected boolean rewriteSetDataPartitioner(OptNode n, LocalVariableMap vars, HashMap<String,PDataPartitionFormat> partitionedMatrices, double thetaM)
 		throws DMLRuntimeException
 	{
 		boolean blockwise = false;
@@ -235,7 +244,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 			LOG.debug(getOptMode()+" OPT: forced 'set data partitioner' - result="+n.getParam(ParamType.DATA_PARTITIONER) );
 		}
 		else
-			super.rewriteSetDataPartitioner(n, vars, partitionedMatrices);
+			super.rewriteSetDataPartitioner(n, vars, partitionedMatrices, thetaM);
 
 		return blockwise;
 	}
@@ -246,7 +255,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 	///
 
 	@Override
-	protected boolean rewriteSetExecutionStategy(OptNode n, double M0, double M, double M2, boolean flagLIX)
+	protected boolean rewriteSetExecutionStategy(OptNode n, double M0, double M, double M2, double M3, boolean flagLIX)
 		throws DMLRuntimeException
 	{
 		boolean ret = false;
@@ -270,7 +279,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 			LOG.debug(getOptMode()+" OPT: forced 'set execution strategy' - result="+mode );
 		}
 		else
-			ret = super.rewriteSetExecutionStategy(n, M0, M, M2, flagLIX);
+			ret = super.rewriteSetExecutionStategy(n, M0, M, M2, M3, flagLIX);
 
 		return ret;
 	}

@@ -47,27 +47,25 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 {
 	private static final long serialVersionUID = 30223759283155139L;
 	
-	private String  _prog = null;
-	private boolean _caching = true;
-	private String _inputVar = null;
-	private String _iterVar = null;
+	private final String  _prog;
+	private final boolean _caching;
+	private final String _inputVar;
+	private final String _iterVar;
 	
-	private OutputInfo _oinfo = null;
-	private int _rlen = -1;
-	private int _clen = -1;
-	private int _brlen = -1;
-	private int _bclen = -1;
-	private boolean _tSparseCol = false;
-	private PDataPartitionFormat _dpf = null;
+	private final OutputInfo _oinfo;
+	private final int _rlen;
+	private final int _clen;
+	private final int _brlen;
+	private final int _bclen;
+	private final boolean _tSparseCol;
+	private final PDataPartitionFormat _dpf;
 	
-	private LongAccumulator _aTasks = null;
-	private LongAccumulator _aIters = null;
+	private final LongAccumulator _aTasks;
+	private final LongAccumulator _aIters;
 	
 	public RemoteDPParForSparkWorker(String program, String inputVar, String iterVar, boolean cpCaching, MatrixCharacteristics mc, boolean tSparseCol, PDataPartitionFormat dpf, OutputInfo oinfo, LongAccumulator atasks, LongAccumulator aiters) 
 		throws DMLRuntimeException
 	{
-		//keep inputs (unfortunately, spark does not expose task ids and it would be implementation-dependent
-		//when this constructor is actually called; hence, we do lazy initialization on task execution)
 		_prog = program;
 		_caching = cpCaching;
 		_inputVar = inputVar;
@@ -78,18 +76,13 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 		_aTasks = atasks;
 		_aIters = aiters;
 		
-		//setup matrixblock partition and meta data
-		_rlen = (int)mc.getRows();
-		_clen = (int)mc.getCols();
+		//setup matrix block partition meta data
+		_rlen = (dpf != PDataPartitionFormat.ROW_WISE) ? (int)mc.getRows() : 1;
+		_clen = (dpf != PDataPartitionFormat.COLUMN_WISE) ? (int)mc.getCols() : 1;
 		_brlen = mc.getRowsPerBlock();
 		_bclen = mc.getColsPerBlock();
 		_tSparseCol = tSparseCol;
 		_dpf = dpf;
-		switch( _dpf ) { //create matrix partition for reuse
-			case ROW_WISE:    _rlen = 1; break;
-			case COLUMN_WISE: _clen = 1; break;
-			default:  throw new RuntimeException("Partition format not yet supported in fused partition-execute: "+dpf);
-		}
 	}
 	
 	@Override 
@@ -102,14 +95,14 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 		configureWorker( TaskContext.get().taskAttemptId() ); //requires Spark 1.3
 	
 		//process all matrix partitions of this data partition
+		MatrixBlock partition = null;
 		while( arg0.hasNext() )
 		{
 			Tuple2<Long,Iterable<Writable>> larg = arg0.next();
 			
 			//collect input partition (check via equals because oinfo deserialized instance)
-			MatrixBlock partition = null;
 			if( _oinfo.equals(OutputInfo.BinaryBlockOutputInfo) )
-				partition = collectBinaryBlock( larg._2() );
+				partition = collectBinaryBlock( larg._2(), partition );
 			else
 				partition = collectBinaryCellInput( larg._2() );
 			
@@ -178,42 +171,44 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 	 * will overwrite the result.
 	 * 
 	 * @param valueList iterable writables
+	 * @param reuse matrix block partition for reuse
 	 * @return matrix block
 	 * @throws IOException if IOException occurs
 	 */
-	private MatrixBlock collectBinaryBlock( Iterable<Writable> valueList ) 
+	private MatrixBlock collectBinaryBlock( Iterable<Writable> valueList, MatrixBlock reuse ) 
 		throws IOException 
 	{
-		MatrixBlock partition = null;
+		MatrixBlock partition = reuse;
 		
 		try
 		{
 			//reset reuse block, keep configured representation
 			if( _tSparseCol )
 				partition = new MatrixBlock(_clen, _rlen, true);
+			else if( partition!=null )
+				partition.reset(_rlen, _clen, false);
 			else
 				partition = new MatrixBlock(_rlen, _clen, false);
 
-			for( Writable val : valueList )
-			{
-				PairWritableBlock pairValue = (PairWritableBlock) val;
-				int row_offset = (int)(pairValue.indexes.getRowIndex()-1)*_brlen;
-				int col_offset = (int)(pairValue.indexes.getColumnIndex()-1)*_bclen;
-				MatrixBlock block = pairValue.block;
+			long lnnz = 0;
+			for( Writable val : valueList ) {
+				PairWritableBlock pval = (PairWritableBlock) val;
+				int row_offset = (int)(pval.indexes.getRowIndex()-1)*_brlen;
+				int col_offset = (int)(pval.indexes.getColumnIndex()-1)*_bclen;
 				if( !partition.isInSparseFormat() ) //DENSE
-				{
-					partition.copy( row_offset, row_offset+block.getNumRows()-1, 
-							   col_offset, col_offset+block.getNumColumns()-1,
-							   pairValue.block, false ); 
-				}
+					partition.copy( row_offset, row_offset+pval.block.getNumRows()-1, 
+							   col_offset, col_offset+pval.block.getNumColumns()-1,
+							   pval.block, false ); 
 				else //SPARSE 
-				{
-					partition.appendToSparse(pairValue.block, row_offset, col_offset);
-				}
+					partition.appendToSparse(pval.block, row_offset, col_offset);
+				lnnz += pval.block.getNonZeros();
 			}
 
-			//final partition cleanup
-			cleanupCollectedMatrixPartition( partition, partition.isInSparseFormat() );
+			//post-processing: cleanups if required
+			if( partition.isInSparseFormat() && _clen>_bclen )
+				partition.sortSparseRows();
+			partition.setNonZeros(lnnz);
+			partition.examSparsity();
 		}
 		catch(DMLRuntimeException ex)
 		{
@@ -273,29 +268,17 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 				throw new IOException("Partition format not yet supported in fused partition-execute: "+_dpf);
 		}
 		
-		//final partition cleanup
-		cleanupCollectedMatrixPartition(partition, _tSparseCol);
-		
-		return partition;
-	}
-
-	private void cleanupCollectedMatrixPartition(MatrixBlock partition, boolean sort) 
-		throws IOException
-	{
-		//sort sparse row contents if required
-		if( partition.isInSparseFormat() && sort )
-			partition.sortSparseRows();
-
-		//ensure right number of nnz
-		if( !partition.isInSparseFormat() )
-			partition.recomputeNonZeros();
-			
-		//exam and switch dense/sparse representation
+		//post-processing: cleanups if required
 		try {
+			if( partition.isInSparseFormat() && _tSparseCol )
+				partition.sortSparseRows();
+			partition.recomputeNonZeros();
 			partition.examSparsity();
 		}
-		catch(Exception ex){
+		catch(DMLRuntimeException ex) {
 			throw new IOException(ex);
 		}
+			
+		return partition;
 	}
 }

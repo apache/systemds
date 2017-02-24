@@ -27,6 +27,7 @@ import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartition
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysml.runtime.instructions.spark.utils.SparkUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -66,26 +67,24 @@ public class DataPartitionerRemoteSpark extends DataPartitioner
 
 		try
 		{
-		    //cleanup existing output files
-		    MapReduceTool.deleteFileIfExistOnHDFS(fnameNew);
-	
-		    //determine degree of parallelism
-			int numRed = (int)determineNumReducers(rlen, clen, brlen, bclen, _numRed);
-	
+			//cleanup existing output files
+			MapReduceTool.deleteFileIfExistOnHDFS(fnameNew);
 			//get input rdd
 			JavaPairRDD<MatrixIndexes, MatrixBlock> inRdd = (JavaPairRDD<MatrixIndexes, MatrixBlock>) 
 					sec.getRDDHandleForMatrixObject(in, InputInfo.BinaryBlockInputInfo);
-			MatrixCharacteristics mc = in.getMatrixCharacteristics();
 			
+			//determine degree of parallelism
+			MatrixCharacteristics mc = in.getMatrixCharacteristics();
+			int numRed = (int)determineNumReducers(inRdd, mc, _numRed);
+	
 			//run spark remote data partition job 
 			DataPartitionerRemoteSparkMapper dpfun = new DataPartitionerRemoteSparkMapper(mc, ii, oi, _format);
 			DataPartitionerRemoteSparkReducer wfun = new DataPartitionerRemoteSparkReducer(fnameNew, oi);
 			inRdd.flatMapToPair(dpfun) //partition the input blocks
 			     .groupByKey(numRed)   //group partition blocks 		          
-			     .foreach( wfun );     //write partitions to hdfs 
+			     .foreach(wfun);       //write partitions to hdfs 
 		}
-		catch(Exception ex)
-		{
+		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
 		}
 		
@@ -97,12 +96,17 @@ public class DataPartitionerRemoteSpark extends DataPartitioner
 		}
 	}
 
-	private long determineNumReducers(long rlen, long clen, int brlen, int bclen, long numRed)
+	private long determineNumReducers(JavaPairRDD<MatrixIndexes,MatrixBlock> in,
+		MatrixCharacteristics mc, long numRed)
 	{
-		//set the number of mappers and reducers 
+		long rlen = mc.getRows();
+		long clen = mc.getCols();
+		int brlen = mc.getRowsPerBlock();
+		int bclen = mc.getColsPerBlock();
+		
+		//determine number of reducer groups 
 	    long reducerGroups = -1;
-	    switch( _format )
-	    {
+	    switch( _format ) {
 		    case ROW_WISE: reducerGroups = rlen; break;
 		    case COLUMN_WISE: reducerGroups = clen; break;
 		    case ROW_BLOCK_WISE: reducerGroups = (rlen/brlen)+((rlen%brlen==0)?0:1); break;
@@ -113,6 +117,8 @@ public class DataPartitionerRemoteSpark extends DataPartitioner
 				//do nothing
 	    }
 	    
-	    return (int)Math.min( numRed, reducerGroups); 	
+	  //compute number of reducers (to avoid OOMs and reduce memory pressure)
+	  int numParts = SparkUtils.getNumPreferredPartitions(mc, in);
+	  return Math.max(numRed, Math.min(numParts, reducerGroups));
 	}
 }

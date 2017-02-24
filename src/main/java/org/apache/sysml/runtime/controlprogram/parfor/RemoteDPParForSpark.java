@@ -36,6 +36,7 @@ import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartition
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysml.runtime.instructions.spark.utils.SparkUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MatrixDimensionsMetaData;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
@@ -55,10 +56,9 @@ public class RemoteDPParForSpark
 	
 	protected static final Log LOG = LogFactory.getLog(RemoteDPParForSpark.class.getName());
 
-	public static RemoteParForJobReturn runJob(long pfid, String itervar, String matrixvar, String program, String resultFile, MatrixObject input, 
-			                                   ExecutionContext ec,
-			                                   PDataPartitionFormat dpf, OutputInfo oi, boolean tSparseCol, //config params
-			                                   boolean enableCPCaching, int numReducers )  //opt params
+	public static RemoteParForJobReturn runJob(long pfid, String itervar, String matrixvar, String program, String resultFile, 
+			MatrixObject input, ExecutionContext ec, PDataPartitionFormat dpf, OutputInfo oi, boolean tSparseCol, //config params
+			boolean enableCPCaching, int numReducers )  //opt params
 		throws DMLRuntimeException
 	{
 		String jobname = "ParFor-DPESP";
@@ -71,20 +71,26 @@ public class RemoteDPParForSpark
 		MatrixDimensionsMetaData md = (MatrixDimensionsMetaData) input.getMetaData();
 		MatrixCharacteristics mc = md.getMatrixCharacteristics();
 		InputInfo ii = InputInfo.BinaryBlockInputInfo;
-				
-		//initialize accumulators for tasks/iterations
+
+		//initialize accumulators for tasks/iterations, and inputs
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryBlockRDDHandleForVariable(matrixvar);
 		LongAccumulator aTasks = sc.sc().longAccumulator("tasks");
 		LongAccumulator aIters = sc.sc().longAccumulator("iterations");
+
+		//compute number of reducers (to avoid OOMs and reduce memory pressure)
+		int numParts = SparkUtils.getNumPreferredPartitions(mc, in);
+		int numParts2 = (int)((dpf==PDataPartitionFormat.ROW_BLOCK_WISE) ? mc.getRows() : mc.getCols()); 
+		int numReducers2 = Math.max(numReducers, Math.min(numParts, numParts2));
 		
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryBlockRDDHandleForVariable(matrixvar);
+		//core parfor datapartition-execute
 		DataPartitionerRemoteSparkMapper dpfun = new DataPartitionerRemoteSparkMapper(mc, ii, oi, dpf);
 		RemoteDPParForSparkWorker efun = new RemoteDPParForSparkWorker(program, matrixvar, itervar, 
 				          enableCPCaching, mc, tSparseCol, dpf, oi, aTasks, aIters);
 		List<Tuple2<Long,String>> out = 
-				in.flatMapToPair(dpfun)         //partition the input blocks
-		          .groupByKey(numReducers)      //group partition blocks 		          
-		          .mapPartitionsToPair( efun )  //execute parfor tasks, incl cleanup
-		          .collect();                   //get output handles
+				in.flatMapToPair(dpfun)       //partition the input blocks
+		          .groupByKey(numReducers2)   //group partition blocks 		          
+		          .mapPartitionsToPair(efun)  //execute parfor tasks, incl cleanup
+		          .collect();                 //get output handles
 		
 		//de-serialize results
 		LocalVariableMap[] results = RemoteParForUtils.getResults(out, LOG);

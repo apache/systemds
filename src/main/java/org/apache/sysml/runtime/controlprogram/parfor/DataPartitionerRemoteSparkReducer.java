@@ -30,8 +30,8 @@ import org.apache.hadoop.io.Writable;
 import org.apache.spark.api.java.function.VoidFunction;
 
 import org.apache.sysml.conf.ConfigurationManager;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.parfor.util.PairWritableBlock;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
@@ -40,16 +40,12 @@ import scala.Tuple2;
 
 public class DataPartitionerRemoteSparkReducer implements VoidFunction<Tuple2<Long, Iterable<Writable>>> 
 {
-	
 	private static final long serialVersionUID = -7149865018683261964L;
 	
 	private String _fnameNew = null;
 	
-	public DataPartitionerRemoteSparkReducer(String fnameNew, OutputInfo oi) 
-		throws DMLRuntimeException
-	{
+	public DataPartitionerRemoteSparkReducer(String fnameNew, OutputInfo oi) {
 		_fnameNew = fnameNew;
-		//_oi = oi;
 	}
 
 	@Override
@@ -69,17 +65,13 @@ public class DataPartitionerRemoteSparkReducer implements VoidFunction<Tuple2<Lo
 			FileSystem fs = FileSystem.get(job);
 			Path path = new Path(_fnameNew + File.separator + key);
 			writer = new SequenceFile.Writer(fs, job, path, MatrixIndexes.class, MatrixBlock.class);
-			while( valueList.hasNext() )
-			{
+			while( valueList.hasNext() ) {
 				PairWritableBlock pair = (PairWritableBlock) valueList.next();
 				writer.append(pair.indexes, pair.block);
 			}
 		} 
-		finally
-		{
-			if( writer != null )
-				writer.close();
+		finally {
+			IOUtilFunctions.closeSilently(writer);
 		}	
-	}
-	
+	}	
 }

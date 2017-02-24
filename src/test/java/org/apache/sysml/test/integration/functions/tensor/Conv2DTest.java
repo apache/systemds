@@ -51,6 +51,7 @@ public class Conv2DTest extends AutomatedTestBase
 		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false);
 	}
 	
+	
 	@Test
 	public void testConv2DDense2() 
 	{
@@ -127,6 +128,92 @@ public class Conv2DTest extends AutomatedTestBase
 		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, true);
 	}
 	
+	// --------------------------------------------
+	
+
+	@Test
+	public void testConv2DDense1SP() 
+	{
+		int numImg = 5; int imgSize = 3; int numChannels = 3; int numFilters = 6; int filterSize = 2; int stride = 1; int pad = 0;
+		runConv2DTest(ExecType.SPARK, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false);
+	}
+	
+	@Test
+	public void testConv2DDense2SP() 
+	{
+		int numImg = 1; int imgSize = 10; int numChannels = 4; int numFilters = 3; int filterSize = 4; int stride = 2; int pad = 0;
+		runConv2DTest(ExecType.SPARK, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false);
+	}
+	
+	@Test
+	public void testConv2DDense3SP() 
+	{
+		int numImg = 1; int imgSize = 10; int numChannels = 4; int numFilters = 3; int filterSize = 4; int stride = 2; int pad = 1;
+		runConv2DTest(ExecType.SPARK, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false);
+	}
+	
+	@Test
+	public void testConv2DDense4SP() 
+	{
+		int numImg = 3; int imgSize = 10; int numChannels = 1; int numFilters = 3; int filterSize = 2; int stride = 2; int pad = 1;
+		runConv2DTest(ExecType.SPARK, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false);
+	}
+	
+	@Test
+	public void testConv2DDense5SP() 
+	{
+		int numImg = 3; int imgSize = 8; int numChannels = 2; int numFilters = 3; int filterSize = 3; int stride = 1; int pad = 2;
+		runConv2DTest(ExecType.SPARK, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false);
+	}
+	
+	@Test
+	public void testConv2DDense6SP() 
+	{
+		int numImg = 1; int imgSize = 10; int numChannels = 4; int numFilters = 3; int filterSize = 4; int stride = 1; int pad = 0;
+		runConv2DTest(ExecType.SPARK, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false);
+	}
+	
+	@Test
+	public void testConv2DDense7SP() 
+	{
+		int numImg = 3; int imgSize = 10; int numChannels = 1; int numFilters = 3; int filterSize = 2; int stride = 1; int pad = 0;
+		runConv2DTest(ExecType.SPARK, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false);
+	}
+	
+	@Test
+	public void testConv2DSparse1SP() 
+	{
+		int numImg = 5; int imgSize = 3; int numChannels = 3; int numFilters = 6; int filterSize = 2; int stride = 1; int pad = 0;
+		runConv2DTest(ExecType.SPARK, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, true);
+	}
+	
+	@Test
+	public void testConv2DSparse2SP() 
+	{
+		int numImg = 1; int imgSize = 10; int numChannels = 4; int numFilters = 3; int filterSize = 4; int stride = 2; int pad = 0;
+		runConv2DTest(ExecType.SPARK, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, true);
+	}
+	
+	@Test
+	public void testConv2DSparse3SP() 
+	{
+		int numImg = 1; int imgSize = 10; int numChannels = 4; int numFilters = 3; int filterSize = 4; int stride = 2; int pad = 1;
+		runConv2DTest(ExecType.SPARK, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, true);
+	}
+	
+	public void testConv2DSparse4SP() 
+	{
+		int numImg = 3; int imgSize = 10; int numChannels = 1; int numFilters = 3; int filterSize = 2; int stride = 2; int pad = 1;
+		runConv2DTest(ExecType.SPARK, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, true);
+	}
+	
+	@Test
+	public void testConv2DSparse5SP() 
+	{
+		int numImg = 3; int imgSize = 8; int numChannels = 2; int numFilters = 3; int filterSize = 3; int stride = 1; int pad = 2;
+		runConv2DTest(ExecType.SPARK, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, true);
+	}
+	
 	/**
 	 * 
 	 * @param et
@@ -162,7 +249,7 @@ public class Conv2DTest extends AutomatedTestBase
 				fullDMLScriptName = RI_HOME + TEST_NAME + ".dml";
 				
 				
-				programArgs = new String[]{"-explain", "-args",  "" + imgSize, "" + numImg, 
+				programArgs = new String[]{"-explain", "recompile_runtime", "-args",  "" + imgSize, "" + numImg, 
 					"" + numChannels, "" + numFilters, 
 					"" + filterSize, "" + stride, "" + pad, 
 					output("B")};

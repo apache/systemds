@@ -325,7 +325,7 @@ public class LibMatrixDNN {
 		
 		if(input.getNumRows() != params.N || input.getNumColumns() != params.C*params.H*params.W || 
 				filter.getNumRows() != params.K || filter.getNumColumns() != params.C*params.R*params.S) {
-			throw new DMLRuntimeException("Incorrect input to conv2d");
+			throw new DMLRuntimeException("Incorrect input to conv2d: " + input.getNumRows());
 		}
 		
 		if(DMLScript.STATISTICS && DISPLAY_STATISTICS) {
@@ -389,8 +389,9 @@ public class LibMatrixDNN {
 		}
 		// -----------------------------------------------------------------------------
 		
+		// Recomputing nnz is not required for each individual im2col as it is invoked by outer public methods (i.e. conv2d.
 		//post-processing: maintain nnz
-		params.output.recomputeNonZeros(); 
+		// params.output.recomputeNonZeros(); 
 	}
 	
 	/**
@@ -807,7 +808,7 @@ public class LibMatrixDNN {
 		params.output = outputBlock;
 		
 		if(input.getNumColumns() != params.C*params.H*params.W || input.getNumRows() != params.N) {
-			throw new DMLRuntimeException("Incorrect input dimensions in maxpooling:" + input.getNumRows() + " " + input.getNumColumns() + " " + params.N + " " + params.K*params.P*params.Q);
+			throw new DMLRuntimeException("Incorrect input dimensions in maxpooling:" + input.getNumRows() + " " + input.getNumColumns() + " " + params.N + " " + params.C*params.H*params.W);
 		}
 		
 		fillIndexesArray(params);

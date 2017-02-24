@@ -21,7 +21,6 @@ package org.apache.sysml.hops;
 
 import java.util.ArrayList;
 
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.Hop.MultiThreadedHop;
 import org.apache.sysml.lops.ConvolutionTransform;
@@ -29,6 +28,7 @@ import org.apache.sysml.lops.ConvolutionTransform.OperationTypes;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.lops.LopProperties.ExecType;
+import org.apache.sysml.lops.ReBlock;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -70,6 +70,10 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		return "" + HopsConv2Lops.get(op);
 	}
 
+	private boolean isEligibleForSpark() {
+		return (op == ConvOp.DIRECT_CONV2D || op == ConvOp.MAX_POOLING) ? true : false;
+	}
+	
 	@Override
 	public Lop constructLops()
 		throws HopsException, LopsException 
@@ -90,19 +94,11 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 			case DIRECT_CONV2D_BACKWARD_FILTER:
 			case BIAS_ADD:
 			{	
-				//TODO: Fix me. Currently forcing the instruction to GPU if gpu flag is set
-				if(DMLScript.USE_ACCELERATOR) {
-					et = ExecType.GPU;
+				if(et == ExecType.CP || et == ExecType.GPU || et == ExecType.SPARK) {
 					setLops(constructConvolutionLops(et, inputs));
 					break;
 				}
-				else if(et == ExecType.CP) {
-					setLops(constructConvolutionLops(et, inputs));
-					break;
-				}			
 				else {
-					// TODO: Add support for SPARK/MR backends once we are happy with the performance of
-					// single node Lenet script. 
 					throw new HopsException("Unimplemented ConvolutionOp for execution type: " + et.name());
 				}
 				// break;
@@ -120,34 +116,74 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	public void setOp(ConvOp op) {
 		this.op = op;
 	}
-
+	
+	private int getNumExpectedInputs() {
+		switch(op) {
+			case MAX_POOLING_BACKWARD: 
+			case DIRECT_CONV2D:
+			case DIRECT_CONV2D_BACKWARD_FILTER:
+			case DIRECT_CONV2D_BACKWARD_DATA:
+				return 14;
+			case BIAS_ADD:
+				return 2;
+			default:
+				return 13;
+		}
+	}
+	
+	private boolean isInputReLU(Hop input) {
+		return input instanceof UnaryOp && ((UnaryOp) input).getOp() == OpOp1.SELP;
+	}
+	
+	private boolean isInputConv2d(Hop input) {
+		return input instanceof ConvolutionOp && ((ConvolutionOp) input).getOp() == ConvOp.DIRECT_CONV2D;
+	}
+	
+	@SuppressWarnings("unused")
+	private Lop addReblockIfNecessary(ExecType et, OperationTypes lopOp, Lop in) throws LopsException {
+		if(et == ExecType.SPARK) {
+			switch(lopOp) {
+				case MAX_POOLING:
+				case RELU_MAX_POOLING:
+				case DIRECT_CONV2D:
+				case DIRECT_CONV2D_BIAS_ADD:
+					if(in.getOutputParameters().getColsInBlock() < in.getOutputParameters().getNumCols() || 
+						in.getOutputParameters().getRowsInBlock() != 1) {
+						// Need to add a reblock
+						return new ReBlock(in, 1L, in.getOutputParameters().getNumCols(), DataType.MATRIX, ValueType.DOUBLE, true, et);
+					}
+					else 
+						return in;
+				default:
+					throw new LopsException("Spark operator is not implemented for " + lopOp.name());
+			}
+		}
+		return in;
+	}
+	
+	@SuppressWarnings("unused")
+	private void setReblockedOutputDimension(ExecType et, Lop lop) throws HopsException {
+		if(et == ExecType.SPARK) {
+			lop.getOutputParameters().setDimensions(getDim1(), getDim2(), 1L, getDim2(), getNnz(), getUpdateType());
+		}
+		else {
+			setOutputDimensions(lop);
+		}
+	}
+	
 	public Lop constructConvolutionLops(ExecType et, ArrayList<Hop> inputs) throws HopsException, LopsException {
-		int expectedNumInputs = 13;
-		if(op == ConvOp.MAX_POOLING_BACKWARD 
-				|| op == ConvOp.DIRECT_CONV2D 
-				|| op == ConvOp.DIRECT_CONV2D_BACKWARD_FILTER
-				|| op == ConvOp.DIRECT_CONV2D_BACKWARD_DATA) {
-			expectedNumInputs = 14;
-		}
-		else if(op == ConvOp.BIAS_ADD) {
-			expectedNumInputs = 2;
-		}
-		
-		if(inputs.size() != expectedNumInputs) {
+		if(inputs.size() != getNumExpectedInputs()) 
 			throw new HopsException("Incorrect number of inputs for " + op.name());
-		}
 		
 		Lop in = null; Lop in2 = null;
-		OperationTypes lopOp = HopsConv2Lops.get(op);
-		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 		ArrayList<Hop> inputs1 = inputs;
-		if(op == ConvOp.MAX_POOLING && et == ExecType.CP && inputs.get(0) instanceof UnaryOp
-				&& ((UnaryOp) inputs.get(0)).getOp() == OpOp1.SELP) {
+		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
+		OperationTypes lopOp = HopsConv2Lops.get(op);
+		if(op == ConvOp.MAX_POOLING && (et == ExecType.CP || et == ExecType.SPARK) && isInputReLU(inputs.get(0))) {
 			in = inputs.get(0).getInput().get(0).constructLops();
 			lopOp = OperationTypes.RELU_MAX_POOLING;
 		}
-		else if(op == ConvOp.BIAS_ADD && et == ExecType.CP && inputs.get(0) instanceof ConvolutionOp
-				&& ((ConvolutionOp) inputs.get(0)).getOp() == ConvOp.DIRECT_CONV2D) {
+		else if(op == ConvOp.BIAS_ADD && (et == ExecType.CP || et == ExecType.SPARK) && isInputConv2d(inputs.get(0))) {
 			lopOp = OperationTypes.DIRECT_CONV2D_BIAS_ADD;
 			
 			// the first lop is image 
@@ -161,8 +197,13 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		else {
 			in = inputs.get(0).constructLops();
 		}
-		ConvolutionTransform transform1 = new ConvolutionTransform( in, lopOp, getDataType(), getValueType(), et, k);
+		
+//		// TODO: Inserting reblock requires knowing columns apriori
+//		ConvolutionTransform transform1 = new ConvolutionTransform(addReblockIfNecessary(et, lopOp, in), lopOp, getDataType(), getValueType(), et, k);
+//		setReblockedOutputDimension(et, transform1);
+		ConvolutionTransform transform1 = new ConvolutionTransform(in, lopOp, getDataType(), getValueType(), et, k);
 		setOutputDimensions(transform1);
+		
 		setLineNumbers(transform1);
 		in.addOutput(transform1);
 		
@@ -290,11 +331,6 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		
 		checkAndSetForcedPlatform();
 		
-		//TODO: Remove this once memEstimate is fixed for these instructions 
-		if((op == ConvOp.MAX_POOLING || op == ConvOp.MAX_POOLING_BACKWARD) && DMLScript.USE_ACCELERATOR) {
-			return ExecType.GPU;
-		}
-	
 		ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
 		
 		if( _etypeForced != null ) 			
@@ -303,12 +339,12 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		}
 		else 
 		{	
-			// TODO: After adding Spark backend, uncomment this
 			if ( OptimizerUtils.isMemoryBasedOptLevel() ) {
-				_etype = findExecTypeByMemEstimate();
+				_etype = findGPUExecTypeByMemEstimate(findExecTypeByMemEstimate());
+				// TODO: Fix this after adding remaining spark instructions
+				_etype = !isEligibleForSpark() && _etype == REMOTE ?  ExecType.CP : _etype;
 			}
-			else 
-			{
+			else {
 				_etype = REMOTE;
 			}
 			
@@ -320,8 +356,6 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		if( ConfigurationManager.isDynamicRecompilation() && !dimsKnown(true) && _etype==REMOTE )
 			setRequiresRecompile();
 		
-		_etype = ExecType.CP;
-	
 		return _etype;
 	}
 	

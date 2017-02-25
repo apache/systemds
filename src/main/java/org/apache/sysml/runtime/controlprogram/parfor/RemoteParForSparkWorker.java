@@ -28,6 +28,7 @@ import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.util.LongAccumulator;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDHandler;
 import org.apache.sysml.runtime.util.LocalFileUtils;
 
@@ -35,23 +36,20 @@ import scala.Tuple2;
 
 public class RemoteParForSparkWorker extends ParWorker implements PairFlatMapFunction<Task, Long, String> 
 {
-	
 	private static final long serialVersionUID = -3254950138084272296L;
 
+	private final String  _prog;
 	private boolean _initialized = false;
-	private String  _prog = null;
 	private boolean _caching = true;
 	
-	private LongAccumulator _aTasks = null;
-	private LongAccumulator _aIters = null;
+	private final LongAccumulator _aTasks;
+	private final LongAccumulator _aIters;
 	
 	public RemoteParForSparkWorker(String program, boolean cpCaching, LongAccumulator atasks, LongAccumulator aiters) 
 		throws DMLRuntimeException
 	{
-		//keep inputs (unfortunately, spark does not expose task ids and it would be implementation-dependent
-		//when this constructor is actually called; hence, we do lazy initialization on task execution)
-		_initialized = false;
 		_prog = program;
+		_initialized = false;
 		_caching = cpCaching;
 		
 		//setup spark accumulators
@@ -65,7 +63,7 @@ public class RemoteParForSparkWorker extends ParWorker implements PairFlatMapFun
 	{
 		//lazy parworker initialization
 		if( !_initialized )
-			configureWorker( TaskContext.get().taskAttemptId() ); //requires Spark 1.3
+			configureWorker( TaskContext.get().taskAttemptId() );
 		
 		//execute a single task
 		long numIter = getExecutedIterations();
@@ -98,24 +96,31 @@ public class RemoteParForSparkWorker extends ParWorker implements PairFlatMapFun
 		_numTasks    = 0;
 		_numIters    = 0;
 
-		//init local cache manager 
-		if( !CacheableData.isCachingActive() ) {
-			String uuid = IDHandler.createDistributedUniqueID();
-			LocalFileUtils.createWorkingDirectoryWithUUID( uuid );
-			CacheableData.initCaching( uuid ); //incl activation, cache dir creation (each map task gets its own dir for simplified cleanup)
-		}		
-		if( !CacheableData.cacheEvictionLocalFilePrefix.contains("_") ){ //account for local mode
-			CacheableData.cacheEvictionLocalFilePrefix = CacheableData.cacheEvictionLocalFilePrefix +"_" + _workerID; 
+		//init and register-cleanup of buffer pool (in parfor spark, multiple tasks might 
+		//share the process-local, i.e., per executor, buffer pool; hence we synchronize 
+		//the initialization and immediately register the created directory for cleanup
+		//on process exit, i.e., executor exit, including any files created in the future.
+		synchronized( CacheableData.class ) {
+			if( !CacheableData.isCachingActive() && !InfrastructureAnalyzer.isLocalMode() ) { 
+				//create id, executor working dir, and cache dir
+				String uuid = IDHandler.createDistributedUniqueID();
+				LocalFileUtils.createWorkingDirectoryWithUUID( uuid );
+				CacheableData.initCaching( uuid ); //incl activation and cache dir creation
+				CacheableData.cacheEvictionLocalFilePrefix = 
+						CacheableData.cacheEvictionLocalFilePrefix +"_" + _workerID; 
+				//register entire working dir for delete on shutdown
+				RemoteParForUtils.cleanupWorkingDirectoriesOnShutdown();
+			}	
 		}
 		
 		//ensure that resultvar files are not removed
 		super.pinResultVariables();
 		
-		//enable/disable caching (if required)
-		if( !_caching )
+		//enable/disable caching (if required and not in CP process)
+		if( !_caching && !InfrastructureAnalyzer.isLocalMode() )
 			CacheableData.disableCaching();
 		
-		//make as lazily intialized
+		//mark as initialized
 		_initialized = true;
 	}
 }

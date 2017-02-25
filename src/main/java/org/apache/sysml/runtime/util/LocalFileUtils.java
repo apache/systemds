@@ -305,7 +305,7 @@ public class LocalFileUtils
 		return createWorkingDirectoryWithUUID( DMLScript.getUUID() );
 	}
 
-	public static synchronized String createWorkingDirectoryWithUUID( String uuid )
+	public static String createWorkingDirectoryWithUUID( String uuid )
 		throws DMLRuntimeException 
 	{
 		//create local tmp dir if not existing

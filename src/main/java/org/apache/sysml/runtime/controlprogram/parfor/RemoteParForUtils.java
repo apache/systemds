@@ -190,12 +190,9 @@ public class RemoteParForUtils
 		
 		return ret;
 	}
-		
 	
 	/**
-	 * Cleanup all temporary files created by this SystemML process
-	 * instance.
-	 * 
+	 * Cleanup all temporary files created by this SystemML process.
 	 */
 	public static void cleanupWorkingDirectories()
 	{
@@ -216,6 +213,15 @@ public class RemoteParForUtils
 		}
 	}
 
+	/**
+	 * Cleanup all temporary files created by this SystemML process,
+	 * on shutdown via exit or interrupt.
+	 */
+	public static void cleanupWorkingDirectoriesOnShutdown() {
+		Runtime.getRuntime().addShutdownHook(
+				new DeleteWorkingDirectoriesTask());
+	}
+	
 	public static LocalVariableMap[] getResults( List<Tuple2<Long,String>> out, Log LOG ) 
 		throws DMLRuntimeException
 	{
@@ -240,5 +246,17 @@ public class RemoteParForUtils
 		
 		//create return array
 		return tmp.values().toArray(new LocalVariableMap[0]);	
+	}
+	
+	/**
+	 * Task to be registered as shutdown hook in order to delete the 
+	 * all working directories, including any remaining files, which 
+	 * might not have been created  at time of registration.
+	 */
+	private static class DeleteWorkingDirectoriesTask extends Thread {
+		@Override
+		public void run() {
+			cleanupWorkingDirectories();
+		}
 	}
 }

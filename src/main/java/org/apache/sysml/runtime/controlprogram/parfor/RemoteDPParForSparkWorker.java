@@ -32,6 +32,7 @@ import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartition
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.parfor.Task.TaskType;
+import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDHandler;
 import org.apache.sysml.runtime.controlprogram.parfor.util.PairWritableBlock;
 import org.apache.sysml.runtime.controlprogram.parfor.util.PairWritableCell;
@@ -145,21 +146,28 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 		_numTasks    = 0;
 		_numIters    = 0;
 
-		//init local cache manager 
-		if( !CacheableData.isCachingActive() ) {
-			String uuid = IDHandler.createDistributedUniqueID();
-			LocalFileUtils.createWorkingDirectoryWithUUID( uuid );
-			CacheableData.initCaching( uuid ); //incl activation, cache dir creation (each map task gets its own dir for simplified cleanup)
-		}		
-		if( !CacheableData.cacheEvictionLocalFilePrefix.contains("_") ){ //account for local mode
-			CacheableData.cacheEvictionLocalFilePrefix = CacheableData.cacheEvictionLocalFilePrefix +"_" + _workerID; 
+		//init and register-cleanup of buffer pool (in parfor spark, multiple tasks might 
+		//share the process-local, i.e., per executor, buffer pool; hence we synchronize 
+		//the initialization and immediately register the created directory for cleanup
+		//on process exit, i.e., executor exit, including any files created in the future.
+		synchronized( CacheableData.class ) {
+			if( !CacheableData.isCachingActive() && !InfrastructureAnalyzer.isLocalMode() ) { 
+				//create id, executor working dir, and cache dir
+				String uuid = IDHandler.createDistributedUniqueID();
+				LocalFileUtils.createWorkingDirectoryWithUUID( uuid );
+				CacheableData.initCaching( uuid ); //incl activation and cache dir creation
+				CacheableData.cacheEvictionLocalFilePrefix = 
+						CacheableData.cacheEvictionLocalFilePrefix +"_" + _workerID; 
+				//register entire working dir for delete on shutdown
+				RemoteParForUtils.cleanupWorkingDirectoriesOnShutdown();
+			}	
 		}
 		
 		//ensure that resultvar files are not removed
 		super.pinResultVariables();
 		
-		//enable/disable caching (if required)
-		if( !_caching )
+		//enable/disable caching (if required and not in CP process)
+		if( !_caching && !InfrastructureAnalyzer.isLocalMode() )
 			CacheableData.disableCaching();
 	}
 	

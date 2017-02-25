@@ -31,9 +31,11 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.CompilerConfig.ConfigType;
+import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.Hop;
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.recompile.Recompiler;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.DataIdentifier;
@@ -1345,8 +1347,10 @@ public class ProgramConverter
 		JobConf job = ConfigurationManager.getCachedJobConf();
 		if( !InfrastructureAnalyzer.isLocalMode(job) ) {
 			if( confStr != null && !confStr.trim().isEmpty() ) {
-				DMLConfig config = DMLConfig.parseDMLConfig(confStr);
-				ConfigurationManager.setLocalConfig(config);
+				DMLConfig dmlconf = DMLConfig.parseDMLConfig(confStr);
+				CompilerConfig cconf = OptimizerUtils.constructCompilerConfig(dmlconf);
+				ConfigurationManager.setLocalConfig(dmlconf);
+				ConfigurationManager.setLocalConfig(cconf);
 			}
 			//init internal configuration w/ parsed or default config
 			ParForProgramBlock.initInternalConfigurations(

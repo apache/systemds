@@ -30,7 +30,7 @@ import org.apache.sysml.runtime.instructions.gpu.MatrixMatrixAxpyGPUInstruction;
 import org.apache.sysml.runtime.instructions.gpu.GPUInstruction.GPUINSTRUCTION_TYPE;
 import org.apache.sysml.runtime.instructions.gpu.MMTSJGPUInstruction;
 import org.apache.sysml.runtime.instructions.gpu.ReorgGPUInstruction;
-import org.apache.sysml.runtime.instructions.gpu.context.AggregateUnaryGPUInstruction;
+import org.apache.sysml.runtime.instructions.gpu.AggregateUnaryGPUInstruction;
 
 public class GPUInstructionParser  extends InstructionParser 
 {

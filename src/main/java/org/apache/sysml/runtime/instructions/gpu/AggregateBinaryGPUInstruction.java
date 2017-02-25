@@ -18,6 +18,7 @@
  */
 package org.apache.sysml.runtime.instructions.gpu;
 
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
@@ -95,7 +96,7 @@ public class AggregateBinaryGPUInstruction extends GPUInstruction
 		int clen = (int) (_isRightTransposed ? m2.getNumRows() : m2.getNumColumns());
 
 		ec.setMetaData(_output.getName(), rlen, clen);
-		LibMatrixCUDA.matmult(ec, m1, m2, _output.getName(), _isLeftTransposed, _isRightTransposed);
+		LibMatrixCUDA.matmult(ec, this, m1, m2, _output.getName(), _isLeftTransposed, _isRightTransposed);
         
 		//release inputs/outputs
 		ec.releaseMatrixInputForGPUInstruction(_input1.getName());

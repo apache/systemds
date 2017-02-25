@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 
+import jcuda.runtime.JCuda;
 import org.apache.sysml.runtime.DMLRuntimeException;
 
 import jcuda.CudaException;
@@ -165,7 +166,7 @@ public class JCudaKernels {
 				config.gridDimX, config.gridDimY, config.gridDimZ, 
 				config.blockDimX, config.blockDimY, config.blockDimZ, 
 				config.sharedMemBytes, config.stream, Pointer.to(kernelParams), null));
-		// JCuda.cudaDeviceSynchronize();
+		JCuda.cudaDeviceSynchronize();
 	}
 	
     public static void checkResult(int cuResult) throws DMLRuntimeException {

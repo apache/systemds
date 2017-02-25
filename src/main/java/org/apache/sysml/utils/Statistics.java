@@ -22,14 +22,13 @@ package org.apache.sysml.utils;
 import java.lang.management.CompilationMXBean;
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
+import java.lang.reflect.Array;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.apache.hadoop.util.hash.Hash;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
@@ -47,7 +46,9 @@ import org.apache.sysml.runtime.matrix.data.LibMatrixDNN;
  * This class captures all statistics.
  */
 public class Statistics 
-{	
+{
+	private static AtomicLong statisticsOverhead = new AtomicLong(0);
+
 	private static long compileStartTime = 0;
 	private static long compileEndTime = 0;
 	
@@ -105,7 +106,10 @@ public class Statistics
 	//heavy hitter counts and times 
 	private static HashMap<String,Long> _cpInstTime   =  new HashMap<String, Long>();
 	private static HashMap<String,Long> _cpInstCounts =  new HashMap<String, Long>();
-	
+	private static HashMap<String, HashMap<String, Long>> _cpInstMiscTime = new HashMap<String, HashMap<String, Long>> ();
+	private static HashMap<String, HashMap<String, Long>> _cpInstMiscCount = new HashMap<String, HashMap<String, Long>> ();
+
+
 	private static AtomicLong lTotalUIPVar = new AtomicLong(0);
 	private static AtomicLong lTotalLix = new AtomicLong(0);
 	private static AtomicLong lTotalLixUIP = new AtomicLong(0);
@@ -523,18 +527,74 @@ public class Statistics
 		
 		return opcode;
 	}
-	
-	public synchronized static void maintainCPHeavyHitters( String key, long timeNanos )
-	{
-		Long oldVal = _cpInstTime.get(key);
-		Long newVal = timeNanos + ((oldVal!=null) ? oldVal : 0);
-		_cpInstTime.put(key, newVal);
 
-		Long oldCnt = _cpInstCounts.get(key);
+	/**
+	 * "Maintains" or adds time to per instruction/op timers, also increments associated count
+	 * @param instructionName	name of the instruction/op
+	 * @param timeNanos				time in nano seconds
+	 */
+	public synchronized static void maintainCPHeavyHitters( String instructionName, long timeNanos )
+	{
+		long t0 = System.nanoTime();
+
+		Long oldVal = _cpInstTime.get(instructionName);
+		Long newVal = timeNanos + ((oldVal!=null) ? oldVal : 0);
+		_cpInstTime.put(instructionName, newVal);
+
+		Long oldCnt = _cpInstCounts.get(instructionName);
 		Long newCnt = 1 + ((oldCnt!=null) ? oldCnt : 0);
-		_cpInstCounts.put(key, newCnt);
+		_cpInstCounts.put(instructionName, newCnt);
+
+		statisticsOverhead.addAndGet(System.nanoTime() - t0);
 	}
-	
+
+	/**
+	 * "Maintains" or adds time to miscellaneous timers per instruction/op, also increments associated count
+	 * @param instructionName	name of the instruction/op
+	 * @param miscTimer				name of the miscellaneous timer
+	 * @param timeNanos				time in nano seconds
+	 * @param incrementCount	how much to increment the count of the miscTimer by
+	 */
+	public synchronized static void maintainCPMiscTimes( String instructionName, String miscTimer, long timeNanos, long incrementCount)
+	{
+		if (!DMLScript.STATISTICS)
+			return;
+
+
+		long t0 = System.nanoTime();
+
+		HashMap<String, Long> miscTimesMap = _cpInstMiscTime.get(instructionName);
+		if (miscTimesMap == null) {
+			miscTimesMap = new HashMap<String, Long>();
+			_cpInstMiscTime.put(instructionName, miscTimesMap);
+		}
+		Long oldVal = miscTimesMap.get(miscTimer);
+		Long newVal = timeNanos + ((oldVal!=null) ? oldVal : 0);
+		miscTimesMap.put(miscTimer, newVal);
+
+		HashMap<String, Long> miscCountMap = _cpInstMiscCount.get(instructionName);
+		if (miscCountMap == null){
+			miscCountMap = new HashMap<String, Long>();
+			_cpInstMiscCount.put(instructionName, miscCountMap);
+		}
+		Long oldCnt = miscCountMap.get(miscTimer);
+		Long newCnt = incrementCount + ((oldCnt!=null) ? oldCnt : 0);
+		miscCountMap.put(miscTimer, newCnt);
+
+		statisticsOverhead.addAndGet(System.nanoTime() - t0);
+	}
+
+	/**
+	 * "Maintains" or adds time to miscellaneous timers per instruction/op, also increments associated count by 1
+	 * @param instructionName	name of the instruction/op
+	 * @param miscTimer				name of the miscellaneous timer
+	 * @param timeNanos				time in nano seconds
+	 */
+	public synchronized static void maintainCPMiscTimes( String instructionName, String miscTimer, long timeNanos){
+		maintainCPMiscTimes(instructionName, miscTimer, timeNanos, 1);
+	}
+
+
 	public static Set<String> getCPHeavyHitterOpCodes() {
 		return _cpInstTime.keySet();
 	}
@@ -568,6 +628,31 @@ public class Statistics
 			sb.append(String.format("%.3f", ((double)tmp[len-1-i].getValue())/1000000000));
 			sb.append(" sec \t");
 			sb.append(_cpInstCounts.get(key));
+			sb.append("\t");
+			// Add the miscellaneous timer info
+			HashMap<String, Long> miscTimerMap =_cpInstMiscTime.get(key);
+			if (miscTimerMap != null) {
+				List<Entry<String, Long>> sortedList = new ArrayList<Entry<String, Long>>(miscTimerMap.entrySet());
+				// Sort the times to display by the most expensive first
+				Collections.sort(sortedList, new Comparator<Entry<String, Long>>() {
+					@Override
+					public int compare(Entry<String, Long> o1, Entry<String, Long> o2) {
+						return (int)(o1.getValue() - o2.getValue());
+					}
+				});
+				Iterator<Entry<String, Long>> miscTimeIter = sortedList.iterator();
+				HashMap<String, Long> miscCountMap = _cpInstMiscCount.get(key);
+				while (miscTimeIter.hasNext()) {
+					Map.Entry<String, Long> e = miscTimeIter.next();
+					String miscTimerName = e.getKey();
+					Long miscTimerTime = e.getValue();
+					Long miscCount = miscCountMap.get(miscTimerName);
+					sb.append(miscTimerName + "[" + String.format("%.3f", (double)miscTimerTime/1000000000.0) + "s," + miscCount + "]");
+					if (miscTimeIter.hasNext())
+						sb.append(", ");
+				}
+			}
+
 			sb.append("\n");
 		}
 		
@@ -755,6 +840,7 @@ public class Statistics
 			sb.append("Total JVM GC time:\t\t" + ((double)getJVMgcTime())/1000 + " sec.\n");
 			LibMatrixDNN.appendStatistics(sb);
 			sb.append("Heavy hitter instructions (name, time, count):\n" + getHeavyHitters(maxHeavyHitters));
+			sb.append("Statistics collection overhead: " + ((double)statisticsOverhead.get()*1e-9) + " sec\n");
 		}
 		
 		return sb.toString();

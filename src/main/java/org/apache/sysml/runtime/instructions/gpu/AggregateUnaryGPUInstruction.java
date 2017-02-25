@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysml.runtime.instructions.gpu.context;
+package org.apache.sysml.runtime.instructions.gpu;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
@@ -27,7 +27,6 @@ import org.apache.sysml.runtime.functionobjects.ReduceCol;
 import org.apache.sysml.runtime.functionobjects.ReduceRow;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
-import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
 import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysml.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
@@ -94,7 +93,7 @@ public class AggregateUnaryGPUInstruction extends GPUInstruction {
       ec.setMetaData(_output.getName(), rlen, 1);
     }
 
-    LibMatrixCUDA.unaryAggregate(ec, in1, _output.getName(), (AggregateUnaryOperator)_optr);
+    LibMatrixCUDA.unaryAggregate(ec, this, in1, _output.getName(), (AggregateUnaryOperator)_optr);
 
     //release inputs/outputs
     ec.releaseMatrixInputForGPUInstruction(_input1.getName());

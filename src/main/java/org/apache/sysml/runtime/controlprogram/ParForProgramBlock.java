@@ -23,6 +23,7 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -1063,8 +1064,8 @@ public class ParForProgramBlock extends ForProgramBlock
 		if( _monitor )
 			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_INIT_TASKS_T, time.stop());
 		
-		//write matrices to HDFS 
-		exportMatricesToHDFS(ec);
+		//write matrices to HDFS, except DP matrix which is the input to the RemoteDPParForSpark job
+		exportMatricesToHDFS(ec, _colocatedDPMatrix);
 				
 		// Step 4) submit MR job (wait for finished work)
 		OutputInfo inputOI = ((inputMatrix.getSparsity()<0.1 && inputDPF==PDataPartitionFormat.COLUMN_WISE)||
@@ -1258,37 +1259,33 @@ public class ParForProgramBlock extends ForProgramBlock
 			}
 	}
 
-	private void exportMatricesToHDFS( ExecutionContext ec ) 
+	private void exportMatricesToHDFS(ExecutionContext ec, String... blacklistNames) 
 		throws CacheException 
 	{
 		ParForStatementBlock sb = (ParForStatementBlock)getStatementBlock();
+		HashSet<String> blacklist = new HashSet<String>(Arrays.asList(blacklistNames));
 		
 		if( LIVEVAR_AWARE_EXPORT && sb != null)
 		{
 			//optimization to prevent unnecessary export of matrices
 			//export only variables that are read in the body
 			VariableSet varsRead = sb.variablesRead();
-			for (String key : ec.getVariables().keySet() ) 
-			{
-				Data d = ec.getVariable(key);
-				if (    d.getDataType() == DataType.MATRIX
-					 && varsRead.containsVariable(key)  )
-				{
-					MatrixObject mo = (MatrixObject)d;
-					mo.exportData( _replicationExport );
+			for (String key : ec.getVariables().keySet() ) {
+				if( varsRead.containsVariable(key) && !blacklist.contains(key) ) {
+					Data d = ec.getVariable(key);
+					if( d.getDataType() == DataType.MATRIX )
+						((MatrixObject)d).exportData(_replicationExport);
 				}
 			}
 		}
 		else
 		{
 			//export all matrices in symbol table
-			for (String key : ec.getVariables().keySet() ) 
-			{
-				Data d = ec.getVariable(key);
-				if ( d.getDataType() == DataType.MATRIX )
-				{
-					MatrixObject mo = (MatrixObject)d;
-					mo.exportData( _replicationExport );
+			for (String key : ec.getVariables().keySet() ) {
+				if( !blacklist.contains(key) ) {
+					Data d = ec.getVariable(key);
+					if( d.getDataType() == DataType.MATRIX )
+						((MatrixObject)d).exportData(_replicationExport);
 				}
 			}
 		}

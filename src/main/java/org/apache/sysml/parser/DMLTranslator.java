@@ -56,6 +56,7 @@ import org.apache.sysml.hops.ParameterizedBuiltinOp;
 import org.apache.sysml.hops.ReorgOp;
 import org.apache.sysml.hops.TernaryOp;
 import org.apache.sysml.hops.UnaryOp;
+import org.apache.sysml.hops.codegen.SpoofCompiler;
 import org.apache.sysml.hops.ipa.InterProceduralAnalysis;
 import org.apache.sysml.hops.recompile.Recompiler;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
@@ -278,6 +279,11 @@ public class DMLTranslator
 		resetHopsDAGVisitStatus(dmlp);
 	}
 	
+	public void codgenHopsDAG(DMLProgram dmlp) 
+		throws LanguageException, HopsException, DMLRuntimeException 
+	{
+		SpoofCompiler.generateCode(dmlp);	
+	}
 	
 	public void constructLops(DMLProgram dmlp) throws ParseException, LanguageException, HopsException, LopsException {
 

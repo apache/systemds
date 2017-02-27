@@ -67,10 +67,14 @@ public class DMLConfig
 	public static final String YARN_APPMASTER       = "dml.yarn.appmaster"; 	
 	public static final String YARN_APPMASTERMEM    = "dml.yarn.appmaster.mem"; 
 	public static final String YARN_MAPREDUCEMEM    = "dml.yarn.mapreduce.mem"; 
-	public static final String YARN_APPQUEUE    	= "dml.yarn.app.queue"; 
+	public static final String YARN_APPQUEUE        = "dml.yarn.app.queue"; 
 	public static final String CP_PARALLEL_MATRIXMULT = "cp.parallel.matrixmult";
 	public static final String CP_PARALLEL_TEXTIO   = "cp.parallel.textio";
 	public static final String COMPRESSED_LINALG    = "compressed.linalg";
+	public static final String CODEGEN              = "codegen.enabled"; //boolean
+	public static final String CODEGEN_PLANCACHE    = "codegen.plancache"; //boolean
+	public static final String CODEGEN_LITERALS     = "codegen.literals"; //1..heuristic, 2..always
+
 	// Fraction of available memory to use. The available memory is computer when the JCudaContext is created
 	// to handle the tradeoff on calling cudaMemGetInfo too often.
 	public static final String GPU_MEMORY_UTILIZATION_FACTOR    = "gpu.memory.util.factor";
@@ -107,6 +111,10 @@ public class DMLConfig
 		_defaultVals.put(CP_PARALLEL_MATRIXMULT, "true" );
 		_defaultVals.put(CP_PARALLEL_TEXTIO,     "true" );
 		_defaultVals.put(COMPRESSED_LINALG,      "false" );
+		_defaultVals.put(CODEGEN,                "false" );
+		_defaultVals.put(CODEGEN_PLANCACHE,      "true" );
+		_defaultVals.put(CODEGEN_LITERALS,       "1" );
+		
 		_defaultVals.put(GPU_MEMORY_UTILIZATION_FACTOR,      "0.9" );
 		_defaultVals.put(REFRESH_AVAILABLE_MEMORY_EVERY_TIME,      "true" );
 	}
@@ -392,7 +400,8 @@ public class DMLConfig
 				LOCAL_TMP_DIR,SCRATCH_SPACE,OPTIMIZATION_LEVEL,
 				NUM_REDUCERS, DEFAULT_BLOCK_SIZE,
 				YARN_APPMASTER, YARN_APPMASTERMEM, YARN_MAPREDUCEMEM, 
-				CP_PARALLEL_MATRIXMULT, CP_PARALLEL_TEXTIO
+				CP_PARALLEL_MATRIXMULT, CP_PARALLEL_TEXTIO,
+				COMPRESSED_LINALG, CODEGEN, CODEGEN_LITERALS, CODEGEN_PLANCACHE,
 		}; 
 		
 		StringBuilder sb = new StringBuilder();

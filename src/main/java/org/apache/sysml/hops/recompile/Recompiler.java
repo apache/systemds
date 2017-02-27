@@ -34,6 +34,7 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.wink.json4j.JSONObject;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.hops.DataGenOp;
 import org.apache.sysml.hops.DataOp;
@@ -52,6 +53,7 @@ import org.apache.sysml.hops.MemoTable;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.ReorgOp;
 import org.apache.sysml.hops.UnaryOp;
+import org.apache.sysml.hops.codegen.SpoofCompiler;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.hops.rewrite.ProgramRewriter;
 import org.apache.sysml.lops.CSVReBlock;
@@ -210,6 +212,12 @@ public class Recompiler
 				hopRoot.refreshMemEstimates(memo); 
 			memo.extract(hops, status);
 			
+			// codegen if enabled
+			if( ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.CODEGEN) && SpoofCompiler.RECOMPILE ) {
+				Hop.resetVisitStatus(hops);
+				hops = SpoofCompiler.optimize(hops, SpoofCompiler.ALWAYS_COMPILE_LITERALS);
+			}
+			
 			// construct lops			
 			Dag<Lop> dag = new Dag<Lop>();
 			for( Hop hopRoot : hops ){
@@ -303,6 +311,12 @@ public class Recompiler
 			memo.init(hops, status);
 			hops.resetVisitStatus();
 			hops.refreshMemEstimates(memo); 		
+			
+			// codegen if enabled
+			if( ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.CODEGEN) && SpoofCompiler.RECOMPILE ) {
+				hops.resetVisitStatus();
+				hops = SpoofCompiler.optimize(hops, false);
+			}
 			
 			// construct lops			
 			Dag<Lop> dag = new Dag<Lop>();

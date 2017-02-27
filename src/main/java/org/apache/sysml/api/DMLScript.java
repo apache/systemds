@@ -56,6 +56,7 @@ import org.apache.sysml.debug.DMLDebuggerProgramInfo;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.OptimizerUtils.OptimizationLevel;
+import org.apache.sysml.hops.codegen.SpoofCompiler;
 import org.apache.sysml.hops.globalopt.GlobalOptimizerWrapper;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopsException;
@@ -606,6 +607,20 @@ public class DMLScript
 					 +"Memory Budget = " + ((double)OptimizerUtils.getLocalMemBudget()/1024/1024) + " MB" + "\n");
 		}
 
+		//Step 5.1: Generate code for the rewrited Hop dags 
+		if( dmlconf.getBooleanValue(DMLConfig.CODEGEN) ){
+			SpoofCompiler.USE_PLAN_CACHE = dmlconf.getBooleanValue(DMLConfig.CODEGEN_PLANCACHE);
+			SpoofCompiler.ALWAYS_COMPILE_LITERALS = (dmlconf.getIntValue(DMLConfig.CODEGEN_LITERALS)==2);
+			
+			dmlt.codgenHopsDAG(prog);
+			
+			if (LOG.isDebugEnabled()) {
+				LOG.debug("\n********************** HOPS DAG (After Codegen) *******************");
+				dmlt.printHops(prog);
+				
+			}
+		}
+		
 		//Step 6: construct lops (incl exec type and op selection)
 		dmlt.constructLops(prog);
 

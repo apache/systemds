@@ -110,6 +110,7 @@ public class OptimizerUtils
 	public static boolean ALLOW_CONSTANT_FOLDING = true;
 	
 	public static boolean ALLOW_ALGEBRAIC_SIMPLIFICATION = true; 
+	public static boolean ALLOW_OPERATOR_FUSION = true; 
 	
 	/**
 	 * Enables if-else branch removal for constant predicates (original literals or 
@@ -272,7 +273,7 @@ public class OptimizerUtils
 
 		//handle optimization level
 		int optlevel = dmlconf.getIntValue(DMLConfig.OPTIMIZATION_LEVEL);
-		if( optlevel < 0 || optlevel > 5 )
+		if( optlevel < 0 || optlevel > 7 )
 			throw new DMLRuntimeException("Error: invalid optimization level '"+optlevel+"' (valid values: 0-5).");
 	
 		// This overrides any optimization level that is present in the configuration file.
@@ -336,6 +337,20 @@ public class OptimizerUtils
 				cconf.set(ConfigType.ALLOW_DYN_RECOMPILATION, false);
 				cconf.set(ConfigType.ALLOW_INDIVIDUAL_SB_SPECIFIC_OPS, false);
 				break;
+			
+			// opt level 6 and7: SPOOF w/o fused operators, otherwise same as O2
+			// (hidden optimization levels not documented on purpose, as they will
+			// be removed once SPOOF is production ready)	
+			case 6:
+				cconf.set(ConfigType.OPT_LEVEL, OptimizationLevel.O2_LOCAL_MEMORY_DEFAULT.ordinal());
+				ALLOW_AUTO_VECTORIZATION = false;
+				break;
+			case 7:				
+				cconf.set(ConfigType.OPT_LEVEL, OptimizationLevel.O2_LOCAL_MEMORY_DEFAULT.ordinal());
+				ALLOW_OPERATOR_FUSION = false;
+				ALLOW_AUTO_VECTORIZATION = false;
+				ALLOW_SUM_PRODUCT_REWRITES = false;
+				break;	
 		}
 		
 		//handle parallel text io (incl awareness of thread contention in <jdk8)

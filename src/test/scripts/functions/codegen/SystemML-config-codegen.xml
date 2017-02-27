@@ -25,7 +25,7 @@
    <scratch>scratch_space</scratch> 
 
    <!-- compiler optimization level, valid values: 0 | 1 | 2 | 3 | 4, default: 2 -->
-   <optlevel>2</optlevel>  
+   <optlevel>7</optlevel>  
 
    <!-- default number of reduce tasks per MR job, default: 2 x number of nodes -->
    <numreducers>10</numreducers> 
@@ -54,15 +54,8 @@
    <!-- enables multi-threaded read/write of text formats in singlenode control program -->
    <cp.parallel.textio>true</cp.parallel.textio>
    
-   <!-- enables compressed linear algebra, experimental feature -->
-   <compressed.linalg>false</compressed.linalg>
-   
-   <!-- enables operator fusion via code generation, experimental feature -->
-   <codegen.enabled>false</codegen.enabled>
-   
-   <!-- if codegen.enabled, enables source code caching of fused operators -->
-   <codegen.plancache>false</codegen.plancache>
-   
-   <!-- if codegen.enabled, compile literals as constants: 1..heuristic, 2..always -->
+   <!-- enables automatic code generation -->
+   <codegen.enabled>true</codegen.enabled>
+   <codegen.plancache>true</codegen.plancache>
    <codegen.literals>1</codegen.literals>
 </root>

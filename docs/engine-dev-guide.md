@@ -63,7 +63,7 @@ The `DMLScript` class serves as the main entrypoint to SystemML. Executing
 `DMLScript` with no arguments displays usage information. A script file can be specified using the `-f` argument.
 
 In Eclipse, a Debug Configuration can be created with `DMLScript` as the Main class and any arguments specified as
-Program arguments. A PyDML script requires the addition of a `-python` switch.
+Program arguments.
 
 Suppose that we have a `hello.dml` script containing the following:
 

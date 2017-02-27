@@ -73,6 +73,7 @@ import org.apache.sysml.runtime.instructions.spark.ReorgSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.RmmSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.SPInstruction;
 import org.apache.sysml.runtime.instructions.spark.SPInstruction.SPINSTRUCTION_TYPE;
+import org.apache.sysml.runtime.instructions.spark.SpoofSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.TernarySPInstruction;
 import org.apache.sysml.runtime.instructions.spark.Tsmm2SPInstruction;
 import org.apache.sysml.runtime.instructions.spark.TsmmSPInstruction;
@@ -277,10 +278,12 @@ public class SPInstructionParser extends InstructionParser
 		
 		String2SPInstructionType.put( "binuaggchain", SPINSTRUCTION_TYPE.BinUaggChain);
 		
-		String2SPInstructionType.put( "write"   , SPINSTRUCTION_TYPE.Write);
+		String2SPInstructionType.put( "write"	, SPINSTRUCTION_TYPE.Write);
 	
-		String2SPInstructionType.put( "castdtm"   , SPINSTRUCTION_TYPE.Cast);
-		String2SPInstructionType.put( "castdtf"   , SPINSTRUCTION_TYPE.Cast);
+		String2SPInstructionType.put( "castdtm" , SPINSTRUCTION_TYPE.Cast);
+		String2SPInstructionType.put( "castdtf"	, SPINSTRUCTION_TYPE.Cast);
+		
+		String2SPInstructionType.put( "spoof"	, SPINSTRUCTION_TYPE.SpoofFused);
 	}
 
 	public static SPInstruction parseSingleInstruction (String str ) 
@@ -443,10 +446,13 @@ public class SPInstructionParser extends InstructionParser
 				
 			case Checkpoint:
 				return CheckpointSPInstruction.parseInstruction(str);
-			
+
 			case Compression:
 				return CompressionSPInstruction.parseInstruction(str);
 			
+			case SpoofFused:
+				return SpoofSPInstruction.parseInstruction(str);
+				
 			case Cast:
 				return CastSPInstruction.parseInstruction(str);
 				

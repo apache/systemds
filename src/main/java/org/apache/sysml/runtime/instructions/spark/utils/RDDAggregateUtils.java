@@ -69,13 +69,17 @@ public class RDDAggregateUtils
 		}
 	}
 
-	public static JavaPairRDD<MatrixIndexes, MatrixBlock> sumByKeyStable( JavaPairRDD<MatrixIndexes, MatrixBlock> in )
+	public static JavaPairRDD<MatrixIndexes, MatrixBlock> sumByKeyStable( JavaPairRDD<MatrixIndexes, MatrixBlock> in ) {
+		return sumByKeyStable(in, in.getNumPartitions());
+	}
+	
+	public static JavaPairRDD<MatrixIndexes, MatrixBlock> sumByKeyStable( JavaPairRDD<MatrixIndexes, MatrixBlock> in, int numPartitions  )
 	{
 		//stable sum of blocks per key, by passing correction blocks along with aggregates 		
 		JavaPairRDD<MatrixIndexes, CorrMatrixBlock> tmp = 
 				in.combineByKey( new CreateCorrBlockCombinerFunction(), 
 							     new MergeSumBlockValueFunction(), 
-							     new MergeSumBlockCombinerFunction() );
+							     new MergeSumBlockCombinerFunction(), numPartitions );
 		
 		//strip-off correction blocks from 					     
 		JavaPairRDD<MatrixIndexes, MatrixBlock> out =  

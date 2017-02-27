@@ -61,6 +61,7 @@ import org.apache.sysml.runtime.instructions.cp.QuantileSortCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.QuaternaryCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.RelationalBinaryCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.ReorgCPInstruction;
+import org.apache.sysml.runtime.instructions.cp.SpoofCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.StringInitCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.TernaryCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.UaggOuterChainCPInstruction;
@@ -271,8 +272,9 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "lu",    CPINSTRUCTION_TYPE.MultiReturnBuiltin);
 		String2CPInstructionType.put( "eigen", CPINSTRUCTION_TYPE.MultiReturnBuiltin);
 		
-		String2CPInstructionType.put( "partition", CPINSTRUCTION_TYPE.Partition);
-		String2CPInstructionType.put( "compress", CPINSTRUCTION_TYPE.Compression);
+		String2CPInstructionType.put( "partition", 	CPINSTRUCTION_TYPE.Partition);
+		String2CPInstructionType.put( "compress", 	CPINSTRUCTION_TYPE.Compression);
+		String2CPInstructionType.put( "spoof", 		CPINSTRUCTION_TYPE.SpoofFused);
 		
 		//CP FILE instruction
 		String2CPFileInstructionType = new HashMap<String, CPINSTRUCTION_TYPE>();
@@ -424,16 +426,19 @@ public class CPInstructionParser extends InstructionParser
 			
 			case Partition:
 				return DataPartitionCPInstruction.parseInstruction(str);	
-	
-			case Compression:
-				return (CPInstruction) CompressionCPInstruction.parseInstruction(str);	
-				
+		
 			case CentralMoment:
 				return CentralMomentCPInstruction.parseInstruction(str);
 	
 			case Covariance:
 				return CovarianceCPInstruction.parseInstruction(str);
-				
+	
+			case Compression:
+				return (CPInstruction) CompressionCPInstruction.parseInstruction(str);	
+			
+			case SpoofFused:
+				return SpoofCPInstruction.parseInstruction(str);
+			
 			case INVALID:
 			
 			default: 

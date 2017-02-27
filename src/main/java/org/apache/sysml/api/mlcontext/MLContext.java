@@ -57,11 +57,6 @@ import org.apache.sysml.utils.Explain.ExplainType;
  */
 public class MLContext {
 	/**
-	 * Minimum Spark version supported by SystemML.
-	 */
-	public static final String SYSTEMML_MINIMUM_SPARK_VERSION = "2.1.0";
-
-	/**
 	 * Logger for MLContext
 	 */
 	public static Logger log = Logger.getLogger(MLContext.class);
@@ -109,11 +104,6 @@ public class MLContext {
 	 * explain is set to true.
 	 */
 	private ExplainLevel explainLevel = null;
-
-	/**
-	 * Project information such as the version and the build time.
-	 */
-	private ProjectInfo projectInfo = null;
 
 	/**
 	 * Whether or not all values should be maintained in the symbol table
@@ -220,7 +210,16 @@ public class MLContext {
 		try {
 			MLContextUtil.verifySparkVersionSupported(sc);
 		} catch (MLContextException e) {
-			log.warn("Apache Spark " + SYSTEMML_MINIMUM_SPARK_VERSION + " or above is recommended for SystemML " + this.info().version());
+			if (info() != null) {
+				log.warn("Apache Spark " + this.info().minimumRecommendedSparkVersion() + " or above is recommended for SystemML " + this.info().version());
+			} else {
+				try {
+					String minSparkVersion = MLContextUtil.getMinimumRecommendedSparkVersionFromPom();
+					log.warn("Apache Spark " + minSparkVersion + " or above is recommended for this version of SystemML.");
+				} catch (MLContextException e1) {
+					log.error("Minimum recommended Spark version could not be determined from SystemML jar file manifest or pom.xml");
+				}
+			}
 		}
 
 		if (activeMLContext == null) {
@@ -627,10 +626,13 @@ public class MLContext {
 	 * @return information about the project
 	 */
 	public ProjectInfo info() {
-		if (projectInfo == null) {
-			projectInfo = new ProjectInfo();
+		try {
+			ProjectInfo projectInfo = ProjectInfo.getProjectInfo();
+			return projectInfo;
+		} catch (Exception e) {
+			log.warn("Project information not available");
+			return null;
 		}
-		return projectInfo;
 	}
 
 	/**
@@ -639,6 +641,9 @@ public class MLContext {
 	 * @return the SystemML version number
 	 */
 	public String version() {
+		if (info() == null) {
+			return "Version not available";
+		}
 		return info().version();
 	}
 
@@ -648,6 +653,9 @@ public class MLContext {
 	 * @return the SystemML jar file build time
 	 */
 	public String buildTime() {
+		if (info() == null) {
+			return "Build time not available";
+		}
 		return info().buildTime();
 	}
 

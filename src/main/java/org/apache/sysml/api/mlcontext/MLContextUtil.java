@@ -19,6 +19,7 @@
 
 package org.apache.sysml.api.mlcontext;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.net.URL;
 import java.text.DateFormat;
@@ -31,6 +32,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Scanner;
 import java.util.Set;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -72,6 +76,9 @@ import org.apache.sysml.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 /**
  * Utility class containing methods for working with the MLContext API.
@@ -151,10 +158,12 @@ public final class MLContextUtil {
 	 * 
 	 * @param sparkVersion
 	 *            Spark version string (ie, "1.5.0").
+	 * @param minimumRecommendedSparkVersion
+	 *            Minimum recommended Spark version string (ie, "2.1.0").
 	 * @return {@code true} if Spark version supported; otherwise {@code false}.
 	 */
-	public static boolean isSparkVersionSupported(String sparkVersion) {
-		return compareVersion(sparkVersion, MLContext.SYSTEMML_MINIMUM_SPARK_VERSION) >= 0;
+	public static boolean isSparkVersionSupported(String sparkVersion, String minimumRecommendedSparkVersion) {
+		return compareVersion(sparkVersion, minimumRecommendedSparkVersion) >= 0;
 	}
 
 	/**
@@ -167,9 +176,65 @@ public final class MLContextUtil {
 	 *             thrown if Spark version isn't supported
 	 */
 	public static void verifySparkVersionSupported(SparkContext sc) {
-		if (!MLContextUtil.isSparkVersionSupported(sc.version())) {
+		String minimumRecommendedSparkVersion = null;
+		try {
+			// If this is being called using the SystemML jar file,
+			// ProjectInfo should be available.
+			ProjectInfo projectInfo = ProjectInfo.getProjectInfo();
+			minimumRecommendedSparkVersion = projectInfo.minimumRecommendedSparkVersion();
+		} catch (MLContextException e) {
+			try {
+				// During development (such as in an IDE), there is no jar file typically
+				// built, so attempt to obtain the minimum recommended Spark version from
+				// the pom.xml file
+				minimumRecommendedSparkVersion = getMinimumRecommendedSparkVersionFromPom();
+			} catch (MLContextException e1) {
+				throw new MLContextException("Minimum recommended Spark version could not be determined from SystemML jar file manifest or pom.xml");
+			}
+		}
+		String sparkVersion = sc.version();
+		if (!MLContextUtil.isSparkVersionSupported(sparkVersion, minimumRecommendedSparkVersion)) {
 			throw new MLContextException(
-					"This version of SystemML requires Spark " + MLContext.SYSTEMML_MINIMUM_SPARK_VERSION + " or greater.");
+					"Spark " + sparkVersion + " or greater is recommended for this version of SystemML.");
+		}
+	}
+
+	/**
+	 * Obtain minimum recommended Spark version from the pom.xml file.
+	 * 
+	 * @return the minimum recommended Spark version from XML parsing of the pom file (during development).
+	 */
+	static String getMinimumRecommendedSparkVersionFromPom() {
+		return getUniquePomProperty("minimum.recommended.spark.version");
+	}
+
+	/**
+	 * Obtain the text associated with an XML element from the pom.xml file. In this implementation,
+	 * the element should be uniquely named, or results will be unpredicable.
+	 * 
+	 * @param property unique property (element) from the pom.xml file
+	 * @return the text value associated with the given property
+	 */
+	static String getUniquePomProperty(String property) {
+		File f = new File("pom.xml");
+		if (!f.exists()) {
+			throw new MLContextException("pom.xml not found");
+		}
+		try {
+			DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+			DocumentBuilder builder = dbf.newDocumentBuilder();
+			Document document = builder.parse(f);
+
+			NodeList nodes = document.getElementsByTagName(property);
+			int length = nodes.getLength();
+			if (length == 0) {
+				throw new MLContextException("Property not found in pom.xml");
+			}
+			Node node = nodes.item(0);
+			String value = node.getTextContent();
+			return value;
+		} catch (Exception e) {
+			throw new MLContextException("MLContextException when reading property '" + property + "' from pom.xml", e);
 		}
 	}
 

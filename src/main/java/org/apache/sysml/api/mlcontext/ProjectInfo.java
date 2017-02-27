@@ -36,8 +36,21 @@ import java.util.jar.Manifest;
 public class ProjectInfo {
 
 	SortedMap<String, String> properties = null;
+	static ProjectInfo projectInfo = null;
 
-	public ProjectInfo() {
+	/**
+	 * Return a ProjectInfo singleton instance.
+	 * 
+	 * @return the ProjectInfo singleton instance
+	 */
+	public static ProjectInfo getProjectInfo() {
+		if (projectInfo == null) {
+			projectInfo = new ProjectInfo();
+		}
+		return projectInfo;
+	}
+
+	private ProjectInfo() {
 		JarFile systemMlJar = null;
 		try {
 			String path = this.getClass().getProtectionDomain().getCodeSource().getLocation().getPath();
@@ -99,6 +112,15 @@ public class ProjectInfo {
 	 */
 	public String buildTime() {
 		return property("Build-Time");
+	}
+
+	/**
+	 * Obtain the minimum recommended Spark version from the manifest.
+	 * 
+	 * @return the minimum recommended Spark version
+	 */
+	public String minimumRecommendedSparkVersion() {
+		return property("Minimum-Recommended-Spark-Version");
 	}
 
 	/**

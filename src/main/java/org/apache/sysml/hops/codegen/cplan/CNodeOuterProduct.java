@@ -146,7 +146,7 @@ public class CNodeOuterProduct extends CNodeTpl
 		if( _hash == 0 ) {
 			int h1 = super.hashCode();
 			int h2 = _type.hashCode();
-			int h3 = Boolean.hashCode(_transposeOutput);
+			int h3 = Boolean.valueOf(_transposeOutput).hashCode();
 			_hash = Arrays.hashCode(new int[]{h1,h2,h3});
 		}
 		return _hash;

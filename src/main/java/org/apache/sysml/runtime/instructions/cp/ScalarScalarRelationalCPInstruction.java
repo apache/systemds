@@ -47,20 +47,13 @@ public class ScalarScalarRelationalCPInstruction extends RelationalBinaryCPInstr
 		
 		BinaryOperator dop = (BinaryOperator) _optr;
 		
-		if ( so1 instanceof IntObject && so2 instanceof IntObject ) {
+		if ( (so1 instanceof IntObject || so1 instanceof BooleanObject) 
+				&& (so2 instanceof IntObject || so2 instanceof BooleanObject)  ) {
 			boolean rval = dop.fn.compare ( so1.getLongValue(), so2.getLongValue() );
 			sores = (ScalarObject) new BooleanObject(rval); 
 		}
 		else if ( so1 instanceof DoubleObject && so2 instanceof DoubleObject ) {
 			boolean rval = dop.fn.compare ( so1.getDoubleValue(), so2.getDoubleValue() );
-			sores = (ScalarObject) new BooleanObject(rval); 
-		}
-		else if ( so1 instanceof IntObject && so2 instanceof DoubleObject) {
-			boolean rval = dop.fn.compare ( so1.getLongValue(), so2.getDoubleValue() );
-			sores = (ScalarObject) new BooleanObject(rval); 
-		}
-		else if ( so1 instanceof DoubleObject && so2 instanceof IntObject ) {
-			boolean rval = dop.fn.compare ( so1.getDoubleValue(), so2.getLongValue() );
 			sores = (ScalarObject) new BooleanObject(rval); 
 		}
 		else if ( so1 instanceof BooleanObject && so2 instanceof BooleanObject ) {
@@ -71,7 +64,16 @@ public class ScalarScalarRelationalCPInstruction extends RelationalBinaryCPInstr
 			boolean rval = dop.fn.compare ( so1.getStringValue(), so2.getStringValue() );
 			sores = (ScalarObject) new BooleanObject(rval); 
 		}
-		else throw new DMLRuntimeException("compare(): Invalid combination of value types.");
+		else if ( so1 instanceof IntObject && so2 instanceof DoubleObject) {
+			boolean rval = dop.fn.compare ( so1.getLongValue(), so2.getDoubleValue() );
+			sores = (ScalarObject) new BooleanObject(rval); 
+		}
+		else if ( so1 instanceof DoubleObject && so2 instanceof IntObject ) {
+			boolean rval = dop.fn.compare ( so1.getDoubleValue(), so2.getLongValue() );
+			sores = (ScalarObject) new BooleanObject(rval); 
+		}
+		else throw new DMLRuntimeException("compare(): Invalid combination of value types "
+				+ "(" + so1.getValueType() + ", " + so2.getValueType() + ").");
 		
 		ec.setScalarOutput(output.getName(), sores);
 	}

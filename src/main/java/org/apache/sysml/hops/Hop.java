@@ -789,6 +789,11 @@ public abstract class Hop
 	public ArrayList<Hop> getInput() {
 		return _input;
 	}
+	
+	public void addInput( Hop h ) {
+		_input.add(h);
+		h._parent.add(this);
+	}
 
 	public long getRowsInBlock() {
 		return _rows_in_block;

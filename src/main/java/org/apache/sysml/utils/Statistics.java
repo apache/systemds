@@ -31,6 +31,8 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.controlprogram.caching.CacheStatistics;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
@@ -72,6 +74,15 @@ public class Statistics
 	private static AtomicLong hopRecompilePred = new AtomicLong(0); //count
 	private static AtomicLong hopRecompileSB = new AtomicLong(0);   //count
 
+	//CODEGEN
+	private static AtomicLong codegenCompileTime = new AtomicLong(0); //in nano
+	private static AtomicLong codegenClassCompileTime = new AtomicLong(0); //in nano
+	private static AtomicLong codegenHopCompile = new AtomicLong(0); //count
+	private static AtomicLong codegenCPlanCompile = new AtomicLong(0); //count
+	private static AtomicLong codegenClassCompile = new AtomicLong(0); //count
+	private static AtomicLong codegenPlanCacheHits = new AtomicLong(0); //count
+	private static AtomicLong codegenPlanCacheTotal = new AtomicLong(0); //count
+	
 	//Function recompile stats 
 	private static AtomicLong funRecompileTime = new AtomicLong(0); //in nano sec
 	private static AtomicLong funRecompiles = new AtomicLong(0); //count
@@ -276,6 +287,62 @@ public class Statistics
 	public static void incrementHOPRecompileSB(long delta) {
 		//note: not synchronized due to use of atomics
 		hopRecompileSB.addAndGet(delta);
+	}
+	
+	public static void incrementCodegenDAGCompile() {
+		codegenHopCompile.incrementAndGet();
+	}
+	
+	public static void incrementCodegenCPlanCompile(long delta) {
+		codegenCPlanCompile.addAndGet(delta);
+	}
+	
+	public static void incrementCodegenClassCompile() {
+		codegenClassCompile.incrementAndGet();
+	}
+	
+	public static void incrementCodegenCompileTime(long delta) {
+		codegenCompileTime.addAndGet(delta);
+	}
+	
+	public static void incrementCodegenClassCompileTime(long delta) {
+		codegenClassCompileTime.addAndGet(delta);
+	}
+	
+	public static void incrementCodegenPlanCacheHits() {
+		codegenPlanCacheHits.incrementAndGet();
+	}
+	
+	public static void incrementCodegenPlanCacheTotal() {
+		codegenPlanCacheTotal.incrementAndGet();
+	}
+	
+	public static long getCodegenDAGCompile() {
+		return codegenHopCompile.get();
+	}
+	
+	public static long getCodegenCPlanCompile() {
+		return codegenCPlanCompile.get();
+	}
+	
+	public static long getCodegenClassCompile() {
+		return codegenClassCompile.get();
+	}
+	
+	public static long getCodegenCompileTime() {
+		return codegenCompileTime.get();
+	}
+	
+	public static long getCodegenClassCompileTime() {
+		return codegenClassCompileTime.get();
+	}
+	
+	public static long getCodegenPlanCacheHits() {
+		return codegenPlanCacheHits.get();
+	}
+	
+	public static long getCodegenPlanCacheTotal() {
+		return codegenPlanCacheTotal.get();
 	}
 
 	public static void incrementFunRecompileTime( long delta ) {
@@ -656,6 +723,12 @@ public class Statistics
 			if( getFunRecompiles()>0 ) {
 				sb.append("Functions recompiled:\t\t" + getFunRecompiles() + ".\n");
 				sb.append("Functions recompile time:\t" + String.format("%.3f", ((double)getFunRecompileTime())/1000000000) + " sec.\n");	
+			}
+			if( ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.CODEGEN) ) {
+				sb.append("Codegen compile (DAG, CP, JC):\t" + getCodegenDAGCompile() + "/" + getCodegenCPlanCompile() + "/" + getCodegenClassCompile() + ".\n");
+				sb.append("Codegen compile times (DAG,JC):\t" + String.format("%.3f", (double)getCodegenCompileTime()/1000000000) + "/" + 
+						String.format("%.3f", (double)getCodegenClassCompileTime()/1000000000)  + " sec.\n");
+				sb.append("Codegen plan cache hits:\t" + getCodegenPlanCacheHits() + "/" + getCodegenPlanCacheTotal() + ".\n");
 			}
 			if( OptimizerUtils.isSparkExecutionMode() ){
 				String lazy = SparkExecutionContext.isLazySparkContextCreation() ? "(lazy)" : "(eager)";

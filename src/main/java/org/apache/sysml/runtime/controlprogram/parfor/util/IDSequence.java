@@ -25,8 +25,6 @@ package org.apache.sysml.runtime.controlprogram.parfor.util;
  */
 public class IDSequence 
 {
-
-	
 	private long _current = -1;
 	private boolean wrapAround = false;
 	
@@ -60,22 +58,11 @@ public class IDSequence
 		return _current;
 	}
 	
-	public synchronized void reset()
-	{
+	public synchronized long getCurrentID() {
+		return _current;
+	}
+	
+	public synchronized void reset() {
 		_current = 0;
 	}
-	
-	/*
-	private AtomicLong _seq = new AtomicLong(0);
-	
-	public long getNextID()
-	{
-		return _seq.getAndIncrement();
-	}
-	
-	public void reset()
-	{
-		_seq = new AtomicLong( 0 );
-	}
-	*/
 }

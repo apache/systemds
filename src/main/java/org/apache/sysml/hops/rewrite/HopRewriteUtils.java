@@ -253,6 +253,12 @@ public class HopRewriteUtils
 		child.getParent().add( parent );
 	}
 	
+	public static void rewireAllParentChildReferences( Hop hold, Hop hnew ) {
+		ArrayList<Hop> parents = new ArrayList<Hop>(hold.getParent());
+		for( Hop lparent : parents )
+			HopRewriteUtils.replaceChildReference(lparent, hold, hnew);	
+	}
+	
 	public static void replaceChildReference( Hop parent, Hop inOld, Hop inNew ) {
 		int pos = getChildReferencePos(parent, inOld);
 		removeChildReferenceByPos(parent, inOld, pos);
@@ -491,10 +497,12 @@ public class HopRewriteUtils
 			input2.getDataType().isMatrix() ? input2 : input1;
 		BinaryOp bop = new BinaryOp(mainInput.getName(), mainInput.getDataType(), 
 			mainInput.getValueType(), op, input1, input2);
+		//cleanup value type for relational operations
+		if( bop.isPPredOperation() && bop.getDataType().isScalar() )
+			bop.setValueType(ValueType.BOOLEAN);
 		bop.setOutputBlocksizes(mainInput.getRowsInBlock(), mainInput.getColsInBlock());
 		copyLineNumbers(mainInput, bop);
 		bop.refreshSizeInformation();	
-		
 		return bop;
 	}
 	

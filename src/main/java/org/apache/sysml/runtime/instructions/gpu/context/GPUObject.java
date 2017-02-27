@@ -106,6 +106,7 @@ public abstract class GPUObject
 	 * @param GPUSize Desired size to be freed up on the GPU
 	 * @throws DMLRuntimeException If no blocks to free up or if not enough blocks with zero locks on them.	 
 	 */
+	@SuppressWarnings("rawtypes")
 	protected static void evict(final long GPUSize) throws DMLRuntimeException {
 		synchronized (GPUContext.syncObj) {
 			// Check for the completion of asynchronous cudaFree calls

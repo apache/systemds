@@ -1,0 +1,74 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ * 
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+package org.apache.sysml.runtime.codegen;
+
+import java.io.Serializable;
+import java.util.ArrayList;
+
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.instructions.cp.ScalarObject;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+
+public abstract class SpoofOperator implements Serializable
+{
+	private static final long serialVersionUID = 3834006998853573319L;
+
+	public abstract void execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalars, MatrixBlock out) 
+		throws DMLRuntimeException;
+	
+	public void execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalars, MatrixBlock out, int k) 
+		throws DMLRuntimeException 
+	{
+		//default implementation serial execution
+		execute(inputs, scalars, out);
+	}
+	
+	public ScalarObject execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalars) throws DMLRuntimeException {
+		throw new RuntimeException("Invalid invocation in base class.");
+	}
+	
+	public ScalarObject execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalars, int k) 
+		throws DMLRuntimeException 
+	{
+		//default implementation serial execution
+		return execute(inputs, scalars);
+	}
+	
+	protected double[][] prepInputMatrices(ArrayList<MatrixBlock> inputs) {
+		return prepInputMatrices(inputs, 1);
+	}
+	
+	protected double[][] prepInputMatrices(ArrayList<MatrixBlock> inputs, int offset) {
+		double[][] b = new double[inputs.size()-offset][]; 
+		for(int i=offset; i < inputs.size(); i++) {
+			if( inputs.get(i).isEmptyBlock(false) && !inputs.get(i).isAllocated() )
+				inputs.get(i).allocateDenseBlock(); 
+			b[i-offset] = inputs.get(i).getDenseBlock();
+		}
+		return b;
+	}
+	
+	protected double[] prepInputScalars(ArrayList<ScalarObject> scalarObjects) {
+		double[] scalars = new double[scalarObjects.size()]; 
+		for(int i=0; i < scalarObjects.size(); i++)
+			scalars[i] = scalarObjects.get(i).getDoubleValue();
+		return scalars;
+	}
+}

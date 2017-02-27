@@ -30,6 +30,8 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 
 //FIXME merge JCudaContext into GPUContext as this context is anyway CUDA specific
+
+@SuppressWarnings("rawtypes")
 public abstract class GPUContext {
 
 	public static ArrayList<GPUObject> allocatedPointers = new ArrayList<GPUObject>();

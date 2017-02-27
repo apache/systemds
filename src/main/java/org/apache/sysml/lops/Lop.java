@@ -59,6 +59,7 @@ public abstract class Lop
 		SortKeys, PickValues,
 		Checkpoint, 										//Spark persist into storage level
 		PlusMult, MinusMult,								//CP
+		SpoofFused,											//CP/SP generated fused operator
 		/** CP operation on a variable number of operands */
 		MULTIPLE_CP
 	};
@@ -418,6 +419,40 @@ public abstract class Lop
 		return outParams;
 	}
 	
+
+	/** Method should be overridden if needed
+	 * 
+	 * @param output output
+	 * @return instructions as string
+	 * @throws LopsException if LopsException occurs
+	 */
+	public String getInstructions(String output) throws LopsException {
+		throw new LopsException(this.printErrorLocation() + "Should never be invoked in Baseclass");
+	}
+	
+	/** Method should be overridden if needed
+	 * 
+	 * @param input1 input 1
+	 * @param output output
+	 * @return instructions as string
+	 * @throws LopsException if LopsException occurs
+	 */
+	public String getInstructions(String input1, String output) throws LopsException {
+		throw new LopsException(this.printErrorLocation() + "Should never be invoked in Baseclass");
+	}
+
+	/** Method should be overridden if needed
+	 * 
+	 * @param input1 input 1
+	 * @param input2 input 2
+	 * @param output output
+	 * @return instructions as string
+	 * @throws LopsException if LopsException occurs
+	 */
+	public String getInstructions(String input1, String input2, String output) throws LopsException {
+		throw new LopsException(this.printErrorLocation() + "Should never be invoked in Baseclass");
+	}
+	
 	/**
 	 * Method should be overridden if needed
 	 * 
@@ -478,6 +513,15 @@ public abstract class Lop
 	public String getInstructions(String input1, String input2, String input3, String input4, String input5, String input6, String output) throws LopsException {
 		throw new LopsException(this.printErrorLocation() + "Should never be invoked in Baseclass");
 	}
+
+	public String getInstructions(String input1, String input2, String input3, String input4, String input5, String input6, String input7, String output) throws LopsException {
+		throw new LopsException(this.printErrorLocation() + "Should never be invoked in Baseclass");
+	}
+	
+	public String getInstructions(String[] inputs, String outputs) throws LopsException {
+		throw new LopsException(this.printErrorLocation() + "Should never be invoked in Baseclass");
+	}
+	
 	
 	public String getInstructions(int output_index) throws LopsException {
 		throw new LopsException(this.printErrorLocation() + "Should never be invoked in Baseclass. Lop Type: " + this.getType());
@@ -541,38 +585,6 @@ public abstract class Lop
 		throw new LopsException(this.printErrorLocation() + "Should never be invoked in Baseclass");
 	}
 
-	/** Method should be overridden if needed
-	 * 
-	 * @param input1 input 1
-	 * @param input2 input 2
-	 * @param output output
-	 * @return instructions as string
-	 * @throws LopsException if LopsException occurs
-	 */
-	public String getInstructions(String input1, String input2, String output) throws LopsException {
-		throw new LopsException(this.printErrorLocation() + "Should never be invoked in Baseclass");
-	}
-
-	/** Method should be overridden if needed
-	 * 
-	 * @param input1 input 1
-	 * @param output output
-	 * @return instructions as string
-	 * @throws LopsException if LopsException occurs
-	 */
-	public String getInstructions(String input1, String output) throws LopsException {
-		throw new LopsException(this.printErrorLocation() + "Should never be invoked in Baseclass");
-	}
-
-	/** Method should be overridden if needed
-	 * 
-	 * @param output output
-	 * @return instructions as string
-	 * @throws LopsException if LopsException occurs
-	 */
-	public String getInstructions(String output) throws LopsException {
-		throw new LopsException(this.printErrorLocation() + "Should never be invoked in Baseclass");
-	}
 
 	/** Method should be overridden if needed
 	 * 
@@ -630,37 +642,6 @@ public abstract class Lop
 		return "ERROR: line " + _beginLine + ", column " + _beginColumn + " -- ";
 	}
 
-	//TODO: Leo This might get confused with Rand.getInstructions
-	public String getInstructions(String input, String rowl, String rowu,
-			String coll, String colu, String leftRowDim,
-			String leftColDim, String output) throws LopsException {
-		throw new LopsException(this.printErrorLocation() + "Should never be invoked in Baseclass");
-	}
-	
-	// stride1, stride2, padding1, padding2  
-	// input_shape1, input_shape2, input_shape3, input_shape4, 
-	// filter_shape1, filter_shape2, filter_shape3, filter_shape4,
-	public String getInstructions(String input, String stride1, String stride2, String padding1, String padding2, 
-			String input_shape1, String input_shape2, String input_shape3, String input_shape4,
-			String filter_shape1, String filter_shape2, String filter_shape3, String filter_shape4,
-			String output) throws LopsException {
-		throw new LopsException(this.printErrorLocation() + "Should never be invoked in Baseclass");
-	}
-	
-	public String getInstructions(String input, String dout, String stride1, String stride2, String padding1, String padding2, 
-			String input_shape1, String input_shape2, String input_shape3, String input_shape4,
-			String filter_shape1, String filter_shape2, String filter_shape3, String filter_shape4,
-			String output) throws LopsException {
-		throw new LopsException(this.printErrorLocation() + "Should never be invoked in Baseclass");
-	}
-	
-	public String getInstructions(String input, String bias, String dout, String stride1, String stride2, String padding1, String padding2, 
-			String input_shape1, String input_shape2, String input_shape3, String input_shape4,
-			String filter_shape1, String filter_shape2, String filter_shape3, String filter_shape4,
-			String output) throws LopsException {
-		throw new LopsException(this.printErrorLocation() + "Should never be invoked in Baseclass");
-	}
-	
 	public String getInstructions(int input, int rowl, int rowu,
 			int coll, int colu, int leftRowDim,
 			int leftColDim, int output) throws LopsException {

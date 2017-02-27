@@ -1004,6 +1004,7 @@ public class JCudaObject extends GPUObject {
 	 * @param lda		rows in input matrix
 	 * @param ldc		columns in output matrix
 	 * @return			transposed matrix
+	 * @throws DMLRuntimeException if operation failed
 	 */
 	public static Pointer transpose(Pointer densePtr, int m, int n, int lda, int ldc) throws DMLRuntimeException {
 		Pointer alpha = LibMatrixCUDA.pointerTo(1.0);
@@ -1146,6 +1147,7 @@ public class JCudaObject extends GPUObject {
 	 * @param toFree {@link Pointer} instance to be freed
 	 * @param synchronous true if to be done synchronously
 	 */
+	@SuppressWarnings("rawtypes")
 	public static void cudaFreeHelper(final Pointer toFree, boolean synchronous) {
 		if (synchronous) {
 			cudaFree(toFree);

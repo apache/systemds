@@ -2905,7 +2905,8 @@ public class LibMatrixMult
 		return val; 
 	}
 
-	private static double dotProduct( double[] a, double[] b, int ai, int bi, final int len )
+	//note: public for use by codegen for consistency
+	public static double dotProduct( double[] a, double[] b, int ai, int bi, final int len )
 	{
 		double val = 0;
 		final int bn = len%8;
@@ -2933,7 +2934,8 @@ public class LibMatrixMult
 		return val; 
 	}
 	
-	private static double dotProduct( double[] a, double[] b, int[] aix, int ai, final int bi, final int len )
+	//note: public for use by codegen for consistency
+	public static double dotProduct( double[] a, double[] b, int[] aix, int ai, final int bi, final int len )
 	{
 		double val = 0;
 		final int bn = len%8;
@@ -2962,7 +2964,8 @@ public class LibMatrixMult
 		return val; 
 	}
 
-	private static void vectMultiplyAdd( final double aval, double[] b, double[] c, int bi, int ci, final int len )
+	//note: public for use by codegen for consistency
+	public static void vectMultiplyAdd( final double aval, double[] b, double[] c, int bi, int ci, final int len )
 	{
 		final int bn = len%8;
 		
@@ -3089,7 +3092,8 @@ public class LibMatrixMult
 		}
 	}
 
-	private static void vectMultiplyAdd( final double aval, double[] b, double[] c, int[] bix, final int bi, final int ci, final int len )
+	//note: public for use by codegen for consistency
+	public static void vectMultiplyAdd( final double aval, double[] b, double[] c, int[] bix, final int bi, final int ci, final int len )
 	{
 		final int bn = len%8;
 		
@@ -3115,7 +3119,8 @@ public class LibMatrixMult
 		}
 	}
 
-	private static void vectMultiplyWrite( final double aval, double[] b, double[] c, int bi, int ci, final int len )
+	//note: public for use by codegen for consistency
+	public static void vectMultiplyWrite( final double aval, double[] b, double[] c, int bi, int ci, final int len )
 	{
 		final int bn = len%8;
 		
@@ -3191,7 +3196,8 @@ public class LibMatrixMult
 		}
 	}
 
-	private static void vectAdd( double[] a, double[] c, int ai, int ci, final int len )
+	//note: public for use by codegen for consistency
+	public static void vectAdd( double[] a, double[] c, int ai, int ci, final int len )
 	{
 		final int bn = len%8;
 		

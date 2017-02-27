@@ -166,48 +166,21 @@ public class ConvolutionTransform extends Lop
 		}
 	}
 	
-	// Used by maxpool
-	public String getInstructions(String input, String stride1, String stride2, String padding1, String padding2, 
-			String input_shape1, String input_shape2, String input_shape3, String input_shape4,
-			String filter_shape1, String filter_shape2, String filter_shape3, String filter_shape4,
-			String output) throws LopsException {
+	@Override
+	public String getInstructions(String[] inputs, String output) throws LopsException {
 		StringBuilder sb = new StringBuilder();
 		appendOpcode(sb);
-		sb.append( getInputs().get(0).prepInputOperand(input));
-		appendOperands(1, 13, output, sb);
+		
+		for( int i=0; i<inputs.length-12; i++ ) {
+			if( i > 0 )
+				sb.append( OPERAND_DELIMITOR );
+			sb.append( getInputs().get(i).prepInputOperand(inputs[i]));
+		}
+		appendOperands(inputs.length-12, inputs.length, output, sb);
+		
 		return sb.toString();
 	}
-	
-	// Used by conv2d*, maxpool_bwd
-	public String getInstructions(String input, String dout, String stride1, String stride2, String padding1, String padding2, 
-			String input_shape1, String input_shape2, String input_shape3, String input_shape4,
-			String filter_shape1, String filter_shape2, String filter_shape3, String filter_shape4,
-			String output) throws LopsException {
-		StringBuilder sb = new StringBuilder();
-		appendOpcode(sb);
-		sb.append( getInputs().get(0).prepInputOperand(input));
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( getInputs().get(1).prepInputOperand(dout));
-		appendOperands(2, 14, output, sb);
-		return sb.toString();
-	}
-	
-	// Used by fused conv2d+bias_add
-	public String getInstructions(String input, String bias, String filter, String stride1, String stride2, String padding1, String padding2, 
-			String input_shape1, String input_shape2, String input_shape3, String input_shape4,
-			String filter_shape1, String filter_shape2, String filter_shape3, String filter_shape4,
-			String output) throws LopsException {
-		StringBuilder sb = new StringBuilder();
-		appendOpcode(sb);
-		sb.append( getInputs().get(0).prepInputOperand(input));
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( getInputs().get(1).prepInputOperand(bias));
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( getInputs().get(2).prepInputOperand(filter));
-		appendOperands(3, 15, output, sb);
-		return sb.toString();
-	}
-	
+
 	public void appendOpcode(StringBuilder sb) {
 		sb.append( getExecType() );
 		sb.append( OPERAND_DELIMITOR );

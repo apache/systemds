@@ -25,8 +25,10 @@ import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Writer;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
@@ -63,6 +65,7 @@ public class LocalFileUtils
 	public static final String CATEGORY_PARTITIONING = "partitioning";
 	public static final String CATEGORY_RESULTMERGE  = "resultmerge";
 	public static final String CATEGORY_WORK         = "work";
+	public static final String CATEGORY_CODEGEN      = "codegen";
 	
 	static {
 		_seq = new IDSequence();
@@ -462,5 +465,26 @@ public class LocalFileUtils
 		//TODO white and black lists according to BI requirements
 		
 		return ret;
+	}
+	
+	/**
+	 * Writes a simple text file to local file system.
+	 * 
+	 * @param file output file
+	 * @param text content of text file 
+	 * @throws IOException
+	 */
+	public static void writeTextFile( File file, String text ) 
+		throws IOException 
+	{
+		Writer writer = null;
+		try {
+			writer = new FileWriter(file);
+			writer.write(text);
+			writer.flush();
+		}
+		finally {
+			IOUtilFunctions.closeSilently(writer);
+		}
 	}
 }

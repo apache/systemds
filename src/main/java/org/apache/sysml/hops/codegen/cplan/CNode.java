@@ -144,7 +144,7 @@ public abstract class CNode
 					tmp[pos++] = c.hashCode();
 			tmp[numIn+0] = (_output!=null)?_output.hashCode():0;
 			tmp[numIn+1] = (_dataType!=null)?_dataType.hashCode():0;
-			tmp[numIn+2] = Boolean.hashCode(_literal);		
+			tmp[numIn+2] = Boolean.valueOf(_literal).hashCode();
 			_hash = Arrays.hashCode(tmp);
 		}
 		return _hash;

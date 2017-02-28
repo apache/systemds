@@ -61,8 +61,6 @@ limitations under the License.
     * [Transforming Frames](dml-language-reference.html#transforming-frames)
   * [Modules](dml-language-reference.html#modules)
   * [Reserved Keywords](dml-language-reference.html#reserved-keywords)
-  * [Invocation of SystemML](dml-language-reference.html#invocation-of-systemml)
-  * [MLContext API](dml-language-reference.html#mlcontext-api)
 
 
 ## Introduction
@@ -334,7 +332,7 @@ var is an integer scalar variable. lower, upper, and increment are integer expre
 
 [lower]:[upper] defines a sequence of numbers with increment 1: {lower, lower + 1, lower + 2, …, upper – 1, upper}.
 
-Similarly, seq([lower],[upper],[increment]) defines a sequence of numbers: {lower, lower + increment, lower + 2(increment), … }. For each element in the sequence, var is assigned the value, and statements in the for loop body are executed.
+Similarly, `seq([lower],[upper],[increment])` defines a sequence of numbers: {lower, lower + increment, lower + 2(increment), … }. For each element in the sequence, var is assigned the value, and statements in the for loop body are executed.
 
 The for loop body may contain any sequence of statements. The statements in the for statement body must be surrounded by braces, even if the body only has a single statement.
 

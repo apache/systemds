@@ -63,6 +63,7 @@ import scala.Tuple6;
 import scala.Tuple7;
 import scala.Tuple8;
 import scala.Tuple9;
+import scala.Option;
 import org.apache.sysml.api.linalg.Matrix;
 
 /**

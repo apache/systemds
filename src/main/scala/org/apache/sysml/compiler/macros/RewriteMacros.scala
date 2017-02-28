@@ -55,12 +55,10 @@ class RewriteMacros(val c: blackbox.Context) extends MacroCompiler with DML {
                  (transformations: (u.Tree => u.Tree)*): u.Tree => u.Tree = {
 
     val bld = Seq.newBuilder[u.Tree => u.Tree]
-    //@formatter:off
     if (typeCheck) bld += { this.typeCheck(_) }
     if (withPre)   bld ++= preProcess
     bld ++= transformations
     if (withPost)  bld ++= postProcess
-    //@formatter:on
     val steps = bld.result()
 
     if (!printAllTrees) scala.Function.chain(steps)
@@ -198,13 +196,15 @@ class RewriteMacros(val c: blackbox.Context) extends MacroCompiler with DML {
       val outputs = Seq(..${outParams})
 
       def run(ml: _root_.org.apache.sysml.api.mlcontext.MLContext, printDML: Boolean = false): ${u.weakTypeOf[T]} = {
-        println("=" * 80)
-        println((" " * 26) + "RUNNING GENERATED DML SCRIPT")
-        println("=" * 80)
-        println(${formatted})
-        println("=" * 80)
+        if (printDML) {
+          println("=" * 80)
+          println((" " * 26) + "RUNNING GENERATED DML SCRIPT")
+          println("=" * 80)
+          println(${formatted})
+          println("=" * 80)
+          println("Input parameters:" +  List(..${inParams}).mkString(", "))
+        }
 
-        println("Input parameters:" +  List(..${inParams}).mkString(", "))
         val script = dml($dmlString).in(inputs).out(..${outParams})
         val res = ml.execute(script)
         val out = $result

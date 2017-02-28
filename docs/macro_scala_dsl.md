@@ -64,7 +64,7 @@ To write algorithms, you can either setup SystemML in the Spark shell for write 
 
 ### Algorithm structure
 
-Algorithms in the Scala DSL are implemented as arguments to the macro `parallelize` which works just like a Scala function and takes a Scala expression as input. The simplest setup would be in a Scala `App` object as in:
+Algorithms in the Scala DSL are implemented as arguments to the macro `systemml` which works just like a Scala function and takes a Scala expression as input. The simplest setup would be in a Scala `App` object as in:
 
 ```scala
 package org.apache.sysml.api.linalg.examples
@@ -116,7 +116,7 @@ object MyAlgorithm extends App {
 
   val mlctx = new MLContext(sc)
 
-  val algorithm = parallelize {
+  val algorithm = systemml {
     val A: Matrix = Matrix.rand(5, 3)
     val B: Matrix = Matrix.rand(3, 7)
     val C: Matrix = A %*% B

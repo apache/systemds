@@ -19,6 +19,9 @@
 
 package org.apache.sysml.api.mlcontext;
 
+import java.lang.Boolean;
+import java.lang.Double;
+import java.lang.Long;
 import java.util.Set;
 
 import org.apache.spark.api.java.JavaRDD;
@@ -38,28 +41,9 @@ import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.instructions.cp.StringObject;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils;
 
-import scala.Tuple1;
-import scala.Tuple10;
-import scala.Tuple11;
-import scala.Tuple12;
-import scala.Tuple13;
-import scala.Tuple14;
-import scala.Tuple15;
-import scala.Tuple16;
-import scala.Tuple17;
-import scala.Tuple18;
-import scala.Tuple19;
-import scala.Tuple2;
-import scala.Tuple20;
-import scala.Tuple21;
-import scala.Tuple22;
-import scala.Tuple3;
-import scala.Tuple4;
-import scala.Tuple5;
-import scala.Tuple6;
-import scala.Tuple7;
-import scala.Tuple8;
-import scala.Tuple9;
+import org.apache.sysml.api.linalg.Matrix;
+
+import scala.*;
 
 /**
  * MLResults handles the results returned from executing a Script using the
@@ -473,7 +457,8 @@ public class MLResults {
 	 */
 	public Matrix getMatrix(String outputName) {
 		MatrixObject mo = getMatrixObject(outputName);
-		return new Matrix(mo, sparkExecutionContext);
+		//return new Matrix(mo, sparkExecutionContext);
+		return new Matrix((int) mo.getNumRows(), (int) mo.getNumColumns(), Option.apply(mo), Option.apply(sparkExecutionContext), Option.<double[]>empty());
 	}
 
 	/**

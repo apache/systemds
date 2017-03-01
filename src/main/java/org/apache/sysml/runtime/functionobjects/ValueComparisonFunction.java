@@ -17,49 +17,23 @@
  * under the License.
  */
 
-package org.apache.sysml.runtime.instructions.cp;
+package org.apache.sysml.runtime.functionobjects;
 
+import java.io.Serializable;
 
-import org.apache.sysml.parser.Expression.ValueType;
-
-public class IntObject extends ScalarObject
+/**
+ * Abstraction for comparison (relational) operators in order to 
+ * force a proper implementation by all relevant subclasses.
+ */
+public abstract class ValueComparisonFunction extends ValueFunction implements Serializable
 {
-	private static final long serialVersionUID = 353170585998999528L;
-
-	//we use consistently to the compiler long in terms of integer (8 byte)
-	private long _value;
-
-	public IntObject(long val) {
-		this(null,val);
-	}
-
-	public IntObject(String name, long val) {
-		super(name, ValueType.INT);
-		_value = val;
-	}
-
-	@Override
-	public boolean getBooleanValue(){
-		return (_value!=0);
-	}
+	private static final long serialVersionUID = 6021132561216734747L;
 	
-	@Override
-	public long getLongValue(){
-		return _value;
-	}
+	public abstract boolean compare(double in1, double in2);
 	
-	@Override
-	public double getDoubleValue(){
-		return (double) _value;
-	}
-
-	@Override
-	public String getStringValue(){
-		return Long.toString(_value);
-	}
+	public abstract boolean compare(long in1, long in2);
 	
-	@Override
-	public Object getValue(){
-		return _value;
-	}
+	public abstract boolean compare(boolean in1, boolean in2);
+	
+	public abstract boolean compare(String in1, String in2);
 }

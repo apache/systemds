@@ -183,11 +183,6 @@ public class ParameterizedBuiltin extends ValueFunction
 		}
 	}
 	
-	public Object clone() throws CloneNotSupportedException {
-		// cloning is not supported for singleton classes
-		throw new CloneNotSupportedException();
-	}
-	
 	public double execute(HashMap<String,String> params) throws DMLRuntimeException {
 		switch(bFunc) {
 		case CDF:

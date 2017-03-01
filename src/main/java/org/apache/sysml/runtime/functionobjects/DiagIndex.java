@@ -19,7 +19,6 @@
 
 package org.apache.sysml.runtime.functionobjects;
 
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
@@ -40,11 +39,6 @@ public class DiagIndex extends IndexFunction
 		if ( singleObj == null )
 			singleObj = new DiagIndex();
 		return singleObj;
-	}
-	
-	public Object clone() throws CloneNotSupportedException {
-		// cloning is not supported for singleton classes
-		throw new CloneNotSupportedException();
 	}
 	
 	@Override
@@ -68,13 +62,12 @@ public class DiagIndex extends IndexFunction
 		return false;
 	}
 	
-	public boolean computeDimension(MatrixCharacteristics in, MatrixCharacteristics out) throws DMLRuntimeException
-	{
+	@Override
+	public boolean computeDimension(MatrixCharacteristics in, MatrixCharacteristics out) {
 		if( in.getCols() == 1 ) //diagV2M
 			out.set(in.getRows(), in.getRows(), in.getRowsPerBlock(), in.getRowsPerBlock());
 		else //diagM2V
 			out.set(in.getRows(), 1, in.getRowsPerBlock(), in.getRowsPerBlock());
 		return false;
 	}
-
 }

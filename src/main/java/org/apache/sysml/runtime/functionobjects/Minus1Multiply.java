@@ -37,23 +37,8 @@ public class Minus1Multiply extends ValueFunction implements Serializable
 		return singleObj;
 	}
 	
-	public Object clone() throws CloneNotSupportedException {
-		// cloning is not supported for singleton classes
-		throw new CloneNotSupportedException();
-	}
-	
 	@Override
 	public double execute(double in1, double in2) {
-		return 1 - in1 * in2;
-	}
-
-	@Override
-	public double execute(double in1, long in2) {
-		return 1 - in1 * in2;
-	}
-
-	@Override
-	public double execute(long in1, double in2) {
 		return 1 - in1 * in2;
 	}
 
@@ -66,5 +51,4 @@ public class Minus1Multiply extends ValueFunction implements Serializable
 		
 		return 1 - in1 * in2;
 	}
-
 }

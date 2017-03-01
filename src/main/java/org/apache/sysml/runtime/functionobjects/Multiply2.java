@@ -21,7 +21,6 @@ package org.apache.sysml.runtime.functionobjects;
 
 public class Multiply2 extends ValueFunction 
 {
-
 	private static final long serialVersionUID = -3762789087715600938L;
 
 	private static Multiply2 singleObj = null;
@@ -36,11 +35,6 @@ public class Multiply2 extends ValueFunction
 		return singleObj;
 	}
 	
-	public Object clone() throws CloneNotSupportedException {
-		// cloning is not supported for singleton classes
-		throw new CloneNotSupportedException();
-	}
-	
 	@Override
 	public double execute(double in1) {
 		return in1 + in1; //ignore in2 because always 2; 
@@ -48,16 +42,6 @@ public class Multiply2 extends ValueFunction
 	
 	@Override
 	public double execute(double in1, double in2) {
-		return in1 + in1; //ignore in2 because always 2; 
-	}
-
-	@Override
-	public double execute(double in1, long in2) {
-		return in1 + in1; //ignore in2 because always 2; 
-	}
-
-	@Override
-	public double execute(long in1, double in2) {
 		return in1 + in1; //ignore in2 because always 2; 
 	}
 

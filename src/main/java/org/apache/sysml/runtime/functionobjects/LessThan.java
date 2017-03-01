@@ -19,9 +19,8 @@
 
 package org.apache.sysml.runtime.functionobjects;
 
-public class LessThan extends ValueFunction 
+public class LessThan extends ValueComparisonFunction
 {
-
 	private static final long serialVersionUID = -5598503447690597942L;
 
 	private static LessThan singleObj = null;
@@ -34,11 +33,6 @@ public class LessThan extends ValueFunction
 		if ( singleObj == null )
 			singleObj = new LessThan();
 		return singleObj;
-	}
-	
-	public Object clone() throws CloneNotSupportedException {
-		// cloning is not supported for singleton classes
-		throw new CloneNotSupportedException();
 	}
 
 	/*
@@ -71,13 +65,8 @@ public class LessThan extends ValueFunction
 	}
 
 	@Override
-	public boolean compare(double in1, long in2) {
-		return (in1 < in2);
-	}
-
-	@Override
-	public boolean compare(long in1, double in2) {
-		return (in1 < in2);
+	public boolean compare(boolean in1, boolean in2) {
+		return (!in1 && in2);
 	}
 	
 	@Override

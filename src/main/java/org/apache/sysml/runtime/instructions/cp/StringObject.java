@@ -24,7 +24,6 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 
 public class StringObject extends ScalarObject 
 {	
-
 	private static final long serialVersionUID = 2464839775369002455L;
 
 	private static final int MAX_STRING_SIZE = 1*1024*1024; //1MB
@@ -64,24 +63,13 @@ public class StringObject extends ScalarObject
 	public Object getValue(){
 		return _value;
 	}
-	
-	public String toString() { 
-		return getStringValue();
-	}
-
-	@Override
-	public String getDebugName() {
-		return _value;
-	}
 
 	public static void checkMaxStringLength( long len ) 
 		throws DMLRuntimeException
 	{
-		if( len > MAX_STRING_SIZE )
-		{
-			throw new DMLRuntimeException(
-					"Output string length exceeds maximum scalar string length " +
-					"("+len+" > "+MAX_STRING_SIZE+").");
+		if( len > MAX_STRING_SIZE ) {
+			throw new DMLRuntimeException("Output string length exceeds maximum "
+				+ "scalar string length ("+len+" > "+MAX_STRING_SIZE+").");
 		}
 	}
 }

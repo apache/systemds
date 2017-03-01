@@ -28,7 +28,7 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 
 public abstract class RelationalBinaryCPInstruction extends BinaryCPInstruction 
 {
-	public RelationalBinaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr ) {
+	public RelationalBinaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr) {
 		super(op, in1, in2, out, opcode, istr);
 		_cptype = CPINSTRUCTION_TYPE.RelationalBinary;
 	}
@@ -40,29 +40,15 @@ public abstract class RelationalBinaryCPInstruction extends BinaryCPInstruction
 		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		String opcode = parseBinaryInstruction(str, in1, in2, out);
 		
-		ValueType vt1 = in1.getValueType();
-		DataType dt1 = in1.getDataType();
-		DataType dt2 = in2.getDataType();
-		DataType dt3 = out.getDataType();
+		checkOutputDataType(in1, in2, out);
 		
-		if( vt1 == ValueType.BOOLEAN && !opcode.equalsIgnoreCase("==") && !opcode.equalsIgnoreCase("!=") ) 
-			throw new DMLRuntimeException("Operation " + opcode + " can not be applied on boolean values "
-					 					  + "(Instruction = " + str + ").");
-		
-		// check for valid data type of output
-		if((dt1 == DataType.MATRIX || dt2 == DataType.MATRIX) && dt3 != DataType.MATRIX)
-			throw new DMLRuntimeException("Element-wise matrix operations between variables " + in1.getName() + 
-					" and " + in2.getName() + " must produce a matrix, which " + out.getName() + " is not");
-		
-		Operator operator = (dt1 != dt2) ?
-					InstructionUtils.parseScalarBinaryOperator(opcode, (dt1 == DataType.SCALAR)) : 
+		Operator operator = (in1.getDataType() != in2.getDataType()) ?
+					InstructionUtils.parseScalarBinaryOperator(opcode, (in1.getDataType() == DataType.SCALAR)) : 
 					InstructionUtils.parseBinaryOperator(opcode);
 		
-		//for scalar relational operations we only allow boolean operands
-		//or when both operands are numeric (int or double)
-		if(dt1 == DataType.SCALAR && dt2 == DataType.SCALAR)
+		if ( in1.getDataType() == DataType.SCALAR && in2.getDataType() == DataType.SCALAR )
 			return new ScalarScalarRelationalCPInstruction(operator, in1, in2, out, opcode, str);
-		else if(dt1 == DataType.MATRIX && dt2 == DataType.MATRIX)
+		else if ( in1.getDataType() == DataType.MATRIX && in2.getDataType() == DataType.MATRIX )
 			return new MatrixMatrixRelationalCPInstruction(operator, in1, in2, out, opcode, str);
 		else
 			return new ScalarMatrixRelationalCPInstruction(operator, in1, in2, out, opcode, str);

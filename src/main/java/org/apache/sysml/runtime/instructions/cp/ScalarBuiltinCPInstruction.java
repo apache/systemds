@@ -50,12 +50,7 @@ public class ScalarBuiltinCPInstruction extends BuiltinUnaryCPInstruction
 			
 		//core execution
 		if ( opcode.equalsIgnoreCase("print") ) {
-			String outString = null;
-			if (so instanceof BooleanObject) {
-				outString = ((BooleanObject) so).getLanguageSpecificBooleanStringValue();
-			} else {
-				outString = so.getStringValue();
-			}
+			String outString = so.getLanguageSpecificStringValue();
 			
 			// print to stdout only when suppress flag in DMLScript is not set.
 			// The flag will be set, for example, when SystemML is invoked in fenced mode from Jaql.
@@ -66,8 +61,7 @@ public class ScalarBuiltinCPInstruction extends BuiltinUnaryCPInstruction
 			sores = new StringObject(outString);
 		}
 		else if ( opcode.equalsIgnoreCase("stop") ) {
-			String msg = so.getStringValue();
-			throw new DMLScriptException(msg);
+			throw new DMLScriptException(so.getStringValue());
 		}
 		else {
 			//Inputs for all builtins other than PRINT are treated as DOUBLE.

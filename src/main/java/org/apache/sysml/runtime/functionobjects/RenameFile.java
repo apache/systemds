@@ -39,11 +39,6 @@ public class RenameFile extends FileFunction
 			singleObj = new RenameFile();
 		return singleObj;
 	}
-	
-	public Object clone() throws CloneNotSupportedException {
-		// cloning is not supported for singleton classes
-		throw new CloneNotSupportedException();
-	}
 
 	@Override
 	public String execute (String origName, String newName) throws DMLRuntimeException {
@@ -54,5 +49,4 @@ public class RenameFile extends FileFunction
 		}
 		return null;
 	}
-
 }

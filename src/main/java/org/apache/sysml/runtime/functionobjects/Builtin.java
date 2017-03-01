@@ -270,12 +270,8 @@ public class Builtin extends ValueFunction
 			return null;
 		}
 	}
-	
-	public Object clone() throws CloneNotSupportedException {
-		// cloning is not supported for singleton classes
-		throw new CloneNotSupportedException();
-	}
 
+	@Override
 	public double execute (double in) 
 		throws DMLRuntimeException 
 	{
@@ -321,6 +317,7 @@ public class Builtin extends ValueFunction
 		}
 	}
 
+	@Override
 	public double execute (long in) throws DMLRuntimeException {
 		return execute((double)in);
 	}
@@ -328,6 +325,7 @@ public class Builtin extends ValueFunction
 	/*
 	 * Builtin functions with two inputs
 	 */	
+	@Override
 	public double execute (double in1, double in2) throws DMLRuntimeException {
 		switch(bFunc) {
 		
@@ -424,6 +422,7 @@ public class Builtin extends ValueFunction
 		}
 	}
 	
+	@Override
 	public double execute (long in1, long in2) throws DMLRuntimeException {
 		switch(bFunc) {
 		
@@ -456,7 +455,7 @@ public class Builtin extends ValueFunction
 		}
 	}
 
-	// currently, it is used only for PRINT, PRINTF and STOP
+	@Override
 	public String execute (String in1) 
 		throws DMLRuntimeException 
 	{

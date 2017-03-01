@@ -21,7 +21,6 @@ package org.apache.sysml.runtime.functionobjects;
 
 public class Divide extends ValueFunction 
 {
-
 	private static final long serialVersionUID = -5377082529324612637L;
 
 	private static Divide singleObj = null;
@@ -35,11 +34,6 @@ public class Divide extends ValueFunction
 			singleObj = new Divide();
 		return singleObj;
 	}
-	
-	public Object clone() throws CloneNotSupportedException {
-		// cloning is not supported for singleton classes
-		throw new CloneNotSupportedException();
-	}
 
 	@Override
 	public double execute(double in1, double in2) {
@@ -47,18 +41,7 @@ public class Divide extends ValueFunction
 	}
 
 	@Override
-	public double execute(double in1, long in2) {
-		return in1 / (double)in2;
-	}
-
-	@Override
-	public double execute(long in1, double in2) {
-		return (double)in1 / in2;
-	}
-
-	@Override
 	public double execute(long in1, long in2) {
 		return (double)in1 / (double)in2;
 	}
-
 }

@@ -23,7 +23,6 @@ import java.io.Serializable;
 
 public class And extends ValueFunction implements Serializable
 {
-	
 	private static final long serialVersionUID = 6523146102263905602L;
 		
 	private static And singleObj = null;
@@ -37,15 +36,9 @@ public class And extends ValueFunction implements Serializable
 			singleObj = new And();
 		return singleObj;
 	}
-	
-	public Object clone() throws CloneNotSupportedException {
-		// cloning is not supported for singleton classes
-		throw new CloneNotSupportedException();
-	}
 
 	@Override
 	public boolean execute(boolean in1, boolean in2) {
 		return in1 && in2;
 	}
-
 }

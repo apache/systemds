@@ -19,7 +19,6 @@
 
 package org.apache.sysml.runtime.functionobjects;
 
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
@@ -27,7 +26,6 @@ import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 
 public class OffsetColumnIndex extends IndexFunction
 {
-
 	private static final long serialVersionUID = 1523769994005450946L;
 
 	//private static OffsetColumnIndex singleObj = null;
@@ -48,11 +46,6 @@ public class OffsetColumnIndex extends IndexFunction
 		this.offset = offset;
 	}
 	
-	public Object clone() throws CloneNotSupportedException {
-		// cloning is not supported for singleton classes
-		throw new CloneNotSupportedException();
-	}
-	
 	@Override
 	public void execute(MatrixIndexes in, MatrixIndexes out) {
 		out.setIndexes(in.getRowIndex(), in.getColumnIndex()+offset);
@@ -70,8 +63,7 @@ public class OffsetColumnIndex extends IndexFunction
 		return false;
 	}
 
-	public boolean computeDimension(MatrixCharacteristics in, MatrixCharacteristics out) throws DMLRuntimeException
-	{
+	public boolean computeDimension(MatrixCharacteristics in, MatrixCharacteristics out) {
 		out.set(numRowsInOutput, numColumnsInOutput, in.getRowsPerBlock(), in.getColsPerBlock());
 		return false;
 	}

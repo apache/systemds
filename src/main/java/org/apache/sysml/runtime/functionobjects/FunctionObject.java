@@ -23,27 +23,20 @@ import java.util.HashMap;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.cp.Data;
-import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
-import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 
 
-public class FunctionObject 
+public abstract class FunctionObject 
 {
+	@Override
+	public final Object clone() throws CloneNotSupportedException {
+		// cloning is not supported for singleton classes
+		throw new CloneNotSupportedException();
+	}
+
+	//basic execute methods for all function objects
 	
-	/*
-	 * execute() methods related to ValueFunctions
-	 */
 	public double execute ( double in1, double in2 ) throws DMLRuntimeException {
 		throw new DMLRuntimeException("FunctionObject.execute(double,double): should never get called in the base class");
-	}
-	
-	public double execute ( double in1, long in2 ) throws DMLRuntimeException {
-		throw new DMLRuntimeException("FunctionObject.execute(double,int): should never get called in the base class");
-	}
-	
-	public double execute ( long in1, double in2 ) throws DMLRuntimeException {
-		throw new DMLRuntimeException("FunctionObject.execute(int,double): should never get called in the base class");
 	}
 	
 	public double execute ( long in1, long in2 )  throws DMLRuntimeException  {
@@ -70,65 +63,6 @@ public class FunctionObject
 	public double execute ( HashMap<String,String> params )  throws DMLRuntimeException  {
 		throw new DMLRuntimeException("FunctionObject.execute(HashMap<String,String> params): should never get called in the base class");
 	}
-	
-	
-	/*
-	 *  execute() methods related to IndexFunctions
-	 */
-	public void execute(MatrixIndexes in, MatrixIndexes out) throws DMLRuntimeException {
-		throw new DMLRuntimeException("FunctionObject.execute(MatrixIndexes,MatrixIndexes): should never get called in the base class");
-	}
-	
-	public void execute(CellIndex in, CellIndex out) throws DMLRuntimeException {
-		throw new DMLRuntimeException("FunctionObject.execute(CellIndex,CellIndex): should never get called in the base class");
-	}
-	
-	//return whether dimension has been reduced
-	public boolean computeDimension(int row, int col, CellIndex retDim) throws DMLRuntimeException {
-		throw new DMLRuntimeException("FunctionObject.execute(int,int,CellIndex): should never get called in the base class");
-	}
-
-	public boolean computeDimension(MatrixCharacteristics in, MatrixCharacteristics out) throws DMLRuntimeException{
-		throw new DMLRuntimeException("computeDimension(MatrixCharacteristics in, MatrixCharacteristics out): should never get called in the base class");
-	}
-	
-	/*
-	 * execute() methods related to FileFunctions (rm, mv)
-	 */
-	public String execute ( String in1 ) throws DMLRuntimeException {
-		throw new DMLRuntimeException("FunctionObject.execute(String): should never get called in the base class");
-	}
-	
-	public String execute ( String in1, String in2 ) throws DMLRuntimeException {
-		throw new DMLRuntimeException("FunctionObject.execute(String,String): should never get called in the base class");
-	}
-	
-	/*
-	 * compare() methods related to ValueFunctions (relational operators)
-	 */
-	public boolean compare(double in1, double in2) throws DMLRuntimeException {
-		throw new DMLRuntimeException("compare(): should not be invoked from base class.");
-	}
-
-	public boolean compare(long in1, long in2) throws DMLRuntimeException {
-		throw new DMLRuntimeException("compare(): should not be invoked from base class.");
-	}
-
-	public boolean compare(double in1, long in2) throws DMLRuntimeException {
-		throw new DMLRuntimeException("compare(): should not be invoked from base class.");
-	}
-
-	public boolean compare(long in1, double in2) throws DMLRuntimeException {
-		throw new DMLRuntimeException("compare(): should not be invoked from base class.");
-	}
-
-	public boolean compare(boolean in1, boolean in2) throws DMLRuntimeException {
-		throw new DMLRuntimeException("compare(): should not be invoked from base class.");
-	}
-	
-	public boolean compare(String in1, String in2) throws DMLRuntimeException {
-		throw new DMLRuntimeException("compare(): should not be invoked from base class.");
-	}
 
 	
 	/////////////////////////////////////////////////////////////////////////////////////
@@ -147,5 +81,17 @@ public class FunctionObject
 	public Data execute(Data in1, Data in2) throws DMLRuntimeException {
 		throw new DMLRuntimeException("execute(): should not be invoked from base class.");
 	}
+	
+	/////////////////////////////////////////////////////////////////////////////////////
+	/*
+	 * For file functions and specific builtin functions 
+	 */
 
+	public String execute ( String in1 ) throws DMLRuntimeException {
+		throw new DMLRuntimeException("FileFunction.execute(String): should never get called in the base class");
+	}
+	
+	public String execute ( String in1, String in2 ) throws DMLRuntimeException {
+		throw new DMLRuntimeException("FileFunction.execute(String,String): should never get called in the base class");
+	}	
 }

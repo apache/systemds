@@ -43,11 +43,6 @@ public class Mean extends ValueFunction
 		return singleObj;
 	}
 	
-	public Object clone() throws CloneNotSupportedException {
-		// cloning is not supported for singleton classes
-		throw new CloneNotSupportedException();
-	}
-	
 	//overwride in1
 	public Data execute(Data in1, double in2, double count) throws DMLRuntimeException {
 		KahanObject kahanObj=(KahanObject)in1;

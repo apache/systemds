@@ -31,18 +31,16 @@ import org.apache.sysml.runtime.matrix.operators.RightScalarOperator;
 
 public abstract class BuiltinBinaryCPInstruction extends BinaryCPInstruction 
 {
+	private int _arity;
 	
-	private int arity;
-	
-	public BuiltinBinaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, int _arity, String opcode, String istr )
-	{
+	public BuiltinBinaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, int arity, String opcode, String istr) {
 		super(op, in1, in2, out, opcode, istr);
 		_cptype = CPINSTRUCTION_TYPE.BuiltinBinary;
-		arity = _arity;
+		_arity = arity;
 	}
 
 	public int getArity() {
-		return arity;
+		return _arity;
 	}
 	
 	public static BuiltinBinaryCPInstruction parseInstruction ( String str ) 
@@ -51,17 +49,17 @@ public abstract class BuiltinBinaryCPInstruction extends BinaryCPInstruction
 		CPOperand in2 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		String opcode = parseBinaryInstruction(str, in1, in2, out);
-		
-		ValueFunction func = Builtin.getBuiltinFnObject(opcode);
+
+		checkOutputDataType(in1, in2, out);
 		
 		// Determine appropriate Function Object based on opcode
+		ValueFunction func = Builtin.getBuiltinFnObject(opcode);
 			
-		if ( in1.getDataType() == DataType.SCALAR && in2.getDataType() == DataType.SCALAR ) {
+		if ( in1.getDataType() == DataType.SCALAR && in2.getDataType() == DataType.SCALAR )
 			return new ScalarScalarBuiltinCPInstruction(new BinaryOperator(func), in1, in2, out, opcode, str);
-		} else if (in1.getDataType() != in2.getDataType()) {
-			return new MatrixScalarBuiltinCPInstruction(new RightScalarOperator(func, 0), in1, in2, out, opcode, str);					
-		} else { // if ( in1.getDataType() == DataType.MATRIX && in2.getDataType() == DataType.MATRIX ) {
+		else if ( in1.getDataType() == DataType.MATRIX && in2.getDataType() == DataType.MATRIX )
 			return new MatrixMatrixBuiltinCPInstruction(new BinaryOperator(func), in1, in2, out, opcode, str);	
-		} 
+		else 
+			return new MatrixScalarBuiltinCPInstruction(new RightScalarOperator(func, 0), in1, in2, out, opcode, str);
 	}
 }

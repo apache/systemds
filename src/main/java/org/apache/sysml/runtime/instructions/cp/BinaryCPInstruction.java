@@ -19,6 +19,7 @@
 
 package org.apache.sysml.runtime.instructions.cp;
 
+import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.operators.Operator;
@@ -66,4 +67,12 @@ public abstract class BinaryCPInstruction extends ComputationCPInstruction
 		return opcode;
 	}
 	
+	protected static void checkOutputDataType(CPOperand in1, CPOperand in2, CPOperand out) 
+		throws DMLRuntimeException 
+	{
+		// check for valid data type of output
+		if((in1.getDataType() == DataType.MATRIX || in2.getDataType() == DataType.MATRIX) && out.getDataType() != DataType.MATRIX)
+			throw new DMLRuntimeException("Element-wise matrix operations between variables " + in1.getName() + 
+					" and " + in2.getName() + " must produce a matrix, which " + out.getName() + " is not");
+	}
 }

@@ -22,84 +22,45 @@ package org.apache.sysml.runtime.instructions.cp;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysml.runtime.functionobjects.Divide;
-import org.apache.sysml.runtime.functionobjects.Power;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
 
 public class ScalarScalarArithmeticCPInstruction extends ArithmeticBinaryCPInstruction
-{
-	
-	public ScalarScalarArithmeticCPInstruction(Operator op, 
-								   CPOperand in1, 
-								   CPOperand in2,
-								   CPOperand out, 
-								   String opcode,
-								   String istr){
+{	
+	public ScalarScalarArithmeticCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr){
 		super(op, in1, in2, out, opcode, istr);
 	}
 	
 	@Override
 	public void processInstruction(ExecutionContext ec) throws DMLRuntimeException{
-		// 1) Obtain data objects associated with inputs 
 		ScalarObject so1 = ec.getScalarInput(input1.getName(), input1.getValueType(), input1.isLiteral());
 		ScalarObject so2 = ec.getScalarInput(input2.getName(), input2.getValueType(), input2.isLiteral() );
-		ScalarObject sores = null;
 		
-		
-		// 2) Compute the result value & make an appropriate data object 
 		BinaryOperator dop = (BinaryOperator) _optr;
-		
-		if( input1.getValueType() == ValueType.STRING 
-			 || input2.getValueType() == ValueType.STRING ) 
-		{
-			String val1 = null;
-			if (so1 instanceof BooleanObject) {
-				val1 = ((BooleanObject) so1).getLanguageSpecificBooleanStringValue();
-			} else {
-				val1 = so1.getStringValue();
-			}
-			String val2 = null;
-			if (so2 instanceof BooleanObject) {
-				val2 = ((BooleanObject) so2).getLanguageSpecificBooleanStringValue();
-			} else {
-				val2 = so2.getStringValue();
-			}
-			//pre-check (for robustness regarding too long strings)
-			// This line was commented out because of the addition of 
-			// the built-in function toString.
-			// The toString function adds its own memory estimation
-			// and does not need a hard check on the limit of the size of the string.
-			// StringObject.checkMaxStringLength(val1.length() + val2.length());
-			
-			String rval = dop.fn.execute(val1, val2);
-			sores = new StringObject(rval);
+		ScalarObject sores = null;
+
+		//compute output value, incl implicit type promotion if necessary
+		if( so1 instanceof StringObject || so2 instanceof StringObject ) {
+			if( !getOpcode().equals("+") ) //not string concatenation
+				throw new DMLRuntimeException("Arithmetic '"+getOpcode()+"' not supported over string inputs.");
+			sores = new StringObject( dop.fn.execute(
+				so1.getLanguageSpecificStringValue(), so2.getLanguageSpecificStringValue()) );
 		}
-		else if ( so1 instanceof IntObject && so2 instanceof IntObject ) {
-			if ( dop.fn instanceof Divide || dop.fn instanceof Power ) {
-				// If both inputs are of type INT then output must be an INT if operation is not divide or power
-				double rval = dop.fn.execute( so1.getLongValue(), so2.getLongValue() );
-				sores = new DoubleObject(rval);
-			}
-			else {
-				// If both inputs are of type INT then output must be an INT if operation is not divide or power
-				double tmpVal = dop.fn.execute( so1.getLongValue(), so2.getLongValue() );
-				//cast to long if no overflow, otherwise controlled exception
-				if( tmpVal > Long.MAX_VALUE )
-					throw new DMLRuntimeException("Integer operation created numerical result overflow ("+tmpVal+" > "+Long.MAX_VALUE+").");
-				sores = new IntObject((long) tmpVal);
-			}
+		else if( so1 instanceof DoubleObject || so2 instanceof DoubleObject || output.getValueType()==ValueType.DOUBLE ) {
+			sores = new DoubleObject( dop.fn.execute(so1.getDoubleValue(), so2.getDoubleValue()) );
 		}
-		//NOTE: boolean-boolean arithmetic covered by general case below in order
-		//to maintain consistency with R
-		else {
-			// If either of the input is of type DOUBLE then output is a DOUBLE
-			double rval = dop.fn.execute ( so1.getDoubleValue(), so2.getDoubleValue() );
-			sores = new DoubleObject(rval); 
+		else if( so1 instanceof IntObject || so2 instanceof IntObject ) {
+			double tmp = dop.fn.execute(so1.getLongValue(), so2.getLongValue());
+			if( tmp > Long.MAX_VALUE ) //cast to long if no overflow, otherwise controlled exception
+				throw new DMLRuntimeException("Integer operation created numerical result overflow ("+tmp+" > "+Long.MAX_VALUE+").");
+			sores = new IntObject((long) tmp);
+		}
+		else { //all boolean
+			//NOTE: boolean-boolean arithmetic treated as double for consistency with R
+			sores = new DoubleObject( dop.fn.execute(so1.getDoubleValue(), so2.getDoubleValue()) );
 		}
 		
-		// 3) Put the result value into ProgramBlock
 		ec.setScalarOutput(output.getName(), sores);
 	}
 }

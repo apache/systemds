@@ -20,7 +20,9 @@
 package org.apache.sysml.runtime.functionobjects;
 
 
-import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.commons.lang.NotImplementedException;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 
 /**
@@ -30,7 +32,6 @@ import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
  */
 public class SortIndex extends IndexFunction
 {
-
 	private static final long serialVersionUID = -8446389232078905200L;
 
 	private int     _col        = -1;
@@ -63,17 +64,24 @@ public class SortIndex extends IndexFunction
 		return _ixreturn;
 	}
 	
-	public Object clone() throws CloneNotSupportedException {
-		// cloning is not supported for singleton classes
-		throw new CloneNotSupportedException();
-	}
-	
-	public boolean computeDimension(int row, int col, CellIndex retDim) 
-		throws DMLRuntimeException 
-	{
+	@Override
+	public boolean computeDimension(int row, int col, CellIndex retDim) {
 		retDim.set(row, _ixreturn?1:col);
 		return false;
 	}
-	
 
+	@Override
+	public void execute(MatrixIndexes in, MatrixIndexes out) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public void execute(CellIndex in, CellIndex out) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public boolean computeDimension(MatrixCharacteristics in, MatrixCharacteristics out) {
+		throw new NotImplementedException();
+	}
 }

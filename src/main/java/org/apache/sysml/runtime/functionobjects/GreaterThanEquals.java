@@ -19,9 +19,9 @@
 
 package org.apache.sysml.runtime.functionobjects;
 
-public class GreaterThanEquals extends ValueFunction 
-{
 
+public class GreaterThanEquals extends ValueComparisonFunction
+{
 	private static final long serialVersionUID = -5444900552418046584L;
 
 	private static GreaterThanEquals singleObj = null;
@@ -34,11 +34,6 @@ public class GreaterThanEquals extends ValueFunction
 		if ( singleObj == null )
 			singleObj = new GreaterThanEquals();
 		return singleObj;
-	}
-	
-	public Object clone() throws CloneNotSupportedException {
-		// cloning is not supported for singleton classes
-		throw new CloneNotSupportedException();
 	}
 
 	/*
@@ -69,15 +64,10 @@ public class GreaterThanEquals extends ValueFunction
 	public boolean compare(long in1, long in2) {
 		return (in1 >= in2);
 	}
-
-	@Override
-	public boolean compare(double in1, long in2) {
-		return (in1 >= in2);
-	}
-
-	@Override
-	public boolean compare(long in1, double in2) {
-		return (in1 >= in2);
+	
+	@Override 
+	public boolean compare(boolean in1, boolean in2) {
+		return (in1 && !in2) || (in1 == in2);
 	}
 	
 	@Override

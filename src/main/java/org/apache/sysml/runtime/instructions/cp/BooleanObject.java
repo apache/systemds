@@ -27,7 +27,6 @@ import org.apache.sysml.parser.Expression.ValueType;
 
 public class BooleanObject extends ScalarObject  
 {
-
 	private static final long serialVersionUID = -4506242165735516984L;
 
 	private boolean _value;
@@ -61,26 +60,15 @@ public class BooleanObject extends ScalarObject
 		return Boolean.toString(_value).toUpperCase();
 	}
 
-	public String getLanguageSpecificBooleanStringValue() {
-		if (DMLScript.SCRIPT_TYPE == ScriptType.DML) {
-			return Boolean.toString(_value).toUpperCase();
-		} else {
-			return StringUtils.capitalize(Boolean.toString(_value));
-		}
+	@Override
+	public String getLanguageSpecificStringValue() {
+		return (DMLScript.SCRIPT_TYPE == ScriptType.DML) ? 
+			Boolean.toString(_value).toUpperCase() : 
+			StringUtils.capitalize(Boolean.toString(_value));
 	}
 
 	@Override
 	public Object getValue(){
 		return _value;
 	}
-	
-	public String toString() { 
-		return getStringValue();
-	}
-
-	@Override
-	public String getDebugName() {
-		return null;
-	}
-	
 }

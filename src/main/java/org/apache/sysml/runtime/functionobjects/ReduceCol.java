@@ -19,7 +19,6 @@
 
 package org.apache.sysml.runtime.functionobjects;
 
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
@@ -42,11 +41,6 @@ public class ReduceCol extends IndexFunction
 		return singleObj;
 	}
 	
-	public Object clone() throws CloneNotSupportedException {
-		// cloning is not supported for singleton classes
-		throw new CloneNotSupportedException();
-	}
-	
 	/*
 	 * NOTE: index starts from 1 for cells in a matrix, but index starts from 0 for cells inside a block
 	 */
@@ -67,8 +61,8 @@ public class ReduceCol extends IndexFunction
 		return true;
 	}
 
-	public boolean computeDimension(MatrixCharacteristics in, MatrixCharacteristics out) throws DMLRuntimeException
-	{
+	@Override
+	public boolean computeDimension(MatrixCharacteristics in, MatrixCharacteristics out) {
 		out.set(in.getRows(), 1, in.getRowsPerBlock(), in.getColsPerBlock());
 		return true;
 	}

@@ -35,7 +35,6 @@ import org.apache.sysml.runtime.instructions.cp.KahanObject;
  */
 public class COV extends ValueFunction
 {
-
 	private static final long serialVersionUID = 1865050401811477181L;
 
 	private static COV singleObj = null;
@@ -48,14 +47,8 @@ public class COV extends ValueFunction
 		return singleObj;
 	}
 	
-	private COV()
-	{
+	private COV() {
 		_plus = KahanPlus.getKahanPlusFnObject();
-	}
-	
-	public Object clone() throws CloneNotSupportedException {
-		// cloning is not supported for singleton classes
-		throw new CloneNotSupportedException();
 	}
 	
 	/**

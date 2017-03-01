@@ -43,11 +43,6 @@ public class KahanPlus extends KahanFunction implements Serializable
 		return singleObj;
 	}
 	
-	public Object clone() throws CloneNotSupportedException {
-		// cloning is not supported for singleton classes
-		throw new CloneNotSupportedException();
-	}
-	
 	@Override
 	public Data execute(Data in1, double in2) 
 		throws DMLRuntimeException 

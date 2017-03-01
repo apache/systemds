@@ -28,7 +28,6 @@ import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class CTable extends ValueFunction 
 {
-
 	private static final long serialVersionUID = -5374880447194177236L;
 
 	private static CTable singleObj = null;
@@ -41,11 +40,6 @@ public class CTable extends ValueFunction
 		if ( singleObj == null )
 			singleObj = new CTable();
 		return singleObj;
-	}
-	
-	public Object clone() throws CloneNotSupportedException {
-		// cloning is not supported for singleton classes
-		throw new CloneNotSupportedException();
 	}
 
 	public void execute(double v1, double v2, double w, boolean ignoreZeros, CTableMap resultMap) 

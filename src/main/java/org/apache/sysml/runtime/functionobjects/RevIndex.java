@@ -21,8 +21,9 @@ package org.apache.sysml.runtime.functionobjects;
 
 import java.io.Serializable;
 
-import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 
 
@@ -41,25 +42,26 @@ public class RevIndex extends IndexFunction implements Serializable
 			singleObj = new RevIndex();
 		return singleObj;
 	}
-	
-	public Object clone() throws CloneNotSupportedException {
-		// cloning is not supported for singleton classes
-		throw new CloneNotSupportedException();
-	}
 
 	@Override // for cp block operations
-	public boolean computeDimension(int row, int col, CellIndex retDim) 
-		throws DMLRuntimeException 
-	{
+	public boolean computeDimension(int row, int col, CellIndex retDim) {
 		retDim.set(row, col);
 		return false;
 	}
 
 	@Override //for mr block operations
-	public boolean computeDimension(MatrixCharacteristics in, MatrixCharacteristics out) 
-		throws DMLRuntimeException
-	{
+	public boolean computeDimension(MatrixCharacteristics in, MatrixCharacteristics out) {
 		out.set(in.getRows(), in.getCols(), in.getColsPerBlock(), in.getRowsPerBlock(), in.getNonZeros());
 		return false;
+	}
+
+	@Override
+	public void execute(MatrixIndexes in, MatrixIndexes out) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public void execute(CellIndex in, CellIndex out) {
+		throw new NotImplementedException();
 	}
 }

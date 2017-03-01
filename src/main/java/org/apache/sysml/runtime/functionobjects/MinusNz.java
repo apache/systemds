@@ -38,23 +38,13 @@ public class MinusNz extends ValueFunction implements Serializable
 		return singleObj;
 	}
 	
-	public Object clone() throws CloneNotSupportedException {
-		// cloning is not supported for singleton classes
-		throw new CloneNotSupportedException();
-	}
-	
 	@Override
 	public double execute(double in1, double in2) {
 		return (in1 != 0) ? in1 - in2 : 0;
 	}
-
+	
 	@Override
-	public double execute(double in1, long in2) {
-		return (in1 != 0) ? in1 - in2 : 0;
-	}
-
-	@Override
-	public double execute(long in1, double in2) {
+	public double execute(long in1, long in2) {
 		return (in1 != 0) ? in1 - in2 : 0;
 	}
 }

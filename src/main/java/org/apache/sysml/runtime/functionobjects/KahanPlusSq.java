@@ -52,11 +52,6 @@ public class KahanPlusSq extends KahanFunction implements Serializable {
         return singleObj;
     }
 
-    public Object clone() throws CloneNotSupportedException {
-        // cloning is not supported for singleton classes
-        throw new CloneNotSupportedException();
-    }
-
     /**
      * Square the given term, then add to the existing sum using
      * the Kahan summation algorithm.

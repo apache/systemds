@@ -482,7 +482,16 @@ public class StatementBlock extends LiveVariableAnalysis
 						if (i > 0) {
 							fstmt.raiseValidateError("Assignment statement cannot return multiple values", false);
 						}
-						newTarget = new DataIdentifier(((AssignmentStatement)current).getTarget());
+						AssignmentStatement as = (AssignmentStatement) current;
+						DataIdentifier targ = as.getTarget();
+						if (targ == null) {
+							Expression exp = as.getSource();
+							FunctionCallIdentifier fci = (FunctionCallIdentifier) exp;
+							String functionName = fci.getName();
+							fstmt.raiseValidateError(functionName + " requires LHS value", false);
+						} else {
+							newTarget = new DataIdentifier(((AssignmentStatement)current).getTarget());
+						}
 					}
 					else{
 						newTarget = new DataIdentifier(((MultiAssignmentStatement)current).getTargetList().get(i));

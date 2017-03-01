@@ -62,11 +62,9 @@ import static jcuda.jcudnn.cudnnActivationMode.CUDNN_ACTIVATION_RELU;
 import static org.apache.sysml.runtime.instructions.gpu.context.JCudaObject.allocate;
 import static org.apache.sysml.runtime.instructions.gpu.context.JCudaObject.cudaFreeHelper;
 
-import javafx.stage.StageStyle;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.controlprogram.caching.CacheStatistics;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.functionobjects.*;
@@ -92,7 +90,6 @@ import jcuda.jcudnn.cudnnPoolingDescriptor;
 import jcuda.jcudnn.cudnnTensorDescriptor;
 import jcuda.jcusparse.JCusparse;
 import jcuda.jcusparse.cusparseHandle;
-import org.apache.sysml.utils.SystemMLLoaderUtils;
 
 //FIXME move could to respective instructions, this is not a block library
 public class LibMatrixCUDA {
@@ -826,7 +823,7 @@ public class LibMatrixCUDA {
 			Pointer srcData = ((JCudaObject)in.getGPUObject()).jcudaDenseMatrixPtr;
 
 			MatrixObject output = ec.getMatrixObject(outputName);
-			ec.getDenseMatrixOutputForGPUInstruction(outputName);	// Allocated the dense output matrix
+			getDenseMatrixOutputForGPUInstruction(ec, inst, outputName);	// Allocated the dense output matrix
 			Pointer dstData = ((JCudaObject)output.getGPUObject()).jcudaDenseMatrixPtr;
 
 			if(N*H*W >= numDoublesIn2GB) {
@@ -901,7 +898,7 @@ public class LibMatrixCUDA {
 
 		// For dense TSMM, exploit cublasDsyrk(...) and call custom kernel to flip the matrix
 		MatrixObject output = ec.getMatrixObject(outputName);
-		ec.getDenseMatrixOutputForGPUInstruction(outputName);	// Allocated the dense output matrix
+		getDenseMatrixOutputForGPUInstruction(ec, inst, outputName);	// Allocated the dense output matrix
 
 		// Since CuBLAS expects inputs in column-major format,
 		// reverse the order of matrix-multiplication and take care of dimension mismatch.
@@ -995,9 +992,7 @@ public class LibMatrixCUDA {
 
 		if (bothDense) {		// Dense C = Dense A * Dense B
 			// For both dense, do cuBLAS
-			long t0 = System.nanoTime();
-			ec.getDenseMatrixOutputForGPUInstruction(outputName);	// Allocated the dense output matrix
-			Statistics.maintainCPMiscTimes(inst.getExtendedOpcode(), GPUInstruction.MISC_TIMER_ALLOCATE, System.nanoTime() - t0);
+			getDenseMatrixOutputForGPUInstruction(ec, inst, outputName);	// Allocated the dense output matrix
 			denseDenseMatmult(inst, output, left1, right1, isLeftTransposed1, isRightTransposed1);
 		}
 		else if (bothSparse){	// Sparse C = Sparse A * Sparse B
@@ -1107,7 +1102,9 @@ public class LibMatrixCUDA {
 			Statistics.cudaSparseToDenseTime.getAndAdd(System.nanoTime() - t0);
 			Statistics.cudaSparseToDenseCount.getAndAdd(System.nanoTime() - t0);
 
-			output.getGPUObject().acquireDeviceModifyDense();	// To allocate the dense matrix
+			long t1 = System.nanoTime();
+			boolean allocated = output.getGPUObject().acquireDeviceModifyDense();	// To allocate the dense matrix
+			if (allocated) Statistics.maintainCPMiscTimes(inst.getExtendedOpcode(), GPUInstruction.MISC_TIMER_ALLOCATE_DENSE_OUTPUT, System.nanoTime() - t1);
 			Pointer C = ((JCudaObject)output.getGPUObject()).jcudaDenseMatrixPtr;
 			denseDenseMatmult(inst, C,
 							(int) left.getNumRows(), (int) left.getNumColumns(),
@@ -1115,9 +1112,9 @@ public class LibMatrixCUDA {
 							isLeftTransposed, !isRightTransposed,
 							ADense, BDenseTransposed);
 
-			long t1 = System.nanoTime();
+			long t2 = System.nanoTime();
 			cudaFreeHelper(BDenseTransposed);
-			Statistics.maintainCPMiscTimes(inst.getExtendedOpcode(), GPUInstruction.MISC_TIMER_CUDA_FREE, System.nanoTime() - t1);
+			Statistics.maintainCPMiscTimes(inst.getExtendedOpcode(), GPUInstruction.MISC_TIMER_CUDA_FREE, System.nanoTime() - t2);
 		}
 	}
 
@@ -1186,7 +1183,10 @@ public class LibMatrixCUDA {
 				Statistics.cudaSparseToDenseTime.getAndAdd(System.nanoTime() - t0);
 				Statistics.cudaSparseToDenseCount.getAndAdd(System.nanoTime() - t0);
 
-				output.getGPUObject().acquireDeviceModifyDense();	// To allocate the dense matrix
+				long t1 = System.nanoTime();
+				boolean allocated = output.getGPUObject().acquireDeviceModifyDense();	// To allocate the dense matrix
+				if (allocated) Statistics.maintainCPMiscTimes(inst.getExtendedOpcode(), GPUInstruction.MISC_TIMER_ALLOCATE_DENSE_OUTPUT, System.nanoTime() - t1);
+
 				Pointer C = ((JCudaObject)output.getGPUObject()).jcudaDenseMatrixPtr;
 				denseDenseMatmult(inst, C,
 								(int) left.getNumColumns(), (int) left.getNumRows(),
@@ -1194,9 +1194,9 @@ public class LibMatrixCUDA {
 								!isLeftTransposed, isRightTransposed,
 								ADenseTransposed, BDense);
 
-				long t1 = System.nanoTime();
+				long t2 = System.nanoTime();
 				cudaFreeHelper(ADenseTransposed);
-				Statistics.maintainCPMiscTimes(inst.getExtendedOpcode(), GPUInstruction.MISC_TIMER_CUDA_FREE, System.nanoTime() - t1);
+				Statistics.maintainCPMiscTimes(inst.getExtendedOpcode(), GPUInstruction.MISC_TIMER_CUDA_FREE, System.nanoTime() - t2);
 			}
 		}
 	}
@@ -1558,7 +1558,7 @@ public class LibMatrixCUDA {
 		Pointer out = null;
 		if (reductionDirection == REDUCTION_COL || reductionDirection == REDUCTION_ROW) {
 			// Matrix output
-			MatrixObject out1 = ec.getDenseMatrixOutputForGPUInstruction(output);
+			MatrixObject out1 = getDenseMatrixOutputForGPUInstruction(ec, inst, output);
 			out = ((JCudaObject) out1.getGPUObject()).jcudaDenseMatrixPtr;
 		}
 
@@ -1614,7 +1614,7 @@ public class LibMatrixCUDA {
 				}
 				long t1 = System.nanoTime();
 				cudaFreeHelper(tmp);
-				Statistics.maintainCPMiscTimes(inst.getExtendedOpcode(), GPUInstruction.MISC_TIMER_CUDA_FREE, System.nanoTime() - t0);
+				Statistics.maintainCPMiscTimes(inst.getExtendedOpcode(), GPUInstruction.MISC_TIMER_CUDA_FREE, System.nanoTime() - t1);
 				break;
 			}
 			case OP_MEAN:{
@@ -1835,7 +1835,7 @@ public class LibMatrixCUDA {
 
 		long t3 = System.nanoTime();
 		cudaMemcpy(Pointer.to(result), tempOut, Sizeof.DOUBLE, cudaMemcpyDeviceToHost);
-		Statistics.maintainCPMiscTimes(inst.getExtendedOpcode(), GPUInstruction.MISC_TIMER_DEVICE_TO, System.nanoTime() - t3);
+		Statistics.maintainCPMiscTimes(inst.getExtendedOpcode(), GPUInstruction.MISC_TIMER_DEVICE_TO_HOST, System.nanoTime() - t3);
 
 		long t4 = System.nanoTime();
 		cudaFreeHelper(tempOut);
@@ -2092,7 +2092,7 @@ public class LibMatrixCUDA {
 		Pointer A = ((JCudaObject)in.getGPUObject()).jcudaDenseMatrixPtr;
 		double scalar = op.getConstant();
 		MatrixObject out = ec.getMatrixObject(outputName);
-		ec.getDenseMatrixOutputForGPUInstruction(outputName);	// Allocated the dense output matrix
+		getDenseMatrixOutputForGPUInstruction(ec, inst, outputName);	// Allocated the dense output matrix
 		Pointer C = ((JCudaObject)out.getGPUObject()).jcudaDenseMatrixPtr;
 		matrixScalarOp(inst, A, scalar, rlenA, clenA, C, op);
 	}
@@ -2180,7 +2180,7 @@ public class LibMatrixCUDA {
 			Pointer B = ((JCudaObject)in2.getGPUObject()).jcudaDenseMatrixPtr;
 
 			MatrixObject out = ec.getMatrixObject(outputName);
-			ec.getDenseMatrixOutputForGPUInstruction(outputName);	// Allocated the dense output matrix
+			getDenseMatrixOutputForGPUInstruction(ec, inst, outputName);	// Allocated the dense output matrix
 			Pointer C = ((JCudaObject)out.getGPUObject()).jcudaDenseMatrixPtr;
 
 			int maxRlen = Math.max(rlenA, rlenB);
@@ -2278,7 +2278,7 @@ public class LibMatrixCUDA {
 		}
 		Pointer srcPtr = ((JCudaObject)src.getGPUObject()).jcudaDenseMatrixPtr;
 		MatrixObject out = ec.getMatrixObject(outputName);
-		ec.getDenseMatrixOutputForGPUInstruction(outputName);	// Allocated the dense output matrix
+		getDenseMatrixOutputForGPUInstruction(ec, inst, outputName);	// Allocated the dense output matrix
 		Pointer destPtr = ((JCudaObject)out.getGPUObject()).jcudaDenseMatrixPtr;
 		deviceCopy(inst, srcPtr, destPtr, (int)src.getNumRows(), (int)src.getNumColumns());
 	}
@@ -2293,7 +2293,7 @@ public class LibMatrixCUDA {
 		}
 		Pointer A = ((JCudaObject)in.getGPUObject()).jcudaDenseMatrixPtr;
 		MatrixObject out = ec.getMatrixObject(outputName);
-		ec.getDenseMatrixOutputForGPUInstruction(outputName);	// Allocated the dense output matrix
+		getDenseMatrixOutputForGPUInstruction(ec, inst, outputName);	// Allocated the dense output matrix
 		Pointer ret = ((JCudaObject)out.getGPUObject()).jcudaDenseMatrixPtr;
 		int rlen = (int) out.getNumRows();
 		int clen = (int) out.getNumColumns();
@@ -2319,7 +2319,7 @@ public class LibMatrixCUDA {
 			// TODO: Create sparse empty block instead
 		}
 		MatrixObject out = ec.getMatrixObject(outputName);
-		ec.getDenseMatrixOutputForGPUInstruction(outputName);	// Allocated the dense output matrix
+		getDenseMatrixOutputForGPUInstruction(ec, inst, outputName);	// Allocated the dense output matrix
 		Pointer A = ((JCudaObject)out.getGPUObject()).jcudaDenseMatrixPtr;
 		int rlen = (int) out.getNumRows();
 		int clen = (int) out.getNumColumns();
@@ -2463,7 +2463,7 @@ public class LibMatrixCUDA {
 			// Dense-Dense dgeam
 			Pointer A = ((JCudaObject)in1.getGPUObject()).jcudaDenseMatrixPtr;
 			Pointer B = ((JCudaObject)in2.getGPUObject()).jcudaDenseMatrixPtr;
-			ec.getDenseMatrixOutputForGPUInstruction(outputName);	// Allocated the dense output matrix
+			getDenseMatrixOutputForGPUInstruction(ec, inst, outputName);	// Allocated the dense output matrix
 			Pointer C = ((JCudaObject)out.getGPUObject()).jcudaDenseMatrixPtr;
 
 			long t0 = System.nanoTime();
@@ -2536,7 +2536,7 @@ public class LibMatrixCUDA {
 				Statistics.maintainCPMiscTimes(inst.getExtendedOpcode(), GPUInstruction.MISC_TIMER_SPARSE_TO_DENSE, System.nanoTime() - t0);
 			}
 			// Dense
-			MatrixObject out = ec.getDenseMatrixOutputForGPUInstruction(outputName);
+			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, inst, outputName);
 			Pointer output = ((JCudaObject)out.getGPUObject()).jcudaDenseMatrixPtr;
 			Pointer input = in.jcudaDenseMatrixPtr;
 			int size = (int)(in1.getNumColumns() * in1.getNumRows());
@@ -2574,7 +2574,7 @@ public class LibMatrixCUDA {
 		Pointer A = ((JCudaObject)in1.getGPUObject()).jcudaDenseMatrixPtr;
 		Pointer B = ((JCudaObject)in2.getGPUObject()).jcudaDenseMatrixPtr;
 		MatrixObject out = ec.getMatrixObject(outputName);
-		ec.getDenseMatrixOutputForGPUInstruction(outputName);	// Allocated the dense output matrix
+		getDenseMatrixOutputForGPUInstruction(ec, inst, outputName);	// Allocated the dense output matrix
 		Pointer C = ((JCudaObject)out.getGPUObject()).jcudaDenseMatrixPtr;
 		Pointer alphaPtr = pointerTo(constant);
 		long n = (in1.getNumRows()*in1.getNumColumns());
@@ -2613,6 +2613,21 @@ public class LibMatrixCUDA {
 			}
 			System.out.println();
 		}
+	}
+
+	/**
+	 * Helper method to get the output block (allocated on the GPU)
+	 * Also records performance information into {@link Statistics}
+	 * @param ec		active {@link ExecutionContext}
+	 * @param name	name of input matrix (that the {@link ExecutionContext} is aware of)
+	 * @return	the matrix object
+	 * @throws DMLRuntimeException	if an error occurs
+	 */
+	private static MatrixObject getDenseMatrixOutputForGPUInstruction(ExecutionContext ec, Instruction inst, String name) throws DMLRuntimeException {
+		long t0 = System.nanoTime();
+		Pair<MatrixObject, Boolean> mb = ec.getDenseMatrixOutputForGPUInstruction(name);
+		if (mb.getValue()) Statistics.maintainCPMiscTimes(inst.getExtendedOpcode(), GPUInstruction.MISC_TIMER_ALLOCATE_DENSE_OUTPUT, System.nanoTime() - t0);
+		return mb.getKey();
 	}
 
 }

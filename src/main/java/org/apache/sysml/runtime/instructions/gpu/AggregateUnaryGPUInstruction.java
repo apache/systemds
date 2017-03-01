@@ -81,7 +81,7 @@ public class AggregateUnaryGPUInstruction extends GPUInstruction {
     }
 
     //get inputs
-    MatrixObject in1 = ec.getMatrixInputForGPUInstruction(_input1.getName());
+    MatrixObject in1 = getMatrixInputForGPUInstruction(ec, _input1.getName());
 
     int rlen = (int)in1.getNumRows();
     int clen = (int)in1.getNumColumns();

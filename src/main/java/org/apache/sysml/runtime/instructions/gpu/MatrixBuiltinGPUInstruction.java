@@ -25,6 +25,7 @@ import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.gpu.BuiltinUnaryGPUInstruction;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
+import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.utils.Statistics;
 
@@ -40,8 +41,7 @@ public class MatrixBuiltinGPUInstruction extends BuiltinUnaryGPUInstruction {
 		Statistics.incrementNoOfExecutedGPUInst();
 		
 		String opcode = getOpcode();
-		MatrixObject mat = ec.getMatrixInputForGPUInstruction(_input.getName());
-
+		MatrixObject mat = getMatrixInputForGPUInstruction(ec, _input.getName());
 		ec.setMetaData(_output.getName(), mat.getNumRows(), mat.getNumColumns());
 
 		if(opcode.equals("sel+")) {

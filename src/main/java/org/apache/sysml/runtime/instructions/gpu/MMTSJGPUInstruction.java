@@ -98,7 +98,7 @@ public class MMTSJGPUInstruction extends GPUInstruction
                 Statistics.incrementNoOfExecutedGPUInst();
 
                 //get input
-                MatrixObject mat = ec.getMatrixInputForGPUInstruction(_input.getName());
+                MatrixObject mat = getMatrixInputForGPUInstruction(ec, _input.getName());
                
                 boolean isLeftTransposed = ( _type == MMTSJType.LEFT);
 

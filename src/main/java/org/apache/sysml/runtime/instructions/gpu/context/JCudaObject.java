@@ -528,22 +528,27 @@ public class JCudaObject extends GPUObject {
 	}
 
 	@Override
-	public synchronized void acquireDeviceRead() throws DMLRuntimeException {
+	public synchronized boolean acquireDeviceRead() throws DMLRuntimeException {
+		boolean transferred = false;
 		if(!isAllocated()) {
 			copyFromHostToDevice();
+			transferred = true;
 		} else {
 			numLocks.addAndGet(1);
 		}
 		if(!isAllocated())
 			throw new DMLRuntimeException("Expected device data to be allocated");
+		return transferred;
 	}
 	
 	@Override
-	public synchronized void acquireDeviceModifyDense() throws DMLRuntimeException {
+	public synchronized boolean acquireDeviceModifyDense() throws DMLRuntimeException {
+		boolean allocated = false;
 		if(!isAllocated()) {
 			mat.setDirty(true);
 			// Dense block, size = numRows * numCols
 			allocateDenseMatrixOnDevice();
+			allocated = true;
 			synchronized(evictionLock) {
 				GPUContext.allocatedPointers.add(this);
 			}
@@ -551,14 +556,17 @@ public class JCudaObject extends GPUObject {
 		isDeviceCopyModified = true;
 		if(!isAllocated()) 
 			throw new DMLRuntimeException("Expected device data to be allocated");
+		return allocated;
 	}
 	
 	@Override
-	public synchronized void acquireDeviceModifySparse() throws DMLRuntimeException {
+	public synchronized boolean acquireDeviceModifySparse() throws DMLRuntimeException {
+		boolean allocated = false;
 		isInSparseFormat = true;
 		if(!isAllocated()) {
 			mat.setDirty(true);
 			allocateSparseMatrixOnDevice();
+			allocated = true;
 			synchronized(evictionLock) {
 				GPUContext.allocatedPointers.add(this);
 			}
@@ -566,14 +574,17 @@ public class JCudaObject extends GPUObject {
 		isDeviceCopyModified = true;
 		if(!isAllocated()) 
 			throw new DMLRuntimeException("Expected device data to be allocated");
+		return allocated;
 	}
 	
 	@Override
-	public synchronized void acquireHostRead() throws CacheException {
+	public synchronized boolean acquireHostRead() throws CacheException {
+		boolean copied = false;
 		if(isAllocated()) {
 			try {
 				if(isDeviceCopyModified) {
 					copyFromDeviceToHost();
+					copied = true;
 				}
 			} catch (DMLRuntimeException e) {
 				throw new CacheException(e);
@@ -582,21 +593,7 @@ public class JCudaObject extends GPUObject {
 		else {
 			throw new CacheException("Cannot perform acquireHostRead as the GPU data is not allocated:" + mat.getVarName());
 		}
-	}
-	
-	@Override
-	public synchronized void acquireHostModify() throws CacheException {
-		if(isAllocated()) {
-			try {
-				if(isDeviceCopyModified) {
-					throw new DMLRuntimeException("Potential overwrite of GPU data");
-					// copyFromDeviceToHost();
-				}
-				clearData();
-			} catch (DMLRuntimeException e) {
-				throw new CacheException(e);
-			}
-		}
+		return copied;
 	}
 	
 	/**

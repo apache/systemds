@@ -74,7 +74,7 @@ public class ReorgGPUInstruction extends GPUInstruction
 	{
 		Statistics.incrementNoOfExecutedGPUInst();
 		//acquire input
-		MatrixObject mat = ec.getMatrixInputForGPUInstruction(_input.getName());	
+		MatrixObject mat = getMatrixInputForGPUInstruction(ec, _input.getName());
 
 		int rlen = (int) mat.getNumColumns();
 		int clen = (int) mat.getNumRows();

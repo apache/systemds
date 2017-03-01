@@ -44,8 +44,8 @@ public class MatrixMatrixArithmeticGPUInstruction extends ArithmeticBinaryGPUIns
 	public void processInstruction(ExecutionContext ec) throws DMLRuntimeException {
 		Statistics.incrementNoOfExecutedGPUInst();
 		
-		MatrixObject in1 = ec.getMatrixInputForGPUInstruction(_input1.getName());
-		MatrixObject in2 = ec.getMatrixInputForGPUInstruction(_input2.getName());
+		MatrixObject in1 = getMatrixInputForGPUInstruction(ec, _input1.getName());
+		MatrixObject in2 = getMatrixInputForGPUInstruction(ec, _input2.getName());
 		
 		//TODO: make hop level changes for this
 		boolean isLeftTransposed = false;

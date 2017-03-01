@@ -48,7 +48,7 @@ public class ScalarMatrixArithmeticGPUInstruction extends ArithmeticBinaryGPUIns
 		
 		CPOperand mat = ( _input1.getDataType() == DataType.MATRIX ) ? _input1 : _input2;
 		CPOperand scalar = ( _input1.getDataType() == DataType.MATRIX ) ? _input2 : _input1;
-		MatrixObject in1 = ec.getMatrixInputForGPUInstruction(mat.getName());
+		MatrixObject in1 = getMatrixInputForGPUInstruction(ec, mat.getName());
 		ScalarObject constant = (ScalarObject) ec.getScalarInput(scalar.getName(), scalar.getValueType(), scalar.isLiteral());
 		
 		boolean isTransposed = false;

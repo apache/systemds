@@ -22,41 +22,45 @@ package org.apache.sysml.runtime.instructions.gpu;
 import jcuda.runtime.JCuda;
 import org.apache.sysml.lops.runtime.RunMRJobs;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.GPUInstructionParser;
 import org.apache.sysml.runtime.instructions.Instruction;
+import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.matrix.operators.Operator;
+import org.apache.sysml.utils.Statistics;
 
 public abstract class GPUInstruction extends Instruction 
 {
 	public enum GPUINSTRUCTION_TYPE { AggregateUnary, AggregateBinary, Convolution, MMTSJ, Reorg, ArithmeticBinary, BuiltinUnary, Builtin };
 
 	// Memory/conversions
-	public final static String MISC_TIMER_TO_DEVICE = "2dev";	// time spent in bringing data to gpu (from host)
-	public final static String MISC_TIMER_DEVICE_TO = "dev2"; // time spent in bringing data from gpu (to host)
-	public final static String MISC_TIMER_DEVICE_TO_DEVICE = "2dev2"; // time spent in copying data from one region on the device to another
-	public final static String MISC_TIMER_SPARSE_TO_DENSE = "sp2";	// time spent in converting data from sparse to dense
-	public final static String MISC_TIMER_DENSE_TO_SPARSE = "2sp";	// time spent in converting data from dense to sparse
-	public final static String MISC_TIMER_CUDA_FREE = "f";	// time spent in calling cudaFree
-	public final static String MISC_TIMER_ALLOCATE = "a";		// time spent to allocate memory on gpu
+	public final static String MISC_TIMER_HOST_TO_DEVICE = 				"H2D";	// time spent in bringing data to gpu (from host)
+	public final static String MISC_TIMER_DEVICE_TO_HOST =				"D2H"; 	// time spent in bringing data from gpu (to host)
+	public final static String MISC_TIMER_DEVICE_TO_DEVICE = 			"D2D"; 	// time spent in copying data from one region on the device to another
+	public final static String MISC_TIMER_SPARSE_TO_DENSE = 			"s2d";	// time spent in converting data from sparse to dense
+	public final static String MISC_TIMER_DENSE_TO_SPARSE = 			"d2s";	// time spent in converting data from dense to sparse
+	public final static String MISC_TIMER_CUDA_FREE = 						"f";		// time spent in calling cudaFree
+	public final static String MISC_TIMER_ALLOCATE = 							"a";		// time spent to allocate memory on gpu
+	public final static String MISC_TIMER_ALLOCATE_DENSE_OUTPUT = "ao";		// time spent to allocate dense output (recorded differently than MISC_TIMER_ALLOCATE)
 
 	// Matmult instructions
-	public final static String MISC_TIMER_SPARSE_ALLOCATE_LIB = 						"sao";		// time spend in allocating for sparse matrix output
-	public final static String MISC_TIMER_DENSE_DOT_LIB = 									"ddot";	// time spent in dot product of 2 dense vectors
-	public final static String MISC_TIMER_DENSE_VECTOR_DENSE_MATRIX_LIB = 	"dvdm";	// time spent in matrix mult of dense vector and dense matrix
-	public final static String MISC_TIMER_DENSE_MATRIX_DENSE_VECTOR_LIB = 	"dmdv";	// time spent in matrix mult of dense matrix and dense vector
-	public final static String MISC_TIMER_DENSE_MATRIX_DENSE_MATRIX_LIB = 	"dmdm";	// time spent in matrix mult of dense matrices
-	public final static String MISC_TIMER_SPARSE_MATRIX_DENSE_VECTOR_LIB = 	"smdv";	// time spent in matrix mult of sparse matrix and dense vector
-	public final static String MISC_TIMER_SPARSE_MATRIX_SPARSE_MATRIX_LIB = "smsm";  // time spent in matrix mult of sparse matrices
-	public final static String MISC_TIMER_SYRK_LIB = 												"syrk"; 	// time spent in symmetric rank-k update
+	public final static String MISC_TIMER_SPARSE_ALLOCATE_LIB = 						"Msao";		// time spend in allocating for sparse matrix output
+	public final static String MISC_TIMER_DENSE_DOT_LIB = 									"Mddot";	// time spent in dot product of 2 dense vectors
+	public final static String MISC_TIMER_DENSE_VECTOR_DENSE_MATRIX_LIB = 	"Mdvdm";	// time spent in matrix mult of dense vector and dense matrix
+	public final static String MISC_TIMER_DENSE_MATRIX_DENSE_VECTOR_LIB = 	"Mdmdv";	// time spent in matrix mult of dense matrix and dense vector
+	public final static String MISC_TIMER_DENSE_MATRIX_DENSE_MATRIX_LIB = 	"Mdmdm";	// time spent in matrix mult of dense matrices
+	public final static String MISC_TIMER_SPARSE_MATRIX_DENSE_VECTOR_LIB = 	"Msmdv";	// time spent in matrix mult of sparse matrix and dense vector
+	public final static String MISC_TIMER_SPARSE_MATRIX_SPARSE_MATRIX_LIB = "Msmsm";  // time spent in matrix mult of sparse matrices
+	public final static String MISC_TIMER_SYRK_LIB = 												"Msyrk"; 	// time spent in symmetric rank-k update
 
 	// Other BLAS instructions
-	public final static String MISC_TIMER_DAXPY_LIB = 											"daxpy";	// time spent in daxpy
+	public final static String MISC_TIMER_DAXPY_LIB = "daxpy";	// time spent in daxpy
 
 	// Transpose
-	public final static String MISC_TIMER_SPARSE_DGEAM_LIB = "sdgeaml"; // time spent in sparse transpose (and other ops of type a*op(A) + b*op(B))
-	public final static String MISC_TIMER_DENSE_DGEAM_LIB = "ddeaml"; 	// time spent in dense transpose (and other ops of type a*op(A) + b*op(B))
-	public final static String MISC_TIMER_TRANSPOSE_LIB = "dtl";				// time spent on dense transpose, this includes allocation of output
+	public final static String MISC_TIMER_SPARSE_DGEAM_LIB = 	"sdgeaml"; 	// time spent in sparse transpose (and other ops of type a*op(A) + b*op(B))
+	public final static String MISC_TIMER_DENSE_DGEAM_LIB = 	"ddgeaml"; 	// time spent in dense transpose (and other ops of type a*op(A) + b*op(B))
+	public final static String MISC_TIMER_TRANSPOSE_LIB = 		"dtl";			// time spent on dense transpose, this includes allocation of output
 
 	// Custom kernels
 	public final static String MISC_TIMER_MATRIX_MATRIX_CELLWISE_OP_KERNEL = 	"mmck";	// time spent in matrix-matrix cellwise operations
@@ -79,11 +83,9 @@ public abstract class GPUInstruction extends Instruction
 	public final static String MISC_TIMER_BIAS_ADD_LIB = 										"nnba"; // time spent in bias_add cuda kernel
 	public final static String MISC_TIMER_RELU_BACKWARD_KERNEL= 						"nnrbk"; // time spent in relu_backward cuda kernel
 	public final static String MISC_TIMER_RELU_KERNEL = 										"nnrk";	// time spent in the relu kernel
+	public final static String MISC_TIMER_CUDNN_INIT = 											"nni";	// time spent in initializations for cudnn call
+	public final static String MISC_TIMER_CUDNN_CLEANUP = 									"nnc";	// time spent in cleanup for cudnn call
 
-
-
-	public final static String MISC_TIMER_CUDNN_INIT = "nni";	// time spent in initializations for cudnn call
-	public final static String MISC_TIMER_CUDNN_CLEANUP = "nnc";	// time spent in cleanup for cudnn call
 
 	protected GPUINSTRUCTION_TYPE _gputype;
 	protected Operator _optr;
@@ -144,5 +146,35 @@ public abstract class GPUInstruction extends Instruction
 					throws DMLRuntimeException
 	{
 		JCuda.cudaDeviceSynchronize();
+	}
+
+	/**
+	 * Helper method to get the input block (allocated on the GPU)
+	 * Also records performance information into {@link Statistics}
+	 * @param ec		active {@link ExecutionContext}
+	 * @param name	name of input matrix (that the {@link ExecutionContext} is aware of)
+	 * @return	the matrix object
+	 * @throws DMLRuntimeException if an error occurs
+	 */
+	protected MatrixObject getMatrixInputForGPUInstruction(ExecutionContext ec, String name) throws DMLRuntimeException {
+		long t0 = System.nanoTime();
+		Pair<MatrixObject, Boolean> mb = ec.getMatrixInputForGPUInstruction(name);
+		if (mb.getValue()) Statistics.maintainCPMiscTimes(getExtendedOpcode(), GPUInstruction.MISC_TIMER_HOST_TO_DEVICE, System.nanoTime() - t0);
+		return mb.getKey();
+	}
+
+	/**
+	 * Helper method to get the output block (allocated on the GPU)
+	 * Also records performance information into {@link Statistics}
+	 * @param ec		active {@link ExecutionContext}
+	 * @param name	name of input matrix (that the {@link ExecutionContext} is aware of)
+	 * @return	the matrix object
+	 * @throws DMLRuntimeException	if an error occurs
+	 */
+	protected MatrixObject getDenseMatrixOutputForGPUInstruction(ExecutionContext ec, String name) throws DMLRuntimeException {
+		long t0 = System.nanoTime();
+		Pair<MatrixObject, Boolean> mb = ec.getDenseMatrixOutputForGPUInstruction(name);
+		if (mb.getValue()) Statistics.maintainCPMiscTimes(getExtendedOpcode(), GPUInstruction.MISC_TIMER_ALLOCATE_DENSE_OUTPUT, System.nanoTime() - t0);
+		return mb.getKey();
 	}
 }

@@ -19,6 +19,7 @@
 
 package org.apache.sysml.runtime.controlprogram.parfor;
 
+import java.util.HashMap;
 import java.util.List;
 
 import org.apache.commons.logging.Log;
@@ -56,9 +57,9 @@ public class RemoteDPParForSpark
 	
 	protected static final Log LOG = LogFactory.getLog(RemoteDPParForSpark.class.getName());
 
-	public static RemoteParForJobReturn runJob(long pfid, String itervar, String matrixvar, String program, String resultFile, 
-			MatrixObject input, ExecutionContext ec, PDataPartitionFormat dpf, OutputInfo oi, boolean tSparseCol, //config params
-			boolean enableCPCaching, int numReducers )  //opt params
+	public static RemoteParForJobReturn runJob(long pfid, String itervar, String matrixvar, String program, HashMap<String, byte[]> clsMap,
+			String resultFile, MatrixObject input, ExecutionContext ec, PDataPartitionFormat dpf, OutputInfo oi, 
+			boolean tSparseCol, boolean enableCPCaching, int numReducers ) 
 		throws DMLRuntimeException
 	{
 		String jobname = "ParFor-DPESP";
@@ -84,7 +85,7 @@ public class RemoteDPParForSpark
 		
 		//core parfor datapartition-execute
 		DataPartitionerRemoteSparkMapper dpfun = new DataPartitionerRemoteSparkMapper(mc, ii, oi, dpf);
-		RemoteDPParForSparkWorker efun = new RemoteDPParForSparkWorker(program, matrixvar, itervar, 
+		RemoteDPParForSparkWorker efun = new RemoteDPParForSparkWorker(program, clsMap, matrixvar, itervar, 
 				          enableCPCaching, mc, tSparseCol, dpf, oi, aTasks, aIters);
 		List<Tuple2<Long,String>> out = 
 				in.flatMapToPair(dpfun)       //partition the input blocks

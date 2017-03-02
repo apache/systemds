@@ -986,8 +986,9 @@ public class ParForProgramBlock extends ForProgramBlock
 		// Step 1) init parallel workers (serialize PBs)
 		// NOTES: each mapper changes filenames with regard to his ID as we submit a single job,
 		//        cannot reuse serialized string, since variables are serialized as well.
-		ParForBody body = new ParForBody( _childBlocks, _resultVars, ec );
-		String program = ProgramConverter.serializeParForBody( body );
+		ParForBody body = new ParForBody(_childBlocks, _resultVars, ec);
+		HashMap<String, byte[]> clsMap = new HashMap<String, byte[]>();
+		String program = ProgramConverter.serializeParForBody(body, clsMap);
 		
 		if( _monitor ) 
 			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_INIT_PARWRK_T, time.stop());
@@ -1008,7 +1009,7 @@ public class ParForProgramBlock extends ForProgramBlock
 				
 		// Step 3) submit Spark parfor job (no lazy evaluation, since collect on result)
 		//MatrixObject colocatedDPMatrixObj = (_colocatedDPMatrix!=null)? (MatrixObject)ec.getVariable(_colocatedDPMatrix) : null;
-		RemoteParForJobReturn ret = RemoteParForSpark.runJob(_ID, program, tasks, ec, _enableCPCaching, _numThreads);
+		RemoteParForJobReturn ret = RemoteParForSpark.runJob(_ID, program, clsMap, tasks, ec, _enableCPCaching, _numThreads);
 		
 		if( _monitor ) 
 			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_WAIT_EXEC_T, time.stop());
@@ -1050,7 +1051,8 @@ public class ParForProgramBlock extends ForProgramBlock
 		// NOTES: each mapper changes filenames with regard to his ID as we submit a single job,
 		//        cannot reuse serialized string, since variables are serialized as well.
 		ParForBody body = new ParForBody( _childBlocks, _resultVars, ec );
-		String program = ProgramConverter.serializeParForBody( body );
+		HashMap<String, byte[]> clsMap = new HashMap<String, byte[]>(); 
+		String program = ProgramConverter.serializeParForBody( body, clsMap );
 		
 		if( _monitor ) 
 			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_INIT_PARWRK_T, time.stop());
@@ -1071,8 +1073,8 @@ public class ParForProgramBlock extends ForProgramBlock
 		OutputInfo inputOI = ((inputMatrix.getSparsity()<0.1 && inputDPF==PDataPartitionFormat.COLUMN_WISE)||
 				              (inputMatrix.getSparsity()<0.001 && inputDPF==PDataPartitionFormat.ROW_WISE))? 
 				             OutputInfo.BinaryCellOutputInfo : OutputInfo.BinaryBlockOutputInfo;
-		RemoteParForJobReturn ret = RemoteDPParForSpark.runJob(_ID, itervar.getName(), _colocatedDPMatrix, program, resultFile, 
-				inputMatrix, ec, inputDPF, inputOI, _tSparseCol, _enableCPCaching, _numThreads );
+		RemoteParForJobReturn ret = RemoteDPParForSpark.runJob(_ID, itervar.getName(), _colocatedDPMatrix, program, clsMap, 
+				resultFile, inputMatrix, ec, inputDPF, inputOI, _tSparseCol, _enableCPCaching, _numThreads );
 		
 		if( _monitor ) 
 			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_WAIT_EXEC_T, time.stop());

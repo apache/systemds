@@ -19,11 +19,9 @@
 
 package org.apache.sysml.runtime.codegen;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.ObjectOutputStream;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Arrays;
@@ -48,9 +46,7 @@ import org.apache.sysml.utils.Statistics;
 
 public class CodegenUtils 
 {
-	//cache to reuse compiled and loaded classes (this is also a workaround for classes,
-	//compiled during initial compilation and subsequently loaded as the working directory
-	//is cleaned up just before the actual execution
+	//cache to reuse compiled and loaded classes 
 	private static ConcurrentHashMap<String, Class<?>> _cache = new ConcurrentHashMap<String,Class<?>>();
 	private static String _workingDir = null;
 	
@@ -128,7 +124,13 @@ public class CodegenUtils
 		return ret;
 	}
 	
-	public static Class<?> loadClass(String name, byte[] classBytes) throws DMLRuntimeException {
+	public static Class<?> loadClass(String name) throws DMLRuntimeException {
+		return loadClass(name, null);
+	}
+	
+	public static Class<?> loadClass(String name, byte[] classBytes) 
+		throws DMLRuntimeException 
+	{
 		//reuse existing compiled class
 		Class<?> ret = _cache.get(name);
 		if( ret != null ) 
@@ -188,16 +190,10 @@ public class CodegenUtils
 	public static byte[] getClassAsByteArray(String name) 
 		throws DMLRuntimeException
 	{
-		//reuse existing compiled class
-		Class<?> cls = _cache.get(name);
-		if( cls != null ) 
-			return getClassAsByteArray(cls);
-		
-		
 		String classAsPath = name.replace('.', '/') + ".class";
 		
 		URLClassLoader classLoader = null;
-		byte[] ret = null;
+		InputStream stream = null;
 		
 		try {
 			//dynamically load compiled class
@@ -205,56 +201,18 @@ public class CodegenUtils
 			classLoader = new URLClassLoader(
 					new URL[]{new File(_workingDir).toURI().toURL(), runDir}, 
 					CodegenUtils.class.getClassLoader());
-			InputStream stream = classLoader.getResourceAsStream(classAsPath);
-			ret = IOUtils.toByteArray(stream);
+			stream = classLoader.getResourceAsStream(classAsPath);
+			return IOUtils.toByteArray(stream);
 		} 
 		catch (IOException e) {
 			throw new DMLRuntimeException(e);
 		}
 		finally {
 			IOUtilFunctions.closeSilently(classLoader);
+			IOUtilFunctions.closeSilently(stream);
 		}
-		
-		return ret;
 	}
 
-
-	public static byte[] getClassAsByteArray(Class<?> cls) 
-		throws DMLRuntimeException 
-	{
-		ByteArrayOutputStream bos = new ByteArrayOutputStream();
-		try {
-			ObjectOutputStream oos = new ObjectOutputStream(bos);
-			oos.writeObject(cls);
-			oos.flush();
-			return bos.toByteArray();
-		} 
-		catch( IOException e ) {
-			throw new DMLRuntimeException(e);
-		} 
-		finally {
-			IOUtilFunctions.closeSilently(bos);
-		}
-	}
-	
-	private static void createWorkingDir() throws DMLRuntimeException  {
-		if( _workingDir != null )
-			return;
-		String tmp = LocalFileUtils.getWorkingDir(LocalFileUtils.CATEGORY_CODEGEN);
-		LocalFileUtils.createLocalFileIfNotExist(tmp);
-		_workingDir = tmp;
-	}
-	
-	public static URL[] getUrls() throws DMLRuntimeException {
-		try {
-			URL runDir = CodegenUtils.class.getProtectionDomain().getCodeSource().getLocation(); 
-			return new URL[]{new File(_workingDir).toURI().toURL(), runDir};
-		}
-		catch(Exception e) {
-			throw new DMLRuntimeException(e);
-		}				
-	}
-	
 	public static String getSpoofType(Class<?> cls) {
 		if(cls.getSuperclass() == SpoofCellwise.class)
 			return "Cell" +  cls.getName().split("\\.")[1];
@@ -268,5 +226,13 @@ public class CodegenUtils
 	
 	public static void clearClassCache() {
 		_cache.clear();
+	}
+	
+	private static void createWorkingDir() throws DMLRuntimeException  {
+		if( _workingDir != null )
+			return;
+		String tmp = LocalFileUtils.getWorkingDir(LocalFileUtils.CATEGORY_CODEGEN);
+		LocalFileUtils.createLocalFileIfNotExist(tmp);
+		_workingDir = tmp;
 	}
 }

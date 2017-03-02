@@ -21,13 +21,16 @@ package org.apache.sysml.runtime.controlprogram.parfor;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map.Entry;
 
 import org.apache.hadoop.io.Writable;
 import org.apache.spark.TaskContext;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.util.LongAccumulator;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.codegen.CodegenUtils;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
@@ -49,6 +52,7 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 	private static final long serialVersionUID = 30223759283155139L;
 	
 	private final String  _prog;
+	private final HashMap<String, byte[]> _clsMap;
 	private final boolean _caching;
 	private final String _inputVar;
 	private final String _iterVar;
@@ -64,10 +68,13 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 	private final LongAccumulator _aTasks;
 	private final LongAccumulator _aIters;
 	
-	public RemoteDPParForSparkWorker(String program, String inputVar, String iterVar, boolean cpCaching, MatrixCharacteristics mc, boolean tSparseCol, PDataPartitionFormat dpf, OutputInfo oinfo, LongAccumulator atasks, LongAccumulator aiters) 
+	public RemoteDPParForSparkWorker(String program, HashMap<String, byte[]> clsMap, String inputVar, String iterVar, 
+			boolean cpCaching, MatrixCharacteristics mc, boolean tSparseCol, PDataPartitionFormat dpf, OutputInfo oinfo, 
+			LongAccumulator atasks, LongAccumulator aiters) 
 		throws DMLRuntimeException
 	{
 		_prog = program;
+		_clsMap = clsMap;
 		_caching = cpCaching;
 		_inputVar = inputVar;
 		_iterVar = iterVar;
@@ -93,7 +100,7 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 		ArrayList<Tuple2<Long,String>> ret = new ArrayList<Tuple2<Long,String>>();
 		
 		//lazy parworker initialization
-		configureWorker( TaskContext.get().taskAttemptId() ); //requires Spark 1.3
+		configureWorker( TaskContext.get().taskAttemptId() );
 	
 		//process all matrix partitions of this data partition
 		MatrixBlock partition = null;
@@ -137,6 +144,12 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 		throws DMLRuntimeException, IOException
 	{
 		_workerID = ID;
+		
+		//initialize codegen class cache (before program parsing)
+		synchronized( CodegenUtils.class ) {
+			for( Entry<String, byte[]> e : _clsMap.entrySet() )
+				CodegenUtils.loadClass(e.getKey(), e.getValue());
+		}
 		
 		//parse and setup parfor body program
 		ParForBody body = ProgramConverter.parseParForBody(_prog, (int)_workerID);

@@ -44,15 +44,18 @@ public class SpoofCPInstruction extends ComputationCPInstruction
 		_numThreads = k;
 		_in = in;
 	}
+	
+	public Class<?> getOperatorClass() {
+		return _class;
+	}
 
 	public static SpoofCPInstruction parseInstruction(String str) 
 		throws DMLRuntimeException 
 	{
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		
-		//String opcode = parts[0];
 		ArrayList<CPOperand> inlist = new ArrayList<CPOperand>();
-		Class<?> cla = CodegenUtils.loadClass(parts[1], null);
+		Class<?> cla = CodegenUtils.loadClass(parts[1]);
 		String opcode =  parts[0] + CodegenUtils.getSpoofType(cla);
 		
 		for( int i=2; i<parts.length-2; i++ )

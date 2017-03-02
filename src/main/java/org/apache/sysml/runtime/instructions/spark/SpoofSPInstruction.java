@@ -73,7 +73,7 @@ public class SpoofSPInstruction extends SPInstruction
 		
 		//String opcode = parts[0];
 		ArrayList<CPOperand> inlist = new ArrayList<CPOperand>();
-		Class<?> cls = CodegenUtils.loadClass(parts[1], null);
+		Class<?> cls = CodegenUtils.loadClass(parts[1]);
 		byte[] classBytes = CodegenUtils.getClassAsByteArray(parts[1]);
 		String opcode =  parts[0] + CodegenUtils.getSpoofType(cls);
 		

@@ -19,6 +19,7 @@
 
 package org.apache.sysml.runtime.controlprogram.parfor;
 
+import java.util.HashMap;
 import java.util.List;
 
 import org.apache.commons.logging.Log;
@@ -53,8 +54,8 @@ public class RemoteParForSpark
 	
 	protected static final Log LOG = LogFactory.getLog(RemoteParForSpark.class.getName());
 
-	public static RemoteParForJobReturn runJob(long pfid, String program, List<Task> tasks, ExecutionContext ec,
-			                                   boolean cpCaching, int numMappers) 
+	public static RemoteParForJobReturn runJob(long pfid, String program, HashMap<String, byte[]> clsMap, 
+			List<Task> tasks, ExecutionContext ec, boolean cpCaching, int numMappers) 
 		throws DMLRuntimeException  
 	{
 		String jobname = "ParFor-ESP";
@@ -69,7 +70,7 @@ public class RemoteParForSpark
 		
 		//run remote_spark parfor job 
 		//(w/o lazy evaluation to fit existing parfor framework, e.g., result merge)
-		RemoteParForSparkWorker func = new RemoteParForSparkWorker(program, cpCaching, aTasks, aIters);
+		RemoteParForSparkWorker func = new RemoteParForSparkWorker(program, clsMap, cpCaching, aTasks, aIters);
 		List<Tuple2<Long,String>> out = 
 				sc.parallelize( tasks, numMappers )  //create rdd of parfor tasks
 		          .flatMapToPair( func )             //execute parfor tasks 

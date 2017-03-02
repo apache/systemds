@@ -581,7 +581,7 @@ public class DMLScript
 		AParserWrapper parser = AParserWrapper.createParser(parsePyDML);
 		DMLProgram prog = parser.parse(DML_FILE_PATH_ANTLR_PARSER, dmlScriptStr, argVals);
 		
-		//Step 4: construct HOP DAGs (incl LVA and validate)
+		//Step 4: construct HOP DAGs (incl LVA, validate, and setup)
 		DMLTranslator dmlt = new DMLTranslator(prog);
 		dmlt.liveVariableAnalysis(prog);			
 		dmlt.validateParseTree(prog);
@@ -592,6 +592,9 @@ public class DMLScript
 			dmlt.printHops(prog);
 			DMLTranslator.resetHopsDAGVisitStatus(prog);
 		}
+		
+		//init working directories (before usage by following compilation steps)
+		initHadoopExecution( dmlconf );
 	
 		//Step 5: rewrite HOP DAGs (incl IPA and memory estimates)
 		dmlt.rewriteHopsDAG(prog);
@@ -673,8 +676,6 @@ public class DMLScript
 		ExecutionContext ec = null;
 		try 
 		{  
-			initHadoopExecution( dmlconf );
-			
 			//run execute (w/ exception handling to ensure proper shutdown)
 			ec = ExecutionContextFactory.createContext(rtprog);
 			rtprog.execute( ec );  

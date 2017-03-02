@@ -33,6 +33,7 @@ import org.apache.sysml.hops.UnaryOp;
 import org.apache.sysml.hops.Hop.AggOp;
 import org.apache.sysml.hops.Hop.Direction;
 import org.apache.sysml.hops.Hop.OpOp2;
+import org.apache.sysml.hops.TernaryOp;
 import org.apache.sysml.hops.codegen.cplan.CNode;
 import org.apache.sysml.hops.codegen.cplan.CNodeBinary;
 import org.apache.sysml.hops.codegen.cplan.CNodeBinary.BinType;
@@ -41,6 +42,9 @@ import org.apache.sysml.hops.codegen.cplan.CNodeData;
 import org.apache.sysml.hops.codegen.cplan.CNodeTpl;
 import org.apache.sysml.hops.codegen.cplan.CNodeUnary;
 import org.apache.sysml.hops.codegen.cplan.CNodeUnary.UnaryType;
+import org.apache.sysml.hops.codegen.cplan.CNodeTernary;
+import org.apache.sysml.hops.codegen.cplan.CNodeTernary.TernaryType;
+import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.codegen.SpoofCellwise.CellType;
 import org.apache.sysml.runtime.matrix.data.Pair;
@@ -67,16 +71,17 @@ public class CellTpl extends BaseTpl
 			return false;
 			
 		//re-assign initialHop to fuse the sum/rowsums (before checking for chains)
-		for (Hop h : _initialHop.getParent())
+		//TODO add aggbinary (vector tsmm) as potential head for cellwise operation
+		for (Hop h : _initialHop.getParent()) {
 			if( h instanceof AggUnaryOp && ((AggUnaryOp) h).getOp() == AggOp.SUM 
 				&& ((AggUnaryOp) h).getDirection()!= Direction.Col ) {
 				_initialHop = h;  
 			}
+		}
 		
 		//unary matrix && endHop found && endHop is not direct child of the initialHop (i.e., chain of operators)
 		if(_endHop != null && _endHop != _initialHop)
 		{
-			
 			// if final hop is unary add its child to the input 
 			if(_endHop instanceof UnaryOp)
 				_matrixInputs.add(_endHop.getInput().get(0));
@@ -199,13 +204,30 @@ public class CellTpl extends BaseTpl
 					if( TemplateUtils.isColVector(cdata2) )
 						cdata2 = new CNodeUnary(cdata2, UnaryType.LOOKUP);
 					
-					
 					if( bop.getOp()==OpOp2.POW && cdata2.isLiteral() && cdata2.getVarname().equals("2") )
 						out = new CNodeUnary(cdata1, UnaryType.POW2);
 					else if( bop.getOp()==OpOp2.MULT && cdata2.isLiteral() && cdata2.getVarname().equals("2") )
 						out = new CNodeUnary(cdata1, UnaryType.MULT2);
 					else //default binary	
 						out = new CNodeBinary(cdata1, cdata2, BinType.valueOf(primitiveOpName));
+				}
+				else if(hop instanceof TernaryOp) 
+				{
+					TernaryOp top = (TernaryOp) hop;
+					CNode cdata1 = cnodeData.get(0);
+					CNode cdata2 = cnodeData.get(1);
+					CNode cdata3 = cnodeData.get(2);
+					
+					//cdata1 is vector
+					if( TemplateUtils.isColVector(cdata1) )
+						cdata1 = new CNodeUnary(cdata1, UnaryType.LOOKUP);
+					//cdata3 is vector
+					if( TemplateUtils.isColVector(cdata3) )
+						cdata3 = new CNodeUnary(cdata3, UnaryType.LOOKUP);
+					
+					//construct ternary cnode, primitive operation derived from OpOp3
+					out = new CNodeTernary(cdata1, cdata2, cdata3, 
+							TernaryType.valueOf(top.getOp().toString()));
 				}
 				else if (hop instanceof AggUnaryOp && ((AggUnaryOp)hop).getOp() == AggOp.SUM
 					&& (((AggUnaryOp) hop).getDirection() == Direction.RowCol 
@@ -283,7 +305,11 @@ public class CellTpl extends BaseTpl
 				&& TemplateUtils.isVectorOrScalar(hop.getInput().get(1)) && !TemplateUtils.isBinaryMatrixRowVector(hop)) 
 			||(TemplateUtils.isVectorOrScalar( hop.getInput().get(0))  
 				&& hop.getInput().get(1).getDataType() == DataType.MATRIX && !TemplateUtils.isBinaryMatrixRowVector(hop)) );
+		boolean isTernaryVectorScalarVector = hop instanceof TernaryOp && hop.getInput().size()==3 && hop.dimsKnown()
+				&& HopRewriteUtils.checkInputDataTypes(hop, DataType.MATRIX, DataType.SCALAR, DataType.MATRIX)
+				&& TemplateUtils.isVector(hop.getInput().get(0)) && TemplateUtils.isVector(hop.getInput().get(2));
+		
 		return hop.getDataType() == DataType.MATRIX && TemplateUtils.isOperationSupported(hop)
-			&& (hop instanceof UnaryOp || isBinaryMatrixScalar || isBinaryMatrixVector);	
+			&& (hop instanceof UnaryOp || isBinaryMatrixScalar || isBinaryMatrixVector || isTernaryVectorScalarVector);	
 	}
 }

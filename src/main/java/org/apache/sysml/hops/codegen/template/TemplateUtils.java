@@ -33,6 +33,7 @@ import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.LiteralOp;
 import org.apache.sysml.hops.ReorgOp;
+import org.apache.sysml.hops.TernaryOp;
 import org.apache.sysml.hops.Hop.AggOp;
 import org.apache.sysml.hops.Hop.Direction;
 import org.apache.sysml.hops.Hop.ReOrgOp;
@@ -45,6 +46,7 @@ import org.apache.sysml.hops.codegen.cplan.CNodeOuterProduct;
 import org.apache.sysml.hops.codegen.cplan.CNodeTpl;
 import org.apache.sysml.hops.codegen.cplan.CNodeUnary;
 import org.apache.sysml.hops.codegen.cplan.CNodeUnary.UnaryType;
+import org.apache.sysml.hops.codegen.cplan.CNodeTernary.TernaryType;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.codegen.SpoofCellwise.CellType;
 import org.apache.sysml.runtime.matrix.data.Pair;
@@ -231,11 +233,12 @@ public class TemplateUtils
 
 	public static boolean isOperationSupported(Hop h) {
 		if(h instanceof  UnaryOp)
-			return UnaryType.contains(((UnaryOp)h).getOp().toString());
+			return UnaryType.contains(((UnaryOp)h).getOp().name());
 		else if(h instanceof BinaryOp)
-			return BinType.contains(((BinaryOp)h).getOp().toString());
-		else
-			return false;
+			return BinType.contains(((BinaryOp)h).getOp().name());
+		else if(h instanceof TernaryOp)
+			return TernaryType.contains(((TernaryOp)h).getOp().name());
+		return false;
 	}
 
 	private static void rfindChildren(Hop hop, HashSet<Hop> children ) {		

@@ -34,10 +34,10 @@ public class CNodeBinary extends CNode
 		LESS, LESSEQUAL, GREATER, GREATEREQUAL, EQUAL,NOTEQUAL,
 		MIN, MAX, AND, OR, LOG, POW,
 		MINUS1_MULT;
-		
+
 		public static boolean contains(String value) {
 			for( BinType bt : values()  )
-				if( bt.toString().equals(value) )
+				if( bt.name().equals(value) )
 					return true;
 			return false;
 		}
@@ -188,6 +188,7 @@ public class CNodeBinary extends CNode
 		}
 	}
 	
+	@Override
 	public void setOutputDims()
 	{
 		switch(_type) {

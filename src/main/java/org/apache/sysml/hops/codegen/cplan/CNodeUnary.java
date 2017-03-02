@@ -27,22 +27,21 @@ import org.apache.sysml.parser.Expression.DataType;
 public class CNodeUnary extends CNode
 {
 	public enum UnaryType {
-		ROW_SUMS, LOOKUP, LOOKUP0,
+		ROW_SUMS, LOOKUP, LOOKUP0, //codegen specific
 		EXP, POW2, MULT2, SQRT, LOG,
-		ABS, ROUND, CEIL,FLOOR, SIGN, 
+		ABS, ROUND, CEIL, FLOOR, SIGN, 
 		SIN, COS, TAN, ASIN, ACOS, ATAN,
-		IQM, STOP,
-		DOTPRODUCT_ROW_SUMS; //row sums via dot product for debugging purposes
+		SELP, SPROP, SIGMOID, LOG_NZ; 
 		
 		public static boolean contains(String value) {
 			for( UnaryType ut : values()  )
-				if( ut.toString().equals(value) )
+				if( ut.name().equals(value) )
 					return true;
 			return false;
 		}
 		
 		public String getTemplate(boolean sparse) {
-			switch (this) {
+			switch( this ) {
 				case ROW_SUMS:
 					return sparse ? "    double %TMP% = LibSpoofPrimitives.vectSum( %IN1v%, %IN1i%, %POS1%, %LEN%);\n": 
 									"    double %TMP% = LibSpoofPrimitives.vectSum( %IN1%, %POS1%,  %LEN%);\n"; 
@@ -82,8 +81,17 @@ public class CNodeUnary extends CNode
 					return "    double %TMP% = Math.ceil(%IN1%);\n";
 				case FLOOR:
 					return "    double %TMP% = Math.floor(%IN1%);\n";
+				case SELP:
+					return "    double %TMP% = (%IN1%>0) ? %IN1% : 0;\n";
+				case SPROP:
+					return "    double %TMP% = %IN1% * (1 - %IN1%);\n";
+				case SIGMOID:
+					return "    double %TMP% = 1 / (1 + FastMath.exp(-%IN1%));\n";
+				case LOG_NZ:
+					return "    double %TMP% = (%IN1%==0) ? 0 : FastMath.log(%IN1%);\n";
+					
 				default: 
-					throw new RuntimeException("Invalid binary type: "+this.toString());
+					throw new RuntimeException("Invalid unary type: "+this.toString());
 			}
 		}
 	}
@@ -150,15 +158,14 @@ public class CNodeUnary extends CNode
 
 	@Override
 	public void setOutputDims() {
-		switch(_type)
-		{
+		switch(_type) {
 			case ROW_SUMS:
 			case EXP:
 			case LOOKUP:
 			case LOOKUP0:	
 			case POW2:
 			case MULT2:	
-			case ABS:
+			case ABS:  
 			case SIN:
 			case COS: 
 			case TAN:
@@ -169,10 +176,12 @@ public class CNodeUnary extends CNode
 			case SQRT:
 			case LOG:
 			case ROUND: 
-			case IQM:
-			case STOP:
 			case CEIL:
 			case FLOOR:
+			case SELP:	
+			case SPROP:
+			case SIGMOID:
+			case LOG_NZ:
 				_rows = 0;
 				_cols = 0;
 				_dataType= DataType.SCALAR;

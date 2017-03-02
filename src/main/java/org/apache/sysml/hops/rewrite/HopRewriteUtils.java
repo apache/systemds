@@ -719,7 +719,7 @@ public class HopRewriteUtils
 		
 		return ret;
 	}
-	
+
 	public static boolean isTransposeOperation(Hop hop) {
 		return (hop instanceof ReorgOp && ((ReorgOp)hop).getOp()==ReOrgOp.TRANSPOSE);
 	}
@@ -777,6 +777,13 @@ public class HopRewriteUtils
 		}
 		
 		return false;
+	}
+
+	public static boolean checkInputDataTypes(Hop hop, DataType... dt) {
+		for( int i=0; i<hop.getInput().size(); i++ )
+			if( hop.getInput().get(i).getDataType() != dt[i] )
+				return false;
+		return true;
 	}
 	
 	public static boolean isFullColumnIndexing(LeftIndexingOp hop)

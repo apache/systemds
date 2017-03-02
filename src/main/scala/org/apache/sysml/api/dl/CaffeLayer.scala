@@ -326,8 +326,8 @@ class MaxPooling(val param:LayerParameter, val id:Int, val net:CaffeNetwork) ext
                    else poolingParam.getPad.toString
   def pad_w =   if(poolingParam.hasPadW) poolingParam.getPadW.toString 
                    else poolingParam.getPad.toString
-  val outputHeight =  try { ConvolutionUtils.getP(bottomLayerOutputShape._2.toLong, kernel_h.toLong, stride_h.toLong, pad_h.toLong).toString } catch { case _ : Throwable => "Hout" + id } 
-  val outputWidth =  try { ConvolutionUtils.getQ(bottomLayerOutputShape._3.toLong, kernel_w.toLong, stride_w.toLong, pad_w.toLong).toString } catch { case _ : Throwable => "Wout" + id }
+  val outputHeight = ConvolutionUtils.getConv2dOutputMap(bottomLayerOutputShape._2, kernel_h, stride_h, pad_h)
+  val outputWidth =  ConvolutionUtils.getConv2dOutputMap(bottomLayerOutputShape._3, kernel_w, stride_w, pad_w)
 }
 
 class Convolution(val param:LayerParameter, val id:Int, val net:CaffeNetwork) extends CaffeLayer {
@@ -361,8 +361,8 @@ class Convolution(val param:LayerParameter, val id:Int, val net:CaffeNetwork) ex
   override def dW = "dW" + id
   override def dB = "db" + id
   // -------------------------------------------------
-  val outputHeight = try { ConvolutionUtils.getP(bottomLayerOutputShape._2.toLong, kernel_h.toLong, stride_h.toLong, pad_h.toLong).toString } catch { case _ : Throwable => "Hout" + id } 
-  val outputWidth =  try { ConvolutionUtils.getQ(bottomLayerOutputShape._3.toLong, kernel_w.toLong, stride_w.toLong, pad_w.toLong).toString } catch { case _ : Throwable => "Wout" + id }
+  val outputHeight = ConvolutionUtils.getConv2dOutputMap(bottomLayerOutputShape._2, kernel_h, stride_h, pad_h) 
+  val outputWidth =  ConvolutionUtils.getConv2dOutputMap(bottomLayerOutputShape._3, kernel_w, stride_w, pad_w)
   def convParam = param.getConvolutionParam
   def numKernels = convParam.getNumOutput.toString
   def numChannels = bottomLayerOutputShape._1

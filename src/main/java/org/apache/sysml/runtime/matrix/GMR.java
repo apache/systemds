@@ -188,7 +188,8 @@ public class GMR
 			}
 		}
 		
-		setupDistributedCache(job, instructionsInMapper, otherInstructionsInReducer, realinputs, realrlens, realclens);
+		boolean resetDistCache = setupDistributedCache(job, instructionsInMapper, 
+				otherInstructionsInReducer, realinputs, realrlens, realclens);
 
 		//set up the input files and their format information
 		boolean[] distCacheOnly = getDistCacheOnlyInputs(realIndexes, recordReaderInstruction, instructionsInMapper, aggInstructionsInReducer, otherInstructionsInReducer);
@@ -301,20 +302,20 @@ public class GMR
 		RunningJob runjob=JobClient.runJob(job);
 		
 		Group group=runjob.getCounters().getGroup(MRJobConfiguration.NUM_NONZERO_CELLS);
-		//MatrixCharacteristics[] stats=new MatrixCharacteristics[resultIndexes.length];
-		for(int i=0; i<resultIndexes.length; i++) {
-			// number of non-zeros
+		for(int i=0; i<resultIndexes.length; i++)
 			stats[i].setNonZeros(group.getCounter(Integer.toString(i)));
-		}
 		
+		//cleanups
 		String dir = dimsUnknownFilePrefix + "/" + runjob.getID().toString() + "_dimsFile";
 		stats = MapReduceTool.processDimsFiles(dir, stats);
 		MapReduceTool.deleteFileIfExistOnHDFS(dir);
+		if( resetDistCache )
+			MRBaseForCommonInstructions.resetDistCache();
 		
 		return new JobReturn(stats, outputInfos, runjob.isSuccessful());
 	}
 
-	private static void setupDistributedCache(JobConf job, String instMap, String instRed, String[] inputs, long[] rlens, long[] clens) 
+	private static boolean setupDistributedCache(JobConf job, String instMap, String instRed, String[] inputs, long[] rlens, long[] clens) 
 		throws DMLRuntimeException 
 	{
 		//concatenate mapper and reducer instructions
@@ -367,9 +368,13 @@ public class GMR
 			MRJobConfiguration.setupDistCacheInputs(job, indexString.toString(), pathString.toString(), pathList);
 			
 			//clean in-memory cache (prevent job interference in local mode)
-			if( InfrastructureAnalyzer.isLocalMode(job) )
+			if( InfrastructureAnalyzer.isLocalMode(job) ) {
 				MRBaseForCommonInstructions.resetDistCache();
+				return true;
+			}
 		}
+		
+		return false;
 	}
 
 	/**

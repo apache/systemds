@@ -682,12 +682,12 @@ public class DMLScript
 		}
 		finally //ensure cleanup/shutdown
 		{	
-			if(DMLScript.USE_ACCELERATOR && ec != null) {
+			if(DMLScript.USE_ACCELERATOR && ec != null)
 				ec.destroyGPUContext();
-			}
-			if(ec != null && ec instanceof SparkExecutionContext) {
+			if( dmlconf.getBooleanValue(DMLConfig.CODEGEN) )
+				SpoofCompiler.cleanupCodeGenerator();
+			if(ec != null && ec instanceof SparkExecutionContext)
 				((SparkExecutionContext) ec).close();
-			}
 			
 			//display statistics (incl caching stats if enabled)
 			Statistics.stopRunTimer();

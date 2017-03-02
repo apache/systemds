@@ -127,7 +127,7 @@ public class Dag<N extends Lop>
 	private HashMap<Long, Integer> IDMap = null;
 
 
-	private class NodeOutput {
+	private static class NodeOutput {
 		String fileName;
 		String varName;
 		OutputInfo outInfo;

@@ -308,7 +308,7 @@ public class LazyWriteBuffer
 				_pool.shutdown();
 		}
 		
-		private class FileCleanerTask implements Runnable {
+		private static class FileCleanerTask implements Runnable {
 			private String _fname = null;
 			
 			public FileCleanerTask( String fname ) {

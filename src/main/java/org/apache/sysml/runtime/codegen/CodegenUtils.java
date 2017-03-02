@@ -265,4 +265,8 @@ public class CodegenUtils
 		else
 			return "UNKNOWN";
 	}
+	
+	public static void clearClassCache() {
+		_cache.clear();
+	}
 }

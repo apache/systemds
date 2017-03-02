@@ -84,10 +84,7 @@ public class SpoofCompiler
 	
 	public static void generateCode(DMLProgram dmlp) 
 		throws LanguageException, HopsException, DMLRuntimeException
-	{	
-		// cleanup static plan cache
-		planCache.clear();
-		
+	{
 		// for each namespace, handle function statement blocks
 		for (String namespaceKey : dmlp.getNamespaces().keySet()) {
 			for (String fname : dmlp.getFunctionStatementBlocks(namespaceKey).keySet()) {
@@ -175,6 +172,13 @@ public class SpoofCompiler
 			return root;
 		
 		return optimize(new ArrayList<Hop>(Arrays.asList(root)), compileLiterals).get(0);
+	}
+	
+	public static void cleanupCodeGenerator() {
+		if( USE_PLAN_CACHE ) {
+			CodegenUtils.clearClassCache(); //class cache
+			planCache.clear(); //plan cache
+		}
 	}
 	
 	/**

@@ -123,8 +123,8 @@ public class LocalFileUtils
 			ret.readFields(in);
 		}
 		finally {
-			IOUtilFunctions.closeSilently(
-					(InputStream)in);
+			IOUtilFunctions.closeSilently((InputStream)in);
+			IOUtilFunctions.closeSilently(fis);
 		}
 			
 		return ret;
@@ -169,6 +169,7 @@ public class LocalFileUtils
 		}
 		finally {
 			IOUtilFunctions.closeSilently(out);
+			IOUtilFunctions.closeSilently(fos);
 		}	
 	}
 
@@ -208,6 +209,7 @@ public class LocalFileUtils
 		}
 		finally {
 			IOUtilFunctions.closeSilently(in);
+			IOUtilFunctions.closeSilently(fis);
 		}
 			
 		return bufferSize;
@@ -232,6 +234,7 @@ public class LocalFileUtils
 		}
 		finally{
 			IOUtilFunctions.closeSilently(out);	
+			IOUtilFunctions.closeSilently(fos);
 		}	
 	}
 

@@ -174,7 +174,7 @@ public class FrameReblockBuffer
 	 * compute the block indexes on-the-fly based on the given cell indexes.
 	 * 
 	 */
-	private class FrameReblockBufferComparator implements Comparator<FrameCell> 
+	private static class FrameReblockBufferComparator implements Comparator<FrameCell> 
 	{	
 		@Override
 		public int compare(FrameCell arg0, FrameCell arg1) 

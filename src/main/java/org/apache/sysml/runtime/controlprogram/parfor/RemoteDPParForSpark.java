@@ -19,13 +19,16 @@
 
 package org.apache.sysml.runtime.controlprogram.parfor;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.io.Writable;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.api.java.function.Function;
 import org.apache.spark.util.LongAccumulator;
 
 import scala.Tuple2;
@@ -47,7 +50,6 @@ import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.utils.Statistics;
 
 /**
- * TODO robustness on failures (cleanup files)
  * TODO heavy hitter maintenance
  * TODO data partitioning with binarycell
  *
@@ -83,15 +85,15 @@ public class RemoteDPParForSpark
 		int numParts2 = (int)((dpf==PDataPartitionFormat.ROW_BLOCK_WISE) ? mc.getRows() : mc.getCols()); 
 		int numReducers2 = Math.max(numReducers, Math.min(numParts, numParts2));
 		
-		//core parfor datapartition-execute
+		//core parfor datapartition-execute (w/ or w/o shuffle, depending on data characteristics)
 		DataPartitionerRemoteSparkMapper dpfun = new DataPartitionerRemoteSparkMapper(mc, ii, oi, dpf);
-		RemoteDPParForSparkWorker efun = new RemoteDPParForSparkWorker(program, clsMap, matrixvar, itervar, 
-				          enableCPCaching, mc, tSparseCol, dpf, oi, aTasks, aIters);
-		List<Tuple2<Long,String>> out = 
-				in.flatMapToPair(dpfun)       //partition the input blocks
-		          .groupByKey(numReducers2)   //group partition blocks 		          
-		          .mapPartitionsToPair(efun)  //execute parfor tasks, incl cleanup
-		          .collect();                 //get output handles
+		RemoteDPParForSparkWorker efun = new RemoteDPParForSparkWorker(program, clsMap, 
+				matrixvar, itervar, enableCPCaching, mc, tSparseCol, dpf, oi, aTasks, aIters);
+		JavaPairRDD<Long,Writable> tmp = in.flatMapToPair(dpfun);
+		List<Tuple2<Long,String>> out = (requiresGrouping(dpf, mc) ?
+				tmp.groupByKey(numReducers2) : tmp.map(new PseudoGrouping()) )
+				   .mapPartitionsToPair(efun)  //execute parfor tasks, incl cleanup
+		           .collect();                 //get output handles 
 		
 		//de-serialize results
 		LocalVariableMap[] results = RemoteParForUtils.getResults(out, LOG);
@@ -109,5 +111,21 @@ public class RemoteDPParForSpark
 		}
 		
 		return ret;
+	}
+	
+	//determines if given input matrix requires grouping of partial partition slices
+	private static boolean requiresGrouping(PDataPartitionFormat dpf, MatrixCharacteristics mc) {
+		return (dpf == PDataPartitionFormat.ROW_WISE && mc.getNumColBlocks() > 1)
+			|| (dpf == PDataPartitionFormat.COLUMN_WISE && mc.getNumRowBlocks() > 1);
+	}
+	
+	//function to map data partition output to parfor input signature without grouping
+	private static class PseudoGrouping implements Function<Tuple2<Long, Writable>, Tuple2<Long, Iterable<Writable>>>  {
+		private static final long serialVersionUID = 2016614593596923995L;
+
+		@Override
+		public Tuple2<Long, Iterable<Writable>> call(Tuple2<Long, Writable> arg0) throws Exception {
+			return new Tuple2<Long, Iterable<Writable>>(arg0._1(), Collections.singletonList(arg0._2()));
+		}
 	}
 }

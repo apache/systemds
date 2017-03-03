@@ -22,6 +22,7 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.utils.GPUStatistics;
 import org.apache.sysml.utils.Statistics;
 
 import java.util.Collections;
@@ -146,7 +147,7 @@ public abstract class GPUObject
 				throw new DMLRuntimeException("There is not enough memory on device for this matrix!");
 			}
 
-			Statistics.cudaEvictionCount.addAndGet(1);
+			GPUStatistics.cudaEvictionCount.addAndGet(1);
 
 			synchronized (evictionLock) {
 				Collections.sort(GPUContext.allocatedPointers, new Comparator<GPUObject>() {

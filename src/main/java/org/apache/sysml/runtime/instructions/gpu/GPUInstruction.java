@@ -28,6 +28,7 @@ import org.apache.sysml.runtime.instructions.GPUInstructionParser;
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.matrix.operators.Operator;
+import org.apache.sysml.utils.GPUStatistics;
 import org.apache.sysml.utils.Statistics;
 
 public abstract class GPUInstruction extends Instruction 
@@ -159,7 +160,7 @@ public abstract class GPUInstruction extends Instruction
 	protected MatrixObject getMatrixInputForGPUInstruction(ExecutionContext ec, String name) throws DMLRuntimeException {
 		long t0 = System.nanoTime();
 		Pair<MatrixObject, Boolean> mb = ec.getMatrixInputForGPUInstruction(name);
-		if (mb.getValue()) Statistics.maintainCPMiscTimes(getExtendedOpcode(), GPUInstruction.MISC_TIMER_HOST_TO_DEVICE, System.nanoTime() - t0);
+		if (mb.getValue()) GPUStatistics.maintainCPMiscTimes(getExtendedOpcode(), GPUInstruction.MISC_TIMER_HOST_TO_DEVICE, System.nanoTime() - t0);
 		return mb.getKey();
 	}
 
@@ -174,7 +175,7 @@ public abstract class GPUInstruction extends Instruction
 	protected MatrixObject getDenseMatrixOutputForGPUInstruction(ExecutionContext ec, String name) throws DMLRuntimeException {
 		long t0 = System.nanoTime();
 		Pair<MatrixObject, Boolean> mb = ec.getDenseMatrixOutputForGPUInstruction(name);
-		if (mb.getValue()) Statistics.maintainCPMiscTimes(getExtendedOpcode(), GPUInstruction.MISC_TIMER_ALLOCATE_DENSE_OUTPUT, System.nanoTime() - t0);
+		if (mb.getValue()) GPUStatistics.maintainCPMiscTimes(getExtendedOpcode(), GPUInstruction.MISC_TIMER_ALLOCATE_DENSE_OUTPUT, System.nanoTime() - t0);
 		return mb.getKey();
 	}
 }

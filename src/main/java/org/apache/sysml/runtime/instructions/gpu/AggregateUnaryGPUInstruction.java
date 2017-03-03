@@ -30,7 +30,7 @@ import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysml.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
-import org.apache.sysml.utils.Statistics;
+import org.apache.sysml.utils.GPUStatistics;
 
 /**
  * Implements aggregate unary instructions for CUDA
@@ -71,7 +71,7 @@ public class AggregateUnaryGPUInstruction extends GPUInstruction {
   public void processInstruction(ExecutionContext ec)
           throws DMLRuntimeException
   {
-    Statistics.incrementNoOfExecutedGPUInst();
+    GPUStatistics.incrementNoOfExecutedGPUInst();
 
     String opcode = getOpcode();
 

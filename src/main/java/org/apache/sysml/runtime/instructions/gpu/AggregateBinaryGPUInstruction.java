@@ -18,8 +18,6 @@
  */
 package org.apache.sysml.runtime.instructions.gpu;
 
-import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.api.mlcontext.Matrix;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
@@ -30,12 +28,11 @@ import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
-import org.apache.sysml.utils.Statistics;
+import org.apache.sysml.utils.GPUStatistics;
 
 public class AggregateBinaryGPUInstruction extends GPUInstruction
 {
@@ -82,7 +79,7 @@ public class AggregateBinaryGPUInstruction extends GPUInstruction
 	public void processInstruction(ExecutionContext ec) 
 		throws DMLRuntimeException 
 	{
-		Statistics.incrementNoOfExecutedGPUInst();
+		GPUStatistics.incrementNoOfExecutedGPUInst();
 		
 		AggregateBinaryOperator op = (AggregateBinaryOperator) _optr;
 		if( !(op.binaryFn instanceof Multiply && op.aggOp.increOp.fn instanceof Plus) ) {

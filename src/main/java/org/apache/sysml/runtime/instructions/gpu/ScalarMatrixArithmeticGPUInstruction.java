@@ -28,7 +28,7 @@ import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.ScalarOperator;
-import org.apache.sysml.utils.Statistics;
+import org.apache.sysml.utils.GPUStatistics;
 
 public class ScalarMatrixArithmeticGPUInstruction extends ArithmeticBinaryGPUInstruction {
 	public ScalarMatrixArithmeticGPUInstruction(Operator op, 
@@ -44,7 +44,7 @@ public class ScalarMatrixArithmeticGPUInstruction extends ArithmeticBinaryGPUIns
 	public void processInstruction(ExecutionContext ec) 
 		throws DMLRuntimeException
 	{
-		Statistics.incrementNoOfExecutedGPUInst();
+		GPUStatistics.incrementNoOfExecutedGPUInst();
 		
 		CPOperand mat = ( _input1.getDataType() == DataType.MATRIX ) ? _input1 : _input2;
 		CPOperand scalar = ( _input1.getDataType() == DataType.MATRIX ) ? _input2 : _input1;

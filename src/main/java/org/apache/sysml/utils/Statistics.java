@@ -22,13 +22,10 @@ package org.apache.sysml.utils;
 import java.lang.management.CompilationMXBean;
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
-import java.lang.reflect.Array;
 import java.util.*;
 import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.hadoop.util.hash.Hash;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
@@ -47,8 +44,6 @@ import org.apache.sysml.runtime.matrix.data.LibMatrixDNN;
  */
 public class Statistics 
 {
-	private static AtomicLong statisticsOverhead = new AtomicLong(0);
-
 	private static long compileStartTime = 0;
 	private static long compileEndTime = 0;
 	
@@ -63,7 +58,6 @@ public class Statistics
 	private static int iNoOfExecutedSPInst = 0;
 	private static int iNoOfCompiledSPInst = 0;
 	
-	private static int iNoOfExecutedGPUInst = 0;
 
 	//JVM stats
 	private static long jitCompileTime = 0; //in milli sec
@@ -106,32 +100,11 @@ public class Statistics
 	//heavy hitter counts and times 
 	private static HashMap<String,Long> _cpInstTime   =  new HashMap<String, Long>();
 	private static HashMap<String,Long> _cpInstCounts =  new HashMap<String, Long>();
-	private static HashMap<String, HashMap<String, Long>> _cpInstMiscTime = new HashMap<String, HashMap<String, Long>> ();
-	private static HashMap<String, HashMap<String, Long>> _cpInstMiscCount = new HashMap<String, HashMap<String, Long>> ();
-
 
 	private static AtomicLong lTotalUIPVar = new AtomicLong(0);
 	private static AtomicLong lTotalLix = new AtomicLong(0);
 	private static AtomicLong lTotalLixUIP = new AtomicLong(0);
-	
-	public static long cudaInitTime = 0;
-	public static long cudaLibrariesInitTime = 0;
-	public static AtomicLong cudaSparseToDenseTime = new AtomicLong(0);		// Measures time spent in converting sparse matrix block to dense
-	public static AtomicLong cudaSparseToDenseCount = new AtomicLong(0);
-	public static AtomicLong cudaDenseToSparseTime = new AtomicLong(0);		// Measures time spent in converting dense matrix block to sparse
-	public static AtomicLong cudaDenseToSparseCount = new AtomicLong(0);
-	public static AtomicLong cudaSparseConversionTime = new AtomicLong(0);	// Measures time spent in converting between sparse block types
-	public static AtomicLong cudaSparseConversionCount = new AtomicLong(0);
-	public static AtomicLong cudaAllocTime = new AtomicLong(0);
-	public static AtomicLong cudaDeAllocTime = new AtomicLong(0);
-	public static AtomicLong cudaToDevTime = new AtomicLong(0);
-	public static AtomicLong cudaFromDevTime = new AtomicLong(0);
-	public static AtomicLong cudaAllocCount = new AtomicLong(0);
-	public static AtomicLong cudaDeAllocCount = new AtomicLong(0);
-	public static AtomicLong cudaToDevCount = new AtomicLong(0);
-	public static AtomicLong cudaFromDevCount = new AtomicLong(0);
-	public static AtomicLong cudaEvictionCount = new AtomicLong(0);
-	
+
 	public static synchronized void setNoOfExecutedMRJobs(int iNoOfExecutedMRJobs) {
 		Statistics.iNoOfExecutedMRJobs = iNoOfExecutedMRJobs;
 	}
@@ -159,19 +132,7 @@ public class Statistics
 	public static synchronized void incrementNoOfCompiledMRJobs() {
 		iNoOfCompiledMRJobs ++;
 	}
-	
-	
-	public static synchronized void setNoOfExecutedGPUInst(int numJobs) {
-		iNoOfExecutedGPUInst = numJobs;
-	}
-	
-	public static synchronized void incrementNoOfExecutedGPUInst() {
-		iNoOfExecutedGPUInst ++;
-	}
-	
-	public static synchronized int getNoOfExecutedGPUInst() {
-		return iNoOfExecutedGPUInst;
-	}
+
 
 	public static synchronized void setNoOfExecutedSPInst(int numJobs) {
 		iNoOfExecutedSPInst = numJobs;
@@ -253,7 +214,7 @@ public class Statistics
 		}
 		
 		if( DMLScript.USE_ACCELERATOR )
-			setNoOfExecutedGPUInst(0);
+			GPUStatistics.setNoOfExecutedGPUInst(0);
 	}
 	
 	public static synchronized void incrementJITCompileTime( long time ) {
@@ -436,18 +397,8 @@ public class Statistics
 		resetJVMgcTime();
 		resetJVMgcCount();
 		resetCPHeavyHitters();
-		
-		cudaInitTime = 0;
-		cudaLibrariesInitTime = 0;
-		cudaAllocTime.set(0);
-		cudaDeAllocTime.set(0);
-		cudaToDevTime.set(0);
-		cudaFromDevTime.set(0);
-		cudaAllocCount.set(0);
-		cudaDeAllocCount.set(0);
-		cudaToDevCount.set(0);
-		cudaFromDevCount.set(0);
-		cudaEvictionCount.set(0);
+
+		GPUStatistics.reset();
 		LibMatrixDNN.resetStatistics();
 	}
 
@@ -535,8 +486,6 @@ public class Statistics
 	 */
 	public synchronized static void maintainCPHeavyHitters( String instructionName, long timeNanos )
 	{
-		long t0 = System.nanoTime();
-
 		Long oldVal = _cpInstTime.get(instructionName);
 		Long newVal = timeNanos + ((oldVal!=null) ? oldVal : 0);
 		_cpInstTime.put(instructionName, newVal);
@@ -544,54 +493,6 @@ public class Statistics
 		Long oldCnt = _cpInstCounts.get(instructionName);
 		Long newCnt = 1 + ((oldCnt!=null) ? oldCnt : 0);
 		_cpInstCounts.put(instructionName, newCnt);
-
-		statisticsOverhead.addAndGet(System.nanoTime() - t0);
-	}
-
-	/**
-	 * "Maintains" or adds time to miscellaneous timers per instruction/op, also increments associated count
-	 * @param instructionName	name of the instruction/op
-	 * @param miscTimer				name of the miscellaneous timer
-	 * @param timeNanos				time in nano seconds
-	 * @param incrementCount	how much to increment the count of the miscTimer by
-	 */
-	public synchronized static void maintainCPMiscTimes( String instructionName, String miscTimer, long timeNanos, long incrementCount)
-	{
-		if (!DMLScript.STATISTICS)
-			return;
-
-
-		long t0 = System.nanoTime();
-
-		HashMap<String, Long> miscTimesMap = _cpInstMiscTime.get(instructionName);
-		if (miscTimesMap == null) {
-			miscTimesMap = new HashMap<String, Long>();
-			_cpInstMiscTime.put(instructionName, miscTimesMap);
-		}
-		Long oldVal = miscTimesMap.get(miscTimer);
-		Long newVal = timeNanos + ((oldVal!=null) ? oldVal : 0);
-		miscTimesMap.put(miscTimer, newVal);
-
-		HashMap<String, Long> miscCountMap = _cpInstMiscCount.get(instructionName);
-		if (miscCountMap == null){
-			miscCountMap = new HashMap<String, Long>();
-			_cpInstMiscCount.put(instructionName, miscCountMap);
-		}
-		Long oldCnt = miscCountMap.get(miscTimer);
-		Long newCnt = incrementCount + ((oldCnt!=null) ? oldCnt : 0);
-		miscCountMap.put(miscTimer, newCnt);
-
-		statisticsOverhead.addAndGet(System.nanoTime() - t0);
-	}
-
-	/**
-	 * "Maintains" or adds time to miscellaneous timers per instruction/op, also increments associated count by 1
-	 * @param instructionName	name of the instruction/op
-	 * @param miscTimer				name of the miscellaneous timer
-	 * @param timeNanos				time in nano seconds
-	 */
-	public synchronized static void maintainCPMiscTimes( String instructionName, String miscTimer, long timeNanos){
-		maintainCPMiscTimes(instructionName, miscTimer, timeNanos, 1);
 	}
 
 
@@ -630,29 +531,9 @@ public class Statistics
 			sb.append(_cpInstCounts.get(key));
 			sb.append("\t");
 			// Add the miscellaneous timer info
-			HashMap<String, Long> miscTimerMap =_cpInstMiscTime.get(key);
-			if (miscTimerMap != null) {
-				List<Entry<String, Long>> sortedList = new ArrayList<Entry<String, Long>>(miscTimerMap.entrySet());
-				// Sort the times to display by the most expensive first
-				Collections.sort(sortedList, new Comparator<Entry<String, Long>>() {
-					@Override
-					public int compare(Entry<String, Long> o1, Entry<String, Long> o2) {
-						return (int)(o1.getValue() - o2.getValue());
-					}
-				});
-				Iterator<Entry<String, Long>> miscTimeIter = sortedList.iterator();
-				HashMap<String, Long> miscCountMap = _cpInstMiscCount.get(key);
-				while (miscTimeIter.hasNext()) {
-					Map.Entry<String, Long> e = miscTimeIter.next();
-					String miscTimerName = e.getKey();
-					Long miscTimerTime = e.getValue();
-					Long miscCount = miscCountMap.get(miscTimerName);
-					sb.append(miscTimerName + "[" + String.format("%.3f", (double)miscTimerTime/1000000000.0) + "s," + miscCount + "]");
-					if (miscTimeIter.hasNext())
-						sb.append(", ");
-				}
+			if (DMLScript.DEV_STATISTICS) {
+				sb.append(GPUStatistics.getStringForCPMiscTimesPerInstruction(key));
 			}
-
 			sb.append("\n");
 		}
 		
@@ -770,32 +651,9 @@ public class Statistics
 				sb.append("Number of compiled MR Jobs:\t" + getNoOfCompiledMRJobs() + ".\n");
 			sb.append("Number of executed MR Jobs:\t" + getNoOfExecutedMRJobs() + ".\n");	
 		}
-		
-		if( DMLScript.USE_ACCELERATOR && DMLScript.STATISTICS ) {
-			sb.append("CUDA/CuLibraries init time:\t" + String.format("%.3f", cudaInitTime*1e-9) + "/"
-					+ String.format("%.3f", cudaLibrariesInitTime*1e-9) + " sec.\n");
-			sb.append("Number of executed GPU inst:\t" + getNoOfExecutedGPUInst() + ".\n");
-			sb.append("GPU mem tx time  (alloc/dealloc/toDev/fromDev):\t"
-					+ String.format("%.3f", cudaAllocTime.get()*1e-9) + "/"
-					+ String.format("%.3f", cudaDeAllocTime.get()*1e-9) + "/"
-					+ String.format("%.3f", cudaToDevTime.get()*1e-9) + "/"
-					+ String.format("%.3f", cudaFromDevTime.get()*1e-9)  + " sec.\n");
-			sb.append("GPU mem tx count (alloc/dealloc/toDev/fromDev/evict):\t"
-					+ cudaAllocCount.get() + "/"
-					+ cudaDeAllocCount.get() + "/"
-					+ cudaSparseConversionCount.get() + "/"
-					+ cudaToDevCount.get() + "/"
-					+ cudaFromDevCount.get() + "/"
-					+ cudaEvictionCount.get() + ".\n");
-			sb.append("GPU conversion time  (sparseConv/sp2dense/dense2sp):\t"
-					+ String.format("%.3f", cudaSparseConversionTime.get()*1e-9) + "/"
-					+ String.format("%.3f", cudaSparseToDenseTime.get()*1e-9) + "/"
-					+ String.format("%.3f", cudaDenseToSparseTime.get()*1e-9) + " sec.\n");
-			sb.append("GPU conversion count (sparseConv/sp2dense/dense2sp):\t"
-					+ cudaSparseConversionCount.get() + "/"
-					+ cudaSparseToDenseCount.get() + "/"
-					+ cudaDenseToSparseCount.get() + ".\n");
-		}
+
+		if( DMLScript.USE_ACCELERATOR && DMLScript.STATISTICS )
+			sb.append(GPUStatistics.getStringForCudaTimers());
 		
 		//show extended caching/compilation statistics
 		if( DMLScript.STATISTICS ) 
@@ -835,12 +693,12 @@ public class Statistics
 				sb.append("ParFor result merge time:\t" + String.format("%.3f", ((double)getParforMergeTime())/1000) + " sec.\n");	
 				sb.append("ParFor total update in-place:\t" + lTotalUIPVar + "/" + lTotalLixUIP + "/" + lTotalLix + "\n");
 			}
+
 			sb.append("Total JIT compile time:\t\t" + ((double)getJITCompileTime())/1000 + " sec.\n");
 			sb.append("Total JVM GC count:\t\t" + getJVMgcCount() + ".\n");
 			sb.append("Total JVM GC time:\t\t" + ((double)getJVMgcTime())/1000 + " sec.\n");
 			LibMatrixDNN.appendStatistics(sb);
 			sb.append("Heavy hitter instructions (name, time, count):\n" + getHeavyHitters(maxHeavyHitters));
-			sb.append("Statistics collection overhead: " + ((double)statisticsOverhead.get()*1e-9) + " sec\n");
 		}
 		
 		return sb.toString();

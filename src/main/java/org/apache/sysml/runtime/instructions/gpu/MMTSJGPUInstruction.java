@@ -34,7 +34,7 @@ import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysml.runtime.matrix.operators.Operator;
-import org.apache.sysml.utils.Statistics;
+import org.apache.sysml.utils.GPUStatistics;
 
 public class MMTSJGPUInstruction extends GPUInstruction
 {
@@ -95,7 +95,7 @@ public class MMTSJGPUInstruction extends GPUInstruction
         public void processInstruction(ExecutionContext ec)
                 throws DMLRuntimeException
         {
-                Statistics.incrementNoOfExecutedGPUInst();
+                GPUStatistics.incrementNoOfExecutedGPUInst();
 
                 //get input
                 MatrixObject mat = getMatrixInputForGPUInstruction(ec, _input.getName());

@@ -26,7 +26,7 @@ import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
-import org.apache.sysml.utils.Statistics;
+import org.apache.sysml.utils.GPUStatistics;
 
 public class MatrixMatrixArithmeticGPUInstruction extends ArithmeticBinaryGPUInstruction
 {
@@ -42,7 +42,7 @@ public class MatrixMatrixArithmeticGPUInstruction extends ArithmeticBinaryGPUIns
 	
 	@Override
 	public void processInstruction(ExecutionContext ec) throws DMLRuntimeException {
-		Statistics.incrementNoOfExecutedGPUInst();
+		GPUStatistics.incrementNoOfExecutedGPUInst();
 		
 		MatrixObject in1 = getMatrixInputForGPUInstruction(ec, _input1.getName());
 		MatrixObject in2 = getMatrixInputForGPUInstruction(ec, _input2.getName());

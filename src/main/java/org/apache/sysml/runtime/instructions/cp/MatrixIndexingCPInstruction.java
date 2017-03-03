@@ -28,6 +28,7 @@ import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.Operator;
+import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.runtime.util.IndexRange;
 import org.apache.sysml.utils.Statistics;
 
@@ -73,7 +74,17 @@ public final class MatrixIndexingCPInstruction extends IndexingCPInstruction
 			}	
 			
 			//unpin output
-			ec.setMatrixOutput(output.getName(), resultBlock);
+			DataType outDataType = output.getDataType();
+			if (outDataType == DataType.SCALAR) {
+				if ((resultBlock.getNumRows() == 1) && (resultBlock.getNumColumns() == 1)) {
+					ec.setScalarOutput(output.getName(), new DoubleObject(resultBlock.getValue(0, 0)));
+				} else {
+					String matrixString = DataConverter.toString(resultBlock);
+					ec.setScalarOutput(output.getName(), new StringObject(matrixString));
+				}
+			} else {
+				ec.setMatrixOutput(output.getName(), resultBlock);
+			}
 		}
 		//left indexing
 		else if ( opcode.equalsIgnoreCase("leftIndex"))

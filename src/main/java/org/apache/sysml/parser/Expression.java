@@ -405,6 +405,10 @@ public abstract class Expression
 			return d1;
 
 		if (cast) {
+			if (d1 == DataType.MATRIX && d2 == DataType.SCALAR && identifier2.getValueType() == ValueType.STRING)
+				return DataType.SCALAR;
+			if (d1 == DataType.SCALAR && identifier1.getValueType() == ValueType.STRING && d2 == DataType.MATRIX)
+				return DataType.SCALAR;
 			if (d1 == DataType.MATRIX && d2 == DataType.SCALAR)
 				return DataType.MATRIX;
 			if (d1 == DataType.SCALAR && d2 == DataType.MATRIX)

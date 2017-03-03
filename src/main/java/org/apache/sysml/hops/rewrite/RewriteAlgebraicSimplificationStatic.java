@@ -258,8 +258,10 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			Hop left = bop.getInput().get(0);
 			Hop right = bop.getInput().get(1);
 			//X/1 or X*1 -> X 
-			if(    left.getDataType()==DataType.MATRIX 
-				&& right instanceof LiteralOp && ((LiteralOp)right).getDoubleValue()==1.0 )
+			if(left.getDataType()==DataType.MATRIX 
+				&& right instanceof LiteralOp
+				&& (right.getValueType() != ValueType.STRING)
+				&& ((LiteralOp)right).getDoubleValue()==1.0 )
 			{
 				if( bop.getOp()==OpOp2.DIV || bop.getOp()==OpOp2.MULT )
 				{
@@ -270,8 +272,10 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				}
 			}
 			//X-0 -> X 
-			else if(    left.getDataType()==DataType.MATRIX 
-					&& right instanceof LiteralOp && ((LiteralOp)right).getDoubleValue()==0.0 )
+			else if(left.getDataType()==DataType.MATRIX 
+					&& right instanceof LiteralOp
+					&& (right.getValueType() != ValueType.STRING)
+					&& ((LiteralOp)right).getDoubleValue()==0.0 )
 			{
 				if( bop.getOp()==OpOp2.MINUS )
 				{
@@ -282,8 +286,10 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				}
 			}
 			//1*X -> X
-			else if(   right.getDataType()==DataType.MATRIX 
-					&& left instanceof LiteralOp && ((LiteralOp)left).getDoubleValue()==1.0 )
+			else if(right.getDataType()==DataType.MATRIX 
+					&& left instanceof LiteralOp
+					&& (left.getValueType() != ValueType.STRING)
+					&& ((LiteralOp)left).getDoubleValue()==1.0 )
 			{
 				if( bop.getOp()==OpOp2.MULT )
 				{
@@ -296,8 +302,10 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			//-1*X -> -X
 			//note: this rewrite is necessary since the new antlr parser always converts 
 			//-X to -1*X due to mechanical reasons
-			else if(   right.getDataType()==DataType.MATRIX 
-					&& left instanceof LiteralOp && ((LiteralOp)left).getDoubleValue()==-1.0 )
+			else if(right.getDataType()==DataType.MATRIX 
+					&& left instanceof LiteralOp
+					&& (left.getValueType() != ValueType.STRING)
+					&& ((LiteralOp)left).getDoubleValue()==-1.0 )
 			{
 				if( bop.getOp()==OpOp2.MULT )
 				{
@@ -309,8 +317,10 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				}
 			}
 			//X*-1 -> -X (see comment above)
-			else if(   left.getDataType()==DataType.MATRIX 
-					&& right instanceof LiteralOp && ((LiteralOp)right).getDoubleValue()==-1.0 )
+			else if(left.getDataType()==DataType.MATRIX 
+					&& right instanceof LiteralOp
+					&& (right.getValueType() != ValueType.STRING)
+					&& ((LiteralOp)right).getDoubleValue()==-1.0 )
 			{
 				if( bop.getOp()==OpOp2.MULT )
 				{
@@ -350,8 +360,10 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			//the creation of multiple datagen ops and thus potentially different results if seed not specified)
 			
 			//left input rand and hence output matrix double, right scalar literal
-			if( left instanceof DataGenOp && ((DataGenOp)left).getOp()==DataGenMethod.RAND &&
-				right instanceof LiteralOp && left.getParent().size()==1 )
+			if( left instanceof DataGenOp && ((DataGenOp)left).getOp()==DataGenMethod.RAND
+				&& right instanceof LiteralOp
+				&& (right.getValueType() != ValueType.STRING)
+				&& left.getParent().size()==1 )
 			{
 				DataGenOp inputGen = (DataGenOp)left;
 				HashMap<String,Integer> params = inputGen.getParamIndexMap();

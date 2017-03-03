@@ -38,12 +38,14 @@ import scala.runtime.AbstractFunction1;
 
 import org.apache.sysml.hops.AggBinaryOp.SparkAggType;
 import org.apache.sysml.lops.LeftIndex.LixCacheType;
+import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
+import org.apache.sysml.runtime.instructions.cp.DoubleObject;
 import org.apache.sysml.runtime.instructions.spark.data.LazyIterableIterator;
 import org.apache.sysml.runtime.instructions.spark.data.PartitionedBroadcast;
 import org.apache.sysml.runtime.instructions.spark.functions.IsBlockInRange;
@@ -108,25 +110,35 @@ public class MatrixIndexingSPInstruction  extends IndexingSPInstruction
 		{
 			//update and check output dimensions
 			MatrixCharacteristics mcIn = sec.getMatrixCharacteristics(input1.getName());
-			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
-			mcOut.set(ru-rl+1, cu-cl+1, mcIn.getRowsPerBlock(), mcIn.getColsPerBlock());
-			checkValidOutputDimensions(mcOut);
 			
-			//execute right indexing operation (partitioning-preserving if possible)
-			JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
-			
-			if( isSingleBlockLookup(mcIn, ixrange) ) {
-				sec.setMatrixOutput(output.getName(), singleBlockIndexing(in1, mcIn, mcOut, ixrange));
-			}
-			else if( isMultiBlockLookup(in1, mcIn, mcOut, ixrange) ) {
-				sec.setMatrixOutput(output.getName(), multiBlockIndexing(in1, mcIn, mcOut, ixrange));
-			}
-			else { //rdd output for general case
-				JavaPairRDD<MatrixIndexes,MatrixBlock> out = generalCaseRightIndexing(in1, mcIn, mcOut, ixrange, _aggType);
-					
-				//put output RDD handle into symbol table
-				sec.setRDDHandleForVariable(output.getName(), out);
-				sec.addLineageRDD(output.getName(), input1.getName());	
+			DataType outDataType = output.getDataType();
+			if (outDataType == DataType.SCALAR) {
+				IndexRange ixr = ixrange.add(-1);
+				MatrixBlock matBlock = ec.getMatrixInput(input1.getName());
+				MatrixBlock resultBlock = matBlock.sliceOperations(ixr, new MatrixBlock());
+				sec.setScalarOutput(output.getName(), new DoubleObject(resultBlock.getValue(0, 0)));
+				sec.releaseMatrixInput(input1.getName());
+			} else {
+				MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
+				mcOut.set(ru - rl + 1, cu - cl + 1, mcIn.getRowsPerBlock(), mcIn.getColsPerBlock());
+				checkValidOutputDimensions(mcOut);
+
+				// execute right indexing operation (partitioning-preserving if
+				// possible)
+				JavaPairRDD<MatrixIndexes, MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable(input1.getName());
+
+				if (isSingleBlockLookup(mcIn, ixrange)) {
+					sec.setMatrixOutput(output.getName(), singleBlockIndexing(in1, mcIn, mcOut, ixrange));
+				} else if (isMultiBlockLookup(in1, mcIn, mcOut, ixrange)) {
+					sec.setMatrixOutput(output.getName(), multiBlockIndexing(in1, mcIn, mcOut, ixrange));
+				} else { // rdd output for general case
+					JavaPairRDD<MatrixIndexes, MatrixBlock> out = generalCaseRightIndexing(in1, mcIn, mcOut, ixrange,
+							_aggType);
+
+					// put output RDD handle into symbol table
+					sec.setRDDHandleForVariable(output.getName(), out);
+					sec.addLineageRDD(output.getName(), input1.getName());
+				}
 			}
 		}
 		//left indexing

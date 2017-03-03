@@ -20,7 +20,6 @@
 package org.apache.sysml.runtime.instructions.spark;
 
 import org.apache.spark.api.java.JavaPairRDD;
-
 import org.apache.sysml.lops.BinaryM.VectorType;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -28,7 +27,9 @@ import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
+import org.apache.sysml.runtime.instructions.cp.DoubleObject;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
+import org.apache.sysml.runtime.instructions.cp.StringObject;
 import org.apache.sysml.runtime.instructions.spark.data.PartitionedBroadcast;
 import org.apache.sysml.runtime.instructions.spark.functions.MatrixMatrixBinaryOpFunction;
 import org.apache.sysml.runtime.instructions.spark.functions.MatrixScalarUnaryFunction;
@@ -41,6 +42,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.ScalarOperator;
+import org.apache.sysml.runtime.util.DataConverter;
 
 public abstract class BinarySPInstruction extends ComputationSPInstruction
 {
@@ -166,25 +168,60 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction
 	protected void processMatrixScalarBinaryInstruction(ExecutionContext ec) 
 		throws DMLRuntimeException
 	{
-		SparkExecutionContext sec = (SparkExecutionContext)ec;
-	
-		//get input RDD
-		String rddVar = (input1.getDataType() == DataType.MATRIX) ? input1.getName() : input2.getName();
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( rddVar );
-		
-		//get operator and scalar
-		CPOperand scalar = ( input1.getDataType() == DataType.MATRIX ) ? input2 : input1;
-		ScalarObject constant = (ScalarObject) ec.getScalarInput(scalar.getName(), scalar.getValueType(), scalar.isLiteral());
+		SparkExecutionContext sec = (SparkExecutionContext) ec;
+
+		// get operator and scalar
+		CPOperand scalar = (input1.getDataType() == DataType.MATRIX) ? input2 : input1;
+		ScalarObject constant = (ScalarObject) ec.getScalarInput(scalar.getName(), scalar.getValueType(),
+				scalar.isLiteral());
 		ScalarOperator sc_op = (ScalarOperator) _optr;
 		sc_op.setConstant(constant.getDoubleValue());
-		
-		//execute scalar matrix arithmetic instruction
-		JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1.mapValues( new MatrixScalarUnaryFunction(sc_op) );
-			
-		//put output RDD handle into symbol table
-		updateUnaryOutputMatrixCharacteristics(sec, rddVar, output.getName());
-		sec.setRDDHandleForVariable(output.getName(), out);
-		sec.addLineageRDD(output.getName(), rddVar);
+
+		DataType outDataType = output.getDataType();
+		if (outDataType == DataType.SCALAR) {
+			boolean matrixThenScalar = false;
+			if (input1.getDataType() == DataType.MATRIX) {
+				matrixThenScalar = true;
+			}
+			CPOperand mat = (input1.getDataType() == DataType.MATRIX) ? input1 : input2;
+			MatrixBlock inBlock = sec.getMatrixInput(mat.getName());
+			if ((inBlock.getNumRows() == 1) && (inBlock.getNumColumns() == 1)) {
+				DoubleObject doubleObject = new DoubleObject(inBlock.getValue(0, 0));
+				sec.releaseMatrixInput(mat.getName());
+				String outString = null;
+				if (matrixThenScalar) {
+					outString = doubleObject.toString() + constant.toString();
+				} else {
+					outString = constant.toString() + doubleObject.toString();
+				}
+				StringObject so = new StringObject(outString);
+				sec.setScalarOutput(output.getName(), so);
+			} else {
+				String matrixString = DataConverter.toString(inBlock);
+				ec.releaseMatrixInput(mat.getName());
+				String outString = null;
+				if (matrixThenScalar) {
+					outString = matrixString + constant.toString();
+				} else {
+					outString = constant.toString() + matrixString;
+				}
+				StringObject so = new StringObject(outString);
+				sec.setScalarOutput(output.getName(), so);
+			}
+		} else {
+
+			// get input RDD
+			String rddVar = (input1.getDataType() == DataType.MATRIX) ? input1.getName() : input2.getName();
+			JavaPairRDD<MatrixIndexes, MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable(rddVar);
+
+			// execute scalar matrix arithmetic instruction
+			JavaPairRDD<MatrixIndexes, MatrixBlock> out = in1.mapValues(new MatrixScalarUnaryFunction(sc_op));
+
+			// put output RDD handle into symbol table
+			updateUnaryOutputMatrixCharacteristics(sec, rddVar, output.getName());
+			sec.setRDDHandleForVariable(output.getName(), out);
+			sec.addLineageRDD(output.getName(), rddVar);
+		}
 	}
 
 	protected void updateBinaryMMOutputMatrixCharacteristics(SparkExecutionContext sec, boolean checkCommonDim) 

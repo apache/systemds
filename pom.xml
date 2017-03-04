@@ -71,10 +71,12 @@
 		<scala.test.version>2.2.6</scala.test.version>
 		<maven.build.timestamp.format>yyyy-MM-dd HH:mm:ss z</maven.build.timestamp.format>
 		<enableGPU>false</enableGPU>
+		<jcuda.scope>provided</jcuda.scope>
+		<jcuda.version>0.8.0</jcuda.version>
 		<!-- OS-specific JVM arguments for running integration tests -->
 		<integrationTestExtraJVMArgs />
 	</properties>
-	
+
 	<repositories>
         <repository>
           <id>central</id>
@@ -82,14 +84,6 @@
           <releases>
             <enabled>true</enabled>
           </releases>
-        </repository>
-        <repository>
-            <id>mavenized-jcuda-mvn-repo</id>
-            <url>https://raw.github.com/niketanpansare/mavenized-jcuda/mvn-repo/</url>
-            <snapshots>
-                <enabled>true</enabled>
-                <updatePolicy>always</updatePolicy>
-            </snapshots>
         </repository>
     </repositories>
 
@@ -169,6 +163,13 @@
 						<goals>
 							<goal>shade</goal>
 						</goals>
+						<configuration>
+						  <artifactSet>
+							  <!--<excludes>
+								<exclude>org.jcuda:*</exclude>
+							</excludes>-->
+						  </artifactSet>
+						</configuration>
 					</execution>
 				</executions>
 
@@ -568,6 +569,60 @@
 	</build>
 
 	<profiles>
+
+		<profile>
+			<id>windows-x86_64</id>
+			<activation>
+				<os>
+					<family>windows</family>
+					<arch>amd64</arch>
+				</os>
+			</activation>
+			<properties>
+				<jcuda.os>windows</jcuda.os>
+				<jcuda.arch>x86_64</jcuda.arch>
+			</properties>
+		</profile>
+		<profile>
+			<id>linux-x86_64</id>
+			<activation>
+				<os>
+					<family>unix</family>
+					<arch>amd64</arch>
+				</os>
+			</activation>
+			<properties>
+				<jcuda.os>linux</jcuda.os>
+				<jcuda.arch>x86_64</jcuda.arch>
+			</properties>
+		</profile>
+		<profile>
+			<id>apple-x86_64</id>
+			<activation>
+				<os>
+					<family>mac</family>
+					<arch>x86_64</arch>
+				</os>
+			</activation>
+			<properties>
+				<jcuda.os>apple</jcuda.os>
+				<jcuda.arch>x86_64</jcuda.arch>
+			</properties>
+		</profile>
+		<profile>
+			<id>linux-ppc_64</id>
+			<activation>
+				<os>
+					<family>unix</family>
+					<arch>ppc64le</arch>
+				</os>
+			</activation>
+			<properties>
+				<jcuda.os>linux</jcuda.os>
+				<jcuda.arch>ppc_64</jcuda.arch>
+			</properties>
+		</profile>
+
 		<profile>
 			<id>scala-2.10</id>
 			<properties>
@@ -575,7 +630,7 @@
 				<scala.binary.version>2.10</scala.binary.version>
 			</properties>
 		</profile>
-		
+
 		<profile>
 			<id>scala-2.11</id>
 			<properties>
@@ -811,7 +866,7 @@
 							</execution>
 						</executions>
 					</plugin>
-					
+
 					<plugin>
 						<artifactId>maven-gpg-plugin</artifactId>
 						<version>1.6</version>
@@ -1032,50 +1087,112 @@
 
 
 	<dependencies>
-	
-		<!-- For GPU backend
-			Use org.mystic:mavenized-jcuda until Alan puts org.jcuda:*
-		 -->
-		<dependency>
-			<groupId>org.mystic</groupId>
-            <artifactId>mavenized-jcuda</artifactId>
-            <version>0.7.5b</version>
-            <type>jar</type>
-            <scope>provided</scope>
-            <exclusions>
-		        <exclusion>
-		            <groupId>*</groupId>
-		            <artifactId>*</artifactId>
-		        </exclusion>
-		    </exclusions>
-		</dependency>
-		<!-- Since there is no mvn repo for jcuda
+
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcuda</artifactId>
-			<version>0.7.5b</version>
-			<scope>provided</scope>
+			<version>${jcuda.version}</version>
+			<scope>${jcuda.scope}</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcublas</artifactId>
-			<version>0.7.5b</version>
-			<scope>provided</scope>
+			<version>${jcuda.version}</version>
+			<scope>${jcuda.scope}</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.jcuda</groupId>
+			<artifactId>jcufft</artifactId>
+			<version>${jcuda.version}</version>
+			<scope>${jcuda.scope}</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcusparse</artifactId>
-			<version>0.7.5b</version>
-			<scope>provided</scope>
+			<version>${jcuda.version}</version>
+			<scope>${jcuda.scope}</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.jcuda</groupId>
+			<artifactId>jcusolver</artifactId>
+			<version>${jcuda.version}</version>
+			<scope>${jcuda.scope}</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.jcuda</groupId>
+			<artifactId>jcurand</artifactId>
+			<version>${jcuda.version}</version>
+			<scope>${jcuda.scope}</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.jcuda</groupId>
+			<artifactId>jnvgraph</artifactId>
+			<version>${jcuda.version}</version>
+			<scope>${jcuda.scope}</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcudnn</artifactId>
-			<version>0.7.5</version>
-			<scope>provided</scope>
+			<version>${jcuda.version}</version>
+			<scope>${jcuda.scope}</scope>
 		</dependency>
-		 -->
-		<!-- ************************* -->
+
+		<dependency>
+			<groupId>org.jcuda</groupId>
+			<artifactId>jcuda-natives</artifactId>
+			<classifier>${jcuda.os}-${jcuda.arch}</classifier>
+			<version>${jcuda.version}</version>
+			<scope>${jcuda.scope}</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.jcuda</groupId>
+			<artifactId>jcublas-natives</artifactId>
+			<classifier>${jcuda.os}-${jcuda.arch}</classifier>
+			<version>${jcuda.version}</version>
+			<scope>${jcuda.scope}</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.jcuda</groupId>
+			<artifactId>jcufft-natives</artifactId>
+			<classifier>${jcuda.os}-${jcuda.arch}</classifier>
+			<version>${jcuda.version}</version>
+			<scope>${jcuda.scope}</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.jcuda</groupId>
+			<artifactId>jcusparse-natives</artifactId>
+			<classifier>${jcuda.os}-${jcuda.arch}</classifier>
+			<version>${jcuda.version}</version>
+			<scope>${jcuda.scope}</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.jcuda</groupId>
+			<artifactId>jcusolver-natives</artifactId>
+			<classifier>${jcuda.os}-${jcuda.arch}</classifier>
+			<version>${jcuda.version}</version>
+			<scope>${jcuda.scope}</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.jcuda</groupId>
+			<artifactId>jcurand-natives</artifactId>
+            <classifier>${jcuda.os}-${jcuda.arch}</classifier>
+            <version>${jcuda.version}</version>
+			<scope>${jcuda.scope}</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.jcuda</groupId>
+			<artifactId>jnvgraph-natives</artifactId>
+			<classifier>${jcuda.os}-${jcuda.arch}</classifier>
+			<version>${jcuda.version}</version>
+			<scope>${jcuda.scope}</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.jcuda</groupId>
+			<artifactId>jcudnn-natives</artifactId>
+			<classifier>${jcuda.os}-${jcuda.arch}</classifier>
+			<version>${jcuda.version}</version>
+			<scope>${jcuda.scope}</scope>
+		</dependency>
 
 		<dependency>
 			<groupId>org.apache.spark</groupId>

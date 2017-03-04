@@ -45,20 +45,12 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator
 	public static final boolean HAAS_AND_STOKES_UJ2A_CUT2 = true; //cut frequency in half
 	public static final boolean HAAS_AND_STOKES_UJ2A_SOLVE = true; //true recommended
 	public static final int MAX_SOLVE_CACHE_SIZE = 64*1024; //global 2MB cache
-	//note: we use a relatively high ALPHA2 and the cut-in-half approach because it
-	//leads to moderate overestimation (compared to systematic underestimation) in
-	//order to follow a conservative approach
 	
 	private static final Log LOG = LogFactory.getLog(CompressedSizeEstimatorSample.class.getName());
-
-	private static ThreadLocal<RandomDataGenerator> _rng = new ThreadLocal<RandomDataGenerator>() {
-        protected RandomDataGenerator initialValue() { return new RandomDataGenerator(); }
-    };
     
     private int[] _sampleRows = null;
     private HashMap<Integer, Double> _solveCache = null;
 	
-    
 	public CompressedSizeEstimatorSample(MatrixBlock data, int sampleSize) 
 		throws DMLRuntimeException 
 	{
@@ -315,7 +307,7 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator
 	private static int[] getSortedUniformSample(int range, int smplSize) {
 		if (smplSize == 0)
 			return new int[] {};
-		RandomDataGenerator rng = _rng.get();
+		RandomDataGenerator rng = new RandomDataGenerator();
 		int[] sample = rng.nextPermutation(range, smplSize);
 		Arrays.sort(sample);
 		return sample;

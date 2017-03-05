@@ -27,7 +27,7 @@ import org.apache.sysml.parser.Expression.DataType;
 public class CNodeUnary extends CNode
 {
 	public enum UnaryType {
-		ROW_SUMS, LOOKUP, LOOKUP0, //codegen specific
+		ROW_SUMS, LOOKUP_R, LOOKUP_RC, LOOKUP0, //codegen specific
 		EXP, POW2, MULT2, SQRT, LOG,
 		ABS, ROUND, CEIL, FLOOR, SIGN, 
 		SIN, COS, TAN, ASIN, ACOS, ATAN,
@@ -47,8 +47,10 @@ public class CNodeUnary extends CNode
 									"    double %TMP% = LibSpoofPrimitives.vectSum( %IN1%, %POS1%,  %LEN%);\n"; 
 				case EXP:
 					return "    double %TMP% = FastMath.exp(%IN1%);\n";
-			    case LOOKUP:
-					return "    double %TMP% = %IN1%[_rowIndex];\n" ;
+			    case LOOKUP_R:
+					return "    double %TMP% = %IN1%[rowIndex];\n";
+			    case LOOKUP_RC:
+					return "    double %TMP% = %IN1%[rowIndex*n+colIndex];\n";	
 				case LOOKUP0:
 					return "    double %TMP% = %IN1%[0];\n" ;
 				case POW2:
@@ -96,7 +98,7 @@ public class CNodeUnary extends CNode
 		}
 	}
 	
-	private final UnaryType _type;
+	private UnaryType _type;
 	
 	public CNodeUnary( CNode in1, UnaryType type ) {
 		_inputs.add(in1);
@@ -106,6 +108,10 @@ public class CNodeUnary extends CNode
 	
 	public UnaryType getType() {
 		return _type;
+	}
+	
+	public void setType(UnaryType type) {
+		_type = type;
 	}
 
 	@Override
@@ -131,10 +137,10 @@ public class CNodeUnary extends CNode
 		else
 			tmp = tmp.replaceAll("%IN1%", varj );
 		
-		if(varj.startsWith("_b")  ) //i.e. b.get(index)
+		if(varj.startsWith("b")  ) //i.e. b.get(index)
 		{
-			tmp = tmp.replaceAll("%POS1%", "_bi");
-			tmp = tmp.replaceAll("%POS2%", "_bi");
+			tmp = tmp.replaceAll("%POS1%", "bi");
+			tmp = tmp.replaceAll("%POS2%", "bi");
 		}
 		tmp = tmp.replaceAll("%POS1%", varj+"i");
 		tmp = tmp.replaceAll("%POS2%", varj+"i");
@@ -161,7 +167,8 @@ public class CNodeUnary extends CNode
 		switch(_type) {
 			case ROW_SUMS:
 			case EXP:
-			case LOOKUP:
+			case LOOKUP_R:
+			case LOOKUP_RC:
 			case LOOKUP0:	
 			case POW2:
 			case MULT2:	

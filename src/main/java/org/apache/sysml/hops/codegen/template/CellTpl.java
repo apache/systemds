@@ -198,11 +198,15 @@ public class CellTpl extends BaseTpl
 					
 					//cdata1 is vector
 					if( TemplateUtils.isColVector(cdata1) )
-						cdata1 = new CNodeUnary(cdata1, UnaryType.LOOKUP);
+						cdata1 = new CNodeUnary(cdata1, UnaryType.LOOKUP_R);
+					else if( cdata1 instanceof CNodeData && hop.getInput().get(0).getDataType().isMatrix() )
+						cdata1 = new CNodeUnary(cdata1, UnaryType.LOOKUP_RC);
 					
 					//cdata2 is vector
 					if( TemplateUtils.isColVector(cdata2) )
-						cdata2 = new CNodeUnary(cdata2, UnaryType.LOOKUP);
+						cdata2 = new CNodeUnary(cdata2, UnaryType.LOOKUP_R);
+					else if( cdata2 instanceof CNodeData && hop.getInput().get(1).getDataType().isMatrix() )
+						cdata2 = new CNodeUnary(cdata2, UnaryType.LOOKUP_RC);
 					
 					if( bop.getOp()==OpOp2.POW && cdata2.isLiteral() && cdata2.getVarname().equals("2") )
 						out = new CNodeUnary(cdata1, UnaryType.POW2);
@@ -220,10 +224,15 @@ public class CellTpl extends BaseTpl
 					
 					//cdata1 is vector
 					if( TemplateUtils.isColVector(cdata1) )
-						cdata1 = new CNodeUnary(cdata1, UnaryType.LOOKUP);
+						cdata1 = new CNodeUnary(cdata1, UnaryType.LOOKUP_R);
+					else if( cdata1 instanceof CNodeData && hop.getInput().get(0).getDataType().isMatrix() )
+						cdata1 = new CNodeUnary(cdata1, UnaryType.LOOKUP_RC);
+					
 					//cdata3 is vector
 					if( TemplateUtils.isColVector(cdata3) )
-						cdata3 = new CNodeUnary(cdata3, UnaryType.LOOKUP);
+						cdata3 = new CNodeUnary(cdata3, UnaryType.LOOKUP_R);
+					else if( cdata3 instanceof CNodeData && hop.getInput().get(2).getDataType().isMatrix() )
+						cdata3 = new CNodeUnary(cdata3, UnaryType.LOOKUP_RC);
 					
 					//construct ternary cnode, primitive operation derived from OpOp3
 					out = new CNodeTernary(cdata1, cdata2, cdata3, 
@@ -297,19 +306,42 @@ public class CellTpl extends BaseTpl
 		}
 	}
 
-	private boolean isValidOperation(Hop hop) {
-		boolean isBinaryMatrixScalar = hop instanceof BinaryOp && hop.getDataType()==DataType.MATRIX &&
-			(hop.getInput().get(0).getDataType()==DataType.SCALAR || hop.getInput().get(1).getDataType()==DataType.SCALAR);	
-		boolean isBinaryMatrixVector = hop instanceof BinaryOp && hop.dimsKnown() &&
-			((hop.getInput().get(0).getDataType() == DataType.MATRIX
-				&& TemplateUtils.isVectorOrScalar(hop.getInput().get(1)) && !TemplateUtils.isBinaryMatrixRowVector(hop)) 
-			||(TemplateUtils.isVectorOrScalar( hop.getInput().get(0))  
-				&& hop.getInput().get(1).getDataType() == DataType.MATRIX && !TemplateUtils.isBinaryMatrixRowVector(hop)) );
-		boolean isTernaryVectorScalarVector = hop instanceof TernaryOp && hop.getInput().size()==3 && hop.dimsKnown()
-				&& HopRewriteUtils.checkInputDataTypes(hop, DataType.MATRIX, DataType.SCALAR, DataType.MATRIX)
-				&& TemplateUtils.isVector(hop.getInput().get(0)) && TemplateUtils.isVector(hop.getInput().get(2));
+	private boolean isValidOperation(Hop hop) 
+	{	
+		//prepare indicators for binary operations
+		boolean isBinaryMatrixScalar = false;
+		boolean isBinaryMatrixVector = false;
+		boolean isBinaryMatrixMatrixDense = false;
+		if( hop instanceof BinaryOp && hop.getDataType().isMatrix() ) {
+			Hop left = hop.getInput().get(0);
+			Hop right = hop.getInput().get(1);
+			DataType ldt = left.getDataType();
+			DataType rdt = right.getDataType();
+			
+			isBinaryMatrixScalar = (ldt.isScalar() || rdt.isScalar());	
+			isBinaryMatrixVector = hop.dimsKnown() 
+				&& ((ldt.isMatrix() && TemplateUtils.isVectorOrScalar(right) && !TemplateUtils.isBinaryMatrixRowVector(hop)) 
+				|| (rdt.isMatrix() && TemplateUtils.isVectorOrScalar(left) && !TemplateUtils.isBinaryMatrixRowVector(hop)) );
+			isBinaryMatrixMatrixDense = hop.dimsKnown() && HopRewriteUtils.isEqualSize(left, right)
+				&& ldt.isMatrix() && rdt.isMatrix() && !HopRewriteUtils.isSparse(left) && !HopRewriteUtils.isSparse(right);
+		}
+				
+		//prepare indicators for ternary operations
+		boolean isTernaryVectorScalarVector = false;
+		boolean isTernaryMatrixScalarMatrixDense = false;
+		if( hop instanceof TernaryOp && hop.getInput().size()==3 && hop.dimsKnown() 
+			&& HopRewriteUtils.checkInputDataTypes(hop, DataType.MATRIX, DataType.SCALAR, DataType.MATRIX)) {
+			Hop left = hop.getInput().get(0);
+			Hop right = hop.getInput().get(2);
+			
+			isTernaryVectorScalarVector = TemplateUtils.isVector(left) && TemplateUtils.isVector(right);
+			isTernaryMatrixScalarMatrixDense = HopRewriteUtils.isEqualSize(left, right) 
+				&& !HopRewriteUtils.isSparse(left) && !HopRewriteUtils.isSparse(right);
+		}
 		
-		return hop.getDataType() == DataType.MATRIX && TemplateUtils.isOperationSupported(hop)
-			&& (hop instanceof UnaryOp || isBinaryMatrixScalar || isBinaryMatrixVector || isTernaryVectorScalarVector);	
+		//check supported unary, binary, ternary operations
+		return hop.getDataType() == DataType.MATRIX && TemplateUtils.isOperationSupported(hop) && (hop instanceof UnaryOp 
+				|| isBinaryMatrixScalar || isBinaryMatrixVector || isBinaryMatrixMatrixDense 
+				|| isTernaryVectorScalarVector || isTernaryMatrixScalarMatrixDense);	
 	}
 }

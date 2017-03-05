@@ -160,8 +160,8 @@ public class CNodeBinary extends CNode
 			else
 				tmp = tmp.replaceAll("%IN"+j+"%", varj );
 			
-			if(varj.startsWith("_b")  ) //i.e. b.get(index)
-				tmp = tmp.replaceAll("%POS"+j+"%", "_bi");
+			if(varj.startsWith("b")  ) //i.e. b.get(index)
+				tmp = tmp.replaceAll("%POS"+j+"%", "bi");
 			else
 				tmp = tmp.replaceAll("%POS"+j+"%", varj+"i");
 		}

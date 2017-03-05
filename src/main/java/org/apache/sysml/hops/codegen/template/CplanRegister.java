@@ -32,6 +32,7 @@ import org.apache.sysml.hops.codegen.cplan.CNodeCell;
 import org.apache.sysml.hops.codegen.cplan.CNodeData;
 import org.apache.sysml.hops.codegen.cplan.CNodeRowAggVector;
 import org.apache.sysml.hops.codegen.cplan.CNodeTpl;
+import org.apache.sysml.hops.codegen.cplan.CNodeUnary.UnaryType;
 import org.apache.sysml.hops.codegen.template.BaseTpl.TemplateType;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.matrix.data.Pair;
@@ -149,8 +150,8 @@ public class CplanRegister {
 					CNodeCell celltpl = (CNodeCell)ret.get(inhopID).getValue();
 					celltpl.getInput().get(0).setDataType(DataType.MATRIX);
 					rowaggtpl.rReplaceDataNode(rowaggtpl.getOutput(), inhopID, celltpl.getOutput());
-					rowaggtpl.rInsertLookupNode(rowaggtpl.getOutput(), 
-						((CNodeData)celltpl.getInput().get(0)).getHopID(), new HashMap<Long, CNode>());
+					rowaggtpl.rInsertLookupNode(rowaggtpl.getOutput(), ((CNodeData)celltpl.getInput().get(0)).getHopID(), 
+							new HashMap<Long, CNode>(), UnaryType.LOOKUP_R);
 					for( CNode input : celltpl.getInput() )
 						rowaggtpl.addInput(input);
 					HashSet<Long> inputIDs = TemplateUtils.rGetInputHopIDs(rowaggtpl.getOutput(), new HashSet<Long>());

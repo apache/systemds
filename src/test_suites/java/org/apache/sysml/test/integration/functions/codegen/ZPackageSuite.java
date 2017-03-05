@@ -36,6 +36,7 @@ import org.junit.runners.Suite;
 	DAGCellwiseTmplTest.class,
 	OuterProdTmplTest.class,
 	RowAggTmplTest.class,
+	SumProductChainTest.class,
 })
 
 

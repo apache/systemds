@@ -41,10 +41,10 @@ public class CNodeOuterProduct extends CNodeTpl
 			+ "  public %TMP%() {\n"
 			+ "    _outerProductType = OutProdType.%TYPE%;\n"
 			+ "  }\n"
-			+ "  protected void genexecDense( double _a, double[] _a1, int _a1i, double[] _a2, int _a2i, double[][] _b, double[] _scalars, double[] _c, int _ci, int _n, int _m, int _k, int _rowIndex, int _colIndex) { \n"
+			+ "  protected void genexecDense( double a, double[] a1, int a1i, double[] a2, int a2i, double[][] b, double[] scalars, double[] c, int ci, int n, int m, int k, int rowIndex, int colIndex) { \n"
 			+ "%BODY_dense%"
 			+ "  } \n"
-			+ "  protected double genexecCellwise( double _a, double[] _a1, int _a1i, double[] _a2, int _a2i, double[][] _b, double[] _scalars, int _n, int _m, int _k, int _rowIndex, int _colIndex) { \n"
+			+ "  protected double genexecCellwise( double a, double[] a1, int a1i, double[] a2, int a2i, double[][] b, double[] scalars, int n, int m, int k, int rowIndex, int colIndex) { \n"
 			+ "%BODY_cellwise%"
 			+ "    return %OUT_cellwise%;\n"
 			+ "  } \n"
@@ -64,9 +64,9 @@ public class CNodeOuterProduct extends CNodeTpl
 		String tmp = TEMPLATE;
 		
 		//rename inputs
-		rReplaceDataNode(_output, _inputs.get(0), "_a");
-		rReplaceDataNode(_output, _inputs.get(1), "_a1"); // u
-		rReplaceDataNode(_output, _inputs.get(2), "_a2"); // v
+		rReplaceDataNode(_output, _inputs.get(0), "a");
+		rReplaceDataNode(_output, _inputs.get(1), "a1"); // u
+		rReplaceDataNode(_output, _inputs.get(2), "a2"); // v
 		renameInputs(_inputs, 3);
 
 		//generate dense/sparse bodies
@@ -77,7 +77,7 @@ public class CNodeOuterProduct extends CNodeTpl
 
 		if(_type == OutProdType.LEFT_OUTER_PRODUCT || _type == OutProdType.RIGHT_OUTER_PRODUCT) {
 			tmp = tmp.replaceAll("%BODY_dense%", tmpDense);
-			tmp = tmp.replaceAll("%OUT%", "_c");
+			tmp = tmp.replaceAll("%OUT%", "c");
 			tmp = tmp.replaceAll("%BODY_cellwise%", "");
 			tmp = tmp.replaceAll("%OUT_cellwise%", "0");
 		}
@@ -87,9 +87,9 @@ public class CNodeOuterProduct extends CNodeTpl
 			tmp = tmp.replaceAll("%OUT_cellwise%", getCurrentVarName());
 		}
 		//replace size information
-		tmp = tmp.replaceAll("%LEN%", "_k");
+		tmp = tmp.replaceAll("%LEN%", "k");
 		
-		tmp = tmp.replaceAll("%POSOUT%", "_ci");
+		tmp = tmp.replaceAll("%POSOUT%", "ci");
 		
 		tmp = tmp.replaceAll("%TYPE%", _type.toString());
 

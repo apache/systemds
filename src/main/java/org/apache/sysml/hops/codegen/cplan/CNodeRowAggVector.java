@@ -36,10 +36,10 @@ public class CNodeRowAggVector extends CNodeTpl
 			+ "  public %TMP%() {\n"
 			+ "    _colVector = %FLAG%;\n"
 			+ "  }\n"
-			+ "  protected void genexecRowDense( double[] _a, int _ai, double[][] _b, double[] _scalars, double[] _c, int _len, int _rowIndex ) { \n"
+			+ "  protected void genexecRowDense( double[] a, int ai, double[][] b, double[] scalars, double[] c, int len, int rowIndex ) { \n"
 			+ "%BODY_dense%"
 			+ "  } \n"
-			+ "  protected void genexecRowSparse( double[] _avals, int[] _aix, int _ai, double[][] _b, double[] _scalars, double[] _c, int _len, int _rowIndex ) { \n"
+			+ "  protected void genexecRowSparse( double[] avals, int[] aix, int ai, double[][] b, double[] scalars, double[] c, int len, int rowIndex ) { \n"
 			+ "%BODY_sparse%"
 			+ "  } \n"			
 			+ "}\n";
@@ -55,7 +55,7 @@ public class CNodeRowAggVector extends CNodeTpl
 		String tmp = TEMPLATE;
 		
 		//rename inputs
-		rReplaceDataNode(_output, _inputs.get(0), "_a"); // input matrix
+		rReplaceDataNode(_output, _inputs.get(0), "a"); // input matrix
 		renameInputs(_inputs, 1);
 		
 		//generate dense/sparse bodies
@@ -67,15 +67,15 @@ public class CNodeRowAggVector extends CNodeTpl
 		tmp = tmp.replaceAll("%BODY_sparse%", tmpSparse);
 		
 		//replace outputs 
-		tmp = tmp.replaceAll("%OUT%", "_c");
+		tmp = tmp.replaceAll("%OUT%", "c");
 		tmp = tmp.replaceAll("%POSOUT%", "0");
 		
 		//replace size information
-		tmp = tmp.replaceAll("%LEN%", "_len");
+		tmp = tmp.replaceAll("%LEN%", "len");
 		
 		//replace colvector information and start position
 		tmp = tmp.replaceAll("%FLAG%", String.valueOf(_output._cols==1));
-		tmp = tmp.replaceAll("_bi", "0");
+		tmp = tmp.replaceAll("bi", "0");
 		
 		return tmp;
 	}

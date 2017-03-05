@@ -208,7 +208,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		return kbuff._sum;
 	}
 	
-	private long executeDense(double[] a, double[][] b,double[] scalars, double[] c, int n, int m, int rl, int ru) 
+	private long executeDense(double[] a, double[][] b, double[] scalars, double[] c, int n, int m, int rl, int ru) 
 	{
 		long lnnz = 0;
 		

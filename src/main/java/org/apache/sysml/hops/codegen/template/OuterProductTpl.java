@@ -341,7 +341,7 @@ public class OuterProductTpl extends BaseTpl {
 					if( (cdata1.getNumRows() > 1 && cdata1.getNumCols() == 1) || (cdata1.getNumRows() == 1 && cdata1.getNumCols() > 1) )
 					{
 						//second argument is always the vector
-						cdata1 = new CNodeUnary(cdata1, UnaryType.LOOKUP);
+						cdata1 = new CNodeUnary(cdata1, UnaryType.LOOKUP_R);
 						//out = new CNodeBinary(tmp, cdata2, BinType.valueOf(primitiveOpName));
 					}
 					//cdata1 is a matrix 
@@ -356,7 +356,7 @@ public class OuterProductTpl extends BaseTpl {
 					//else if( cdata2 instanceof CNodeData && (((CNodeData)cdata2).getNumRows() > 1 && ((CNodeData)cdata2).getNumCols() == 1) || ( ((CNodeData)cdata2).getNumRows() == 1 && ((CNodeData)cdata2).getNumCols() > 1  ))
 					if( (cdata2.getNumRows() > 1 && cdata2.getNumCols() == 1) || (cdata2.getNumRows() == 1 && cdata2.getNumCols() > 1) )
 					{
-						cdata2 = new CNodeUnary(cdata2, UnaryType.LOOKUP);
+						cdata2 = new CNodeUnary(cdata2, UnaryType.LOOKUP_R);
 						//out = new CNodeBinary(cdata1, tmp, BinType.valueOf(primitiveOpName));
 					}
 					//cdata2 is a matrix 

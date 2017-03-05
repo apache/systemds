@@ -186,7 +186,7 @@ public class RowAggTpl extends BaseTpl {
 					if(  ((AggUnaryOp)hop).getDirection() == Direction.Row && ((AggUnaryOp)hop).getOp() == AggOp.SUM  ) //RowSums 
 					{
 						if(hop.getInput().get(0).getDim2()==1)
-							out = (cdata1.getDataType()==DataType.SCALAR) ? cdata1 : new CNodeUnary(cdata1,UnaryType.LOOKUP);
+							out = (cdata1.getDataType()==DataType.SCALAR) ? cdata1 : new CNodeUnary(cdata1,UnaryType.LOOKUP_R);
 						else
 							out = new CNodeUnary(cdata1, UnaryType.ROW_SUMS);
 					}
@@ -245,14 +245,13 @@ public class RowAggTpl extends BaseTpl {
 						if( (cdata1.getNumRows() > 1 && cdata1.getNumCols() == 1) || (cdata1.getNumRows() == 1 && cdata1.getNumCols() > 1) )
 						{
 							//second argument is always the vector
-							cdata1 = new CNodeUnary(cdata1, UnaryType.LOOKUP);
-							//out = new CNodeBinary(tmp, cdata2, BinType.valueOf(primitiveOpName));
+							cdata1 = new CNodeUnary(cdata1, UnaryType.LOOKUP_R);
 						}
 						//cdata2 is vector
 						//else if( cdata2 instanceof CNodeData && (((CNodeData)cdata2).getNumRows() > 1 && ((CNodeData)cdata2).getNumCols() == 1) || ( ((CNodeData)cdata2).getNumRows() == 1 && ((CNodeData)cdata2).getNumCols() > 1  ))
 						if( (cdata2.getNumRows() > 1 && cdata2.getNumCols() == 1) || (cdata2.getNumRows() == 1 && cdata2.getNumCols() > 1) )
 						{
-							cdata2 = new CNodeUnary(cdata2, UnaryType.LOOKUP);
+							cdata2 = new CNodeUnary(cdata2, UnaryType.LOOKUP_R);
 							//out = new CNodeBinary(cdata1, tmp, BinType.valueOf(primitiveOpName));
 						}
 						out = new CNodeBinary(cdata1, cdata2, BinType.valueOf(primitiveOpName));	

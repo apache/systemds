@@ -313,4 +313,10 @@ public class TemplateUtils
 			((((AggUnaryOp) hop).getDirection() == Direction.RowCol) ? 
 			CellType.FULL_AGG : CellType.ROW_AGG) : CellType.NO_AGG;
 	}
+	
+	public static boolean isLookup(CNode node) {
+		return (node instanceof CNodeUnary 
+				&& (((CNodeUnary)node).getType()==UnaryType.LOOKUP_R 
+				|| ((CNodeUnary)node).getType()==UnaryType.LOOKUP_RC));
+	}
 }

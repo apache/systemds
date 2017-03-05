@@ -37,6 +37,7 @@ import org.apache.sysml.hops.codegen.cplan.CNodeData;
 import org.apache.sysml.hops.codegen.cplan.CNodeOuterProduct;
 import org.apache.sysml.hops.codegen.cplan.CNodeTpl;
 import org.apache.sysml.hops.codegen.cplan.CNodeUnary;
+import org.apache.sysml.hops.codegen.cplan.CNodeUnary.UnaryType;
 import org.apache.sysml.hops.codegen.template.BaseTpl;
 import org.apache.sysml.hops.codegen.template.CellTpl;
 import org.apache.sysml.hops.codegen.template.CplanRegister;
@@ -205,7 +206,7 @@ public class SpoofCompiler
 			HashMap<Long, Pair<Hop[],CNodeTpl>>  cplans = constructCPlans(roots, compileLiterals);
 			
 			//cleanup codegen plans (remove unnecessary inputs, fix hop-cnodedata mapping,
-			//remove empty templates with single cnodedata input)
+			//remove empty templates with single cnodedata input, remove spurious lookups)
 			cplans = cleanupCPlans(cplans);
 					
 			//explain before modification
@@ -386,6 +387,12 @@ public class SpoofCompiler
 						tmp.toArray(new Hop[0]),tpl));
 			}
 			
+			//remove spurious lookups on main input of cell template
+			if( tpl instanceof CNodeCell || tpl instanceof CNodeOuterProduct ) {
+				CNode in1 = tpl.getInput().get(0);
+				rFindAndRemoveLookup(tpl.getOutput(), in1.getVarname());
+			}
+			
 			//remove cplan w/ single op and w/o agg
 			if( tpl instanceof CNodeCell && ((CNodeCell)tpl).getCellType()==CellType.NO_AGG
 				&& tpl.getOutput() instanceof CNodeUnary && tpl.getOutput().getInput().get(0) instanceof CNodeData) 
@@ -407,5 +414,19 @@ public class SpoofCompiler
 		//recursively process cplan
 		for( CNode c : node.getInput() )
 			rCollectLeafIDs(c, leafs);
+	}
+	
+	private static void rFindAndRemoveLookup(CNode node, String nodeName) {
+		for( int i=0; i<node.getInput().size(); i++ ) {
+			CNode tmp = node.getInput().get(i);
+			if( tmp instanceof CNodeUnary && (((CNodeUnary)tmp).getType()==UnaryType.LOOKUP_R 
+					|| ((CNodeUnary)tmp).getType()==UnaryType.LOOKUP_RC)
+				&& tmp.getInput().get(0).getVarname().equals(nodeName) )
+			{
+				node.getInput().set(i, tmp.getInput().get(0));
+			}
+			else
+				rFindAndRemoveLookup(tmp, nodeName);
+		}
 	}
 }

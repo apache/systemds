@@ -41,7 +41,7 @@ public class CNodeCell extends CNodeTpl
 			+ "  public %TMP%() {\n"
 			+ "    _type = CellType.%TYPE%;\n"
 			+ "  }\n"
-			+ "  protected double genexecDense( double _a, double[][] _b, double[] _scalars, int _n, int _m, int _rowIndex, int _colIndex) { \n"
+			+ "  protected double genexecDense( double a, double[][] b, double[] scalars, int n, int m, int rowIndex, int colIndex) { \n"
 			+ "%BODY_dense%"
 			+ "    return %OUT%;\n"
 			+ "  } \n"
@@ -76,7 +76,7 @@ public class CNodeCell extends CNodeTpl
 		String tmp = TEMPLATE;
 		
 		//rename inputs
-		rReplaceDataNode(_output, _inputs.get(0), "_a");
+		rReplaceDataNode(_output, _inputs.get(0), "a");
 		renameInputs(_inputs, 1);
 		
 		//generate dense/sparse bodies

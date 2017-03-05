@@ -22,14 +22,18 @@ package org.apache.sysml.runtime.codegen;
 import java.io.Serializable;
 import java.util.ArrayList;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.util.DataConverter;
 
 public abstract class SpoofOperator implements Serializable
 {
 	private static final long serialVersionUID = 3834006998853573319L;
-
+	private static final Log LOG = LogFactory.getLog(SpoofOperator.class.getName());
+	
 	public abstract void execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalars, MatrixBlock out) 
 		throws DMLRuntimeException;
 	
@@ -58,9 +62,20 @@ public abstract class SpoofOperator implements Serializable
 	protected double[][] prepInputMatrices(ArrayList<MatrixBlock> inputs, int offset) {
 		double[][] b = new double[inputs.size()-offset][]; 
 		for(int i=offset; i < inputs.size(); i++) {
+			//allocate dense block in place for empty blocks
 			if( inputs.get(i).isEmptyBlock(false) && !inputs.get(i).isAllocated() )
 				inputs.get(i).allocateDenseBlock(); 
-			b[i-offset] = inputs.get(i).getDenseBlock();
+			//convert sparse to dense temporary block
+			if( inputs.get(i).isInSparseFormat() ) {
+				MatrixBlock tmp = inputs.get(i);
+				b[i-offset] = DataConverter.convertToDoubleVector(tmp);
+				LOG.warn("Converted "+tmp.getNumRows()+"x"+tmp.getNumColumns() + 
+						" sideways input matrix from sparse to dense.");
+			}
+			//use existing dense block
+			else {
+				b[i-offset] = inputs.get(i).getDenseBlock();
+			}
 		}
 		return b;
 	}

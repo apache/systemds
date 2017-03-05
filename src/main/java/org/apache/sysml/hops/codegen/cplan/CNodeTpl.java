@@ -25,6 +25,7 @@ import java.util.HashSet;
 
 import org.apache.sysml.hops.codegen.SpoofFusedOp.SpoofOutputDimsType;
 import org.apache.sysml.hops.codegen.cplan.CNodeUnary.UnaryType;
+import org.apache.sysml.hops.codegen.template.TemplateUtils;
 import org.apache.sysml.parser.Expression.DataType;
 
 public abstract class CNodeTpl extends CNode implements Cloneable
@@ -67,13 +68,13 @@ public abstract class CNodeTpl extends CNode implements Cloneable
 		HashMap<Long, CNode> nodes = new HashMap<Long, CNode>();
 		for(int i=startIndex, sPos=0, mPos=0; i < inputs.size(); i++) {
 			CNode cnode = inputs.get(i);
-			if( !(cnode instanceof CNodeData) || ((CNodeData)cnode).isLiteral())
+			if( cnode instanceof CNodeData && ((CNodeData)cnode).isLiteral() )
 				continue;
 			CNodeData cdata = (CNodeData)cnode;
 			if( cdata.getDataType() == DataType.SCALAR  || ( cdata.getNumCols() == 0 && cdata.getNumRows() == 0) ) 
-				nodes.put(cdata.getHopID(), new CNodeData(cdata, "_scalars["+ mPos++ +"]"));
+				nodes.put(cdata.getHopID(), new CNodeData(cdata, "scalars["+ mPos++ +"]"));
 			else
-				nodes.put(cdata.getHopID(), new CNodeData(cdata, "_b["+ sPos++ +"]"));
+				nodes.put(cdata.getHopID(), new CNodeData(cdata, "b["+ sPos++ +"]"));
 		}
 		
 		//single pass to replace all names
@@ -112,9 +113,10 @@ public abstract class CNodeTpl extends CNode implements Cloneable
 					node._inputs.set(i, dnodes.get(tmp.getHopID()));
 			}
 			
-			//replace lookup on top of leaf data node
+			//replace lookup on top of leaf data node (for CSE only)
 			if( node._inputs.get(i) instanceof CNodeUnary
-				&& ((CNodeUnary)node._inputs.get(i)).getType()==UnaryType.LOOKUP) {
+				&& (((CNodeUnary)node._inputs.get(i)).getType()==UnaryType.LOOKUP_R
+				|| ((CNodeUnary)node._inputs.get(i)).getType()==UnaryType.LOOKUP_RC)) {
 				CNodeData tmp = (CNodeData)node._inputs.get(i)._inputs.get(0);
 				if( !lnodes.containsKey(tmp.getHopID()) )
 					lnodes.put(tmp.getHopID(), node._inputs.get(i));
@@ -138,17 +140,18 @@ public abstract class CNodeTpl extends CNode implements Cloneable
 			
 			//remove unnecessary lookups
 			if( node._inputs.get(i) instanceof CNodeUnary 
-				&& ((CNodeUnary)node._inputs.get(i)).getType()==UnaryType.LOOKUP 
+				&& (((CNodeUnary)node._inputs.get(i)).getType()==UnaryType.LOOKUP_R
+				|| ((CNodeUnary)node._inputs.get(i)).getType()==UnaryType.LOOKUP_RC)
 				&& node._inputs.get(i)._inputs.get(0).getDataType()==DataType.SCALAR)
 				node._inputs.set(i, node._inputs.get(i)._inputs.get(0));
 		}
 	}
 	
-	public void rInsertLookupNode( CNode node, long hopID, HashMap<Long, CNode> memo ) 
+	public void rInsertLookupNode( CNode node, long hopID, HashMap<Long, CNode> memo, UnaryType lookupType ) 
 	{
 		for( int i=0; i<node._inputs.size(); i++ ) {
 			//recursively process children
-			rInsertLookupNode(node._inputs.get(i), hopID, memo);
+			rInsertLookupNode(node._inputs.get(i), hopID, memo, lookupType);
 			
 			//replace leaf node
 			if( node._inputs.get(i) instanceof CNodeData ) {
@@ -156,11 +159,14 @@ public abstract class CNodeTpl extends CNode implements Cloneable
 				if( tmp.getHopID() == hopID ) {
 					//use memo structure to retain DAG structure
 					CNode lookup = memo.get(hopID);
-					if( lookup == null ) {
-						lookup = new CNodeUnary(tmp, UnaryType.LOOKUP);
+					if( lookup == null && !TemplateUtils.isLookup(node) ) {
+						lookup = new CNodeUnary(tmp, lookupType);
 						memo.put(hopID, lookup);
 					}
-					node._inputs.set(i, lookup);
+					else if( TemplateUtils.isLookup(node) )
+						((CNodeUnary)node).setType(lookupType);
+					else
+						node._inputs.set(i, lookup);
 				}
 			}
 		}

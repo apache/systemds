@@ -642,11 +642,17 @@ public class HopRewriteUtils
 		return ( hop.getNnz()==0 );
 	}
 	
-	public static boolean isEqualSize( Hop hop1, Hop hop2 )
-	{
+	public static boolean isEqualSize( Hop hop1, Hop hop2 ) {
 		return (hop1.dimsKnown() && hop2.dimsKnown()
 				&& hop1.getDim1() == hop2.getDim1()
 				&& hop1.getDim2() == hop2.getDim2());
+	}
+	
+	public static boolean isEqualSize( Hop hop1, Hop... hops ) {
+		boolean ret = hop1.dimsKnown();
+		for( int i=0; i<hops.length && ret; i++ )
+			ret &= isEqualSize(hop1, hops[i]);
+		return ret;	
 	}
 	
 	public static boolean isSingleBlock( Hop hop ) {

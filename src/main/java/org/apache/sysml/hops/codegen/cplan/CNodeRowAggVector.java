@@ -108,4 +108,11 @@ public class CNodeRowAggVector extends CNodeTpl
 		return (o instanceof CNodeRowAggVector
 			&& super.equals(o));
 	}
+	
+	@Override
+	public String getTemplateInfo() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("SPOOF ROWAGGREGATE");
+		return sb.toString();
+	}
 }

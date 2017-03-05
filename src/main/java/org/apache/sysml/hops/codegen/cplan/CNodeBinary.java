@@ -181,10 +181,20 @@ public class CNodeBinary extends CNode
 			case VECT_DIV_ADD: return "b(vda)";
 			case MULT: return "b(*)";
 			case DIV: return "b(/)";
+			case PLUS: return "b(+)";
+			case MINUS: return "b(-)";
+			case MODULUS: return "b(%%)";
+			case INTDIV: return "b(%/%)";
+			case LESS: return "b(<)";
+			case LESSEQUAL: return "b(<=)";
+			case GREATER: return "b(>)";
+			case GREATEREQUAL: return "b(>=)";
+			case EQUAL: return "b(==)";
+			case NOTEQUAL: return "b(!=)";
+			case MINUS1_MULT: return "b(1-*)";
 			case VECT_DIV_SCALAR:  return "b(vector/)";
 			case VECT_MULT_SCALAR:  return "b(vector*)";
-			default:
-				return super.toString();	
+			default: return "b("+_type.name()+")";
 		}
 	}
 	

@@ -135,7 +135,7 @@ public class DAGCellwiseTmplTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[]{"-explain", "runtime", "-stats", 
+			programArgs = new String[]{"-explain", "hops", "-stats", 
 					"-config=" + HOME + TEST_CONF, "-args", String.valueOf(cols), output("S") };
 			
 			fullRScriptName = HOME + testname + ".R";

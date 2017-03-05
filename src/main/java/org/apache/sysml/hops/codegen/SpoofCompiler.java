@@ -62,7 +62,6 @@ import org.apache.sysml.runtime.codegen.CodegenUtils;
 import org.apache.sysml.runtime.codegen.SpoofCellwise.CellType;
 import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.utils.Explain;
-import org.apache.sysml.utils.Explain.ExplainType;
 import org.apache.sysml.utils.Statistics;
 
 public class SpoofCompiler 
@@ -152,7 +151,7 @@ public class SpoofCompiler
 		if( roots == null )
 			return roots;
 
-		ArrayList<Hop> optimized = SpoofCompiler.optimize(roots, true);
+		ArrayList<Hop> optimized = SpoofCompiler.optimize(roots, false);
 		Hop.resetVisitStatus(roots);
 		Hop.resetVisitStatus(optimized);
 		
@@ -164,15 +163,15 @@ public class SpoofCompiler
 	 * Main interface of sum-product optimizer, predicate dag.
 	 * 
 	 * @param root dag root node
-	 * @param compileLiterals if true literals compiled as constants, otherwise as scalar variables
+	 * @param recompile true if invoked during dynamic recompilation
 	 * @return dag root node of modified dag
 	 * @throws DMLRuntimeException if optimization failed
 	 */
-	public static Hop optimize( Hop root, boolean compileLiterals ) throws DMLRuntimeException {
+	public static Hop optimize( Hop root, boolean recompile ) throws DMLRuntimeException {
 		if( root == null )
 			return root;
 		
-		return optimize(new ArrayList<Hop>(Arrays.asList(root)), compileLiterals).get(0);
+		return optimize(new ArrayList<Hop>(Arrays.asList(root)), recompile).get(0);
 	}
 	
 	public static void cleanupCodeGenerator() {
@@ -186,12 +185,12 @@ public class SpoofCompiler
 	 * Main interface of sum-product optimizer, statement block dag.
 	 * 
 	 * @param roots dag root nodes
-	 * @param compileLiterals if true literals compiled as constants, otherwise as scalar variables
+	 * @param recompile true if invoked during dynamic recompilation
 	 * @return dag root nodes of modified dag 
 	 * @throws DMLRuntimeException if optimization failed
 	 */
 	@SuppressWarnings("unused")
-	public static ArrayList<Hop> optimize(ArrayList<Hop> roots, boolean compileLiterals) 
+	public static ArrayList<Hop> optimize(ArrayList<Hop> roots, boolean recompile) 
 		throws DMLRuntimeException 
 	{
 		if( roots == null || roots.isEmpty() || !OPTIMIZE )
@@ -202,6 +201,9 @@ public class SpoofCompiler
 		
 		try
 		{
+			//context-sensitive literal replacement (only integers during recompile)
+			boolean compileLiterals = ALWAYS_COMPILE_LITERALS || !recompile;
+			
 			//construct codegen plans
 			HashMap<Long, Pair<Hop[],CNodeTpl>>  cplans = constructCPlans(roots, compileLiterals);
 			
@@ -223,8 +225,13 @@ public class SpoofCompiler
 					//generate java source code
 					String src = tmp.getValue().codegen(false);
 					
-					//explain debug output generated source code
-					if( LDEBUG || DMLScript.EXPLAIN != ExplainType.NONE ) {
+					//explain debug output cplans or generated source code
+					if( LDEBUG || DMLScript.EXPLAIN.isHopsType(recompile) ) {
+						LOG.info("Codegen EXPLAIN (generated cplan for HopID: " +  cplan.getKey() +"):");
+						LOG.info(tmp.getValue().getClassname()
+								+Explain.explainCPlan(cplan.getValue().getValue()));
+					}
+					if( LDEBUG || DMLScript.EXPLAIN.isRuntimeType(recompile) ) {
 						LOG.info("Codegen EXPLAIN (generated code for HopID: " +  cplan.getKey() +"):");
 						LOG.info(src);
 					}

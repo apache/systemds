@@ -162,4 +162,14 @@ public class CNodeOuterProduct extends CNodeTpl
 			&& _type == that._type
 			&& _transposeOutput == that._transposeOutput;
 	}
+	
+	@Override
+	public String getTemplateInfo() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("SPOOF OUTERPRODUCT [type=");
+		sb.append(_type.name());
+		sb.append(", to="+_transposeOutput);
+		sb.append("]");
+		return sb.toString();
+	}
 }

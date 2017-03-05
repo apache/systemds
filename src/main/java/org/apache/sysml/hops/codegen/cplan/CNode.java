@@ -27,10 +27,13 @@ import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
 
 public abstract class CNode
 {
-	private static final IDSequence _seq = new IDSequence();
+	private static final IDSequence _seqVar = new IDSequence();
+	private static final IDSequence _seqID = new IDSequence();
 	
+	protected final long _ID; 
 	protected ArrayList<CNode> _inputs = null; 
 	protected CNode _output = null; 
+	protected boolean _visited = false;
 	protected boolean _generated = false;
 	protected String _genVar = null;
 	protected long _rows = -1;
@@ -43,8 +46,13 @@ public abstract class CNode
 	protected int _hash = 0;
 	
 	public CNode() {
+		_ID = _seqID.getNextID();
 		_inputs = new ArrayList<CNode>();
 		_generated = false;
+	}
+	
+	public long getID() {
+		return _ID;
 	}
 
 	public ArrayList<CNode> getInput() {
@@ -52,12 +60,12 @@ public abstract class CNode
 	}
 	
 	public String createVarname() {
-		_genVar = "TMP"+_seq.getNextID();
+		_genVar = "TMP"+_seqVar.getNextID();
 		return _genVar; 
 	}
 	
 	protected String getCurrentVarName() {
-		return "TMP"+(_seq.getCurrentID()-1);
+		return "TMP"+(_seqVar.getCurrentID()-1);
 	}
 	
 	public String getVarname() {
@@ -116,6 +124,26 @@ public abstract class CNode
 	public void setOutput(CNode output) {
 		_output = output;
 		_hash = 0;
+	}
+	
+	public boolean isVisited() {
+		return _visited; 
+	}
+	
+	public void setVisited() {
+		setVisited(true);
+	}
+	
+	public void setVisited(boolean flag) {
+		_visited = flag;
+	}
+	
+	public void resetVisitStatus() {
+		if( !isVisited() )
+			return;
+		for( CNode h : getInput() )
+			h.resetVisitStatus();
+		setVisited(false);
 	}
 	
 	public abstract String codegen(boolean sparse) ;

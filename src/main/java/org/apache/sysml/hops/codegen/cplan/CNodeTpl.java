@@ -55,6 +55,13 @@ public abstract class CNodeTpl extends CNode implements Cloneable
 		_inputs = tmp;
 	}
 	
+	public String[] getInputNames() {
+		String[] ret = new String[_inputs.size()];
+		for( int i=0; i<_inputs.size(); i++ )
+			ret[i] = _inputs.get(i).getVarname();
+		return ret;
+	}
+	
 	public String codegen() {
 		return codegen(false);
 	}
@@ -62,6 +69,8 @@ public abstract class CNodeTpl extends CNode implements Cloneable
 	public abstract CNodeTpl clone();
 	
 	public abstract SpoofOutputDimsType getOutputDimType();
+	
+	public abstract String getTemplateInfo();
 	
 	protected void renameInputs(ArrayList<CNode> inputs, int startIndex) {
 		//create map of hopID to data nodes with new names, used for CSE

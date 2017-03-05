@@ -215,7 +215,7 @@ public class Recompiler
 			// codegen if enabled
 			if( ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.CODEGEN) && SpoofCompiler.RECOMPILE ) {
 				Hop.resetVisitStatus(hops);
-				hops = SpoofCompiler.optimize(hops, SpoofCompiler.ALWAYS_COMPILE_LITERALS);
+				hops = SpoofCompiler.optimize(hops, true);
 			}
 			
 			// construct lops			

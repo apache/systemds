@@ -141,4 +141,14 @@ public class CNodeCell extends CNodeTpl
 		return super.equals(that)
 			&& _type == that._type;
 	}
+	
+	@Override
+	public String getTemplateInfo() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("SPOOF CELLWISE [type=");
+		sb.append(_type.name());
+		sb.append(", mc="+_multipleConsumers);
+		sb.append("]");
+		return sb.toString();
+	}
 }

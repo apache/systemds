@@ -72,7 +72,7 @@ public class CNodeData extends CNode
 	
 	@Override
 	public String toString() {
-		return "CdataNode[name="+_name+", id="+_hopID+"]";
+		return "data("+_name+", hopid="+_hopID+")";
 	}
 	
 	@Override

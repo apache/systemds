@@ -156,9 +156,11 @@ public class CNodeUnary extends CNode
 	@Override
 	public String toString() {
 		switch(_type) {
-			case ROW_SUMS: return "u(R+)";
-			default:
-				return super.toString();
+			case ROW_SUMS:  return "u(R+)";
+			case LOOKUP_R:	return "u(ixr)";
+			case LOOKUP_RC:	return "u(ixrc)";
+			case LOOKUP0:	return "u(ix0)";
+			default:		return "u("+_type.name()+")";
 		}
 	}
 

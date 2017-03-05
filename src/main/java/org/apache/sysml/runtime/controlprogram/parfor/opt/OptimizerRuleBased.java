@@ -2078,38 +2078,36 @@ public class OptimizerRuleBased extends Optimizer
 	private void rGetUIPConsumerList(Hop hop, HashMap <String, ArrayList<UIPCandidateHop>> uipCandHopHM)
 		throws DMLRuntimeException
 	{
-		if(hop.getVisited() != Hop.VisitStatus.DONE)
-		{
-			if ((!(!hop.getParent().isEmpty() && hop.getParent().get(0) instanceof LeftIndexingOp)) &&
-				   ((hop instanceof DataOp && ((DataOp)hop).getDataOpType() == DataOpTypes.TRANSIENTREAD ) ||
-					(hop instanceof ReorgOp && (((ReorgOp)hop).getOp() == ReOrgOp.RESHAPE || ((ReorgOp)hop).getOp() == ReOrgOp.TRANSPOSE)) ||
-					(hop instanceof FunctionOp)))
-			{	
-				// If candidate's name is same as input hop.
-				String uipCandiateID = hop.getName();
-				ArrayList <UIPCandidateHop> uipCandHopList = uipCandHopHM.get(uipCandiateID);
-				
-				if (uipCandHopList != null) 
+		if(hop.isVisited())
+			return;
+		
+		if ((!(!hop.getParent().isEmpty() && hop.getParent().get(0) instanceof LeftIndexingOp)) &&
+			   ((hop instanceof DataOp && ((DataOp)hop).getDataOpType() == DataOpTypes.TRANSIENTREAD ) ||
+				(hop instanceof ReorgOp && (((ReorgOp)hop).getOp() == ReOrgOp.RESHAPE || ((ReorgOp)hop).getOp() == ReOrgOp.TRANSPOSE)) ||
+				(hop instanceof FunctionOp)))
+		{	
+			// If candidate's name is same as input hop.
+			String uipCandiateID = hop.getName();
+			ArrayList <UIPCandidateHop> uipCandHopList = uipCandHopHM.get(uipCandiateID);
+			
+			if (uipCandHopList != null) 
+			{
+				for (UIPCandidateHop uipCandHop: uipCandHopList)
 				{
-					for (UIPCandidateHop uipCandHop: uipCandHopList)
-					{
-						// Add consumers for candidate hop.
-						ArrayList<Hop> consumerHops = uipCandHop.getConsumerHops();
-						if(uipCandHop.getConsumerHops() == null)
-							consumerHops = new ArrayList<Hop>();
-						consumerHops.add(getRootHop(hop));
-						uipCandHop.setConsumerHops(consumerHops);
-					}
+					// Add consumers for candidate hop.
+					ArrayList<Hop> consumerHops = uipCandHop.getConsumerHops();
+					if(uipCandHop.getConsumerHops() == null)
+						consumerHops = new ArrayList<Hop>();
+					consumerHops.add(getRootHop(hop));
+					uipCandHop.setConsumerHops(consumerHops);
 				}
 			}
-			
-			for(Hop hopIn: hop.getInput())
-			{
-				rGetUIPConsumerList(hopIn, uipCandHopHM);
-			}
-			
-			hop.setVisited(Hop.VisitStatus.DONE);
 		}
+		
+		for(Hop hopIn: hop.getInput())
+			rGetUIPConsumerList(hopIn, uipCandHopHM);
+		
+		hop.setVisited();
 	}
 	
 
@@ -2337,61 +2335,51 @@ public class OptimizerRuleBased extends Optimizer
 	private void rValidateUIPConsumerList(Hop hop, HashMap <String, ArrayList<UIPCandidateHop>> uipCandHopHM)
 			throws DMLRuntimeException 
 	{
-		if(hop.getVisited() != Hop.VisitStatus.DONE)
+		if(hop.isVisited())
+			return;
+		
+		for(Entry<String, ArrayList <UIPCandidateHop>> entry: uipCandHopHM.entrySet())
 		{
-			for(Entry<String, ArrayList <UIPCandidateHop>> entry: uipCandHopHM.entrySet())
-			{
-				ArrayList <UIPCandidateHop> uipCandHopList = entry.getValue();
-				if (uipCandHopList != null) 
-				{
-					for (UIPCandidateHop uipCandHop: uipCandHopList)
-					{
-						ArrayList<Hop> consumerHops = uipCandHop.getConsumerHops();
-						if(consumerHops != null)
-						{
-							// If consumer has read then remove candidate from the list (set flag to false).
-							for (Hop consumerHop: consumerHops)
-								if(hop.getName().equals(consumerHop.getName()))
-								{
-									uipCandHop.setUpdateInPlace(false);
-									break;
-								}
+			if (entry.getValue() == null)
+				continue;
+			for (UIPCandidateHop uipCandHop: entry.getValue()) {
+				ArrayList<Hop> consumerHops = uipCandHop.getConsumerHops();
+				if(consumerHops != null) {
+					// If consumer has read then remove candidate from the list (set flag to false).
+					for (Hop consumerHop: consumerHops)
+						if(hop.getName().equals(consumerHop.getName())) {
+							uipCandHop.setUpdateInPlace(false);
+							break;
 						}
-					}
 				}
 			}
-			hop.setVisited(Hop.VisitStatus.DONE);
 		}
+		hop.setVisited();
 	}
 
 	private void rValidateUIPConsumerList(Hop hop, HashMap <String, ArrayList<UIPCandidateHop>> uipCandHopHM, VariableSet readVariables)
 			throws DMLRuntimeException 
 	{
-		if(hop.getVisited() != Hop.VisitStatus.DONE)
+		if(hop.isVisited())
+			return;
+		
+		for(Entry<String, ArrayList <UIPCandidateHop>> entry: uipCandHopHM.entrySet())
 		{
-			for(Entry<String, ArrayList <UIPCandidateHop>> entry: uipCandHopHM.entrySet())
-			{
-				ArrayList <UIPCandidateHop> uipCandHopList = entry.getValue();
-				if (uipCandHopList != null) 
-				{
-					for (UIPCandidateHop uipCandHop: uipCandHopList)
-					{
-						ArrayList<Hop> consumerHops = uipCandHop.getConsumerHops();
-						if(consumerHops != null)
-						{
-							// If consumer has read then remove candidate from the list (set flag to false).
-							for (Hop consumerHop: consumerHops)
-								if(readVariables.containsVariable(consumerHop.getName()))
-								{
-									uipCandHop.setUpdateInPlace(false);
-									break;
-								}
+			if (entry.getValue() == null)
+				continue;
+			for (UIPCandidateHop uipCandHop: entry.getValue()) {
+				ArrayList<Hop> consumerHops = uipCandHop.getConsumerHops();
+				if(consumerHops != null) {
+					// If consumer has read then remove candidate from the list (set flag to false).
+					for (Hop consumerHop: consumerHops)
+						if(readVariables.containsVariable(consumerHop.getName())) {
+							uipCandHop.setUpdateInPlace(false);
+							break;
 						}
-					}
 				}
 			}
-			hop.setVisited(Hop.VisitStatus.DONE);
 		}
+		hop.setVisited();
 	}
 	
 	

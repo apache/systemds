@@ -176,19 +176,6 @@ public class DataGenOp extends Hop implements MultiThreadedHop
 		
 		return getLops();
 	}
-	
-	@Override
-	public void printMe() throws HopsException
-	{	
-		if (LOG.isDebugEnabled()){
-			if(getVisited() != VisitStatus.DONE)
-			{
-				super.printMe();
-			}
-
-			setVisited(VisitStatus.DONE);
-		}
-	}
 
 	@Override
 	public boolean allowsAllExecTypes()

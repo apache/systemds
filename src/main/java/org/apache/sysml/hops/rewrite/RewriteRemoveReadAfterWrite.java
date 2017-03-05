@@ -89,7 +89,7 @@ public class RewriteRemoveReadAfterWrite extends HopRewriteRule
 	private void collectPersistentReadWriteOps(Hop hop, HashMap<String,Hop> pWrites, HashMap<String,Hop> pReads) 
 		throws HopsException 
 	{
-		if( hop.getVisited() == Hop.VisitStatus.DONE )
+		if( hop.isVisited() )
 			return;
 		
 		//process childs
@@ -111,6 +111,6 @@ public class RewriteRemoveReadAfterWrite extends HopRewriteRule
 			}
 		}
 		
-		hop.setVisited(Hop.VisitStatus.DONE);
+		hop.setVisited();
 	}
 }

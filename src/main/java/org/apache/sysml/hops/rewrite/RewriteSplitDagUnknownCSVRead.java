@@ -25,7 +25,6 @@ import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.DataOpTypes;
 import org.apache.sysml.hops.Hop.FileFormatTypes;
-import org.apache.sysml.hops.Hop.VisitStatus;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.parser.DataIdentifier;
 import org.apache.sysml.parser.StatementBlock;
@@ -137,7 +136,7 @@ public class RewriteSplitDagUnknownCSVRead extends StatementBlockRewriteRule
 	
 	private void collectCSVReadHopsUnknownSize( Hop hop, ArrayList<Hop> cand )
 	{
-		if( hop.getVisited() == VisitStatus.DONE )
+		if( hop.isVisited() )
 			return;
 		
 		//collect persistent reads (of type csv, with unknown size)
@@ -159,6 +158,6 @@ public class RewriteSplitDagUnknownCSVRead extends StatementBlockRewriteRule
 			for( Hop c : hop.getInput() )
 				collectCSVReadHopsUnknownSize(c, cand);
 		
-		hop.setVisited(VisitStatus.DONE);
+		hop.setVisited();
 	}
 }

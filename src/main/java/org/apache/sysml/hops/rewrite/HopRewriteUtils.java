@@ -40,7 +40,6 @@ import org.apache.sysml.hops.Hop.OpOp2;
 import org.apache.sysml.hops.Hop.OpOp3;
 import org.apache.sysml.hops.Hop.ParamBuiltinOp;
 import org.apache.sysml.hops.Hop.ReOrgOp;
-import org.apache.sysml.hops.Hop.VisitStatus;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.LeftIndexingOp;
 import org.apache.sysml.hops.LiteralOp;
@@ -919,7 +918,7 @@ public class HopRewriteUtils
 	
 	public static boolean rHasSimpleReadChain(Hop root, String var)
 	{
-		if( root.getVisited()==VisitStatus.DONE )
+		if( root.isVisited() )
 			return false;
 
 		boolean ret = false;
@@ -939,13 +938,13 @@ public class HopRewriteUtils
 				ret |= root.getParent().size()<=1;
 		}
 		
-		root.setVisited(Hop.VisitStatus.DONE);
+		root.setVisited();
 		return ret;
 	}
 	
 	public static boolean rContainsRead(Hop root, String var, boolean includeMetaOp)
 	{
-		if( root.getVisited()==VisitStatus.DONE )
+		if( root.isVisited() )
 			return false;
 
 		boolean ret = false;
@@ -971,7 +970,7 @@ public class HopRewriteUtils
 		for( Hop c : root.getInput() )
 			ret |= rContainsRead(c, var, includeMetaOp);
 		
-		root.setVisited(Hop.VisitStatus.DONE);
+		root.setVisited();
 		return ret;
 	}
 	

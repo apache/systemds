@@ -28,7 +28,6 @@ import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.DataOpTypes;
-import org.apache.sysml.hops.Hop.VisitStatus;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.Hop.FileFormatTypes;
 import org.apache.sysml.hops.OptimizerUtils;
@@ -451,7 +450,7 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 				if( !(currentHop instanceof DataOp && ((DataOp)currentHop).isWrite()) ){
 					ArrayList<Hop> newRoots = new ArrayList<Hop>();
 					tmpHop = new DataOp("_tmp", currentHop.getDataType(), currentHop.getValueType(), currentHop, DataOpTypes.TRANSIENTWRITE, "tmp");
-					tmpHop.setVisited(VisitStatus.DONE); //ensure recursive visitstatus reset on recompile
+					tmpHop.setVisited(); //ensure recursive visitstatus reset on recompile
 					newRoots.add(tmpHop);
 					pb.getStatementBlock().set_hops(newRoots);
 				}

@@ -85,7 +85,7 @@ public class HopDagValidator
 	private static void rValidateHop( Hop hop ) 
 		throws HopsException
 	{
-		if(hop.getVisited() == Hop.VisitStatus.DONE)
+		if(hop.isVisited())
 			return;
 		
 		//check parent linking
@@ -107,6 +107,6 @@ public class HopDagValidator
 		for( Hop child : hop.getInput() )
 			rValidateHop(child);
 		
-		hop.setVisited(Hop.VisitStatus.DONE);
+		hop.setVisited();
 	}
 }

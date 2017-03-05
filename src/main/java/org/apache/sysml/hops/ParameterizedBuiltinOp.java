@@ -802,19 +802,6 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 			setLops(finalagg);
 		}
 	}
-	
-	
-	@Override
-	public void printMe() throws HopsException {
-		if (LOG.isDebugEnabled()){
-			if (getVisited() != VisitStatus.DONE) {
-				super.printMe();
-				LOG.debug(" " + _op);
-			}
-
-			setVisited(VisitStatus.DONE);
-		}
-	}
 
 	@Override
 	protected double computeOutputMemEstimate( long dim1, long dim2, long nnz )

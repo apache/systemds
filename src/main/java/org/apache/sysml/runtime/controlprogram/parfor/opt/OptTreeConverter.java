@@ -30,7 +30,6 @@ import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.MultiThreadedHop;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.LiteralOp;
-import org.apache.sysml.hops.Hop.VisitStatus;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.lops.LopProperties;
 import org.apache.sysml.parser.DMLProgram;
@@ -503,7 +502,7 @@ public class OptTreeConverter
 		ArrayList<OptNode> ret = new ArrayList<OptNode>(); 
 		ArrayList<Hop> in = hop.getInput();
 	
-		if( hop.getVisited() == VisitStatus.DONE )
+		if( hop.isVisited() )
 			return ret;
 		
 		//general case
@@ -584,7 +583,7 @@ public class OptTreeConverter
 				if( !(hin instanceof DataOp || hin instanceof LiteralOp ) ) //no need for opt nodes
 					ret.addAll(rCreateAbstractOptNodes(hin, vars, memo));
 
-		hop.setVisited(VisitStatus.DONE);
+		hop.setVisited();
 		
 		return ret;
 	}

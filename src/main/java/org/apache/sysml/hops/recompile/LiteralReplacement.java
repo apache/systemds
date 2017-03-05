@@ -33,7 +33,6 @@ import org.apache.sysml.hops.Hop.AggOp;
 import org.apache.sysml.hops.Hop.DataOpTypes;
 import org.apache.sysml.hops.Hop.Direction;
 import org.apache.sysml.hops.Hop.OpOp1;
-import org.apache.sysml.hops.Hop.VisitStatus;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -54,7 +53,7 @@ public class LiteralReplacement
 	protected static void rReplaceLiterals( Hop hop, LocalVariableMap vars ) 
 		throws DMLRuntimeException
 	{
-		if( hop.getVisited() == VisitStatus.DONE )
+		if( hop.isVisited() )
 			return;
 
 		if( hop.getInput() != null )
@@ -101,7 +100,7 @@ public class LiteralReplacement
 			}
 		}
 		
-		hop.setVisited(VisitStatus.DONE);
+		hop.setVisited();
 	}
 	
 

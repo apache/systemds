@@ -29,7 +29,6 @@ import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.DataOpTypes;
 import org.apache.sysml.hops.Hop.OpOp1;
 import org.apache.sysml.hops.Hop.OpOp2;
-import org.apache.sysml.hops.Hop.VisitStatus;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.LiteralOp;
 import org.apache.sysml.hops.UnaryOp;
@@ -98,7 +97,7 @@ public class RewriteConstantFolding extends HopRewriteRule
 	private Hop rConstantFoldingExpression( Hop root ) 
 		throws HopsException
 	{
-		if( root.getVisited() == VisitStatus.DONE )
+		if( root.isVisited() )
 			return root;
 		
 		//recursively process childs (before replacement to allow bottom-recursion)
@@ -168,7 +167,7 @@ public class RewriteConstantFolding extends HopRewriteRule
 			
 		
 		//mark processed
-		root.setVisited( VisitStatus.DONE );
+		root.setVisited();
 		return root;
 	}
 	

@@ -93,12 +93,11 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 	private void rule_OptimizeMMChains(Hop hop) 
 		throws HopsException 
 	{
-		if(hop.getVisited() == Hop.VisitStatus.DONE)
+		if(hop.isVisited())
 				return;
 		
 		if (  HopRewriteUtils.isMatrixMultiply(hop)
-			  && !((AggBinaryOp)hop).hasLeftPMInput() 
-			  && hop.getVisited() != Hop.VisitStatus.DONE ) 
+			  && !((AggBinaryOp)hop).hasLeftPMInput() && !hop.isVisited() ) 
 		{
 			// Try to find and optimize the chain in which current Hop is the
 			// last operator
@@ -108,7 +107,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 		for (Hop hi : hop.getInput())
 			rule_OptimizeMMChains(hi);
 
-		hop.setVisited(Hop.VisitStatus.DONE);
+		hop.setVisited();
 	}
 
 	
@@ -160,8 +159,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 			 */
 
 			if (    HopRewriteUtils.isMatrixMultiply(h)
-			     && !((AggBinaryOp)hop).hasLeftPMInput() 
-				 && h.getVisited() != Hop.VisitStatus.DONE ) 
+			     && !((AggBinaryOp)hop).hasLeftPMInput() && h.isVisited() ) 
 			{
 				// check if the output of "h" is used at multiple places. If yes, it can
 				// not be expanded.
@@ -173,7 +171,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 					expandable = true;
 			}
 
-			h.setVisited(Hop.VisitStatus.DONE);
+			h.setVisited();
 
 			if ( !expandable ) {
 				i = i + 1;

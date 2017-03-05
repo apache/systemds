@@ -84,7 +84,7 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 	{
 		// Go to the source(s) of the DAG
 		for (Hop hi : hop.getInput()) {
-			if (hi.getVisited() != Hop.VisitStatus.DONE)
+			if (!hi.isVisited())
 				rule_BlockSizeAndReblock(hi, blocksize);
 		}
 
@@ -237,7 +237,7 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 			}
 		}
 
-		hop.setVisited(Hop.VisitStatus.DONE);
+		hop.setVisited();
 	}
 	
 	private static boolean isReblockValid() {

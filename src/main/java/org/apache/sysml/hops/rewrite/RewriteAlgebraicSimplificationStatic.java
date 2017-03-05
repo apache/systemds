@@ -123,7 +123,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 	private void rule_AlgebraicSimplification(Hop hop, boolean descendFirst) 
 		throws HopsException 
 	{
-		if(hop.getVisited() == Hop.VisitStatus.DONE)
+		if(hop.isVisited())
 			return;
 		
 		//recursively process children
@@ -178,7 +178,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				rule_AlgebraicSimplification(hi, descendFirst);
 		}
 
-		hop.setVisited(Hop.VisitStatus.DONE);
+		hop.setVisited();
 	}
 	
 	private Hop removeUnnecessaryVectorizeOperation(Hop hi)

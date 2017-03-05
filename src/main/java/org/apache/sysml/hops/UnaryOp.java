@@ -78,19 +78,6 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 	public OpOp1 getOp() {
 		return _op;
 	}
-	
-	public void printMe() throws HopsException {
-		if (LOG.isDebugEnabled()){
-			if (getVisited() != VisitStatus.DONE) {
-				super.printMe();
-				LOG.debug("  Operation: " + _op);
-				for (Hop h : getInput()) {
-					h.printMe();
-				}
-			}
-			setVisited(VisitStatus.DONE);
-		}
-	}
 
 	@Override
 	public String getOpString() {

@@ -334,23 +334,6 @@ public class DataOp extends Hop
 		return s;
 	}
 
-	public void printMe() throws HopsException {
-		if (LOG.isDebugEnabled()){
-			if (getVisited() != VisitStatus.DONE) {
-				super.printMe();
-				LOG.debug("  DataOp: " + _dataop);
-				if (_fileName != null) {
-					LOG.debug(" file: " + _fileName);
-				}
-				LOG.debug(" format: " + getInputFormatType());
-				for (Hop h : getInput()) {
-					h.printMe();
-				}
-			}
-			setVisited(VisitStatus.DONE);
-		}
-	}
-
 	@Override
 	public boolean allowsAllExecTypes()
 	{

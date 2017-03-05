@@ -756,20 +756,6 @@ public class BinaryOp extends Hop
 		return s;
 	}
 
-	public void printMe() throws HopsException {
-		if (LOG.isDebugEnabled()){
-			if (getVisited() != VisitStatus.DONE) {
-				super.printMe();
-				LOG.debug("  Operation: " + op );
-				for (Hop h : getInput()) {
-					h.printMe();
-				}
-				;
-			}
-			setVisited(VisitStatus.DONE);
-		}
-	}
-
 	@Override
 	protected double computeOutputMemEstimate( long dim1, long dim2, long nnz )
 	{		

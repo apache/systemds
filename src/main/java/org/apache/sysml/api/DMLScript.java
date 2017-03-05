@@ -587,28 +587,11 @@ public class DMLScript
 		dmlt.validateParseTree(prog);
 		dmlt.constructHops(prog);
 		
-		if (LOG.isDebugEnabled()) {
-			LOG.debug("\n********************** HOPS DAG (Before Rewrite) *******************");
-			dmlt.printHops(prog);
-			DMLTranslator.resetHopsDAGVisitStatus(prog);
-		}
-		
 		//init working directories (before usage by following compilation steps)
 		initHadoopExecution( dmlconf );
 	
 		//Step 5: rewrite HOP DAGs (incl IPA and memory estimates)
 		dmlt.rewriteHopsDAG(prog);
-		
-		if (LOG.isDebugEnabled()) {
-			LOG.debug("\n********************** HOPS DAG (After Rewrite) *******************");
-			dmlt.printHops(prog);
-			DMLTranslator.resetHopsDAGVisitStatus(prog);
-		
-			LOG.debug("\n********************** OPTIMIZER *******************\n" + 
-			          "Level = " + OptimizerUtils.getOptLevel() + "\n"
-					 +"Available Memory = " + ((double)InfrastructureAnalyzer.getLocalMaxMemory()/1024/1024) + " MB" + "\n"
-					 +"Memory Budget = " + ((double)OptimizerUtils.getLocalMemBudget()/1024/1024) + " MB" + "\n");
-		}
 
 		//Step 5.1: Generate code for the rewrited Hop dags 
 		if( dmlconf.getBooleanValue(DMLConfig.CODEGEN) ){
@@ -616,12 +599,6 @@ public class DMLScript
 			SpoofCompiler.ALWAYS_COMPILE_LITERALS = (dmlconf.getIntValue(DMLConfig.CODEGEN_LITERALS)==2);
 			
 			dmlt.codgenHopsDAG(prog);
-			
-			if (LOG.isDebugEnabled()) {
-				LOG.debug("\n********************** HOPS DAG (After Codegen) *******************");
-				dmlt.printHops(prog);
-				
-			}
 		}
 		
 		//Step 6: construct lops (incl exec type and op selection)

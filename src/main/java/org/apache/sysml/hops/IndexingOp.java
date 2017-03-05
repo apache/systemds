@@ -193,16 +193,6 @@ public class IndexingOp extends Hop
 		s += OPSTRING;
 		return s;
 	}
-
-	public void printMe() throws HopsException {
-		if (getVisited() != VisitStatus.DONE) {
-			super.printMe();
-			for (Hop h : getInput()) {
-				h.printMe();
-			}
-		}
-		setVisited(VisitStatus.DONE);
-	}
 	
 	@Override
 	public boolean allowsAllExecTypes()

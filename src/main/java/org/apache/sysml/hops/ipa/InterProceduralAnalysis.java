@@ -47,7 +47,6 @@ import org.apache.sysml.hops.Hop.OpOp1;
 import org.apache.sysml.hops.Hop.OpOp2;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.OptimizerUtils;
-import org.apache.sysml.hops.Hop.VisitStatus;
 import org.apache.sysml.hops.LiteralOp;
 import org.apache.sysml.hops.UnaryOp;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
@@ -299,7 +298,7 @@ public class InterProceduralAnalysis
 	private void getFunctionCandidatesForStatisticPropagation(DMLProgram prog, Hop hop, Map<String, Integer> fcandCounts, Map<String, FunctionOp> fcandHops ) 
 		throws HopsException, ParseException
 	{
-		if( hop.getVisited() == VisitStatus.DONE )
+		if( hop.isVisited() )
 			return;
 		
 		if( hop instanceof FunctionOp && !((FunctionOp)hop).getFunctionNamespace().equals(DMLProgram.INTERNAL_NAMESPACE) )
@@ -355,7 +354,7 @@ public class InterProceduralAnalysis
 		for( Hop c : hop.getInput() )
 			getFunctionCandidatesForStatisticPropagation(prog, c, fcandCounts, fcandHops);
 		
-		hop.setVisited(VisitStatus.DONE);
+		hop.setVisited();
 	}
 	
 	private void pruneFunctionCandidatesForStatisticPropagation(Map<String, Integer> fcandCounts, Map<String, FunctionOp> fcandHops)
@@ -607,7 +606,7 @@ public class InterProceduralAnalysis
 	private void propagateStatisticsIntoFunctions(DMLProgram prog, Hop hop, Map<String, Integer> fcand, LocalVariableMap callVars, Map<String, Set<Long>> fcandSafeNNZ, Set<String> unaryFcands, Set<String> fnStack ) 
 		throws HopsException, ParseException
 	{
-		if( hop.getVisited() == VisitStatus.DONE )
+		if( hop.isVisited() )
 			return;
 		
 		for( Hop c : hop.getInput() )
@@ -664,7 +663,7 @@ public class InterProceduralAnalysis
 			}
 		}
 		
-		hop.setVisited(VisitStatus.DONE);
+		hop.setVisited();
 	}
 	
 	private void populateLocalVariableMapForFunctionCall( FunctionStatement fstmt, FunctionOp fop, LocalVariableMap callvars, LocalVariableMap vars, Set<Long> inputSafeNNZ, Integer numCalls ) 
@@ -1155,7 +1154,7 @@ public class InterProceduralAnalysis
 	
 	private void rCollectCheckpoints(Hop hop, ArrayList<Hop> checkpoints)
 	{
-		if( hop.getVisited()==VisitStatus.DONE )
+		if( hop.isVisited() )
 			return;
 
 		//handle leaf node for variable (checkpoint directly bound
@@ -1171,12 +1170,12 @@ public class InterProceduralAnalysis
 		for( Hop c : hop.getInput() )
 			rCollectCheckpoints(c, checkpoints);
 	
-		hop.setVisited(Hop.VisitStatus.DONE);
+		hop.setVisited();
 	}
 	
 	public static void rRemoveCheckpointReadWrite(Hop hop)
 	{
-		if( hop.getVisited()==VisitStatus.DONE )
+		if( hop.isVisited() )
 			return;
 
 		//remove checkpoint on pread if only consumed by pwrite or uagg
@@ -1206,7 +1205,7 @@ public class InterProceduralAnalysis
 		for( Hop c : hop.getInput() )
 			rRemoveCheckpointReadWrite(c);
 		
-		hop.setVisited(Hop.VisitStatus.DONE);
+		hop.setVisited();
 	}
 	
 	/////////////////////////////
@@ -1294,7 +1293,7 @@ public class InterProceduralAnalysis
 	
 	private void rRemoveConstantBinaryOp(Hop hop, HashMap<String,Hop> mOnes)
 	{
-		if( hop.getVisited()==VisitStatus.DONE )
+		if( hop.isVisited() )
 			return;
 
 		if( hop instanceof BinaryOp && ((BinaryOp)hop).getOp()==OpOp2.MULT
@@ -1314,6 +1313,6 @@ public class InterProceduralAnalysis
 		for( Hop c : hop.getInput() )
 			rRemoveConstantBinaryOp(c, mOnes);
 	
-		hop.setVisited(Hop.VisitStatus.DONE);		
+		hop.setVisited();		
 	}
 }

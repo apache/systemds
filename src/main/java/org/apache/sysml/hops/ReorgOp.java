@@ -647,22 +647,6 @@ public class ReorgOp extends Hop implements MultiThreadedHop
 		
 		return ret;
 	}
-	
-	
-	@Override
-	public void printMe() throws HopsException 
-	{
-		if (LOG.isDebugEnabled()){
-			if (getVisited() != VisitStatus.DONE) {
-				super.printMe();
-				LOG.debug("  Operation: " + op);
-				for (Hop h : getInput()) {
-					h.printMe();
-				}
-			}
-			setVisited(VisitStatus.DONE);
-		}
-	}
 
 	/**
 	 * This will check if there is sufficient memory locally (twice the size of second matrix, for original and sort data), and remotely (size of second matrix (sorted data)).  

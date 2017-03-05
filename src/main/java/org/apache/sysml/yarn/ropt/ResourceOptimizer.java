@@ -437,7 +437,7 @@ public class ResourceOptimizer
 			vars.put(varname, mo);
 		}
 		
-		hop.setVisited(Hop.VisitStatus.DONE);
+		hop.setVisited();
 	}
 
 	private static ArrayList<ProgramBlock> pruneProgramBlocks( ArrayList<ProgramBlock> B ) 
@@ -513,7 +513,7 @@ public class ResourceOptimizer
 
 	private static boolean pruneHasOnlyUnknownMR( Hop hop )
 	{
-		if( hop == null || hop.getVisited() == Hop.VisitStatus.DONE )
+		if( hop == null || hop.isVisited() )
 			return true;
 
 		boolean ret = true;
@@ -537,7 +537,7 @@ public class ResourceOptimizer
 			ret &= lret;
 		}
 		
-		hop.setVisited(Hop.VisitStatus.DONE);
+		hop.setVisited();
 		
 		return ret;
 	}

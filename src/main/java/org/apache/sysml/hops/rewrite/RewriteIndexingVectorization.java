@@ -72,7 +72,7 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 	private void rule_IndexingVectorization( Hop hop ) 
 		throws HopsException 
 	{
-		if(hop.getVisited() == Hop.VisitStatus.DONE)
+		if(hop.isVisited())
 			return;
 		
 		//recursively process children
@@ -90,7 +90,7 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 			rule_IndexingVectorization( hi );
 		}
 
-		hop.setVisited(Hop.VisitStatus.DONE);
+		hop.setVisited();
 	}
 
 	/**

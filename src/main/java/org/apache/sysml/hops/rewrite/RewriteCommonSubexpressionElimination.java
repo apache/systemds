@@ -100,7 +100,7 @@ public class RewriteCommonSubexpressionElimination extends HopRewriteRule
 		throws HopsException 
 	{
 		int ret = 0;
-		if( hop.getVisited() == Hop.VisitStatus.DONE )
+		if( hop.isVisited() )
 			return ret;
 
 		if( hop.getInput().isEmpty() ) //LEAF NODE
@@ -152,7 +152,7 @@ public class RewriteCommonSubexpressionElimination extends HopRewriteRule
 			}	
 		}
 		
-		hop.setVisited(Hop.VisitStatus.DONE);
+		hop.setVisited();
 		return ret;
 	}
 
@@ -160,7 +160,7 @@ public class RewriteCommonSubexpressionElimination extends HopRewriteRule
 		throws HopsException 
 	{
 		int ret = 0;
-		if( hop.getVisited() == Hop.VisitStatus.DONE )
+		if( hop.isVisited() )
 			return ret;
 
 		//step 1: merge childs recursively first
@@ -212,7 +212,7 @@ public class RewriteCommonSubexpressionElimination extends HopRewriteRule
 				}
 		}
 		
-		hop.setVisited(Hop.VisitStatus.DONE);
+		hop.setVisited();
 
 		return ret;
 	}

@@ -55,11 +55,6 @@ public abstract class Hop
 	
 	public static final long CPThreshold = 2000;
 
-	public enum VisitStatus {
-		DONE,
-		NOTVISITED
-	}
-	
 	/**
 	 * Optional hop interface, to be implemented by multi-threaded hops.
 	 */
@@ -75,7 +70,7 @@ public abstract class Hop
 	protected String _name;
 	protected DataType _dataType;
 	protected ValueType _valueType;
-	protected VisitStatus _visited = VisitStatus.NOTVISITED;
+	protected boolean _visited = false;
 	protected long _dim1 = -1;
 	protected long _dim2 = -1;
 	protected long _rows_in_block = -1;
@@ -731,12 +726,12 @@ public abstract class Hop
 	 * @param memo memory table
 	 */
 	public void refreshMemEstimates( MemoTable memo ) {
-		if (getVisited() == VisitStatus.DONE)
+		if( isVisited() )
 			return;
-		for (Hop h : this.getInput())
+		for( Hop h : this.getInput() )
 			h.refreshMemEstimates( memo );
-		this.computeMemEstimate( memo );
-		this.setVisited(VisitStatus.DONE);
+		computeMemEstimate( memo );
+		setVisited();
 	}
 
 	/**
@@ -861,22 +856,18 @@ public abstract class Hop
 				&& (_dim1 > 0 || _dim2 > 0)) );
 	}
 	
-	public static void resetVisitStatus( ArrayList<Hop> hops )
-	{
+	public static void resetVisitStatus( ArrayList<Hop> hops ) {
 		if( hops != null )
 			for( Hop hopRoot : hops )
 				hopRoot.resetVisitStatus();
 	}
 	
-	public void resetVisitStatus() 
-	{
-		if ( getVisited() == Hop.VisitStatus.NOTVISITED )
+	public void resetVisitStatus()  {
+		if( !isVisited() )
 			return;
-		
-		for (Hop h : this.getInput())
-			h.resetVisitStatus();
-		
-		setVisited(Hop.VisitStatus.NOTVISITED);
+		for( Hop h : this.getInput() )
+			h.resetVisitStatus();		
+		setVisited(false);
 	}
 
 	public static void resetRecompilationFlag( ArrayList<Hop> hops, ExecType et )
@@ -894,7 +885,7 @@ public abstract class Hop
 	
 	private void resetRecompilationFlag( ExecType et ) 
 	{
-		if( getVisited() == VisitStatus.DONE )
+		if( isVisited() )
 			return;
 		
 		//process child hops
@@ -905,28 +896,7 @@ public abstract class Hop
 		if( et == null || getExecType() == et || getExecType()==null )
 			_requiresRecompile = false;
 		
-		this.setVisited(VisitStatus.DONE);
-	}
-
-	public void printMe() throws HopsException {
-		if (LOG.isDebugEnabled()) {
-			StringBuilder s = new StringBuilder(""); 
-			s.append(getClass().getSimpleName() + " " + getHopID() + "\n");
-			s.append("  Label: " + getName() + "; DataType: " + _dataType + "; ValueType: " + _valueType + "\n");
-			s.append("  Parent: ");
-			for (Hop h : getParent()) {
-				s.append(h.hashCode() + "; ");
-			}
-			;
-			s.append("\n  Input: ");
-			for (Hop h : getInput()) {
-				s.append(h.getHopID() + "; ");
-			}
-			
-			s.append("\n  dims [" + _dim1 + "," + _dim2 + "] blk [" + _rows_in_block + "," + _cols_in_block + "] nnz: " + _nnz + " UpdateInPlace: " + _updateType);
-			s.append("  MemEstimate = Out " + (_outputMemEstimate/1024/1024) + " MB, In&Out " + (_memEstimate/1024/1024) + " MB" );
-			LOG.debug(s.toString());
-		}
+		setVisited();
 	}
 
 	public long getDim1() {
@@ -960,7 +930,7 @@ public abstract class Hop
 		_lops = lops;
 	}
 
-	public VisitStatus getVisited() {
+	public boolean isVisited() {
 		return _visited;
 	}
 
@@ -972,8 +942,12 @@ public abstract class Hop
 		_dataType = dt;
 	}
 
-	public void setVisited(VisitStatus visited) {
-		_visited = visited;
+	public void setVisited() {
+		setVisited(true);
+	}
+	
+	public void setVisited(boolean flag) {
+		_visited = flag;
 	}
 
 	public void setName(String _name) {

@@ -28,7 +28,6 @@ import java.util.Map.Entry;
 
 import org.apache.sysml.api.DMLException;
 import org.apache.sysml.hops.Hop;
-import org.apache.sysml.hops.Hop.VisitStatus;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.LiteralOp;
 import org.apache.sysml.hops.OptimizerUtils;
@@ -560,11 +559,8 @@ public class Explain
 	private static String explainHop(Hop hop, int level) 
 		throws DMLRuntimeException 
 	{
-		if(   hop.getVisited() == VisitStatus.DONE 
-		   || (!SHOW_LITERAL_HOPS && hop instanceof LiteralOp) )
-		{
+		if( hop.isVisited() || (!SHOW_LITERAL_HOPS && hop instanceof LiteralOp) )
 			return "";
-		}
 		
 		StringBuilder sb = new StringBuilder();
 		String offset = createOffset(level);
@@ -632,7 +628,7 @@ public class Explain
 		
 		sb.append('\n');
 		
-		hop.setVisited(VisitStatus.DONE);
+		hop.setVisited();
 		
 		return sb.toString();
 	}

@@ -31,7 +31,6 @@ import org.apache.sysml.hops.Hop.OpOp3;
 import org.apache.sysml.hops.Hop.ParamBuiltinOp;
 import org.apache.sysml.hops.Hop.DataOpTypes;
 import org.apache.sysml.hops.Hop.ReOrgOp;
-import org.apache.sysml.hops.Hop.VisitStatus;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.LiteralOp;
 import org.apache.sysml.hops.ParameterizedBuiltinOp;
@@ -123,7 +122,7 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 						//create new transient read
 						DataOp tread = new DataOp(varname, c.getDataType(), c.getValueType(),
 			                    DataOpTypes.TRANSIENTREAD, null, rlen, clen, nnz, update, brlen, bclen);
-						tread.setVisited(VisitStatus.DONE);
+						tread.setVisited();
 						HopRewriteUtils.copyLineNumbers(c, tread);
 						
 						//replace data-dependent operator with transient read
@@ -149,7 +148,7 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 						//create new transient read
 						DataOp tread = new DataOp(varname, c.getDataType(), c.getValueType(),
 			                    DataOpTypes.TRANSIENTREAD, null, rlen, clen, nnz, update, brlen, bclen);
-						tread.setVisited(VisitStatus.DONE);
+						tread.setVisited();
 						HopRewriteUtils.copyLineNumbers(c, tread);
 						
 						//replace data-dependent operator with transient read
@@ -164,7 +163,7 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 						//add data-dependent operator sub dag to first statement block
 						DataOp twrite = new DataOp(varname, c.getDataType(), c.getValueType(),
 								                   c, DataOpTypes.TRANSIENTWRITE, null);
-						twrite.setVisited(VisitStatus.DONE);
+						twrite.setVisited();
 						twrite.setOutputParams(rlen, clen, nnz, update, brlen, bclen);
 						HopRewriteUtils.copyLineNumbers(c, twrite);
 						sb1hops.add(twrite);	
@@ -223,7 +222,7 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 
 	private void rCollectDataDependentOperators( Hop hop, ArrayList<Hop> cand )
 	{
-		if( hop.getVisited() == VisitStatus.DONE )
+		if( hop.isVisited() )
 			return;
 		
 		//prevent unnecessary dag split (dims known or no consumer operations)
@@ -293,7 +292,7 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 	    		Hop c = hop.getInput().get(i);
 	    		if( !(c instanceof LiteralOp || c instanceof DataOp) ){
 		    		cand.add(c);
-		    		c.setVisited(VisitStatus.DONE);
+		    		c.setVisited();
 		    		investigateChilds = false;	
 		    	}
 
@@ -307,7 +306,7 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 				for( Hop c : hop.getInput() )
 					rCollectDataDependentOperators(c, cand);
 		
-		hop.setVisited(VisitStatus.DONE);
+		hop.setVisited();
 	}
 
 	private boolean hasTransientWriteParents( Hop hop )
@@ -350,11 +349,11 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 
 			DataOp tread = new DataOp(varname, c.getDataType(), c.getValueType(), DataOpTypes.TRANSIENTREAD, 
 					null, c.getDim1(), c.getDim2(), c.getNnz(), c.getUpdateType(), c.getRowsInBlock(), c.getColsInBlock());
-			tread.setVisited(VisitStatus.DONE);
+			tread.setVisited();
 			HopRewriteUtils.copyLineNumbers(c, tread);
 
 			DataOp twrite = new DataOp(varname, c.getDataType(), c.getValueType(), c, DataOpTypes.TRANSIENTWRITE, null);
-			twrite.setVisited(VisitStatus.DONE);
+			twrite.setVisited();
 			twrite.setOutputParams(c.getDim1(), c.getDim2(), c.getNnz(), c.getUpdateType(), c.getRowsInBlock(), c.getColsInBlock());
 			HopRewriteUtils.copyLineNumbers(c, twrite);
 			
@@ -378,7 +377,7 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 
 	private void rAddHopsToProbeSet( Hop hop, HashSet<Hop> probeSet )
 	{
-		if( hop.getVisited() == VisitStatus.DONE )
+		if( hop.isVisited() )
 			return;
 		
 		//prevent cuts for no-ops
@@ -392,7 +391,7 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 			for( Hop c : hop.getInput() )
 				rAddHopsToProbeSet(c, probeSet);
 	
-		hop.setVisited(VisitStatus.DONE);	
+		hop.setVisited();	
 	}
 	
 	/**
@@ -405,7 +404,7 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 	 */
 	private void rProbeAndAddHopsToCandidateSet( Hop hop, HashSet<Hop> probeSet, HashSet<Pair<Hop,Hop>> candSet )
 	{
-		if( hop.getVisited() == VisitStatus.DONE )
+		if( hop.isVisited() )
 			return;
 
 		if( hop.getInput() != null )
@@ -420,7 +419,7 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 				}
 			}
 		
-		hop.setVisited(VisitStatus.DONE);	
+		hop.setVisited();	
 	}
 	
 	private void collectCandidateChildOperators( ArrayList<Hop> cand, HashSet<Hop> candChilds )
@@ -439,7 +438,7 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 	
 	private void rCollectCandidateChildOperators( Hop hop, ArrayList<Hop> cand, HashSet<Hop> candChilds, boolean collect )
 	{
-		if( hop.getVisited() == VisitStatus.DONE )
+		if( hop.isVisited() )
 			return;
 		
 		//collect operator if necessary
@@ -459,6 +458,6 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 				rCollectCandidateChildOperators(c, cand, candChilds, passedFlag);
 		}
 		
-		hop.setVisited(VisitStatus.DONE);
+		hop.setVisited();
 	}
 }

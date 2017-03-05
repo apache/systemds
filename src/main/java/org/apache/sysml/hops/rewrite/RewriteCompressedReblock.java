@@ -66,7 +66,7 @@ public class RewriteCompressedReblock extends HopRewriteRule
 	{
 		// Go to the source(s) of the DAG
 		for (Hop hi : hop.getInput()) {
-			if (hi.getVisited() != Hop.VisitStatus.DONE)
+			if (!hi.isVisited())
 				rule_CompressedReblock(hi);
 		}
 
@@ -77,6 +77,6 @@ public class RewriteCompressedReblock extends HopRewriteRule
 			hop.setRequiresCompression(true);
 		}
 
-		hop.setVisited(Hop.VisitStatus.DONE);
+		hop.setVisited();
 	}
 }

@@ -25,7 +25,6 @@ import java.util.ArrayList;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.Hop;
-import org.apache.sysml.hops.Hop.VisitStatus;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.IndexingOp;
 import org.apache.sysml.hops.OptimizerUtils;
@@ -396,7 +395,7 @@ public class ProgramRecompiler
 	{
 		boolean ret = false;
 		
-		if( hop.getVisited() == VisitStatus.DONE )
+		if( hop.isVisited() )
 			return ret;
 		
 		ArrayList<Hop> in = hop.getInput();
@@ -423,7 +422,7 @@ public class ProgramRecompiler
 			for( Hop hin : in )
 				ret |= rFindAndSetCPIndexingHOP(hin,var);
 		
-		hop.setVisited(VisitStatus.DONE);
+		hop.setVisited();
 		
 		return ret;
 	}
@@ -432,7 +431,7 @@ public class ProgramRecompiler
 	{
 		boolean ret = false;
 		
-		if( hop.getVisited() == VisitStatus.DONE )
+		if( hop.isVisited() )
 			return ret;
 		
 		ArrayList<Hop> in = hop.getInput();
@@ -453,7 +452,7 @@ public class ProgramRecompiler
 			for( Hop hin : in )
 				ret |= rFindAndReleaseIndexingHOP(hin,var);
 		
-		hop.setVisited(VisitStatus.DONE);
+		hop.setVisited();
 		
 		return ret;
 	}

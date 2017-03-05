@@ -142,7 +142,7 @@ public class GridEnumerationMemory extends GridEnumeration
 	
 	private void getMemoryEstimates( Hop hop, ArrayList<Long> mem )
 	{
-		if( hop.getVisited() == Hop.VisitStatus.DONE )
+		if( hop.isVisited() )
 			return;
 
 		//process childs
@@ -153,7 +153,7 @@ public class GridEnumerationMemory extends GridEnumeration
 		mem.add( (long)( (hop.getMemEstimate()+DEFAULT_MEM_ADD)
 				          /OptimizerUtils.MEM_UTIL_FACTOR) );
 		
-		hop.setVisited(Hop.VisitStatus.DONE);
+		hop.setVisited();
 	}
 	
 }

@@ -45,7 +45,6 @@ import org.apache.sysml.hops.Hop.DataGenMethod;
 import org.apache.sysml.hops.Hop.DataOpTypes;
 import org.apache.sysml.hops.Hop.FileFormatTypes;
 import org.apache.sysml.hops.Hop.OpOp1;
-import org.apache.sysml.hops.Hop.VisitStatus;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.IndexingOp;
 import org.apache.sysml.hops.LiteralOp;
@@ -750,7 +749,7 @@ public class Recompiler
 	
 	public static void rUpdateFunctionNames( Hop hop, long pid )
 	{
-		if( hop.getVisited() == VisitStatus.DONE )
+		if( hop.isVisited() )
 			return;
 		
 		//update function names
@@ -764,7 +763,7 @@ public class Recompiler
 			for( Hop c : hop.getInput() )
 				rUpdateFunctionNames(c, pid);
 		
-		hop.setVisited(VisitStatus.DONE);
+		hop.setVisited();
 	}
 	
 	
@@ -1413,7 +1412,7 @@ public class Recompiler
 	private static boolean rRequiresRecompile( Hop hop )
 	{	
 		boolean ret = hop.requiresRecompile();
-		if( hop.getVisited() == VisitStatus.DONE )
+		if( hop.isVisited() )
 			return ret;
 		
 		if( hop.getInput() != null )
@@ -1423,7 +1422,7 @@ public class Recompiler
 				if( ret ) break; // early abort
 			}
 		
-		hop.setVisited(VisitStatus.DONE);
+		hop.setVisited();
 		
 		return ret;
 	}
@@ -1441,7 +1440,7 @@ public class Recompiler
 	 */
 	public static void rClearLops( Hop hop )
 	{
-		if( hop.getVisited() == VisitStatus.DONE )
+		if( hop.isVisited() )
 			return;
 		
 		//clear all relevant lops to allow for recompilation
@@ -1460,13 +1459,13 @@ public class Recompiler
 					rClearLops(c);
 		}
 		
-		hop.setVisited(VisitStatus.DONE);
+		hop.setVisited();
 	}
 	
 	public static void rUpdateStatistics( Hop hop, LocalVariableMap vars ) 
 		throws DMLRuntimeException
 	{
-		if( hop.getVisited() == VisitStatus.DONE )
+		if( hop.isVisited() )
 			return;
 
 		//recursively process children
@@ -1587,7 +1586,7 @@ public class Recompiler
 			hop.refreshSizeInformation();
 		}
 		
-		hop.setVisited(VisitStatus.DONE);
+		hop.setVisited();
 	}
 
 	/**
@@ -1606,7 +1605,7 @@ public class Recompiler
 	
 	public static void rSetExecType( Hop hop, ExecType etype )
 	{
-		if( hop.getVisited() == VisitStatus.DONE )
+		if( hop.isVisited() )
 			return;
 		
 		//update function names
@@ -1616,7 +1615,7 @@ public class Recompiler
 			for( Hop c : hop.getInput() )
 				rSetExecType(c, etype);
 		
-		hop.setVisited(VisitStatus.DONE);
+		hop.setVisited();
 	}
 	
 

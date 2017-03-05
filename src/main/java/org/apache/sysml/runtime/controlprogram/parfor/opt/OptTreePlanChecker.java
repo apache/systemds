@@ -25,7 +25,6 @@ import java.util.Set;
 
 import org.apache.sysml.hops.FunctionOp;
 import org.apache.sysml.hops.Hop;
-import org.apache.sysml.hops.Hop.VisitStatus;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.ForStatement;
@@ -186,7 +185,7 @@ public class OptTreePlanChecker
 
 	private static void getAllFunctionOps( Hop hop, HashMap<String, FunctionOp> memo )
 	{
-		if( hop.getVisited() == VisitStatus.DONE )
+		if( hop.isVisited() )
 			return;
 		
 		//process functionop
@@ -201,6 +200,6 @@ public class OptTreePlanChecker
 		for( Hop in : hop.getInput() )
 			getAllFunctionOps(in, memo);
 		
-		hop.setVisited(VisitStatus.DONE);
+		hop.setVisited();
 	}
 }

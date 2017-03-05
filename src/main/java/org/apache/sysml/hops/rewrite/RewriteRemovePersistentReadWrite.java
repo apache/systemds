@@ -28,7 +28,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.DataOpTypes;
-import org.apache.sysml.hops.Hop.VisitStatus;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
@@ -107,7 +106,7 @@ public class RewriteRemovePersistentReadWrite extends HopRewriteRule
 		throws HopsException
 	{
 		//check mark processed
-		if( hop.getVisited() == VisitStatus.DONE )
+		if( hop.isVisited() )
 			return;
 		
 		//recursively process childs
@@ -164,6 +163,6 @@ public class RewriteRemovePersistentReadWrite extends HopRewriteRule
 		}
 		
 		//mark processed
-		hop.setVisited( VisitStatus.DONE );
+		hop.setVisited();
 	}
 }

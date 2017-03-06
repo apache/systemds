@@ -779,6 +779,22 @@ public class DataConverter
 			System.arraycopy(mb.getDenseBlock(), 0, dest, destPos, rows*cols);
 		}
 	}
+	
+	/**
+	 * Convenience method to print NaN & Infinity compliant with how as.scalar prints them.
+	 * {@link DecimalFormat} prints NaN as \uFFFD and Infinity as \u221E
+	 * http://docs.oracle.com/javase/6/docs/api/java/text/DecimalFormat.html
+	 * @param df	The {@link DecimalFormat} instance, constructed with the appropriate options
+	 * @param value	The double value to print
+	 * @return	a string formatted with the {@link DecimalFormat} instance or "NaN" or "Infinity" or "-Infinity"
+	 */
+	private static String dfFormat(DecimalFormat df, double value) {
+		if (Double.isNaN(value) || Double.isInfinite(value)){
+			return Double.toString(value);
+		} else {
+			return df.format(value);
+		}
+	}
 
 	public static String toString(MatrixBlock mb) {
 		return toString(mb, false, " ", "\n", mb.getNumRows(), mb.getNumColumns(), 3);
@@ -826,7 +842,7 @@ public class DataConverter
 					if (row < rowLength && col < colLength) {
 						// Print (row+1) and (col+1) since for a DML user, everything is 1-indexed
 						sb.append(row+1).append(separator).append(col+1).append(separator);
-						sb.append(df.format(value)).append(lineseparator);
+						sb.append(dfFormat(df, value)).append(lineseparator);
 					}
 				}
 			} else {	// Block is in dense format
@@ -835,7 +851,7 @@ public class DataConverter
 						double value = mb.getValue(i, j);
 						if (value != 0.0){
 							sb.append(i+1).append(separator).append(j+1).append(separator);
-							sb.append(df.format(value)).append(lineseparator);
+							sb.append(dfFormat(df, value)).append(lineseparator);
 						}
 					}
 				}
@@ -845,11 +861,11 @@ public class DataConverter
 			for (int i=0; i<rowLength; i++){
 				for (int j=0; j<colLength-1; j++){
 					double value = mb.quickGetValue(i, j);
-					sb.append(df.format(value));
+					sb.append(dfFormat(df, value));
 					sb.append(separator);
 				}
 				double value = mb.quickGetValue(i, colLength-1);
-				sb.append(df.format(value));	// Do not put separator after last element
+				sb.append(dfFormat(df, value));	// Do not put separator after last element
 				sb.append(lineseparator);
 			}
 		}
@@ -910,7 +926,7 @@ public class DataConverter
 			for( int j=0; j<colLength; j++ ) {
 				if( row[j]!=null ) {
 					if( fb.getSchema()[j] == ValueType.DOUBLE )
-						sb.append(df.format(row[j]));
+						sb.append(dfFormat(df, (Double)row[j]));
 					else
 						sb.append(row[j]);
 					if( j != colLength-1 )

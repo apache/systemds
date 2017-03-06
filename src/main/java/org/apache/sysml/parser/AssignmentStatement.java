@@ -121,14 +121,17 @@ public class AssignmentStatement extends Statement
 		
 		// add target to updated list
 		for (DataIdentifier target : _targetList)
-			result.addVariable(target.getName(), target);
+			if (target != null) {
+				result.addVariable(target.getName(), target);
+			}
 		return result;
 	}
 	
 	public String toString(){
 		StringBuilder sb = new StringBuilder();
 		for (int i=0; i< _targetList.size(); i++){
-			sb.append(_targetList.get(i).toString());
+			DataIdentifier di = _targetList.get(i);
+			sb.append(di);
 		}
 		sb.append(" = ");
 		if (_source instanceof StringIdentifier) {

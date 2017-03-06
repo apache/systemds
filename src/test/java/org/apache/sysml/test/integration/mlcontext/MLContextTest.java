@@ -2665,6 +2665,66 @@ public class MLContextTest extends AutomatedTestBase {
 		ml.execute(script);
 	}
 
+	@Test
+	public void testFunctionNoReturnValueDML() {
+		System.out.println("MLContextTest - function with no return value DML");
+
+		String s = "hello=function(){print('no return value')}\nhello();";
+		Script script = dml(s);
+		setExpectedStdOut("no return value");
+		ml.execute(script);
+	}
+
+	@Test
+	public void testFunctionNoReturnValuePYDML() {
+		System.out.println("MLContextTest - function with no return value PYDML");
+
+		String s = "def hello():\n\tprint('no return value')\nhello()";
+		Script script = pydml(s);
+		setExpectedStdOut("no return value");
+		ml.execute(script);
+	}
+
+	@Test
+	public void testFunctionReturnValueDML() {
+		System.out.println("MLContextTest - function with return value DML");
+
+		String s = "hello=function()return(string s){s='return value'}\na=hello();\nprint(a);";
+		Script script = dml(s);
+		setExpectedStdOut("return value");
+		ml.execute(script);
+	}
+
+	@Test
+	public void testFunctionReturnValuePYDML() {
+		System.out.println("MLContextTest - function with return value PYDML");
+
+		String s = "def hello()->(s:str):\n\ts='return value'\na=hello()\nprint(a)";
+		Script script = pydml(s);
+		setExpectedStdOut("return value");
+		ml.execute(script);
+	}
+
+	@Test
+	public void testFunctionTwoReturnValuesDML() {
+		System.out.println("MLContextTest - function with two return values DML");
+
+		String s = "hello=function()return(string s1,string s2){s1='return'; s2='values'}\n[a,b]=hello();\nprint(a+' '+b);";
+		Script script = dml(s);
+		setExpectedStdOut("return values");
+		ml.execute(script);
+	}
+
+	@Test
+	public void testFunctionTwoReturnValuesPYDML() {
+		System.out.println("MLContextTest - function with two return values PYDML");
+
+		String s = "def hello()->(s1:str,s2:str):\n\ts1='return'\n\ts2='values'\n[a,b]=hello()\nprint(a+' '+b)";
+		Script script = pydml(s);
+		setExpectedStdOut("return values");
+		ml.execute(script);
+	}
+
 	// NOTE: Uncomment these tests once they work
 
 	// @SuppressWarnings({ "rawtypes", "unchecked" })

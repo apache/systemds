@@ -704,16 +704,11 @@ public abstract class CommonSyntacticValidator {
 			}
 		}
 
-		if (!hasLHS){
-			notifyErrorListeners("function call needs to have lvalue (Quickfix: change it to \'tmpVar = " + functionName + "(...)\')", nameToken);
-			return;
-		}
-
 		DataIdentifier target = null;
 		if(dataInfo instanceof DataIdentifier) {
 			target = (DataIdentifier) dataInfo;
 		}
-		else {
+		else if (dataInfo != null) {
 			notifyErrorListeners("incorrect lvalue for function call ", targetListToken);
 			return;
 		}

@@ -641,7 +641,6 @@ parfor(i in 0:nrow(A)-1):
 
 Functions encapsulate useful functionality in SystemML. In addition to built-in functions, users can define their own functions.
 Functions take 0 or more parameters and return 0 or more values.
-Currently, if a function returns nothing, it still needs to be assigned to a variable.
 
 <div class="codetabs2">
 

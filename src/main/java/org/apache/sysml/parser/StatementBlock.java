@@ -466,7 +466,23 @@ public class StatementBlock extends LiveVariableAnalysis
 					Statement rewrittenStmt = stmt.rewriteStatement(prefix);
 					newStatements.add(rewrittenStmt);		
 				}
-				
+
+				if (current instanceof AssignmentStatement) {
+					if (fstmt.getOutputParams().size() == 0) {
+						AssignmentStatement as = (AssignmentStatement) current;
+						if ((as.getTargetList().size() == 1) && (as.getTargetList().get(0) != null)) {
+							raiseValidateError("Function '" + fcall.getName()
+									+ "' does not return a value but is assigned to " + as.getTargetList().get(0),
+									true);
+						}
+					}
+				} else if (current instanceof MultiAssignmentStatement) {
+					if (fstmt.getOutputParams().size() == 0) {
+						MultiAssignmentStatement mas = (MultiAssignmentStatement) current;
+						raiseValidateError("Function '" + fcall.getName()
+								+ "' does not return a value but is assigned to " + mas.getTargetList(), true);
+					}
+				}
 				// handle the return values
 				for (int i = 0; i < fstmt.getOutputParams().size(); i++){
 					

@@ -25,6 +25,7 @@ import org.apache.sysml.runtime.matrix.data.LibCommonsMath;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
+import org.apache.sysml.runtime.util.DataConverter;
 
 
 public class MatrixBuiltinCPInstruction extends BuiltinUnaryCPInstruction
@@ -47,16 +48,31 @@ public class MatrixBuiltinCPInstruction extends BuiltinUnaryCPInstruction
 		}
 		else {
 			MatrixBlock inBlock = ec.getMatrixInput(input1.getName());
-			MatrixBlock retBlock = (MatrixBlock) (inBlock.unaryOperations(u_op, new MatrixBlock()));
-		
-			ec.releaseMatrixInput(input1.getName());
-			
-			// Ensure right dense/sparse output representation (guarded by released input memory)
-			if( checkGuardedRepresentationChange(inBlock, retBlock) ) {
-	 			retBlock.examSparsity();
-	 		}
-			
-			ec.setMatrixOutput(output_name, retBlock);
-		}		
+
+			// print(A), where A is 1x1 matrix
+			if (("print".equalsIgnoreCase(opcode)) && (inBlock.getNumColumns() == 1) && (inBlock.getNumRows() == 1)) {
+				DoubleObject d = new DoubleObject(inBlock.getValue(0, 0));
+				ec.releaseMatrixInput(input1.getName());
+				ec.setScalarOutput(output_name, d);
+				System.out.println(d.toString());
+			} else if ("print".equalsIgnoreCase(opcode)) {
+				String matrixString = DataConverter.toString(inBlock);
+				ec.releaseMatrixInput(input1.getName());
+				ec.setScalarOutput(output_name, new StringObject(""));
+				System.out.println(matrixString);
+			} else {
+				MatrixBlock retBlock = (MatrixBlock) (inBlock.unaryOperations(u_op, new MatrixBlock()));
+
+				ec.releaseMatrixInput(input1.getName());
+
+				// Ensure right dense/sparse output representation (guarded by
+				// released input memory)
+				if (checkGuardedRepresentationChange(inBlock, retBlock)) {
+					retBlock.examSparsity();
+				}
+
+				ec.setMatrixOutput(output_name, retBlock);
+			}
+		}
 	}
 }

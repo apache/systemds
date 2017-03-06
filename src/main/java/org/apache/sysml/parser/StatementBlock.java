@@ -731,13 +731,22 @@ public class StatementBlock extends LiveVariableAnalysis
 				raiseValidateError("control statement (WhileStatement, IfStatement, ForStatement) should not be in generic statement block. Likely a parsing error", conditional);
 			}
 
+			// note: this can be removed if no validate errors raised
 			else if (current instanceof PrintStatement) {
 				PrintStatement pstmt = (PrintStatement) current;
 				List<Expression> expressions = pstmt.getExpressions();
 				for (Expression expression : expressions) {
 					expression.validateExpression(ids.getVariables(), currConstVars, conditional);
 					if (expression.getOutput().getDataType() != Expression.DataType.SCALAR) {
-						raiseValidateError("print statement can only print scalars", conditional);
+						Identifier out = expression.getOutput();
+						if (out instanceof IndexedIdentifier) {
+							IndexedIdentifier ii = (IndexedIdentifier) out;
+							if (ii.getColLowerEqualsUpper() && ii.getRowLowerEqualsUpper()) {
+								// single cell
+							} else {
+								// raiseValidateError("print statement can not implicitly print ranges of cells", conditional);
+							}
+						}
 					}
 				}
 

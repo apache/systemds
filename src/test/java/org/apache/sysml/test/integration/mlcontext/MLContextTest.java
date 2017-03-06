@@ -2665,6 +2665,171 @@ public class MLContextTest extends AutomatedTestBase {
 		ml.execute(script);
 	}
 
+	@Test
+	public void testPrintMatrixCellWithAsScalar() {
+		System.out.println("MLContextTest - print matrix cell with as.scalar");
+
+		String s = "A=matrix('1 2 3 4 5 6',rows=2,cols=3);print(as.scalar(A[1,1]));";
+		setExpectedStdOut("1.0");
+		ml.execute(dml(s));
+	}
+
+	@Test
+	public void testPrintMatrixCell() {
+		System.out.println("MLContextTest - print matrix cell");
+
+		String s = "A=matrix('1 2 3 4 5 6',rows=2,cols=3);print(A[1,2]);";
+		setExpectedStdOut("2.0");
+		ml.execute(dml(s));
+	}
+
+	@Test
+	public void testPrintStringMatrixCellConcatenation() {
+		System.out.println("MLContextTest - print string/matrix-cell concatenation");
+
+		String s = "A=matrix('1 2 3 4 5 6',rows=2,cols=3);print('one two '+A[1,3]);";
+		setExpectedStdOut("one two 3.0");
+		ml.execute(dml(s));
+	}
+
+	@Test
+	public void testPrintMatrixCellStringConcatenation() {
+		System.out.println("MLContextTest - print matrix-cell/string concatenation");
+
+		String s = "A=matrix('1 2 3 4 5 6',rows=2,cols=3);print(A[2,1]+' five six');";
+		setExpectedStdOut("4.0 five six");
+		ml.execute(dml(s));
+	}
+
+	@Test
+	public void testPrintStringMatrixCellStringConcatenation() {
+		System.out.println("MLContextTest - print string/matrix-cell/string concatenation");
+
+		String s = "A=matrix('1 2 3 4 5 6',rows=2,cols=3);print('four '+A[2,2]+' six');";
+		setExpectedStdOut("four 5.0 six");
+		ml.execute(dml(s));
+	}
+
+	@Test
+	public void testPrintMatrixCellStringMatrixCellConcatenation() {
+		System.out.println("MLContextTest - print matrix-cell/string/matrix-cell concatenation");
+
+		String s = "A=matrix('1 2 3 4 5 6',rows=2,cols=3);print(A[1,1]+' two '+A[1,3]);";
+		setExpectedStdOut("1.0 two 3.0");
+		ml.execute(dml(s));
+	}
+
+	@Test
+	public void testPrintSingleCellMatrix() {
+		System.out.println("MLContextTest - print single cell matrix");
+
+		String s = "A=matrix('1 2 3 4 5 6',rows=2,cols=3);B=A[2,3];print(B);";
+		setExpectedStdOut("6.0");
+		ml.execute(dml(s));
+	}
+
+	@Test
+	public void testPrintStringSingleCellMatrixConcatenation() {
+		System.out.println("MLContextTest - print string/single-cell-matrix concatenation");
+
+		String s = "A=matrix('1 2 3 4 5 6',rows=2,cols=3);B=A[2,3];print('five '+B);";
+		setExpectedStdOut("five 6.0");
+		ml.execute(dml(s));
+	}
+
+	@Test
+	public void testPrintSingleCellMatrixStringConcatenation() {
+		System.out.println("MLContextTest - print single-cell-matrix/string concatenation");
+
+		String s = "A=matrix('1 2 3 4 5 6',rows=2,cols=3);B=A[2,3];print(B+' seven');";
+		setExpectedStdOut("6.0 seven");
+		ml.execute(dml(s));
+	}
+
+	@Test
+	public void testPrintStringSingleCellMatrixStringConcatenation() {
+		System.out.println("MLContextTest - print string/single-cell-matrix/string concatenation");
+
+		String s = "A=matrix('1 2 3 4 5 6',rows=2,cols=3);B=A[2,3];print('five '+B+' seven');";
+		setExpectedStdOut("five 6.0 seven");
+		ml.execute(dml(s));
+	}
+
+	@Test
+	public void testPrintSingleCellMatrixStringSingleCellMatrixConcatenation() {
+		System.out.println("MLContextTest - print single-cell-matrix/string/single-cell-matrix concatenation");
+
+		String s = "A=matrix('1 2 3 4 5 6',rows=2,cols=3);B=A[2,3];C=A[2,1];print(C+' five '+B);";
+		setExpectedStdOut("4.0 five 6.0");
+		ml.execute(dml(s));
+	}
+
+	@Test
+	public void testPrintMatrix() {
+		System.out.println("MLContextTest - print matrix");
+
+		String s = "A=matrix('1 2 3 4 5 6',rows=2,cols=3);print(A);";
+		setExpectedStdOut("1.000 2.000 3.000"); // or "4.000 5.000 6.000"
+		ml.execute(dml(s));
+	}
+
+	@Test
+	public void testPrintMatrix2() {
+		System.out.println("MLContextTest - print matrix 2");
+
+		String s = "print(matrix('1 2 3 4',rows=2,cols=2));";
+		setExpectedStdOut("1.000 2.000"); // or "3.000 4.000"
+		ml.execute(dml(s));
+	}
+
+	@Test
+	public void testPrintStringMatrix() {
+		System.out.println("MLContextTest - print string/matrix");
+
+		// A:1.000 2.000
+		// 3.000 4.000
+		String s = "A=matrix('1 2 3 4',rows=2,cols=2);print('A:'+A);";
+		setExpectedStdOut("A:1.000 2.000");
+		ml.execute(dml(s));
+	}
+
+	@Test
+	public void testPrintMatrixString() {
+		System.out.println("MLContextTest - print matrix/string");
+
+		// 1.000 2.000
+		// 3.000 4.000
+		// !!!
+		String s = "A=matrix('1 2 3 4',rows=2,cols=2);print(A+'!!!');";
+		setExpectedStdOut("1.000 2.000");
+		ml.execute(dml(s));
+	}
+
+	@Test
+	public void testPrintStringMatrixString() {
+		System.out.println("MLContextTest - print string/matrix/string");
+
+		// A:1.000 2.000
+		// 3.000 4.000
+		// !!!
+		String s = "A=matrix('1 2 3 4',rows=2,cols=2);print('A:'+A+'!!!');";
+		setExpectedStdOut("A:1.000 2.000");
+		ml.execute(dml(s));
+	}
+
+	@Test
+	public void testPrintMatrixStringMatrix() {
+		System.out.println("MLContextTest - print matrix/string/matrix");
+
+		// 1.000 1.000
+		// 1.000 1.000
+		// ^^^2.000 2.000
+		// 2.000 2.000
+		String s = "A=matrix(1,rows=2,cols=2);B=matrix(2,rows=2,cols=2);print(A+'^^^'+B);";
+		setExpectedStdOut("^^^2.000 2.000");
+		ml.execute(dml(s));
+	}
+
 	// NOTE: Uncomment these tests once they work
 
 	// @SuppressWarnings({ "rawtypes", "unchecked" })

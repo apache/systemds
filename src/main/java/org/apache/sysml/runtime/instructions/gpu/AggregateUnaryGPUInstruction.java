@@ -93,7 +93,7 @@ public class AggregateUnaryGPUInstruction extends GPUInstruction {
       ec.setMetaData(_output.getName(), rlen, 1);
     }
 
-    LibMatrixCUDA.unaryAggregate(ec, this, in1, _output.getName(), (AggregateUnaryOperator)_optr);
+    LibMatrixCUDA.unaryAggregate(ec, getExtendedOpcode(), in1, _output.getName(), (AggregateUnaryOperator)_optr);
 
     //release inputs/outputs
     ec.releaseMatrixInputForGPUInstruction(_input1.getName());

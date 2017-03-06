@@ -103,7 +103,7 @@ public class MatrixMatrixAxpyGPUInstruction extends ArithmeticBinaryGPUInstructi
 
 		ec.setMetaData(_output.getName(), (int)rlen1, (int)clen1);
 		
-		LibMatrixCUDA.axpy(ec, this, in1, in2, _output.getName(), multiplier*scalar.getDoubleValue());
+		LibMatrixCUDA.axpy(ec, getExtendedOpcode(), in1, in2, _output.getName(), multiplier*scalar.getDoubleValue());
 		
 		ec.releaseMatrixInputForGPUInstruction(_input1.getName());
 		ec.releaseMatrixInputForGPUInstruction(_input2.getName());

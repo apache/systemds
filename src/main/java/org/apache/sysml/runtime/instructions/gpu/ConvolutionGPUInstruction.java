@@ -148,7 +148,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction
 		
 		ec.setMetaData(_output.getName(), input.getNumRows(), input.getNumColumns());
 		MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, _output.getName());
-		LibMatrixCUDA.biasAdd(this, input, bias, out);
+		LibMatrixCUDA.biasAdd(getExtendedOpcode(), input, bias, out);
 		// release inputs/outputs
 		ec.releaseMatrixInputForGPUInstruction(_input1.getName());
 		ec.releaseMatrixInputForGPUInstruction(_input2.getName());
@@ -162,7 +162,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction
 		
 		MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, _output.getName());
 		ec.setMetaData(_output.getName(), input.getNumRows(), input.getNumColumns());
-		LibMatrixCUDA.reluBackward(this, input, dout, out);
+		LibMatrixCUDA.reluBackward(getExtendedOpcode(), input, dout, out);
 		// release inputs/outputs
 		ec.releaseMatrixInputForGPUInstruction(_input1.getName());
 		ec.releaseMatrixInputForGPUInstruction(_input2.getName());
@@ -213,7 +213,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction
 			
 			ec.setMetaData(_output.getName(), N, K * P * Q);
 			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, _output.getName());
-			LibMatrixCUDA.conv2d(this, image, filter, out, N, C, H, W,
+			LibMatrixCUDA.conv2d(getExtendedOpcode(), image, filter, out, N, C, H, W,
 					K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
 		}
 		else if (instOpcode.equalsIgnoreCase("conv2d_backward_filter")) {
@@ -228,7 +228,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction
 			
 			ec.setMetaData(_output.getName(), K, C * R * S);
 			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, _output.getName());
-			LibMatrixCUDA.conv2dBackwardFilter(this, image, dout, out, N, C, H, W,
+			LibMatrixCUDA.conv2dBackwardFilter(getExtendedOpcode(), image, dout, out, N, C, H, W,
 					K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
 			// TODO: For now always copy the device data to host
 			// ec.gpuCtx.copyDeviceToHost(outputBlock);
@@ -245,7 +245,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction
 			
 			ec.setMetaData(_output.getName(), N, C * H * W);
 			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, _output.getName());
-			LibMatrixCUDA.conv2dBackwardData(this, filter, dout, out, N, C, H, W,
+			LibMatrixCUDA.conv2dBackwardData(getExtendedOpcode(), filter, dout, out, N, C, H, W,
 					K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
 		}
 		else if (instOpcode.equalsIgnoreCase("maxpooling")) {
@@ -257,7 +257,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction
 			
 			ec.setMetaData(_output.getName(), N, C * P * Q);
 			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, _output.getName());
-			LibMatrixCUDA.maxpooling(this, image, out, N, C, H, W,
+			LibMatrixCUDA.maxpooling(getExtendedOpcode(), image, out, N, C, H, W,
 					K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
 		}
 		else if (instOpcode.equalsIgnoreCase("maxpooling_backward")) {
@@ -272,7 +272,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction
 			
 			ec.setMetaData(_output.getName(), N, C * H * W);
 			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, _output.getName());
-			LibMatrixCUDA.maxpoolingBackward(this, image, dout, out, N, C, H, W,
+			LibMatrixCUDA.maxpoolingBackward(getExtendedOpcode(), image, dout, out, N, C, H, W,
 					K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
 		}
 		else {

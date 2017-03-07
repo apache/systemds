@@ -19,6 +19,7 @@
 
 package org.apache.sysml.test.integration.functions.compress;
 
+import java.io.File;
 import java.util.HashMap;
 
 import org.apache.sysml.api.DMLScript;
@@ -40,6 +41,7 @@ public class CompressedLinregCG extends AutomatedTestBase
 	private final static String TEST_NAME1 = "LinregCG";
 	private final static String TEST_DIR = "functions/compress/";
 	private final static String TEST_CONF = "SystemML-config-compress.xml";
+	private final static File   TEST_CONF_FILE = new File(SCRIPT_DIR + TEST_DIR, TEST_CONF);
 	
 	private final static double eps = 1e-4;
 	
@@ -109,7 +111,6 @@ public class CompressedLinregCG extends AutomatedTestBase
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[]{ "-explain","-stats",
-					                    "-config="+HOME+TEST_CONF,
 					                    "-args", HOME + INPUT_DIR + "X",
 					                             HOME + INPUT_DIR + "y",
 					                             String.valueOf(intercept),
@@ -149,4 +150,14 @@ public class CompressedLinregCG extends AutomatedTestBase
 		}
 	}
 
+	/**
+	 * Override default configuration with custom test configuration to ensure
+	 * scratch space and local temporary directory locations are also updated.
+	 */
+	@Override
+	protected File getConfigTemplateFile() {
+		// Instrumentation in this test's output log to show custom configuration file used for template.
+		System.out.println("This test case overrides default configuration with " + TEST_CONF_FILE.getPath());
+		return TEST_CONF_FILE;
+	}
 }

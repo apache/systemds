@@ -19,9 +19,10 @@
 
 package org.apache.sysml.test.integration.functions.codegen;
 
+import java.io.File;
+
 import org.junit.Assert;
 import org.junit.Test;
-
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.hops.OptimizerUtils;
@@ -36,6 +37,7 @@ public class AlgorithmGLM extends AutomatedTestBase
 	private final static String TEST_DIR = "functions/codegen/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + AlgorithmGLM.class.getSimpleName() + "/";
 	private final static String TEST_CONF = "SystemML-config-codegen.xml";
+	private final static File   TEST_CONF_FILE = new File(SCRIPT_DIR + TEST_DIR, TEST_CONF);
 	
 	//private final static double eps = 1e-5;
 	
@@ -158,7 +160,7 @@ public class AlgorithmGLM extends AutomatedTestBase
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[]{ "-explain", "-stats",
-				"-config=" + HOME + TEST_CONF, "-args", input("X"), input("Y"),
+				"-args", input("X"), input("Y"),
 				String.valueOf(intercept), String.valueOf(epsilon), String.valueOf(maxiter), 
 				addArgs[0], addArgs[1], addArgs[2], addArgs[3], output("w")};
 
@@ -190,5 +192,16 @@ public class AlgorithmGLM extends AutomatedTestBase
 			OptimizerUtils.ALLOW_AUTO_VECTORIZATION = true;
 			OptimizerUtils.ALLOW_OPERATOR_FUSION = true;
 		}
+	}
+
+	/**
+	 * Override default configuration with custom test configuration to ensure
+	 * scratch space and local temporary directory locations are also updated.
+	 */
+	@Override
+	protected File getConfigTemplateFile() {
+		// Instrumentation in this test's output log to show custom configuration file used for template.
+		System.out.println("This test case overrides default configuration with " + TEST_CONF_FILE.getPath());
+		return TEST_CONF_FILE;
 	}
 }

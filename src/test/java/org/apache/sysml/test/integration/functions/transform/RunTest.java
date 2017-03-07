@@ -52,7 +52,7 @@ public class RunTest extends AutomatedTestBase
 	private final static String HOMES_NAN_DATASET 	= "homes/homesNAN.csv";
 	private final static String HOMES_NAN_SPEC 		= "homes/homesNAN.tfspec.json";
 	//private final static String HOMES_NAN_IDSPEC 	= "homes/homesNAN.tfidspec.json";
-	private final static String HOMES_NAN_COLNAMES 	= "homes/homesNAN.csv.colnames";
+	private final static String HOMES_NAN_COLNAMES 	= "homes/homesNAN.colnames.csv";
 	
 	private final static String HOMES_MISSING_DATASET 	= "homes/homesAllMissing.csv";
 	private final static String HOMES_MISSING_SPEC 		= "homes/homesAllMissing.tfspec.json";

@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysml.runtime.instructions.gpu.context;
+package org.apache.sysml.runtime.instructions.gpu;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
@@ -27,11 +27,10 @@ import org.apache.sysml.runtime.functionobjects.ReduceCol;
 import org.apache.sysml.runtime.functionobjects.ReduceRow;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
-import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
 import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysml.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
-import org.apache.sysml.utils.Statistics;
+import org.apache.sysml.utils.GPUStatistics;
 
 /**
  * Implements aggregate unary instructions for CUDA
@@ -72,7 +71,7 @@ public class AggregateUnaryGPUInstruction extends GPUInstruction {
   public void processInstruction(ExecutionContext ec)
           throws DMLRuntimeException
   {
-    Statistics.incrementNoOfExecutedGPUInst();
+    GPUStatistics.incrementNoOfExecutedGPUInst();
 
     String opcode = getOpcode();
 
@@ -82,7 +81,7 @@ public class AggregateUnaryGPUInstruction extends GPUInstruction {
     }
 
     //get inputs
-    MatrixObject in1 = ec.getMatrixInputForGPUInstruction(_input1.getName());
+    MatrixObject in1 = getMatrixInputForGPUInstruction(ec, _input1.getName());
 
     int rlen = (int)in1.getNumRows();
     int clen = (int)in1.getNumColumns();
@@ -94,7 +93,7 @@ public class AggregateUnaryGPUInstruction extends GPUInstruction {
       ec.setMetaData(_output.getName(), rlen, 1);
     }
 
-    LibMatrixCUDA.unaryAggregate(ec, in1, _output.getName(), (AggregateUnaryOperator)_optr);
+    LibMatrixCUDA.unaryAggregate(ec, getExtendedOpcode(), in1, _output.getName(), (AggregateUnaryOperator)_optr);
 
     //release inputs/outputs
     ec.releaseMatrixInputForGPUInstruction(_input1.getName());

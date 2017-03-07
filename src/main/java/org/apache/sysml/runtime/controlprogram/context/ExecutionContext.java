@@ -51,6 +51,7 @@ import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
 import org.apache.sysml.runtime.matrix.MetaData;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
@@ -224,14 +225,20 @@ public class ExecutionContext
 				((MatrixFormatMetaData)oldMetaData).getOutputInfo(),
 				((MatrixFormatMetaData)oldMetaData).getInputInfo()));
 	}
-	
-	public MatrixObject getDenseMatrixOutputForGPUInstruction(String varName) 
+
+	/**
+	 * Allocates a dense matrix on the GPU (for output)
+	 * @param varName	name of the output matrix (known by this {@link ExecutionContext})
+	 * @return a pair containing the wrapping {@link MatrixObject} and a boolean indicating whether a cuda memory allocation took place (as opposed to the space already being allocated)
+	 * @throws DMLRuntimeException
+	 */
+	public Pair<MatrixObject, Boolean> getDenseMatrixOutputForGPUInstruction(String varName)
 		throws DMLRuntimeException 
 	{	
 		MatrixObject mo = allocateGPUMatrixObject(varName);
-		mo.getGPUObject().acquireDeviceModifyDense();
+		boolean allocated = mo.getGPUObject().acquireDeviceModifyDense();
 		mo.getMatrixCharacteristics().setNonZeros(-1);
-		return mo;
+		return new Pair<MatrixObject, Boolean>(mo, allocated);
 	}
 
     /**
@@ -243,13 +250,13 @@ public class ExecutionContext
      * @return matrix object
      * @throws DMLRuntimeException if DMLRuntimeException occurs
      */
-    public MatrixObject getSparseMatrixOutputForGPUInstruction(String varName, long nnz)
+    public Pair<MatrixObject, Boolean> getSparseMatrixOutputForGPUInstruction(String varName, long nnz)
         throws DMLRuntimeException
     {
         MatrixObject mo = allocateGPUMatrixObject(varName);
         mo.getMatrixCharacteristics().setNonZeros(nnz);
-        mo.getGPUObject().acquireDeviceModifySparse();
-        return mo;
+				boolean allocated = mo.getGPUObject().acquireDeviceModifySparse();
+        return new Pair<MatrixObject, Boolean>(mo, allocated);
     } 
 
 	/**
@@ -266,9 +273,10 @@ public class ExecutionContext
 		return mo;
 	}
 
-	public MatrixObject getMatrixInputForGPUInstruction(String varName) 
+	public Pair<MatrixObject, Boolean> getMatrixInputForGPUInstruction(String varName)
 			throws DMLRuntimeException 
-	{	
+	{
+		boolean copied = false;
 		MatrixObject mo = getMatrixObject(varName);
 		if(mo == null) {
 			throw new DMLRuntimeException("No matrix object available for variable:" + varName);
@@ -281,11 +289,11 @@ public class ExecutionContext
 			mo.acquireRead();
 			acquired = true;
 		}
-		mo.getGPUObject().acquireDeviceRead();
+		copied = mo.getGPUObject().acquireDeviceRead();
 		if(acquired) {
 			mo.release();
 		}
-		return mo;
+		return new Pair<MatrixObject, Boolean>(mo, copied);
 	}
 	
 	/**
@@ -301,7 +309,7 @@ public class ExecutionContext
 		mo.release();
 	}
 	
-	public void releaseMatrixInputForGPUInstruction(String varName) 
+	public void releaseMatrixInputForGPUInstruction(String varName)
 		throws DMLRuntimeException 
 	{
 		MatrixObject mo = getMatrixObject(varName);

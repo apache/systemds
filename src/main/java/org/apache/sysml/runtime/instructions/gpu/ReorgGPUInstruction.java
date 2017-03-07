@@ -28,7 +28,7 @@ import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
-import org.apache.sysml.utils.Statistics;
+import org.apache.sysml.utils.GPUStatistics;
 
 
 public class ReorgGPUInstruction extends GPUInstruction
@@ -72,16 +72,16 @@ public class ReorgGPUInstruction extends GPUInstruction
 	public void processInstruction(ExecutionContext ec)
 			throws DMLRuntimeException 
 	{
-		Statistics.incrementNoOfExecutedGPUInst();
+		GPUStatistics.incrementNoOfExecutedGPUInst();
 		//acquire input
-		MatrixObject mat = ec.getMatrixInputForGPUInstruction(_input.getName());	
+		MatrixObject mat = getMatrixInputForGPUInstruction(ec, _input.getName());
 
 		int rlen = (int) mat.getNumColumns();
 		int clen = (int) mat.getNumRows();
 		
 		//execute operation
 		ec.setMetaData(_output.getName(), rlen, clen);
-		LibMatrixCUDA.transpose(ec, mat, _output.getName());
+		LibMatrixCUDA.transpose(ec, getExtendedOpcode(), mat, _output.getName());
 		
 		//release inputs/outputs
 		ec.releaseMatrixInputForGPUInstruction(_input.getName());

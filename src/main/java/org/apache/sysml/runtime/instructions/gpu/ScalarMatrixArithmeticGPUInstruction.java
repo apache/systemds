@@ -28,7 +28,7 @@ import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.ScalarOperator;
-import org.apache.sysml.utils.Statistics;
+import org.apache.sysml.utils.GPUStatistics;
 
 public class ScalarMatrixArithmeticGPUInstruction extends ArithmeticBinaryGPUInstruction {
 	public ScalarMatrixArithmeticGPUInstruction(Operator op, 
@@ -44,11 +44,11 @@ public class ScalarMatrixArithmeticGPUInstruction extends ArithmeticBinaryGPUIns
 	public void processInstruction(ExecutionContext ec) 
 		throws DMLRuntimeException
 	{
-		Statistics.incrementNoOfExecutedGPUInst();
+		GPUStatistics.incrementNoOfExecutedGPUInst();
 		
 		CPOperand mat = ( _input1.getDataType() == DataType.MATRIX ) ? _input1 : _input2;
 		CPOperand scalar = ( _input1.getDataType() == DataType.MATRIX ) ? _input2 : _input1;
-		MatrixObject in1 = ec.getMatrixInputForGPUInstruction(mat.getName());
+		MatrixObject in1 = getMatrixInputForGPUInstruction(ec, mat.getName());
 		ScalarObject constant = (ScalarObject) ec.getScalarInput(scalar.getName(), scalar.getValueType(), scalar.isLiteral());
 		
 		boolean isTransposed = false;
@@ -60,7 +60,7 @@ public class ScalarMatrixArithmeticGPUInstruction extends ArithmeticBinaryGPUIns
 		ScalarOperator sc_op = (ScalarOperator) _optr;
 		sc_op.setConstant(constant.getDoubleValue());
 		
-		LibMatrixCUDA.matrixScalarArithmetic(ec, in1, _output.getName(), isTransposed, sc_op);
+		LibMatrixCUDA.matrixScalarArithmetic(ec, getExtendedOpcode(), in1, _output.getName(), isTransposed, sc_op);
 		
 		ec.releaseMatrixInputForGPUInstruction(mat.getName());
         ec.releaseMatrixOutputForGPUInstruction(_output.getName());

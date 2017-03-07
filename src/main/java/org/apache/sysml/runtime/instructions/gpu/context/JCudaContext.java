@@ -26,6 +26,7 @@ import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
+import org.apache.sysml.utils.GPUStatistics;
 import org.apache.sysml.utils.Statistics;
 
 import jcuda.driver.JCudaDriver;
@@ -104,7 +105,7 @@ public class JCudaContext extends GPUContext {
 		LOG.info("Active CUDA device number : " + device[0]);
 		LOG.info("Max Blocks/Threads/SharedMem : " + maxBlocks + "/" + maxThreadsPerBlock + "/" + sharedMemPerBlock);
 
-		Statistics.cudaInitTime = System.nanoTime() - start;
+		GPUStatistics.cudaInitTime = System.nanoTime() - start;
 
 		start = System.nanoTime();
 		LibMatrixCUDA.cudnnHandle = new cudnnHandle();
@@ -116,7 +117,7 @@ public class JCudaContext extends GPUContext {
 		// cublasSetPointerMode(LibMatrixCUDA.cublasHandle, cublasPointerMode.CUBLAS_POINTER_MODE_DEVICE);
 		LibMatrixCUDA.cusparseHandle = new cusparseHandle();
 		cusparseCreate(LibMatrixCUDA.cusparseHandle);
-		Statistics.cudaLibrariesInitTime = System.nanoTime() - start;
+		GPUStatistics.cudaLibrariesInitTime = System.nanoTime() - start;
 
 		try {
 			LibMatrixCUDA.kernels = new JCudaKernels();

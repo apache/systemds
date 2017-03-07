@@ -78,6 +78,8 @@ import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDHandler;
 import org.apache.sysml.runtime.matrix.CleanupMR;
+import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
+import org.apache.sysml.runtime.matrix.data.LibMatrixDNN;
 import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
 import org.apache.sysml.runtime.util.LocalFileUtils;
@@ -85,6 +87,7 @@ import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.utils.Explain;
 import org.apache.sysml.utils.Explain.ExplainCounts;
 import org.apache.sysml.utils.Explain.ExplainType;
+import org.apache.sysml.utils.GPUStatistics;
 import org.apache.sysml.utils.Statistics;
 import org.apache.sysml.yarn.DMLAppMasterUtils;
 import org.apache.sysml.yarn.DMLYarnClientProxy;
@@ -646,7 +649,11 @@ public class DMLScript
 		
 		//double costs = CostEstimationWrapper.getTimeEstimate(rtprog, ExecutionContextFactory.createContext());
 		//System.out.println("Estimated costs: "+costs);
-		
+
+		// Whether extra statistics useful for developers and others interested in digging
+		// into performance problems are recorded and displayed
+		GPUStatistics.DISPLAY_STATISTICS = dmlconf.getBooleanValue(DMLConfig.EXTRA_GPU_STATS);
+		LibMatrixDNN.DISPLAY_STATISTICS = dmlconf.getBooleanValue(DMLConfig.EXTRA_DNN_STATS);
 		
 		//Step 10: execute runtime program
 		Statistics.startRunTimer();

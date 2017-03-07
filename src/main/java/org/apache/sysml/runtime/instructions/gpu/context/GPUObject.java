@@ -22,6 +22,7 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.utils.GPUStatistics;
 import org.apache.sysml.utils.Statistics;
 
 import java.util.Collections;
@@ -54,18 +55,25 @@ public abstract class GPUObject
 	}
 	
 	public abstract boolean isAllocated();
-	
-	public abstract void acquireDeviceRead() throws DMLRuntimeException;
+
+	/**
+	 * Signal intent that a matrix block will be read (as input) on the GPU
+	 * @return	true if a host memory to device memory transfer happened
+	 * @throws DMLRuntimeException
+	 */
+	public abstract boolean acquireDeviceRead() throws DMLRuntimeException;
 	/**
 	 * To signal intent that a matrix block will be written to on the GPU
+	 * @return	true if memory was allocated on the GPU as a result of this call
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public abstract void acquireDeviceModifyDense() throws DMLRuntimeException;
+	public abstract boolean acquireDeviceModifyDense() throws DMLRuntimeException;
 	/**
 	 * To signal intent that a sparse matrix block will be written to on the GPU
+	 * @return	true if memory was allocated on the GPU as a result of this call
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public abstract void acquireDeviceModifySparse() throws DMLRuntimeException;
+	public abstract boolean acquireDeviceModifySparse() throws DMLRuntimeException;
 	
 	/**
 	 * If memory on GPU has been allocated from elsewhere, this method 
@@ -73,9 +81,14 @@ public abstract class GPUObject
 	 * @param numBytes number of bytes
 	 */
 	public abstract void setDeviceModify(long numBytes);
-	
-	public abstract void acquireHostRead() throws CacheException;
-	public abstract void acquireHostModify() throws CacheException;
+
+	/**
+	 * Signal intent that a block needs to be read on the host
+	 * @return true if copied from device to host
+	 * @throws CacheException
+	 */
+	public abstract boolean acquireHostRead() throws CacheException;
+
 	public abstract void releaseInput() throws CacheException;
 	public abstract void releaseOutput() throws CacheException;
 	
@@ -134,7 +147,7 @@ public abstract class GPUObject
 				throw new DMLRuntimeException("There is not enough memory on device for this matrix!");
 			}
 
-			Statistics.cudaEvictionCount.addAndGet(1);
+			GPUStatistics.cudaEvictionCount.addAndGet(1);
 
 			synchronized (evictionLock) {
 				Collections.sort(GPUContext.allocatedPointers, new Comparator<GPUObject>() {

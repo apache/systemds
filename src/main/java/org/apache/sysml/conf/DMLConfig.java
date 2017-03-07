@@ -74,6 +74,8 @@ public class DMLConfig
 	public static final String CODEGEN              = "codegen.enabled"; //boolean
 	public static final String CODEGEN_PLANCACHE    = "codegen.plancache"; //boolean
 	public static final String CODEGEN_LITERALS     = "codegen.literals"; //1..heuristic, 2..always
+	public static final String EXTRA_GPU_STATS			= "systemml.stats.extraGPU"; //boolean
+	public static final String EXTRA_DNN_STATS			= "systemml.stats.extraDNN"; //boolean
 
 	// Fraction of available memory to use. The available memory is computer when the JCudaContext is created
 	// to handle the tradeoff on calling cudaMemGetInfo too often.
@@ -114,7 +116,10 @@ public class DMLConfig
 		_defaultVals.put(CODEGEN,                "false" );
 		_defaultVals.put(CODEGEN_PLANCACHE,      "true" );
 		_defaultVals.put(CODEGEN_LITERALS,       "1" );
-		
+
+		_defaultVals.put(EXTRA_GPU_STATS,       "false" );
+		_defaultVals.put(EXTRA_DNN_STATS,       "false" );
+
 		_defaultVals.put(GPU_MEMORY_UTILIZATION_FACTOR,      "0.9" );
 		_defaultVals.put(REFRESH_AVAILABLE_MEMORY_EVERY_TIME,      "true" );
 	}
@@ -402,6 +407,7 @@ public class DMLConfig
 				YARN_APPMASTER, YARN_APPMASTERMEM, YARN_MAPREDUCEMEM, 
 				CP_PARALLEL_MATRIXMULT, CP_PARALLEL_TEXTIO,
 				COMPRESSED_LINALG, CODEGEN, CODEGEN_LITERALS, CODEGEN_PLANCACHE,
+				EXTRA_GPU_STATS, EXTRA_DNN_STATS
 		}; 
 		
 		StringBuilder sb = new StringBuilder();

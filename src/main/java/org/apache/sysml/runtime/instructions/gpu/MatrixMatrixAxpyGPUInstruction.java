@@ -28,7 +28,7 @@ import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysml.runtime.matrix.operators.Operator;
-import org.apache.sysml.utils.Statistics;
+import org.apache.sysml.utils.GPUStatistics;
 
 public class MatrixMatrixAxpyGPUInstruction extends ArithmeticBinaryGPUInstruction
 {
@@ -85,10 +85,10 @@ public class MatrixMatrixAxpyGPUInstruction extends ArithmeticBinaryGPUInstructi
 	
 	@Override
 	public void processInstruction(ExecutionContext ec) throws DMLRuntimeException {
-		Statistics.incrementNoOfExecutedGPUInst();
+		GPUStatistics.incrementNoOfExecutedGPUInst();
 		
-		MatrixObject in1 = ec.getMatrixInputForGPUInstruction(_input1.getName());
-		MatrixObject in2 = ec.getMatrixInputForGPUInstruction(_input2.getName());
+		MatrixObject in1 = getMatrixInputForGPUInstruction(ec, _input1.getName());
+		MatrixObject in2 = getMatrixInputForGPUInstruction(ec, _input2.getName());
 		ScalarObject scalar = ec.getScalarInput(constant.getName(), constant.getValueType(), constant.isLiteral());
 		
 		long rlen1 = in1.getNumRows();
@@ -103,7 +103,7 @@ public class MatrixMatrixAxpyGPUInstruction extends ArithmeticBinaryGPUInstructi
 
 		ec.setMetaData(_output.getName(), (int)rlen1, (int)clen1);
 		
-		LibMatrixCUDA.axpy(ec, in1, in2, _output.getName(), multiplier*scalar.getDoubleValue());
+		LibMatrixCUDA.axpy(ec, getExtendedOpcode(), in1, in2, _output.getName(), multiplier*scalar.getDoubleValue());
 		
 		ec.releaseMatrixInputForGPUInstruction(_input1.getName());
 		ec.releaseMatrixInputForGPUInstruction(_input2.getName());

@@ -50,10 +50,10 @@ public class LibMatrixDNN {
 	
 	//library configurations and external contracts
 	public static final boolean SUPPORTS_SPARSE_OUTPUTS = false; //operations able to handle sparse outputs 
-	private static final boolean DISPLAY_STATISTICS = false; //conv2d summaries in stats output
 	private static final boolean ALLOW_MULTI_THREADED_OPS = true; //enable multi-threading in cp
 	private static final int NUM_TASK_FACTOR = 2; //number of tasks is vcores scaled by this factor
-	
+	public static boolean DISPLAY_STATISTICS = false; //conv2d summaries in stats output
+
 	private enum TaskType {
 		MaxPooling_Forward, MaxPooling_Backward, 
 		// Alternate approaches that we tried but the performance was unsatisfactory be included: direct, non-looped im2col

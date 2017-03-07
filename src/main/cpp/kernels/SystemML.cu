@@ -25,10 +25,15 @@ nvcc -ptx -arch=sm_30 SystemML.cu
 
 #include <cfloat>
 
-// dim => rlen (Assumption: rlen == clen)
-// N = length of dense array
+
+/**
+ * Does a copy of upper to lower triangle of the given matrix
+ * @param ret the input and output array allocated on the GPU
+ * @param dim the number of rows of the square matrix ret
+ * @param N total number of elements of the matrix
+ */
 extern "C"
-__global__ void copyUpperToLowerTriangleDense(double* ret, int dim, int N) {
+__global__ void copy_u2l_dense(double* ret, int dim, int N) {
 	int ix = blockIdx.x * blockDim.x + threadIdx.x;
 	int iy = blockIdx.y * blockDim.y + threadIdx.y;
 	int id_dest = iy * dim + ix;
@@ -71,26 +76,6 @@ __forceinline__ __device__ double binaryOp(double x, double y, int op) {
 }
 
 extern "C"
-__global__ void dense_matrix_set(double* A,  double scalar, int rlen, int clen) {
-	int ix = blockIdx.x * blockDim.x + threadIdx.x;
-	int iy = blockIdx.y * blockDim.y + threadIdx.y;
-	int index = ix * clen + iy;
-	if(index < rlen*clen) {
-		A[index] = scalar;
-	}
-}
-
-extern "C"
-__global__ void dense_matrix_copy(double* A,  double* ret, int rlen, int clen) {
-	int ix = blockIdx.x * blockDim.x + threadIdx.x;
-	int iy = blockIdx.y * blockDim.y + threadIdx.y;
-	int index = ix * clen + iy;
-	if(ix < rlen && iy < clen) {
-		ret[index] = A[index];
-	}
-}
-
-extern "C"
 __global__ void relu(double* A,  double* ret, int rlen, int clen) {
 	int ix = blockIdx.x * blockDim.x + threadIdx.x;
 	int iy = blockIdx.y * blockDim.y + threadIdx.y;
@@ -102,7 +87,7 @@ __global__ void relu(double* A,  double* ret, int rlen, int clen) {
 
 // This method computes the backpropagation errors for previous layer of relu operation
 extern "C"
-__global__ void reluBackward(double* X,  double* dout, double* ret, int rlen, int clen) {
+__global__ void relu_backward(double* X,  double* dout, double* ret, int rlen, int clen) {
 	int ix = blockIdx.x * blockDim.x + threadIdx.x;
 	int iy = blockIdx.y * blockDim.y + threadIdx.y;
 	if(ix < rlen && iy < clen) {
@@ -116,7 +101,7 @@ __global__ void reluBackward(double* X,  double* dout, double* ret, int rlen, in
 // output = input + matrix(bias %*% ones, rows=1, cols=F*Hout*Wout)
 // This operation is often followed by conv2d and hence we have introduced bias_add(input, bias) built-in function
 extern "C"
-__global__ void biasAdd(double* input,  double* bias, double* ret, int rlen, int clen, int PQ) {
+__global__ void bias_add(double* input,  double* bias, double* ret, int rlen, int clen, int PQ) {
 	int ix = blockIdx.x * blockDim.x + threadIdx.x;
 	int iy = blockIdx.y * blockDim.y + threadIdx.y;
 	if(ix < rlen && iy < clen) {
@@ -128,7 +113,7 @@ __global__ void biasAdd(double* input,  double* bias, double* ret, int rlen, int
 
 // Compares the value and set
 extern "C"
-__global__ void compareAndSet(double* A,  double* ret, int rlen, int clen, double compareVal, double tol, double ifEqualsVal, double ifLessThanVal, double ifGreaterThanVal) {
+__global__ void compare_and_set(double* A,  double* ret, int rlen, int clen, double compareVal, double tol, double ifEqualsVal, double ifLessThanVal, double ifGreaterThanVal) {
 	int ix = blockIdx.x * blockDim.x + threadIdx.x;
 	int iy = blockIdx.y * blockDim.y + threadIdx.y;
 	int index = ix * clen + iy;

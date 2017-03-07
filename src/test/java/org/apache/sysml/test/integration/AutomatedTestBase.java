@@ -341,6 +341,16 @@ public abstract class AutomatedTestBase
 		return new File(getCurLocalTempDir(), "SystemML-config.xml");
 	}
 	
+	/**
+	 * <p>
+	 * Tests that use custom SystemML configuration should override to ensure
+	 * scratch space and local temporary directory locations are also updated.
+	 * </p>
+	 */
+	protected File getConfigTemplateFile() {
+		return CONFIG_TEMPLATE_FILE;
+	}
+	
 	protected MLContext getMLContextForTesting() throws DMLRuntimeException {
 		synchronized(AutomatedTestBase.class) {
 			
@@ -889,9 +899,9 @@ public abstract class AutomatedTestBase
 			curLocalTempDir.mkdirs();
 			TestUtils.clearDirectory(curLocalTempDir.getPath());
 
-			// Create a SystemML config file for this test case.
-			// Use the canned file under src/test/config as a template
-			String configTemplate = FileUtils.readFileToString(CONFIG_TEMPLATE_FILE, "UTF-8");
+			// Create a SystemML config file for this test case based on default template
+			// from src/test/config or derive from custom configuration provided by test.
+			String configTemplate = FileUtils.readFileToString(getConfigTemplateFile(), "UTF-8");
 			
 			String localTemp = curLocalTempDir.getPath();
 			String configContents = configTemplate.replace("<scratch>scratch_space</scratch>", 
@@ -901,9 +911,7 @@ public abstract class AutomatedTestBase
 			
 			FileUtils.write(getCurConfigFile(), configContents, "UTF-8");
 			
-			System.out.printf(
-					"This test case will use SystemML config file %s\n",
-					getCurConfigFile());
+			System.out.printf("This test case will use SystemML config file %s\n", getCurConfigFile());
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}

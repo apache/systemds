@@ -117,7 +117,7 @@ public class SparkUtils
 	}
 	
 	public static int getNumPreferredPartitions(MatrixCharacteristics mc, JavaPairRDD<?,?> in) {
-		if( !mc.dimsKnown(true) )
+		if( !mc.dimsKnown(true) && in != null )
 			return in.getNumPartitions();
 		double hdfsBlockSize = InfrastructureAnalyzer.getHDFSBlockSize();
 		double matrixPSize = OptimizerUtils.estimatePartitionedSizeExactSparsity(mc);

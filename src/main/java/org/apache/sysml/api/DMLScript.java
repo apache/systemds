@@ -78,6 +78,8 @@ import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDHandler;
 import org.apache.sysml.runtime.matrix.CleanupMR;
+import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
+import org.apache.sysml.runtime.matrix.data.LibMatrixDNN;
 import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
 import org.apache.sysml.runtime.util.LocalFileUtils;
@@ -85,6 +87,7 @@ import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.utils.Explain;
 import org.apache.sysml.utils.Explain.ExplainCounts;
 import org.apache.sysml.utils.Explain.ExplainType;
+import org.apache.sysml.utils.GPUStatistics;
 import org.apache.sysml.utils.Statistics;
 import org.apache.sysml.yarn.DMLAppMasterUtils;
 import org.apache.sysml.yarn.DMLYarnClientProxy;
@@ -103,7 +106,6 @@ public class DMLScript
 	public static RUNTIME_PLATFORM rtplatform = OptimizerUtils.getDefaultExecutionMode();
 	public static boolean STATISTICS = false; //default statistics
 	public static int STATISTICS_COUNT = 10;	//default statistics maximum heavy hitter count
-	public static boolean DEV_STATISTICS = false; // default value for dev statistics
 	public static boolean ENABLE_DEBUG_MODE = false; //default debug mode
 	public static boolean USE_LOCAL_SPARK_CONFIG = false; //set default local spark configuration - used for local testing
 	public static String DML_FILE_PATH_ANTLR_PARSER = null;
@@ -144,7 +146,6 @@ public class DMLScript
 			+ "   -exec: <mode> (optional) execution mode (hadoop, singlenode, [hybrid], hybrid_spark)\n"
 			+ "   -explain: <type> (optional) explain plan (hops, [runtime], recompile_hops, recompile_runtime)\n"
 			+ "   -stats: <count> (optional) monitor and report caching/recompilation statistics, default heavy hitter count is 10\n"
-			+ "   -devstats: <count> (optional) monitor and report caching/recompilation statistics, also prints advanced statistics, default heavy hitter count is 10\n"
 			+ "   -clean: (optional) cleanup all SystemML working directories (FS, DFS).\n"
 			+ "         All other flags are ignored in this mode. \n"
 			+ "   -config: (optional) use config file <config_filename> (default: use parameter\n"
@@ -279,12 +280,6 @@ public class DMLScript
 				}
 				else if( args[i].equalsIgnoreCase("-stats") ) {
 					STATISTICS = true;
-					if (args.length > (i + 1) && !args[i + 1].startsWith("-"))
-						STATISTICS_COUNT = Integer.parseInt(args[++i]);
-				}
-				else if( args[i].equalsIgnoreCase("-devstats") ) {
-					STATISTICS = true;
-					DEV_STATISTICS = true;
 					if (args.length > (i + 1) && !args[i + 1].startsWith("-"))
 						STATISTICS_COUNT = Integer.parseInt(args[++i]);
 				}
@@ -654,7 +649,11 @@ public class DMLScript
 		
 		//double costs = CostEstimationWrapper.getTimeEstimate(rtprog, ExecutionContextFactory.createContext());
 		//System.out.println("Estimated costs: "+costs);
-		
+
+		// Whether extra statistics useful for developers and others interested in digging
+		// into performance problems are recorded and displayed
+		GPUStatistics.DISPLAY_STATISTICS = dmlconf.getBooleanValue(DMLConfig.EXTRA_GPU_STATS);
+		LibMatrixDNN.DISPLAY_STATISTICS = dmlconf.getBooleanValue(DMLConfig.EXTRA_DNN_STATS);
 		
 		//Step 10: execute runtime program
 		Statistics.startRunTimer();

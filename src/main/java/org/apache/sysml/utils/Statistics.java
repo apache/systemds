@@ -531,7 +531,7 @@ public class Statistics
 			sb.append(_cpInstCounts.get(key));
 			sb.append("\t");
 			// Add the miscellaneous timer info
-			if (DMLScript.DEV_STATISTICS) {
+			if (GPUStatistics.DISPLAY_STATISTICS) {
 				sb.append(GPUStatistics.getStringForCPMiscTimesPerInstruction(key));
 			}
 			sb.append("\n");
@@ -652,7 +652,7 @@ public class Statistics
 			sb.append("Number of executed MR Jobs:\t" + getNoOfExecutedMRJobs() + ".\n");	
 		}
 
-		if( DMLScript.USE_ACCELERATOR && DMLScript.STATISTICS )
+		if( DMLScript.USE_ACCELERATOR && DMLScript.STATISTICS)
 			sb.append(GPUStatistics.getStringForCudaTimers());
 		
 		//show extended caching/compilation statistics

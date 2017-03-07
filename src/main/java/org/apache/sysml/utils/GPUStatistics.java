@@ -30,6 +30,9 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class GPUStatistics {
 
+  // Whether or not extra per-instruction statistics will be recorded and shown for the GPU
+  public static boolean DISPLAY_STATISTICS = false;
+
   private static int iNoOfExecutedGPUInst = 0;
 
   public static long cudaInitTime = 0;
@@ -105,7 +108,7 @@ public class GPUStatistics {
    */
   public synchronized static void maintainCPMiscTimes( String instructionName, String miscTimer, long timeNanos, long incrementCount)
   {
-    if (!DMLScript.DEV_STATISTICS)
+    if (!DISPLAY_STATISTICS)
       return;
 
     HashMap<String, Long> miscTimesMap = _cpInstMiscTime.get(instructionName);

@@ -770,9 +770,6 @@
 								<!-- Compiled ptx file from nvcc -->
 								<exclude>src/main/cpp/kernels/SystemML.ptx</exclude>
 								<!-- Test Validation files -->
-								<exclude>src/test/scripts/functions/external/kMeans/kMeansWrapperOutput</exclude>
-								<exclude>src/test/scripts/functions/external/kMeans2/kMeansWrapperOutput1</exclude>
-								<exclude>src/test/scripts/functions/external/kMeans2/kMeansWrapperOutput2</exclude>
 								<exclude>src/test/scripts/functions/external/seqMiner/FreqSeqFile</exclude>
 								<exclude>src/test/scripts/functions/external/seqMiner/FreqSeqSupportFile</exclude>
 								<exclude>src/test/scripts/functions/io/csv/in/transfusion_1.data</exclude>

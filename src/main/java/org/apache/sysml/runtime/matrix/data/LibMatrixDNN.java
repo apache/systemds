@@ -79,7 +79,6 @@ public class LibMatrixDNN {
 	private static AtomicLong loopedConvBwdDataMatMultTime = new AtomicLong(0);
 	private static AtomicLong loopedConvBwdDataCol2ImTime = new AtomicLong(0);
 	
-	@SuppressWarnings("unused")
 	public static void appendStatistics(StringBuilder sb) {
 		if(DMLScript.STATISTICS && DISPLAY_STATISTICS && (conv2dDenseCount.get() != 0 || conv2dSparseCount.get() != 0)) {
 			sb.append("LibMatrixDNN dense count (conv/bwdF/bwdD/im2col/maxBwd):\t" 
@@ -136,7 +135,6 @@ public class LibMatrixDNN {
 	 * @param params convolution parameters
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	@SuppressWarnings("unused")
 	public static void conv2dBackwardData(MatrixBlock filter, MatrixBlock dout, MatrixBlock outputBlock, ConvolutionParameters params) throws DMLRuntimeException {
 		params.input1 = filter;
 		params.input2 = dout;
@@ -173,7 +171,6 @@ public class LibMatrixDNN {
 	 * @param params convolution parameters
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	@SuppressWarnings("unused")
 	public static void conv2dBackwardFilter(MatrixBlock input, MatrixBlock dout, MatrixBlock outputBlock, ConvolutionParameters params) throws DMLRuntimeException {
 		params.input1 = input;
 		params.input2 = dout;
@@ -268,7 +265,6 @@ public class LibMatrixDNN {
 		LibMatrixReorg.transpose(tmpAgg, ret);
 	}
 	
-	@SuppressWarnings("unused")
 	private static void doLoopedIm2ColConv2dBwdData(int n, MatrixBlock dout_reshaped, ConvolutionParameters params) throws DMLRuntimeException {
 		MatrixBlock filter = params.input1;
 		MatrixBlock dout = params.input2;
@@ -287,7 +283,6 @@ public class LibMatrixDNN {
 		}
 	}
 	
-	@SuppressWarnings("unused")
 	private static MatrixBlock doLoopedIm2ColConv2dBwdFilter(int n, 
 			MatrixBlock im2ColOutBlock, MatrixBlock dout_reshaped, MatrixBlock partialRetBlock, ConvolutionParameters params) throws DMLRuntimeException {
 		long t1 = DMLScript.STATISTICS && DISPLAY_STATISTICS ? System.nanoTime() : 0;
@@ -317,7 +312,6 @@ public class LibMatrixDNN {
 		ret[2] = j % W;
 	}
 	
-	@SuppressWarnings("unused")
 	public static void conv2d(MatrixBlock input, MatrixBlock filter, MatrixBlock outputBlock, ConvolutionParameters params) throws DMLRuntimeException {
 		params.input1 = input;
 		params.input2 = filter;
@@ -350,7 +344,6 @@ public class LibMatrixDNN {
 		outputBlock.recomputeNonZeros();
 	}
 	
-	@SuppressWarnings("unused")
 	private static void doLoopedIm2ColConv2d(int n, MatrixBlock im2ColOutBlock, ConvolutionParameters params) throws DMLRuntimeException {
 		long t1 = DMLScript.STATISTICS && DISPLAY_STATISTICS ? System.nanoTime() : 0;
 		doIm2col(n, im2ColOutBlock, params);
@@ -403,7 +396,6 @@ public class LibMatrixDNN {
 	 * @param params convolution parameters
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	@SuppressWarnings("unused")
 	public static void maxpoolingBackward(MatrixBlock input, MatrixBlock dout, MatrixBlock outputBlock, ConvolutionParameters params) throws DMLRuntimeException {
 		params.input1 = input;
 		params.input2 = dout;

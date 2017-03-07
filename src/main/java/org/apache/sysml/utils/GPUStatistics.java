@@ -19,9 +19,13 @@
 
 package org.apache.sysml.utils;
 
-import org.apache.sysml.api.DMLScript;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -29,7 +33,9 @@ import java.util.concurrent.atomic.AtomicLong;
  * Printed as part of {@link Statistics}.
  */
 public class GPUStatistics {
-
+	//TODO fix formatting 
+	
+	
   // Whether or not extra per-instruction statistics will be recorded and shown for the GPU
   public static boolean DISPLAY_STATISTICS = false;
 
@@ -149,7 +155,9 @@ public class GPUStatistics {
     StringBuffer sb = new StringBuffer();
     HashMap<String, Long> miscTimerMap = _cpInstMiscTime.get(instructionName);
     if (miscTimerMap != null) {
-      List<Map.Entry<String, Long>> sortedList = new ArrayList<Map.Entry<String, Long>>(miscTimerMap.entrySet());
+      List<Map.Entry<String, Long>> sortedList 
+      = new ArrayList<
+      Map.Entry<String, Long>>(miscTimerMap.entrySet());
       // Sort the times to display by the most expensive first
       Collections.sort(sortedList, new Comparator<Map.Entry<String, Long>>() {
         @Override

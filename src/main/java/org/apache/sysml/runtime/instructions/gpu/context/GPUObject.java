@@ -23,7 +23,6 @@ import org.apache.sysml.runtime.controlprogram.caching.CacheException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.utils.GPUStatistics;
-import org.apache.sysml.utils.Statistics;
 
 import java.util.Collections;
 import java.util.Comparator;

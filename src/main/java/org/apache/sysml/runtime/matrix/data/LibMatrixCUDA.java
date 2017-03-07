@@ -1115,7 +1115,7 @@ public class LibMatrixCUDA {
 			// Convert right to dense and do a cuBlas matmul
 			// BDenseTransposed is a column major matrix
 			// Note the arguments to denseDenseMatmult to accommodate for this.
-			long t0=0, t1=0, t2=0;
+			long t0=0, t1=0;
 			if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
 			Pointer BDenseTransposed = B.toColumnMajorDenseMatrix(cusparseHandle, cublasHandle, (int)right.getNumRows(), (int)right.getNumColumns());
 			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_SPARSE_TO_DENSE, System.nanoTime() - t0);
@@ -1585,7 +1585,6 @@ public class LibMatrixCUDA {
 		Pointer in = ((JCudaObject)in1.getGPUObject()).jcudaDenseMatrixPtr;
 		int size = rlen * clen;
 
-		long t0=0;
 		// For scalars, set the scalar output in the Execution Context object
 		switch (opIndex){
 			case OP_PLUS: {
@@ -1610,7 +1609,6 @@ public class LibMatrixCUDA {
 			}
 			case OP_PLUS_SQ : {
 				// Calculate the squares in a temporary object tmp
-				if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
 				Pointer tmp = JCudaObject.allocate(instName, size * Sizeof.DOUBLE);
 
 				squareMatrix(instName, in, tmp, rlen, clen);
@@ -1710,7 +1708,6 @@ public class LibMatrixCUDA {
 			}
 			case OP_VARIANCE : {
 				// Temporary GPU array for
-				if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
 				Pointer tmp = JCudaObject.allocate(instName, size * Sizeof.DOUBLE);
 				Pointer tmp2 = JCudaObject.allocate(instName, size * Sizeof.DOUBLE);
 

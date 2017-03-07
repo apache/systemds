@@ -27,7 +27,6 @@ import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysml.utils.GPUStatistics;
-import org.apache.sysml.utils.Statistics;
 
 import jcuda.driver.JCudaDriver;
 import jcuda.jcublas.JCublas2;

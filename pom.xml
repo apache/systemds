@@ -66,7 +66,6 @@
 		<hadoop.version>2.6.0</hadoop.version>
 		<antlr.version>4.5.3</antlr.version>
 		<spark.version>2.1.0</spark.version>
-		<minimum.recommended.spark.version>2.1.0</minimum.recommended.spark.version>
 		<scala.version>2.11.8</scala.version>
 		<scala.binary.version>2.11</scala.binary.version>
 		<scala.test.version>2.2.6</scala.test.version>
@@ -520,7 +519,7 @@
 									<Group-Id>${project.groupId}</Group-Id>
 									<Artifact-Id>${project.artifactId}</Artifact-Id>
 									<Version>${project.version}</Version>
-									<Minimum-Recommended-Spark-Version>${minimum.recommended.spark.version}</Minimum-Recommended-Spark-Version>
+									<Minimum-Recommended-Spark-Version>${spark.version}</Minimum-Recommended-Spark-Version>
 								</manifestEntries>
 							</archive>
 						</configuration>

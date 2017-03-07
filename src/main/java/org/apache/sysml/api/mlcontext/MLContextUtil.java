@@ -205,7 +205,7 @@ public final class MLContextUtil {
 	 * @return the minimum recommended Spark version from XML parsing of the pom file (during development).
 	 */
 	static String getMinimumRecommendedSparkVersionFromPom() {
-		return getUniquePomProperty("minimum.recommended.spark.version");
+		return getUniquePomProperty("spark.version");
 	}
 
 	/**

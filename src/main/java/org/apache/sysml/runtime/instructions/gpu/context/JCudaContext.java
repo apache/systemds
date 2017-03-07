@@ -18,6 +18,7 @@
  */
 package org.apache.sysml.runtime.instructions.gpu.context;
 
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.commons.logging.Log;
@@ -266,6 +267,8 @@ public class JCudaContext extends GPUContext {
 			LibMatrixCUDA.kernels = null;
 		}
 		GPUStatistics.cudaLibrariesInitTime = System.nanoTime() - start;
+
+		GPUContext.deallocExecutorService = Executors.newSingleThreadExecutor();
 
 	}
 

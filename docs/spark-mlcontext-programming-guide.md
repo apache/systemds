@@ -1086,6 +1086,96 @@ mean: Double = 0.5002109404821844
 
 </div>
 
+## GPU
+
+If the driver node has a GPU, SystemML may be able to utilize it, subject to memory constraints and what instructions are used in the dml script
+
+<div class="codetabs">
+
+<div data-lang="Scala" markdown="1">
+{% highlight scala %}
+ml.setGPU(true)
+ml.setStatistics(true)
+val matMultScript = dml("""
+A = rand(rows=10, cols=1000)
+B = rand(rows=1000, cols=10)
+C = A %*% B
+print(toString(C))
+""")
+ml.execute(matMultScript)
+{% endhighlight %}
+</div>
+
+<div data-lang="Spark Shell" markdown="1">
+{% highlight scala %}
+scala> ml.setGPU(true)
+
+scala> ml.setStatistics(true)
+
+scala> val matMultScript = dml("""
+     | A = rand(rows=10, cols=1000)
+     | B = rand(rows=1000, cols=10)
+     | C = A %*% B
+     | print(toString(C))
+     | """)
+matMultScript: org.apache.sysml.api.mlcontext.Script =
+Inputs:
+None
+
+Outputs:
+None
+
+scala> ml.execute(matMultScript)
+249.977 238.545 233.700 234.489 248.556 244.423 249.051 255.043 249.117 251.605
+249.226 248.680 245.532 238.258 254.451 249.827 260.957 251.273 250.577 257.571
+258.703 246.969 243.463 246.547 250.784 251.758 251.654 258.318 251.817 254.097
+248.788 242.960 230.920 244.026 249.159 247.998 251.330 254.718 248.013 255.706
+253.251 248.788 235.785 242.941 252.096 248.675 256.865 251.677 252.872 250.490
+256.087 245.035 234.124 238.307 248.630 252.522 251.122 251.577 249.171 247.974
+245.419 243.114 232.262 239.776 249.583 242.351 250.972 249.244 246.729 251.807
+250.081 242.367 230.334 240.955 248.332 240.730 246.940 250.396 244.107 249.729
+247.368 239.882 234.353 237.087 252.337 248.801 246.627 249.077 244.305 245.621
+252.827 257.352 239.546 246.529 258.916 255.612 260.480 254.805 252.695 257.531
+
+SystemML Statistics:
+Total elapsed time:		0.000 sec.
+Total compilation time:		0.000 sec.
+Total execution time:		0.000 sec.
+Number of compiled Spark inst:	0.
+Number of executed Spark inst:	0.
+CUDA/CuLibraries init time:	0.000/0.003 sec.
+Number of executed GPU inst:	8.
+GPU mem tx time  (alloc/dealloc/toDev/fromDev):	0.003/0.002/0.010/0.002 sec.
+GPU mem tx count (alloc/dealloc/toDev/fromDev/evict):	24/24/0/16/8/0.
+GPU conversion time  (sparseConv/sp2dense/dense2sp):	0.000/0.000/0.000 sec.
+GPU conversion count (sparseConv/sp2dense/dense2sp):	0/0/0.
+Cache hits (Mem, WB, FS, HDFS):	40/0/0/0.
+Cache writes (WB, FS, HDFS):	21/0/0.
+Cache times (ACQr/m, RLS, EXP):	0.002/0.002/0.003/0.000 sec.
+HOP DAGs recompiled (PRED, SB):	0/0.
+HOP DAGs recompile time:	0.000 sec.
+Spark ctx create time (lazy):	0.000 sec.
+Spark trans counts (par,bc,col):0/0/0.
+Spark trans times (par,bc,col):	0.000/0.000/0.000 secs.
+Total JIT compile time:		11.426 sec.
+Total JVM GC count:		20.
+Total JVM GC time:		1.078 sec.
+Heavy hitter instructions (name, time, count):
+-- 1) 	toString 	0.085 sec 	8
+-- 2) 	rand 	0.027 sec 	16
+-- 3) 	gpu_ba+* 	0.018 sec 	8
+-- 4) 	print 	0.006 sec 	8
+-- 5) 	createvar 	0.003 sec 	24
+-- 6) 	rmvar 	0.003 sec 	40
+
+res20: org.apache.sysml.api.mlcontext.MLResults =
+None
+{% endhighlight %}
+</div>
+
+</div>
+
+Note that GPU instructions show up prepended with a "gpu" in the statistics.
 
 ## Explain
 

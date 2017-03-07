@@ -18,6 +18,7 @@
  */
 package org.apache.sysml.runtime.instructions.gpu.context;
 
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.commons.logging.Log;
@@ -104,27 +105,8 @@ public class JCudaContext extends GPUContext {
 		LOG.info("Active CUDA device number : " + device[0]);
 		LOG.info("Max Blocks/Threads/SharedMem : " + maxBlocks + "/" + maxThreadsPerBlock + "/" + sharedMemPerBlock);
 
+
 		GPUStatistics.cudaInitTime = System.nanoTime() - start;
-
-		start = System.nanoTime();
-		LibMatrixCUDA.cudnnHandle = new cudnnHandle();
-		cudnnCreate(LibMatrixCUDA.cudnnHandle);
-		LibMatrixCUDA.cublasHandle = new cublasHandle();
-		cublasCreate(LibMatrixCUDA.cublasHandle);
-		// For cublas v2, cublasSetPointerMode tells Cublas whether to expect scalar arguments on device or on host
-		// This applies to arguments like "alpha" in Dgemm, and "y" in Ddot.
-		// cublasSetPointerMode(LibMatrixCUDA.cublasHandle, cublasPointerMode.CUBLAS_POINTER_MODE_DEVICE);
-		LibMatrixCUDA.cusparseHandle = new cusparseHandle();
-		cusparseCreate(LibMatrixCUDA.cusparseHandle);
-		GPUStatistics.cudaLibrariesInitTime = System.nanoTime() - start;
-
-		try {
-			LibMatrixCUDA.kernels = new JCudaKernels();
-		} catch (DMLRuntimeException e) {
-			System.err.println("ERROR - Unable to initialize JCudaKernels. System in an inconsistent state");
-			LibMatrixCUDA.kernels = null;
-		}
-
 	}
 
 	@Override
@@ -267,6 +249,26 @@ public class JCudaContext extends GPUContext {
 		}
 		LOG.info("Total GPU memory: " + (totalNumBytes*(1e-6)) + " MB");
 		LOG.info("Available GPU memory: " + (deviceMemBytes.get()*(1e-6)) + " MB");
+
+		long start = System.nanoTime();
+		LibMatrixCUDA.cudnnHandle = new cudnnHandle();
+		cudnnCreate(LibMatrixCUDA.cudnnHandle);
+		LibMatrixCUDA.cublasHandle = new cublasHandle();
+		cublasCreate(LibMatrixCUDA.cublasHandle);
+		// For cublas v2, cublasSetPointerMode tells Cublas whether to expect scalar arguments on device or on host
+		// This applies to arguments like "alpha" in Dgemm, and "y" in Ddot.
+		// cublasSetPointerMode(LibMatrixCUDA.cublasHandle, cublasPointerMode.CUBLAS_POINTER_MODE_DEVICE);
+		LibMatrixCUDA.cusparseHandle = new cusparseHandle();
+		cusparseCreate(LibMatrixCUDA.cusparseHandle);
+		try {
+			LibMatrixCUDA.kernels = new JCudaKernels();
+		} catch (DMLRuntimeException e) {
+			System.err.println("ERROR - Unable to initialize JCudaKernels. System in an inconsistent state");
+			LibMatrixCUDA.kernels = null;
+		}
+		GPUStatistics.cudaLibrariesInitTime = System.nanoTime() - start;
+
+		GPUContext.deallocExecutorService = Executors.newSingleThreadExecutor();
 
 	}
 

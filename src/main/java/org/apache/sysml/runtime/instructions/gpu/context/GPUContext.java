@@ -41,7 +41,7 @@ public abstract class GPUContext {
 	public static ConcurrentLinkedQueue<Future> pendingDeallocates = new ConcurrentLinkedQueue<Future>();
 
 	/** All asynchronous cudaFree calls will be done on this executor service */
-	public static ExecutorService deallocExecutorService = Executors.newSingleThreadExecutor();
+	public static ExecutorService deallocExecutorService;
 
 	/** Synchronization object to make sure no allocations happen when something is being evicted from memory */
 	public static final Object syncObj = new Object();

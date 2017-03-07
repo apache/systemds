@@ -36,7 +36,7 @@ import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.ml.feature.LabeledPoint;
-import org.apache.spark.ml.linalg.DenseVector;
+import org.apache.spark.ml.linalg.SparseVector;
 import org.apache.spark.ml.linalg.Vector;
 import org.apache.spark.ml.linalg.VectorUDT;
 import org.apache.spark.ml.linalg.Vectors;
@@ -64,7 +64,6 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixCell;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
-import org.apache.sysml.runtime.matrix.data.SparseBlock;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.matrix.mapred.ReblockBuffer;
 import org.apache.sysml.runtime.util.DataConverter;
@@ -416,6 +415,16 @@ public class RDDConverterUtils
 		return lnnz;
 	}
 	
+	private static Vector createVector(MatrixBlock row) {
+		if( row.isEmptyBlock(false) ) //EMPTY SPARSE ROW
+			return Vectors.sparse(row.getNumColumns(), new int[0], new double[0]);
+		else if( row.isInSparseFormat() ) //SPARSE ROW
+			return Vectors.sparse(row.getNumColumns(), 
+					row.getSparseBlock().indexes(0), row.getSparseBlock().values(0));
+		else // DENSE ROW
+			return Vectors.dense(row.getDenseBlock());
+	}
+	
 	/////////////////////////////////
 	// BINARYBLOCK-SPECIFIC FUNCTIONS
 
@@ -433,24 +442,9 @@ public class RDDConverterUtils
 			throws Exception 
 		{
 			ArrayList<LabeledPoint> ret = new ArrayList<LabeledPoint>();
-			for( int i=0; i<arg0.getNumRows(); i++ )
-			{
+			for( int i=0; i<arg0.getNumRows(); i++ ) {
 				MatrixBlock tmp = arg0.sliceOperations(i, i, 0, arg0.getNumColumns()-2, new MatrixBlock());
-				double[] data = DataConverter.convertToDoubleVector(tmp);
-				if( tmp.isEmptyBlock(false) ) //EMPTY SPARSE ROW
-				{
-					ret.add(new LabeledPoint(arg0.getValue(i, arg0.getNumColumns()-1), Vectors.sparse(0, new int[0], new double[0])));
-				}
-				else if( tmp.isInSparseFormat() ) //SPARSE ROW
-				{
-					SparseBlock sblock = tmp.getSparseBlock();
-					ret.add(new LabeledPoint(arg0.getValue(i, arg0.getNumColumns()-1), 
-							Vectors.sparse(sblock.size(0), sblock.indexes(0), sblock.values(0))));
-				}
-				else // DENSE ROW
-				{
-					ret.add(new LabeledPoint(arg0.getValue(i, arg0.getNumColumns()-1), Vectors.dense(data)));
-				}
+				ret.add(new LabeledPoint(arg0.getValue(i, arg0.getNumColumns()-1), createVector(tmp)));
 			}
 			
 			return ret.iterator();
@@ -808,6 +802,8 @@ public class RDDConverterUtils
 			{
 				Tuple2<org.apache.spark.mllib.regression.LabeledPoint,Long> tmp = arg0.next();
 				org.apache.spark.mllib.regression.LabeledPoint row = tmp._1();
+				boolean lsparse = _sparseX || (!_labels && 
+						row.features() instanceof org.apache.spark.mllib.linalg.SparseVector);
 				long rowix = tmp._2() + 1;
 				
 				long rix = UtilFunctions.computeBlockIndex(rowix, _brlen);
@@ -818,7 +814,7 @@ public class RDDConverterUtils
 					if( ix[0] !=null )
 						flushBlocksToList(ix, mb, ret);
 					long len = UtilFunctions.computeBlockSize(_rlen, rix, _brlen);
-					createBlocks(rowix, (int)len, ix, mb);
+					createBlocks(rowix, (int)len, ix, mb, lsparse);
 				}
 				
 				//process row data
@@ -828,12 +824,26 @@ public class RDDConverterUtils
 					_aNnz.add((val != 0) ? 1 : 0);
 				}
 				else { //features
-					for( int cix=1, pix=0; cix<=ncblks; cix++ ) {
-						int lclen = (int)UtilFunctions.computeBlockSize(_clen, cix, _bclen);
-						for( int j=0; j<lclen; j++ )
-							mb[cix-1].appendValue(pos, j, row.features().apply(pix++));
+					int lnnz = row.features().numNonzeros();
+					if( row.features() instanceof org.apache.spark.mllib.linalg.SparseVector )
+					{
+						org.apache.spark.mllib.linalg.SparseVector srow = 
+								(org.apache.spark.mllib.linalg.SparseVector) row.features();
+						for( int k=0; k<lnnz; k++ ) {
+							int gix = srow.indices()[k]+1;
+							int cix = (int)UtilFunctions.computeBlockIndex(gix, _bclen);
+							int j = UtilFunctions.computeCellInBlock(gix, _bclen);
+							mb[cix-1].appendValue(pos, j, srow.values()[k]);
+						}
 					}
-					_aNnz.add(row.features().numNonzeros());
+					else { //dense
+						for( int cix=1, pix=0; cix<=ncblks; cix++ ) {
+							int lclen = (int)UtilFunctions.computeBlockSize(_clen, cix, _bclen);
+							for( int j=0; j<lclen; j++ )
+								mb[cix-1].appendValue(pos, j, row.features().apply(pix++));
+						}
+					}
+					_aNnz.add(lnnz);
 				}
 			}
 		
@@ -844,7 +854,7 @@ public class RDDConverterUtils
 		}
 		
 		// Creates new state of empty column blocks for current global row index.
-		private void createBlocks(long rowix, int lrlen, MatrixIndexes[] ix, MatrixBlock[] mb)
+		private void createBlocks(long rowix, int lrlen, MatrixIndexes[] ix, MatrixBlock[] mb, boolean lsparse)
 		{
 			//compute row block index and number of column blocks
 			long rix = UtilFunctions.computeBlockIndex(rowix, _brlen);
@@ -852,9 +862,9 @@ public class RDDConverterUtils
 			
 			//create all column blocks (assume dense since csv is dense text format)
 			for( int cix=1; cix<=ncblks; cix++ ) {
-				int lclen = (int)UtilFunctions.computeBlockSize(_clen, cix, _bclen);				
+				int lclen = (int)UtilFunctions.computeBlockSize(_clen, cix, _bclen);
 				ix[cix-1] = new MatrixIndexes(rix, cix);
-				mb[cix-1] = new MatrixBlock(lrlen, lclen, _sparseX);
+				mb[cix-1] = new MatrixBlock(lrlen, lclen, lsparse);
 				mb[cix-1].allocateDenseOrSparseBlock();
 			}
 		}
@@ -1058,8 +1068,18 @@ public class RDDConverterUtils
 					//append data to matrix blocks
 					if( _isVector ) {
 						Vector vect = (Vector) obj;
-						for( int j=0; j<lclen; j++ )
-							mb[cix-1].appendValue(pos, j, vect.apply(pix++));	
+						if( vect instanceof SparseVector ) {
+							SparseVector svect = (SparseVector) vect;
+							int[] svectIx = svect.indices();
+							while( pix<svectIx.length && svectIx[pix]<cix*_bclen ) {
+								int j = UtilFunctions.computeCellInBlock(svectIx[pix]+1, _bclen);
+								mb[cix-1].appendValue(pos, j, svect.values()[pix++]);
+							}
+						}
+						else { //dense
+							for( int j=0; j<lclen; j++ )
+								mb[cix-1].appendValue(pos, j, vect.apply(pix++));	
+						}
 					}
 					else { //row
 						Row row = (Row) obj;
@@ -1176,13 +1196,18 @@ public class RDDConverterUtils
 			
 			//copy block data into target row
 			if( _toVector ) {
-				double[] tmp = new double[_clen];
-				for(Tuple2<Long, MatrixBlock> kv : arg0._2()) {
-					int cl = (kv._1().intValue()-1)*_bclen;
-					MatrixBlock mb = kv._2();
-					DataConverter.copyToDoubleVector(mb, tmp, cl);
+				if( _clen <= _bclen ) { //single block
+					row[1] = createVector(arg0._2().iterator().next()._2());
 				}
-				row[1] = new DenseVector(tmp);
+				else { //multiple column blocks
+					double[] tmp = new double[_clen];
+					for(Tuple2<Long, MatrixBlock> kv : arg0._2()) {
+						int cl = (kv._1().intValue()-1)*_bclen;
+						MatrixBlock mb = kv._2();
+						DataConverter.copyToDoubleVector(mb, tmp, cl);
+					}
+					row[1] = Vectors.dense(tmp);
+				}
 			}
 			else {
 				for(Tuple2<Long, MatrixBlock> kv : arg0._2()) {

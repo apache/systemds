@@ -1487,8 +1487,6 @@ public abstract class AutomatedTestBase
 		}
 
 		TestUtils.clearAssertionInformation();
-
-		System.gc();
 	}
 
 	/**

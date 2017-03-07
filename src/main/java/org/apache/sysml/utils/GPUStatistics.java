@@ -155,9 +155,7 @@ public class GPUStatistics {
     StringBuffer sb = new StringBuffer();
     HashMap<String, Long> miscTimerMap = _cpInstMiscTime.get(instructionName);
     if (miscTimerMap != null) {
-      List<Map.Entry<String, Long>> sortedList 
-      = new ArrayList<
-      Map.Entry<String, Long>>(miscTimerMap.entrySet());
+      List<Map.Entry<String, Long>> sortedList = new ArrayList<Map.Entry<String, Long>>(miscTimerMap.entrySet());
       // Sort the times to display by the most expensive first
       Collections.sort(sortedList, new Comparator<Map.Entry<String, Long>>() {
         @Override

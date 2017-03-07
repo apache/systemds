@@ -46,6 +46,7 @@ import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysml.utils.Explain;
 import org.apache.sysml.utils.Explain.ExplainCounts;
 import org.apache.sysml.utils.Explain.ExplainType;
@@ -114,6 +115,7 @@ public class ScriptExecutor {
 	protected Script script;
 	protected boolean init = false;
 	protected boolean explain = false;
+	protected boolean gpu = false;
 	protected boolean statistics = false;
 	protected ExplainLevel explainLevel;
 	protected int statisticsMaxHeavyHitters = 10;
@@ -307,7 +309,7 @@ public class ScriptExecutor {
 	 * Sets the script in the ScriptExecutor, checks that the script has a type
 	 * and string, sets the ScriptExecutor in the script, sets the script string
 	 * in the Spark Monitor, and globally sets the script type.
-	 * 
+	 * Also does GPU initialization
 	 * @param script
 	 *            the DML or PYDML script to execute
 	 */
@@ -317,6 +319,12 @@ public class ScriptExecutor {
 		script.setScriptExecutor(this);
 		// Set global variable indicating the script type
 		DMLScript.SCRIPT_TYPE = script.getScriptType();
+		try {
+			if (gpu)
+				GPUContext.getGPUContext();
+		} catch (DMLRuntimeException e) {
+			throw new MLContextException("Exception occurred during initialization of GPU", e);
+		}
 	}
 
 	/**
@@ -324,6 +332,12 @@ public class ScriptExecutor {
 	 */
 	protected void cleanupAfterExecution() {
 		restoreInputsInSymbolTable();
+		try {
+			if (gpu)
+				executionContext.destroyGPUContext();
+		} catch (DMLRuntimeException e) {
+			throw new MLContextException("Exception occurred during cleanup of GPU related resources", e);
+		}
 	}
 
 	/**
@@ -630,6 +644,16 @@ public class ScriptExecutor {
 			ExplainType explainType = explainLevel.getExplainType();
 			DMLScript.EXPLAIN = explainType;
 		}
+	}
+
+	/**
+	 * Whether or not to enable GPU usage
+	 * @param enabled
+	 * 					true if enabled, false otherwise
+	 */
+	public void setGPU(boolean enabled) {
+		this.gpu = enabled;
+		DMLScript.USE_ACCELERATOR = enabled;
 	}
 
 }

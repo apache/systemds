@@ -99,6 +99,11 @@ public class MLContext {
 	private boolean statistics = false;
 
 	/**
+	 * Whether or not GPU mode should be enabled
+	 */
+	private boolean gpu = false;
+
+	/**
 	 * The number of heavy hitters that are printed as part of the statistics
 	 * option
 	 */
@@ -274,6 +279,7 @@ public class MLContext {
 		ScriptExecutor scriptExecutor = new ScriptExecutor();
 		scriptExecutor.setExplain(explain);
 		scriptExecutor.setExplainLevel(explainLevel);
+		scriptExecutor.setGPU(gpu);
 		scriptExecutor.setStatistics(statistics);
 		scriptExecutor.setStatisticsMaxHeavyHitters(statisticsMaxHeavyHitters);
 		scriptExecutor.setInit(scriptHistoryStrings.isEmpty());
@@ -410,6 +416,25 @@ public class MLContext {
 		throw new MLContextException("Failed to parse explain level: " + explainLevel + " "
 				+ "(valid types: hops, runtime, recompile_hops, recompile_runtime).");
 	}
+
+	/**
+	 * Whether or not to use (an available) GPU on the driver node.
+	 * If a GPU is not available, and the GPU mode is set, SystemML will crash when the program is run.
+	 * @param enable
+	 * 					true if needs to be enabled, false otherwise
+	 */
+	public void setGPU(boolean enable) {
+		this.gpu = true;
+	}
+
+	/**
+	 * Whether or not the GPU mode is enabled.
+	 * @return true if enabled, false otherwise
+	 */
+	public boolean isGPU() {
+		return this.gpu;
+	}
+
 
 	/**
 	 * Used internally by MLContextProxy.

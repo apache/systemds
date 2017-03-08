@@ -276,6 +276,9 @@ public class ScriptExecutor {
 	public MLResults execute(Script script) {
 
 		// main steps in script execution
+		if(statistics) {
+			Statistics.startRunTimer();
+		}
 		setup(script);
 		parseScript();
 		liveVariableAnalysis();
@@ -299,6 +302,7 @@ public class ScriptExecutor {
 		script.setResults(mlResults);
 
 		if (statistics) {
+			Statistics.stopRunTimer();
 			System.out.println(Statistics.display(statisticsMaxHeavyHitters));
 		}
 

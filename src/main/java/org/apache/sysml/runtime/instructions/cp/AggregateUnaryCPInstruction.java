@@ -121,7 +121,7 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 						rval = mc.getRows() * mc.getCols();
 				}
 				else {
-					throw new DMLRuntimeException("Invalid meta data returned by '"+opcode+"': "+rval);
+					throw new DMLRuntimeException("Invalid meta data returned by '"+opcode+"': "+rval + ":" + instString);
 				}
 			}
 			

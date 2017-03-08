@@ -96,7 +96,6 @@ trait BaseSystemMLEstimatorModel {
 }
 
 trait BaseSystemMLClassifier extends BaseSystemMLEstimator {
-  
   def baseFit(X_mb: MatrixBlock, y_mb: MatrixBlock, sc: SparkContext): MLResults = {
     val isSingleNode = true
     val ml = new MLContext(sc)
@@ -105,7 +104,6 @@ trait BaseSystemMLClassifier extends BaseSystemMLEstimator {
     val script = ret._1.in(ret._2, X_mb).in(ret._3, y_mb)
     ml.execute(script)
   }
-  
   def baseFit(df: ScriptsUtils.SparkDataType, sc: SparkContext): MLResults = {
     val isSingleNode = false
     val ml = new MLContext(df.rdd.sparkContext)
@@ -121,7 +119,7 @@ trait BaseSystemMLClassifier extends BaseSystemMLEstimator {
 }
 
 trait BaseSystemMLClassifierModel extends BaseSystemMLEstimatorModel {
-  
+
   def baseTransform(X: MatrixBlock, mloutput: MLResults, sc: SparkContext, probVar:String): MatrixBlock = {
     val isSingleNode = true
     val ml = new MLContext(sc)
@@ -137,7 +135,7 @@ trait BaseSystemMLClassifierModel extends BaseSystemMLEstimatorModel {
     }
     return ret
   }
-  
+
   def baseTransform(df: ScriptsUtils.SparkDataType, mloutput: MLResults, sc: SparkContext, 
       probVar:String, outputProb:Boolean=true): DataFrame = {
     val isSingleNode = false

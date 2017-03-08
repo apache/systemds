@@ -23,7 +23,7 @@
  * Max pooling layer.
  */
 forward = function(matrix[double] X, int C, int Hin, int Win, int Hf, int Wf,
-                   int strideh, int stridew)
+                   int strideh, int stridew, int padh, int padw)
     return (matrix[double] out, int Hout, int Wout) {
   /*
    * Computes the forward pass for a 2D spatial max pooling layer.
@@ -56,11 +56,11 @@ forward = function(matrix[double] X, int C, int Hin, int Win, int Hf, int Wf,
 
   # Max pooling - built-in implementation
   out = max_pool(X, input_shape=[N,C,Hin,Win], pool_size=[Hf,Wf], stride=[strideh,stridew],
-                 padding=[0,0])
+                 padding=[padh,padw])
 }
 
 backward = function(matrix[double] dout, int Hout, int Wout, matrix[double] X, int C,
-                    int Hin, int Win, int Hf, int Wf, int strideh, int stridew)
+                    int Hin, int Win, int Hf, int Wf, int strideh, int stridew, int padh, int padw)
     return (matrix[double] dX) {
   /*
    * Computes the backward pass for a 2D spatial max pooling layer.
@@ -87,6 +87,6 @@ backward = function(matrix[double] dout, int Hout, int Wout, matrix[double] X, i
   
   # Gradient of max pooling
   dX = max_pool_backward(X, dout, input_shape=[N,C,Hin,Win], pool_size=[Hf,Wf],
-                         stride=[strideh,stridew], padding=[0,0])
+                         stride=[strideh,stridew], padding=[padh,padw])
 }
 

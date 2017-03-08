@@ -19,10 +19,10 @@
 
 package org.apache.sysml.test.integration.functions.gdfo;
 
+import java.io.File;
 import java.util.HashMap;
 
 import org.junit.Test;
-
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.lops.LopProperties.ExecType;
@@ -41,6 +41,7 @@ public class GDFOLinregDSsimpl extends AutomatedTestBase
 	private final static String TEST_DIR = "functions/gdfo/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + GDFOLinregDSsimpl.class.getSimpleName() + "/";
 	private final static String TEST_CONF = "SystemML-config-globalopt.xml";
+	private final static File   TEST_CONF_FILE = new File(SCRIPT_DIR + TEST_DIR, TEST_CONF);
 	
 	private final static double eps = 1e-8;
 	
@@ -126,7 +127,7 @@ public class GDFOLinregDSsimpl extends AutomatedTestBase
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[]{ "-explain","hops",
-				"-config=" + HOME + TEST_CONF, "-args", input("X"), input("y"),
+				"-args", input("X"), input("y"),
 				String.valueOf(intercept), String.valueOf(lambda), output("B")};
 
 			rCmd = getRCmd(inputDir(), String.valueOf(intercept), String.valueOf(lambda), expectedDir());
@@ -152,4 +153,14 @@ public class GDFOLinregDSsimpl extends AutomatedTestBase
 		}
 	}
 
+	/**
+	 * Override default configuration with custom test configuration to ensure
+	 * scratch space and local temporary directory locations are also updated.
+	 */
+	@Override
+	protected File getConfigTemplateFile() {
+		// Instrumentation in this test's output log to show custom configuration file used for template.
+		System.out.println("This test case overrides default configuration with " + TEST_CONF_FILE.getPath());
+		return TEST_CONF_FILE;
+	}
 }

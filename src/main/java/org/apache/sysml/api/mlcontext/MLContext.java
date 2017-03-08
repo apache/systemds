@@ -424,7 +424,7 @@ public class MLContext {
 	 * 					true if needs to be enabled, false otherwise
 	 */
 	public void setGPU(boolean enable) {
-		this.gpu = true;
+		this.gpu = enable;
 	}
 
 	/**

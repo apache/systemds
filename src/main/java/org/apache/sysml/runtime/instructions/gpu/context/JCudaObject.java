@@ -18,46 +18,30 @@
  */
 package org.apache.sysml.runtime.instructions.gpu.context;
 
-import static jcuda.jcublas.cublasOperation.CUBLAS_OP_T;
-import static jcuda.jcusparse.JCusparse.cusparseCreateMatDescr;
-import static jcuda.jcusparse.JCusparse.cusparseDcsr2dense;
-import static jcuda.jcusparse.JCusparse.cusparseDdense2csr;
-import static jcuda.jcusparse.JCusparse.cusparseDnnz;
-import static jcuda.jcusparse.JCusparse.cusparseSetMatIndexBase;
-import static jcuda.jcusparse.JCusparse.cusparseSetMatType;
-import static jcuda.jcusparse.JCusparse.cusparseSetPointerMode;
-import static jcuda.jcusparse.JCusparse.cusparseXcsrgemmNnz;
-import static jcuda.jcusparse.JCusparse.cusparseXcsrgeamNnz;
-import static jcuda.jcusparse.cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO;
-import static jcuda.jcusparse.cusparseMatrixType.CUSPARSE_MATRIX_TYPE_GENERAL;
-import static jcuda.runtime.JCuda.*;
-import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost;
-import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice;
-
+import jcuda.Pointer;
+import jcuda.jcublas.JCublas2;
+import jcuda.jcublas.cublasHandle;
+import jcuda.jcusparse.JCusparse;
+import jcuda.jcusparse.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
-import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
-import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.apache.sysml.runtime.matrix.data.SparseBlock;
-import org.apache.sysml.runtime.matrix.data.SparseBlockCOO;
-import org.apache.sysml.runtime.matrix.data.SparseBlockCSR;
-import org.apache.sysml.runtime.matrix.data.SparseBlockMCSR;
+import org.apache.sysml.runtime.matrix.data.*;
 import org.apache.sysml.utils.GPUStatistics;
+import org.apache.sysml.utils.LRUCacheMap;
 
-import jcuda.Pointer;
-import jcuda.jcublas.JCublas2;
-import jcuda.jcublas.cublasHandle;
-import jcuda.jcusparse.JCusparse;
-import jcuda.jcusparse.cusparseDirection;
-import jcuda.jcusparse.cusparseHandle;
-import jcuda.jcusparse.cusparseMatDescr;
-import jcuda.jcusparse.cusparsePointerMode;
+import java.util.HashMap;
 
-import java.util.concurrent.Future;
+import static jcuda.jcublas.cublasOperation.CUBLAS_OP_T;
+import static jcuda.jcusparse.JCusparse.*;
+import static jcuda.jcusparse.cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO;
+import static jcuda.jcusparse.cusparseMatrixType.CUSPARSE_MATRIX_TYPE_GENERAL;
+import static jcuda.runtime.JCuda.*;
+import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost;
+import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice;
 
 /**
  * Handle to a matrix block on the GPU
@@ -408,20 +392,22 @@ public class JCudaObject extends GPUObject {
 		}
 		
 		/**
-		 * Calls cudaFree asynchronously on the allocated {@link Pointer} instances
+		 * Calls cudaFree lazily on the allocated {@link Pointer} instances
 		 */
 		public void deallocate() {
 			deallocate(false);
 		}
 
 		/**
-		 * Calls cudaFree asynchronously or synchronously on the allocated {@link Pointer} instances
-		 * @param synchronous whether to do synchronous or async cudaFrees
+		 * Calls cudaFree lazily or eagerly on the allocated {@link Pointer} instances
+		 * @param eager whether to do eager or lazy cudaFrees
 		 */
-		public void deallocate(boolean synchronous){
-			cudaFreeHelper(val);
-			cudaFreeHelper(rowPtr);
-			cudaFreeHelper(colInd);
+		public void deallocate(boolean eager){
+			if (nnz > 0) {
+				cudaFreeHelper(val, eager);
+				cudaFreeHelper(rowPtr, eager);
+				cudaFreeHelper(colInd, eager);
+			}
 		}
 	};
 	
@@ -451,54 +437,6 @@ public class JCudaObject extends GPUObject {
 	JCudaObject(MatrixObject m) {
 		super(m);
 	}
-	
-	/**
-	 * Allocates temporary space on the device.
-	 * Does not update bookkeeping.
-	 * The caller is responsible for freeing up after usage.
-	 * @param instructionName name of instruction for which to record per instruction performance statistics, null if don't want to record
-	 * @param size   			Size of data (in bytes) to allocate
-	 * @param statsCount	amount to increment the cudaAllocCount by
-	 * @return jcuda Pointer
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
-	 */
-	public static Pointer allocate(String instructionName, long size, int statsCount) throws DMLRuntimeException{
-		synchronized (GPUContext.syncObj) {
-			Pointer A = new Pointer();
-			ensureFreeSpace(size);
-			long t0 = System.nanoTime();
-			cudaMalloc(A, size);
-			// Set all elements to 0 since newly allocated space will contain garbage
-			cudaMemset(A, 0, size);
-			GPUStatistics.cudaAllocTime.getAndAdd(System.nanoTime() - t0);
-			GPUStatistics.cudaAllocCount.getAndAdd(statsCount);
-			if (instructionName != null && GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instructionName, GPUInstruction.MISC_TIMER_ALLOCATE, System.nanoTime() - t0);
-
-			return A;
-		}
-	}
-
-	/**
-	 * Convenience method for {@link #allocate(String, long, int)}, defaults statsCount to 1.
-	 * @param size size of data (in bytes) to allocate
-	 * @return jcuda pointer
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
-	 */
-	public static Pointer allocate(long size) throws DMLRuntimeException {
-		return allocate(null, size, 1);
-	}
-
-	/**
-	 * Convenience method for {@link #allocate(String, long, int)}, defaults statsCount to 1.
-	 * @param instructionName name of instruction for which to record per instruction performance statistics, null if don't want to record
-	 * @param size size of data (in bytes) to allocate
-	 * @return jcuda pointer
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
-	 */
-	public static Pointer allocate(String instructionName, long size) throws DMLRuntimeException {
-		return allocate(instructionName, size, 1);
-	}
-
 
 	/**
 	 * Allocates a sparse and empty {@link JCudaObject}
@@ -565,7 +503,7 @@ public class JCudaObject extends GPUObject {
 			allocateDenseMatrixOnDevice();
 			allocated = true;
 			synchronized(evictionLock) {
-				GPUContext.allocatedPointers.add(this);
+				JCudaContext.allocatedPointers.add(this);
 			}
 		}
 		isDeviceCopyModified = true;
@@ -583,7 +521,7 @@ public class JCudaObject extends GPUObject {
 			allocateSparseMatrixOnDevice();
 			allocated = true;
 			synchronized(evictionLock) {
-				GPUContext.allocatedPointers.add(this);
+				JCudaContext.allocatedPointers.add(this);
 			}
 		}
 		isDeviceCopyModified = true;
@@ -724,17 +662,17 @@ public class JCudaObject extends GPUObject {
 	}
 
 	@Override
-	void deallocateMemoryOnDevice(boolean synchronous) {
+	void deallocateMemoryOnDevice(boolean eager) {
 		if(jcudaDenseMatrixPtr != null) {
 			long start = System.nanoTime();
-			cudaFreeHelper(null, jcudaDenseMatrixPtr, synchronous);
+			cudaFreeHelper(null, jcudaDenseMatrixPtr, eager);
 			((JCudaContext)GPUContext.currContext).getAndAddAvailableMemory(numBytes);
 			GPUStatistics.cudaDeAllocTime.addAndGet(System.nanoTime()-start);
 			GPUStatistics.cudaDeAllocCount.addAndGet(1);
 		}
 		if (jcudaSparseMatrixPtr != null) {
 			long start = System.nanoTime();
-			jcudaSparseMatrixPtr.deallocate(synchronous);
+			jcudaSparseMatrixPtr.deallocate(eager);
 			((JCudaContext)GPUContext.currContext).getAndAddAvailableMemory(numBytes);
 			GPUStatistics.cudaDeAllocTime.addAndGet(System.nanoTime()-start);
 			GPUStatistics.cudaDeAllocCount.addAndGet(1);
@@ -750,8 +688,18 @@ public class JCudaObject extends GPUObject {
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	static void ensureFreeSpace(long size) throws DMLRuntimeException {
+		ensureFreeSpace(null, size);
+	}
+
+	/**
+	 * Thin wrapper over {@link #evict(long)}
+	 * @param instructionName instructionName name of the instruction for which performance measurements are made
+	 * @param size size to check
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
+	 */
+	static void ensureFreeSpace(String instructionName, long size) throws DMLRuntimeException {
 		if(size >= getAvailableMemory()) {
-			evict(size);
+			evict(instructionName, size);
 		}
 	}
 	
@@ -814,7 +762,7 @@ public class JCudaObject extends GPUObject {
 			}
 			allocateSparseMatrixOnDevice();
 			synchronized(evictionLock) {
-				GPUContext.allocatedPointers.add(this);
+				JCudaContext.allocatedPointers.add(this);
 			}
 			if(copyToDevice) {
 				CSRPointer.copyToDevice(jcudaSparseMatrixPtr, tmp.getNumRows(), tmp.getNonZeros(), rowPtr, colInd, values);
@@ -835,7 +783,7 @@ public class JCudaObject extends GPUObject {
 			// Copy dense block
 			allocateDenseMatrixOnDevice();
 			synchronized(evictionLock) {
-				GPUContext.allocatedPointers.add(this);
+				JCudaContext.allocatedPointers.add(this);
 			}
 			cudaMemcpy(jcudaDenseMatrixPtr, Pointer.to(data), getDoubleSizeOf(mat.getNumRows()*mat.getNumColumns()), cudaMemcpyHostToDevice);
 		}
@@ -1157,8 +1105,69 @@ public class JCudaObject extends GPUObject {
 		return C;
 	}
 
+
+	/** Map of free blocks allocate on GPU. maps size_of_block -> pointer on GPU */
+	static LRUCacheMap<Long, Pointer> freeCUDASpaceMap = new LRUCacheMap<Long, Pointer>();
+	/** To record size of allocated blocks */
+	static HashMap<Pointer, Long> cudaBlockSizeMap = new HashMap<Pointer, Long>();
+
+
 	/**
-	 * Does asynchronous cudaFree calls
+	 * Convenience method for {@link #allocate(String, long, int)}, defaults statsCount to 1.
+	 * @param size size of data (in bytes) to allocate
+	 * @return jcuda pointer
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
+	 */
+	public static Pointer allocate(long size) throws DMLRuntimeException {
+		return allocate(null, size, 1);
+	}
+
+	/**
+	 * Convenience method for {@link #allocate(String, long, int)}, defaults statsCount to 1.
+	 * @param instructionName name of instruction for which to record per instruction performance statistics, null if don't want to record
+	 * @param size size of data (in bytes) to allocate
+	 * @return jcuda pointer
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
+	 */
+	public static Pointer allocate(String instructionName, long size) throws DMLRuntimeException {
+		return allocate(instructionName, size, 1);
+	}
+
+	/**
+	 * Allocates temporary space on the device.
+	 * Does not update bookkeeping.
+	 * The caller is responsible for freeing up after usage.
+	 * @param instructionName name of instruction for which to record per instruction performance statistics, null if don't want to record
+	 * @param size   			Size of data (in bytes) to allocate
+	 * @param statsCount	amount to increment the cudaAllocCount by
+	 * @return jcuda Pointer
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
+	 */
+	public static Pointer allocate(String instructionName, long size, int statsCount) throws DMLRuntimeException{
+		synchronized (JCudaContext.syncObj) {
+			Pointer A;
+			if (freeCUDASpaceMap.containsKey(size)) {
+				A = freeCUDASpaceMap.get(size);
+				freeCUDASpaceMap.remove(size);
+			} else {
+				long t0 = System.nanoTime();
+				ensureFreeSpace(instructionName, size);
+				A = new Pointer();
+				cudaMalloc(A, size);
+				((JCudaContext)(JCudaContext.currContext)).deviceMemBytes.addAndGet(size);
+				GPUStatistics.cudaAllocTime.getAndAdd(System.nanoTime() - t0);
+				GPUStatistics.cudaAllocCount.getAndAdd(statsCount);
+				if (instructionName != null && GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instructionName, GPUInstruction.MISC_TIMER_ALLOCATE, System.nanoTime() - t0);
+			}
+			// Set all elements to 0 since newly allocated space will contain garbage
+			cudaMemset(A, 0, size);
+			cudaBlockSizeMap.put(A, size);
+			return A;
+		}
+	}
+
+	/**
+	 * Does lazy cudaFree calls
 	 * @param toFree {@link Pointer} instance to be freed
 	 */
 	public static void cudaFreeHelper(final Pointer toFree) {
@@ -1166,7 +1175,17 @@ public class JCudaObject extends GPUObject {
 	}
 
 	/**
-	 * Does asynchronous cudaFree calls
+	 * does lazy/eager cudaFree calls
+	 * @param toFree {@link Pointer} instance to be freed
+	 * @param eager true if to be done eagerly
+	 * @throws DMLRuntimeException
+	 */
+	public static void cudaFreeHelper(final Pointer toFree, boolean eager) {
+		cudaFreeHelper(null, toFree, eager);
+	}
+
+	/**
+	 * Does lazy cudaFree calls
 	 * @param instructionName name of the instruction for which to record per instruction free time, null if do not want to record
 	 * @param toFree {@link Pointer} instance to be freed
 	 */
@@ -1175,27 +1194,25 @@ public class JCudaObject extends GPUObject {
 	}
 
 	/**
-	 * Does cudaFree calls, either synchronously or asynchronously
+	 * Does cudaFree calls, lazily
 	 * @param instructionName name of the instruction for which to record per instruction free time, null if do not want to record
 	 * @param toFree {@link Pointer} instance to be freed
-	 * @param synchronous true if to be done synchronously
+	 * @param eager true if to be done eagerly
 	 */
 	@SuppressWarnings("rawtypes")
-	public static void cudaFreeHelper(String instructionName, final Pointer toFree, boolean synchronous) {
+	public static void cudaFreeHelper(String instructionName, final Pointer toFree, boolean eager){
 		long t0 = 0;
-		if (instructionName != null) t0 = System.nanoTime();
-		if (synchronous) {
+		assert cudaBlockSizeMap.containsKey(toFree) : "ERROR : Internal state corrupted, cache block size map is not aware of a block it trying to free up";
+		long size = cudaBlockSizeMap.get(toFree);
+		if (eager) {
+			if (instructionName != null) t0 = System.nanoTime();
+			((JCudaContext)(JCudaContext.currContext)).deviceMemBytes.addAndGet(-size);
 			cudaFree(toFree);
+			cudaBlockSizeMap.remove(toFree);
+			if (instructionName != null && GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instructionName, GPUInstruction.MISC_TIMER_CUDA_FREE, System.nanoTime() - t0);
 		} else {
-			Future submitted = GPUContext.deallocExecutorService.submit(new Runnable() {
-				@Override
-				public void run() {
-					cudaFree(toFree);
-				}
-			});
-			GPUContext.pendingDeallocates.offer(submitted);
+			freeCUDASpaceMap.put(size, toFree);
 		}
-		if (instructionName != null && GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instructionName, GPUInstruction.MISC_TIMER_CUDA_FREE, System.nanoTime() - t0);
 	}
 
 

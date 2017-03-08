@@ -18,11 +18,6 @@
  */
 package org.apache.sysml.runtime.instructions.gpu.context;
 
-import java.util.ArrayList;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -32,18 +27,6 @@ import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 
 @SuppressWarnings("rawtypes")
 public abstract class GPUContext {
-
-	public static ArrayList<GPUObject> allocatedPointers = new ArrayList<GPUObject>();
-
-	/** cudaFree calls are done asynchronously on a separate thread,
-	 *  this list preserve the list of currently happening cudaFree calls */
-	public static ConcurrentLinkedQueue<Future> pendingDeallocates = new ConcurrentLinkedQueue<Future>();
-
-	/** All asynchronous cudaFree calls will be done on this executor service */
-	public static ExecutorService deallocExecutorService;
-
-	/** Synchronization object to make sure no allocations happen when something is being evicted from memory */
-	public static final Object syncObj = new Object();
 
 	protected static GPUContext currContext;
 	public static volatile Boolean isGPUContextCreated = false;
@@ -76,7 +59,7 @@ public abstract class GPUContext {
 			synchronized(isGPUContextCreated) {
 				currContext = new JCudaContext();
 				currContext.ensureComputeCapability();
-				OptimizerUtils.GPU_MEMORY_BUDGET = ((JCudaContext)currContext).getAvailableMemory();
+				OptimizerUtils.GPU_MEMORY_BUDGET = currContext.getAvailableMemory();
 				isGPUContextCreated = true;
 			}
 		}

@@ -18,9 +18,15 @@
  */
 package org.apache.sysml.runtime.instructions.gpu.context;
 
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicLong;
-
+import jcuda.driver.JCudaDriver;
+import jcuda.jcublas.JCublas2;
+import jcuda.jcublas.cublasHandle;
+import jcuda.jcudnn.JCudnn;
+import jcuda.jcudnn.cudnnHandle;
+import jcuda.jcusparse.JCusparse;
+import jcuda.jcusparse.cusparseHandle;
+import jcuda.runtime.JCuda;
+import jcuda.runtime.cudaDeviceProp;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.conf.ConfigurationManager;
@@ -29,36 +35,29 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysml.utils.GPUStatistics;
 
-import jcuda.driver.JCudaDriver;
-import jcuda.jcublas.JCublas2;
-import jcuda.jcublas.cublasHandle;
-import jcuda.jcudnn.JCudnn;
-import jcuda.runtime.JCuda;
-import jcuda.jcudnn.cudnnHandle;
-import jcuda.jcusparse.JCusparse;
-import jcuda.jcusparse.cusparseHandle;
-import jcuda.runtime.cudaDeviceProp;
-import static jcuda.jcudnn.JCudnn.cudnnCreate;
+import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicLong;
+
+import static jcuda.driver.JCudaDriver.cuDeviceGetCount;
+import static jcuda.driver.JCudaDriver.cuInit;
 import static jcuda.jcublas.JCublas2.cublasCreate;
 import static jcuda.jcublas.JCublas2.cublasDestroy;
+import static jcuda.jcudnn.JCudnn.cudnnCreate;
 import static jcuda.jcudnn.JCudnn.cudnnDestroy;
-import static jcuda.jcusparse.JCusparse.cusparseDestroy;
 import static jcuda.jcusparse.JCusparse.cusparseCreate;
-import static jcuda.driver.JCudaDriver.cuInit;
-import static jcuda.driver.JCudaDriver.cuDeviceGetCount;
+import static jcuda.jcusparse.JCusparse.cusparseDestroy;
 import static jcuda.runtime.JCuda.*;
 import static jcuda.runtime.cudaError.cudaSuccess;
 
-/**
- * Setup:
- * 1. Install CUDA 7.5
- * 2. Install CuDNN v4 from http://developer.download.nvidia.com/compute/redist/cudnn/v4/cudnn-7.0-win-x64-v4.0-prod.zip
- * 3. Download JCuda binaries version 0.7.5b and JCudnn version 0.7.5. Copy the DLLs into C:\lib (or /lib) directory. Link: http://www.jcuda.org/downloads/downloads.html
- *
- */
+
 public class JCudaContext extends GPUContext {
 
+	/** Synchronization object to make sure no allocations happen when something is being evicted from memory */
+	public static final Object syncObj = new Object();
 	private static final Log LOG = LogFactory.getLog(JCudaContext.class.getName());
+
+	/** Global list of allocated {@link GPUObject} instances. This list must be accessed in a synchronized way */
+	public static ArrayList<GPUObject> allocatedPointers = new ArrayList<GPUObject>();
 
 	// The minimum CUDA Compute capability needed for SystemML.
 	// After compute capability 3.0, 2^31 - 1 blocks and 1024 threads per block are supported.
@@ -73,7 +72,7 @@ public class JCudaContext extends GPUContext {
 	public static boolean DEBUG = false;
 
 	/** total bytes available on currently active cude device, please be careful with its bookkeeping */
-	private AtomicLong deviceMemBytes = new AtomicLong(0);
+	AtomicLong deviceMemBytes = new AtomicLong(0);
 
 	/** Stores the cached deviceProperties */
 	private static cudaDeviceProp[] deviceProperties;
@@ -267,9 +266,6 @@ public class JCudaContext extends GPUContext {
 			LibMatrixCUDA.kernels = null;
 		}
 		GPUStatistics.cudaLibrariesInitTime = System.nanoTime() - start;
-
-		GPUContext.deallocExecutorService = Executors.newSingleThreadExecutor();
-
 	}
 
 	@Override
@@ -279,7 +275,6 @@ public class JCudaContext extends GPUContext {
 				cudnnDestroy(LibMatrixCUDA.cudnnHandle);
 				cublasDestroy(LibMatrixCUDA.cublasHandle);
 				cusparseDestroy(LibMatrixCUDA.cusparseHandle);
-				GPUContext.deallocExecutorService.shutdown();
 				currContext = null;
 				isGPUContextCreated = false;
 			}

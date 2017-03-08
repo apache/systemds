@@ -21,7 +21,7 @@
 
 # DML script that tests read/write csv
 
-A = read($1+".data");
+A = read($1+".csv");
 x = sum(A);
 write(x, $2);
 

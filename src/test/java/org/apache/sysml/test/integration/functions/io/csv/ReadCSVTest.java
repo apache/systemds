@@ -141,13 +141,7 @@ public class ReadCSVTest extends AutomatedTestBase
 	public void testCSV3_SP() {
 		runCSVTest(3, RUNTIME_PLATFORM.SPARK, false);
 	}
-	
-	/**
-	 * 
-	 * @param testNumber
-	 * @param platform
-	 * @param parallel
-	 */
+
 	private void runCSVTest(int testNumber, RUNTIME_PLATFORM platform, boolean parallel) 
 	{
 		RUNTIME_PLATFORM oldPlatform = rtplatform;
@@ -168,15 +162,16 @@ public class ReadCSVTest extends AutomatedTestBase
 			loadTestConfiguration(config);
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
-			String inputMatrixName = HOME + INPUT_DIR + "transfusion_" + testNumber + ".data";
+			String inputMatrixNameNoExtension = HOME + INPUT_DIR + "transfusion_" + testNumber;
+			String inputMatrixNameWithExtension = inputMatrixNameNoExtension + ".csv";
 			String dmlOutput = output("dml.scalar");
 			String rOutput = output("R.scalar");
 			
 			fullDMLScriptName = HOME + TEST_NAME + "_" + testNumber + ".dml";
-			programArgs = new String[]{"-args", inputMatrixName, dmlOutput};
+			programArgs = new String[]{"-args", inputMatrixNameWithExtension, dmlOutput};
 			
 			fullRScriptName = HOME + "csv_verify2.R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + inputMatrixName + ".single " + rOutput;
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputMatrixNameNoExtension + ".single.csv " + rOutput;
 			
 			runTest(true, false, null, -1);
 			runRScript(true);

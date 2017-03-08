@@ -758,6 +758,7 @@
 								<exclude>**/*.json</exclude>
 								<exclude>**/*.mtx</exclude>
 								<exclude>**/*.mtd</exclude>
+								<exclude>**/part-*</exclude>
 								<exclude>**/*.keep</exclude>
 								<exclude>**/target/**</exclude>
 								<exclude>**/README.md</exclude>
@@ -770,14 +771,6 @@
 								<!-- Compiled ptx file from nvcc -->
 								<exclude>src/main/cpp/kernels/SystemML.ptx</exclude>
 								<!-- Test Validation files -->
-								<exclude>src/test/scripts/functions/io/csv/in/transfusion_1.data</exclude>
-								<exclude>src/test/scripts/functions/io/csv/in/transfusion_1.data.single</exclude>
-								<exclude>src/test/scripts/functions/io/csv/in/transfusion_2.data/part-0</exclude>
-								<exclude>src/test/scripts/functions/io/csv/in/transfusion_2.data/part-1</exclude>
-								<exclude>src/test/scripts/functions/io/csv/in/transfusion_2.data.single</exclude>
-								<exclude>src/test/scripts/functions/io/csv/in/transfusion_3.data/part-0</exclude>
-								<exclude>src/test/scripts/functions/io/csv/in/transfusion_3.data/part-1</exclude>
-								<exclude>src/test/scripts/functions/io/csv/in/transfusion_3.data.single</exclude>
 								<exclude>src/test/scripts/functions/jmlc/**/*.impute</exclude>
 								<exclude>src/test/scripts/functions/jmlc/**/*.map</exclude>
 								<exclude>src/test/scripts/functions/jmlc/**/*.mode</exclude>
@@ -789,7 +782,6 @@
 								<exclude>src/test/scripts/functions/jmlc/tfmtd_example/dummycoded.column.names</exclude>
 								<exclude>src/test/scripts/functions/jmlc/tfmtd_example2/column.names</exclude>
 								<exclude>src/test/scripts/functions/jmlc/tfmtd_frame_example/tfmtd_frame</exclude>
-								<exclude>src/test/scripts/functions/transform/input/homes/homesNAN.csv.colnames</exclude>
 							</excludes>
 						</configuration>
 					</plugin>

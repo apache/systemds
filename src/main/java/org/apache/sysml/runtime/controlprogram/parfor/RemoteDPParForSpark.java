@@ -29,6 +29,11 @@ import org.apache.hadoop.io.Writable;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
+import org.apache.spark.api.java.function.PairFunction;
+import org.apache.spark.ml.linalg.SparseVector;
+import org.apache.spark.ml.linalg.Vector;
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Row;
 import org.apache.spark.util.LongAccumulator;
 
 import scala.Tuple2;
@@ -40,13 +45,17 @@ import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartition
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysml.runtime.controlprogram.parfor.util.PairWritableBlock;
+import org.apache.sysml.runtime.instructions.spark.data.DatasetObject;
+import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils;
 import org.apache.sysml.runtime.instructions.spark.utils.SparkUtils;
+import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils.DataFrameExtractIDFunction;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.MatrixDimensionsMetaData;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
+import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.utils.Statistics;
 
 /**
@@ -71,9 +80,8 @@ public class RemoteDPParForSpark
 		JavaSparkContext sc = sec.getSparkContext();
 		
 		//prepare input parameters
-		MatrixDimensionsMetaData md = (MatrixDimensionsMetaData) input.getMetaData();
-		MatrixCharacteristics mc = md.getMatrixCharacteristics();
-		InputInfo ii = InputInfo.BinaryBlockInputInfo;
+		MatrixObject mo = sec.getMatrixObject(matrixvar);
+		MatrixCharacteristics mc = mo.getMatrixCharacteristics();
 
 		//initialize accumulators for tasks/iterations, and inputs
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryBlockRDDHandleForVariable(matrixvar);
@@ -86,11 +94,10 @@ public class RemoteDPParForSpark
 		int numReducers2 = Math.max(numReducers, Math.min(numParts, numParts2));
 		
 		//core parfor datapartition-execute (w/ or w/o shuffle, depending on data characteristics)
-		DataPartitionerRemoteSparkMapper dpfun = new DataPartitionerRemoteSparkMapper(mc, ii, oi, dpf);
 		RemoteDPParForSparkWorker efun = new RemoteDPParForSparkWorker(program, clsMap, 
 				matrixvar, itervar, enableCPCaching, mc, tSparseCol, dpf, oi, aTasks, aIters);
-		JavaPairRDD<Long,Writable> tmp = in.flatMapToPair(dpfun);
-		List<Tuple2<Long,String>> out = (requiresGrouping(dpf, mc) ?
+		JavaPairRDD<Long,Writable> tmp = getPartitionedInput(sec, matrixvar, oi, dpf);
+		List<Tuple2<Long,String>> out = (requiresGrouping(dpf, mo) ?
 				tmp.groupByKey(numReducers2) : tmp.map(new PseudoGrouping()) )
 				   .mapPartitionsToPair(efun)  //execute parfor tasks, incl cleanup
 		           .collect();                 //get output handles 
@@ -113,10 +120,57 @@ public class RemoteDPParForSpark
 		return ret;
 	}
 	
+	private static JavaPairRDD<Long, Writable> getPartitionedInput(SparkExecutionContext sec, 
+			String matrixvar, OutputInfo oi, PDataPartitionFormat dpf) 
+		throws DMLRuntimeException 
+	{
+		InputInfo ii = InputInfo.BinaryBlockInputInfo;
+		MatrixObject mo = sec.getMatrixObject(matrixvar);
+		MatrixCharacteristics mc = mo.getMatrixCharacteristics();
+
+		//leverage existing dataset (w/o shuffling for reblock and data partitioning) 
+		//NOTE: there will always be a checkpoint rdd on top of the input rdd and the dataset
+		if( hasInputDataSet(dpf, mo) )
+		{
+			DatasetObject dsObj = (DatasetObject)mo.getRDDHandle()
+					.getLineageChilds().get(0).getLineageChilds().get(0);
+			Dataset<Row> in = dsObj.getDataset();
+			
+			//construct or reuse row ids
+			JavaPairRDD<Row, Long> prepinput = dsObj.containsID() ?
+					in.javaRDD().mapToPair(new DataFrameExtractIDFunction(
+						in.schema().fieldIndex(RDDConverterUtils.DF_ID_COLUMN))) :
+					in.javaRDD().zipWithIndex(); //zip row index
+			
+			//convert row to row in matrix block format 
+			return prepinput.mapToPair(new DataFrameToRowBinaryBlockFunction(
+					mc.getCols(), dsObj.isVectorBased(), dsObj.containsID()));
+		}
+		//default binary block input rdd
+		else
+		{
+			//get input rdd and data partitioning 
+			JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryBlockRDDHandleForVariable(matrixvar);
+			DataPartitionerRemoteSparkMapper dpfun = new DataPartitionerRemoteSparkMapper(mc, ii, oi, dpf);
+			return in.flatMapToPair(dpfun);
+		}
+	} 
+	
 	//determines if given input matrix requires grouping of partial partition slices
-	private static boolean requiresGrouping(PDataPartitionFormat dpf, MatrixCharacteristics mc) {
-		return (dpf == PDataPartitionFormat.ROW_WISE && mc.getNumColBlocks() > 1)
-			|| (dpf == PDataPartitionFormat.COLUMN_WISE && mc.getNumRowBlocks() > 1);
+	private static boolean requiresGrouping(PDataPartitionFormat dpf, MatrixObject mo) {
+		MatrixCharacteristics mc = mo.getMatrixCharacteristics();
+		return ((dpf == PDataPartitionFormat.ROW_WISE && mc.getNumColBlocks() > 1)
+				|| (dpf == PDataPartitionFormat.COLUMN_WISE && mc.getNumRowBlocks() > 1))
+			&& !hasInputDataSet(dpf, mo);
+	}
+	
+	//determines if given input matrix wraps input data set applicable to direct processing
+	private static boolean hasInputDataSet(PDataPartitionFormat dpf, MatrixObject mo) {
+		return (dpf == PDataPartitionFormat.ROW_WISE 
+			&& mo.getRDDHandle().isCheckpointRDD()
+			&& mo.getRDDHandle().getLineageChilds().size()==1
+			&& mo.getRDDHandle().getLineageChilds().get(0).getLineageChilds().size()==1
+			&& mo.getRDDHandle().getLineageChilds().get(0).getLineageChilds().get(0) instanceof DatasetObject);
 	}
 	
 	//function to map data partition output to parfor input signature without grouping
@@ -126,6 +180,58 @@ public class RemoteDPParForSpark
 		@Override
 		public Tuple2<Long, Iterable<Writable>> call(Tuple2<Long, Writable> arg0) throws Exception {
 			return new Tuple2<Long, Iterable<Writable>>(arg0._1(), Collections.singletonList(arg0._2()));
+		}
+	}
+	
+	//function to map dataset rows to rows in binary block representation
+	private static class DataFrameToRowBinaryBlockFunction implements PairFunction<Tuple2<Row,Long>,Long,Writable> 
+	{
+		private static final long serialVersionUID = -3162404379379461523L;
+		
+		private final long _clen;
+		private final boolean _containsID;
+		private final boolean _isVector;
+		
+		public DataFrameToRowBinaryBlockFunction(long clen, boolean containsID, boolean isVector) {
+			_clen = clen;
+			_containsID = containsID;
+			_isVector = isVector;
+		}
+		
+		@Override
+		public Tuple2<Long, Writable> call(Tuple2<Row, Long> arg0) 
+			throws Exception 
+		{
+			long rowix = arg0._2() + 1;
+			
+			//process row data
+			int off = _containsID ? 1: 0;
+			Object obj = _isVector ? arg0._1().get(off) : arg0._1();
+			boolean sparse = (obj instanceof SparseVector);
+			MatrixBlock mb = new MatrixBlock(1, (int)_clen, sparse);
+			
+			if( _isVector ) {
+				Vector vect = (Vector) obj;
+				if( vect instanceof SparseVector ) {
+					SparseVector svect = (SparseVector) vect;
+					int lnnz = svect.numNonzeros();
+					for( int k=0; k<lnnz; k++ )
+						mb.appendValue(0, svect.indices()[k], svect.values()[k]);
+				}
+				else { //dense
+					for( int j=0; j<_clen; j++ )
+						mb.appendValue(0, j, vect.apply(j));	
+				}
+			}
+			else { //row
+				Row row = (Row) obj;
+				for( int j=off; j<off+_clen; j++ )
+					mb.appendValue(0, j-off, UtilFunctions.getDouble(row.get(j)));
+			}
+			mb.examSparsity();
+			
+			return new Tuple2<Long, Writable>(rowix, 
+					new PairWritableBlock(new MatrixIndexes(1,1),mb));
 		}
 	}
 }

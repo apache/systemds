@@ -1151,7 +1151,7 @@ public class RDDConverterUtils
 		}
 	}
 
-	protected static class DataFrameExtractIDFunction implements PairFunction<Row, Row,Long> 
+	public static class DataFrameExtractIDFunction implements PairFunction<Row, Row,Long> 
 	{
 		private static final long serialVersionUID = 7438855241666363433L;
 

@@ -49,6 +49,7 @@ import org.apache.sysml.runtime.controlprogram.caching.CacheException;
 import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysml.runtime.instructions.spark.data.DatasetObject;
 import org.apache.sysml.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysml.runtime.instructions.spark.functions.ConvertStringToLongTextPair;
 import org.apache.sysml.runtime.instructions.spark.functions.CopyTextInputFunction;
@@ -328,7 +329,11 @@ public class MLContextConversionUtil {
 	{
 		matrixMetadata = (matrixMetadata!=null) ? matrixMetadata : new MatrixMetadata();
 		JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlock = dataFrameToMatrixBinaryBlocks(dataFrame, matrixMetadata);
-		return binaryBlocksToMatrixObject(variableName, binaryBlock, matrixMetadata, false);
+		MatrixObject mo = binaryBlocksToMatrixObject(variableName, binaryBlock, matrixMetadata, false);
+		//keep lineage of original dataset to allow bypassing binary block conversion if possible
+		mo.getRDDHandle().addLineageChild(new DatasetObject(dataFrame, variableName, 
+				isDataFrameWithIDColumn(matrixMetadata),isVectorBasedDataFrame(matrixMetadata)));
+		return mo;
 	}
 
 	/**

@@ -23,7 +23,6 @@ import org.apache.spark.api.java.JavaPairRDD;
 
 public class RDDObject extends LineageObject
 {
-
 	private JavaPairRDD<?,?> _rddHandle = null;
 	
 	//meta data on origin of given rdd handle
@@ -31,10 +30,9 @@ public class RDDObject extends LineageObject
 	private boolean _hdfsfile = false;     //created from hdfs file
 	private String  _hdfsFname = null;     //hdfs filename, if created from hdfs.  
 	
-	public RDDObject( JavaPairRDD<?,?> rddvar, String varName)
-	{
+	public RDDObject( JavaPairRDD<?,?> rddvar, String varName) {
+		super(varName);
 		_rddHandle = rddvar;
-		_varName = varName;
 	}
 
 	public JavaPairRDD<?,?> getRDD()

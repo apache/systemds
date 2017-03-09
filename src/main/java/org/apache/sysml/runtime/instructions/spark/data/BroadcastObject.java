@@ -29,10 +29,9 @@ public class BroadcastObject<T extends CacheBlock> extends LineageObject
 	//soft reference storage for graceful cleanup in case of memory pressure
 	protected SoftReference<PartitionedBroadcast<T>> _bcHandle = null;
 	
-	public BroadcastObject( PartitionedBroadcast<T> bvar, String varName )
-	{
+	public BroadcastObject( PartitionedBroadcast<T> bvar, String varName ) {
+		super(varName);
 		_bcHandle = new SoftReference<PartitionedBroadcast<T>>(bvar);
-		_varName = varName;
 	}
 
 	@SuppressWarnings("rawtypes")

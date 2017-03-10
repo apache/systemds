@@ -53,8 +53,12 @@ public class ConvolutionGPUInstruction extends GPUInstruction
 		_output = out;
 	}
 	
-	public ConvolutionGPUInstruction(CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String opcode, String istr) throws DMLRuntimeException {
-		this(in1, in2, out, opcode, istr);
+	public ConvolutionGPUInstruction(CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String opcode,
+			String istr, ArrayList<CPOperand> stride,
+			ArrayList<CPOperand> padding, ArrayList<CPOperand> input_shape,
+			ArrayList<CPOperand> filter_shape) 
+	{
+		this(in1, in2, out, opcode, istr, stride, padding,  input_shape, filter_shape);
 		_input3 = in3;
 	}
 	
@@ -134,7 +138,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction
 			filter_shape.add(new CPOperand(parts[14]));
 			filter_shape.add(new CPOperand(parts[15]));
 
-			return new ConvolutionGPUInstruction(in1, in2, out, opcode, str, stride,
+			return new ConvolutionGPUInstruction(in1, in2, in3, out, opcode, str, stride,
 					padding, input_shape, filter_shape);
 		}
 		else if (opcode.equalsIgnoreCase("maxpooling") || opcode.equalsIgnoreCase("relu_maxpooling")) {

@@ -335,7 +335,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		
 		if( _etypeForced != null ) 			
 		{
-			_etype = _etypeForced;
+			_etype = findGPUExecTypeByMemEstimate(_etypeForced);
 		}
 		else 
 		{	

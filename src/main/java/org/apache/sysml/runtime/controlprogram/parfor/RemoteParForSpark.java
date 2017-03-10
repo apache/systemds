@@ -71,10 +71,10 @@ public class RemoteParForSpark
 		//run remote_spark parfor job 
 		//(w/o lazy evaluation to fit existing parfor framework, e.g., result merge)
 		RemoteParForSparkWorker func = new RemoteParForSparkWorker(program, clsMap, cpCaching, aTasks, aIters);
-		List<Tuple2<Long,String>> out = 
-				sc.parallelize( tasks, numMappers )  //create rdd of parfor tasks
-		          .flatMapToPair( func )             //execute parfor tasks 
-		          .collect();                        //get output handles
+		List<Tuple2<Long,String>> out = sc
+				.parallelize(tasks, tasks.size()) //create rdd of parfor tasks
+				.flatMapToPair(func)              //execute parfor tasks 
+				.collect();                       //get output handles
 		
 		//de-serialize results
 		LocalVariableMap[] results = RemoteParForUtils.getResults(out, LOG);

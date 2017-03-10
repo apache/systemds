@@ -242,7 +242,7 @@ public class JCudaObject extends GPUObject {
 		 * @param handle	a valid {@link cusparseHandle}
 		 * @param C			Output matrix
 		 * @param rowsC			number of rows in C
-		 * @throws DMLRuntimeException
+		 * @throws DMLRuntimeException ?
 		 */
 		private static void step1AllocateRowPointers(cusparseHandle handle, CSRPointer C, int rowsC) throws DMLRuntimeException {
 			cusparseSetPointerMode(handle, cusparsePointerMode.CUSPARSE_POINTER_MODE_HOST);
@@ -261,7 +261,7 @@ public class JCudaObject extends GPUObject {
 		 * @param C			Output Sparse Matrix C on GPU
 		 * @param m			Rows in C
 		 * @param n			Columns in C
-		 * @throws DMLRuntimeException
+		 * @throws DMLRuntimeException ?
 		 */
 		private static void step2GatherNNZGeam(cusparseHandle handle, CSRPointer A, CSRPointer B, CSRPointer C, int m, int n) throws DMLRuntimeException {
 			int[] CnnzArray = { -1 };
@@ -293,7 +293,7 @@ public class JCudaObject extends GPUObject {
 		 * @param m			Number of rows of sparse matrix op ( A ) and C
 		 * @param n			Number of columns of sparse matrix op ( B ) and C
 		 * @param k			Number of columns/rows of sparse matrix op ( A ) / op ( B )
-		 * @throws DMLRuntimeException
+		 * @throws DMLRuntimeException ?
 		 */
 		private static void step2GatherNNZGemm(cusparseHandle handle, CSRPointer A, int transA, CSRPointer B, int transB, CSRPointer C, int m, int n, int k) throws DMLRuntimeException {
 			int[] CnnzArray = { -1 };
@@ -321,7 +321,7 @@ public class JCudaObject extends GPUObject {
 		 * 
 		 * @param handle	a valid {@link cusparseHandle}
 		 * @param C			Output sparse matrix on GPU
-		 * @throws DMLRuntimeException
+		 * @throws DMLRuntimeException ?
 		 */
 		private static void step3AllocateValNInd(cusparseHandle handle, CSRPointer C) throws DMLRuntimeException {
 			// Increment cudaCount by one when all three arrays of CSR sparse array are allocated
@@ -1074,7 +1074,7 @@ public class JCudaObject extends GPUObject {
 	 * Convert sparse to dense (Performs transpose, use sparseToColumnMajorDense if the kernel can deal with column major format)
 	 * Also records per instruction invokation of sparseToDense.
 	 * @param instructionName	Name of the instruction for which statistics are recorded in {@link GPUStatistics}
-	 * @throws DMLRuntimeException
+	 * @throws DMLRuntimeException ?
 	 */
 	public void sparseToDense(String instructionName) throws DMLRuntimeException {
 		long start = System.nanoTime();

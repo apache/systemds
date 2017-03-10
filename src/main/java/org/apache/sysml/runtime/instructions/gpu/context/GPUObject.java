@@ -58,7 +58,7 @@ public abstract class GPUObject
 	/**
 	 * Signal intent that a matrix block will be read (as input) on the GPU
 	 * @return	true if a host memory to device memory transfer happened
-	 * @throws DMLRuntimeException
+	 * @throws DMLRuntimeException ?
 	 */
 	public abstract boolean acquireDeviceRead() throws DMLRuntimeException;
 	/**
@@ -84,7 +84,7 @@ public abstract class GPUObject
 	/**
 	 * Signal intent that a block needs to be read on the host
 	 * @return true if copied from device to host
-	 * @throws CacheException
+	 * @throws CacheException ?
 	 */
 	public abstract boolean acquireHostRead() throws CacheException;
 

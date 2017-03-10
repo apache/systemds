@@ -35,6 +35,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction
 {
 	private CPOperand _input1; 
 	private CPOperand _input2; 
+	private CPOperand _input3; 
 	private CPOperand _output; 
 	private ArrayList<CPOperand> _input_shape;
 	private ArrayList<CPOperand> _filter_shape;
@@ -50,6 +51,11 @@ public class ConvolutionGPUInstruction extends GPUInstruction
 		_input2 = in2;
 		_gputype = GPUINSTRUCTION_TYPE.Convolution;
 		_output = out;
+	}
+	
+	public ConvolutionGPUInstruction(CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String opcode, String istr) throws DMLRuntimeException {
+		this(in1, in2, out, opcode, istr);
+		_input3 = in3;
 	}
 	
 	public ConvolutionGPUInstruction(CPOperand in1, CPOperand in2, CPOperand out, String opcode,
@@ -104,7 +110,34 @@ public class ConvolutionGPUInstruction extends GPUInstruction
 			return new ConvolutionGPUInstruction(in1, in2, out, opcode, str, stride,
 					padding, input_shape, filter_shape);
 		}
-		else if (opcode.equalsIgnoreCase("maxpooling")) {
+		else if (opcode.equalsIgnoreCase("conv2d_bias_add")) {
+			InstructionUtils.checkNumFields(parts, 16);
+			CPOperand in1 = new CPOperand(parts[1]);
+			CPOperand in2 = new CPOperand(parts[2]);
+			CPOperand in3 = new CPOperand(parts[3]);
+			CPOperand out = new CPOperand(parts[16]);
+		
+			ArrayList<CPOperand> stride = new ArrayList<CPOperand>();
+			ArrayList<CPOperand> padding = new ArrayList<CPOperand>();
+			ArrayList<CPOperand> input_shape = new ArrayList<CPOperand>();
+			ArrayList<CPOperand> filter_shape = new ArrayList<CPOperand>();
+			stride.add(new CPOperand(parts[4]));
+			stride.add(new CPOperand(parts[5]));
+			padding.add(new CPOperand(parts[6]));
+			padding.add(new CPOperand(parts[7]));
+			input_shape.add(new CPOperand(parts[8]));
+			input_shape.add(new CPOperand(parts[9]));
+			input_shape.add(new CPOperand(parts[10]));
+			input_shape.add(new CPOperand(parts[11]));
+			filter_shape.add(new CPOperand(parts[12]));
+			filter_shape.add(new CPOperand(parts[13]));
+			filter_shape.add(new CPOperand(parts[14]));
+			filter_shape.add(new CPOperand(parts[15]));
+
+			return new ConvolutionGPUInstruction(in1, in2, out, opcode, str, stride,
+					padding, input_shape, filter_shape);
+		}
+		else if (opcode.equalsIgnoreCase("maxpooling") || opcode.equalsIgnoreCase("relu_maxpooling")) {
 			InstructionUtils.checkNumFields(parts, 14);
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand out = new CPOperand(parts[14]);
@@ -216,6 +249,21 @@ public class ConvolutionGPUInstruction extends GPUInstruction
 			LibMatrixCUDA.conv2d(getExtendedOpcode(), image, filter, out, N, C, H, W,
 					K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
 		}
+		else if (instOpcode.equalsIgnoreCase("conv2d_bias_add")) {
+			MatrixObject image = getMatrixInputForGPUInstruction(ec, _input1.getName());
+			MatrixObject bias = getMatrixInputForGPUInstruction(ec, _input2.getName());
+			MatrixObject filter = getMatrixInputForGPUInstruction(ec, _input3.getName());
+
+			if(image.getNumRows() != N || image.getNumColumns() != C*H*W) 
+				throw new DMLRuntimeException("Incorrect dimensions for image in conv2d");
+			if(filter.getNumRows() != K || filter.getNumColumns() != C*R*S) 
+				throw new DMLRuntimeException("Incorrect dimensions for filter in conv2d");
+			
+			ec.setMetaData(_output.getName(), N, K * P * Q);
+			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, _output.getName());
+			LibMatrixCUDA.conv2dBiasAdd(getExtendedOpcode(), image, bias, filter, out, N, C, H, W,
+						K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
+		}
 		else if (instOpcode.equalsIgnoreCase("conv2d_backward_filter")) {
 			MatrixObject image = getMatrixInputForGPUInstruction(ec, _input1.getName());
 			MatrixObject dout = getMatrixInputForGPUInstruction(ec, _input2.getName());
@@ -248,7 +296,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction
 			LibMatrixCUDA.conv2dBackwardData(getExtendedOpcode(), filter, dout, out, N, C, H, W,
 					K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
 		}
-		else if (instOpcode.equalsIgnoreCase("maxpooling")) {
+		else if (instOpcode.equalsIgnoreCase("maxpooling") || instOpcode.equalsIgnoreCase("relu_maxpooling")) {
 			MatrixObject image = getMatrixInputForGPUInstruction(ec, _input1.getName());
 
 			if(image.getNumRows() != N || image.getNumColumns() != C*H*W) 
@@ -257,8 +305,12 @@ public class ConvolutionGPUInstruction extends GPUInstruction
 			
 			ec.setMetaData(_output.getName(), N, C * P * Q);
 			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, _output.getName());
-			LibMatrixCUDA.maxpooling(getExtendedOpcode(), image, out, N, C, H, W,
+			if(instOpcode.equalsIgnoreCase("maxpooling"))
+				LibMatrixCUDA.maxpooling(getExtendedOpcode(), image, out, N, C, H, W,
 					K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
+			else
+				LibMatrixCUDA.reluMaxpooling(getExtendedOpcode(), image, out, N, C, H, W,
+						K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
 		}
 		else if (instOpcode.equalsIgnoreCase("maxpooling_backward")) {
 			MatrixObject image = getMatrixInputForGPUInstruction(ec, _input1.getName());

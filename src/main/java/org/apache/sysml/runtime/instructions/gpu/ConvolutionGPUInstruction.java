@@ -337,7 +337,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction
 		
 		// release inputs/outputs
 		ec.releaseMatrixInputForGPUInstruction(_input1.getName());
-		if (!instOpcode.equalsIgnoreCase("maxpooling"))
+		if (!( instOpcode.equalsIgnoreCase("maxpooling") || instOpcode.equalsIgnoreCase("relu_maxpooling")) )
 			ec.releaseMatrixInputForGPUInstruction(_input2.getName());
 		ec.releaseMatrixOutputForGPUInstruction(_output.getName());
 	}

@@ -47,6 +47,7 @@ import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.controlprogram.parfor.util.PairWritableBlock;
 import org.apache.sysml.runtime.instructions.spark.data.DatasetObject;
+import org.apache.sysml.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils;
 import org.apache.sysml.runtime.instructions.spark.utils.SparkUtils;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils.DataFrameExtractIDFunction;
@@ -120,6 +121,7 @@ public class RemoteDPParForSpark
 		return ret;
 	}
 	
+	@SuppressWarnings("unchecked")
 	private static JavaPairRDD<Long, Writable> getPartitionedInput(SparkExecutionContext sec, 
 			String matrixvar, OutputInfo oi, PDataPartitionFormat dpf) 
 		throws DMLRuntimeException 
@@ -146,11 +148,25 @@ public class RemoteDPParForSpark
 			return prepinput.mapToPair(new DataFrameToRowBinaryBlockFunction(
 					mc.getCols(), dsObj.isVectorBased(), dsObj.containsID()));
 		}
-		//default binary block input rdd
-		else
+		//binary block input rdd without grouping
+		else if( !requiresGrouping(dpf, mo) ) 
 		{
 			//get input rdd and data partitioning 
 			JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryBlockRDDHandleForVariable(matrixvar);
+			DataPartitionerRemoteSparkMapper dpfun = new DataPartitionerRemoteSparkMapper(mc, ii, oi, dpf);
+			return in.flatMapToPair(dpfun);
+		}
+		//default binary block input rdd with grouping
+		else
+		{
+			//get input rdd, avoid unnecessary caching if input is checkpoint and not cached yet
+			//to reduce memory pressure for shuffle and subsequent 
+			JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryBlockRDDHandleForVariable(matrixvar);
+			if( mo.getRDDHandle().isCheckpointRDD() && !sec.isRDDCached(in.id()) )
+				in = (JavaPairRDD<MatrixIndexes,MatrixBlock>)((RDDObject)
+						mo.getRDDHandle().getLineageChilds().get(0)).getRDD();
+			
+			//data partitioning of input rdd 
 			DataPartitionerRemoteSparkMapper dpfun = new DataPartitionerRemoteSparkMapper(mc, ii, oi, dpf);
 			return in.flatMapToPair(dpfun);
 		}

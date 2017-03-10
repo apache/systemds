@@ -1244,7 +1244,7 @@ public class SparkExecutionContext extends ExecutionContext
 		return jsc.sc().getPersistentRDDs().contains(rddID);
 	}
 
-	private boolean isRDDCached( int rddID ) {
+	public boolean isRDDCached( int rddID ) {
 		//check that rdd is marked for caching
 		JavaSparkContext jsc = getSparkContext();
 		if( !jsc.sc().getPersistentRDDs().contains(rddID) ) {

@@ -1499,8 +1499,8 @@ public class OptimizerRuleBased extends Optimizer
 		// (this also implies that the body is CP only)
 		
 		// try to merge MR data partitioning and MR exec 
-		if( (pn.getExecType()==ExecType.MR || pn.getExecType()==ExecType.SPARK) //MR/SP EXEC and CP body
-			&& M < _rm2 //fits into remote memory of reducers	
+		if( (pn.getExecType()==ExecType.MR && M < _rm2 //fits into remote memory of reducers
+			|| pn.getExecType()==ExecType.SPARK) //MR/SP EXEC and CP body
 			&& partitioner!=null && partitioner.equals(REMOTE_DP.toString()) //MR/SP partitioning
 			&& partitionedMatrices.size()==1 ) //only one partitioned matrix
 		{

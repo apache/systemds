@@ -695,6 +695,7 @@ public class LibMatrixCUDA {
 		Pointer y = ((JCudaObject)image.getGPUObject()).jcudaDenseMatrixPtr;
 		performReLU(instName, x, y, N, C, H, W);
 		performMaxpooling(instName, y, outputBlock, N, C, H, W, K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
+		((JCudaObject)temp.getGPUObject()).clearData(); // deallocate the temporary data
 	}
 	
 	private static void performMaxpooling(String instName, Pointer x,

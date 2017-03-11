@@ -28,6 +28,8 @@ import org.apache.sysml.utils.LRUCacheMap;
 
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.LinkedList;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -135,11 +137,16 @@ public abstract class GPUObject
 
 			// Release the set of free blocks maintained in a JCudaObject.freeCUDASpaceMap
 			// to free up space
-			LRUCacheMap<Long, Pointer> lruCacheMap = JCudaObject.freeCUDASpaceMap;
+			LRUCacheMap<Long, LinkedList<Pointer>> lruCacheMap = JCudaObject.freeCUDASpaceMap;
 			while (lruCacheMap.size() > 0) {
 				if (GPUSize <= getAvailableMemory())
 					break;
-				Pointer toFree = lruCacheMap.removeAndGetLRUEntry().getValue();
+				Map.Entry<Long, LinkedList<Pointer>> toFreeListPair = lruCacheMap.removeAndGetLRUEntry();
+				LinkedList<Pointer> toFreeList = toFreeListPair.getValue();
+				Long size = toFreeListPair.getKey();
+				Pointer toFree = toFreeList.pop();
+				if (toFreeList.isEmpty())
+					lruCacheMap.remove(size);
 				JCudaObject.cudaFreeHelper(instructionName, toFree, true);
 			}
 

@@ -22,24 +22,45 @@ import jcuda.Pointer;
 import jcuda.jcublas.JCublas2;
 import jcuda.jcublas.cublasHandle;
 import jcuda.jcusparse.JCusparse;
-import jcuda.jcusparse.*;
+import jcuda.jcusparse.cusparseDirection;
+import jcuda.jcusparse.cusparseHandle;
+import jcuda.jcusparse.cusparseMatDescr;
+import jcuda.jcusparse.cusparsePointerMode;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
-import org.apache.sysml.runtime.matrix.data.*;
+import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.SparseBlock;
+import org.apache.sysml.runtime.matrix.data.SparseBlockCOO;
+import org.apache.sysml.runtime.matrix.data.SparseBlockCSR;
+import org.apache.sysml.runtime.matrix.data.SparseBlockMCSR;
 import org.apache.sysml.utils.GPUStatistics;
 import org.apache.sysml.utils.LRUCacheMap;
 
 import java.util.HashMap;
+import java.util.LinkedList;
 
 import static jcuda.jcublas.cublasOperation.CUBLAS_OP_T;
-import static jcuda.jcusparse.JCusparse.*;
+import static jcuda.jcusparse.JCusparse.cusparseCreateMatDescr;
+import static jcuda.jcusparse.JCusparse.cusparseDcsr2dense;
+import static jcuda.jcusparse.JCusparse.cusparseDdense2csr;
+import static jcuda.jcusparse.JCusparse.cusparseDnnz;
+import static jcuda.jcusparse.JCusparse.cusparseSetMatIndexBase;
+import static jcuda.jcusparse.JCusparse.cusparseSetMatType;
+import static jcuda.jcusparse.JCusparse.cusparseSetPointerMode;
+import static jcuda.jcusparse.JCusparse.cusparseXcsrgeamNnz;
+import static jcuda.jcusparse.JCusparse.cusparseXcsrgemmNnz;
 import static jcuda.jcusparse.cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO;
 import static jcuda.jcusparse.cusparseMatrixType.CUSPARSE_MATRIX_TYPE_GENERAL;
-import static jcuda.runtime.JCuda.*;
+import static jcuda.runtime.JCuda.cudaDeviceSynchronize;
+import static jcuda.runtime.JCuda.cudaFree;
+import static jcuda.runtime.JCuda.cudaMalloc;
+import static jcuda.runtime.JCuda.cudaMemcpy;
+import static jcuda.runtime.JCuda.cudaMemset;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice;
 
@@ -1107,7 +1128,7 @@ public class JCudaObject extends GPUObject {
 
 
 	/** Map of free blocks allocate on GPU. maps size_of_block -> pointer on GPU */
-	static LRUCacheMap<Long, Pointer> freeCUDASpaceMap = new LRUCacheMap<Long, Pointer>();
+	static LRUCacheMap<Long, LinkedList<Pointer>> freeCUDASpaceMap = new LRUCacheMap<Long, LinkedList<Pointer>>();
 	/** To record size of allocated blocks */
 	static HashMap<Pointer, Long> cudaBlockSizeMap = new HashMap<Pointer, Long>();
 
@@ -1147,8 +1168,10 @@ public class JCudaObject extends GPUObject {
 		synchronized (JCudaContext.syncObj) {
 			Pointer A;
 			if (freeCUDASpaceMap.containsKey(size)) {
-				A = freeCUDASpaceMap.get(size);
-				freeCUDASpaceMap.remove(size);
+				LinkedList<Pointer> freeList = freeCUDASpaceMap.get(size);
+				A = freeList.pop();
+				if (freeList.isEmpty())
+					freeCUDASpaceMap.remove(size);
 			} else {
 				long t0 = System.nanoTime();
 				ensureFreeSpace(instructionName, size);
@@ -1211,7 +1234,12 @@ public class JCudaObject extends GPUObject {
 			cudaBlockSizeMap.remove(toFree);
 			if (instructionName != null && GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instructionName, GPUInstruction.MISC_TIMER_CUDA_FREE, System.nanoTime() - t0);
 		} else {
-			freeCUDASpaceMap.put(size, toFree);
+			LinkedList<Pointer> freeList = freeCUDASpaceMap.get(size);
+			if (freeList == null) {
+				freeList = new LinkedList<Pointer>();
+				freeCUDASpaceMap.put(size, freeList);
+			}
+			freeList.add(toFree);
 		}
 	}
 

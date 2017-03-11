@@ -129,13 +129,12 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 			//maintain accumulators
 			_aTasks.add( 1 );
 			_aIters.add( (int)(getExecutedIterations()-numIter) );
-			
-			//write output if required (matrix indexed write) 
-			//note: this copy is necessary for environments without spark libraries
-			ArrayList<String> tmp = RemoteParForUtils.exportResultVariables( _workerID, _ec.getVariables(), _resultVars );
-			for( String val : tmp )
-				ret.add(new Tuple2<Long,String>(_workerID, val));
-		}	
+		}
+		
+		//write output if required (matrix indexed write) 
+		ArrayList<String> tmp = RemoteParForUtils.exportResultVariables( _workerID, _ec.getVariables(), _resultVars );
+		for( String val : tmp )
+			ret.add(new Tuple2<Long,String>(_workerID, val));
 		
 		return ret.iterator();
 	}

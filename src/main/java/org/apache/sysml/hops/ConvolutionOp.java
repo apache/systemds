@@ -179,11 +179,11 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		ArrayList<Hop> inputs1 = inputs;
 		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 		OperationTypes lopOp = HopsConv2Lops.get(op);
-		if(op == ConvOp.MAX_POOLING && (et == ExecType.CP || et == ExecType.SPARK) && isInputReLU(inputs.get(0))) {
+		if(op == ConvOp.MAX_POOLING && isInputReLU(inputs.get(0))) {
 			in = inputs.get(0).getInput().get(0).constructLops();
 			lopOp = OperationTypes.RELU_MAX_POOLING;
 		}
-		else if(op == ConvOp.BIAS_ADD && (et == ExecType.CP || et == ExecType.SPARK) && isInputConv2d(inputs.get(0))) {
+		else if(op == ConvOp.BIAS_ADD && isInputConv2d(inputs.get(0))) {
 			lopOp = OperationTypes.DIRECT_CONV2D_BIAS_ADD;
 			
 			// the first lop is image 
@@ -320,7 +320,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		
 		if( _etypeForced != null ) 			
 		{
-			_etype = _etypeForced;
+			_etype = findGPUExecTypeByMemEstimate(_etypeForced);
 		}
 		else 
 		{	

@@ -206,6 +206,13 @@ public class LibMatrixCUDA {
 
 	private static int CONVOLUTION_PREFERENCE = cudnnConvolutionFwdPreference.CUDNN_CONVOLUTION_FWD_NO_WORKSPACE;
 
+	public static void conv2dBiasAdd(String instName, MatrixObject image, MatrixObject bias, MatrixObject filter, MatrixObject outputBlock, int N, int C, int H, int W,
+			int K, int R, int S, int pad_h, int pad_w, int stride_h, int stride_w, int P, int Q)
+					throws DMLRuntimeException {
+		conv2d(instName, image, filter, outputBlock, N, C, H, W, K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
+		biasAdd(instName, outputBlock, bias, outputBlock);
+	}
+	
 	public static void conv2d(String instName, MatrixObject image, MatrixObject filter, MatrixObject outputBlock, int N, int C, int H, int W,
 														int K, int R, int S, int pad_h, int pad_w, int stride_h, int stride_w, int P, int Q)
 					throws DMLRuntimeException {
@@ -623,7 +630,7 @@ public class LibMatrixCUDA {
 			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_CUDNN_CLEANUP, System.nanoTime() - t3);
 		}
 	}
-
+	
 	/**
 	 * performs maxpooling on GPU by exploiting cudnnPoolingForward(...)
 	 * @param instName the invoking instruction's name for record {@link Statistics}.
@@ -645,12 +652,57 @@ public class LibMatrixCUDA {
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void maxpooling(String instName, MatrixObject image,
-																MatrixObject outputBlock, int N, int C, int H, int W, int K, int R,
-																int S, int pad_h, int pad_w, int stride_h, int stride_w, int P,
-																int Q) throws DMLRuntimeException {
+			MatrixObject outputBlock, int N, int C, int H, int W, int K, int R,
+			int S, int pad_h, int pad_w, int stride_h, int stride_w, int P,
+			int Q) throws DMLRuntimeException {
 		if(isInSparseFormat(image)) {
 			((JCudaObject)image.getGPUObject()).sparseToDense(instName);
 		}
+		Pointer x = ((JCudaObject)image.getGPUObject()).jcudaDenseMatrixPtr;
+		performMaxpooling(instName, x, outputBlock, N, C, H, W, K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
+	}
+	
+	/**
+	 * performs relu followed by maxpooling on GPU by exploiting cudnnPoolingForward(...)
+	 * @param instName the invoking instruction's name for record {@link Statistics}.
+	 * @param image image as matrix object
+	 * @param outputBlock output matrix
+	 * @param N				batch size
+	 * @param C				number of channels
+	 * @param H				height of image
+	 * @param W				width of image
+	 * @param K				number of filters
+	 * @param R				height of filter
+	 * @param S				width of filter
+	 * @param pad_h			vertical padding
+	 * @param pad_w			horizontal padding
+	 * @param stride_h		horizontal stride
+	 * @param stride_w		vertical stride
+	 * @param P				(H - R + 1 + 2*pad_h)/stride_h
+	 * @param Q				(W - S + 1 + 2*pad_w)/stride_w
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
+	 */
+	public static void reluMaxpooling(String instName, MatrixObject image,
+			MatrixObject outputBlock, int N, int C, int H, int W, int K, int R,
+			int S, int pad_h, int pad_w, int stride_h, int stride_w, int P,
+			int Q) throws DMLRuntimeException {
+		if(isInSparseFormat(image)) {
+			((JCudaObject)image.getGPUObject()).sparseToDense(instName);
+		}
+		Pointer x = ((JCudaObject)image.getGPUObject()).jcudaDenseMatrixPtr;
+		MatrixObject temp = new MatrixObject(image);
+		temp.getGPUObject().acquireDeviceModifyDense();
+		Pointer y = ((JCudaObject)image.getGPUObject()).jcudaDenseMatrixPtr;
+		performReLU(instName, x, y, N, C, H, W);
+		performMaxpooling(instName, y, outputBlock, N, C, H, W, K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
+		((JCudaObject)temp.getGPUObject()).clearData(); // deallocate the temporary data
+	}
+	
+	private static void performMaxpooling(String instName, Pointer x,
+												MatrixObject outputBlock, int N, int C, int H, int W, int K, int R,
+												int S, int pad_h, int pad_w, int stride_h, int stride_w, int P,
+												int Q) throws DMLRuntimeException {
+		
 		Pointer alpha = null;
 		Pointer beta = null;
 		cudnnTensorDescriptor xDesc = null;
@@ -666,7 +718,6 @@ public class LibMatrixCUDA {
 			poolingDesc = allocatePoolingDescriptor(R, S, pad_h, pad_w, stride_h, stride_w);
 
 			// Allocate data
-			Pointer x = ((JCudaObject)image.getGPUObject()).jcudaDenseMatrixPtr;
 			Pointer y = ((JCudaObject)outputBlock.getGPUObject()).jcudaDenseMatrixPtr;
 
 			alpha = pointerTo(1.0);
@@ -807,62 +858,29 @@ public class LibMatrixCUDA {
 			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_CUDNN_CLEANUP, System.nanoTime() - t4);
 		}
 	}
-
-
-	/**
-	 * Performs the relu operation on the GPU.
-	 * @param ec currently active {@link ExecutionContext}
-	 * @param instName the invoking instruction's name for record {@link Statistics}.
-	 * @param in input matrix
-	 * @param outputName	name of the output matrix
-	 * @throws DMLRuntimeException	if an error occurs
-	 */
-	public static void relu(ExecutionContext ec, String instName, MatrixObject in, String outputName) throws DMLRuntimeException {
-		if(isInSparseFormat(in)) {
-			// TODO: FIXME: Implement sparse relu kernel
-			((JCudaObject)in.getGPUObject()).sparseToDense(instName);
-		}
-
+	
+	private static void performCuDNNReLU(String instName, Pointer srcData, Pointer dstData, long N, long C, long H, long W) {
 		cudnnTensorDescriptor srcTensorDesc = null;
 		cudnnTensorDescriptor dstTensorDesc = null;
 		Pointer alpha = null;
 		Pointer beta = null;
-
+		long t0=0;
 		try {
 			alpha = pointerTo(1.0f);
 			beta = pointerTo(0.0f);
-			long N = in.getNumRows();
-			long H = in.getNumColumns();
-			long W = 1;
-			Pointer srcData = ((JCudaObject)in.getGPUObject()).jcudaDenseMatrixPtr;
-
-			MatrixObject output = ec.getMatrixObject(outputName);
-			getDenseMatrixOutputForGPUInstruction(ec, instName, outputName);	// Allocated the dense output matrix
-			Pointer dstData = ((JCudaObject)output.getGPUObject()).jcudaDenseMatrixPtr;
-
-			long t0=0;
-			if(N*H*W >= numDoublesIn2GB) {
-				// Invokes relu(double* A,  double* ret, int rlen, int clen)
-				if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
-				kernels.launchKernel("relu",
-								ExecutionConfig.getConfigForSimpleMatrixOperations((int)N, (int) (H*W)),
-								srcData, dstData, (int)N, (int) H*W);
-				if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_RELU_KERNEL, System.nanoTime() - t0);
-			}
-			else {
-				// Allocate descriptors
-				srcTensorDesc = allocateTensorDescriptor((int)N, 1, (int)H, (int)W);
-				dstTensorDesc = allocateTensorDescriptor((int)N, 1, (int)H, (int)W);
-				cudnnActivationDescriptor activationDescriptor = new cudnnActivationDescriptor();
-				cudnnCreateActivationDescriptor(activationDescriptor);
-				double dummy = -1;
-				cudnnSetActivationDescriptor(activationDescriptor, CUDNN_ACTIVATION_RELU, CUDNN_PROPAGATE_NAN, dummy);
-				if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
-				cudnnActivationForward(cudnnHandle, activationDescriptor,
-								alpha, srcTensorDesc, srcData,
-								beta, dstTensorDesc, dstData);
-				if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_ACTIVATION_FORWARD_LIB, System.nanoTime() - t0);
-			}
+			
+			// Allocate descriptors
+			srcTensorDesc = allocateTensorDescriptor((int)N, (int)C, (int)H, (int)W);
+			dstTensorDesc = allocateTensorDescriptor((int)N, (int)C, (int)H, (int)W);
+			cudnnActivationDescriptor activationDescriptor = new cudnnActivationDescriptor();
+			cudnnCreateActivationDescriptor(activationDescriptor);
+			double dummy = -1;
+			cudnnSetActivationDescriptor(activationDescriptor, CUDNN_ACTIVATION_RELU, CUDNN_PROPAGATE_NAN, dummy);
+			if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
+			cudnnActivationForward(cudnnHandle, activationDescriptor,
+							alpha, srcTensorDesc, srcData,
+							beta, dstTensorDesc, dstData);
+			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_ACTIVATION_FORWARD_LIB, System.nanoTime() - t0);
 		}
 		finally {
 			long t1=0;
@@ -879,6 +897,47 @@ public class LibMatrixCUDA {
 
 			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_CUDNN_CLEANUP, System.nanoTime() - t1);
 		}
+	}
+	
+	private static void performReLU(String instName, Pointer srcData, Pointer dstData, long N, long C, long H, long W) throws DMLRuntimeException {
+		long t0=0;
+		if(N*H*W >= numDoublesIn2GB) {
+			// Invokes relu(double* A,  double* ret, int rlen, int clen)
+			if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
+			kernels.launchKernel("relu",
+							ExecutionConfig.getConfigForSimpleMatrixOperations((int)N, (int) (H*W)),
+							srcData, dstData, (int)N, (int) H*W);
+			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_RELU_KERNEL, System.nanoTime() - t0);
+		}
+		else {
+			performCuDNNReLU(instName, srcData, dstData, N, 1, H, W);
+		}
+	}
+
+
+	/**
+	 * Performs the relu operation on the GPU.
+	 * @param ec currently active {@link ExecutionContext}
+	 * @param instName the invoking instruction's name for record {@link Statistics}.
+	 * @param in input matrix
+	 * @param outputName	name of the output matrix
+	 * @throws DMLRuntimeException	if an error occurs
+	 */
+	public static void relu(ExecutionContext ec, String instName, MatrixObject in, String outputName) throws DMLRuntimeException {
+		if(isInSparseFormat(in)) {
+			// TODO: FIXME: Implement sparse relu kernel
+			((JCudaObject)in.getGPUObject()).sparseToDense(instName);
+		}
+
+		long N = in.getNumRows();
+		long H = in.getNumColumns();
+		long W = 1;
+		Pointer srcData = ((JCudaObject)in.getGPUObject()).jcudaDenseMatrixPtr;
+
+		MatrixObject output = ec.getMatrixObject(outputName);
+		getDenseMatrixOutputForGPUInstruction(ec, instName, outputName);	// Allocated the dense output matrix
+		Pointer dstData = ((JCudaObject)output.getGPUObject()).jcudaDenseMatrixPtr;
+		performReLU(instName, srcData, dstData, N, 1, H, W);
 	}
 
 

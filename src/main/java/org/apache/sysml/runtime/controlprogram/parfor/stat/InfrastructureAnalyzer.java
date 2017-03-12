@@ -26,6 +26,8 @@ import org.apache.hadoop.mapred.ClusterStatus;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
@@ -243,8 +245,10 @@ public class InfrastructureAnalyzer
 	 */
 	public static int getCkMaxMR() 
 	{
-		//default value (if not specified)
-		return getRemoteParallelMapTasks();
+		if( OptimizerUtils.isSparkExecutionMode() )
+			return SparkExecutionContext.getDefaultParallelism(true);
+		else
+			return getRemoteParallelMapTasks();
 	}
 
 	/**

@@ -361,38 +361,42 @@ public class OptimizerRuleBased extends Optimizer
 		_lk      = InfrastructureAnalyzer.getLocalParallelism();
 		_lkmaxCP = (int) Math.ceil( PAR_K_FACTOR * _lk ); 
 		_lkmaxMR = (int) Math.ceil( PAR_K_MR_FACTOR * _lk );
-		_rnk     = InfrastructureAnalyzer.getRemoteParallelNodes();  
-		_rk      = InfrastructureAnalyzer.getRemoteParallelMapTasks();
-		_rk2     = InfrastructureAnalyzer.getRemoteParallelReduceTasks();
-		_rkmax   = (int) Math.ceil( PAR_K_FACTOR * _rk ); 
-		_rkmax2  = (int) Math.ceil( PAR_K_FACTOR * _rk2 ); 
 		_lm      = OptimizerUtils.getLocalMemBudget();
-		_rm      = OptimizerUtils.getRemoteMemBudgetMap(false); 	
-		_rm2     = OptimizerUtils.getRemoteMemBudgetReduce(); 	
 		
-		//correction of max parallelism if yarn enabled because yarn
-		//does not have the notion of map/reduce slots and hence returns 
-		//small constants of map=10*nodes, reduce=2*nodes
-		//(not doing this correction would loose available degree of parallelism)
-		if( InfrastructureAnalyzer.isYarnEnabled() ) {
-			long tmprk = YarnClusterAnalyzer.getNumCores();
-			_rk = (int) Math.max( _rk, tmprk );
-			_rk2 = (int) Math.max( _rk2, tmprk/2 );
-		}
-		
-		//correction of max parallelism and memory if spark runtime enabled because
-		//spark limits the available parallelism by its own executor configuration
+		//spark-specific cluster characteristics
 		if( OptimizerUtils.isSparkExecutionMode() ) {
-			_rk = (int) SparkExecutionContext.getDefaultParallelism(true);
+			//we get all required cluster characteristics from spark's configuration
+			//to avoid invoking yarns cluster status
+			_rnk = SparkExecutionContext.getNumExecutors(); 
+			_rk  = (int) SparkExecutionContext.getDefaultParallelism(true);
 			_rk2 = _rk; //equal map/reduce unless we find counter-examples 
-			_rkmax   = (int) Math.ceil( PAR_K_FACTOR * _rk ); 
-			_rkmax2  = (int) Math.ceil( PAR_K_FACTOR * _rk2 ); 
 			int cores = SparkExecutionContext.getDefaultParallelism(true)
 					/ SparkExecutionContext.getNumExecutors();
 			int ccores = (int) Math.min(cores, _N);
-			_rm = SparkExecutionContext.getBroadcastMemoryBudget() / ccores;
+			_rm  = SparkExecutionContext.getBroadcastMemoryBudget() / ccores;
 			_rm2 = SparkExecutionContext.getBroadcastMemoryBudget() / ccores;
 		}
+		//mr/yarn-specific cluster characteristics
+		else {
+			_rnk = InfrastructureAnalyzer.getRemoteParallelNodes();  
+			_rk  = InfrastructureAnalyzer.getRemoteParallelMapTasks();
+			_rk2 = InfrastructureAnalyzer.getRemoteParallelReduceTasks();
+			_rm  = OptimizerUtils.getRemoteMemBudgetMap(false); 	
+			_rm2 = OptimizerUtils.getRemoteMemBudgetReduce(); 	
+		
+			//correction of max parallelism if yarn enabled because yarn
+			//does not have the notion of map/reduce slots and hence returns 
+			//small constants of map=10*nodes, reduce=2*nodes
+			//(not doing this correction would loose available degree of parallelism)
+			if( InfrastructureAnalyzer.isYarnEnabled() ) {
+				long tmprk = YarnClusterAnalyzer.getNumCores();
+				_rk  = (int) Math.max( _rk, tmprk );
+				_rk2 = (int) Math.max( _rk2, tmprk/2 );
+			}
+		}
+		
+		_rkmax   = (int) Math.ceil( PAR_K_FACTOR * _rk ); 
+		_rkmax2  = (int) Math.ceil( PAR_K_FACTOR * _rk2 ); 
 	}
 	
 	///////

@@ -487,6 +487,9 @@ public class OptimizerUtils
 	 */
 	public static int getNumReducers( boolean configOnly )
 	{
+		if( isSparkExecutionMode() )
+			return SparkExecutionContext.getDefaultParallelism(false);
+		
 		int ret = ConfigurationManager.getNumReducers();
 		if( !configOnly ) {
 			ret = Math.min(ret,InfrastructureAnalyzer.getRemoteParallelReduceTasks());
@@ -501,6 +504,9 @@ public class OptimizerUtils
 
 	public static int getNumMappers()
 	{
+		if( isSparkExecutionMode() )
+			return SparkExecutionContext.getDefaultParallelism(false);
+		
 		int ret = InfrastructureAnalyzer.getRemoteParallelMapTasks();
 			
 		//correction max number of reducers on yarn clusters

@@ -1481,16 +1481,24 @@ public class ParForProgramBlock extends ForProgramBlock
 		ResultMerge rm = null;
 		
 		//determine degree of parallelism
-		int numReducers = ConfigurationManager.getNumReducers();
-		int maxMap = InfrastructureAnalyzer.getRemoteParallelMapTasks();
-		int maxRed = InfrastructureAnalyzer.getRemoteParallelReduceTasks();
-		//correction max number of reducers on yarn clusters
-		if( InfrastructureAnalyzer.isYarnEnabled() ) {					
-			maxMap = (int)Math.max( maxMap, YarnClusterAnalyzer.getNumCores() );	
-			maxRed = (int)Math.max( maxRed, YarnClusterAnalyzer.getNumCores()/2 );	
+		int maxMap = -1, maxRed = -1;
+		if( OptimizerUtils.isSparkExecutionMode() ) {
+			maxMap = (int) SparkExecutionContext.getDefaultParallelism(true);
+			maxRed = maxMap; //equal map/reduce
+		}
+		else {
+			int numReducers = ConfigurationManager.getNumReducers();
+			maxMap = InfrastructureAnalyzer.getRemoteParallelMapTasks();
+			maxRed = Math.min(numReducers, 
+				InfrastructureAnalyzer.getRemoteParallelReduceTasks());
+			//correction max number of reducers on yarn clusters
+			if( InfrastructureAnalyzer.isYarnEnabled() ) {					
+				maxMap = (int)Math.max( maxMap, YarnClusterAnalyzer.getNumCores() );	
+				maxRed = (int)Math.max( maxRed, YarnClusterAnalyzer.getNumCores()/2 );	
+			}
 		}
 		int numMap = Math.max(_numThreads, maxMap);
-		int numRed = Math.min(numReducers, maxRed);
+		int numRed = maxRed;
 		
 		//create result merge implementation		
 		switch( prm )

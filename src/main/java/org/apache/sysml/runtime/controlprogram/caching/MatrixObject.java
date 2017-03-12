@@ -185,7 +185,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 
 	public double getSparsity() {
 		MatrixCharacteristics mc = getMatrixCharacteristics();		
-		return ((double)mc.getNonZeros())/mc.getRows()/mc.getCols();
+		return OptimizerUtils.getSparsity(mc);
 	}
 	
 	// *********************************************

@@ -29,13 +29,14 @@ import jcuda.jcudnn.cudnnActivationDescriptor;
 import jcuda.jcudnn.cudnnConvolutionDescriptor;
 import jcuda.jcudnn.cudnnConvolutionFwdPreference;
 import jcuda.jcudnn.cudnnFilterDescriptor;
+import jcuda.jcudnn.cudnnHandle;
 import jcuda.jcudnn.cudnnPoolingDescriptor;
 import jcuda.jcudnn.cudnnTensorDescriptor;
-import jcuda.jcudnn.cudnnHandle;
 import jcuda.jcusparse.JCusparse;
 import jcuda.jcusparse.cusparseHandle;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
@@ -1128,8 +1129,8 @@ public class LibMatrixCUDA {
 			int colsA = (int)left.getNumColumns();
 
 
-			long t1=0, t2=0;
-			long t0 = System.nanoTime();
+			long t0=0,t1=0, t2=0;
+			if (DMLScript.STATISTICS) t0 = System.nanoTime();
 			Pointer AT = JCudaObject.transpose(ADense, rowsA, colsA, colsA, rowsA);
 			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_TRANSPOSE_LIB, System.nanoTime() - t0);
 
@@ -1137,8 +1138,8 @@ public class LibMatrixCUDA {
 			CSRPointer A = JCudaObject.columnMajorDenseToRowMajorSparse(cusparseHandle, rowsA, colsA, AT);
 			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_DENSE_TO_SPARSE, System.nanoTime() - t1);
 
-			GPUStatistics.cudaDenseToSparseTime.getAndAdd(System.nanoTime() - t0);
-			GPUStatistics.cudaDenseToSparseCount.getAndAdd(1);
+			if (DMLScript.STATISTICS) GPUStatistics.cudaDenseToSparseTime.getAndAdd(System.nanoTime() - t0);
+			if (DMLScript.STATISTICS) GPUStatistics.cudaDenseToSparseCount.getAndAdd(1);
 			sparseSparseMatmult(instName, output, transA, transB, m, n, k, A, B);
 
 			if (GPUStatistics.DISPLAY_STATISTICS) t2 = System.nanoTime();
@@ -1152,15 +1153,15 @@ public class LibMatrixCUDA {
 			// BDenseTransposed is a column major matrix
 			// Note the arguments to denseDenseMatmult to accommodate for this.
 			long t0=0, t1=0;
-			if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
+			if (DMLScript.STATISTICS) t0 = System.nanoTime();
 			Pointer BDenseTransposed = B.toColumnMajorDenseMatrix(cusparseHandle, cublasHandle, (int)right.getNumRows(), (int)right.getNumColumns());
 			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_SPARSE_TO_DENSE, System.nanoTime() - t0);
-			GPUStatistics.cudaSparseToDenseTime.getAndAdd(System.nanoTime() - t0);
-			GPUStatistics.cudaSparseToDenseCount.getAndAdd(System.nanoTime() - t0);
+			if (DMLScript.STATISTICS) GPUStatistics.cudaSparseToDenseTime.getAndAdd(System.nanoTime() - t0);
+			if (DMLScript.STATISTICS) GPUStatistics.cudaSparseToDenseCount.getAndAdd(System.nanoTime() - t0);
 
 			if (GPUStatistics.DISPLAY_STATISTICS) t1 = System.nanoTime();
 			boolean allocated = output.getGPUObject().acquireDeviceModifyDense();	// To allocate the dense matrix
-			if (allocated) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_ALLOCATE_DENSE_OUTPUT, System.nanoTime() - t1);
+			if (GPUStatistics.DISPLAY_STATISTICS && allocated) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_ALLOCATE_DENSE_OUTPUT, System.nanoTime() - t1);
 			Pointer C = ((JCudaObject)output.getGPUObject()).jcudaDenseMatrixPtr;
 			denseDenseMatmult(instName, C,
 							(int) left.getNumRows(), (int) left.getNumColumns(),
@@ -1210,7 +1211,7 @@ public class LibMatrixCUDA {
 				int rowsB = (int)right.getNumRows();
 				int colsB = (int)right.getNumColumns();
 
-				if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
+				if (DMLScript.STATISTICS) t0 = System.nanoTime();
 				Pointer BT = JCudaObject.transpose(BDense, rowsB, colsB, colsB, rowsB);
 				if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_TRANSPOSE_LIB, System.nanoTime() - t0);
 
@@ -1218,8 +1219,8 @@ public class LibMatrixCUDA {
 				CSRPointer B = JCudaObject.columnMajorDenseToRowMajorSparse(cusparseHandle, rowsB, colsB, BT);
 				if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_DENSE_TO_SPARSE, System.nanoTime() - t1);
 
-				GPUStatistics.cudaDenseToSparseTime.getAndAdd(System.nanoTime() - t0);
-				GPUStatistics.cudaDenseToSparseCount.getAndAdd(1);
+				if (DMLScript.STATISTICS) GPUStatistics.cudaDenseToSparseTime.getAndAdd(System.nanoTime() - t0);
+				if (DMLScript.STATISTICS) GPUStatistics.cudaDenseToSparseCount.getAndAdd(1);
 
 				sparseSparseMatmult(instName, output, transA, transB, m, n, k, A, B);
 
@@ -1233,15 +1234,15 @@ public class LibMatrixCUDA {
 				// Convert left to dense and do a cuBlas matmul
 				// ADenseTransposed is a column major matrix
 				// Note the arguments to denseDenseMatmult to accommodate for this.
-				if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
+				if (DMLScript.STATISTICS) t0 = System.nanoTime();
 				Pointer ADenseTransposed = A.toColumnMajorDenseMatrix(cusparseHandle, cublasHandle, (int)left.getNumRows(), (int)left.getNumColumns());
 				if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_SPARSE_TO_DENSE, System.nanoTime() - t0);
-				GPUStatistics.cudaSparseToDenseTime.getAndAdd(System.nanoTime() - t0);
-				GPUStatistics.cudaSparseToDenseCount.getAndAdd(System.nanoTime() - t0);
+				if (DMLScript.STATISTICS) GPUStatistics.cudaSparseToDenseTime.getAndAdd(System.nanoTime() - t0);
+				if (DMLScript.STATISTICS) GPUStatistics.cudaSparseToDenseCount.getAndAdd(System.nanoTime() - t0);
 
 				if (GPUStatistics.DISPLAY_STATISTICS) t1 = System.nanoTime();
 				boolean allocated = output.getGPUObject().acquireDeviceModifyDense();	// To allocate the dense matrix
-				if (allocated) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_ALLOCATE_DENSE_OUTPUT, System.nanoTime() - t1);
+				if (allocated && GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_ALLOCATE_DENSE_OUTPUT, System.nanoTime() - t1);
 
 				Pointer C = ((JCudaObject)output.getGPUObject()).jcudaDenseMatrixPtr;
 				denseDenseMatmult(instName, C,
@@ -2668,7 +2669,9 @@ public class LibMatrixCUDA {
 		long t0=0;
 		if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
 		Pair<MatrixObject, Boolean> mb = ec.getDenseMatrixOutputForGPUInstruction(name);
-		if (mb.getValue()) if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_ALLOCATE_DENSE_OUTPUT, System.nanoTime() - t0);
+		if (mb.getValue())
+			if (GPUStatistics.DISPLAY_STATISTICS)
+				GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_ALLOCATE_DENSE_OUTPUT, System.nanoTime() - t0);
 		return mb.getKey();
 	}
 

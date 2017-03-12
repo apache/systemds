@@ -104,7 +104,6 @@ public class JCudaContext extends GPUContext {
 		LOG.info("Active CUDA device number : " + device[0]);
 		LOG.info("Max Blocks/Threads/SharedMem : " + maxBlocks + "/" + maxThreadsPerBlock + "/" + sharedMemPerBlock);
 
-
 		GPUStatistics.cudaInitTime = System.nanoTime() - start;
 	}
 

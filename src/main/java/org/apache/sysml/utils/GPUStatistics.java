@@ -52,10 +52,12 @@ public class GPUStatistics {
 
   public static AtomicLong cudaAllocTime = new AtomicLong(0);             // time spent in allocating memory on the GPU
   public static AtomicLong cudaDeAllocTime = new AtomicLong(0);           // time spent in deallocating memory on the GPU
+  public static AtomicLong cudaMemSet0Time = new AtomicLong(0);           // time spent in setting memory to 0 on the GPU (part of reusing and for new allocates)
   public static AtomicLong cudaToDevTime = new AtomicLong(0);             // time spent in copying data from host (CPU) to device (GPU) memory
   public static AtomicLong cudaFromDevTime = new AtomicLong(0);           // time spent in copying data from device to host
   public static AtomicLong cudaAllocCount = new AtomicLong(0);
   public static AtomicLong cudaDeAllocCount = new AtomicLong(0);
+  public static AtomicLong cudaMemSet0Count = new AtomicLong(0);
   public static AtomicLong cudaToDevCount = new AtomicLong(0);
   public static AtomicLong cudaFromDevCount = new AtomicLong(0);
   public static AtomicLong cudaEvictionCount = new AtomicLong(0);
@@ -82,6 +84,8 @@ public class GPUStatistics {
     cudaLibrariesInitTime = 0;
     cudaAllocTime.set(0);
     cudaDeAllocTime.set(0);
+    cudaMemSet0Time.set(0);
+    cudaMemSet0Count.set(0);
     cudaToDevTime.set(0);
     cudaFromDevTime.set(0);
     cudaAllocCount.set(0);
@@ -187,14 +191,16 @@ public class GPUStatistics {
     sb.append("CUDA/CuLibraries init time:\t" + String.format("%.3f", cudaInitTime*1e-9) + "/"
             + String.format("%.3f", cudaLibrariesInitTime*1e-9) + " sec.\n");
     sb.append("Number of executed GPU inst:\t" + getNoOfExecutedGPUInst() + ".\n");
-    sb.append("GPU mem tx time  (alloc/dealloc/toDev/fromDev):\t"
+    sb.append("GPU mem tx time  (alloc/dealloc/set0/toDev/fromDev):\t"
             + String.format("%.3f", cudaAllocTime.get()*1e-9) + "/"
             + String.format("%.3f", cudaDeAllocTime.get()*1e-9) + "/"
+            + String.format("%.3f", cudaMemSet0Time.get()*1e-9) + "/"
             + String.format("%.3f", cudaToDevTime.get()*1e-9) + "/"
             + String.format("%.3f", cudaFromDevTime.get()*1e-9)  + " sec.\n");
-    sb.append("GPU mem tx count (alloc/dealloc/toDev/fromDev/evict):\t"
+    sb.append("GPU mem tx count (alloc/dealloc/set0/toDev/fromDev/evict):\t"
             + cudaAllocCount.get() + "/"
             + cudaDeAllocCount.get() + "/"
+            + cudaMemSet0Count.get() + "/"
             + cudaSparseConversionCount.get() + "/"
             + cudaToDevCount.get() + "/"
             + cudaFromDevCount.get() + "/"

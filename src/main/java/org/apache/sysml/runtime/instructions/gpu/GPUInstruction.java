@@ -44,6 +44,8 @@ public abstract class GPUInstruction extends Instruction
 	public final static String MISC_TIMER_CUDA_FREE = 						"f";		// time spent in calling cudaFree
 	public final static String MISC_TIMER_ALLOCATE = 							"a";		// time spent to allocate memory on gpu
 	public final static String MISC_TIMER_ALLOCATE_DENSE_OUTPUT = "ao";		// time spent to allocate dense output (recorded differently than MISC_TIMER_ALLOCATE)
+	public final static String MISC_TIMER_SET_ZERO = 							"az";		// time spent to allocate
+	public final static String MISC_TIMER_REUSE = 								"r";		// time spent in reusing already allocated memory on GPU (mainly for the count)
 
 	// Matmult instructions
 	public final static String MISC_TIMER_SPARSE_ALLOCATE_LIB = 						"Msao";		// time spend in allocating for sparse matrix output

@@ -135,6 +135,7 @@ public abstract class GPUObject
 	protected static void evict(String instructionName, final long GPUSize) throws DMLRuntimeException {
 		synchronized (JCudaContext.syncObj) {
 
+			GPUStatistics.cudaEvictionCount.addAndGet(1);
 			// Release the set of free blocks maintained in a JCudaObject.freeCUDASpaceMap
 			// to free up space
 			LRUCacheMap<Long, LinkedList<Pointer>> lruCacheMap = JCudaObject.freeCUDASpaceMap;
@@ -156,8 +157,6 @@ public abstract class GPUObject
 			if (JCudaContext.allocatedPointers.size() == 0) {
 				throw new DMLRuntimeException("There is not enough memory on device for this matrix!");
 			}
-
-			GPUStatistics.cudaEvictionCount.addAndGet(1);
 
 			synchronized (evictionLock) {
 				Collections.sort(JCudaContext.allocatedPointers, new Comparator<GPUObject>() {

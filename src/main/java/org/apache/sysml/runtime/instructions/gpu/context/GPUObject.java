@@ -18,16 +18,18 @@
  */
 package org.apache.sysml.runtime.instructions.gpu.context;
 
+import jcuda.Pointer;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.utils.GPUStatistics;
+import org.apache.sysml.utils.LRUCacheMap;
 
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
+import java.util.LinkedList;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -95,7 +97,7 @@ public abstract class GPUObject
 
 	abstract void allocateDenseMatrixOnDevice() throws DMLRuntimeException;
 	abstract void allocateSparseMatrixOnDevice() throws DMLRuntimeException;
-	abstract void deallocateMemoryOnDevice(boolean synchronous) throws DMLRuntimeException;
+	abstract void deallocateMemoryOnDevice(boolean eager) throws DMLRuntimeException;
 	abstract long getSizeOnDevice() throws DMLRuntimeException;
 	
 	abstract void copyFromHostToDevice() throws DMLRuntimeException;
@@ -109,47 +111,55 @@ public abstract class GPUObject
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	abstract void copyFromDeviceToHost() throws DMLRuntimeException; // Called by export()
-	
+
+
+	/**
+	 * Convenience wrapper over {@link GPUObject#evict(String, long)}
+	 * @param GPUSize Desired size to be freed up on the GPU
+	 * @throws DMLRuntimeException If no blocks to free up or if not enough blocks with zero locks on them.
+	 */
+	protected static void evict(final long GPUSize) throws DMLRuntimeException {
+		evict(null, GPUSize);
+	}
+
 	/**
 	 * Cycles through the sorted list of allocated {@link GPUObject} instances. Sorting is based on
 	 * number of (read) locks that have been obtained on it (reverse order). It repeatedly frees up 
 	 * blocks on which there are zero locks until the required size has been freed up.
 	 * // TODO: update it with hybrid policy
+	 * @param instructionName name of the instruction for which performance measurements are made
 	 * @param GPUSize Desired size to be freed up on the GPU
 	 * @throws DMLRuntimeException If no blocks to free up or if not enough blocks with zero locks on them.	 
 	 */
 	@SuppressWarnings("rawtypes")
-	protected static void evict(final long GPUSize) throws DMLRuntimeException {
-		synchronized (GPUContext.syncObj) {
-			// Check for the completion of asynchronous cudaFree calls
-			try {
-				while (GPUSize > getAvailableMemory()) {
-					Future f = GPUContext.pendingDeallocates.poll();
-					if (f == null) {
-						break;
-					} else if (f.isDone()) {
-						continue;
-					} else {
-						f.get();
-					}
-				}
-			} catch (InterruptedException e) {
-				throw new DMLRuntimeException("There was an error with pending deallocates", e);
-			} catch (ExecutionException e) {
-				throw new DMLRuntimeException("There was an error with pending deallocates", e);
+	protected static void evict(String instructionName, final long GPUSize) throws DMLRuntimeException {
+		synchronized (JCudaContext.syncObj) {
+
+			GPUStatistics.cudaEvictionCount.addAndGet(1);
+			// Release the set of free blocks maintained in a JCudaObject.freeCUDASpaceMap
+			// to free up space
+			LRUCacheMap<Long, LinkedList<Pointer>> lruCacheMap = JCudaObject.freeCUDASpaceMap;
+			while (lruCacheMap.size() > 0) {
+				if (GPUSize <= getAvailableMemory())
+					break;
+				Map.Entry<Long, LinkedList<Pointer>> toFreeListPair = lruCacheMap.removeAndGetLRUEntry();
+				LinkedList<Pointer> toFreeList = toFreeListPair.getValue();
+				Long size = toFreeListPair.getKey();
+				Pointer toFree = toFreeList.pop();
+				if (toFreeList.isEmpty())
+					lruCacheMap.remove(size);
+				JCudaObject.cudaFreeHelper(instructionName, toFree, true);
 			}
 
 			if (GPUSize <= getAvailableMemory())
 				return;
 
-			if (GPUContext.allocatedPointers.size() == 0) {
+			if (JCudaContext.allocatedPointers.size() == 0) {
 				throw new DMLRuntimeException("There is not enough memory on device for this matrix!");
 			}
 
-			GPUStatistics.cudaEvictionCount.addAndGet(1);
-
 			synchronized (evictionLock) {
-				Collections.sort(GPUContext.allocatedPointers, new Comparator<GPUObject>() {
+				Collections.sort(JCudaContext.allocatedPointers, new Comparator<GPUObject>() {
 
 					@Override
 					public int compare(GPUObject p1, GPUObject p2) {
@@ -189,8 +199,8 @@ public abstract class GPUObject
 					}
 				});
 
-				while (GPUSize > getAvailableMemory() && GPUContext.allocatedPointers.size() > 0) {
-					GPUObject toBeRemoved = GPUContext.allocatedPointers.get(GPUContext.allocatedPointers.size() - 1);
+				while (GPUSize > getAvailableMemory() && JCudaContext.allocatedPointers.size() > 0) {
+					GPUObject toBeRemoved = JCudaContext.allocatedPointers.get(JCudaContext.allocatedPointers.size() - 1);
 					if (toBeRemoved.numLocks.get() > 0) {
 						throw new DMLRuntimeException("There is not enough memory on device for this matrix!");
 					}
@@ -205,7 +215,7 @@ public abstract class GPUObject
 	}
 
 	/**
-	 * Asynchronously clears the data associated with this {@link GPUObject} instance
+	 * lazily clears the data associated with this {@link GPUObject} instance
 	 * @throws CacheException ?
 	 */
 	public void clearData() throws CacheException {
@@ -214,15 +224,15 @@ public abstract class GPUObject
 
 	/**
 	 * Clears the data associated with this {@link GPUObject} instance
-	 * @param synchronous whether to be done synchronously or asynchronously
+	 * @param eager whether to be done synchronously or asynchronously
 	 * @throws CacheException ?
 	 */
-	public void clearData(boolean synchronous) throws CacheException {
+	public void clearData(boolean eager) throws CacheException {
 		synchronized(evictionLock) {
-			GPUContext.allocatedPointers.remove(this);
+			JCudaContext.allocatedPointers.remove(this);
 		}
 		try {
-			deallocateMemoryOnDevice(synchronous);
+			deallocateMemoryOnDevice(eager);
 		} catch (DMLRuntimeException e) {
 			throw new CacheException(e);
 		}

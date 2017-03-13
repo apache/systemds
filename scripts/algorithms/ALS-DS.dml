@@ -7,9 +7,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,10 +19,10 @@
 #
 #-------------------------------------------------------------
 
-#  
-# THIS SCRIPT COMPUTES AN APPROXIMATE FACTORIZATIONOF A LOW-RANK MATRIX V INTO TWO MATRICES L AND R 
-# USING ALTERNATING-LEAST-SQUARES (ALS) ALGORITHM 
-# MATRICES L AND R ARE COMPUTED BY MINIMIZING A LOSS FUNCTION (WITH REGULARIZATION)
+#
+# ALS algorithm using a direct solve method for individual least squares problems. This script
+# computes an approximate factorization of a low-rank matrix V into two matrices L and R.
+# Matrices L and R are computed by minimizing a loss function (with regularization).
 #
 # INPUT   PARAMETERS:
 # ---------------------------------------------------------------------------------------------
@@ -32,41 +32,41 @@
 # L       String   ---      Location to write the factor matrix L
 # R       String   ---      Location to write the factor matrix R
 # rank    Int      10       Rank of the factorization
-# reg     String   "L2"	    Regularization: 
-#						    "L2" = L2 regularization;
+# reg     String   "L2"     Regularization:
+#                           "L2" = L2 regularization;
 #                           "wL2" = weighted L2 regularization
-# lambda  Double   0.0      Regularization parameter, no regularization if 0.0
+# lambda  Double   0.000001 Regularization parameter, no regularization if 0.0
 # maxi    Int      50       Maximum number of iterations
 # check   Boolean  FALSE    Check for convergence after every iteration, i.e., updating L and R once
-# thr     Double   0.0001   Assuming check is set to TRUE, the algorithm stops and convergence is declared 
-# 							if the decrease in loss in any two consecutive iterations falls below this threshold; 
-#							if check is FALSE thr is ignored
+# thr     Double   0.0001   Assuming check is set to TRUE, the algorithm stops and convergence is declared
+#                           if the decrease in loss in any two consecutive iterations falls below this threshold;
+#                           if check is FALSE thr is ignored
 # fmt     String   "text"   The output format of the factor matrices L and R, such as "text" or "csv"
 # ---------------------------------------------------------------------------------------------
-# OUTPUT: 
-# 1- An m x r matrix L, where r is the factorization rank 
+# OUTPUT:
+# 1- An m x r matrix L, where r is the factorization rank
 # 2- An r x n matrix R
 #
 # HOW TO INVOKE THIS SCRIPT - EXAMPLE:
-# hadoop jar SystemML.jar -f ALS.dml -nvargs V=INPUT_DIR/V L=OUTPUT_DIR/L R=OUTPUT_DIR/R rank=10 reg="L2" lambda=0.0001 fmt=csv
+# hadoop jar SystemML.jar -f ALS-DS.dml -nvargs V=INPUT_DIR/V L=OUTPUT_DIR/L R=OUTPUT_DIR/R rank=10 reg="L2" lambda=0.0001 fmt=csv
 
 fileV      = $V;
-fileL	   = $L;
+fileL      = $L;
 fileR      = $R;
 
 # Default values of some parameters
-r          = ifdef ($rank, 10);	        # $rank=10;
-reg	   	   = ifdef ($reg, "L2")         # $reg="L2";
-lambda	   = ifdef ($lambda, 0.000001); # $lambda=0.000001;
-max_iter   = ifdef ($maxi, 50);         # $maxi=50;
-check      = ifdef ($check, FALSE);	    # $check=FALSE;
-thr        = ifdef ($thr, 0.0001);      # $thr=0.0001;
-fmtO       = ifdef ($fmt, "text");      # $fmt="text";
+r          = ifdef($rank, 10);
+reg        = ifdef($reg, "L2");
+lambda     = ifdef($lambda, 0.000001);
+max_iter   = ifdef($maxi, 50);
+check      = ifdef($check, FALSE);
+thr        = ifdef($thr, 0.0001);
+fmtO       = ifdef($fmt, "text");
 
 V = read (fileV);
 
 
-# check the input matrix V, if some rows or columns contain only zeros remove them from V  
+# check the input matrix V, if some rows or columns contain only zeros remove them from V
 V_nonzero_ind = V != 0;
 row_nonzeros = rowSums (V_nonzero_ind);
 col_nonzeros = t (colSums (V_nonzero_ind));
@@ -75,18 +75,18 @@ orig_nonzero_cols_ind = col_nonzeros != 0;
 num_zero_rows = nrow (V) - sum (orig_nonzero_rows_ind);
 num_zero_cols = ncol (V) - sum (orig_nonzero_cols_ind);
 if (num_zero_rows > 0) {
-	print ("Matrix V contains empty rows! These rows will be removed.");
-	V = removeEmpty (target = V, margin = "rows");
+  print ("Matrix V contains empty rows! These rows will be removed.");
+  V = removeEmpty (target = V, margin = "rows");
 }
 if (num_zero_cols > 0) {
-	print ("Matrix V contains empty columns! These columns will be removed.");
-	V = removeEmpty (target = V, margin = "cols");
+  print ("Matrix V contains empty columns! These columns will be removed.");
+  V = removeEmpty (target = V, margin = "cols");
 }
 if (num_zero_rows > 0 | num_zero_cols > 0) {
-	print ("Recomputing nonzero rows and columns!");
-	V_nonzero_ind = V != 0;
-	row_nonzeros = rowSums (V_nonzero_ind);
-	col_nonzeros = t (colSums (V_nonzero_ind));	
+  print ("Recomputing nonzero rows and columns!");
+  V_nonzero_ind = V != 0;
+  row_nonzeros = rowSums (V_nonzero_ind);
+  col_nonzeros = t (colSums (V_nonzero_ind));
 }
 
 ###### MAIN PART ######
@@ -99,72 +99,73 @@ R = rand (rows = n, cols = r, min = -0.5, max = 0.5);
 
 # initializing transformed matrices
 Vt = t(V);
-  
+
 # check for regularization
 if (reg == "L2") {
-	print ("BEGIN ALS SCRIPT WITH NONZERO SQUARED LOSS + L2 WITH LAMBDA - " + lambda);
+  print ("BEGIN ALS SCRIPT WITH NONZERO SQUARED LOSS + L2 WITH LAMBDA - " + lambda);
 } else if (reg == "wL2") {
-	print ("BEGIN ALS SCRIPT WITH NONZERO SQUARED LOSS + WEIGHTED L2 WITH LAMBDA - " + lambda);
+  print ("BEGIN ALS SCRIPT WITH NONZERO SQUARED LOSS + WEIGHTED L2 WITH LAMBDA - " + lambda);
 } else {
-	stop ("wrong regularization! " + reg);
+  stop ("wrong regularization! " + reg);
 }
 
+loss_init = 0.0; # only used if check is TRUE
 if (check) {
-	loss_init = sum (V_nonzero_ind * (V - (L %*% t(R)))^2) + lambda * (sum ((L^2) * row_nonzeros) + sum ((R^2) * col_nonzeros));
-	print ("-----   Initial train loss: " + loss_init + " -----");
+  loss_init = sum (V_nonzero_ind * (V - (L %*% t(R)))^2) + lambda * (sum ((L^2) * row_nonzeros) + sum ((R^2) * col_nonzeros));
+  print ("----- Initial train loss: " + loss_init + " -----");
 }
 
 lambda_I = diag (matrix (lambda, rows = r, cols = 1));
 it = 0;
 converged = FALSE;
 while ((it < max_iter) & (!converged)) {
-	it = it + 1;
-	# keep R fixed and update L
-	parfor (i in 1:m) {
-    	R_nonzero_ind = t(V[i,] != 0);
-		R_nonzero = removeEmpty (target=R * R_nonzero_ind, margin="rows");			
-		A1 = (t(R_nonzero) %*% R_nonzero) + (as.scalar(row_nonzeros[i,1]) * lambda_I); # coefficient matrix
-		L[i,] = t(solve (A1, t(V[i,] %*% R)));		
-	}
-  
-	# keep L fixed and update R
-	parfor (j in 1:n) {
-		L_nonzero_ind = t(Vt[j,] != 0)
-		L_nonzero = removeEmpty (target=L * L_nonzero_ind, margin="rows");
-		A2 = (t(L_nonzero) %*% L_nonzero) + (as.scalar(col_nonzeros[j,1]) * lambda_I); # coefficient matrix
-		R[j,] = t(solve (A2, t(Vt[j,] %*% L)));    
-	}
-	
-	# check for convergence
-	if (check) {
-		loss_cur = sum (V_nonzero_ind * (V - (L %*% t(R)))^2) + lambda * (sum ((L^2) * row_nonzeros) + sum ((R^2) * col_nonzeros));
-		loss_dec = (loss_init - loss_cur) / loss_init;
-		print ("Train loss at iteration (R) " + it + ": " + loss_cur + " loss-dec " + loss_dec);
-		if (loss_dec >= 0 & loss_dec < thr | loss_init == 0) {
-			print ("----- ALS converged after " + it + " iterations!");
-			converged = TRUE;
-		}
-		loss_init = loss_cur;
-	}
+  it = it + 1;
+  # keep R fixed and update L
+  parfor (i in 1:m) {
+    R_nonzero_ind = t(V[i,] != 0);
+    R_nonzero = removeEmpty (target=R * R_nonzero_ind, margin="rows");
+    A1 = (t(R_nonzero) %*% R_nonzero) + (as.scalar(row_nonzeros[i,1]) * lambda_I); # coefficient matrix
+    L[i,] = t(solve (A1, t(V[i,] %*% R)));
+  }
+
+  # keep L fixed and update R
+  parfor (j in 1:n) {
+    L_nonzero_ind = t(Vt[j,] != 0)
+    L_nonzero = removeEmpty (target=L * L_nonzero_ind, margin="rows");
+    A2 = (t(L_nonzero) %*% L_nonzero) + (as.scalar(col_nonzeros[j,1]) * lambda_I); # coefficient matrix
+    R[j,] = t(solve (A2, t(Vt[j,] %*% L)));
+  }
+
+  # check for convergence
+  if (check) {
+    loss_cur = sum (V_nonzero_ind * (V - (L %*% t(R)))^2) + lambda * (sum ((L^2) * row_nonzeros) + sum ((R^2) * col_nonzeros));
+    loss_dec = (loss_init - loss_cur) / loss_init;
+    print ("Train loss at iteration (R) " + it + ": " + loss_cur + " loss-dec " + loss_dec);
+    if (loss_dec >= 0 & loss_dec < thr | loss_init == 0) {
+      print ("----- ALS converged after " + it + " iterations!");
+      converged = TRUE;
+    }
+    loss_init = loss_cur;
+  }
 } # end of while loop
 
 if (check) {
-	print ("-----	Final train loss: " + loss_init + " -----");
+  print ("----- Final train loss: " + loss_init + " -----");
 }
 
 if (!converged) {
-   print ("Max iteration achieved but not converged!");
-} 
+  print ("Max iteration achieved but not converged!");
+}
 
 # inject 0s in L if original V had empty rows
 if (num_zero_rows > 0) {
-	L = removeEmpty (target = diag (orig_nonzero_rows_ind), margin = "cols") %*% L;
+  L = removeEmpty (target = diag (orig_nonzero_rows_ind), margin = "cols") %*% L;
 }
 # inject 0s in R if original V had empty rows
 if (num_zero_cols > 0) {
-	R = removeEmpty (target = diag (orig_nonzero_cols_ind), margin = "cols") %*% R; 
+  R = removeEmpty (target = diag (orig_nonzero_cols_ind), margin = "cols") %*% R;
 }
 Rt = t (R);
 write (L, fileL, format=fmtO);
 write (Rt, fileR, format=fmtO);
- 
+

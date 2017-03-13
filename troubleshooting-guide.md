@@ -94,3 +94,45 @@ Note: The default `SystemML-config.xml` is located in `<path to SystemML root>/c
     hadoop jar SystemML.jar [-? | -help | -f <filename>] (-config=<config_filename>) ([-args | -nvargs] <args-list>)
     
 See [Invoking SystemML in Hadoop Batch Mode](hadoop-batch-mode.html) for details of the syntax. 
+
+## Total size of serialized results is bigger than spark.driver.maxResultSize
+
+Spark aborts a job if the estimated result size of collect is greater than maxResultSize to avoid out-of-memory errors in driver.
+However, SystemML's optimizer has estimates the memory required for each operator and provides guards against these out-of-memory errors in driver.
+So, we recommend setting the configuration `--conf spark.driver.maxResultSize=0`.
+
+## File does not exist on HDFS/LFS error from remote parfor
+
+This error usually comes from incorrect HDFS configuration on the worker nodes. To investigate this, we recommend
+
+- Testing if HDFS is accessible from the worker node: `hadoop fs -ls <file path>`
+- Synchronize hadoop configuration across the worker nodes.
+- Set the environment variable `HADOOP_CONF_DIR`. You may have to restart the cluster-manager to get the hadoop configuration. 
+
+## JVM Garbage Collection related flags
+
+We recommend providing 10% of maximum memory to young generation and using `-server` flag for robust garbage collection policy. 
+For example: if you intend to use 20G driver and 60G executor, then please add following to your configuration:
+
+	 spark-submit --driver-memory 20G --executor-memory 60G --conf "spark.executor.extraJavaOptions=-Xmn6G -server" --conf  "spark.driver.extraJavaOptions=-Xmn2G -server" ... 
+
+## Memory overhead
+
+Spark sets `spark.yarn.executor.memoryOverhead`, `spark.yarn.driver.memoryOverhead` and `spark.yarn.am.memoryOverhead` to be 10% of memory provided
+to the executor, driver and YARN Application Master respectively (with minimum of 384 MB). For certain workloads, the user may have to increase this
+overhead to 12-15% of the memory budget.
+
+## Network timeout
+
+To avoid false-positive errors due to network failures in case of compute-bound scripts, the user may have to increase the timeout `spark.network.timeout` (default: 120s).
+
+## Advanced developer statistics
+
+Few of our operators (for example: convolution-related operator) and GPU backend allows an expert user to get advanced statistics
+by setting the configuration `systemml.stats.extraGPU` and `systemml.stats.extraDNN` in the file SystemML-config.xml. 
+
+## Out-Of-Memory on executors
+
+Out-Of-Memory on executors is often caused due to side-effects of lazy evaluation and in-memory input data of Spark for large-scale problems. 
+Though we are constantly improving our optimizer to address this scenario, a quick hack to resolve this is reducing the number of cores allocated to the executor.
+We would highly appreciate if you file a bug report on our [issue tracker](https://issues.apache.org/jira/browse/SYSTEMML) if and when you encounter OOM.

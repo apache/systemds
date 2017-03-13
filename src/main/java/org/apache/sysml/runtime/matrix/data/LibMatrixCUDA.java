@@ -648,7 +648,9 @@ public class LibMatrixCUDA {
 			((JCudaObject)image.getGPUObject()).sparseToDense(instName);
 		}
 		Pointer x = ((JCudaObject)image.getGPUObject()).jcudaDenseMatrixPtr;
-		performMaxpooling(instName, x, outputBlock, N, C, H, W, K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
+		Pointer y = ((JCudaObject)outputBlock.getGPUObject()).jcudaDenseMatrixPtr;
+
+		performMaxpooling(instName, x, y, N, C, H, W, K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
 	}
 	
 	/**
@@ -678,17 +680,17 @@ public class LibMatrixCUDA {
 		if(isInSparseFormat(image)) {
 			((JCudaObject)image.getGPUObject()).sparseToDense(instName);
 		}
+		long size  = image.getNumRows() * image.getNumColumns() * Sizeof.DOUBLE;
 		Pointer x = ((JCudaObject)image.getGPUObject()).jcudaDenseMatrixPtr;
-		//MatrixObject temp = new MatrixObject(image);
-		//temp.getGPUObject().acquireDeviceModifyDense();
-		Pointer y = ((JCudaObject)image.getGPUObject()).jcudaDenseMatrixPtr;
-		performReLU(instName, x, y, N, C, H, W);
-		performMaxpooling(instName, y, outputBlock, N, C, H, W, K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
-		//((JCudaObject)temp.getGPUObject()).clearData(); // deallocate the temporary data
+		Pointer y = ((JCudaObject)outputBlock.getGPUObject()).jcudaDenseMatrixPtr;
+		Pointer tmp = allocate(size);
+		performReLU(instName, x, tmp, N, C, H, W);
+		performMaxpooling(instName, tmp, y, N, C, H, W, K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
+		cudaFreeHelper(tmp);
 	}
 	
 	private static void performMaxpooling(String instName, Pointer x,
-												MatrixObject outputBlock, int N, int C, int H, int W, int K, int R,
+												Pointer y, int N, int C, int H, int W, int K, int R,
 												int S, int pad_h, int pad_w, int stride_h, int stride_w, int P,
 												int Q) throws DMLRuntimeException {
 		
@@ -705,9 +707,6 @@ public class LibMatrixCUDA {
 			yDesc = allocateTensorDescriptor(N, C, P, Q);
 			xDesc = allocateTensorDescriptor(N, C, H, W);
 			poolingDesc = allocatePoolingDescriptor(R, S, pad_h, pad_w, stride_h, stride_w);
-
-			// Allocate data
-			Pointer y = ((JCudaObject)outputBlock.getGPUObject()).jcudaDenseMatrixPtr;
 
 			alpha = pointerTo(1.0);
 			beta = pointerTo(0.0f);

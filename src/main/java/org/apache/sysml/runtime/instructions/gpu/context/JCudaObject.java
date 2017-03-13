@@ -1188,7 +1188,7 @@ public class JCudaObject extends GPUObject {
 			// Set all elements to 0 since newly allocated space will contain garbage
 			if (DMLScript.STATISTICS) t1 = System.nanoTime();
 			cudaMemset(A, 0, size);
-			if (DMLScript.STATISTICS) end = System.nanoTime() - t1;
+			if (DMLScript.STATISTICS) end = System.nanoTime();
 			if (instructionName != null && GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instructionName, GPUInstruction.MISC_TIMER_SET_ZERO, end - t1);
 			if (DMLScript.STATISTICS) GPUStatistics.cudaMemSet0Time.getAndAdd(end - t1);
 			if (DMLScript.STATISTICS) GPUStatistics.cudaMemSet0Count.getAndAdd(1);

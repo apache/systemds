@@ -18,8 +18,6 @@
  */
 package org.apache.sysml.runtime.instructions.gpu;
 
-import java.util.ArrayList;
-
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
@@ -30,6 +28,8 @@ import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysml.runtime.util.ConvolutionUtils;
 import org.apache.sysml.utils.GPUStatistics;
+
+import java.util.ArrayList;
 
 public class ConvolutionGPUInstruction extends GPUInstruction 
 {
@@ -337,8 +337,13 @@ public class ConvolutionGPUInstruction extends GPUInstruction
 		
 		// release inputs/outputs
 		ec.releaseMatrixInputForGPUInstruction(_input1.getName());
+
 		if (!( instOpcode.equalsIgnoreCase("maxpooling") || instOpcode.equalsIgnoreCase("relu_maxpooling")) )
 			ec.releaseMatrixInputForGPUInstruction(_input2.getName());
+
+		if (instOpcode.equalsIgnoreCase("conv2d_bias_add"))
+			ec.releaseMatrixInputForGPUInstruction(_input3.getName());
+
 		ec.releaseMatrixOutputForGPUInstruction(_output.getName());
 	}
 

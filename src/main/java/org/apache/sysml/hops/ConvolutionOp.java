@@ -19,21 +19,21 @@
 
 package org.apache.sysml.hops;
 
-import java.util.ArrayList;
-
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.Hop.MultiThreadedHop;
 import org.apache.sysml.lops.ConvolutionTransform;
 import org.apache.sysml.lops.ConvolutionTransform.OperationTypes;
 import org.apache.sysml.lops.Lop;
-import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.lops.LopProperties.ExecType;
+import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.lops.ReBlock;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.ConvolutionParameters;
+
+import java.util.ArrayList;
 
 public class ConvolutionOp extends Hop  implements MultiThreadedHop
 {	
@@ -179,7 +179,11 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		ArrayList<Hop> inputs1 = inputs;
 		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 		OperationTypes lopOp = HopsConv2Lops.get(op);
-		if(op == ConvOp.MAX_POOLING && isInputReLU(inputs.get(0))) {
+
+		// The fused relu_maxpooling is being disabled for now on the GPU
+		// There is a bug in LibMatrixCUDA#reluMaxpooling
+		// which we need to understand before enabling this by removing the "et != ExecType.GPU" guard.
+		if(op == ConvOp.MAX_POOLING && isInputReLU(inputs.get(0)) && et != ExecType.GPU) {
 			in = inputs.get(0).getInput().get(0).constructLops();
 			lopOp = OperationTypes.RELU_MAX_POOLING;
 		}

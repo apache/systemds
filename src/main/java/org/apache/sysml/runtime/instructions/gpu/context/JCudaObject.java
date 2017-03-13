@@ -1229,7 +1229,6 @@ public class JCudaObject extends GPUObject {
 	 * @param toFree {@link Pointer} instance to be freed
 	 * @param eager true if to be done eagerly
 	 */
-	@SuppressWarnings("rawtypes")
 	public static void cudaFreeHelper(String instructionName, final Pointer toFree, boolean eager){
 		long t0 = 0;
 		assert cudaBlockSizeMap.containsKey(toFree) : "ERROR : Internal state corrupted, cache block size map is not aware of a block it trying to free up";

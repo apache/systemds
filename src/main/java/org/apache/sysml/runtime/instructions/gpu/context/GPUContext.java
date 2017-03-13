@@ -25,7 +25,6 @@ import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 
 //FIXME merge JCudaContext into GPUContext as this context is anyway CUDA specific
 
-@SuppressWarnings("rawtypes")
 public abstract class GPUContext {
 
 	protected static GPUContext currContext;

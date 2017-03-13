@@ -1209,7 +1209,6 @@ public class JCudaObject extends GPUObject {
 	 * does lazy/eager cudaFree calls
 	 * @param toFree {@link Pointer} instance to be freed
 	 * @param eager true if to be done eagerly
-	 * @throws DMLRuntimeException
 	 */
 	public static void cudaFreeHelper(final Pointer toFree, boolean eager) {
 		cudaFreeHelper(null, toFree, eager);

@@ -32,7 +32,9 @@ import org.apache.spark.sql.types.StructType;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 
+import scala.collection.JavaConversions;
 import scala.collection.Seq;
+import scala.collection.mutable.Buffer;
 
 /**
  * @deprecated This will be removed in SystemML 1.0. Please migrate to {@link org.apache.sysml.api.mlcontext.MLContext}
@@ -185,7 +187,9 @@ public class MLBlock implements Row {
 		retVal.add(indexes);
 		retVal.add(block);
 		// retVal.add(new Tuple2<MatrixIndexes, MatrixBlock>(indexes, block));
-		return (Seq<T>) scala.collection.JavaConversions.asScalaBuffer(retVal).toSeq();
+		@SuppressWarnings("rawtypes")
+		Buffer scBuf = JavaConversions.asScalaBuffer(retVal);
+		return scBuf.toSeq();
 	}
 
 	@Override
@@ -245,13 +249,16 @@ public class MLBlock implements Row {
 		return 2;
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public Seq<Object> toSeq() {
 		ArrayList<Object> retVal = new ArrayList<Object>();
 		retVal.add(indexes);
 		retVal.add(block);
 		// retVal.add(new Tuple2<MatrixIndexes, MatrixBlock>(indexes, block));
-		return scala.collection.JavaConversions.asScalaBuffer(retVal).toSeq();
+		@SuppressWarnings("rawtypes")
+		Buffer scBuf = JavaConversions.asScalaBuffer(retVal);
+		return scBuf.toSeq();
 	}
 	
 	public static StructType getDefaultSchemaForBinaryBlock() {

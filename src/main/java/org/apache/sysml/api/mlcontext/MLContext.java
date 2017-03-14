@@ -29,6 +29,7 @@ import java.util.Set;
 import org.apache.log4j.Logger;
 import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.sql.SparkSession;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.api.MLContextProxy;
@@ -62,9 +63,9 @@ public class MLContext {
 	public static Logger log = Logger.getLogger(MLContext.class);
 
 	/**
-	 * SparkContext object.
+	 * SparkSession object.
 	 */
-	private SparkContext sc = null;
+	private SparkSession spark = null;
 
 	/**
 	 * Reference to the currently executing script.
@@ -164,6 +165,16 @@ public class MLContext {
 	}
 
 	/**
+	 * Create an MLContext based on a SparkSession for interaction with SystemML
+	 * on Spark.
+	 * 
+	 * @param spark SparkSession
+	 */
+	public MLContext(SparkSession spark) {
+		initMLContext(spark);
+	}
+
+	/**
 	 * Create an MLContext based on a SparkContext for interaction with SystemML
 	 * on Spark.
 	 *
@@ -171,7 +182,7 @@ public class MLContext {
 	 *            SparkContext
 	 */
 	public MLContext(SparkContext sparkContext) {
-		this(sparkContext, false);
+		initMLContext(SparkSession.builder().sparkContext(sparkContext).getOrCreate());
 	}
 
 	/**
@@ -182,38 +193,21 @@ public class MLContext {
 	 *            JavaSparkContext
 	 */
 	public MLContext(JavaSparkContext javaSparkContext) {
-		this(javaSparkContext.sc(), false);
-	}
-
-	/**
-	 * Create an MLContext based on a SparkContext for interaction with SystemML
-	 * on Spark, optionally monitor performance.
-	 *
-	 * @param sc
-	 *            SparkContext object.
-	 * @param monitorPerformance
-	 *            {@code true} if performance should be monitored, {@code false}
-	 *            otherwise
-	 */
-	public MLContext(SparkContext sc, boolean monitorPerformance) {
-		initMLContext(sc, monitorPerformance);
+		initMLContext(SparkSession.builder().sparkContext(javaSparkContext.sc()).getOrCreate());
 	}
 
 	/**
 	 * Initialize MLContext. Verify Spark version supported, set default
 	 * execution mode, set MLContextProxy, set default config, set compiler
-	 * config, and configure monitoring if needed.
+	 * config.
 	 *
 	 * @param sc
 	 *            SparkContext object.
-	 * @param monitorPerformance
-	 *            {@code true} if performance should be monitored, {@code false}
-	 *            otherwise
 	 */
-	private void initMLContext(SparkContext sc, boolean monitorPerformance) {
+	private void initMLContext(SparkSession spark) {
 
 		try {
-			MLContextUtil.verifySparkVersionSupported(sc);
+			MLContextUtil.verifySparkVersionSupported(spark);
 		} catch (MLContextException e) {
 			if (info() != null) {
 				log.warn("Apache Spark " + this.info().minimumRecommendedSparkVersion() + " or above is recommended for SystemML " + this.info().version());
@@ -231,7 +225,7 @@ public class MLContext {
 			System.out.println(MLContextUtil.welcomeMessage());
 		}
 
-		this.sc = sc;
+		this.spark = spark;
 		// by default, run in hybrid Spark mode for optimal performance
 		DMLScript.rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK;
 
@@ -329,12 +323,12 @@ public class MLContext {
 	}
 
 	/**
-	 * Obtain the SparkContext associated with this MLContext.
+	 * Obtain the SparkSession associated with this MLContext.
 	 *
-	 * @return the SparkContext associated with this MLContext.
+	 * @return the SparkSession associated with this MLContext.
 	 */
-	public SparkContext getSparkContext() {
-		return sc;
+	public SparkSession getSparkSession() {
+		return spark;
 	}
 
 	/**
@@ -641,7 +635,7 @@ public class MLContext {
 		scripts.clear();
 		scriptHistoryStrings.clear();
 		resetConfig();
-		sc = null;
+		spark = null;
 	}
 
 	/**

@@ -33,11 +33,14 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.broadcast.Broadcast;
+import org.apache.spark.sql.SparkSession;
+import org.apache.spark.sql.SparkSession.Builder;
 import org.apache.spark.storage.RDDInfo;
 import org.apache.spark.storage.StorageLevel;
 import org.apache.spark.util.LongAccumulator;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.MLContextProxy;
+import org.apache.sysml.api.mlcontext.MLContextUtil;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.lops.Checkpoint;
@@ -193,7 +196,7 @@ public class SparkExecutionContext extends ExecutionContext
 				_spctx = new JavaSparkContext(mlCtx.getSparkContext());
 			} else if (mlCtxObj instanceof org.apache.sysml.api.mlcontext.MLContext) {
 				org.apache.sysml.api.mlcontext.MLContext mlCtx = (org.apache.sysml.api.mlcontext.MLContext) mlCtxObj;
-				_spctx = new JavaSparkContext(mlCtx.getSparkContext());
+				_spctx = MLContextUtil.getJavaSparkContext(mlCtx);
 			}
 		}
 		else 
@@ -260,12 +263,36 @@ public class SparkExecutionContext extends ExecutionContext
 		
 		return conf;
 	}
-	
+
+	/**
+	 * Create a SystemML-preferred Spark Session.
+	 * 
+	 * @param appName the application name
+	 * @param master the master value (ie, "local", etc)
+	 * @return
+	 */
+	public static SparkSession createSystemMLSparkSession(String appName, String master) {
+		Builder builder = SparkSession.builder();
+		if (appName != null) {
+			builder.appName(appName);
+		}
+		if (master != null) {
+			builder.master(master);
+		}
+		builder.config("spark.driver.maxResultSize", "0");
+		if (FAIR_SCHEDULER_MODE) {
+			builder.config("spark.scheduler.mode", "FAIR");
+		}
+		builder.config("spark.locality.wait", "5s");
+		SparkSession spark = builder.getOrCreate();
+		return spark;
+	}
+
 	/**
 	 * Spark instructions should call this for all matrix inputs except broadcast
 	 * variables.
 	 * 
-	 * @param varname varible name
+	 * @param varname variable name
 	 * @return JavaPairRDD of MatrixIndexes-MatrixBlocks
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */

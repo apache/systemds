@@ -519,6 +519,7 @@
 									<Group-Id>${project.groupId}</Group-Id>
 									<Artifact-Id>${project.artifactId}</Artifact-Id>
 									<Version>${project.version}</Version>
+									<Minimum-Recommended-Spark-Version>${spark.version}</Minimum-Recommended-Spark-Version>
 								</manifestEntries>
 							</archive>
 						</configuration>

@@ -21,6 +21,7 @@ package org.apache.sysml.runtime.controlprogram.parfor;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map.Entry;
@@ -198,6 +199,14 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 	private MatrixBlock collectBinaryBlock( Iterable<Writable> valueList, MatrixBlock reuse ) 
 		throws IOException 
 	{
+		//fast path for partition of single fragment (see pseudo grouping),
+		//which avoids unnecessary copies and reduces memory pressure
+		if( valueList instanceof Collection && ((Collection<Writable>)valueList).size()==1 ) {
+			return ((PairWritableBlock)valueList.iterator().next()).block;
+		}
+		
+		//default: create or reuse target partition and copy individual partition fragments 
+		//into this target, including nnz maintenance and potential dense-sparse format change 
 		MatrixBlock partition = reuse;
 		
 		try

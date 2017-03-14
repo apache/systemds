@@ -49,7 +49,6 @@ import org.apache.sysml.parser.DataExpression;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.parser.ParseException;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDConverterUtils;
 import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDConverterUtils.LongFrameToLongWritableFrameFunction;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -105,7 +104,7 @@ public class FrameTest extends AutomatedTestBase
 
 	@BeforeClass
 	public static void setUpClass() {
-		spark = SparkExecutionContext.createSystemMLSparkSession("FrameTest", "local");
+		spark = createSystemMLSparkSession("FrameTest", "local");
 		ml = new MLContext(spark);
 		sc = MLContextUtil.getJavaSparkContext(ml);
 	}

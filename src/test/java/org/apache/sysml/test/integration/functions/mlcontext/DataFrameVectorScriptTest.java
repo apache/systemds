@@ -44,7 +44,6 @@ import org.apache.sysml.api.mlcontext.Script;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -81,7 +80,7 @@ public class DataFrameVectorScriptTest extends AutomatedTestBase
 
 	@BeforeClass
 	public static void setUpClass() {
-		spark = SparkExecutionContext.createSystemMLSparkSession("DataFrameVectorScriptTest", "local");
+		spark = createSystemMLSparkSession("DataFrameVectorScriptTest", "local");
 		ml = new MLContext(spark);
 		ml.setExplain(true);
 	}

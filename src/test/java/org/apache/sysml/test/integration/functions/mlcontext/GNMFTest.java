@@ -48,7 +48,6 @@ import org.apache.sysml.api.mlcontext.ScriptFactory;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.parser.ParseException;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -88,7 +87,7 @@ public class GNMFTest extends AutomatedTestBase
 
 	@BeforeClass
 	public static void setUpClass() {
-		spark = SparkExecutionContext.createSystemMLSparkSession("GNMFTest", "local");
+		spark = createSystemMLSparkSession("GNMFTest", "local");
 		ml = new MLContext(spark);
 		sc = MLContextUtil.getJavaSparkContext(ml);
 	}

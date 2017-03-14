@@ -61,7 +61,7 @@ public class DataFrameMatrixConversionTest extends AutomatedTestBase
 
 	@BeforeClass
 	public static void setUpClass() {
-		spark = SparkExecutionContext.createSystemMLSparkSession("DataFrameMatrixConversionTest", "local");
+		spark = createSystemMLSparkSession("DataFrameMatrixConversionTest", "local");
 		sc = new JavaSparkContext(spark.sparkContext());
 	}
 

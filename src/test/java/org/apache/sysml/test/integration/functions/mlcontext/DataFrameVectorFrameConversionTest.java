@@ -79,7 +79,7 @@ public class DataFrameVectorFrameConversionTest extends AutomatedTestBase
 
 	@BeforeClass
 	public static void setUpClass() {
-		spark = SparkExecutionContext.createSystemMLSparkSession("DataFrameVectorFrameConversionTest", "local");
+		spark = createSystemMLSparkSession("DataFrameVectorFrameConversionTest", "local");
 		sc = new JavaSparkContext(spark.sparkContext());
 	}
 

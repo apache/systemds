@@ -48,7 +48,6 @@ import org.apache.sysml.api.mlcontext.MatrixFormat;
 import org.apache.sysml.api.mlcontext.MatrixMetadata;
 import org.apache.sysml.api.mlcontext.Script;
 import org.apache.sysml.parser.Expression.ValueType;
-import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDConverterUtils;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils;
 import org.apache.sysml.test.integration.AutomatedTestBase;
@@ -80,7 +79,7 @@ public class MLContextFrameTest extends AutomatedTestBase {
 
 	@BeforeClass
 	public static void setUpClass() {
-		spark = SparkExecutionContext.createSystemMLSparkSession("MLContextFrameTest", "local");
+		spark = createSystemMLSparkSession("MLContextFrameTest", "local");
 		ml = new MLContext(spark);
 		sc = MLContextUtil.getJavaSparkContext(ml);
 		ml.setExplainLevel(ExplainLevel.RECOMPILE_HOPS);

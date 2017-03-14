@@ -33,8 +33,6 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.broadcast.Broadcast;
-import org.apache.spark.sql.SparkSession;
-import org.apache.spark.sql.SparkSession.Builder;
 import org.apache.spark.storage.RDDInfo;
 import org.apache.spark.storage.StorageLevel;
 import org.apache.spark.util.LongAccumulator;
@@ -90,8 +88,9 @@ public class SparkExecutionContext extends ExecutionContext
 	//internal configurations 
 	private static boolean LAZY_SPARKCTX_CREATION = true;
 	private static boolean ASYNCHRONOUS_VAR_DESTROY = true;
-	private static boolean FAIR_SCHEDULER_MODE = true;
-	
+
+	public static boolean FAIR_SCHEDULER_MODE = true;
+
 	//executor memory and relative fractions as obtained from the spark configuration
 	private static SparkClusterConfig _sconf = null;
 	
@@ -262,30 +261,6 @@ public class SparkExecutionContext extends ExecutionContext
 		}
 		
 		return conf;
-	}
-
-	/**
-	 * Create a SystemML-preferred Spark Session.
-	 * 
-	 * @param appName the application name
-	 * @param master the master value (ie, "local", etc)
-	 * @return
-	 */
-	public static SparkSession createSystemMLSparkSession(String appName, String master) {
-		Builder builder = SparkSession.builder();
-		if (appName != null) {
-			builder.appName(appName);
-		}
-		if (master != null) {
-			builder.master(master);
-		}
-		builder.config("spark.driver.maxResultSize", "0");
-		if (FAIR_SCHEDULER_MODE) {
-			builder.config("spark.scheduler.mode", "FAIR");
-		}
-		builder.config("spark.locality.wait", "5s");
-		SparkSession spark = builder.getOrCreate();
-		return spark;
 	}
 
 	/**

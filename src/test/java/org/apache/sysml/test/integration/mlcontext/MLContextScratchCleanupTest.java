@@ -29,7 +29,6 @@ import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.api.mlcontext.MLContext;
 import org.apache.sysml.api.mlcontext.Matrix;
 import org.apache.sysml.api.mlcontext.Script;
-import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.utils.TestUtils;
 import org.junit.After;
@@ -91,7 +90,7 @@ public class MLContextScratchCleanupTest extends AutomatedTestBase
 		DMLScript.rtplatform = platform;
 		
 		//create mlcontext
-		SparkSession spark = SparkExecutionContext.createSystemMLSparkSession("MLContextScratchCleanupTest", "local");
+		SparkSession spark = createSystemMLSparkSession("MLContextScratchCleanupTest", "local");
 		MLContext ml = new MLContext(spark);
 		ml.setExplain(true);
 

@@ -40,7 +40,8 @@ numpy_version = '1.8.2'
 scipy_version = '0.15.1'
 REQUIRED_PACKAGES = [
     'numpy >= %s' % numpy_version,
-    'scipy >= %s' % scipy_version
+    'scipy >= %s' % scipy_version,
+    'pandas'
 ]
 
 

@@ -22,10 +22,8 @@ package org.apache.sysml.hops.codegen.template;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.Map.Entry;
+import java.util.LinkedList;
 
-import org.apache.sysml.api.DMLException;
 import org.apache.sysml.hops.AggUnaryOp;
 import org.apache.sysml.hops.BinaryOp;
 import org.apache.sysml.hops.Hop;
@@ -42,271 +40,168 @@ import org.apache.sysml.hops.codegen.cplan.CNodeData;
 import org.apache.sysml.hops.codegen.cplan.CNodeTpl;
 import org.apache.sysml.hops.codegen.cplan.CNodeUnary;
 import org.apache.sysml.hops.codegen.cplan.CNodeUnary.UnaryType;
+import org.apache.sysml.hops.codegen.template.CPlanMemoTable.MemoTableEntry;
 import org.apache.sysml.hops.codegen.cplan.CNodeTernary;
 import org.apache.sysml.hops.codegen.cplan.CNodeTernary.TernaryType;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.parser.Expression.DataType;
-import org.apache.sysml.runtime.codegen.SpoofCellwise.CellType;
 import org.apache.sysml.runtime.matrix.data.Pair;
 
 public class CellTpl extends BaseTpl 
-{
-	
+{	
 	public CellTpl() {
 		super(TemplateType.CellTpl);
 	}
-	
+
 	@Override
-	public boolean openTpl(Hop hop) {
+	public boolean open(Hop hop) {
 		return isValidOperation(hop);
 	}
 
 	@Override
-	public boolean findTplBoundaries(Hop initialHop, CplanRegister cplanRegister) {
-		_initialHop = initialHop;
-		rFindCellwisePattern(initialHop, new HashMap<Long, Hop>());
-		
-		//if cplanRegister has the initial hop then no need to reconstruct
-		if(cplanRegister.containsHop(TemplateType.CellTpl, _initialHop.getHopID()))
-			return false;
-			
-		//re-assign initialHop to fuse the sum/rowsums (before checking for chains)
-		//TODO add aggbinary (vector tsmm) as potential head for cellwise operation
-		for (Hop h : _initialHop.getParent()) {
-			if( h instanceof AggUnaryOp && ((AggUnaryOp) h).getOp() == AggOp.SUM 
-				&& ((AggUnaryOp) h).getDirection()!= Direction.Col ) {
-				_initialHop = h;  
-			}
-		}
-		
-		//unary matrix && endHop found && endHop is not direct child of the initialHop (i.e., chain of operators)
-		if(_endHop != null && _endHop != _initialHop)
-		{
-			// if final hop is unary add its child to the input 
-			if(_endHop instanceof UnaryOp)
-				_matrixInputs.add(_endHop.getInput().get(0));
-			//if one input is scalar then add the other as major input
-			else if(_endHop.getInput().get(0).getDataType() == DataType.SCALAR)
-				_matrixInputs.add(_endHop.getInput().get(1));
-			else if(_endHop.getInput().get(1).getDataType() == DataType.SCALAR)
-				_matrixInputs.add(_endHop.getInput().get(0));
-			//if one is matrix and the other is vector add the matrix
-			else if(TemplateUtils.isMatrix(_endHop.getInput().get(0)) && TemplateUtils.isVector(_endHop.getInput().get(1)) )
-				_matrixInputs.add(_endHop.getInput().get(0));
-			else if(TemplateUtils.isMatrix(_endHop.getInput().get(1)) && TemplateUtils.isVector(_endHop.getInput().get(0)) )
-				_matrixInputs.add(_endHop.getInput().get(1));
-			//both are vectors (add any of them)
-			else
-				_matrixInputs.add(_endHop.getInput().get(0));
-				
-			return true;
-		}
-		
-		return false;
-	}
-	
-	private void rFindCellwisePattern(Hop h, HashMap<Long,Hop> memo)
-	{
-		if(memo.containsKey(h.getHopID()))
-			return;
-		
-		//stop recursion if stopping operator
-		if(h.getDataType() == DataType.SCALAR || !isValidOperation(h))
-			return;
-		
-		//process childs recursively
-		_endHop = h;
-		for( Hop in : h.getInput() )
-		{
-			//propagate the _endHop from bottom to top
-			if(memo.containsKey(in.getHopID()))
-				_endHop=memo.get(in.getHopID());
-			else
-				rFindCellwisePattern(in,memo);
-		}
-	
-		memo.put(h.getHopID(), _endHop);	
+	public boolean fuse(Hop hop, Hop input) {
+		return !isClosed() && (isValidOperation(hop) 
+			|| ( hop instanceof AggUnaryOp && ((AggUnaryOp) hop).getOp() == AggOp.SUM 
+				&& ((AggUnaryOp) hop).getDirection()!= Direction.Col));
 	}
 
 	@Override
-	public LinkedHashMap<Long, Pair<Hop[],CNodeTpl>> constructTplCplan(boolean compileLiterals)
-			throws DMLException {
-		//re-assign the dimensions of inputs to match the generated code dimensions
-		_initialCnodes.add(new CNodeData(_matrixInputs.get(0), 1, 1, DataType.SCALAR));
-		
-		rConstructCellCplan(_initialHop,_initialHop, new HashSet<Long>(), compileLiterals);
-		return _cpplans;
-	}
-	
-	public CNode fuseCellWise(Hop initialHop,Hop matrixInput, boolean compileLiterals)
-			throws DMLException {
-		//re-assign the dimensions of inputs to match the generated code dimensions
-		_initialHop = initialHop;
-		_matrixInputs.add(matrixInput);
-		
-		constructTplCplan(compileLiterals);
-		Entry<Long, Pair<Hop[],CNodeTpl>> toplevel = TemplateUtils.getTopLevelCpplan(_cpplans);
-		if(toplevel != null)
-			return toplevel.getValue().getValue().getOutput();
-		else 
-			return null;
-	}
-	
-	private void rConstructCellCplan(Hop root, Hop hop, HashSet<Long> memo, boolean compileLiterals) 
-		throws DMLException
-	{
-		if( memo.contains(hop.getHopID()) )
-			return;
-		
-		
-		//process childs recursively
-		for( Hop c : hop.getInput() )
-			rConstructCellCplan(root, c, memo, compileLiterals);
-		
-		 // first hop to enter here should be _endHop
-		if(TemplateUtils.inputsAreGenerated(hop,_matrixInputs,_cpplans))  
-		// if direct children are DataGenOps, literals, or already in the cpplans then we are ready to generate code
-		{
-			CNodeCell cellTmpl = null;
-			
-			//Fetch operands
-			CNode out = null;
-			ArrayList<CNode> addedCNodes = new ArrayList<CNode>();
-			ArrayList<Hop> addedHops = new ArrayList<Hop>();
-			ArrayList<CNode> cnodeData = TemplateUtils.fetchOperands(hop, _cpplans, addedCNodes, addedHops, _initialCnodes, compileLiterals);
-			
-			//if operands are scalar or independent from X 
-			boolean independentOperands = hop != root && (hop.getDataType() == DataType.SCALAR || TemplateUtils.isOperandsIndependent(cnodeData, addedHops, new String[] {_matrixInputs.get(0).getName()}));
-			if(!independentOperands)
-			{
-				if(hop instanceof UnaryOp)
-				{
-					CNode cdata1 = cnodeData.get(0);
-					
-					//Primitive Operation haas the same name as Hop Type OpOp1
-					String primitiveOpName = ((UnaryOp)hop).getOp().toString();
-					out = new CNodeUnary(cdata1, UnaryType.valueOf(primitiveOpName));
-				}
-				else if(hop instanceof BinaryOp)
-				{
-					BinaryOp bop = (BinaryOp) hop;
-					CNode cdata1 = cnodeData.get(0);
-					CNode cdata2 = cnodeData.get(1);
-					
-					//Primitive Operation has the same name as Hop Type OpOp2
-					String primitiveOpName = bop.getOp().toString();
-					
-					//cdata1 is vector
-					if( TemplateUtils.isColVector(cdata1) )
-						cdata1 = new CNodeUnary(cdata1, UnaryType.LOOKUP_R);
-					else if( cdata1 instanceof CNodeData && hop.getInput().get(0).getDataType().isMatrix() )
-						cdata1 = new CNodeUnary(cdata1, UnaryType.LOOKUP_RC);
-					
-					//cdata2 is vector
-					if( TemplateUtils.isColVector(cdata2) )
-						cdata2 = new CNodeUnary(cdata2, UnaryType.LOOKUP_R);
-					else if( cdata2 instanceof CNodeData && hop.getInput().get(1).getDataType().isMatrix() )
-						cdata2 = new CNodeUnary(cdata2, UnaryType.LOOKUP_RC);
-					
-					if( bop.getOp()==OpOp2.POW && cdata2.isLiteral() && cdata2.getVarname().equals("2") )
-						out = new CNodeUnary(cdata1, UnaryType.POW2);
-					else if( bop.getOp()==OpOp2.MULT && cdata2.isLiteral() && cdata2.getVarname().equals("2") )
-						out = new CNodeUnary(cdata1, UnaryType.MULT2);
-					else //default binary	
-						out = new CNodeBinary(cdata1, cdata2, BinType.valueOf(primitiveOpName));
-				}
-				else if(hop instanceof TernaryOp) 
-				{
-					TernaryOp top = (TernaryOp) hop;
-					CNode cdata1 = cnodeData.get(0);
-					CNode cdata2 = cnodeData.get(1);
-					CNode cdata3 = cnodeData.get(2);
-					
-					//cdata1 is vector
-					if( TemplateUtils.isColVector(cdata1) )
-						cdata1 = new CNodeUnary(cdata1, UnaryType.LOOKUP_R);
-					else if( cdata1 instanceof CNodeData && hop.getInput().get(0).getDataType().isMatrix() )
-						cdata1 = new CNodeUnary(cdata1, UnaryType.LOOKUP_RC);
-					
-					//cdata3 is vector
-					if( TemplateUtils.isColVector(cdata3) )
-						cdata3 = new CNodeUnary(cdata3, UnaryType.LOOKUP_R);
-					else if( cdata3 instanceof CNodeData && hop.getInput().get(2).getDataType().isMatrix() )
-						cdata3 = new CNodeUnary(cdata3, UnaryType.LOOKUP_RC);
-					
-					//construct ternary cnode, primitive operation derived from OpOp3
-					out = new CNodeTernary(cdata1, cdata2, cdata3, 
-							TernaryType.valueOf(top.getOp().toString()));
-				}
-				else if (hop instanceof AggUnaryOp && ((AggUnaryOp)hop).getOp() == AggOp.SUM
-					&& (((AggUnaryOp) hop).getDirection() == Direction.RowCol 
-					|| ((AggUnaryOp) hop).getDirection() == Direction.Row) && root == hop)
-				{
-					out = cnodeData.get(0);
-				}
-			}
-			// wire output to the template
-			if(out != null || independentOperands)
-			{
-				if(_cpplans.isEmpty())
-				{
-					//first initialization has to have the first variable as input
-					ArrayList<CNode> initialInputs = new ArrayList<CNode>();					
-					
-					if(independentOperands) // pass the hop itself as an input instead of its children
-					{
-						CNode c =  new CNodeData(hop);
-						initialInputs.addAll(_initialCnodes);
-						initialInputs.add(c);
-						cellTmpl = new CNodeCell(initialInputs, c); 
-						cellTmpl.setDataType(hop.getDataType());
-						cellTmpl.setCellType(CellType.NO_AGG);
-						cellTmpl.setMultipleConsumers(hop.getParent().size()>1);
-						
-						_cpplans.put(hop.getHopID(), new Pair<Hop[],CNodeTpl>(new Hop[] {_matrixInputs.get(0),hop} ,cellTmpl));
-					}
-					else
-					{
-						initialInputs.addAll(_initialCnodes);
-						initialInputs.addAll(cnodeData);
-						cellTmpl =  new CNodeCell(initialInputs, out); 
-						cellTmpl.setDataType(hop.getDataType());
-						cellTmpl.setCellType(CellType.NO_AGG);
-						cellTmpl.setMultipleConsumers(hop.getParent().size()>1);
-						
-						//Hop[] hopArray = new Hop[hop.getInput().size()+1];
-						Hop[] hopArray = new Hop[addedHops.size()+1];
-						hopArray[0] = _matrixInputs.get(0);
-						
-						//System.arraycopy( hop.getInput().toArray(), 0, hopArray, 1, hop.getInput().size());
-						System.arraycopy( addedHops.toArray(), 0, hopArray, 1, addedHops.size());
-						
-						_cpplans.put(hop.getHopID(), new Pair<Hop[],CNodeTpl>(hopArray,cellTmpl));
-					}
-				}
-				else
-				{
-					if(independentOperands)
-					{
-						CNode c =  new CNodeData(hop);
-						//clear Operands
-						addedCNodes.clear();
-						addedHops.clear();
-						
-						//added the current hop as the input
-						addedCNodes.add(c);
-						addedHops.add(hop);
-						out = c;
-					}
-					//wire the output to existing or new template	
-					TemplateUtils.setOutputToExistingTemplate(hop, out, _cpplans, addedCNodes, addedHops);
-				}
-			}
-			memo.add(hop.getHopID());
-		}
+	public boolean merge(Hop hop, Hop input) {
+		//merge of other cell tpl possible
+		return (!isClosed() && isValidOperation(hop));
 	}
 
-	private boolean isValidOperation(Hop hop) 
+	@Override
+	public CloseType close(Hop hop) {
+		//need to close cell tpl after aggregation, see fuse for exact properties
+		if( hop instanceof AggUnaryOp && isValidOperation(hop.getInput().get(0)) )
+			return CloseType.CLOSED_VALID;
+		else if( hop instanceof AggUnaryOp )
+			return CloseType.CLOSED_INVALID;
+		else
+			return CloseType.OPEN;
+	}
+
+	@Override
+	public Pair<Hop[], CNodeTpl> constructCplan(Hop hop, CPlanMemoTable memo, boolean compileLiterals) 
+	{
+		//recursively process required cplan output
+		HashSet<Hop> inHops = new HashSet<Hop>();
+		HashMap<Long, CNode> tmp = new HashMap<Long, CNode>();
+		hop.resetVisitStatus();
+		rConstructCplan(hop, memo, tmp, inHops, compileLiterals);
+		hop.resetVisitStatus();
+		
+		//reorder inputs (ensure matrices/vectors come first, prune literals)
+		LinkedList<Hop> sinHops = new LinkedList<Hop>();
+		for( int i : new int[]{0,1,2} ) //matrices, vectors, scalars
+			for( Hop h : inHops ) //matrices
+				if( (i==0 && h.getDataType().isMatrix() && !TemplateUtils.isVector(h))
+					|| (i==1 && h.getDataType().isMatrix() && TemplateUtils.isVector(h))
+					|| (i==2 && h.getDataType().isScalar() && !tmp.get(h.getHopID()).isLiteral())) {
+					sinHops.add(h);
+				}
+		
+		//construct template node
+		ArrayList<CNode> inputs = new ArrayList<CNode>();
+		for( Hop in : sinHops )
+			inputs.add(tmp.get(in.getHopID()));
+		CNode output = tmp.get(hop.getHopID());
+		CNodeCell tpl = new CNodeCell(inputs, output);
+		tpl.setCellType(TemplateUtils.getCellType(hop));
+		
+		// return cplan instance
+		return new Pair<Hop[],CNodeTpl>(sinHops.toArray(new Hop[0]), tpl);
+	}
+	
+	private void rConstructCplan(Hop hop, CPlanMemoTable memo, HashMap<Long, CNode> tmp, HashSet<Hop> inHops, boolean compileLiterals) 
+	{
+		//recursively process required childs
+		MemoTableEntry me = memo.getBest(hop.getHopID(), TemplateType.CellTpl);
+		for( int i=0; i<hop.getInput().size(); i++ ) {
+			Hop c = hop.getInput().get(i);
+			if( me.isPlanRef(i) )
+				rConstructCplan(c, memo, tmp, inHops, compileLiterals);
+			else {
+				CNodeData cdata = TemplateUtils.createCNodeData(c, compileLiterals);	
+				tmp.put(c.getHopID(), cdata);
+				inHops.add(c);
+			}
+		}
+		
+		//construct cnode for current hop
+		CNode out = null;
+		if(hop instanceof UnaryOp)
+		{
+			CNode cdata1 = tmp.get(hop.getInput().get(0).getHopID());
+			if( TemplateUtils.isColVector(cdata1) )
+				cdata1 = new CNodeUnary(cdata1, UnaryType.LOOKUP_R);
+			else if( cdata1 instanceof CNodeData && hop.getInput().get(0).getDataType().isMatrix() )
+				cdata1 = new CNodeUnary(cdata1, UnaryType.LOOKUP_RC);
+			
+			String primitiveOpName = ((UnaryOp)hop).getOp().toString();
+			out = new CNodeUnary(cdata1, UnaryType.valueOf(primitiveOpName));
+		}
+		else if(hop instanceof BinaryOp)
+		{
+			BinaryOp bop = (BinaryOp) hop;
+			CNode cdata1 = tmp.get(hop.getInput().get(0).getHopID());
+			CNode cdata2 = tmp.get(hop.getInput().get(1).getHopID());
+			String primitiveOpName = bop.getOp().toString();
+			
+			//cdata1 is vector
+			if( TemplateUtils.isColVector(cdata1) )
+				cdata1 = new CNodeUnary(cdata1, UnaryType.LOOKUP_R);
+			else if( cdata1 instanceof CNodeData && hop.getInput().get(0).getDataType().isMatrix() )
+				cdata1 = new CNodeUnary(cdata1, UnaryType.LOOKUP_RC);
+			
+			//cdata2 is vector
+			if( TemplateUtils.isColVector(cdata2) )
+				cdata2 = new CNodeUnary(cdata2, UnaryType.LOOKUP_R);
+			else if( cdata2 instanceof CNodeData && hop.getInput().get(1).getDataType().isMatrix() )
+				cdata2 = new CNodeUnary(cdata2, UnaryType.LOOKUP_RC);
+			
+			if( bop.getOp()==OpOp2.POW && cdata2.isLiteral() && cdata2.getVarname().equals("2") )
+				out = new CNodeUnary(cdata1, UnaryType.POW2);
+			else if( bop.getOp()==OpOp2.MULT && cdata2.isLiteral() && cdata2.getVarname().equals("2") )
+				out = new CNodeUnary(cdata1, UnaryType.MULT2);
+			else //default binary	
+				out = new CNodeBinary(cdata1, cdata2, BinType.valueOf(primitiveOpName));
+		}
+		else if(hop instanceof TernaryOp) 
+		{
+			TernaryOp top = (TernaryOp) hop;
+			CNode cdata1 = tmp.get(hop.getInput().get(0).getHopID());
+			CNode cdata2 = tmp.get(hop.getInput().get(1).getHopID());
+			CNode cdata3 = tmp.get(hop.getInput().get(2).getHopID());
+			
+			//cdata1 is vector
+			if( TemplateUtils.isColVector(cdata1) )
+				cdata1 = new CNodeUnary(cdata1, UnaryType.LOOKUP_R);
+			else if( cdata1 instanceof CNodeData && hop.getInput().get(0).getDataType().isMatrix() )
+				cdata1 = new CNodeUnary(cdata1, UnaryType.LOOKUP_RC);
+			
+			//cdata3 is vector
+			if( TemplateUtils.isColVector(cdata3) )
+				cdata3 = new CNodeUnary(cdata3, UnaryType.LOOKUP_R);
+			else if( cdata3 instanceof CNodeData && hop.getInput().get(2).getDataType().isMatrix() )
+				cdata3 = new CNodeUnary(cdata3, UnaryType.LOOKUP_RC);
+			
+			//construct ternary cnode, primitive operation derived from OpOp3
+			out = new CNodeTernary(cdata1, cdata2, cdata3, 
+					TernaryType.valueOf(top.getOp().toString()));
+		}
+		else if (hop instanceof AggUnaryOp && ((AggUnaryOp)hop).getOp() == AggOp.SUM
+			&& (((AggUnaryOp) hop).getDirection() == Direction.RowCol 
+			|| ((AggUnaryOp) hop).getDirection() == Direction.Row) )
+		{
+			out = tmp.get(hop.getInput().get(0).getHopID());
+		}
+		
+		tmp.put(hop.getHopID(), out);
+	}
+	
+	private static boolean isValidOperation(Hop hop) 
 	{	
 		//prepare indicators for binary operations
 		boolean isBinaryMatrixScalar = false;

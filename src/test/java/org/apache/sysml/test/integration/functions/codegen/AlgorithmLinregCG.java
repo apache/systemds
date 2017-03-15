@@ -137,7 +137,8 @@ public class AlgorithmLinregCG extends AutomatedTestBase
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("w");
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("w");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
-			Assert.assertTrue(heavyHittersContainsSubString("spoof") || heavyHittersContainsSubString("sp_spoof"));
+			Assert.assertTrue(heavyHittersContainsSubString("spoofRA") 
+					|| heavyHittersContainsSubString("sp_spoofRA"));
 		}
 		finally {
 			rtplatform = platformOld;

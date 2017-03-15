@@ -19,12 +19,7 @@
 
 package org.apache.sysml.hops.codegen.template;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-
-import org.apache.sysml.api.DMLException;
 import org.apache.sysml.hops.Hop;
-import org.apache.sysml.hops.codegen.cplan.CNodeData;
 import org.apache.sysml.hops.codegen.cplan.CNodeTpl;
 import org.apache.sysml.runtime.matrix.data.Pair;
 
@@ -32,32 +27,98 @@ public abstract class BaseTpl
 {	
 	public enum TemplateType {
 		CellTpl,
-		OuterProductTpl,
+		OuterProdTpl,
 		RowAggTpl
 	}
 	
-	private TemplateType _type = null;
-	
-	protected ArrayList<Hop> _matrixInputs = new ArrayList<Hop>();
-	protected Hop _initialHop;
-	protected Hop _endHop;
-	protected ArrayList<CNodeData> _initialCnodes = new ArrayList<CNodeData>();
-	protected ArrayList<Hop> _adddedMatrices = new ArrayList<Hop>();
-	protected boolean _endHopReached = false;
+	public enum CloseType {
+		CLOSED_VALID,
+		CLOSED_INVALID,
+		OPEN,
+	}
 
-	protected LinkedHashMap<Long, Pair<Hop[],CNodeTpl>> _cpplans = new LinkedHashMap<Long, Pair<Hop[],CNodeTpl>>();
+	protected TemplateType _type = null;
+	protected boolean _closed = false;
 	
 	protected BaseTpl(TemplateType type) {
 		_type = type;
+		_closed = false;
 	}
 	
 	public TemplateType getType() {
 		return _type;
 	}
 	
-	public abstract boolean openTpl(Hop hop);
-
-	public abstract boolean findTplBoundaries(Hop initialHop, CplanRegister cplanRegister);
+	public boolean isClosed() {
+		return _closed;
+	}
 	
-	public abstract LinkedHashMap<Long, Pair<Hop[],CNodeTpl>> constructTplCplan(boolean compileLiterals) throws DMLException;
+	/////////////////////////////////////////////
+	// Open-Fuse-Merge-Close interface 
+	// (for candidate generation and exploration)
+	
+	/**
+	 * Indicates if this template can be opened at the given hop,
+	 * where hop represents bottom (first operation on the inputs) 
+	 * of the fused operator.
+	 * 
+	 * @param hop current hop
+	 * @return true if template can be opened 
+	 */
+	public abstract boolean open(Hop hop);
+	
+	/**
+	 * Indicates if the template can be expanded to the given hop
+	 * starting from an open template at the input.
+	 * 
+	 * @param hop current hop
+	 * @param input hop with open template of same type
+	 * @return true if the current hop can be fused into the operator.
+	 */
+	public abstract boolean fuse(Hop hop, Hop input);
+	
+	/**
+	 * Indicates if the template at the current hop can be expanded
+	 * by merging another template available for one of its other inputs
+	 * which is not yet covered by the template of the current hop. 
+	 * 
+	 * @param hop current hop
+	 * @param input direct input of current hop with available template
+	 * @return true if the the input hop can be fused into the current hop
+	 */
+	public abstract boolean merge(Hop hop, Hop input);
+	
+	/**
+	 * Indicates if the template must be closed at the current hop; either
+	 * due to final operations (e.g., aggregate) or unsupported operations.
+	 * 
+	 * @param hop current hop
+	 * @return close type (closed invalid, closed valid, open)
+	 */
+	public abstract CloseType close(Hop hop);
+	
+	/**
+	 * Mark the template as closed either invalid or valid.
+	 */
+	public void close() {
+		_closed = true;
+	}
+	
+	/////////////////////////////////////////////
+	// CPlan construction interface
+	// (for plan creation of selected candidates)
+	
+	/**
+	 * Constructs a single cplan rooted at the given hop, according 
+	 * to the plan given in the memo structure for this particular 
+	 * hop and its recursive inputs.  
+	 * 
+	 * @param hop root of cplan
+	 * @param memo memoization table for partial subplans
+	 * @param compileLiterals if true compile non-integer literals 
+	 * as constants, otherwise variables. note: integer literals are 
+	 * always compiled as constants.
+	 * @return
+	 */
+	public abstract Pair<Hop[], CNodeTpl> constructCplan(Hop hop, CPlanMemoTable memo, boolean compileLiterals);	
 }

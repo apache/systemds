@@ -19,11 +19,13 @@
 #
 #-------------------------------------------------------------
 
-X = matrix( 3, rows=4000, cols=2000)
-U = matrix( 4, rows=4000, cols=10)
-V = matrix( 5, rows=2000, cols=10)
-if(1==1){}
-eps = 0.1
-S= t(t(U) %*% (X/(U%*%t(V)+eps)))
+args<-commandArgs(TRUE)
+options(digits=22)
+library("Matrix")
 
-write(S,$1)
+X = matrix(seq(1,15), 5, 3, byrow=TRUE);
+v = seq(1,3);
+P = seq(1,5);
+S = t(X) %*% ((P * (1-P)) * (X %*% v));
+
+writeMM(as(S, "CsparseMatrix"), paste(args[2], "S", sep="")); 

@@ -124,6 +124,7 @@ public abstract class CNodeTpl extends CNode implements Cloneable
 			
 			//replace lookup on top of leaf data node (for CSE only)
 			if( node._inputs.get(i) instanceof CNodeUnary
+				&& node._inputs.get(i)._inputs.get(0) instanceof CNodeData
 				&& (((CNodeUnary)node._inputs.get(i)).getType()==UnaryType.LOOKUP_R
 				|| ((CNodeUnary)node._inputs.get(i)).getType()==UnaryType.LOOKUP_RC)) {
 				CNodeData tmp = (CNodeData)node._inputs.get(i)._inputs.get(0);
@@ -212,5 +213,30 @@ public abstract class CNodeTpl extends CNode implements Cloneable
 	public boolean equals(Object o) {
 		return (o instanceof CNodeTpl
 			&& super.equals(o));
+	}
+	
+	protected static boolean equalInputReferences(CNode current1, CNode current2, ArrayList<CNode> input1, ArrayList<CNode> input2) {
+		boolean ret = true;
+		
+		//process childs recursively
+		for( int i=0; ret && i<current1.getInput().size(); i++ )
+			ret &= equalInputReferences(
+					current1.getInput().get(i), current2.getInput().get(i), input1, input2);
+		
+		if( ret && current1 instanceof CNodeData ) {
+			ret &= indexOf(input1, (CNodeData)current1)
+				== indexOf(input2, (CNodeData)current2);
+		}
+		
+		return ret;
+	}
+	
+	private static int indexOf(ArrayList<CNode> inputs, CNodeData probe) {
+		for( int i=0; i<inputs.size(); i++ ) {
+			CNodeData cd = ((CNodeData)inputs.get(i));
+			if( cd.getHopID()==probe.getHopID() )
+				return i;
+		}
+		return -1;
 	}
 }

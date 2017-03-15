@@ -160,7 +160,9 @@ public class CNodeOuterProduct extends CNodeTpl
 		CNodeOuterProduct that = (CNodeOuterProduct)o;
 		return super.equals(that)
 			&& _type == that._type
-			&& _transposeOutput == that._transposeOutput;
+			&& _transposeOutput == that._transposeOutput
+			&& equalInputReferences(
+				_output, that._output, _inputs, that._inputs);
 	}
 	
 	@Override

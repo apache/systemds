@@ -141,8 +141,8 @@ public class SumProductChainTest extends AutomatedTestBase
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("R");	
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 			if( vectors || !sparse  )
-				Assert.assertTrue(heavyHittersContainsSubString("spoof") 
-						|| heavyHittersContainsSubString("sp_spoof"));
+				Assert.assertTrue(heavyHittersContainsSubString("spoofCell") 
+						|| heavyHittersContainsSubString("sp_spoofCell"));
 		}
 		finally {
 			rtplatform = oldPlatform;

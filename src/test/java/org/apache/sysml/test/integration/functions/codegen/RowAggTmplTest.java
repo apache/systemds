@@ -39,6 +39,7 @@ public class RowAggTmplTest extends AutomatedTestBase
 	private static final String TEST_NAME2 = "rowAggPattern2";
 	private static final String TEST_NAME3 = "rowAggPattern3";
 	private static final String TEST_NAME4 = "rowAggPattern4";
+	private static final String TEST_NAME5 = "rowAggPattern5";
 
 	private static final String TEST_DIR = "functions/codegen/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + RowAggTmplTest.class.getSimpleName() + "/";
@@ -54,6 +55,7 @@ public class RowAggTmplTest extends AutomatedTestBase
 		addTestConfiguration( TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "1" }) );
 		addTestConfiguration( TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] { "2" }) );
 		addTestConfiguration( TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] { "3" }) );
+		addTestConfiguration( TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5, new String[] { "4" }) );
 	}
 	
 	@Test	
@@ -76,6 +78,11 @@ public class RowAggTmplTest extends AutomatedTestBase
 		testCodegenIntegration( TEST_NAME4, true, ExecType.CP );	
 	}
 	
+	@Test
+	public void testCodegenRowAggRewrite5() {
+		testCodegenIntegration( TEST_NAME5, true, ExecType.CP );	
+	}
+	
 	@Test	
 	public void testCodegenRowAgg1() {
 		testCodegenIntegration( TEST_NAME1, false, ExecType.CP );
@@ -96,6 +103,10 @@ public class RowAggTmplTest extends AutomatedTestBase
 		testCodegenIntegration( TEST_NAME4, false, ExecType.CP );	
 	}
 	
+	@Test
+	public void testCodegenRowAgg5() {
+		testCodegenIntegration( TEST_NAME5, false, ExecType.CP );	
+	}
 	
 	private void testCodegenIntegration( String testname, boolean rewrites, ExecType instType )
 	{	
@@ -117,7 +128,7 @@ public class RowAggTmplTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[]{"-explain", "runtime", "-stats", "-args", output("S") };
+			programArgs = new String[]{"-explain", "-stats", "-args", output("S") };
 			
 			fullRScriptName = HOME + testname + ".R";
 			rCmd = getRCmd(inputDir(), expectedDir());			
@@ -131,7 +142,8 @@ public class RowAggTmplTest extends AutomatedTestBase
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("S");
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("S");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
-			Assert.assertTrue(heavyHittersContainsSubString("spoof") || heavyHittersContainsSubString("sp_spoof"));
+			Assert.assertTrue(heavyHittersContainsSubString("spoofRA") 
+					|| heavyHittersContainsSubString("sp_spoofRA"));
 		}
 		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlag;

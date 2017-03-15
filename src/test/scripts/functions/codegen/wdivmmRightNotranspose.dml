@@ -19,9 +19,9 @@
 #
 #-------------------------------------------------------------
 
-X= matrix( "1 0 1 2 2 0 0 3 3 0 0 4", rows=4, cols=3)
-U= matrix( "1 2 3 4 5 6 7 8", rows=4, cols=2)
-V= matrix( "9 12 10 13 11 14", rows=2, cols=3)
+X = matrix( 3, rows=4000, cols=2000)
+U = matrix( 4, rows=4000, cols=10)
+V = matrix( 5, rows=10, cols=2000)
 
 if(1==1){}
 

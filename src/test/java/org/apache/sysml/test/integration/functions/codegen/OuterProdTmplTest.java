@@ -132,8 +132,6 @@ public class OuterProdTmplTest extends AutomatedTestBase
 		testCodegenIntegration( TEST_NAME7, false, ExecType.CP );
 	}
 	
-	//TODO
-	
 	@Test
 	public void testCodegenOuterProdRewrite1_sp() {
 		testCodegenIntegrationWithInput( TEST_NAME1, true, ExecType.SPARK  );
@@ -191,7 +189,8 @@ public class OuterProdTmplTest extends AutomatedTestBase
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("S");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 			if( !rewrites )
-				Assert.assertTrue(heavyHittersContainsSubString("spoof") || heavyHittersContainsSubString("sp_spoof"));
+				Assert.assertTrue(heavyHittersContainsSubString("spoofOP") 
+						|| heavyHittersContainsSubString("sp_spoofOP"));
 		}
 		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlag;
@@ -233,22 +232,22 @@ public class OuterProdTmplTest extends AutomatedTestBase
 
 			runTest(true, false, null, -1); 
 			runRScript(true); 
-			if(testname.equals(TEST_NAME4)) //wcemm
-			{
+			if(testname.equals(TEST_NAME4)) { //wcemm
 				//compare scalars 
 				HashMap<CellIndex, Double> dmlfile = readDMLScalarFromHDFS("S");
 				HashMap<CellIndex, Double> rfile  = readRScalarFromFS("S");
 				TestUtils.compareScalars((Double) dmlfile.values().toArray()[0], (Double) rfile.values().toArray()[0],0.0001);
 			}
-			else
-			{
+			else {
 				//compare matrices 
 				HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("S");
 				HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("S");
 				TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
-				if( !rewrites )
-					Assert.assertTrue(heavyHittersContainsSubString("spoof") || heavyHittersContainsSubString("sp_spoof"));
 			}
+			
+			if( !rewrites )
+				Assert.assertTrue(heavyHittersContainsSubString("spoofOP") 
+					|| heavyHittersContainsSubString("sp_spoofOP"));
 		}
 		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlag;

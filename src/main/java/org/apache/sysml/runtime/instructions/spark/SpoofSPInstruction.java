@@ -107,6 +107,7 @@ public class SpoofSPInstruction extends SPInstruction
 				bcVars.add(_in[i].getName());
 			}
 			else if(_in[i].getDataType()==DataType.SCALAR) {
+				//note: even if literal, it might be compiled as scalar placeholder
 				scalars.add(sec.getScalarInput(_in[i].getName(), _in[i].getValueType(), _in[i].isLiteral()));
 			}
 		}
@@ -308,7 +309,7 @@ public class SpoofSPInstruction extends SPInstruction
 				MatrixBlock blkIn = tmp._2();
 				MatrixIndexes ixOut = ixIn; 
 				MatrixBlock blkOut = new MatrixBlock();
-				ArrayList<MatrixBlock> inputs = getVectorInputsFromBroadcast(blkIn, (int)ixIn.getRowIndex());
+				ArrayList<MatrixBlock> inputs = getVectorInputsFromBroadcast(blkIn, ixIn);
 					
 				//execute core operation
 				if(((SpoofCellwise)_op).getCellType()==CellType.FULL_AGG) {
@@ -326,13 +327,16 @@ public class SpoofSPInstruction extends SPInstruction
 			return ret.iterator();
 		}
 		
-		private ArrayList<MatrixBlock> getVectorInputsFromBroadcast(MatrixBlock blkIn, int rowIndex) 
+		private ArrayList<MatrixBlock> getVectorInputsFromBroadcast(MatrixBlock blkIn, MatrixIndexes ixIn) 
 			throws DMLRuntimeException 
 		{
 			ArrayList<MatrixBlock> ret = new ArrayList<MatrixBlock>();
 			ret.add(blkIn);
-			for( PartitionedBroadcast<MatrixBlock> vector : _vectors )
-				ret.add(vector.getBlock((vector.getNumRowBlocks()>=rowIndex)?rowIndex:1, 1));
+			for( PartitionedBroadcast<MatrixBlock> in : _vectors ) {
+				int rowIndex = (int)((in.getNumRowBlocks()>=ixIn.getRowIndex())?ixIn.getRowIndex():1);
+				int colIndex = (int)((in.getNumColumnBlocks()>=ixIn.getColumnIndex())?ixIn.getColumnIndex():1);
+				ret.add(in.getBlock(rowIndex, colIndex));
+			}
 			return ret;
 		}
 	}	

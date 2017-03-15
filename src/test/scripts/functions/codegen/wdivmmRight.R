@@ -23,9 +23,9 @@ args<-commandArgs(TRUE)
 options(digits=22)
 library("Matrix")
 
-X= matrix( 3, 2000,2000)
-U= matrix( 4, 2000,10)
-V= matrix( 5, 2000,10)
+X = matrix( 3, 4000, 2000)
+U = matrix( 4, 4000, 10)
+V = matrix( 5, 2000, 10)
 eps = 0.1
 S= (X/(U%*%t(V)))%*%V
 writeMM(as(S, "CsparseMatrix"), paste(args[2], "S", sep="")); 

@@ -157,7 +157,7 @@ public class CellwiseTmplTest extends AutomatedTestBase
 
 			runTest(true, false, null, -1); 
 			runRScript(true); 
-			//System.exit(1);
+			
 			if(testname.equals(TEST_NAME6)) //tak+
 			{
 				//compare scalars 
@@ -172,7 +172,8 @@ public class CellwiseTmplTest extends AutomatedTestBase
 				HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("S");	
 				TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 				if( !(rewrites && testname.equals(TEST_NAME2)) ) //sigmoid
-					Assert.assertTrue(heavyHittersContainsSubString("spoof") || heavyHittersContainsSubString("sp_spoof"));
+					Assert.assertTrue(heavyHittersContainsSubString("spoofCell") 
+						|| heavyHittersContainsSubString("sp_spoofCell"));
 			}
 		}
 		finally {

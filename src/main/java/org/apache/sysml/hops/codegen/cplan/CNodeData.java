@@ -53,7 +53,14 @@ public class CNodeData extends CNode
 		
 	@Override
 	public String getVarname() {
-		return _name;
+		if( "NaN".equals(_name) )
+			return "Double.NaN";
+		else if( "Infinity".equals(_name) )
+			return "Double.POSITIVE_INFINITY";
+		else if( "-Infinity".equals(_name) )
+			return "Double.NEGATIVE_INFINITY";
+		else
+			return _name;
 	}
 	
 	public long getHopID() {
@@ -89,6 +96,7 @@ public class CNodeData extends CNode
 	public boolean equals(Object o) {
 		return (o instanceof CNodeData 
 			&& super.equals(o)
-			&& (!isLiteral() || _name.equals(((CNodeData)o)._name)));
+			&& isLiteral() == ((CNodeData)o).isLiteral()
+			&& (isLiteral() ? _name.equals(((CNodeData)o)._name) : true));
 	}
 }

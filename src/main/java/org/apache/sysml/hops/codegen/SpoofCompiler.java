@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
@@ -39,13 +40,17 @@ import org.apache.sysml.hops.codegen.cplan.CNodeTpl;
 import org.apache.sysml.hops.codegen.cplan.CNodeUnary;
 import org.apache.sysml.hops.codegen.cplan.CNodeUnary.UnaryType;
 import org.apache.sysml.hops.codegen.template.BaseTpl;
-import org.apache.sysml.hops.codegen.template.CellTpl;
-import org.apache.sysml.hops.codegen.template.CplanRegister;
-import org.apache.sysml.hops.codegen.template.OuterProductTpl;
-import org.apache.sysml.hops.codegen.template.RowAggTpl;
+import org.apache.sysml.hops.codegen.template.BaseTpl.CloseType;
+import org.apache.sysml.hops.codegen.template.BaseTpl.TemplateType;
+import org.apache.sysml.hops.codegen.template.CPlanMemoTable;
+import org.apache.sysml.hops.codegen.template.CPlanMemoTable.MemoTableEntry;
+import org.apache.sysml.hops.codegen.template.TemplateUtils;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
+import org.apache.sysml.hops.rewrite.ProgramRewriteStatus;
+import org.apache.sysml.hops.rewrite.ProgramRewriter;
+import org.apache.sysml.hops.rewrite.RewriteCommonSubexpressionElimination;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.ForStatement;
 import org.apache.sysml.parser.ForStatementBlock;
@@ -81,6 +86,8 @@ public class SpoofCompiler
 	//plan cache for cplan->compiled source to avoid unnecessary codegen/source code compile
 	//for equal operators from (1) different hop dags and (2) repeated recompilation 
 	private static ConcurrentHashMap<CNode, Class<?>> planCache = new ConcurrentHashMap<CNode, Class<?>>();
+	
+	private static ProgramRewriter rewriteCSE = new ProgramRewriter(new RewriteCommonSubexpressionElimination(true));
 	
 	public static void generateCode(DMLProgram dmlp) 
 		throws LanguageException, HopsException, DMLRuntimeException
@@ -212,7 +219,7 @@ public class SpoofCompiler
 			cplans = cleanupCPlans(cplans);
 					
 			//explain before modification
-			if( LDEBUG && cplans.size() > 0 ) { //existing cplans
+			if( LDEBUG && !cplans.isEmpty() ) { //existing cplans
 				LOG.info("Codegen EXPLAIN (before optimize): \n"+Explain.explainHops(roots));
 			}
 			
@@ -252,12 +259,19 @@ public class SpoofCompiler
 					Statistics.incrementCodegenPlanCacheTotal();
 			}
 			
-			//generate final hop dag
-			ret = constructModifiedHopDag(roots, cplans, clas);
-			
-			//explain after modification
-			if( LDEBUG && cplans.size() > 0 ) { //existing cplans
-				LOG.info("Codegen EXPLAIN (after optimize): \n"+Explain.explainHops(roots));
+			//create modified hop dag (operator replacement and CSE)
+			if( !cplans.isEmpty() ) 
+			{
+				//generate final hop dag
+				ret = constructModifiedHopDag(roots, cplans, clas);
+				
+				//run common subexpression elimination
+				ret = rewriteCSE.rewriteHopDAGs(ret, new ProgramRewriteStatus());	
+				
+				//explain after modification
+				if( LDEBUG ) {
+					LOG.info("Codegen EXPLAIN (after optimize): \n"+Explain.explainHops(roots));
+				}
 			}
 		}
 		catch( Exception ex ) {
@@ -278,40 +292,112 @@ public class SpoofCompiler
 
 	private static HashMap<Long, Pair<Hop[],CNodeTpl>> constructCPlans(ArrayList<Hop> roots, boolean compileLiterals) throws DMLException
 	{
+		//explore cplan candidates
+		CPlanMemoTable memo = new CPlanMemoTable();
+		for( Hop hop : roots )
+			rExploreCPlans(hop, memo, compileLiterals);
+		
+		//select optimal cplan candidates
+		memo.pruneSuboptimal();
+		
+		//construct actual cplan representations
 		LinkedHashMap<Long, Pair<Hop[],CNodeTpl>> ret = new LinkedHashMap<Long, Pair<Hop[],CNodeTpl>>();
-		for( Hop hop : roots ) {
-			CplanRegister perRootCplans = new CplanRegister();
-			HashSet<Long> memo = new HashSet<Long>();
-			rConstructCPlans(hop, perRootCplans, memo, compileLiterals);
-			
-			for (Entry<Long, Pair<Hop[],CNodeTpl>> entry : perRootCplans.getTopLevelCplans().entrySet())
-				if(!ret.containsKey(entry.getKey()))
-					ret.put(entry.getKey(), entry.getValue());
-		}
+		Hop.resetVisitStatus(roots);
+		for( Hop hop : roots )
+			rConstructCPlans(hop, memo, ret, compileLiterals);
+		Hop.resetVisitStatus(roots);
+		
 		return ret;
 	}
 	
-	private static void rConstructCPlans(Hop hop, CplanRegister cplanReg, HashSet<Long> memo, boolean compileLiterals) throws DMLException
+	private static void rExploreCPlans(Hop hop, CPlanMemoTable memo, boolean compileLiterals) 
+		throws DMLException
 	{		
+		//top-down memoization of processed dag nodes
 		if( memo.contains(hop.getHopID()) )
 			return;
 		
-		//construct template instances
-		BaseTpl[] templates = new BaseTpl[]{
-				new RowAggTpl(), new CellTpl(), new OuterProductTpl()};
+		//recursively process child nodes
+		for( Hop c : hop.getInput() )
+			rExploreCPlans(c, memo, compileLiterals);
 		
-		//process hop with all templates
-		for( BaseTpl tpl : templates ) {
-			if( tpl.openTpl(hop) && tpl.findTplBoundaries(hop,cplanReg) ) {
-				cplanReg.insertCpplans(tpl.getType(), 
-					tpl.constructTplCplan(compileLiterals));
-			}		
+		//generate new node plans
+		for( BaseTpl tpl : TemplateUtils.TEMPLATES )
+			if( tpl.open(hop) )
+				memo.add(hop, tpl.getType());
+		
+		for( Hop c : hop.getInput() ) {
+			if( memo.contains(c.getHopID()) )
+				for( MemoTableEntry me : memo.get(c.getHopID()) ) {
+					BaseTpl tpl = TemplateUtils.createTemplate(me.type, me.closed);
+					if( tpl.fuse(hop, c) )
+						genExplorePlans(tpl, hop, memo, hop.getInput(), c);	
+				}	
+		}
+		
+		//prune subsumed / redundant plans
+		memo.pruneRedundant(hop.getHopID());
+		
+		//check if templates require close
+		if( memo.contains(hop.getHopID()) ) {
+			Iterator<MemoTableEntry> iter = memo.get(hop.getHopID()).iterator();
+			while( iter.hasNext() ) {
+				MemoTableEntry me = iter.next();
+				BaseTpl tpl = TemplateUtils.createTemplate(me.type);
+				CloseType ccode = tpl.close(hop);
+				if( ccode != CloseType.OPEN ) {
+					me.closed = true;
+					if( ccode == CloseType.CLOSED_INVALID )
+						iter.remove();
+				}
+			}
+		}
+	}
+	
+	private static void genExplorePlans(BaseTpl tpl, Hop hop, CPlanMemoTable memo, ArrayList<Hop> inputs, Hop exclude)
+	{
+		//handle unary operators
+		if( hop.getInput().size() == 1 ) {
+			memo.add(hop, tpl.getType(), exclude.getHopID());
+		}
+		//handle binary operators
+		//TODO rework plan exploration step
+		else if( hop.getInput().size() == 2 ) {
+			int input2ix = (inputs.get(0)==exclude ? 1:0);
+			Hop input2 = inputs.get(input2ix); 
+			long[] refs = (input2ix==1) ? new long[]{exclude.getHopID(), -1} : new long[]{-1, exclude.getHopID()};
+			memo.add(hop, tpl.getType(), refs[0], refs[1]);		
+			if( memo.contains(input2.getHopID()) && !memo.get(input2.getHopID()).get(0).closed
+				&& memo.get(input2.getHopID()).get(0).type == TemplateType.CellTpl && tpl.merge(hop, input2) ) {
+				refs[input2ix] = input2.getHopID();
+				memo.add(hop, tpl.getType(), refs[0], refs[1]);		
+			}
+		}
+		else {
+			LOG.warn("genExplorePlans currently only supports unary and binary operators.");
+		}
+	}
+	
+	private static void rConstructCPlans(Hop hop, CPlanMemoTable memo, HashMap<Long, Pair<Hop[],CNodeTpl>> cplans, boolean compileLiterals) 
+		throws DMLException
+	{		
+		//top-down memoization of processed dag nodes
+		if( hop.isVisited() )
+			return;
+		
+		//generate cplan for existing memo table entry
+		if( memo.containsTopLevel(hop.getHopID()) ) {
+			cplans.put(hop.getHopID(), TemplateUtils
+				.createTemplate(memo.getBest(hop.getHopID()).type)
+				.constructCplan(hop, memo, compileLiterals));
+			if( DMLScript.STATISTICS )
+				Statistics.incrementCodegenCPlanCompile(1); 
 		}
 		
 		//process childs recursively
-		memo.add(hop.getHopID());
 		for( Hop c : hop.getInput() )
-			rConstructCPlans(c, cplanReg, memo, compileLiterals);
+			rConstructCPlans(c, memo, cplans, compileLiterals);
+		hop.setVisited();
 	}
 	
 	////////////////////
@@ -342,8 +428,15 @@ public class SpoofCompiler
 			CNodeTpl tmpCNode = cplans.get(hop.getHopID()).getValue();
 			hnew = new SpoofFusedOp(hop.getName(), hop.getDataType(), hop.getValueType(), 
 					tmpCla.getValue(), false, tmpCNode.getOutputDimType());
-			for( Hop in : tmpCla.getKey() ) {
-				hnew.addInput(in); //add inputs
+			Hop[] inHops = tmpCla.getKey();
+			for( int i=0; i<inHops.length; i++ ) {
+				if( tmpCNode instanceof CNodeOuterProduct 
+					&& inHops[i].getHopID()==((CNodeData)tmpCNode.getInput().get(2)).getHopID()
+					&& !TemplateUtils.hasTransposeParentUnderOuterProduct(inHops[i]) ) {
+					hnew.addInput(HopRewriteUtils.createTranspose(inHops[i]));
+				}
+				else
+					hnew.addInput(inHops[i]); //add inputs
 			}
 			hnew.setOutputBlocksizes(hop.getRowsInBlock() , hop.getColsInBlock());
 			hnew.setDim1(hop.getDim1());
@@ -387,9 +480,10 @@ public class SpoofCompiler
 			else {
 				tpl.cleanupInputs(leafs);
 				ArrayList<Hop> tmp = new ArrayList<Hop>();
-				for( Hop hop : inHops )
-					if( leafs.contains(hop.getHopID()) )
+				for( Hop hop : inHops ) {
+					if( hop!= null && leafs.contains(hop.getHopID()) )
 						tmp.add(hop);
+				}
 				cplans2.put(e.getKey(), new Pair<Hop[],CNodeTpl>(
 						tmp.toArray(new Hop[0]),tpl));
 			}
@@ -415,7 +509,7 @@ public class SpoofCompiler
 	
 	private static void rCollectLeafIDs(CNode node, HashSet<Long> leafs) {
 		//collect leaf variable names
-		if( node instanceof CNodeData )
+		if( node instanceof CNodeData && !((CNodeData)node).isLiteral() )
 			leafs.add(((CNodeData) node).getHopID());
 		
 		//recursively process cplan

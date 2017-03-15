@@ -41,7 +41,7 @@ public class CNodeCell extends CNodeTpl
 			+ "  public %TMP%() {\n"
 			+ "    _type = CellType.%TYPE%;\n"
 			+ "  }\n"
-			+ "  protected double genexecDense( double a, double[][] b, double[] scalars, int n, int m, int rowIndex, int colIndex) { \n"
+			+ "  protected double genexec( double a, double[][] b, double[] scalars, int n, int m, int rowIndex, int colIndex) { \n"
 			+ "%BODY_dense%"
 			+ "    return %OUT%;\n"
 			+ "  } \n"
@@ -51,7 +51,7 @@ public class CNodeCell extends CNodeTpl
 	private boolean _multipleConsumers = false;
 	
 	public CNodeCell(ArrayList<CNode> inputs, CNode output ) {
-		super(inputs,output);
+		super(inputs, output);
 	}
 	
 	public void setMultipleConsumers(boolean flag) {
@@ -138,8 +138,10 @@ public class CNodeCell extends CNodeTpl
 			return false;
 		
 		CNodeCell that = (CNodeCell)o;
-		return super.equals(that)
-			&& _type == that._type;
+		return super.equals(that) 
+			&& _type == that._type
+			&& equalInputReferences(
+				_output, that._output, _inputs, that._inputs);
 	}
 	
 	@Override

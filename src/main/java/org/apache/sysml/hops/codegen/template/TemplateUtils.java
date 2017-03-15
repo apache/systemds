@@ -24,178 +24,32 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
-import java.util.Map.Entry;
 
+import org.apache.sysml.hops.AggBinaryOp;
 import org.apache.sysml.hops.AggUnaryOp;
 import org.apache.sysml.hops.BinaryOp;
-import org.apache.sysml.hops.DataGenOp;
-import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.LiteralOp;
-import org.apache.sysml.hops.ReorgOp;
 import org.apache.sysml.hops.TernaryOp;
 import org.apache.sysml.hops.Hop.AggOp;
 import org.apache.sysml.hops.Hop.Direction;
-import org.apache.sysml.hops.Hop.ReOrgOp;
 import org.apache.sysml.hops.UnaryOp;
 import org.apache.sysml.hops.codegen.cplan.CNode;
 import org.apache.sysml.hops.codegen.cplan.CNodeBinary.BinType;
-import org.apache.sysml.hops.codegen.cplan.CNodeCell;
 import org.apache.sysml.hops.codegen.cplan.CNodeData;
-import org.apache.sysml.hops.codegen.cplan.CNodeOuterProduct;
-import org.apache.sysml.hops.codegen.cplan.CNodeTpl;
 import org.apache.sysml.hops.codegen.cplan.CNodeUnary;
 import org.apache.sysml.hops.codegen.cplan.CNodeUnary.UnaryType;
+import org.apache.sysml.hops.codegen.template.BaseTpl.TemplateType;
+import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.hops.codegen.cplan.CNodeTernary.TernaryType;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.codegen.SpoofCellwise.CellType;
-import org.apache.sysml.runtime.matrix.data.Pair;
+import org.apache.sysml.runtime.codegen.SpoofOuterProduct.OutProdType;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class TemplateUtils 
 {
-	public static boolean inputsAreGenerated(Hop parent, ArrayList<Hop> inputs, HashMap<Long, Pair<Hop[],CNodeTpl>> cpplans)
-	{		
-		if( parent instanceof DataOp || parent instanceof DataGenOp || parent instanceof LiteralOp || inputs.contains(parent) )
-			return false;
-	
-		for(Hop hop : parent.getInput() )
-			if(!inputs.contains(hop) && !(hop instanceof DataOp) && !(hop instanceof DataGenOp) && !(hop.getDataType()==DataType.SCALAR) && !isVector(hop) && !(cpplans.containsKey(hop.getHopID())) && !( hop instanceof ReorgOp && ((ReorgOp)hop).getOp() == ReOrgOp.TRANSPOSE && inputsAreGenerated(hop,inputs, cpplans) ))
-				return false;
-		return true;
-	}
-	
-	public static ArrayList<CNode> fetchOperands(Hop hop,  HashMap<Long, Pair<Hop[],CNodeTpl>> cpplans, ArrayList<CNode> addedCNodes, ArrayList<Hop> addedHops, ArrayList<CNodeData> initialCNodes, boolean compileLiterals)
-	{
-		ArrayList<CNode> cnodeData = new ArrayList<CNode>();
-		for (Hop h: hop.getInput())
-		{
-			CNode cdata = null;
-			
-			//CNodeData already in template inputs
-			for(CNodeData c : initialCNodes) {
-				if( c.getHopID() == h.getHopID() ) {
-					cdata = c;
-					break;
-				}
-			}
-			
-			if(cdata != null)
-			{
-				cnodeData.add(cdata);
-				continue;
-			}
-			//hop already in the cplan
-			else if(cpplans.containsKey(h.getHopID()))
-			{
-				cdata = cpplans.get(h.getHopID()).getValue().getOutput();
-			}
-			else if(h instanceof ReorgOp && ((ReorgOp)h).getOp()==ReOrgOp.TRANSPOSE )
-			{
-				//fetch what is under the transpose
-				Hop in = h.getInput().get(0);
-				cdata = new CNodeData(in);
-				if(in instanceof DataOp || in instanceof DataGenOp ) {
-					addedCNodes.add(cdata);
-					addedHops.add(in);
-				}
-			}
-			else
-			{
-				//note: only compile literals if forced or integer literals (likely constants) 
-				//to increase reuse potential on literal replacement during recompilation
-				cdata = new CNodeData(h);
-				cdata.setLiteral(h instanceof LiteralOp && (compileLiterals 
-					|| UtilFunctions.isIntegerNumber(((LiteralOp)h).getStringValue())));
-				if( !cdata.isLiteral() ) {
-					addedCNodes.add(cdata);
-					addedHops.add(h);
-				}
-			}
-			
-			cnodeData.add(cdata);
-		}
-		return cnodeData;
-	}
-	
-	public static void setOutputToExistingTemplate(Hop hop, CNode out,  HashMap<Long, Pair<Hop[],CNodeTpl>> cpplans, ArrayList<CNode> addedCNodes, ArrayList<Hop> addedHops)
-	{
-		//get the toplevel rowTemp
-		Entry<Long, Pair<Hop[],CNodeTpl>> cplan = null;
-		Iterator<Entry<Long, Pair<Hop[],CNodeTpl>>> iterator = cpplans.entrySet().iterator();
-		while (iterator.hasNext()) 
-			cplan = iterator.next();
-		
-		CNodeTpl tmpl = cplan.getValue().getValue().clone();
-		tmpl.setDataType(hop.getDataType());
-		
-		if(tmpl instanceof CNodeOuterProduct) {
-			((CNodeOuterProduct) tmpl).setOutProdType( ((CNodeOuterProduct)cplan.getValue().getValue()).getOutProdType());
-			((CNodeOuterProduct) tmpl).setTransposeOutput(((CNodeOuterProduct)cplan.getValue().getValue()).isTransposeOutput() );
-		}
-		else if( tmpl instanceof CNodeCell ) {
-			((CNodeCell)tmpl).setCellType(getCellType(hop));
-			((CNodeCell)tmpl).setMultipleConsumers(hop.getParent().size()>1);
-		}
-		
-		//add extra inputs
-		for(CNode c : addedCNodes)
-			tmpl.addInput(c);
-		
-		//modify addedHops if they exist
-		
-		Hop[] currentInputHops = cplan.getValue().getKey();
-		for (Hop h : currentInputHops)
-			if (addedHops.contains(h))
-				addedHops.remove(h);
-		
-		Hop[] extendedHopInputs = new Hop[cplan.getValue().getKey().length + addedHops.size()];
-		System.arraycopy(cplan.getValue().getKey(), 0, extendedHopInputs, 0, cplan.getValue().getKey().length);
-		for(int j=addedHops.size(); j > 0; j--)	
-			extendedHopInputs[extendedHopInputs.length-j] = addedHops.get(addedHops.size() - j);  //append the added hops to the end of the array
-	
-		//set the template output and add it to the cpplans
-		Pair<Hop[],CNodeTpl> pair = new Pair<Hop[],CNodeTpl>(extendedHopInputs,tmpl);
-		pair.getValue().setOutput(out);
-		cpplans.put(hop.getHopID(), pair);
-		
-	}
-
-	public static boolean isOperandsIndependent(ArrayList<CNode> cnodeData, ArrayList<Hop> addedHops, String[] varNames)
-	{
-		for(CNode c : cnodeData) {
-			// it is some variable inside the cplan // TODO needs to be modified because sometimes the varname is not null but the variable is in the cplan
-			if(c.getVarname() == null)
-				return false;
-			//if one of the operands is is any of the varnames // if one of the operands is T(X) this condition will apply as well because during fetch operands we fetch what is inside transpose 
-			for(String varName : varNames)
-				if(c.getVarname().equals(varName))
-					return false;
-		}
-		return true;
-	}
-	
-	public static Entry<Long, Pair<Hop[],CNodeTpl>> getTopLevelCpplan(HashMap<Long, Pair<Hop[],CNodeTpl>> cplans)
-	{
-		Entry<Long, Pair<Hop[],CNodeTpl>> ret = null;
-		
-		//get last entry (most fused operators) or special handling
-		boolean hasExp = false;
-		for( Entry<Long, Pair<Hop[],CNodeTpl>> e : cplans.entrySet() ) 
-		{ 
-			ret = e; //keep last seen entry
-			
-			//special handling overlapping fused operators with exp
-			hasExp |= (ret.getValue().getValue().getOutput() instanceof CNodeUnary
-					&& ((CNodeUnary)ret.getValue().getValue().getOutput()).getType()==UnaryType.EXP);
-			
-			if( hasExp && ret.getValue().getValue() instanceof CNodeCell
-				&& ((CNodeCell)ret.getValue().getValue()).hasMultipleConsumers() )
-				break;
-		}
-		
-		return ret;
-	}
+	public static final BaseTpl[] TEMPLATES = new BaseTpl[]{new RowAggTpl(), new CellTpl(), new OuterProductTpl()};
 	
 	public static boolean isVector(Hop hop) {
 		return (hop.getDataType() == DataType.MATRIX 
@@ -229,6 +83,16 @@ public class TemplateUtils
 		return left.dimsKnown() && right.dimsKnown() 
 			&& left.getDataType().isMatrix() && right.getDataType().isMatrix()
 			&& left.getDim1() > right.getDim1();
+	}
+	
+	public static boolean isBinaryMatrixColVector(Hop hop) {
+		if( !(hop instanceof BinaryOp) )
+			return false;
+		Hop left = hop.getInput().get(0);
+		Hop right = hop.getInput().get(1);
+		return left.dimsKnown() && right.dimsKnown() 
+			&& left.getDataType().isMatrix() && right.getDataType().isMatrix()
+			&& left.getDim2() > right.getDim2();
 	}
 
 	public static boolean isOperationSupported(Hop h) {
@@ -307,16 +171,81 @@ public class TemplateUtils
 					ret[pos++] = c; 
 		return ret;
 	}
+
+	public static BaseTpl createTemplate(TemplateType type) {
+		return createTemplate(type, false);
+	}
 	
-	private static CellType getCellType(Hop hop) {
+	public static BaseTpl createTemplate(TemplateType type, boolean closed) {
+		BaseTpl tpl = null;
+		switch( type ) {
+			case CellTpl: tpl = new CellTpl(); break;
+			case RowAggTpl: tpl = new RowAggTpl(); break;
+			case OuterProdTpl: tpl = new OuterProductTpl(); break;
+		}
+		tpl._closed = closed;
+		return tpl;
+	}
+	
+	public static CellType getCellType(Hop hop) {
 		return (hop instanceof AggUnaryOp && ((AggUnaryOp)hop).getOp() == AggOp.SUM) ?
 			((((AggUnaryOp) hop).getDirection() == Direction.RowCol) ? 
 			CellType.FULL_AGG : CellType.ROW_AGG) : CellType.NO_AGG;
+	}
+	
+	public static OutProdType getOuterProductType(Hop X, Hop U, Hop V, Hop out) {
+		if( out.getDataType() == DataType.SCALAR ) 
+			return OutProdType.AGG_OUTER_PRODUCT;
+		else if( (out instanceof AggBinaryOp && (out.getInput().get(0) == U 
+				|| HopRewriteUtils.isTransposeOperation(out.getInput().get(0))
+				&& out.getInput().get(0).getInput().get(0) == U))
+				|| HopRewriteUtils.isTransposeOperation(out) ) 
+			return OutProdType.LEFT_OUTER_PRODUCT;
+		else if( out instanceof AggBinaryOp && (out.getInput().get(1) == V
+				|| HopRewriteUtils.isTransposeOperation(out.getInput().get(1)) 
+				&& out.getInput().get(1).getInput().get(0) == V ) )
+			return OutProdType.RIGHT_OUTER_PRODUCT;
+		else if( out instanceof BinaryOp && HopRewriteUtils.isEqualSize(out.getInput().get(0), out.getInput().get(1)) )
+			return OutProdType.CELLWISE_OUTER_PRODUCT;
+		
+		//should never come here
+		throw new RuntimeException("Undefined outer product type");
 	}
 	
 	public static boolean isLookup(CNode node) {
 		return (node instanceof CNodeUnary 
 				&& (((CNodeUnary)node).getType()==UnaryType.LOOKUP_R 
 				|| ((CNodeUnary)node).getType()==UnaryType.LOOKUP_RC));
+	}
+
+	public static CNodeData createCNodeData(Hop hop, boolean compileLiterals) {
+		CNodeData cdata = new CNodeData(hop);
+		cdata.setLiteral(hop instanceof LiteralOp && (compileLiterals 
+				|| UtilFunctions.isIntegerNumber(((LiteralOp)hop).getStringValue())));
+		return cdata;
+	}
+
+	public static CNode skipTranspose(CNode cdataOrig, Hop hop, HashMap<Long, CNode> tmp, boolean compileLiterals) {
+		if( HopRewriteUtils.isTransposeOperation(hop) ) {
+			CNode cdata = tmp.get(hop.getInput().get(0).getHopID());
+			if( cdata == null ) { //never accessed
+				cdata = TemplateUtils.createCNodeData(hop.getInput().get(0), compileLiterals);
+				tmp.put(hop.getInput().get(0).getHopID(), cdata);
+			}
+			tmp.put(hop.getHopID(), cdata);
+			return cdata;
+		}
+		else {
+			return cdataOrig;
+		}
+	}
+	
+	public static boolean hasTransposeParentUnderOuterProduct(Hop hop) {
+		for( Hop p : hop.getParent() )
+			if( HopRewriteUtils.isTransposeOperation(p) )
+				for( Hop p2 : p.getParent() )
+					if( HopRewriteUtils.isOuterProductLikeMM(p2) )
+						return true;
+		return false;
 	}
 }

@@ -23,7 +23,7 @@ import java.util.ArrayList;
 
 import org.apache.sysml.hops.codegen.SpoofFusedOp.SpoofOutputDimsType;
 
-public class CNodeRowAggVector extends CNodeTpl
+public class CNodeRowAgg extends CNodeTpl
 {
 	private static final String TEMPLATE = 
 			  "package codegen;\n"
@@ -44,7 +44,7 @@ public class CNodeRowAggVector extends CNodeTpl
 			+ "  } \n"			
 			+ "}\n";
 
-	public CNodeRowAggVector(ArrayList<CNode> inputs, CNode output ) {
+	public CNodeRowAgg(ArrayList<CNode> inputs, CNode output ) {
 		super(inputs, output);
 	}
 	
@@ -95,7 +95,7 @@ public class CNodeRowAggVector extends CNodeTpl
 	
 	@Override
 	public CNodeTpl clone() {
-		return new CNodeRowAggVector(_inputs, _output);
+		return new CNodeRowAgg(_inputs, _output);
 	}
 	
 	@Override
@@ -105,8 +105,13 @@ public class CNodeRowAggVector extends CNodeTpl
 	
 	@Override 
 	public boolean equals(Object o) {
-		return (o instanceof CNodeRowAggVector
-			&& super.equals(o));
+		if(!(o instanceof CNodeRowAgg))
+			return false;
+		
+		CNodeRowAgg that = (CNodeRowAgg)o;
+		return super.equals(o)
+			&& equalInputReferences(
+				_output, that._output, _inputs, that._inputs);
 	}
 	
 	@Override

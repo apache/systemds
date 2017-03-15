@@ -56,17 +56,20 @@ public abstract class SpoofOperator implements Serializable
 	}
 	
 	protected double[][] prepInputMatrices(ArrayList<MatrixBlock> inputs) {
-		return prepInputMatrices(inputs, 1);
+		return prepInputMatrices(inputs, 1, inputs.size()-1);
 	}
 	
 	protected double[][] prepInputMatrices(ArrayList<MatrixBlock> inputs, int offset) {
-		double[][] b = new double[inputs.size()-offset][]; 
-		for(int i=offset; i < inputs.size(); i++) {
-			//allocate dense block in place for empty blocks
-			if( inputs.get(i).isEmptyBlock(false) && !inputs.get(i).isAllocated() )
-				inputs.get(i).allocateDenseBlock(); 
-			//convert sparse to dense temporary block
-			if( inputs.get(i).isInSparseFormat() ) {
+		return prepInputMatrices(inputs, offset, inputs.size()-offset);
+	}
+	
+	protected double[][] prepInputMatrices(ArrayList<MatrixBlock> inputs, int offset, int len) {
+		double[][] b = new double[len][]; 
+		for(int i=offset; i<offset+len; i++) {
+			//convert empty or sparse to dense temporary block (note: we don't do
+			//this in place because this block might be used by multiple threads)
+			if( (inputs.get(i).isEmptyBlock(false) && !inputs.get(i).isAllocated())
+				|| inputs.get(i).isInSparseFormat() ) {
 				MatrixBlock tmp = inputs.get(i);
 				b[i-offset] = DataConverter.convertToDoubleVector(tmp);
 				LOG.warn("Converted "+tmp.getNumRows()+"x"+tmp.getNumColumns() + 
@@ -77,6 +80,7 @@ public abstract class SpoofOperator implements Serializable
 				b[i-offset] = inputs.get(i).getDenseBlock();
 			}
 		}
+		
 		return b;
 	}
 	

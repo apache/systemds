@@ -152,7 +152,8 @@ public class DAGCellwiseTmplTest extends AutomatedTestBase
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("S");
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("S");	
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
-			Assert.assertTrue(heavyHittersContainsSubString("spoof") || heavyHittersContainsSubString("sp_spoof"));
+			Assert.assertTrue(heavyHittersContainsSubString("spoofCell") 
+				|| heavyHittersContainsSubString("sp_spoofCell"));
 		}
 		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldRewrites;

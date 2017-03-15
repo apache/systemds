@@ -186,7 +186,7 @@ public abstract class CNode
 		CNode cthat = (CNode) that;
 		boolean ret = _inputs.size() == cthat._inputs.size();
 		for( int i=0; i<_inputs.size() && ret; i++ )
-			ret &= _inputs.get(i).equals(_inputs.get(i));
+			ret &= _inputs.get(i).equals(cthat._inputs.get(i));
 		return ret 
 			&& (_output == cthat._output || _output.equals(cthat._output))
 			&& _dataType == cthat._dataType

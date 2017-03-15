@@ -69,6 +69,7 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 			throw new RuntimeException("Invalid input arguments.");
 		
 		//input preparation
+		double[][] ab = prepInputMatrices(inputs, 1, 2);
 		double[][] b = prepInputMatrices(inputs, 3);
 		double[] scalars = prepInputScalars(scalarObjects);
 		
@@ -77,18 +78,14 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 		final int n = inputs.get(0).getNumColumns();	
 		final int k = inputs.get(1).getNumColumns(); // rank
 		
-		//public static void matrixMultWDivMM(MatrixBlock mW, MatrixBlock mU, MatrixBlock mV, MatrixBlock mX, MatrixBlock ret, WDivMMType wt, int k)
 		MatrixBlock a = inputs.get(0);
-		MatrixBlock u = inputs.get(1);
-		MatrixBlock v = inputs.get(2);
-		
 		MatrixBlock out = new MatrixBlock(1, 1, false);
 		out.allocateDenseBlock();
 		
 		if(!a.isInSparseFormat())
-			executeCellwiseDense(a.getDenseBlock(), u.getDenseBlock(), v.getDenseBlock(), b, scalars, out.getDenseBlock(), n, m, k, _outerProductType, 0, m, 0, n);
+			executeCellwiseDense(a.getDenseBlock(), ab[0], ab[1], b, scalars, out.getDenseBlock(), n, m, k, _outerProductType, 0, m, 0, n);
 		else
-			executeCellwiseSparse(a.getSparseBlock(), u.getDenseBlock(), v.getDenseBlock(), b, scalars, out, n, m, k, (int) a.getNonZeros(), _outerProductType, 0, m, 0, n);
+			executeCellwiseSparse(a.getSparseBlock(), ab[0], ab[1], b, scalars, out, n, m, k, (int) a.getNonZeros(), _outerProductType, 0, m, 0, n);
 		return new DoubleObject(out.getDenseBlock()[0]);
 	}
 	
@@ -101,6 +98,7 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 			throw new RuntimeException("Invalid input arguments.");
 		
 		//input preparation
+		double[][] ab = prepInputMatrices(inputs, 1, 2);
 		double[][] b = prepInputMatrices(inputs, 3);
 		double[] scalars = prepInputScalars(scalarObjects);
 		
@@ -118,7 +116,7 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 			//for wdivmm-right, parallelization over rows; both ensure disjoint results)
 			int blklen = (int)(Math.ceil((double)m/numThreads));
 			for( int i=0; i<numThreads & i*blklen<m; i++ )
-				tasks.add(new ParOuterProdAggTask(inputs.get(0), inputs.get(1).getDenseBlock(), inputs.get(2).getDenseBlock(), b, scalars, n, m, k, _outerProductType, i*blklen, Math.min((i+1)*blklen,m), 0, n));
+				tasks.add(new ParOuterProdAggTask(inputs.get(0), ab[0], ab[1], b, scalars, n, m, k, _outerProductType, i*blklen, Math.min((i+1)*blklen,m), 0, n));
 			//execute tasks
 			List<Future<Double>> taskret = pool.invokeAll(tasks);
 			pool.shutdown();
@@ -164,6 +162,7 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 		}			
 		
 		//input preparation
+		double[][] ab = prepInputMatrices(inputs, 1, 2);
 		double[][] b = prepInputMatrices(inputs, 3);
 		double[] scalars = prepInputScalars(scalarObjects);
 				
@@ -173,23 +172,21 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 		final int k = inputs.get(1).getNumColumns(); // rank
 		
 		MatrixBlock a = inputs.get(0);
-		MatrixBlock u = inputs.get(1);
-		MatrixBlock v = inputs.get(2);
 		
 		switch(_outerProductType) {
 			case LEFT_OUTER_PRODUCT:	
 			case RIGHT_OUTER_PRODUCT:
 				if( !a.isInSparseFormat() )
-					executeDense(a.getDenseBlock(), u.getDenseBlock(), v.getDenseBlock(), b, scalars, out.getDenseBlock(), n, m, k, _outerProductType, 0, m, 0, n);
+					executeDense(a.getDenseBlock(), ab[0], ab[1], b, scalars, out.getDenseBlock(), n, m, k, _outerProductType, 0, m, 0, n);
 				else
-					executeSparse(a.getSparseBlock(), u.getDenseBlock(), v.getDenseBlock(), b, scalars, out.getDenseBlock(), n, m, k, (int) a.getNonZeros(), _outerProductType, 0, m, 0, n);
+					executeSparse(a.getSparseBlock(), ab[0], ab[1], b, scalars, out.getDenseBlock(), n, m, k, (int) a.getNonZeros(), _outerProductType, 0, m, 0, n);
 				break;
 				
 			case CELLWISE_OUTER_PRODUCT:
 				if( !a.isInSparseFormat() )
-					executeCellwiseDense(a.getDenseBlock(), u.getDenseBlock(), v.getDenseBlock(), b, scalars, out.getDenseBlock(), n, m, k, _outerProductType, 0, m, 0, n);
+					executeCellwiseDense(a.getDenseBlock(), ab[0], ab[1], b, scalars, out.getDenseBlock(), n, m, k, _outerProductType, 0, m, 0, n);
 				else 
-					executeCellwiseSparse(a.getSparseBlock(), u.getDenseBlock(), v.getDenseBlock(), b, scalars, out, n, m, k, (int) a.getNonZeros(), _outerProductType, 0, m, 0, n);
+					executeCellwiseSparse(a.getSparseBlock(), ab[0], ab[1], b, scalars, out, n, m, k, (int) a.getNonZeros(), _outerProductType, 0, m, 0, n);
 				break;
 	
 			case AGG_OUTER_PRODUCT:
@@ -210,11 +207,11 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 			throw new RuntimeException("Invalid input arguments.");
 		
 		//check empty result
-		if(   (_outerProductType == OutProdType.LEFT_OUTER_PRODUCT && inputs.get(1).isEmptyBlock(false)) //U is empty
-				   || (_outerProductType == OutProdType.RIGHT_OUTER_PRODUCT &&  inputs.get(2).isEmptyBlock(false)) //V is empty
-				   || (_outerProductType == OutProdType.CELLWISE_OUTER_PRODUCT && inputs.get(0).isEmptyBlock(false))) {  //X is empty
-					out.examSparsity(); //turn empty dense into sparse
-					return; 
+		if( (_outerProductType == OutProdType.LEFT_OUTER_PRODUCT && inputs.get(1).isEmptyBlock(false)) //U is empty
+			|| (_outerProductType == OutProdType.RIGHT_OUTER_PRODUCT &&  inputs.get(2).isEmptyBlock(false)) //V is empty
+			|| (_outerProductType == OutProdType.CELLWISE_OUTER_PRODUCT && inputs.get(0).isEmptyBlock(false))) {  //X is empty
+			out.examSparsity(); //turn empty dense into sparse
+			return; 
 		}
 		
 		//input preparation and result allocation (Allocate the output that is set by Sigma2CPInstruction) 
@@ -236,6 +233,7 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 		}	
 		
 		//input preparation
+		double[][] ab = prepInputMatrices(inputs, 1, 2);
 		double[][] b = prepInputMatrices(inputs, 3);
 		double[] scalars = prepInputScalars(scalarObjects);
 		
@@ -254,12 +252,12 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 			if( _outerProductType == OutProdType.LEFT_OUTER_PRODUCT ) {
 				int blklen = (int)(Math.ceil((double)n/numThreads));
 				for( int j=0; j<numThreads & j*blklen<n; j++ )
-					tasks.add(new ParExecTask(inputs.get(0), inputs.get(1).getDenseBlock(), inputs.get(2).getDenseBlock(), b, scalars, out, n, m, k, _outerProductType,  0, m, j*blklen, Math.min((j+1)*blklen, n)));
+					tasks.add(new ParExecTask(inputs.get(0), ab[0], ab[1], b, scalars, out, n, m, k, _outerProductType,  0, m, j*blklen, Math.min((j+1)*blklen, n)));
 			}
 			else { ///right // cellwise
 				int blklen = (int)(Math.ceil((double)m/numThreads));
 				for( int i=0; i<numThreads & i*blklen<m; i++ )
-					tasks.add(new ParExecTask(inputs.get(0), inputs.get(1).getDenseBlock(), inputs.get(2).getDenseBlock(), b, scalars, out, n, m, k, _outerProductType, i*blklen, Math.min((i+1)*blklen,m), 0, n));
+					tasks.add(new ParExecTask(inputs.get(0), ab[0], ab[1], b, scalars, out, n, m, k, _outerProductType, i*blklen, Math.min((i+1)*blklen,m), 0, n));
 			}
 			List<Future<Long>> taskret = pool.invokeAll(tasks);
 			pool.shutdown();

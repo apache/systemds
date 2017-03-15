@@ -138,7 +138,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		//input preparation
 		double[][] b = prepInputMatrices(inputs);
 		double[] scalars = prepInputScalars(scalarObjects);
-		
+
 		//core sequential execute
 		final int m = inputs.get(0).getNumRows();
 		final int n = inputs.get(0).getNumColumns();		
@@ -197,12 +197,12 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 			//as the output might change with different row indices
 			for( int i=rl; i<ru; i++ ) 
 				for( int j=0; j<n; j++ )
-					kplus.execute2(kbuff, genexecDense( 0, b, scalars, n, m, i, j ));
+					kplus.execute2(kbuff, genexec( 0, b, scalars, n, m, i, j ));
 		}
 		else { //general case
 			for( int i=rl, ix=rl*n; i<ru; i++ ) 
 				for( int j=0; j<n; j++, ix++ )
-					kplus.execute2(kbuff, genexecDense( a[ix], b, scalars, n, m, i, j ));
+					kplus.execute2(kbuff, genexec( a[ix], b, scalars, n, m, i, j ));
 		}
 		
 		return kbuff._sum;
@@ -219,14 +219,14 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 				//as the output might change with different row indices
 				for( int i=rl, ix=rl*n; i<ru; i++ ) 
 					for( int j=0; j<n; j++, ix++ ) {
-						c[ix] = genexecDense( 0, b, scalars, n, m, i, j ); 
+						c[ix] = genexec( 0, b, scalars, n, m, i, j ); 
 						lnnz += (c[ix]!=0) ? 1 : 0;
 					}
 			}
 			else { //general case
 				for( int i=rl, ix=rl*n; i<ru; i++ ) 
 					for( int j=0; j<n; j++, ix++ ) {
-						c[ix] = genexecDense( a[ix], b, scalars, n, m, i, j); 
+						c[ix] = genexec( a[ix], b, scalars, n, m, i, j); 
 						lnnz += (c[ix]!=0) ? 1 : 0;
 					}
 			}
@@ -242,7 +242,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 				for( int i=rl; i<ru; i++ ) { 
 					kbuff.set(0, 0);
 					for( int j=0; j<n; j++ )
-						kplus.execute2(kbuff, genexecDense( 0, b, scalars, n, m, i, j ));
+						kplus.execute2(kbuff, genexec( 0, b, scalars, n, m, i, j ));
 					c[i] = kbuff._sum;
 					lnnz += (c[i]!=0) ? 1 : 0;
 				}
@@ -251,7 +251,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 				for( int i=rl, ix=rl*n; i<ru; i++ ) {
 					kbuff.set(0, 0);
 					for( int j=0; j<n; j++, ix++ )
-						kplus.execute2(kbuff, genexecDense( a[ix], b, scalars, n, m, i, j ));
+						kplus.execute2(kbuff, genexec( a[ix], b, scalars, n, m, i, j ));
 					c[i] = kbuff._sum;
 					lnnz += (c[i]!=0) ? 1 : 0;
 				}
@@ -267,7 +267,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		KahanPlus kplus = KahanPlus.getKahanPlusFnObject();
 		
 		//TODO rework sparse safe test
-		double val = genexecDense( 0, b, scalars, n, m, 0, 0 );
+		double val = genexec( 0, b, scalars, n, m, 0, 0 );
 		
 		if(val == 0 && b.length==0) // sparse safe
 		{
@@ -278,7 +278,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 						int alen = sblock.size(i);
 						double[] avals = sblock.values(i);
 						for( int j=apos; j<apos+alen; j++ ) {
-							kplus.execute2( kbuff, genexecDense(avals[j], b, scalars, n, m, i, j)); 
+							kplus.execute2( kbuff, genexec(avals[j], b, scalars, n, m, i, j)); 
 						}
 					}	
 			}
@@ -288,7 +288,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 			for(int i=rl; i<ru; i++)
 				for(int j=0; j<n; j++) {
 					double valij = (sblock != null) ? sblock.get(i, j) : 0;
-					kplus.execute2( kbuff, genexecDense(valij, b, scalars, n, m, i, j)); 
+					kplus.execute2( kbuff, genexec(valij, b, scalars, n, m, i, j)); 
 				}
 		}
 		
@@ -298,7 +298,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 	private long executeSparse(SparseBlock sblock, double[][] b, double[] scalars, double[] c, int n, int m, int rl, int ru) 
 	{
 		//TODO rework sparse safe test
-		double val0 = genexecDense( 0, b, scalars, n, m, 0, 0 );
+		double val0 = genexec( 0, b, scalars, n, m, 0, 0 );
 		long lnnz = 0;
 		
 		if( _type == CellType.NO_AGG )
@@ -312,7 +312,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 							int alen = sblock.size(i);
 							double[] avals = sblock.values(i);
 							for( int j=apos; j<apos+alen; j++ ) {
-								double val = genexecDense(avals[j], b, scalars, n, m, i, j);
+								double val = genexec(avals[j], b, scalars, n, m, i, j);
 								c[i*n+sblock.indexes(i)[j]] = val;
 								lnnz += (val!=0) ? 1 : 0;
 							}
@@ -324,7 +324,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 				for(int i=rl, cix=rl*n; i<ru; i++, cix+=n)
 					for(int j=0; j<n; j++) {
 						double valij = (sblock != null) ? sblock.get(i, j) : 0;
-						c[cix+j] = genexecDense(valij, b, scalars, n, m, i, j); 
+						c[cix+j] = genexec(valij, b, scalars, n, m, i, j); 
 						lnnz += (c[cix+j]!=0) ? 1 : 0;
 					}
 			}
@@ -344,7 +344,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 						int alen = sblock.size(i);
 						double[] avals = sblock.values(i);
 						for( int j=apos; j<apos+alen; j++ ) {
-							kplus.execute2(kbuff, genexecDense(avals[j], b, scalars, n, m, i, j));
+							kplus.execute2(kbuff, genexec(avals[j], b, scalars, n, m, i, j));
 						}
 						c[i] = kbuff._sum; 
 						lnnz += (c[i]!=0) ? 1 : 0;	
@@ -357,7 +357,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 					kbuff.set(0, 0);
 					for(int j=0; j<n; j++) {
 						double valij = (sblock != null) ? sblock.get(i, j) : 0;
-						kplus.execute2( kbuff, genexecDense(valij, b, scalars, n, m, i, j)); 
+						kplus.execute2( kbuff, genexec(valij, b, scalars, n, m, i, j)); 
 					}
 					c[i] = kbuff._sum;
 					lnnz += (c[i]!=0) ? 1 : 0;
@@ -368,7 +368,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		return lnnz;
 	}
 
-	protected abstract double genexecDense( double a, double[][] b, double[] scalars, int n, int m, int rowIndex, int colIndex);
+	protected abstract double genexec( double a, double[][] b, double[] scalars, int n, int m, int rowIndex, int colIndex);
 	
 	private class ParAggTask implements Callable<Double> 
 	{

@@ -159,7 +159,7 @@ public class AlgorithmKMeans extends AutomatedTestBase
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{ "-explain", "hops", "-stats",
+			programArgs = new String[]{ "-explain", "-stats",
 				"-args", input("X"), String.valueOf(centroids),
 				String.valueOf(runs), String.valueOf(epsilon), String.valueOf(maxiter), output("C")};
 
@@ -173,13 +173,6 @@ public class AlgorithmKMeans extends AutomatedTestBase
 			writeInputMatrixWithMTD("X", X, true);
 			
 			runTest(true, false, null, -1); 
-			
-			//no comparison with R due to randomized algorithm
-			//runRScript(true); 
-			//compare matrices 
-			//HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("C");
-			//HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("C");
-			//TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 			
 			Assert.assertTrue(heavyHittersContainsSubString("spoof") || heavyHittersContainsSubString("sp_spoof"));
 		}

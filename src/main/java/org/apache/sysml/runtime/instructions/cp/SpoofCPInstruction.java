@@ -78,8 +78,10 @@ public class SpoofCPInstruction extends ComputationCPInstruction
 		for (CPOperand input : _in) {
 			if(input.getDataType()==DataType.MATRIX)
 				inputs.add(ec.getMatrixInput(input.getName()));
-			else if(input.getDataType()==DataType.SCALAR)
+			else if(input.getDataType()==DataType.SCALAR) {
+				//note: even if literal, it might be compiled as scalar placeholder
 				scalars.add(ec.getScalarInput(input.getName(), input.getValueType(), input.isLiteral()));
+			}
 		}
 		
 		// set the output dimensions to the hop node matrix dimensions

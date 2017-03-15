@@ -682,7 +682,8 @@ public class HopRewriteUtils
 	}
 	
 	public static boolean isOuterProductLikeMM( Hop hop ) {
-		return isMatrixMultiply(hop)
+		return isMatrixMultiply(hop) && hop.dimsKnown() 
+			&& hop.getInput().get(0).dimsKnown() && hop.getInput().get(1).dimsKnown()	
 			&& hop.getInput().get(0).getDim1() > hop.getInput().get(0).getDim2()
 			&& hop.getInput().get(1).getDim1() < hop.getInput().get(1).getDim2();
 	}
@@ -757,6 +758,19 @@ public class HopRewriteUtils
 		return hop instanceof BinaryOp && 
 			((hop.getInput().get(0).getDataType().isMatrix() && hop.getInput().get(1).getDataType().isScalar())
 			||(hop.getInput().get(1).getDataType().isMatrix() && hop.getInput().get(0).getDataType().isScalar()));
+	}
+	
+	public static boolean isBinaryMatrixMatrixOperation(Hop hop) {
+		return hop instanceof BinaryOp 
+			&& hop.getInput().get(0).getDataType().isMatrix() && hop.getInput().get(1).getDataType().isMatrix()
+			&& hop.getInput().get(0).dimsKnown() && hop.getInput().get(0).getDim1() > 1 && hop.getInput().get(0).getDim2() > 1
+			&& hop.getInput().get(1).dimsKnown() && hop.getInput().get(1).getDim1() > 1 && hop.getInput().get(1).getDim2() > 1;
+	}
+	
+	public static boolean isBinaryMatrixColVectorOperation(Hop hop) {
+		return hop instanceof BinaryOp 
+			&& hop.getInput().get(0).getDataType().isMatrix() && hop.getInput().get(1).getDataType().isMatrix()
+			&& hop.getInput().get(0).dimsKnown() && hop.getInput().get(1).dimsKnown() && hop.getInput().get(1).getDim2() == 1;
 	}
 	
 	public static boolean isUnary(Hop hop, OpOp1 type) {

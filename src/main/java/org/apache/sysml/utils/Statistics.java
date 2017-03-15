@@ -28,7 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.LongAdder;
 
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
@@ -55,167 +55,133 @@ public class Statistics
 	private static long execEndTime = 0;
 
 	// number of compiled/executed MR jobs
-	private static int iNoOfExecutedMRJobs = 0;
-	private static int iNoOfCompiledMRJobs = 0;
+	private static final LongAdder numExecutedMRJobs = new LongAdder();
+	private static final LongAdder numCompiledMRJobs = new LongAdder();
 
 	// number of compiled/executed SP instructions
-	private static int iNoOfExecutedSPInst = 0;
-	private static int iNoOfCompiledSPInst = 0;
-	
+	private static final LongAdder numExecutedSPInst = new LongAdder();
+	private static final LongAdder numCompiledSPInst = new LongAdder();
 
-	//JVM stats
+	//JVM stats (low frequency updates)
 	private static long jitCompileTime = 0; //in milli sec
 	private static long jvmGCTime = 0; //in milli sec
 	private static long jvmGCCount = 0; //count
 	
 	//HOP DAG recompile stats (potentially high update frequency)
-	private static AtomicLong hopRecompileTime = new AtomicLong(0); //in nano sec
-	private static AtomicLong hopRecompilePred = new AtomicLong(0); //count
-	private static AtomicLong hopRecompileSB = new AtomicLong(0);   //count
+	private static final LongAdder hopRecompileTime = new LongAdder(); //in nano sec
+	private static final LongAdder hopRecompilePred = new LongAdder(); //count
+	private static final LongAdder hopRecompileSB = new LongAdder();   //count
 
 	//CODEGEN
-	private static AtomicLong codegenCompileTime = new AtomicLong(0); //in nano
-	private static AtomicLong codegenClassCompileTime = new AtomicLong(0); //in nano
-	private static AtomicLong codegenHopCompile = new AtomicLong(0); //count
-	private static AtomicLong codegenCPlanCompile = new AtomicLong(0); //count
-	private static AtomicLong codegenClassCompile = new AtomicLong(0); //count
-	private static AtomicLong codegenPlanCacheHits = new AtomicLong(0); //count
-	private static AtomicLong codegenPlanCacheTotal = new AtomicLong(0); //count
+	private static final LongAdder codegenCompileTime = new LongAdder(); //in nano
+	private static final LongAdder codegenClassCompileTime = new LongAdder(); //in nano
+	private static final LongAdder codegenHopCompile = new LongAdder(); //count
+	private static final LongAdder codegenCPlanCompile = new LongAdder(); //count
+	private static final LongAdder codegenClassCompile = new LongAdder(); //count
+	private static final LongAdder codegenPlanCacheHits = new LongAdder(); //count
+	private static final LongAdder codegenPlanCacheTotal = new LongAdder(); //count
 	
 	//Function recompile stats 
-	private static AtomicLong funRecompileTime = new AtomicLong(0); //in nano sec
-	private static AtomicLong funRecompiles = new AtomicLong(0); //count
+	private static final LongAdder funRecompileTime = new LongAdder(); //in nano sec
+	private static final LongAdder funRecompiles = new LongAdder(); //count
 	
 	//Spark-specific stats
 	private static long sparkCtxCreateTime = 0; 
-	private static AtomicLong sparkParallelize = new AtomicLong(0L);
-	private static AtomicLong sparkParallelizeCount = new AtomicLong(0L);
-	private static AtomicLong sparkCollect = new AtomicLong(0L);
-	private static AtomicLong sparkCollectCount = new AtomicLong(0L);
-	private static AtomicLong sparkBroadcast = new AtomicLong(0L);
-	private static AtomicLong sparkBroadcastCount = new AtomicLong(0L);
+	private static final LongAdder sparkParallelize = new LongAdder();
+	private static final LongAdder sparkParallelizeCount = new LongAdder();
+	private static final LongAdder sparkCollect = new LongAdder();
+	private static final LongAdder sparkCollectCount = new LongAdder();
+	private static final LongAdder sparkBroadcast = new LongAdder();
+	private static final LongAdder sparkBroadcastCount = new LongAdder();
 
-	//PARFOR optimization stats 
+	//PARFOR optimization stats (low frequency updates)
 	private static long parforOptTime = 0; //in milli sec
 	private static long parforOptCount = 0; //count
 	private static long parforInitTime = 0; //in milli sec
 	private static long parforMergeTime = 0; //in milli sec
 	
 	//heavy hitter counts and times 
-	private static HashMap<String,Long> _cpInstTime   =  new HashMap<String, Long>();
-	private static HashMap<String,Long> _cpInstCounts =  new HashMap<String, Long>();
+	private static HashMap<String,Long> _cpInstTime = new HashMap<String, Long>();
+	private static HashMap<String,Long> _cpInstCounts = new HashMap<String, Long>();
 
-	private static AtomicLong lTotalUIPVar = new AtomicLong(0);
-	private static AtomicLong lTotalLix = new AtomicLong(0);
-	private static AtomicLong lTotalLixUIP = new AtomicLong(0);
+	private static final LongAdder lTotalUIPVar = new LongAdder();
+	private static final LongAdder lTotalLix = new LongAdder();
+	private static final LongAdder lTotalLixUIP = new LongAdder();
 
-	public static synchronized void setNoOfExecutedMRJobs(int iNoOfExecutedMRJobs) {
-		Statistics.iNoOfExecutedMRJobs = iNoOfExecutedMRJobs;
-	}
-
-	public static synchronized int getNoOfExecutedMRJobs() {
-		return iNoOfExecutedMRJobs;
+	public static synchronized long getNoOfExecutedMRJobs() {
+		return numExecutedMRJobs.longValue();
 	}
 	
-	public static synchronized void incrementNoOfExecutedMRJobs() {
-		iNoOfExecutedMRJobs ++;
+	public static void incrementNoOfExecutedMRJobs() {
+		numExecutedMRJobs.increment();
 	}
 	
-	public static synchronized void decrementNoOfExecutedMRJobs() {
-		iNoOfExecutedMRJobs --;
+	public static void decrementNoOfExecutedMRJobs() {
+		numExecutedMRJobs.decrement();
 	}
 
-	public static synchronized void setNoOfCompiledMRJobs(int numJobs) {
-		iNoOfCompiledMRJobs = numJobs;
-	}
-
-	public static synchronized int getNoOfCompiledMRJobs() {
-		return iNoOfCompiledMRJobs;
+	public static long getNoOfCompiledMRJobs() {
+		return numCompiledMRJobs.longValue();
 	}
 	
-	public static synchronized void incrementNoOfCompiledMRJobs() {
-		iNoOfCompiledMRJobs ++;
+	public static void incrementNoOfCompiledMRJobs() {
+		numCompiledMRJobs.increment();
 	}
 
-
-	public static synchronized void setNoOfExecutedSPInst(int numJobs) {
-		iNoOfExecutedSPInst = numJobs;
+	public static long getNoOfExecutedSPInst() {
+		return numExecutedSPInst.longValue();
 	}
 	
-	public static synchronized int getNoOfExecutedSPInst() {
-		return iNoOfExecutedSPInst;
+	public static void incrementNoOfExecutedSPInst() {
+		numExecutedSPInst.increment();
 	}
 	
-	public static synchronized void incrementNoOfExecutedSPInst() {
-		iNoOfExecutedSPInst ++;
-	}
-	
-	public static synchronized void decrementNoOfExecutedSPInst() {
-		iNoOfExecutedSPInst --;
-	}
-	
-	public static synchronized void setNoOfCompiledSPInst(int numJobs) {
-		iNoOfCompiledSPInst = numJobs;
+	public static void decrementNoOfExecutedSPInst() {
+		numExecutedSPInst.decrement();
 	}
 
-	public static synchronized int getNoOfCompiledSPInst() {
-		return iNoOfCompiledSPInst;
+	public static long getNoOfCompiledSPInst() {
+		return numCompiledSPInst.longValue();
 	}
 
-	public static synchronized void incrementNoOfCompiledSPInst() {
-		iNoOfCompiledSPInst ++;
+	public static void incrementNoOfCompiledSPInst() {
+		numCompiledSPInst.increment();
 	}
 	
 	public static long getTotalUIPVar() {
-		return lTotalUIPVar.get();
+		return lTotalUIPVar.longValue();
 	}
 
 	public static void incrementTotalUIPVar() {
-		lTotalUIPVar.incrementAndGet();
+		lTotalUIPVar.increment();
 	}
 
 	public static long getTotalLixUIP() {
-		return lTotalLixUIP.get();
+		return lTotalLixUIP.longValue();
 	}
 
 	public static void incrementTotalLixUIP() {
-		lTotalLixUIP.incrementAndGet();
+		lTotalLixUIP.increment();
 	}
 
 	public static long getTotalLix() {
-		return lTotalLix.get();
+		return lTotalLix.longValue();
 	}
 
 	public static void incrementTotalLix() {
-		lTotalLix.incrementAndGet();
+		lTotalLix.increment();
 	}
 
-	public static void resetNoOfCompiledJobs( int count )
-	{
+	public static void resetNoOfCompiledJobs( int count ) {
 		//reset both mr/sp for multiple tests within one jvm
-		
-		if(OptimizerUtils.isSparkExecutionMode()) {
-			setNoOfCompiledSPInst(count);
-			setNoOfCompiledMRJobs(0);
-		}
-		else{
-			setNoOfCompiledMRJobs(count);
-			setNoOfCompiledSPInst(0);
-		}
+		numCompiledSPInst.reset();
+		numCompiledMRJobs.reset();
 	}
 
-	public static void resetNoOfExecutedJobs( int count )
-	{
+	public static void resetNoOfExecutedJobs() {
 		//reset both mr/sp for multiple tests within one jvm
-		
-		if(OptimizerUtils.isSparkExecutionMode()) {
-			setNoOfExecutedSPInst(count);
-			setNoOfExecutedMRJobs(0);		
-		}
-		else {
-			setNoOfExecutedMRJobs(count);
-			setNoOfExecutedSPInst(0);
-		}
+		numExecutedSPInst.reset();
+		numExecutedMRJobs.reset();
 		
 		if( DMLScript.USE_ACCELERATOR )
 			GPUStatistics.setNoOfExecutedGPUInst(0);
@@ -234,94 +200,87 @@ public class Statistics
 	}
 	
 	public static void incrementHOPRecompileTime( long delta ) {
-		//note: not synchronized due to use of atomics
-		hopRecompileTime.addAndGet(delta);
+		hopRecompileTime.add(delta);
 	}
 	
 	public static void incrementHOPRecompilePred() {
-		//note: not synchronized due to use of atomics
-		hopRecompilePred.incrementAndGet();
+		hopRecompilePred.increment();
 	}
 	
 	public static void incrementHOPRecompilePred(long delta) {
-		//note: not synchronized due to use of atomics
-		hopRecompilePred.addAndGet(delta);
+		hopRecompilePred.add(delta);
 	}
 	
 	public static void incrementHOPRecompileSB() {
-		//note: not synchronized due to use of atomics
-		hopRecompileSB.incrementAndGet();
+		hopRecompileSB.increment();
 	}
 	
 	public static void incrementHOPRecompileSB(long delta) {
-		//note: not synchronized due to use of atomics
-		hopRecompileSB.addAndGet(delta);
+		hopRecompileSB.add(delta);
 	}
 	
 	public static void incrementCodegenDAGCompile() {
-		codegenHopCompile.incrementAndGet();
+		codegenHopCompile.increment();
 	}
 	
 	public static void incrementCodegenCPlanCompile(long delta) {
-		codegenCPlanCompile.addAndGet(delta);
+		codegenCPlanCompile.add(delta);
 	}
 	
 	public static void incrementCodegenClassCompile() {
-		codegenClassCompile.incrementAndGet();
+		codegenClassCompile.increment();
 	}
 	
 	public static void incrementCodegenCompileTime(long delta) {
-		codegenCompileTime.addAndGet(delta);
+		codegenCompileTime.add(delta);
 	}
 	
 	public static void incrementCodegenClassCompileTime(long delta) {
-		codegenClassCompileTime.addAndGet(delta);
+		codegenClassCompileTime.add(delta);
 	}
 	
 	public static void incrementCodegenPlanCacheHits() {
-		codegenPlanCacheHits.incrementAndGet();
+		codegenPlanCacheHits.increment();
 	}
 	
 	public static void incrementCodegenPlanCacheTotal() {
-		codegenPlanCacheTotal.incrementAndGet();
+		codegenPlanCacheTotal.increment();
 	}
 	
 	public static long getCodegenDAGCompile() {
-		return codegenHopCompile.get();
+		return codegenHopCompile.longValue();
 	}
 	
 	public static long getCodegenCPlanCompile() {
-		return codegenCPlanCompile.get();
+		return codegenCPlanCompile.longValue();
 	}
 	
 	public static long getCodegenClassCompile() {
-		return codegenClassCompile.get();
+		return codegenClassCompile.longValue();
 	}
 	
 	public static long getCodegenCompileTime() {
-		return codegenCompileTime.get();
+		return codegenCompileTime.longValue();
 	}
 	
 	public static long getCodegenClassCompileTime() {
-		return codegenClassCompileTime.get();
+		return codegenClassCompileTime.longValue();
 	}
 	
 	public static long getCodegenPlanCacheHits() {
-		return codegenPlanCacheHits.get();
+		return codegenPlanCacheHits.longValue();
 	}
 	
 	public static long getCodegenPlanCacheTotal() {
-		return codegenPlanCacheTotal.get();
+		return codegenPlanCacheTotal.longValue();
 	}
 
 	public static void incrementFunRecompileTime( long delta ) {
-		//note: not synchronized due to use of atomics
-		funRecompileTime.addAndGet(delta);
+		funRecompileTime.add(delta);
 	}
 	
 	public static void incrementFunRecompiles() {
-		//note: not synchronized due to use of atomics
-		funRecompiles.incrementAndGet();
+		funRecompiles.increment();
 	}
 	
 	public static synchronized void incrementParForOptimCount(){
@@ -381,21 +340,21 @@ public class Statistics
 	
 	public static void reset()
 	{
-		hopRecompileTime.set(0);
-		hopRecompilePred.set(0);
-		hopRecompileSB.set(0);
+		hopRecompileTime.reset();
+		hopRecompilePred.reset();
+		hopRecompileSB.reset();
 		
-		funRecompiles.set(0);
-		funRecompileTime.set(0);
+		funRecompiles.reset();
+		funRecompileTime.reset();
 		
 		parforOptCount = 0;
 		parforOptTime = 0;
 		parforInitTime = 0;
 		parforMergeTime = 0;
 		
-		lTotalLix.set(0);
-		lTotalLixUIP.set(0);
-		lTotalUIPVar.set(0);
+		lTotalLix.reset();
+		lTotalLixUIP.reset();
+		lTotalUIPVar.reset();
 		
 		resetJITCompileTime();
 		resetJVMgcTime();
@@ -428,27 +387,27 @@ public class Statistics
 	}
 	
 	public static void accSparkParallelizeTime(long t) {
-		sparkParallelize.addAndGet(t);
+		sparkParallelize.add(t);
 	}
 
 	public static void incSparkParallelizeCount(long c) {
-		sparkParallelizeCount.addAndGet(c);
+		sparkParallelizeCount.add(c);
 	}
 
 	public static void accSparkCollectTime(long t) {
-		sparkCollect.addAndGet(t);
+		sparkCollect.add(t);
 	}
 
 	public static void incSparkCollectCount(long c) {
-		sparkCollectCount.addAndGet(c);
+		sparkCollectCount.add(c);
 	}
 
 	public static void accSparkBroadCastTime(long t) {
-		sparkBroadcast.addAndGet(t);
+		sparkBroadcast.add(t);
 	}
 
 	public static void incSparkBroadcastCount(long c) {
-		sparkBroadcastCount.addAndGet(c);
+		sparkBroadcastCount.add(c);
 	}
 	
 	
@@ -467,7 +426,6 @@ public class Statistics
 			if( inst instanceof FunctionCallCPInstruction ) {
 				FunctionCallCPInstruction extfunct = (FunctionCallCPInstruction)inst;
 				opcode = extfunct.getFunctionName();
-				//opcode = extfunct.getNamespace()+Program.KEY_DELIM+extfunct.getFunctionName();
 			}	
 		}
 		else //CPInstructions
@@ -476,7 +434,6 @@ public class Statistics
 			if( inst instanceof FunctionCallCPInstruction ) {
 				FunctionCallCPInstruction extfunct = (FunctionCallCPInstruction)inst;
 				opcode = extfunct.getFunctionName();
-				//opcode = extfunct.getNamespace()+Program.KEY_DELIM+extfunct.getFunctionName();
 			}		
 		}
 		
@@ -485,18 +442,16 @@ public class Statistics
 
 	/**
 	 * "Maintains" or adds time to per instruction/op timers, also increments associated count
-	 * @param instructionName	name of the instruction/op
-	 * @param timeNanos				time in nano seconds
+	 * @param instructionName name of the instruction/op
+	 * @param timeNanos time in nano seconds
 	 */
 	public synchronized static void maintainCPHeavyHitters( String instructionName, long timeNanos )
 	{
-		Long oldVal = _cpInstTime.get(instructionName);
-		Long newVal = timeNanos + ((oldVal!=null) ? oldVal : 0);
-		_cpInstTime.put(instructionName, newVal);
+		Long oldVal = _cpInstTime.getOrDefault(instructionName, 0L);
+		_cpInstTime.put(instructionName, oldVal + timeNanos);
 
-		Long oldCnt = _cpInstCounts.get(instructionName);
-		Long newCnt = 1 + ((oldCnt!=null) ? oldCnt : 0);
-		_cpInstCounts.put(instructionName, newCnt);
+		Long oldCnt = _cpInstCounts.getOrDefault(instructionName, 0L);
+		_cpInstCounts.put(instructionName, oldCnt + 1);
 	}
 
 
@@ -587,23 +542,23 @@ public class Statistics
 	}
 	
 	public static long getHopRecompileTime(){
-		return hopRecompileTime.get();
+		return hopRecompileTime.longValue();
 	}
 	
 	public static long getHopRecompiledPredDAGs(){
-		return hopRecompilePred.get();
+		return hopRecompilePred.longValue();
 	}
 	
 	public static long getHopRecompiledSBDAGs(){
-		return hopRecompileSB.get();
+		return hopRecompileSB.longValue();
 	}
 	
 	public static long getFunRecompileTime(){
-		return funRecompileTime.get();
+		return funRecompileTime.longValue();
 	}
 	
 	public static long getFunRecompiles(){
-		return funRecompiles.get();
+		return funRecompiles.longValue();
 	}
 		
 	public static long getParforOptCount(){
@@ -681,14 +636,14 @@ public class Statistics
 				String lazy = SparkExecutionContext.isLazySparkContextCreation() ? "(lazy)" : "(eager)";
 				sb.append("Spark ctx create time "+lazy+":\t"+
 						String.format("%.3f", ((double)sparkCtxCreateTime)*1e-9)  + " sec.\n" ); // nanoSec --> sec
-				
 				sb.append("Spark trans counts (par,bc,col):" +
-						String.format("%d/%d/%d.\n", sparkParallelizeCount.get(), sparkBroadcastCount.get(), sparkCollectCount.get()));
+						String.format("%d/%d/%d.\n", sparkParallelizeCount.longValue(), 
+								sparkBroadcastCount.longValue(), sparkCollectCount.longValue()));
 				sb.append("Spark trans times (par,bc,col):\t" +
 						String.format("%.3f/%.3f/%.3f secs.\n", 
-								 ((double)sparkParallelize.get())*1e-9,
-								 ((double)sparkBroadcast.get())*1e-9,
-								 ((double)sparkCollect.get())*1e-9));
+								 ((double)sparkParallelize.longValue())*1e-9,
+								 ((double)sparkBroadcast.longValue())*1e-9,
+								 ((double)sparkCollect.longValue())*1e-9));
 			}
 			if( parforOptCount>0 ){
 				sb.append("ParFor loops optimized:\t\t" + getParforOptCount() + ".\n");

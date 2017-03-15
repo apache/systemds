@@ -34,6 +34,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class GPUStatistics {
 	//TODO fix formatting 
+	//TODO replace AtomicLong with LongAdder
 	
 	
   // Whether or not extra per-instruction statistics will be recorded and shown for the GPU

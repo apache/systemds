@@ -760,7 +760,7 @@ public class DMLScript
 		CacheableData.initCaching();
 						
 		//reset statistics (required if multiple scripts executed in one JVM)
-		Statistics.resetNoOfExecutedJobs( 0 );
+		Statistics.resetNoOfExecutedJobs();
 		if( STATISTICS ) {
 			CacheStatistics.reset();
 			Statistics.reset();

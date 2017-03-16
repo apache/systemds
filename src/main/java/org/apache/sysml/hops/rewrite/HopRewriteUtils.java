@@ -750,6 +750,16 @@ public class HopRewriteUtils
 		return hop instanceof BinaryOp && ((BinaryOp)hop).getOp()==type;
 	}
 	
+	public static boolean isBinary(Hop hop, OpOp2... types) {
+		if( hop instanceof BinaryOp ) {
+			BinaryOp bop = (BinaryOp) hop;
+			for( OpOp2 type : types )
+				if( type == bop.getOp() )
+					return true;
+		}
+		return false;
+	}
+	
 	public static boolean isBinary(Hop hop, OpOp2 type, int maxParents) {
 		return isBinary(hop, type) && hop.getParent().size() <= maxParents;
 	}

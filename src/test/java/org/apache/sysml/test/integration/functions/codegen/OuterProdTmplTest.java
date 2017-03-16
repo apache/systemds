@@ -42,6 +42,7 @@ public class OuterProdTmplTest extends AutomatedTestBase
 	private static final String TEST_NAME5 = "wdivmmRightNotranspose";
 	private static final String TEST_NAME6 = "wdivmmbasic";
 	private static final String TEST_NAME7 = "wdivmmTransposeOut";
+	private static final String TEST_NAME8 = "wSparseUnsafeOuterProduct";
 
 	private static final String TEST_DIR = "functions/codegen/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + OuterProdTmplTest.class.getSimpleName() + "/";
@@ -60,6 +61,7 @@ public class OuterProdTmplTest extends AutomatedTestBase
 		addTestConfiguration( TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5, new String[] { "5" }) );
 		addTestConfiguration( TEST_NAME6, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME6, new String[] { "6" }) );
 		addTestConfiguration( TEST_NAME7, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME7, new String[] { "7" }) );
+		addTestConfiguration( TEST_NAME8, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME8, new String[] { "8" }) );
 	}
 		
 	@Test
@@ -95,6 +97,11 @@ public class OuterProdTmplTest extends AutomatedTestBase
 	@Test
 	public void testCodegenOuterProdRewrite7() {
 		testCodegenIntegration( TEST_NAME7, true, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenOuterProdRewrite8() {
+		testCodegenIntegration( TEST_NAME8, true, ExecType.CP );
 	}
 
 	@Test
@@ -133,6 +140,11 @@ public class OuterProdTmplTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testCodegenOuterProd8() {
+		testCodegenIntegration( TEST_NAME8, false, ExecType.CP );
+	}
+	
+	@Test
 	public void testCodegenOuterProdRewrite1_sp() {
 		testCodegenIntegrationWithInput( TEST_NAME1, true, ExecType.SPARK  );
 	}
@@ -150,6 +162,11 @@ public class OuterProdTmplTest extends AutomatedTestBase
 	@Test
 	public void testCodegenOuterProdRewrite4_sp() {
 		testCodegenIntegrationWithInput( TEST_NAME4, true, ExecType.SPARK  );
+	}
+	
+	@Test
+	public void testCodegenOuterProdRewrite8_sp() {
+		testCodegenIntegrationWithInput( TEST_NAME8, true, ExecType.SPARK  );
 	}
 
 	
@@ -188,7 +205,11 @@ public class OuterProdTmplTest extends AutomatedTestBase
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("S");
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("S");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
-			if( !rewrites )
+			
+			if( testname.equals(TEST_NAME8) )
+				Assert.assertTrue(!(heavyHittersContainsSubString("spoofOP") 
+						|| heavyHittersContainsSubString("sp_spoofOP")));
+			else if( !rewrites )
 				Assert.assertTrue(heavyHittersContainsSubString("spoofOP") 
 						|| heavyHittersContainsSubString("sp_spoofOP"));
 		}
@@ -232,6 +253,7 @@ public class OuterProdTmplTest extends AutomatedTestBase
 
 			runTest(true, false, null, -1); 
 			runRScript(true); 
+			
 			if(testname.equals(TEST_NAME4)) { //wcemm
 				//compare scalars 
 				HashMap<CellIndex, Double> dmlfile = readDMLScalarFromHDFS("S");
@@ -245,7 +267,10 @@ public class OuterProdTmplTest extends AutomatedTestBase
 				TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 			}
 			
-			if( !rewrites )
+			if( testname.equals(TEST_NAME8) )
+				Assert.assertTrue(!(heavyHittersContainsSubString("spoofOP") 
+						|| heavyHittersContainsSubString("sp_spoofOP")));
+			else if( !rewrites )
 				Assert.assertTrue(heavyHittersContainsSubString("spoofOP") 
 					|| heavyHittersContainsSubString("sp_spoofOP"));
 		}

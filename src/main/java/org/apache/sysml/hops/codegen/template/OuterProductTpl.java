@@ -32,6 +32,7 @@ import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.UnaryOp;
 import org.apache.sysml.hops.Hop.AggOp;
 import org.apache.sysml.hops.Hop.Direction;
+import org.apache.sysml.hops.Hop.OpOp2;
 import org.apache.sysml.hops.codegen.cplan.CNode;
 import org.apache.sysml.hops.codegen.cplan.CNodeBinary;
 import org.apache.sysml.hops.codegen.cplan.CNodeBinary.BinType;
@@ -62,7 +63,9 @@ public class OuterProductTpl extends BaseTpl {
 	public boolean fuse(Hop hop, Hop input) {
 		return !isClosed() 
 			&&((hop instanceof UnaryOp && TemplateUtils.isOperationSupported(hop))  
-			|| (hop instanceof BinaryOp && TemplateUtils.isOperationSupported(hop)) 
+			|| (hop instanceof BinaryOp && TemplateUtils.isOperationSupported(hop)
+				&& (TemplateUtils.isBinaryMatrixColVector(hop) || HopRewriteUtils.isBinaryMatrixScalarOperation(hop)
+				|| (HopRewriteUtils.isBinaryMatrixMatrixOperation(hop) && HopRewriteUtils.isBinary(hop, OpOp2.MULT, OpOp2.DIV)) )) 
 			|| HopRewriteUtils.isTransposeOperation(hop) 
 			|| (hop instanceof AggBinaryOp && !HopRewriteUtils.isOuterProductLikeMM(hop))
 			|| (hop instanceof AggUnaryOp && ((AggUnaryOp)hop).getDirection()==Direction.RowCol));

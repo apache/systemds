@@ -266,11 +266,11 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		KahanObject kbuff = new KahanObject(0, 0);
 		KahanPlus kplus = KahanPlus.getKahanPlusFnObject();
 		
-		//TODO rework sparse safe test
-		double val = genexec( 0, b, scalars, n, m, 0, 0 );
+		//sparse safe check 
+		boolean sparseSafe = (b.length == 0                //no sideways inputs 
+			&& genexec( 0, b, scalars, n, m, 0, 0 ) == 0); //0 input results in 0
 		
-		if(val == 0 && b.length==0) // sparse safe
-		{
+		if( sparseSafe ) {
 			if( sblock != null ) {
 				for( int i=rl; i<ru; i++ )
 					if( !sblock.isEmpty(i) ) {
@@ -283,8 +283,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 					}	
 			}
 		}
-		else //sparse-unsafe
-		{
+		else { //sparse-unsafe
 			for(int i=rl; i<ru; i++)
 				for(int j=0; j<n; j++) {
 					double valij = (sblock != null) ? sblock.get(i, j) : 0;
@@ -297,14 +296,14 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 	
 	private long executeSparse(SparseBlock sblock, double[][] b, double[] scalars, double[] c, int n, int m, int rl, int ru) 
 	{
-		//TODO rework sparse safe test
-		double val0 = genexec( 0, b, scalars, n, m, 0, 0 );
-		long lnnz = 0;
+		//sparse safe check 
+		boolean sparseSafe = (b.length == 0                //no sideways inputs 
+			&& genexec( 0, b, scalars, n, m, 0, 0 ) == 0); //0 input results in 0
 		
+		long lnnz = 0;
 		if( _type == CellType.NO_AGG )
 		{
-			if(val0 == 0 && b.length == 0) // sparse safe
-			{
+			if( sparseSafe ) {
 				if( sblock != null ) {
 					for( int i=rl; i<ru; i++ )
 						if( !sblock.isEmpty(i) ) {
@@ -319,8 +318,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 						}
 				}
 			}
-			else //sparse-unsafe
-			{
+			else { //sparse-unsafe
 				for(int i=rl, cix=rl*n; i<ru; i++, cix+=n)
 					for(int j=0; j<n; j++) {
 						double valij = (sblock != null) ? sblock.get(i, j) : 0;
@@ -334,8 +332,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 			KahanObject kbuff = new KahanObject(0, 0);
 			KahanPlus kplus = KahanPlus.getKahanPlusFnObject();
 
-			if(val0 == 0 && b.length == 0) // sparse safe
-			{
+			if( sparseSafe ) {
 				if( sblock != null ) {
 					for( int i=rl; i<ru; i++ ) {
 						if( sblock.isEmpty(i) ) continue;
@@ -351,8 +348,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 					}
 				}
 			}
-			else //sparse-unsafe
-			{
+			else { //sparse-unsafe
 				for(int i=rl; i<ru; i++) {
 					kbuff.set(0, 0);
 					for(int j=0; j<n; j++) {

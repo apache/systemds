@@ -139,7 +139,7 @@ public class ReorgSPInstruction extends UnarySPInstruction
 			//execute reverse reorg operation
 			out = in1.flatMapToPair(new RDDRevFunction(mcIn));
 			if( mcIn.getRows() % mcIn.getRowsPerBlock() != 0 )
-				out = RDDAggregateUtils.mergeByKey(out);
+				out = RDDAggregateUtils.mergeByKey(out, false);
 		}
 		else if ( opcode.equalsIgnoreCase("rdiag") ) // DIAG
 		{	

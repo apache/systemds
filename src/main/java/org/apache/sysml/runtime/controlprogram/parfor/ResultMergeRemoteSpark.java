@@ -162,7 +162,7 @@ public class ResultMergeRemoteSpark extends ResultMerge
 		    else
 		    {
 		    	//direct merge in any order (disjointness guaranteed)
-		    	out = RDDAggregateUtils.mergeByKey(rdd);
+		    	out = RDDAggregateUtils.mergeByKey(rdd, false);
 		    }
 		    
 		    //Step 3: create output rdd handle w/ lineage

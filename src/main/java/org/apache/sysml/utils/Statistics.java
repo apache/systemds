@@ -175,9 +175,11 @@ public class Statistics
 	public static void resetNoOfCompiledJobs( int count ) {
 		//reset both mr/sp for multiple tests within one jvm
 		numCompiledSPInst.reset();
-		numCompiledSPInst.add(count);
 		numCompiledMRJobs.reset();
-		numCompiledMRJobs.add(count);
+		if( OptimizerUtils.isSparkExecutionMode() )
+			numCompiledSPInst.add(count);
+		else
+			numCompiledMRJobs.add(count);
 	}
 
 	public static void resetNoOfExecutedJobs() {

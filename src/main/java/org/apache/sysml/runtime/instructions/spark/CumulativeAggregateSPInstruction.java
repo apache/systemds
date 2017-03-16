@@ -78,7 +78,7 @@ public class CumulativeAggregateSPInstruction extends AggregateUnarySPInstructio
 		AggregateUnaryOperator auop = (AggregateUnaryOperator) _optr;
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = 
 				in.mapToPair(new RDDCumAggFunction(auop, rlen, brlen, bclen));
-		out = RDDAggregateUtils.mergeByKey(out);
+		out = RDDAggregateUtils.mergeByKey(out, false);
 		
 		//put output handle in symbol table
 		sec.setRDDHandleForVariable(output.getName(), out);	

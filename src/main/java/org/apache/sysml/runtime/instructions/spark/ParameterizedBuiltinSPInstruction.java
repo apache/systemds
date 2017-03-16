@@ -225,7 +225,7 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 						target.flatMapToPair(new RDDMapGroupedAggFunction(groups, _optr, 
 								ngroups, mc1.getRowsPerBlock(), mc1.getColsPerBlock()));
 				
-				out = RDDAggregateUtils.sumByKeyStable(out);
+				out = RDDAggregateUtils.sumByKeyStable(out, false);
 				
 				//updated characteristics and handle outputs
 				mcOut.set(ngroups, mc1.getCols(), mc1.getRowsPerBlock(), mc1.getColsPerBlock(), -1);
@@ -355,7 +355,7 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 						.flatMapToPair(new RDDRemoveEmptyFunction(rows, maxDim, brlen, bclen));		
 				}				
 	
-				out = RDDAggregateUtils.mergeByKey(out);
+				out = RDDAggregateUtils.mergeByKey(out, false);
 				
 				//store output rdd handle
 				sec.setRDDHandleForVariable(output.getName(), out);
@@ -414,7 +414,7 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			//execute remove empty rows/cols operation
 			JavaPairRDD<MatrixIndexes,MatrixBlock> out = in
 					.flatMapToPair(new RDDRExpandFunction(maxVal, dirRows, cast, ignore, brlen, bclen));		
-			out = RDDAggregateUtils.mergeByKey(out);
+			out = RDDAggregateUtils.mergeByKey(out, false);
 			
 			//store output rdd handle
 			sec.setRDDHandleForVariable(output.getName(), out);
@@ -484,7 +484,7 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			if( mc.getCols() > mc.getNumColBlocks() ) {
 				in = in.mapToPair(new RDDTransformDecodeExpandFunction(
 						(int)mc.getCols(), mc.getColsPerBlock()));
-				in = RDDAggregateUtils.mergeByKey(in);
+				in = RDDAggregateUtils.mergeByKey(in, false);
 			}
 			
 			//construct decoder and decode individual matrix blocks

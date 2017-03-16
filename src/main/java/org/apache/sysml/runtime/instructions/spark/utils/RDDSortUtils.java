@@ -66,7 +66,7 @@ public class RDDSortUtils
 		JavaPairRDD<MatrixIndexes, MatrixBlock> ret = sdvals
 				.zipWithIndex()
 		        .mapPartitionsToPair(new ConvertToBinaryBlockFunction(rlen, brlen));
-		ret = RDDAggregateUtils.mergeByKey(ret);	
+		ret = RDDAggregateUtils.mergeByKey(ret, false);
 		
 		return ret;
 	}
@@ -88,7 +88,7 @@ public class RDDSortUtils
 		JavaPairRDD<MatrixIndexes, MatrixBlock> ret = sdvals
 				.zipWithIndex()
 		        .mapPartitionsToPair(new ConvertToBinaryBlockFunction2(rlen, brlen));
-		ret = RDDAggregateUtils.mergeByKey(ret);		
+		ret = RDDAggregateUtils.mergeByKey(ret, false);		
 		
 		return ret;
 	}
@@ -111,7 +111,7 @@ public class RDDSortUtils
 		JavaPairRDD<MatrixIndexes, MatrixBlock> ret = sdvals
 				.zipWithIndex()
 		        .mapPartitionsToPair(new ConvertToBinaryBlockFunction3(rlen, brlen));
-		ret = RDDAggregateUtils.mergeByKey(ret);		
+		ret = RDDAggregateUtils.mergeByKey(ret, false);		
 		
 		return ret;	
 	}
@@ -137,7 +137,7 @@ public class RDDSortUtils
 				.mapToPair(new ExtractIndexFunction())
 				.sortByKey()
 		        .mapPartitionsToPair(new ConvertToBinaryBlockFunction4(rlen, brlen));
-		ixmap = RDDAggregateUtils.mergeByKey(ixmap);		
+		ixmap = RDDAggregateUtils.mergeByKey(ixmap, false);		
 		
 		//replicate indexes for all column blocks
 		JavaPairRDD<MatrixIndexes, MatrixBlock> rixmap = ixmap

@@ -118,7 +118,7 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction
 			else if( _aggtype == SparkAggType.MULTI_BLOCK ) {
 				//in case of multi-block aggregation, we always keep the correction
 				out = out.mapToPair(new RDDUAggFunction(auop, mc.getRowsPerBlock(), mc.getColsPerBlock()));			
-				out = RDDAggregateUtils.aggByKeyStable(out, aggop);
+				out = RDDAggregateUtils.aggByKeyStable(out, aggop, false);
 	
 				//drop correction after aggregation if required (aggbykey creates 
 				//partitioning, drop correction via partitioning-preserving mapvalues)

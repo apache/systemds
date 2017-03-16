@@ -116,7 +116,7 @@ public class AggregateTernarySPInstruction extends ComputationSPInstruction
 		else //tack+* multi block
 		{
 			//multi-block aggregation and drop correction
-			out = RDDAggregateUtils.aggByKeyStable(out, aggop.aggOp);
+			out = RDDAggregateUtils.aggByKeyStable(out, aggop.aggOp, false);
 			out = out.mapValues( new AggregateDropCorrectionFunction(aggop.aggOp) );
 
 			//put output RDD handle into symbol table

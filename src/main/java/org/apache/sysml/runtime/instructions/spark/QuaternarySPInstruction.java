@@ -304,7 +304,7 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 		{
 			//aggregation if required (map/redwdivmm)
 			if( qop.wtype3 != null && !qop.wtype3.isBasic() )
-				out = RDDAggregateUtils.sumByKeyStable( out );
+				out = RDDAggregateUtils.sumByKeyStable(out, false);
 				
 			//put output RDD handle into symbol table
 			sec.setRDDHandleForVariable(output.getName(), out);

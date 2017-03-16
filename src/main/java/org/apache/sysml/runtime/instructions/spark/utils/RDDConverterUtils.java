@@ -92,7 +92,7 @@ public class RDDConverterUtils
 		}
 		
 		//aggregate partial matrix blocks
-		out = RDDAggregateUtils.mergeByKey( out ); 
+		out = RDDAggregateUtils.mergeByKey(out, false); 
 		
 		return out;
 	}
@@ -112,7 +112,7 @@ public class RDDConverterUtils
 		}
 		
 		//aggregate partial matrix blocks
-		out = RDDAggregateUtils.mergeByKey( out ); 
+		out = RDDAggregateUtils.mergeByKey(out, false); 
 		
 		return out;
 	}

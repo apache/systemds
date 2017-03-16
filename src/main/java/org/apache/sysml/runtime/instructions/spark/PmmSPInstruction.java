@@ -103,7 +103,7 @@ public class PmmSPInstruction extends BinarySPInstruction
 		//execute pmm instruction
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1
 				.flatMapToPair( new RDDPMMFunction(_type, in2, rlen, mc.getRowsPerBlock()) );
-		out = RDDAggregateUtils.sumByKeyStable(out);
+		out = RDDAggregateUtils.sumByKeyStable(out, false);
 		
 		//put output RDD handle into symbol table
 		sec.setRDDHandleForVariable(output.getName(), out);

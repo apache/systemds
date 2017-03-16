@@ -111,7 +111,7 @@ public class CpmmSPInstruction extends BinarySPInstruction
 		}
 		else //DEFAULT: MULTI_BLOCK
 		{
-			out = RDDAggregateUtils.sumByKeyStable(out); 
+			out = RDDAggregateUtils.sumByKeyStable(out, false); 
 			
 			//put output RDD handle into symbol table
 			sec.setRDDHandleForVariable(output.getName(), out);

@@ -149,7 +149,7 @@ public class MapmmSPInstruction extends BinarySPInstruction
 				out = out.filter(new FilterNonEmptyBlocksFunction());
 			
 			if( _aggtype == SparkAggType.MULTI_BLOCK )
-				out = RDDAggregateUtils.sumByKeyStable(out);
+				out = RDDAggregateUtils.sumByKeyStable(out, false);
 		
 			//put output RDD handle into symbol table
 			sec.setRDDHandleForVariable(output.getName(), out);

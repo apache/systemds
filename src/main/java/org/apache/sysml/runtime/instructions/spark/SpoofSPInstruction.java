@@ -123,9 +123,9 @@ public class SpoofSPInstruction extends SPInstruction
 					//NOTE: workaround with partition size needed due to potential bug in SPARK
 					//TODO investigate if some other side effect of correct blocks
 					if( out.partitions().size() > mcIn.getNumRowBlocks() )
-						out = RDDAggregateUtils.sumByKeyStable(out, (int)mcIn.getNumRowBlocks());
+						out = RDDAggregateUtils.sumByKeyStable(out, (int)mcIn.getNumRowBlocks(), false);
 					else
-						out = RDDAggregateUtils.sumByKeyStable(out);
+						out = RDDAggregateUtils.sumByKeyStable(out, false);
 				}
 				sec.setRDDHandleForVariable(_out.getName(), out);
 				
@@ -158,9 +158,9 @@ public class SpoofSPInstruction extends SPInstruction
 					//NOTE: workaround with partition size needed due to potential bug in SPARK
 					//TODO investigate if some other side effect of correct blocks
 					if( in.partitions().size() > mcOut.getNumRowBlocks()*mcOut.getNumColBlocks() )
-						out = RDDAggregateUtils.sumByKeyStable( out, (int)(mcOut.getNumRowBlocks()*mcOut.getNumColBlocks()) );
+						out = RDDAggregateUtils.sumByKeyStable(out, (int)(mcOut.getNumRowBlocks()*mcOut.getNumColBlocks()), false);
 					else
-						out = RDDAggregateUtils.sumByKeyStable( out );	
+						out = RDDAggregateUtils.sumByKeyStable(out, false);	
 				}
 				sec.setRDDHandleForVariable(_out.getName(), out);
 				

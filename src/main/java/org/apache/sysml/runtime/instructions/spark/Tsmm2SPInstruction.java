@@ -119,7 +119,7 @@ public class Tsmm2SPInstruction extends UnarySPInstruction
 		else {
 			//output individual output blocks and aggregate by key (no action)
 			JavaPairRDD<MatrixIndexes,MatrixBlock> tmp2 = in.flatMapToPair(new RDDTSMM2Function(bpmb, _type));
-			JavaPairRDD<MatrixIndexes,MatrixBlock> out = RDDAggregateUtils.sumByKeyStable(tmp2);
+			JavaPairRDD<MatrixIndexes,MatrixBlock> out = RDDAggregateUtils.sumByKeyStable(tmp2, false);
 			
 			//put output RDD handle into symbol table
 			sec.getMatrixCharacteristics(output.getName()).set(outputDim, outputDim, mc.getRowsPerBlock(), mc.getColsPerBlock());

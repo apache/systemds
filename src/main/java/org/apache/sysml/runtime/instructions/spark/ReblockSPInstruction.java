@@ -178,7 +178,7 @@ public class ReblockSPInstruction extends UnarySPInstruction
 			
 			JavaPairRDD<MatrixIndexes, MatrixBlock> out = 
 					in1.flatMapToPair(new ExtractBlockForBinaryReblock(mc, mcOut));
-			out = RDDAggregateUtils.mergeByKey( out );
+			out = RDDAggregateUtils.mergeByKey(out, false);
 			
 			//put output RDD handle into symbol table
 			sec.setRDDHandleForVariable(output.getName(), out);

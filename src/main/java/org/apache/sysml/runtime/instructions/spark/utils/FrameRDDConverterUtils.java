@@ -208,7 +208,7 @@ public class FrameRDDConverterUtils
 			
 			//shuffle matrix blocks (instead of frame blocks) in order to exploit 
 			//sparse formats (for sparse or wide matrices) during shuffle
-			in = RDDAggregateUtils.mergeByKey(in);
+			in = RDDAggregateUtils.mergeByKey(in, false);
 		}
 			
 		//convert individual matrix blocks to frame blocks (w/o shuffle)
@@ -223,7 +223,7 @@ public class FrameRDDConverterUtils
 				.flatMapToPair(new BinaryBlockToMatrixBlockFunction(mcIn, mcOut));
 	
 		//aggregate partial matrix blocks
-		return RDDAggregateUtils.mergeByKey( out ); 	
+		return RDDAggregateUtils.mergeByKey(out, false); 	
 	}
 	
 	//=====================================

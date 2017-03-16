@@ -1185,8 +1185,9 @@ public class SparkExecutionContext extends ExecutionContext
 				in = in.coalesce( numPartitions );
 		}
 		
-		//repartition rdd (force creation of shuffled rdd via merge)
-		JavaPairRDD<MatrixIndexes,MatrixBlock> out = RDDAggregateUtils.mergeByKey(in);
+		//repartition rdd (force creation of shuffled rdd via merge), note: without deep copy albeit 
+		//executed on the original data, because there will be no merge, i.e., no key duplicates
+		JavaPairRDD<MatrixIndexes,MatrixBlock> out = RDDAggregateUtils.mergeByKey(in, false);
 		
 		//convert mcsr into memory-efficient csr if potentially sparse
 		if( OptimizerUtils.checkSparseBlockCSRConversion(mcIn) ) {				

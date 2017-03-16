@@ -95,7 +95,7 @@ public class RmmSPInstruction extends BinarySPInstruction
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = 
 				tmp1.join( tmp2 )                              //join by result block 
 		            .mapToPair( new RmmMultiplyFunction() );   //do matrix multiplication
-		out = RDDAggregateUtils.sumByKeyStable(out);           //aggregation per result block
+		out = RDDAggregateUtils.sumByKeyStable(out, false);    //aggregation per result block
 		
 		//put output block into symbol table (no lineage because single block)
 		updateBinaryMMOutputMatrixCharacteristics(sec, true);

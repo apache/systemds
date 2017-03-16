@@ -120,7 +120,7 @@ public class PMapmmSPInstruction extends BinarySPInstruction
 			//matrix multiplication
 			JavaPairRDD<MatrixIndexes,MatrixBlock> rdd2 = in2
 					.flatMapToPair(new PMapMMFunction(bpmb, i/mc1.getRowsPerBlock()));
-			rdd2 = RDDAggregateUtils.sumByKeyStable(rdd2);
+			rdd2 = RDDAggregateUtils.sumByKeyStable(rdd2, false);
 			rdd2.persist(pmapmmStorageLevel)
 			    .count();
 			bpmb.unpersist(false);

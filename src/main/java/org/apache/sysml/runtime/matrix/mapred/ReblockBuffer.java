@@ -34,6 +34,7 @@ import org.apache.sysml.runtime.matrix.data.IJV;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.PartialBlock;
+import org.apache.sysml.runtime.matrix.data.SparseBlock.Type;
 import org.apache.sysml.runtime.matrix.data.TaggedAdaptivePartialBlock;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
@@ -309,6 +310,11 @@ public class ReblockBuffer
 		
 		//ensure correct representation (for in-memory blocks)
 		value.examSparsity();
+	
+		//convert ultra-sparse blocks from MCSR to COO in order to 
+		//significantly reduce temporary memory pressure until write 
+		if( value.isUltraSparse() )
+			value = new MatrixBlock(value, Type.COO, false);
 		
 		//output block
 		out.add(new IndexedMatrixValue(key,value));

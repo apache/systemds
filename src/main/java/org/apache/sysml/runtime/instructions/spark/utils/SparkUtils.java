@@ -21,17 +21,22 @@
 package org.apache.sysml.runtime.instructions.spark.utils;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.LongStream;
 
 import org.apache.spark.HashPartitioner;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
+import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.storage.StorageLevel;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.lops.Checkpoint;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.instructions.spark.functions.CopyBinaryCellFunction;
 import org.apache.sysml.runtime.instructions.spark.functions.CopyBlockFunction;
@@ -174,36 +179,36 @@ public class SparkUtils
 			return retVal + "|" + twoSpaces;
 	}
 
+	/**
+	 * Creates an RDD of empty blocks according to the given matrix characteristics. This is
+	 * done in a scalable manner by parallelizing block ranges and generating empty blocks
+	 * in a distributed manner, under awareness of preferred output partition sizes.
+	 * 
+	 * @param sc spark context
+	 * @param mc matrix characteristics
+	 * @return pair rdd of empty matrix blocks 
+	 */
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> getEmptyBlockRDD( JavaSparkContext sc, MatrixCharacteristics mc )
 	{
-		//create all empty blocks
-		ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> list = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
-		int nrblks = (int)Math.ceil((double)mc.getRows()/mc.getRowsPerBlock());
-		int ncblks = (int)Math.ceil((double)mc.getCols()/mc.getColsPerBlock());
-		for(long r=1; r<=nrblks; r++)
-			for(long c=1; c<=ncblks; c++)
-			{
-				int lrlen = UtilFunctions.computeBlockSize(mc.getRows(), r, mc.getRowsPerBlock());
-				int lclen = UtilFunctions.computeBlockSize(mc.getCols(), c, mc.getColsPerBlock());
-				MatrixIndexes ix = new MatrixIndexes(r, c);
-				MatrixBlock mb = new MatrixBlock(lrlen, lclen, true);
-				list.add(new Tuple2<MatrixIndexes,MatrixBlock>(ix,mb));
-			}
+		//compute degree of parallelism and block ranges
+		long size = mc.getNumBlocks() * OptimizerUtils.estimateSizeEmptyBlock(Math.max(
+				mc.getRows(), mc.getRowsPerBlock()), Math.max(mc.getCols(), mc.getColsPerBlock()));
+		int par = (int) Math.min(Math.max(SparkExecutionContext.getDefaultParallelism(true),
+				Math.ceil(size/InfrastructureAnalyzer.getHDFSBlockSize())), mc.getNumBlocks());
+		long pNumBlocks = (long)Math.ceil((double)mc.getNumBlocks()/par);
 		
-		//create rdd of in-memory list
-		return sc.parallelizePairs(list);
+		//generate block offsets per partition
+		List<Long> offsets = LongStream.iterate(0, n -> n+pNumBlocks)
+				.limit(par).boxed().collect(Collectors.toList());
+		
+		//parallelize offsets and generate all empty blocks
+		return (JavaPairRDD<MatrixIndexes,MatrixBlock>) sc.parallelize(offsets, par)
+				.flatMapToPair(new GenerateEmptyBlocks(mc, pNumBlocks));
 	}
 
-	public static JavaPairRDD<MatrixIndexes, MatrixCell> cacheBinaryCellRDD(JavaPairRDD<MatrixIndexes, MatrixCell> input)
-	{
-		JavaPairRDD<MatrixIndexes, MatrixCell> ret = null;
-		
-		if( !input.getStorageLevel().equals(DEFAULT_TMP) ) {
-			ret = input.mapToPair(new CopyBinaryCellFunction())
-					   .persist(DEFAULT_TMP);
-		}
-		
-		return ret;
+	public static JavaPairRDD<MatrixIndexes, MatrixCell> cacheBinaryCellRDD(JavaPairRDD<MatrixIndexes, MatrixCell> input) {
+		return !input.getStorageLevel().equals(DEFAULT_TMP) ? 
+			input.mapToPair(new CopyBinaryCellFunction()).persist(DEFAULT_TMP) : input;
 	}
 
 	/**
@@ -252,5 +257,37 @@ public class SparkUtils
 					arg0.getColsPerBlock(),
 					arg0.getNonZeros() + arg1.getNonZeros() ); //sum
 		}	
+	}
+	
+	private static class GenerateEmptyBlocks implements PairFlatMapFunction<Long, MatrixIndexes, MatrixBlock> 
+	{
+		private static final long serialVersionUID = 630129586089106855L;
+
+		private final MatrixCharacteristics _mc;
+		private final long _pNumBlocks;
+		
+		public GenerateEmptyBlocks(MatrixCharacteristics mc, long pNumBlocks) {
+			_mc = mc;
+			_pNumBlocks = pNumBlocks;
+		}
+		
+		@Override
+		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Long arg0) 
+			throws Exception 
+		{
+			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> list = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
+			long ncblks = _mc.getNumColBlocks();
+			long nblocksU = Math.min(arg0+_pNumBlocks, _mc.getNumBlocks());
+			for( long i=arg0; i<nblocksU; i++ ) {
+				long rix = 1 + i / ncblks;
+				long cix = 1 + i % ncblks;
+				int lrlen = UtilFunctions.computeBlockSize(_mc.getRows(), rix, _mc.getRowsPerBlock());
+				int lclen = UtilFunctions.computeBlockSize(_mc.getCols(), cix, _mc.getColsPerBlock());
+				list.add(new Tuple2<MatrixIndexes,MatrixBlock>(
+						new MatrixIndexes(rix,cix), 
+						new MatrixBlock(lrlen, lclen, true)));
+			}
+			return list.iterator();
+		}
 	}
 }

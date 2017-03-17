@@ -44,8 +44,8 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction
 	public ConvolutionCPInstruction(CPOperand in, CPOperand in2, CPOperand out, String opcode, String istr, int numThreads) throws DMLRuntimeException {
 		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, out,
 				opcode, istr);
-		if( !(opcode.equals("bias_add") || opcode.equals("relu_backward")) ) {
-			throw new DMLRuntimeException("Incorrect usage. Expected the opcode to be bias_add or relu_backward, but found " + opcode);
+		if( !(opcode.equals("bias_add") || opcode.equals("relu_backward") || opcode.equals("bias_multiply") ) ) {
+			throw new DMLRuntimeException("Incorrect usage. Expected the opcode to be bias_add or bias_multiply or relu_backward, but found " + opcode);
 		}
 		_in2 = in2;
 		_cptype = CPINSTRUCTION_TYPE.Convolution;
@@ -195,7 +195,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction
 			return new ConvolutionCPInstruction(in, in2, in3, out, opcode, str, stride,
 					padding, input_shape, filter_shape, k);
 		}
-		else if (opcode.equalsIgnoreCase("bias_add") || opcode.equals("relu_backward")) {
+		else if (opcode.equalsIgnoreCase("bias_add") || opcode.equals("relu_backward") || opcode.equalsIgnoreCase("bias_multiply") ) {
 			InstructionUtils.checkNumFields(parts, 4);
 			CPOperand in = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);
@@ -262,12 +262,42 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction
 		ec.setMatrixOutput(getOutputVariableName(), outputBlock);
 	}
 	
+	public void processBiasMultiplyInstruction(ExecutionContext ec) throws DMLRuntimeException {
+		MatrixBlock input = ec.getMatrixInput(input1.getName());
+		MatrixBlock bias = ec.getMatrixInput(_in2.getName());
+		MatrixBlock outputBlock = null;
+		
+		if(bias.getNumColumns() != 1) {
+			throw new DMLRuntimeException("Expected the number of columns of bias matrix to be 1, but found " + bias.getNumColumns());
+		}
+		
+		if(bias.isEmptyBlock()) {
+			// Anything multiplied by zero is zero
+			outputBlock = new MatrixBlock(input.getNumRows(), input.getNumColumns(), true);
+		}
+		else {
+			// As we always fill the output first with bias
+			outputBlock = new MatrixBlock(input.getNumRows(), input.getNumColumns(), false);
+			outputBlock.allocateDenseBlock();
+			LibMatrixDNN.biasMultiply(input, bias, outputBlock, _numThreads);
+		}
+		
+		// release inputs/outputs
+		ec.releaseMatrixInput(input1.getName());
+		ec.releaseMatrixInput(_in2.getName());
+		ec.setMatrixOutput(getOutputVariableName(), outputBlock);
+	}
+	
 	
 	@Override
 	public void processInstruction(ExecutionContext ec)
 			throws DMLRuntimeException {
 		if (instOpcode.equalsIgnoreCase("bias_add")) {
 			processBiasAddInstruction(ec);
+			return;
+		}
+		else if (instOpcode.equalsIgnoreCase("bias_multiply")) {
+			processBiasMultiplyInstruction(ec);
 			return;
 		}
 		else if (instOpcode.equalsIgnoreCase("relu_backward")) {

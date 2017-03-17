@@ -93,6 +93,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 			case DIRECT_CONV2D_BACKWARD_DATA:
 			case DIRECT_CONV2D_BACKWARD_FILTER:
 			case BIAS_ADD:
+			case BIAS_MULTIPLY:
 			{	
 				if(et == ExecType.CP || et == ExecType.GPU || et == ExecType.SPARK) {
 					setLops(constructConvolutionLops(et, inputs));
@@ -125,6 +126,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 			case DIRECT_CONV2D_BACKWARD_DATA:
 				return 14;
 			case BIAS_ADD:
+			case BIAS_MULTIPLY:
 				return 2;
 			default:
 				return 13;
@@ -247,7 +249,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		// [numRows, numCols, NNZ] 
 		long[] ret = new long[3];
 		
-		if(op == ConvOp.BIAS_ADD) {
+		if(op == ConvOp.BIAS_ADD || op == ConvOp.BIAS_MULTIPLY) {
 			MatrixCharacteristics[] mc = memo.getAllInputStats(getInput());
 			ret[0] = mc[0].rowsKnown() ? mc[0].getRows() : -1;
 			ret[1] = mc[0].colsKnown() ? mc[0].getCols() : -1;
@@ -394,7 +396,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	@Override
 	public void refreshSizeInformation()
 	{
-		if(op == ConvOp.BIAS_ADD) {
+		if(op == ConvOp.BIAS_ADD || op == ConvOp.BIAS_MULTIPLY) {
 			Hop input1 = getInput().get(0);
 			setDim1(input1.getDim1());
 			setDim2(input1.getDim2());

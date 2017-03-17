@@ -111,6 +111,18 @@ __global__ void bias_add(double* input,  double* bias, double* ret, int rlen, in
 	}
 }
 
+// Performs similar operation as bias_add except elementwise multiplication instead of add
+extern "C"
+__global__ void bias_multiply(double* input,  double* bias, double* ret, int rlen, int clen, int PQ) {
+	int ix = blockIdx.x * blockDim.x + threadIdx.x;
+	int iy = blockIdx.y * blockDim.y + threadIdx.y;
+	if(ix < rlen && iy < clen) {
+		int index = ix * clen + iy;
+		int biasIndex = iy / PQ;
+		ret[index] = input[index] * bias[biasIndex];
+	}
+}
+
 // Compares the value and set
 extern "C"
 __global__ void compare_and_set(double* A,  double* ret, int rlen, int clen, double compareVal, double tol, double ifEqualsVal, double ifLessThanVal, double ifGreaterThanVal) {

@@ -433,6 +433,43 @@ public class LibMatrixCUDA {
 		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_BIAS_ADD_LIB, System.nanoTime() - t1);
 
 	}
+	
+	/**
+	 * Performs the operation corresponding to the DML script:
+	 * ones = matrix(1, rows=1, cols=Hout*Wout)
+	 * output = input * matrix(bias %*% ones, rows=1, cols=F*Hout*Wout)
+	 * This operation is often followed by conv2d and hence we have introduced bias_add(input, bias) built-in function
+	 * @param instName the invoking instruction's name for record {@link Statistics}.
+	 * @param input input image
+	 * @param bias bias
+	 * @param outputBlock output
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
+	 */
+	public static void biasMultiply(String instName, MatrixObject input, MatrixObject bias, MatrixObject outputBlock) throws DMLRuntimeException {
+		if(isInSparseFormat(input)) {
+			((JCudaObject)input.getGPUObject()).sparseToDense(instName);
+		}
+		if(isInSparseFormat(bias)) {
+			((JCudaObject)bias.getGPUObject()).sparseToDense(instName);
+		}
+		long rows = input.getNumRows();
+		long cols = input.getNumColumns();
+		long K = bias.getNumRows();
+		long PQ = cols / K;
+		if(bias.getNumColumns() != 1 || cols % K != 0) {
+			throw new DMLRuntimeException("Incorrect inputs for bias_multiply: input[" + rows + " X " + cols + "] and bias[" + K + " X " + bias.getNumColumns() + "]");
+		}
+		Pointer imagePointer = ((JCudaObject)input.getGPUObject()).jcudaDenseMatrixPtr;
+		Pointer biasPointer = ((JCudaObject)bias.getGPUObject()).jcudaDenseMatrixPtr;
+		Pointer outputPointer = ((JCudaObject)outputBlock.getGPUObject()).jcudaDenseMatrixPtr;
+		long t1 = 0;
+		if (GPUStatistics.DISPLAY_STATISTICS) t1 = System.nanoTime();
+		kernels.launchKernel("bias_multiply",
+						ExecutionConfig.getConfigForSimpleMatrixOperations((int)rows, (int)cols),
+						imagePointer, biasPointer, outputPointer, (int)rows, (int)cols, (int) PQ);
+		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_RELU_BACKWARD_KERNEL, System.nanoTime() - t1);
+
+	}
 
 	/**
 	 * Performs the operation corresponding to the DML script:

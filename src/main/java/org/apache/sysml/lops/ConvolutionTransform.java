@@ -32,7 +32,7 @@ public class ConvolutionTransform extends Lop
 	public enum OperationTypes {
 		MAX_POOLING, MAX_POOLING_BACKWARD, RELU_MAX_POOLING, RELU_BACKWARD,
 		DIRECT_CONV2D, DIRECT_CONV2D_BACKWARD_FILTER, DIRECT_CONV2D_BACKWARD_DATA,
-		BIAS_ADD, DIRECT_CONV2D_BIAS_ADD
+		BIAS_ADD, DIRECT_CONV2D_BIAS_ADD, BIAS_MULTIPLY
 	};
 	
 	private OperationTypes operation = null;
@@ -126,6 +126,9 @@ public class ConvolutionTransform extends Lop
 		
 		case BIAS_ADD:
 			return "bias_add";
+		
+		case BIAS_MULTIPLY:
+			return "bias_multiply";
 			
 		case DIRECT_CONV2D_BACKWARD_FILTER:
 			return "conv2d_backward_filter";
@@ -140,7 +143,7 @@ public class ConvolutionTransform extends Lop
 	}
 	
 	public String getInstructions(String input, String bias, String output) throws LopsException {
-		if(operation == OperationTypes.BIAS_ADD || operation == OperationTypes.RELU_BACKWARD) {
+		if(operation == OperationTypes.BIAS_ADD || operation == OperationTypes.BIAS_MULTIPLY || operation == OperationTypes.RELU_BACKWARD) {
 			StringBuilder sb = new StringBuilder();
 			sb.append( getExecType() );
 			

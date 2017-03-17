@@ -279,7 +279,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction
 			// As we always fill the output first with bias
 			outputBlock = new MatrixBlock(input.getNumRows(), input.getNumColumns(), false);
 			outputBlock.allocateDenseBlock();
-			LibMatrixDNN.biasAdd(input, bias, outputBlock, _numThreads);
+			LibMatrixDNN.biasMultiply(input, bias, outputBlock, _numThreads);
 		}
 		
 		// release inputs/outputs

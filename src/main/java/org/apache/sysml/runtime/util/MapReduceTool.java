@@ -64,6 +64,8 @@ import org.apache.wink.json4j.OrderedJSONObject;
 
 public class MapReduceTool 
 {
+	private static final int MAX_DELETE_RETRIES = 10;
+	
 	private static final Log LOG = LogFactory.getLog(MapReduceTool.class.getName());
 	private static JobConf _rJob = null; //cached job conf for read-only operations
 	
@@ -119,18 +121,6 @@ public class MapReduceTool
 		}
 		return ret;
 	}
-	
-	public static void deleteFileIfExistOnHDFS(Path outpath, JobConf job) throws IOException {
-		if (FileSystem.get(job).exists(outpath)) {
-			FileSystem.get(job).delete(outpath, true);
-		}
-	}
-	
-	public static void deleteFileIfExistOnLFS(Path outpath, JobConf job) throws IOException {
-		if (FileSystem.getLocal(job).exists(outpath)) {
-			FileSystem.getLocal(job).delete(outpath, true);
-		}
-	}
 
 	public static void deleteFileWithMTDIfExistOnHDFS(String fname)  throws IOException {
 		deleteFileIfExistOnHDFS(fname);
@@ -138,11 +128,23 @@ public class MapReduceTool
 	}
 	
 	public static void deleteFileIfExistOnHDFS(String dir) throws IOException {
-		Path outpath = new Path(dir);
-		FileSystem fs = FileSystem.get(_rJob);
-		if (fs.exists(outpath)) {
-			//System.err.println("Deleting " + outpath + " ... ");
-			fs.delete(outpath, true);
+		deleteFileIfExists(FileSystem.get(_rJob), new Path(dir));
+	}
+
+	public static void deleteFileIfExistOnHDFS(Path outpath, JobConf job) throws IOException {
+		deleteFileIfExists(FileSystem.get(job), outpath);
+	}
+	
+	public static void deleteFileIfExistOnLFS(Path outpath, JobConf job) throws IOException {
+		deleteFileIfExists(FileSystem.getLocal(job), outpath);
+	}
+	
+	private static void deleteFileIfExists(FileSystem fs, Path outpath) throws IOException {
+		if( fs.exists(outpath) ) {
+			int retries = MAX_DELETE_RETRIES;
+			while( !fs.delete(outpath, true) && retries > 0 ) {
+				retries--;
+			}
 		}
 	}
 

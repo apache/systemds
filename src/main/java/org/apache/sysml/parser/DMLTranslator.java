@@ -2720,6 +2720,15 @@ public class DMLTranslator
 			setBlockSizeAndRefreshSizeInfo(expr, currBuiltinOp);
 			break;
 		}
+		case BIAS_MULTIPLY:
+		{
+			ArrayList<Hop> inHops1 = new ArrayList<Hop>();
+			inHops1.add(expr);
+			inHops1.add(expr2);
+			currBuiltinOp = new ConvolutionOp(target.getName(), target.getDataType(), target.getValueType(), Hop.ConvOp.BIAS_MULTIPLY, inHops1);
+			setBlockSizeAndRefreshSizeInfo(expr, currBuiltinOp);
+			break;
+		}
 		case AVG_POOL:
 		case MAX_POOL:
 		{

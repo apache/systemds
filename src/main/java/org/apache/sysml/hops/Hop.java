@@ -1024,7 +1024,7 @@ public abstract class Hop
 	public enum ConvOp {
 		MAX_POOLING, MAX_POOLING_BACKWARD,
 		DIRECT_CONV2D, DIRECT_CONV2D_BACKWARD_FILTER, DIRECT_CONV2D_BACKWARD_DATA,
-		BIAS_ADD
+		BIAS_ADD, BIAS_MULTIPLY
 	};
 	
 	public enum DataGenMethod {
@@ -1091,6 +1091,7 @@ public abstract class Hop
 		HopsConv2Lops.put(ConvOp.MAX_POOLING_BACKWARD, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.MAX_POOLING_BACKWARD);
 		HopsConv2Lops.put(ConvOp.DIRECT_CONV2D, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.DIRECT_CONV2D);
 		HopsConv2Lops.put(ConvOp.BIAS_ADD, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.BIAS_ADD);
+		HopsConv2Lops.put(ConvOp.BIAS_MULTIPLY, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.BIAS_MULTIPLY);
 		HopsConv2Lops.put(ConvOp.DIRECT_CONV2D_BACKWARD_FILTER, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.DIRECT_CONV2D_BACKWARD_FILTER);
 		HopsConv2Lops.put(ConvOp.DIRECT_CONV2D_BACKWARD_DATA, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.DIRECT_CONV2D_BACKWARD_DATA);
 	}

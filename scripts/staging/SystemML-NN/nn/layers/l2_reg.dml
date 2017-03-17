@@ -46,7 +46,7 @@ backward = function(matrix[double] X, double lambda) return (matrix[double] dX) 
    *  - lambda: Regularization strength.
    *
    * Outputs:
-   *  - dX: Gradient wrt X, of same shape as X. 
+   *  - dX: Gradient wrt X, of same shape as X.
    */
   dX = lambda * X
 }

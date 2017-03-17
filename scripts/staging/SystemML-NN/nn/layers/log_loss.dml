@@ -23,10 +23,10 @@
  * Log loss function.
  *
  * L_i = -y_i*log(pred_i) - (1-y_i)*log(1-pred_i), where y_i is a
- *  binary target, and pred_i is a probability of y=1. 
+ *  binary target, and pred_i is a probability of y=1.
  * L = (1/N) sum(L_i) for i=1 to N, where N is the number of examples.
  */
-forward = function(matrix[double] pred, matrix[double] y) 
+forward = function(matrix[double] pred, matrix[double] y)
     return (double loss) {
   /*
    * Computes the forward pass for a log loss function.
@@ -48,7 +48,7 @@ forward = function(matrix[double] pred, matrix[double] y)
   loss = sum(losses) / N
 }
 
-backward = function(matrix[double] pred, matrix[double] y) 
+backward = function(matrix[double] pred, matrix[double] y)
     return (matrix[double] dpred) {
   /*
    * Computes the backward pass for a log loss function.

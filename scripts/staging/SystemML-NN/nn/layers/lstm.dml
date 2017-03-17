@@ -81,7 +81,7 @@ forward = function(matrix[double] X, matrix[double] W, matrix[double] b, int T, 
   }
   # caches to be used during the backward pass for performance
   cache_out = matrix(0, rows=T, cols=N*M)
-  cache_c = matrix(0, rows=T, cols=N*M) 
+  cache_c = matrix(0, rows=T, cols=N*M)
   cache_ifog = matrix(0, rows=T, cols=N*4*M)
 
   for (t in 1:T) {  # each timestep
@@ -113,7 +113,7 @@ forward = function(matrix[double] X, matrix[double] W, matrix[double] b, int T, 
   }
 }
 
-backward = function(matrix[double] dout, matrix[double] dc, 
+backward = function(matrix[double] dout, matrix[double] dc,
                     matrix[double] X, matrix[double] W, matrix[double] b, int T, int D,
                     boolean given_sequences, matrix[double] out0, matrix[double] c0,
                     matrix[double] cache_out, matrix[double] cache_c, matrix[double] cache_ifog)
@@ -197,7 +197,7 @@ backward = function(matrix[double] dout, matrix[double] dc,
     dc_prev = f * dct  # shape (N, M)
     di = g * dct  # input gate, shape (N, M)
     dg = i * dct  # g gate, shape (N, M)
-    
+
     di_raw = i * (1-i) * di
     df_raw = f * (1-f) * df
     do_raw = o * (1-o) * do
@@ -228,7 +228,7 @@ init = function(int N, int D, int M)
    *
    * Note: This is just a convenience function, and parameters
    * may be initialized manually if needed.
-   * 
+   *
    * We use the Glorot uniform heuristic which limits the magnification
    * of inputs/gradients during forward/backward passes by scaling
    * uniform weights by a factor of sqrt(6/(fan_in + fan_out)).
@@ -248,7 +248,7 @@ init = function(int N, int D, int M)
   fan_out = 4*M
   scale = sqrt(6/(fan_in+fan_out))
   W = rand(rows=D+M, cols=4*M, min=-scale, max=scale, pdf="uniform")
-  b = matrix(0, rows=1, cols=4*M) 
+  b = matrix(0, rows=1, cols=4*M)
   out0 = matrix(0, rows=N, cols=M)
   c0 = matrix(0, rows=N, cols=M)
 }

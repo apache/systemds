@@ -82,7 +82,7 @@ forward = function(matrix[double] X, matrix[double] W, matrix[double] b, int T, 
 
 backward = function(matrix[double] dout, matrix[double] X, matrix[double] W, matrix[double] b,
                     int T, int D, boolean given_sequences, matrix[double] out0,
-                    matrix[double] cache_out) 
+                    matrix[double] cache_out)
     return (matrix[double] dX, matrix[double] dW, matrix[double] db, matrix[double] dout0) {
   /*
    * Computes the backward pass for a simple RNN layer with M neurons.
@@ -157,7 +157,7 @@ init = function(int N, int D, int M)
    *
    * Note: This is just a convenience function, and parameters
    * may be initialized manually if needed.
-   * 
+   *
    * We use the Glorot uniform heuristic which limits the magnification
    * of inputs/gradients during forward/backward passes by scaling
    * uniform weights by a factor of sqrt(6/(fan_in + fan_out)).
@@ -176,7 +176,7 @@ init = function(int N, int D, int M)
   fan_out = M
   scale = sqrt(6/(fan_in+fan_out))
   W = rand(rows=D+M, cols=M, min=-scale, max=scale, pdf="uniform")
-  b = matrix(0, rows=1, cols=M) 
+  b = matrix(0, rows=1, cols=M)
   out0 = matrix(0, rows=N, cols=M)
 }
 

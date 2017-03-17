@@ -61,7 +61,7 @@ backward = function(matrix[double] dprobs, matrix[double] scores)
    * dprobs_ij/dscores_ij = probs_ij * (1 - probs_ij)
    * dprobs_ik/dscores_ij = -probs_ik * probs_ij, for all k != j
    *
-   * dloss/dscores_ij = dloss/dprobs_ij * dprobs_ij/dscores_ij + 
+   * dloss/dscores_ij = dloss/dprobs_ij * dprobs_ij/dscores_ij +
    *                    sum_{k!=j}(dloss/dprobs_ik * dprobs_ik/dscores_ij)
    *
    * Inputs:

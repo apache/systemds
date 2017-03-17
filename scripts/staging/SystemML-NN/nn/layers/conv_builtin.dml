@@ -60,10 +60,9 @@ forward = function(matrix[double] X, matrix[double] W, matrix[double] b,
    */
   N = nrow(X)
   F = nrow(W)
-  # TODO: We should eliminate this in a seperate PR
   Hout = as.integer((Hin + 2 * padh - Hf) / strideh + 1)
   Wout = as.integer((Win + 2 * padw - Wf) / stridew + 1)
-  
+
   # Convolution - built-in implementation
   out = conv2d(X, W, input_shape=[N,C,Hin,Win], filter_shape=[F,C,Hf,Wf],
                stride=[strideh,stridew], padding=[padh,padw])
@@ -105,7 +104,7 @@ backward = function(matrix[double] dout, int Hout, int Wout,
    */
   N = nrow(X)
   F = nrow(W)
-  
+
   # Partial derivatives for convolution - built-in implementation
   dW = conv2d_backward_filter(X, dout, stride=[strideh,stridew], padding=[padh,padw],
                               input_shape=[N,C,Hin,Win], filter_shape=[F,C,Hf,Wf])
@@ -123,7 +122,7 @@ init = function(int F, int C, int Hf, int Wf)
    *
    * Note: This is just a convenience function, and parameters
    * may be initialized manually if needed.
-   * 
+   *
    * We use the heuristic by He et al. [http://arxiv.org/abs/1502.01852],
    * which limits the magnification of inputs/gradients during
    * forward/backward passes by scaling unit-Gaussian weights by a
@@ -140,6 +139,6 @@ init = function(int F, int C, int Hf, int Wf)
    *  - b: Biases vector, of shape (F, 1).
    */
   W = rand(rows=F, cols=C*Hf*Wf, pdf="normal") * sqrt(2.0/(C*Hf*Wf))
-  b = matrix(0, rows=F, cols=1) 
+  b = matrix(0, rows=F, cols=1)
 }
 

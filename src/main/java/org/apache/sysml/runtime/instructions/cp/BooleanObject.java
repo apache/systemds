@@ -21,7 +21,7 @@ package org.apache.sysml.runtime.instructions.cp;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.api.mlcontext.ScriptType;
+import org.apache.sysml.api.ScriptType;
 import org.apache.sysml.parser.Expression.ValueType;
 
 

@@ -19,6 +19,7 @@
 
 package org.apache.sysml.parser;
 
+import org.apache.sysml.api.ScriptType;
 import org.apache.sysml.parser.common.CommonSyntacticValidator;
 import org.apache.sysml.parser.dml.DMLParserWrapper;
 import org.apache.sysml.parser.pydml.PyDMLParserWrapper;
@@ -28,19 +29,18 @@ public class ParserFactory {
 	/**
 	 * Factory method for creating parser wrappers
 	 * 
-	 * @param pydml
-	 *            true if a PyDMLParserWrapper is needed, false if a DMLParserWrapper is needed
+	 * @param scriptType
+	 *            type of script
 	 * @return parser wrapper (DMLParserWrapper or PyDMLParserWrapper)
 	 */
-	public static ParserWrapper createParser(boolean pydml) {
+	public static ParserWrapper createParser(ScriptType scriptType) {
 		ParserWrapper ret = null;
 
 		// create the parser instance
-		if (pydml)
-			ret = new PyDMLParserWrapper();
-		else
-			ret = new DMLParserWrapper();
-
+		switch (scriptType) {
+			case DML: ret = new DMLParserWrapper(); break;
+			case PYDML: ret = new PyDMLParserWrapper(); break;
+		}
 		CommonSyntacticValidator.init();
 
 		return ret;

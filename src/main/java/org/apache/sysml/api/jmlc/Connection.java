@@ -33,7 +33,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.sysml.api.DMLException;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
-import org.apache.sysml.api.mlcontext.ScriptType;
+import org.apache.sysml.api.ScriptType;
 import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.conf.ConfigurationManager;
@@ -166,7 +166,7 @@ public class Connection implements Closeable
 		try
 		{
 			//parsing
-			ParserWrapper parser = ParserFactory.createParser(parsePyDML);
+			ParserWrapper parser = ParserFactory.createParser(parsePyDML ? ScriptType.PYDML : ScriptType.DML);
 			DMLProgram prog = parser.parse(null, script, args);
 			
 			//language validate

@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysml.api.mlcontext;
+package org.apache.sysml.api;
 
 /**
  * ScriptType represents the type of script, DML (R-like syntax) or PYDML

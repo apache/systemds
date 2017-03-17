@@ -19,16 +19,10 @@
 
 package org.apache.sysml.parser;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.commons.logging.Log;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.sysml.api.ScriptType;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.parser.common.CommonSyntacticValidator;
 import org.apache.sysml.parser.common.CustomErrorListener.ParseIssue;
@@ -36,6 +30,13 @@ import org.apache.sysml.parser.dml.DMLParserWrapper;
 import org.apache.sysml.parser.pydml.PyDMLParserWrapper;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.util.LocalFileUtils;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Base class for all dml parsers in order to make the various compilation chains
@@ -54,19 +55,18 @@ public abstract class AParserWrapper
 	/**
 	 * Factory method for creating parser wrappers
 	 * 
-	 * @param pydml true if a PyDML parser is needed
+	 * @param scriptType type of script
 	 * @return parser wrapper
 	 */
-	public static AParserWrapper createParser(boolean pydml)
+	public static AParserWrapper createParser(ScriptType scriptType)
 	{
 		AParserWrapper ret = null;
 		
 		//create the parser instance
-		if( pydml )
-			ret = new PyDMLParserWrapper();
-		else
-			ret = new DMLParserWrapper();
-		
+		switch (scriptType) {
+			case DML: ret = new DMLParserWrapper(); break;
+			case PYDML: ret = new PyDMLParserWrapper(); break;
+		}
 		CommonSyntacticValidator.init();
 		
 		return ret;

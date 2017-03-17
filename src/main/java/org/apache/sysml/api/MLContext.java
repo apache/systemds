@@ -20,14 +20,6 @@
 package org.apache.sysml.api;
 
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Scanner;
-
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.spark.SparkContext;
@@ -41,7 +33,6 @@ import org.apache.spark.sql.SQLContext;
 import org.apache.spark.sql.SparkSession;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.api.jmlc.JMLCUtils;
-import org.apache.sysml.api.mlcontext.ScriptType;
 import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.conf.ConfigurationManager;
@@ -91,6 +82,14 @@ import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.utils.Explain;
 import org.apache.sysml.utils.Explain.ExplainCounts;
 import org.apache.sysml.utils.Statistics;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Scanner;
 
 /**
  * MLContext is useful for passing RDDs as input/output to SystemML. This API avoids the need to read/write
@@ -770,7 +769,7 @@ public class MLContext {
 				args[i] = entry.getKey() + "=" + entry.getValue();
 			i++;
 		}
-		return compileAndExecuteScript(dmlScriptFilePath, args, true, parsePyDML, configFilePath);
+		return compileAndExecuteScript(dmlScriptFilePath, args, true, parsePyDML ? ScriptType.PYDML : ScriptType.DML, configFilePath);
 	}
 	
 	/**
@@ -784,17 +783,7 @@ public class MLContext {
 	 * @throws ParseException if ParseException occurs
 	 */
 	public MLOutput execute(String dmlScriptFilePath, Map<String, String> namedArgs, String configFilePath) throws IOException, DMLException, ParseException {
-		String [] args = new String[namedArgs.size()];
-		int i = 0;
-		for(Entry<String, String> entry : namedArgs.entrySet()) {
-			if(entry.getValue().trim().isEmpty())
-				args[i] = entry.getKey() + "=\"" + entry.getValue() + "\"";
-			else
-				args[i] = entry.getKey() + "=" + entry.getValue();
-			i++;
-		}
-		
-		return compileAndExecuteScript(dmlScriptFilePath, args, true, false, configFilePath);
+		return execute(dmlScriptFilePath, namedArgs, false, configFilePath);
 	}
 	
 	/**
@@ -1013,7 +1002,7 @@ public class MLContext {
 	 * @throws ParseException if ParseException occurs
 	 */
 	public MLOutput execute(String dmlScriptFilePath, String [] args, boolean parsePyDML, String configFilePath) throws IOException, DMLException, ParseException {
-		return compileAndExecuteScript(dmlScriptFilePath, args, false, parsePyDML, configFilePath);
+		return compileAndExecuteScript(dmlScriptFilePath, args, false, parsePyDML ? ScriptType.PYDML : ScriptType.DML, configFilePath);
 	}
 	
 	/**
@@ -1066,7 +1055,7 @@ public class MLContext {
 	 * @throws ParseException if ParseException occurs
 	 */
 	public MLOutput execute(String dmlScriptFilePath, boolean parsePyDML, String configFilePath) throws IOException, DMLException, ParseException {
-		return compileAndExecuteScript(dmlScriptFilePath, null, false, parsePyDML, configFilePath);
+		return compileAndExecuteScript(dmlScriptFilePath, null, false, parsePyDML ? ScriptType.PYDML : ScriptType.DML, configFilePath);
 	}
 	
 	/**
@@ -1313,7 +1302,7 @@ public class MLContext {
 
 	public MLOutput executeScript(String dmlScript, boolean isPyDML, String configFilePath)
 			throws IOException, DMLException {
-		return compileAndExecuteScript(dmlScript, null, false, false, isPyDML, configFilePath);
+		return compileAndExecuteScript(dmlScript, null, false, false, isPyDML ? ScriptType.PYDML : ScriptType.DML, configFilePath);
 	}
 
 	/*
@@ -1390,7 +1379,7 @@ public class MLContext {
 				args[i] = entry.getKey() + "=" + entry.getValue();
 			i++;
 		}
-		return compileAndExecuteScript(dmlScript, args, false, true, isPyDML, configFilePath);
+		return compileAndExecuteScript(dmlScript, args, false, true, isPyDML ? ScriptType.PYDML : ScriptType.DML, configFilePath);
 	}
 
 	private void checkIfRegisteringInputAllowed() throws DMLRuntimeException {
@@ -1399,26 +1388,29 @@ public class MLContext {
 		}
 	}
 	
-	private MLOutput compileAndExecuteScript(String dmlScriptFilePath, String [] args, boolean isNamedArgument, boolean isPyDML, String configFilePath) throws IOException, DMLException {
-		return compileAndExecuteScript(dmlScriptFilePath, args, true, isNamedArgument, isPyDML, configFilePath);
+	private MLOutput compileAndExecuteScript(String dmlScriptFilePath, String [] args, boolean isNamedArgument, ScriptType scriptType, String configFilePath) throws IOException, DMLException {
+		return compileAndExecuteScript(dmlScriptFilePath, args, true, isNamedArgument, scriptType, configFilePath);
 	}
-	
+
 	/**
-	 * All the execute() methods call this, which  after setting appropriate input/output variables
+	 * 	 * All the execute() methods call this, which  after setting appropriate input/output variables
 	 * calls _compileAndExecuteScript
 	 * We have explicitly synchronized this function because MLContext/SystemML does not yet support multi-threading.
+	 * @throws ParseException if ParseException occurs
 	 * @param dmlScriptFilePath script file path
 	 * @param args arguments
-	 * @param isNamedArgument is named argument
+	 * @param isFile whether the string is a path
+	 * @param isNamedArgument  is named argument
+	 * @param scriptType type of script (DML or PyDML)
+	 * @param configFilePath path to config file
 	 * @return output as MLOutput
 	 * @throws IOException if IOException occurs
 	 * @throws DMLException if DMLException occurs
-	 * @throws ParseException if ParseException occurs
 	 */
-	private synchronized MLOutput compileAndExecuteScript(String dmlScriptFilePath, String [] args,  boolean isFile, boolean isNamedArgument, boolean isPyDML, String configFilePath) throws IOException, DMLException {
+	private synchronized MLOutput compileAndExecuteScript(String dmlScriptFilePath, String [] args,  boolean isFile, boolean isNamedArgument, ScriptType scriptType, String configFilePath) throws IOException, DMLException {
 		try {
 
-			DMLScript.SCRIPT_TYPE = isPyDML ? ScriptType.PYDML : ScriptType.DML;
+			DMLScript.SCRIPT_TYPE = scriptType;
 
 			if(getActiveMLContext() != null) {
 				throw new DMLRuntimeException("SystemML (and hence by definition MLContext) doesnot support parallel execute() calls from same or different MLContexts. "
@@ -1438,7 +1430,7 @@ public class MLContext {
 				Map<String, String> argVals = DMLScript.createArgumentsMap(isNamedArgument, args);
 				
 				// Run the DML script
-				ExecutionContext ec = executeUsingSimplifiedCompilationChain(dmlScriptFilePath, isFile, argVals, isPyDML, inputs, outputs, _variables, configFilePath);
+				ExecutionContext ec = executeUsingSimplifiedCompilationChain(dmlScriptFilePath, isFile, argVals, scriptType, inputs, outputs, _variables, configFilePath);
 				SparkExecutionContext sec = (SparkExecutionContext) ec;
 				
 				// Now collect the output
@@ -1481,7 +1473,7 @@ public class MLContext {
 	 * @param dmlScriptFilePath script file path
 	 * @param isFile true if file, false otherwise
 	 * @param argVals map of args
-	 * @param parsePyDML  true if pydml, false otherwise
+	 * @param scriptType  type of script (DML or PyDML)
 	 * @param inputs the inputs
 	 * @param outputs the outputs
 	 * @param inputSymbolTable the input symbol table
@@ -1491,7 +1483,7 @@ public class MLContext {
 	 * @throws DMLException if DMLException occurs
 	 * @throws ParseException if ParseException occurs
 	 */
-	private ExecutionContext executeUsingSimplifiedCompilationChain(String dmlScriptFilePath, boolean isFile, Map<String, String> argVals, boolean parsePyDML, 
+	private ExecutionContext executeUsingSimplifiedCompilationChain(String dmlScriptFilePath, boolean isFile, Map<String, String> argVals, ScriptType scriptType,
 			String[] inputs, String[] outputs, LocalVariableMap inputSymbolTable, String configFilePath) 
 		throws IOException, DMLException
 	{
@@ -1510,13 +1502,13 @@ public class MLContext {
 		ConfigurationManager.setGlobalConfig(cconf);
 		
 		//read dml script string
-		String dmlScriptStr = DMLScript.readDMLScript( isFile?"-f":"-s", dmlScriptFilePath);
+		String dmlScriptStr = DMLScript.readDMLScript( isFile, dmlScriptFilePath);
 		
 		//simplified compilation chain
 		_rtprog = null;
 		
 		//parsing
-		AParserWrapper parser = AParserWrapper.createParser(parsePyDML);
+		AParserWrapper parser = AParserWrapper.createParser(scriptType);
 		DMLProgram prog;
 		if (isFile) {
 			prog = parser.parse(dmlScriptFilePath, null, argVals);

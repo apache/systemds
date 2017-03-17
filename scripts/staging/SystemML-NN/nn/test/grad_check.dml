@@ -40,7 +40,7 @@ source("nn/layers/rnn.dml") as rnn
 source("nn/layers/sigmoid.dml") as sigmoid
 source("nn/layers/softmax.dml") as softmax
 source("nn/layers/tanh.dml") as tanh
-source("nn/layers/batch_norm.dml") as batch_norm
+source("nn/layers/spatial_batch_norm.dml") as spatial_batch_norm
 source("nn/test/conv_simple.dml") as conv_simple
 source("nn/test/max_pool_simple.dml") as max_pool_simple
 source("nn/util.dml") as util
@@ -338,7 +338,7 @@ conv_builtin = function() {
   }
 }
 
-batch_norm = function(boolean per_channel) {
+spatial_batch_norm = function(boolean per_channel) {
 	N = 2  # num examples
   	C = 2  # num channels
   	H = 5  # input height
@@ -348,22 +348,16 @@ batch_norm = function(boolean per_channel) {
 	ma_fraction = 0.999 # moving average fraction (typical value: 0.999)
 	eps = 1e-5 # value to be added to variance (typical value: 1e-5)
 	# Create layers
-	if(per_channel) {
-		size = C
-		print("Grad checking the per-channel batch normalization layer.")
-	}
-	else {
-		size = C*H*W
-		print("Grad checking the batch normalization layer.")
-	}
-	[ ema_mean, ema_var, gamma, beta ] = batch_norm::init(size) 
+	size = C
+	print("Grad checking the per-channel batch normalization layer.")
+	[ ema_mean, ema_var, gamma, beta ] = spatial_batch_norm::init(size) 
 	# ema_mean = t(colMeans(X))
 	# ema_var = t(colVars(X))
 	
 	# Compute analytical gradients of loss wrt parameters
-  	[out, ema_mean_out, ema_var_out] = batch_norm::forward(X, ema_mean, ema_var, C, H, W, gamma, beta, ma_fraction, eps, 'train')
+  	[out, ema_mean_out, ema_var_out] = spatial_batch_norm::forward(X, ema_mean, ema_var, C, H, W, gamma, beta, ma_fraction, eps, 'train')
   	dout = l2_loss::backward(out, y)
-  	[ dX, dgamma, dbeta ] = batch_norm::backward(dout, X, out, ema_mean, ema_var, C, H, W, gamma, eps)
+  	[ dX, dgamma, dbeta ] = spatial_batch_norm::backward(dout, X, out, ema_mean, ema_var, C, H, W, gamma, eps)
   	
   	# Grad check
   	h = 1e-5
@@ -373,10 +367,10 @@ batch_norm = function(boolean per_channel) {
 	      	# Compute numerical derivative
 	      	old = as.scalar(X[i,j])
 	      	X[i,j] = old - h
-	      	[outmh, ema_mean_out, ema_var_out] = batch_norm::forward(X, ema_mean, ema_var, C, H, W, gamma, beta, ma_fraction, eps, 'train')
+	      	[outmh, ema_mean_out, ema_var_out] = spatial_batch_norm::forward(X, ema_mean, ema_var, C, H, W, gamma, beta, ma_fraction, eps, 'train')
 	      	lossmh = l2_loss::forward(outmh, y)
 	      	X[i,j] = old + h
-	      	[outph, ema_mean_out, ema_var_out] = batch_norm::forward(X, ema_mean, ema_var, C, H, W, gamma, beta, ma_fraction, eps, 'train')
+	      	[outph, ema_mean_out, ema_var_out] = spatial_batch_norm::forward(X, ema_mean, ema_var, C, H, W, gamma, beta, ma_fraction, eps, 'train')
 	      	lossph = l2_loss::forward(outph, y)
 	      	X[i,j] = old  # reset
 	      	dX_num = (lossph - lossmh) / (2 * h) # numerical derivative

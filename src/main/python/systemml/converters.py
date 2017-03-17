@@ -23,6 +23,7 @@ __all__ = [ 'getNumCols', 'convertToMatrixBlock', 'convertToNumPyArr', 'convertT
 
 import numpy as np
 import pandas as pd
+import math
 from pyspark.context import SparkContext
 from scipy.sparse import coo_matrix, spmatrix
 from .classloader import *
@@ -55,32 +56,53 @@ def convertToLabeledDF(sparkSession, X, y=None):
     else:
         return out.select('features')
 
+def _convertSPMatrixToMB(sc, src):
+    numRows = src.shape[0]
+    numCols = src.shape[1]
+    data = src.data
+    row = src.row.astype(np.int32)
+    col = src.col.astype(np.int32)
+    nnz = len(src.col)
+    buf1 = bytearray(data.tostring())
+    buf2 = bytearray(row.tostring())
+    buf3 = bytearray(col.tostring())
+    createJavaObject(sc, 'dummy')
+    return sc._jvm.org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt.convertSciPyCOOToMB(buf1, buf2, buf3, numRows, numCols, nnz)
+            
+def _convertDenseMatrixToMB(sc, src):
+    numCols = getNumCols(src)
+    numRows = src.shape[0]
+    arr = src.ravel().astype(np.float64)
+    buf = bytearray(arr.tostring())
+    createJavaObject(sc, 'dummy')
+    return sc._jvm.org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt.convertPy4JArrayToMB(buf, numRows, numCols)
 
-def convertToMatrixBlock(sc, src):
+def convertToMatrixBlock(sc, src, maxSizeBlockInMB=8):
     if isinstance(src, spmatrix):
         src = coo_matrix(src,  dtype=np.float64)
-        numRows = src.shape[0]
-        numCols = src.shape[1]
-        data = src.data
-        row = src.row.astype(np.int32)
-        col = src.col.astype(np.int32)
-        nnz = len(src.col)
-        buf1 = bytearray(data.tostring())
-        buf2 = bytearray(row.tostring())
-        buf3 = bytearray(col.tostring())
-        createJavaObject(sc, 'dummy')
-        return sc._jvm.org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt.convertSciPyCOOToMB(buf1, buf2, buf3, numRows, numCols, nnz)
-    elif isinstance(sc, SparkContext):
-        src = np.asarray(src)
-        numCols = getNumCols(src)
-        numRows = src.shape[0]
-        arr = src.ravel().astype(np.float64)
-        buf = bytearray(arr.tostring())
-        createJavaObject(sc, 'dummy')
-        return sc._jvm.org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt.convertPy4JArrayToMB(buf, numRows, numCols)
     else:
-        raise TypeError('sc needs to be of type SparkContext') # TODO: We can generalize this by creating py4j gateway ourselves
-
+        src = np.asarray(src, dtype=np.float64)
+    numRowsPerBlock = int(math.ceil((maxSizeBlockInMB*1000000) / (src.shape[1]*8)))
+    # print("numRowsPerBlock=" + str(numRowsPerBlock))
+    multiBlockTransfer = False if numRowsPerBlock >= src.shape[0] else True
+    if not multiBlockTransfer:
+        if isinstance(src, spmatrix):
+            return _convertSPMatrixToMB(sc, src)
+        elif isinstance(sc, SparkContext):
+            return _convertDenseMatrixToMB(sc, src)
+        else:
+            raise TypeError('sc needs to be of type SparkContext')
+    else:
+        if isinstance(src, spmatrix):
+            numRowsPerBlock = 1 # To avoid unnecessary conversion to csr and then coo again
+            rowBlocks = [ _convertSPMatrixToMB(sc, src.getrow(i)) for i in  range(src.shape[0]) ]
+            isSparse = True
+        elif isinstance(sc, SparkContext):
+            rowBlocks = [ _convertDenseMatrixToMB(sc, src[i:i+numRowsPerBlock,]) for i in  range(0, src.shape[0], numRowsPerBlock) ]
+            isSparse = False
+        else:
+            raise TypeError('sc needs to be of type SparkContext')
+        return sc._jvm.org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt.mergeRowBlocks(rowBlocks, int(numRowsPerBlock), int(src.shape[0]), int(src.shape[1]), isSparse)
 
 def convertToNumPyArr(sc, mb):
     if isinstance(sc, SparkContext):

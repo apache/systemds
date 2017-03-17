@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 
+import org.apache.sysml.hops.AggBinaryOp;
 import org.apache.sysml.hops.AggUnaryOp;
 import org.apache.sysml.hops.BinaryOp;
 import org.apache.sysml.hops.Hop;
@@ -61,8 +62,9 @@ public class CellTpl extends BaseTpl
 	@Override
 	public boolean fuse(Hop hop, Hop input) {
 		return !isClosed() && (isValidOperation(hop) 
-			|| ( hop instanceof AggUnaryOp && ((AggUnaryOp) hop).getOp() == AggOp.SUM 
-				&& ((AggUnaryOp) hop).getDirection()!= Direction.Col));
+			|| (HopRewriteUtils.isSum(hop) && ((AggUnaryOp) hop).getDirection()!= Direction.Col)
+			|| (HopRewriteUtils.isMatrixMultiply(hop) && hop.getDim1()==1 && hop.getDim2()==1)
+				&& HopRewriteUtils.isTransposeOperation(hop.getInput().get(0)));
 	}
 
 	@Override
@@ -74,9 +76,10 @@ public class CellTpl extends BaseTpl
 	@Override
 	public CloseType close(Hop hop) {
 		//need to close cell tpl after aggregation, see fuse for exact properties
-		if( hop instanceof AggUnaryOp && isValidOperation(hop.getInput().get(0)) )
+		if( (HopRewriteUtils.isSum(hop) && ((AggUnaryOp) hop).getDirection()!= Direction.Col)
+			|| (HopRewriteUtils.isMatrixMultiply(hop) && hop.getDim1()==1 && hop.getDim2()==1) )
 			return CloseType.CLOSED_VALID;
-		else if( hop instanceof AggUnaryOp )
+		else if( hop instanceof AggUnaryOp || hop instanceof AggBinaryOp )
 			return CloseType.CLOSED_INVALID;
 		else
 			return CloseType.OPEN;
@@ -109,6 +112,7 @@ public class CellTpl extends BaseTpl
 		CNode output = tmp.get(hop.getHopID());
 		CNodeCell tpl = new CNodeCell(inputs, output);
 		tpl.setCellType(TemplateUtils.getCellType(hop));
+		tpl.setRequiresCastDtm(hop instanceof AggBinaryOp);
 		
 		// return cplan instance
 		return new Pair<Hop[],CNodeTpl>(sinHops.toArray(new Hop[0]), tpl);
@@ -191,12 +195,34 @@ public class CellTpl extends BaseTpl
 			out = new CNodeTernary(cdata1, cdata2, cdata3, 
 					TernaryType.valueOf(top.getOp().toString()));
 		}
-		else if (hop instanceof AggUnaryOp && ((AggUnaryOp)hop).getOp() == AggOp.SUM
+		else if( HopRewriteUtils.isTransposeOperation(hop) ) 
+		{
+			out = tmp.get(hop.getInput().get(0).getHopID());	
+		}
+		else if( hop instanceof AggUnaryOp && ((AggUnaryOp)hop).getOp() == AggOp.SUM
 			&& (((AggUnaryOp) hop).getDirection() == Direction.RowCol 
 			|| ((AggUnaryOp) hop).getDirection() == Direction.Row) )
 		{
 			out = tmp.get(hop.getInput().get(0).getHopID());
 		}
+		else if( hop instanceof AggBinaryOp ) {
+			//guaranteed to be a dot product, so there are two cases:
+			//(1) t(X)%*%X -> sum(X^2) and t(X) %*% Y -> sum(X*Y)
+			if( HopRewriteUtils.isTransposeOfItself(hop.getInput().get(0), hop.getInput().get(1)) ) {
+				CNode cdata1 = tmp.get(hop.getInput().get(1).getHopID());
+				out = new CNodeUnary(cdata1, UnaryType.POW2);
+			}
+			else {
+				CNode cdata1 = TemplateUtils.skipTranspose(tmp.get(hop.getInput().get(0).getHopID()), 
+						hop.getInput().get(0), tmp, compileLiterals);
+				if( TemplateUtils.isColVector(cdata1) )
+					cdata1 = new CNodeUnary(cdata1, UnaryType.LOOKUP_R);
+				CNode cdata2 = tmp.get(hop.getInput().get(1).getHopID());
+				if( TemplateUtils.isColVector(cdata2) )
+					cdata2 = new CNodeUnary(cdata2, UnaryType.LOOKUP_R);
+				out = new CNodeBinary(cdata1, cdata2, BinType.MULT);
+			}
+		} 
 		
 		tmp.put(hop.getHopID(), out);
 	}

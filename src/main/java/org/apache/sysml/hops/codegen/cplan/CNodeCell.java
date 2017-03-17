@@ -48,6 +48,7 @@ public class CNodeCell extends CNodeTpl
 			+ "}";
 	
 	private CellType _type = null;
+	private boolean _requiresCastdtm = false;
 	private boolean _multipleConsumers = false;
 	
 	public CNodeCell(ArrayList<CNode> inputs, CNode output ) {
@@ -69,6 +70,15 @@ public class CNodeCell extends CNodeTpl
 	
 	public CellType getCellType() {
 		return _type;
+	}
+	
+	public void setRequiresCastDtm(boolean flag) {
+		_requiresCastdtm = flag;
+		_hash = 0;
+	}
+	
+	public boolean requiredCastDtm() {
+		return _requiresCastdtm;
 	}
 	
 	@Override
@@ -126,8 +136,9 @@ public class CNodeCell extends CNodeTpl
 		if( _hash == 0 ) {
 			int h1 = super.hashCode();
 			int h2 = _type.hashCode();
+			int h3 = Boolean.valueOf(_requiresCastdtm).hashCode();
 			//note: _multipleConsumers irrelevant for plan comparison
-			_hash = Arrays.hashCode(new int[]{h1,h2});
+			_hash = Arrays.hashCode(new int[]{h1,h2,h3});
 		}
 		return _hash;
 	}
@@ -140,6 +151,7 @@ public class CNodeCell extends CNodeTpl
 		CNodeCell that = (CNodeCell)o;
 		return super.equals(that) 
 			&& _type == that._type
+			&& _requiresCastdtm == that._requiresCastdtm
 			&& equalInputReferences(
 				_output, that._output, _inputs, that._inputs);
 	}
@@ -149,6 +161,7 @@ public class CNodeCell extends CNodeTpl
 		StringBuilder sb = new StringBuilder();
 		sb.append("SPOOF CELLWISE [type=");
 		sb.append(_type.name());
+		sb.append(", castdtm="+_requiresCastdtm);
 		sb.append(", mc="+_multipleConsumers);
 		sb.append("]");
 		return sb.toString();

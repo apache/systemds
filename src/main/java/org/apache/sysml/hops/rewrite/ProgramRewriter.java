@@ -142,13 +142,14 @@ public class ProgramRewriter
 	/**
 	 * Construct a program rewriter for a given rewrite which is passed from outside.
 	 * 
-	 * @param rewrite the HOP rewrite rule
+	 * @param rewrites the HOP rewrite rules
 	 */
-	public ProgramRewriter( HopRewriteRule rewrite )
+	public ProgramRewriter( HopRewriteRule... rewrites )
 	{
 		//initialize HOP DAG rewrite ruleSet (with fixed rewrite order)
 		_dagRuleSet = new ArrayList<HopRewriteRule>();
-		_dagRuleSet.add( rewrite );		
+		for( HopRewriteRule rewrite : rewrites )
+			_dagRuleSet.add( rewrite );		
 		
 		_sbRuleSet = new ArrayList<StatementBlockRewriteRule>();
 	}
@@ -156,15 +157,16 @@ public class ProgramRewriter
 	/**
 	 * Construct a program rewriter for a given rewrite which is passed from outside.
 	 * 
-	 * @param rewrite the statement block rewrite rule
+	 * @param rewrites the statement block rewrite rules
 	 */
-	public ProgramRewriter( StatementBlockRewriteRule rewrite )
+	public ProgramRewriter( StatementBlockRewriteRule... rewrites )
 	{
 		//initialize HOP DAG rewrite ruleSet (with fixed rewrite order)
 		_dagRuleSet = new ArrayList<HopRewriteRule>();
 		
 		_sbRuleSet = new ArrayList<StatementBlockRewriteRule>();
-		_sbRuleSet.add( rewrite );
+		for( StatementBlockRewriteRule rewrite : rewrites )
+			_sbRuleSet.add( rewrite );
 	}
 	
 	/**

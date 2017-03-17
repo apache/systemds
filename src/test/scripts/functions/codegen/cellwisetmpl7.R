@@ -23,10 +23,11 @@ args<-commandArgs(TRUE)
 options(digits=22)
 library("Matrix")
 
-X = matrix(  c(1,2,3), nrow=3, ncol=1, byrow = TRUE)
-y = matrix(  c(1,1,1), nrow=3, ncol=1, byrow = TRUE)
-z = matrix(  c(3,3,3), nrow=3, ncol=1, byrow = TRUE)
+X = seq(7, 1007);
+Y = seq(6, 1006);
 
-S = sum(X*y*z)
-print(S)
-write(S,paste(args[2],"S",sep=""))
+Z = X + Y - 7 + abs(X);
+R = t(Z) %*% Z
+
+print(R)
+write(R, paste(args[2],"S",sep=""))

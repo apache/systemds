@@ -46,11 +46,13 @@ import org.apache.sysml.hops.codegen.template.CPlanMemoTable;
 import org.apache.sysml.hops.codegen.template.CPlanMemoTable.MemoTableEntry;
 import org.apache.sysml.hops.codegen.template.TemplateUtils;
 import org.apache.sysml.hops.Hop;
+import org.apache.sysml.hops.Hop.OpOp1;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.hops.rewrite.ProgramRewriteStatus;
 import org.apache.sysml.hops.rewrite.ProgramRewriter;
 import org.apache.sysml.hops.rewrite.RewriteCommonSubexpressionElimination;
+import org.apache.sysml.hops.rewrite.RewriteRemoveUnnecessaryCasts;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.ForStatement;
 import org.apache.sysml.parser.ForStatementBlock;
@@ -87,7 +89,9 @@ public class SpoofCompiler
 	//for equal operators from (1) different hop dags and (2) repeated recompilation 
 	private static ConcurrentHashMap<CNode, Class<?>> planCache = new ConcurrentHashMap<CNode, Class<?>>();
 	
-	private static ProgramRewriter rewriteCSE = new ProgramRewriter(new RewriteCommonSubexpressionElimination(true));
+	private static ProgramRewriter rewriteCSE = new ProgramRewriter(
+			new RewriteCommonSubexpressionElimination(true),
+			new RewriteRemoveUnnecessaryCasts());
 	
 	public static void generateCode(DMLProgram dmlp) 
 		throws LanguageException, HopsException, DMLRuntimeException
@@ -217,7 +221,7 @@ public class SpoofCompiler
 			//cleanup codegen plans (remove unnecessary inputs, fix hop-cnodedata mapping,
 			//remove empty templates with single cnodedata input, remove spurious lookups)
 			cplans = cleanupCPlans(cplans);
-					
+			
 			//explain before modification
 			if( LDEBUG && !cplans.isEmpty() ) { //existing cplans
 				LOG.info("Codegen EXPLAIN (before optimize): \n"+Explain.explainHops(roots));
@@ -265,7 +269,7 @@ public class SpoofCompiler
 				//generate final hop dag
 				ret = constructModifiedHopDag(roots, cplans, clas);
 				
-				//run common subexpression elimination
+				//run common subexpression elimination and other rewrites
 				ret = rewriteCSE.rewriteHopDAGs(ret, new ProgramRewriteStatus());	
 				
 				//explain after modification
@@ -438,11 +442,15 @@ public class SpoofCompiler
 				else
 					hnew.addInput(inHops[i]); //add inputs
 			}
-			hnew.setOutputBlocksizes(hop.getRowsInBlock() , hop.getColsInBlock());
-			hnew.setDim1(hop.getDim1());
-			hnew.setDim2(hop.getDim2());
-			if(tmpCNode instanceof CNodeOuterProduct && ((CNodeOuterProduct)tmpCNode).isTransposeOutput() ) {
+			
+			//modify output parameters 
+			HopRewriteUtils.setOutputParameters(hnew, hop.getDim1(), hop.getDim2(), 
+					hop.getRowsInBlock(), hop.getColsInBlock(), hop.getNnz());
+			if(tmpCNode instanceof CNodeOuterProduct && ((CNodeOuterProduct)tmpCNode).isTransposeOutput() )
 				hnew = HopRewriteUtils.createTranspose(hnew);
+			else if( tmpCNode instanceof CNodeCell && ((CNodeCell)tmpCNode).requiredCastDtm() ) {
+				HopRewriteUtils.setOutputParametersForScalar(hnew);
+				hnew = HopRewriteUtils.createUnary(hnew, OpOp1.CAST_AS_MATRIX);
 			}
 			
 			HopRewriteUtils.rewireAllParentChildReferences(hop, hnew);
@@ -496,9 +504,9 @@ public class SpoofCompiler
 			
 			//remove cplan w/ single op and w/o agg
 			if( tpl instanceof CNodeCell && ((CNodeCell)tpl).getCellType()==CellType.NO_AGG
-				&& tpl.getOutput() instanceof CNodeUnary && tpl.getOutput().getInput().get(0) instanceof CNodeData) 
+				&& TemplateUtils.hasSingleOperation(tpl) ) 
 				cplans2.remove(e.getKey());
-		
+				
 			//remove cplan if empty
 			if( tpl.getOutput() instanceof CNodeData )
 				cplans2.remove(e.getKey());

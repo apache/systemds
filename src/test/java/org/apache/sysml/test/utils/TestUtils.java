@@ -423,7 +423,7 @@ public class TestUtils
 				matrixType = 2;
 			
 			if ( matrixType == -1 )
-				throw new RuntimeException("unknown matrix type while reading R matrix: ." + line);
+				throw new RuntimeException("unknown matrix type while reading R matrix: " + line);
 			
 			line = reader.readLine(); // header line with dimension and nnz information
 			

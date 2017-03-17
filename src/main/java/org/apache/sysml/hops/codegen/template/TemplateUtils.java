@@ -31,17 +31,19 @@ import org.apache.sysml.hops.BinaryOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.LiteralOp;
 import org.apache.sysml.hops.TernaryOp;
-import org.apache.sysml.hops.Hop.AggOp;
 import org.apache.sysml.hops.Hop.Direction;
 import org.apache.sysml.hops.UnaryOp;
 import org.apache.sysml.hops.codegen.cplan.CNode;
+import org.apache.sysml.hops.codegen.cplan.CNodeBinary;
 import org.apache.sysml.hops.codegen.cplan.CNodeBinary.BinType;
 import org.apache.sysml.hops.codegen.cplan.CNodeData;
+import org.apache.sysml.hops.codegen.cplan.CNodeTernary;
 import org.apache.sysml.hops.codegen.cplan.CNodeUnary;
 import org.apache.sysml.hops.codegen.cplan.CNodeUnary.UnaryType;
 import org.apache.sysml.hops.codegen.template.BaseTpl.TemplateType;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.hops.codegen.cplan.CNodeTernary.TernaryType;
+import org.apache.sysml.hops.codegen.cplan.CNodeTpl;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.codegen.SpoofCellwise.CellType;
 import org.apache.sysml.runtime.codegen.SpoofOuterProduct.OutProdType;
@@ -188,8 +190,8 @@ public class TemplateUtils
 	}
 	
 	public static CellType getCellType(Hop hop) {
-		return (hop instanceof AggUnaryOp && ((AggUnaryOp)hop).getOp() == AggOp.SUM) ?
-			((((AggUnaryOp) hop).getDirection() == Direction.RowCol) ? 
+		return (hop instanceof AggBinaryOp) ? CellType.FULL_AGG :
+			HopRewriteUtils.isSum(hop) ? ((((AggUnaryOp) hop).getDirection() == Direction.RowCol) ? 
 			CellType.FULL_AGG : CellType.ROW_AGG) : CellType.NO_AGG;
 	}
 	
@@ -247,5 +249,18 @@ public class TemplateUtils
 					if( HopRewriteUtils.isOuterProductLikeMM(p2) )
 						return true;
 		return false;
+	}
+
+	public static boolean hasSingleOperation(CNodeTpl tpl) {
+		CNode output = tpl.getOutput();
+		return (output instanceof CNodeUnary || output instanceof CNodeBinary
+				|| output instanceof CNodeTernary) && hasOnlyDataNodeInputs(output);
+	}
+	
+	public static boolean hasOnlyDataNodeInputs(CNode node) {
+		boolean ret = true;
+		for( CNode c : node.getInput() )
+			ret &= (c instanceof CNodeData);
+		return ret;
 	}
 }

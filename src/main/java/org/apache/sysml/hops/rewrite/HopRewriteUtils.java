@@ -467,7 +467,6 @@ public class HopRewriteUtils
 	}
 	
 	public static UnaryOp createUnary(Hop input, OpOp1 type) 
-		throws HopsException
 	{
 		DataType dt = (type==OpOp1.CAST_AS_SCALAR) ? DataType.SCALAR : 
 			(type==OpOp1.CAST_AS_MATRIX) ? DataType.MATRIX : input.getDataType();
@@ -593,6 +592,7 @@ public class HopRewriteUtils
 	}
 	
 	public static void setOutputParametersForScalar( Hop hop ) {
+		hop.setDataType(DataType.SCALAR);
 		hop.setDim1( 0 );
 		hop.setDim2( 0 );
 		hop.setOutputBlocksizes(-1, -1 );
@@ -793,6 +793,10 @@ public class HopRewriteUtils
 	
 	public static boolean isMatrixMultiply(Hop hop) {
 		return hop instanceof AggBinaryOp && ((AggBinaryOp)hop).isMatrixMultiply();
+	}
+	
+	public static boolean isSum(Hop hop) {
+		return (hop instanceof AggUnaryOp && ((AggUnaryOp)hop).getOp()==AggOp.SUM);
 	}
 	
 	public static boolean isNonZeroIndicator(Hop pred, Hop hop )

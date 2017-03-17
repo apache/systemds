@@ -60,14 +60,11 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 		//default constructor for clone
 	}
 	
-	public UnaryOp(String l, DataType dt, ValueType vt, OpOp1 o, Hop inp)
-			throws HopsException 
-	{
+	public UnaryOp(String l, DataType dt, ValueType vt, OpOp1 o, Hop inp) {
 		super(l, dt, vt);
 
 		getInput().add(0, inp);
 		inp.getParent().add(this);
-
 		_op = o;
 		
 		//compute unknown dims and nnz

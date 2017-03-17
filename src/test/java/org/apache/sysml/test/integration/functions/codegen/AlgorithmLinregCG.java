@@ -43,8 +43,8 @@ public class AlgorithmLinregCG extends AutomatedTestBase
 	
 	private final static double eps = 1e-5;
 	
-	private final static int rows = 1468;
-	private final static int cols = 1007;
+	private final static int rows = 2468;
+	private final static int cols = 507;
 		
 	private final static double sparsity1 = 0.7; //dense
 	private final static double sparsity2 = 0.1; //sparse

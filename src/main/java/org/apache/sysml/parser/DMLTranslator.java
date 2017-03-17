@@ -1496,16 +1496,9 @@ public class DMLTranslator
 		{
 			if ( target.getDim1() != -1 ) 
 				rowUpperHops = new LiteralOp(target.getOrigDim1());
-			else
-			{
-				try {
-					//currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), Hops.OpOp1.NROW, expr);
-					rowUpperHops = new UnaryOp(target.getName(), DataType.SCALAR, ValueType.INT, Hop.OpOp1.NROW, hops.get(target.getName()));
-					rowUpperHops.setAllPositions(target.getBeginLine(), target.getBeginColumn(), target.getEndLine(), target.getEndColumn());
-				} catch (HopsException e) {
-					LOG.error(target.printErrorLocation() + "error processing row upper index for indexed expression " + target.toString());
-					throw new RuntimeException(target.printErrorLocation() + "error processing row upper index for indexed expression " + target.toString());
-				}
+			else {
+				rowUpperHops = new UnaryOp(target.getName(), DataType.SCALAR, ValueType.INT, Hop.OpOp1.NROW, hops.get(target.getName()));
+				rowUpperHops.setAllPositions(target.getBeginLine(), target.getBeginColumn(), target.getEndLine(), target.getEndColumn());
 			}
 		}
 		if (target.getColLowerBound() != null)
@@ -1520,19 +1513,8 @@ public class DMLTranslator
 			if ( target.getDim2() != -1 ) 
 				colUpperHops = new LiteralOp(target.getOrigDim2());
 			else
-			{
-				try {
-					colUpperHops = new UnaryOp(target.getName(), DataType.SCALAR, ValueType.INT, Hop.OpOp1.NCOL, hops.get(target.getName()));
-				} catch (HopsException e) {
-					LOG.error(target.printErrorLocation() + " error processing column upper index for indexed expression " + target.toString());
-					throw new RuntimeException(target.printErrorLocation() + " error processing column upper index for indexed expression " + target.toString(), e);
-				}
-			}
+				colUpperHops = new UnaryOp(target.getName(), DataType.SCALAR, ValueType.INT, Hop.OpOp1.NCOL, hops.get(target.getName()));
 		}
-		
-		//if (target == null) {
-		//	target = createTarget(source);
-		//}
 		
 		// process the source expression to get source Hops
 		Hop sourceOp = processExpression(source, target, hops);
@@ -1579,16 +1561,9 @@ public class DMLTranslator
 		{
 			if ( source.getOrigDim1() != -1 ) 
 				rowUpperHops = new LiteralOp(source.getOrigDim1());
-			else
-			{
-				try {
-					//currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), Hops.OpOp1.NROW, expr);
-					rowUpperHops = new UnaryOp(source.getName(), DataType.SCALAR, ValueType.INT, Hop.OpOp1.NROW, hops.get(source.getName()));
-					rowUpperHops.setAllPositions(source.getBeginLine(),source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
-				} catch (HopsException e) {
-					LOG.error(source.printErrorLocation() + "error processing row upper index for indexed identifier " + source.toString());
-					throw new RuntimeException(source.printErrorLocation() + "error processing row upper index for indexed identifier " + source.toString() + e);
-				}
+			else {
+				rowUpperHops = new UnaryOp(source.getName(), DataType.SCALAR, ValueType.INT, Hop.OpOp1.NROW, hops.get(source.getName()));
+				rowUpperHops.setAllPositions(source.getBeginLine(),source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
 			}
 		}
 		if (source.getColLowerBound() != null)
@@ -1603,14 +1578,7 @@ public class DMLTranslator
 			if ( source.getOrigDim2() != -1 ) 
 				colUpperHops = new LiteralOp(source.getOrigDim2());
 			else
-			{
-				try {
-					colUpperHops = new UnaryOp(source.getName(), DataType.SCALAR, ValueType.INT, Hop.OpOp1.NCOL, hops.get(source.getName()));
-				} catch (HopsException e) {
-					LOG.error(source.printErrorLocation() + "error processing column upper index for indexed indentifier " + source.toString(), e);
-					throw new RuntimeException(source.printErrorLocation() + "error processing column upper index for indexed indentifier " + source.toString(), e);
-				}
-			}
+				colUpperHops = new UnaryOp(source.getName(), DataType.SCALAR, ValueType.INT, Hop.OpOp1.NCOL, hops.get(source.getName()));
 		}
 		
 		if (target == null) {
@@ -1759,15 +1727,11 @@ public class DMLTranslator
 	    target.setValueType(ValueType.BOOLEAN);
 		
 		if (source.getRight() == null) {
-			Hop currUop = null;
-			try {
-				currUop = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), Hop.OpOp1.NOT, left);
-				currUop.setAllPositions(source.getBeginLine(), source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
-			} catch (HopsException e) {
-				throw new ParseException(e.getMessage());
-			}
+			Hop currUop = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), Hop.OpOp1.NOT, left);
+			currUop.setAllPositions(source.getBeginLine(), source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
 			return currUop;
-		} else {
+		} 
+		else {
 			Hop currBop = null;
 			OpOp2 op = null;
 

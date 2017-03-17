@@ -180,10 +180,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 		OperationTypes lopOp = HopsConv2Lops.get(op);
 
-		// The fused relu_maxpooling is being disabled for now on the GPU
-		// There is a bug in LibMatrixCUDA#reluMaxpooling
-		// which we need to understand before enabling this by removing the "et != ExecType.GPU" guard.
-		if(op == ConvOp.MAX_POOLING && isInputReLU(inputs.get(0)) && et != ExecType.GPU) {
+		if(op == ConvOp.MAX_POOLING && isInputReLU(inputs.get(0))) {
 			in = inputs.get(0).getInput().get(0).constructLops();
 			lopOp = OperationTypes.RELU_MAX_POOLING;
 		}

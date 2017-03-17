@@ -23,36 +23,12 @@
  * Per-channel Batch normalization layer.
  *
  */
- 
-inference = function(matrix[double] X, matrix[double] ema_mean, matrix[double] ema_var,
-                   matrix[double] gamma, matrix[double] beta, double eps)
-          return (matrix[double] out) {
-  /*
-   *  Computes the forward activations during inference for a batch normalization layer. 
-   *
-   * See S. Ioffe and C. Szegedy, "Batch Normalization: Accelerating Deep Network Training by Reducing Internal Covariate Shift." arXiv preprint arXiv:1502.03167 (2015).
-   *
-   * Inputs:
-   * - X: Input data matrix, of shape (N, C*H*W).
-   * - ema_mean: exponential moving average for mean from previous iteration (of dimension [C, 1]).
-   * - ema_var: exponential moving average for variance from previous iteration (of dimension [C, 1]).
-   * - gamma: scale (of dimension [C, 1]).
-   * - beta: bias (of dimension [C, 1]).
-   * - eps: value to be added to variance (typical value: 1e-5)
-   *
-   * Outputs:
-   * - out: output matrix, of shape (N, C*H*W).
-   *
-   */
-   # out matches with CuDNN
-   out = bias_multiply(bias_add(X, - ema_mean), 1 / sqrt(ema_var + eps))
-   out = bias_add(bias_multiply(out, gamma), beta)     
-} 
 
 forward = function(matrix[double] X, matrix[double] ema_mean, matrix[double] ema_var,
                    int C, int H, int W,
                    matrix[double] gamma, matrix[double] beta,
-                   double ma_fraction, double eps)
+                   double ma_fraction, double eps,
+                   string mode)
           return (matrix[double] out, matrix[double] ema_mean_out, matrix[double] ema_var_out) {
   /*
    * Computes the forward pass for a batch normalization layer. Uses an exponential moving average.
@@ -61,8 +37,8 @@ forward = function(matrix[double] X, matrix[double] ema_mean, matrix[double] ema
    *
    * Inputs:
    * - X: Input data matrix, of shape (N, C*H*W).
-   * - ema_mean: exponential moving average for mean from previous iteration (of dimension [C, 1]).
-   * - ema_var: exponential moving average for variance from previous iteration (of dimension [C, 1]).
+   * - ema_mean: exponential moving average for mean from previous iteration (of dimension either [C, 1] or [C*H*W, 1]).
+   * - ema_var: exponential moving average for variance from previous iteration (of dimension either [C, 1] or [C*H*W, 1]).
    * - C: Number of input channels
    * - H: Input height.
    * - W: Input width.
@@ -70,21 +46,32 @@ forward = function(matrix[double] X, matrix[double] ema_mean, matrix[double] ema
    * - beta: bias
    * - ma_fraction: moving average fraction (typical value: 0.999)
    * - eps: value to be added to variance (typical value: 1e-5)
+   * - mode: can be 'train' or 'test'
    *
    * Outputs:
    * - out: output matrix, of shape (N, C*H*W).
-   * - ema_mean_out: new exponential moving average for mean (of dimension [C, 1]).
-   * - ema_var_out: new exponential moving average for variance (of dimension [C, 1]).
+   * - ema_mean_out: new exponential moving average for mean (of dimension either [C, 1] or [C*H*W, 1]).
+   * - ema_var_out: new exponential moving average for variance (of dimension either [C, 1] or [C*H*W, 1]).
    */
-   N = nrow(X)
-   
-   # new exponential moving average for mean and variance match with that of CuDNN
-   batch_mean = matrix(colSums(X), rows=C, cols=H*W)
-   ema_mean_out = ma_fraction*rowSums(batch_mean)/(N*H*W) + (1-ma_fraction)*ema_mean
-   ema_var_out = ma_fraction*rowVars(batch_mean)/N + (1-ma_fraction)*ema_var
-   
-   # out doesnot match with CuDNN
-   out = bias_multiply(bias_add(X, - ema_mean_out), 1 / sqrt(ema_var_out + eps))
+   if(mode == "test") {
+      # Test
+      ema_mean_out = ema_mean
+      ema_var_out = ema_var
+      local_mean = ema_mean
+      local_var = ema_var
+   }
+   else {
+      # Train
+      N = nrow(X)
+      batch_mean = matrix(colSums(X), rows=C, cols=H*W)
+      local_mean = rowSums(batch_mean)/(N*H*W)
+      local_var = rowVars(batch_mean)/N
+      # new exponential moving average for mean and variance match with that of CuDNN
+      ema_mean_out = ma_fraction*local_mean + (1-ma_fraction)*ema_mean
+      ema_var_out = ma_fraction*local_var + (1-ma_fraction)*ema_var
+   }
+   # out doesnot match with CuDNN for train, but matches for test
+   out = bias_multiply(bias_add(X, - local_mean), 1 / sqrt(local_var + eps))
    out = bias_add(bias_multiply(out, gamma), beta)
 
 }

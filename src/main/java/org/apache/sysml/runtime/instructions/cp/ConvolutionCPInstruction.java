@@ -44,8 +44,8 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction
 	public ConvolutionCPInstruction(CPOperand in, CPOperand in2, CPOperand out, String opcode, String istr, int numThreads) throws DMLRuntimeException {
 		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, out,
 				opcode, istr);
-		if( !(opcode.equals("bias_add") || opcode.equals("relu_backward")) ) {
-			throw new DMLRuntimeException("Incorrect usage. Expected the opcode to be bias_add or relu_backward, but found " + opcode);
+		if( !(opcode.equals("bias_add") || opcode.equals("relu_backward") || opcode.equals("bias_multiply") ) ) {
+			throw new DMLRuntimeException("Incorrect usage. Expected the opcode to be bias_add or bias_multiply or relu_backward, but found " + opcode);
 		}
 		_in2 = in2;
 		_cptype = CPINSTRUCTION_TYPE.Convolution;

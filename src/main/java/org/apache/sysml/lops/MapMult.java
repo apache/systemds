@@ -38,8 +38,18 @@ public class MapMult extends Lop
 		LEFT,
 		LEFT_PART;
 		
-		public boolean isRightCache(){
+		public boolean isRight() {
 			return (this == RIGHT || this == RIGHT_PART);
+		}
+		
+		public CacheType getFlipped() {
+			switch( this ) {
+				case RIGHT: return LEFT;
+				case RIGHT_PART: return LEFT_PART;
+				case LEFT: return RIGHT;
+				case LEFT_PART: return RIGHT_PART;
+				default: return null;
+			}
 		}
 	}
 	

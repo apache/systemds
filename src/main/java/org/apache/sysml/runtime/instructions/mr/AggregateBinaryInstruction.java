@@ -119,7 +119,7 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase implemen
 	@Override //IDistributedCacheConsumer
 	public boolean isDistCacheOnlyIndex( String inst, byte index )
 	{
-		return _cacheType.isRightCache() ? 
+		return _cacheType.isRight() ? 
 				(index==input2 && index!=input1) : 
 				(index==input1 && index!=input2);
 	}
@@ -127,7 +127,7 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase implemen
 	@Override //IDistributedCacheConsumer
 	public void addDistCacheIndex( String inst, ArrayList<Byte> indexes )
 	{
-		indexes.add( _cacheType.isRightCache() ? input2 : input1 );
+		indexes.add( _cacheType.isRight() ? input2 : input1 );
 	}
 	
 	@Override
@@ -142,7 +142,7 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase implemen
 		if ( _opcode.equals(MapMult.OPCODE) ) 
 		{
 			//check empty inputs (data for different instructions)
-			if( _cacheType.isRightCache() ? in1==null : in2==null )
+			if( _cacheType.isRight() ? in1==null : in2==null )
 				return;
 			
 			// one of the input is from distributed cache.
@@ -190,7 +190,7 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase implemen
 	{
 		boolean removeOutput = true;
 		
-		if( _cacheType.isRightCache() )
+		if( _cacheType.isRight() )
 		{
 			DistributedCacheInput dcInput = MRBaseForCommonInstructions.dcValues.get(input2);
 			

@@ -112,6 +112,8 @@ public class CellTpl extends BaseTpl
 		CNode output = tmp.get(hop.getHopID());
 		CNodeCell tpl = new CNodeCell(inputs, output);
 		tpl.setCellType(TemplateUtils.getCellType(hop));
+		tpl.setSparseSafe((HopRewriteUtils.isBinary(hop, OpOp2.MULT) && hop.getInput().contains(sinHops.getFirst()))
+				|| (HopRewriteUtils.isBinary(hop, OpOp2.DIV) && hop.getInput().get(0) == sinHops.getFirst()));
 		tpl.setRequiresCastDtm(hop instanceof AggBinaryOp);
 		
 		// return cplan instance

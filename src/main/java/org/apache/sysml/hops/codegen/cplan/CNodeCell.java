@@ -39,15 +39,16 @@ public class CNodeCell extends CNodeTpl
 			+ "\n"
 			+ "public final class %TMP% extends SpoofCellwise {\n" 
 			+ "  public %TMP%() {\n"
-			+ "    _type = CellType.%TYPE%;\n"
+			+ "    super(CellType.%TYPE%, %SPARSE_SAFE%);\n"
 			+ "  }\n"
-			+ "  protected double genexec( double a, double[][] b, double[] scalars, int n, int m, int rowIndex, int colIndex) { \n"
+			+ "  protected double genexec( double a, double[][] b, double[] scalars, int m, int n, int rowIndex, int colIndex) { \n"
 			+ "%BODY_dense%"
 			+ "    return %OUT%;\n"
 			+ "  } \n"
 			+ "}";
 	
 	private CellType _type = null;
+	private boolean _sparseSafe = false;
 	private boolean _requiresCastdtm = false;
 	private boolean _multipleConsumers = false;
 	
@@ -70,6 +71,14 @@ public class CNodeCell extends CNodeTpl
 	
 	public CellType getCellType() {
 		return _type;
+	}
+	
+	public void setSparseSafe(boolean flag) {
+		_sparseSafe = flag;
+	}
+	
+	public boolean isSparseSafe() {
+		return _sparseSafe;
 	}
 	
 	public void setRequiresCastDtm(boolean flag) {
@@ -99,8 +108,9 @@ public class CNodeCell extends CNodeTpl
 		//return last TMP
 		tmp = tmp.replaceAll("%OUT%", getCurrentVarName());
 		
-		//replace aggregate information
-		tmp = tmp.replaceAll("%TYPE%", getCellType().toString());
+		//replace meta data information
+		tmp = tmp.replaceAll("%TYPE%", getCellType().name());
+		tmp = tmp.replaceAll("%SPARSE_SAFE%", String.valueOf(isSparseSafe()));
 		
 		return tmp;
 	}
@@ -136,9 +146,10 @@ public class CNodeCell extends CNodeTpl
 		if( _hash == 0 ) {
 			int h1 = super.hashCode();
 			int h2 = _type.hashCode();
-			int h3 = Boolean.valueOf(_requiresCastdtm).hashCode();
+			int h3 = Boolean.valueOf(_sparseSafe).hashCode();
+			int h4 = Boolean.valueOf(_requiresCastdtm).hashCode();
 			//note: _multipleConsumers irrelevant for plan comparison
-			_hash = Arrays.hashCode(new int[]{h1,h2,h3});
+			_hash = Arrays.hashCode(new int[]{h1,h2,h3,h4});
 		}
 		return _hash;
 	}
@@ -151,6 +162,7 @@ public class CNodeCell extends CNodeTpl
 		CNodeCell that = (CNodeCell)o;
 		return super.equals(that) 
 			&& _type == that._type
+			&& _sparseSafe == that._sparseSafe
 			&& _requiresCastdtm == that._requiresCastdtm
 			&& equalInputReferences(
 				_output, that._output, _inputs, that._inputs);
@@ -161,6 +173,7 @@ public class CNodeCell extends CNodeTpl
 		StringBuilder sb = new StringBuilder();
 		sb.append("SPOOF CELLWISE [type=");
 		sb.append(_type.name());
+		sb.append(", spafeSafe="+_sparseSafe);
 		sb.append(", castdtm="+_requiresCastdtm);
 		sb.append(", mc="+_multipleConsumers);
 		sb.append("]");

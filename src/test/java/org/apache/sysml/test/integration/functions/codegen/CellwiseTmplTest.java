@@ -35,13 +35,15 @@ import org.apache.sysml.test.utils.TestUtils;
 
 public class CellwiseTmplTest extends AutomatedTestBase 
 {	
-	private static final String TEST_NAME1 = "cellwisetmpl1";
-	private static final String TEST_NAME2 = "cellwisetmpl2";
-	private static final String TEST_NAME3 = "cellwisetmpl3";
-	private static final String TEST_NAME4 = "cellwisetmpl4";
-	private static final String TEST_NAME5 = "cellwisetmpl5";
-	private static final String TEST_NAME6 = "cellwisetmpl6";
-	private static final String TEST_NAME7 = "cellwisetmpl7";
+	private static final String TEST_NAME = "cellwisetmpl";
+	private static final String TEST_NAME1 = TEST_NAME+1;
+	private static final String TEST_NAME2 = TEST_NAME+2;
+	private static final String TEST_NAME3 = TEST_NAME+3;
+	private static final String TEST_NAME4 = TEST_NAME+4;
+	private static final String TEST_NAME5 = TEST_NAME+5;
+	private static final String TEST_NAME6 = TEST_NAME+6;
+	private static final String TEST_NAME7 = TEST_NAME+7;
+	private static final String TEST_NAME8 = TEST_NAME+8;
 
 	private static final String TEST_DIR = "functions/codegen/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + CellwiseTmplTest.class.getSimpleName() + "/";
@@ -53,13 +55,10 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "1" }) );
-		addTestConfiguration( TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "2" }) );
-		addTestConfiguration( TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] { "3" }) );
-		addTestConfiguration( TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] { "4" }) );
-		addTestConfiguration( TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5, new String[] { "5" }) );
-		addTestConfiguration( TEST_NAME6, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME6, new String[] { "6" }) );
-		addTestConfiguration( TEST_NAME7, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME7, new String[] { "7" }) );
+		for( int i=1; i<=8; i++ ) {
+			addTestConfiguration( TEST_NAME+i, new TestConfiguration(
+					TEST_CLASS_DIR, TEST_NAME+i, new String[] {String.valueOf(i)}) );
+		}
 	}
 		
 	@Test
@@ -97,6 +96,11 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	public void testCodegenCellwiseRewrite7() {
 		testCodegenIntegration( TEST_NAME7, true, ExecType.CP  );
 	}
+	
+	@Test
+	public void testCodegenCellwiseRewrite8() {
+		testCodegenIntegration( TEST_NAME8, true, ExecType.CP  );
+	}
 
 	@Test
 	public void testCodegenCellwise1() {
@@ -133,6 +137,11 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	public void testCodegenCellwise7() {
 		testCodegenIntegration( TEST_NAME7, false, ExecType.CP  );
 	}
+	
+	@Test
+	public void testCodegenCellwise8() {
+		testCodegenIntegration( TEST_NAME8, false, ExecType.CP  );
+	}
 
 	@Test
 	public void testCodegenCellwiseRewrite1_sp() {
@@ -142,6 +151,11 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	@Test
 	public void testCodegenCellwiseRewrite7_sp() {
 		testCodegenIntegration( TEST_NAME7, true, ExecType.SPARK );
+	}
+	
+	@Test
+	public void testCodegenCellwiseRewrite8_sp() {
+		testCodegenIntegration( TEST_NAME8, true, ExecType.SPARK );
 	}
 	
 	private void testCodegenIntegration( String testname, boolean rewrites, ExecType instType )

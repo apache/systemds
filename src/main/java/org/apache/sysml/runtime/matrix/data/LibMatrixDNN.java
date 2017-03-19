@@ -433,16 +433,14 @@ public class LibMatrixDNN {
 		params.start_indexes_w = new int[params.Q];
 		params.end_indexes_w = new int[params.Q];
 		for (int p = 0; p < params.P; p++) {
-			int start_index_h = p * params.stride_h - params.pad_h;
-			final int end_index_h = Math.min(start_index_h + params.R, params.H);
-			start_index_h = Math.max(start_index_h, 0);
+			int start_index_h = p * params.stride_h - params.pad_h; // Math.max(p * params.stride_h - params.pad_h, 0);
+			int end_index_h = start_index_h + params.R; // Math.min(start_index_h + params.R, params.H);
 			params.start_indexes_h[p] = start_index_h;
 			params.end_indexes_h[p] = end_index_h;
 		}
 		for (int q = 0; q < params.Q; q++) {
-			int start_index_w = Math.max(q * params.stride_w - params.pad_w, 0);
-			int end_index_w = Math.min(start_index_w + params.S, params.W);
-			start_index_w = Math.max(start_index_w, 0);
+			int start_index_w =  q * params.stride_w - params.pad_w; // Math.max(q * params.stride_w - params.pad_w, 0);
+			int end_index_w = start_index_w + params.S; // Math.min(start_index_w + params.S, params.W);
 			params.start_indexes_w[q] = start_index_w;
 			params.end_indexes_w[q] = end_index_w;
 		}
@@ -899,6 +897,27 @@ public class LibMatrixDNN {
 		//post-processing: maintain nnz
 		outputBlock.recomputeNonZeros();
 	}
+	
+	private static void doPoolingDenseGeneralCase(int n, ConvolutionParameters params, double [] inputArray, double [] outputArray) {
+		final int inOffset = n*params.C*params.H*params.W;
+		int out_index = n*params.C*params.P*params.Q;
+		final int HW = params.H*params.W;
+		for (int c = 0; c < params.C; c++) {
+			final int inOffset1 = inOffset + c*HW;
+			for (int p = 0; p < params.P; p++) {
+				for (int q = 0; q < params.Q; q++, out_index++) {
+					for (int h = params.start_indexes_h[p]; h < params.end_indexes_h[p]; h++) {
+						for (int w = params.start_indexes_w[q]; w < params.end_indexes_w[q]; w++) {
+							if(h >= 0 && h < params.H && w >= 0 && w < params.W)
+								outputArray[out_index] = Math.max(outputArray[out_index], inputArray[inOffset1 +  h*params.W + w]);
+							else
+								outputArray[out_index] = Math.max(outputArray[out_index], 0);
+						}
+					}
+				}
+			}
+		}
+	}
 
 	private static void doPooling(int n, ConvolutionParameters params) throws DMLRuntimeException {
 		double [] inputArray = null;
@@ -915,18 +934,21 @@ public class LibMatrixDNN {
 		final int HW = params.H*params.W;
 		
 		if(inputArray != null) {
-			for (int c = 0; c < params.C; c++) {
-				final int inOffset1 = inOffset + c*HW;
-				for (int p = 0; p < params.P; p++) {
-					for (int q = 0; q < params.Q; q++, out_index++) {
-						for (int h = params.start_indexes_h[p]; h < params.end_indexes_h[p]; h++) {
-							for (int w = params.start_indexes_w[q]; w < params.end_indexes_w[q]; w++) {
-								outputArray[out_index] = Math.max(outputArray[out_index], inputArray[inOffset1 +  h*params.W + w]);
+			if(params.pad_h == 0 && params.pad_w == 0) {
+				for (int c = 0; c < params.C; c++) {
+					final int inOffset1 = inOffset + c*HW;
+					for (int p = 0; p < params.P; p++) {
+						for (int q = 0; q < params.Q; q++, out_index++) {
+							for (int h = params.start_indexes_h[p]; h < params.end_indexes_h[p]; h++) {
+								for (int w = params.start_indexes_w[q]; w < params.end_indexes_w[q]; w++)
+									outputArray[out_index] = Math.max(outputArray[out_index], inputArray[inOffset1 +  h*params.W + w]);
 							}
 						}
 					}
 				}
 			}
+			else
+				doPoolingDenseGeneralCase(n, params, inputArray, outputArray);
 		}
 		else {
 			// TODO: Optimize sparse maxpooling

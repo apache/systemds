@@ -28,11 +28,15 @@ import org.apache.sysml.hops.AggBinaryOp;
 import org.apache.sysml.hops.AggUnaryOp;
 import org.apache.sysml.hops.BinaryOp;
 import org.apache.sysml.hops.Hop;
+import org.apache.sysml.hops.IndexingOp;
+import org.apache.sysml.hops.LiteralOp;
 import org.apache.sysml.hops.codegen.cplan.CNode;
 import org.apache.sysml.hops.codegen.cplan.CNodeBinary;
 import org.apache.sysml.hops.codegen.cplan.CNodeBinary.BinType;
+import org.apache.sysml.hops.codegen.cplan.CNodeTernary.TernaryType;
 import org.apache.sysml.hops.codegen.cplan.CNodeData;
 import org.apache.sysml.hops.codegen.cplan.CNodeRowAgg;
+import org.apache.sysml.hops.codegen.cplan.CNodeTernary;
 import org.apache.sysml.hops.codegen.cplan.CNodeTpl;
 import org.apache.sysml.hops.codegen.cplan.CNodeUnary;
 import org.apache.sysml.hops.codegen.cplan.CNodeUnary.UnaryType;
@@ -90,18 +94,16 @@ public class RowAggTpl extends BaseTpl {
 	public Pair<Hop[], CNodeTpl> constructCplan(Hop hop, CPlanMemoTable memo, boolean compileLiterals) {
 		//recursively process required cplan output
 		HashSet<Hop> inHops = new HashSet<Hop>();
+		HashMap<String, Hop> inHops2 = new HashMap<String,Hop>();
 		HashMap<Long, CNode> tmp = new HashMap<Long, CNode>();
 		hop.resetVisitStatus();
-		rConstructCplan(hop, memo, tmp, inHops, compileLiterals);
+		rConstructCplan(hop, memo, tmp, inHops, inHops2, compileLiterals);
 		hop.resetVisitStatus();
 		
 		//reorder inputs (ensure matrix is first input)
 		LinkedList<Hop> sinHops = new LinkedList<Hop>(inHops);
-		for( Hop h : inHops )
-			if( h.getDataType().isMatrix() && !TemplateUtils.isVector(h) ) {
-				sinHops.remove(h);
-				sinHops.addFirst(h);
-			}
+		Hop X = inHops2.get("X");
+		sinHops.remove(X); sinHops.addFirst(X);
 		
 		//construct template node
 		ArrayList<CNode> inputs = new ArrayList<CNode>();
@@ -114,14 +116,14 @@ public class RowAggTpl extends BaseTpl {
 		return new Pair<Hop[],CNodeTpl>(sinHops.toArray(new Hop[0]), tpl);
 	}
 
-	private void rConstructCplan(Hop hop, CPlanMemoTable memo, HashMap<Long, CNode> tmp, HashSet<Hop> inHops, boolean compileLiterals) 
+	private void rConstructCplan(Hop hop, CPlanMemoTable memo, HashMap<Long, CNode> tmp, HashSet<Hop> inHops, HashMap<String, Hop> inHops2, boolean compileLiterals) 
 	{	
 		//recursively process required childs
 		MemoTableEntry me = memo.getBest(hop.getHopID(), TemplateType.RowAggTpl);
 		for( int i=0; i<hop.getInput().size(); i++ ) {
 			Hop c = hop.getInput().get(i);
 			if( me.isPlanRef(i) )
-				rConstructCplan(c, memo, tmp, inHops, compileLiterals);
+				rConstructCplan(c, memo, tmp, inHops, inHops2, compileLiterals);
 			else {
 				CNodeData cdata = TemplateUtils.createCNodeData(c, compileLiterals);	
 				tmp.put(c.getHopID(), cdata);
@@ -137,8 +139,10 @@ public class RowAggTpl extends BaseTpl {
 			if(  ((AggUnaryOp)hop).getDirection() == Direction.Row && ((AggUnaryOp)hop).getOp() == AggOp.SUM  ) {
 				if(hop.getInput().get(0).getDim2()==1)
 					out = (cdata1.getDataType()==DataType.SCALAR) ? cdata1 : new CNodeUnary(cdata1,UnaryType.LOOKUP_R);
-				else
+				else {
 					out = new CNodeUnary(cdata1, UnaryType.ROW_SUMS);
+					inHops2.put("X", hop.getInput().get(0));
+				}
 			}
 			else  if (((AggUnaryOp)hop).getDirection() == Direction.Col && ((AggUnaryOp)hop).getOp() == AggOp.SUM ) {
 				//vector div add without temporary copy
@@ -167,8 +171,10 @@ public class RowAggTpl extends BaseTpl {
 				if(hop.getInput().get(0).getDim2()==1 && hop.getInput().get(1).getDim2()==1)
 					out = new CNodeBinary((cdata1.getDataType()==DataType.SCALAR)? cdata1 : new CNodeUnary(cdata1, UnaryType.LOOKUP0),
 						(cdata2.getDataType()==DataType.SCALAR)? cdata2 : new CNodeUnary(cdata2, UnaryType.LOOKUP0), BinType.MULT);
-				else	
+				else {
 					out = new CNodeBinary(cdata1, cdata2, BinType.DOT_PRODUCT);
+					inHops2.put("X", hop.getInput().get(0));
+				}
 			}
 		}
 		else if(hop instanceof BinaryOp)
@@ -193,6 +199,14 @@ public class RowAggTpl extends BaseTpl {
 				}
 				out = new CNodeBinary(cdata1, cdata2, BinType.valueOf(primitiveOpName));	
 			}
+		}
+		else if( hop instanceof IndexingOp ) 
+		{
+			CNode cdata1 = tmp.get(hop.getInput().get(0).getHopID());
+			out = new CNodeTernary(cdata1, 
+					TemplateUtils.createCNodeData(new LiteralOp(hop.getInput().get(0).getDim2()), true), 
+					TemplateUtils.createCNodeData(hop.getInput().get(4), true),
+					TernaryType.LOOKUP_RC1);
 		}
 		
 		if( out.getDataType().isMatrix() ) {

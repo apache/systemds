@@ -107,8 +107,8 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 		if( hop instanceof IndexingOp ) //right indexing
 		{
 			IndexingOp ihop0 = (IndexingOp) hop;
-			boolean isSingleRow = ihop0.getRowLowerEqualsUpper();
-			boolean isSingleCol = ihop0.getColLowerEqualsUpper();
+			boolean isSingleRow = ihop0.isRowLowerEqualsUpper();
+			boolean isSingleCol = ihop0.isColLowerEqualsUpper();
 			boolean appliedRow = false;
 			
 			//search for multiple indexing in same row
@@ -120,7 +120,7 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 				ihops.add(ihop0);
 				for( Hop c : input.getParent() ){
 					if( c != ihop0 && c instanceof IndexingOp && c.getInput().get(0) == input
-					   && ((IndexingOp) c).getRowLowerEqualsUpper() 
+					   && ((IndexingOp) c).isRowLowerEqualsUpper() 
 					   && c.getInput().get(1)==ihop0.getInput().get(1) )
 					{
 						ihops.add( c );
@@ -159,7 +159,7 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 				ihops.add(ihop0);
 				for( Hop c : input.getParent() ){
 					if( c != ihop0 && c instanceof IndexingOp && c.getInput().get(0) == input
-					   && ((IndexingOp) c).getColLowerEqualsUpper() 
+					   && ((IndexingOp) c).isColLowerEqualsUpper() 
 					   && c.getInput().get(3)==ihop0.getInput().get(3) )
 					{
 						ihops.add( c );

@@ -27,7 +27,8 @@ import org.apache.sysml.parser.Expression.DataType;
 public class CNodeTernary extends CNode
 {
 	public enum TernaryType {
-		PLUS_MULT, MINUS_MULT;
+		PLUS_MULT, MINUS_MULT,
+		LOOKUP_RC1;
 		
 		public static boolean contains(String value) {
 			for( TernaryType tt : values()  )
@@ -43,6 +44,9 @@ public class CNodeTernary extends CNode
 				
 				case MINUS_MULT:
 					return "    double %TMP% = %IN1% - %IN2% * %IN3%;\n;\n" ;
+					
+				case LOOKUP_RC1:
+					return "    double %TMP% = %IN1%[rowIndex*%IN2%+%IN3%-1];\n";	
 					
 				default: 
 					throw new RuntimeException("Invalid ternary type: "+this.toString());
@@ -97,6 +101,7 @@ public class CNodeTernary extends CNode
 		switch(_type) {
 			case PLUS_MULT: return "t(+*)";
 			case MINUS_MULT: return "t(-*)";
+			case LOOKUP_RC1: return "u(ixrc1)";
 			default:
 				return super.toString();	
 		}
@@ -107,6 +112,7 @@ public class CNodeTernary extends CNode
 		switch(_type) {
 			case PLUS_MULT: 
 			case MINUS_MULT:
+			case LOOKUP_RC1:
 				_rows = 0;
 				_cols = 0;
 				_dataType= DataType.SCALAR;

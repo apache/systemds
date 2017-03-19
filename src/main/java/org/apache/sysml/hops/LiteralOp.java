@@ -183,7 +183,7 @@ public class LiteralOp extends Hop
 		//do nothing; it is a scalar
 	}
 	
-	public long getLongValue() throws HopsException 
+	public long getLongValue() 
 	{
 		switch( getValueType() ) {
 			case INT:		
@@ -192,8 +192,10 @@ public class LiteralOp extends Hop
 				return UtilFunctions.toLong(value_double);
 			case STRING:
 				return Long.parseLong(value_string);	
+			case BOOLEAN: 
+				return value_boolean ? 1 : 0;
 			default:
-				throw new HopsException("Can not coerce an object of type " + getValueType() + " into Long.");
+				return -1;
 		}
 	}
 	

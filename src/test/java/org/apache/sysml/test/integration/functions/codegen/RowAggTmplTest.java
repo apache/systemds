@@ -35,11 +35,13 @@ import org.apache.sysml.test.utils.TestUtils;
 
 public class RowAggTmplTest extends AutomatedTestBase 
 {
-	private static final String TEST_NAME1 = "rowAggPattern1";
-	private static final String TEST_NAME2 = "rowAggPattern2";
-	private static final String TEST_NAME3 = "rowAggPattern3";
-	private static final String TEST_NAME4 = "rowAggPattern4";
-	private static final String TEST_NAME5 = "rowAggPattern5";
+	private static final String TEST_NAME = "rowAggPattern";
+	private static final String TEST_NAME1 = TEST_NAME+"1";
+	private static final String TEST_NAME2 = TEST_NAME+"2";
+	private static final String TEST_NAME3 = TEST_NAME+"3";
+	private static final String TEST_NAME4 = TEST_NAME+"4";
+	private static final String TEST_NAME5 = TEST_NAME+"5";
+	private static final String TEST_NAME6 = TEST_NAME+"6";
 
 	private static final String TEST_DIR = "functions/codegen/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + RowAggTmplTest.class.getSimpleName() + "/";
@@ -51,11 +53,8 @@ public class RowAggTmplTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "0" }) );
-		addTestConfiguration( TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "1" }) );
-		addTestConfiguration( TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] { "2" }) );
-		addTestConfiguration( TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] { "3" }) );
-		addTestConfiguration( TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5, new String[] { "4" }) );
+		for(int i=1; i<=6; i++)
+			addTestConfiguration( TEST_NAME+i, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME+i, new String[] { String.valueOf(i) }) );
 	}
 	
 	@Test	
@@ -83,6 +82,11 @@ public class RowAggTmplTest extends AutomatedTestBase
 		testCodegenIntegration( TEST_NAME5, true, ExecType.CP );	
 	}
 	
+	@Test
+	public void testCodegenRowAggRewrite6() {
+		testCodegenIntegration( TEST_NAME6, true, ExecType.CP );	
+	}
+	
 	@Test	
 	public void testCodegenRowAgg1() {
 		testCodegenIntegration( TEST_NAME1, false, ExecType.CP );
@@ -106,6 +110,11 @@ public class RowAggTmplTest extends AutomatedTestBase
 	@Test
 	public void testCodegenRowAgg5() {
 		testCodegenIntegration( TEST_NAME5, false, ExecType.CP );	
+	}
+	
+	@Test
+	public void testCodegenRowAgg6() {
+		testCodegenIntegration( TEST_NAME6, false, ExecType.CP );	
 	}
 	
 	private void testCodegenIntegration( String testname, boolean rewrites, ExecType instType )

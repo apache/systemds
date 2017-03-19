@@ -173,7 +173,7 @@ public class CNodeCell extends CNodeTpl
 		StringBuilder sb = new StringBuilder();
 		sb.append("SPOOF CELLWISE [type=");
 		sb.append(_type.name());
-		sb.append(", spafeSafe="+_sparseSafe);
+		sb.append(", sparseSafe="+_sparseSafe);
 		sb.append(", castdtm="+_requiresCastdtm);
 		sb.append(", mc="+_multipleConsumers);
 		sb.append("]");

@@ -76,11 +76,11 @@ public class IndexingOp extends Hop
 	}
 	
 	
-	public boolean getRowLowerEqualsUpper(){
+	public boolean isRowLowerEqualsUpper(){
 		return _rowLowerEqualsUpper;
 	}
 	
-	public boolean getColLowerEqualsUpper() {
+	public boolean isColLowerEqualsUpper() {
 		return _colLowerEqualsUpper;
 	}
 	
@@ -396,6 +396,10 @@ public class IndexingOp extends Hop
 		Hop input3 = getInput().get(2); //inpRowU
 		Hop input4 = getInput().get(3); //inpColL
 		Hop input5 = getInput().get(4); //inpColU
+		
+		//update single row/column flags (depends on CSE)
+		_rowLowerEqualsUpper = (input2 == input3);
+		_colLowerEqualsUpper = (input4 == input5);
 		
 		//parse input information
 		boolean allRows = 

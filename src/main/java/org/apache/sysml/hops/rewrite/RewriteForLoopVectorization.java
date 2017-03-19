@@ -133,12 +133,12 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 					&& right.getInput().get(0) instanceof IndexingOp )
 				{
 					IndexingOp ix = (IndexingOp)right.getInput().get(0);
-					if( ix.getRowLowerEqualsUpper() && ix.getInput().get(1) instanceof DataOp
+					if( ix.isRowLowerEqualsUpper() && ix.getInput().get(1) instanceof DataOp
 						&& ix.getInput().get(1).getName().equals(itervar) ){
 						leftScalar = true;
 						rowIx = true;
 					}
-					else if( ix.getColLowerEqualsUpper() && ix.getInput().get(3) instanceof DataOp
+					else if( ix.isColLowerEqualsUpper() && ix.getInput().get(3) instanceof DataOp
 						&& ix.getInput().get(3).getName().equals(itervar) ){
 						leftScalar = true;
 						rowIx = false;
@@ -152,12 +152,12 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 					&& left.getInput().get(0) instanceof IndexingOp )
 				{
 					IndexingOp ix = (IndexingOp)left.getInput().get(0);
-					if( ix.getRowLowerEqualsUpper() && ix.getInput().get(1) instanceof DataOp
+					if( ix.isRowLowerEqualsUpper() && ix.getInput().get(1) instanceof DataOp
 						&& ix.getInput().get(1).getName().equals(itervar) ){
 						rightScalar = true;
 						rowIx = true;
 					}
-					else if( ix.getColLowerEqualsUpper() && ix.getInput().get(3) instanceof DataOp
+					else if( ix.isColLowerEqualsUpper() && ix.getInput().get(3) instanceof DataOp
 						&& ix.getInput().get(3).getName().equals(itervar) ){
 						rightScalar = true;
 						rowIx = false;
@@ -236,7 +236,7 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 					IndexingOp rix1 = (IndexingOp) lixrhs.getInput().get(1);
 					
 					//check for rowwise
-					if(    lix.getRowLowerEqualsUpper() && rix0.getRowLowerEqualsUpper() && rix1.getRowLowerEqualsUpper() 
+					if(    lix.getRowLowerEqualsUpper() && rix0.isRowLowerEqualsUpper() && rix1.isRowLowerEqualsUpper() 
 						&& lix.getInput().get(2).getName().equals(itervar)
 						&& rix0.getInput().get(1).getName().equals(itervar)
 						&& rix1.getInput().get(1).getName().equals(itervar))
@@ -245,7 +245,7 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 						rowIx = true;
 					}
 					//check for colwise
-					if(    lix.getColLowerEqualsUpper() && rix0.getColLowerEqualsUpper() && rix1.getColLowerEqualsUpper() 
+					if(    lix.getColLowerEqualsUpper() && rix0.isColLowerEqualsUpper() && rix1.isColLowerEqualsUpper() 
 						&& lix.getInput().get(4).getName().equals(itervar)
 						&& rix0.getInput().get(3).getName().equals(itervar)
 						&& rix1.getInput().get(3).getName().equals(itervar))
@@ -406,14 +406,14 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 		boolean[] ret = new boolean[2]; //apply, rowIx
 		
 		//check for rowwise
-		if(    lix.getRowLowerEqualsUpper() && rix.getRowLowerEqualsUpper() 
+		if(    lix.getRowLowerEqualsUpper() && rix.isRowLowerEqualsUpper() 
 			&& lix.getInput().get(2).getName().equals(itervar)
 			&& rix.getInput().get(1).getName().equals(itervar) ) {
 			ret[0] = true;
 			ret[1] = true;
 		}
 		//check for colwise
-		if(    lix.getColLowerEqualsUpper() && rix.getColLowerEqualsUpper() 
+		if(    lix.getColLowerEqualsUpper() && rix.isColLowerEqualsUpper() 
 			&& lix.getInput().get(4).getName().equals(itervar)
 			&& rix.getInput().get(3).getName().equals(itervar) ) {
 			ret[0] = true;

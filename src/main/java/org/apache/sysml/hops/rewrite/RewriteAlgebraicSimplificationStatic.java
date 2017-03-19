@@ -1234,8 +1234,8 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 	{
 		//e.g., (X%*%Y)[1,1] -> X[1,] %*% Y[,1] 
 		if( hi instanceof IndexingOp 
-			&& ((IndexingOp)hi).getRowLowerEqualsUpper()
-			&& ((IndexingOp)hi).getColLowerEqualsUpper()  
+			&& ((IndexingOp)hi).isRowLowerEqualsUpper()
+			&& ((IndexingOp)hi).isColLowerEqualsUpper()  
 			&& hi.getInput().get(0).getParent().size()==1 //rix is single mm consumer
 			&& HopRewriteUtils.isMatrixMultiply(hi.getInput().get(0)) )
 		{

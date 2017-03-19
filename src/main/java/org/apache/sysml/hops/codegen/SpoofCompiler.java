@@ -36,6 +36,8 @@ import org.apache.sysml.hops.codegen.cplan.CNode;
 import org.apache.sysml.hops.codegen.cplan.CNodeCell;
 import org.apache.sysml.hops.codegen.cplan.CNodeData;
 import org.apache.sysml.hops.codegen.cplan.CNodeOuterProduct;
+import org.apache.sysml.hops.codegen.cplan.CNodeTernary;
+import org.apache.sysml.hops.codegen.cplan.CNodeTernary.TernaryType;
 import org.apache.sysml.hops.codegen.cplan.CNodeTpl;
 import org.apache.sysml.hops.codegen.cplan.CNodeUnary;
 import org.apache.sysml.hops.codegen.cplan.CNodeUnary.UnaryType;
@@ -490,8 +492,15 @@ public class SpoofCompiler
 			
 			//remove spurious lookups on main input of cell template
 			if( tpl instanceof CNodeCell || tpl instanceof CNodeOuterProduct ) {
-				CNode in1 = tpl.getInput().get(0);
-				rFindAndRemoveLookup(tpl.getOutput(), in1.getVarname());
+				CNodeData in1 = (CNodeData)tpl.getInput().get(0);
+				rFindAndRemoveLookup(tpl.getOutput(), in1);
+			}
+			
+			//remove invalid plans with column indexing on main input
+			if( tpl instanceof CNodeCell ) {
+				CNodeData in1 = (CNodeData)tpl.getInput().get(0);
+				if( rHasLookupRC1(tpl.getOutput(), in1) )
+					cplans2.remove(e.getKey());
 			}
 			
 			//remove cplan w/ single op and w/o agg
@@ -517,17 +526,32 @@ public class SpoofCompiler
 			rCollectLeafIDs(c, leafs);
 	}
 	
-	private static void rFindAndRemoveLookup(CNode node, String nodeName) {
+	private static void rFindAndRemoveLookup(CNode node, CNodeData mainInput) {
 		for( int i=0; i<node.getInput().size(); i++ ) {
 			CNode tmp = node.getInput().get(i);
 			if( tmp instanceof CNodeUnary && (((CNodeUnary)tmp).getType()==UnaryType.LOOKUP_R 
 					|| ((CNodeUnary)tmp).getType()==UnaryType.LOOKUP_RC)
-				&& tmp.getInput().get(0).getVarname().equals(nodeName) )
+				&& tmp.getInput().get(0) instanceof CNodeData
+				&& ((CNodeData)tmp.getInput().get(0)).getHopID()==mainInput.getHopID() )
 			{
 				node.getInput().set(i, tmp.getInput().get(0));
 			}
 			else
-				rFindAndRemoveLookup(tmp, nodeName);
+				rFindAndRemoveLookup(tmp, mainInput);
 		}
+	}
+	
+	private static boolean rHasLookupRC1(CNode node, CNodeData mainInput) {
+		boolean ret = false;
+		for( int i=0; i<node.getInput().size() && !ret; i++ ) {
+			CNode tmp = node.getInput().get(i);
+			if( tmp instanceof CNodeTernary && ((CNodeTernary)tmp).getType()==TernaryType.LOOKUP_RC1 
+				&& tmp.getInput().get(0) instanceof CNodeData
+				&& ((CNodeData)tmp.getInput().get(0)).getHopID() == mainInput.getHopID())
+				ret = true;
+			else
+				ret |= rHasLookupRC1(tmp, mainInput);
+		}
+		return ret;
 	}
 }

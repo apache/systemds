@@ -32,6 +32,8 @@ import org.apache.sysml.hops.UnaryOp;
 import org.apache.sysml.hops.Hop.AggOp;
 import org.apache.sysml.hops.Hop.Direction;
 import org.apache.sysml.hops.Hop.OpOp2;
+import org.apache.sysml.hops.IndexingOp;
+import org.apache.sysml.hops.LiteralOp;
 import org.apache.sysml.hops.TernaryOp;
 import org.apache.sysml.hops.codegen.cplan.CNode;
 import org.apache.sysml.hops.codegen.cplan.CNodeBinary;
@@ -56,7 +58,8 @@ public class CellTpl extends BaseTpl
 
 	@Override
 	public boolean open(Hop hop) {
-		return isValidOperation(hop);
+		return isValidOperation(hop)
+			|| (hop instanceof IndexingOp && ((IndexingOp)hop).isColLowerEqualsUpper());
 	}
 
 	@Override
@@ -196,6 +199,14 @@ public class CellTpl extends BaseTpl
 			//construct ternary cnode, primitive operation derived from OpOp3
 			out = new CNodeTernary(cdata1, cdata2, cdata3, 
 					TernaryType.valueOf(top.getOp().toString()));
+		}
+		else if( hop instanceof IndexingOp ) 
+		{
+			CNode cdata1 = tmp.get(hop.getInput().get(0).getHopID());
+			out = new CNodeTernary(cdata1, 
+					TemplateUtils.createCNodeData(new LiteralOp(hop.getInput().get(0).getDim2()), true), 
+					TemplateUtils.createCNodeData(hop.getInput().get(4), true),
+					TernaryType.LOOKUP_RC1);
 		}
 		else if( HopRewriteUtils.isTransposeOperation(hop) ) 
 		{

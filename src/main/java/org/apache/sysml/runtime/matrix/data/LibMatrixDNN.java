@@ -484,7 +484,8 @@ public class LibMatrixDNN {
 					if(inVal != 0) {
 						final int inputOffset = n*params.C*params.H*params.W + c*params.H*params.W;
 						int maxIndex = getMaxIndexSparse(p, q, inputOffset, n, c, params.input1, params);
-						outputArray[maxIndex] += inVal;
+						if(maxIndex != -1)
+							outputArray[maxIndex] += inVal;
 					}
 				}
 			}
@@ -508,7 +509,8 @@ public class LibMatrixDNN {
 			
 			final int inputOffset = n*params.C*params.H*params.W + c*params.H*params.W;
 			int maxIndex = getMaxIndexSparse(p, q, inputOffset, n, c, params.input1, params);
-			outputArray[maxIndex] += ijv.getV();
+			if(maxIndex != -1)
+				outputArray[maxIndex] += ijv.getV();
 		}
 		
 	}
@@ -528,7 +530,8 @@ public class LibMatrixDNN {
 			
 			final int inputOffset = n*params.C*params.H*params.W + c*params.H*params.W;
 			int maxIndex = getMaxIndex(p, q, inputOffset, inputArray, params);
-			outputArray[maxIndex] += ijv.getV();
+			if(maxIndex != -1)
+				outputArray[maxIndex] += ijv.getV();
 		}
 	}
 	
@@ -541,7 +544,8 @@ public class LibMatrixDNN {
 			for (int p = 0; p < params.P; p++) {
 				for (int q = 0; q < params.Q; q++) {
 					int maxIndex = getMaxIndex(p, q, inputOffset, inputArray, params);
-					outputArray[maxIndex] += doutArray[outputOffset +  p * params.Q + q];
+					if(maxIndex != -1)
+						outputArray[maxIndex] += doutArray[outputOffset +  p * params.Q + q];
 				}
 			}
 		}
@@ -560,8 +564,11 @@ public class LibMatrixDNN {
 		int start_index_w = params.start_indexes_w[q];
 		int end_index_w = params.end_indexes_w[q];
 		
-		int maxIndex = inputOffset +  start_index_h*params.W + start_index_w; 
+		int maxIndex = -1; 
 		double maxVal = -Double.MAX_VALUE;
+		if(start_index_h < 0 || start_index_w < 0 || end_index_h >= params.H || end_index_w >= params.W) {
+			maxVal = 0;
+		}
 
 		// Find maxIndex
 		double currDoutVal = -1;
@@ -589,8 +596,12 @@ public class LibMatrixDNN {
 		int start_index_w = params.start_indexes_w[q];
 		int end_index_w = params.end_indexes_w[q];
 		
-		int maxIndex = inputOffset +  start_index_h*params.W + start_index_w; 
+		int maxIndex = -1; 
 		double maxVal = -Double.MAX_VALUE;
+		
+		if(start_index_h < 0 || start_index_w < 0 || end_index_h >= params.H || end_index_w >= params.W) {
+			maxVal = 0;
+		}
 
 		// Find maxIndex
 		double currDoutVal = -1;

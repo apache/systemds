@@ -44,6 +44,7 @@ import org.apache.sysml.hops.codegen.template.BaseTpl.CloseType;
 import org.apache.sysml.hops.codegen.template.BaseTpl.TemplateType;
 import org.apache.sysml.hops.codegen.template.CPlanMemoTable;
 import org.apache.sysml.hops.codegen.template.CPlanMemoTable.MemoTableEntry;
+import org.apache.sysml.hops.codegen.template.CPlanMemoTable.MemoTableEntrySet;
 import org.apache.sysml.hops.codegen.template.TemplateUtils;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.OpOp1;
@@ -318,68 +319,59 @@ public class SpoofCompiler
 		throws DMLException
 	{		
 		//top-down memoization of processed dag nodes
-		if( memo.contains(hop.getHopID()) )
+		if( memo.contains(hop.getHopID()) || memo.containsHop(hop) )
 			return;
 		
-		//recursively process child nodes
+		//recursive candidate exploration
 		for( Hop c : hop.getInput() )
 			rExploreCPlans(c, memo, compileLiterals);
 		
-		//generate new node plans
+		//open initial operator plans, if possible
 		for( BaseTpl tpl : TemplateUtils.TEMPLATES )
 			if( tpl.open(hop) )
 				memo.add(hop, tpl.getType());
 		
+		//fuse and merge operator plans
 		for( Hop c : hop.getInput() ) {
 			if( memo.contains(c.getHopID()) )
 				for( MemoTableEntry me : memo.get(c.getHopID()) ) {
 					BaseTpl tpl = TemplateUtils.createTemplate(me.type, me.closed);
-					if( tpl.fuse(hop, c) )
-						genExplorePlans(tpl, hop, memo, hop.getInput(), c);	
+					if( tpl.fuse(hop, c) ) {
+						int pos = hop.getInput().indexOf(c);
+						MemoTableEntrySet P = new MemoTableEntrySet(tpl.getType(), pos, c.getHopID(), tpl.isClosed());
+						for(int k=0; k<hop.getInput().size(); k++)
+							if( k != pos ) {
+								Hop input2 = hop.getInput().get(k);
+								if( memo.contains(input2.getHopID()) && !memo.get(input2.getHopID()).get(0).closed
+									&& memo.get(input2.getHopID()).get(0).type == TemplateType.CellTpl && tpl.merge(hop, input2) ) 
+									P.crossProduct(k, -1L, input2.getHopID());
+								else
+									P.crossProduct(k, -1L);
+							}
+						memo.addAll(hop, P);
+					}
 				}	
 		}
 		
 		//prune subsumed / redundant plans
 		memo.pruneRedundant(hop.getHopID());
 		
-		//check if templates require close
+		//close operator plans, if required
 		if( memo.contains(hop.getHopID()) ) {
 			Iterator<MemoTableEntry> iter = memo.get(hop.getHopID()).iterator();
 			while( iter.hasNext() ) {
 				MemoTableEntry me = iter.next();
 				BaseTpl tpl = TemplateUtils.createTemplate(me.type);
 				CloseType ccode = tpl.close(hop);
-				if( ccode != CloseType.OPEN ) {
+				if( ccode == CloseType.CLOSED_INVALID )
+					iter.remove();
+				else if( ccode == CloseType.CLOSED_VALID )
 					me.closed = true;
-					if( ccode == CloseType.CLOSED_INVALID )
-						iter.remove();
-				}
 			}
 		}
-	}
-	
-	private static void genExplorePlans(BaseTpl tpl, Hop hop, CPlanMemoTable memo, ArrayList<Hop> inputs, Hop exclude)
-	{
-		//handle unary operators
-		if( hop.getInput().size() == 1 ) {
-			memo.add(hop, tpl.getType(), exclude.getHopID());
-		}
-		//handle binary operators
-		//TODO rework plan exploration step
-		else if( hop.getInput().size() == 2 ) {
-			int input2ix = (inputs.get(0)==exclude ? 1:0);
-			Hop input2 = inputs.get(input2ix); 
-			long[] refs = (input2ix==1) ? new long[]{exclude.getHopID(), -1} : new long[]{-1, exclude.getHopID()};
-			memo.add(hop, tpl.getType(), refs[0], refs[1]);		
-			if( memo.contains(input2.getHopID()) && !memo.get(input2.getHopID()).get(0).closed
-				&& memo.get(input2.getHopID()).get(0).type == TemplateType.CellTpl && tpl.merge(hop, input2) ) {
-				refs[input2ix] = input2.getHopID();
-				memo.add(hop, tpl.getType(), refs[0], refs[1]);		
-			}
-		}
-		else {
-			LOG.warn("genExplorePlans currently only supports unary and binary operators.");
-		}
+		
+		//mark visited even if no plans found (e.g., unsupported ops)
+		memo.addHop(hop);
 	}
 	
 	private static void rConstructCPlans(Hop hop, CPlanMemoTable memo, HashMap<Long, Pair<Hop[],CNodeTpl>> cplans, boolean compileLiterals) 

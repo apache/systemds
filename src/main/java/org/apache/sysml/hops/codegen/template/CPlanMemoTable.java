@@ -52,6 +52,14 @@ public class CPlanMemoTable
 		_plansBlacklist = new HashSet<Long>();
 	}
 	
+	public void addHop(Hop hop) {
+		_hopRefs.put(hop.getHopID(), hop);
+	}
+	
+	public boolean containsHop(Hop hop) {
+		return _hopRefs.containsKey(hop.getHopID());
+	}
+	
 	public boolean contains(long hopID) {
 		return _plans.containsKey(hopID);
 	}
@@ -78,6 +86,13 @@ public class CPlanMemoTable
 		if( !_plans.containsKey(hop.getHopID()) )
 			_plans.put(hop.getHopID(), new ArrayList<MemoTableEntry>());
 		_plans.get(hop.getHopID()).add(new MemoTableEntry(type, in1, in2, in3));
+	}
+	
+	public void addAll(Hop hop, MemoTableEntrySet P) {
+		_hopRefs.put(hop.getHopID(), hop);
+		if( !_plans.containsKey(hop.getHopID()) )
+			_plans.put(hop.getHopID(), new ArrayList<MemoTableEntry>());
+		_plans.get(hop.getHopID()).addAll(P.plans);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -275,6 +290,25 @@ public class CPlanMemoTable
 		@Override
 		public String toString() {
 			return type.name()+"("+input1+","+input2+","+input3+")";
+		}
+	}
+	
+	public static class MemoTableEntrySet 
+	{
+		public ArrayList<MemoTableEntry> plans = new ArrayList<MemoTableEntry>();
+		
+		public MemoTableEntrySet(TemplateType type, int pos, long hopID, boolean close) {
+			plans.add(new MemoTableEntry(type, (pos==0)?hopID:-1, 
+					(pos==1)?hopID:-1, (pos==2)?hopID:-1));
+		}
+		
+		public void crossProduct(int pos, Long... refs) {
+			ArrayList<MemoTableEntry> tmp = new ArrayList<MemoTableEntry>();
+			for( MemoTableEntry me : plans )
+				for( Long ref : refs )
+					tmp.add(new MemoTableEntry(me.type, (pos==0)?ref:me.input1, 
+						(pos==1)?ref:me.input2, (pos==2)?ref:me.input3));
+			plans = tmp;
 		}
 	}
 }

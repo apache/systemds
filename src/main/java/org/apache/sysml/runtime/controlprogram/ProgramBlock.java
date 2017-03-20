@@ -64,9 +64,7 @@ public class ProgramBlock
 	protected long _tid = 0; //by default _t0
 	
 	
-	public ProgramBlock(Program prog) 
-		throws DMLRuntimeException 
-	{	
+	public ProgramBlock(Program prog) {	
 		_prog = prog;
 		_inst = new ArrayList<Instruction>();
 	}

@@ -685,7 +685,10 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 		HashMap<String, String> parForParamValues = new HashMap<String, String>();
 		if(ctx.parForParams != null && ctx.parForParams.size() > 0) {
 			for(StrictParameterizedExpressionContext parForParamCtx : ctx.parForParams) {
-				parForParamValues.put(parForParamCtx.paramName.getText(), parForParamCtx.paramVal.getText());
+				String paramVal = parForParamCtx.paramVal.getText();
+				if( argVals.containsKey(paramVal) )
+					paramVal = argVals.get(paramVal);
+				parForParamValues.put(parForParamCtx.paramName.getText(), paramVal);
 			}
 		}
 

@@ -42,7 +42,7 @@ public class FunctionProgramBlock extends ProgramBlock
 	
 	private boolean _recompileOnce = false;
 	
-	public FunctionProgramBlock( Program prog, ArrayList<DataIdentifier> inputParams, ArrayList<DataIdentifier> outputParams) throws DMLRuntimeException
+	public FunctionProgramBlock( Program prog, ArrayList<DataIdentifier> inputParams, ArrayList<DataIdentifier> outputParams) 
 	{
 		super(prog);
 		_childBlocks = new ArrayList<ProgramBlock>();

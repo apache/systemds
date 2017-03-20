@@ -103,6 +103,7 @@ import org.apache.sysml.runtime.instructions.cp.StringObject;
 import org.apache.sysml.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
+import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.utils.Statistics;
 import org.apache.sysml.yarn.ropt.YarnClusterAnalyzer;
 
@@ -308,7 +309,6 @@ public class ParForProgramBlock extends ForProgramBlock
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public ParForProgramBlock(int ID, Program prog, String[] iterPredVars, HashMap<String,String> params) 
-		throws DMLRuntimeException  
 	{
 		super(prog, iterPredVars);
 
@@ -322,21 +322,18 @@ public class ParForProgramBlock extends ForProgramBlock
 		
 		//parse and use internal parameters (already set to default if not specified)
 		_params = params;
-		try
-		{
-			_numThreads      = Integer.parseInt( _params.get(ParForStatementBlock.PAR) );
-			_taskPartitioner = PTaskPartitioner.valueOf( _params.get(ParForStatementBlock.TASK_PARTITIONER).toUpperCase() );
-			_taskSize        = Integer.parseInt( _params.get(ParForStatementBlock.TASK_SIZE) );
-			_dataPartitioner = PDataPartitioner.valueOf( _params.get(ParForStatementBlock.DATA_PARTITIONER).toUpperCase() );
-			_resultMerge     = PResultMerge.valueOf( _params.get(ParForStatementBlock.RESULT_MERGE).toUpperCase() );
-			_execMode        = PExecMode.valueOf( _params.get(ParForStatementBlock.EXEC_MODE).toUpperCase() );
-			_optMode         = POptMode.valueOf( _params.get(ParForStatementBlock.OPT_MODE).toUpperCase());		
-			_optLogLevel     = Level.toLevel( _params.get(ParForStatementBlock.OPT_LOG));
-			_monitor         = (Integer.parseInt(_params.get(ParForStatementBlock.PROFILE) ) == 1);
+		try {
+			_numThreads      = Integer.parseInt( getParForParam(ParForStatementBlock.PAR) );
+			_taskPartitioner = PTaskPartitioner.valueOf( getParForParam(ParForStatementBlock.TASK_PARTITIONER) );
+			_taskSize        = Integer.parseInt( getParForParam(ParForStatementBlock.TASK_SIZE) );
+			_dataPartitioner = PDataPartitioner.valueOf( getParForParam(ParForStatementBlock.DATA_PARTITIONER) );
+			_resultMerge     = PResultMerge.valueOf( getParForParam(ParForStatementBlock.RESULT_MERGE) );
+			_execMode        = PExecMode.valueOf( getParForParam(ParForStatementBlock.EXEC_MODE) );
+			_optMode         = POptMode.valueOf( getParForParam(ParForStatementBlock.OPT_MODE) );		
+			_optLogLevel     = Level.toLevel( getParForParam(ParForStatementBlock.OPT_LOG) );
+			_monitor         = (Integer.parseInt(getParForParam(ParForStatementBlock.PROFILE) ) == 1);
 		}
-		catch(Exception ex)
-		{
-			//runtime exception in order to keep signature of program block
+		catch(Exception ex) {
 			throw new RuntimeException("Error parsing specified ParFOR parameters.",ex);
 		}
 			
@@ -364,19 +361,22 @@ public class ParForProgramBlock extends ForProgramBlock
 		LOG.trace("PARFOR: ParForProgramBlock created with mode = "+_execMode+", optmode = "+_optMode+", numThreads = "+_numThreads);
 	}
 	
-	public long getID()
-	{
+	public long getID() {
 		return _ID;
 	}
 	
-	public PExecMode getExecMode()
-	{
+	public PExecMode getExecMode() {
 		return _execMode;
 	}
 	
-	public HashMap<String,String> getParForParams()
-	{
+	public HashMap<String,String> getParForParams() {
 		return _params;
+	}
+	
+	public String getParForParam(String key) {
+		String tmp = getParForParams().get(key);
+		return (tmp == null) ? null :  
+			UtilFunctions.unquote(tmp).toUpperCase();
 	}
 
 	public ArrayList<String> getResultVariables()
@@ -384,109 +384,90 @@ public class ParForProgramBlock extends ForProgramBlock
 		return _resultVars;
 	}
 	
-	public void setResultVariables(ArrayList<String> resultVars)
-	{
+	public void setResultVariables(ArrayList<String> resultVars) {
 		_resultVars = resultVars;
 	}
 	
-	public void disableOptimization()
-	{
+	public void disableOptimization() {
 		_optMode = POptMode.NONE;
 	}
 	
-	public POptMode getOptimizationMode()
-	{
+	public POptMode getOptimizationMode() {
 		return _optMode;
 	}
 	
-	public int getDegreeOfParallelism()
-	{
+	public int getDegreeOfParallelism() {
 		return _numThreads;
 	}
 	
-	public void setDegreeOfParallelism(int k)
-	{
+	public void setDegreeOfParallelism(int k) {
 		_numThreads = k;
 		_params.put(ParForStatementBlock.PAR, String.valueOf(_numThreads)); //kept up-to-date for copies
 		setLocalParWorkerIDs();
 	}
 
-	public void setCPCaching(boolean flag)
-	{
+	public void setCPCaching(boolean flag) {
 		_enableCPCaching = flag;
 	}
 	
-	public void setRuntimePiggybacking(boolean flag)
-	{
+	public void setRuntimePiggybacking(boolean flag) {
 		_enableRuntimePiggybacking = flag;
 	}
 	
-	public void setExecMode( PExecMode mode )
-	{
+	public void setExecMode( PExecMode mode ) {
 		_execMode = mode;
 		_params.put(ParForStatementBlock.EXEC_MODE, String.valueOf(_execMode)); //kept up-to-date for copies
 	}
 	
-	public void setTaskPartitioner( PTaskPartitioner partitioner )
-	{
+	public void setTaskPartitioner( PTaskPartitioner partitioner ) {
 		_taskPartitioner = partitioner;
 		_params.put(ParForStatementBlock.TASK_PARTITIONER, String.valueOf(_taskPartitioner)); //kept up-to-date for copies
 	}
 	
-	public void setTaskSize( long tasksize )
-	{
+	public void setTaskSize( long tasksize ) {
 		_taskSize = tasksize;
 		_params.put(ParForStatementBlock.TASK_SIZE, String.valueOf(_taskSize)); //kept up-to-date for copies
 	}
 	
-	public void setDataPartitioner(PDataPartitioner partitioner) 
-	{
+	public void setDataPartitioner(PDataPartitioner partitioner)  {
 		_dataPartitioner = partitioner;
 		_params.put(ParForStatementBlock.DATA_PARTITIONER, String.valueOf(_dataPartitioner)); //kept up-to-date for copies
 	}
 	
-	public void enableColocatedPartitionedMatrix( String varname )
-	{
+	public void enableColocatedPartitionedMatrix( String varname ) {
 		//only called from optimizer
 		_colocatedDPMatrix = varname;
 	}
 	
-	public void setTransposeSparseColumnVector( boolean flag )
-	{
+	public void setTransposeSparseColumnVector( boolean flag ) {
 		_tSparseCol = flag;
 	}
 	
-	public void setPartitionReplicationFactor( int rep )
-	{
+	public void setPartitionReplicationFactor( int rep ) {
 		//only called from optimizer
 		_replicationDP = rep;
 	}
 	
-	public void setExportReplicationFactor( int rep )
-	{
+	public void setExportReplicationFactor( int rep ) {
 		//only called from optimizer
 		_replicationExport = rep;
 	}
 	
-	public void disableJVMReuse() 
-	{
+	public void disableJVMReuse() {
 		//only called from optimizer
 		_jvmReuse = false;
 	}
 	
-	public void disableMonitorReport()
-	{
+	public void disableMonitorReport() {
 		_monitorReport = false;
 	}
 	
-	public void setResultMerge(PResultMerge merge) 
-	{
+	public void setResultMerge(PResultMerge merge) {
 		_resultMerge = merge;
 		_params.put(ParForStatementBlock.RESULT_MERGE, String.valueOf(_resultMerge)); //kept up-to-date for copies
 	}
 	
-	public void setRecompileMemoryBudget( double localMem )
-	{
+	public void setRecompileMemoryBudget( double localMem ) {
 		_recompileMemoryBudget = localMem;
 	}
 	
@@ -502,8 +483,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		_variablesECache = vars;
 	}
 	
-	public long getNumIterations()
-	{
+	public long getNumIterations() {
 		return _numIterations;
 	}
 	
@@ -511,8 +491,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		return _hasFunctions;
 	}
 
-	public static void initInternalConfigurations( DMLConfig conf )
-	{
+	public static void initInternalConfigurations( DMLConfig conf ) {
 		ALLOW_REUSE_MR_JVMS = conf.getBooleanValue(DMLConfig.JVM_REUSE);
 		ALLOW_REUSE_MR_PAR_WORKER = ALLOW_REUSE_MR_JVMS;
 	}

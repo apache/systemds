@@ -49,8 +49,7 @@ public class ForProgramBlock extends ProgramBlock
 	protected String[]                  _iterablePredicateVars; //from,to,where constants/internal vars not captured via instructions
 
 	
-	public ForProgramBlock(Program prog, String[] iterPredVars) throws DMLRuntimeException
-	{
+	public ForProgramBlock(Program prog, String[] iterPredVars) {
 		super(prog);
 		
 		_exitInstructions = new ArrayList<Instruction>();

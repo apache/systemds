@@ -107,7 +107,7 @@ y_test = lr.fit(df_train)
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f LinearRegDS.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Y=<file>
@@ -152,7 +152,7 @@ y_test = lr.fit(df_train)
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f LinearRegCG.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Y=<file>
@@ -258,7 +258,7 @@ print("Residual sum of squares: %.2f" % np.mean((regr.predict(diabetes_X_test) -
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f LinearRegDS.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/Y.mtx
@@ -316,7 +316,7 @@ print("Residual sum of squares: %.2f" % np.mean((regr.predict(diabetes_X_test) -
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f LinearRegCG.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/Y.mtx
@@ -557,7 +557,7 @@ lowest AIC is computed.
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f StepLinearRegDS.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Y=<file>
@@ -628,7 +628,7 @@ SystemML Language Reference for details.
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f StepLinearRegDS.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/Y.mtx
@@ -760,7 +760,7 @@ distributions and link functions, see below for details.
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f GLM.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Y=<file>
@@ -898,7 +898,7 @@ if no maximum limit provided
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f GLM.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/Y.mtx
@@ -1235,7 +1235,7 @@ distribution family is supported (see below for details).
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f StepGLM.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Y=<file>
@@ -1340,7 +1340,7 @@ SystemML Language Reference for details.
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f StepGLM.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/Y.mtx
@@ -1486,7 +1486,7 @@ this step outside the scope of `GLM-predict.dml` for now.
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f GLM-predict.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Y=[file]
@@ -1625,7 +1625,7 @@ unknown (which sets it to `1.0`).
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f GLM-predict.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs dfam=1
                                          vpow=0.0
@@ -1661,7 +1661,7 @@ unknown (which sets it to `1.0`).
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f GLM-predict.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs dfam=1
                                          vpow=0.0
@@ -1695,7 +1695,7 @@ unknown (which sets it to `1.0`).
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f GLM-predict.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs dfam=2
                                          link=2
@@ -1730,7 +1730,7 @@ unknown (which sets it to `1.0`).
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f GLM-predict.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs dfam=2
                                          link=3
@@ -1763,7 +1763,7 @@ unknown (which sets it to `1.0`).
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f GLM-predict.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs dfam=3
                                          X=/user/ml/X.mtx
@@ -1798,7 +1798,7 @@ unknown (which sets it to `1.0`).
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f GLM-predict.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs dfam=1
                                          vpow=1.0
@@ -1837,7 +1837,7 @@ unknown (which sets it to `1.0`).
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f GLM-predict.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs dfam=1
                                          vpow=2.0

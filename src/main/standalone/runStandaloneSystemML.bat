@@ -46,7 +46,7 @@ set CMD=java %SYSTEMML_STANDALONE_OPTS% ^
      org.apache.sysml.api.DMLScript ^
      -f %1 ^
      -exec singlenode ^
-     -config=SystemML-config.xml ^
+     -config SystemML-config.xml ^
      %ALLBUTFIRST%
 
 :: execute the java command
@@ -72,6 +72,6 @@ GOTO Msg
 :Msg
 ECHO Usage: runStandaloneSystemML.bat ^<dml-filename^> [arguments] [-help]
 ECHO Default Java options (-Xmx4g -Xms4g -Xmn400m) can be overridden by setting SYSTEMML_STANDALONE_OPTS.
-ECHO Script internally invokes 'java [SYSTEMML_STANDALONE_OPTS] -cp ./lib/* -Dlog4j.configuration=file:log4j.properties org.apache.sysml.api.DMLScript -f ^<dml-filename^> -exec singlenode -config=SystemML-config.xml [arguments]'
+ECHO Script internally invokes 'java [SYSTEMML_STANDALONE_OPTS] -cp ./lib/* -Dlog4j.configuration=file:log4j.properties org.apache.sysml.api.DMLScript -f ^<dml-filename^> -exec singlenode -config SystemML-config.xml [arguments]'
 
 :End

@@ -165,7 +165,7 @@ val prediction = model.transform(X_test_df)
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f MultiLogReg.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Y=<file>
@@ -336,7 +336,7 @@ prediction.show()
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f MultiLogReg.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/Y.mtx
@@ -532,7 +532,7 @@ val model = svm.fit(X_train_df)
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f l2-svm.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Y=<file>
@@ -579,7 +579,7 @@ val prediction = model.transform(X_test_df)
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f l2-svm-predict.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Y=[file]
@@ -661,7 +661,7 @@ using a held-out test set. Note that this is an optional argument.
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f l2-svm.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/y.mtx
@@ -695,7 +695,7 @@ using a held-out test set. Note that this is an optional argument.
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f l2-svm-predict.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/y.mtx
@@ -800,7 +800,7 @@ val model = svm.fit(X_train_df)
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f m-svm.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Y=<file>
@@ -847,7 +847,7 @@ val prediction = model.transform(X_test_df)
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f m-svm-predict.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Y=[file]
@@ -1014,7 +1014,7 @@ prediction.show()
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f m-svm.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/y.mtx
@@ -1048,7 +1048,7 @@ prediction.show()
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f m-svm-predict.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/y.mtx
@@ -1153,7 +1153,7 @@ val model = nb.fit(X_train_df)
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f naive-bayes.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Y=<file>
@@ -1198,7 +1198,7 @@ val prediction = model.transform(X_test_df)
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f naive-bayes-predict.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Y=[file]
@@ -1289,7 +1289,7 @@ metrics.f1_score(newsgroups_test.target, pred, average='weighted')
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f naive-bayes.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/y.mtx
@@ -1321,7 +1321,7 @@ metrics.f1_score(newsgroups_test.target, pred, average='weighted')
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f naive-bayes-predict.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/y.mtx
@@ -1420,7 +1420,7 @@ implementation is well-suited to handle large-scale data and builds a
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f decision-tree.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Y=<file>
@@ -1458,7 +1458,7 @@ implementation is well-suited to handle large-scale data and builds a
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f decision-tree-predict.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Y=[file]
@@ -1558,7 +1558,7 @@ SystemML Language Reference for details.
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f decision-tree.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/Y.mtx
@@ -1593,7 +1593,7 @@ SystemML Language Reference for details.
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f decision-tree-predict.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/Y.mtx
@@ -1828,7 +1828,7 @@ for classification in parallel.
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f random-forest.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Y=<file>
@@ -1871,7 +1871,7 @@ for classification in parallel.
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f random-forest-predict.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Y=[file]
@@ -1994,7 +1994,7 @@ SystemML Language Reference for details.
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f random-forest.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/Y.mtx
@@ -2032,7 +2032,7 @@ To compute predictions:
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f random-forest-predict.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/Y.mtx

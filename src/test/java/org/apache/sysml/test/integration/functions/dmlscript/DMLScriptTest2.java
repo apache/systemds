@@ -101,11 +101,11 @@ public class DMLScriptTest2 extends AutomatedTestBase
 		runTest(true, true, DMLException.class, -1);
 		
 		//Expect to print out an ERROR message, -de is an unknown argument
-		programArgs = new String[]{"-de", "-exec", "hybrid", "-config=" + HOME + "SystemML-config.xml",
+		programArgs = new String[]{"-de", "-exec", "hybrid", "-config " + HOME + "SystemML-config.xml",
 			"-args", input("a"), Integer.toString(rows), Integer.toString(cols), "text", output("a")};
 		runTest(true, false, null, -1);
 		
-		//Expect to print out an ERROR message, -config syntax is -config=<config file>
+		//Expect to print out an ERROR message, -config syntax is -config <config file>
 		programArgs = new String[]{"-exec", "hybrid", "-config", HOME + "SystemML-config.xml",
 			"-args", input("a"), Integer.toString(rows), Integer.toString(cols), "text", output("a")};
 		runTest(true, false, null, -1);
@@ -143,8 +143,8 @@ public class DMLScriptTest2 extends AutomatedTestBase
 			Integer.toString(rows), Integer.toString(cols), "text", output("a")};
 		runTest(true, false, null, -1);
 		
-		//Expect to print out an ERROR message, -config syntax is -config=<config file>
-		programArgs = new String[]{"-s", s, "-config", HOME + "SystemML-config.xml", "-exec", "hybrid",
+		//Expect to print out an ERROR message, -config syntax is -config <config file>
+		programArgs = new String[]{"-s", s, "-config ", HOME + "SystemML-config.xml", "-exec", "hybrid",
 			"-args", input("a"), Integer.toString(rows), Integer.toString(cols), "text", output("a")};
 		runTest(true, false, null, -1);
 	}

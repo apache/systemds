@@ -1,35 +1,292 @@
 package org.apache.sysml.test.utils;
 
+import org.apache.commons.cli.AlreadySelectedException;
 import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.api.ScriptType;
 import org.junit.Assert;
-import org.junit.BeforeClass;
 import org.junit.Test;
+
+import java.util.Map;
 
 
 public class CLIOptionsParserTest {
 
-  private static Options options;
-
-  @BeforeClass
-  public static void setupOptions(){
-    options = DMLScript.createCLIOptions();
-  }
-
   @Test
-  public void parseCLArguments1() throws Exception {
+  public void testFile() throws Exception {
     String cl = "systemml -f test.dml";
     String[] args = cl.split(" ");
+    Options options = DMLScript.createCLIOptions();
     DMLScript.DMLOptions o = DMLScript.parseCLArguments(args, options);
     Assert.assertEquals("test.dml", o.filePath);
+    Assert.assertEquals(ScriptType.DML, o.scriptType);
+
   }
 
   @Test
-  public void parseCLArguments2() throws Exception {
-    String cl = "systemml -s \"print('hello world')\"";
+  public void testScript() throws Exception {
+    String cl = "systemml -s \"print('hello')\"";
     String[] args = cl.split(" ");
+    Options options = DMLScript.createCLIOptions();
     DMLScript.DMLOptions o = DMLScript.parseCLArguments(args, options);
-    Assert.assertEquals("print('hello world')", o.script);
+    Assert.assertEquals("print('hello')", o.script);
+  }
+
+  @Test
+  public void testConfig() throws Exception {
+    String cl = "systemml -s \"print('hello')\" -config SystemML-config.xml";
+    String[] args = cl.split(" ");
+    Options options = DMLScript.createCLIOptions();
+    DMLScript.DMLOptions o = DMLScript.parseCLArguments(args, options);
+    Assert.assertEquals("print('hello')", o.script);
+    Assert.assertEquals("SystemML-config.xml", o.configFile);
+  }
+
+  @Test
+  public void testDebug() throws Exception {
+    String cl = "systemml -s \"print('hello')\" -debug";
+    String[] args = cl.split(" ");
+    Options options = DMLScript.createCLIOptions();
+    DMLScript.DMLOptions o = DMLScript.parseCLArguments(args, options);
+    Assert.assertEquals("print('hello')", o.script);
+    Assert.assertEquals(true, o.debug);
+  }
+
+  @Test
+  public void testClean() throws Exception {
+    String cl = "systemml -clean";
+    String[] args = cl.split(" ");
+    Options options = DMLScript.createCLIOptions();
+    DMLScript.DMLOptions o = DMLScript.parseCLArguments(args, options);
+    Assert.assertEquals(true, o.clean);
+  }
+
+  @Test(expected = AlreadySelectedException.class)
+  public void testBadClean() throws Exception {
+    String cl = "systemml -clean -f test.dml";
+    String[] args = cl.split(" ");
+    Options options = DMLScript.createCLIOptions();
+    DMLScript.DMLOptions o = DMLScript.parseCLArguments(args, options);
+  }
+
+  @Test(expected = AlreadySelectedException.class)
+  public void testBadScript() throws Exception {
+    String cl = "systemml -f test.dml -s \"print('hello')\"";
+    String[] args = cl.split(" ");
+    Options options = DMLScript.createCLIOptions();
+    DMLScript.DMLOptions o = DMLScript.parseCLArguments(args, options);
+  }
+
+  @Test
+  public void testStats() throws Exception {
+    String cl = "systemml -f test.dml -stats";
+    String[] args = cl.split(" ");
+    Options options = DMLScript.createCLIOptions();
+    DMLScript.DMLOptions o = DMLScript.parseCLArguments(args, options);
+    Assert.assertEquals(true, o.stats);
+    Assert.assertEquals(10, o.statsCount);
+  }
+
+  @Test
+  public void testStatsCount() throws Exception {
+    String cl = "systemml -f test.dml -stats 9123";
+    String[] args = cl.split(" ");
+    Options options = DMLScript.createCLIOptions();
+    DMLScript.DMLOptions o = DMLScript.parseCLArguments(args, options);
+    Assert.assertEquals(true, o.stats);
+    Assert.assertEquals(9123, o.statsCount);
+  }
+
+  @Test(expected = ParseException.class)
+  public void testBadStats() throws Exception {
+    String cl = "systemml -f test.dml -stats help";
+    String[] args = cl.split(" ");
+    Options options = DMLScript.createCLIOptions();
+    DMLScript.DMLOptions o = DMLScript.parseCLArguments(args, options);
+    Assert.assertEquals(true, o.stats);
+  }
+
+  @Test
+  public void testGPUForce() throws Exception {
+    String cl = "systemml -f test.dml -gpu force";
+    String[] args = cl.split(" ");
+    Options options = DMLScript.createCLIOptions();
+    DMLScript.DMLOptions o = DMLScript.parseCLArguments(args, options);
+    Assert.assertEquals(true, o.gpu);
+    Assert.assertEquals(true, o.forceGPU);
+  }
+
+  @Test(expected = ParseException.class)
+  public void testBadGPUOption() throws Exception {
+    String cl = "systemml -f test.dml -gpu f2orce";
+    String[] args = cl.split(" ");
+    Options options = DMLScript.createCLIOptions();
+    DMLScript.DMLOptions o = DMLScript.parseCLArguments(args, options);
+  }
+
+  @Test
+  public void testPython() throws Exception {
+    String cl = "systemml -f test.dml -python";
+    String[] args = cl.split(" ");
+    Options options = DMLScript.createCLIOptions();
+    DMLScript.DMLOptions o = DMLScript.parseCLArguments(args, options);
+    Assert.assertEquals(ScriptType.PYDML, o.scriptType);
+  }
+
+  @Test
+  public void testHelp() throws Exception {
+    String cl = "systemml -help";
+    String[] args = cl.split(" ");
+    Options options = DMLScript.createCLIOptions();
+    DMLScript.DMLOptions o = DMLScript.parseCLArguments(args, options);
+    Assert.assertEquals(true, o.help);
+  }
+
+  @Test(expected = AlreadySelectedException.class)
+  public void testBadHelp() throws Exception {
+    String cl = "systemml -help -clean";
+    String[] args = cl.split(" ");
+    Options options = DMLScript.createCLIOptions();
+    DMLScript.DMLOptions o = DMLScript.parseCLArguments(args, options);
+    Assert.assertEquals(true, o.help);
+  }
+
+  @Test
+  public void testExec1() throws Exception {
+    String cl = "systemml -f test.dml -exec hadoop";
+    String[] args = cl.split(" ");
+    Options options = DMLScript.createCLIOptions();
+    DMLScript.DMLOptions o = DMLScript.parseCLArguments(args, options);
+    Assert.assertEquals(DMLScript.RUNTIME_PLATFORM.HADOOP, o.execMode);
+  }
+
+  @Test
+  public void testExec2() throws Exception {
+    String cl = "systemml -f test.dml -exec spark";
+    String[] args = cl.split(" ");
+    Options options = DMLScript.createCLIOptions();
+    DMLScript.DMLOptions o = DMLScript.parseCLArguments(args, options);
+    Assert.assertEquals(DMLScript.RUNTIME_PLATFORM.SPARK, o.execMode);
+  }
+
+  @Test
+  public void testExec3() throws Exception {
+    String cl = "systemml -f test.dml -exec singlenode";
+    String[] args = cl.split(" ");
+    Options options = DMLScript.createCLIOptions();
+    DMLScript.DMLOptions o = DMLScript.parseCLArguments(args, options);
+    Assert.assertEquals(DMLScript.RUNTIME_PLATFORM.SINGLE_NODE, o.execMode);
+  }
+
+  @Test
+  public void testExec4() throws Exception {
+    String cl = "systemml -f test.dml -exec hybrid";
+    String[] args = cl.split(" ");
+    Options options = DMLScript.createCLIOptions();
+    DMLScript.DMLOptions o = DMLScript.parseCLArguments(args, options);
+    Assert.assertEquals(DMLScript.RUNTIME_PLATFORM.HYBRID, o.execMode);
+  }
+
+  @Test
+  public void testExec5() throws Exception {
+    String cl = "systemml -f test.dml -exec hybrid_spark";
+    String[] args = cl.split(" ");
+    Options options = DMLScript.createCLIOptions();
+    DMLScript.DMLOptions o = DMLScript.parseCLArguments(args, options);
+    Assert.assertEquals(DMLScript.RUNTIME_PLATFORM.HYBRID_SPARK, o.execMode);
+  }
+
+  @Test(expected = ParseException.class)
+  public void testBadExec() throws Exception {
+    String cl = "systemml -f test.dml -exec new_system";
+    String[] args = cl.split(" ");
+    Options options = DMLScript.createCLIOptions();
+    DMLScript.DMLOptions o = DMLScript.parseCLArguments(args, options);
+  }
+
+  @Test
+  public void testArgs1() throws Exception {
+    String cl = "systemml -f test.dml -args 10 \"x.csv\"";
+    String[] args = cl.split(" ");
+    Options options = DMLScript.createCLIOptions();
+    DMLScript.DMLOptions o = DMLScript.parseCLArguments(args, options);
+    Map<String, String> m = o.argVals;
+    Assert.assertEquals(2, m.size());
+    Assert.assertEquals("10", m.get("$1"));
+    Assert.assertEquals("x.csv", m.get("$2"));
+  }
+
+  @Test
+  public void testArgs2() throws Exception {
+    String cl = "systemml -f test.dml -args 10 \"x.csv\" 1234.2 systemml.conf -config systemml.conf";
+    String[] args = cl.split(" ");
+    Options options = DMLScript.createCLIOptions();
+    DMLScript.DMLOptions o = DMLScript.parseCLArguments(args, options);
+    Map<String, String> m = o.argVals;
+    Assert.assertEquals(4, m.size());
+    Assert.assertEquals("10", m.get("$1"));
+    Assert.assertEquals("x.csv", m.get("$2"));
+    Assert.assertEquals("1234.2", m.get("$3"));
+    Assert.assertEquals("systemml.conf", m.get("$4"));
+  }
+
+  @Test(expected = ParseException.class)
+  public void testBadArgs1() throws Exception {
+    String cl = "systemml -f test.dml -args -config systemml.conf";
+    String[] args = cl.split(" ");
+    Options options = DMLScript.createCLIOptions();
+    DMLScript.DMLOptions o = DMLScript.parseCLArguments(args, options);
+    Map<String, String> m = o.argVals;
+  }
+
+  @Test
+  public void testNVArgs1() throws Exception {
+    String cl = "systemml -f test.dml -nvargs A=12 B=x.csv my123=12.2";
+    String[] args = cl.split(" ");
+    Options options = DMLScript.createCLIOptions();
+    DMLScript.DMLOptions o = DMLScript.parseCLArguments(args, options);
+    Map<String, String> m = o.argVals;
+    Assert.assertEquals(3, m.size());
+    Assert.assertEquals("12", m.get("$A"));
+    Assert.assertEquals("x.csv", m.get("$B"));
+    Assert.assertEquals("12.2", m.get("$my123"));
+  }
+
+  @Test(expected = ParseException.class)
+  public void testBadNVArgs1() throws Exception {
+    String cl = "systemml -f test.dml -nvargs";
+    String[] args = cl.split(" ");
+    Options options = DMLScript.createCLIOptions();
+    DMLScript.DMLOptions o = DMLScript.parseCLArguments(args, options);
+    Map<String, String> m = o.argVals;
+  }
+
+  @Test(expected = ParseException.class)
+  public void testBadNVArgs2() throws Exception {
+    String cl = "systemml -f test.dml -nvargs asd qwe";
+    String[] args = cl.split(" ");
+    Options options = DMLScript.createCLIOptions();
+    DMLScript.DMLOptions o = DMLScript.parseCLArguments(args, options);
+    Map<String, String> m = o.argVals;
+  }
+
+  @Test(expected = ParseException.class)
+  public void testBadNVArgs3() throws Exception {
+    String cl = "systemml -f test.dml -nvargs $X=12";
+    String[] args = cl.split(" ");
+    Options options = DMLScript.createCLIOptions();
+    DMLScript.DMLOptions o = DMLScript.parseCLArguments(args, options);
+    Map<String, String> m = o.argVals;
+  }
+
+  @Test(expected = ParseException.class)
+  public void testBadNVArgs4() throws Exception {
+    String cl = "systemml -f test.dml -nvargs 123=123";
+    String[] args = cl.split(" ");
+    Options options = DMLScript.createCLIOptions();
+    DMLScript.DMLOptions o = DMLScript.parseCLArguments(args, options);
+    Map<String, String> m = o.argVals;
   }
 
 }

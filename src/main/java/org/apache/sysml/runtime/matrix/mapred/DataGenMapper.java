@@ -21,6 +21,7 @@
 package org.apache.sysml.runtime.matrix.mapred;
 
 import java.io.IOException;
+import java.util.stream.LongStream;
 
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.JobConf;
@@ -83,7 +84,7 @@ implements Mapper<Writable, Writable, Writable, Writable>
 																		pdf, blockRowSize, blockColSize, blockRowSize, blockColSize,   
 																		sparsity, minValue, maxValue, randInst.getPdfParams() );
 
-					block[i].randOperationsInPlace(rgen, new long[]{blockNNZ}, null, seed); 
+					block[i].randOperationsInPlace(rgen, LongStream.of(blockNNZ), null, seed); 
 				} 
 				catch(DMLRuntimeException e) {
 					throw new IOException(e);

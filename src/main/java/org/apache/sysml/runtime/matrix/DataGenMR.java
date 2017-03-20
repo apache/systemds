@@ -22,6 +22,8 @@ package org.apache.sysml.runtime.matrix;
 
 import java.io.PrintWriter;
 import java.util.HashSet;
+import java.util.PrimitiveIterator;
+import java.util.stream.LongStream;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -152,8 +154,8 @@ public class DataGenMR
 				
 				//seed generation
 				Well1024a bigrand = LibMatrixDatagen.setupSeedsForRand(randInst.getSeed());
-				long[] nnz = LibMatrixDatagen.computeNNZperBlock(rlens[i], clens[i], brlens[i], bclens[i], randInst.getSparsity());
-				int nnzIx = 0;
+				LongStream nnz = LibMatrixDatagen.computeNNZperBlock(rlens[i], clens[i], brlens[i], bclens[i], randInst.getSparsity());
+				PrimitiveIterator.OfLong nnzIter = nnz.iterator();
 				for(long r = 0; r < rlens[i]; r += brlens[i]) {
 					long curBlockRowSize = Math.min(brlens[i], (rlens[i] - r));
 					for(long c = 0; c < clens[i]; c += bclens[i])
@@ -168,7 +170,7 @@ public class DataGenMR
 						sb.append(',');
 						sb.append(curBlockColSize);
 						sb.append(',');
-						sb.append(nnz[nnzIx++]);
+						sb.append(nnzIter.nextLong());
 						sb.append(',');
 						sb.append(bigrand.nextLong());
 						pw.println(sb.toString());

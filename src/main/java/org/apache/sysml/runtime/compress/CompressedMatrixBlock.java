@@ -35,6 +35,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.stream.LongStream;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -2076,14 +2077,14 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 
 	@Override
 	public MatrixBlock randOperationsInPlace(RandomMatrixGenerator rgen,
-			long[] nnzInBlock, Well1024a bigrand, long bSeed)
+			LongStream nnzInBlock, Well1024a bigrand, long bSeed)
 			throws DMLRuntimeException {
 		throw new RuntimeException("CompressedMatrixBlock: randOperationsInPlace not supported.");
 	}
 
 	@Override
 	public MatrixBlock randOperationsInPlace(RandomMatrixGenerator rgen,
-			long[] nnzInBlock, Well1024a bigrand, long bSeed, int k)
+			LongStream nnzInBlock, Well1024a bigrand, long bSeed, int k)
 			throws DMLRuntimeException {
 		throw new RuntimeException("CompressedMatrixBlock: randOperationsInPlace not supported.");
 	}

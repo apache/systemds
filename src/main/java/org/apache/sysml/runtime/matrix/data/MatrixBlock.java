@@ -30,6 +30,7 @@ import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.stream.LongStream;
 
 import org.apache.commons.math3.random.Well1024a;
 import org.apache.hadoop.io.DataInputBuffer;
@@ -5575,7 +5576,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	{
 		MatrixBlock out = new MatrixBlock();
 		Well1024a bigrand = null;
-		long[] nnzInBlock = null;
+		LongStream nnzInBlock = null;
 
 		//setup seeds and nnz per block
 		if( !LibMatrixDatagen.isShortcutRandOperation(rgen._min, rgen._max, rgen._sparsity, rgen._pdf) ){
@@ -5614,7 +5615,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public MatrixBlock randOperationsInPlace(
-								RandomMatrixGenerator rgen, long[] nnzInBlock, 
+								RandomMatrixGenerator rgen, LongStream nnzInBlock, 
 								Well1024a bigrand, long bSeed ) 
 		throws DMLRuntimeException
 	{
@@ -5645,7 +5646,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public MatrixBlock randOperationsInPlace(RandomMatrixGenerator rgen, 
-			long[] nnzInBlock, Well1024a bigrand, long bSeed, int k) 
+			LongStream nnzInBlock, Well1024a bigrand, long bSeed, int k) 
 		throws DMLRuntimeException
 	{
 		LibMatrixDatagen.generateRandomMatrix( this, rgen, nnzInBlock, 

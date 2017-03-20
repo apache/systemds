@@ -24,6 +24,7 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.ScriptType;
+import org.apache.sysml.utils.Explain;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -169,6 +170,51 @@ public class CLIOptionsParserTest {
     Options options = DMLScript.createCLIOptions();
     DMLScript.DMLOptions o = DMLScript.parseCLArguments(args, options);
     Assert.assertEquals(true, o.help);
+  }
+
+  @Test
+  public void testExplain1() throws Exception {
+    String cl = "systemml -f test.dml -explain";
+    String[] args = cl.split(" ");
+    Options options = DMLScript.createCLIOptions();
+    DMLScript.DMLOptions o = DMLScript.parseCLArguments(args, options);
+    Assert.assertEquals(Explain.ExplainType.RUNTIME, o.explainType);
+  }
+
+  @Test
+  public void testExplain2() throws Exception {
+    String cl = "systemml -f test.dml -explain hops";
+    String[] args = cl.split(" ");
+    Options options = DMLScript.createCLIOptions();
+    DMLScript.DMLOptions o = DMLScript.parseCLArguments(args, options);
+    Assert.assertEquals(Explain.ExplainType.HOPS, o.explainType);
+  }
+
+  @Test
+  public void testExplain3() throws Exception {
+    String cl = "systemml -f test.dml -explain runtime";
+    String[] args = cl.split(" ");
+    Options options = DMLScript.createCLIOptions();
+    DMLScript.DMLOptions o = DMLScript.parseCLArguments(args, options);
+    Assert.assertEquals(Explain.ExplainType.RUNTIME, o.explainType);
+  }
+
+  @Test
+  public void testExplain4() throws Exception {
+    String cl = "systemml -f test.dml -explain recompile_hops";
+    String[] args = cl.split(" ");
+    Options options = DMLScript.createCLIOptions();
+    DMLScript.DMLOptions o = DMLScript.parseCLArguments(args, options);
+    Assert.assertEquals(Explain.ExplainType.RECOMPILE_HOPS, o.explainType);
+  }
+
+  @Test
+  public void testExplain5() throws Exception {
+    String cl = "systemml -f test.dml -explain recompile_runtime";
+    String[] args = cl.split(" ");
+    Options options = DMLScript.createCLIOptions();
+    DMLScript.DMLOptions o = DMLScript.parseCLArguments(args, options);
+    Assert.assertEquals(Explain.ExplainType.RECOMPILE_RUNTIME, o.explainType);
   }
 
   @Test

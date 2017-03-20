@@ -34,6 +34,7 @@ import org.apache.sysml.parser.common.CommonSyntacticValidator;
 import org.apache.sysml.parser.common.CustomErrorListener.ParseIssue;
 import org.apache.sysml.parser.dml.DMLParserWrapper;
 import org.apache.sysml.parser.pydml.PyDMLParserWrapper;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.util.LocalFileUtils;
 
 /**
@@ -147,10 +148,8 @@ public abstract class AParserWrapper
 			LOG.error("Failed to read the script from the file system", ex);
 			throw ex;
 		}
-		finally 
-		{
-			if( in != null )
-				in.close();
+		finally {
+			IOUtilFunctions.closeSilently(in);
 		}
 		
 		dmlScriptStr = sb.toString();

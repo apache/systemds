@@ -46,6 +46,7 @@ import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.parfor.util.Cell;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysml.runtime.controlprogram.parfor.util.StagingFileUtils;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.io.MatrixReader;
 import org.apache.sysml.runtime.matrix.data.IJV;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
@@ -184,10 +185,8 @@ public class DataPartitionerLocal extends DataPartitioner
 						buffer.clear();
 					}
 				}
-				finally
-				{
-					if( reader != null )
-						reader.close();
+				finally {
+					IOUtilFunctions.closeSilently(reader);
 				}
 			}
 
@@ -274,10 +273,8 @@ public class DataPartitionerLocal extends DataPartitioner
 						buffer.clear();
 					}
 				}
-				finally
-				{
-					if( reader != null )
-						reader.close();
+				finally {
+					IOUtilFunctions.closeSilently(reader);
 				}
 			}
 			
@@ -359,10 +356,8 @@ public class DataPartitionerLocal extends DataPartitioner
 					    appendBlockToStagingArea(fnameStaging, value, row_offset, col_offset, brlen, bclen);
 					}
 				}
-				finally
-				{
-					if( reader != null )
-						reader.close();
+				finally {
+					IOUtilFunctions.closeSilently(reader);
 				}
 			}
 
@@ -466,10 +461,8 @@ public class DataPartitionerLocal extends DataPartitioner
 						buffer.clear();
 					}
 				}
-				finally
-				{
-					if( reader != null )
-						reader.close();
+				finally {
+					IOUtilFunctions.closeSilently(reader);
 				}
 			}
 
@@ -635,10 +628,8 @@ public class DataPartitionerLocal extends DataPartitioner
 				}
 			}
 		}
-		finally
-		{
-			if( writer != null )
-				writer.close();
+		finally {
+			IOUtilFunctions.closeSilently(writer);
 		}
 	}
 	
@@ -668,10 +659,8 @@ public class DataPartitionerLocal extends DataPartitioner
 				}
 			}
 		}
-		finally
-		{
-			if( writer != null )
-				writer.close();
+		finally {
+			IOUtilFunctions.closeSilently(writer);
 		}
 	}
 	
@@ -704,10 +693,8 @@ public class DataPartitionerLocal extends DataPartitioner
 				}
 			}
 		}
-		finally
-		{
-			if( out != null )
-				out.close();
+		finally {
+			IOUtilFunctions.closeSilently(out);
 		}
 	}
 	

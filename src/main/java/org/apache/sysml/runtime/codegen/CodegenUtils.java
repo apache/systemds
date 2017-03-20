@@ -103,11 +103,16 @@ public class CodegenUtils
 				throw new RuntimeException("Failed to compile class "+name);
 			
 			//dynamically load compiled class
-			URLClassLoader classLoader = new URLClassLoader(
+			URLClassLoader classLoader = null;
+			try {
+				classLoader = new URLClassLoader(
 					new URL[]{new File(_workingDir).toURI().toURL(), runDir}, 
 					CodegenUtils.class.getClassLoader());
-			ret = classLoader.loadClass("codegen."+name);
-			classLoader.close();
+				ret = classLoader.loadClass("codegen."+name);
+			}
+			finally {
+				IOUtilFunctions.closeSilently(classLoader);
+			}
 		}
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);

@@ -51,6 +51,7 @@ import org.apache.sysml.runtime.controlprogram.parfor.stat.Stat;
 import org.apache.sysml.runtime.controlprogram.parfor.util.PairWritableBlock;
 import org.apache.sysml.runtime.controlprogram.parfor.util.PairWritableCell;
 import org.apache.sysml.runtime.instructions.cp.Data;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.io.MatrixReader;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
@@ -267,10 +268,8 @@ public class RemoteDPParForMR
 		        	countAll++;
 				}
 			}	
-			finally
-			{
-				if( reader != null )
-					reader.close();
+			finally {
+				IOUtilFunctions.closeSilently(reader);
 			}
 		}		
 

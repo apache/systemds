@@ -101,6 +101,7 @@ import org.apache.sysml.runtime.instructions.cp.DoubleObject;
 import org.apache.sysml.runtime.instructions.cp.IntObject;
 import org.apache.sysml.runtime.instructions.cp.StringObject;
 import org.apache.sysml.runtime.instructions.cp.VariableCPInstruction;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.utils.Statistics;
 import org.apache.sysml.yarn.ropt.YarnClusterAnalyzer;
@@ -1588,10 +1589,8 @@ public class ParForProgramBlock extends ForProgramBlock
 		{
 			throw new DMLRuntimeException("Error writing tasks to taskfile "+fname, ex);
 		}
-		finally
-		{
-			if( br !=null )
-				br.close();
+		finally {
+			IOUtilFunctions.closeSilently(br);
 		}
 		
 		return fname;
@@ -1620,10 +1619,8 @@ public class ParForProgramBlock extends ForProgramBlock
 		{
 			throw new DMLRuntimeException("Error writing tasks to taskfile "+fname, ex);
 		}
-		finally
-		{
-			if( br !=null )
-				br.close();
+		finally {
+			IOUtilFunctions.closeSilently(br);
 		}
 		
 		return fname;

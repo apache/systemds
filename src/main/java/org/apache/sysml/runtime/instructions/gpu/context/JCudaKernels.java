@@ -34,6 +34,7 @@ import java.util.HashMap;
 
 import jcuda.runtime.JCuda;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 
 import jcuda.CudaException;
 import jcuda.Pointer;
@@ -207,22 +208,8 @@ public class JCudaKernels {
         	throw new DMLRuntimeException("Could not initialize the kernels", e);
 		}
         finally {
-        	if (out != null) {
-                try {
-                	out.close();
-                }
-                catch (IOException e) {
-                    throw new DMLRuntimeException("Could not initialize the kernels", e);
-                }
-            }
-            if (in != null) {
-                try {
-                    in.close();
-                }
-                catch (IOException e) {
-                    throw new DMLRuntimeException("Could not initialize the kernels", e);
-                }
-            }
-        }
+        	IOUtilFunctions.closeSilently(out);
+        	IOUtilFunctions.closeSilently(in);
+		}
 	}
 }

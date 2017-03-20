@@ -41,6 +41,7 @@ import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.DataExpression;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.io.MatrixReader;
 import org.apache.sysml.runtime.matrix.CSVReblockMR;
 import org.apache.sysml.runtime.matrix.CSVReblockMR.OffsetCount;
@@ -524,19 +525,22 @@ public class TfUtils implements Serializable{
 	 */
 	public String getPartFileID(JobConf job, long offset) throws IOException
 	{
-		Reader reader = initOffsetsReader(job);
-		
-		ByteWritable key=new ByteWritable();
-		OffsetCount value=new OffsetCount();
-		String thisFile = TfUtils.getPartFileName(job);
-		
+		Reader reader = null;
 		int id = 0;
-		while (reader.next(key, value)) {
-			if ( thisFile.equals(value.filename) && value.fileOffset == offset ) 
-				break;
-			id++;
+		try {
+			reader = initOffsetsReader(job);
+			ByteWritable key=new ByteWritable();
+			OffsetCount value=new OffsetCount();
+			String thisFile = TfUtils.getPartFileName(job);
+			while (reader.next(key, value)) {
+				if ( thisFile.equals(value.filename) && value.fileOffset == offset ) 
+					break;
+				id++;
+			}
 		}
-		reader.close();
+		finally {
+			IOUtilFunctions.closeSilently(reader);
+		}
 		
 		String sid = Integer.toString(id);
 		char[] carr = new char[5-sid.length()];

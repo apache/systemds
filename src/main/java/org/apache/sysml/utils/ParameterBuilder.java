@@ -32,6 +32,8 @@ import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.sysml.runtime.io.IOUtilFunctions;
+
 /**
  * Class to help setting variables in a script. 
  */
@@ -58,33 +60,40 @@ public class ParameterBuilder
 			String strScript = strScriptPathName;
 			String strTmpScript = strScript + "t";
 
-			BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(strScript)));
-			FileOutputStream out = new FileOutputStream(strTmpScript);
-			PrintWriter pw = new PrintWriter(out);
-			String content;
-			Pattern unresolvedVars = Pattern.compile(_RS + ".*" + _RS);
-			/*
-			 * so that variables, which were not assigned, are replaced by an
-			 * empty string
-			 */
-			while ((content = in.readLine()) != null) {
-				for (Entry<String, String> e : variables.entrySet() ) {
-					String variable = e.getKey();
-					String val = e.getValue();
-					Pattern pattern = Pattern.compile(_RS + variable + _RS);
-					Matcher matcher = pattern.matcher(content);
-					while (matcher.find()) {
-						content = content.replaceFirst(matcher.group().replace("$", "\\$"), val);
+			BufferedReader in = null;
+			PrintWriter pw = null;
+			
+			try {
+				in = new BufferedReader(new InputStreamReader(new FileInputStream(strScript)));
+				pw = new PrintWriter(new FileOutputStream(strTmpScript));
+				
+				String content;
+				Pattern unresolvedVars = Pattern.compile(_RS + ".*" + _RS);
+				/*
+				 * so that variables, which were not assigned, are replaced by an
+				 * empty string
+				 */
+				while ((content = in.readLine()) != null) {
+					for (Entry<String, String> e : variables.entrySet() ) {
+						String variable = e.getKey();
+						String val = e.getValue();
+						Pattern pattern = Pattern.compile(_RS + variable + _RS);
+						Matcher matcher = pattern.matcher(content);
+						while (matcher.find()) {
+							content = content.replaceFirst(matcher.group().replace("$", "\\$"), val);
+						}
 					}
+					Matcher matcher = unresolvedVars.matcher(content);
+					content = matcher.replaceAll("");
+					pw.println(content);
 				}
-				Matcher matcher = unresolvedVars.matcher(content);
-				content = matcher.replaceAll("");
-				pw.println(content);
 			}
-			pw.close();
-			out.close();
-			in.close();
-		} catch (IOException e) {
+			finally {
+				IOUtilFunctions.closeSilently(pw);
+				IOUtilFunctions.closeSilently(in);
+			}
+		} 
+		catch (IOException e) {
 			fail("unable to set variables in dml script: " + e.getMessage());
 		}
 	}

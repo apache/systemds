@@ -339,12 +339,16 @@ public class IOUtilFunctions
 	public static String toString(InputStream input) throws IOException {
 		if( input == null )
 			return null;
-		ByteArrayOutputStream bos = new ByteArrayOutputStream();
-		byte[] buff = new byte[LocalFileUtils.BUFFER_SIZE];
-		for( int len=0; (len=input.read(buff))!=-1; )
-			bos.write(buff, 0, len);
-		input.close();		
-		return bos.toString("UTF-8");
+		try {
+			ByteArrayOutputStream bos = new ByteArrayOutputStream();
+			byte[] buff = new byte[LocalFileUtils.BUFFER_SIZE];
+			for( int len=0; (len=input.read(buff))!=-1; )
+				bos.write(buff, 0, len);
+			return bos.toString("UTF-8");
+		}
+		finally {
+			IOUtilFunctions.closeSilently(input);
+		}
 	}
 
 	public static InputSplit[] sortInputSplits(InputSplit[] splits) {

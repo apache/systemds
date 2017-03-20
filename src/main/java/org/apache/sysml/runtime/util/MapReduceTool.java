@@ -47,6 +47,7 @@ import org.apache.sysml.parser.DataExpression;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.io.MatrixReader;
 import org.apache.sysml.runtime.io.MatrixReaderFactory;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -109,17 +110,36 @@ public class MapReduceTool
 	}
 
 	public static boolean existsFileOnHDFS(String fname){
-		boolean ret = true;
-		try{
-			Path outpath = new Path(fname);
-			ret = FileSystem.get(_rJob).exists(outpath);
+		try {
+			return FileSystem.get(_rJob)
+				.exists(new Path(fname));
 		}
-		catch(Exception ex)
-		{
-			LOG.error("Exception caught in existsFileOnHDFS", ex);
-			ret = false;
+		catch(Exception ex) {
+			LOG.error("Failed check existsFileOnHDFS.", ex);
 		}
-		return ret;
+		return false;
+	}
+	
+	public static boolean isDirectory(String fname) {
+		try {
+			return FileSystem.get(_rJob)
+				.isDirectory(new Path(fname));
+		}
+		catch(Exception ex) {
+			LOG.error("Failed check isDirectory.", ex);
+		}
+		return false;
+	}
+	
+	public static FileStatus[] getDirectoryListing(String fname) {
+		try {
+			return FileSystem.get(_rJob)
+				.listStatus(new Path(fname));
+		}
+		catch(Exception ex) {
+			LOG.error("Failed listing of directory contents.", ex);
+		}
+		return new FileStatus[0];
 	}
 
 	public static void deleteFileWithMTDIfExistOnHDFS(String fname)  throws IOException {
@@ -254,24 +274,25 @@ public class MapReduceTool
 	public static String readStringFromHDFSFile(String filename) 
 		throws IOException 
 	{
-		BufferedReader br = setupInputFile(filename);
-		// handle multi-line strings in the HDFS file
 		StringBuilder sb = new StringBuilder();
-		String line = null;
-		while ( (line = br.readLine()) != null ) {
-			sb.append(line);
-			sb.append("\n");
+		try( BufferedReader br = setupInputFile(filename) ) {
+			// handle multi-line strings in the HDFS file
+			String line = null;
+			while ( (line = br.readLine()) != null ) {
+				sb.append(line);
+				sb.append("\n");
+			}
 		}
-		br.close();
 		
 		//return string without last character
 		return sb.substring(0, sb.length()-1);
 	}
 	
 	public static Object readObjectFromHDFSFile(String filename, ValueType vt) throws IOException {
-		BufferedReader br = setupInputFile(filename);
-		String line = br.readLine();
-		br.close();
+		String line = null;
+		try( BufferedReader br = setupInputFile(filename) ) {
+			line = br.readLine();
+		}
 		if( line == null )
 			throw new IOException("Empty file on hdfs: "+filename);
 		
@@ -307,24 +328,24 @@ public class MapReduceTool
 	}
 	
 	public static void writeObjectToHDFS ( Object obj, String filename ) throws IOException {
-		BufferedWriter br = setupOutputFile(filename);
-		br.write(obj.toString());
-		br.close();
+		try( BufferedWriter br = setupOutputFile(filename) ) {
+			br.write(obj.toString());
+		}
 	}
 	
 	public static void writeDimsFile ( String filename, byte[] unknownFlags, long[] maxRows, long[] maxCols) throws IOException {
-        BufferedWriter br = setupOutputFile(filename);
-        StringBuilder line = new StringBuilder();
-        for ( int i=0; i < unknownFlags.length; i++ ) {
-        	if ( unknownFlags[i]  != (byte)0 ) {
-        		line.append(i);
-        		line.append(" " + maxRows[i]);
-        		line.append(" " + maxCols[i]);
-        		line.append("\n");
-        	}
+		try( BufferedWriter br = setupOutputFile(filename) ) {
+	        StringBuilder line = new StringBuilder();
+	        for ( int i=0; i < unknownFlags.length; i++ ) {
+	        	if ( unknownFlags[i]  != (byte)0 ) {
+	        		line.append(i);
+	        		line.append(" " + maxRows[i]);
+	        		line.append(" " + maxCols[i]);
+	        		line.append("\n");
+	        	}
+	        }
+	        br.write(line.toString());
         }
-        br.write(line.toString());
-        br.close();
 	}
 	
 	public static MatrixCharacteristics[] processDimsFiles(String dir, MatrixCharacteristics[] stats) 
@@ -343,21 +364,18 @@ public class MapReduceTool
 			FileStatus[] files = fs.listStatus(pt);
 			for ( int i=0; i < files.length; i++ ) {
 				Path filePath = files[i].getPath();
-				//System.out.println("Processing dims file: " + filePath.toString());
-				BufferedReader br = setupInputFile(filePath.toString());
-				
-				String line = "";
-				while((line=br.readLine()) != null ) {
-					String[] parts = line.split(" ");
-					int resultIndex = Integer.parseInt(parts[0]);
-					long maxRows = Long.parseLong(parts[1]);
-					long maxCols = Long.parseLong(parts[2]);
-					
-					stats[resultIndex].setDimension( (stats[resultIndex].getRows() < maxRows ? maxRows : stats[resultIndex].getRows()), 
-							                         (stats[resultIndex].getCols() < maxCols ? maxCols : stats[resultIndex].getCols()) );
+				try( BufferedReader br = setupInputFile(filePath.toString()) ) {
+					String line = "";
+					while((line=br.readLine()) != null ) {
+						String[] parts = line.split(" ");
+						int resultIndex = Integer.parseInt(parts[0]);
+						long maxRows = Long.parseLong(parts[1]);
+						long maxCols = Long.parseLong(parts[2]);
+						
+						stats[resultIndex].setDimension( (stats[resultIndex].getRows() < maxRows ? maxRows : stats[resultIndex].getRows()), 
+								                         (stats[resultIndex].getCols() < maxCols ? maxCols : stats[resultIndex].getCols()) );
+					}
 				}
-				
-				br.close();
 			}
 		}
 		else 
@@ -389,12 +407,9 @@ public class MapReduceTool
 	{
 		Path pt = new Path(mtdfile);
 		FileSystem fs = FileSystem.get(_rJob);
-		BufferedWriter br = new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
-
-		try {
+		try( BufferedWriter br = new BufferedWriter(new OutputStreamWriter(fs.create(pt,true))) ) {
 			String mtd = metaDataToString(vt, schema, dt, mc, outinfo, formatProperties);
 			br.write(mtd);
-			br.close();
 		} catch (Exception e) {
 			throw new IOException("Error creating and writing metadata JSON file", e);
 		}
@@ -405,12 +420,9 @@ public class MapReduceTool
 	{
 		Path pt = new Path(mtdfile);
 		FileSystem fs = FileSystem.get(_rJob);
-		BufferedWriter br = new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
-
-		try {
+		try( BufferedWriter br = new BufferedWriter(new OutputStreamWriter(fs.create(pt,true))) ) {
 			String mtd = metaDataToString(vt, null, DataType.SCALAR, null, OutputInfo.TextCellOutputInfo, null);
 			br.write(mtd);
-			br.close();
 		} 
 		catch (Exception e) {
 			throw new IOException("Error creating and writing metadata JSON file", e);
@@ -558,37 +570,43 @@ public class MapReduceTool
 			throw new RuntimeException("cannot read partition "+currentPart);
 		
 		int buffsz = 64 * 1024;
-		FSDataInputStream currentStream=fs.open(fileToRead, buffsz);
-	    DoubleWritable readKey=new DoubleWritable();
+		DoubleWritable readKey=new DoubleWritable();
 	    IntWritable readValue=new IntWritable();
-	    
-		boolean contain0s=false;
-		long numZeros=0;
-		if(currentPart==metadata.getPartitionOfZero())
-		{
-			contain0s=true;
-			numZeros=metadata.getNumberOfZero();
-		}
-	    ReadWithZeros reader=new ReadWithZeros(currentStream, contain0s, numZeros);
-
-	    int numRead=0;
-	    while(numRead<=offset)
-		{
-	    	reader.readNextKeyValuePairs(readKey, readValue);
-			numRead+=readValue.get();
-			cum_weight += readValue.get();
-		}
-	    
-	    double ret = readKey.get();
-	    if(average) {
-	    	if(numRead<=offset+1) {
-	    		reader.readNextKeyValuePairs(readKey, readValue);
+	    FSDataInputStream currentStream = null;
+		double ret = -1;
+	    try {
+			currentStream = fs.open(fileToRead, buffsz);
+		    
+			boolean contain0s=false;
+			long numZeros=0;
+			if(currentPart==metadata.getPartitionOfZero())
+			{
+				contain0s=true;
+				numZeros=metadata.getNumberOfZero();
+			}
+		    ReadWithZeros reader=new ReadWithZeros(currentStream, contain0s, numZeros);
+	
+		    int numRead=0;
+		    while(numRead<=offset)
+			{
+		    	reader.readNextKeyValuePairs(readKey, readValue);
+				numRead+=readValue.get();
 				cum_weight += readValue.get();
-				ret = (ret+readKey.get())/2;
-	    	}
-	    }
-	    currentStream.close();
-		return new double[] {ret, (average ? -1 : readValue.get()), (average ? -1 : cum_weight)};
+			}
+		    
+		    ret = readKey.get();
+		    if(average) {
+		    	if(numRead<=offset+1) {
+		    		reader.readNextKeyValuePairs(readKey, readValue);
+					cum_weight += readValue.get();
+					ret = (ret+readKey.get())/2;
+		    	}
+		    }
+		}
+		finally {
+			IOUtilFunctions.closeSilently(currentStream);
+		}
+	    return new double[] {ret, (average ? -1 : readValue.get()), (average ? -1 : cum_weight)};
 	}
 
 	public static void createDirIfNotExistOnHDFS(String dir, String permissions) 

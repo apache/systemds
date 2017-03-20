@@ -49,6 +49,7 @@ import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.Stat;
 import org.apache.sysml.runtime.instructions.cp.Data;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.io.MatrixReader;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
@@ -278,10 +279,8 @@ public class RemoteParForMR
 		        	countAll++;
 				}
 			}	
-			finally
-			{
-				if( reader != null )
-					reader.close();
+			finally {
+				IOUtilFunctions.closeSilently(reader);
 			}
 		}		
 

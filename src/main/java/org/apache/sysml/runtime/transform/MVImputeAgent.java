@@ -544,25 +544,25 @@ public class MVImputeAgent extends Encoder
 	private void writeTfMtd(int colID, String mean, String tfMtdDir, FileSystem fs, TfUtils agents) throws IOException 
 	{
 		Path pt=new Path(tfMtdDir+"/Impute/"+ agents.getName(colID) + TfUtils.TXMTD_MV_FILE_SUFFIX);
-		BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
-		br.write(colID + TfUtils.TXMTD_SEP + mean + "\n");
-		br.close();
+		try( BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true))) ) {
+			br.write(colID + TfUtils.TXMTD_SEP + mean + "\n");
+		}
 	}
 	
 	private void writeTfMtd(int colID, String mean, String sdev, String tfMtdDir, FileSystem fs, TfUtils agents) throws IOException 
 	{
 		Path pt=new Path(tfMtdDir+"/Scale/"+ agents.getName(colID) + TfUtils.SCALE_FILE_SUFFIX);
-		BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
-		br.write(colID + TfUtils.TXMTD_SEP + mean + TfUtils.TXMTD_SEP + sdev + "\n");
-		br.close();
+		try( BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true))) ) {
+			br.write(colID + TfUtils.TXMTD_SEP + mean + TfUtils.TXMTD_SEP + sdev + "\n");
+		}
 	}
 	
 	private void writeTfMtd(int colID, String min, String max, String binwidth, String nbins, String tfMtdDir, FileSystem fs, TfUtils agents) throws IOException 
 	{
 		Path pt = new Path(tfMtdDir+"/Bin/"+ agents.getName(colID) + TfUtils.TXMTD_BIN_FILE_SUFFIX);
-		BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
-		br.write(colID + TfUtils.TXMTD_SEP + min + TfUtils.TXMTD_SEP + max + TfUtils.TXMTD_SEP + binwidth + TfUtils.TXMTD_SEP + nbins + "\n");
-		br.close();
+		try( BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true))) ) {
+			br.write(colID + TfUtils.TXMTD_SEP + min + TfUtils.TXMTD_SEP + max + TfUtils.TXMTD_SEP + binwidth + TfUtils.TXMTD_SEP + nbins + "\n");
+		}
 	}
 	
 	public void outputTransformationMetadata(String outputDir, FileSystem fs, TfUtils agents) throws IOException {
@@ -822,11 +822,11 @@ public class MVImputeAgent extends Encoder
 	{
 		Path path = new Path( txMtdDir + "/Impute/" + agents.getName(colID) + TfUtils.TXMTD_MV_FILE_SUFFIX);
 		TfUtils.checkValidInputFile(fs, path, true); 
-		
-		BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)));
-		String line = br.readLine();
-		String replacement =  UtilFunctions.unquote(line.split(TfUtils.TXMTD_SEP)[1]);
-		br.close();
+		String replacement = null;
+		try( BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path))) ) {
+			String line = br.readLine();
+			replacement = UtilFunctions.unquote(line.split(TfUtils.TXMTD_SEP)[1]);
+		}
 		
 		return replacement;
 	}
@@ -835,9 +835,10 @@ public class MVImputeAgent extends Encoder
 	{
 		Path path = new Path( txMtdDir + "/Scale/" + agents.getName(colID) + TfUtils.SCALE_FILE_SUFFIX);
 		TfUtils.checkValidInputFile(fs, path, true); 
-		BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)));
-		String line = br.readLine();
-		br.close();
+		String line = null;
+		try( BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path))) ) {
+			line = br.readLine();
+		}
 		
 		return line;
 	}
@@ -892,7 +893,6 @@ public class MVImputeAgent extends Encoder
 					processScalingFile(i, _scnomvList, _scnomvMeanList, _scnomvVarList, fs, tfMtdDir, agents);
 		}
 		else {
-			fs.close();
 			throw new RuntimeException("Path to recode maps must be a directory: " + tfMtdDir);
 		}
 	}

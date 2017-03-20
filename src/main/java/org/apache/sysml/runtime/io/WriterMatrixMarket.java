@@ -71,10 +71,14 @@ public class WriterMatrixMarket extends MatrixWriter
 		Path path = new Path( fname );
 		FileSystem fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
 		
-		FSDataOutputStream writer = fs.create(path);
-		writer.writeBytes("1 1 0");
-		writer.close();
-
+		FSDataOutputStream writer = null;
+		try {
+			writer = fs.create(path);
+			writer.writeBytes("1 1 0");
+		}
+		finally {
+			IOUtilFunctions.closeSilently(writer);
+		}
 		IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, path);
 	}
 

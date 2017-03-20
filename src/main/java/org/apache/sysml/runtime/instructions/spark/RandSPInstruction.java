@@ -30,7 +30,6 @@ import java.util.stream.LongStream;
 
 import org.apache.commons.math3.distribution.PoissonDistribution;
 import org.apache.commons.math3.random.Well1024a;
-import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -387,12 +386,11 @@ public class RandSPInstruction extends UnarySPInstruction
 		else
 		{
 			String path = LibMatrixDatagen.generateUniqueSeedPath(dir);
-			
+			PrintWriter pw = null;
 			try
 			{
 				FileSystem fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
-				FSDataOutputStream fsOut = fs.create(new Path(path));
-				PrintWriter pw = new PrintWriter(fsOut);
+				pw = new PrintWriter(fs.create(new Path(path)));
 				StringBuilder sb = new StringBuilder();
 				for( long i=0; i<numBlocks; i++ ) {
 					sb.append(1 + i/numColBlocks);
@@ -405,11 +403,12 @@ public class RandSPInstruction extends UnarySPInstruction
 					pw.println(sb.toString());
 					sb.setLength(0);
 				}
-				pw.close();
-				fsOut.close();
 			}
 			catch( IOException ex ) {
 				throw new DMLRuntimeException(ex);
+			}
+			finally {
+				IOUtilFunctions.closeSilently(pw);
 			}
 			
 			//for load balancing: degree of parallelism such that ~128MB per partition
@@ -479,20 +478,21 @@ public class RandSPInstruction extends UnarySPInstruction
 		{
 			String path = LibMatrixDatagen.generateUniqueSeedPath(dir);
 			
+			PrintWriter pw = null;
 			try
 			{
 				FileSystem fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
-				FSDataOutputStream fsOut = fs.create(new Path(path));
-				PrintWriter pw = new PrintWriter(fsOut);
+				pw = new PrintWriter(fs.create(new Path(path)));
 				for( long i=0; i<numBlocks; i++ ) {
 					double off = seq_from + seq_incr*i*rowsInBlock;
 					pw.println(off);
 				}
-				pw.close();
-				fsOut.close();
 			}
 			catch( IOException ex ) {
 				throw new DMLRuntimeException(ex);
+			}
+			finally {
+				IOUtilFunctions.closeSilently(pw);
 			}
 			
 			//for load balancing: degree of parallelism such that ~128MB per partition

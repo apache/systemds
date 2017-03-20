@@ -131,48 +131,46 @@ public class DummycodeAgent extends Encoder
 		
 		_dcdColumnMap = new int[numCols];
 
-		Path pt=new Path(txMtdDir+"/Dummycode/" + TfUtils.DCD_FILE_NAME);
-		BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
-		
 		int sum=1;
-		int idx = 0;
-		for(int colID=1; colID <= numCols; colID++) 
-		{
-			if ( _colList != null && idx < _colList.length && _colList[idx] == colID )
+		try( BufferedWriter br=new BufferedWriter(new OutputStreamWriter(
+				fs.create(new Path(txMtdDir+"/Dummycode/" + TfUtils.DCD_FILE_NAME),true))) ) {
+			int idx = 0;
+			for(int colID=1; colID <= numCols; colID++) 
 			{
-				br.write(colID + TfUtils.TXMTD_SEP + "1" + TfUtils.TXMTD_SEP + sum + TfUtils.TXMTD_SEP + (sum+_domainSizes[idx]-1) + "\n");
-				_dcdColumnMap[colID-1] = (sum+_domainSizes[idx]-1)-1;
-
-				for(int i=sum; i <=(sum+_domainSizes[idx]-1); i++)
-					ctypes[i-1] = TfUtils.ColumnTypes.DUMMYCODED;
-				
-				sum += _domainSizes[idx];
-				idx++;
-			}
-			else 
-			{
-				br.write(colID + TfUtils.TXMTD_SEP + "0" + TfUtils.TXMTD_SEP + sum + TfUtils.TXMTD_SEP + sum + "\n");
-				_dcdColumnMap[colID-1] = sum-1;
-				
-				if ( agents.getBinAgent().isApplicable(colID) != -1 )
-					ctypes[sum-1] = TfUtils.ColumnTypes.ORDINAL;	// binned variable results in an ordinal column
-				
-				if ( agents.getRecodeAgent().isApplicable(colID) != -1 )
-					ctypes[sum-1] = TfUtils.ColumnTypes.NOMINAL;
-				
-				sum += 1;
+				if ( _colList != null && idx < _colList.length && _colList[idx] == colID )
+				{
+					br.write(colID + TfUtils.TXMTD_SEP + "1" + TfUtils.TXMTD_SEP + sum + TfUtils.TXMTD_SEP + (sum+_domainSizes[idx]-1) + "\n");
+					_dcdColumnMap[colID-1] = (sum+_domainSizes[idx]-1)-1;
+	
+					for(int i=sum; i <=(sum+_domainSizes[idx]-1); i++)
+						ctypes[i-1] = TfUtils.ColumnTypes.DUMMYCODED;
+					
+					sum += _domainSizes[idx];
+					idx++;
+				}
+				else 
+				{
+					br.write(colID + TfUtils.TXMTD_SEP + "0" + TfUtils.TXMTD_SEP + sum + TfUtils.TXMTD_SEP + sum + "\n");
+					_dcdColumnMap[colID-1] = sum-1;
+					
+					if ( agents.getBinAgent().isApplicable(colID) != -1 )
+						ctypes[sum-1] = TfUtils.ColumnTypes.ORDINAL;	// binned variable results in an ordinal column
+					
+					if ( agents.getRecodeAgent().isApplicable(colID) != -1 )
+						ctypes[sum-1] = TfUtils.ColumnTypes.NOMINAL;
+					
+					sum += 1;
+				}
 			}
 		}
-		br.close();
 
 		// Write coltypes.csv
-		pt=new Path(txMtdDir + File.separator + TfUtils.TXMTD_COLTYPES);
-		br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
-		
-		br.write(ctypes[0].toID() + "");
-		for(int i = 1; i < _dummycodedLength; i++) 
-			br.write( TfUtils.TXMTD_SEP + ctypes[i].toID() );
-		br.close();
+		try(BufferedWriter br=new BufferedWriter(new OutputStreamWriter(
+				fs.create(new Path(txMtdDir + File.separator + TfUtils.TXMTD_COLTYPES),true))) ) {
+			br.write(ctypes[0].toID() + "");
+			for(int i = 1; i < _dummycodedLength; i++) 
+				br.write( TfUtils.TXMTD_SEP + ctypes[i].toID() );
+		}
 		
 		return sum-1;
 	}

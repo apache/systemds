@@ -38,6 +38,7 @@ import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.sysml.lops.Lop;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.Pair;
@@ -221,44 +222,46 @@ public class RecodeAgent extends Encoder
 		
 		Path pt=new Path(outputDir+"/Recode/"+ agents.getName(colID) + TfUtils.TXMTD_RCD_MAP_SUFFIX);
 		BufferedWriter br=null;
-		if(isRecoded)
-			br = new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));		
-
-		// remove NA strings
-		if ( agents.getNAStrings() != null)
-			for(String naword : agents.getNAStrings()) 
-				map.remove(naword);
-		
-		if(fromCP)
-			map = handleMVConstant(colID, agents,  map);
-		
-		if ( map.size() == 0 ) 
-			throw new RuntimeException("Can not proceed since \"" + agents.getName(colID) + "\" (id=" + colID + ") contains only the missing values, and not a single valid value -- set imputation method to \"constant\".");
-		
-		// Order entries by category (string) value
-		List<String> newNames = new ArrayList<String>(map.keySet());
-		Collections.sort(newNames);
-
-		for(String w : newNames) { //map.keySet()) {
-				count = map.get(w);
-				++rcdIndex;
-				
-				// output (w, count, rcdIndex)
-				if(br != null)		
-					br.write(UtilFunctions.quote(w) + TfUtils.TXMTD_SEP + rcdIndex + TfUtils.TXMTD_SEP + count  + "\n");
-				
-				if(maxCount < count) {
-					maxCount = count;
-					mode = w;
-					modeIndex = rcdIndex;
-				}
-				
-				// Replace count with recode index (useful when invoked from CP)
-				map.put(w, (long)rcdIndex);
+		try { 
+			if(isRecoded)
+				br = new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));		
+	
+			// remove NA strings
+			if ( agents.getNAStrings() != null)
+				for(String naword : agents.getNAStrings()) 
+					map.remove(naword);
+			
+			if(fromCP)
+				map = handleMVConstant(colID, agents,  map);
+			
+			if ( map.size() == 0 ) 
+				throw new RuntimeException("Can not proceed since \"" + agents.getName(colID) + "\" (id=" + colID + ") contains only the missing values, and not a single valid value -- set imputation method to \"constant\".");
+			
+			// Order entries by category (string) value
+			List<String> newNames = new ArrayList<String>(map.keySet());
+			Collections.sort(newNames);
+	
+			for(String w : newNames) { //map.keySet()) {
+					count = map.get(w);
+					++rcdIndex;
+					
+					// output (w, count, rcdIndex)
+					if(br != null)		
+						br.write(UtilFunctions.quote(w) + TfUtils.TXMTD_SEP + rcdIndex + TfUtils.TXMTD_SEP + count  + "\n");
+					
+					if(maxCount < count) {
+						maxCount = count;
+						mode = w;
+						modeIndex = rcdIndex;
+					}
+					
+					// Replace count with recode index (useful when invoked from CP)
+					map.put(w, (long)rcdIndex);
+			}
 		}
-		
-		if(br != null)		
-			br.close();
+		finally {
+			IOUtilFunctions.closeSilently(br);
+		}
 		
 		if ( mode == null ) {
 			mode = "";
@@ -269,23 +272,23 @@ public class RecodeAgent extends Encoder
 		{
 			// output mode
 			pt=new Path(outputDir+"/Recode/"+ agents.getName(colID) + TfUtils.MODE_FILE_SUFFIX);
-			br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
-			br.write(UtilFunctions.quote(mode) + "," + modeIndex + "," + maxCount );
-			br.close();
+			try(BufferedWriter br2=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true))) ) {
+				br2.write(UtilFunctions.quote(mode) + "," + modeIndex + "," + maxCount );
+			}
 		
 			// output number of distinct values
 			pt=new Path(outputDir+"/Recode/"+ agents.getName(colID) + TfUtils.TXMTD_RCD_DISTINCT_SUFFIX);
-			br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
-			br.write(""+map.size());
-			br.close();
+			try(BufferedWriter br2=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true))) ) {
+				br2.write(""+map.size());
+			}
 		}
 		
 		if (isModeImputed) 
 		{
 			pt=new Path(outputDir+"/Impute/"+ agents.getName(colID) + TfUtils.TXMTD_MV_FILE_SUFFIX);
-			br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
-			br.write(colID + "," + UtilFunctions.quote(mode));
-			br.close();
+			try( BufferedWriter br2=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)))) {
+				br2.write(colID + "," + UtilFunctions.quote(mode));
+			}
 		}
 		
 	}
@@ -347,20 +350,18 @@ public class RecodeAgent extends Encoder
 				HashMap<String,String> map = new HashMap<String,String>();
 				Pair<String,String> pair = new Pair<String,String>();
 				
-				BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)));
 				String line = null;
-				
-				// Example line to parse: "WN (1)67492",1,61975
-				while((line=br.readLine())!=null) {
-					DecoderRecode.parseRecodeMapEntry(line, pair);
-					map.put(pair.getKey(), pair.getValue());
+				try( BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path))) ) {
+					// Example line to parse: "WN (1)67492",1,61975
+					while((line=br.readLine())!=null) {
+						DecoderRecode.parseRecodeMapEntry(line, pair);
+						map.put(pair.getKey(), pair.getValue());
+					}
 				}
-				br.close();
 				_finalMaps.put(colID, map);
 			}
 		}
 		else {
-			fs.close();
 			throw new RuntimeException("Path to recode maps must be a directory: " + txMtdDir);
 		}
 	}	

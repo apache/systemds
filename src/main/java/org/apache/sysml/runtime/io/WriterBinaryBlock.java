@@ -78,15 +78,20 @@ public class WriterBinaryBlock extends MatrixWriter
 		Path path = new Path( fname );
 		FileSystem fs = FileSystem.get(job);
 
-		SequenceFile.Writer writer = new SequenceFile.Writer(fs, job, path,
-				                        MatrixIndexes.class, MatrixBlock.class);
+		SequenceFile.Writer writer = null;
+		try {
+			writer = new SequenceFile.Writer(fs, job, path,
+					                        MatrixIndexes.class, MatrixBlock.class);
+			
+			MatrixIndexes index = new MatrixIndexes(1, 1);
+			MatrixBlock block = new MatrixBlock((int)Math.min(rlen, brlen),
+												(int)Math.min(clen, bclen), true);
+			writer.append(index, block);
+		}
+		finally {
+			IOUtilFunctions.closeSilently(writer);
+		}
 		
-		MatrixIndexes index = new MatrixIndexes(1, 1);
-		MatrixBlock block = new MatrixBlock((int)Math.min(rlen, brlen),
-											(int)Math.min(clen, bclen), true);
-		writer.append(index, block);
-		writer.close();
-
 		IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, path);
 	}
 

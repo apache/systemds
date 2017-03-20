@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.util.FastStringTokenizer;
 
@@ -61,10 +62,8 @@ public class StagingFileUtils
 				sb.setLength(0);
 			}
 		}
-		finally
-		{
-			if( out != null )
-				out.close();	
+		finally {
+			IOUtilFunctions.closeSilently(out);
 		}	
 	}
 
@@ -88,10 +87,8 @@ public class StagingFileUtils
 				sb.setLength(0);
 			}
 		}
-		finally
-		{
-			if( out != null )
-				out.close();	
+		finally {
+			IOUtilFunctions.closeSilently(out);
 		}	
 	}
 
@@ -151,13 +148,6 @@ public class StagingFileUtils
 		
 		return len;
 	}
-	
-	public static void closeKeyMap( BufferedReader in ) 
-		throws IOException
-	{
-		if( in != null )
-			in.close();		
-	}
 
 	public static LinkedList<Cell> readCellListFromLocal( String fname ) 
 		throws IOException
@@ -179,10 +169,8 @@ public class StagingFileUtils
 				buffer.addLast( c );
 			}
 		}
-		finally
-		{
-			if( in != null )
-				in.close();
+		finally {
+			IOUtilFunctions.closeSilently(in);
 		}
    		
 		return buffer;
@@ -232,10 +220,8 @@ public class StagingFileUtils
 				tmp.recomputeNonZeros();
 			}
 		}
-		finally
-		{
-			if( in != null )
-				in.close();
+		finally {
+			IOUtilFunctions.closeSilently(in);
 		}
 			
 		//finally change internal representation if required

@@ -29,7 +29,6 @@ import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -277,18 +276,17 @@ public class DMLYarnClient
 		//(runtime plan migration during resource reoptimizations now needs to use qualified names
 		//for shipping/reading intermediates) TODO modify resource reoptimizer on prototype integration.
 		Path confPath = new Path(hdfsWD, DML_CONFIG_NAME);
-		FSDataOutputStream fout = fs.create(confPath, true);
-		//_dmlConfig.makeQualifiedScratchSpacePath(); 
-		fout.writeBytes(_dmlConfig.serializeDMLConfig() + "\n");
-		fout.close();
+		try( FSDataOutputStream fout = fs.create(confPath, true) ) {
+			fout.writeBytes(_dmlConfig.serializeDMLConfig() + "\n");
+		}
 		_hdfsDMLConfig = confPath.makeQualified(fs).toString();
 		LOG.debug("DML config written to HDFS file: "+_hdfsDMLConfig+"");
 
 		//serialize the dml script to HDFS file
 		Path scriptPath = new Path(hdfsWD, DML_SCRIPT_NAME);
-		FSDataOutputStream fout2 = fs.create(scriptPath, true);
-		fout2.writeBytes(_dmlScript);
-		fout2.close();
+		try( FSDataOutputStream fout2 = fs.create(scriptPath, true) ) {
+			fout2.writeBytes(_dmlScript);
+		}
 		_hdfsDMLScript = scriptPath.makeQualified(fs).toString();
 		LOG.debug("DML script written to HDFS file: "+_hdfsDMLScript+"");
 		
@@ -524,10 +522,9 @@ public class DMLYarnClient
 			FileSystem fs = FileSystem.get(yconf);
 			if( fs.exists(msgPath) )
 			{
-				FSDataInputStream fin = fs.open(msgPath);
-				BufferedReader br = new BufferedReader(new InputStreamReader(fin));
-				ret = br.readLine();
-				fin.close();
+				try( BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(msgPath))) ) {
+					ret = br.readLine();
+				}
 				LOG.debug("Stop message read from HDFS file "+msgPath+": "+ret );
 			}
 		}

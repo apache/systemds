@@ -36,6 +36,7 @@ import org.apache.hadoop.mapred.Reporter;
 import org.apache.wink.json4j.JSONException;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.mr.CSVReblockInstruction;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.CSVReblockMR;
 import org.apache.sysml.runtime.matrix.CSVReblockMR.OffsetCount;
 import org.apache.sysml.runtime.matrix.data.TaggedFirstSecondIndexes;
@@ -75,14 +76,19 @@ public class ApplyTfBBMapper extends MapperBase implements Mapper<LongWritable, 
 			Path thisPath=new Path(job.get(MRConfigurationNames.MR_MAP_INPUT_FILE)).makeQualified(fs);
 			String thisfile=thisPath.toString();
 
-			SequenceFile.Reader reader = new SequenceFile.Reader(fs, p, job);
-			while (reader.next(key, value)) {
-				// "key" needn't be checked since the offset file has information about a single CSV input (the raw data file)
-				if(thisfile.equals(value.filename))
-					offsetMap.put(value.fileOffset, value.count);
+			SequenceFile.Reader reader = null;
+			try {
+				reader = new SequenceFile.Reader(fs, p, job);
+				while (reader.next(key, value)) {
+					// "key" needn't be checked since the offset file has information about a single CSV input (the raw data file)
+					if(thisfile.equals(value.filename))
+						offsetMap.put(value.fileOffset, value.count);
+				}
 			}
-			reader.close();
-
+			finally {
+				IOUtilFunctions.closeSilently(reader);
+			}
+			
 			idxRow = new CSVReblockMapper.IndexedBlockRow();
 			int maxBclen=0;
 		

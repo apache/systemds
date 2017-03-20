@@ -78,6 +78,7 @@ import org.apache.sysml.runtime.instructions.spark.functions.CopyTextInputFuncti
 import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDConverterUtils;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils;
 import org.apache.sysml.runtime.instructions.spark.utils.SparkUtils;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
 import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
@@ -1263,8 +1264,8 @@ public class MLContext {
 			if(s1.hasNextInt()) return 1;
 		}
 		finally {
-			if(s1 != null) s1.close();
-			if(s2 != null) s2.close();
+			IOUtilFunctions.closeSilently(s1);
+			IOUtilFunctions.closeSilently(s2);
 		}
 		
 		return 0;

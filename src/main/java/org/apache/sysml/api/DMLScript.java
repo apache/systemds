@@ -73,6 +73,7 @@ import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
@@ -476,10 +477,8 @@ public class DMLScript
 				LOG.error("Failed to read the script from the file system", ex);
 				throw ex;
 			}
-			finally 
-			{
-				if( in != null )
-					in.close();
+			finally {
+				IOUtilFunctions.closeSilently(in);
 			}
 			
 			dmlScriptStr = sb.toString();

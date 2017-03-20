@@ -62,6 +62,7 @@ import org.apache.sysml.runtime.functionobjects.SwapIndex;
 import org.apache.sysml.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysml.runtime.instructions.cp.KahanObject;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.LibMatrixBincell.BinaryAccessType;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
@@ -1824,9 +1825,14 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		{
 			//workaround because sequencefile.reader.next(key, value) does not yet support serialization framework
 			DataInputBuffer din = (DataInputBuffer)in;
-			MatrixBlockDataInput mbin = new FastBufferedDataInputStream(din);
-			nonZeros = mbin.readDoubleArray(limit, denseBlock);			
-			((FastBufferedDataInputStream)mbin).close();
+			FastBufferedDataInputStream mbin = null;
+			try {
+				mbin = new FastBufferedDataInputStream(din);
+				nonZeros = mbin.readDoubleArray(limit, denseBlock);	
+			}
+			finally {
+				IOUtilFunctions.closeSilently(mbin);
+			}
 		}
 		else //default deserialize
 		{
@@ -1854,9 +1860,14 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		{
 			//workaround because sequencefile.reader.next(key, value) does not yet support serialization framework
 			DataInputBuffer din = (DataInputBuffer)in;
-			MatrixBlockDataInput mbin = new FastBufferedDataInputStream(din);
-			nonZeros = mbin.readSparseRows(rlen, sparseBlock);		
-			((FastBufferedDataInputStream)mbin).close();
+			FastBufferedDataInputStream mbin = null;
+			try {
+				mbin = new FastBufferedDataInputStream(din);
+				nonZeros = mbin.readSparseRows(rlen, sparseBlock);	
+			}
+			finally {
+				IOUtilFunctions.closeSilently(mbin);
+			}
 		}
 		else //default deserialize
 		{

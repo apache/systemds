@@ -49,6 +49,7 @@ import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.parfor.util.Cell;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysml.runtime.controlprogram.parfor.util.StagingFileUtils;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.io.MatrixReader;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
@@ -254,18 +255,14 @@ public class ResultMergeLocalFile extends ResultMerge
 								out.write( valueStr+"\n" );
 							}
 						}
-						finally
-						{
-							if( reader != null )
-								reader.close();
+						finally {
+							IOUtilFunctions.closeSilently(reader);
 						}
 					}
 				}
 			}
-			finally
-			{
-				if( out != null )
-					out.close();
+			finally {
+				IOUtilFunctions.closeSilently(out);
 			}
 		}
 		catch(Exception ex)
@@ -353,18 +350,14 @@ public class ResultMergeLocalFile extends ResultMerge
 								out.append(key, value);
 							}
 						}
-						finally
-						{
-							if( reader != null )
-								reader.close();
+						finally {
+							IOUtilFunctions.closeSilently(reader);
 						}
 					}					
 				}	
 			}
-			finally
-			{
-				if( out != null )
-					out.close();
+			finally {
+				IOUtilFunctions.closeSilently(out);
 			}
 		}
 		catch(Exception ex)
@@ -500,10 +493,8 @@ public class ResultMergeLocalFile extends ResultMerge
 					}
 				}
 			}
-			finally
-			{
-				if( reader != null )
-					reader.close();
+			finally {
+				IOUtilFunctions.closeSilently(reader);
 			}
 		}
 	}
@@ -563,10 +554,8 @@ public class ResultMergeLocalFile extends ResultMerge
 					buffer.clear();
 				}
 			}
-			finally
-			{
-				if( reader != null )
-					reader.close();
+			finally {
+				IOUtilFunctions.closeSilently(reader);
 			}
 		}
 	}
@@ -611,10 +600,8 @@ public class ResultMergeLocalFile extends ResultMerge
 					buffer.clear();
 				}
 			}
-			finally
-			{
-				if( reader != null )
-					reader.close();
+			finally {
+				IOUtilFunctions.closeSilently(reader);
 			}
 		}
 	}
@@ -749,10 +736,8 @@ public class ResultMergeLocalFile extends ResultMerge
 					writer.append(indexes, mb);
 				}	
 		}
-		finally
-		{
-			if( writer != null )
-				writer.close();
+		finally {
+			IOUtilFunctions.closeSilently(writer);
 		}
 	}
 
@@ -887,10 +872,8 @@ public class ResultMergeLocalFile extends ResultMerge
 			if( !written )
 				out.write("1 1 0\n");
 		}
-		finally
-		{
-			if( out != null )
-				out.close();
+		finally {
+			IOUtilFunctions.closeSilently(out);
 		}
 	}
 
@@ -1017,10 +1000,8 @@ public class ResultMergeLocalFile extends ResultMerge
 			if( !written )
 				out.append(indexes,cell);
 		}
-		finally
-		{
-			if( out != null )
-				out.close();
+		finally {
+			IOUtilFunctions.closeSilently(out);
 		}
 	}
 

@@ -104,15 +104,15 @@ public class TestUtils
 			
 			Path compareFile = new Path(expectedFile);
 			FSDataInputStream fsin = fs.open(compareFile);
-			BufferedReader compareIn = new BufferedReader(new InputStreamReader(fsin));
-			lineExpected = compareIn.readLine();
-			compareIn.close();
+			try( BufferedReader compareIn = new BufferedReader(new InputStreamReader(fsin)) ) {
+				lineExpected = compareIn.readLine();
+			}
 			
 			Path outFile = new Path(actualFile);
 			FSDataInputStream fsout = fs.open(outFile);
-			BufferedReader outIn = new BufferedReader(new InputStreamReader(fsout));
-			lineActual = outIn.readLine();
-			outIn.close();
+			try( BufferedReader outIn = new BufferedReader(new InputStreamReader(fsout)) ) {
+				lineActual = outIn.readLine();
+			}
 
 			assertTrue(expectedFile + ": " + lineExpected + " vs " + actualFile + ": " + lineActual, 
 					   lineActual.equals(lineExpected));
@@ -130,22 +130,22 @@ public class TestUtils
 	public static void compareDMLMatrixWithJavaMatrixRowsOutOfOrder(String expectedFile, String actualDir, double epsilon)
 	{
 		try {
+			HashMap<CellIndex, Double> expectedValues = new HashMap<CellIndex, Double>();
+			
 			FileSystem fs = FileSystem.get(conf);
 			Path outDirectory = new Path(actualDir);
 			Path compareFile = new Path(expectedFile);
 			FSDataInputStream fsin = fs.open(compareFile);
-			BufferedReader compareIn = new BufferedReader(new InputStreamReader(fsin));
-			
-			HashMap<CellIndex, Double> expectedValues = new HashMap<CellIndex, Double>();
-			String line;
-			while ((line = compareIn.readLine()) != null) {
-				StringTokenizer st = new StringTokenizer(line, " ");
-				int i = Integer.parseInt(st.nextToken());
-				int j = Integer.parseInt(st.nextToken());
-				double v = Double.parseDouble(st.nextToken());
-				expectedValues.put(new CellIndex(i, j), v);
+			try( BufferedReader compareIn = new BufferedReader(new InputStreamReader(fsin)) ) {
+				String line;
+				while ((line = compareIn.readLine()) != null) {
+					StringTokenizer st = new StringTokenizer(line, " ");
+					int i = Integer.parseInt(st.nextToken());
+					int j = Integer.parseInt(st.nextToken());
+					double v = Double.parseDouble(st.nextToken());
+					expectedValues.put(new CellIndex(i, j), v);
+				}
 			}
-			compareIn.close();
 
 			HashMap<CellIndex, Double> actualValues = new HashMap<CellIndex, Double>();
 
@@ -153,16 +153,16 @@ public class TestUtils
 
 			for (FileStatus file : outFiles) {
 				FSDataInputStream fsout = fs.open(file.getPath());
-				BufferedReader outIn = new BufferedReader(new InputStreamReader(fsout));
-				
-				while ((line = outIn.readLine()) != null) {
-					StringTokenizer st = new StringTokenizer(line, " ");
-					int i = Integer.parseInt(st.nextToken());
-					int j = Integer.parseInt(st.nextToken());
-					double v = Double.parseDouble(st.nextToken());
-					actualValues.put(new CellIndex(i, j), v);
+				try( BufferedReader outIn = new BufferedReader(new InputStreamReader(fsout)) ) {
+					String line = null;
+					while ((line = outIn.readLine()) != null) {
+						StringTokenizer st = new StringTokenizer(line, " ");
+						int i = Integer.parseInt(st.nextToken());
+						int j = Integer.parseInt(st.nextToken());
+						double v = Double.parseDouble(st.nextToken());
+						actualValues.put(new CellIndex(i, j), v);
+					}
 				}
-				outIn.close();
 			}
 
 			ArrayList<Double> e_list = new ArrayList <Double>();
@@ -213,56 +213,57 @@ public class TestUtils
 			Path outDirectory = new Path(actualDir);
 			Path compareFile = new Path(expectedFile);
 			FSDataInputStream fsin = fs.open(compareFile);
-			BufferedReader compareIn = new BufferedReader(new InputStreamReader(fsin));
 			
 			HashMap<CellIndex, Double> expectedValues = new HashMap<CellIndex, Double>();
+			String[] expRcn = null;
 			
-			// skip the header of Matrix Market file
-			String line = compareIn.readLine();
-			
-			// rows, cols and nnz
-			line = compareIn.readLine();
-			String [] expRcn = line.split(" ");
-			
-			while ((line = compareIn.readLine()) != null) {
-				StringTokenizer st = new StringTokenizer(line, " ");
-				int i = Integer.parseInt(st.nextToken());
-				int j = Integer.parseInt(st.nextToken());
-				double v = Double.parseDouble(st.nextToken());
-				expectedValues.put(new CellIndex(i, j), v);
+			try(BufferedReader compareIn = new BufferedReader(new InputStreamReader(fsin)) ) {
+				// skip the header of Matrix Market file
+				String line = compareIn.readLine();
+				
+				// rows, cols and nnz
+				line = compareIn.readLine();
+				expRcn = line.split(" ");
+				
+				while ((line = compareIn.readLine()) != null) {
+					StringTokenizer st = new StringTokenizer(line, " ");
+					int i = Integer.parseInt(st.nextToken());
+					int j = Integer.parseInt(st.nextToken());
+					double v = Double.parseDouble(st.nextToken());
+					expectedValues.put(new CellIndex(i, j), v);
+				}
 			}
-			compareIn.close();
-
+			
 			HashMap<CellIndex, Double> actualValues = new HashMap<CellIndex, Double>();
 
 			FSDataInputStream fsout = fs.open(outDirectory);
-			BufferedReader outIn = new BufferedReader(new InputStreamReader(fsout));
-			
-			//skip MM header
-			line = outIn.readLine();
-			
-			//rows, cols and nnz
-			line = outIn.readLine();
-			String[] rcn = line.split(" ");
-			
-			if (Integer.parseInt(expRcn[0]) != Integer.parseInt(rcn[0])) {
-				System.out.println(" Rows mismatch: expected " + Integer.parseInt(expRcn[0]) + ", actual " + Integer.parseInt(rcn[0]));
+			try( BufferedReader outIn = new BufferedReader(new InputStreamReader(fsout)) ) {
+					
+				//skip MM header
+				String line = outIn.readLine();
+				
+				//rows, cols and nnz
+				line = outIn.readLine();
+				String[] rcn = line.split(" ");
+				
+				if (Integer.parseInt(expRcn[0]) != Integer.parseInt(rcn[0])) {
+					System.out.println(" Rows mismatch: expected " + Integer.parseInt(expRcn[0]) + ", actual " + Integer.parseInt(rcn[0]));
+				}
+				else if (Integer.parseInt(expRcn[1]) != Integer.parseInt(rcn[1])) {
+					System.out.println(" Cols mismatch: expected " + Integer.parseInt(expRcn[1]) + ", actual " + Integer.parseInt(rcn[1]));
+				}
+				else if (Integer.parseInt(expRcn[2]) != Integer.parseInt(rcn[2])) {
+					System.out.println(" Nnz mismatch: expected " + Integer.parseInt(expRcn[2]) + ", actual " + Integer.parseInt(rcn[2]));
+				}
+				
+				while ((line = outIn.readLine()) != null) {
+					StringTokenizer st = new StringTokenizer(line, " ");
+					int i = Integer.parseInt(st.nextToken());
+					int j = Integer.parseInt(st.nextToken());
+					double v = Double.parseDouble(st.nextToken());
+					actualValues.put(new CellIndex(i, j), v);
+				}
 			}
-			else if (Integer.parseInt(expRcn[1]) != Integer.parseInt(rcn[1])) {
-				System.out.println(" Cols mismatch: expected " + Integer.parseInt(expRcn[1]) + ", actual " + Integer.parseInt(rcn[1]));
-			}
-			else if (Integer.parseInt(expRcn[2]) != Integer.parseInt(rcn[2])) {
-				System.out.println(" Nnz mismatch: expected " + Integer.parseInt(expRcn[2]) + ", actual " + Integer.parseInt(rcn[2]));
-			}
-			
-			while ((line = outIn.readLine()) != null) {
-				StringTokenizer st = new StringTokenizer(line, " ");
-				int i = Integer.parseInt(st.nextToken());
-				int j = Integer.parseInt(st.nextToken());
-				double v = Double.parseDouble(st.nextToken());
-				actualValues.put(new CellIndex(i, j), v);
-			}
-			outIn.close();
 			
 
 			int countErrors = 0;
@@ -305,35 +306,36 @@ public class TestUtils
 			Path outDirectory = new Path(actualDir);
 			Path compareFile = new Path(expectedFile);
 			FSDataInputStream fsin = fs.open(compareFile);
-			BufferedReader compareIn = new BufferedReader(new InputStreamReader(fsin));
 			
 			HashMap<CellIndex, Double> expectedValues = new HashMap<CellIndex, Double>();
-			String line;
-			while ((line = compareIn.readLine()) != null) {
-				StringTokenizer st = new StringTokenizer(line, " ");
-				int i = Integer.parseInt(st.nextToken());
-				int j = Integer.parseInt(st.nextToken());
-				double v = Double.parseDouble(st.nextToken());
-				expectedValues.put(new CellIndex(i, j), v);
+			
+			try( BufferedReader compareIn = new BufferedReader(new InputStreamReader(fsin)) ) {
+				String line;
+				while ((line = compareIn.readLine()) != null) {
+					StringTokenizer st = new StringTokenizer(line, " ");
+					int i = Integer.parseInt(st.nextToken());
+					int j = Integer.parseInt(st.nextToken());
+					double v = Double.parseDouble(st.nextToken());
+					expectedValues.put(new CellIndex(i, j), v);
+				}
 			}
-			compareIn.close();
-
+			
 			HashMap<CellIndex, Double> actualValues = new HashMap<CellIndex, Double>();
 
 			FileStatus[] outFiles = fs.listStatus(outDirectory);
 
 			for (FileStatus file : outFiles) {
 				FSDataInputStream fsout = fs.open(file.getPath());
-				BufferedReader outIn = new BufferedReader(new InputStreamReader(fsout));
-				
-				while ((line = outIn.readLine()) != null) {
-					StringTokenizer st = new StringTokenizer(line, " ");
-					int i = Integer.parseInt(st.nextToken());
-					int j = Integer.parseInt(st.nextToken());
-					double v = Double.parseDouble(st.nextToken());
-					actualValues.put(new CellIndex(i, j), v);
+				try( BufferedReader outIn = new BufferedReader(new InputStreamReader(fsout)) ) {
+					String line = null;
+					while ((line = outIn.readLine()) != null) {
+						StringTokenizer st = new StringTokenizer(line, " ");
+						int i = Integer.parseInt(st.nextToken());
+						int j = Integer.parseInt(st.nextToken());
+						double v = Double.parseDouble(st.nextToken());
+						actualValues.put(new CellIndex(i, j), v);
+					}
 				}
-				outIn.close();
 			}
 
 			int countErrors = 0;
@@ -377,15 +379,15 @@ public class TestUtils
 			FileStatus[] outFiles = fs.listStatus(outDirectory);
 			for (FileStatus file : outFiles) {
 				FSDataInputStream outIn = fs.open(file.getPath());
-				BufferedReader reader = new BufferedReader(new InputStreamReader(outIn));
-				while ((line = reader.readLine()) != null) {
-					StringTokenizer st = new StringTokenizer(line, " ");
-					int i = Integer.parseInt(st.nextToken());
-					int j = Integer.parseInt(st.nextToken());
-					double v = Double.parseDouble(st.nextToken());
-					expectedValues.put(new CellIndex(i,j), v);
+				try(BufferedReader reader = new BufferedReader(new InputStreamReader(outIn)) ) {
+					while ((line = reader.readLine()) != null) {
+						StringTokenizer st = new StringTokenizer(line, " ");
+						int i = Integer.parseInt(st.nextToken());
+						int j = Integer.parseInt(st.nextToken());
+						double v = Double.parseDouble(st.nextToken());
+						expectedValues.put(new CellIndex(i,j), v);
+					}
 				}
-				outIn.close();
 			}
 		} 
 		catch (IOException e) {
@@ -471,12 +473,11 @@ public class TestUtils
 			FileStatus[] outFiles = fs.listStatus(outDirectory);
 			for (FileStatus file : outFiles) {
 				FSDataInputStream fsout = fs.open(file.getPath());
-				BufferedReader outIn = new BufferedReader(new InputStreamReader(fsout));
-				
-				while ((line = outIn.readLine()) != null) { // only 1 scalar value in file
-					d = Double.parseDouble(line);
+				try(BufferedReader outIn = new BufferedReader(new InputStreamReader(fsout))){
+					while ((line = outIn.readLine()) != null) { // only 1 scalar value in file
+						d = Double.parseDouble(line);
+					}
 				}
-				outIn.close();
 			}
 			return d;
 		} catch (IOException e) {
@@ -495,12 +496,11 @@ public class TestUtils
 			FileStatus[] outFiles = fs.listStatus(outDirectory);
 			for (FileStatus file : outFiles) {
 				FSDataInputStream fsout = fs.open(file.getPath());
-				BufferedReader outIn = new BufferedReader(new InputStreamReader(fsout));
-				
-				while ((line = outIn.readLine()) != null) { // only 1 scalar value in file
-					b = Boolean.valueOf(Boolean.parseBoolean(line));
+				try(BufferedReader outIn = new BufferedReader(new InputStreamReader(fsout))) {
+					while ((line = outIn.readLine()) != null) { // only 1 scalar value in file
+						b = Boolean.valueOf(Boolean.parseBoolean(line));
+					}
 				}
-				outIn.close();
 			}
 			return b.booleanValue();
 		} catch (IOException e) {
@@ -518,9 +518,9 @@ public class TestUtils
 			FileStatus[] outFiles = fs.listStatus(outDirectory);
 			for (FileStatus file : outFiles) {
 				FSDataInputStream fsout = fs.open(file.getPath());
-				InputStreamReader is = new InputStreamReader(fsout);
-				sb.append(IOUtils.toString(is));
-				is.close();
+				try(InputStreamReader is = new InputStreamReader(fsout)){
+					sb.append(IOUtils.toString(is));
+				}
 			}
 			return sb.toString();
 		} catch (IOException e) {
@@ -542,12 +542,12 @@ public class TestUtils
 	public static Double readRScalar(String filePath) {
 		try {
 			double d = Double.NaN;
-			BufferedReader compareIn = new BufferedReader(new FileReader(filePath));
-			String line;
-			while ((line = compareIn.readLine()) != null) { // only 1 scalar value in file
-				d = Double.parseDouble(line);
+			try(BufferedReader compareIn = new BufferedReader(new FileReader(filePath))) {
+				String line;
+				while ((line = compareIn.readLine()) != null) { // only 1 scalar value in file
+					d = Double.parseDouble(line);
+				}
 			}
-			compareIn.close();
 			return d;
 		} catch (IOException e) {
 			assertTrue("could not read from file " + filePath, false);
@@ -993,36 +993,36 @@ public class TestUtils
 		try {
 			FileSystem fs = FileSystem.get(conf);
 			Path outDirectory = new Path(hdfsDir);
-			BufferedReader compareIn = new BufferedReader(new FileReader(rFile));
 			HashMap<CellIndex, Double> expectedValues = new HashMap<CellIndex, Double>();
 			HashMap<CellIndex, Double> actualValues = new HashMap<CellIndex, Double>();
-			String line;
-			// skip both R header lines
-			compareIn.readLine();
-			compareIn.readLine();
-			while ((line = compareIn.readLine()) != null) {
-				StringTokenizer st = new StringTokenizer(line, " ");
-				int i = Integer.parseInt(st.nextToken());
-				int j = Integer.parseInt(st.nextToken());
-				double v = Double.parseDouble(st.nextToken());
-				expectedValues.put(new CellIndex(i, j), v);
-			}
-			compareIn.close();
-
-			FileStatus[] outFiles = fs.listStatus(outDirectory);
-
-			for (FileStatus file : outFiles) {
-				FSDataInputStream fsout = fs.open(file.getPath());
-				BufferedReader outIn = new BufferedReader(new InputStreamReader(fsout));
-				
-				while ((line = outIn.readLine()) != null) {
+			try(BufferedReader compareIn = new BufferedReader(new FileReader(rFile))) {
+				String line;
+				// skip both R header lines
+				compareIn.readLine();
+				compareIn.readLine();
+				while ((line = compareIn.readLine()) != null) {
 					StringTokenizer st = new StringTokenizer(line, " ");
 					int i = Integer.parseInt(st.nextToken());
 					int j = Integer.parseInt(st.nextToken());
 					double v = Double.parseDouble(st.nextToken());
-					actualValues.put(new CellIndex(i, j), v);
+					expectedValues.put(new CellIndex(i, j), v);
 				}
-				outIn.close();
+			}
+			
+			FileStatus[] outFiles = fs.listStatus(outDirectory);
+
+			for (FileStatus file : outFiles) {
+				FSDataInputStream fsout = fs.open(file.getPath());
+				try(BufferedReader outIn = new BufferedReader(new InputStreamReader(fsout))) {
+					String line = null;
+					while ((line = outIn.readLine()) != null) {
+						StringTokenizer st = new StringTokenizer(line, " ");
+						int i = Integer.parseInt(st.nextToken());
+						int j = Integer.parseInt(st.nextToken());
+						double v = Double.parseDouble(st.nextToken());
+						actualValues.put(new CellIndex(i, j), v);
+					}
+				}
 			}
 
 			int countErrors = 0;
@@ -1099,8 +1099,24 @@ public class TestUtils
 				FileStatus[] outFiles = fs.listStatus(outDirectory);
 				for (FileStatus file : outFiles) {
 					FSDataInputStream fsout = fs.open(file.getPath());
-					BufferedReader outIn = new BufferedReader(new InputStreamReader(fsout));
-					
+					try( BufferedReader outIn = new BufferedReader(new InputStreamReader(fsout)) ){
+						String line;
+						while ((line = outIn.readLine()) != null) {
+							String[] rcv = line.split(" ");
+							long row = Long.parseLong(rcv[0]);
+							long col = Long.parseLong(rcv[1]);
+							double value = Double.parseDouble(rcv[2]);
+							assertTrue("invalid row index", (row > 0 && row <= rows));
+							assertTrue("invlaid column index", (col > 0 && col <= cols));
+							assertTrue("invalid value", ((value >= min && value <= max) || value == 0));
+						}
+					}
+				}
+			}
+			else
+			{
+				FSDataInputStream fsout = fs.open(outDirectory);
+				try(BufferedReader outIn = new BufferedReader(new InputStreamReader(fsout))) {
 					String line;
 					while ((line = outIn.readLine()) != null) {
 						String[] rcv = line.split(" ");
@@ -1111,25 +1127,7 @@ public class TestUtils
 						assertTrue("invlaid column index", (col > 0 && col <= cols));
 						assertTrue("invalid value", ((value >= min && value <= max) || value == 0));
 					}
-					outIn.close();
 				}
-			}
-			else
-			{
-				FSDataInputStream fsout = fs.open(outDirectory);
-				BufferedReader outIn = new BufferedReader(new InputStreamReader(fsout));
-				
-				String line;
-				while ((line = outIn.readLine()) != null) {
-					String[] rcv = line.split(" ");
-					long row = Long.parseLong(rcv[0]);
-					long col = Long.parseLong(rcv[1]);
-					double value = Double.parseDouble(rcv[2]);
-					assertTrue("invalid row index", (row > 0 && row <= rows));
-					assertTrue("invlaid column index", (col > 0 && col <= cols));
-					assertTrue("invalid value", ((value >= min && value <= max) || value == 0));
-				}
-				outIn.close();
 			}
 		} catch (IOException e) {
 			fail("unable to read file: " + e.getMessage());
@@ -1151,10 +1149,10 @@ public class TestUtils
 			FileStatus[] outFiles = fs.listStatus(outDirectory);
 			assertEquals("number of files in directory not 1", 1, outFiles.length);
 			FSDataInputStream fsout = fs.open(outFiles[0].getPath());
-			BufferedReader outIn = new BufferedReader(new InputStreamReader(fsout));
-			
-			String outLine = outIn.readLine();
-			outIn.close();
+			String outLine = null;
+			try(BufferedReader outIn = new BufferedReader(new InputStreamReader(fsout))) {
+				outLine = outIn.readLine();
+			}
 			assertNotNull("file is empty", outLine);
 			assertTrue("file is empty", outLine.length() > 0);
 		} catch (IOException e) {
@@ -1374,19 +1372,19 @@ public class TestUtils
 			FileSystem fs = FileSystem.get(conf);
 			Path inFile = new Path(file);
 			DataOutputStream out = fs.create(inFile);
-			PrintWriter pw = new PrintWriter(out);
-			Random random = (seed == -1) ? TestUtils.random : new Random(seed);
-			
-			for (int i = 1; i <= rows; i++) {
-				for (int j = 1; j <= cols; j++) {
-					if (random.nextDouble() > sparsity)
-						continue;
-					double value = (random.nextDouble() * (max - min) + min);
-					if (value != 0)
-						pw.println(i + " " + j + " " + value);
+			try( PrintWriter pw = new PrintWriter(out) ) {
+				Random random = (seed == -1) ? TestUtils.random : new Random(seed);
+				
+				for (int i = 1; i <= rows; i++) {
+					for (int j = 1; j <= cols; j++) {
+						if (random.nextDouble() > sparsity)
+							continue;
+						double value = (random.nextDouble() * (max - min) + min);
+						if (value != 0)
+							pw.println(i + " " + j + " " + value);
+					}
 				}
 			}
-			pw.close();
 		} catch (IOException e) {
 			fail("unable to write test matrix: " + e.getMessage());
 		}
@@ -1416,26 +1414,23 @@ public class TestUtils
 			//create outputstream to HDFS / FS and writer
 			FileSystem fs = FileSystem.get(conf);
 			DataOutputStream out = fs.create(new Path(file), true);
-			BufferedWriter pw = new BufferedWriter(new OutputStreamWriter(out));
-			
-			//writer actual matrix
-			StringBuilder sb = new StringBuilder();
-			for (int i = 0; i < matrix.length; i++) {
-				sb.setLength(0);
-				if ( matrix[i][0] != 0 )
-					sb.append(matrix[i][0]);
-				for (int j = 1; j < matrix[i].length; j++) {
-					sb.append(",");
-					if ( matrix[i][j] == 0 ) 
-						continue;
-					sb.append(matrix[i][j]);
+			try( BufferedWriter pw = new BufferedWriter(new OutputStreamWriter(out))) {
+				//writer actual matrix
+				StringBuilder sb = new StringBuilder();
+				for (int i = 0; i < matrix.length; i++) {
+					sb.setLength(0);
+					if ( matrix[i][0] != 0 )
+						sb.append(matrix[i][0]);
+					for (int j = 1; j < matrix[i].length; j++) {
+						sb.append(",");
+						if ( matrix[i][j] == 0 ) 
+							continue;
+						sb.append(matrix[i][j]);
+					}
+					sb.append('\n');
+					pw.append(sb.toString());
 				}
-				sb.append('\n');
-				pw.append(sb.toString());
 			}
-			
-			//close writer and streams
-			pw.close();
 		} 
 		catch (IOException e) 
 		{
@@ -1470,40 +1465,38 @@ public class TestUtils
 				out = new DataOutputStream(new FileOutputStream(file));
 			}
 			
-			BufferedWriter pw = new BufferedWriter(new OutputStreamWriter(out));
-			
-			//write header
-			if( isR ) {
-				/** add R header */
-				pw.append("%%MatrixMarket matrix coordinate real general\n");
-				pw.append("" + matrix.length + " " + matrix[0].length + " " + matrix.length*matrix[0].length+"\n");
-			}
-			
-			//writer actual matrix
-			StringBuilder sb = new StringBuilder();
-			boolean emptyOutput = true;
-			for (int i = 0; i < matrix.length; i++) {
-				for (int j = 0; j < matrix[i].length; j++) {
-					if ( matrix[i][j] == 0 ) 
-						continue;
-					sb.append(i + 1);
-					sb.append(' ');
-					sb.append(j + 1);
-					sb.append(' ');
-					sb.append(matrix[i][j]);
-					sb.append('\n');
-					pw.append(sb.toString());
-					sb.setLength(0);
-					emptyOutput = false;
+			try( BufferedWriter pw = new BufferedWriter(new OutputStreamWriter(out))) {
+				
+				//write header
+				if( isR ) {
+					/** add R header */
+					pw.append("%%MatrixMarket matrix coordinate real general\n");
+					pw.append("" + matrix.length + " " + matrix[0].length + " " + matrix.length*matrix[0].length+"\n");
 				}
+				
+				//writer actual matrix
+				StringBuilder sb = new StringBuilder();
+				boolean emptyOutput = true;
+				for (int i = 0; i < matrix.length; i++) {
+					for (int j = 0; j < matrix[i].length; j++) {
+						if ( matrix[i][j] == 0 ) 
+							continue;
+						sb.append(i + 1);
+						sb.append(' ');
+						sb.append(j + 1);
+						sb.append(' ');
+						sb.append(matrix[i][j]);
+						sb.append('\n');
+						pw.append(sb.toString());
+						sb.setLength(0);
+						emptyOutput = false;
+					}
+				}
+				
+				//writer dummy entry if empty
+				if( emptyOutput )
+					pw.append("1 1 " + matrix[0][0]);
 			}
-			
-			//writer dummy entry if empty
-			if( emptyOutput )
-				pw.append("1 1 " + matrix[0][0]);
-			
-			//close writer and streams
-			pw.close();
 		} 
 		catch (IOException e) 
 		{
@@ -1590,9 +1583,9 @@ public class TestUtils
 	public static void writeTestScalar(String file, double value) {
 		try {
 			DataOutputStream out = new DataOutputStream(new FileOutputStream(file));
-			PrintWriter pw = new PrintWriter(out);
-			pw.println(value);
-			pw.close();
+			try( PrintWriter pw = new PrintWriter(out) ) {
+				pw.println(value);
+			}
 		} catch (IOException e) {
 			fail("unable to write test scalar (" + file + "): " + e.getMessage());
 		}
@@ -1611,22 +1604,26 @@ public class TestUtils
 	@SuppressWarnings("deprecation")
 	public static void writeBinaryTestMatrixCells(String file, double[][] matrix) {
 		try {
-			SequenceFile.Writer writer = new SequenceFile.Writer(FileSystem.get(conf), conf, new Path(file),
+			SequenceFile.Writer writer = null;
+			try {
+				writer = new SequenceFile.Writer(FileSystem.get(conf), conf, new Path(file),
 					MatrixIndexes.class, MatrixCell.class);
 
-			MatrixIndexes index = new MatrixIndexes();
-			MatrixCell value = new MatrixCell();
-			for (int i = 0; i < matrix.length; i++) {
-				for (int j = 0; j < matrix[i].length; j++) {
-					if (matrix[i][j] != 0) {
-						index.setIndexes((i + 1), (j + 1));
-						value.setValue(matrix[i][j]);
-						writer.append(index, value);
+				MatrixIndexes index = new MatrixIndexes();
+				MatrixCell value = new MatrixCell();
+				for (int i = 0; i < matrix.length; i++) {
+					for (int j = 0; j < matrix[i].length; j++) {
+						if (matrix[i][j] != 0) {
+							index.setIndexes((i + 1), (j + 1));
+							value.setValue(matrix[i][j]);
+							writer.append(index, value);
+						}
 					}
 				}
 			}
-
-			writer.close();
+			finally {
+				IOUtilFunctions.closeSilently(writer);
+			}
 		} catch (IOException e) {
 			e.printStackTrace();
 			fail("unable to write test matrix: " + e.getMessage());
@@ -1652,8 +1649,10 @@ public class TestUtils
 	@SuppressWarnings("deprecation")
 	public static void writeBinaryTestMatrixBlocks(String file, double[][] matrix, int rowsInBlock, int colsInBlock,
 			boolean sparseFormat) {
+		SequenceFile.Writer writer = null;
+			
 		try {
-			SequenceFile.Writer writer = new SequenceFile.Writer(FileSystem.get(conf), conf, new Path(file),
+			writer = new SequenceFile.Writer(FileSystem.get(conf), conf, new Path(file),
 					MatrixIndexes.class, MatrixBlock.class);
 
 			MatrixIndexes index = new MatrixIndexes();
@@ -1672,11 +1671,13 @@ public class TestUtils
 					writer.append(index, value);
 				}
 			}
-
-			writer.close();
-		} catch (IOException e) {
+		} 
+		catch (IOException e) {
 			e.printStackTrace();
 			fail("unable to write test matrix: " + e.getMessage());
+		}
+		finally {
+			IOUtilFunctions.closeSilently(writer);
 		}
 	}
 
@@ -1689,20 +1690,19 @@ public class TestUtils
 	 *            filename of DML script
 	 */
 	public static void printDMLScript(String dmlScriptFile) {
-		try {
-			System.out.println("Running script: " + dmlScriptFile + "\n");
-			System.out.println("******************* DML script *******************");
-			BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(dmlScriptFile)));
+		System.out.println("Running script: " + dmlScriptFile + "\n");
+		System.out.println("******************* DML script *******************");
+		try(BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(dmlScriptFile)))) {
 			String content;
 			while ((content = in.readLine()) != null) {
 				System.out.println(content);
 			}
-			in.close();
-			System.out.println("**************************************************\n\n");
-		} catch (IOException e) {
+		}
+		catch (IOException e) {
 			e.printStackTrace();
 			fail("unable to print dml script: " + e.getMessage());
 		}
+		System.out.println("**************************************************\n\n");
 	}
 
 	/**
@@ -1714,20 +1714,19 @@ public class TestUtils
 	 *            filename of PYDML script
 	 */
 	public static void printPYDMLScript(String pydmlScriptFile) {
-		try {
-			System.out.println("Running script: " + pydmlScriptFile + "\n");
-			System.out.println("******************* PYDML script *******************");
-			BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(pydmlScriptFile)));
+		System.out.println("Running script: " + pydmlScriptFile + "\n");
+		System.out.println("******************* PYDML script *******************");
+		try(BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(pydmlScriptFile))) ) {
 			String content;
 			while ((content = in.readLine()) != null) {
 				System.out.println(content);
 			}
-			in.close();
-			System.out.println("**************************************************\n\n");
-		} catch (IOException e) {
+		} 
+		catch (IOException e) {
 			e.printStackTrace();
 			fail("unable to print pydml script: " + e.getMessage());
 		}
+		System.out.println("**************************************************\n\n");
 	}
 	
 	/**
@@ -1739,20 +1738,19 @@ public class TestUtils
 	 *            filename of RL script
 	 */
 	public static void printRScript(String dmlScriptFile) {
-		try {
-			System.out.println("Running script: " + dmlScriptFile + "\n");
-			System.out.println("******************* R script *******************");
-			BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(dmlScriptFile)));
+		System.out.println("Running script: " + dmlScriptFile + "\n");
+		System.out.println("******************* R script *******************");
+		try( BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(dmlScriptFile)))) {
 			String content;
 			while ((content = in.readLine()) != null) {
 				System.out.println(content);
 			}
-			in.close();
-			System.out.println("**************************************************\n\n");
-		} catch (IOException e) {
+		}
+		catch (IOException e) {
 			e.printStackTrace();
 			fail("unable to print R script: " + e.getMessage());
 		}
+		System.out.println("**************************************************\n\n");
 	}
 
 	/**
@@ -1842,18 +1840,20 @@ public class TestUtils
 			MatrixIndexes indexes = new MatrixIndexes();
 			MatrixCell value = new MatrixCell();
 			for (FileStatus file : files) {
-				SequenceFile.Reader reader = new SequenceFile.Reader(FileSystem.get(conf), file.getPath(), conf);
-
-				while (reader.next(indexes, value)) {
-					if (rows < indexes.getRowIndex())
-						rows = (int) indexes.getRowIndex();
-					if (cols < indexes.getColumnIndex())
-						cols = (int) indexes.getColumnIndex();
-
-					valueMap.put(new MatrixIndexes(indexes), value.getValue());
+				SequenceFile.Reader reader = null;
+				try {
+					reader = new SequenceFile.Reader(FileSystem.get(conf), file.getPath(), conf);
+					while (reader.next(indexes, value)) {
+						if (rows < indexes.getRowIndex())
+							rows = (int) indexes.getRowIndex();
+						if (cols < indexes.getColumnIndex())
+							cols = (int) indexes.getColumnIndex();
+						valueMap.put(new MatrixIndexes(indexes), value.getValue());
+					}
 				}
-
-				reader.close();
+				finally {
+					IOUtilFunctions.closeSilently(reader);
+				}
 			}
 
 			double[][] values = new double[rows][cols];

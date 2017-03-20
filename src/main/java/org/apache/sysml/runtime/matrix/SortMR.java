@@ -117,16 +117,15 @@ public class SortMR
     private ArrayList<WritableComparable> readPartitions(FileSystem fs, Path p, JobConf job) 
     	throws IOException 
     {
-    	SequenceFile.Reader reader = new SequenceFile.Reader(fs, p, job);
     	ArrayList<WritableComparable> parts = new ArrayList<WritableComparable>();
+    	SequenceFile.Reader reader = null;
     	try 
     	{
-			//WritableComparable key = keyClass.newInstance();
-    		DoubleWritable key = new DoubleWritable();
+    		reader = new SequenceFile.Reader(fs, p, job);
+			DoubleWritable key = new DoubleWritable();
 			NullWritable value = NullWritable.get();
 			while (reader.next(key, value)) {
 				parts.add(key);
-				//key=keyClass.newInstance();
 				key = new DoubleWritable();
 			}
 		} 
@@ -137,7 +136,6 @@ public class SortMR
     		IOUtilFunctions.closeSilently(reader);
     	}
 		
-		reader.close();
 		return parts;
     }
 

@@ -137,9 +137,9 @@ public class DMLAppMaster
 		//write given message to hdfs
 		try {
 			FileSystem fs = FileSystem.get(_conf);
-			FSDataOutputStream fout = fs.create(msgPath, true);
-			fout.writeBytes( msg );
-			fout.close();
+			try( FSDataOutputStream fout = fs.create(msgPath, true) ) {
+				fout.writeBytes( msg );
+			}
 			LOG.debug("Stop message written to HDFS file: "+msgPath );
 		}
 		catch(Exception ex) {

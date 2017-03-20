@@ -68,6 +68,7 @@ import org.apache.sysml.runtime.instructions.mr.CSVReblockInstruction;
 import org.apache.sysml.runtime.instructions.spark.ParameterizedBuiltinSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.CSVReblockMR;
 import org.apache.sysml.runtime.matrix.CSVReblockMR.AssignRowIDMRReturn;
 import org.apache.sysml.runtime.matrix.JobReturn;
@@ -98,10 +99,9 @@ public class DataTransform
 	 */
 	private static String readHeaderLine(FileSystem fs, CSVFileFormatProperties prop, String smallestFile) throws IOException {
 		String line = null;
-		
-		BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(new Path(smallestFile))));
-		line = br.readLine();
-		br.close();
+		try( BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(new Path(smallestFile)))) ) {
+			line = br.readLine();
+		}
 		if(prop.hasHeader()) {
 			; // nothing here
 		}
@@ -660,9 +660,10 @@ public class DataTransform
 		String[] columnNames = Pattern.compile(Pattern.quote(delim)).split(header, -1);
 		int ret = columnNames.length;
 		
-		BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(new Path(tfMtdPath + "/spec.json"))));
-		JSONObject spec = JSONHelper.parse(br);
-		br.close();
+		JSONObject spec = null;
+		try(BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(new Path(tfMtdPath + "/spec.json"))))) {
+			spec = JSONHelper.parse(br);
+		}
 		
 		// fetch relevant attribute lists
 		if ( !spec.containsKey(TfUtils.TXMETHOD_DUMMYCODE) )
@@ -680,16 +681,18 @@ public class DataTransform
 			
 			if ( TfUtils.checkValidInputFile(fs, binpath, false ) )
 			{
-				br = new BufferedReader(new InputStreamReader(fs.open(binpath)));
-				int nbins = UtilFunctions.parseToInt(br.readLine().split(TfUtils.TXMTD_SEP)[4]);
-				br.close();
+				int nbins = -1;
+				try( BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(binpath)))) {
+					nbins = UtilFunctions.parseToInt(br.readLine().split(TfUtils.TXMTD_SEP)[4]);
+				}
 				ret += (nbins-1);
 			}
 			else if ( TfUtils.checkValidInputFile(fs, rcdpath, false ) )
 			{
-				br = new BufferedReader(new InputStreamReader(fs.open(rcdpath)));
-				int ndistinct = UtilFunctions.parseToInt(br.readLine());
-				br.close();
+				int ndistinct = -1;
+				try( BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(rcdpath))) ) {
+					ndistinct = UtilFunctions.parseToInt(br.readLine());
+				}
 				ret += (ndistinct-1);
 			}
 			else
@@ -938,17 +941,17 @@ public class DataTransform
 		
 		if(oprnds.isApply)
 		{
-			BufferedReader br = new BufferedReader(new InputStreamReader( fs.open(new Path(oprnds.applyTxPath + "/" + TfUtils.TXMTD_COLNAMES)) ));
-			ret = br.readLine();
-			br.close();
+			try( BufferedReader br = new BufferedReader(new InputStreamReader( fs.open(new Path(oprnds.applyTxPath + "/" + TfUtils.TXMTD_COLNAMES)) )) ) {
+				ret = br.readLine();
+			}
 		}
 		else {
 			if ( oprnds.outNamesFile == null )
 				ret = headerLine;
 			else {
-				BufferedReader br = new BufferedReader(new InputStreamReader( fs.open(new Path(oprnds.outNamesFile)) ));
-				ret = br.readLine();
-				br.close();
+				try( BufferedReader br = new BufferedReader(new InputStreamReader( fs.open(new Path(oprnds.outNamesFile)) )) ) {
+					ret = br.readLine();
+				}
 			}
 		}
 		
@@ -1077,13 +1080,13 @@ public class DataTransform
 		{
 			for(int fileNo=0; fileNo<files.size(); fileNo++)
 			{
-				BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(files.get(fileNo))));
-				if(fileNo==0 && prop.hasHeader() ) 
-					br.readLine(); //ignore header
-				
-				while ( br.readLine() != null)
-					numRows++;
-				br.close();
+				try(BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(files.get(fileNo))))) {
+					if(fileNo==0 && prop.hasHeader() ) 
+						br.readLine(); //ignore header
+					
+					while ( br.readLine() != null)
+						numRows++;
+				}
 			}
 			numRowsTf = numRows;
 		}
@@ -1096,19 +1099,18 @@ public class DataTransform
 			
 			for(int fileNo=0; fileNo<files.size(); fileNo++)
 			{
-				BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(files.get(fileNo))));
-				if(fileNo==0 && prop.hasHeader() ) 
-					br.readLine(); //ignore header
-				
-				while ( (line=br.readLine()) != null)
-				{
-					numRows++;
-					
-					words = delim.split(line, -1);
-					if(!oa.omit(words, agents))
-						numRowsTf++;
+				try( BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(files.get(fileNo)))) ) {
+					if(fileNo==0 && prop.hasHeader() ) 
+						br.readLine(); //ignore header
+					while ( (line=br.readLine()) != null)
+					{
+						numRows++;
+						
+						words = delim.split(line, -1);
+						if(!oa.omit(words, agents))
+							numRowsTf++;
+					}
 				}
-				br.close();
 			}
 		}
 		
@@ -1162,20 +1164,19 @@ public class DataTransform
 		String[] words  = null;
 		
 		int numColumnsTf=0;
-		BufferedReader br = null;
 		
 		if (!isApply) {
 			for(int fileNo=0; fileNo<files.size(); fileNo++)
 			{
-				br = new BufferedReader(new InputStreamReader(fs.open(files.get(fileNo))));
-				if(fileNo==0 && prop.hasHeader() ) 
-					br.readLine(); //ignore header
-				
-				line = null;
-				while ( (line = br.readLine()) != null) {
-					agents.prepareTfMtd(line);
+				try(BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(files.get(fileNo)))) ) {
+					if(fileNo==0 && prop.hasHeader() ) 
+						br.readLine(); //ignore header
+					
+					line = null;
+					while ( (line = br.readLine()) != null) {
+						agents.prepareTfMtd(line);
+					}
 				}
-				br.close();
 			}
 			
 			if(agents.getValid() == 0) 
@@ -1227,75 +1228,79 @@ public class DataTransform
 		BufferedWriter out=new BufferedWriter(new OutputStreamWriter(fs.create(new Path(result.getFileName()),true)));		
 		StringBuilder sb = new StringBuilder();
 		
-		MatrixBlock mb = null; 
-		if ( isBB ) 
-		{
-			int estNNZ = (int)agents.getValid() * ncols;
-			mb = new MatrixBlock((int)agents.getValid(), numColumnsTf, estNNZ );
-			
-			if ( mb.isInSparseFormat() )
-				mb.allocateSparseRowsBlock();
-			else
-				mb.allocateDenseBlock();
-		}
-
-		int rowID = 0; // rowid to be used in filling the matrix block
-		
-		for(int fileNo=0; fileNo<files.size(); fileNo++)
-		{
-			br = new BufferedReader(new InputStreamReader(fs.open(files.get(fileNo))));
-			if ( fileNo == 0 ) 
+		try {
+			MatrixBlock mb = null; 
+			if ( isBB ) 
 			{
-				if ( prop.hasHeader() )
-					br.readLine(); // ignore the header line from data file
+				int estNNZ = (int)agents.getValid() * ncols;
+				mb = new MatrixBlock((int)agents.getValid(), numColumnsTf, estNNZ );
 				
-				//TODO: fix hard-wired header propagation to meta data column names
-				
-				String dcdHeader = _da.constructDummycodedHeader(headerLine, agents.getDelim());
-				numColumnsTf = _da.genDcdMapsAndColTypes(fs, tfMtdPath, ncols, agents);
-				generateHeaderFiles(fs, tfMtdPath, headerLine, dcdHeader);
+				if ( mb.isInSparseFormat() )
+					mb.allocateSparseRowsBlock();
+				else
+					mb.allocateDenseBlock();
 			}
-			
-			line = null;
-			while ( (line = br.readLine()) != null) {
-				words = agents.getWords(line);
-
-				if(!agents.omit(words))
-				{
-					words = agents.apply(words);
 	
-					if (isCSV)
+			int rowID = 0; // rowid to be used in filling the matrix block
+			
+			for(int fileNo=0; fileNo<files.size(); fileNo++)
+			{
+				try( BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(files.get(fileNo)))) ) {
+					if ( fileNo == 0 ) 
 					{
-						out.write( agents.checkAndPrepOutputString(words, sb) );
-						out.write("\n");
+						if ( prop.hasHeader() )
+							br.readLine(); // ignore the header line from data file
+						
+						//TODO: fix hard-wired header propagation to meta data column names
+						
+						String dcdHeader = _da.constructDummycodedHeader(headerLine, agents.getDelim());
+						numColumnsTf = _da.genDcdMapsAndColTypes(fs, tfMtdPath, ncols, agents);
+						generateHeaderFiles(fs, tfMtdPath, headerLine, dcdHeader);
 					}
 					
-					if( isBB ) 
-					{
-						agents.check(words);
-						for(int c=0; c<words.length; c++)
+					line = null;
+					while ( (line = br.readLine()) != null) {
+						words = agents.getWords(line);
+		
+						if(!agents.omit(words))
 						{
-							if(words[c] == null || words[c].isEmpty())
-								;
-							else 
-								mb.appendValue(rowID, c, UtilFunctions.parseToDouble(words[c]));
+							words = agents.apply(words);
+			
+							if (isCSV)
+							{
+								out.write( agents.checkAndPrepOutputString(words, sb) );
+								out.write("\n");
+							}
+							
+							if( isBB ) 
+							{
+								agents.check(words);
+								for(int c=0; c<words.length; c++)
+								{
+									if(words[c] == null || words[c].isEmpty())
+										;
+									else 
+										mb.appendValue(rowID, c, UtilFunctions.parseToDouble(words[c]));
+								}
+							}
+							rowID++;
 						}
 					}
-					rowID++;
 				}
 			}
-			br.close();
-		}
-		out.close();
-		
-		if(mb != null)
-		{
-			mb.recomputeNonZeros();
-			mb.examSparsity();
 			
-			result.acquireModify(mb);
-			result.release();
-			result.exportData();
+			if(mb != null)
+			{
+				mb.recomputeNonZeros();
+				mb.examSparsity();
+				
+				result.acquireModify(mb);
+				result.release();
+				result.exportData();
+			}
+		}
+		finally {
+			IOUtilFunctions.closeSilently(out);
 		}
 		
 		MatrixCharacteristics mc = new MatrixCharacteristics(agents.getValid(), numColumnsTf, (int) result.getNumRowsPerBlock(), (int) result.getNumColumnsPerBlock());
@@ -1306,16 +1311,16 @@ public class DataTransform
 	
 	public static void generateHeaderFiles(FileSystem fs, String txMtdDir, String origHeader, String newHeader) throws IOException {
 		// write out given header line
-		Path pt=new Path(txMtdDir+"/" + TfUtils.TXMTD_COLNAMES);
-		BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
-		br.write(origHeader+"\n");
-		br.close();
+		try( BufferedWriter br=new BufferedWriter(new OutputStreamWriter(
+				fs.create(new Path(txMtdDir+"/" + TfUtils.TXMTD_COLNAMES),true)))) {
+			br.write(origHeader+"\n");
+		}
 
 		// write out the new header line (after all transformations)
-		pt = new Path(txMtdDir + "/" + TfUtils.TXMTD_DC_COLNAMES);
-		br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
-		br.write(newHeader+"\n");
-		br.close();
+		try( BufferedWriter br=new BufferedWriter(new OutputStreamWriter(
+				fs.create(new Path(txMtdDir + "/" + TfUtils.TXMTD_DC_COLNAMES),true))) ){
+			br.write(newHeader+"\n");
+		}
 	}
 	
 	private static void checkIfOutputOverlapsWithTxMtd(MatrixObject[] outputs, TransformOperands oprnds,

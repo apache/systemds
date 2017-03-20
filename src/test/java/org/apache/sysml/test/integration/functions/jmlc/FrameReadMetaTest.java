@@ -162,10 +162,8 @@ public class FrameReadMetaTest extends AutomatedTestBase
 			ex.printStackTrace();
 			throw new IOException(ex);
 		}
-		finally
-		{
-			if( conn != null )
-				conn.close();
+		finally {
+			IOUtilFunctions.closeSilently(conn);
 		}
 	}
 

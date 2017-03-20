@@ -450,8 +450,7 @@ public class ReaderTextCSVParallel extends MatrixReader
 					}
 				} 
 				finally {
-					if (reader != null)
-						reader.close();
+					IOUtilFunctions.closeSilently(reader);
 				}
 			} 
 			catch (Exception ex) {

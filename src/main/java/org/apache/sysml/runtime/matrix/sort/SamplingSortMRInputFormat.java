@@ -38,7 +38,7 @@ import org.apache.hadoop.mapred.SequenceFileInputFormat;
 import org.apache.hadoop.mapred.SequenceFileRecordReader;
 import org.apache.hadoop.util.IndexedSortable;
 import org.apache.hadoop.util.QuickSort;
-
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.data.Converter;
 import org.apache.sysml.runtime.matrix.data.MatrixCell;
 import org.apache.sysml.runtime.matrix.data.Pair;
@@ -149,23 +149,28 @@ extends SequenceFileInputFormat<K,V>
 	    }
 	    
 	    //note: key value always double/null as expected by partitioner
-	    SequenceFile.Writer writer = 
-	    	SequenceFile.createWriter(outFs, conf, partFile, DoubleWritable.class, NullWritable.class);
-	    NullWritable nullValue = NullWritable.get();
-	    int index0=-1, i=0;
-	    boolean lessthan0=true;
-	    for(WritableComparable splitValue : sampler.createPartitions(partitions)) 
-	    {
-	    	writer.append(splitValue, nullValue);
-	    	if(lessthan0 && ((DoubleWritable)splitValue).get()>=0) {
-	    		index0=i;
-	    		lessthan0=false;
-	    	}
-	    	i++;
+	    SequenceFile.Writer writer = null;
+	    int index0 = -1;
+	    try {
+		    writer = SequenceFile.createWriter(outFs, conf, partFile, DoubleWritable.class, NullWritable.class);
+		    NullWritable nullValue = NullWritable.get();
+		    int i = 0;
+		    boolean lessthan0=true;
+		    for(WritableComparable splitValue : sampler.createPartitions(partitions)) 
+		    {
+		    	writer.append(splitValue, nullValue);
+		    	if(lessthan0 && ((DoubleWritable)splitValue).get()>=0) {
+		    		index0=i;
+		    		lessthan0=false;
+		    	}
+		    	i++;
+		    }
+		    if(lessthan0)
+		    	index0=partitions-1;
 	    }
-	    if(lessthan0)
-	    	index0=partitions-1;
-	    writer.close();
+	    finally {
+	    	IOUtilFunctions.closeSilently(writer);
+	    }
 	    
 	    return index0;
 	  }

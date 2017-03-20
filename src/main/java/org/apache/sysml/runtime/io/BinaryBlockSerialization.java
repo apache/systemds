@@ -99,8 +99,7 @@ public class BinaryBlockSerialization implements Serialization
 		public void close() 
 			throws IOException 
 		{
-			if( _in != null )
-				_in.close();
+			IOUtilFunctions.closeSilently(_in);
 		}
 	}
 
@@ -128,9 +127,8 @@ public class BinaryBlockSerialization implements Serialization
 		@Override
 		public void close() 
 			throws IOException 
-		{			
-			if( _out != null )
-				_out.close();
+		{
+			IOUtilFunctions.closeSilently(_out);
 		}
 	}
 }

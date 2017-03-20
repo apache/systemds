@@ -161,12 +161,12 @@ public class InstallDependencyForIntegrationTests {
 		try {
 			System.out.println("Running script: " + dmlScriptFile + "\n");
 			System.out.println("******************* R script *******************");
-			BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(dmlScriptFile)));
-			String content;
-			while ((content = in.readLine()) != null) {
-				System.out.println(content);
+			try( BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(dmlScriptFile)))) {
+				String content;
+				while ((content = in.readLine()) != null) {
+					System.out.println(content);
+				}
 			}
-			in.close();
 			System.out.println("**************************************************\n\n");
 		} catch (IOException e) {
 			e.printStackTrace();

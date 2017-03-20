@@ -618,7 +618,7 @@ public abstract class Hop
 					//infer the output stats
 					wstats = inferOutputCharacteristics(memo);
 					
-					if( wstats != null ) {
+					if( wstats != null && wstats[0] >= 0 && wstats[1] >= 0 ) {
 						//use worst case characteristics to estimate mem
 						long lnnz = ((wstats[2]>=0)?wstats[2]:wstats[0]*wstats[1]);
 						_outputMemEstimate = computeOutputMemEstimate( wstats[0], wstats[1], lnnz );

@@ -169,7 +169,8 @@ public abstract class CostEstimator
 						case PARFOR:
 							tmp = node.getParam(ParamType.NUM_ITERATIONS);
 							N = (tmp!=null) ? (double)Long.parseLong(tmp) : FACTOR_NUM_ITERATIONS; 
-							val = N * getSumEstimate(measure, node.getChilds(), et) / node.getK(); 
+							val = N * getSumEstimate(measure, node.getChilds(), et) 
+									/ Math.max(node.getK(), 1); 
 							break;	
 						default:
 							//do nothing
@@ -187,10 +188,11 @@ public abstract class CostEstimator
 							val = getMaxEstimate(measure, node.getChilds(), et); 
 							break;
 						case PARFOR:
-							if( node.getExecType() == OptNode.ExecType.MR )
+							if( node.getExecType() == OptNode.ExecType.MR || node.getExecType() == OptNode.ExecType.SPARK )
 								val = getMaxEstimate(measure, node.getChilds(), et); //executed in different JVMs
-							else if ( node.getExecType() == OptNode.ExecType.CP )
-								val = getMaxEstimate(measure, node.getChilds(), et) * node.getK(); //everything executed within 1 JVM
+							else if ( node.getExecType() == OptNode.ExecType.CP || node.getExecType() == null )
+								val = getMaxEstimate(measure, node.getChilds(), et) 
+									* Math.max(node.getK(), 1); //everything executed within 1 JVM
 							break;
 						default:
 							//do nothing

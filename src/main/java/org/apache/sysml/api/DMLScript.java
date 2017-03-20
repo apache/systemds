@@ -122,7 +122,7 @@ public class DMLScript
 	 * Despite there being a DML & PyDML, this class is named DMLOptions
 	 * to keep it consistent with {@link DMLScript} & {@link DMLOptions}
 	 */
-	private static class DMLOptions {
+	public static class DMLOptions {
 		public Map<String, String>  argVals 			= new HashMap<>();	// Arguments map containing either named arguments or arguments by position for a DML program
 		public String               configFile    = null;							// Path to config file if default config and default config is to be overriden
 		public boolean              clean         = false;						// Whether to clean up all SystemML working directories (FS, DFS)
@@ -227,7 +227,7 @@ public class DMLScript
 	 * @return
 	 * @throws org.apache.commons.cli.ParseException
 	 */
-	private static DMLOptions parseCLArguments(String[] args, Options options) throws org.apache.commons.cli.ParseException {
+	public static DMLOptions parseCLArguments(String[] args, Options options) throws org.apache.commons.cli.ParseException {
 
 		CommandLineParser clParser = new PosixParser();
 		CommandLine line = clParser.parse(options, args);
@@ -332,7 +332,7 @@ public class DMLScript
 	 * @return an appropriate instance of {@link Options}
 	 */
 	@SuppressWarnings("static-access")
-	private static Options createCLIOptions() {
+	public static Options createCLIOptions() {
 		Options options = new Options();
 		Option nvargsOpt = OptionBuilder.withArgName("key=value")
 						.withDescription("parameterize DML script with named parameters."
@@ -543,7 +543,7 @@ public class DMLScript
 	 * Once that is removed, this function should be removed as well.
 	 * @param hasNamedArgs true for named arguments, false for positional arguments
 	 * @param args in "k=v" format for named arguments and "v" for positional arguments
-	 * @return	a map containing either "$K -> V" or "$1 -> V" for named and positional arguments respectively
+	 * @return	a map containing either ($K,V) or ($1,V) for named and positional arguments respectively
 	 * @throws LanguageException when a named argument is an invalid identifier for DML/PyDML
 	 */
 	protected static Map<String,String> createArgumentsMap(boolean hasNamedArgs, String[] args)

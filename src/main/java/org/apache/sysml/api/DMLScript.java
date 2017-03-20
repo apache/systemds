@@ -115,8 +115,8 @@ public class DMLScript
 	 * Set of DMLOptions that can be set through the command line
 	 * and {@link org.apache.sysml.api.mlcontext.MLContext}
 	 * The values have been initialized with the default values
-	 * Despite there being a DML & PyDML, this class is named DMLOptions
-	 * to keep it consistent with {@link DMLScript} & {@link DMLOptions}
+	 * Despite there being a DML and PyDML, this class is named DMLOptions
+	 * to keep it consistent with {@link DMLScript} and {@link DMLOptions}
 	 */
 	public static class DMLOptions {
 		public Map<String, String>  argVals 			= new HashMap<>();	// Arguments map containing either named arguments or arguments by position for a DML program
@@ -219,9 +219,9 @@ public class DMLScript
 	/**
 	 * Parses command line arguments to create a {@link DMLOptions} instance with the correct options
 	 * @param args	arguments from the command line
-	 * @param options	an instance of {@link DMLOptions} that contain the correct {@link Option}s.
-	 * @return
-	 * @throws org.apache.commons.cli.ParseException
+	 * @param options	an {@link Options} instance containing the options that need to be parsed
+	 * @return an instance of {@link Options} that contain the correct {@link Option}s.
+	 * @throws org.apache.commons.cli.ParseException if there is an incorrect option specified in the CLI
 	 */
 	public static DMLOptions parseCLArguments(String[] args, Options options) throws org.apache.commons.cli.ParseException {
 
@@ -248,7 +248,7 @@ public class DMLScript
 			if (execMode != null){
 				if (execMode.equalsIgnoreCase("hadoop")) dmlOptions.execMode = RUNTIME_PLATFORM.HADOOP;
 				else if (execMode.equalsIgnoreCase("singlenode")) dmlOptions.execMode = RUNTIME_PLATFORM.SINGLE_NODE;
-				else if (execMode.equalsIgnoreCase("hybrid")) dmlOptions.execMode = RUNTIME_PLATFORM.HYBRID_SPARK;
+				else if (execMode.equalsIgnoreCase("hybrid")) dmlOptions.execMode = RUNTIME_PLATFORM.HYBRID;
 				else if (execMode.equalsIgnoreCase("hybrid_spark")) dmlOptions.execMode = RUNTIME_PLATFORM.HYBRID_SPARK;
 				else if (execMode.equalsIgnoreCase("spark")) dmlOptions.execMode = RUNTIME_PLATFORM.SPARK;
 				else throw new org.apache.commons.cli.ParseException("Invalid argument specified for -exec option, must be one of [hadoop, singlenode, hybrid, hybrid_spark, spark]");
@@ -268,10 +268,12 @@ public class DMLScript
 		dmlOptions.stats = line.hasOption("stats");
 		if (dmlOptions.stats){
 			String statsCount = line.getOptionValue("stats");
-			try {
-				dmlOptions.statsCount = Integer.parseInt(statsCount);
-			} catch (NumberFormatException e) {
-				throw new org.apache.commons.cli.ParseException("Invalid argument specified for -stats option, must be a valid integer");
+			if (statsCount != null) {
+				try {
+					dmlOptions.statsCount = Integer.parseInt(statsCount);
+				} catch (NumberFormatException e) {
+					throw new org.apache.commons.cli.ParseException("Invalid argument specified for -stats option, must be a valid integer");
+				}
 			}
 		}
 
@@ -292,7 +294,7 @@ public class DMLScript
 		// Positional arguments map is created as ("$1", "a"), ("$2", 123), ....
 		if (line.hasOption("args")){
 			String[] argValues = line.getOptionValues("args");
-			int k=0;
+			int k=1;
 			for (String str : argValues){
 				if (!str.isEmpty()) {
 					dmlOptions.argVals.put("$" + k, str);
@@ -337,7 +339,7 @@ public class DMLScript
 										+ " name (start with letter, contain only letters, numbers, or underscores)."
 										+ " Either -args or -nvargs can be used, not both.")
 						.hasArgs()
-						.withValueSeparator()
+						.withValueSeparator(' ')
 						.create("nvargs");
 		Option argsOpt = OptionBuilder.withArgName("argN")
 						.withDescription("parameterize DML script with positional parameters,"
@@ -352,7 +354,7 @@ public class DMLScript
 										+ " values in default SystemML-config.xml config file; if <filename> is"
 										+ " prefixed with hdfs or gpfs it is read from DFS, otherwise from local file system)")
 						.hasArg()
-						.withValueSeparator('=')
+						.withValueSeparator(' ')
 						.create("config");
 		Option cleanOpt = OptionBuilder.withDescription("cleanup all SystemML working directories (FS, DFS),"
 						+ " All other flags are ignored in this mode. \n")
@@ -400,7 +402,13 @@ public class DMLScript
 						.create("help");
 
 		OptionGroup fileOrScriptOpt = new OptionGroup();
-		fileOrScriptOpt.addOption(scriptOpt).addOption(fileOpt).isRequired();	// Either -f or -s is required, but not both
+		// Either a clean(-clean) is specified, a file(-f), a script(-s) or help(-help)
+		fileOrScriptOpt.addOption(scriptOpt);
+		fileOrScriptOpt.addOption(fileOpt);
+		fileOrScriptOpt.addOption(cleanOpt);
+		fileOrScriptOpt.addOption(helpOpt);
+		fileOrScriptOpt.isRequired();
+
 
 		OptionGroup argsOrNVArgsOpt = new OptionGroup();
 		argsOrNVArgsOpt.addOption(nvargsOpt).addOption(argsOpt);	// Either -args or -nvargs
@@ -561,7 +569,7 @@ public class DMLScript
 				arg.equalsIgnoreCase("-stats") || 
 				arg.equalsIgnoreCase("-exec") ||
 				arg.equalsIgnoreCase("-debug") ||
-				arg.startsWith("-config="))
+				arg.startsWith("-config "))
 			{
 					throw new LanguageException("-args or -nvargs must be the final argument for DMLScript!");
 			}

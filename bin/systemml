@@ -155,7 +155,7 @@ java ${SYSTEMML_DEFAULT_JAVA_OPTS} \
 org.apache.sysml.api.DMLScript \
 -f '$SCRIPT_FILE' \
 -exec singlenode \
--config='$PROJECT_ROOT_DIR/conf/SystemML-config.xml' \
+-config '$PROJECT_ROOT_DIR/conf/SystemML-config.xml' \
 $@"
 
 eval ${CMD}

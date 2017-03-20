@@ -87,7 +87,7 @@ public class DMLScriptTest1 extends AutomatedTestBase
 			Integer.toString(rows), Integer.toString(cols), "text", output("a")};
 		runTest(true, false, null, -1);
 		
-		programArgs = new String[]{"-exec", "hybrid", "-config=" + HOME + "SystemML-config.xml",
+		programArgs = new String[]{"-exec", "hybrid", "-config " + HOME + "SystemML-config.xml",
 			"-args", input("a"), Integer.toString(rows), Integer.toString(cols), "text", output("a")};
 		runTest(true, false, null, -1);
 	}
@@ -118,7 +118,7 @@ public class DMLScriptTest1 extends AutomatedTestBase
 			Integer.toString(rows), Integer.toString(cols), "text", output("a")};
 		runTest(true, false, null, -1);
 		
-		programArgs = new String[]{"-s", s, "-config=" + HOME + "SystemML-config.xml", "-exec", "hybrid",
+		programArgs = new String[]{"-s", s, "-config " + HOME + "SystemML-config.xml", "-exec", "hybrid",
 			"-args", input("a"), Integer.toString(rows), Integer.toString(cols), "text", output("a")};
 		runTest(true, false, null, -1);
 	}

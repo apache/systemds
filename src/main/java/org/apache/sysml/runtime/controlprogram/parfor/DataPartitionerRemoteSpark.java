@@ -23,7 +23,7 @@ import org.apache.spark.api.java.JavaPairRDD;
 
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
+import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PartitionFormat;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
@@ -47,9 +47,9 @@ public class DataPartitionerRemoteSpark extends DataPartitioner
 	private ExecutionContext _ec = null;
 	private long _numRed = -1;
 	
-	public DataPartitionerRemoteSpark(PDataPartitionFormat dpf, int n, ExecutionContext ec, long numRed, boolean keepIndexes) 
+	public DataPartitionerRemoteSpark(PartitionFormat dpf, ExecutionContext ec, long numRed, boolean keepIndexes) 
 	{
-		super(dpf, n);
+		super(dpf._dpf, dpf._N);
 		
 		_ec = ec;
 		_numRed = numRed;
@@ -78,7 +78,7 @@ public class DataPartitionerRemoteSpark extends DataPartitioner
 			int numRed = (int)determineNumReducers(inRdd, mc, _numRed);
 	
 			//run spark remote data partition job 
-			DataPartitionerRemoteSparkMapper dpfun = new DataPartitionerRemoteSparkMapper(mc, ii, oi, _format);
+			DataPartitionerRemoteSparkMapper dpfun = new DataPartitionerRemoteSparkMapper(mc, ii, oi, _format, _n);
 			DataPartitionerRemoteSparkReducer wfun = new DataPartitionerRemoteSparkReducer(fnameNew, oi);
 			inRdd.flatMapToPair(dpfun) //partition the input blocks
 			     .groupByKey(numRed)   //group partition blocks 		          

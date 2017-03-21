@@ -57,8 +57,7 @@ public abstract class DataPartitioner
 	protected int _n = -1; //blocksize if applicable
 	protected boolean _allowBinarycell = true;
 	
-	protected DataPartitioner( PDataPartitionFormat dpf, int n )
-	{
+	protected DataPartitioner( PDataPartitionFormat dpf, int n ) {
 		_format = dpf;
 		_n = n;
 	}

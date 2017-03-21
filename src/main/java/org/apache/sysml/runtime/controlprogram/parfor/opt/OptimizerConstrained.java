@@ -29,12 +29,12 @@ import org.apache.sysml.parser.ParForStatementBlock;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock;
-import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitioner;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PExecMode;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.POptMode;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PResultMerge;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PTaskPartitioner;
+import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PartitionFormat;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.parfor.opt.CostEstimator.TestMeasure;
@@ -107,7 +107,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 		//OPTIMIZE PARFOR PLAN
 
 		// rewrite 1: data partitioning (incl. log. recompile RIX)
-		HashMap<String, PDataPartitionFormat> partitionedMatrices = new HashMap<String,PDataPartitionFormat>();
+		HashMap<String, PartitionFormat> partitionedMatrices = new HashMap<String, PartitionFormat>();
 		rewriteSetDataPartitioner( pn, ec.getVariables(), partitionedMatrices, OptimizerUtils.getLocalMemBudget() );
 		double M0b = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn); //reestimate
 
@@ -230,7 +230,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 	///
 
 	@Override
-	protected boolean rewriteSetDataPartitioner(OptNode n, LocalVariableMap vars, HashMap<String,PDataPartitionFormat> partitionedMatrices, double thetaM)
+	protected boolean rewriteSetDataPartitioner(OptNode n, LocalVariableMap vars, HashMap<String,PartitionFormat> partitionedMatrices, double thetaM)
 		throws DMLRuntimeException
 	{
 		boolean blockwise = false;
@@ -362,7 +362,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 	//REWRITE set fused data partitioning / execution
 	///
 
-	protected void rewriteSetFusedDataPartitioningExecution(OptNode pn, double M, boolean flagLIX, HashMap<String, PDataPartitionFormat> partitionedMatrices, LocalVariableMap vars, PExecMode emode)
+	protected void rewriteSetFusedDataPartitioningExecution(OptNode pn, double M, boolean flagLIX, HashMap<String, PartitionFormat> partitionedMatrices, LocalVariableMap vars, PExecMode emode)
 		throws DMLRuntimeException
 	{
 		if( emode == PExecMode.REMOTE_MR_DP || emode == PExecMode.REMOTE_SPARK_DP )
@@ -378,15 +378,15 @@ public class OptimizerConstrained extends OptimizerRuleBased
 			}
 
 			String moVarname = partitionedMatrices.keySet().iterator().next();
-			PDataPartitionFormat moDpf = partitionedMatrices.get(moVarname);
+			PartitionFormat moDpf = partitionedMatrices.get(moVarname);
 			MatrixObject mo = (MatrixObject)vars.get(moVarname);
 
 			//check if access via iteration variable and sizes match
 			String iterVarname = pfpb.getIterablePredicateVars()[0];
 
 			if( rIsAccessByIterationVariable(pn, moVarname, iterVarname) &&
-			   ((moDpf==PDataPartitionFormat.ROW_WISE && mo.getNumRows()==_N ) ||
-				(moDpf==PDataPartitionFormat.COLUMN_WISE && mo.getNumColumns()==_N)) )
+			   ((moDpf==PartitionFormat.ROW_WISE && mo.getNumRows()==_N ) ||
+				(moDpf==PartitionFormat.COLUMN_WISE && mo.getNumColumns()==_N)) )
 			{
 				int k = (int)Math.min(_N,_rk2);
 

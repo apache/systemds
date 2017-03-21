@@ -42,7 +42,7 @@ import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock;
-import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
+import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PartitionFormat;
 import org.apache.sysml.runtime.controlprogram.caching.CacheStatistics;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
@@ -68,12 +68,11 @@ import org.apache.sysml.yarn.DMLAppMasterUtils;
  */
 public class RemoteDPParForMR
 {
-	
 	protected static final Log LOG = LogFactory.getLog(RemoteDPParForMR.class.getName());
 
-	public static RemoteParForJobReturn runJob(long pfid, String itervar, String matrixvar, String program, String resultFile, MatrixObject input, 
-			                                   PDataPartitionFormat dpf, OutputInfo oi, boolean tSparseCol, //config params
-			                                   boolean enableCPCaching, int numReducers, int replication, int max_retry)  //opt params
+	public static RemoteParForJobReturn runJob(long pfid, String itervar, String matrixvar, String program, 
+			String resultFile, MatrixObject input, PartitionFormat dpf, OutputInfo oi, boolean tSparseCol, //config params
+			boolean enableCPCaching, int numReducers, int replication, int max_retry)  //opt params
 		throws DMLRuntimeException
 	{
 		RemoteParForJobReturn ret = null;
@@ -104,7 +103,8 @@ public class RemoteDPParForMR
 			long clen = input.getNumColumns();
 			int brlen = (int) input.getNumRowsPerBlock();
 			int bclen = (int) input.getNumColumnsPerBlock();
-			MRJobConfiguration.setPartitioningInfo(job, rlen, clen, brlen, bclen, InputInfo.BinaryBlockInputInfo, oi, dpf, 1, input.getFileName(), itervar, matrixvar, tSparseCol);
+			MRJobConfiguration.setPartitioningInfo(job, rlen, clen, brlen, bclen, InputInfo.BinaryBlockInputInfo, 
+					oi, dpf._dpf, dpf._N, input.getFileName(), itervar, matrixvar, tSparseCol);
 			job.setInputFormat(InputInfo.BinaryBlockInputInfo.inputFormatClass);
 			FileInputFormat.setInputPaths(job, path);
 			

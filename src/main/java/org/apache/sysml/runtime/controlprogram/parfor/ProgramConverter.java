@@ -60,6 +60,7 @@ import org.apache.sysml.runtime.controlprogram.ProgramBlock;
 import org.apache.sysml.runtime.controlprogram.WhileProgramBlock;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PExecMode;
+import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PartitionFormat;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
@@ -883,7 +884,8 @@ public class ProgramConverter
 				MatrixFormatMetaData md = (MatrixFormatMetaData) dat.getMetaData();
 				MatrixCharacteristics mc = md.getMatrixCharacteristics();
 				value = mo.getFileName();
-				PDataPartitionFormat partFormat = (mo.getPartitionFormat()!=null) ? mo.getPartitionFormat() : PDataPartitionFormat.NONE;
+				PartitionFormat partFormat = (mo.getPartitionFormat()!=null) ? new PartitionFormat(
+						mo.getPartitionFormat(),mo.getPartitionSize()) : PartitionFormat.NONE;
 				matrixMetaData = new String[9];
 				matrixMetaData[0] = String.valueOf( mc.getRows() );
 				matrixMetaData[1] = String.valueOf( mc.getCols() );
@@ -1819,14 +1821,14 @@ public class ProgramConverter
 				long nnz = Long.parseLong( st.nextToken() );
 				InputInfo iin = InputInfo.stringToInputInfo( st.nextToken() );
 				OutputInfo oin = OutputInfo.stringToOutputInfo( st.nextToken() );		
-				PDataPartitionFormat partFormat = PDataPartitionFormat.valueOf( st.nextToken() );
+				PartitionFormat partFormat = PartitionFormat.valueOf( st.nextToken() );
 				UpdateType inplace = UpdateType.valueOf( st.nextToken() );
 				MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, brows, bcols, nnz); 
 				MatrixFormatMetaData md = new MatrixFormatMetaData( mc, oin, iin );
 				mo.setMetaData( md );
 				mo.setVarName( name );
-				if( partFormat!=PDataPartitionFormat.NONE )
-					mo.setPartitioned( partFormat, -1 ); //TODO once we support BLOCKWISE_N we should support it here as well
+				if( partFormat._dpf != PDataPartitionFormat.NONE )
+					mo.setPartitioned( partFormat._dpf, partFormat._N );
 				mo.setUpdateType(inplace);
 				dat = mo;
 				break;

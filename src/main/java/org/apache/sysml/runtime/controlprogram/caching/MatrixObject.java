@@ -293,6 +293,10 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 						rows = brlen;
 						cols = mc.getCols();
 						break;
+					case ROW_BLOCK_WISE_N: 
+						rows = _partitionSize;
+						cols = mc.getCols();
+						break;
 					case COLUMN_WISE:
 						rows = mc.getRows();
 						cols = 1;
@@ -301,6 +305,10 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 						rows = mc.getRows();
 						cols = bclen;
 						break;
+					case COLUMN_BLOCK_WISE_N: 
+						rows = mc.getRows();
+						cols = _partitionSize;
+						break;	
 					default:
 						throw new CacheException("Unsupported partition format: "+_partitionFormat);
 				}
@@ -370,6 +378,10 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 				sb.append(Lop.FILE_SEPARATOR);
 				sb.append((pred.rowStart-1)/brlen+1);
 				break;
+			case ROW_BLOCK_WISE_N:
+				sb.append(Lop.FILE_SEPARATOR);
+				sb.append((pred.rowStart-1)/_partitionSize+1);
+				break;
 			case COLUMN_WISE:
 				sb.append(Lop.FILE_SEPARATOR);
 				sb.append(pred.colStart);
@@ -378,6 +390,10 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 				sb.append(Lop.FILE_SEPARATOR);
 				sb.append((pred.colStart-1)/bclen+1);
 				break;
+			case COLUMN_BLOCK_WISE_N:
+				sb.append(Lop.FILE_SEPARATOR);
+				sb.append((pred.colStart-1)/_partitionSize+1);
+				break;	
 			default:
 				throw new CacheException ("MatrixObject not available to indexed read.");
 		}

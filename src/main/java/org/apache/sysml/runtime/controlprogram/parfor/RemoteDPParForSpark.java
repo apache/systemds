@@ -42,6 +42,7 @@ import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
+import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PartitionFormat;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
@@ -70,7 +71,7 @@ public class RemoteDPParForSpark
 	protected static final Log LOG = LogFactory.getLog(RemoteDPParForSpark.class.getName());
 
 	public static RemoteParForJobReturn runJob(long pfid, String itervar, String matrixvar, String program, HashMap<String, byte[]> clsMap,
-			String resultFile, MatrixObject input, ExecutionContext ec, PDataPartitionFormat dpf, OutputInfo oi, 
+			String resultFile, MatrixObject input, ExecutionContext ec, PartitionFormat dpf, OutputInfo oi, 
 			boolean tSparseCol, boolean enableCPCaching, int numReducers ) 
 		throws DMLRuntimeException
 	{
@@ -91,7 +92,7 @@ public class RemoteDPParForSpark
 
 		//compute number of reducers (to avoid OOMs and reduce memory pressure)
 		int numParts = SparkUtils.getNumPreferredPartitions(mc, in);
-		int numParts2 = (int)((dpf==PDataPartitionFormat.ROW_BLOCK_WISE) ? mc.getRows() : mc.getCols()); 
+		int numParts2 = (int)((dpf._dpf==PDataPartitionFormat.ROW_BLOCK_WISE) ? mc.getRows() : mc.getCols()); 
 		int numReducers2 = Math.max(numReducers, Math.min(numParts, numParts2));
 		
 		//core parfor datapartition-execute (w/ or w/o shuffle, depending on data characteristics)
@@ -123,7 +124,7 @@ public class RemoteDPParForSpark
 	
 	@SuppressWarnings("unchecked")
 	private static JavaPairRDD<Long, Writable> getPartitionedInput(SparkExecutionContext sec, 
-			String matrixvar, OutputInfo oi, PDataPartitionFormat dpf) 
+			String matrixvar, OutputInfo oi, PartitionFormat dpf) 
 		throws DMLRuntimeException 
 	{
 		InputInfo ii = InputInfo.BinaryBlockInputInfo;
@@ -153,7 +154,7 @@ public class RemoteDPParForSpark
 		{
 			//get input rdd and data partitioning 
 			JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryBlockRDDHandleForVariable(matrixvar);
-			DataPartitionerRemoteSparkMapper dpfun = new DataPartitionerRemoteSparkMapper(mc, ii, oi, dpf);
+			DataPartitionerRemoteSparkMapper dpfun = new DataPartitionerRemoteSparkMapper(mc, ii, oi, dpf._dpf, dpf._N);
 			return in.flatMapToPair(dpfun);
 		}
 		//default binary block input rdd with grouping
@@ -167,22 +168,22 @@ public class RemoteDPParForSpark
 						mo.getRDDHandle().getLineageChilds().get(0)).getRDD();
 			
 			//data partitioning of input rdd 
-			DataPartitionerRemoteSparkMapper dpfun = new DataPartitionerRemoteSparkMapper(mc, ii, oi, dpf);
+			DataPartitionerRemoteSparkMapper dpfun = new DataPartitionerRemoteSparkMapper(mc, ii, oi, dpf._dpf, dpf._N);
 			return in.flatMapToPair(dpfun);
 		}
 	} 
 	
 	//determines if given input matrix requires grouping of partial partition slices
-	private static boolean requiresGrouping(PDataPartitionFormat dpf, MatrixObject mo) {
+	private static boolean requiresGrouping(PartitionFormat dpf, MatrixObject mo) {
 		MatrixCharacteristics mc = mo.getMatrixCharacteristics();
-		return ((dpf == PDataPartitionFormat.ROW_WISE && mc.getNumColBlocks() > 1)
-				|| (dpf == PDataPartitionFormat.COLUMN_WISE && mc.getNumRowBlocks() > 1))
+		return ((dpf == PartitionFormat.ROW_WISE && mc.getNumColBlocks() > 1)
+				|| (dpf == PartitionFormat.COLUMN_WISE && mc.getNumRowBlocks() > 1))
 			&& !hasInputDataSet(dpf, mo);
 	}
 	
 	//determines if given input matrix wraps input data set applicable to direct processing
-	private static boolean hasInputDataSet(PDataPartitionFormat dpf, MatrixObject mo) {
-		return (dpf == PDataPartitionFormat.ROW_WISE 
+	private static boolean hasInputDataSet(PartitionFormat dpf, MatrixObject mo) {
+		return (dpf == PartitionFormat.ROW_WISE 
 			&& mo.getRDDHandle().isCheckpointRDD()
 			&& mo.getRDDHandle().getLineageChilds().size()==1
 			&& mo.getRDDHandle().getLineageChilds().get(0).getLineageChilds().size()==1

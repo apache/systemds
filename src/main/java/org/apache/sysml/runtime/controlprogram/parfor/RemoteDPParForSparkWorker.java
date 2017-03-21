@@ -33,6 +33,7 @@ import org.apache.spark.util.LongAccumulator;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.codegen.CodegenUtils;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
+import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PartitionFormat;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.parfor.Task.TaskType;
@@ -70,7 +71,7 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 	private final LongAccumulator _aIters;
 	
 	public RemoteDPParForSparkWorker(String program, HashMap<String, byte[]> clsMap, String inputVar, String iterVar, 
-			boolean cpCaching, MatrixCharacteristics mc, boolean tSparseCol, PDataPartitionFormat dpf, OutputInfo oinfo, 
+			boolean cpCaching, MatrixCharacteristics mc, boolean tSparseCol, PartitionFormat dpf, OutputInfo oinfo, 
 			LongAccumulator atasks, LongAccumulator aiters) 
 		throws DMLRuntimeException
 	{
@@ -86,12 +87,12 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 		_aIters = aiters;
 		
 		//setup matrix block partition meta data
-		_rlen = (dpf != PDataPartitionFormat.ROW_WISE) ? (int)mc.getRows() : 1;
-		_clen = (dpf != PDataPartitionFormat.COLUMN_WISE) ? (int)mc.getCols() : 1;
+		_rlen = (dpf != PartitionFormat.ROW_WISE) ? (int)mc.getRows() : 1;
+		_clen = (dpf != PartitionFormat.COLUMN_WISE) ? (int)mc.getCols() : 1;
 		_brlen = mc.getRowsPerBlock();
 		_bclen = mc.getColsPerBlock();
 		_tSparseCol = tSparseCol;
-		_dpf = dpf;
+		_dpf = dpf._dpf;
 	}
 	
 	@Override 

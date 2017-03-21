@@ -22,6 +22,7 @@ package org.apache.sysml.runtime.controlprogram;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -176,6 +177,42 @@ public class ParForProgramBlock extends ForProgramBlock
 				return BLOCK_WISE_M_N;
 			else
 				return NONE;
+		}
+	}
+	
+	/**
+	 * Convenience class to package PDataPartitionFormat and its parameters.
+	 */
+	public static class PartitionFormat implements Serializable {
+		private static final long serialVersionUID = 4729309847778707801L;
+		public static final PartitionFormat NONE = new PartitionFormat(PDataPartitionFormat.NONE, -1);
+		public static final PartitionFormat ROW_WISE = new PartitionFormat(PDataPartitionFormat.ROW_WISE, -1);
+		public static final PartitionFormat COLUMN_WISE = new PartitionFormat(PDataPartitionFormat.COLUMN_WISE, -1);
+		
+		public final PDataPartitionFormat _dpf;
+		public final int _N;
+		public PartitionFormat(PDataPartitionFormat dpf, int N) {
+			_dpf = dpf;
+			_N = N;
+		}
+		@Override
+		public boolean equals(Object o) {
+			return (o instanceof PartitionFormat)
+				&& _dpf == ((PartitionFormat)o)._dpf
+				&& _N == ((PartitionFormat)o)._N;
+		}
+		@Override
+		public String toString() {
+			return _dpf.name()+","+_N;	
+		}
+		public static PartitionFormat valueOf(String value) {
+			String[] parts = value.split(",");
+			return new PartitionFormat(PDataPartitionFormat
+				.parsePDataPartitionFormat(parts[0]), Integer.parseInt(parts[1]));
+		}
+		public boolean isBlockwise() {
+			return _dpf == PDataPartitionFormat.COLUMN_BLOCK_WISE_N 
+				|| _dpf == PDataPartitionFormat.ROW_BLOCK_WISE_N;
 		}
 	}
 	
@@ -893,11 +930,11 @@ public class ParForProgramBlock extends ForProgramBlock
 		// Step 0) check and compile to CP (if forced remote parfor)
 		boolean flagForced = checkMRAndRecompileToCP(0);
 		
-		// Step 1) prepare partitioned input matrix (needs to happen before serializing the progam)
+		// Step 1) prepare partitioned input matrix (needs to happen before serializing the program)
 		ParForStatementBlock sb = (ParForStatementBlock) getStatementBlock();
 		MatrixObject inputMatrix = ec.getMatrixObject(_colocatedDPMatrix );
-		PDataPartitionFormat inputDPF = sb.determineDataPartitionFormat( _colocatedDPMatrix );
-		inputMatrix.setPartitioned(inputDPF, 1); //mark matrix var as partitioned (for reducers) 
+		PartitionFormat inputDPF = sb.determineDataPartitionFormat( _colocatedDPMatrix );
+		inputMatrix.setPartitioned(inputDPF._dpf, inputDPF._N); //mark matrix var as partitioned  
 		
 		// Step 2) init parallel workers (serialize PBs)
 		// NOTES: each mapper changes filenames with regard to his ID as we submit a single job,
@@ -921,8 +958,8 @@ public class ParForProgramBlock extends ForProgramBlock
 		exportMatricesToHDFS(ec);
 				
 		// Step 4) submit MR job (wait for finished work)
-		OutputInfo inputOI = ((inputMatrix.getSparsity()<0.1 && inputDPF==PDataPartitionFormat.COLUMN_WISE)||
-				              (inputMatrix.getSparsity()<0.001 && inputDPF==PDataPartitionFormat.ROW_WISE))? 
+		OutputInfo inputOI = ((inputMatrix.getSparsity()<0.1 && inputDPF==PartitionFormat.COLUMN_WISE)||
+				              (inputMatrix.getSparsity()<0.001 && inputDPF==PartitionFormat.ROW_WISE))? 
 				             OutputInfo.BinaryCellOutputInfo : OutputInfo.BinaryBlockOutputInfo;
 		RemoteParForJobReturn ret = RemoteDPParForMR.runJob(_ID, itervar.getName(), _colocatedDPMatrix, program, resultFile, 
 				inputMatrix, inputDPF, inputOI, _tSparseCol, _enableCPCaching, _numThreads, _replicationDP, MAX_RETRYS_ON_ERROR );
@@ -1024,8 +1061,8 @@ public class ParForProgramBlock extends ForProgramBlock
 		// Step 1) prepare partitioned input matrix (needs to happen before serializing the progam)
 		ParForStatementBlock sb = (ParForStatementBlock) getStatementBlock();
 		MatrixObject inputMatrix = ec.getMatrixObject(_colocatedDPMatrix );
-		PDataPartitionFormat inputDPF = sb.determineDataPartitionFormat( _colocatedDPMatrix );
-		inputMatrix.setPartitioned(inputDPF, 1); //mark matrix var as partitioned (for reducers) 
+		PartitionFormat inputDPF = sb.determineDataPartitionFormat( _colocatedDPMatrix );
+		inputMatrix.setPartitioned(inputDPF._dpf, inputDPF._N); //mark matrix var as partitioned  
 		
 		// Step 2) init parallel workers (serialize PBs)
 		// NOTES: each mapper changes filenames with regard to his ID as we submit a single job,
@@ -1084,7 +1121,8 @@ public class ParForProgramBlock extends ForProgramBlock
 	private void handleDataPartitioning( ExecutionContext ec ) 
 		throws DMLRuntimeException
 	{
-		if( _dataPartitioner != PDataPartitioner.NONE )
+		PDataPartitioner dataPartitioner = _dataPartitioner;
+		if( dataPartitioner != PDataPartitioner.NONE )
 		{			
 			ParForStatementBlock sb = (ParForStatementBlock) getStatementBlock();
 			if( sb == null )
@@ -1100,19 +1138,24 @@ public class ParForProgramBlock extends ForProgramBlock
 				{
 					MatrixObject moVar = (MatrixObject) dat; //unpartitioned input
 					
-					PDataPartitionFormat dpf = sb.determineDataPartitionFormat( var );
-					//dpf = (_optMode != POptMode.NONE) ? OptimizerRuleBased.decideBlockWisePartitioning(moVar, dpf) : dpf;
+					PartitionFormat dpf = sb.determineDataPartitionFormat( var );
 					LOG.trace("PARFOR ID = "+_ID+", Partitioning read-only input variable "+var+" (format="+dpf+", mode="+_dataPartitioner+")");
 					
-					if( dpf != PDataPartitionFormat.NONE )
+					if( dpf != PartitionFormat.NONE )
 					{
+						if( dataPartitioner != PDataPartitioner.REMOTE_SPARK && dpf.isBlockwise() ) {
+							LOG.warn("PARFOR ID = "+_ID+", Switching data partitioner from " + dataPartitioner + 
+									" to " + PDataPartitioner.REMOTE_SPARK.name()+" for blockwise-n partitioning.");
+							dataPartitioner = PDataPartitioner.REMOTE_SPARK;
+						}
+						
 						Timing ltime = new Timing(true);
 						
 						//input data partitioning (reuse if possible)
 						Data dpdatNew = _variablesDPReuse.get(var);
 						if( dpdatNew == null ) //no reuse opportunity
 						{
-							DataPartitioner dp = createDataPartitioner( dpf, _dataPartitioner, ec );
+							DataPartitioner dp = createDataPartitioner( dpf, dataPartitioner, ec );
 							//disable binary cell for sparse if consumed by MR jobs
 							if(    !OptimizerRuleBased.allowsBinaryCellPartitions(moVar, dpf )
 								|| OptimizerUtils.isSparkExecutionMode() ) //TODO support for binarycell
@@ -1422,7 +1465,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	 * @return data partitioner
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private DataPartitioner createDataPartitioner(PDataPartitionFormat dpf, PDataPartitioner dataPartitioner, ExecutionContext ec) 
+	private DataPartitioner createDataPartitioner(PartitionFormat dpf, PDataPartitioner dataPartitioner, ExecutionContext ec) 
 		throws DMLRuntimeException 
 	{
 		DataPartitioner dp = null;
@@ -1439,19 +1482,17 @@ public class ParForProgramBlock extends ForProgramBlock
 		switch( dataPartitioner )
 		{
 			case LOCAL:
-				dp = new DataPartitionerLocal(dpf, -1, _numThreads);
+				dp = new DataPartitionerLocal(dpf, _numThreads);
 				break;
 			case REMOTE_MR:
-				dp = new DataPartitionerRemoteMR( dpf, -1, _ID, numRed,
-						                          _replicationDP, 
-						                          MAX_RETRYS_ON_ERROR, 
-						                          ALLOW_REUSE_MR_JVMS, false );
+				dp = new DataPartitionerRemoteMR( dpf, _ID, numRed,
+					_replicationDP, MAX_RETRYS_ON_ERROR, ALLOW_REUSE_MR_JVMS, false );
 				break;
 			case REMOTE_SPARK:
-				dp = new DataPartitionerRemoteSpark( dpf, -1, ec, numRed, false );
+				dp = new DataPartitionerRemoteSpark( dpf, ec, numRed, false );
 				break;	
 			default:
-				throw new DMLRuntimeException("Undefined data partitioner: '" +dataPartitioner.toString()+"'.");
+				throw new DMLRuntimeException("Unknown data partitioner: '" +dataPartitioner.name()+"'.");
 		}
 		
 		return dp;
@@ -1983,7 +2024,6 @@ public class ParForProgramBlock extends ForProgramBlock
 			}
 		}
 	}
-	
 
 	public String printBlockErrorLocation(){
 		return "ERROR: Runtime error in parfor program block generated from parfor statement block between lines " + _beginLine + " and " + _endLine + " -- ";

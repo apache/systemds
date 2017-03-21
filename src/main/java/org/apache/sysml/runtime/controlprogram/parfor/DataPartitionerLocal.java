@@ -42,6 +42,7 @@ import org.apache.hadoop.mapred.TextInputFormat;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
+import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PartitionFormat;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.parfor.util.Cell;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
@@ -78,7 +79,6 @@ import org.apache.sysml.runtime.util.LocalFileUtils;
  */
 public class DataPartitionerLocal extends DataPartitioner
 {
-	
 	private static final boolean PARALLEL = true; 
 	
 	private IDSequence _seq = null;
@@ -94,13 +94,12 @@ public class DataPartitionerLocal extends DataPartitioner
 	 * @param par -1 for serial otherwise number of threads, can be ignored by implementation
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public DataPartitionerLocal(PDataPartitionFormat dpf, int n, int par) 
+	public DataPartitionerLocal(PartitionFormat dpf, int par) 
 		throws DMLRuntimeException 
 	{
-		super(dpf, n);
+		super(dpf._dpf, dpf._N);
 		
-		//TODO
-		if( dpf == PDataPartitionFormat.ROW_BLOCK_WISE_N || dpf == PDataPartitionFormat.COLUMN_BLOCK_WISE_N  )
+		if( dpf.isBlockwise() )
 			throw new DMLRuntimeException("Data partitioning formt '"+dpf+"' not supported by DataPartitionerLocal" );
 		
 		_seq = new IDSequence();

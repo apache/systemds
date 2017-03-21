@@ -30,7 +30,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-
+import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.parser.Expression.BinaryOp;
 import org.apache.sysml.parser.Expression.BuiltinFunctionOp;
 import org.apache.sysml.parser.Expression.DataType;
@@ -41,6 +42,7 @@ import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PExecMode;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.POptMode;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PResultMerge;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PTaskPartitioner;
+import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PartitionFormat;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
@@ -403,43 +405,27 @@ public class ParForStatementBlock extends ForStatementBlock
 	 * @param var variables
 	 * @return partition format
 	 */
-	public PDataPartitionFormat determineDataPartitionFormat(String var) 
+	public PartitionFormat determineDataPartitionFormat(String var) 
 	{
-		PDataPartitionFormat dpf = null;
-		List<PDataPartitionFormat> dpfc = new LinkedList<PDataPartitionFormat>();
+		PartitionFormat dpf = null;
+		List<PartitionFormat> dpfc = new LinkedList<PartitionFormat>();
 		
 		try 
 		{
 			//determine partitioning candidates
-			ParForStatement pfs = (ParForStatement) _statements.get(0);
-			rDeterminePartitioningCandidates(var, pfs.getBody(), dpfc);
+			ParForStatement dpfs = (ParForStatement) _statements.get(0);
+			rDeterminePartitioningCandidates(var, dpfs.getBody(), dpfc);
 			
 			//determine final solution		
-			for( PDataPartitionFormat tmp : dpfc )
-			{
-				//System.out.println(var+": "+tmp);
-				if( dpf != null && dpf!=tmp ) //if no consensus
-					dpf = PDataPartitionFormat.NONE;	
-				else
-					dpf = tmp;
-					
-				/* TODO block partitioning
-				if( dpf == null || dpf==tmp ) //consensus
-					dpf = tmp;
-				else if(   dpf==PDataPartitionFormat.BLOCK_WISE_M_N //subsumption 
-						|| tmp==PDataPartitionFormat.BLOCK_WISE_M_N )
-					dpf = PDataPartitionFormat.BLOCK_WISE_M_N;
-				else //no consensus
-					dpf = PDataPartitionFormat.NONE;
-				*/			
-			}
+			for( PartitionFormat tmp : dpfc )
+				dpf = ( dpf!=null && !dpf.equals(tmp) ) ? //if no consensus
+					PartitionFormat.NONE : tmp;
 			if( dpf == null )
-				dpf = PDataPartitionFormat.NONE;
+				dpf = PartitionFormat.NONE;
 		}
-		catch (LanguageException e) 
-		{
+		catch (LanguageException e) {
 			LOG.trace( "Unable to determine partitioning candidates.", e );
-			dpf = PDataPartitionFormat.NONE;
+			dpf = PartitionFormat.NONE;
 		}
 		
 		return dpf;
@@ -520,7 +506,7 @@ public class ParForStatementBlock extends ForStatementBlock
 	 * @param C list of partition formats
 	 * @throws LanguageException if LanguageException occurs
 	 */
-	private void rDeterminePartitioningCandidates(String var, ArrayList<StatementBlock> asb, List<PDataPartitionFormat> C) 
+	private void rDeterminePartitioningCandidates(String var, ArrayList<StatementBlock> asb, List<PartitionFormat> C) 
 		throws LanguageException 
 	{
 		for(StatementBlock sb : asb ) // foreach statementblock in parforbody
@@ -570,59 +556,75 @@ public class ParForStatementBlock extends ForStatementBlock
 			}
 	}
 
-	private void rDeterminePartitioningCandidates(String var, List<DataIdentifier> datsRead, List<PDataPartitionFormat> C)
+	private void rDeterminePartitioningCandidates(String var, List<DataIdentifier> datsRead, List<PartitionFormat> C)
 	{
-		if( datsRead != null )
-			for(DataIdentifier read : datsRead)
-			{ 
-				String readStr = read.getName();							
-				if( var.equals( readStr ) ) 
-				{
-					if( read instanceof IndexedIdentifier )
-					{
-						IndexedIdentifier idat = (IndexedIdentifier) read;
-						C.add( determineAccessPattern(idat) );
-					}
-					else if( read instanceof DataIdentifier )
-					{
-						C.add( PDataPartitionFormat.NONE );
-					}
-				}
+		if( datsRead == null )
+			return;
+		
+		for(DataIdentifier read : datsRead)
+			if( var.equals( read.getName() ) ) {
+				if( read instanceof IndexedIdentifier )
+					C.add( determineAccessPattern((IndexedIdentifier) read) );
+				else if( read instanceof DataIdentifier )
+					C.add( PartitionFormat.NONE );
 			}
 	}
 	
-	private PDataPartitionFormat determineAccessPattern( IndexedIdentifier dat )
+	private PartitionFormat determineAccessPattern( IndexedIdentifier dat )
 	{
-		PDataPartitionFormat dpf = null;
+		boolean isSpark = OptimizerUtils.isSparkExecutionMode();
+		int blksz = ConfigurationManager.getBlocksize();
+		PartitionFormat dpf = null;
 		
 		//1) get all bounds expressions for index access
 		Expression rowL = dat.getRowLowerBound();
 		Expression rowU = dat.getRowUpperBound();
 		Expression colL = dat.getColLowerBound();
 		Expression colU = dat.getColUpperBound();
+		boolean allRows = (rowL == null && rowU == null);
+		boolean allCols = (colL == null && colU == null);
 		
-		//2) decided on access pattern		
-		//COLUMN_WISE iff row expr is colon (all rows) 
-		//   and access to single column
-		if( rowL == null && rowU == null && 
-			colL!=null && colU != null && colL.equals(colU) )
-		{
-			dpf = PDataPartitionFormat.COLUMN_WISE;
-		}		
-		//ROW_WISE iff col expr is colon (all columns) 
-		//   and access to single row
-		else if( colL == null && colU == null &&
-				rowL!=null && rowU != null && rowL.equals(rowU) )
-		{
-			dpf = PDataPartitionFormat.ROW_WISE;
+		try {
+			//2) decided on access pattern		
+			//COLUMN_WISE if all rows and access to single column
+			if( allRows && colL!=null && colL.equals(colU) ) {
+				dpf = PartitionFormat.COLUMN_WISE;
+			}		
+			//ROW_WISE if all cols and access to single row
+			else if( allCols && rowL!=null && rowL.equals(rowU) ) {
+				dpf = PartitionFormat.ROW_WISE;
+			}
+			//COLUMN_BLOCK_WISE
+			else if( isSpark && allRows && colL != colU ) {
+				LinearFunction l1 = getLinearFunction(colL, true);
+				LinearFunction l2 = getLinearFunction(colU, true);
+				dpf = !isAlignedBlocking(l1, l2, blksz) ? PartitionFormat.NONE :
+					new PartitionFormat(PDataPartitionFormat.COLUMN_BLOCK_WISE_N, (int)l1._b[0]);
+			}
+			//ROW_BLOCK_WISE
+			else if( isSpark && allCols && rowL != rowU ) {
+				LinearFunction l1 = getLinearFunction(rowL, true);
+				LinearFunction l2 = getLinearFunction(rowU, true);
+				dpf = !isAlignedBlocking(l1, l2, blksz) ?  PartitionFormat.NONE :
+					new PartitionFormat(PDataPartitionFormat.ROW_BLOCK_WISE_N, (int)l1._b[0]);
+			}
+			//NONE otherwise (conservative)
+			else
+				dpf = PartitionFormat.NONE;
 		}
-		//NONE otherwise (conservative)
-		else
-			dpf = PDataPartitionFormat.NONE;
-		
-		//TODO block partitioning
+		catch(Exception ex) {
+			throw new RuntimeException(ex);
+		}
 		
 		return dpf;
+	}
+	
+	private static boolean isAlignedBlocking(LinearFunction l1, LinearFunction l2, int blksz) {
+		return (l1!=null && l2!=null && l1.equalSlope(l2) //same slope
+			&& l1._b.length==1 && l1._b[0]<=blksz         //single index and block
+			&& (l2._a - l1._a + 1 == l1._b[0])            //intercept difference is slope
+			&& (blksz/l1._b[0])*l1._b[0] == blksz         //aligned slope
+			&& l2.eval(1L) == l1._b[0] );                 //aligned intercept
 	}
 	
 	private void rConsolidateResultVars(ArrayList<StatementBlock> asb, ArrayList<String> vars) 
@@ -1718,6 +1720,28 @@ public class ParForStatementBlock extends ForStatementBlock
 		return out;
 	}
 	
+	private LinearFunction getLinearFunction(Expression expr, boolean ignoreMinWithConstant) 
+		throws LanguageException {
+		if( expr instanceof IntIdentifier )
+			return new LinearFunction(((IntIdentifier)expr).getValue(), 0, null);
+		else if( expr instanceof BinaryExpression )
+			return rParseBinaryExpression((BinaryExpression)expr);
+		else if( expr instanceof BuiltinFunctionExpression && ignoreMinWithConstant ) {
+			//note: builtin function expression is also a data identifier and hence order before
+			BuiltinFunctionExpression bexpr = (BuiltinFunctionExpression) expr;
+			if( bexpr.getOpCode()==BuiltinFunctionOp.MIN ) {
+				if( bexpr.getFirstExpr() instanceof BinaryExpression )
+					return rParseBinaryExpression((BinaryExpression)bexpr.getFirstExpr());
+				else if( bexpr.getSecondExpr() instanceof BinaryExpression )
+					return rParseBinaryExpression((BinaryExpression)bexpr.getSecondExpr());
+			}
+		}
+		else if( expr instanceof DataIdentifier )
+			return new LinearFunction(0, 1, ((DataIdentifier)expr)._name); //never use public members
+		
+		return null;
+	}
+	
 	/**
 	 * Creates a functionID for a given data identifier (mainly used for caching purposes),
 	 * where data identifiers with equal name and matrix subscripts results in equal
@@ -1931,16 +1955,25 @@ public class ParForStatementBlock extends ForStatementBlock
 		}
 		else if( be.getOpCode() == BinaryOp.MULT )
 		{
-			//NOTE: no recursion for MULT expressions
+			//NOTE: only recursion for MULT expressions, where
+			//one side is a constant 
 			
 			//atomic case
 			Long cvalL = parseLongConstant(l);
 			Long cvalR = parseLongConstant(r);
 			
-			if( cvalL != null )
+			if( cvalL != null && r instanceof DataIdentifier )
 				ret = new LinearFunction(0, cvalL,((DataIdentifier)r)._name);	
-			else if( cvalR != null )
+			else if( cvalR != null && l instanceof DataIdentifier )
 				ret = new LinearFunction(0, cvalR,((DataIdentifier)l)._name);
+			else if( cvalL != null && r instanceof BinaryExpression ) {
+				LinearFunction ltmp = rParseBinaryExpression((BinaryExpression)r);
+				return ltmp.scale(cvalL);
+			}
+			else if( cvalR != null && l instanceof BinaryExpression ) {
+				LinearFunction ltmp = rParseBinaryExpression((BinaryExpression)l);
+				return ltmp.scale(cvalR);
+			}
 			else
 				return null; //let dependency analysis fail
 		}
@@ -2014,8 +2047,7 @@ public class ParForStatementBlock extends ForStatementBlock
 			_vars[0] = name;
 		}
 		
-		public void addConstant(long value)
-		{
+		public void addConstant(long value) {
 			_a += value;	
 		}
 
@@ -2048,19 +2080,26 @@ public class ParForStatementBlock extends ForStatementBlock
 			_vars = tmpvars;			
 		}
 		
-		public void scale( long scale )
-		{				
-			_a *= scale; //-1 because indexing starts at 1 
-			
+		public LinearFunction scale( long scale ) {
+			_a *= scale; 
 			for( int i=0; i<_b.length; i++ )
 				if( _b[i] != 0 )
 					_b[i] *= scale;
+			return this;
 		}
 		
-		public void normalize(int index, long lower, long increment) 
-		{
+		public LinearFunction normalize(int index, long lower, long increment) {
 			_a -= (_b[index] * lower);
 			_b[index] *= increment;
+			return this;
+		}
+		
+		public long eval(Long... x) {
+			long ret = _a;
+			for( int i=0; i<_b.length; i++ )
+				if( _b[i] != 0 )
+					ret += _b[i] *= x[i];
+			return ret;
 		}
 		
 		@Override
@@ -2087,48 +2126,36 @@ public class ParForStatementBlock extends ForStatementBlock
 		}
 		
 		@Override
-		public boolean equals( Object o2 )
-		{
+		public boolean equals( Object o2 ) {
 			if( o2 == null || !(o2 instanceof LinearFunction)  )
 				return false;
 				
 			LinearFunction f2 = (LinearFunction)o2;
-			boolean ret = true;
-			ret &= ( _a == f2._a );
-			ret &= ( _b.length == f2._b.length );
-			
-			if( ret )
-			{
-				for( int i=0; i<_b.length; i++ )
-				{
-					ret &= (_b[i] == f2._b[i] );
-					ret &= (_vars[i].equals(f2._vars[i]) 
-							||(_vars[i].startsWith(INTERAL_FN_INDEX_ROW) && f2._vars[i].startsWith(INTERAL_FN_INDEX_ROW)) 
-							||(_vars[i].startsWith(INTERAL_FN_INDEX_COL) && f2._vars[i].startsWith(INTERAL_FN_INDEX_COL)) )  ;
-				}
-			}
-			
-			return ret;
+			return ( _a == f2._a )
+				&& equalSlope(f2);
 		}
 
-		@Override
-		public int hashCode()
-		{
-			//use identity hash code
-			return super.hashCode();
+		public boolean equalSlope(LinearFunction f2) {
+			boolean ret = ( _b.length == f2._b.length );
+			for( int i=0; i<_b.length && ret; i++ ) {
+				ret &= (_b[i] == f2._b[i] );
+				ret &= (_vars[i].equals(f2._vars[i])
+					||(_vars[i].startsWith(INTERAL_FN_INDEX_ROW) && f2._vars[i].startsWith(INTERAL_FN_INDEX_ROW))
+					||(_vars[i].startsWith(INTERAL_FN_INDEX_COL) && f2._vars[i].startsWith(INTERAL_FN_INDEX_COL)) )  ;
+			}
+			return ret;
 		}
 		
-		public boolean hasNonIndexVariables() 
-		{
-			boolean ret = false;
+		@Override
+		public int hashCode() {
+			return super.hashCode(); //identity
+		}
+		
+		public boolean hasNonIndexVariables() {
 			for( String var : _vars )
 				if( var!=null && !_bounds._lower.containsKey(var) )
-				{
-					ret = true;
-					break;
-				}
-			
-			return ret;
+					return true;
+			return false;
 		}
 		
 	}

@@ -1217,7 +1217,8 @@ public abstract class AutomatedTestBase
 			throw new RuntimeException("Unknown runtime platform: " + rtplatform);
 		}
 		//use optional config file since default under SystemML/DML
-		args.add("-config "+ getCurConfigFile().getPath());
+		args.add("-config");
+		args.add(getCurConfigFile().getPath());
 		
 		if(TEST_GPU)
 			args.add("-gpu");

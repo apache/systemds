@@ -189,6 +189,8 @@ max_pool = function() {
   for (padh in 0:3) {
     for (padw in 0:3) {
       print(" - Testing w/ padh="+padh+" & padw="+padw+".")
+      if (1==1) {}  # force correct printing
+      print("   - Testing forward")
       [out, Hout, Wout] = max_pool::forward(X, C, Hin, Win, Hf, Wf, stride, stride, padh, padw)
       [out_simple, Hout_simple, Wout_simple] = max_pool_simple::forward(X, C, Hin, Win, Hf, Wf,
                                                                         stride, stride, padh, padw)
@@ -205,6 +207,25 @@ max_pool = function() {
                                           as.scalar(out_simple[1,i]), 1e-10, 1e-12)
         rel_error = util::check_rel_error(as.scalar(out[1,i]),
                                           as.scalar(out_builtin[1,i]), 1e-10, 1e-12)
+      }
+
+      print("   - Testing backward")
+      dout = rand(rows=N, cols=C*Hout*Wout, pdf="normal")
+      dX = max_pool::backward(dout, Hout, Wout, X, C, Hin, Win, Hf, Wf, stride, stride, padh, padw)
+      dX_simple = max_pool_simple::backward(dout, Hout_simple, Wout_simple, X, C, Hin, Win, Hf, Wf,
+                                            stride, stride, padh, padw)
+      dX_builtin = max_pool_builtin::backward(dout, Hout_builtin, Wout_builtin, X, C, Hin, Win,
+                                              Hf, Wf, stride, stride, padh, padw)
+
+      # Equivalency check
+      dX = matrix(dX, rows=1, cols=N*C*Hin*Win)
+      dX_simple = matrix(dX_simple, rows=1, cols=N*C*Hin*Win)
+      dX_builtin = matrix(dX_builtin, rows=1, cols=N*C*Hin*Win)
+      for (i in 1:length(dX)) {
+        rel_error = util::check_rel_error(as.scalar(dX[1,i]),
+                                          as.scalar(dX_simple[1,i]), 1e-10, 1e-12)
+        rel_error = util::check_rel_error(as.scalar(dX[1,i]),
+                                          as.scalar(dX_builtin[1,i]), 1e-10, 1e-12)
       }
     }
   }
@@ -288,10 +309,83 @@ max_pool = function() {
   target = rbind(target, target)  # n=2
   tmp = util::check_all_equal(out, target)
   tmp = util::check_all_equal(out_simple, target)
-  # NOTE: the builting max pooling layer is broken for pad>0
   tmp = util::check_all_equal(out_builtin, target)
-  print(toString(out))
-  print(toString(out_builtin))
+
+  print(" - Testing for correct behavior against known answer w/ all negative matrix w/ pad=0.")
+  # generate data
+  # -- channel 1
+  #  -1  -2  -3  -4
+  #  -5  -6  -7  -8
+  #  -9 -10 -11 -12
+  # -13 -14 -15 -16
+  # -- channel 2
+  #  -1  -5  -9 -13
+  #  -2  -6 -10 -14
+  #  -3  -7 -11 -15
+  #  -4  -8 -12 -16
+  X = X * -1
+  pad = 0
+
+  # forward
+  [out, Hout, Wout] = max_pool::forward(X, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
+  [out_simple, Hout_simple, Wout_simple] = max_pool_simple::forward(X, C, Hin, Win, Hf, Wf,
+                                                                    stride, stride, pad, pad)
+  [out_builtin, Hout_builtin, Wout_builtin] = max_pool_builtin::forward(X, C, Hin, Win, Hf, Wf,
+                                                                        stride, stride, pad, pad)
+
+  # equivalency check
+  # -- channel 1
+  #  -1  -3
+  #  -9 -11
+  # -- channel 2
+  #  -1  -9
+  #  -3 -11
+  target = matrix("-1 -3 -9 -11 -1 -9 -3 -11", rows=1, cols=C*Hout*Wout)
+  target = rbind(target, target)  # n=2
+  tmp = util::check_all_equal(out, target)
+  tmp = util::check_all_equal(out_simple, target)
+  tmp = util::check_all_equal(out_builtin, target)
+
+
+  print(" - Testing for correct behavior against known answer w/ all negative matrix w/ pad=1.")
+  # generate data
+  # -- channel 1
+  #  0   0   0   0   0  0
+  #  0  -1  -2  -3  -4  0
+  #  0  -5  -6  -7  -8  0
+  #  0  -9 -10 -11 -12  0
+  #  0 -13 -14 -15 -16  0
+  #  0   0   0   0   0  0
+  # -- channel 2
+  #  0   0   0   0   0  0
+  #  0  -1  -5  -9 -13  0
+  #  0  -2  -6 -10 -14  0
+  #  0  -3  -7 -11 -15  0
+  #  0  -4  -8 -12 -16  0
+  #  0   0   0   0   0  0
+  pad = 1
+
+  # forward
+  [out, Hout, Wout] = max_pool::forward(X, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
+  [out_simple, Hout_simple, Wout_simple] = max_pool_simple::forward(X, C, Hin, Win, Hf, Wf,
+                                                                    stride, stride, pad, pad)
+  [out_builtin, Hout_builtin, Wout_builtin] = max_pool_builtin::forward(X, C, Hin, Win, Hf, Wf,
+                                                                        stride, stride, pad, pad)
+
+  # equivalency check
+  # -- channel 1
+  #  0  0  0
+  #  0 -6  0
+  #  0  0  0
+  # -- channel 2
+  #  0  0  0
+  #  0 -6  0
+  #  0  0  0
+  target = matrix("0 0 0 0 -6 0 0 0 0 0 0 0 0 -6 0 0 0 0", rows=1, cols=C*Hout*Wout)
+  target = rbind(target, target)  # n=2
+  tmp = util::check_all_equal(out, target)
+  tmp = util::check_all_equal(out_simple, target)
+  tmp = util::check_all_equal(out_builtin, target)
 }
 
 tanh = function() {

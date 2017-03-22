@@ -559,10 +559,10 @@ public class LibMatrixDNN {
 		Iterator<IJV> iter = input.sparseBlock.getIterator(n, n+1);
 		int [] tensorIndexes = new int[3];
 		
-		int start_index_h = params.start_indexes_h[p];
-		int end_index_h = params.end_indexes_h[p];
-		int start_index_w = params.start_indexes_w[q];
-		int end_index_w = params.end_indexes_w[q];
+		int start_index_h = Math.max(params.start_indexes_h[p], 0);
+		int end_index_h = Math.min(params.end_indexes_h[p], params.H);
+		int start_index_w = Math.max(params.start_indexes_w[q], 0);
+		int end_index_w = Math.min(params.end_indexes_w[q], params.W);
 		
 		int maxIndex = -1; 
 		double maxVal = -Double.MAX_VALUE;
@@ -592,10 +592,10 @@ public class LibMatrixDNN {
 	}
 	
 	private static int getMaxIndex(int p, int q, int inputOffset, double [] inputArray, ConvolutionParameters params) {
-		int start_index_h = params.start_indexes_h[p];
-		int end_index_h = params.end_indexes_h[p];
-		int start_index_w = params.start_indexes_w[q];
-		int end_index_w = params.end_indexes_w[q];
+		int start_index_h = Math.max(params.start_indexes_h[p], 0);
+		int end_index_h = Math.min(params.end_indexes_h[p], params.H);
+		int start_index_w = Math.max(params.start_indexes_w[q], 0);
+		int end_index_w = Math.min(params.end_indexes_w[q], params.W);
 		
 		int maxIndex = -1; 
 		double maxVal = -Double.MAX_VALUE;

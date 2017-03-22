@@ -65,6 +65,7 @@ import org.apache.sysml.runtime.controlprogram.caching.CacheStatistics;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
@@ -469,6 +470,10 @@ public class DMLScript
 				HelpFormatter formatter = new HelpFormatter();
 				formatter.printHelp( "systemml", options );
 				return true;
+			}
+
+			if (USE_ACCELERATOR){
+				GPUContext.getGPUContext();
 			}
 
 			if (dmlOptions.clean) {

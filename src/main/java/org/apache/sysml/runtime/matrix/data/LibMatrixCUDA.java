@@ -72,10 +72,9 @@ import org.apache.sysml.runtime.instructions.cp.DoubleObject;
 import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
 import org.apache.sysml.runtime.instructions.gpu.context.ExecutionConfig;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
-import org.apache.sysml.runtime.instructions.gpu.context.JCudaContext;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUObject;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUObject.CSRPointer;
 import org.apache.sysml.runtime.instructions.gpu.context.JCudaKernels;
-import org.apache.sysml.runtime.instructions.gpu.context.JCudaObject;
-import org.apache.sysml.runtime.instructions.gpu.context.JCudaObject.CSRPointer;
 import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
@@ -128,8 +127,9 @@ import static jcuda.runtime.JCuda.cudaMemcpy;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToDevice;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice;
-import static org.apache.sysml.runtime.instructions.gpu.context.JCudaObject.allocate;
-import static org.apache.sysml.runtime.instructions.gpu.context.JCudaObject.cudaFreeHelper;
+import static org.apache.sysml.runtime.instructions.gpu.context.GPUObject.allocate;
+import static org.apache.sysml.runtime.instructions.gpu.context.GPUObject.cudaFreeHelper;
+
 
 //FIXME move could to respective instructions, this is not a block library
 public class LibMatrixCUDA {
@@ -145,14 +145,14 @@ public class LibMatrixCUDA {
 	 * Utility function to get maximum number of threads supported by the active CUDA device.
 	 * This is put into a singleton style method because the GPUContext is not fully initialized when
 	 * the LibMatrixCUDA class is loaded. If the {@link GPUContext#getGPUContext()} is invoked in a
-	 * static block in this class, it will access the {@link JCudaContext} instance when it is not
+	 * static block in this class, it will access the {@link GPUContext} instance when it is not
 	 * properly initialized. Due to the proper checks in place, a deadlock occurs.
 	 * @return max threads
 	 * @throws DMLRuntimeException if exception occurs
 	 */
 	static int getMaxThreads() throws DMLRuntimeException{
 		if (_MAX_THREADS == -1){
-			_MAX_THREADS = JCudaContext.getMaxThreadsPerBlock();
+			_MAX_THREADS = GPUContext.getMaxThreadsPerBlock();
 		}
 		return _MAX_THREADS;
 	}
@@ -161,14 +161,14 @@ public class LibMatrixCUDA {
 	 * Utility function to get maximum number of blocks supported by the active CUDA device.
 	 * This is put into a singleton style method because the GPUContext is not fully initialized when
 	 * the LibMatrixCUDA class is loaded. If the {@link GPUContext#getGPUContext()} is invoked in a
-	 * static block in this class, it will access the {@link JCudaContext} instance when it is not
+	 * static block in this class, it will access the {@link GPUContext} instance when it is not
 	 * properly initialized. Due to the proper checks in place, a deadlock occurs.
 	 * @return max blocks
 	 * @throws DMLRuntimeException if exception occurs
 	 */
 	static int getMaxBlocks() throws DMLRuntimeException{
 		if (_MAX_BLOCKS == -1){
-			_MAX_BLOCKS = JCudaContext.getMaxBlocks();
+			_MAX_BLOCKS = GPUContext.getMaxBlocks();
 		}
 		return _MAX_BLOCKS;
 	}
@@ -177,14 +177,14 @@ public class LibMatrixCUDA {
 	 * Utility function to get the warp size supported by the active CUDA device.
 	 * This is put into a singleton style method because the GPUContext is not fully initialized when
 	 * the LibMatrixCUDA class is loaded. If the {@link GPUContext#getGPUContext()} is invoked in a
-	 * static block in this class, it will access the {@link JCudaContext} instance when it is not
+	 * static block in this class, it will access the {@link GPUContext} instance when it is not
 	 * properly initialized. Due to the proper checks in place, a deadlock occurs.
 	 * @return warp size
 	 * @throws DMLRuntimeException if exception occurs
 	 */
 	static int getWarpSize() throws DMLRuntimeException {
 		if (_WARP_SIZE == -1) {
-			_WARP_SIZE = JCudaContext.getWarpSize();
+			_WARP_SIZE = GPUContext.getWarpSize();
 		}
 		return _WARP_SIZE;
 	}
@@ -234,7 +234,7 @@ public class LibMatrixCUDA {
 	}
 	
 	/**
-	 * Convenience method to get tensor descriptor from underlying JCudaObject
+	 * Convenience method to get tensor descriptor from underlying GPUObject
 	 * @param mat matrix object
 	 * @param N number of images
 	 * @param C number of channels
@@ -248,7 +248,7 @@ public class LibMatrixCUDA {
 			throw new DMLRuntimeException("Mismatch descriptor-matrix dimensions:" + mat.getNumRows() + " != " + N 
 					+ " || " + mat.getNumColumns() + " != " + (C*H*W));
 		}
-		return ((JCudaObject)mat.getGPUObject()).allocateTensorDescriptor(N, C, H, W);
+		return ((GPUObject)mat.getGPUObject()).allocateTensorDescriptor(N, C, H, W);
 	}
 	
 	/**
@@ -273,9 +273,9 @@ public class LibMatrixCUDA {
 	 */
 	private static Pointer getDensePointer(MatrixObject image, String instName) throws DMLRuntimeException {
 		if(isInSparseFormat(image)) {
-			((JCudaObject)image.getGPUObject()).sparseToDense(instName);
+			((GPUObject)image.getGPUObject()).sparseToDense(instName);
 		}
-		return ((JCudaObject)image.getGPUObject()).jcudaDenseMatrixPtr;
+		return ((GPUObject)image.getGPUObject()).jcudaDenseMatrixPtr;
 	}
 	
 	/**
@@ -446,10 +446,10 @@ public class LibMatrixCUDA {
 	 */
 	public static void biasMultiply(String instName, MatrixObject input, MatrixObject bias, MatrixObject outputBlock) throws DMLRuntimeException {
 		if(isInSparseFormat(input)) {
-			((JCudaObject)input.getGPUObject()).sparseToDense(instName);
+			((GPUObject)input.getGPUObject()).sparseToDense(instName);
 		}
 		if(isInSparseFormat(bias)) {
-			((JCudaObject)bias.getGPUObject()).sparseToDense(instName);
+			((GPUObject)bias.getGPUObject()).sparseToDense(instName);
 		}
 		long rows = input.getNumRows();
 		long cols = input.getNumColumns();
@@ -458,9 +458,9 @@ public class LibMatrixCUDA {
 		if(bias.getNumColumns() != 1 || cols % K != 0) {
 			throw new DMLRuntimeException("Incorrect inputs for bias_multiply: input[" + rows + " X " + cols + "] and bias[" + K + " X " + bias.getNumColumns() + "]");
 		}
-		Pointer imagePointer = ((JCudaObject)input.getGPUObject()).jcudaDenseMatrixPtr;
-		Pointer biasPointer = ((JCudaObject)bias.getGPUObject()).jcudaDenseMatrixPtr;
-		Pointer outputPointer = ((JCudaObject)outputBlock.getGPUObject()).jcudaDenseMatrixPtr;
+		Pointer imagePointer = ((GPUObject)input.getGPUObject()).jcudaDenseMatrixPtr;
+		Pointer biasPointer = ((GPUObject)bias.getGPUObject()).jcudaDenseMatrixPtr;
+		Pointer outputPointer = ((GPUObject)outputBlock.getGPUObject()).jcudaDenseMatrixPtr;
 		long t1 = 0;
 		if (GPUStatistics.DISPLAY_STATISTICS) t1 = System.nanoTime();
 		kernels.launchKernel("bias_multiply",
@@ -629,9 +629,9 @@ public class LibMatrixCUDA {
 		cudnnTensorDescriptor knownNCHWdescriptor = null;
 		int H = -1; int W = -1;
 		for(int i = 0; i < input.length; i++) {
-			knownNCHWdescriptor = ((JCudaObject)input[i].getGPUObject()).getTensorDescriptor();
+			knownNCHWdescriptor = ((GPUObject)input[i].getGPUObject()).getTensorDescriptor();
 			if(knownNCHWdescriptor != null) {
-				int [] shape = ((JCudaObject)input[i].getGPUObject()).getTensorShape();
+				int [] shape = ((GPUObject)input[i].getGPUObject()).getTensorShape();
 				if(shape[0] != N || shape[1] != C) {
 					throw new DMLRuntimeException("Incorrect N and C:" + shape[0]  + " != " + N + " || " + shape[1]  + " != " +  C);
 				}
@@ -1082,7 +1082,7 @@ public class LibMatrixCUDA {
 		MatrixObject output = ec.getMatrixObject(outputName);
 		getDenseMatrixOutputForGPUInstruction(ec, instName, outputName);	// Allocated the dense output matrix
 		long t0=0;
-		cudnnTensorDescriptor srcTensorDesc = ((JCudaObject)in.getGPUObject()).getTensorDescriptor();
+		cudnnTensorDescriptor srcTensorDesc = ((GPUObject)in.getGPUObject()).getTensorDescriptor();
 		if(N*CHW >= numDoublesIn2GB ||  srcTensorDesc == null) {
 			// Invokes relu(double* A,  double* ret, int rlen, int clen)
 			if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
@@ -1298,7 +1298,7 @@ public class LibMatrixCUDA {
 																					 boolean isLeftTransposed, boolean isRightTransposed, int transA, int transB, int m, int n, int k)
 					throws DMLRuntimeException {
 		// right sparse, left dense
-		CSRPointer B = ((JCudaObject)right.getGPUObject()).jcudaSparseMatrixPtr;
+		CSRPointer B = ((GPUObject)right.getGPUObject()).jcudaSparseMatrixPtr;
 		Pointer ADense = getDensePointer(left, instName);
 		if (B.isUltraSparse(k, n)){
 			LOG.debug(" GPU Dense-Sparse Matrix Multiplication (Converted to Sparse-Sparse)");
@@ -1309,11 +1309,11 @@ public class LibMatrixCUDA {
 
 			long t0=0,t1=0, t2=0;
 			if (DMLScript.STATISTICS) t0 = System.nanoTime();
-			Pointer AT = JCudaObject.transpose(ADense, rowsA, colsA, colsA, rowsA);
+			Pointer AT = GPUObject.transpose(ADense, rowsA, colsA, colsA, rowsA);
 			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_TRANSPOSE_LIB, System.nanoTime() - t0);
 
 			if (GPUStatistics.DISPLAY_STATISTICS) t1 = System.nanoTime();
-			CSRPointer A = JCudaObject.columnMajorDenseToRowMajorSparse(cusparseHandle, rowsA, colsA, AT);
+			CSRPointer A = GPUObject.columnMajorDenseToRowMajorSparse(cusparseHandle, rowsA, colsA, AT);
 			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_DENSE_TO_SPARSE, System.nanoTime() - t1);
 
 			if (DMLScript.STATISTICS) GPUStatistics.cudaDenseToSparseTime.getAndAdd(System.nanoTime() - t0);
@@ -1371,7 +1371,7 @@ public class LibMatrixCUDA {
 	protected static void sparseDenseMatmult(String instName, MatrixObject output, MatrixObject left, MatrixObject right,
 																					 boolean isLeftTransposed, boolean isRightTransposed, int transA, int transB, int m, int n, int k)
 					throws DMLRuntimeException {
-		CSRPointer A = ((JCudaObject)left.getGPUObject()).jcudaSparseMatrixPtr;
+		CSRPointer A = ((GPUObject)left.getGPUObject()).jcudaSparseMatrixPtr;
 		Pointer BDense = getDensePointer(right, instName);
 
 		if (n == 1){
@@ -1390,11 +1390,11 @@ public class LibMatrixCUDA {
 				int colsB = (int)right.getNumColumns();
 
 				if (DMLScript.STATISTICS) t0 = System.nanoTime();
-				Pointer BT = JCudaObject.transpose(BDense, rowsB, colsB, colsB, rowsB);
+				Pointer BT = GPUObject.transpose(BDense, rowsB, colsB, colsB, rowsB);
 				if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_TRANSPOSE_LIB, System.nanoTime() - t0);
 
 				if (GPUStatistics.DISPLAY_STATISTICS) t1 = System.nanoTime();
-				CSRPointer B = JCudaObject.columnMajorDenseToRowMajorSparse(cusparseHandle, rowsB, colsB, BT);
+				CSRPointer B = GPUObject.columnMajorDenseToRowMajorSparse(cusparseHandle, rowsB, colsB, BT);
 				if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_DENSE_TO_SPARSE, System.nanoTime() - t1);
 
 				if (DMLScript.STATISTICS) GPUStatistics.cudaDenseToSparseTime.getAndAdd(System.nanoTime() - t0);
@@ -1452,14 +1452,14 @@ public class LibMatrixCUDA {
 		if (transA == CUSPARSE_OPERATION_TRANSPOSE){
 			size = k * Sizeof.DOUBLE;
 		}
-		Pointer C_dense = JCudaObject.allocate(instName, (int)size);
+		Pointer C_dense = GPUObject.allocate(instName, (int)size);
 		long t1=0;
 		if (GPUStatistics.DISPLAY_STATISTICS) t1 = System.nanoTime();
 		cusparseDcsrmv(cusparseHandle, transA, m, k, (int)A.nnz, one(), A.descr, A.val, A.rowPtr, A.colInd, B_dense, zero(), C_dense);
 		cudaDeviceSynchronize(); 	// Since cusparseDcsrmv is asynchronously executed
 		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_SPARSE_MATRIX_DENSE_VECTOR_LIB, System.nanoTime() - t1);
 
-		((JCudaObject)(output.getGPUObject())).setDenseMatrixCudaPointer(C_dense);
+		((GPUObject)(output.getGPUObject())).setDenseMatrixCudaPointer(C_dense);
 		output.getGPUObject().setDeviceModify(size);
 	}
 
@@ -1491,8 +1491,8 @@ public class LibMatrixCUDA {
 		if(m == -1 || n == -1 || k == -1)
 			throw new DMLRuntimeException("Incorrect dimensions");
 
-		CSRPointer A = ((JCudaObject)left.getGPUObject()).jcudaSparseMatrixPtr;
-		CSRPointer B = ((JCudaObject)right.getGPUObject()).jcudaSparseMatrixPtr;
+		CSRPointer A = ((GPUObject)left.getGPUObject()).jcudaSparseMatrixPtr;
+		CSRPointer B = ((GPUObject)right.getGPUObject()).jcudaSparseMatrixPtr;
 
 		// TODO if (m == 1) {	// Vector-matrix multiplication
 
@@ -1549,7 +1549,7 @@ public class LibMatrixCUDA {
 		CSRPointer C = CSRPointer.allocateForMatrixMultiply(cusparseHandle, A, transA, B, transB, m, n, k);
 		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_SPARSE_ALLOCATE_LIB, System.nanoTime() - t0);
 
-		((JCudaObject)output.getGPUObject()).setSparseMatrixCudaPointer(C);
+		((GPUObject)output.getGPUObject()).setSparseMatrixCudaPointer(C);
 		long sizeOfC = CSRPointer.estimateSize(C.nnz, output.getNumRows());
 		output.getGPUObject().setDeviceModify(sizeOfC);
 
@@ -1778,7 +1778,7 @@ public class LibMatrixCUDA {
 		if (isSparse){
 			// The strategy for the time being is to convert sparse to dense
 			// until a sparse specific kernel is written.
-			((JCudaObject)in1.getGPUObject()).sparseToDense(instName);
+			((GPUObject)in1.getGPUObject()).sparseToDense(instName);
 			// long nnz = in1.getNnz();
 			// assert nnz > 0 : "Internal Error - number of non zeroes set to " + nnz + " in Aggregate Binary for GPU";
 			// MatrixObject out = ec.getSparseMatrixOutputForGPUInstruction(output, nnz);
@@ -1820,7 +1820,7 @@ public class LibMatrixCUDA {
 			}
 			case OP_PLUS_SQ : {
 				// Calculate the squares in a temporary object tmp
-				Pointer tmp = JCudaObject.allocate(instName, size * Sizeof.DOUBLE);
+				Pointer tmp = GPUObject.allocate(instName, size * Sizeof.DOUBLE);
 
 				squareMatrix(instName, in, tmp, rlen, clen);
 				// Then do the sum on the temporary object and free it
@@ -1919,8 +1919,8 @@ public class LibMatrixCUDA {
 			}
 			case OP_VARIANCE : {
 				// Temporary GPU array for
-				Pointer tmp = JCudaObject.allocate(instName, size * Sizeof.DOUBLE);
-				Pointer tmp2 = JCudaObject.allocate(instName, size * Sizeof.DOUBLE);
+				Pointer tmp = GPUObject.allocate(instName, size * Sizeof.DOUBLE);
+				Pointer tmp2 = GPUObject.allocate(instName, size * Sizeof.DOUBLE);
 
 				switch(reductionDirection) {
 
@@ -1948,7 +1948,7 @@ public class LibMatrixCUDA {
 
 						squareMatrix(instName, tmp, tmp2, rlen, clen);
 
-						Pointer tmpRow = JCudaObject.allocate(instName, rlen * Sizeof.DOUBLE);
+						Pointer tmpRow = GPUObject.allocate(instName, rlen * Sizeof.DOUBLE);
 						reduceRow(instName, "reduce_row_sum", tmp2, tmpRow, rlen, clen);
 
 						ScalarOperator divideOp = new RightScalarOperator(Divide.getDivideFnObject(), clen - 1);
@@ -1966,7 +1966,7 @@ public class LibMatrixCUDA {
 
 						squareMatrix(instName, tmp, tmp2, rlen, clen);
 
-						Pointer tmpCol = JCudaObject.allocate(instName, clen * Sizeof.DOUBLE);
+						Pointer tmpCol = GPUObject.allocate(instName, clen * Sizeof.DOUBLE);
 						reduceCol(instName, "reduce_col_sum", tmp2, tmpCol, rlen, clen);
 
 						ScalarOperator divideOp = new RightScalarOperator(Divide.getDivideFnObject(), rlen - 1);
@@ -2031,7 +2031,7 @@ public class LibMatrixCUDA {
 		int[] tmp = getKernelParamsForReduceAll(n);
 		int blocks = tmp[0], threads = tmp[1], sharedMem = tmp[2];
 
-		Pointer tempOut = JCudaObject.allocate(instName, n * Sizeof.DOUBLE);
+		Pointer tempOut = GPUObject.allocate(instName, n * Sizeof.DOUBLE);
 
 		long t1=0,t2=0,t3=0;
 
@@ -2362,9 +2362,9 @@ public class LibMatrixCUDA {
 			ec.allocateGPUMatrixObject(outputName);
 			// When both inputs are empty, the output is empty too (except in the case of division)
 			if (op.fn instanceof Divide) {
-				((JCudaObject) out.getGPUObject()).allocateAndFillDense(Double.NaN);
+				((GPUObject) out.getGPUObject()).allocateAndFillDense(Double.NaN);
 			} else {
-				((JCudaObject) out.getGPUObject()).allocateSparseAndEmpty();
+				((GPUObject) out.getGPUObject()).allocateSparseAndEmpty();
 			}
 		}
 		// Check for M1 * M2 when M1 is empty; if M2 is a vector then fallback to general case
@@ -2454,7 +2454,7 @@ public class LibMatrixCUDA {
 
 	private static boolean isSparseAndEmpty(MatrixObject in1) {
 		boolean isSparse1 = isInSparseFormat(in1);
-		boolean isEmpty1 = isSparse1 && (((JCudaObject)in1.getGPUObject()).jcudaSparseMatrixPtr.nnz == 0);
+		boolean isEmpty1 = isSparse1 && (((GPUObject)in1.getGPUObject()).jcudaSparseMatrixPtr.nnz == 0);
 		return isEmpty1;
 	}
 
@@ -2604,9 +2604,9 @@ public class LibMatrixCUDA {
 
 		MatrixObject out = ec.getMatrixObject(outputName);
 		boolean isSparse1 = isInSparseFormat(in1);
-//		boolean isEmpty1 = isSparse1 && (((JCudaObject)in1.getGPUObject()).jcudaSparseMatrixPtr.nnz == 0);
+//		boolean isEmpty1 = isSparse1 && (((GPUObject)in1.getGPUObject()).jcudaSparseMatrixPtr.nnz == 0);
 		boolean isSparse2 = isInSparseFormat(in2);
-//		boolean isEmpty2 = isSparse2 && (((JCudaObject)in2.getGPUObject()).jcudaSparseMatrixPtr.nnz == 0);
+//		boolean isEmpty2 = isSparse2 && (((GPUObject)in2.getGPUObject()).jcudaSparseMatrixPtr.nnz == 0);
 
 		long t0=0,t1=0;
 		// TODO: Implement sparse-dense matrix cublasDgeam kernel
@@ -2615,16 +2615,16 @@ public class LibMatrixCUDA {
 			// Perform sparse-sparse dgeam
 			if(!isInSparseFormat(in1)) {
 				if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
-				((JCudaObject)in1.getGPUObject()).denseToSparse();
+				((GPUObject)in1.getGPUObject()).denseToSparse();
 				if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_DENSE_TO_SPARSE, System.nanoTime() - t0);
 			}
-			CSRPointer A = ((JCudaObject)in1.getGPUObject()).jcudaSparseMatrixPtr;
+			CSRPointer A = ((GPUObject)in1.getGPUObject()).jcudaSparseMatrixPtr;
 			if(!isInSparseFormat(in2)) {
 				if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
-				((JCudaObject)in2.getGPUObject()).denseToSparse();
+				((GPUObject)in2.getGPUObject()).denseToSparse();
 				if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_DENSE_TO_SPARSE, System.nanoTime() - t0);
 			}
-			CSRPointer B = ((JCudaObject)in2.getGPUObject()).jcudaSparseMatrixPtr;
+			CSRPointer B = ((GPUObject)in2.getGPUObject()).jcudaSparseMatrixPtr;
 
 			ec.allocateGPUMatrixObject(outputName);
 
@@ -2632,7 +2632,7 @@ public class LibMatrixCUDA {
 			CSRPointer C = CSRPointer.allocateForDgeam(cusparseHandle, A, B, m, n);
 			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_SPARSE_ALLOCATE_LIB, System.nanoTime() - t1);
 
-			((JCudaObject)out.getGPUObject()).setSparseMatrixCudaPointer(C);
+			((GPUObject)out.getGPUObject()).setSparseMatrixCudaPointer(C);
 			long sizeOfC = CSRPointer.estimateSize(C.nnz, out.getNumRows());
 			out.getGPUObject().setDeviceModify(sizeOfC);
 			if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
@@ -2700,14 +2700,14 @@ public class LibMatrixCUDA {
 	 * @throws DMLRuntimeException	if DMLRuntimeException occurs
 	 */
 	public static void exp(ExecutionContext ec, String instName, MatrixObject in1, String outputName) throws DMLRuntimeException {
-		JCudaObject in = ((JCudaObject)in1.getGPUObject());
+		GPUObject in = ((GPUObject)in1.getGPUObject());
 		boolean isSparseAndEmpty = in.isSparseAndEmpty();
 		long t1=0;
 		if (isSparseAndEmpty) {
 			// e^0 = 1, create a dense block full of 1s
 			MatrixObject out = ec.getMatrixObject(outputName);
 			ec.allocateGPUMatrixObject(outputName);
-			((JCudaObject)(out.getGPUObject())).allocateAndFillDense(1);
+			((GPUObject)(out.getGPUObject())).allocateAndFillDense(1);
 		} else {
 			// Dense
 			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, instName, outputName);

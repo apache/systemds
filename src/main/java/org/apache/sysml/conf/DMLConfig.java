@@ -19,12 +19,18 @@
 
 package org.apache.sysml.conf;
 
-import java.io.ByteArrayInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.StringWriter;
-import java.util.HashMap;
-import java.util.Map;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.parser.ParseException;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.util.LocalFileUtils;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -34,19 +40,12 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
-import org.apache.sysml.hops.OptimizerUtils;
-import org.apache.sysml.parser.ParseException;
-import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.util.LocalFileUtils;
+import java.io.ByteArrayInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.util.HashMap;
+import java.util.Map;
 
 
 public class DMLConfig 
@@ -80,8 +79,6 @@ public class DMLConfig
 	// Fraction of available memory to use. The available memory is computer when the GPUContext is created
 	// to handle the tradeoff on calling cudaMemGetInfo too often.
 	public static final String GPU_MEMORY_UTILIZATION_FACTOR    = "gpu.memory.util.factor";
-	// Invoke cudaMemGetInfo to get available memory information. Useful if GPU is shared among multiple application.
-	public static final String REFRESH_AVAILABLE_MEMORY_EVERY_TIME    = "gpu.memory.refresh";
 
 	// supported prefixes for custom map/reduce configurations
 	public static final String PREFIX_MAPRED = "mapred";
@@ -121,7 +118,6 @@ public class DMLConfig
 		_defaultVals.put(EXTRA_DNN_STATS,       "false" );
 
 		_defaultVals.put(GPU_MEMORY_UTILIZATION_FACTOR,      "0.9" );
-		_defaultVals.put(REFRESH_AVAILABLE_MEMORY_EVERY_TIME,      "true" );
 	}
 	
 	public DMLConfig()

@@ -928,10 +928,11 @@ public class LibMatrixDNN {
 				final int inOffset1 = inOffset + c*HW;
 				for (int p = 0; p < params.P; p++) {
 					for (int q = 0; q < params.Q; q++, out_index++) {
-						if(params.start_indexes_h[p] < 0 || params.start_indexes_w[q] < 0
-							|| params.end_indexes_h[p] >= params.H || params.end_indexes_w[q] >= params.W) {
-							outputArray[out_index] = Math.max(outputArray[out_index], 0);
-						}
+//						 Logic to have results match that of CuDNN
+//						if(params.start_indexes_h[p] < 0 || params.start_indexes_w[q] < 0
+//							|| params.end_indexes_h[p] >= params.H || params.end_indexes_w[q] >= params.W) {
+//							outputArray[out_index] = Math.max(outputArray[out_index], 0);
+//						}
 						for (int h = Math.max(params.start_indexes_h[p], 0); h < Math.min(params.end_indexes_h[p], params.H); h++) {
 							for (int w = Math.max(params.start_indexes_w[q], 0); w < Math.min(params.end_indexes_w[q], params.W); w++) {
 								outputArray[out_index] = Math.max(outputArray[out_index], inputArray[inOffset1 +  h*params.W + w]);
@@ -947,10 +948,11 @@ public class LibMatrixDNN {
 			for (int c = 0; c < params.C; c++) {
 				for (int p = 0; p < params.P; p++) {
 					for (int q = 0; q < params.Q; q++, out_index++) {
-						if(params.start_indexes_h[p] < 0 || params.start_indexes_w[q] < 0
-							|| params.end_indexes_h[p] >= params.H || params.end_indexes_w[q] >= params.W) {
-							outputArray[out_index] = Math.max(outputArray[out_index], 0);
-						}
+//						 Logic to have results match that of CuDNN
+//						if(params.start_indexes_h[p] < 0 || params.start_indexes_w[q] < 0
+//							|| params.end_indexes_h[p] >= params.H || params.end_indexes_w[q] >= params.W) {
+//							outputArray[out_index] = Math.max(outputArray[out_index], 0);
+//						}
 						for (int h = Math.max(params.start_indexes_h[p], 0); h < Math.min(params.end_indexes_h[p], params.H); h++) {
 							for (int w = Math.max(params.start_indexes_w[q], 0); w < Math.min(params.end_indexes_w[q], params.W); w++) {
 								outputArray[out_index] = Math.max(outputArray[out_index], params.input1.quickGetValue(n, c*HW +  h*params.W + w));

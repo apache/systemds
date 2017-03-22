@@ -119,43 +119,42 @@ public class DMLScript
 	 * to keep it consistent with {@link DMLScript} and {@link DMLOptions}
 	 */
 	public static class DMLOptions {
-		public Map<String, String>  argVals 			= new HashMap<>();	// Arguments map containing either named arguments or arguments by position for a DML program
-		public String               configFile    = null;							// Path to config file if default config and default config is to be overriden
-		public boolean              clean         = false;						// Whether to clean up all SystemML working directories (FS, DFS)
-		public boolean              stats         = false;						// Whether to record and print the statistics
-		public int                  statsCount    = 10;								// Default statistics count
-		public Explain.ExplainType  explainType  	= Explain.ExplainType.NONE;		// Whether to print the "Explain" and if so, what type
-		public DMLScript.RUNTIME_PLATFORM execMode = OptimizerUtils.getDefaultExecutionMode();	// Execution mode standalone, MR, Spark or a hybrid
-		public boolean              gpu           = false;						// Whether to use the GPU
-		public boolean              forceGPU      = false;						// Whether to ignore memory & estimates and always use the GPU
-		public boolean              debug         = false;						// to go into debug mode to be able to step through a program
-		public ScriptType           scriptType    = ScriptType.DML;		// whether the script is a DML or PyDML script
-		public String               filePath 			= null;							// path to script
-		public String 							script				= null;							// the script itself
-		public boolean              help          = false;						// whether to print the usage option
+		public Map<String, String>  argVals       = new HashMap<>();  // Arguments map containing either named arguments or arguments by position for a DML program
+		public String               configFile    = null;             // Path to config file if default config and default config is to be overriden
+		public boolean              clean         = false;            // Whether to clean up all SystemML working directories (FS, DFS)
+		public boolean              stats         = false;            // Whether to record and print the statistics
+		public int                  statsCount    = 10;	              // Default statistics count
+		public Explain.ExplainType  explainType   = Explain.ExplainType.NONE;  // Whether to print the "Explain" and if so, what type
+		public DMLScript.RUNTIME_PLATFORM execMode = OptimizerUtils.getDefaultExecutionMode();  // Execution mode standalone, MR, Spark or a hybrid
+		public boolean              gpu           = false;            // Whether to use the GPU
+		public boolean              forceGPU      = false;            // Whether to ignore memory & estimates and always use the GPU
+		public boolean              debug         = false;            // to go into debug mode to be able to step through a program
+		public ScriptType           scriptType    = ScriptType.DML;   // whether the script is a DML or PyDML script
+		public String               filePath      = null;             // path to script
+		public String               script        = null;             // the script itself
+		public boolean              help          = false;            // whether to print the usage option
 
 		public final static DMLOptions defaultOptions = new DMLOptions();
 	}
-	
-	public static RUNTIME_PLATFORM 	rtplatform = DMLOptions.defaultOptions.execMode;							// the execution mode
-	public static boolean						STATISTICS = DMLOptions.defaultOptions.stats;									// whether to print statistics
-	public static int 							STATISTICS_COUNT = DMLOptions.defaultOptions.statsCount;			// statistics maximum heavy hitter count
-	public static boolean						ENABLE_DEBUG_MODE = DMLOptions.defaultOptions.debug; 					// debug mode
-	public static ExplainType 			EXPLAIN = DMLOptions.defaultOptions.explainType; 							// explain type
-	public static String						DML_FILE_PATH_ANTLR_PARSER = DMLOptions.defaultOptions.filePath;	// filename of dml/pydml script
+
+	public static RUNTIME_PLATFORM  rtplatform          = DMLOptions.defaultOptions.execMode;    // the execution mode
+	public static boolean           STATISTICS          = DMLOptions.defaultOptions.stats;       // whether to print statistics
+	public static int               STATISTICS_COUNT    = DMLOptions.defaultOptions.statsCount;  // statistics maximum heavy hitter count
+	public static boolean           ENABLE_DEBUG_MODE   = DMLOptions.defaultOptions.debug;       // debug mode
+	public static ExplainType       EXPLAIN             = DMLOptions.defaultOptions.explainType; // explain type
+	public static String            DML_FILE_PATH_ANTLR_PARSER = DMLOptions.defaultOptions.filePath; // filename of dml/pydml script
 
 	/**
 	 * Global variable indicating the script type (DML or PYDML). Can be used
 	 * for DML/PYDML-specific tasks, such as outputting booleans in the correct
 	 * case (TRUE/FALSE for DML and True/False for PYDML).
 	 */
-	public static ScriptType 				SCRIPT_TYPE = DMLOptions.defaultOptions.scriptType;
+	public static ScriptType        SCRIPT_TYPE         = DMLOptions.defaultOptions.scriptType;
+	public static boolean           USE_ACCELERATOR     = DMLOptions.defaultOptions.gpu;
+	public static boolean           FORCE_ACCELERATOR   = DMLOptions.defaultOptions.forceGPU;
 
-	public static boolean						USE_ACCELERATOR = DMLOptions.defaultOptions.gpu;
-	public static boolean 					FORCE_ACCELERATOR = DMLOptions.defaultOptions.forceGPU;
 
-
-	public static boolean _suppressPrint2Stdout = false;		// flag that indicates whether or not to suppress any prints to stdout
+	public static boolean _suppressPrint2Stdout = false;  // flag that indicates whether or not to suppress any prints to stdout
 	public static boolean USE_LOCAL_SPARK_CONFIG = false; //set default local spark configuration - used for local testing
 	public static boolean _activeAM = false;
 
@@ -441,8 +440,8 @@ public class DMLScript
 		throws DMLException
 	{
 		//parse arguments and set execution properties
-		RUNTIME_PLATFORM oldrtplatform 	= rtplatform; //keep old rtplatform
-		ExplainType oldexplain 					= EXPLAIN; //keep old explain
+		RUNTIME_PLATFORM oldrtplatform  = rtplatform;  //keep old rtplatform
+		ExplainType oldexplain          = EXPLAIN;     //keep old explain
 
 		Options options = createCLIOptions();
 		try
@@ -452,13 +451,13 @@ public class DMLScript
 			// String[] scriptArgs = null; //optional script arguments
 			// boolean namedScriptArgs = false;
 
-			STATISTICS 				= dmlOptions.stats;
-			STATISTICS_COUNT 	= dmlOptions.statsCount;
-			USE_ACCELERATOR 	= dmlOptions.gpu;
+			STATISTICS        = dmlOptions.stats;
+			STATISTICS_COUNT  = dmlOptions.statsCount;
+			USE_ACCELERATOR   = dmlOptions.gpu;
 			FORCE_ACCELERATOR = dmlOptions.forceGPU;
-			EXPLAIN 					= dmlOptions.explainType;
+			EXPLAIN           = dmlOptions.explainType;
 			ENABLE_DEBUG_MODE = dmlOptions.debug;
-			SCRIPT_TYPE				= dmlOptions.scriptType;
+			SCRIPT_TYPE       = dmlOptions.scriptType;
 
 			String fnameOptConfig = dmlOptions.configFile;
 			boolean isFile = dmlOptions.filePath != null;

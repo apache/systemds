@@ -77,7 +77,7 @@ public class DMLConfig
 	public static final String EXTRA_GPU_STATS			= "systemml.stats.extraGPU"; //boolean
 	public static final String EXTRA_DNN_STATS			= "systemml.stats.extraDNN"; //boolean
 
-	// Fraction of available memory to use. The available memory is computer when the JCudaContext is created
+	// Fraction of available memory to use. The available memory is computer when the GPUContext is created
 	// to handle the tradeoff on calling cudaMemGetInfo too often.
 	public static final String GPU_MEMORY_UTILIZATION_FACTOR    = "gpu.memory.util.factor";
 	// Invoke cudaMemGetInfo to get available memory information. Useful if GPU is shared among multiple application.

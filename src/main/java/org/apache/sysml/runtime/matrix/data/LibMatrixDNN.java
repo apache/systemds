@@ -427,20 +427,26 @@ public class LibMatrixDNN {
 		outputBlock.recomputeNonZeros();
 	}
 	
+	/**
+	 * This method computes start and end indexes required for max_pool and max_pool_backward operations.
+	 * This speeds up the performance of max_pool and  max_pool_backward
+	 * 
+	 * @param params parameters required for max_pool and max_pool_backward operations
+	 */
 	private static void fillIndexesArray(ConvolutionParameters params) {
 		params.start_indexes_h = new int[params.P];
 		params.end_indexes_h = new int[params.P];
 		params.start_indexes_w = new int[params.Q];
 		params.end_indexes_w = new int[params.Q];
 		for (int p = 0; p < params.P; p++) {
-			int start_index_h = p * params.stride_h - params.pad_h; // Math.max(p * params.stride_h - params.pad_h, 0);
-			int end_index_h = start_index_h + params.R; // Math.min(start_index_h + params.R, params.H);
+			int start_index_h = p * params.stride_h - params.pad_h;
+			int end_index_h = start_index_h + params.R;
 			params.start_indexes_h[p] = start_index_h;
 			params.end_indexes_h[p] = end_index_h;
 		}
 		for (int q = 0; q < params.Q; q++) {
-			int start_index_w =  q * params.stride_w - params.pad_w; // Math.max(q * params.stride_w - params.pad_w, 0);
-			int end_index_w = start_index_w + params.S; // Math.min(start_index_w + params.S, params.W);
+			int start_index_w =  q * params.stride_w - params.pad_w;
+			int end_index_w = start_index_w + params.S;
 			params.start_indexes_w[q] = start_index_w;
 			params.end_indexes_w[q] = end_index_w;
 		}
@@ -551,6 +557,19 @@ public class LibMatrixDNN {
 		}
 	}
 	
+	/**
+	 * Returns the index of cell with maximum value. This method is optimized for sparse input
+	 * 
+	 * @param p output feature map height
+	 * @param q output feature map width
+	 * @param inputOffset offset to be used for input index
+	 * @param n number of images
+	 * @param c number of channels 
+	 * @param input input matrix
+	 * @param params convolution parameters
+	 * @return index of the cell with maximum value
+	 * @throws DMLRuntimeException if error occurs
+	 */
 	private static int getMaxIndexSparse(int p, int q, int inputOffset, int n, int c, MatrixBlock input, ConvolutionParameters params) throws DMLRuntimeException {
 		if(!input.isInSparseFormat())
 			throw new DMLRuntimeException("Incorrect usage: Only sparse format supported");
@@ -591,6 +610,16 @@ public class LibMatrixDNN {
 		return maxIndex;
 	}
 	
+	/**
+	 * Returns the index of cell with maximum value. This method is optimized for dense input
+	 * 
+	 * @param p output feature map height
+	 * @param q output feature map width
+	 * @param inputOffset offset to be used for input index
+	 * @param inputArray input array
+	 * @param params convolution parameters
+	 * @return index of cell with maximum value
+	 */
 	private static int getMaxIndex(int p, int q, int inputOffset, double [] inputArray, ConvolutionParameters params) {
 		int start_index_h = Math.max(params.start_indexes_h[p], 0);
 		int end_index_h = Math.min(params.end_indexes_h[p], params.H);

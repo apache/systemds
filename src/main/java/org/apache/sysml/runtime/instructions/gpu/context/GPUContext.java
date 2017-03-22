@@ -88,20 +88,25 @@ public class GPUContext {
 		GPUStatistics.cudaInitTime = System.nanoTime() - start;
 	}
 
-	/** Synchronization object to make sure no allocations happen when something is being evicted from memory */
-	public static final Object syncObj = new Object();
 	/** Global list of allocated {@link GPUObject} instances. This list must be accessed in a synchronized way */
-	public static ArrayList<GPUObject> allocatedPointers = new ArrayList<GPUObject>();
+	public static ArrayList<GPUObject> allocatedGPUObjects = new ArrayList<>();
+
 	/** The total number of cuda devices on this machine */
 	/** enable this to print debug information before code pertaining to the GPU is executed  */
 	public static boolean DEBUG = false;
+
 	protected static GPUContext currContext;
+
 	public static volatile Boolean isGPUContextCreated = false;
+
 	/** Stores the cached deviceProperties */
 	protected static cudaDeviceProp[] deviceProperties;
-	// The minimum CUDA Compute capability needed for SystemML.
-	// After compute capability 3.0, 2^31 - 1 blocks and 1024 threads per block are supported.
-	// If SystemML needs to run on an older card, this logic can be revisited.
+
+	/**
+	 * The minimum CUDA Compute capability needed for SystemML.
+	 * After compute capability 3.0, 2^31 - 1 blocks and 1024 threads per block are supported.
+	 * If SystemML needs to run on an older card, this logic can be revisited.
+	 */
 	final int MAJOR_REQUIRED = 3;
 	final int MINOR_REQUIRED = 0;
 
@@ -156,15 +161,13 @@ public class GPUContext {
 				} catch (InterruptedException e) {
 				}
 			} while (isGPUContextCreated && (System.currentTimeMillis() - startTime) < 60000);
-			synchronized (isGPUContextCreated) {
-				if (GPUContext.currContext != null) {
-					throw new RuntimeException("Cannot create multiple GPUContext. Waited for 10 min to close previous GPUContext");
-				}
+			if (GPUContext.currContext != null) {
+				throw new RuntimeException("Cannot create multiple GPUContext. Waited for 10 min to close previous GPUContext");
 			}
+
 		}
-		synchronized (isGPUContextCreated) {
-			GPUContext.currContext = this;
-		}
+
+		GPUContext.currContext = this;
 
 		long free[] = {0};
 		long total[] = {0};
@@ -198,24 +201,20 @@ public class GPUContext {
 	 */
 	public static GPUContext getGPUContext() throws DMLRuntimeException {
 		if(currContext == null && DMLScript.USE_ACCELERATOR) {
-			synchronized(isGPUContextCreated) {
-				currContext = new GPUContext();
-				currContext.ensureComputeCapability();
-				OptimizerUtils.GPU_MEMORY_BUDGET = currContext.getAvailableMemory();
-				isGPUContextCreated = true;
-			}
+			currContext = new GPUContext();
+			currContext.ensureComputeCapability();
+			OptimizerUtils.GPU_MEMORY_BUDGET = currContext.getAvailableMemory();
+			isGPUContextCreated = true;
 		}
 		return currContext;
 	}
 	
 	public static GPUObject createGPUObject(MatrixObject mo) {
 		if(DMLScript.USE_ACCELERATOR) {
-			synchronized(isGPUContextCreated) {
 				if(currContext == null)
 					throw new RuntimeException("GPUContext is not created");
 				if(currContext instanceof GPUContext)
 					return new GPUObject(mo);
-			}
 		}
 		throw new RuntimeException("Cannot create createGPUObject when USE_ACCELERATOR is off");
 	}
@@ -282,13 +281,11 @@ public class GPUContext {
 
 	public void destroy() throws DMLRuntimeException {
 		if(currContext != null) {
-			synchronized(isGPUContextCreated) {
-				cudnnDestroy(LibMatrixCUDA.cudnnHandle);
-				cublasDestroy(LibMatrixCUDA.cublasHandle);
-				cusparseDestroy(LibMatrixCUDA.cusparseHandle);
-				currContext = null;
-				isGPUContextCreated = false;
-			}
+			cudnnDestroy(LibMatrixCUDA.cudnnHandle);
+			cublasDestroy(LibMatrixCUDA.cublasHandle);
+			cusparseDestroy(LibMatrixCUDA.cusparseHandle);
+			currContext = null;
+			isGPUContextCreated = false;
 		}
 		else if(LibMatrixCUDA.cudnnHandle != null || LibMatrixCUDA.cublasHandle != null) {
 			throw new DMLRuntimeException("Error while destroying the GPUContext");

@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysml.test.utils;
+package org.apache.sysml.test.unit;
 
 import org.apache.commons.cli.AlreadySelectedException;
 import org.apache.commons.cli.Options;

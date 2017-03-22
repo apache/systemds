@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.sysml.test.utils;
+package org.apache.sysml.test.unit;
 
 import org.apache.sysml.utils.LRUCacheMap;
 import org.junit.Assert;

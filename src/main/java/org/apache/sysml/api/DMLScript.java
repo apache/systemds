@@ -512,14 +512,14 @@ public class DMLScript
 		}
 		catch(AlreadySelectedException e)
 		{
-			System.err.println("On of the options");
+			System.err.println("Mutually exclusive options were selected. " + e.getMessage());
 			HelpFormatter formatter = new HelpFormatter();
 			formatter.printHelp( "systemml", options );
 			return false;
 		}
 		catch(org.apache.commons.cli.ParseException e)
 		{
-			System.err.println("Incorrect arguments specified");
+			System.err.println(e.getMessage());
 			HelpFormatter formatter = new HelpFormatter();
 			formatter.printHelp( "systemml", options );
 		}

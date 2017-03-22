@@ -39,7 +39,6 @@ import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysml.utils.GPUStatistics;
 
 import java.util.ArrayList;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static jcuda.driver.JCudaDriver.cuDeviceGetCount;
 import static jcuda.driver.JCudaDriver.cuInit;
@@ -53,7 +52,6 @@ import static jcuda.runtime.JCuda.cudaGetDevice;
 import static jcuda.runtime.JCuda.cudaGetDeviceCount;
 import static jcuda.runtime.JCuda.cudaGetDeviceProperties;
 import static jcuda.runtime.JCuda.cudaMemGetInfo;
-import static jcuda.runtime.cudaError.cudaSuccess;
 
 /**
  * Represents a context per GPU accessible through the same JVM
@@ -106,27 +104,25 @@ public class GPUContext {
 	// If SystemML needs to run on an older card, this logic can be revisited.
 	final int MAJOR_REQUIRED = 3;
 	final int MINOR_REQUIRED = 0;
+
 	// Invoke cudaMemGetInfo to get available memory information. Useful if GPU is shared among multiple application.
 	public double GPU_MEMORY_UTILIZATION_FACTOR = ConfigurationManager.getDMLConfig().getDoubleValue(DMLConfig.GPU_MEMORY_UTILIZATION_FACTOR);
-	// Whether to invoke cudaMemGetInfo for available memory or rely on internal bookkeeping for memory info.
-	public boolean REFRESH_AVAILABLE_MEMORY_EVERY_TIME = ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.REFRESH_AVAILABLE_MEMORY_EVERY_TIME);
-	/** total bytes available on currently active cude device, please be careful with its bookkeeping */
-	AtomicLong deviceMemBytes = new AtomicLong(0);
 
+	/**
+	 * Gets the available memory on GPU that SystemML can use
+	 * @return the available memory in bytes
+	 */
 	public long getAvailableMemory() {
-		if (REFRESH_AVAILABLE_MEMORY_EVERY_TIME) {
-			long free[] = {0};
-			long total[] = {0};
-			if (cudaMemGetInfo(free, total) == cudaSuccess) {
-				//long totalNumBytes = total[0];
-				deviceMemBytes.set(free[0]);
-			} else {
-				throw new RuntimeException("ERROR: Unable to get memory information of the GPU.");
-			}
-		}
-		return (long) (deviceMemBytes.get()*GPU_MEMORY_UTILIZATION_FACTOR);
+		long free[] = {0};
+		long total[] = {0};
+		cudaMemGetInfo(free, total);
+		return (long) (free[0] * GPU_MEMORY_UTILIZATION_FACTOR);
 	}
 
+	/**
+	 * Makes sure that GPU that SystemML is trying to use has the minimum compute capability needed
+	 * @throws DMLRuntimeException if the compute capability is less than what is required
+	 */
 	public void ensureComputeCapability() throws DMLRuntimeException {
 		int[] devices =  {-1};
 		cudaGetDeviceCount(devices);
@@ -172,15 +168,9 @@ public class GPUContext {
 
 		long free[] = {0};
 		long total[] = {0};
-		long totalNumBytes = 0;
-		if (cudaMemGetInfo(free, total) == cudaSuccess) {
-			totalNumBytes = total[0];
-			deviceMemBytes.set(free[0]);
-		} else {
-			throw new RuntimeException("ERROR: Unable to get memory information of the GPU.");
-		}
-		LOG.info("Total GPU memory: " + (totalNumBytes * (1e-6)) + " MB");
-		LOG.info("Available GPU memory: " + (deviceMemBytes.get() * (1e-6)) + " MB");
+		cudaMemGetInfo(free, total);
+		LOG.info("Total GPU memory: " + (total[0] * (1e-6)) + " MB");
+		LOG.info("Available GPU memory: " + (free[0] * (1e-6)) + " MB");
 
 		long start = System.nanoTime();
 		LibMatrixCUDA.cudnnHandle = new cudnnHandle();
@@ -288,15 +278,6 @@ public class GPUContext {
 	public static int getWarpSize() {
 		cudaDeviceProp deviceProp = getGPUProperties();
 		return deviceProp.warpSize;
-	}
-
-	/**
-	 * Gets the available memory and then adds value to it
-	 * @param v the value to add
-	 * @return the current available memory before adding value to it
-	 */
-	public long getAndAddAvailableMemory(long v){
-		return deviceMemBytes.getAndAdd(v);
 	}
 
 	public void destroy() throws DMLRuntimeException {

@@ -211,7 +211,6 @@ public class GPUObject
 				ensureFreeSpace(instructionName, size);
 				A = new Pointer();
 				cudaMalloc(A, size);
-				GPUContext.currContext.deviceMemBytes.addAndGet(size);
 				if (DMLScript.STATISTICS) GPUStatistics.cudaAllocTime.getAndAdd(System.nanoTime() - t0);
 				if (DMLScript.STATISTICS) GPUStatistics.cudaAllocCount.getAndAdd(statsCount);
 				if (instructionName != null && GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instructionName, GPUInstruction.MISC_TIMER_ALLOCATE, System.nanoTime() - t0);
@@ -266,7 +265,6 @@ public class GPUObject
 		long size = cudaBlockSizeMap.get(toFree);
 		if (eager) {
 			if (DMLScript.STATISTICS) t0 = System.nanoTime();
-			GPUContext.currContext.deviceMemBytes.addAndGet(-size);
 			cudaFree(toFree);
 			cudaBlockSizeMap.remove(toFree);
 			if (DMLScript.STATISTICS) GPUStatistics.cudaDeAllocTime.addAndGet(System.nanoTime() - t0);
@@ -633,7 +631,6 @@ public class GPUObject
 	public void setDeviceModify(long numBytes) {
 		this.numLocks.addAndGet(1);
 		this.numBytes = numBytes;
-		GPUContext.currContext.getAndAddAvailableMemory(-numBytes);
 	}
 
 	public synchronized boolean acquireHostRead() throws CacheException {
@@ -761,11 +758,9 @@ public class GPUObject
 	void deallocateMemoryOnDevice(boolean eager) {
 		if(jcudaDenseMatrixPtr != null) {
 			cudaFreeHelper(null, jcudaDenseMatrixPtr, eager);
-			GPUContext.currContext.getAndAddAvailableMemory(numBytes);
 		}
 		if (jcudaSparseMatrixPtr != null) {
 			jcudaSparseMatrixPtr.deallocate(eager);
-			GPUContext.currContext.getAndAddAvailableMemory(numBytes);
 		}
 		jcudaDenseMatrixPtr = null;
 		jcudaSparseMatrixPtr = null;

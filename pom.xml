@@ -351,6 +351,7 @@
 					<excludes>
 						<exclude>**/slowtest/**</exclude>
 						<exclude>**/integration/**</exclude>
+						<exclude>**/test/unit/**</exclude>
 					</excludes>
 
 				</configuration>

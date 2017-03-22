@@ -59,6 +59,7 @@ forward = function(matrix[double] X, int C, int Hin, int Win, int Hf, int Wf,
   N = nrow(X)
   Hout = as.integer((Hin + 2 * padh - Hf) / strideh + 1)
   Wout = as.integer((Win + 2 * padw - Wf) / stridew + 1)
+  pad_value = -1/0  # in max pooling we pad with -infinity
 
   # Create output volume
   out = matrix(0, rows=N, cols=C*Hout*Wout)
@@ -68,8 +69,8 @@ forward = function(matrix[double] X, int C, int Hin, int Win, int Hf, int Wf,
     img = matrix(X[n,], rows=C, cols=Hin*Win)  # reshape
 
     if (padh > 0 | padw > 0) {
-      # Pad image
-      img = util::pad_image(img, Hin, Win, padh, padw)  # shape (C, (Hin+2*padh)*(Win+2*padw))
+      # Pad image to shape (C, (Hin+2*padh)*(Win+2*padw))
+      img = util::pad_image(img, Hin, Win, padh, padw, pad_value)
     }
 
     img_maxes = matrix(0, rows=C, cols=Hout*Wout)  # zeros
@@ -115,6 +116,7 @@ backward = function(matrix[double] dout, int Hout, int Wout, matrix[double] X,
    *  - dX: Gradient wrt X, of shape (N, C*Hin*Win).
    */
   N = nrow(X)
+  pad_value = -1/0  # in max pooling we pad with -infinity
 
   # Create gradient volume
   dX = matrix(0, rows=N, cols=C*Hin*Win)
@@ -123,8 +125,8 @@ backward = function(matrix[double] dout, int Hout, int Wout, matrix[double] X,
   parfor (n in 1:N, check=0) {  # all examples
     img = matrix(X[n,], rows=C, cols=Hin*Win)
     if (padh > 0 | padw > 0) {
-      # Pad image
-      img = util::pad_image(img, Hin, Win, padh, padw)  # shape (C, (Hin+2*padh)*(Win+2*padw))
+      # Pad image to shape (C, (Hin+2*padh)*(Win+2*padw))
+      img = util::pad_image(img, Hin, Win, padh, padw, pad_value)
     }
 
     dimg = matrix(0, rows=C, cols=(Hin+2*padh)*(Win+2*padw))

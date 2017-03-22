@@ -65,12 +65,13 @@ forward = function(matrix[double] X, int C, int Hin, int Win, int Hf, int Wf,
     Xn = matrix(X[n,], rows=C, cols=Hin*Win)
 
     # Pad image
-    Xn_padded = matrix(0, rows=C, cols=(Hin+2*padh)*(Win+2*padw))  # zeros
+    pad_value = -1/0
+    Xn_padded = matrix(pad_value, rows=C, cols=(Hin+2*padh)*(Win+2*padw))  # zeros
     parfor (c in 1:C) {
       Xn_slice = matrix(Xn[c,], rows=Hin, cols=Win)  # depth slice C reshaped
       Xn_padded_slice = matrix(Xn_padded[c,], rows=Hin+2*padh, cols=Win+2*padw)
       Xn_padded_slice[padh+1:padh+Hin, padw+1:padw+Win] = Xn_slice
-      Xn_padded[c, ] = matrix(Xn_padded_slice, rows=1, cols=(Hin+2*padh)*(Win+2*padw))  # reshape
+      Xn_padded[c,] = matrix(Xn_padded_slice, rows=1, cols=(Hin+2*padh)*(Win+2*padw))  # reshape
     }
     img = Xn_padded  # shape (C, (Hin+2*padh)*(Win+2*padw))
 
@@ -127,7 +128,8 @@ backward = function(matrix[double] dout, int Hout, int Wout, matrix[double] X,
     Xn = matrix(X[n,], rows=C, cols=Hin*Win)
 
     # Pad image
-    Xn_padded = matrix(0, rows=C, cols=(Hin+2*padh)*(Win+2*padw))  # zeros
+    pad_value = -1/0
+    Xn_padded = matrix(pad_value, rows=C, cols=(Hin+2*padh)*(Win+2*padw))  # zeros
     parfor (c in 1:C) {
       Xn_slice = matrix(Xn[c,], rows=Hin, cols=Win)  # depth slice C reshaped
       Xn_padded_slice = matrix(Xn_padded[c,], rows=Hin+2*padh, cols=Win+2*padw)

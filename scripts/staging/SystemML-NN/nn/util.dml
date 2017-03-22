@@ -214,7 +214,7 @@ col2im = function(matrix[double] img_cols, int C, int Hin, int Win, int Hf, int 
   }
 }
 
-pad_image = function(matrix[double] img, int Hin, int Win, int padh, int padw)
+pad_image = function(matrix[double] img, int Hin, int Win, int padh, int padw, double pad_value)
     return (matrix[double] img_padded) {
   /*
    * Pads an image along the height and width dimensions with zeros.
@@ -226,6 +226,8 @@ pad_image = function(matrix[double] img, int Hin, int Win, int padh, int padw)
    *  - Win: Input width.
    *  - padh: Padding for top and bottom sides.
    *  - padw: Padding for left and right sides.
+   *  - pad_value: Value to use for the padding.
+   *      A typical value is 0.
    *
    * Outputs:
    *  - img_padded: The input image padded along the height and width
@@ -235,7 +237,7 @@ pad_image = function(matrix[double] img, int Hin, int Win, int padh, int padw)
   img_padded = matrix(0, rows=C, cols=(Hin+2*padh)*(Win+2*padw))  # zeros
   parfor (c in 1:C) {
     img_slice = matrix(img[c,], rows=Hin, cols=Win)  # depth slice C reshaped
-    img_padded_slice = matrix(0, rows=Hin+2*padh, cols=Win+2*padw)
+    img_padded_slice = matrix(pad_value, rows=Hin+2*padh, cols=Win+2*padw)
     img_padded_slice[padh+1:padh+Hin, padw+1:padw+Win] = img_slice
     img_padded[c,] = matrix(img_padded_slice, rows=1, cols=(Hin+2*padh)*(Win+2*padw))  # reshape
   }

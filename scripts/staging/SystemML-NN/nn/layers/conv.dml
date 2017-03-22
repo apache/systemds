@@ -78,7 +78,7 @@ forward = function(matrix[double] X, matrix[double] W, matrix[double] b,
     Xn = matrix(X[n,], rows=C, cols=Hin*Win)  # reshape
 
     # Pad image
-    Xn_padded = util::pad_image(Xn, Hin, Win, padh, padw)  # shape (C, (Hin+2*padh)*(Win+2*padw))
+    Xn_padded = util::pad_image(Xn, Hin, Win, padh, padw, 0)  # shape (C, (Hin+2*padh)*(Win+2*padw))
 
     # Extract local image patches into columns with im2col, of shape (C*Hf*Wf, Hout*Wout)
     Xn_padded_cols = util::im2col(Xn_padded, Hin+2*padh, Win+2*padw, Hf, Wf, strideh, stridew)
@@ -140,7 +140,7 @@ backward = function(matrix[double] dout, int Hout, int Wout,
 
     # Compute dW
     Xn = matrix(X[n,], rows=C, cols=Hin*Win)  # reshape
-    Xn_padded = util::pad_image(Xn, Hin, Win, padh, padw)  # shape (C, (Hin+2*padh)*(Win+2*padw))
+    Xn_padded = util::pad_image(Xn, Hin, Win, padh, padw, 0)  # shape (C, (Hin+2*padh)*(Win+2*padw))
     Xn_padded_cols = util::im2col(Xn_padded, Hin+2*padh, Win+2*padw, Hf, Wf, strideh, stridew)
     # dW = dW + doutn %*% t(Xn_padded_cols)
     dWN[n,] = matrix(doutn %*% t(Xn_padded_cols), rows=1, cols=F*C*Hf*Wf)

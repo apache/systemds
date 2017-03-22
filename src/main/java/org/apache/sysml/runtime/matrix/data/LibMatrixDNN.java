@@ -441,14 +441,16 @@ public class LibMatrixDNN {
 		for (int p = 0; p < params.P; p++) {
 			int start_index_h = p * params.stride_h - params.pad_h;
 			int end_index_h = start_index_h + params.R;
-			params.start_indexes_h[p] = start_index_h;
-			params.end_indexes_h[p] = end_index_h;
+			// Note: We do not treat pad as zero
+			params.start_indexes_h[p] = Math.max(start_index_h, 0);
+			params.end_indexes_h[p] = Math.min(end_index_h, params.H);
 		}
 		for (int q = 0; q < params.Q; q++) {
 			int start_index_w =  q * params.stride_w - params.pad_w;
 			int end_index_w = start_index_w + params.S;
-			params.start_indexes_w[q] = start_index_w;
-			params.end_indexes_w[q] = end_index_w;
+			// Note: We do not treat pad as zero
+			params.start_indexes_w[q] = Math.max(start_index_w, 0);
+			params.end_indexes_w[q] = Math.min(end_index_w, params.W);
 		}
 	}
 	
@@ -578,10 +580,10 @@ public class LibMatrixDNN {
 		Iterator<IJV> iter = input.sparseBlock.getIterator(n, n+1);
 		int [] tensorIndexes = new int[3];
 		
-		int start_index_h = Math.max(params.start_indexes_h[p], 0);
-		int end_index_h = Math.min(params.end_indexes_h[p], params.H);
-		int start_index_w = Math.max(params.start_indexes_w[q], 0);
-		int end_index_w = Math.min(params.end_indexes_w[q], params.W);
+		int start_index_h = params.start_indexes_h[p];
+		int end_index_h = params.end_indexes_h[p];
+		int start_index_w = params.start_indexes_w[q];
+		int end_index_w = params.end_indexes_w[q];
 		
 		int maxIndex = -1; 
 		double maxVal = -Double.MAX_VALUE;
@@ -621,10 +623,10 @@ public class LibMatrixDNN {
 	 * @return index of cell with maximum value
 	 */
 	private static int getMaxIndex(int p, int q, int inputOffset, double [] inputArray, ConvolutionParameters params) {
-		int start_index_h = Math.max(params.start_indexes_h[p], 0);
-		int end_index_h = Math.min(params.end_indexes_h[p], params.H);
-		int start_index_w = Math.max(params.start_indexes_w[q], 0);
-		int end_index_w = Math.min(params.end_indexes_w[q], params.W);
+		int start_index_h = params.start_indexes_h[p];
+		int end_index_h = params.end_indexes_h[p];
+		int start_index_w = params.start_indexes_w[q];
+		int end_index_w = params.end_indexes_w[q];
 		
 		int maxIndex = -1; 
 		double maxVal = -Double.MAX_VALUE;
@@ -958,11 +960,8 @@ public class LibMatrixDNN {
 				final int inOffset1 = inOffset + c*HW;
 				for (int p = 0; p < params.P; p++) {
 					for (int q = 0; q < params.Q; q++, out_index++) {
-						// Note: We do not treat pad as zero and hence we don't do:  
-						// outputArray[out_index] = Math.max(outputArray[out_index], 0) 
-						// if params.start_indexes_h[p] < 0 || params.end_indexes_h[p] >= params.H || params.start_indexes_w[q] < 0 || params.end_indexes_w[q] >= params.W
-						for (int h = Math.max(params.start_indexes_h[p], 0); h < Math.min(params.end_indexes_h[p], params.H); h++) {
-							for (int w = Math.max(params.start_indexes_w[q], 0); w < Math.min(params.end_indexes_w[q], params.W); w++) {
+						for (int h = params.start_indexes_h[p]; h < params.end_indexes_h[p]; h++) {
+							for (int w = params.start_indexes_w[q]; w < params.end_indexes_w[q]; w++) {
 								outputArray[out_index] = Math.max(outputArray[out_index], inputArray[inOffset1 +  h*params.W + w]);
 							}
 						}
@@ -976,11 +975,8 @@ public class LibMatrixDNN {
 			for (int c = 0; c < params.C; c++) {
 				for (int p = 0; p < params.P; p++) {
 					for (int q = 0; q < params.Q; q++, out_index++) {
-						// Note: We do not treat pad as zero and hence we don't do:  
-						// outputArray[out_index] = Math.max(outputArray[out_index], 0) 
-						// if params.start_indexes_h[p] < 0 || params.end_indexes_h[p] >= params.H || params.start_indexes_w[q] < 0 || params.end_indexes_w[q] >= params.W
-						for (int h = Math.max(params.start_indexes_h[p], 0); h < Math.min(params.end_indexes_h[p], params.H); h++) {
-							for (int w = Math.max(params.start_indexes_w[q], 0); w < Math.min(params.end_indexes_w[q], params.W); w++) {
+						for (int h = params.start_indexes_h[p]; h < params.end_indexes_h[p]; h++) {
+							for (int w = params.start_indexes_w[q]; w < params.end_indexes_w[q]; w++) {
 								outputArray[out_index] = Math.max(outputArray[out_index], params.input1.quickGetValue(n, c*HW +  h*params.W + w));
 							}
 						}

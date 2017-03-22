@@ -1085,8 +1085,8 @@ public class OptimizerRuleBased extends Optimizer
 		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
         							.getAbstractPlanMapping().getMappedProg(n.getID())[1];
 		
-		if(    n.getExecType()==ExecType.MR
-			&& n.getParam(ParamType.DATA_PARTITIONER).equals(PDataPartitioner.REMOTE_MR.toString())
+		if(((n.getExecType()==ExecType.MR && n.getParam(ParamType.DATA_PARTITIONER).equals(PDataPartitioner.REMOTE_MR.name()))
+		    || (n.getExecType()==ExecType.SPARK && n.getParam(ParamType.DATA_PARTITIONER).equals(PDataPartitioner.REMOTE_SPARK.name())))
 		    && n.hasNestedParallelism(false) 
 		    && n.hasNestedPartitionReads(false) )		
 		{

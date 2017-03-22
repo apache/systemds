@@ -72,7 +72,7 @@ public class RemoteDPParForMR
 
 	public static RemoteParForJobReturn runJob(long pfid, String itervar, String matrixvar, String program, 
 			String resultFile, MatrixObject input, PartitionFormat dpf, OutputInfo oi, boolean tSparseCol, //config params
-			boolean enableCPCaching, int numReducers, int replication, int max_retry)  //opt params
+			boolean enableCPCaching, int numReducers, int replication)  //opt params
 		throws DMLRuntimeException
 	{
 		RemoteParForJobReturn ret = null;

@@ -975,7 +975,7 @@ public class ParForProgramBlock extends ForProgramBlock
 				              (inputMatrix.getSparsity()<0.001 && inputDPF==PartitionFormat.ROW_WISE))? 
 				             OutputInfo.BinaryCellOutputInfo : OutputInfo.BinaryBlockOutputInfo;
 		RemoteParForJobReturn ret = RemoteDPParForMR.runJob(_ID, itervar.getName(), _colocatedDPMatrix, program, resultFile, 
-				inputMatrix, inputDPF, inputOI, _tSparseCol, _enableCPCaching, _numThreads, _replicationDP, MAX_RETRYS_ON_ERROR );
+				inputMatrix, inputDPF, inputOI, _tSparseCol, _enableCPCaching, _numThreads, _replicationDP );
 		
 		if( _monitor ) 
 			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_WAIT_EXEC_T, time.stop());
@@ -1499,10 +1499,11 @@ public class ParForProgramBlock extends ForProgramBlock
 				break;
 			case REMOTE_MR:
 				dp = new DataPartitionerRemoteMR( dpf, _ID, numRed,
-					_replicationDP, MAX_RETRYS_ON_ERROR, ALLOW_REUSE_MR_JVMS, false );
+						_replicationDP, ALLOW_REUSE_MR_JVMS, false );
 				break;
 			case REMOTE_SPARK:
-				dp = new DataPartitionerRemoteSpark( dpf, ec, numRed, false );
+				dp = new DataPartitionerRemoteSpark( dpf, ec, numRed,
+						_replicationDP, false );
 				break;	
 			default:
 				throw new DMLRuntimeException("Unknown data partitioner: '" +dataPartitioner.name()+"'.");

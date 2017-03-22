@@ -55,12 +55,12 @@ public class DataPartitionerRemoteMR extends DataPartitioner
 	private boolean _keepIndexes = false;
 	
 	
-	public DataPartitionerRemoteMR(PartitionFormat dpf, long pfid, int numReducers, int replication, int max_retry, boolean jvmReuse, boolean keepIndexes) 
+	public DataPartitionerRemoteMR(PartitionFormat dpf, long pfid, int numRed, int replication, boolean jvmReuse, boolean keepIndexes) 
 	{
 		super(dpf._dpf, dpf._N);
 		
 		_pfid = pfid;
-		_numReducers = numReducers;
+		_numReducers = numRed;
 		_replication = replication;
 		_jvmReuse = jvmReuse;
 		_keepIndexes = keepIndexes;

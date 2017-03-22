@@ -42,17 +42,17 @@ import org.apache.sysml.utils.Statistics;
  */
 public class DataPartitionerRemoteSpark extends DataPartitioner
 {	
+	private final ExecutionContext _ec;
+	private final long _numRed;
+	private final int _replication;
 	
-	//private boolean _keepIndexes = false;
-	private ExecutionContext _ec = null;
-	private long _numRed = -1;
-	
-	public DataPartitionerRemoteSpark(PartitionFormat dpf, ExecutionContext ec, long numRed, boolean keepIndexes) 
+	public DataPartitionerRemoteSpark(PartitionFormat dpf, ExecutionContext ec, long numRed, int replication, boolean keepIndexes) 
 	{
 		super(dpf._dpf, dpf._N);
 		
 		_ec = ec;
 		_numRed = numRed;
+		_replication = replication;
 	}
 
 	@Override
@@ -79,7 +79,7 @@ public class DataPartitionerRemoteSpark extends DataPartitioner
 	
 			//run spark remote data partition job 
 			DataPartitionerRemoteSparkMapper dpfun = new DataPartitionerRemoteSparkMapper(mc, ii, oi, _format, _n);
-			DataPartitionerRemoteSparkReducer wfun = new DataPartitionerRemoteSparkReducer(fnameNew, oi);
+			DataPartitionerRemoteSparkReducer wfun = new DataPartitionerRemoteSparkReducer(fnameNew, oi, _replication);
 			inRdd.flatMapToPair(dpfun) //partition the input blocks
 			     .groupByKey(numRed)   //group partition blocks 		          
 			     .foreach(wfun);       //write partitions to hdfs 

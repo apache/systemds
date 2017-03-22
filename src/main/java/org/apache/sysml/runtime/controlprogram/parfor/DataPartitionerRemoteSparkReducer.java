@@ -35,6 +35,7 @@ import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
+import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
 
 import scala.Tuple2;
 
@@ -42,10 +43,12 @@ public class DataPartitionerRemoteSparkReducer implements VoidFunction<Tuple2<Lo
 {
 	private static final long serialVersionUID = -7149865018683261964L;
 	
-	private String _fnameNew = null;
+	private final String _fnameNew;
+	private final int _replication;
 	
-	public DataPartitionerRemoteSparkReducer(String fnameNew, OutputInfo oi) {
+	public DataPartitionerRemoteSparkReducer(String fnameNew, OutputInfo oi, int replication) {
 		_fnameNew = fnameNew;
+		_replication = replication;
 	}
 
 	@Override
@@ -60,11 +63,16 @@ public class DataPartitionerRemoteSparkReducer implements VoidFunction<Tuple2<Lo
 		//write entire partition to binary block sequence file
 		SequenceFile.Writer writer = null;
 		try
-		{			
+		{
+			//create sequence file writer
 			Configuration job = new Configuration(ConfigurationManager.getCachedJobConf());
 			FileSystem fs = FileSystem.get(job);
 			Path path = new Path(_fnameNew + File.separator + key);
-			writer = new SequenceFile.Writer(fs, job, path, MatrixIndexes.class, MatrixBlock.class);
+			writer = new SequenceFile.Writer(fs, job, path, MatrixIndexes.class, MatrixBlock.class, 
+					job.getInt(MRConfigurationNames.IO_FILE_BUFFER_SIZE, 4096),
+                    (short)_replication, fs.getDefaultBlockSize(), null, new SequenceFile.Metadata());	
+			
+			//write individual blocks unordered to output
 			while( valueList.hasNext() ) {
 				PairWritableBlock pair = (PairWritableBlock) valueList.next();
 				writer.append(pair.indexes, pair.block);

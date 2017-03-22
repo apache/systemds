@@ -83,7 +83,7 @@ public class DataPartitionMR
 						throw new DMLRuntimeException("Unsupported partition format for distributed cache input: "+pformat);
 				}
 				PartitionFormat pf = new PartitionFormat(pformat, (int)N);
-				DataPartitioner dpart = new DataPartitionerRemoteMR(pf, -1, numReducers, replication, 4, false, true);
+				DataPartitioner dpart = new DataPartitionerRemoteMR(pf, -1, numReducers, replication, false, true);
 				out = dpart.createPartitionedMatrixObject(in, out, true);
 				
 				sts[i] = out.getMatrixCharacteristics();

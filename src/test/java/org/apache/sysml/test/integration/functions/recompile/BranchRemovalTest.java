@@ -107,9 +107,6 @@ public class BranchRemovalTest extends AutomatedTestBase
 		boolean oldFlagBranchRemoval = OptimizerUtils.ALLOW_BRANCH_REMOVAL;
 		boolean oldFlagIPA = OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS;
 		
-		//boolean oldFlagRand1 = OptimizerUtils.ALLOW_RAND_JOB_RECOMPILE;
-		//boolean oldFlagRand3 = OptimizerUtils.ALLOW_WORSTCASE_SIZE_EXPRESSION_EVALUATION;
-		
 		int val = (condition?1:0);
 		
 		try
@@ -131,10 +128,6 @@ public class BranchRemovalTest extends AutomatedTestBase
 			OptimizerUtils.ALLOW_BRANCH_REMOVAL = branchRemoval;
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = IPA;
 			
-			//disable rand specific recompile
-			//OptimizerUtils.ALLOW_RAND_JOB_RECOMPILE = false;
-			//OptimizerUtils.ALLOW_WORSTCASE_SIZE_EXPRESSION_EVALUATION = false;
-			
 			double[][] V = getRandomMatrix(rows, cols, -1, 1, 1.0d, 7);
 			writeInputMatrix("X", V, true);
 			
@@ -147,24 +140,20 @@ public class BranchRemovalTest extends AutomatedTestBase
 			TestUtils.compareMatrices(dmlfile, rfile, 0, "Stat-DML", "Stat-R");
 			
 			//check expected number of compiled and executed MR jobs
-			int expectedNumCompiled = 4; //reblock, 3xGMR (append), write
+			int expectedNumCompiled = 5; //reblock, 3xGMR (append), write
 			int expectedNumExecuted = 0;			
 			if( branchRemoval && IPA )
 				expectedNumCompiled = 1; //reblock
 			else if( branchRemoval ){
-				expectedNumCompiled = 3; //reblock, GMR (append), write
+				expectedNumCompiled = condition ? 4 : 3; //reblock, GMR (append), write
 			}
 			
 			checkNumCompiledMRJobs(expectedNumCompiled); 
 			checkNumExecutedMRJobs(expectedNumExecuted); 
 		}
-		finally
-		{
+		finally {
 			OptimizerUtils.ALLOW_BRANCH_REMOVAL = oldFlagBranchRemoval;
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = oldFlagIPA;
-			
-			//OptimizerUtils.ALLOW_RAND_JOB_RECOMPILE = oldFlagRand1;
-			//OptimizerUtils.ALLOW_WORSTCASE_SIZE_EXPRESSION_EVALUATION = oldFlagRand3;
 		}
 	}
 	

@@ -1524,7 +1524,9 @@ public class OptimizerRuleBased extends Optimizer
 			
 			if( rIsAccessByIterationVariable(pn, moVarname, iterVarname) &&
 			   ((moDpf==PartitionFormat.ROW_WISE && mo.getNumRows()==_N ) ||
-				(moDpf==PartitionFormat.COLUMN_WISE && mo.getNumColumns()==_N)) )
+				(moDpf==PartitionFormat.COLUMN_WISE && mo.getNumColumns()==_N) ||
+				(moDpf._dpf==PDataPartitionFormat.ROW_BLOCK_WISE_N && mo.getNumRows()<=_N*moDpf._N)||
+				(moDpf._dpf==PDataPartitionFormat.COLUMN_BLOCK_WISE_N && mo.getNumColumns()<=_N*moDpf._N)) )
 			{
 				int k = (int)Math.min(_N,_rk2);
 				
@@ -1567,9 +1569,15 @@ public class OptimizerRuleBased extends Optimizer
 					if( h.getInput().get(1) instanceof DataOp )
 						indexAccess = h.getInput().get(1).getName();
 					break;
+				case ROW_BLOCK_WISE_N: //input 1 and 2 have same slope and var
+					indexAccess = rGetVarFromExpression(h.getInput().get(1));
+					break;
 				case COLUMN_WISE: //input 3 and 4 eq
 					if( h.getInput().get(3) instanceof DataOp )
 						indexAccess = h.getInput().get(3).getName();
+					break;
+				case COLUMN_BLOCK_WISE_N: //input 3 and 4 have same slope and var
+					indexAccess = rGetVarFromExpression(h.getInput().get(3));
 					break;
 					
 				default:
@@ -1581,6 +1589,17 @@ public class OptimizerRuleBased extends Optimizer
 		}
 		
 		return ret;
+	}
+	
+	private static String rGetVarFromExpression(Hop current) {
+		String var = null;
+		for( Hop c : current.getInput() ) {
+			var = rGetVarFromExpression(c);
+			if( var != null )
+				return var;
+		}
+		return (current instanceof DataOp) ?
+			current.getName() : null;
 	}
 	
 	///////

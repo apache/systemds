@@ -29,6 +29,7 @@ import org.apache.sysml.parser.ParForStatementBlock;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock;
+import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitioner;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PExecMode;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.POptMode;
@@ -386,7 +387,9 @@ public class OptimizerConstrained extends OptimizerRuleBased
 
 			if( rIsAccessByIterationVariable(pn, moVarname, iterVarname) &&
 			   ((moDpf==PartitionFormat.ROW_WISE && mo.getNumRows()==_N ) ||
-				(moDpf==PartitionFormat.COLUMN_WISE && mo.getNumColumns()==_N)) )
+				(moDpf==PartitionFormat.COLUMN_WISE && mo.getNumColumns()==_N) ||
+				(moDpf._dpf==PDataPartitionFormat.ROW_BLOCK_WISE_N && mo.getNumRows()<=_N*moDpf._N)||
+				(moDpf._dpf==PDataPartitionFormat.COLUMN_BLOCK_WISE_N && mo.getNumColumns()<=_N*moDpf._N)) )
 			{
 				int k = (int)Math.min(_N,_rk2);
 

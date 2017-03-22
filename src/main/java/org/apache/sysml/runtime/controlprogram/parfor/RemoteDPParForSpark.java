@@ -92,8 +92,7 @@ public class RemoteDPParForSpark
 
 		//compute number of reducers (to avoid OOMs and reduce memory pressure)
 		int numParts = SparkUtils.getNumPreferredPartitions(mc, in);
-		int numParts2 = (int)((dpf._dpf==PDataPartitionFormat.ROW_BLOCK_WISE) ? mc.getRows() : mc.getCols()); 
-		int numReducers2 = Math.max(numReducers, Math.min(numParts, numParts2));
+		int numReducers2 = Math.max(numReducers, Math.min(numParts, (int)dpf.getNumParts(mc)));
 		
 		//core parfor datapartition-execute (w/ or w/o shuffle, depending on data characteristics)
 		RemoteDPParForSparkWorker efun = new RemoteDPParForSparkWorker(program, clsMap, 
@@ -177,7 +176,9 @@ public class RemoteDPParForSpark
 	private static boolean requiresGrouping(PartitionFormat dpf, MatrixObject mo) {
 		MatrixCharacteristics mc = mo.getMatrixCharacteristics();
 		return ((dpf == PartitionFormat.ROW_WISE && mc.getNumColBlocks() > 1)
-				|| (dpf == PartitionFormat.COLUMN_WISE && mc.getNumRowBlocks() > 1))
+				|| (dpf == PartitionFormat.COLUMN_WISE && mc.getNumRowBlocks() > 1)
+				|| (dpf._dpf == PDataPartitionFormat.ROW_BLOCK_WISE_N && mc.getNumColBlocks() > 1)
+				|| (dpf._dpf == PDataPartitionFormat.COLUMN_BLOCK_WISE_N && mc.getNumRowBlocks() > 1))
 			&& !hasInputDataSet(dpf, mo);
 	}
 	

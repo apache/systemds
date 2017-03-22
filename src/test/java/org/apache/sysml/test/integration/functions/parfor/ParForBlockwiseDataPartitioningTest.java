@@ -21,6 +21,7 @@ package org.apache.sysml.test.integration.functions.parfor;
 
 import java.util.HashMap;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 import org.apache.sysml.api.DMLScript;
@@ -68,17 +69,17 @@ public class ParForBlockwiseDataPartitioningTest extends AutomatedTestBase
 	}
 
 	@Test
-	public void testParForRowBlockPartitioningLocalRemoteSparkDense() {
+	public void testParForRowBlockPartitioningLocalRemoteDense() {
 		runParForDataPartitioningTest(TEST_NAME1, PDataPartitioner.LOCAL, PExecMode.REMOTE_SPARK, false);
 	}	
 
 	@Test
-	public void testParForRowBlockPartitioningRemoteSparkLocalDense() {
+	public void testParForRowBlockPartitioningRemoteLocalDense() {
 		runParForDataPartitioningTest(TEST_NAME1, PDataPartitioner.REMOTE_SPARK, PExecMode.LOCAL, false);
 	}
 
 	@Test
-	public void testParForRowBlockPartitioningRemoteSparkRemoteDense() {
+	public void testParForRowBlockPartitioningRemoteRemoteDense() {
 		runParForDataPartitioningTest(TEST_NAME1, PDataPartitioner.REMOTE_SPARK, PExecMode.REMOTE_SPARK, false);
 	}
 
@@ -88,17 +89,17 @@ public class ParForBlockwiseDataPartitioningTest extends AutomatedTestBase
 	}
 
 	@Test
-	public void testParForRowBlockPartitioningLocalRemoteSparkSparse() {
+	public void testParForRowBlockPartitioningLocalRemoteSparse() {
 		runParForDataPartitioningTest(TEST_NAME1, PDataPartitioner.LOCAL, PExecMode.REMOTE_SPARK, true);
 	}	
 
 	@Test
-	public void testParForRowBlockPartitioningRemoteSparkLocalSparse() {
+	public void testParForRowBlockPartitioningRemoteLocalSparse() {
 		runParForDataPartitioningTest(TEST_NAME1, PDataPartitioner.REMOTE_SPARK, PExecMode.LOCAL, true);
 	}
 
 	@Test
-	public void testParForRowBlockPartitioningRemoteSparkRemoteSparse() {
+	public void testParForRowBlockPartitioningRemoteRemoteSparse() {
 		runParForDataPartitioningTest(TEST_NAME1, PDataPartitioner.REMOTE_SPARK, PExecMode.REMOTE_SPARK, true);
 	}
 
@@ -108,17 +109,17 @@ public class ParForBlockwiseDataPartitioningTest extends AutomatedTestBase
 	}
 
 	@Test
-	public void testParForColBlockPartitioningLocalRemoteSparkDense() {
+	public void testParForColBlockPartitioningLocalRemoteDense() {
 		runParForDataPartitioningTest(TEST_NAME2, PDataPartitioner.LOCAL, PExecMode.REMOTE_SPARK, false);
 	}	
 
 	@Test
-	public void testParForColBlockPartitioningRemoteSparkLocalDense() {
+	public void testParForColBlockPartitioningRemoteLocalDense() {
 		runParForDataPartitioningTest(TEST_NAME2, PDataPartitioner.REMOTE_SPARK, PExecMode.LOCAL, false);
 	}
 
 	@Test
-	public void testParForColBlockPartitioningRemoteSparkRemoteDense() {
+	public void testParForColBlockPartitioningRemoteRemoteDense() {
 		runParForDataPartitioningTest(TEST_NAME2, PDataPartitioner.REMOTE_SPARK, PExecMode.REMOTE_SPARK, false);
 	}
 
@@ -128,39 +129,52 @@ public class ParForBlockwiseDataPartitioningTest extends AutomatedTestBase
 	}
 
 	@Test
-	public void testParForColBlockPartitioningLocalRemoteSparkSparse() {
+	public void testParForColBlockPartitioningLocalRemoteSparse() {
 		runParForDataPartitioningTest(TEST_NAME2, PDataPartitioner.LOCAL, PExecMode.REMOTE_SPARK, true);
 	}	
 
 	@Test
-	public void testParForColBlockPartitioningRemoteSparkLocalSparse() {
+	public void testParForColBlockPartitioningRemoteLocalSparse() {
 		runParForDataPartitioningTest(TEST_NAME2, PDataPartitioner.REMOTE_SPARK, PExecMode.LOCAL, true);
 	}
 
 	@Test
-	public void testParForColBlockPartitioningRemoteSparkRemoteSparse() {
+	public void testParForColBlockPartitioningRemoteRemoteSparse() {
 		runParForDataPartitioningTest(TEST_NAME2, PDataPartitioner.REMOTE_SPARK, PExecMode.REMOTE_SPARK, true);
 	}
+	
+	//fused data partition execute
+	
+	@Test
+	public void testParForRowBlockPartitioningRemoteRemoteFusedDense() {
+		runParForDataPartitioningTest(TEST_NAME1, PDataPartitioner.UNSPECIFIED, PExecMode.REMOTE_SPARK_DP, false);
+	}
+
+	@Test
+	public void testParForColBlockPartitioningRemoteRemoteFusedDense() {
+		runParForDataPartitioningTest(TEST_NAME2, PDataPartitioner.UNSPECIFIED, PExecMode.REMOTE_SPARK_DP, false);
+	}
+
 	
 	//negative examples
 	
 	@Test
-	public void testParForRowBlockPartitioningRemoteSparkLocalSparseNegative() {
+	public void testParForRowBlockPartitioningRemoteLocalSparseNegative() {
 		runParForDataPartitioningTest(TEST_NAME3, PDataPartitioner.REMOTE_SPARK, PExecMode.LOCAL, true);
 	}
 	
 	@Test
-	public void testParForRowBlockPartitioningRemoteSparkRemoteSparseNegative() {
+	public void testParForRowBlockPartitioningRemoteRemoteSparseNegative() {
 		runParForDataPartitioningTest(TEST_NAME3, PDataPartitioner.REMOTE_SPARK, PExecMode.REMOTE_SPARK, true);
 	}
 	
 	@Test
-	public void testParForColBlockPartitioningRemoteSparkLocalSparseNegative() {
+	public void testParForColBlockPartitioningRemoteLocalSparseNegative() {
 		runParForDataPartitioningTest(TEST_NAME4, PDataPartitioner.REMOTE_SPARK, PExecMode.LOCAL, true);
 	}
 	
 	@Test
-	public void testParForColBlockPartitioningRemoteSparkRemoteSparseNegative() {
+	public void testParForColBlockPartitioningRemoteRemoteSparseNegative() {
 		runParForDataPartitioningTest(TEST_NAME4, PDataPartitioner.REMOTE_SPARK, PExecMode.REMOTE_SPARK, true);
 	}
 	
@@ -183,7 +197,7 @@ public class ParForBlockwiseDataPartitioningTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[]{"-args", input("V"), 
+			programArgs = new String[]{"-stats", "-args", input("V"), 
 				partitioner.name(), mode.name(), output("R") };
 			
 			fullRScriptName = HOME + testname + ".R";
@@ -204,6 +218,11 @@ public class ParForBlockwiseDataPartitioningTest extends AutomatedTestBase
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("Rout");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "DML", "R");
+			
+			//test for correct plan
+			boolean pos = testname.equals(TEST_NAME1) || testname.equals(TEST_NAME2);
+			Assert.assertEquals(pos, heavyHittersContainsSubString("ParFor-DPSP") 
+					|| heavyHittersContainsSubString("ParFor-DPESP"));
 		}
 		finally
 		{

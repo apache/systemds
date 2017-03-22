@@ -103,6 +103,7 @@ import org.apache.sysml.runtime.instructions.cp.IntObject;
 import org.apache.sysml.runtime.instructions.cp.StringObject;
 import org.apache.sysml.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.utils.Statistics;
@@ -213,6 +214,18 @@ public class ParForProgramBlock extends ForProgramBlock
 		public boolean isBlockwise() {
 			return _dpf == PDataPartitionFormat.COLUMN_BLOCK_WISE_N 
 				|| _dpf == PDataPartitionFormat.ROW_BLOCK_WISE_N;
+		}
+		public long getNumParts(MatrixCharacteristics mc) {
+			switch( _dpf ) {
+				case ROW_WISE: return mc.getRows();
+				case ROW_BLOCK_WISE: return mc.getNumRowBlocks();
+				case ROW_BLOCK_WISE_N: return (long)Math.ceil((double)mc.getRows()/_N);
+				case COLUMN_WISE: return mc.getCols();
+				case COLUMN_BLOCK_WISE: return mc.getNumColBlocks();
+				case COLUMN_BLOCK_WISE_N: return (long)Math.ceil((double)mc.getCols()/_N);
+				default:
+					throw new RuntimeException("Unsupported partition format: "+_dpf);
+			}
 		}
 	}
 	

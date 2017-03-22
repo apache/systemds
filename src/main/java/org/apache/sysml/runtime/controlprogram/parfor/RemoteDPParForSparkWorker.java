@@ -87,8 +87,18 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 		_aIters = aiters;
 		
 		//setup matrix block partition meta data
-		_rlen = (dpf != PartitionFormat.ROW_WISE) ? (int)mc.getRows() : 1;
-		_clen = (dpf != PartitionFormat.COLUMN_WISE) ? (int)mc.getCols() : 1;
+		switch( dpf._dpf ) {
+			case ROW_WISE: 
+				_rlen = (int)mc.getRows(); _clen = 1; break;
+			case ROW_BLOCK_WISE_N:
+				_rlen = dpf._N; _clen = (int)mc.getCols(); break;
+			case COLUMN_BLOCK_WISE:
+				_rlen = 1; _clen = (int)mc.getCols(); break;
+			case COLUMN_BLOCK_WISE_N:
+				_rlen = (int)mc.getRows(); _clen = dpf._N; break;
+			default:
+				throw new RuntimeException("Unsupported partition format: "+dpf._dpf.name());
+		}
 		_brlen = mc.getRowsPerBlock();
 		_bclen = mc.getColsPerBlock();
 		_tSparseCol = tSparseCol;

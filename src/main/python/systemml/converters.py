@@ -82,6 +82,13 @@ def convertToMatrixBlock(sc, src, maxSizeBlockInMB=8):
         src = coo_matrix(src,  dtype=np.float64)
     else:
         src = np.asarray(src, dtype=np.float64)
+    if len(src.shape) != 2:
+        hint = ''
+        if type(src) == np.ndarray and len(src.shape) == 1:
+            hint = '. Hint: If you intend to pass a one dimensional ndarray as column-vector, please use np.matrix(input).T'
+        elif len(src.shape) > 2:
+            hint = '. Hint: If you intend to pass a tensor, please reshape it into (N, CHW) format'
+        raise TypeError('SystemML only supports matrix datatype (i.e. len(input.shape) should be 2)' + hint)
     numRowsPerBlock = int(math.ceil((maxSizeBlockInMB*1000000) / (src.shape[1]*8)))
     # print("numRowsPerBlock=" + str(numRowsPerBlock))
     multiBlockTransfer = False if numRowsPerBlock >= src.shape[0] else True

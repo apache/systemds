@@ -101,7 +101,7 @@ public class ResourceConfig
 
 	public long getMaxMRResource()
 	{
-		double val = Collections.max(_mrres);
+		double val = (double) Collections.max(_mrres);
 		return (long)val;
 	}
 	

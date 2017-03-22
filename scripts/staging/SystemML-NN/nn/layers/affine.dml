@@ -69,7 +69,7 @@ init = function(int D, int M)
    *
    * Note: This is just a convenience function, and parameters
    * may be initialized manually if needed.
-   * 
+   *
    * We use the heuristic by He et al. [http://arxiv.org/abs/1502.01852],
    * which limits the magnification of inputs/gradients during
    * forward/backward passes by scaling unit-Gaussian weights by a
@@ -84,6 +84,6 @@ init = function(int D, int M)
    *  - b: Biases vector, of shape (1, M).
    */
   W = rand(rows=D, cols=M, pdf="normal") * sqrt(2.0/D)
-  b = matrix(0, rows=1, cols=M) 
+  b = matrix(0, rows=1, cols=M)
 }
 

@@ -26,7 +26,7 @@
  *  vectors of class probs.
  * L = (1/N) sum(L_i) for i=1 to N, where N is the number of examples.
  */
-forward = function(matrix[double] pred, matrix[double] y) 
+forward = function(matrix[double] pred, matrix[double] y)
     return (double loss) {
   /*
    * Computes the forward pass for a cross-entropy loss function.  The
@@ -50,7 +50,7 @@ forward = function(matrix[double] pred, matrix[double] y)
   loss = sum(losses) / N
 }
 
-backward = function(matrix[double] pred, matrix[double] y) 
+backward = function(matrix[double] pred, matrix[double] y)
     return (matrix[double] dpred) {
   /*
    * Computes the backward pass of a cross-entropy loss function.  The

@@ -69,7 +69,7 @@ forward = function(matrix[double] X, matrix[double] W, matrix[double] b,
   F = nrow(W)
   Hout = as.integer((Hin + 2 * padh - Hf) / strideh + 1)
   Wout = as.integer((Win + 2 * padw - Wf) / stridew + 1)
-  
+
   # Create output volume
   out = matrix(0, rows=N, cols=F*Hout*Wout)
 
@@ -124,7 +124,7 @@ backward = function(matrix[double] dout, int Hout, int Wout,
    */
   N = nrow(X)
   F = nrow(W)
-  
+
   # Create gradient volumes
   # Note: Create convenience gradient volumes for dW and db that will
   # allow for one gradient to be stored per example, allowing for
@@ -151,8 +151,8 @@ backward = function(matrix[double] dout, int Hout, int Wout,
 
     # Compute dX
     dXn_padded_cols = t(W) %*% doutn  # shape (C*Hf*Wf, Hout*Wout)
-    dXn_padded =
-      util::col2im(dXn_padded_cols, C, Hin+2*padh, Win+2*padw, Hf, Wf, strideh, stridew, "add")
+    dXn_padded = util::col2im(dXn_padded_cols, C, Hin+2*padh, Win+2*padw, Hf, Wf,
+                              strideh, stridew, "add")
     dXn = util::unpad_image(dXn_padded, Hin, Win, padh, padw)
     dX[n,] = matrix(dXn, rows=1, cols=C*Hin*Win)  # reshape
   }
@@ -170,7 +170,7 @@ init = function(int F, int C, int Hf, int Wf)
    *
    * Note: This is just a convenience function, and parameters
    * may be initialized manually if needed.
-   * 
+   *
    * We use the heuristic by He et al. [http://arxiv.org/abs/1502.01852],
    * which limits the magnification of inputs/gradients during
    * forward/backward passes by scaling unit-Gaussian weights by a
@@ -187,6 +187,6 @@ init = function(int F, int C, int Hf, int Wf)
    *  - b: Biases vector, of shape (F, 1).
    */
   W = rand(rows=F, cols=C*Hf*Wf, pdf="normal") * sqrt(2.0/(C*Hf*Wf))
-  b = matrix(0, rows=F, cols=1) 
+  b = matrix(0, rows=F, cols=1)
 }
 

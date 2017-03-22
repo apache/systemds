@@ -25,7 +25,7 @@
  * L_i = sum_j(abs((pred_i)_j - (y_i)_j)) for all j.
  * L = (1/N) sum(L_i) for i=1 to N, where N is the number of examples.
  */
-forward = function(matrix[double] pred, matrix[double] y) 
+forward = function(matrix[double] pred, matrix[double] y)
     return (double loss) {
   /*
    * Computes the forward pass for an L1 loss function.  The inputs
@@ -46,7 +46,7 @@ forward = function(matrix[double] pred, matrix[double] y)
   loss = sum(losses) / N
 }
 
-backward = function(matrix[double] pred, matrix[double] y) 
+backward = function(matrix[double] pred, matrix[double] y)
     return (matrix[double] dpred) {
   /*
    * Computes the backward pass for an L1 loss function.  The inputs

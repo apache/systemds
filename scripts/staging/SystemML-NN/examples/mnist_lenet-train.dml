@@ -41,7 +41,7 @@
 #  - W1, W2, W3, W4: Files containing the trained weights of the model.
 #  - b1, b2, b3, b4: Files containing the trained biases of the model.
 #  - accuracy: File containing the final accuracy on the test data.
-# 
+#
 # Data:
 # The MNIST dataset contains labeled images of handwritten digits,
 # where each example is a 28x28 pixel image of grayscale values in

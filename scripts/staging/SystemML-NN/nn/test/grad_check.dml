@@ -50,7 +50,7 @@ check_rel_error = function(double dw_a, double dw_n, double lossph, double lossm
    * Check and report any issues with the relative error measure between
    * the analytical and numerical partial derivatives.
    *
-   *  - Issues an "ERROR" statement for relative errors > 1e-2, 
+   *  - Issues an "ERROR" statement for relative errors > 1e-2,
    *  indicating that the gradient is likely incorrect.
    *  - Issues a "WARNING" statement for relative errors < 1e-2
    *  but > 1e-4, indicating that the may be incorrect.
@@ -66,7 +66,7 @@ check_rel_error = function(double dw_a, double dw_n, double lossph, double lossm
    */
   # Compute relative error
   rel_error = util::compute_rel_error(dw_a, dw_n)
-  
+
   # Evaluate relative error
   thresh_error = 1e-2
   thresh_warn = 1e-4
@@ -186,8 +186,8 @@ conv = function() {
   # Compute analytical gradients of loss wrt parameters
   [out, Hout, Wout] = conv::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
   dout = l2_loss::backward(out, y)
-  [dX, dW, db] =
-    conv::backward(dout, Hout, Wout, X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
+  [dX, dW, db] = conv::backward(dout, Hout, Wout, X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
+                                pad, pad)
 
   # Grad check
   h = 1e-5
@@ -274,8 +274,8 @@ conv_builtin = function() {
   # Compute analytical gradients of loss wrt parameters
   [out, Hout, Wout] = conv_builtin::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
   dout = l2_loss::backward(out, y)
-  [dX, dW, db] =
-    conv_builtin::backward(dout, Hout, Wout, X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
+  [dX, dW, db] = conv_builtin::backward(dout, Hout, Wout, X, W, b, C, Hin, Win, Hf, Wf,
+                                        stride, stride, pad, pad)
 
   # Grad check
   h = 1e-5
@@ -285,10 +285,12 @@ conv_builtin = function() {
       # Compute numerical derivative
       old = as.scalar(X[i,j])
       X[i,j] = old - h
-      [outmh, Hout, Wout] = conv_builtin::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
+      [outmh, Hout, Wout] = conv_builtin::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
+                                                  pad, pad)
       lossmh = l2_loss::forward(outmh, y)
       X[i,j] = old + h
-      [outph, Hout, Wout] = conv_builtin::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
+      [outph, Hout, Wout] = conv_builtin::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
+                                                  pad, pad)
       lossph = l2_loss::forward(outph, y)
       X[i,j] = old  # reset
       dX_num = (lossph - lossmh) / (2 * h) # numerical derivative
@@ -304,10 +306,12 @@ conv_builtin = function() {
       # Compute numerical derivative
       old = as.scalar(W[i,j])
       W[i,j] = old - h
-      [outmh, Hout, Wout] = conv_builtin::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
+      [outmh, Hout, Wout] = conv_builtin::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
+                                                  pad, pad)
       lossmh = l2_loss::forward(outmh, y)
       W[i,j] = old + h
-      [outph, Hout, Wout] = conv_builtin::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
+      [outph, Hout, Wout] = conv_builtin::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
+                                                  pad, pad)
       lossph = l2_loss::forward(outph, y)
       W[i,j] = old  # reset
       dW_num = (lossph - lossmh) / (2 * h) # numerical derivative
@@ -323,10 +327,12 @@ conv_builtin = function() {
       # Compute numerical derivative
       old = as.scalar(b[i,j])
       b[i,j] = old - h
-      [outmh, Hout, Wout] = conv_builtin::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
+      [outmh, Hout, Wout] = conv_builtin::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
+                                                  pad, pad)
       lossmh = l2_loss::forward(outmh, y)
       b[i,j] = old + h
-      [outph, Hout, Wout] = conv_builtin::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
+      [outph, Hout, Wout] = conv_builtin::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
+                                                  pad, pad)
       lossph = l2_loss::forward(outph, y)
       b[i,j] = old  # reset
       db_num = (lossph - lossmh) / (2 * h) # numerical derivative
@@ -362,8 +368,8 @@ conv_simple = function() {
   # Compute analytical gradients of loss wrt parameters
   [out, Hout, Wout] = conv_simple::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
   dout = l2_loss::backward(out, y)
-  [dX, dW, db] =
-    conv_simple::backward(dout, Hout, Wout, X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
+  [dX, dW, db] = conv_simple::backward(dout, Hout, Wout, X, W, b, C, Hin, Win, Hf, Wf,
+                                       stride, stride, pad, pad)
 
   # Grad check
   h = 1e-5
@@ -373,10 +379,12 @@ conv_simple = function() {
       # Compute numerical derivative
       old = as.scalar(X[i,j])
       X[i,j] = old - h
-      [outmh, Hout, Wout] = conv_simple::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
+      [outmh, Hout, Wout] = conv_simple::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
+                                                 pad, pad)
       lossmh = l2_loss::forward(outmh, y)
       X[i,j] = old + h
-      [outph, Hout, Wout] = conv_simple::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
+      [outph, Hout, Wout] = conv_simple::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
+                                                 pad, pad)
       lossph = l2_loss::forward(outph, y)
       X[i,j] = old  # reset
       dX_num = (lossph - lossmh) / (2 * h) # numerical derivative
@@ -392,10 +400,12 @@ conv_simple = function() {
       # Compute numerical derivative
       old = as.scalar(W[i,j])
       W[i,j] = old - h
-      [outmh, Hout, Wout] = conv_simple::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
+      [outmh, Hout, Wout] = conv_simple::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
+                                                 pad, pad)
       lossmh = l2_loss::forward(outmh, y)
       W[i,j] = old + h
-      [outph, Hout, Wout] = conv_simple::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
+      [outph, Hout, Wout] = conv_simple::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
+                                                 pad, pad)
       lossph = l2_loss::forward(outph, y)
       W[i,j] = old  # reset
       dW_num = (lossph - lossmh) / (2 * h) # numerical derivative
@@ -411,10 +421,12 @@ conv_simple = function() {
       # Compute numerical derivative
       old = as.scalar(b[i,j])
       b[i,j] = old - h
-      [outmh, Hout, Wout] = conv_simple::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
+      [outmh, Hout, Wout] = conv_simple::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
+                                                 pad, pad)
       lossmh = l2_loss::forward(outmh, y)
       b[i,j] = old + h
-      [outph, Hout, Wout] = conv_simple::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
+      [outph, Hout, Wout] = conv_simple::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
+                                                 pad, pad)
       lossph = l2_loss::forward(outph, y)
       b[i,j] = old  # reset
       db_num = (lossph - lossmh) / (2 * h) # numerical derivative
@@ -830,30 +842,36 @@ max_pool = function() {
   Wf = 2  # pool filter width
   stride = 2
   X = rand(rows=N, cols=C*Hin*Win)
-  y = rand(rows=N, cols=C*2*2)
 
-  # Compute analytical gradients of loss wrt parameters
-  [out, Hout, Wout] = max_pool::forward(X, C, Hin, Win, Hf, Wf, stride, stride)
-  dout = l2_loss::backward(out, y)
-  dX = max_pool::backward(dout, Hout, Wout, X, C, Hin, Win, Hf, Wf, stride, stride)
+  for (pad in 0:1) {
+    print(" - Grad checking w/ pad="+pad+".")
+    Hout = as.integer((Hin + 2 * pad - Hf) / stride + 1)
+    Wout = as.integer((Win + 2 * pad - Wf) / stride + 1)
+    y = rand(rows=N, cols=C*Hout*Wout)
 
-  # Grad check
-  h = 1e-5
-  for (i in 1:nrow(X)) {
-    for (j in 1:ncol(X)) {
-      # Compute numerical derivative
-      old = as.scalar(X[i,j])
-      X[i,j] = old - h
-      [outmh, Hout, Wout] = max_pool::forward(X, C, Hin, Win, Hf, Wf, stride, stride)
-      lossmh = l2_loss::forward(outmh, y)
-      X[i,j] = old + h
-      [outph, Hout, Wout] = max_pool::forward(X, C, Hin, Win, Hf, Wf, stride, stride)
-      lossph = l2_loss::forward(outph, y)
-      X[i,j] = old  # reset
-      dX_num = (lossph - lossmh) / (2 * h) # numerical derivative
+    # Compute analytical gradients of loss wrt parameters
+    [out, Hout, Wout] = max_pool::forward(X, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
+    dout = l2_loss::backward(out, y)
+    dX = max_pool::backward(dout, Hout, Wout, X, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
 
-      # Check error
-      rel_error = check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
+    # Grad check
+    h = 1e-5
+    for (i in 1:nrow(X)) {
+      for (j in 1:ncol(X)) {
+        # Compute numerical derivative
+        old = as.scalar(X[i,j])
+        X[i,j] = old - h
+        [outmh, Hout, Wout] = max_pool::forward(X, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
+        lossmh = l2_loss::forward(outmh, y)
+        X[i,j] = old + h
+        [outph, Hout, Wout] = max_pool::forward(X, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
+        lossph = l2_loss::forward(outph, y)
+        X[i,j] = old  # reset
+        dX_num = (lossph - lossmh) / (2 * h) # numerical derivative
+
+        # Check error
+        rel_error = check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
+      }
     }
   }
 }
@@ -873,30 +891,39 @@ max_pool_builtin = function() {
   Wf = 2  # pool filter width
   stride = 2
   X = rand(rows=N, cols=C*Hin*Win)
-  y = rand(rows=N, cols=C*2*2)
 
-  # Compute analytical gradients of loss wrt parameters
-  [out, Hout, Wout] = max_pool_builtin::forward(X, C, Hin, Win, Hf, Wf, stride, stride)
-  dout = l2_loss::backward(out, y)
-  dX = max_pool_builtin::backward(dout, Hout, Wout, X, C, Hin, Win, Hf, Wf, stride, stride)
+  for (pad in 0:1) {
+    print(" - Grad checking w/ pad="+pad+".")
+    Hout = as.integer((Hin + 2 * pad - Hf) / stride + 1)
+    Wout = as.integer((Win + 2 * pad - Wf) / stride + 1)
+    y = rand(rows=N, cols=C*Hout*Wout)
 
-  # Grad check
-  h = 1e-5
-  for (i in 1:nrow(X)) {
-    for (j in 1:ncol(X)) {
-      # Compute numerical derivative
-      old = as.scalar(X[i,j])
-      X[i,j] = old - h
-      [outmh, Hout, Wout] = max_pool_builtin::forward(X, C, Hin, Win, Hf, Wf, stride, stride)
-      lossmh = l2_loss::forward(outmh, y)
-      X[i,j] = old + h
-      [outph, Hout, Wout] = max_pool_builtin::forward(X, C, Hin, Win, Hf, Wf, stride, stride)
-      lossph = l2_loss::forward(outph, y)
-      X[i,j] = old  # reset
-      dX_num = (lossph - lossmh) / (2 * h) # numerical derivative
+    # Compute analytical gradients of loss wrt parameters
+    [out, Hout, Wout] = max_pool_builtin::forward(X, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
+    dout = l2_loss::backward(out, y)
+    dX = max_pool_builtin::backward(dout, Hout, Wout, X, C, Hin, Win, Hf, Wf, stride, stride,
+                                    pad, pad)
 
-      # Check error
-      rel_error = check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
+    # Grad check
+    h = 1e-5
+    for (i in 1:nrow(X)) {
+      for (j in 1:ncol(X)) {
+        # Compute numerical derivative
+        old = as.scalar(X[i,j])
+        X[i,j] = old - h
+        [outmh, Hout, Wout] = max_pool_builtin::forward(X, C, Hin, Win, Hf, Wf, stride, stride,
+                                                        pad, pad)
+        lossmh = l2_loss::forward(outmh, y)
+        X[i,j] = old + h
+        [outph, Hout, Wout] = max_pool_builtin::forward(X, C, Hin, Win, Hf, Wf, stride, stride,
+                                                        pad, pad)
+        lossph = l2_loss::forward(outph, y)
+        X[i,j] = old  # reset
+        dX_num = (lossph - lossmh) / (2 * h) # numerical derivative
+
+        # Check error
+        rel_error = check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
+      }
     }
   }
 }
@@ -916,30 +943,39 @@ max_pool_simple = function() {
   Wf = 2  # pool filter width
   stride = 2
   X = rand(rows=N, cols=C*Hin*Win)
-  y = rand(rows=N, cols=C*2*2)
 
-  # Compute analytical gradients of loss wrt parameters
-  [out, Hout, Wout] = max_pool_simple::forward(X, C, Hin, Win, Hf, Wf, stride, stride)
-  dout = l2_loss::backward(out, y)
-  dX = max_pool_simple::backward(dout, Hout, Wout, X, C, Hin, Win, Hf, Wf, stride, stride)
+  for (pad in 0:1) {
+    print(" - Grad checking w/ pad="+pad+".")
+    Hout = as.integer((Hin + 2 * pad - Hf) / stride + 1)
+    Wout = as.integer((Win + 2 * pad - Wf) / stride + 1)
+    y = rand(rows=N, cols=C*Hout*Wout)
 
-  # Grad check
-  h = 1e-5
-  for (i in 1:nrow(X)) {
-    for (j in 1:ncol(X)) {
-      # Compute numerical derivative
-      old = as.scalar(X[i,j])
-      X[i,j] = old - h
-      [outmh, Hout, Wout] = max_pool_simple::forward(X, C, Hin, Win, Hf, Wf, stride, stride)
-      lossmh = l2_loss::forward(outmh, y)
-      X[i,j] = old + h
-      [outph, Hout, Wout] = max_pool_simple::forward(X, C, Hin, Win, Hf, Wf, stride, stride)
-      lossph = l2_loss::forward(outph, y)
-      X[i,j] = old  # reset
-      dX_num = (lossph - lossmh) / (2 * h) # numerical derivative
+    # Compute analytical gradients of loss wrt parameters
+    [out, Hout, Wout] = max_pool_simple::forward(X, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
+    dout = l2_loss::backward(out, y)
+    dX = max_pool_simple::backward(dout, Hout, Wout, X, C, Hin, Win, Hf, Wf, stride, stride,
+                                   pad, pad)
 
-      # Check error
-      rel_error = check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
+    # Grad check
+    h = 1e-5
+    for (i in 1:nrow(X)) {
+      for (j in 1:ncol(X)) {
+        # Compute numerical derivative
+        old = as.scalar(X[i,j])
+        X[i,j] = old - h
+        [outmh, Hout, Wout] = max_pool_simple::forward(X, C, Hin, Win, Hf, Wf, stride, stride,
+                                                       pad, pad)
+        lossmh = l2_loss::forward(outmh, y)
+        X[i,j] = old + h
+        [outph, Hout, Wout] = max_pool_simple::forward(X, C, Hin, Win, Hf, Wf, stride, stride,
+                                                       pad, pad)
+        lossph = l2_loss::forward(outph, y)
+        X[i,j] = old  # reset
+        dX_num = (lossph - lossmh) / (2 * h) # numerical derivative
+
+        # Check error
+        rel_error = check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
+      }
     }
   }
 }
@@ -1252,7 +1288,7 @@ two_layer_affine_l2_net = function() {
 
   # Compute analytical gradients
   [pred, loss, dX, dW1, db1, dW2, db2] = two_layer_affine_l2_net_run(X, y, W1, b1, W2, b2)
-  
+
   # Grad check
   h = 1e-5
   print(" - Grad checking X.")
@@ -1356,7 +1392,7 @@ two_layer_affine_l2_net_run = function(matrix[double] X, matrix[double] y,
 
   # Compute backward pass
   [dX, dpred, daout, dhout, dW1, db1, dW2, db2] =
-    two_layer_affine_l2_net_backward(X, y, pred, aout, hout, W1, b1, W2, b2)
+      two_layer_affine_l2_net_backward(X, y, pred, aout, hout, W1, b1, W2, b2)
 }
 
 two_layer_affine_l2_net_forward = function(matrix[double] X, matrix[double] y,

@@ -58,7 +58,7 @@ forward = function(matrix[double] X, matrix[double] W, matrix[double] b,
   F = nrow(W)
   Hout = as.integer((Hin + 2 * padh - Hf) / strideh + 1)
   Wout = as.integer((Win + 2 * padw - Wf) / stridew + 1)
-  
+
   # Create output volume
   out = matrix(0, rows=N, cols=F*Hout*Wout)
 
@@ -83,11 +83,11 @@ forward = function(matrix[double] X, matrix[double] W, matrix[double] b,
           Xn_padded_patch = matrix(0, rows=C, cols=Hf*Wf)  # zeros
           parfor (c in 1:C, check=0) {
             Xn_padded_slice = matrix(Xn_padded[c,], rows=Hin+2*padh, cols=Win+2*padw)  # reshape
-            Xn_padded_patch[c,] = 
-              matrix(Xn_padded_slice[h0:h0-1+Hf, w0:w0-1+Wf], rows=1, cols=Hf*Wf)  # reshape
+            Xn_padded_patch[c,] = matrix(Xn_padded_slice[h0:h0-1+Hf, w0:w0-1+Wf], rows=1,
+                                         cols=Hf*Wf)  # reshape
           }
-          out[n, (f-1)*Hout*Wout + (hout-1)*Wout + wout] = 
-            W[f,] %*% matrix(Xn_padded_patch, rows=C*Hf*Wf, cols=1) + b[f,]
+          out[n, (f-1)*Hout*Wout + (hout-1)*Wout + wout] =
+              W[f,] %*% matrix(Xn_padded_patch, rows=C*Hf*Wf, cols=1) + b[f,]
         }
       }
     }
@@ -131,7 +131,7 @@ backward = function(matrix[double] dout, int Hout, int Wout,
   F = nrow(W)
   Hout = as.integer((Hin + 2 * padh - Hf) / strideh + 1)
   Wout = as.integer((Win + 2 * padw - Wf) / stridew + 1)
-  
+
   # Create gradient volumes
   dX = matrix(0, rows=N, cols=C*Hin*Win)
   dW = matrix(0, rows=F, cols=C*Hf*Wf)
@@ -160,16 +160,17 @@ backward = function(matrix[double] dout, int Hout, int Wout,
                                     rows=C, cols=Hf*Wf)  # reshape
           for (c in 1:C) {
             Xn_padded_slice = matrix(Xn_padded[c,], rows=Hin+2*padh, cols=Win+2*padw)  # reshape
-            Xn_padded_patch[c,] = 
-              matrix(Xn_padded_slice[h0:h0-1+Hf, w0:w0-1+Wf], rows=1, cols=Hf*Wf)  # reshape
+            Xn_padded_patch[c,] = matrix(Xn_padded_slice[h0:h0-1+Hf, w0:w0-1+Wf],
+                                         rows=1, cols=Hf*Wf)  # reshape
             dXn_padded_slice = matrix(0, rows=Hin+2*padh, cols=Win+2*padw)
-            dXn_padded_slice[h0:h0-1+Hf, w0:w0-1+Wf] =
-              matrix(dXn_padded_patch[c,], rows=Hf, cols=Wf)  # reshape
-            dXn_padded[c,] = dXn_padded[c,] +
-              matrix(dXn_padded_slice, rows=1, cols=(Hin+2*padh)*(Win+2*padw))
+            dXn_padded_slice[h0:h0-1+Hf, w0:w0-1+Wf] = matrix(dXn_padded_patch[c,],
+                                                              rows=Hf, cols=Wf)  # reshape
+            dXn_padded[c,] = dXn_padded[c,] + matrix(dXn_padded_slice,
+                                                     rows=1, cols=(Hin+2*padh)*(Win+2*padw))
           }
-          dW[f,] = dW[f,] + matrix(Xn_padded_patch, rows=1, cols=C*Hf*Wf) *
-            dout[n, (f-1)*Hout*Wout + (hout-1)*Wout + wout]
+          dW[f,] = dW[f,]
+                   + matrix(Xn_padded_patch, rows=1, cols=C*Hf*Wf)
+                   * dout[n, (f-1)*Hout*Wout + (hout-1)*Wout + wout]
           db[f,] = db[f,] + dout[n, (f-1)*Hout*Wout + (hout-1)*Wout + wout]
         }
       }
@@ -179,7 +180,7 @@ backward = function(matrix[double] dout, int Hout, int Wout,
     parfor (c in 1:C, check=0) {
       dXn_padded_slice = matrix(dXn_padded[c,], rows=(Hin+2*padh), cols=(Win+2*padw))
       dXn_slice = dXn_padded_slice[padh+1:padh+Hin, padw+1:padw+Win]
-      dXn[c, ] = matrix(dXn_slice, rows=1, cols=Hin*Win)
+      dXn[c,] = matrix(dXn_slice, rows=1, cols=Hin*Win)
     }
     dX[n,] = matrix(dXn, rows=1, cols=C*Hin*Win)
   }
@@ -189,7 +190,7 @@ init = function(int F, int C, int Hf, int Wf)
     return (matrix[double] W, matrix[double] b) {
   /*
    * Initialize the parameters of this layer.
-   * 
+   *
    * We use the heuristic by He et al. [http://arxiv.org/abs/1502.01852],
    * which limits the magnification of inputs/gradients during
    * forward/backward passes by scaling unit-Gaussian weights by a
@@ -206,6 +207,6 @@ init = function(int F, int C, int Hf, int Wf)
    *  - b: Biases vector, of shape (F, 1).
    */
   W = rand(rows=F, cols=C*Hf*Wf, pdf="normal") * sqrt(2.0/(C*Hf*Wf))
-  b = matrix(0, rows=F, cols=1) 
+  b = matrix(0, rows=F, cols=1)
 }
 

@@ -23,7 +23,7 @@
  * Max pooling layer.
  */
 forward = function(matrix[double] X, int C, int Hin, int Win, int Hf, int Wf,
-                   int strideh, int stridew)
+                   int strideh, int stridew, int padh, int padw)
     return (matrix[double] out, int Hout, int Wout) {
   /*
    * Computes the forward pass for a 2D spatial max pooling layer.
@@ -44,6 +44,10 @@ forward = function(matrix[double] X, int C, int Hin, int Win, int Hf, int Wf,
    *  - Wf: Filter width.
    *  - strideh: Stride over height.
    *  - stridew: Stride over width.
+   *  - padh: Padding for top and bottom sides.
+   *      A typical value is 0.
+   *  - padw: Padding for left and right sides.
+   *      A typical value is 0.
    *
    * Outputs:
    *  - out: Outputs, of shape (N, C*Hout*Wout).
@@ -55,12 +59,13 @@ forward = function(matrix[double] X, int C, int Hin, int Win, int Hf, int Wf,
   Wout = as.integer((Win - Wf) / stridew + 1)
 
   # Max pooling - built-in implementation
-  out = max_pool(X, input_shape=[N,C,Hin,Win], pool_size=[Hf,Wf], stride=[strideh,stridew],
-                 padding=[0,0])
+  out = max_pool(X, input_shape=[N,C,Hin,Win], pool_size=[Hf,Wf],
+                 stride=[strideh,stridew], padding=[padh,padw])
 }
 
-backward = function(matrix[double] dout, int Hout, int Wout, matrix[double] X, int C,
-                    int Hin, int Win, int Hf, int Wf, int strideh, int stridew)
+backward = function(matrix[double] dout, int Hout, int Wout, matrix[double] X,
+                    int C, int Hin, int Win, int Hf, int Wf,
+                    int strideh, int stridew, int padh, int padw)
     return (matrix[double] dX) {
   /*
    * Computes the backward pass for a 2D spatial max pooling layer.
@@ -79,14 +84,18 @@ backward = function(matrix[double] dout, int Hout, int Wout, matrix[double] X, i
    *  - Wf: Filter width.
    *  - strideh: Stride over height.
    *  - stridew: Stride over width.
+   *  - padh: Padding for top and bottom sides.
+   *      A typical value is 0.
+   *  - padw: Padding for left and right sides.
+   *      A typical value is 0.
    *
    * Outputs:
    *  - dX: Gradient wrt X, of shape (N, C*Hin*Win).
    */
   N = nrow(X)
-  
+
   # Gradient of max pooling
   dX = max_pool_backward(X, dout, input_shape=[N,C,Hin,Win], pool_size=[Hf,Wf],
-                         stride=[strideh,stridew], padding=[0,0])
+                         stride=[strideh,stridew], padding=[padh,padw])
 }
 

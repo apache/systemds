@@ -1393,7 +1393,7 @@ public class MLContext {
 	}
 
 	/**
-	 * 	 * All the execute() methods call this, which  after setting appropriate input/output variables
+	 * All the execute() methods call this, which  after setting appropriate input/output variables
 	 * calls _compileAndExecuteScript
 	 * We have explicitly synchronized this function because MLContext/SystemML does not yet support multi-threading.
 	 * @throws ParseException if ParseException occurs

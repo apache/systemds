@@ -568,7 +568,7 @@ public class DMLScript
 				arg.equalsIgnoreCase("-stats") || 
 				arg.equalsIgnoreCase("-exec") ||
 				arg.equalsIgnoreCase("-debug") ||
-				arg.startsWith("-config "))
+				arg.startsWith("-config"))
 			{
 					throw new LanguageException("-args or -nvargs must be the final argument for DMLScript!");
 			}

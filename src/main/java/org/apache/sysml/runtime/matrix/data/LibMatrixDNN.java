@@ -566,9 +566,10 @@ public class LibMatrixDNN {
 		
 		int maxIndex = -1; 
 		double maxVal = -Double.MAX_VALUE;
-		if(start_index_h < 0 || start_index_w < 0 || end_index_h >= params.H || end_index_w >= params.W) {
-			maxVal = 0;
-		}
+		
+		// Note: We do not treat pad as zero and hence we don't do:  
+		// maxVal = 0 
+		// if start_index_h < 0 || start_index_w < 0 || end_index_h >= params.H || end_index_w >= params.W
 
 		// Find maxIndex
 		double currDoutVal = -1;
@@ -599,10 +600,10 @@ public class LibMatrixDNN {
 		int maxIndex = -1; 
 		double maxVal = -Double.MAX_VALUE;
 		
-		if(start_index_h < 0 || start_index_w < 0 || end_index_h >= params.H || end_index_w >= params.W) {
-			maxVal = 0;
-		}
-
+		// Note: We do not treat pad as zero and hence we don't do:  
+		// maxVal = 0 
+		// if start_index_h < 0 || start_index_w < 0 || end_index_h >= params.H || end_index_w >= params.W
+		
 		// Find maxIndex
 		double currDoutVal = -1;
 		for (int h = start_index_h; h < end_index_h; h++) {
@@ -928,11 +929,9 @@ public class LibMatrixDNN {
 				final int inOffset1 = inOffset + c*HW;
 				for (int p = 0; p < params.P; p++) {
 					for (int q = 0; q < params.Q; q++, out_index++) {
-//						 Logic to have results match that of CuDNN
-//						if(params.start_indexes_h[p] < 0 || params.start_indexes_w[q] < 0
-//							|| params.end_indexes_h[p] >= params.H || params.end_indexes_w[q] >= params.W) {
-//							outputArray[out_index] = Math.max(outputArray[out_index], 0);
-//						}
+						// Note: We do not treat pad as zero and hence we don't do:  
+						// outputArray[out_index] = Math.max(outputArray[out_index], 0) 
+						// if params.start_indexes_h[p] < 0 || params.end_indexes_h[p] >= params.H || params.start_indexes_w[q] < 0 || params.end_indexes_w[q] >= params.W
 						for (int h = Math.max(params.start_indexes_h[p], 0); h < Math.min(params.end_indexes_h[p], params.H); h++) {
 							for (int w = Math.max(params.start_indexes_w[q], 0); w < Math.min(params.end_indexes_w[q], params.W); w++) {
 								outputArray[out_index] = Math.max(outputArray[out_index], inputArray[inOffset1 +  h*params.W + w]);
@@ -948,11 +947,9 @@ public class LibMatrixDNN {
 			for (int c = 0; c < params.C; c++) {
 				for (int p = 0; p < params.P; p++) {
 					for (int q = 0; q < params.Q; q++, out_index++) {
-//						 Logic to have results match that of CuDNN
-//						if(params.start_indexes_h[p] < 0 || params.start_indexes_w[q] < 0
-//							|| params.end_indexes_h[p] >= params.H || params.end_indexes_w[q] >= params.W) {
-//							outputArray[out_index] = Math.max(outputArray[out_index], 0);
-//						}
+						// Note: We do not treat pad as zero and hence we don't do:  
+						// outputArray[out_index] = Math.max(outputArray[out_index], 0) 
+						// if params.start_indexes_h[p] < 0 || params.end_indexes_h[p] >= params.H || params.start_indexes_w[q] < 0 || params.end_indexes_w[q] >= params.W
 						for (int h = Math.max(params.start_indexes_h[p], 0); h < Math.min(params.end_indexes_h[p], params.H); h++) {
 							for (int w = Math.max(params.start_indexes_w[q], 0); w < Math.min(params.end_indexes_w[q], params.W); w++) {
 								outputArray[out_index] = Math.max(outputArray[out_index], params.input1.quickGetValue(n, c*HW +  h*params.W + w));

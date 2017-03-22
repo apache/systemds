@@ -79,21 +79,28 @@ import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice;
 /**
  * Handle to a matrix block on the GPU
  */
-public class GPUObject
-{
+public class GPUObject {
+
 	private static final Log LOG = LogFactory.getLog(GPUObject.class.getName());
+
 	/** Map of free blocks allocate on GPU. maps size_of_block -> pointer on GPU */
 	static LRUCacheMap<Long, LinkedList<Pointer>> freeCUDASpaceMap = new LRUCacheMap<Long, LinkedList<Pointer>>();
+
 	/** To record size of allocated blocks */
 	static HashMap<Pointer, Long> cudaBlockSizeMap = new HashMap<Pointer, Long>();
+
 	/** Pointer to dense matrix */
 	public Pointer jcudaDenseMatrixPtr = null;
+
 	/** Pointer to sparse matrix */
 	public CSRPointer jcudaSparseMatrixPtr = null;
+
 	public long numBytes;
+
 	// An optional tensor descriptor (and shape) that can be set by a tensor instruction such as convolution, maxpooling
 	// and exploited by a subsequent non-tensor instruction such as relu
 	private cudnnTensorDescriptor tensorDescriptor = null;
+
 	private int [] tensorShape = null;
 
 	/**
@@ -197,34 +204,34 @@ public class GPUObject
 	 */
 	public static Pointer allocate(String instructionName, long size, int statsCount) throws DMLRuntimeException{
 		long t0=0, t1=0, end=0;
-		synchronized (GPUContext.syncObj) {
-			Pointer A;
-			if (freeCUDASpaceMap.containsKey(size)) {
-				if (instructionName != null && GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
-				LinkedList<Pointer> freeList = freeCUDASpaceMap.get(size);
-				A = freeList.pop();
-				if (freeList.isEmpty())
-					freeCUDASpaceMap.remove(size);
-				if (instructionName != null && GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instructionName, GPUInstruction.MISC_TIMER_REUSE, System.nanoTime() - t0);
-			} else {
-				if (DMLScript.STATISTICS) t0 = System.nanoTime();
-				ensureFreeSpace(instructionName, size);
-				A = new Pointer();
-				cudaMalloc(A, size);
-				if (DMLScript.STATISTICS) GPUStatistics.cudaAllocTime.getAndAdd(System.nanoTime() - t0);
-				if (DMLScript.STATISTICS) GPUStatistics.cudaAllocCount.getAndAdd(statsCount);
-				if (instructionName != null && GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instructionName, GPUInstruction.MISC_TIMER_ALLOCATE, System.nanoTime() - t0);
-			}
-			// Set all elements to 0 since newly allocated space will contain garbage
-			if (DMLScript.STATISTICS) t1 = System.nanoTime();
-			cudaMemset(A, 0, size);
-			if (DMLScript.STATISTICS) end = System.nanoTime();
-			if (instructionName != null && GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instructionName, GPUInstruction.MISC_TIMER_SET_ZERO, end - t1);
-			if (DMLScript.STATISTICS) GPUStatistics.cudaMemSet0Time.getAndAdd(end - t1);
-			if (DMLScript.STATISTICS) GPUStatistics.cudaMemSet0Count.getAndAdd(1);
-			cudaBlockSizeMap.put(A, size);
-			return A;
+		Pointer A;
+		if (freeCUDASpaceMap.containsKey(size)) {
+			if (instructionName != null && GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
+			LinkedList<Pointer> freeList = freeCUDASpaceMap.get(size);
+			A = freeList.pop();
+			if (freeList.isEmpty())
+				freeCUDASpaceMap.remove(size);
+			if (instructionName != null && GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instructionName, GPUInstruction.MISC_TIMER_REUSE, System.nanoTime() - t0);
+		} else {
+			if (DMLScript.STATISTICS) t0 = System.nanoTime();
+			ensureFreeSpace(instructionName, size);
+			A = new Pointer();
+			cudaMalloc(A, size);
+			if (DMLScript.STATISTICS) GPUStatistics.cudaAllocTime.getAndAdd(System.nanoTime() - t0);
+			if (DMLScript.STATISTICS) GPUStatistics.cudaAllocCount.getAndAdd(statsCount);
+			if (instructionName != null && GPUStatistics.DISPLAY_STATISTICS)
+				GPUStatistics.maintainCPMiscTimes(instructionName, GPUInstruction.MISC_TIMER_ALLOCATE, System.nanoTime() - t0);
 		}
+		// Set all elements to 0 since newly allocated space will contain garbage
+		if (DMLScript.STATISTICS) t1 = System.nanoTime();
+		cudaMemset(A, 0, size);
+		if (DMLScript.STATISTICS) end = System.nanoTime();
+		if (instructionName != null && GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instructionName, GPUInstruction.MISC_TIMER_SET_ZERO, end - t1);
+		if (DMLScript.STATISTICS) GPUStatistics.cudaMemSet0Time.getAndAdd(end - t1);
+		if (DMLScript.STATISTICS) GPUStatistics.cudaMemSet0Count.getAndAdd(1);
+		cudaBlockSizeMap.put(A, size);
+		return A;
+
 	}
 
 	/**
@@ -339,7 +346,7 @@ public class GPUObject
 	 * Needed for operations like {@link JCusparse#cusparseDcsrgemm(cusparseHandle, int, int, int, int, int, cusparseMatDescr, int, Pointer, Pointer, Pointer, cusparseMatDescr, int, Pointer, Pointer, Pointer, cusparseMatDescr, Pointer, Pointer, Pointer)}
 	 * @param sparseMatrixPtr CSR (compressed sparse row) pointer
 	 */
-	public synchronized void setSparseMatrixCudaPointer(CSRPointer sparseMatrixPtr) {
+	public void setSparseMatrixCudaPointer(CSRPointer sparseMatrixPtr) {
 		this.jcudaSparseMatrixPtr = sparseMatrixPtr;
 		this.isInSparseFormat = true;
 		if(jcudaDenseMatrixPtr != null) {
@@ -354,7 +361,7 @@ public class GPUObject
 	 *
 	 * @param densePtr dense pointer
 	 */
-	public synchronized void setDenseMatrixCudaPointer(Pointer densePtr){
+	public void setDenseMatrixCudaPointer(Pointer densePtr){
 		this.jcudaDenseMatrixPtr = densePtr;
 		this.isInSparseFormat = false;
 		if(jcudaSparseMatrixPtr != null) {
@@ -536,7 +543,7 @@ public class GPUObject
 		return numElems * ((long)jcuda.Sizeof.INT);
 	}
 
-	public synchronized boolean isAllocated() {
+	public boolean isAllocated() {
 		return (jcudaDenseMatrixPtr != null || jcudaSparseMatrixPtr != null);
 	}
 
@@ -581,7 +588,7 @@ public class GPUObject
 		return isEmptyAndSparseAndAllocated;
 	}
 
-	public synchronized boolean acquireDeviceRead() throws DMLRuntimeException {
+	public boolean acquireDeviceRead() throws DMLRuntimeException {
 		boolean transferred = false;
 		if(!isAllocated()) {
 			copyFromHostToDevice();
@@ -594,16 +601,14 @@ public class GPUObject
 		return transferred;
 	}
 
-	public synchronized boolean acquireDeviceModifyDense() throws DMLRuntimeException {
+	public boolean acquireDeviceModifyDense() throws DMLRuntimeException {
 		boolean allocated = false;
 		if(!isAllocated()) {
 			mat.setDirty(true);
 			// Dense block, size = numRows * numCols
 			allocateDenseMatrixOnDevice();
 			allocated = true;
-			synchronized(evictionLock) {
-				GPUContext.allocatedPointers.add(this);
-			}
+			GPUContext.allocatedGPUObjects.add(this);
 		}
 		isDeviceCopyModified = true;
 		if(!isAllocated())
@@ -611,16 +616,15 @@ public class GPUObject
 		return allocated;
 	}
 
-	public synchronized boolean acquireDeviceModifySparse() throws DMLRuntimeException {
+	public boolean acquireDeviceModifySparse() throws DMLRuntimeException {
 		boolean allocated = false;
 		isInSparseFormat = true;
 		if(!isAllocated()) {
 			mat.setDirty(true);
 			allocateSparseMatrixOnDevice();
 			allocated = true;
-			synchronized(evictionLock) {
-				GPUContext.allocatedPointers.add(this);
-			}
+			GPUContext.allocatedGPUObjects.add(this);
+
 		}
 		isDeviceCopyModified = true;
 		if(!isAllocated())
@@ -633,7 +637,7 @@ public class GPUObject
 		this.numBytes = numBytes;
 	}
 
-	public synchronized boolean acquireHostRead() throws CacheException {
+	public boolean acquireHostRead() throws CacheException {
 		boolean copied = false;
 		if(isAllocated()) {
 			try {
@@ -677,7 +681,7 @@ public class GPUObject
 	 * releases input allocated on GPU
 	 * @throws CacheException if data is not allocated
 	 */
-	public synchronized void releaseInput() throws CacheException {
+	public void releaseInput() throws CacheException {
 		updateReleaseLocks();
 		if(!isAllocated())
 			throw new CacheException("Attempting to release an input before allocating it");
@@ -687,49 +691,12 @@ public class GPUObject
 	 * releases output allocated on GPU
 	 * @throws CacheException if data is not allocated
 	 */
-    public synchronized void releaseOutput() throws CacheException {
+	public void releaseOutput() throws CacheException {
 		updateReleaseLocks();
 		isDeviceCopyModified = true;
 		if(!isAllocated())
 			throw new CacheException("Attempting to release an output before allocating it");
 	}
-	
-	// package-level visibility as these methods are guarded by underlying GPUContext
-
-	/**
-	@Override
-	void allocateMemoryOnDevice(long numElemToAllocate) throws DMLRuntimeException {
-		if(!isAllocated()) {
-			long start = System.nanoTime();
-			if(numElemToAllocate == -1 && LibMatrixCUDA.isInSparseFormat(mat)) {
-				setSparseMatrixCudaPointer(CSRPointer.allocateEmpty(mat.getNnz(), mat.getNumRows()));
-				numBytes = CSRPointer.estimateSize(mat.getNnz(), mat.getNumRows());
-				GPUContext.deviceMemBytes.addAndGet(-numBytes);
-				isInSparseFormat = true;
-				//throw new DMLRuntimeException("Sparse format not implemented");
-			} else if(numElemToAllocate == -1) {
-				// Called for dense input
-				setDenseMatrixCudaPointer(new Pointer());
-				numBytes = mat.getNumRows()*getDoubleSizeOf(mat.getNumColumns());
-				cudaMalloc(jcudaDenseMatrixPtr, numBytes);
-				GPUContext.deviceMemBytes.addAndGet(-numBytes);
-			}
-			else {
-				// Called for dense output
-				setDenseMatrixCudaPointer(new Pointer());
-				numBytes = getDoubleSizeOf(numElemToAllocate);
-				if(numElemToAllocate <= 0 || numBytes <= 0)
-					throw new DMLRuntimeException("Cannot allocate dense matrix object with " + numElemToAllocate + " elements and size " + numBytes);
-				cudaMalloc(jcudaDenseMatrixPtr,  numBytes);
-				GPUContext.deviceMemBytes.addAndGet(-numBytes);
-			}
-
-			GPUStatistics.cudaAllocTime.addAndGet(System.nanoTime()-start);
-			GPUStatistics.cudaAllocCount.addAndGet(1);
-
-		}
-	}
-	 */
 
 	void allocateDenseMatrixOnDevice() throws DMLRuntimeException {
 		assert !isAllocated() : "Internal error - trying to allocated dense matrix to a GPUObject that is already allocated";
@@ -866,9 +833,8 @@ public class GPUObject
 				values = csrBlock.values();
 			}
 			allocateSparseMatrixOnDevice();
-			synchronized(evictionLock) {
-				GPUContext.allocatedPointers.add(this);
-			}
+			GPUContext.allocatedGPUObjects.add(this);
+
 			if(copyToDevice) {
 				CSRPointer.copyToDevice(jcudaSparseMatrixPtr, tmp.getNumRows(), tmp.getNonZeros(), rowPtr, colInd, values);
 			}
@@ -885,9 +851,8 @@ public class GPUObject
 
 			// Copy dense block
 			allocateDenseMatrixOnDevice();
-			synchronized(evictionLock) {
-				GPUContext.allocatedPointers.add(this);
-			}
+			GPUContext.allocatedGPUObjects.add(this);
+
 			cudaMemcpy(jcudaDenseMatrixPtr, Pointer.to(data), getDoubleSizeOf(mat.getNumRows()*mat.getNumColumns()), cudaMemcpyHostToDevice);
 		}
 
@@ -981,8 +946,6 @@ public class GPUObject
 	 * @throws DMLRuntimeException If no blocks to free up or if not enough blocks with zero locks on them.	 
 	 */
 	protected static void evict(String instructionName, final long GPUSize) throws DMLRuntimeException {
-		synchronized (GPUContext.syncObj) {
-
 			GPUStatistics.cudaEvictionCount.addAndGet(1);
 			// Release the set of free blocks maintained in a GPUObject.freeCUDASpaceMap
 			// to free up space
@@ -1002,53 +965,51 @@ public class GPUObject
 			if (GPUSize <= getAvailableMemory())
 				return;
 
-			if (GPUContext.allocatedPointers.size() == 0) {
+			if (GPUContext.allocatedGPUObjects.size() == 0) {
 				throw new DMLRuntimeException("There is not enough memory on device for this matrix!");
 			}
 
-			synchronized (evictionLock) {
-				Collections.sort(GPUContext.allocatedPointers, new Comparator<GPUObject>() {
+			Collections.sort(GPUContext.allocatedGPUObjects, new Comparator<GPUObject>() {
+				@Override
+				public int compare(GPUObject p1, GPUObject p2) {
+					long p1Val = p1.numLocks.get();
+					long p2Val = p2.numLocks.get();
 
-					@Override
-					public int compare(GPUObject p1, GPUObject p2) {
-						long p1Val = p1.numLocks.get();
-						long p2Val = p2.numLocks.get();
+					if (p1Val > 0 && p2Val > 0) {
+						// Both are locked, so don't sort
+						return 0;
+					} else if (p1Val > 0 || p2Val > 0) {
+						// Put the unlocked one to RHS
+						return Long.compare(p2Val, p1Val);
+					} else {
+						// Both are unlocked
 
-						if (p1Val > 0 && p2Val > 0) {
-							// Both are locked, so don't sort
-							return 0;
-						} else if (p1Val > 0 || p2Val > 0) {
-							// Put the unlocked one to RHS
-							return Long.compare(p2Val, p1Val);
-						} else {
-							// Both are unlocked
-
-							if (evictionPolicy == EvictionPolicy.MIN_EVICT) {
-								long p1Size = 0;
-								long p2Size = 0;
-								try {
-									p1Size = p1.getSizeOnDevice() - GPUSize;
-									p2Size = p2.getSizeOnDevice() - GPUSize;
-								} catch (DMLRuntimeException e) {
-									throw new RuntimeException(e);
-								}
-
-								if (p1Size >= 0 && p2Size >= 0) {
-									return Long.compare(p2Size, p1Size);
-								} else {
-									return Long.compare(p1Size, p2Size);
-								}
-							} else if (evictionPolicy == EvictionPolicy.LRU || evictionPolicy == EvictionPolicy.LFU) {
-								return Long.compare(p2.timestamp.get(), p1.timestamp.get());
-							} else {
-								throw new RuntimeException("Unsupported eviction policy:" + evictionPolicy.name());
+						if (evictionPolicy == EvictionPolicy.MIN_EVICT) {
+							long p1Size = 0;
+							long p2Size = 0;
+							try {
+								p1Size = p1.getSizeOnDevice() - GPUSize;
+								p2Size = p2.getSizeOnDevice() - GPUSize;
+							} catch (DMLRuntimeException e) {
+								throw new RuntimeException(e);
 							}
+
+							if (p1Size >= 0 && p2Size >= 0) {
+								return Long.compare(p2Size, p1Size);
+							} else {
+								return Long.compare(p1Size, p2Size);
+							}
+						} else if (evictionPolicy == EvictionPolicy.LRU || evictionPolicy == EvictionPolicy.LFU) {
+							return Long.compare(p2.timestamp.get(), p1.timestamp.get());
+						} else {
+							throw new RuntimeException("Unsupported eviction policy:" + evictionPolicy.name());
 						}
 					}
-				});
+				}
+			});
 
-				while (GPUSize > getAvailableMemory() && GPUContext.allocatedPointers.size() > 0) {
-					GPUObject toBeRemoved = GPUContext.allocatedPointers.get(GPUContext.allocatedPointers.size() - 1);
+				while (GPUSize > getAvailableMemory() && GPUContext.allocatedGPUObjects.size() > 0) {
+					GPUObject toBeRemoved = GPUContext.allocatedGPUObjects.get(GPUContext.allocatedGPUObjects.size() - 1);
 					if (toBeRemoved.numLocks.get() > 0) {
 						throw new DMLRuntimeException("There is not enough memory on device for this matrix!");
 					}
@@ -1058,8 +1019,6 @@ public class GPUObject
 
 					toBeRemoved.clearData(true);
 				}
-			}
-		}
 	}
 
 	/**
@@ -1076,15 +1035,11 @@ public class GPUObject
 	 * @throws CacheException ?
 	 */
 	public void clearData(boolean eager) throws CacheException {
-		synchronized(evictionLock) {
-			GPUContext.allocatedPointers.remove(this);
-		}
+		GPUContext.allocatedGPUObjects.remove(this);
 		deallocateMemoryOnDevice(eager);
 
 	}
-	
-	static Boolean evictionLock = new Boolean(true);
-	
+
 	protected static long getAvailableMemory() {
 		return GPUContext.currContext.getAvailableMemory();
 	}

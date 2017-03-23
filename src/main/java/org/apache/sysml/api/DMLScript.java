@@ -343,7 +343,6 @@ public class DMLScript
 										+ " name (start with letter, contain only letters, numbers, or underscores)."
 										+ " Either -args or -nvargs can be used, not both.")
 						.hasArgs()
-						.withValueSeparator(' ')
 						.create("nvargs");
 		Option argsOpt = OptionBuilder.withArgName("argN")
 						.withDescription("parameterize DML script with positional parameters,"
@@ -351,14 +350,12 @@ public class DMLScript
 										+ " after -args will replace $1 in DML script, 2nd value will replace $2, etc."
 										+ " Either -args or -nvargs can be used, not both.")
 						.hasArgs()
-						.withValueSeparator(' ')
 						.create("args");
 		Option configOpt = OptionBuilder.withArgName("filename")
 						.withDescription("use a given configuration file  (default: use parameter"
 										+ " values in default SystemML-config.xml config file; if <filename> is"
 										+ " prefixed with hdfs or gpfs it is read from DFS, otherwise from local file system)")
 						.hasArg()
-						.withValueSeparator(' ')
 						.create("config");
 		Option cleanOpt = OptionBuilder.withDescription("cleanup all SystemML working directories (FS, DFS),"
 						+ " All other flags are ignored in this mode. \n")
@@ -366,23 +363,19 @@ public class DMLScript
 		Option statsOpt = OptionBuilder.withArgName("count")
 						.withDescription("monitor and report caching/recompilation statistics, default heavy hitter count is 10")
 						.hasOptionalArg()
-						.withValueSeparator(' ')
 						.create("stats");
 		Option explainOpt = OptionBuilder.withArgName("level")
 						.withDescription("explain plan levels can be hops, runtime[default], recompile_hops, recompile_runtime")
 						.hasOptionalArg()
-						.withValueSeparator(' ')
 						.create("explain");
 		Option execOpt = OptionBuilder.withArgName("mode")
 						.withDescription("execution mode can be hadoop, singlenode, hybrid[default], hybrid_spark, spark")
 						.hasArg()
-						.withValueSeparator(' ')
 						.create("exec");
 		Option gpuOpt = OptionBuilder.withArgName("force")
 						.withDescription("use CUDA instructions when reasonable."
 										+ " If the force option is set (by specifying -gpu force), the conservative memory estimates are skipped and GPU is used wherever possible")
 						.hasOptionalArg()
-						.withValueSeparator()
 						.create("gpu");
 		Option debugOpt = OptionBuilder.withDescription("run in debug mode")
 						.create("debug");
@@ -394,13 +387,11 @@ public class DMLScript
 										+ " Either this option must be specified or -s")
 						.isRequired()
 						.hasArg()
-						.withValueSeparator(' ')
 						.create("f");
 		Option scriptOpt = OptionBuilder.withArgName("script_contents")
 						.withDescription("A script to execute directly. Either this options must be specified or -f")
 						.isRequired()
 						.hasArg()
-						.withValueSeparator(' ')
 						.create("s");
 		Option helpOpt = OptionBuilder.withDescription("show usage message")
 						.create("help");

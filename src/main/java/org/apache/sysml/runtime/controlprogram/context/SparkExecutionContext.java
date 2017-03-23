@@ -85,9 +85,9 @@ public class SparkExecutionContext extends ExecutionContext
 	private static final boolean LDEBUG = false; //local debug flag
 	
 	//internal configurations 
-	private static boolean LAZY_SPARKCTX_CREATION = true;
-	private static boolean ASYNCHRONOUS_VAR_DESTROY = true;
-	private static boolean FAIR_SCHEDULER_MODE = true;
+	private static final boolean LAZY_SPARKCTX_CREATION = true;
+	private static final boolean ASYNCHRONOUS_VAR_DESTROY = true;
+	private static final boolean FAIR_SCHEDULER_MODE = true;
 	
 	//executor memory and relative fractions as obtained from the spark configuration
 	private static SparkClusterConfig _sconf = null;
@@ -1152,12 +1152,12 @@ public class SparkExecutionContext extends ExecutionContext
 	 * 
 	 * @param bvar broadcast variable
 	 */
-	public void cleanupBroadcastVariable(Broadcast<?> bvar) 
+	public static void cleanupBroadcastVariable(Broadcast<?> bvar) 
 	{
-		//in comparison to 'unpersist' (which would only delete the broadcast from the executors),
-		//this call also deletes related data from the driver.
+		//In comparison to 'unpersist' (which would only delete the broadcast 
+		//from the executors), this call also deletes related data from the driver.
 		if( bvar.isValid() ) {
-			bvar.destroy( ASYNCHRONOUS_VAR_DESTROY );
+			bvar.destroy( !ASYNCHRONOUS_VAR_DESTROY );
 		}
 	}
 	
@@ -1168,10 +1168,10 @@ public class SparkExecutionContext extends ExecutionContext
 	 * 
 	 * @param rvar rdd variable to remove
 	 */
-	public void cleanupRDDVariable(JavaPairRDD<?,?> rvar) 
+	public static void cleanupRDDVariable(JavaPairRDD<?,?> rvar) 
 	{
 		if( rvar.getStorageLevel()!=StorageLevel.NONE() ) {
-			rvar.unpersist( ASYNCHRONOUS_VAR_DESTROY );
+			rvar.unpersist( !ASYNCHRONOUS_VAR_DESTROY );
 		}
 	}
 

@@ -24,6 +24,7 @@ import java.io.Serializable;
 import org.apache.spark.broadcast.Broadcast;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheBlock;
+import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 
 /**
  * This class is a wrapper around an array of broadcasts of partitioned matrix/frame blocks,
@@ -101,4 +102,12 @@ public class PartitionedBroadcast<T extends CacheBlock> implements Serializable
 		return ret;
 	}
 
+	/**
+	 * This method cleanups all underlying broadcasts of a partitioned broadcast,
+	 * by forward the calls to SparkExecutionContext.cleanupBroadcastVariable.
+	 */
+	public void destroy() {
+		for( Broadcast<PartitionedBlock<T>> bvar : _pbc )
+			SparkExecutionContext.cleanupBroadcastVariable(bvar);
+	}
 }

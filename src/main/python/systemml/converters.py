@@ -85,12 +85,12 @@ def convertToMatrixBlock(sc, src, maxSizeBlockInMB=8):
     if len(src.shape) != 2:
         hint = ''
         num_dim = len(src.shape)
-        type = str(type(src).__name__)
+        type1 = str(type(src).__name__)
         if type(src) == np.ndarray and num_dim == 1:
             hint = '. Hint: If you intend to pass the 1-dimensional ndarray as a column-vector, please reshape it: input_ndarray.reshape(-1, 1)'
         elif num_dim > 2:
             hint = '. Hint: If you intend to pass a tensor, please reshape it into (N, CHW) format'
-        raise TypeError('Expected 2-dimensional ' + type + ', instead passed ' + str(num_dim) + '-dimensional ' + type + hint)
+        raise TypeError('Expected 2-dimensional ' + type1 + ', instead passed ' + str(num_dim) + '-dimensional ' + type1 + hint)
     numRowsPerBlock = int(math.ceil((maxSizeBlockInMB*1000000) / (src.shape[1]*8)))
     multiBlockTransfer = False if numRowsPerBlock >= src.shape[0] else True
     if not multiBlockTransfer:

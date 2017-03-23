@@ -20,6 +20,7 @@
 package org.apache.sysml.test.unit;
 
 import org.apache.commons.cli.AlreadySelectedException;
+import org.apache.commons.cli.MissingOptionException;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.sysml.api.DMLScript;
@@ -32,6 +33,14 @@ import java.util.Map;
 
 
 public class CLIOptionsParserTest {
+
+  @Test(expected = MissingOptionException.class)
+  public void testNoOptions() throws Exception {
+    String cl = "systemml";
+    String[] args = cl.split(" ");
+    Options options = DMLScript.createCLIOptions();
+    DMLScript.DMLOptions o = DMLScript.parseCLArguments(args, options);
+  }
 
   @Test
   public void testFile() throws Exception {

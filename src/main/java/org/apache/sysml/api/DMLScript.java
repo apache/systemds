@@ -354,63 +354,50 @@ public class DMLScript
 	public static Options createCLIOptions() {
 		Options options = new Options();
 		Option nvargsOpt = OptionBuilder.withArgName("key=value")
-						.withDescription("parameterize DML script with named parameters."
-										+ " after -nvargs flag, each argument must be be named-argument of form argName=argValue,"
-										+ " where value will replace $argName in DML script, argName must be a valid DML variable"
-										+ " name (start with letter, contain only letters, numbers, or underscores)."
-										+ " Either -args or -nvargs can be used, not both.")
+						.withDescription("parameterizes DML script with named parameters of the form <key=value>; <key> should be a valid identifier in DML/PyDML")
 						.hasArgs()
 						.create("nvargs");
 		Option argsOpt = OptionBuilder.withArgName("argN")
-						.withDescription("parameterize DML script with positional parameters,"
-										+ " after -args flag, each argument must be an unnamed-argument, where 1st value"
-										+ " after -args will replace $1 in DML script, 2nd value will replace $2, etc."
-										+ " Either -args or -nvargs can be used, not both.")
+						.withDescription("specifies positional parameters; first value will replace $1 in DML program; $2 will replace 2nd and so on")
 						.hasArgs()
 						.create("args");
 		Option configOpt = OptionBuilder.withArgName("filename")
-						.withDescription("use a given configuration file  (default: use parameter"
-										+ " values in default SystemML-config.xml config file; if <filename> is"
-										+ " prefixed with hdfs or gpfs it is read from DFS, otherwise from local file system)")
+						.withDescription("uses a given configuration file (can be on local/hdfs/gpfs; default values in SystemML-config.xml")
 						.hasArg()
 						.create("config");
-		Option cleanOpt = OptionBuilder.withDescription("cleanup all SystemML working directories (FS, DFS),"
-						+ " All other flags are ignored in this mode. \n")
+		Option cleanOpt = OptionBuilder.withDescription("cleans up all SystemML working directories (FS, DFS); all other flags are ignored in this mode. \n")
 						.create("clean");
 		Option statsOpt = OptionBuilder.withArgName("count")
-						.withDescription("monitor and report caching/recompilation statistics, default heavy hitter count is 10")
+						.withDescription("monitors and reports caching/recompilation statistics; heavy hitter <count> is 10 unless overridden; default off")
 						.hasOptionalArg()
 						.create("stats");
 		Option explainOpt = OptionBuilder.withArgName("level")
-						.withDescription("explain plan levels can be hops, runtime[default], recompile_hops, recompile_runtime")
+						.withDescription("explains plan levels; can be 'hops' / 'runtime'[default] / 'recompile_hops' / 'recompile_runtime'")
 						.hasOptionalArg()
 						.create("explain");
 		Option execOpt = OptionBuilder.withArgName("mode")
-						.withDescription("execution mode can be hadoop, singlenode, hybrid[default], hybrid_spark, spark")
+						.withDescription("sets execution mode; can be 'hadoop' / 'singlenode' / 'hybrid'[default] / 'hybrid_spark' / 'spark'")
 						.hasArg()
 						.create("exec");
 		Option gpuOpt = OptionBuilder.withArgName("force")
-						.withDescription("use CUDA instructions when reasonable."
-										+ " If the force option is set (by specifying -gpu force), the conservative memory estimates are skipped and GPU is used wherever possible")
+						.withDescription("uses CUDA instructions when reasonable; set <force> option to skip conservative memory estimates and use GPU wherever possible; default off")
 						.hasOptionalArg()
 						.create("gpu");
-		Option debugOpt = OptionBuilder.withDescription("run in debug mode")
+		Option debugOpt = OptionBuilder.withDescription("runs in debug mode; default off")
 						.create("debug");
 		Option pythonOpt = OptionBuilder.withDescription("parses Python-like DML")
 						.create("python");
 		Option fileOpt = OptionBuilder.withArgName("filename")
-						.withDescription("will be interpreted as a filename path (if <filename> is prefixed"
-										+ " with hdfs or gpfs it is read from DFS, otherwise from local file system)"
-										+ " Either this option must be specified or -s")
+						.withDescription("specifies dml/pydml file to execute; path can be local/hdfs/gpfs (prefixed with appropriate URI)")
 						.isRequired()
 						.hasArg()
 						.create("f");
 		Option scriptOpt = OptionBuilder.withArgName("script_contents")
-						.withDescription("A script to execute directly. Either this options must be specified or -f")
+						.withDescription("specified script string to execute directly")
 						.isRequired()
 						.hasArg()
 						.create("s");
-		Option helpOpt = OptionBuilder.withDescription("show usage message")
+		Option helpOpt = OptionBuilder.withDescription("shows usage message")
 						.create("help");
 
 		OptionGroup fileOrScriptOpt = new OptionGroup();
@@ -419,7 +406,7 @@ public class DMLScript
 		fileOrScriptOpt.addOption(fileOpt);
 		fileOrScriptOpt.addOption(cleanOpt);
 		fileOrScriptOpt.addOption(helpOpt);
-		fileOrScriptOpt.isRequired();
+		fileOrScriptOpt.setRequired(true);
 
 
 		OptionGroup argsOrNVArgsOpt = new OptionGroup();

@@ -81,7 +81,11 @@ class BaseSystemMLEstimator(Estimator):
     
     def _fit_numpy(self):
         try:
-            self.model = self.estimator.fit(convertToMatrixBlock(self.sc, self.X), convertToMatrixBlock(self.sc, self.y))
+            if type(self.y) == np.ndarray and len(self.y.shape) == 1:
+                # Since we know that mllearn always needs a column vector
+                self.y = np.matrix(self.y).T
+            y_mb = convertToMatrixBlock(self.sc, self.y)
+            self.model = self.estimator.fit(convertToMatrixBlock(self.sc, self.X), y_mb)
         except Py4JError:
             traceback.print_exc()
                     

@@ -183,7 +183,7 @@ y_train = diabetes.target[:-20]
 y_test = diabetes.target[-20:]
 # Train Linear Regression model
 X = sml.matrix(X_train)
-y = sml.matrix(y_train)
+y = sml.matrix(np.matrix(y_train).T)
 A = X.transpose().dot(X)
 b = X.transpose().dot(y)
 beta = sml.solve(A, b).toNumPy()

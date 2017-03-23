@@ -526,6 +526,10 @@ public class SparkExecutionContext extends ExecutionContext
 		//create new broadcast handle (never created, evicted)
 		if( bret == null ) 
 		{
+			//account for overwritten invalid broadcast (e.g., evicted)
+			if( mo.getBroadcastHandle()!=null )
+				CacheableData.addBroadcastSize(-mo.getBroadcastHandle().getSize());
+			
 			//obtain meta data for matrix 
 			int brlen = (int) mo.getNumRowsPerBlock();
 			int bclen = (int) mo.getNumColumnsPerBlock();
@@ -550,12 +554,14 @@ public class SparkExecutionContext extends ExecutionContext
 				}
 			}
 			else { //single partition
-				ret[0] = getSparkContext().broadcast( pmb);
+				ret[0] = getSparkContext().broadcast(pmb);
 			}
 		
 			bret = new PartitionedBroadcast<MatrixBlock>(ret);
-			BroadcastObject<MatrixBlock> bchandle = new BroadcastObject<MatrixBlock>(bret, varname);
+			BroadcastObject<MatrixBlock> bchandle = new BroadcastObject<MatrixBlock>(bret, varname, 
+					OptimizerUtils.estimatePartitionedSizeExactSparsity(mo.getMatrixCharacteristics()));
 			mo.setBroadcastHandle(bchandle);
+			CacheableData.addBroadcastSize(bchandle.getSize());
 		}
 		
 		if (DMLScript.STATISTICS) {
@@ -586,6 +592,10 @@ public class SparkExecutionContext extends ExecutionContext
 		//create new broadcast handle (never created, evicted)
 		if( bret == null ) 
 		{
+			//account for overwritten invalid broadcast (e.g., evicted)
+			if( fo.getBroadcastHandle()!=null )
+				CacheableData.addBroadcastSize(-fo.getBroadcastHandle().getSize());
+			
 			//obtain meta data for frame 
 			int bclen = (int) fo.getNumColumns();
 			int brlen = OptimizerUtils.getDefaultFrameSize();
@@ -610,12 +620,14 @@ public class SparkExecutionContext extends ExecutionContext
 				}
 			}
 			else { //single partition
-				ret[0] = getSparkContext().broadcast( pmb);
+				ret[0] = getSparkContext().broadcast(pmb);
 			}
 		
 			bret = new PartitionedBroadcast<FrameBlock>(ret);
-			BroadcastObject<FrameBlock> bchandle = new BroadcastObject<FrameBlock>(bret, varname);
+			BroadcastObject<FrameBlock> bchandle = new BroadcastObject<FrameBlock>(bret, varname,  
+					OptimizerUtils.estimatePartitionedSizeExactSparsity(fo.getMatrixCharacteristics()));
 			fo.setBroadcastHandle(bchandle);
+			CacheableData.addBroadcastSize(bchandle.getSize());
 		}
 		
 		if (DMLScript.STATISTICS) {
@@ -1136,6 +1148,7 @@ public class SparkExecutionContext extends ExecutionContext
 			if( pbm != null ) //robustness for evictions
 				for( Broadcast<PartitionedBlock> bc : pbm.getBroadcasts() )
 					cleanupBroadcastVariable(bc);
+			CacheableData.addBroadcastSize(-((BroadcastObject)lob).getSize());
 		}
 	
 		//recursively process lineage children

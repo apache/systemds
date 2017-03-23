@@ -22,6 +22,7 @@ package org.apache.sysml.runtime.controlprogram.caching;
 import java.io.File;
 import java.io.IOException;
 import java.lang.ref.SoftReference;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.commons.lang.mutable.MutableBoolean;
 import org.apache.commons.logging.Log;
@@ -115,6 +116,12 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	private static ThreadLocal<Long> sizePinned = new ThreadLocal<Long>() {
         @Override protected Long initialValue() { return 0L; }
     };
+
+	//current size of live broadcast objects (because Spark's ContextCleaner maintains 
+	//a buffer with references to prevent eager cleanup by GC); note that this is an 
+	//overestimate, because we maintain partitioned broadcasts as soft references, which 
+	//might be collected by the GC and subsequently cleaned up by Spark's ContextCleaner.
+	private static AtomicLong _refBCs = new AtomicLong(0);	
     
 	static {
 		_seq = new IDSequence();
@@ -1213,6 +1220,14 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		return sizePinned.get();
 	}
 	
+	public static void addBroadcastSize(long size) {
+		_refBCs.addAndGet(size);
+	}
+	
+	public static long getBroadcastSize() {
+		return _refBCs.longValue();
+	}
+	
 	// --------- STATIC CACHE INIT/CLEANUP OPERATIONS ----------
 
 	public synchronized static void cleanupCacheDir() {
@@ -1285,6 +1300,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	
 		//init write-ahead buffer
 		LazyWriteBuffer.init();
+		_refBCs.set(0);
 		
 		_activeFlag = true; //turn on caching
 	}

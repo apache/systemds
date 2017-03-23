@@ -482,7 +482,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 			
 			//guarded rdd collect 
 			if( ii == InputInfo.BinaryBlockInputInfo && //guarded collect not for binary cell
-				!OptimizerUtils.checkSparkCollectMemoryBudget(rlen, clen, brlen, bclen, nnz, getPinnedSize()) ) {
+				!OptimizerUtils.checkSparkCollectMemoryBudget(mc, getPinnedSize()+getBroadcastSize()) ) {
 				//write RDD to hdfs and read to prevent invalid collect mem consumption 
 				//note: lazy, partition-at-a-time collect (toLocalIterator) was significantly slower
 				if( !MapReduceTool.existsFileOnHDFS(_hdfsFileName) ) { //prevent overwrite existing file

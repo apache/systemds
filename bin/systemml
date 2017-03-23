@@ -158,6 +158,7 @@ org.apache.sysml.api.DMLScript \
 -config='$PROJECT_ROOT_DIR/conf/SystemML-config.xml' \
 $@"
 
+echo ${CMD}
 eval ${CMD}
 
 RETURN_CODE=$?

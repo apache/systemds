@@ -130,7 +130,6 @@ import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice;
 import static org.apache.sysml.runtime.instructions.gpu.context.GPUObject.allocate;
 import static org.apache.sysml.runtime.instructions.gpu.context.GPUObject.cudaFreeHelper;
 
-
 //FIXME move could to respective instructions, this is not a block library
 public class LibMatrixCUDA {
 
@@ -152,7 +151,7 @@ public class LibMatrixCUDA {
 	 */
 	static int getMaxThreads() throws DMLRuntimeException{
 		if (_MAX_THREADS == -1){
-			_MAX_THREADS = GPUContext.getMaxThreadsPerBlock();
+			_MAX_THREADS = GPUContext.getGPUContext().getMaxThreadsPerBlock();
 		}
 		return _MAX_THREADS;
 	}
@@ -168,7 +167,7 @@ public class LibMatrixCUDA {
 	 */
 	static int getMaxBlocks() throws DMLRuntimeException{
 		if (_MAX_BLOCKS == -1){
-			_MAX_BLOCKS = GPUContext.getMaxBlocks();
+			_MAX_BLOCKS = GPUContext.getGPUContext().getMaxBlocks();
 		}
 		return _MAX_BLOCKS;
 	}
@@ -184,7 +183,7 @@ public class LibMatrixCUDA {
 	 */
 	static int getWarpSize() throws DMLRuntimeException {
 		if (_WARP_SIZE == -1) {
-			_WARP_SIZE = GPUContext.getWarpSize();
+			_WARP_SIZE = GPUContext.getGPUContext().getWarpSize();
 		}
 		return _WARP_SIZE;
 	}
@@ -196,15 +195,27 @@ public class LibMatrixCUDA {
 	}
 
 
+	private static cusparseHandle getCusparseHandle() throws DMLRuntimeException{
+		return GPUContext.getGPUContext().getCusparseHandle();
+	}
+
+	private static cublasHandle getCublasHandle() throws DMLRuntimeException {
+		return GPUContext.getGPUContext().getCublasHandle();
+	}
+
+	private static cudnnHandle getCudnnHandle() throws DMLRuntimeException {
+		return GPUContext.getGPUContext().getCudnnHandle();
+	}
+	
+	private static JCudaKernels getCudaKernels() throws DMLRuntimeException {
+		return GPUContext.getGPUContext().getKernels();
+	}
+
+
 	//********************************************************************/
 	//***************** DEEP LEARNING Operators **************************/
 	//********************************************************************/
 
-
-	public static cudnnHandle cudnnHandle;
-	public static cublasHandle cublasHandle;
-	public static cusparseHandle cusparseHandle;
-	public static JCudaKernels kernels; // Used to launch custom kernels
 
 	private static final Log LOG = LogFactory.getLog(LibMatrixCUDA.class.getName());
 
@@ -336,9 +347,9 @@ public class LibMatrixCUDA {
 				// TODO: Look into FFt, Winograd, etc
 				// Also ensure that GPU has enough memory to allocate memory
 				long sizeInBytesArray[] = { 0 };
-				algo = jcuda.jcudnn.JCudnn.cudnnGetConvolutionForwardAlgorithm(cudnnHandle, srcTensorDesc, filterDesc, convDesc, dstTensorDesc,
+				algo = jcuda.jcudnn.JCudnn.cudnnGetConvolutionForwardAlgorithm(getCudnnHandle(), srcTensorDesc, filterDesc, convDesc, dstTensorDesc,
 								CONVOLUTION_PREFERENCE, sizeInBytesArray[0], algos);
-				cudnnGetConvolutionForwardWorkspaceSize(cudnnHandle, srcTensorDesc, filterDesc, convDesc, dstTensorDesc, algo, sizeInBytesArray);
+				cudnnGetConvolutionForwardWorkspaceSize(getCudnnHandle(), srcTensorDesc, filterDesc, convDesc, dstTensorDesc, algo, sizeInBytesArray);
 				if(sizeInBytesArray[0] != 0)
 					workSpace = allocate(sizeInBytesArray[0]);
 				sizeInBytes = sizeInBytesArray[0];
@@ -351,7 +362,7 @@ public class LibMatrixCUDA {
 			}
 			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_CUDNN_INIT, System.nanoTime() - t1);
 			if (GPUStatistics.DISPLAY_STATISTICS) t2 = System.nanoTime();
-			int status = cudnnConvolutionForward(cudnnHandle, one(),
+			int status = cudnnConvolutionForward(getCudnnHandle(), one(),
 							srcTensorDesc, imagePointer,
 							filterDesc, filterPointer,
 							convDesc, algo, workSpace, sizeInBytes, zero(),
@@ -426,7 +437,7 @@ public class LibMatrixCUDA {
 
 		long t1=0;
 		if (GPUStatistics.DISPLAY_STATISTICS) t1 = System.nanoTime();
-		kernels.launchKernel("relu_backward",
+		getCudaKernels().launchKernel("relu_backward",
 						ExecutionConfig.getConfigForSimpleMatrixOperations((int)rows, (int)cols),
 						imagePointer, doutPointer, outputPointer, (int)rows, (int)cols);
 		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_BIAS_ADD_LIB, System.nanoTime() - t1);
@@ -463,7 +474,7 @@ public class LibMatrixCUDA {
 		Pointer outputPointer = ((GPUObject)outputBlock.getGPUObject()).jcudaDenseMatrixPtr;
 		long t1 = 0;
 		if (GPUStatistics.DISPLAY_STATISTICS) t1 = System.nanoTime();
-		kernels.launchKernel("bias_multiply",
+		getCudaKernels().launchKernel("bias_multiply",
 						ExecutionConfig.getConfigForSimpleMatrixOperations((int)rows, (int)cols),
 						imagePointer, biasPointer, outputPointer, (int)rows, (int)cols, (int) PQ);
 		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_RELU_BACKWARD_KERNEL, System.nanoTime() - t1);
@@ -494,7 +505,7 @@ public class LibMatrixCUDA {
 		Pointer outputPointer = getDensePointer(outputBlock, instName);
 		long t1 = 0;
 		if (GPUStatistics.DISPLAY_STATISTICS) t1 = System.nanoTime();
-		kernels.launchKernel("bias_add",
+		getCudaKernels().launchKernel("bias_add",
 						ExecutionConfig.getConfigForSimpleMatrixOperations((int)rows, (int)cols),
 						imagePointer, biasPointer, outputPointer, (int)rows, (int)cols, (int) PQ);
 		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_RELU_BACKWARD_KERNEL, System.nanoTime() - t1);
@@ -552,7 +563,7 @@ public class LibMatrixCUDA {
 		Pointer runningMeanPtr = getDensePointer(runningMean, true, instName);
 		Pointer runningVarPtr = getDensePointer(runningVar, true, instName);
 		
-		checkStatus(cudnnBatchNormalizationForwardInference(cudnnHandle, mode, one(), zero(),
+		checkStatus(cudnnBatchNormalizationForwardInference(getCudnnHandle(), mode, one(), zero(),
 				nCHWDescriptor, imagePtr, nCHWDescriptor, retPtr,
 			scaleTensorDesc, scalePtr, biasPtr,
 			runningMeanPtr, runningVarPtr, epsilon));
@@ -604,7 +615,7 @@ public class LibMatrixCUDA {
 		cudaMemcpy(retRunningVarPtr, runningVarPtr, C * Sizeof.DOUBLE, cudaMemcpyDeviceToDevice);
 		
 		// ignoring resultSaveMean and resultSaveVariance as it requires state management
-		checkStatus(cudnnBatchNormalizationForwardTraining(cudnnHandle, mode, one(), zero(),
+		checkStatus(cudnnBatchNormalizationForwardTraining(getCudnnHandle(), mode, one(), zero(),
 				nCHWDescriptor, imagePtr, nCHWDescriptor, retPtr,
 			scaleTensorDesc, scalePtr, biasPtr, exponentialAverageFactor,
 			retRunningMeanPtr, retRunningVarPtr, epsilon, new Pointer(), new Pointer()));
@@ -701,7 +712,7 @@ public class LibMatrixCUDA {
 		Pointer retBiasPtr = getDensePointer(retBias, true, instName);
 		
 		// ignoring resultSaveMean and resultSaveVariance as it requires state management
-		checkStatus(cudnnBatchNormalizationBackward(cudnnHandle, mode,  one(), zero(), one(), zero(),
+		checkStatus(cudnnBatchNormalizationBackward(getCudnnHandle(), mode,  one(), zero(), one(), zero(),
 				nCHWDescriptor,  imagePtr, nCHWDescriptor, doutPtr, nCHWDescriptor, retPtr,
 				scaleTensorDesc, scalePtr, retScalePtr, retBiasPtr, epsilon, new Pointer(), new Pointer()));
 	}
@@ -760,12 +771,12 @@ public class LibMatrixCUDA {
 			int algo = jcuda.jcudnn.cudnnConvolutionBwdFilterAlgo.CUDNN_CONVOLUTION_BWD_FILTER_ALGO_0;
 
 			workSpace = new Pointer();
-			cudnnGetConvolutionBackwardFilterWorkspaceSize(cudnnHandle,
+			cudnnGetConvolutionBackwardFilterWorkspaceSize(getCudnnHandle(),
 							xTensorDesc, doutTensorDesc, convDesc, dwDesc, algo, sizeInBytesArray);
 			if (GPUStatistics.DISPLAY_STATISTICS)GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_CUDNN_INIT, System.nanoTime() - t1);
 
 			if (GPUStatistics.DISPLAY_STATISTICS) t2 = System.nanoTime();
-			int status = cudnnConvolutionBackwardFilter(cudnnHandle, one(), xTensorDesc, imagePointer,
+			int status = cudnnConvolutionBackwardFilter(getCudnnHandle(), one(), xTensorDesc, imagePointer,
 							doutTensorDesc, doutPointer, convDesc, algo, workSpace, sizeInBytes, zero(), dwDesc, dwPointer);
 			if (GPUStatistics.DISPLAY_STATISTICS)GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_CONVOLUTION_BACKWARD_FILTER_LIB, System.nanoTime() - t2);
 
@@ -841,12 +852,12 @@ public class LibMatrixCUDA {
 			// TODO: Select the best algorithm depending on the data and supported CUDA
 			int algo = jcuda.jcudnn.cudnnConvolutionBwdDataAlgo.CUDNN_CONVOLUTION_BWD_DATA_ALGO_0;
 			workSpace = new Pointer();
-			cudnnGetConvolutionBackwardDataWorkspaceSize(cudnnHandle,
+			cudnnGetConvolutionBackwardDataWorkspaceSize(getCudnnHandle(),
 							wDesc, dyDesc, convDesc, dxDesc, algo, sizeInBytesArray);
 			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_CUDNN_INIT, System.nanoTime() - t1);
 
 			if (GPUStatistics.DISPLAY_STATISTICS) t2 = System.nanoTime();
-			int status = cudnnConvolutionBackwardData(cudnnHandle, one(), wDesc, w,
+			int status = cudnnConvolutionBackwardData(getCudnnHandle(), one(), wDesc, w,
 							dyDesc, dy, convDesc, algo, workSpace, sizeInBytes, zero(), dxDesc, dx);
 			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_CONVOLUTION_BACKWARD_DATA_LIB, System.nanoTime() - t2);
 
@@ -914,7 +925,7 @@ public class LibMatrixCUDA {
 			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_CUDNN_INIT, System.nanoTime() - t1);
 
 			if (GPUStatistics.DISPLAY_STATISTICS) t2 = System.nanoTime();
-			int status = cudnnPoolingForward(cudnnHandle, poolingDesc, one(), xDesc, x, zero(), yDesc, y);
+			int status = cudnnPoolingForward(getCudnnHandle(), poolingDesc, one(), xDesc, x, zero(), yDesc, y);
 			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_MAXPOOLING_FORWARD_LIB, System.nanoTime() - t2);
 
 			if(status != jcuda.jcudnn.cudnnStatus.CUDNN_STATUS_SUCCESS) {
@@ -1016,7 +1027,7 @@ public class LibMatrixCUDA {
 			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_CUDNN_INIT, System.nanoTime() - t1);
 
 			if (GPUStatistics.DISPLAY_STATISTICS) t2 = System.nanoTime();
-			int status = cudnnPoolingForward(cudnnHandle, poolingDesc, one(), xDesc, x, zero(), yDesc, y);
+			int status = cudnnPoolingForward(getCudnnHandle(), poolingDesc, one(), xDesc, x, zero(), yDesc, y);
 			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_MAXPOOLING_FORWARD_LIB, System.nanoTime() - t2);
 
 			if(status != jcuda.jcudnn.cudnnStatus.CUDNN_STATUS_SUCCESS) {
@@ -1024,7 +1035,7 @@ public class LibMatrixCUDA {
 			}
 
 			if (GPUStatistics.DISPLAY_STATISTICS) t3 = System.nanoTime();
-			status = cudnnPoolingBackward(cudnnHandle, poolingDesc, one(), yDesc, y, dyDesc, dy, xDesc, x, zero(), dxDesc, dx);
+			status = cudnnPoolingBackward(getCudnnHandle(), poolingDesc, one(), yDesc, y, dyDesc, dy, xDesc, x, zero(), dxDesc, dx);
 			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_MAXPOOLING_BACKWARD_LIB, System.nanoTime() - t3);
 
 			if(status != jcuda.jcudnn.cudnnStatus.CUDNN_STATUS_SUCCESS) {
@@ -1055,7 +1066,7 @@ public class LibMatrixCUDA {
 			double dummy = -1;
 			cudnnSetActivationDescriptor(activationDescriptor, CUDNN_ACTIVATION_RELU, CUDNN_PROPAGATE_NAN, dummy);
 			if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
-			cudnnActivationForward(cudnnHandle, activationDescriptor,
+			cudnnActivationForward(getCudnnHandle(), activationDescriptor,
 							one(), srcTensorDesc, srcData,
 							zero(), dstTensorDesc, dstData);
 			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_ACTIVATION_FORWARD_LIB, System.nanoTime() - t0);
@@ -1088,7 +1099,7 @@ public class LibMatrixCUDA {
 			if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
 			Pointer dstData = getDensePointer(output, instName);
 			Pointer srcData = getDensePointer(in, instName); // TODO: FIXME: Add sparse kernel support for relu
-			kernels.launchKernel("relu",
+			getCudaKernels().launchKernel("relu",
 							ExecutionConfig.getConfigForSimpleMatrixOperations((int)N, (int)CHW),
 							srcData, dstData, (int)N, (int) CHW);
 			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_RELU_KERNEL, System.nanoTime() - t0);
@@ -1156,7 +1167,7 @@ public class LibMatrixCUDA {
 		long t0=0, t1=0;
 
 		if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
-		JCublas2.cublasDsyrk(cublasHandle, cublasFillMode.CUBLAS_FILL_MODE_LOWER,transa, m, k, one(), A, lda, zero(), C, ldc);
+		JCublas2.cublasDsyrk(getCublasHandle(), cublasFillMode.CUBLAS_FILL_MODE_LOWER,transa, m, k, one(), A, lda, zero(), C, ldc);
 		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_SYRK_LIB, System.nanoTime() - t0);
 
 		if (GPUStatistics.DISPLAY_STATISTICS) t1 = System.nanoTime();
@@ -1181,7 +1192,7 @@ public class LibMatrixCUDA {
 			throw new DMLRuntimeException("Only square matrix kernel is implemented for copyUpperToLowerTriangle");
 		}
 		int dim = (int) ret.getNumRows();
-		kernels.launchKernel("copy_u2l_dense",
+		getCudaKernels().launchKernel("copy_u2l_dense",
 						ExecutionConfig.getConfigForSimpleMatrixOperations(dim, dim),
 						getDensePointer(ret, instName), dim, dim*dim);
 	}
@@ -1313,7 +1324,7 @@ public class LibMatrixCUDA {
 			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_TRANSPOSE_LIB, System.nanoTime() - t0);
 
 			if (GPUStatistics.DISPLAY_STATISTICS) t1 = System.nanoTime();
-			CSRPointer A = GPUObject.columnMajorDenseToRowMajorSparse(cusparseHandle, rowsA, colsA, AT);
+			CSRPointer A = GPUObject.columnMajorDenseToRowMajorSparse(getCusparseHandle(), rowsA, colsA, AT);
 			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_DENSE_TO_SPARSE, System.nanoTime() - t1);
 
 			if (DMLScript.STATISTICS) GPUStatistics.cudaDenseToSparseTime.getAndAdd(System.nanoTime() - t0);
@@ -1332,7 +1343,7 @@ public class LibMatrixCUDA {
 			// Note the arguments to denseDenseMatmult to accommodate for this.
 			long t0=0, t1=0;
 			if (DMLScript.STATISTICS) t0 = System.nanoTime();
-			Pointer BDenseTransposed = B.toColumnMajorDenseMatrix(cusparseHandle, cublasHandle, (int)right.getNumRows(), (int)right.getNumColumns());
+			Pointer BDenseTransposed = B.toColumnMajorDenseMatrix(getCusparseHandle(), getCublasHandle(), (int)right.getNumRows(), (int)right.getNumColumns());
 			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_SPARSE_TO_DENSE, System.nanoTime() - t0);
 			if (DMLScript.STATISTICS) GPUStatistics.cudaSparseToDenseTime.getAndAdd(System.nanoTime() - t0);
 			if (DMLScript.STATISTICS) GPUStatistics.cudaSparseToDenseCount.getAndAdd(System.nanoTime() - t0);
@@ -1394,7 +1405,7 @@ public class LibMatrixCUDA {
 				if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_TRANSPOSE_LIB, System.nanoTime() - t0);
 
 				if (GPUStatistics.DISPLAY_STATISTICS) t1 = System.nanoTime();
-				CSRPointer B = GPUObject.columnMajorDenseToRowMajorSparse(cusparseHandle, rowsB, colsB, BT);
+				CSRPointer B = GPUObject.columnMajorDenseToRowMajorSparse(getCusparseHandle(), rowsB, colsB, BT);
 				if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_DENSE_TO_SPARSE, System.nanoTime() - t1);
 
 				if (DMLScript.STATISTICS) GPUStatistics.cudaDenseToSparseTime.getAndAdd(System.nanoTime() - t0);
@@ -1413,7 +1424,7 @@ public class LibMatrixCUDA {
 				// ADenseTransposed is a column major matrix
 				// Note the arguments to denseDenseMatmult to accommodate for this.
 				if (DMLScript.STATISTICS) t0 = System.nanoTime();
-				Pointer ADenseTransposed = A.toColumnMajorDenseMatrix(cusparseHandle, cublasHandle, (int)left.getNumRows(), (int)left.getNumColumns());
+				Pointer ADenseTransposed = A.toColumnMajorDenseMatrix(getCusparseHandle(), getCublasHandle(), (int)left.getNumRows(), (int)left.getNumColumns());
 				if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_SPARSE_TO_DENSE, System.nanoTime() - t0);
 				if (DMLScript.STATISTICS) GPUStatistics.cudaSparseToDenseTime.getAndAdd(System.nanoTime() - t0);
 				if (DMLScript.STATISTICS) GPUStatistics.cudaSparseToDenseCount.getAndAdd(System.nanoTime() - t0);
@@ -1455,7 +1466,7 @@ public class LibMatrixCUDA {
 		Pointer C_dense = GPUObject.allocate(instName, (int)size);
 		long t1=0;
 		if (GPUStatistics.DISPLAY_STATISTICS) t1 = System.nanoTime();
-		cusparseDcsrmv(cusparseHandle, transA, m, k, (int)A.nnz, one(), A.descr, A.val, A.rowPtr, A.colInd, B_dense, zero(), C_dense);
+		cusparseDcsrmv(getCusparseHandle(), transA, m, k, (int)A.nnz, one(), A.descr, A.val, A.rowPtr, A.colInd, B_dense, zero(), C_dense);
 		cudaDeviceSynchronize(); 	// Since cusparseDcsrmv is asynchronously executed
 		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_SPARSE_MATRIX_DENSE_VECTOR_LIB, System.nanoTime() - t1);
 
@@ -1521,7 +1532,7 @@ public class LibMatrixCUDA {
 		LOG.debug(" GPU Sparse Matrix Sparse Vector Multiply (Converted to Sparse Matrix Dense Vector Multiply)");
 		long t0=0;
 		if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
-		Pointer BDenseVector = B.toColumnMajorDenseMatrix(cusparseHandle, cublasHandle, k, 1);
+		Pointer BDenseVector = B.toColumnMajorDenseMatrix(getCusparseHandle(), getCublasHandle(), k, 1);
 		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_SPARSE_TO_DENSE, System.nanoTime() - t0);
 		sparseMatrixDenseVectorMult(instName, output, A, BDenseVector, transA, m, k);
 	}
@@ -1546,7 +1557,7 @@ public class LibMatrixCUDA {
 
 		long t0=0, t1=0;
 		if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
-		CSRPointer C = CSRPointer.allocateForMatrixMultiply(cusparseHandle, A, transA, B, transB, m, n, k);
+		CSRPointer C = CSRPointer.allocateForMatrixMultiply(getCusparseHandle(), A, transA, B, transB, m, n, k);
 		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_SPARSE_ALLOCATE_LIB, System.nanoTime() - t0);
 
 		((GPUObject)output.getGPUObject()).setSparseMatrixCudaPointer(C);
@@ -1554,7 +1565,7 @@ public class LibMatrixCUDA {
 		output.getGPUObject().setDeviceModify(sizeOfC);
 
 		if (GPUStatistics.DISPLAY_STATISTICS) t1 = System.nanoTime();
-		cusparseDcsrgemm(cusparseHandle, transA, transB, m, n, k,
+		cusparseDcsrgemm(getCusparseHandle(), transA, transB, m, n, k,
 						A.descr, (int)A.nnz, A.val, A.rowPtr, A.colInd,
 						B.descr, (int)B.nnz, B.val, B.rowPtr, B.colInd,
 						C.descr, C.val, C.rowPtr, C.colInd);
@@ -1653,7 +1664,7 @@ public class LibMatrixCUDA {
 			// Vector product
 			LOG.debug(" GPU Dense-dense Vector Product");
 			double[] result = {0};
-			JCublas2.cublasDdot(cublasHandle, k, A, 1, B, 1, Pointer.to(result));
+			JCublas2.cublasDdot(getCublasHandle(), k, A, 1, B, 1, Pointer.to(result));
 			// By default in CuBlas V2, cublas pointer mode is set to CUBLAS_POINTER_MODE_HOST.
 			// This means that scalar values passed are on host (as opposed to on device).
 			// The result is copied from the host back to the device so that the rest of
@@ -1664,16 +1675,16 @@ public class LibMatrixCUDA {
 			// Vector-matrix multiply
 			LOG.debug(" GPU Dense Vector-Matrix Multiply");
 			transb = isRightTransposed ? cublasOperation.CUBLAS_OP_N : cublasOperation.CUBLAS_OP_T;
-			JCublas2.cublasDgemv(cublasHandle, transb, rightRows, rightCols, Pointer.to(one), B, ldb, A, 1, Pointer.to(zero), C, 1);
+			JCublas2.cublasDgemv(getCublasHandle(), transb, rightRows, rightCols, Pointer.to(one), B, ldb, A, 1, Pointer.to(zero), C, 1);
 			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_DENSE_VECTOR_DENSE_MATRIX_LIB, System.nanoTime() - t0);
 		} else if (n == 1){
 			// Matrix-vector multiply
 			LOG.debug(" GPU Dense Matrix-Vector Multiply");
-			JCublas2.cublasDgemv(cublasHandle, transa, leftRows, leftCols, Pointer.to(one), A, lda, B, 1, Pointer.to(zero), C, 1);
+			JCublas2.cublasDgemv(getCublasHandle(), transa, leftRows, leftCols, Pointer.to(one), A, lda, B, 1, Pointer.to(zero), C, 1);
 			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_DENSE_MATRIX_DENSE_VECTOR_LIB, System.nanoTime() - t0);
 		} else {
 			LOG.debug(" GPU Dense-Dense Matrix Multiply ");
-			JCublas2.cublasDgemm(cublasHandle, transa, transb, m, n, k, Pointer.to(one), A, lda, B, ldb, Pointer.to(zero), C, ldc);
+			JCublas2.cublasDgemm(getCublasHandle(), transa, transb, m, n, k, Pointer.to(one), A, lda, B, ldb, Pointer.to(zero), C, ldc);
 			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_DENSE_MATRIX_DENSE_MATRIX_LIB, System.nanoTime() - t0);
 		}
 	}
@@ -2036,7 +2047,7 @@ public class LibMatrixCUDA {
 		long t1=0,t2=0,t3=0;
 
 		if (GPUStatistics.DISPLAY_STATISTICS) t1 = System.nanoTime();
-		kernels.launchKernel(kernelFunction, new ExecutionConfig(blocks, threads, sharedMem), in, tempOut, n);
+		getCudaKernels().launchKernel(kernelFunction, new ExecutionConfig(blocks, threads, sharedMem), in, tempOut, n);
 		cudaDeviceSynchronize();
 		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_REDUCE_ALL_KERNEL, System.nanoTime() - t1);
 
@@ -2045,7 +2056,7 @@ public class LibMatrixCUDA {
 			tmp = getKernelParamsForReduceAll(s);
 			blocks = tmp[0]; threads = tmp[1]; sharedMem = tmp[2];
 			if (GPUStatistics.DISPLAY_STATISTICS) t2 = System.nanoTime();
-			kernels.launchKernel(kernelFunction, new ExecutionConfig(blocks, threads, sharedMem),
+			getCudaKernels().launchKernel(kernelFunction, new ExecutionConfig(blocks, threads, sharedMem),
 							tempOut, tempOut, s);
 			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_REDUCE_ALL_KERNEL, System.nanoTime() - t2);
 			s = (s + (threads*2-1)) / (threads*2);
@@ -2076,7 +2087,7 @@ public class LibMatrixCUDA {
 
 		long t0=0;
 		if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
-		kernels.launchKernel(kernelFunction, new ExecutionConfig(blocks, threads, sharedMem),
+		getCudaKernels().launchKernel(kernelFunction, new ExecutionConfig(blocks, threads, sharedMem),
 						in, out, rows, cols);
 		cudaDeviceSynchronize();
 		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_REDUCE_ROW_KERNEL, System.nanoTime() - t0);
@@ -2099,7 +2110,7 @@ public class LibMatrixCUDA {
 
 		long t0=0;
 		if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
-		kernels.launchKernel(kernelFunction, new ExecutionConfig(blocks, threads, sharedMem),
+		getCudaKernels().launchKernel(kernelFunction, new ExecutionConfig(blocks, threads, sharedMem),
 						in, out, rows, cols);
 		cudaDeviceSynchronize();
 		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_REDUCE_COL_KERNEL, System.nanoTime() - t0);
@@ -2326,7 +2337,7 @@ public class LibMatrixCUDA {
     int size = rlenA * clenA;
 		long t0=0;
     if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
-		kernels.launchKernel("matrix_scalar_op",
+		getCudaKernels().launchKernel("matrix_scalar_op",
 						ExecutionConfig.getConfigForSimpleVectorOperations(size),
 						a, scalar, c, size, getBinaryOp(op.fn), isLeftScalar);
 		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_MATRIX_SCALAR_OP_KERNEL, System.nanoTime() - t0);
@@ -2411,7 +2422,7 @@ public class LibMatrixCUDA {
 	private static void matrixMatrixOp(String instName, Pointer a, Pointer b, int maxRlen, int maxClen, int vecStatusA, int vecStatusB, Pointer c, BinaryOperator op) throws DMLRuntimeException {
 		long t0=0;
 		if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
-		kernels.launchKernel("matrix_matrix_cellwise_op",
+		getCudaKernels().launchKernel("matrix_matrix_cellwise_op",
             ExecutionConfig.getConfigForSimpleMatrixOperations(maxRlen, maxClen),
 						a, b, c, maxRlen, maxClen, vecStatusA, vecStatusB, getBinaryOp(op.fn));
 		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_MATRIX_MATRIX_CELLWISE_OP_KERNEL, System.nanoTime() - t0);
@@ -2494,7 +2505,7 @@ public class LibMatrixCUDA {
 		// compareAndSet(double* A,  double* ret, int rlen, int clen, double compareVal, double ifEqualsVal, double ifNotEqualsVal)
 		long t0=0;
 		if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
-		kernels.launchKernel("compare_and_set",
+		getCudaKernels().launchKernel("compare_and_set",
 						ExecutionConfig.getConfigForSimpleMatrixOperations(rlen, clen),
 						A, ret, rlen, clen, compareVal, tolerance, ifEqualsVal, ifLessThanVal, ifGreaterThanVal);
 		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_COMPARE_AND_SET_KERNEL, System.nanoTime() - t0);
@@ -2520,7 +2531,7 @@ public class LibMatrixCUDA {
 		long t0=0;
 		if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
 		int size = rlen * clen;
-		kernels.launchKernel("fill", ExecutionConfig.getConfigForSimpleVectorOperations(size),
+		getCudaKernels().launchKernel("fill", ExecutionConfig.getConfigForSimpleVectorOperations(size),
 						A, constant, size);
 		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_FILL_KERNEL, System.nanoTime() - t0);
 	}
@@ -2629,14 +2640,14 @@ public class LibMatrixCUDA {
 			ec.allocateGPUMatrixObject(outputName);
 
 			if (GPUStatistics.DISPLAY_STATISTICS) t1 = System.nanoTime();
-			CSRPointer C = CSRPointer.allocateForDgeam(cusparseHandle, A, B, m, n);
+			CSRPointer C = CSRPointer.allocateForDgeam(getCusparseHandle(), A, B, m, n);
 			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_SPARSE_ALLOCATE_LIB, System.nanoTime() - t1);
 
 			((GPUObject)out.getGPUObject()).setSparseMatrixCudaPointer(C);
 			long sizeOfC = CSRPointer.estimateSize(C.nnz, out.getNumRows());
 			out.getGPUObject().setDeviceModify(sizeOfC);
 			if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
-			JCusparse.cusparseDcsrgeam(cusparseHandle, m, n, alphaPtr, A.descr, (int)A.nnz, A.val, A.rowPtr, A.colInd, betaPtr,
+			JCusparse.cusparseDcsrgeam(getCusparseHandle(), m, n, alphaPtr, A.descr, (int)A.nnz, A.val, A.rowPtr, A.colInd, betaPtr,
 							B.descr, (int)B.nnz, B.val, B.rowPtr, B.colInd,
 							C.descr, C.val, C.rowPtr, C.colInd);
 			cudaDeviceSynchronize();
@@ -2650,7 +2661,7 @@ public class LibMatrixCUDA {
 			Pointer C = getDensePointer(out, instName);
 
 			if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
-			JCublas2.cublasDgeam(cublasHandle, transa, transb, m, n, alphaPtr, A, lda, betaPtr, B, ldb, C, ldc);
+			JCublas2.cublasDgeam(getCublasHandle(), transa, transb, m, n, alphaPtr, A, lda, betaPtr, B, ldb, C, ldc);
 			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_DENSE_DGEAM_LIB, System.nanoTime() - t0);
 		}
 	}
@@ -2717,7 +2728,7 @@ public class LibMatrixCUDA {
 			Pointer input = getDensePointer(in1, instName);
 			int size = (int)(in1.getNumColumns() * in1.getNumRows());
 			if (GPUStatistics.DISPLAY_STATISTICS) t1 = System.nanoTime();
-			kernels.launchKernel("matrix_exp", ExecutionConfig.getConfigForSimpleVectorOperations(size),
+			getCudaKernels().launchKernel("matrix_exp", ExecutionConfig.getConfigForSimpleVectorOperations(size),
 							input, output, size);
 			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_EXP_KERNEL, System.nanoTime() - t1);
 		}
@@ -2756,7 +2767,7 @@ public class LibMatrixCUDA {
 			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_DEVICE_TO_DEVICE, System.nanoTime() - t1);
 
 			if (GPUStatistics.DISPLAY_STATISTICS) t2 = System.nanoTime();
-			JCublas2.cublasDaxpy(cublasHandle, (int) n, alphaPtr, B, 1, C, 1);
+			JCublas2.cublasDaxpy(getCublasHandle(), (int) n, alphaPtr, B, 1, C, 1);
 			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_DAXPY_LIB, System.nanoTime() - t2);
 		}
 		else {
@@ -2766,7 +2777,7 @@ public class LibMatrixCUDA {
 			if (GPUStatistics.DISPLAY_STATISTICS) t1 = System.nanoTime();
 			int rlenA = (int) in1.getNumRows(); int clenA =  (int) in1.getNumColumns();
 			int rlenB = (int) in2.getNumRows(); int clenB =  (int) in2.getNumColumns();
-			kernels.launchKernel("daxpy_matrix_vector", ExecutionConfig.getConfigForSimpleMatrixOperations(rlenA, clenA),
+			getCudaKernels().launchKernel("daxpy_matrix_vector", ExecutionConfig.getConfigForSimpleMatrixOperations(rlenA, clenA),
 					A, B, constant, C, rlenA, clenA, rlenB, clenB);
 			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_DAXPY_MV_KERNEL, System.nanoTime() - t1);
 		}

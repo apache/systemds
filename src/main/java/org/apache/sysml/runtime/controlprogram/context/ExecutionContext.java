@@ -19,9 +19,6 @@
 
 package org.apache.sysml.runtime.controlprogram.context;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.debug.DMLFrame;
 import org.apache.sysml.debug.DMLProgramCounter;
@@ -54,6 +51,9 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.runtime.util.UtilFunctions;
+
+import java.util.ArrayList;
+import java.util.HashMap;
 
 
 public class ExecutionContext 
@@ -98,13 +98,7 @@ public class ExecutionContext
 	public void setVariables(LocalVariableMap vars) {
 		_variables = vars;
 	}
-	
-	public void destroyGPUContext() throws DMLRuntimeException {
-		if(GPUContext.isGPUContextCreated)
-			GPUContext.getGPUContext().destroy();
-	}
-	
-	
+
 	/* -------------------------------------------------------
 	 * Methods to handle variables and associated data objects
 	 * -------------------------------------------------------
@@ -268,7 +262,7 @@ public class ExecutionContext
 	public MatrixObject allocateGPUMatrixObject(String varName) throws DMLRuntimeException {
 		MatrixObject mo = getMatrixObject(varName);
 		if( mo.getGPUObject() == null ) {
-			mo.setGPUObject(GPUContext.createGPUObject(mo));
+			mo.setGPUObject(GPUContext.getGPUContext().createGPUObject(mo));
 		}
 		return mo;
 	}
@@ -282,7 +276,7 @@ public class ExecutionContext
 			throw new DMLRuntimeException("No matrix object available for variable:" + varName);
 		}
 		if( mo.getGPUObject() == null ) {
-			mo.setGPUObject(GPUContext.createGPUObject(mo));
+			mo.setGPUObject(GPUContext.getGPUContext().createGPUObject(mo));
 		}
 		boolean acquired = false;
 		if( !mo.getGPUObject().isAllocated() ) {

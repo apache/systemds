@@ -104,6 +104,22 @@ import org.apache.sysml.utils.Statistics;
 import org.apache.sysml.yarn.DMLAppMasterUtils;
 import org.apache.sysml.yarn.DMLYarnClientProxy;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URI;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Scanner;
+
 
 public class DMLScript 
 {	
@@ -848,7 +864,7 @@ public class DMLScript
 		finally //ensure cleanup/shutdown
 		{	
 			if(DMLScript.USE_ACCELERATOR && ec != null)
-				ec.destroyGPUContext();
+				GPUContext.getGPUContext().destroy();
 			if( dmlconf.getBooleanValue(DMLConfig.CODEGEN) )
 				SpoofCompiler.cleanupCodeGenerator();
 			if(ec != null && ec instanceof SparkExecutionContext)

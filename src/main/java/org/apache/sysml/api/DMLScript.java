@@ -65,12 +65,12 @@ import org.apache.sysml.runtime.controlprogram.caching.CacheStatistics;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
-import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
-import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDHandler;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.CleanupMR;
 import org.apache.sysml.runtime.matrix.data.LibMatrixDNN;
 import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
@@ -136,6 +136,26 @@ public class DMLScript
 		public boolean              help          = false;            // whether to print the usage option
 
 		public final static DMLOptions defaultOptions = new DMLOptions();
+
+		@Override
+		public String toString() {
+			return "DMLOptions{" +
+							"argVals=" + argVals +
+							", configFile='" + configFile + '\'' +
+							", clean=" + clean +
+							", stats=" + stats +
+							", statsCount=" + statsCount +
+							", explainType=" + explainType +
+							", execMode=" + execMode +
+							", gpu=" + gpu +
+							", forceGPU=" + forceGPU +
+							", debug=" + debug +
+							", scriptType=" + scriptType +
+							", filePath='" + filePath + '\'' +
+							", script='" + script + '\'' +
+							", help=" + help +
+							'}';
+		}
 	}
 
 	public static RUNTIME_PLATFORM  rtplatform          = DMLOptions.defaultOptions.execMode;    // the execution mode
@@ -192,7 +212,6 @@ public class DMLScript
 	public static boolean isActiveAM(){
 		return _activeAM;
 	}
-
 
 	/**
 	 *

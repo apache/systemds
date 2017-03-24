@@ -717,10 +717,8 @@ public class Dag<N extends Lop>
 		//send write lop to MR if (1) it is marked with exec type MR (based on its memory estimate), or
 		//(2) if the input lop is in MR and the write format allows to pack it into the same job (this does
 		//not apply to csv write because MR csvwrite is a separate MR job type)
-		if( node.getExecType() == ExecType.MR || (in.getExecType() == ExecType.MR && nodeFormat != Format.CSV ) )
-			return true;
-		else
-			return false;
+		return (node.getExecType() == ExecType.MR 
+			|| (in.getExecType() == ExecType.MR && nodeFormat != Format.CSV));
 	}
 	
 	/**
@@ -1868,11 +1866,7 @@ public class Dag<N extends Lop>
 			}
 		}
 		
-		if( (tmpNode.getCompatibleJobs() & node.getCompatibleJobs()) > 0)
-			return true;
-		else
-			return false;
-			
+		return ( (tmpNode.getCompatibleJobs() & node.getCompatibleJobs()) > 0);
 	}
 	  
 	/**

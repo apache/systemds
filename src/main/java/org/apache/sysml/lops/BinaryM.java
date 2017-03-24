@@ -177,6 +177,15 @@ public class BinaryM extends Lop
 			   opcode.equals("map^") || opcode.equals("map1-*");
 	}
 	
+	
+	@Override
+	public String getInstructions(int input_index1, int input_index2, int output_index) throws LopsException {
+		return getInstructions(
+				String.valueOf(input_index1), 
+				String.valueOf(input_index2), 
+				String.valueOf(output_index));
+	}
+	
 	@Override
 	public String getInstructions(String input1, String input2, String output) 
 		throws LopsException 
@@ -206,20 +215,12 @@ public class BinaryM extends Lop
 	}
 	
 	@Override
-	public String getInstructions(int input_index1, int input_index2, int output_index) throws LopsException
-	{
-		return getInstructions(input_index1+"", input_index2+"", output_index+"");
-	}
-	
-	@Override
-	public boolean usesDistributedCache() 
-	{
+	public boolean usesDistributedCache() {
 		return true;
 	}
 	
 	@Override
-	public int[] distributedCacheInputIndex() 
-	{	
+	public int[] distributedCacheInputIndex() {	
 		// second input is from distributed cache
 		return new int[]{2};
 	}

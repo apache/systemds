@@ -108,10 +108,10 @@ public class AppendG extends Lop
 		sb.append( OPCODE );
 		
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( getInputs().get(0).prepInputOperand(input_index1+""));
+		sb.append( getInputs().get(0).prepInputOperand(input_index1));
 		
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( getInputs().get(1).prepInputOperand(input_index2+""));
+		sb.append( getInputs().get(1).prepInputOperand(input_index2));
 		
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( getInputs().get(2).prepScalarInputOperand(getExecType()));
@@ -120,7 +120,7 @@ public class AppendG extends Lop
 		sb.append( getInputs().get(3).prepScalarInputOperand(getExecType()));
 		
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( prepOutputOperand(output_index+"") );
+		sb.append( prepOutputOperand(output_index) );
 		
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( _cbind );

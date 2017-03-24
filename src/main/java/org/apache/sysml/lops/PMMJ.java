@@ -82,39 +82,13 @@ public class PMMJ extends Lop
 	}
 	
 	@Override
-	public String getInstructions(int input_index1, int input_index2, int input_index3, int output_index)
-	{
-		StringBuilder sb = new StringBuilder();
-		
-		sb.append(getExecType());
-		sb.append(Lop.OPERAND_DELIMITOR);
-		
-		sb.append(OPCODE);
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( getInputs().get(0).prepInputOperand(input_index1));
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( getInputs().get(1).prepInputOperand(input_index2));
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( getInputs().get(2).prepScalarLabel() );
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( this.prepOutputOperand(output_index));
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(_cacheType);
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(_outputEmptyBlocks);
-		
-		return sb.toString();
+	public String getInstructions(int input_index1, int input_index2, int input_index3, int output_index) {
+		return getInstructions(String.valueOf(input_index1), String.valueOf(input_index2), 
+				String.valueOf(input_index3), String.valueOf(output_index));
 	}
 	
 	@Override
 	public String getInstructions(String input_index1, String input_index2, String input_index3, String output_index) 
-		throws LopsException
 	{	
 		StringBuilder sb = new StringBuilder();
 		
@@ -130,18 +104,25 @@ public class PMMJ extends Lop
 		sb.append( getInputs().get(1).prepInputOperand(input_index2));
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( getInputs().get(2).prepInputOperand(input_index3));
+		if( getExecType() == ExecType.MR )
+			sb.append( getInputs().get(2).prepScalarLabel() );
+		else
+			sb.append( getInputs().get(2).prepInputOperand(input_index3));
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( this.prepOutputOperand(output_index));
+		sb.append( prepOutputOperand(output_index));
 		
-		if( getExecType() == ExecType.SPARK ) 
-		{
+		if( getExecType() == ExecType.SPARK ) {
 			sb.append(Lop.OPERAND_DELIMITOR);
 			sb.append(_cacheType);
 		}
-		else if( getExecType()==ExecType.CP ) {
-			//append degree of parallelism
+		else if( getExecType() == ExecType.MR ) {
+			sb.append(Lop.OPERAND_DELIMITOR);
+			sb.append(_cacheType);
+			sb.append(Lop.OPERAND_DELIMITOR);
+			sb.append(_outputEmptyBlocks);
+		}
+		else if( getExecType() == ExecType.CP ) {
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( _numThreads );
 		}
@@ -150,15 +131,12 @@ public class PMMJ extends Lop
 	}
 
 	@Override
-	public boolean usesDistributedCache() 
-	{
+	public boolean usesDistributedCache() {
 		return true;
 	}
 	
 	@Override
-	public int[] distributedCacheInputIndex() 
-	{	
-		//always left cached selection vector
+	public int[] distributedCacheInputIndex() {	
 		return new int[]{1};
 	}
 	

@@ -117,7 +117,10 @@ public class ZeroOut  extends Lop
 		 * be derived from input lops.
 		 */
 		
-		return getInstructions(Integer.toString(input_index1), input_index2+"", input_index3+"", input_index4+"", input_index5+"", Integer.toString(output_index));
+		return getInstructions(
+				String.valueOf(input_index1), String.valueOf(input_index2), 
+				String.valueOf(input_index3), String.valueOf(input_index4), 
+				String.valueOf(input_index5), String.valueOf(output_index));
 	}
 
 	@Override

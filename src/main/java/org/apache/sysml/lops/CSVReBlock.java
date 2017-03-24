@@ -134,62 +134,28 @@ public class CSVReBlock extends Lop
 }
 
 	@Override
-	public String getInstructions(int input_index, int output_index) throws LopsException
-	{
+	public String getInstructions(int input_index, int output_index) throws LopsException {
+		return getInstructions(String.valueOf(input_index), String.valueOf(output_index));
+	}
+	
+	@Override
+	public String getInstructions(String input1, String output) throws LopsException {
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );
 		sb.append( Lop.OPERAND_DELIMITOR );
 		sb.append( OPCODE );
 		sb.append( OPERAND_DELIMITOR );
-		
-		Lop input = getInputs().get(0);
-		
-		sb.append( input.prepInputOperand(input_index) );
+		sb.append( getInputs().get(0).prepInputOperand(input1));
 		sb.append( OPERAND_DELIMITOR );
-		
-		sb.append( this.prepOutputOperand(output_index) );
+		sb.append( prepOutputOperand(output));
 		sb.append( OPERAND_DELIMITOR );
-		
 		sb.append( rows_per_block );
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( cols_per_block );
 		sb.append( OPERAND_DELIMITOR );
 		
 		sb.append( prepCSVProperties() );
-		
+
 		return sb.toString();
 	}
-	
-	@Override
-	public String getInstructions(String input1, String output) throws LopsException {
-		if(getExecType() != ExecType.SPARK) {
-			throw new LopsException("The method getInstructions(String,String) for CSVReblock should be called only for Spark execution type");
-		}
-		
-		if (this.getInputs().size() == 1) {
-			
-			StringBuilder sb = new StringBuilder();
-			sb.append( getExecType() );
-			sb.append( Lop.OPERAND_DELIMITOR );
-			sb.append( OPCODE );
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( getInputs().get(0).prepInputOperand(input1));
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( this.prepOutputOperand(output));
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( rows_per_block );
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( cols_per_block );
-			sb.append( OPERAND_DELIMITOR );
-			
-			sb.append( prepCSVProperties() );
-
-			return sb.toString();
-
-		} else {
-			throw new LopsException(this.printErrorLocation() + "Invalid number of operands ("
-					+ this.getInputs().size() + ") for CSVReblock operation");
-		}
-	}
- 
 }

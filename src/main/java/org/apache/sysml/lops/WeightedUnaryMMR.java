@@ -133,12 +133,8 @@ public class WeightedUnaryMMR extends Lop
 	}
 	
 	@Override
-	public boolean usesDistributedCache() 
-	{
-		if( _cacheU || _cacheV )
-			return true;
-		else
-			return false;
+	public boolean usesDistributedCache() {
+		return (_cacheU || _cacheV);
 	}
 	
 	@Override

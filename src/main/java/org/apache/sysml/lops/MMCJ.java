@@ -31,8 +31,6 @@ import org.apache.sysml.parser.Expression.*;
  */
 public class MMCJ extends Lop 
 {
-
-		
 	public enum MMCJType {
 		AGG,
 		NO_AGG,
@@ -83,41 +81,21 @@ public class MMCJ extends Lop
 		}
 	}
 
-	public MMCJ(Lop input1, Lop input2, DataType dt, ValueType vt, SparkAggType aggtype, ExecType et) 
-	{
+	public MMCJ(Lop input1, Lop input2, DataType dt, ValueType vt, SparkAggType aggtype, ExecType et) {
 		this(input1, input2, dt, vt, MMCJType.NO_AGG, et);
-		
 		_aggtype = aggtype;
 	}
 	
 	
 	@Override
 	public String toString() {
-	
 		return "Operation = MMCJ";
 	}
 
-	//MR instruction generation
 	@Override
-	public String getInstructions(int input_index1, int input_index2, int output_index)
-	{
-		StringBuilder sb = new StringBuilder();
-		sb.append( getExecType() );
-		sb.append( Lop.OPERAND_DELIMITOR );
-		sb.append( "cpmm" );
-		sb.append( OPERAND_DELIMITOR );
-		
-		sb.append( getInputs().get(0).prepInputOperand(input_index1));
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( getInputs().get(1).prepInputOperand(input_index2));
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( this.prepOutputOperand(output_index));
-		
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( _type );
-		
-		
-		return sb.toString();
+	public String getInstructions(int input_index1, int input_index2, int output_index) {
+		return getInstructions(String.valueOf(input_index1), 
+				String.valueOf(input_index2), String.valueOf(output_index));
 	}
 
 	//SPARK instruction generation
@@ -126,19 +104,25 @@ public class MMCJ extends Lop
 	{
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );
+		
 		sb.append( Lop.OPERAND_DELIMITOR );
 		sb.append( "cpmm" );
-		sb.append( OPERAND_DELIMITOR );
 		
+		sb.append( OPERAND_DELIMITOR );
 		sb.append( getInputs().get(0).prepInputOperand(input1) );
+		
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( getInputs().get(1).prepInputOperand(input2) );
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( this.prepOutputOperand(output) );
 		
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( _aggtype );
-				
+		sb.append( prepOutputOperand(output) );
+		
+		sb.append( OPERAND_DELIMITOR );
+		if( getExecType() == ExecType.SPARK )
+			sb.append(_aggtype.name());
+		else
+			sb.append(_type.name());
+		
 		return sb.toString();
 	}
 }

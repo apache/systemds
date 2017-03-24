@@ -721,7 +721,7 @@ public abstract class Lop
 	}
 	
 	public String prepOutputOperand(int index) {
-		return prepOperand(index+"");
+		return prepOperand(String.valueOf(index));
 	}
 	public String prepOutputOperand(String label) {
 		return prepOperand(label);
@@ -804,7 +804,7 @@ public abstract class Lop
 	}
 
 	public String prepInputOperand(int index) {
-		return prepInputOperand(index+"");
+		return prepInputOperand(String.valueOf(index));
 	}
 
 	public String prepInputOperand(String label) {

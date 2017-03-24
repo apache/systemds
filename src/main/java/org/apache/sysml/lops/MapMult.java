@@ -29,7 +29,6 @@ import org.apache.sysml.parser.Expression.ValueType;
 
 public class MapMult extends Lop 
 {
-	
 	public static final String OPCODE = "mapmm";
 	
 	public enum CacheType {
@@ -139,91 +138,52 @@ public class MapMult extends Lop
 	}
 	
 	@Override
-	public String getInstructions(int input_index1, int input_index2, int output_index)
-	{
-		//MR instruction generation
-		
-		StringBuilder sb = new StringBuilder();
-		
-		sb.append(getExecType());
-		sb.append(Lop.OPERAND_DELIMITOR);
-		
-		sb.append(OPCODE);
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( getInputs().get(0).prepInputOperand(input_index1));
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( getInputs().get(1).prepInputOperand(input_index2));
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( this.prepOutputOperand(output_index));
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(_cacheType);
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(_outputEmptyBlocks);
-		
-		return sb.toString();
+	public String getInstructions(int input_index1, int input_index2, int output_index) {
+		return getInstructions(String.valueOf(input_index1), 
+			String.valueOf(input_index2), String.valueOf(output_index));
 	}
 	
 	@Override
 	public String getInstructions(String input1, String input2, String output)
 	{
-		//Spark instruction generation
-		
 		StringBuilder sb = new StringBuilder();
 		
 		sb.append(getExecType());
-		sb.append(Lop.OPERAND_DELIMITOR);
 		
+		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append(OPCODE);
-		sb.append(Lop.OPERAND_DELIMITOR);
 		
+		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append( getInputs().get(0).prepInputOperand(input1));
+		
 		sb.append(Lop.OPERAND_DELIMITOR);
-		
-		
 		sb.append( getInputs().get(1).prepInputOperand(input2));
-		sb.append(Lop.OPERAND_DELIMITOR);
 		
-		sb.append( this.prepOutputOperand(output));
 		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append(prepOutputOperand(output));
 		
+		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append(_cacheType);
-		sb.append(Lop.OPERAND_DELIMITOR);
 		
+		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append(_outputEmptyBlocks);
-		sb.append(Lop.OPERAND_DELIMITOR);
 		
-		sb.append(_aggtype.toString());
+		if( getExecType() == ExecType.SPARK ) {
+			sb.append(Lop.OPERAND_DELIMITOR);
+			sb.append(_aggtype.toString());
+		}
 		
 		return sb.toString();
 	}
 
 	@Override
-	public boolean usesDistributedCache() 
-	{
+	public boolean usesDistributedCache() {
 		return true;
 	}
 	
 	@Override
-	public int[] distributedCacheInputIndex() 
-	{	
-		switch( _cacheType )
-		{
-			// first input is from distributed cache
-			case LEFT:
-			case LEFT_PART: 
-				return new int[]{1};
-			
-			// second input is from distributed cache
-			case RIGHT:
-			case RIGHT_PART: 
-				return new int[]{2};
-		}
-				
-		return new int[]{-1}; //error
+	public int[] distributedCacheInputIndex() {	
+		return _cacheType.isRight() ?
+			new int[]{2} : new int[]{1};
 	}
 }

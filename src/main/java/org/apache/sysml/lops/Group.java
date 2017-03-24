@@ -30,9 +30,6 @@ import org.apache.sysml.parser.Expression.*;
 
 public class Group extends Lop  
 {
-
-	
-	
 	public enum OperationTypes {Sort};
 	
 	OperationTypes operation;
@@ -67,11 +64,7 @@ public class Group extends Lop
 	}
 
 	@Override
-	public String toString() 
-	{
-		//return "Group " + "Operation: " + operation;
+	public String toString() {
 		return "Operation: " + operation;
-	
 	}
-
 }

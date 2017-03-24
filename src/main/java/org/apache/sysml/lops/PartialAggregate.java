@@ -283,48 +283,34 @@ public class PartialAggregate extends Lop
 	 */
 	@Override
 	public String getInstructions(String input1, String output) 
-		throws LopsException 
 	{
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );
+		
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( getOpcode() );
+		
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( getInputs().get(0).prepInputOperand(input1) );
+		
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( this.prepOutputOperand(output) );
+		sb.append( prepOutputOperand(output) );
 		
-		//in case of spark, we also compile the optional aggregate flag into the instruction.
-		if( getExecType() == ExecType.SPARK ) {
-			sb.append( OPERAND_DELIMITOR );
+		//exec-type specific attributes
+		sb.append( OPERAND_DELIMITOR );
+		if( getExecType() == ExecType.SPARK )
 			sb.append( _aggtype );	
-		}
-		
-		//in case of cp, we also compile the number of threads into the instruction
-		if( getExecType() == ExecType.CP ){
-			sb.append( OPERAND_DELIMITOR );
+		else if( getExecType() == ExecType.MR )
+			sb.append( _dropCorr );
+		else if( getExecType() == ExecType.CP )
 			sb.append( _numThreads );	
-		}
 		
 		return sb.toString();
 	}
 	
 	@Override
-	public String getInstructions(int input_index, int output_index)
-		throws LopsException 
-	{
-		StringBuilder sb = new StringBuilder();
-		sb.append( getExecType() );
-		sb.append( Lop.OPERAND_DELIMITOR );
-		sb.append( getOpcode() );
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( getInputs().get(0).prepInputOperand(input_index) );
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( this.prepOutputOperand(output_index) );
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( _dropCorr );
-
-		return sb.toString();
+	public String getInstructions(int input_index, int output_index) {
+		return getInstructions(String.valueOf(input_index), String.valueOf(output_index));
 	}
 
 	public static String getOpcode(Aggregate.OperationTypes op, DirectionTypes dir) 

@@ -79,31 +79,13 @@ public class MMTSJ extends Lop
 		return "Operation = MMTSJ";
 	}
 
-	/**
-	 * MR instruction generation.
-	 */
 	@Override
-	public String getInstructions(int input_index1, int output_index)
-	{
-		StringBuilder sb = new StringBuilder();
-		sb.append( getExecType() );
-		sb.append( Lop.OPERAND_DELIMITOR );
-		sb.append( "tsmm" );
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( getInputs().get(0).prepInputOperand(input_index1));
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( this.prepOutputOperand(output_index));
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( _type );
-		
-		return sb.toString();
+	public String getInstructions(int input_index1, int output_index) {
+		return getInstructions(String.valueOf(input_index1), String.valueOf(output_index));
 	}
 
-	/**
-	 * CP and Spark instruction generation.
-	 */
 	@Override
-	public String getInstructions(String input_index1, String output_index) throws LopsException
+	public String getInstructions(String input_index1, String output_index)
 	{	
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );
@@ -112,7 +94,7 @@ public class MMTSJ extends Lop
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( getInputs().get(0).prepInputOperand(input_index1));
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( this.prepOutputOperand(output_index));
+		sb.append( prepOutputOperand(output_index));
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( _type );
 		
@@ -124,6 +106,4 @@ public class MMTSJ extends Lop
 		
 		return sb.toString();
 	}
- 
- 
 }

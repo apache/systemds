@@ -259,11 +259,8 @@ public class Data extends Lop
 	 * method to check if this data lop represents a literal.
 	 * @return true if data lop is a literal
 	 */
-	
-	public boolean isLiteral()
-	{
+	public boolean isLiteral() {
 		return literal_var;
-
 	}
 	
 	public boolean getBooleanValue() throws LopsException {

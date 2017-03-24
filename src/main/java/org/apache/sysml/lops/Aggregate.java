@@ -127,48 +127,31 @@ public class Aggregate extends Lop
 	}
 	
 	@Override
-	public String getInstructions(String input1, String output) throws LopsException {
-		String opcode = getOpcode(); 
-		
+	public String getInstructions(int input_index, int output_index) throws LopsException {
+		return getInstructions(String.valueOf(input_index), String.valueOf(output_index));
+	}
+
+	@Override
+	public String getInstructions(String input1, String output) 
+		throws LopsException 
+	{
+		boolean isCorrectionApplicable = (getExecType() == ExecType.MR &&
+				(operation == OperationTypes.Mean || operation == OperationTypes.Var
+				|| operation == OperationTypes.KahanSum || operation == OperationTypes.KahanSumSq
+				|| operation == OperationTypes.KahanTrace));
+			
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( opcode );
+		sb.append( getOpcode() );
 		sb.append( OPERAND_DELIMITOR );
 		
 		sb.append( getInputs().get(0).prepInputOperand(input1));
 		sb.append( OPERAND_DELIMITOR );
-		
+
 		sb.append( this.prepOutputOperand(output));
 		
-		return sb.toString();
-	}
-	
-	@Override
-	public String getInstructions(int input_index, int output_index) throws LopsException
-	{
-		boolean isCorrectionApplicable = false;
-		
-		String opcode = getOpcode(); 
-		if (operation == OperationTypes.Mean || operation == OperationTypes.Var
-				|| operation == OperationTypes.KahanSum || operation == OperationTypes.KahanSumSq
-				|| operation == OperationTypes.KahanTrace)
-			isCorrectionApplicable = true;
-		
-		StringBuilder sb = new StringBuilder();
-		sb.append( getExecType() );
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( opcode );
-		sb.append( OPERAND_DELIMITOR );
-		
-		sb.append( getInputs().get(0).prepInputOperand(input_index));
-		sb.append( OPERAND_DELIMITOR );
-
-		sb.append( this.prepOutputOperand(output_index));
-		
-		if ( isCorrectionApplicable )
-		{
-			// add correction information to the instruction
+		if ( isCorrectionApplicable ) {
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( isCorrectionUsed );
 			sb.append( OPERAND_DELIMITOR );
@@ -177,7 +160,4 @@ public class Aggregate extends Lop
 		
 		return sb.toString();
 	}
-
- 
- 
 }

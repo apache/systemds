@@ -28,7 +28,6 @@ import org.apache.sysml.parser.Expression.ValueType;
 
 public class WeightedSigmoidR extends Lop 
 {
-
 	public static final String OPCODE = "redwsigmoid";
 	
 	private WSigmoidType _wsType = null;
@@ -127,12 +126,8 @@ public class WeightedSigmoidR extends Lop
 	}
 	
 	@Override
-	public boolean usesDistributedCache() 
-	{
-		if( _cacheU || _cacheV )
-			return true;
-		else
-			return false;
+	public boolean usesDistributedCache() {
+		return (_cacheU || _cacheV);
 	}
 	
 	@Override

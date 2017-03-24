@@ -213,10 +213,7 @@ public enum JobType
 	}
 	
 	public boolean allowsRecordReaderInstructions() {
-		if ( getName().equals("GMR") ) 
-			return true;
-		else
-			return false;
+		return getName().equals("GMR"); 
 	}
 	
 	public int getBase() {

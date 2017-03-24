@@ -55,7 +55,6 @@ public class MMZip extends Lop
 
 	@Override
 	public String toString() {
-	
 		return "Operation = MMZip";
 	}
 

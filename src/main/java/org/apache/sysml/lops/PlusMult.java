@@ -32,7 +32,13 @@ import org.apache.sysml.parser.Expression.ValueType;
  */
 public class PlusMult extends Lop 
 {
-	
+	public PlusMult(Lop input1, Lop input2, Lop input3, OpOp3 op, DataType dt, ValueType vt, ExecType et) {
+		super(Lop.Type.PlusMult, dt, vt);
+		if(op == OpOp3.MINUS_MULT)
+			type=Lop.Type.MinusMult;
+		init(input1, input2, input3, et);
+	}
+
 	private void init(Lop input1, Lop input2, Lop input3, ExecType et) {
 		addInput(input1);
 		addInput(input2);
@@ -57,13 +63,6 @@ public class PlusMult extends Lop
 		}
 	}
 	
-	public PlusMult(Lop input1, Lop input2, Lop input3, OpOp3 op, DataType dt, ValueType vt, ExecType et) {
-		super(Lop.Type.PlusMult, dt, vt);
-		if(op == OpOp3.MINUS_MULT)
-			type=Lop.Type.MinusMult;
-		init(input1, input2, input3, et);
-	}
-
 	@Override
 	public String toString() {
 		return "Operation = PlusMult";
@@ -81,58 +80,39 @@ public class PlusMult extends Lop
 	 * input3: matrix2
 	 */
 	@Override
-	public String getInstructions(String input1, String input2, String input3, String output) {
+	public String getInstructions(String input1, String input2, String input3, String output) 
+	{
 		StringBuilder sb = new StringBuilder();
 		
 		sb.append( getExecType() );
-		sb.append( OPERAND_DELIMITOR );
 		
-		sb.append(getOpString());
 		sb.append( OPERAND_DELIMITOR );
+		sb.append( getOpString() );
 		
-		// Matrix1
+		//matrix 1
+		sb.append( OPERAND_DELIMITOR );
 		sb.append( getInputs().get(0).prepInputOperand(input1) );
-		sb.append( OPERAND_DELIMITOR );
 		
-		// Scalar
-		sb.append( getInputs().get(1).prepScalarInputOperand(input2) );
+		//scalar
 		sb.append( OPERAND_DELIMITOR );
+		if( getExecType()==ExecType.MR )
+			sb.append( getInputs().get(1).prepScalarLabel() );
+		else
+			sb.append( getInputs().get(1).prepScalarInputOperand(input2) );
 		
-		// Matrix2
-		sb.append( getInputs().get(2).prepInputOperand(input3));
+		//matrix 2
 		sb.append( OPERAND_DELIMITOR );
+		sb.append( getInputs().get(2).prepInputOperand(input3) );
 		
-		sb.append( prepOutputOperand(output));
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( prepOutputOperand(output) );
 		
 		return sb.toString();
 	}
 	
 	@Override
-	public String getInstructions(int input1, int input2, int input3, int output) 
-		throws LopsException 
-	{
-		StringBuilder sb = new StringBuilder();
-		
-		sb.append( getExecType() );
-		sb.append( OPERAND_DELIMITOR );
-		
-		sb.append(getOpString());
-		sb.append( OPERAND_DELIMITOR );
-		
-		// Matrix1
-		sb.append( getInputs().get(0).prepInputOperand(input1) );
-		sb.append( OPERAND_DELIMITOR );
-		
-		// Scalar
-		sb.append( getInputs().get(1).prepScalarLabel() );
-		sb.append( OPERAND_DELIMITOR );
-		
-		// Matrix2
-		sb.append( getInputs().get(2).prepInputOperand(input3));
-		sb.append( OPERAND_DELIMITOR );
-		
-		sb.append( prepOutputOperand(output));
-		
-		return sb.toString();
+	public String getInstructions(int input1, int input2, int input3, int output) {
+		return getInstructions(String.valueOf(input1), String.valueOf(input2), 
+				String.valueOf(input3), String.valueOf(output));
 	}
 }

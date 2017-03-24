@@ -100,21 +100,7 @@ public class CoVariance extends Lop
 	 */
 	@Override
 	public String getInstructions(String input1, String input2, String output) {
-		StringBuilder sb = new StringBuilder();
-		sb.append( getExecType() );
-		sb.append( Lop.OPERAND_DELIMITOR );
-		sb.append( "cov" );
-		sb.append( OPERAND_DELIMITOR );
-
-		sb.append( getInputs().get(0).prepInputOperand(input1));
-		sb.append( OPERAND_DELIMITOR );
-
-		sb.append( getInputs().get(1).prepInputOperand(input2));
-		sb.append( OPERAND_DELIMITOR );
-
-		sb.append( this.prepOutputOperand(output));
-		
-		return sb.toString();
+		return getInstructions(input1, input2, null, output);
 	}
 
 	/**
@@ -134,13 +120,17 @@ public class CoVariance extends Lop
 		sb.append( getInputs().get(0).prepInputOperand(input1));
 		sb.append( OPERAND_DELIMITOR );
 
-		sb.append( getInputs().get(1).prepInputOperand(input2));
-		sb.append( OPERAND_DELIMITOR );
-
-		sb.append( getInputs().get(2).prepInputOperand(input3));
-		sb.append( OPERAND_DELIMITOR );
+		if( input2 != null ) {
+			sb.append( getInputs().get(1).prepInputOperand(input2));
+			sb.append( OPERAND_DELIMITOR );
+		}
 		
-		sb.append( this.prepOutputOperand(output));
+		if( input3 != null ) {
+			sb.append( getInputs().get(2).prepInputOperand(input3));
+			sb.append( OPERAND_DELIMITOR );
+		}
+		
+		sb.append( prepOutputOperand(output));
 		
 		return sb.toString();
 	}
@@ -152,18 +142,7 @@ public class CoVariance extends Lop
 	 */
 	@Override
 	public String getInstructions(int input_index, int output_index) {
-		StringBuilder sb = new StringBuilder();
-		sb.append( getExecType() );
-		sb.append( Lop.OPERAND_DELIMITOR );
-		sb.append( "cov" );
-		sb.append( OPERAND_DELIMITOR );
-		
-		sb.append( getInputs().get(0).prepInputOperand(input_index));
-		sb.append( OPERAND_DELIMITOR );
-		
-		sb.append ( this.prepInputOperand(output_index));
-		
-		return sb.toString();
+		return getInstructions(String.valueOf(input_index), null, null, String.valueOf(output_index));
 	}
 
 }

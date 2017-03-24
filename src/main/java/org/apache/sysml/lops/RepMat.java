@@ -28,7 +28,6 @@ import org.apache.sysml.parser.Expression.ValueType;
 
 public class RepMat extends Lop 
 {
-	
 	public static final String OPCODE = "rep";
 	
 	private boolean _repCols = true;
@@ -88,7 +87,7 @@ public class RepMat extends Lop
 		sb.append( getInputs().get(1).prepScalarInputOperand(getExecType()));
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( this.prepOutputOperand(output_index));
+		sb.append( prepOutputOperand(output_index));
 		
 		return sb.toString();
 	}

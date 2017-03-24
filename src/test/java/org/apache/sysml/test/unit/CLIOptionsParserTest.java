@@ -363,4 +363,57 @@ public class CLIOptionsParserTest {
     Map<String, String> m = o.argVals;
   }
 
+  @Test
+  /**
+   * For Apache Commons CLI, if an argument to an option is enclosed in quotes,
+   * the leading and trailing quotes are stripped away. For instance, if the options is -arg and the
+   * argument is "foo"
+   *  -args "foo"
+   * Commons CLI will strip the quotes from "foo". This becomes troublesome when you really do
+   * want to pass in "foo" and not just foo.
+   * A way around this is to use 'foo` as done in {@link CLIOptionsParserTest#testNVArgs3()}
+   */
+  public void testNVArgs2() throws Exception {
+    String cl = "systemml -f test.dml -args \"def\"";
+    String[] args = cl.split(" ");
+    Options options = DMLScript.createCLIOptions();
+    DMLScript.DMLOptions o = DMLScript.parseCLArguments(args, options);
+    Map<String, String> m = o.argVals;
+    Assert.assertEquals("def", m.get("$1"));
+  }
+
+  @Test
+  /**
+   * See comment in {@link CLIOptionsParserTest#testNVArgs2()}
+   */
+  public void testNVArgs3() throws Exception {
+    String cl = "systemml -f test.dml -args 'def'";
+    String[] args = cl.split(" ");
+    Options options = DMLScript.createCLIOptions();
+    DMLScript.DMLOptions o = DMLScript.parseCLArguments(args, options);
+    Map<String, String> m = o.argVals;
+    Assert.assertEquals("'def'", m.get("$1"));
+  }
+
+  @Test
+  /**
+   * See comment in {@link CLIOptionsParserTest#testNVArgs2()}
+   * Additionally, if we try to pass something like
+   * -nvargs X="foo"
+   * Commons CLI will strip the leading and trailing quotes (viz. double quotes), which
+   * causes it to return
+   * X="foo
+   * The way to overcome this is to enclose the <value> of the <key=value> pair in single quotes
+   * and strip them away in the parsing code ourselves.
+   * TODO: Read the javadoc for this method, we can add in this logic if required
+   */
+  public void testNVArgs4() throws Exception {
+    String cl = "systemml -f test.dml -nvargs abc='def'";
+    String[] args = cl.split(" ");
+    Options options = DMLScript.createCLIOptions();
+    DMLScript.DMLOptions o = DMLScript.parseCLArguments(args, options);
+    Map<String, String> m = o.argVals;
+    Assert.assertEquals("'def'", m.get("$abc"));
+  }
+
 }

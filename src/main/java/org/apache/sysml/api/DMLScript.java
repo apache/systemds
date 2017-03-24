@@ -346,6 +346,11 @@ public class DMLScript
 
 	/**
 	 * Creates an {@link Options} instance for the command line parameters
+	 *  As of SystemML 0.13, Apache Commons CLI 1.2 is transitively in the classpath
+	 *  However the most recent version of Apache Commons CLI is 1.4
+	 *  Creating CLI options is done using Static methods. This obviously makes it
+	 *  thread unsafe. Instead of {@link OptionBuilder}, CLI 1.4 uses Option.Builder which
+	 *  has non-static methods.
 	 * @return an appropriate instance of {@link Options}
 	 */
 	@SuppressWarnings("static-access")
@@ -399,13 +404,12 @@ public class DMLScript
 						.create("help");
 
 		OptionGroup fileOrScriptOpt = new OptionGroup();
-		// Either a clean(-clean) is specified, a file(-f), a script(-s) or help(-help)
+		// Either a clean(-clean), a file(-f), a script(-s) or help(-help) needs to be specified
 		fileOrScriptOpt.addOption(scriptOpt);
 		fileOrScriptOpt.addOption(fileOpt);
 		fileOrScriptOpt.addOption(cleanOpt);
 		fileOrScriptOpt.addOption(helpOpt);
 		fileOrScriptOpt.setRequired(true);
-
 
 		OptionGroup argsOrNVArgsOpt = new OptionGroup();
 		argsOrNVArgsOpt.addOption(nvargsOpt).addOption(argsOpt);	// Either -args or -nvargs
@@ -491,10 +495,10 @@ public class DMLScript
 			String dmlScriptStr = readDMLScript(isFile, fileOrScript);
 			Map<String, String> argVals = dmlOptions.argVals;
 
-			DML_FILE_PATH_ANTLR_PARSER = args[1];
+			DML_FILE_PATH_ANTLR_PARSER = dmlOptions.filePath;
 			
 			//Step 3: invoke dml script
-			printInvocationInfo(args[1], fnameOptConfig, argVals);
+			printInvocationInfo(fileOrScript, fnameOptConfig, argVals);
 			if (ENABLE_DEBUG_MODE) {
 				// inner try loop is just to isolate the debug exception, which will allow to manage the bugs from debugger v/s runtime
 				launchDebugger(dmlScriptStr, fnameOptConfig, argVals, SCRIPT_TYPE);
@@ -543,10 +547,12 @@ public class DMLScript
 	// private internal utils (argument parsing)
 	////////
 
+	@Deprecated()
 	/**
 	 * Creates an argument map appropriate for consumption by the backend
 	 * The only method using this is the legacy {@link MLContext} api.
 	 * Once that is removed, this function should be removed as well.
+	 * This method uses a fragile position based argument for -args & -nvargs
 	 * @param hasNamedArgs true for named arguments, false for positional arguments
 	 * @param args in "k=v" format for named arguments and "v" for positional arguments
 	 * @return	a map containing either ($K,V) or ($1,V) for named and positional arguments respectively

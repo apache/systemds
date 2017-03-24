@@ -213,7 +213,8 @@ public class Recompiler
 			memo.extract(hops, status);
 			
 			// codegen if enabled
-			if( ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.CODEGEN) && SpoofCompiler.RECOMPILE ) {
+			if( ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.CODEGEN) 
+					&& SpoofCompiler.RECOMPILE_CODEGEN ) {
 				Hop.resetVisitStatus(hops);
 				hops = SpoofCompiler.optimize(hops, true);
 			}
@@ -313,7 +314,8 @@ public class Recompiler
 			hops.refreshMemEstimates(memo); 		
 			
 			// codegen if enabled
-			if( ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.CODEGEN) && SpoofCompiler.RECOMPILE ) {
+			if( ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.CODEGEN) 
+					&& SpoofCompiler.RECOMPILE_CODEGEN ) {
 				hops.resetVisitStatus();
 				hops = SpoofCompiler.optimize(hops, false);
 			}

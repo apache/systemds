@@ -78,15 +78,28 @@ public class SpoofCompiler
 {
 	private static final Log LOG = LogFactory.getLog(SpoofCompiler.class.getName());
 	
-	public static boolean OPTIMIZE = true;
-	
 	//internal configuration flags
-	public static final boolean LDEBUG = false;
-	public static final boolean SUM_PRODUCT = false;
-	public static final boolean RECOMPILE = true;
-	public static boolean USE_PLAN_CACHE = true;
-	public static boolean ALWAYS_COMPILE_LITERALS = false;
-	public static final boolean ALLOW_SPARK_OPS = false;
+	public static boolean LDEBUG = false;
+	public static final boolean RECOMPILE_CODEGEN = true;
+	public static PlanCache PLAN_CACHE_POLICY = PlanCache.CSLH;
+	public static final PlanSelection PLAN_SEL_POLICY = PlanSelection.FUSE_ALL; 
+	public static final boolean PRUNE_REDUNDANT_PLANS = true;
+	
+	public enum PlanSelection {
+		FUSE_ALL,             //maximal fusion, possible w/ redundant compute
+		FUSE_NO_REDUNDANCY,   //fusion without redundant compute 
+		FUSE_COST_BASED,      //cost-based decision on materialization points
+	}
+
+	public enum PlanCache {
+		CONSTANT, //plan cache, with always compile literals
+		CSLH,     //plan cache, with context-sensitive literal replacement heuristic
+		NONE;     //no plan cache
+		
+		public static PlanCache getPolicy(boolean planCache, boolean compileLiterals) {
+			return !planCache ? NONE : compileLiterals ? CONSTANT : CSLH;
+		}
+	}
 	
 	//plan cache for cplan->compiled source to avoid unnecessary codegen/source code compile
 	//for equal operators from (1) different hop dags and (2) repeated recompilation 
@@ -189,7 +202,7 @@ public class SpoofCompiler
 	}
 	
 	public static void cleanupCodeGenerator() {
-		if( USE_PLAN_CACHE ) {
+		if( PLAN_CACHE_POLICY != PlanCache.NONE ) {
 			CodegenUtils.clearClassCache(); //class cache
 			planCache.clear(); //plan cache
 		}
@@ -203,11 +216,10 @@ public class SpoofCompiler
 	 * @return dag root nodes of modified dag 
 	 * @throws DMLRuntimeException if optimization failed
 	 */
-	@SuppressWarnings("unused")
 	public static ArrayList<Hop> optimize(ArrayList<Hop> roots, boolean recompile) 
 		throws DMLRuntimeException 
 	{
-		if( roots == null || roots.isEmpty() || !OPTIMIZE )
+		if( roots == null || roots.isEmpty() )
 			return roots;
 	
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
@@ -216,7 +228,7 @@ public class SpoofCompiler
 		try
 		{
 			//context-sensitive literal replacement (only integers during recompile)
-			boolean compileLiterals = ALWAYS_COMPILE_LITERALS || !recompile;
+			boolean compileLiterals = (PLAN_CACHE_POLICY==PlanCache.CONSTANT) || !recompile;
 			
 			//construct codegen plans
 			HashMap<Long, Pair<Hop[],CNodeTpl>>  cplans = constructCPlans(roots, compileLiterals);
@@ -235,7 +247,7 @@ public class SpoofCompiler
 			for( Entry<Long, Pair<Hop[],CNodeTpl>> cplan : cplans.entrySet() ) {
 				Pair<Hop[],CNodeTpl> tmp = cplan.getValue();
 				
-				if( !USE_PLAN_CACHE || !planCache.containsKey(tmp.getValue()) ) {
+				if( PLAN_CACHE_POLICY==PlanCache.NONE || !planCache.containsKey(tmp.getValue()) ) {
 					//generate java source code
 					String src = tmp.getValue().codegen(false);
 					
@@ -336,7 +348,7 @@ public class SpoofCompiler
 		//fuse and merge operator plans
 		for( Hop c : hop.getInput() ) {
 			if( memo.contains(c.getHopID()) )
-				for( MemoTableEntry me : memo.get(c.getHopID()) ) {
+				for( MemoTableEntry me : memo.getDistinct(c.getHopID()) ) {
 					BaseTpl tpl = TemplateUtils.createTemplate(me.type, me.closed);
 					if( tpl.fuse(hop, c) ) {
 						int pos = hop.getInput().indexOf(c);
@@ -356,7 +368,8 @@ public class SpoofCompiler
 		}
 		
 		//prune subsumed / redundant plans
-		memo.pruneRedundant(hop.getHopID());
+		if( PRUNE_REDUNDANT_PLANS )
+			memo.pruneRedundant(hop.getHopID());
 		
 		//close operator plans, if required
 		if( memo.contains(hop.getHopID()) ) {

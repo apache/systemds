@@ -458,6 +458,7 @@ public class DMLScript
 			EXPLAIN           = dmlOptions.explainType;
 			ENABLE_DEBUG_MODE = dmlOptions.debug;
 			SCRIPT_TYPE       = dmlOptions.scriptType;
+			rtplatform        = dmlOptions.execMode;
 
 			String fnameOptConfig = dmlOptions.configFile;
 			boolean isFile = dmlOptions.filePath != null;

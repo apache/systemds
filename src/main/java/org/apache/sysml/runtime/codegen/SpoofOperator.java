@@ -72,8 +72,8 @@ public abstract class SpoofOperator implements Serializable
 				|| inputs.get(i).isInSparseFormat() ) {
 				MatrixBlock tmp = inputs.get(i);
 				b[i-offset] = DataConverter.convertToDoubleVector(tmp);
-				LOG.warn("Converted "+tmp.getNumRows()+"x"+tmp.getNumColumns() + 
-						" sideways input matrix from sparse to dense.");
+				LOG.warn(getClass().getName()+": Converted "+tmp.getNumRows()+"x"+tmp.getNumColumns()+
+						", nnz="+tmp.getNonZeros()+" sideways input matrix from sparse to dense.");
 			}
 			//use existing dense block
 			else {

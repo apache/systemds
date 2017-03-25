@@ -254,13 +254,16 @@ public class TemplateUtils
 	public static boolean hasSingleOperation(CNodeTpl tpl) {
 		CNode output = tpl.getOutput();
 		return (output instanceof CNodeUnary || output instanceof CNodeBinary
-				|| output instanceof CNodeTernary) && hasOnlyDataNodeInputs(output);
+				|| output instanceof CNodeTernary) && hasOnlyDataNodeOrLookupInputs(output);
 	}
 	
-	public static boolean hasOnlyDataNodeInputs(CNode node) {
+	public static boolean hasOnlyDataNodeOrLookupInputs(CNode node) {
 		boolean ret = true;
 		for( CNode c : node.getInput() )
-			ret &= (c instanceof CNodeData);
+			ret &= (c instanceof CNodeData || (c instanceof CNodeUnary 
+				&& (((CNodeUnary)c).getType()==UnaryType.LOOKUP0 
+					|| ((CNodeUnary)c).getType()==UnaryType.LOOKUP_R 
+					|| ((CNodeUnary)c).getType()==UnaryType.LOOKUP_RC)));
 		return ret;
 	}
 }

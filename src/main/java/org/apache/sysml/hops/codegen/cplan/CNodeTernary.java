@@ -43,7 +43,7 @@ public class CNodeTernary extends CNode
 					return "    double %TMP% = %IN1% + %IN2% * %IN3%;\n" ;
 				
 				case MINUS_MULT:
-					return "    double %TMP% = %IN1% - %IN2% * %IN3%;\n;\n" ;
+					return "    double %TMP% = %IN1% - %IN2% * %IN3%;\n" ;
 					
 				case LOOKUP_RC1:
 					return "    double %TMP% = %IN1%[rowIndex*%IN2%+%IN3%-1];\n";	

@@ -20,9 +20,11 @@
 package org.apache.sysml.hops.codegen.template;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import org.apache.sysml.hops.AggBinaryOp;
 import org.apache.sysml.hops.AggUnaryOp;
@@ -98,15 +100,12 @@ public class CellTpl extends BaseTpl
 		rConstructCplan(hop, memo, tmp, inHops, compileLiterals);
 		hop.resetVisitStatus();
 		
-		//reorder inputs (ensure matrices/vectors come first, prune literals)
-		LinkedList<Hop> sinHops = new LinkedList<Hop>();
-		for( int i : new int[]{0,1,2} ) //matrices, vectors, scalars
-			for( Hop h : inHops ) //matrices
-				if( (i==0 && h.getDataType().isMatrix() && !TemplateUtils.isVector(h))
-					|| (i==1 && h.getDataType().isMatrix() && TemplateUtils.isVector(h))
-					|| (i==2 && h.getDataType().isScalar() && !tmp.get(h.getHopID()).isLiteral())) {
-					sinHops.add(h);
-				}
+		//reorder inputs (ensure matrices/vectors come first) and prune literals
+		//note: we order by number of cells and subsequently sparsity to ensure
+		//that sparse inputs are used as the main input w/o unnecessary conversion
+		List<Hop> sinHops = inHops.stream()
+			.filter(h -> !(h.getDataType().isScalar() && tmp.get(h.getHopID()).isLiteral()))
+			.sorted(new HopInputComparator()).collect(Collectors.toList());
 		
 		//construct template node
 		ArrayList<CNode> inputs = new ArrayList<CNode>();
@@ -115,8 +114,8 @@ public class CellTpl extends BaseTpl
 		CNode output = tmp.get(hop.getHopID());
 		CNodeCell tpl = new CNodeCell(inputs, output);
 		tpl.setCellType(TemplateUtils.getCellType(hop));
-		tpl.setSparseSafe((HopRewriteUtils.isBinary(hop, OpOp2.MULT) && hop.getInput().contains(sinHops.getFirst()))
-				|| (HopRewriteUtils.isBinary(hop, OpOp2.DIV) && hop.getInput().get(0) == sinHops.getFirst()));
+		tpl.setSparseSafe((HopRewriteUtils.isBinary(hop, OpOp2.MULT) && hop.getInput().contains(sinHops.get(0)))
+				|| (HopRewriteUtils.isBinary(hop, OpOp2.DIV) && hop.getInput().get(0) == sinHops.get(0)));
 		tpl.setRequiresCastDtm(hop instanceof AggBinaryOp);
 		
 		// return cplan instance
@@ -277,5 +276,29 @@ public class CellTpl extends BaseTpl
 		return hop.getDataType() == DataType.MATRIX && TemplateUtils.isOperationSupported(hop) && (hop instanceof UnaryOp 
 				|| isBinaryMatrixScalar || isBinaryMatrixVector || isBinaryMatrixMatrixDense 
 				|| isTernaryVectorScalarVector || isTernaryMatrixScalarMatrixDense);	
+	}
+	
+	/**
+	 * Comparator to order input hops of the cell template. We try to order 
+	 * matrices-vectors-scalars via sorting by number of cells and for 
+	 * equal number of cells by sparsity to prefer sparse inputs as the main 
+	 * input for sparsity exploitation.
+	 */
+	public static class HopInputComparator implements Comparator<Hop> 
+	{
+		@Override
+		public int compare(Hop h1, Hop h2) {
+			long ncells1 = h1.getDataType()==DataType.SCALAR ? Long.MIN_VALUE : 
+				h1.dimsKnown() ? h1.getDim1()*h1.getDim2() : Long.MAX_VALUE;
+			long ncells2 = h2.getDataType()==DataType.SCALAR ? Long.MIN_VALUE :
+				h2.dimsKnown() ? h2.getDim1()*h2.getDim2() : Long.MAX_VALUE;
+			if( ncells1 > ncells2 ) 
+				return -1;
+			else if( ncells1 < ncells2) 
+				return 1;
+			return Long.compare(
+				h1.dimsKnown(true) ? h1.getNnz() : ncells1, 
+				h2.dimsKnown(true) ? h2.getNnz() : ncells2);
+		}
 	}
 }

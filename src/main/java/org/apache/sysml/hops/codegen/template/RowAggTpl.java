@@ -20,9 +20,11 @@
 package org.apache.sysml.hops.codegen.template;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import org.apache.sysml.hops.AggBinaryOp;
 import org.apache.sysml.hops.AggUnaryOp;
@@ -100,10 +102,10 @@ public class RowAggTpl extends BaseTpl {
 		rConstructCplan(hop, memo, tmp, inHops, inHops2, compileLiterals);
 		hop.resetVisitStatus();
 		
-		//reorder inputs (ensure matrix is first input)
-		LinkedList<Hop> sinHops = new LinkedList<Hop>(inHops);
-		Hop X = inHops2.get("X");
-		sinHops.remove(X); sinHops.addFirst(X);
+		//reorder inputs (ensure matrix is first input, and other inputs ordered by size)
+		List<Hop> sinHops = inHops.stream()
+			.filter(h -> !(h.getDataType().isScalar() && tmp.get(h.getHopID()).isLiteral()))
+			.sorted(new HopInputComparator(inHops2.get("X"))).collect(Collectors.toList());
 		
 		//construct template node
 		ArrayList<CNode> inputs = new ArrayList<CNode>();
@@ -215,5 +217,30 @@ public class RowAggTpl extends BaseTpl {
 		}
 		
 		tmp.put(hop.getHopID(), out);
+	}
+	
+	/**
+	 * Comparator to order input hops of the row aggregate template. We try 
+	 * to order matrices-vectors-scalars via sorting by number of cells but 
+	 * we keep the given main input always at the first position.
+	 */
+	public static class HopInputComparator implements Comparator<Hop> 
+	{
+		private final Hop _X;
+		
+		public HopInputComparator(Hop X) {
+			_X = X;
+		}
+		
+		@Override
+		public int compare(Hop h1, Hop h2) {
+			long ncells1 = h1.getDataType()==DataType.SCALAR ? Long.MIN_VALUE : 
+				(h1==_X) ? Long.MAX_VALUE : 
+				h1.dimsKnown() ? h1.getDim1()*h1.getDim2() : Long.MAX_VALUE-1;
+			long ncells2 = h2.getDataType()==DataType.SCALAR ? Long.MIN_VALUE : 
+				(h2==_X) ? Long.MAX_VALUE : 
+				h2.dimsKnown() ? h2.getDim1()*h2.getDim2() : Long.MAX_VALUE-1;
+			return (ncells1 > ncells2) ? -1 : (ncells1 < ncells2) ? 1 : 0; 
+		}
 	}
 }

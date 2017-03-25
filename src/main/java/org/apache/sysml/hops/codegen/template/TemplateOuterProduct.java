@@ -46,9 +46,9 @@ import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.runtime.codegen.SpoofOuterProduct.OutProdType;
 import org.apache.sysml.runtime.matrix.data.Pair;
 
-public class OuterProductTpl extends BaseTpl {
+public class TemplateOuterProduct extends TemplateBase {
 	
-	public OuterProductTpl() {
+	public TemplateOuterProduct() {
 		super(TemplateType.OuterProdTpl);
 	}
 

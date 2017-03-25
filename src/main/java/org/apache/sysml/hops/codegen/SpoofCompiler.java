@@ -41,9 +41,9 @@ import org.apache.sysml.hops.codegen.cplan.CNodeTernary.TernaryType;
 import org.apache.sysml.hops.codegen.cplan.CNodeTpl;
 import org.apache.sysml.hops.codegen.cplan.CNodeUnary;
 import org.apache.sysml.hops.codegen.cplan.CNodeUnary.UnaryType;
-import org.apache.sysml.hops.codegen.template.BaseTpl;
-import org.apache.sysml.hops.codegen.template.BaseTpl.CloseType;
-import org.apache.sysml.hops.codegen.template.BaseTpl.TemplateType;
+import org.apache.sysml.hops.codegen.template.TemplateBase;
+import org.apache.sysml.hops.codegen.template.TemplateBase.CloseType;
+import org.apache.sysml.hops.codegen.template.TemplateBase.TemplateType;
 import org.apache.sysml.hops.codegen.template.CPlanMemoTable;
 import org.apache.sysml.hops.codegen.template.CPlanMemoTable.MemoTableEntry;
 import org.apache.sysml.hops.codegen.template.CPlanMemoTable.MemoTableEntrySet;
@@ -317,7 +317,7 @@ public class SpoofCompiler
 			rExploreCPlans(hop, memo, compileLiterals);
 		
 		//select optimal cplan candidates
-		memo.pruneSuboptimal();
+		memo.pruneSuboptimal(roots);
 		
 		//construct actual cplan representations
 		LinkedHashMap<Long, Pair<Hop[],CNodeTpl>> ret = new LinkedHashMap<Long, Pair<Hop[],CNodeTpl>>();
@@ -341,7 +341,7 @@ public class SpoofCompiler
 			rExploreCPlans(c, memo, compileLiterals);
 		
 		//open initial operator plans, if possible
-		for( BaseTpl tpl : TemplateUtils.TEMPLATES )
+		for( TemplateBase tpl : TemplateUtils.TEMPLATES )
 			if( tpl.open(hop) )
 				memo.add(hop, tpl.getType());
 		
@@ -349,7 +349,7 @@ public class SpoofCompiler
 		for( Hop c : hop.getInput() ) {
 			if( memo.contains(c.getHopID()) )
 				for( MemoTableEntry me : memo.getDistinct(c.getHopID()) ) {
-					BaseTpl tpl = TemplateUtils.createTemplate(me.type, me.closed);
+					TemplateBase tpl = TemplateUtils.createTemplate(me.type, me.closed);
 					if( tpl.fuse(hop, c) ) {
 						int pos = hop.getInput().indexOf(c);
 						MemoTableEntrySet P = new MemoTableEntrySet(tpl.getType(), pos, c.getHopID(), tpl.isClosed());
@@ -376,7 +376,7 @@ public class SpoofCompiler
 			Iterator<MemoTableEntry> iter = memo.get(hop.getHopID()).iterator();
 			while( iter.hasNext() ) {
 				MemoTableEntry me = iter.next();
-				BaseTpl tpl = TemplateUtils.createTemplate(me.type);
+				TemplateBase tpl = TemplateUtils.createTemplate(me.type);
 				CloseType ccode = tpl.close(hop);
 				if( ccode == CloseType.CLOSED_INVALID )
 					iter.remove();

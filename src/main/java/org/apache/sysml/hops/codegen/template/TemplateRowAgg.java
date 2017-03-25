@@ -32,6 +32,7 @@ import org.apache.sysml.hops.BinaryOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.IndexingOp;
 import org.apache.sysml.hops.LiteralOp;
+import org.apache.sysml.hops.UnaryOp;
 import org.apache.sysml.hops.codegen.cplan.CNode;
 import org.apache.sysml.hops.codegen.cplan.CNodeBinary;
 import org.apache.sysml.hops.codegen.cplan.CNodeBinary.BinType;
@@ -50,9 +51,9 @@ import org.apache.sysml.hops.Hop.OpOp2;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.matrix.data.Pair;
 
-public class RowAggTpl extends BaseTpl {
+public class TemplateRowAgg extends TemplateBase {
 
-	public RowAggTpl() {
+	public TemplateRowAgg() {
 		super(TemplateType.RowAggTpl);
 	}
 	
@@ -71,6 +72,7 @@ public class RowAggTpl extends BaseTpl {
 		return !isClosed() && 
 			(  (hop instanceof BinaryOp && (HopRewriteUtils.isBinaryMatrixColVectorOperation(hop)
 					|| HopRewriteUtils.isBinaryMatrixScalarOperation(hop))) 
+			|| (hop instanceof UnaryOp && TemplateCell.isValidOperation(hop))		
 			|| (hop instanceof AggUnaryOp && ((AggUnaryOp)hop).getDirection()==Direction.Col)
 			|| (hop instanceof AggBinaryOp && HopRewriteUtils.isTransposeOperation(hop.getInput().get(0))));
 	}
@@ -132,7 +134,7 @@ public class RowAggTpl extends BaseTpl {
 				inHops.add(c);
 			}
 		}
-				
+		
 		//construct cnode for current hop
 		CNode out = null;
 		if(hop instanceof AggUnaryOp)
@@ -178,6 +180,17 @@ public class RowAggTpl extends BaseTpl {
 					inHops2.put("X", hop.getInput().get(0));
 				}
 			}
+		}
+		else if(hop instanceof UnaryOp)
+		{
+			CNode cdata1 = tmp.get(hop.getInput().get(0).getHopID());
+			if( TemplateUtils.isColVector(cdata1) )
+				cdata1 = new CNodeUnary(cdata1, UnaryType.LOOKUP_R);
+			else if( cdata1 instanceof CNodeData && hop.getInput().get(0).getDataType().isMatrix() )
+				cdata1 = new CNodeUnary(cdata1, UnaryType.LOOKUP_RC);
+			
+			String primitiveOpName = ((UnaryOp)hop).getOp().toString();
+			out = new CNodeUnary(cdata1, UnaryType.valueOf(primitiveOpName));
 		}
 		else if(hop instanceof BinaryOp)
 		{

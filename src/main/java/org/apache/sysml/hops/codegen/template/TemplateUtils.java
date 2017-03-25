@@ -40,7 +40,7 @@ import org.apache.sysml.hops.codegen.cplan.CNodeData;
 import org.apache.sysml.hops.codegen.cplan.CNodeTernary;
 import org.apache.sysml.hops.codegen.cplan.CNodeUnary;
 import org.apache.sysml.hops.codegen.cplan.CNodeUnary.UnaryType;
-import org.apache.sysml.hops.codegen.template.BaseTpl.TemplateType;
+import org.apache.sysml.hops.codegen.template.TemplateBase.TemplateType;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.hops.codegen.cplan.CNodeTernary.TernaryType;
 import org.apache.sysml.hops.codegen.cplan.CNodeTpl;
@@ -51,7 +51,7 @@ import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class TemplateUtils 
 {
-	public static final BaseTpl[] TEMPLATES = new BaseTpl[]{new RowAggTpl(), new CellTpl(), new OuterProductTpl()};
+	public static final TemplateBase[] TEMPLATES = new TemplateBase[]{new TemplateRowAgg(), new TemplateCell(), new TemplateOuterProduct()};
 	
 	public static boolean isVector(Hop hop) {
 		return (hop.getDataType() == DataType.MATRIX 
@@ -174,16 +174,16 @@ public class TemplateUtils
 		return ret;
 	}
 
-	public static BaseTpl createTemplate(TemplateType type) {
+	public static TemplateBase createTemplate(TemplateType type) {
 		return createTemplate(type, false);
 	}
 	
-	public static BaseTpl createTemplate(TemplateType type, boolean closed) {
-		BaseTpl tpl = null;
+	public static TemplateBase createTemplate(TemplateType type, boolean closed) {
+		TemplateBase tpl = null;
 		switch( type ) {
-			case CellTpl: tpl = new CellTpl(); break;
-			case RowAggTpl: tpl = new RowAggTpl(); break;
-			case OuterProdTpl: tpl = new OuterProductTpl(); break;
+			case CellTpl: tpl = new TemplateCell(); break;
+			case RowAggTpl: tpl = new TemplateRowAgg(); break;
+			case OuterProdTpl: tpl = new TemplateOuterProduct(); break;
 		}
 		tpl._closed = closed;
 		return tpl;

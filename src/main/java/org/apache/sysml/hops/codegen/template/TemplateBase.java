@@ -23,12 +23,17 @@ import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.codegen.cplan.CNodeTpl;
 import org.apache.sysml.runtime.matrix.data.Pair;
 
-public abstract class BaseTpl 
+public abstract class TemplateBase 
 {	
 	public enum TemplateType {
-		CellTpl,
+		RowAggTpl,
 		OuterProdTpl,
-		RowAggTpl
+		CellTpl;
+		
+		//rank in preferred order
+		public int getRank() {
+			return this.ordinal();
+		}
 	}
 	
 	public enum CloseType {
@@ -40,7 +45,7 @@ public abstract class BaseTpl
 	protected TemplateType _type = null;
 	protected boolean _closed = false;
 	
-	protected BaseTpl(TemplateType type) {
+	protected TemplateBase(TemplateType type) {
 		_type = type;
 		_closed = false;
 	}

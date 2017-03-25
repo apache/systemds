@@ -35,19 +35,18 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.codegen.SpoofCompiler;
-import org.apache.sysml.hops.codegen.template.BaseTpl.TemplateType;
-import org.apache.sysml.hops.rewrite.HopRewriteUtils;
+import org.apache.sysml.hops.codegen.template.TemplateBase.TemplateType;
 
 public class CPlanMemoTable 
 {
 	private static final Log LOG = LogFactory.getLog(SpoofCompiler.class.getName());
 	
-	private HashMap<Long, ArrayList<MemoTableEntry>> _plans;
-	private HashMap<Long, Hop> _hopRefs;
-	private HashSet<Long> _plansBlacklist;
+	protected HashMap<Long, List<MemoTableEntry>> _plans;
+	protected HashMap<Long, Hop> _hopRefs;
+	protected HashSet<Long> _plansBlacklist;
 	
 	public CPlanMemoTable() {
-		_plans = new HashMap<Long, ArrayList<MemoTableEntry>>();
+		_plans = new HashMap<Long, List<MemoTableEntry>>();
 		_hopRefs = new HashMap<Long, Hop>();
 		_plansBlacklist = new HashSet<Long>();
 	}
@@ -94,6 +93,16 @@ public class CPlanMemoTable
 			_plans.put(hop.getHopID(), new ArrayList<MemoTableEntry>());
 		_plans.get(hop.getHopID()).addAll(P.plans);
 	}
+	
+	public void remove(Hop hop, HashSet<MemoTableEntry> blackList) {
+		_plans.put(hop.getHopID(), _plans.get(hop.getHopID()).stream()
+			.filter(p -> !blackList.contains(p)).collect(Collectors.toList()));	
+	}
+	
+	public void setDistinct(long hopID, List<MemoTableEntry> plans) {
+		_plans.put(hopID, plans.stream()
+			.distinct().collect(Collectors.toList()));
+	}
 
 	@SuppressWarnings("unchecked")
 	public void pruneRedundant(long hopID) {
@@ -102,7 +111,7 @@ public class CPlanMemoTable
 		
 		//prune redundant plans (i.e., equivalent) 
 		HashSet<MemoTableEntry> set = new HashSet<MemoTableEntry>();
-		ArrayList<MemoTableEntry> list = _plans.get(hopID);
+		List<MemoTableEntry> list = _plans.get(hopID);
 		for( MemoTableEntry me : list )
 			set.add(me);
 		
@@ -127,13 +136,13 @@ public class CPlanMemoTable
 		list.addAll(CollectionUtils.subtract(set, rmList));
 	}
 
-	public void pruneSuboptimal() {
+	public void pruneSuboptimal(ArrayList<Hop> roots) {
 		if( SpoofCompiler.LDEBUG )
 			LOG.info("#1: Memo before plan selection ("+size()+" plans)\n"+this);
 		
 		//build index of referenced entries
 		HashSet<Long> ix = new HashSet<Long>();
-		for( Entry<Long, ArrayList<MemoTableEntry>> e : _plans.entrySet() )
+		for( Entry<Long, List<MemoTableEntry>> e : _plans.entrySet() )
 			for( MemoTableEntry me : e.getValue() ) {
 				ix.add(me.input1); 
 				ix.add(me.input2); 
@@ -141,15 +150,13 @@ public class CPlanMemoTable
 			}
 		
 		//prune single-operation (not referenced, and no child references)
-		Iterator<Entry<Long, ArrayList<MemoTableEntry>>> iter = _plans.entrySet().iterator();
+		Iterator<Entry<Long, List<MemoTableEntry>>> iter = _plans.entrySet().iterator();
 		while( iter.hasNext() ) {
-			Entry<Long, ArrayList<MemoTableEntry>> e = iter.next();
+			Entry<Long, List<MemoTableEntry>> e = iter.next();
 			if( !ix.contains(e.getKey()) ) {
-				ArrayList<MemoTableEntry> list = e.getValue();
-				for( int i=0; i<list.size(); i++ )
-					if( !list.get(i).hasPlanRef() )
-						list.remove(i--);
-				if( list.isEmpty() )
+				e.setValue(e.getValue().stream().filter(
+					p -> p.hasPlanRef()).collect(Collectors.toList()));
+				if( e.getValue().isEmpty() )
 					iter.remove();
 			}
 		}
@@ -157,12 +164,22 @@ public class CPlanMemoTable
 		//prune dominated plans (e.g., plan referenced by other plan and this
 		//other plan is single consumer) by marking it as blacklisted because
 		//the chain of entries is still required for cplan construction
-		for( Entry<Long, ArrayList<MemoTableEntry>> e : _plans.entrySet() )
+		for( Entry<Long, List<MemoTableEntry>> e : _plans.entrySet() )
 			for( MemoTableEntry me : e.getValue() ) {
 				for( int i=0; i<=2; i++ )
 					if( me.isPlanRef(i) && _hopRefs.get(me.intput(i)).getParent().size()==1 )
 						_plansBlacklist.add(me.intput(i));
 			}
+		
+		//core plan selection
+		switch( SpoofCompiler.PLAN_SEL_POLICY ) {
+			case FUSE_ALL: 
+				new PlanSelectionFuseAll().selectPlans(this, roots);
+				break;
+			case FUSE_NO_REDUNDANCY:
+			case FUSE_COST_BASED:
+				throw new RuntimeException("Not implemented yet.");
+		}
 		
 		if( SpoofCompiler.LDEBUG )
 			LOG.info("#2: Memo after plan selection ("+size()+" plans)\n"+this);
@@ -183,51 +200,21 @@ public class CPlanMemoTable
 		List<MemoTableEntry> tmp = get(hopID);
 		if( tmp == null || tmp.isEmpty() )
 			return null;
-		
-		//get first plan by type preference
-		TemplateType[] ttPrefOrder = new TemplateType[]{TemplateType.RowAggTpl, 
-				TemplateType.OuterProdTpl, TemplateType.CellTpl}; 
-		for( TemplateType pref : ttPrefOrder )
-			for( MemoTableEntry me : tmp )
-				if( me.type == pref && isValid(me, _hopRefs.get(hopID)) )
-					return me;
-		return null;
+
+		//single plan per type, get plan w/ best rank in preferred order
+		//but ensure that the plans valid as a top-level plan
+		return tmp.stream().filter(p -> PlanSelection.isValid(p, _hopRefs.get(hopID)))
+			.min(Comparator.comparing(p -> p.type.getRank())).orElse(null);
 	}
 	
-	//TODO revisit requirement for preference once cost-based pruning (pruneSuboptimal) ready
 	public MemoTableEntry getBest(long hopID, TemplateType pref) {
 		List<MemoTableEntry> tmp = get(hopID);
-		if( tmp.size()==1 ) //single plan available
-			return tmp.get(0);
-		
-		//try to find plan with preferred type
-		if( SpoofCompiler.LDEBUG )
-			LOG.warn("Multiple memo table entries available, searching for preferred type.");
-		ArrayList<MemoTableEntry> tmp2 = new ArrayList<MemoTableEntry>();
-		for( MemoTableEntry me : tmp )
-			if( me.type == pref )
-				tmp2.add(me);
-		if( !tmp2.isEmpty() ) {
-			if( tmp2.size() > 1 && SpoofCompiler.LDEBUG )
-				LOG.warn("Multiple memo table entries w/ preferred type available, return max refs entry.");
-			return getMaxRefsEntry(tmp2);
-		}
-		else {
-			if( SpoofCompiler.LDEBUG )
-				LOG.warn("Multiple memo table entries available but none with preferred type, return max refs entry.");
-			return getMaxRefsEntry(tmp);
-		}
-	}
-	
-	private static MemoTableEntry getMaxRefsEntry(List<MemoTableEntry> tmp) {
-		return Collections.max(tmp, Comparator.comparing(p -> p.countPlanRefs()));
-	}
-	
-	private static boolean isValid(MemoTableEntry me, Hop hop) {
-		return (me.type == TemplateType.OuterProdTpl 
-				&& (me.closed || HopRewriteUtils.isBinaryMatrixMatrixOperation(hop)))
-			|| (me.type == TemplateType.RowAggTpl && me.closed)	
-			|| (me.type == TemplateType.CellTpl);
+		if( tmp == null || tmp.isEmpty() )
+			return null;
+
+		//single plan per type, get plan w/ best rank in preferred order
+		return Collections.min(tmp, Comparator.comparing(
+			p -> (p.type==pref) ? -1 : p.type.getRank()));
 	}
 	
 	public int size() {
@@ -242,7 +229,7 @@ public class CPlanMemoTable
 		sb.append("----------------------------------\n");
 		sb.append("MEMO TABLE: \n");
 		sb.append("----------------------------------\n");
-		for( Entry<Long, ArrayList<MemoTableEntry>> e : _plans.entrySet() ) {
+		for( Entry<Long, List<MemoTableEntry>> e : _plans.entrySet() ) {
 			sb.append(e.getKey() + " "+_hopRefs.get(e.getKey()).getOpString()+": ");
 			sb.append(Arrays.toString(e.getValue().toArray(new MemoTableEntry[0]))+"\n");
 		}
@@ -252,6 +239,10 @@ public class CPlanMemoTable
 		sb.append("----------------------------------\n");
 		return sb.toString();	
 	}
+
+	////////////////////////////////////////
+	// Memo table entry abstractions
+	//////
 	
 	public static class MemoTableEntry 
 	{

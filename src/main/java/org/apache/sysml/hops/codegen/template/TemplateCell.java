@@ -52,9 +52,9 @@ import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.matrix.data.Pair;
 
-public class CellTpl extends BaseTpl 
+public class TemplateCell extends TemplateBase 
 {	
-	public CellTpl() {
+	public TemplateCell() {
 		super(TemplateType.CellTpl);
 	}
 
@@ -239,7 +239,7 @@ public class CellTpl extends BaseTpl
 		tmp.put(hop.getHopID(), out);
 	}
 	
-	private static boolean isValidOperation(Hop hop) 
+	public static boolean isValidOperation(Hop hop) 
 	{	
 		//prepare indicators for binary operations
 		boolean isBinaryMatrixScalar = false;

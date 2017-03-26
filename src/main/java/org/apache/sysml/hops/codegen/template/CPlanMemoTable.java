@@ -172,19 +172,13 @@ public class CPlanMemoTable
 			}
 		
 		//core plan selection
-		switch( SpoofCompiler.PLAN_SEL_POLICY ) {
-			case FUSE_ALL: 
-				new PlanSelectionFuseAll().selectPlans(this, roots);
-				break;
-			case FUSE_NO_REDUNDANCY:
-			case FUSE_COST_BASED:
-				throw new RuntimeException("Not implemented yet.");
-		}
+		PlanSelection selector = SpoofCompiler.createPlanSelector();
+		selector.selectPlans(this, roots);
 		
 		if( SpoofCompiler.LDEBUG )
 			LOG.info("#2: Memo after plan selection ("+size()+" plans)\n"+this);
 	}
-
+	
 	public List<MemoTableEntry> get(long hopID) {
 		return _plans.get(hopID);
 	}

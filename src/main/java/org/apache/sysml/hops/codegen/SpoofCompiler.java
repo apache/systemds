@@ -45,6 +45,9 @@ import org.apache.sysml.hops.codegen.template.TemplateBase;
 import org.apache.sysml.hops.codegen.template.TemplateBase.CloseType;
 import org.apache.sysml.hops.codegen.template.TemplateBase.TemplateType;
 import org.apache.sysml.hops.codegen.template.CPlanMemoTable;
+import org.apache.sysml.hops.codegen.template.PlanSelection;
+import org.apache.sysml.hops.codegen.template.PlanSelectionFuseAll;
+import org.apache.sysml.hops.codegen.template.PlanSelectionFuseNoRedundancy;
 import org.apache.sysml.hops.codegen.template.CPlanMemoTable.MemoTableEntry;
 import org.apache.sysml.hops.codegen.template.CPlanMemoTable.MemoTableEntrySet;
 import org.apache.sysml.hops.codegen.template.TemplateUtils;
@@ -82,10 +85,10 @@ public class SpoofCompiler
 	public static boolean LDEBUG = false;
 	public static final boolean RECOMPILE_CODEGEN = true;
 	public static PlanCache PLAN_CACHE_POLICY = PlanCache.CSLH;
-	public static final PlanSelection PLAN_SEL_POLICY = PlanSelection.FUSE_ALL; 
+	public static final PlanSelector PLAN_SEL_POLICY = PlanSelector.FUSE_ALL; 
 	public static final boolean PRUNE_REDUNDANT_PLANS = true;
 	
-	public enum PlanSelection {
+	public enum PlanSelector {
 		FUSE_ALL,             //maximal fusion, possible w/ redundant compute
 		FUSE_NO_REDUNDANCY,   //fusion without redundant compute 
 		FUSE_COST_BASED,      //cost-based decision on materialization points
@@ -566,5 +569,23 @@ public class SpoofCompiler
 				ret |= rHasLookupRC1(tmp, mainInput);
 		}
 		return ret;
+	}
+
+	/**
+	 * Factory method for alternative plan selection policies.
+	 * 
+	 * @return plan selector
+	 */
+	public static PlanSelection createPlanSelector() {
+		switch( PLAN_SEL_POLICY ) {
+			case FUSE_ALL: 
+				return new PlanSelectionFuseAll();
+			case FUSE_NO_REDUNDANCY: 
+				return new PlanSelectionFuseNoRedundancy();
+			case FUSE_COST_BASED:
+			default:	
+				throw new RuntimeException("Unsupported "
+					+ "plan selector: "+PLAN_SEL_POLICY);
+		}
 	}
 }

@@ -31,13 +31,16 @@ import org.apache.sysml.hops.codegen.template.CPlanMemoTable.MemoTableEntry;
 import org.apache.sysml.hops.codegen.template.TemplateBase.TemplateType;
 
 /**
- * This plan selection heuristic aims for maximal fusion, which
- * potentially leads to overlapping fused operators and thus,
- * redundant computation but with a minimal number of materialized
- * intermediate results.
+ * This plan selection heuristic aims for fusion without any redundant 
+ * computation, which, however, potentially leads to more materialized 
+ * intermediates than the fuse all heuristic.
+ * <p>
+ * NOTE: This heuristic is essentially the same as FuseAll, except that 
+ * any plans that refer to a hop with multiple consumers are removed in 
+ * a pre-processing step.
  * 
  */
-public class PlanSelectionFuseAll extends PlanSelection
+public class PlanSelectionFuseNoRedundancy extends PlanSelection
 {	
 	private HashMap<Long, List<MemoTableEntry>> _bestPlans = 
 			new HashMap<Long, List<MemoTableEntry>>();
@@ -57,6 +60,17 @@ public class PlanSelectionFuseAll extends PlanSelection
 	{	
 		if( isVisited(current.getHopID(), currentType) )
 			return;
+		
+		//step 0: remove plans that refer to a common partial plan
+		if( memo.contains(current.getHopID()) ) {
+			HashSet<MemoTableEntry> rmSet = new HashSet<MemoTableEntry>();
+			List<MemoTableEntry> hopP = memo.get(current.getHopID());
+			for( MemoTableEntry e1 : hopP )
+				for( int i=0; i<3; i++ )
+					if( e1.isPlanRef(i) && current.getInput().get(i).getParent().size()>1 )
+						rmSet.add(e1); //remove references to hops w/ multiple consumers
+			memo.remove(current, rmSet);
+		}
 		
 		//step 1: prune subsumed plans of same type
 		if( memo.contains(current.getHopID()) ) {

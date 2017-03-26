@@ -21,14 +21,18 @@ package org.apache.sysml.hops.codegen.template;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.codegen.template.CPlanMemoTable.MemoTableEntry;
 import org.apache.sysml.hops.codegen.template.TemplateBase.TemplateType;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 public abstract class PlanSelection 
 {
+	private final HashSet<VisitMark> _visited = new HashSet<VisitMark>();
+	
 	/**
 	 * Given a HOP DAG G, and a set of partial fusions plans P, find the set of optimal, 
 	 * non-conflicting fusion plans P' that applied to G minimizes costs C with
@@ -54,11 +58,19 @@ public abstract class PlanSelection
 			|| (me.type == TemplateType.CellTpl);
 	}
 	
+	public boolean isVisited(long hopID, TemplateType type) {
+		return _visited.contains(new VisitMark(hopID, type));
+	}
+	
+	public void setVisited(long hopID, TemplateType type) {
+		_visited.add(new VisitMark(hopID, type));
+	}
+	
 	/**
 	 * Basic plan comparator to compare memo table entries with regard to
 	 * a pre-defined template preference order and the number of references.
 	 */
-	protected class BasicPlanComparator implements Comparator<MemoTableEntry> {
+	protected static class BasicPlanComparator implements Comparator<MemoTableEntry> {
 		@Override
 		public int compare(MemoTableEntry o1, MemoTableEntry o2) {
 			//for different types, select preferred type
@@ -68,6 +80,27 @@ public abstract class PlanSelection
 			//for same type, prefer plan with more refs
 			return Integer.compare(
 				3-o1.countPlanRefs(), 3-o2.countPlanRefs());
+		}
+	}
+	
+	private static class VisitMark {
+		private final long _hopID;
+		private final TemplateType _type;
+		
+		public VisitMark(long hopID, TemplateType type) {
+			_hopID = hopID;
+			_type = type;
+		}
+		@Override
+		public int hashCode() {
+			return UtilFunctions.longlongHashCode(
+				_hopID, (_type!=null)?_type.hashCode():0);
+		}
+		@Override 
+		public boolean equals(Object o) {
+			return (o instanceof VisitMark
+				&& _hopID == ((VisitMark)o)._hopID
+				&& _type == ((VisitMark)o)._type);
 		}
 	}
 }

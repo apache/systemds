@@ -19,15 +19,18 @@
 
 package org.apache.sysml.runtime.controlprogram.parfor;
 
-import java.util.Collection;
-
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.Stat;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.StatisticMonitor;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
+
+import java.util.Collection;
 
 /**
  * Instances of this class can be used to execute tasks in parallel. Within each ParWorker 
@@ -145,6 +148,13 @@ public class LocalParWorker extends ParWorker implements Runnable
 			StatisticMonitor.putPWStat(_workerID, Stat.PARWRK_NUMTASKS, _numTasks);
 			StatisticMonitor.putPWStat(_workerID, Stat.PARWRK_NUMITERS, _numIters);
 			StatisticMonitor.putPWStat(_workerID, Stat.PARWRK_EXEC_T, time1.stop());
+		}
+		if (DMLScript.USE_ACCELERATOR){
+			try {
+				GPUContext.getGPUContext().destroy();
+			} catch(DMLRuntimeException e){
+				throw new RuntimeException(e);
+			}
 		}
 	}
 }

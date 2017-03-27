@@ -381,13 +381,13 @@ public class GPUContext {
 	 * @return the device properties
 	 */
 	private static cudaDeviceProp getGPUProperties(int device){
-    // do once - initialization of GPU
-    if (!initialized) initializeGPU();
+		// do once - initialization of GPU
+		if (!initialized) initializeGPU();
 
-    // the access to the static class member deviceProperties is
-    // assumed to be safe since either the static initializer
-    // will access it or one of the member methods which access by their
-    // device number
+		// the access to the static class member deviceProperties is
+		// assumed to be safe since either the static initializer
+		// will access it or one of the member methods which access by their
+		// device number
 		if (deviceProperties[device] == null) {
 			cudaDeviceProp properties = new cudaDeviceProp();
 			cudaGetDeviceProperties(properties, device);
@@ -449,6 +449,10 @@ public class GPUContext {
     return kernels;
   }
 
+  public static int getDeviceCount() {
+	  if (!initialized) initializeGPU();
+	  return deviceCount;
+  }
   /**
    * Destroys this GPUContext object
    * This method MUST BE called so that the GPU is available to be used again

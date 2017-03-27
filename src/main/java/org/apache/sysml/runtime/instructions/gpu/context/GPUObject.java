@@ -84,7 +84,7 @@ public class GPUObject {
 	static LRUCacheMap<Long, LinkedList<Pointer>> freeCUDASpaceMap = new LRUCacheMap<Long, LinkedList<Pointer>>();
 
 	/** To record size of allocated blocks */
-	static HashMap<Pointer, Long> cudaBlockSizeMap = new HashMap<Pointer, Long>();
+	static HashMap<Pointer, Long> cudaBlockSizeMap = new HashMap<>();
 
 	/** Pointer to dense matrix */
 	public Pointer jcudaDenseMatrixPtr = null;
@@ -185,7 +185,7 @@ public class GPUObject {
 	 * @return jcuda pointer
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static Pointer allocate(String instructionName, long size) throws DMLRuntimeException {
+	public synchronized static Pointer allocate(String instructionName, long size) throws DMLRuntimeException {
 		return allocate(instructionName, size, 1);
 	}
 
@@ -199,7 +199,7 @@ public class GPUObject {
 	 * @return jcuda Pointer
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static Pointer allocate(String instructionName, long size, int statsCount) throws DMLRuntimeException{
+	public synchronized static Pointer allocate(String instructionName, long size, int statsCount) throws DMLRuntimeException{
 		long t0=0, t1=0, end=0;
 		Pointer A;
 		if (freeCUDASpaceMap.containsKey(size)) {
@@ -235,7 +235,7 @@ public class GPUObject {
 	 * Does lazy cudaFree calls
 	 * @param toFree {@link Pointer} instance to be freed
 	 */
-	public static void cudaFreeHelper(final Pointer toFree) {
+	public synchronized static void cudaFreeHelper(final Pointer toFree) {
 		cudaFreeHelper(null, toFree, false);
 	}
 
@@ -244,7 +244,7 @@ public class GPUObject {
 	 * @param toFree {@link Pointer} instance to be freed
 	 * @param eager true if to be done eagerly
 	 */
-	public static void cudaFreeHelper(final Pointer toFree, boolean eager) {
+	public synchronized static void cudaFreeHelper(final Pointer toFree, boolean eager) {
 		cudaFreeHelper(null, toFree, eager);
 	}
 
@@ -253,7 +253,7 @@ public class GPUObject {
 	 * @param instructionName name of the instruction for which to record per instruction free time, null if do not want to record
 	 * @param toFree {@link Pointer} instance to be freed
 	 */
-	public static void cudaFreeHelper(String instructionName, final Pointer toFree) {
+	public synchronized static void cudaFreeHelper(String instructionName, final Pointer toFree) {
 		cudaFreeHelper(instructionName, toFree, false);
 	}
 
@@ -263,7 +263,7 @@ public class GPUObject {
 	 * @param toFree {@link Pointer} instance to be freed
 	 * @param eager true if to be done eagerly
 	 */
-	public static void cudaFreeHelper(String instructionName, final Pointer toFree, boolean eager){
+	public synchronized static void cudaFreeHelper(String instructionName, final Pointer toFree, boolean eager){
 		long t0 = 0;
 		assert cudaBlockSizeMap.containsKey(toFree) : "ERROR : Internal state corrupted, cache block size map is not aware of a block it trying to free up";
 		long size = cudaBlockSizeMap.get(toFree);
@@ -292,6 +292,7 @@ public class GPUObject {
 	 * @return the debug string
 	 * @throws DMLRuntimeException  if DMLRuntimeException occurs
 	 */
+	@SuppressWarnings("unused")
 	public static String debugString(Pointer A, long rows, long cols) throws DMLRuntimeException {
 		StringBuffer sb = new StringBuffer();
         int len = toIntExact(rows * cols);

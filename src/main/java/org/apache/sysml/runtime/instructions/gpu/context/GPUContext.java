@@ -54,7 +54,6 @@ import static jcuda.jcudnn.JCudnn.cudnnCreate;
 import static jcuda.jcudnn.JCudnn.cudnnDestroy;
 import static jcuda.jcusparse.JCusparse.cusparseCreate;
 import static jcuda.jcusparse.JCusparse.cusparseDestroy;
-import static jcuda.runtime.JCuda.cudaGetDevice;
 import static jcuda.runtime.JCuda.cudaGetDeviceCount;
 import static jcuda.runtime.JCuda.cudaGetDeviceProperties;
 import static jcuda.runtime.JCuda.cudaMemGetInfo;
@@ -359,6 +358,7 @@ public class GPUContext {
       activeGPUContext.ensureComputeCapability();
       OptimizerUtils.GPU_MEMORY_BUDGET = activeGPUContext.getAvailableMemory();
 		  assignedGPUContextsMap.put(thisThread, activeGPUContext);
+		  LOG.trace("Created context for thread " + thisThread + ", with GPU " + deviceNum);
     }
     return activeGPUContext;
 	}

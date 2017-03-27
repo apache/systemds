@@ -26,15 +26,16 @@ import jcuda.jcublas.cublasFillMode;
 import jcuda.jcublas.cublasHandle;
 import jcuda.jcublas.cublasOperation;
 import jcuda.jcudnn.cudnnActivationDescriptor;
+import jcuda.jcudnn.cudnnBatchNormMode;
 import jcuda.jcudnn.cudnnConvolutionDescriptor;
 import jcuda.jcudnn.cudnnConvolutionFwdPreference;
 import jcuda.jcudnn.cudnnFilterDescriptor;
 import jcuda.jcudnn.cudnnHandle;
 import jcuda.jcudnn.cudnnPoolingDescriptor;
+import jcuda.jcudnn.cudnnStatus;
 import jcuda.jcudnn.cudnnTensorDescriptor;
 import jcuda.jcusparse.JCusparse;
 import jcuda.jcusparse.cusparseHandle;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
@@ -88,6 +89,9 @@ import org.apache.sysml.utils.Statistics;
 import static jcuda.jcublas.cublasOperation.CUBLAS_OP_N;
 import static jcuda.jcublas.cublasOperation.CUBLAS_OP_T;
 import static jcuda.jcudnn.JCudnn.cudnnActivationForward;
+import static jcuda.jcudnn.JCudnn.cudnnBatchNormalizationBackward;
+import static jcuda.jcudnn.JCudnn.cudnnBatchNormalizationForwardInference;
+import static jcuda.jcudnn.JCudnn.cudnnBatchNormalizationForwardTraining;
 import static jcuda.jcudnn.JCudnn.cudnnConvolutionBackwardData;
 import static jcuda.jcudnn.JCudnn.cudnnConvolutionBackwardFilter;
 import static jcuda.jcudnn.JCudnn.cudnnConvolutionForward;
@@ -126,11 +130,6 @@ import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice;
 import static org.apache.sysml.runtime.instructions.gpu.context.JCudaObject.allocate;
 import static org.apache.sysml.runtime.instructions.gpu.context.JCudaObject.cudaFreeHelper;
-import jcuda.jcudnn.cudnnBatchNormMode;
-import jcuda.jcudnn.cudnnStatus;
-import static jcuda.jcudnn.JCudnn.cudnnBatchNormalizationForwardInference;
-import static jcuda.jcudnn.JCudnn.cudnnBatchNormalizationForwardTraining;
-import static jcuda.jcudnn.JCudnn.cudnnBatchNormalizationBackward;
 
 //FIXME move could to respective instructions, this is not a block library
 public class LibMatrixCUDA {
@@ -2518,22 +2517,11 @@ public class LibMatrixCUDA {
 		Pointer A = getDensePointer(out, instName);
 		int rlen = (int) out.getNumRows();
 		int clen = (int) out.getNumColumns();
-//	    if(constant == 0) {
-//	    	out.getMatrixCharacteristics().setNonZeros(0);
-//	    }
-//	    else {
-//	    	out.getMatrixCharacteristics().setNonZeros(rlen*clen);
-//	    }
-		// dense_matrix_set(double* A,  double scalar, int rlen, int clen)
-
 		long t0=0;
 		if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
 		int size = rlen * clen;
 		kernels.launchKernel("fill", ExecutionConfig.getConfigForSimpleVectorOperations(size),
 						A, constant, size);
-		//		kernels.launchKernel("dense_matrix_set",
-		//						ExecutionConfig.getConfigForSimpleMatrixOperations(rlen, clen),
-		//						A, constant, rlen, clen);
 		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_FILL_KERNEL, System.nanoTime() - t0);
 	}
 
@@ -2549,9 +2537,6 @@ public class LibMatrixCUDA {
 	private static void deviceCopy(String instName, Pointer src, Pointer dest, int rlen, int clen) throws DMLRuntimeException {
 		long t0=0;
 		if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
-		//kernels.launchKernel("dense_matrix_copy",
-		//				ExecutionConfig.getConfigForSimpleMatrixOperations(rlen, clen),
-		//				src, dest, rlen, clen);
 		int size = rlen * clen * Sizeof.DOUBLE;
 		cudaMemcpy(dest, src, size, cudaMemcpyDeviceToDevice);
 		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_DEVICE_TO_DEVICE, System.nanoTime() - t0);

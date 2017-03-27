@@ -799,6 +799,10 @@ public class HopRewriteUtils
 		return (hop instanceof AggUnaryOp && ((AggUnaryOp)hop).getOp()==AggOp.SUM);
 	}
 	
+	public static boolean isSumSq(Hop hop) {
+		return (hop instanceof AggUnaryOp && ((AggUnaryOp)hop).getOp()==AggOp.SUM_SQ);
+	}
+	
 	public static boolean isNonZeroIndicator(Hop pred, Hop hop )
 	{
 		if( pred instanceof BinaryOp && ((BinaryOp)pred).getOp()==OpOp2.NOTEQUAL

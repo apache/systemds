@@ -31,6 +31,7 @@ import org.apache.sysml.hops.BinaryOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.LiteralOp;
 import org.apache.sysml.hops.TernaryOp;
+import org.apache.sysml.hops.Hop.AggOp;
 import org.apache.sysml.hops.Hop.Direction;
 import org.apache.sysml.hops.UnaryOp;
 import org.apache.sysml.hops.codegen.cplan.CNode;
@@ -191,8 +192,13 @@ public class TemplateUtils
 	
 	public static CellType getCellType(Hop hop) {
 		return (hop instanceof AggBinaryOp) ? CellType.FULL_AGG :
-			HopRewriteUtils.isSum(hop) ? ((((AggUnaryOp) hop).getDirection() == Direction.RowCol) ? 
+			(hop instanceof AggUnaryOp) ? ((((AggUnaryOp) hop).getDirection() == Direction.RowCol) ? 
 			CellType.FULL_AGG : CellType.ROW_AGG) : CellType.NO_AGG;
+	}
+	
+	public static AggOp getAggOp(Hop hop) {
+		return (hop instanceof AggUnaryOp) ? ((AggUnaryOp)hop).getOp() :
+			(hop instanceof AggBinaryOp) ? AggOp.SUM : null;
 	}
 	
 	public static OutProdType getOuterProductType(Hop X, Hop U, Hop V, Hop out) {

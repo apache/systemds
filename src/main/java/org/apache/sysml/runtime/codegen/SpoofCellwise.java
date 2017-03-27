@@ -29,7 +29,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.functionobjects.KahanFunction;
 import org.apache.sysml.runtime.functionobjects.KahanPlus;
+import org.apache.sysml.runtime.functionobjects.KahanPlusSq;
 import org.apache.sysml.runtime.instructions.cp.DoubleObject;
 import org.apache.sysml.runtime.instructions.cp.KahanObject;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
@@ -48,11 +50,19 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		ROW_AGG,
 	}
 	
+	//redefinition of Hop.AggOp for cleaner imports in generate class
+	public enum AggOp {
+		SUM, 
+		SUM_SQ,
+	}
+	
 	private final CellType _type;
+	private final AggOp _aggOp;
 	private final boolean _sparseSafe;
 	
-	public SpoofCellwise(CellType type, boolean sparseSafe) {
+	public SpoofCellwise(CellType type, AggOp aggOp, boolean sparseSafe) {
 		_type = type;
+		_aggOp = aggOp;
 		_sparseSafe = sparseSafe;
 	}
 	
@@ -64,6 +74,16 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		return _sparseSafe;
 	}
 	
+	private KahanFunction getAggFunction() {
+		switch( _aggOp ) {
+			case SUM: return KahanPlus.getKahanPlusFnObject();
+			case SUM_SQ: return KahanPlusSq.getKahanPlusSqFnObject();
+			default:
+				throw new RuntimeException("Unsupported "
+						+ "aggregation type: "+_aggOp.name());
+		}
+	}
+		
 	@Override
 	public ScalarObject execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, int k) 
 		throws DMLRuntimeException 
@@ -202,11 +222,9 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 	private double executeDenseAndAgg(double[] a, double[][] b, double[] scalars, int m, int n, boolean sparseSafe, int rl, int ru) 
 	{
 		KahanObject kbuff = new KahanObject(0, 0);
-		KahanPlus kplus = KahanPlus.getKahanPlusFnObject();
+		KahanFunction kplus = getAggFunction();
 
 		if( a == null && !sparseSafe ) { //empty
-			//note: we can't determine sparse-safeness by executing the operator once 
-			//as the output might change with different row indices
 			for( int i=rl; i<ru; i++ ) 
 				for( int j=0; j<n; j++ )
 					kplus.execute2(kbuff, genexec( 0, b, scalars, m, n, i, j ));
@@ -248,11 +266,9 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		else if( _type == CellType.ROW_AGG )
 		{
 			KahanObject kbuff = new KahanObject(0, 0);
-			KahanPlus kplus = KahanPlus.getKahanPlusFnObject();
+			KahanFunction kplus = getAggFunction();
 
 			if( a == null && !sparseSafe ) { //empty
-				//note: we can't determine sparse-safeness by executing the operator once 
-				//as the output might change with different row indices
 				for( int i=rl; i<ru; i++ ) { 
 					kbuff.set(0, 0);
 					for( int j=0; j<n; j++ )
@@ -279,7 +295,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 	private double executeSparseAndAgg(SparseBlock sblock, double[][] b, double[] scalars, int m, int n, boolean sparseSafe, int rl, int ru) 
 	{
 		KahanObject kbuff = new KahanObject(0, 0);
-		KahanPlus kplus = KahanPlus.getKahanPlusFnObject();
+		KahanFunction kplus = getAggFunction();
 		
 		if( sparseSafe ) {
 			if( sblock != null ) {
@@ -337,7 +353,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		else if( _type == CellType.ROW_AGG ) 
 		{
 			KahanObject kbuff = new KahanObject(0, 0);
-			KahanPlus kplus = KahanPlus.getKahanPlusFnObject();
+			KahanFunction kplus = getAggFunction();
 
 			if( sparseSafe ) {
 				if( sblock != null ) {

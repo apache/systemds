@@ -44,18 +44,20 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	private static final String TEST_NAME6 = TEST_NAME+6;
 	private static final String TEST_NAME7 = TEST_NAME+7;
 	private static final String TEST_NAME8 = TEST_NAME+8;
+	private static final String TEST_NAME9 = TEST_NAME+9; //sum((X + 7 * Y)^2)
 
 	private static final String TEST_DIR = "functions/codegen/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + CellwiseTmplTest.class.getSimpleName() + "/";
-	private final static String TEST_CONF = "SystemML-config-codegen.xml";
-	private final static File   TEST_CONF_FILE = new File(SCRIPT_DIR + TEST_DIR, TEST_CONF);
+	private final static String TEST_CONF6 = "SystemML-config-codegen6.xml";
+	private final static String TEST_CONF7 = "SystemML-config-codegen.xml";
+	private static String TEST_CONF = TEST_CONF7;
 	
 	private static final double eps = Math.pow(10, -10);
 	
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		for( int i=1; i<=8; i++ ) {
+		for( int i=1; i<=9; i++ ) {
 			addTestConfiguration( TEST_NAME+i, new TestConfiguration(
 					TEST_CLASS_DIR, TEST_NAME+i, new String[] {String.valueOf(i)}) );
 		}
@@ -101,6 +103,11 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	public void testCodegenCellwiseRewrite8() {
 		testCodegenIntegration( TEST_NAME8, true, ExecType.CP  );
 	}
+	
+	@Test
+	public void testCodegenCellwiseRewrite9() {
+		testCodegenIntegration( TEST_NAME9, true, ExecType.CP  );
+	}
 
 	@Test
 	public void testCodegenCellwise1() {
@@ -142,6 +149,11 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	public void testCodegenCellwise8() {
 		testCodegenIntegration( TEST_NAME8, false, ExecType.CP  );
 	}
+	
+	@Test
+	public void testCodegenCellwise9() {
+		testCodegenIntegration( TEST_NAME9, false, ExecType.CP  );
+	}
 
 	@Test
 	public void testCodegenCellwiseRewrite1_sp() {
@@ -158,10 +170,16 @@ public class CellwiseTmplTest extends AutomatedTestBase
 		testCodegenIntegration( TEST_NAME8, true, ExecType.SPARK );
 	}
 	
+	@Test
+	public void testCodegenCellwiseRewrite9_sp() {
+		testCodegenIntegration( TEST_NAME9, true, ExecType.SPARK );
+	}
+	
 	private void testCodegenIntegration( String testname, boolean rewrites, ExecType instType )
 	{	
 		
 		boolean oldRewrites = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
+		String oldTestConf = TEST_CONF;
 		
 		switch( instType ){
 			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
@@ -171,6 +189,9 @@ public class CellwiseTmplTest extends AutomatedTestBase
 				break;
 			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}
+		
+		if( testname.equals(TEST_NAME9) )
+			TEST_CONF = TEST_CONF6;
 		
 		try
 		{
@@ -189,7 +210,7 @@ public class CellwiseTmplTest extends AutomatedTestBase
 			runTest(true, false, null, -1); 
 			runRScript(true); 
 			
-			if(testname.equals(TEST_NAME6) || testname.equals(TEST_NAME7) ) {
+			if(testname.equals(TEST_NAME6) || testname.equals(TEST_NAME7) || testname.equals(TEST_NAME9) ) {
 				//compare scalars 
 				HashMap<CellIndex, Double> dmlfile = readDMLScalarFromHDFS("S");
 				HashMap<CellIndex, Double> rfile  = readRScalarFromFS("S");
@@ -212,6 +233,7 @@ public class CellwiseTmplTest extends AutomatedTestBase
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldRewrites;
 			OptimizerUtils.ALLOW_AUTO_VECTORIZATION = true;
 			OptimizerUtils.ALLOW_OPERATOR_FUSION = true;
+			TEST_CONF = oldTestConf;
 		}
 	}	
 
@@ -222,6 +244,7 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	@Override
 	protected File getConfigTemplateFile() {
 		// Instrumentation in this test's output log to show custom configuration file used for template.
+		File TEST_CONF_FILE = new File(SCRIPT_DIR + TEST_DIR, TEST_CONF);
 		System.out.println("This test case overrides default configuration with " + TEST_CONF_FILE.getPath());
 		return TEST_CONF_FILE;
 	}

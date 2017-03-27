@@ -27,8 +27,6 @@ public class CNodeRowAgg extends CNodeTpl
 {
 	private static final String TEMPLATE = 
 			  "package codegen;\n"
-			+ "import java.util.Arrays;\n"
-			+ "import java.util.ArrayList;\n"
 			+ "import org.apache.sysml.runtime.codegen.LibSpoofPrimitives;\n"
 			+ "import org.apache.sysml.runtime.codegen.SpoofRowAggregate;\n"
 			+ "\n"
@@ -38,10 +36,10 @@ public class CNodeRowAgg extends CNodeTpl
 			+ "  }\n"
 			+ "  protected void genexecRowDense( double[] a, int ai, double[][] b, double[] scalars, double[] c, int len, int rowIndex ) { \n"
 			+ "%BODY_dense%"
-			+ "  } \n"
+			+ "  }\n"
 			+ "  protected void genexecRowSparse( double[] avals, int[] aix, int ai, double[][] b, double[] scalars, double[] c, int len, int rowIndex ) { \n"
 			+ "%BODY_sparse%"
-			+ "  } \n"			
+			+ "  }\n"			
 			+ "}\n";
 
 	public CNodeRowAgg(ArrayList<CNode> inputs, CNode output ) {

@@ -30,8 +30,6 @@ public class CNodeOuterProduct extends CNodeTpl
 {	
 	private static final String TEMPLATE = 
 			  "package codegen;\n"
-			+ "import java.util.Arrays;\n"
-			+ "import java.util.ArrayList;\n"
 			+ "import org.apache.sysml.runtime.codegen.LibSpoofPrimitives;\n"
 			+ "import org.apache.sysml.runtime.codegen.SpoofOuterProduct;\n"
 			+ "import org.apache.sysml.runtime.codegen.SpoofOuterProduct.OutProdType;\n"
@@ -43,13 +41,12 @@ public class CNodeOuterProduct extends CNodeTpl
 			+ "  }\n"
 			+ "  protected void genexecDense( double a, double[] a1, int a1i, double[] a2, int a2i, double[][] b, double[] scalars, double[] c, int ci, int n, int m, int k, int rowIndex, int colIndex) { \n"
 			+ "%BODY_dense%"
-			+ "  } \n"
+			+ "  }\n"
 			+ "  protected double genexecCellwise( double a, double[] a1, int a1i, double[] a2, int a2i, double[][] b, double[] scalars, int n, int m, int k, int rowIndex, int colIndex) { \n"
 			+ "%BODY_cellwise%"
 			+ "    return %OUT_cellwise%;\n"
-			+ "  } \n"
-			
-			+ "}";
+			+ "  }\n"			
+			+ "}\n";
 	
 	private OutProdType _type = null;
 	private boolean _transposeOutput = false;

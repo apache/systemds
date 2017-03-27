@@ -22,6 +22,7 @@ package org.apache.sysml.hops.codegen.cplan;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import org.apache.sysml.hops.Hop.AggOp;
 import org.apache.sysml.hops.codegen.SpoofFusedOp.SpoofOutputDimsType;
 import org.apache.sysml.runtime.codegen.SpoofCellwise.CellType;
 
@@ -29,25 +30,24 @@ public class CNodeCell extends CNodeTpl
 {	
 	private static final String TEMPLATE = 
 			  "package codegen;\n"
-			+ "import java.util.Arrays;\n"
-			+ "import java.io.Serializable;\n"
-			+ "import java.util.ArrayList;\n"
 			+ "import org.apache.sysml.runtime.codegen.LibSpoofPrimitives;\n"
 			+ "import org.apache.sysml.runtime.codegen.SpoofCellwise;\n"
+			+ "import org.apache.sysml.runtime.codegen.SpoofCellwise.AggOp;\n"
 			+ "import org.apache.sysml.runtime.codegen.SpoofCellwise.CellType;\n"
 			+ "import org.apache.commons.math3.util.FastMath;\n"
 			+ "\n"
 			+ "public final class %TMP% extends SpoofCellwise {\n" 
 			+ "  public %TMP%() {\n"
-			+ "    super(CellType.%TYPE%, %SPARSE_SAFE%);\n"
+			+ "    super(CellType.%TYPE%, %AGG_OP%, %SPARSE_SAFE%);\n"
 			+ "  }\n"
 			+ "  protected double genexec( double a, double[][] b, double[] scalars, int m, int n, int rowIndex, int colIndex) { \n"
 			+ "%BODY_dense%"
 			+ "    return %OUT%;\n"
-			+ "  } \n"
-			+ "}";
+			+ "  }\n"
+			+ "}\n";
 	
 	private CellType _type = null;
+	private AggOp _aggOp = null;
 	private boolean _sparseSafe = false;
 	private boolean _requiresCastdtm = false;
 	private boolean _multipleConsumers = false;
@@ -71,6 +71,15 @@ public class CNodeCell extends CNodeTpl
 	
 	public CellType getCellType() {
 		return _type;
+	}
+	
+	public void setAggOp(AggOp aggop) {
+		_aggOp = aggop;
+		_hash = 0;
+	}
+	
+	public AggOp getAggOp() {
+		return _aggOp;
 	}
 	
 	public void setSparseSafe(boolean flag) {
@@ -110,6 +119,7 @@ public class CNodeCell extends CNodeTpl
 		
 		//replace meta data information
 		tmp = tmp.replaceAll("%TYPE%", getCellType().name());
+		tmp = tmp.replaceAll("%AGG_OP%", (_aggOp!=null) ? "AggOp."+_aggOp.name() : "null" );
 		tmp = tmp.replaceAll("%SPARSE_SAFE%", String.valueOf(isSparseSafe()));
 		
 		return tmp;
@@ -146,10 +156,11 @@ public class CNodeCell extends CNodeTpl
 		if( _hash == 0 ) {
 			int h1 = super.hashCode();
 			int h2 = _type.hashCode();
-			int h3 = Boolean.valueOf(_sparseSafe).hashCode();
-			int h4 = Boolean.valueOf(_requiresCastdtm).hashCode();
+			int h3 = (_aggOp!=null) ? _aggOp.hashCode() : 0;
+			int h4 = Boolean.valueOf(_sparseSafe).hashCode();
+			int h5 = Boolean.valueOf(_requiresCastdtm).hashCode();
 			//note: _multipleConsumers irrelevant for plan comparison
-			_hash = Arrays.hashCode(new int[]{h1,h2,h3,h4});
+			_hash = Arrays.hashCode(new int[]{h1,h2,h3,h4,h5});
 		}
 		return _hash;
 	}
@@ -162,6 +173,7 @@ public class CNodeCell extends CNodeTpl
 		CNodeCell that = (CNodeCell)o;
 		return super.equals(that) 
 			&& _type == that._type
+			&& _aggOp == that._aggOp
 			&& _sparseSafe == that._sparseSafe
 			&& _requiresCastdtm == that._requiresCastdtm
 			&& equalInputReferences(
@@ -173,6 +185,7 @@ public class CNodeCell extends CNodeTpl
 		StringBuilder sb = new StringBuilder();
 		sb.append("SPOOF CELLWISE [type=");
 		sb.append(_type.name());
+		sb.append(", aggOp="+((_aggOp!=null) ? _aggOp.name() : "null"));
 		sb.append(", sparseSafe="+_sparseSafe);
 		sb.append(", castdtm="+_requiresCastdtm);
 		sb.append(", mc="+_multipleConsumers);

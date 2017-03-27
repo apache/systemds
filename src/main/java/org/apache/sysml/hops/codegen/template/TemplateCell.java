@@ -31,7 +31,6 @@ import org.apache.sysml.hops.AggUnaryOp;
 import org.apache.sysml.hops.BinaryOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.UnaryOp;
-import org.apache.sysml.hops.Hop.AggOp;
 import org.apache.sysml.hops.Hop.Direction;
 import org.apache.sysml.hops.Hop.OpOp2;
 import org.apache.sysml.hops.IndexingOp;
@@ -67,7 +66,8 @@ public class TemplateCell extends TemplateBase
 	@Override
 	public boolean fuse(Hop hop, Hop input) {
 		return !isClosed() && (isValidOperation(hop) 
-			|| (HopRewriteUtils.isSum(hop) && ((AggUnaryOp) hop).getDirection()!= Direction.Col)
+			|| ((HopRewriteUtils.isSum(hop)||HopRewriteUtils.isSumSq(hop)) 
+				&& ((AggUnaryOp) hop).getDirection()!= Direction.Col)
 			|| (HopRewriteUtils.isMatrixMultiply(hop) && hop.getDim1()==1 && hop.getDim2()==1)
 				&& HopRewriteUtils.isTransposeOperation(hop.getInput().get(0)));
 	}
@@ -81,7 +81,8 @@ public class TemplateCell extends TemplateBase
 	@Override
 	public CloseType close(Hop hop) {
 		//need to close cell tpl after aggregation, see fuse for exact properties
-		if( (HopRewriteUtils.isSum(hop) && ((AggUnaryOp) hop).getDirection()!= Direction.Col)
+		if( ((HopRewriteUtils.isSum(hop)||HopRewriteUtils.isSumSq(hop)) 
+				&& ((AggUnaryOp) hop).getDirection()!= Direction.Col)
 			|| (HopRewriteUtils.isMatrixMultiply(hop) && hop.getDim1()==1 && hop.getDim2()==1) )
 			return CloseType.CLOSED_VALID;
 		else if( hop instanceof AggUnaryOp || hop instanceof AggBinaryOp )
@@ -114,6 +115,7 @@ public class TemplateCell extends TemplateBase
 		CNode output = tmp.get(hop.getHopID());
 		CNodeCell tpl = new CNodeCell(inputs, output);
 		tpl.setCellType(TemplateUtils.getCellType(hop));
+		tpl.setAggOp(TemplateUtils.getAggOp(hop));
 		tpl.setSparseSafe((HopRewriteUtils.isBinary(hop, OpOp2.MULT) && hop.getInput().contains(sinHops.get(0)))
 				|| (HopRewriteUtils.isBinary(hop, OpOp2.DIV) && hop.getInput().get(0) == sinHops.get(0)));
 		tpl.setRequiresCastDtm(hop instanceof AggBinaryOp);
@@ -211,10 +213,10 @@ public class TemplateCell extends TemplateBase
 		{
 			out = tmp.get(hop.getInput().get(0).getHopID());	
 		}
-		else if( hop instanceof AggUnaryOp && ((AggUnaryOp)hop).getOp() == AggOp.SUM
-			&& (((AggUnaryOp) hop).getDirection() == Direction.RowCol 
-			|| ((AggUnaryOp) hop).getDirection() == Direction.Row) )
+		else if( hop instanceof AggUnaryOp )
 		{
+			//aggregation handled in template implementation (note: we do not compile 
+			//^2 of SUM_SQ into the operator to simplify the detection of single operators)
 			out = tmp.get(hop.getInput().get(0).getHopID());
 		}
 		else if( hop instanceof AggBinaryOp ) {

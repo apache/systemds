@@ -19,7 +19,7 @@
 
 package org.apache.sysml.parser;
 
-import org.apache.sysml.api.ScriptType;
+import org.apache.sysml.api.mlcontext.ScriptType;
 import org.apache.sysml.parser.common.CommonSyntacticValidator;
 import org.apache.sysml.parser.dml.DMLParserWrapper;
 import org.apache.sysml.parser.pydml.PyDMLParserWrapper;

@@ -24,7 +24,7 @@ import org.apache.commons.cli.MissingOptionException;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.api.ScriptType;
+import org.apache.sysml.api.mlcontext.ScriptType;
 import org.apache.sysml.utils.Explain;
 import org.junit.Assert;
 import org.junit.Test;
@@ -39,7 +39,7 @@ public class CLIOptionsParserTest {
     String cl = "systemml";
     String[] args = cl.split(" ");
     Options options = DMLScript.createCLIOptions();
-    DMLScript.DMLOptions o = DMLScript.parseCLArguments(args, options);
+    DMLScript.parseCLArguments(args, options);
   }
 
   @Test
@@ -96,7 +96,7 @@ public class CLIOptionsParserTest {
     String cl = "systemml -clean -f test.dml";
     String[] args = cl.split(" ");
     Options options = DMLScript.createCLIOptions();
-    DMLScript.DMLOptions o = DMLScript.parseCLArguments(args, options);
+    DMLScript.parseCLArguments(args, options);
   }
 
   @Test(expected = AlreadySelectedException.class)
@@ -104,7 +104,7 @@ public class CLIOptionsParserTest {
     String cl = "systemml -f test.dml -s \"print('hello')\"";
     String[] args = cl.split(" ");
     Options options = DMLScript.createCLIOptions();
-    DMLScript.DMLOptions o = DMLScript.parseCLArguments(args, options);
+    DMLScript.parseCLArguments(args, options);
   }
 
   @Test
@@ -151,7 +151,7 @@ public class CLIOptionsParserTest {
     String cl = "systemml -f test.dml -gpu f2orce";
     String[] args = cl.split(" ");
     Options options = DMLScript.createCLIOptions();
-    DMLScript.DMLOptions o = DMLScript.parseCLArguments(args, options);
+    DMLScript.parseCLArguments(args, options);
   }
 
   @Test
@@ -276,7 +276,7 @@ public class CLIOptionsParserTest {
     String cl = "systemml -f test.dml -exec new_system";
     String[] args = cl.split(" ");
     Options options = DMLScript.createCLIOptions();
-    DMLScript.DMLOptions o = DMLScript.parseCLArguments(args, options);
+    DMLScript.parseCLArguments(args, options);
   }
 
   @Test
@@ -310,8 +310,7 @@ public class CLIOptionsParserTest {
     String cl = "systemml -f test.dml -args -config systemml.conf";
     String[] args = cl.split(" ");
     Options options = DMLScript.createCLIOptions();
-    DMLScript.DMLOptions o = DMLScript.parseCLArguments(args, options);
-    Map<String, String> m = o.argVals;
+    DMLScript.parseCLArguments(args, options);
   }
 
   @Test
@@ -332,8 +331,7 @@ public class CLIOptionsParserTest {
     String cl = "systemml -f test.dml -nvargs";
     String[] args = cl.split(" ");
     Options options = DMLScript.createCLIOptions();
-    DMLScript.DMLOptions o = DMLScript.parseCLArguments(args, options);
-    Map<String, String> m = o.argVals;
+    DMLScript.parseCLArguments(args, options);
   }
 
   @Test(expected = ParseException.class)
@@ -341,8 +339,7 @@ public class CLIOptionsParserTest {
     String cl = "systemml -f test.dml -nvargs asd qwe";
     String[] args = cl.split(" ");
     Options options = DMLScript.createCLIOptions();
-    DMLScript.DMLOptions o = DMLScript.parseCLArguments(args, options);
-    Map<String, String> m = o.argVals;
+    DMLScript.parseCLArguments(args, options);
   }
 
   @Test(expected = ParseException.class)
@@ -350,8 +347,7 @@ public class CLIOptionsParserTest {
     String cl = "systemml -f test.dml -nvargs $X=12";
     String[] args = cl.split(" ");
     Options options = DMLScript.createCLIOptions();
-    DMLScript.DMLOptions o = DMLScript.parseCLArguments(args, options);
-    Map<String, String> m = o.argVals;
+    DMLScript.parseCLArguments(args, options);
   }
 
   @Test(expected = ParseException.class)
@@ -359,11 +355,9 @@ public class CLIOptionsParserTest {
     String cl = "systemml -f test.dml -nvargs 123=123";
     String[] args = cl.split(" ");
     Options options = DMLScript.createCLIOptions();
-    DMLScript.DMLOptions o = DMLScript.parseCLArguments(args, options);
-    Map<String, String> m = o.argVals;
+    DMLScript.parseCLArguments(args, options);
   }
 
-  @Test
   /**
    * For Apache Commons CLI, if an argument to an option is enclosed in quotes,
    * the leading and trailing quotes are stripped away. For instance, if the options is -arg and the
@@ -373,6 +367,7 @@ public class CLIOptionsParserTest {
    * want to pass in "foo" and not just foo.
    * A way around this is to use 'foo` as done in {@link CLIOptionsParserTest#testNVArgs3()}
    */
+  @Test
   public void testNVArgs2() throws Exception {
     String cl = "systemml -f test.dml -args \"def\"";
     String[] args = cl.split(" ");
@@ -382,10 +377,11 @@ public class CLIOptionsParserTest {
     Assert.assertEquals("def", m.get("$1"));
   }
 
-  @Test
+
   /**
    * See comment in {@link CLIOptionsParserTest#testNVArgs2()}
    */
+  @Test
   public void testNVArgs3() throws Exception {
     String cl = "systemml -f test.dml -args 'def'";
     String[] args = cl.split(" ");
@@ -395,7 +391,6 @@ public class CLIOptionsParserTest {
     Assert.assertEquals("'def'", m.get("$1"));
   }
 
-  @Test
   /**
    * See comment in {@link CLIOptionsParserTest#testNVArgs2()}
    * Additionally, if we try to pass something like
@@ -407,6 +402,7 @@ public class CLIOptionsParserTest {
    * and strip them away in the parsing code ourselves.
    * TODO: Read the javadoc for this method, we can add in this logic if required
    */
+  @Test
   public void testNVArgs4() throws Exception {
     String cl = "systemml -f test.dml -nvargs abc='def'";
     String[] args = cl.split(" ");

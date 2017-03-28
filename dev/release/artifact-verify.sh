@@ -95,10 +95,12 @@ done
 
 ORIG_DIR=$(pwd)
 EXEC_DIR="`dirname \"$0\"`"
+if [[ ${EXEC_DIR:0:1} != "/" ]]; then
+    EXEC_DIR=$ORIG_DIR/$EXEC_DIR
+fi
 cd $EXEC_DIR/src/test/java
 
 if [[ "$ARTIFACT_VERIFY" == "true" && -z "$DIST_DIR" ]]; then
-#     echo "WARNING: Since --distDir has not passed, default distribution directory '../../../target/release/incubator-systemml/target' has been used."
     echo "WARNING: Since --distDir has not passed, default distribution directory '$EXEC_DIR/target/release/incubator-systemml/target' has been used."
     DIST_DIR="$EXEC_DIR/target/release/incubator-systemml/target"
 elif [[ ${DIST_DIR:0:1} != "/" ]]; then

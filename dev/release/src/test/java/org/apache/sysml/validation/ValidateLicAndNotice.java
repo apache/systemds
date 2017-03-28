@@ -50,16 +50,22 @@ public class ValidateLicAndNotice
 	//Return codes
 	public static final int SUCCESS = 0;
 	public static final int NO_ZIP_TGZ = 1; 	// 0000 0000 0000 0001
-	public static final int JAR_NOT_IN_LIC = 2; // 0000 0000 0000 0010
-	public static final int JAR_NOT_IN_ZIP = 4; // 0000 0000 0000 0100
+	public static final int FILE_NOT_IN_LIC = 2; // 0000 0000 0000 0010
+	public static final int FILE_NOT_IN_ZIP = 4; // 0000 0000 0000 0100
 	public static final int FAILURE = 0xFFFF;
 
 	//String constants
-	public static final String JAR = "jar";
 	public static final String ZIP = "zip";
 	public static final String TGZ = "tgz";
 	public static final String LICENSE = "LICENSE";
+	public static final String JAR = "jar";
+	public static final String DLL = "dll";
+	public static final String EXP = "exp";
+	public static final String LIB = "lib";
+	public static final String PDB = "pdb";
+	public static final String EXE = "exe";
 
+	public static String[] fileTypes = {JAR, DLL, EXP, LIB, PDB, EXE};
 
 	static final int BUFFER = 2048;
 	// Zip Distribution directory.
@@ -87,7 +93,7 @@ public class ValidateLicAndNotice
 	 */
 	public int validate() throws Exception {
 
-		int retCode = SUCCESS, retCodeAll = SUCCESS;
+		int retCode = SUCCESS, retCodeForAllFileTypes = SUCCESS, retCodeAll = SUCCESS;
 
 		File distroRoot = new File( getDistroDir());
 		File libDirectory = distroRoot;
@@ -108,45 +114,50 @@ public class ValidateLicAndNotice
 
 		for (String zipFile: zips)
 		{
-			retCode = SUCCESS;
-
+			retCodeForAllFileTypes = SUCCESS;
 			System.out.println("======================================================================================");
 			System.out.println("Validating zip file : " + zipFile + " ...");
 
-			List<String> jarsAll = null;
-			if(zipFile.endsWith("." + ZIP)) {
-				ValidateLicAndNotice.extractFileFromZip(libDirectory + "/" + zipFile, LICENSE, outTempDir.getAbsolutePath());
-				jarsAll = getFilesFromZip(libDirectory + "/" + zipFile, JAR);
-			} else if(zipFile.endsWith("." + TGZ)) {
-				ValidateLicAndNotice.extractFileFromTGZ(libDirectory + "/" + zipFile, LICENSE, outTempDir.getAbsolutePath());
-				jarsAll = getFilesFromTGZ(libDirectory + "/" + zipFile, JAR);
-			}
+			for (String fileType: fileTypes) {
+				retCode = SUCCESS;
 
-			File licenseFile = new File(outTempDir, LICENSE);
-			List<String> jars = new ArrayList<String>();
-			for (String jar: jarsAll) {
-				String strSysMLName = "SystemML";
-				int sysmlLen = strSysMLName.length();
-				String strBegPart = jar.substring(0, sysmlLen);
-				if(strBegPart.compareToIgnoreCase(strSysMLName) != 0)
-					jars.add(jar);
-			}
+				List<String> filesAll = null;
+				if (zipFile.endsWith("." + ZIP)) {
+					ValidateLicAndNotice.extractFileFromZip(libDirectory + "/" + zipFile, LICENSE, outTempDir.getAbsolutePath());
+					filesAll = getFilesFromZip(libDirectory + "/" + zipFile, fileType);
+				} else if (zipFile.endsWith("." + TGZ)) {
+					ValidateLicAndNotice.extractFileFromTGZ(libDirectory + "/" + zipFile, LICENSE, outTempDir.getAbsolutePath());
+					filesAll = getFilesFromTGZ(libDirectory + "/" + zipFile, fileType);
+				}
 
-			List<String> bad2 = getLICENSEFilesNotInList(licenseFile, jars, JAR);
-			if (bad2.size() > 0) {
-				System.err.println("Jars in LICENSE but not in Distribution: " + bad2);
-				retCode += JAR_NOT_IN_ZIP;
-			}
+				File licenseFile = new File(outTempDir, LICENSE);
+				List<String> files = new ArrayList<String>();
+				for (String file : filesAll) {
+					String strSysMLName = "SystemML";
+					int sysmlLen = strSysMLName.length();
+					String strBegPart = file.substring(0, sysmlLen);
+					if (strBegPart.compareToIgnoreCase(strSysMLName) != 0)
+						files.add(file);
+				}
 
-			List<String> bad1 = getFilesNotInLICENSE(licenseFile, jars, JAR);
-			if (bad1.size() > 0) {
-				System.err.println("Jars in distribution but not in LICENSE: " + bad1);
-				retCode += JAR_NOT_IN_LIC;
+				List<String> bad2 = getLICENSEFilesNotInList(licenseFile, files, fileType);
+				if (bad2.size() > 0) {
+					System.err.println("Files in LICENSE but not in Distribution: " + bad2);
+					retCode += FILE_NOT_IN_ZIP;
+				}
+
+				List<String> bad1 = getFilesNotInLICENSE(licenseFile, files, fileType);
+				if (bad1.size() > 0) {
+					System.err.println("Files in distribution but not in LICENSE: " + bad1);
+					retCode += FILE_NOT_IN_LIC;
+				}
+
+				if (bad1.size() > 0 || bad2.size() > 0) {
+					System.out.println("ERROR: License validation failed for zip file " + zipFile + " with error code " + retCode + ", please validate file manually.");
+					retCodeForAllFileTypes = FAILURE;
+				}
 			}
-        
-			if (bad1.size() > 0 || bad2.size() > 0)
-				System.out.println("ERROR: License validation failed for zip file " + zipFile + " with error code " + retCode + ", please validate file manually.");
-			else 
+			if(retCodeForAllFileTypes == SUCCESS)
 				System.out.println("Validation of zip file : " + zipFile + " completed successfully.");
 
 			retCodeAll = retCode != SUCCESS?FAILURE:retCodeAll;
@@ -261,17 +272,9 @@ public class ValidateLicAndNotice
 	 */
 	private List<String> getZipsInDistro(File directory) {
 		List<String> zips = new ArrayList<String>();
-		for (String fileName : directory.list()){
-			if ((fileName.endsWith("." + ZIP)) || (fileName.endsWith("." + TGZ))) {
+		for (String fileName : directory.list())
+			if ((fileName.endsWith("." + ZIP)) || (fileName.endsWith("." + TGZ)))
 				zips.add(fileName);
-			}
-//			else {
-//				File file = new File(directory, fileName);
-//				if (file.isDirectory()) {
-//					zips.addAll(getZipsInDistro(f));
-//				}
-//			}
-		}
 		return zips;
 	}
 
@@ -400,7 +403,7 @@ public class ValidateLicAndNotice
 	 * @return	Returns list of files having specified extention from zip file .
 	 */
 	public static List<String> getFilesFromZip (String zipFileName, String fileExt) {
-		List<String> jars = new ArrayList<String>();
+		List<String> files = new ArrayList<String>();
 		try {
 			ZipEntry entry;
 			ZipFile zipfile = new ZipFile(zipFileName);
@@ -413,14 +416,14 @@ public class ValidateLicAndNotice
 					if (iPos == 0)
 					    --iPos;
 					String strFileName = entry.getName().substring(iPos+1);
-					jars.add(strFileName);
+					files.add(strFileName);
 //	        			System.out.println("File found : " + strFileName);
-            			}
-         		}
+				}
+			}
 		} catch(Exception e) {
 			e.printStackTrace();
-      		}
-		return (jars);
+		}
+		return (files);
 	}
 
 	/**
@@ -445,7 +448,7 @@ public class ValidateLicAndNotice
 			return null;
 		} 
 
-		List<String> jars = new ArrayList<String>();
+		List<String> files = new ArrayList<String>();
 		try {
 			TarArchiveEntry tarEntry = null;
 			while((tarEntry = tarIn.getNextTarEntry()) != null) {
@@ -455,14 +458,14 @@ public class ValidateLicAndNotice
 					if (iPos == 0)
 						--iPos;
 					String strFileName = tarEntry.getName().substring(iPos+1);
-					jars.add(strFileName);
+					files.add(strFileName);
 //	        			System.out.println("File found : " + strFileName);
 				}
 			}
 		} catch(Exception e) {
 			e.printStackTrace();
 		}
-		return (jars);
+		return (files);
 	}
 
 	/**
@@ -484,7 +487,7 @@ public class ValidateLicAndNotice
 			System.out.println("Return code = " + retCode);
 		}
 		catch (Exception e) {
-			System.out.println("Error while validating license in jars file." + e);
+			System.out.println("Error while validating license in zip/tgz file." + e);
 		}
 	}
 

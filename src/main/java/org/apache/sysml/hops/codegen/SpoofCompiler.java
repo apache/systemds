@@ -408,9 +408,16 @@ public class SpoofCompiler
 				Statistics.incrementCodegenCPlanCompile(1); 
 		}
 		
-		//process childs recursively
-		for( Hop c : hop.getInput() )
-			rConstructCPlans(c, memo, cplans, compileLiterals);
+		//process children recursively, but skip compiled operator
+		if( cplans.containsKey(hop.getHopID()) ) {
+			for( Hop c : cplans.get(hop.getHopID()).getKey() )
+				rConstructCPlans(c, memo, cplans, compileLiterals);
+		}
+		else {
+			for( Hop c : hop.getInput() )
+				rConstructCPlans(c, memo, cplans, compileLiterals);	
+		}
+		
 		hop.setVisited();
 	}
 	

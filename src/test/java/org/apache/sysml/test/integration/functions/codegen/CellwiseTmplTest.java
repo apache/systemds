@@ -44,7 +44,8 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	private static final String TEST_NAME6 = TEST_NAME+6;
 	private static final String TEST_NAME7 = TEST_NAME+7;
 	private static final String TEST_NAME8 = TEST_NAME+8;
-	private static final String TEST_NAME9 = TEST_NAME+9; //sum((X + 7 * Y)^2)
+	private static final String TEST_NAME9 = TEST_NAME+9;   //sum((X + 7 * Y)^2)
+	private static final String TEST_NAME10 = TEST_NAME+10; //min/max(X + 7 * Y)
 
 	private static final String TEST_DIR = "functions/codegen/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + CellwiseTmplTest.class.getSimpleName() + "/";
@@ -57,7 +58,7 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		for( int i=1; i<=9; i++ ) {
+		for( int i=1; i<=10; i++ ) {
 			addTestConfiguration( TEST_NAME+i, new TestConfiguration(
 					TEST_CLASS_DIR, TEST_NAME+i, new String[] {String.valueOf(i)}) );
 		}
@@ -108,6 +109,11 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	public void testCodegenCellwiseRewrite9() {
 		testCodegenIntegration( TEST_NAME9, true, ExecType.CP  );
 	}
+	
+	@Test
+	public void testCodegenCellwiseRewrite10() {
+		testCodegenIntegration( TEST_NAME10, true, ExecType.CP  );
+	}
 
 	@Test
 	public void testCodegenCellwise1() {
@@ -154,6 +160,11 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	public void testCodegenCellwise9() {
 		testCodegenIntegration( TEST_NAME9, false, ExecType.CP  );
 	}
+	
+	@Test
+	public void testCodegenCellwise10() {
+		testCodegenIntegration( TEST_NAME10, false, ExecType.CP  );
+	}
 
 	@Test
 	public void testCodegenCellwiseRewrite1_sp() {
@@ -173,6 +184,11 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	@Test
 	public void testCodegenCellwiseRewrite9_sp() {
 		testCodegenIntegration( TEST_NAME9, true, ExecType.SPARK );
+	}
+	
+	@Test
+	public void testCodegenCellwiseRewrite10_sp() {
+		testCodegenIntegration( TEST_NAME10, true, ExecType.SPARK );
 	}
 	
 	private void testCodegenIntegration( String testname, boolean rewrites, ExecType instType )
@@ -210,7 +226,8 @@ public class CellwiseTmplTest extends AutomatedTestBase
 			runTest(true, false, null, -1); 
 			runRScript(true); 
 			
-			if(testname.equals(TEST_NAME6) || testname.equals(TEST_NAME7) || testname.equals(TEST_NAME9) ) {
+			if(testname.equals(TEST_NAME6) || testname.equals(TEST_NAME7) 
+				|| testname.equals(TEST_NAME9) || testname.equals(TEST_NAME10) ) {
 				//compare scalars 
 				HashMap<CellIndex, Double> dmlfile = readDMLScalarFromHDFS("S");
 				HashMap<CellIndex, Double> rfile  = readRScalarFromFS("S");
@@ -228,6 +245,9 @@ public class CellwiseTmplTest extends AutomatedTestBase
 					|| heavyHittersContainsSubString("sp_spoofCell"));
 			if( testname.equals(TEST_NAME7) ) //ensure matrix mult is fused
 				Assert.assertTrue(!heavyHittersContainsSubString("tsmm"));
+			else if( testname.equals(TEST_NAME10) ) //ensure min/max is fused
+				Assert.assertTrue(!heavyHittersContainsSubString("uamin","uamax"));
+				
 		}
 		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldRewrites;

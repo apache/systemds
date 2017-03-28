@@ -795,6 +795,16 @@ public class HopRewriteUtils
 		return hop instanceof AggBinaryOp && ((AggBinaryOp)hop).isMatrixMultiply();
 	}
 	
+	public static boolean isAggUnaryOp(Hop hop, AggOp...op) {
+		if( !(hop instanceof AggUnaryOp) )
+			return false;
+		AggOp hopOp = ((AggUnaryOp)hop).getOp();
+		for( AggOp opi : op ) 
+			if( hopOp == opi )
+				return true;
+		return false; 
+	}
+	
 	public static boolean isSum(Hop hop) {
 		return (hop instanceof AggUnaryOp && ((AggUnaryOp)hop).getOp()==AggOp.SUM);
 	}

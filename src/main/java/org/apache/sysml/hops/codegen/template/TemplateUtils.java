@@ -217,7 +217,7 @@ public class TemplateUtils
 			return OutProdType.CELLWISE_OUTER_PRODUCT;
 		
 		//should never come here
-		throw new RuntimeException("Undefined outer product type");
+		throw new RuntimeException("Undefined outer product type for hop "+out.getHopID());
 	}
 	
 	public static boolean isLookup(CNode node) {

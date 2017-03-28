@@ -520,4 +520,18 @@ public class UtilFunctions
 	public static ValueType[] copyOf(ValueType[] schema1, ValueType[] schema2) {
 		return (ValueType[]) ArrayUtils.addAll(schema1, schema2);
 	}
+	
+	public static int countNonZeros(double[] data, int pos, int len) {
+		int ret = 0;
+		for( int i=pos; i<pos+len; i++ )
+			ret += (data[i] != 0) ? 1 : 0;
+		return ret;
+	}
+	
+	public static boolean containsZero(double[] data, int pos, int len) {
+		for( int i=pos; i<pos+len; i++ )
+			if( data[i] == 0 )
+				return true;
+		return false;
+	}
 }

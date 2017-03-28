@@ -26,10 +26,12 @@ import java.util.List;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
+import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.codegen.CodegenUtils;
 import org.apache.sysml.runtime.codegen.SpoofCellwise;
+import org.apache.sysml.runtime.codegen.SpoofCellwise.AggOp;
 import org.apache.sysml.runtime.codegen.SpoofCellwise.CellType;
 import org.apache.sysml.runtime.codegen.SpoofOperator;
 import org.apache.sysml.runtime.codegen.SpoofOuterProduct;
@@ -37,6 +39,9 @@ import org.apache.sysml.runtime.codegen.SpoofOuterProduct.OutProdType;
 import org.apache.sysml.runtime.codegen.SpoofRowAggregate;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysml.runtime.functionobjects.Builtin;
+import org.apache.sysml.runtime.functionobjects.Builtin.BuiltinCode;
+import org.apache.sysml.runtime.functionobjects.KahanPlus;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.cp.DoubleObject;
@@ -47,6 +52,7 @@ import org.apache.sysml.runtime.instructions.spark.utils.RDDAggregateUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 
 import scala.Tuple2;
 
@@ -94,7 +100,7 @@ public class SpoofSPInstruction extends SPInstruction
 		//get input rdd and variable name
 		ArrayList<String> bcVars = new ArrayList<String>();
 		MatrixCharacteristics mcIn = sec.getMatrixCharacteristics(_in[0].getName());
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryBlockRDDHandleForVariable( _in[0].getName() );
+		JavaPairRDD<MatrixIndexes, MatrixBlock> in = sec.getBinaryBlockRDDHandleForVariable( _in[0].getName() );
 		JavaPairRDD<MatrixIndexes, MatrixBlock> out = null;
 				
 		//simple case: map-side only operation (one rdd input, broadcast all)
@@ -115,17 +121,17 @@ public class SpoofSPInstruction extends SPInstruction
 		//initialize Spark Operator
 		if(_class.getSuperclass() == SpoofCellwise.class) // cellwise operator
 		{
+			SpoofCellwise op = (SpoofCellwise) CodegenUtils.createInstance(_class); 	
+			AggregateOperator aggop = getAggregateOperator(op.getAggOp());
+			
 			if( _out.getDataType()==DataType.MATRIX ) {
-				SpoofOperator op = (SpoofOperator) CodegenUtils.createInstance(_class); 	
-				
 				out = in.mapPartitionsToPair(new CellwiseFunction(_class.getName(), _classBytes, bcMatrices, scalars), true);
-				if( ((SpoofCellwise)op).getCellType()==CellType.ROW_AGG && mcIn.getCols() > mcIn.getColsPerBlock() ) {
-					//NOTE: workaround with partition size needed due to potential bug in SPARK
+				if( op.getCellType()==CellType.ROW_AGG && mcIn.getCols() > mcIn.getColsPerBlock() ) {
 					//TODO investigate if some other side effect of correct blocks
 					if( out.partitions().size() > mcIn.getNumRowBlocks() )
-						out = RDDAggregateUtils.sumByKeyStable(out, (int)mcIn.getNumRowBlocks(), false);
+						out = RDDAggregateUtils.aggByKeyStable(out, aggop, (int)mcIn.getNumRowBlocks(), false);
 					else
-						out = RDDAggregateUtils.sumByKeyStable(out, false);
+						out = RDDAggregateUtils.aggByKeyStable(out, aggop, false);
 				}
 				sec.setRDDHandleForVariable(_out.getName(), out);
 				
@@ -139,7 +145,7 @@ public class SpoofSPInstruction extends SPInstruction
 			}
 			else { //SCALAR
 				out = in.mapPartitionsToPair(new CellwiseFunction(_class.getName(), _classBytes, bcMatrices, scalars), true);
-				MatrixBlock tmpMB = RDDAggregateUtils.sumStable(out);
+				MatrixBlock tmpMB = RDDAggregateUtils.aggStable(out, aggop);
 				sec.setVariable(_out.getName(), new DoubleObject(tmpMB.getValue(0, 0)));
 			}
 		}
@@ -155,7 +161,6 @@ public class SpoofSPInstruction extends SPInstruction
 				
 				out = in.mapPartitionsToPair(new OuterProductFunction(_class.getName(), _classBytes, bcMatrices, scalars), true);
 				if(type == OutProdType.LEFT_OUTER_PRODUCT || type == OutProdType.RIGHT_OUTER_PRODUCT ) {
-					//NOTE: workaround with partition size needed due to potential bug in SPARK
 					//TODO investigate if some other side effect of correct blocks
 					if( in.partitions().size() > mcOut.getNumRowBlocks()*mcOut.getNumColBlocks() )
 						out = RDDAggregateUtils.sumByKeyStable(out, (int)(mcOut.getNumRowBlocks()*mcOut.getNumColBlocks()), false);
@@ -407,5 +412,15 @@ public class SpoofSPInstruction extends SPInstruction
 			else 
 				return in;
 		}		
+	}
+	
+	public static AggregateOperator getAggregateOperator(AggOp aggop) {
+		if( aggop == AggOp.SUM || aggop == AggOp.SUM_SQ )
+			return new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.NONE);
+		else if( aggop == AggOp.MIN )
+			return new AggregateOperator(Double.MAX_VALUE, Builtin.getBuiltinFnObject(BuiltinCode.MIN), false, CorrectionLocationType.NONE);
+		else if( aggop == AggOp.MAX )
+			return new AggregateOperator(-Double.MAX_VALUE, Builtin.getBuiltinFnObject(BuiltinCode.MAX), false, CorrectionLocationType.NONE);
+		return null;
 	}
 }

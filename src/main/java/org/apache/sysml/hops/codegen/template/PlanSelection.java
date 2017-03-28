@@ -21,7 +21,9 @@ package org.apache.sysml.hops.codegen.template;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.codegen.template.CPlanMemoTable.MemoTableEntry;
@@ -31,6 +33,8 @@ import org.apache.sysml.runtime.util.UtilFunctions;
 
 public abstract class PlanSelection 
 {
+	private final HashMap<Long, List<MemoTableEntry>> _bestPlans = 
+			new HashMap<Long, List<MemoTableEntry>>();
 	private final HashSet<VisitMark> _visited = new HashSet<VisitMark>();
 	
 	/**
@@ -56,6 +60,17 @@ public abstract class PlanSelection
 				&& (me.closed || HopRewriteUtils.isBinaryMatrixMatrixOperation(hop)))
 			|| (me.type == TemplateType.RowAggTpl && me.closed)	
 			|| (me.type == TemplateType.CellTpl);
+	}
+	
+	protected void addBestPlan(long hopID, MemoTableEntry me) {
+		if( me == null ) return;
+		if( !_bestPlans.containsKey(hopID) )
+			_bestPlans.put(hopID, new ArrayList<MemoTableEntry>());
+		_bestPlans.get(hopID).add(me);
+	}
+	
+	protected HashMap<Long, List<MemoTableEntry>> getBestPlans() {
+		return _bestPlans;
 	}
 	
 	public boolean isVisited(long hopID, TemplateType type) {

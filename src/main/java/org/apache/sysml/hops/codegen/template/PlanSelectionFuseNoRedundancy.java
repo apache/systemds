@@ -21,7 +21,6 @@ package org.apache.sysml.hops.codegen.template;
 
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.HashSet;
 import java.util.List;
@@ -42,9 +41,6 @@ import org.apache.sysml.hops.codegen.template.TemplateBase.TemplateType;
  */
 public class PlanSelectionFuseNoRedundancy extends PlanSelection
 {	
-	private HashMap<Long, List<MemoTableEntry>> _bestPlans = 
-			new HashMap<Long, List<MemoTableEntry>>();
-	
 	@Override
 	public void selectPlans(CPlanMemoTable memo, ArrayList<Hop> roots) {
 		//pruning and collection pass
@@ -52,7 +48,7 @@ public class PlanSelectionFuseNoRedundancy extends PlanSelection
 			rSelectPlans(memo, hop, null);
 		
 		//take all distinct best plans
-		for( Entry<Long, List<MemoTableEntry>> e : _bestPlans.entrySet() )
+		for( Entry<Long, List<MemoTableEntry>> e : getBestPlans().entrySet() )
 			memo.setDistinct(e.getKey(), e.getValue());
 	}
 	
@@ -92,11 +88,12 @@ public class PlanSelectionFuseNoRedundancy extends PlanSelection
 					.min(new BasicPlanComparator()).orElse(null);
 			}
 			else {
-				
 				best = memo.get(current.getHopID()).stream()
 					.filter(p -> p.type==currentType || p.type==TemplateType.CellTpl)
-					.min(Comparator.comparing(p -> 3-p.countPlanRefs())).orElse(null);
+					.min(Comparator.comparing(p -> 7-((p.type==currentType)?4:0)-p.countPlanRefs()))
+					.orElse(null);
 			}
+			addBestPlan(current.getHopID(), best);
 		}
 		
 		//step 3: recursively process children

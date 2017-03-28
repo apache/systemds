@@ -1781,9 +1781,10 @@ public abstract class AutomatedTestBase
 		return writeInputFrame(name, data, false, schema, oi);
 	}
 	
-	protected boolean heavyHittersContainsSubString(String str) {
+	protected boolean heavyHittersContainsSubString(String... str) {
 		for( String opcode : Statistics.getCPHeavyHitterOpCodes())
-			if(opcode.contains(str))
+			for( String s : str )
+				if(opcode.contains(s))
 				return true;
 		return false;		
 	}

@@ -57,6 +57,7 @@ def convertToLabeledDF(sparkSession, X, y=None):
         return out.select('features')
 
 def _convertSPMatrixToMB(sc, src):
+    src = coo_matrix(src,  dtype=np.float64)
     numRows = src.shape[0]
     numCols = src.shape[1]
     data = src.data
@@ -82,9 +83,6 @@ def _copyRowBlock(i, sc, ret, src, numRowsPerBlock,  rlen, clen):
     mb = _convertSPMatrixToMB(sc, src.getrow(i)) if isinstance(src, spmatrix) else  _convertDenseMatrixToMB(sc, src[i:i+numRowsPerBlock,])
     sc._jvm.org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt.copyRowBlocks(mb, rowIndex, ret, numRowsPerBlock, rlen, clen)
     return i
-
-def _copyRowBlock_helper(args):
-    return _copyRowBlock(*args)
     
 def convertToMatrixBlock(sc, src, maxSizeBlockInMB=8):
     if not isinstance(sc, SparkContext):

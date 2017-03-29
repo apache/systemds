@@ -25,7 +25,7 @@ import numpy as np
 import pandas as pd
 import math
 from pyspark.context import SparkContext
-from scipy.sparse import coo_matrix, spmatrix
+from scipy.sparse import coo_matrix, spmatrix, csr_matrix
 from .classloader import *
 
 SUPPORTED_TYPES = (np.ndarray, pd.DataFrame, spmatrix)
@@ -80,7 +80,7 @@ def _convertDenseMatrixToMB(sc, src):
 
 def _copyRowBlock(i, sc, ret, src, numRowsPerBlock,  rlen, clen):
     rowIndex = int(i / numRowsPerBlock)
-    mb = _convertSPMatrixToMB(sc, src.getrow(i)) if isinstance(src, spmatrix) else  _convertDenseMatrixToMB(sc, src[i:i+numRowsPerBlock,])
+    mb = _convertSPMatrixToMB(sc, src[i:i+numRowsPerBlock,]) if isinstance(src, spmatrix) else _convertDenseMatrixToMB(sc, src[i:i+numRowsPerBlock,])
     sc._jvm.org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt.copyRowBlocks(mb, rowIndex, ret, numRowsPerBlock, rlen, clen)
     return i
     
@@ -88,17 +88,18 @@ def convertToMatrixBlock(sc, src, maxSizeBlockInMB=8):
     if not isinstance(sc, SparkContext):
         raise TypeError('sc needs to be of type SparkContext')
     isSparse = True if isinstance(src, spmatrix) else False
-    src = coo_matrix(src,  dtype=np.float64) if isSparse else np.asarray(src, dtype=np.float64)
+    src = np.asarray(src, dtype=np.float64) if not isSparse else src
     if len(src.shape) != 2:
         src_type = str(type(src).__name__)
         raise TypeError('Expected 2-dimensional ' + src_type + ', instead passed ' + str(len(src.shape)) + '-dimensional ' + src_type)
+    # Ignoring sparsity for computing numRowsPerBlock for now
     numRowsPerBlock = int(math.ceil((maxSizeBlockInMB*1000000) / (src.shape[1]*8)))
     multiBlockTransfer = False if numRowsPerBlock >= src.shape[0] else True
     if not multiBlockTransfer:
         return _convertSPMatrixToMB(sc, src) if isSparse else _convertDenseMatrixToMB(sc, src)
     else:
-        # To avoid unnecessary conversion to csr and then coo again
-        numRowsPerBlock = 1 if isSparse else numRowsPerBlock
+        # Since coo_matrix does not have range indexing
+        src = csr_matrix(src) if isSparse else src
         rlen = int(src.shape[0])
         clen = int(src.shape[1])
         ret = sc._jvm.org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt.allocateDenseOrSparse(rlen, clen, isSparse)

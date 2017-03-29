@@ -100,7 +100,7 @@ def convertToMatrixBlock(sc, src, maxSizeBlockInMB=8):
         numRowsPerBlock = 1 if isSparse else numRowsPerBlock
         ret = sc._jvm.org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt.allocateDenseOrSparse(int(src.shape[0]), int(src.shape[1]), isSparse)
         from functools import partial
-        partialFunc = partial(_copyRowBlock, sc=sc, ret=ret, src=src, numRowsPerBlock=numRowsPerBlock, rlen=rlen, clen=clen)
+        partialFunc = partial(_copyRowBlock, sc=sc, ret=ret, src=src, numRowsPerBlock=int(numRowsPerBlock), rlen=int(src.shape[0]), clen=int(src.shape[1]))
         import multiprocessing
         pool = multiprocessing.Pool()
         pool.map(partialFunc, range(0, src.shape[0], numRowsPerBlock))

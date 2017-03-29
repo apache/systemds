@@ -193,9 +193,9 @@ public class TemplateOuterProduct extends TemplateBase {
 			//final left/right matrix mult, see close
 			else {
 				if( cdata1.getDataType().isScalar() )
-					out = new CNodeBinary(cdata1, cdata2, BinType.VECT_MULT_ADD);	
-				else
 					out = new CNodeBinary(cdata2, cdata1, BinType.VECT_MULT_ADD);	
+				else
+					out = new CNodeBinary(cdata1, cdata2, BinType.VECT_MULT_ADD);	
 			}
 		}
 		else if( HopRewriteUtils.isTransposeOperation(hop) ) 

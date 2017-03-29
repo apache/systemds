@@ -32,7 +32,7 @@ public class CNodeRowAgg extends CNodeTpl
 			+ "\n"
 			+ "public final class %TMP% extends SpoofRowAggregate { \n"
 			+ "  public %TMP%() {\n"
-			+ "    _colVector = %FLAG%;\n"
+			+ "    super(%COL_VECTOR%, %VECT_MEM%);\n"
 			+ "  }\n"
 			+ "  protected void genexecRowDense( double[] a, int ai, double[][] b, double[] scalars, double[] c, int len, int rowIndex ) { \n"
 			+ "%BODY_dense%"
@@ -46,6 +46,16 @@ public class CNodeRowAgg extends CNodeTpl
 		super(inputs, output);
 	}
 	
+	//number of intermediate vectors
+	private int _numVectors = -1;
+	
+	public void setNumVectorIntermediates(int num) {
+		_numVectors = num;
+	}
+	
+	public int getNumVectorIntermediates() {
+		return _numVectors;
+	}
 	
 	@Override
 	public String codegen(boolean sparse) {
@@ -71,9 +81,9 @@ public class CNodeRowAgg extends CNodeTpl
 		//replace size information
 		tmp = tmp.replaceAll("%LEN%", "len");
 		
-		//replace colvector information and start position
-		tmp = tmp.replaceAll("%FLAG%", String.valueOf(_output._cols==1));
-		tmp = tmp.replaceAll("bi", "0");
+		//replace colvector information and number of vector intermediates
+		tmp = tmp.replaceAll("%COL_VECTOR%", String.valueOf(_output._cols==1));
+		tmp = tmp.replaceAll("%VECT_MEM%", String.valueOf(_numVectors));
 		
 		return tmp;
 	}
@@ -108,6 +118,7 @@ public class CNodeRowAgg extends CNodeTpl
 		
 		CNodeRowAgg that = (CNodeRowAgg)o;
 		return super.equals(o)
+			&& _numVectors == that._numVectors	
 			&& equalInputReferences(
 				_output, that._output, _inputs, that._inputs);
 	}
@@ -115,7 +126,9 @@ public class CNodeRowAgg extends CNodeTpl
 	@Override
 	public String getTemplateInfo() {
 		StringBuilder sb = new StringBuilder();
-		sb.append("SPOOF ROWAGGREGATE");
+		sb.append("SPOOF ROWAGGREGATE [reqVectMem=");
+		sb.append(_numVectors);
+		sb.append("]");
 		return sb.toString();
 	}
 }

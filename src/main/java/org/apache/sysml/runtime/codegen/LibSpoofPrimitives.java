@@ -19,6 +19,9 @@
 
 package org.apache.sysml.runtime.codegen;
 
+import java.util.Arrays;
+import java.util.LinkedList;
+
 import org.apache.sysml.runtime.matrix.data.LibMatrixMult;
 
 /**
@@ -30,6 +33,12 @@ import org.apache.sysml.runtime.matrix.data.LibMatrixMult;
  */
 public class LibSpoofPrimitives 
 {
+	//global pool of reusable vectors, individual operations set up their own thread-local
+	//ring buffers of reusable vectors with specific number of vectors and vector sizes 
+	private static ThreadLocal<LinkedList<double[]>> memPool = new ThreadLocal<LinkedList<double[]>>() {
+		@Override protected LinkedList<double[]> initialValue() { return new LinkedList<double[]>(); }
+	};
+	
 	// forwarded calls to LibMatrixMult
 	
 	public static double dotProduct(double[] a, double[] b, int ai, int bi, int len) {
@@ -40,20 +49,24 @@ public class LibSpoofPrimitives
 		return LibMatrixMult.dotProduct(a, b, aix, ai, bi, len);
 	}
 	
-	public static void vectMultAdd(double aval, double[] b, double[] c, int bi, int ci, int len) {
-		LibMatrixMult.vectMultiplyAdd(aval, b, c, bi, ci, len);
+	public static void vectMultAdd(double[] a, double bval, double[] c, int bi, int ci, int len) {
+		LibMatrixMult.vectMultiplyAdd(bval, a, c, bi, ci, len);
 	}
 	
-	public static void vectMultAdd(double aval, double[] b, double[] c, int[] bix, int bi, int ci, int len) {
-		LibMatrixMult.vectMultiplyAdd(aval, b, c, bix, bi, ci, len);
+	public static void vectMultAdd(double[] a, double bval, double[] c, int[] bix, int bi, int ci, int len) {
+		LibMatrixMult.vectMultiplyAdd(bval, a, c, bix, bi, ci, len);
 	}
 	
-	public static void vectMultWrite(double aval, double[] b, double[] c, int bi, int ci, int len) {
-		LibMatrixMult.vectMultiplyWrite(aval, b, c, bi, ci, len);
+	public static double[] vectMultWrite(double[] a, double bval, int bi, int len) {
+		double[] c = allocVector(len, false);
+		LibMatrixMult.vectMultiplyWrite(bval, a, c, bi, 0, len);
+		return c;
 	}
 	
-	public static void vectMultWrite(double aval, double[] b, double[] c, int[] bix, int bi, int ci, int len) {
-		LibMatrixMult.vectMultiplyAdd(aval, b, c, bix, bi, ci, len);
+	public static double[] vectMultWrite(double[] a, double bval, int[] bix, int bi, int len) {
+		double[] c = allocVector(len, true);
+		LibMatrixMult.vectMultiplyAdd(bval, a, c, bix, bi, 0, len);
+		return c;
 	}
 
 	// custom vector sums
@@ -119,155 +132,214 @@ public class LibSpoofPrimitives
 	
 	//custom vector div
 	
-	public static void vectDivAdd(double bval, double[] a, double[] c, int ai, int ci, int len) {
+	public static void vectDivAdd(double[] a, double bval, double[] c, int ai, int ci, int len) {
 		for( int j = ai; j < ai+len; j++, ci++)
 			c[ci] +=  a[j] / bval;
 	} 
 
-	public static void vectDivAdd(double bval, double[] a, double[] c, int[] aix, int ai, int ci, int len) {
+	public static void vectDivAdd(double[] a, double bval, double[] c, int[] aix, int ai, int ci, int len) {
 		for( int j = ai; j < ai+len; j++ )
 			c[ci + aix[j]] += a[j] / bval;
 	}
 	
-	public static void vectDivWrite(double bval, double[] a, double[] c, int ai, int ci, int len) {
-		for( int j = ai; j < ai+len; j++, ci++)
-			c[ci] = a[j] / bval;
+	public static double[] vectDivWrite(double[] a, double bval, int ai, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = 0; j < len; j++, ai++)
+			c[j] = a[ai] / bval;
+		return c;
 	}
 
-	public static void vectDivWrite(double bval, double[] a, int[] aix, double[] c, int ai, int ci, int len) {
+	public static double[] vectDivWrite(double[] a, double bval, int[] aix, int ai, int len) {
+		double[] c = allocVector(len, true);
 		for( int j = ai; j < ai+len; j++ )
-			c[ci + aix[j]] = a[j] / bval;
+			c[aix[j]] = a[j] / bval;
+		return c;
 	}
 	
 	//custom vector equal
 	
-	public static void vectEqualAdd(double bval, double[] a, double[] c, int ai, int ci, int len) {
+	public static void vectEqualAdd(double[] a, double bval, double[] c, int ai, int ci, int len) {
 		for( int j = ai; j < ai+len; j++, ci++)
 			c[ci] += (a[j] == bval) ? 1 : 0;
 	} 
 
-	public static void vectEqualAdd(double bval, double[] a, double[] c, int[] aix, int ai, int ci, int len) {
+	public static void vectEqualAdd(double[] a, double bval, double[] c, int[] aix, int ai, int ci, int len) {
 		for( int j = ai; j < ai+len; j++ )
 			c[ci + aix[j]] += (a[j] == bval) ? 1 : 0;
 	}
 	
-	public static void vectEqualWrite(double bval, double[] a, double[] c, int ai, int ci, int len) {
-		for( int j = ai; j < ai+len; j++, ci++)
-			c[ci] = (a[j] == bval) ? 1 : 0;
+	public static double[] vectEqualWrite(double[] a, double bval, int ai, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = 0; j < len; j++, ai++)
+			c[j] = (a[ai] == bval) ? 1 : 0;
+		return c;
 	}
 
-	public static void vectEqualWrite(double bval, double[] a, int[] aix, double[] c, int ai, int ci, int len) {
+	public static double[] vectEqualWrite(double[] a, double bval, int[] aix, int ai, int len) {
+		double[] c = allocVector(len, true);
 		for( int j = ai; j < ai+len; j++ )
-			c[ci + aix[j]] = (a[j] == bval) ? 1 : 0;
-	}
+			c[aix[j]] = (a[j] == bval) ? 1 : 0;
+		return c;
+	}	
 	
-	//custom vector notequal
+	//custom vector not equal
 	
-	public static void vectNotequalAdd(double bval, double[] a, double[] c, int ai, int ci, int len) {
+	public static void vectNotequalAdd(double[] a, double bval, double[] c, int ai, int ci, int len) {
 		for( int j = ai; j < ai+len; j++, ci++)
 			c[ci] += (a[j] != bval) ? 1 : 0;
 	} 
 
-	public static void vectNotequalAdd(double bval, double[] a, double[] c, int[] aix, int ai, int ci, int len) {
+	public static void vectNotequalAdd(double[] a, double bval, double[] c, int[] aix, int ai, int ci, int len) {
 		for( int j = ai; j < ai+len; j++ )
 			c[ci + aix[j]] += (a[j] != bval) ? 1 : 0;
 	}
 	
-	public static void vectNotequalWrite(double bval, double[] a, double[] c, int ai, int ci, int len) {
-		for( int j = ai; j < ai+len; j++, ci++)
-			c[ci] = (a[j] != bval) ? 1 : 0;
+	public static double[] vectNotequalWrite(double[] a, double bval, int ai, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = 0; j < len; j++, ai++)
+			c[j] = (a[j] != bval) ? 1 : 0;
+		return c;
 	}
 
-	public static void vectNotequalWrite(double bval, double[] a, int[] aix, double[] c, int ai, int ci, int len) {
+	public static double[] vectNotequalWrite(double[] a, double bval, int[] aix, int ai, int len) {
+		double[] c = allocVector(len, true);
 		for( int j = ai; j < ai+len; j++ )
-			c[ci + aix[j]] = (a[j] != bval) ? 1 : 0;
+			c[aix[j]] = (a[j] != bval) ? 1 : 0;
+		return c;
 	}
 	
 	//custom vector less
 	
-	public static void vectLessAdd(double bval, double[] a, double[] c, int ai, int ci, int len) {
+	public static void vectLessAdd(double[] a, double bval, double[] c, int ai, int ci, int len) {
 		for( int j = ai; j < ai+len; j++, ci++)
 			c[ci] += (a[j] < bval) ? 1 : 0;
 	} 
 
-	public static void vectLessAdd(double bval, double[] a, double[] c, int[] aix, int ai, int ci, int len) {
+	public static void vectLessAdd(double[] a, double bval, double[] c, int[] aix, int ai, int ci, int len) {
 		for( int j = ai; j < ai+len; j++ )
 			c[ci + aix[j]] += (a[j] < bval) ? 1 : 0;
 	}
 	
-	public static void vectLessWrite(double bval, double[] a, double[] c, int ai, int ci, int len) {
-		for( int j = ai; j < ai+len; j++, ci++)
-			c[ci] = (a[j] < bval) ? 1 : 0;
+	public static double[] vectLessWrite(double[] a, double bval, int ai, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = 0; j < len; j++, ai++)
+			c[j] = (a[j] < bval) ? 1 : 0;
+		return c;
 	}
 
-	public static void vectLessWrite(double bval, double[] a, int[] aix, double[] c, int ai, int ci, int len) {
+	public static double[] vectLessWrite(double[] a, double bval, int[] aix, int ai, int len) {
+		double[] c = allocVector(len, true);
 		for( int j = ai; j < ai+len; j++ )
-			c[ci + aix[j]] = (a[j] < bval) ? 1 : 0;
+			c[aix[j]] = (a[j] < bval) ? 1 : 0;
+		return c;
 	}
 	
-	//custom vector lessequal
+	//custom vector less equal
 	
-	public static void vectLessequalAdd(double bval, double[] a, double[] c, int ai, int ci, int len) {
+	public static void vectLessequalAdd(double[] a, double bval, double[] c, int ai, int ci, int len) {
 		for( int j = ai; j < ai+len; j++, ci++)
 			c[ci] += (a[j] <= bval) ? 1 : 0;
 	} 
 
-	public static void vectLessequalAdd(double bval, double[] a, double[] c, int[] aix, int ai, int ci, int len) {
+	public static void vectLessequalAdd(double[] a, double bval, double[] c, int[] aix, int ai, int ci, int len) {
 		for( int j = ai; j < ai+len; j++ )
 			c[ci + aix[j]] += (a[j] <= bval) ? 1 : 0;
 	}
 	
-	public static void vectLessequalWrite(double bval, double[] a, double[] c, int ai, int ci, int len) {
-		for( int j = ai; j < ai+len; j++, ci++)
-			c[ci] = (a[j] <= bval) ? 1 : 0;
+	public static double[] vectLessequalWrite(double[] a, double bval, int ai, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = 0; j < len; j++, ai++)
+			c[j] = (a[j] <= bval) ? 1 : 0;
+		return c;
 	}
 
-	public static void vectLessequalWrite(double bval, double[] a, int[] aix, double[] c, int ai, int ci, int len) {
+	public static double[] vectLessequalWrite(double[] a, double bval, int[] aix, int ai, int len) {
+		double[] c = allocVector(len, true);
 		for( int j = ai; j < ai+len; j++ )
-			c[ci + aix[j]] = (a[j] <= bval) ? 1 : 0;
+			c[aix[j]] = (a[j] <= bval) ? 1 : 0;
+		return c;
 	}
 
 	//custom vector greater
 	
-	public static void vectGreaterAdd(double bval, double[] a, double[] c, int ai, int ci, int len) {
+	public static void vectGreaterAdd(double[] a, double bval, double[] c, int ai, int ci, int len) {
 		for( int j = ai; j < ai+len; j++, ci++)
 			c[ci] += (a[j] > bval) ? 1 : 0;
 	} 
 
-	public static void vectGreaterAdd(double bval, double[] a, double[] c, int[] aix, int ai, int ci, int len) {
+	public static void vectGreaterAdd(double[] a, double bval, double[] c, int[] aix, int ai, int ci, int len) {
 		for( int j = ai; j < ai+len; j++ )
 			c[ci + aix[j]] += (a[j] > bval) ? 1 : 0;
 	}
 	
-	public static void vectGreaterWrite(double bval, double[] a, double[] c, int ai, int ci, int len) {
-		for( int j = ai; j < ai+len; j++, ci++)
-			c[ci] = (a[j] > bval) ? 1 : 0;
+	public static double[] vectGreaterWrite(double[] a, double bval, int ai, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = 0; j < len; j++, ai++)
+			c[j] = (a[j] > bval) ? 1 : 0;
+		return c;
 	}
 
-	public static void vectGreaterWrite(double bval, double[] a, int[] aix, double[] c, int ai, int ci, int len) {
+	public static double[] vectGreaterWrite(double[] a, double bval, int[] aix, int ai, int len) {
+		double[] c = allocVector(len, true);
 		for( int j = ai; j < ai+len; j++ )
-			c[ci + aix[j]] = (a[j] > bval) ? 1 : 0;
-	}
+			c[aix[j]] = (a[j] > bval) ? 1 : 0;
+		return c;
+	}	
 	
-	//custom vector greaterequal
+	//custom vector greater equal
 	
-	public static void vectGreaterequalAdd(double bval, double[] a, double[] c, int ai, int ci, int len) {
+	public static void vectGreaterequalAdd(double[] a, double bval, double[] c, int ai, int ci, int len) {
 		for( int j = ai; j < ai+len; j++, ci++)
 			c[ci] += (a[j] >= bval) ? 1 : 0;
 	} 
 
-	public static void vectGreaterequalAdd(double bval, double[] a, double[] c, int[] aix, int ai, int ci, int len) {
+	public static void vectGreaterequalAdd(double[] a, double bval, double[] c, int[] aix, int ai, int ci, int len) {
 		for( int j = ai; j < ai+len; j++ )
 			c[ci + aix[j]] += (a[j] >= bval) ? 1 : 0;
 	}
 	
-	public static void vectGreaterequalWrite(double bval, double[] a, double[] c, int ai, int ci, int len) {
-		for( int j = ai; j < ai+len; j++, ci++)
-			c[ci] = (a[j] >= bval) ? 1 : 0;
+	public static double[] vectGreaterequalWrite(double[] a, double bval, int ai, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = 0; j < len; j++, ai++)
+			c[j] = (a[j] >= bval) ? 1 : 0;
+		return c;
 	}
 
-	public static void vectGreaterequalWrite(double bval, double[] a, int[] aix, double[] c, int ai, int ci, int len) {
+	public static double[] vectGreaterequalWrite(double[] a, double bval, int[] aix, int ai, int len) {
+		double[] c = allocVector(len, true);
 		for( int j = ai; j < ai+len; j++ )
-			c[ci + aix[j]] = (a[j] >= bval) ? 1 : 0;
+			c[aix[j]] = (a[j] >= bval) ? 1 : 0;
+		return c;
+	}
+	
+	//dynamic memory management
+	
+	public static void setupThreadLocalMemory(int numVectors, int len) {
+		LinkedList<double[]> list = new LinkedList<double[]>();
+		for( int i=0; i<numVectors; i++ )
+			list.addLast(new double[len]);
+		memPool.set(list);
+	}
+	
+	public static void cleanupThreadLocalMemory() {
+		memPool.remove();
+	}
+	
+	private static double[] allocVector(int len, boolean reset) {
+		LinkedList<double[]> list = memPool.get();
+		
+		//sanity check for missing setup
+		if( list.isEmpty() )
+			return new double[len];
+		
+		//get and re-queue first entry
+		double[] tmp = list.removeFirst();
+		list.addLast(tmp);
+		
+		//reset vector if required
+		if( reset )
+			Arrays.fill(tmp, 0);
+		return tmp;
 	}
 }
+

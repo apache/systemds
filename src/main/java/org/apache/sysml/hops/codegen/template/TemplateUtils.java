@@ -272,4 +272,12 @@ public class TemplateUtils
 					|| ((CNodeUnary)c).getType()==UnaryType.LOOKUP_RC)));
 		return ret;
 	}
+	
+	public static int countVectorIntermediates(CNode node) {
+		int ret = 0;
+		for( CNode c : node.getInput() )
+			ret += countVectorIntermediates(c);
+		return ret + ((node instanceof CNodeBinary 
+			&& ((CNodeBinary)node).getType().isVectorScalarPrimitive()) ? 1 : 0);
+	}
 }

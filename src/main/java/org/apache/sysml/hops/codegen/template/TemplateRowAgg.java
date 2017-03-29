@@ -118,6 +118,8 @@ public class TemplateRowAgg extends TemplateBase
 			inputs.add(tmp.get(in.getHopID()));
 		CNode output = tmp.get(hop.getHopID());
 		CNodeRowAgg tpl = new CNodeRowAgg(inputs, output);
+		tpl.setNumVectorIntermediates(TemplateUtils
+			.countVectorIntermediates(output));
 		
 		// return cplan instance
 		return new Pair<Hop[],CNodeTpl>(sinHops.toArray(new Hop[0]), tpl);
@@ -172,7 +174,7 @@ public class TemplateRowAgg extends TemplateBase
 				inHops.remove(hop.getInput().get(0)); 
 				inHops.add(hop.getInput().get(0).getInput().get(0));
 				
-				out = new CNodeBinary(cdata2, cdata1, BinType.VECT_MULT_ADD);
+				out = new CNodeBinary(cdata1, cdata2, BinType.VECT_MULT_ADD);
 			}
 			else
 			{
@@ -206,7 +208,7 @@ public class TemplateRowAgg extends TemplateBase
 			{
 				if( HopRewriteUtils.isBinary(hop, SUPPORTED_VECT_BINARY) ) {
 					String opname = "VECT_"+((BinaryOp)hop).getOp().name()+"_SCALAR";
-					out = new CNodeBinary(cdata2, cdata1, BinType.valueOf(opname));
+					out = new CNodeBinary(cdata1, cdata2, BinType.valueOf(opname));
 				}
 				else 
 					throw new RuntimeException("Unsupported binary matrix "

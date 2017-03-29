@@ -39,10 +39,12 @@ public abstract class SpoofRowAggregate extends SpoofOperator
 	private static final long serialVersionUID = 6242910797139642998L;
 	private static final long PAR_NUMCELL_THRESHOLD = 1024*1024;   //Min 1M elements
 	
-	protected boolean _colVector = false;
+	protected final boolean _colVector;
+	protected final int _reqVectMem;
 	
-	public SpoofRowAggregate() {
-
+	public SpoofRowAggregate(boolean colVector, int reqVectMem) {
+		_colVector = colVector;
+		_reqVectMem = reqVectMem;
 	}
 
 	@Override
@@ -66,12 +68,14 @@ public abstract class SpoofRowAggregate extends SpoofOperator
 		//core sequential execute
 		final int m = inputs.get(0).getNumRows();
 		final int n = inputs.get(0).getNumColumns();		
+		LibSpoofPrimitives.setupThreadLocalMemory(_reqVectMem, out.getNumColumns());
 		if( !inputs.get(0).isInSparseFormat() )
 			executeDense(inputs.get(0).getDenseBlock(), b, scalars, c, n, 0, m);
 		else
 			executeSparse(inputs.get(0).getSparseBlock(), b, scalars, c, n, 0, m);
 	
 		//post-processing
+		LibSpoofPrimitives.cleanupThreadLocalMemory();
 		out.recomputeNonZeros();	
 	}
 	
@@ -176,12 +180,17 @@ public abstract class SpoofRowAggregate extends SpoofOperator
 		
 		@Override
 		public double[] call() throws DMLRuntimeException {
+			
+			//allocate vector intermediates and partial output
+			LibSpoofPrimitives.setupThreadLocalMemory(_reqVectMem, _clen);
 			double[] c = new double[_clen];
+			
 			if( !_a.isInSparseFormat() )
 				executeDense(_a.getDenseBlock(), _b, _scalars, c, _clen, _rl, _ru);
 			else
 				executeSparse(_a.getSparseBlock(), _b, _scalars, c, _clen, _rl, _ru);
-				
+			
+			LibSpoofPrimitives.cleanupThreadLocalMemory();
 			return c;
 		}
 	}

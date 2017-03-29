@@ -56,7 +56,7 @@ public class CNodeBinary extends CNode
 				case DOT_PRODUCT:   
 					return sparse ? "    double %TMP% = LibSpoofPrimitives.dotProduct(%IN1v%, %IN2%, %IN1i%, %POS1%, %POS2%, %LEN%);\n" :
 									"    double %TMP% = LibSpoofPrimitives.dotProduct(%IN1%, %IN2%, %POS1%, %POS2%, %LEN%);\n";
-					
+				
 				case VECT_MULT_ADD:
 				case VECT_DIV_ADD:
 				case VECT_EQUAL_ADD:
@@ -66,9 +66,10 @@ public class CNodeBinary extends CNode
 				case VECT_GREATER_ADD:
 				case VECT_GREATEREQUAL_ADD: {
 					String vectName = getVectorPrimitiveName();
-					return sparse ? "    LibSpoofPrimitives.vect"+vectName+"Add(%IN1%, %IN2v%, %OUT%, %IN2i%, %POS2%, %POSOUT%, %LEN%);\n" : 
-									"    LibSpoofPrimitives.vect"+vectName+"Add(%IN1%, %IN2%, %OUT%, %POS2%, %POSOUT%, %LEN%);\n";
+					return sparse ? "    LibSpoofPrimitives.vect"+vectName+"Add(%IN1v%, %IN2%, %OUT%, %IN1i%, %POS1%, %POSOUT%, %LEN%);\n" : 
+									"    LibSpoofPrimitives.vect"+vectName+"Add(%IN1%, %IN2%, %OUT%, %POS1%, %POSOUT%, %LEN%);\n";
 				}
+				
 				case VECT_DIV_SCALAR:
 				case VECT_MULT_SCALAR:
 				case VECT_EQUAL_SCALAR:
@@ -78,9 +79,10 @@ public class CNodeBinary extends CNode
 				case VECT_GREATER_SCALAR:
 				case VECT_GREATEREQUAL_SCALAR: {
 					String vectName = getVectorPrimitiveName();
-					return sparse ? "    LibSpoofPrimitives.vect"+vectName+"Write(%IN1v%, %IN1i%, %IN2%,  %OUT%, %POS1%, %POSOUT%, %LEN%);\n" : 
-									"    LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %IN2%, %OUT%, %POS1%, %POSOUT%, %LEN%);\n";
+					return sparse ? "    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1v%, %IN2%, %IN1i%, %POS1%, %LEN%);\n" : 
+									"    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %IN2%, %POS1%, %LEN%);\n";
 				}
+				
 				/*Can be replaced by function objects*/
 				case MULT:
 					return "    double %TMP% = %IN1% * %IN2%;\n" ;
@@ -171,23 +173,25 @@ public class CNodeBinary extends CNode
 		sb.append(_inputs.get(0).codegen(sparse));
 		sb.append(_inputs.get(1).codegen(sparse));
 		
-		//generate binary operation
+		//generate binary operation (use sparse template, if data input)
+		boolean lsparse = sparse && (_inputs.get(0) instanceof CNodeData);
 		String var = createVarname();
-		String tmp = _type.getTemplate(sparse);
+		String tmp = _type.getTemplate(lsparse);
 		tmp = tmp.replaceAll("%TMP%", var);
+		
+		//replace input references and start indexes
 		for( int j=1; j<=2; j++ ) {
 			String varj = _inputs.get(j-1).getVarname();
-			if( sparse && !tmp.contains("%IN"+j+"%") ) {
-				tmp = tmp.replaceAll("%IN"+j+"v%", varj+"vals");
-				tmp = tmp.replaceAll("%IN"+j+"i%", varj+"ix");
-			}
-			else
-				tmp = tmp.replaceAll("%IN"+j+"%", varj );
 			
-			if(varj.startsWith("b")  ) //i.e. b.get(index)
-				tmp = tmp.replaceAll("%POS"+j+"%", "bi");
-			else
-				tmp = tmp.replaceAll("%POS"+j+"%", varj+"i");
+			//replace sparse and dense inputs
+			tmp = tmp.replaceAll("%IN"+j+"v%", varj+"vals");
+			tmp = tmp.replaceAll("%IN"+j+"i%", varj+"ix");
+			tmp = tmp.replaceAll("%IN"+j+"%", varj );
+			
+			//replace start position of main input
+			tmp = tmp.replaceAll("%POS"+j+"%", (!varj.startsWith("b") 
+				&& _inputs.get(j-1) instanceof CNodeData 
+				&& _inputs.get(j-1).getDataType().isMatrix()) ? varj+"i" : "0");
 		}
 		sb.append(tmp);
 		

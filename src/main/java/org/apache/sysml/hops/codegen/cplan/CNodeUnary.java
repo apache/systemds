@@ -43,8 +43,8 @@ public class CNodeUnary extends CNode
 		public String getTemplate(boolean sparse) {
 			switch( this ) {
 				case ROW_SUMS:
-					return sparse ? "    double %TMP% = LibSpoofPrimitives.vectSum( %IN1v%, %IN1i%, %POS1%, %LEN%);\n": 
-									"    double %TMP% = LibSpoofPrimitives.vectSum( %IN1%, %POS1%,  %LEN%);\n"; 
+					return sparse ? "    double %TMP% = LibSpoofPrimitives.vectSum(%IN1v%, %IN1i%, %POS1%, %LEN%);\n": 
+									"    double %TMP% = LibSpoofPrimitives.vectSum(%IN1%, %POS1%, %LEN%);\n"; 
 				case EXP:
 					return "    double %TMP% = FastMath.exp(%IN1%);\n";
 			    case LOOKUP_R:

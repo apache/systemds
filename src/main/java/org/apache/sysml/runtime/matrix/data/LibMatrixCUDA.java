@@ -304,6 +304,7 @@ public class LibMatrixCUDA {
 			int K, int R, int S, int pad_h, int pad_w, int stride_h, int stride_w, int P, int Q)
 					throws DMLRuntimeException {
 		conv2d(instName, image, filter, outputBlock, N, C, H, W, K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
+		cudaDeviceSynchronize();
 		biasAdd(instName, outputBlock, bias, outputBlock);
 	}
 	

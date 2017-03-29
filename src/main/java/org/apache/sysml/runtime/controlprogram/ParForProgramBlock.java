@@ -630,8 +630,10 @@ public class ParForProgramBlock extends ForProgramBlock
 			switch( _execMode )
 			{
 				case LOCAL: //create parworkers as local threads
-					if (DMLScript.USE_ACCELERATOR)
+					if (DMLScript.USE_ACCELERATOR) {
 						setDegreeOfParallelism(GPUContext.getDeviceCount());
+						GPUContext.getGPUContext().destroy(); // destroy current GPUContext so that parfor can use the most number of GPUs
+					}
 					executeLocalParFor(ec, iterVar, from, to, incr);
 					break;
 					

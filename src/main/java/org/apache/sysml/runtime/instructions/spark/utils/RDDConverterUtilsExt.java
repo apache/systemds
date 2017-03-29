@@ -196,6 +196,30 @@ public class RDDConverterUtilsExt
 		return ret;
 	}
 	
+	public static MatrixBlock allocateDenseOrSparse(int rlen, int clen, boolean isSparse) {
+		MatrixBlock ret = new MatrixBlock(rlen, clen, isSparse);
+		ret.allocateDenseOrSparseBlock();
+		return ret;
+	}
+	public static MatrixBlock allocateDenseOrSparse(long rlen, long clen, boolean isSparse) throws DMLRuntimeException {
+		if(rlen > Integer.MAX_VALUE || clen > Integer.MAX_VALUE) {
+			throw new DMLRuntimeException("Dimensions of matrix are too large to be passed via NumPy/SciPy:" + rlen + " X " + clen);
+		}
+		return allocateDenseOrSparse(rlen, clen, isSparse);
+	}
+	
+	public static void copyRowBlocks(MatrixBlock mb, int rowIndex, MatrixBlock ret, long numRowsPerBlock, long rlen, long clen) throws DMLRuntimeException {
+		// TODO: Double-check if synchronization is required here.
+		// synchronized (RDDConverterUtilsExt.class) {
+			ret.copy((int)(rowIndex*numRowsPerBlock), (int)Math.min((rowIndex+1)*numRowsPerBlock-1, rlen-1), 0, (int)(clen-1), mb, false);
+		// }
+	}
+	
+	public static void postProcessAfterCopying(MatrixBlock ret) throws DMLRuntimeException {
+		ret.recomputeNonZeros();
+		ret.examSparsity();
+	}
+	
 	public static MatrixBlock convertPy4JArrayToMB(byte [] data, int rlen, int clen, boolean isSparse) throws DMLRuntimeException {
 		MatrixBlock mb = new MatrixBlock(rlen, clen, isSparse, -1);
 		if(isSparse) {

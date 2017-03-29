@@ -77,40 +77,35 @@ def _convertDenseMatrixToMB(sc, src):
     createJavaObject(sc, 'dummy')
     return sc._jvm.org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt.convertPy4JArrayToMB(buf, numRows, numCols)
 
+def _copyRowBlock(i, sc, ret, src, numRowsPerBlock,  rlen, clen):
+    rowIndex = int(i / numRowsPerBlock)
+    mb = _convertSPMatrixToMB(sc, src.getrow(i)) if isinstance(src, spmatrix) else  _convertDenseMatrixToMB(sc, src[i:i+numRowsPerBlock,])
+    sc._jvm.org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt.copyRowBlocks(mb, rowIndex, ret, numRowsPerBlock, rlen, clen)
+    return i
+
 def convertToMatrixBlock(sc, src, maxSizeBlockInMB=8):
-    if isinstance(src, spmatrix):
-        src = coo_matrix(src,  dtype=np.float64)
-    else:
-        src = np.asarray(src, dtype=np.float64)
+    if not isinstance(sc, SparkContext):
+        raise TypeError('sc needs to be of type SparkContext')
+    isSparse = True if isinstance(src, spmatrix) else False
+    src = coo_matrix(src,  dtype=np.float64) if isSparse else np.asarray(src, dtype=np.float64)
     if len(src.shape) != 2:
-        hint = ''
-        num_dim = len(src.shape)
-        type1 = str(type(src).__name__)
-        if type(src) == np.ndarray and num_dim == 1:
-            hint = '. Hint: If you intend to pass the 1-dimensional ndarray as a column-vector, please reshape it: input_ndarray.reshape(-1, 1)'
-        elif num_dim > 2:
-            hint = '. Hint: If you intend to pass a tensor, please reshape it into (N, CHW) format'
-        raise TypeError('Expected 2-dimensional ' + type1 + ', instead passed ' + str(num_dim) + '-dimensional ' + type1 + hint)
+        src_type = str(type(src).__name__)
+        raise TypeError('Expected 2-dimensional ' + src_type + ', instead passed ' + str(len(src.shape)) + '-dimensional ' + src_type)
     numRowsPerBlock = int(math.ceil((maxSizeBlockInMB*1000000) / (src.shape[1]*8)))
     multiBlockTransfer = False if numRowsPerBlock >= src.shape[0] else True
     if not multiBlockTransfer:
-        if isinstance(src, spmatrix):
-            return _convertSPMatrixToMB(sc, src)
-        elif isinstance(sc, SparkContext):
-            return _convertDenseMatrixToMB(sc, src)
-        else:
-            raise TypeError('sc needs to be of type SparkContext')
+        return _convertSPMatrixToMB(sc, src) if isSparse else _convertDenseMatrixToMB(sc, src)
     else:
-        if isinstance(src, spmatrix):
-            numRowsPerBlock = 1 # To avoid unnecessary conversion to csr and then coo again
-            rowBlocks = [ _convertSPMatrixToMB(sc, src.getrow(i)) for i in  range(src.shape[0]) ]
-            isSparse = True
-        elif isinstance(sc, SparkContext):
-            rowBlocks = [ _convertDenseMatrixToMB(sc, src[i:i+numRowsPerBlock,]) for i in  range(0, src.shape[0], numRowsPerBlock) ]
-            isSparse = False
-        else:
-            raise TypeError('sc needs to be of type SparkContext')
-        return sc._jvm.org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt.mergeRowBlocks(rowBlocks, int(numRowsPerBlock), int(src.shape[0]), int(src.shape[1]), isSparse)
+        # To avoid unnecessary conversion to csr and then coo again
+        numRowsPerBlock = 1 if isSparse else numRowsPerBlock
+        ret = sc._jvm.org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt.allocateDenseOrSparse(int(src.shape[0]), int(src.shape[1]), isSparse)
+        from functools import partial
+        partialFunc = partial(_copyRowBlock, sc=sc, ret=ret, src=src, numRowsPerBlock=numRowsPerBlock, rlen=rlen, clen=clen)
+        import multiprocessing
+        pool = multiprocessing.Pool()
+        pool.map(partialFunc, range(0, src.shape[0], numRowsPerBlock))
+        sc._jvm.org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt.postProcessAfterCopying(ret)
+        return ret
 
 def convertToNumPyArr(sc, mb):
     if isinstance(sc, SparkContext):

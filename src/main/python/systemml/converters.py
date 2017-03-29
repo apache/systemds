@@ -104,11 +104,7 @@ def convertToMatrixBlock(sc, src, maxSizeBlockInMB=8):
         rlen = int(src.shape[0])
         clen = int(src.shape[1])
         ret = sc._jvm.org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt.allocateDenseOrSparse(rlen, clen, isSparse)
-        import multiprocessing
-        pool = multiprocessing.Pool()
-        pool.map(_copyRowBlock_helper, [ (i, sc, ret, src, numRowsPerBlock,  rlen, clen) for i in range(0, src.shape[0], numRowsPerBlock)])
-        pool.close()
-        pool.join()
+        [ _copyRowBlock(i, sc, ret, src, numRowsPerBlock,  rlen, clen) for i in range(0, src.shape[0], numRowsPerBlock) ]
         sc._jvm.org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt.postProcessAfterCopying(ret)
         return ret
 

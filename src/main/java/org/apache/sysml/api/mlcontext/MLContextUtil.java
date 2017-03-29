@@ -889,11 +889,12 @@ public final class MLContextUtil {
 				}
 				sb.append(") ");
 
-				sb.append(key);
-				sb.append(": ");
-				String str = object.toString();
-				str = StringUtils.abbreviate(str, 100);
-				sb.append(str);
+				// Can cause java.lang.OutOfMemoryError: Java heap space at org.apache.sysml.runtime.matrix.data.MatrixBlock.toString(MatrixBlock.java:5804)
+				// sb.append(key);
+				// sb.append(": ");
+				// String str = object.toString();
+				// str = StringUtils.abbreviate(str, 100);
+				// sb.append(str);
 				sb.append("\n");
 			}
 		}

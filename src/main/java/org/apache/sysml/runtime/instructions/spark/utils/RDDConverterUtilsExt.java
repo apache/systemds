@@ -165,37 +165,6 @@ public class RDDConverterUtilsExt
 		return convertPy4JArrayToMB(data, (int) rlen, (int) clen, isSparse);
 	}
 	
-	public static MatrixBlock mergeRowBlocks(ArrayList<MatrixBlock> mb, int numRowsPerBlock, int rlen, int clen, boolean isSparse) throws DMLRuntimeException {
-		return mergeRowBlocks(mb, (long)numRowsPerBlock, (long)rlen, (long)clen, isSparse);
-	}
-	
-	/**
-	 * This creates a MatrixBlock from list of row blocks
-	 * 
-	 * @param mb list of row blocks
-	 * @param numRowsPerBlock number of rows per block
-	 * @param rlen number of rows
-	 * @param clen number of columns
-	 * @param isSparse is the output matrix in sparse format
-	 * @return a matrix block of shape (rlen, clen)
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
-	 */
-	public static MatrixBlock mergeRowBlocks(ArrayList<MatrixBlock> mb, long numRowsPerBlock, long rlen, long clen, boolean isSparse) throws DMLRuntimeException {
-		if(clen >= Integer.MAX_VALUE)
-			throw new DMLRuntimeException("Number of columns cannot be greater than " + Integer.MAX_VALUE);
-		if(rlen >= Integer.MAX_VALUE)
-			throw new DMLRuntimeException("Number of rows cannot be greater than " + Integer.MAX_VALUE);
-		
-		MatrixBlock ret = new MatrixBlock((int)rlen, (int) clen, isSparse);
-		ret.allocateDenseOrSparseBlock();
-		for(int i = 0; i < mb.size(); i++) {
-			ret.copy((int)(i*numRowsPerBlock), (int)Math.min((i+1)*numRowsPerBlock-1, rlen-1), 0, (int)(clen-1), mb.get(i), false);
-		}
-		ret.recomputeNonZeros();
-		ret.examSparsity();
-		return ret;
-	}
-	
 	public static MatrixBlock allocateDenseOrSparse(int rlen, int clen, boolean isSparse) {
 		MatrixBlock ret = new MatrixBlock(rlen, clen, isSparse);
 		ret.allocateDenseOrSparseBlock();

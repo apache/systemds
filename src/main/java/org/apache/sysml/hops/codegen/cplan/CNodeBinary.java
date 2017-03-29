@@ -21,6 +21,7 @@ package org.apache.sysml.hops.codegen.cplan;
 
 import java.util.Arrays;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.sysml.parser.Expression.DataType;
 
 
@@ -28,8 +29,10 @@ public class CNodeBinary extends CNode
 {
 	public enum BinType {
 		DOT_PRODUCT,
-		VECT_MULT_ADD, VECT_DIV_ADD,
-		VECT_MULT_SCALAR, VECT_DIV_SCALAR, 
+		VECT_MULT_ADD, VECT_DIV_ADD, VECT_EQUAL_ADD, VECT_NOTEQUAL_ADD, 
+		VECT_LESS_ADD, VECT_LESSEQUAL_ADD, VECT_GREATER_ADD, VECT_GREATEREQUAL_ADD,
+		VECT_MULT_SCALAR, VECT_DIV_SCALAR, VECT_EQUAL_SCALAR, VECT_NOTEQUAL_SCALAR, 
+		VECT_LESS_SCALAR, VECT_LESSEQUAL_SCALAR, VECT_GREATER_SCALAR, VECT_GREATEREQUAL_SCALAR,
 		MULT, DIV, PLUS, MINUS, MODULUS, INTDIV, 
 		LESS, LESSEQUAL, GREATER, GREATEREQUAL, EQUAL,NOTEQUAL,
 		MIN, MAX, AND, OR, LOG, POW,
@@ -53,23 +56,31 @@ public class CNodeBinary extends CNode
 				case DOT_PRODUCT:   
 					return sparse ? "    double %TMP% = LibSpoofPrimitives.dotProduct(%IN1v%, %IN2%, %IN1i%, %POS1%, %POS2%, %LEN%);\n" :
 									"    double %TMP% = LibSpoofPrimitives.dotProduct(%IN1%, %IN2%, %POS1%, %POS2%, %LEN%);\n";
-			
-				case VECT_MULT_ADD: 
-					return sparse ? "    LibSpoofPrimitives.vectMultiplyAdd(%IN1%, %IN2v%, %OUT%, %IN2i%, %POS2%, %POSOUT%, %LEN%);\n" : 
-									"    LibSpoofPrimitives.vectMultiplyAdd(%IN1%, %IN2%, %OUT%, %POS2%, %POSOUT%, %LEN%);\n";
-				
-				case VECT_DIV_ADD: 
-					return sparse ? "    LibSpoofPrimitives.vectDivAdd(%IN1v%, %IN2%, %OUT%, %IN1i%, %POS1%, %POSOUT%, %LEN%);\n" : 
-									"    LibSpoofPrimitives.vectDivAdd(%IN1%, %IN2%, %OUT%, %POS1%, %POSOUT%, %LEN%);\n";
-				
-				case VECT_DIV_SCALAR: 
-					return sparse ? "    LibSpoofPrimitives.vectDivWrite(%IN1v%, %IN1i%, %IN2%,  %OUT%, %POS1%, %POSOUT%, %LEN%);\n" : 
-									"    LibSpoofPrimitives.vectDivWrite(%IN1%, %IN2%, %OUT%, %POS1%, %POSOUT%, %LEN%);\n";
-				
-				case VECT_MULT_SCALAR: 
-					return "    LibSpoofPrimitives.vectMultiplyWrite(%IN2%, %IN1%, %POS1%, %OUT%, 0, %LEN%);\n";
-							
-				
+					
+				case VECT_MULT_ADD:
+				case VECT_DIV_ADD:
+				case VECT_EQUAL_ADD:
+				case VECT_NOTEQUAL_ADD:
+				case VECT_LESS_ADD:
+				case VECT_LESSEQUAL_ADD:
+				case VECT_GREATER_ADD:
+				case VECT_GREATEREQUAL_ADD: {
+					String vectName = getVectorPrimitiveName();
+					return sparse ? "    LibSpoofPrimitives.vect"+vectName+"Add(%IN1%, %IN2v%, %OUT%, %IN2i%, %POS2%, %POSOUT%, %LEN%);\n" : 
+									"    LibSpoofPrimitives.vect"+vectName+"Add(%IN1%, %IN2%, %OUT%, %POS2%, %POSOUT%, %LEN%);\n";
+				}
+				case VECT_DIV_SCALAR:
+				case VECT_MULT_SCALAR:
+				case VECT_EQUAL_SCALAR:
+				case VECT_NOTEQUAL_SCALAR:
+				case VECT_LESS_SCALAR:
+				case VECT_LESSEQUAL_SCALAR:
+				case VECT_GREATER_SCALAR:
+				case VECT_GREATEREQUAL_SCALAR: {
+					String vectName = getVectorPrimitiveName();
+					return sparse ? "    LibSpoofPrimitives.vect"+vectName+"Write(%IN1v%, %IN1i%, %IN2%,  %OUT%, %POS1%, %POSOUT%, %LEN%);\n" : 
+									"    LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %IN2%, %OUT%, %POS1%, %POSOUT%, %LEN%);\n";
+				}
 				/*Can be replaced by function objects*/
 				case MULT:
 					return "    double %TMP% = %IN1% * %IN2%;\n" ;
@@ -111,6 +122,19 @@ public class CNodeBinary extends CNode
 				default: 
 					throw new RuntimeException("Invalid binary type: "+this.toString());
 			}
+		}
+		public boolean isVectorScalarPrimitive() {
+			return this == VECT_DIV_SCALAR || this == VECT_MULT_SCALAR
+				|| this == VECT_EQUAL_SCALAR || this == VECT_NOTEQUAL_SCALAR
+				|| this == VECT_LESS_SCALAR || this == VECT_LESSEQUAL_SCALAR
+				|| this == VECT_GREATER_SCALAR || this == VECT_GREATEREQUAL_SCALAR;
+		}
+		public BinType getVectorAddPrimitive() {
+			return BinType.valueOf("VECT_"+getVectorPrimitiveName().toUpperCase()+"_ADD");
+		}
+		public String getVectorPrimitiveName() {
+			String [] tmp = this.name().split("_");
+			return StringUtils.capitalize(tmp[1].toLowerCase());
 		}
 	}
 	
@@ -179,6 +203,20 @@ public class CNodeBinary extends CNode
 			case DOT_PRODUCT: return "b(dot)";
 			case VECT_MULT_ADD: return "b(vma)";
 			case VECT_DIV_ADD: return "b(vda)";
+			case VECT_EQUAL_ADD: return "b(veqa)";
+			case VECT_NOTEQUAL_ADD: return "b(vneqa)";
+			case VECT_LESS_ADD: return "b(vlta)";
+			case VECT_LESSEQUAL_ADD: return "b(vltea)";
+			case VECT_GREATEREQUAL_ADD: return "b(vgtea)";
+			case VECT_GREATER_ADD: return "b(vgta)";
+			case VECT_MULT_SCALAR:  return "b(vm)";
+			case VECT_DIV_SCALAR:  return "b(vd)";
+			case VECT_EQUAL_SCALAR: return "b(veq)";
+			case VECT_NOTEQUAL_SCALAR: return "b(vneq)";
+			case VECT_LESS_SCALAR: return "b(vlt)";
+			case VECT_LESSEQUAL_SCALAR: return "b(vlte)";
+			case VECT_GREATEREQUAL_SCALAR: return "b(vgte)";
+			case VECT_GREATER_SCALAR: return "b(vgt)";
 			case MULT: return "b(*)";
 			case DIV: return "b(/)";
 			case PLUS: return "b(+)";
@@ -192,8 +230,6 @@ public class CNodeBinary extends CNode
 			case EQUAL: return "b(==)";
 			case NOTEQUAL: return "b(!=)";
 			case MINUS1_MULT: return "b(1-*)";
-			case VECT_DIV_SCALAR:  return "b(vector/)";
-			case VECT_MULT_SCALAR:  return "b(vector*)";
 			default: return "b("+_type.name()+")";
 		}
 	}
@@ -205,6 +241,12 @@ public class CNodeBinary extends CNode
 			//VECT
 			case VECT_MULT_ADD: 
 			case VECT_DIV_ADD:
+			case VECT_EQUAL_ADD: 
+			case VECT_NOTEQUAL_ADD: 
+			case VECT_LESS_ADD: 
+			case VECT_LESSEQUAL_ADD: 
+			case VECT_GREATER_ADD: 
+			case VECT_GREATEREQUAL_ADD:
 				_rows = _inputs.get(1)._rows;
 				_cols = _inputs.get(1)._cols;
 				_dataType= DataType.MATRIX;
@@ -212,6 +254,12 @@ public class CNodeBinary extends CNode
 				
 			case VECT_DIV_SCALAR: 	
 			case VECT_MULT_SCALAR:
+			case VECT_EQUAL_SCALAR: 
+			case VECT_NOTEQUAL_SCALAR: 
+			case VECT_LESS_SCALAR: 
+			case VECT_LESSEQUAL_SCALAR: 
+			case VECT_GREATER_SCALAR: 
+			case VECT_GREATEREQUAL_SCALAR:
 				_rows = _inputs.get(0)._rows;
 				_cols = _inputs.get(0)._cols;
 				_dataType= DataType.MATRIX;

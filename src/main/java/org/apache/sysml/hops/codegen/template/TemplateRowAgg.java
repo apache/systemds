@@ -51,8 +51,11 @@ import org.apache.sysml.hops.Hop.OpOp2;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.matrix.data.Pair;
 
-public class TemplateRowAgg extends TemplateBase {
-
+public class TemplateRowAgg extends TemplateBase 
+{
+	private static final Hop.OpOp2[] SUPPORTED_VECT_BINARY = new OpOp2[]{OpOp2.MULT, OpOp2.DIV, 
+			OpOp2.EQUAL, OpOp2.NOTEQUAL, OpOp2.LESS, OpOp2.LESSEQUAL, OpOp2.GREATER, OpOp2.GREATEREQUAL};
+	
 	public TemplateRowAgg() {
 		super(TemplateType.RowAggTpl);
 	}
@@ -149,9 +152,10 @@ public class TemplateRowAgg extends TemplateBase {
 				}
 			}
 			else  if (((AggUnaryOp)hop).getDirection() == Direction.Col && ((AggUnaryOp)hop).getOp() == AggOp.SUM ) {
-				//vector div add without temporary copy
-				if(cdata1 instanceof CNodeBinary && ((CNodeBinary)cdata1).getType()==BinType.VECT_DIV_SCALAR)
-					out = new CNodeBinary(cdata1.getInput().get(0), cdata1.getInput().get(1), BinType.VECT_DIV_ADD);
+				//vector add without temporary copy
+				if( cdata1 instanceof CNodeBinary && ((CNodeBinary)cdata1).getType().isVectorScalarPrimitive() )
+					out = new CNodeBinary(cdata1.getInput().get(0), cdata1.getInput().get(1), 
+							((CNodeBinary)cdata1).getType().getVectorAddPrimitive());
 				else	
 					out = cdata1;
 			}
@@ -200,8 +204,13 @@ public class TemplateRowAgg extends TemplateBase {
 			// if one input is a matrix then we need to do vector by scalar operations
 			if(hop.getInput().get(0).getDim1() > 1 && hop.getInput().get(0).getDim2() > 1 )
 			{
-				if (((BinaryOp)hop).getOp()== OpOp2.DIV)
-					out = new CNodeBinary(cdata1, cdata2, BinType.VECT_DIV_SCALAR);
+				if( HopRewriteUtils.isBinary(hop, SUPPORTED_VECT_BINARY) ) {
+					String opname = "VECT_"+((BinaryOp)hop).getOp().name()+"_SCALAR";
+					out = new CNodeBinary(cdata2, cdata1, BinType.valueOf(opname));
+				}
+				else 
+					throw new RuntimeException("Unsupported binary matrix "
+							+ "operation: " + ((BinaryOp)hop).getOp().name());
 			}
 			else //one input is a vector/scalar other is a scalar
 			{

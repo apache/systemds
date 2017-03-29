@@ -83,6 +83,9 @@ def _copyRowBlock(i, sc, ret, src, numRowsPerBlock,  rlen, clen):
     sc._jvm.org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt.copyRowBlocks(mb, rowIndex, ret, numRowsPerBlock, rlen, clen)
     return i
 
+def _copyRowBlock_helper(args):
+    return _copyRowBlock(*args)
+    
 def convertToMatrixBlock(sc, src, maxSizeBlockInMB=8):
     if not isinstance(sc, SparkContext):
         raise TypeError('sc needs to be of type SparkContext')
@@ -98,12 +101,14 @@ def convertToMatrixBlock(sc, src, maxSizeBlockInMB=8):
     else:
         # To avoid unnecessary conversion to csr and then coo again
         numRowsPerBlock = 1 if isSparse else numRowsPerBlock
-        ret = sc._jvm.org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt.allocateDenseOrSparse(int(src.shape[0]), int(src.shape[1]), isSparse)
-        from functools import partial
-        partialFunc = partial(_copyRowBlock, sc=sc, ret=ret, src=src, numRowsPerBlock=int(numRowsPerBlock), rlen=int(src.shape[0]), clen=int(src.shape[1]))
+        rlen = int(src.shape[0])
+        clen = int(src.shape[1])
+        ret = sc._jvm.org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt.allocateDenseOrSparse(rlen, clen, isSparse)
         import multiprocessing
         pool = multiprocessing.Pool()
-        pool.map(partialFunc, range(0, src.shape[0], numRowsPerBlock))
+        pool.map(_copyRowBlock_helper, [ (i, sc, ret, src, numRowsPerBlock,  rlen, clen) for i in range(0, src.shape[0], numRowsPerBlock)])
+        pool.close()
+        pool.join()
         sc._jvm.org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt.postProcessAfterCopying(ret)
         return ret
 

@@ -594,4 +594,13 @@ public class GPUContext {
     cusparseDestroy(cusparseHandle);
 	}
 
+	@Override
+	public String toString() {
+		return "GPUContext{" +
+						"deviceNum=" + deviceNum +
+						", cudnnHandle=" + cudnnHandle +
+						", cublasHandle=" + cublasHandle +
+						", cusparseHandle=" + cusparseHandle +
+						'}';
+	}
 }

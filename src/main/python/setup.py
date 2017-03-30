@@ -38,10 +38,12 @@ ARTIFACT_VERSION_SHORT = ARTIFACT_VERSION.split("-")[0]
 
 numpy_version = '1.8.2'
 scipy_version = '0.15.1'
+pillow_version = '2.0.0'
 REQUIRED_PACKAGES = [
     'numpy >= %s' % numpy_version,
     'scipy >= %s' % scipy_version,
-    'pandas'
+    'pandas',
+    'Pillow >= %s' % pillow_version
 ]
 
 

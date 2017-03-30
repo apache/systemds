@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-__all__ = ['LinearRegression', 'LogisticRegression', 'SVM', 'NaiveBayes']
+__all__ = ['LinearRegression', 'LogisticRegression', 'SVM', 'NaiveBayes', 'Caffe2DML']
 
 import numpy as np
 from pyspark.ml import Estimator
@@ -45,6 +45,7 @@ def assemble(sparkSession, pdf, inputCols, outputCol):
 class BaseSystemMLEstimator(Estimator):
     features_col = 'features'
     label_col = 'label'
+    do_visualize = False
     
     def set_features_col(self, colName):
         """
@@ -66,6 +67,21 @@ class BaseSystemMLEstimator(Estimator):
         """
         self.label_col = colName
 
+    def setGPU(self, enableGPU):
+        self.estimator.setGPU(enableGPU)
+        return self
+    
+    def setExplain(self, explain):
+        self.estimator.setExplain(explain)
+        return self
+            
+    def setStatistics(self, stat):
+        self.estimator.setStatistics(stat)
+        return self
+    
+    def setConfigProperty(self, propertyName, propertyValue):
+        self.estimator.setConfigProperty(propertyName, propertyValue)
+        return self
     
     def _fit_df(self):
         try:
@@ -158,6 +174,11 @@ class BaseSystemMLEstimator(Estimator):
         ----------
         X: NumPy ndarray, Pandas DataFrame, scipy sparse matrix or PySpark DataFrame
         """
+        try:
+            if self.estimator is not None and self.model is not None:
+                self.estimator.copyProperties(self.model)
+        except AttributeError:
+            pass
         if isinstance(X, SUPPORTED_TYPES):
             if self.transferUsingDF:
                 pdfX = convertToPandasDF(X)
@@ -206,6 +227,13 @@ class BaseSystemMLClassifier(BaseSystemMLEstimator):
         else:
             return [ self.labelMap[int(i)] for i in y ]
         
+    def predict(self, X):
+        predictions = np.array(super(BaseSystemMLClassifier, self).predict(X))
+        try:
+            return np.array(predictions, dtype='double')
+        except ValueError:
+            return np.array(predictions, dtype='str')
+            
     def score(self, X, y):
         """
         Scores the predicted value with ground truth 'y'
@@ -215,8 +243,11 @@ class BaseSystemMLClassifier(BaseSystemMLEstimator):
         X: NumPy ndarray, Pandas DataFrame, scipy sparse matrix
         y: NumPy ndarray, Pandas DataFrame, scipy sparse matrix
         """
-        return accuracy_score(y, self.predict(X))
-
+        predictions = np.array(self.predict(X))
+        if np.issubdtype(predictions.dtype.type, np.number):
+            return accuracy_score(y, predictions)
+        else:
+            return accuracy_score(np.array(y, dtype='str'), np.array(predictions, dtype='str'))
 
 class BaseSystemMLRegressor(BaseSystemMLEstimator):
 
@@ -500,3 +531,145 @@ class NaiveBayes(BaseSystemMLClassifier):
         self.estimator.setLaplace(laplace)
         self.transferUsingDF = transferUsingDF
         self.setOutputRawPredictionsToFalse = False
+
+class Caffe2DML(BaseSystemMLClassifier):
+    """
+    Performs training/prediction for a given caffe network.
+    
+    Examples
+    --------
+    
+    >>> from systemml.mllearn import Caffe2DML
+    >>> from pyspark.sql import SQLContext
+    >>> sqlCtx = SQLContext(sc)
+    >>> from mlxtend.data import mnist_data
+    >>> import numpy as np
+    >>> from sklearn.utils import shuffle
+    >>> X, y = mnist_data()
+    >>> X, y = shuffle(X, y)
+    >>> imgShape = (1, 28, 28)
+    >>> import urllib
+    >>> urllib.urlretrieve('https://raw.githubusercontent.com/niketanpansare/model_zoo/master/caffe/vision/lenet/mnist/lenet.proto', 'lenet.proto')
+    >>> urllib.urlretrieve('https://raw.githubusercontent.com/niketanpansare/model_zoo/master/caffe/vision/lenet/mnist/lenet_solver.proto', 'lenet_solver.proto')
+    >>> caffe2DML = Caffe2DML(sqlCtx, 'lenet_solver.proto').set(max_iter=500)
+    >>> caffe2DML.fit(X, y)
+    """
+    def __init__(self, sqlCtx, solver, weights=None, ignore_weights=None, transferUsingDF=False, tensorboard_log_dir=None):
+        """
+        Performs training/prediction for a given caffe network. 
+
+        Parameters
+        ----------
+        sqlCtx: PySpark SQLContext
+        solver: caffe solver file path
+        weights: directory whether learned weights are stored (default: None)
+        ignore_weights: names of layers to not read from the weights directory (list of string, default:None)
+        transferUsingDF: whether to pass the input dataset via PySpark DataFrame (default: False)
+        tensorboard_log_dir: directory to store the event logs (default: None, we use a temporary directory)
+        """
+        self.sqlCtx = sqlCtx
+        self.sc = sqlCtx._sc
+        self.uid = "Caffe2DML"
+        self.model = None
+        solver = self.sc._jvm.org.apache.sysml.api.dl.Utils.readCaffeSolver(solver)
+        self.estimator = self.sc._jvm.org.apache.sysml.api.dl.Caffe2DML(self.sc._jsc.sc(), solver)
+        self.weights = weights
+        if weights is not None:
+            self.estimator.setInput("$weights", str(weights))
+            self._loadLabelTxt()
+            if ignore_weights is not None:
+                self.estimator.setWeightsToIgnore(ignore_weights)
+        self.transferUsingDF = transferUsingDF
+        self.setOutputRawPredictionsToFalse = False
+        self.visualize_called = False
+        if tensorboard_log_dir is not None:
+            self.estimator.setTensorBoardLogDir(tensorboard_log_dir)
+    
+    def _loadLabelTxt(self, format="binary", sep="/"):
+        if(self.weights is not None):
+            self.model = self.sc._jvm.org.apache.sysml.api.dl.Caffe2DMLModel(self.estimator)
+            df = self.sqlCtx.read.csv(self.weights + sep + 'labels.txt', header=False).toPandas()
+            keys = np.array(df._c0, dtype='int')
+            values = np.array(df._c1, dtype='str')
+            self.labelMap = {}
+            self.le = None
+            for i in range(len(keys)):
+                self.labelMap[int(keys[i])] = values[i]
+            # self.encode(classes) # Giving incorrect results
+    
+    def set(self, num_classes=None, input_shape=None, display=None, max_iter=None, normalize_input=None, validation_split=None, snapshot=None, snapshot_prefix=None, debug=None):
+        """
+        Set input to Caffe2DML
+        
+        Parameters
+        ----------
+        num_classes: number of classes in the dataset (default: derived from the last layer of network)
+        input_shape: 3-element list (number of channels, input height, input width) (default: (1, sqrt(ncol(image)), sqrt(ncol(image))))
+        display: number of iterations after which we should print training loss (default: fetched from the solver file)
+        max_iter: maximum number of iterations (default: fetched from the solver file)
+        normalize_input: whether to normalize the inputs or not (default: False)
+        validation_split: Percentage of validation split (default: 0.1)
+        snapshot: Number of iterations after which to snapshot (default: fetched from the solver file)
+        snapshot_prefix: path to the directory where to snapshot (default: fetched from the solver file)
+        debug: to add debugging DML code such as classification report, print DML script, etc (default: False)
+        """
+        if num_classes is not None: self.estimator.setInput("$num_classes", str(num_classes))
+        if input_shape is not None: self.estimator.setInputShape(str(input_shape[0]), str(input_shape[1]), str(input_shape[2]))
+        if display is not None: self.estimator.setInput("$display", str(display))
+        if max_iter is not None: self.estimator.setInput("$max_iter", str(max_iter))
+        if normalize_input is not None: self.estimator.setInput("$normalize_input", str(normalize_input).upper())
+        if validation_split is not None: self.estimator.setInput("$validation_split", str(validation_split))
+        if snapshot is not None: self.estimator.setInput("$snapshot", str(snapshot))
+        if snapshot_prefix is not None: self.estimator.setInput("$snapshot_prefix", str(snapshot_prefix))
+        if debug is not None: self.estimator.setInput("$debug", str(debug).upper())
+        return self
+    
+    def visualize(self, layerName=None, varType='weight', aggFn='mean'):
+        """
+        Use this to visualize the training procedure (requires validation_percentage to be non-zero).
+        When one provides no argument to this method, we visualize training and validation loss.
+        
+        Parameters
+        ----------
+        layerName: Name of the layer in the Caffe prototype
+        varType: should be either 'weight', 'bias', 'dweight', 'dbias', 'output' or 'doutput'
+        aggFn: should be either 'sum', 'mean', 'var' or 'sd'
+        """
+        valid_vis_var_types = ['weight', 'bias', 'dweight', 'dbias', 'output', 'doutput']
+        valid_vis_aggFn = [ 'sum', 'mean', 'var', 'sd' ]
+        if layerName is not None and varType is not None and aggFn is not None:
+            # Visualize other values
+            if varType not in valid_vis_var_types:
+                raise ValueError('The second argument should be either weight, bias, dweight, dbias, output or doutput')
+            if aggFn not in valid_vis_aggFn:
+                raise ValueError('The third argument should be either sum, mean, var, sd.')
+            if self.visualize_called:
+                self.estimator.visualizeLoss()
+            self.estimator.visualizeLayer(layerName, varType, aggFn)
+        else:
+            self.estimator.visualizeLoss()
+        self.visualize_called = True
+        return self
+    
+    def save(self, outputDir, format='binary', sep='/'):
+        """
+        Save a trained model.
+        
+        Parameters
+        ----------
+        outputDir: Directory to save the model to
+        format: optional format (default: 'binary')
+        sep: seperator to use (default: '/')
+        """
+        if self.model != None:
+            self.model.save(outputDir, format, sep)
+            if self.le is not None:
+                labelMapping = dict(enumerate(list(self.le.classes_), 1))
+            else:
+                labelMapping = self.labelMap
+            lStr = [ [ int(k), str(labelMapping[k]) ] for k in labelMapping ]
+            df = self.sqlCtx.createDataFrame(lStr)
+            df.write.csv(outputDir + sep + 'labels.txt', mode='overwrite', header=False)
+        else:
+            raise Exception('Cannot save as you need to train the model first using fit')
+        return self

@@ -127,8 +127,6 @@ import static jcuda.runtime.JCuda.cudaMemcpy;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToDevice;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice;
-import static org.apache.sysml.runtime.instructions.gpu.context.GPUObject.allocate;
-import static org.apache.sysml.runtime.instructions.gpu.context.GPUObject.cudaFreeHelper;
 
 //FIXME move could to respective instructions, this is not a block library
 public class LibMatrixCUDA {
@@ -211,6 +209,22 @@ public class LibMatrixCUDA {
 		return GPUContext.getGPUContext().getKernels();
 	}
 
+
+	private static Pointer allocate(String instName, long size) throws DMLRuntimeException {
+		return GPUContext.getGPUContext().allocate(instName, size);
+	}
+
+	private static Pointer allocate(long size) throws DMLRuntimeException {
+		return GPUContext.getGPUContext().allocate(size);
+	}
+
+	private static void cudaFreeHelper(Pointer toFree) throws DMLRuntimeException {
+		GPUContext.getGPUContext().cudaFreeHelper(toFree);
+	}
+
+	private static void cudaFreeHelper(String instName, Pointer toFree) throws DMLRuntimeException {
+		GPUContext.getGPUContext().cudaFreeHelper(instName, toFree);
+	}
 
 	//********************************************************************/
 	//***************** DEEP LEARNING Operators **************************/
@@ -1523,7 +1537,7 @@ public class LibMatrixCUDA {
 		if (transA == CUSPARSE_OPERATION_TRANSPOSE){
 			size = k * Sizeof.DOUBLE;
 		}
-		Pointer C_dense = GPUObject.allocate(instName, (int)size);
+		Pointer C_dense = allocate(instName, (int)size);
 		long t1=0;
 		if (GPUStatistics.DISPLAY_STATISTICS) t1 = System.nanoTime();
 		cusparseDcsrmv(getCusparseHandle(), transA, m, k, (int)A.nnz, one(), A.descr, A.val, A.rowPtr, A.colInd, B_dense, zero(), C_dense);
@@ -1891,7 +1905,7 @@ public class LibMatrixCUDA {
 			}
 			case OP_PLUS_SQ : {
 				// Calculate the squares in a temporary object tmp
-				Pointer tmp = GPUObject.allocate(instName, size * Sizeof.DOUBLE);
+				Pointer tmp = allocate(instName, size * Sizeof.DOUBLE);
 
 				squareMatrix(instName, in, tmp, rlen, clen);
 				// Then do the sum on the temporary object and free it
@@ -1990,8 +2004,8 @@ public class LibMatrixCUDA {
 			}
 			case OP_VARIANCE : {
 				// Temporary GPU array for
-				Pointer tmp = GPUObject.allocate(instName, size * Sizeof.DOUBLE);
-				Pointer tmp2 = GPUObject.allocate(instName, size * Sizeof.DOUBLE);
+				Pointer tmp = allocate(instName, size * Sizeof.DOUBLE);
+				Pointer tmp2 = allocate(instName, size * Sizeof.DOUBLE);
 
 				switch(reductionDirection) {
 
@@ -2019,7 +2033,7 @@ public class LibMatrixCUDA {
 
 						squareMatrix(instName, tmp, tmp2, rlen, clen);
 
-						Pointer tmpRow = GPUObject.allocate(instName, rlen * Sizeof.DOUBLE);
+						Pointer tmpRow = allocate(instName, rlen * Sizeof.DOUBLE);
 						reduceRow(instName, "reduce_row_sum", tmp2, tmpRow, rlen, clen);
 
 						ScalarOperator divideOp = new RightScalarOperator(Divide.getDivideFnObject(), clen - 1);
@@ -2037,7 +2051,7 @@ public class LibMatrixCUDA {
 
 						squareMatrix(instName, tmp, tmp2, rlen, clen);
 
-						Pointer tmpCol = GPUObject.allocate(instName, clen * Sizeof.DOUBLE);
+						Pointer tmpCol = allocate(instName, clen * Sizeof.DOUBLE);
 						reduceCol(instName, "reduce_col_sum", tmp2, tmpCol, rlen, clen);
 
 						ScalarOperator divideOp = new RightScalarOperator(Divide.getDivideFnObject(), rlen - 1);
@@ -2102,7 +2116,7 @@ public class LibMatrixCUDA {
 		int[] tmp = getKernelParamsForReduceAll(n);
 		int blocks = tmp[0], threads = tmp[1], sharedMem = tmp[2];
 
-		Pointer tempOut = GPUObject.allocate(instName, n * Sizeof.DOUBLE);
+		Pointer tempOut = allocate(instName, n * Sizeof.DOUBLE);
 
 		long t1=0,t2=0,t3=0;
 

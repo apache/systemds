@@ -2732,17 +2732,17 @@ public class LibMatrixCUDA {
 	 * @param in2 input matrix 2
 	 * @param outputName output matrix name
 	 * @param constant pointer constant
+	 * @param n size (i.e. rlen*clen) of output
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void axpy(ExecutionContext ec, String instName, MatrixObject in1, MatrixObject in2,
-													String outputName,  double constant) throws DMLRuntimeException {
+													String outputName,  double constant, long n) throws DMLRuntimeException {
 		Pointer A = getDensePointer(in1, instName);
 		Pointer B = getDensePointer(in2, instName);
 		MatrixObject out = ec.getMatrixObject(outputName);
 		getDenseMatrixOutputForGPUInstruction(ec, instName, outputName);	// Allocated the dense output matrix
 		Pointer C = getDensePointer(out, instName);
 		Pointer alphaPtr = pointerTo(constant);
-		long n = (in1.getNumRows()*in1.getNumColumns());
 		// C <- A + alpha*B
 		// becomes
 		// C <- A

@@ -111,6 +111,25 @@ check_rel_error = function(double x1, double x2, double thresh_error, double thr
   }
 }
 
+channel_sums = function(matrix[double] X, int C, int Hin, int Win)
+    return (matrix[double] out) {
+  /*
+   * Computes a channel-wise summation over a 4D input.
+   *
+   * Inputs:
+   *  - X: Input data matrix, of shape (N, C*Hin*Win).
+   *  - C: Number of input channels (dimensionality of input depth).
+   *  - Hin: Input height.
+   *  - Win: Input width.
+   *
+   * Outputs:
+   *  - out: Outputs, of shape (C, 1).
+   */
+  # Here we sum each column, reshape to (C, Hin*Win), and sum each row to result in the summation
+  # for each channel.
+  out = rowSums(matrix(colSums(X), rows=C, cols=Hin*Win))  # shape (C, 1)
+}
+
 im2col = function(matrix[double] img, int Hin, int Win, int Hf, int Wf, int strideh, int stridew)
     return (matrix[double] img_cols) {
   /*

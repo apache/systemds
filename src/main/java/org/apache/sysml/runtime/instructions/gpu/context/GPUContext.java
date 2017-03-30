@@ -57,6 +57,7 @@ import static jcuda.jcusparse.JCusparse.cusparseDestroy;
 import static jcuda.runtime.JCuda.cudaGetDeviceCount;
 import static jcuda.runtime.JCuda.cudaGetDeviceProperties;
 import static jcuda.runtime.JCuda.cudaMemGetInfo;
+import static jcuda.runtime.JCuda.cudaSetDevice;
 
 /**
  * Represents a context per GPU accessible through the same JVM
@@ -310,6 +311,7 @@ public class GPUContext {
 
 	protected GPUContext(int deviceNum) throws DMLRuntimeException {
 		this.deviceNum = deviceNum;
+		cudaSetDevice(deviceNum);
 
 		long free[] = {0};
 		long total[] = {0};

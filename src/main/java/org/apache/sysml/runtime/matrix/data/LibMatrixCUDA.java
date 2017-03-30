@@ -19,6 +19,7 @@
 
 package org.apache.sysml.runtime.matrix.data;
 
+import jcuda.CudaException;
 import jcuda.Pointer;
 import jcuda.Sizeof;
 import jcuda.jcublas.JCublas2;
@@ -431,6 +432,8 @@ public class LibMatrixCUDA {
 			if (status != cudnnStatus.CUDNN_STATUS_SUCCESS) {
 				throw new DMLRuntimeException("Could not executed cudnnConvolutionForward: " + cudnnStatus.stringFor(status));
 			}
+		} catch (CudaException e) {
+			throw new DMLRuntimeException("Error in conv2d in GPUContext " + GPUContext.getGPUContext().toString() + " from Thread " + Thread.currentThread().toString(), e);
 		} finally {
 			long t3 = 0;
 			if (GPUStatistics.DISPLAY_STATISTICS) t3 = System.nanoTime();
@@ -828,7 +831,7 @@ public class LibMatrixCUDA {
 		long sizeInBytes = 0;
 		try {
 
-			long t1=0, t2=0;
+			long t1 = 0, t2 = 0;
 			if (GPUStatistics.DISPLAY_STATISTICS) t1 = System.nanoTime();
 			// Allocate descriptors
 			cudnnTensorDescriptor xTensorDesc = allocateTensorDescriptor(image, N, C, H, W);
@@ -839,10 +842,10 @@ public class LibMatrixCUDA {
 			Pointer imagePointer = getDensePointer(image, true, instName);
 			Pointer doutPointer = getDensePointer(dout, true, instName);
 			Pointer dwPointer = getDensePointer(outputBlock, true, instName);
-			int padding [] = { pad_h, pad_w };
-			int strides [] = { stride_h, stride_w };
+			int padding[] = {pad_h, pad_w};
+			int strides[] = {stride_h, stride_w};
 			convDesc = allocateConvolutionDescriptor(padding, strides);
-			long sizeInBytesArray[] = { 0 };
+			long sizeInBytesArray[] = {0};
 
 			// TODO: Select the best algorithm depending on the data and supported CUDA
 			int algo = jcuda.jcudnn.cudnnConvolutionBwdFilterAlgo.CUDNN_CONVOLUTION_BWD_FILTER_ALGO_0;
@@ -850,18 +853,21 @@ public class LibMatrixCUDA {
 			workSpace = new Pointer();
 			cudnnGetConvolutionBackwardFilterWorkspaceSize(getCudnnHandle(),
 							xTensorDesc, doutTensorDesc, convDesc, dwDesc, algo, sizeInBytesArray);
-			if (GPUStatistics.DISPLAY_STATISTICS)GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_CUDNN_INIT, System.nanoTime() - t1);
+			if (GPUStatistics.DISPLAY_STATISTICS)
+				GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_CUDNN_INIT, System.nanoTime() - t1);
 
 			if (GPUStatistics.DISPLAY_STATISTICS) t2 = System.nanoTime();
 			int status = cudnnConvolutionBackwardFilter(getCudnnHandle(), one(), xTensorDesc, imagePointer,
 							doutTensorDesc, doutPointer, convDesc, algo, workSpace, sizeInBytes, zero(), dwDesc, dwPointer);
-			if (GPUStatistics.DISPLAY_STATISTICS)GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_CONVOLUTION_BACKWARD_FILTER_LIB, System.nanoTime() - t2);
+			if (GPUStatistics.DISPLAY_STATISTICS)
+				GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_CONVOLUTION_BACKWARD_FILTER_LIB, System.nanoTime() - t2);
 
-			if(status != jcuda.jcudnn.cudnnStatus.CUDNN_STATUS_SUCCESS) {
+			if (status != jcuda.jcudnn.cudnnStatus.CUDNN_STATUS_SUCCESS) {
 				throw new DMLRuntimeException("Could not executed cudnnConvolutionBackwardFilter: " + jcuda.jcudnn.cudnnStatus.stringFor(status));
 			}
-		}
-		finally {
+		} catch (CudaException e) {
+				throw new DMLRuntimeException("Error in conv2d in GPUContext " + GPUContext.getGPUContext().toString() + " from Thread " + Thread.currentThread().toString(), e);
+		} finally {
 			long t3=0;
 			if (GPUStatistics.DISPLAY_STATISTICS) t3 = System.nanoTime();
 
@@ -941,6 +947,8 @@ public class LibMatrixCUDA {
 			if(status != jcuda.jcudnn.cudnnStatus.CUDNN_STATUS_SUCCESS) {
 				throw new DMLRuntimeException("Could not executed cudnnConvolutionBackwardData: " + jcuda.jcudnn.cudnnStatus.stringFor(status));
 			}
+		} catch (CudaException e) {
+			throw new DMLRuntimeException("Error in conv2d in GPUContext " + GPUContext.getGPUContext().toString() + " from Thread " + Thread.currentThread().toString(), e);
 		}
 		finally {
 			long t3=0;
@@ -1008,6 +1016,8 @@ public class LibMatrixCUDA {
 			if(status != jcuda.jcudnn.cudnnStatus.CUDNN_STATUS_SUCCESS) {
 				throw new DMLRuntimeException("Could not executed cudnnPoolingForward: " + jcuda.jcudnn.cudnnStatus.stringFor(status));
 			}
+		} catch (CudaException e) {
+			throw new DMLRuntimeException("Error in conv2d in GPUContext " + GPUContext.getGPUContext().toString() + " from Thread " + Thread.currentThread().toString(), e);
 		}
 		finally {
 			long t3=0;
@@ -1118,6 +1128,8 @@ public class LibMatrixCUDA {
 			if(status != jcuda.jcudnn.cudnnStatus.CUDNN_STATUS_SUCCESS) {
 				throw new DMLRuntimeException("Could not executed cudnnPoolingBackward: " + jcuda.jcudnn.cudnnStatus.stringFor(status));
 			}
+		} catch (CudaException e) {
+			throw new DMLRuntimeException("Error in conv2d in GPUContext " + GPUContext.getGPUContext().toString() + " from Thread " + Thread.currentThread().toString(), e);
 		}
 		finally {
 			long t4=0;
@@ -1147,6 +1159,8 @@ public class LibMatrixCUDA {
 							one(), srcTensorDesc, srcData,
 							zero(), dstTensorDesc, dstData);
 			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_ACTIVATION_FORWARD_LIB, System.nanoTime() - t0);
+		} catch (CudaException e) {
+			throw new DMLRuntimeException("Error in conv2d in GPUContext " + GPUContext.getGPUContext().toString() + " from Thread " + Thread.currentThread().toString(), e);
 		}
 		finally {
 			long t1=0;

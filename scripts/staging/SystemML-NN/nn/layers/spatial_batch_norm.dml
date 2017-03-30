@@ -1,0 +1,134 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+/*
+ * Per-channel Batch normalization layer.
+ *
+ */
+
+forward = function(matrix[double] X, matrix[double] ema_mean, matrix[double] ema_var,
+                   int C, int H, int W,
+                   matrix[double] gamma, matrix[double] beta,
+                   double ma_fraction, double eps,
+                   string mode)
+          return (matrix[double] out, matrix[double] ema_mean_out, matrix[double] ema_var_out) {
+  /*
+   * Computes the forward pass for a batch normalization layer. Uses an exponential moving average.
+   *
+   * See S. Ioffe and C. Szegedy, "Batch Normalization: Accelerating Deep Network Training by Reducing Internal Covariate Shift." arXiv preprint arXiv:1502.03167 (2015).
+   *
+   * Inputs:
+   * - X: Input data matrix, of shape (N, C*H*W).
+   * - ema_mean: exponential moving average for mean from previous iteration (of dimension either [C, 1] or [C*H*W, 1]).
+   * - ema_var: exponential moving average for variance from previous iteration (of dimension either [C, 1] or [C*H*W, 1]).
+   * - C: Number of input channels
+   * - H: Input height.
+   * - W: Input width.
+   * - gamma: multiplier
+   * - beta: bias
+   * - ma_fraction: moving average fraction (typical value: 0.999)
+   * - eps: value to be added to variance (typical value: 1e-5)
+   * - mode: can be 'train' or 'test'
+   *
+   * Outputs:
+   * - out: output matrix, of shape (N, C*H*W).
+   * - ema_mean_out: new exponential moving average for mean (of dimension either [C, 1] or [C*H*W, 1]).
+   * - ema_var_out: new exponential moving average for variance (of dimension either [C, 1] or [C*H*W, 1]).
+   */
+   if(mode == "test") {
+      # Test
+      ema_mean_out = ema_mean
+      ema_var_out = ema_var
+      local_mean = ema_mean
+      local_var = ema_var
+   }
+   else {
+      # Train
+      N = nrow(X)
+      batch_mean = matrix(colSums(X), rows=C, cols=H*W)
+      local_mean = rowSums(batch_mean)/(N*H*W)
+      local_var = rowVars(batch_mean)/N
+      # new exponential moving average for mean and variance match with that of CuDNN
+      ema_mean_out = ma_fraction*local_mean + (1-ma_fraction)*ema_mean
+      ema_var_out = ma_fraction*local_var + (1-ma_fraction)*ema_var
+   }
+   # out doesnot match with CuDNN for train, but matches for test
+   out = bias_multiply(bias_add(X, - local_mean), 1 / sqrt(local_var + eps))
+   out = bias_add(bias_multiply(out, gamma), beta)
+
+}
+
+backward = function(matrix[double] dout, matrix[double] X, matrix[double] out, matrix[double] ema_mean, matrix[double] ema_var,
+                   int C, int H, int W, matrix[double] gamma, double eps)
+          return (matrix[double] dX, matrix[double] dgamma, matrix[double] dbeta) {
+  /*
+   * Computes the backward pass for a batch normalization layer. Uses an exponential moving average.
+   *
+   * See S. Ioffe and C. Szegedy, "Batch Normalization: Accelerating Deep Network Training by Reducing Internal Covariate Shift." arXiv preprint arXiv:1502.03167 (2015).
+   *
+   * Inputs:
+   * - dout: Derivatives from upstream, of shape (N, C*H*W).
+   * - X: Input data matrix, of shape (N, C*H*W).
+   * - ema_mean: exponential moving average for mean from previous iteration (of dimension [C, 1]).
+   * - ema_var: exponential moving average for variance from previous iteration (of dimension [C, 1]).
+   * - C: Number of input channels
+   * - H: Input height.
+   * - W: Input width.
+   * - gamma: multiplier/scale
+   * - eps: value to be added to variance (typical value: 1e-5)
+   *
+   * Outputs:
+   * - dX: Gradient wrt X, of shape (N, C*H*W).
+   * - dgamma: Gradient wrt gamma
+   * - dbeta: Gradient wrt beta
+   *
+   */
+   dbeta = rowSums(matrix(colSums(dout), rows=C, cols=H*W))
+   dgamma = rowSums(matrix(colSums(out*dout), rows=C, cols=H*W))
+   ones = matrix(1, rows=1, cols=H*W)
+   gamma = matrix(gamma %*% ones, rows=1, cols=C*H*W)
+   m = matrix(ema_mean %*% ones, rows=1, cols=C*H*W)
+   v = matrix(ema_var %*% ones, rows=1, cols=C*H*W)
+   # See http://cthorey.github.io./backpropagation/
+   term1 = colSums(dout) # sum_k dL / dy_{kj}
+   N = nrow(X)
+   out11 = (X - m) / (v + eps)
+   dX = ( N*dout - term1 - out11 * colSums(dout*(X - m))) * (1/N) * gamma / sqrt(v + eps)
+}
+
+init = function(int C) return (matrix[double] ema_mean, matrix[double] ema_var, matrix[double] gamma, matrix[double] beta) {
+  /*
+   * Initialize the parameters of this layer.
+   *
+   * Inputs:
+   * - size: number of channels C  (i.e. per-channel batch normalization; used in ResNet)
+   *
+   * Outputs:
+   * - ema_mean: initial exponential moving average for mean (of dimension [C, 1])
+   * - ema_var: initial exponential moving average for variance (of dimension [C, 1])
+   * - gamma: gamma (of dimension [C, 1])
+   * - beta: beta (of dimension [C, 1])
+   */
+   ema_mean = matrix(0, rows=C, cols=1)
+   ema_var = matrix(0, rows=C, cols=1)
+   gamma = matrix(1, rows=C, cols=1)
+   beta = matrix(0, rows=C, cols=1)
+}

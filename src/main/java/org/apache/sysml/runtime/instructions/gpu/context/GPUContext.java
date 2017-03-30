@@ -30,11 +30,13 @@ import jcuda.runtime.JCuda;
 import jcuda.runtime.cudaDeviceProp;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
 import org.apache.sysml.utils.GPUStatistics;
 import org.apache.sysml.utils.LRUCacheMap;
 
@@ -54,9 +56,12 @@ import static jcuda.jcudnn.JCudnn.cudnnCreate;
 import static jcuda.jcudnn.JCudnn.cudnnDestroy;
 import static jcuda.jcusparse.JCusparse.cusparseCreate;
 import static jcuda.jcusparse.JCusparse.cusparseDestroy;
+import static jcuda.runtime.JCuda.cudaFree;
 import static jcuda.runtime.JCuda.cudaGetDeviceCount;
 import static jcuda.runtime.JCuda.cudaGetDeviceProperties;
+import static jcuda.runtime.JCuda.cudaMalloc;
 import static jcuda.runtime.JCuda.cudaMemGetInfo;
+import static jcuda.runtime.JCuda.cudaMemset;
 import static jcuda.runtime.JCuda.cudaSetDevice;
 
 /**
@@ -127,6 +132,13 @@ public class GPUContext {
     deviceCount = deviceCountArray[0];
     deviceProperties = new cudaDeviceProp[deviceCount];
 
+    // Initialize the list of devices
+    for (int i=0; i<deviceCount; i++){
+			cudaDeviceProp properties = new cudaDeviceProp();
+			cudaGetDeviceProperties(properties, i);
+			deviceProperties[i] = properties;
+		}
+
     // Populate the list of free devices
     for (int i=0; i<deviceCount; i++){
       freeDevices.add(i);
@@ -155,6 +167,122 @@ public class GPUContext {
 
 	// Invoke cudaMemGetInfo to get available memory information. Useful if GPU is shared among multiple application.
 	public double GPU_MEMORY_UTILIZATION_FACTOR = ConfigurationManager.getDMLConfig().getDoubleValue(DMLConfig.GPU_MEMORY_UTILIZATION_FACTOR);
+
+	/**
+	 * Convenience method for {@link #allocate(String, long, int)}, defaults statsCount to 1.
+	 * @param size size of data (in bytes) to allocate
+	 * @return jcuda pointer
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
+	 */
+	public Pointer allocate(long size) throws DMLRuntimeException {
+		return allocate(null, size, 1);
+	}
+
+	/**
+	 * Convenience method for {@link #allocate(String, long, int)}, defaults statsCount to 1.
+	 * @param instructionName name of instruction for which to record per instruction performance statistics, null if don't want to record
+	 * @param size size of data (in bytes) to allocate
+	 * @return jcuda pointer
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
+	 */
+	public Pointer allocate(String instructionName, long size) throws DMLRuntimeException {
+		return allocate(instructionName, size, 1);
+	}
+
+	/**
+	 * Allocates temporary space on the device.
+	 * Does not update bookkeeping.
+	 * The caller is responsible for freeing up after usage.
+	 * @param instructionName name of instruction for which to record per instruction performance statistics, null if don't want to record
+	 * @param size   			Size of data (in bytes) to allocate
+	 * @param statsCount	amount to increment the cudaAllocCount by
+	 * @return jcuda Pointer
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
+	 */
+	public Pointer allocate(String instructionName, long size, int statsCount) throws DMLRuntimeException{
+		long t0=0, t1=0, end=0;
+		Pointer A;
+		if (GPUObject.freeCUDASpaceMap.containsKey(size)) {
+			if (instructionName != null && GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
+			LinkedList<Pointer> freeList = GPUObject.freeCUDASpaceMap.get(size);
+			A = freeList.pop();
+			if (freeList.isEmpty())
+				GPUObject.freeCUDASpaceMap.remove(size);
+			if (instructionName != null && GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instructionName, GPUInstruction.MISC_TIMER_REUSE, System.nanoTime() - t0);
+		} else {
+			if (DMLScript.STATISTICS) t0 = System.nanoTime();
+			GPUObject.ensureFreeSpace(instructionName, size);
+			A = new Pointer();
+			cudaMalloc(A, size);
+			if (DMLScript.STATISTICS) GPUStatistics.cudaAllocTime.getAndAdd(System.nanoTime() - t0);
+			if (DMLScript.STATISTICS) GPUStatistics.cudaAllocCount.getAndAdd(statsCount);
+			if (instructionName != null && GPUStatistics.DISPLAY_STATISTICS)
+				GPUStatistics.maintainCPMiscTimes(instructionName, GPUInstruction.MISC_TIMER_ALLOCATE, System.nanoTime() - t0);
+		}
+		// Set all elements to 0 since newly allocated space will contain garbage
+		if (DMLScript.STATISTICS) t1 = System.nanoTime();
+		cudaMemset(A, 0, size);
+		if (DMLScript.STATISTICS) end = System.nanoTime();
+		if (instructionName != null && GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instructionName, GPUInstruction.MISC_TIMER_SET_ZERO, end - t1);
+		if (DMLScript.STATISTICS) GPUStatistics.cudaMemSet0Time.getAndAdd(end - t1);
+		if (DMLScript.STATISTICS) GPUStatistics.cudaMemSet0Count.getAndAdd(1);
+		GPUObject.cudaBlockSizeMap.put(A, size);
+		return A;
+
+	}
+
+	/**
+	 * Does lazy cudaFree calls
+	 * @param toFree {@link Pointer} instance to be freed
+	 */
+	public void cudaFreeHelper(final Pointer toFree) {
+		cudaFreeHelper(null, toFree, false);
+	}
+
+	/**
+	 * does lazy/eager cudaFree calls
+	 * @param toFree {@link Pointer} instance to be freed
+	 * @param eager true if to be done eagerly
+	 */
+	public void cudaFreeHelper(final Pointer toFree, boolean eager) {
+		cudaFreeHelper(null, toFree, eager);
+	}
+
+	/**
+	 * Does lazy cudaFree calls
+	 * @param instructionName name of the instruction for which to record per instruction free time, null if do not want to record
+	 * @param toFree {@link Pointer} instance to be freed
+	 */
+	public void cudaFreeHelper(String instructionName, final Pointer toFree) {
+		cudaFreeHelper(instructionName, toFree, false);
+	}
+
+	/**
+	 * Does cudaFree calls, lazily
+	 * @param instructionName name of the instruction for which to record per instruction free time, null if do not want to record
+	 * @param toFree {@link Pointer} instance to be freed
+	 * @param eager true if to be done eagerly
+	 */
+	public void cudaFreeHelper(String instructionName, final Pointer toFree, boolean eager){
+		long t0 = 0;
+		assert GPUObject.cudaBlockSizeMap.containsKey(toFree) : "ERROR : Internal state corrupted, cache block size map is not aware of a block it trying to free up";
+		long size = GPUObject.cudaBlockSizeMap.get(toFree);
+		if (eager) {
+			if (DMLScript.STATISTICS) t0 = System.nanoTime();
+			cudaFree(toFree);
+			GPUObject.cudaBlockSizeMap.remove(toFree);
+			if (DMLScript.STATISTICS) GPUStatistics.cudaDeAllocTime.addAndGet(System.nanoTime() - t0);
+			if (DMLScript.STATISTICS) GPUStatistics.cudaDeAllocCount.addAndGet(1);
+			if (instructionName != null && GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instructionName, GPUInstruction.MISC_TIMER_CUDA_FREE, System.nanoTime() - t0);
+		} else {
+			LinkedList<Pointer> freeList = GPUObject.freeCUDASpaceMap.get(size);
+			if (freeList == null) {
+				freeList = new LinkedList<Pointer>();
+				GPUObject.freeCUDASpaceMap.put(size, freeList);
+			}
+			freeList.add(toFree);
+		}
+	}
 
 	/**
 	 * Convenience wrapper over {@link GPUContext#evict(String, long)}
@@ -192,7 +320,7 @@ public class GPUContext {
 			Pointer toFree = toFreeList.pop();
 			if (toFreeList.isEmpty())
 				lruCacheMap.remove(size);
-			GPUObject.cudaFreeHelper(instructionName, toFree, true);
+			cudaFreeHelper(instructionName, toFree, true);
 		}
 
 		if (neededSize <= getAvailableMemory())
@@ -349,9 +477,7 @@ public class GPUContext {
     // of GPUs left on the system
 	  Thread thisThread = Thread.currentThread();
 		GPUContext activeGPUContext = assignedGPUContextsMap.get(thisThread);
-		if (activeGPUContext != null) {
-      return activeGPUContext;
-    } else {
+		if (activeGPUContext == null) {
       Integer deviceNum = freeDevices.poll();
       if (deviceNum == null) { // no more devices to allocate
         return null;
@@ -385,16 +511,6 @@ public class GPUContext {
 	private static cudaDeviceProp getGPUProperties(int device){
 		// do once - initialization of GPU
 		if (!initialized) initializeGPU();
-
-		// the access to the static class member deviceProperties is
-		// assumed to be safe since either the static initializer
-		// will access it or one of the member methods which access by their
-		// device number
-		if (deviceProperties[device] == null) {
-			cudaDeviceProp properties = new cudaDeviceProp();
-			cudaGetDeviceProperties(properties, device);
-			deviceProperties[device] = properties;
-		}
 		return deviceProperties[device];
 	}
 
@@ -455,6 +571,14 @@ public class GPUContext {
 	  if (!initialized) initializeGPU();
 	  return deviceCount;
   }
+
+  @SuppressWarnings("unused")
+  public static int cudaGetDevice() {
+		int[] device = new int[1];
+		JCuda.cudaGetDevice(device);
+		return device[0];
+	}
+
   /**
    * Destroys this GPUContext object
    * This method MUST BE called so that the GPU is available to be used again

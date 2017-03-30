@@ -66,10 +66,7 @@ import static jcuda.jcusparse.JCusparse.cusparseXcsrgemmNnz;
 import static jcuda.jcusparse.cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO;
 import static jcuda.jcusparse.cusparseMatrixType.CUSPARSE_MATRIX_TYPE_GENERAL;
 import static jcuda.runtime.JCuda.cudaDeviceSynchronize;
-import static jcuda.runtime.JCuda.cudaFree;
-import static jcuda.runtime.JCuda.cudaMalloc;
 import static jcuda.runtime.JCuda.cudaMemcpy;
-import static jcuda.runtime.JCuda.cudaMemset;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice;
 
@@ -100,6 +97,30 @@ public class GPUObject {
 
 	private int [] tensorShape = null;
 
+	private static Pointer allocate(String instName, long size) throws DMLRuntimeException {
+		return GPUContext.getGPUContext().allocate(instName, size);
+	}
+
+	private static Pointer allocate(long size) throws DMLRuntimeException {
+		return GPUContext.getGPUContext().allocate(size);
+	}
+
+	private static void cudaFreeHelper(Pointer toFree) throws DMLRuntimeException {
+		GPUContext.getGPUContext().cudaFreeHelper(toFree);
+	}
+
+	private static void cudaFreeHelper(String instName, Pointer toFree) throws DMLRuntimeException {
+		GPUContext.getGPUContext().cudaFreeHelper(instName, toFree);
+	}
+
+	private static void cudaFreeHelper(Pointer toFree, boolean eager) throws DMLRuntimeException {
+		GPUContext.getGPUContext().cudaFreeHelper(toFree, eager);
+	}
+
+	private static void cudaFreeHelper(String instName, Pointer toFree, boolean eager) throws DMLRuntimeException {
+		GPUContext.getGPUContext().cudaFreeHelper(instName, toFree, eager);
+	}
+
 	/**
 	 * Transposes a dense matrix on the GPU by calling the cublasDgeam operation
 	 * @param densePtr	Pointer to dense matrix on the GPU
@@ -114,7 +135,7 @@ public class GPUObject {
 		Pointer alpha = LibMatrixCUDA.pointerTo(1.0);
 		Pointer beta = LibMatrixCUDA.pointerTo(0.0);
 		Pointer A = densePtr;
-		Pointer C = GPUObject.allocate(((long)m)*getDoubleSizeOf(n));
+		Pointer C = allocate(((long)m)*getDoubleSizeOf(n));
 
 		// Transpose the matrix to get a dense matrix
 		JCublas2.cublasDgeam(GPUContext.getGPUContext().getCublasHandle(), CUBLAS_OP_T, CUBLAS_OP_T, m, n, alpha, A, lda, beta, new Pointer(), lda, C, ldc);
@@ -169,122 +190,6 @@ public class GPUObject {
 	}
 
 	/**
-	 * Convenience method for {@link #allocate(String, long, int)}, defaults statsCount to 1.
-	 * @param size size of data (in bytes) to allocate
-	 * @return jcuda pointer
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
-	 */
-	public static Pointer allocate(long size) throws DMLRuntimeException {
-		return allocate(null, size, 1);
-	}
-
-	/**
-	 * Convenience method for {@link #allocate(String, long, int)}, defaults statsCount to 1.
-	 * @param instructionName name of instruction for which to record per instruction performance statistics, null if don't want to record
-	 * @param size size of data (in bytes) to allocate
-	 * @return jcuda pointer
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
-	 */
-	public synchronized static Pointer allocate(String instructionName, long size) throws DMLRuntimeException {
-		return allocate(instructionName, size, 1);
-	}
-
-	/**
-	 * Allocates temporary space on the device.
-	 * Does not update bookkeeping.
-	 * The caller is responsible for freeing up after usage.
-	 * @param instructionName name of instruction for which to record per instruction performance statistics, null if don't want to record
-	 * @param size   			Size of data (in bytes) to allocate
-	 * @param statsCount	amount to increment the cudaAllocCount by
-	 * @return jcuda Pointer
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
-	 */
-	public synchronized static Pointer allocate(String instructionName, long size, int statsCount) throws DMLRuntimeException{
-		long t0=0, t1=0, end=0;
-		Pointer A;
-		if (freeCUDASpaceMap.containsKey(size)) {
-			if (instructionName != null && GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
-			LinkedList<Pointer> freeList = freeCUDASpaceMap.get(size);
-			A = freeList.pop();
-			if (freeList.isEmpty())
-				freeCUDASpaceMap.remove(size);
-			if (instructionName != null && GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instructionName, GPUInstruction.MISC_TIMER_REUSE, System.nanoTime() - t0);
-		} else {
-			if (DMLScript.STATISTICS) t0 = System.nanoTime();
-			ensureFreeSpace(instructionName, size);
-			A = new Pointer();
-			cudaMalloc(A, size);
-			if (DMLScript.STATISTICS) GPUStatistics.cudaAllocTime.getAndAdd(System.nanoTime() - t0);
-			if (DMLScript.STATISTICS) GPUStatistics.cudaAllocCount.getAndAdd(statsCount);
-			if (instructionName != null && GPUStatistics.DISPLAY_STATISTICS)
-				GPUStatistics.maintainCPMiscTimes(instructionName, GPUInstruction.MISC_TIMER_ALLOCATE, System.nanoTime() - t0);
-		}
-		// Set all elements to 0 since newly allocated space will contain garbage
-		if (DMLScript.STATISTICS) t1 = System.nanoTime();
-		cudaMemset(A, 0, size);
-		if (DMLScript.STATISTICS) end = System.nanoTime();
-		if (instructionName != null && GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instructionName, GPUInstruction.MISC_TIMER_SET_ZERO, end - t1);
-		if (DMLScript.STATISTICS) GPUStatistics.cudaMemSet0Time.getAndAdd(end - t1);
-		if (DMLScript.STATISTICS) GPUStatistics.cudaMemSet0Count.getAndAdd(1);
-		cudaBlockSizeMap.put(A, size);
-		return A;
-
-	}
-
-	/**
-	 * Does lazy cudaFree calls
-	 * @param toFree {@link Pointer} instance to be freed
-	 */
-	public synchronized static void cudaFreeHelper(final Pointer toFree) {
-		cudaFreeHelper(null, toFree, false);
-	}
-
-	/**
-	 * does lazy/eager cudaFree calls
-	 * @param toFree {@link Pointer} instance to be freed
-	 * @param eager true if to be done eagerly
-	 */
-	public synchronized static void cudaFreeHelper(final Pointer toFree, boolean eager) {
-		cudaFreeHelper(null, toFree, eager);
-	}
-
-	/**
-	 * Does lazy cudaFree calls
-	 * @param instructionName name of the instruction for which to record per instruction free time, null if do not want to record
-	 * @param toFree {@link Pointer} instance to be freed
-	 */
-	public synchronized static void cudaFreeHelper(String instructionName, final Pointer toFree) {
-		cudaFreeHelper(instructionName, toFree, false);
-	}
-
-	/**
-	 * Does cudaFree calls, lazily
-	 * @param instructionName name of the instruction for which to record per instruction free time, null if do not want to record
-	 * @param toFree {@link Pointer} instance to be freed
-	 * @param eager true if to be done eagerly
-	 */
-	public synchronized static void cudaFreeHelper(String instructionName, final Pointer toFree, boolean eager){
-		long t0 = 0;
-		assert cudaBlockSizeMap.containsKey(toFree) : "ERROR : Internal state corrupted, cache block size map is not aware of a block it trying to free up";
-		long size = cudaBlockSizeMap.get(toFree);
-		if (eager) {
-			if (DMLScript.STATISTICS) t0 = System.nanoTime();
-			cudaFree(toFree);
-			cudaBlockSizeMap.remove(toFree);
-			if (DMLScript.STATISTICS) GPUStatistics.cudaDeAllocTime.addAndGet(System.nanoTime() - t0);
-			if (DMLScript.STATISTICS) GPUStatistics.cudaDeAllocCount.addAndGet(1);
-			if (instructionName != null && GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instructionName, GPUInstruction.MISC_TIMER_CUDA_FREE, System.nanoTime() - t0);
-		} else {
-			LinkedList<Pointer> freeList = freeCUDASpaceMap.get(size);
-			if (freeList == null) {
-				freeList = new LinkedList<Pointer>();
-				freeCUDASpaceMap.put(size, freeList);
-			}
-			freeList.add(toFree);
-		}
-	}
-
-	/**
 	 * Gets the double array from GPU memory onto host memory and returns string.
 	 * @param A Pointer to memory on device (GPU), assumed to point to a double array
 	 * @param rows rows in matrix A
@@ -328,7 +233,7 @@ public class GPUObject {
 	 * Needed for operations like {@link JCusparse#cusparseDcsrgemm(cusparseHandle, int, int, int, int, int, cusparseMatDescr, int, Pointer, Pointer, Pointer, cusparseMatDescr, int, Pointer, Pointer, Pointer, cusparseMatDescr, Pointer, Pointer, Pointer)}
 	 * @param sparseMatrixPtr CSR (compressed sparse row) pointer
 	 */
-	public void setSparseMatrixCudaPointer(CSRPointer sparseMatrixPtr) {
+	public void setSparseMatrixCudaPointer(CSRPointer sparseMatrixPtr) throws DMLRuntimeException {
 		this.jcudaSparseMatrixPtr = sparseMatrixPtr;
 		this.isInSparseFormat = true;
 		if(jcudaDenseMatrixPtr != null) {
@@ -343,7 +248,7 @@ public class GPUObject {
 	 *
 	 * @param densePtr dense pointer
 	 */
-	public void setDenseMatrixCudaPointer(Pointer densePtr){
+	public void setDenseMatrixCudaPointer(Pointer densePtr) throws DMLRuntimeException{
 		this.jcudaDenseMatrixPtr = densePtr;
 		this.isInSparseFormat = false;
 		if(jcudaSparseMatrixPtr != null) {
@@ -704,7 +609,7 @@ public class GPUObject {
 		setDeviceModify(size);
 	}
 
-	void deallocateMemoryOnDevice(boolean eager) {
+	void deallocateMemoryOnDevice(boolean eager) throws DMLRuntimeException {
 		if(jcudaDenseMatrixPtr != null) {
 			cudaFreeHelper(null, jcudaDenseMatrixPtr, eager);
 		}
@@ -1036,9 +941,9 @@ public class GPUObject {
 			}
 			ensureFreeSpace(getDoubleSizeOf(nnz2) + getIntSizeOf(rows + 1) + getIntSizeOf(nnz2));
 			// increment the cudaCount by 1 for the allocation of all 3 arrays
-			r.val = allocate(null, getDoubleSizeOf(nnz2), 0);
-			r.rowPtr = allocate(null, getIntSizeOf(rows + 1), 0);
-			r.colInd = allocate(null, getIntSizeOf(nnz2), 1);
+			r.val = allocate(null, getDoubleSizeOf(nnz2));
+			r.rowPtr = allocate(null, getIntSizeOf(rows + 1));
+			r.colInd = allocate(null, getIntSizeOf(nnz2));
 			return r;
 		}
 
@@ -1113,7 +1018,7 @@ public class GPUObject {
 			cusparseSetPointerMode(handle, cusparsePointerMode.CUSPARSE_POINTER_MODE_HOST);
             cudaDeviceSynchronize();
 			// Do not increment the cudaCount of allocations on GPU
-			C.rowPtr = allocate(null, getIntSizeOf((long)rowsC+1), 0);
+			C.rowPtr = allocate(getIntSizeOf((long)rowsC+1));
 		}
 
 		/**
@@ -1190,8 +1095,8 @@ public class GPUObject {
 		 */
 		private static void step3AllocateValNInd(cusparseHandle handle, CSRPointer C) throws DMLRuntimeException {
 			// Increment cudaCount by one when all three arrays of CSR sparse array are allocated
-			C.val = allocate(null, getDoubleSizeOf(C.nnz), 0);
-			C.colInd = allocate(null, getIntSizeOf(C.nnz), 1);
+			C.val = allocate(null, getDoubleSizeOf(C.nnz));
+			C.colInd = allocate(null, getIntSizeOf(C.nnz));
 		}
 
 		// ==============================================================================================
@@ -1260,7 +1165,7 @@ public class GPUObject {
 		 */
 		public Pointer toColumnMajorDenseMatrix(cusparseHandle cusparseHandle, cublasHandle cublasHandle, int rows, int cols) throws DMLRuntimeException {
 			long size = ((long)rows) * getDoubleSizeOf((long)cols);
-			Pointer A = GPUObject.allocate(size);
+			Pointer A = allocate(size);
 			// If this sparse block is empty, the allocated dense matrix, initialized to zeroes, will be returned.
 			if (val != null && rowPtr != null && colInd != null && nnz > 0) {
 				// Note: cusparseDcsr2dense method cannot handle empty blocks
@@ -1275,7 +1180,7 @@ public class GPUObject {
 		/**
 		 * Calls cudaFree lazily on the allocated {@link Pointer} instances
 		 */
-		public void deallocate() {
+		public void deallocate() throws DMLRuntimeException {
 			deallocate(false);
 		}
 
@@ -1283,7 +1188,7 @@ public class GPUObject {
 		 * Calls cudaFree lazily or eagerly on the allocated {@link Pointer} instances
 		 * @param eager whether to do eager or lazy cudaFrees
 		 */
-		public void deallocate(boolean eager){
+		public void deallocate(boolean eager) throws DMLRuntimeException{
 			if (nnz > 0) {
 				cudaFreeHelper(val, eager);
 				cudaFreeHelper(rowPtr, eager);

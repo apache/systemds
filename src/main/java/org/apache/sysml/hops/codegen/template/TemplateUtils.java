@@ -182,11 +182,20 @@ public class TemplateUtils
 	public static TemplateBase createTemplate(TemplateType type, boolean closed) {
 		TemplateBase tpl = null;
 		switch( type ) {
-			case CellTpl: tpl = new TemplateCell(); break;
-			case RowAggTpl: tpl = new TemplateRowAgg(); break;
-			case OuterProdTpl: tpl = new TemplateOuterProduct(); break;
+			case CellTpl: tpl = new TemplateCell(closed); break;
+			case RowAggTpl: tpl = new TemplateRowAgg(closed); break;
+			case OuterProdTpl: tpl = new TemplateOuterProduct(closed); break;
 		}
-		tpl._closed = closed;
+		return tpl;
+	}
+	
+	public static TemplateBase[] createCompatibleTemplates(TemplateType type, boolean closed) {
+		TemplateBase[] tpl = null;
+		switch( type ) {
+			case CellTpl: tpl = new TemplateBase[]{new TemplateCell(closed), new TemplateRowAgg(closed)}; break;
+			case RowAggTpl: tpl = new TemplateBase[]{new TemplateRowAgg(closed)}; break;
+			case OuterProdTpl: tpl = new TemplateBase[]{new TemplateOuterProduct(closed)}; break;
+		}
 		return tpl;
 	}
 	

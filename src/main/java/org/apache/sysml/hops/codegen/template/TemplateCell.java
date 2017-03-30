@@ -60,6 +60,10 @@ public class TemplateCell extends TemplateBase
 	public TemplateCell() {
 		super(TemplateType.CellTpl);
 	}
+	
+	public TemplateCell(boolean closed) {
+		super(TemplateType.CellTpl, closed);
+	}
 
 	@Override
 	public boolean open(Hop hop) {

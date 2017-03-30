@@ -51,6 +51,10 @@ public class TemplateOuterProduct extends TemplateBase {
 	public TemplateOuterProduct() {
 		super(TemplateType.OuterProdTpl);
 	}
+	
+	public TemplateOuterProduct(boolean closed) {
+		super(TemplateType.OuterProdTpl, closed);
+	}
 
 	@Override
 	public boolean open(Hop hop) {

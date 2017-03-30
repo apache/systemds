@@ -44,8 +44,9 @@ public class AlgorithmL2SVM extends AutomatedTestBase
 	private final static double eps = 1e-5;
 	
 	private final static int rows = 1468;
-	private final static int cols = 1007;
-		
+	private final static int cols1 = 1007;
+	private final static int cols2 = 987;
+	
 	private final static double sparsity1 = 0.7; //dense
 	private final static double sparsity2 = 0.1; //sparse
 	
@@ -133,6 +134,7 @@ public class AlgorithmL2SVM extends AutomatedTestBase
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
 			
 			//generate actual datasets
+			int cols = (instType==ExecType.SPARK) ? cols2 : cols1;
 			double[][] X = getRandomMatrix(rows, cols, 0, 1, sparse?sparsity2:sparsity1, 714);
 			writeInputMatrixWithMTD("X", X, true);
 			double[][] y = TestUtils.round(getRandomMatrix(rows, 1, 0, 1, 1.0, 136));

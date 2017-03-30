@@ -129,6 +129,9 @@ public abstract class SpoofRowAggregate extends SpoofOperator
 	
 	private void executeDense(double[] a, double[][] b, double[] scalars, double[] c, int n, int rl, int ru) 
 	{
+		if( a == null )
+			return;
+		
 		for( int i=rl, aix=rl*n; i<ru; i++, aix+=n ) {
 			//call generated method
 			genexecRowDense( a, aix, b, scalars, c, n, i );
@@ -137,6 +140,9 @@ public abstract class SpoofRowAggregate extends SpoofOperator
 	
 	private void executeSparse(SparseBlock sblock, double[][] b, double[] scalars, double[] c, int n, int rl, int ru) 
 	{
+		if( sblock == null )
+			return;
+			
 		for( int i=rl; i<ru; i++ ) {
 			if( !sblock.isEmpty(i) ) {
 				double[] avals = sblock.values(i);

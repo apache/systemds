@@ -46,8 +46,12 @@ public abstract class TemplateBase
 	protected boolean _closed = false;
 	
 	protected TemplateBase(TemplateType type) {
+		this(type, false);
+	}
+	
+	protected TemplateBase(TemplateType type, boolean closed) {
 		_type = type;
-		_closed = false;
+		_closed = closed;
 	}
 	
 	public TemplateType getType() {

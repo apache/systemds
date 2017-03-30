@@ -124,26 +124,22 @@ public class CNodeUnary extends CNode
 		//generate children
 		sb.append(_inputs.get(0).codegen(sparse));
 		
-		//generate binary operation
+		//generate unary operation
 		String var = createVarname();
 		String tmp = _type.getTemplate(sparse);
 		tmp = tmp.replaceAll("%TMP%", var);
 		
 		String varj = _inputs.get(0).getVarname();
-		if( sparse && !tmp.contains("%IN1%") ) {
-			tmp = tmp.replaceAll("%IN1v%", varj+"vals");
-			tmp = tmp.replaceAll("%IN1i%", varj+"ix");
-		}
-		else
-			tmp = tmp.replaceAll("%IN1%", varj );
 		
-		if(varj.startsWith("b")  ) //i.e. b.get(index)
-		{
-			tmp = tmp.replaceAll("%POS1%", "bi");
-			tmp = tmp.replaceAll("%POS2%", "bi");
-		}
-		tmp = tmp.replaceAll("%POS1%", varj+"i");
-		tmp = tmp.replaceAll("%POS2%", varj+"i");
+		//replace sparse and dense inputs
+		tmp = tmp.replaceAll("%IN1v%", varj+"vals");
+		tmp = tmp.replaceAll("%IN1i%", varj+"ix");
+		tmp = tmp.replaceAll("%IN1%", varj );
+		
+		//replace start position of main input
+		String spos = !varj.startsWith("b") ? varj+"i" : "0";
+		tmp = tmp.replaceAll("%POS1%", spos);
+		tmp = tmp.replaceAll("%POS2%", spos);
 		
 		sb.append(tmp);
 		

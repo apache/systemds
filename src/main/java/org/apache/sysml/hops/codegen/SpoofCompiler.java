@@ -345,8 +345,10 @@ public class SpoofCompiler
 		
 		//open initial operator plans, if possible
 		for( TemplateBase tpl : TemplateUtils.TEMPLATES )
-			if( tpl.open(hop) )
-				memo.add(hop, tpl.getType());
+			if( tpl.open(hop) ) {
+				MemoTableEntrySet P = new MemoTableEntrySet(tpl.getType(), false);
+				memo.addAll(hop, enumPlans(hop, -1, P, tpl, memo));
+			}
 		
 		//fuse and merge operator plans
 		for( Hop c : hop.getInput() ) {
@@ -356,16 +358,7 @@ public class SpoofCompiler
 					if( tpl.fuse(hop, c) ) {
 						int pos = hop.getInput().indexOf(c);
 						MemoTableEntrySet P = new MemoTableEntrySet(tpl.getType(), pos, c.getHopID(), tpl.isClosed());
-						for(int k=0; k<hop.getInput().size(); k++)
-							if( k != pos ) {
-								Hop input2 = hop.getInput().get(k);
-								if( memo.contains(input2.getHopID()) && !memo.get(input2.getHopID()).get(0).closed
-									&& memo.get(input2.getHopID()).get(0).type == TemplateType.CellTpl && tpl.merge(hop, input2) ) 
-									P.crossProduct(k, -1L, input2.getHopID());
-								else
-									P.crossProduct(k, -1L);
-							}
-						memo.addAll(hop, P);
+						memo.addAll(hop, enumPlans(hop, pos, P, tpl, memo));
 					}
 				}	
 		}
@@ -390,6 +383,19 @@ public class SpoofCompiler
 		
 		//mark visited even if no plans found (e.g., unsupported ops)
 		memo.addHop(hop);
+	}
+	
+	private static MemoTableEntrySet enumPlans(Hop hop, int pos, MemoTableEntrySet P, TemplateBase tpl, CPlanMemoTable memo) {
+		for(int k=0; k<hop.getInput().size(); k++)
+			if( k != pos ) {
+				Hop input2 = hop.getInput().get(k);
+				if( memo.contains(input2.getHopID()) && !memo.get(input2.getHopID()).get(0).closed
+					&& memo.get(input2.getHopID()).get(0).type == TemplateType.CellTpl && tpl.merge(hop, input2) ) 
+					P.crossProduct(k, -1L, input2.getHopID());
+				else
+					P.crossProduct(k, -1L);
+			}
+		return P;
 	}
 	
 	private static void rConstructCPlans(Hop hop, CPlanMemoTable memo, HashMap<Long, Pair<Hop[],CNodeTpl>> cplans, boolean compileLiterals) 

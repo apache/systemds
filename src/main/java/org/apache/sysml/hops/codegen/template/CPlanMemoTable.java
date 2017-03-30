@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.hops.Hop;
@@ -104,23 +103,20 @@ public class CPlanMemoTable
 			.distinct().collect(Collectors.toList()));
 	}
 
-	@SuppressWarnings("unchecked")
 	public void pruneRedundant(long hopID) {
 		if( !contains(hopID) )
 			return;
 		
 		//prune redundant plans (i.e., equivalent) 
-		HashSet<MemoTableEntry> set = new HashSet<MemoTableEntry>();
-		List<MemoTableEntry> list = _plans.get(hopID);
-		for( MemoTableEntry me : list )
-			set.add(me);
+		setDistinct(hopID, _plans.get(hopID));
 		
 		//prune dominated plans (e.g., opened plan subsumed
 		//by fused plan if single consumer of input)
-		ArrayList<MemoTableEntry> rmList = new ArrayList<MemoTableEntry>();
+		HashSet<MemoTableEntry> rmList = new HashSet<MemoTableEntry>();
+		List<MemoTableEntry> list = _plans.get(hopID);
 		Hop hop = _hopRefs.get(hopID);
-		for( MemoTableEntry e1 : set )
-			for( MemoTableEntry e2 : set )
+		for( MemoTableEntry e1 : list )
+			for( MemoTableEntry e2 : list )
 				if( e1 != e2 && e1.subsumes(e2) ) {
 					//check that childs don't have multiple consumers
 					boolean rmSafe = true; 
@@ -131,9 +127,8 @@ public class CPlanMemoTable
 						rmList.add(e2);
 				}
 		
-		//update current entry list
-		list.clear();
-		list.addAll(CollectionUtils.subtract(set, rmList));
+		//update current entry list, by removing rmList
+		remove(hop, rmList);
 	}
 
 	public void pruneSuboptimal(ArrayList<Hop> roots) {
@@ -300,6 +295,10 @@ public class CPlanMemoTable
 	public static class MemoTableEntrySet 
 	{
 		public ArrayList<MemoTableEntry> plans = new ArrayList<MemoTableEntry>();
+		
+		public MemoTableEntrySet(TemplateType type, boolean close) {
+			plans.add(new MemoTableEntry(type, -1, -1, -1, close));
+		}
 		
 		public MemoTableEntrySet(TemplateType type, int pos, long hopID, boolean close) {
 			plans.add(new MemoTableEntry(type, (pos==0)?hopID:-1, 

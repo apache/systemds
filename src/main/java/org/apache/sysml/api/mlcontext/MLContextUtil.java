@@ -889,11 +889,17 @@ public final class MLContextUtil {
 				}
 				sb.append(") ");
 
-				sb.append(key);
-				sb.append(": ");
-				String str = object.toString();
-				str = StringUtils.abbreviate(str, 100);
-				sb.append(str);
+				 sb.append(key);
+				 sb.append(": ");
+				 String str = null;
+				 if(object instanceof MatrixBlock) {
+					 MatrixBlock mb = (MatrixBlock) object;
+					 str = "MatrixBlock [sparse? = " + mb.isInSparseFormat() + ", nonzeros = " + mb.getNonZeros() + ", size: " + mb.getNumRows() + " X " + mb.getNumColumns() + "]";  
+				 }
+				 else 
+					 str = object.toString(); // TODO: Deal with OOM for other objects such as Frame, etc
+				 str = StringUtils.abbreviate(str, 100);
+				 sb.append(str);
 				sb.append("\n");
 			}
 		}

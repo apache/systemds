@@ -165,35 +165,37 @@ public class RDDConverterUtilsExt
 		return convertPy4JArrayToMB(data, (int) rlen, (int) clen, isSparse);
 	}
 	
-	public static MatrixBlock mergeRowBlocks(ArrayList<MatrixBlock> mb, int numRowsPerBlock, int rlen, int clen, boolean isSparse) throws DMLRuntimeException {
-		return mergeRowBlocks(mb, (long)numRowsPerBlock, (long)rlen, (long)clen, isSparse);
+	public static MatrixBlock allocateDenseOrSparse(int rlen, int clen, boolean isSparse) {
+		MatrixBlock ret = new MatrixBlock(rlen, clen, isSparse);
+		ret.allocateDenseOrSparseBlock();
+		return ret;
+	}
+	public static MatrixBlock allocateDenseOrSparse(long rlen, long clen, boolean isSparse) throws DMLRuntimeException {
+		if(rlen > Integer.MAX_VALUE || clen > Integer.MAX_VALUE) {
+			throw new DMLRuntimeException("Dimensions of matrix are too large to be passed via NumPy/SciPy:" + rlen + " X " + clen);
+		}
+		return allocateDenseOrSparse(rlen, clen, isSparse);
 	}
 	
-	/**
-	 * This creates a MatrixBlock from list of row blocks
-	 * 
-	 * @param mb list of row blocks
-	 * @param numRowsPerBlock number of rows per block
-	 * @param rlen number of rows
-	 * @param clen number of columns
-	 * @param isSparse is the output matrix in sparse format
-	 * @return a matrix block of shape (rlen, clen)
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
-	 */
-	public static MatrixBlock mergeRowBlocks(ArrayList<MatrixBlock> mb, long numRowsPerBlock, long rlen, long clen, boolean isSparse) throws DMLRuntimeException {
-		if(clen >= Integer.MAX_VALUE)
-			throw new DMLRuntimeException("Number of columns cannot be greater than " + Integer.MAX_VALUE);
-		if(rlen >= Integer.MAX_VALUE)
-			throw new DMLRuntimeException("Number of rows cannot be greater than " + Integer.MAX_VALUE);
-		
-		MatrixBlock ret = new MatrixBlock((int)rlen, (int) clen, isSparse);
-		ret.allocateDenseOrSparseBlock();
-		for(int i = 0; i < mb.size(); i++) {
-			ret.copy((int)(i*numRowsPerBlock), (int)Math.min((i+1)*numRowsPerBlock-1, rlen-1), 0, (int)(clen-1), mb.get(i), false);
-		}
+	public static void copyRowBlocks(MatrixBlock mb, int rowIndex, MatrixBlock ret, int numRowsPerBlock, int rlen, int clen) throws DMLRuntimeException {
+		copyRowBlocks(mb, (long)rowIndex, ret, (long)numRowsPerBlock, (long)rlen, (long)clen);
+	}
+	public static void copyRowBlocks(MatrixBlock mb, long rowIndex, MatrixBlock ret, int numRowsPerBlock, int rlen, int clen) throws DMLRuntimeException {
+		copyRowBlocks(mb, (long)rowIndex, ret, (long)numRowsPerBlock, (long)rlen, (long)clen);
+	}
+	public static void copyRowBlocks(MatrixBlock mb, int rowIndex, MatrixBlock ret, long numRowsPerBlock, long rlen, long clen) throws DMLRuntimeException {
+		copyRowBlocks(mb, (long)rowIndex, ret, (long)numRowsPerBlock, (long)rlen, (long)clen);
+	}
+	public static void copyRowBlocks(MatrixBlock mb, long rowIndex, MatrixBlock ret, long numRowsPerBlock, long rlen, long clen) throws DMLRuntimeException {
+		// TODO: Double-check if synchronization is required here.
+		// synchronized (RDDConverterUtilsExt.class) {
+			ret.copy((int)(rowIndex*numRowsPerBlock), (int)Math.min((rowIndex+1)*numRowsPerBlock-1, rlen-1), 0, (int)(clen-1), mb, false);
+		// }
+	}
+	
+	public static void postProcessAfterCopying(MatrixBlock ret) throws DMLRuntimeException {
 		ret.recomputeNonZeros();
 		ret.examSparsity();
-		return ret;
 	}
 	
 	public static MatrixBlock convertPy4JArrayToMB(byte [] data, int rlen, int clen, boolean isSparse) throws DMLRuntimeException {

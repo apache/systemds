@@ -71,7 +71,8 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	}
 
 	private boolean isEligibleForSpark() {
-		return (op == ConvOp.DIRECT_CONV2D || op == ConvOp.MAX_POOLING) ? true : false;
+		// return (op == ConvOp.DIRECT_CONV2D || op == ConvOp.MAX_POOLING) ? true : false;
+		return false;
 	}
 	
 	@Override

@@ -26,7 +26,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -84,9 +83,10 @@ public class SpoofCompiler
 	//internal configuration flags
 	public static boolean LDEBUG = false;
 	public static final boolean RECOMPILE_CODEGEN = true;
-	public static PlanCache PLAN_CACHE_POLICY = PlanCache.CSLH;
-	public static final PlanSelector PLAN_SEL_POLICY = PlanSelector.FUSE_ALL; 
 	public static final boolean PRUNE_REDUNDANT_PLANS = true;
+	public static PlanCachePolicy PLAN_CACHE_POLICY = PlanCachePolicy.CSLH;
+	public static final int PLAN_CACHE_SIZE = 1024; //max 1K classes 
+	public static final PlanSelector PLAN_SEL_POLICY = PlanSelector.FUSE_ALL; 
 	
 	public enum PlanSelector {
 		FUSE_ALL,             //maximal fusion, possible w/ redundant compute
@@ -94,19 +94,20 @@ public class SpoofCompiler
 		FUSE_COST_BASED,      //cost-based decision on materialization points
 	}
 
-	public enum PlanCache {
+	public enum PlanCachePolicy {
 		CONSTANT, //plan cache, with always compile literals
 		CSLH,     //plan cache, with context-sensitive literal replacement heuristic
 		NONE;     //no plan cache
 		
-		public static PlanCache getPolicy(boolean planCache, boolean compileLiterals) {
+		public static PlanCachePolicy get(boolean planCache, boolean compileLiterals) {
 			return !planCache ? NONE : compileLiterals ? CONSTANT : CSLH;
 		}
 	}
 	
 	//plan cache for cplan->compiled source to avoid unnecessary codegen/source code compile
 	//for equal operators from (1) different hop dags and (2) repeated recompilation 
-	private static ConcurrentHashMap<CNode, Class<?>> planCache = new ConcurrentHashMap<CNode, Class<?>>();
+	//note: if PLAN_CACHE_SIZE is exceeded, we evict the least-recently-used plan (LRU policy)
+	private static final PlanCache planCache = new PlanCache(PLAN_CACHE_SIZE);
 	
 	private static ProgramRewriter rewriteCSE = new ProgramRewriter(
 			new RewriteCommonSubexpressionElimination(true),
@@ -204,13 +205,6 @@ public class SpoofCompiler
 		return optimize(new ArrayList<Hop>(Arrays.asList(root)), recompile).get(0);
 	}
 	
-	public static void cleanupCodeGenerator() {
-		if( PLAN_CACHE_POLICY != PlanCache.NONE ) {
-			CodegenUtils.clearClassCache(); //class cache
-			planCache.clear(); //plan cache
-		}
-	}
-	
 	/**
 	 * Main interface of sum-product optimizer, statement block dag.
 	 * 
@@ -231,7 +225,7 @@ public class SpoofCompiler
 		try
 		{
 			//context-sensitive literal replacement (only integers during recompile)
-			boolean compileLiterals = (PLAN_CACHE_POLICY==PlanCache.CONSTANT) || !recompile;
+			boolean compileLiterals = (PLAN_CACHE_POLICY==PlanCachePolicy.CONSTANT) || !recompile;
 			
 			//construct codegen plans
 			HashMap<Long, Pair<Hop[],CNodeTpl>>  cplans = constructCPlans(roots, compileLiterals);
@@ -247,10 +241,12 @@ public class SpoofCompiler
 			
 			//source code generation for all cplans
 			HashMap<Long, Pair<Hop[],Class<?>>> clas = new HashMap<Long, Pair<Hop[],Class<?>>>();
-			for( Entry<Long, Pair<Hop[],CNodeTpl>> cplan : cplans.entrySet() ) {
+			for( Entry<Long, Pair<Hop[],CNodeTpl>> cplan : cplans.entrySet() ) 
+			{
 				Pair<Hop[],CNodeTpl> tmp = cplan.getValue();
+				Class<?> cla = planCache.getPlan(tmp.getValue());
 				
-				if( PLAN_CACHE_POLICY==PlanCache.NONE || !planCache.containsKey(tmp.getValue()) ) {
+				if( cla == null ) {
 					//generate java source code
 					String src = tmp.getValue().codegen(false);
 					
@@ -266,17 +262,19 @@ public class SpoofCompiler
 					}
 					
 					//compile generated java source code
-					Class<?> cla = CodegenUtils.compileClass(tmp.getValue().getClassname(), src);
-					planCache.put(tmp.getValue(), cla);
+					cla = CodegenUtils.compileClass(tmp.getValue().getClassname(), src);
+					
+					//maintain plan cache
+					if( PLAN_CACHE_POLICY!=PlanCachePolicy.NONE )
+						planCache.putPlan(tmp.getValue(), cla);
 				}
 				else if( LDEBUG || DMLScript.STATISTICS ) {
 					Statistics.incrementCodegenPlanCacheHits();
 				}
 				
-				Class<?> cla = planCache.get(tmp.getValue());
+				//make class available and maintain hits
 				if(cla != null)
 					clas.put(cplan.getKey(), new Pair<Hop[],Class<?>>(tmp.getKey(),cla));
-				
 				if( LDEBUG || DMLScript.STATISTICS )
 					Statistics.incrementCodegenPlanCacheTotal();
 			}
@@ -308,6 +306,30 @@ public class SpoofCompiler
 		return ret;
 	}
 
+	public static void cleanupCodeGenerator() {
+		if( PLAN_CACHE_POLICY != PlanCachePolicy.NONE ) {
+			CodegenUtils.clearClassCache(); //class cache
+			planCache.clear(); //plan cache
+		}
+	}
+	
+	/**
+	 * Factory method for alternative plan selection policies.
+	 * 
+	 * @return plan selector
+	 */
+	public static PlanSelection createPlanSelector() {
+		switch( PLAN_SEL_POLICY ) {
+			case FUSE_ALL: 
+				return new PlanSelectionFuseAll();
+			case FUSE_NO_REDUNDANCY: 
+				return new PlanSelectionFuseNoRedundancy();
+			case FUSE_COST_BASED:
+			default:	
+				throw new RuntimeException("Unsupported "
+					+ "plan selector: "+PLAN_SEL_POLICY);
+		}
+	}
 	
 	////////////////////
 	// Codegen plan construction
@@ -583,22 +605,48 @@ public class SpoofCompiler
 		}
 		return ret;
 	}
-
+	
 	/**
-	 * Factory method for alternative plan selection policies.
+	 * This plan cache maps CPlans to compiled and loaded classes in order
+	 * to reduce javac and JIT compilation overhead. It uses a simple LRU 
+	 * eviction policy if the maximum number of entries is exceeded. In case 
+	 * of evictions, this cache also triggers the eviction of corresponding 
+	 * class cache entries (1:N). 
+	 * <p>
+	 * Note: The JVM is free to garbage collect and unload classes that are no
+	 * longer referenced.
 	 * 
-	 * @return plan selector
 	 */
-	public static PlanSelection createPlanSelector() {
-		switch( PLAN_SEL_POLICY ) {
-			case FUSE_ALL: 
-				return new PlanSelectionFuseAll();
-			case FUSE_NO_REDUNDANCY: 
-				return new PlanSelectionFuseNoRedundancy();
-			case FUSE_COST_BASED:
-			default:	
-				throw new RuntimeException("Unsupported "
-					+ "plan selector: "+PLAN_SEL_POLICY);
+	private static class PlanCache {
+		private final LinkedHashMap<CNode, Class<?>> _plans;
+		private final int _maxSize;
+		
+		public PlanCache(int maxSize) {
+			 _plans = new LinkedHashMap<CNode, Class<?>>();	
+			 _maxSize = maxSize;
+		}
+		
+		public synchronized Class<?> getPlan(CNode key) {
+			//constant time get and maintain usage order
+			Class<?> value = _plans.remove(key);
+			if( value != null ) 
+				_plans.put(key, value); 
+			return value;
+		}
+		
+		public synchronized void putPlan(CNode key, Class<?> value) {
+			if( _plans.size() >= _maxSize ) {
+				//remove least recently used (i.e., first) entry
+				Iterator<Entry<CNode, Class<?>>> iter = _plans.entrySet().iterator();
+				Class<?> rmCla = iter.next().getValue();
+				CodegenUtils.clearClassCache(rmCla); //class cache
+				iter.remove(); //plan cache
+			}
+			_plans.put(key, value);
+		}
+		
+		public synchronized void clear() {
+			_plans.clear();
 		}
 	}
 }

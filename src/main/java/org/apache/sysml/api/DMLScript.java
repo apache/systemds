@@ -57,7 +57,7 @@ import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.OptimizerUtils.OptimizationLevel;
 import org.apache.sysml.hops.codegen.SpoofCompiler;
-import org.apache.sysml.hops.codegen.SpoofCompiler.PlanCache;
+import org.apache.sysml.hops.codegen.SpoofCompiler.PlanCachePolicy;
 import org.apache.sysml.hops.globalopt.GlobalOptimizerWrapper;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopsException;
@@ -597,7 +597,7 @@ public class DMLScript
 
 		//Step 5.1: Generate code for the rewrited Hop dags 
 		if( dmlconf.getBooleanValue(DMLConfig.CODEGEN) ){
-			SpoofCompiler.PLAN_CACHE_POLICY = PlanCache.getPolicy(
+			SpoofCompiler.PLAN_CACHE_POLICY = PlanCachePolicy.get(
 					dmlconf.getBooleanValue(DMLConfig.CODEGEN_PLANCACHE),
 					dmlconf.getIntValue(DMLConfig.CODEGEN_LITERALS)==2);
 			dmlt.codgenHopsDAG(prog);

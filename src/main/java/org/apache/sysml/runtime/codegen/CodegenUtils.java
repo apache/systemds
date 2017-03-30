@@ -25,7 +25,9 @@ import java.io.InputStream;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.tools.Diagnostic;
@@ -231,6 +233,14 @@ public class CodegenUtils
 	
 	public static void clearClassCache() {
 		_cache.clear();
+	}
+	
+	public static void clearClassCache(Class<?> cla) {
+		//one-pass, in-place filtering of class cache
+		Iterator<Entry<String,Class<?>>> iter = _cache.entrySet().iterator();
+		while( iter.hasNext() )
+			if( iter.next().getValue()==cla )
+				iter.remove();
 	}
 	
 	private static void createWorkingDir() throws DMLRuntimeException  {

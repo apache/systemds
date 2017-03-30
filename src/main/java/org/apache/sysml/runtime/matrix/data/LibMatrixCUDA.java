@@ -333,7 +333,7 @@ public class LibMatrixCUDA {
 	public static void conv2dBiasAdd(String instName, MatrixObject image, MatrixObject bias, MatrixObject filter, MatrixObject outputBlock, int N, int C, int H, int W,
 			int K, int R, int S, int pad_h, int pad_w, int stride_h, int stride_w, int P, int Q)
 					throws DMLRuntimeException {
-
+		/*
 		int rows = (int) outputBlock.getNumRows();
 		int cols = (int) outputBlock.getNumColumns();
 		long size  = rows * cols * Sizeof.DOUBLE;
@@ -356,6 +356,9 @@ public class LibMatrixCUDA {
 		biasAdd(instName, tmp, biasPointer, outputPointer, rows, cols, (int)k1);
 
 		cudaFreeHelper(tmp);
+		*/
+		conv2d(instName, image, filter, outputBlock, N, C, H, W, K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
+		biasAdd(instName, outputBlock, bias, outputBlock);
 	}
 	
 	public static void conv2d(String instName, MatrixObject image, MatrixObject filter, MatrixObject outputBlock, int N, int C, int H, int W,

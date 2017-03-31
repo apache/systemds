@@ -95,21 +95,15 @@ public class MatrixMatrixAxpyGPUInstruction extends ArithmeticBinaryGPUInstructi
 		long clen1 = in1.getNumColumns();
 		long rlen2 = in2.getNumRows();
 		long clen2 = in2.getNumColumns();
-		long n = -1;
 		if(isValidMMOperation(rlen1, rlen2, clen1, clen2) || isValidMVOperation(rlen1, rlen2, clen1, clen2)) {
 			ec.setMetaData(_output.getName(), (int)rlen1, (int)clen1);
-			n = rlen1*clen1;
-		}
-		else if(isValidVMOperation(rlen1, rlen2, clen1, clen2)) {
-			ec.setMetaData(_output.getName(), (int)rlen2, (int)clen2);
-			n = rlen2*clen2;
 		}
 		else { 
 			throw new DMLRuntimeException("Incorrect dimensions of inputs in GPU axpy operation. input1:" + rlen1 + " X " + clen1 +
 					" and input2:" + rlen2 + " X " + clen2);
 		}
 		
-		LibMatrixCUDA.axpy(ec, getExtendedOpcode(), in1, in2, _output.getName(), multiplier*scalar.getDoubleValue(), n);
+		LibMatrixCUDA.axpy(ec, getExtendedOpcode(), in1, in2, _output.getName(), multiplier*scalar.getDoubleValue());
 		
 		ec.releaseMatrixInputForGPUInstruction(_input1.getName());
 		ec.releaseMatrixInputForGPUInstruction(_input2.getName());
@@ -124,7 +118,4 @@ public class MatrixMatrixAxpyGPUInstruction extends ArithmeticBinaryGPUInstructi
 		return (rlen1 == rlen2 && clen2 == 1) || (rlen2 == 1 && clen1 == clen2); 
 	}
 	
-	private boolean isValidVMOperation(long rlen1, long rlen2, long clen1, long clen2) {
-		return (rlen1 == rlen2 && clen1 == 1) || (rlen1 == 1 && clen1 == clen2); 
-	}
 }

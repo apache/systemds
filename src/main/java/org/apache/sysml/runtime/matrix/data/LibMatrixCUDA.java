@@ -2732,29 +2732,44 @@ public class LibMatrixCUDA {
 	 * @param in2 input matrix 2
 	 * @param outputName output matrix name
 	 * @param constant pointer constant
-	 * @param n size (i.e. rlen*clen) of output
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void axpy(ExecutionContext ec, String instName, MatrixObject in1, MatrixObject in2,
-													String outputName,  double constant, long n) throws DMLRuntimeException {
+													String outputName,  double constant) throws DMLRuntimeException {
 		Pointer A = getDensePointer(in1, instName);
 		Pointer B = getDensePointer(in2, instName);
 		MatrixObject out = ec.getMatrixObject(outputName);
 		getDenseMatrixOutputForGPUInstruction(ec, instName, outputName);	// Allocated the dense output matrix
 		Pointer C = getDensePointer(out, instName);
-		Pointer alphaPtr = pointerTo(constant);
-		// C <- A + alpha*B
-		// becomes
-		// C <- A
-		// C <- alpha*B + C
+		
 		long t1=0, t2=0;
-		if (GPUStatistics.DISPLAY_STATISTICS) t1 = System.nanoTime();
-		cudaMemcpy(C, A, n*((long)jcuda.Sizeof.DOUBLE), cudaMemcpyDeviceToDevice);
-		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_DEVICE_TO_DEVICE, System.nanoTime() - t1);
+		if(in1.getNumRows() == in2.getNumRows() && in1.getNumColumns() == in2.getNumColumns()) {
+			// Matrix-Matrix daxpy
+			long n = in1.getNumRows()*in2.getNumColumns(); // Since A is always a matrix
+			Pointer alphaPtr = pointerTo(constant);
+			// C <- A + alpha*B
+			// becomes
+			// C <- A
+			// C <- alpha*B + C
+			if (GPUStatistics.DISPLAY_STATISTICS) t1 = System.nanoTime();
+			cudaMemcpy(C, A, n*((long)jcuda.Sizeof.DOUBLE), cudaMemcpyDeviceToDevice);
+			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_DEVICE_TO_DEVICE, System.nanoTime() - t1);
 
-		if (GPUStatistics.DISPLAY_STATISTICS) t2 = System.nanoTime();
-		JCublas2.cublasDaxpy(cublasHandle, (int) n, alphaPtr, B, 1, C, 1);
-		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_DAXPY_LIB, System.nanoTime() - t2);
+			if (GPUStatistics.DISPLAY_STATISTICS) t2 = System.nanoTime();
+			JCublas2.cublasDaxpy(cublasHandle, (int) n, alphaPtr, B, 1, C, 1);
+			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_DAXPY_LIB, System.nanoTime() - t2);
+		}
+		else {
+			// Matrix-Vector daxpy
+			// Note: Vector-Matrix operation is not supported
+			// daxpy_matrix_vector(double* A,  double* B, double alpha, double* ret, int rlenA, int clenA, int rlenB, int clenB)
+			if (GPUStatistics.DISPLAY_STATISTICS) t1 = System.nanoTime();
+			int rlenA = (int) in1.getNumRows(); int clenA =  (int) in1.getNumColumns();
+			int rlenB = (int) in2.getNumRows(); int clenB =  (int) in2.getNumColumns();
+			kernels.launchKernel("daxpy_matrix_vector", ExecutionConfig.getConfigForSimpleMatrixOperations(rlenA, clenA),
+					A, B, constant, C, rlenA, clenA, rlenB, clenB);
+			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_DAXPY_MV_KERNEL, System.nanoTime() - t1);
+		}
 	}
 
 	//********************************************************************/

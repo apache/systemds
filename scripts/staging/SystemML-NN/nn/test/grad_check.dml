@@ -44,45 +44,7 @@ source("nn/layers/spatial_batch_norm.dml") as spatial_batch_norm
 source("nn/layers/tanh.dml") as tanh
 source("nn/test/conv_simple.dml") as conv_simple
 source("nn/test/max_pool_simple.dml") as max_pool_simple
-source("nn/util.dml") as util
-
-check_rel_error = function(double dw_a, double dw_n, double lossph, double lossmh)
-    return (double rel_error) {
-  /*
-   * Check and report any issues with the relative error measure between
-   * the analytical and numerical partial derivatives.
-   *
-   *  - Issues an "ERROR" statement for relative errors > 1e-2,
-   *  indicating that the gradient is likely incorrect.
-   *  - Issues a "WARNING" statement for relative errors < 1e-2
-   *  but > 1e-4, indicating that the may be incorrect.
-   *
-   * Inputs:
-   *  - dw_a: Analytical partial derivative wrt w.
-   *  - dw_n: Numerical partial derivative wrt w.
-   *  - lossph: Loss evaluated with w set to w+h.
-   *  - lossmh: Loss evaluated with w set to w-h.
-   *
-   * Outputs:
-   *  - rel_error: Relative error measure between the two derivatives.
-   */
-  # Compute relative error
-  rel_error = util::compute_rel_error(dw_a, dw_n)
-
-  # Evaluate relative error
-  thresh_error = 1e-2
-  thresh_warn = 1e-4
-  if (rel_error > thresh_error) {
-    print("ERROR: Relative error " + rel_error + " > " + thresh_error + " with " + dw_a +
-          " analytical vs " + dw_n + " numerical, with lossph " + lossph +
-          " and lossmh " + lossmh)
-  }
-  else if (rel_error > thresh_warn & rel_error <= thresh_error) {
-    print("WARNING: Relative error " + rel_error + " > " + thresh_warn + " & <= " + thresh_error +
-          " with " + dw_a + " analytical vs " + dw_n + " numerical, with lossph " + lossph +
-          " and lossmh " + lossmh)
-  }
-}
+source("nn/test/util.dml") as test_util
 
 affine = function() {
   /*
@@ -120,7 +82,7 @@ affine = function() {
       dX_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
-      rel_error = check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
+      rel_error = test_util::check_rel_grad_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
     }
   }
 
@@ -139,7 +101,7 @@ affine = function() {
       dW_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
-      rel_error = check_rel_error(as.scalar(dW[i,j]), dW_num, lossph, lossmh)
+      rel_error = test_util::check_rel_grad_error(as.scalar(dW[i,j]), dW_num, lossph, lossmh)
     }
   }
 
@@ -158,7 +120,7 @@ affine = function() {
       db_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
-      rel_error = check_rel_error(as.scalar(db[i,j]), db_num, lossph, lossmh)
+      rel_error = test_util::check_rel_grad_error(as.scalar(db[i,j]), db_num, lossph, lossmh)
     }
   }
 }
@@ -217,7 +179,7 @@ batch_norm = function() {
         dX_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
         # Check error
-        rel_error = check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
+        rel_error = test_util::check_rel_grad_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
       }
     }
 
@@ -238,7 +200,8 @@ batch_norm = function() {
         dgamma_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
         # Check error
-        rel_error = check_rel_error(as.scalar(dgamma[i,j]), dgamma_num, lossph, lossmh)
+        rel_error = test_util::check_rel_grad_error(as.scalar(dgamma[i,j]), dgamma_num,
+                                                    lossph, lossmh)
       }
     }
 
@@ -259,7 +222,8 @@ batch_norm = function() {
         dbeta_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
         # Check error
-        rel_error = check_rel_error(as.scalar(dbeta[i,j]), dbeta_num, lossph, lossmh)
+        rel_error = test_util::check_rel_grad_error(as.scalar(dbeta[i,j]), dbeta_num,
+                                                    lossph, lossmh)
       }
     }
   }
@@ -310,7 +274,7 @@ conv = function() {
       dX_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
-      rel_error = check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
+      rel_error = test_util::check_rel_grad_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
     }
   }
 
@@ -329,7 +293,7 @@ conv = function() {
       dW_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
-      rel_error = check_rel_error(as.scalar(dW[i,j]), dW_num, lossph, lossmh)
+      rel_error = test_util::check_rel_grad_error(as.scalar(dW[i,j]), dW_num, lossph, lossmh)
     }
   }
 
@@ -348,7 +312,7 @@ conv = function() {
       db_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
-      rel_error = check_rel_error(as.scalar(db[i,j]), db_num, lossph, lossmh)
+      rel_error = test_util::check_rel_grad_error(as.scalar(db[i,j]), db_num, lossph, lossmh)
     }
   }
 }
@@ -401,7 +365,7 @@ conv_builtin = function() {
       dX_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
-      rel_error = check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
+      rel_error = test_util::check_rel_grad_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
     }
   }
 
@@ -422,7 +386,7 @@ conv_builtin = function() {
       dW_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
-      rel_error = check_rel_error(as.scalar(dW[i,j]), dW_num, lossph, lossmh)
+      rel_error = test_util::check_rel_grad_error(as.scalar(dW[i,j]), dW_num, lossph, lossmh)
     }
   }
 
@@ -443,7 +407,7 @@ conv_builtin = function() {
       db_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
-      rel_error = check_rel_error(as.scalar(db[i,j]), db_num, lossph, lossmh)
+      rel_error = test_util::check_rel_grad_error(as.scalar(db[i,j]), db_num, lossph, lossmh)
     }
   }
 }
@@ -495,7 +459,7 @@ conv_simple = function() {
       dX_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
-      rel_error = check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
+      rel_error = test_util::check_rel_grad_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
     }
   }
 
@@ -516,7 +480,7 @@ conv_simple = function() {
       dW_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
-      rel_error = check_rel_error(as.scalar(dW[i,j]), dW_num, lossph, lossmh)
+      rel_error = test_util::check_rel_grad_error(as.scalar(dW[i,j]), dW_num, lossph, lossmh)
     }
   }
 
@@ -537,7 +501,7 @@ conv_simple = function() {
       db_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
-      rel_error = check_rel_error(as.scalar(db[i,j]), db_num, lossph, lossmh)
+      rel_error = test_util::check_rel_grad_error(as.scalar(db[i,j]), db_num, lossph, lossmh)
     }
   }
 }
@@ -573,7 +537,7 @@ cross_entropy_loss = function() {
       dpred_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
-      rel_error = check_rel_error(as.scalar(dpred[i,j]), dpred_num, lossph, lossmh)
+      rel_error = test_util::check_rel_grad_error(as.scalar(dpred[i,j]), dpred_num, lossph, lossmh)
     }
   }
 }
@@ -613,7 +577,7 @@ dropout = function() {
       dX_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
-      rel_error = check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
+      rel_error = test_util::check_rel_grad_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
     }
   }
 }
@@ -647,7 +611,7 @@ l1_loss = function() {
       dpred_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
-      rel_error = check_rel_error(as.scalar(dpred[i,j]), dpred_num, lossph, lossmh)
+      rel_error = test_util::check_rel_grad_error(as.scalar(dpred[i,j]), dpred_num, lossph, lossmh)
     }
   }
 }
@@ -681,7 +645,8 @@ l1_reg = function() {
       dW_num = (reg_lossph-reg_lossmh) / (2*h)  # numerical derivative
 
       # Check error
-      rel_error = check_rel_error(as.scalar(dW[i,j]), dW_num, reg_lossph, reg_lossmh)
+      rel_error = test_util::check_rel_grad_error(as.scalar(dW[i,j]), dW_num,
+                                                  reg_lossph, reg_lossmh)
     }
   }
 }
@@ -715,7 +680,7 @@ l2_loss = function() {
       dpred_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
-      rel_error = check_rel_error(as.scalar(dpred[i,j]), dpred_num, lossph, lossmh)
+      rel_error = test_util::check_rel_grad_error(as.scalar(dpred[i,j]), dpred_num, lossph, lossmh)
     }
   }
 }
@@ -749,7 +714,8 @@ l2_reg = function() {
       dW_num = (reg_lossph-reg_lossmh) / (2*h)  # numerical derivative
 
       # Check error
-      rel_error = check_rel_error(as.scalar(dW[i,j]), dW_num, reg_lossph, reg_lossmh)
+      rel_error = test_util::check_rel_grad_error(as.scalar(dW[i,j]), dW_num,
+                                                  reg_lossph, reg_lossmh)
     }
   }
 }
@@ -783,7 +749,7 @@ log_loss = function() {
       dpred_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
-      rel_error = check_rel_error(as.scalar(dpred[i,j]), dpred_num, lossph, lossmh)
+      rel_error = test_util::check_rel_grad_error(as.scalar(dpred[i,j]), dpred_num, lossph, lossmh)
     }
   }
 }
@@ -835,7 +801,7 @@ lstm = function() {
       dX_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
-      rel_error = check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
+      rel_error = test_util::check_rel_grad_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
     }
   }
 
@@ -858,7 +824,7 @@ lstm = function() {
       dW_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
-      rel_error = check_rel_error(as.scalar(dW[i,j]), dW_num, lossph, lossmh)
+      rel_error = test_util::check_rel_grad_error(as.scalar(dW[i,j]), dW_num, lossph, lossmh)
     }
   }
 
@@ -881,7 +847,7 @@ lstm = function() {
       db_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
-      rel_error = check_rel_error(as.scalar(db[i,j]), db_num, lossph, lossmh)
+      rel_error = test_util::check_rel_grad_error(as.scalar(db[i,j]), db_num, lossph, lossmh)
     }
   }
 
@@ -904,7 +870,7 @@ lstm = function() {
       dout0_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
-      rel_error = check_rel_error(as.scalar(dout0[i,j]), dout0_num, lossph, lossmh)
+      rel_error = test_util::check_rel_grad_error(as.scalar(dout0[i,j]), dout0_num, lossph, lossmh)
     }
   }
 
@@ -927,7 +893,7 @@ lstm = function() {
       dc0_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
-      rel_error = check_rel_error(as.scalar(dc0[i,j]), dc0_num, lossph, lossmh)
+      rel_error = test_util::check_rel_grad_error(as.scalar(dc0[i,j]), dc0_num, lossph, lossmh)
     }
   }
 }
@@ -975,7 +941,7 @@ max_pool = function() {
         dX_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
         # Check error
-        rel_error = check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
+        rel_error = test_util::check_rel_grad_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
       }
     }
   }
@@ -1027,7 +993,7 @@ max_pool_builtin = function() {
         dX_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
         # Check error
-        rel_error = check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
+        rel_error = test_util::check_rel_grad_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
       }
     }
   }
@@ -1079,7 +1045,7 @@ max_pool_simple = function() {
         dX_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
         # Check error
-        rel_error = check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
+        rel_error = test_util::check_rel_grad_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
       }
     }
   }
@@ -1125,7 +1091,7 @@ relu = function() {
       dX_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
-      rel_error = check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
+      rel_error = test_util::check_rel_grad_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
     }
   }
 }
@@ -1169,7 +1135,7 @@ rnn = function() {
       dX_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
-      rel_error = check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
+      rel_error = test_util::check_rel_grad_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
     }
   }
 
@@ -1188,7 +1154,7 @@ rnn = function() {
       dW_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
-      rel_error = check_rel_error(as.scalar(dW[i,j]), dW_num, lossph, lossmh)
+      rel_error = test_util::check_rel_grad_error(as.scalar(dW[i,j]), dW_num, lossph, lossmh)
     }
   }
 
@@ -1207,7 +1173,7 @@ rnn = function() {
       db_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
-      rel_error = check_rel_error(as.scalar(db[i,j]), db_num, lossph, lossmh)
+      rel_error = test_util::check_rel_grad_error(as.scalar(db[i,j]), db_num, lossph, lossmh)
     }
   }
 
@@ -1226,7 +1192,7 @@ rnn = function() {
       dout0_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
-      rel_error = check_rel_error(as.scalar(dout0[i,j]), dout0_num, lossph, lossmh)
+      rel_error = test_util::check_rel_grad_error(as.scalar(dout0[i,j]), dout0_num, lossph, lossmh)
     }
   }
 }
@@ -1264,7 +1230,7 @@ sigmoid = function() {
       dX_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
-      rel_error = check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
+      rel_error = test_util::check_rel_grad_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
     }
   }
 }
@@ -1303,7 +1269,7 @@ softmax = function() {
       dX_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
-      rel_error = check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
+      rel_error = test_util::check_rel_grad_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
     }
   }
 }
@@ -1368,7 +1334,7 @@ spatial_batch_norm = function() {
         dX_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
         # Check error
-        rel_error = check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
+        rel_error = test_util::check_rel_grad_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
       }
     }
 
@@ -1391,7 +1357,8 @@ spatial_batch_norm = function() {
         dgamma_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
         # Check error
-        rel_error = check_rel_error(as.scalar(dgamma[i,j]), dgamma_num, lossph, lossmh)
+        rel_error = test_util::check_rel_grad_error(as.scalar(dgamma[i,j]), dgamma_num,
+                                                    lossph, lossmh)
       }
     }
 
@@ -1414,7 +1381,8 @@ spatial_batch_norm = function() {
         dbeta_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
         # Check error
-        rel_error = check_rel_error(as.scalar(dbeta[i,j]), dbeta_num, lossph, lossmh)
+        rel_error = test_util::check_rel_grad_error(as.scalar(dbeta[i,j]), dbeta_num,
+                                                    lossph, lossmh)
       }
     }
   }
@@ -1454,7 +1422,7 @@ tanh = function() {
       dX_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
-      rel_error = check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
+      rel_error = test_util::check_rel_grad_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
     }
   }
 }
@@ -1522,7 +1490,7 @@ two_layer_affine_l2_net = function() {
       dX_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
-      rel_error = check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
+      rel_error = test_util::check_rel_grad_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
     }
   }
 
@@ -1539,7 +1507,7 @@ two_layer_affine_l2_net = function() {
       dWij_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
-      rel_error = check_rel_error(as.scalar(dW1[i,j]), dWij_num, lossph, lossmh)
+      rel_error = test_util::check_rel_grad_error(as.scalar(dW1[i,j]), dWij_num, lossph, lossmh)
     }
   }
 
@@ -1556,7 +1524,7 @@ two_layer_affine_l2_net = function() {
       dWij_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
-      rel_error = check_rel_error(as.scalar(dW2[i,j]), dWij_num, lossph, lossmh)
+      rel_error = test_util::check_rel_grad_error(as.scalar(dW2[i,j]), dWij_num, lossph, lossmh)
     }
   }
 
@@ -1573,7 +1541,7 @@ two_layer_affine_l2_net = function() {
       dbij_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
-      rel_error = check_rel_error(as.scalar(db1[i,j]), dbij_num, lossph, lossmh)
+      rel_error = test_util::check_rel_grad_error(as.scalar(db1[i,j]), dbij_num, lossph, lossmh)
     }
   }
 
@@ -1590,7 +1558,7 @@ two_layer_affine_l2_net = function() {
       dbij_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
-      rel_error = check_rel_error(as.scalar(db2[i,j]), dbij_num, lossph, lossmh)
+      rel_error = test_util::check_rel_grad_error(as.scalar(db2[i,j]), dbij_num, lossph, lossmh)
     }
   }
 }

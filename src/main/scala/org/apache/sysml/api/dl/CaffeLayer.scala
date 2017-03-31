@@ -134,9 +134,8 @@ class BatchNorm(val param:LayerParameter, val id:Int, val net:CaffeNetwork) exte
   // val scale =  
   override def sourceFileName = "spatial_batch_norm"
   override def init(dmlScript:StringBuilder) = {
-    // Currently only supports per-channel batch normalization
     dmlScript.append(
-      "[" + commaSep(ema_mean, ema_var, gamma, beta) + "] = " + namespace + "init(" + numChannels + ")\n")
+      "[" + commaSep(gamma, beta, ema_mean, ema_var) + "] = " + namespace + "init(" + numChannels + ")\n")
     
   }
   
@@ -144,18 +143,24 @@ class BatchNorm(val param:LayerParameter, val id:Int, val net:CaffeNetwork) exte
   def forward(dmlScript: StringBuilder, prefix: String, isPrediction: Boolean): Unit = {
     val mode = if(isPrediction) "\"test\"" else "\"train\""
     dmlScript.append(
-      "[" + commaSep(outVar, if(update_mean_var) ema_mean else ema_mean + "_ignore", if(update_mean_var) ema_var else ema_var + "_ignore") + "] = " + namespace + "forward(" + 
-       commaSep(bottomLayerOutVar, ema_mean, ema_var, numChannels, H, W, gamma, beta, ma_fraction, eps, mode) + ")\n")
+      "[" + commaSep(outVar, withSuffix(ema_mean), withSuffix(ema_var), withSuffix(cache_mean), withSuffix(cache_var), withSuffix(cache_norm) )
+        + "] = " + namespace + "forward(" + 
+         commaSep(bottomLayerOutVar, gamma, beta, numChannels, H, W, mode, ema_mean, ema_var,  ma_fraction, eps) + ")\n")
   }
-
+  
+  private def withSuffix(str:String):String = if(update_mean_var) str else str + "_ignore"
   def backward(dmlScript: StringBuilder): Unit = {
+    val mode = "\"train\""
     dmlScript.append(
       "[" + commaSep(dOut, dgamma, dbeta) + "] = " + namespace + "backward(" + 
-       commaSep(topLayerDout, bottomLayerOutVar, outVar, ema_mean, ema_var, numChannels, H, W, gamma, eps) + ")\n")
+       commaSep(topLayerDout, outVar, ema_mean, ema_var, cache_mean, cache_var, cache_norm, bottomLayerOutVar, gamma, beta, numChannels, H, W, mode, ema_mean, ema_var,  ma_fraction, eps) + ")\n")
   }
   
   override def weight = "ema_mean" + id
   override def bias = "ema_var" + id
+  def cache_mean(): String = "cache_mean" + id
+  def cache_var():String = "cache_mean" + id
+  def cache_norm():String = "cache_norm" + id
   var scaleLayer:Scale = null
   def gamma():String = { checkNextLayer(); scaleLayer.weight }
   def ma_fraction():String = if(param.getBatchNormParam.hasMovingAverageFraction()) param.getBatchNormParam.getMovingAverageFraction.toString else "0.999"

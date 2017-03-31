@@ -24,38 +24,42 @@
  */
 source("nn/layers/sigmoid.dml") as sigmoid
 
-forward = function(matrix[double] X) return (matrix[double] out) {
+forward = function(matrix[double] X)
+    return (matrix[double] out) {
   /*
    * Computes the forward pass for a tanh nonlinearity layer.
    *
-   * tanh(x) = (e^x - e^-x) / (e^x + e^-x)
-   *         = 2 * sigmoid(2x) - 1
+   *   ```
+   *   tanh(x) = (e^x - e^-x) / (e^x + e^-x)
+   *           = 2 * sigmoid(2x) - 1
+   *   ```
    *
    * Inputs:
-   *  - X: Input data matrix, of shape (any, any).
+   *  - X: Inputs, of shape (any, any).
    *
    * Outputs:
-   *  - out: Ouptuts, of same shape as X.
+   *  - out: Outputs, of same shape as `X`.
    */
   # out = (exp(X) - exp(-X)) / (exp(X) + exp(-X))
   # Simplification of the above formulation to use the sigmoid function:
   sigma2X = sigmoid::forward(2*X)
-  out = 2 * sigma2X - 1
+  out = 2*sigma2X - 1
 }
 
-backward = function(matrix[double] dout, matrix[double] X) return (matrix[double] dX) {
+backward = function(matrix[double] dout, matrix[double] X)
+    return (matrix[double] dX) {
   /*
    * Computes the backward pass for a tanh nonlinearity layer.
    *
    * Inputs:
-   *  - dout: Derivatives from upstream, of same shape as X.
-   *  - X: Previous input data matrix, of shape (any, any).
+   *  - dout: Gradient wrt `out` from upstream, of same shape as `X`.
+   *  - X: Inputs, of shape (any, any).
    *
    * Outputs:
-   *  - dX: Gradient wrt X, of same shape as X.
+   *  - dX: Gradient wrt `X`, of same shape as `X`.
    */
   sigma2X = sigmoid::forward(2*X)
-  out = 2 * sigma2X - 1
-  dX = (1 - out^2) * dout
+  out = 2*sigma2X - 1
+  dX = (1-out^2) * dout
 }
 

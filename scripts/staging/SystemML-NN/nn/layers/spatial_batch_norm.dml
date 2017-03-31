@@ -39,7 +39,7 @@ forward = function(matrix[double] X, matrix[double] gamma, matrix[double] beta,
    * introduces learnable parameters (gamma, beta) to control the
    * amount of normalization.
    *
-   *    y = ((x-mean) / sqrt(var+eps)) * gamma + beta
+   *   `y = ((x-mean) / sqrt(var+eps)) * gamma + beta`
    *
    * This implementation maintains exponential moving averages of the
    * mean and variance during training for use during testing.
@@ -50,7 +50,7 @@ forward = function(matrix[double] X, matrix[double] gamma, matrix[double] beta,
    *    - https://arxiv.org/abs/1502.03167
    *
    * Inputs:
-   *  - X: Input data matrix, of shape (N, C*Hin*Win).
+   *  - X: Inputs, of shape (N, C*Hin*Win).
    *  - gamma: Scale parameters, of shape (C, 1).
    *  - beta: Shift parameters, of shape (C, 1).
    *  - C: Number of input channels (dimensionality of input depth).
@@ -134,7 +134,7 @@ backward = function(matrix[double] dout, matrix[double] out,
    * Computes the backward pass for a spatial batch normalization layer.
    *
    * Inputs:
-   *  - dout: Derivatives from upstream, of shape (N, C*Hin*Win).
+   *  - dout: Gradient wrt `out` from upstream, of shape (N, C*Hin*Win).
    *  - out: Outputs from the forward pass, of shape (N, C*Hin*Win).
    *  - ema_mean_upd: Updated exponential moving average of the mean
    *      from the forward pass, of shape (C, 1).
@@ -171,9 +171,9 @@ backward = function(matrix[double] dout, matrix[double] out,
    *      Typical values are in the range of [1e-5, 1e-3].
    *
    * Outputs:
-   *  - dX: Gradient wrt X, of shape (N, C*Hin*Win).
-   *  - dgamma: Gradient wrt W, of shape (C, 1).
-   *  - dbeta: Gradient wrt b, of shape (C, 1).
+   *  - dX: Gradient wrt `X`, of shape (N, C*Hin*Win).
+   *  - dgamma: Gradient wrt `W`, of shape (C, 1).
+   *  - dbeta: Gradient wrt `b`, of shape (C, 1).
    *
    */
   N = nrow(X)

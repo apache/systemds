@@ -21,28 +21,35 @@
 
 /*
  * L1 loss function.
- *
- * L_i = sum_j(abs((pred_i)_j - (y_i)_j)) for all j.
- * L = (1/N) sum(L_i) for i=1 to N, where N is the number of examples.
  */
+
 forward = function(matrix[double] pred, matrix[double] y)
     return (double loss) {
   /*
    * Computes the forward pass for an L1 loss function.  The inputs
    * consist of N examples, each with M dimensions to predict.
    *
+   *   ```
+   *   L_i = sum_j(abs((pred_i)_j - (y_i)_j)) for all j.
+   *   L = (1/N) sum(L_i) for i=1 to N
+   *   ```
+   *
+   * In these equations, `L` is the total loss, `L_i` is the loss for
+   * example `i`, `y_i` is the scalar target, `pred_i` is the scalar
+   * prediction, and `N` is the number of examples.
+   *
    * This can be interpreted as the negative log-likelihood assuming
    * a Laplace distribution.
    *
    * Inputs:
-   *  - pred: Prediction matrix, of shape (N, M).
-   *  - y: Target matrix, of shape (N, M).
+   *  - pred: Predictions, of shape (N, M).
+   *  - y: Targets, of shape (N, M).
    *
    * Outputs:
-   *  - loss: Scalar loss, of shape (1).
+   *  - loss: Average loss.
    */
   N = nrow(y)
-  losses = rowSums(abs(pred - y))
+  losses = rowSums(abs(pred-y))
   loss = sum(losses) / N
 }
 
@@ -53,13 +60,13 @@ backward = function(matrix[double] pred, matrix[double] y)
    * consist of N examples, each with M dimensions to predict.
    *
    * Inputs:
-   *  - pred: Prediction matrix, of shape (N, M).
-   *  - y: Target matrix, of shape (N, M).
+   *  - pred: Predictions, of shape (N, M).
+   *  - y: Targets, of shape (N, M).
    *
    * Outputs:
-   *  - dpred: Gradient wrt pred, of shape (N, M).
+   *  - dpred: Gradient wrt `pred`, of shape (N, M).
    */
   N = nrow(y)
-  dpred = sign(pred - y) / N
+  dpred = sign(pred-y) / N
 }
 

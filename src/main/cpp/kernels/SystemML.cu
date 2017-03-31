@@ -118,7 +118,7 @@ __global__ void daxpy_matrix_vector(double* A,  double* B, double alpha, double*
 	int iy = blockIdx.y * blockDim.y + threadIdx.y;
 	if(ix < rlenA && iy < clenA) {
 		int index = ix * clenA + iy;
-		if(rlenA == 1) {
+		if(rlenB == 1) {
 			ret[index] = A[index] + alpha*B[iy];
 		}
 		else {

@@ -240,7 +240,7 @@ BB3_2:
 )
 {
 	.reg .pred 	%p<5>;
-	.reg .b32 	%r<12>;
+	.reg .b32 	%r<13>;
 	.reg .f64 	%fd<7>;
 	.reg .b64 	%rd<14>;
 
@@ -249,32 +249,33 @@ BB3_2:
 	ld.param.u64 	%rd5, [daxpy_matrix_vector_param_1];
 	ld.param.f64 	%fd2, [daxpy_matrix_vector_param_2];
 	ld.param.u64 	%rd4, [daxpy_matrix_vector_param_3];
-	ld.param.u32 	%r3, [daxpy_matrix_vector_param_4];
-	ld.param.u32 	%r4, [daxpy_matrix_vector_param_5];
+	ld.param.u32 	%r5, [daxpy_matrix_vector_param_4];
+	ld.param.u32 	%r3, [daxpy_matrix_vector_param_5];
+	ld.param.u32 	%r4, [daxpy_matrix_vector_param_6];
 	cvta.to.global.u64 	%rd1, %rd5;
-	mov.u32 	%r5, %ntid.x;
-	mov.u32 	%r6, %ctaid.x;
-	mov.u32 	%r7, %tid.x;
-	mad.lo.s32 	%r1, %r5, %r6, %r7;
-	mov.u32 	%r8, %ntid.y;
-	mov.u32 	%r9, %ctaid.y;
-	mov.u32 	%r10, %tid.y;
-	mad.lo.s32 	%r2, %r8, %r9, %r10;
-	setp.lt.s32	%p1, %r1, %r3;
-	setp.lt.s32	%p2, %r2, %r4;
+	mov.u32 	%r6, %ntid.x;
+	mov.u32 	%r7, %ctaid.x;
+	mov.u32 	%r8, %tid.x;
+	mad.lo.s32 	%r1, %r6, %r7, %r8;
+	mov.u32 	%r9, %ntid.y;
+	mov.u32 	%r10, %ctaid.y;
+	mov.u32 	%r11, %tid.y;
+	mad.lo.s32 	%r2, %r9, %r10, %r11;
+	setp.lt.s32	%p1, %r1, %r5;
+	setp.lt.s32	%p2, %r2, %r3;
 	and.pred  	%p3, %p1, %p2;
 	@!%p3 bra 	BB4_4;
 	bra.uni 	BB4_1;
 
 BB4_1:
 	cvta.to.global.u64 	%rd6, %rd4;
-	mad.lo.s32 	%r11, %r1, %r4, %r2;
+	mad.lo.s32 	%r12, %r1, %r3, %r2;
 	cvta.to.global.u64 	%rd7, %rd3;
-	mul.wide.s32 	%rd8, %r11, 8;
+	mul.wide.s32 	%rd8, %r12, 8;
 	add.s64 	%rd9, %rd7, %rd8;
 	ld.global.f64 	%fd1, [%rd9];
 	add.s64 	%rd2, %rd6, %rd8;
-	setp.eq.s32	%p4, %r3, 1;
+	setp.eq.s32	%p4, %r4, 1;
 	@%p4 bra 	BB4_3;
 	bra.uni 	BB4_2;
 

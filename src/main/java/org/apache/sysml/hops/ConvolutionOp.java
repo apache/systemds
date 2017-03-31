@@ -96,7 +96,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 			case BIAS_ADD:
 			case BIAS_MULTIPLY:
 			{	
-				if(et == ExecType.CP || et == ExecType.GPU || et == ExecType.SPARK) {
+				if(et == ExecType.CP || et == ExecType.GPU) {
 					setLops(constructConvolutionLops(et, inputs));
 					break;
 				}
@@ -140,38 +140,6 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	
 	private boolean isInputConv2d(Hop input) {
 		return input instanceof ConvolutionOp && ((ConvolutionOp) input).getOp() == ConvOp.DIRECT_CONV2D;
-	}
-	
-	@SuppressWarnings("unused")
-	private Lop addReblockIfNecessary(ExecType et, OperationTypes lopOp, Lop in) throws LopsException {
-		if(et == ExecType.SPARK) {
-			switch(lopOp) {
-				case MAX_POOLING:
-				case RELU_MAX_POOLING:
-				case DIRECT_CONV2D:
-				case DIRECT_CONV2D_BIAS_ADD:
-					if(in.getOutputParameters().getColsInBlock() < in.getOutputParameters().getNumCols() || 
-						in.getOutputParameters().getRowsInBlock() != 1) {
-						// Need to add a reblock
-						return new ReBlock(in, 1L, in.getOutputParameters().getNumCols(), DataType.MATRIX, ValueType.DOUBLE, true, et);
-					}
-					else 
-						return in;
-				default:
-					throw new LopsException("Spark operator is not implemented for " + lopOp.name());
-			}
-		}
-		return in;
-	}
-	
-	@SuppressWarnings("unused")
-	private void setReblockedOutputDimension(ExecType et, Lop lop) throws HopsException {
-		if(et == ExecType.SPARK) {
-			lop.getOutputParameters().setDimensions(getDim1(), getDim2(), 1L, getDim2(), getNnz(), getUpdateType());
-		}
-		else {
-			setOutputDimensions(lop);
-		}
 	}
 	
 	public Lop constructConvolutionLops(ExecType et, ArrayList<Hop> inputs) throws HopsException, LopsException {
@@ -330,8 +298,6 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		{	
 			if ( OptimizerUtils.isMemoryBasedOptLevel() ) {
 				_etype = findGPUExecTypeByMemEstimate(findExecTypeByMemEstimate());
-				// TODO: Fix this after adding remaining spark instructions
-				_etype = !isEligibleForSpark() && _etype == REMOTE ?  ExecType.CP : _etype;
 			}
 			else {
 				_etype = REMOTE;
@@ -340,6 +306,9 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 			//check for valid CP dimensions and matrix size
 			checkAndSetInvalidCPDimsAndSize();
 		}
+		
+		// TODO: Fix this after adding remaining spark instructions
+		_etype = !isEligibleForSpark() && _etype == REMOTE ?  ExecType.CP : _etype;
 		
 		//mark for recompile (forever)
 		if( ConfigurationManager.isDynamicRecompilation() && !dimsKnown(true) && _etype==REMOTE )

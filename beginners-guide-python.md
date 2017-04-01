@@ -250,8 +250,6 @@ algorithm on digits datasets.
 # Scikit-learn way
 from sklearn import datasets
 from systemml.mllearn import LogisticRegression
-from pyspark.sql import SQLContext
-sqlCtx = SQLContext(sc)
 digits = datasets.load_digits()
 X_digits = digits.data
 y_digits = digits.target 
@@ -281,7 +279,6 @@ from pyspark.sql import SQLContext
 import pandas as pd
 from sklearn.metrics import accuracy_score
 import systemml as sml
-sqlCtx = SQLContext(sc)
 digits = datasets.load_digits()
 X_digits = digits.data
 y_digits = digits.target
@@ -314,7 +311,6 @@ from pyspark.ml import Pipeline
 from systemml.mllearn import LogisticRegression
 from pyspark.ml.feature import HashingTF, Tokenizer
 from pyspark.sql import SQLContext
-sqlCtx = SQLContext(sc)
 training = sqlCtx.createDataFrame([
     (0, "a b c d e spark", 1.0),
     (1, "b d", 2.0),
@@ -368,7 +364,6 @@ from sklearn import datasets
 from pyspark.sql import SQLContext
 import systemml as sml
 import pandas as pd
-sqlCtx = SQLContext(sc)
 digits = datasets.load_digits()
 X_digits = digits.data
 y_digits = digits.target + 1

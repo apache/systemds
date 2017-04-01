@@ -24,8 +24,8 @@
  */
 source("nn/layers/affine.dml") as affine
 source("nn/layers/batch_norm.dml") as batch_norm
-source("nn/layers/conv.dml") as conv
-source("nn/layers/conv_builtin.dml") as conv_builtin
+source("nn/layers/conv2d.dml") as conv2d
+source("nn/layers/conv2d_builtin.dml") as conv2d_builtin
 source("nn/layers/cross_entropy_loss.dml") as cross_entropy_loss
 source("nn/layers/dropout.dml") as dropout
 source("nn/layers/l1_loss.dml") as l1_loss
@@ -34,16 +34,16 @@ source("nn/layers/l2_loss.dml") as l2_loss
 source("nn/layers/l2_reg.dml") as l2_reg
 source("nn/layers/log_loss.dml") as log_loss
 source("nn/layers/lstm.dml") as lstm
-source("nn/layers/max_pool.dml") as max_pool
-source("nn/layers/max_pool_builtin.dml") as max_pool_builtin
+source("nn/layers/max_pool2d.dml") as max_pool2d
+source("nn/layers/max_pool2d_builtin.dml") as max_pool2d_builtin
 source("nn/layers/relu.dml") as relu
 source("nn/layers/rnn.dml") as rnn
 source("nn/layers/sigmoid.dml") as sigmoid
 source("nn/layers/softmax.dml") as softmax
 source("nn/layers/spatial_batch_norm.dml") as spatial_batch_norm
 source("nn/layers/tanh.dml") as tanh
-source("nn/test/conv_simple.dml") as conv_simple
-source("nn/test/max_pool_simple.dml") as max_pool_simple
+source("nn/test/conv2d_simple.dml") as conv2d_simple
+source("nn/test/max_pool2d_simple.dml") as max_pool2d_simple
 source("nn/test/util.dml") as test_util
 
 affine = function() {
@@ -229,11 +229,11 @@ batch_norm = function() {
   }
 }
 
-conv = function() {
+conv2d = function() {
   /*
-   * Gradient check for the convolutional layer using `im2col`.
+   * Gradient check for the 2D convolutional layer using `im2col`.
    */
-  print("Grad checking the `im2col` convolutional layer with L2 loss.")
+  print("Grad checking the `im2col` 2D convolutional layer with L2 loss.")
 
   # Generate data
   N = 2  # num examples
@@ -249,13 +249,13 @@ conv = function() {
   y = rand(rows=N, cols=F*Hin*Win)
 
   # Create layers
-  [W, b] = conv::init(F, C, Hf, Wf)
+  [W, b] = conv2d::init(F, C, Hf, Wf)
 
   # Compute analytical gradients of loss wrt parameters
-  [out, Hout, Wout] = conv::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
+  [out, Hout, Wout] = conv2d::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
   dout = l2_loss::backward(out, y)
-  [dX, dW, db] = conv::backward(dout, Hout, Wout, X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
-                                pad, pad)
+  [dX, dW, db] = conv2d::backward(dout, Hout, Wout, X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
+                                  pad, pad)
 
   # Grad check
   h = 1e-5
@@ -265,10 +265,10 @@ conv = function() {
       # Compute numerical derivative
       old = as.scalar(X[i,j])
       X[i,j] = old - h
-      [outmh, Hout, Wout] = conv::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
+      [outmh, Hout, Wout] = conv2d::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
       lossmh = l2_loss::forward(outmh, y)
       X[i,j] = old + h
-      [outph, Hout, Wout] = conv::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
+      [outph, Hout, Wout] = conv2d::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
       lossph = l2_loss::forward(outph, y)
       X[i,j] = old  # reset
       dX_num = (lossph-lossmh) / (2*h)  # numerical derivative
@@ -284,10 +284,10 @@ conv = function() {
       # Compute numerical derivative
       old = as.scalar(W[i,j])
       W[i,j] = old - h
-      [outmh, Hout, Wout] = conv::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
+      [outmh, Hout, Wout] = conv2d::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
       lossmh = l2_loss::forward(outmh, y)
       W[i,j] = old + h
-      [outph, Hout, Wout] = conv::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
+      [outph, Hout, Wout] = conv2d::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
       lossph = l2_loss::forward(outph, y)
       W[i,j] = old  # reset
       dW_num = (lossph-lossmh) / (2*h)  # numerical derivative
@@ -303,10 +303,10 @@ conv = function() {
       # Compute numerical derivative
       old = as.scalar(b[i,j])
       b[i,j] = old - h
-      [outmh, Hout, Wout] = conv::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
+      [outmh, Hout, Wout] = conv2d::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
       lossmh = l2_loss::forward(outmh, y)
       b[i,j] = old + h
-      [outph, Hout, Wout] = conv::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
+      [outph, Hout, Wout] = conv2d::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
       lossph = l2_loss::forward(outph, y)
       b[i,j] = old  # reset
       db_num = (lossph-lossmh) / (2*h)  # numerical derivative
@@ -317,12 +317,12 @@ conv = function() {
   }
 }
 
-conv_builtin = function() {
+conv2d_builtin = function() {
   /*
-   * Gradient check for the convolutional layer using built-in
+   * Gradient check for the 2D convolutional layer using built-in
    * functions.
    */
-  print("Grad checking the built-in convolutional layer with L2 loss.")
+  print("Grad checking the built-in 2D convolutional layer with L2 loss.")
 
   # Generate data
   N = 2  # num examples
@@ -338,13 +338,14 @@ conv_builtin = function() {
   y = rand(rows=N, cols=F*Hin*Win)
 
   # Create layers
-  [W, b] = conv_builtin::init(F, C, Hf, Wf)
+  [W, b] = conv2d_builtin::init(F, C, Hf, Wf)
 
   # Compute analytical gradients of loss wrt parameters
-  [out, Hout, Wout] = conv_builtin::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
+  [out, Hout, Wout] = conv2d_builtin::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
+                                              pad, pad)
   dout = l2_loss::backward(out, y)
-  [dX, dW, db] = conv_builtin::backward(dout, Hout, Wout, X, W, b, C, Hin, Win, Hf, Wf,
-                                        stride, stride, pad, pad)
+  [dX, dW, db] = conv2d_builtin::backward(dout, Hout, Wout, X, W, b, C, Hin, Win, Hf, Wf,
+                                          stride, stride, pad, pad)
 
   # Grad check
   h = 1e-5
@@ -354,12 +355,12 @@ conv_builtin = function() {
       # Compute numerical derivative
       old = as.scalar(X[i,j])
       X[i,j] = old - h
-      [outmh, Hout, Wout] = conv_builtin::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
-                                                  pad, pad)
+      [outmh, Hout, Wout] = conv2d_builtin::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
+                                                    pad, pad)
       lossmh = l2_loss::forward(outmh, y)
       X[i,j] = old + h
-      [outph, Hout, Wout] = conv_builtin::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
-                                                  pad, pad)
+      [outph, Hout, Wout] = conv2d_builtin::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
+                                                    pad, pad)
       lossph = l2_loss::forward(outph, y)
       X[i,j] = old  # reset
       dX_num = (lossph-lossmh) / (2*h)  # numerical derivative
@@ -375,12 +376,12 @@ conv_builtin = function() {
       # Compute numerical derivative
       old = as.scalar(W[i,j])
       W[i,j] = old - h
-      [outmh, Hout, Wout] = conv_builtin::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
-                                                  pad, pad)
+      [outmh, Hout, Wout] = conv2d_builtin::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
+                                                    pad, pad)
       lossmh = l2_loss::forward(outmh, y)
       W[i,j] = old + h
-      [outph, Hout, Wout] = conv_builtin::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
-                                                  pad, pad)
+      [outph, Hout, Wout] = conv2d_builtin::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
+                                                    pad, pad)
       lossph = l2_loss::forward(outph, y)
       W[i,j] = old  # reset
       dW_num = (lossph-lossmh) / (2*h)  # numerical derivative
@@ -396,12 +397,12 @@ conv_builtin = function() {
       # Compute numerical derivative
       old = as.scalar(b[i,j])
       b[i,j] = old - h
-      [outmh, Hout, Wout] = conv_builtin::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
-                                                  pad, pad)
+      [outmh, Hout, Wout] = conv2d_builtin::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
+                                                    pad, pad)
       lossmh = l2_loss::forward(outmh, y)
       b[i,j] = old + h
-      [outph, Hout, Wout] = conv_builtin::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
-                                                  pad, pad)
+      [outph, Hout, Wout] = conv2d_builtin::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
+                                                    pad, pad)
       lossph = l2_loss::forward(outph, y)
       b[i,j] = old  # reset
       db_num = (lossph-lossmh) / (2*h)  # numerical derivative
@@ -412,11 +413,11 @@ conv_builtin = function() {
   }
 }
 
-conv_simple = function() {
+conv2d_simple = function() {
   /*
-   * Gradient check for the simple reference convolutional layer.
+   * Gradient check for the simple reference 2D convolutional layer.
    */
-  print("Grad checking the simple reference convolutional layer with L2 loss.")
+  print("Grad checking the simple reference 2D convolutional layer with L2 loss.")
 
   # Generate data
   N = 2  # num examples
@@ -432,13 +433,13 @@ conv_simple = function() {
   y = rand(rows=N, cols=F*Hin*Win)
 
   # Create layers
-  [W, b] = conv_simple::init(F, C, Hf, Wf)
+  [W, b] = conv2d_simple::init(F, C, Hf, Wf)
 
   # Compute analytical gradients of loss wrt parameters
-  [out, Hout, Wout] = conv_simple::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
+  [out, Hout, Wout] = conv2d_simple::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
   dout = l2_loss::backward(out, y)
-  [dX, dW, db] = conv_simple::backward(dout, Hout, Wout, X, W, b, C, Hin, Win, Hf, Wf,
-                                       stride, stride, pad, pad)
+  [dX, dW, db] = conv2d_simple::backward(dout, Hout, Wout, X, W, b, C, Hin, Win, Hf, Wf,
+                                         stride, stride, pad, pad)
 
   # Grad check
   h = 1e-5
@@ -448,12 +449,12 @@ conv_simple = function() {
       # Compute numerical derivative
       old = as.scalar(X[i,j])
       X[i,j] = old - h
-      [outmh, Hout, Wout] = conv_simple::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
-                                                 pad, pad)
+      [outmh, Hout, Wout] = conv2d_simple::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
+                                                   pad, pad)
       lossmh = l2_loss::forward(outmh, y)
       X[i,j] = old + h
-      [outph, Hout, Wout] = conv_simple::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
-                                                 pad, pad)
+      [outph, Hout, Wout] = conv2d_simple::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
+                                                   pad, pad)
       lossph = l2_loss::forward(outph, y)
       X[i,j] = old  # reset
       dX_num = (lossph-lossmh) / (2*h)  # numerical derivative
@@ -469,12 +470,12 @@ conv_simple = function() {
       # Compute numerical derivative
       old = as.scalar(W[i,j])
       W[i,j] = old - h
-      [outmh, Hout, Wout] = conv_simple::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
-                                                 pad, pad)
+      [outmh, Hout, Wout] = conv2d_simple::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
+                                                   pad, pad)
       lossmh = l2_loss::forward(outmh, y)
       W[i,j] = old + h
-      [outph, Hout, Wout] = conv_simple::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
-                                                 pad, pad)
+      [outph, Hout, Wout] = conv2d_simple::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
+                                                   pad, pad)
       lossph = l2_loss::forward(outph, y)
       W[i,j] = old  # reset
       dW_num = (lossph-lossmh) / (2*h)  # numerical derivative
@@ -490,12 +491,12 @@ conv_simple = function() {
       # Compute numerical derivative
       old = as.scalar(b[i,j])
       b[i,j] = old - h
-      [outmh, Hout, Wout] = conv_simple::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
-                                                 pad, pad)
+      [outmh, Hout, Wout] = conv2d_simple::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
+                                                   pad, pad)
       lossmh = l2_loss::forward(outmh, y)
       b[i,j] = old + h
-      [outph, Hout, Wout] = conv_simple::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
-                                                 pad, pad)
+      [outph, Hout, Wout] = conv2d_simple::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
+                                                   pad, pad)
       lossph = l2_loss::forward(outph, y)
       b[i,j] = old  # reset
       db_num = (lossph-lossmh) / (2*h)  # numerical derivative
@@ -898,11 +899,11 @@ lstm = function() {
   }
 }
 
-max_pool = function() {
+max_pool2d = function() {
   /*
-   * Gradient check for the max pooling layer.
+   * Gradient check for the 2D max pooling layer.
    */
-  print("Grad checking the max pooling layer with L2 loss.")
+  print("Grad checking the 2D max pooling layer with L2 loss.")
 
   # Generate data
   N = 2  # num examples
@@ -921,9 +922,9 @@ max_pool = function() {
     y = rand(rows=N, cols=C*Hout*Wout)
 
     # Compute analytical gradients of loss wrt parameters
-    [out, Hout, Wout] = max_pool::forward(X, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
+    [out, Hout, Wout] = max_pool2d::forward(X, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
     dout = l2_loss::backward(out, y)
-    dX = max_pool::backward(dout, Hout, Wout, X, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
+    dX = max_pool2d::backward(dout, Hout, Wout, X, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
 
     # Grad check
     h = 1e-5
@@ -932,10 +933,10 @@ max_pool = function() {
         # Compute numerical derivative
         old = as.scalar(X[i,j])
         X[i,j] = old - h
-        [outmh, Hout, Wout] = max_pool::forward(X, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
+        [outmh, Hout, Wout] = max_pool2d::forward(X, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
         lossmh = l2_loss::forward(outmh, y)
         X[i,j] = old + h
-        [outph, Hout, Wout] = max_pool::forward(X, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
+        [outph, Hout, Wout] = max_pool2d::forward(X, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
         lossph = l2_loss::forward(outph, y)
         X[i,j] = old  # reset
         dX_num = (lossph-lossmh) / (2*h)  # numerical derivative
@@ -947,11 +948,11 @@ max_pool = function() {
   }
 }
 
-max_pool_builtin = function() {
+max_pool2d_builtin = function() {
   /*
-   * Gradient check for the max pooling layer.
+   * Gradient check for the 2D max pooling layer.
    */
-  print("Grad checking the built-in max pooling layer with L2 loss.")
+  print("Grad checking the built-in 2D max pooling layer with L2 loss.")
 
   # Generate data
   N = 2  # num examples
@@ -970,10 +971,11 @@ max_pool_builtin = function() {
     y = rand(rows=N, cols=C*Hout*Wout)
 
     # Compute analytical gradients of loss wrt parameters
-    [out, Hout, Wout] = max_pool_builtin::forward(X, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
+    [out, Hout, Wout] = max_pool2d_builtin::forward(X, C, Hin, Win, Hf, Wf, stride, stride,
+                                                    pad, pad)
     dout = l2_loss::backward(out, y)
-    dX = max_pool_builtin::backward(dout, Hout, Wout, X, C, Hin, Win, Hf, Wf, stride, stride,
-                                    pad, pad)
+    dX = max_pool2d_builtin::backward(dout, Hout, Wout, X, C, Hin, Win, Hf, Wf, stride, stride,
+                                      pad, pad)
 
     # Grad check
     h = 1e-5
@@ -982,12 +984,12 @@ max_pool_builtin = function() {
         # Compute numerical derivative
         old = as.scalar(X[i,j])
         X[i,j] = old - h
-        [outmh, Hout, Wout] = max_pool_builtin::forward(X, C, Hin, Win, Hf, Wf, stride, stride,
-                                                        pad, pad)
+        [outmh, Hout, Wout] = max_pool2d_builtin::forward(X, C, Hin, Win, Hf, Wf, stride, stride,
+                                                          pad, pad)
         lossmh = l2_loss::forward(outmh, y)
         X[i,j] = old + h
-        [outph, Hout, Wout] = max_pool_builtin::forward(X, C, Hin, Win, Hf, Wf, stride, stride,
-                                                        pad, pad)
+        [outph, Hout, Wout] = max_pool2d_builtin::forward(X, C, Hin, Win, Hf, Wf, stride, stride,
+                                                          pad, pad)
         lossph = l2_loss::forward(outph, y)
         X[i,j] = old  # reset
         dX_num = (lossph-lossmh) / (2*h)  # numerical derivative
@@ -999,11 +1001,11 @@ max_pool_builtin = function() {
   }
 }
 
-max_pool_simple = function() {
+max_pool2d_simple = function() {
   /*
-   * Gradient check for the simple reference max pooling layer.
+   * Gradient check for the simple reference 2D max pooling layer.
    */
-  print("Grad checking the simple reference max pooling layer with L2 loss.")
+  print("Grad checking the simple reference 2D max pooling layer with L2 loss.")
 
   # Generate data
   N = 2  # num examples
@@ -1022,10 +1024,10 @@ max_pool_simple = function() {
     y = rand(rows=N, cols=C*Hout*Wout)
 
     # Compute analytical gradients of loss wrt parameters
-    [out, Hout, Wout] = max_pool_simple::forward(X, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
+    [out, Hout, Wout] = max_pool2d_simple::forward(X, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
     dout = l2_loss::backward(out, y)
-    dX = max_pool_simple::backward(dout, Hout, Wout, X, C, Hin, Win, Hf, Wf, stride, stride,
-                                   pad, pad)
+    dX = max_pool2d_simple::backward(dout, Hout, Wout, X, C, Hin, Win, Hf, Wf, stride, stride,
+                                     pad, pad)
 
     # Grad check
     h = 1e-5
@@ -1034,12 +1036,12 @@ max_pool_simple = function() {
         # Compute numerical derivative
         old = as.scalar(X[i,j])
         X[i,j] = old - h
-        [outmh, Hout, Wout] = max_pool_simple::forward(X, C, Hin, Win, Hf, Wf, stride, stride,
-                                                       pad, pad)
+        [outmh, Hout, Wout] = max_pool2d_simple::forward(X, C, Hin, Win, Hf, Wf, stride, stride,
+                                                         pad, pad)
         lossmh = l2_loss::forward(outmh, y)
         X[i,j] = old + h
-        [outph, Hout, Wout] = max_pool_simple::forward(X, C, Hin, Win, Hf, Wf, stride, stride,
-                                                       pad, pad)
+        [outph, Hout, Wout] = max_pool2d_simple::forward(X, C, Hin, Win, Hf, Wf, stride, stride,
+                                                         pad, pad)
         lossph = l2_loss::forward(outph, y)
         X[i,j] = old  # reset
         dX_num = (lossph-lossmh) / (2*h)  # numerical derivative

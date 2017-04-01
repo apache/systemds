@@ -7,9 +7,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -24,11 +24,11 @@
  */
 # Imports
 source("nn/layers/affine.dml") as affine
-source("nn/layers/conv_builtin.dml") as conv
+source("nn/layers/conv2d_builtin.dml") as conv2d
 source("nn/layers/cross_entropy_loss.dml") as cross_entropy_loss
 source("nn/layers/dropout.dml") as dropout
 source("nn/layers/l2_reg.dml") as l2_reg
-source("nn/layers/max_pool_builtin.dml") as max_pool
+source("nn/layers/max_pool2d_builtin.dml") as max_pool2d
 source("nn/layers/relu.dml") as relu
 source("nn/layers/softmax.dml") as softmax
 #source("nn/optim/adam.dml") as adam
@@ -96,9 +96,9 @@ train = function(matrix[double] X, matrix[double] Y,
   F3 = 32  # num conv filters in conv3
   N1 = 512  # num nodes in affine1
   # Note: affine2 has K nodes, which is equal to the number of target dimensions (num classes)
-  [Wc1, bc1] = conv::init(F1, C, Hf, Wf)  # inputs: (N, C*Hin*Win)
-  [Wc2, bc2] = conv::init(F2, F1, Hf, Wf)  # inputs: (N, F1*(Hin/2)*(Win/2))
-  [Wc3, bc3] = conv::init(F3, F2, Hf, Wf)  # inputs: (N, F2*(Hin/2^2)*(Win/2^2))
+  [Wc1, bc1] = conv2d::init(F1, C, Hf, Wf)  # inputs: (N, C*Hin*Win)
+  [Wc2, bc2] = conv2d::init(F2, F1, Hf, Wf)  # inputs: (N, F1*(Hin/2)*(Win/2))
+  [Wc3, bc3] = conv2d::init(F3, F2, Hf, Wf)  # inputs: (N, F2*(Hin/2^2)*(Win/2^2))
   [Wa1, ba1] = affine::init(F3*(Hin/2^3)*(Win/2^3), N1)  # inputs: (N, F3*(Hin/2^3)*(Win/2^3))
   [Wa2, ba2] = affine::init(N1, K)  # inputs: (N, N1)
   Wa2 = Wa2 / sqrt(2)  # different initialization, since being fed into softmax, instead of relu
@@ -145,17 +145,23 @@ train = function(matrix[double] X, matrix[double] Y,
 
       # Compute forward pass
       ## conv layer 1: conv1 -> relu1 -> pool1
-      [outc1, Houtc1, Woutc1] = conv::forward(X_batch, Wc1, bc1, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
+      [outc1, Houtc1, Woutc1] = conv2d::forward(X_batch, Wc1, bc1, C, Hin, Win, Hf, Wf,
+                                                stride, stride, pad, pad)
       outc1r = relu::forward(outc1)
-      [outc1p, Houtc1p, Woutc1p] = max_pool::forward(outc1r, F1, Houtc1, Woutc1, Hf=2, Wf=2, strideh=2, stridew=2) 
+      [outc1p, Houtc1p, Woutc1p] = max_pool2d::forward(outc1r, F1, Houtc1, Woutc1, Hf=2, Wf=2,
+                                                       strideh=2, stridew=2)
       ## conv layer 2: conv2 -> relu2 -> pool2
-      [outc2, Houtc2, Woutc2] = conv::forward(outc1p, Wc2, bc2, F1, Houtc1p, Woutc1p, Hf, Wf, stride, stride, pad, pad)
+      [outc2, Houtc2, Woutc2] = conv2d::forward(outc1p, Wc2, bc2, F1, Houtc1p, Woutc1p, Hf, Wf,
+                                                stride, stride, pad, pad)
       outc2r = relu::forward(outc2)
-      [outc2p, Houtc2p, Woutc2p] = max_pool::forward(outc2r, F2, Houtc2, Woutc2, Hf=2, Wf=2, strideh=2, stridew=2) 
+      [outc2p, Houtc2p, Woutc2p] = max_pool2d::forward(outc2r, F2, Houtc2, Woutc2, Hf=2, Wf=2,
+                                                       strideh=2, stridew=2)
       ## conv layer 3: conv3 -> relu3 -> pool3
-      [outc3, Houtc3, Woutc3] = conv::forward(outc2p, Wc3, bc3, F2, Houtc2p, Woutc2p, Hf, Wf, stride, stride, pad, pad)
+      [outc3, Houtc3, Woutc3] = conv2d::forward(outc2p, Wc3, bc3, F2, Houtc2p, Woutc2p, Hf, Wf,
+                                                stride, stride, pad, pad)
       outc3r = relu::forward(outc3)
-      [outc3p, Houtc3p, Woutc3p] = max_pool::forward(outc3r, F3, Houtc3, Woutc3, Hf=2, Wf=2, strideh=2, stridew=2) 
+      [outc3p, Houtc3p, Woutc3p] = max_pool2d::forward(outc3r, F3, Houtc3, Woutc3, Hf=2, Wf=2,
+                                                       strideh=2, stridew=2)
       ## affine layer 1:  affine1 -> relu1 -> dropout1
       outa1 = affine::forward(outc3p, Wa1, ba1)
       outa1r = relu::forward(outa1)
@@ -176,17 +182,23 @@ train = function(matrix[double] X, matrix[double] Y,
       douta1 = relu::backward(douta1r, outa1)
       [doutc3p, dWa1, dba1] = affine::backward(douta1, outc3p, Wa1, ba1)
       ## conv layer 3: conv3 -> relu3 -> pool3
-      doutc3r = max_pool::backward(doutc3p, Houtc3p, Woutc3p, outc3r, F3, Houtc3, Woutc3, Hf=2, Wf=2, strideh=2, stridew=2)
+      doutc3r = max_pool2d::backward(doutc3p, Houtc3p, Woutc3p, outc3r, F3, Houtc3, Woutc3,
+                                     Hf=2, Wf=2, strideh=2, stridew=2)
       doutc3 = relu::backward(doutc3r, outc3)
-      [doutc2p, dWc3, dbc3] = conv::backward(doutc3, Houtc3, Woutc3, outc2p, Wc3, bc2, F2, Houtc2p, Woutc2p, Hf, Wf, stride, stride, pad, pad)
+      [doutc2p, dWc3, dbc3] = conv2d::backward(doutc3, Houtc3, Woutc3, outc2p, Wc3, bc2, F2,
+                                               Houtc2p, Woutc2p, Hf, Wf, stride, stride, pad, pad)
       ## conv layer 2: conv2 -> relu2 -> pool2
-      doutc2r = max_pool::backward(doutc2p, Houtc2p, Woutc2p, outc2r, F2, Houtc2, Woutc2, Hf=2, Wf=2, strideh=2, stridew=2)
+      doutc2r = max_pool2d::backward(doutc2p, Houtc2p, Woutc2p, outc2r, F2, Houtc2, Woutc2,
+                                     Hf=2, Wf=2, strideh=2, stridew=2)
       doutc2 = relu::backward(doutc2r, outc2)
-      [doutc1p, dWc2, dbc2] = conv::backward(doutc2, Houtc2, Woutc2, outc1p, Wc2, bc2, F1, Houtc1p, Woutc1p, Hf, Wf, stride, stride, pad, pad)
+      [doutc1p, dWc2, dbc2] = conv2d::backward(doutc2, Houtc2, Woutc2, outc1p, Wc2, bc2, F1,
+                                               Houtc1p, Woutc1p, Hf, Wf, stride, stride, pad, pad)
       ## conv layer 1: conv1 -> relu1 -> pool1
-      doutc1r = max_pool::backward(doutc1p, Houtc1p, Woutc1p, outc1r, F1, Houtc1, Woutc1, Hf=2, Wf=2, strideh=2, stridew=2)
+      doutc1r = max_pool2d::backward(doutc1p, Houtc1p, Woutc1p, outc1r, F1, Houtc1, Woutc1,
+                                     Hf=2, Wf=2, strideh=2, stridew=2)
       doutc1 = relu::backward(doutc1r, outc1)
-      [dX_batch, dWc1, dbc1] = conv::backward(doutc1, Houtc1, Woutc1, X_batch, Wc1, bc1, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
+      [dX_batch, dWc1, dbc1] = conv2d::backward(doutc1, Houtc1, Woutc1, X_batch, Wc1, bc1, C,
+                                                Hin, Win, Hf, Wf, stride, stride, pad, pad)
 
       # Compute regularization backward pass
       dWc1_reg = l2_reg::backward(Wc1, lambda)
@@ -222,7 +234,7 @@ train = function(matrix[double] X, matrix[double] Y,
       #[ba1, mba1, vba1] = adam::update(ba1, dba1, lr, beta1, beta2, eps, t, mba1, vba1)
       #[Wa2, mWa2, vWa2] = adam::update(Wa2, dWa2, lr, beta1, beta2, eps, t, mWa2, vWa2)
       #[ba2, mba2, vba2] = adam::update(ba2, dba2, lr, beta1, beta2, eps, t, mba2, vba2)
-        
+
       # Compute loss & accuracy for training & validation data every `log_interval` iterations.
       if (i %% log_interval == 0) {
         # Compute training loss & accuracy
@@ -348,7 +360,8 @@ predict = function(matrix[double] X, int C, int Hin, int Win,
   N = nrow(X)
 
   # Network:
-  # conv1 -> relu1 -> pool1 -> conv2 -> relu2 -> pool2 -> conv3 -> relu3 -> pool3 -> affine1 -> relu1 -> affine2 -> softmax
+  # conv1 -> relu1 -> pool1 -> conv2 -> relu2 -> pool2 -> conv3 -> relu3 -> pool3
+  #  -> affine1 -> relu1 -> affine2 -> softmax
   Hf = 3  # filter height
   Wf = 3  # filter width
   stride = 1
@@ -365,17 +378,23 @@ predict = function(matrix[double] X, int C, int Hin, int Win,
   # so that it can be efficiently used for parallel predictions.
   ## Compute forward pass
   ### conv layer 1: conv1 -> relu1 -> pool1
-  #[outc1, Houtc1, Woutc1] = conv::forward(X, Wc1, bc1, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
+  #[outc1, Houtc1, Woutc1] = conv2d::forward(X, Wc1, bc1, C, Hin, Win, Hf, Wf, stride, stride,
+  #                                          pad, pad)
   #outc1r = relu::forward(outc1)
-  #[outc1p, Houtc1p, Woutc1p] = max_pool::forward(outc1r, F1, Houtc1, Woutc1, Hf=2, Wf=2, strideh=2, stridew=2) 
+  #[outc1p, Houtc1p, Woutc1p] = max_pool2d::forward(outc1r, F1, Houtc1, Woutc1, Hf=2, Wf=2,
+  #                                                 strideh=2, stridew=2)
   ### conv layer 2: conv2 -> relu2 -> pool2
-  #[outc2, Houtc2, Woutc2] = conv::forward(outc1p, Wc2, bc2, F1, Houtc1p, Woutc1p, Hf, Wf, stride, stride, pad, pad)
+  #[outc2, Houtc2, Woutc2] = conv2d::forward(outc1p, Wc2, bc2, F1, Houtc1p, Woutc1p, Hf, Wf,
+  #                                          stride, stride, pad, pad)
   #outc2r = relu::forward(outc2)
-  #[outc2p, Houtc2p, Woutc2p] = max_pool::forward(outc2r, F2, Houtc2, Woutc2, Hf=2, Wf=2, strideh=2, stridew=2) 
+  #[outc2p, Houtc2p, Woutc2p] = max_pool2d::forward(outc2r, F2, Houtc2, Woutc2, Hf=2, Wf=2,
+  #                                                 strideh=2, stridew=2)
   ### conv layer 3: conv3 -> relu3 -> pool3
-  #[outc3, Houtc3, Woutc3] = conv::forward(outc2p, Wc3, bc3, F2, Houtc2p, Woutc2p, Hf, Wf, stride, stride, pad, pad)
+  #[outc3, Houtc3, Woutc3] = conv2d::forward(outc2p, Wc3, bc3, F2, Houtc2p, Woutc2p, Hf, Wf,
+  #                                          stride, stride, pad, pad)
   #outc3r = relu::forward(outc3)
-  #[outc3p, Houtc3p, Woutc3p] = max_pool::forward(outc3r, F3, Houtc3, Woutc3, Hf=2, Wf=2, strideh=2, stridew=2) 
+  #[outc3p, Houtc3p, Woutc3p] = max_pool2d::forward(outc3r, F3, Houtc3, Woutc3, Hf=2, Wf=2,
+  #                                                 strideh=2, stridew=2)
   ### affine layer 1:  affine1 -> relu1 -> dropout
   #outa1 = affine::forward(outc3p, Wa1, ba1)
   #outa1r = relu::forward(outa1)
@@ -398,17 +417,23 @@ predict = function(matrix[double] X, int C, int Hin, int Win,
 
     # Compute forward pass
     ## conv layer 1: conv1 -> relu1 -> pool1
-    [outc1, Houtc1, Woutc1] = conv::forward(X_batch, Wc1, bc1, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
+    [outc1, Houtc1, Woutc1] = conv2d::forward(X_batch, Wc1, bc1, C, Hin, Win, Hf, Wf,
+                                              stride, stride, pad, pad)
     outc1r = relu::forward(outc1)
-    [outc1p, Houtc1p, Woutc1p] = max_pool::forward(outc1r, F1, Houtc1, Woutc1, Hf=2, Wf=2, strideh=2, stridew=2) 
+    [outc1p, Houtc1p, Woutc1p] = max_pool2d::forward(outc1r, F1, Houtc1, Woutc1, Hf=2, Wf=2,
+                                                     strideh=2, stridew=2)
     ## conv layer 2: conv2 -> relu2 -> pool2
-    [outc2, Houtc2, Woutc2] = conv::forward(outc1p, Wc2, bc2, F1, Houtc1p, Woutc1p, Hf, Wf, stride, stride, pad, pad)
+    [outc2, Houtc2, Woutc2] = conv2d::forward(outc1p, Wc2, bc2, F1, Houtc1p, Woutc1p, Hf, Wf,
+                                              stride, stride, pad, pad)
     outc2r = relu::forward(outc2)
-    [outc2p, Houtc2p, Woutc2p] = max_pool::forward(outc2r, F2, Houtc2, Woutc2, Hf=2, Wf=2, strideh=2, stridew=2) 
+    [outc2p, Houtc2p, Woutc2p] = max_pool2d::forward(outc2r, F2, Houtc2, Woutc2, Hf=2, Wf=2,
+                                                     strideh=2, stridew=2)
     ## conv layer 3: conv3 -> relu3 -> pool3
-    [outc3, Houtc3, Woutc3] = conv::forward(outc2p, Wc3, bc3, F2, Houtc2p, Woutc2p, Hf, Wf, stride, stride, pad, pad)
+    [outc3, Houtc3, Woutc3] = conv2d::forward(outc2p, Wc3, bc3, F2, Houtc2p, Woutc2p, Hf, Wf,
+                                              stride, stride, pad, pad)
     outc3r = relu::forward(outc3)
-    [outc3p, Houtc3p, Woutc3p] = max_pool::forward(outc3r, F3, Houtc3, Woutc3, Hf=2, Wf=2, strideh=2, stridew=2) 
+    [outc3p, Houtc3p, Woutc3p] = max_pool2d::forward(outc3r, F3, Houtc3, Woutc3, Hf=2, Wf=2,
+                                                     strideh=2, stridew=2)
     ## affine layer 1:  affine1 -> relu1 -> dropout
     outa1 = affine::forward(outc3p, Wa1, ba1)
     outa1r = relu::forward(outa1)
@@ -433,7 +458,7 @@ eval = function(matrix[double] probs, matrix[double] Y)
    *
    * Inputs:
    *  - probs: Class probabilities, of shape (N, K).
-   *  - Y: Target matrix, of shape (N, 
+   *  - Y: Target matrix, of shape (N,
    *
    * Outputs:
    *  - loss: Scalar loss, of shape (1).
@@ -448,7 +473,7 @@ eval = function(matrix[double] probs, matrix[double] Y)
 generate_dummy_data = function()
     return (matrix[double] X, matrix[double] Y, int C, int Hin, int Win) {
   /*
-   * Generate a dummy dataset similar to the MNIST dataset.
+   * Generate a dummy dataset similar to the breast cancer dataset.
    *
    * Outputs:
    *  - X: Input data matrix, of shape (N, D).
@@ -459,9 +484,9 @@ generate_dummy_data = function()
    */
   # Generate dummy input data
   N = 1024  # num examples
-  C = 1  # num input channels
-  Hin = 64  # input height
-  Win = 64  # input width
+  C = 3  # num input channels
+  Hin = 256  # input height
+  Win = 256  # input width
   K = 3  # num target classes
   X = rand(rows=N, cols=C*Hin*Win, pdf="normal")
   classes = round(rand(rows=N, cols=1, min=1, max=K, pdf="uniform"))

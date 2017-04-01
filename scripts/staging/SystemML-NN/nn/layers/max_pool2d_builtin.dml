@@ -20,7 +20,9 @@
 #-------------------------------------------------------------
 
 /*
- * Max pooling layer.
+ * 2D Max Pooling layer.
+ *
+ * This implementation uses a built-in operator for higher performance.
  */
 
 forward = function(matrix[double] X, int C, int Hin, int Win, int Hf, int Wf,
@@ -31,10 +33,8 @@ forward = function(matrix[double] X, int C, int Hin, int Win, int Hf, int Wf,
    * The input data has N examples, each represented as a 3D volume
    * unrolled into a single vector.
    *
-   * This implementation uses `im2col` internally for each image to
-   * extract local image regions (patches) of each channel slice into
-   * columns, and then performs max pooling over the patches to compute
-   * the output maps.
+   * This implementation uses a built-in operator for higher
+   * performance.
    *
    * Inputs:
    *  - X: Inputs, of shape (N, C*Hin*Win).

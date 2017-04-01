@@ -20,9 +20,10 @@
 #-------------------------------------------------------------
 
 /*
- * Max pooling layer.
+ * Max Pooling layer.
+ *
+ * This implementation is intended to be a simple, reference version.
  */
-source("nn/util.dml") as util
 
 forward = function(matrix[double] X, int C, int Hin, int Win, int Hf, int Wf,
                    int strideh, int stridew, int padh, int padw)
@@ -32,10 +33,7 @@ forward = function(matrix[double] X, int C, int Hin, int Win, int Hf, int Wf,
    * The input data has N examples, each represented as a 3D volume
    * unrolled into a single vector.
    *
-   * This implementation uses `im2col` internally for each image to
-   * extract local image regions (patches) of each channel slice into
-   * columns, and then performs max pooling over the patches to compute
-   * the output maps.
+   * This implementation is intended to be a simple, reference version.
    *
    * Inputs:
    *  - X: Inputs, of shape (N, C*Hin*Win).
@@ -59,30 +57,36 @@ forward = function(matrix[double] X, int C, int Hin, int Win, int Hf, int Wf,
   N = nrow(X)
   Hout = as.integer((Hin + 2*padh - Hf)/strideh + 1)
   Wout = as.integer((Win + 2*padw - Wf)/stridew + 1)
-  pad_value = -1/0  # in max pooling we pad with -infinity
 
   # Create output volume
   out = matrix(0, rows=N, cols=C*Hout*Wout)
 
-  # Max pooling - im2col implementation
-  parfor (n in 1:N) {  # all examples
-    img = matrix(X[n,], rows=C, cols=Hin*Win)  # reshape
+  # Max pooling
+  parfor (n in 1:N, check=0) {  # all examples
+    Xn = matrix(X[n,], rows=C, cols=Hin*Win)
 
-    if (padh > 0 | padw > 0) {
-      # Pad image to shape (C, (Hin+2*padh)*(Win+2*padw))
-      img = util::pad_image(img, Hin, Win, padh, padw, pad_value)
+    # Pad image
+    pad_value = -1/0
+    Xn_padded = matrix(pad_value, rows=C, cols=(Hin+2*padh)*(Win+2*padw))  # zeros
+    parfor (c in 1:C) {
+      Xn_slice = matrix(Xn[c,], rows=Hin, cols=Win)  # depth slice C reshaped
+      Xn_padded_slice = matrix(Xn_padded[c,], rows=Hin+2*padh, cols=Win+2*padw)
+      Xn_padded_slice[padh+1:padh+Hin, padw+1:padw+Win] = Xn_slice
+      Xn_padded[c,] = matrix(Xn_padded_slice, rows=1, cols=(Hin+2*padh)*(Win+2*padw))  # reshape
     }
+    img = Xn_padded  # shape (C, (Hin+2*padh)*(Win+2*padw))
 
-    img_maxes = matrix(0, rows=C, cols=Hout*Wout)  # zeros
-    parfor (c in 1:C) {  # all channels
-      # Extract local image slice patches into columns with im2col, of shape (Hf*Wf, Hout*Wout)
-      img_slice_cols = util::im2col(img[c,], Hin+2*padh, Win+2*padw, Hf, Wf, strideh, stridew)
-
-      # Max pooling on patches
-      img_maxes[c,] = colMaxs(img_slice_cols)
+    parfor (c in 1:C, check=0) {  # all channels
+      img_slice = matrix(img[c,], rows=Hin+2*padh, cols=Win+2*padw)
+      parfor (hout in 1:Hout, check=0) {  # all output rows
+        hin = (hout-1) * strideh + 1
+        parfor (wout in 1:Wout, check=0) {  # all output columns
+          win = (wout-1) * stridew + 1
+          out[n, (c-1)*Hout*Wout + (hout-1)*Wout + wout] = max(img_slice[hin:hin+Hf-1,
+                                                               win:win+Wf-1])
+        }
+      }
     }
-
-    out[n,] = matrix(img_maxes, rows=1, cols=C*Hout*Wout)
   }
 }
 
@@ -100,7 +104,7 @@ backward = function(matrix[double] dout, int Hout, int Wout, matrix[double] X,
    *      shape (N, C*Hout*Wout).
    *  - Hout: Output height.
    *  - Wout: Output width.
-   *  - X: Input data matrix, of shape (N, C*Hin*Win).
+   *  - X: Inputs, of shape (N, C*Hin*Win).
    *  - C: Number of input channels (dimensionality of input depth).
    *  - Hin: Input height.
    *  - Win: Input width.
@@ -117,27 +121,33 @@ backward = function(matrix[double] dout, int Hout, int Wout, matrix[double] X,
    *  - dX: Gradient wrt `X`, of shape (N, C*Hin*Win).
    */
   N = nrow(X)
-  pad_value = -1/0  # in max pooling we pad with -infinity
 
   # Create gradient volume
   dX = matrix(0, rows=N, cols=C*Hin*Win)
 
   # Gradient of max pooling
-  parfor (n in 1:N, check=0) {  # all examples
-    img = matrix(X[n,], rows=C, cols=Hin*Win)
-    if (padh > 0 | padw > 0) {
-      # Pad image to shape (C, (Hin+2*padh)*(Win+2*padw))
-      img = util::pad_image(img, Hin, Win, padh, padw, pad_value)
+  for (n in 1:N) {  # all examples
+    Xn = matrix(X[n,], rows=C, cols=Hin*Win)
+
+    # Pad image
+    pad_value = -1/0
+    Xn_padded = matrix(pad_value, rows=C, cols=(Hin+2*padh)*(Win+2*padw))  # zeros
+    parfor (c in 1:C) {
+      Xn_slice = matrix(Xn[c,], rows=Hin, cols=Win)  # depth slice C reshaped
+      Xn_padded_slice = matrix(Xn_padded[c,], rows=Hin+2*padh, cols=Win+2*padw)
+      Xn_padded_slice[padh+1:padh+Hin, padw+1:padw+Win] = Xn_slice
+      Xn_padded[c,] = matrix(Xn_padded_slice, rows=1, cols=(Hin+2*padh)*(Win+2*padw))  # reshape
     }
+    img = Xn_padded
 
     dimg = matrix(0, rows=C, cols=(Hin+2*padh)*(Win+2*padw))
-    parfor (c in 1:C, check=0) {  # all channels
+    for (c in 1:C) {  # all channels
       img_slice = matrix(img[c,], rows=Hin+2*padh, cols=Win+2*padw)
       dimg_slice = matrix(0, rows=Hin+2*padh, cols=Win+2*padw)
       for (hout in 1:Hout, check=0) {  # all output rows
-        hin = (hout-1)*strideh + 1
+        hin = (hout-1) * strideh + 1
         for (wout in 1:Wout) {  # all output columns
-          win = (wout-1)*stridew + 1
+          win = (wout-1) * stridew + 1
           img_slice_patch = img_slice[hin:hin+Hf-1, win:win+Wf-1]
           max_val_ind = img_slice_patch == max(img_slice_patch)  # max value indicator matrix
           # gradient passes through only for the max value(s) in this patch
@@ -149,11 +159,14 @@ backward = function(matrix[double] dout, int Hout, int Wout, matrix[double] X,
       dimg[c,] = matrix(dimg_slice, rows=1, cols=(Hin+2*padh)*(Win+2*padw))
     }
 
-    if (padh > 0 | padw > 0) {
-      # Unpad image gradient
-      dimg = util::unpad_image(dimg, Hin, Win, padh, padw)  # shape (C, (Hin+2*padh)*(Win+2*padw))
+    # Unpad derivs on input
+    dXn = matrix(0, rows=C, cols=Hin*Win)
+    parfor (c in 1:C, check=0) {
+      dXn_padded_slice = matrix(dimg[c,], rows=(Hin+2*padh), cols=(Win+2*padw))
+      dXn_slice = dXn_padded_slice[padh+1:padh+Hin, padw+1:padw+Win]
+      dXn[c,] = matrix(dXn_slice, rows=1, cols=Hin*Win)
     }
-    dX[n,] = matrix(dimg, rows=1, cols=C*Hin*Win)
+    dX[n,] = matrix(dXn, rows=1, cols=C*Hin*Win)
   }
 }
 

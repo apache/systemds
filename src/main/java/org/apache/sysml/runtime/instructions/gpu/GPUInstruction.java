@@ -69,6 +69,7 @@ public abstract class GPUInstruction extends Instruction
 	public final static String MISC_TIMER_MATRIX_MATRIX_CELLWISE_OP_KERNEL = 	"mmck";	// time spent in matrix-matrix cellwise operations
 	public final static String MISC_TIMER_COMPARE_AND_SET_KERNEL = 						"cask";	// time spent in compareAndSet kernel
 	public final static String MISC_TIMER_EXP_KERNEL = 												"expk";	// time spent in the exp kernel
+	public final static String MISC_TIMER_DAXPY_MV_KERNEL = 									"daxpymv";	// time spent in the daxpy_matrix_vector kernel
 	public final static String MISC_TIMER_UPPER_TO_LOWER_TRIANGLE_KERNEL = 		"u2lk"; // time spent in the copy_u2l_dense kernel
 	public final static String MISC_TIMER_FILL_KERNEL	=												"fillk"; // time spent in the "fill" kernel
 	public final static String MISC_TIMER_MATRIX_SCALAR_OP_KERNEL = 					"msk";	// time spent in the matrix scalar kernel

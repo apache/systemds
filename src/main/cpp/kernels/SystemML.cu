@@ -111,6 +111,22 @@ __global__ void bias_add(double* input,  double* bias, double* ret, int rlen, in
 	}
 }
 
+// Performs the operation "ret <- A + alpha*B", where B is a vector
+extern "C"
+__global__ void daxpy_matrix_vector(double* A,  double* B, double alpha, double* ret, int rlenA, int clenA, int rlenB, int clenB) {
+	int ix = blockIdx.x * blockDim.x + threadIdx.x;
+	int iy = blockIdx.y * blockDim.y + threadIdx.y;
+	if(ix < rlenA && iy < clenA) {
+		int index = ix * clenA + iy;
+		if(rlenB == 1) {
+			ret[index] = A[index] + alpha*B[iy];
+		}
+		else {
+			ret[index] = A[index] + alpha*B[ix];
+		}
+	}
+}
+
 // Performs similar operation as bias_add except elementwise multiplication instead of add
 extern "C"
 __global__ void bias_multiply(double* input,  double* bias, double* ret, int rlen, int clen, int PQ) {

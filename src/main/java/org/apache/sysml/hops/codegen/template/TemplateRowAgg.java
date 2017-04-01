@@ -32,6 +32,7 @@ import org.apache.sysml.hops.BinaryOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.IndexingOp;
 import org.apache.sysml.hops.LiteralOp;
+import org.apache.sysml.hops.ParameterizedBuiltinOp;
 import org.apache.sysml.hops.TernaryOp;
 import org.apache.sysml.hops.UnaryOp;
 import org.apache.sysml.hops.codegen.cplan.CNode;
@@ -78,7 +79,8 @@ public class TemplateRowAgg extends TemplateBase
 		return !isClosed() && 
 			(  (hop instanceof BinaryOp && (HopRewriteUtils.isBinaryMatrixColVectorOperation(hop)
 					|| HopRewriteUtils.isBinaryMatrixScalarOperation(hop)) ) 
-			|| (hop instanceof UnaryOp && TemplateCell.isValidOperation(hop))		
+			|| ((hop instanceof UnaryOp || hop instanceof ParameterizedBuiltinOp) 
+					&& TemplateCell.isValidOperation(hop))		
 			|| (hop instanceof AggUnaryOp && ((AggUnaryOp)hop).getDirection()!=Direction.RowCol)
 			|| (hop instanceof AggBinaryOp && hop.getDim1()>1 
 				&& HopRewriteUtils.isTransposeOperation(hop.getInput().get(0))));
@@ -254,6 +256,20 @@ public class TemplateRowAgg extends TemplateBase
 			//construct ternary cnode, primitive operation derived from OpOp3
 			out = new CNodeTernary(cdata1, cdata2, cdata3, 
 					TernaryType.valueOf(top.getOp().toString()));
+		}
+		else if( hop instanceof ParameterizedBuiltinOp ) 
+		{
+			CNode cdata1 = tmp.get(((ParameterizedBuiltinOp)hop).getTargetHop().getHopID());
+			if( TemplateUtils.isColVector(cdata1) )
+				cdata1 = new CNodeUnary(cdata1, UnaryType.LOOKUP_R);
+			else if( cdata1 instanceof CNodeData && hop.getInput().get(0).getDataType().isMatrix() )
+				cdata1 = new CNodeUnary(cdata1, UnaryType.LOOKUP_RC);
+			
+			CNode cdata2 = tmp.get(((ParameterizedBuiltinOp)hop).getParameterHop("pattern").getHopID());
+			CNode cdata3 = tmp.get(((ParameterizedBuiltinOp)hop).getParameterHop("replacement").getHopID());
+			TernaryType ttype = (cdata2.isLiteral() && cdata2.getVarname().equals("Double.NaN")) ? 
+					TernaryType.REPLACE_NAN : TernaryType.REPLACE;
+			out = new CNodeTernary(cdata1, cdata2, cdata3, ttype);
 		}
 		else if( hop instanceof IndexingOp ) 
 		{

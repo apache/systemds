@@ -28,6 +28,7 @@ public class CNodeTernary extends CNode
 {
 	public enum TernaryType {
 		PLUS_MULT, MINUS_MULT,
+		REPLACE, REPLACE_NAN,
 		LOOKUP_RC1;
 		
 		public static boolean contains(String value) {
@@ -40,10 +41,17 @@ public class CNodeTernary extends CNode
 		public String getTemplate(boolean sparse) {
 			switch (this) {
 				case PLUS_MULT:
-					return "    double %TMP% = %IN1% + %IN2% * %IN3%;\n" ;
+					return "    double %TMP% = %IN1% + %IN2% * %IN3%;\n";
 				
 				case MINUS_MULT:
-					return "    double %TMP% = %IN1% - %IN2% * %IN3%;\n" ;
+					return "    double %TMP% = %IN1% - %IN2% * %IN3%;\n";
+					
+				case REPLACE:
+					return "    double %TMP% = (%IN1% == %IN2% || (Double.isNaN(%IN1%) "
+							+ "&& Double.isNaN(%IN2%))) ? %IN3% : %IN1%;\n";
+				
+				case REPLACE_NAN:
+					return "    double %TMP% = Double.isNaN(%IN1%) ? %IN3% : %IN1%;\n";
 					
 				case LOOKUP_RC1:
 					return "    double %TMP% = %IN1%[rowIndex*%IN2%+%IN3%-1];\n";	
@@ -101,6 +109,8 @@ public class CNodeTernary extends CNode
 		switch(_type) {
 			case PLUS_MULT: return "t(+*)";
 			case MINUS_MULT: return "t(-*)";
+			case REPLACE: 
+			case REPLACE_NAN: return "t(rplc)";
 			case LOOKUP_RC1: return "u(ixrc1)";
 			default:
 				return super.toString();	
@@ -112,6 +122,8 @@ public class CNodeTernary extends CNode
 		switch(_type) {
 			case PLUS_MULT: 
 			case MINUS_MULT:
+			case REPLACE:
+			case REPLACE_NAN:
 			case LOOKUP_RC1:
 				_rows = 0;
 				_cols = 0;

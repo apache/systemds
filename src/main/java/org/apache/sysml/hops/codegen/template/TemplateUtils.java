@@ -30,6 +30,7 @@ import org.apache.sysml.hops.AggUnaryOp;
 import org.apache.sysml.hops.BinaryOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.LiteralOp;
+import org.apache.sysml.hops.ParameterizedBuiltinOp;
 import org.apache.sysml.hops.TernaryOp;
 import org.apache.sysml.hops.Hop.AggOp;
 import org.apache.sysml.hops.Hop.Direction;
@@ -105,6 +106,8 @@ public class TemplateUtils
 			return BinType.contains(((BinaryOp)h).getOp().name());
 		else if(h instanceof TernaryOp)
 			return TernaryType.contains(((TernaryOp)h).getOp().name());
+		else if(h instanceof ParameterizedBuiltinOp) 
+			return TernaryType.contains(((ParameterizedBuiltinOp)h).getOp().name());
 		return false;
 	}
 

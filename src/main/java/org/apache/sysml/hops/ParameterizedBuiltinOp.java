@@ -154,6 +154,11 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 			getInput().get(_paramIndexMap.get("target")) : null;
 	}
 	
+	public Hop getParameterHop(String name) {
+		return _paramIndexMap.containsKey(name) ?   
+			getInput().get(_paramIndexMap.get(name)) : null;	
+	}
+	
 	@Override
 	public void setMaxNumThreads( int k ) {
 		_maxNumThreads = k;

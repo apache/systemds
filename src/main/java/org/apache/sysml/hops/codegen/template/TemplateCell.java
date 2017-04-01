@@ -34,8 +34,10 @@ import org.apache.sysml.hops.UnaryOp;
 import org.apache.sysml.hops.Hop.AggOp;
 import org.apache.sysml.hops.Hop.Direction;
 import org.apache.sysml.hops.Hop.OpOp2;
+import org.apache.sysml.hops.Hop.ParamBuiltinOp;
 import org.apache.sysml.hops.IndexingOp;
 import org.apache.sysml.hops.LiteralOp;
+import org.apache.sysml.hops.ParameterizedBuiltinOp;
 import org.apache.sysml.hops.TernaryOp;
 import org.apache.sysml.hops.codegen.cplan.CNode;
 import org.apache.sysml.hops.codegen.cplan.CNodeBinary;
@@ -157,7 +159,7 @@ public class TemplateCell extends TemplateBase
 			else if( cdata1 instanceof CNodeData && hop.getInput().get(0).getDataType().isMatrix() )
 				cdata1 = new CNodeUnary(cdata1, UnaryType.LOOKUP_RC);
 			
-			String primitiveOpName = ((UnaryOp)hop).getOp().toString();
+			String primitiveOpName = ((UnaryOp)hop).getOp().name();
 			out = new CNodeUnary(cdata1, UnaryType.valueOf(primitiveOpName));
 		}
 		else if(hop instanceof BinaryOp)
@@ -165,7 +167,7 @@ public class TemplateCell extends TemplateBase
 			BinaryOp bop = (BinaryOp) hop;
 			CNode cdata1 = tmp.get(hop.getInput().get(0).getHopID());
 			CNode cdata2 = tmp.get(hop.getInput().get(1).getHopID());
-			String primitiveOpName = bop.getOp().toString();
+			String primitiveOpName = bop.getOp().name();
 			
 			//cdata1 is vector
 			if( TemplateUtils.isColVector(cdata1) )
@@ -207,7 +209,21 @@ public class TemplateCell extends TemplateBase
 			
 			//construct ternary cnode, primitive operation derived from OpOp3
 			out = new CNodeTernary(cdata1, cdata2, cdata3, 
-					TernaryType.valueOf(top.getOp().toString()));
+					TernaryType.valueOf(top.getOp().name()));
+		}
+		else if( hop instanceof ParameterizedBuiltinOp ) 
+		{
+			CNode cdata1 = tmp.get(((ParameterizedBuiltinOp)hop).getTargetHop().getHopID());
+			if( TemplateUtils.isColVector(cdata1) )
+				cdata1 = new CNodeUnary(cdata1, UnaryType.LOOKUP_R);
+			else if( cdata1 instanceof CNodeData && hop.getInput().get(0).getDataType().isMatrix() )
+				cdata1 = new CNodeUnary(cdata1, UnaryType.LOOKUP_RC);
+			
+			CNode cdata2 = tmp.get(((ParameterizedBuiltinOp)hop).getParameterHop("pattern").getHopID());
+			CNode cdata3 = tmp.get(((ParameterizedBuiltinOp)hop).getParameterHop("replacement").getHopID());
+			TernaryType ttype = (cdata2.isLiteral() && cdata2.getVarname().equals("Double.NaN")) ? 
+					TernaryType.REPLACE_NAN : TernaryType.REPLACE;
+			out = new CNodeTernary(cdata1, cdata2, cdata3, ttype);
 		}
 		else if( hop instanceof IndexingOp ) 
 		{
@@ -285,7 +301,8 @@ public class TemplateCell extends TemplateBase
 		//check supported unary, binary, ternary operations
 		return hop.getDataType() == DataType.MATRIX && TemplateUtils.isOperationSupported(hop) && (hop instanceof UnaryOp 
 				|| isBinaryMatrixScalar || isBinaryMatrixVector || isBinaryMatrixMatrixDense 
-				|| isTernaryVectorScalarVector || isTernaryMatrixScalarMatrixDense);	
+				|| isTernaryVectorScalarVector || isTernaryMatrixScalarMatrixDense
+				|| (hop instanceof ParameterizedBuiltinOp && ((ParameterizedBuiltinOp)hop).getOp()==ParamBuiltinOp.REPLACE));	
 	}
 	
 	/**

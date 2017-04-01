@@ -32,6 +32,7 @@ source("nn/layers/spatial_batch_norm.dml") as spatial_batch_norm
 source("nn/layers/tanh.dml") as tanh
 source("nn/test/conv_simple.dml") as conv_simple
 source("nn/test/max_pool_simple.dml") as max_pool_simple
+source("nn/test/util.dml") as test_util
 source("nn/util.dml") as util
 
 batch_norm = function() {
@@ -62,7 +63,7 @@ batch_norm = function() {
                     1.34160733  1.34160721  1.34160733  1.34160733", rows=1, cols=N*D)
   out = matrix(out, rows=1, cols=N*D)
   for (i in 1:length(out)) {
-    rel_error = util::check_rel_error(as.scalar(out[1,i]),
+    rel_error = test_util::check_rel_error(as.scalar(out[1,i]),
                                       as.scalar(target[1,i]), 1e-3, 1e-4)
   }
 }
@@ -100,9 +101,9 @@ conv = function() {
   out_simple = matrix(out_simple, rows=1, cols=N*F*Hout*Wout)
   out_builtin = matrix(out_builtin, rows=1, cols=N*F*Hout*Wout)
   for (i in 1:length(out)) {
-    rel_error = util::check_rel_error(as.scalar(out[1,i]),
+    rel_error = test_util::check_rel_error(as.scalar(out[1,i]),
                                       as.scalar(out_simple[1,i]), 1e-10, 1e-12)
-    rel_error = util::check_rel_error(as.scalar(out[1,i]),
+    rel_error = test_util::check_rel_error(as.scalar(out[1,i]),
                                       as.scalar(out_builtin[1,i]), 1e-10, 1e-12)
   }
 }
@@ -160,7 +161,7 @@ im2col = function() {
   x_pad2 = util::col2im(x_cols, C, Hin+2*pad, Win+2*pad, Hf, Wf, stride, stride, "none")
 
   # Equivalency check
-  equivalent = util::all_equal(x_pad, x_pad2)
+  equivalent = test_util::all_equal(x_pad, x_pad2)
   if (!equivalent) {
     print("ERROR: im2col and then col2im does not yield the original image.")
   }
@@ -199,7 +200,7 @@ padding = function() {
   x1 = util::unpad_image(x_pad, Hin, Win, pad, pad)
 
   # Equivalency check
-  equivalent = util::all_equal(x, x1)
+  equivalent = test_util::all_equal(x, x1)
   if (!equivalent) {
     print("ERROR: Padding and then unpadding does not yield the original image.")
   }
@@ -238,9 +239,9 @@ max_pool = function() {
       out_simple = matrix(out_simple, rows=1, cols=N*C*Hout*Wout)
       out_builtin = matrix(out_builtin, rows=1, cols=N*C*Hout*Wout)
       for (i in 1:length(out)) {
-        rel_error = util::check_rel_error(as.scalar(out[1,i]),
+        rel_error = test_util::check_rel_error(as.scalar(out[1,i]),
                                           as.scalar(out_simple[1,i]), 1e-10, 1e-12)
-        rel_error = util::check_rel_error(as.scalar(out[1,i]),
+        rel_error = test_util::check_rel_error(as.scalar(out[1,i]),
                                           as.scalar(out_builtin[1,i]), 1e-10, 1e-12)
       }
 
@@ -257,9 +258,9 @@ max_pool = function() {
       dX_simple = matrix(dX_simple, rows=1, cols=N*C*Hin*Win)
       dX_builtin = matrix(dX_builtin, rows=1, cols=N*C*Hin*Win)
       for (i in 1:length(dX)) {
-        rel_error = util::check_rel_error(as.scalar(dX[1,i]),
+        rel_error = test_util::check_rel_error(as.scalar(dX[1,i]),
                                           as.scalar(dX_simple[1,i]), 1e-10, 1e-12)
-        rel_error = util::check_rel_error(as.scalar(dX[1,i]),
+        rel_error = test_util::check_rel_error(as.scalar(dX[1,i]),
                                           as.scalar(dX_builtin[1,i]), 1e-10, 1e-12)
       }
     }
@@ -302,9 +303,9 @@ max_pool = function() {
   #  8  16
   target = matrix("6 8 14 16 6 14 8 16", rows=1, cols=C*Hout*Wout)
   target = rbind(target, target)  # n=2
-  tmp = util::check_all_equal(out, target)
-  tmp = util::check_all_equal(out_simple, target)
-  tmp = util::check_all_equal(out_builtin, target)
+  tmp = test_util::check_all_equal(out, target)
+  tmp = test_util::check_all_equal(out_simple, target)
+  tmp = test_util::check_all_equal(out_builtin, target)
 
   print(" - Testing for correct behavior against known answer w/ pad=1.")
   # generate data
@@ -342,9 +343,9 @@ max_pool = function() {
   #  4 12 16
   target = matrix("1 3 4 9 11 12 13 15 16 1 9 13 3 11 15 4 12 16", rows=1, cols=C*Hout*Wout)
   target = rbind(target, target)  # n=2
-  tmp = util::check_all_equal(out, target)
-  tmp = util::check_all_equal(out_simple, target)
-  tmp = util::check_all_equal(out_builtin, target)
+  tmp = test_util::check_all_equal(out, target)
+  tmp = test_util::check_all_equal(out_simple, target)
+  tmp = test_util::check_all_equal(out_builtin, target)
 
   print(" - Testing for correct behavior against known answer w/ all negative matrix w/ pad=0.")
   # generate data
@@ -377,9 +378,9 @@ max_pool = function() {
   #  -3 -11
   target = matrix("-1 -3 -9 -11 -1 -9 -3 -11", rows=1, cols=C*Hout*Wout)
   target = rbind(target, target)  # n=2
-  tmp = util::check_all_equal(out, target)
-  tmp = util::check_all_equal(out_simple, target)
-  tmp = util::check_all_equal(out_builtin, target)
+  tmp = test_util::check_all_equal(out, target)
+  tmp = test_util::check_all_equal(out_simple, target)
+  tmp = test_util::check_all_equal(out_builtin, target)
 
 
   print(" - Testing for correct behavior against known answer w/ all negative matrix w/ pad=1.")
@@ -418,9 +419,9 @@ max_pool = function() {
   #  0  0  0
   target = matrix("-1 -2 -4 -5 -6 -8 -13 -14 -16 -1 -5 -13 -2 -6 -14 -4 -8 -16", rows=1, cols=C*Hout*Wout)
   target = rbind(target, target)  # n=2
-  tmp = util::check_all_equal(out, target)
-  tmp = util::check_all_equal(out_simple, target)
-  tmp = util::check_all_equal(out_builtin, target)
+  tmp = test_util::check_all_equal(out, target)
+  tmp = test_util::check_all_equal(out_simple, target)
+  tmp = test_util::check_all_equal(out_builtin, target)
 }
 
 spatial_batch_norm = function() {
@@ -509,7 +510,7 @@ spatial_batch_norm = function() {
                                                                                 cols=N*C*Hin*Win)
   out = matrix(out, rows=1, cols=N*C*Hin*Win)
   for (i in 1:length(out)) {
-    rel_error = util::check_rel_error(as.scalar(out[1,i]),
+    rel_error = test_util::check_rel_error(as.scalar(out[1,i]),
                                       as.scalar(target[1,i]), 1e-3, 1e-4)
   }
 }
@@ -531,7 +532,7 @@ tanh = function() {
   # Equivalency check
   for (i in 1:nrow(out)) {
     for (j in 1:ncol(out)) {
-      rel_error = util::check_rel_error(as.scalar(out[i,j]), as.scalar(out_ref[i,j]), 1e-10, 1e-12)
+      rel_error = test_util::check_rel_error(as.scalar(out[i,j]), as.scalar(out_ref[i,j]), 1e-10, 1e-12)
     }
   }
 }

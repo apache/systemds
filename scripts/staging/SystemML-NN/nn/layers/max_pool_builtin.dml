@@ -22,6 +22,7 @@
 /*
  * Max pooling layer.
  */
+
 forward = function(matrix[double] X, int C, int Hin, int Win, int Hf, int Wf,
                    int strideh, int stridew, int padh, int padw)
     return (matrix[double] out, int Hout, int Wout) {
@@ -36,7 +37,7 @@ forward = function(matrix[double] X, int C, int Hin, int Win, int Hf, int Wf,
    * the output maps.
    *
    * Inputs:
-   *  - X: Input data matrix, of shape (N, C*Hin*Win).
+   *  - X: Inputs, of shape (N, C*Hin*Win).
    *  - C: Number of input channels (dimensionality of input depth).
    *  - Hin: Input height.
    *  - Win: Input width.
@@ -55,8 +56,8 @@ forward = function(matrix[double] X, int C, int Hin, int Win, int Hf, int Wf,
    *  - Wout: Output width.
    */
   N = nrow(X)
-  Hout = as.integer((Hin - Hf) / strideh + 1)
-  Wout = as.integer((Win - Wf) / stridew + 1)
+  Hout = as.integer((Hin-Hf)/strideh + 1)
+  Wout = as.integer((Win-Wf)/stridew + 1)
 
   # Max pooling - built-in implementation
   out = max_pool(X, input_shape=[N,C,Hin,Win], pool_size=[Hf,Wf],
@@ -73,10 +74,11 @@ backward = function(matrix[double] dout, int Hout, int Wout, matrix[double] X,
    * unrolled into a single vector.
    *
    * Inputs:
-   *  - dout: Derivatives from upstream, of shape (N, C*Hout*Wout).
+   *  - dout: Gradient wrt `out` from upstream, of
+   *      shape (N, C*Hout*Wout).
    *  - Hout: Output height.
    *  - Wout: Output width.
-   *  - X: Input data matrix, of shape (N, C*Hin*Win).
+   *  - X: Inputs, of shape (N, C*Hin*Win).
    *  - C: Number of input channels (dimensionality of input depth).
    *  - Hin: Input height.
    *  - Win: Input width.
@@ -90,7 +92,7 @@ backward = function(matrix[double] dout, int Hout, int Wout, matrix[double] X,
    *      A typical value is 0.
    *
    * Outputs:
-   *  - dX: Gradient wrt X, of shape (N, C*Hin*Win).
+   *  - dX: Gradient wrt `X`, of shape (N, C*Hin*Win).
    */
   N = nrow(X)
 

@@ -22,14 +22,15 @@
 /*
  * Utility functions.
  */
+
 all_equal = function(matrix[double] X1, matrix[double] X2)
     return(boolean equivalent) {
   /*
    * Determine if two matrices are equivalent.
    *
    * Inputs:
-   *  - X1: Input matrix, of shape (any, any).
-   *  - X2: Input matrix, of same shape as X1.
+   *  - X1: Inputs, of shape (any, any).
+   *  - X2: Inputs, of same shape as X1.
    *
    * Outputs:
    *  - equivalent: Whether or not the two matrices are equivalent.
@@ -42,12 +43,12 @@ check_all_equal = function(matrix[double] X1, matrix[double] X2)
   /*
    * Check if two matrices are equivalent, and report any issues.
    *
-   *  - Issues an "ERROR" statement if elements of the two matrices
-   *  are not equal.
+   * Issues an "ERROR" statement if elements of the two matrices are
+   * not equal.
    *
    * Inputs:
-   *  - X1: Input matrix, of shape (any, any).
-   *  - X2: Input matrix, of same shape as X1.
+   *  - X1: Inputs, of shape (any, any).
+   *  - X2: Inputs, of same shape as X1.
    *
    * Outputs:
    *  - equivalent: Whether or not the two matrices are equivalent.
@@ -61,7 +62,8 @@ check_all_equal = function(matrix[double] X1, matrix[double] X2)
   }
 }
 
-compute_rel_error = function(double x1, double x2) return (double rel_error) {
+compute_rel_error = function(double x1, double x2)
+    return (double rel_error) {
   /*
    * Relative error measure between two values.
    *
@@ -74,7 +76,7 @@ compute_rel_error = function(double x1, double x2) return (double rel_error) {
    * Outputs:
    *  - rel_error: Relative error measure between the two values.
    */
-  rel_error = abs(x1 - x2) / max(1e-8, abs(x1) + abs(x2))
+  rel_error = abs(x1-x2) / max(1e-8, abs(x1)+abs(x2))
 }
 
 check_rel_error = function(double x1, double x2, double thresh_error, double thresh_warn)
@@ -83,10 +85,12 @@ check_rel_error = function(double x1, double x2, double thresh_error, double thr
    * Check and report any issues with the relative error measure between
    * two values.
    *
-   *  - Issues an "ERROR" statement for relative errors > thresh_error,
-   *  indicating that the implementation is likely incorrect.
-   *  - Issues a "WARNING" statement for relative errors < thresh_error
-   *  but > thresh_warn, indicating that the implementation may be incorrect.
+   * Issues an "ERROR" statement for relative errors > thresh_error,
+   * indicating that the implementation is likely incorrect.
+   *
+   * Issues a "WARNING" statement for relative errors < thresh_error
+   * but > thresh_warn, indicating that the implementation may be
+   * incorrect.
    *
    * Inputs:
    *  - x1: First value.
@@ -117,7 +121,7 @@ channel_sums = function(matrix[double] X, int C, int Hin, int Win)
    * Computes a channel-wise summation over a 4D input.
    *
    * Inputs:
-   *  - X: Input data matrix, of shape (N, C*Hin*Win).
+   *  - X: Inputs, of shape (N, C*Hin*Win).
    *  - C: Number of input channels (dimensionality of input depth).
    *  - Hin: Input height.
    *  - Win: Input width.
@@ -152,16 +156,16 @@ im2col = function(matrix[double] img, int Hin, int Win, int Hf, int Wf, int stri
    *      out into columns, of shape (C*Hf*Wf, Hout*Wout).
    */
   C = nrow(img)
-  Hout = as.integer((Hin - Hf) / strideh + 1)
-  Wout = as.integer((Win - Wf) / stridew + 1)
+  Hout = as.integer((Hin-Hf)/strideh + 1)
+  Wout = as.integer((Win-Wf)/stridew + 1)
 
   # Note: We start with `img_cols` transposed to allow for row-major
   # left-indexing inside the loop, which is more performant.
   img_cols = matrix(0, rows=Hout*Wout, cols=C*Hf*Wf)  # zeros
   parfor (hout in 1:Hout, check=0) {  # all output rows
-    hin = (hout-1) * strideh + 1
+    hin = (hout-1)*strideh + 1
     parfor (wout in 1:Wout, check=0) {  # all output columns
-      win = (wout-1) * stridew + 1
+      win = (wout-1)*stridew + 1
       # Extract a local patch of the input image corresponding spatially to the filter sizes.
       img_patch = matrix(0, rows=C, cols=Hf*Wf)  # zeros
       parfor (c in 1:C) {  # all channels
@@ -207,14 +211,14 @@ col2im = function(matrix[double] img_cols, int C, int Hin, int Win, int Hf, int 
    * Outputs:
    *  - img: Input image, of shape (C, Hin*Win).
    */
-  Hout = as.integer((Hin - Hf) / strideh + 1)
-  Wout = as.integer((Win - Wf) / stridew + 1)
+  Hout = as.integer((Hin-Hf)/strideh + 1)
+  Wout = as.integer((Win-Wf)/stridew + 1)
 
   img = matrix(0, rows=C, cols=Hin*Win)  # zeros
   for (hout in 1:Hout) {  # all output rows
-    hin = (hout-1) * strideh + 1
+    hin = (hout-1)*strideh + 1
     for (wout in 1:Wout) {  # all output columns
-      win = (wout-1) * stridew + 1
+      win = (wout-1)*stridew + 1
       # Extract a local patch of the input image corresponding spatially to the filter sizes.
       img_patch = matrix(img_cols[,(hout-1)*Wout + wout], rows=C, cols=Hf*Wf)  # zeros
       parfor (c in 1:C) {  # all channels

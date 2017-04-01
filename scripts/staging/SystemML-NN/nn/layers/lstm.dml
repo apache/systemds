@@ -44,16 +44,16 @@ forward = function(matrix[double] X, matrix[double] W, matrix[double] b, int T, 
    *    - http://deeplearning.cs.cmu.edu/pdfs/Hochreiter97_lstm.pdf
    *
    * Inputs:
-   *  - X: Input data matrix, of shape (N, T*D).
-   *  - W: Weights (parameters) matrix, of shape (D+M, 4M).
-   *  - b: Biases vector, of shape (1, 4M).
+   *  - X: Inputs, of shape (N, T*D).
+   *  - W: Weights, of shape (D+M, 4M).
+   *  - b: Biases, of shape (1, 4M).
    *  - T: Length of example sequences (number of timesteps).
-   *  - D: Dimensionality of the input features.
+   *  - D: Dimensionality of the input features (number of features).
    *  - return_sequences: Whether to return `out` at all timesteps,
    *      or just for the final timestep.
-   *  - out0: Output matrix at previous timestep, of shape (N, M).
+   *  - out0: Outputs from previous timestep, of shape (N, M).
    *      Note: This is *optional* and could just be an empty matrix.
-   *  - c0: Initial cell state matrix, of shape (N, M).
+   *  - c0: Initial cell state, of shape (N, M).
    *      Note: This is *optional* and could just be an empty matrix.
    *
    * Outputs:
@@ -123,23 +123,27 @@ backward = function(matrix[double] dout, matrix[double] dc,
    * Computes the backward pass for an LSTM layer with M neurons.
    *
    * Inputs:
-   *  - dout: Gradient on output from upstream.  If `given_sequences`
-   *      is True, contains gradients on outputs for all timesteps,
-   *      of shape (N, T*M).  Else, contains gradient on output for
-   *      the final timestep, of shape (N, M).
-   *  - dc: Gradient on final (current) cell state from later in time,
-   *      of shape (N, M).
-   *  - X: Input data matrix, of shape (N, T*D).
-   *  - W: Weights (parameters) matrix, of shape (D+M, 4M).
-   *  - b: Biases vector, of shape (1, 4M).
+   *  - dout: Gradient wrt `out`.  If `given_sequences` is `True`,
+   *      contains gradients on outputs for all timesteps, of
+   *      shape (N, T*M). Else, contains the gradient on the output
+   *      for the final timestep, of shape (N, M).
+   *  - dc: Gradient wrt `c` (from later in time), of shape (N, M).
+   *      This would come from later in time if the cell state was used
+   *      downstream as the initial cell state for another LSTM layer.
+   *      Typically, this would be used when a sequence was cut at
+   *      timestep `T` and then continued in the next batch.  If `c`
+   *      was not used downstream, then `dc` would be an empty matrix.
+   *  - X: Inputs, of shape (N, T*D).
+   *  - W: Weights, of shape (D+M, 4M).
+   *  - b: Biases, of shape (1, 4M).
    *  - T: Length of example sequences (number of timesteps).
    *  - D: Dimensionality of the input features.
    *  - given_sequences: Whether `dout` is for all timesteps,
    *      or just for the final timestep.  This is based on whether
    *      `return_sequences` was true in the forward pass.
-   *  - out0: Output matrix at previous timestep, of shape (N, M).
+   *  - out0: Outputs from previous timestep, of shape (N, M).
    *      Note: This is *optional* and could just be an empty matrix.
-   *  - c0: Initial cell state matrix, of shape (N, M).
+   *  - c0: Initial cell state, of shape (N, M).
    *      Note: This is *optional* and could just be an empty matrix.
    *  - cache_out: Cache of outputs, of shape (T, N*M).
    *      Note: This is used for performance during training.
@@ -149,11 +153,11 @@ backward = function(matrix[double] dout, matrix[double] dc,
    *      Note: This is used for performance during training.
    *
    * Outputs:
-   *  - dX: Gradient wrt X, of shape (N, T*D).
-   *  - dW: Gradient wrt W, of shape (D+M, 4M).
-   *  - db: Gradient wrt b, of shape (1, 4M).
-   *  - dout0: Gradient wrt out0, of shape (N, M).
-   *  - dc0: Gradient wrt c0, of shape (N, M).
+   *  - dX: Gradient wrt `X`, of shape (N, T*D).
+   *  - dW: Gradient wrt `W`, of shape (D+M, 4M).
+   *  - db: Gradient wrt `b`, of shape (1, 4M).
+   *  - dout0: Gradient wrt `out0`, of shape (N, M).
+   *  - dc0: Gradient wrt `c0`, of shape (N, M).
    */
   N = nrow(X)
   M = as.integer(ncol(W)/4)
@@ -190,7 +194,7 @@ backward = function(matrix[double] dout, matrix[double] dc,
     g = ifog[,3*M+1:4*M]  # g gate, shape (N, M)
 
     tmp = tanh::backward(dout_t, ct)
-    dct = dct + o * tmp  # shape (N, M)
+    dct = dct + o*tmp  # shape (N, M)
     tmp = tanh::forward(ct)
     do = tmp * dout_t  # output gate, shape (N, M)
     df = c_prev * dct  # forget gate, shape (N, M)
@@ -201,7 +205,7 @@ backward = function(matrix[double] dout, matrix[double] dc,
     di_raw = i * (1-i) * di
     df_raw = f * (1-f) * df
     do_raw = o * (1-o) * do
-    dg_raw = (1 - g^2) * dg
+    dg_raw = (1-g^2) * dg
     difog_raw = cbind(di_raw, cbind(df_raw, cbind(do_raw, dg_raw)))  # shape (N, 4M)
 
     dW = dW + t(input) %*% difog_raw  # shape (D+M, 4M)
@@ -217,7 +221,7 @@ backward = function(matrix[double] dout, matrix[double] dc,
       dout[,(t-2)*M+1:(t-1)*M] = dout[,(t-2)*M+1:(t-1)*M] + dout_prev  # shape (N, M)
       dct = dc_prev  # shape (N, M)
     }
-    t = t-1
+    t = t - 1
   }
 }
 
@@ -232,17 +236,18 @@ init = function(int N, int D, int M)
    * We use the Glorot uniform heuristic which limits the magnification
    * of inputs/gradients during forward/backward passes by scaling
    * uniform weights by a factor of sqrt(6/(fan_in + fan_out)).
+   *  - http://jmlr.org/proceedings/papers/v9/glorot10a/glorot10a.pdf
    *
    * Inputs:
    *  - N: Number of examples in batch.
-   *  - D: Dimensionality of the input features.
+   *  - D: Dimensionality of the input features (number of features).
    *  - M: Number of neurons in this layer.
    *
    * Outputs:
-   *  - W: Weights (parameters) matrix, of shape (D+M, 4M).
-   *  - b: Biases vector, of shape (1, 4M).
-   *  - out0: Dummy output matrix at previous timestep, of shape (N, M).
-   *  - c0: Initial empty cell state matrix, of shape (N, M).
+   *  - W: Weights, of shape (D+M, 4M).
+   *  - b: Biases, of shape (1, 4M).
+   *  - out0: Empty previous timestep output matrix, of shape (N, M).
+   *  - c0: Empty initial cell state matrix, of shape (N, M).
    */
   fan_in = D+M
   fan_out = 4*M

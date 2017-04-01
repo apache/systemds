@@ -21,11 +21,8 @@
 
 /*
  * Cross-entropy loss function.
- *
- * L_i = -y_i^T * log(pred_i), where y_i and pred_i are K-dimensional
- *  vectors of class probs.
- * L = (1/N) sum(L_i) for i=1 to N, where N is the number of examples.
  */
+
 forward = function(matrix[double] pred, matrix[double] y)
     return (double loss) {
   /*
@@ -33,16 +30,26 @@ forward = function(matrix[double] pred, matrix[double] y)
    * inputs consist of N examples, each with K dimensions corresponding
    * to normalized probabilities of K classes.
    *
+   *   ```
+   *   L_i = -y_i^T * log(pred_i)
+   *   L = (1/N) sum(L_i) for i=1 to N
+   *   ```
+   *
+   * In these equations, `L` is the total loss, `L_i` is the loss for
+   * example `i`, `y_i` is the K-dimensional vector of target class
+   * probabilities, `pred_i` is K-dimensional vector of predicted
+   * class probabilities, and `N` is the number of examples.
+   *
    * This can be interpreted as the negative log-likelihood assuming
    * a Bernoulli distribution generalized to K dimensions, or a
-   * Multinomial with 1 observation.
+   * Multinomial with one observation.
    *
    * Inputs:
-   *  - pred: Prediction matrix, of shape (N, K).
-   *  - y: Target matrix, of shape (N, K).
+   *  - pred: Predictions, of shape (N, K).
+   *  - y: Targets, of shape (N, K).
    *
    * Outputs:
-   *  - loss: Scalar loss, of shape (1).
+   *  - loss: Average loss.
    */
   N = nrow(y)
   eps = 1e-10  # numerical stability to avoid log(0)
@@ -58,11 +65,11 @@ backward = function(matrix[double] pred, matrix[double] y)
    * to normalized probabilities of K classes.
    *
    * Inputs:
-   *  - pred: Prediction matrix, of shape (N, K).
-   *  - y: Target matrix, of shape (N, K).
+   *  - pred: Predictions, of shape (N, K).
+   *  - y: Targets, of shape (N, K).
    *
    * Outputs:
-   *  - dpred: Gradient wrt pred, of shape (N, K).
+   *  - dpred: Gradient wrt `pred`, of shape (N, K).
    */
   N = nrow(y)
   eps = 1e-10  # numerical stability to avoid divide-by-zero

@@ -22,6 +22,7 @@
 /*
  * Batch normalization layer.
  */
+
 forward = function(matrix[double] X, matrix[double] gamma, matrix[double] beta,
                    string mode, matrix[double] ema_mean, matrix[double] ema_var,
                    double mu, double epsilon)
@@ -36,7 +37,7 @@ forward = function(matrix[double] X, matrix[double] gamma, matrix[double] beta,
    * introduces learnable parameters (gamma, beta) to control the
    * amount of normalization.
    *
-   *    y = ((x-mean) / sqrt(var+eps)) * gamma + beta
+   *   `y = ((x-mean) / sqrt(var+eps)) * gamma + beta`
    *
    * This implementation maintains exponential moving averages of the
    * mean and variance during training for use during testing.
@@ -47,7 +48,7 @@ forward = function(matrix[double] X, matrix[double] gamma, matrix[double] beta,
    *    - https://arxiv.org/abs/1502.03167
    *
    * Inputs:
-   *  - X: Input data matrix, of shape (N, D).
+   *  - X: Inputs, of shape (N, D).
    *  - gamma: Scale parameters, of shape (1, D).
    *  - beta: Shift parameters, of shape (1, D).
    *  - mode: 'train' or 'test' to indicate if the model is currently
@@ -118,7 +119,7 @@ backward = function(matrix[double] dout, matrix[double] out,
    * Computes the backward pass for a batch normalization layer.
    *
    * Inputs:
-   *  - dout: Derivatives from upstream, of shape (N, D).
+   *  - dout: Gradient wrt `out` from upstream, of shape (N, D).
    *  - out: Outputs from the forward pass, of shape (N, D).
    *  - ema_mean_upd: Updated exponential moving average of the mean
    *      from the forward pass, of shape (1, D).
@@ -133,7 +134,7 @@ backward = function(matrix[double] dout, matrix[double] out,
    *  - cache_norm: Cache of the normalized inputs from the forward
    *      pass, of shape (N, D).  Note: This is used for performance
    *      during training.
-   *  - X: Input data matrix to the forward pass, of shape (N, D).
+   *  - X: Inputs, of shape (N, D).
    *  - gamma: Scale parameters, of shape (1, D).
    *  - beta: Shift parameters, of shape (1, D).
    *  - mode: 'train' or 'test' to indicate if the model is currently
@@ -151,9 +152,9 @@ backward = function(matrix[double] dout, matrix[double] out,
    *      Typical values are in the range of [1e-5, 1e-3].
    *
    * Outputs:
-   *  - dX: Gradient wrt X, of shape (N, D).
-   *  - dgamma: Gradient wrt W, of shape (1, D).
-   *  - dbeta: Gradient wrt b, of shape (1, D).
+   *  - dX: Gradient wrt `X`, of shape (N, D).
+   *  - dgamma: Gradient wrt `W`, of shape (1, D).
+   *  - dbeta: Gradient wrt `b`, of shape (1, D).
    *
    */
   N = nrow(X)
@@ -190,7 +191,7 @@ init = function(int D)
    * may be initialized manually if needed.
    *
    * Inputs:
-   *  - D: Dimensionality of the input features.
+   *  - D: Dimensionality of the input features (number of features).
    *
    * Outputs:
    *  - gamma: Scale parameters, of shape (1, D).

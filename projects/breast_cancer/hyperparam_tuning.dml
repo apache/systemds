@@ -7,9 +7,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -66,7 +66,9 @@ parfor(j in 1:10000) {
   log_interval = 10
 
   # Train
-  [Wc1, bc1, Wc2, bc2, Wc3, bc3, Wa1, ba1, Wa2, ba2] = clf::train(X, Y, X_val, Y_val, C, Hin, Win, lr, mu, decay, lambda, batch_size, epochs, log_interval, dir)
+  [Wc1, bc1, Wc2, bc2, Wc3, bc3, Wa1, ba1, Wa2, ba2] =
+      clf::train(X, Y, X_val, Y_val, C, Hin, Win, lr, mu, decay, lambda, batch_size, epochs,
+                 log_interval, dir)
 
   # Eval
   #probs = clf::predict(X, C, Hin, Win, Wc1, bc1, Wc2, bc2, Wc3, bc3, Wa1, ba1, Wa2, ba2)

@@ -24,6 +24,7 @@
  *
  * This implementation is intended to be a simple, reference version.
  */
+
 forward = function(matrix[double] X, matrix[double] W, matrix[double] b,
                    int C, int Hin, int Win, int Hf, int Wf,
                    int strideh, int stridew, int padh, int padw)
@@ -36,9 +37,9 @@ forward = function(matrix[double] X, matrix[double] W, matrix[double] b,
    * This implementation is intended to be a simple, reference version.
    *
    * Inputs:
-   *  - X: Input data matrix, of shape (N, C*Hin*Win).
-   *  - W: Weights (parameters) matrix, of shape (F, C*Hf*Wf).
-   *  - b: Biases vector, of shape (F, 1).
+   *  - X: Inputs, of shape (N, C*Hin*Win).
+   *  - W: Weights, of shape (F, C*Hf*Wf).
+   *  - b: Biases, of shape (F, 1).
    *  - C: Number of input channels (dimensionality of input depth).
    *  - Hin: Input height.
    *  - Win: Input width.
@@ -56,8 +57,8 @@ forward = function(matrix[double] X, matrix[double] W, matrix[double] b,
    */
   N = nrow(X)
   F = nrow(W)
-  Hout = as.integer((Hin + 2 * padh - Hf) / strideh + 1)
-  Wout = as.integer((Win + 2 * padw - Wf) / stridew + 1)
+  Hout = as.integer((Hin + 2*padh - Hf)/strideh + 1)
+  Wout = as.integer((Win + 2*padw - Wf)/stridew + 1)
 
   # Create output volume
   out = matrix(0, rows=N, cols=F*Hout*Wout)
@@ -71,14 +72,14 @@ forward = function(matrix[double] X, matrix[double] W, matrix[double] b,
       Xn_slice = matrix(Xn[c,], rows=Hin, cols=Win)  # depth slice C reshaped
       Xn_padded_slice = matrix(Xn_padded[c,], rows=Hin+2*padh, cols=Win+2*padw)
       Xn_padded_slice[padh+1:padh+Hin, padw+1:padw+Win] = Xn_slice
-      Xn_padded[c, ] = matrix(Xn_padded_slice, rows=1, cols=(Hin+2*padh)*(Win+2*padw))  # reshape
+      Xn_padded[c,] = matrix(Xn_padded_slice, rows=1, cols=(Hin+2*padh)*(Win+2*padw))  # reshape
     }
     # Convolve image with filters
     parfor (f in 1:F, check=0) {  # all filters
       parfor (hout in 1:Hout, check=0) {  # all output rows
-        h0 = (hout-1) * strideh + 1
+        h0 = (hout-1)*strideh + 1
         parfor (wout in 1:Wout, check=0) {  # all output columns
-          w0 = (wout-1) * stridew + 1
+          w0 = (wout-1)*stridew + 1
           # Create a patch of the input example corresponding spatially to the filter sizes
           Xn_padded_patch = matrix(0, rows=C, cols=Hf*Wf)  # zeros
           parfor (c in 1:C, check=0) {
@@ -106,12 +107,13 @@ backward = function(matrix[double] dout, int Hout, int Wout,
    * This implementation is intended to be a simple, reference version.
    *
    * Inputs:
-   *  - dout: Derivatives from upstream, of shape (N, F*Hout*Wout).
+   *  - dout: Gradient wrt `out` from upstream, of
+   *      shape (N, F*Hout*Wout).
    *  - Hout: Output height.
    *  - Wout: Output width.
-   *  - X: Previous input data matrix, of shape (N, C*Hin*Win).
-   *  - W: Weights (parameters) matrix, of shape (F, C*Hf*Wf).
-   *  - b: Biases vector, of shape (F, 1).
+   *  - X: Inputs, of shape (N, C*Hin*Win).
+   *  - W: Weights, of shape (F, C*Hf*Wf).
+   *  - b: Biases, of shape (F, 1).
    *  - C: Number of input channels (dimensionality of input depth).
    *  - Hin: Input height.
    *  - Win: Input width.
@@ -123,14 +125,14 @@ backward = function(matrix[double] dout, int Hout, int Wout,
    *  - padw: Padding for left and right sides.
    *
    * Outputs:
-   *  - dX: Gradient wrt X, of shape (N, C*Hin*Win).
-   *  - dW: Gradient wrt W, of shape (F, C*Hf*Wf).
-   *  - db: Gradient wrt b, of shape (F, 1).
+   *  - dX: Gradient wrt `X`, of shape (N, C*Hin*Win).
+   *  - dW: Gradient wrt `W`, of shape (F, C*Hf*Wf).
+   *  - db: Gradient wrt `b`, of shape (F, 1).
    */
   N = nrow(X)
   F = nrow(W)
-  Hout = as.integer((Hin + 2 * padh - Hf) / strideh + 1)
-  Wout = as.integer((Win + 2 * padw - Wf) / stridew + 1)
+  Hout = as.integer((Hin + 2*padh - Hf)/strideh + 1)
+  Wout = as.integer((Win + 2*padw - Wf)/stridew + 1)
 
   # Create gradient volumes
   dX = matrix(0, rows=N, cols=C*Hin*Win)
@@ -146,7 +148,7 @@ backward = function(matrix[double] dout, int Hout, int Wout,
       Xn_slice = matrix(Xn[c,], rows=Hin, cols=Win)  # depth slice C reshaped
       Xn_padded_slice = matrix(Xn_padded[c,], rows=Hin+2*padh, cols=Win+2*padw)
       Xn_padded_slice[padh+1:padh+Hin, padw+1:padw+Win] = Xn_slice
-      Xn_padded[c, ] = matrix(Xn_padded_slice, rows=1, cols=(Hin+2*padh)*(Win+2*padw))  # reshape
+      Xn_padded[c,] = matrix(Xn_padded_slice, rows=1, cols=(Hin+2*padh)*(Win+2*padw))  # reshape
     }
     dXn_padded = matrix(0, rows=C, cols=(Hin+2*padh)*(Win+2*padw))
     for (f in 1:F) {  # all filters
@@ -191,10 +193,11 @@ init = function(int F, int C, int Hf, int Wf)
   /*
    * Initialize the parameters of this layer.
    *
-   * We use the heuristic by He et al. [http://arxiv.org/abs/1502.01852],
-   * which limits the magnification of inputs/gradients during
-   * forward/backward passes by scaling unit-Gaussian weights by a
-   * factor of sqrt(2/n), under the assumption of relu neurons.
+   * We use the heuristic by He et al., which limits the magnification
+   * of inputs/gradients during forward/backward passes by scaling
+   * unit-Gaussian weights by a factor of sqrt(2/n), under the
+   * assumption of relu neurons.
+   *  - http://arxiv.org/abs/1502.01852
    *
    * Inputs:
    *  - F: Number of filters.
@@ -203,8 +206,8 @@ init = function(int F, int C, int Hf, int Wf)
    *  - Wf: Filter width.
    *
    * Outputs:
-   *  - W: Weights (parameters) matrix, of shape (F, C*Hf*Wf).
-   *  - b: Biases vector, of shape (F, 1).
+   *  - W: Weights, of shape (F, C*Hf*Wf).
+   *  - b: Biases, of shape (F, 1).
    */
   W = rand(rows=F, cols=C*Hf*Wf, pdf="normal") * sqrt(2.0/(C*Hf*Wf))
   b = matrix(0, rows=F, cols=1)

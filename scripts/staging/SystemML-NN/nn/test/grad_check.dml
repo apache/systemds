@@ -117,7 +117,7 @@ affine = function() {
       outph = affine::forward(X, W, b)
       lossph = l2_loss::forward(outph, y)
       X[i,j] = old  # reset
-      dX_num = (lossph - lossmh) / (2 * h) # numerical derivative
+      dX_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
       rel_error = check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
@@ -136,7 +136,7 @@ affine = function() {
       outph = affine::forward(X, W, b)
       lossph = l2_loss::forward(outph, y)
       W[i,j] = old  # reset
-      dW_num = (lossph - lossmh) / (2 * h) # numerical derivative
+      dW_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
       rel_error = check_rel_error(as.scalar(dW[i,j]), dW_num, lossph, lossmh)
@@ -155,7 +155,7 @@ affine = function() {
       outph = affine::forward(X, W, b)
       lossph = l2_loss::forward(outph, y)
       b[i,j] = old  # reset
-      db_num = (lossph - lossmh) / (2 * h) # numerical derivative
+      db_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
       rel_error = check_rel_error(as.scalar(db[i,j]), db_num, lossph, lossmh)
@@ -214,7 +214,7 @@ batch_norm = function() {
             batch_norm::forward(X, gamma, beta, mode, ema_mean, ema_var, mu, eps)
         lossph = l2_loss::forward(outph, y)
         X[i,j] = old  # reset
-        dX_num = (lossph - lossmh) / (2 * h) # numerical derivative
+        dX_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
         # Check error
         rel_error = check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
@@ -235,7 +235,7 @@ batch_norm = function() {
             batch_norm::forward(X, gamma, beta, mode, ema_mean, ema_var, mu, eps)
         lossph = l2_loss::forward(outph, y)
         gamma[i,j] = old  # reset
-        dgamma_num = (lossph - lossmh) / (2 * h) # numerical derivative
+        dgamma_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
         # Check error
         rel_error = check_rel_error(as.scalar(dgamma[i,j]), dgamma_num, lossph, lossmh)
@@ -256,7 +256,7 @@ batch_norm = function() {
             batch_norm::forward(X, gamma, beta, mode, ema_mean, ema_var, mu, eps)
         lossph = l2_loss::forward(outph, y)
         beta[i,j] = old  # reset
-        dbeta_num = (lossph - lossmh) / (2 * h) # numerical derivative
+        dbeta_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
         # Check error
         rel_error = check_rel_error(as.scalar(dbeta[i,j]), dbeta_num, lossph, lossmh)
@@ -307,7 +307,7 @@ conv = function() {
       [outph, Hout, Wout] = conv::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
       lossph = l2_loss::forward(outph, y)
       X[i,j] = old  # reset
-      dX_num = (lossph - lossmh) / (2 * h) # numerical derivative
+      dX_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
       rel_error = check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
@@ -326,7 +326,7 @@ conv = function() {
       [outph, Hout, Wout] = conv::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
       lossph = l2_loss::forward(outph, y)
       W[i,j] = old  # reset
-      dW_num = (lossph - lossmh) / (2 * h) # numerical derivative
+      dW_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
       rel_error = check_rel_error(as.scalar(dW[i,j]), dW_num, lossph, lossmh)
@@ -345,7 +345,7 @@ conv = function() {
       [outph, Hout, Wout] = conv::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
       lossph = l2_loss::forward(outph, y)
       b[i,j] = old  # reset
-      db_num = (lossph - lossmh) / (2 * h) # numerical derivative
+      db_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
       rel_error = check_rel_error(as.scalar(db[i,j]), db_num, lossph, lossmh)
@@ -355,7 +355,8 @@ conv = function() {
 
 conv_builtin = function() {
   /*
-   * Gradient check for the convolutional layer using built-in functions.
+   * Gradient check for the convolutional layer using built-in
+   * functions.
    */
   print("Grad checking the built-in convolutional layer with L2 loss.")
 
@@ -397,7 +398,7 @@ conv_builtin = function() {
                                                   pad, pad)
       lossph = l2_loss::forward(outph, y)
       X[i,j] = old  # reset
-      dX_num = (lossph - lossmh) / (2 * h) # numerical derivative
+      dX_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
       rel_error = check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
@@ -418,7 +419,7 @@ conv_builtin = function() {
                                                   pad, pad)
       lossph = l2_loss::forward(outph, y)
       W[i,j] = old  # reset
-      dW_num = (lossph - lossmh) / (2 * h) # numerical derivative
+      dW_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
       rel_error = check_rel_error(as.scalar(dW[i,j]), dW_num, lossph, lossmh)
@@ -439,7 +440,7 @@ conv_builtin = function() {
                                                   pad, pad)
       lossph = l2_loss::forward(outph, y)
       b[i,j] = old  # reset
-      db_num = (lossph - lossmh) / (2 * h) # numerical derivative
+      db_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
       rel_error = check_rel_error(as.scalar(db[i,j]), db_num, lossph, lossmh)
@@ -491,7 +492,7 @@ conv_simple = function() {
                                                  pad, pad)
       lossph = l2_loss::forward(outph, y)
       X[i,j] = old  # reset
-      dX_num = (lossph - lossmh) / (2 * h) # numerical derivative
+      dX_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
       rel_error = check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
@@ -512,7 +513,7 @@ conv_simple = function() {
                                                  pad, pad)
       lossph = l2_loss::forward(outph, y)
       W[i,j] = old  # reset
-      dW_num = (lossph - lossmh) / (2 * h) # numerical derivative
+      dW_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
       rel_error = check_rel_error(as.scalar(dW[i,j]), dW_num, lossph, lossmh)
@@ -533,7 +534,7 @@ conv_simple = function() {
                                                  pad, pad)
       lossph = l2_loss::forward(outph, y)
       b[i,j] = old  # reset
-      db_num = (lossph - lossmh) / (2 * h) # numerical derivative
+      db_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
       rel_error = check_rel_error(as.scalar(db[i,j]), db_num, lossph, lossmh)
@@ -569,7 +570,7 @@ cross_entropy_loss = function() {
       pred[i,j] = old + h
       lossph = cross_entropy_loss::forward(pred, y)
       pred[i,j] = old  # reset W[i,j]
-      dpred_num = (lossph - lossmh) / (2 * h) # numerical derivative
+      dpred_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
       rel_error = check_rel_error(as.scalar(dpred[i,j]), dpred_num, lossph, lossmh)
@@ -609,7 +610,7 @@ dropout = function() {
       [outph, mask] = dropout::forward(X, p, seed)
       lossph = l2_loss::forward(outph, y)
       X[i,j] = old  # reset
-      dX_num = (lossph - lossmh) / (2 * h) # numerical derivative
+      dX_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
       rel_error = check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
@@ -643,7 +644,7 @@ l1_loss = function() {
       pred[i,j] = old + h
       lossph = l1_loss::forward(pred, y)
       pred[i,j] = old  # reset W[i,j]
-      dpred_num = (lossph - lossmh) / (2 * h) # numerical derivative
+      dpred_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
       rel_error = check_rel_error(as.scalar(dpred[i,j]), dpred_num, lossph, lossmh)
@@ -677,7 +678,7 @@ l1_reg = function() {
       W[i,j] = old + h
       reg_lossph = l1_reg::forward(W, lambda)
       W[i,j] = old  # reset W[i,j]
-      dW_num = (reg_lossph - reg_lossmh) / (2 * h) # numerical derivative
+      dW_num = (reg_lossph-reg_lossmh) / (2*h)  # numerical derivative
 
       # Check error
       rel_error = check_rel_error(as.scalar(dW[i,j]), dW_num, reg_lossph, reg_lossmh)
@@ -711,7 +712,7 @@ l2_loss = function() {
       pred[i,j] = old + h
       lossph = l2_loss::forward(pred, y)
       pred[i,j] = old  # reset W[i,j]
-      dpred_num = (lossph - lossmh) / (2 * h) # numerical derivative
+      dpred_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
       rel_error = check_rel_error(as.scalar(dpred[i,j]), dpred_num, lossph, lossmh)
@@ -745,7 +746,7 @@ l2_reg = function() {
       W[i,j] = old + h
       reg_lossph = l2_reg::forward(W, lambda)
       W[i,j] = old  # reset W[i,j]
-      dW_num = (reg_lossph - reg_lossmh) / (2 * h) # numerical derivative
+      dW_num = (reg_lossph-reg_lossmh) / (2*h)  # numerical derivative
 
       # Check error
       rel_error = check_rel_error(as.scalar(dW[i,j]), dW_num, reg_lossph, reg_lossmh)
@@ -779,7 +780,7 @@ log_loss = function() {
       pred[i,j] = old + h
       lossph = log_loss::forward(pred, y)
       pred[i,j] = old  # reset W[i,j]
-      dpred_num = (lossph - lossmh) / (2 * h) # numerical derivative
+      dpred_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
       rel_error = check_rel_error(as.scalar(dpred[i,j]), dpred_num, lossph, lossmh)
@@ -831,7 +832,7 @@ lstm = function() {
       loss_cph = l2_loss::forward(cph, yc)
       lossph = loss_outph + loss_cph
       X[i,j] = old  # reset
-      dX_num = (lossph - lossmh) / (2 * h)  # numerical derivative
+      dX_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
       rel_error = check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
@@ -854,7 +855,7 @@ lstm = function() {
       loss_cph = l2_loss::forward(cph, yc)
       lossph = loss_outph + loss_cph
       W[i,j] = old  # reset
-      dW_num = (lossph - lossmh) / (2 * h)  # numerical derivative
+      dW_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
       rel_error = check_rel_error(as.scalar(dW[i,j]), dW_num, lossph, lossmh)
@@ -877,7 +878,7 @@ lstm = function() {
       loss_cph = l2_loss::forward(cph, yc)
       lossph = loss_outph + loss_cph
       b[i,j] = old  # reset
-      db_num = (lossph - lossmh) / (2 * h)  # numerical derivative
+      db_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
       rel_error = check_rel_error(as.scalar(db[i,j]), db_num, lossph, lossmh)
@@ -900,7 +901,7 @@ lstm = function() {
       loss_cph = l2_loss::forward(cph, yc)
       lossph = loss_outph + loss_cph
       out0[i,j] = old  # reset
-      dout0_num = (lossph - lossmh) / (2 * h)  # numerical derivative
+      dout0_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
       rel_error = check_rel_error(as.scalar(dout0[i,j]), dout0_num, lossph, lossmh)
@@ -923,7 +924,7 @@ lstm = function() {
       loss_cph = l2_loss::forward(cph, yc)
       lossph = loss_outph + loss_cph
       c0[i,j] = old  # reset
-      dc0_num = (lossph - lossmh) / (2 * h)  # numerical derivative
+      dc0_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
       rel_error = check_rel_error(as.scalar(dc0[i,j]), dc0_num, lossph, lossmh)
@@ -949,8 +950,8 @@ max_pool = function() {
 
   for (pad in 0:1) {
     print(" - Grad checking w/ pad="+pad+".")
-    Hout = as.integer((Hin + 2 * pad - Hf) / stride + 1)
-    Wout = as.integer((Win + 2 * pad - Wf) / stride + 1)
+    Hout = as.integer((Hin + 2*pad - Hf)/stride + 1)
+    Wout = as.integer((Win + 2*pad - Wf)/stride + 1)
     y = rand(rows=N, cols=C*Hout*Wout)
 
     # Compute analytical gradients of loss wrt parameters
@@ -971,7 +972,7 @@ max_pool = function() {
         [outph, Hout, Wout] = max_pool::forward(X, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
         lossph = l2_loss::forward(outph, y)
         X[i,j] = old  # reset
-        dX_num = (lossph - lossmh) / (2 * h) # numerical derivative
+        dX_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
         # Check error
         rel_error = check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
@@ -1023,7 +1024,7 @@ max_pool_builtin = function() {
                                                         pad, pad)
         lossph = l2_loss::forward(outph, y)
         X[i,j] = old  # reset
-        dX_num = (lossph - lossmh) / (2 * h) # numerical derivative
+        dX_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
         # Check error
         rel_error = check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
@@ -1050,8 +1051,8 @@ max_pool_simple = function() {
 
   for (pad in 0:1) {
     print(" - Grad checking w/ pad="+pad+".")
-    Hout = as.integer((Hin + 2 * pad - Hf) / stride + 1)
-    Wout = as.integer((Win + 2 * pad - Wf) / stride + 1)
+    Hout = as.integer((Hin + 2*pad - Hf)/stride + 1)
+    Wout = as.integer((Win + 2*pad - Wf)/stride + 1)
     y = rand(rows=N, cols=C*Hout*Wout)
 
     # Compute analytical gradients of loss wrt parameters
@@ -1075,7 +1076,7 @@ max_pool_simple = function() {
                                                        pad, pad)
         lossph = l2_loss::forward(outph, y)
         X[i,j] = old  # reset
-        dX_num = (lossph - lossmh) / (2 * h) # numerical derivative
+        dX_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
         # Check error
         rel_error = check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
@@ -1121,7 +1122,7 @@ relu = function() {
       outph = relu::forward(X)
       lossph = l2_loss::forward(outph, y)
       X[i,j] = old  # reset
-      dX_num = (lossph - lossmh) / (2 * h) # numerical derivative
+      dX_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
       rel_error = check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
@@ -1165,7 +1166,7 @@ rnn = function() {
       [outph, cache_out] = rnn::forward(X, W, b, T, D, return_seq, out0)
       lossph = l2_loss::forward(outph, y)
       X[i,j] = old  # reset
-      dX_num = (lossph - lossmh) / (2 * h)  # numerical derivative
+      dX_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
       rel_error = check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
@@ -1184,7 +1185,7 @@ rnn = function() {
       [outph, cache_out] = rnn::forward(X, W, b, T, D, return_seq, out0)
       lossph = l2_loss::forward(outph, y)
       W[i,j] = old  # reset
-      dW_num = (lossph - lossmh) / (2 * h)  # numerical derivative
+      dW_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
       rel_error = check_rel_error(as.scalar(dW[i,j]), dW_num, lossph, lossmh)
@@ -1203,7 +1204,7 @@ rnn = function() {
       [outph, cache_out] = rnn::forward(X, W, b, T, D, return_seq, out0)
       lossph = l2_loss::forward(outph, y)
       b[i,j] = old  # reset
-      db_num = (lossph - lossmh) / (2 * h)  # numerical derivative
+      db_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
       rel_error = check_rel_error(as.scalar(db[i,j]), db_num, lossph, lossmh)
@@ -1222,7 +1223,7 @@ rnn = function() {
       [outph, cache_out] = rnn::forward(X, W, b, T, D, return_seq, out0)
       lossph = l2_loss::forward(outph, y)
       out0[i,j] = old  # reset
-      dout0_num = (lossph - lossmh) / (2 * h)  # numerical derivative
+      dout0_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
       rel_error = check_rel_error(as.scalar(dout0[i,j]), dout0_num, lossph, lossmh)
@@ -1260,7 +1261,7 @@ sigmoid = function() {
       outph = sigmoid::forward(X)
       lossph = l2_loss::forward(outph, y)
       X[i,j] = old  # reset
-      dX_num = (lossph - lossmh) / (2 * h) # numerical derivative
+      dX_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
       rel_error = check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
@@ -1299,7 +1300,7 @@ softmax = function() {
       outph = softmax::forward(X)
       lossph = l2_loss::forward(outph, y)
       X[i,j] = old  # reset
-      dX_num = (lossph - lossmh) / (2 * h) # numerical derivative
+      dX_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
       rel_error = check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
@@ -1364,7 +1365,7 @@ spatial_batch_norm = function() {
                                         ema_mean, ema_var, mu, eps)
         lossph = l2_loss::forward(outph, y)
         X[i,j] = old  # reset
-        dX_num = (lossph - lossmh) / (2 * h) # numerical derivative
+        dX_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
         # Check error
         rel_error = check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
@@ -1387,7 +1388,7 @@ spatial_batch_norm = function() {
                                         ema_mean, ema_var, mu, eps)
         lossph = l2_loss::forward(outph, y)
         gamma[i,j] = old  # reset
-        dgamma_num = (lossph - lossmh) / (2 * h) # numerical derivative
+        dgamma_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
         # Check error
         rel_error = check_rel_error(as.scalar(dgamma[i,j]), dgamma_num, lossph, lossmh)
@@ -1410,7 +1411,7 @@ spatial_batch_norm = function() {
                                         ema_mean, ema_var, mu, eps)
         lossph = l2_loss::forward(outph, y)
         beta[i,j] = old  # reset
-        dbeta_num = (lossph - lossmh) / (2 * h) # numerical derivative
+        dbeta_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
         # Check error
         rel_error = check_rel_error(as.scalar(dbeta[i,j]), dbeta_num, lossph, lossmh)
@@ -1421,7 +1422,8 @@ spatial_batch_norm = function() {
 
 tanh = function() {
   /*
-   * Gradient check for the hyperbolic tangent (tanh) nonlinearity layer.
+   * Gradient check for the hyperbolic tangent (tanh) nonlinearity
+   * layer.
    */
   print("Grad checking the tanh nonlinearity layer with L2 loss.")
 
@@ -1449,7 +1451,7 @@ tanh = function() {
       outph = tanh::forward(X)
       lossph = l2_loss::forward(outph, y)
       X[i,j] = old  # reset
-      dX_num = (lossph - lossmh) / (2 * h) # numerical derivative
+      dX_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
       rel_error = check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
@@ -1517,7 +1519,7 @@ two_layer_affine_l2_net = function() {
       X[i,j] = old_x + h
       [lossph, pred, aout, hout] = two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
       X[i,j] = old_x  # reset X[i,j]
-      dX_num = (lossph - lossmh) / (2 * h) # numerical derivative
+      dX_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
       rel_error = check_rel_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
@@ -1534,7 +1536,7 @@ two_layer_affine_l2_net = function() {
       W1[i,j] = old_w + h
       [lossph, pred, aout, hout] = two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
       W1[i,j] = old_w  # reset W[i,j]
-      dWij_num = (lossph - lossmh) / (2 * h) # numerical derivative
+      dWij_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
       rel_error = check_rel_error(as.scalar(dW1[i,j]), dWij_num, lossph, lossmh)
@@ -1551,7 +1553,7 @@ two_layer_affine_l2_net = function() {
       W2[i,j] = old_w + h
       [lossph, pred, aout, hout] = two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
       W2[i,j] = old_w  # reset W[i,j]
-      dWij_num = (lossph - lossmh) / (2 * h) # numerical derivative
+      dWij_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
       rel_error = check_rel_error(as.scalar(dW2[i,j]), dWij_num, lossph, lossmh)
@@ -1568,7 +1570,7 @@ two_layer_affine_l2_net = function() {
       b1[i,j] = old_b + h
       [lossph, pred, aout, hout] = two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
       b1[i,j] = old_b  # reset b[1,j]
-      dbij_num = (lossph - lossmh) / (2 * h) # numerical derivative
+      dbij_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
       rel_error = check_rel_error(as.scalar(db1[i,j]), dbij_num, lossph, lossmh)
@@ -1585,7 +1587,7 @@ two_layer_affine_l2_net = function() {
       b2[i,j] = old_b + h
       [lossph, pred, aout, hout] = two_layer_affine_l2_net_forward(X, y, W1, b1, W2, b2)
       b2[i,j] = old_b  # reset b[1,j]
-      dbij_num = (lossph - lossmh) / (2 * h) # numerical derivative
+      dbij_num = (lossph-lossmh) / (2*h)  # numerical derivative
 
       # Check error
       rel_error = check_rel_error(as.scalar(db2[i,j]), dbij_num, lossph, lossmh)

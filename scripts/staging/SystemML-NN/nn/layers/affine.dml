@@ -22,6 +22,7 @@
 /*
  * Fully-connected (affine) layer.
  */
+
 forward = function(matrix[double] X, matrix[double] W, matrix[double] b)
     return (matrix[double] out) {
   /*
@@ -29,9 +30,9 @@ forward = function(matrix[double] X, matrix[double] W, matrix[double] b)
    * M neurons.  The input data has N examples, each with D features.
    *
    * Inputs:
-   *  - X: Input data matrix, of shape (N, D).
-   *  - W: Weights (parameters) matrix, of shape (D, M).
-   *  - b: Biases vector, of shape (1, M).
+   *  - X: Inputs, of shape (N, D).
+   *  - W: Weights, of shape (D, M).
+   *  - b: Biases, of shape (1, M).
    *
    * Outputs:
    *  - out: Outputs, of shape (N, M).
@@ -47,15 +48,15 @@ backward = function(matrix[double] dout, matrix[double] X,
    * with M neurons.
    *
    * Inputs:
-   *  - dout: Derivatives from upstream, of shape (N, M).
-   *  - X: Previous input data matrix, of shape (N, D).
-   *  - W: Weights (parameters) matrix, of shape (D, M).
-   *  - b: Biases vector, of shape (1, M).
+   *  - dout: Gradient wrt `out` from upstream, of shape (N, M).
+   *  - X: Inputs, of shape (N, D).
+   *  - W: Weights, of shape (D, M).
+   *  - b: Biases, of shape (1, M).
    *
    * Outputs:
-   *  - dX: Gradient wrt X, of shape (N, D).
-   *  - dW: Gradient wrt W, of shape (D, M).
-   *  - db: Gradient wrt b, of shape (1, M).
+   *  - dX: Gradient wrt `X`, of shape (N, D).
+   *  - dW: Gradient wrt `W`, of shape (D, M).
+   *  - db: Gradient wrt `b`, of shape (1, M).
    */
   dX = dout %*% t(W)
   dW = t(X) %*% dout
@@ -70,18 +71,19 @@ init = function(int D, int M)
    * Note: This is just a convenience function, and parameters
    * may be initialized manually if needed.
    *
-   * We use the heuristic by He et al. [http://arxiv.org/abs/1502.01852],
-   * which limits the magnification of inputs/gradients during
-   * forward/backward passes by scaling unit-Gaussian weights by a
-   * factor of sqrt(2/n), under the assumption of relu neurons.
+   * We use the heuristic by He et al., which limits the magnification
+   * of inputs/gradients during forward/backward passes by scaling
+   * unit-Gaussian weights by a factor of sqrt(2/n), under the
+   * assumption of relu neurons.
+   *  - http://arxiv.org/abs/1502.01852
    *
    * Inputs:
-   *  - D: Dimensionality of the input features.
+   *  - D: Dimensionality of the input features (number of features).
    *  - M: Number of neurons in this layer.
    *
    * Outputs:
-   *  - W: Weight matrix, of shape (D, M).
-   *  - b: Biases vector, of shape (1, M).
+   *  - W: Weights, of shape (D, M).
+   *  - b: Biases, of shape (1, M).
    */
   W = rand(rows=D, cols=M, pdf="normal") * sqrt(2.0/D)
   b = matrix(0, rows=1, cols=M)

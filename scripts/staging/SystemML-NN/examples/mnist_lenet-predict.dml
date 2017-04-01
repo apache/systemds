@@ -50,7 +50,7 @@
 # Sample Invocation:
 # Execute using Spark
 #   ```
-#   $SPARK_HOME/bin/spark-submit --master local[*] --driver-memory 5G
+#   spark-submit --master local[*] --driver-memory 5G
 #   --conf spark.driver.maxResultSize=0 --conf spark.akka.frameSize=128
 #   $SYSTEMML_HOME/target/SystemML.jar -f mnist_lenet-predict.dml
 #   -nvargs X=data/mnist/images.csv C=1 Hin=28 Win=28

@@ -26,7 +26,6 @@ import org.apache.sysml.lops.ConvolutionTransform.OperationTypes;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.lops.LopsException;
-import org.apache.sysml.lops.ReBlock;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;

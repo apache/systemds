@@ -189,6 +189,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			hi = simplifyEmptyBinaryOperation(hop, hi, i);    //e.g., X*Y -> matrix(0,nrow(X), ncol(X)) / X+Y->X / X-Y -> X
 			hi = simplifyScalarMVBinaryOperation(hi);         //e.g., X*y -> X*as.scalar(y), if y is a 1-1 matrix
 			hi = simplifyNnzComputation(hop, hi, i);          //e.g., sum(ppred(X,0,"!=")) -> literal(nnz(X)), if nnz known
+			hi = simplifyNrowNcolComputation(hop, hi, i);     //e.g., nrow(X) -> literal(nrow(X)), if nrow known to remove data dependency
 			
 			//process childs recursively after rewrites (to investigate pattern newly created by rewrites)
 			if( !descendFirst )
@@ -2435,6 +2436,33 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				hi = hnew;
 				
 				LOG.debug("Applied simplifyNnzComputation.");	
+			}
+		}
+		
+		return hi;
+	}
+	
+	private Hop simplifyNrowNcolComputation(Hop parent, Hop hi, int pos) 
+		throws HopsException
+	{
+		//nrow(X) -> literal(nrow(X)), ncol(X) -> literal(ncol(X)), if respective dims known
+		//(this rewrite aims to remove unnecessary data dependencies to X which trigger computation
+		//even if the intermediate is otherwise not required, e.g., when part of a fused operator)
+		if( hi instanceof UnaryOp ) 
+		{
+			if( ((UnaryOp)hi).getOp()==OpOp1.NROW && hi.getInput().get(0).getDim1()>0 ) {
+				Hop hnew = new LiteralOp(hi.getInput().get(0).getDim1());
+				HopRewriteUtils.replaceChildReference(parent, hi, hnew, pos, false);
+				HopRewriteUtils.cleanupUnreferenced(hi);
+				hi = hnew;
+				LOG.debug("Applied simplifyNrowComputation.");
+			}
+			else if( ((UnaryOp)hi).getOp()==OpOp1.NCOL && hi.getInput().get(0).getDim2()>0 ) {
+				Hop hnew = new LiteralOp(hi.getInput().get(0).getDim2());
+				HopRewriteUtils.replaceChildReference(parent, hi, hnew, pos, false);
+				HopRewriteUtils.cleanupUnreferenced(hi);
+				hi = hnew;
+				LOG.debug("Applied simplifyNcolComputation.");	
 			}
 		}
 		

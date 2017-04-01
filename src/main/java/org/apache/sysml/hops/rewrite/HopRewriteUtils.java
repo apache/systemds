@@ -266,9 +266,14 @@ public class HopRewriteUtils
 	}
 	
 	public static void replaceChildReference( Hop parent, Hop inOld, Hop inNew, int pos ) {
+		replaceChildReference(parent, inOld, inNew, pos, true);
+	}
+	
+	public static void replaceChildReference( Hop parent, Hop inOld, Hop inNew, int pos, boolean refresh ) {
 		removeChildReferenceByPos(parent, inOld, pos);
 		addChildReference(parent, inNew, pos);
-		parent.refreshSizeInformation();
+		if( refresh )
+			parent.refreshSizeInformation();
 	}
 	
 	public static void cleanupUnreferenced( Hop... inputs ) {

@@ -41,10 +41,8 @@ import org.apache.sysml.runtime.matrix.data.SparseBlockCOO;
 import org.apache.sysml.runtime.matrix.data.SparseBlockCSR;
 import org.apache.sysml.runtime.matrix.data.SparseBlockMCSR;
 import org.apache.sysml.utils.GPUStatistics;
-import org.apache.sysml.utils.LRUCacheMap;
 
-import java.util.HashMap;
-import java.util.LinkedList;
+import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -77,25 +75,34 @@ public class GPUObject {
 
 	private static final Log LOG = LogFactory.getLog(GPUObject.class.getName());
 
-	/** Map of free blocks allocate on GPU. maps size_of_block -> pointer on GPU */
-	static LRUCacheMap<Long, LinkedList<Pointer>> freeCUDASpaceMap = new LRUCacheMap<Long, LinkedList<Pointer>>();
-
-	/** To record size of allocated blocks */
-	static HashMap<Pointer, Long> cudaBlockSizeMap = new HashMap<>();
-
 	/** Pointer to dense matrix */
 	public Pointer jcudaDenseMatrixPtr = null;
 
 	/** Pointer to sparse matrix */
 	public CSRPointer jcudaSparseMatrixPtr = null;
 
-	public long numBytes;
-
-	// An optional tensor descriptor (and shape) that can be set by a tensor instruction such as convolution, maxpooling
-	// and exploited by a subsequent non-tensor instruction such as relu
+	/** An optional tensor descriptor (and shape) that can be set by a tensor instruction such as convolution,
+	 * maxpooling and exploited by a subsequent non-tensor instruction such as relu
+	 */
 	private cudnnTensorDescriptor tensorDescriptor = null;
 
+	/** the shape of this tensor, if in fact this is a tensor */
 	private int [] tensorShape = null;
+
+	/** whether the block attached to this {@link GPUContext} is dirty on the device and needs to be copied back to host */
+	protected boolean dirty = false;
+
+	/** number of read locks on this object */
+	protected AtomicInteger readLocks = new AtomicInteger(0);
+
+	/** Timestamp, needed by {@link GPUContext#evict(long)} */
+	AtomicLong timestamp = new AtomicLong(0);
+
+	/** Whether this block is in sparse format */
+	protected boolean isSparse = false;
+
+	/** Enclosing {@link MatrixObject} instance */
+	protected MatrixObject mat = null;
 
 	private static Pointer allocate(String instName, long size) throws DMLRuntimeException {
 		return GPUContext.getGPUContext().allocate(instName, size);
@@ -107,10 +114,6 @@ public class GPUObject {
 
 	private static void cudaFreeHelper(Pointer toFree) throws DMLRuntimeException {
 		GPUContext.getGPUContext().cudaFreeHelper(toFree);
-	}
-
-	private static void cudaFreeHelper(String instName, Pointer toFree) throws DMLRuntimeException {
-		GPUContext.getGPUContext().cudaFreeHelper(instName, toFree);
 	}
 
 	private static void cudaFreeHelper(Pointer toFree, boolean eager) throws DMLRuntimeException {
@@ -132,6 +135,7 @@ public class GPUObject {
 	 * @throws DMLRuntimeException if operation failed
 	 */
 	public static Pointer transpose(Pointer densePtr, int m, int n, int lda, int ldc) throws DMLRuntimeException {
+		LOG.trace("GPU : transpose of block of size [" + m + "," + n + "]");
 		Pointer alpha = LibMatrixCUDA.pointerTo(1.0);
 		Pointer beta = LibMatrixCUDA.pointerTo(0.0);
 		Pointer A = densePtr;
@@ -178,6 +182,8 @@ public class GPUObject {
 		if (nnzC[0] == -1){
 			throw new DMLRuntimeException("cusparseDnnz did not calculate the correct number of nnz from the sparse-matrix vector mulitply on the GPU");
 		}
+
+		LOG.trace("GPU : col-major dense size[" + rows + "," + cols + "] to row-major sparse of with nnz = " + nnzC[0]);
 
 		CSRPointer C = CSRPointer.allocateEmpty(nnzC[0], rows);
 		cusparseDdense2csr(cusparseHandle, rows, cols, matDescr, densePtr, rows, nnzPerRowPtr, C.val, C.rowPtr, C.colInd);
@@ -229,13 +235,13 @@ public class GPUObject {
 
 	/**
 	 * Convenience method to directly set the sparse matrix on GPU
-	 * Make sure to call {@link #setDeviceModify(long)} after this to set appropriate state, if you are not sure what you are doing.
+	 * Make sure to call {@link #addReadLock()} after this to set appropriate state, if you are not sure what you are doing.
 	 * Needed for operations like {@link JCusparse#cusparseDcsrgemm(cusparseHandle, int, int, int, int, int, cusparseMatDescr, int, Pointer, Pointer, Pointer, cusparseMatDescr, int, Pointer, Pointer, Pointer, cusparseMatDescr, Pointer, Pointer, Pointer)}
 	 * @param sparseMatrixPtr CSR (compressed sparse row) pointer
 	 */
 	public void setSparseMatrixCudaPointer(CSRPointer sparseMatrixPtr) throws DMLRuntimeException {
 		this.jcudaSparseMatrixPtr = sparseMatrixPtr;
-		this.isInSparseFormat = true;
+		this.isSparse = true;
 		if(jcudaDenseMatrixPtr != null) {
 			cudaFreeHelper(jcudaDenseMatrixPtr);
 			jcudaDenseMatrixPtr = null;
@@ -244,13 +250,13 @@ public class GPUObject {
 
 	/**
 	 * Convenience method to directly set the dense matrix pointer on GPU
-	 * Make sure to call {@link #setDeviceModify(long)} after this to set appropriate state, if you are not sure what you are doing.
+	 * Make sure to call {@link #addReadLock()} after this to set appropriate state, if you are not sure what you are doing.
 	 *
 	 * @param densePtr dense pointer
 	 */
 	public void setDenseMatrixCudaPointer(Pointer densePtr) throws DMLRuntimeException{
 		this.jcudaDenseMatrixPtr = densePtr;
-		this.isInSparseFormat = false;
+		this.isSparse = false;
 		if(jcudaSparseMatrixPtr != null) {
 			jcudaSparseMatrixPtr.deallocate();
 			jcudaSparseMatrixPtr = null;
@@ -263,6 +269,7 @@ public class GPUObject {
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public void denseToSparse() throws DMLRuntimeException {
+		LOG.trace("GPU : dense -> sparse on " + this);
 		long t0=0;
 		if (DMLScript.STATISTICS) t0 = System.nanoTime();
 		cusparseHandle cusparseHandle = GPUContext.getGPUContext().getCusparseHandle();
@@ -277,7 +284,6 @@ public class GPUObject {
 		convertDensePtrFromRowMajorToColumnMajor();
 		setSparseMatrixCudaPointer(columnMajorDenseToRowMajorSparse(cusparseHandle, rows, cols, jcudaDenseMatrixPtr));
 		// TODO: What if mat.getNnz() is -1 ?
-		numBytes = CSRPointer.estimateSize(mat.getNnz(), rows);
 		if (DMLScript.STATISTICS) GPUStatistics.cudaDenseToSparseTime.addAndGet(System.nanoTime() - t0);
 		if (DMLScript.STATISTICS) GPUStatistics.cudaDenseToSparseCount.addAndGet(1);
 	}
@@ -287,6 +293,7 @@ public class GPUObject {
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private void convertDensePtrFromRowMajorToColumnMajor() throws DMLRuntimeException {
+		LOG.trace("GPU : dense Ptr row-major -> col-major on " + this);
 		int m = toIntExact(mat.getNumRows());
 		int n = toIntExact(mat.getNumColumns());
 		int lda = n;
@@ -301,6 +308,8 @@ public class GPUObject {
 	}
 
 	private void convertDensePtrFromColMajorToRowMajor() throws DMLRuntimeException {
+		LOG.trace("GPU : dense Ptr row-major -> col-major on " + this);
+
 		int n = toIntExact(mat.getNumRows());
 		int m = toIntExact(mat.getNumColumns());
 		int lda = n;
@@ -330,6 +339,7 @@ public class GPUObject {
 	 * @throws DMLRuntimeException ?
 	 */
 	public void sparseToDense(String instructionName) throws DMLRuntimeException {
+		LOG.trace("GPU : sparse -> dense on " + this);
 		long start=0, end=0;
 		if (DMLScript.STATISTICS) start = System.nanoTime();
 		if(jcudaSparseMatrixPtr == null || !isAllocated())
@@ -349,6 +359,7 @@ public class GPUObject {
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public void sparseToColumnMajorDense() throws DMLRuntimeException {
+		LOG.trace("GPU : sparse -> col-major dense on " + this);
 		if(jcudaSparseMatrixPtr == null || !isAllocated())
 			throw new DMLRuntimeException("Expected allocated sparse matrix before sparseToDense() call");
 
@@ -358,19 +369,7 @@ public class GPUObject {
 		int rows = toIntExact(mat.getNumRows());
 		int cols = toIntExact(mat.getNumColumns());
 		setDenseMatrixCudaPointer(jcudaSparseMatrixPtr.toColumnMajorDenseMatrix(cusparseHandle, null, rows, cols));
-		numBytes = ((long)rows)*getDoubleSizeOf(cols);
 	}
-
-	public enum EvictionPolicy {
-        LRU, LFU, MIN_EVICT
-    }
-	public static final EvictionPolicy evictionPolicy = EvictionPolicy.LRU;
-	protected boolean isDeviceCopyModified = false;
-	protected AtomicInteger numLocks = new AtomicInteger(0);
-	AtomicLong timestamp = new AtomicLong(0);
-	
-	protected boolean isInSparseFormat = false;
-	protected MatrixObject mat = null;
 
 	/**
 	 * Initializes this GPUObject with a {@link MatrixObject} instance which will contain metadata about the enclosing matrix block
@@ -380,8 +379,8 @@ public class GPUObject {
 		this.mat = mat2;
 	}
 	
-	public boolean isInSparseFormat() {
-		return isInSparseFormat;
+	public boolean isSparse() {
+		return isSparse;
 	}
 
 	/**
@@ -409,6 +408,7 @@ public class GPUObject {
 	 * @return cudnn tensor descriptor
 	 */
 	public cudnnTensorDescriptor allocateTensorDescriptor(int N, int C, int H, int W) {
+		LOG.trace("GPU : allocateTensorDescriptor with [N="+N+",C="+C+",H="+H+",W="+W+"] on " + this);
 		if(tensorDescriptor == null) {
 			tensorDescriptor = new cudnnTensorDescriptor();
 			cudnnCreateTensorDescriptor(tensorDescriptor);
@@ -441,8 +441,9 @@ public class GPUObject {
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public void allocateSparseAndEmpty() throws DMLRuntimeException{
+		LOG.trace("GPU : allocate sparse and empty block on " + this);
 		setSparseMatrixCudaPointer(CSRPointer.allocateEmpty(0, mat.getNumRows()));
-		setDeviceModify(0);
+		addReadLock();
 	}
 
 	/**
@@ -453,12 +454,13 @@ public class GPUObject {
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public void allocateAndFillDense(double v) throws DMLRuntimeException {
+		LOG.trace("GPU : allocate and fill dense with value " + v + " on " + this);
 		long rows = mat.getNumRows();
 		long cols = mat.getNumColumns();
 		int numElems = toIntExact(rows * cols);
 		long size = getDoubleSizeOf(numElems);
 		setDenseMatrixCudaPointer(allocate(size));
-		setDeviceModify(size);
+		addReadLock();
 		// The "fill" kernel is called which treats the matrix "jcudaDensePtr" like a vector and fills it with value "v"
 		GPUContext.getGPUContext().getKernels().launchKernel("fill", ExecutionConfig.getConfigForSimpleVectorOperations(numElems), jcudaDenseMatrixPtr, v, numElems);
 	}
@@ -476,12 +478,14 @@ public class GPUObject {
 	}
 
 	public boolean acquireDeviceRead() throws DMLRuntimeException {
+		LOG.trace("GPU : acquireDeviceRead on " + this);
 		boolean transferred = false;
 		if(!isAllocated()) {
+			LOG.trace("GPU : in acquireDeviceRead, data is not allocated, copying from host, on " + this);
 			copyFromHostToDevice();
 			transferred = true;
 		} else {
-			numLocks.addAndGet(1);
+			addReadLock();
 		}
 		if(!isAllocated())
 			throw new DMLRuntimeException("Expected device data to be allocated");
@@ -489,46 +493,51 @@ public class GPUObject {
 	}
 
 	public boolean acquireDeviceModifyDense() throws DMLRuntimeException {
+		LOG.trace("GPU : acquireDeviceModifyDense on " + this);
 		boolean allocated = false;
 		if(!isAllocated()) {
 			mat.setDirty(true);
+			LOG.trace("GPU : data is not allocated, allocating a dense block, on " + this);
 			// Dense block, size = numRows * numCols
 			allocateDenseMatrixOnDevice();
 			allocated = true;
 			GPUContext.getGPUContext().recordBlockUsage(this);
 		}
-		isDeviceCopyModified = true;
+		dirty = true;
 		if(!isAllocated())
 			throw new DMLRuntimeException("Expected device data to be allocated");
 		return allocated;
 	}
 
 	public boolean acquireDeviceModifySparse() throws DMLRuntimeException {
+		LOG.trace("GPU : acquireDeviceModifySparse on " + this);
 		boolean allocated = false;
-		isInSparseFormat = true;
+		isSparse = true;
 		if(!isAllocated()) {
+			LOG.trace("GPU : data is not allocated, allocating a sparse block, on " + this);
 			mat.setDirty(true);
 			allocateSparseMatrixOnDevice();
 			allocated = true;
 			GPUContext.getGPUContext().recordBlockUsage(this);
 
 		}
-		isDeviceCopyModified = true;
+		dirty = true;
 		if(!isAllocated())
 			throw new DMLRuntimeException("Expected device data to be allocated");
 		return allocated;
 	}
 
-	public void setDeviceModify(long numBytes) {
-		this.numLocks.addAndGet(1);
-		this.numBytes = numBytes;
+	public void addReadLock() {
+		readLocks.addAndGet(1);
 	}
 
 	public boolean acquireHostRead() throws CacheException {
+		LOG.trace("GPU : acquireDeviceModifySparse on " + this);
 		boolean copied = false;
 		if(isAllocated()) {
 			try {
-				if(isDeviceCopyModified) {
+				if(dirty) {
+					LOG.trace("GPU : data is dirty on device, copying to host, on " + this);
 					copyFromDeviceToHost();
 					copied = true;
 				}
@@ -543,32 +552,28 @@ public class GPUObject {
 	}
 
 	/**
-	 * updates the locks depending on the eviction policy selected
-	 * @throws CacheException if there is no locked GPU Object
+	 * Updates the locks depending on the eviction policy selected
+	 * @throws DMLRuntimeException if there is no locked GPU Object or if could not obtain a {@link GPUContext}
 	 */
-	private void updateReleaseLocks() throws CacheException {
-		if(numLocks.addAndGet(-1) < 0) {
-            throw new CacheException("Redundant release of GPU object");
+	private void updateReleaseLocks() throws DMLRuntimeException {
+		if (readLocks.addAndGet(-1) < 0) {
+			throw new CacheException("Redundant release of GPU object");
 		}
-		if(evictionPolicy == EvictionPolicy.LRU) {
-            timestamp.set(System.nanoTime());
-		}
-		else if(evictionPolicy == EvictionPolicy.LFU) {
-            timestamp.addAndGet(1);
-		}
-		else if(evictionPolicy == EvictionPolicy.MIN_EVICT) {
-            // Do Nothing
-		}
-		else {
-            throw new CacheException("The eviction policy is not supported:" + evictionPolicy.name());
+		LOG.trace("GPU : updateReleaseLocks, new number of read locks is " + readLocks.get() + ", on " + this);
+		GPUContext.EvictionPolicy evictionPolicy = GPUContext.getGPUContext().evictionPolicy;
+		switch (evictionPolicy){
+			case LRU : timestamp.set(System.nanoTime()); break;
+			case LFU : timestamp.addAndGet(1); break;
+			case MIN_EVICT : /* Do Nothing */ break;
+			default : throw new CacheException("The eviction policy is not supported:" + evictionPolicy.name());
 		}
 	}
 
 	/**
-	 * releases input allocated on GPU
-	 * @throws CacheException if data is not allocated
+	 * Releases input allocated on GPU
+	 * @throws DMLRuntimeException if data is not allocated or if there is no locked GPU Object or if could not obtain a {@link GPUContext}
 	 */
-	public void releaseInput() throws CacheException {
+	public void releaseInput() throws DMLRuntimeException {
 		updateReleaseLocks();
 		if(!isAllocated())
 			throw new CacheException("Attempting to release an input before allocating it");
@@ -576,16 +581,17 @@ public class GPUObject {
 
 	/**
 	 * releases output allocated on GPU
-	 * @throws CacheException if data is not allocated
+	 * @throws DMLRuntimeException if data is not allocated or if there is no locked GPU Object or if could not obtain a {@link GPUContext}
 	 */
-	public void releaseOutput() throws CacheException {
+	public void releaseOutput() throws DMLRuntimeException {
 		updateReleaseLocks();
-		isDeviceCopyModified = true;
+		dirty = true;
 		if(!isAllocated())
 			throw new CacheException("Attempting to release an output before allocating it");
 	}
 
 	void allocateDenseMatrixOnDevice() throws DMLRuntimeException {
+		LOG.trace("GPU : allocateDenseMatrixOnDevice, on " + this);
 		assert !isAllocated() : "Internal error - trying to allocated dense matrix to a GPUObject that is already allocated";
 		long rows = mat.getNumRows();
 		long cols = mat.getNumColumns();
@@ -594,10 +600,11 @@ public class GPUObject {
         long size = getDoubleSizeOf(rows * cols);
 		Pointer tmp = allocate(size);
 		setDenseMatrixCudaPointer(tmp);
-		setDeviceModify(size);
+		addReadLock();
 	}
 
 	void allocateSparseMatrixOnDevice() throws DMLRuntimeException {
+		LOG.trace("GPU : allocateSparseMatrixOnDevice, on " + this);
 		assert !isAllocated() : "Internal error = trying to allocated sparse matrix to a GPUObject that is already allocated";
 		long rows = mat.getNumRows();
 		long nnz = mat.getNnz();
@@ -605,11 +612,11 @@ public class GPUObject {
 		assert nnz > 0 : "Internal error - invalid number of non zeroes when allocating a sparse matrix";
 		CSRPointer tmp = CSRPointer.allocateEmpty(nnz, rows);
 		setSparseMatrixCudaPointer(tmp);
-		long size = CSRPointer.estimateSize(nnz, rows);
-		setDeviceModify(size);
+		addReadLock();
 	}
 
 	void deallocateMemoryOnDevice(boolean eager) throws DMLRuntimeException {
+		LOG.trace("GPU : deallocateMemoryOnDevice, on " + this);
 		if(jcudaDenseMatrixPtr != null) {
 			cudaFreeHelper(null, jcudaDenseMatrixPtr, eager);
 		}
@@ -622,7 +629,7 @@ public class GPUObject {
 			cudnnDestroyTensorDescriptor(tensorDescriptor);
 			tensorDescriptor = null;
 		}
-		numLocks.set(0);
+		readLocks.set(0);
 	}
 
 	protected long getSizeOnDevice() throws DMLRuntimeException {
@@ -661,9 +668,8 @@ public class GPUObject {
 		}
 	}
 
-	void copyFromHostToDevice()
-		throws DMLRuntimeException
-	{
+	void copyFromHostToDevice() throws DMLRuntimeException {
+		LOG.trace("GPU : copyFromHostToDevice, on " + this);
 		long start=0;
 		if (DMLScript.STATISTICS) start = System.nanoTime();
 
@@ -756,6 +762,7 @@ public class GPUObject {
 	}
 
 	protected void copyFromDeviceToHost() throws DMLRuntimeException {
+		LOG.trace("GPU : copyFromDeviceToHost, on " + this);
 		if (jcudaDenseMatrixPtr != null && jcudaSparseMatrixPtr != null){
 			throw new DMLRuntimeException("Invalid state : JCuda dense/sparse pointer are both allocated");
 		}
@@ -807,7 +814,7 @@ public class GPUObject {
 		else {
 			throw new DMLRuntimeException("Cannot copy from device to host as JCuda dense/sparse pointer is not allocated");
 		}
-		isDeviceCopyModified = false;
+		dirty = false;
 	}
 
 
@@ -931,6 +938,7 @@ public class GPUObject {
 		 * @throws DMLRuntimeException if DMLRuntimeException occurs
 		 */
 		public static CSRPointer allocateEmpty(long nnz2, long rows) throws DMLRuntimeException {
+			LOG.trace("GPU : allocateEmpty from CSRPointer with nnz="+nnz2+" and rows="+rows);
 			assert nnz2 > -1 : "Incorrect usage of internal API, number of non zeroes is less than 0 when trying to allocate sparse data on GPU";
 			CSRPointer r = new CSRPointer();
 			r.nnz = nnz2;
@@ -1015,6 +1023,7 @@ public class GPUObject {
 		 * @throws DMLRuntimeException ?
 		 */
 		private static void step1AllocateRowPointers(cusparseHandle handle, CSRPointer C, int rowsC) throws DMLRuntimeException {
+			LOG.trace("GPU : step1AllocateRowPointers");
 			cusparseSetPointerMode(handle, cusparsePointerMode.CUSPARSE_POINTER_MODE_HOST);
             cudaDeviceSynchronize();
 			// Do not increment the cudaCount of allocations on GPU
@@ -1034,6 +1043,7 @@ public class GPUObject {
 		 * @throws DMLRuntimeException ?
 		 */
 		private static void step2GatherNNZGeam(cusparseHandle handle, CSRPointer A, CSRPointer B, CSRPointer C, int m, int n) throws DMLRuntimeException {
+			LOG.trace("GPU : step2GatherNNZGeam for DGEAM");
 			int[] CnnzArray = { -1 };
 			cusparseXcsrgeamNnz(handle, m, n,
 					A.descr, toIntExact(A.nnz), A.rowPtr, A.colInd,
@@ -1066,6 +1076,7 @@ public class GPUObject {
 		 * @throws DMLRuntimeException ?
 		 */
 		private static void step2GatherNNZGemm(cusparseHandle handle, CSRPointer A, int transA, CSRPointer B, int transB, CSRPointer C, int m, int n, int k) throws DMLRuntimeException {
+			LOG.trace("GPU : step2GatherNNZGemm for DGEMM");
 			int[] CnnzArray = { -1 };
 			if (A.nnz >= Integer.MAX_VALUE || B.nnz >= Integer.MAX_VALUE) {
 				throw new DMLRuntimeException("Number of non zeroes is larger than supported by cuSparse");
@@ -1094,6 +1105,7 @@ public class GPUObject {
 		 * @throws DMLRuntimeException ?
 		 */
 		private static void step3AllocateValNInd(cusparseHandle handle, CSRPointer C) throws DMLRuntimeException {
+			LOG.trace("GPU : step3AllocateValNInd");
 			// Increment cudaCount by one when all three arrays of CSR sparse array are allocated
 			C.val = allocate(null, getDoubleSizeOf(C.nnz));
 			C.colInd = allocate(null, getIntSizeOf(C.nnz));
@@ -1164,6 +1176,7 @@ public class GPUObject {
 		 * @throws DMLRuntimeException if DMLRuntimeException occurs
 		 */
 		public Pointer toColumnMajorDenseMatrix(cusparseHandle cusparseHandle, cublasHandle cublasHandle, int rows, int cols) throws DMLRuntimeException {
+			LOG.trace("GPU : sparse -> column major dense (inside CSRPointer) on " + this);
 			long size = ((long)rows) * getDoubleSizeOf((long)cols);
 			Pointer A = allocate(size);
 			// If this sparse block is empty, the allocated dense matrix, initialized to zeroes, will be returned.
@@ -1195,5 +1208,33 @@ public class GPUObject {
 				cudaFreeHelper(colInd, eager);
 			}
 		}
+
+		@Override
+		public String toString() {
+			return "CSRPointer{" +
+							"nnz=" + nnz +
+							", val=" + val +
+							", rowPtr=" + rowPtr +
+							", colInd=" + colInd +
+							'}';
+		}
 	}
+
+	@Override
+	public String toString() {
+		final StringBuilder sb = new StringBuilder("GPUObject{");
+		if (jcudaDenseMatrixPtr != null)
+			sb.append("jcudaDenseMatrixPtr=").append(jcudaDenseMatrixPtr);
+		if (jcudaSparseMatrixPtr != null)
+			sb.append("jcudaSparseMatrixPtr=").append(jcudaSparseMatrixPtr);
+		sb.append(", tensorShape=").append(Arrays.toString(tensorShape));
+		sb.append(", dirty=").append(dirty);
+		sb.append(", readLocks=").append(readLocks);
+		sb.append(", sparse? ").append(isSparse);
+		sb.append(", dims=[").append(mat.getNumRows()).append(",").append(mat.getNumColumns()).append("]");
+		sb.append('}');
+		return sb.toString();
+	}
+
+
 }

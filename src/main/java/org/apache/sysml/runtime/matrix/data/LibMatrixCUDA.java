@@ -129,7 +129,11 @@ import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToDevice;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice;
 
-//FIXME move could to respective instructions, this is not a block library
+/**
+ * All CUDA kernels and library calls are redirected through this class
+ * @see GPUContext
+ * @see GPUObject
+ */
 public class LibMatrixCUDA {
 
 	// Assume Compute Capability 3.0
@@ -189,7 +193,7 @@ public class LibMatrixCUDA {
 
 	public static boolean isInSparseFormat(MatrixObject mo) {
 		if(mo.getGPUObject() != null && mo.getGPUObject().isAllocated())
-			return mo.getGPUObject().isInSparseFormat();
+			return mo.getGPUObject().isSparse();
 		return MatrixBlock.evalSparseFormatInMemory(mo.getNumRows(), mo.getNumColumns(), mo.getNnz());
 	}
 
@@ -1319,8 +1323,8 @@ public class LibMatrixCUDA {
 		if(!left1.getGPUObject().isAllocated() || !right1.getGPUObject().isAllocated())
 			throw new DMLRuntimeException("One of input is not allocated:" + left1.getGPUObject().isAllocated() + " " + right1.getGPUObject().isAllocated());
 
-		boolean bothDense = !left1.getGPUObject().isInSparseFormat() && !right1.getGPUObject().isInSparseFormat();
-		boolean bothSparse = left1.getGPUObject().isInSparseFormat() && right1.getGPUObject().isInSparseFormat();
+		boolean bothDense = !left1.getGPUObject().isSparse() && !right1.getGPUObject().isSparse();
+		boolean bothSparse = left1.getGPUObject().isSparse() && right1.getGPUObject().isSparse();
 
 		MatrixObject output = ec.getMatrixObject(outputName);
 
@@ -1370,7 +1374,7 @@ public class LibMatrixCUDA {
 			throw new DMLRuntimeException("Incorrect dimensions");
 
 
-		if (left.getGPUObject().isInSparseFormat()) {
+		if (left.getGPUObject().isSparse()) {
 			// Left sparse, right dense
 			sparseDenseMatmult(instName, output, left, right, isLeftTransposed, isRightTransposed, transA, transB, m, n, k);
 		} else {
@@ -1562,7 +1566,7 @@ public class LibMatrixCUDA {
 		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_SPARSE_MATRIX_DENSE_VECTOR_LIB, System.nanoTime() - t1);
 
 		output.getGPUObject().setDenseMatrixCudaPointer(C_dense);
-		output.getGPUObject().setDeviceModify(size);
+		output.getGPUObject().addReadLock();
 	}
 
 	/**
@@ -1653,7 +1657,7 @@ public class LibMatrixCUDA {
 
 		output.getGPUObject().setSparseMatrixCudaPointer(C);
 		long sizeOfC = CSRPointer.estimateSize(C.nnz, output.getNumRows());
-		output.getGPUObject().setDeviceModify(sizeOfC);
+		output.getGPUObject().addReadLock();
 
 		if (GPUStatistics.DISPLAY_STATISTICS) t1 = System.nanoTime();
 		cusparseDcsrgemm(getCusparseHandle(), transA, transB, m, n, k,
@@ -1825,7 +1829,7 @@ public class LibMatrixCUDA {
 		if(!in1.getGPUObject().isAllocated())
 			throw new DMLRuntimeException("Internal Error - The input is not allocated for a GPU Aggregate Unary:" + in1.getGPUObject().isAllocated());
 
-		boolean isSparse = in1.getGPUObject().isInSparseFormat();
+		boolean isSparse = in1.getGPUObject().isSparse();
 		IndexFunction indexFn = op.indexFn;
 		AggregateOperator aggOp = op.aggOp;
 
@@ -2734,7 +2738,7 @@ public class LibMatrixCUDA {
 
 			out.getGPUObject().setSparseMatrixCudaPointer(C);
 			long sizeOfC = CSRPointer.estimateSize(C.nnz, out.getNumRows());
-			out.getGPUObject().setDeviceModify(sizeOfC);
+			out.getGPUObject().addReadLock();
 			if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
 			JCusparse.cusparseDcsrgeam(getCusparseHandle(), m, n, alphaPtr, A.descr, (int)A.nnz, A.val, A.rowPtr, A.colInd, betaPtr,
 							B.descr, (int)B.nnz, B.val, B.rowPtr, B.colInd,

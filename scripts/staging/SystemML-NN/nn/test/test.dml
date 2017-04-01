@@ -23,23 +23,23 @@
  * Various tests, not including gradient checks.
  */
 source("nn/layers/batch_norm.dml") as batch_norm
-source("nn/layers/conv.dml") as conv
-source("nn/layers/conv_builtin.dml") as conv_builtin
+source("nn/layers/conv2d.dml") as conv2d
+source("nn/layers/conv2d_builtin.dml") as conv2d_builtin
 source("nn/layers/cross_entropy_loss.dml") as cross_entropy_loss
-source("nn/layers/max_pool.dml") as max_pool
-source("nn/layers/max_pool_builtin.dml") as max_pool_builtin
+source("nn/layers/max_pool2d.dml") as max_pool2d
+source("nn/layers/max_pool2d_builtin.dml") as max_pool2d_builtin
 source("nn/layers/spatial_batch_norm.dml") as spatial_batch_norm
 source("nn/layers/tanh.dml") as tanh
-source("nn/test/conv_simple.dml") as conv_simple
-source("nn/test/max_pool_simple.dml") as max_pool_simple
+source("nn/test/conv2d_simple.dml") as conv2d_simple
+source("nn/test/max_pool2d_simple.dml") as max_pool2d_simple
 source("nn/test/util.dml") as test_util
 source("nn/util.dml") as util
 
 batch_norm = function() {
   /*
-   * Test for the `batch_norm` function.
+   * Test for the batch normalization function.
    */
-  print("Testing the batch_norm function.")
+  print("Testing the batch normalization function.")
 
   # Generate data
   N = 4  # Number of examples
@@ -68,11 +68,11 @@ batch_norm = function() {
   }
 }
 
-conv = function() {
+conv2d = function() {
   /*
-   * Test for the `conv` functions.
+   * Test for the 2D convolution functions.
    */
-  print("Testing the conv functions.")
+  print("Testing the 2D convolution functions.")
 
   # Generate data
   N = 2  # num examples
@@ -87,14 +87,14 @@ conv = function() {
   X = rand(rows=N, cols=C*Hin*Win, pdf="normal")
 
   # Create layer
-  [W, b] = conv::init(F, C, Hf, Wf)
+  [W, b] = conv2d::init(F, C, Hf, Wf)
 
   # Forward
-  [out, Hout, Wout] = conv::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
-  [out_simple, Hout_simple, Wout_simple] = conv_simple::forward(X, W, b, C, Hin, Win, Hf, Wf,
-                                                                stride, stride, pad, pad)
-  [out_builtin, Hout_builtin, Wout_builtin] = conv_builtin::forward(X, W, b, C, Hin, Win, Hf, Wf,
-                                                                    stride, stride, pad, pad)
+  [out, Hout, Wout] = conv2d::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
+  [out_simple, Hout_simple, Wout_simple] = conv2d_simple::forward(X, W, b, C, Hin, Win, Hf, Wf,
+                                                                  stride, stride, pad, pad)
+  [out_builtin, Hout_builtin, Wout_builtin] = conv2d_builtin::forward(X, W, b, C, Hin, Win, Hf, Wf,
+                                                                      stride, stride, pad, pad)
 
   # Equivalency check
   out = matrix(out, rows=1, cols=N*F*Hout*Wout)
@@ -110,7 +110,7 @@ conv = function() {
 
 cross_entropy_loss = function() {
   /*
-   * Test for the `cross-entropy` loss function.
+   * Test for the cross-entropy loss function.
    *
    * Here we make sure that the cross-entropy loss function does
    * not propagate `infinity` values in the case that a prediction is
@@ -206,11 +206,11 @@ padding = function() {
   }
 }
 
-max_pool = function() {
+max_pool2d = function() {
   /*
-   * Test for the `max_pool` functions.
+   * Test for the 2D max pooling functions.
    */
-  print("Testing the max pool functions.")
+  print("Testing the 2D max pooling functions.")
 
   # Generate data
   N = 2  # num examples
@@ -227,12 +227,14 @@ max_pool = function() {
       print(" - Testing w/ padh="+padh+" & padw="+padw+".")
       #if (1==1) {}  # force correct printing
       #print("   - Testing forward")
-      [out, Hout, Wout] = max_pool::forward(X, C, Hin, Win, Hf, Wf, stride, stride, padh, padw)
-      [out_simple, Hout_simple, Wout_simple] = max_pool_simple::forward(X, C, Hin, Win, Hf, Wf,
-                                                                        stride, stride, padh, padw)
-      [out_builtin, Hout_builtin, Wout_builtin] = max_pool_builtin::forward(X, C, Hin, Win, Hf, Wf,
-                                                                            stride, stride,
-                                                                            padh, padw)
+      [out, Hout, Wout] = max_pool2d::forward(X, C, Hin, Win, Hf, Wf, stride, stride, padh, padw)
+      [out_simple, Hout_simple, Wout_simple] = max_pool2d_simple::forward(X, C, Hin, Win, Hf, Wf,
+                                                                          stride, stride,
+                                                                          padh, padw)
+      [out_builtin, Hout_builtin, Wout_builtin] = max_pool2d_builtin::forward(X, C, Hin, Win,
+                                                                              Hf, Wf,
+                                                                              stride, stride,
+                                                                              padh, padw)
 
       # Equivalency check
       out = matrix(out, rows=1, cols=N*C*Hout*Wout)
@@ -247,11 +249,12 @@ max_pool = function() {
 
       #print("   - Testing backward")
       dout = rand(rows=N, cols=C*Hout*Wout, pdf="normal")
-      dX = max_pool::backward(dout, Hout, Wout, X, C, Hin, Win, Hf, Wf, stride, stride, padh, padw)
-      dX_simple = max_pool_simple::backward(dout, Hout_simple, Wout_simple, X, C, Hin, Win, Hf, Wf,
-                                            stride, stride, padh, padw)
-      dX_builtin = max_pool_builtin::backward(dout, Hout_builtin, Wout_builtin, X, C, Hin, Win,
+      dX = max_pool2d::backward(dout, Hout, Wout, X, C, Hin, Win, Hf, Wf, stride, stride,
+                                padh, padw)
+      dX_simple = max_pool2d_simple::backward(dout, Hout_simple, Wout_simple, X, C, Hin, Win,
                                               Hf, Wf, stride, stride, padh, padw)
+      dX_builtin = max_pool2d_builtin::backward(dout, Hout_builtin, Wout_builtin, X, C, Hin, Win,
+                                                Hf, Wf, stride, stride, padh, padw)
 
       # Equivalency check
       dX = matrix(dX, rows=1, cols=N*C*Hin*Win)
@@ -288,11 +291,11 @@ max_pool = function() {
   pad = 0
 
   # forward
-  [out, Hout, Wout] = max_pool::forward(X, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
-  [out_simple, Hout_simple, Wout_simple] = max_pool_simple::forward(X, C, Hin, Win, Hf, Wf,
-                                                                    stride, stride, pad, pad)
-  [out_builtin, Hout_builtin, Wout_builtin] = max_pool_builtin::forward(X, C, Hin, Win, Hf, Wf,
-                                                                        stride, stride, pad, pad)
+  [out, Hout, Wout] = max_pool2d::forward(X, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
+  [out_simple, Hout_simple, Wout_simple] = max_pool2d_simple::forward(X, C, Hin, Win, Hf, Wf,
+                                                                      stride, stride, pad, pad)
+  [out_builtin, Hout_builtin, Wout_builtin] = max_pool2d_builtin::forward(X, C, Hin, Win, Hf, Wf,
+                                                                          stride, stride, pad, pad)
 
   # equivalency check
   # -- channel 1
@@ -326,11 +329,11 @@ max_pool = function() {
   pad = 1
 
   # forward
-  [out, Hout, Wout] = max_pool::forward(X, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
-  [out_simple, Hout_simple, Wout_simple] = max_pool_simple::forward(X, C, Hin, Win, Hf, Wf,
-                                                                    stride, stride, pad, pad)
-  [out_builtin, Hout_builtin, Wout_builtin] = max_pool_builtin::forward(X, C, Hin, Win, Hf, Wf,
-                                                                        stride, stride, pad, pad)
+  [out, Hout, Wout] = max_pool2d::forward(X, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
+  [out_simple, Hout_simple, Wout_simple] = max_pool2d_simple::forward(X, C, Hin, Win, Hf, Wf,
+                                                                      stride, stride, pad, pad)
+  [out_builtin, Hout_builtin, Wout_builtin] = max_pool2d_builtin::forward(X, C, Hin, Win, Hf, Wf,
+                                                                          stride, stride, pad, pad)
 
   # equivalency check
   # -- channel 1
@@ -363,11 +366,11 @@ max_pool = function() {
   pad = 0
 
   # forward
-  [out, Hout, Wout] = max_pool::forward(X, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
-  [out_simple, Hout_simple, Wout_simple] = max_pool_simple::forward(X, C, Hin, Win, Hf, Wf,
-                                                                    stride, stride, pad, pad)
-  [out_builtin, Hout_builtin, Wout_builtin] = max_pool_builtin::forward(X, C, Hin, Win, Hf, Wf,
-                                                                        stride, stride, pad, pad)
+  [out, Hout, Wout] = max_pool2d::forward(X, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
+  [out_simple, Hout_simple, Wout_simple] = max_pool2d_simple::forward(X, C, Hin, Win, Hf, Wf,
+                                                                      stride, stride, pad, pad)
+  [out_builtin, Hout_builtin, Wout_builtin] = max_pool2d_builtin::forward(X, C, Hin, Win, Hf, Wf,
+                                                                          stride, stride, pad, pad)
 
   # equivalency check
   # -- channel 1
@@ -402,11 +405,11 @@ max_pool = function() {
   pad = 1
 
   # forward
-  [out, Hout, Wout] = max_pool::forward(X, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
-  [out_simple, Hout_simple, Wout_simple] = max_pool_simple::forward(X, C, Hin, Win, Hf, Wf,
-                                                                    stride, stride, pad, pad)
-  [out_builtin, Hout_builtin, Wout_builtin] = max_pool_builtin::forward(X, C, Hin, Win, Hf, Wf,
-                                                                        stride, stride, pad, pad)
+  [out, Hout, Wout] = max_pool2d::forward(X, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
+  [out_simple, Hout_simple, Wout_simple] = max_pool2d_simple::forward(X, C, Hin, Win, Hf, Wf,
+                                                                      stride, stride, pad, pad)
+  [out_builtin, Hout_builtin, Wout_builtin] = max_pool2d_builtin::forward(X, C, Hin, Win, Hf, Wf,
+                                                                          stride, stride, pad, pad)
 
   # equivalency check
   # -- channel 1
@@ -417,7 +420,8 @@ max_pool = function() {
   #  0  0  0
   #  0 -6  0
   #  0  0  0
-  target = matrix("-1 -2 -4 -5 -6 -8 -13 -14 -16 -1 -5 -13 -2 -6 -14 -4 -8 -16", rows=1, cols=C*Hout*Wout)
+  target = matrix("-1 -2 -4 -5 -6 -8 -13 -14 -16 -1 -5 -13 -2 -6 -14 -4 -8 -16",
+                  rows=1, cols=C*Hout*Wout)
   target = rbind(target, target)  # n=2
   tmp = test_util::check_all_equal(out, target)
   tmp = test_util::check_all_equal(out_simple, target)
@@ -426,9 +430,9 @@ max_pool = function() {
 
 spatial_batch_norm = function() {
   /*
-   * Test for the `spatial_batch_norm` function.
+   * Test for the spatial batch normalization function.
    */
-  print("Testing the spatial_batch_norm function.")
+  print("Testing the spatial batch normalization function.")
 
   # Generate data
   N = 2  # Number of examples
@@ -532,7 +536,8 @@ tanh = function() {
   # Equivalency check
   for (i in 1:nrow(out)) {
     for (j in 1:ncol(out)) {
-      rel_error = test_util::check_rel_error(as.scalar(out[i,j]), as.scalar(out_ref[i,j]), 1e-10, 1e-12)
+      rel_error = test_util::check_rel_error(as.scalar(out[i,j]), as.scalar(out_ref[i,j]),
+                                             1e-10, 1e-12)
     }
   }
 }

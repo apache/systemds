@@ -21,6 +21,8 @@
 
 /*
  * 2D Convolutional layer.
+ *
+ * This implementation uses a built-in operator for higher performance.
  */
 
 forward = function(matrix[double] X, matrix[double] W, matrix[double] b,
@@ -31,6 +33,9 @@ forward = function(matrix[double] X, matrix[double] W, matrix[double] b,
    * Computes the forward pass for a 2D spatial convolutional layer with
    * F filters.  The input data has N examples, each represented as a 3D
    * volume unrolled into a single vector.
+   *
+   * This implementation uses a built-in operator for higher
+   * performance.
    *
    * Inputs:
    *  - X: Inputs, of shape (N, C*Hin*Win).

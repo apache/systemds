@@ -70,9 +70,23 @@ import static jcuda.runtime.JCuda.cudaSetDevice;
  */
 public class GPUContext {
 
-  protected static final Log LOG = LogFactory.getLog(GPUContext.class.getName());
+	protected static final Log LOG = LogFactory.getLog(GPUContext.class.getName());
 
-  /** Whether cuda has been initialized */
+	/** Eviction policies for {@link GPUContext#evict(long)} */
+	public enum EvictionPolicy {
+		LRU, LFU, MIN_EVICT
+	}
+
+	/** currently employed eviction policy */
+	public final EvictionPolicy evictionPolicy = EvictionPolicy.LRU;
+
+	/** Map of free blocks allocate on GPU. maps size_of_block -> pointer on GPU */
+	private LRUCacheMap<Long, LinkedList<Pointer>> freeCUDASpaceMap = new LRUCacheMap<>();
+
+	/** To record size of allocated blocks */
+	private HashMap<Pointer, Long> cudaBlockSizeMap = new HashMap<>();
+
+	/** Whether cuda has been initialized */
   private static boolean initialized = false;
 
   /** The total number of cuda devices on this machine */
@@ -202,14 +216,16 @@ public class GPUContext {
 	public Pointer allocate(String instructionName, long size, int statsCount) throws DMLRuntimeException{
 		long t0=0, t1=0, end=0;
 		Pointer A;
-		if (GPUObject.freeCUDASpaceMap.containsKey(size)) {
+		if (freeCUDASpaceMap.containsKey(size)) {
+			LOG.trace("GPU : in allocate from instruction " + instructionName + ", found free block of size " + (size/1024.0) + " Kbytes from previously allocated block on " + this);
 			if (instructionName != null && GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
-			LinkedList<Pointer> freeList = GPUObject.freeCUDASpaceMap.get(size);
+			LinkedList<Pointer> freeList = freeCUDASpaceMap.get(size);
 			A = freeList.pop();
 			if (freeList.isEmpty())
-				GPUObject.freeCUDASpaceMap.remove(size);
+				freeCUDASpaceMap.remove(size);
 			if (instructionName != null && GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instructionName, GPUInstruction.MISC_TIMER_REUSE, System.nanoTime() - t0);
 		} else {
+			LOG.trace("GPU : in allocate from instruction " + instructionName + ", allocating new block of size " + (size/1024.0) + " Kbytes on " + this);
 			if (DMLScript.STATISTICS) t0 = System.nanoTime();
 			GPUObject.ensureFreeSpace(instructionName, size);
 			A = new Pointer();
@@ -221,12 +237,13 @@ public class GPUContext {
 		}
 		// Set all elements to 0 since newly allocated space will contain garbage
 		if (DMLScript.STATISTICS) t1 = System.nanoTime();
+		LOG.trace("GPU : in allocate from instruction " + instructionName + ", setting block of size " + (size/1024.0) + " Kbytes to zero on " + this);
 		cudaMemset(A, 0, size);
 		if (DMLScript.STATISTICS) end = System.nanoTime();
 		if (instructionName != null && GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instructionName, GPUInstruction.MISC_TIMER_SET_ZERO, end - t1);
 		if (DMLScript.STATISTICS) GPUStatistics.cudaMemSet0Time.getAndAdd(end - t1);
 		if (DMLScript.STATISTICS) GPUStatistics.cudaMemSet0Count.getAndAdd(1);
-		GPUObject.cudaBlockSizeMap.put(A, size);
+		cudaBlockSizeMap.put(A, size);
 		return A;
 
 	}
@@ -265,20 +282,22 @@ public class GPUContext {
 	 */
 	public void cudaFreeHelper(String instructionName, final Pointer toFree, boolean eager){
 		long t0 = 0;
-		assert GPUObject.cudaBlockSizeMap.containsKey(toFree) : "ERROR : Internal state corrupted, cache block size map is not aware of a block it trying to free up";
-		long size = GPUObject.cudaBlockSizeMap.get(toFree);
+		assert cudaBlockSizeMap.containsKey(toFree) : "ERROR : Internal state corrupted, cache block size map is not aware of a block it trying to free up";
+		long size = cudaBlockSizeMap.get(toFree);
 		if (eager) {
+			LOG.trace("GPU : eagerly freeing cuda memory [ " + toFree + " ] for instruction " + instructionName + " on " + this);
 			if (DMLScript.STATISTICS) t0 = System.nanoTime();
 			cudaFree(toFree);
-			GPUObject.cudaBlockSizeMap.remove(toFree);
+			cudaBlockSizeMap.remove(toFree);
 			if (DMLScript.STATISTICS) GPUStatistics.cudaDeAllocTime.addAndGet(System.nanoTime() - t0);
 			if (DMLScript.STATISTICS) GPUStatistics.cudaDeAllocCount.addAndGet(1);
 			if (instructionName != null && GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instructionName, GPUInstruction.MISC_TIMER_CUDA_FREE, System.nanoTime() - t0);
 		} else {
-			LinkedList<Pointer> freeList = GPUObject.freeCUDASpaceMap.get(size);
+			LOG.trace("GPU : lazily freeing cuda memory for instruction " + instructionName + " on " + this);
+			LinkedList<Pointer> freeList = freeCUDASpaceMap.get(size);
 			if (freeList == null) {
 				freeList = new LinkedList<Pointer>();
-				GPUObject.freeCUDASpaceMap.put(size, freeList);
+				freeCUDASpaceMap.put(size, freeList);
 			}
 			freeList.add(toFree);
 		}
@@ -307,10 +326,11 @@ public class GPUContext {
 	 * @throws DMLRuntimeException If no reusable memory blocks to free up or if not enough matrix blocks with zero locks on them.
 	 */
 	protected void evict(String instructionName, final long neededSize) throws DMLRuntimeException {
+		LOG.trace("GPU : evict called from " + instructionName + " for size " + neededSize + " on " + this);
 		GPUStatistics.cudaEvictionCount.addAndGet(1);
 		// Release the set of free blocks maintained in a GPUObject.freeCUDASpaceMap
 		// to free up space
-		LRUCacheMap<Long, LinkedList<Pointer>> lruCacheMap = GPUObject.freeCUDASpaceMap;
+		LRUCacheMap<Long, LinkedList<Pointer>> lruCacheMap = freeCUDASpaceMap;
 		while (lruCacheMap.size() > 0) {
 			if (neededSize <= getAvailableMemory())
 				break;
@@ -333,8 +353,8 @@ public class GPUContext {
 		Collections.sort(allocatedGPUObjects, new Comparator<GPUObject>() {
 			@Override
 			public int compare(GPUObject p1, GPUObject p2) {
-				long p1Val = p1.numLocks.get();
-				long p2Val = p2.numLocks.get();
+				long p1Val = p1.readLocks.get();
+				long p2Val = p2.readLocks.get();
 
 				if (p1Val > 0 && p2Val > 0) {
 					// Both are locked, so don't sort
@@ -345,7 +365,7 @@ public class GPUContext {
 				} else {
 					// Both are unlocked
 
-					if (GPUObject.evictionPolicy == GPUObject.EvictionPolicy.MIN_EVICT) {
+					if (evictionPolicy == EvictionPolicy.MIN_EVICT) {
 						long p1Size = 0;
 						long p2Size = 0;
 						try {
@@ -360,10 +380,10 @@ public class GPUContext {
 						} else {
 							return Long.compare(p1Size, p2Size);
 						}
-					} else if (GPUObject.evictionPolicy == GPUObject.EvictionPolicy.LRU || GPUObject.evictionPolicy == GPUObject.EvictionPolicy.LFU) {
+					} else if (evictionPolicy == EvictionPolicy.LRU || evictionPolicy == EvictionPolicy.LFU) {
 						return Long.compare(p2.timestamp.get(), p1.timestamp.get());
 					} else {
-						throw new RuntimeException("Unsupported eviction policy:" + GPUObject.evictionPolicy.name());
+						throw new RuntimeException("Unsupported eviction policy:" + evictionPolicy.name());
 					}
 				}
 			}
@@ -371,10 +391,10 @@ public class GPUContext {
 
 		while (neededSize > getAvailableMemory() && allocatedGPUObjects.size() > 0) {
 			GPUObject toBeRemoved = allocatedGPUObjects.get(allocatedGPUObjects.size() - 1);
-			if (toBeRemoved.numLocks.get() > 0) {
+			if (toBeRemoved.readLocks.get() > 0) {
 				throw new DMLRuntimeException("There is not enough memory on device for this matrix!");
 			}
-			if (toBeRemoved.isDeviceCopyModified) {
+			if (toBeRemoved.dirty) {
 				toBeRemoved.copyFromDeviceToHost();
 			}
 
@@ -585,10 +605,13 @@ public class GPUContext {
    * @throws DMLRuntimeException
    */
 	public void destroy() throws DMLRuntimeException {
+    LOG.trace("GPU : this context was destroyed, this = " + this.toString());
 	  synchronized (GPUContext.class) {
       assignedGPUContextsMap.entrySet().removeIf(e -> e.getValue().equals(this));
       freeDevices.add(deviceNum);
-    }
+			LOG.trace("GPU : removed this from contexts map (size : " + assignedGPUContextsMap.size() + ") and added freed up device back into freeDevices (size : " + freeDevices.size()+ ")");
+
+		}
     cudnnDestroy(cudnnHandle);
     cublasDestroy(cublasHandle);
     cusparseDestroy(cusparseHandle);

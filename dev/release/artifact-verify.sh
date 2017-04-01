@@ -110,7 +110,7 @@ fi
 if [[ "$COMPILE_CODE" == "true" ]]; then
     echo "Compiling artifact utility..."
 
-    javac -classpath ../../../../..//target/lib/commons-compress-1.4.1.jar:../../../../..//target/lib/commons-io-2.4.jar:. org/apache/sysml/validation/ValidateLicAndNotice.java
+    javac -Xlint:unchecked -classpath ../../../../..//target/lib/commons-compress-1.4.1.jar:../../../../..//target/lib/commons-io-2.4.jar:. org/apache/sysml/validation/ValidateLicAndNotice.java
 
     cd "$ORIG_DIR" # Return to directoryt from it was called.
     exit 0

@@ -48,6 +48,11 @@ public abstract class SpoofRowAggregate extends SpoofOperator
 	}
 
 	@Override
+	public String getSpoofType() {
+		return "RA" +  getClass().getName().split("\\.")[1];
+	}
+	
+	@Override
 	public void execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, MatrixBlock out)	
 		throws DMLRuntimeException
 	{

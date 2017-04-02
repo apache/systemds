@@ -600,6 +600,7 @@ public class DMLScript
 			SpoofCompiler.PLAN_CACHE_POLICY = PlanCachePolicy.get(
 					dmlconf.getBooleanValue(DMLConfig.CODEGEN_PLANCACHE),
 					dmlconf.getIntValue(DMLConfig.CODEGEN_LITERALS)==2);
+			SpoofCompiler.setExecTypeSpecificJavaCompiler();
 			dmlt.codgenHopsDAG(prog);
 		}
 		

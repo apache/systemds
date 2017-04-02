@@ -83,6 +83,11 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		return _sparseSafe;
 	}
 	
+	@Override
+	public String getSpoofType() {
+		return "Cell" +  getClass().getName().split("\\.")[1];
+	}
+	
 	private ValueFunction getAggFunction() {
 		switch( _aggOp ) {
 			case SUM: return KahanPlus.getKahanPlusFnObject();

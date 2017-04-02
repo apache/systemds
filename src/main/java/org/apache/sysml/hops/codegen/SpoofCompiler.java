@@ -53,6 +53,7 @@ import org.apache.sysml.hops.codegen.template.TemplateUtils;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.OpOp1;
 import org.apache.sysml.hops.HopsException;
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.hops.rewrite.ProgramRewriteStatus;
 import org.apache.sysml.hops.rewrite.ProgramRewriter;
@@ -81,12 +82,18 @@ public class SpoofCompiler
 	private static final Log LOG = LogFactory.getLog(SpoofCompiler.class.getName());
 	
 	//internal configuration flags
-	public static boolean LDEBUG = false;
-	public static final boolean RECOMPILE_CODEGEN = true;
+	public static boolean LDEBUG                      = false;
+	public static CompilerType JAVA_COMPILER          = CompilerType.JANINO; 
+	public static final boolean RECOMPILE_CODEGEN     = true;
 	public static final boolean PRUNE_REDUNDANT_PLANS = true;
-	public static PlanCachePolicy PLAN_CACHE_POLICY = PlanCachePolicy.CSLH;
-	public static final int PLAN_CACHE_SIZE = 1024; //max 1K classes 
-	public static final PlanSelector PLAN_SEL_POLICY = PlanSelector.FUSE_ALL; 
+	public static PlanCachePolicy PLAN_CACHE_POLICY   = PlanCachePolicy.CSLH;
+	public static final int PLAN_CACHE_SIZE           = 1024; //max 1K classes 
+	public static final PlanSelector PLAN_SEL_POLICY  = PlanSelector.FUSE_ALL; 
+
+	public enum CompilerType {
+		JAVAC,
+		JANINO,
+	}
 	
 	public enum PlanSelector {
 		FUSE_ALL,             //maximal fusion, possible w/ redundant compute
@@ -262,7 +269,8 @@ public class SpoofCompiler
 					}
 					
 					//compile generated java source code
-					cla = CodegenUtils.compileClass(tmp.getValue().getClassname(), src);
+					cla = CodegenUtils.compileClass("codegen."+
+							tmp.getValue().getClassname(), src);
 					
 					//maintain plan cache
 					if( PLAN_CACHE_POLICY!=PlanCachePolicy.NONE )
@@ -329,6 +337,11 @@ public class SpoofCompiler
 				throw new RuntimeException("Unsupported "
 					+ "plan selector: "+PLAN_SEL_POLICY);
 		}
+	}
+	
+	public static void setExecTypeSpecificJavaCompiler() {
+		JAVA_COMPILER = OptimizerUtils.isSparkExecutionMode() ?
+			CompilerType.JANINO : CompilerType.JAVAC;
 	}
 	
 	////////////////////

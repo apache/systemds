@@ -44,6 +44,8 @@ public abstract class SpoofOperator implements Serializable
 		execute(inputs, scalars, out);
 	}
 	
+	public abstract String getSpoofType(); 
+	
 	public ScalarObject execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalars) throws DMLRuntimeException {
 		throw new RuntimeException("Invalid invocation in base class.");
 	}

@@ -209,19 +209,20 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	}
 	
 	private void testCodegenIntegration( String testname, boolean rewrites, ExecType instType )
-	{	
-		
+	{			
 		boolean oldRewrites = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		String oldTestConf = TEST_CONF;
-		
+		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( instType ){
 			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
-			case SPARK: 
-				rtplatform = RUNTIME_PLATFORM.SPARK;
-				DMLScript.USE_LOCAL_SPARK_CONFIG = true; 
-				break;
-			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
+			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
+			default: rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK; break;
 		}
+	
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK )
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+
 		
 		if( testname.equals(TEST_NAME9) )
 			TEST_CONF = TEST_CONF6;
@@ -268,6 +269,8 @@ public class CellwiseTmplTest extends AutomatedTestBase
 				Assert.assertTrue(!heavyHittersContainsSubString("replace"));	
 		}
 		finally {
+			rtplatform = platformOld;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldRewrites;
 			OptimizerUtils.ALLOW_AUTO_VECTORIZATION = true;
 			OptimizerUtils.ALLOW_OPERATOR_FUSION = true;

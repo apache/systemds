@@ -63,7 +63,7 @@ public class SpoofSPInstruction extends SPInstruction
 	private final CPOperand[] _in;
 	private final CPOperand _out;
 	
-	public SpoofSPInstruction(Class<?> cls , byte[] classBytes, CPOperand[] in, CPOperand out, String opcode, String str) {
+	public SpoofSPInstruction(Class<?> cls, byte[] classBytes, CPOperand[] in, CPOperand out, String opcode, String str) {
 		super(opcode, str);
 		_class = cls;
 		_classBytes = classBytes;
@@ -79,9 +79,9 @@ public class SpoofSPInstruction extends SPInstruction
 		
 		//String opcode = parts[0];
 		ArrayList<CPOperand> inlist = new ArrayList<CPOperand>();
-		Class<?> cls = CodegenUtils.loadClass(parts[1]);
-		byte[] classBytes = CodegenUtils.getClassAsByteArray(parts[1]);
-		String opcode =  parts[0] + CodegenUtils.getSpoofType(cls);
+		Class<?> cls = CodegenUtils.getClass(parts[1]);
+		byte[] classBytes = CodegenUtils.getClassData(parts[1]);
+		String opcode =  parts[0] + CodegenUtils.createInstance(cls).getSpoofType();
 		
 		for( int i=2; i<parts.length-2; i++ )
 			inlist.add(new CPOperand(parts[i]));
@@ -247,7 +247,7 @@ public class SpoofSPInstruction extends SPInstruction
 		{
 			//lazy load of shipped class
 			if( _op == null ) {
-				Class<?> loadedClass = CodegenUtils.loadClass(_className, _classBytes);
+				Class<?> loadedClass = CodegenUtils.getClass(_className, _classBytes);
 				_op = (SpoofOperator) CodegenUtils.createInstance(loadedClass); 
 			}
 			
@@ -302,7 +302,7 @@ public class SpoofSPInstruction extends SPInstruction
 		{
 			//lazy load of shipped class
 			if( _op == null ) {
-				Class<?> loadedClass = CodegenUtils.loadClass(_className, _classBytes);
+				Class<?> loadedClass = CodegenUtils.getClass(_className, _classBytes);
 				_op = (SpoofOperator) CodegenUtils.createInstance(loadedClass); 
 			}
 			
@@ -371,7 +371,7 @@ public class SpoofSPInstruction extends SPInstruction
 		{
 			//lazy load of shipped class
 			if( _op == null ) {
-				Class<?> loadedClass = CodegenUtils.loadClass(_className, _classBytes);
+				Class<?> loadedClass = CodegenUtils.getClass(_className, _classBytes);
 				_op = (SpoofOperator) CodegenUtils.createInstance(loadedClass); 
 			}
 			

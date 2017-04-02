@@ -61,6 +61,11 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 	}
 	
 	@Override
+	public String getSpoofType() {
+		return "OP" +  getClass().getName().split("\\.")[1];
+	}
+	
+	@Override
 	public ScalarObject execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects)	
 		throws DMLRuntimeException
 	{

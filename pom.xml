@@ -1298,6 +1298,14 @@
 			<scope>provided</scope>
 		</dependency>
 
+		<!-- fast java compiler for codegen, consistent version w/ spark -->
+		<dependency>
+			<groupId>org.codehaus.janino</groupId>
+			<artifactId>janino</artifactId>
+			<version>3.0.0</version>
+			<scope>provided</scope>
+		</dependency>
+
 		<dependency>
 			<groupId>org.antlr</groupId>
 			<artifactId>antlr4</artifactId>

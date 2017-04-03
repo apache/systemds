@@ -136,6 +136,10 @@ public class TemplateCell extends TemplateBase
 	
 	private void rConstructCplan(Hop hop, CPlanMemoTable memo, HashMap<Long, CNode> tmp, HashSet<Hop> inHops, boolean compileLiterals) 
 	{
+		//memoization for common subexpression elimination and to avoid redundant work 
+		if( tmp.containsKey(hop.getHopID()) )
+			return;
+		
 		//recursively process required childs
 		MemoTableEntry me = memo.getBest(hop.getHopID(), TemplateType.CellTpl);
 		for( int i=0; i<hop.getInput().size(); i++ ) {

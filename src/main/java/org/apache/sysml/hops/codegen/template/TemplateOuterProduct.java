@@ -133,6 +133,10 @@ public class TemplateOuterProduct extends TemplateBase {
 	
 	private void rConstructCplan(Hop hop, CPlanMemoTable memo, HashMap<Long, CNode> tmp, HashSet<Hop> inHops, HashMap<String, Hop> inHops2, boolean compileLiterals) 
 	{
+		//memoization for common subexpression elimination and to avoid redundant work 
+		if( tmp.containsKey(hop.getHopID()) )
+			return;
+		
 		//recursively process required childs
 		MemoTableEntry me = memo.getBest(hop.getHopID(), TemplateType.OuterProdTpl);
 		for( int i=0; i<hop.getInput().size(); i++ ) {

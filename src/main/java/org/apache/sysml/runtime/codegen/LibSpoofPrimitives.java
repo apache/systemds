@@ -22,6 +22,8 @@ package org.apache.sysml.runtime.codegen;
 import java.util.Arrays;
 import java.util.LinkedList;
 
+import org.apache.sysml.runtime.functionobjects.IntegerDivide;
+import org.apache.sysml.runtime.functionobjects.Modulus;
 import org.apache.sysml.runtime.matrix.data.LibMatrixMult;
 
 /**
@@ -33,6 +35,9 @@ import org.apache.sysml.runtime.matrix.data.LibMatrixMult;
  */
 public class LibSpoofPrimitives 
 {
+	private static IntegerDivide intDiv = IntegerDivide.getFnObject();
+	private static Modulus mod = Modulus.getFnObject();
+	
 	//global pool of reusable vectors, individual operations set up their own thread-local
 	//ring buffers of reusable vectors with specific number of vectors and vector sizes 
 	private static ThreadLocal<LinkedList<double[]>> memPool = new ThreadLocal<LinkedList<double[]>>() {
@@ -311,6 +316,18 @@ public class LibSpoofPrimitives
 			c[aix[j]] = (a[j] >= bval) ? 1 : 0;
 		return c;
 	}
+	
+	//complex builtin functions that are not directly generated
+	//(included here in order to reduce the number of imports)
+	
+	public static double intDiv(double in1, double in2) {
+		return intDiv.execute(in1, in2);
+	}
+	
+	public static double mod(double in1, double in2) {
+		return mod.execute(in1, in2);
+	}
+	
 	
 	//dynamic memory management
 	

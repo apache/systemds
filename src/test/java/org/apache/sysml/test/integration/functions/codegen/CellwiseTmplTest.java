@@ -46,8 +46,8 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	private static final String TEST_NAME8 = TEST_NAME+8;
 	private static final String TEST_NAME9 = TEST_NAME+9;   //sum((X + 7 * Y)^2)
 	private static final String TEST_NAME10 = TEST_NAME+10; //min/max(X + 7 * Y)
-	private static final String TEST_NAME11 = TEST_NAME+11; //replace((0 / (X - 500))+1, 0/0, 7);
-	
+	private static final String TEST_NAME11 = TEST_NAME+11; //replace((0 / (X - 500))+1, 0/0, 7)
+	private static final String TEST_NAME12 = TEST_NAME+12; //((X/3) %% 0.6) + ((X/3) %/% 0.6)
 
 	private static final String TEST_DIR = "functions/codegen/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + CellwiseTmplTest.class.getSimpleName() + "/";
@@ -60,7 +60,7 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		for( int i=1; i<=11; i++ ) {
+		for( int i=1; i<=12; i++ ) {
 			addTestConfiguration( TEST_NAME+i, new TestConfiguration(
 					TEST_CLASS_DIR, TEST_NAME+i, new String[] {String.valueOf(i)}) );
 		}
@@ -121,6 +121,11 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	public void testCodegenCellwiseRewrite11() {
 		testCodegenIntegration( TEST_NAME11, true, ExecType.CP  );
 	}
+	
+	@Test
+	public void testCodegenCellwiseRewrite12() {
+		testCodegenIntegration( TEST_NAME12, true, ExecType.CP  );
+	}
 
 	@Test
 	public void testCodegenCellwise1() {
@@ -177,6 +182,11 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	public void testCodegenCellwise11() {
 		testCodegenIntegration( TEST_NAME11, false, ExecType.CP  );
 	}
+	
+	@Test
+	public void testCodegenCellwise12() {
+		testCodegenIntegration( TEST_NAME12, false, ExecType.CP  );
+	}
 
 	@Test
 	public void testCodegenCellwiseRewrite1_sp() {
@@ -206,6 +216,11 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	@Test
 	public void testCodegenCellwiseRewrite11_sp() {
 		testCodegenIntegration( TEST_NAME11, true, ExecType.SPARK );
+	}
+	
+	@Test
+	public void testCodegenCellwiseRewrite12_sp() {
+		testCodegenIntegration( TEST_NAME12, true, ExecType.SPARK );
 	}
 	
 	private void testCodegenIntegration( String testname, boolean rewrites, ExecType instType )

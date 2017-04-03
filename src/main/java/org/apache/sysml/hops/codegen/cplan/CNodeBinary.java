@@ -94,9 +94,9 @@ public class CNodeBinary extends CNode
 				case MINUS:
 					return "    double %TMP% = %IN1% - %IN2%;\n" ;
 				case MODULUS:
-					return "    double %TMP% = %IN1% % %IN2%;\n" ;
+					return "    double %TMP% = LibSpoofPrimitives.mod(%IN1%, %IN2%);\n" ;
 				case INTDIV: 
-					return "    double %TMP% = (int) %IN1% / %IN2%;\n" ;
+					return "    double %TMP% = LibSpoofPrimitives.intDiv(%IN1%, %IN2%);\n" ;
 				case LESS:
 					return "    double %TMP% = (%IN1% < %IN2%) ? 1 : 0;\n" ;
 				case LESSEQUAL:
@@ -111,11 +111,11 @@ public class CNodeBinary extends CNode
 					return "    double %TMP% = (%IN1% != %IN2%) ? 1 : 0;\n" ;
 				
 				case MIN:
-					return "    double %TMP% = Math.min(%IN1%, %IN2%);\n" ;
+					return "    double %TMP% = (%IN1% <= %IN2%) ? %IN1% : %IN2%;\n" ;
 				case MAX:
-					return "    double %TMP% = Math.max(%IN1%, %IN2%);\n" ;
+					return "    double %TMP% = (%IN1% >= %IN2%) ? %IN1% : %IN2%;\n" ;
 				case LOG:
-					return "    double %TMP% = Math.log(%IN1%)/Math.log(%IN2%);\n" ;
+					return "    double %TMP% = FastMath.log(%IN1%)/FastMath.log(%IN2%);\n" ;
 				case POW:
 					return "    double %TMP% = Math.pow(%IN1%, %IN2%);\n" ;
 				case MINUS1_MULT:

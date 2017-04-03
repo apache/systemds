@@ -60,19 +60,19 @@ public class CNodeUnary extends CNode
 				case ABS:
 					return "    double %TMP% = Math.abs(%IN1%);\n";
 				case SIN:
-					return "    double %TMP% = Math.sin(%IN1%);\n";
+					return "    double %TMP% = FastMath.sin(%IN1%);\n";
 				case COS: 
-					return "    double %TMP% = Math.cos(%IN1%);\n";
+					return "    double %TMP% = FastMath.cos(%IN1%);\n";
 				case TAN:
-					return "    double %TMP% = Math.tan(%IN1%);\n";
+					return "    double %TMP% = FastMath.tan(%IN1%);\n";
 				case ASIN:
-					return "    double %TMP% = Math.asin(%IN1%);\n";
+					return "    double %TMP% = FastMath.asin(%IN1%);\n";
 				case ACOS:
-					return "    double %TMP% = Math.acos(%IN1%);\n";
+					return "    double %TMP% = FastMath.acos(%IN1%);\n";
 				case ATAN:
 					return "    double %TMP% = Math.atan(%IN1%);\n";
 				case SIGN:
-					return "    double %TMP% = Math.signum(%IN1%);\n";
+					return "    double %TMP% = FastMath.signum(%IN1%);\n";
 				case SQRT:
 					return "    double %TMP% = Math.sqrt(%IN1%);\n";
 				case LOG:
@@ -80,9 +80,9 @@ public class CNodeUnary extends CNode
 				case ROUND: 
 					return "    double %TMP% = Math.round(%IN1%);\n";
 				case CEIL:
-					return "    double %TMP% = Math.ceil(%IN1%);\n";
+					return "    double %TMP% = FastMath.ceil(%IN1%);\n";
 				case FLOOR:
-					return "    double %TMP% = Math.floor(%IN1%);\n";
+					return "    double %TMP% = FastMath.floor(%IN1%);\n";
 				case SELP:
 					return "    double %TMP% = (%IN1%>0) ? %IN1% : 0;\n";
 				case SPROP:

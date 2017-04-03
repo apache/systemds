@@ -26,21 +26,21 @@ X = read($1, rows=$2, cols=$3);
 if( $4==1 )
 {
    v = matrix(1,rows=nrow(X),cols=1);
-   X = append(X, v);
+   X = cbind(X, v);
 }  
 
 # test if-else branches
 if( $4!=1 )
 {
    v = matrix(1,rows=nrow(X),cols=1);
-   X = append(X, v);
+   X = cbind(X, v);
 } 
 else
 {
    v1 = matrix(1,rows=nrow(X),cols=1);
-   X = append(X, v1);
+   X = cbind(X, v1);
    v2 = matrix(1,rows=nrow(X),cols=1);
-   X = append(X, v2);
+   X = cbind(X, v2);
 }
 
 write(X, $5);       

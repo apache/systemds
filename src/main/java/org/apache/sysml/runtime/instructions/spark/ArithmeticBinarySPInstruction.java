@@ -36,13 +36,7 @@ public abstract class ArithmeticBinarySPInstruction extends BinarySPInstruction
 		super(op, in1, in2, out, opcode, istr);
 		_sptype = SPINSTRUCTION_TYPE.ArithmeticBinary;
 	}
-	
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static ArithmeticBinarySPInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{

@@ -32,6 +32,7 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordWriter;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.util.Progressable;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 
 public class CompactOutputFormat<K extends Writable, V extends Writable> extends FileOutputFormat<K,V> 
 {
@@ -40,14 +41,10 @@ public class CompactOutputFormat<K extends Writable, V extends Writable> extends
 	static final String FINAL_SYNC_ATTRIBUTE = "final.sync";
 
 	  /**
-	   * Set the requirement for a final sync before the stream is closed.
-	   */
-	  public static void setFinalSync(JobConf conf, boolean newValue) {
-	    conf.setBoolean(FINAL_SYNC_ATTRIBUTE, newValue);
-	  }
-
-	  /**
 	   * Does the user want a final sync at close?
+	   * 
+	   * @param conf job configuration
+	   * @return true if final sync at close
 	   */
 	  public static boolean getFinalSync(JobConf conf) {
 	    return conf.getBoolean(FINAL_SYNC_ATTRIBUTE, false);
@@ -78,7 +75,7 @@ public class CompactOutputFormat<K extends Writable, V extends Writable> extends
 			if (finalSync) {
 		        ((FSDataOutputStream) out).sync();
 		      }
-			out.close();
+			IOUtilFunctions.closeSilently(out);
 		}
 
 		@Override

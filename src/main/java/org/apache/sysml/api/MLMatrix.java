@@ -21,27 +21,25 @@ package org.apache.sysml.api;
 import java.io.IOException;
 import java.util.List;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.rdd.RDD;
-import org.apache.spark.sql.DataFrame;
+import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SQLContext;
-import org.apache.spark.sql.SQLContext.QueryExecution;
+import org.apache.spark.sql.SparkSession;
+import org.apache.spark.sql.catalyst.encoders.RowEncoder;
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan;
+import org.apache.spark.sql.execution.QueryExecution;
 import org.apache.spark.sql.types.StructType;
-
-import scala.Tuple2;
-
 import org.apache.sysml.hops.OptimizerUtils;
-import org.apache.sysml.parser.ParseException;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.spark.functions.GetMIMBFromRow;
 import org.apache.sysml.runtime.instructions.spark.functions.GetMLBlock;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
+
+import scala.Tuple2;
 
 /**
  * Experimental API: Might be discontinued in future release
@@ -60,33 +58,44 @@ import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 
  import org.apache.sysml.api.{MLContext, MLMatrix}
  val ml = new MLContext(sc)
- val mat1 = ml.read(sqlContext, "V_small.csv", "csv")
- val mat2 = ml.read(sqlContext, "W_small.mtx", "binary")
+ val mat1 = ml.read(sparkSession, "V_small.csv", "csv")
+ val mat2 = ml.read(sparkSession, "W_small.mtx", "binary")
  val result = mat1.transpose() %*% mat2
  result.write("Result_small.mtx", "text")
  
+ * @deprecated This will be removed in SystemML 1.0. Please migrate to {@link org.apache.sysml.api.mlcontext.MLContext}
  */
-public class MLMatrix extends DataFrame {
+@Deprecated
+public class MLMatrix extends Dataset<Row> {
 	private static final long serialVersionUID = -7005940673916671165L;
-	protected static final Log LOG = LogFactory.getLog(DMLScript.class.getName());
 	
 	protected MatrixCharacteristics mc = null;
 	protected MLContext ml = null;
 	
+	protected MLMatrix(SparkSession sparkSession, LogicalPlan logicalPlan, MLContext ml) {
+		super(sparkSession, logicalPlan, RowEncoder.apply(null));
+		this.ml = ml;
+	}
+
 	protected MLMatrix(SQLContext sqlContext, LogicalPlan logicalPlan, MLContext ml) {
-		super(sqlContext, logicalPlan);
+		super(sqlContext, logicalPlan, RowEncoder.apply(null));
+		this.ml = ml;
+	}
+
+	protected MLMatrix(SparkSession sparkSession, QueryExecution queryExecution, MLContext ml) {
+		super(sparkSession, queryExecution, RowEncoder.apply(null));
 		this.ml = ml;
 	}
 
 	protected MLMatrix(SQLContext sqlContext, QueryExecution queryExecution, MLContext ml) {
-		super(sqlContext, queryExecution);
+		super(sqlContext.sparkSession(), queryExecution, RowEncoder.apply(null));
 		this.ml = ml;
 	}
-	
+
 	// Only used internally to set a new MLMatrix after one of matrix operations.
 	// Not to be used externally.
-	protected MLMatrix(DataFrame df, MatrixCharacteristics mc, MLContext ml) throws DMLRuntimeException {
-		super(df.sqlContext(), df.logicalPlan());
+	protected MLMatrix(Dataset<Row> df, MatrixCharacteristics mc, MLContext ml) throws DMLRuntimeException {
+		super(df.sparkSession(), df.logicalPlan(), RowEncoder.apply(null));
 		this.mc = mc;
 		this.ml = ml;
 	}
@@ -107,14 +116,24 @@ public class MLMatrix extends DataFrame {
 //	}
 	
 	// ------------------------------------------------------------------------------------------------
-	static MLMatrix createMLMatrix(MLContext ml, SQLContext sqlContext, JavaPairRDD<MatrixIndexes, MatrixBlock> blocks, MatrixCharacteristics mc) throws DMLRuntimeException {
+	static MLMatrix createMLMatrix(MLContext ml, SparkSession sparkSession, JavaPairRDD<MatrixIndexes, MatrixBlock> blocks, MatrixCharacteristics mc) throws DMLRuntimeException {
 		RDD<Row> rows = blocks.map(new GetMLBlock()).rdd();
 		StructType schema = MLBlock.getDefaultSchemaForBinaryBlock();
-		return new MLMatrix(sqlContext.createDataFrame(rows.toJavaRDD(), schema), mc, ml);
+		return new MLMatrix(sparkSession.createDataFrame(rows.toJavaRDD(), schema), mc, ml);
 	}
-	
+
+	static MLMatrix createMLMatrix(MLContext ml, SQLContext sqlContext, JavaPairRDD<MatrixIndexes, MatrixBlock> blocks, MatrixCharacteristics mc) throws DMLRuntimeException {
+		SparkSession sparkSession = sqlContext.sparkSession();
+		return createMLMatrix(ml, sparkSession, blocks, mc);
+	}
+
 	/**
 	 * Convenient method to write a MLMatrix.
+	 * 
+	 * @param filePath the file path
+	 * @param format the format
+	 * @throws IOException if IOException occurs
+	 * @throws DMLException if DMLException occurs
 	 */
 	public void write(String filePath, String format) throws IOException, DMLException {
 		ml.reset();
@@ -145,10 +164,9 @@ public class MLMatrix extends DataFrame {
 	
 	/**
 	 * Gets or computes the number of rows.
-	 * @return
-	 * @throws ParseException 
-	 * @throws DMLException 
-	 * @throws IOException 
+	 * @return the number of rows
+	 * @throws IOException if IOException occurs
+	 * @throws DMLException if DMLException occurs
 	 */
 	public long numRows() throws IOException, DMLException {
 		if(mc.rowsKnown()) {
@@ -161,10 +179,9 @@ public class MLMatrix extends DataFrame {
 	
 	/**
 	 * Gets or computes the number of columns.
-	 * @return
-	 * @throws ParseException 
-	 * @throws DMLException 
-	 * @throws IOException 
+	 * @return the number of columns
+	 * @throws IOException if IOException occurs
+	 * @throws DMLException if DMLException occurs
 	 */
 	public long numCols() throws IOException, DMLException {
 		if(mc.colsKnown()) {
@@ -232,7 +249,7 @@ public class MLMatrix extends DataFrame {
 		RDD<Row> rows = out.getBinaryBlockedRDD("output").map(new GetMLBlock()).rdd();
 		StructType schema = MLBlock.getDefaultSchemaForBinaryBlock();
 		MatrixCharacteristics mcOut = out.getMatrixCharacteristics("output");
-		return new MLMatrix(this.sqlContext().createDataFrame(rows.toJavaRDD(), schema), mcOut, ml);
+		return new MLMatrix(this.sparkSession().createDataFrame(rows.toJavaRDD(), schema), mcOut, ml);
 	}
 	
 	private MLMatrix scalarBinaryOp(Double scalar, String op, boolean isScalarLeft) throws IOException, DMLException {
@@ -243,7 +260,7 @@ public class MLMatrix extends DataFrame {
 		RDD<Row> rows = out.getBinaryBlockedRDD("output").map(new GetMLBlock()).rdd();
 		StructType schema = MLBlock.getDefaultSchemaForBinaryBlock();
 		MatrixCharacteristics mcOut = out.getMatrixCharacteristics("output");
-		return new MLMatrix(this.sqlContext().createDataFrame(rows.toJavaRDD(), schema), mcOut, ml);
+		return new MLMatrix(this.sparkSession().createDataFrame(rows.toJavaRDD(), schema), mcOut, ml);
 	}
 	
 	// ---------------------------------------------------
@@ -348,7 +365,7 @@ public class MLMatrix extends DataFrame {
 		RDD<Row> rows = out.getBinaryBlockedRDD("output").map(new GetMLBlock()).rdd();
 		StructType schema = MLBlock.getDefaultSchemaForBinaryBlock();
 		MatrixCharacteristics mcOut = out.getMatrixCharacteristics("output");
-		return new MLMatrix(this.sqlContext().createDataFrame(rows.toJavaRDD(), schema), mcOut, ml);
+		return new MLMatrix(this.sparkSession().createDataFrame(rows.toJavaRDD(), schema), mcOut, ml);
 	}
 	
 	// TODO: For 'scalar op matrix' operations: Do implicit conversions 

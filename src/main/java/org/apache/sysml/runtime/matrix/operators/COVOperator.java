@@ -28,7 +28,6 @@ public class COVOperator extends Operator
 	private static final long serialVersionUID = -8404264552880694469L;
 
 	public COV fn;
-	public int constant;
 	
 	public COVOperator(COV op)
 	{

@@ -30,6 +30,7 @@ import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
+import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PartitionFormat;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.parfor.util.PairWritableBlock;
 import org.apache.sysml.runtime.controlprogram.parfor.util.PairWritableCell;
@@ -47,23 +48,20 @@ import org.apache.sysml.yarn.DMLAppMasterUtils;
  */
 public class DataPartitionerRemoteMR extends DataPartitioner
 {	
-	
 	private long _pfid = -1;
 	private int  _numReducers = -1;
 	private int  _replication = -1;
-	//private int  _max_retry = -1;
 	private boolean _jvmReuse = false;
 	private boolean _keepIndexes = false;
 	
 	
-	public DataPartitionerRemoteMR(PDataPartitionFormat dpf, int n, long pfid, int numReducers, int replication, int max_retry, boolean jvmReuse, boolean keepIndexes) 
+	public DataPartitionerRemoteMR(PartitionFormat dpf, long pfid, int numRed, int replication, boolean jvmReuse, boolean keepIndexes) 
 	{
-		super(dpf, n);
+		super(dpf._dpf, dpf._N);
 		
 		_pfid = pfid;
-		_numReducers = numReducers;
+		_numReducers = numRed;
 		_replication = replication;
-		//_max_retry = max_retry;
 		_jvmReuse = jvmReuse;
 		_keepIndexes = keepIndexes;
 	}

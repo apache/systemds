@@ -58,7 +58,7 @@ dimensions = ncol(X)
 
 if (intercept == 1):
     ones  = full(1, rows=num_samples, cols=1)
-    X = append(X, ones)
+    X = cbind(X, ones)
 
 num_rows_in_w = dimensions
 if(intercept == 1):

@@ -41,18 +41,7 @@ import org.apache.sysml.runtime.matrix.data.FrameBlock;
  */
 public class FrameReaderBinaryBlockParallel extends FrameReaderBinaryBlock
 {
-	/**
-	 * 
-	 * @param path
-	 * @param job
-	 * @param fs 
-	 * @param dest
-	 * @param rlen
-	 * @param clen
-	 * 
-	 * @throws IOException
-	 * @throws DMLRuntimeException 
-	 */
+
 	protected void readBinaryBlockFrameFromHDFS( Path path, JobConf job, FileSystem fs, FrameBlock dest, long rlen, long clen )
 		throws IOException, DMLRuntimeException
 	{
@@ -78,10 +67,7 @@ public class FrameReaderBinaryBlockParallel extends FrameReaderBinaryBlock
 			throw new IOException("Failed parallel read of binary block input.", e);
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	private class ReadFileTask implements Callable<Object> 
 	{
 		private Path _path = null;

@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.OpOp1;
 import org.apache.sysml.hops.HopsException;
-import org.apache.sysml.hops.Hop.VisitStatus;
 import org.apache.sysml.hops.UnaryOp;
 import org.apache.sysml.parser.Expression.ValueType;
 
@@ -69,16 +68,12 @@ public class RewriteRemoveUnnecessaryCasts extends HopRewriteRule
 		
 		return root;
 	}
-	
-	/**
-	 * 
-	 * @param hop
-	 */
+
 	@SuppressWarnings("unchecked")
 	private void rule_RemoveUnnecessaryCasts( Hop hop )
 	{
 		//check mark processed
-		if( hop.getVisited() == VisitStatus.DONE )
+		if( hop.isVisited() )
 			return;
 		
 		//recursively process childs
@@ -127,15 +122,12 @@ public class RewriteRemoveUnnecessaryCasts extends HopRewriteRule
 				Hop input = uop2.getInput().get(0);
 				//rewire parents
 				ArrayList<Hop> parents = (ArrayList<Hop>) hop.getParent().clone();
-				for( Hop p : parents ) {
-					int ix = HopRewriteUtils.getChildReferencePos(p, hop);
-					HopRewriteUtils.removeChildReference(p, hop);
-					HopRewriteUtils.addChildReference(p, input, ix);
-				}
+				for( Hop p : parents )
+					HopRewriteUtils.replaceChildReference(p, hop, input);
 			}
 		}
 		
 		//mark processed
-		hop.setVisited( VisitStatus.DONE );
+		hop.setVisited();
 	}
 }

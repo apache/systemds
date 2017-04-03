@@ -19,9 +19,8 @@
 
 package org.apache.sysml.runtime.functionobjects;
 
-public class NotEquals extends ValueFunction 
+public class NotEquals extends ValueComparisonFunction
 {
-
 	private static final long serialVersionUID = 2243676126579964278L;
 
 	private static NotEquals singleObj = null;
@@ -34,11 +33,6 @@ public class NotEquals extends ValueFunction
 		if ( singleObj == null )
 			singleObj = new NotEquals();
 		return singleObj;
-	}
-	
-	public Object clone() throws CloneNotSupportedException {
-		// cloning is not supported for singleton classes
-		throw new CloneNotSupportedException();
 	}
 
 	/*
@@ -61,10 +55,6 @@ public class NotEquals extends ValueFunction
 	}
 	
 	@Override
-	public boolean compare(boolean in1, boolean in2) {
-		return (in1 != in2);
-	}
-	@Override
 	public boolean compare(double in1, double in2) {
 		return (in1 != in2);
 	}
@@ -75,12 +65,7 @@ public class NotEquals extends ValueFunction
 	}
 
 	@Override
-	public boolean compare(double in1, long in2) {
-		return (in1 != in2);
-	}
-
-	@Override
-	public boolean compare(long in1, double in2) {
+	public boolean compare(boolean in1, boolean in2) {
 		return (in1 != in2);
 	}
 	

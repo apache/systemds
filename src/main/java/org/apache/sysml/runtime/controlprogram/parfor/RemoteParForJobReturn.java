@@ -42,46 +42,26 @@ public class RemoteParForJobReturn
 		_variables  = variables;
 	}
 
-	/**
-	 * 
-	 * @return
-	 */
 	public boolean isSuccessful()
 	{
 		return _successful;
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public int getNumExecutedTasks()
 	{
 		return _numTasks;
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public int getNumExecutedIterations()
 	{
 		return _numIters;
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public LocalVariableMap [] getVariables()
 	{
 		return _variables;
 	}
-	
-	/**
-	 * 
-	 * @param variables
-	 */
+
 	public void setVariables (LocalVariableMap [] variables)
 	{
 		_variables = variables;

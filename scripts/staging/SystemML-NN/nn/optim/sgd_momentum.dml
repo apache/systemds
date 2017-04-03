@@ -7,9 +7,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -22,6 +22,7 @@
 /*
  * Stochastic Gradient Descent with momentum (SGD-momentum) optimizer.
  */
+
 update = function(matrix[double] X, matrix[double] dX, double lr, double mu, matrix[double] v)
     return (matrix[double] X, matrix[double] v) {
   /*
@@ -33,25 +34,26 @@ update = function(matrix[double] X, matrix[double] dX, double lr, double mu, mat
    *
    * Inputs:
    *  - X: Parameters to update, of shape (any, any).
-   *  - dX: Gradient of X wrt to a loss function being optimized, of
-   *      same shape as X.
+   *  - dX: Gradient wrt `X` of a loss function being optimized, of
+   *      same shape as `X`.
    *  - lr: Learning rate.
    *  - mu: Momentum value.
    *      Typical values are in the range of [0.5, 0.99], usually
    *      started at the lower end and annealed towards the higher end.
-   *  - v: State maintaining the velocity of the parameters X, of same
-   *      shape as X.
+   *  - v: State maintaining the velocity of the parameters `X`, of same
+   *      shape as `X`.
    *
    * Outputs:
-   *  - X: Updated parameters X, of same shape as input X.
-   *  - v: Updated velocity of the parameters X, of same shape as
-   *      input v.
+   *  - X: Updated parameters `X`, of same shape as input `X`.
+   *  - v: Updated velocity of the parameters `X`, of same shape as
+   *      input `X`.
    */
-  v = mu * v - lr * dX  # update velocity
+  v = mu*v - lr*dX  # update velocity
   X = X + v  # update position
 }
 
-init = function(matrix[double] X) return (matrix[double] v) {
+init = function(matrix[double] X)
+    return (matrix[double] v) {
   /*
    * Initialize the state for this optimizer.
    *
@@ -60,9 +62,9 @@ init = function(matrix[double] X) return (matrix[double] v) {
    *
    * Inputs:
    *  - X: Parameters to update, of shape (any, any).
-   * 
+   *
    * Outputs:
-   *  - v: Initial velocity of the parameters X.
+   *  - v: Initial velocity of the parameters `X`.
    */
   v = matrix(0, rows=nrow(X), cols=ncol(X))
 }

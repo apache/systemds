@@ -20,7 +20,6 @@
 package org.apache.sysml.runtime.instructions.cp;
 
 import java.util.ArrayList;
-import java.util.List;
 
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
@@ -47,13 +46,7 @@ public class MultiReturnParameterizedBuiltinCPInstruction extends ComputationCPI
 	public CPOperand getOutput(int i) {
 		return _outputs.get(i);
 	}
-	
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static MultiReturnParameterizedBuiltinCPInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{
@@ -82,7 +75,7 @@ public class MultiReturnParameterizedBuiltinCPInstruction extends ComputationCPI
 		//obtain and pin input frame
 		FrameBlock fin = ec.getFrameInput(input1.getName());
 		String spec = ec.getScalarInput(input2.getName(), input2.getValueType(), input2.isLiteral()).getStringValue();
-		List<String> colnames = fin.getColumnNames(); 
+		String[] colnames = fin.getColumnNames(); 
 		
 		//execute block transform encode
 		Encoder encoder = EncoderFactory.createEncoder(spec, colnames, fin.getNumColumns(), null);

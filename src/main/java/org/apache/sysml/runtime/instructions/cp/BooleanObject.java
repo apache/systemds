@@ -19,12 +19,14 @@
 
 package org.apache.sysml.runtime.instructions.cp;
 
+import org.apache.commons.lang.StringUtils;
+import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.api.mlcontext.ScriptType;
 import org.apache.sysml.parser.Expression.ValueType;
 
 
 public class BooleanObject extends ScalarObject  
 {
-
 	private static final long serialVersionUID = -4506242165735516984L;
 
 	private boolean _value;
@@ -57,19 +59,16 @@ public class BooleanObject extends ScalarObject
 	public String getStringValue(){
 		return Boolean.toString(_value).toUpperCase();
 	}
-	
+
+	@Override
+	public String getLanguageSpecificStringValue() {
+		return (DMLScript.SCRIPT_TYPE == ScriptType.DML) ? 
+			Boolean.toString(_value).toUpperCase() : 
+			StringUtils.capitalize(Boolean.toString(_value));
+	}
+
 	@Override
 	public Object getValue(){
 		return _value;
 	}
-	
-	public String toString() { 
-		return getStringValue();
-	}
-
-	@Override
-	public String getDebugName() {
-		return null;
-	}
-	
 }

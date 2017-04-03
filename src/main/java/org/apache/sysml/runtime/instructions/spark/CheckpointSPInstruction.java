@@ -27,14 +27,13 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
-import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.BooleanObject;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.spark.data.RDDObject;
-import org.apache.sysml.runtime.instructions.spark.functions.CopyBlockFunction;
 import org.apache.sysml.runtime.instructions.spark.functions.CopyFrameBlockFunction;
 import org.apache.sysml.runtime.instructions.spark.functions.CreateSparseBlockFunction;
+import org.apache.sysml.runtime.instructions.spark.utils.SparkUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
@@ -101,9 +100,11 @@ public class CheckpointSPInstruction extends UnarySPInstruction
 		JavaPairRDD<?,?> out = null;
 		if( !in.getStorageLevel().equals( _level ) ) 
 		{
-			//investigate issue of unnecessarily large number of partitions
-			int numPartitions = getNumCoalescePartitions(mcIn, in);
-			boolean coalesce = ( numPartitions < in.partitions().size() );
+			//(trigger coalesce if intended number of partitions exceeded by 20%
+			//and not hash partitioned to avoid losing the existing partitioner)
+			int numPartitions = SparkUtils.getNumPreferredPartitions(mcIn, in);
+			boolean coalesce = ( 1.2*numPartitions < in.getNumPartitions() 
+					&& !SparkUtils.isHashPartitioned(in) );
 			
 			//checkpoint pre-processing rdd operations
 			if( coalesce ) {
@@ -114,8 +115,8 @@ public class CheckpointSPInstruction extends UnarySPInstruction
 				//since persist is an in-place marker for a storage level, we 
 				//apply a narrow shallow copy to allow for short-circuit collects 
 				if( input1.getDataType() == DataType.MATRIX )
-					out = ((JavaPairRDD<MatrixIndexes,MatrixBlock>)in)
-						.mapValues(new CopyBlockFunction(false));
+					out = SparkUtils.copyBinaryBlockMatrix(
+						(JavaPairRDD<MatrixIndexes,MatrixBlock>)in, false);
 				else if( input1.getDataType() == DataType.FRAME)
 					out = ((JavaPairRDD<Long,FrameBlock>)in)
 						.mapValues(new CopyFrameBlockFunction(false));	
@@ -155,23 +156,4 @@ public class CheckpointSPInstruction extends UnarySPInstruction
 		}
 		sec.setVariable( output.getName(), cd);
 	}
-	
-	/**
-	 * 
-	 * @param mc
-	 * @param in
-	 * @return
-	 */
-	public static int getNumCoalescePartitions(MatrixCharacteristics mc, JavaPairRDD<?,?> in)
-	{
-		if( mc.dimsKnown(true) ) {
-			double hdfsBlockSize = InfrastructureAnalyzer.getHDFSBlockSize();
-			double matrixPSize = OptimizerUtils.estimatePartitionedSizeExactSparsity(mc);
-			return (int) Math.max(Math.ceil(matrixPSize/hdfsBlockSize), 1);
-		}
-		else {
-			return in.partitions().size();
-		}
-	}
 }
-

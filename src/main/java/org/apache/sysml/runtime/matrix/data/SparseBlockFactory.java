@@ -22,20 +22,11 @@ package org.apache.sysml.runtime.matrix.data;
 
 public abstract class SparseBlockFactory
 {
-	/**
-	 * 
-	 * @param rlen
-	 */
+
 	public static SparseBlock createSparseBlock(int rlen) {
 		return createSparseBlock(MatrixBlock.DEFAULT_SPARSEBLOCK, rlen);
 	}
-	
-	/**
-	 * 
-	 * @param type
-	 * @param rlen
-	 * @return
-	 */
+
 	public static SparseBlock createSparseBlock( SparseBlock.Type type, int rlen ) {
 		switch( type ) {
 			case MCSR: return new SparseBlockMCSR(rlen, -1);
@@ -45,24 +36,7 @@ public abstract class SparseBlockFactory
 				throw new RuntimeException("Unexpected sparse block type: "+type.toString());
 		}
 	}
-	
-	/**
-	 * 
-	 * @param type
-	 * @param sblock
-	 * @return
-	 */
-	public static SparseBlock copySparseBlock( SparseBlock.Type type, SparseBlock sblock ) {
-		return copySparseBlock(type, sblock, false);
-	}
-	
-	/**
-	 * 
-	 * @param type
-	 * @param sblock
-	 * @param forceCopy
-	 * @return
-	 */
+
 	public static SparseBlock copySparseBlock( SparseBlock.Type type, SparseBlock sblock, boolean forceCopy )
 	{
 		//sanity check for empty inputs
@@ -87,15 +61,7 @@ public abstract class SparseBlockFactory
 				throw new RuntimeException("Unexpected sparse block type: "+type.toString());
 		}
 	}
-	
-	/**
-	 * 
-	 * @param type
-	 * @param nrows
-	 * @param ncols
-	 * @param sparsity
-	 * @return
-	 */
+
 	public static long estimateSizeSparseInMemory(SparseBlock.Type type, long nrows, long ncols, double sparsity) {
 		switch( type ) {
 			case MCSR: return SparseBlockMCSR.estimateMemory(nrows, ncols, sparsity);

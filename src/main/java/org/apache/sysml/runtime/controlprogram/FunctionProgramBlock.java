@@ -34,14 +34,15 @@ import org.apache.sysml.utils.Statistics;
 
 public class FunctionProgramBlock extends ProgramBlock 
 {
-	
+	public String _functionName;
+	public String _namespace;
 	protected ArrayList<ProgramBlock> _childBlocks;
 	protected ArrayList<DataIdentifier> _inputParams;
 	protected ArrayList<DataIdentifier> _outputParams;
 	
 	private boolean _recompileOnce = false;
 	
-	public FunctionProgramBlock( Program prog, ArrayList<DataIdentifier> inputParams, ArrayList<DataIdentifier> outputParams) throws DMLRuntimeException
+	public FunctionProgramBlock( Program prog, ArrayList<DataIdentifier> inputParams, ArrayList<DataIdentifier> outputParams) 
 	{
 		super(prog);
 		_childBlocks = new ArrayList<ProgramBlock>();
@@ -124,11 +125,7 @@ public class FunctionProgramBlock extends ProgramBlock
 		// check return values
 		checkOutputParameters(ec.getVariables());
 	}
-	
-	/**
-	 * 
-	 * @param vars
-	 */
+
 	protected void checkOutputParameters( LocalVariableMap vars )
 	{
 		for( DataIdentifier diOut : _outputParams )

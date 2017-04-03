@@ -116,10 +116,6 @@ public class PermutationMatrixWrapper extends PackageFunction
 		}
 	}
 
-	/**
-	 * 
-	 *
-	 */
 	private static class AscRowComparator implements Comparator<double[]> {
 		private int _col = -1;
 
@@ -134,10 +130,6 @@ public class PermutationMatrixWrapper extends PackageFunction
 		}
 	}
 
-	/**
-	 * 
-	 * 
-	 */
 	private static class DescRowComparator implements Comparator<double[]> {
 		private int _col = -1;
 

@@ -29,16 +29,7 @@ import org.apache.sysml.parser.Expression.ValueType;
 
 public class RangeBasedReIndex extends Lop 
 {
-	
-	/**
-	 * Constructor to setup a RangeBasedReIndex operation.
-	 * 
-	 * @param input
-	 * @param op
-	 * @return 
-	 * @throws LopsException
-	 */
-	
+
 	private boolean forLeftIndexing = false;
 
 	//optional attribute for spark exec type

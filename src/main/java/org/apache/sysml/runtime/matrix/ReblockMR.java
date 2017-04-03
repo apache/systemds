@@ -191,16 +191,7 @@ public class ReblockMR
 
 		return new JobReturn(stats, outputInfos, runjob.isSuccessful());
 	}
-	
-	/**
-	 * 
-	 * @param rlen
-	 * @param clen
-	 * @param nnz
-	 * @param defaultNumRed
-	 * @param numRedGroups
-	 * @return
-	 */
+
 	private static int determineNumReducers( long[] rlen, long[] clen, long[] nnz, int defaultNumRed, long numRedGroups )
 	{
 		//init return with default value

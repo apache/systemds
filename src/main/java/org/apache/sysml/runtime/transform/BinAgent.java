@@ -40,6 +40,7 @@ import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
 import org.apache.sysml.lops.Lop;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.Pair;
@@ -64,24 +65,13 @@ public class BinAgent extends Encoder
 	private double[][] _binMins = null;
 	private double[][] _binMaxs = null;
 	
-	public BinAgent(int clen) {
-		super( null, clen );
-	}
-	
-	public BinAgent(JSONObject parsedSpec, List<String> colnames, int clen) 
+	public BinAgent(JSONObject parsedSpec, String[] colnames, int clen) 
 		throws JSONException, IOException 
 	{
 		this(parsedSpec, colnames, clen, false);
 	}
-	
-	/**
-	 * 
-	 * @param parsedSpec
-	 * @param clen
-	 * @throws JSONException
-	 * @throws IOException 
-	 */
-	public BinAgent(JSONObject parsedSpec, List<String> colnames, int clen, boolean colsOnly) 
+
+	public BinAgent(JSONObject parsedSpec, String[] colnames, int clen, boolean colsOnly) 
 		throws JSONException, IOException 
 	{
 		super( null, clen );		
@@ -157,9 +147,6 @@ public class BinAgent extends Encoder
 	/**
 	 * Method to output transformation metadata from the mappers. 
 	 * This information is collected and merged by the reducers.
-	 * 
-	 * @param out
-	 * @throws IOException
 	 */
 	@Override
 	public void mapOutputTransformationMetadata(OutputCollector<IntWritable, DistinctValue> out, int taskID, TfUtils agents) throws IOException {
@@ -202,17 +189,18 @@ public class BinAgent extends Encoder
 	private void writeTfMtd(int colID, String min, String max, String binwidth, String nbins, String tfMtdDir, FileSystem fs, TfUtils agents) throws IOException 
 	{
 		Path pt = new Path(tfMtdDir+"/Bin/"+ agents.getName(colID) + TfUtils.TXMTD_BIN_FILE_SUFFIX);
-		BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
-		br.write(colID + TfUtils.TXMTD_SEP + min + TfUtils.TXMTD_SEP + max + TfUtils.TXMTD_SEP + binwidth + TfUtils.TXMTD_SEP + nbins + "\n");
-		br.close();
+		BufferedWriter br = null;
+		try {
+			br = new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
+			br.write(colID + TfUtils.TXMTD_SEP + min + TfUtils.TXMTD_SEP + max + TfUtils.TXMTD_SEP + binwidth + TfUtils.TXMTD_SEP + nbins + "\n");
+		}
+		finally {
+			IOUtilFunctions.closeSilently(br);
+		}
 	}
 
 	/** 
 	 * Method to merge map output transformation metadata.
-	 * 
-	 * @param values
-	 * @return
-	 * @throws IOException 
 	 */
 	@Override
 	public void mergeAndOutputTransformationMetadata(Iterator<DistinctValue> values, String outputDir, int colID, FileSystem fs, TfUtils agents) throws IOException {
@@ -278,9 +266,6 @@ public class BinAgent extends Encoder
 
 	/**
 	 * Method to load transform metadata for all attributes
-	 * 
-	 * @param job
-	 * @throws IOException
 	 */
 	@Override
 	public void loadTxMtd(JobConf job, FileSystem fs, Path txMtdDir, TfUtils agents) throws IOException {
@@ -294,23 +279,26 @@ public class BinAgent extends Encoder
 				Path path = new Path( txMtdDir + "/Bin/" + agents.getName(colID) + TfUtils.TXMTD_BIN_FILE_SUFFIX);
 				TfUtils.checkValidInputFile(fs, path, true); 
 					
-				BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)));
-				// format: colID,min,max,nbins
-				String[] fields = br.readLine().split(TfUtils.TXMTD_SEP);
-				double min = UtilFunctions.parseToDouble(fields[1]);
-				//double max = UtilFunctions.parseToDouble(fields[2]);
-				double binwidth = UtilFunctions.parseToDouble(fields[3]);
-				int nbins = UtilFunctions.parseToInt(fields[4]);
-				
-				_numBins[i] = nbins;
-				_min[i] = min;
-				_binWidths[i] = binwidth; // (max-min)/nbins;
-				
-				br.close();
+				BufferedReader br = null;
+				try {
+					br = new BufferedReader(new InputStreamReader(fs.open(path)));
+					// format: colID,min,max,nbins
+					String[] fields = br.readLine().split(TfUtils.TXMTD_SEP);
+					double min = UtilFunctions.parseToDouble(fields[1]);
+					//double max = UtilFunctions.parseToDouble(fields[2]);
+					double binwidth = UtilFunctions.parseToDouble(fields[3]);
+					int nbins = UtilFunctions.parseToInt(fields[4]);
+					
+					_numBins[i] = nbins;
+					_min[i] = min;
+					_binWidths[i] = binwidth; // (max-min)/nbins;
+				}
+				finally {
+					IOUtilFunctions.closeSilently(br);
+				}
 			}
 		}
 		else {
-			fs.close();
 			throw new RuntimeException("Path to recode maps must be a directory: " + txMtdDir);
 		}
 	}
@@ -329,9 +317,6 @@ public class BinAgent extends Encoder
 	
 	/**
 	 * Method to apply transformations.
-	 * 
-	 * @param words
-	 * @return
 	 */
 	@Override
 	public String[] apply(String[] words) {
@@ -364,7 +349,7 @@ public class BinAgent extends Encoder
 			int colID = _colList[j];
 			for( int i=0; i<in.getNumRows(); i++ ) {
 				double inVal = UtilFunctions.objectToDouble(
-						in.getSchema().get(colID-1), in.get(i, colID-1));
+						in.getSchema()[colID-1], in.get(i, colID-1));
 				int ix = Arrays.binarySearch(_binMaxs[j], inVal);
 				int binID = ((ix < 0) ? Math.abs(ix+1) : ix) + 1;		
 				out.quickSetValue(i, colID-1, binID);
@@ -384,7 +369,7 @@ public class BinAgent extends Encoder
 		_binMaxs = new double[_colList.length][];
 		for( int j=0; j<_colList.length; j++ ) {
 			int colID = _colList[j]; //1-based
-			int nbins = (int)meta.getColumnMetadata().get(colID-1).getNumDistinct();
+			int nbins = (int)meta.getColumnMetadata()[colID-1].getNumDistinct();
 			_binMins[j] = new double[nbins];
 			_binMaxs[j] = new double[nbins];
 			for( int i=0; i<nbins; i++ ) {

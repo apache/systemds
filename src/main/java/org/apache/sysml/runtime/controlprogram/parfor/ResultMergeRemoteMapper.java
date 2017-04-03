@@ -78,10 +78,7 @@ public class ResultMergeRemoteMapper
 		else
 			throw new RuntimeException("Unable to configure mapper with unknown input info: "+ii.toString());
 	}
-	
-	/**
-	 * 
-	 */
+
 	@Override
 	public void close() throws IOException 
 	{

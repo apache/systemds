@@ -119,7 +119,7 @@ public class Ternary extends Lop
 
 	/**
 	 * method to get operation type
-	 * @return
+	 * @return operation type
 	 */
 	 
 	public OperationTypes getOperationType()
@@ -331,32 +331,7 @@ public class Ternary extends Lop
 		
 		return sb.toString();
 	}
-
-	/**
-	 * 
-	 * @param type
-	 * @return
-	 */
-	public static String getOpcode(OperationTypes type)
-	{
-		switch( type ) 
-		{
-			case CTABLE_TRANSFORM: return "ctabletransform";
-			case CTABLE_TRANSFORM_SCALAR_WEIGHT: return "ctabletransformscalarweight";
-			case CTABLE_EXPAND_SCALAR_WEIGHT: return "ctableexpandscalarweight";
-			case CTABLE_TRANSFORM_HISTOGRAM: return "ctabletransformhistogram"; 
-			case CTABLE_TRANSFORM_WEIGHTED_HISTOGRAM: return "ctabletransformweightedhistogram";
-		
-			default:
-				throw new UnsupportedOperationException("Ternary operation code is not defined: " + type);
-		}
-	}
 	
-	/**
-	 * 
-	 * @param opcode
-	 * @return
-	 */
 	public static OperationTypes getOperationType(String opcode)
 	{
 		OperationTypes op = null;

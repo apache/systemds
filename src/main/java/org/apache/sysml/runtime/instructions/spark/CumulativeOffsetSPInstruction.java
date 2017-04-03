@@ -20,6 +20,7 @@
 package org.apache.sysml.runtime.instructions.spark;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
@@ -74,13 +75,7 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction
 		
 		_initValue = init;
 	}
-	
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static CumulativeOffsetSPInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{
@@ -123,12 +118,7 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction
 		sec.addLineageRDD(output.getName(), input1.getName());
 		sec.addLineageRDD(output.getName(), input2.getName());
 	}
-	
-	
-	/**
-	 * 
-	 * 
-	 */
+
 	private static class RDDCumSplitFunction implements PairFlatMapFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock> 
 	{
 		private static final long serialVersionUID = -8407407527406576965L;
@@ -145,7 +135,7 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction
 		}
 		
 		@Override
-		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call( Tuple2<MatrixIndexes, MatrixBlock> arg0 ) 
+		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call( Tuple2<MatrixIndexes, MatrixBlock> arg0 ) 
 			throws Exception 
 		{
 			ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes, MatrixBlock>>();
@@ -178,13 +168,10 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction
 					ret.add(new Tuple2<MatrixIndexes,MatrixBlock>(tmpix, tmpblk));
 				}
 			
-			return ret;
+			return ret.iterator();
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class RDDCumOffsetFunction implements Function<Tuple2<MatrixBlock, MatrixBlock>, MatrixBlock> 
 	{
 		private static final long serialVersionUID = -5804080263258064743L;

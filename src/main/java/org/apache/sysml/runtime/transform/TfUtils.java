@@ -23,7 +23,6 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Arrays;
-import java.util.List;
 import java.util.regex.Pattern;
 
 import org.apache.hadoop.filecache.DistributedCache;
@@ -42,6 +41,7 @@ import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.DataExpression;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.io.MatrixReader;
 import org.apache.sysml.runtime.matrix.CSVReblockMR;
 import org.apache.sysml.runtime.matrix.CSVReblockMR.OffsetCount;
@@ -56,11 +56,10 @@ public class TfUtils implements Serializable{
 	private static final long serialVersionUID = 526252850872633125L;
 
 	protected enum ColumnTypes { 
-		SCALE, 
-		NOMINAL, 
-		ORDINAL, 
-		DUMMYCODED, 
-		INVALID;
+		SCALE,
+		NOMINAL,
+		ORDINAL,
+		DUMMYCODED;
 	
 		protected byte toID() { 
 			switch(this) {
@@ -176,16 +175,7 @@ public class TfUtils implements Serializable{
 		init (headerLine, hasHeader, delim, naStrings, spec, ncol, offsetFile, tmpPath, null);
 		_tfMtdDir = tfMtdDir;
 	}
-	
-	//called from cp frame transformapply
-	public TfUtils(JSONObject spec, long inNcol) 
-		throws IOException, JSONException 
-	{
-		//TODO recodemaps handover
-		_numInputCols = (int)inNcol;
-		createAgents(spec, new String[]{});
-	}
-	
+
 	protected static boolean checkValidInputFile(FileSystem fs, Path path, boolean err)
 			throws IOException {
 		// check non-existing file
@@ -226,8 +216,8 @@ public class TfUtils implements Serializable{
 	/**
 	 * Prepare NA strings so that they can be sent to workers via JobConf.
 	 * A "dummy" string is added at the end to handle the case of empty strings.
-	 * @param na
-	 * @return
+	 * @param na NA string
+	 * @return NA string concatenated with NA string separator concatenated with "dummy"
 	 */
 	public static String prepNAStrings(String na) {
 		return na  + DataExpression.DELIM_NA_STRING_SEP + "dummy";
@@ -250,21 +240,11 @@ public class TfUtils implements Serializable{
 	private void createAgents(JSONObject spec, String[] naStrings) 
 		throws IOException, JSONException 
 	{
-		List<String> colnames = Arrays.asList(_outputColumnNames);
-		
-		_oa = new OmitAgent(spec, colnames, _numInputCols);
-		_mia = new MVImputeAgent(spec, naStrings, _numInputCols);
-		_ra = new RecodeAgent(spec, colnames, _numInputCols);
-		_ba = new BinAgent(spec, colnames, _numInputCols);
-		_da = new DummycodeAgent(spec, colnames, _numInputCols);
-	}
-	
-	public void setupAgents(OmitAgent oa, MVImputeAgent mia, RecodeAgent ra, BinAgent ba, DummycodeAgent da)  {
-		_oa = oa;
-		_mia = mia;
-		_ra = ra;
-		_ba = ba;
-		_da = da;
+		_oa = new OmitAgent(spec, _outputColumnNames, _numInputCols);
+		_mia = new MVImputeAgent(spec, null, naStrings, _numInputCols);
+		_ra = new RecodeAgent(spec, _outputColumnNames, _numInputCols);
+		_ba = new BinAgent(spec, _outputColumnNames, _numInputCols);
+		_da = new DummycodeAgent(spec, _outputColumnNames, _numInputCols);
 	}
 	
 	private void parseColumnNames() {
@@ -330,8 +310,9 @@ public class TfUtils implements Serializable{
 	/**
 	 * Function that checks if the given string is one of NA strings.
 	 * 
-	 * @param w
-	 * @return
+	 * @param NAstrings array of NA strings
+	 * @param w string to check
+	 * @return true if w is a NAstring
 	 */
 	public static boolean isNA(String[] NAstrings, String w) {
 		if(NAstrings == null)
@@ -356,9 +337,9 @@ public class TfUtils implements Serializable{
 	/**
 	 * Process a given row to construct transformation metadata.
 	 * 
-	 * @param line
-	 * @return
-	 * @throws IOException
+	 * @param line string to break into words
+	 * @return string array of words from the line
+	 * @throws IOException if IOException occurs
 	 */
 	public String[] prepareTfMtd(String line) throws IOException {
 		String[] words = getWords(line);
@@ -434,9 +415,8 @@ public class TfUtils implements Serializable{
 	/**
 	 * Function to apply transformation metadata on a given row.
 	 * 
-	 * @param words
-	 * @param optimizeMaps
-	 * @return
+	 * @param words string array of words
+	 * @return string array of transformed words
 	 */
 	public String[] apply( String[] words ) {
 		words = getMVImputeAgent().apply(words);
@@ -538,22 +518,29 @@ public class TfUtils implements Serializable{
 	 * counters/offsets file, which was generated from either GenTfMtdMR
 	 * or AssignRowIDMR job.
 	 * 
+	 * @param job job configuration
+	 * @param offset file offset
+	 * @return part file id (ie, 00001, 00002, etc)
+	 * @throws IOException if IOException occurs
 	 */
 	public String getPartFileID(JobConf job, long offset) throws IOException
 	{
-		Reader reader = initOffsetsReader(job);
-		
-		ByteWritable key=new ByteWritable();
-		OffsetCount value=new OffsetCount();
-		String thisFile = TfUtils.getPartFileName(job);
-		
+		Reader reader = null;
 		int id = 0;
-		while (reader.next(key, value)) {
-			if ( thisFile.equals(value.filename) && value.fileOffset == offset ) 
-				break;
-			id++;
+		try {
+			reader = initOffsetsReader(job);
+			ByteWritable key=new ByteWritable();
+			OffsetCount value=new OffsetCount();
+			String thisFile = TfUtils.getPartFileName(job);
+			while (reader.next(key, value)) {
+				if ( thisFile.equals(value.filename) && value.fileOffset == offset ) 
+					break;
+				id++;
+			}
 		}
-		reader.close();
+		finally {
+			IOUtilFunctions.closeSilently(reader);
+		}
 		
 		String sid = Integer.toString(id);
 		char[] carr = new char[5-sid.length()];

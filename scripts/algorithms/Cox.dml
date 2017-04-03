@@ -138,9 +138,9 @@ if (fileR != " ") { # factors available
 	ones = matrix (1, rows = nrow (F), cols = 1);
 	F_filter = table (ones, F, 1, ncol (X_orig));
 	F_filter = removeEmpty (target = F_filter * col_seq, margin = "cols");
-	TE_F = t(append (t (TE), F_filter));
+	TE_F = t(cbind (t (TE), F_filter));
 } else if (fileF != " ") { # all features scale
-	TE_F = t(append (t (TE), t(F)));
+	TE_F = t(cbind (t (TE), t(F)));
 } else { # no features available 
 	TE_F = TE;
 }

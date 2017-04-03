@@ -28,12 +28,10 @@ import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.IndexingOp;
 import org.apache.sysml.hops.OptimizerUtils;
-import org.apache.sysml.hops.Hop.VisitStatus;
 import org.apache.sysml.hops.recompile.Recompiler;
-import org.apache.sysml.lops.LopProperties;
 import org.apache.sysml.lops.Lop;
+import org.apache.sysml.lops.LopProperties;
 import org.apache.sysml.lops.LopsException;
-import org.apache.sysml.lops.compile.Dag;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.DMLTranslator;
 import org.apache.sysml.parser.ForStatement;
@@ -47,35 +45,18 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.ForProgramBlock;
 import org.apache.sysml.runtime.controlprogram.IfProgramBlock;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
-import org.apache.sysml.runtime.controlprogram.ParForProgramBlock;
 import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.ProgramBlock;
 import org.apache.sysml.runtime.controlprogram.WhileProgramBlock;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
-import org.apache.sysml.runtime.controlprogram.parfor.opt.OptNode.NodeType;
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.cp.ArithmeticBinaryCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 
-/**
- * 
- */
 public class ProgramRecompiler 
 {
-	
-	/**
-	 * 
-	 * @param rtprog
-	 * @param sbs
-	 * @return
-	 * @throws IOException 
-	 * @throws DMLRuntimeException 
-	 * @throws LopsException 
-	 * @throws HopsException 
-	 */
 	public static ArrayList<ProgramBlock> generatePartitialRuntimeProgram(Program rtprog, ArrayList<StatementBlock> sbs) 
 		throws LopsException, DMLRuntimeException, IOException, HopsException
 	{
@@ -103,12 +84,12 @@ public class ProgramRecompiler
 	 * otherwise, we release the forced exec type and recompile again. Hence, 
 	 * any changes can be exactly reverted with the same access behavior.
 	 * 
-	 * @param sb
-	 * @param pb
-	 * @param var
-	 * @param ec
-	 * @param force
-	 * @throws DMLRuntimeException
+	 * @param sb statement block
+	 * @param pb program block
+	 * @param var variable
+	 * @param ec execution context
+	 * @param force if true, set and recompile the respective indexing hops
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void rFindAndRecompileIndexingHOP( StatementBlock sb, ProgramBlock pb, String var, ExecutionContext ec, boolean force )
 		throws DMLRuntimeException
@@ -212,15 +193,7 @@ public class ProgramRecompiler
 			}
 		}
 	}
-	
-	/**
-	 * 
-	 * @param prog
-	 * @param parforSB
-	 * @param vars
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static LocalVariableMap getReusableScalarVariables( DMLProgram prog, StatementBlock parforSB, LocalVariableMap vars ) 
 		throws DMLRuntimeException
 	{
@@ -282,13 +255,7 @@ public class ProgramRecompiler
 			}	
 		}
 	}
-	
-	/**
-	 * 
-	 * @param pred
-	 * @param vars
-	 * @throws DMLRuntimeException
-	 */
+
 	private static void replacePredicateLiterals( Hop pred, LocalVariableMap vars )
 		throws DMLRuntimeException
 	{
@@ -304,11 +271,11 @@ public class ProgramRecompiler
 	 * In case of invariant variables we can reuse partitioned matrices and propagate constants
 	 * for better size estimation.
 	 * 
-	 * @param prog
-	 * @param parforSB
-	 * @param var
-	 * @return
-	 * @throws DMLRuntimeException
+	 * @param prog dml program
+	 * @param parforSB parfor statement block
+	 * @param var variable
+	 * @return true if can reuse variable
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static boolean isApplicableForReuseVariable( DMLProgram prog, StatementBlock parforSB, String var )
 		throws DMLRuntimeException
@@ -320,14 +287,7 @@ public class ProgramRecompiler
 		
 		return  ret;	
 	}
-	
-	/**
-	 * 
-	 * @param sb
-	 * @param parforSB
-	 * @param var
-	 * @throws DMLRuntimeException
-	 */
+
 	private static boolean isApplicableForReuseVariable( StatementBlock sb, StatementBlock parforSB, String var )
 			throws DMLRuntimeException
 	{
@@ -363,12 +323,7 @@ public class ProgramRecompiler
 		
 		return  ret && !sb.variablesUpdated().containsVariable(var);	
 	}
-	
-	/**
-	 * 
-	 * @param pb
-	 * @return
-	 */
+
 	public static boolean containsAtLeastOneFunction( ProgramBlock pb )
 	{
 		if( pb instanceof IfProgramBlock )
@@ -405,15 +360,7 @@ public class ProgramRecompiler
 		
 		return false;	
 	}
-	
-	/**
-	 * 
-	 * @param hop
-	 * @param in
-	 * @param force
-	 * @return
-	 * @throws DMLRuntimeException 
-	 */
+
 	private static ArrayList<Instruction> rFindAndRecompileIndexingHOP( Hop hop, ArrayList<Instruction> in, String var, ExecutionContext ec, boolean force ) 
 		throws DMLRuntimeException
 	{
@@ -443,19 +390,12 @@ public class ProgramRecompiler
 		
 		return tmp;
 	}
-	
-	
-	/**
-	 * 
-	 * @param hop
-	 * @param var
-	 * @return
-	 */
+
 	private static boolean rFindAndSetCPIndexingHOP(Hop hop, String var) 
 	{
 		boolean ret = false;
 		
-		if( hop.getVisited() == VisitStatus.DONE )
+		if( hop.isVisited() )
 			return ret;
 		
 		ArrayList<Hop> in = hop.getInput();
@@ -482,7 +422,7 @@ public class ProgramRecompiler
 			for( Hop hin : in )
 				ret |= rFindAndSetCPIndexingHOP(hin,var);
 		
-		hop.setVisited(VisitStatus.DONE);
+		hop.setVisited();
 		
 		return ret;
 	}
@@ -491,7 +431,7 @@ public class ProgramRecompiler
 	{
 		boolean ret = false;
 		
-		if( hop.getVisited() == VisitStatus.DONE )
+		if( hop.isVisited() )
 			return ret;
 		
 		ArrayList<Hop> in = hop.getInput();
@@ -512,7 +452,7 @@ public class ProgramRecompiler
 			for( Hop hin : in )
 				ret |= rFindAndReleaseIndexingHOP(hin,var);
 		
-		hop.setVisited(VisitStatus.DONE);
+		hop.setVisited();
 		
 		return ret;
 	}
@@ -520,14 +460,7 @@ public class ProgramRecompiler
 
 	///////
 	// additional general-purpose functionalities
-	
-	/**
-	 * 
-	 * @param iterVar
-	 * @param offset
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	protected static ArrayList<Instruction> createNestedParallelismToInstructionSet(String iterVar, String offset) 
 		throws DMLRuntimeException 
 	{
@@ -548,169 +481,4 @@ public class ProgramRecompiler
 		
 		return tmp;
 	}
-	
-	
-	
-	
-	/////////////////////////////////
-	// experimental functionality
-	//////////
-	
-	/**
-	 * 
-	 * @param n
-	 * @throws DMLRuntimeException
-	 */
-	protected static void recompilePartialPlan( OptNode n ) 
-		throws DMLRuntimeException 
-	{
-		//NOTE: need to recompile complete programblock because (1) many to many relationships
-		//between hops and instructions and (2) due to changed internal variable names 
-		
-		try
-		{
-			//get parent program and statement block
-			OptTreePlanMappingAbstract map = OptTreeConverter.getAbstractPlanMapping();
-			long pid = map.getMappedParentID(n.getID());
-			Object[] o = map.getMappedProg(pid);
-			StatementBlock sbOld = (StatementBlock) o[0];
-			ProgramBlock pbOld = (ProgramBlock) o[1];
-			
-			//get changed node and set type appropriately
-			Hop hop = (Hop) map.getMappedHop(n.getID());
-			hop.setForcedExecType(n.getExecType().toLopsExecType()); 
-			hop.setLops(null); //to enable fresh construction
-		
-			//get all hops of statement and construct new instructions
-			Dag<Lop> dag = new Dag<Lop>();
-			for( Hop hops : sbOld.get_hops() )
-			{
-				hops.resetVisitStatus();
-				Recompiler.rClearLops(hops);
-				Lop lops = hops.constructLops();
-				lops.addToDag(dag);
-			}
-			
-			//construct new instructions
-			ArrayList<Instruction> newInst = dag.getJobs(sbOld, ConfigurationManager.getDMLConfig());
-			
-			
-			//exchange instructions
-			pbOld.getInstructions().clear();
-			pbOld.getInstructions().addAll(newInst);
-		}
-		catch(Exception ex)
-		{
-			throw new DMLRuntimeException(ex);
-		}
-	}
-
-	
-	/**
-	 * NOTE: need to recompile complete programblock because (1) many to many relationships
-	 * between hops and instructions and (2) due to changed internal variable names 
-	 * 
-	 * @param n
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
-	protected static ProgramBlock recompile( OptNode n ) 
-		throws DMLRuntimeException 
-	{
-		ProgramBlock pbNew = null;
-		
-		try
-		{
-			if( n.getNodeType() == NodeType.HOP )
-			{
-				//get parent program and statement block
-				OptTreePlanMappingAbstract map = OptTreeConverter.getAbstractPlanMapping();
-				long pid = map.getMappedParentID(n.getID());
-				Object[] o = map.getMappedProg(pid);
-				StatementBlock sbOld = (StatementBlock) o[0];
-				ProgramBlock pbOld = (ProgramBlock) o[1];
-				LopProperties.ExecType oldtype = null;
-				
-				//get changed node and set type appropriately
-				Hop hop = (Hop) map.getMappedHop(n.getID());
-				hop.setForcedExecType(n.getExecType().toLopsExecType()); 
-				hop.setLops(null); //to enable fresh construction
-			
-				//get all hops of statement and construct new lops
-				Dag<Lop> dag = new Dag<Lop>();
-				for( Hop hops : sbOld.get_hops() )
-				{
-					hops.resetVisitStatus();
-					Recompiler.rClearLops(hops);
-					Lop lops = hops.constructLops();
-					lops.addToDag(dag);
-				}
-				
-				//construct new instructions
-				ArrayList<Instruction> newInst = dag.getJobs(sbOld, ConfigurationManager.getDMLConfig());
-				
-				//exchange instructions
-				pbNew = new ProgramBlock(pbOld.getProgram());
-				pbNew.setInstructions(newInst);
-				
-				//reset type global repository
-				hop.setForcedExecType(oldtype);
-				
-			}
-			else if( n.getNodeType() == NodeType.PARFOR )
-			{	
-				//no recompilation required
-				OptTreePlanMappingAbstract map = OptTreeConverter.getAbstractPlanMapping();
-				ParForProgramBlock pb = (ParForProgramBlock)map.getMappedProg(n.getID())[1];
-				pbNew = ProgramConverter.createShallowCopyParForProgramBlock(pb, pb.getProgram());
-				((ParForProgramBlock)pbNew).setExecMode(n.getExecType().toParForExecMode());
-			}
-			else
-			{
-				throw new DMLRuntimeException("Unexpected node type.");
-			}
-		}
-		catch(Exception ex)
-		{
-			throw new DMLRuntimeException(ex);
-		}
-		
-		return pbNew;
-	}
-
-
-	/**
-	 * 
-	 * @param hlNodeID
-	 * @param pbNew
-	 * @throws DMLRuntimeException
-	 */
-	protected static void exchangeProgram(long hlNodeID, ProgramBlock pbNew) 
-		throws DMLRuntimeException 
-	{
-		OptTreePlanMappingAbstract map = OptTreeConverter.getAbstractPlanMapping();
-		OptNode node = map.getOptNode(hlNodeID);
-		
-		if( node.getNodeType() == NodeType.HOP )
-		{
-			long pid = map.getMappedParentID(hlNodeID);
-			Object[] o = map.getMappedProg(pid);
-			ProgramBlock pbOld = (ProgramBlock) o[1];
-			
-			//exchange instructions (save version)
-			pbOld.getInstructions().clear();
-			pbOld.getInstructions().addAll( pbNew.getInstructions() );
-		}
-		else if( node.getNodeType() == NodeType.PARFOR )
-		{
-			ParForProgramBlock pbOld = (ParForProgramBlock) map.getMappedProg(node.getID())[1];
-			pbOld.setExecMode(((ParForProgramBlock)pbNew).getExecMode());
-			//TODO extend as required
-		}
-		else
-		{
-			throw new DMLRuntimeException("Unexpected node type: "+node.getNodeType());
-		}
-	}
-	
 }

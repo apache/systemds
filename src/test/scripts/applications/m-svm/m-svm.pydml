@@ -56,7 +56,7 @@ else:
     
     if (intercept == 1):
         ones  = full(1, rows=num_samples, cols=1)
-        X = append(X, ones)
+        X = cbind(X, ones)
     
     num_rows_in_w = num_features
     if(intercept == 1):
@@ -69,7 +69,7 @@ else:
         w_class = full(0, rows=num_features, cols=1)
         if (intercept == 1):
             zero_matrix = full(0, rows=1, cols=1)
-            w_class = transpose(append(transpose(w_class), zero_matrix))
+            w_class = transpose(cbind(transpose(w_class), zero_matrix))
         g_old = dot(transpose(X), Y_local)
         s = g_old
         

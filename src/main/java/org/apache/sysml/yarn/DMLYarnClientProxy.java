@@ -62,16 +62,7 @@ public class DMLYarnClientProxy
 			      .setLevel((Level) Level.DEBUG);
 		}
 	}
-	
-	/**
-	 * 
-	 * @param dmlScriptStr
-	 * @param conf
-	 * @param allArgs
-	 * @return
-	 * @throws IOException 
-	 * @throws DMLRuntimeException 
-	 */
+
 	public static boolean launchDMLYarnAppmaster(String dmlScriptStr, DMLConfig conf, String[] allArgs, Program rtprog) 
 		throws IOException, DMLRuntimeException
 	{

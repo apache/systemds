@@ -23,7 +23,7 @@ import java.util.ArrayList;
 
 /**
  * This class provides a memory-efficient replacement for
- * HashMap<Double,IntArrayList> for restricted use cases.
+ * {@code HashMap<Double,IntArrayList>} for restricted use cases.
  * 
  */
 public class DoubleIntListHashMap 
@@ -40,19 +40,10 @@ public class DoubleIntListHashMap
 		_size = 0;
 	}
 
-	/**
-	 * 
-	 * @return
-	 */
 	public int size() {
 		return _size;
 	}
 
-	/**
-	 * 
-	 * @param key
-	 * @return
-	 */
 	public IntArrayList get(double key) {
 		// probe for early abort
 		if( _size == 0 )
@@ -72,11 +63,6 @@ public class DoubleIntListHashMap
 		return null;
 	}
 
-	/**
-	 * 
-	 * @param key
-	 * @param value
-	 */
 	public void appendValue(double key, IntArrayList value) {
 		// compute entry index position
 		int hash = hash(key);
@@ -93,10 +79,6 @@ public class DoubleIntListHashMap
 			resize();
 	}
 
-	/**
-	 * 
-	 * @return
-	 */
 	public ArrayList<DIListEntry> extractValues() {
 		ArrayList<DIListEntry> ret = new ArrayList<DIListEntry>();
 		for( DIListEntry e : _data ) {
@@ -112,9 +94,6 @@ public class DoubleIntListHashMap
 		return ret;
 	}
 
-	/**
-     * 
-     */
 	private void resize() {
 		// check for integer overflow on resize
 		if( _data.length > Integer.MAX_VALUE / RESIZE_FACTOR )
@@ -137,11 +116,6 @@ public class DoubleIntListHashMap
 		}
 	}
 
-	/**
-	 * 
-	 * @param key
-	 * @return
-	 */
 	private static int hash(double key) {
 		// basic double hash code (w/o object creation)
 		long bits = Double.doubleToRawLongBits(key);
@@ -154,19 +128,10 @@ public class DoubleIntListHashMap
 		return h ^ (h >>> 7) ^ (h >>> 4);
 	}
 
-	/**
-	 * 
-	 * @param h
-	 * @param length
-	 * @return
-	 */
 	private static int indexFor(int h, int length) {
 		return h & (length - 1);
 	}
 
-	/**
-	 *
-	 */
 	public class DIListEntry {
 		public double key = Double.MAX_VALUE;
 		public IntArrayList value = null;

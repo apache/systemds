@@ -30,14 +30,15 @@ import org.apache.sysml.parser.Expression.*;
  */
 public class MMRJ extends Lop 
 {
-
-		
 	/**
 	 * Constructor to perform a cross product operation.
-	 * @param input
-	 * @param op
+	 * 
+	 * @param input1 low-level operator 1
+	 * @param input2 low-level operator 2
+	 * @param dt data type
+	 * @param vt value type
+	 * @param et execution type
 	 */
-
 	public MMRJ(Lop input1, Lop input2, DataType dt, ValueType vt, ExecType et) 
 	{
 		//handle inputs and outputs
@@ -68,25 +69,13 @@ public class MMRJ extends Lop
 
 	@Override
 	public String toString() {
-	
 		return "Operation = MMRJ";
 	}
 
 	@Override
-	public String getInstructions(int input_index1, int input_index2, int output_index)
-	{
-		StringBuilder sb = new StringBuilder();
-		sb.append( getExecType() );
-		sb.append( Lop.OPERAND_DELIMITOR );
-		sb.append( "rmm" );
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( getInputs().get(0).prepInputOperand(input_index1));
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( getInputs().get(1).prepInputOperand(input_index2));
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( this.prepOutputOperand(output_index));
-		
-		return sb.toString();
+	public String getInstructions(int input_index1, int input_index2, int output_index) {
+		return getInstructions(String.valueOf(input_index1), 
+				String.valueOf(input_index2), String.valueOf(output_index));
 	}
 
 	@Override

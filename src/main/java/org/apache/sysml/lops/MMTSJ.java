@@ -32,8 +32,6 @@ import org.apache.sysml.parser.Expression.*;
  */
 public class MMTSJ extends Lop 
 {
-
-	
 	public enum MMTSJType {
 		NONE,
 		LEFT,
@@ -45,20 +43,27 @@ public class MMTSJ extends Lop
 	}
 	
 	private MMTSJType _type = null;
+	private boolean _multiPass = false;
 	private int _numThreads = 1;
 
-	public MMTSJ(Lop input1, DataType dt, ValueType vt, ExecType et, MMTSJType type) 
-	{
-		this(input1, dt, vt, et, type, -1);
+	public MMTSJ(Lop input1, DataType dt, ValueType vt, ExecType et, MMTSJType type) {
+		this(input1, dt, vt, et, type, false, -1);
 	}
 	
-	public MMTSJ(Lop input1, DataType dt, ValueType vt, ExecType et, MMTSJType type, int k) 
-	{
+	public MMTSJ(Lop input1, DataType dt, ValueType vt, ExecType et, MMTSJType type, boolean multiPass) {
+		this(input1, dt, vt, et, type, multiPass, -1);
+	}
+	
+	public MMTSJ(Lop input1, DataType dt, ValueType vt, ExecType et, MMTSJType type, boolean multiPass, int k) {
 		super(Lop.Type.MMTSJ, dt, vt);		
 		addInput(input1);
 		input1.addOutput(this);
 		_type = type;
+		_multiPass = multiPass;
 		_numThreads = k;
+		
+		if( multiPass && et != ExecType.SPARK )
+			throw new RuntimeException("Multipass tsmm only supported for exec type SPARK.");
 		 
 		boolean breaksAlignment = true; //if result keys (matrix indexes) different 
 		boolean aligner = false; //if groups multiple inputs by key (e.g., group)
@@ -74,40 +79,22 @@ public class MMTSJ extends Lop
 		return "Operation = MMTSJ";
 	}
 
-	/**
-	 * MR instruction generation.
-	 */
 	@Override
-	public String getInstructions(int input_index1, int output_index)
-	{
-		StringBuilder sb = new StringBuilder();
-		sb.append( getExecType() );
-		sb.append( Lop.OPERAND_DELIMITOR );
-		sb.append( "tsmm" );
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( getInputs().get(0).prepInputOperand(input_index1));
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( this.prepOutputOperand(output_index));
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( _type );
-		
-		return sb.toString();
+	public String getInstructions(int input_index1, int output_index) {
+		return getInstructions(String.valueOf(input_index1), String.valueOf(output_index));
 	}
 
-	/**
-	 * CP and Spark instruction generation.
-	 */
 	@Override
-	public String getInstructions(String input_index1, String output_index) throws LopsException
+	public String getInstructions(String input_index1, String output_index)
 	{	
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( "tsmm" );
+		sb.append( _multiPass ? "tsmm2" : "tsmm" );
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( getInputs().get(0).prepInputOperand(input_index1));
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( this.prepOutputOperand(output_index));
+		sb.append( prepOutputOperand(output_index));
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( _type );
 		
@@ -119,6 +106,4 @@ public class MMTSJ extends Lop
 		
 		return sb.toString();
 	}
- 
- 
 }

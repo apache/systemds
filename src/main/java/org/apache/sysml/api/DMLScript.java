@@ -46,6 +46,7 @@ import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.util.GenericOptionsParser;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.apache.sysml.api.mlcontext.ScriptType;
 import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
@@ -55,6 +56,8 @@ import org.apache.sysml.debug.DMLDebuggerProgramInfo;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.OptimizerUtils.OptimizationLevel;
+import org.apache.sysml.hops.codegen.SpoofCompiler;
+import org.apache.sysml.hops.codegen.SpoofCompiler.PlanCachePolicy;
 import org.apache.sysml.hops.globalopt.GlobalOptimizerWrapper;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopsException;
@@ -71,11 +74,13 @@ import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDHandler;
 import org.apache.sysml.runtime.matrix.CleanupMR;
+import org.apache.sysml.runtime.matrix.data.LibMatrixDNN;
 import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
 import org.apache.sysml.runtime.util.LocalFileUtils;
@@ -83,6 +88,7 @@ import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.utils.Explain;
 import org.apache.sysml.utils.Explain.ExplainCounts;
 import org.apache.sysml.utils.Explain.ExplainType;
+import org.apache.sysml.utils.GPUStatistics;
 import org.apache.sysml.utils.Statistics;
 import org.apache.sysml.yarn.DMLAppMasterUtils;
 import org.apache.sysml.yarn.DMLYarnClientProxy;
@@ -100,10 +106,17 @@ public class DMLScript
 	
 	public static RUNTIME_PLATFORM rtplatform = OptimizerUtils.getDefaultExecutionMode();
 	public static boolean STATISTICS = false; //default statistics
+	public static int STATISTICS_COUNT = 10;	//default statistics maximum heavy hitter count
 	public static boolean ENABLE_DEBUG_MODE = false; //default debug mode
 	public static boolean USE_LOCAL_SPARK_CONFIG = false; //set default local spark configuration - used for local testing
 	public static String DML_FILE_PATH_ANTLR_PARSER = null;
 	public static ExplainType EXPLAIN = ExplainType.NONE; //default explain
+	/**
+	 * Global variable indicating the script type (DML or PYDML). Can be used
+	 * for DML/PYDML-specific tasks, such as outputting booleans in the correct
+	 * case (TRUE/FALSE for DML and True/False for PYDML).
+	 */
+	public static ScriptType SCRIPT_TYPE = ScriptType.DML;
 	
 	public static boolean USE_ACCELERATOR = false;
 	public static boolean FORCE_ACCELERATOR = false;
@@ -133,7 +146,7 @@ public class DMLScript
 			//+ "			Optional <flags> that is supported for this mode is optimize=(on|off)\n"
 			+ "   -exec: <mode> (optional) execution mode (hadoop, singlenode, [hybrid], hybrid_spark)\n"
 			+ "   -explain: <type> (optional) explain plan (hops, [runtime], recompile_hops, recompile_runtime)\n"
-			+ "   -stats: (optional) monitor and report caching/recompilation statistics\n"
+			+ "   -stats: <count> (optional) monitor and report caching/recompilation statistics, default heavy hitter count is 10\n"
 			+ "   -clean: (optional) cleanup all SystemML working directories (FS, DFS).\n"
 			+ "         All other flags are ignored in this mode. \n"
 			+ "   -config: (optional) use config file <config_filename> (default: use parameter\n"
@@ -162,7 +175,7 @@ public class DMLScript
 	 * Used to set master UUID on all nodes (in parfor remote_mr, where DMLScript passed) 
 	 * in order to simplify cleanup of scratch_space and local working dirs.
 	 * 
-	 * @param uuid
+	 * @param uuid master UUID to set on all nodes
 	 */
 	public static void setUUID(String uuid) 
 	{
@@ -185,9 +198,9 @@ public class DMLScript
 	/**
 	 * Default DML script invocation (e.g., via 'hadoop jar SystemML.jar -f Test.dml')
 	 * 
-	 * @param args
-	 * @throws IOException
-	 * @throws DMLException
+	 * @param args command-line arguments
+	 * @throws IOException if an IOException occurs
+	 * @throws DMLException if a DMLException occurs
 	 */
 	public static void main(String[] args) 
 		throws IOException, DMLException
@@ -205,44 +218,15 @@ public class DMLScript
 		}
 	} 
 
-	public static boolean executeScript( String[] args ) 
-		throws DMLException
-	{
-		Configuration conf = new Configuration(ConfigurationManager.getCachedJobConf());
-		return executeScript( conf, args );
-	}
-	
-	/**
-	 * This version of executeScript() is invoked from RJaqlUdf (from BigR).
-	 *  
-	 * @param conf
-	 * @param args
-	 * @param suppress
-	 * @return
-	 * @throws DMLException
-	 * @throws ParseException
-	 */
-	public static String executeScript( Configuration conf, String[] args, boolean suppress) 
-		throws DMLException
-	{
-		_suppressPrint2Stdout = suppress;
-		try {
-			boolean ret = executeScript(conf, args);
-			return Boolean.toString(ret);
-		} catch(DMLScriptException e) {
-			return e.getMessage();
-		}
-	}
-	
 	/**
 	 * Single entry point for all public invocation alternatives (e.g.,
 	 * main, executeScript, JaqlUdf etc)
 	 * 
-	 * @param conf
-	 * @param args
-	 * @return
-	 * @throws DMLException 
-	 * @throws ParseException 
+	 * @param conf Hadoop configuration
+	 * @param args arguments
+	 * @return true if success, false otherwise
+	 * @throws DMLException if DMLException occurs
+	 * @throws ParseException if ParseException occurs
 	 */
 	public static boolean executeScript( Configuration conf, String[] args ) 
 		throws DMLException
@@ -276,7 +260,7 @@ public class DMLScript
 		
 		//parse arguments and set execution properties
 		RUNTIME_PLATFORM oldrtplatform = rtplatform; //keep old rtplatform
-		ExplainType oldexplain = EXPLAIN; //keep old explain	
+		ExplainType oldexplain = EXPLAIN; //keep old explain
 		
 		// Reset global flags to avoid errors in test suite
 		ENABLE_DEBUG_MODE = false;
@@ -295,8 +279,11 @@ public class DMLScript
 					if( args.length > (i+1) && !args[i+1].startsWith("-") )
 						EXPLAIN = Explain.parseExplainType(args[++i]);
 				}
-				else if( args[i].equalsIgnoreCase("-stats") )
+				else if( args[i].equalsIgnoreCase("-stats") ) {
 					STATISTICS = true;
+					if (args.length > (i + 1) && !args[i + 1].startsWith("-"))
+						STATISTICS_COUNT = Integer.parseInt(args[++i]);
+				}
 				else if ( args[i].equalsIgnoreCase("-exec")) {
 					rtplatform = parseRuntimePlatform(args[++i]);
 					if( rtplatform==null ) 
@@ -324,7 +311,7 @@ public class DMLScript
 							throw new DMLRuntimeException("Unsupported flag for -gpu:" + flag);
 						}
 					}
-					GPUContext.createGPUContext(); // Set GPU memory budget
+					GPUContext.getGPUContext(); // creates the singleton GPU context object. Return value ignored.
 				}
 				else if( args[i].equalsIgnoreCase("-python") ) {
 					parsePyDML = true;
@@ -391,12 +378,6 @@ public class DMLScript
 	// private internal utils (argument parsing)
 	////////
 
-	/**
-	 * 
-	 * @param hasNamedArgs
-	 * @param args
-	 * @throws LanguageException
-	 */
 	protected static Map<String,String> createArgumentsMap(boolean hasNamedArgs, String[] args)
 		throws LanguageException
 	{			
@@ -450,14 +431,6 @@ public class DMLScript
 		return argMap;
 	}
 	
-	/**
-	 * 
-	 * @param argname
-	 * @param script
-	 * @return
-	 * @throws IOException 
-	 * @throws LanguageException 
-	 */
 	protected static String readDMLScript( String argname, String script ) 
 		throws IOException, LanguageException
 	{
@@ -505,10 +478,8 @@ public class DMLScript
 				LOG.error("Failed to read the script from the file system", ex);
 				throw ex;
 			}
-			finally 
-			{
-				if( in != null )
-					in.close();
+			finally {
+				IOUtilFunctions.closeSilently(in);
 			}
 			
 			dmlScriptStr = sb.toString();
@@ -528,11 +499,6 @@ public class DMLScript
 		return dmlScriptStr;
 	}
 	
-	/**
-	 * 
-	 * @param platform
-	 * @return
-	 */
 	private static RUNTIME_PLATFORM parseRuntimePlatform( String platform )
 	{
 		RUNTIME_PLATFORM lrtplatform = null;
@@ -553,10 +519,6 @@ public class DMLScript
 		return lrtplatform;
 	}
 	
-	/**
-	 * 
-	 * @param conf
-	 */
 	private static void setLoggingProperties( Configuration conf )
 	{
 		String debug = conf.get("systemml.logging");
@@ -581,18 +543,26 @@ public class DMLScript
 	////////
 
 	/**
-	 * run: The running body of DMLScript execution. This method should be called after execution properties have been correctly set,
+	 * The running body of DMLScript execution. This method should be called after execution properties have been correctly set,
 	 * and customized parameters have been put into _argVals
-	 * @throws ParseException 
-	 * @throws IOException 
-	 * @throws DMLRuntimeException 
-	 * @throws HopsException 
-	 * @throws LanguageException 
-	 * @throws LopsException 
+	 * 
+	 * @param dmlScriptStr DML script string
+	 * @param fnameOptConfig configuration file
+	 * @param argVals map of argument values
+	 * @param allArgs arguments
+	 * @param parsePyDML true if PYDML, false if DML
+	 * @throws ParseException if ParseException occurs
+	 * @throws IOException if IOException occurs
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
+	 * @throws LanguageException if LanguageException occurs
+	 * @throws HopsException if HopsException occurs
+	 * @throws LopsException if LopsException occurs
 	 */
 	private static void execute(String dmlScriptStr, String fnameOptConfig, Map<String,String> argVals, String[] allArgs, boolean parsePyDML)
 		throws ParseException, IOException, DMLRuntimeException, LanguageException, HopsException, LopsException 
 	{	
+		SCRIPT_TYPE = parsePyDML ? ScriptType.PYDML : ScriptType.DML;
+
 		//print basic time and environment info
 		printStartExecInfo( dmlScriptStr );
 		
@@ -613,32 +583,26 @@ public class DMLScript
 		AParserWrapper parser = AParserWrapper.createParser(parsePyDML);
 		DMLProgram prog = parser.parse(DML_FILE_PATH_ANTLR_PARSER, dmlScriptStr, argVals);
 		
-		//Step 4: construct HOP DAGs (incl LVA and validate)
+		//Step 4: construct HOP DAGs (incl LVA, validate, and setup)
 		DMLTranslator dmlt = new DMLTranslator(prog);
 		dmlt.liveVariableAnalysis(prog);			
 		dmlt.validateParseTree(prog);
 		dmlt.constructHops(prog);
 		
-		if (LOG.isDebugEnabled()) {
-			LOG.debug("\n********************** HOPS DAG (Before Rewrite) *******************");
-			dmlt.printHops(prog);
-			DMLTranslator.resetHopsDAGVisitStatus(prog);
-		}
+		//init working directories (before usage by following compilation steps)
+		initHadoopExecution( dmlconf );
 	
 		//Step 5: rewrite HOP DAGs (incl IPA and memory estimates)
 		dmlt.rewriteHopsDAG(prog);
-		
-		if (LOG.isDebugEnabled()) {
-			LOG.debug("\n********************** HOPS DAG (After Rewrite) *******************");
-			dmlt.printHops(prog);
-			DMLTranslator.resetHopsDAGVisitStatus(prog);
-		
-			LOG.debug("\n********************** OPTIMIZER *******************\n" + 
-			          "Level = " + OptimizerUtils.getOptLevel() + "\n"
-					 +"Available Memory = " + ((double)InfrastructureAnalyzer.getLocalMaxMemory()/1024/1024) + " MB" + "\n"
-					 +"Memory Budget = " + ((double)OptimizerUtils.getLocalMemBudget()/1024/1024) + " MB" + "\n");
-		}
 
+		//Step 5.1: Generate code for the rewrited Hop dags 
+		if( dmlconf.getBooleanValue(DMLConfig.CODEGEN) ){
+			SpoofCompiler.PLAN_CACHE_POLICY = PlanCachePolicy.get(
+					dmlconf.getBooleanValue(DMLConfig.CODEGEN_PLANCACHE),
+					dmlconf.getIntValue(DMLConfig.CODEGEN_LITERALS)==2);
+			dmlt.codgenHopsDAG(prog);
+		}
+		
 		//Step 6: construct lops (incl exec type and op selection)
 		dmlt.constructLops(prog);
 
@@ -684,15 +648,17 @@ public class DMLScript
 		
 		//double costs = CostEstimationWrapper.getTimeEstimate(rtprog, ExecutionContextFactory.createContext());
 		//System.out.println("Estimated costs: "+costs);
-		
+
+		// Whether extra statistics useful for developers and others interested in digging
+		// into performance problems are recorded and displayed
+		GPUStatistics.DISPLAY_STATISTICS = dmlconf.getBooleanValue(DMLConfig.EXTRA_GPU_STATS);
+		LibMatrixDNN.DISPLAY_STATISTICS = dmlconf.getBooleanValue(DMLConfig.EXTRA_DNN_STATS);
 		
 		//Step 10: execute runtime program
 		Statistics.startRunTimer();
 		ExecutionContext ec = null;
 		try 
 		{  
-			initHadoopExecution( dmlconf );
-			
 			//run execute (w/ exception handling to ensure proper shutdown)
 			ec = ExecutionContextFactory.createContext(rtprog);
 			rtprog.execute( ec );  
@@ -700,12 +666,12 @@ public class DMLScript
 		}
 		finally //ensure cleanup/shutdown
 		{	
-			if(DMLScript.USE_ACCELERATOR && ec != null) {
+			if(DMLScript.USE_ACCELERATOR && ec != null)
 				ec.destroyGPUContext();
-			}
-			if(ec != null && ec instanceof SparkExecutionContext) {
+			if( dmlconf.getBooleanValue(DMLConfig.CODEGEN) )
+				SpoofCompiler.cleanupCodeGenerator();
+			if(ec != null && ec instanceof SparkExecutionContext)
 				((SparkExecutionContext) ec).close();
-			}
 			
 			//display statistics (incl caching stats if enabled)
 			Statistics.stopRunTimer();
@@ -718,19 +684,20 @@ public class DMLScript
 	}		
 	
 	/**
-	 * launchDebugger: Launcher for DML debugger. This method should be called after 
-	 * execution and debug properties have been correctly set, and customized parameters 
-	 * have been put into _argVals
-	 * @param  dmlScriptStr DML script contents (including new lines)
-	 * @param  fnameOptConfig Full path of configuration file for SystemML
-	 * @param  argVals Key-value pairs defining arguments of DML script
-	 * @throws ParseException 
-	 * @throws IOException 
-	 * @throws DMLRuntimeException 
-	 * @throws DMLDebuggerException
-	 * @throws HopsException 
-	 * @throws LanguageException 
-	 * @throws LopsException
+	 * Launcher for DML debugger. This method should be called after 
+	 * execution and debug properties have been correctly set, and customized parameters
+	 * 
+	 * @param dmlScriptStr DML script contents (including new lines)
+	 * @param fnameOptConfig Full path of configuration file for SystemML
+	 * @param argVals Key-value pairs defining arguments of DML script
+	 * @param parsePyDML true if PYDML, false if DML
+	 * @throws ParseException if ParseException occurs
+	 * @throws IOException if IOException occurs
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
+	 * @throws DMLDebuggerException if DMLDebuggerException occurs
+	 * @throws LanguageException if LanguageException occurs
+	 * @throws HopsException if HopsException occurs
+	 * @throws LopsException if LopsException occurs
 	 */
 	private static void launchDebugger(String dmlScriptStr, String fnameOptConfig, Map<String,String> argVals, boolean parsePyDML)
 		throws ParseException, IOException, DMLRuntimeException, DMLDebuggerException, LanguageException, HopsException, LopsException 
@@ -775,12 +742,6 @@ public class DMLScript
 		}
 	}
 
-	/**
-	 * @throws ParseException 
-	 * @throws IOException 
-	 * @throws DMLRuntimeException 
-	 * 
-	 */
 	public static void initHadoopExecution( DMLConfig config ) 
 		throws IOException, ParseException, DMLRuntimeException
 	{
@@ -799,19 +760,13 @@ public class DMLScript
 		CacheableData.initCaching();
 						
 		//reset statistics (required if multiple scripts executed in one JVM)
-		Statistics.resetNoOfExecutedJobs( 0 );
+		Statistics.resetNoOfExecutedJobs();
 		if( STATISTICS ) {
 			CacheStatistics.reset();
 			Statistics.reset();
 		}
 	}
 	
-	/**
-	 * 
-	 * @param config 
-	 * @throws IOException
-	 * @throws DMLRuntimeException 
-	 */
 	private static void checkSecuritySetup(DMLConfig config) 
 		throws IOException, DMLRuntimeException
 	{
@@ -865,13 +820,7 @@ public class DMLScript
 			throw new DMLRuntimeException("Invalid (non-trustworthy) hdfs working directory.");
 	}
 	
-	/**
-	 * 
-	 * @param config
-	 * @throws IOException
-	 * @throws ParseException
-	 */
-	private static void cleanupHadoopExecution( DMLConfig config ) 
+	public static void cleanupHadoopExecution( DMLConfig config ) 
 		throws IOException, ParseException
 	{
 		//create dml-script-specific suffix
@@ -918,12 +867,6 @@ public class DMLScript
 	// private internal helper functionalities
 	////////
 
-	/**
-	 * 
-	 * @param fnameScript
-	 * @param fnameOptConfig
-	 * @param argVals
-	 */
 	private static void printInvocationInfo(String fnameScript, String fnameOptConfig, Map<String,String> argVals)
 	{		
 		LOG.debug("****** args to DML Script ******\n" + "UUID: " + getUUID() + "\n" + "SCRIPT PATH: " + fnameScript + "\n" 
@@ -948,10 +891,6 @@ public class DMLScript
 		}
 	}
 	
-	/**
-	 * 
-	 * @return
-	 */
 	private static String getDateTime() 
 	{
 		DateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
@@ -959,10 +898,6 @@ public class DMLScript
 		return dateFormat.format(date);
 	}
 
-	/**
-	 * 
-	 * @throws DMLException
-	 */
 	private static void cleanSystemMLWorkspace() 
 		throws DMLException
 	{
@@ -989,6 +924,4 @@ public class DMLScript
 			throw new DMLException("Failed to run SystemML workspace cleanup.", ex);
 		}
 	}
-
-	public static final boolean REUSE_NONZEROED_OUTPUT = false;
 }  

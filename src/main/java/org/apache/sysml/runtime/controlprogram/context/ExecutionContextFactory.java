@@ -20,15 +20,12 @@
 package org.apache.sysml.runtime.controlprogram.context;
 
 import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.controlprogram.Program;
 
 public class ExecutionContextFactory 
 {
-	
-	/**
-	 * 
-	 * @return
-	 */
 	public static ExecutionContext createContext()
 	{
 		return createContext( null );
@@ -38,12 +35,7 @@ public class ExecutionContextFactory
 	{
 		return createContext(true, prog);
 	}
-	
-	/**
-	 * 
-	 * @param platform
-	 * @return
-	 */
+
 	public static ExecutionContext createContext( boolean allocateVars, Program prog )
 	{
 		ExecutionContext ec = null;
@@ -51,6 +43,14 @@ public class ExecutionContextFactory
 		switch( DMLScript.rtplatform )
 		{
 			case SINGLE_NODE:
+				//NOTE: even in case of forced singlenode operations, users might still 
+				//want to run remote parfor which requires the correct execution context
+				if( OptimizerUtils.getDefaultExecutionMode()==RUNTIME_PLATFORM.HYBRID)
+					ec = new ExecutionContext(allocateVars, prog);
+				else
+					ec = new SparkExecutionContext(allocateVars, prog);
+				break;
+				
 			case HADOOP:
 			case HYBRID:
 				ec = new ExecutionContext(allocateVars, prog);

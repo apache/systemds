@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.applications.dml;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-
 import org.apache.sysml.test.integration.applications.L2SVMTest;
 
 @RunWith(value = Parameterized.class)
@@ -37,5 +36,4 @@ public class L2SVMDMLTest extends L2SVMTest {
 	public void testL2SVMDml() {
 		testL2SVM(ScriptType.DML);
 	}
-
 }

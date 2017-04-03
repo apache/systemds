@@ -47,13 +47,7 @@ public class LongLongDoubleHashMap
 	public int size() {
 		return size;
 	}
-	
-	/**
-	 * 
-	 * @param key1
-	 * @param key2
-	 * @param value
-	 */
+
 	public void addValue(long key1, long key2, double value)
 	{
 		//compute entry index position
@@ -78,11 +72,7 @@ public class LongLongDoubleHashMap
 		if( size >= LOAD_FACTOR*data.length )
 			resize();
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public ArrayList<LLDoubleEntry> extractValues()
 	{
 		ArrayList<LLDoubleEntry> ret = new ArrayList<LLDoubleEntry>();
@@ -98,10 +88,7 @@ public class LongLongDoubleHashMap
 
 		return ret;
 	}
-	
-	/**
-	 * 
-	 */
+
 	private void resize() {
 		//check for integer overflow on resize
 		if( data.length > Integer.MAX_VALUE/RESIZE_FACTOR )
@@ -123,17 +110,9 @@ public class LongLongDoubleHashMap
 			}
 		}
 	}
-	
-	/**
-	 * 
-	 * @param key1
-	 * @param key2
-	 * @return
-	 */
+
 	private static int hash(long key1, long key2) {
-		//basic hash mixing of two longs hashes (w/o object creation)
-		int h = (int)(key1 ^ (key1 >>> 32));
-		h = h*31 + (int)(key2 ^ (key2 >>> 32));
+		int h = UtilFunctions.longlongHashCode(key1, key2);
 		
 		// This function ensures that hashCodes that differ only by
 		// constant multiples at each bit position have a bounded
@@ -142,19 +121,10 @@ public class LongLongDoubleHashMap
 		return h ^ (h >>> 7) ^ (h >>> 4);
 	}
 
-	/**
-	 * 
-	 * @param h
-	 * @param length
-	 * @return
-	 */
 	private static int indexFor(int h, int length) {
 		return h & (length-1);
 	}
-	
-	/**
-	 * 
-	 */
+
 	public class LLDoubleEntry {
 		public long key1 = Long.MAX_VALUE;
 		public long key2 = Long.MAX_VALUE;

@@ -40,16 +40,7 @@ public class StringIdentifier extends ConstIdentifier
         this.setAllPositions(filename, blp, bcp, elp, ecp);
 		
 	}
-	
-	public StringIdentifier(StringIdentifier s){
-		super();
-		 _val = s.getValue();
-		_kind = Kind.Data;
-		this.setDimensions(0,0);
-        this.computeDataType();
-        this.setValueType(ValueType.STRING);
-	}
-	
+
 	public String getValue(){
 		return _val;
 	}

@@ -65,7 +65,7 @@ public abstract class ResultMerge
 	 * of one input matrix at a time.
 	 * 
 	 * @return output (merged) matrix
-	 * @throws DMLRuntimeException
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public abstract MatrixObject executeSerialMerge() 
 		throws DMLRuntimeException;
@@ -77,17 +77,18 @@ public abstract class ResultMerge
 	 * 
 	 * @param par degree of parallelism
 	 * @return output (merged) matrix
-	 * @throws DMLRuntimeException
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public abstract MatrixObject executeParallelMerge( int par ) 
 		throws DMLRuntimeException;
 	
 	/**
+	 * ?
 	 * 
 	 * @param out initially empty block
-	 * @param in 
-	 * @param appendOnly 
-	 * @throws DMLRuntimeException 
+	 * @param in input matrix block
+	 * @param appendOnly ?
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	protected void mergeWithoutComp( MatrixBlock out, MatrixBlock in, boolean appendOnly ) 
 		throws DMLRuntimeException
@@ -100,9 +101,10 @@ public abstract class ResultMerge
 	 * NOTE: append only not applicable for wiht compare because output must be populated with
 	 * initial state of matrix - with append, this would result in duplicates.
 	 * 
-	 * @param out
-	 * @param in
-	 * @throws DMLRuntimeException 
+	 * @param out output matrix block
+	 * @param in input matrix block
+	 * @param compare ?
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	protected void mergeWithComp( MatrixBlock out, MatrixBlock in, double[][] compare ) 
 		throws DMLRuntimeException
@@ -161,12 +163,7 @@ public abstract class ResultMerge
 		
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @param in
-	 * @return
-	 */
+
 	protected ArrayList<MatrixObject> convertToList(MatrixObject[] in)
 	{
 		ArrayList<MatrixObject> ret = new ArrayList<MatrixObject>();

@@ -344,11 +344,11 @@ public class ParForDependencyAnalysisTest extends AutomatedTestBase
 			HashMap<String, String> argVals = new HashMap<String,String>();
 			
 			//read script
-			BufferedReader in = new BufferedReader(new FileReader(HOME + scriptFilename));
-			String s1 = null;
-			while ((s1 = in.readLine()) != null)
-				dmlScriptString += s1 + "\n";
-			in.close();	
+			try( BufferedReader in = new BufferedReader(new FileReader(HOME + scriptFilename)) ) {
+				String s1 = null;
+				while ((s1 = in.readLine()) != null)
+					dmlScriptString += s1 + "\n";
+			}	
 			
 			//parsing and dependency analysis
 			AParserWrapper parser = AParserWrapper.createParser(false);

@@ -96,8 +96,7 @@ public class RelationalExpression extends Expression
 	}
 
 	/**
-	 * Validate parse tree : Process Relational Expression  
-	 * @throws LanguageException 
+	 * Validate parse tree : Process Relational Expression
 	 */
 	@Override
 	public void validateExpression(HashMap<String,DataIdentifier> ids, HashMap<String, ConstIdentifier> constVars, boolean conditional) 
@@ -172,8 +171,10 @@ public class RelationalExpression extends Expression
 	
 	/**
 	 * This is same as the function from BuiltinFunctionExpression which is called by ppred
-	 * @param expr1
-	 * @param expr2
+	 * 
+	 * @param expr1 expression 1
+	 * @param expr2 expression 2
+	 * @param allowsMV ?
 	 * @throws LanguageException
 	 */
 	private void checkMatchingDimensions(Expression expr1, Expression expr2, boolean allowsMV) 
@@ -197,11 +198,24 @@ public class RelationalExpression extends Expression
 			}
 		}
 	}
-	
-	
+
 	public String toString(){
-		return "(" + _left.toString() + " " + _opcode.toString() + " " + _right.toString() + ")";
+		String leftString;
+		String rightString;
+		if (_left instanceof StringIdentifier) {
+			leftString = "\"" + _left.toString() + "\"";
+		} else {
+			leftString = _left.toString();
+		}
+		if (_right instanceof StringIdentifier) {
+			rightString = "\"" + _right.toString() + "\"";
+		} else {
+			rightString = _right.toString();
+		}
+		return "(" + leftString + " " + _opcode.toString() + " "
+				+ rightString + ")";
 	}
+
 	@Override
 	public VariableSet variablesRead() {
 		VariableSet result = new VariableSet();

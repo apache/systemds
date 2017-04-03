@@ -27,13 +27,12 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.sysml.api.jmlc.Connection;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.Expression.ValueType;
@@ -51,12 +50,7 @@ import org.apache.wink.json4j.JSONObject;
 
 public class TfMetaUtils 
 {
-	/**
-	 * 
-	 * @param spec
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static boolean isIDSpecification(String spec) throws DMLRuntimeException {
 		try {
 			JSONObject jSpec = new JSONObject(spec);
@@ -66,27 +60,12 @@ public class TfMetaUtils
 			throw new DMLRuntimeException(ex);
 		}
 	}
-	
-	/**
-	 * 
-	 * @param spec
-	 * @param colnames
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
-	public static boolean containsOmitSpec(String spec, List<String> colnames) throws DMLRuntimeException {
+
+	public static boolean containsOmitSpec(String spec, String[] colnames) throws DMLRuntimeException {
 		return (TfMetaUtils.parseJsonIDList(spec, colnames, TfUtils.TXMETHOD_OMIT).length > 0);	
 	}
-	
-	/**
-	 * 
-	 * @param spec
-	 * @param colnames
-	 * @param group
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
-	public static int[] parseJsonIDList(String spec, List<String> colnames, String group) 
+
+	public static int[] parseJsonIDList(String spec, String[] colnames, String group) 
 		throws DMLRuntimeException 
 	{
 		try {
@@ -101,13 +80,13 @@ public class TfMetaUtils
 	/**
 	 * TODO consolidate external and internal json spec definitions
 	 * 
-	 * @param spec
-	 * @param colnames
-	 * @param group
-	 * @return
-	 * @throws JSONException
+	 * @param spec transform specification as json string
+	 * @param colnames column names
+	 * @param group ?
+	 * @return list of column ids
+	 * @throws JSONException if JSONException occurs
 	 */
-	public static int[] parseJsonIDList(JSONObject spec, List<String> colnames, String group) 
+	public static int[] parseJsonIDList(JSONObject spec, String[] colnames, String group) 
 		throws JSONException
 	{
 		int[] colList = new int[0];
@@ -127,7 +106,7 @@ public class TfMetaUtils
 			colList = new int[attrs.size()];
 			for(int i=0; i < colList.length; i++) {
 				colList[i] = ids ? UtilFunctions.toInt(attrs.get(i)) : 
-					(colnames.indexOf(attrs.get(i)) + 1);
+					(ArrayUtils.indexOf(colnames, attrs.get(i)) + 1);
 				if( colList[i] <= 0 ) {
 					throw new RuntimeException("Specified column '" + 
 						attrs.get(i)+"' does not exist.");
@@ -140,15 +119,8 @@ public class TfMetaUtils
 		
 		return colList;
 	}
-	
-	/**
-	 * 
-	 * @param spec
-	 * @param group
-	 * @return
-	 * @throws JSONException
-	 */
-	public static int[] parseJsonObjectIDList(JSONObject spec, List<String> colnames, String group) 
+
+	public static int[] parseJsonObjectIDList(JSONObject spec, String[] colnames, String group) 
 		throws JSONException
 	{
 		int[] colList = new int[0];
@@ -161,7 +133,7 @@ public class TfMetaUtils
 			for(int j=0; j<colspecs.size(); j++) {
 				JSONObject colspec = (JSONObject) colspecs.get(j);
 				colList[j] = ids ? colspec.getInt("id") : 
-					(colnames.indexOf(colspec.get("name")) + 1);
+					(ArrayUtils.indexOf(colnames, colspec.get("name")) + 1);
 				if( colList[j] <= 0 ) {
 					throw new RuntimeException("Specified column '" +
 						colspec.get(ids?"id":"name")+"' does not exist.");
@@ -182,23 +154,23 @@ public class TfMetaUtils
 	 * @param spec      transform specification as json string
 	 * @param metapath  hdfs file path to meta data directory
 	 * @param colDelim  separator for processing column names in the meta data file 'column.names'
-	 * @return FrameBlock object representing transform metadata
-	 * @throws IOException
+	 * @return frame block
+	 * @throws IOException if IOException occurs
 	 */
 	public static FrameBlock readTransformMetaDataFromFile(String spec, String metapath, String colDelim) 
 		throws IOException 
 	{
 		//read column names
 		String colnamesStr = MapReduceTool.readStringFromHDFSFile(metapath+File.separator+TfUtils.TXMTD_COLNAMES);
-		List<String> colnames = Arrays.asList(IOUtilFunctions.split(colnamesStr.trim(), colDelim));
+		String[] colnames = IOUtilFunctions.split(colnamesStr.trim(), colDelim);
 		
 		//read meta data (currently supported: recode, dummycode, bin, omit, impute)
 		//note: recode/binning and impute might be applied on the same column
 		HashMap<String,String> meta = new HashMap<String,String>();
 		HashMap<String,String> mvmeta = new HashMap<String,String>();
 		int rows = 0;
-		for( int j=0; j<colnames.size(); j++ ) {
-			String colName = colnames.get(j);
+		for( int j=0; j<colnames.length; j++ ) {
+			String colName = colnames[j];
 			//read recode maps for recoded or dummycoded columns
 			String name = metapath+File.separator+"Recode"+File.separator+colName;
 			if( MapReduceTool.existsFileOnHDFS(name+TfUtils.TXMTD_RCD_MAP_SUFFIX) ) {
@@ -236,23 +208,23 @@ public class TfMetaUtils
 	 * @param spec      transform specification as json string
 	 * @param metapath  resource path to meta data directory
 	 * @param colDelim  separator for processing column names in the meta data file 'column.names'
-	 * @return FrameBlock object representing transform metadata
-	 * @throws IOException
+	 * @return frame block
+	 * @throws IOException if IOException occurs
 	 */
 	public static FrameBlock readTransformMetaDataFromPath(String spec, String metapath, String colDelim) 
 		throws IOException 
 	{
 		//read column names
 		String colnamesStr = IOUtilFunctions.toString(Connection.class.getResourceAsStream(metapath+"/"+TfUtils.TXMTD_COLNAMES));
-		List<String> colnames = Arrays.asList(IOUtilFunctions.split(colnamesStr.trim(), colDelim));
+		String[] colnames = IOUtilFunctions.split(colnamesStr.trim(), colDelim);
 		
 		//read meta data (currently supported: recode, dummycode, bin, omit)
 		//note: recode/binning and impute might be applied on the same column
 		HashMap<String,String> meta = new HashMap<String,String>();
 		HashMap<String,String> mvmeta = new HashMap<String,String>();
 		int rows = 0;
-		for( int j=0; j<colnames.size(); j++ ) {
-			String colName = colnames.get(j);
+		for( int j=0; j<colnames.length; j++ ) {
+			String colName = colnames[j];
 			//read recode maps for recoded or dummycoded columns
 			String name = metapath+"/"+"Recode"+"/"+colName;
 			String map = IOUtilFunctions.toString(Connection.class.getResourceAsStream(name+TfUtils.TXMTD_RCD_MAP_SUFFIX));
@@ -287,25 +259,27 @@ public class TfMetaUtils
 	/**
 	 * Converts transform meta data into an in-memory FrameBlock object.
 	 * 
-	 * @param rows
-	 * @param recodeIDs
-	 * @param colnames
-	 * @param meta
-	 * @return
-	 * @throws IOException
+	 * @param rows number of rows
+	 * @param colnames column names
+	 * @param rcIDs recode IDs
+	 * @param binIDs binning IDs
+	 * @param meta ?
+	 * @param mvmeta ?
+	 * @return frame block
+	 * @throws IOException if IOException occurs
 	 */
-	private static FrameBlock convertToTransformMetaDataFrame(int rows, List<String> colnames, List<Integer> rcIDs, List<Integer> binIDs, 
+	private static FrameBlock convertToTransformMetaDataFrame(int rows, String[] colnames, List<Integer> rcIDs, List<Integer> binIDs, 
 			HashMap<String,String> meta, HashMap<String,String> mvmeta) 
 		throws IOException 
 	{
 		//create frame block w/ pure string schema
-		List<ValueType> schema = Collections.nCopies(colnames.size(), ValueType.STRING);
+		ValueType[] schema = UtilFunctions.nCopies(colnames.length, ValueType.STRING);
 		FrameBlock ret = new FrameBlock(schema, colnames);
 		ret.ensureAllocatedColumns(rows);
 		
 		//encode recode maps (recoding/dummycoding) into frame
 		for( Integer colID : rcIDs ) {
-			String name = colnames.get(colID-1);
+			String name = colnames[colID-1];
 			String map = meta.get(name);
 			if( map == null )
 				throw new IOException("Recode map for column '"+name+"' (id="+colID+") not existing.");
@@ -324,7 +298,7 @@ public class TfMetaUtils
 		
 		//encode bin maps (binning) into frame
 		for( Integer colID : binIDs ) {
-			String name = colnames.get(colID-1);
+			String name = colnames[colID-1];
 			String map = meta.get(name);
 			if( map == null )
 				throw new IOException("Binning map for column '"+name+"' (id="+colID+") not existing.");
@@ -343,7 +317,7 @@ public class TfMetaUtils
 		
 		//encode impute meta data into frame
 		for( Entry<String, String> e : mvmeta.entrySet() ) {
-			int colID = colnames.indexOf(e.getKey()) + 1;
+			int colID = ArrayUtils.indexOf(colnames, e.getKey()) + 1;
 			String mvVal = e.getValue().split(TfUtils.TXMTD_SEP)[1];
 			ret.getColumnMetadata(colID-1).setMvValue(mvVal);
 		}
@@ -355,13 +329,13 @@ public class TfMetaUtils
 	 * Parses the given json specification and extracts a list of column ids
 	 * that are subject to recoding.
 	 * 
-	 * @param spec
-	 * @param coltypes
-	 * @return
-	 * @throws IOException
+	 * @param spec transform specification as json string
+	 * @param colnames column names
+	 * @return list of column ids
+	 * @throws IOException if IOException occurs
 	 */
 	@SuppressWarnings("unchecked")
-	private static List<Integer> parseRecodeColIDs(String spec, List<String> colnames) 
+	private static List<Integer> parseRecodeColIDs(String spec, String[] colnames) 
 		throws IOException 
 	{	
 		if( spec == null )
@@ -384,14 +358,8 @@ public class TfMetaUtils
 		
 		return specRecodeIDs;
 	}
-	
-	/**
-	 * 
-	 * @param spec
-	 * @return
-	 * @throws IOException
-	 */
-	public static List<Integer> parseBinningColIDs(String spec, List<String> colnames) 
+
+	public static List<Integer> parseBinningColIDs(String spec, String[] colnames) 
 		throws IOException 
 	{
 		try {
@@ -402,14 +370,8 @@ public class TfMetaUtils
 			throw new IOException(ex);
 		}
 	}
-	
-	/**
-	 * 
-	 * @param jSpec
-	 * @return
-	 * @throws IOException
-	 */
-	public static List<Integer> parseBinningColIDs(JSONObject jSpec, List<String> colnames) 
+
+	public static List<Integer> parseBinningColIDs(JSONObject jSpec, String[] colnames) 
 		throws IOException 
 	{
 		try {

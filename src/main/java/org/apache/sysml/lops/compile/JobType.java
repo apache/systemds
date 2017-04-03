@@ -213,10 +213,7 @@ public enum JobType
 	}
 	
 	public boolean allowsRecordReaderInstructions() {
-		if ( getName().equals("GMR") ) 
-			return true;
-		else
-			return false;
+		return getName().equals("GMR"); 
 	}
 	
 	public int getBase() {
@@ -232,22 +229,6 @@ public enum JobType
 			return (int) Math.pow(2, id-1);
 	}
 
-	public JobType findJobTypeById(int id) {
-		for (JobType jt : JobType.values()) {
-			if (jt.getId() == id)
-				return jt;
-		}
-		return null;
-	}
-
-	public JobType findJobTypeByName(String name) {
-		for (JobType jt : JobType.values()) {
-			if (jt.getName().equalsIgnoreCase(name))
-				return jt;
-		}
-		return null;
-	}
-	
 	public static int getNumJobTypes() {
 		return values().length;
 	}

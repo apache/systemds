@@ -19,20 +19,35 @@
 
 package org.apache.sysml.parser;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.debug.DMLBreakpointManager;
 
  
 public class PrintStatement extends Statement
 {
-	public enum PRINTTYPE {PRINT, STOP};
-	
-	protected PRINTTYPE _type; // print or stop
-	protected Expression _expr;
+	/**
+	 * The PRINTTYPE options are: PRINT, PRINTF, and STOP.
+	 * <p>
+	 * Note that PRINTF functionality is overloaded onto the existing 'print'
+	 * built-in function.
+	 */
+	public enum PRINTTYPE {
+		PRINT, PRINTF, STOP
+	};
 
-	private static PRINTTYPE getPrintType(String type) throws LanguageException {
+	protected PRINTTYPE _type; // print, printf, or stop
+	protected List<Expression> expressions;
+
+	private static PRINTTYPE getPrintType(String type, List<Expression> expressions) throws LanguageException {
 		if(type.equalsIgnoreCase("print")) {
-			return PRINTTYPE.PRINT;
+			if (expressions.size() == 1) {
+				return PRINTTYPE.PRINT;
+			} else {
+				return PRINTTYPE.PRINTF;
+			}
 		}
 		else if (type.equalsIgnoreCase("stop")) {
 			return PRINTTYPE.STOP;
@@ -40,26 +55,30 @@ public class PrintStatement extends Statement
 		else
 			throw new LanguageException("Unknown statement type: " + type);
 	}
-	
-	public PrintStatement(String type, Expression expr, int beginLine, int beginCol, int endLine, int endCol) 
-		throws LanguageException
-	{
-		this(getPrintType(type), expr);
-		
+
+	public PrintStatement(String type, List<Expression> expressions, int beginLine, int beginCol,
+			int endLine, int endCol) throws LanguageException {
+		this(getPrintType(type, expressions), expressions);
+
 		setBeginLine(beginLine);
 		setBeginColumn(beginCol);
 		setEndLine(endLine);
 		setEndColumn(endCol);
 	}
-	 
-	public PrintStatement(PRINTTYPE type, Expression expr) throws LanguageException{
+
+	public PrintStatement(PRINTTYPE type, List<Expression> expressions)
+			throws LanguageException {
 		_type = type;
-		_expr = expr; 
+		this.expressions = expressions;
 	}
-	 
+
 	public Statement rewriteStatement(String prefix) throws LanguageException{
-		Expression newExpr = _expr.rewriteExpression(prefix);
-		PrintStatement retVal = new PrintStatement(_type, newExpr);
+		List<Expression> newExpressions = new ArrayList<Expression>();
+		for (Expression oldExpression : expressions) {
+			Expression newExpression = oldExpression.rewriteExpression(prefix);
+			newExpressions.add(newExpression);
+		}
+		PrintStatement retVal = new PrintStatement(_type, newExpressions);
 		retVal.setBeginLine(this.getBeginLine());
 		retVal.setBeginColumn(this.getBeginColumn());
 		retVal.setEndLine(this.getEndLine());
@@ -74,22 +93,47 @@ public class PrintStatement extends Statement
 		return lo;
 	}
 	
-	
-	public String toString(){
-		 StringBuilder sb = new StringBuilder();
-		 sb.append(_type + " (" );
-		 if (_expr != null){
-			 sb.append(_expr.toString());
-		 }
-		 sb.append(");");
-		 return sb.toString(); 
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(_type + "(");
+		if ((_type == PRINTTYPE.PRINT) || (_type == PRINTTYPE.STOP)) {
+			Expression expression = expressions.get(0);
+			if (expression instanceof StringIdentifier) {
+				sb.append("\"");
+				sb.append(expression.toString());
+				sb.append("\"");
+			} else {
+				sb.append(expression.toString());
+			}
+		} else if (_type == PRINTTYPE.PRINTF) {
+			for (int i = 0; i < expressions.size(); i++) {
+				if (i > 0) {
+					sb.append(", ");
+				}
+				Expression expression = expressions.get(i);
+				if (expression instanceof StringIdentifier) {
+					sb.append("\"");
+					sb.append(expression.toString());
+					sb.append("\"");
+				} else {
+					sb.append(expression.toString());
+				}
+			}
+		}
+
+		sb.append(");");
+		return sb.toString();
 	}
 	
 	
 	@Override
 	public VariableSet variablesRead() {
-		VariableSet result =  _expr.variablesRead();
-		return result;
+		VariableSet variableSet = new VariableSet();
+		for (Expression expression : expressions) {
+			VariableSet variablesRead = expression.variablesRead();
+			variableSet.addVariables(variablesRead);
+		}
+		return variableSet;
 	}
 
 	@Override
@@ -101,7 +145,7 @@ public class PrintStatement extends Statement
 	public boolean controlStatement() {	 
 		// ensure that breakpoints end up in own statement block
 		if (DMLScript.ENABLE_DEBUG_MODE) {
-			DMLBreakpointManager.insertBreakpoint(_expr.getBeginLine());
+			DMLBreakpointManager.insertBreakpoint(expressions.get(0).getBeginLine());
 			return true;
 		}
 		
@@ -112,12 +156,15 @@ public class PrintStatement extends Statement
 		return false;
 	}
 
-	public Expression getExpression(){
-		return _expr;
-	}
-	
 	public PRINTTYPE getType() {
 		return _type;
 	}
-	 
+
+	public List<Expression> getExpressions() {
+		return expressions;
+	}
+
+	public void setExpressions(List<Expression> expressions) {
+		this.expressions = expressions;
+	}
 }

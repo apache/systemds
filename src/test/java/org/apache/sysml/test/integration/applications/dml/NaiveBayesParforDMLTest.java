@@ -36,5 +36,4 @@ public class NaiveBayesParforDMLTest extends NaiveBayesParforTest {
 	public void testNaiveBayesDml() {
 		testNaiveBayes(ScriptType.DML);
 	}
-
 }

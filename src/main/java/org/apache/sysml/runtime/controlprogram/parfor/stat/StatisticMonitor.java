@@ -55,8 +55,8 @@ public class StatisticMonitor
 	 * Register information about parent-child relationships of parworkers and 
 	 * parfor program blocks, with a parfor can be related to one or many parworkers.
 	 * 
-	 * @param pfid
-	 * @param pwid
+	 * @param pfid ?
+	 * @param pwid ?
 	 */
 	public static void putPfPwMapping( long pfid, long pwid )
 	{
@@ -69,9 +69,9 @@ public class StatisticMonitor
 	/**
 	 * Puts a specific parfor statistic for future analysis into the repository.
 	 * 
-	 * @param id
-	 * @param type
-	 * @param s
+	 * @param id ?
+	 * @param type parfor statistic type
+	 * @param s ?
 	 */
 	public static void putPFStat( long id, Stat type, double s)
 	{
@@ -95,9 +95,9 @@ public class StatisticMonitor
 	/**
 	 * Puts a specific parworker statistic for future analysis into the repository.
 	 * 
-	 * @param id
-	 * @param type
-	 * @param s
+	 * @param id ?
+	 * @param type parfor statistic type
+	 * @param s ?
 	 */
 	public static void putPWStat( long id, Stat type, double s)
 	{
@@ -118,17 +118,7 @@ public class StatisticMonitor
 		stats.addLast(s);
 		
 	}
-	
-	/**
-	 * Cleans up the whole repository by discarding all collected information.
-	 */
-	public static void cleanUp()
-	{
-		_mapPwPf.clear();
-		_pfstats.clear();
-		_pwstats.clear();
-	}
-	
+
 	/**
 	 * Globally disables statistic monitor for the currently activ JVM.
 	 */
@@ -143,7 +133,7 @@ public class StatisticMonitor
 	 * 
 	 * NOTE: This report is mainly for analysis and debugging purposes.
 	 * 
-	 * @return
+	 * @return report as string
 	 */
 	public static String createReport()
 	{

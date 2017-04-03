@@ -46,7 +46,7 @@ public abstract class FunctionParameter implements Serializable
 	/**
 	 * Constructor to set type
 	 * 
-	 * @param type
+	 * @param type function parameter type
 	 */
 	public FunctionParameter(FunctionParameterType type) {
 		_type = type;
@@ -55,7 +55,7 @@ public abstract class FunctionParameter implements Serializable
 	/**
 	 * Method to get type
 	 * 
-	 * @return
+	 * @return function parameter type
 	 */
 	public FunctionParameterType getType() {
 		return _type;

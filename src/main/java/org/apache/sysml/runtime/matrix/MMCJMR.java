@@ -267,11 +267,11 @@ public class MMCJMR
 	 * Determine number of reducers based on configured number of reducers, number of results groups
 	 * and input data divided by blocksize (as heuristic for useful degree of parallelism).
 	 * 
-	 * @param rlen
-	 * @param clen
-	 * @param defaultNumRed
-	 * @param numRedGroups
-	 * @return
+	 * @param rlen array of numbers of rows
+	 * @param clen array of numbers of columns
+	 * @param defaultNumRed default number of reducers
+	 * @param numRedGroups number of reducer groups
+	 * @return number of reducers
 	 */
 	protected static int determineNumReducers( long[] rlen, long[] clen, int defaultNumRed, long numRedGroups )
 	{

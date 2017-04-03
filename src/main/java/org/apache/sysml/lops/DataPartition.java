@@ -61,11 +61,8 @@ public class DataPartition extends Lop
 		return "DataPartition";
 	}
 
-	//CP instruction generation
 	@Override
-	public String getInstructions(String input_index, String output_index) 
-		throws LopsException
-	{
+	public String getInstructions(String input_index, String output_index) {
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );
 		sb.append( Lop.OPERAND_DELIMITOR );
@@ -88,30 +85,8 @@ public class DataPartition extends Lop
 		return sb.toString();
 	}
 	
-	//MR instruction generation
 	@Override
-	public String getInstructions(int input_index, int output_index) 
-		throws LopsException
-	{
-		StringBuilder sb = new StringBuilder();
-		sb.append( getExecType() );
-		sb.append( Lop.OPERAND_DELIMITOR );
-		sb.append( OPCODE );
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( input_index );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(0).getDataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(0).getValueType() );
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( output_index );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getDataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getValueType() );
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( _pformat.toString() );
-		
-		return sb.toString();
+	public String getInstructions(int input_index, int output_index) {
+		return getInstructions(String.valueOf(input_index), String.valueOf(output_index));
 	}
 }

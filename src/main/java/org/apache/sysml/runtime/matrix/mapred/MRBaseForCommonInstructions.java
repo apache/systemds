@@ -105,20 +105,7 @@ public class MRBaseForCommonInstructions extends MapReduceBase
 				dimensions.put(index, MRJobConfiguration.getIntermediateMatrixCharactristics(job, index));			
 		}
 	}
-	
-	/**
-	 * 
-	 * @param indexes
-	 * @param value
-	 * @param i
-	 * @param reporter
-	 * @param collectFinalMultipleOutputs
-	 * @param resultDimsUnknown
-	 * @param resultsNonZeros
-	 * @param resultsMaxRowDims
-	 * @param resultsMaxColDims
-	 * @throws IOException
-	 */
+
 	protected void collectOutput_N_Increase_Counter(MatrixIndexes indexes, MatrixValue value, 
 			int i, Reporter reporter, CollectMultipleConvertedOutputs collectFinalMultipleOutputs, 
 			byte[] resultDimsUnknown, long[] resultsNonZeros, long[] resultsMaxRowDims, 
@@ -151,11 +138,6 @@ public class MRBaseForCommonInstructions extends MapReduceBase
 		}
 	}
 
-	/**
-	 * 
-	 * @param mixed_instructions
-	 * @throws DMLRuntimeException
-	 */
 	protected void processMixedInstructions(ArrayList<MRInstruction> mixed_instructions) 
 		throws DMLRuntimeException
 	{
@@ -163,16 +145,7 @@ public class MRBaseForCommonInstructions extends MapReduceBase
 			for( MRInstruction ins : mixed_instructions )
 				processOneInstruction(ins, valueClass, cachedValues, tempValue, zeroInput);
 	}
-	
-	/**
-	 * 
-	 * @param ins
-	 * @param valueClass
-	 * @param cachedValues
-	 * @param tempValue
-	 * @param zeroInput
-	 * @throws DMLRuntimeException
-	 */
+
 	protected void processOneInstruction(MRInstruction ins, Class<? extends MatrixValue> valueClass,
 			CachedValueMap cachedValues, IndexedMatrixValue tempValue, IndexedMatrixValue zeroInput) 
 		throws DMLRuntimeException
@@ -281,11 +254,6 @@ public class MRBaseForCommonInstructions extends MapReduceBase
 		dcValues.clear();
 	}
 
-	/**
-	 * 
-	 * @param job
-	 * @throws IOException
-	 */
 	protected void setupDistCacheFiles(JobConf job) 
 		throws IOException 
 	{
@@ -332,10 +300,10 @@ public class MRBaseForCommonInstructions extends MapReduceBase
 	/**
 	 * Returns the maximum row or column dimension of the given key and value pair. 
 	 * 
-	 * @param key
-	 * @param value
-	 * @param row
-	 * @return
+	 * @param key matrix indexes
+	 * @param value MatrixValue of either type MatrixCell or MatrixBlock
+	 * @param row if true return row dimension, else return column dimension
+	 * @return maximum row or column dimension, or 0 if MatrixValue not MatrixCell or MatrixBlock
 	 */
 	private long getMaxDimension( MatrixIndexes key, MatrixValue value, boolean row ) {
 		if( value instanceof MatrixCell )

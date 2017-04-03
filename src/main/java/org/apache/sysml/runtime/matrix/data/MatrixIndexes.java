@@ -40,12 +40,6 @@ import org.apache.sysml.runtime.util.UtilFunctions;
 public class MatrixIndexes implements WritableComparable<MatrixIndexes>, RawComparator<MatrixIndexes>, Externalizable
 {	
 	private static final long serialVersionUID = -1521166657518127789L;
-		
-	public static final int BYTE_SIZE = (Long.SIZE+Long.SIZE)/8;
-	public static final long ADD_PRIME1 = 99991;
-	public static final long ADD_PRIME2 = 853;
-	//prime close to max int, because it determines the max hash domain size
-	public static final int DIVIDE_PRIME = 1405695061; 
 	
 	private long _row = -1;
 	private long _col = -1;
@@ -106,23 +100,12 @@ public class MatrixIndexes implements WritableComparable<MatrixIndexes>, RawComp
 	
 	@Override
 	public int hashCode() {
-		return UtilFunctions.longHashFunc((_row<<32)+_col+ADD_PRIME1)%DIVIDE_PRIME;
+		return UtilFunctions.longlongHashCode(_row, _col);
 	}
 	
 	@Override
 	public String toString() {
 		return "("+_row+", "+_col+")";
-	}
-	
-	public int compareWithOrder(MatrixIndexes other, boolean leftcached) {
-		if( !leftcached )
-			return compareTo(other);
-		
-		if( _col != other._col)
-			return (_col > other._col ? 1 : -1);
-		else if( _row != other._row)
-			return (_row>other._row ? 1 : -1);
-		return 0;
 	}
 
 	////////////////////////////////////////////////////
@@ -152,8 +135,8 @@ public class MatrixIndexes implements WritableComparable<MatrixIndexes>, RawComp
 	 * Redirects the default java serialization via externalizable to our default 
 	 * hadoop writable serialization for consistency/maintainability. 
 	 * 
-	 * @param is
-	 * @throws IOException
+	 * @param is object input
+	 * @throws IOException if IOException occurs
 	 */
 	public void readExternal(ObjectInput is) 
 		throws IOException
@@ -166,8 +149,8 @@ public class MatrixIndexes implements WritableComparable<MatrixIndexes>, RawComp
 	 * Redirects the default java serialization via externalizable to our default 
 	 * hadoop writable serialization for consistency/maintainability. 
 	 * 
-	 * @param is
-	 * @throws IOException
+	 * @param os object output
+	 * @throws IOException if IOException occurs
 	 */
 	public void writeExternal(ObjectOutput os) 
 		throws IOException

@@ -20,7 +20,6 @@
 package org.apache.sysml.runtime.io;
 
 import java.io.IOException;
-import java.util.List;
 
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -36,39 +35,17 @@ import org.apache.sysml.runtime.matrix.data.FrameBlock;
 public abstract class FrameWriter 
 {
 
-	/**
-	 * 
-	 * @param src
-	 * @param fname
-	 * @param rlen
-	 * @param clen
-	 * @return
-	 * @throws IOException 
-	 * @throws DMLRuntimeException 
-	 */
 	public abstract void writeFrameToHDFS( FrameBlock src, String fname, long rlen, long clen )
 		throws IOException, DMLRuntimeException;
-	
-	/**
-	 * 
-	 * @param schema
-	 * @param names
-	 * @return
-	 * @throws DMLRuntimeException 
-	 */
-	public static FrameBlock[] createFrameBlocksForReuse( List<ValueType> schema, List<String> names, long rlen ) 
+
+	public static FrameBlock[] createFrameBlocksForReuse( ValueType[] schema, String[] names, long rlen ) 
 		throws DMLRuntimeException
 	{
 		FrameBlock frameBlock[] = new FrameBlock[1];
 		frameBlock[0] = new FrameBlock(schema, names);
 		return frameBlock;
 	}
-	
-	/**
-	 * 
-	 * @param blocks
-	 * @return
-	 */
+
 	public static FrameBlock getFrameBlockForReuse( FrameBlock[] blocks) //TODO do we need this function?
 	{
 		return blocks[ 0 ];

@@ -19,25 +19,25 @@
 
 package org.apache.sysml.test.integration.functions.data;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
-
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
+
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
 
 /**
- * Tests if Rand produces the same output, for a given set of parameters, across different (CP vs. MR) runtime platforms.   
- * 
+ * Tests both DML's seq() and PyDML's range() functions
+ * with different numbers of parameters, across different (CP vs. MR)
+ * runtime platforms.
  */
 @RunWith(value = Parameterized.class)
 public class SequenceTest extends AutomatedTestBase 
@@ -53,35 +53,55 @@ public class SequenceTest extends AutomatedTestBase
 	
 	private TEST_TYPE test_type;
 	private double from, to, incr;
+	private boolean isPyDml;
 	
-	public SequenceTest(TEST_TYPE tp, double f, double t, double i) {
+	public SequenceTest(TEST_TYPE tp, double f, double t, double i, boolean isPyDml) {
 		//numInputs = ni;
 		test_type = tp;
 		from = f;
 		to = t;
 		incr = i;
+		this.isPyDml = isPyDml;
 	}
 	
 	@Parameters
 	public static Collection<Object[]> data() {
 		Object[][] data = new Object[][] { 
-				// 3 inputs
-				{TEST_TYPE.THREE_INPUTS, 1, 2000, 1},
-				{TEST_TYPE.THREE_INPUTS, 2000, 1, -1},
-				{TEST_TYPE.THREE_INPUTS, 0, 150, 0.1},
-				{TEST_TYPE.THREE_INPUTS, 150, 0, -0.1},
-				{TEST_TYPE.THREE_INPUTS, 4000, 0, -3},
-				
-				// 2 inputs
-				{TEST_TYPE.TWO_INPUTS, 1, 2000, Double.NaN},
-				{TEST_TYPE.TWO_INPUTS, 2000, 1, Double.NaN},
-				{TEST_TYPE.TWO_INPUTS, 0, 150, Double.NaN},
-				{TEST_TYPE.TWO_INPUTS, 150, 0, Double.NaN}, 
-				{TEST_TYPE.TWO_INPUTS, 4, 4, Double.NaN}, 
-				
-				// Error
-				{TEST_TYPE.ERROR, 1, 2000, -1},
-				{TEST_TYPE.ERROR, 150, 0, 1}
+				// DML - 3 inputs
+				{TEST_TYPE.THREE_INPUTS, 1, 2000, 1, false},
+				{TEST_TYPE.THREE_INPUTS, 2000, 1, -1, false},
+				{TEST_TYPE.THREE_INPUTS, 0, 150, 0.1, false},
+				{TEST_TYPE.THREE_INPUTS, 150, 0, -0.1, false},
+				{TEST_TYPE.THREE_INPUTS, 4000, 0, -3, false},
+
+				// PyDML - 3 inputs
+				{TEST_TYPE.THREE_INPUTS, 1, 2000, 1, true},
+				{TEST_TYPE.THREE_INPUTS, 2000, 1, -1, true},
+				{TEST_TYPE.THREE_INPUTS, 0, 150, 0.1, true},
+				{TEST_TYPE.THREE_INPUTS, 150, 0, -0.1, true},
+				{TEST_TYPE.THREE_INPUTS, 4000, 0, -3, true},
+
+				// DML - 2 inputs
+				{TEST_TYPE.TWO_INPUTS, 1, 2000, Double.NaN, false},
+				{TEST_TYPE.TWO_INPUTS, 2000, 1, Double.NaN, false},
+				{TEST_TYPE.TWO_INPUTS, 0, 150, Double.NaN, false},
+				{TEST_TYPE.TWO_INPUTS, 150, 0, Double.NaN, false},
+				{TEST_TYPE.TWO_INPUTS, 4, 4, Double.NaN, false},
+
+				// PyDML - 2 inputs
+				{TEST_TYPE.TWO_INPUTS, 1, 2000, Double.NaN, true},
+				{TEST_TYPE.TWO_INPUTS, 2000, 1, Double.NaN, true},
+				{TEST_TYPE.TWO_INPUTS, 0, 150, Double.NaN, true},
+				{TEST_TYPE.TWO_INPUTS, 150, 0, Double.NaN, true},
+				{TEST_TYPE.TWO_INPUTS, 4, 4, Double.NaN, true},
+
+				// DML - Error
+				{TEST_TYPE.ERROR, 1, 2000, -1, false},
+				{TEST_TYPE.ERROR, 150, 0, 1, false},
+
+				// PyDML - Error
+				{TEST_TYPE.ERROR, 1, 2000, -1, true},
+				{TEST_TYPE.ERROR, 150, 0, 1, true}
 				};
 		return Arrays.asList(data);
 	}
@@ -105,7 +125,12 @@ public class SequenceTest extends AutomatedTestBase
 			boolean exceptionExpected = false;
 			
 			if ( test_type == TEST_TYPE.THREE_INPUTS || test_type == TEST_TYPE.ERROR ) {
-				fullDMLScriptName = HOME + TEST_NAME + ".dml";
+				if (isPyDml) {
+					fullDMLScriptName = HOME + "Range" + ".pydml";
+				} else {
+					fullDMLScriptName = HOME + TEST_NAME + ".dml";
+				}
+
 				fullRScriptName = HOME + TEST_NAME + ".R";
 				
 				programArgs = new String[]{"-args", Double.toString(from), 
@@ -118,7 +143,11 @@ public class SequenceTest extends AutomatedTestBase
 					exceptionExpected = true;
 			}
 			else {
-				fullDMLScriptName = HOME + TEST_NAME + "2inputs.dml";
+				if (isPyDml) {
+					fullDMLScriptName = HOME + "Range" + "2inputs.pydml";
+				} else {
+					fullDMLScriptName = HOME + TEST_NAME + "2inputs.dml";
+				}
 				fullRScriptName = HOME + TEST_NAME + "2inputs.R";
 				
 				programArgs = new String[]{"-args", Double.toString(from),

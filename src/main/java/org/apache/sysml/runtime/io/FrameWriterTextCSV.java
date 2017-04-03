@@ -49,16 +49,7 @@ public class FrameWriterTextCSV extends FrameWriter
 	public FrameWriterTextCSV( CSVFileFormatProperties props ) {
 		_props = props;
 	}
-	
-	/**
-	 * @param src
-	 * @param fname
-	 * @param rlen
-	 * @param clen
-	 * @return
-	 * @throws IOException 
-	 * @throws DMLRuntimeException  
-	 */
+
 	@Override
 	public final void writeFrameToHDFS(FrameBlock src, String fname, long rlen, long clen) 
 		throws IOException, DMLRuntimeException 
@@ -80,16 +71,6 @@ public class FrameWriterTextCSV extends FrameWriter
 		writeCSVFrameToHDFS(path, job, src, rlen, clen, _props);
 	}
 
-	/**
-	 * 
-	 * @param path
-	 * @param job
-	 * @param src
-	 * @param rlen
-	 * @param clen
-	 * @param csvprops
-	 * @throws IOException
-	 */
 	protected void writeCSVFrameToHDFS( Path path, JobConf job, FrameBlock src, long rlen, long clen, CSVFileFormatProperties csvprops ) 
 		throws IOException
 	{
@@ -98,18 +79,7 @@ public class FrameWriterTextCSV extends FrameWriter
 		//sequential write to single text file
 		writeCSVFrameToFile(path, job, fs, src, 0, (int)rlen, csvprops);	
 	}
-	
-	/**
-	 * 
-	 * @param path
-	 * @param job
-	 * @param src
-	 * @param rlen
-	 * @param clen
-	 * @param props
-	 * @return
-	 * @throws IOException
-	 */
+
 	protected final void writeCSVFrameToFile( Path path, JobConf job, FileSystem fs, FrameBlock src, int rl, int ru, CSVFileFormatProperties props )
 		throws IOException
 	{
@@ -130,7 +100,7 @@ public class FrameWriterTextCSV extends FrameWriter
 				//append column names if header requested
 				if( props.hasHeader() ) {
 					for( int j=0; j<cols; j++ ) {
-						sb.append(src.getColumnNames().get(j));
+						sb.append(src.getColumnNames()[j]);
 						if ( j < cols-1 )
 							sb.append(delim);
 					}

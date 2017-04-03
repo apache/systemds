@@ -27,28 +27,24 @@ import org.apache.sysml.runtime.controlprogram.caching.CacheBlock;
 public class BroadcastObject<T extends CacheBlock> extends LineageObject
 {
 	//soft reference storage for graceful cleanup in case of memory pressure
-	protected SoftReference<PartitionedBroadcast<T>> _bcHandle = null;
+	protected final SoftReference<PartitionedBroadcast<T>> _bcHandle;
+	private final long _size;
 	
-	public BroadcastObject( PartitionedBroadcast<T> bvar, String varName )
-	{
+	public BroadcastObject( PartitionedBroadcast<T> bvar, String varName, long size ) {
+		super(varName);
 		_bcHandle = new SoftReference<PartitionedBroadcast<T>>(bvar);
-		_varName = varName;
+		_size = size;
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	@SuppressWarnings("rawtypes")
-	public PartitionedBroadcast getBroadcast()
-	{
+	public PartitionedBroadcast getBroadcast() {
 		return _bcHandle.get();
 	}
 	
-	/**
-	 * 
-	 * @return
-	 */
+	public long getSize() {
+		return _size;
+	}
+
 	public boolean isValid() 
 	{
 		//check for evicted soft reference

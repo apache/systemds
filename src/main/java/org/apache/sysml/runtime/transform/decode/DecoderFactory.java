@@ -21,11 +21,10 @@ package org.apache.sysml.runtime.transform.decode;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
@@ -37,16 +36,9 @@ import org.apache.wink.json4j.JSONObject;
 
 public class DecoderFactory 
 {
-	/**
-	 * 
-	 * @param spec
-	 * @param schema
-	 * @param meta
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	@SuppressWarnings("unchecked")
-	public static Decoder createDecoder(String spec, List<String> colnames, List<ValueType> schema, FrameBlock meta) 
+	public static Decoder createDecoder(String spec, String[] colnames, ValueType[] schema, FrameBlock meta) 
 		throws DMLRuntimeException 
 	{	
 		Decoder decoder = null;
@@ -57,11 +49,6 @@ public class DecoderFactory
 			JSONObject jSpec = new JSONObject(spec);
 			List<Decoder> ldecoders = new ArrayList<Decoder>();
 		
-			//create default schema if unspecified
-			if( schema == null ) {
-				schema = Collections.nCopies(meta.getNumColumns(), ValueType.STRING);
-			}
-			
 			//create decoders 'recode', 'dummy' and 'pass-through'
 			List<Integer> rcIDs = Arrays.asList(ArrayUtils.toObject(
 					TfMetaUtils.parseJsonIDList(jSpec, colnames, TfUtils.TXMETHOD_RECODE)));
@@ -69,7 +56,14 @@ public class DecoderFactory
 					TfMetaUtils.parseJsonIDList(jSpec, colnames, TfUtils.TXMETHOD_DUMMYCODE))); 
 			rcIDs = new ArrayList<Integer>(CollectionUtils.union(rcIDs, dcIDs));
 			List<Integer> ptIDs = new ArrayList<Integer>(CollectionUtils
-					.subtract(UtilFunctions.getSequenceList(1, schema.size(), 1), rcIDs)); 
+					.subtract(UtilFunctions.getSequenceList(1, meta.getNumColumns(), 1), rcIDs)); 
+
+			//create default schema if unspecified (with double columns for pass-through)
+			if( schema == null ) {
+				schema = UtilFunctions.nCopies(meta.getNumColumns(), ValueType.STRING);
+				for( Integer col : ptIDs )
+					schema[col-1] = ValueType.DOUBLE;
+			}
 			
 			if( !dcIDs.isEmpty() ) {
 				ldecoders.add(new DecoderDummycode(schema, 

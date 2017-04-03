@@ -21,14 +21,12 @@ package org.apache.sysml.runtime.controlprogram.parfor.opt;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import org.apache.sysml.runtime.controlprogram.ProgramBlock;
 import org.apache.sysml.runtime.instructions.Instruction;
 
 public class OptTreePlanMappingRuntime extends OptTreePlanMapping
-{
-	
+{	
 	private Map<Long, Object> _id_rtprog;
 
 	public OptTreePlanMappingRuntime()
@@ -70,15 +68,7 @@ public class OptTreePlanMappingRuntime extends OptTreePlanMapping
 	{
 		return _id_rtprog.get( id );
 	}
-	
-	public OptNode getOptNode( Object prog )
-	{
-		for( Entry<Long,Object> e : _id_rtprog.entrySet() )
-			if( e.getValue() == prog )
-				return _id_optnode.get(e.getKey());
-		return null;
-	}
-	
+
 	@Override
 	public void clear()
 	{

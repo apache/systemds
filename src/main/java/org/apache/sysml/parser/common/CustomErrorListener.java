@@ -178,19 +178,6 @@ public class CustomErrorListener extends BaseErrorListener {
 		 */
 		ParseIssueType parseIssueType;
 
-		public ParseIssue(int line, int charPositionInLine, String message) {
-			this.line = line;
-			this.charPositionInLine = charPositionInLine;
-			this.message = message;
-		}
-
-		public ParseIssue(int line, int charPositionInLine, String message, String fileName) {
-			this.line = line;
-			this.charPositionInLine = charPositionInLine;
-			this.message = message;
-			this.fileName = fileName;
-		}
-
 		public ParseIssue(int line, int charPositionInLine, String message, String fileName,
 				ParseIssueType parseIssueType) {
 			this.line = line;
@@ -327,14 +314,6 @@ public class CustomErrorListener extends BaseErrorListener {
 	 */
 	public void setParseIssues(List<ParseIssue> parseIssues) {
 		this.parseIssues = parseIssues;
-	}
-
-	/**
-	 * Clear the list of parse issues.
-	 * 
-	 */
-	public void clearParseIssues() {
-		parseIssues.clear();
 	}
 
 	/**

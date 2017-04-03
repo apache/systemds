@@ -49,6 +49,7 @@ import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.parfor.util.Cell;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysml.runtime.controlprogram.parfor.util.StagingFileUtils;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.io.MatrixReader;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
@@ -152,13 +153,6 @@ public class ResultMergeLocalFile extends ResultMerge
 		return executeSerialMerge();
 	}
 
-	/**
-	 * 
-	 * @param output
-	 * @param inMO
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	private MatrixObject createNewMatrixObject(MatrixObject output, ArrayList<MatrixObject> inMO ) 
 		throws DMLRuntimeException
 	{
@@ -182,14 +176,7 @@ public class ResultMergeLocalFile extends ResultMerge
 		
 		return moNew;
 	}
-	
-	/**
-	 * 
-	 * @param fnameNew
-	 * @param outMo
-	 * @param inMO
-	 * @throws DMLRuntimeException
-	 */
+
 	private void merge( String fnameNew, MatrixObject outMo, ArrayList<MatrixObject> inMO ) 
 		throws DMLRuntimeException
 	{
@@ -218,14 +205,7 @@ public class ResultMergeLocalFile extends ResultMerge
 				mergeBinaryBlockWithoutComp( fnameNew, outMo, inMO );
 		}
 	}
-	
-	/**
-	 * 
-	 * @param fnameNew
-	 * @param outMo
-	 * @param inMO
-	 * @throws DMLRuntimeException
-	 */
+
 	private void mergeTextCellWithoutComp( String fnameNew, MatrixObject outMo, ArrayList<MatrixObject> inMO ) 
 		throws DMLRuntimeException
 	{
@@ -275,18 +255,14 @@ public class ResultMergeLocalFile extends ResultMerge
 								out.write( valueStr+"\n" );
 							}
 						}
-						finally
-						{
-							if( reader != null )
-								reader.close();
+						finally {
+							IOUtilFunctions.closeSilently(reader);
 						}
 					}
 				}
 			}
-			finally
-			{
-				if( out != null )
-					out.close();
+			finally {
+				IOUtilFunctions.closeSilently(out);
 			}
 		}
 		catch(Exception ex)
@@ -294,14 +270,7 @@ public class ResultMergeLocalFile extends ResultMerge
 			throw new DMLRuntimeException("Unable to merge text cell results.", ex);
 		}
 	}
-	
-	/**
-	 * 
-	 * @param fnameNew
-	 * @param outMo
-	 * @param inMO
-	 * @throws DMLRuntimeException
-	 */
+
 	private void mergeTextCellWithComp( String fnameNew, MatrixObject outMo, ArrayList<MatrixObject> inMO ) 
 		throws DMLRuntimeException
 	{
@@ -337,14 +306,7 @@ public class ResultMergeLocalFile extends ResultMerge
 		LocalFileUtils.cleanupWorkingDirectory(fnameStaging);
 		LocalFileUtils.cleanupWorkingDirectory(fnameStagingCompare);
 	}
-	
-	/**
-	 * 
-	 * @param fnameNew
-	 * @param outMo
-	 * @param inMO
-	 * @throws DMLRuntimeException
-	 */
+
 	@SuppressWarnings("deprecation")
 	private void mergeBinaryCellWithoutComp( String fnameNew, MatrixObject outMo, ArrayList<MatrixObject> inMO ) 
 		throws DMLRuntimeException
@@ -388,18 +350,14 @@ public class ResultMergeLocalFile extends ResultMerge
 								out.append(key, value);
 							}
 						}
-						finally
-						{
-							if( reader != null )
-								reader.close();
+						finally {
+							IOUtilFunctions.closeSilently(reader);
 						}
 					}					
 				}	
 			}
-			finally
-			{
-				if( out != null )
-					out.close();
+			finally {
+				IOUtilFunctions.closeSilently(out);
 			}
 		}
 		catch(Exception ex)
@@ -407,14 +365,7 @@ public class ResultMergeLocalFile extends ResultMerge
 			throw new DMLRuntimeException("Unable to merge binary cell results.", ex);
 		}	
 	}
-	
-	/**
-	 * 
-	 * @param fnameNew
-	 * @param outMo
-	 * @param inMO
-	 * @throws DMLRuntimeException
-	 */
+
 	private void mergeBinaryCellWithComp( String fnameNew, MatrixObject outMo, ArrayList<MatrixObject> inMO ) 
 		throws DMLRuntimeException
 	{
@@ -450,14 +401,7 @@ public class ResultMergeLocalFile extends ResultMerge
 		LocalFileUtils.cleanupWorkingDirectory(fnameStaging);
 		LocalFileUtils.cleanupWorkingDirectory(fnameStagingCompare);
 	}
-	
-	/**
-	 * 
-	 * @param fnameNew
-	 * @param outMo
-	 * @param inMO
-	 * @throws DMLRuntimeException
-	 */
+
 	private void mergeBinaryBlockWithoutComp( String fnameNew, MatrixObject outMo, ArrayList<MatrixObject> inMO ) 
 		throws DMLRuntimeException
 	{
@@ -486,14 +430,7 @@ public class ResultMergeLocalFile extends ResultMerge
 		
 		LocalFileUtils.cleanupWorkingDirectory(fnameStaging);
 	}
-	
-	/**
-	 * 
-	 * @param fnameNew
-	 * @param outMo
-	 * @param inMO
-	 * @throws DMLRuntimeException
-	 */
+
 	private void mergeBinaryBlockWithComp( String fnameNew, MatrixObject outMo, ArrayList<MatrixObject> inMO ) 
 		throws DMLRuntimeException
 	{
@@ -528,13 +465,7 @@ public class ResultMergeLocalFile extends ResultMerge
 		LocalFileUtils.cleanupWorkingDirectory(fnameStaging);
 		LocalFileUtils.cleanupWorkingDirectory(fnameStagingCompare);
 	}
-	
-	/**
-	 * 
-	 * @param fnameStaging
-	 * @param mo
-	 * @throws IOException
-	 */
+
 	@SuppressWarnings("deprecation")
 	private void createBinaryBlockStagingFile( String fnameStaging, MatrixObject mo ) 
 		throws IOException
@@ -562,23 +493,12 @@ public class ResultMergeLocalFile extends ResultMerge
 					}
 				}
 			}
-			finally
-			{
-				if( reader != null )
-					reader.close();
+			finally {
+				IOUtilFunctions.closeSilently(reader);
 			}
 		}
 	}
-	
-	/**
-	 * 
-	 * @param fnameStaging
-	 * @param mo
-	 * @param ID
-	 * @throws IOException
-	 * @throws DMLRuntimeException
-	 */
-	
+
 	private void createTextCellStagingFile( String fnameStaging, MatrixObject mo, long ID ) 
 		throws IOException, DMLRuntimeException
 	{		
@@ -634,22 +554,12 @@ public class ResultMergeLocalFile extends ResultMerge
 					buffer.clear();
 				}
 			}
-			finally
-			{
-				if( reader != null )
-					reader.close();
+			finally {
+				IOUtilFunctions.closeSilently(reader);
 			}
 		}
 	}
-	
-	/**
-	 * 
-	 * @param fnameStaging
-	 * @param mo
-	 * @param ID
-	 * @throws IOException
-	 * @throws DMLRuntimeException
-	 */
+
 	@SuppressWarnings("deprecation")
 	private void createBinaryCellStagingFile( String fnameStaging, MatrixObject mo, long ID ) 
 		throws IOException, DMLRuntimeException
@@ -690,23 +600,12 @@ public class ResultMergeLocalFile extends ResultMerge
 					buffer.clear();
 				}
 			}
-			finally
-			{
-				if( reader != null )
-					reader.close();
+			finally {
+				IOUtilFunctions.closeSilently(reader);
 			}
 		}
 	}
-	
-	/**
-	 * @param fnameStaging
-	 * @param ID
-	 * @param buffer
-	 * @param brlen
-	 * @param bclen
-	 * @throws DMLRuntimeException
-	 * @throws IOException
-	 */
+
 	private void appendCellBufferToStagingArea( String fnameStaging, long ID, LinkedList<Cell> buffer, int brlen, int bclen ) 
 		throws DMLRuntimeException, IOException
 	{
@@ -744,17 +643,7 @@ public class ResultMergeLocalFile extends ResultMerge
 			}
 		}
 	}	
-	
-	/**
-	 * 
-	 * @param fnameStaging
-	 * @param fnameStagingCompare
-	 * @param fnameNew
-	 * @param metadata
-	 * @param withCompare
-	 * @throws IOException
-	 * @throws DMLRuntimeException
-	 */
+
 	@SuppressWarnings("deprecation")
 	private void createBinaryBlockResultFile( String fnameStaging, String fnameStagingCompare, String fnameNew, MatrixFormatMetaData metadata, boolean withCompare ) 
 		throws IOException, DMLRuntimeException
@@ -847,23 +736,11 @@ public class ResultMergeLocalFile extends ResultMerge
 					writer.append(indexes, mb);
 				}	
 		}
-		finally
-		{
-			if( writer != null )
-				writer.close();
+		finally {
+			IOUtilFunctions.closeSilently(writer);
 		}
 	}
-	
-	/**
-	 * 
-	 * @param fnameStaging
-	 * @param fnameStagingCompare
-	 * @param fnameNew
-	 * @param metadata
-	 * @param withCompare
-	 * @throws IOException
-	 * @throws DMLRuntimeException
-	 */
+
 	private void createTextCellResultFile( String fnameStaging, String fnameStagingCompare, String fnameNew, MatrixFormatMetaData metadata, boolean withCompare ) 
 		throws IOException, DMLRuntimeException
 	{
@@ -995,23 +872,11 @@ public class ResultMergeLocalFile extends ResultMerge
 			if( !written )
 				out.write("1 1 0\n");
 		}
-		finally
-		{
-			if( out != null )
-				out.close();
+		finally {
+			IOUtilFunctions.closeSilently(out);
 		}
 	}
 
-	/**
-	 * 
-	 * @param fnameStaging
-	 * @param fnameStagingCompare
-	 * @param fnameNew
-	 * @param metadata
-	 * @param withCompare
-	 * @throws IOException
-	 * @throws DMLRuntimeException
-	 */
 	@SuppressWarnings("deprecation")
 	private void createBinaryCellResultFile( String fnameStaging, String fnameStagingCompare, String fnameNew, MatrixFormatMetaData metadata, boolean withCompare ) 
 		throws IOException, DMLRuntimeException
@@ -1135,20 +1000,11 @@ public class ResultMergeLocalFile extends ResultMerge
 			if( !written )
 				out.append(indexes,cell);
 		}
-		finally
-		{
-			if( out != null )
-				out.close();
+		finally {
+			IOUtilFunctions.closeSilently(out);
 		}
 	}
 
-	/**
-	 * 
-	 * @param fnameNew
-	 * @param inMO
-	 * @throws CacheException
-	 * @throws IOException
-	 */
 	private void copyAllFiles( String fnameNew, ArrayList<MatrixObject> inMO ) 
 		throws CacheException, IOException
 	{

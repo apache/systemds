@@ -22,7 +22,12 @@ package org.apache.sysml.runtime.instructions.cp;
 import java.io.IOException;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.LocalFileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.UnaryCP;
 import org.apache.sysml.parser.Expression.DataType;
@@ -37,6 +42,7 @@ import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.io.WriterMatrixMarket;
 import org.apache.sysml.runtime.io.WriterTextCSV;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -101,6 +107,7 @@ public class VariableCPInstruction extends CPInstruction
 	private CPOperand input1;
 	private CPOperand input2;
 	private CPOperand input3;
+	private CPOperand input4;
 	private CPOperand output;
 	private MetaData metadata;
 	private UpdateType _updateType;
@@ -274,15 +281,15 @@ public class VariableCPInstruction extends CPInstruction
 		else if ( voc == VariableOperationCode.Write ) {
 			// All write instructions have 3 parameters, except in case of delimited/csv file.
 			// Write instructions for csv files also include three additional parameters (hasHeader, delimiter, sparse)
-			if ( parts.length != 4 && parts.length != 7 )
-				throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
+			if ( parts.length != 5 && parts.length != 8 )
+				throw new DMLRuntimeException("Invalid number of operands in write instruction: " + str);
 		}
 		else {
 			_arity = getArity(voc);
 			InstructionUtils.checkNumFields ( parts, _arity ); // no output
 		}
 		
-		CPOperand in1=null, in2=null, in3=null, out=null;
+		CPOperand in1=null, in2=null, in3=null, in4=null, out=null;
 		
 		switch (voc) {
 		
@@ -413,6 +420,13 @@ public class VariableCPInstruction extends CPInstruction
 				boolean sparse = Boolean.parseBoolean(parts[6]);
 				FileFormatProperties formatProperties = new CSVFileFormatProperties(hasHeader, delim, sparse);
 				inst.setFormatProperties(formatProperties);
+				in4 = new CPOperand(parts[7]); // description
+				inst.input4 = in4;
+			} else {
+				FileFormatProperties ffp = new FileFormatProperties();
+				inst.setFormatProperties(ffp);
+				in4 = new CPOperand(parts[4]); // description
+				inst.input4 = in4;
 			}
 			return inst;
 			
@@ -536,7 +550,7 @@ public class VariableCPInstruction extends CPInstruction
 				Object value = fBlock.get(0,0);
 				ec.releaseFrameInput(input1.getName());
 				ec.setScalarOutput(output.getName(), 
-						ScalarObjectFactory.createScalarObject(fBlock.getSchema().get(0), value));
+						ScalarObjectFactory.createScalarObject(fBlock.getSchema()[0], value));
 			}
 			else { //assume DataType.MATRIX otherwise
 				MatrixBlock mBlock = ec.getMatrixInput(input1.getName());
@@ -649,12 +663,12 @@ public class VariableCPInstruction extends CPInstruction
 	
 	/**
 	 * Handler for mvvar instructions.
-	 * Example: mvvar <srcvar> <destFile> <format>
+	 * Example: mvvar &lt;srcvar&gt; &lt;destFile&gt; &lt;format&gt;
 	 * Move the file pointed by srcvar to destFile. 
 	 * Currently, applicable only when format=binaryblock.
 	 *  
-	 * @param ec
-	 * @throws DMLRuntimeException
+	 * @param ec execution context
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	@SuppressWarnings("rawtypes")
 	private void processMoveInstruction(ExecutionContext ec) throws DMLRuntimeException {
@@ -706,10 +720,10 @@ public class VariableCPInstruction extends CPInstruction
 	
 	/**
 	 * Handler for cpvar instructions.
-	 * Example: cpvar <srcvar> <destvar>
+	 * Example: cpvar &lt;srcvar&gt; &lt;destvar&gt;
 	 * 
-	 * @param ec
-	 * @throws DMLRuntimeException 
+	 * @param ec execution context
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private void processCopyInstruction(ExecutionContext ec) throws DMLRuntimeException {
 		// get source variable 
@@ -737,18 +751,21 @@ public class VariableCPInstruction extends CPInstruction
 	 * The default behavior is to write out the specified matrix from the instruction, in 
 	 * the format given by the corresponding symbol table entry.
 	 * 
-	 * @throws DMLRuntimeException 
+	 * @param ec execution context
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private void processWriteInstruction(ExecutionContext ec) 
 		throws DMLRuntimeException 
 	{
 		//get filename (literal or variable expression)
 		String fname = ec.getScalarInput(input2.getName(), ValueType.STRING, input2.isLiteral()).getStringValue();
+		String desc = ec.getScalarInput(input4.getName(), ValueType.STRING, input4.isLiteral()).getStringValue();
+		_formatProperties.setDescription(desc);
 		
 		if( input1.getDataType() == DataType.SCALAR ) {
 			writeScalarToHDFS(ec, fname);
 		}
-		else if( input1.getDataType() == DataType.MATRIX ){
+		else if( input1.getDataType() == DataType.MATRIX ) {
 			String outFmt = input3.getName();
 			if (outFmt.equalsIgnoreCase("matrixmarket")) 
 				writeMMFile(ec, fname);
@@ -757,13 +774,13 @@ public class VariableCPInstruction extends CPInstruction
 			else {
 				// Default behavior
 				MatrixObject mo = ec.getMatrixObject(input1.getName());
-				mo.exportData(fname, outFmt);
+				mo.exportData(fname, outFmt, _formatProperties);
 			}
 		}
 		else if( input1.getDataType() == DataType.FRAME ) {
 			String outFmt = input3.getName();
 			FrameObject mo = ec.getFrameObject(input1.getName());
-			mo.exportData(fname, outFmt);
+			mo.exportData(fname, outFmt, _formatProperties);
 		}
 	}
 	
@@ -771,9 +788,9 @@ public class VariableCPInstruction extends CPInstruction
 	 * Remove variable instruction externalized as a static function in order to allow various 
 	 * cleanup procedures to use the same codepath as the actual rmVar instruction
 	 * 
-	 * @param ec
-	 * @param varname
-	 * @throws DMLRuntimeException
+	 * @param ec execution context
+	 * @param varname variable name
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void processRemoveVariableInstruction( ExecutionContext ec, String varname ) 
 		throws DMLRuntimeException
@@ -793,8 +810,9 @@ public class VariableCPInstruction extends CPInstruction
 	/**
 	 * Helper function to write CSV files to HDFS.
 	 * 
-	 * @param ec
-	 * @throws DMLRuntimeException
+	 * @param ec execution context
+	 * @param fname file name
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private void writeCSVFile(ExecutionContext ec, String fname) 
 		throws DMLRuntimeException 
@@ -832,8 +850,10 @@ public class VariableCPInstruction extends CPInstruction
 	
 	/**
 	 * Helper function to write MM files to HDFS.
-	 * @param ec
-	 * @throws DMLRuntimeException
+	 * 
+	 * @param ec execution context
+	 * @param fname file name
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private void writeMMFile(ExecutionContext ec, String fname) 
 		throws DMLRuntimeException 
@@ -866,7 +886,10 @@ public class VariableCPInstruction extends CPInstruction
 	}
 	/**
 	 * Helper function to write scalars to HDFS based on its value type.
-	 * @throws DMLRuntimeException 
+	 * 
+	 * @param ec execution context
+	 * @param fname file name
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private void writeScalarToHDFS(ExecutionContext ec, String fname) 
 		throws DMLRuntimeException 
@@ -875,6 +898,14 @@ public class VariableCPInstruction extends CPInstruction
 			ScalarObject scalar = ec.getScalarInput(input1.getName(), input1.getValueType(), input1.isLiteral());
 			MapReduceTool.writeObjectToHDFS(scalar.getValue(), fname);
 			MapReduceTool.writeScalarMetaDataFile(fname +".mtd", input1.getValueType());
+
+			JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
+			FileSystem fs = FileSystem.get(job);
+			if (fs instanceof LocalFileSystem) {
+				Path path = new Path(fname);
+				IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, path);
+			}
+
 		} catch ( IOException e ) {
 			throw new DMLRuntimeException(e);
 		}
@@ -974,27 +1005,7 @@ public class VariableCPInstruction extends CPInstruction
 	public static Instruction prepareCreateMatrixVariableInstruction(String varName, String fileName, boolean fNameOverride, String format) throws DMLRuntimeException {
 		return parseInstruction(getBasicCreateVarString(varName, fileName, fNameOverride, DataType.MATRIX, format));
 	}
-	
-	public static Instruction prepareCreateVariableInstruction(String varName, String fileName, boolean fNameOverride, DataType dt, String format, MatrixCharacteristics mc) throws DMLRuntimeException {
-		StringBuilder sb = new StringBuilder();
-		sb.append(getBasicCreateVarString(varName, fileName, fNameOverride, dt, format));
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(mc.getRows());
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(mc.getCols());
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(mc.getRowsPerBlock());
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(mc.getColsPerBlock());
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(mc.getNonZeros());
-		
-		String str = sb.toString();
 
-		return parseInstruction(str);
-	}	
-	
 	public static Instruction prepareCreateVariableInstruction(String varName, String fileName, boolean fNameOverride, DataType dt, String format, MatrixCharacteristics mc, UpdateType update) throws DMLRuntimeException {
 		StringBuilder sb = new StringBuilder();
 		sb.append(getBasicCreateVarString(varName, fileName, fNameOverride, dt, format));
@@ -1070,11 +1081,7 @@ public class VariableCPInstruction extends CPInstruction
 			instString = sb.toString();
 		}
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public boolean isVariableCastInstruction()
 	{
 		return ( opcode == VariableOperationCode.CastAsScalarVariable  ||

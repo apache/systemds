@@ -26,18 +26,9 @@ import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 
-/**
- * 
- * 
- */
 public class FrameReaderFactory 
 {
-	/**
-	 * 
-	 * @param iinfo
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static FrameReader createFrameReader( InputInfo iinfo ) 
 		throws DMLRuntimeException
 	{
@@ -46,34 +37,7 @@ public class FrameReaderFactory
 		
 		return createFrameReader(iinfo, props);
 	}
-	
-	/**
-	 * 
-	 * @param props
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
-	public static FrameReader createFrameReader( ReadProperties rprops ) 
-		throws DMLRuntimeException
-	{
-		//check valid read properties
-		if( rprops == null )
-			throw new DMLRuntimeException("Failed to create frame reader with empty properties.");
-		
-		InputInfo iinfo = rprops.inputInfo;
-		FileFormatProperties props = (iinfo==InputInfo.CSVInputInfo) ? ((rprops.formatProperties!=null) ? 
-			(CSVFileFormatProperties)rprops.formatProperties : new CSVFileFormatProperties()) : null;		
-			
-		return createFrameReader(iinfo, props);
-	}
 
-	
-	/**
-	 * 
-	 * @param props
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	public static FrameReader createFrameReader( InputInfo iinfo, FileFormatProperties props ) 
 		throws DMLRuntimeException
 	{

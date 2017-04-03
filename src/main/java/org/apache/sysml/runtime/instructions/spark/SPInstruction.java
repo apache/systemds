@@ -19,31 +19,26 @@
 
 package org.apache.sysml.runtime.instructions.spark;
 
-import org.apache.sysml.api.MLContextProxy;
 import org.apache.sysml.lops.runtime.RunMRJobs;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.SPInstructionParser;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.utils.Statistics;
 
-/**
- * 
- * 
- */
 public abstract class SPInstruction extends Instruction 
 {
 	
 	public enum SPINSTRUCTION_TYPE { 
-		MAPMM, MAPMMCHAIN, CPMM, RMM, TSMM, PMM, ZIPMM, PMAPMM, //matrix multiplication instructions  
+		MAPMM, MAPMMCHAIN, CPMM, RMM, TSMM, TSMM2, PMM, ZIPMM, PMAPMM, //matrix multiplication instructions  
 		MatrixIndexing, Reorg, ArithmeticBinary, RelationalBinary, AggregateUnary, AggregateTernary, Reblock, CSVReblock, 
 		Builtin, BuiltinUnary, BuiltinBinary, MultiReturnBuiltin, Checkpoint, Compression, Cast,
 		CentralMoment, Covariance, QSort, QPick, 
 		ParameterizedBuiltin, MAppend, RAppend, GAppend, GAlignedAppend, Rand, 
 		MatrixReshape, Ternary, Quaternary, CumsumAggregate, CumsumOffset, BinUaggChain, UaggOuterChain, 
-		Write, INVALID, 
+		Write, SpoofFused, INVALID, 
+		Convolution
 	};
 	
 	protected SPINSTRUCTION_TYPE _sptype;
@@ -94,29 +89,7 @@ public abstract class SPInstruction extends Instruction
 			String updInst = RunMRJobs.updateLabels(tmp.toString(), ec.getVariables());
 			tmp = SPInstructionParser.parseSingleInstruction(updInst);
 		}
-		
-
-		//spark-explain-specific handling of current instructions 
-		//This only relevant for ComputationSPInstruction as in postprocess we call setDebugString which is valid only for ComputationSPInstruction
-		Object mlCtxObj = MLContextProxy.getActiveMLContext();
-		if (mlCtxObj instanceof org.apache.sysml.api.MLContext) {
-			org.apache.sysml.api.MLContext mlCtx = (org.apache.sysml.api.MLContext) mlCtxObj;
-			if (tmp instanceof ComputationSPInstruction 
-				&& mlCtx != null && mlCtx.getMonitoringUtil() != null 
-				&& ec instanceof SparkExecutionContext ) {
-				mlCtx.getMonitoringUtil().addCurrentInstruction((SPInstruction)tmp);
-				MLContextProxy.setInstructionForMonitoring(tmp);
-			}
-		} else if (mlCtxObj instanceof org.apache.sysml.api.mlcontext.MLContext) {
-			org.apache.sysml.api.mlcontext.MLContext mlCtx = (org.apache.sysml.api.mlcontext.MLContext) mlCtxObj;
-			if (tmp instanceof ComputationSPInstruction 
-				&& mlCtx != null && mlCtx.getSparkMonitoringUtil() != null 
-				&& ec instanceof SparkExecutionContext ) {
-				mlCtx.getSparkMonitoringUtil().addCurrentInstruction((SPInstruction)tmp);
-				MLContextProxy.setInstructionForMonitoring(tmp);
-			}
-		}
-		
+				
 		return tmp;
 	}
 
@@ -128,28 +101,6 @@ public abstract class SPInstruction extends Instruction
 	public void postprocessInstruction(ExecutionContext ec)
 			throws DMLRuntimeException 
 	{
-		//spark-explain-specific handling of current instructions
-		Object mlCtxObj = MLContextProxy.getActiveMLContext();
-		if (mlCtxObj instanceof org.apache.sysml.api.MLContext) {
-			org.apache.sysml.api.MLContext mlCtx = (org.apache.sysml.api.MLContext) mlCtxObj;
-			if (this instanceof ComputationSPInstruction 
-					&& mlCtx != null && mlCtx.getMonitoringUtil() != null
-					&& ec instanceof SparkExecutionContext ) {
-				SparkExecutionContext sec = (SparkExecutionContext) ec;
-				sec.setDebugString(this, ((ComputationSPInstruction) this).getOutputVariableName());
-				mlCtx.getMonitoringUtil().removeCurrentInstruction(this);
-			}
-		} else if (mlCtxObj instanceof org.apache.sysml.api.mlcontext.MLContext) {
-			org.apache.sysml.api.mlcontext.MLContext mlCtx = (org.apache.sysml.api.mlcontext.MLContext) mlCtxObj;
-			if (this instanceof ComputationSPInstruction 
-					&& mlCtx != null && mlCtx.getSparkMonitoringUtil() != null
-					&& ec instanceof SparkExecutionContext ) {
-				SparkExecutionContext sec = (SparkExecutionContext) ec;
-				sec.setDebugString(this, ((ComputationSPInstruction) this).getOutputVariableName());
-				mlCtx.getSparkMonitoringUtil().removeCurrentInstruction(this);
-			}
-		}
-		
 		//maintain statistics
 		Statistics.incrementNoOfExecutedSPInst();
 		

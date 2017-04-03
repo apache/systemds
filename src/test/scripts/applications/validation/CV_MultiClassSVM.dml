@@ -65,11 +65,11 @@ parfor( i in 1:k )
    yi = y * vPxi;  #  Create the labels for the TEST set
    nXi = X - Xi;   #  Create the TRAINING set with (k-1)/k of the rows
    nyi = y - yi;   #  Create the labels for the TRAINING set
-   Xyi = append(Xi,yi); #keep alignment on removeEmpty
+   Xyi = cbind(Xi,yi); #keep alignment on removeEmpty
    Xyi = removeEmpty( target=Xyi, margin="rows" );
    Xi = Xyi[ , 1:n];
    yi = Xyi[ , n+1];   
-   nXyi = append(nXi,nyi); #keep alignment on removeEmpty
+   nXyi = cbind(nXi,nyi); #keep alignment on removeEmpty
    nXyi = removeEmpty( target=nXyi, margin="rows" );
    nXi = nXyi[ , 1:n];
    nyi = nXyi[ , n+1];
@@ -144,7 +144,7 @@ multiClassSVM = function (Matrix[double] X, Matrix[double] Y, Integer intercept,
       
       if (intercept == 1) {
         ones = Rand( rows=num_samples, cols=1, min=1, max=1, pdf="uniform");
-        X = append( X, ones);
+        X = cbind( X, ones);
       }
       
       iter_class = 1
@@ -154,7 +154,7 @@ multiClassSVM = function (Matrix[double] X, Matrix[double] Y, Integer intercept,
    
       if (intercept == 1) {
          zero_matrix = Rand( rows=1, cols=1, min=0.0, max=0.0);
-         w_class = t( append( t( w_class), zero_matrix));
+         w_class = t( cbind( t( w_class), zero_matrix));
       }
       
       g_old = t(X) %*% Y_local
@@ -218,7 +218,7 @@ multiClassSVM = function (Matrix[double] X, Matrix[double] Y, Integer intercept,
        w_class = Rand(rows=ncol(X), cols=1, min=0, max=0, pdf="uniform")
        if (intercept == 1) {
        	zero_matrix = Rand(rows=1, cols=1, min=0.0, max=0.0);
-       	w_class = t(append(t(w_class), zero_matrix));
+       	w_class = t(cbind(t(w_class), zero_matrix));
        }
        
        g_old = t(X) %*% Y_local
@@ -272,7 +272,7 @@ multiClassSVM = function (Matrix[double] X, Matrix[double] Y, Integer intercept,
         iter = iter + 1
        }
       
-       w = append(w, w_class) 
+       w = cbind(w, w_class) 
        iter_class = iter_class + 1
       }
       ret_W = w

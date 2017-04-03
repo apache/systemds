@@ -21,8 +21,7 @@
 package org.apache.sysml.runtime.matrix.data;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.Arrays;
 
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -59,13 +58,7 @@ public class OperationsOnMatrixValues
 	{
 		valueIn.unaryOperations(op, valueOut);
 	}
-	
-	public static void performUnaryIgnoreIndexesInPlace(MatrixValue valueIn, UnaryOperator op) 
-		throws DMLRuntimeException
-	{
-		valueIn.unaryOperationsInPlace(op);
-	}
-	
+
 	public static void performReorg(MatrixIndexes indexesIn, MatrixValue valueIn, MatrixIndexes indexesOut, 
 			         MatrixValue valueOut, ReorgOperator op, int startRow, int startColumn, int length) 
 		throws DMLRuntimeException
@@ -146,18 +139,7 @@ public class OperationsOnMatrixValues
 	{
 		value1.binaryOperations(op, value2, valueOut);
 	}
-	
-	/**
-	 * 
-	 * @param valueOut
-	 * @param correction
-	 * @param op
-	 * @param rlen
-	 * @param clen
-	 * @param sparseHint
-	 * @param imbededCorrection
-	 * @throws DMLRuntimeException
-	 */
+
 	public static void startAggregation(MatrixValue valueOut, MatrixValue correction, AggregateOperator op, 
 			int rlen, int clen, boolean sparseHint, boolean imbededCorrection)
 		throws DMLRuntimeException
@@ -292,26 +274,19 @@ public class OperationsOnMatrixValues
 			value1.aggregateBinaryOperations(indexes1, value1, indexes2, value2, valueOut, op);
 	}
 
-	public static void performAggregateBinaryIgnoreIndexes(
+	public static MatrixValue performAggregateBinaryIgnoreIndexes(
 			MatrixValue value1, MatrixValue value2,
 			MatrixValue valueOut, AggregateBinaryOperator op) 
 	throws DMLRuntimeException {
 			
 		//perform on the value
-		value1.aggregateBinaryOperations(value1, value2, valueOut, op);
+		if( value2 instanceof CompressedMatrixBlock )
+			value2.aggregateBinaryOperations(value1, value2, valueOut, op);
+		else
+			value1.aggregateBinaryOperations(value1, value2, valueOut, op);
+		return valueOut;
 	}
-	
-	/**
-	 * 
-	 * @param ixrange
-	 * @param brlen
-	 * @param bclen
-	 * @param iix
-	 * @param jix
-	 * @param in
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	@SuppressWarnings("rawtypes")
 	public static ArrayList performSlice(IndexRange ixrange, int brlen, int bclen, int iix, int jix, CacheBlock in) 
 		throws DMLRuntimeException
@@ -335,15 +310,6 @@ public class OperationsOnMatrixValues
 		return SparkUtils.fromIndexedMatrixBlockToPair(outlist);
 	}
 
-	/**
-	 * 
-	 * @param val
-	 * @param range
-	 * @param brlen
-	 * @param bclen
-	 * @param outlist
-	 * @throws DMLRuntimeException
-	 */
 	public static void performSlice(IndexedMatrixValue in, IndexRange ixrange, int brlen, int bclen, ArrayList<IndexedMatrixValue> outlist) 
 		throws DMLRuntimeException
 	{
@@ -405,17 +371,6 @@ public class OperationsOnMatrixValues
 		in.getValue().sliceOperations(outlist, tmpRange, rowCut, colCut, brlen, bclen, boundaryRlen, boundaryClen);
 	}
 
-	/**
-	 * 
-	 * @param in
-	 * @param ixrange
-	 * @param brlen
-	 * @param bclen
-	 * @param rlen
-	 * @param clen
-	 * @param outlist
-	 * @throws DMLRuntimeException
-	 */
 	public static void performShift(IndexedMatrixValue in, IndexRange ixrange, int brlen, int bclen, long rlen, long clen, ArrayList<IndexedMatrixValue> outlist) 
 		throws DMLRuntimeException
 	{
@@ -466,16 +421,7 @@ public class OperationsOnMatrixValues
 			}
 		}
 	}
-	
-	/**
-	 * 
-	 * @param target
-	 * @param groups
-	 * @param brlen
-	 * @param bclen
-	 * @param outlist
-	 * @throws DMLRuntimeException 
-	 */
+
 	public static void performMapGroupedAggregate( Operator op, IndexedMatrixValue inTarget, MatrixBlock groups, int ngroups, int brlen, int bclen, ArrayList<IndexedMatrixValue> outlist ) throws DMLRuntimeException
 	{
 		MatrixIndexes ix = inTarget.getIndexes();
@@ -522,12 +468,12 @@ public class OperationsOnMatrixValues
 	/**
 	 * This function will get slice of the input frame block overlapping in overall slice(Range), slice has requested for.
 	 * 
-	 * @param val
-	 * @param range
-	 * @param brlen
-	 * @param bclen
-	 * @param outlist
-	 * @throws DMLRuntimeException
+	 * @param in ?
+	 * @param ixrange index range
+	 * @param brlen number of rows in a block
+	 * @param bclen number of columns in a block
+	 * @param outlist list of pairs of frame blocks
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void performSlice(Pair<Long,FrameBlock> in, IndexRange ixrange, int brlen, int bclen, ArrayList<Pair<Long,FrameBlock>> outlist) 
 		throws DMLRuntimeException
@@ -569,7 +515,7 @@ public class OperationsOnMatrixValues
 		//allocate space for the output value
 		for(long r=resultBlockIndexTop; r<=resultBlockIndexBottom; r++)
 		{
-			List<ValueType> schema = UtilFunctions.getSubSchema(block.getSchema(), tmpRange.colStart, tmpRange.colEnd);
+			ValueType[] schema = Arrays.copyOfRange(block.getSchema(), (int)tmpRange.colStart, (int)tmpRange.colEnd+1);
 			long iResultIndex = Math.max(((r-1)*brlen - ixrange.rowStart + 1), 0);
 			Pair<Long,FrameBlock> out=new Pair<Long,FrameBlock>(new Long(iResultIndex+1), new FrameBlock(schema));
 			outlist.add(out);
@@ -579,17 +525,6 @@ public class OperationsOnMatrixValues
 		block.sliceOperations(outlist, tmpRange, rowCut);
 	}
 
-	/**
-	 * 
-	 * @param in
-	 * @param ixrange
-	 * @param brlen
-	 * @param bclen
-	 * @param rlen
-	 * @param clen
-	 * @param outlist
-	 * @throws DMLRuntimeException
-	 */
 	public static void performShift(Pair<Long,FrameBlock> in, IndexRange ixrange, int brlenLeft, int clenLeft/*, int bclen*/, long rlen, long clen, ArrayList<Pair<Long,FrameBlock>> outlist) 
 		throws DMLRuntimeException
 	{
@@ -631,12 +566,11 @@ public class OperationsOnMatrixValues
 			
 			int lbclen = clenLeft;
 			
-			List<ValueType> schemaPartialLeft = Collections.nCopies(lhs_lcl, ValueType.STRING);
-			List<ValueType> schemaRHS = UtilFunctions.getSubSchema(fb.getSchema(), rhs_lcl, rhs_lcl-lhs_lcl+lhs_lcu);
-			List<ValueType> schema = new ArrayList<ValueType>(schemaPartialLeft);
-			schema.addAll(schemaRHS);
-			List<ValueType> schemaPartialRight = Collections.nCopies(lbclen-schema.size(), ValueType.STRING);
-			schema.addAll(schemaPartialRight);
+			ValueType[] schemaPartialLeft = UtilFunctions.nCopies(lhs_lcl, ValueType.STRING);
+			ValueType[] schemaRHS = Arrays.copyOfRange(fb.getSchema(), (int)(rhs_lcl), (int)(rhs_lcl-lhs_lcl+lhs_lcu+1));
+			ValueType[] schema = UtilFunctions.copyOf(schemaPartialLeft, schemaRHS);
+			ValueType[] schemaPartialRight = UtilFunctions.nCopies(lbclen-schema.length, ValueType.STRING);
+			schema = UtilFunctions.copyOf(schema, schemaPartialRight);
 			FrameBlock resultBlock = new FrameBlock(schema);
 			int iRHSRows = (int)(leftRowIndex<=rlen/brlenLeft?brlenLeft:rlen-(rlen/brlenLeft)*brlenLeft);
 			resultBlock.ensureAllocatedColumns(iRHSRows);

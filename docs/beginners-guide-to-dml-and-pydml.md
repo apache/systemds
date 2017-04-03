@@ -50,13 +50,13 @@ DML and PyDML scripts can be invoked in a variety of ways. Suppose that we have 
 
 	print('hello ' + $1)
 
-One way to begin working with SystemML is to [download a standalone tar.gz or zip distribution of SystemML](http://systemml.apache.org/download.html)
+One way to begin working with SystemML is to [download a binary distribution of SystemML](http://systemml.apache.org/download.html)
 and use the `runStandaloneSystemML.sh` and `runStandaloneSystemML.bat` scripts to run SystemML in standalone
-mode. The name of the DML or PyDML script
-is passed as the first argument to these scripts, along with a variety of arguments.
+mode. The name of the DML or PyDML script is passed as the first argument to these scripts,
+along with a variety of arguments. Note that PyDML invocation can be forced with the addition of a `-python` flag.
 
 	./runStandaloneSystemML.sh hello.dml -args world
-	./runStandaloneSystemML.sh hello.pydml -python -args world
+	./runStandaloneSystemML.sh hello.pydml -args world
 
 
 # Data Types
@@ -283,14 +283,15 @@ is 0-based.*
 </div>
 
 <div data-lang="m.txt.mtd" markdown="1">
-	{ 
-	    "data_type": "matrix"
-	    ,"value_type": "double"
-	    ,"rows": 4
-	    ,"cols": 3
-	    ,"nnz": 6
-	    ,"format": "text"
-	    ,"description": { "author": "SystemML" } 
+	{
+	    "data_type": "matrix",
+	    "value_type": "double",
+	    "rows": 4,
+	    "cols": 3,
+	    "nnz": 6,
+	    "format": "text",
+	    "author": "SystemML",
+	    "created": "2017-01-01 00:00:01 PST"
 	}
 </div>
 
@@ -313,16 +314,17 @@ is 0-based.*
 </div>
 
 <div data-lang="m.csv.mtd" markdown="1">
-	{ 
-	    "data_type": "matrix"
-	    ,"value_type": "double"
-	    ,"rows": 4
-	    ,"cols": 3
-	    ,"nnz": 6
-	    ,"format": "csv"
-	    ,"header": false
-	    ,"sep": ","
-	    ,"description": { "author": "SystemML" } 
+	{
+	    "data_type": "matrix",
+	    "value_type": "double",
+	    "rows": 4,
+	    "cols": 3,
+	    "nnz": 6,
+	    "format": "csv",
+	    "header": false,
+	    "sep": ",",
+	    "author": "SystemML",
+	    "created": "2017-01-01 00:00:01 PST"
 	}
 </div>
 
@@ -331,16 +333,17 @@ is 0-based.*
 </div>
 
 <div data-lang="m.binary.mtd" markdown="1">
-	{ 
-	    "data_type": "matrix"
-	    ,"value_type": "double"
-	    ,"rows": 4
-	    ,"cols": 3
-	    ,"rows_in_block": 1000
-	    ,"cols_in_block": 1000
-	    ,"nnz": 6
-	    ,"format": "binary"
-	    ,"description": { "author": "SystemML" } 
+	{
+	    "data_type": "matrix",
+	    "value_type": "double",
+	    "rows": 4,
+	    "cols": 3,
+	    "rows_in_block": 1000,
+	    "cols_in_block": 1000,
+	    "nnz": 6,
+	    "format": "binary",
+	    "author": "SystemML",
+	    "created": "2017-01-01 00:00:01 PST"
 	}
 </div>
 
@@ -638,7 +641,6 @@ parfor(i in 0:nrow(A)-1):
 
 Functions encapsulate useful functionality in SystemML. In addition to built-in functions, users can define their own functions.
 Functions take 0 or more parameters and return 0 or more values.
-Currently, if a function returns nothing, it still needs to be assigned to a variable.
 
 <div class="codetabs2">
 
@@ -775,7 +777,7 @@ for (i in 0:numRowsToPrint-1):
 
 <div data-lang="PyDML Named Arguments and Results" markdown="1">
 	Example #1 Arguments:
-	-f ex.pydml -python -nvargs M=m.csv rowsToPrint=1 colsToPrint=3
+	-f ex.pydml -nvargs M=m.csv rowsToPrint=1 colsToPrint=3
 	
 	Example #1 Results:
 	[0,0]:1.0
@@ -783,7 +785,7 @@ for (i in 0:numRowsToPrint-1):
 	[0,2]:3.0
 	
 	Example #2 Arguments:
-	-f ex.pydml -python -nvargs M=m.csv
+	-f ex.pydml -nvargs M=m.csv
 	
 	Example #2 Results:
 	[0,0]:1.0
@@ -857,7 +859,7 @@ for (i in 0:numRowsToPrint-1):
 
 <div data-lang="PyDML Positional Arguments and Results" markdown="1">
 	Example #1 Arguments:
-	-f ex.pydml -python -args m.csv 1 3
+	-f ex.pydml -args m.csv 1 3
 	
 	Example #1 Results:
 	[0,0]:1.0
@@ -865,7 +867,7 @@ for (i in 0:numRowsToPrint-1):
 	[0,2]:3.0
 	
 	Example #2 Arguments:
-	-f ex.pydml -python -args m.csv
+	-f ex.pydml -args m.csv
 	
 	Example #2 Results:
 	[0,0]:1.0
@@ -882,5 +884,5 @@ for (i in 0:numRowsToPrint-1):
 
 The [Language Reference](dml-language-reference.html) contains highly detailed information regarding DML.
 
-In addition, many excellent examples of DML and PyDML can be found in the [`scripts`](https://github.com/apache/incubator-systemml/tree/master/scripts) directory.
+In addition, many excellent examples can be found in the [`scripts`](https://github.com/apache/incubator-systemml/tree/master/scripts) directory.
 

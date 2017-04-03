@@ -114,20 +114,7 @@ public class ResultMergeRemoteSpark extends ResultMerge
 		
 		return moNew;		
 	}
-	
-	/**
-	 * 
-	 * @param fname 	null if no comparison required
-	 * @param fnameNew
-	 * @param srcFnames
-	 * @param ii
-	 * @param oi
-	 * @param rlen
-	 * @param clen
-	 * @param brlen
-	 * @param bclen
-	 * @throws DMLRuntimeException
-	 */
+
 	@SuppressWarnings("unchecked")
 	protected RDDObject executeMerge(MatrixObject compare, MatrixObject[] inputs, String varname, long rlen, long clen, int brlen, int bclen)
 		throws DMLRuntimeException 
@@ -175,7 +162,7 @@ public class ResultMergeRemoteSpark extends ResultMerge
 		    else
 		    {
 		    	//direct merge in any order (disjointness guaranteed)
-		    	out = RDDAggregateUtils.mergeByKey(rdd);
+		    	out = RDDAggregateUtils.mergeByKey(rdd, false);
 		    }
 		    
 		    //Step 3: create output rdd handle w/ lineage
@@ -201,15 +188,6 @@ public class ResultMergeRemoteSpark extends ResultMerge
 		return ret;
 	}
 
-	/**
-	 * 
-	 * @param rlen
-	 * @param clen
-	 * @param brlen
-	 * @param bclen
-	 * @param numRed
-	 * @return
-	 */
 	private int determineNumReducers(long rlen, long clen, int brlen, int bclen, long numRed)
 	{
 		//set the number of mappers and reducers 

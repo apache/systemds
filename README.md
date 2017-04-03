@@ -20,7 +20,7 @@ limitations under the License.
 # SystemML
 
 **Documentation:** [SystemML Documentation](http://apache.github.io/incubator-systemml/)<br/>
-**Mailing List:** [Dev Mailing List](http://systemml.apache.org/community.html)<br/>
+**Mailing List:** [Dev Mailing List](mailto:dev@systemml.incubator.apache.org)<br/>
 **Build Status:** [![Build Status](https://sparktc.ibmcloud.com/jenkins/job/SystemML-DailyTest/badge/icon)](https://sparktc.ibmcloud.com/jenkins/job/SystemML-DailyTest)<br/>
 **Issue Tracker:** [JIRA](https://issues.apache.org/jira/browse/SYSTEMML)<br/>
 **Download:** [Download SystemML](http://systemml.apache.org/download.html)<br/>
@@ -98,22 +98,22 @@ Before you get started on SystemML, make sure that your environment is set up an
   brew install Caskroom/cask/java
   ```
 
-  3. **Install Spark 1.6.**
+  3. **Install Spark 2.1.**
   ```
   brew tap homebrew/versions
-  brew install apache-spark16
+  brew install apache-spark21
   ```
 
   4. **Download SystemML.**
 
-  Go to the [SystemML Downloads page](http://systemml.apache.org/download.html), download `systemml-0.10.0-incubating.zip` (should be 2nd), and unzip it to a location of your choice.
+  Go to the [SystemML Downloads page](http://systemml.apache.org/download.html), download `systemml-0.13.0-incubating.zip` (should be 2nd), and unzip it to a location of your choice.
 
   *The next step is optional, but it will make your life a lot easier.*
 
   5. **[OPTIONAL] Set `SYSTEMML_HOME` in your bash profile.**
   Add the following to `~/.bash_profile`, replacing `path/to/` with the location of the download in step 5.
   ```
-  export SYSTEMML_HOME=path/to/systemml-0.10.0-incubating
+  export SYSTEMML_HOME=path/to/systemml-0.13.0-incubating
   ```
   *Make sure to open a new tab in terminal so that you make sure the changes have been made.*
 

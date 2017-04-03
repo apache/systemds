@@ -101,10 +101,7 @@ public class AppendGSPInstruction extends BinarySPInstruction
 		sec.addLineageRDD(output.getName(), input1.getName());
 		sec.addLineageRDD(output.getName(), input2.getName());
 	}
-	
-	/**
-	 * 
-	 */
+
 	public static class MergeWithShiftedBlocks implements PairFunction<Tuple2<MatrixIndexes,Tuple2<Iterable<MatrixBlock>,Iterable<MatrixBlock>>>, MatrixIndexes, MatrixBlock> 
 	{
 		private static final long serialVersionUID = 848955582909209400L;
@@ -157,10 +154,7 @@ public class AppendGSPInstruction extends BinarySPInstruction
 		}
 		
 	}
-	
-	/**
-	 * 
-	 */
+
 	public static class ShiftMatrix implements PairFlatMapFunction<Tuple2<MatrixIndexes,MatrixBlock>, MatrixIndexes,MatrixBlock> 
 	{
 		private static final long serialVersionUID = 3524189212798209172L;
@@ -182,7 +176,7 @@ public class AppendGSPInstruction extends BinarySPInstruction
 		}
 
 		@Override
-		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Tuple2<MatrixIndexes, MatrixBlock> kv) 
+		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Tuple2<MatrixIndexes, MatrixBlock> kv) 
 			throws Exception 
 		{
 			//common preparation
@@ -246,7 +240,7 @@ public class AppendGSPInstruction extends BinarySPInstruction
 				}
 			}
 			
-			return retVal;
+			return retVal.iterator();
 		}
 	}
 }

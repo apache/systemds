@@ -19,9 +19,9 @@
 
 package org.apache.sysml.runtime.functionobjects;
 
-public class GreaterThan extends ValueFunction 
-{
 
+public class GreaterThan extends ValueComparisonFunction
+{
 	private static final long serialVersionUID = 1408566061111937556L;
 
 	private static GreaterThan singleObj = null;
@@ -35,12 +35,7 @@ public class GreaterThan extends ValueFunction
 			singleObj = new GreaterThan();
 		return singleObj;
 	}
-	
-	public Object clone() throws CloneNotSupportedException {
-		// cloning is not supported for singleton classes
-		throw new CloneNotSupportedException();
-	}
-	
+
 	/*
 	 * Arithmetic relational operators (==, !=, <=, >=) must be instead of
 	 * <code>Double.compare()</code> due to the inconsistencies in the way
@@ -53,7 +48,7 @@ public class GreaterThan extends ValueFunction
 	/**
 	 * execute() method that returns double is required since current map-reduce
 	 * runtime can only produce matrices of doubles. This method is used on MR
-	 * side to perform comparisons on matrices like A>B and A>2.5
+	 * side to perform comparisons on matrices like A&gt;B and A&gt;2.5
 	 */	
 	@Override
 	public double execute(double in1, double in2) {
@@ -71,15 +66,10 @@ public class GreaterThan extends ValueFunction
 	}
 
 	@Override
-	public boolean compare(double in1, long in2) {
-		return (in1 > in2);
+	public boolean compare(boolean in1, boolean in2) {
+		return (in1 && !in2);
 	}
-
-	@Override
-	public boolean compare(long in1, double in2) {
-		return (in1 > in2);
-	}
-
+	
 	@Override
 	public boolean compare(String in1, String in2) {
 		return (in1!=null && in1.compareTo(in2)>0 );

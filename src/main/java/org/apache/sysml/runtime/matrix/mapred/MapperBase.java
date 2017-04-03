@@ -24,13 +24,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
-
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.mr.AggregateBinaryInstruction;
 import org.apache.sysml.runtime.instructions.mr.CSVReblockInstruction;
@@ -43,13 +40,10 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.MatrixValue;
 import org.apache.sysml.runtime.matrix.data.Pair;
-import org.apache.sysml.runtime.matrix.data.TaggedMatrixValue;
 
 @SuppressWarnings("rawtypes")
 public abstract class MapperBase extends MRBaseForCommonInstructions
 {
-	
-	protected static final Log LOG = LogFactory.getLog(MapperBase.class);
 	
 	//the indexes that this particular input matrix file represents
 	protected ArrayList<Byte> representativeMatrixes=null;
@@ -162,7 +156,7 @@ public abstract class MapperBase extends MRBaseForCommonInstructions
 	 * Determines if empty blocks can be discarded on map input. Conceptually, this is true
 	 * if the individual instruction don't need to output empty blocks and if they are sparsesafe.
 	 * 
-	 * @return
+	 * @return true if empty blocks can be discarded on map input
 	 */
 	public boolean allowsFilterEmptyInputBlocks()
 	{
@@ -402,31 +396,5 @@ public abstract class MapperBase extends MRBaseForCommonInstructions
 		} catch (Exception e) {
 			throw new IOException(e);
 		}
-	}
-	
-	protected void processMapOutputToReducer(int index, MatrixIndexes indexBuffer, 
-			TaggedMatrixValue taggedValueBuffer, OutputCollector<Writable, Writable> out) throws IOException
-	{
-			
-		for(byte output: outputIndexes.get(index))
-		{
-			ArrayList<IndexedMatrixValue> results= cachedValues.get(output);
-			if(results==null)
-				continue;
-			for(IndexedMatrixValue result: results)
-			{
-				if(result==null)
-					continue;
-				indexBuffer.setIndexes(result.getIndexes());
-				////////////////////////////////////////
-			//	taggedValueBuffer.getBaseObject().copy(result.getValue());
-				taggedValueBuffer.setBaseObject(result.getValue());
-				////////////////////////////////////////
-				taggedValueBuffer.setTag(output);
-				out.collect(indexBuffer, taggedValueBuffer);
-			//	System.out.println("map output: "+indexBuffer+"\n"+taggedValueBuffer);
-			}
-			
-		}	
 	}
 }

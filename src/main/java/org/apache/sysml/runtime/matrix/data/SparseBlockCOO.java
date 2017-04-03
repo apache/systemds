@@ -59,7 +59,9 @@ public class SparseBlockCOO extends SparseBlock
 	}
 	
 	/**
-	 * Copy constructor sparse block abstraction. 
+	 * Copy constructor sparse block abstraction.
+	 * 
+	 * @param sblock sparse block to copy
 	 */
 	public SparseBlockCOO(SparseBlock sblock)
 	{
@@ -103,6 +105,9 @@ public class SparseBlockCOO extends SparseBlock
 	
 	/**
 	 * Copy constructor old sparse row representation. 
+	 * 
+	 * @param rows array of sparse rows
+	 * @param nnz number of non-zeros
 	 */
 	public SparseBlockCOO(SparseRow[] rows, int nnz)
 	{
@@ -130,10 +135,10 @@ public class SparseBlockCOO extends SparseBlock
 	 * Get the estimated in-memory size of the sparse block in COO 
 	 * with the given dimensions w/o accounting for overallocation. 
 	 * 
-	 * @param nrows
-	 * @param ncols
-	 * @param sparsity
-	 * @return
+	 * @param nrows number of rows
+	 * @param ncols number of columns
+	 * @param sparsity sparsity ratio
+	 * @return memory estimate
 	 */
 	public static long estimateMemory(long nrows, long ncols, double sparsity) {
 		double lnnz = Math.max(INIT_CAPACITY, Math.ceil(sparsity*nrows*ncols));
@@ -501,10 +506,7 @@ public class SparseBlockCOO extends SparseBlock
 	
 	///////////////////////////
 	// private helper methods
-	
-	/**
-	 * 
-	 */
+
 	private void resize() {
 		//compute new size
 		double tmpCap = _values.length * RESIZE_FACTOR1;
@@ -512,25 +514,14 @@ public class SparseBlockCOO extends SparseBlock
 		
 		resize(newCap);
 	}
-	
-	/**
-	 * 
-	 * @param capacity
-	 */
+
 	private void resize(int capacity) {
 		//reallocate arrays and copy old values
 		_rindexes = Arrays.copyOf(_rindexes, capacity);
 		_cindexes = Arrays.copyOf(_cindexes, capacity);
 		_values = Arrays.copyOf(_values, capacity);
 	}
-	
-	/**
-	 * 
-	 * @param ix
-	 * @param r
-	 * @param c
-	 * @param v
-	 */
+
 	private void resizeAndInsert(int ix, int r, int c, double v) {
 		//compute new size
 		double tmpCap = _values.length * RESIZE_FACTOR1;
@@ -556,14 +547,7 @@ public class SparseBlockCOO extends SparseBlock
 		//insert new value
 		insert(ix, r, c, v);
 	}
-	
-	/**
-	 * 
-	 * @param ix
-	 * @param r
-	 * @param c
-	 * @param v
-	 */
+
 	private void shiftRightAndInsert(int ix, int r, int c, double v)  {		
 		//overlapping array copy (shift rhs values right by 1)
 		System.arraycopy(_rindexes, ix, _rindexes, ix+1, _size-ix);
@@ -573,11 +557,7 @@ public class SparseBlockCOO extends SparseBlock
 		//insert new value
 		insert(ix, r, c, v);
 	}
-	
-	/**
-	 * 
-	 * @param index
-	 */
+
 	private void shiftLeftAndDelete(int ix)
 	{
 		//overlapping array copy (shift rhs values left by 1)
@@ -586,12 +566,7 @@ public class SparseBlockCOO extends SparseBlock
 		System.arraycopy(_values, ix+1, _values, ix, _size-ix-1);
 		_size--;
 	}
-	
-	/**
-	 * 
-	 * @param ix
-	 * @param n
-	 */
+
 	private void shiftRightByN(int ix, int n) 
 	{		
 		//overlapping array copy (shift rhs values right by 1)
@@ -600,14 +575,7 @@ public class SparseBlockCOO extends SparseBlock
 		System.arraycopy(_values, ix, _values, ix+n, _size-ix);
 		_size += n;
 	}
-	
-	/**
-	 * 
-	 * @param ix
-	 * @param r
-	 * @param c
-	 * @param v
-	 */
+
 	private void insert(int ix, int r, int c, double v) {
 		_rindexes[ix] = r;
 		_cindexes[ix] = c;
@@ -652,7 +620,7 @@ public class SparseBlockCOO extends SparseBlock
 	/**
 	 * Get raw access to underlying array of row indices
 	 * For use in GPU code
-	 * @return
+	 * @return array of row indices
 	 */
 	public int[] rowIndexes() {
 		return _rindexes;
@@ -661,7 +629,7 @@ public class SparseBlockCOO extends SparseBlock
 	/** 
 	 * Get raw access to underlying array of column indices
 	 * For use in GPU code
-	 * @return
+	 * @return array of column indices
 	 */
 	public int[] indexes() {
 		return _cindexes;
@@ -670,7 +638,7 @@ public class SparseBlockCOO extends SparseBlock
 	/**
 	 * Get raw access to underlying array of values
 	 * For use in GPU code
-	 * @return
+	 * @return array of values
 	 */
 	public double[] values() {
 		return _values;

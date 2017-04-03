@@ -43,9 +43,6 @@ import org.apache.sysml.lops.AppendM;
 import org.apache.sysml.lops.BinaryM;
 import org.apache.sysml.lops.CombineBinary;
 import org.apache.sysml.lops.Data;
-import org.apache.sysml.lops.PMMJ;
-import org.apache.sysml.lops.ParameterizedBuiltin;
-import org.apache.sysml.lops.SortKeys;
 import org.apache.sysml.lops.Data.OperationTypes;
 import org.apache.sysml.lops.FunctionCallCP;
 import org.apache.sysml.lops.Lop;
@@ -56,12 +53,15 @@ import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.lops.MapMult;
 import org.apache.sysml.lops.OutputParameters;
 import org.apache.sysml.lops.OutputParameters.Format;
+import org.apache.sysml.lops.PMMJ;
+import org.apache.sysml.lops.ParameterizedBuiltin;
 import org.apache.sysml.lops.PickByCount;
+import org.apache.sysml.lops.SortKeys;
 import org.apache.sysml.lops.Unary;
 import org.apache.sysml.parser.DataExpression;
 import org.apache.sysml.parser.Expression;
-import org.apache.sysml.parser.ParameterizedBuiltinFunctionExpression;
 import org.apache.sysml.parser.Expression.DataType;
+import org.apache.sysml.parser.ParameterizedBuiltinFunctionExpression;
 import org.apache.sysml.parser.StatementBlock;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
@@ -70,11 +70,11 @@ import org.apache.sysml.runtime.instructions.CPInstructionParser;
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.Instruction.INSTRUCTION_TYPE;
 import org.apache.sysml.runtime.instructions.InstructionParser;
+import org.apache.sysml.runtime.instructions.MRJobInstruction;
 import org.apache.sysml.runtime.instructions.SPInstructionParser;
 import org.apache.sysml.runtime.instructions.cp.CPInstruction;
-import org.apache.sysml.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.CPInstruction.CPINSTRUCTION_TYPE;
-import org.apache.sysml.runtime.instructions.MRJobInstruction;
+import org.apache.sysml.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
@@ -127,7 +127,7 @@ public class Dag<N extends Lop>
 	private HashMap<Long, Integer> IDMap = null;
 
 
-	private class NodeOutput {
+	private static class NodeOutput {
 		String fileName;
 		String varName;
 		OutputInfo outInfo;
@@ -182,10 +182,6 @@ public class Dag<N extends Lop>
 		}		
 	}
 	
-	
-	/**
-	 * Constructor
-	 */
 	public Dag() 
 	{
 		//allocate internal data structures
@@ -224,7 +220,7 @@ public class Dag<N extends Lop>
 	/**
 	 * Method to add a node to the DAG.
 	 * 
-	 * @param node
+	 * @param node low-level operator
 	 * @return true if node was not already present, false if not.
 	 */
 
@@ -234,29 +230,17 @@ public class Dag<N extends Lop>
 		nodes.add(node);
 		return true;
 	}
-	
-	/**
-	 * 
-	 * @param config
-	 * @return
-	 * @throws LopsException
-	 * @throws IOException
-	 * @throws DMLRuntimeException
-	 */
-	public ArrayList<Instruction> getJobs(DMLConfig config)
-			throws LopsException, IOException, DMLRuntimeException 
-	{
-		return getJobs(null, config);
-	}
-	
+
 	/**
 	 * Method to compile a dag generically
 	 * 
-	 * @param config
-	 * @throws LopsException
-	 * @throws DMLRuntimeException
+	 * @param sb statement block
+	 * @param config dml configuration
+	 * @return list of instructions
+	 * @throws LopsException if LopsException occurs
+	 * @throws IOException if IOException occurs
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-
 	public ArrayList<Instruction> getJobs(StatementBlock sb, DMLConfig config)
 			throws LopsException, IOException, DMLRuntimeException {
 		
@@ -443,11 +427,11 @@ public class Dag<N extends Lop>
 
 	/**
 	 * Function that determines if the two input nodes can be executed together 
-	 * in at least on job.
+	 * in at least one job.
 	 * 
-	 * @param node1
-	 * @param node2
-	 * @return
+	 * @param node1 low-level operator 1
+	 * @param node2 low-level operator 2
+	 * @return true if nodes can be executed together
 	 */
 	private static boolean isCompatible(Lop node1, Lop node2) {
 		return( (node1.getCompatibleJobs() & node2.getCompatibleJobs()) > 0);
@@ -456,9 +440,9 @@ public class Dag<N extends Lop>
 	/**
 	 * Function that checks if the given node executes in the job specified by jt.
 	 * 
-	 * @param node
-	 * @param jt
-	 * @return
+	 * @param node low-level operator
+	 * @param jt job type
+	 * @return true if node executes in the specified job type
 	 */
 	private static boolean isCompatible(Lop node, JobType jt) {
 		if ( jt == JobType.GMRCELL )
@@ -574,9 +558,10 @@ public class Dag<N extends Lop>
 	 * As some jobs only write one output, all operations in the mapper need to
 	 * be redone and cannot be marked as finished.
 	 * 
-	 * @param execNodes
-	 * @param jobNodes
-	 * @throws LopsException
+	 * @param execNodes list of exec low-level operators
+	 * @param jobNodes list of job low-level operators
+	 * @param finishedNodes list of finished low-level operators
+	 * @throws LopsException if LopsException occurs
 	 */
 	private void handleSingleOutputJobs(ArrayList<Lop> execNodes,
 			ArrayList<ArrayList<Lop>> jobNodes, ArrayList<Lop> finishedNodes)
@@ -634,7 +619,13 @@ public class Dag<N extends Lop>
 		
 	}
 
-	/** Method to check if a lop can be eliminated from checking **/
+	/**
+	 * Method to check if a lop can be eliminated from checking
+	 * 
+	 * @param node low-level operator
+	 * @param execNodes list of exec nodes
+	 * @return true if lop can be eliminated
+	 */
 	private static boolean canEliminateLop(Lop node, ArrayList<Lop> execNodes) {
 		// this function can only eliminate "aligner" lops such a group
 		if (!node.isAligner())
@@ -669,8 +660,10 @@ public class Dag<N extends Lop>
 	 * Transient reads needn't be considered here since the previous program 
 	 * block would already create appropriate entries in the symbol table.
 	 * 
-	 * @param nodes
-	 * @throws LopsException 
+	 * @param nodes_v list of nodes
+	 * @param inst list of instructions
+	 * @throws LopsException if LopsException occurs
+	 * @throws IOException if IOException occurs
 	 */
 	private static void generateInstructionsForInputVariables(ArrayList<Lop> nodes_v, ArrayList<Instruction> inst) throws LopsException, IOException {
 		for(Lop n : nodes_v) {
@@ -701,8 +694,8 @@ public class Dag<N extends Lop>
 	 * 
 	 * 2) if the exectype of write lop itself is marked MR i.e., memory estimate > memory budget.
 	 * 
-	 * @param node
-	 * @return
+	 * @param node low-level operator
+	 * @return true if lop should be sent to MR
 	 */
 	private static boolean sendWriteLopToMR(Lop node) 
 	{
@@ -724,16 +717,17 @@ public class Dag<N extends Lop>
 		//send write lop to MR if (1) it is marked with exec type MR (based on its memory estimate), or
 		//(2) if the input lop is in MR and the write format allows to pack it into the same job (this does
 		//not apply to csv write because MR csvwrite is a separate MR job type)
-		if( node.getExecType() == ExecType.MR || (in.getExecType() == ExecType.MR && nodeFormat != Format.CSV ) )
-			return true;
-		else
-			return false;
+		return (node.getExecType() == ExecType.MR 
+			|| (in.getExecType() == ExecType.MR && nodeFormat != Format.CSV));
 	}
 	
 	/**
 	 * Computes the memory footprint required to execute <code>node</code> in the mapper.
 	 * It is used only for those nodes that use inputs from distributed cache. The returned 
 	 * value is utilized in limiting the number of instructions piggybacked onto a single GMR mapper.
+	 * 
+	 * @param node low-level operator
+	 * @return memory footprint
 	 */
 	private static double computeFootprintInMapper(Lop node) {
 		// Memory limits must be checked only for nodes that use distributed cache
@@ -783,6 +777,10 @@ public class Dag<N extends Lop>
 	 * If the total estimated footprint (<code>node</code> and previously added nodes in GMR) is less than available memory on 
 	 * the mappers then <code>node</code> can be executed in current round, and <code>true</code> is returned. Otherwise, 
 	 * <code>node</code> must be queued and <code>false</code> is returned. 
+	 * 
+	 * @param node low-level operator
+	 * @param footprintInMapper mapper footprint
+	 * @return true if node can be executed in current round of jobs
 	 */
 	private static boolean checkMemoryLimits(Lop node, double footprintInMapper) {
 		boolean addNode = true;
@@ -802,9 +800,12 @@ public class Dag<N extends Lop>
 	/**
 	 * Method to group a vector of sorted lops.
 	 * 
-	 * @param node_v
-	 * @throws LopsException
-	 * @throws DMLRuntimeException
+	 * @param sb statement block
+	 * @param node_v list of low-level operators
+	 * @return list of instructions
+	 * @throws LopsException if LopsException occurs
+	 * @throws IOException if IOException occurs
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private ArrayList<Instruction> doGreedyGrouping(StatementBlock sb, ArrayList<Lop> node_v)
 			throws LopsException, IOException, DMLRuntimeException
@@ -1266,10 +1267,10 @@ public class Dag<N extends Lop>
 	}
 
 	/**
-	 * Exclude rmvar instruction for <varname> from deleteInst, if exists
+	 * Exclude rmvar instruction for varname from deleteInst, if exists
 	 * 
-	 * @param varName
-	 * @param deleteInst
+	 * @param varName variable name
+	 * @param deleteInst list of instructions
 	 */
 	private static void excludeRemoveInstruction(String varName, ArrayList<Instruction> deleteInst) {
 		//for(Instruction inst : deleteInst) {
@@ -1286,9 +1287,10 @@ public class Dag<N extends Lop>
 	/**
 	 * Generate rmvar instructions for the inputs, if their consumer count becomes zero.
 	 * 
-	 * @param node
-	 * @param inst
-	 * @throws DMLRuntimeException
+	 * @param node low-level operator
+	 * @param inst list of instructions
+	 * @param delteInst list of instructions
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private void processConsumersForInputs(Lop node, ArrayList<Instruction> inst, ArrayList<Instruction> delteInst) throws DMLRuntimeException {
 		// reduce the consumer count for all input lops
@@ -1328,11 +1330,12 @@ public class Dag<N extends Lop>
 	 * this point, this DAG has no dependencies on the MR dag. ie. none of the
 	 * inputs are outputs of MR jobs
 	 * 
-	 * @param execNodes
-	 * @param inst
-	 * @param deleteInst
-	 * @throws LopsException
-	 * @throws DMLRuntimeException
+	 * @param execNodes list of low-level operators
+	 * @param inst list of instructions
+	 * @param writeInst list of write instructions
+	 * @param deleteInst list of delete instructions
+	 * @throws LopsException if LopsException occurs
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private void generateControlProgramJobs(ArrayList<Lop> execNodes,
 			ArrayList<Instruction> inst, ArrayList<Instruction> writeInst, ArrayList<Instruction> deleteInst) throws LopsException, DMLRuntimeException {
@@ -1422,6 +1425,9 @@ public class Dag<N extends Lop>
 					
 					inst_string = node.getInstructions(inputs, outputs);
 				}
+				else if (node.getType() == Lop.Type.MULTIPLE_CP) { // ie, MultipleCP class
+					inst_string = node.getInstructions(node.getOutputParameters().getLabel());
+				}
 				else {
 					if ( node.getInputs().isEmpty() ) {
 						// currently, such a case exists only for Rand lop
@@ -1483,45 +1489,12 @@ public class Dag<N extends Lop>
 								node.getInputs().get(6).getOutputParameters().getLabel(),
 								node.getOutputParameters().getLabel());
 					}
-					else if (node.getInputs().size() == 13) {
-						 // Used for im2col and reshape_col
-						 inst_string = node.getInstructions(
-						 		node.getInputs().get(0).getOutputParameters().getLabel(),
-						 		node.getInputs().get(1).getOutputParameters().getLabel(),
-						 		node.getInputs().get(2).getOutputParameters().getLabel(),
-						 		node.getInputs().get(3).getOutputParameters().getLabel(),
-						 		node.getInputs().get(4).getOutputParameters().getLabel(),
-						 		node.getInputs().get(5).getOutputParameters().getLabel(),
-						 		node.getInputs().get(6).getOutputParameters().getLabel(),
-						 		node.getInputs().get(7).getOutputParameters().getLabel(),
-						 		node.getInputs().get(8).getOutputParameters().getLabel(),
-						 		node.getInputs().get(9).getOutputParameters().getLabel(),
-						 		node.getInputs().get(10).getOutputParameters().getLabel(),
-						 		node.getInputs().get(11).getOutputParameters().getLabel(),
-						 		node.getInputs().get(12).getOutputParameters().getLabel(),
-						 		node.getOutputParameters().getLabel());
-					}
-					else if (node.getInputs().size() == 14) {
-						 // Used for pooling_backward
-						 inst_string = node.getInstructions(
-						 		node.getInputs().get(0).getOutputParameters().getLabel(),
-						 		node.getInputs().get(1).getOutputParameters().getLabel(),
-						 		node.getInputs().get(2).getOutputParameters().getLabel(),
-						 		node.getInputs().get(3).getOutputParameters().getLabel(),
-						 		node.getInputs().get(4).getOutputParameters().getLabel(),
-						 		node.getInputs().get(5).getOutputParameters().getLabel(),
-						 		node.getInputs().get(6).getOutputParameters().getLabel(),
-						 		node.getInputs().get(7).getOutputParameters().getLabel(),
-						 		node.getInputs().get(8).getOutputParameters().getLabel(),
-						 		node.getInputs().get(9).getOutputParameters().getLabel(),
-						 		node.getInputs().get(10).getOutputParameters().getLabel(),
-						 		node.getInputs().get(11).getOutputParameters().getLabel(),
-						 		node.getInputs().get(12).getOutputParameters().getLabel(),
-						 		node.getInputs().get(13).getOutputParameters().getLabel(),
-						 		node.getOutputParameters().getLabel());
-					}
 					else {
-						throw new LopsException(node.printErrorLocation() + "Node with " + node.getInputs().size() + " inputs is not supported in CP yet! \n");
+						String[] inputs = new String[node.getInputs().size()];
+						for( int j=0; j<node.getInputs().size(); j++ )
+							inputs[j] = node.getInputs().get(j).getOutputParameters().getLabel();
+						inst_string = node.getInstructions(inputs,
+								node.getOutputParameters().getLabel());
 					}
 				}
 				
@@ -1638,11 +1611,12 @@ public class Dag<N extends Lop>
 	 * Method to remove all child nodes of a queued node that should be executed
 	 * in a following iteration.
 	 * 
-	 * @param node
-	 * @param finishedNodes
-	 * @param execNodes
-	 * @param queuedNodes
-	 * @throws LopsException
+	 * @param node low-level operator
+	 * @param finishedNodes list of finished nodes
+	 * @param execNodes list of exec nodes
+	 * @param queuedNodes list of queued nodes
+	 * @param jobvec list of lists of low-level operators
+	 * @throws LopsException if LopsException occurs
 	 */
 	private void removeNodesForNextIteration(Lop node, ArrayList<Lop> finishedNodes,
 			ArrayList<Lop> execNodes, ArrayList<Lop> queuedNodes,
@@ -1892,11 +1866,7 @@ public class Dag<N extends Lop>
 			}
 		}
 		
-		if( (tmpNode.getCompatibleJobs() & node.getCompatibleJobs()) > 0)
-			return true;
-		else
-			return false;
-			
+		return ( (tmpNode.getCompatibleJobs() & node.getCompatibleJobs()) > 0);
 	}
 	  
 	/**
@@ -1908,11 +1878,11 @@ public class Dag<N extends Lop>
 	 * Reduce: CAN NOT be piggybacked since it must execute before <code>node</code>
 	 * Map or MapOrReduce: CAN be piggybacked ONLY IF it is comatible w/ <code>tmpNode</code> 
 	 * 
-	 * @param tmpNode
-	 * @param node
-	 * @param execNodes
-	 * @param finishedNodes
-	 * @return
+	 * @param tmpNode temporary low-level operator
+	 * @param node low-level operator
+	 * @param execNodes list of exec nodes
+	 * @param queuedNodes list of queued nodes
+	 * @return true if tmpNode can be piggbacked on node
 	 */
 	private boolean branchCanBePiggyBackedMapAndReduce(Lop tmpNode, Lop node,
 			ArrayList<Lop> execNodes, ArrayList<Lop> queuedNodes) {
@@ -1978,10 +1948,10 @@ public class Dag<N extends Lop>
 	/**
 	 * Method to return the job index for a lop.
 	 * 
-	 * @param lops
-	 * @param jobvec
-	 * @return
-	 * @throws LopsException
+	 * @param lops low-level operator
+	 * @param jobvec list of lists of low-level operators
+	 * @return job index for a low-level operator
+	 * @throws LopsException if LopsException occurs
 	 */
 	private static int jobType(Lop lops, ArrayList<ArrayList<Lop>> jobvec) throws LopsException {
 		for ( JobType jt : JobType.values()) {
@@ -1997,10 +1967,10 @@ public class Dag<N extends Lop>
 	 * Method to see if there is a node of type MapAndReduce between tmpNode and node
 	 * in given node collection
 	 * 
-	 * @param tmpNode
-	 * @param nodeList
-	 * @param node
-	 * @return
+	 * @param tmpNode temporary low-level operator
+	 * @param nodeList list of low-level operators
+	 * @param node low-level operator
+	 * @return true if MapAndReduce node between tmpNode and node in nodeList
 	 */
 	private boolean hasOtherMapAndReduceParentNode(Lop tmpNode,
 			ArrayList<Lop> nodeList, Lop node) {
@@ -2023,10 +1993,10 @@ public class Dag<N extends Lop>
 	/**
 	 * Method to check if there is a queued node that is a parent of both tmpNode and node
 	 * 
-	 * @param tmpNode
-	 * @param queuedNodes
-	 * @param node
-	 * @return
+	 * @param tmpNode temporary low-level operator
+	 * @param queuedNodes list of queued nodes
+	 * @param node low-level operator
+	 * @return true if there is a queued node that is a parent of tmpNode and node
 	 */
 	private boolean hasOtherQueuedParentNode(Lop tmpNode, ArrayList<Lop> queuedNodes, Lop node) {
 		if ( queuedNodes.isEmpty() )
@@ -2049,8 +2019,8 @@ public class Dag<N extends Lop>
 	/**
 	 * Method to print the lops grouped by job type
 	 * 
-	 * @param jobNodes
-	 * @throws DMLRuntimeException
+	 * @param jobNodes list of lists of low-level operators
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private static void printJobNodes(ArrayList<ArrayList<Lop>> jobNodes)
 		throws DMLRuntimeException 
@@ -2075,9 +2045,9 @@ public class Dag<N extends Lop>
 	/**
 	 * Method to check if there exists any lops with ExecLocation=RecordReader
 	 * 
-	 * @param nodes
-	 * @param loc
-	 * @return
+	 * @param nodes list of low-level operators
+	 * @param loc exec location
+	 * @return true if there is a node with RecordReader exec location
 	 */
 	private static boolean hasANode(ArrayList<Lop> nodes, ExecLocation loc) {
 		for ( Lop n : nodes ) {
@@ -2139,12 +2109,13 @@ public class Dag<N extends Lop>
 	 * sub-types and then invokes the appropriate method to generate
 	 * instructions.
 	 * 
-	 * @param execNodes
-	 * @param inst
-	 * @param deleteinst
-	 * @param jobNodes
-	 * @throws LopsException
-	 * @throws DMLRuntimeException
+	 * @param execNodes list of exec nodes
+	 * @param inst list of instructions
+	 * @param writeinst list of write instructions
+	 * @param deleteinst list of delete instructions
+	 * @param jobNodes list of list of low-level operators
+	 * @throws LopsException if LopsException occurs
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private void generateMRJobs(ArrayList<Lop> execNodes,
 			ArrayList<Instruction> inst,
@@ -2224,9 +2195,9 @@ public class Dag<N extends Lop>
 	/**
 	 * Method to add all parents of "node" in exec_n to node_v.
 	 * 
-	 * @param node
-	 * @param node_v
-	 * @param exec_n
+	 * @param node low-level operator
+	 * @param node_v list of nodes
+	 * @param exec_n list of nodes
 	 */
 	private void addParents(Lop node, ArrayList<Lop> node_v, ArrayList<Lop> exec_n) {
 		for (Lop enode : exec_n ) {
@@ -2243,9 +2214,9 @@ public class Dag<N extends Lop>
 	/**
 	 * Method to add all relevant data nodes for set of exec nodes.
 	 * 
-	 * @param node
-	 * @param node_v
-	 * @param exec_n
+	 * @param node low-level operator
+	 * @param node_v list of nodes
+	 * @param exec_n list of nodes
 	 */
 	private static void addChildren(Lop node, ArrayList<Lop> node_v, ArrayList<Lop> exec_n) {
 
@@ -2272,9 +2243,10 @@ public class Dag<N extends Lop>
 	/**
 	 * Method that determines the output format for a given node.
 	 * 
-	 * @param node
-	 * @return
-	 * @throws LopsException 
+	 * @param node low-level operator
+	 * @param cellModeOverride override mode
+	 * @return output info
+	 * @throws LopsException if LopsException occurs
 	 */
 	private static OutputInfo getOutputInfo(Lop node, boolean cellModeOverride) 
 		throws LopsException 
@@ -2363,8 +2335,14 @@ public class Dag<N extends Lop>
 
 	/**
 	 * Method to setup output filenames and outputInfos, and to generate related instructions
-	 * @throws DMLRuntimeException 
-	 * @throws LopsException 
+	 * 
+	 * @param node low-level operator
+	 * @param et exec type
+	 * @param cellModeOverride override mode
+	 * @param copyTWrite ?
+	 * @return node output
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
+	 * @throws LopsException if LopsException occurs
 	 */
 	private NodeOutput setupNodeOutputs(Lop node, ExecType et, boolean cellModeOverride, boolean copyTWrite) 
 	throws DMLRuntimeException, LopsException {
@@ -2817,12 +2795,14 @@ public class Dag<N extends Lop>
 	/**
 	 * Method to generate MapReduce job instructions from a given set of nodes.
 	 * 
-	 * @param execNodes
-	 * @param inst
-	 * @param deleteinst
-	 * @param jobType
-	 * @throws LopsException
-	 * @throws DMLRuntimeException
+	 * @param execNodes list of exec nodes
+	 * @param inst list of instructions
+	 * @param writeinst list of write instructions
+	 * @param deleteinst list of delete instructions
+	 * @param rmvarinst list of rmvar instructions
+	 * @param jt job type
+	 * @throws LopsException if LopsException occurs
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private void generateMapReduceInstructions(ArrayList<Lop> execNodes,
 			ArrayList<Instruction> inst, ArrayList<Instruction> writeinst, ArrayList<Instruction> deleteinst, ArrayList<Instruction> rmvarinst, 
@@ -3070,10 +3050,10 @@ public class Dag<N extends Lop>
 	}
 
 	/**
-	 * converts an array list into a comma separated string
+	 * converts an array list into a Lop.INSTRUCTION_DELIMITOR separated string
 	 * 
-	 * @param inputStrings
-	 * @return
+	 * @param inputStrings list of input strings
+	 * @return Lop.INSTRUCTION_DELIMITOR separated string
 	 */
 	private static String getCSVString(ArrayList<String> inputStrings) {
 		StringBuilder sb = new StringBuilder();
@@ -3090,16 +3070,18 @@ public class Dag<N extends Lop>
 	/**
 	 * Method to populate aggregate and other instructions in reducer.
 	 * 
-	 * @param node
-	 * @param execNodes
-	 * @param aggInstructionsReducer
-	 * @param otherInstructionsReducer
-	 * @param nodeIndexMapping
-	 * @param start_index
-	 * @param inputLabels
-	 * @param MRJoblineNumbers
-	 * @return
-	 * @throws LopsException
+	 * @param node low-level operator
+	 * @param execNodes list of exec nodes
+	 * @param shuffleInstructions list of shuffle instructions
+	 * @param aggInstructionsReducer ?
+	 * @param otherInstructionsReducer ?
+	 * @param nodeIndexMapping node index mapping
+	 * @param start_index start index
+	 * @param inputLabels list of input labels
+	 * @param inputLops list of input lops
+	 * @param MRJobLineNumbers MR job line numbers
+	 * @return -1 if problem
+	 * @throws LopsException if LopsException occurs
 	 */
 	private int getAggAndOtherInstructions(Lop node, ArrayList<Lop> execNodes,
 			ArrayList<String> shuffleInstructions,
@@ -3350,16 +3332,17 @@ public class Dag<N extends Lop>
 	/**
 	 * Method to get record reader instructions for a MR job.
 	 * 
-	 * @param node
-	 * @param execNodes
-	 * @param inputStrings
-	 * @param recordReaderInstructions
-	 * @param nodeIndexMapping
-	 * @param start_index
-	 * @param inputLabels
-	 * @param MRJobLineNumbers
-	 * @return
-	 * @throws LopsException
+	 * @param node low-level operator
+	 * @param execNodes list of exec nodes
+	 * @param inputStrings list of input strings
+	 * @param recordReaderInstructions list of record reader instructions
+	 * @param nodeIndexMapping node index mapping
+	 * @param start_index start index
+	 * @param inputLabels list of input labels
+	 * @param inputLops list of input lops
+	 * @param MRJobLineNumbers MR job line numbers
+	 * @return -1 if problem
+	 * @throws LopsException if LopsException occurs
 	 */
 	private static int getRecordReaderInstructions(Lop node, ArrayList<Lop> execNodes,
 			ArrayList<String> inputStrings,
@@ -3451,16 +3434,16 @@ public class Dag<N extends Lop>
 	/**
 	 * Method to get mapper instructions for a MR job.
 	 * 
-	 * @param node
-	 * @param execNodes
-	 * @param inputStrings
-	 * @param instructionsInMapper
-	 * @param nodeIndexMapping
-	 * @param start_index
-	 * @param inputLabels
-	 * @param MRJoblineNumbers
-	 * @return
-	 * @throws LopsException
+	 * @param node low-level operator
+	 * @param execNodes list of exec nodes
+	 * @param inputStrings list of input strings
+	 * @param instructionsInMapper list of instructions in mapper
+	 * @param nodeIndexMapping ?
+	 * @param start_index starting index
+	 * @param inputLabels input labels
+	 * @param MRJoblineNumbers MR job line numbers
+	 * @return -1 if problem
+	 * @throws LopsException if LopsException occurs
 	 */
 	private int getMapperInstructions(Lop node, ArrayList<Lop> execNodes,
 			ArrayList<String> inputStrings,
@@ -3717,8 +3700,9 @@ public class Dag<N extends Lop>
 	/**
 	 * Method to find all terminal nodes.
 	 * 
-	 * @param execNodes
-	 * @param rootNodes
+	 * @param execNodes list of exec nodes
+	 * @param rootNodes list of root nodes
+	 * @param jt job type
 	 */
 	private static void getOutputNodes(ArrayList<Lop> execNodes, ArrayList<Lop> rootNodes, JobType jt) {
 		for ( Lop node : execNodes ) {
@@ -3755,8 +3739,10 @@ public class Dag<N extends Lop>
 	/**
 	 * check to see if a is the child of b (i.e., there is a directed path from a to b)
 	 * 
-	 * @param a
-	 * @param b
+	 * @param a child lop
+	 * @param b parent lop
+	 * @param IDMap id map
+	 * @return true if a child of b
 	 */
 	private static boolean isChild(Lop a, Lop b, HashMap<Long, Integer> IDMap) {
 		int bID = IDMap.get(b.getID());
@@ -3766,7 +3752,7 @@ public class Dag<N extends Lop>
 	/**
 	 * Method to topologically sort lops
 	 * 
-	 * @param v
+	 * @param v list of lops
 	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private void doTopologicalSort_strict_order(ArrayList<Lop> v) {
@@ -3835,8 +3821,8 @@ public class Dag<N extends Lop>
 	 * Method to perform depth-first traversal from a given node in the DAG.
 	 * Store the reachability information in marked[] boolean array.
 	 * 
-	 * @param root
-	 * @param marked
+	 * @param root low-level operator
+	 * @param marked reachability results
 	 */
 	private void dagDFS(Lop root, boolean[] marked) {
 		//contains check currently required for globalopt, will be removed when cleaned up

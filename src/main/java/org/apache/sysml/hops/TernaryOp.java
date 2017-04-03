@@ -19,6 +19,7 @@
 
 package org.apache.sysml.hops;
 
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.lops.Aggregate;
@@ -164,8 +165,8 @@ public class TernaryOp extends Hop
 	/**
 	 * Method to construct LOPs when op = CENTRAILMOMENT.
 	 * 
-	 * @throws HopsException
-	 * @throws LopsException
+	 * @throws HopsException if HopsException occurs
+	 * @throws LopsException if LopsException occurs
 	 */
 	private void constructLopsCentralMoment() 
 		throws HopsException, LopsException 
@@ -218,8 +219,8 @@ public class TernaryOp extends Hop
 	/**
 	 * Method to construct LOPs when op = COVARIANCE.
 	 * 
-	 * @throws HopsException
-	 * @throws LopsException
+	 * @throws HopsException if HopsException occurs
+	 * @throws LopsException if LopsException occurs
 	 */
 	private void constructLopsCovariance()
 		throws HopsException, LopsException 
@@ -276,8 +277,8 @@ public class TernaryOp extends Hop
 	/**
 	 * Method to construct LOPs when op = QUANTILE | INTERQUANTILE.
 	 * 
-	 * @throws HopsException
-	 * @throws LopsException
+	 * @throws HopsException if HopsException occurs
+	 * @throws LopsException if LopsException occurs
 	 */
 	private void constructLopsQuantile() throws HopsException, LopsException {
 		
@@ -358,8 +359,8 @@ public class TernaryOp extends Hop
 	/**
 	 * Method to construct LOPs when op = CTABLE.
 	 * 
-	 * @throws HopsException
-	 * @throws LopsException
+	 * @throws HopsException if HopsException occurs
+	 * @throws LopsException if LopsException occurs
 	 */
 	private void constructLopsCtable() throws HopsException, LopsException {
 		
@@ -628,22 +629,21 @@ public class TernaryOp extends Hop
 			}
 		}
 	}
-	
-	/**
-	 * 
-	 * @throws HopsException
-	 * @throws LopsException
-	 */
+
 	private void constructLopsPlusMult() 
 		throws HopsException, LopsException 
 	{
 		if ( _op != OpOp3.PLUS_MULT && _op != OpOp3.MINUS_MULT )
 			throw new HopsException("Unexpected operation: " + _op + ", expecting " + OpOp3.PLUS_MULT + " or" +  OpOp3.MINUS_MULT);
 		
-		ExecType et = optFindExecType();
+		ExecType et = null;
+		if(DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR || getMemEstimate() < OptimizerUtils.GPU_MEMORY_BUDGET) )
+			et = ExecType.GPU;
+		else
+			et = optFindExecType();
 		PlusMult plusmult = null;
 		
-		if( et == ExecType.CP || et == ExecType.SPARK ) {
+		if( et == ExecType.CP || et == ExecType.SPARK || et == ExecType.GPU ) {
 			plusmult = new PlusMult(
 					getInput().get(0).constructLops(),
 					getInput().get(1).constructLops(),
@@ -685,19 +685,6 @@ public class TernaryOp extends Hop
 		String s = new String("");
 		s += "t(" + HopsOpOp3String.get(_op) + ")";
 		return s;
-	}
-
-	public void printMe() throws HopsException {
-		if (LOG.isDebugEnabled()){
-			if (getVisited() != VisitStatus.DONE) {
-				super.printMe();
-				LOG.debug("  Operation: " + _op);
-				for (Hop h : getInput()) {
-					h.printMe();
-				}
-			}
-			setVisited(VisitStatus.DONE);
-		}
 	}
 
 	@Override
@@ -966,22 +953,13 @@ public class TernaryOp extends Hop
 		
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	private boolean isSequenceRewriteApplicable() 
 	{
 		return    isSequenceRewriteApplicable(true)
 			   || isSequenceRewriteApplicable(false);
 	}
-	
-	/**
-	 * 
-	 * @param left
-	 * @return
-	 */
+
 	private boolean isSequenceRewriteApplicable( boolean left ) 
 	{
 		boolean ret = false;
@@ -1034,7 +1012,7 @@ public class TernaryOp extends Hop
 	 * Used for (1) constructing CP lops (hop-lop rewrite), and (2) in order to determine
 	 * if dag split after removeEmpty necessary (#2 is precondition for #1). 
 	 * 
-	 * @return
+	 * @return true if ignore zero rewrite
 	 */
 	public boolean isMatrixIgnoreZeroRewriteApplicable() 
 	{

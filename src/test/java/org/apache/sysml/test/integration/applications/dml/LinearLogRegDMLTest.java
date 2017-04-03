@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.applications.dml;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-
 import org.apache.sysml.test.integration.applications.LinearLogRegTest;
 
 @RunWith(value = Parameterized.class)
@@ -37,5 +36,4 @@ public class LinearLogRegDMLTest extends LinearLogRegTest {
 	public void testLinearLogRegDml() {
 		testLinearLogReg(ScriptType.DML);
 	}
-
 }

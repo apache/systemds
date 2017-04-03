@@ -153,6 +153,7 @@ public class RewriteFuseBinaryOpChainTest extends AutomatedTestBase
 	 * @param rewrites
 	 * @param instType
 	 */
+	@SuppressWarnings("unused")
 	private void testFuseBinaryChain( String testname, boolean rewrites, ExecType instType )
 	{	
 		RUNTIME_PLATFORM platformOld = rtplatform;
@@ -191,7 +192,12 @@ public class RewriteFuseBinaryOpChainTest extends AutomatedTestBase
 			
 			//check for applies rewrites
 			if( rewrites && instType!=ExecType.MR  ) {
-				String prefix = (instType==ExecType.SPARK) ? Instruction.SP_INST_PREFIX  : "";
+				String prefix = "";
+				if((instType == ExecType.SPARK || instType==ExecType.CP) && AutomatedTestBase.TEST_GPU)
+					prefix = Instruction.GPU_INST_PREFIX;
+				else if(instType == ExecType.SPARK)
+					prefix = Instruction.SP_INST_PREFIX;
+				
 				String opcode = (testname.equals(TEST_NAME1)||testname.equals(TEST_NAME3)) ? prefix+"+*" : prefix+"-*";
 				Assert.assertTrue("Rewrite not applied.",Statistics.getCPHeavyHitterOpCodes().contains(opcode));
 			}

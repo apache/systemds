@@ -21,8 +21,8 @@ package org.apache.sysml.runtime.instructions.spark;
 
 
 import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
-import org.apache.spark.api.java.function.PairFunction;
 
 import scala.Tuple2;
 
@@ -39,9 +39,6 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-/**
- * 
- */
 public class MapmmChainSPInstruction extends SPInstruction 
 {
 		
@@ -80,12 +77,6 @@ public class MapmmChainSPInstruction extends SPInstruction
 		_chainType = type;
 	}
 
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	public static MapmmChainSPInstruction parseInstruction( String str ) 
 		throws DMLRuntimeException 
 	{
@@ -132,14 +123,12 @@ public class MapmmChainSPInstruction extends SPInstruction
 		//execute mapmmchain (guaranteed to have single output block)
 		MatrixBlock out = null;
 		if( _chainType == ChainType.XtXv ) {
-			RDDMapMMChainFunction fmmc = new RDDMapMMChainFunction(inV);
-			JavaPairRDD<MatrixIndexes,MatrixBlock> tmp = inX.mapValues(fmmc);
+			JavaRDD<MatrixBlock> tmp = inX.values().map(new RDDMapMMChainFunction(inV));
 			out = RDDAggregateUtils.sumStable(tmp);		
 		}
 		else { // ChainType.XtwXv / ChainType.XtXvy
 			PartitionedBroadcast<MatrixBlock> inW = sec.getBroadcastForVariable( _input3.getName() );
-			RDDMapMMChainFunction2 fmmc = new RDDMapMMChainFunction2(inV, inW, _chainType);
-			JavaPairRDD<MatrixIndexes,MatrixBlock> tmp = inX.mapToPair(fmmc);
+			JavaRDD<MatrixBlock> tmp = inX.map(new RDDMapMMChainFunction2(inV, inW, _chainType));
 			out = RDDAggregateUtils.sumStable(tmp);		
 		}
 		
@@ -173,8 +162,8 @@ public class MapmmChainSPInstruction extends SPInstruction
 			MatrixBlock pmV = _pmV.getBlock(1, 1);
 			
 			//execute mapmmchain operation
-			MatrixBlock out = new MatrixBlock();
-			return arg0.chainMatrixMultOperations(pmV, null, out, ChainType.XtXv);
+			return arg0.chainMatrixMultOperations(pmV, 
+					null, new MatrixBlock(), ChainType.XtXv);
 		}
 	}
 	
@@ -182,7 +171,7 @@ public class MapmmChainSPInstruction extends SPInstruction
 	 * This function implements the chain type XtwXv which requires two broadcasts and
 	 * access to the row index of a given matrix block. 
 	 */
-	private static class RDDMapMMChainFunction2 implements PairFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock> 
+	private static class RDDMapMMChainFunction2 implements Function<Tuple2<MatrixIndexes, MatrixBlock>, MatrixBlock> 
 	{
 		private static final long serialVersionUID = -7926980450209760212L;
 
@@ -200,7 +189,7 @@ public class MapmmChainSPInstruction extends SPInstruction
 		}
 		
 		@Override
-		public Tuple2<MatrixIndexes, MatrixBlock> call( Tuple2<MatrixIndexes, MatrixBlock> arg0 ) 
+		public MatrixBlock call( Tuple2<MatrixIndexes, MatrixBlock> arg0 ) 
 			throws Exception 
 		{
 			MatrixBlock pmV = _pmV.getBlock(1, 1);
@@ -209,14 +198,9 @@ public class MapmmChainSPInstruction extends SPInstruction
 			MatrixBlock blkIn = arg0._2();
 			int rowIx = (int)ixIn.getRowIndex();
 			
-			MatrixIndexes ixOut = new MatrixIndexes(1,1);
-			MatrixBlock blkOut = new MatrixBlock();
-			
 			//execute mapmmchain operation
-			blkIn.chainMatrixMultOperations(pmV, _pmW.getBlock(rowIx,1), blkOut, _chainType);
-				
-			//output new tuple
-			return new Tuple2<MatrixIndexes, MatrixBlock>(ixOut, blkOut);
+			return blkIn.chainMatrixMultOperations(pmV, 
+					_pmW.getBlock(rowIx,1), new MatrixBlock(), _chainType);
 		}
 	}
 }

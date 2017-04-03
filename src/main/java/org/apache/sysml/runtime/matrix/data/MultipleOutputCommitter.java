@@ -95,14 +95,7 @@ public class MultipleOutputCommitter extends FileOutputCommitter
 		if( !fs.delete(taskOutPath, true) ) 
 			LOG.debug("Failed to delete the temporary output directory of task: " + attemptId + " - " + taskOutPath);
 	}
-	
-	/**
-	 * 
-	 * @param context
-	 * @param fs
-	 * @param taskOutput
-	 * @throws IOException
-	 */
+
 	private void moveFinalTaskOutputs(TaskAttemptContext context, FileSystem fs, Path taskOutput)
 		throws IOException 
 	{
@@ -116,14 +109,7 @@ public class MultipleOutputCommitter extends FileOutputCommitter
 						moveFileToDestination(context, fs, file.getPath());
 		}
 	}
-	
-	/**
-	 * 
-	 * @param context
-	 * @param fs
-	 * @param file
-	 * @throws IOException
-	 */
+
 	private void moveFileToDestination(TaskAttemptContext context, FileSystem fs, Path file) 
 		throws IOException 
 	{

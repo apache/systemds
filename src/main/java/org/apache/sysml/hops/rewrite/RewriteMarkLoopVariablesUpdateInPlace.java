@@ -63,9 +63,12 @@ public class RewriteMarkLoopVariablesUpdateInPlace extends StatementBlockRewrite
 		{
 			ArrayList<String> candidates = new ArrayList<String>(); 
 			VariableSet updated = sb.variablesUpdated();
+			VariableSet liveout = sb.liveOut();
 			
 			for( String varname : updated.getVariableNames() ) {
-				if( updated.getVariable(varname).getDataType()==DataType.MATRIX) {
+				if( updated.getVariable(varname).getDataType()==DataType.MATRIX
+					&& liveout.containsVariable(varname) ) //exclude local vars 
+				{
 					if( sb instanceof WhileStatementBlock ) {
 						WhileStatement wstmt = (WhileStatement) sb.getStatement(0);
 						if( rIsApplicableForUpdateInPlace(wstmt.getBody(), varname) )
@@ -87,13 +90,6 @@ public class RewriteMarkLoopVariablesUpdateInPlace extends StatementBlockRewrite
 		return ret;
 	}
 	
-	/**
-	 * 
-	 * @param sbs
-	 * @param varname
-	 * @return
-	 * @throws HopsException 
-	 */
 	private boolean rIsApplicableForUpdateInPlace( ArrayList<StatementBlock> sbs, String varname ) 
 		throws HopsException
 	{
@@ -131,12 +127,6 @@ public class RewriteMarkLoopVariablesUpdateInPlace extends StatementBlockRewrite
 		return ret;
 	}
 	
-	/**
-	 * 
-	 * @param hop
-	 * @param varname
-	 * @return
-	 */
 	private boolean isApplicableForUpdateInPlace( Hop hop, String varname )
 	{
 		if( !hop.getName().equals(varname) )

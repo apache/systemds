@@ -39,9 +39,6 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.util.MapReduceTool;
 
-/**
- * 
- */
 public class WriterTextCSVParallel extends WriterTextCSV
 {
 	public WriterTextCSVParallel( CSVFileFormatProperties props ) {
@@ -104,11 +101,6 @@ public class WriterTextCSVParallel extends WriterTextCSV
 		}
 	}
 
-	
-	/**
-	 * 
-	 * 
-	 */
 	private class WriteCSVTask implements Callable<Object> 
 	{
 		private JobConf _job = null;

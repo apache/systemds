@@ -50,12 +50,7 @@ public class RangeBasedReIndexInstruction extends UnaryMRInstructionBase
 		_rlenLhs = rlen;
 		_clenLhs = clen;
 	}
-	
-	/**
-	 * 
-	 * @param mcIn
-	 * @param mcOut
-	 */
+
 	public void computeOutputCharacteristics(MatrixCharacteristics mcIn, MatrixCharacteristics mcOut) {
 		if( _forLeft )
 			mcOut.set(_rlenLhs, _clenLhs, mcIn.getRowsPerBlock(), mcIn.getColsPerBlock(), -1);
@@ -63,13 +58,7 @@ public class RangeBasedReIndexInstruction extends UnaryMRInstructionBase
 			mcOut.set(_ixrange.rowEnd-_ixrange.rowStart+1, _ixrange.colEnd-_ixrange.colStart+1, 
 					mcIn.getRowsPerBlock(), mcIn.getColsPerBlock(), -1);
 	}
-	
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static RangeBasedReIndexInstruction parseInstruction( String str ) 
 		throws DMLRuntimeException 
 	{	

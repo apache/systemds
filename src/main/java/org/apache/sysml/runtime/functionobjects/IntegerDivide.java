@@ -38,24 +38,10 @@ public class IntegerDivide extends ValueFunction
 		return singleObj;
 	}
 	
-	public Object clone() throws CloneNotSupportedException {
-		// cloning is not supported for singleton classes
-		throw new CloneNotSupportedException();
-	}
 
 	@Override
 	public double execute(double in1, double in2) {
 		return executeIntDiv( in1, in2 );
-	}
-
-	@Override
-	public double execute(double in1, long in2) {
-		return executeIntDiv( in1, (double)in2 );
-	}
-
-	@Override
-	public double execute(long in1, double in2) {
-		return executeIntDiv( (double)in1, in2 );
 	}
 
 	@Override
@@ -69,9 +55,9 @@ public class IntegerDivide extends ValueFunction
 	 * or +-INFINITY devision result, the overall output is NOT cast to
 	 * int in order to prevent the special double values.
 	 * 
-	 * @param in1
-	 * @param in2
-	 * @return
+	 * @param in1 double input 1
+	 * @param in2 double input 2
+	 * @return result
 	 */
 	private double executeIntDiv( double in1, double in2 )
 	{

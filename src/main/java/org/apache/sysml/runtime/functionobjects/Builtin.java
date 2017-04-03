@@ -49,7 +49,7 @@ public class Builtin extends ValueFunction
 
 	private static final long serialVersionUID = 3836744687789840574L;
 	
-	public enum BuiltinCode { INVALID, SIN, COS, TAN, ASIN, ACOS, ATAN, LOG, LOG_NZ, MIN, MAX, ABS, SIGN, SQRT, EXP, PLOGP, PRINT, NROW, NCOL, LENGTH, ROUND, MAXINDEX, MININDEX, STOP, CEIL, FLOOR, CUMSUM, CUMPROD, CUMMIN, CUMMAX, INVERSE, SPROP, SIGMOID, SELP };
+	public enum BuiltinCode { SIN, COS, TAN, ASIN, ACOS, ATAN, LOG, LOG_NZ, MIN, MAX, ABS, SIGN, SQRT, EXP, PLOGP, PRINT, PRINTF, NROW, NCOL, LENGTH, ROUND, MAXINDEX, MININDEX, STOP, CEIL, FLOOR, CUMSUM, CUMPROD, CUMMIN, CUMMAX, INVERSE, SPROP, SIGMOID, SELP };
 	public BuiltinCode bFunc;
 	
 	private static final boolean FASTMATH = true;
@@ -76,6 +76,7 @@ public class Builtin extends ValueFunction
 		String2BuiltinCode.put( "exp"    , BuiltinCode.EXP);
 		String2BuiltinCode.put( "plogp"  , BuiltinCode.PLOGP);
 		String2BuiltinCode.put( "print"  , BuiltinCode.PRINT);
+		String2BuiltinCode.put( "printf"  , BuiltinCode.PRINTF);
 		String2BuiltinCode.put( "nrow"   , BuiltinCode.NROW);
 		String2BuiltinCode.put( "ncol"   , BuiltinCode.NCOL);
 		String2BuiltinCode.put( "length" , BuiltinCode.LENGTH);
@@ -96,7 +97,7 @@ public class Builtin extends ValueFunction
 	// We should create one object for every builtin function that we support
 	private static Builtin sinObj = null, cosObj = null, tanObj = null, asinObj = null, acosObj = null, atanObj = null;
 	private static Builtin logObj = null, lognzObj = null, minObj = null, maxObj = null, maxindexObj = null, minindexObj=null;
-	private static Builtin absObj = null, signObj = null, sqrtObj = null, expObj = null, plogpObj = null, printObj = null;
+	private static Builtin absObj = null, signObj = null, sqrtObj = null, expObj = null, plogpObj = null, printObj = null, printfObj;
 	private static Builtin nrowObj = null, ncolObj = null, lengthObj = null, roundObj = null, ceilObj=null, floorObj=null; 
 	private static Builtin inverseObj=null, cumsumObj=null, cumprodObj=null, cumminObj=null, cummaxObj=null;
 	private static Builtin stopObj = null, spropObj = null, sigmoidObj = null, selpObj = null;
@@ -108,23 +109,13 @@ public class Builtin extends ValueFunction
 	public BuiltinCode getBuiltinCode() {
 		return bFunc;
 	}
-	
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 */
+
 	public static Builtin getBuiltinFnObject (String str) 
 	{
 		BuiltinCode code = String2BuiltinCode.get(str);
 		return getBuiltinFnObject( code );
 	}
-	
-	/**
-	 * 
-	 * @param code
-	 * @return
-	 */
+
 	public static Builtin getBuiltinFnObject(BuiltinCode code) 
 	{	
 		if ( code == null ) 
@@ -205,6 +196,11 @@ public class Builtin extends ValueFunction
 			if ( printObj == null )
 				printObj = new Builtin(BuiltinCode.PRINT);
 			return printObj;
+		case PRINTF:
+			if (printfObj == null) {
+				printfObj = new Builtin(BuiltinCode.PRINTF);
+			}
+			return printfObj;
 		case NROW:
 			if ( nrowObj == null )
 				nrowObj = new Builtin(BuiltinCode.NROW);
@@ -274,54 +270,8 @@ public class Builtin extends ValueFunction
 			return null;
 		}
 	}
-	
-	public Object clone() throws CloneNotSupportedException {
-		// cloning is not supported for singleton classes
-		throw new CloneNotSupportedException();
-	}
-	
-	public boolean checkArity(int _arity) throws DMLRuntimeException {
-		switch (bFunc) {
-		case ABS:
-		case SIN:
-		case COS:
-		case TAN:
-		case ASIN:
-		case ACOS:
-		case ATAN:
-		case SIGN:	
-		case SQRT:
-		case EXP:
-		case PLOGP:
-		case NROW:
-		case NCOL:
-		case LENGTH:
-		case ROUND:
-		case PRINT:
-		case MAXINDEX:
-		case MININDEX:
-		case STOP:
-		case CEIL:
-		case FLOOR:
-		case CUMSUM:
-		case INVERSE:
-		case SPROP:	
-		case SIGMOID:
-		case SELP:
-			return (_arity == 1);
-		
-		case LOG:
-		case LOG_NZ:
-			return (_arity == 1 || _arity == 2);
-			
-		case MAX:
-		case MIN:
-			return (_arity == 2);
-		default:
-			throw new DMLRuntimeException("checkNumberOfOperands(): Unknown opcode: " + bFunc);
-		}
-	}
-	
+
+	@Override
 	public double execute (double in) 
 		throws DMLRuntimeException 
 	{
@@ -367,6 +317,7 @@ public class Builtin extends ValueFunction
 		}
 	}
 
+	@Override
 	public double execute (long in) throws DMLRuntimeException {
 		return execute((double)in);
 	}
@@ -374,6 +325,7 @@ public class Builtin extends ValueFunction
 	/*
 	 * Builtin functions with two inputs
 	 */	
+	@Override
 	public double execute (double in1, double in2) throws DMLRuntimeException {
 		switch(bFunc) {
 		
@@ -444,9 +396,9 @@ public class Builtin extends ValueFunction
 	/**
 	 * Simplified version without exception handling
 	 * 
-	 * @param in1
-	 * @param in2
-	 * @return
+	 * @param in1 double 1
+	 * @param in2 double 2
+	 * @return result
 	 */
 	public double execute2(double in1, double in2) 
 	{
@@ -470,6 +422,7 @@ public class Builtin extends ValueFunction
 		}
 	}
 	
+	@Override
 	public double execute (long in1, long in2) throws DMLRuntimeException {
 		switch(bFunc) {
 		
@@ -502,12 +455,16 @@ public class Builtin extends ValueFunction
 		}
 	}
 
-	// currently, it is used only for PRINT and STOP
+	@Override
 	public String execute (String in1) 
 		throws DMLRuntimeException 
 	{
 		switch (bFunc) {
 		case PRINT:
+			if (!DMLScript.suppressPrint2Stdout())
+				System.out.println(in1);
+			return null;
+		case PRINTF:
 			if (!DMLScript.suppressPrint2Stdout())
 				System.out.println(in1);
 			return null;

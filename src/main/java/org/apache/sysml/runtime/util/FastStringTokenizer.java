@@ -37,12 +37,10 @@ public class FastStringTokenizer implements Serializable
 
     /**
      * Constructs a new StringTokenizer for string using the specified
-     * delimiters, returnDelimiters is false.
+     * delimiter
      * 
-     * @param string
-     *            the string to be tokenized
-     * @param delimiters
-     *            the delimiters to use
+     * @param delimiter
+     *            the delimiter to use
      */
     public FastStringTokenizer(char delimiter) 
     {
@@ -50,10 +48,6 @@ public class FastStringTokenizer implements Serializable
         reset( null );
     }
 
-    /**
-     * 
-     * @param string
-     */
     public void reset( String string )
     {
     	_string = string;
@@ -64,8 +58,6 @@ public class FastStringTokenizer implements Serializable
      * Returns the next token in the string as a String.
      * 
      * @return next token in the string as a String
-     * @exception NoSuchElementException
-     *                if no tokens remain
      */
     public String nextToken() 
     {

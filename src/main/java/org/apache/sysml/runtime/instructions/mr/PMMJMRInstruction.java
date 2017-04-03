@@ -34,11 +34,6 @@ import org.apache.sysml.runtime.matrix.mapred.MRBaseForCommonInstructions;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
-
-/**
- * 
- * 
- */
 public class PMMJMRInstruction extends BinaryMRInstructionBase implements IDistributedCacheConsumer
 {	
 	
@@ -64,13 +59,7 @@ public class PMMJMRInstruction extends BinaryMRInstructionBase implements IDistr
 	public boolean getOutputEmptyBlocks() {
 		return _outputEmptyBlocks;
 	}
-	
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static PMMJMRInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{

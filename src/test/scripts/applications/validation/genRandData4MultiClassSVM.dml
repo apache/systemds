@@ -54,7 +54,7 @@ w = w * maxWeight
 ot = X%*%w
 if(b!=0) {
 	b_mat = Rand(rows=1, cols=1, min=b, max=b, pdf="uniform")
-	w =  t(append(t(w), b_mat))
+	w =  t(cbind(t(w), b_mat))
 	ot = ot + b
 }
 

@@ -24,6 +24,7 @@ import java.util.Iterator;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
+import org.apache.spark.api.java.function.PairFunction;
 
 import scala.Tuple2;
 
@@ -36,7 +37,7 @@ import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.spark.data.LazyIterableIterator;
 import org.apache.sysml.runtime.instructions.spark.data.PartitionedBroadcast;
 import org.apache.sysml.runtime.instructions.spark.functions.IsFrameBlockInRange;
-import org.apache.sysml.runtime.instructions.spark.utils.RDDAggregateUtils;
+import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDAggregateUtils;
 import org.apache.sysml.runtime.instructions.spark.utils.SparkUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
@@ -107,16 +108,16 @@ public class FrameIndexingSPInstruction  extends IndexingSPInstruction
 			}
 			else{
 				out = in1.filter(new IsFrameBlockInRange(rl, ru, mcOut))
-			             .flatMapToPair(new SliceBlock(ixrange, mcOut));
-				
-				//aggregation if required 
-				if( _aggType != SparkAggType.NONE )
-					out = RDDAggregateUtils.mergeByFrameKey(out);
+			             .mapToPair(new SliceBlock(ixrange, mcOut));
 			}
 			
 			//put output RDD handle into symbol table
 			sec.setRDDHandleForVariable(output.getName(), out);
 			sec.addLineageRDD(output.getName(), input1.getName());
+			
+			//update schema of output with subset of input schema
+			sec.getFrameObject(output.getName()).setSchema(
+				sec.getFrameObject(input1.getName()).getSchema((int)cl, (int)cu));
 		}
 		//left indexing
 		else if ( opcode.equalsIgnoreCase("leftIndex") || opcode.equalsIgnoreCase("mapLeftIndex"))
@@ -160,7 +161,7 @@ public class FrameIndexingSPInstruction  extends IndexingSPInstruction
 				in2 = sec.getFrameBinaryBlockRDDHandleForVariable( input2.getName() )
 					    .flatMapToPair(new SliceRHSForLeftIndexing(ixrange, mcLeft));
 
-				out = (JavaPairRDD<Long, FrameBlock>) RDDAggregateUtils.mergeByFrameKey(in1.union(in2));
+				out = FrameRDDAggregateUtils.mergeByKey(in1.union(in2));
 			}
 			
 			sec.setRDDHandleForVariable(output.getName(), out);
@@ -173,25 +174,13 @@ public class FrameIndexingSPInstruction  extends IndexingSPInstruction
 		else
 			throw new DMLRuntimeException("Invalid opcode (" + opcode +") encountered in FrameIndexingSPInstruction.");		
 	}
-		
-	/**
-	 * 
-	 * @param mcIn
-	 * @param ixrange
-	 * @return
-	 */
+
 	private boolean isPartitioningPreservingRightIndexing(MatrixCharacteristics mcIn, IndexRange ixrange)
 	{
 		return ( mcIn.dimsKnown() &&
 			(ixrange.rowStart==1 && ixrange.rowEnd==mcIn.getRows() ));   //Entire Column/s			 
 	}
-	
-	
-	/**
-	 * 
-	 * @param mcOut
-	 * @throws DMLRuntimeException
-	 */
+
 	private static void checkValidOutputDimensions(MatrixCharacteristics mcOut) 
 		throws DMLRuntimeException
 	{
@@ -199,10 +188,7 @@ public class FrameIndexingSPInstruction  extends IndexingSPInstruction
 			throw new DMLRuntimeException("FrameIndexingSPInstruction: The updated output dimensions are invalid: " + mcOut);
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class SliceRHSForLeftIndexing implements PairFlatMapFunction<Tuple2<Long,FrameBlock>, Long, FrameBlock> 
 	{
 		private static final long serialVersionUID = 5724800998701216440L;
@@ -222,19 +208,16 @@ public class FrameIndexingSPInstruction  extends IndexingSPInstruction
 		}
 
 		@Override
-		public Iterable<Tuple2<Long, FrameBlock>> call(Tuple2<Long, FrameBlock> rightKV) 
+		public Iterator<Tuple2<Long, FrameBlock>> call(Tuple2<Long, FrameBlock> rightKV) 
 			throws Exception 
 		{
 			Pair<Long,FrameBlock> in = SparkUtils.toIndexedFrameBlock(rightKV);			
 			ArrayList<Pair<Long,FrameBlock>> out = new ArrayList<Pair<Long,FrameBlock>>();
 			OperationsOnMatrixValues.performShift(in, _ixrange, _brlen, _bclen, _rlen, _clen, out);
-			return SparkUtils.fromIndexedFrameBlock(out);
+			return SparkUtils.fromIndexedFrameBlock(out).iterator();
 		}		
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class ZeroOutLHS implements PairFlatMapFunction<Tuple2<Long,FrameBlock>, Long,FrameBlock> 
 	{
 		private static final long serialVersionUID = -2672267231152496854L;
@@ -254,7 +237,7 @@ public class FrameIndexingSPInstruction  extends IndexingSPInstruction
 		}
 		
 		@Override
-		public Iterable<Tuple2<Long, FrameBlock>> call(Tuple2<Long, FrameBlock> kv) 
+		public Iterator<Tuple2<Long, FrameBlock>> call(Tuple2<Long, FrameBlock> kv) 
 			throws Exception 
 		{
 			ArrayList<Pair<Long,FrameBlock>> out = new ArrayList<Pair<Long,FrameBlock>>();
@@ -286,13 +269,10 @@ public class FrameIndexingSPInstruction  extends IndexingSPInstruction
 				curBlockRange.rowStart =  lGblStartRow + _brlen;
 				iRowStartDest = UtilFunctions.computeCellInBlock(iRowStartDest+iMaxRowsToCopy+1, _brlen);
 			}
-			return SparkUtils.fromIndexedFrameBlock(out);
+			return SparkUtils.fromIndexedFrameBlock(out).iterator();
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class LeftIndexPartitionFunction implements PairFlatMapFunction<Iterator<Tuple2<Long,FrameBlock>>, Long, FrameBlock> 
 	{
 		private static final long serialVersionUID = -911940376947364915L;
@@ -307,15 +287,12 @@ public class FrameIndexingSPInstruction  extends IndexingSPInstruction
 		}
 
 		@Override
-		public Iterable<Tuple2<Long, FrameBlock>> call(Iterator<Tuple2<Long, FrameBlock>> arg0)
+		public LazyIterableIterator<Tuple2<Long, FrameBlock>> call(Iterator<Tuple2<Long, FrameBlock>> arg0)
 			throws Exception 
 		{
 			return new LeftIndexPartitionIterator(arg0);
 		}
-		
-		/**
-		 * 
-		 */
+
 		private class LeftIndexPartitionIterator extends LazyIterableIterator<Tuple2<Long, FrameBlock>>
 		{
 			public LeftIndexPartitionIterator(Iterator<Tuple2<Long, FrameBlock>> in) {
@@ -370,61 +347,60 @@ public class FrameIndexingSPInstruction  extends IndexingSPInstruction
 			}
 		}
 	}
-	
-	/**
-	 * 
-	 */
-	private static class SliceBlock implements PairFlatMapFunction<Tuple2<Long, FrameBlock>, Long, FrameBlock> 
+
+	private static class SliceBlock implements PairFunction<Tuple2<Long, FrameBlock>, Long, FrameBlock> 
 	{
 		private static final long serialVersionUID = -5270171193018691692L;
 		
 		private IndexRange _ixrange;
-		private int _brlen; 
-		private int _bclen;
 		
 		public SliceBlock(IndexRange ixrange, MatrixCharacteristics mcOut) {
 			_ixrange = ixrange;
-			_brlen = OptimizerUtils.getDefaultFrameSize();
-			_bclen = (int) mcOut.getCols();
 		}
 
 		@Override
-		public Iterable<Tuple2<Long, FrameBlock>> call(Tuple2<Long, FrameBlock> kv) 
+		public Tuple2<Long, FrameBlock> call(Tuple2<Long, FrameBlock> kv) 
 			throws Exception 
 		{	
-			Pair<Long, FrameBlock> in = SparkUtils.toIndexedFrameBlock(kv);
+			long rowindex = kv._1();
+			FrameBlock in = kv._2();
 			
-			ArrayList<Pair<Long, FrameBlock>> outlist = new ArrayList<Pair<Long, FrameBlock>>();
-			OperationsOnMatrixValues.performSlice(in, _ixrange, _brlen, _bclen, outlist);
+			//prepare local index range (block guaranteed to be in range)
+			int rl = (int) ((rowindex > _ixrange.rowStart) ? 0 : _ixrange.rowStart-rowindex);
+			int ru = (int) ((_ixrange.rowEnd-rowindex >= in.getNumRows()) ? 
+					in.getNumRows()-1 : _ixrange.rowEnd-rowindex);
 			
-			return SparkUtils.fromIndexedFrameBlock(outlist);
+			//slice out the block
+			FrameBlock out = in.sliceOperations(rl, ru, (int)(_ixrange.colStart-1), 
+					(int)(_ixrange.colEnd-1), new FrameBlock());
+			
+			//return block with shifted row index
+			long rowindex2 = (rowindex > _ixrange.rowStart) ? rowindex-_ixrange.rowStart+1 : 1; 
+			return new Tuple2<Long,FrameBlock>(rowindex2, out);
 		}		
 	}
 
-	/**
-	 * 
-	 */
 	private static class SliceBlockPartitionFunction implements PairFlatMapFunction<Iterator<Tuple2<Long, FrameBlock>>, Long, FrameBlock> 
 	{
 		private static final long serialVersionUID = -1655390518299307588L;
 		
 		private IndexRange _ixrange;
-		private int _brlen; 
-		private int _bclen;
 		
 		public SliceBlockPartitionFunction(IndexRange ixrange, MatrixCharacteristics mcOut) {
 			_ixrange = ixrange;
-			_brlen = (int) Math.min(OptimizerUtils.getDefaultFrameSize(), mcOut.getRows());
-			_bclen = (int) mcOut.getCols();
 		}
 
 		@Override
-		public Iterable<Tuple2<Long, FrameBlock>> call(Iterator<Tuple2<Long, FrameBlock>> arg0)
+		public LazyIterableIterator<Tuple2<Long, FrameBlock>> call(Iterator<Tuple2<Long, FrameBlock>> arg0)
 			throws Exception 
 		{
 			return new SliceBlockPartitionIterator(arg0);
 		}	
 		
+		/**
+		 * NOTE: this function is only applied for slicing columns (which preserved all rows
+		 * and hence the existing partitioning). 
+		 */
 		private class SliceBlockPartitionIterator extends LazyIterableIterator<Tuple2<Long, FrameBlock>>
 		{
 			public SliceBlockPartitionIterator(Iterator<Tuple2<Long, FrameBlock>> in) {
@@ -435,13 +411,15 @@ public class FrameIndexingSPInstruction  extends IndexingSPInstruction
 			protected Tuple2<Long, FrameBlock> computeNext(Tuple2<Long, FrameBlock> arg)
 				throws Exception
 			{
-				Pair<Long, FrameBlock> in = SparkUtils.toIndexedFrameBlock(arg);
+				long rowindex = arg._1();
+				FrameBlock in = arg._2();
 				
-				ArrayList<Pair<Long, FrameBlock>> outlist = new ArrayList<Pair<Long, FrameBlock>>();
-				OperationsOnMatrixValues.performSlice(in, _ixrange, _brlen, _bclen, outlist);
+				//slice out the block
+				FrameBlock out = in.sliceOperations(0, in.getNumRows()-1, 
+						(int)_ixrange.colStart-1, (int)_ixrange.colEnd-1, new FrameBlock());
 				
-				assert(outlist.size() == 1); //1-1 row/column block indexing
-				return SparkUtils.fromIndexedFrameBlock(outlist.get(0));
+				//return block with shifted row index
+				return new Tuple2<Long,FrameBlock>(rowindex, out);		
 			}			
 		}
 	}

@@ -23,7 +23,6 @@ import java.io.Serializable;
 
 public class Minus extends ValueFunction implements Serializable
 {
-
 	private static final long serialVersionUID = 8433928060333018056L;
 
 	private static Minus singleObj = null;
@@ -38,23 +37,8 @@ public class Minus extends ValueFunction implements Serializable
 		return singleObj;
 	}
 	
-	public Object clone() throws CloneNotSupportedException {
-		// cloning is not supported for singleton classes
-		throw new CloneNotSupportedException();
-	}
-	
 	@Override
 	public double execute(double in1, double in2) {
-		return in1 - in2;
-	}
-
-	@Override
-	public double execute(double in1, long in2) {
-		return in1 - in2;
-	}
-
-	@Override
-	public double execute(long in1, double in2) {
 		return in1 - in2;
 	}
 
@@ -67,5 +51,4 @@ public class Minus extends ValueFunction implements Serializable
 		
 		return in1 - in2;
 	}
-
 }

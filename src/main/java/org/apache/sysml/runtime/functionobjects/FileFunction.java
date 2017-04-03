@@ -19,7 +19,6 @@
 
 package org.apache.sysml.runtime.functionobjects;
 
-public class FileFunction extends FunctionObject {
+public abstract class FileFunction extends FunctionObject {
 
-	
 }

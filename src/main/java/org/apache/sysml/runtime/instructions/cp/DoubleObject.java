@@ -24,7 +24,6 @@ import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class DoubleObject extends ScalarObject 
 {
-
 	private static final long serialVersionUID = -8525290101679236360L;
 
 	private double _value;
@@ -61,11 +60,6 @@ public class DoubleObject extends ScalarObject
 	@Override
 	public Object getValue(){
 		return _value;
-	}
-	
-
-	public String toString() { 
-		return getStringValue();
 	}
 
 	@Override

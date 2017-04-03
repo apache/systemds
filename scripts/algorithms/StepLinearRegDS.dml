@@ -155,7 +155,7 @@ if (dir == "forward") {
 			if (as.scalar(columns_fixed[1,i]) == 0) {	
 			
 				# Construct the feature matrix
-				X = append (X_global, X_orig[,i]);
+				X = cbind (X_global, X_orig[,i]);
 				
 				[AIC_2] = linear_regression (X, y, m_orig, columns_fixed_ordered, " ");
 				AICs[1,i] = AIC_2;
@@ -171,16 +171,16 @@ if (dir == "forward") {
 			}
 		}
 				
-		# Append best found features (i.e., columns) to X_global
+		# cbind best found features (i.e., columns) to X_global
 		if (as.scalar(columns_fixed[1,column_best]) == 0) { # new best feature found
 			print ("Best AIC " + AIC_best + " achieved with feature: " + column_best);
 			columns_fixed[1,column_best] = 1;
-			columns_fixed_ordered = append (columns_fixed_ordered, as.matrix(column_best));
+			columns_fixed_ordered = cbind (columns_fixed_ordered, as.matrix(column_best));
 			if (ncol(columns_fixed_ordered) == m_orig) { # all features examined
-				X_global = append (X_global, X_orig[,column_best]);
+				X_global = cbind (X_global, X_orig[,column_best]);
 				continue = FALSE;
 			} else {
-				X_global = append (X_global, X_orig[,column_best]);
+				X_global = cbind (X_global, X_orig[,column_best]);
 			}
 		} else {
 			continue = FALSE;
@@ -210,7 +210,7 @@ linear_regression = function (Matrix[Double] X, Matrix[Double] y, Double m_orig,
 	# Introduce the intercept, shift and rescale the columns of X if needed
 	if (intercept_status == 1 | intercept_status == 2) { # add the intercept column
 		ones_n = matrix (1, rows = n, cols = 1);
-		X = append (X, ones_n);
+		X = cbind (X, ones_n);
 		m = m - 1;
 	}
 	m_ext = ncol(X);
@@ -321,7 +321,7 @@ linear_regression = function (Matrix[Double] X, Matrix[Double] y, Double m_orig,
 		# Prepare the output matrix
 		print ("Writing the output matrix...");
 		if (intercept_status == 2) {
-			beta_out = append (beta, beta_unscaled);
+			beta_out = cbind (beta, beta_unscaled);
 		} else {
 			beta_out = beta;
 		}
@@ -335,7 +335,7 @@ linear_regression = function (Matrix[Double] X, Matrix[Double] y, Double m_orig,
 		
 		if (intercept_status != 0) {
 		
-			Selected_ext = append (Selected, as.matrix (last));			
+			Selected_ext = cbind (Selected, as.matrix (last));			
 			P1 = table (seq (1, ncol (Selected_ext)), t(Selected_ext)); 
 
 			if (intercept_status == 2) {
@@ -346,8 +346,8 @@ linear_regression = function (Matrix[Double] X, Matrix[Double] y, Double m_orig,
 				P2_beta_unscaled = colSums(P1_beta_unscaled);
 				
 				if (max_selected < m_orig) {
-					P2_beta = append (P2_beta, matrix (0, rows=1, cols=(m_orig - max_selected)));
-					P2_beta_unscaled = append (P2_beta_unscaled, matrix (0, rows=1, cols=(m_orig - max_selected)));
+					P2_beta = cbind (P2_beta, matrix (0, rows=1, cols=(m_orig - max_selected)));
+					P2_beta_unscaled = cbind (P2_beta_unscaled, matrix (0, rows=1, cols=(m_orig - max_selected)));
 					
 					P2_beta[1, m_orig+1] = P2_beta[1, max_selected + 1]; 
 					P2_beta[1, max_selected + 1] = 0;
@@ -355,7 +355,7 @@ linear_regression = function (Matrix[Double] X, Matrix[Double] y, Double m_orig,
 					P2_beta_unscaled[1, m_orig+1] = P2_beta_unscaled[1, max_selected + 1]; 
 					P2_beta_unscaled[1, max_selected + 1] = 0;
 				}
-				beta_out = append (t(P2_beta), t(P2_beta_unscaled));
+				beta_out = cbind (t(P2_beta), t(P2_beta_unscaled));
 				
 			} else {
 			
@@ -363,7 +363,7 @@ linear_regression = function (Matrix[Double] X, Matrix[Double] y, Double m_orig,
 				P2_beta = colSums (P1_beta);
 				
 				if (max_selected < m_orig) {
-					P2_beta = append (P2_beta, matrix (0, rows=1, cols=(m_orig - max_selected)));
+					P2_beta = cbind (P2_beta, matrix (0, rows=1, cols=(m_orig - max_selected)));
 					P2_beta[1, m_orig+1] = P2_beta[1, max_selected + 1] ; 
 					P2_beta[1, max_selected + 1] = 0;
 				}
@@ -377,7 +377,7 @@ linear_regression = function (Matrix[Double] X, Matrix[Double] y, Double m_orig,
 			P2_beta = colSums (P1_beta);	
 
 			if (max_selected < m_orig) {
-				P2_beta = append (P2_beta, matrix (0, rows=1, cols=(m_orig - max_selected)));
+				P2_beta = cbind (P2_beta, matrix (0, rows=1, cols=(m_orig - max_selected)));
 			}		
 
 			beta_out = t(P2_beta);	

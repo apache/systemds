@@ -62,8 +62,8 @@ class_prior = class_counts / numRows
 
 # Compute accuracy on training set
 ones = full(1, rows=numRows, cols=1)
-D_w_ones = append(D, ones)
-model = append(class_conditionals, class_prior)
+D_w_ones = cbind(D, ones)
+model = cbind(class_conditionals, class_prior)
 log_model = log(model)
 transpose_log_model = log_model.transpose()
 log_probs = dot(D_w_ones, transpose_log_model)

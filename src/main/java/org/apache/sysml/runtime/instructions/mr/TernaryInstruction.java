@@ -48,12 +48,14 @@ public class TernaryInstruction extends MRInstruction
 	/**
 	 * Single matrix input
 	 * 
-	 * @param op
-	 * @param in1
-	 * @param scalar_in2
-	 * @param scalar_in3
-	 * @param out
-	 * @param istr
+	 * @param op operation type
+	 * @param in1 input 1 (byte)
+	 * @param scalar_in2 input 2 (double)
+	 * @param scalar_in3 input 3 (double)
+	 * @param out output
+	 * @param outputDim1 output dimension 1
+	 * @param outputDim2 output dimension 2
+	 * @param istr instruction string
 	 */
 	public TernaryInstruction(OperationTypes op, byte in1, double scalar_in2, double scalar_in3, byte out, long outputDim1, long outputDim2, String istr)
 	{
@@ -71,12 +73,14 @@ public class TernaryInstruction extends MRInstruction
 	/**
 	 * Two matrix inputs
 	 * 
-	 * @param op
-	 * @param in1
-	 * @param in2
-	 * @param scalar_in3
-	 * @param out
-	 * @param istr
+	 * @param op operation type
+	 * @param in1 input 1 (byte)
+	 * @param in2 input 2 (byte)
+	 * @param scalar_in3 input 3 (double)
+	 * @param out output
+	 * @param outputDim1 output dimension 1
+	 * @param outputDim2 output dimension 2
+	 * @param istr instruction string
 	 */
 	public TernaryInstruction(OperationTypes op, byte in1, byte in2, double scalar_in3, byte out, long outputDim1, long outputDim2, String istr)
 	{
@@ -94,12 +98,14 @@ public class TernaryInstruction extends MRInstruction
 	/**
 	 * Two matrix input 
 	 * 
-	 * @param op
-	 * @param in1
-	 * @param scalar_in2
-	 * @param in3
-	 * @param out
-	 * @param istr
+	 * @param op operation type
+	 * @param in1 input 1 (byte)
+	 * @param scalar_in2 input 2 (double)
+	 * @param in3 input 3 (byte)
+	 * @param out output
+	 * @param outputDim1 output dimension 1
+	 * @param outputDim2 output dimension 2
+	 * @param istr instruction string
 	 */
 	public TernaryInstruction(OperationTypes op, byte in1, double scalar_in2, byte in3, byte out, long outputDim1, long outputDim2, String istr)
 	{
@@ -117,12 +123,14 @@ public class TernaryInstruction extends MRInstruction
 	/**
 	 * Three matrix inputs
 	 * 
-	 * @param op
-	 * @param in1
-	 * @param in2
-	 * @param in3
-	 * @param out
-	 * @param istr
+	 * @param op operation type
+	 * @param in1 input 1 (byte)
+	 * @param in2 input 2 (byte)
+	 * @param in3 input 3 (byte)
+	 * @param out output
+	 * @param outputDim1 output dimension 1
+	 * @param outputDim2 output dimension 2
+	 * @param istr instruction string
 	 */
 	public TernaryInstruction(OperationTypes op, byte in1, byte in2, byte in3, byte out, long outputDim1, long outputDim2, String istr)
 	{
@@ -148,13 +156,7 @@ public class TernaryInstruction extends MRInstruction
 	public boolean knownOutputDims() {
 		return (_outputDim1 >0 && _outputDim2>0);
 	}
-	
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static TernaryInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{		

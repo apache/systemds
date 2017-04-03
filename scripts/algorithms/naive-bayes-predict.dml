@@ -45,8 +45,8 @@ conditionals = read($conditionals)
 numRows = nrow(D)
 
 ones = matrix(1, rows=numRows, cols=1)
-D_w_ones = append(D, ones)
-model = append(conditionals, prior)
+D_w_ones = cbind(D, ones)
+model = cbind(conditionals, prior)
 
 log_probs = D_w_ones %*% t(log(model))
 

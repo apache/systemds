@@ -40,7 +40,6 @@ import org.apache.sysml.parser.IfStatementBlock;
 import org.apache.sysml.parser.StatementBlock;
 import org.apache.sysml.parser.WhileStatementBlock;
 import org.apache.sysml.parser.Expression.DataType;
-import org.apache.sysml.parser.Expression.ValueType;
 
 /**
  * Rule: Simplify program structure by pulling if or else statement body out
@@ -77,10 +76,20 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 					  || csb instanceof IfStatementBlock 
 					  || csb instanceof ForStatementBlock ) )
 				{
-					//auto vectorization pattern
-					sb = vectorizeScalarAggregate(sb, csb, from, to, incr, iterVar);           //e.g., for(i){s = s + as.scalar(X[i,2])}
+					//AUTO VECTORIZATION PATTERNS
+					//Note: unnecessary row or column indexing then later removed via hop rewrites
+					
+					//e.g., for(i in a:b){s = s + as.scalar(X[i,2])} -> s = sum(X[a:b,2])
+					sb = vectorizeScalarAggregate(sb, csb, from, to, incr, iterVar);  
+					
+					//e.g., for(i in a:b){X[i,2] = Y[i,1] + Z[i,3]} -> X[a:b,2] = Y[a:b,1] + Z[a:b,3];
 					sb = vectorizeElementwiseBinary(sb, csb, from, to, incr, iterVar);
+					
+					//e.g., for(i in a:b){X[i,2] = abs(Y[i,1])} -> X[a:b,2] = abs(Y[a:b,1]);
 					sb = vectorizeElementwiseUnary(sb, csb, from, to, incr, iterVar);
+				
+					//e.g., for(i in a:b){X[7,i] = Y[1,i]} -> X[7,a:b] = Y[1,a:b];
+					sb = vectorizeIndexedCopy(sb, csb, from, to, incr, iterVar);
 				}	
 			}	
 		}	
@@ -92,19 +101,6 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 		return ret;
 	}
 	
-	/**
-	 * Note: unnecessary row or column indexing then later removed via
-	 * dynamic rewrites
-	 * 
-	 * @param sb
-	 * @param csb
-	 * @param from
-	 * @param to
-	 * @param increment
-	 * @param itervar
-	 * @return
-	 * @throws HopsException
-	 */
 	private StatementBlock vectorizeScalarAggregate( StatementBlock sb, StatementBlock csb, Hop from, Hop to, Hop increment, String itervar ) 
 		throws HopsException
 	{
@@ -137,12 +133,12 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 					&& right.getInput().get(0) instanceof IndexingOp )
 				{
 					IndexingOp ix = (IndexingOp)right.getInput().get(0);
-					if( ix.getRowLowerEqualsUpper() && ix.getInput().get(1) instanceof DataOp
+					if( ix.isRowLowerEqualsUpper() && ix.getInput().get(1) instanceof DataOp
 						&& ix.getInput().get(1).getName().equals(itervar) ){
 						leftScalar = true;
 						rowIx = true;
 					}
-					else if( ix.getColLowerEqualsUpper() && ix.getInput().get(3) instanceof DataOp
+					else if( ix.isColLowerEqualsUpper() && ix.getInput().get(3) instanceof DataOp
 						&& ix.getInput().get(3).getName().equals(itervar) ){
 						leftScalar = true;
 						rowIx = false;
@@ -156,12 +152,12 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 					&& left.getInput().get(0) instanceof IndexingOp )
 				{
 					IndexingOp ix = (IndexingOp)left.getInput().get(0);
-					if( ix.getRowLowerEqualsUpper() && ix.getInput().get(1) instanceof DataOp
+					if( ix.isRowLowerEqualsUpper() && ix.getInput().get(1) instanceof DataOp
 						&& ix.getInput().get(1).getName().equals(itervar) ){
 						rightScalar = true;
 						rowIx = true;
 					}
-					else if( ix.getColLowerEqualsUpper() && ix.getInput().get(3) instanceof DataOp
+					else if( ix.isColLowerEqualsUpper() && ix.getInput().get(3) instanceof DataOp
 						&& ix.getInput().get(3).getName().equals(itervar) ){
 						rightScalar = true;
 						rowIx = false;
@@ -179,41 +175,34 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 			Hop ix = cast.getInput().get(0);
 			int aggOpPos = HopRewriteUtils.getValidOpPos(bop.getOp(), MAP_SCALAR_AGGREGATE_SOURCE_OPS);
 			AggOp aggOp = MAP_SCALAR_AGGREGATE_TARGET_OPS[aggOpPos];
+			
 			//replace cast with sum
-			AggUnaryOp newSum = new AggUnaryOp(cast.getName(), DataType.SCALAR, ValueType.DOUBLE, aggOp, Direction.RowCol, ix);
+			AggUnaryOp newSum = HopRewriteUtils.createAggUnaryOp(ix, aggOp, Direction.RowCol);
 			HopRewriteUtils.removeChildReference(cast, ix);
 			HopRewriteUtils.removeChildReference(bop, cast);
 			HopRewriteUtils.addChildReference(bop, newSum, leftScalar?1:0 );
+			
 			//modify indexing expression according to loop predicate from-to
 			//NOTE: any redundant index operations are removed via dynamic algebraic simplification rewrites
 			int index1 = rowIx ? 1 : 3;
 			int index2 = rowIx ? 2 : 4;
-			HopRewriteUtils.removeChildReferenceByPos(ix, ix.getInput().get(index1), index1);
-			HopRewriteUtils.addChildReference(ix, from, index1);
-			HopRewriteUtils.removeChildReferenceByPos(ix, ix.getInput().get(index2), index2);
-			HopRewriteUtils.addChildReference(ix, to, index2);
+			HopRewriteUtils.replaceChildReference(ix, ix.getInput().get(index1), from, index1);
+			HopRewriteUtils.replaceChildReference(ix, ix.getInput().get(index2), to, index2);
+			
+			//update indexing size information
+			if( rowIx )
+				((IndexingOp)ix).setRowLowerEqualsUpper(false);
+			else
+				((IndexingOp)ix).setColLowerEqualsUpper(false);	
+			ix.refreshSizeInformation();
 			
 			ret = csb;
-			//ret.liveIn().removeVariable(itervar);
 			LOG.debug("Applied vectorizeScalarSumForLoop.");
 		}
 		
 		return ret;
 	}
 	
-	/**
-	 * Note: unnecessary row or column indexing then later removed via
-	 * dynamic rewrites
-	 * 
-	 * @param sb
-	 * @param csb
-	 * @param from
-	 * @param to
-	 * @param increment
-	 * @param itervar
-	 * @return
-	 * @throws HopsException
-	 */
 	private StatementBlock vectorizeElementwiseBinary( StatementBlock sb, StatementBlock csb, Hop from, Hop to, Hop increment, String itervar ) 
 		throws HopsException
 	{
@@ -247,7 +236,7 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 					IndexingOp rix1 = (IndexingOp) lixrhs.getInput().get(1);
 					
 					//check for rowwise
-					if(    lix.getRowLowerEqualsUpper() && rix0.getRowLowerEqualsUpper() && rix1.getRowLowerEqualsUpper() 
+					if(    lix.getRowLowerEqualsUpper() && rix0.isRowLowerEqualsUpper() && rix1.isRowLowerEqualsUpper() 
 						&& lix.getInput().get(2).getName().equals(itervar)
 						&& rix0.getInput().get(1).getName().equals(itervar)
 						&& rix1.getInput().get(1).getName().equals(itervar))
@@ -256,7 +245,7 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 						rowIx = true;
 					}
 					//check for colwise
-					if(    lix.getColLowerEqualsUpper() && rix0.getColLowerEqualsUpper() && rix1.getColLowerEqualsUpper() 
+					if(    lix.getColLowerEqualsUpper() && rix0.isColLowerEqualsUpper() && rix1.isColLowerEqualsUpper() 
 						&& lix.getInput().get(4).getName().equals(itervar)
 						&& rix0.getInput().get(3).getName().equals(itervar)
 						&& rix1.getInput().get(3).getName().equals(itervar))
@@ -279,23 +268,16 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 			int index1 = rowIx ? 2 : 4;
 			int index2 = rowIx ? 3 : 5;
 			//modify left indexing bounds
-			HopRewriteUtils.removeChildReferenceByPos(lix, lix.getInput().get(index1), index1 );
-			HopRewriteUtils.addChildReference(lix, from, index1);
-			HopRewriteUtils.removeChildReferenceByPos(lix, lix.getInput().get(index2), index2 );
-			HopRewriteUtils.addChildReference(lix, to, index2);
+			HopRewriteUtils.replaceChildReference(lix, lix.getInput().get(index1),from, index1);
+			HopRewriteUtils.replaceChildReference(lix, lix.getInput().get(index2),to, index2);
 			//modify both right indexing
-			HopRewriteUtils.removeChildReferenceByPos(rix0, rix0.getInput().get(index1-1), index1-1 );
-			HopRewriteUtils.addChildReference(rix0, from, index1-1);
-			HopRewriteUtils.removeChildReferenceByPos(rix0, rix0.getInput().get(index2-1), index2-1 );
-			HopRewriteUtils.addChildReference(rix0, to, index2-1);
-			HopRewriteUtils.removeChildReferenceByPos(rix1, rix1.getInput().get(index1-1), index1-1 );
-			HopRewriteUtils.addChildReference(rix1, from, index1-1);
-			HopRewriteUtils.removeChildReferenceByPos(rix1, rix1.getInput().get(index2-1), index2-1 );
-			HopRewriteUtils.addChildReference(rix1, to, index2-1);
-			rix0.refreshSizeInformation();
-			rix1.refreshSizeInformation();
+			HopRewriteUtils.replaceChildReference(rix0, rix0.getInput().get(index1-1), from, index1-1);
+			HopRewriteUtils.replaceChildReference(rix0, rix0.getInput().get(index2-1), to, index2-1);
+			HopRewriteUtils.replaceChildReference(rix1, rix1.getInput().get(index1-1), from, index1-1);
+			HopRewriteUtils.replaceChildReference(rix1, rix1.getInput().get(index2-1), to, index2-1);
+			updateLeftAndRightIndexingSizes(rowIx, lix, rix0, rix1);
 			bop.refreshSizeInformation();
-			lix.refreshSizeInformation();
+			lix.refreshSizeInformation(); //after bop update
 			
 			ret = csb;
 			//ret.liveIn().removeVariable(itervar);
@@ -305,19 +287,6 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 		return ret;
 	}
 	
-	/**
-	 * Note: unnecessary row or column indexing then later removed via
-	 * dynamic rewrites
-	 * 
-	 * @param sb
-	 * @param csb
-	 * @param from
-	 * @param to
-	 * @param increment
-	 * @param itervar
-	 * @return
-	 * @throws HopsException
-	 */
 	private StatementBlock vectorizeElementwiseUnary( StatementBlock sb, StatementBlock csb, Hop from, Hop to, Hop increment, String itervar )
 		throws HopsException
 	{
@@ -345,30 +314,16 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 					&& lixrhs.getInput().get(0) instanceof IndexingOp
 					&& lixrhs.getInput().get(0).getInput().get(0) instanceof DataOp )
 				{
-					IndexingOp rix = (IndexingOp) lixrhs.getInput().get(0);
-					//check for rowwise
-					if(    lix.getRowLowerEqualsUpper() && rix.getRowLowerEqualsUpper() 
-						&& lix.getInput().get(2).getName().equals(itervar)
-						&& rix.getInput().get(1).getName().equals(itervar) )
-					{
-						apply = true;
-						rowIx = true;
-					}
-					//check for colwise
-					if(    lix.getColLowerEqualsUpper() && rix.getColLowerEqualsUpper() 
-						&& lix.getInput().get(4).getName().equals(itervar)
-						&& rix.getInput().get(3).getName().equals(itervar) )
-					{
-						apply = true;
-						rowIx = false;
-					}
+					boolean[] tmp = checkLeftAndRightIndexing(lix, 
+							(IndexingOp) lixrhs.getInput().get(0), itervar);
+					apply = tmp[0];
+					rowIx = tmp[1];
 				}
 			}
 		}	
 		
 		//apply rewrite if possible
-		if( apply ) 
-		{
+		if( apply ) {
 			Hop root = csb.get_hops().get(0);
 			LeftIndexingOp lix = (LeftIndexingOp) root.getInput().get(0);
 			UnaryOp uop = (UnaryOp) lix.getInput().get(1);
@@ -376,26 +331,112 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 			int index1 = rowIx ? 2 : 4;
 			int index2 = rowIx ? 3 : 5;
 			//modify left indexing bounds
-			HopRewriteUtils.removeChildReferenceByPos(lix, lix.getInput().get(index1), index1 );
-			HopRewriteUtils.addChildReference(lix, from, index1);
-			HopRewriteUtils.removeChildReferenceByPos(lix, lix.getInput().get(index2), index2 );
-			HopRewriteUtils.addChildReference(lix, to, index2);
+			HopRewriteUtils.replaceChildReference(lix, lix.getInput().get(index1), from, index1);
+			HopRewriteUtils.replaceChildReference(lix, lix.getInput().get(index2), to, index2);
 			//modify right indexing
-			HopRewriteUtils.removeChildReferenceByPos(rix, rix.getInput().get(index1-1), index1-1 );
-			HopRewriteUtils.addChildReference(rix, from, index1-1);
-			HopRewriteUtils.removeChildReferenceByPos(rix, rix.getInput().get(index2-1), index2-1 );
-			HopRewriteUtils.addChildReference(rix, to, index2-1);
-			rix.refreshSizeInformation();
+			HopRewriteUtils.replaceChildReference(rix, rix.getInput().get(index1-1), from, index1-1);
+			HopRewriteUtils.replaceChildReference(rix, rix.getInput().get(index2-1), to, index2-1);
+			updateLeftAndRightIndexingSizes(rowIx, lix, rix);
 			uop.refreshSizeInformation();
-			lix.refreshSizeInformation();
+			lix.refreshSizeInformation(); //after uop update
 			
 			ret = csb;
-			//ret.liveIn().removeVariable(itervar);
 			LOG.debug("Applied vectorizeElementwiseUnaryForLoop.");
 		}
 		
 		return ret;
 	}
 	
+	private StatementBlock vectorizeIndexedCopy( StatementBlock sb, StatementBlock csb, Hop from, Hop to, Hop increment, String itervar )
+		throws HopsException
+	{
+		StatementBlock ret = sb;
+		
+		//check supported increment values
+		if( !(increment instanceof LiteralOp && ((LiteralOp)increment).getDoubleValue()==1.0) ) {
+			return ret;
+		}
+			
+		//check for applicability
+		boolean apply = false;
+		boolean rowIx = false; //row or col
+		if( csb.get_hops()!=null && csb.get_hops().size()==1 )
+		{
+			Hop root = csb.get_hops().get(0);
+			
+			if( root.getDataType()==DataType.MATRIX && root.getInput().get(0) instanceof LeftIndexingOp )
+			{
+				LeftIndexingOp lix = (LeftIndexingOp) root.getInput().get(0);
+				Hop lixlhs = lix.getInput().get(0);
+				Hop lixrhs = lix.getInput().get(1);
+				
+				if( lixlhs instanceof DataOp && lixrhs instanceof IndexingOp
+					&& lixrhs.getInput().get(0) instanceof DataOp )
+				{
+					boolean[] tmp = checkLeftAndRightIndexing(lix, (IndexingOp)lixrhs, itervar);
+					apply = tmp[0];
+					rowIx = tmp[1];
+				}
+			}
+		}	
+		
+		//apply rewrite if possible
+		if( apply ) {
+			Hop root = csb.get_hops().get(0);
+			LeftIndexingOp lix = (LeftIndexingOp) root.getInput().get(0);
+			IndexingOp rix = (IndexingOp) lix.getInput().get(1);
+			int index1 = rowIx ? 2 : 4;
+			int index2 = rowIx ? 3 : 5;
+			//modify left indexing bounds
+			HopRewriteUtils.replaceChildReference(lix, lix.getInput().get(index1), from, index1);
+			HopRewriteUtils.replaceChildReference(lix, lix.getInput().get(index2), to, index2);
+			//modify right indexing
+			HopRewriteUtils.replaceChildReference(rix, rix.getInput().get(index1-1), from, index1-1);
+			HopRewriteUtils.replaceChildReference(rix, rix.getInput().get(index2-1), to, index2-1);
+			updateLeftAndRightIndexingSizes(rowIx, lix, rix);
+			
+			ret = csb;
+			LOG.debug("Applied vectorizeIndexedCopy.");
+		}
+		
+		return ret;
+	}
 	
+	private static boolean[] checkLeftAndRightIndexing(LeftIndexingOp lix, IndexingOp rix, String itervar) {
+		boolean[] ret = new boolean[2]; //apply, rowIx
+		
+		//check for rowwise
+		if(    lix.getRowLowerEqualsUpper() && rix.isRowLowerEqualsUpper() 
+			&& lix.getInput().get(2).getName().equals(itervar)
+			&& rix.getInput().get(1).getName().equals(itervar) ) {
+			ret[0] = true;
+			ret[1] = true;
+		}
+		//check for colwise
+		if(    lix.getColLowerEqualsUpper() && rix.isColLowerEqualsUpper() 
+			&& lix.getInput().get(4).getName().equals(itervar)
+			&& rix.getInput().get(3).getName().equals(itervar) ) {
+			ret[0] = true;
+			ret[1] = false;
+		}
+		
+		return ret;
+	} 
+	
+	private static void updateLeftAndRightIndexingSizes(boolean rowIx, LeftIndexingOp lix, IndexingOp... rix) {
+		//unset special flags
+		if( rowIx ) {
+			lix.setRowLowerEqualsUpper(false);
+			for( IndexingOp rixi : rix )
+				rixi.setRowLowerEqualsUpper(false);
+		}
+		else {
+			lix.setColLowerEqualsUpper(false);
+			for( IndexingOp rixi : rix )
+				rixi.setColLowerEqualsUpper(false);
+		}
+		for( IndexingOp rixi : rix )
+			rixi.refreshSizeInformation();
+		lix.refreshSizeInformation();
+	}
 }

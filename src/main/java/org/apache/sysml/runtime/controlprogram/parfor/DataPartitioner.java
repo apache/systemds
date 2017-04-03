@@ -57,35 +57,17 @@ public abstract class DataPartitioner
 	protected int _n = -1; //blocksize if applicable
 	protected boolean _allowBinarycell = true;
 	
-	protected DataPartitioner( PDataPartitionFormat dpf, int n )
-	{
+	protected DataPartitioner( PDataPartitionFormat dpf, int n ) {
 		_format = dpf;
 		_n = n;
 	}
-	
-	
-	
-	/**
-	 * 
-	 * @param in
-	 * @param fnameNew
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public MatrixObject createPartitionedMatrixObject( MatrixObject in, String fnameNew )
 		throws DMLRuntimeException
 	{
 		return createPartitionedMatrixObject(in, fnameNew, false);
 	}
-	
-	/**
-	 * 
-	 * @param in
-	 * @param fnameNew
-	 * @param force
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public MatrixObject createPartitionedMatrixObject( MatrixObject in, String fnameNew, boolean force )
 		throws DMLRuntimeException
 	{
@@ -106,10 +88,11 @@ public abstract class DataPartitioner
 	 * created matrix object can be used transparently for obtaining the full matrix
 	 * or reading 1 or multiple partitions based on given index ranges. 
 	 * 
-	 * @param in
-	 * @param force
-	 * @return
-	 * @throws DMLRuntimeException
+	 * @param in input matrix object
+	 * @param out output matrix object
+	 * @param force if false, try to optimize
+	 * @return partitioned matrix object
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public MatrixObject createPartitionedMatrixObject( MatrixObject in, MatrixObject out, boolean force )
 		throws DMLRuntimeException
@@ -190,27 +173,12 @@ public abstract class DataPartitioner
 		return out;
 		
 	}
-	
-	/**
-	 * 
-	 */
+
 	public void disableBinaryCell()
 	{
 		_allowBinarycell = false;
 	}
-	
-	/**
-	 * 
-	 * @param fname
-	 * @param fnameNew
-	 * @param ii
-	 * @param oi
-	 * @param rlen
-	 * @param clen
-	 * @param brlen
-	 * @param bclen
-	 * @throws DMLRuntimeException
-	 */
+
 	protected abstract void partitionMatrix( MatrixObject in, String fnameNew, InputInfo ii, OutputInfo oi, long rlen, long clen, int brlen, int bclen )
 		throws DMLRuntimeException;
 

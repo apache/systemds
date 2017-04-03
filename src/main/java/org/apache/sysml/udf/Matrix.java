@@ -53,7 +53,7 @@ public class Matrix extends FunctionParameter
 	private MatrixObject _mo;
 
 	public enum ValueType {
-		Double, 
+		Double,
 		Integer
 	};
 	
@@ -62,9 +62,9 @@ public class Matrix extends FunctionParameter
 	 * with a default filename of ExternalFunctionProgramBlockCP and hence, should only
 	 * be used by CP external functions.
 	 * 
-	 * @param rows
-	 * @param cols
-	 * @param vType
+	 * @param rows number of rows
+	 * @param cols number of columns
+	 * @param vType value type
 	 */
 	public Matrix(long rows, long cols, ValueType vType) {
 		this( ExternalFunctionProgramBlockCP.DEFAULT_FILENAME, 
@@ -75,10 +75,10 @@ public class Matrix extends FunctionParameter
 	 * Constructor that takes matrix file path, num rows, num cols, and matrix
 	 * value type as parameters.
 	 * 
-	 * @param path
-	 * @param rows
-	 * @param cols
-	 * @param vType
+	 * @param path file path
+	 * @param rows number of rows
+	 * @param cols number of columns
+	 * @param vType value type
 	 */
 	public Matrix(String path, long rows, long cols, ValueType vType) {
 		super(FunctionParameterType.Matrix);
@@ -101,7 +101,7 @@ public class Matrix extends FunctionParameter
 	/**
 	 * Method to get file path for matrix.
 	 * 
-	 * @return
+	 * @return file path
 	 */
 	public String getFilePath() {
 		return _filePath;
@@ -110,7 +110,7 @@ public class Matrix extends FunctionParameter
 	/**
 	 * Method to get the number of rows in the matrix.
 	 * 
-	 * @return
+	 * @return number of rows
 	 */
 	public long getNumRows() {
 		return _rows;
@@ -119,7 +119,7 @@ public class Matrix extends FunctionParameter
 	/**
 	 * Method to get the number of cols in the matrix.
 	 * 
-	 * @return
+	 * @return number of columns
 	 */
 
 	public long getNumCols() {
@@ -129,7 +129,7 @@ public class Matrix extends FunctionParameter
 	/**
 	 * Method to get value type for this matrix.
 	 * 
-	 * @return
+	 * @return value type
 	 */
 	public ValueType getValueType() {
 		return _vType;
@@ -140,9 +140,9 @@ public class Matrix extends FunctionParameter
 	 * user knows the matrix fits in memory. We are using the dense
 	 * representation.
 	 * 
-	 * @return
-	 * @throws DMLRuntimeException 
-	 * @throws IOException 
+	 * @return matrix as two-dimensional double array
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
+	 * @throws IOException if IOException occurs
 	 */
 	public double[][] getMatrixAsDoubleArray() 
 		throws DMLRuntimeException, IOException 
@@ -169,9 +169,9 @@ public class Matrix extends FunctionParameter
 	 * user knows the matrix fits in memory. We are using the dense
 	 * representation.
 	 * 
-	 * @return
-	 * @throws IOException 
-	 * @throws DMLRuntimeException 
+	 * @param data matrix as 2-dimensional double array
+	 * @throws IOException if IOException occurs
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public void setMatrixDoubleArray(double[][] data /*, OutputInfo oinfo, InputInfo iinfo*/) 
 		throws IOException, DMLRuntimeException 
@@ -185,9 +185,9 @@ public class Matrix extends FunctionParameter
 	 * user knows the matrix fits in memory. We are using the dense
 	 * representation.
 	 * 
-	 * @return
-	 * @throws IOException 
-	 * @throws DMLRuntimeException 
+	 * @param data matrix as double array
+	 * @throws IOException if IOException occurs
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public void setMatrixDoubleArray(double[] data /*, OutputInfo oinfo, InputInfo iinfo*/) 
 		throws IOException, DMLRuntimeException 
@@ -201,8 +201,10 @@ public class Matrix extends FunctionParameter
 	 * user knows the matrix fits in memory. We are using the dense
 	 * representation.
 	 * 
-	 * @return
-	 * @throws IOException 
+	 * @param mb matrix block
+	 * @param oinfo output info
+	 * @param iinfo input info
+	 * @throws IOException if IOException occurs
 	 */
 	public void setMatrixDoubleArray(MatrixBlock mb, OutputInfo oinfo, InputInfo iinfo) 
 		throws IOException 

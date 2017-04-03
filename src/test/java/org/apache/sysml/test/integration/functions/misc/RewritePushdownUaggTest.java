@@ -100,13 +100,7 @@ public class RewritePushdownUaggTest extends AutomatedTestBase
 		testRewritePushdownUagg( TEST_NAME4, true );
 	}
 
-	
-	/**
-	 * 
-	 * @param condition
-	 * @param branchRemoval
-	 * @param IPA
-	 */
+
 	private void testRewritePushdownUagg( String testname, boolean rewrites )
 	{	
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
@@ -146,8 +140,11 @@ public class RewritePushdownUaggTest extends AutomatedTestBase
 				check = rewrites ? "uarmin" : "uacmin";
 			else if( testname.equals(TEST_NAME4) ) //rowmins
 				check = rewrites ? "uacmin" : "uarmin";
-			
-			Assert.assertTrue( "Missing opcode: "+check, Statistics.getCPHeavyHitterOpCodes().contains(check) );
+
+			String gpuCheck = "gpu_" + check;
+			boolean containsOpcode = Statistics.getCPHeavyHitterOpCodes().contains(check) || Statistics.getCPHeavyHitterOpCodes().contains(gpuCheck);
+
+			Assert.assertTrue( "Missing opcode: "+check, containsOpcode);
 		}
 		finally
 		{

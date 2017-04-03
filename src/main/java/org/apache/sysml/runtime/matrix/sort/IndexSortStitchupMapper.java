@@ -112,13 +112,7 @@ public class IndexSortStitchupMapper extends MapReduceBase
 		_tmpIx = new MatrixIndexes();
 		_tmpBlk = new MatrixBlock((int)_brlen, 1, false);
 	}
-	
-	
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 */
+
 	private static long[] parseOffsets(String str)
 	{
 		String counts = str.substring(1, str.length() - 1);

@@ -23,7 +23,7 @@ import java.util.ArrayList;
 
 /**
  * This class provides a memory-efficient replacement for
- * HashMap<DblArray,IntArrayList> for restricted use cases.
+ * {@code HashMap<DblArray,IntArrayList>} for restricted use cases.
  * 
  */
 public class DblArrayIntListHashMap 
@@ -40,19 +40,10 @@ public class DblArrayIntListHashMap
 		_size = 0;
 	}
 
-	/**
-	 * 
-	 * @return
-	 */
 	public int size() {
 		return _size;
 	}
 
-	/**
-	 * 
-	 * @param key
-	 * @return
-	 */
 	public IntArrayList get(DblArray key) {
 		// probe for early abort
 		if( _size == 0 )
@@ -72,11 +63,6 @@ public class DblArrayIntListHashMap
 		return null;
 	}
 
-	/**
-	 * 
-	 * @param key
-	 * @param value
-	 */
 	public void appendValue(DblArray key, IntArrayList value) {
 		// compute entry index position
 		int hash = hash(key);
@@ -93,10 +79,6 @@ public class DblArrayIntListHashMap
 			resize();
 	}
 
-	/**
-	 * 
-	 * @return
-	 */
 	public ArrayList<DArrayIListEntry> extractValues() {
 		ArrayList<DArrayIListEntry> ret = new ArrayList<DArrayIListEntry>();
 		for( DArrayIListEntry e : _data ) {
@@ -112,9 +94,6 @@ public class DblArrayIntListHashMap
 		return ret;
 	}
 
-	/**
-     * 
-     */
 	private void resize() {
 		// check for integer overflow on resize
 		if( _data.length > Integer.MAX_VALUE / RESIZE_FACTOR )
@@ -137,11 +116,6 @@ public class DblArrayIntListHashMap
 		}
 	}
 
-	/**
-	 * 
-	 * @param key
-	 * @return
-	 */
 	private static int hash(DblArray key) {
 		int h = key.hashCode();
 
@@ -152,19 +126,10 @@ public class DblArrayIntListHashMap
 		return h ^ (h >>> 7) ^ (h >>> 4);
 	}
 
-	/**
-	 * 
-	 * @param h
-	 * @param length
-	 * @return
-	 */
 	private static int indexFor(int h, int length) {
 		return h & (length - 1);
 	}
 
-	/**
-	 *
-	 */
 	public class DArrayIListEntry {
 		public DblArray key;
 		public IntArrayList value;

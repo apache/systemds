@@ -22,7 +22,7 @@ package org.apache.sysml.api.mlcontext;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
@@ -33,10 +33,11 @@ import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.mllib.linalg.VectorUDT;
+import org.apache.spark.ml.linalg.VectorUDT;
 import org.apache.spark.rdd.RDD;
-import org.apache.spark.sql.DataFrame;
-import org.apache.spark.sql.SQLContext;
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Row;
+import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 import org.apache.sysml.api.MLContextProxy;
@@ -48,12 +49,13 @@ import org.apache.sysml.runtime.controlprogram.caching.CacheException;
 import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysml.runtime.instructions.spark.data.DatasetObject;
 import org.apache.sysml.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysml.runtime.instructions.spark.functions.ConvertStringToLongTextPair;
-import org.apache.sysml.runtime.instructions.spark.functions.CopyBlockPairFunction;
 import org.apache.sysml.runtime.instructions.spark.functions.CopyTextInputFunction;
 import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDConverterUtils;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils;
+import org.apache.sysml.runtime.instructions.spark.utils.SparkUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
@@ -62,7 +64,9 @@ import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
+import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.util.DataConverter;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 import scala.collection.JavaConversions;
 import scala.reflect.ClassTag;
@@ -193,7 +197,8 @@ public class MLContextConversionUtil {
 					frameMetadata.asMatrixCharacteristics() : new MatrixCharacteristics();
 			MatrixFormatMetaData mtd = new MatrixFormatMetaData(mc, 
 					OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
-			FrameObject frameObject = new FrameObject(OptimizerUtils.getUniqueTempFileName(), mtd);
+			FrameObject frameObject = new FrameObject(OptimizerUtils.getUniqueTempFileName(), mtd, 
+					frameMetadata.getFrameSchema().getSchema().toArray(new ValueType[0]));
 			frameObject.acquireModify(frameBlock);
 			frameObject.release();
 			return frameObject;
@@ -235,10 +240,15 @@ public class MLContextConversionUtil {
 	 */
 	public static MatrixObject binaryBlocksToMatrixObject(String variableName,
 			JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlocks, MatrixMetadata matrixMetadata) {
+		return binaryBlocksToMatrixObject(variableName, binaryBlocks, matrixMetadata, true);
+	}
+	
+	private static MatrixObject binaryBlocksToMatrixObject(String variableName,
+			JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlocks, MatrixMetadata matrixMetadata, boolean copy) {
 
 		MatrixCharacteristics mc = (matrixMetadata != null) ?
 			matrixMetadata.asMatrixCharacteristics() : new MatrixCharacteristics();
-		JavaPairRDD<MatrixIndexes, MatrixBlock> javaPairRdd = binaryBlocks.mapToPair(new CopyBlockPairFunction());
+		JavaPairRDD<MatrixIndexes, MatrixBlock> javaPairRdd = SparkUtils.copyBinaryBlockMatrix(binaryBlocks, copy);
 		
 		MatrixObject matrixObject = new MatrixObject(ValueType.DOUBLE, OptimizerUtils.getUniqueTempFileName(),
 				new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
@@ -282,7 +292,8 @@ public class MLContextConversionUtil {
 				frameMetadata.asMatrixCharacteristics() : new MatrixCharacteristics();
 
 		FrameObject frameObject = new FrameObject(OptimizerUtils.getUniqueTempFileName(), 
-				new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
+				new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo), 
+				frameMetadata.getFrameSchema().getSchema().toArray(new ValueType[0]));
 		frameObject.setRDDHandle(new RDDObject(binaryBlocks, variableName));
 		return frameObject;
 	}
@@ -297,7 +308,7 @@ public class MLContextConversionUtil {
 	 * @return the {@code DataFrame} matrix converted to a converted to a
 	 *         {@code MatrixObject}
 	 */
-	public static MatrixObject dataFrameToMatrixObject(String variableName, DataFrame dataFrame) {
+	public static MatrixObject dataFrameToMatrixObject(String variableName, Dataset<Row> dataFrame) {
 		return dataFrameToMatrixObject(variableName, dataFrame, null);
 	}
 
@@ -313,12 +324,16 @@ public class MLContextConversionUtil {
 	 * @return the {@code DataFrame} matrix converted to a converted to a
 	 *         {@code MatrixObject}
 	 */
-	public static MatrixObject dataFrameToMatrixObject(String variableName, DataFrame dataFrame,
+	public static MatrixObject dataFrameToMatrixObject(String variableName, Dataset<Row> dataFrame,
 		MatrixMetadata matrixMetadata) 
 	{
 		matrixMetadata = (matrixMetadata!=null) ? matrixMetadata : new MatrixMetadata();
 		JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlock = dataFrameToMatrixBinaryBlocks(dataFrame, matrixMetadata);
-		return binaryBlocksToMatrixObject(variableName, binaryBlock, matrixMetadata);
+		MatrixObject mo = binaryBlocksToMatrixObject(variableName, binaryBlock, matrixMetadata, false);
+		//keep lineage of original dataset to allow bypassing binary block conversion if possible
+		mo.getRDDHandle().addLineageChild(new DatasetObject(dataFrame, variableName, 
+				isDataFrameWithIDColumn(matrixMetadata),isVectorBasedDataFrame(matrixMetadata)));
+		return mo;
 	}
 
 	/**
@@ -331,7 +346,7 @@ public class MLContextConversionUtil {
 	 * @return the {@code DataFrame} matrix converted to a converted to a
 	 *         {@code FrameObject}
 	 */
-	public static FrameObject dataFrameToFrameObject(String variableName, DataFrame dataFrame) {
+	public static FrameObject dataFrameToFrameObject(String variableName, Dataset<Row> dataFrame) {
 		return dataFrameToFrameObject(variableName, dataFrame, null);
 	}
 
@@ -347,29 +362,31 @@ public class MLContextConversionUtil {
 	 * @return the {@code DataFrame} frame converted to a converted to a
 	 *         {@code FrameObject}
 	 */
-	public static FrameObject dataFrameToFrameObject(String variableName, DataFrame dataFrame,
-			FrameMetadata frameMetadata) {
+	public static FrameObject dataFrameToFrameObject(String variableName, Dataset<Row> dataFrame, FrameMetadata frameMetadata) 
+	{
 		try {
-			if (frameMetadata == null) {
+			//setup meta data and java spark context
+			if (frameMetadata == null)
 				frameMetadata = new FrameMetadata();
-			}
-
+			determineFrameFormatIfNeeded(dataFrame, frameMetadata);
+			boolean containsID = isDataFrameWithIDColumn(frameMetadata);
 			JavaSparkContext javaSparkContext = MLContextUtil
 					.getJavaSparkContext((MLContext) MLContextProxy.getActiveMLContextForAPI());
-			boolean containsID = isDataFrameWithIDColumn(frameMetadata);
-			MatrixCharacteristics matrixCharacteristics = frameMetadata.asMatrixCharacteristics();
-			if (matrixCharacteristics == null) {
-				matrixCharacteristics = new MatrixCharacteristics();
-				long rows = dataFrame.count();
-				int cols = dataFrame.columns().length;
-				matrixCharacteristics.setDimension(rows, cols);
-				frameMetadata.setMatrixCharacteristics(matrixCharacteristics);
-			}
-			JavaPairRDD<Long, FrameBlock> binaryBlock = FrameRDDConverterUtils.dataFrameToBinaryBlock(javaSparkContext,
-					dataFrame, matrixCharacteristics, containsID);
-
+			MatrixCharacteristics mc = frameMetadata.asMatrixCharacteristics();
+			if( mc == null )
+				mc = new MatrixCharacteristics();
+			
+			//convert data frame and obtain column names / schema
+			//TODO extend frame schema by column names (right now dropped)
+			Pair<String[], ValueType[]> ret = new Pair<String[], ValueType[]>(); 
+			JavaPairRDD<Long, FrameBlock> binaryBlock = FrameRDDConverterUtils
+				.dataFrameToBinaryBlock(javaSparkContext, dataFrame, mc, containsID, ret);
+			frameMetadata.setFrameSchema(new FrameSchema(Arrays.asList(ret.getValue())));
+			frameMetadata.setMatrixCharacteristics(mc); //required due to meta data copy
+			
 			return MLContextConversionUtil.binaryBlocksToFrameObject(variableName, binaryBlock, frameMetadata);
-		} catch (DMLRuntimeException e) {
+		} 
+		catch (DMLRuntimeException e) {
 			throw new MLContextException("Exception converting DataFrame to FrameObject", e);
 		}
 	}
@@ -384,7 +401,7 @@ public class MLContextConversionUtil {
 	 *         {@code JavaPairRDD<MatrixIndexes,
 	 *         MatrixBlock>} binary-block matrix
 	 */
-	public static JavaPairRDD<MatrixIndexes, MatrixBlock> dataFrameToMatrixBinaryBlocks(DataFrame dataFrame) {
+	public static JavaPairRDD<MatrixIndexes, MatrixBlock> dataFrameToMatrixBinaryBlocks(Dataset<Row> dataFrame) {
 		return dataFrameToMatrixBinaryBlocks(dataFrame, null);
 	}
 
@@ -401,7 +418,7 @@ public class MLContextConversionUtil {
 	 *         MatrixBlock>} binary-block matrix
 	 */
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> dataFrameToMatrixBinaryBlocks(
-			DataFrame dataFrame, MatrixMetadata matrixMetadata) 
+			Dataset<Row> dataFrame, MatrixMetadata matrixMetadata) 
 	{
 		//handle meta data
 		determineMatrixFormatIfNeeded(dataFrame, matrixMetadata);
@@ -436,7 +453,7 @@ public class MLContextConversionUtil {
 	 *         {@code JavaPairRDD<Long,
 	 *         FrameBlock>} binary-block frame
 	 */
-	public static JavaPairRDD<Long, FrameBlock> dataFrameToFrameBinaryBlocks(DataFrame dataFrame,
+	public static JavaPairRDD<Long, FrameBlock> dataFrameToFrameBinaryBlocks(Dataset<Row> dataFrame,
 			FrameMetadata frameMetadata) {
 		throw new MLContextException("dataFrameToFrameBinaryBlocks is unimplemented");
 	}
@@ -450,7 +467,7 @@ public class MLContextConversionUtil {
 	 * @param matrixMetadata
 	 *            the matrix metadata, if available
 	 */
-	public static void determineMatrixFormatIfNeeded(DataFrame dataFrame, MatrixMetadata matrixMetadata) {
+	public static void determineMatrixFormatIfNeeded(Dataset<Row> dataFrame, MatrixMetadata matrixMetadata) {
 		MatrixFormat matrixFormat = matrixMetadata.getMatrixFormat();
 		if (matrixFormat != null) {
 			return;
@@ -483,6 +500,33 @@ public class MLContextConversionUtil {
 			throw new MLContextException("DataFrame format not recognized as an accepted SystemML MatrixFormat");
 		}
 		matrixMetadata.setMatrixFormat(mf);
+	}
+
+	/**
+	 * If the FrameFormat of the DataFrame has not been explicitly specified,
+	 * attempt to determine the proper FrameFormat.
+	 *
+	 * @param dataFrame
+	 *            the Spark {@code DataFrame}
+	 * @param frameMetadata
+	 *            the frame metadata, if available
+	 */
+	public static void determineFrameFormatIfNeeded(Dataset<Row> dataFrame, FrameMetadata frameMetadata) {
+		FrameFormat frameFormat = frameMetadata.getFrameFormat();
+		if (frameFormat != null) {
+			return;
+		}
+
+		StructType schema = dataFrame.schema();
+		boolean hasID = false;
+		try {
+			schema.fieldIndex(RDDConverterUtils.DF_ID_COLUMN);
+			hasID = true;
+		} catch (IllegalArgumentException iae) {
+		}
+
+		FrameFormat ff = hasID ? FrameFormat.DF_WITH_INDEX : FrameFormat.DF;
+		frameMetadata.setFrameFormat(ff);
 	}
 
 	/**
@@ -598,7 +642,8 @@ public class MLContextConversionUtil {
 		JavaSparkContext jsc = MLContextUtil.getJavaSparkContext((MLContext) MLContextProxy.getActiveMLContextForAPI());
 
 		FrameObject frameObject = new FrameObject(OptimizerUtils.getUniqueTempFileName(), 
-				new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
+				new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo), 
+				frameMetadata.getFrameSchema().getSchema().toArray(new ValueType[0]));
 		JavaPairRDD<Long, FrameBlock> rdd;
 		try {
 			rdd = FrameRDDConverterUtils.csvToBinaryBlock(jsc, javaPairRDDText, mc, 
@@ -659,12 +704,13 @@ public class MLContextConversionUtil {
 		JavaSparkContext jsc = MLContextUtil.getJavaSparkContext((MLContext) MLContextProxy.getActiveMLContextForAPI());
 
 		FrameObject frameObject = new FrameObject(OptimizerUtils.getUniqueTempFileName(), 
-				new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
+				new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo), 
+				frameMetadata.getFrameSchema().getSchema().toArray(new ValueType[0]));
 		JavaPairRDD<Long, FrameBlock> rdd;
 		try {
-			List<ValueType> lschema = null;
+			ValueType[] lschema = null;
 			if (lschema == null)
-				lschema = Collections.nCopies((int) mc.getCols(), ValueType.STRING);
+				lschema = UtilFunctions.nCopies((int) mc.getCols(), ValueType.STRING);
 			rdd = FrameRDDConverterUtils.textCellToBinaryBlock(jsc, javaPairRDDText, mc, lschema);
 		} catch (DMLRuntimeException e) {
 			e.printStackTrace();
@@ -825,6 +871,7 @@ public class MLContextConversionUtil {
 	 * 
 	 * @param frameObject
 	 *            the {@code FrameObject}
+	 * @param delimiter the delimiter
 	 * @return the {@code FrameObject} converted to a {@code JavaRDD<String>}
 	 */
 	public static JavaRDD<String> frameObjectToJavaRDDStringCSV(FrameObject frameObject, String delimiter) {
@@ -951,6 +998,7 @@ public class MLContextConversionUtil {
 	 * 
 	 * @param frameObject
 	 *            the {@code FrameObject}
+	 * @param delimiter the delimiter
 	 * @return the {@code FrameObject} converted to a {@code RDD<String>}
 	 */
 	public static RDD<String> frameObjectToRDDStringCSV(FrameObject frameObject, String delimiter) {
@@ -1040,6 +1088,7 @@ public class MLContextConversionUtil {
 	 * 
 	 * @param frameObject
 	 *            the {@code FrameObject}
+	 * @param delimiter the delimiter
 	 * @return the {@code FrameObject} converted to a {@code List<String>}
 	 */
 	public static List<String> frameObjectToListStringCSV(FrameObject frameObject, String delimiter) {
@@ -1056,7 +1105,9 @@ public class MLContextConversionUtil {
 					if (j > 0) {
 						sb.append(delimiter);
 					}
-					sb.append(fb.get(i, j));
+					if (fb.get(i, j) != null) {
+						sb.append(fb.get(i, j));
+					}
 				}
 				list.add(sb.toString());
 			}
@@ -1141,13 +1192,15 @@ public class MLContextConversionUtil {
 			for (int i = 0; i < rows; i++) {
 				sb = new StringBuilder();
 				for (int j = 0; j < cols; j++) {
-					sb = new StringBuilder();
-					sb.append(i + 1);
-					sb.append(" ");
-					sb.append(j + 1);
-					sb.append(" ");
-					sb.append(fb.get(i, j));
-					list.add(sb.toString());
+					if (fb.get(i, j) != null) {
+						sb = new StringBuilder();
+						sb.append(i + 1);
+						sb.append(" ");
+						sb.append(j + 1);
+						sb.append(" ");
+						sb.append(fb.get(i, j));
+						list.add(sb.toString());
+					}
 				}
 			}
 
@@ -1183,9 +1236,10 @@ public class MLContextConversionUtil {
 	 *            the {@code MatrixObject}
 	 * @param sparkExecutionContext
 	 *            the Spark execution context
+	 * @param isVectorDF is the DataFrame a vector DataFrame?
 	 * @return the {@code MatrixObject} converted to a {@code DataFrame}
 	 */
-	public static DataFrame matrixObjectToDataFrame(MatrixObject matrixObject,
+	public static Dataset<Row> matrixObjectToDataFrame(MatrixObject matrixObject,
 			SparkExecutionContext sparkExecutionContext, boolean isVectorDF) {
 		try {
 			@SuppressWarnings("unchecked")
@@ -1194,9 +1248,9 @@ public class MLContextConversionUtil {
 			MatrixCharacteristics mc = matrixObject.getMatrixCharacteristics();
 
 			SparkContext sc = ((MLContext) MLContextProxy.getActiveMLContextForAPI()).getSparkContext();
-			SQLContext sqlctx = new SQLContext(sc);
+			SparkSession sparkSession = SparkSession.builder().sparkContext(sc).getOrCreate();
 			
-			return RDDConverterUtils.binaryBlockToDataFrame(sqlctx, binaryBlockMatrix, mc, isVectorDF);			
+			return RDDConverterUtils.binaryBlockToDataFrame(sparkSession, binaryBlockMatrix, mc, isVectorDF);
 		} 
 		catch (DMLRuntimeException e) {
 			throw new MLContextException("DMLRuntimeException while converting matrix object to DataFrame", e);
@@ -1212,7 +1266,7 @@ public class MLContextConversionUtil {
 	 *            the Spark execution context
 	 * @return the {@code FrameObject} converted to a {@code DataFrame}
 	 */
-	public static DataFrame frameObjectToDataFrame(FrameObject frameObject,
+	public static Dataset<Row> frameObjectToDataFrame(FrameObject frameObject,
 			SparkExecutionContext sparkExecutionContext) {
 		try {
 			@SuppressWarnings("unchecked")
@@ -1221,7 +1275,8 @@ public class MLContextConversionUtil {
 			MatrixCharacteristics mc = frameObject.getMatrixCharacteristics();
 
 			JavaSparkContext jsc = MLContextUtil.getJavaSparkContext((MLContext) MLContextProxy.getActiveMLContextForAPI());
-			return FrameRDDConverterUtils.binaryBlockToDataFrame(new SQLContext(jsc), binaryBlockFrame, mc, frameObject.getSchema());
+			SparkSession sparkSession = SparkSession.builder().sparkContext(jsc.sc()).getOrCreate();
+			return FrameRDDConverterUtils.binaryBlockToDataFrame(sparkSession, binaryBlockFrame, mc, frameObject.getSchema());
 		} 
 		catch (DMLRuntimeException e) {
 			throw new MLContextException("DMLRuntimeException while converting frame object to DataFrame", e);
@@ -1266,7 +1321,7 @@ public class MLContextConversionUtil {
 			JavaPairRDD<Long, FrameBlock> binaryBlock = (JavaPairRDD<Long, FrameBlock>) sparkExecutionContext
 					.getRDDHandleForFrameObject(frameObject, InputInfo.BinaryBlockInputInfo);
 			MatrixCharacteristics matrixCharacteristics = frameObject.getMatrixCharacteristics();
-			FrameSchema fs = new FrameSchema(frameObject.getSchema());
+			FrameSchema fs = new FrameSchema(Arrays.asList(frameObject.getSchema()));
 			FrameMetadata fm = new FrameMetadata(fs, matrixCharacteristics);
 			return new BinaryBlockFrame(binaryBlock, fm);
 		} catch (DMLRuntimeException e) {

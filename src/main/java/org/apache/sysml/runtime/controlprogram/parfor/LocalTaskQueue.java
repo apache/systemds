@@ -55,8 +55,8 @@ public class LocalTaskQueue<T>
 	/**
 	 * Synchronized insert of a new task to the end of the FIFO queue.
 	 * 
-	 * @param t
-	 * @throws InterruptedException
+	 * @param t task
+	 * @throws InterruptedException if InterruptedException occurs
 	 */
 	public synchronized void enqueueTask( T t ) 
 		throws InterruptedException
@@ -75,8 +75,8 @@ public class LocalTaskQueue<T>
 	/**
 	 * Synchronized read and delete from the top of the FIFO queue.
 	 * 
-	 * @return
-	 * @throws InterruptedException
+	 * @return task
+	 * @throws InterruptedException if InterruptedException occurs
 	 */
 	@SuppressWarnings("unchecked")
 	public synchronized T dequeueTask() 
@@ -105,18 +105,6 @@ public class LocalTaskQueue<T>
 	{
 		_closedInput = true;
 		notifyAll(); //notify all waiting readers
-	}
-	
-	/**
-	 * Synchronized read of the current number of tasks in the queue.
-	 * 
-	 * @return
-	 * @throws InterruptedException
-	 */
-	public synchronized int size()
-		throws InterruptedException
-	{
-		return _data.size();
 	}
 
 	@Override

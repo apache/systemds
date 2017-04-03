@@ -24,11 +24,6 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import org.apache.hadoop.io.RawComparator;
-import org.apache.hadoop.io.WritableComparator;
-import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.Partitioner;
-
 import org.apache.sysml.runtime.util.UtilFunctions;
 
 
@@ -112,45 +107,7 @@ public class TaggedTripleIndexes extends TaggedFirstSecondIndexes
 	
 	@Override
 	public int hashCode() {
-		 return UtilFunctions.longHashFunc((first<<32)+(second<<16)+third+tag+MatrixIndexes.ADD_PRIME1)%MatrixIndexes.DIVIDE_PRIME;
+		 return UtilFunctions.longHashCode((first<<32)+(second<<16)+third+tag+UtilFunctions.ADD_PRIME1)%UtilFunctions.DIVIDE_PRIME;
 	}
-	
-	public static class Comparator implements RawComparator<TaggedTripleIndexes>
-	{
-		@Override
-		public int compare(byte[] b1, int s1, int l1,
-                byte[] b2, int s2, int l2)
-		{
-			return WritableComparator.compareBytes(b1, s1, l1, b2, s2, l2);
-		}
-
-		@Override
-		public int compare(TaggedTripleIndexes m1, TaggedTripleIndexes m2) {
-			return m1.compareTo(m2);
-		}	
-	}
-	
-	 /**
-	   * Partition based on the first and second index.
-	   */
-	  public static class FirstTwoIndexesPartitioner implements Partitioner<TaggedTripleIndexes, MatrixBlock>{
-	    @Override
-	    public int getPartition(TaggedTripleIndexes key, MatrixBlock value, 
-	                            int numPartitions) {
-	   
-	    	return UtilFunctions.longHashFunc((key.getFirstIndex()*127)
-	    			+key.getSecondIndex()+MatrixIndexes.ADD_PRIME1)
-	    			%MatrixIndexes.DIVIDE_PRIME%numPartitions;
-	    	/*return UtilFunctions.longHashFunc(((key.getFirstIndex()+MatrixIndexes.ADD_PRIME2)<<32)
-	    			+key.getSecondIndex()+MatrixIndexes.ADD_PRIME1)
-	    			%MatrixIndexes.DIVIDE_PRIME%numPartitions;*/
-	     // return UtilFunctions.longHashFunc(key.getFirstIndex()*127 + key.getSecondIndex())%10007%numPartitions;
-	    }
-
-		@Override
-		public void configure(JobConf arg0) {
-			
-		}
-	  }
 
 }

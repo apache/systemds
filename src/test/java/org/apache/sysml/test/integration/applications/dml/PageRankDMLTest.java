@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.applications.dml;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-
 import org.apache.sysml.test.integration.applications.PageRankTest;
 
 @RunWith(value = Parameterized.class)
@@ -37,5 +36,4 @@ public class PageRankDMLTest extends PageRankTest {
 	public void testPageRankDml() {
 		testPageRank(ScriptType.DML);
 	}
-
 }

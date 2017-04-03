@@ -18,11 +18,14 @@
  */
 package org.apache.sysml.runtime.instructions.spark.functions;
 
-import org.apache.spark.api.java.function.PairFunction;
+import java.util.Iterator;
+
+import org.apache.spark.api.java.function.PairFlatMapFunction;
 
 import scala.Tuple2;
 
 import org.apache.sysml.lops.Checkpoint;
+import org.apache.sysml.runtime.instructions.spark.data.LazyIterableIterator;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.SparseBlock;
@@ -33,7 +36,7 @@ import org.apache.sysml.runtime.matrix.data.SparseBlock;
  * of key/value pairs.
  * 
  */
-public class CopyBlockPairFunction implements PairFunction<Tuple2<MatrixIndexes, MatrixBlock>,MatrixIndexes, MatrixBlock>
+public class CopyBlockPairFunction implements PairFlatMapFunction<Iterator<Tuple2<MatrixIndexes, MatrixBlock>>,MatrixIndexes, MatrixBlock>
 {
 	private static final long serialVersionUID = -196553327495233360L;
 
@@ -48,22 +51,36 @@ public class CopyBlockPairFunction implements PairFunction<Tuple2<MatrixIndexes,
 	}
 
 	@Override
-	public Tuple2<MatrixIndexes, MatrixBlock> call(Tuple2<MatrixIndexes, MatrixBlock> arg0) 
+	public LazyIterableIterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<MatrixIndexes, MatrixBlock>> arg0) 
 		throws Exception 
 	{	
-		if( _deepCopy ) {
-			MatrixIndexes ix = new MatrixIndexes(arg0._1());
-			MatrixBlock block = null;
-			//always create deep copies in more memory-efficient CSR representation 
-			//if block is already in sparse format			
-			if( Checkpoint.CHECKPOINT_SPARSE_CSR && arg0._2.isInSparseFormat() )
-				block = new MatrixBlock(arg0._2, SparseBlock.Type.CSR, true);
-			else
-				block = new MatrixBlock(arg0._2());
-			return new Tuple2<MatrixIndexes,MatrixBlock>(ix,block);
+		return new CopyBlockPairIterator(arg0);
+	}
+	
+	private class CopyBlockPairIterator extends LazyIterableIterator<Tuple2<MatrixIndexes,MatrixBlock>>
+	{
+		public CopyBlockPairIterator(Iterator<Tuple2<MatrixIndexes, MatrixBlock>> iter) {
+			super(iter);
 		}
-		else {
-			return arg0;
+		
+		@Override
+		protected Tuple2<MatrixIndexes, MatrixBlock> computeNext(Tuple2<MatrixIndexes, MatrixBlock> arg) 
+			throws Exception 
+		{
+			if( _deepCopy ) {
+				MatrixIndexes ix = new MatrixIndexes(arg._1());
+				MatrixBlock block = null;
+				//always create deep copies in more memory-efficient CSR representation 
+				//if block is already in sparse format			
+				if( Checkpoint.CHECKPOINT_SPARSE_CSR && arg._2.isInSparseFormat() )
+					block = new MatrixBlock(arg._2, SparseBlock.Type.CSR, true);
+				else
+					block = new MatrixBlock(arg._2());
+				return new Tuple2<MatrixIndexes,MatrixBlock>(ix,block);
+			}
+			else {
+				return arg;
+			}
 		}
 	}
 }

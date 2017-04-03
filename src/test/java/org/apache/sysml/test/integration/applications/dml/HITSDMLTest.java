@@ -20,7 +20,6 @@
 package org.apache.sysml.test.integration.applications.dml;
 
 import org.junit.Test;
-
 import org.apache.sysml.test.integration.applications.HITSTest;
 
 public class HITSDMLTest extends HITSTest {
@@ -33,6 +32,5 @@ public class HITSDMLTest extends HITSTest {
 	@Test
 	public void testHitsDml() {
 		testHits(ScriptType.DML);
-	}
-
+	}	
 }

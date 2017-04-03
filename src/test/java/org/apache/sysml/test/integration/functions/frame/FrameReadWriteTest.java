@@ -20,8 +20,6 @@
 package org.apache.sysml.test.integration.functions.frame;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
 
 import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.conf.ConfigurationManager;
@@ -174,14 +172,12 @@ public class FrameReadWriteTest extends AutomatedTestBase
 			
 			//Initialize the frame data.
 			//init data frame 1
-			List<ValueType> lschema1 = Arrays.asList(schema1);
-			FrameBlock frame1 = new FrameBlock(lschema1);
-			initFrameData(frame1, A, lschema1);
+			FrameBlock frame1 = new FrameBlock(schema1);
+			initFrameData(frame1, A, schema1);
 			
 			//init data frame 2
-			List<ValueType> lschema2 = Arrays.asList(schema2);
-			FrameBlock frame2 = new FrameBlock(lschema2);
-			initFrameData(frame2, B, lschema2);
+			FrameBlock frame2 = new FrameBlock(schema2);
+			initFrameData(frame2, B, schema2);
 			
 			//Write frame data to disk
 			CSVFileFormatProperties fprop = new CSVFileFormatProperties();			
@@ -201,23 +197,23 @@ public class FrameReadWriteTest extends AutomatedTestBase
 		}
 	}
 	
-	void initFrameData(FrameBlock frame, double[][] data, List<ValueType> lschema)
+	void initFrameData(FrameBlock frame, double[][] data, ValueType[] lschema)
 	{
-		Object[] row1 = new Object[lschema.size()];
+		Object[] row1 = new Object[lschema.length];
 		for( int i=0; i<rows; i++ ) {
-			for( int j=0; j<lschema.size(); j++ )
-				data[i][j] = UtilFunctions.objectToDouble(lschema.get(j), 
-						row1[j] = UtilFunctions.doubleToObject(lschema.get(j), data[i][j]));
+			for( int j=0; j<lschema.length; j++ )
+				data[i][j] = UtilFunctions.objectToDouble(lschema[j], 
+						row1[j] = UtilFunctions.doubleToObject(lschema[j], data[i][j]));
 			frame.appendRow(row1);
 		}
 	}
 
 	void verifyFrameData(FrameBlock frame1, FrameBlock frame2)
 	{
-		List<ValueType> lschema = frame1.getSchema();
+		ValueType[] lschema = frame1.getSchema();
 		for ( int i=0; i<frame1.getNumRows(); i++ )
-			for( int j=0; j<lschema.size(); j++ )	{
-				if( UtilFunctions.compareTo(lschema.get(j), frame1.get(i, j), frame2.get(i, j)) != 0)
+			for( int j=0; j<lschema.length; j++ )	{
+				if( UtilFunctions.compareTo(lschema[j], frame1.get(i, j), frame2.get(i, j)) != 0)
 					Assert.fail("Target value for cell ("+ i + "," + j + ") is " + frame1.get(i,  j) + 
 							", is not same as original value " + frame2.get(i, j));
 			}

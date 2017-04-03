@@ -70,14 +70,7 @@ public class SparseRow implements Serializable
 		values = Arrays.copyOf(that.values, cap);
 		indexes = Arrays.copyOf(that.indexes, cap);
 	}
-	
-	public void truncate(int newsize)
-	{
-		if( newsize>size || newsize<0 )
-			throw new RuntimeException("truncate size: "+newsize+" should <= size: "+size+" and >=0");
-		size = newsize;
-	}
-	
+
 	public int size() {
 		return size;
 	}
@@ -109,11 +102,7 @@ public class SparseRow implements Serializable
 	public int capacity() {
 		return values.length;
 	}
-	
-	/**
-	 * 
-	 * @param that
-	 */
+
 	public void copy(SparseRow that)
 	{
 		//note: no recap (if required) + copy, in order to prevent unnecessary copy of old values
@@ -132,22 +121,13 @@ public class SparseRow implements Serializable
 		size = that.size;
 	}
 
-	/**
-	 * 
-	 * @param estnns
-	 * @param maxnns
-	 */
 	public void reset(int estnns, int maxnns)
 	{
 		estimatedNzs = estnns;
 		maxNzs = maxnns;
 		size = 0;
 	}
-	
-	/**
-	 * 
-	 * @param newCap
-	 */
+
 	public void recap(int newCap) 
 	{
 		if( newCap<=values.length )
@@ -163,7 +143,7 @@ public class SparseRow implements Serializable
 	 *   doubling before capacity reaches estimated nonzeros, then 1.1x after that for default behavior: always 1.1x
 	 *   (both with exponential size increase for log N steps of reallocation and shifting)
 	 * 
-	 * @return
+	 * @return new capacity for resizing
 	 */
 	private int newCapacity()
 	{
@@ -188,13 +168,7 @@ public class SparseRow implements Serializable
 			}
 		size = nnz; //adjust row size
 	}
-	
-	/**
-	 * 
-	 * @param col
-	 * @param v
-	 * @return
-	 */
+
 	public boolean set(int col, double v)
 	{
 		//search for existing col index
@@ -225,12 +199,7 @@ public class SparseRow implements Serializable
 			shiftRightAndInsert(index, col, v);
 		return true; // nnz++
 	}
-	
-	/**
-	 * 
-	 * @param col
-	 * @param v
-	 */
+
 	public void append(int col, double v)
 	{
 		//early abort on zero 
@@ -247,12 +216,7 @@ public class SparseRow implements Serializable
 		indexes[size] = col;
 		size++;
 	}
-	
-	/**
-	 * 
-	 * @param col
-	 * @return
-	 */
+
 	public double get(int col)
 	{
 		//search for existing col index
@@ -262,12 +226,7 @@ public class SparseRow implements Serializable
 		else
 			return 0;
 	}
-	
-	/**
-	 * 
-	 * @param col
-	 * @return
-	 */
+
 	public int searchIndexesFirstLTE(int col)
 	{
 		//search for existing col index
@@ -286,13 +245,7 @@ public class SparseRow implements Serializable
 		else 
 			return -1;
 	}
-	
 
-	/**
-	 * 
-	 * @param col
-	 * @return
-	 */
 	public int searchIndexesFirstGTE(int col)
 	{
 		//search for existing col index
@@ -311,12 +264,7 @@ public class SparseRow implements Serializable
 		else 
 			return -1;
 	}
-	
-	/**
-	 * 
-	 * @param col
-	 * @return
-	 */
+
 	public int searchIndexesFirstGT(int col)
 	{
 		//search for existing col index
@@ -336,25 +284,6 @@ public class SparseRow implements Serializable
 			return -1;
 	}
 
-	/**
-	 * 
-	 * @param col
-	 */
-	public void delete(int col)
-	{
-		//search for existing col index
-		int index = Arrays.binarySearch(indexes, 0, size, col);
-		if( index >= 0 ) {
-			//shift following entries left by 1
-			shiftLeftAndDelete(index);
-		}
-	}
-	
-	/**
-	 * 
-	 * @param lowerCol
-	 * @param upperCol
-	 */
 	public void deleteIndexRange(int lowerCol, int upperCol)
 	{
 		int start = searchIndexesFirstGTE(lowerCol);
@@ -375,11 +304,11 @@ public class SparseRow implements Serializable
 	 * Inserts a dense vector into a column range; calling this methods helps to
 	 * avoid repeated shifting of remaining values/indexes for every set value. 
 	 * 
-	 * @param lowerCol
-	 * @param upperCol
-	 * @param v
-	 * @param vix
-	 * @param len
+	 * @param lowerCol lower column index
+	 * @param upperCol upper column index
+	 * @param v dense vector
+	 * @param vix ?
+	 * @param len ?
 	 */
 	public void setIndexRange(int lowerCol, int upperCol, double[] v, int vix, int len)
 	{
@@ -418,12 +347,6 @@ public class SparseRow implements Serializable
 			}
 	}
 
-	/**
-	 * 
-	 * @param index
-	 * @param col
-	 * @param v
-	 */
 	private void resizeAndInsert(int index, int col, double v) 
 	{
 		//allocate new arrays
@@ -446,13 +369,7 @@ public class SparseRow implements Serializable
 		System.arraycopy(oldindexes, index, indexes, index+1, size-index);
 		size++;
 	}
-	
-	/**
-	 * 
-	 * @param index
-	 * @param col
-	 * @param v
-	 */
+
 	private void shiftRightAndInsert(int index, int col, double v) 
 	{		
 		//overlapping array copy (shift rhs values right by 1)
@@ -464,12 +381,7 @@ public class SparseRow implements Serializable
 		indexes[index] = col;
 		size++;
 	}
-	
-	/**
-	 * 
-	 * @param index
-	 * @param n
-	 */
+
 	private void shiftRightByN(int index, int n) 
 	{		
 		//overlapping array copy (shift rhs values right by 1)
@@ -477,11 +389,7 @@ public class SparseRow implements Serializable
 		System.arraycopy(indexes, index, indexes, index+n, size-index);
 		size += n;
 	}
-	
-	/**
-	 * 
-	 * @param index
-	 */
+
 	private void shiftLeftAndDelete(int index)
 	{
 		//overlapping array copy (shift rhs values left by 1)
@@ -504,10 +412,7 @@ public class SparseRow implements Serializable
 		if( size<=100 || !SortUtils.isSorted(0, size, indexes) )
 			SortUtils.sortByIndex(0, size, indexes, values);
 	}
-	
-	/**
-	 * 
-	 */
+
 	@Override
 	public String toString()
 	{

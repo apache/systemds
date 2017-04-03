@@ -98,7 +98,7 @@ public class MVImputeAgent extends Encoder
 	public KahanObject[] getMeans_scnomv()   { return _scnomvMeanList; }
 	public CM_COV_Object[] getVars_scnomv()  { return _scnomvVarList; }
 	
-	public MVImputeAgent(JSONObject parsedSpec, List<String> colnames, int clen) 
+	public MVImputeAgent(JSONObject parsedSpec, String[] colnames, int clen) 
 		throws JSONException
 	{
 		super(null, clen);
@@ -114,7 +114,7 @@ public class MVImputeAgent extends Encoder
 		_hist = new HashMap<Integer, HashMap<String,Long>>();
 	}
 			
-	public MVImputeAgent(JSONObject parsedSpec, String[] NAstrings, int clen)
+	public MVImputeAgent(JSONObject parsedSpec, String[] colnames, String[] NAstrings, int clen)
 		throws JSONException 
 	{
 		super(null, clen);	
@@ -229,12 +229,7 @@ public class MVImputeAgent extends Encoder
 			}
 		}
 	}
-	
-	/**
-	 * 
-	 * @param parsedSpec
-	 * @throws JSONException
-	 */
+
 	private void parseMethodsAndReplacments(JSONObject parsedSpec) throws JSONException {
 		JSONArray mvspec = (JSONArray) parsedSpec.get(TfUtils.TXMETHOD_IMPUTE);
 		_mvMethodList = new MVMethod[mvspec.size()];
@@ -447,9 +442,6 @@ public class MVImputeAgent extends Encoder
 	/**
 	 * Method to output transformation metadata from the mappers. 
 	 * This information is collected and merged by the reducers.
-	 * 
-	 * @param out
-	 * @throws IOException
 	 */
 	@Override
 	public void mapOutputTransformationMetadata(OutputCollector<IntWritable, DistinctValue> out, int taskID, TfUtils agents) throws IOException {
@@ -496,12 +488,11 @@ public class MVImputeAgent extends Encoder
 	 * Applicable when running on SPARK.
 	 * Helper function to output transformation metadata into shuffle.
 	 * 
-	 * @param iw
-	 * @param dv
-	 * @param list
-	 * @throws IOException
+	 * @param iw integer value
+	 * @param dv distinct value
+	 * @param list list of integer-distinct value pairs
+	 * @throws IOException if IOException occurs
 	 */
-	
 	private void addDV(Integer iw, DistinctValue dv, ArrayList<Pair<Integer, DistinctValue>> list) throws IOException {
 		if ( dv != null )	
 			list.add( new Pair<Integer, DistinctValue>(iw, dv) );	
@@ -553,25 +544,25 @@ public class MVImputeAgent extends Encoder
 	private void writeTfMtd(int colID, String mean, String tfMtdDir, FileSystem fs, TfUtils agents) throws IOException 
 	{
 		Path pt=new Path(tfMtdDir+"/Impute/"+ agents.getName(colID) + TfUtils.TXMTD_MV_FILE_SUFFIX);
-		BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
-		br.write(colID + TfUtils.TXMTD_SEP + mean + "\n");
-		br.close();
+		try( BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true))) ) {
+			br.write(colID + TfUtils.TXMTD_SEP + mean + "\n");
+		}
 	}
 	
 	private void writeTfMtd(int colID, String mean, String sdev, String tfMtdDir, FileSystem fs, TfUtils agents) throws IOException 
 	{
 		Path pt=new Path(tfMtdDir+"/Scale/"+ agents.getName(colID) + TfUtils.SCALE_FILE_SUFFIX);
-		BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
-		br.write(colID + TfUtils.TXMTD_SEP + mean + TfUtils.TXMTD_SEP + sdev + "\n");
-		br.close();
+		try( BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true))) ) {
+			br.write(colID + TfUtils.TXMTD_SEP + mean + TfUtils.TXMTD_SEP + sdev + "\n");
+		}
 	}
 	
 	private void writeTfMtd(int colID, String min, String max, String binwidth, String nbins, String tfMtdDir, FileSystem fs, TfUtils agents) throws IOException 
 	{
 		Path pt = new Path(tfMtdDir+"/Bin/"+ agents.getName(colID) + TfUtils.TXMTD_BIN_FILE_SUFFIX);
-		BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
-		br.write(colID + TfUtils.TXMTD_SEP + min + TfUtils.TXMTD_SEP + max + TfUtils.TXMTD_SEP + binwidth + TfUtils.TXMTD_SEP + nbins + "\n");
-		br.close();
+		try( BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true))) ) {
+			br.write(colID + TfUtils.TXMTD_SEP + min + TfUtils.TXMTD_SEP + max + TfUtils.TXMTD_SEP + binwidth + TfUtils.TXMTD_SEP + nbins + "\n");
+		}
 	}
 	
 	public void outputTransformationMetadata(String outputDir, FileSystem fs, TfUtils agents) throws IOException {
@@ -638,11 +629,7 @@ public class MVImputeAgent extends Encoder
 	}
 	
 	/** 
-	 * Method to merge map output transformation metadata.
-	 * 
-	 * @param values
-	 * @return
-	 * @throws IOException 
+	 * Method to merge map output transformation metadata. 
 	 */
 	@Override
 	public void mergeAndOutputTransformationMetadata(Iterator<DistinctValue> values, String outputDir, int colID, FileSystem fs, TfUtils agents) throws IOException {
@@ -835,11 +822,11 @@ public class MVImputeAgent extends Encoder
 	{
 		Path path = new Path( txMtdDir + "/Impute/" + agents.getName(colID) + TfUtils.TXMTD_MV_FILE_SUFFIX);
 		TfUtils.checkValidInputFile(fs, path, true); 
-		
-		BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)));
-		String line = br.readLine();
-		String replacement =  UtilFunctions.unquote(line.split(TfUtils.TXMTD_SEP)[1]);
-		br.close();
+		String replacement = null;
+		try( BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path))) ) {
+			String line = br.readLine();
+			replacement = UtilFunctions.unquote(line.split(TfUtils.TXMTD_SEP)[1]);
+		}
 		
 		return replacement;
 	}
@@ -848,9 +835,10 @@ public class MVImputeAgent extends Encoder
 	{
 		Path path = new Path( txMtdDir + "/Scale/" + agents.getName(colID) + TfUtils.SCALE_FILE_SUFFIX);
 		TfUtils.checkValidInputFile(fs, path, true); 
-		BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)));
-		String line = br.readLine();
-		br.close();
+		String line = null;
+		try( BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path))) ) {
+			line = br.readLine();
+		}
 		
 		return line;
 	}
@@ -872,9 +860,6 @@ public class MVImputeAgent extends Encoder
 
 	/**
 	 * Method to load transform metadata for all attributes
-	 * 
-	 * @param job
-	 * @throws IOException
 	 */
 	@Override
 	public void loadTxMtd(JobConf job, FileSystem fs, Path tfMtdDir, TfUtils agents) throws IOException {
@@ -908,7 +893,6 @@ public class MVImputeAgent extends Encoder
 					processScalingFile(i, _scnomvList, _scnomvMeanList, _scnomvVarList, fs, tfMtdDir, agents);
 		}
 		else {
-			fs.close();
 			throw new RuntimeException("Path to recode maps must be a directory: " + tfMtdDir);
 		}
 	}
@@ -947,7 +931,7 @@ public class MVImputeAgent extends Encoder
 					long off = _countList[j];
 					for( int i=0; i<in.getNumRows(); i++ )
 						_meanFn.execute2(_meanList[j], UtilFunctions.objectToDouble(
-							in.getSchema().get(colID-1), in.get(i, colID-1)), off+i+1);
+							in.getSchema()[colID-1], in.get(i, colID-1)), off+i+1);
 					_replacementList[j] = String.valueOf(_meanList[j]._sum);
 					_countList[j] += in.getNumRows();
 				}
@@ -1027,12 +1011,7 @@ public class MVImputeAgent extends Encoder
 		}
 		return out;
 	}
-	
-	/**
-	 * 
-	 * @param meta
-	 * @param rcList
-	 */
+
 	public void initMetaData(FrameBlock meta) {
 		//init replacement lists, replace recoded values to
 		//apply mv imputation potentially after recoding
@@ -1050,11 +1029,7 @@ public class MVImputeAgent extends Encoder
 			}
 		}
 	}
-	
-	/**
-	 * 
-	 * @param rcList
-	 */
+
 	public void initRecodeIDList(List<Integer> rcList) {
 		_rcList = rcList;
 	}
@@ -1062,8 +1037,8 @@ public class MVImputeAgent extends Encoder
 	/**
 	 * Exposes the internal histogram after build.
 	 * 
-	 * @param colID
-	 * @return
+	 * @param colID column ID
+	 * @return histogram (map of string keys and long values)
 	 */
 	public HashMap<String,Long> getHistogram( int colID ) {
 		return _hist.get(colID);

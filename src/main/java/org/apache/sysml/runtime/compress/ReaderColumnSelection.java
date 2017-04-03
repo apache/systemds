@@ -42,14 +42,10 @@ public abstract class ReaderColumnSelection
 	/**
 	 * Gets the next row, null when no more rows.
 	 * 
-	 * @return
+	 * @return next row
 	 */
 	public abstract DblArray nextRow();
 
-	/**
-	 * 
-	 * @return
-	 */
 	public int getCurrentRowIndex() {
 		return _lastRow;
 	}

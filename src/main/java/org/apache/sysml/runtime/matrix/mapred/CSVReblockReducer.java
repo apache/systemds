@@ -63,13 +63,6 @@ public class CSVReblockReducer extends ReduceBase implements Reducer<TaggedFirst
 		reporter.incrCounter(Counters.COMBINE_OR_REDUCE_TIME, System.currentTimeMillis()-start);
 	}
 
-	/**
-	 * 
-	 * @param indexes
-	 * @param values
-	 * @param dimensions
-	 * @throws IOException
-	 */
 	protected void processCSVReblock(TaggedFirstSecondIndexes indexes, Iterator<BlockRow> values, 
 			HashMap<Byte, MatrixCharacteristics> dimensions) throws IOException
 	{

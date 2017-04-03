@@ -66,40 +66,25 @@ public class WriterTextCell extends MatrixWriter
 		Path path = new Path( fname );
 		FileSystem fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
 		
-		FSDataOutputStream writer = fs.create(path);
-		writer.writeBytes("1 1 0");
-		writer.close();
-
+		FSDataOutputStream writer = null;
+		try{
+			writer = fs.create(path);
+			writer.writeBytes("1 1 0");
+		}
+		finally{
+			IOUtilFunctions.closeSilently(writer);
+		}
+		
 		IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, path);
 	}
-	
-	/**
-	 * 
-	 * @param path
-	 * @param job
-	 * @param src
-	 * @param rlen
-	 * @param clen
-	 * @param brlen
-	 * @param bclen
-	 * @throws IOException
-	 */
+
 	protected void writeTextCellMatrixToHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock src, long rlen, long clen )
 		throws IOException
 	{
 		//sequential write text cell file
 		writeTextCellMatrixToFile(path, job, fs, src, 0, (int)rlen);
 	}
-	
-	/**
-	 * 
-	 * @param path
-	 * @param job
-	 * @param src
-	 * @param rl
-	 * @param ru
-	 * @throws IOException
-	 */
+
 	protected final void writeTextCellMatrixToFile( Path path, JobConf job, FileSystem fs, MatrixBlock src, int rl, int ru )
 		throws IOException
 	{

@@ -31,15 +31,7 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 public class AppendInstruction extends BinaryMRInstructionBase 
 {
 	protected boolean _cbind = true;
-	
-	/**
-	 * 
-	 * @param op
-	 * @param in1
-	 * @param in2
-	 * @param out
-	 * @param istr
-	 */
+
 	public AppendInstruction(Operator op, byte in1, byte in2, byte out, boolean cbind, String istr)
 	{
 		super(op, in1, in2, out);
@@ -51,13 +43,7 @@ public class AppendInstruction extends BinaryMRInstructionBase
 	public boolean isCBind() {
 		return _cbind;
 	}
-	
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static AppendInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{

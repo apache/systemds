@@ -56,8 +56,10 @@ public class IterablePredicate extends Expression
 		sb.append(_fromExpr.toString());
 		sb.append(",");
 		sb.append(_toExpr.toString());
-		sb.append(",");
-		sb.append(_incrementExpr.toString());
+		if (_incrementExpr != null) {
+			sb.append(",");
+			sb.append(_incrementExpr.toString());
+		}
 		sb.append( ")" );
 		if (_parforParams != null && _parforParams.size() > 0){
 			for (String key : _parforParams.keySet())

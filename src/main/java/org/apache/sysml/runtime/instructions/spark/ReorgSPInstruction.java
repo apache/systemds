@@ -20,6 +20,7 @@
 package org.apache.sysml.runtime.instructions.spark;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
@@ -138,7 +139,7 @@ public class ReorgSPInstruction extends UnarySPInstruction
 			//execute reverse reorg operation
 			out = in1.flatMapToPair(new RDDRevFunction(mcIn));
 			if( mcIn.getRows() % mcIn.getRowsPerBlock() != 0 )
-				out = RDDAggregateUtils.mergeByKey(out);
+				out = RDDAggregateUtils.mergeByKey(out, false);
 		}
 		else if ( opcode.equalsIgnoreCase("rdiag") ) // DIAG
 		{	
@@ -191,12 +192,7 @@ public class ReorgSPInstruction extends UnarySPInstruction
 		sec.setRDDHandleForVariable(output.getName(), out);
 		sec.addLineageRDD(output.getName(), input1.getName());
 	}
-	
-	/**
-	 * 
-	 * @param sec
-	 * @throws DMLRuntimeException
-	 */
+
 	private void updateReorgMatrixCharacteristics(SparkExecutionContext sec) 
 		throws DMLRuntimeException
 	{
@@ -228,10 +224,7 @@ public class ReorgSPInstruction extends UnarySPInstruction
 				mcOut.setNonZeros(mc1.getNonZeros());
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class RDDDiagV2MFunction implements PairFlatMapFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock> 
 	{
 		private static final long serialVersionUID = 31065772250744103L;
@@ -247,7 +240,7 @@ public class ReorgSPInstruction extends UnarySPInstruction
 		}
 		
 		@Override
-		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call( Tuple2<MatrixIndexes, MatrixBlock> arg0 ) 
+		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call( Tuple2<MatrixIndexes, MatrixBlock> arg0 ) 
 			throws Exception 
 		{
 			ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
@@ -272,13 +265,10 @@ public class ReorgSPInstruction extends UnarySPInstruction
 				}
 			}
 			
-			return ret;
+			return ret.iterator();
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class RDDRevFunction implements PairFlatMapFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock> 
 	{
 		private static final long serialVersionUID = 1183373828539843938L;
@@ -292,7 +282,7 @@ public class ReorgSPInstruction extends UnarySPInstruction
 		}
 		
 		@Override
-		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call( Tuple2<MatrixIndexes, MatrixBlock> arg0 ) 
+		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call( Tuple2<MatrixIndexes, MatrixBlock> arg0 ) 
 			throws Exception 
 		{
 			//construct input
@@ -303,13 +293,10 @@ public class ReorgSPInstruction extends UnarySPInstruction
 			LibMatrixReorg.rev(in, _mcIn.getRows(), _mcIn.getRowsPerBlock(), out);
 			
 			//construct output
-			return SparkUtils.fromIndexedMatrixBlock(out);
+			return SparkUtils.fromIndexedMatrixBlock(out).iterator();
 		}
 	}
 
-	/**
-	 *
-	 */
 	private static class ExtractColumn implements Function<MatrixBlock, MatrixBlock>  
 	{
 		private static final long serialVersionUID = -1472164797288449559L;

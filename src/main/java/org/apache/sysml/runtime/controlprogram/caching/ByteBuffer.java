@@ -19,9 +19,13 @@
 
 package org.apache.sysml.runtime.controlprogram.caching;
 
+import java.io.ByteArrayInputStream;
+import java.io.DataInput;
+import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.IOException;
 
+import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.util.LocalFileUtils;
 
@@ -32,9 +36,10 @@ import org.apache.sysml.runtime.util.LocalFileUtils;
  */
 public class ByteBuffer
 {
-	private boolean _serialized;	
-	private boolean _shallow;
-	private long _size;
+	private volatile boolean _serialized;	
+	private volatile boolean _shallow;
+	private volatile boolean _matrix;
+	private final long _size;
 	
 	protected byte[]     _bdata = null; //sparse matrix
 	protected CacheBlock _cdata = null; //dense matrix/frame
@@ -43,16 +48,12 @@ public class ByteBuffer
 		_size = size;
 		_serialized = false;
 	}
-	
-	/**
-	 * 
-	 * @param mb
-	 * @throws IOException
-	 */
+
 	public void serializeBlock( CacheBlock cb ) 
 		throws IOException
 	{	
 		_shallow = cb.isShallowSerialize();
+		_matrix = (cb instanceof MatrixBlock);
 		
 		try
 		{
@@ -78,20 +79,16 @@ public class ByteBuffer
 		
 		_serialized = true;
 	}
-	
-	/**
-	 * 
-	 * @return
-	 * @throws IOException
-	 */
+
 	public CacheBlock deserializeBlock() 
 		throws IOException
 	{
 		CacheBlock ret = null;
 		
-		if( !_shallow ) { //sparse matrix 
-			CacheDataInput din = new CacheDataInput(_bdata);
-			ret = new MatrixBlock();
+		if( !_shallow ) { //sparse matrix / string frame
+			DataInput din = _matrix ? new CacheDataInput(_bdata) :
+				new DataInputStream(new ByteArrayInputStream(_bdata));
+			ret = _matrix ? new MatrixBlock() : new FrameBlock();
 			ret.readFields(din);
 		}
 		else { //dense matrix/frame
@@ -100,12 +97,7 @@ public class ByteBuffer
 		
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @param fname
-	 * @throws IOException
-	 */
+
 	public void evictBuffer( String fname ) 
 		throws IOException
 	{
@@ -122,16 +114,12 @@ public class ByteBuffer
 	/**
 	 * Returns the buffer size in bytes.
 	 * 
-	 * @return
+	 * @return buffer size in bytes
 	 */
 	public long getSize() {
 		return _size;
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public boolean isShallow() {
 		return _shallow;
 	}
@@ -148,10 +136,7 @@ public class ByteBuffer
 			_cdata = null;
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	public void checkSerialized()
 	{
 		//check if already serialized
@@ -169,9 +154,9 @@ public class ByteBuffer
 	 * This call is consistent with 'serializeBlock' and allows for internal optimization
 	 * according to dense/sparse representation.
 	 * 
-	 * @param size
-	 * @param mb
-	 * @return
+	 * @param size the size
+	 * @param cb cache block
+	 * @return true if valid capacity
 	 */
 	public static boolean isValidCapacity( long size, CacheBlock cb )
 	{

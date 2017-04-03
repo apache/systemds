@@ -48,11 +48,13 @@ public final class BitmapDecoderOLE implements Iterator<Integer>
 
 	/**
 	 * Point this object at the beginning of a particular bitmap. After a call
-	 * to this method, the next call to {@link #nextOffset()} will return the
+	 * to this method, the next call to {@link #next()} will return the
 	 * offset of the first bit in the specified bitmap.
 	 * 
 	 * @param bmPtr
 	 *            pointer to a compressed bitmap
+	 * @param off offset
+	 * @param len length
 	 */
 	public BitmapDecoderOLE(char[] bmPtr, int off, int len) {
 		_bmOff = off;

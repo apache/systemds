@@ -61,15 +61,10 @@ public class RewriteInjectSparkPReadCheckpointing extends HopRewriteRule
 		return root;
 	}
 
-	/**
-	 * 
-	 * @param hop
-	 * @throws HopsException
-	 */
 	private void rInjectCheckpointAfterPRead( Hop hop ) 
 		throws HopsException 
 	{
-		if(hop.getVisited() == Hop.VisitStatus.DONE)
+		if(hop.isVisited())
 			return;
 		
 		// The reblocking is performed after transform, and hence checkpoint only non-transformed reads.   
@@ -91,6 +86,6 @@ public class RewriteInjectSparkPReadCheckpointing extends HopRewriteRule
 			}
 		}
 		
-		hop.setVisited(Hop.VisitStatus.DONE);
+		hop.setVisited();
 	}
 }

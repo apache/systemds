@@ -30,7 +30,14 @@ public class CMOperator extends Operator
 	
 	// supported aggregates
 	public enum AggregateOperationTypes {
-		SUM, COUNT, MEAN, CM, CM2, CM3, CM4, NORM, VARIANCE, INVALID
+		SUM,
+		COUNT,
+		MEAN, //a.k.a. CM
+		CM2,
+		CM3,
+		CM4,
+		VARIANCE,
+		INVALID
 	};
 
 	public ValueFunction fn;
@@ -89,11 +96,7 @@ public class CMOperator extends Operator
 		}
 		return AggregateOperationTypes.INVALID;
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public boolean isPartialAggregateOperator()
 	{
 		boolean ret = false;

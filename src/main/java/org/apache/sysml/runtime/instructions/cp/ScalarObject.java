@@ -24,7 +24,6 @@ import org.apache.sysml.parser.Expression.ValueType;
 
 public abstract class ScalarObject extends Data
 {
-
 	private static final long serialVersionUID = 6994413375932824892L;
 
 	private String _name;
@@ -46,6 +45,19 @@ public abstract class ScalarObject extends Data
 
 	public abstract String getStringValue();
 	
-	public abstract Object getValue();
+	public String getLanguageSpecificStringValue() {
+		return getStringValue();
+	}
 	
+	public abstract Object getValue();	
+	
+	@Override
+	public String toString() { 
+		return getStringValue();
+	}
+	
+	@Override
+	public String getDebugName() {
+		return getStringValue();
+	}
 }

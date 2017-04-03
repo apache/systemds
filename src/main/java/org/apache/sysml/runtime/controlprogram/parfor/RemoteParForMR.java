@@ -49,6 +49,7 @@ import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.Stat;
 import org.apache.sysml.runtime.instructions.cp.Data;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.io.MatrixReader;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
@@ -66,20 +67,7 @@ public class RemoteParForMR
 {
 	
 	protected static final Log LOG = LogFactory.getLog(RemoteParForMR.class.getName());
-	
-	/**
-	 * 
-	 * @param pfid
-	 * @param program
-	 * @param taskFile
-	 * @param resultFile
-	 * @param _enableCPCaching 
-	 * @param mode
-	 * @param numMappers
-	 * @param replication
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static RemoteParForJobReturn runJob(long pfid, String program, String taskFile, String resultFile, MatrixObject colocatedDPMatrixObj, //inputs
 			                                   boolean enableCPCaching, int numMappers, int replication, int max_retry, long minMem, boolean jvmReuse)  //opt params
 		throws DMLRuntimeException
@@ -258,10 +246,11 @@ public class RemoteParForMR
 	 * (the RemoteParWorkerMapper ensures uniqueness of those files independent of the 
 	 * runtime implementation). 
 	 * 
-	 * @param job 
-	 * @param fname
-	 * @return
-	 * @throws DMLRuntimeException
+	 * @param job job configuration
+	 * @param fname file name
+	 * @return array of local variable maps
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
+	 * @throws IOException if IOException occurs
 	 */
 	@SuppressWarnings("deprecation")
 	public static LocalVariableMap [] readResultFile( JobConf job, String fname )
@@ -290,10 +279,8 @@ public class RemoteParForMR
 		        	countAll++;
 				}
 			}	
-			finally
-			{
-				if( reader != null )
-					reader.close();
+			finally {
+				IOUtilFunctions.closeSilently(reader);
 			}
 		}		
 

@@ -21,6 +21,7 @@ package org.apache.sysml.hops;
 
 import java.util.ArrayList;
 
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.Hop.MultiThreadedHop;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
@@ -132,6 +133,9 @@ public class ReorgOp extends Hop implements MultiThreadedHop
 					setLops(lin); //if input of size 1x1, avoid unnecessary transpose
 				else { //general case
 					int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
+					if(DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR || getMemEstimate() < OptimizerUtils.GPU_MEMORY_BUDGET)) {
+						et = ExecType.GPU;
+					}
 					Transform transform1 = new Transform( lin, 
 							HopsTransf2Lops.get(op), getDataType(), getValueType(), et, k);
 					setOutputDimensions(transform1);
@@ -252,7 +256,7 @@ public class ReorgOp extends Hop implements MultiThreadedHop
 						vinput = new IndexingOp("tmp1", getDataType(), getValueType(), input, new LiteralOp(1L), 
 								HopRewriteUtils.createValueHop(input, true), by, by, false, true);
 						vinput.refreshSizeInformation();
-						HopRewriteUtils.setOutputBlocksizes(vinput, getRowsInBlock(), getColsInBlock());
+						vinput.setOutputBlocksizes(getRowsInBlock(), getColsInBlock());
 						HopRewriteUtils.copyLineNumbers(this, vinput);	
 					}
 					
@@ -310,7 +314,7 @@ public class ReorgOp extends Hop implements MultiThreadedHop
 						
 						//generate table
 						TernaryOp table = new TernaryOp("tmp5", DataType.MATRIX, ValueType.DOUBLE, OpOp3.CTABLE, seq, voutput, new LiteralOp(1L) );
-						HopRewriteUtils.setOutputBlocksizes(table, getRowsInBlock(), getColsInBlock());
+						table.setOutputBlocksizes(getRowsInBlock(), getColsInBlock());
 						table.refreshSizeInformation();
 						table.setForcedExecType(ExecType.MR); //force MR 
 						HopRewriteUtils.copyLineNumbers(this, table);
@@ -643,26 +647,10 @@ public class ReorgOp extends Hop implements MultiThreadedHop
 		
 		return ret;
 	}
-	
-	
-	@Override
-	public void printMe() throws HopsException 
-	{
-		if (LOG.isDebugEnabled()){
-			if (getVisited() != VisitStatus.DONE) {
-				super.printMe();
-				LOG.debug("  Operation: " + op);
-				for (Hop h : getInput()) {
-					h.printMe();
-				}
-			}
-			setVisited(VisitStatus.DONE);
-		}
-	}
 
 	/**
 	 * This will check if there is sufficient memory locally (twice the size of second matrix, for original and sort data), and remotely (size of second matrix (sorted data)).  
-	 * @return
+	 * @return true if sufficient memory locally
 	 */
 	private boolean isSortSPRewriteApplicable() 
 	{

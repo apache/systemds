@@ -30,6 +30,7 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordWriter;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.util.Progressable;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
 
 public class UnPaddedOutputFormat<K extends Writable, V extends Writable> extends FileOutputFormat<K, V>
@@ -46,8 +47,7 @@ public class UnPaddedOutputFormat<K extends Writable, V extends Writable> extend
 		}
 		@Override
 		public void close(Reporter report) throws IOException {
-			out.close();
-			
+			IOUtilFunctions.closeSilently(out);
 		}
 		@Override
 		public void write(K key, V value) throws IOException {

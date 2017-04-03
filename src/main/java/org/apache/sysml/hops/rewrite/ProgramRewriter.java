@@ -142,13 +142,14 @@ public class ProgramRewriter
 	/**
 	 * Construct a program rewriter for a given rewrite which is passed from outside.
 	 * 
-	 * @param rewrite
+	 * @param rewrites the HOP rewrite rules
 	 */
-	public ProgramRewriter( HopRewriteRule rewrite )
+	public ProgramRewriter( HopRewriteRule... rewrites )
 	{
 		//initialize HOP DAG rewrite ruleSet (with fixed rewrite order)
 		_dagRuleSet = new ArrayList<HopRewriteRule>();
-		_dagRuleSet.add( rewrite );		
+		for( HopRewriteRule rewrite : rewrites )
+			_dagRuleSet.add( rewrite );		
 		
 		_sbRuleSet = new ArrayList<StatementBlockRewriteRule>();
 	}
@@ -156,21 +157,23 @@ public class ProgramRewriter
 	/**
 	 * Construct a program rewriter for a given rewrite which is passed from outside.
 	 * 
-	 * @param rewrite
+	 * @param rewrites the statement block rewrite rules
 	 */
-	public ProgramRewriter( StatementBlockRewriteRule rewrite )
+	public ProgramRewriter( StatementBlockRewriteRule... rewrites )
 	{
 		//initialize HOP DAG rewrite ruleSet (with fixed rewrite order)
 		_dagRuleSet = new ArrayList<HopRewriteRule>();
 		
 		_sbRuleSet = new ArrayList<StatementBlockRewriteRule>();
-		_sbRuleSet.add( rewrite );
+		for( StatementBlockRewriteRule rewrite : rewrites )
+			_sbRuleSet.add( rewrite );
 	}
 	
 	/**
 	 * Construct a program rewriter for the given rewrite sets which are passed from outside.
 	 * 
-	 * @param rewrite
+	 * @param hRewrites HOP rewrite rules
+	 * @param sbRewrites statement block rewrite rules
 	 */
 	public ProgramRewriter( ArrayList<HopRewriteRule> hRewrites, ArrayList<StatementBlockRewriteRule> sbRewrites )
 	{
@@ -182,13 +185,6 @@ public class ProgramRewriter
 		_sbRuleSet.addAll( sbRewrites );
 	}
 	
-	/**
-	 * 
-	 * @param dmlp
-	 * @return
-	 * @throws LanguageException
-	 * @throws HopsException
-	 */
 	public ProgramRewriteStatus rewriteProgramHopDAGs(DMLProgram dmlp) 
 		throws LanguageException, HopsException
 	{	
@@ -214,12 +210,6 @@ public class ProgramRewriter
 		return state;
 	}
 	
-	/**
-	 * 
-	 * @param current
-	 * @throws LanguageException
-	 * @throws HopsException
-	 */
 	public void rewriteStatementBlockHopDAGs(StatementBlock current, ProgramRewriteStatus state) 
 		throws LanguageException, HopsException
 	{	
@@ -268,12 +258,6 @@ public class ProgramRewriter
 		}
 	}
 	
-	/**
-	 * 
-	 * @param roots
-	 * @throws LanguageException
-	 * @throws HopsException
-	 */
 	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state) 
 		throws HopsException
 	{	
@@ -291,12 +275,6 @@ public class ProgramRewriter
 		return roots;
 	}
 	
-	/**
-	 * 
-	 * @param root
-	 * @throws LanguageException
-	 * @throws HopsException
-	 */
 	public Hop rewriteHopDAG(Hop root, ProgramRewriteStatus state) 
 		throws HopsException
 	{	
@@ -317,12 +295,6 @@ public class ProgramRewriter
 		return root;
 	}
 	
-	/**
-	 * 
-	 * @param sbs
-	 * @return
-	 * @throws HopsException 
-	 */
 	public ArrayList<StatementBlock> rewriteStatementBlocks( ArrayList<StatementBlock> sbs, ProgramRewriteStatus state ) 
 		throws HopsException
 	{
@@ -344,12 +316,6 @@ public class ProgramRewriter
 		return sbs;
 	}
 	
-	/**
-	 * 
-	 * @param sb
-	 * @return
-	 * @throws HopsException
-	 */
 	private ArrayList<StatementBlock> rewriteStatementBlock( StatementBlock sb, ProgramRewriteStatus status ) 
 		throws HopsException
 	{

@@ -18,8 +18,7 @@
 # under the License.
 #
 #-------------------------------------------------------------
-
-F1 = read($DATA, data_type="frame", format="csv");
+F1 = read($DATA, data_type="frame", format="csv", sep=$SEP);
 jspec = read($TFSPEC, data_type="scalar", value_type="string");
 
 [X, M] = transformencode(target=F1, spec=jspec);
@@ -28,5 +27,5 @@ if(1==1){}
 
 F2 = transformdecode(target=X, spec=jspec, meta=M);
 
-write(F2, $TFDATA, format=$OFMT);
+write(F2, $TFDATA, format=$OFMT, sep=$OSEP);
 

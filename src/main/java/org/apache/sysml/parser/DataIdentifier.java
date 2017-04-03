@@ -71,40 +71,7 @@ public class DataIdentifier extends Identifier
 		_kind = null;
 		_defaultValue = null;
 	}
-	
 
-	public void setTypeInfo( String valueType, String dataType) throws ParseException{
-		
-		if (valueType.equalsIgnoreCase("int") || valueType.equalsIgnoreCase("integer"))
-			this.setValueType(ValueType.INT);
-		else if (valueType.equalsIgnoreCase("double"))
-			this.setValueType(ValueType.DOUBLE);
-		else if (valueType.equalsIgnoreCase("string"))
-			this.setValueType(ValueType.STRING);
-		else if (valueType.equalsIgnoreCase("boolean"))
-			this.setValueType(ValueType.BOOLEAN);
-		else if (valueType.equalsIgnoreCase("object"))
-			this.setValueType(ValueType.OBJECT);
-		else {
-			// provide location for this exception in the parser
-			LOG.error(this.printErrorLocation() + "function parameter has unknown value type " + valueType);
-			throw new ParseException(this.printErrorLocation() + "function parameter has unknown value type " + valueType);
-		}
-		
-		if (dataType.equalsIgnoreCase("object"))
-			this.setDataType(DataType.OBJECT);
-		else if (dataType.equalsIgnoreCase("SCALAR"))
-			this.setDataType(DataType.SCALAR);
-		else if (dataType.equalsIgnoreCase("MATRIX"))
-			this.setDataType(DataType.MATRIX);
-		else {
-			// provide location for this exception in the parser
-			LOG.error(this.printErrorLocation() + "function parameter has unknown data type " + valueType);
-			throw new ParseException(this.printErrorLocation() + "function parameter has unknown data type " + valueType);
-		}
-		
-	}
-	
 	public String getName(){
 		return _name;
 	}
@@ -138,7 +105,9 @@ public class DataIdentifier extends Identifier
 	/**
 	 * Method to specify if an expression returns multiple outputs.
 	 * This method must be overridden by all child classes.
-	 * @return
+	 * 
+	 * @return true if expression returns multiple outputs
+	 * @throws LanguageException if LanguageException occurs
 	 */
 	public boolean multipleReturns() throws LanguageException {
 		throw new LanguageException("multipleReturns() must be overridden in the subclass.");

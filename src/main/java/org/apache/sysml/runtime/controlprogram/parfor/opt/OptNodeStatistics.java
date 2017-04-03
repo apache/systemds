@@ -19,7 +19,7 @@
 
 package org.apache.sysml.runtime.controlprogram.parfor.opt;
 
-import org.apache.sysml.runtime.controlprogram.parfor.opt.PerfTestTool.DataFormat;
+import org.apache.sysml.runtime.controlprogram.parfor.opt.CostEstimator.DataFormat;
 
 /**
  * 
@@ -28,9 +28,7 @@ import org.apache.sysml.runtime.controlprogram.parfor.opt.PerfTestTool.DataForma
  * 
  */
 public class OptNodeStatistics 
-{
-
-	
+{	
 	public static final long       DEFAULT_DIMENSION  = 100;
 	public static final double     DEFAULT_SPARSITY   = 1.0;		
 	public static final DataFormat DEFAULT_DATAFORMAT = DataFormat.DENSE;

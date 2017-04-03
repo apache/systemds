@@ -41,11 +41,16 @@ public class BinaryUAggChain extends Lop
 	/**
 	 * Constructor to setup a map mult chain without weights
 	 * 
-	 * @param input
-	 * @param op
-	 * @return 
-	 * @throws LopsException
-	 */	
+	 * 
+	 * @param input1 low-level operator
+	 * @param bop binary operation type
+	 * @param uaop aggregate operation type
+	 * @param uadir partial aggregate direction type
+	 * @param dt data type
+	 * @param vt value type
+	 * @param et execution type
+	 * @throws LopsException if LopsException occurs
+	 */
 	public BinaryUAggChain(Lop input1, Binary.OperationTypes bop, Aggregate.OperationTypes uaop, PartialAggregate.DirectionTypes uadir, DataType dt, ValueType vt, ExecType et) 
 		throws LopsException 
 	{
@@ -88,32 +93,10 @@ public class BinaryUAggChain extends Lop
 	}
 	
 	@Override
-	public String getInstructions(int input_index1, int output_index)
-	{
-		StringBuilder sb = new StringBuilder();
-		
-		//exec type
-		sb.append(getExecType());
-		sb.append(Lop.OPERAND_DELIMITOR);
-		
-		//inst op code
-		sb.append(OPCODE);
-		sb.append(Lop.OPERAND_DELIMITOR);
-
-		//outer operation op code
-		sb.append(Binary.getOpcode(_binOp));
-		sb.append(Lop.OPERAND_DELIMITOR);
-		
-		//inner operation op code
-		sb.append(PartialAggregate.getOpcode(_uaggOp, _uaggDir));		
-		sb.append(Lop.OPERAND_DELIMITOR);
-
-		//inputs and outputs
-		sb.append( getInputs().get(0).prepInputOperand(input_index1));
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( this.prepOutputOperand(output_index));
-				
-		return sb.toString();
+	public String getInstructions(int input_index1, int output_index) {
+		return getInstructions(
+				String.valueOf(input_index1), 
+				String.valueOf(output_index));
 	}
 	
 	@Override

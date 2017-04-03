@@ -50,8 +50,8 @@ import org.apache.sysml.parser.FunctionCallIdentifier;
 import org.apache.sysml.parser.FunctionStatement;
 import org.apache.sysml.parser.IfStatement;
 import org.apache.sysml.parser.ImportStatement;
-import org.apache.sysml.parser.IntIdentifier;
 import org.apache.sysml.parser.IndexedIdentifier;
+import org.apache.sysml.parser.IntIdentifier;
 import org.apache.sysml.parser.IterablePredicate;
 import org.apache.sysml.parser.LanguageException;
 import org.apache.sysml.parser.ParForStatement;
@@ -66,8 +66,6 @@ import org.apache.sysml.parser.common.CommonSyntacticValidator;
 import org.apache.sysml.parser.common.CustomErrorListener;
 import org.apache.sysml.parser.common.ExpressionInfo;
 import org.apache.sysml.parser.common.StatementInfo;
-import org.apache.sysml.parser.dml.DmlParser.MatrixMulExpressionContext;
-import org.apache.sysml.parser.dml.DmlSyntacticValidator;
 import org.apache.sysml.parser.pydml.PydmlParser.AddSubExpressionContext;
 import org.apache.sysml.parser.pydml.PydmlParser.AssignmentStatementContext;
 import org.apache.sysml.parser.pydml.PydmlParser.AtomicExpressionContext;
@@ -84,6 +82,7 @@ import org.apache.sysml.parser.pydml.PydmlParser.ConstStringIdExpressionContext;
 import org.apache.sysml.parser.pydml.PydmlParser.ConstTrueExpressionContext;
 import org.apache.sysml.parser.pydml.PydmlParser.DataIdExpressionContext;
 import org.apache.sysml.parser.pydml.PydmlParser.DataIdentifierContext;
+import org.apache.sysml.parser.pydml.PydmlParser.ElifBranchContext;
 import org.apache.sysml.parser.pydml.PydmlParser.ExpressionContext;
 import org.apache.sysml.parser.pydml.PydmlParser.ExternalFunctionDefExpressionContext;
 import org.apache.sysml.parser.pydml.PydmlParser.ForStatementContext;
@@ -91,7 +90,6 @@ import org.apache.sysml.parser.pydml.PydmlParser.FunctionCallAssignmentStatement
 import org.apache.sysml.parser.pydml.PydmlParser.FunctionCallMultiAssignmentStatementContext;
 import org.apache.sysml.parser.pydml.PydmlParser.FunctionStatementContext;
 import org.apache.sysml.parser.pydml.PydmlParser.IfStatementContext;
-import org.apache.sysml.parser.pydml.PydmlParser.ElifBranchContext;
 import org.apache.sysml.parser.pydml.PydmlParser.IfdefAssignmentStatementContext;
 import org.apache.sysml.parser.pydml.PydmlParser.IgnoreNewLineContext;
 import org.apache.sysml.parser.pydml.PydmlParser.ImportStatementContext;
@@ -438,9 +436,9 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 	 * Increment lower indices by 1 when translating from PyDML
 	 * (0-based indexing) to DML (1-based indexing).
 	 *
-	 * @param expr
-	 * @param ctx
-	 * @return
+	 * @param expr expression 
+	 * @param ctx antlr rule context
+	 * @return expression
 	 */
 	private Expression incrementByOne(Expression expr, ParserRuleContext ctx) {
 		// Addition and subtraction operator same as DML
@@ -575,7 +573,7 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 	// -----------------------------------------------------------------
 
 	/** Similar to the "axis" argument in numpy.
-	 * @param ctx
+	 * @param ctx parameter expression
 	 * @return 0 (along rows), 1 (along column) or -1 (for error)
 	 */
 	private int getAxis(ParameterExpression ctx) {
@@ -608,6 +606,12 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 		}
 		else if(functionName.equals("mean")) {
 			return axis == 0 ? "colMeans" : "rowMeans";
+		}
+		else if(functionName.equals("var")) {
+			return axis == 0 ? "colVars" : "rowVars";
+		}
+		else if(functionName.equals("sd")) {
+			return axis == 0 ? "colSds" : "rowSds";
 		}
 		else if(functionName.equals("avg")) {
 			return axis == 0 ? "colMeans" : "rowMeans";
@@ -647,12 +651,12 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 
 	/**
 	 * Check function name, namespace, parameters (#params & possible values) and produce useful messages/hints
-	 * @param ctx
-	 * @param namespace
-	 * @param functionName
-	 * @param paramExpression
-	 * @param fnName
-	 * @return
+	 * @param ctx antlr rule context
+	 * @param namespace Namespace of the function
+	 * @param functionName Name of the builtin function
+	 * @param paramExpression Array of parameter names and values
+	 * @param fnName Token of the builtin function identifier
+	 * @return common syntax format for runtime
 	 */
 	private ConvertedDMLSyntax convertPythonBuiltinFunctionToDMLSyntax(ParserRuleContext ctx, String namespace, String functionName, ArrayList<ParameterExpression> paramExpression,
 			Token fnName) {
@@ -674,7 +678,8 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 		else if(functionName.equals("sum") || functionName.equals("mean") || functionName.equals("avg") ||
 				functionName.equals("min") || functionName.equals("max")  ||
 				functionName.equals("argmax") || functionName.equals("argmin") ||
-				functionName.equals("cumsum") || functionName.equals("transpose") || functionName.equals("trace")) {
+				functionName.equals("cumsum") || functionName.equals("transpose") || functionName.equals("trace") ||
+				functionName.equals("var") || functionName.equals("sd")) {
 			// 0 maps row-wise computation and 1 maps to column-wise computation
 
 			// can mean sum of all cells or row-wise or columnwise sum
@@ -808,6 +813,20 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 			paramExpression.get(1).setName("cols");
 			paramExpression.get(2).setName("sparsity");
 			paramExpression.add(new ParameterExpression("pdf", new StringIdentifier("normal", fileName, line, col, line, col)));
+			functionName = "rand";
+			namespace = DMLProgram.DEFAULT_NAMESPACE;
+		}
+		else if(namespace.equals("random") && functionName.equals("poisson")) {
+			if(paramExpression.size() != 4) {
+				String qualifiedName = namespace + namespaceResolutionOp() + functionName;
+				notifyErrorListeners("The builtin function \'" + qualifiedName + "\' accepts exactly 3 arguments (number of rows, number of columns, sparsity, lambda)", fnName);
+				return null;
+			}
+			paramExpression.get(0).setName("rows");
+			paramExpression.get(1).setName("cols");
+			paramExpression.get(2).setName("sparsity");
+			paramExpression.get(3).setName("lambda");
+			paramExpression.add(new ParameterExpression("pdf", new StringIdentifier("poisson", fileName, line, col, line, col)));
 			functionName = "rand";
 			namespace = DMLProgram.DEFAULT_NAMESPACE;
 		}
@@ -959,9 +978,11 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 			namespace = DMLProgram.DEFAULT_NAMESPACE;
 		}
 		else if(namespace.equals(DMLProgram.DEFAULT_NAMESPACE) && functionName.equals("range")) {
-			if(paramExpression.size() != 3) {
-				notifyErrorListeners("The builtin function \'" + functionName + "\' accepts exactly 3 arguments (from, to, increment)", fnName);
+			if (paramExpression.size() < 2) {
+				notifyErrorListeners("The builtin function \'" + functionName + "\' accepts 3 arguments (from, to, increment), with the first 2 lacking default values", fnName);
 				return null;
+			} else if (paramExpression.size() > 3) {
+				notifyErrorListeners("The builtin function \'" + functionName + "\' accepts 3 arguments (from, to, increment)", fnName);
 			}
 			functionName = "seq";
 			namespace = DMLProgram.DEFAULT_NAMESPACE;
@@ -1071,7 +1092,7 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 	 * For Pydml, matrix multiply is invoked using dot (A, B). This is taken from numpy.dot
 	 * For Dml, it is invoked using "%*%". The dot function call in pydml is converted to a
 	 * {@link BinaryExpression} equivalent to what is done in
-	 * {@link DmlSyntacticValidator#exitMatrixMulExpression(MatrixMulExpressionContext)}
+	 * DmlSyntacticValidator's exitMatrixMulExpression(MatrixMulExpressionContext).
 	 */
 	@Override
 	protected Expression handleLanguageSpecificFunction(ParserRuleContext ctx, String functionName, ArrayList<ParameterExpression> paramExpression){
@@ -1332,7 +1353,10 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 		HashMap<String, String> parForParamValues = new HashMap<String, String>();
 		if(ctx.parForParams != null && ctx.parForParams.size() > 0) {
 			for(StrictParameterizedExpressionContext parForParamCtx : ctx.parForParams) {
-				parForParamValues.put(parForParamCtx.paramName.getText(), parForParamCtx.paramVal.getText());
+				String paramVal = parForParamCtx.paramVal.getText();
+				if( argVals.containsKey(paramVal) )
+					paramVal = argVals.get(paramVal);
+				parForParamValues.put(parForParamCtx.paramName.getText(), paramVal);
 			}
 		}
 
@@ -1368,7 +1392,8 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 		}
 		ctx.info.from = ctx.from.info.expr;
 		ctx.info.to = ctx.to.info.expr;
-		ctx.info.increment = ctx.increment.info.expr;
+		if(ctx.increment != null && ctx.increment.info != null)
+			ctx.info.increment = ctx.increment.info.expr;
 	}
 
 
@@ -1391,18 +1416,14 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 				dataType = paramCtx.paramType.dataType().getText();
 			}
 
-			if(dataType.equals("matrix")) {
-				// matrix
+			//check and assign data type
+			checkValidDataType(dataType, paramCtx.start);
+			if( dataType.equals("matrix") )
 				dataId.setDataType(DataType.MATRIX);
-			}
-			else if(dataType.equals("scalar")) {
-				// scalar
+			else if( dataType.equals("frame") )
+				dataId.setDataType(DataType.FRAME);
+			else if( dataType.equals("scalar") )
 				dataId.setDataType(DataType.SCALAR);
-			}
-			else {
-				notifyErrorListeners("invalid datatype " + dataType, paramCtx.start);
-				return null;
-			}
 
 			valueType = paramCtx.paramType.valueType().getText();
 			if(valueType.equals("int")) {
@@ -1574,24 +1595,20 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 
 	@Override
 	public void exitMatrixDataTypeCheck(MatrixDataTypeCheckContext ctx) {
-		if(		ctx.ID().getText().equals("matrix")
-				|| ctx.ID().getText().equals("scalar")
-				) {
-			// Do nothing
-		}
-		else if(ctx.ID().getText().equals("Matrix"))
+		checkValidDataType(ctx.ID().getText(), ctx.start);
+		
+		//additional error handling (pydml-specific)
+		String datatype = ctx.ID().getText();
+		if(datatype.equals("Matrix"))
 			notifyErrorListeners("incorrect datatype (Hint: use matrix instead of Matrix)", ctx.start);
-		else if(ctx.ID().getText().equals("Scalar"))
+		else if(datatype.equals("Frame"))
+			notifyErrorListeners("incorrect datatype (Hint: use frame instead of Frame)", ctx.start);
+		else if(datatype.equals("Scalar"))
 			notifyErrorListeners("incorrect datatype (Hint: use scalar instead of Scalar)", ctx.start);
-		else if(		ctx.ID().getText().equals("int")
-				|| ctx.ID().getText().equals("str")
-				|| ctx.ID().getText().equals("bool")
-				|| ctx.ID().getText().equals("float")
-				) {
-			notifyErrorListeners("expected datatype but found a valuetype (Hint: use matrix or scalar instead of " + ctx.ID().getText() + ")", ctx.start);
-		}
-		else {
-			notifyErrorListeners("incorrect datatype (expected matrix or scalar)", ctx.start);
+		else if( datatype.equals("int") || datatype.equals("str")
+			|| datatype.equals("bool") || datatype.equals("float") ) {
+			notifyErrorListeners("expected datatype but found a valuetype "
+					+ "(Hint: use matrix, frame or scalar instead of " + datatype + ")", ctx.start);
 		}
 	}
 

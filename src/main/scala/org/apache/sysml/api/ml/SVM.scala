@@ -67,13 +67,13 @@ class SVM (override val uid: String, val sc: SparkContext, val isMultiClass:Bool
   
   // Note: will update the y_mb as this will be called by Python mllearn
   def fit(X_mb: MatrixBlock, y_mb: MatrixBlock): SVMModel = {
-    val ret = fit(X_mb, y_mb, sc)
-    new SVMModel("svm")(ret._1, sc, isMultiClass, ret._2)
+    val ret = baseFit(X_mb, y_mb, sc)
+    new SVMModel("svm")(ret, sc, isMultiClass)
   }
   
   def fit(df: ScriptsUtils.SparkDataType): SVMModel = {
-    val ret = fit(df, sc)
-    new SVMModel("svm")(ret._1, sc, isMultiClass, ret._2)
+    val ret = baseFit(df, sc)
+    new SVMModel("svm")(ret, sc, isMultiClass)
   }
   
 }
@@ -83,10 +83,10 @@ object SVMModel {
   final val predictionScriptPathMulticlass = "scripts" + File.separator + "algorithms" + File.separator + "m-svm-predict.dml"
 }
 
-class SVMModel (override val uid: String)(val mloutput: MLResults, val sc: SparkContext, val isMultiClass:Boolean, 
-    val labelMapping: java.util.HashMap[Int, String]) extends Model[SVMModel] with BaseSystemMLClassifierModel {
+class SVMModel (override val uid: String)(val mloutput: MLResults, val sc: SparkContext, val isMultiClass:Boolean) 
+  extends Model[SVMModel] with BaseSystemMLClassifierModel {
   override def copy(extra: ParamMap): SVMModel = {
-    val that = new SVMModel(uid)(mloutput, sc, isMultiClass, labelMapping)
+    val that = new SVMModel(uid)(mloutput, sc, isMultiClass)
     copyValues(that, extra)
   }
   
@@ -108,6 +108,6 @@ class SVMModel (override val uid: String)(val mloutput: MLResults, val sc: Spark
     (ret, "X")
   }
   
-  def transform(X: MatrixBlock): MatrixBlock = transform(X, mloutput, labelMapping, sc, "scores")
-  def transform(df: ScriptsUtils.SparkDataType): DataFrame = transform(df, mloutput, labelMapping, sc, "scores")
+  def transform(X: MatrixBlock): MatrixBlock = baseTransform(X, mloutput, sc, "scores")
+  def transform(df: ScriptsUtils.SparkDataType): DataFrame = baseTransform(df, mloutput, sc, "scores")
 }

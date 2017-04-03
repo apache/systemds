@@ -21,72 +21,59 @@ package org.apache.sysml.runtime.controlprogram.caching;
 
 import java.io.DataOutput;
 import java.io.IOException;
+import java.io.UTFDataFormatException;
 
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.data.MatrixBlockDataOutput;
 import org.apache.sysml.runtime.matrix.data.SparseBlock;
 
 /**
- * Customer DataOutput to serialize directly into the given byte array.
- * 
+ * Custom DataOutput to serialize directly into the given byte array.
  * 
  */
 public class CacheDataOutput implements DataOutput, MatrixBlockDataOutput 
 {
-	
 	protected byte[] _buff;
 	protected int _bufflen;
 	protected int _count;
 
-	public CacheDataOutput( byte[] mem ) 
-	{		
+	public CacheDataOutput( byte[] mem ) {		
 		_buff = mem;
 		_bufflen = _buff.length;
 		_count = 0;
 	}
 	
 	@Override
-	public void write(int b) 
-    	throws IOException 
-    {
+	public void write(int b) throws IOException {
 		_buff[_count++] = (byte)b;
     }
 
     @Override
-	public void write(byte[] b) 
-		throws IOException 
-	{
+	public void write(byte[] b) throws IOException {
 		System.arraycopy(b, 0, _buff, _count, b.length);
 		_count += b.length;
 	}
     
     @Override
-	public void write(byte[] b, int off, int len) 
-    	throws IOException 
-    {
+	public void write(byte[] b, int off, int len) throws IOException {
 		System.arraycopy(b, off, _buff, _count, len);
 		_count += len;
     }
 	
 	@Override
-	public void writeBoolean(boolean v) 
-		throws IOException 
-	{
+	public void writeBoolean(boolean v) throws IOException {
 		_buff[_count++] = (byte)( v ? 1 : 0 );
 	}
 
 
 	@Override
-	public void writeInt(int v) 
-		throws IOException 
-	{
+	public void writeInt(int v) throws IOException {
 		intToBa(v, _buff, _count);
 		_count += 4;
 	}
 	
 	@Override
-	public void writeDouble(double v) 
-		throws IOException 
-	{
+	public void writeDouble(double v) throws IOException {
 		long tmp = Double.doubleToRawLongBits(v);		
 		longToBa(tmp, _buff, _count);
 		_count += 8;
@@ -125,14 +112,36 @@ public class CacheDataOutput implements DataOutput, MatrixBlockDataOutput
 
 	@Override
 	public void writeShort(int v) throws IOException {
-		throw new IOException("Not supported.");
+		shortToBa(v, _buff, _count);
+		_count += 2;
 	}
 
 	@Override
 	public void writeUTF(String s) throws IOException {
-		throw new IOException("Not supported.");
+		int slen = s.length();
+		int utflen = IOUtilFunctions.getUTFSize(s) - 2;
+		if (utflen-2 > 65535)
+			throw new UTFDataFormatException("encoded string too long: "+utflen);
+		
+		//write utf len (2 bytes) 
+		writeShort(utflen);
+		
+		//write utf payload
+		for( int i=0; i<slen; i++ ) {
+			char c = s.charAt(i);
+			if( c>= 0x0001 && c<=0x007F ) //1 byte range
+				writeByte(c);
+			else if( c>=0x0800 ) { //3 byte range
+				_buff[_count++] = (byte) (0xE0 | ((c >> 12) & 0x0F));
+				_buff[_count++] = (byte) (0x80 | ((c >>  6) & 0x3F));
+				_buff[_count++] = (byte) (0x80 | ((c >>  0) & 0x3F));
+			}
+			else { //2 byte range and null
+				_buff[_count++] = (byte) (0xC0 | ((c >>  6) & 0x1F));
+				_buff[_count++] = (byte) (0x80 | ((c >>  0) & 0x3F));
+			}
+		}
 	}
-
 
     ///////////////////////////////////////////////
     // Implementation of MatrixBlockDSMDataOutput
@@ -190,13 +199,14 @@ public class CacheDataOutput implements DataOutput, MatrixBlockDataOutput
 		for( int i=lrlen; i<rlen; i++ )
 			writeInt( 0 );
 	}
-	
-	/**
-	 * 
-	 * @param val
-	 * @param ba
-	 * @param off
-	 */
+
+	private static void shortToBa( final int val, byte[] ba, final int off )
+	{
+		//shift and mask out 2 bytes
+		ba[ off+0 ] = (byte)((val >>>  8) & 0xFF);
+		ba[ off+1 ] = (byte)((val >>>  0) & 0xFF);
+	}
+
 	private static void intToBa( final int val, byte[] ba, final int off )
 	{
 		//shift and mask out 4 bytes
@@ -205,13 +215,7 @@ public class CacheDataOutput implements DataOutput, MatrixBlockDataOutput
 		ba[ off+2 ] = (byte)((val >>>  8) & 0xFF);
 		ba[ off+3 ] = (byte)((val >>>  0) & 0xFF);
 	}
-	
-	/**
-	 * 
-	 * @param val
-	 * @param ba
-	 * @param off
-	 */
+
 	private static void longToBa( final long val, byte[] ba, final int off )
 	{
 		//shift and mask out 8 bytes

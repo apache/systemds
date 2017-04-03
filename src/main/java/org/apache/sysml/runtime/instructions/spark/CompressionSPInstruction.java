@@ -38,13 +38,7 @@ public class CompressionSPInstruction extends UnarySPInstruction
 		super(op, in, out, opcode, istr);
 		_sptype = SPINSTRUCTION_TYPE.Reorg;
 	}
-	
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static CompressionSPInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{
@@ -76,10 +70,7 @@ public class CompressionSPInstruction extends UnarySPInstruction
 		sec.setRDDHandleForVariable(output.getName(), out);
 		sec.addLineageRDD(input1.getName(), output.getName());
 	}
-	
-	/**
-	 * 
-	 */
+
 	public static class CompressionFunction implements Function<MatrixBlock,MatrixBlock> 
 	{	
 		private static final long serialVersionUID = -6528833083609423922L;

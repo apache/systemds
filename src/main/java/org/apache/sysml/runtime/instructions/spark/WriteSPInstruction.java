@@ -21,14 +21,13 @@ package org.apache.sysml.runtime.instructions.spark;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Random;
 
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.mapred.SequenceFileOutputFormat;
-import org.apache.spark.Accumulator;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.util.LongAccumulator;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -40,7 +39,6 @@ import org.apache.sysml.runtime.instructions.spark.functions.ComputeBinaryBlockN
 import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDConverterUtils;
 import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDConverterUtils.LongFrameToLongWritableFrameFunction;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils;
-import org.apache.sysml.runtime.instructions.spark.utils.SparkUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FileFormatProperties;
@@ -56,15 +54,12 @@ public class WriteSPInstruction extends SPInstruction
 	private CPOperand input1 = null; 
 	private CPOperand input2 = null;
 	private CPOperand input3 = null;
+	private CPOperand input4 = null;
 	private FileFormatProperties formatProperties;
 	
 	//scalars might occur for transform
 	// TODO remove once transform over frames supported
 	private boolean isInputMatrixBlock = true; 
-	
-	public WriteSPInstruction(String opcode, String istr) {
-		super(opcode, istr);
-	}
 
 	public WriteSPInstruction(CPOperand in1, CPOperand in2, CPOperand in3, String opcode, String str) {
 		super(opcode, str);
@@ -87,7 +82,7 @@ public class WriteSPInstruction extends SPInstruction
 		
 		// All write instructions have 3 parameters, except in case of delimited/csv file.
 		// Write instructions for csv files also include three additional parameters (hasHeader, delimiter, sparse)
-		if ( parts.length != 4 && parts.length != 8 ) {
+		if ( parts.length != 5 && parts.length != 9 ) {
 			throw new DMLRuntimeException("Invalid number of operands in write instruction: " + str);
 		}
 		
@@ -108,6 +103,15 @@ public class WriteSPInstruction extends SPInstruction
 			
 			boolean isInputMB = Boolean.parseBoolean(parts[7]);
 			inst.setInputMatrixBlock(isInputMB);
+
+			CPOperand in4 = new CPOperand(parts[8]);
+			inst.input4 = in4;
+		} else {
+			FileFormatProperties ffp = new FileFormatProperties();
+
+			CPOperand in4 = new CPOperand(parts[4]);
+			inst.input4 = in4;
+			inst.setFormatProperties(ffp);
 		}
 		return inst;		
 	}
@@ -137,7 +141,10 @@ public class WriteSPInstruction extends SPInstruction
 
 		//get filename (literal or variable expression)
 		String fname = ec.getScalarInput(input2.getName(), ValueType.STRING, input2.isLiteral()).getStringValue();
-		List<ValueType> schema = (input1.getDataType()==DataType.FRAME) ? 
+		String desc = ec.getScalarInput(input4.getName(), ValueType.STRING, input4.isLiteral()).getStringValue();
+		formatProperties.setDescription(desc);
+
+		ValueType[] schema = (input1.getDataType()==DataType.FRAME) ? 
 				sec.getFrameObject(input1.getName()).getSchema() : null;
 		
 		try
@@ -160,15 +167,7 @@ public class WriteSPInstruction extends SPInstruction
 			throw new DMLRuntimeException("Failed to process write instruction", ex);
 		}
 	}
-	
-	/**
-	 * 
-	 * @param sec
-	 * @param fname
-	 * @param oi
-	 * @throws DMLRuntimeException
-	 * @throws IOException 
-	 */
+
 	protected void processMatrixWriteInstruction(SparkExecutionContext sec, String fname, OutputInfo oi) 
 		throws DMLRuntimeException, IOException
 	{
@@ -179,9 +178,12 @@ public class WriteSPInstruction extends SPInstruction
 		if(    oi == OutputInfo.MatrixMarketOutputInfo
 			|| oi == OutputInfo.TextCellOutputInfo     ) 
 		{
-			//recompute nnz if necessary (required for header if matrix market)
-			if ( isInputMatrixBlock && !mc.nnzKnown() )
-				mc.setNonZeros( SparkUtils.computeNNZFromBlocks(in1) );
+			//piggyback nnz maintenance on write
+			LongAccumulator aNnz = null;
+			if ( isInputMatrixBlock && !mc.nnzKnown() ) {
+				aNnz = sec.getSparkContext().sc().longAccumulator("nnz");
+				in1 = in1.mapValues(new ComputeBinaryBlockNnzFunction(aNnz));
+			}
 			
 			JavaRDD<String> header = null;				
 			if( oi == OutputInfo.MatrixMarketOutputInfo  ) {
@@ -199,16 +201,19 @@ public class WriteSPInstruction extends SPInstruction
 				customSaveTextFile(header.union(ijv), fname, true);
 			else
 				customSaveTextFile(ijv, fname, false);
+			
+			if ( isInputMatrixBlock && !mc.nnzKnown() )
+				mc.setNonZeros( aNnz.value() );
 		}
 		else if( oi == OutputInfo.CSVOutputInfo ) 
 		{
 			JavaRDD<String> out = null;
-			Accumulator<Double> aNnz = null;
+			LongAccumulator aNnz = null;
 			
 			if ( isInputMatrixBlock ) {
 				//piggyback nnz computation on actual write
 				if( !mc.nnzKnown() ) {
-					aNnz = sec.getSparkContext().accumulator(0L);
+					aNnz = sec.getSparkContext().sc().longAccumulator("nnz");
 					in1 = in1.mapValues(new ComputeBinaryBlockNnzFunction(aNnz));
 				}	
 				
@@ -252,9 +257,9 @@ public class WriteSPInstruction extends SPInstruction
 		}
 		else if( oi == OutputInfo.BinaryBlockOutputInfo ) {
 			//piggyback nnz computation on actual write
-			Accumulator<Double> aNnz = null;
+			LongAccumulator aNnz = null;
 			if( !mc.nnzKnown() ) {
-				aNnz = sec.getSparkContext().accumulator(0L);
+				aNnz = sec.getSparkContext().sc().longAccumulator("nnz");
 				in1 = in1.mapValues(new ComputeBinaryBlockNnzFunction(aNnz));
 			}
 			
@@ -273,16 +278,8 @@ public class WriteSPInstruction extends SPInstruction
 		MapReduceTool.writeMetaDataFile (fname + ".mtd", ValueType.DOUBLE, mc, oi, formatProperties);	
 	}
 
-	/**
-	 * 
-	 * @param sec
-	 * @param fname
-	 * @param oi
-	 * @throws DMLRuntimeException 
-	 * @throws IOException 
-	 */
 	@SuppressWarnings("unchecked")
-	protected void processFrameWriteInstruction(SparkExecutionContext sec, String fname, OutputInfo oi, List<ValueType> schema) 
+	protected void processFrameWriteInstruction(SparkExecutionContext sec, String fname, OutputInfo oi, ValueType[] schema) 
 		throws DMLRuntimeException, IOException
 	{
 		//get input rdd
@@ -315,14 +312,7 @@ public class WriteSPInstruction extends SPInstruction
 		// write meta data file
 		MapReduceTool.writeMetaDataFile(fname + ".mtd", input1.getValueType(), schema, DataType.FRAME, mc, oi, formatProperties);	
 	}
-	
-	/**
-	 * 
-	 * @param rdd
-	 * @param fname
-	 * @param inSingleFile
-	 * @throws DMLRuntimeException
-	 */
+
 	private void customSaveTextFile(JavaRDD<String> rdd, String fname, boolean inSingleFile) 
 		throws DMLRuntimeException 
 	{

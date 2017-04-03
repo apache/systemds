@@ -35,7 +35,6 @@ import org.apache.sysml.runtime.instructions.cp.KahanObject;
  */
 public class COV extends ValueFunction
 {
-
 	private static final long serialVersionUID = 1865050401811477181L;
 
 	private static COV singleObj = null;
@@ -48,25 +47,19 @@ public class COV extends ValueFunction
 		return singleObj;
 	}
 	
-	private COV()
-	{
+	private COV() {
 		_plus = KahanPlus.getKahanPlusFnObject();
-	}
-	
-	public Object clone() throws CloneNotSupportedException {
-		// cloning is not supported for singleton classes
-		throw new CloneNotSupportedException();
 	}
 	
 	/**
 	 * General case for arbitrary weights w2
 	 * 
-	 * @param in1
-	 * @param u
-	 * @param v
-	 * @param w2
-	 * @return
-	 * @throws DMLRuntimeException
+	 * @param in1 input data
+	 * @param u ?
+	 * @param v ?
+	 * @param w2 ?
+	 * @return result
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public Data execute(Data in1, double u, double v, double w2) 
 		throws DMLRuntimeException 
@@ -94,6 +87,11 @@ public class COV extends ValueFunction
 	
 	/**
 	 * Special case for weights w2==1
+	 * 
+	 * @param in1 ?
+	 * @param u ?
+	 * @param v ?
+	 * @return result
 	 */
 	public Data execute(Data in1, double u, double v) 
 		throws DMLRuntimeException 

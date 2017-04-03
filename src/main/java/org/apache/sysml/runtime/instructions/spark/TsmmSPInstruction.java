@@ -21,8 +21,8 @@ package org.apache.sysml.runtime.instructions.spark;
 
 
 import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
-
 import org.apache.sysml.lops.MMTSJ.MMTSJType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
@@ -34,9 +34,8 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-/**
- * 
- */
+import scala.Tuple2;
+
 public class TsmmSPInstruction extends UnarySPInstruction 
 {
 	
@@ -49,12 +48,6 @@ public class TsmmSPInstruction extends UnarySPInstruction
 		_type = type;
 	}
 
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	public static TsmmSPInstruction parseInstruction( String str ) 
 		throws DMLRuntimeException 
 	{
@@ -84,20 +77,15 @@ public class TsmmSPInstruction extends UnarySPInstruction
 		
 		//execute tsmm instruction (always produce exactly one output block)
 		//(this formulation with values() requires --conf spark.driver.maxResultSize=0)
-		RDDTSMMFunction ftsmm = new RDDTSMMFunction(_type);		
-		JavaPairRDD<MatrixIndexes,MatrixBlock> tmp = in.mapValues(ftsmm);
+		JavaRDD<MatrixBlock> tmp = in.map(new RDDTSMMFunction(_type));
 		MatrixBlock out = RDDAggregateUtils.sumStable(tmp);
 		      
 		//put output block into symbol table (no lineage because single block)
 		//this also includes implicit maintenance of matrix characteristics
 		sec.setMatrixOutput(output.getName(), out);
 	}
-	
-	/**
-	 * 
-	 * 
-	 */
-	private static class RDDTSMMFunction implements Function<MatrixBlock, MatrixBlock> 
+
+	private static class RDDTSMMFunction implements Function<Tuple2<MatrixIndexes,MatrixBlock>, MatrixBlock> 
 	{
 		private static final long serialVersionUID = 2935770425858019666L;
 		
@@ -108,11 +96,11 @@ public class TsmmSPInstruction extends UnarySPInstruction
 		}
 		
 		@Override
-		public MatrixBlock call( MatrixBlock arg0 ) 
+		public MatrixBlock call( Tuple2<MatrixIndexes,MatrixBlock> arg0 ) 
 			throws Exception 
 		{
 			//execute transpose-self matrix multiplication
-			return arg0.transposeSelfMatrixMultOperations(new MatrixBlock(), _type);
+			return arg0._2().transposeSelfMatrixMultOperations(new MatrixBlock(), _type);
 		}
 	}
 	

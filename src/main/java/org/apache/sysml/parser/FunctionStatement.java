@@ -21,8 +21,6 @@ package org.apache.sysml.parser;
 
 import java.util.ArrayList;
 
-import org.apache.sysml.lops.Lop;
-
 
 public class FunctionStatement extends Statement
 {
@@ -67,11 +65,7 @@ public class FunctionStatement extends Statement
 	public String getName(){
 		return _name;
 	}
-	
-	public void addStatementBlock(StatementBlock sb){
-		_body.add(sb);
-	}
-	
+
 	public ArrayList<StatementBlock> getBody(){
 		return _body;
 	}
@@ -138,19 +132,5 @@ public class FunctionStatement extends Statement
 	public VariableSet variablesUpdated() {
 		LOG.warn(this.printWarningLocation() + " -- should not call variablesRead from FunctionStatement ");
 		return new VariableSet();
-	}
-	
-	public static String[] createFunctionCallVariables( ArrayList<Lop> lops )
-	{
-		String[] ret = new String[lops.size()]; //vars in order
-		
-		for( int i=0; i<lops.size(); i++ )
-		{	
-			Lop llops = lops.get(i);
-			if( llops.getType()==Lop.Type.Data )
-				ret[i] = llops.getOutputParameters().getLabel(); 
-		}
-		
-		return ret;
 	}
 }

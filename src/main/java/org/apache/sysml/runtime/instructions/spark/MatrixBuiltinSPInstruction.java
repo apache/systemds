@@ -30,9 +30,6 @@ import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
 
-/**
- * 
- */
 public class MatrixBuiltinSPInstruction extends BuiltinUnarySPInstruction
 {
 	
@@ -58,10 +55,7 @@ public class MatrixBuiltinSPInstruction extends BuiltinUnarySPInstruction
 		sec.setRDDHandleForVariable(output.getName(), out);	
 		sec.addLineageRDD(output.getName(), input1.getName());
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class RDDMatrixBuiltinUnaryOp implements Function<MatrixBlock,MatrixBlock> 
 	{
 		private static final long serialVersionUID = -3128192099832877491L;

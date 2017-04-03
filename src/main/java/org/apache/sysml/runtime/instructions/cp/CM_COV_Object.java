@@ -129,6 +129,10 @@ public class CM_COV_Object extends Data
 	/**
 	 * Return the result of the aggregated operation given the
 	 * operator.
+	 * 
+	 * @param op operator
+	 * @return result of the aggregated operation for the given operator
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public double getRequiredResult(Operator op) throws DMLRuntimeException
 	{
@@ -150,6 +154,10 @@ public class CM_COV_Object extends Data
 	/**
 	 * Return the result of the aggregated operation given the
 	 * operation type.
+	 * 
+	 * @param agg aggregate operation type
+	 * @return result of the aggregated operation given the operation type
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public double getRequiredResult(AggregateOperationTypes agg) throws DMLRuntimeException {
 		switch(agg)
@@ -171,12 +179,6 @@ public class CM_COV_Object extends Data
 		}
 	}
 
-	/**
-	 * 
-	 * @param op
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	public double getRequiredPartialResult(Operator op) 
 		throws DMLRuntimeException
 	{
@@ -202,10 +204,6 @@ public class CM_COV_Object extends Data
 			return c2._sum;
 	}
 
-	/**
-	 * 
-	 * @return
-	 */
 	public double getWeight() 
 	{
 		return w;

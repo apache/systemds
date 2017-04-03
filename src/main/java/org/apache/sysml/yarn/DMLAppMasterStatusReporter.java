@@ -26,11 +26,9 @@ import org.apache.hadoop.yarn.client.api.AMRMClient.ContainerRequest;
 
 public class DMLAppMasterStatusReporter extends Thread
 {
-	
-	public static long DEFAULT_REPORT_INTERVAL = 5000;
+	public static final long DEFAULT_REPORT_INTERVAL = 5000;
 	private static final Log LOG = LogFactory.getLog(DMLAppMasterStatusReporter.class);
-	
-	
+
 	private AMRMClient<ContainerRequest> _rmClient;
 	private long _interval; //in ms
 	private volatile boolean _stop;
@@ -39,7 +37,7 @@ public class DMLAppMasterStatusReporter extends Thread
 	public DMLAppMasterStatusReporter(AMRMClient<ContainerRequest> rmClient, long interval) 
 	{
 		_rmClient = rmClient;
-		_interval = interval;
+		_interval = interval>0 ? interval : DEFAULT_REPORT_INTERVAL;
 		_stop = false;
 	}
 	

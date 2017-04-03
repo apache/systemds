@@ -36,11 +36,19 @@ import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
  */
 public class PairWritableBlock implements Writable, Serializable
 {
-
 	private static final long serialVersionUID = -6022511967446089164L;
 
 	public MatrixIndexes indexes;
 	public MatrixBlock block;
+	
+	public PairWritableBlock() {
+	
+	}
+	
+	public PairWritableBlock(MatrixIndexes ix, MatrixBlock mb) {
+		indexes = ix;
+		block = mb;
+	}
 	
 	@Override
 	public void readFields(DataInput in) throws IOException 

@@ -19,7 +19,6 @@
 
 package org.apache.sysml.runtime.functionobjects;
 
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
@@ -40,11 +39,6 @@ public class ReduceRow extends IndexFunction
 		if ( singleObj == null )
 			singleObj = new ReduceRow();
 		return singleObj;
-	}
-	
-	public Object clone() throws CloneNotSupportedException {
-		// cloning is not supported for singleton classes
-		throw new CloneNotSupportedException();
 	}
 	
 	/*
@@ -68,8 +62,8 @@ public class ReduceRow extends IndexFunction
 		return true;
 	}
 	
-	public boolean computeDimension(MatrixCharacteristics in, MatrixCharacteristics out) throws DMLRuntimeException
-	{
+	@Override
+	public boolean computeDimension(MatrixCharacteristics in, MatrixCharacteristics out) {
 		out.set(1, in.getCols(), in.getRowsPerBlock(), in.getColsPerBlock());
 		return true;
 	}

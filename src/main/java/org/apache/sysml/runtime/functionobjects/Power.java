@@ -38,24 +38,9 @@ public class Power extends ValueFunction
 		return singleObj;
 	}
 	
-	public Object clone() throws CloneNotSupportedException {
-		// cloning is not supported for singleton classes
-		throw new CloneNotSupportedException();
-	}
-	
 	@Override
 	public double execute(double in1, double in2) {
 		return Math.pow(in1, in2); 
-	}
-
-	@Override
-	public double execute(double in1, long in2) {
-		return Math.pow(in1, (double)in2); 
-	}
-
-	@Override
-	public double execute(long in1, double in2) {
-		return Math.pow((double)in1, in2); 
 	}
 
 	@Override

@@ -20,8 +20,10 @@
 package org.apache.sysml.api.mlcontext;
 
 import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.sql.DataFrame;
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Row;
 import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -44,7 +46,7 @@ public class BinaryBlockFrame {
 	 * @param frameMetadata
 	 *            frame metadata, such as number of rows and columns
 	 */
-	public BinaryBlockFrame(DataFrame dataFrame, FrameMetadata frameMetadata) {
+	public BinaryBlockFrame(Dataset<Row> dataFrame, FrameMetadata frameMetadata) {
 		this.frameMetadata = frameMetadata;
 		binaryBlocks = MLContextConversionUtil.dataFrameToFrameBinaryBlocks(dataFrame, frameMetadata);
 	}
@@ -60,7 +62,7 @@ public class BinaryBlockFrame {
 	 * @param numCols
 	 *            the number of columns
 	 */
-	public BinaryBlockFrame(DataFrame dataFrame, long numRows, long numCols) {
+	public BinaryBlockFrame(Dataset<Row> dataFrame, long numRows, long numCols) {
 		this(dataFrame, new FrameMetadata(numRows, numCols, 
 				ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize()));
 	}
@@ -71,7 +73,7 @@ public class BinaryBlockFrame {
 	 * @param dataFrame
 	 *            the Spark DataFrame
 	 */
-	public BinaryBlockFrame(DataFrame dataFrame) {
+	public BinaryBlockFrame(Dataset<Row> dataFrame) {
 		this(dataFrame, new FrameMetadata());
 	}
 
@@ -122,7 +124,7 @@ public class BinaryBlockFrame {
 		try {
 			MatrixCharacteristics mc = getMatrixCharacteristics();
 			FrameSchema frameSchema = frameMetadata.getFrameSchema();
-			return SparkExecutionContext.toFrameBlock(binaryBlocks, frameSchema.getSchema(),
+			return SparkExecutionContext.toFrameBlock(binaryBlocks, frameSchema.getSchema().toArray(new ValueType[0]),
 					(int) mc.getRows(), (int) mc.getCols());
 		} catch (DMLRuntimeException e) {
 			throw new MLContextException("Exception while getting FrameBlock from binary-block frame", e);

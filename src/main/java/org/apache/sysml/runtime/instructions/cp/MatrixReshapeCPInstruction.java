@@ -27,10 +27,6 @@ import org.apache.sysml.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-/**
- * 
- * 
- */
 public class MatrixReshapeCPInstruction extends UnaryCPInstruction
 {	
 	
@@ -47,13 +43,7 @@ public class MatrixReshapeCPInstruction extends UnaryCPInstruction
 		_opCols = in3;
 		_opByRow = in4;
 	}
-	
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static MatrixReshapeCPInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{

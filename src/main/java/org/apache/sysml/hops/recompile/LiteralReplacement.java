@@ -33,7 +33,6 @@ import org.apache.sysml.hops.Hop.AggOp;
 import org.apache.sysml.hops.Hop.DataOpTypes;
 import org.apache.sysml.hops.Hop.Direction;
 import org.apache.sysml.hops.Hop.OpOp1;
-import org.apache.sysml.hops.Hop.VisitStatus;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -51,16 +50,10 @@ public class LiteralReplacement
 	private static final long REPLACE_LITERALS_MAX_MATRIX_SIZE = 1000000; //10^6 cells (8MB)
 	private static final boolean REPORT_LITERAL_REPLACE_OPS_STATS = true; 	
 	
-	/**
-	 * 
-	 * @param hop
-	 * @param vars
-	 * @throws DMLRuntimeException
-	 */
 	protected static void rReplaceLiterals( Hop hop, LocalVariableMap vars ) 
 		throws DMLRuntimeException
 	{
-		if( hop.getVisited() == VisitStatus.DONE )
+		if( hop.isVisited() )
 			return;
 
 		if( hop.getInput() != null )
@@ -107,7 +100,7 @@ public class LiteralReplacement
 			}
 		}
 		
-		hop.setVisited(VisitStatus.DONE);
+		hop.setVisited();
 	}
 	
 
@@ -115,12 +108,6 @@ public class LiteralReplacement
 	// Literal replacement rules
 	///////////////////////////////
 	
-	/**
-	 * 
-	 * @param c
-	 * @param vars
-	 * @return
-	 */
 	private static LiteralOp replaceLiteralScalarRead(Hop c, LocalVariableMap vars)
 	{
 		LiteralOp ret = null;
@@ -152,12 +139,6 @@ public class LiteralReplacement
 		return ret;
 	}
 	
-	/**
-	 * 
-	 * @param c
-	 * @param vars
-	 * @return
-	 */
 	private static LiteralOp replaceLiteralValueTypeCastScalarRead( Hop c, LocalVariableMap vars )
 	{
 		LiteralOp ret = null;
@@ -191,13 +172,6 @@ public class LiteralReplacement
 		return ret;
 	}
 	
-	/**
-	 * 
-	 * @param c
-	 * @param vars
-	 * @return
-	 * @throws DMLRuntimeException 
-	 */
 	private static LiteralOp replaceLiteralValueTypeCastLiteral( Hop c, LocalVariableMap vars ) 
 		throws DMLRuntimeException
 	{
@@ -238,13 +212,6 @@ public class LiteralReplacement
 		return ret;
 	}
 	
-	/**
-	 * 
-	 * @param c
-	 * @param vars
-	 * @return
-	 * @throws DMLRuntimeException 
-	 */
 	private static LiteralOp replaceLiteralDataTypeCastMatrixRead( Hop c, LocalVariableMap vars ) 
 		throws DMLRuntimeException
 	{
@@ -274,13 +241,6 @@ public class LiteralReplacement
 		return ret;
 	}
 	
-	/**
-	 * 
-	 * @param c
-	 * @param vars
-	 * @return
-	 * @throws DMLRuntimeException 
-	 */
 	private static LiteralOp replaceLiteralValueTypeCastRightIndexing( Hop c, LocalVariableMap vars ) 
 		throws DMLRuntimeException
 	{
@@ -324,13 +284,6 @@ public class LiteralReplacement
 		return ret;
 	}
 
-	/**
-	 * 
-	 * @param c
-	 * @param vars
-	 * @return
-	 * @throws DMLRuntimeException 
-	 */
 	private static LiteralOp replaceLiteralFullUnaryAggregate( Hop c, LocalVariableMap vars ) 
 		throws DMLRuntimeException
 	{
@@ -361,13 +314,6 @@ public class LiteralReplacement
 		return ret;
 	}
 	
-	/**
-	 * 
-	 * @param c
-	 * @param vars
-	 * @return
-	 * @throws DMLRuntimeException 
-	 */
 	private static LiteralOp replaceLiteralFullUnaryAggregateRightIndexing( Hop c, LocalVariableMap vars ) 
 		throws DMLRuntimeException
 	{
@@ -420,12 +366,6 @@ public class LiteralReplacement
 	// Utility functions
 	///////////////////////////////
 
-	/**
-	 * 
-	 * @param h
-	 * @param vars
-	 * @return
-	 */
 	private static boolean isIntValueDataLiteral(Hop h, LocalVariableMap vars)
 	{
 		return (  (h instanceof DataOp && vars.keySet().contains(h.getName())) 
@@ -434,13 +374,6 @@ public class LiteralReplacement
 				   && h.getInput().get(0) instanceof DataOp && vars.keySet().contains(h.getInput().get(0).getName())) );
 	}
 	
-	/**
-	 * 
-	 * @param hop
-	 * @param vars
-	 * @return
-	 * @throws DMLRuntimeException 
-	 */
 	private static long getIntValueDataLiteral(Hop hop, LocalVariableMap vars) 
 		throws DMLRuntimeException
 	{
@@ -481,11 +414,6 @@ public class LiteralReplacement
 	}
 	
 	
-	/**
-	 * 
-	 * @param auop
-	 * @return
-	 */
 	private static boolean isReplaceableUnaryAggregate( AggUnaryOp auop )
 	{
 		boolean cdir = (auop.getDirection() == Direction.RowCol);		
@@ -497,13 +425,6 @@ public class LiteralReplacement
 		return cdir && cop;
 	}
 	
-	/**
-	 * 
-	 * @param auop
-	 * @param mb
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	private static double replaceUnaryAggregate( AggUnaryOp auop, MatrixBlock mb ) 
 		throws DMLRuntimeException
 	{

@@ -21,7 +21,6 @@ package org.apache.sysml.runtime.functionobjects;
 
 import java.io.Serializable;
 
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
@@ -29,7 +28,6 @@ import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 
 public class SwapIndex extends IndexFunction implements Serializable
 {
-
 	private static final long serialVersionUID = -8898087610410746689L;
 
 	private static SwapIndex singleObj = null;
@@ -42,11 +40,6 @@ public class SwapIndex extends IndexFunction implements Serializable
 		if ( singleObj == null )
 			singleObj = new SwapIndex();
 		return singleObj;
-	}
-	
-	public Object clone() throws CloneNotSupportedException {
-		// cloning is not supported for singleton classes
-		throw new CloneNotSupportedException();
 	}
 	
 	@Override
@@ -67,8 +60,8 @@ public class SwapIndex extends IndexFunction implements Serializable
 		return false;
 	}
 
-	public boolean computeDimension(MatrixCharacteristics in, MatrixCharacteristics out) throws DMLRuntimeException
-	{
+	@Override
+	public boolean computeDimension(MatrixCharacteristics in, MatrixCharacteristics out) {
 		out.set(in.getCols(), in.getRows(), in.getColsPerBlock(), in.getRowsPerBlock());
 		return false;
 	}

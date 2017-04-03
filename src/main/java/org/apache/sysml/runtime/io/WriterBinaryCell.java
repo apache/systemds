@@ -64,28 +64,22 @@ public class WriterBinaryCell extends MatrixWriter
 		Path path = new Path( fname );
 		FileSystem fs = FileSystem.get(job);
 
-		SequenceFile.Writer writer = new SequenceFile.Writer(fs, job, path,
+		SequenceFile.Writer writer = null;
+		try {
+			writer = new SequenceFile.Writer(fs, job, path,
                 MatrixIndexes.class, MatrixCell.class);
 		
-		MatrixIndexes index = new MatrixIndexes(1, 1);
-		MatrixCell cell = new MatrixCell(0);
-		writer.append(index, cell);
-		writer.close();
-
+			MatrixIndexes index = new MatrixIndexes(1, 1);
+			MatrixCell cell = new MatrixCell(0);
+			writer.append(index, cell);
+		}
+		finally {
+			IOUtilFunctions.closeSilently(writer);
+		}
+		
 		IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, path);
 	}
 
-	/**
-	 * 
-	 * @param path
-	 * @param job
-	 * @param src
-	 * @param rlen
-	 * @param clen
-	 * @param brlen
-	 * @param bclen
-	 * @throws IOException
-	 */
 	@SuppressWarnings("deprecation")
 	protected void writeBinaryCellMatrixToHDFS( Path path, JobConf job, MatrixBlock src, long rlen, long clen, int brlen, int bclen )
 		throws IOException

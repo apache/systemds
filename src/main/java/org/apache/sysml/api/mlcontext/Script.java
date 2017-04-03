@@ -29,8 +29,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
-import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
-import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.instructions.cp.Data;
 
 import scala.Tuple2;
@@ -320,6 +319,17 @@ public class Script {
 	 * @return {@code this} Script object to allow chaining of methods
 	 */
 	public Script in(String name, Object value, Metadata metadata) {
+
+		if ((value != null) && (value instanceof Long)) {
+			// convert Long to Integer since Long not a supported value type
+			Long lng = (Long) value;
+			value = lng.intValue();
+		} else if ((value != null) && (value instanceof Float)) {
+			// convert Float to Double since Float not a supported value type
+			Float flt = (Float) value;
+			value = flt.doubleValue();
+		}
+
 		MLContextUtil.checkInputValueType(name, value);
 		if (inputs == null) {
 			inputs = new LinkedHashMap<String, Object>();
@@ -332,15 +342,19 @@ public class Script {
 				inputParameters = new LinkedHashMap<String, Object>();
 			}
 			inputParameters.put(name, value);
-		} else {
+		} 
+		else {
 			Data data = MLContextUtil.convertInputType(name, value, metadata);
 			if (data != null) {
+				//store input variable name and data
 				symbolTable.put(name, data);
 				inputVariables.add(name);
-				if (data instanceof MatrixObject || data instanceof FrameObject) {
-					if (metadata != null) {
+				
+				//store matrix/frame meta data and disable variable cleanup
+				if( data instanceof CacheableData ) {
+					if( metadata != null )
 						inputMetadata.put(name, metadata);
-					}
+					((CacheableData<?>)data).enableCleanup(false);
 				}
 			}
 		}
@@ -503,7 +517,7 @@ public class Script {
 					String quotedString = MLContextUtil.quotedString((String) inValue);
 					sb.append(" = " + quotedString + ";\n");
 				} else if (MLContextUtil.isBasicType(inValue)) {
-					sb.append(" = read('', data_type='scalar');\n");
+					sb.append(" = read('', data_type='scalar', value_type='" + MLContextUtil.getBasicTypeString(inValue) + "');\n");
 				} else if (MLContextUtil.doesSymbolTableContainFrameObject(symbolTable, in)) {
 					sb.append(" = read('', data_type='frame');\n");
 				} else {
@@ -514,7 +528,7 @@ public class Script {
 					String quotedString = MLContextUtil.quotedString((String) inValue);
 					sb.append(" = " + quotedString + "\n");
 				} else if (MLContextUtil.isBasicType(inValue)) {
-					sb.append(" = load('', data_type='scalar')\n");
+					sb.append(" = load('', data_type='scalar', value_type='" + MLContextUtil.getBasicTypeString(inValue) + "')\n");
 				} else if (MLContextUtil.doesSymbolTableContainFrameObject(symbolTable, in)) {
 					sb.append(" = load('', data_type='frame')\n");
 				} else {

@@ -50,10 +50,6 @@ public class GridEnumerationMemory extends GridEnumeration
 		_nsteps = DEFAULT_NSTEPS;
 	}
 	
-	/**
-	 * 
-	 * @param steps
-	 */
 	public void setNumSteps( int steps )
 	{
 		_nsteps = steps;
@@ -102,12 +98,6 @@ public class GridEnumerationMemory extends GridEnumeration
 		return val;
 	}
 	
-	/**
-	 * 
-	 * @param pbs
-	 * @param mem
-	 * @throws HopsException
-	 */
 	private void getMemoryEstimates( ArrayList<ProgramBlock> pbs, ArrayList<Long> mem ) 
 		throws HopsException
 	{
@@ -115,12 +105,6 @@ public class GridEnumerationMemory extends GridEnumeration
 			getMemoryEstimates(pb, mem);
 	}
 	
-	/**
-	 * 
-	 * @param pb
-	 * @param mem
-	 * @throws HopsException
-	 */
 	private void getMemoryEstimates( ProgramBlock pb, ArrayList<Long> mem ) 
 		throws HopsException
 	{
@@ -156,14 +140,9 @@ public class GridEnumerationMemory extends GridEnumeration
 		}
 	}
 	
-	/**
-	 * 
-	 * @param hop
-	 * @param mem
-	 */
 	private void getMemoryEstimates( Hop hop, ArrayList<Long> mem )
 	{
-		if( hop.getVisited() == Hop.VisitStatus.DONE )
+		if( hop.isVisited() )
 			return;
 
 		//process childs
@@ -174,7 +153,7 @@ public class GridEnumerationMemory extends GridEnumeration
 		mem.add( (long)( (hop.getMemEstimate()+DEFAULT_MEM_ADD)
 				          /OptimizerUtils.MEM_UTIL_FACTOR) );
 		
-		hop.setVisited(Hop.VisitStatus.DONE);
+		hop.setVisited();
 	}
 	
 }

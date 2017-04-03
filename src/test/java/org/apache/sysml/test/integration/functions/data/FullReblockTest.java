@@ -23,7 +23,8 @@ import java.io.IOException;
 
 import org.junit.Assert;
 import org.junit.Test;
-
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.lops.LopProperties.ExecType;
@@ -54,6 +55,9 @@ public class FullReblockTest extends AutomatedTestBase
 	private final static int blocksize = 1000; 
 	private final static double sparsity1 = 0.7;
 	private final static double sparsity2 = 0.3;
+	
+	private static final Log LOG = LogFactory.getLog(FullReblockTest.class.getName());
+	
 	
 	public enum Type{
 		Single,
@@ -442,14 +446,15 @@ public class FullReblockTest extends AutomatedTestBase
 			programArgs = new String[]{"-args", input("A"), output("C")};
 		}
 		
+		boolean success = false;
+		long seed1 = System.nanoTime();
+		long seed2 = System.nanoTime()+7;
+        
 		try 
 		{
 			//run test cases with single or multiple inputs
 			if( type==Type.Multiple )
 			{
-				long seed1 = System.nanoTime();
-				long seed2 = System.nanoTime()+7;
-		        
 				double[][] A1 = getRandomMatrix(rows, cols, 0, 1, sparsity, seed1);
 				double[][] A2 = getRandomMatrix(rows, cols, 0, 1, sparsity, seed2);
 		        
@@ -459,14 +464,12 @@ public class FullReblockTest extends AutomatedTestBase
 				runTest(true, false, null, -1);
 		        double[][] C1 = readMatrix(output("C1"), InputInfo.BinaryBlockInputInfo, rows, cols, blocksize, blocksize);
 		        double[][] C2 = readMatrix(output("C2"), InputInfo.BinaryBlockInputInfo, rows, cols, blocksize, blocksize);
-				
 		        TestUtils.compareMatrices(A1, C1, rows, cols, eps);
 		        TestUtils.compareMatrices(A2, C2, rows, cols, eps);
-			}
+		    }
 			else
 			{
-				long seed1 = System.nanoTime();
-		        double[][] A = getRandomMatrix(rows, cols, 0, 1, sparsity, seed1);
+				double[][] A = getRandomMatrix(rows, cols, 0, 1, sparsity, seed1);
 
 				//force binary reblock for 999 to match 1000
 		        writeMatrix(A, input("A"), oi, rows, cols, blocksize-1, blocksize-1);
@@ -475,16 +478,19 @@ public class FullReblockTest extends AutomatedTestBase
 				
 		        TestUtils.compareMatrices(A, C, rows, cols, eps);
 			}
+			
+			success = true;
 		} 
-		catch (Exception e) 
-		{
+		catch (Exception e) {
 			e.printStackTrace();
 			Assert.fail();
 		}
-		finally
-		{
+		finally {
 			rtplatform = platformOld;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+			
+		    if( !success )
+				LOG.error("FullReblockTest failed with seed="+seed1+", seed2="+seed2);
 		}
 	}
 	

@@ -20,6 +20,7 @@
 package org.apache.sysml.runtime.instructions.spark;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
@@ -41,10 +42,6 @@ import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-/**
- * 
- * 
- */
 public class MatrixReshapeSPInstruction extends UnarySPInstruction
 {	
 	
@@ -61,13 +58,7 @@ public class MatrixReshapeSPInstruction extends UnarySPInstruction
 		_opCols = in3;
 		_opByRow = in4;
 	}
-	
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static MatrixReshapeSPInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{
@@ -136,7 +127,7 @@ public class MatrixReshapeSPInstruction extends UnarySPInstruction
 		}
 		
 		@Override
-		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call( Tuple2<MatrixIndexes, MatrixBlock> arg0 ) 
+		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call( Tuple2<MatrixIndexes, MatrixBlock> arg0 ) 
 			throws Exception 
 		{
 			//input conversion (for libmatrixreorg compatibility)
@@ -148,7 +139,7 @@ public class MatrixReshapeSPInstruction extends UnarySPInstruction
                     out, _mcOut.getRows(), _mcOut.getCols(), _mcOut.getRowsPerBlock(), _mcOut.getColsPerBlock(), _byrow);
 
 			//output conversion (for compatibility w/ rdd schema)
-			return SparkUtils.fromIndexedMatrixBlock(out);
+			return SparkUtils.fromIndexedMatrixBlock(out).iterator();
 		}
 	}
 }

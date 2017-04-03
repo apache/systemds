@@ -27,9 +27,6 @@ import org.apache.sysml.runtime.controlprogram.parfor.opt.OptimizerRuleBased;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 
-/**
- * 
- */
 public class ResultMergeLocalAutomatic extends ResultMerge
 {
 	

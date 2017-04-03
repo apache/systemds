@@ -25,11 +25,6 @@ import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.lops.compile.JobType;
 import org.apache.sysml.parser.Expression.*;
 
-
-/**
- * 
- * 
- */
 public class CumulativeOffsetBinary extends Lop 
 {
 	
@@ -59,13 +54,6 @@ public class CumulativeOffsetBinary extends Lop
 		init(data, offsets, dt, vt, et);
 	}
 	
-	/**
-	 * 
-	 * @param input
-	 * @param dt
-	 * @param vt
-	 * @param et
-	 */
 	private void init(Lop input1, Lop input2, DataType dt, ValueType vt, ExecType et) 
 	{
 		this.addInput(input1);
@@ -99,11 +87,6 @@ public class CumulativeOffsetBinary extends Lop
 		return "CumulativeOffsetBinary";
 	}
 
-	/**
-	 * 
-	 * @param op
-	 * @throws LopsException
-	 */
 	private void checkSupportedOperations(OperationTypes op) 
 		throws LopsException
 	{
@@ -126,26 +109,13 @@ public class CumulativeOffsetBinary extends Lop
 	}
 	
 	@Override
-	public String getInstructions(int input_index1, int input_index2, int output_index)
-		throws LopsException 
-	{
-		StringBuilder sb = new StringBuilder();
-		sb.append( getExecType() );
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( getOpcode() );
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( getInputs().get(0).prepInputOperand(input_index1) );
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( getInputs().get(1).prepInputOperand(input_index2) );
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( this.prepOutputOperand(output_index) );
-
-		return sb.toString();
+	public String getInstructions(int input_index1, int input_index2, int output_index) {
+		return getInstructions(String.valueOf(input_index1), 
+				String.valueOf(input_index2), String.valueOf(output_index));
 	}
 	
 	@Override
 	public String getInstructions(String input1, String input2, String output)
-		throws LopsException 
 	{
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );
@@ -157,6 +127,7 @@ public class CumulativeOffsetBinary extends Lop
 		sb.append( getInputs().get(1).prepInputOperand(input2) );
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( this.prepOutputOperand(output) );
+		
 		if( getExecType() == ExecType.SPARK ) {
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( _initValue );	

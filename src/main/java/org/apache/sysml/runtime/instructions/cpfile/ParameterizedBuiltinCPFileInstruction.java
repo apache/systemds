@@ -56,6 +56,7 @@ import org.apache.sysml.runtime.functionobjects.ValueFunction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.io.MatrixReader;
 import org.apache.sysml.runtime.io.MatrixWriter;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -84,12 +85,6 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 		super(op, paramsMap, out, opcode, istr);
 	}
 
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	public static ParameterizedBuiltinCPFileInstruction parseInstruction( String str ) 
 		throws DMLRuntimeException 
 	{
@@ -158,12 +153,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			_src = src;
 			_out = out;
 		}
-		
-		/**
-		 * 
-		 * @return
-		 * @throws DMLRuntimeException
-		 */
+
 		public MatrixObject execute() 
 			throws DMLRuntimeException 
 		{
@@ -233,16 +223,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			else
 				return createNewOutputObject(_src, _out, mc.getRows(), ret );
 		}
-		
-		/**
-		 * 
-		 * @param src
-		 * @param out
-		 * @param rows
-		 * @param cols
-		 * @return
-		 * @throws DMLRuntimeException 
-		 */
+
 		private MatrixObject createNewOutputObject( MatrixObject src, MatrixObject out, long rows, long cols ) 
 			throws DMLRuntimeException
 		{
@@ -280,13 +261,6 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			return moNew;
 		}
 
-		/**
-		 * 
-		 * @param fnameOld
-		 * @param stagingDir
-		 * @throws IOException
-		 * @throws DMLRuntimeException
-		 */
 		public void createTextCellStagingFile( String fnameOld, String stagingDir ) 
 			throws IOException, DMLRuntimeException
 		{	
@@ -334,21 +308,12 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 						buffer.clear();
 					}
 				}
-				finally
-				{
-					if( reader != null )
-						reader.close();
+				finally {
+					IOUtilFunctions.closeSilently(reader);
 				}
 			}
 		}		
 
-		/**
-		 * 
-		 * @param fnameOld
-		 * @param stagingDir
-		 * @throws IOException
-		 * @throws DMLRuntimeException
-		 */
 		@SuppressWarnings("deprecation")
 		public void createBinaryCellStagingFile( String fnameOld, String stagingDir ) 
 			throws IOException, DMLRuntimeException
@@ -391,10 +356,8 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 						buffer.clear();
 					}
 				}
-				finally
-				{
-					if( reader != null )
-						reader.close();
+				finally {
+					IOUtilFunctions.closeSilently(reader);
 				}
 			}
 		}
@@ -403,10 +366,11 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 		 * Creates a binary block staging file and returns if the input matrix is a diag,
 		 * because diag is the primary usecase and there is lots of optimization potential.
 		 * 
-		 * @param fnameOld
-		 * @param stagingDir
-		 * @throws IOException
-		 * @throws DMLRuntimeException
+		 * @param fnameOld old filename
+		 * @param stagingDir staging directory
+		 * @return true if diag
+		 * @throws IOException if IOException occurs
+		 * @throws DMLRuntimeException if DMLRuntimeException occurs
 		 */
 		@SuppressWarnings("deprecation")
 		public boolean createBinaryBlockStagingFile( String fnameOld, String stagingDir ) 
@@ -439,25 +403,14 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 						}
 					}	
 				}
-				finally
-				{
-					if( reader != null )
-						reader.close();
+				finally {
+					IOUtilFunctions.closeSilently(reader);
 				}
 			}
 			
 			return diagBlocks;
 		}
-		
-		/**
-		 * 
-		 * @param dir
-		 * @param buffer
-		 * @param brlen
-		 * @param bclen
-		 * @throws DMLRuntimeException
-		 * @throws IOException
-		 */
+
 		private void appendCellBufferToStagingArea( String dir, LinkedList<Cell> buffer, int brlen, int bclen ) 
 			throws DMLRuntimeException, IOException
 		{
@@ -483,19 +436,6 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			}
 		}	
 
-		/**
-		 * 
-		 * @param stagingDir
-		 * @param rlen
-		 * @param clen
-		 * @param brlen
-		 * @param bclen
-		 * @param ii
-		 * @return
-		 * @throws FileNotFoundException
-		 * @throws IOException
-		 * @throws DMLRuntimeException
-		 */
 		private long createKeyMapping( String stagingDir, long rlen, long clen, int brlen, int bclen, InputInfo ii) 
 			throws FileNotFoundException, IOException, DMLRuntimeException 
 		{
@@ -592,19 +532,6 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			return len;
 		}
 
-		/**
-		 * 
-		 * @param stagingDir
-		 * @param rlen
-		 * @param clen
-		 * @param brlen
-		 * @param bclen
-		 * @param ii
-		 * @return
-		 * @throws FileNotFoundException
-		 * @throws IOException
-		 * @throws DMLRuntimeException
-		 */
 		private long createKeyMappingDiag( String stagingDir, long rlen, long clen, int brlen, int bclen, InputInfo ii) 
 			throws FileNotFoundException, IOException, DMLRuntimeException 
 		{
@@ -696,19 +623,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			
 			return len;
 		}
-		
-		/**
-		 * 
-		 * @param fnameNew
-		 * @param stagingDir
-		 * @param rlen
-		 * @param clen
-		 * @param brlen
-		 * @param bclen
-		 * @param ii
-		 * @throws IOException
-		 * @throws DMLRuntimeException
-		 */
+
 		@SuppressWarnings("deprecation")
 		public void createCellResultFile( String fnameNew, String stagingDir, long rlen, long clen, int brlen, int bclen, InputInfo ii ) 
 			throws IOException, DMLRuntimeException
@@ -804,29 +719,12 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 
 				//Note: no need to handle empty result
 			}
-			finally
-			{
-				if( twriter != null )
-					twriter.close();	
-				if( bwriter != null )
-					bwriter.close();	
+			finally {
+				IOUtilFunctions.closeSilently(twriter);
+				IOUtilFunctions.closeSilently(bwriter);
 			}
 		}
-	
-		/**
-		 * 
-		 * @param fnameNew
-		 * @param stagingDir
-		 * @param rlen
-		 * @param clen
-		 * @param newlen
-		 * @param nnz
-		 * @param brlen
-		 * @param bclen
-		 * @param ii
-		 * @throws IOException
-		 * @throws DMLRuntimeException
-		 */
+
 		@SuppressWarnings("deprecation")
 		public void createBlockResultFile( String fnameNew, String stagingDir, long rlen, long clen, long newlen, long nnz, int brlen, int bclen, InputInfo ii ) 
 			throws IOException, DMLRuntimeException
@@ -905,8 +803,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 							blockRowOut++;
 						}
 						
-						if( fkeyMap != null )
-							StagingFileUtils.closeKeyMap(fkeyMap);
+						IOUtilFunctions.closeSilently(fkeyMap);
 					}
 				}
 				else
@@ -968,35 +865,17 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 							writer.append(key, block);
 							blockColOut++;
 						}
-						
-						if( fkeyMap != null )
-							StagingFileUtils.closeKeyMap(fkeyMap);
+						IOUtilFunctions.closeSilently(fkeyMap);
 					}
 				}
 				
 				//Note: no handling of empty matrices necessary
 			}
-			finally
-			{
-				if( writer != null )
-					writer.close();
+			finally {
+				IOUtilFunctions.closeSilently(writer);
 			}
 		}
-		
-		/**
-		 * 
-		 * @param fnameNew
-		 * @param stagingDir
-		 * @param rlen
-		 * @param clen
-		 * @param newlen
-		 * @param nnz
-		 * @param brlen
-		 * @param bclen
-		 * @param ii
-		 * @throws IOException
-		 * @throws DMLRuntimeException
-		 */
+
 		@SuppressWarnings("deprecation")
 		public void createBlockResultFileDiag( String fnameNew, String stagingDir, long rlen, long clen, long newlen, long nnz, int brlen, int bclen, InputInfo ii ) 
 			throws IOException, DMLRuntimeException
@@ -1070,9 +949,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 							}
 						}
 					}
-					if( fkeyMap != null )
-						StagingFileUtils.closeKeyMap(fkeyMap);
-					
+					IOUtilFunctions.closeSilently(fkeyMap);
 				}
 				else //cols
 				{
@@ -1130,8 +1007,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 							}
 						}
 					}
-					if( fkeyMap != null )
-						StagingFileUtils.closeKeyMap(fkeyMap);
+					IOUtilFunctions.closeSilently(fkeyMap);
 				}
 				
 				//write remaining empty blocks
@@ -1155,10 +1031,8 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 				if( countBlk1 != countBlk2 )
 					throw new DMLRuntimeException("Wrong number of written result blocks: "+countBlk1+" vs "+countBlk2+".");
 			}
-			finally
-			{
-				if( writer != null )
-					writer.close();
+			finally {
+				IOUtilFunctions.closeSilently(writer);
 			}
 		}
 	}

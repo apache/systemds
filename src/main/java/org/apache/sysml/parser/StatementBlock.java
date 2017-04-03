@@ -22,6 +22,7 @@ package org.apache.sysml.parser;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -91,24 +92,7 @@ public class StatementBlock extends LiveVariableAnalysis
 		this._endColumn		= s.getEndColumn();
 		
 	}
-	
-	/**
-	 * replace statement 
-	 */
-	public void replaceStatement(int index, Statement passedStmt){
-		this._statements.set(index, passedStmt);
-		
-		if (index == 0){
-			this._beginLine 	= passedStmt.getBeginLine(); 
-			this._beginColumn 	= passedStmt.getBeginColumn();
-		}
-		
-		else if (index == this._statements.size() -1){
-			this._endLine 		= passedStmt.getEndLine();
-			this._endColumn		= passedStmt.getEndColumn();	
-		}
-	}
-	
+
 	public void addStatementBlock(StatementBlock s){
 		for (int i = 0; i < s.getNumStatements(); i++){
 			_statements.add(s.getStatement(i));
@@ -246,12 +230,6 @@ public class StatementBlock extends LiveVariableAnalysis
 	}
    
 
-    /**
-     * 
-     * @param fblock
-     * @param prog
-     * @return
-     */
     private boolean rIsInlineableFunction( FunctionStatementBlock fblock, DMLProgram prog )
     {
     	boolean ret = true;
@@ -488,7 +466,23 @@ public class StatementBlock extends LiveVariableAnalysis
 					Statement rewrittenStmt = stmt.rewriteStatement(prefix);
 					newStatements.add(rewrittenStmt);		
 				}
-				
+
+				if (current instanceof AssignmentStatement) {
+					if (fstmt.getOutputParams().size() == 0) {
+						AssignmentStatement as = (AssignmentStatement) current;
+						if ((as.getTargetList().size() == 1) && (as.getTargetList().get(0) != null)) {
+							raiseValidateError("Function '" + fcall.getName()
+									+ "' does not return a value but is assigned to " + as.getTargetList().get(0),
+									true);
+						}
+					}
+				} else if (current instanceof MultiAssignmentStatement) {
+					if (fstmt.getOutputParams().size() == 0) {
+						MultiAssignmentStatement mas = (MultiAssignmentStatement) current;
+						raiseValidateError("Function '" + fcall.getName()
+								+ "' does not return a value but is assigned to " + mas.getTargetList(), true);
+					}
+				}
 				// handle the return values
 				for (int i = 0; i < fstmt.getOutputParams().size(); i++){
 					
@@ -504,7 +498,16 @@ public class StatementBlock extends LiveVariableAnalysis
 						if (i > 0) {
 							fstmt.raiseValidateError("Assignment statement cannot return multiple values", false);
 						}
-						newTarget = new DataIdentifier(((AssignmentStatement)current).getTarget());
+						AssignmentStatement as = (AssignmentStatement) current;
+						DataIdentifier targ = as.getTarget();
+						if (targ == null) {
+							Expression exp = as.getSource();
+							FunctionCallIdentifier fci = (FunctionCallIdentifier) exp;
+							String functionName = fci.getName();
+							fstmt.raiseValidateError(functionName + " requires LHS value", false);
+						} else {
+							newTarget = new DataIdentifier(((AssignmentStatement)current).getTarget());
+						}
 					}
 					else{
 						newTarget = new DataIdentifier(((MultiAssignmentStatement)current).getTargetList().get(i));
@@ -533,17 +536,6 @@ public class StatementBlock extends LiveVariableAnalysis
 		return newStatements;
 	}
 	
-	/**
-	 * 
-	 * @param dmlProg
-	 * @param ids
-	 * @param constVars
-	 * @param conditional
-	 * @return
-	 * @throws LanguageException
-	 * @throws ParseException
-	 * @throws IOException
-	 */
 	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String, ConstIdentifier> constVars, boolean conditional) 
 		throws LanguageException, ParseException, IOException 
 	{
@@ -628,9 +620,11 @@ public class StatementBlock extends LiveVariableAnalysis
 						}
 						IntIdentifier intid = null;
 						if (bife.getOpCode() == Expression.BuiltinFunctionOp.NROW){
-							intid = new IntIdentifier(currVal.getDim1(), bife.getFilename(), bife.getBeginLine(), bife.getBeginColumn(), bife.getEndLine(), bife.getEndColumn());
+							intid = new IntIdentifier((currVal instanceof IndexedIdentifier)?((IndexedIdentifier)currVal).getOrigDim1():currVal.getDim1(), 
+									bife.getFilename(), bife.getBeginLine(), bife.getBeginColumn(), bife.getEndLine(), bife.getEndColumn());
 						} else {
-							intid = new IntIdentifier(currVal.getDim2(), bife.getFilename(), bife.getBeginLine(), bife.getBeginColumn(), bife.getEndLine(), bife.getEndColumn());
+							intid = new IntIdentifier((currVal instanceof IndexedIdentifier)?((IndexedIdentifier)currVal).getOrigDim2():currVal.getDim2(), 
+									bife.getFilename(), bife.getBeginLine(), bife.getBeginColumn(), bife.getEndLine(), bife.getEndColumn());
 						}
 						
 						// handle case when nrow / ncol called on variable with size unknown (dims == -1) 
@@ -759,18 +753,19 @@ public class StatementBlock extends LiveVariableAnalysis
 			}
 				
 			else if(current instanceof ForStatement || current instanceof IfStatement || current instanceof WhileStatement ){
-				raiseValidateError("control statement (CVStatement, ELStatement, WhileStatement, IfStatement, ForStatement) should not be in genreric statement block.  Likely a parsing error", conditional);
+				raiseValidateError("control statement (WhileStatement, IfStatement, ForStatement) should not be in generic statement block. Likely a parsing error", conditional);
 			}
-				
-			else if (current instanceof PrintStatement){
+
+			else if (current instanceof PrintStatement) {
 				PrintStatement pstmt = (PrintStatement) current;
-				Expression expr = pstmt.getExpression();	
-				expr.validateExpression(ids.getVariables(), currConstVars, conditional);
-				
-				// check that variables referenced in print statement expression are scalars
-				if (expr.getOutput().getDataType() != Expression.DataType.SCALAR){
-				   raiseValidateError("print statement can only print scalars", conditional);
+				List<Expression> expressions = pstmt.getExpressions();
+				for (Expression expression : expressions) {
+					expression.validateExpression(ids.getVariables(), currConstVars, conditional);
+					if (expression.getOutput().getDataType() != Expression.DataType.SCALAR) {
+						raiseValidateError("print statement can only print scalars", conditional);
+					}
 				}
+
 			}
 			
 			// no work to perform for PathStatement or ImportStatement
@@ -969,25 +964,12 @@ public class StatementBlock extends LiveVariableAnalysis
 	///////////////////////////////////////////////////////////////
 	// validate error handling (consistent for all expressions)
 	
-	/**
-	* 
-	* @param msg
-	* @param conditional
-	* @throws LanguageException
-	*/
 	public void raiseValidateError( String msg, boolean conditional ) 
 		throws LanguageException
 	{
 		raiseValidateError(msg, conditional, null);
 	}
 	
-	/**
-	* 
-	* @param msg
-	* @param conditional
-	* @param code
-	* @throws LanguageException
-	*/
 	public void raiseValidateError( String msg, boolean conditional, String errorCode ) 
 		throws LanguageException
 	{

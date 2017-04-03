@@ -30,7 +30,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-
+import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.parser.Expression.BinaryOp;
 import org.apache.sysml.parser.Expression.BuiltinFunctionOp;
 import org.apache.sysml.parser.Expression.DataType;
@@ -41,6 +42,7 @@ import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PExecMode;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.POptMode;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PResultMerge;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PTaskPartitioner;
+import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PartitionFormat;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
@@ -241,20 +243,7 @@ public class ParForStatementBlock extends ForStatementBlock
 					}
 					else //default case
 						params.put(key, _paramDefaults.get(key));
-				}
-			
-			//check for disabled parameters values
-			if( params.containsKey( OPT_MODE ) )
-			{
-				String optStr = params.get( OPT_MODE );
-				if(    optStr.equals(POptMode.HEURISTIC.toString()) 
-					|| optStr.equals(POptMode.GREEDY.toString()) 
-					|| optStr.equals(POptMode.FULL_DP.toString())   ) 
-				{ //always unconditional
-					raiseValidateError("Sorry, parfor optimization mode '"+optStr+"' is disabled for external usage.", false);
-				}
-			}
-			
+				}			
 		}
 		else
 		{
@@ -393,11 +382,6 @@ public class ParForStatementBlock extends ForStatementBlock
 		return vs;
 	}
 	
-	/**
-	 * 
-	 * @param sb
-	 * @return
-	 */
 	public ArrayList<String> getReadOnlyParentVars() 
 	{
 		ArrayList<String> ret = new ArrayList<String>();
@@ -418,46 +402,30 @@ public class ParForStatementBlock extends ForStatementBlock
 	 * Row-wise or column wise partitioning is only suggested if we see pure row-wise or
 	 * column-wise access patterns.
 	 * 
-	 * @param var
-	 * @return
+	 * @param var variables
+	 * @return partition format
 	 */
-	public PDataPartitionFormat determineDataPartitionFormat(String var) 
+	public PartitionFormat determineDataPartitionFormat(String var) 
 	{
-		PDataPartitionFormat dpf = null;
-		List<PDataPartitionFormat> dpfc = new LinkedList<PDataPartitionFormat>();
+		PartitionFormat dpf = null;
+		List<PartitionFormat> dpfc = new LinkedList<PartitionFormat>();
 		
 		try 
 		{
 			//determine partitioning candidates
-			ParForStatement pfs = (ParForStatement) _statements.get(0);
-			rDeterminePartitioningCandidates(var, pfs.getBody(), dpfc);
+			ParForStatement dpfs = (ParForStatement) _statements.get(0);
+			rDeterminePartitioningCandidates(var, dpfs.getBody(), dpfc);
 			
 			//determine final solution		
-			for( PDataPartitionFormat tmp : dpfc )
-			{
-				//System.out.println(var+": "+tmp);
-				if( dpf != null && dpf!=tmp ) //if no consensus
-					dpf = PDataPartitionFormat.NONE;	
-				else
-					dpf = tmp;
-					
-				/* TODO block partitioning
-				if( dpf == null || dpf==tmp ) //consensus
-					dpf = tmp;
-				else if(   dpf==PDataPartitionFormat.BLOCK_WISE_M_N //subsumption 
-						|| tmp==PDataPartitionFormat.BLOCK_WISE_M_N )
-					dpf = PDataPartitionFormat.BLOCK_WISE_M_N;
-				else //no consensus
-					dpf = PDataPartitionFormat.NONE;
-				*/			
-			}
+			for( PartitionFormat tmp : dpfc )
+				dpf = ( dpf!=null && !dpf.equals(tmp) ) ? //if no consensus
+					PartitionFormat.NONE : tmp;
 			if( dpf == null )
-				dpf = PDataPartitionFormat.NONE;
+				dpf = PartitionFormat.NONE;
 		}
-		catch (LanguageException e) 
-		{
+		catch (LanguageException e) {
 			LOG.trace( "Unable to determine partitioning candidates.", e );
-			dpf = PDataPartitionFormat.NONE;
+			dpf = PartitionFormat.NONE;
 		}
 		
 		return dpf;
@@ -467,10 +435,10 @@ public class ParForStatementBlock extends ForStatementBlock
 	 * This method recursively determines candidates for output,data,anti dependencies. 
 	 * Candidates are defined as writes to non-local variables.
 	 * 
-	 * @param asb
-	 * @param C
-	 * @param sCount
-	 * @throws LanguageException 
+	 * @param asb list of statement blocks
+	 * @param C set of candidates
+	 * @param sCount statement count
+	 * @throws LanguageException if LanguageException occurs
 	 */
 	private void rDetermineCandidates(ArrayList<StatementBlock> asb, HashSet<Candidate> C, Integer sCount) 
 		throws LanguageException 
@@ -533,11 +501,12 @@ public class ParForStatementBlock extends ForStatementBlock
 	 * This method recursively determines partitioning candidates for input variables. 
 	 * Candidates are defined as index reads of non-local variables.
 	 * 
-	 * @param asb
-	 * @param C
-	 * @throws LanguageException 
+	 * @param var variables
+	 * @param asb list of statement blocks
+	 * @param C list of partition formats
+	 * @throws LanguageException if LanguageException occurs
 	 */
-	private void rDeterminePartitioningCandidates(String var, ArrayList<StatementBlock> asb, List<PDataPartitionFormat> C) 
+	private void rDeterminePartitioningCandidates(String var, ArrayList<StatementBlock> asb, List<PartitionFormat> C) 
 		throws LanguageException 
 	{
 		for(StatementBlock sb : asb ) // foreach statementblock in parforbody
@@ -586,66 +555,76 @@ public class ParForStatementBlock extends ForStatementBlock
 				}
 			}
 	}
-	
-	/**
-	 * 
-	 * @param var
-	 * @param datsRead
-	 * @param C
-	 */
-	private void rDeterminePartitioningCandidates(String var, List<DataIdentifier> datsRead, List<PDataPartitionFormat> C)
+
+	private void rDeterminePartitioningCandidates(String var, List<DataIdentifier> datsRead, List<PartitionFormat> C)
 	{
-		if( datsRead != null )
-			for(DataIdentifier read : datsRead)
-			{ 
-				String readStr = read.getName();							
-				if( var.equals( readStr ) ) 
-				{
-					if( read instanceof IndexedIdentifier )
-					{
-						IndexedIdentifier idat = (IndexedIdentifier) read;
-						C.add( determineAccessPattern(idat) );
-					}
-					else if( read instanceof DataIdentifier )
-					{
-						C.add( PDataPartitionFormat.NONE );
-					}
-				}
+		if( datsRead == null )
+			return;
+		
+		for(DataIdentifier read : datsRead)
+			if( var.equals( read.getName() ) ) {
+				if( read instanceof IndexedIdentifier )
+					C.add( determineAccessPattern((IndexedIdentifier) read) );
+				else if( read instanceof DataIdentifier )
+					C.add( PartitionFormat.NONE );
 			}
 	}
 	
-	private PDataPartitionFormat determineAccessPattern( IndexedIdentifier dat )
+	private PartitionFormat determineAccessPattern( IndexedIdentifier dat )
 	{
-		PDataPartitionFormat dpf = null;
+		boolean isSpark = OptimizerUtils.isSparkExecutionMode();
+		int blksz = ConfigurationManager.getBlocksize();
+		PartitionFormat dpf = null;
 		
 		//1) get all bounds expressions for index access
 		Expression rowL = dat.getRowLowerBound();
 		Expression rowU = dat.getRowUpperBound();
 		Expression colL = dat.getColLowerBound();
 		Expression colU = dat.getColUpperBound();
+		boolean allRows = (rowL == null && rowU == null);
+		boolean allCols = (colL == null && colU == null);
 		
-		//2) decided on access pattern		
-		//COLUMN_WISE iff row expr is colon (all rows) 
-		//   and access to single column
-		if( rowL == null && rowU == null && 
-			colL!=null && colU != null && colL.equals(colU) )
-		{
-			dpf = PDataPartitionFormat.COLUMN_WISE;
-		}		
-		//ROW_WISE iff col expr is colon (all columns) 
-		//   and access to single row
-		else if( colL == null && colU == null &&
-				rowL!=null && rowU != null && rowL.equals(rowU) )
-		{
-			dpf = PDataPartitionFormat.ROW_WISE;
+		try {
+			//2) decided on access pattern		
+			//COLUMN_WISE if all rows and access to single column
+			if( allRows && colL!=null && colL.equals(colU) ) {
+				dpf = PartitionFormat.COLUMN_WISE;
+			}		
+			//ROW_WISE if all cols and access to single row
+			else if( allCols && rowL!=null && rowL.equals(rowU) ) {
+				dpf = PartitionFormat.ROW_WISE;
+			}
+			//COLUMN_BLOCK_WISE
+			else if( isSpark && allRows && colL != colU ) {
+				LinearFunction l1 = getLinearFunction(colL, true);
+				LinearFunction l2 = getLinearFunction(colU, true);
+				dpf = !isAlignedBlocking(l1, l2, blksz) ? PartitionFormat.NONE :
+					new PartitionFormat(PDataPartitionFormat.COLUMN_BLOCK_WISE_N, (int)l1._b[0]);
+			}
+			//ROW_BLOCK_WISE
+			else if( isSpark && allCols && rowL != rowU ) {
+				LinearFunction l1 = getLinearFunction(rowL, true);
+				LinearFunction l2 = getLinearFunction(rowU, true);
+				dpf = !isAlignedBlocking(l1, l2, blksz) ?  PartitionFormat.NONE :
+					new PartitionFormat(PDataPartitionFormat.ROW_BLOCK_WISE_N, (int)l1._b[0]);
+			}
+			//NONE otherwise (conservative)
+			else
+				dpf = PartitionFormat.NONE;
 		}
-		//NONE otherwise (conservative)
-		else
-			dpf = PDataPartitionFormat.NONE;
-		
-		//TODO block partitioning
+		catch(Exception ex) {
+			throw new RuntimeException(ex);
+		}
 		
 		return dpf;
+	}
+	
+	private static boolean isAlignedBlocking(LinearFunction l1, LinearFunction l2, int blksz) {
+		return (l1!=null && l2!=null && l1.equalSlope(l2) //same slope
+			&& l1._b.length==1 && l1._b[0]<=blksz         //single index and block
+			&& (l2._a - l1._a + 1 == l1._b[0])            //intercept difference is slope
+			&& (blksz/l1._b[0])*l1._b[0] == blksz         //aligned slope
+			&& l2.eval(1L) == l1._b[0] );                 //aligned intercept
 	}
 	
 	private void rConsolidateResultVars(ArrayList<StatementBlock> asb, ArrayList<String> vars) 
@@ -687,12 +666,12 @@ public class ParForStatementBlock extends ForStatementBlock
 	 * (undetected dependency) but potentially false positives (misdetected dependency) can appear.  
 	 * 
 	 * 
-	 * @param c
-	 * @param cdt
-	 * @param asb
-	 * @param sCount
-	 * @param dep
-	 * @throws LanguageException
+	 * @param c candidate
+	 * @param cdt candidate data type
+	 * @param asb list of statement blocks
+	 * @param sCount statement count
+	 * @param dep array of boolean potential output dependencies
+	 * @throws LanguageException if LanguageException occurs
 	 */
 	private void rCheckCandidates(Candidate c, DataType cdt, ArrayList<StatementBlock> asb, 
 			                      Integer sCount, boolean[] dep) 
@@ -851,9 +830,9 @@ public class ParForStatementBlock extends ForStatementBlock
 	/**
 	 * Get all target/source DataIdentifiers of the given statement.
 	 * 
-	 * @param s
-	 * @param target 
-	 * @return
+	 * @param s statement
+	 * @param target if true, get targets
+	 * @return list of data identifiers
 	 */
 	private List<DataIdentifier> getDataIdentifiers(Statement s, boolean target) 
 	{
@@ -886,7 +865,11 @@ public class ParForStatementBlock extends ForStatementBlock
 		else if (s instanceof PrintStatement)
 		{
 			PrintStatement s2 = (PrintStatement)s;
-			ret = rGetDataIdentifiers(s2.getExpression());
+			ret = new ArrayList<DataIdentifier>();
+			for (Expression expression : s2.getExpressions()) {
+				List<DataIdentifier> dataIdentifiers = rGetDataIdentifiers(expression);
+				ret.addAll(dataIdentifiers);
+			}
 		}
 		
 		//potentially extend this list with other Statements if required
@@ -988,12 +971,6 @@ public class ParForStatementBlock extends ForStatementBlock
 		return ret;
 	}
 	
-	/**
-	 * 
-	 * @param sbs
-	 * @param flag
-	 * @throws LanguageException
-	 */
 	private void rDetermineBounds( ArrayList<StatementBlock> sbs, boolean flag ) 
 		throws LanguageException
 	{
@@ -1004,10 +981,9 @@ public class ParForStatementBlock extends ForStatementBlock
 	/**
 	 * Determines the lower/upper bounds of all nested for/parfor indexes.
 	 * 
-	 * @param sbs
+	 * @param sb statement block
 	 * @param flag indicates that method is already in subtree of THIS.
-	 * @return
-	 * @throws LanguageException 
+	 * @throws LanguageException if LanguageException occurs
 	 */
 	private void rDetermineBounds( StatementBlock sb, boolean flag ) 
 		throws LanguageException
@@ -1102,12 +1078,6 @@ public class ParForStatementBlock extends ForStatementBlock
 		}
 	}
 	
-	/**
-	 * 
-	 * @param cParent
-	 * @param cChild
-	 * @return
-	 */
 	private boolean rIsParent( ArrayList<StatementBlock> cParent, StatementBlock cChild)
 	{
 		for( StatementBlock sb : cParent  ) 
@@ -1116,13 +1086,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		
 		return false;
 	}
-		
-	/**
-	 * 
-	 * @param cParent
-	 * @param cChild
-	 * @return
-	 */
+
 	private boolean rIsParent( StatementBlock cParent, StatementBlock cChild)
 	{
 		boolean ret = false;
@@ -1168,10 +1132,10 @@ public class ParForStatementBlock extends ForStatementBlock
 	 * dynamic lower, upper, and increment expressions, and (2) therefore potentially large 
 	 * overheads in the general case.
 	 * 
-	 * @param dat1
-	 * @param dat2
-	 * @return
-	 * @throws LanguageException
+	 * @param dat1 data identifier 1
+	 * @param dat2 data identifier 2
+	 * @return true if "anti or data dependency"
+	 * @throws LanguageException if LanguageException occurs
 	 */
 	private boolean runBanerjeeGCDTest(DataIdentifier dat1, DataIdentifier dat2) 
 		throws LanguageException 
@@ -1344,9 +1308,9 @@ public class ParForStatementBlock extends ForStatementBlock
 	 * Runs a constant check for a single data identifier (target of assignment). If constant, then every
 	 * iteration writes to the same cell. 
 	 * 
-	 * @param dat1
-	 * @return
-	 * @throws LanguageException
+	 * @param dat1 data identifier
+	 * @return true if dependency
+	 * @throws LanguageException if LanguageException occurs
 	 */
 	private boolean runConstantCheck(DataIdentifier dat1) 
 		throws LanguageException 
@@ -1393,10 +1357,10 @@ public class ParForStatementBlock extends ForStatementBlock
 	 * Runs an equality check for two data identifiers. If equal, there there are no
 	 * inter-iteration (loop-carried) but only intra-iteration dependencies.
 	 * 
-	 * @param dat1
-	 * @param dat2
-	 * @return
-	 * @throws LanguageException
+	 * @param dat1 data identifier 1
+	 * @param dat2 data identifier 2
+	 * @return true if equal data identifiers
+	 * @throws LanguageException if LanguageException occurs
 	 */
 	private boolean runEqualsCheck(DataIdentifier dat1, DataIdentifier dat2) 
 		throws LanguageException 
@@ -1456,9 +1420,9 @@ public class ParForStatementBlock extends ForStatementBlock
 	 * This is the Euclid's algorithm for GCD (greatest common denominator), 
 	 * required for the GCD test.
 	 * 
-	 * @param a
-	 * @param b
-	 * @return
+	 * @param a first value
+	 * @param b second value
+	 * @return greatest common denominator
 	 */
 	private long determineGCD(long a, long b) 
 	{
@@ -1472,9 +1436,9 @@ public class ParForStatementBlock extends ForStatementBlock
 	 * Creates or reuses a linear function for a given data identifier, where identifiers with equal
 	 * names and matrix subscripts result in exactly the same linear function.
 	 * 
-	 * @param dat
-	 * @return
-	 * @throws LanguageException
+	 * @param dat data identifier
+	 * @return linear function
+	 * @throws LanguageException if LanguageException occurs
 	 */
 	private LinearFunction getLinearFunction(DataIdentifier dat)
 		throws LanguageException
@@ -1756,13 +1720,35 @@ public class ParForStatementBlock extends ForStatementBlock
 		return out;
 	}
 	
+	private LinearFunction getLinearFunction(Expression expr, boolean ignoreMinWithConstant) 
+		throws LanguageException {
+		if( expr instanceof IntIdentifier )
+			return new LinearFunction(((IntIdentifier)expr).getValue(), 0, null);
+		else if( expr instanceof BinaryExpression )
+			return rParseBinaryExpression((BinaryExpression)expr);
+		else if( expr instanceof BuiltinFunctionExpression && ignoreMinWithConstant ) {
+			//note: builtin function expression is also a data identifier and hence order before
+			BuiltinFunctionExpression bexpr = (BuiltinFunctionExpression) expr;
+			if( bexpr.getOpCode()==BuiltinFunctionOp.MIN ) {
+				if( bexpr.getFirstExpr() instanceof BinaryExpression )
+					return rParseBinaryExpression((BinaryExpression)bexpr.getFirstExpr());
+				else if( bexpr.getSecondExpr() instanceof BinaryExpression )
+					return rParseBinaryExpression((BinaryExpression)bexpr.getSecondExpr());
+			}
+		}
+		else if( expr instanceof DataIdentifier )
+			return new LinearFunction(0, 1, ((DataIdentifier)expr)._name); //never use public members
+		
+		return null;
+	}
+	
 	/**
 	 * Creates a functionID for a given data identifier (mainly used for caching purposes),
 	 * where data identifiers with equal name and matrix subscripts results in equal
 	 * functionIDs.
 	 * 
-	 * @param dat
-	 * @return
+	 * @param dat indexed identifier
+	 * @return string function id
 	 */
 	private String getFunctionID( IndexedIdentifier dat )
 	{
@@ -1793,7 +1779,7 @@ public class ParForStatementBlock extends ForStatementBlock
 	/**
 	 * Removes all zero intercepts created by recursive computation.
 	 * 
-	 * @param f1
+	 * @param f1 linear function
 	 */
 	private void cleanupFunction( LinearFunction f1 )
 	{
@@ -1812,8 +1798,8 @@ public class ParForStatementBlock extends ForStatementBlock
 	 * Simply verification check of created linear functions, mainly used for
 	 * robustness purposes.
 	 * 
-	 * @param f1
-	 * @throws LanguageException
+	 * @param f1 linear function
+	 * @throws LanguageException if LanguageException occurs
 	 */
 	private void verifyFunction(LinearFunction f1)
 		throws LanguageException
@@ -1844,8 +1830,8 @@ public class ParForStatementBlock extends ForStatementBlock
 	 * Tries to obtain consistent linear functions by forcing the same variable ordering for
 	 * efficient comparison: f2 is modified in a way that it matches the sequence of variables in f1.		
 	 * 
-	 * @param f1
-	 * @param f2
+	 * @param f1 linear function 1
+	 * @param f2 linear function 2
 	 */
 	private void forceConsistency(LinearFunction f1, LinearFunction f2) 
 	{
@@ -1890,9 +1876,9 @@ public class ParForStatementBlock extends ForStatementBlock
 	 * Recursively creates a linear function for a single BinaryExpression, where PLUS, MINUS, MULT
 	 * are allowed as operators.
 	 * 
-	 * @param be
-	 * @return
-	 * @throws LanguageException
+	 * @param be binary expression
+	 * @return linear function
+	 * @throws LanguageException if LanguageException occurs
 	 */
 	private LinearFunction rParseBinaryExpression(BinaryExpression be) 
 		throws LanguageException
@@ -1969,16 +1955,25 @@ public class ParForStatementBlock extends ForStatementBlock
 		}
 		else if( be.getOpCode() == BinaryOp.MULT )
 		{
-			//NOTE: no recursion for MULT expressions
+			//NOTE: only recursion for MULT expressions, where
+			//one side is a constant 
 			
 			//atomic case
 			Long cvalL = parseLongConstant(l);
 			Long cvalR = parseLongConstant(r);
 			
-			if( cvalL != null )
+			if( cvalL != null && r instanceof DataIdentifier )
 				ret = new LinearFunction(0, cvalL,((DataIdentifier)r)._name);	
-			else if( cvalR != null )
+			else if( cvalR != null && l instanceof DataIdentifier )
 				ret = new LinearFunction(0, cvalR,((DataIdentifier)l)._name);
+			else if( cvalL != null && r instanceof BinaryExpression ) {
+				LinearFunction ltmp = rParseBinaryExpression((BinaryExpression)r);
+				return ltmp.scale(cvalL);
+			}
+			else if( cvalR != null && l instanceof BinaryExpression ) {
+				LinearFunction ltmp = rParseBinaryExpression((BinaryExpression)l);
+				return ltmp.scale(cvalR);
+			}
 			else
 				return null; //let dependency analysis fail
 		}
@@ -1988,11 +1983,6 @@ public class ParForStatementBlock extends ForStatementBlock
 		return ret;
 	}
 
-	/**
-	 * 
-	 * @param expr
-	 * @return
-	 */
 	private Long parseLongConstant(Expression expr)
 	{
 		Long ret = null;
@@ -2057,8 +2047,7 @@ public class ParForStatementBlock extends ForStatementBlock
 			_vars[0] = name;
 		}
 		
-		public void addConstant(long value)
-		{
+		public void addConstant(long value) {
 			_a += value;	
 		}
 
@@ -2091,19 +2080,26 @@ public class ParForStatementBlock extends ForStatementBlock
 			_vars = tmpvars;			
 		}
 		
-		public void scale( long scale )
-		{				
-			_a *= scale; //-1 because indexing starts at 1 
-			
+		public LinearFunction scale( long scale ) {
+			_a *= scale; 
 			for( int i=0; i<_b.length; i++ )
 				if( _b[i] != 0 )
 					_b[i] *= scale;
+			return this;
 		}
 		
-		public void normalize(int index, long lower, long increment) 
-		{
+		public LinearFunction normalize(int index, long lower, long increment) {
 			_a -= (_b[index] * lower);
 			_b[index] *= increment;
+			return this;
+		}
+		
+		public long eval(Long... x) {
+			long ret = _a;
+			for( int i=0; i<_b.length; i++ )
+				if( _b[i] != 0 )
+					ret += _b[i] *= x[i];
+			return ret;
 		}
 		
 		@Override
@@ -2130,48 +2126,36 @@ public class ParForStatementBlock extends ForStatementBlock
 		}
 		
 		@Override
-		public boolean equals( Object o2 )
-		{
+		public boolean equals( Object o2 ) {
 			if( o2 == null || !(o2 instanceof LinearFunction)  )
 				return false;
 				
 			LinearFunction f2 = (LinearFunction)o2;
-			boolean ret = true;
-			ret &= ( _a == f2._a );
-			ret &= ( _b.length == f2._b.length );
-			
-			if( ret )
-			{
-				for( int i=0; i<_b.length; i++ )
-				{
-					ret &= (_b[i] == f2._b[i] );
-					ret &= (_vars[i].equals(f2._vars[i]) 
-							||(_vars[i].startsWith(INTERAL_FN_INDEX_ROW) && f2._vars[i].startsWith(INTERAL_FN_INDEX_ROW)) 
-							||(_vars[i].startsWith(INTERAL_FN_INDEX_COL) && f2._vars[i].startsWith(INTERAL_FN_INDEX_COL)) )  ;
-				}
-			}
-			
-			return ret;
+			return ( _a == f2._a )
+				&& equalSlope(f2);
 		}
 
-		@Override
-		public int hashCode()
-		{
-			//use identity hash code
-			return super.hashCode();
+		public boolean equalSlope(LinearFunction f2) {
+			boolean ret = ( _b.length == f2._b.length );
+			for( int i=0; i<_b.length && ret; i++ ) {
+				ret &= (_b[i] == f2._b[i] );
+				ret &= (_vars[i].equals(f2._vars[i])
+					||(_vars[i].startsWith(INTERAL_FN_INDEX_ROW) && f2._vars[i].startsWith(INTERAL_FN_INDEX_ROW))
+					||(_vars[i].startsWith(INTERAL_FN_INDEX_COL) && f2._vars[i].startsWith(INTERAL_FN_INDEX_COL)) )  ;
+			}
+			return ret;
 		}
 		
-		public boolean hasNonIndexVariables() 
-		{
-			boolean ret = false;
+		@Override
+		public int hashCode() {
+			return super.hashCode(); //identity
+		}
+		
+		public boolean hasNonIndexVariables() {
 			for( String var : _vars )
 				if( var!=null && !_bounds._lower.containsKey(var) )
-				{
-					ret = true;
-					break;
-				}
-			
-			return ret;
+					return true;
+			return false;
 		}
 		
 	}

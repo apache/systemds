@@ -44,13 +44,7 @@ public class ScalarInstruction extends UnaryMRInstructionBase
 		//value dependent safe-safeness (trigger re-evaluation sparse-safe)
 		op.setConstant(op.getConstant());
 	}
-	
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static ScalarInstruction parseInstruction ( String str )
 		throws DMLRuntimeException 
 	{	
@@ -94,12 +88,7 @@ public class ScalarInstruction extends UnaryMRInstructionBase
 					cachedValues.add(output, out);
 			}
 	}
-	
-	/**
-	 * 
-	 * @param inst
-	 * @return
-	 */
+
 	private static boolean isFirstArgumentScalar(String inst)
 	{
 		//get first argument

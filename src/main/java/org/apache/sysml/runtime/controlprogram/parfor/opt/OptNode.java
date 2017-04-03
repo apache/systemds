@@ -25,11 +25,10 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Set;
 
-import org.apache.sysml.lops.LopProperties;
 import org.apache.sysml.lops.Lop;
-
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
+import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PartitionFormat;
 
 /**
  * Internal representation of a plan alternative for program blocks and instructions 
@@ -55,17 +54,7 @@ public class OptNode
 		CP,
 		MR,
 		SPARK;
-		
-		public LopProperties.ExecType toLopsExecType() {
-			switch( this ) {
-				case CP: 	return LopProperties.ExecType.CP;
-				case MR: 	return LopProperties.ExecType.MR;
-				case SPARK: return LopProperties.ExecType.SPARK;
-			}
-			
-			return null;
-		}
-		
+
 		public ParForProgramBlock.PExecMode toParForExecMode() {
 			switch( this ) {
 				case CP: 	return ParForProgramBlock.PExecMode.LOCAL;
@@ -78,12 +67,13 @@ public class OptNode
 	}
 	
 	public enum ParamType{
-		OPTYPE,
 		OPSTRING,
 		TASK_PARTITIONER,
 		TASK_SIZE,
 		DATA_PARTITIONER,
 		DATA_PARTITION_FORMAT,
+		DATA_PARTITION_COND,
+		DATA_PARTITION_COND_MEM,
 		RESULT_MERGE,
 		NUM_ITERATIONS,
 		RECURSIVE_CALL
@@ -245,13 +235,7 @@ public class OptNode
 	{
 		_stats = stats;
 	}
-	
-	/**
-	 * 
-	 * @param oldNode
-	 * @param newNode
-	 * @return
-	 */
+
 	public boolean exchangeChild(OptNode oldNode, OptNode newNode) 
 	{
 		boolean ret = false;
@@ -266,54 +250,12 @@ public class OptNode
 		
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @param qn
-	 * @return
-	 */
-	public boolean containsNode( OptNode qn )
-	{
-		boolean ret = (this == qn);
-		if( !ret && !isLeaf() )
-			for( OptNode n : _childs ) {
-				ret |= n.containsNode(qn);
-				if( ret ) break; //early abort
-			}
-		
-		return ret;
-	}
-	
-	/**
-	 * 
-	 * @param type
-	 * @return
-	 */
-	public boolean containsNode( NodeType type )
-	{
-		boolean ret = (_ntype == type);
-		if( !ret && !isLeaf() )
-			for( OptNode n : _childs ) {
-				ret |= n.containsNode(type);
-				if( ret ) break; //early abort
-			}
-		
-		return ret;
-	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public boolean isLeaf()
 	{
 		return ( _childs == null || _childs.isEmpty() );
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public boolean hasOnlySimpleChilds()
 	{
 		boolean ret = true;
@@ -328,20 +270,12 @@ public class OptNode
 		
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public String getInstructionName() 
 	{
 		return String.valueOf(_etype) + Lop.OPERAND_DELIMITOR + getParam(ParamType.OPSTRING);
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public boolean isRecursive()
 	{
 		boolean ret = false;
@@ -354,12 +288,7 @@ public class OptNode
 
 	///////
 	//recursive methods
-	
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public Collection<OptNode> getNodeList()
 	{
 		Collection<OptNode> nodes = new LinkedList<OptNode>();
@@ -371,11 +300,7 @@ public class OptNode
 		
 		return nodes;
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public Collection<OptNode> getNodeList( ExecType et )
 	{
 		Collection<OptNode> nodes = new LinkedList<OptNode>();
@@ -389,11 +314,7 @@ public class OptNode
 		
 		return nodes;
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public Collection<OptNode> getRelevantNodeList()
 	{
 		Collection<OptNode> nodes = new LinkedList<OptNode>();
@@ -436,7 +357,7 @@ public class OptNode
 	/**
 	 * Gets the number of plan nodes.
 	 * 
-	 * @return
+	 * @return number of plan nodes
 	 */
 	public int size() 
 	{
@@ -448,10 +369,10 @@ public class OptNode
 	}
 	
 	/**
-	 * Determines if all programblocks and instructions exhibit 
+	 * Determines if all program blocks and instructions exhibit 
 	 * the execution type CP. 
 	 * 
-	 * @return
+	 * @return true of all program blocks and instructions execute on CP
 	 */
 	public boolean isCPOnly()
 	{
@@ -464,12 +385,7 @@ public class OptNode
 			}
 		return ret;
 	}
-	
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public int getTotalK()
 	{
 		int k = 1;		
@@ -487,12 +403,7 @@ public class OptNode
 		
 		return k;
 	}
-	
-	/**
-	 * 
-	 * @param N
-	 * @return
-	 */
+
 	public long getMaxC( long N )
 	{
 		long maxc = N;
@@ -516,11 +427,6 @@ public class OptNode
 		return maxc;
 	}
 
-	
-	/**
-	 * 
-	 * @return
-	 */
 	public boolean hasNestedParallelism( boolean flagNested )
 	{
 		boolean ret = false;
@@ -544,12 +450,6 @@ public class OptNode
 		return ret;
 	}
 
-
-	/**
-	 * 
-	 * @param flagNested
-	 * @return
-	 */
 	public boolean hasNestedPartitionReads( boolean flagNested )
 	{
 		boolean ret = false;
@@ -558,7 +458,7 @@ public class OptNode
 			//partitioned read identified by selected partition format
 			String tmp = getParam(ParamType.DATA_PARTITION_FORMAT);
 			ret = ( tmp !=null 
-					&& PDataPartitionFormat.valueOf(tmp)!=PDataPartitionFormat.NONE 
+					&& PartitionFormat.valueOf(tmp)._dpf!=PDataPartitionFormat.NONE 
 					&& flagNested );
 		}
 		else
@@ -576,10 +476,6 @@ public class OptNode
 		return ret;
 	}
 
-	
-	/**
-	 * 
-	 */
 	public void checkAndCleanupLeafNodes() 
 	{
 		if( _childs != null )
@@ -595,11 +491,7 @@ public class OptNode
 				}
 			}
 	}
-	
-	/**
-	 * @param stack 
-	 * 
-	 */
+
 	public void checkAndCleanupRecursiveFunc(Set<String> stack) 
 	{
 		//recursive invocation
@@ -622,9 +514,9 @@ public class OptNode
 	/**
 	 * Explain tool: prints the hierarchical plan to <code>stdout</code>.
 	 * 
-	 * @param level
-	 * @param withDetails
-	 * @return
+	 * @param level depth to print?
+	 * @param withDetails if true, explain details
+	 * @return string explanation
 	 */
 	public String explain(int level, boolean withDetails) 
 	{
@@ -681,9 +573,9 @@ public class OptNode
 	}
 
 	/**
-	 * Determines the maximum problem size of all childs.
+	 * Determines the maximum problem size of all children.
 	 * 
-	 * @return
+	 * @return maximum problem size
 	 */
 	public long getMaxProblemSize() 
 	{
@@ -699,33 +591,5 @@ public class OptNode
 
 		return max;
 	}
-	
-	
-	/**
-	 * 
-	 * @return
-	 */
-	@SuppressWarnings("unchecked")
-	public OptNode createShallowClone()
-	{
-		OptNode n = new OptNode(_ntype,_etype);
-		n.setID(_id);
-		n.setK(_k);		
-		if( _childs != null )
-			n.setChilds( (ArrayList<OptNode>)_childs.clone() );
-		if( _params != null )
-			n.setParams((HashMap<ParamType,String>)_params.clone());
-		return n;
-	}
-	
-	/**
-	 * 
-	 * @return
-	 */
-	public OptNode createDeepClone()
-	{
-		throw new RuntimeException("not implemented yet");
-	}
-
 
 }

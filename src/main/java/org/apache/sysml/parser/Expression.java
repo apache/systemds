@@ -35,7 +35,7 @@ public abstract class Expression
 	 * parameterized built-in function operator, data operator, relational operator, external built-in function operator, function call operator), data, or literal.
 	 */
 	public enum Kind {
-		UnaryOp, BinaryOp, BooleanOp, BuiltinFunctionOp, ParameterizedBuiltinFunctionOp, DataOp, Data, Literal, RelationalOp, ExtBuiltinFunctionOp, FunctionCallOp
+		BinaryOp, BooleanOp, BuiltinFunctionOp, ParameterizedBuiltinFunctionOp, DataOp, Data, RelationalOp, FunctionCallOp
 	};
 
 	/**
@@ -67,7 +67,6 @@ public abstract class Expression
 		ACOS,
 		ASIN,
 		ATAN,
-		AVG,
 		CAST_AS_BOOLEAN,
 		CAST_AS_DOUBLE,
 		CAST_AS_FRAME,
@@ -91,7 +90,7 @@ public abstract class Expression
 		CUMSUM,
 		DIAG,
 		EIGEN,
-		CONV2D, CONV2D_BACKWARD_FILTER, CONV2D_BACKWARD_DATA, 
+		CONV2D, CONV2D_BACKWARD_FILTER, CONV2D_BACKWARD_DATA, BIAS_ADD, BIAS_MULTIPLY,
 		MAX_POOL, AVG_POOL, MAX_POOL_BACKWARD,
 		EXP,
 		FLOOR,
@@ -156,7 +155,7 @@ public abstract class Expression
 	 * Data operators.
 	 */
 	public enum DataOp {
-		READ, WRITE, RAND, MATRIX, INVALID	
+		READ, WRITE, RAND, MATRIX
 	}
 
 	/**
@@ -164,13 +163,6 @@ public abstract class Expression
 	 */
 	public enum FunctCallOp {
 		INTERNAL, EXTERNAL
-	};
-	
-	/**
-	 * External built-in function operators.
-	 */
-	public enum ExtBuiltinFunctionOp {
-		EIGEN, CHOLESKY
 	};
 
 	/**
@@ -198,7 +190,7 @@ public abstract class Expression
 	 * Format types (text, binary, matrix market, csv, unknown).
 	 */
 	public enum FormatType {
-		TEXT, BINARY, MM, CSV, UNKNOWN
+		TEXT, BINARY, MM, CSV
 	};
 	
 	protected static final Log LOG = LogFactory.getLog(Expression.class.getName());
@@ -290,7 +282,7 @@ public abstract class Expression
 	/**
 	 * Convert string value to relational operator.
 	 * 
-	 * @param val String value ('&lt;', '&lt=', '&gt;', '&gt;=', '==', '!=')
+	 * @param val String value ('&lt;', '&lt;=', '&gt;', '&gt;=', '==', '!=')
 	 * @return Relational operator ({@code RelationalOp.LESS}, {@code RelationalOp.LESSEQUAL}, 
 	 * {@code RelationalOp.GREATER}, {@code RelationalOp.GREATEREQUAL}, {@code RelationalOp.EQUAL}, 
 	 * {@code RelationalOp.NOTEQUAL}).
@@ -388,7 +380,7 @@ public abstract class Expression
 	 * @param expression2 Second expression
 	 * @param cast Whether a cast should potentially be performed
 	 * @return The data type ({@link DataType})
-	 * @throws LanguageException
+	 * @throws LanguageException if LanguageException occurs
 	 */
 	public static DataType computeDataType(Expression expression1, Expression expression2, boolean cast) throws LanguageException {
 		return computeDataType(expression1.getOutput(), expression2.getOutput(), cast);
@@ -403,7 +395,7 @@ public abstract class Expression
 	 * @param identifier2 Second identifier
 	 * @param cast Whether a cast should potentially be performed
 	 * @return The data type ({@link DataType})
-	 * @throws LanguageException
+	 * @throws LanguageException if LanguageException occurs
 	 */
 	public static DataType computeDataType(Identifier identifier1, Identifier identifier2, boolean cast) throws LanguageException {
 		DataType d1 = identifier1.getDataType();
@@ -436,7 +428,7 @@ public abstract class Expression
 	 * @param expression2 Second expression
 	 * @param cast Whether a cast should potentially be performed
 	 * @return The value type ({@link ValueType})
-	 * @throws LanguageException
+	 * @throws LanguageException if LanguageException occurs
 	 */
 	public static ValueType computeValueType(Expression expression1, Expression expression2, boolean cast) throws LanguageException {
 		return computeValueType(expression1.getOutput(), expression2.getOutput(), cast);
@@ -452,7 +444,7 @@ public abstract class Expression
 	 * @param identifier2 Second identifier
 	 * @param cast Whether a cast should potentially be performed
 	 * @return The value type ({@link ValueType})
-	 * @throws LanguageException
+	 * @throws LanguageException if LanguageException occurs
 	 */
 	public static ValueType computeValueType(Identifier identifier1, Identifier identifier2, boolean cast) throws LanguageException {
 		ValueType v1 = identifier1.getValueType();
@@ -510,7 +502,7 @@ public abstract class Expression
 	 * Throw a LanguageException with the message.
 	 * 
 	 * @param message the error message
-	 * @throws LanguageException
+	 * @throws LanguageException if LanguageException occurs
 	 */
 	public void raiseValidateError( String message ) throws LanguageException {
 		raiseValidateError(message, false, null);

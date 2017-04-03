@@ -61,7 +61,6 @@ public class YarnClusterAnalyzer
 	public static long _remoteJVMMaxMemMap    = -1;
 	public static long _remoteJVMMaxMemReduce = -1;
 	public static long _remoteMRSortMem = -1;
-	public static boolean _localJT      = false;
 	public static long _blocksize       = -1;
 	
 	// Map from StatementBlock.ID to remoteJVMMaxMem (in bytes)
@@ -135,7 +134,7 @@ public class YarnClusterAnalyzer
 	 * Gets the number of logical processors of the current node,
 	 * including hyper-threading if enabled.
 	 * 
-	 * @return
+	 * @return number of logical processors
 	 */
 	public static int getLocalParallelism()
 	{
@@ -146,7 +145,7 @@ public class YarnClusterAnalyzer
 	 * Gets the number of cluster nodes (number of tasktrackers). If multiple tasktracker
 	 * are started per node, each tasktracker is viewed as individual node.
 	 * 
-	 * @return
+	 * @return number of cluster nodes
 	 */
 	public static int getRemoteParallelNodes() 
 	{
@@ -159,7 +158,8 @@ public class YarnClusterAnalyzer
 	/**
 	 * Gets the total number of available map slots.
 	 * 
-	 * @return
+	 * @param jobLookupId hadoop job id
+	 * @return total number of available map slots
 	 */
 	public static int getRemoteParallelMapTasks(long jobLookupId)
 	{
@@ -177,7 +177,8 @@ public class YarnClusterAnalyzer
 	/**
 	 * Gets the total number of available reduce slots.
 	 * 
-	 * @return
+	 * @param jobLookupId hadoop job id
+	 * @return total number of available reduce slots
 	 */
 	public static int getRemoteParallelReduceTasks(long jobLookupId)
 	{
@@ -206,7 +207,8 @@ public class YarnClusterAnalyzer
 	/**
 	 * Gets the totals number of parallel tasks given its max memory size.
 	 * 
-	 * @return
+	 * @param remoteTaskJvmMemory remote task max memory size
+	 * @return total number of parallel tasks given max memory size
 	 */
 	public static int getRemoteParallelTasksGivenMem(long remoteTaskJvmMemory) {
 		long taskPhy = getYarnPhyAllocate(ResourceOptimizer.jvmToPhy(remoteTaskJvmMemory, false));
@@ -260,17 +262,13 @@ public class YarnClusterAnalyzer
 	/**
 	 * Gets the maximum memory [in bytes] of the current JVM.
 	 * 
-	 * @return
+	 * @return the current JVM maximum memory in bytes
 	 */
 	public static long getLocalMaxMemory()
 	{
 		return _localJVMMaxMem;
 	}
-	
-	/**
-	 * 
-	 * @param localMem
-	 */
+
 	public static void setLocalMaxMemory( long localMem )
 	{
 		_localJVMMaxMem = localMem;
@@ -280,7 +278,7 @@ public class YarnClusterAnalyzer
 	/**
 	 * Gets the maximum memory [in bytes] of all given hadoop task memory settings.
 	 * 
-	 * @return
+	 * @return maximum memory in bytes of all hadoop task memory settings
 	 */
 	public static long getMaximumRemoteMaxMemory()
 	{
@@ -298,7 +296,8 @@ public class YarnClusterAnalyzer
 	/**
 	 * Gets the maximum memory [in bytes] of a hadoop map task JVM.
 	 * 
-	 * @return
+	 * @param jobLookupId hadoop job id
+	 * @return maximum memory in bytes of the hadoop map task JVM
 	 */
 	public static long getRemoteMaxMemoryMap(long jobLookupId)
 	{
@@ -314,7 +313,8 @@ public class YarnClusterAnalyzer
 	/**
 	 * Gets the maximum memory [in bytes] of a hadoop reduce task JVM.
 	 * 
-	 * @return
+	 * @param jobLookupId hadoop job id
+	 * @return maximum memory in bytes of the hadoop reduce task JVM
 	 */
 	public static long getRemoteMaxMemoryReduce(long jobLookupId)
 	{
@@ -330,7 +330,8 @@ public class YarnClusterAnalyzer
 	/**
 	 * Gets the maximum memory [in bytes] of a hadoop task JVM.
 	 * 
-	 * @return
+	 * @param jobLookupId hadoop job id
+	 * @return maximum memory in bytes of the hadoop task JVM
 	 */
 	public static long getSpecifiedRemoteMaxMemory(long jobLookupId)
 	{
@@ -374,24 +375,11 @@ public class YarnClusterAnalyzer
 			System.out.print(id + ",");
 		System.out.println();
 	}
-		
-	/**
-	 * Gets the maximum memory requirement [in bytes] of a given hadoop job.
-	 * 
-	 * @param conf
-	 * @return
-	 */
-	/*public static long getRemoteMaxMemory( JobConf job )
-	{
-		return (1024*1024) * Math.max(
-				               job.getMemoryForMapTask(),
-				               job.getMemoryForReduceTask() );			
-	}*/
-	
+
 	/**
 	 * Gets the maximum sort buffer memory requirement [in bytes] of a hadoop task.
 	 * 
-	 * @return
+	 * @return maximum sort buffer memory requirement in bytes
 	 */
 	public static long getRemoteMaxMemorySortBuffer( )
 	{
@@ -407,7 +395,7 @@ public class YarnClusterAnalyzer
 	/**
 	 * Gets the maximum local parallelism constraint.
 	 * 
-	 * @return
+	 * @return maximum local parallelism constraint (number of logical processors)
 	 */
 	public static int getCkMaxCP() 
 	{
@@ -418,7 +406,8 @@ public class YarnClusterAnalyzer
 	/**
 	 * Gets the maximum remote parallelism constraint
 	 * 
-	 * @return
+	 * @param jobLookupId hadoop job id
+	 * @return maximum remote parallelism constraint (total number of available map slots)
 	 */
 	public static int getCkMaxMR(long jobLookupId) 
 	{
@@ -429,7 +418,8 @@ public class YarnClusterAnalyzer
 	/**
 	 * Gets the maximum memory constraint [in bytes].
 	 * 
-	 * @return
+	 * @param jobLookupId hadoop job id
+	 * @return maximum memory constraint in bytes
 	 */
 	public static long getCmMax(long jobLookupId) 
 	{
@@ -440,7 +430,7 @@ public class YarnClusterAnalyzer
 	/**
 	 * Gets the HDFS blocksize of the used cluster in bytes.
 	 * 
-	 * @return
+	 * @return HDFS block size
 	 */
 	public static long getHDFSBlockSize()
 	{
@@ -450,11 +440,6 @@ public class YarnClusterAnalyzer
 		return _blocksize;		
 	}
 	
-	/**
-	 * 
-	 * @param javaOpts
-	 * @return
-	 */
 	public static long extractMaxMemoryOpt(String javaOpts)
 	{
 		long ret = -1; //mem in bytes
@@ -493,13 +478,7 @@ public class YarnClusterAnalyzer
 		
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @param job
-	 * @param key
-	 * @param bytes
-	 */
+
 	public static void setMaxMemoryOpt(JobConf job, String key, long bytes)
 	{
 		String javaOptsOld = job.get( key );
@@ -583,13 +562,7 @@ public class YarnClusterAnalyzer
 		
 		return cc;
 	}
-	
-	/**
-	 * 
-	 * @return
-	 * @throws YarnException
-	 * @throws IOException
-	 */
+
 	public static double getClusterUtilization() 
 		throws IOException
 	{
@@ -628,6 +601,10 @@ public class YarnClusterAnalyzer
 
 	/**
 	 * Analyzes properties of Yarn cluster and Hadoop configurations.
+	 * 
+	 * @param yarnClient hadoop yarn client
+	 * @param conf hadoop yarn configuration
+	 * @param verbose output info to standard output
 	 */
 	public static void analyzeYarnCluster(YarnClient yarnClient, YarnConfiguration conf, boolean verbose) {
 		try {
@@ -727,11 +704,7 @@ public class YarnClusterAnalyzer
 			LOG.info(node.getNodeId() + " updated with " + resource.getMemory() + " memory and " + resource.getVirtualCores() + " cores");
 		}*/
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	private static YarnClient createYarnClient()
 	{
 		YarnConfiguration conf = new YarnConfiguration();

@@ -21,35 +21,26 @@ package org.apache.sysml.runtime.controlprogram.parfor.opt;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.POptMode;
-import org.apache.sysml.runtime.controlprogram.parfor.opt.PerfTestTool.TestMeasure;
+import org.apache.sysml.runtime.controlprogram.parfor.opt.CostEstimator.TestMeasure;
 
 
 /**
- * Heuristic ParFor Optimizer (time: O(n)):
+ * Heuristic ParFor Optimizer: This optimizer extends the rule-based
+ * optimizer by a time-based cost estimate for execution type decisions.
  * 
  *  
  */
 public class OptimizerHeuristic extends OptimizerRuleBased
 {
-
-	
-	public static final double EXEC_TIME_THRESHOLD = 60000; //in ms
+	public static final double EXEC_TIME_THRESHOLD = 30000; //in ms
 			
 	@Override
-	public CostModelType getCostModelType() 
-	{
+	public CostModelType getCostModelType() {
 		return CostModelType.RUNTIME_METRICS;
-	}
-
-	@Override
-	public PlanInputType getPlanInputType() 
-	{
-		return PlanInputType.RUNTIME_PLAN;
 	}
 	
 	@Override
-	public POptMode getOptMode() 
-	{
+	public POptMode getOptMode() {
 		return POptMode.HEURISTIC;
 	}
 

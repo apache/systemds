@@ -107,37 +107,6 @@ public class LiteralOp extends Hop
 		return getLops();
 	}
 
-	public void printMe() throws HopsException {
-		if (LOG.isDebugEnabled()){
-			if (getVisited() != VisitStatus.DONE) {
-				super.printMe();
-				switch (getValueType()) {
-				case DOUBLE:
-					LOG.debug("  Value: " + value_double);
-					break;
-				case BOOLEAN:
-					LOG.debug("  Value: " + value_boolean);
-					break;
-				case STRING:
-					LOG.debug("  Value: " + value_string);
-					break;
-				case INT:
-					LOG.debug("  Value: " + value_long);
-					break;
-				default:
-					throw new HopsException(this.printErrorLocation() +
-							"unexpected value type printing LiteralOp.\n");
-				}
-
-				for (Hop h : getInput()) {
-					h.printMe();
-				}
-
-			}
-			setVisited(VisitStatus.DONE);
-		}
-	}
-
 	@Override
 	public String getOpString() {
 		String val = null;
@@ -214,7 +183,7 @@ public class LiteralOp extends Hop
 		//do nothing; it is a scalar
 	}
 	
-	public long getLongValue() throws HopsException 
+	public long getLongValue() 
 	{
 		switch( getValueType() ) {
 			case INT:		
@@ -223,8 +192,10 @@ public class LiteralOp extends Hop
 				return UtilFunctions.toLong(value_double);
 			case STRING:
 				return Long.parseLong(value_string);	
+			case BOOLEAN: 
+				return value_boolean ? 1 : 0;
 			default:
-				throw new HopsException("Can not coerce an object of type " + getValueType() + " into Long.");
+				return -1;
 		}
 	}
 	

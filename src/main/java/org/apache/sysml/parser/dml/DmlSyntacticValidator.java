@@ -685,7 +685,10 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 		HashMap<String, String> parForParamValues = new HashMap<String, String>();
 		if(ctx.parForParams != null && ctx.parForParams.size() > 0) {
 			for(StrictParameterizedExpressionContext parForParamCtx : ctx.parForParams) {
-				parForParamValues.put(parForParamCtx.paramName.getText(), parForParamCtx.paramVal.getText());
+				String paramVal = parForParamCtx.paramVal.getText();
+				if( argVals.containsKey(paramVal) )
+					paramVal = argVals.get(paramVal);
+				parForParamValues.put(parForParamCtx.paramName.getText(), paramVal);
 			}
 		}
 
@@ -720,18 +723,15 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 				dataType = paramCtx.paramType.dataType().getText();
 			}
 
-			if(dataType.equals("matrix") || dataType.equals("Matrix")) {
-				// matrix
+			
+			//check and assign data type
+			checkValidDataType(dataType, paramCtx.start);
+			if( dataType.equalsIgnoreCase("matrix") )
 				dataId.setDataType(DataType.MATRIX);
-			}
-			else if(dataType.equals("scalar") || dataType.equals("Scalar")) {
-				// scalar
+			else if( dataType.equalsIgnoreCase("frame") )
+				dataId.setDataType(DataType.FRAME);
+			else if( dataType.equalsIgnoreCase("scalar") )
 				dataId.setDataType(DataType.SCALAR);
-			}
-			else {
-				notifyErrorListeners("invalid datatype " + dataType, paramCtx.start);
-				return null;
-			}
 
 			valueType = paramCtx.paramType.valueType().getText();
 			if(valueType.equals("int") || valueType.equals("integer")
@@ -775,7 +775,8 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 		}
 		ctx.info.from = ctx.from.info.expr;
 		ctx.info.to = ctx.to.info.expr;
-		ctx.info.increment = ctx.increment.info.expr;
+		if(ctx.increment != null && ctx.increment.info != null)
+			ctx.info.increment = ctx.increment.info.expr;
 	}
 
 
@@ -931,13 +932,7 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 
 	@Override
 	public void exitMatrixDataTypeCheck(MatrixDataTypeCheckContext ctx) {
-		boolean validMatrixType = ctx.ID().getText().equals("matrix")
-								|| ctx.ID().getText().equals("Matrix")
-								|| ctx.ID().getText().equals("Scalar")
-								|| ctx.ID().getText().equals("scalar");
-		if(!validMatrixType	) {
-			notifyErrorListeners("incorrect datatype (expected matrix or scalar)", ctx.start);
-		}
+		checkValidDataType(ctx.ID().getText(), ctx.start);
 	}
 
 

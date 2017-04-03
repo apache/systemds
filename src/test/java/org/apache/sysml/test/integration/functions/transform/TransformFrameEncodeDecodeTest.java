@@ -160,8 +160,8 @@ public class TransformFrameEncodeDecodeTest extends AutomatedTestBase
 			programArgs = new String[]{"-explain","-nvargs", 
 				"DATA=" + HOME + "input/" + DATASET,
 				"TFSPEC=" + HOME + "input/" + SPEC,
-				"TFDATA=" + output("tfout"),
-				"OFMT=" + ofmt };
+				"TFDATA=" + output("tfout"), "SEP=,",
+				"OFMT=" + ofmt, "OSEP=\",\"" };
 	
 			OptimizerUtils.ALLOW_FRAME_CSV_REBLOCK = true;
 			runTest(true, false, null, -1); 

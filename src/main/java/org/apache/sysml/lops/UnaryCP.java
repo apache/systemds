@@ -36,7 +36,7 @@ public class UnaryCP extends Lop
 	public enum OperationTypes {
 		NOT, ABS, SIN, COS, TAN, ASIN, ACOS, ATAN, SQRT, LOG, EXP, 
 		CAST_AS_SCALAR, CAST_AS_MATRIX, CAST_AS_FRAME, CAST_AS_DOUBLE, CAST_AS_INT, CAST_AS_BOOLEAN, 
-		PRINT, NROW, NCOL, LENGTH, ROUND, STOP, CEIL, FLOOR, CUMSUM, NOTSUPPORTED
+		PRINT, NROW, NCOL, LENGTH, ROUND, STOP, CEIL, FLOOR, CUMSUM
 	};
 	
 	public static final String CAST_AS_SCALAR_OPCODE = "castdts";
@@ -53,10 +53,11 @@ public class UnaryCP extends Lop
 	/**
 	 * Constructor to perform a scalar operation
 	 * 
-	 * @param input
-	 * @param op
+	 * @param input low-level operator 1
+	 * @param op operation type
+	 * @param dt data type
+	 * @param vt value type
 	 */
-
 	public UnaryCP(Lop input, OperationTypes op, DataType dt, ValueType vt) {
 		super(Lop.Type.UnaryCP, dt, vt);
 		operation = op;

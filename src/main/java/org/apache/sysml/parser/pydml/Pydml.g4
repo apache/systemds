@@ -203,7 +203,7 @@ iterablePredicate returns [ org.apache.sysml.parser.common.ExpressionInfo info ]
          $info = new org.apache.sysml.parser.common.ExpressionInfo();
   } :
     from=expression ':' to=expression #IterablePredicateColonExpression
-    | ID OPEN_PAREN from=expression ',' to=expression ',' increment=expression CLOSE_PAREN #IterablePredicateSeqExpression
+    | ID OPEN_PAREN from=expression ',' to=expression (',' increment=expression)? CLOSE_PAREN #IterablePredicateSeqExpression
     ;
 
 functionStatement returns [ org.apache.sysml.parser.common.StatementInfo info ]
@@ -404,4 +404,4 @@ NEWLINE : ( '\r'? '\n' | '\r' ) SPACES?
 }
 ;
 
-SKIP : ( SPACES | COMMENT | LINE_JOINING ) -> skip ;
+SKIP_WS : ( SPACES | COMMENT | LINE_JOINING ) -> skip ;

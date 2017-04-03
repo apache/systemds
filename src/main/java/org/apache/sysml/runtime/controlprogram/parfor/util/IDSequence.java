@@ -19,26 +19,24 @@
 
 package org.apache.sysml.runtime.controlprogram.parfor.util;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 /**
  * ID sequence for generating unique long identifiers with start 0 and increment 1.
  * 
  */
 public class IDSequence 
 {
-
+	private final AtomicLong _current;
+	private final boolean _wrapAround;
 	
-	private long _current = -1;
-	private boolean wrapAround = false;
-	
-	public IDSequence()
-	{
-		reset();
+	public IDSequence() {
+		this(false);
 	}
 	
-	public IDSequence(boolean wrapAround)
-	{
-		reset();
-		this.wrapAround = wrapAround;
+	public IDSequence(boolean wrapAround) {
+		_current = new AtomicLong(-1);
+		_wrapAround = wrapAround;
 	}
 	
 	/**
@@ -46,36 +44,24 @@ public class IDSequence
 	 * 
 	 * @return ID
 	 */
-	public synchronized long getNextID()
-	{
-		_current++;
-		
-		if( _current == Long.MAX_VALUE ) {
-			if (wrapAround)
-				reset();
-			else
-				throw new RuntimeException("WARNING: IDSequence will produced numeric overflow.");
-		}
-		
-		return _current;
-	}
-	
-	public synchronized void reset()
-	{
-		_current = 0;
-	}
-	
-	/*
-	private AtomicLong _seq = new AtomicLong(0);
-	
 	public long getNextID()
 	{
-		return _seq.getAndIncrement();
+		long val = _current.incrementAndGet();
+		
+		if( val == Long.MAX_VALUE ) {
+			if( !_wrapAround )
+				throw new RuntimeException("WARNING: IDSequence will produced numeric overflow.");
+			reset();
+		}
+		
+		return val;
 	}
 	
-	public void reset()
-	{
-		_seq = new AtomicLong( 0 );
+	public long getCurrentID() {
+		return _current.get();
 	}
-	*/
+	
+	public void reset() {
+		_current.set(0);
+	}
 }

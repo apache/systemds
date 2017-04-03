@@ -30,7 +30,7 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
-import org.apache.sysml.runtime.instructions.spark.utils.RDDAggregateUtils;
+import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDAggregateUtils;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
@@ -53,9 +53,9 @@ public class FrameAppendRSPInstruction extends AppendRSPInstruction
 		
 		if(_cbind) {
 			JavaPairRDD<Long,FrameBlock> in1Aligned = in1.mapToPair(new ReduceSideAppendAlignFunction(leftRows));			
-			in1Aligned = (JavaPairRDD<Long, FrameBlock>) RDDAggregateUtils.mergeByFrameKey(in1Aligned);			
+			in1Aligned = FrameRDDAggregateUtils.mergeByKey(in1Aligned);			
 			JavaPairRDD<Long,FrameBlock> in2Aligned = in2.mapToPair(new ReduceSideAppendAlignFunction(leftRows));
-			in2Aligned = (JavaPairRDD<Long, FrameBlock>) RDDAggregateUtils.mergeByFrameKey(in2Aligned);			
+			in2Aligned = FrameRDDAggregateUtils.mergeByKey(in2Aligned);			
 			
 			out = in1Aligned.join(in2Aligned).mapValues(new ReduceSideColumnsFunction(_cbind));
 		} else {	//rbind
@@ -68,11 +68,13 @@ public class FrameAppendRSPInstruction extends AppendRSPInstruction
 		sec.setRDDHandleForVariable(output.getName(), out);
 		sec.addLineageRDD(output.getName(), input1.getName());
 		sec.addLineageRDD(output.getName(), input2.getName());		
+		
+		//update schema of output with merged input schemas
+		sec.getFrameObject(output.getName()).setSchema(
+			sec.getFrameObject(input1.getName()).mergeSchemas(
+			sec.getFrameObject(input2.getName())));
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class ReduceSideColumnsFunction implements Function<Tuple2<FrameBlock, FrameBlock>, FrameBlock> 
 	{
 		private static final long serialVersionUID = -97824903649667646L;
@@ -94,9 +96,6 @@ public class FrameAppendRSPInstruction extends AppendRSPInstruction
 		}
 	}
 
-	/**
-	 * 
-	 */
 	private static class ReduceSideAppendRowsFunction implements PairFunction<Tuple2<Long, FrameBlock>, Long, FrameBlock> 
 	{
 		private static final long serialVersionUID = 1723795153048336791L;
@@ -115,9 +114,6 @@ public class FrameAppendRSPInstruction extends AppendRSPInstruction
 		}
 	}
 
-	/**
-	 * 
-	 */
 	private static class ReduceSideAppendAlignFunction implements PairFunction<Tuple2<Long, FrameBlock>, Long, FrameBlock> 
 	{
 		private static final long serialVersionUID = 5850400295183766409L;

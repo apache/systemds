@@ -57,7 +57,7 @@ public abstract class SparseBlock implements Serializable
 	 * Allocate the underlying data structure holding non-zero values
 	 * of row r if necessary. 
 	 * 
-	 * @param r
+	 * @param r row index
 	 */
 	public abstract void allocate(int r);
 	
@@ -65,7 +65,8 @@ public abstract class SparseBlock implements Serializable
 	 * Allocate the underlying data structure holding non-zero values
 	 * of row r if necessary, w/ given size. 
 	 * 
-	 * @param r
+	 * @param r row index
+	 * @param nnz number of non-zeros
 	 */
 	public abstract void allocate(int r, int nnz);
 	
@@ -73,9 +74,9 @@ public abstract class SparseBlock implements Serializable
 	 * Allocate the underlying data structure holding non-zero values
 	 * of row r w/ the specified estimated nnz and max nnz.
 	 * 
-	 * @param r
-	 * @param ennz
-	 * @param maxnnz
+	 * @param r row index
+	 * @param ennz estimated non-zeros
+	 * @param maxnnz max non-zeros
 	 */
 	public abstract void allocate(int r, int ennz, int maxnnz);
 	
@@ -86,7 +87,7 @@ public abstract class SparseBlock implements Serializable
 	/**
 	 * Get the number of rows in the sparse block.
 	 * 
-	 * @return
+	 * @return number of rows
 	 */
 	public abstract int numRows();
 	
@@ -94,7 +95,7 @@ public abstract class SparseBlock implements Serializable
 	 * Indicates if the underlying implementation allows thread-safe row
 	 * updates if concurrent threads update disjoint rows. 
 	 * 
-	 * @return
+	 * @return true if thread-safe row updates
 	 */
 	public abstract boolean isThreadSafe();
 
@@ -103,7 +104,7 @@ public abstract class SparseBlock implements Serializable
 	 * and indexes are contiguous arrays, which can be exploited for 
 	 * more efficient operations.
 	 * 
-	 * @return
+	 * @return true if underlying data structures are contiguous arrays
 	 */
 	public abstract boolean isContiguous();
 	
@@ -114,8 +115,8 @@ public abstract class SparseBlock implements Serializable
 	 * more efficient operations. Two non-zeros are aligned if they 
 	 * have the same column index and reside in the same array position.
 	 * 
-	 * @param that
-	 * @return
+	 * @param that sparse block
+	 * @return true if all non-zero values are aligned with the given second sparse block
 	 */
 	public boolean isAligned(SparseBlock that)
 	{
@@ -139,9 +140,10 @@ public abstract class SparseBlock implements Serializable
 	 * are aligned if they have the same column index and reside in
 	 * the same array position.
 	 * 
-	 * @param r  row index starting at 0
-	 * @param that
-	 * @return
+	 * @param r row index starting at 0
+	 * @param that sparse block
+	 * @return true if all non-zero values of row r are aligned with the same row
+	 * of the given second sparse block instance
 	 */
 	public boolean isAligned(int r, SparseBlock that)
 	{
@@ -172,12 +174,19 @@ public abstract class SparseBlock implements Serializable
 	/**
 	 * Clears the sparse block by deleting non-zero values. After this call
 	 * all size() calls are guaranteed to return 0.
+	 * 
+	 * @param ennz estimated non-zeros
+	 * @param maxnnz max non-zeros
 	 */
 	public abstract void reset(int ennz, int maxnnz);
 	
 	/**
 	 * Clears row r of the sparse block by deleting non-zero values. 
 	 * After this call size(r) is guaranteed to return 0.
+	 * 
+	 * @param r row index
+	 * @param ennz estimated non-zeros
+	 * @param maxnnz max non-zeros
 	 */
 	public abstract void reset(int r, int ennz, int maxnnz);
 	
@@ -185,15 +194,15 @@ public abstract class SparseBlock implements Serializable
 	/**
 	 * Get the number of non-zero values in the sparse block.
 	 * 
-	 * @return
+	 * @return number of non-zero values in sparse block
 	 */
 	public abstract long size();
 	
 	/**
 	 * Get the number of non-zero values in row r.
 	 * 
-	 * @param r  row index starting at 0
-	 * @return
+	 * @param r row index starting at 0
+	 * @return number of non-zero values in row r
 	 */
 	public abstract int size(int r);
 	
@@ -201,9 +210,9 @@ public abstract class SparseBlock implements Serializable
 	 * Get the number of non-zeros values in the row range
 	 * of [rl, ru). 
 	 * 
-	 * @param rl  row index starting at 0
-	 * @param ru  column index starting at 0
-	 * @return
+	 * @param rl  row lower index
+	 * @param ru  row upper index
+	 * @return number of non-zero values in the row range
 	 */
 	public abstract long size(int rl, int ru);
 	
@@ -211,11 +220,11 @@ public abstract class SparseBlock implements Serializable
 	 * Get the number of non-zeros values in the row and column
 	 * range of [rl/cl, ru/cu);
 	 * 
-	 * @param rl
-	 * @param ru
-	 * @param cl
-	 * @param cu
-	 * @return
+	 * @param rl row lower index
+	 * @param ru row upper index
+	 * @param cl column lower index
+	 * @param cu column upper index
+	 * @return number of non-zero values in the row and column range
 	 */
 	public abstract long size(int rl, int ru, int cl, int cu);
 	
@@ -225,7 +234,7 @@ public abstract class SparseBlock implements Serializable
 	 * it is unknown if the underlying row data structure is allocated. 
 	 * 
 	 * @param r  row index starting at 0
-	 * @return
+	 * @return true if row does not contain non-zero values
 	 */
 	public abstract boolean isEmpty(int r); 
 	
@@ -240,7 +249,7 @@ public abstract class SparseBlock implements Serializable
 	 * [pos(r),pos(r)+size(r)).
 	 * 
 	 * @param r  row index starting at 0
-	 * @return
+	 * @return sorted array of column indexes
 	 */
 	public abstract int[] indexes(int r);
 	
@@ -251,7 +260,7 @@ public abstract class SparseBlock implements Serializable
 	 * [pos(r),pos(r)+size(r)).
 	 * 
 	 * @param r  row index starting at 0
-	 * @return
+	 * @return array of all non-zero entries in row r sorted by column indexes
 	 */
 	public abstract double[] values(int r);
 	
@@ -260,7 +269,7 @@ public abstract class SparseBlock implements Serializable
 	 * by indexes(r) and values(r). 
 	 * 
 	 * @param r  row index starting at 0
-	 * @return
+	 * @return starting position of row r
 	 */
 	public abstract int pos(int r);
 	
@@ -275,7 +284,7 @@ public abstract class SparseBlock implements Serializable
 	 * @param r  row index starting at 0
 	 * @param c  column index starting at 0
 	 * @param v  zero or non-zero value 
-	 * @return
+	 * @return ?
 	 */
 	public abstract boolean set(int r, int c, double v);
 	
@@ -287,7 +296,7 @@ public abstract class SparseBlock implements Serializable
 	 * be deleted in the future.
 	 * 
 	 * @param r  row index starting at 0
-	 * @param row
+	 * @param row sparse row
 	 * @param deep  indicator to create deep copy of sparse row
 	 */
 	public abstract void set(int r, SparseRow row, boolean deep);
@@ -350,7 +359,7 @@ public abstract class SparseBlock implements Serializable
 	 * 
 	 * @param r  row index starting at 0
 	 * @param c  column index starting at 0
-	 * @return
+	 * @return value of cell at position (r,c)
 	 */
 	public abstract double get(int r, int c);
 	
@@ -361,7 +370,7 @@ public abstract class SparseBlock implements Serializable
 	 * be deleted in the future.
 	 * 
 	 * @param r  row index starting at 0
-	 * @return
+	 * @return values of row r as a sparse row
 	 */
 	public abstract SparseRow get(int r);
 	
@@ -373,7 +382,7 @@ public abstract class SparseBlock implements Serializable
 	 * 
 	 * @param r  row index starting at 0
 	 * @param c  column index starting at 0
-	 * @return
+	 * @return position of the first column index lower than or equal to column c in row r
 	 */
 	public abstract int posFIndexLTE(int r, int c);
 	
@@ -383,9 +392,9 @@ public abstract class SparseBlock implements Serializable
 	 * returned by indexes(r) and values(r). If no such value exists, 
 	 * this call returns -1.
 	 * 
-	 * @param r
-	 * @param c
-	 * @return
+	 * @param r row index starting at 0
+	 * @param c column index starting at 0
+	 * @return position of the first column index greater than or equal to column c in row r
 	 */
 	public abstract int posFIndexGTE(int r, int c);
 	
@@ -395,9 +404,9 @@ public abstract class SparseBlock implements Serializable
 	 * indexes(r) and values(r). If no such value exists, this call 
 	 * returns -1.
 	 * 
-	 * @param r
-	 * @param c
-	 * @return
+	 * @param r row index starting at 0
+	 * @param c column index starting at 0
+	 * @return position of the first column index greater than column c in row r
 	 */
 	public abstract int posFIndexGT(int r, int c);
 	
@@ -410,7 +419,7 @@ public abstract class SparseBlock implements Serializable
 	 * the returned IJV object is reused across next calls and should 
 	 * be directly consumed or deep copied. 
 	 * 
-	 * @return
+	 * @return IJV iterator
 	 */
 	public Iterator<IJV> getIterator() {
 		//default generic iterator, override if necessary
@@ -423,7 +432,7 @@ public abstract class SparseBlock implements Serializable
 	 * be directly consumed or deep copied. 
 	 * 
 	 * @param ru   exclusive upper row index starting at 0
-	 * @return
+	 * @return IJV iterator
 	 */
 	public Iterator<IJV> getIterator(int ru) {
 		//default generic iterator, override if necessary
@@ -437,7 +446,7 @@ public abstract class SparseBlock implements Serializable
 	 * 
 	 * @param rl   inclusive lower row index starting at 0
 	 * @param ru   exclusive upper row index starting at 0
-	 * @return
+	 * @return IJV iterator
 	 */
 	public Iterator<IJV> getIterator(int rl, int ru) {
 		//default generic iterator, override if necessary

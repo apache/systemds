@@ -21,7 +21,8 @@ package org.apache.sysml.api.mlcontext;
 
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.rdd.RDD;
-import org.apache.spark.sql.DataFrame;
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Row;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils;
@@ -102,7 +103,7 @@ public class Matrix {
 	 * 
 	 * @return the matrix as a {@code DataFrame} of doubles with an ID column
 	 */
-	public DataFrame toDF() {
+	public Dataset<Row> toDF() {
 		return MLContextConversionUtil.matrixObjectToDataFrame(matrixObject, sparkExecutionContext, false);
 	}
 
@@ -111,7 +112,7 @@ public class Matrix {
 	 * 
 	 * @return the matrix as a {@code DataFrame} of doubles with an ID column
 	 */
-	public DataFrame toDFDoubleWithIDColumn() {
+	public Dataset<Row> toDFDoubleWithIDColumn() {
 		return MLContextConversionUtil.matrixObjectToDataFrame(matrixObject, sparkExecutionContext, false);
 	}
 
@@ -120,8 +121,8 @@ public class Matrix {
 	 * 
 	 * @return the matrix as a {@code DataFrame} of doubles with no ID column
 	 */
-	public DataFrame toDFDoubleNoIDColumn() {
-		DataFrame df = MLContextConversionUtil.matrixObjectToDataFrame(matrixObject, sparkExecutionContext, false);
+	public Dataset<Row> toDFDoubleNoIDColumn() {
+		Dataset<Row> df = MLContextConversionUtil.matrixObjectToDataFrame(matrixObject, sparkExecutionContext, false);
 		return df.drop(RDDConverterUtils.DF_ID_COLUMN);
 	}
 
@@ -130,7 +131,7 @@ public class Matrix {
 	 * 
 	 * @return the matrix as a {@code DataFrame} of vectors with an ID column
 	 */
-	public DataFrame toDFVectorWithIDColumn() {
+	public Dataset<Row> toDFVectorWithIDColumn() {
 		return MLContextConversionUtil.matrixObjectToDataFrame(matrixObject, sparkExecutionContext, true);
 	}
 
@@ -139,8 +140,8 @@ public class Matrix {
 	 * 
 	 * @return the matrix as a {@code DataFrame} of vectors with no ID column
 	 */
-	public DataFrame toDFVectorNoIDColumn() {
-		DataFrame df = MLContextConversionUtil.matrixObjectToDataFrame(matrixObject, sparkExecutionContext, true);
+	public Dataset<Row> toDFVectorNoIDColumn() {
+		Dataset<Row> df = MLContextConversionUtil.matrixObjectToDataFrame(matrixObject, sparkExecutionContext, true);
 		return df.drop(RDDConverterUtils.DF_ID_COLUMN);
 	}
 

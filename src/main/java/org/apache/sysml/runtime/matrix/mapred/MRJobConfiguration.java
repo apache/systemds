@@ -33,7 +33,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
@@ -83,7 +82,6 @@ import org.apache.sysml.runtime.matrix.data.IdenticalConverter;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixCell;
-import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.MatrixValue;
 import org.apache.sysml.runtime.matrix.data.MultipleOutputCommitter;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
@@ -231,18 +229,7 @@ public class MRJobConfiguration
 	 * group name for the counters on number of output nonZeros
 	 */
 	public static final String NUM_NONZERO_CELLS="nonzeros";
-	
-	/*
-	 * Counter group for determining the dimensions of result matrix. It is 
-	 * useful in operations like ctable and groupedAgg, in which the dimensions 
-	 * of result matrix are known only after computing the matrix.
-	 */
-	public static final String MAX_ROW_DIMENSION = "maxrows";
-	public static final String MAX_COL_DIMENSION = "maxcols";
-	
-	public static final String PARFOR_NUMTASKS="numtasks";
-	public static final String PARFOR_NUMITERATOINS="numiterations";
-	
+
 	public static final String TF_NUM_COLS 		= "transform.num.columns";
 	public static final String TF_HAS_HEADER 	= "transform.has.header";
 	public static final String TF_DELIM 		= "transform.field.delimiter";
@@ -274,39 +261,7 @@ public class MRJobConfiguration
 	{
 		return job.getInt(MRConfigurationNames.IO_FILE_BUFFER_SIZE, 4096);
 	}
-	
-	public static final int getJVMMaxMemSize(JobConf job)
-	{
-		String str=job.get(MRConfigurationNames.MR_CHILD_JAVA_OPTS);
-		int start=str.indexOf("-Xmx");
-		if(start<0)
-			return 209715200; //default 200MB
-		str=str.substring(start+4);
-		int i=0;
-		for(; i<str.length() && str.charAt(i)<='9' && str.charAt(i)>='0'; i++);
-		int ret=Integer.parseInt(str.substring(0, i));
-		if(i>=str.length())
-			return ret;
-		
-		switch(str.charAt(i))
-		{
-		case 'k':
-		case 'K':
-			ret=ret*1024;
-			break;
-		case 'm':
-		case 'M':
-			ret=ret*1048576;
-			break;
-		case 'g':
-		case 'G':
-			ret=ret*1073741824;
-			break;
-			default:
-		}
-		return ret;
-	}
-	
+
 	public static void setMMCJCacheSize(JobConf job, long size)
 	{
 		job.setLong(MMCJ_CACHE_SIZE, size);
@@ -407,8 +362,7 @@ public class MRJobConfiguration
 	 * Unique working dirs required for thread-safe submission of parallel jobs;
 	 * otherwise job.xml and other files might be overridden (in local mode).
 	 * 
-	 * @param job
-	 * @param mode
+	 * @param job job configuration
 	 */
 	public static void setUniqueWorkingDir( JobConf job )
 	{
@@ -454,17 +408,6 @@ public class MRJobConfiguration
 	public static String getStagingWorkingDirPrefix(JobConf job)
 	{
 		return job.get(MRConfigurationNames.MR_JOBTRACKER_STAGING_ROOT_DIR);
-	}
-	
-	/**
-	 * 
-	 * @param job
-	 */
-	public static void setStagingDir( JobConf job )
-	{
-		String dir = DMLConfig.LOCAL_MR_MODE_STAGING_DIR + 
-		             Lop.FILE_SEPARATOR + Lop.PROCESS_PREFIX + DMLScript.getUUID() + Lop.FILE_SEPARATOR;
-		job.set( MRConfigurationNames.MR_JOBTRACKER_STAGING_ROOT_DIR, dir );
 	}
 
 	public static void setInputInfo(JobConf job, byte input, InputInfo inputinfo, 
@@ -535,21 +478,7 @@ public class MRJobConfiguration
 		} 
 		return outputConverter;
 	}
-	
-	@SuppressWarnings("unchecked")
-	public static Class<Writable> getInputKeyClass(JobConf job, byte input)
-	{
-		return (Class<Writable>) job.getClass(INPUT_KEY_CLASS_PREFIX_CONFIG+input, 
-				MatrixIndexes.class);
-	}
-	
-	@SuppressWarnings("unchecked")
-	public static Class<Writable> getInputValueClass(JobConf job, byte input)
-	{
-		return (Class<Writable>) job.getClass(INPUT_VALUE_CLASS_PREFIX_CONFIG+input, 
-				DoubleWritable.class);
-	}
-	
+
 	public static MRInstruction[] getInstructionsInReducer(JobConf job) throws DMLRuntimeException
 	{
 		String str=job.get(INSTRUCTIONS_IN_REDUCER_CONFIG);
@@ -769,12 +698,7 @@ public class MRJobConfiguration
 	{
 		return InputInfo.stringToInputInfo( job.get(RESULTMERGE_INPUT_INFO_CONFIG) );
 	}
-	
-	public static String getResultMergeStagingDir( JobConf job )
-	{
-		return job.get(RESULTMERGE_STAGING_DIR_CONFIG) + job.get(MRConfigurationNames.MR_TASK_ID);
-	}
-	
+
 	public static long[] getResultMergeMatrixCharacteristics( JobConf job )
 	{
 		long[] ret = new long[4];
@@ -921,13 +845,7 @@ public class MRJobConfiguration
 		String str=job.get(CM_N_COV_INSTRUCTIONS_CONFIG);
 		return MRInstructionParser.parseCM_N_COVInstructions(str);
 	}
-	
-	/**
-	 * 
-	 * @param job
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static GroupedAggregateInstruction[] getGroupedAggregateInstructions(JobConf job) 
 		throws DMLRuntimeException
 	{
@@ -1058,12 +976,7 @@ public class MRJobConfiguration
 	{
 		return job.getLong(INPUT_MATRIX_NUM_NNZ_PREFIX_CONFIG+matrixIndex, 1);
 	}
-	
-	public static void handleRecordReaderInstrucion(JobConf job, String recordReaderInstruction, String[] inputs, InputInfo[] inputInfos)
-	{
-		//do nothing, not used currently
-	}
-	
+
 	public static void setupDistCacheInputs(JobConf job, String indices, String pathsString, ArrayList<String> paths) {
 		job.set(DISTCACHE_INPUT_INDICES, indices);
 		job.set(DISTCACHE_INPUT_PATHS, pathsString);
@@ -1080,11 +993,7 @@ public class MRJobConfiguration
 	public static String getDistCacheInputIndices(JobConf job) {
 		return job.get(DISTCACHE_INPUT_INDICES);
 	}
-	
-	public static String getDistCacheInputPaths(JobConf job) {
-		return job.get(DISTCACHE_INPUT_PATHS);
-	}
-	
+
 	private static String getCSVString(PDataPartitionFormat[] formats) {
 		if ( formats == null || formats.length == 0 )
 			return "";
@@ -1126,20 +1035,7 @@ public class MRJobConfiguration
 		
 		setUpMultipleInputs(job, inputIndexes, inputs, inputInfos, brlens, bclens, distCacheOnly, setConverter, target);
 	}
-	
-	/**
-	 * 
-	 * @param job
-	 * @param inputIndexes
-	 * @param inputs
-	 * @param inputInfos
-	 * @param brlens
-	 * @param bclens
-	 * @param distCacheOnly
-	 * @param setConverter
-	 * @param target
-	 * @throws Exception
-	 */
+
 	public static void setUpMultipleInputs(JobConf job, byte[] inputIndexes, String[] inputs, InputInfo[] inputInfos, 
 			int[] brlens, int[] bclens, boolean[] distCacheOnly, boolean setConverter, ConvertTarget target) 
 		throws Exception
@@ -1214,16 +1110,13 @@ public class MRJobConfiguration
 	 * input infos. Note that any mapper instruction before reblock can work on binary block
 	 * if it can work on binary cell as well.
 	 * 
-	 * @param job
-	 * @param inputIndexes
-	 * @param inputs
-	 * @param inputInfos
-	 * @param inBlockRepresentation
-	 * @param brlens
-	 * @param bclens
-	 * @param setConverter
-	 * @param forCMJob
-	 * @throws Exception
+	 * @param job job configuration
+	 * @param inputIndexes array of byte indexes
+	 * @param inputs array of input string
+	 * @param inputInfos array of input infos
+	 * @param brlens array of block row lengths
+	 * @param bclens array of block column lengths
+	 * @throws Exception if Exception occurs
 	 */
 	public static void setUpMultipleInputsReblock(JobConf job, byte[] inputIndexes, String[] inputs, InputInfo[] inputInfos, 
 												  int[] brlens, int[] bclens) 
@@ -1263,12 +1156,7 @@ public class MRJobConfiguration
 			paths.add(p);
 		}
 	}
-	
-	
-	public static void updateResultDimsUnknown (JobConf job, byte[] updDimsUnknown) {
-		job.set(RESULT_DIMS_UNKNOWN_CONFIG, MRJobConfiguration.getIndexesString(updDimsUnknown));
-	}
-	
+
 	public static void setUpMultipleOutputs(JobConf job, byte[] resultIndexes, byte[] resultDimsUnknown, String[] outputs, 
 			OutputInfo[] outputInfos, boolean inBlockRepresentation, boolean mayContainCtable) 
 	throws Exception
@@ -1311,12 +1199,7 @@ public class MRJobConfiguration
 		setUpMultipleOutputs(job, resultIndexes, resultDimsUnknwon, outputs, 
 				outputInfos, inBlockRepresentation, false);
 	}
-	
-	/**
-	 * 
-	 * @param job
-	 * @return
-	 */
+
 	public static String setUpSortPartitionFilename( JobConf job ) 
 	{
 		String pfname = constructPartitionFilename();
@@ -1324,12 +1207,7 @@ public class MRJobConfiguration
 		
 		return pfname;
 	}
-	
-	/**
-	 * 
-	 * @param job
-	 * @return
-	 */
+
 	public static String getSortPartitionFilename( JobConf job )
 	{
 		return job.get( SORT_PARTITION_FILENAME );
@@ -1381,19 +1259,19 @@ public class MRJobConfiguration
 	 * NOTE: this method needs to be in-sync with MRBaseForCommonInstructions.processOneInstruction,
 	 * otherwise, the latter will potentially fail with missing dimension information.
 	 * 
-	 * @param job
-	 * @param inputIndexes
-	 * @param dataGenInstructions
-	 * @param instructionsInMapper
-	 * @param reblockInstructions
-	 * @param aggInstructionsInReducer
-	 * @param aggBinInstructions
-	 * @param otherInstructionsInReducer
-	 * @param resultIndexes
-	 * @param mapOutputIndexes
-	 * @param forMMCJ
-	 * @return
-	 * @throws DMLRuntimeException
+	 * @param job job configuration
+	 * @param inputIndexes array of byte indexes
+	 * @param dataGenInstructions data gen instructions as a string
+	 * @param instructionsInMapper instruction in mapper as a string
+	 * @param reblockInstructions reblock instructions as a string
+	 * @param aggInstructionsInReducer aggregate instructions in reducer as a string
+	 * @param aggBinInstructions binary aggregate instructions as a string
+	 * @param otherInstructionsInReducer other instructions in reducer as a string
+	 * @param resultIndexes array of byte result indexes
+	 * @param mapOutputIndexes set of map output indexes
+	 * @param forMMCJ ?
+	 * @return reducer groups
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static MatrixChar_N_ReducerGroups computeMatrixCharacteristics(JobConf job, byte[] inputIndexes, String dataGenInstructions,
 			String instructionsInMapper, String reblockInstructions, String aggInstructionsInReducer, String aggBinInstructions, 
@@ -1925,8 +1803,8 @@ public class MRJobConfiguration
 	 * Set all configurations with prefix mapred or mapreduce that exist in the given
 	 * DMLConfig into the given JobConf.
 	 * 
-	 * @param job
-	 * @param config
+	 * @param job job configuration
+	 * @param config dml configuration
 	 */
 	public static void setupCustomMRConfigurations( JobConf job, DMLConfig config ) {
 		Map<String,String> map = config.getCustomMRConfig();

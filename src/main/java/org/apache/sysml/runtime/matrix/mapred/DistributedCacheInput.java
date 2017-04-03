@@ -77,10 +77,7 @@ public class DistributedCacheInput
 	public int getNumColsPerBlock(){
 		return _bclen;
 	}
-	
-	/**
-	 * 
-	 */
+
 	public void reset() 
 	{
 		_localFilePath = null;
@@ -91,13 +88,6 @@ public class DistributedCacheInput
 		_pformat = null;
 	}
 
-	/**
-	 * 
-	 * @param rowBlockIndex
-	 * @param colBlockIndex
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	public IndexedMatrixValue getDataBlock(int rowBlockIndex, int colBlockIndex)
 		throws DMLRuntimeException 
 	{
@@ -108,12 +98,7 @@ public class DistributedCacheInput
 		//return read or existing block
 		return dataBlocks[rowBlockIndex-1][colBlockIndex-1];
 	}
-	
-	/**
-	 * 
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public double[] getRowVectorArray() 
 		throws DMLRuntimeException
 	{
@@ -127,12 +112,7 @@ public class DistributedCacheInput
 		
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public double[] getColumnVectorArray() 
 		throws DMLRuntimeException
 	{
@@ -146,13 +126,7 @@ public class DistributedCacheInput
 		
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @param rowBlockSize
-	 * @param colBlockSize
-	 * @throws DMLRuntimeException
-	 */
+
 	private void readDataBlocks( int rowBlockIndex, int colBlockIndex )
 		throws DMLRuntimeException 
 	{
@@ -183,24 +157,12 @@ public class DistributedCacheInput
 			throw new DMLRuntimeException(ex);
 		} 
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	private boolean isPartitioned()
 	{
 		return (_pformat != PDataPartitionFormat.NONE);
 	}
-	
 
-	/**
-	 * 
-	 * @param rowBlockIndex
-	 * @param colBlockIndex
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	private String getPartitionFileName( int rowBlockIndex, int colBlockIndex  ) 
 		throws DMLRuntimeException
 	{

@@ -20,6 +20,7 @@
 package org.apache.sysml.runtime.instructions.spark;
 
 
+import java.util.Iterator;
 import java.util.LinkedList;
 
 import org.apache.spark.api.java.JavaPairRDD;
@@ -44,9 +45,6 @@ import org.apache.sysml.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-/**
- * 
- */
 public class RmmSPInstruction extends BinarySPInstruction 
 {
 	
@@ -56,12 +54,6 @@ public class RmmSPInstruction extends BinarySPInstruction
 		_sptype = SPINSTRUCTION_TYPE.RMM;		
 	}
 
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	public static RmmSPInstruction parseInstruction( String str ) 
 		throws DMLRuntimeException 
 	{
@@ -103,7 +95,7 @@ public class RmmSPInstruction extends BinarySPInstruction
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = 
 				tmp1.join( tmp2 )                              //join by result block 
 		            .mapToPair( new RmmMultiplyFunction() );   //do matrix multiplication
-		out = RDDAggregateUtils.sumByKeyStable(out);           //aggregation per result block
+		out = RDDAggregateUtils.sumByKeyStable(out, false);    //aggregation per result block
 		
 		//put output block into symbol table (no lineage because single block)
 		updateBinaryMMOutputMatrixCharacteristics(sec, true);
@@ -112,10 +104,6 @@ public class RmmSPInstruction extends BinarySPInstruction
 		sec.addLineageRDD(output.getName(), input2.getName());
 	}
 
-
-	/**
-	 * 
-	 */
 	private static class RmmReplicateFunction implements PairFlatMapFunction<Tuple2<MatrixIndexes, MatrixBlock>, TripleIndexes, MatrixBlock> 
 	{
 		private static final long serialVersionUID = 3577072668341033932L;
@@ -132,7 +120,7 @@ public class RmmSPInstruction extends BinarySPInstruction
 		}
 		
 		@Override
-		public Iterable<Tuple2<TripleIndexes, MatrixBlock>> call( Tuple2<MatrixIndexes, MatrixBlock> arg0 ) 
+		public Iterator<Tuple2<TripleIndexes, MatrixBlock>> call( Tuple2<MatrixIndexes, MatrixBlock> arg0 ) 
 			throws Exception 
 		{
 			LinkedList<Tuple2<TripleIndexes, MatrixBlock>> ret = new LinkedList<Tuple2<TripleIndexes, MatrixBlock>>();
@@ -165,14 +153,10 @@ public class RmmSPInstruction extends BinarySPInstruction
 			}
 			
 			//output list of new tuples
-			return ret;
+			return ret.iterator();
 		}
 	}
 
-	/**
-	 * 
-	 * 
-	 */
 	private static class RmmMultiplyFunction implements PairFunction<Tuple2<TripleIndexes, Tuple2<MatrixBlock,MatrixBlock>>, MatrixIndexes, MatrixBlock> 
 	{
 		private static final long serialVersionUID = -5772410117511730911L;

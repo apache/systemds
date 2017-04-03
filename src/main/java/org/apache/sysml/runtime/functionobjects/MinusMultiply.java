@@ -35,23 +35,8 @@ public class MinusMultiply extends ValueFunctionWithConstant implements Serializ
 		return new MinusMultiply();
 	}
 	
-	public Object clone() throws CloneNotSupportedException {
-		// cloning is not supported for singleton classes
-		throw new CloneNotSupportedException();
-	}
-	
 	@Override
 	public double execute(double in1, double in2) {
-		return in1 - _constant * in2;	
-	}
-	
-	@Override
-	public double execute(double in1, long in2) {
-		return in1 - _constant * in2;	
-	}
-	
-	@Override
-	public double execute(long in1, double in2) {
 		return in1 - _constant * in2;	
 	}
 	

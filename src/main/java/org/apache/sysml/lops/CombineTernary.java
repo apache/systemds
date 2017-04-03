@@ -36,8 +36,8 @@ public class CombineTernary extends Lop
 {
 	
 	public enum OperationTypes {
-		PreCovWeighted, PreGroupedAggWeighted
-	}; // PreCovUnweighted,PreGroupedAggWeighted will be CombineBinary
+		PreCovWeighted
+	};
 
 	OperationTypes operation;
 

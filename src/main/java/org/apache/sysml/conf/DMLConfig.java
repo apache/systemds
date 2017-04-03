@@ -67,10 +67,21 @@ public class DMLConfig
 	public static final String YARN_APPMASTER       = "dml.yarn.appmaster"; 	
 	public static final String YARN_APPMASTERMEM    = "dml.yarn.appmaster.mem"; 
 	public static final String YARN_MAPREDUCEMEM    = "dml.yarn.mapreduce.mem"; 
-	public static final String YARN_APPQUEUE    	= "dml.yarn.app.queue"; 
+	public static final String YARN_APPQUEUE        = "dml.yarn.app.queue"; 
 	public static final String CP_PARALLEL_MATRIXMULT = "cp.parallel.matrixmult";
 	public static final String CP_PARALLEL_TEXTIO   = "cp.parallel.textio";
 	public static final String COMPRESSED_LINALG    = "compressed.linalg";
+	public static final String CODEGEN              = "codegen.enabled"; //boolean
+	public static final String CODEGEN_PLANCACHE    = "codegen.plancache"; //boolean
+	public static final String CODEGEN_LITERALS     = "codegen.literals"; //1..heuristic, 2..always
+	public static final String EXTRA_GPU_STATS			= "systemml.stats.extraGPU"; //boolean
+	public static final String EXTRA_DNN_STATS			= "systemml.stats.extraDNN"; //boolean
+
+	// Fraction of available memory to use. The available memory is computer when the JCudaContext is created
+	// to handle the tradeoff on calling cudaMemGetInfo too often.
+	public static final String GPU_MEMORY_UTILIZATION_FACTOR    = "gpu.memory.util.factor";
+	// Invoke cudaMemGetInfo to get available memory information. Useful if GPU is shared among multiple application.
+	public static final String REFRESH_AVAILABLE_MEMORY_EVERY_TIME    = "gpu.memory.refresh";
 
 	// supported prefixes for custom map/reduce configurations
 	public static final String PREFIX_MAPRED = "mapred";
@@ -102,6 +113,15 @@ public class DMLConfig
 		_defaultVals.put(CP_PARALLEL_MATRIXMULT, "true" );
 		_defaultVals.put(CP_PARALLEL_TEXTIO,     "true" );
 		_defaultVals.put(COMPRESSED_LINALG,      "false" );
+		_defaultVals.put(CODEGEN,                "false" );
+		_defaultVals.put(CODEGEN_PLANCACHE,      "true" );
+		_defaultVals.put(CODEGEN_LITERALS,       "1" );
+
+		_defaultVals.put(EXTRA_GPU_STATS,       "false" );
+		_defaultVals.put(EXTRA_DNN_STATS,       "false" );
+
+		_defaultVals.put(GPU_MEMORY_UTILIZATION_FACTOR,      "0.9" );
+		_defaultVals.put(REFRESH_AVAILABLE_MEMORY_EVERY_TIME,      "true" );
 	}
 	
 	public DMLConfig()
@@ -109,25 +129,12 @@ public class DMLConfig
 		
 	}
 	
-	/**
-	 * 
-	 * @param fileName
-	 * @throws ParseException
-	 * @throws FileNotFoundException 
-	 */
 	public DMLConfig(String fileName) 
 		throws ParseException, FileNotFoundException
 	{
 		this( fileName, false );
 	}
 	
-	/**
-	 * 
-	 * @param fileName
-	 * @param silent
-	 * @throws ParseException
-	 * @throws FileNotFoundException 
-	 */
 	public DMLConfig(String fileName, boolean silent) 
 		throws ParseException, FileNotFoundException
 	{
@@ -151,41 +158,7 @@ public class DMLConfig
 	{
 		_xmlRoot = root;
 	}
-	
-	public void merge(DMLConfig otherConfig) 
-		throws ParseException
-	{
-		if (otherConfig == null) 
-			return;
-	
-		try {
-			// for each element in otherConfig, either overwrite existing value OR add to defaultConfig
-			NodeList otherConfigNodeList = otherConfig._xmlRoot.getChildNodes();
-			if (otherConfigNodeList != null && otherConfigNodeList.getLength() > 0){
-				for (int i=0; i<otherConfigNodeList.getLength(); i++){
-					org.w3c.dom.Node optionalConfigNode = otherConfigNodeList.item(i);
-					
-					if (optionalConfigNode.getNodeType() == org.w3c.dom.Node.ELEMENT_NODE){
-					
-						// try to find optional config node in default config node
-						String paramName = optionalConfigNode.getNodeName();
-						String paramValue = ((Element)optionalConfigNode).getFirstChild().getNodeValue();
-					
-						if (_xmlRoot.getElementsByTagName(paramName) != null)
-							LOG.info("Updating " + paramName + " with value " + paramValue);
-						else 
-							LOG.info("Defining new attribute" + paramName + " with value " + paramValue);
-						DMLConfig.setTextValue(_xmlRoot, paramName, paramValue);
-					}
-					
-				}
-			} // end if (otherConfigNodeList != null && otherConfigNodeList.getLength() > 0){
-		} catch (Exception e){
-			LOG.error("Failed in merge default config file with optional config file",e);
-			throw new ParseException("ERROR: error merging config file " + otherConfig._fileName + " with " + _fileName);
-		}
-	}
-	
+
 	/**
 	 * Method to parse configuration
 	 * @throws ParserConfigurationException
@@ -249,12 +222,16 @@ public class DMLConfig
 		return Boolean.parseBoolean( getTextValue(tagName) );
 	}
 	
+	public double getDoubleValue( String tagName )
+	{
+		return Double.parseDouble( getTextValue(tagName) );
+	}
 	
 	/**
-	 * Method to get the string value of an element identified by tag
-	 * @param ele
-	 * @param tagName
-	 * @return
+	 * Method to get the string value of an element identified by a tag name
+	 * @param element the DOM element
+	 * @param tagName the tag name
+	 * @return the string value of the element
 	 */
 	private static String getTextValue(Element element, String tagName) {
 		String textVal = null;
@@ -268,10 +245,10 @@ public class DMLConfig
 	}
 	
 	/**
-	 * Method to update the string value of an element identified by tagname 
-	 * @param ele
-	 * @param tagName
-	 * @param newTextValue
+	 * Method to update the string value of an element identified by a tag name
+	 * @param element the DOM element
+	 * @param tagName the tag name
+	 * @param newTextValue the new string value
 	 */
 	private static void setTextValue(Element element, String tagName, String newTextValue) {
 		
@@ -284,8 +261,9 @@ public class DMLConfig
 	
 	/**
 	 * Method to update the key value
-	 * @param paramName
-	 * @param paramValue
+	 * @param paramName parameter name
+	 * @param paramValue parameter value
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public void setTextValue(String paramName, String paramValue) throws DMLRuntimeException {
 		if(_xmlRoot != null)
@@ -307,9 +285,9 @@ public class DMLConfig
 
 	/**
 	 * Get a map of key/value pairs of all configurations w/ the prefix 'mapred'
-	 * or 'mapreduce'. 
+	 * or 'mapreduce'.
 	 * 
-	 * @return
+	 * @return map of mapred and mapreduce key/value pairs
 	 */
 	public Map<String, String> getCustomMRConfig()
 	{
@@ -335,11 +313,6 @@ public class DMLConfig
 		return ret;
 	}
 	
-	/**
-	 * 
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	public synchronized String serializeDMLConfig() 
 		throws DMLRuntimeException
 	{
@@ -362,12 +335,6 @@ public class DMLConfig
 		return ret;
 	}
 	
-	/**
-	 * 
-	 * @param content
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	public static DMLConfig parseDMLConfig( String content ) 
 		throws DMLRuntimeException
 	{
@@ -396,9 +363,9 @@ public class DMLConfig
 	 * the default configuration file location, if available.
 	 *
 	 * @param configPath User-defined path of the configuration file.
-	 * @return DMLConfig object containing configuration settings.
-	 * @throws ParseException 
-	 * @throws FileNotFoundException 
+	 * @return dml configuration
+	 * @throws ParseException if ParseException occurs
+	 * @throws FileNotFoundException if FileNotFoundException occurs
 	 */
 	public static DMLConfig readConfigurationFile(String configPath)
 		throws ParseException, FileNotFoundException
@@ -432,17 +399,15 @@ public class DMLConfig
 		return config;
 	}
 
-	/**
-	 * 
-	 * @return
-	 */
 	public String getConfigInfo() 
 	{
 		String[] tmpConfig = new String[] { 
 				LOCAL_TMP_DIR,SCRATCH_SPACE,OPTIMIZATION_LEVEL,
 				NUM_REDUCERS, DEFAULT_BLOCK_SIZE,
 				YARN_APPMASTER, YARN_APPMASTERMEM, YARN_MAPREDUCEMEM, 
-				CP_PARALLEL_MATRIXMULT, CP_PARALLEL_TEXTIO
+				CP_PARALLEL_MATRIXMULT, CP_PARALLEL_TEXTIO,
+				COMPRESSED_LINALG, CODEGEN, CODEGEN_LITERALS, CODEGEN_PLANCACHE,
+				EXTRA_GPU_STATS, EXTRA_DNN_STATS
 		}; 
 		
 		StringBuilder sb = new StringBuilder();
@@ -458,11 +423,6 @@ public class DMLConfig
 		return sb.toString();
 	}
 	
-	/**
-	 * 
-	 * @param amMem
-	 * @param mrMem
-	 */
 	public void updateYarnMemorySettings(String amMem, String mrMem)
 	{
 		//app master memory
@@ -479,39 +439,11 @@ public class DMLConfig
 			elem.getFirstChild().setNodeValue(String.valueOf(mrMem));
 		}
 	}
-	
-	/**
-	 * 
-	 * @throws IOException
-	 */
-	@SuppressWarnings("deprecation")
-	public void makeQualifiedScratchSpacePath() 
-		throws IOException
-	{
-		NodeList list2 = _xmlRoot.getElementsByTagName(SCRATCH_SPACE);
-		if (list2 != null && list2.getLength() > 0) {
-			Element elem = (Element) list2.item(0);
-			
-			FileSystem fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
-			String fname = elem.getFirstChild().getNodeValue();
-			Path path = new Path(fname).makeQualified(fs);
-			
-			elem.getFirstChild().setNodeValue(path.toString());
-		}
-	}
-	
-	/**
-	 * 
-	 * @param key
-	 * @return
-	 */
+
 	public static String getDefaultTextValue( String key ) {
 		return _defaultVals.get( key );
 	}
 	
-	/**
-	 * 
-	 */
 	public DMLConfig clone() {
 		DMLConfig conf = new DMLConfig();
 		conf._fileName = _fileName;

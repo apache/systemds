@@ -25,44 +25,37 @@ import org.apache.sysml.runtime.functionobjects.GreaterThan;
 import org.apache.sysml.runtime.functionobjects.GreaterThanEquals;
 import org.apache.sysml.runtime.functionobjects.LessThan;
 import org.apache.sysml.runtime.functionobjects.LessThanEquals;
-import org.apache.sysml.runtime.functionobjects.Power;
 import org.apache.sysml.runtime.functionobjects.ValueFunction;
 
-
+/**
+ * Scalar operator for scalar-matrix operations with scalar 
+ * on the left-hand-side.
+ * 
+ */
 public class LeftScalarOperator extends ScalarOperator 
-{
-	
+{	
 	private static final long serialVersionUID = 2360577666575746424L;
 	
 	public LeftScalarOperator(ValueFunction p, double cst) {
 		super(p, cst);
-		
-		//disable sparse-safe for c^M because 1^0=1
-		if( fn instanceof Power )
-			sparseSafe = false;
-	}
-
-	@Override
-	public double executeScalar(double in) throws DMLRuntimeException {
-		return fn.execute(_constant, in);
 	}
 	
 	@Override
 	public void setConstant(double cst) 
 	{
+		//overwrites constant and sparse safe flag
 		super.setConstant(cst);
 		
-		//disable sparse-safe for c^M because 1^0=1
-		if( fn instanceof Power )
-			sparseSafe = false;
-		
 		//enable conditionally sparse safe operations
-		if(    (fn instanceof GreaterThan && _constant<=0)
+		sparseSafe |= ( isSparseSafeStatic()
+			|| (fn instanceof GreaterThan && _constant<=0)
 			|| (fn instanceof GreaterThanEquals && _constant<0)
 			|| (fn instanceof LessThan && _constant>=0)
-			|| (fn instanceof LessThanEquals && _constant>0))
-		{
-			sparseSafe = true;
-		}
+			|| (fn instanceof LessThanEquals && _constant>0));
+	}
+
+	@Override
+	public double executeScalar(double in) throws DMLRuntimeException {
+		return fn.execute(_constant, in);
 	}
 }

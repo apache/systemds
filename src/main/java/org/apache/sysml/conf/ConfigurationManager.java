@@ -63,16 +63,12 @@ public class ConfigurationManager
      * with read-only access to job conf. This prevents to read the hadoop conf files
      * over and over again from classpath. However, 
      * 
-     * @return
+     * @return the cached JobConf
      */
 	public static JobConf getCachedJobConf() {
 		return _rJob;
 	}
 	
-	/**
-	 * 
-	 * @param job
-	 */
 	public static void setCachedJobConf(JobConf job) {
 		_rJob = job;
 	}
@@ -82,7 +78,7 @@ public class ConfigurationManager
 	 * NOTE: This global configuration should never be accessed directly but only
 	 * through its thread-local derivatives. 
 	 * 
-	 * @param conf
+	 * @param conf the configuration
 	 */
 	public synchronized static void setGlobalConfig( DMLConfig conf ) {
 		_dmlconf = conf;
@@ -94,7 +90,7 @@ public class ConfigurationManager
 	/**
 	 * Sets the current thread-local dml configuration to the given config.
 	 * 
-	 * @param conf
+	 * @param conf the configuration
 	 */
 	public static void setLocalConfig( DMLConfig conf ) {
 		_ldmlconf.set(conf);
@@ -103,16 +99,12 @@ public class ConfigurationManager
 	/**
 	 * Gets the current thread-local dml configuration.
 	 * 
-	 * @return
+	 * @return the dml configuration
 	 */
 	public static DMLConfig getDMLConfig() {
 		return _ldmlconf.get();
 	}
 	
-	/**
-	 * 
-	 * @param conf
-	 */
 	public synchronized static void setGlobalConfig( CompilerConfig conf ) {
 		_cconf = conf;
 		
@@ -123,7 +115,7 @@ public class ConfigurationManager
 	/**
 	 * Sets the current thread-local compiler configuration to the given config.
 	 * 
-	 * @param conf
+	 * @param conf the compiler configuration
 	 */
 	public static void setLocalConfig( CompilerConfig conf ) {
 		_lcconf.set(conf);
@@ -141,7 +133,7 @@ public class ConfigurationManager
 	/**
 	 * Gets the current thread-local compiler configuration.
 	 * 
-	 * @return
+	 * @return the compiler configuration
 	 */
 	public static CompilerConfig getCompilerConfig() {
 		return _lcconf.get();
@@ -151,8 +143,8 @@ public class ConfigurationManager
 	 * Get a boolean compiler config in a robust manner,
 	 * returning false if config not existing.
 	 * 
-	 * @param key
-	 * @return
+	 * @param key config type
+	 * @return compiler config flag
 	 */
 	public static boolean getCompilerConfigFlag(ConfigType key) {
 		CompilerConfig cconf = getCompilerConfig();
@@ -190,9 +182,6 @@ public class ConfigurationManager
 	///////////////////////////////////////
 	// Thread-local classes
 	
-	/**
-	 * 
-	 */
 	private static class ThreadLocalDMLConfig extends ThreadLocal<DMLConfig> {
 		@Override 
         protected DMLConfig initialValue() { 
@@ -203,9 +192,6 @@ public class ConfigurationManager
         }
     }
 	
-	/**
-	 * 
-	 */
 	private static class ThreadLocalCompilerConfig extends ThreadLocal<CompilerConfig> {
 		@Override 
 		protected CompilerConfig initialValue() { 

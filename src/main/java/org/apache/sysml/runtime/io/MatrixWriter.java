@@ -34,44 +34,23 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 public abstract class MatrixWriter 
 {
 
-	/**
-	 * 
-	 * @param fname
-	 * @param rlen
-	 * @param clen
-	 * @param brlen
-	 * @param bclen
-	 * @param expNnz
-	 * @return
-	 * @throws DMLRuntimeException 
-	 */
 	public abstract void writeMatrixToHDFS( MatrixBlock src, String fname, long rlen, long clen, int brlen, int bclen, long nnz )
 		throws IOException, DMLRuntimeException;
 	
 	/**
 	 * Writes a minimal entry to represent an empty matrix on hdfs.
 	 * 
-	 * @param fname
-	 * @param rlen
-	 * @param clen
-	 * @param brlen
-	 * @param bclen
-	 * @throws IOException
-	 * @throws DMLRuntimeException
+	 * @param fname file name
+	 * @param rlen number of rows
+	 * @param clen number of columns
+	 * @param brlen number of rows in block
+	 * @param bclen number of columns in block
+	 * @throws IOException if IOException occurs
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public abstract void writeEmptyMatrixToHDFS( String fname, long rlen, long clen, int brlen, int bclen )
 		throws IOException, DMLRuntimeException;
-	
-	/**
-	 * 
-	 * @param rlen
-	 * @param clen
-	 * @param brlen
-	 * @param bclen
-	 * @param sparse
-	 * @return
-	 * @throws DMLRuntimeException 
-	 */
+
 	public static MatrixBlock[] createMatrixBlocksForReuse( long rlen, long clen, int brlen, int bclen, boolean sparse, long nonZeros ) 
 		throws DMLRuntimeException
 	{
@@ -113,16 +92,7 @@ public abstract class MatrixWriter
 		
 		return blocks;
 	}
-	
-	/**
-	 * 
-	 * @param blocks
-	 * @param rows
-	 * @param cols
-	 * @param brlen
-	 * @param bclen
-	 * @return
-	 */
+
 	public static MatrixBlock getMatrixBlockForReuse( MatrixBlock[] blocks, int rows, int cols, int brlen, int bclen )
 	{
 		int index = -1;

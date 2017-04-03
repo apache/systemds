@@ -62,8 +62,19 @@ public class DataOp extends Hop
 	}
 	
 	/**
-	 *  READ operation for Matrix w/ dim1, dim2. 
+	 * READ operation for Matrix w/ dim1, dim2. 
 	 * This constructor does not support any expression in parameters
+	 * 
+	 * @param l ?
+	 * @param dt data type
+	 * @param vt value type
+	 * @param dop data operator type
+	 * @param fname file name
+	 * @param dim1 dimension 1
+	 * @param dim2 dimension 2
+	 * @param nnz number of non-zeros
+	 * @param rowsPerBlock rows per block
+	 * @param colsPerBlock cols per block
 	 */
 	public DataOp(String l, DataType dt, ValueType vt, DataOpTypes dop,
 			String fname, long dim1, long dim2, long nnz, long rowsPerBlock, long colsPerBlock) {
@@ -90,6 +101,12 @@ public class DataOp extends Hop
 	/**
 	 * READ operation for Matrix
 	 * This constructor supports expressions in parameters
+	 * 
+	 * @param l ?
+	 * @param dt data type
+	 * @param vt value type
+	 * @param dop data operator type
+	 * @param inputParameters input parameters
 	 */
 	public DataOp(String l, DataType dt, ValueType vt, 
 			DataOpTypes dop, HashMap<String, Hop> inputParameters) {
@@ -127,26 +144,16 @@ public class DataOp extends Hop
 			setInputFormatType(FileFormatTypes.BINARY);
 	}
 	
-	// CHECKPOINT operation
-	// This constructor does not support any expression in parameters
-	public DataOp(String l, DataType dt, ValueType vt, Hop in,
-			LiteralOp level, DataOpTypes dop, String fname) {
-		super(l, dt, vt);
-		_dataop = dop;
-		getInput().add(0, in);
-		getInput().add(1, level);
-		in.getParent().add(this);
-		level.getParent().add(this);
-		_fileName = fname;
-
-		if (dop == DataOpTypes.TRANSIENTWRITE || dop == DataOpTypes.FUNCTIONOUTPUT )
-			setInputFormatType(FileFormatTypes.BINARY);
-	}
-	
-	
 	/**
 	 *  WRITE operation for Matrix
 	 *  This constructor supports expression in parameters
+	 * 
+	 * @param l ?
+	 * @param dt data type
+	 * @param vt value type
+	 * @param dop data operator type
+	 * @param in high-level operator
+	 * @param inputParameters input parameters
 	 */
 	public DataOp(String l, DataType dt, ValueType vt, 
 		DataOpTypes dop, Hop in, HashMap<String, Hop> inputParameters) {
@@ -325,23 +332,6 @@ public class DataOp extends Hop
 		s += HopsData2String.get(_dataop);
 		s += " "+getName();
 		return s;
-	}
-
-	public void printMe() throws HopsException {
-		if (LOG.isDebugEnabled()){
-			if (getVisited() != VisitStatus.DONE) {
-				super.printMe();
-				LOG.debug("  DataOp: " + _dataop);
-				if (_fileName != null) {
-					LOG.debug(" file: " + _fileName);
-				}
-				LOG.debug(" format: " + getInputFormatType());
-				for (Hop h : getInput()) {
-					h.printMe();
-				}
-			}
-			setVisited(VisitStatus.DONE);
-		}
 	}
 
 	@Override

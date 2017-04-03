@@ -20,6 +20,7 @@
 package org.apache.sysml.runtime.instructions.spark;
 
 import org.apache.sysml.hops.AggBinaryOp.SparkAggType;
+import org.apache.sysml.lops.LeftIndex.LixCacheType;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
@@ -94,7 +95,7 @@ public abstract class IndexingSPInstruction  extends UnarySPInstruction
 			}
 		} 
 		else if ( opcode.equalsIgnoreCase("leftIndex") || opcode.equalsIgnoreCase("mapLeftIndex")) {
-			if ( parts.length == 8 ) {
+			if ( parts.length == 9 ) {
 				// Example: leftIndex:mVar1:mvar2:Var3:Var4:Var5:Var6:mVar7
 				CPOperand lhsInput = new CPOperand(parts[1]);
 				CPOperand rhsInput = new CPOperand(parts[2]);
@@ -103,8 +104,9 @@ public abstract class IndexingSPInstruction  extends UnarySPInstruction
 				CPOperand cl = new CPOperand(parts[5]);
 				CPOperand cu = new CPOperand(parts[6]);
 				CPOperand out = new CPOperand(parts[7]);
+				LixCacheType lixtype = LixCacheType.valueOf(parts[8]);
 				if( lhsInput.getDataType()==DataType.MATRIX )
-					return new MatrixIndexingSPInstruction(new SimpleOperator(null), lhsInput, rhsInput, rl, ru, cl, cu, out, opcode, str);
+					return new MatrixIndexingSPInstruction(new SimpleOperator(null), lhsInput, rhsInput, rl, ru, cl, cu, out, lixtype, opcode, str);
 				else
 					return new FrameIndexingSPInstruction(new SimpleOperator(null), lhsInput, rhsInput, rl, ru, cl, cu, out, opcode, str);
 			}

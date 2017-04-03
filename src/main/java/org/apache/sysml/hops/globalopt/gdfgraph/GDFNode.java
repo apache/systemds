@@ -28,9 +28,8 @@ import org.apache.sysml.hops.Hop.DataGenMethod;
 import org.apache.sysml.hops.Hop.Direction;
 import org.apache.sysml.hops.Hop.FileFormatTypes;
 import org.apache.sysml.hops.Hop.OpOp1;
-import org.apache.sysml.hops.Hop.ReOrgOp;
-import org.apache.sysml.hops.ReorgOp;
 import org.apache.sysml.hops.UnaryOp;
+import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.ProgramBlock;
@@ -123,7 +122,7 @@ public class GDFNode
 	 * MR configurations. This for examples excludes Literals or
 	 * any purely scalar operation.
 	 * 
-	 * @return
+	 * @return true if requires MR enumeration
 	 */
 	public boolean requiresMREnumeration()
 	{
@@ -145,24 +144,14 @@ public class GDFNode
 		return ret;
 	}
 	
-	/**
-	 * 
-	 * @param format
-	 * @return
-	 */
 	public boolean isValidInputFormatForOperation( FileFormatTypes format )
 	{
 		return (   _hop instanceof UnaryOp && format!=FileFormatTypes.CSV
 				|| (_hop instanceof AggUnaryOp && ((AggUnaryOp)_hop).getDirection()==Direction.RowCol && format!=FileFormatTypes.CSV)
-				|| (_hop instanceof ReorgOp && ((ReorgOp)_hop).getOp()==ReOrgOp.TRANSPOSE && format!=FileFormatTypes.CSV)
+				|| (HopRewriteUtils.isTransposeOperation(_hop) && format!=FileFormatTypes.CSV)
 				|| format==FileFormatTypes.BINARY ); //any op
 	}
 	
-	/**
-	 * 
-	 * @param deps
-	 * @return
-	 */
 	public String explain(String deps) 
 	{
 		String ldeps = (deps!=null) ? deps : "";

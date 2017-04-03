@@ -19,12 +19,13 @@
 
 package org.apache.sysml.runtime.controlprogram.parfor;
 
+import java.util.HashMap;
 import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.spark.Accumulator;
 import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.util.LongAccumulator;
 
 import scala.Tuple2;
 
@@ -52,20 +53,9 @@ public class RemoteParForSpark
 {
 	
 	protected static final Log LOG = LogFactory.getLog(RemoteParForSpark.class.getName());
-	
-	/**
-	 * 
-	 * @param pfid
-	 * @param program
-	 * @param tasks
-	 * @param ec
-	 * @param enableCPCaching
-	 * @param numMappers
-	 * @return
-	 * @throws DMLRuntimeException 
-	 */
-	public static RemoteParForJobReturn runJob(long pfid, String program, List<Task> tasks, ExecutionContext ec,
-			                                   boolean cpCaching, int numMappers) 
+
+	public static RemoteParForJobReturn runJob(long pfid, String program, HashMap<String, byte[]> clsMap, 
+			List<Task> tasks, ExecutionContext ec, boolean cpCaching, int numMappers) 
 		throws DMLRuntimeException  
 	{
 		String jobname = "ParFor-ESP";
@@ -75,21 +65,21 @@ public class RemoteParForSpark
 		JavaSparkContext sc = sec.getSparkContext();
 		
 		//initialize accumulators for tasks/iterations
-		Accumulator<Integer> aTasks = sc.accumulator(0);
-		Accumulator<Integer> aIters = sc.accumulator(0);
+		LongAccumulator aTasks = sc.sc().longAccumulator("tasks");
+		LongAccumulator aIters = sc.sc().longAccumulator("iterations");
 		
 		//run remote_spark parfor job 
 		//(w/o lazy evaluation to fit existing parfor framework, e.g., result merge)
-		RemoteParForSparkWorker func = new RemoteParForSparkWorker(program, cpCaching, aTasks, aIters);
-		List<Tuple2<Long,String>> out = 
-				sc.parallelize( tasks, numMappers )  //create rdd of parfor tasks
-		          .flatMapToPair( func )             //execute parfor tasks 
-		          .collect();                        //get output handles
+		RemoteParForSparkWorker func = new RemoteParForSparkWorker(program, clsMap, cpCaching, aTasks, aIters);
+		List<Tuple2<Long,String>> out = sc
+				.parallelize(tasks, tasks.size()) //create rdd of parfor tasks
+				.flatMapToPair(func)              //execute parfor tasks 
+				.collect();                       //get output handles
 		
 		//de-serialize results
 		LocalVariableMap[] results = RemoteParForUtils.getResults(out, LOG);
-		int numTasks = aTasks.value(); //get accumulator value
-		int numIters = aIters.value(); //get accumulator value
+		int numTasks = aTasks.value().intValue(); //get accumulator value
+		int numIters = aIters.value().intValue(); //get accumulator value
 		
 		//create output symbol table entries
 		RemoteParForJobReturn ret = new RemoteParForJobReturn(true, numTasks, numIters, results);

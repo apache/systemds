@@ -39,6 +39,7 @@ import org.apache.hadoop.mapred.lib.NLineInputFormat;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.controlprogram.parfor.Task.TaskType;
 import org.apache.sysml.runtime.instructions.cp.IntObject;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 
 
 /**
@@ -85,9 +86,14 @@ public class RemoteParForColocatedFileSplit extends FileSplit
 		//read task string
 		LongWritable key = new LongWritable();
 		Text value = new Text();
-		RecordReader<LongWritable,Text> reader = new NLineInputFormat().getRecordReader(this, job, Reporter.NULL);
-		reader.next(key, value);
-		reader.close();
+		RecordReader<LongWritable,Text> reader = null;
+		try {
+			reader = new NLineInputFormat().getRecordReader(this, job, Reporter.NULL);
+			reader.next(key, value);
+		}
+		finally {
+			IOUtilFunctions.closeSilently(reader);
+		}
 		
 		//parse task
 		Task t = Task.parseCompactString( value.toString() );
@@ -142,12 +148,6 @@ public class RemoteParForColocatedFileSplit extends FileSplit
 		return getTopHosts(hosts);
 	}
 
-	
-	/**
-	 * 
-	 * @param hosts
-	 * @param names
-	 */
 	private void countHosts( HashMap<String,Integer> hosts, String[] names )
 	{
 		for( String name : names )
@@ -159,12 +159,7 @@ public class RemoteParForColocatedFileSplit extends FileSplit
 				hosts.put(name, 1);
 		}
 	}
-	
-	/**
-	 * 
-	 * @param hosts
-	 * @return
-	 */
+
 	private String[] getTopHosts( HashMap<String,Integer> hosts )
 	{
 		int max = Integer.MIN_VALUE;

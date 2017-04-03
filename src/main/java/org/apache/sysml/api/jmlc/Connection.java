@@ -33,6 +33,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.sysml.api.DMLException;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
+import org.apache.sysml.api.mlcontext.ScriptType;
 import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.conf.ConfigurationManager;
@@ -87,7 +88,7 @@ import org.apache.wink.json4j.JSONObject;
  * <ul>
  *   <li>JMLC JUnit test cases (org.apache.sysml.test.integration.functions.jmlc)</li>
  *   <li><a target="_blank" href="http://apache.github.io/incubator-systemml/jmlc.html">JMLC section
- *   of SystemML online documentation</li>
+ *   of SystemML online documentation</a></li>
  * </ul>
  */
 public class Connection implements Closeable
@@ -135,7 +136,7 @@ public class Connection implements Closeable
 	 * @param outputs string array of output variables to register
 	 * @param parsePyDML {@code true} if PyDML, {@code false} if DML
 	 * @return PreparedScript object representing the precompiled script
-	 * @throws DMLException
+	 * @throws DMLException if DMLException occurs
 	 */
 	public PreparedScript prepareScript( String script, String[] inputs, String[] outputs, boolean parsePyDML) 
 		throws DMLException 
@@ -152,11 +153,13 @@ public class Connection implements Closeable
 	 * @param outputs string array of output variables to register
 	 * @param parsePyDML {@code true} if PyDML, {@code false} if DML
 	 * @return PreparedScript object representing the precompiled script
-	 * @throws DMLException
+	 * @throws DMLException if DMLException occurs
 	 */
 	public PreparedScript prepareScript( String script, Map<String, String> args, String[] inputs, String[] outputs, boolean parsePyDML) 
 		throws DMLException 
 	{
+		DMLScript.SCRIPT_TYPE = parsePyDML ? ScriptType.PYDML : ScriptType.DML;
+
 		//prepare arguments
 		
 		//simplified compilation chain
@@ -218,7 +221,7 @@ public class Connection implements Closeable
 	 * 
 	 * @param fname the filename of the script
 	 * @return string content of the script file
-	 * @throws IOException
+	 * @throws IOException if IOException occurs
 	 */
 	public String readScript(String fname) 
 		throws IOException
@@ -263,7 +266,7 @@ public class Connection implements Closeable
 	 * 
 	 * @param fname the filename of the input matrix
 	 * @return matrix as a two-dimensional double array
-	 * @throws IOException
+	 * @throws IOException if IOException occurs
 	 */
 	public double[][] readDoubleMatrix(String fname) 
 		throws IOException
@@ -305,7 +308,7 @@ public class Connection implements Closeable
 	 * @param bclen number of columns per block
 	 * @param nnz number of non-zero values, -1 indicates unknown
 	 * @return matrix as a two-dimensional double array
-	 * @throws IOException
+	 * @throws IOException if IOException occurs
 	 */
 	public double[][] readDoubleMatrix(String fname, InputInfo iinfo, long rows, long cols, int brlen, int bclen, long nnz) 
 		throws IOException
@@ -328,7 +331,7 @@ public class Connection implements Closeable
 	 * @param input string matrix in textcell format
 	 * @param meta string representing SystemML matrix metadata in JSON format
 	 * @return matrix as a two-dimensional double array
-	 * @throws IOException
+	 * @throws IOException if IOException occurs
 	 */
 	public double[][] convertToDoubleMatrix(String input, String meta) 
 		throws IOException
@@ -364,7 +367,7 @@ public class Connection implements Closeable
 	 * @param rows number of rows in the matrix
 	 * @param cols number of columns in the matrix
 	 * @return matrix as a two-dimensional double array
-	 * @throws IOException
+	 * @throws IOException if IOException occurs
 	 */
 	public double[][] convertToDoubleMatrix(String input, int rows, int cols) 
 		throws IOException
@@ -383,7 +386,7 @@ public class Connection implements Closeable
 	 * @param rows number of rows in the matrix
 	 * @param cols number of columns in the matrix
 	 * @return matrix as a two-dimensional double array
-	 * @throws IOException
+	 * @throws IOException if IOException occurs
 	 */
 	public double[][] convertToDoubleMatrix(InputStream input, int rows, int cols) 
 		throws IOException
@@ -415,7 +418,7 @@ public class Connection implements Closeable
 	 * 
 	 * @param fname the filename of the input frame
 	 * @return frame as a two-dimensional string array
-	 * @throws IOException
+	 * @throws IOException if IOException occurs
 	 */
 	public String[][] readStringFrame(String fname) 
 		throws IOException
@@ -448,7 +451,7 @@ public class Connection implements Closeable
 	 * @param rows number of rows in the frame
 	 * @param cols number of columns in the frame
 	 * @return frame as a two-dimensional string array
-	 * @throws IOException
+	 * @throws IOException if IOException occurs
 	 */
 	public String[][] readStringFrame(String fname, InputInfo iinfo, long rows, long cols) 
 		throws IOException
@@ -471,7 +474,7 @@ public class Connection implements Closeable
 	 * @param input string frame in textcell format
 	 * @param meta string representing SystemML frame metadata in JSON format
 	 * @return frame as a two-dimensional string array
-	 * @throws IOException
+	 * @throws IOException if IOException occurs
 	 */
 	public String[][] convertToStringFrame(String input, String meta) 
 		throws IOException
@@ -507,7 +510,7 @@ public class Connection implements Closeable
 	 * @param rows number of rows in the frame
 	 * @param cols number of columns in the frame
 	 * @return frame as a two-dimensional string array
-	 * @throws IOException
+	 * @throws IOException if IOException occurs
 	 */
 	public String[][] convertToStringFrame(String input, int rows, int cols) 
 		throws IOException
@@ -526,7 +529,7 @@ public class Connection implements Closeable
 	 * @param rows number of rows in the frame
 	 * @param cols number of columns in the frame
 	 * @return frame as a two-dimensional string array
-	 * @throws IOException
+	 * @throws IOException if IOException occurs
 	 */
 	public String[][] convertToStringFrame(InputStream input, int rows, int cols) 
 		throws IOException
@@ -560,7 +563,7 @@ public class Connection implements Closeable
 	 * 
 	 * @param metapath  hdfs file path to meta data directory
 	 * @return FrameBlock object representing transform metadata
-	 * @throws IOException
+	 * @throws IOException if IOException occurs
 	 */
 	public FrameBlock readTransformMetaDataFromFile(String metapath) throws IOException {
 		return readTransformMetaDataFromFile(null, metapath, TfUtils.TXMTD_SEP);
@@ -574,7 +577,7 @@ public class Connection implements Closeable
 	 * @param spec      transform specification as json string
 	 * @param metapath  hdfs file path to meta data directory
 	 * @return FrameBlock object representing transform metadata
-	 * @throws IOException
+	 * @throws IOException if IOException occurs
 	 */
 	public FrameBlock readTransformMetaDataFromFile(String spec, String metapath) throws IOException {
 		return readTransformMetaDataFromFile(spec, metapath, TfUtils.TXMTD_SEP);
@@ -588,7 +591,7 @@ public class Connection implements Closeable
 	 * @param metapath  hdfs file path to meta data directory
 	 * @param colDelim  separator for processing column names in the meta data file 'column.names'
 	 * @return FrameBlock object representing transform metadata
-	 * @throws IOException
+	 * @throws IOException if IOException occurs
 	 */
 	public FrameBlock readTransformMetaDataFromFile(String spec, String metapath, String colDelim) throws IOException {
 		return TfMetaUtils.readTransformMetaDataFromFile(spec, metapath, colDelim);
@@ -601,7 +604,7 @@ public class Connection implements Closeable
 	 * 
 	 * @param metapath  resource path to meta data directory
 	 * @return FrameBlock object representing transform metadata
-	 * @throws IOException
+	 * @throws IOException if IOException occurs
 	 */
 	public FrameBlock readTransformMetaDataFromPath(String metapath) throws IOException {
 		return readTransformMetaDataFromPath(null, metapath, TfUtils.TXMTD_SEP);
@@ -615,7 +618,7 @@ public class Connection implements Closeable
 	 * @param spec      transform specification as json string
 	 * @param metapath  resource path to meta data directory
 	 * @return FrameBlock object representing transform metadata
-	 * @throws IOException
+	 * @throws IOException if IOException occurs
 	 */
 	public FrameBlock readTransformMetaDataFromPath(String spec, String metapath) throws IOException {
 		return readTransformMetaDataFromPath(spec, metapath, TfUtils.TXMTD_SEP);
@@ -629,7 +632,7 @@ public class Connection implements Closeable
 	 * @param metapath  resource path to meta data directory
 	 * @param colDelim  separator for processing column names in the meta data file 'column.names'
 	 * @return FrameBlock object representing transform metadata
-	 * @throws IOException
+	 * @throws IOException if IOException occurs
 	 */
 	public FrameBlock readTransformMetaDataFromPath(String spec, String metapath, String colDelim) throws IOException {
 		return TfMetaUtils.readTransformMetaDataFromPath(spec, metapath, colDelim);

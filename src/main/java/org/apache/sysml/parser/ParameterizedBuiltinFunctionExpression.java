@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 import org.apache.sysml.hops.Hop.ParamBuiltinOp;
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.parser.LanguageException.LanguageErrorCodes;
 
 
@@ -134,14 +135,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		_varParams = varParams;
 		this.setAllPositions(filename, blp, bcp, elp, ecp);
 	}
-   
-	public ParameterizedBuiltinFunctionExpression(String filename, int blp, int bcp, int elp, int ecp) {
-		_kind = Kind.ParameterizedBuiltinFunctionOp;
-		_opcode = ParameterizedBuiltinFunctionOp.INVALID;
-		_varParams = new HashMap<String,Expression>();
-		this.setAllPositions(filename, blp, bcp, elp, ecp);
-	}
-    
+
 	public Expression rewriteExpression(String prefix) throws LanguageException {
 		
 		HashMap<String,Expression> newVarParams = new HashMap<String,Expression>();
@@ -174,16 +168,10 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 	public void addVarParam(String name, Expression value){
 		_varParams.put(name, value);
 	}
-	
-	public void removeVarParam(String name) {
-		_varParams.remove(name);
-	}
-	
+
 	/**
 	 * Validate parse tree : Process BuiltinFunction Expression in an assignment
 	 * statement
-	 * 
-	 * @throws LanguageException
 	 */
 	@Override
 	public void validateExpression(HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> constVars, boolean conditional)
@@ -258,7 +246,13 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			break;
 			
 		default: //always unconditional (because unsupported operation)
-			raiseValidateError("Unsupported parameterized function "+ getOpCode(), false, LanguageErrorCodes.INVALID_PARAMETERS);
+			//handle common issue of transformencode
+			if( getOpCode()==ParameterizedBuiltinFunctionOp.TRANSFORMENCODE )
+				raiseValidateError("Parameterized function "+ getOpCode() +" requires a multi-assignment statement "
+						+ "for data and metadata.", false, LanguageErrorCodes.UNSUPPORTED_EXPRESSION);
+			else
+				raiseValidateError("Unsupported parameterized function "+ getOpCode(), 
+						false, LanguageErrorCodes.UNSUPPORTED_EXPRESSION);
 		}
 		return;
 	}
@@ -298,7 +292,9 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 	}
 	
 	// example: A = transform(data=D, txmtd="", txspec="")
-	private void validateTransform(DataIdentifier output, boolean conditional) throws LanguageException {
+	private void validateTransform(DataIdentifier output, boolean conditional) 
+		throws LanguageException 
+	{
 		//validate data
 		checkDataType("transform", TF_FN_PARAM_DATA, DataType.FRAME, conditional);
 		
@@ -337,6 +333,14 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 				raiseValidateError("Only one of '" + TF_FN_PARAM_APPLYMTD + "' or '" + TF_FN_PARAM_OUTNAMES + "' can be specified in transform().", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 		}
 		
+		// disable frame csv reblocks as transform operates directly over csv files
+		// (this is required to support both file-based transform and frame-based
+		// transform at the same time; hence, transform and frame-based transform
+		// functions over csv cannot be used in the same script; accordingly we
+		// give an appropriate warning)
+		OptimizerUtils.ALLOW_FRAME_CSV_REBLOCK = false;
+		raiseValidateError("Disable frame csv reblock to support file-based transform.", true);
+		
 		// Output is a matrix with same dims as input
 		output.setDataType(DataType.MATRIX);
 		output.setFormatType(FormatType.CSV);
@@ -362,12 +366,6 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		output.setDimensions(-1, -1);
 	}
 	
-	/**
-	 * 
-	 * @param output
-	 * @param conditional
-	 * @throws LanguageException
-	 */
 	private void validateTransformDecode(DataIdentifier output, boolean conditional) 
 		throws LanguageException 
 	{
@@ -384,12 +382,6 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		output.setDimensions(-1, -1);
 	}
 	
-	/**
-	 * 
-	 * @param output
-	 * @param conditional
-	 * @throws LanguageException
-	 */
 	private void validateTransformMeta(DataIdentifier output, boolean conditional) 
 		throws LanguageException 
 	{
@@ -405,12 +397,6 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		output.setDimensions(-1, -1);
 	}
 	
-	/**
-	 * 
-	 * @param output
-	 * @param conditional
-	 * @throws LanguageException
-	 */
 	private void validateTransformEncode(DataIdentifier output1, DataIdentifier output2, boolean conditional) 
 		throws LanguageException 
 	{
@@ -541,12 +527,6 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		
 	}
 	
-	/**
-	 * 
-	 * @param output
-	 * @param conditional
-	 * @throws LanguageException
-	 */
 	private void validateGroupedAgg(DataIdentifier output, boolean conditional) 
 		throws LanguageException 
 	{
@@ -736,12 +716,6 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		return;
 	}
 	
-	/**
-	 * 
-	 * @param output
-	 * @param conditional
-	 * @throws LanguageException
-	 */
 	private void validateCastAsString(DataIdentifier output, boolean conditional) 
 		throws LanguageException 
 	{
@@ -767,15 +741,6 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		output.setDimensions(0, 0);
 	}
 
-
-	/**
-	 * 
-	 * @param fname
-	 * @param pname
-	 * @param dt
-	 * @param conditional
-	 * @throws LanguageException
-	 */
 	private void checkDataType( String fname, String pname, DataType dt, boolean conditional ) 
 		throws LanguageException 
 	{
@@ -785,17 +750,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		else if( data.getOutput().getDataType() != dt )
 			raiseValidateError("Input to "+fname+"::"+pname+" must be of type '"+dt.toString()+"'. It is of type '"+data.getOutput().getDataType()+"'.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);		
 	}
-	
 
-	/**
-	 * 
-	 * @param fname
-	 * @param pname
-	 * @param dt
-	 * @param vt
-	 * @param conditional
-	 * @throws LanguageException
-	 */
 	private void checkDataValueType( String fname, String pname, DataType dt, ValueType vt, boolean conditional ) 
 		throws LanguageException 
 	{

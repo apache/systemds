@@ -30,11 +30,6 @@ import org.apache.sysml.runtime.matrix.mapred.CachedValueMap;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-
-/**
- * 
- * 
- */
 public class MMTSJMRInstruction extends UnaryInstruction
 {	
 	
@@ -48,22 +43,12 @@ public class MMTSJMRInstruction extends UnaryInstruction
 		
 		_type = type;
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public MMTSJType getMMTSJType()
 	{
 		return _type;
 	}
-	
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static MMTSJMRInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{

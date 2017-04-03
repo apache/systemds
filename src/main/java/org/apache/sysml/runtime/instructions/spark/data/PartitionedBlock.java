@@ -106,14 +106,7 @@ public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 		int ncblks = getNumColumnBlocks();
 		_partBlocks = new CacheBlock[nrblks * ncblks];
 	}
-	
-	
-	/**
-	 * 
-	 * @param offset
-	 * @param numBlks
-	 * @return
-	 */
+
 	public PartitionedBlock<T> createPartition( int offset, int numBlks, T block )
 	{
 		PartitionedBlock<T> ret = new PartitionedBlock<T>();
@@ -143,30 +136,15 @@ public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 	public long getNumColumnsPerBlock() {
 		return _bclen;
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public int getNumRowBlocks() {
 		return (int)Math.ceil((double)_rlen/_brlen);
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public int getNumColumnBlocks() {
 		return (int)Math.ceil((double)_clen/_bclen);
 	}
-	
-	/**
-	 * 
-	 * @param rowIndex
-	 * @param colIndex
-	 * @return
-	 * @throws DMLRuntimeException 
-	 */
+
 	@SuppressWarnings("unchecked")
 	public T getBlock(int rowIndex, int colIndex) 
 		throws DMLRuntimeException 
@@ -184,14 +162,7 @@ public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 		int ix = rix*ncblks+cix - _offset;
 		return (T)_partBlocks[ix];
 	}
-	
-	/**
-	 * 
-	 * @param rowIndex
-	 * @param colIndex
-	 * @param mb
-	 * @throws DMLRuntimeException
-	 */
+
 	public void setBlock(int rowIndex, int colIndex, T block) 
 		throws DMLRuntimeException
 	{
@@ -209,10 +180,6 @@ public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 		_partBlocks[ ix ] = block;	
 	}
 
-	/**
-	 * 
-	 * @return
-	 */	
 	public long getInMemorySize() {
 		long ret = 24; //header
 		ret += 32;    //block array
@@ -223,12 +190,7 @@ public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 		
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
-	
+
 	public long getExactSerializedSize() {
 		long ret = 24; //header
 		
@@ -244,13 +206,13 @@ public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 	 * multiple blocks. The result is always a single result matrix block. All semantics are 
 	 * equivalent to the core matrix block slice operations. 
 	 * 
-	 * @param rl
-	 * @param ru
-	 * @param cl
-	 * @param cu
-	 * @param matrixBlock
-	 * @return
-	 * @throws DMLRuntimeException 
+	 * @param rl row lower bound
+	 * @param ru row upper bound
+	 * @param cl column lower bound
+	 * @param cu column upper bound
+	 * @param block block object
+	 * @return block object
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	@SuppressWarnings("unchecked")
 	public T sliceOperations(long rl, long ru, long cl, long cu, T block) 
@@ -297,29 +259,30 @@ public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 	 * Redirects the default java serialization via externalizable to our default 
 	 * hadoop writable serialization for efficient broadcast deserialization. 
 	 * 
-	 * @param is
-	 * @throws IOException
+	 * @param is object input
+	 * @throws IOException if IOException occurs
 	 */
 	public void readExternal(ObjectInput is) 
 		throws IOException
 	{
 		DataInput dis = is;
 		
-		if( is instanceof ObjectInputStream ) {
+		int code = readHeader(dis);
+		if( is instanceof ObjectInputStream && code == 0) {	// Apply only for MatrixBlock at this point as a temporary workaround
+															// We will generalize this code by adding UTF functionality to support Frame
 			//fast deserialize of dense/sparse blocks
 			ObjectInputStream ois = (ObjectInputStream)is;
 			dis = new FastBufferedDataInputStream(ois);
 		}
-		
-		readHeaderAndPayload(dis);
+		readPayload(dis, code);
 	}
 	
 	/**
 	 * Redirects the default java serialization via externalizable to our default 
 	 * hadoop writable serialization for efficient broadcast serialization. 
 	 * 
-	 * @param is
-	 * @throws IOException
+	 * @param os object output
+	 * @throws IOException if IOException occurs
 	 */
 	public void writeExternal(ObjectOutput os) 
 		throws IOException
@@ -336,12 +299,7 @@ public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 			writeHeaderAndPayload(os);	
 		}
 	}
-	
-	/**
-	 * 
-	 * @param dos
-	 * @throws IOException 
-	 */
+
 	private void writeHeaderAndPayload(DataOutput dos) 
 		throws IOException
 	{
@@ -357,12 +315,7 @@ public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 			block.write(dos);
 	}
 
-	/**
-	 * 
-	 * @param din
-	 * @throws IOException 
-	 */
-	private void readHeaderAndPayload(DataInput dis) 
+	private int readHeader(DataInput dis) 
 		throws IOException
 	{
 		_rlen = dis.readLong();
@@ -374,6 +327,14 @@ public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 		int code = dis.readByte();
 		
 		_partBlocks = new CacheBlock[len];
+		
+		return code;
+	}
+
+	private void readPayload(DataInput dis, int code) 
+		throws IOException
+	{
+		int len = _partBlocks.length;
 		for( int i=0; i<len; i++ ) {
 			_partBlocks[i] = CacheBlockFactory.newInstance(code);
 			_partBlocks[i].readFields(dis);

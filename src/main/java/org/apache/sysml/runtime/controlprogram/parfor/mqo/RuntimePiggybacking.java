@@ -31,10 +31,6 @@ import org.apache.sysml.runtime.matrix.JobReturn;
 import org.apache.sysml.runtime.matrix.data.Pair;
 
 
-/**
- * 
- * 
- */
 public class RuntimePiggybacking 
 {
 	
@@ -70,32 +66,18 @@ public class RuntimePiggybacking
 	/////////////////////////////////////////////////
 	// public interface to runtime piggybacking
 	///////
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public static boolean isActive()
 	{
 		return _active;
 	}
-	
-	/**
-	 * 
-	 * @param type
-	 * @param par
-	 * @throws DMLRuntimeException
-	 */
+
 	public static void start( int par ) 
 		throws DMLRuntimeException
 	{
 		start( DEFAULT_WORKER_TYPE, par );
 	}
-	
-	/**
-	 * @throws DMLRuntimeException 
-	 * 
-	 */
+
 	public static void start( PiggybackingType type, int par ) 
 		throws DMLRuntimeException
 	{
@@ -121,11 +103,7 @@ public class RuntimePiggybacking
 		//start worker
 		_worker.start();
 	}
-	
-	/**
-	 * 
-	 * @throws DMLRuntimeException
-	 */
+
 	public static void stop() 
 		throws DMLRuntimeException 
 	{
@@ -144,14 +122,7 @@ public class RuntimePiggybacking
 			throw new DMLRuntimeException("Failed to stop runtime piggybacking server.", ex);
 		}
 	}
-	
-	/**
-	 * 
-	 * @param inst
-	 * @param ec
-	 * @return
-	 * @throws DMLRuntimeException 
-	 */
+
 	public static JobReturn submitJob(MRJobInstruction inst) 
 		throws DMLRuntimeException 
 	{
@@ -187,12 +158,7 @@ public class RuntimePiggybacking
 		
 		return ret;
 	}		
-	
-	/**
-	 * 
-	 * @param type
-	 * @return
-	 */
+
 	public static boolean isSupportedJobType( JobType type )
 	{
 		// reblock and datagen apply as well but this would limit the recompilation
@@ -210,7 +176,7 @@ public class RuntimePiggybacking
 	 * but are not necessarily mergable. This method returns the largest 
 	 * instruction set currently in the pool. 
 	 * 
-	 * @return
+	 * @return linked list of MR job instructions
 	 */
 	protected static LinkedList<Pair<Long,MRJobInstruction>> getMaxWorkingSet()
 	{
@@ -242,11 +208,7 @@ public class RuntimePiggybacking
 		
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public static boolean isEmptyJobPool()
 	{
 		return _pool.isEmpty();

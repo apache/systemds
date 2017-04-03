@@ -30,15 +30,13 @@ import org.apache.sysml.test.utils.TestUtils;
 
 public class ParForRulebasedOptimizerTest extends AutomatedTestBase 
 {
-	
-	private final static String TEST_NAME1 = "parfor_optimizer1";
-	private final static String TEST_NAME2 = "parfor_optimizer2";
-	private final static String TEST_NAME3 = "parfor_optimizer3";
+	private final static String TEST_NAME1 = "parfor_optimizer1"; //+b for dml 
+	private final static String TEST_NAME2 = "parfor_optimizer2"; //+b for dml
+	private final static String TEST_NAME3 = "parfor_optimizer3"; //+b for dml
 	private final static String TEST_DIR = "functions/parfor/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + ParForRulebasedOptimizerTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-10;
-	
-	
+		
 	private final static int rows1 = 1000; //small CP
 	private final static int rows2 = 10000; //large MR
 	
@@ -67,82 +65,127 @@ public class ParForRulebasedOptimizerTest extends AutomatedTestBase
 
 	
 	@Test
-	public void testParForOptimizerCorrelationSmallSmall() 
-	{
-		runParForOptimizerTest(1, false, false);
-	}
-	
-	
-	@Test
-	public void testParForOptimizerCorrelationSmallLarge() 
-	{
-		runParForOptimizerTest(1, false, true);
-	}
-	
-	
-	@Test
-	public void testParForOptimizerCorrelationLargeSmall() 
-	{
-		runParForOptimizerTest(1, true, false);
+	public void testParForRulebasedOptimizerCorrelationSmallSmall() {
+		runParForOptimizerTest(1, false, false, false);
 	}
 	
 	@Test
-	public void testParForOptimizerCorrelationLargeLarge() 
-	{
-		runParForOptimizerTest(1, true, true);
-	}
-	
-	
-	@Test
-	public void testParForOptimizerBivariateStatsSmallSmall() 
-	{
-		runParForOptimizerTest(2, false, false);
+	public void testParForRulebasedOptimizerCorrelationSmallLarge() {
+		runParForOptimizerTest(1, false, true, false);
 	}
 	
 	@Test
-	public void testParForOptimizerBivariateStatsSmallLarge() 
-	{
-		runParForOptimizerTest(2, false, true);
+	public void testParForRulebasedOptimizerCorrelationLargeSmall() {
+		runParForOptimizerTest(1, true, false, false);
 	}
 	
 	@Test
-	public void testParForOptimizerBivariateStatsLargeSmall() 
-	{
-		runParForOptimizerTest(2, true, false);
+	public void testParForRulebasedOptimizerCorrelationLargeLarge() {
+		runParForOptimizerTest(1, true, true, false);
 	}
 	
 	@Test
-	public void testParForOptimizerBivariateStatsLargeLarge() 
-	{
-		runParForOptimizerTest(2, true, true);
+	public void testParForRulebasedOptimizerBivariateStatsSmallSmall() {
+		runParForOptimizerTest(2, false, false, false);
 	}
 	
 	@Test
-	public void testParForOptimizerFunctionInvocationSmallSmall() 
-	{
-		runParForOptimizerTest(3, false, false);
+	public void testParForRulebasedOptimizerBivariateStatsSmallLarge() {
+		runParForOptimizerTest(2, false, true, false);
 	}
 	
 	@Test
-	public void testParForOptimizerFunctionInvocationSmallLarge() 
-	{
-		runParForOptimizerTest(3, false, true);
+	public void testParForRulebasedOptimizerBivariateStatsLargeSmall() {
+		runParForOptimizerTest(2, true, false, false);
 	}
 	
 	@Test
-	public void testParForOptimizerFunctionInvocationLargeSmall() 
-	{
-		runParForOptimizerTest(3, true, false);
+	public void testParForRulebasedOptimizerBivariateStatsLargeLarge() {
+		runParForOptimizerTest(2, true, true, false);
 	}
 	
 	@Test
-	public void testParForOptimizerFunctionInvocationLargeLarge() 
-	{
-		runParForOptimizerTest(3, true, true);
+	public void testParForRulebasedOptimizerFunctionInvocationSmallSmall() {
+		runParForOptimizerTest(3, false, false, false);
+	}
+	
+	@Test
+	public void testParForRulebasedOptimizerFunctionInvocationSmallLarge() {
+		runParForOptimizerTest(3, false, true, false);
+	}
+	
+	@Test
+	public void testParForRulebasedOptimizerFunctionInvocationLargeSmall() {
+		runParForOptimizerTest(3, true, false, false);
+	}
+	
+	@Test
+	public void testParForRulebasedOptimizerFunctionInvocationLargeLarge() {
+		runParForOptimizerTest(3, true, true, false);
+	}
+	
+	@Test
+	public void testParForHeuristicOptimizerCorrelationSmallSmall() {
+		runParForOptimizerTest(1, false, false, true);
+	}
+	
+	@Test
+	public void testParForHeuristicOptimizerCorrelationSmallLarge() {
+		runParForOptimizerTest(1, false, true, true);
+	}
+	
+	@Test
+	public void testParForHeuristicOptimizerCorrelationLargeSmall() {
+		runParForOptimizerTest(1, true, false, true);
+	}
+	
+	@Test
+	public void testParForHeuristicOptimizerCorrelationLargeLarge() {
+		runParForOptimizerTest(1, true, true, true);
+	}
+	
+	@Test
+	public void testParForHeuristicOptimizerBivariateStatsSmallSmall() {
+		runParForOptimizerTest(2, false, false, true);
+	}
+	
+	@Test
+	public void testParForHeuristicOptimizerBivariateStatsSmallLarge() {
+		runParForOptimizerTest(2, false, true, true);
+	}
+	
+	@Test
+	public void testParForHeuristicOptimizerBivariateStatsLargeSmall() {
+		runParForOptimizerTest(2, true, false, true);
+	}
+	
+	@Test
+	public void testParForHeuristicOptimizerBivariateStatsLargeLarge() {
+		runParForOptimizerTest(2, true, true, true);
+	}
+	
+	@Test
+	public void testParForHeuristicOptimizerFunctionInvocationSmallSmall() {
+		runParForOptimizerTest(3, false, false, true);
+	}
+	
+	@Test
+	public void testParForHeuristicOptimizerFunctionInvocationSmallLarge() {
+		runParForOptimizerTest(3, false, true, true);
+	}
+	
+	@Test
+	public void testParForHeuristicOptimizerFunctionInvocationLargeSmall() {
+		runParForOptimizerTest(3, true, false, true);
+	}
+	
+	@Test
+	public void testParForHeuristicOptimizerFunctionInvocationLargeLarge() {
+		runParForOptimizerTest(3, true, true, true);
 	}
 	
 	
-	private void runParForOptimizerTest( int scriptNum, boolean largeRows, boolean largeCols )
+	private void runParForOptimizerTest( int scriptNum, boolean largeRows, boolean largeCols, boolean timebasedOpt )
 	{
 		//find right rows and cols configuration
 		int rows=-1, cols=-1;  
@@ -171,31 +214,34 @@ public class ParForRulebasedOptimizerTest extends AutomatedTestBase
 		switch( scriptNum )
 		{
 			case 1: 
-				runUnaryTest(scriptNum, rows, cols);
+				runUnaryTest(scriptNum, timebasedOpt, rows, cols);
 				break;
 			case 2:
-				runNaryTest(scriptNum, rows, cols);
+				runNaryTest(scriptNum, timebasedOpt, rows, cols);
 				break;
 			case 3: 
-				runUnaryTest(scriptNum, rows, cols);
+				runUnaryTest(scriptNum, timebasedOpt, rows, cols);
 				break;	
 		}
 	}
 	
-	private void runUnaryTest(int scriptNum, int rows, int cols )
+	private void runUnaryTest(int scriptNum, boolean timebasedOpt, int rows, int cols )
 	{
 		TestConfiguration config = null;
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		if( scriptNum==1 )
 		{
 			config=getTestConfiguration(TEST_NAME1);
-			fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
+			String testname = TEST_NAME1 + (timebasedOpt ? "b" : "");
+			fullDMLScriptName = HOME + testname + ".dml";
 		}
 		else if( scriptNum==3 )
 		{
 			config=getTestConfiguration(TEST_NAME3);
-			fullDMLScriptName = HOME + TEST_NAME3 + ".dml";
+			String testname = TEST_NAME3 + (timebasedOpt ? "b" : "");
+			fullDMLScriptName = HOME + testname + ".dml";
 		}
+		
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
 		loadTestConfiguration(config);
@@ -235,7 +281,7 @@ public class ParForRulebasedOptimizerTest extends AutomatedTestBase
 		TestUtils.compareMatrices(dmlfile, rfile, eps, "DML", "R");		
 	}
 	
-	private void runNaryTest(int scriptNum, int rows, int cols)
+	private void runNaryTest(int scriptNum, boolean timebasedOpt, int rows, int cols)
 	{
 		TestConfiguration config = getTestConfiguration(TEST_NAME2);
 		config.addVariable("rows", rows);
@@ -244,7 +290,8 @@ public class ParForRulebasedOptimizerTest extends AutomatedTestBase
 		
 		/* This is for running the junit test the new way, i.e., construct the arguments directly */
 		String HOME = SCRIPT_DIR + TEST_DIR;
-		fullDMLScriptName = HOME + TEST_NAME2 + ".dml";
+		String testname = TEST_NAME2 + (timebasedOpt ? "b" : "");
+		fullDMLScriptName = HOME + testname + ".dml";
 		programArgs = new String[]{"-args", 
 			input("D"),
 			input("S1"), input("S2"),

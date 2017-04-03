@@ -47,13 +47,7 @@ public class AggregateUnaryInstruction extends UnaryMRInstructionBase
 		
 		_dropCorr = dropCorr;
 	}
-	
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static AggregateUnaryInstruction parseInstruction ( String str ) throws DMLRuntimeException {
 		
 		InstructionUtils.checkNumFields ( str, 3 );

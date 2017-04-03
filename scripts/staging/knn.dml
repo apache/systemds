@@ -297,7 +297,7 @@ naiveKNNsearchForPredict = function(
     } else {
         OL = matrix (0, rows = num_queries, cols = K);
         parfor (i in 1:num_queries) {
-            D_sorted=order(target=append(D[,i],L), by=1, decreasing=FALSE, index.return=FALSE);
+            D_sorted=order(target=cbind(D[,i],L), by=1, decreasing=FALSE, index.return=FALSE);
             OL[i,] = t(D_sorted[1:K,2]);
         }   
     }   
@@ -491,7 +491,7 @@ return(
         print( "Get k, which value is " + k  );
     }else{
         m_err_for_order = 
-            append( t( m_iter_err_sum ), matrix( seq( k_min,k_max,1  ),k_max-k_min+1,1  )  );
+            cbind( t( m_iter_err_sum ), matrix( seq( k_min,k_max,1  ),k_max-k_min+1,1  )  );
         m_err_for_order = removeEmpty( 
             target=m_err_for_order * t( m_active_flag == 0 ),margin="rows"  );
         for( i in 1:nrow( m_err_for_order  )  ){
@@ -606,7 +606,7 @@ return(
                 }
                 parfor( i in 1:i_n_column ,check=0){
                     if( as.scalar( m_feature_selected_flag[1,i] ) != 1 ){
-                        m_tmp_process_data = append( m_tmp_data,in_m_data[,i] );
+                        m_tmp_process_data = cbind( m_tmp_data,in_m_data[,i] );
                         m_neighbor_value = getKNeighbor( 
                             m_tmp_process_data,m_tmp_process_data[i_process_begin_item:i_process_end_item,],in_m_data_target,k_value );
                         m_tmp_err = getErr( 
@@ -616,9 +616,9 @@ return(
                 }
             }
             if( m_this_model_selected_flag == TRUE ){
-                m_active_flag_tmp = append( m_feature_selected_flag,matrix( 0,1,1 ) );
+                m_active_flag_tmp = cbind( m_feature_selected_flag,matrix( 0,1,1 ) );
             }else{
-                m_active_flag_tmp = append( m_feature_selected_flag,matrix( 1,1,1 ) );
+                m_active_flag_tmp = cbind( m_feature_selected_flag,matrix( 1,1,1 ) );
             }
             
             s_rows_number = i_process_item#nrow(m_err);

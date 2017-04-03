@@ -68,11 +68,6 @@ public class DblArray
 		return Arrays.toString(_arr);
 	}
 
-	/**
-	 * 
-	 * @param ds
-	 * @return
-	 */
 	public static boolean isZero(double[] ds) {
 		for (int i = 0; i < ds.length; i++)
 			if (ds[i] != 0.0)
@@ -80,11 +75,6 @@ public class DblArray
 		return true;
 	}
 
-	/**
-	 * 
-	 * @param val
-	 * @return
-	 */
 	public static boolean isZero(DblArray val) {
 		return val._zero || isZero(val._arr);
 	}

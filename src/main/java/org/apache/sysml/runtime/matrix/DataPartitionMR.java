@@ -22,6 +22,7 @@ package org.apache.sysml.runtime.matrix;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
+import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PartitionFormat;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.parfor.DataPartitioner;
 import org.apache.sysml.runtime.controlprogram.parfor.DataPartitionerRemoteMR;
@@ -81,8 +82,8 @@ public class DataPartitionMR
 					default: 
 						throw new DMLRuntimeException("Unsupported partition format for distributed cache input: "+pformat);
 				}
-				
-				DataPartitioner dpart = new DataPartitionerRemoteMR(pformat, (int)N, -1, numReducers, replication, 4, false, true);
+				PartitionFormat pf = new PartitionFormat(pformat, (int)N);
+				DataPartitioner dpart = new DataPartitionerRemoteMR(pf, -1, numReducers, replication, false, true);
 				out = dpart.createPartitionedMatrixObject(in, out, true);
 				
 				sts[i] = out.getMatrixCharacteristics();

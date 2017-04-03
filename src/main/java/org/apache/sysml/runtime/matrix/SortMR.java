@@ -111,24 +111,21 @@ public class SortMR
      * @param fs the file system
      * @param p the path to read
      * @param job the job config
-     * @return the strings to split the partitions on
-     * @throws IOException
-     * @throws IllegalAccessException 
-     * @throws InstantiationException 
-     */
+	 * @return list of writable comparables
+	 * @throws IOException if IOException occurs
+	 */
     private ArrayList<WritableComparable> readPartitions(FileSystem fs, Path p, JobConf job) 
     	throws IOException 
     {
-    	SequenceFile.Reader reader = new SequenceFile.Reader(fs, p, job);
     	ArrayList<WritableComparable> parts = new ArrayList<WritableComparable>();
+    	SequenceFile.Reader reader = null;
     	try 
     	{
-			//WritableComparable key = keyClass.newInstance();
-    		DoubleWritable key = new DoubleWritable();
+    		reader = new SequenceFile.Reader(fs, p, job);
+			DoubleWritable key = new DoubleWritable();
 			NullWritable value = NullWritable.get();
 			while (reader.next(key, value)) {
 				parts.add(key);
-				//key=keyClass.newInstance();
 				key = new DoubleWritable();
 			}
 		} 
@@ -139,7 +136,6 @@ public class SortMR
     		IOUtilFunctions.closeSilently(reader);
     	}
 		
-		reader.close();
 		return parts;
     }
 
@@ -311,14 +307,7 @@ public class SortMR
 		    return new JobReturn(s[0], counts, partitionWith0, missing0s, runjob.isSuccessful());
 		}
 	}
-	
 
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException 
-	 */
 	public static MRInstruction parseSortInstruction(String str) 
 		throws DMLRuntimeException 
 	{
@@ -333,42 +322,19 @@ public class SortMR
 			return new UnaryInstruction(null, in, out, str);
 		}
 	}
-	
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 */
+
 	private static SortKeys.OperationTypes getSortInstructionType(String str)
 	{
 		String[] parts = str.split(Lop.OPERAND_DELIMITOR);
 		return SortKeys.OperationTypes.valueOf(parts[parts.length-2]);
 	}
-	
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 */
+
 	private static boolean getSortInstructionDescending(String str)
 	{
 		String[] parts = str.split(Lop.OPERAND_DELIMITOR);
 		return Boolean.parseBoolean(parts[5]);
 	}
-	
-	/**
-	 * 
-	 * @param input
-	 * @param rlen
-	 * @param clen
-	 * @param brlen
-	 * @param bclen
-	 * @param counts
-	 * @param numReducers
-	 * @param replication
-	 * @param output
-	 * @throws Exception
-	 */
+
 	private static boolean runStitchupJob(String input, long rlen, long clen, int brlen, int bclen, long[] counts,
 			int numReducers, int replication, String output) 
 	  throws Exception 

@@ -362,12 +362,7 @@ public class ReduceBase extends MRBaseForCommonInstructions
 			throw new IOException(e);
 		}
 	}
-	
 
-	/**
-	 * 
-	 * @return
-	 */
 	protected boolean containsTernaryInstruction()
 	{
 		if( mixed_instructions != null )
@@ -385,10 +380,6 @@ public class ReduceBase extends MRBaseForCommonInstructions
 		return true;
 	}
 
-	/**
-	 * 
-	 * @param job
-	 */
 	protected void prepareMatrixCharacteristicsTernaryInstruction(JobConf job)
 	{
 		if( mixed_instructions != null )

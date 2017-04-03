@@ -50,7 +50,7 @@ public class WhileProgramBlock extends ProgramBlock
 	private ArrayList <Instruction> _exitInstructions ;
 	private ArrayList<ProgramBlock> _childBlocks;
 
-	public WhileProgramBlock(Program prog, ArrayList<Instruction> predicate) throws DMLRuntimeException{
+	public WhileProgramBlock(Program prog, ArrayList<Instruction> predicate) {
 		super(prog);
 		_predicate = predicate;
 		_predicateResultVar = findPredicateResultVar ();
@@ -69,11 +69,7 @@ public class WhileProgramBlock extends ProgramBlock
 	public void setExitInstructions1(ArrayList<Instruction> predicate) { 
 		_predicate = predicate; 
 	}
-	
-	public void addExitInstruction(Instruction inst) { 
-		_exitInstructions.add(inst); 
-	}
-	
+
 	public ArrayList<Instruction> getPredicate() { 
 		return _predicate; 
 	}

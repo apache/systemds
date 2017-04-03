@@ -53,13 +53,6 @@ public class GroupedAggregateM extends Lop
 		_cacheType = partitioned ? CacheType.RIGHT_PART : CacheType.RIGHT;
 	}
 
-	/**
-	 * 
-	 * @param inputParameterLops
-	 * @param dt
-	 * @param vt
-	 * @param et
-	 */
 	private void init(HashMap<String, Lop> inputParameterLops, 
 			DataType dt, ValueType vt, ExecType et) 
 	{
@@ -95,8 +88,7 @@ public class GroupedAggregateM extends Lop
 	}
 	
 	@Override
-	public String getInstructions(int input1, int input2, int output) 
-	{
+	public String getInstructions(int input1, int input2, int output) {
 		return getInstructions(
 			String.valueOf(input1),
 			String.valueOf(input2),
@@ -133,20 +125,13 @@ public class GroupedAggregateM extends Lop
 	}
 	
 	@Override
-	public boolean usesDistributedCache() 
-	{
-		if( getExecType()==ExecType.MR )
-			return true;
-		else
-			return false;
+	public boolean usesDistributedCache() {
+		return (getExecType()==ExecType.MR);
 	}
 	
 	@Override
-	public int[] distributedCacheInputIndex() 
-	{
-		if( getExecType()==ExecType.MR )
-			return new int[]{2};
-		else
-			return new int[]{-1};
+	public int[] distributedCacheInputIndex() {
+		return (getExecType()==ExecType.MR) ?
+			new int[]{2} : new int[]{-1};
 	}
 }

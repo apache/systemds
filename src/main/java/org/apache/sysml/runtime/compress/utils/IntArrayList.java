@@ -22,7 +22,7 @@ package org.apache.sysml.runtime.compress.utils;
 import java.util.Arrays;
 
 /**
- * This class provides a memory-efficient replacement for ArrayList<Integer> for
+ * This class provides a memory-efficient replacement for {@code ArrayList<Integer>} for
  * restricted use cases.
  * 
  */
@@ -40,18 +40,10 @@ public class IntArrayList
 		_size = 0;
 	}
 
-	/**
-	 * 
-	 * @return
-	 */
 	public int size() {
 		return _size;
 	}
 
-	/**
-	 * 
-	 * @param value
-	 */
 	public void appendValue(int value) {
 		// embedded value (no array allocation)
 		if( _size == 0 ) {
@@ -75,19 +67,20 @@ public class IntArrayList
 	}
 
 	/**
+	 * Returns the underlying array of offsets. Note that this array might be 
+	 * physically larger than the actual length of the offset lists. Use size() 
+	 * to obtain the actual length.
 	 * 
-	 * @return
+	 * @return integer array of offsets, the physical array length
+	 * may be larger than the length of the offset list 
 	 */
 	public int[] extractValues() {
 		if( _size == 1 )
 			return new int[] { _val0 };
 		else
-			return Arrays.copyOfRange(_data, 0, _size);
+			return _data;
 	}
 
-	/**
-	 * 
-	 */
 	private void resize() {
 		// check for integer overflow on resize
 		if( _data.length > Integer.MAX_VALUE / RESIZE_FACTOR )
@@ -95,8 +88,6 @@ public class IntArrayList
 					"IntArrayList resize leads to integer overflow: size=" + _size);
 
 		// resize data array and copy existing contents
-		int[] newdata = new int[_data.length * RESIZE_FACTOR];
-		System.arraycopy(_data, 0, newdata, 0, _size);
-		_data = newdata;
+		_data = Arrays.copyOf(_data, _data.length * RESIZE_FACTOR);
 	}
 }

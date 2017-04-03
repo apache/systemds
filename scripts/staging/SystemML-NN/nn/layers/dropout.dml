@@ -7,9 +7,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -22,6 +22,7 @@
 /*
  * Dropout layer.
  */
+
 forward = function(matrix[double] X, double p, int seed)
     return (matrix[double] out, matrix[double] mask) {
   /*
@@ -32,20 +33,24 @@ forward = function(matrix[double] X, double p, int seed)
    * the outputs of neurons) at test time.
    *
    * Inputs:
-   *  - X: Input data matrix, of shape (any, any).
+   *  - X: Inputs, of shape (any, any).
    *  - p: Probability of keeping a neuron output.
-   *  - seed: [Optional: -1] Random number generator seed.  Setting this
-   *      allows for deterministic evaluation.  Set to -1 for a random
-   *      seed.
+   *  - seed: [Optional: -1] Random number generator seed to allow for
+   *      deterministic evaluation.  Set to -1 for a random seed.
    *
    * Outputs:
-   *  - out: Ouptuts, of same shape as X.
+   *  - out: Outputs, of same shape as `X`.
    *  - mask: Dropout mask used to compute the output.
    */
+  # Normally, we might use something like
+  #    `mask = rand(rows=nrow(X), cols=ncol(X), min=0, max=1, seed=seed) <= p`
+  # to create a dropout mask.  Fortunately, SystemML has a `sparsity` parameter on
+  # the `rand` function that allows use to create a mask directly.
   if (seed == -1) {
-    seed = as.integer(floor(as.scalar(rand(rows=1, cols=1, min=1, max=100000))))
+    mask = rand(rows=nrow(X), cols=ncol(X), min=1, max=1, sparsity=p)
+  } else {
+    mask = rand(rows=nrow(X), cols=ncol(X), min=1, max=1, sparsity=p, seed=seed)
   }
-  mask = rand(rows=nrow(X), cols=ncol(X), min=0, max=1, seed=seed) <= p
   out = X * mask / p
 }
 
@@ -58,13 +63,13 @@ backward = function(matrix[double] dout, matrix[double] X, double p, matrix[doub
    * maintain the expected values at test time.
    *
    * Inputs:
-   *  - dout: Derivatives from upstream, of same shape as X.
-   *  - X: Previous input data matrix, of shape (any, any).
-   *  - p: Previous probability of keeping a neuron output.
-   *  - mask: Previous dropout mask used to compute the output.
+   *  - dout: Gradient wrt `out`, of same shape as `X`.
+   *  - X: Inputs, of shape (any, any).
+   *  - p: Probability of keeping a neuron output.
+   *  - mask: Dropout mask used to compute the output.
    *
    * Outputs:
-   *  - dX: Gradient wrt X, of same shape as X.
+   *  - dX: Gradient wrt `X`, of same shape as `X`.
    */
   dX = mask / p * dout
 }

@@ -57,7 +57,7 @@ import org.apache.sysml.runtime.util.MapReduceTool;
  *    the parallel reader does not do the validity check for.
  * 2) In extreme scenarios, the last comment might be in one split, and the following meta data
  *    in the subsequent split. This would create incorrect results or errors. However, this
- *    scenario is extremely unlikely (num threads > num lines if 1 comment line) and hence ignored 
+ *    scenario is extremely unlikely (num threads &gt; num lines if 1 comment line) and hence ignored 
  *    similar to our parallel MR setting (but there we have a 128MB guarantee).     
  * 3) However, we use MIN_FILESIZE_MM (8KB) to give guarantees for the common case of small headers
  *    in order the issue described in (2).
@@ -102,20 +102,6 @@ public class ReaderTextCellParallel extends MatrixReader
 		return ret;
 	}
 
-
-	/**
-	 * 
-	 * @param path
-	 * @param job
-	 * @param dest
-	 * @param rlen
-	 * @param clen
-	 * @param brlen
-	 * @param bclen
-	 * @throws IOException
-	 * @throws IllegalAccessException
-	 * @throws InstantiationException
-	 */
 	private void readTextCellMatrixFromHDFS( Path path, JobConf job, MatrixBlock dest, long rlen, long clen, int brlen, int bclen, boolean matrixMarket )
 		throws IOException
 	{
@@ -161,11 +147,7 @@ public class ReaderTextCellParallel extends MatrixReader
 			throw new IOException("Threadpool issue, while parallel read.", e);
 		}
 	}
-	
-	/**
-	 * 
-	 * 
-	 */
+
 	public static class ReadTask implements Callable<Long> 
 	{
 		private InputSplit _split = null;

@@ -179,12 +179,6 @@ public class DMLDebuggerInterface
 		System.out.flush();
 	}
 	
-	public void writeToStandardError(String errStr) {
-		System.err.print(errStr);
-		System.err.flush();
-	}
-
-	
 	public void writelnToStandardError(String errStr) {
 		System.err.println(errStr);
 		System.err.flush();
@@ -235,7 +229,7 @@ public class DMLDebuggerInterface
 	/**
 	 * Read, process and return command from debugger CLI
 	 * @return CommandLine Current debug command (enter by user)
-	 * @throws DMLDebuggerException
+	 * @throws DMLDebuggerException if DMLDebuggerException occurs
 	 */
 	public CommandLine getDebuggerCommand()
 		throws DMLDebuggerException

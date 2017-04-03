@@ -73,16 +73,16 @@ public class AppendGAlignedSP extends Lop
 		sb.append( OPCODE );
 		
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( getInputs().get(0).prepInputOperand(input_index1+""));
+		sb.append( getInputs().get(0).prepInputOperand(input_index1));
 		
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( getInputs().get(1).prepInputOperand(input_index2+""));
+		sb.append( getInputs().get(1).prepInputOperand(input_index2));
 		
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( getInputs().get(2).prepScalarInputOperand(getExecType()));
 		
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( prepOutputOperand(output_index+"") );
+		sb.append( prepOutputOperand(output_index) );
 		
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( _cbind );
@@ -90,4 +90,3 @@ public class AppendGAlignedSP extends Lop
 		return sb.toString();
 	}
 }
-

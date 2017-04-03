@@ -32,18 +32,6 @@ import org.apache.sysml.parser.Expression.ValueType;
 public class CoVariance extends Lop 
 {
 
-	
-	/**
-	 * Constructor to perform covariance.
-	 * input1 <- data 
-	 * (prior to this lop, input vectors need to attached together using CombineBinary or CombineTertiary) 
-	 * @throws LopsException 
-	 */
-
-	public CoVariance(Lop input1, DataType dt, ValueType vt) throws LopsException {
-		this(input1, dt, vt, ExecType.MR);
-	}
-
 	public CoVariance(Lop input1, DataType dt, ValueType vt, ExecType et) throws LopsException {
 		super(Lop.Type.CoVariance, dt, vt);
 		init(input1, null, null, et);
@@ -107,33 +95,19 @@ public class CoVariance extends Lop
 	
 	/**
 	 * Function two generate CP instruction to compute unweighted covariance.
-	 * input1 -> input column 1
-	 * input2 -> input column 2
+	 * input1 -&gt; input column 1
+	 * input2 -&gt; input column 2
 	 */
 	@Override
 	public String getInstructions(String input1, String input2, String output) {
-		StringBuilder sb = new StringBuilder();
-		sb.append( getExecType() );
-		sb.append( Lop.OPERAND_DELIMITOR );
-		sb.append( "cov" );
-		sb.append( OPERAND_DELIMITOR );
-
-		sb.append( getInputs().get(0).prepInputOperand(input1));
-		sb.append( OPERAND_DELIMITOR );
-
-		sb.append( getInputs().get(1).prepInputOperand(input2));
-		sb.append( OPERAND_DELIMITOR );
-
-		sb.append( this.prepOutputOperand(output));
-		
-		return sb.toString();
+		return getInstructions(input1, input2, null, output);
 	}
 
 	/**
 	 * Function two generate CP instruction to compute weighted covariance.
-	 * input1 -> input column 1
-	 * input2 -> input column 2
-	 * input3 -> weights
+	 * input1 -&gt; input column 1
+	 * input2 -&gt; input column 2
+	 * input3 -&gt; weights
 	 */
 	@Override
 	public String getInstructions(String input1, String input2, String input3, String output) {
@@ -146,36 +120,29 @@ public class CoVariance extends Lop
 		sb.append( getInputs().get(0).prepInputOperand(input1));
 		sb.append( OPERAND_DELIMITOR );
 
-		sb.append( getInputs().get(1).prepInputOperand(input2));
-		sb.append( OPERAND_DELIMITOR );
-
-		sb.append( getInputs().get(2).prepInputOperand(input3));
-		sb.append( OPERAND_DELIMITOR );
+		if( input2 != null ) {
+			sb.append( getInputs().get(1).prepInputOperand(input2));
+			sb.append( OPERAND_DELIMITOR );
+		}
 		
-		sb.append( this.prepOutputOperand(output));
+		if( input3 != null ) {
+			sb.append( getInputs().get(2).prepInputOperand(input3));
+			sb.append( OPERAND_DELIMITOR );
+		}
+		
+		sb.append( prepOutputOperand(output));
 		
 		return sb.toString();
 	}
 
 	/**
 	 * Function to generate MR version of covariance instruction.
-	 * input_index -> denote the "combined" input columns and weights, 
+	 * input_index -&gt; denote the "combined" input columns and weights, 
 	 * when applicable.
 	 */
 	@Override
 	public String getInstructions(int input_index, int output_index) {
-		StringBuilder sb = new StringBuilder();
-		sb.append( getExecType() );
-		sb.append( Lop.OPERAND_DELIMITOR );
-		sb.append( "cov" );
-		sb.append( OPERAND_DELIMITOR );
-		
-		sb.append( getInputs().get(0).prepInputOperand(input_index));
-		sb.append( OPERAND_DELIMITOR );
-		
-		sb.append ( this.prepInputOperand(output_index));
-		
-		return sb.toString();
+		return getInstructions(String.valueOf(input_index), null, null, String.valueOf(output_index));
 	}
 
 }

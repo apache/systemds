@@ -25,7 +25,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 
 import org.apache.hadoop.conf.Configuration;
@@ -42,9 +41,6 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.SparseBlock;
 import org.apache.sysml.runtime.util.MapReduceTool;
 
-/**
- * 
- */
 public class WriterTextCSV extends MatrixWriter
 {
 	//blocksize for string concatenation in order to prevent write OOM 
@@ -93,32 +89,14 @@ public class WriterTextCSV extends MatrixWriter
 
 		IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, path);
 	}
-	
-	/**
-	 * 
-	 * @param path
-	 * @param job
-	 * @param fs
-	 * @param src
-	 * @param csvprops
-	 * @throws IOException 
-	 */
+
 	protected void writeCSVMatrixToHDFS(Path path, JobConf job, FileSystem fs, MatrixBlock src, CSVFileFormatProperties csvprops) 
 		throws IOException 
 	{
 		//sequential write csv file
 		writeCSVMatrixToFile(path, job, fs, src, 0, (int)src.getNumRows(), csvprops);
 	}
-	
-	/**
-	 * 
-	 * @param fileName
-	 * @param src
-	 * @param rlen
-	 * @param clen
-	 * @param nnz
-	 * @throws IOException
-	 */
+
 	protected final void writeCSVMatrixToFile( Path path, JobConf job, FileSystem fs, MatrixBlock src, int rl, int ru, CSVFileFormatProperties props )
 		throws IOException
 	{
@@ -259,100 +237,6 @@ public class WriterTextCSV extends MatrixWriter
 		}
 	}
 
-
-	
-	/**
-	 * Method to merge multiple CSV part files on HDFS into a single CSV file on HDFS. 
-	 * The part files are created by CSV_WRITE MR job. 
-	 * 
-	 * This method is invoked from CP-write instruction.
-	 * 
-	 * @param srcFileName
-	 * @param destFileName
-	 * @param csvprop
-	 * @param rlen
-	 * @param clen
-	 * @throws IOException
-	 */
-	public final void mergeCSVPartFiles(String srcFileName, String destFileName, CSVFileFormatProperties csvprop, long rlen, long clen) 
-		throws IOException 
-	{	
-		Configuration conf = new Configuration(ConfigurationManager.getCachedJobConf());
-
-		Path srcFilePath = new Path(srcFileName);
-		Path mergedFilePath = new Path(destFileName);
-		FileSystem hdfs = FileSystem.get(conf);
-
-		if (hdfs.exists(mergedFilePath)) {
-			hdfs.delete(mergedFilePath, true);
-		}
-		OutputStream out = hdfs.create(mergedFilePath, true);
-
-		// write out the header, if needed
-		if (csvprop.hasHeader()) {
-			StringBuilder sb = new StringBuilder();
-			for (int i = 0; i < clen; i++) {
-				sb.append("C" + (i + 1));
-				if (i < clen - 1)
-					sb.append(csvprop.getDelim());
-			}
-			sb.append('\n');
-			out.write(sb.toString().getBytes());
-			sb.setLength(0);
-		}
-
-		// if the source is a directory
-		if (hdfs.isDirectory(srcFilePath)) {
-			try {
-				FileStatus[] contents = hdfs.listStatus(srcFilePath);
-				Path[] partPaths = new Path[contents.length];
-				int numPartFiles = 0;
-				for (int i = 0; i < contents.length; i++) {
-					if (!contents[i].isDirectory()) {
-						partPaths[i] = contents[i].getPath();
-						numPartFiles++;
-					}
-				}
-				Arrays.sort(partPaths);
-
-				for (int i = 0; i < numPartFiles; i++) {
-					InputStream in = hdfs.open(partPaths[i]);
-					try {
-						IOUtils.copyBytes(in, out, conf, false);
-						if(i<numPartFiles-1)
-							out.write('\n');
-					} 
-					finally {
-						IOUtilFunctions.closeSilently(in);
-					}
-				}
-			} finally {
-				IOUtilFunctions.closeSilently(out);
-			}
-		} else if (hdfs.isFile(srcFilePath)) {
-			InputStream in = null;
-			try {
-				in = hdfs.open(srcFilePath);
-				IOUtils.copyBytes(in, out, conf, true);
-			} finally {
-				IOUtilFunctions.closeSilently(in);
-				IOUtilFunctions.closeSilently(out);
-			}
-		} else {
-			throw new IOException(srcFilePath.toString()
-					+ ": No such file or directory");
-		}
-	}
-		
-	/**
-	 * 
-	 * @param srcFileName
-	 * @param destFileName
-	 * @param csvprop
-	 * @param rlen
-	 * @param clen
-	 * @throws IOException
-	 */
 	@SuppressWarnings("unchecked")
 	public final void addHeaderToCSV(String srcFileName, String destFileName, long rlen, long clen) 
 		throws IOException 

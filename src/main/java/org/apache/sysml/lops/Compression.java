@@ -25,23 +25,10 @@ import org.apache.sysml.lops.compile.JobType;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 
-
-/**
- * 
- */
 public class Compression extends Lop 
 {
 	public static final String OPCODE = "compress"; 
 
-	/**
-	 * 
-	 * @param input
-	 * @param dt
-	 * @param vt
-	 * @param level
-	 * @param et
-	 * @throws LopsException
-	 */
 	public Compression(Lop input, DataType dt, ValueType vt, ExecType et) 
 		throws LopsException
 	{

@@ -34,6 +34,7 @@ import org.apache.hadoop.mapred.Reporter;
 import org.apache.wink.json4j.JSONException;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 
 public class ApplyTfCSVMapper implements Mapper<LongWritable, Text, NullWritable, Text> {
 	
@@ -105,8 +106,7 @@ public class ApplyTfCSVMapper implements Mapper<LongWritable, Text, NullWritable
 
 	@Override
 	public void close() throws IOException {
-		if ( br != null ) 
-			br.close();
+		IOUtilFunctions.closeSilently(br);
 	}
 
 }

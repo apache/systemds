@@ -19,51 +19,53 @@
 
 package org.apache.sysml.runtime.compress.estim;
 
+import org.apache.sysml.runtime.compress.CompressedMatrixBlock;
+
 /**
  * 
  * A helper reusable object for maintaining bitmap sizes
  */
 public class CompressedSizeInfo 
 {
-	private int _estCard = -1;
-	private long _rleSize = -1; 
-	private long _oleSize = -1;
+	private final int _estCard;
+	private final int _estNnz;
+	private final long _rleSize; 
+	private final long _oleSize;
+	private final long _ddcSize;
 
-	public CompressedSizeInfo() {
-		
-	}
-
-	public CompressedSizeInfo(int estCard, long rleSize, long oleSize) {
+	public CompressedSizeInfo(int estCard, int estNnz, long rleSize, long oleSize, long ddcSize) {
 		_estCard = estCard;
+		_estNnz = estNnz;
 		_rleSize = rleSize;
 		_oleSize = oleSize;
+		_ddcSize = ddcSize;
 	}
 
-	public void setRLESize(long rleSize) {
-		_rleSize = rleSize;
-	}
-	
 	public long getRLESize() {
 		return _rleSize;
-	}
-	
-	public void setOLESize(long oleSize) {
-		_oleSize = oleSize;
 	}
 
 	public long getOLESize() {
 		return _oleSize;
 	}
+	
+	public long getDDCSize() {
+		return CompressedMatrixBlock.ALLOW_DDC_ENCODING ? 
+			_ddcSize : Long.MAX_VALUE; 
+	}
 
 	public long getMinSize() {
-		return Math.min(_rleSize, _oleSize);
+		return Math.min(Math.min(
+			getRLESize(), 
+			getOLESize()),
+			getDDCSize());
 	}
 
-	public void setEstCardinality(int estCard) {
-		_estCard = estCard;
-	}
-
-	public int getEstCarinality() {
+	public int getEstCard() {
 		return _estCard;
+	}
+	
+	public int getEstNnz() {
+		return _estNnz;
 	}
 }

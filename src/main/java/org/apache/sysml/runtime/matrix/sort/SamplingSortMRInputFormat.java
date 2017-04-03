@@ -38,7 +38,7 @@ import org.apache.hadoop.mapred.SequenceFileInputFormat;
 import org.apache.hadoop.mapred.SequenceFileRecordReader;
 import org.apache.hadoop.util.IndexedSortable;
 import org.apache.hadoop.util.QuickSort;
-
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.data.Converter;
 import org.apache.sysml.runtime.matrix.data.MatrixCell;
 import org.apache.sysml.runtime.matrix.data.Pair;
@@ -73,17 +73,19 @@ extends SequenceFileInputFormat<K,V>
 			reporter.setStatus(split.toString());
 		return new SequenceFileRecordReader<K,V>(job, (FileSplit) split);
     }
-	
-	  /**
-	   * Use the input splits to take samples of the input and generate sample
-	   * keys. By default reads 100,000 keys from 10 locations in the input, sorts
-	   * them and picks N-1 keys to generate N equally sized partitions.
-	   * @param conf the job to sample
-	   * @param partFile where to write the output file to
-	   * @throws IOException if something goes wrong
-	 * @throws IllegalAccessException 
-	 * @throws InstantiationException 
-	   */
+
+	/**
+	 * Use the input splits to take samples of the input and generate sample
+	 * keys. By default reads 100,000 keys from 10 locations in the input, sorts
+	 * them and picks N-1 keys to generate N equally sized partitions.
+	 * 
+	 * @param conf the job to sample
+	 * @param partFile where to write the output file to
+	 * @return index value
+	 * @throws IOException if something goes wrong
+	 * @throws InstantiationException if InstantiationException occurs
+	 * @throws IllegalAccessException if IllegalAccessException occurs
+	 */
 	@SuppressWarnings({ "unchecked", "unused", "deprecation" })
 	public static int writePartitionFile(JobConf conf, Path partFile) 
 	  throws IOException, InstantiationException, IllegalAccessException
@@ -147,23 +149,28 @@ extends SequenceFileInputFormat<K,V>
 	    }
 	    
 	    //note: key value always double/null as expected by partitioner
-	    SequenceFile.Writer writer = 
-	    	SequenceFile.createWriter(outFs, conf, partFile, DoubleWritable.class, NullWritable.class);
-	    NullWritable nullValue = NullWritable.get();
-	    int index0=-1, i=0;
-	    boolean lessthan0=true;
-	    for(WritableComparable splitValue : sampler.createPartitions(partitions)) 
-	    {
-	    	writer.append(splitValue, nullValue);
-	    	if(lessthan0 && ((DoubleWritable)splitValue).get()>=0) {
-	    		index0=i;
-	    		lessthan0=false;
-	    	}
-	    	i++;
+	    SequenceFile.Writer writer = null;
+	    int index0 = -1;
+	    try {
+		    writer = SequenceFile.createWriter(outFs, conf, partFile, DoubleWritable.class, NullWritable.class);
+		    NullWritable nullValue = NullWritable.get();
+		    int i = 0;
+		    boolean lessthan0=true;
+		    for(WritableComparable splitValue : sampler.createPartitions(partitions)) 
+		    {
+		    	writer.append(splitValue, nullValue);
+		    	if(lessthan0 && ((DoubleWritable)splitValue).get()>=0) {
+		    		index0=i;
+		    		lessthan0=false;
+		    	}
+		    	i++;
+		    }
+		    if(lessthan0)
+		    	index0=partitions-1;
 	    }
-	    if(lessthan0)
-	    	index0=partitions-1;
-	    writer.close();
+	    finally {
+	    	IOUtilFunctions.closeSilently(writer);
+	    }
 	    
 	    return index0;
 	  }

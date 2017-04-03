@@ -85,8 +85,11 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 	 * functions. Remaining parameters will just be passed to constructor for
 	 * function program block.
 	 * 
-	 * @param eFuncStat
-	 * @throws DMLRuntimeException 
+	 * @param prog runtime program
+	 * @param inputParams list of input data identifiers
+	 * @param outputParams list of output data indentifiers
+	 * @param baseDir base directory
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	protected ExternalFunctionProgramBlock(Program prog,
 			ArrayList<DataIdentifier> inputParams,
@@ -136,18 +139,14 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 	 * by the external function program block.
 	 * 
 	 * 
-	 * @param id
+	 * @param id this field does nothing
 	 */
 	private void changeTmpOutput( long id )
 	{
 		ArrayList<DataIdentifier> outputParams = getOutputParams();
 		cell2BlockInst = getCell2BlockInstructions(outputParams, _blockedFileNames);
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public String getBaseDir()
 	{
 		return _baseDir;
@@ -156,7 +155,6 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 	/**
 	 * Method to be invoked to execute instructions for the external function
 	 * invocation
-	 * @throws DMLRuntimeException 
 	 */
 	@Override
 	public void execute(ExecutionContext ec) 
@@ -234,8 +232,8 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 	 * Given a list of parameters as data identifiers, returns a string
 	 * representation.
 	 * 
-	 * @param params
-	 * @return
+	 * @param params list of data identifiers
+	 * @return parameter string
 	 */
 	protected String getParameterString(ArrayList<DataIdentifier> params) {
 		String parameterString = "";
@@ -274,7 +272,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 	}
 
 	/**
-	 * method to get instructions
+	 * method to create instructions
 	 */
 	protected void createInstructions() {
 
@@ -317,9 +315,10 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 	
 	/**
 	 * Method to generate a reblock job to convert the cell representation into block representation
-	 * @param outputParams
-	 * @param blockedFileNames
-	 * @return
+	 * 
+	 * @param outputParams list out output data identifiers
+	 * @param blockedFileNames map of blocked file names
+	 * @return list of instructions
 	 */
 	private ArrayList<Instruction> getCell2BlockInstructions(
 			ArrayList<DataIdentifier> outputParams,
@@ -438,8 +437,9 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 	 * Method to generate instructions to convert input matrices from block to
 	 * cell. We generate a GMR job here.
 	 * 
-	 * @param inputParams
-	 * @return
+	 * @param inputParams list of data identifiers
+	 * @param unBlockedFileNames map of unblocked file names
+	 * @return list of instructions
 	 */
 	private ArrayList<Instruction> getBlock2CellInstructions(
 			ArrayList<DataIdentifier> inputParams,
@@ -564,9 +564,9 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 	/**
 	 * Method to execute an external function invocation instruction.
 	 * 
-	 * @param ec
-	 * @param inst
-	 * @throws DMLRuntimeException
+	 * @param ec execution context
+	 * @param inst external function invocation instructions
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	@SuppressWarnings("unchecked")
 	public void executeInstruction(ExecutionContext ec, ExternalFunctionInvocationInstruction inst) 
@@ -612,9 +612,10 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 	/**
 	 * Method to verify that function outputs match with declared outputs
 	 * 
-	 * @param returnFunc
-	 * @param outputParams
-	 * @throws DMLRuntimeException 
+	 * @param ec execution context
+	 * @param returnFunc package function
+	 * @param outputParams output parameters
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	protected void verifyAndAttachOutputs(ExecutionContext ec, PackageFunction returnFunc,
 			String outputParams) throws DMLRuntimeException {
@@ -724,8 +725,8 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 	/**
 	 * Method to get string representation of scalar value type
 	 * 
-	 * @param scalarType
-	 * @return
+	 * @param scalarType scalar value type
+	 * @return scalar value type string
 	 */
 	protected String getScalarValueTypeString(ScalarValueType scalarType) {
 		if (scalarType.equals(ScalarValueType.Text))
@@ -737,10 +738,9 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 	/**
 	 * Method to parse inputs, update labels, and add to package function.
 	 * 
-	 * @param func
-	 * @param inputParams
-	 * @param metaData
-	 * @param variableMapping
+	 * @param func package function
+	 * @param inputParams input parameters
+	 * @param variableMapping local variable map
 	 */
 	protected void setupInputs (PackageFunction func, String inputParams, LocalVariableMap variableMapping) {
 		ArrayList<String> inputs = getParameters(inputParams);
@@ -754,12 +754,10 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 	 * Method to convert string representation of input into function input
 	 * object.
 	 * 
-	 * @param inputs
-	 * @param variableMapping
-	 * @param metaData
-	 * @return
+	 * @param inputs list of inputs
+	 * @param variableMapping local variable map
+	 * @return list of function parameters
 	 */
-
 	protected ArrayList<FunctionParameter> getInputObjects(ArrayList<String> inputs,
 			LocalVariableMap variableMapping) {
 		ArrayList<FunctionParameter> inputObjects = new ArrayList<FunctionParameter>();
@@ -812,8 +810,8 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 	/**
 	 * Converts string representation of scalar value type to enum type
 	 * 
-	 * @param string
-	 * @return
+	 * @param string scalar value string
+	 * @return scalar value type
 	 */
 	protected ScalarValueType getScalarValueType(String string) {
 		if (string.equals("String"))
@@ -825,8 +823,8 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 	/**
 	 * Get string representation of matrix value type
 	 * 
-	 * @param t
-	 * @return
+	 * @param t matrix value type
+	 * @return matrix value type as string
 	 */
 	protected String getMatrixValueTypeString(Matrix.ValueType t) {
 		return t.toString();
@@ -835,8 +833,8 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 	/**
 	 * Converts string representation of matrix value type into enum type
 	 * 
-	 * @param string
-	 * @return
+	 * @param string matrix value type as string
+	 * @return matrix value type
 	 */
 	protected Matrix.ValueType getMatrixValueType(String string) {
 		return Matrix.ValueType.valueOf(string); 
@@ -846,8 +844,8 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 	 * Method to break the comma separated input parameters into an arraylist of
 	 * parameters
 	 * 
-	 * @param inputParams
-	 * @return
+	 * @param inputParams input parameters
+	 * @return list of string inputs
 	 */
 	protected ArrayList<String> getParameters(String inputParams) {
 		ArrayList<String> inputs = new ArrayList<String>();
@@ -863,8 +861,8 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 	/**
 	 * Get string representation for data type
 	 * 
-	 * @param d
-	 * @return
+	 * @param d data type
+	 * @return string representation of data type
 	 */
 	protected String getDataTypeString(DataType d) {
 		if (d.equals(DataType.MATRIX))
@@ -880,10 +878,10 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 	}
 
 	/**
-	 * Method to get string representation of data type.
+	 * Method to get string representation of function parameter type.
 	 * 
-	 * @param t
-	 * @return
+	 * @param t function parameter type
+	 * @return function parameter type as string
 	 */
 	protected String getFunctionParameterDataTypeString(FunctionParameterType t) {
 		return t.toString();
@@ -892,8 +890,8 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 	/**
 	 * Get string representation of value type
 	 * 
-	 * @param v
-	 * @return
+	 * @param v value type
+	 * @return value type string
 	 */
 	protected String getValueTypeString(ValueType v) {
 		if (v.equals(ValueType.DOUBLE))
@@ -911,13 +909,6 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 		throw new RuntimeException("Should never come here");
 	}
 
-	public void printMe() {
-		//System.out.println("***** INSTRUCTION BLOCK *****");
-		for (Instruction i : this._inst) {
-			i.printMe();
-		}
-	}
-	
 	public HashMap<String,String> getOtherParams() {
 		return _otherParams;
 	}
@@ -936,24 +927,6 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 	
 	private Collection<String> _skipInReblock = new HashSet<String>();
 	private Collection<String> _skipOutReblock = new HashSet<String>();
-	
-	public void setSkippedReblockLists( Collection<String> varsIn, Collection<String> varsOut )
-	{
-		_skipInReblock.clear();
-		_skipOutReblock.clear();
-		
-		if( varsIn!=null || varsOut!=null )
-		{
-			if( varsIn != null )
-				_skipInReblock.addAll(varsIn);		
-			if( varsOut != null )
-				_skipOutReblock.addAll(varsOut);
-		
-			 //regenerate instructions
-			createInstructions();
-		}
-	}
-	
 	
 	@Override
 	public ArrayList<Instruction> getInstructions()

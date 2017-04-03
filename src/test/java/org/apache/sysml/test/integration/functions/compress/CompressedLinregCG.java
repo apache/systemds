@@ -19,11 +19,13 @@
 
 package org.apache.sysml.test.integration.functions.compress;
 
+import java.io.File;
 import java.util.HashMap;
 
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.lops.LopProperties.ExecType;
+import org.apache.sysml.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
@@ -39,6 +41,7 @@ public class CompressedLinregCG extends AutomatedTestBase
 	private final static String TEST_NAME1 = "LinregCG";
 	private final static String TEST_DIR = "functions/compress/";
 	private final static String TEST_CONF = "SystemML-config-compress.xml";
+	private final static File   TEST_CONF_FILE = new File(SCRIPT_DIR + TEST_DIR, TEST_CONF);
 	
 	private final static double eps = 1e-4;
 	
@@ -108,7 +111,6 @@ public class CompressedLinregCG extends AutomatedTestBase
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[]{ "-explain","-stats",
-					                    "-config="+HOME+TEST_CONF,
 					                    "-args", HOME + INPUT_DIR + "X",
 					                             HOME + INPUT_DIR + "y",
 					                             String.valueOf(intercept),
@@ -140,12 +142,22 @@ public class CompressedLinregCG extends AutomatedTestBase
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("w");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 		}
-		finally
-		{
+		finally {
 			rtplatform = platformOld;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 			InfrastructureAnalyzer.setLocalMaxMemory(memOld);		
+			CompressedMatrixBlock.ALLOW_DDC_ENCODING = true;
 		}
 	}
 
+	/**
+	 * Override default configuration with custom test configuration to ensure
+	 * scratch space and local temporary directory locations are also updated.
+	 */
+	@Override
+	protected File getConfigTemplateFile() {
+		// Instrumentation in this test's output log to show custom configuration file used for template.
+		System.out.println("This test case overrides default configuration with " + TEST_CONF_FILE.getPath());
+		return TEST_CONF_FILE;
+	}
 }

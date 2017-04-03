@@ -46,13 +46,7 @@ public abstract class IndexingCPInstruction extends UnaryCPInstruction
 		colLower = cl;
 		colUpper = cu;
 	}
-	
-	/**
-	 * 
-	 * @param ec
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	protected IndexRange getIndexRange(ExecutionContext ec) throws DMLRuntimeException {
 		return new IndexRange( //rl, ru, cl, ru
 			(int)(ec.getScalarInput(rowLower.getName(), rowLower.getValueType(), rowLower.isLiteral()).getLongValue()-1),
@@ -60,13 +54,7 @@ public abstract class IndexingCPInstruction extends UnaryCPInstruction
 			(int)(ec.getScalarInput(colLower.getName(), colLower.getValueType(), colLower.isLiteral()).getLongValue()-1),
 			(int)(ec.getScalarInput(colUpper.getName(), colUpper.getValueType(), colUpper.isLiteral()).getLongValue()-1));		
 	}
-	
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static IndexingCPInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{	

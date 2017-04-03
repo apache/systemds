@@ -19,9 +19,9 @@
 
 package org.apache.sysml.runtime.functionobjects;
 
-public class Equals extends ValueFunction 
-{
 
+public class Equals extends ValueComparisonFunction
+{
 	private static final long serialVersionUID = -8887713112454357802L;
 
 	private static Equals singleObj = null;
@@ -35,11 +35,6 @@ public class Equals extends ValueFunction
 			singleObj = new Equals();
 		return singleObj;
 	}
-	
-	public Object clone() throws CloneNotSupportedException {
-		// cloning is not supported for singleton classes
-		throw new CloneNotSupportedException();
-	}
 
 	/*
 	 * Arithmetic relational operators (==, !=, <=, >=) must be instead of
@@ -47,7 +42,7 @@ public class Equals extends ValueFunction
 	 * NaN and -0.0 are handled. The behavior of methods in
 	 * <code>Double</code> class are designed mainly to make Java
 	 * collections work properly. For more details, see the help for
-	 * <code>Double.equals()</code> and <code>Double.comapreTo()</code>.
+	 * <code>Double.equals()</code> and <code>Double.compareTo()</code>.
 	 */
 	
 	/**
@@ -61,11 +56,6 @@ public class Equals extends ValueFunction
 	}
 	
 	@Override
-	public boolean compare(boolean in1, boolean in2) {
-		return (in1 == in2);
-	}
-
-	@Override
 	public boolean compare(double in1, double in2) {
 		return (in1 == in2);
 	}
@@ -74,17 +64,12 @@ public class Equals extends ValueFunction
 	public boolean compare(long in1, long in2) {
 		return (in1 == in2);
 	}
-
-	@Override
-	public boolean compare(double in1, long in2) {
-		return (in1 == in2);
-	}
-
-	@Override
-	public boolean compare(long in1, double in2) {
-		return (in1 == in2);
-	}
 	
+	@Override
+	public boolean compare(boolean in1, boolean in2) {
+		return (in1 == in2);
+	}
+
 	@Override
 	public boolean compare(String in1, String in2) {
 		return ( in1!=null && in1.equals(in2) );

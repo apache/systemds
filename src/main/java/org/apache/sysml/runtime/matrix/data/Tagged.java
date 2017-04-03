@@ -24,7 +24,6 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import org.apache.hadoop.io.RawComparator;
 import org.apache.hadoop.io.WritableComparable;
 
 @SuppressWarnings("rawtypes")
@@ -34,7 +33,7 @@ public class Tagged<T extends WritableComparable> implements WritableComparable<
 //	private static final Log LOG = LogFactory.getLog(Tagged.class);
 	protected byte tag=-1;
 	protected T base;
-	public static int TAG_SIZE=Integer.SIZE/8;
+
 	public Tagged(T b, byte t)
 	{		
 		base=b;
@@ -77,26 +76,6 @@ public class Tagged<T extends WritableComparable> implements WritableComparable<
 	{
 		return base.toString()+" ~~ tag: "+tag;
 	}
-	
-	 /** A Comparator optimized for Tagged. */ 
-	public static class Comparator implements RawComparator<Tagged> {
-		
-		public int compare(byte[] b1, int s1, int l1,
-	                       byte[] b2, int s2, int l2) {
-	      byte thisValue = b1[s1];
-	      byte thatValue = b2[s2];
-	      return (thisValue-thatValue);
-	    }
-
-		@Override
-		@SuppressWarnings("unchecked")
-		public int compare(Tagged a, Tagged b) {
-			if(a.tag!=b.tag)
-				return a.tag-b.tag;
-			else 
-				return a.getBaseObject().compareTo(b.getBaseObject());
-		}
-	  }
 
 	@Override
 	@SuppressWarnings("unchecked")

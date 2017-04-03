@@ -39,10 +39,6 @@ public class GridEnumerationEqui extends GridEnumeration
 		_nsteps = DEFAULT_NSTEPS;
 	}
 	
-	/**
-	 * 
-	 * @param steps
-	 */
 	public void setNumSteps( int steps )
 	{
 		_nsteps = steps;

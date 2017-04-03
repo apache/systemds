@@ -20,7 +20,6 @@
 package org.apache.sysml.runtime.transform.decode;
 
 import java.util.HashMap;
-import java.util.List;
 
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.Expression.ValueType;
@@ -42,7 +41,7 @@ public class DecoderRecode extends Decoder
 	private HashMap<Long, Object>[] _rcMaps = null;
 	private boolean _onOut = false;
 	
-	protected DecoderRecode(List<ValueType> schema, boolean onOut, int[] rcCols) {
+	protected DecoderRecode(ValueType[] schema, boolean onOut, int[] rcCols) {
 		super(schema, rcCols);
 		_onOut = onOut;
 	}
@@ -54,7 +53,7 @@ public class DecoderRecode extends Decoder
 				for( int j=0; j<_colList.length; j++ ) {
 					int colID = _colList[j];
 					double val = UtilFunctions.objectToDouble(
-							out.getSchema().get(colID-1), out.get(i, colID-1));
+							out.getSchema()[colID-1], out.get(i, colID-1));
 					long key = UtilFunctions.toLong(val);
 					out.set(i, colID-1, _rcMaps[j].get(key));
 				}
@@ -84,7 +83,7 @@ public class DecoderRecode extends Decoder
 				if( meta.get(i, _colList[j]-1)==null )
 					break; //reached end of recode map
 				String[] tmp = meta.get(i, _colList[j]-1).toString().split(Lop.DATATYPE_PREFIX);				
-				Object obj = UtilFunctions.stringToObject(_schema.get(_colList[j]-1), tmp[0]);
+				Object obj = UtilFunctions.stringToObject(_schema[_colList[j]-1], tmp[0]);
 				map.put(Long.parseLong(tmp[1]), obj);				
 			}
 			_rcMaps[j] = map;
@@ -92,11 +91,11 @@ public class DecoderRecode extends Decoder
 	}
 	
 	/**
-	 * Parses a line of <token, ID, count> into <token, ID> pairs, where 
+	 * Parses a line of &lt;token, ID, count&gt; into &lt;token, ID&gt; pairs, where 
 	 * quoted tokens (potentially including separators) are supported.
 	 * 
-	 * @param entry
-	 * @param pair
+	 * @param entry entry line (token, ID, count)
+	 * @param pair token-ID pair
 	 */
 	public static void parseRecodeMapEntry(String entry, Pair<String,String> pair) {
 		int ixq = entry.lastIndexOf('"');

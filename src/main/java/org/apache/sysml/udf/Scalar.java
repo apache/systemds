@@ -41,8 +41,8 @@ public class Scalar extends FunctionParameter
 	/**
 	 * Constructor to setup a scalar object.
 	 * 
-	 * @param t
-	 * @param val
+	 * @param t scalar value type
+	 * @param val value
 	 */
 	public Scalar(ScalarValueType t, String val) {
 		super(FunctionParameterType.Scalar);
@@ -53,7 +53,7 @@ public class Scalar extends FunctionParameter
 	/**
 	 * Method to get type of scalar.
 	 * 
-	 * @return
+	 * @return scalar value type
 	 */
 	public ScalarValueType getScalarType() {
 		return _sType;
@@ -62,7 +62,7 @@ public class Scalar extends FunctionParameter
 	/**
 	 * Method to get value for scalar.
 	 * 
-	 * @return
+	 * @return scalar value
 	 */
 	public String getValue() {
 		return _value;

@@ -40,22 +40,12 @@ public class OptTreePlanMapping
 		_idSeq = new IDSequence();
 		_id_optnode = new HashMap<Long, OptNode>();
 	}
-	
-	/**
-	 * 
-	 * @param id
-	 * @return
-	 */
+
 	public OptNode getOptNode( long id )
 	{
 		return _id_optnode.get(id);
 	}
-	
-	/**
-	 * 
-	 * @param id
-	 * @return
-	 */
+
 	public long getMappedParentID( long id )
 	{
 		for( OptNode p : _id_optnode.values() )
@@ -65,10 +55,7 @@ public class OptTreePlanMapping
 						return p.getID();
 		return -1;
 	}
-	
-	/**
-	 * 
-	 */
+
 	public void clear()
 	{
 		_id_optnode.clear();

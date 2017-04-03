@@ -40,7 +40,7 @@ import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
-
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.data.MatrixCell;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.NumItemsByEachReducerMetaData;
@@ -342,7 +342,7 @@ public class PickFromCompactInputFormat extends FileInputFormat<MatrixIndexes, M
 		
 		@Override
 		public void close() throws IOException {
-			currentStream.close();
+			IOUtilFunctions.closeSilently(currentStream);
 		}
 
 		@Override
@@ -367,10 +367,7 @@ public class PickFromCompactInputFormat extends FileInputFormat<MatrixIndexes, M
 			return (progress>=0 && progress<=1) ? progress : 1.0f;
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	public static class PickRecordReader implements RecordReader<MatrixIndexes, MatrixCell>
 	{
 		private boolean valueIsWeight=true;
@@ -452,7 +449,7 @@ public class PickFromCompactInputFormat extends FileInputFormat<MatrixIndexes, M
 
 		@Override
 		public void close() throws IOException {
-			currentStream.close();			
+			IOUtilFunctions.closeSilently(currentStream);			
 		}
 
 		@Override

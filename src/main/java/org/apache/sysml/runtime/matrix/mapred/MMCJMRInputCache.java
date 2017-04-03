@@ -63,13 +63,7 @@ public class MMCJMRInputCache extends MMCJMRCache
 	{
 		return cacheSize;
 	}
-	
-	/**
-	 * 
-	 * @param inIndex
-	 * @param inValue
-	 * @throws Exception
-	 */
+
 	public void put( long inIndex, MatrixValue inValue ) 
 		throws Exception
 	{
@@ -92,13 +86,7 @@ public class MMCJMRInputCache extends MMCJMRCache
 		_bufferSize++;
 		cacheSize++;
 	}
-	
-	/**
-	 * 
-	 * @param pos
-	 * @return
-	 * @throws IOException
-	 */
+
 	public Pair<MatrixIndexes,MatrixValue> get( int pos ) 
 		throws IOException
 	{
@@ -124,22 +112,7 @@ public class MMCJMRInputCache extends MMCJMRCache
 		int lpos = pos % _bufferCapacity;
 		return _buffer[lpos];
 	}
-	
-	/**
-	 * 
-	 * @throws IOException
-	 */
-	public void resetCache() 
-		throws IOException
-	{
-		//by default don't reset buffersize (e.g., for aggregator)
-		resetCache(false);
-	}
-	
-	/**
-	 * @throws IOException 
-	 * 
-	 */
+
 	public void resetCache(boolean fullreset) 
 		throws IOException
 	{

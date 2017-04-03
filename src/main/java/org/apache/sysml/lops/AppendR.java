@@ -80,7 +80,7 @@ public class AppendR extends Lop
 	}
 	
 	//called when append executes in CP
-	public String getInstructions(String input_index1, String input_index2, String output_index) 
+	public String getInstructions(String input1, String input2, String output) 
 		throws LopsException
 	{
 		StringBuilder sb = new StringBuilder();
@@ -90,13 +90,13 @@ public class AppendR extends Lop
 		sb.append( OPCODE );
 		
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( getInputs().get(0).prepInputOperand(input_index1+""));
+		sb.append( getInputs().get(0).prepInputOperand(input1));
 		
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( getInputs().get(1).prepInputOperand(input_index2+""));
+		sb.append( getInputs().get(1).prepInputOperand(input2));
 		
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( prepOutputOperand(output_index+"") );
+		sb.append( prepOutputOperand(output) );
 		
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( _cbind );

@@ -27,20 +27,24 @@ import java.util.HashMap;
 import java.util.List;
 
 import org.apache.hadoop.io.LongWritable;
-import org.apache.spark.SparkContext;
+import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.sql.DataFrame;
+import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
-import org.apache.spark.sql.SQLContext;
+import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.types.StructType;
 import org.apache.sysml.api.DMLException;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
-import org.apache.sysml.api.MLContext;
-import org.apache.sysml.api.MLContextProxy;
-import org.apache.sysml.api.MLOutput;
+import org.apache.sysml.api.mlcontext.FrameFormat;
+import org.apache.sysml.api.mlcontext.FrameMetadata;
+import org.apache.sysml.api.mlcontext.FrameSchema;
+import org.apache.sysml.api.mlcontext.MLContext;
+import org.apache.sysml.api.mlcontext.MLResults;
+import org.apache.sysml.api.mlcontext.Script;
+import org.apache.sysml.api.mlcontext.ScriptFactory;
 import org.apache.sysml.parser.DataExpression;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.parser.ParseException;
@@ -49,7 +53,6 @@ import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDConverterUtils;
 import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDConverterUtils.LongFrameToLongWritableFrameFunction;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
@@ -58,7 +61,10 @@ import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
+import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 
@@ -92,7 +98,21 @@ public class FrameTest extends AutomatedTestBase
 		schemaMixedLarge = new ValueType[schemaMixedLargeList.size()];
 		schemaMixedLarge = (ValueType[]) schemaMixedLargeList.toArray(schemaMixedLarge);
 	}
-	 
+
+	private static SparkConf conf;
+	private static JavaSparkContext sc;
+	private static MLContext ml;
+
+	@BeforeClass
+	public static void setUpClass() {
+		if (conf == null)
+			conf = SparkExecutionContext.createSystemMLSparkConf()
+				.setAppName("FrameTest").setMaster("local");
+		if (sc == null)
+			sc = new JavaSparkContext(conf);
+		ml = new MLContext(sc);
+	}
+
 	@Override
 	public void setUp() {
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, 
@@ -153,8 +173,6 @@ public class FrameTest extends AutomatedTestBase
 		RUNTIME_PLATFORM oldRT = DMLScript.rtplatform;
 		DMLScript.rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK;
 
-		this.scriptType = ScriptType.DML;
-		
 		int rowstart = 234, rowend = 1478, colstart = 125, colend = 568;
 		int bRows = rowend-rowstart+1, bCols = colend-colstart+1;
 
@@ -185,7 +203,6 @@ public class FrameTest extends AutomatedTestBase
 		proArgs.add(Integer.toString(colstartC));
 		proArgs.add(Integer.toString(colendC));
 		proArgs.add(output("C"));
-		programArgs = proArgs.toArray(new String[proArgs.size()]);
 		
 		fullDMLScriptName = SCRIPT_DIR + TEST_DIR + TEST_NAME + ".dml";
 
@@ -198,71 +215,76 @@ public class FrameTest extends AutomatedTestBase
 		rCmd = "Rscript" + " " + fullRScriptName + " " + 
 			inputDir() + " " + rowstart + " " + rowend + " " + colstart + " " + colend + " " + expectedDir()
 					  + " " + rowstartC + " " + rowendC + " " + colstartC + " " + colendC;
-		
-		double sparsity=sparsity1;//rand.nextDouble(); 
-        double[][] A = getRandomMatrix(rows, cols, min, max, sparsity, 1111 /*\\System.currentTimeMillis()*/);
-        writeInputFrameWithMTD("A", A, true, lschema, oinfo);	        
-        
-        sparsity=sparsity2;//rand.nextDouble();
-        double[][] B = getRandomMatrix((int)(bRows), (int)(bCols), min, max, sparsity, 2345 /*System.currentTimeMillis()*/);
-        //Following way of creation causes serialization issue in frame processing
-        //List<ValueType> lschemaB = lschema.subList((int)colstart-1, (int)colend); 
-        ValueType[] schemaB = new ValueType[bCols];
-        for (int i = 0; i < bCols; ++i)
-        	schemaB[i] = schema[colstart-1+i];
-		List<ValueType> lschemaB = Arrays.asList(schemaB);
-        writeInputFrameWithMTD("B", B, true, lschemaB, oinfo);	        
 
-        ValueType[] schemaC = new ValueType[colendC-colstartC+1];
-        for (int i = 0; i < cCols; ++i)
-        	schemaC[i] = schema[colstartC-1+i];
-        
-		MLContext mlCtx = getMLContextForTesting();
-		SparkContext sc = mlCtx.getSparkContext();
-		JavaSparkContext jsc = new JavaSparkContext(sc);
-		
-		DataFrame dfA = null, dfB = null; 
+		double sparsity = sparsity1;
+		double[][] A = getRandomMatrix(rows, cols, min, max, sparsity, 1111);
+		writeInputFrameWithMTD("A", A, true, schema, oinfo);
+
+		sparsity = sparsity2;
+		double[][] B = getRandomMatrix((int) (bRows), (int) (bCols), min, max, sparsity, 2345);
+
+		ValueType[] schemaB = new ValueType[bCols];
+		for (int i = 0; i < bCols; ++i)
+			schemaB[i] = schema[colstart - 1 + i];
+		List<ValueType> lschemaB = Arrays.asList(schemaB);
+		writeInputFrameWithMTD("B", B, true, schemaB, oinfo);
+
+		ValueType[] schemaC = new ValueType[colendC - colstartC + 1];
+		for (int i = 0; i < cCols; ++i)
+			schemaC[i] = schema[colstartC - 1 + i];
+
+		Dataset<Row> dfA = null, dfB = null; 
 		if(bFromDataFrame)
 		{
 			//Create DataFrame for input A 
-			SQLContext sqlContext = new SQLContext(sc);
-			StructType dfSchemaA = FrameRDDConverterUtils.convertFrameSchemaToDFSchema(lschema, false);
-			JavaRDD<Row> rowRDDA = FrameRDDConverterUtils.csvToRowRDD(jsc, input("A"), DataExpression.DEFAULT_DELIM_DELIMITER, lschema);
-			dfA = sqlContext.createDataFrame(rowRDDA, dfSchemaA);
+			SparkSession sparkSession = SparkSession.builder().sparkContext(sc.sc()).getOrCreate();
+			StructType dfSchemaA = FrameRDDConverterUtils.convertFrameSchemaToDFSchema(schema, false);
+
+			JavaRDD<Row> rowRDDA = FrameRDDConverterUtils.csvToRowRDD(sc, input("A"), DataExpression.DEFAULT_DELIM_DELIMITER, schema);
+			dfA = sparkSession.createDataFrame(rowRDDA, dfSchemaA);
 			
 			//Create DataFrame for input B 
-			StructType dfSchemaB = FrameRDDConverterUtils.convertFrameSchemaToDFSchema(lschemaB, false);
-			JavaRDD<Row> rowRDDB = FrameRDDConverterUtils.csvToRowRDD(jsc, input("B"), DataExpression.DEFAULT_DELIM_DELIMITER, lschemaB);
-			dfB = sqlContext.createDataFrame(rowRDDB, dfSchemaB);
+			StructType dfSchemaB = FrameRDDConverterUtils.convertFrameSchemaToDFSchema(schemaB, false);
+			JavaRDD<Row> rowRDDB = FrameRDDConverterUtils.csvToRowRDD(sc, input("B"), DataExpression.DEFAULT_DELIM_DELIMITER, schemaB);
+			dfB = sparkSession.createDataFrame(rowRDDB, dfSchemaB);
 		}
 
 		try 
 		{
-			mlCtx.reset(true); // Cleanup config to ensure future MLContext testcases have correct 'cp.parallel.matrixmult'
+			Script script = ScriptFactory.dmlFromFile(fullDMLScriptName);
 			
 			String format = "csv";
 			if(oinfo == OutputInfo.TextCellOutputInfo)
 				format = "text";
 
-			if(bFromDataFrame)
-				mlCtx.registerFrameInput("A", dfA, false);
-			else {
-				JavaRDD<String> aIn =  jsc.textFile(input("A"));
-				mlCtx.registerInput("A", aIn, format, rows, cols, new CSVFileFormatProperties(), lschema);
+			if(bFromDataFrame) {
+				script.in("A", dfA);
+			} else {
+				JavaRDD<String> aIn =  sc.textFile(input("A"));
+				FrameSchema fs = new FrameSchema(lschema);
+				FrameFormat ff = (format.equals("text")) ? FrameFormat.IJV : FrameFormat.CSV;
+				FrameMetadata fm = new FrameMetadata(ff, fs, rows, cols);
+				script.in("A", aIn, fm);
 			}
 
-			if(bFromDataFrame)
-				mlCtx.registerFrameInput("B", dfB, false);
-			else {
-				JavaRDD<String> bIn =  jsc.textFile(input("B"));
-				mlCtx.registerInput("B", bIn, format, bRows, bCols, new CSVFileFormatProperties(), lschemaB);
+			if(bFromDataFrame) {
+				script.in("B", dfB);
+			} else {
+				JavaRDD<String> bIn =  sc.textFile(input("B"));
+				FrameSchema fs = new FrameSchema(lschemaB);
+				FrameFormat ff = (format.equals("text")) ? FrameFormat.IJV : FrameFormat.CSV;
+				FrameMetadata fm = new FrameMetadata(ff, fs, bRows, bCols);
+				script.in("B", bIn, fm);
 			}
 
 			// Output one frame to HDFS and get one as RDD //TODO HDFS input/output to do
-			mlCtx.registerOutput("A");
-			mlCtx.registerOutput("C");
+			script.out("A", "C");
 			
-			MLOutput out = mlCtx.execute(fullDMLScriptName, programArgs);
+			// set positional argument values
+			for (int argNum = 1; argNum <= proArgs.size(); argNum++) {
+				script.in("$" + argNum, proArgs.get(argNum-1));
+			}
+			MLResults results = ml.execute(script);
 			
 			format = "csv";
 			if(iinfo == InputInfo.TextCellInputInfo)
@@ -277,15 +299,20 @@ public class FrameTest extends AutomatedTestBase
 			
 			if(!bToDataFrame)
 			{
-				JavaRDD<String> aOut = out.getStringFrameRDD("A", format, new CSVFileFormatProperties());
-				aOut.saveAsTextFile(fName);
+				if (format.equals("text")) {
+					JavaRDD<String> javaRDDStringIJV = results.getJavaRDDStringIJV("A");
+					javaRDDStringIJV.saveAsTextFile(fName);
+				} else {
+					JavaRDD<String> javaRDDStringCSV = results.getJavaRDDStringCSV("A");
+					javaRDDStringCSV.saveAsTextFile(fName);
+				}
 			} else {
-				DataFrame df = out.getDataFrameRDD("A", jsc);
+				Dataset<Row> df = results.getDataFrame("A");
 				
 				//Convert back DataFrame to binary block for comparison using original binary to converted DF and back to binary 
 				MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, -1, -1, -1);
 				JavaPairRDD<LongWritable, FrameBlock> rddOut = FrameRDDConverterUtils
-						.dataFrameToBinaryBlock(jsc, df, mc, bFromDataFrame)
+						.dataFrameToBinaryBlock(sc, df, mc, bFromDataFrame)
 						.mapToPair(new LongFrameToLongWritableFrameFunction());
 				rddOut.saveAsHadoopFile(output("AB"), LongWritable.class, FrameBlock.class, OutputInfo.BinaryBlockOutputInfo.outputFormatClass);
 			}
@@ -298,15 +325,20 @@ public class FrameTest extends AutomatedTestBase
 			} 
 			if(!bToDataFrame)
 			{
-				JavaRDD<String> aOut = out.getStringFrameRDD("C", format, new CSVFileFormatProperties());
-				aOut.saveAsTextFile(fName);
+				if (format.equals("text")) {
+					JavaRDD<String> javaRDDStringIJV = results.getJavaRDDStringIJV("C");
+					javaRDDStringIJV.saveAsTextFile(fName);
+				} else {
+					JavaRDD<String> javaRDDStringCSV = results.getJavaRDDStringCSV("C");
+					javaRDDStringCSV.saveAsTextFile(fName);
+				}
 			} else {
-				DataFrame df = out.getDataFrameRDD("C", jsc);
+				Dataset<Row> df = results.getDataFrame("C");
 				
 				//Convert back DataFrame to binary block for comparison using original binary to converted DF and back to binary 
 				MatrixCharacteristics mc = new MatrixCharacteristics(cRows, cCols, -1, -1, -1);
 				JavaPairRDD<LongWritable, FrameBlock> rddOut = FrameRDDConverterUtils
-						.dataFrameToBinaryBlock(jsc, df, mc, bFromDataFrame)
+						.dataFrameToBinaryBlock(sc, df, mc, bFromDataFrame)
 						.mapToPair(new LongFrameToLongWritableFrameFunction());
 				rddOut.saveAsHadoopFile(fName, LongWritable.class, FrameBlock.class, OutputInfo.BinaryBlockOutputInfo.outputFormatClass);
 			}
@@ -328,20 +360,11 @@ public class FrameTest extends AutomatedTestBase
 				System.out.println("File " + file +  " processed successfully.");
 			}
 
-			//cleanup mlcontext (prevent test memory leaks)
-			mlCtx.reset();
-			
 			System.out.println("Frame MLContext test completed successfully.");
 		}
 		finally {
 			DMLScript.rtplatform = oldRT;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = oldConfig;
-
-			if (sc != null) {
-				sc.stop();
-			}
-			SparkExecutionContext.resetSparkContextStatic();
-			MLContextProxy.setActive(false);
 		}
 	}
 	
@@ -356,4 +379,21 @@ public class FrameTest extends AutomatedTestBase
 			}
 	}
 
+	@After
+	public void tearDown() {
+		super.tearDown();
+	}
+
+	@AfterClass
+	public static void tearDownClass() {
+		// stop spark context to allow single jvm tests (otherwise the
+		// next test that tries to create a SparkContext would fail)
+		sc.stop();
+		sc = null;
+		conf = null;
+
+		// clear status mlcontext and spark exec context
+		ml.close();
+		ml = null;
+	}
 }

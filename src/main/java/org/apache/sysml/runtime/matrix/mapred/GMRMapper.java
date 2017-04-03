@@ -37,10 +37,6 @@ import org.apache.sysml.runtime.matrix.data.TaggedMatrixPackedCell;
 import org.apache.sysml.runtime.matrix.data.TaggedMatrixValue;
 import org.apache.sysml.runtime.util.MapReduceTool;
 
-/**
- * 
- * 
- */
 public class GMRMapper extends MapperBase 
 implements Mapper<Writable, Writable, Writable, Writable>
 {
@@ -102,14 +98,7 @@ implements Mapper<Writable, Writable, Writable, Writable>
 		else
 			processMapOutputToReducerForGMR(index, taggedValueBuffer, out);
 	}
-	
-	/**
-	 * 
-	 * @param index
-	 * @param taggedValueBuffer
-	 * @param out
-	 * @throws IOException
-	 */
+
 	protected void processMapOutputToReducerForGMR(int index, TaggedMatrixValue taggedValueBuffer, OutputCollector<Writable, Writable> out) 
 		throws IOException
 	{			
@@ -136,16 +125,7 @@ implements Mapper<Writable, Writable, Writable, Writable>
 			}
 		}	
 	}
-	
-	/**
-	 * 
-	 * @param index
-	 * @param taggedValueBuffer
-	 * @param collectFinalMultipleOutputs
-	 * @param reporter
-	 * @param tagMapping
-	 * @throws IOException
-	 */
+
 	protected void processMapFinalOutput(int index,
 			TaggedMatrixValue taggedValueBuffer, CollectMultipleConvertedOutputs collectFinalMultipleOutputs,
 			Reporter reporter, HashMap<Byte, ArrayList<Integer>> tagMapping) throws IOException

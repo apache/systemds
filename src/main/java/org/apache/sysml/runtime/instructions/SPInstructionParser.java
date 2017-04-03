@@ -50,6 +50,7 @@ import org.apache.sysml.runtime.instructions.spark.CastSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.CentralMomentSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.CheckpointSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.CompressionSPInstruction;
+import org.apache.sysml.runtime.instructions.spark.ConvolutionSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.CovarianceSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.CpmmSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.CumulativeAggregateSPInstruction;
@@ -72,7 +73,9 @@ import org.apache.sysml.runtime.instructions.spark.ReorgSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.RmmSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.SPInstruction;
 import org.apache.sysml.runtime.instructions.spark.SPInstruction.SPINSTRUCTION_TYPE;
+import org.apache.sysml.runtime.instructions.spark.SpoofSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.TernarySPInstruction;
+import org.apache.sysml.runtime.instructions.spark.Tsmm2SPInstruction;
 import org.apache.sysml.runtime.instructions.spark.TsmmSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.QuantileSortSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.UaggOuterChainSPInstruction;
@@ -117,7 +120,8 @@ public class SPInstructionParser extends InstructionParser
 		//binary aggregate operators (matrix multiplication operators)
 		String2SPInstructionType.put( "mapmm"      , SPINSTRUCTION_TYPE.MAPMM);
 		String2SPInstructionType.put( "mapmmchain" , SPINSTRUCTION_TYPE.MAPMMCHAIN);
-		String2SPInstructionType.put( "tsmm"       , SPINSTRUCTION_TYPE.TSMM);
+		String2SPInstructionType.put( "tsmm"       , SPINSTRUCTION_TYPE.TSMM); //single-pass tsmm
+		String2SPInstructionType.put( "tsmm2"      , SPINSTRUCTION_TYPE.TSMM2); //multi-pass tsmm
 		String2SPInstructionType.put( "cpmm"   	   , SPINSTRUCTION_TYPE.CPMM);
 		String2SPInstructionType.put( "rmm"        , SPINSTRUCTION_TYPE.RMM);
 		String2SPInstructionType.put( "pmm"        , SPINSTRUCTION_TYPE.PMM);
@@ -129,7 +133,13 @@ public class SPInstructionParser extends InstructionParser
 		
 		//ternary aggregate operators
 		String2SPInstructionType.put( "tak+*"      , SPINSTRUCTION_TYPE.AggregateTernary);
+		String2SPInstructionType.put( "tack+*"     , SPINSTRUCTION_TYPE.AggregateTernary);
 
+		// Neural network operators
+		String2SPInstructionType.put( "conv2d",                 SPINSTRUCTION_TYPE.Convolution);
+		String2SPInstructionType.put( "conv2d_bias_add", SPINSTRUCTION_TYPE.Convolution);
+		String2SPInstructionType.put( "maxpooling",             SPINSTRUCTION_TYPE.Convolution);
+		String2SPInstructionType.put( "relu_maxpooling",          SPINSTRUCTION_TYPE.Convolution);
 		
 		String2SPInstructionType.put( "rangeReIndex"   	, SPINSTRUCTION_TYPE.MatrixIndexing);
 		String2SPInstructionType.put( "leftIndex"   	, SPINSTRUCTION_TYPE.MatrixIndexing);
@@ -268,10 +278,12 @@ public class SPInstructionParser extends InstructionParser
 		
 		String2SPInstructionType.put( "binuaggchain", SPINSTRUCTION_TYPE.BinUaggChain);
 		
-		String2SPInstructionType.put( "write"   , SPINSTRUCTION_TYPE.Write);
+		String2SPInstructionType.put( "write"	, SPINSTRUCTION_TYPE.Write);
 	
-		String2SPInstructionType.put( "castdtm"   , SPINSTRUCTION_TYPE.Cast);
-		String2SPInstructionType.put( "castdtf"   , SPINSTRUCTION_TYPE.Cast);
+		String2SPInstructionType.put( "castdtm" , SPINSTRUCTION_TYPE.Cast);
+		String2SPInstructionType.put( "castdtf"	, SPINSTRUCTION_TYPE.Cast);
+		
+		String2SPInstructionType.put( "spoof"	, SPINSTRUCTION_TYPE.SpoofFused);
 	}
 
 	public static SPInstruction parseSingleInstruction (String str ) 
@@ -310,6 +322,8 @@ public class SPInstructionParser extends InstructionParser
 				return MapmmChainSPInstruction.parseInstruction(str);
 			case TSMM:
 				return TsmmSPInstruction.parseInstruction(str);
+			case TSMM2:
+				return Tsmm2SPInstruction.parseInstruction(str);	
 			case PMM:
 				return PmmSPInstruction.parseInstruction(str);
 			case ZIPMM:
@@ -327,6 +341,9 @@ public class SPInstructionParser extends InstructionParser
 			case AggregateTernary:
 				return AggregateTernarySPInstruction.parseInstruction(str);
 				
+			case Convolution:
+				 return ConvolutionSPInstruction.parseInstruction(str);
+
 			case MatrixIndexing:
 				return IndexingSPInstruction.parseInstruction(str);
 				
@@ -429,10 +446,13 @@ public class SPInstructionParser extends InstructionParser
 				
 			case Checkpoint:
 				return CheckpointSPInstruction.parseInstruction(str);
-			
+
 			case Compression:
 				return CompressionSPInstruction.parseInstruction(str);
 			
+			case SpoofFused:
+				return SpoofSPInstruction.parseInstruction(str);
+				
 			case Cast:
 				return CastSPInstruction.parseInstruction(str);
 				

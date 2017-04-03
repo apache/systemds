@@ -141,11 +141,15 @@ public class MatrixCharacteristics implements Serializable
 		numColumnsPerBlock = bclen;
 	} 
 	
-	public long getNumRowBlocks(){
+	public long getNumBlocks() {
+		return getNumRowBlocks() * getNumColBlocks();
+	}
+	
+	public long getNumRowBlocks() {
 		return (long) Math.ceil((double)getRows() / getRowsPerBlock());
 	}
 	
-	public long getNumColBlocks(){
+	public long getNumColBlocks() {
 		return (long) Math.ceil((double)getCols() / getColsPerBlock());
 	}
 	

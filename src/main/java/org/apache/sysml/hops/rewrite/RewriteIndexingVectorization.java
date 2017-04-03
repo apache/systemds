@@ -28,8 +28,6 @@ import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.IndexingOp;
 import org.apache.sysml.hops.LeftIndexingOp;
 import org.apache.sysml.hops.LiteralOp;
-import org.apache.sysml.parser.Expression.DataType;
-import org.apache.sysml.parser.Expression.ValueType;
 
 /**
  * Rule: Indexing vectorization. This rewrite rule set simplifies
@@ -71,17 +69,10 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 		return root;
 	}
 
-
-	/**
-	 * 
-	 * @param hop
-	 * @param descendFirst
-	 * @throws HopsException
-	 */
 	private void rule_IndexingVectorization( Hop hop ) 
 		throws HopsException 
 	{
-		if(hop.getVisited() == Hop.VisitStatus.DONE)
+		if(hop.isVisited())
 			return;
 		
 		//recursively process children
@@ -99,15 +90,15 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 			rule_IndexingVectorization( hi );
 		}
 
-		hop.setVisited(Hop.VisitStatus.DONE);
+		hop.setVisited();
 	}
 
 	/**
 	 * Note: unnecessary row or column indexing then later removed via
 	 * dynamic rewrites
 	 * 
-	 * @param hop
-	 * @throws HopsException 
+	 * @param hop high-level operator
+	 * @throws HopsException if HopsException occurs
 	 */
 	@SuppressWarnings("unused")
 	private void vectorizeRightIndexing( Hop hop )
@@ -116,8 +107,8 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 		if( hop instanceof IndexingOp ) //right indexing
 		{
 			IndexingOp ihop0 = (IndexingOp) hop;
-			boolean isSingleRow = ihop0.getRowLowerEqualsUpper();
-			boolean isSingleCol = ihop0.getColLowerEqualsUpper();
+			boolean isSingleRow = ihop0.isRowLowerEqualsUpper();
+			boolean isSingleCol = ihop0.isColLowerEqualsUpper();
 			boolean appliedRow = false;
 			
 			//search for multiple indexing in same row
@@ -129,7 +120,7 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 				ihops.add(ihop0);
 				for( Hop c : input.getParent() ){
 					if( c != ihop0 && c instanceof IndexingOp && c.getInput().get(0) == input
-					   && ((IndexingOp) c).getRowLowerEqualsUpper() 
+					   && ((IndexingOp) c).isRowLowerEqualsUpper() 
 					   && c.getInput().get(1)==ihop0.getInput().get(1) )
 					{
 						ihops.add( c );
@@ -138,7 +129,7 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 				//apply rewrite if found candidates
 				if( ihops.size() > 1 ){
 					//new row indexing operator
-					IndexingOp newRix = new IndexingOp("tmp", DataType.MATRIX, ValueType.DOUBLE, input, 
+					IndexingOp newRix = new IndexingOp("tmp", input.getDataType(), input.getValueType(), input, 
 							            ihop0.getInput().get(1), ihop0.getInput().get(1), new LiteralOp(1), 
 							            HopRewriteUtils.createValueHop(input, false), true, false); 
 					HopRewriteUtils.setOutputParameters(newRix, -1, -1, input.getRowsInBlock(), input.getColsInBlock(), -1);
@@ -168,7 +159,7 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 				ihops.add(ihop0);
 				for( Hop c : input.getParent() ){
 					if( c != ihop0 && c instanceof IndexingOp && c.getInput().get(0) == input
-					   && ((IndexingOp) c).getColLowerEqualsUpper() 
+					   && ((IndexingOp) c).isColLowerEqualsUpper() 
 					   && c.getInput().get(3)==ihop0.getInput().get(3) )
 					{
 						ihops.add( c );
@@ -177,7 +168,7 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 				//apply rewrite if found candidates
 				if( ihops.size() > 1 ){
 					//new row indexing operator
-					IndexingOp newRix = new IndexingOp("tmp", DataType.MATRIX, ValueType.DOUBLE, input, 
+					IndexingOp newRix = new IndexingOp("tmp", input.getDataType(), input.getValueType(), input, 
 							         new LiteralOp(1), HopRewriteUtils.createValueHop(input, true),
 				                    ihop0.getInput().get(3), ihop0.getInput().get(3), false, true); 
 					HopRewriteUtils.setOutputParameters(newRix, -1, -1, input.getRowsInBlock(), input.getColsInBlock(), -1);
@@ -186,10 +177,8 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 					for( Hop c : ihops ) {
 						HopRewriteUtils.removeChildReference(c, input); //input data
 						HopRewriteUtils.addChildReference(c, newRix, 0);
-						HopRewriteUtils.removeChildReferenceByPos(c, c.getInput().get(3),3); //col lower expr
-						HopRewriteUtils.addChildReference(c, new LiteralOp(1), 3);
-						HopRewriteUtils.removeChildReferenceByPos(c, c.getInput().get(4),4); //col upper expr
-						HopRewriteUtils.addChildReference(c, new LiteralOp(1), 4);
+						HopRewriteUtils.replaceChildReference(c, c.getInput().get(3), new LiteralOp(1), 3); //col lower expr
+						HopRewriteUtils.replaceChildReference(c, c.getInput().get(4), new LiteralOp(1), 4); //col upper expr 
 						c.refreshSizeInformation();
 					}
 
@@ -199,11 +188,6 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 		}
 	}
 	
-	/**
-	 * 
-	 * @param hop
-	 * @throws HopsException
-	 */
 	@SuppressWarnings("unchecked")
 	private void vectorizeLeftIndexing( Hop hop )
 		throws HopsException
@@ -240,7 +224,7 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 					Hop rowExpr = ihop0.getInput().get(2); //keep before reset
 					
 					//new row indexing operator
-					IndexingOp newRix = new IndexingOp("tmp1", DataType.MATRIX, ValueType.DOUBLE, input, 
+					IndexingOp newRix = new IndexingOp("tmp1", input.getDataType(), input.getValueType(), input, 
 							            rowExpr, rowExpr, new LiteralOp(1), 
 							            HopRewriteUtils.createValueHop(input, false), true, false); 
 					HopRewriteUtils.setOutputParameters(newRix, -1, -1, input.getRowsInBlock(), input.getColsInBlock(), -1);
@@ -253,10 +237,8 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 					//reset row index all candidates and refresh sizes (bottom-up)
 					for( int i=ihops.size()-1; i>=0; i-- ) {
 						Hop c = ihops.get(i);
-						HopRewriteUtils.removeChildReferenceByPos(c, c.getInput().get(2), 2); //row lower expr
-						HopRewriteUtils.addChildReference(c, new LiteralOp(1), 2);
-						HopRewriteUtils.removeChildReferenceByPos(c, c.getInput().get(3), 3); //row upper expr
-						HopRewriteUtils.addChildReference(c, new LiteralOp(1), 3);
+						HopRewriteUtils.replaceChildReference(c, c.getInput().get(2), new LiteralOp(1), 2); //row lower expr
+						HopRewriteUtils.replaceChildReference(c, c.getInput().get(3), new LiteralOp(1), 3); //row upper expr
 						((LeftIndexingOp)c).setRowLowerEqualsUpper(true);
 						c.refreshSizeInformation();
 					}
@@ -271,7 +253,7 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 						ihop0parentsPos.add(posp);
 					}
 					
-					LeftIndexingOp newLix = new LeftIndexingOp("tmp2", DataType.MATRIX, ValueType.DOUBLE, input, ihop0, 
+					LeftIndexingOp newLix = new LeftIndexingOp("tmp2", input.getDataType(), input.getValueType(), input, ihop0, 
 													rowExpr, rowExpr, new LiteralOp(1), 
 													HopRewriteUtils.createValueHop(input, false), true, false); 
 					HopRewriteUtils.setOutputParameters(newLix, -1, -1, input.getRowsInBlock(), input.getColsInBlock(), -1);
@@ -314,7 +296,7 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 					Hop colExpr = ihop0.getInput().get(4); //keep before reset
 					
 					//new row indexing operator
-					IndexingOp newRix = new IndexingOp("tmp1", DataType.MATRIX, ValueType.DOUBLE, input, 
+					IndexingOp newRix = new IndexingOp("tmp1", input.getDataType(), input.getValueType(), input, 
 							        new LiteralOp(1), HopRewriteUtils.createValueHop(input, true),            
 									colExpr, colExpr, false, true); 
 					HopRewriteUtils.setOutputParameters(newRix, -1, -1, input.getRowsInBlock(), input.getColsInBlock(), -1);
@@ -327,10 +309,8 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 					//reset col index all candidates and refresh sizes (bottom-up)
 					for( int i=ihops.size()-1; i>=0; i-- ) {
 						Hop c = ihops.get(i);
-						HopRewriteUtils.removeChildReferenceByPos(c, c.getInput().get(4), 4); //col lower expr
-						HopRewriteUtils.addChildReference(c, new LiteralOp(1), 4);
-						HopRewriteUtils.removeChildReferenceByPos(c, c.getInput().get(5), 5); //col upper expr
-						HopRewriteUtils.addChildReference(c, new LiteralOp(1), 5);
+						HopRewriteUtils.replaceChildReference(c, c.getInput().get(4), new LiteralOp(1), 4); //col lower expr
+						HopRewriteUtils.replaceChildReference(c, c.getInput().get(5), new LiteralOp(1), 5); //col upper expr
 						((LeftIndexingOp)c).setColLowerEqualsUpper(true);
 						c.refreshSizeInformation();
 					}
@@ -345,7 +325,7 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 						ihop0parentsPos.add(posp);
 					}
 					
-					LeftIndexingOp newLix = new LeftIndexingOp("tmp2", DataType.MATRIX, ValueType.DOUBLE, input, ihop0, 
+					LeftIndexingOp newLix = new LeftIndexingOp("tmp2", input.getDataType(), input.getValueType(), input, ihop0, 
 							                        new LiteralOp(1), HopRewriteUtils.createValueHop(input, true), 
 													colExpr, colExpr, false, true); 
 					HopRewriteUtils.setOutputParameters(newLix, -1, -1, input.getRowsInBlock(), input.getColsInBlock(), -1);

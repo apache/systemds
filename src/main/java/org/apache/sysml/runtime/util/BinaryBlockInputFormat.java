@@ -33,8 +33,10 @@ import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 
 /**
  * Custom binary block input format to return the custom record reader.
- * 
- * NOTE: not used by default.
+ * <p>
+ * NOTE: Not used by default.
+ * <p>
+ * NOTE: Used for performance debugging of binary block HDFS reads.
  */
 public class BinaryBlockInputFormat extends SequenceFileInputFormat<MatrixIndexes,MatrixBlock>
 {

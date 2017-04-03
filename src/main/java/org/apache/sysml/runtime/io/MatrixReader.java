@@ -51,26 +51,9 @@ public abstract class MatrixReader
 	//internal configuration
 	protected static final boolean AGGREGATE_BLOCK_NNZ = true;
 	
-	
-	/**
-	 * 
-	 * @param fname
-	 * @param rlen
-	 * @param clen
-	 * @param brlen
-	 * @param bclen
-	 * @param expNnz
-	 * @return
-	 */
 	public abstract MatrixBlock readMatrixFromHDFS( String fname, long rlen, long clen, int brlen, int bclen, long estnnz )
 		throws IOException, DMLRuntimeException;
-	
-	/**
-	 * 
-	 * @param file
-	 * @return
-	 * @throws IOException
-	 */
+
 	public static Path[] getSequenceFilePaths( FileSystem fs, Path file ) 
 		throws IOException
 	{
@@ -97,13 +80,16 @@ public abstract class MatrixReader
 	 * NOTE: mallocDense controls if the output matrix blocks is fully allocated, this can be redundant
 	 * if binary block read and single block. 
 	 * 
-	 * @param rlen
-	 * @param clen
-	 * @param estnnz
-	 * @param mallocDense
-	 * @return
-	 * @throws DMLRuntimeException 
-	 * @throws IOException 
+	 * @param rlen number of rows
+	 * @param clen number of columns
+	 * @param bclen number of columns in a block
+	 * @param brlen number of rows in a block
+	 * @param estnnz estimated number of non-zeros
+	 * @param mallocDense if true and not sparse, allocate dense block unsafe
+	 * @param mallocSparse if true and sparse, allocate sparse rows block
+	 * @return matrix block
+	 * @throws IOException if IOException occurs
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	protected static MatrixBlock createOutputMatrixBlock( long rlen, long clen, int bclen, int brlen, long estnnz, boolean mallocDense, boolean mallocSparse ) 
 		throws IOException, DMLRuntimeException
@@ -132,13 +118,7 @@ public abstract class MatrixReader
 		
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @param fs
-	 * @param path
-	 * @throws IOException 
-	 */
+
 	protected static void checkValidInputFile(FileSystem fs, Path path) 
 		throws IOException
 	{
@@ -151,16 +131,7 @@ public abstract class MatrixReader
 			throw new EOFException("Empty input file "+ path.toString() +".");
 		
 	}
-	
-	/**
-	 * 
-	 * @param dest
-	 * @param rlen
-	 * @param k
-	 * @param pool
-	 * @throws InterruptedException
-	 * @throws ExecutionException 
-	 */
+
 	protected static void sortSparseRowsParallel(MatrixBlock dest, long rlen, int k, ExecutorService pool) 
 		throws InterruptedException, ExecutionException
 	{

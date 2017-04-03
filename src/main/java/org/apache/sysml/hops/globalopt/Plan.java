@@ -110,7 +110,7 @@ public class Plan
 	 * Note that the output blocksize can be different since we would add
 	 * additional reblocks after that operation.
 	 * 
-	 * @return
+	 * @return true if valid blocksizes in MR
 	 */
 	public boolean checkValidBlocksizesInMR()
 	{
@@ -131,10 +131,6 @@ public class Plan
 		return ret;
 	}
 
-	/**
-	 * 
-	 * @return
-	 */
 	public boolean checkValidBlocksizesTRead()
 	{
 		boolean ret = true;
@@ -161,8 +157,7 @@ public class Plan
 	 * all formats. In general, unary operations also allow for cell inputs. 
 	 * TODO: check and test current format assumptions
 	 * 
-	 * @param node
-	 * @return
+	 * @return true if valid format in MR
 	 */
 	public boolean checkValidFormatInMR()
 	{
@@ -194,7 +189,7 @@ public class Plan
 	 * A plan is defined as preferred if its output interesting properties
 	 * match the interesting properties of all its matrix inputs.
 	 * 
-	 * @return
+	 * @return true if preferred plan
 	 */
 	public boolean isPreferredPlan()
 	{

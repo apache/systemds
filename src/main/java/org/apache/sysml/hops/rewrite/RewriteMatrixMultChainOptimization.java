@@ -86,16 +86,18 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 	/**
 	 * rule_OptimizeMMChains(): This method recurses through all Hops in the DAG
 	 * to find chains that need to be optimized.
+	 * 
+	 * @param hop high-level operator
+	 * @throws HopsException if HopsException occurs
 	 */
 	private void rule_OptimizeMMChains(Hop hop) 
 		throws HopsException 
 	{
-		if(hop.getVisited() == Hop.VisitStatus.DONE)
+		if(hop.isVisited())
 				return;
 		
-		if (  hop instanceof AggBinaryOp && ((AggBinaryOp) hop).isMatrixMultiply()
-			  && !((AggBinaryOp)hop).hasLeftPMInput() 
-			  && hop.getVisited() != Hop.VisitStatus.DONE ) 
+		if (  HopRewriteUtils.isMatrixMultiply(hop)
+			  && !((AggBinaryOp)hop).hasLeftPMInput() && !hop.isVisited() ) 
 		{
 			// Try to find and optimize the chain in which current Hop is the
 			// last operator
@@ -105,7 +107,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 		for (Hop hi : hop.getInput())
 			rule_OptimizeMMChains(hi);
 
-		hop.setVisited(Hop.VisitStatus.DONE);
+		hop.setVisited();
 	}
 
 	
@@ -115,6 +117,9 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 	 * links among the Hops that are involved in mmChain. (Step-3) Find the
 	 * optimal ordering (dynamic programming) (Step-4) Relink the hops in
 	 * mmChain.
+	 * 
+	 * @param hop high-level operator
+	 * @throws HopsException if HopsException occurs
 	 */
 	private void optimizeMMChain( Hop hop ) throws HopsException 
 	{
@@ -153,9 +158,8 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 			 *    (either within chain or outside the chain)
 			 */
 
-			if (    h instanceof AggBinaryOp && ((AggBinaryOp) h).isMatrixMultiply()
-			     && !((AggBinaryOp)hop).hasLeftPMInput() 
-				 && h.getVisited() != Hop.VisitStatus.DONE ) 
+			if (    HopRewriteUtils.isMatrixMultiply(h)
+			     && !((AggBinaryOp)hop).hasLeftPMInput() && h.isVisited() ) 
 			{
 				// check if the output of "h" is used at multiple places. If yes, it can
 				// not be expanded.
@@ -167,7 +171,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 					expandable = true;
 			}
 
-			h.setVisited(Hop.VisitStatus.DONE);
+			h.setVisited();
 
 			if ( !expandable ) {
 				i = i + 1;
@@ -321,11 +325,6 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 		}
 	}
 
-	/**
-	 * 
-	 * @param operators
-	 * @throws HopsException
-	 */
 	private void clearLinksWithinChain ( Hop hop, ArrayList<Hop> operators ) 
 		throws HopsException 
 	{
@@ -350,11 +349,11 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 	 * If all dimensions are known it returns true; othrewise the mmchain rewrite
 	 * should be ended without modifications.
 	 * 
-	 * @param hop
-	 * @param chain
-	 * @param dimArray
-	 * @return
-	 * @throws HopsException
+	 * @param hop high-level operator
+	 * @param chain list of high-level operators
+	 * @param dimArray dimension array
+	 * @return true if all dimensions known
+	 * @throws HopsException if HopsException occurs
 	 */
 	private boolean getDimsArray( Hop hop, ArrayList<Hop> chain, double[] dimsArray ) 
 		throws HopsException 
@@ -394,13 +393,6 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 		return dimsKnown;
 	}
 
-	
-	/**
-	 * 
-	 * @param p
-	 * @param h
-	 * @return
-	 */
 	private int inputCount ( Hop p, Hop h ) {
 		int count = 0;
 		for ( int i=0; i < p.getInput().size(); i++ )
@@ -409,11 +401,6 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 		return count;
 	}
 	
-	/**
-	 * 
-	 * @param hop
-	 * @param level
-	 */
 	private void logTraceHop( Hop hop, int level )
 	{
 		if( LOG.isTraceEnabled() ) {

@@ -58,10 +58,6 @@ public class ReaderColumnSelectionDenseSample extends ReaderColumnSelection
 		}
 	}
 
-	/**
-	 * 
-	 * @return
-	 */
 	private DblArray getNextRow() {
 		if (lastIndex == _sampleIndexes.length - 1)
 			return null;

@@ -72,6 +72,37 @@ public class PoolTest extends AutomatedTestBase
 		runPoolTest(ExecType.CP, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max");
 	}
 	
+	// ----------------------------------------
+	
+	@Test
+	public void testMaxPool2DDense1SP() 
+	{
+		int numImg = 1; int imgSize = 50; int numChannels = 1;  int stride = 2; int pad = 0; int poolSize1 = 2; int poolSize2 = 2;
+		runPoolTest(ExecType.SPARK, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max");
+	}
+	
+	@Test
+	public void testMaxPool2DDense2SP() 
+	{
+		int numImg = 2; int imgSize = 6; int numChannels = 1;  int stride = 1; int pad = 0; int poolSize1 = 2; int poolSize2 = 2;
+		runPoolTest(ExecType.SPARK, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max");
+	}
+	
+	
+	@Test
+	public void testMaxPool2DDense3SP() 
+	{
+		int numImg = 3; int imgSize = 7; int numChannels = 2;  int stride = 2; int pad = 0; int poolSize1 = 3; int poolSize2 = 3;
+		runPoolTest(ExecType.SPARK, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max");
+	}
+	
+	@Test
+	public void testMaxPool2DDense4SP() 
+	{
+		int numImg = 2; int imgSize = 4; int numChannels = 2;  int stride = 1; int pad = 0; int poolSize1 = 3; int poolSize2 = 3;
+		runPoolTest(ExecType.SPARK, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max");
+	}
+	
 	/**
 	 * 
 	 * @param et

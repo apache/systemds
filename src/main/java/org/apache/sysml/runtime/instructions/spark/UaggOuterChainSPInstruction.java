@@ -58,7 +58,7 @@ import org.apache.sysml.runtime.util.DataConverter;
 
 /**
  * Two types of broadcast variables used -- 1. Array of type double. 2.PartitionedMatrixBlock
- * 1. Array of type double: Matrix B is sorted at driver level and passed to every task for cases where operations are handled with special cases. e.g. <, RowSum
+ * 1. Array of type double: Matrix B is sorted at driver level and passed to every task for cases where operations are handled with special cases. e.g. &lt;, RowSum
  * 2. PartitionedMatrixBlock:  Any operations not implemented through this change goes through generic process, In that case, task takes Matrix B, in partitioned form and operate on it.
  */
 public class UaggOuterChainSPInstruction extends BinarySPInstruction 
@@ -81,13 +81,6 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction
 		instString = istr;
 	}
 
-
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	public static UaggOuterChainSPInstruction parseInstruction( String str ) 
 		throws DMLRuntimeException 
 	{
@@ -190,12 +183,6 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction
 		}
 	}
 
-	/**
-	 * 
-	 * @param mcIn
-	 * @param ixfun
-	 * @return
-	 */
 	protected static boolean preservesPartitioning( MatrixCharacteristics mcIn, IndexFunction ixfun )
 	{
 		if( ixfun instanceof ReduceCol ) //rowSums
@@ -203,12 +190,7 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction
 		else // colsSums
 			return mcIn.dimsKnown() && mcIn.getRows() <= mcIn.getRowsPerBlock();
 	}
-	
-	/**
-	 * 
-	 * @param sec
-	 * @throws DMLRuntimeException
-	 */
+
 	protected void updateUnaryAggOutputMatrixCharacteristics(SparkExecutionContext sec) 
 		throws DMLRuntimeException
 	{	
@@ -241,12 +223,7 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction
 			}
 		}
 	}
-	
-	
-	/**
-	 * 
-	 * 
-	 */
+
 	private static class RDDMapUAggOuterChainFunction implements PairFlatMapFunction<Iterator<Tuple2<MatrixIndexes, MatrixBlock>>, MatrixIndexes, MatrixBlock> 
 	{
 		private static final long serialVersionUID = 8197406787010296291L;
@@ -271,7 +248,7 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction
 		}
 		
 		@Override
-		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<MatrixIndexes, MatrixBlock>> arg0)
+		public LazyIterableIterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<MatrixIndexes, MatrixBlock>> arg0)
 			throws Exception 
 		{
 			return new RDDMapUAggOuterChainIterator(arg0);	
@@ -306,10 +283,7 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction
 			}			
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class RDDMapGenUAggOuterChainFunction implements PairFlatMapFunction<Iterator<Tuple2<MatrixIndexes, MatrixBlock>>, MatrixIndexes, MatrixBlock> 
 	{
 		private static final long serialVersionUID = 8197406787010296291L;
@@ -346,7 +320,7 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction
 		}
 		
 		@Override
-		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<MatrixIndexes, MatrixBlock>> arg)
+		public LazyIterableIterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<MatrixIndexes, MatrixBlock>> arg)
 			throws Exception 
 		{
 			return new RDDMapGenUAggOuterChainIterator(arg);

@@ -76,24 +76,7 @@ public class ReaderBinaryBlockParallel extends ReaderBinaryBlock
 		
 		return ret;
 	}
-	
 
-	
-	/**
-	 * 
-	 * @param path
-	 * @param job
-	 * @param fs 
-	 * @param dest
-	 * @param rlen
-	 * @param clen
-	 * @param brlen
-	 * @param bclen
-	 * @throws IOException
-	 * @throws IllegalAccessException
-	 * @throws InstantiationException
-	 * @throws DMLRuntimeException 
-	 */
 	private static void readBinaryBlockMatrixFromHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock dest, long rlen, long clen, int brlen, int bclen )
 		throws IOException, DMLRuntimeException
 	{			
@@ -131,9 +114,6 @@ public class ReaderBinaryBlockParallel extends ReaderBinaryBlock
 		}
 	}
 
-	/**
-	 * 
-	 */
 	private static class ReadFileTask implements Callable<Object> 
 	{
 		private Path _path = null;
@@ -158,7 +138,7 @@ public class ReaderBinaryBlockParallel extends ReaderBinaryBlock
 		}
 
 		@Override
-		@SuppressWarnings({ "deprecation", "resource" })
+		@SuppressWarnings({ "deprecation" })
 		public Object call() throws Exception 
 		{
 			boolean sparse = _dest.isInSparseFormat();

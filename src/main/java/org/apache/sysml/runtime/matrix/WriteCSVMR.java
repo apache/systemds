@@ -155,15 +155,7 @@ public class WriteCSVMR
 		
 		return new JobReturn(stats, outputInfos, runjob.isSuccessful());
 	}
-	
-	/**
-	 * 
-	 * @param rlen
-	 * @param clen
-	 * @param defaultNumRed
-	 * @param numRedGroups
-	 * @return
-	 */
+
 	public static int determineNumReducers( long[] rlen, long[] clen, int defaultNumRed, long numRedGroups )
 	{
 		//init return with default value

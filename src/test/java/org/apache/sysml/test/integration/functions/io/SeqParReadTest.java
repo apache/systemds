@@ -270,8 +270,7 @@ public class SeqParReadTest extends AutomatedTestBase {
 	private void writeMatrix( double[][] A, String fname, OutputInfo oi, long rows, long cols, int brows, int bcols, long nnz ) 
 		throws DMLRuntimeException, IOException
 	{
-		MapReduceTool.deleteFileIfExistOnHDFS(fname);
-		MapReduceTool.deleteFileIfExistOnHDFS(fname+".mtd");
+		MapReduceTool.deleteFileWithMTDIfExistOnHDFS(fname);
 		
 		MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, brows, bcols, nnz);
 		MatrixBlock mb = DataConverter.convertToMatrixBlock(A);

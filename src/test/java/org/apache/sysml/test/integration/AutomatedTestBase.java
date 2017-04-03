@@ -31,7 +31,6 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 
 import org.apache.sysml.lops.Lop;
 import org.apache.commons.io.FileUtils;
@@ -79,6 +78,7 @@ import org.apache.sysml.utils.Statistics;
  * </ul>
  * 
  */
+@SuppressWarnings("deprecation")
 public abstract class AutomatedTestBase 
 {
 	
@@ -95,6 +95,7 @@ public abstract class AutomatedTestBase
 	
 	// By default: TEST_GPU is set to false to allow developers without Nvidia GPU to run integration test suite 
 	public static final boolean TEST_GPU = false;
+	public static final double GPU_TOLERANCE = 1e-9;
 	
 	protected ScriptType scriptType;
 	
@@ -166,8 +167,12 @@ public abstract class AutomatedTestBase
 	 */
 	private static final File CONFIG_TEMPLATE_FILE = new File(CONFIG_DIR, "SystemML-config.xml");
 	
-	/** Location under which we create local temporary directories for test cases. */
-	private static final String LOCAL_TEMP_ROOT_DIR = "target/testTemp";
+	/**
+	 * Location under which we create local temporary directories for test cases.
+	 * To adjust where testTemp is located, use -Dsystemml.testTemp.root.dir=<new location>.  This is necessary
+	 * if any parent directories are public-protected.
+	 */
+	private static final String LOCAL_TEMP_ROOT_DIR = System.getProperty("systemml.testTemp.root.dir","target/testTemp");
 	private static final File LOCAL_TEMP_ROOT = new File(LOCAL_TEMP_ROOT_DIR);
 	
 	/** Base directory for generated IN, OUT, EXPECTED test data artifacts instead of SCRIPT_DIR. */
@@ -334,6 +339,16 @@ public abstract class AutomatedTestBase
 	 */
 	protected File getCurConfigFile() {
 		return new File(getCurLocalTempDir(), "SystemML-config.xml");
+	}
+	
+	/**
+	 * <p>
+	 * Tests that use custom SystemML configuration should override to ensure
+	 * scratch space and local temporary directory locations are also updated.
+	 * </p>
+	 */
+	protected File getConfigTemplateFile() {
+		return CONFIG_TEMPLATE_FILE;
 	}
 	
 	protected MLContext getMLContextForTesting() throws DMLRuntimeException {
@@ -714,13 +729,11 @@ public abstract class AutomatedTestBase
 		TestUtils.writeTestScalar(baseDirectory + EXPECTED_DIR + cacheDir + name, value);
 		expectedFiles.add(baseDirectory + EXPECTED_DIR + cacheDir + name);
 	}
-	
-	@SuppressWarnings("deprecation")
+
 	protected static HashMap<CellIndex, Double> readDMLMatrixFromHDFS(String fileName) {
 		return TestUtils.readDMLMatrixFromHDFS(baseDirectory + OUTPUT_DIR + fileName);
 	}
 
-	@SuppressWarnings("deprecation")
 	public HashMap<CellIndex, Double> readRMatrixFromFS(String fileName) {
 		System.out.println("R script out: " + baseDirectory + EXPECTED_DIR + cacheDir + fileName);
 		return TestUtils.readRMatrixFromFS(baseDirectory + EXPECTED_DIR + cacheDir + fileName);
@@ -886,9 +899,9 @@ public abstract class AutomatedTestBase
 			curLocalTempDir.mkdirs();
 			TestUtils.clearDirectory(curLocalTempDir.getPath());
 
-			// Create a SystemML config file for this test case.
-			// Use the canned file under src/test/config as a template
-			String configTemplate = FileUtils.readFileToString(CONFIG_TEMPLATE_FILE, "UTF-8");
+			// Create a SystemML config file for this test case based on default template
+			// from src/test/config or derive from custom configuration provided by test.
+			String configTemplate = FileUtils.readFileToString(getConfigTemplateFile(), "UTF-8");
 			
 			String localTemp = curLocalTempDir.getPath();
 			String configContents = configTemplate.replace("<scratch>scratch_space</scratch>", 
@@ -898,9 +911,7 @@ public abstract class AutomatedTestBase
 			
 			FileUtils.write(getCurConfigFile(), configContents, "UTF-8");
 			
-			System.out.printf(
-					"This test case will use SystemML config file %s\n",
-					getCurConfigFile());
+			System.out.printf("This test case will use SystemML config file %s\n", getCurConfigFile());
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
@@ -1484,8 +1495,6 @@ public abstract class AutomatedTestBase
 		}
 
 		TestUtils.clearAssertionInformation();
-
-		System.gc();
 	}
 
 	/**
@@ -1700,7 +1709,7 @@ public abstract class AutomatedTestBase
 	 * @throws IOException 
 	 * @throws DMLRuntimeException 
 	 */
-	protected double[][] writeInputFrame(String name, double[][] data, boolean bIncludeR, List<ValueType> schema, OutputInfo oi) 
+	protected double[][] writeInputFrame(String name, double[][] data, boolean bIncludeR, ValueType[] schema, OutputInfo oi) 
 			throws DMLRuntimeException, IOException 
 	{
 		String completePath = baseDirectory + INPUT_DIR + name;
@@ -1725,14 +1734,14 @@ public abstract class AutomatedTestBase
 		return data;
 	}
 
-	protected double[][] writeInputFrameWithMTD(String name, double[][] data, boolean bIncludeR, List<ValueType> schema, OutputInfo oi) 
+	protected double[][] writeInputFrameWithMTD(String name, double[][] data, boolean bIncludeR, ValueType[] schema, OutputInfo oi) 
 			throws DMLRuntimeException, IOException 
 	{
 		MatrixCharacteristics mc = new MatrixCharacteristics(data.length, data[0].length, OptimizerUtils.DEFAULT_BLOCKSIZE, data[0].length, -1);
 		return writeInputFrameWithMTD(name, data, bIncludeR, mc, schema, oi);
 	}
 	
-	protected double[][] writeInputFrameWithMTD(String name, double[][] data, boolean bIncludeR, MatrixCharacteristics mc, List<ValueType> schema, OutputInfo oi) 
+	protected double[][] writeInputFrameWithMTD(String name, double[][] data, boolean bIncludeR, MatrixCharacteristics mc, ValueType[] schema, OutputInfo oi) 
 			throws DMLRuntimeException, IOException 
 	{
 		writeInputFrame(name, data, bIncludeR, schema, oi);
@@ -1766,9 +1775,17 @@ public abstract class AutomatedTestBase
 	 * @throws IOException 
 	 * @throws DMLRuntimeException 
 	 */
-	protected double[][] writeInputFrame(String name, double[][] data, List<ValueType> schema, OutputInfo oi) 
+	protected double[][] writeInputFrame(String name, double[][] data, ValueType[] schema, OutputInfo oi) 
 			throws DMLRuntimeException, IOException 
 	{
 		return writeInputFrame(name, data, false, schema, oi);
+	}
+	
+	protected boolean heavyHittersContainsSubString(String... str) {
+		for( String opcode : Statistics.getCPHeavyHitterOpCodes())
+			for( String s : str )
+				if(opcode.contains(s))
+				return true;
+		return false;		
 	}
 }

@@ -27,7 +27,7 @@ import java.util.List;
 
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.spark.Accumulator;
+import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
@@ -35,22 +35,24 @@ import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
-import org.apache.spark.mllib.linalg.DenseVector;
-import org.apache.spark.mllib.linalg.Vector;
-import org.apache.spark.mllib.linalg.VectorUDT;
-import org.apache.spark.mllib.linalg.Vectors;
-import org.apache.spark.mllib.regression.LabeledPoint;
-import org.apache.spark.sql.DataFrame;
+import org.apache.spark.ml.feature.LabeledPoint;
+import org.apache.spark.ml.linalg.SparseVector;
+import org.apache.spark.ml.linalg.Vector;
+import org.apache.spark.ml.linalg.VectorUDT;
+import org.apache.spark.ml.linalg.Vectors;
+import org.apache.spark.mllib.util.MLUtils;
+import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.SQLContext;
+import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
-
-import scala.Tuple2;
-
+import org.apache.spark.storage.StorageLevel;
+import org.apache.spark.util.LongAccumulator;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.spark.data.SerLongWritable;
 import org.apache.sysml.runtime.instructions.spark.data.SerText;
@@ -61,26 +63,20 @@ import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixCell;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
-import org.apache.sysml.runtime.matrix.data.SparseBlock;
+import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.matrix.mapred.ReblockBuffer;
 import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.runtime.util.FastStringTokenizer;
+import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.runtime.util.UtilFunctions;
+
+import scala.Tuple2;
 
 public class RDDConverterUtils 
 {
 	public static final String DF_ID_COLUMN = "__INDEX";
-	
-	/**
-	 * 
-	 * @param sc
-	 * @param input
-	 * @param mcOut
-	 * @param outputEmptyBlocks
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> textCellToBinaryBlock(JavaSparkContext sc,
 			JavaPairRDD<LongWritable, Text> input, MatrixCharacteristics mcOut, boolean outputEmptyBlocks) 
 		throws DMLRuntimeException  
@@ -96,20 +92,11 @@ public class RDDConverterUtils
 		}
 		
 		//aggregate partial matrix blocks
-		out = RDDAggregateUtils.mergeByKey( out ); 
+		out = RDDAggregateUtils.mergeByKey(out, false); 
 		
 		return out;
 	}
 
-	/**
-	 * 
-	 * @param sc
-	 * @param input
-	 * @param mcOut
-	 * @param outputEmptyBlocks
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> binaryCellToBinaryBlock(JavaSparkContext sc,
 			JavaPairRDD<MatrixIndexes, MatrixCell> input, MatrixCharacteristics mcOut, boolean outputEmptyBlocks) 
 		throws DMLRuntimeException 
@@ -125,17 +112,17 @@ public class RDDConverterUtils
 		}
 		
 		//aggregate partial matrix blocks
-		out = RDDAggregateUtils.mergeByKey( out ); 
+		out = RDDAggregateUtils.mergeByKey(out, false); 
 		
 		return out;
 	}
 
 	/**
 	 * Converter from binary block rdd to rdd of labeled points. Note that the input needs to be 
-	 * reblocked to satisfy the 'clen <= bclen' constraint.
+	 * reblocked to satisfy the 'clen &lt;= bclen' constraint.
 	 * 
-	 * @param in
-	 * @return
+	 * @param in matrix as {@code JavaPairRDD<MatrixIndexes, MatrixBlock>}
+	 * @return JavaRDD of labeled points
 	 */
 	public static JavaRDD<LabeledPoint> binaryBlockToLabeledPoints(JavaPairRDD<MatrixIndexes, MatrixBlock> in) 
 	{
@@ -147,25 +134,11 @@ public class RDDConverterUtils
 		return pointrdd;
 	}
 
-	/**
-	 * 
-	 * @param in
-	 * @param mc
-	 * @return
-	 */
 	public static JavaRDD<String> binaryBlockToTextCell(JavaPairRDD<MatrixIndexes, MatrixBlock> in, MatrixCharacteristics mc) {
 		return in.flatMap(new ConvertMatrixBlockToIJVLines(
 				mc.getRowsPerBlock(), mc.getColsPerBlock()));
 	}
-	
-	/**
-	 * 
-	 * @param in
-	 * @param mcIn
-	 * @param props
-	 * @param strict
-	 * @return
-	 */
+
 	public static JavaRDD<String> binaryBlockToCsv(JavaPairRDD<MatrixIndexes,MatrixBlock> in, MatrixCharacteristics mcIn, CSVFileFormatProperties props, boolean strict)
 	{
 		JavaPairRDD<MatrixIndexes,MatrixBlock> input = in;
@@ -190,33 +163,21 @@ public class RDDConverterUtils
 	
 		return out;
 	}
-	
-	/**
-	 * 
-	 * @param sc
-	 * @param lines
-	 * @param mcOut
-	 * @param hasHeader
-	 * @param delim
-	 * @param fill
-	 * @param missingValue
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> csvToBinaryBlock(JavaSparkContext sc,
-			JavaPairRDD<LongWritable, Text> input, MatrixCharacteristics mcOut, 
+			JavaPairRDD<LongWritable, Text> input, MatrixCharacteristics mc, 
 			boolean hasHeader, String delim, boolean fill, double fillValue) 
 		throws DMLRuntimeException 
 	{
 		//determine unknown dimensions and sparsity if required
-		if( !mcOut.dimsKnown(true) ) {
-			Accumulator<Double> aNnz = sc.accumulator(0L);
+		if( !mc.dimsKnown(true) ) {
+			LongAccumulator aNnz = sc.sc().longAccumulator("nnz");
 			JavaRDD<String> tmp = input.values()
 					.map(new CSVAnalysisFunction(aNnz, delim));
 			long rlen = tmp.count() - (hasHeader ? 1 : 0);
 			long clen = tmp.first().split(delim).length;
 			long nnz = UtilFunctions.toLong(aNnz.value());
-			mcOut.set(rlen, clen, mcOut.getRowsPerBlock(), mcOut.getColsPerBlock(), nnz);
+			mc.set(rlen, clen, mc.getRowsPerBlock(), mc.getColsPerBlock(), nnz);
 		}
 		
 		//prepare csv w/ row indexes (sorted by filenames)
@@ -224,14 +185,16 @@ public class RDDConverterUtils
 				.zipWithIndex(); //zip row index
 		
 		//convert csv rdd to binary block rdd (w/ partial blocks)
+		boolean sparse = requiresSparseAllocation(prepinput, mc);
 		JavaPairRDD<MatrixIndexes, MatrixBlock> out = 
-				prepinput.mapPartitionsToPair(
-					new CSVToBinaryBlockFunction(mcOut, hasHeader, delim, fill, fillValue));
+				prepinput.mapPartitionsToPair(new CSVToBinaryBlockFunction(
+						mc, sparse, hasHeader, delim, fill, fillValue));
 		
-		//aggregate partial matrix blocks
-		out = RDDAggregateUtils.mergeByKey( out ); 
-		
-		return out;
+		//aggregate partial matrix blocks (w/ preferred number of output 
+		//partitions as the data is likely smaller in binary block format,
+		//but also to bound the size of partitions for compressed inputs)
+		int parts = SparkUtils.getNumPreferredPartitions(mc, out);
+		return RDDAggregateUtils.mergeByKey(out, parts, false); 
 	}
 	
 	/**
@@ -245,15 +208,15 @@ public class RDDConverterUtils
 	 * val Abin = RDDConverterUtils.csvToBinaryBlock(new JavaSparkContext(sc), A, Amc, false, ",", false, 0)
 	 * </code></pre>
 	 * 
-	 * @param sc 
-	 * @param input
-	 * @param mcOut
-	 * @param hasHeader
-	 * @param delim
-	 * @param fill
-	 * @param fillValue
-	 * @return
-	 * @throws DMLRuntimeException
+	 * @param sc java spark context
+	 * @param input rdd of strings
+	 * @param mcOut matrix characteristics
+	 * @param hasHeader if true, has header
+	 * @param delim delimiter as a string
+	 * @param fill if true, fill in empty values with fillValue
+	 * @param fillValue fill value used to fill empty values
+	 * @return matrix as {@code JavaPairRDD<MatrixIndexes, MatrixBlock>}
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> csvToBinaryBlock(JavaSparkContext sc,
 			JavaRDD<String> input, MatrixCharacteristics mcOut, 
@@ -267,24 +230,13 @@ public class RDDConverterUtils
 		//convert to binary block
 		return csvToBinaryBlock(sc, prepinput, mcOut, hasHeader, delim, fill, fillValue);
 	}
-	
-	/**
-	 * 
-	 * @param sc
-	 * @param df
-	 * @param mcOut
-	 * @param containsID
-	 * @param isVector
-	 * @param columns
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> dataFrameToBinaryBlock(JavaSparkContext sc,
-			DataFrame df, MatrixCharacteristics mc, boolean containsID, boolean isVector) 
+			Dataset<Row> df, MatrixCharacteristics mc, boolean containsID, boolean isVector) 
 	{
 		//determine unknown dimensions and sparsity if required
 		if( !mc.dimsKnown(true) ) {
-			Accumulator<Double> aNnz = sc.accumulator(0L);
+			LongAccumulator aNnz = sc.sc().longAccumulator("nnz");
 			JavaRDD<Row> tmp = df.javaRDD().map(new DataFrameAnalysisFunction(aNnz, containsID, isVector));
 			long rlen = tmp.count();
 			long clen = !isVector ? df.columns().length - (containsID?1:0) : 
@@ -298,31 +250,26 @@ public class RDDConverterUtils
 			mc.setBlockSize(ConfigurationManager.getBlocksize());
 		}
 		
+		//construct or reuse row ids
 		JavaPairRDD<Row, Long> prepinput = containsID ?
-				df.javaRDD().mapToPair(new DataFrameExtractIDFunction()) :
+				df.javaRDD().mapToPair(new DataFrameExtractIDFunction(
+					df.schema().fieldIndex(DF_ID_COLUMN))) :
 				df.javaRDD().zipWithIndex(); //zip row index
 		
 		//convert csv rdd to binary block rdd (w/ partial blocks)
+		boolean sparse = requiresSparseAllocation(prepinput, mc);
 		JavaPairRDD<MatrixIndexes, MatrixBlock> out = 
 				prepinput.mapPartitionsToPair(
-					new DataFrameToBinaryBlockFunction(mc, containsID, isVector));
+					new DataFrameToBinaryBlockFunction(mc, sparse, containsID, isVector));
 		
-		//aggregate partial matrix blocks
-		out = RDDAggregateUtils.mergeByKey( out ); 
-		
-		return out;
+		//aggregate partial matrix blocks (w/ preferred number of output 
+		//partitions as the data is likely smaller in binary block format,
+		//but also to bound the size of partitions for compressed inputs)
+		int parts = SparkUtils.getNumPreferredPartitions(mc, out);
+		return RDDAggregateUtils.mergeByKey(out, parts, false); 
 	}
-	
-	/**
-	 * 
-	 * @param sqlContext
-	 * @param in
-	 * @param mc
-	 * @param toVector
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
-	public static DataFrame binaryBlockToDataFrame(SQLContext sqlctx, 
+
+	public static Dataset<Row> binaryBlockToDataFrame(SparkSession sparkSession,
 			JavaPairRDD<MatrixIndexes, MatrixBlock> in, MatrixCharacteristics mc, boolean toVector)  
 	{
 		if( !mc.colsKnown() )
@@ -344,25 +291,145 @@ public class RDDConverterUtils
 		}
 		
 		//rdd to data frame conversion
-		return sqlctx.createDataFrame(rowsRDD.rdd(), DataTypes.createStructType(fields));
+		return sparkSession.createDataFrame(rowsRDD.rdd(), DataTypes.createStructType(fields));
+	}
+
+	@Deprecated
+	public static Dataset<Row> binaryBlockToDataFrame(SQLContext sqlContext,
+			JavaPairRDD<MatrixIndexes, MatrixBlock> in, MatrixCharacteristics mc, boolean toVector)  
+	{
+		SparkSession sparkSession = sqlContext.sparkSession();
+		return binaryBlockToDataFrame(sparkSession, in, mc, toVector);
+	}
+
+	/**
+	 * Converts a libsvm text input file into two binary block matrices for features 
+	 * and labels, and saves these to the specified output files. This call also deletes 
+	 * existing files at the specified output locations, as well as determines and 
+	 * writes the meta data files of both output matrices. 
+	 * <p>
+	 * Note: We use {@code org.apache.spark.mllib.util.MLUtils.loadLibSVMFile} for parsing 
+	 * the libsvm input files in order to ensure consistency with Spark.
+	 * 
+	 * @param sc java spark context
+	 * @param pathIn path to libsvm input file
+	 * @param pathX path to binary block output file of features
+	 * @param pathY path to binary block output file of labels
+	 * @param mcOutX matrix characteristics of output matrix X
+	 * @throws DMLRuntimeException if output path not writable or conversion failure
+	 */
+	public static void libsvmToBinaryBlock(JavaSparkContext sc, String pathIn, 
+			String pathX, String pathY, MatrixCharacteristics mcOutX) 
+		throws DMLRuntimeException
+	{
+		if( !mcOutX.dimsKnown() )
+			throw new DMLRuntimeException("Matrix characteristics "
+				+ "required to convert sparse input representation.");
+		try {
+			//cleanup existing output files
+			MapReduceTool.deleteFileIfExistOnHDFS(pathX);
+			MapReduceTool.deleteFileIfExistOnHDFS(pathY);
+			
+			//convert libsvm to labeled points
+			int numFeatures = (int) mcOutX.getCols();
+			int numPartitions = SparkUtils.getNumPreferredPartitions(mcOutX, null);
+			JavaRDD<org.apache.spark.mllib.regression.LabeledPoint> lpoints = 
+					MLUtils.loadLibSVMFile(sc.sc(), pathIn, numFeatures, numPartitions).toJavaRDD();
+			
+			//append row index and best-effort caching to avoid repeated text parsing
+			JavaPairRDD<org.apache.spark.mllib.regression.LabeledPoint,Long> ilpoints = 
+					lpoints.zipWithIndex().persist(StorageLevel.MEMORY_AND_DISK()); 
+			
+			//extract labels and convert to binary block
+			MatrixCharacteristics mc1 = new MatrixCharacteristics(mcOutX.getRows(), 1, 
+					mcOutX.getRowsPerBlock(), mcOutX.getColsPerBlock(), -1);
+			LongAccumulator aNnz1 = sc.sc().longAccumulator("nnz");
+			JavaPairRDD<MatrixIndexes,MatrixBlock> out1 = ilpoints
+					.mapPartitionsToPair(new LabeledPointToBinaryBlockFunction(mc1, true, aNnz1));
+			int numPartitions2 = SparkUtils.getNumPreferredPartitions(mc1, null);
+			out1 = RDDAggregateUtils.mergeByKey(out1, numPartitions2, false);
+			out1.saveAsHadoopFile(pathY, MatrixIndexes.class, MatrixBlock.class, SequenceFileOutputFormat.class);
+			mc1.setNonZeros(aNnz1.value()); //update nnz after triggered save
+			MapReduceTool.writeMetaDataFile(pathY+".mtd", ValueType.DOUBLE, mc1, OutputInfo.BinaryBlockOutputInfo);
+			
+			//extract data and convert to binary block
+			MatrixCharacteristics mc2 = new MatrixCharacteristics(mcOutX.getRows(), mcOutX.getCols(),
+					mcOutX.getRowsPerBlock(), mcOutX.getColsPerBlock(), -1);
+			LongAccumulator aNnz2 = sc.sc().longAccumulator("nnz");
+			JavaPairRDD<MatrixIndexes,MatrixBlock> out2 = ilpoints
+					.mapPartitionsToPair(new LabeledPointToBinaryBlockFunction(mc2, false, aNnz2));
+			out2 = RDDAggregateUtils.mergeByKey(out2, numPartitions, false);
+			out2.saveAsHadoopFile(pathX, MatrixIndexes.class, MatrixBlock.class, SequenceFileOutputFormat.class);
+			mc2.setNonZeros(aNnz2.value()); //update nnz after triggered save
+			MapReduceTool.writeMetaDataFile(pathX+".mtd", ValueType.DOUBLE, mc2, OutputInfo.BinaryBlockOutputInfo);
+			
+			//asynchronous cleanup of cached intermediates
+			ilpoints.unpersist(false);
+		}
+		catch(IOException ex) {
+			throw new DMLRuntimeException(ex);
+		}
 	}
 	
-	/**
-	 * 
-	 * @param in
-	 * @return
-	 */
 	public static JavaPairRDD<LongWritable, Text> stringToSerializableText(JavaPairRDD<Long,String> in)
 	{
 		return in.mapToPair(new TextToSerTextFunction());
 	}
 
+	private static boolean requiresSparseAllocation(JavaPairRDD<?,?> in, MatrixCharacteristics mc) {
+		//if nnz unknown or sparse, pick the robust sparse representation
+		if( !mc.nnzKnown() || (mc.nnzKnown() && MatrixBlock.evalSparseFormatInMemory(
+			mc.getRows(), mc.getCols(), mc.getNonZeros())) ) {
+			return true;
+		}
+		
+		//if dense evaluate expected rows per partition to handle wide matrices
+		//(pick sparse representation if fraction of rows per block less than sparse theshold)
+		double datasize = OptimizerUtils.estimatePartitionedSizeExactSparsity(mc);
+		double rowsize = OptimizerUtils.estimatePartitionedSizeExactSparsity(1, mc.getCols(),
+				mc.getNumRowBlocks(), mc.getColsPerBlock(), Math.ceil((double)mc.getNonZeros()/mc.getRows()));
+		double partsize = Math.ceil(datasize/in.getNumPartitions());
+		double blksz = Math.min(mc.getRows(), mc.getRowsPerBlock());
+		return partsize/rowsize/blksz < MatrixBlock.SPARSITY_TURN_POINT;
+	}
+
+	private static int countNnz(Object vect, boolean isVector, int off) {
+		if( isVector ) //note: numNonzeros scans entries but handles sparse/dense
+			return ((Vector) vect).numNonzeros();
+		else 
+			return countNnz(vect, isVector, off, ((Row)vect).length()-off);
+	}
+
+	private static int countNnz(Object vect, boolean isVector, int pos, int len ) {
+		int lnnz = 0;
+		if( isVector ) {
+			Vector vec = (Vector) vect;
+			for( int i=pos; i<pos+len; i++ )
+				lnnz += (vec.apply(i) != 0) ? 1 : 0;
+		}
+		else { //row
+			Row row = (Row) vect;
+			for( int i=pos; i<pos+len; i++ )
+				lnnz += UtilFunctions.isNonZero(row.get(i)) ? 1 : 0;
+		}
+		return lnnz;
+	}
+	
+	private static Vector createVector(MatrixBlock row) {
+		if( row.isEmptyBlock(false) ) //EMPTY SPARSE ROW
+			return Vectors.sparse(row.getNumColumns(), new int[0], new double[0]);
+		else if( row.isInSparseFormat() ) //SPARSE ROW
+			return Vectors.sparse(row.getNumColumns(), 
+					row.getSparseBlock().indexes(0), row.getSparseBlock().values(0));
+		else // DENSE ROW
+			return Vectors.dense(row.getDenseBlock());
+	}
 	
 	/////////////////////////////////
 	// BINARYBLOCK-SPECIFIC FUNCTIONS
 
 	/**
-	 * This function converts a binary block input (<X,y>) into mllib's labeled points. Note that
+	 * This function converts a binary block input (&lt;X,y&gt;) into mllib's labeled points. Note that
 	 * this function requires prior reblocking if the number of columns is larger than the column
 	 * block size. 
 	 */
@@ -371,31 +438,16 @@ public class RDDConverterUtils
 		private static final long serialVersionUID = -6590259914203201585L;
 
 		@Override
-		public Iterable<LabeledPoint> call(MatrixBlock arg0) 
+		public Iterator<LabeledPoint> call(MatrixBlock arg0) 
 			throws Exception 
 		{
 			ArrayList<LabeledPoint> ret = new ArrayList<LabeledPoint>();
-			for( int i=0; i<arg0.getNumRows(); i++ )
-			{
+			for( int i=0; i<arg0.getNumRows(); i++ ) {
 				MatrixBlock tmp = arg0.sliceOperations(i, i, 0, arg0.getNumColumns()-2, new MatrixBlock());
-				double[] data = DataConverter.convertToDoubleVector(tmp);
-				if( tmp.isEmptyBlock(false) ) //EMPTY SPARSE ROW
-				{
-					ret.add(new LabeledPoint(arg0.getValue(i, arg0.getNumColumns()-1), Vectors.sparse(0, new int[0], new double[0])));
-				}
-				else if( tmp.isInSparseFormat() ) //SPARSE ROW
-				{
-					SparseBlock sblock = tmp.getSparseBlock();
-					ret.add(new LabeledPoint(arg0.getValue(i, arg0.getNumColumns()-1), 
-							Vectors.sparse(sblock.size(0), sblock.indexes(0), sblock.values(0))));
-				}
-				else // DENSE ROW
-				{
-					ret.add(new LabeledPoint(arg0.getValue(i, arg0.getNumColumns()-1), Vectors.dense(data)));
-				}
+				ret.add(new LabeledPoint(arg0.getValue(i, arg0.getNumColumns()-1), createVector(tmp)));
 			}
 			
-			return ret;
+			return ret.iterator();
 		}
 	}
 	
@@ -426,14 +478,6 @@ public class RDDConverterUtils
 			_bufflen = (int) Math.min(_rlen*_clen, BUFFER_SIZE);
 		}
 
-
-		/**
-		 * 
-		 * @param rbuff
-		 * @param ret
-		 * @throws IOException 
-		 * @throws DMLRuntimeException 
-		 */
 		protected void flushBufferToList( ReblockBuffer rbuff,  ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret ) 
 			throws IOException, DMLRuntimeException
 		{
@@ -443,10 +487,7 @@ public class RDDConverterUtils
 			ret.addAll(SparkUtils.fromIndexedMatrixBlock(rettmp));
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class TextToBinaryBlockFunction extends CellToBinaryBlockFunction implements PairFlatMapFunction<Iterator<Text>,MatrixIndexes,MatrixBlock> 
 	{
 		private static final long serialVersionUID = 4907483236186747224L;
@@ -456,7 +497,7 @@ public class RDDConverterUtils
 		}
 
 		@Override
-		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Text> arg0) 
+		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Text> arg0) 
 			throws Exception 
 		{
 			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
@@ -487,13 +528,10 @@ public class RDDConverterUtils
 			//final flush buffer
 			flushBufferToList(rbuff, ret);
 		
-			return ret;
+			return ret.iterator();
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class TextToSerTextFunction implements PairFunction<Tuple2<Long,String>,LongWritable,Text> 
 	{
 		private static final long serialVersionUID = 2286037080400222528L;
@@ -507,10 +545,7 @@ public class RDDConverterUtils
 			return new Tuple2<LongWritable,Text>(slarg, starg);
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class StringToSerTextFunction implements PairFunction<String, LongWritable, Text> 
 	{
 		private static final long serialVersionUID = 2286037080400222528L;
@@ -537,7 +572,7 @@ public class RDDConverterUtils
 		}
 
 		@Override
-		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<MatrixIndexes,MatrixCell>> arg0) 
+		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<MatrixIndexes,MatrixCell>> arg0) 
 			throws Exception 
 		{
 			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
@@ -564,24 +599,21 @@ public class RDDConverterUtils
 			//final flush buffer
 			flushBufferToList(rbuff, ret);
 		
-			return ret;
+			return ret.iterator();
 		}
 	}
 	
 	/////////////////////////////////
 	// CSV-SPECIFIC FUNCTIONS
 
-	/**
-	 * 
-	 */
 	private static class CSVAnalysisFunction implements Function<Text,String> 
 	{
 		private static final long serialVersionUID = 2310303223289674477L;
 
-		private Accumulator<Double> _aNnz = null;
+		private LongAccumulator _aNnz = null;
 		private String _delim = null;
 		
-		public CSVAnalysisFunction( Accumulator<Double> aNnz, String delim )
+		public CSVAnalysisFunction( LongAccumulator aNnz, String delim )
 		{
 			_aNnz = aNnz;
 			_delim = delim;
@@ -596,14 +628,10 @@ public class RDDConverterUtils
 			String[] cols = IOUtilFunctions.split(line, _delim);
 			
 			//determine number of non-zeros of row (w/o string parsing)
-			long lnnz = 0;
-			for( String col : cols ) {
-				lnnz += (!col.isEmpty() && !col.equals("0") 
-						&& !col.equals("0.0")) ? 1 : 0;
-			}
+			int lnnz = IOUtilFunctions.countNnz(cols);
 			
 			//update counters
-			_aNnz.add( (double)lnnz );
+			_aNnz.add( lnnz );
 			
 			return line;
 		}
@@ -633,15 +661,14 @@ public class RDDConverterUtils
 		private boolean _fill = false;
 		private double _fillValue = 0;
 		
-		public CSVToBinaryBlockFunction(MatrixCharacteristics mc, boolean hasHeader, String delim, boolean fill, double fillValue)
+		public CSVToBinaryBlockFunction(MatrixCharacteristics mc, boolean sparse, boolean hasHeader, String delim, boolean fill, double fillValue)
 		{
 			_rlen = mc.getRows();
 			_clen = mc.getCols();
 			_brlen = mc.getRowsPerBlock();
 			_bclen = mc.getColsPerBlock();
 			_sparsity = OptimizerUtils.getSparsity(mc);
-			_sparse = mc.nnzKnown() && MatrixBlock.evalSparseFormatInMemory(mc.getRows(), 
-					mc.getCols(), mc.getNonZeros()) && (!fill || fillValue==0);
+			_sparse = sparse && (!fill || fillValue==0);
 			_header = hasHeader;
 			_delim = delim;
 			_fill = fill;
@@ -649,7 +676,7 @@ public class RDDConverterUtils
 		}
 
 		@Override
-		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<Text,Long>> arg0) 
+		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<Text,Long>> arg0) 
 			throws Exception 
 		{
 			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
@@ -684,7 +711,12 @@ public class RDDConverterUtils
 				boolean emptyFound = false;
 				for( int cix=1, pix=0; cix<=ncblks; cix++ ) 
 				{
-					int lclen = (int)UtilFunctions.computeBlockSize(_clen, cix, _bclen);				
+					int lclen = (int)UtilFunctions.computeBlockSize(_clen, cix, _bclen);
+					if( mb[cix-1].isInSparseFormat() ) {
+						//allocate row once (avoid re-allocations)
+						int lnnz = IOUtilFunctions.countNnz(parts, pix, lclen);
+						mb[cix-1].getSparseBlock().allocate(pos, lnnz);
+					}
 					for( int j=0; j<lclen; j++ ) {
 						String part = parts[pix++];
 						emptyFound |= part.isEmpty() && !_fill;
@@ -701,7 +733,7 @@ public class RDDConverterUtils
 			//flush last blocks
 			flushBlocksToList(ix, mb, ret);
 		
-			return ret;
+			return ret.iterator();
 		}
 		
 		// Creates new state of empty column blocks for current global row index.
@@ -715,7 +747,125 @@ public class RDDConverterUtils
 			for( int cix=1; cix<=ncblks; cix++ ) {
 				int lclen = (int)UtilFunctions.computeBlockSize(_clen, cix, _bclen);				
 				ix[cix-1] = new MatrixIndexes(rix, cix);
-				mb[cix-1] = new MatrixBlock(lrlen, lclen, _sparse, (int)(lrlen*lclen*_sparsity));		
+				mb[cix-1] = new MatrixBlock(lrlen, lclen, _sparse, (int)(lrlen*lclen*_sparsity));
+				mb[cix-1].allocateDenseOrSparseBlock();
+			}
+		}
+		
+		// Flushes current state of filled column blocks to output list.
+		private void flushBlocksToList( MatrixIndexes[] ix, MatrixBlock[] mb, ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret ) 
+			throws DMLRuntimeException
+		{
+			int len = ix.length;			
+			for( int i=0; i<len; i++ )
+				if( mb[i] != null ) {
+					ret.add(new Tuple2<MatrixIndexes,MatrixBlock>(ix[i],mb[i]));
+					mb[i].examSparsity(); //ensure right representation
+				}	
+		}
+	}
+
+	private static class LabeledPointToBinaryBlockFunction implements PairFlatMapFunction<Iterator<Tuple2<org.apache.spark.mllib.regression.LabeledPoint,Long>>,MatrixIndexes,MatrixBlock> 
+	{	
+		private static final long serialVersionUID = 2290124693964816276L;
+		
+		private final long _rlen;
+		private final long _clen;
+		private final int _brlen;
+		private final int _bclen;
+		private final boolean _sparseX;
+		private final boolean _labels;
+		private final LongAccumulator _aNnz;
+		
+		public LabeledPointToBinaryBlockFunction(MatrixCharacteristics mc, boolean labels, LongAccumulator aNnz) {
+			_rlen = mc.getRows();
+			_clen = mc.getCols();
+			_brlen = mc.getRowsPerBlock();
+			_bclen = mc.getColsPerBlock();
+			_sparseX = MatrixBlock.evalSparseFormatInMemory(
+					mc.getRows(), mc.getCols(), mc.getNonZeros());
+			_labels = labels;
+			_aNnz = aNnz;
+		}
+
+		@Override
+		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<org.apache.spark.mllib.regression.LabeledPoint,Long>> arg0) 
+			throws Exception 
+		{
+			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
+
+			int ncblks = (int)Math.ceil((double)_clen/_bclen);
+			MatrixIndexes[] ix = new MatrixIndexes[ncblks];
+			MatrixBlock[] mb = new MatrixBlock[ncblks];
+			
+			while( arg0.hasNext() )
+			{
+				Tuple2<org.apache.spark.mllib.regression.LabeledPoint,Long> tmp = arg0.next();
+				org.apache.spark.mllib.regression.LabeledPoint row = tmp._1();
+				boolean lsparse = _sparseX || (!_labels && 
+						row.features() instanceof org.apache.spark.mllib.linalg.SparseVector);
+				long rowix = tmp._2() + 1;
+				
+				long rix = UtilFunctions.computeBlockIndex(rowix, _brlen);
+				int pos = UtilFunctions.computeCellInBlock(rowix, _brlen);
+			
+				//create new blocks for entire row
+				if( ix[0] == null || ix[0].getRowIndex() != rix ) {
+					if( ix[0] !=null )
+						flushBlocksToList(ix, mb, ret);
+					long len = UtilFunctions.computeBlockSize(_rlen, rix, _brlen);
+					createBlocks(rowix, (int)len, ix, mb, lsparse);
+				}
+				
+				//process row data
+				if( _labels ) {
+					double val = row.label();
+					mb[0].appendValue(pos, 0, val);
+					_aNnz.add((val != 0) ? 1 : 0);
+				}
+				else { //features
+					int lnnz = row.features().numNonzeros();
+					if( row.features() instanceof org.apache.spark.mllib.linalg.SparseVector )
+					{
+						org.apache.spark.mllib.linalg.SparseVector srow = 
+								(org.apache.spark.mllib.linalg.SparseVector) row.features();
+						for( int k=0; k<lnnz; k++ ) {
+							int gix = srow.indices()[k]+1;
+							int cix = (int)UtilFunctions.computeBlockIndex(gix, _bclen);
+							int j = UtilFunctions.computeCellInBlock(gix, _bclen);
+							mb[cix-1].appendValue(pos, j, srow.values()[k]);
+						}
+					}
+					else { //dense
+						for( int cix=1, pix=0; cix<=ncblks; cix++ ) {
+							int lclen = (int)UtilFunctions.computeBlockSize(_clen, cix, _bclen);
+							for( int j=0; j<lclen; j++ )
+								mb[cix-1].appendValue(pos, j, row.features().apply(pix++));
+						}
+					}
+					_aNnz.add(lnnz);
+				}
+			}
+		
+			//flush last blocks
+			flushBlocksToList(ix, mb, ret);
+		
+			return ret.iterator();
+		}
+		
+		// Creates new state of empty column blocks for current global row index.
+		private void createBlocks(long rowix, int lrlen, MatrixIndexes[] ix, MatrixBlock[] mb, boolean lsparse)
+		{
+			//compute row block index and number of column blocks
+			long rix = UtilFunctions.computeBlockIndex(rowix, _brlen);
+			int ncblks = (int)Math.ceil((double)_clen/_bclen);
+			
+			//create all column blocks (assume dense since csv is dense text format)
+			for( int cix=1; cix<=ncblks; cix++ ) {
+				int lclen = (int)UtilFunctions.computeBlockSize(_clen, cix, _bclen);
+				ix[cix-1] = new MatrixIndexes(rix, cix);
+				mb[cix-1] = new MatrixBlock(lrlen, lclen, lsparse);
+				mb[cix-1].allocateDenseOrSparseBlock();
 			}
 		}
 		
@@ -732,9 +882,6 @@ public class RDDConverterUtils
 		}
 	}
 	
-	/**
-	 * 
-	 */
 	private static class BinaryBlockToCSVFunction implements FlatMapFunction<Tuple2<MatrixIndexes,MatrixBlock>,String> 
 	{
 		private static final long serialVersionUID = 1891768410987528573L;
@@ -746,7 +893,7 @@ public class RDDConverterUtils
 		}
 
 		@Override
-		public Iterable<String> call(Tuple2<MatrixIndexes, MatrixBlock> arg0)
+		public Iterator<String> call(Tuple2<MatrixIndexes, MatrixBlock> arg0)
 			throws Exception 
 		{
 			MatrixIndexes ix = arg0._1();
@@ -779,13 +926,10 @@ public class RDDConverterUtils
 	    		sb.setLength(0); //reset
     		}
 			
-			return ret;
+			return ret.iterator();
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class SliceBinaryBlockToRowsFunction implements PairFlatMapFunction<Tuple2<MatrixIndexes,MatrixBlock>,Long,Tuple2<Long,MatrixBlock>> 
 	{
 		private static final long serialVersionUID = 7192024840710093114L;
@@ -797,7 +941,7 @@ public class RDDConverterUtils
 		}
 		
 		@Override
-		public Iterable<Tuple2<Long,Tuple2<Long,MatrixBlock>>> call(Tuple2<MatrixIndexes, MatrixBlock> arg0) 
+		public Iterator<Tuple2<Long,Tuple2<Long,MatrixBlock>>> call(Tuple2<MatrixIndexes, MatrixBlock> arg0) 
 			throws Exception 
 		{
 			ArrayList<Tuple2<Long,Tuple2<Long,MatrixBlock>>> ret = 
@@ -813,14 +957,11 @@ public class RDDConverterUtils
 						new Tuple2<Long,MatrixBlock>(ix.getColumnIndex(),tmpBlk)));
 			}
 			
-			return ret;
+			return ret.iterator();
 		}
 		
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class ConcatenateBlocksFunction implements PairFunction<Tuple2<Long, Iterable<Tuple2<Long,MatrixBlock>>>,MatrixIndexes,MatrixBlock>
 	{
 		private static final long serialVersionUID = -7879603125149650097L;
@@ -864,9 +1005,6 @@ public class RDDConverterUtils
 	/////////////////////////////////
 	// DATAFRAME-SPECIFIC FUNCTIONS
 
-	/**
-	 * 
-	 */
 	private static class DataFrameToBinaryBlockFunction implements PairFlatMapFunction<Iterator<Tuple2<Row,Long>>,MatrixIndexes,MatrixBlock> 
 	{
 		private static final long serialVersionUID = 653447740362447236L;
@@ -875,23 +1013,24 @@ public class RDDConverterUtils
 		private long _clen = -1;
 		private int _brlen = -1;
 		private int _bclen = -1;
+		private double _sparsity = 1.0;
 		private boolean _sparse = false;
 		private boolean _containsID;
 		private boolean _isVector;
 		
-		public DataFrameToBinaryBlockFunction(MatrixCharacteristics mc, boolean containsID, boolean isVector) {
+		public DataFrameToBinaryBlockFunction(MatrixCharacteristics mc, boolean sparse, boolean containsID, boolean isVector) {
 			_rlen = mc.getRows();
 			_clen = mc.getCols();
 			_brlen = mc.getRowsPerBlock();
 			_bclen = mc.getColsPerBlock();
-			_sparse = mc.nnzKnown() && MatrixBlock.evalSparseFormatInMemory(
-					mc.getRows(), mc.getCols(), mc.getNonZeros());
+			_sparsity = OptimizerUtils.getSparsity(mc);
+			_sparse = sparse;
 			_containsID = containsID;
 			_isVector = isVector;
 		}
 		
 		@Override
-		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<Row, Long>> arg0) 
+		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<Row, Long>> arg0) 
 			throws Exception 
 		{
 			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
@@ -918,18 +1057,32 @@ public class RDDConverterUtils
 				
 				//process row data
 				int off = _containsID ? 1: 0;
-				if( _isVector ) {
-					Vector vect = (Vector) tmp._1().get(off);
-					for( int cix=1, pix=0; cix<=ncblks; cix++ ) {
-						int lclen = (int)UtilFunctions.computeBlockSize(_clen, cix, _bclen);				
-						for( int j=0; j<lclen; j++ )
-							mb[cix-1].appendValue(pos, j, vect.apply(pix++));
-					}	
-				}
-				else { //row
-					Row row = tmp._1();
-					for( int cix=1, pix=off; cix<=ncblks; cix++ ) {
-						int lclen = (int)UtilFunctions.computeBlockSize(_clen, cix, _bclen);				
+				Object obj = _isVector ? tmp._1().get(off) : tmp._1();
+				for( int cix=1, pix=_isVector?0:off; cix<=ncblks; cix++ ) {
+					int lclen = (int)UtilFunctions.computeBlockSize(_clen, cix, _bclen);				
+					//allocate sparse row once (avoid re-allocations)
+					if( mb[cix-1].isInSparseFormat() ) {
+						int lnnz = countNnz(obj, _isVector, pix, lclen);
+						mb[cix-1].getSparseBlock().allocate(pos, lnnz);
+					}
+					//append data to matrix blocks
+					if( _isVector ) {
+						Vector vect = (Vector) obj;
+						if( vect instanceof SparseVector ) {
+							SparseVector svect = (SparseVector) vect;
+							int[] svectIx = svect.indices();
+							while( pix<svectIx.length && svectIx[pix]<cix*_bclen ) {
+								int j = UtilFunctions.computeCellInBlock(svectIx[pix]+1, _bclen);
+								mb[cix-1].appendValue(pos, j, svect.values()[pix++]);
+							}
+						}
+						else { //dense
+							for( int j=0; j<lclen; j++ )
+								mb[cix-1].appendValue(pos, j, vect.apply(pix++));	
+						}
+					}
+					else { //row
+						Row row = (Row) obj;
 						for( int j=0; j<lclen; j++ )
 							mb[cix-1].appendValue(pos, j, UtilFunctions.getDouble(row.get(pix++)));
 					}
@@ -939,7 +1092,7 @@ public class RDDConverterUtils
 			//flush last blocks
 			flushBlocksToList(ix, mb, ret);
 		
-			return ret;		
+			return ret.iterator();
 		}
 		
 		// Creates new state of empty column blocks for current global row index.
@@ -953,7 +1106,8 @@ public class RDDConverterUtils
 			for( int cix=1; cix<=ncblks; cix++ ) {
 				int lclen = (int)UtilFunctions.computeBlockSize(_clen, cix, _bclen);				
 				ix[cix-1] = new MatrixIndexes(rix, cix);
-				mb[cix-1] = new MatrixBlock(lrlen, lclen, _sparse);		
+				mb[cix-1] = new MatrixBlock(lrlen, lclen, _sparse,(int)(lrlen*lclen*_sparsity));
+				mb[cix-1].allocateDenseOrSparseBlock();
 			}
 		}
 		
@@ -969,19 +1123,16 @@ public class RDDConverterUtils
 				}	
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class DataFrameAnalysisFunction implements Function<Row,Row>  
 	{	
 		private static final long serialVersionUID = 5705371332119770215L;
 		
-		private Accumulator<Double> _aNnz = null;
+		private LongAccumulator _aNnz = null;
 		private boolean _containsID;
 		private boolean _isVector;
 		
-		public DataFrameAnalysisFunction( Accumulator<Double> aNnz, boolean containsID, boolean isVector) {
+		public DataFrameAnalysisFunction( LongAccumulator aNnz, boolean containsID, boolean isVector) {
 			_aNnz = aNnz;
 			_containsID = containsID;
 			_isVector = isVector;
@@ -991,34 +1142,29 @@ public class RDDConverterUtils
 		public Row call(Row arg0) throws Exception {
 			//determine number of non-zeros of row
 			int off = _containsID ? 1 : 0;
-			long lnnz = 0;
-			if( _isVector ) {
-				//note: numNonzeros scans entries but handles sparse/dense
-				Vector vec = (Vector) arg0.get(off);
-				lnnz += vec.numNonzeros();
-			}
-			else { //row
-				for(int i=off; i<arg0.length(); i++)
-					lnnz += UtilFunctions.isNonZero(arg0.get(i)) ? 1 : 0;
-			}
-		
+			Object vect = _isVector ? arg0.get(off) : arg0;
+			int lnnz = countNnz(vect, _isVector, off);
+			
 			//update counters
-			_aNnz.add( (double)lnnz );
+			_aNnz.add( lnnz );
 			return arg0;
 		}
 	}
 
-	/**
-	 * 
-	 */
-	protected static class DataFrameExtractIDFunction implements PairFunction<Row, Row,Long> 
+	public static class DataFrameExtractIDFunction implements PairFunction<Row, Row,Long> 
 	{
 		private static final long serialVersionUID = 7438855241666363433L;
+
+		private int _index = -1;
+		
+		public DataFrameExtractIDFunction(int index) {
+			_index = index;
+		}
 
 		@Override
 		public Tuple2<Row, Long> call(Row arg0) throws Exception {
 			//extract 1-based IDs and convert to 0-based positions
-			long id = UtilFunctions.toLong(UtilFunctions.getDouble(arg0.get(0)));
+			long id = UtilFunctions.toLong(UtilFunctions.getDouble(arg0.get(_index)));
 			if( id <= 0 ) {
 				throw new DMLRuntimeException("ID Column '" + DF_ID_COLUMN 
 						+ "' expected to be 1-based, but found value: "+id);
@@ -1026,10 +1172,7 @@ public class RDDConverterUtils
 			return new Tuple2<Row,Long>(arg0, id-1);
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class ConvertRowBlocksToRows implements Function<Tuple2<Long, Iterable<Tuple2<Long, MatrixBlock>>>, Row> {
 		
 		private static final long serialVersionUID = 4441184411670316972L;
@@ -1053,13 +1196,18 @@ public class RDDConverterUtils
 			
 			//copy block data into target row
 			if( _toVector ) {
-				double[] tmp = new double[_clen];
-				for(Tuple2<Long, MatrixBlock> kv : arg0._2()) {
-					int cl = (kv._1().intValue()-1)*_bclen;
-					MatrixBlock mb = kv._2();
-					DataConverter.copyToDoubleVector(mb, tmp, cl);
+				if( _clen <= _bclen ) { //single block
+					row[1] = createVector(arg0._2().iterator().next()._2());
 				}
-				row[1] = new DenseVector(tmp);
+				else { //multiple column blocks
+					double[] tmp = new double[_clen];
+					for(Tuple2<Long, MatrixBlock> kv : arg0._2()) {
+						int cl = (kv._1().intValue()-1)*_bclen;
+						MatrixBlock mb = kv._2();
+						DataConverter.copyToDoubleVector(mb, tmp, cl);
+					}
+					row[1] = Vectors.dense(tmp);
+				}
 			}
 			else {
 				for(Tuple2<Long, MatrixBlock> kv : arg0._2()) {

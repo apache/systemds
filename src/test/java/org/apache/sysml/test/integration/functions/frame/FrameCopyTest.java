@@ -19,9 +19,6 @@
 
 package org.apache.sysml.test.integration.functions.frame;
 
-import java.util.Arrays;
-import java.util.List;
-
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.instructions.cp.AppendCPInstruction.AppendType;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
@@ -89,14 +86,12 @@ public class FrameCopyTest extends AutomatedTestBase
 			
 			//Initialize the frame data.
 			//init data frame 1
-			List<ValueType> lschema1 = Arrays.asList(schema1);
-			FrameBlock frame1 = new FrameBlock(lschema1);
-			initFrameData(frame1, A, lschema1);
+			FrameBlock frame1 = new FrameBlock(schema1);
+			initFrameData(frame1, A, schema1);
 			
 			//init data frame 2
-			List<ValueType> lschema2 = Arrays.asList(schema2);
-			FrameBlock frame2 = new FrameBlock(lschema2);
-			initFrameData(frame2, B, lschema2);
+			FrameBlock frame2 = new FrameBlock(schema2);
+			initFrameData(frame2, B, schema2);
 			
 			//copy from one frame to another.
 			FrameBlock frame1Backup = new FrameBlock(frame1.getSchema(), frame1.getColumnNames());
@@ -125,44 +120,44 @@ public class FrameCopyTest extends AutomatedTestBase
 		}
 	}
 	
-	void initFrameData(FrameBlock frame, double[][] data, List<ValueType> lschema)
+	void initFrameData(FrameBlock frame, double[][] data, ValueType[] lschema)
 	{
-		Object[] row1 = new Object[lschema.size()];
+		Object[] row1 = new Object[lschema.length];
 		for( int i=0; i<rows; i++ ) {
-			for( int j=0; j<lschema.size(); j++ )
-				data[i][j] = UtilFunctions.objectToDouble(lschema.get(j), 
-						row1[j] = UtilFunctions.doubleToObject(lschema.get(j), data[i][j]));
+			for( int j=0; j<lschema.length; j++ )
+				data[i][j] = UtilFunctions.objectToDouble(lschema[j], 
+						row1[j] = UtilFunctions.doubleToObject(lschema[j], data[i][j]));
 			frame.appendRow(row1);
 		}
 	}
 
 	void updateFrameWithDummyData(FrameBlock frame, int updateRow)
 	{
-		List<ValueType>lschema = frame.getSchema();
-		for( int j=0; j<lschema.size(); j++ )	{
-			switch( lschema.get(j) ) {
+		ValueType[] lschema = frame.getSchema();
+		for( int j=0; j<lschema.length; j++ )	{
+			switch( lschema[j] ) {
 				case STRING:  frame.set(updateRow,  j,  "String:"+ frame.get(updateRow, j)); break;
 				case BOOLEAN: frame.set(updateRow,  j, ((Boolean)frame.get(updateRow, j))?(new Boolean(false)):(new Boolean(true))); break;
 				case INT:     frame.set(updateRow,  j, (Long)frame.get(updateRow, j) * 2 + 5); break;
 				case DOUBLE:  frame.set(updateRow,  j, (Double)frame.get(updateRow, j) * 2 + 7); break;
-				default: throw new RuntimeException("Unsupported value type: "+lschema.get(j));
+				default: throw new RuntimeException("Unsupported value type: "+lschema[j]);
 			}
 		}		
 	}
 	
 	void verifyFrameData(FrameBlock frame1, FrameBlock frame2, int updateRow, boolean bEqual)
 	{
-		List<ValueType>lschema = frame1.getSchema();
-		for( int j=0; j<lschema.size(); j++ )	{
+		ValueType[ ]lschema = frame1.getSchema();
+		for( int j=0; j<lschema.length; j++ )	{
 			if(!bEqual)
 			{
-				if( UtilFunctions.compareTo(lschema.get(j), frame1.get(updateRow, j), frame2.get(updateRow, j)) == 0)
+				if( UtilFunctions.compareTo(lschema[j], frame1.get(updateRow, j), frame2.get(updateRow, j)) == 0)
 					Assert.fail("Updated value for cell ("+ updateRow + "," + j + ") is " + frame1.get(updateRow,  j) + 
 							", same as original value "+frame2.get(updateRow, j));
 			}
 			else
 			{
-				if( UtilFunctions.compareTo(lschema.get(j), frame1.get(updateRow, j), frame2.get(updateRow, j)) != 0)
+				if( UtilFunctions.compareTo(lschema[j], frame1.get(updateRow, j), frame2.get(updateRow, j)) != 0)
 					Assert.fail("Updated value for cell ("+ updateRow + "," + j + ") is " + frame1.get(updateRow,  j) + 
 							", not same as original value "+frame2.get(updateRow, j));
 			}
@@ -171,10 +166,10 @@ public class FrameCopyTest extends AutomatedTestBase
 	
 	void verifyFrameData(FrameBlock frame1, FrameBlock frame2)
 	{
-		List<ValueType> lschema = frame1.getSchema();
+		ValueType[] lschema = frame1.getSchema();
 		for ( int i=0; i<frame1.getNumRows(); i++ )
-			for( int j=0; j<lschema.size(); j++ )	{
-				if( UtilFunctions.compareTo(lschema.get(j), frame1.get(i, j), frame2.get(i, j)) != 0)
+			for( int j=0; j<lschema.length; j++ )	{
+				if( UtilFunctions.compareTo(lschema[j], frame1.get(i, j), frame2.get(i, j)) != 0)
 					Assert.fail("Target value for cell ("+ i + "," + j + ") is " + frame1.get(i,  j) + 
 							", is not same as original value " + frame2.get(i, j));
 			}

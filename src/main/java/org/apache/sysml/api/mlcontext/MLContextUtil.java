@@ -19,10 +19,12 @@
 
 package org.apache.sysml.api.mlcontext;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -31,6 +33,9 @@ import java.util.Map.Entry;
 import java.util.Scanner;
 import java.util.Set;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.text.WordUtils;
@@ -38,9 +43,10 @@ import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.mllib.linalg.VectorUDT;
+import org.apache.spark.mllib.util.MLUtils;
 import org.apache.spark.rdd.RDD;
-import org.apache.spark.sql.DataFrame;
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Row;
 import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
@@ -50,17 +56,29 @@ import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.parser.ParseException;
+import org.apache.sysml.parser.Statement;
+import org.apache.sysml.runtime.controlprogram.ForProgramBlock;
+import org.apache.sysml.runtime.controlprogram.FunctionProgramBlock;
+import org.apache.sysml.runtime.controlprogram.IfProgramBlock;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
+import org.apache.sysml.runtime.controlprogram.Program;
+import org.apache.sysml.runtime.controlprogram.ProgramBlock;
+import org.apache.sysml.runtime.controlprogram.WhileProgramBlock;
 import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.cp.BooleanObject;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.DoubleObject;
 import org.apache.sysml.runtime.instructions.cp.IntObject;
 import org.apache.sysml.runtime.instructions.cp.StringObject;
+import org.apache.sysml.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 /**
  * Utility class containing methods for working with the MLContext API.
@@ -78,7 +96,7 @@ public final class MLContextUtil {
 	 * Complex data types supported by the MLContext API
 	 */
 	@SuppressWarnings("rawtypes")
-	public static final Class[] COMPLEX_DATA_TYPES = { JavaRDD.class, RDD.class, DataFrame.class,
+	public static final Class[] COMPLEX_DATA_TYPES = { JavaRDD.class, RDD.class, Dataset.class,
 			BinaryBlockMatrix.class, BinaryBlockFrame.class, Matrix.class, Frame.class, (new double[][] {}).getClass(),
 			MatrixBlock.class, URL.class };
 
@@ -140,10 +158,12 @@ public final class MLContextUtil {
 	 * 
 	 * @param sparkVersion
 	 *            Spark version string (ie, "1.5.0").
+	 * @param minimumRecommendedSparkVersion
+	 *            Minimum recommended Spark version string (ie, "2.1.0").
 	 * @return {@code true} if Spark version supported; otherwise {@code false}.
 	 */
-	public static boolean isSparkVersionSupported(String sparkVersion) {
-		return compareVersion(sparkVersion, MLContext.SYSTEMML_MINIMUM_SPARK_VERSION) >= 0;
+	public static boolean isSparkVersionSupported(String sparkVersion, String minimumRecommendedSparkVersion) {
+		return compareVersion(sparkVersion, minimumRecommendedSparkVersion) >= 0;
 	}
 
 	/**
@@ -156,9 +176,65 @@ public final class MLContextUtil {
 	 *             thrown if Spark version isn't supported
 	 */
 	public static void verifySparkVersionSupported(SparkContext sc) {
-		if (!MLContextUtil.isSparkVersionSupported(sc.version())) {
+		String minimumRecommendedSparkVersion = null;
+		try {
+			// If this is being called using the SystemML jar file,
+			// ProjectInfo should be available.
+			ProjectInfo projectInfo = ProjectInfo.getProjectInfo();
+			minimumRecommendedSparkVersion = projectInfo.minimumRecommendedSparkVersion();
+		} catch (MLContextException e) {
+			try {
+				// During development (such as in an IDE), there is no jar file typically
+				// built, so attempt to obtain the minimum recommended Spark version from
+				// the pom.xml file
+				minimumRecommendedSparkVersion = getMinimumRecommendedSparkVersionFromPom();
+			} catch (MLContextException e1) {
+				throw new MLContextException("Minimum recommended Spark version could not be determined from SystemML jar file manifest or pom.xml");
+			}
+		}
+		String sparkVersion = sc.version();
+		if (!MLContextUtil.isSparkVersionSupported(sparkVersion, minimumRecommendedSparkVersion)) {
 			throw new MLContextException(
-					"SystemML requires Spark " + MLContext.SYSTEMML_MINIMUM_SPARK_VERSION + " or greater");
+					"Spark " + sparkVersion + " or greater is recommended for this version of SystemML.");
+		}
+	}
+
+	/**
+	 * Obtain minimum recommended Spark version from the pom.xml file.
+	 * 
+	 * @return the minimum recommended Spark version from XML parsing of the pom file (during development).
+	 */
+	static String getMinimumRecommendedSparkVersionFromPom() {
+		return getUniquePomProperty("spark.version");
+	}
+
+	/**
+	 * Obtain the text associated with an XML element from the pom.xml file. In this implementation,
+	 * the element should be uniquely named, or results will be unpredicable.
+	 * 
+	 * @param property unique property (element) from the pom.xml file
+	 * @return the text value associated with the given property
+	 */
+	static String getUniquePomProperty(String property) {
+		File f = new File("pom.xml");
+		if (!f.exists()) {
+			throw new MLContextException("pom.xml not found");
+		}
+		try {
+			DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+			DocumentBuilder builder = dbf.newDocumentBuilder();
+			Document document = builder.parse(f);
+
+			NodeList nodes = document.getElementsByTagName(property);
+			int length = nodes.getLength();
+			if (length == 0) {
+				throw new MLContextException("Property not found in pom.xml");
+			}
+			Node node = nodes.item(0);
+			String value = node.getTextContent();
+			return value;
+		} catch (Exception e) {
+			throw new MLContextException("MLContextException when reading property '" + property + "' from pom.xml", e);
 		}
 	}
 
@@ -245,7 +321,7 @@ public final class MLContextUtil {
 			}
 		}
 		if (!supported) {
-			throw new MLContextException("Input name (\"" + value + "\") value type not supported: " + o.getClass());
+			throw new MLContextException("Input name (\"" + name + "\") value type not supported: " + o.getClass());
 		}
 	}
 
@@ -307,12 +383,38 @@ public final class MLContextUtil {
 	}
 
 	/**
+	 * Obtain the SystemML scalar value type string equivalent of an accepted
+	 * basic type (Integer, Boolean, Double, String)
+	 * 
+	 * @param object
+	 *            the object type to be examined
+	 * @return a String representing the type as a SystemML scalar value type
+	 */
+	public static String getBasicTypeString(Object object) {
+		if (!isBasicType(object)) {
+			throw new MLContextException("Type (" + object.getClass() + ") not a recognized basic type");
+		}
+		Class<? extends Object> clazz = object.getClass();
+		if (clazz.equals(Integer.class)) {
+			return Statement.INT_VALUE_TYPE;
+		} else if (clazz.equals(Boolean.class)) {
+			return Statement.BOOLEAN_VALUE_TYPE;
+		} else if (clazz.equals(Double.class)) {
+			return Statement.DOUBLE_VALUE_TYPE;
+		} else if (clazz.equals(String.class)) {
+			return Statement.STRING_VALUE_TYPE;
+		} else {
+			return null;
+		}
+	}
+
+	/**
 	 * Is the object one of the supported complex data types? (JavaRDD, RDD,
 	 * DataFrame, BinaryBlockMatrix, Matrix, double[][], MatrixBlock, URL)
 	 * 
 	 * @param object
 	 *            the object type to be examined
-	 * @return {@code true} if type is a complexe data type; otherwise
+	 * @return {@code true} if type is a complex data type; otherwise
 	 *         {@code false}.
 	 */
 	public static boolean isComplexType(Object object) {
@@ -464,9 +566,11 @@ public final class MLContextUtil {
 		} else if (value instanceof FrameBlock) {
 			FrameBlock frameBlock = (FrameBlock) value;
 			return MLContextConversionUtil.frameBlockToFrameObject(name, frameBlock, (FrameMetadata) metadata);
-		} else if (value instanceof DataFrame) {
-			DataFrame dataFrame = (DataFrame) value;
+		} else if (value instanceof Dataset<?>) {
+			@SuppressWarnings("unchecked")
+			Dataset<Row> dataFrame = (Dataset<Row>) value;
 
+			dataFrame = MLUtils.convertVectorColumnsToML(dataFrame);
 			if (hasMatrixMetadata) {
 				return MLContextConversionUtil.dataFrameToMatrixObject(name, dataFrame, (MatrixMetadata) metadata);
 			} else if (hasFrameMetadata) {
@@ -551,7 +655,7 @@ public final class MLContextUtil {
 	 * @return {@code true} if the DataFrame appears to be a matrix,
 	 *         {@code false} otherwise
 	 */
-	public static boolean doesDataFrameLookLikeMatrix(DataFrame df) {
+	public static boolean doesDataFrameLookLikeMatrix(Dataset<Row> df) {
 		StructType schema = df.schema();
 		StructField[] fields = schema.fields();
 		if (fields == null) {
@@ -560,7 +664,8 @@ public final class MLContextUtil {
 		for (StructField field : fields) {
 			DataType dataType = field.dataType();
 			if ((dataType != DataTypes.DoubleType) && (dataType != DataTypes.IntegerType)
-					&& (dataType != DataTypes.LongType) && (!(dataType instanceof VectorUDT))) {
+					&& (dataType != DataTypes.LongType) && (!(dataType instanceof org.apache.spark.ml.linalg.VectorUDT))
+					&& (!(dataType instanceof org.apache.spark.mllib.linalg.VectorUDT)) ) {
 				// uncomment if we support arrays of doubles for matrices
 				// if (dataType instanceof ArrayType) {
 				// ArrayType arrayType = (ArrayType) dataType;
@@ -748,6 +853,7 @@ public final class MLContextUtil {
 	 *            the title to display for the inputs
 	 * @param map
 	 *            the map of inputs
+	 * @param symbolTable the symbol table
 	 * @return the script inputs represented as a String
 	 */
 	public static String displayInputs(String name, Map<String, Object> map, LocalVariableMap symbolTable) {
@@ -783,11 +889,17 @@ public final class MLContextUtil {
 				}
 				sb.append(") ");
 
-				sb.append(key);
-				sb.append(": ");
-				String str = object.toString();
-				str = StringUtils.abbreviate(str, 100);
-				sb.append(str);
+				 sb.append(key);
+				 sb.append(": ");
+				 String str = null;
+				 if(object instanceof MatrixBlock) {
+					 MatrixBlock mb = (MatrixBlock) object;
+					 str = "MatrixBlock [sparse? = " + mb.isInSparseFormat() + ", nonzeros = " + mb.getNonZeros() + ", size: " + mb.getNumRows() + " X " + mb.getNumColumns() + "]";  
+				 }
+				 else 
+					 str = object.toString(); // TODO: Deal with OOM for other objects such as Frame, etc
+				 str = StringUtils.abbreviate(str, 100);
+				 sb.append(str);
 				sb.append("\n");
 			}
 		}
@@ -959,5 +1071,72 @@ public final class MLContextUtil {
 	public static boolean doesSymbolTableContainMatrixObject(LocalVariableMap symbolTable, String variableName) {
 		return (symbolTable != null && symbolTable.keySet().contains(variableName)
 				&& symbolTable.get(variableName) instanceof MatrixObject);
+	}
+
+	/**
+	 * Delete the 'remove variable' instructions from a runtime program.
+	 * 
+	 * @param progam
+	 *            runtime program
+	 */
+	public static void deleteRemoveVariableInstructions(Program progam) {
+		Map<String, FunctionProgramBlock> fpbs = progam.getFunctionProgramBlocks();
+		if (fpbs != null && !fpbs.isEmpty()) {
+			for (Entry<String, FunctionProgramBlock> e : fpbs.entrySet()) {
+				FunctionProgramBlock fpb = e.getValue();
+				for (ProgramBlock pb : fpb.getChildBlocks()) {
+					deleteRemoveVariableInstructions(pb);
+				}
+			}
+		}
+
+		for (ProgramBlock pb : progam.getProgramBlocks()) {
+			deleteRemoveVariableInstructions(pb);
+		}
+	}
+
+	/**
+	 * Recursively traverse program block to delete 'remove variable'
+	 * instructions.
+	 * 
+	 * @param pb
+	 *            Program block
+	 */
+	private static void deleteRemoveVariableInstructions(ProgramBlock pb) {
+		if (pb instanceof WhileProgramBlock) {
+			WhileProgramBlock wpb = (WhileProgramBlock) pb;
+			for (ProgramBlock pbc : wpb.getChildBlocks())
+				deleteRemoveVariableInstructions(pbc);
+		} else if (pb instanceof IfProgramBlock) {
+			IfProgramBlock ipb = (IfProgramBlock) pb;
+			for (ProgramBlock pbc : ipb.getChildBlocksIfBody())
+				deleteRemoveVariableInstructions(pbc);
+			for (ProgramBlock pbc : ipb.getChildBlocksElseBody())
+				deleteRemoveVariableInstructions(pbc);
+		} else if (pb instanceof ForProgramBlock) {
+			ForProgramBlock fpb = (ForProgramBlock) pb;
+			for (ProgramBlock pbc : fpb.getChildBlocks())
+				deleteRemoveVariableInstructions(pbc);
+		} else {
+			ArrayList<Instruction> instructions = pb.getInstructions();
+			deleteRemoveVariableInstructions(instructions);
+		}
+	}
+
+	/**
+	 * Delete 'remove variable' instructions.
+	 * 
+	 * @param instructions
+	 *            list of instructions
+	 */
+	private static void deleteRemoveVariableInstructions(ArrayList<Instruction> instructions) {
+		for (int i = 0; i < instructions.size(); i++) {
+			Instruction linst = instructions.get(i);
+			if (linst instanceof VariableCPInstruction && ((VariableCPInstruction) linst).isRemoveVariable()) {
+				VariableCPInstruction varinst = (VariableCPInstruction) linst;
+				instructions.remove(varinst);
+				i--;
+			}
+		}
 	}
 }

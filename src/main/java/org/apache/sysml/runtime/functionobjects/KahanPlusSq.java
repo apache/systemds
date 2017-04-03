@@ -43,16 +43,13 @@ public class KahanPlusSq extends KahanFunction implements Serializable {
 
     /**
      * Get the KahanPlusSq singleton object.
+     * 
+     * @return KahanPlusSq singleton object
      */
     public static KahanPlusSq getKahanPlusSqFnObject() {
         if (singleObj == null)
             singleObj = new KahanPlusSq();
         return singleObj;
-    }
-
-    public Object clone() throws CloneNotSupportedException {
-        // cloning is not supported for singleton classes
-        throw new CloneNotSupportedException();
     }
 
     /**

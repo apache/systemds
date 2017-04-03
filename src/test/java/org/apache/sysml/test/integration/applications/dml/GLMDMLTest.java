@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.applications.dml;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-
 import org.apache.sysml.test.integration.applications.GLMTest;
 
 @RunWith(value = Parameterized.class)
@@ -40,5 +39,4 @@ public class GLMDMLTest extends GLMTest {
 	public void testGLMDml() {
 		testGLM(ScriptType.DML);
 	}
-
 }

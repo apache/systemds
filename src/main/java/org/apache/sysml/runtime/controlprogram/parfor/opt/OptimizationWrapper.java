@@ -20,9 +20,7 @@
 package org.apache.sysml.runtime.controlprogram.parfor.opt;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.commons.logging.Log;
@@ -33,35 +31,22 @@ import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.ipa.InterProceduralAnalysis;
+import org.apache.sysml.hops.recompile.Recompiler;
 import org.apache.sysml.hops.rewrite.HopRewriteRule;
 import org.apache.sysml.hops.rewrite.ProgramRewriteStatus;
 import org.apache.sysml.hops.rewrite.ProgramRewriter;
 import org.apache.sysml.hops.rewrite.RewriteConstantFolding;
 import org.apache.sysml.hops.rewrite.RewriteRemoveUnnecessaryBranches;
 import org.apache.sysml.hops.rewrite.StatementBlockRewriteRule;
-import org.apache.sysml.hops.recompile.Recompiler;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.ForStatement;
-import org.apache.sysml.parser.ForStatementBlock;
-import org.apache.sysml.parser.IfStatement;
-import org.apache.sysml.parser.IfStatementBlock;
-import org.apache.sysml.parser.LanguageException;
 import org.apache.sysml.parser.ParForStatementBlock;
-import org.apache.sysml.parser.StatementBlock;
-import org.apache.sysml.parser.WhileStatement;
-import org.apache.sysml.parser.WhileStatementBlock;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.controlprogram.ForProgramBlock;
 import org.apache.sysml.runtime.controlprogram.FunctionProgramBlock;
-import org.apache.sysml.runtime.controlprogram.IfProgramBlock;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock;
-import org.apache.sysml.runtime.controlprogram.Program;
-import org.apache.sysml.runtime.controlprogram.ProgramBlock;
-import org.apache.sysml.runtime.controlprogram.WhileProgramBlock;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.POptMode;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysml.runtime.controlprogram.parfor.opt.Optimizer.CostModelType;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.Stat;
@@ -91,7 +76,6 @@ public class OptimizationWrapper
 	
 	//internal parameters
 	public static final double PAR_FACTOR_INFRASTRUCTURE = 1.0;
-	private static final boolean ALLOW_RUNTIME_COSTMODEL = false;
 	private static final boolean CHECK_PLAN_CORRECTNESS = false; 
 	
 	static
@@ -102,47 +86,6 @@ public class OptimizationWrapper
 				  .setLevel((Level) Level.DEBUG);
 		}
 	}
-	
-	/**
-	 * Called once per DML script (during program compile time) 
-	 * in order to optimize all top-level parfor program blocks.
-	 * 
-	 * NOTE: currently note used at all.
-	 * 
-	 * @param prog
-	 * @param rtprog
-	 * @throws DMLRuntimeException 
-	 * @throws LanguageException 
-	 */
-	public static void optimize(DMLProgram prog, Program rtprog, boolean monitor) 
-		throws DMLRuntimeException, LanguageException 
-	{
-		LOG.debug("ParFOR Opt: Running optimize all on DML program "+DMLScript.getUUID());
-		
-		//init internal structures 
-		HashMap<Long, ParForStatementBlock> sbs = new HashMap<Long, ParForStatementBlock>();
-		HashMap<Long, ParForProgramBlock> pbs = new HashMap<Long, ParForProgramBlock>();	
-		
-		//find all top-level paror pbs
-		findParForProgramBlocks(prog, rtprog, sbs, pbs);
-		
-		// Create an empty symbol table
-		ExecutionContext ec = ExecutionContextFactory.createContext();
-		
-		//optimize each top-level parfor pb independently
-		for( Entry<Long, ParForProgramBlock> entry : pbs.entrySet() )
-		{
-			long key = entry.getKey();
-			ParForStatementBlock sb = sbs.get(key);
-			ParForProgramBlock pb = entry.getValue();
-			
-			//optimize (and implicit exchange)
-			POptMode type = pb.getOptimizationMode(); //known to be >0
-			optimize( type, sb, pb, ec, monitor );
-		}		
-		
-		LOG.debug("ParFOR Opt: Finished optimization for DML program "+DMLScript.getUUID());
-	}
 
 	/**
 	 * Called once per top-level parfor (during runtime, on parfor execute)
@@ -150,10 +93,12 @@ public class OptimizationWrapper
 	 * 
 	 * NOTE: this is the default way to invoke parfor optimizers.
 	 * 
-	 * @param type
-	 * @param sb
-	 * @param pb
-	 * @throws DMLRuntimeException
+	 * @param type ?
+	 * @param sb parfor statement block
+	 * @param pb parfor program block
+	 * @param ec execution context
+	 * @param monitor ?
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void optimize( POptMode type, ParForStatementBlock sb, ParForProgramBlock pb, ExecutionContext ec, boolean monitor ) 
 		throws DMLRuntimeException
@@ -177,11 +122,7 @@ public class OptimizationWrapper
 		if( monitor )
 			StatisticMonitor.putPFStat( pb.getID() , Stat.OPT_T, timeVal);
 	}
-	
-	/**
-	 * 
-	 * @param optLogLevel
-	 */
+
 	public static void setLogLevel( Level optLogLevel )
 	{
 		if( !LDEBUG ){ //set log level if not overwritten by internal flag
@@ -189,17 +130,7 @@ public class OptimizationWrapper
 			      .setLevel( optLogLevel );
 		}
 	}
-	
-	/**
-	 * 
-	 * @param type
-	 * @param ck
-	 * @param cm
-	 * @param sb
-	 * @param pb
-	 * @throws DMLRuntimeException
-	 * @throws  
-	 */
+
 	@SuppressWarnings("unused")
 	private static void optimize( POptMode otype, int ck, double cm, ParForStatementBlock sb, ParForProgramBlock pb, ExecutionContext ec, boolean monitor ) 
 		throws DMLRuntimeException
@@ -214,12 +145,6 @@ public class OptimizationWrapper
 		Optimizer opt = createOptimizer( otype );
 		CostModelType cmtype = opt.getCostModelType();
 		LOG.trace("ParFOR Opt: Created optimizer ("+otype+","+opt.getPlanInputType()+","+opt.getCostModelType());
-		
-		if( cmtype == CostModelType.RUNTIME_METRICS  //TODO remove check when perftesttool supported
-			&& !ALLOW_RUNTIME_COSTMODEL )
-		{
-			throw new DMLRuntimeException("ParFOR Optimizer "+otype+" requires cost model "+cmtype+" that is not suported yet.");
-		}
 		
 		OptTree tree = null;
 		
@@ -311,7 +236,7 @@ public class OptimizationWrapper
 		}
 		
 		//create cost estimator
-		CostEstimator est = createCostEstimator( cmtype );
+		CostEstimator est = createCostEstimator( cmtype, ec.getVariables() );
 		LOG.trace("ParFOR Opt: Created cost estimator ("+cmtype+")");
 		
 		//core optimize
@@ -348,105 +273,6 @@ public class OptimizationWrapper
 		}
 	}
 
-	/**
-	 * 
-	 * @param prog
-	 * @param rtprog
-	 * @throws LanguageException 
-	 */
-	private static void findParForProgramBlocks( DMLProgram prog, Program rtprog, 
-			HashMap<Long, ParForStatementBlock> sbs, HashMap<Long, ParForProgramBlock> pbs ) 
-		throws LanguageException
-	{
-		//handle function program blocks
-		HashMap<String,FunctionProgramBlock> fpbs = rtprog.getFunctionProgramBlocks();
-		for( Entry<String, FunctionProgramBlock> entry : fpbs.entrySet() )
-		{
-			String[] keypart = entry.getKey().split( Program.KEY_DELIM );
-			String namespace = keypart[0];
-			String name      = keypart[1]; 
-			
-			ProgramBlock pb = entry.getValue();
-			StatementBlock sb = prog.getFunctionStatementBlock(namespace, name);
-			
-			//recursive find 
-			rfindParForProgramBlocks(sb, pb, sbs, pbs);	
-		}
-		
-		//handle actual program blocks
-		ArrayList<ProgramBlock> tpbs = rtprog.getProgramBlocks();
-		for( int i=0; i<tpbs.size(); i++ )
-		{
-			ProgramBlock pb = tpbs.get(i);
-			StatementBlock sb = prog.getStatementBlock(i);
-			
-			//recursive find
-			rfindParForProgramBlocks(sb, pb, sbs, pbs);
-		}	
-	}
-	
-	/**
-	 * 
-	 * @param sb
-	 * @param pb
-	 */
-	private static void rfindParForProgramBlocks( StatementBlock sb, ProgramBlock pb,
-			HashMap<Long, ParForStatementBlock> sbs, HashMap<Long, ParForProgramBlock> pbs )
-	{
-		if( pb instanceof ParForProgramBlock  ) 
-		{
-			//put top-level parfor into map, but no recursion
-			ParForProgramBlock pfpb = (ParForProgramBlock) pb;
-			ParForStatementBlock pfsb = (ParForStatementBlock) sb;
-			
-			LOG.trace("ParFOR: found ParForProgramBlock with POptMode="+pfpb.getOptimizationMode().toString());
-			
-			if( pfpb.getOptimizationMode() != POptMode.NONE )
-			{
-				//register programblock tree for optimization
-				long pfid = pfpb.getID();
-				pbs.put(pfid, pfpb);
-				sbs.put(pfid, pfsb);
-			}
-		}
-		else if( pb instanceof ForProgramBlock )
-		{
-			//recursive find
-			ArrayList<ProgramBlock> fpbs = ((ForProgramBlock) pb).getChildBlocks();
-			ArrayList<StatementBlock> fsbs = ((ForStatement)((ForStatementBlock) sb).getStatement(0)).getBody();
-			for( int i=0;  i< fpbs.size(); i++ )
-				rfindParForProgramBlocks(fsbs.get(i), fpbs.get(i), sbs, pbs);
-		}
-		else if( pb instanceof WhileProgramBlock )
-		{
-			//recursive find
-			ArrayList<ProgramBlock> wpbs = ((WhileProgramBlock) pb).getChildBlocks();
-			ArrayList<StatementBlock> wsbs = ((WhileStatement)((WhileStatementBlock) sb).getStatement(0)).getBody();
-			for( int i=0;  i< wpbs.size(); i++ )
-				rfindParForProgramBlocks(wsbs.get(i), wpbs.get(i), sbs, pbs);	
-		}
-		else if( pb instanceof IfProgramBlock  )
-		{
-			//recursive find
-			IfProgramBlock ifpb = (IfProgramBlock) pb;
-			IfStatement ifs = (IfStatement) ((IfStatementBlock) sb).getStatement(0);			
-			ArrayList<ProgramBlock> ipbs1 = ifpb.getChildBlocksIfBody();
-			ArrayList<ProgramBlock> ipbs2 = ifpb.getChildBlocksElseBody();
-			ArrayList<StatementBlock> isbs1 = ifs.getIfBody();
-			ArrayList<StatementBlock> isbs2 = ifs.getElseBody();			
-			for( int i=0;  i< ipbs1.size(); i++ )
-				rfindParForProgramBlocks(isbs1.get(i), ipbs1.get(i), sbs, pbs);				
-			for( int i=0;  i< ipbs2.size(); i++ )
-				rfindParForProgramBlocks(isbs2.get(i), ipbs2.get(i), sbs, pbs);								
-		}
-	}
-	
-	/**
-	 * 
-	 * @param otype
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	private static Optimizer createOptimizer( POptMode otype ) 
 		throws DMLRuntimeException
 	{
@@ -463,15 +289,6 @@ public class OptimizationWrapper
 			case CONSTRAINED:
 				opt = new OptimizerConstrained();
 				break;	
-		
-			//MB: removed unused and experimental prototypes
-			//case FULL_DP:
-			//	opt = new OptimizerDPEnum();
-			//	break;
-			//case GREEDY:
-			//	opt = new OptimizerGreedyEnum();
-			//	break;
-			
 			default:
 				throw new DMLRuntimeException("Undefined optimizer: '"+otype+"'.");
 		}
@@ -479,13 +296,7 @@ public class OptimizationWrapper
 		return opt;
 	}
 
-	/**
-	 * 
-	 * @param cmtype
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
-	private static CostEstimator createCostEstimator( CostModelType cmtype ) 
+	private static CostEstimator createCostEstimator( CostModelType cmtype, LocalVariableMap vars ) 
 		throws DMLRuntimeException
 	{
 		CostEstimator est = null;
@@ -493,10 +304,13 @@ public class OptimizationWrapper
 		switch( cmtype )
 		{
 			case STATIC_MEM_METRIC:
-				est = new CostEstimatorHops( OptTreeConverter.getAbstractPlanMapping() );
+				est = new CostEstimatorHops( 
+						OptTreeConverter.getAbstractPlanMapping() );
 				break;
 			case RUNTIME_METRICS:
-				est = new CostEstimatorRuntime();
+				est = new CostEstimatorRuntime( 
+						OptTreeConverter.getAbstractPlanMapping(), 
+						(LocalVariableMap)vars.clone() );
 				break;
 			default:
 				throw new DMLRuntimeException("Undefined cost model type: '"+cmtype+"'.");
@@ -504,11 +318,7 @@ public class OptimizationWrapper
 		
 		return est;
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	private static ProgramRewriter createProgramRewriterWithRuleSets()
 	{
 		//create hop rewrite set

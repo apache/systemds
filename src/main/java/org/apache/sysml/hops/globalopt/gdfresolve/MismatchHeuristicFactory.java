@@ -25,12 +25,6 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 public abstract class MismatchHeuristicFactory 
 {
 
-	/**
-	 * 
-	 * @param type
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	public static GDFMismatchHeuristic createMismatchHeuristic( MismatchHeuristicType type ) 
 		throws DMLRuntimeException
 	{

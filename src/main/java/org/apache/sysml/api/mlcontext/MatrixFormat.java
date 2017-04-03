@@ -63,13 +63,8 @@ public enum MatrixFormat {
 	 *         otherwise.
 	 */
 	public boolean isVectorBased() {
-		if (this == DF_VECTOR_WITH_INDEX) {
-			return true;
-		} else if (this == DF_VECTOR) {
-			return true;
-		} else {
-			return false;
-		}
+		return (this == DF_VECTOR_WITH_INDEX
+			|| this == DF_VECTOR);
 	}
 
 	/**
@@ -79,13 +74,8 @@ public enum MatrixFormat {
 	 *         otherwise.
 	 */
 	public boolean hasIDColumn() {
-		if (this == DF_DOUBLES_WITH_INDEX) {
-			return true;
-		} else if (this == DF_VECTOR_WITH_INDEX) {
-			return true;
-		} else {
-			return false;
-		}
+		return (this == DF_DOUBLES_WITH_INDEX 
+			|| this == DF_VECTOR_WITH_INDEX);
 	}
 
 }

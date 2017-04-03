@@ -40,12 +40,6 @@ public class AggregateBinaryCPInstruction extends BinaryCPInstruction
 		_cptype = CPINSTRUCTION_TYPE.AggregateBinary;
 	}
 
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	public static AggregateBinaryCPInstruction parseInstruction( String str ) 
 		throws DMLRuntimeException 
 	{

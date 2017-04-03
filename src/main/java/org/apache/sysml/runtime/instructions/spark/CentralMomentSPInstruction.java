@@ -41,9 +41,6 @@ import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.operators.CMOperator;
 import org.apache.sysml.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
 
-/**
- * 
- */
 public class CentralMomentSPInstruction extends UnarySPInstruction
 {
 	
@@ -52,13 +49,7 @@ public class CentralMomentSPInstruction extends UnarySPInstruction
 	{
 		super(op, in1, in2, in3, out, opcode, str);
 	}
-	
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static CentralMomentSPInstruction parseInstruction(String str)
 		throws DMLRuntimeException 
 	{
@@ -131,14 +122,14 @@ public class CentralMomentSPInstruction extends UnarySPInstruction
 		if( input3 == null ) //w/o weights
 		{
 			cmobj = in1.values().map(new RDDCMFunction(cop))
-			           .reduce(new RDDCMReduceFunction(cop));
+			           .fold(new CM_COV_Object(), new RDDCMReduceFunction(cop));
 		}
 		else //with weights
 		{
 			JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = sec.getBinaryBlockRDDHandleForVariable( input2.getName() );
 			cmobj = in1.join( in2 )
 					   .values().map(new RDDCMWeightsFunction(cop))
-			           .reduce(new RDDCMReduceFunction(cop));
+			           .fold(new CM_COV_Object(), new RDDCMReduceFunction(cop));
 		}
 
 		//create scalar output (no lineage information required)
@@ -147,9 +138,6 @@ public class CentralMomentSPInstruction extends UnarySPInstruction
 		ec.setScalarOutput(output.getName(), ret);
 	}
 
-	/**
-	 * 
-	 */
 	private static class RDDCMFunction implements Function<MatrixBlock, CM_COV_Object> 
 	{
 		private static final long serialVersionUID = 2293839116041610644L;
@@ -168,10 +156,7 @@ public class CentralMomentSPInstruction extends UnarySPInstruction
 			return arg0.cmOperations(_op);
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class RDDCMWeightsFunction implements Function<Tuple2<MatrixBlock,MatrixBlock>, CM_COV_Object> 
 	{
 		private static final long serialVersionUID = -8949715516574052497L;
@@ -209,13 +194,9 @@ public class CentralMomentSPInstruction extends UnarySPInstruction
 		public CM_COV_Object call(CM_COV_Object arg0, CM_COV_Object arg1) 
 			throws Exception 
 		{
-			CM_COV_Object out = new CM_COV_Object();
-			
 			//execute cm combine operations
-			_op.fn.execute(out, arg0);
-			_op.fn.execute(out, arg1);
-			
-			return out;
+			_op.fn.execute(arg0, arg1);		
+			return arg0;
 		}
 	}
 }

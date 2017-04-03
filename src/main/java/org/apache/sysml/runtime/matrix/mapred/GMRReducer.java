@@ -67,11 +67,7 @@ implements Reducer<MatrixIndexes, TaggedMatrixValue, MatrixIndexes, MatrixValue>
 
 		reporter.incrCounter(Counters.COMBINE_OR_REDUCE_TIME, System.currentTimeMillis()-start);
 	}
-	
-	/**
-	 * 
-	 * @throws IOException
-	 */
+
 	protected void processReducerInstructionsInGMR(MatrixIndexes indexes) 
 		throws IOException 
 	{
@@ -111,12 +107,7 @@ implements Reducer<MatrixIndexes, TaggedMatrixValue, MatrixIndexes, MatrixValue>
 			throw new IOException(e);
 		}
 	}
-	
-	/**
-	 * 
-	 * @param reporter
-	 * @throws IOException
-	 */
+
 	protected void outputResultsFromCachedValuesForGMR(Reporter reporter) throws IOException
 	{
 		for(int i=0; i<resultIndexes.length; i++)

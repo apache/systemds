@@ -7,9 +7,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -37,7 +37,7 @@
 # Outputs:
 #  - probs: File containing class probability predictions for each
 #     image.
-# 
+#
 # Data:
 # The X file should contain images of handwritten digits,
 # where each example is a 28x28 pixel image of grayscale values in
@@ -46,7 +46,7 @@
 # Sample Invocation:
 # Execute using Spark
 #   ```
-#   $SPARK_HOME/bin/spark-submit --master local[*] --driver-memory 5G
+#   spark-submit --master local[*] --driver-memory 5G
 #   --conf spark.driver.maxResultSize=0 --conf spark.akka.frameSize=128
 #   $SYSTEMML_HOME/target/SystemML.jar -f mnist_softmax-predict.dml
 #   -nvargs X=data/mnist/images.csv model_dir=model/mnist_softmax
@@ -66,7 +66,7 @@ X = X / 255.0
 W = read($model_dir+"/W")
 b = read($model_dir+"/b")
 
-# Predict classes 
+# Predict classes
 probs = mnist_softmax::predict(X, W, b)
 
 # Output results

@@ -26,10 +26,6 @@ import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-/**
- * 
- * 
- */
 public class MMTSJCPInstruction extends UnaryCPInstruction
 {	
 	
@@ -43,13 +39,7 @@ public class MMTSJCPInstruction extends UnaryCPInstruction
 		_type = type;
 		_numThreads = k;
 	}
-	
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static MMTSJCPInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{

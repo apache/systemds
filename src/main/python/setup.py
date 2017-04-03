@@ -19,40 +19,60 @@
 #
 #-------------------------------------------------------------
 
+from __future__ import print_function
 import os
+import sys
 from setuptools import find_packages, setup
 import time
 
-VERSION = '0.11.0.dev1'
-RELEASED_DATE = str(time.strftime("%m/%d/%Y"))
+try:
+    exec(open('systemml/project_info.py').read())
+except IOError:
+    print("Could not read project_info.py. Will use default values.", file=sys.stderr)
+    BUILD_DATE_TIME = str(time.strftime("%Y%m%d.%H%M%S"))
+    __project_artifact_id__ = 'systemml'
+    __project_version__ = BUILD_DATE_TIME + '.dev0'
+ARTIFACT_NAME = __project_artifact_id__
+ARTIFACT_VERSION = __project_version__
+ARTIFACT_VERSION_SHORT = ARTIFACT_VERSION.split("-")[0]
+
 numpy_version = '1.8.2'
 scipy_version = '0.15.1'
 REQUIRED_PACKAGES = [
     'numpy >= %s' % numpy_version,
-    'scipy >= %s' % scipy_version
+    'scipy >= %s' % scipy_version,
+    'pandas'
 ]
 
+
+python_dir = 'systemml'
+java_dir='systemml-java'
+java_dir_full_path = os.path.join(python_dir, java_dir)
 PACKAGE_DATA = []
-for path, subdirs, files in os.walk('systemml/systemml-java'):
+for path, subdirs, files in os.walk(java_dir_full_path):
     for name in files:
         PACKAGE_DATA = PACKAGE_DATA + [ os.path.join(path, name).replace('./', '') ]
+PACKAGE_DATA = PACKAGE_DATA + [os.path.join(python_dir, 'LICENSE'),
+                               os.path.join(python_dir, 'DISCLAIMER'),
+                               os.path.join(python_dir, 'NOTICE')]
 
 setup(
-    name='systemml',
-    version=VERSION,
+    name=ARTIFACT_NAME,
+    version=ARTIFACT_VERSION_SHORT,
     description='Apache SystemML is a distributed and declarative machine learning platform.',
     long_description='''
 
-    Apache SystemML is an effort undergoing incubation at the Apache Software Foundation (ASF), sponsored by the Apache Incubator PMC.
+    Apache SystemML is an effort undergoing incubation at the Apache Software Foundation (ASF),
+    sponsored by the Apache Incubator PMC.
     While incubation status is not necessarily a reflection of the completeness
     or stability of the code, it does indicate that the project has yet to be
     fully endorsed by the ASF.
 
     Apache SystemML provides declarative large-scale machine learning (ML) that aims at
     flexible specification of ML algorithms and automatic generation of hybrid runtime
-    plans ranging from single-node, in-memory computations, to distributed computations on Apache Hadoop and Apache Spark.
-
-    Note: This is not a released version and was built with SNAPSHOT available on the date''' + RELEASED_DATE,
+    plans ranging from single-node, in-memory computations, to distributed computations on Apache
+    Hadoop and Apache Spark.
+    ''',
     url='http://systemml.apache.org/',
     author='Apache SystemML',
     author_email='dev@systemml.incubator.apache.org',

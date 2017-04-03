@@ -26,9 +26,6 @@ import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 
-/**
- * 
- */
 public class WeightedDivMM extends Lop 
 {
 	public static final String OPCODE = "mapwdivmm";
@@ -102,10 +99,6 @@ public class WeightedDivMM extends Lop
 		setupLopProperties(et);
 	}
 	
-	/**
-	 * 
-	 * @param et
-	 */
 	private void setupLopProperties( ExecType et )
 	{
 		if( et == ExecType.MR )
@@ -194,21 +187,14 @@ public class WeightedDivMM extends Lop
 	}
 	
 	@Override
-	public boolean usesDistributedCache() 
-	{
-		if( getExecType()==ExecType.MR )
-			return true;
-		else
-			return false;
+	public boolean usesDistributedCache() {
+		return (getExecType()==ExecType.MR);
 	}
 	
 	@Override
-	public int[] distributedCacheInputIndex() 
-	{
-		if( getExecType()==ExecType.MR )
-			return new int[]{2,3};
-		else
-			return new int[]{-1};
+	public int[] distributedCacheInputIndex() {
+		return (getExecType()==ExecType.MR) ?
+			new int[]{2,3} : new int[]{-1};
 	}
 	
 	public void setNumThreads(int k) {

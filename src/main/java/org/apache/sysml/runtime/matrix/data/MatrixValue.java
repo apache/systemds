@@ -62,7 +62,7 @@ public abstract class MatrixValue implements WritableComparable
 		}
 
 		public int hashCode() {
-			return UtilFunctions.longHashFunc((row << 16) + column);
+			return UtilFunctions.longHashCode((row << 16) + column);
 		}
 	
 		public void set(int r, int c) {

@@ -25,7 +25,6 @@ import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.DataOpTypes;
 import org.apache.sysml.hops.Hop.FileFormatTypes;
-import org.apache.sysml.hops.Hop.VisitStatus;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.parser.DataIdentifier;
 import org.apache.sysml.parser.StatementBlock;
@@ -87,9 +86,7 @@ public class RewriteSplitDagUnknownCSVRead extends StatementBlockRewriteRule
 					for( int i=0; i<parents.size(); i++ )
 					{
 						Hop parent = parents.get(i);
-						int pos = HopRewriteUtils.getChildReferencePos(parent, reblock);
-						HopRewriteUtils.removeChildReferenceByPos(parent, reblock, pos);
-						HopRewriteUtils.addChildReference(parent, tread, pos);
+						HopRewriteUtils.replaceChildReference(parent, reblock, tread);
 					}
 					
 					//add reblock sub dag to first statement block
@@ -127,11 +124,6 @@ public class RewriteSplitDagUnknownCSVRead extends StatementBlockRewriteRule
 		return ret;
 	}
 	
-	/**
-	 * 
-	 * @param roots
-	 * @param cand
-	 */
 	private void collectCSVReadHopsUnknownSize( ArrayList<Hop> roots, ArrayList<Hop> cand )
 	{
 		if( roots == null )
@@ -142,14 +134,9 @@ public class RewriteSplitDagUnknownCSVRead extends StatementBlockRewriteRule
 			collectCSVReadHopsUnknownSize(root, cand);
 	}
 	
-	/**
-	 * 
-	 * @param root
-	 * @param cand
-	 */
 	private void collectCSVReadHopsUnknownSize( Hop hop, ArrayList<Hop> cand )
 	{
-		if( hop.getVisited() == VisitStatus.DONE )
+		if( hop.isVisited() )
 			return;
 		
 		//collect persistent reads (of type csv, with unknown size)
@@ -171,6 +158,6 @@ public class RewriteSplitDagUnknownCSVRead extends StatementBlockRewriteRule
 			for( Hop c : hop.getInput() )
 				collectCSVReadHopsUnknownSize(c, cand);
 		
-		hop.setVisited(VisitStatus.DONE);
+		hop.setVisited();
 	}
 }

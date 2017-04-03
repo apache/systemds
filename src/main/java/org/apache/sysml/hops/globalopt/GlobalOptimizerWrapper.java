@@ -49,7 +49,7 @@ public class GlobalOptimizerWrapper
 	//supported optimizers
 	public enum GlobalOptimizerType{
 		ENUMERATE_DP,
-		TRANSFORM,
+		TRANSFORM
 	}
 	
 	//internal parameters
@@ -64,15 +64,6 @@ public class GlobalOptimizerWrapper
 		}
 	}
 	
-	/**
-	 * 
-	 * @param prog
-	 * @param rtprog
-	 * @return
-	 * @throws DMLRuntimeException 
-	 * @throws HopsException
-	 * @throws LopsException  
-	 */
 	public static Program optimizeProgram(DMLProgram prog, Program rtprog) 
 		throws DMLRuntimeException, HopsException, LopsException
 	{
@@ -102,14 +93,6 @@ public class GlobalOptimizerWrapper
 		return rtprog;
 	}
 	
-	/**
-	 * 
-	 * @param type
-	 * @param graphCreator
-	 * @return
-	 * @throws HopsException 
-	 * @throws DMLRuntimeException 
-	 */
 	private static GlobalOptimizer createGlobalOptimizer( GlobalOptimizerType type ) 
 		throws HopsException, DMLRuntimeException
 	{

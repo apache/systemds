@@ -35,7 +35,7 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.wink.json4j.JSONException;
-
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.CSVReblockMR.OffsetCount;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
 
@@ -95,28 +95,31 @@ public class GTFMTDReducer implements Reducer<IntWritable, DistinctValue, Text, 
 		
 	}
 	
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({"unchecked","deprecation"})
 	private long generateOffsetsFile(ArrayList<OffsetCount> list) throws IllegalArgumentException, IOException 
 	{
 		Collections.sort(list);
 		
-		@SuppressWarnings("deprecation")
-		SequenceFile.Writer writer = new SequenceFile.Writer(
+		SequenceFile.Writer writer = null;
+		long lineOffset=0;
+		try {
+			writer = new SequenceFile.Writer(
 				FileSystem.get(_rJob), _rJob, 
 				new Path(_agents.getOffsetFile()+"/part-00000"), 
 				ByteWritable.class, OffsetCount.class);
 		
-		long lineOffset=0;
-		for(OffsetCount oc: list)
-		{
-			long count=oc.count;
-			oc.count=lineOffset;
-			writer.append(new ByteWritable((byte)0), oc);
-			lineOffset+=count;
+			for(OffsetCount oc: list)
+			{
+				long count=oc.count;
+				oc.count=lineOffset;
+				writer.append(new ByteWritable((byte)0), oc);
+				lineOffset+=count;
+			}
 		}
-		writer.close();
+		finally {
+			IOUtilFunctions.closeSilently(writer);
+		}
 		list.clear();
-		
 		return lineOffset;
 	}
 	

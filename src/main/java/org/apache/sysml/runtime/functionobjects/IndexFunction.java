@@ -21,9 +21,23 @@ package org.apache.sysml.runtime.functionobjects;
 
 import java.io.Serializable;
 
-public class IndexFunction extends FunctionObject implements Serializable 
-{
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 
-	
+public abstract class IndexFunction extends FunctionObject implements Serializable 
+{
 	private static final long serialVersionUID = -7672111359444767237L;
+	
+	//compute output indexes
+	
+	public abstract void execute(MatrixIndexes in, MatrixIndexes out);
+	
+	public abstract void execute(CellIndex in, CellIndex out);
+	
+	//determine of dimension has been reduced
+	public abstract boolean computeDimension(int row, int col, CellIndex retDim);
+
+	//compute output dimensions
+	public abstract boolean computeDimension(MatrixCharacteristics in, MatrixCharacteristics out);
 }

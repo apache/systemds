@@ -31,7 +31,8 @@ import org.junit.runners.Suite;
 	CTableMatrixIgnoreZerosTest.class,
 	CTableSequenceTest.class,
 	QuantileWeightsTest.class,
-	TableOutputTest.class
+	TableOutputTest.class,
+	TernaryAggregateTest.class,
 })
 
 

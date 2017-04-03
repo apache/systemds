@@ -20,6 +20,7 @@
 package org.apache.sysml.runtime.instructions.spark;
 
 import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
 
 import scala.Tuple2;
@@ -53,13 +54,7 @@ public class ZipmmSPInstruction extends BinarySPInstruction
 		
 		_tRewrite = tRewrite;
 	}
-	
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static ZipmmSPInstruction parseInstruction( String str ) 
 		throws DMLRuntimeException 
 	{
@@ -94,9 +89,8 @@ public class ZipmmSPInstruction extends BinarySPInstruction
 		
 		//process core zipmm matrix multiply (in contrast to cpmm, the join over original indexes
 		//preserves the original partitioning and with that potentially unnecessary join shuffle)
-		JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1
-				   .join(in2)                                       // join over original indexes
-				   .mapValues(new ZipMultiplyFunction(_tRewrite));  // compute block multiplications, incl t(y)
+		JavaRDD<MatrixBlock> out = in1.join(in2).values()     // join over original indexes
+				   .map(new ZipMultiplyFunction(_tRewrite));  // compute block multiplications, incl t(y)
 				   
 		//single-block aggregation (guaranteed by zipmm blocksize constraint)
 		MatrixBlock out2 = RDDAggregateUtils.sumStable(out);
@@ -112,10 +106,6 @@ public class ZipmmSPInstruction extends BinarySPInstruction
 		sec.setMatrixOutput(output.getName(), out2);	
 	}
 
-	/**
-	 * 
-	 *
-	 */
 	private static class ZipMultiplyFunction implements Function<Tuple2<MatrixBlock,MatrixBlock>, MatrixBlock> 
 	{
 		private static final long serialVersionUID = -6669267794926220287L;

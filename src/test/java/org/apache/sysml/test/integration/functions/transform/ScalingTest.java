@@ -143,9 +143,9 @@ public class ScalingTest extends AutomatedTestBase
 		outputSpec.put(TfUtils.TXMETHOD_SCALE, scaleSpec);
 		
 		FileSystem fs = FileSystem.get(TestUtils.conf);
-		BufferedWriter out = new BufferedWriter(new OutputStreamWriter(fs.create(new Path(specFile),true)));
-		out.write(outputSpec.toString());
-		out.close();
+		try( BufferedWriter out = new BufferedWriter(new OutputStreamWriter(fs.create(new Path(specFile),true))) ) {
+			out.write(outputSpec.toString());
+		}
 
 	}
 	
@@ -158,9 +158,9 @@ public class ScalingTest extends AutomatedTestBase
 		mtd.put("header", false);
 		
 		FileSystem fs = FileSystem.get(TestUtils.conf);
-		BufferedWriter out = new BufferedWriter(new OutputStreamWriter(fs.create(new Path(datafile+".mtd"),true)));
-		out.write(mtd.toString());
-		out.close();
+		try( BufferedWriter out = new BufferedWriter(new OutputStreamWriter(fs.create(new Path(datafile+".mtd"),true))) ) {
+			out.write(mtd.toString());
+		}
 	}
 	
 	/**

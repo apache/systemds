@@ -45,12 +45,6 @@ public class CovarianceCPInstruction extends BinaryCPInstruction
 		_cptype = CPINSTRUCTION_TYPE.AggregateBinary;
 	}
 
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	public static CovarianceCPInstruction parseInstruction( String str ) 
 		throws DMLRuntimeException 
 	{

@@ -216,7 +216,7 @@ public class DMLDebuggerFunctions {
 
 	/**
 	 * Print current call stack
-	 * @param currentEC Current stack frame
+	 * @param currFrame Current stack frame
  	 * @param callStack Saved stack frames  
 	 */
 	public void printCallStack(DMLFrame currFrame, Stack<DMLFrame> callStack) {
@@ -381,8 +381,8 @@ public class DMLDebuggerFunctions {
 	/**
 	 * Print DML matrix variable in current frame (if existing)
 	 * @param variables Current frame variables
- 	 * @param varname Variable name  
-	 * @throws DMLRuntimeException 
+ 	 * @param varname Variable name
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public void printMatrixVariable(LocalVariableMap variables, String varname) throws DMLRuntimeException {
 		if (varname == null) {
@@ -565,7 +565,7 @@ public class DMLDebuggerFunctions {
 	/**
 	 * Parse command line arguments and return valid IntRange variable 
 	 * @param args CLI arguments for range of debugger display functionality 
-	 * @param size Size (number of lines of code) of DML script
+	 * @param length Size (number of lines of code) of DML script
 	 * @return Validated range of lines within DML script to be displayed  
 	 * @throws DMLDebuggerException Invalid range 
 	 */

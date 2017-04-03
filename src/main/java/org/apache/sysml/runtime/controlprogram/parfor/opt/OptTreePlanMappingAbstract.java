@@ -29,13 +29,11 @@ import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.ProgramBlock;
 
 public class OptTreePlanMappingAbstract extends OptTreePlanMapping
-{
-	
+{	
 	private DMLProgram _prog;
 	private Program _rtprog;
 	private Map<Long, Object> _id_hlprog;
 	private Map<Long, Object> _id_rtprog;
-	private Map<Long, Object> _id_symb; // mapping for symbol table
 	
 	public OptTreePlanMappingAbstract( )
 	{
@@ -46,7 +44,6 @@ public class OptTreePlanMappingAbstract extends OptTreePlanMapping
 		
 		_id_hlprog = new HashMap<Long, Object>();
 		_id_rtprog = new HashMap<Long, Object>();
-		_id_symb = new HashMap<Long, Object>();
 	}
 	
 	public void putRootProgram( DMLProgram prog, Program rtprog )
@@ -61,7 +58,6 @@ public class OptTreePlanMappingAbstract extends OptTreePlanMapping
 		
 		_id_hlprog.put(id, hops);
 		_id_rtprog.put(id, null);
-		_id_symb.put(id, null);
 		_id_optnode.put(id, n);	
 		
 		n.setID(id);
@@ -75,7 +71,6 @@ public class OptTreePlanMappingAbstract extends OptTreePlanMapping
 		
 		_id_hlprog.put(id, sb);
 		_id_rtprog.put(id, pb);
-		_id_symb.put(id, null);
 		_id_optnode.put(id, n);
 		n.setID(id);
 		
@@ -97,10 +92,9 @@ public class OptTreePlanMappingAbstract extends OptTreePlanMapping
 	
 	public Object[] getMappedProg( long id )
 	{
-		Object[] ret = new Object[3];
+		Object[] ret = new Object[2];
 		ret[0] = (StatementBlock)_id_hlprog.get( id );
 		ret[1] = (ProgramBlock)_id_rtprog.get( id );
-		ret[2] = (ProgramBlock)_id_symb.get( id );
 		
 		return ret;
 	}

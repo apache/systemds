@@ -40,6 +40,7 @@ import org.junit.runners.Suite;
 	RandRecompileTest.class,
 	RandSizeExpressionEvalTest.class,
 	ReblockRecompileTest.class,
+	RecursiveFunctionRecompileTest.class,
 	RemoveEmptyPotpourriTest.class,
 	RemoveEmptyRecompileTest.class,
 	RewriteComplexMapMultChainTest.class,

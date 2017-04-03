@@ -50,10 +50,6 @@ public class ReaderColumnSelectionDense extends ReaderColumnSelection
 		}
 	}
 
-	/**
-	 * 
-	 * @return
-	 */
 	private DblArray getNextRow() {
 		if(_lastRow == _numRows-1)
 			return null;

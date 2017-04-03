@@ -20,6 +20,7 @@
 package org.apache.sysml.hops.rewrite;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 
 import org.apache.commons.logging.Log;
@@ -27,9 +28,15 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.DataOpTypes;
-import org.apache.sysml.hops.Hop.VisitStatus;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.parser.Expression.DataType;
+import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
+import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysml.runtime.instructions.cp.Data;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
+import org.apache.sysml.runtime.matrix.MetaData;
+import org.apache.sysml.runtime.matrix.data.InputInfo;
 
 /**
  * This rewrite is a custom rewrite for JMLC in order to replace all persistent reads
@@ -43,15 +50,31 @@ public class RewriteRemovePersistentReadWrite extends HopRewriteRule
 	
 	private HashSet<String> _inputs = null;
 	private HashSet<String> _outputs = null;
+	private HashMap<String,MetaData> _inputsMeta = null;
 	
-	public RewriteRemovePersistentReadWrite( String[] in, String[] out )
+	public RewriteRemovePersistentReadWrite( String[] in, String[] out ) {
+		this(in, out, null);
+	}
+	
+	public RewriteRemovePersistentReadWrite( String[] in, String[] out, LocalVariableMap vars )
 	{
+		//store input and output names
 		_inputs = new HashSet<String>();
 		for( String var : in )
 			_inputs.add( var );
 		_outputs = new HashSet<String>();
 		for( String var : out )
 			_outputs.add( var );
+		
+		//store input meta data
+		_inputsMeta = new HashMap<String, MetaData>();
+		if( vars != null ) {
+			for( String varname : in ) {
+				Data dat = vars.get(varname);
+				if( dat != null && dat instanceof CacheableData<?> )
+					_inputsMeta.put(varname, ((CacheableData<?>)dat).getMetaData());
+			}
+		}
 	}
 	
 	@Override
@@ -79,16 +102,11 @@ public class RewriteRemovePersistentReadWrite extends HopRewriteRule
 		return root;
 	}
 	
-	/**
-	 * 
-	 * @param hop
-	 * @throws HopsException 
-	 */
 	private void rule_RemovePersistentDataOp( Hop hop ) 
 		throws HopsException
 	{
 		//check mark processed
-		if( hop.getVisited() == VisitStatus.DONE )
+		if( hop.isVisited() )
 			return;
 		
 		//recursively process childs
@@ -110,6 +128,21 @@ public class RewriteRemovePersistentReadWrite extends HopRewriteRule
 						if (hop.getDataType() == DataType.SCALAR) {
 							dop.removeInput("iofilename");
 						}
+						
+						//disable unnecessary reblock of binary block w/ equal block sizes
+						if( dop.requiresReblock() && _inputsMeta.containsKey(dop.getName()) 
+							&& _inputsMeta.get(dop.getName()) instanceof MatrixFormatMetaData) {
+							MatrixFormatMetaData meta = (MatrixFormatMetaData)_inputsMeta.get(dop.getName());
+							MatrixCharacteristics mc = meta.getMatrixCharacteristics();
+							boolean matchingBlksz = mc.getRowsPerBlock() == dop.getRowsInBlock() 
+									&& mc.getColsPerBlock() == dop.getColsInBlock();
+							//binary matrix w/ matching dims and frames do not require reblock
+							if( meta.getInputInfo() == InputInfo.BinaryBlockInputInfo 
+								&& (matchingBlksz || dop.getDataType() == DataType.FRAME))
+							{
+								dop.setRequiresReblock(false);
+							}
+						}
 					} 
 					else
 						LOG.warn("Non-registered persistent read of variable '"+dop.getName()+"' (line "+dop.getBeginLine()+").");
@@ -130,6 +163,6 @@ public class RewriteRemovePersistentReadWrite extends HopRewriteRule
 		}
 		
 		//mark processed
-		hop.setVisited( VisitStatus.DONE );
+		hop.setVisited();
 	}
 }

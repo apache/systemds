@@ -140,12 +140,7 @@ public class OutputInfo implements Serializable
 		else
 			throw new DMLRuntimeException("Unrecognized outputInfo: " + oi);
 	}
-	
-	/**
-	 * 
-	 * @param oinfo
-	 * @return
-	 */
+
 	public static String outputInfoToStringExternal(OutputInfo oinfo) 
 	{
 		if( oinfo == OutputInfo.TextCellOutputInfo )

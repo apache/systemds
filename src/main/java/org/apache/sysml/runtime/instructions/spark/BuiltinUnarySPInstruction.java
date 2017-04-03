@@ -37,13 +37,7 @@ public abstract class BuiltinUnarySPInstruction extends UnarySPInstruction
 		super(op, in, out, opcode, istr);
 		_sptype = SPINSTRUCTION_TYPE.BuiltinUnary;
 	}
-	
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static BuiltinUnarySPInstruction parseInstruction ( String str ) 
 			throws DMLRuntimeException 
 	{

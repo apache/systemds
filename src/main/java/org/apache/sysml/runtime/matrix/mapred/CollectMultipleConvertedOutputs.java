@@ -71,7 +71,7 @@ public class CollectMultipleConvertedOutputs
 
 	public void close() 
 		throws IOException 
-	{	
+	{
 		multipleOutputs.close();
 	}
 

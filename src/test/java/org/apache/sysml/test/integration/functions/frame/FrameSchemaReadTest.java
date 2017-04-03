@@ -19,9 +19,7 @@
 
 package org.apache.sysml.test.integration.functions.frame;
 
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 
 import org.apache.sysml.parser.DataExpression;
 import org.apache.sysml.parser.Expression.ValueType;
@@ -120,20 +118,17 @@ public class FrameSchemaReadTest extends AutomatedTestBase
 			TestConfiguration config = getTestConfiguration(testname);
 			loadTestConfiguration(config);
 			
-			List<ValueType> lschema = Arrays.asList(schema);
-			
-			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[]{"-explain","-args", input("A"), getSchemaString(lschema, wildcard), 
+			programArgs = new String[]{"-explain","-args", input("A"), getSchemaString(schema, wildcard), 
 					Integer.toString(rows), Integer.toString(schema.length), output("B") };
 			
 			//data generation
 			double[][] A = getRandomMatrix(rows, schema.length, -10, 10, 0.9, 2373); 
 			
 			//prepare input/output infos
-			FrameBlock frame1 = new FrameBlock(lschema);
-			initFrameData(frame1, A, lschema);
+			FrameBlock frame1 = new FrameBlock(schema);
+			initFrameData(frame1, A, schema);
 			
 			//write frame data to hdfs
 			FrameWriter writer = FrameWriterFactory.createFrameWriter(OutputInfo.CSVOutputInfo);
@@ -147,11 +142,11 @@ public class FrameSchemaReadTest extends AutomatedTestBase
 			FrameBlock frame2 = ((FrameReaderBinaryBlock)reader).readFirstBlock(output("B"));
 			
 			//verify output schema
-			List<ValueType> schemaExpected = (testname.equals(TEST_NAME2) || wildcard) ?
-					Collections.nCopies(schema.length, ValueType.STRING) : lschema;					
-			for( int i=0; i<schemaExpected.size(); i++ ) {
-				Assert.assertEquals("Wrong result: "+frame2.getSchema().get(i)+".", 
-						schemaExpected.get(i), frame2.getSchema().get(i));
+			ValueType[] schemaExpected = (testname.equals(TEST_NAME2) || wildcard) ?
+					Collections.nCopies(schema.length, ValueType.STRING).toArray(new ValueType[0]) : schema;					
+			for( int i=0; i<schemaExpected.length; i++ ) {
+				Assert.assertEquals("Wrong result: "+frame2.getSchema()[i]+".", 
+						schemaExpected[i], frame2.getSchema()[i]);
 			}
 		}
 		catch(Exception ex) {
@@ -166,12 +161,12 @@ public class FrameSchemaReadTest extends AutomatedTestBase
 	 * @param data
 	 * @param lschema
 	 */
-	private void initFrameData(FrameBlock frame, double[][] data, List<ValueType> lschema) {
-		Object[] row1 = new Object[lschema.size()];
+	private void initFrameData(FrameBlock frame, double[][] data, ValueType[] lschema) {
+		Object[] row1 = new Object[lschema.length];
 		for( int i=0; i<rows; i++ ) {
-			for( int j=0; j<lschema.size(); j++ )
-				data[i][j] = UtilFunctions.objectToDouble(lschema.get(j), 
-						row1[j] = UtilFunctions.doubleToObject(lschema.get(j), data[i][j]));
+			for( int j=0; j<lschema.length; j++ )
+				data[i][j] = UtilFunctions.objectToDouble(lschema[j], 
+						row1[j] = UtilFunctions.doubleToObject(lschema[j], data[i][j]));
 			frame.appendRow(row1);
 		}
 	}
@@ -182,7 +177,7 @@ public class FrameSchemaReadTest extends AutomatedTestBase
 	 * @param wildcard
 	 * @return
 	 */
-	private String getSchemaString( List<ValueType> lschema, boolean wildcard ) {
+	private String getSchemaString( ValueType[] lschema, boolean wildcard ) {
 		if( wildcard )
 			return "*";		
 		StringBuilder ret = new StringBuilder();

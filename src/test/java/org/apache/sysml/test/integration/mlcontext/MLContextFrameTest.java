@@ -31,24 +31,28 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.rdd.RDD;
-import org.apache.spark.sql.DataFrame;
+import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
-import org.apache.spark.sql.SQLContext;
+import org.apache.spark.sql.RowFactory;
+import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 import org.apache.sysml.api.mlcontext.FrameFormat;
 import org.apache.sysml.api.mlcontext.FrameMetadata;
+import org.apache.sysml.api.mlcontext.FrameSchema;
 import org.apache.sysml.api.mlcontext.MLContext;
+import org.apache.sysml.api.mlcontext.MLContext.ExplainLevel;
 import org.apache.sysml.api.mlcontext.MLResults;
 import org.apache.sysml.api.mlcontext.MatrixFormat;
 import org.apache.sysml.api.mlcontext.MatrixMetadata;
 import org.apache.sysml.api.mlcontext.Script;
 import org.apache.sysml.parser.Expression.ValueType;
+import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDConverterUtils;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils;
 import org.apache.sysml.test.integration.AutomatedTestBase;
-import org.apache.sysml.test.integration.mlcontext.MLContextTest.CommaSeparatedValueStringToRow;
+import org.apache.sysml.test.integration.mlcontext.MLContextTest.CommaSeparatedValueStringToDoubleArrayRow;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -72,14 +76,17 @@ public class MLContextFrameTest extends AutomatedTestBase {
 	private static SparkConf conf;
 	private static JavaSparkContext sc;
 	private static MLContext ml;
+	private static String CSV_DELIM = ",";
 
 	@BeforeClass
 	public static void setUpClass() {
 		if (conf == null)
-			conf = new SparkConf().setAppName("MLContextFrameTest").setMaster("local");
+			conf = SparkExecutionContext.createSystemMLSparkConf()
+				.setAppName("MLContextFrameTest").setMaster("local");
 		if (sc == null)
 			sc = new JavaSparkContext(conf);
 		ml = new MLContext(sc);
+		ml.setExplainLevel(ExplainLevel.RECOMPILE_HOPS);
 	}
 
 	@Override
@@ -181,6 +188,12 @@ public class MLContextFrameTest extends AutomatedTestBase {
 		List<String> listB = new ArrayList<String>();
 		FrameMetadata fmA = null, fmB = null;
 		Script script = null;
+		ValueType[] schemaA = { ValueType.INT, ValueType.STRING, ValueType.DOUBLE, ValueType.BOOLEAN };
+		List<ValueType> lschemaA = Arrays.asList(schemaA);
+		FrameSchema fschemaA = new FrameSchema(lschemaA);
+		ValueType[] schemaB = { ValueType.STRING, ValueType.DOUBLE, ValueType.BOOLEAN };
+		List<ValueType> lschemaB = Arrays.asList(schemaB);
+		FrameSchema fschemaB = new FrameSchema(lschemaB);
 
 		if (inputType != IO_TYPE.FILE) {
 			if (format == FrameFormat.CSV) {
@@ -191,8 +204,8 @@ public class MLContextFrameTest extends AutomatedTestBase {
 				listB.add("Str12,13.0,true");
 				listB.add("Str25,26.0,false");
 
-				fmA = new FrameMetadata(FrameFormat.CSV, 3, 4);
-				fmB = new FrameMetadata(FrameFormat.CSV, 2, 3);
+				fmA = new FrameMetadata(FrameFormat.CSV, fschemaA, 3, 4);
+				fmB = new FrameMetadata(FrameFormat.CSV, fschemaB, 2, 3);
 			} else if (format == FrameFormat.IJV) {
 				listA.add("1 1 1");
 				listA.add("1 2 Str2");
@@ -214,27 +227,22 @@ public class MLContextFrameTest extends AutomatedTestBase {
 				listB.add("2 2 26.0");
 				listB.add("2 3 false");
 
-				fmA = new FrameMetadata(FrameFormat.IJV, 3, 4);
-				fmB = new FrameMetadata(FrameFormat.IJV, 2, 3);
+				fmA = new FrameMetadata(FrameFormat.IJV, fschemaA, 3, 4);
+				fmB = new FrameMetadata(FrameFormat.IJV, fschemaB, 2, 3);
 			}
 			JavaRDD<String> javaRDDA = sc.parallelize(listA);
 			JavaRDD<String> javaRDDB = sc.parallelize(listB);
 
 			if (inputType == IO_TYPE.DATAFRAME) {
-				JavaRDD<Row> javaRddRowA = javaRDDA.map(new MLContextTest.CommaSeparatedValueStringToRow());
-				JavaRDD<Row> javaRddRowB = javaRDDB.map(new MLContextTest.CommaSeparatedValueStringToRow());
-
-				ValueType[] schemaA = { ValueType.INT, ValueType.STRING, ValueType.DOUBLE, ValueType.BOOLEAN };
-				List<ValueType> lschemaA = Arrays.asList(schemaA);
-				ValueType[] schemaB = { ValueType.STRING, ValueType.DOUBLE, ValueType.BOOLEAN };
-				List<ValueType> lschemaB = Arrays.asList(schemaB);
+				JavaRDD<Row> javaRddRowA = FrameRDDConverterUtils.csvToRowRDD(sc, javaRDDA, CSV_DELIM, schemaA);
+				JavaRDD<Row> javaRddRowB = FrameRDDConverterUtils.csvToRowRDD(sc, javaRDDB, CSV_DELIM, schemaB);
 
 				// Create DataFrame
-				SQLContext sqlContext = new SQLContext(sc);
-				StructType dfSchemaA = FrameRDDConverterUtils.convertFrameSchemaToDFSchema(lschemaA, false);
-				DataFrame dataFrameA = sqlContext.createDataFrame(javaRddRowA, dfSchemaA);
-				StructType dfSchemaB = FrameRDDConverterUtils.convertFrameSchemaToDFSchema(lschemaB, false);
-				DataFrame dataFrameB = sqlContext.createDataFrame(javaRddRowB, dfSchemaB);
+				SparkSession sparkSession = SparkSession.builder().sparkContext(sc.sc()).getOrCreate();
+				StructType dfSchemaA = FrameRDDConverterUtils.convertFrameSchemaToDFSchema(schemaA, false);
+				Dataset<Row> dataFrameA = sparkSession.createDataFrame(javaRddRowA, dfSchemaA);
+				StructType dfSchemaB = FrameRDDConverterUtils.convertFrameSchemaToDFSchema(schemaB, false);
+				Dataset<Row> dataFrameB = sparkSession.createDataFrame(javaRddRowB, dfSchemaB);
 				if (script_type == SCRIPT_TYPE.DML)
 					script = dml("A[2:3,2:4]=B;C=A[2:3,2:3]").in("A", dataFrameA, fmA).in("B", dataFrameB, fmB).out("A")
 							.out("C");
@@ -290,7 +298,7 @@ public class MLContextFrameTest extends AutomatedTestBase {
 			}
 
 			if (script_type == SCRIPT_TYPE.DML)
-				script = dml("A=read($A); B=read($B);A[2:3,2:4]=B;C=A[2:3,2:3]").in("$A", fileA, fmA)
+				script = dml("A=read($A); B=read($B);A[2:3,2:4]=B;C=A[2:3,2:3];A[1,1]=234").in("$A", fileA, fmA)
 						.in("$B", fileB, fmB).out("A").out("C");
 			else if (script_type == SCRIPT_TYPE.PYDML)
 				// DO NOT USE ; at the end of any statment, it throws NPE
@@ -302,6 +310,17 @@ public class MLContextFrameTest extends AutomatedTestBase {
 		}
 
 		MLResults mlResults = ml.execute(script);
+		
+		//Validate output schema
+		List<ValueType> lschemaOutA = Arrays.asList(mlResults.getFrameObject("A").getSchema());
+		List<ValueType> lschemaOutC = Arrays.asList(mlResults.getFrameObject("C").getSchema());
+		Assert.assertEquals(ValueType.INT, lschemaOutA.get(0));
+		Assert.assertEquals(ValueType.STRING, lschemaOutA.get(1));
+		Assert.assertEquals(ValueType.DOUBLE, lschemaOutA.get(2));
+		Assert.assertEquals(ValueType.BOOLEAN, lschemaOutA.get(3));
+		
+		Assert.assertEquals(ValueType.STRING, lschemaOutC.get(0));
+		Assert.assertEquals(ValueType.DOUBLE, lschemaOutC.get(1));
 
 		if (outputType == IO_TYPE.JAVA_RDD_STR_CSV) {
 
@@ -369,31 +388,47 @@ public class MLContextFrameTest extends AutomatedTestBase {
 
 		} else if (outputType == IO_TYPE.DATAFRAME) {
 
-			DataFrame dataFrameA = mlResults.getDataFrame("A").drop(RDDConverterUtils.DF_ID_COLUMN);
+			Dataset<Row> dataFrameA = mlResults.getDataFrame("A").drop(RDDConverterUtils.DF_ID_COLUMN);
+			StructType dfschemaA = dataFrameA.schema(); 
+			StructField structTypeA = dfschemaA.apply(0);
+			Assert.assertEquals(DataTypes.LongType, structTypeA.dataType());
+			structTypeA = dfschemaA.apply(1);
+			Assert.assertEquals(DataTypes.StringType, structTypeA.dataType());
+			structTypeA = dfschemaA.apply(2);
+			Assert.assertEquals(DataTypes.DoubleType, structTypeA.dataType());
+			structTypeA = dfschemaA.apply(3);
+			Assert.assertEquals(DataTypes.BooleanType, structTypeA.dataType());
+
 			List<Row> listAOut = dataFrameA.collectAsList();
 
 			Row row1 = listAOut.get(0);
-			Assert.assertEquals("Mistmatch with expected value", "1", row1.get(0).toString());
-			Assert.assertEquals("Mistmatch with expected value", "Str2", row1.get(1).toString());
-			Assert.assertEquals("Mistmatch with expected value", "3.0", row1.get(2).toString());
-			Assert.assertEquals("Mistmatch with expected value", "true", row1.get(3).toString());
+			Assert.assertEquals("Mismatch with expected value", Long.valueOf(1), row1.get(0));
+			Assert.assertEquals("Mismatch with expected value", "Str2", row1.get(1));
+			Assert.assertEquals("Mismatch with expected value", 3.0, row1.get(2));
+			Assert.assertEquals("Mismatch with expected value", true, row1.get(3));
 			
 			Row row2 = listAOut.get(1);
-			Assert.assertEquals("Mistmatch with expected value", "4", row2.get(0).toString());
-			Assert.assertEquals("Mistmatch with expected value", "Str12", row2.get(1).toString());
-			Assert.assertEquals("Mistmatch with expected value", "13.0", row2.get(2).toString());
-			Assert.assertEquals("Mistmatch with expected value", "true", row2.get(3).toString());
+			Assert.assertEquals("Mismatch with expected value", Long.valueOf(4), row2.get(0));
+			Assert.assertEquals("Mismatch with expected value", "Str12", row2.get(1));
+			Assert.assertEquals("Mismatch with expected value", 13.0, row2.get(2));
+			Assert.assertEquals("Mismatch with expected value", true, row2.get(3));
 
-			DataFrame dataFrameC = mlResults.getDataFrame("C").drop(RDDConverterUtils.DF_ID_COLUMN);
+			Dataset<Row> dataFrameC = mlResults.getDataFrame("C").drop(RDDConverterUtils.DF_ID_COLUMN);
+			StructType dfschemaC = dataFrameC.schema(); 
+			StructField structTypeC = dfschemaC.apply(0);
+			Assert.assertEquals(DataTypes.StringType, structTypeC.dataType());
+			structTypeC = dfschemaC.apply(1);
+			Assert.assertEquals(DataTypes.DoubleType, structTypeC.dataType());
+			
 			List<Row> listCOut = dataFrameC.collectAsList();
 
 			Row row3 = listCOut.get(0);
-			Assert.assertEquals("Mistmatch with expected value", "Str12", row3.get(0).toString());
-			Assert.assertEquals("Mistmatch with expected value", "13.0", row3.get(1).toString());
+			Assert.assertEquals("Mismatch with expected value", "Str12", row3.get(0));
+			Assert.assertEquals("Mismatch with expected value", 13.0, row3.get(1));
 
 			Row row4 = listCOut.get(1);
-			Assert.assertEquals("Mistmatch with expected value", "Str25", row4.get(0));
-			Assert.assertEquals("Mistmatch with expected value", "26.0", row4.get(1));
+			Assert.assertEquals("Mismatch with expected value", "Str25", row4.get(0));
+			Assert.assertEquals("Mismatch with expected value", 26.0, row4.get(1));
 		} else {
 			String[][] frameA = mlResults.getFrameAs2DStringArray("A");
 			Assert.assertEquals("Str2", frameA[0][1]);
@@ -447,27 +482,28 @@ public class MLContextFrameTest extends AutomatedTestBase {
 		dataA.add("Test2,5.0");
 		dataA.add("Test3,6.0");
 		JavaRDD<String> javaRddStringA = sc.parallelize(dataA);
+		ValueType[] schema = { ValueType.STRING, ValueType.DOUBLE };
 
 		List<String> dataB = new ArrayList<String>();
 		dataB.add("1.0");
 		dataB.add("2.0");
 		JavaRDD<String> javaRddStringB = sc.parallelize(dataB);
 
-		JavaRDD<Row> javaRddRowA = javaRddStringA.map(new CommaSeparatedValueStringToRow());
-		JavaRDD<Row> javaRddRowB = javaRddStringB.map(new CommaSeparatedValueStringToRow());
+		JavaRDD<Row> javaRddRowA = FrameRDDConverterUtils.csvToRowRDD(sc, javaRddStringA, CSV_DELIM, schema);
+		JavaRDD<Row> javaRddRowB = javaRddStringB.map(new CommaSeparatedValueStringToDoubleArrayRow());
 
-		SQLContext sqlContext = new SQLContext(sc);
+		SparkSession sparkSession = SparkSession.builder().sparkContext(sc.sc()).getOrCreate();
 
 		List<StructField> fieldsA = new ArrayList<StructField>();
 		fieldsA.add(DataTypes.createStructField("1", DataTypes.StringType, true));
 		fieldsA.add(DataTypes.createStructField("2", DataTypes.DoubleType, true));
 		StructType schemaA = DataTypes.createStructType(fieldsA);
-		DataFrame dataFrameA = sqlContext.createDataFrame(javaRddRowA, schemaA);
+		Dataset<Row> dataFrameA = sparkSession.createDataFrame(javaRddRowA, schemaA);
 
 		List<StructField> fieldsB = new ArrayList<StructField>();
 		fieldsB.add(DataTypes.createStructField("1", DataTypes.DoubleType, true));
 		StructType schemaB = DataTypes.createStructType(fieldsB);
-		DataFrame dataFrameB = sqlContext.createDataFrame(javaRddRowB, schemaB);
+		Dataset<Row> dataFrameB = sparkSession.createDataFrame(javaRddRowB, schemaB);
 
 		String dmlString = "[tA, tAM] = transformencode (target = A, spec = \"{ids: true ,recode: [ 1, 2 ]}\");\n"
 				+ "C = tA %*% B;\n" + "M = s * C;";
@@ -483,6 +519,89 @@ public class MLContextFrameTest extends AutomatedTestBase {
 		Assert.assertEquals(6.0, matrix[0][0], 0.0);
 		Assert.assertEquals(12.0, matrix[1][0], 0.0);
 		Assert.assertEquals(18.0, matrix[2][0], 0.0);
+	}
+
+	@Test
+	public void testInputFrameAndMatrixOutputMatrixAndFrame() {
+		System.out.println("MLContextFrameTest - input frame and matrix, output matrix and frame");
+		
+		Row[] rowsA = {RowFactory.create("Doc1", "Feat1", 10), RowFactory.create("Doc1", "Feat2", 20), RowFactory.create("Doc2", "Feat1", 31)};
+
+		JavaRDD<Row> javaRddRowA = sc. parallelize( Arrays.asList(rowsA)); 
+
+		SparkSession sparkSession = SparkSession.builder().sparkContext(sc.sc()).getOrCreate();
+
+		List<StructField> fieldsA = new ArrayList<StructField>();
+		fieldsA.add(DataTypes.createStructField("myID", DataTypes.StringType, true));
+		fieldsA.add(DataTypes.createStructField("FeatureName", DataTypes.StringType, true));
+		fieldsA.add(DataTypes.createStructField("FeatureValue", DataTypes.IntegerType, true));
+		StructType schemaA = DataTypes.createStructType(fieldsA);
+		Dataset<Row> dataFrameA = sparkSession.createDataFrame(javaRddRowA, schemaA);
+
+		String dmlString = "[tA, tAM] = transformencode (target = A, spec = \"{ids: false ,recode: [ myID, FeatureName ]}\");";
+
+		Script script = dml(dmlString)
+				.in("A", dataFrameA,
+						new FrameMetadata(FrameFormat.CSV, dataFrameA.count(), (long) dataFrameA.columns().length))
+				.out("tA").out("tAM");
+		MLResults results = ml.execute(script);
+
+		double[][] matrixtA = results.getMatrixAs2DDoubleArray("tA");
+		Assert.assertEquals(10.0, matrixtA[0][2], 0.0);
+		Assert.assertEquals(20.0, matrixtA[1][2], 0.0);
+		Assert.assertEquals(31.0, matrixtA[2][2], 0.0);
+
+		Dataset<Row> dataFrame_tA = results.getMatrix("tA").toDF();
+		System.out.println("Number of matrix tA rows = " + dataFrame_tA.count());
+		dataFrame_tA.printSchema();
+		dataFrame_tA.show();
+		
+		Dataset<Row> dataFrame_tAM = results.getFrame("tAM").toDF();
+		System.out.println("Number of frame tAM rows = " + dataFrame_tAM.count());
+		dataFrame_tAM.printSchema();
+		dataFrame_tAM.show();
+	}
+
+	@Test
+	public void testTransform() {
+		System.out.println("MLContextFrameTest - transform");
+		
+		Row[] rowsA = {RowFactory.create("\"`@(\"(!&",2,"20news-bydate-train/comp.os.ms-windows.misc/9979"),
+				RowFactory.create("\"`@(\"\"(!&\"",3,"20news-bydate-train/comp.os.ms-windows.misc/9979")};
+
+		JavaRDD<Row> javaRddRowA = sc. parallelize( Arrays.asList(rowsA)); 
+
+		SparkSession sparkSession = SparkSession.builder().sparkContext(sc.sc()).getOrCreate();
+
+		List<StructField> fieldsA = new ArrayList<StructField>();
+		fieldsA.add(DataTypes.createStructField("featureName", DataTypes.StringType, true));
+		fieldsA.add(DataTypes.createStructField("featureValue", DataTypes.IntegerType, true));
+		fieldsA.add(DataTypes.createStructField("id", DataTypes.StringType, true));
+		StructType schemaA = DataTypes.createStructType(fieldsA);
+		Dataset<Row> dataFrameA = sparkSession.createDataFrame(javaRddRowA, schemaA);
+
+		String dmlString = "[tA, tAM] = transformencode (target = A, spec = \"{ids: false ,recode: [ featureName, id ]}\");";
+
+		Script script = dml(dmlString)
+				.in("A", dataFrameA,
+						new FrameMetadata(FrameFormat.CSV, dataFrameA.count(), (long) dataFrameA.columns().length))
+				.out("tA").out("tAM");
+		ml.setExplain(true);
+		ml.setExplainLevel(ExplainLevel.RECOMPILE_HOPS);
+		MLResults results = ml.execute(script);
+
+		double[][] matrixtA = results.getMatrixAs2DDoubleArray("tA");
+		Assert.assertEquals(1.0, matrixtA[0][2], 0.0);
+
+		Dataset<Row> dataFrame_tA = results.getMatrix("tA").toDF();
+		System.out.println("Number of matrix tA rows = " + dataFrame_tA.count());
+		dataFrame_tA.printSchema();
+		dataFrame_tA.show();
+		
+		Dataset<Row> dataFrame_tAM = results.getFrame("tAM").toDF();
+		System.out.println("Number of frame tAM rows = " + dataFrame_tAM.count());
+		dataFrame_tAM.printSchema();
+		dataFrame_tAM.show();
 	}
 
 	// NOTE: the ordering of the frame values seem to come out differently here
@@ -502,7 +621,7 @@ public class MLContextFrameTest extends AutomatedTestBase {
 	// JavaRDD<Row> javaRddRowA = javaRddStringA.map(new
 	// CommaSeparatedValueStringToRow());
 	//
-	// SQLContext sqlContext = new SQLContext(sc);
+	// SparkSession sparkSession = SparkSession.builder().sparkContext(sc.sc()).getOrCreate();
 	//
 	// List<StructField> fieldsA = new ArrayList<StructField>();
 	// fieldsA.add(DataTypes.createStructField("1", DataTypes.StringType,
@@ -510,7 +629,7 @@ public class MLContextFrameTest extends AutomatedTestBase {
 	// fieldsA.add(DataTypes.createStructField("2", DataTypes.StringType,
 	// true));
 	// StructType schemaA = DataTypes.createStructType(fieldsA);
-	// DataFrame dataFrameA = sqlContext.createDataFrame(javaRddRowA, schemaA);
+	// DataFrame dataFrameA = sparkSession.createDataFrame(javaRddRowA, schemaA);
 	//
 	// String dmlString = "[tA, tAM] = transformencode (target = A, spec =
 	// \"{ids: true ,recode: [ 1, 2 ]}\");\n";

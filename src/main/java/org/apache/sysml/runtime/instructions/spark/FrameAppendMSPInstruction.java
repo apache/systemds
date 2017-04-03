@@ -68,23 +68,20 @@ public class FrameAppendMSPInstruction extends AppendMSPInstruction
 		sec.setRDDHandleForVariable(output.getName(), out);
 		sec.addLineageRDD(output.getName(), input1.getName());
 		sec.addLineageBroadcast(output.getName(), input2.getName());
+		
+		//update schema of output with merged input schemas
+		sec.getFrameObject(output.getName()).setSchema(
+			sec.getFrameObject(input1.getName()).mergeSchemas(
+			sec.getFrameObject(input2.getName())));
 	}
-	
-	/** 
-	 * 
-	 * @param cbind
-	 * @return
-	 */
+
 	private boolean preservesPartitioning( boolean cbind )
 	{
 		//Partitions for input1 will be preserved in case of cbind, 
 		// where as in case of rbind partitions will not be preserved.
 		return cbind;
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class MapSideAppendPartitionFunction implements  PairFlatMapFunction<Iterator<Tuple2<Long,FrameBlock>>, Long, FrameBlock> 
 	{
 		private static final long serialVersionUID = -3997051891171313830L;
@@ -97,7 +94,7 @@ public class FrameAppendMSPInstruction extends AppendMSPInstruction
 		}
 
 		@Override
-		public Iterable<Tuple2<Long, FrameBlock>> call(Iterator<Tuple2<Long, FrameBlock>> arg0)
+		public LazyIterableIterator<Tuple2<Long, FrameBlock>> call(Iterator<Tuple2<Long, FrameBlock>> arg0)
 			throws Exception 
 		{
 			return new MapAppendPartitionIterator(arg0);

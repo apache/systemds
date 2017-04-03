@@ -34,7 +34,7 @@ import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysml.runtime.matrix.operators.Operator;
-import org.apache.sysml.utils.Statistics;
+import org.apache.sysml.utils.GPUStatistics;
 
 public class MMTSJGPUInstruction extends GPUInstruction
 {
@@ -45,12 +45,14 @@ public class MMTSJGPUInstruction extends GPUInstruction
         CPOperand _output;
 
         /**
+         * MMTSJGPUInstruction constructor.
+         * 
          * @param op	operator
          * @param in1	input
-         * @param type	left/right, left-> A' %*% A, right-> A %*% A'
+         * @param type	left/right, left-&gt; A' %*% A, right-&gt; A %*% A'
          * @param out	output
-         * @param opcode
-         * @param istr
+         * @param opcode the opcode
+         * @param istr ?
          */
         public MMTSJGPUInstruction(Operator op, CPOperand in1, MMTSJType type, CPOperand out,  String opcode, String istr)
         {
@@ -63,9 +65,9 @@ public class MMTSJGPUInstruction extends GPUInstruction
 
         /**
          * parse MMTSJ GPU instruction
-         * @param str
-         * @return
-         * @throws DMLRuntimeException
+         * @param str instruction string
+         * @return MMTSJGPUInstruction object
+         * @throws DMLRuntimeException if DMLRuntimeException occurs
          */
         public static MMTSJGPUInstruction parseInstruction ( String str )
         	throws DMLRuntimeException
@@ -87,16 +89,16 @@ public class MMTSJGPUInstruction extends GPUInstruction
         /**
          * process MMTSJ GPU instruction 
          * @param ec	execution context
-         * @throws DMLRuntimeException
+         * @throws DMLRuntimeException if DMLRuntimeException occurs
          */
         @Override
         public void processInstruction(ExecutionContext ec)
                 throws DMLRuntimeException
         {
-                Statistics.incrementNoOfExecutedGPUInst();
+                GPUStatistics.incrementNoOfExecutedGPUInst();
 
                 //get input
-                MatrixObject mat = ec.getMatrixInputForGPUInstruction(_input.getName());
+                MatrixObject mat = getMatrixInputForGPUInstruction(ec, _input.getName());
                
                 boolean isLeftTransposed = ( _type == MMTSJType.LEFT);
 
@@ -105,8 +107,7 @@ public class MMTSJGPUInstruction extends GPUInstruction
 
                 //execute operations 
                 ec.setMetaData(_output.getName(), rlen, clen);
-                MatrixObject out = ec.getDenseMatrixOutputForGPUInstruction(_output.getName());
-                LibMatrixCUDA.matmultTSMM(mat, out, isLeftTransposed);
+                LibMatrixCUDA.matmultTSMM(ec, getExtendedOpcode(), mat, _output.getName(), isLeftTransposed);
                 
                 ec.releaseMatrixInputForGPUInstruction(_input.getName());
                 ec.releaseMatrixOutputForGPUInstruction(_output.getName());
@@ -114,7 +115,7 @@ public class MMTSJGPUInstruction extends GPUInstruction
 
         /**
          * returns left/right depending on the type of MMTSJ instruction
-         * @return _type
+         * @return MMTSJType object
          */
         public MMTSJType getMMTSJType()
         {

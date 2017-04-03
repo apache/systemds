@@ -26,7 +26,7 @@
 # Environment
 
 # Following variables must be rewritten by your installation paths.
-DEFAULT_SPARK_HOME=/usr/local/spark-1.4.0/spark-1.4.0-SNAPSHOT-bin-hadoop2.4
+DEFAULT_SPARK_HOME=/usr/local/spark-2.1.0/spark-2.1.0-bin-hadoop2.6
 DEFAULT_SYSTEMML_HOME=.
 
 if [ -z ${SPARK_HOME} ]; then

@@ -20,6 +20,10 @@
 package org.apache.sysml.yarn.ropt;
 
 
+/**
+ * Experimental feature not used in production.
+ *
+ */
 public class ResourceOptimizerCPMigration 
 {
 	

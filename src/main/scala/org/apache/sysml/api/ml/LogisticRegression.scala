@@ -56,13 +56,13 @@ class LogisticRegression(override val uid: String, val sc: SparkContext) extends
   
   // Note: will update the y_mb as this will be called by Python mllearn
   def fit(X_mb: MatrixBlock, y_mb: MatrixBlock): LogisticRegressionModel = {
-    val ret = fit(X_mb, y_mb, sc)
-    new LogisticRegressionModel("log")(ret._1, ret._2, sc)
+    val ret = baseFit(X_mb, y_mb, sc)
+    new LogisticRegressionModel("log")(ret, sc)
   }
   
   def fit(df: ScriptsUtils.SparkDataType): LogisticRegressionModel = {
-    val ret = fit(df, sc)
-    new LogisticRegressionModel("log")(ret._1, ret._2, sc)
+    val ret = baseFit(df, sc)
+    new LogisticRegressionModel("log")(ret, sc)
   }
   
   
@@ -89,11 +89,11 @@ object LogisticRegressionModel {
  */
 
 class LogisticRegressionModel(override val uid: String)(
-    val mloutput: MLResults, val labelMapping: java.util.HashMap[Int, String], val sc: SparkContext) 
+    val mloutput: MLResults, val sc: SparkContext) 
     extends Model[LogisticRegressionModel] with HasIcpt
     with HasRegParam with HasTol with HasMaxOuterIter with HasMaxInnerIter with BaseSystemMLClassifierModel {
   override def copy(extra: ParamMap): LogisticRegressionModel = {
-    val that = new LogisticRegressionModel(uid)(mloutput, labelMapping, sc)
+    val that = new LogisticRegressionModel(uid)(mloutput, sc)
     copyValues(that, extra)
   }
   var outputRawPredictions = true
@@ -102,8 +102,8 @@ class LogisticRegressionModel(override val uid: String)(
   def getPredictionScript(mloutput: MLResults, isSingleNode:Boolean): (Script, String) =
     PredictionUtils.getGLMPredictionScript(mloutput.getBinaryBlockMatrix("B_out"), isSingleNode, 3)
    
-  def transform(X: MatrixBlock): MatrixBlock = transform(X, mloutput, labelMapping, sc, "means")
-  def transform(df: ScriptsUtils.SparkDataType): DataFrame = transform(df, mloutput, labelMapping, sc, "means")
+  def transform(X: MatrixBlock): MatrixBlock = baseTransform(X, mloutput, sc, "means")
+  def transform(df: ScriptsUtils.SparkDataType): DataFrame = baseTransform(df, mloutput, sc, "means")
 }
 
 /**
@@ -111,16 +111,16 @@ class LogisticRegressionModel(override val uid: String)(
  */
 object LogisticRegressionExample {
   import org.apache.spark.{ SparkConf, SparkContext }
+  import org.apache.spark.sql._
   import org.apache.spark.sql.types._
-  import org.apache.spark.mllib.linalg.Vectors
-  import org.apache.spark.mllib.regression.LabeledPoint
+  import org.apache.spark.ml.linalg.Vectors
+  import org.apache.spark.ml.feature.LabeledPoint
 
   def main(args: Array[String]) = {
-    val sparkConf: SparkConf = new SparkConf();
-    val sc: SparkContext = new SparkContext("local", "TestLocal", sparkConf);
-    val sqlContext = new org.apache.spark.sql.SQLContext(sc);
+    val sparkSession = SparkSession.builder().master("local").appName("TestLocal").getOrCreate();
+    val sc: SparkContext = sparkSession.sparkContext;
 
-    import sqlContext.implicits._
+    import sparkSession.implicits._
     val training = sc.parallelize(Seq(
       LabeledPoint(1.0, Vectors.dense(1.0, 0.0, 3.0)),
       LabeledPoint(1.0, Vectors.dense(1.0, 0.4, 2.1)),
@@ -130,7 +130,7 @@ object LogisticRegressionExample {
       LabeledPoint(1.0, Vectors.dense(1.0, 0.0, 2.3))))
     val lr = new LogisticRegression("log", sc)
     val lrmodel = lr.fit(training.toDF)
-    // lrmodel.mloutput.getDF(sqlContext, "B_out").show()
+    // lrmodel.mloutput.getDF(sparkSession, "B_out").show()
 
     val testing = sc.parallelize(Seq(
       LabeledPoint(1.0, Vectors.dense(1.0, 0.0, 3.0)),

@@ -59,20 +59,12 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase implemen
 		
 		_opcode = opcode;
 	}
-	
-	/**
-	 * 
-	 * @param flag
-	 */
+
 	public void setCacheTypeMapMult( CacheType type )
 	{
 		_cacheType = type;
 	}
-	
-	/**
-	 * 
-	 * @param flag
-	 */
+
 	public void setOutputEmptyBlocksMapMult( boolean flag )
 	{
 		_outputEmptyBlocks = flag;
@@ -92,13 +84,7 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase implemen
 	{
 		return _aggType;
 	}
-	
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static AggregateBinaryInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{
@@ -133,7 +119,7 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase implemen
 	@Override //IDistributedCacheConsumer
 	public boolean isDistCacheOnlyIndex( String inst, byte index )
 	{
-		return _cacheType.isRightCache() ? 
+		return _cacheType.isRight() ? 
 				(index==input2 && index!=input1) : 
 				(index==input1 && index!=input2);
 	}
@@ -141,7 +127,7 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase implemen
 	@Override //IDistributedCacheConsumer
 	public void addDistCacheIndex( String inst, ArrayList<Byte> indexes )
 	{
-		indexes.add( _cacheType.isRightCache() ? input2 : input1 );
+		indexes.add( _cacheType.isRight() ? input2 : input1 );
 	}
 	
 	@Override
@@ -156,7 +142,7 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase implemen
 		if ( _opcode.equals(MapMult.OPCODE) ) 
 		{
 			//check empty inputs (data for different instructions)
-			if( _cacheType.isRightCache() ? in1==null : in2==null )
+			if( _cacheType.isRight() ? in1==null : in2==null )
 				return;
 			
 			// one of the input is from distributed cache.
@@ -191,20 +177,20 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase implemen
 	/**
 	 * Helper function to perform map-side matrix-matrix multiplication.
 	 * 
-	 * @param valueClass
-	 * @param cachedValues
-	 * @param in1
-	 * @param in2
-	 * @param blockRowFactor
-	 * @param blockColFactor
-	 * @throws DMLRuntimeException
+	 * @param valueClass matrix value class
+	 * @param cachedValues cached value map
+	 * @param in1 indexed matrix value 1
+	 * @param in2 indexed matrix value 2
+	 * @param blockRowFactor ?
+	 * @param blockColFactor ?
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private void processMapMultInstruction(Class<? extends MatrixValue> valueClass, CachedValueMap cachedValues, IndexedMatrixValue in1, IndexedMatrixValue in2, int blockRowFactor, int blockColFactor) 
 		throws DMLRuntimeException 
 	{
 		boolean removeOutput = true;
 		
-		if( _cacheType.isRightCache() )
+		if( _cacheType.isRight() )
 		{
 			DistributedCacheInput dcInput = MRBaseForCommonInstructions.dcValues.get(input2);
 			

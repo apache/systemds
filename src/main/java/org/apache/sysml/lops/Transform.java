@@ -46,10 +46,13 @@ public class Transform extends Lop
 		
 	/**
 	 * Constructor when we have one input.
-	 * @param input
-	 * @param op
+	 * 
+	 * @param input low-level operator
+	 * @param op transform operation type
+	 * @param dt data type
+	 * @param vt value type
+	 * @param et execution type
 	 */
-
 	public Transform(Lop input, Transform.OperationTypes op, DataType dt, ValueType vt, ExecType et) {
 		this(input, op, dt, vt, et, 1);		
 	}
@@ -116,7 +119,7 @@ public class Transform extends Lop
 
 	/**
 	 * method to get operation type
-	 * @return
+	 * @return operaton type
 	 */
 	 
 	public OperationTypes getOperationType()
@@ -269,30 +272,4 @@ public class Transform extends Lop
 		
 		return sb.toString();
 	}
-
-	public static Transform constructTransformLop(Lop input1, OperationTypes op, DataType dt, ValueType vt) {
-		
-		for (Lop lop  : input1.getOutputs()) {
-			if ( lop.type == Lop.Type.Transform ) {
-				return (Transform)lop;
-			}
-		}
-		Transform retVal = new Transform(input1, op, dt, vt);
-		retVal.setAllPositions(input1.getBeginLine(), input1.getBeginColumn(), input1.getEndLine(), input1.getEndColumn());
-		return retVal;
-	}
-
-	public static Transform constructTransformLop(Lop input1, OperationTypes op, DataType dt, ValueType vt, ExecType et) {
-		
-		for (Lop lop  : input1.getOutputs()) {
-			if ( lop.type == Lop.Type.Transform ) {
-				return (Transform)lop;
-			}
-		}
-		Transform retVal = new  Transform(input1, op, dt, vt, et);
-		retVal.setAllPositions(input1.getBeginLine(), input1.getBeginColumn(), input1.getEndLine(), input1.getEndColumn());
-		return retVal; 
-	}
-
- 
 }

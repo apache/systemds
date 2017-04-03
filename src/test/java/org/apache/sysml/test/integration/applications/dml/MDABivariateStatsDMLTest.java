@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.applications.dml;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-
 import org.apache.sysml.test.integration.applications.MDABivariateStatsTest;
 
 @RunWith(value = Parameterized.class)
@@ -37,5 +36,4 @@ public class MDABivariateStatsDMLTest extends MDABivariateStatsTest {
 	public void testMDABivariateStatsDml() {
 		testMDABivariateStats(ScriptType.DML);
 	}
-
 }

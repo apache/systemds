@@ -34,6 +34,7 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.util.ReflectionUtils;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 
 @SuppressWarnings("rawtypes")
 public class CompactInputFormat<K extends WritableComparable, V extends Writable> extends FileInputFormat<K, V>  
@@ -86,7 +87,7 @@ public class CompactInputFormat<K extends WritableComparable, V extends Writable
 	    
 		@Override
 		public void close() throws IOException {
-			currentStream.close();
+			IOUtilFunctions.closeSilently(currentStream);
 		}
 		@SuppressWarnings("unchecked")
 		public K createKey() {

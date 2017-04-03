@@ -61,12 +61,6 @@ public class CpmmSPInstruction extends BinarySPInstruction
 		_aggtype = aggtype;
 	}
 
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	public static CpmmSPInstruction parseInstruction( String str ) 
 		throws DMLRuntimeException 
 	{
@@ -117,7 +111,7 @@ public class CpmmSPInstruction extends BinarySPInstruction
 		}
 		else //DEFAULT: MULTI_BLOCK
 		{
-			out = RDDAggregateUtils.sumByKeyStable(out); 
+			out = RDDAggregateUtils.sumByKeyStable(out, false); 
 			
 			//put output RDD handle into symbol table
 			sec.setRDDHandleForVariable(output.getName(), out);
@@ -128,11 +122,7 @@ public class CpmmSPInstruction extends BinarySPInstruction
 			updateBinaryMMOutputMatrixCharacteristics(sec, true);
 		}
 	}
-	
-	/**
-	 * 
-	 * 
-	 */
+
 	private static class CpmmIndexFunction implements PairFunction<Tuple2<MatrixIndexes, MatrixBlock>, Long, IndexedMatrixValue>  
 	{
 		private static final long serialVersionUID = -1187183128301671162L;
@@ -155,10 +145,6 @@ public class CpmmSPInstruction extends BinarySPInstruction
 		}	
 	}
 
-	/**
-	 * 
-	 *
-	 */
 	private static class CpmmMultiplyFunction implements PairFunction<Tuple2<Long, Tuple2<IndexedMatrixValue,IndexedMatrixValue>>, MatrixIndexes, MatrixBlock> 
 	{
 		private static final long serialVersionUID = -2009255629093036642L;

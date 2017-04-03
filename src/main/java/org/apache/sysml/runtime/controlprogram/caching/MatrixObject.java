@@ -40,7 +40,6 @@ import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
 import org.apache.sysml.runtime.matrix.MetaData;
 import org.apache.sysml.runtime.matrix.data.FileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
-import org.apache.sysml.runtime.matrix.data.LibMatrixDNN;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.util.DataConverter;
@@ -82,14 +81,21 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	private MatrixBlock _partitionInMemory = null;
 
 	/**
-	 * Constructor that takes only the HDFS filename.
+	 * Constructor that takes the value type and the HDFS filename.
+	 * 
+	 * @param vt value type
+	 * @param file file name
 	 */
 	public MatrixObject (ValueType vt, String file) {
 		this (vt, file, null); //HDFS file path
 	}
 	
 	/**
-	 * Constructor that takes both HDFS filename and associated metadata.
+	 * Constructor that takes the value type, HDFS filename and associated metadata.
+	 * 
+	 * @param vt value type
+	 * @param file file name
+	 * @param mtd metadata
 	 */
 	public MatrixObject( ValueType vt, String file, MetaData mtd ) {
 		super (DataType.MATRIX, vt);
@@ -102,7 +108,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	/**
 	 * Copy constructor that copies meta data but NO data.
 	 * 
-	 * @param mo
+	 * @param mo matrix object
 	 */
 	public MatrixObject( MatrixObject mo )
 	{
@@ -119,20 +125,11 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		_partitionSize = mo._partitionSize;
 		_partitionCacheName = mo._partitionCacheName;
 	}
-	
 
-	/**
-	 * 
-	 * @param flag
-	 */
 	public void setUpdateType(UpdateType flag) {
 		_updateType = flag;
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public UpdateType getUpdateType() {
 		return _updateType;
 	}
@@ -144,7 +141,8 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 
 	/**
 	 * Make the matrix metadata consistent with the in-memory matrix data
-	 * @throws CacheException 
+	 * 
+	 * @throws CacheException if CacheException occurs
 	 */
 	@Override
 	public void refreshMetaData() 
@@ -159,69 +157,35 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 						 _data.getNumColumns() );
 		mc.setNonZeros( _data.getNonZeros() );		
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public long getNumRows() {
 		MatrixCharacteristics mc = getMatrixCharacteristics();
 		return mc.getRows ();
 	}
 
-	/**
-	 * 
-	 * @return
-	 */
 	public long getNumColumns() {
 		MatrixCharacteristics mc = getMatrixCharacteristics();
 		return mc.getCols ();
 	}
 
-	/**
-	 * 
-	 * @return
-	 */
 	public long getNumRowsPerBlock() {
 		MatrixCharacteristics mc = getMatrixCharacteristics();
 		return mc.getRowsPerBlock();
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public long getNumColumnsPerBlock() {
 		MatrixCharacteristics mc = getMatrixCharacteristics();
 		return mc.getColsPerBlock();
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public long getNnz() {
 		MatrixCharacteristics mc = getMatrixCharacteristics();
 		return mc.getNonZeros();
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public double getSparsity() {
 		MatrixCharacteristics mc = getMatrixCharacteristics();		
-		return ((double)mc.getNonZeros())/mc.getRows()/mc.getCols();
-	}
-	
-	@Override
-	protected void clearReusableData() {
-		if(DMLScript.REUSE_NONZEROED_OUTPUT) {
-			if(_data == null)
-				getCache();
-			if( _data != null && !_data.isVector() )
-				LibMatrixDNN.cacheReuseableData(_data.getDenseBlock());
-		}
+		return OptimizerUtils.getSparsity(mc);
 	}
 	
 	// *********************************************
@@ -231,11 +195,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	// ***   (all other methods still usable)    ***
 	// ***                                       ***
 	// *********************************************
-	
-	/**
-	 * @param n 
-	 * 
-	 */
+
 	public void setPartitioned( PDataPartitionFormat format, int n )
 	{
 		_partitioned = true;
@@ -250,11 +210,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		_partitionFormat = null;
 		_partitionSize = -1;
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public boolean isPartitioned()
 	{
 		return _partitioned;
@@ -283,9 +239,9 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	 * as we reject to partition vectors and support only full row or column indexing, no metadata (apart from
 	 * the partition flag) is required.  
 	 * 
-	 * @param pred
-	 * @return
-	 * @throws CacheException
+	 * @param pred index range
+	 * @return matrix block
+	 * @throws CacheException if CacheException occurs
 	 */
 	public synchronized MatrixBlock readMatrixPartition( IndexRange pred ) 
 		throws CacheException
@@ -337,6 +293,10 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 						rows = brlen;
 						cols = mc.getCols();
 						break;
+					case ROW_BLOCK_WISE_N: 
+						rows = _partitionSize;
+						cols = mc.getCols();
+						break;
 					case COLUMN_WISE:
 						rows = mc.getRows();
 						cols = 1;
@@ -345,6 +305,10 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 						rows = mc.getRows();
 						cols = bclen;
 						break;
+					case COLUMN_BLOCK_WISE_N: 
+						rows = mc.getRows();
+						cols = _partitionSize;
+						break;	
 					default:
 						throw new CacheException("Unsupported partition format: "+_partitionFormat);
 				}
@@ -394,14 +358,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		
 		return mb;
 	}
-	
-	
-	/**
-	 * 
-	 * @param pred
-	 * @return
-	 * @throws CacheException 
-	 */
+
 	public String getPartitionFileName( IndexRange pred, int brlen, int bclen ) 
 		throws CacheException
 	{
@@ -421,6 +378,10 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 				sb.append(Lop.FILE_SEPARATOR);
 				sb.append((pred.rowStart-1)/brlen+1);
 				break;
+			case ROW_BLOCK_WISE_N:
+				sb.append(Lop.FILE_SEPARATOR);
+				sb.append((pred.rowStart-1)/_partitionSize+1);
+				break;
 			case COLUMN_WISE:
 				sb.append(Lop.FILE_SEPARATOR);
 				sb.append(pred.colStart);
@@ -429,6 +390,10 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 				sb.append(Lop.FILE_SEPARATOR);
 				sb.append((pred.colStart-1)/bclen+1);
 				break;
+			case COLUMN_BLOCK_WISE_N:
+				sb.append(Lop.FILE_SEPARATOR);
+				sb.append((pred.colStart-1)/_partitionSize+1);
+				break;	
 			default:
 				throw new CacheException ("MatrixObject not available to indexed read.");
 		}
@@ -485,13 +450,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		
 		return newData;
 	}
-	
-	/**
-	 * 
-	 * @param rdd
-	 * @return
-	 * @throws IOException 
-	 */
+
 	@Override
 	protected MatrixBlock readBlobFromRDD(RDDObject rdd, MutableBoolean writeStatus) 
 		throws IOException
@@ -523,7 +482,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 			
 			//guarded rdd collect 
 			if( ii == InputInfo.BinaryBlockInputInfo && //guarded collect not for binary cell
-				!OptimizerUtils.checkSparkCollectMemoryBudget(rlen, clen, brlen, bclen, nnz, getPinnedSize()) ) {
+				!OptimizerUtils.checkSparkCollectMemoryBudget(mc, getPinnedSize()+getBroadcastSize()) ) {
 				//write RDD to hdfs and read to prevent invalid collect mem consumption 
 				//note: lazy, partition-at-a-time collect (toLocalIterator) was significantly slower
 				if( !MapReduceTool.existsFileOnHDFS(_hdfsFileName) ) { //prevent overwrite existing file
@@ -557,9 +516,6 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	
 	/**
 	 * Writes in-memory matrix to HDFS in a specified format.
-	 * 
-	 * @throws DMLRuntimeException
-	 * @throws IOException
 	 */
 	@Override
 	protected void writeBlobToHDFS(String fname, String ofmt, int rep, FileFormatProperties fprop)

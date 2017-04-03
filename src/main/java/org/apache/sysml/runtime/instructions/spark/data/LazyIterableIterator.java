@@ -42,9 +42,9 @@ public abstract class LazyIterableIterator<T> implements Iterable<T>, Iterator<T
 	/**
 	 * Block computation to be overwritten by sub classes.
 	 * 
-	 * @param arg
-	 * @return
-	 * @throws Exception 
+	 * @param arg argument
+	 * @return the next object
+	 * @throws Exception if a problem occurs when computing next
 	 */
 	protected abstract T computeNext(T arg) 
 		throws Exception;

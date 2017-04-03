@@ -29,6 +29,8 @@ pad=$7
 # Assumption: NCHW image format
 x=matrix(seq(1, numImg*numChannels*imgSize*imgSize), rows=numImg, cols=numChannels*imgSize*imgSize)
 w=matrix(seq(1, numFilters*numChannels*filterSize*filterSize), rows=numFilters, cols=numChannels*filterSize*filterSize)
-output = conv2d(x, w, padding=[pad, pad], stride=[stride, stride], input_shape=[numImg, numChannels, imgSize, imgSize], filter_shape=[numFilters, numChannels, filterSize, filterSize])
+b=matrix(seq(1, numFilters), rows=numFilters, cols=1) 
 
+output = conv2d(x, w, padding=[pad, pad], stride=[stride, stride], input_shape=[numImg, numChannels, imgSize, imgSize], filter_shape=[numFilters, numChannels, filterSize, filterSize], bias=b)
+output = bias_add(output, b) 
 write(output, $8, format="text")

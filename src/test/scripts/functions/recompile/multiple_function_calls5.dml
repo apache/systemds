@@ -43,7 +43,7 @@ foo2 = function(Matrix[Double] Xin) return (Matrix[Double] Xout)
 V = read($1);
 
 R1 = foo1(V);
-Vp = append(V,matrix(1,rows=nrow(V),cols=1))
+Vp = cbind(V,matrix(1,rows=nrow(V),cols=1))
 R2 = foo1(Vp);
 R = R1+R2[,1:ncol(V)];
 

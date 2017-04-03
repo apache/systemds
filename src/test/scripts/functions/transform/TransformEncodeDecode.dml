@@ -25,7 +25,7 @@ jspec = read($5, data_type="scalar", value_type="string");
 [X, M] = transformencode(target=F1, spec=jspec);
 
 A = aggregate(target=X[,1], groups=X[,2], fn="count");
-Ag = append(A, seq(1,nrow(A)));
+Ag = cbind(A, seq(1,nrow(A)));
 
 F2 = transformdecode(target=Ag, spec=jspec, meta=M);
 

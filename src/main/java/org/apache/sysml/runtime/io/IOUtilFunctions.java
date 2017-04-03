@@ -51,11 +51,7 @@ public class IOUtilFunctions
 	private static final Log LOG = LogFactory.getLog(UtilFunctions.class.getName());
 
 	private static final char CSV_QUOTE_CHAR = '"';
-	
-	/**
-	 * 
-	 * @param io
-	 */
+
 	public static void closeSilently( Closeable io ) {
 		try {
 			if( io != null )
@@ -66,10 +62,6 @@ public class IOUtilFunctions
 		}
 	}
 
-	/**
-	 * 
-	 * @param rr
-	 */
 	public static void closeSilently( RecordReader<?,?> rr ) 
 	{
 		try {
@@ -80,24 +72,13 @@ public class IOUtilFunctions
            LOG.error("Failed to close record reader.", ex);
 		}
 	}
-	
-	/**
-	 * 
-	 * @param br
-	 */
+
 	public static double parseDoubleParallel( String str ) 
 	{
 		//return FloatingDecimal.parseDouble(str);
 		return Double.parseDouble(str);
 	}
 
-	/**
-	 * 
-	 * @param row
-	 * @param fill
-	 * @param emptyFound
-	 * @throws IOException
-	 */
 	public static void checkAndRaiseErrorCSVEmptyField(String row, boolean fill, boolean emptyFound) 
 		throws IOException
 	{
@@ -106,15 +87,7 @@ public class IOUtilFunctions
 			+ "Use \"fill\" option to read delimited files with empty fields:" + ((row!=null)?row:""));
 		}
 	}
-	
-	/**
-	 * 
-	 * @param fname
-	 * @param line
-	 * @param parts
-	 * @param ncol
-	 * @throws IOException 
-	 */
+
 	public static void checkAndRaiseErrorCSVNumColumns(String fname, String line, String[] parts, long ncol) 
 		throws IOException
 	{
@@ -131,9 +104,9 @@ public class IOUtilFunctions
 	 * NOTE: This method is meant as a faster drop-in replacement of the regular 
 	 * string split.
 	 * 
-	 * @param str
-	 * @param delim
-	 * @return
+	 * @param str string to split
+	 * @param delim delimiter
+	 * @return string array
 	 */
 	public static String[] split(String str, String delim)
 	{
@@ -144,13 +117,12 @@ public class IOUtilFunctions
 	
 	/**
 	 * Splits a string by a specified delimiter into all tokens, including empty
-	 * while respecting the rules for quotes and escapes defined in RFC4180.
+	 * while respecting the rules for quotes and escapes defined in RFC4180,
+	 * with robustness for various special cases.
 	 * 
-	 * NOTE: use StringEscapeUtils.unescapeCsv(tmp) if needed afterwards.
-	 * 
-	 * @param str
-	 * @param delim
-	 * @return
+	 * @param str string to split
+	 * @param delim delimiter
+	 * @return string array of tokens
 	 */
 	public static String[] splitCSV(String str, String delim)
 	{
@@ -162,15 +134,20 @@ public class IOUtilFunctions
 		ArrayList<String> tokens = new ArrayList<String>();
 		int from = 0, to = 0; 
 		int len = str.length();
+		int dlen = delim.length();
 		while( from < len  ) { // for all tokens
-			if( str.charAt(from) == CSV_QUOTE_CHAR ) {
+			if( str.charAt(from) == CSV_QUOTE_CHAR 
+				&& str.indexOf(CSV_QUOTE_CHAR, from+1) > 0 ) {
 				to = str.indexOf(CSV_QUOTE_CHAR, from+1);
 				// handle escaped inner quotes, e.g. "aa""a"
 				while( to+1 < len && str.charAt(to+1)==CSV_QUOTE_CHAR )
 					to = str.indexOf(CSV_QUOTE_CHAR, to+2); // to + ""
 				to += 1; // last "
+				// handle remaining non-quoted characters "aa"a 
+				if( to<len-1 && !str.regionMatches(to, delim, 0, dlen) )
+					to = str.indexOf(delim, to+1);
 			}
-			else if(str.regionMatches(from, delim, 0, delim.length())) {
+			else if( str.regionMatches(from, delim, 0, dlen) ) {
 				to = from; // empty string
 			}
 			else { // default: unquoted non-empty
@@ -190,13 +167,16 @@ public class IOUtilFunctions
 		// return tokens
 		return tokens.toArray(new String[0]);
 	}
-	
+
 	/**
+	 * Splits a string by a specified delimiter into all tokens, including empty
+	 * while respecting the rules for quotes and escapes defined in RFC4180,
+	 * with robustness for various special cases.
 	 * 
-	 * @param str
-	 * @param delim
-	 * @param tokens
-	 * @return
+	 * @param str string to split
+	 * @param delim delimiter
+	 * @param tokens array for tokens, length needs to match the number of tokens
+	 * @return string array of tokens
 	 */
 	public static String[] splitCSV(String str, String delim, String[] tokens)
 	{
@@ -207,16 +187,21 @@ public class IOUtilFunctions
 		// scan string and create individual tokens
 		int from = 0, to = 0; 
 		int len = str.length();
+		int dlen = delim.length();
 		int pos = 0;
 		while( from < len  ) { // for all tokens
-			if( str.charAt(from) == CSV_QUOTE_CHAR ) {
+			if( str.charAt(from) == CSV_QUOTE_CHAR
+				&& str.indexOf(CSV_QUOTE_CHAR, from+1) > 0 ) {
 				to = str.indexOf(CSV_QUOTE_CHAR, from+1);
 				// handle escaped inner quotes, e.g. "aa""a"
 				while( to+1 < len && str.charAt(to+1)==CSV_QUOTE_CHAR )
 					to = str.indexOf(CSV_QUOTE_CHAR, to+2); // to + ""
 				to += 1; // last "
+				// handle remaining non-quoted characters "aa"a 
+				if( to<len-1 && !str.regionMatches(to, delim, 0, dlen) )
+					to = str.indexOf(delim, to+1);
 			}
-			else if(str.regionMatches(from, delim, 0, delim.length())) {
+			else if( str.regionMatches(from, delim, 0, dlen) ) {
 				to = from; // empty string
 			}
 			else { // default: unquoted non-empty
@@ -239,11 +224,12 @@ public class IOUtilFunctions
 	
 	/**
 	 * Counts the number of tokens defined by the given delimiter, respecting 
-	 * the rules for quotes and escapes defined in RFC4180.
+	 * the rules for quotes and escapes defined in RFC4180,
+	 * with robustness for various special cases.
 	 * 
-	 * @param str
-	 * @param delim
-	 * @return
+	 * @param str string to split
+	 * @param delim delimiter
+	 * @return number of tokens split by the given delimiter
 	 */
 	public static int countTokensCSV(String str, String delim)
 	{
@@ -255,15 +241,20 @@ public class IOUtilFunctions
 		int numTokens = 0;
 		int from = 0, to = 0; 
 		int len = str.length();
+		int dlen = delim.length();
 		while( from < len  ) { // for all tokens
-			if( str.charAt(from) == CSV_QUOTE_CHAR ) {
+			if( str.charAt(from) == CSV_QUOTE_CHAR
+				&& str.indexOf(CSV_QUOTE_CHAR, from+1) > 0 ) {
 				to = str.indexOf(CSV_QUOTE_CHAR, from+1);
 				// handle escaped inner quotes, e.g. "aa""a"
 				while( to+1 < len && str.charAt(to+1)==CSV_QUOTE_CHAR ) 
 					to = str.indexOf(CSV_QUOTE_CHAR, to+2); // to + ""
 				to += 1; // last "
+				// handle remaining non-quoted characters "aa"a 
+				if( to<len-1 && !str.regionMatches(to, delim, 0, dlen) )
+					to = str.indexOf(delim, to+1);
 			}
-			else if(str.regionMatches(from, delim, 0, delim.length())) {
+			else if( str.regionMatches(from, delim, 0, dlen) ) {
 				to = from; // empty string
 			}
 			else { // default: unquoted non-empty
@@ -285,39 +276,81 @@ public class IOUtilFunctions
 	}
 	
 	/**
+	 * Returns the number of non-zero entries but avoids the expensive 
+	 * string to double parsing. This function is guaranteed to never
+	 * underestimate.
 	 * 
-	 * @param input
-	 * @return
-	 * @throws IOException
+	 * @param cols string array
+	 * @return number of non-zeros
 	 */
+	public static int countNnz(String[] cols) {
+		return countNnz(cols, 0, cols.length);
+	}
+	
+	/**
+	 * Returns the number of non-zero entries but avoids the expensive 
+	 * string to double parsing. This function is guaranteed to never
+	 * underestimate.
+	 * 
+	 * @param cols string array
+	 * @param pos starting array index
+	 * @param len ending array index
+	 * @return number of non-zeros
+	 */
+	public static int countNnz(String[] cols, int pos, int len) {
+		int lnnz = 0;
+		for( int i=pos; i<pos+len; i++ ) {
+			String col = cols[i];
+			lnnz += (!col.isEmpty() && !col.equals("0") 
+					&& !col.equals("0.0")) ? 1 : 0;
+		}
+		return lnnz;
+	}
+	
+	/**
+	 * Returns the serialized size in bytes of the given string value,
+	 * following the modified UTF-8 specification as used by Java's
+	 * DataInput/DataOutput.
+	 * 
+	 * see java docs: docs/api/java/io/DataInput.html#modified-utf-8
+	 * 
+	 * @param value string value
+	 * @return string size for modified UTF-8 specifiecation
+	 */
+	public static int getUTFSize(String value) {
+		if( value == null )
+			return 2;
+		//size in modified UTF-8 as used by DataInput/DataOutput
+		int size = 2; //length in bytes
+		for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            size += ( c>=0x0001 && c<=0x007F) ? 1 :
+            	(c >= 0x0800) ? 3 : 2;
+        }
+		return size;
+	}
+
 	public static InputStream toInputStream(String input) throws IOException {
 		if( input == null ) 
 			return null;
 		return new ByteArrayInputStream(input.getBytes("UTF-8"));
 	}
-	
-	/**
-	 * 
-	 * @param input
-	 * @return
-	 * @throws IOException
-	 */
+
 	public static String toString(InputStream input) throws IOException {
 		if( input == null )
 			return null;
-		ByteArrayOutputStream bos = new ByteArrayOutputStream();
-		byte[] buff = new byte[LocalFileUtils.BUFFER_SIZE];
-		for( int len=0; (len=input.read(buff))!=-1; )
-			bos.write(buff, 0, len);
-		input.close();		
-		return bos.toString("UTF-8");
+		try {
+			ByteArrayOutputStream bos = new ByteArrayOutputStream();
+			byte[] buff = new byte[LocalFileUtils.BUFFER_SIZE];
+			for( int len=0; (len=input.read(buff))!=-1; )
+				bos.write(buff, 0, len);
+			return bos.toString("UTF-8");
+		}
+		finally {
+			IOUtilFunctions.closeSilently(input);
+		}
 	}
 
-	/**
-	 * 
-	 * @param splits
-	 * @return
-	 */
 	public static InputSplit[] sortInputSplits(InputSplit[] splits) {
 		if (splits[0] instanceof FileSplit) {
 			// The splits do not always arrive in order by file name.
@@ -340,12 +373,12 @@ public class IOUtilFunctions
 	 * Counts the number of columns in a given collection of csv file splits. This primitive aborts 
 	 * if a row with more than 0 columns is found and hence is robust against empty file splits etc.
 	 * 
-	 * @param splits
-	 * @param informat
-	 * @param job
-	 * @param delim
-	 * @return
-	 * @throws IOException 
+	 * @param splits input splits
+	 * @param informat input format
+	 * @param job job configruation
+	 * @param delim delimiter
+	 * @return the number of columns in the collection of csv file splits
+	 * @throws IOException if IOException occurs
 	 */
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public static int countNumColumnsCSV(InputSplit[] splits, InputFormat informat, JobConf job, String delim ) 
@@ -353,19 +386,21 @@ public class IOUtilFunctions
 	{
 		LongWritable key = new LongWritable();
 		Text value = new Text();
-		int ncol = -1;
+		int ncol = -1; 
 		for( int i=0; i<splits.length && ncol<=0; i++ ) {
 			RecordReader<LongWritable, Text> reader = 
 					informat.getRecordReader(splits[i], job, Reporter.NULL);
 			try {
 				if( reader.next(key, value) ) {
+					boolean hasValue = true;
+					if( value.toString().startsWith(TfUtils.TXMTD_MVPREFIX) )
+						hasValue = reader.next(key, value);
+					if( value.toString().startsWith(TfUtils.TXMTD_NDPREFIX) )
+						hasValue = reader.next(key, value);
 					String row = value.toString().trim();
-					if( row.startsWith(TfUtils.TXMTD_MVPREFIX) )
-						reader.next(key, value);
-					if( row.startsWith(TfUtils.TXMTD_NDPREFIX) )
-						reader.next(key, value);
-					if( !row.isEmpty() )
+					if( hasValue && !row.isEmpty() ) {
 						ncol = IOUtilFunctions.countTokensCSV(row, delim);
+					}
 				}
 			}
 			finally {

@@ -28,14 +28,14 @@ import org.apache.sysml.udf.Matrix.ValueType;
 /**
  * Wrapper class for conversions of bit vectors to condensed position vectors.
  * The semantics are equivalent to the following dml snippet:
- *   # bitvector into position vector, e.g., 1011 -> 1034
+ *   # bitvector into position vector, e.g., 1011 -&gt; 1034
  *   Bv = seq(1,nrow(B)) * B; 
  *   # gather positions into condensed vector
  *   V = removeEmpty(target=Bv, margin="rows");
  * 
  * Note that the inverse operation would be a scatter that can be implemented 
  * via the following dml snippet:
- *   # position vector into bit vector, e.g., 1034 -> 1011
+ *   # position vector into bit vector, e.g., 1034 -&gt; 1011
  *   B = table( V, 1 );
  */
 public class GatherWrapper extends PackageFunction 

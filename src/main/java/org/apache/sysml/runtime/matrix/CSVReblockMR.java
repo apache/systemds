@@ -203,11 +203,11 @@ public class CSVReblockMR
 	/**
 	 * Method to find the first (part)file in the order given by <code>fs.listStatus()</code> among all (part)files in <code>inpathPath</code>.
 	 * 
-	 * @param job
-	 * @param inputPath
-	 * @return
-	 * @throws IOException 
-	 * @throws FileNotFoundException 
+	 * @param job job configuration
+	 * @param inputPath path to input file
+	 * @return file name
+	 * @throws IOException if IOException occurs
+	 * @throws FileNotFoundException if FileNotFoundException occurs
 	 */
 	public static String findSmallestFile(JobConf job, String inputPath) throws FileNotFoundException, IOException {
 		

@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -30,6 +31,7 @@ import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.AggBinaryOp;
 import org.apache.sysml.hops.AggUnaryOp;
 import org.apache.sysml.hops.BinaryOp;
+import org.apache.sysml.hops.ConvolutionOp;
 import org.apache.sysml.hops.DataGenOp;
 import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.FunctionOp;
@@ -48,25 +50,26 @@ import org.apache.sysml.hops.IndexingOp;
 import org.apache.sysml.hops.LeftIndexingOp;
 import org.apache.sysml.hops.LiteralOp;
 import org.apache.sysml.hops.MemoTable;
+import org.apache.sysml.hops.MultipleOp;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.ParameterizedBuiltinOp;
 import org.apache.sysml.hops.ReorgOp;
 import org.apache.sysml.hops.TernaryOp;
 import org.apache.sysml.hops.UnaryOp;
+import org.apache.sysml.hops.codegen.SpoofCompiler;
 import org.apache.sysml.hops.ipa.InterProceduralAnalysis;
-import org.apache.sysml.hops.rewrite.ProgramRewriter;
 import org.apache.sysml.hops.recompile.Recompiler;
+import org.apache.sysml.hops.rewrite.HopRewriteUtils;
+import org.apache.sysml.hops.rewrite.ProgramRewriter;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopsException;
+import org.apache.sysml.parser.Expression.BuiltinFunctionOp;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.FormatType;
 import org.apache.sysml.parser.Expression.ParameterizedBuiltinFunctionOp;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.parser.PrintStatement.PRINTTYPE;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.hops.ConvolutionOp;
-import org.apache.sysml.hops.rewrite.HopRewriteUtils;
-import org.apache.sysml.parser.Expression.BuiltinFunctionOp;
 
 
 public class DMLTranslator 
@@ -88,8 +91,10 @@ public class DMLTranslator
 	/**
 	 * Validate parse tree
 	 * 
-	 * @throws LanguageException
-	 * @throws IOException 
+	 * @param dmlp dml program
+	 * @throws LanguageException if LanguageException occurs
+	 * @throws ParseException if ParseException occurs
+	 * @throws IOException if IOException occurs
 	 */
 	public void validateParseTree(DMLProgram dmlp) 
 		throws LanguageException, ParseException, IOException 
@@ -224,7 +229,9 @@ public class DMLTranslator
 	/**
 	 * Construct Hops from parse tree
 	 * 
-	 * @throws ParseException
+	 * @param dmlp dml program
+	 * @throws ParseException if ParseException occurs
+	 * @throws LanguageException if LanguageException occurs
 	 */
 	public void constructHops(DMLProgram dmlp) 
 		throws ParseException, LanguageException 
@@ -245,14 +252,7 @@ public class DMLTranslator
 			constructHops(current);
 		}
 	}
-		
-	/**
-	 * 
-	 * @param dmlp
-	 * @throws ParseException
-	 * @throws LanguageException
-	 * @throws HopsException
-	 */
+
 	public void rewriteHopsDAG(DMLProgram dmlp) 
 		throws ParseException, LanguageException, HopsException 
 	{
@@ -279,6 +279,11 @@ public class DMLTranslator
 		resetHopsDAGVisitStatus(dmlp);
 	}
 	
+	public void codgenHopsDAG(DMLProgram dmlp) 
+		throws LanguageException, HopsException, DMLRuntimeException 
+	{
+		SpoofCompiler.generateCode(dmlp);	
+	}
 	
 	public void constructLops(DMLProgram dmlp) throws ParseException, LanguageException, HopsException, LopsException {
 
@@ -296,13 +301,7 @@ public class DMLTranslator
 			constructLops(current);
 		}
 	}
-	
-	/**
-	 * 
-	 * @param sb
-	 * @throws HopsException
-	 * @throws LopsException
-	 */
+
 	public void constructLops(StatementBlock sb) 
 		throws HopsException, LopsException 
 	{	
@@ -537,108 +536,6 @@ public class DMLTranslator
 				Iterator<Lop> iter = lopsDAG.iterator();
 				while (iter.hasNext()) {
 					LOG.debug("\n********************** OUTPUT LOPS *******************");
-					iter.next().printMe();
-				}
-			}
-		}
-	}
-	
-
-	public void printHops(DMLProgram dmlp) throws ParseException, LanguageException, HopsException {
-		if (LOG.isDebugEnabled()) {
-			// for each namespace, handle function program blocks
-			for (String namespaceKey : dmlp.getNamespaces().keySet()){
-				for (String fname : dmlp.getFunctionStatementBlocks(namespaceKey).keySet()){
-					FunctionStatementBlock fsblock = dmlp.getFunctionStatementBlock(namespaceKey,fname);
-					printHops(fsblock);
-				}
-			}
-
-			// hand
-			for (int i = 0; i < dmlp.getNumStatementBlocks(); i++) {
-				StatementBlock current = dmlp.getStatementBlock(i);
-				printHops(current);
-			}
-		}
-	}
-	
-	public void printHops(StatementBlock current) throws ParseException, HopsException {
-		if (LOG.isDebugEnabled()) {
-			ArrayList<Hop> hopsDAG = current.get_hops();
-			LOG.debug("\n********************** HOPS DAG FOR BLOCK *******************");
-
-			if (current instanceof FunctionStatementBlock) {
-				if (current.getNumStatements() > 1)
-					LOG.debug("Function statement block has more than 1 stmt");
-				FunctionStatement fstmt = (FunctionStatement)current.getStatement(0);
-				for (StatementBlock child : fstmt.getBody()){
-					printHops(child);
-				}
-			}
-
-			if (current instanceof WhileStatementBlock) {
-
-				// print predicate hops
-				WhileStatementBlock wstb = (WhileStatementBlock) current; 
-				Hop predicateHops = wstb.getPredicateHops();
-				LOG.debug("\n********************** PREDICATE HOPS *******************");
-				predicateHops.printMe();
-				
-				if (wstb.getNumStatements() > 1)
-					LOG.debug("While statement block has more than 1 stmt");
-				WhileStatement ws = (WhileStatement)wstb.getStatement(0);
-
-				for (StatementBlock sb : ws.getBody()){
-					printHops(sb);
-				}
-			}
-
-			if (current instanceof IfStatementBlock) {
-
-				// print predicate hops
-				IfStatementBlock istb = (IfStatementBlock) current; 
-				Hop predicateHops = istb.getPredicateHops();
-				LOG.debug("\n********************** PREDICATE HOPS *******************");
-				predicateHops.printMe();
-				
-
-				if (istb.getNumStatements() > 1)
-					LOG.debug("If statement block has more than 1 stmt");
-				IfStatement is = (IfStatement)istb.getStatement(0);
-
-				for (StatementBlock sb : is.getIfBody()){
-					printHops(sb);
-				}
-
-				for (StatementBlock sb : is.getElseBody()){
-					printHops(sb);
-				}
-			}
-
-
-			if (current instanceof ForStatementBlock) {
-
-				// print predicate hops
-				ForStatementBlock fsb = (ForStatementBlock) current; 
-				LOG.debug("\n********************** PREDICATE HOPS *******************");
-				if (fsb.getFromHops() != null) fsb.getFromHops().printMe();
-				if (fsb.getToHops() != null) fsb.getToHops().printMe();
-				if (fsb.getIncrementHops() != null) fsb.getIncrementHops().printMe();
-				
-				if (fsb.getNumStatements() > 1)
-					LOG.debug("For statement block has more than 1 stmt");
-				ForStatement ws = (ForStatement)fsb.getStatement(0);
-
-				for (StatementBlock sb : ws.getBody()){
-					printHops(sb);
-				}
-			}
-
-			if (hopsDAG != null && !hopsDAG.isEmpty()) {
-				// hopsDAG.iterator().next().printMe();
-				Iterator<Hop> iter = hopsDAG.iterator();
-				while (iter.hasNext()) {
-					LOG.debug("\n********************** OUTPUT HOPS *******************");
 					iter.next().printMe();
 				}
 			}
@@ -1023,27 +920,57 @@ public class DMLTranslator
 			}
 
 			if (current instanceof PrintStatement) {
-				PrintStatement ps = (PrintStatement) current;
-				Expression source = ps.getExpression();
-				PRINTTYPE ptype = ps.getType();
-				
 				DataIdentifier target = createTarget();
 				target.setDataType(DataType.SCALAR);
 				target.setValueType(ValueType.STRING);
-				target.setAllPositions(current.getFilename(), current.getBeginLine(), target.getBeginColumn(), current.getEndLine(),  current.getEndColumn());
-				
-				Hop ae = processExpression(source, target, ids);
-			
+				target.setAllPositions(current.getFilename(), current.getBeginLine(), target.getBeginColumn(),
+						current.getEndLine(), current.getEndColumn());
+
+				PrintStatement ps = (PrintStatement) current;
+				PRINTTYPE ptype = ps.getType();
+
 				try {
-					Hop.OpOp1 op = (ptype == PRINTTYPE.PRINT ? Hop.OpOp1.PRINT : Hop.OpOp1.STOP);
-					Hop printHop = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), op, ae);
-					printHop.setAllPositions(current.getBeginLine(), current.getBeginColumn(), current.getEndLine(), current.getEndColumn());
-					output.add(printHop);
-				} catch ( HopsException e ) {
+					if (ptype == PRINTTYPE.PRINT) {
+						Hop.OpOp1 op = Hop.OpOp1.PRINT;
+						Expression source = ps.getExpressions().get(0);
+						Hop ae = processExpression(source, target, ids);
+						Hop printHop = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), op,
+								ae);
+						printHop.setAllPositions(current.getBeginLine(), current.getBeginColumn(), current.getEndLine(),
+								current.getEndColumn());
+						output.add(printHop);
+					} else if (ptype == PRINTTYPE.STOP) {
+						Hop.OpOp1 op = Hop.OpOp1.STOP;
+						Expression source = ps.getExpressions().get(0);
+						Hop ae = processExpression(source, target, ids);
+						Hop stopHop = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), op,
+								ae);
+						stopHop.setAllPositions(current.getBeginLine(), current.getBeginColumn(), current.getEndLine(),
+								current.getEndColumn());
+						output.add(stopHop);
+					} else if (ptype == PRINTTYPE.PRINTF) {
+						Hop.MultipleOperandOperation printfOperation = Hop.MultipleOperandOperation.PRINTF;
+						List<Expression> expressions = ps.getExpressions();
+						Hop[] inHops = new Hop[expressions.size()];
+						// process the expressions (function parameters) that
+						// make up the printf-styled print statement
+						// into Hops so that these can be passed to the printf
+						// Hop (ie, MultipleOp) as input Hops
+						for (int j = 0; j < expressions.size(); j++) {
+							Hop inHop = processExpression(expressions.get(j), target, ids);
+							inHops[j] = inHop;
+						}
+						target.setValueType(ValueType.STRING);
+						Hop printfHop = new MultipleOp(target.getName(), target.getDataType(), target.getValueType(),
+								printfOperation, inHops);
+						output.add(printfHop);
+					}
+
+				} catch (HopsException e) {
 					throw new LanguageException(e);
 				}
 			}
-	
+
 			if (current instanceof AssignmentStatement) {
 	
 				AssignmentStatement as = (AssignmentStatement) current;
@@ -1220,9 +1147,9 @@ public class DMLTranslator
 	/**
 	 * Constructs Hops for a given ForStatementBlock or ParForStatementBlock, respectively.
 	 * 
-	 * @param sb
-	 * @throws ParseException
-	 * @throws LanguageException
+	 * @param sb for statement block
+	 * @throws ParseException if ParseException occurs
+	 * @throws LanguageException if LanguageException occurs
 	 */
 	public void constructHopsForForControlBlock(ForStatementBlock sb) 
 		throws ParseException, LanguageException 
@@ -1362,8 +1289,8 @@ public class DMLTranslator
 	 * 
 	 * Method used for both ForStatementBlock and ParForStatementBlock.
 	 * 
-	 * @param passedSB
-	 * @throws ParseException
+	 * @param fsb for statement block
+	 * @throws ParseException if ParseException occurs
 	 */
 	public void constructHopsForIterablePredicate(ForStatementBlock fsb) 
 		throws ParseException 
@@ -1444,7 +1371,11 @@ public class DMLTranslator
 	 * Construct Hops from parse tree : Process Expression in an assignment
 	 * statement
 	 * 
-	 * @throws ParseException
+	 * @param source source expression
+	 * @param target data identifier
+	 * @param hops map of high-level operators
+	 * @return high-level operator
+	 * @throws ParseException if ParseException occurs
 	 */
 	private Hop processExpression(Expression source, DataIdentifier target, HashMap<String, Hop> hops) throws ParseException {
 		if (source.getKind() == Expression.Kind.BinaryOp) {
@@ -1532,10 +1463,10 @@ public class DMLTranslator
 	/**
 	 * Constructs the Hops for arbitrary expressions that eventually evaluate to an INT scalar. 
 	 * 
-	 * @param source 
-	 * @param hops
-	 * @return
-	 * @throws ParseException
+	 * @param source source expression
+	 * @param hops map of high-level operators
+	 * @return high-level operator
+	 * @throws ParseException if ParseException occurs
 	 */
 	private Hop processTempIntExpression( Expression source,  HashMap<String, Hop> hops ) 
 		throws ParseException
@@ -1565,16 +1496,9 @@ public class DMLTranslator
 		{
 			if ( target.getDim1() != -1 ) 
 				rowUpperHops = new LiteralOp(target.getOrigDim1());
-			else
-			{
-				try {
-					//currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), Hops.OpOp1.NROW, expr);
-					rowUpperHops = new UnaryOp(target.getName(), DataType.SCALAR, ValueType.INT, Hop.OpOp1.NROW, hops.get(target.getName()));
-					rowUpperHops.setAllPositions(target.getBeginLine(), target.getBeginColumn(), target.getEndLine(), target.getEndColumn());
-				} catch (HopsException e) {
-					LOG.error(target.printErrorLocation() + "error processing row upper index for indexed expression " + target.toString());
-					throw new RuntimeException(target.printErrorLocation() + "error processing row upper index for indexed expression " + target.toString());
-				}
+			else {
+				rowUpperHops = new UnaryOp(target.getName(), DataType.SCALAR, ValueType.INT, Hop.OpOp1.NROW, hops.get(target.getName()));
+				rowUpperHops.setAllPositions(target.getBeginLine(), target.getBeginColumn(), target.getEndLine(), target.getEndColumn());
 			}
 		}
 		if (target.getColLowerBound() != null)
@@ -1589,19 +1513,8 @@ public class DMLTranslator
 			if ( target.getDim2() != -1 ) 
 				colUpperHops = new LiteralOp(target.getOrigDim2());
 			else
-			{
-				try {
-					colUpperHops = new UnaryOp(target.getName(), DataType.SCALAR, ValueType.INT, Hop.OpOp1.NCOL, hops.get(target.getName()));
-				} catch (HopsException e) {
-					LOG.error(target.printErrorLocation() + " error processing column upper index for indexed expression " + target.toString());
-					throw new RuntimeException(target.printErrorLocation() + " error processing column upper index for indexed expression " + target.toString(), e);
-				}
-			}
+				colUpperHops = new UnaryOp(target.getName(), DataType.SCALAR, ValueType.INT, Hop.OpOp1.NCOL, hops.get(target.getName()));
 		}
-		
-		//if (target == null) {
-		//	target = createTarget(source);
-		//}
 		
 		// process the source expression to get source Hops
 		Hop sourceOp = processExpression(source, target, hops);
@@ -1648,16 +1561,9 @@ public class DMLTranslator
 		{
 			if ( source.getOrigDim1() != -1 ) 
 				rowUpperHops = new LiteralOp(source.getOrigDim1());
-			else
-			{
-				try {
-					//currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), Hops.OpOp1.NROW, expr);
-					rowUpperHops = new UnaryOp(source.getName(), DataType.SCALAR, ValueType.INT, Hop.OpOp1.NROW, hops.get(source.getName()));
-					rowUpperHops.setAllPositions(source.getBeginLine(),source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
-				} catch (HopsException e) {
-					LOG.error(source.printErrorLocation() + "error processing row upper index for indexed identifier " + source.toString());
-					throw new RuntimeException(source.printErrorLocation() + "error processing row upper index for indexed identifier " + source.toString() + e);
-				}
+			else {
+				rowUpperHops = new UnaryOp(source.getName(), DataType.SCALAR, ValueType.INT, Hop.OpOp1.NROW, hops.get(source.getName()));
+				rowUpperHops.setAllPositions(source.getBeginLine(),source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
 			}
 		}
 		if (source.getColLowerBound() != null)
@@ -1672,14 +1578,7 @@ public class DMLTranslator
 			if ( source.getOrigDim2() != -1 ) 
 				colUpperHops = new LiteralOp(source.getOrigDim2());
 			else
-			{
-				try {
-					colUpperHops = new UnaryOp(source.getName(), DataType.SCALAR, ValueType.INT, Hop.OpOp1.NCOL, hops.get(source.getName()));
-				} catch (HopsException e) {
-					LOG.error(source.printErrorLocation() + "error processing column upper index for indexed indentifier " + source.toString(), e);
-					throw new RuntimeException(source.printErrorLocation() + "error processing column upper index for indexed indentifier " + source.toString(), e);
-				}
-			}
+				colUpperHops = new UnaryOp(source.getName(), DataType.SCALAR, ValueType.INT, Hop.OpOp1.NCOL, hops.get(source.getName()));
 		}
 		
 		if (target == null) {
@@ -1704,7 +1603,11 @@ public class DMLTranslator
 	 * Construct Hops from parse tree : Process Binary Expression in an
 	 * assignment statement
 	 * 
-	 * @throws ParseException
+	 * @param source binary expression
+	 * @param target data identifier
+	 * @param hops map of high-level operators
+	 * @return high-level operator
+	 * @throws ParseException if ParseException occurs
 	 */
 	private Hop processBinaryExpression(BinaryExpression source, DataIdentifier target, HashMap<String, Hop> hops)
 		throws ParseException 
@@ -1764,8 +1667,9 @@ public class DMLTranslator
 			target = createTarget(source);
 			if(left.getDataType() == DataType.MATRIX || right.getDataType() == DataType.MATRIX) {
 				// Added to support matrix relational comparison
+				// (we support only matrices of value type double)
 				target.setDataType(DataType.MATRIX);
-				target.setValueType(ValueType.BOOLEAN);
+				target.setValueType(ValueType.DOUBLE);
 			}
 			else {
 				// Added to support scalar relational comparison
@@ -1794,14 +1698,6 @@ public class DMLTranslator
 		return currBop;
 	}
 
-	/**
-	 * 
-	 * @param source
-	 * @param target
-	 * @param hops
-	 * @return
-	 * @throws ParseException
-	 */
 	private Hop processBooleanExpression(BooleanExpression source, DataIdentifier target, HashMap<String, Hop> hops)
 			throws ParseException 
 	{
@@ -1831,15 +1727,11 @@ public class DMLTranslator
 	    target.setValueType(ValueType.BOOLEAN);
 		
 		if (source.getRight() == null) {
-			Hop currUop = null;
-			try {
-				currUop = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), Hop.OpOp1.NOT, left);
-				currUop.setAllPositions(source.getBeginLine(), source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
-			} catch (HopsException e) {
-				throw new ParseException(e.getMessage());
-			}
+			Hop currUop = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), Hop.OpOp1.NOT, left);
+			currUop.setAllPositions(source.getBeginLine(), source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
 			return currUop;
-		} else {
+		} 
+		else {
 			Hop currBop = null;
 			OpOp2 op = null;
 
@@ -1898,14 +1790,6 @@ public class DMLTranslator
 		return new ParameterizedBuiltinOp(name, dt, vt, ParameterizedBuiltinFunctionExpression.pbHopMap.get(op), paramHops);
 	}
 	
-	/**
-	 * 
-	 * @param source
-	 * @param targetList
-	 * @param hops
-	 * @return
-	 * @throws ParseException
-	 */
 	private Hop processMultipleReturnParameterizedBuiltinFunctionExpression(ParameterizedBuiltinFunctionExpression source, ArrayList<DataIdentifier> targetList,
 			HashMap<String, Hop> hops) throws ParseException 
 	{
@@ -1950,8 +1834,12 @@ public class DMLTranslator
 	 * Construct Hops from parse tree : Process ParameterizedBuiltinFunction Expression in an
 	 * assignment statement
 	 * 
-	 * @throws ParseException
-	 * @throws HopsException 
+	 * @param source parameterized built-in function
+	 * @param target data identifier
+	 * @param hops map of high-level operators
+	 * @return high-level operator
+	 * @throws ParseException if ParseException occurs
+	 * @throws HopsException if HopsException occurs
 	 */
 	private Hop processParameterizedBuiltinFunctionExpression(ParameterizedBuiltinFunctionExpression source, DataIdentifier target,
 			HashMap<String, Hop> hops) throws ParseException, HopsException {
@@ -2073,8 +1961,12 @@ public class DMLTranslator
 	 * Construct Hops from parse tree : Process ParameterizedExpression in a
 	 * read/write/rand statement
 	 * 
-	 * @throws ParseException
-	 * @throws HopsException 
+	 * @param source data expression
+	 * @param target data identifier
+	 * @param hops map of high-level operators
+	 * @return high-level operator
+	 * @throws ParseException if ParseException occurs
+	 * @throws HopsException if HopsException occurs
 	 */
 	private Hop processDataExpression(DataExpression source, DataIdentifier target,
 			HashMap<String, Hop> hops) throws ParseException, HopsException {
@@ -2157,6 +2049,12 @@ public class DMLTranslator
 	 * Construct HOps from parse tree: process BuiltinFunction Expressions in 
 	 * MultiAssignment Statements. For all other builtin function expressions,
 	 * <code>processBuiltinFunctionExpression()</code> is used.
+	 * 
+	 * @param source built-in function expression
+	 * @param targetList list of data identifiers
+	 * @param hops map of high-level operators
+	 * @return high-level operator
+	 * @throws ParseException if ParseException occurs
 	 */
 	private Hop processMultipleReturnBuiltinFunctionExpression(BuiltinFunctionExpression source, ArrayList<DataIdentifier> targetList,
 			HashMap<String, Hop> hops) throws ParseException {
@@ -2215,8 +2113,12 @@ public class DMLTranslator
 	 * Construct Hops from parse tree : Process BuiltinFunction Expression in an
 	 * assignment statement
 	 * 
-	 * @throws ParseException
-	 * @throws HopsException 
+	 * @param source built-in function expression
+	 * @param target data identifier
+	 * @param hops map of high-level operators
+	 * @return high-level operator
+	 * @throws ParseException if ParseException occurs
+	 * @throws HopsException if HopsException occurs
 	 */
 	private Hop processBuiltinFunctionExpression(BuiltinFunctionExpression source, DataIdentifier target,
 			HashMap<String, Hop> hops) throws ParseException, HopsException {
@@ -2809,6 +2711,24 @@ public class DMLTranslator
 			setBlockSizeAndRefreshSizeInfo(image, currBuiltinOp);
 			break;
 		}
+		case BIAS_ADD:
+		{
+			ArrayList<Hop> inHops1 = new ArrayList<Hop>();
+			inHops1.add(expr);
+			inHops1.add(expr2);
+			currBuiltinOp = new ConvolutionOp(target.getName(), target.getDataType(), target.getValueType(), Hop.ConvOp.BIAS_ADD, inHops1);
+			setBlockSizeAndRefreshSizeInfo(expr, currBuiltinOp);
+			break;
+		}
+		case BIAS_MULTIPLY:
+		{
+			ArrayList<Hop> inHops1 = new ArrayList<Hop>();
+			inHops1.add(expr);
+			inHops1.add(expr2);
+			currBuiltinOp = new ConvolutionOp(target.getName(), target.getDataType(), target.getValueType(), Hop.ConvOp.BIAS_MULTIPLY, inHops1);
+			setBlockSizeAndRefreshSizeInfo(expr, currBuiltinOp);
+			break;
+		}
 		case AVG_POOL:
 		case MAX_POOL:
 		{
@@ -2856,9 +2776,9 @@ public class DMLTranslator
 	}
 	
 	private void setBlockSizeAndRefreshSizeInfo(Hop in, Hop out) {
-		HopRewriteUtils.setOutputBlocksizes(out, in.getRowsInBlock(), in.getColsInBlock());
-		HopRewriteUtils.copyLineNumbers(in, out);
+		out.setOutputBlocksizes(in.getRowsInBlock(), in.getColsInBlock());
 		out.refreshSizeInformation();
+		HopRewriteUtils.copyLineNumbers(in, out);
 	}
 
 	private ArrayList<Hop> getALHopsForConvOpPoolingCOL2IM(Hop first, BuiltinFunctionExpression source, int skip, HashMap<String, Hop> hops) throws ParseException {
@@ -2952,21 +2872,6 @@ public class DMLTranslator
 		h.setColsInBlock(id.getColumnsInBlock());
 	}
 
-	public void setIdentifierParams(Hop h, Hop source) {
-
-		h.setDim1(source.getDim1());
-		h.setDim2(source.getDim2());
-		h.setNnz(source.getNnz());
-		h.setRowsInBlock(source.getRowsInBlock());
-		h.setColsInBlock(source.getColsInBlock());
-	}
-
-	/**
-	 * 
-	 * @param prog
-	 * @param pWrites
-	 * @throws LanguageException 
-	 */
 	private boolean prepareReadAfterWrite( DMLProgram prog, HashMap<String, DataIdentifier> pWrites ) 
 		throws LanguageException
 	{
@@ -2985,11 +2890,6 @@ public class DMLTranslator
 		return ret;
 	}
 	
-	/**
-	 * 
-	 * @param sb
-	 * @param pWrites
-	 */
 	private boolean prepareReadAfterWrite( StatementBlock sb, HashMap<String, DataIdentifier> pWrites )
 	{
 		boolean ret = false;

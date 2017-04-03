@@ -21,7 +21,8 @@ package org.apache.sysml.api.mlcontext;
 
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.rdd.RDD;
-import org.apache.spark.sql.DataFrame;
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Row;
 import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 
@@ -98,7 +99,7 @@ public class Frame {
 	 * 
 	 * @return the frame as a {@code DataFrame}
 	 */
-	public DataFrame toDF() {
+	public Dataset<Row> toDF() {
 		return MLContextConversionUtil.frameObjectToDataFrame(frameObject, sparkExecutionContext);
 	}
 

@@ -25,37 +25,30 @@ import org.apache.sysml.runtime.functionobjects.And;
 import org.apache.sysml.runtime.functionobjects.Builtin;
 import org.apache.sysml.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysml.runtime.functionobjects.Equals;
-import org.apache.sysml.runtime.functionobjects.GreaterThan;
-import org.apache.sysml.runtime.functionobjects.LessThan;
 import org.apache.sysml.runtime.functionobjects.Minus;
 import org.apache.sysml.runtime.functionobjects.MinusNz;
 import org.apache.sysml.runtime.functionobjects.Multiply;
 import org.apache.sysml.runtime.functionobjects.Multiply2;
 import org.apache.sysml.runtime.functionobjects.NotEquals;
-import org.apache.sysml.runtime.functionobjects.Power;
 import org.apache.sysml.runtime.functionobjects.Power2;
 import org.apache.sysml.runtime.functionobjects.ValueFunction;
 
 
-public class ScalarOperator  extends Operator 
+/**
+ * Base class for all scalar operators.
+ * 
+ */
+public abstract class ScalarOperator extends Operator 
 {
 	private static final long serialVersionUID = 4547253761093455869L;
 
-	
 	public ValueFunction fn;
 	protected double _constant;
 	
-	public ScalarOperator(ValueFunction p, double cst)
-	{
+	public ScalarOperator(ValueFunction p, double cst) {
 		fn = p;
-		_constant = cst;
-		
-		//as long as (0 op v)=0, then op is sparsesafe
-		//note: additional functionobjects might qualify according to constant
-		sparseSafe = (fn instanceof Multiply || fn instanceof Multiply2 
-				|| fn instanceof Power || fn instanceof Power2 
-				|| fn instanceof And || fn instanceof MinusNz
-				|| (fn instanceof Builtin && ((Builtin)fn).getBuiltinCode()==BuiltinCode.LOG_NZ));
+		//set constant and sparse safe flag
+		setConstant(cst);
 	}
 	
 	public double getConstant() {
@@ -63,26 +56,34 @@ public class ScalarOperator  extends Operator
 	}
 	
 	public void setConstant(double cst) {
-		//set constant
 		_constant = cst;
-		
-		//revisit sparse safe decision according to known constant
-		//note: there would be even more potential if we take left/right op into account
-		sparseSafe = ( fn instanceof Multiply || fn instanceof Multiply2 
-			|| fn instanceof Power || fn instanceof Power2 
-			|| fn instanceof And || fn instanceof MinusNz
-			|| fn instanceof Builtin && ((Builtin)fn).getBuiltinCode()==BuiltinCode.LOG_NZ
-			|| (fn instanceof GreaterThan && _constant==0) 
-			|| (fn instanceof LessThan && _constant==0)
+		sparseSafe = (isSparseSafeStatic()
 			|| (fn instanceof NotEquals && _constant==0)
 			|| (fn instanceof Equals && _constant!=0)
-			|| (fn instanceof Minus && _constant==0)
 			|| (fn instanceof Minus && _constant==0)
 			|| (fn instanceof Builtin && ((Builtin)fn).getBuiltinCode()==BuiltinCode.MAX && _constant<=0)
 			|| (fn instanceof Builtin && ((Builtin)fn).getBuiltinCode()==BuiltinCode.MIN && _constant>=0));
 	}
 	
-	public double executeScalar(double in) throws DMLRuntimeException {
-		throw new DMLRuntimeException("executeScalar(): can not be invoked from base class.");
+	/**
+	 * Apply the scalar operator over a given input value.
+	 * 
+	 * @param in input value
+	 * @return result
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
+	 */
+	public abstract double executeScalar(double in) 
+		throws DMLRuntimeException;
+	
+	/**
+	 * Indicates if the function is statically sparse safe, i.e., it is always
+	 * sparse safe independent of the given constant.
+	 * 
+	 * @return true if function statically sparse safe
+	 */
+	protected boolean isSparseSafeStatic() {
+		return ( fn instanceof Multiply || fn instanceof Multiply2 
+			|| fn instanceof Power2 || fn instanceof And || fn instanceof MinusNz
+			|| fn instanceof Builtin && ((Builtin)fn).getBuiltinCode()==BuiltinCode.LOG_NZ);
 	}
 }

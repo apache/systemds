@@ -22,9 +22,6 @@ package org.apache.sysml.udf;
 import java.io.Serializable;
 import java.util.ArrayList;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
 
 /**
@@ -33,9 +30,7 @@ import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
  * 
  */
 public abstract class PackageFunction implements Serializable 
-{	
-	protected static final Log LOG = LogFactory.getLog(PackageFunction.class.getName());
-	
+{
 	private static final long serialVersionUID = 3274150928865462856L;
 	
 	private ArrayList<FunctionParameter> _function_inputs; // function inputs
@@ -52,7 +47,7 @@ public abstract class PackageFunction implements Serializable
 	/**
 	 * Method to get the number of inputs to this package function.
 	 * 
-	 * @return
+	 * @return number of inputs
 	 */
 	public final int getNumFunctionInputs() {
 		if (_function_inputs == null)
@@ -64,8 +59,8 @@ public abstract class PackageFunction implements Serializable
 	/**
 	 * Method to get a specific input to this package function.
 	 * 
-	 * @param pos
-	 * @return
+	 * @param pos input position
+	 * @return function parameter
 	 */
 	public final FunctionParameter getFunctionInput(int pos) {
 		if (_function_inputs == null || _function_inputs.size() <= pos)
@@ -78,7 +73,7 @@ public abstract class PackageFunction implements Serializable
 	 * Method to get the number of outputs of this package function. This method
 	 * should be implemented in the user's function.
 	 * 
-	 * @return
+	 * @return number of outputs
 	 */
 	public abstract int getNumFunctionOutputs();
 
@@ -86,15 +81,15 @@ public abstract class PackageFunction implements Serializable
 	 * Method to get a specific output of this package function. This method
 	 * should be implemented in the user's function.
 	 * 
-	 * @param pos
-	 * @return
+	 * @param pos function position
+	 * @return function parameter
 	 */
 	public abstract FunctionParameter getFunctionOutput(int pos);
 
 	/**
 	 * Method to set the number of inputs for this package function
 	 * 
-	 * @param numInputs
+	 * @param numInputs number of inputs
 	 */
 	public final void setNumFunctionInputs(int numInputs) {
 		if (_function_inputs == null)
@@ -111,8 +106,8 @@ public abstract class PackageFunction implements Serializable
 	/**
 	 * Method to set a specific input for this package function
 	 * 
-	 * @param input
-	 * @param pos
+	 * @param input function parameter input
+	 * @param pos input position
 	 */
 	public final void setInput(FunctionParameter input, int pos) {
 		if (_function_inputs == null || _function_inputs.size() <= pos)
@@ -125,7 +120,7 @@ public abstract class PackageFunction implements Serializable
 	/**
 	 * Method to set the configuration file for this function.
 	 * 
-	 * @param fName
+	 * @param fName configuration file name
 	 */
 	public final void setConfiguration(String fName) {
 		_configurationFile = fName;
@@ -134,24 +129,16 @@ public abstract class PackageFunction implements Serializable
 	/**
 	 * Method to get the configuration file name
 	 * 
-	 * @return
+	 * @return configuration file name
 	 */
 	public final String getConfiguration() {
 		return _configurationFile;
 	}
-	
-	/**
-	 * 
-	 * @param dir
-	 */
+
 	public void setBaseDir(String dir) {
 		_baseDir = dir;
 	}
 
-	/**
-	 * 
-	 * @return
-	 */
 	public String getBaseDir() {
 		return _baseDir;
 	}

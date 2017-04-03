@@ -39,12 +39,12 @@ public class ConvertMatrixBlockToIJVLines implements FlatMapFunction<Tuple2<Matr
 	}
 	
 	@Override
-	public Iterable<String> call(Tuple2<MatrixIndexes, MatrixBlock> kv) throws Exception {
+	public Iterator<String> call(Tuple2<MatrixIndexes, MatrixBlock> kv) throws Exception {
 		final BinaryBlockToTextCellConverter converter = new BinaryBlockToTextCellConverter();
 		converter.setBlockSize(brlen, bclen);
 		converter.convert(kv._1, kv._2);
 		
-		return new Iterable<String>() {
+		Iterable<String> ret = new Iterable<String>() {
 			@Override
 			public Iterator<String> iterator() {
 				return new Iterator<String>() {
@@ -64,6 +64,8 @@ public class ConvertMatrixBlockToIJVLines implements FlatMapFunction<Tuple2<Matr
 				};
 			}
 		};
+		
+		return ret.iterator();
 	}
 
 }

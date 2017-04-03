@@ -79,11 +79,7 @@ public abstract class ParWorker
 		_numTasks    = 0;
 		_numIters    = 0;
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public LocalVariableMap getVariables()
 	{
 		return _ec.getVariables();
@@ -93,7 +89,7 @@ public abstract class ParWorker
 	 * Returns a summary statistic of executed tasks and hence should only be called 
 	 * after execution.
 	 * 
-	 * @return
+	 * @return number of executed tasks
 	 */
 	public long getExecutedTasks()
 	{
@@ -104,25 +100,13 @@ public abstract class ParWorker
 	 * Returns a summary statistic of executed iterations and hence should only be called 
 	 * after execution.
 	 * 
-	 * @return
+	 * @return number of executed iterations
 	 */
 	public long getExecutedIterations()
 	{
 		return _numIters;
 	}
-	
-	/**
-	 * 
-	 */
-	public void resetExecutedTasks()
-	{
-		_numTasks = 0;
-		_numIters = 0;
-	}
-	
-	/**
-	 * 
-	 */
+
 	protected void pinResultVariables()
 	{
 		for( String var : _resultVars )
@@ -136,11 +120,6 @@ public abstract class ParWorker
 		}
 	}
 
-	/**
-	 * 
-	 * @param task
-	 * @throws DMLRuntimeException
-	 */
 	protected void executeTask( Task task ) 
 		throws DMLRuntimeException 
 	{
@@ -156,12 +135,7 @@ public abstract class ParWorker
 				break;		
 		}
 	}	
-		
-	/**
-	 * 
-	 * @param task
-	 * @throws DMLRuntimeException
-	 */
+
 	private void executeSetTask( Task task ) 
 		throws DMLRuntimeException 
 	{
@@ -202,12 +176,7 @@ public abstract class ParWorker
 			StatisticMonitor.putPWStat(_workerID, Stat.PARWRK_TASK_T, time2.stop());
 		}
 	}
-	
-	/**
-	 * 
-	 * @param task
-	 * @throws DMLRuntimeException
-	 */
+
 	private void executeRangeTask( Task task ) 
 		throws DMLRuntimeException 
 	{

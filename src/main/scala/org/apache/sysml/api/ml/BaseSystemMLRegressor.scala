@@ -35,7 +35,7 @@ import org.apache.sysml.api.mlcontext.ScriptFactory._
 
 trait BaseSystemMLRegressor extends BaseSystemMLEstimator {
   
-  def fit(X_mb: MatrixBlock, y_mb: MatrixBlock, sc: SparkContext): MLResults = {
+  def baseFit(X_mb: MatrixBlock, y_mb: MatrixBlock, sc: SparkContext): MLResults = {
     val isSingleNode = true
     val ml = new MLContext(sc)
     val ret = getTrainingScript(isSingleNode)
@@ -43,7 +43,7 @@ trait BaseSystemMLRegressor extends BaseSystemMLEstimator {
     ml.execute(script)
   }
   
-  def fit(df: ScriptsUtils.SparkDataType, sc: SparkContext): MLResults = {
+  def baseFit(df: ScriptsUtils.SparkDataType, sc: SparkContext): MLResults = {
     val isSingleNode = false
     val ml = new MLContext(df.rdd.sparkContext)
     val mcXin = new MatrixCharacteristics()
@@ -58,7 +58,7 @@ trait BaseSystemMLRegressor extends BaseSystemMLEstimator {
 
 trait BaseSystemMLRegressorModel extends BaseSystemMLEstimatorModel {
   
-  def transform(X: MatrixBlock, mloutput: MLResults, sc: SparkContext, predictionVar:String): MatrixBlock = {
+  def baseTransform(X: MatrixBlock, mloutput: MLResults, sc: SparkContext, predictionVar:String): MatrixBlock = {
     val isSingleNode = true
     val ml = new MLContext(sc)
     val script = getPredictionScript(mloutput, isSingleNode)
@@ -71,7 +71,7 @@ trait BaseSystemMLRegressorModel extends BaseSystemMLEstimatorModel {
     return ret
   }
   
-  def transform(df: ScriptsUtils.SparkDataType, mloutput: MLResults, sc: SparkContext, predictionVar:String): DataFrame = {
+  def baseTransform(df: ScriptsUtils.SparkDataType, mloutput: MLResults, sc: SparkContext, predictionVar:String): DataFrame = {
     val isSingleNode = false
     val ml = new MLContext(sc)
     val mcXin = new MatrixCharacteristics()
@@ -80,7 +80,7 @@ trait BaseSystemMLRegressorModel extends BaseSystemMLEstimatorModel {
     val Xin_bin = new BinaryBlockMatrix(Xin, mcXin)
     val modelPredict = ml.execute(script._1.in(script._2, Xin_bin))
     val predictedDF = modelPredict.getDataFrame(predictionVar).select(RDDConverterUtils.DF_ID_COLUMN, "C1").withColumnRenamed("C1", "prediction")
-    val dataset = RDDConverterUtilsExt.addIDToDataFrame(df.asInstanceOf[DataFrame], df.sqlContext, RDDConverterUtils.DF_ID_COLUMN)
+    val dataset = RDDConverterUtilsExt.addIDToDataFrame(df.asInstanceOf[DataFrame], df.sparkSession, RDDConverterUtils.DF_ID_COLUMN)
     return PredictionUtils.joinUsingID(dataset, predictedDF)
   }
 }

@@ -41,10 +41,10 @@ public abstract class StatementBlockRewriteRule
 	 * Handle an arbitrary statement block. Specific type constraints have to be ensured
 	 * within the individual rewrites.
 	 * 
-	 * @param sb
-	 * @param sate
-	 * @return
-	 * @throws HopsException
+	 * @param sb statement block
+	 * @param sate program rewrite status
+	 * @return list of statement blocks
+	 * @throws HopsException if HopsException occurs
 	 */
 	public abstract ArrayList<StatementBlock> rewriteStatementBlock( StatementBlock sb, ProgramRewriteStatus sate ) 
 		throws HopsException;

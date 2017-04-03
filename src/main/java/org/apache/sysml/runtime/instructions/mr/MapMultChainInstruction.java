@@ -32,9 +32,6 @@ import org.apache.sysml.runtime.matrix.mapred.DistributedCacheInput;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.matrix.mapred.MRBaseForCommonInstructions;
 
-/**
- * 
- */
 public class MapMultChainInstruction extends MRInstruction implements IDistributedCacheConsumer
 {
 	private ChainType _chainType = null;
@@ -46,11 +43,11 @@ public class MapMultChainInstruction extends MRInstruction implements IDistribut
 	/**
 	 * Two matrix inputs - type XtXv
 	 * 
-	 * @param type
-	 * @param in1
-	 * @param in2
-	 * @param out
-	 * @param istr
+	 * @param type chain type
+	 * @param in1 input byte 1
+	 * @param in2 input byte 2
+	 * @param out output byte
+	 * @param istr instruction string
 	 */
 	public MapMultChainInstruction(ChainType type, byte in1, byte in2, byte out, String istr)
 	{
@@ -69,12 +66,12 @@ public class MapMultChainInstruction extends MRInstruction implements IDistribut
 	/**
 	 * Three matrix inputs - type XtwXv
 	 * 
-	 * @param type
-	 * @param in1
-	 * @param in2
-	 * @param in3
-	 * @param out
-	 * @param istr
+	 * @param type chain type
+	 * @param in1 input byte 1
+	 * @param in2 input byte 2
+	 * @param in3 input byte 3
+	 * @param out output byte
+	 * @param istr instruction string
 	 */
 	public MapMultChainInstruction(ChainType type, byte in1, byte in2, byte in3, byte out, String istr)
 	{
@@ -107,12 +104,6 @@ public class MapMultChainInstruction extends MRInstruction implements IDistribut
 		return _input3;
 	}
 
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	public static MapMultChainInstruction parseInstruction( String str ) 
 		throws DMLRuntimeException 
 	{		
@@ -221,11 +212,11 @@ public class MapMultChainInstruction extends MRInstruction implements IDistribut
 	 * Chain implementation for r = (t(X)%*%(X%*%v))
 	 * (implemented as r = (t(t(X%*%v)%*%X))
 	 * 
-	 * @param inIx
-	 * @param inVal
-	 * @param outIx
-	 * @param outVal
-	 * @throws DMLRuntimeException 
+	 * @param inIx input matrix indexes
+	 * @param inVal input matrix value
+	 * @param outIx output matrix indexes
+	 * @param outVal output matrix value
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private void processXtXvOperations(MatrixIndexes inIx, MatrixValue inVal, MatrixIndexes outIx, MatrixValue outVal ) 
 		throws DMLRuntimeException
@@ -243,11 +234,11 @@ public class MapMultChainInstruction extends MRInstruction implements IDistribut
 	 * Chain implementation for r = (t(X)%*%(w*(X%*%v)))
 	 * (implemented as r = (t(t((X%*%v)*w)%*%X))
 	 * 
-	 * @param inIx
-	 * @param inVal
-	 * @param outIx
-	 * @param outVal
-	 * @throws DMLRuntimeException 
+	 * @param inIx input matrix indexes
+	 * @param inVal input matrix value
+	 * @param outIx output matrix indexes
+	 * @param outVal output matrix value
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private void processXtwXvOperations(MatrixIndexes inIx, MatrixValue inVal, MatrixIndexes outIx, MatrixValue outVal, ChainType chain )
 		throws DMLRuntimeException

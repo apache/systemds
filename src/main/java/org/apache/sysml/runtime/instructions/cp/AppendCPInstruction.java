@@ -45,13 +45,7 @@ public abstract class AppendCPInstruction extends BinaryCPInstruction
 		
 		_type = type;
 	}
-	
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static AppendCPInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{

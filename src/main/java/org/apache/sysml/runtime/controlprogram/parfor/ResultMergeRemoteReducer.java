@@ -68,9 +68,6 @@ public class ResultMergeRemoteReducer
 		_reducer.processKeyValueList(key, valueList, out, reporter);
 	}
 
-	/**
-	 * 
-	 */
 	public void configure(JobConf job)
 	{
 		InputInfo ii = MRJobConfiguration.getResultMergeInputInfo(job);
@@ -90,10 +87,7 @@ public class ResultMergeRemoteReducer
 		else
 			throw new RuntimeException("Unable to configure mapper with unknown input info: "+ii.toString());
 	}
-	
-	/**
-	 * 
-	 */
+
 	@Override
 	public void close() throws IOException 
 	{

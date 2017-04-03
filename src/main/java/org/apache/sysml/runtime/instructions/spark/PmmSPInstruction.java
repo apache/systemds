@@ -21,6 +21,7 @@ package org.apache.sysml.runtime.instructions.spark;
 
 
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
@@ -47,9 +48,6 @@ import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
-/**
- * 
- */
 public class PmmSPInstruction extends BinarySPInstruction 
 {
 	
@@ -65,12 +63,6 @@ public class PmmSPInstruction extends BinarySPInstruction
 		_nrow = nrow;
 	}
 
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	public static PmmSPInstruction parseInstruction( String str ) 
 		throws DMLRuntimeException 
 	{
@@ -111,7 +103,7 @@ public class PmmSPInstruction extends BinarySPInstruction
 		//execute pmm instruction
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1
 				.flatMapToPair( new RDDPMMFunction(_type, in2, rlen, mc.getRowsPerBlock()) );
-		out = RDDAggregateUtils.sumByKeyStable(out);
+		out = RDDAggregateUtils.sumByKeyStable(out, false);
 		
 		//put output RDD handle into symbol table
 		sec.setRDDHandleForVariable(output.getName(), out);
@@ -121,11 +113,7 @@ public class PmmSPInstruction extends BinarySPInstruction
 		//update output statistics if not inferred
 		updateBinaryMMOutputMatrixCharacteristics(sec, false);
 	}
-	
-	/**
-	 * 
-	 * 
-	 */
+
 	private static class RDDPMMFunction implements PairFlatMapFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock> 
 	{
 		private static final long serialVersionUID = -1696560050436469140L;
@@ -143,7 +131,7 @@ public class PmmSPInstruction extends BinarySPInstruction
 		}
 		
 		@Override
-		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call( Tuple2<MatrixIndexes, MatrixBlock> arg0 ) 
+		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call( Tuple2<MatrixIndexes, MatrixBlock> arg0 ) 
 			throws Exception 
 		{
 			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
@@ -183,7 +171,7 @@ public class PmmSPInstruction extends BinarySPInstruction
 					ret.add(new Tuple2<MatrixIndexes, MatrixBlock>(new MatrixIndexes(rowIX2, ixIn.getColumnIndex()), out2));
 			}
 			
-			return ret;
+			return ret.iterator();
 		}
 	}
 	

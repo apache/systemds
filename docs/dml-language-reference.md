@@ -53,10 +53,14 @@ limitations under the License.
     * [Read/Write Built-In Functions](dml-language-reference.html#readwrite-built-in-functions)
     * [Data Pre-Processing Built-In Functions](dml-language-reference.html#data-pre-processing-built-in-functions)
     * [Other Built-In Functions](dml-language-reference.html#other-built-in-functions)
+  * [Frames](dml-language-reference.html#frames)
+    * [Creating Frames](dml-language-reference.html#creating-frames)
+    * [Appending Frames](dml-language-reference.html#appending-frames)
+    * [Indexing Frames](dml-language-reference.html#indexing-frames)
+    * [Casting Frames](dml-language-reference.html#casting-frames)
+    * [Transforming Frames](dml-language-reference.html#transforming-frames)
   * [Modules](dml-language-reference.html#modules)
   * [Reserved Keywords](dml-language-reference.html#reserved-keywords)
-  * [Invocation of SystemML](dml-language-reference.html#invocation-of-systemml)
-  * [MLContext API](dml-language-reference.html#mlcontext-api)
 
 
 ## Introduction
@@ -99,7 +103,7 @@ As seen in above example, there is no formal declaration of a variable. A variab
 
 ### Data Types
 
-Three data types (frame, matrix and scalar) and four value types (double, integer, string, and boolean) are supported. Matrices are 2-dimensional, and support the double value type (i.e., the cells in a matrix are of type double). The frame data type denotes the tabular data, potentially containing columns of value type numeric, string, and boolean, This data type currently supports a single operation, transform(), which transforms the given tabular data with arbitrary value types into a matrix of doubles. SystemML supports type polymorphism for both data type (primarily, matrix and scalar types) and value type during evaluation. For example:
+Three data types (frame, matrix and scalar) and four value types (double, integer, string, and boolean) are supported. Matrices are 2-dimensional, and support the double value type (i.e., the cells in a matrix are of type double). The frame data type denotes the tabular data, potentially containing columns of value type numeric, string, and boolean.  Frame functions are described in [Frames](dml-language-reference.html#frames) and  [Data Pre-Processing Built-In Functions](dml-language-reference.html#data-pre-processing-built-in-functions).  SystemML supports type polymorphism for both data type (primarily, matrix and scalar types) and value type during evaluation. For example:
 
     # Spoiler alert: matrix() is a built-in function to
     # create matrix, which will be discussed later
@@ -328,7 +332,7 @@ var is an integer scalar variable. lower, upper, and increment are integer expre
 
 [lower]:[upper] defines a sequence of numbers with increment 1: {lower, lower + 1, lower + 2, …, upper – 1, upper}.
 
-Similarly, seq([lower],[upper],[increment]) defines a sequence of numbers: {lower, lower + increment, lower + 2(increment), … }. For each element in the sequence, var is assigned the value, and statements in the for loop body are executed.
+Similarly, `seq([lower],[upper],[increment])` defines a sequence of numbers: {lower, lower + increment, lower + 2(increment), … }. For each element in the sequence, var is assigned the value, and statements in the for loop body are executed.
 
 The for loop body may contain any sequence of statements. The statements in the for statement body must be surrounded by braces, even if the body only has a single statement.
 
@@ -351,51 +355,73 @@ The syntax and semantics of a `parfor` (parallel `for`) statement are equivalent
 	}
 
 	<parfor_paramslist> ::= <,<parfor_parameter>>*
-	<parfor_parameter> ::= check = <dependency_analysis>
-	||= par = <degree_of_parallelism>
-	||= mode = <execution_mode>
-	||= taskpartitioner = <task_partitioning_algorithm>
-	||= tasksize = <task_size>
-	||= datapartitioner = <data_partitioning_mode>
-	||= resultmerge = <result_merge_mode>
-	||= opt = <optimization_mode>
+	<parfor_parameter> ::
+	   = check = <dependency_analysis>
+	|| = par = <degree_of_parallelism>
+	|| = mode = <execution_mode>
+	|| = taskpartitioner = <task_partitioning_algorithm>
+	|| = tasksize = <task_size>
+	|| = datapartitioner = <data_partitioning_mode>
+	|| = resultmerge = <result_merge_mode>
+	|| = opt = <optimization_mode>
+	|| = log = <log_level>
+	|| = profile = <monitor>
 
-	<dependency_analysis>         is one of the following tokens: 0 1
-	<degree_of_parallelism>       is an arbitrary integer number
-	<execution_mode>              is one of the following tokens: LOCAL REMOTE_MR
-	<task_partitioning_algorithm> is one of the following tokens: FIXED NAIVE STATIC FACTORING FACTORING_CMIN FACTORING_CMAX
-	<task_size>                   is an arbitrary integer number
-	<data_partitioning_mode>      is one of the following tokens: NONE LOCAL REMOTE_MR
-	<result_merge_mode>           is one of the following tokens: LOCAL_MEM LOCAL_FILE LOCAL_AUTOMATIC REMOTE_MR
-	<optimization_mode>           is one of the following tokens: NONE CONSTRAINED RULEBASED HEURISTIC GREEDY FULL_DP
+	<dependency_analysis>         0 1
+	<degree_of_parallelism>       arbitrary integer number
+	<execution_mode>              LOCAL REMOTE_MR REMOTE_MR_DP REMOTE_SPARK REMOTE_SPARK_DP
+	<task_partitioning_algorithm> FIXED NAIVE STATIC FACTORING FACTORING_CMIN FACTORING_CMAX
+	<task_size>                   arbitrary integer number
+	<data_partitioning_mode>      NONE LOCAL REMOTE_MR REMOTE_SPARK
+	<result_merge_mode>           LOCAL_MEM LOCAL_FILE LOCAL_AUTOMATIC REMOTE_MR REMOTE_SPARK
+	<optimization_mode>           NONE RULEBASED CONSTRAINED HEURISTIC GREEDY FULL_DP
+	<log_level>                   ALL TRACE DEBUG INFO WARN ERROR FATAL OFF
+	<monitor>                     0 1
 
-If any of these parameters is not specified, the following respective defaults are used: `check = 1`, `par = [number of virtual processors on master node]`, `mode = LOCAL`, `taskpartitioner = FIXED`, `tasksize = 1`, `datapartitioner = NONE`, `resultmerge = LOCAL_AUTOMATIC`, `opt = RULEBASED`.
+
+If any of these parameters is not specified, the following respective defaults are used:
+
+**Table 2**: Parfor default parameter values
+
+Parameter Name  | Default Value
+--------------- | -------------
+check           | 1
+par             | [number of virtual processors on master node]
+mode            | LOCAL
+taskpartitioner | FIXED
+tasksize        | 1
+datapartitioner | NONE
+resultmerge     | LOCAL_AUTOMATIC
+opt             | RULEBASED
+log             | INFO
+profile         | 0
+
 
 Of particular note is the `check` parameter. SystemML's `parfor` statement by default (`check = 1`) performs dependency analysis in an
 attempt to guarantee result correctness for parallel execution. For example, the following `parfor` statement is **incorrect** because
-the iterations do not act independently, so they are not parallizable. The iterations incorrectly try to increment the same `sum` variable.
+the iterations do not act independently, so they are not parallelizable. The iterations incorrectly try to increment the same `sum` variable.
 
 	sum = 0
 	parfor(i in 1:3) {
-	    sum = sum + i; # not parallizable - generates error
+	    sum = sum + i; # not parallelizable - generates error
 	}
 	print(sum)
 
 SystemML's `parfor` dependency analysis can occasionally result in false positives, as in the following example. This example creates a 2x30
-matrix. It then utilizes a `parfor` loop to write 10 2x3 matrices into the 2x30 matrix. This `parfor` statement is parallizable and correct,
+matrix. It then utilizes a `parfor` loop to write 10 2x3 matrices into the 2x30 matrix. This `parfor` statement is parallelizable and correct,
 but the dependency analysis generates a false positive dependency error for the variable `ms`.
 
 	ms = matrix(0, rows=2, cols=3*10)
-	parfor (v in 1:10) { # parallizable - false positive
+	parfor (v in 1:10) { # parallelizable - false positive
 	    mv = matrix(v, rows=2, cols=3)
 	    ms[,(v-1)*3+1:v*3] = mv
 	}
 
-If a false positive arises but you are certain that the `parfor` is parallizable, the `parfor` dependency check can be disabled via
+If a false positive arises but you are certain that the `parfor` is parallelizable, the `parfor` dependency check can be disabled via
 the `check = 0` option.
 
 	ms = matrix(0, rows=2, cols=3*10)
-	parfor (v in 1:10, check=0) { # parallizable
+	parfor (v in 1:10, check=0) { # parallelizable
 	    mv = matrix(v, rows=2, cols=3)
 	    ms[,(v-1)*3+1:v*3] = mv
 	}
@@ -431,7 +457,7 @@ The syntax for the UDF function declaration for functions defined in external pa
     implemented in ([userParam=value]*)
 
 
-**Table 2**: Parameters for UDF Function Definition Statements
+**Table 3**: Parameters for UDF Function Definition Statements
 
 Parameter Name | Description | Optional | Permissible Values
 -------------- | ----------- | -------- | ------------------
@@ -448,15 +474,18 @@ userParam=value | User-defined parameter to invoke the package. | Yes | Any non-
     mean = function (matrix[double] A) return (double m) {
         m = sum(A)/nrow(A)
     }
+
     # example of a UDF defined in DML with multiple return values
     minMax = function( matrix[double] M) return (double minVal, double maxVal) {
         minVal = min(M);
         maxVal = max(M);
     }
+
     # example of an external UDF
-    eigen = externalFunction(matrix[double] A)
-    return (matrix[double] evec, matrix[double] eval)
-    implemented in (classname="org.apache.sysml.packagesupport.JLapackEigenWrapper")
+    time = externalFunction(Integer i) return (Double B)
+           implemented in (classname="org.apache.sysml.udf.lib.TimeWrapper", exectype="mem");
+    t = time(1);
+    print("Time: " + t);
 
 A UDF invocation specifies the function identifier, variable identifiers for calling parameters, and the variables to be populated by the returned values from the function. The syntax for function calls is as follows.
 
@@ -604,22 +633,21 @@ The builtin function `sum` operates on a matrix (say A of dimensionality (m x n)
 
 ### Matrix Construction, Manipulation, and Aggregation Built-In Functions
 
-**Table 3**: Matrix Construction, Manipulation, and Aggregation Built-In Functions
+**Table 4**: Matrix Construction, Manipulation, and Aggregation Built-In Functions
 
 Function | Description | Parameters | Example
 -------- | ----------- | ---------- | -------
-append() | Adds the second argument as additional columns to the first argument (note that the first argument is not over-written). Append is meant to be used in situations where one cannot use left-indexing. <br/> **NOTE: append() has been replaced by cbind(), so its use is discouraged.** | Input: (X &lt;matrix&gt;, Y &lt;matrix&gt;) <br/>Output: &lt;matrix&gt; <br/> X and Y are matrices (with possibly multiple columns), where the number of rows in X and Y must be the same. Output is a matrix with exactly the same number of rows as X and Y. Let n1 and n2 denote the number of columns of matrix X and Y, respectively. The returned matrix has n1+n2 columns, where the first n1 columns contain X and the last n2 columns contain Y. | A = matrix(1, rows=2,cols=5) <br/> B = matrix(1, rows=2,cols=3) <br/> C = append(A,B) <br/> print("Dimensions of C: " + nrow(C) + " X " + ncol(C)) <br/> The output of above example is: <br/> Dimensions of C: 2 X 8
 cbind() | Column-wise matrix concatenation. Concatenates the second matrix as additional columns to the first matrix | Input: (X &lt;matrix&gt;, Y &lt;matrix&gt;) <br/>Output: &lt;matrix&gt; <br/> X and Y are matrices, where the number of rows in X and the number of rows in Y are the same. | A = matrix(1, rows=2,cols=3) <br/> B = matrix(2, rows=2,cols=3) <br/> C = cbind(A,B) <br/> print("Dimensions of C: " + nrow(C) + " X " + ncol(C)) <br/> Output: <br/> Dimensions of C: 2 X 6
 matrix() | Matrix constructor (assigning all the cells to numeric literals). | Input: (&lt;init&gt;, rows=&lt;value&gt;, cols=&lt;value&gt;) <br/> init: numeric literal; <br/> rows/cols: number of rows/cols (expression) <br/> Output: matrix | # 10x10 matrix initialized to 0 <br/> A = matrix (0, rows=10, cols=10)
  | Matrix constructor (reshaping an existing matrix). | Input: (&lt;existing matrix&gt;, rows=&lt;value&gt;, cols=&lt;value&gt;, byrow=TRUE) <br/> Output: matrix | A = matrix (0, rows=10, cols=10) <br/> B = matrix (A, rows=100, cols=1)
  | Matrix constructor (initializing using string). | Input: (&lt;initialization string&gt;, rows=&lt;value&gt;, cols=&lt;value&gt;) <br/> Output: matrix | A = matrix("4 3 2 5 7 8", rows=3, cols=2) <br/> Creates a matrix: [ [4, 3], [2, 5], [7, 8] ]
 min() <br/> max() | Return the minimum/maximum cell value in matrix | Input: matrix <br/> Output: scalar | min(X) <br/> max(Y)
 min() <br/> max() | Return the minimum/maximum cell values of two matrices, matrix and scalar, or scalar value of two scalars. | Input: matrices or scalars <br/> Output: matrix or scalar | With x,y, z as scalars, and X, Y, Z as matrices: <br/> Z = min (X, Y) <br/> Z = min (X, y) <br/> z = min(x,y)
-nrow(), <br/> ncol(), <br/> length() | Return the number of rows, number of columns, or number of cells in matrix respectively. | Input: matrix <br/> Output: scalar | nrow(X)
+nrow(), <br/> ncol(), <br/> length() | Return the number of rows, number of columns, or number of cells in matrix or frame respectively. | Input: matrix or frame <br/> Output: scalar | nrow(X) <br/> ncol(F) <br/> length(X)
 prod() | Return the product of all cells in matrix | Input: matrix <br/> Output: scalarj | prod(X)
 rand() | Generates a random matrix | Input: (rows=&lt;value&gt;, cols=&lt;value&gt;, min=&lt;value&gt;, max=&lt;value&gt;, sparsity=&lt;value&gt;, pdf=&lt;string&gt;, seed=&lt;value&gt;) <br/> rows/cols: Number of rows/cols (expression) <br/> min/max: Min/max value for cells (either constant value, or variable that evaluates to constant value) <br/> sparsity: fraction of non-zero cells (constant value) <br/> pdf: "uniform" (min, max) distribution, or "normal" (0,1) distribution; or "poisson" (lambda=1) distribution. string; default value is "uniform". Note that, for the Poisson distribution, users can provide the mean/lambda parameter as follows: <br/> rand(rows=1000,cols=1000, pdf="poisson", lambda=2.5). <br/> The default value for lambda is 1. <br/> seed: Every invocation of rand() internally generates a random seed with which the cell values are generated. One can optionally provide a seed when repeatability is desired.  <br/> Output: matrix | X = rand(rows=10, cols=20, min=0, max=1, pdf="uniform", sparsity=0.2) <br/> The example generates a 10 x 20 matrix, with cell values uniformly chosen at random between 0 and 1, and approximately 20% of cells will have non-zero values.
 rbind() | Row-wise matrix concatenation. Concatenates the second matrix as additional rows to the first matrix | Input: (X &lt;matrix&gt;, Y &lt;matrix&gt;) <br/>Output: &lt;matrix&gt; <br/> X and Y are matrices, where the number of columns in X and the number of columns in Y are the same. | A = matrix(1, rows=2,cols=3) <br/> B = matrix(2, rows=2,cols=3) <br/> C = rbind(A,B) <br/> print("Dimensions of C: " + nrow(C) + " X " + ncol(C)) <br/> Output: <br/> Dimensions of C: 4 X 3
-removeEmpty() | Removes all empty rows or columns from the input matrix target X according to the specified margin. | Input : (target= X &lt;matrix&gt;, margin="...") <br/> Output : &lt;matrix&gt; <br/> Valid values for margin are "rows" or "cols". | A = removeEmpty(target=X, margin="rows")
+removeEmpty() | Removes all empty rows or columns from the input matrix target X according to the specified margin. Also, allows to apply a filter F before removing the empty rows/cols. | Input : (target= X &lt;matrix&gt;, margin="...", select=F) <br/> Output : &lt;matrix&gt; <br/> Valid values for margin are "rows" or "cols". | A = removeEmpty(target=X, margin="rows", select=F)
 replace() | Creates a copy of input matrix X, where all values that are equal to the scalar pattern s1 are replaced with the scalar replacement s2. | Input : (target= X &lt;matrix&gt;, pattern=&lt;scalar&gt;, replacement=&lt;scalar&gt;) <br/> Output : &lt;matrix&gt; <br/> If s1 is NaN, then all NaN values of X are treated as equal and hence replaced with s2. Positive and negative infinity are treated as different values. | A = replace(target=X, pattern=s1, replacement=s2)
 rev() | Reverses the rows in a matrix | Input : (&lt;matrix&gt;) <br/> Output : &lt;matrix&gt; | <span style="white-space: nowrap;">A = matrix("1 2 3 4", rows=2, cols=2)</span> <br/> <span style="white-space: nowrap;">B = matrix("1 2 3 4", rows=4, cols=1)</span> <br/> <span style="white-space: nowrap;">C = matrix("1 2 3 4", rows=1, cols=4)</span> <br/> revA = rev(A) <br/> revB = rev(B) <br/> revC = rev(C) <br/> Matrix revA: [[3, 4], [1, 2]]<br/> Matrix revB: [[4], [3], [2], [1]]<br/> Matrix revC: [[1, 2, 3, 4]]<br/>
 seq() | Creates a single column vector with values starting from &lt;from&gt;, to &lt;to&gt;, in increments of &lt;increment&gt; | Input: (&lt;from&gt;, &lt;to&gt;, &lt;increment&gt;) <br/> Output: &lt;matrix&gt; | S = seq (10, 200, 10)
@@ -628,7 +656,7 @@ sum() | Sum of all cells in matrix | Input: matrix <br/> Output: scalar | sum(X)
 
 ### Matrix and/or Scalar Comparison Built-In Functions
 
-**Table 4**: Matrix and/or Scalar Comparison Built-In Functions
+**Table 5**: Matrix and/or Scalar Comparison Built-In Functions
 
 Function | Description | Parameters | Example
 -------- | ----------- | ---------- | -------
@@ -639,7 +667,7 @@ ppred() | "parallel predicate".<br/> The relational operator specified in the th
 
 ### Casting Built-In Functions
 
-**Table 5**: Casting Built-In Functions
+**Table 6**: Casting Built-In Functions
 
 Function | Description | Parameters | Example
 -------- | ----------- | ---------- | -------
@@ -649,7 +677,7 @@ as.double(), <br/> as.integer(), <br/> as.logical() | A variable is cast as the 
 
 ### Statistical Built-In Functions
 
-**Table 6**: Statistical Built-In Functions
+**Table 7**: Statistical Built-In Functions
 
 Function | Description | Parameters | Example
 -------- | ----------- | ---------- | -------
@@ -658,9 +686,9 @@ var() <br/> sd() | Return the variance/stdDev value of all cells in matrix | Inp
 moment() | Returns the kth central moment of values in a column matrix V, where k = 2, 3, or 4. It can be used to compute statistical measures like Variance, Kurtosis, and Skewness. This function also takes an optional weights parameter W. | Input: (X &lt;(n x 1) matrix&gt;, [W &lt;(n x 1) matrix&gt;),] k &lt;scalar&gt;) <br/> Output: &lt;scalar&gt; | A = rand(rows=100000,cols=1, pdf="normal") <br/> print("Variance from our (standard normal) random generator is approximately " + moment(A,2))
 colSums() <br/> colMeans() <br/> colVars() <br/> colSds() <br/> colMaxs() <br/> colMins() | Column-wise computations -- for each column, compute the sum/mean/variance/stdDev/max/min of cell values | Input: matrix <br/> Output: (1 x n) matrix | colSums(X) <br/> colMeans(X) <br/> colVars(X) <br/> colSds(X) <br/> colMaxs(X) <br/>colMins(X)
 cov() | Returns the covariance between two 1-dimensional column matrices X and Y. The function takes an optional weights parameter W. All column matrices X, Y, and W (when specified) must have the exact same dimension. | Input: (X &lt;(n x 1) matrix&gt;, Y &lt;(n x 1) matrix&gt; [, W &lt;(n x 1) matrix&gt;)]) <br/> Output: &lt;scalar&gt; | cov(X,Y) <br/> cov(X,Y,W)
-table() | Returns the contingency table of two vectors A and B. The resulting table F consists of max(A) rows and max(B) columns. <br/> More precisely, F[i,j] = \\|{ k \\| A[k] = i and B[k] = j, 1 ≤ k ≤ n }\\|, where A and B are two n-dimensional vectors. <br/> This function supports multiple other variants, which can be found below, at the end of this Table 6. | Input: (&lt;(n x 1) matrix&gt;, &lt;(n x 1) matrix&gt;), [&lt;(n x 1) matrix&gt;]) <br/> Output: &lt;matrix&gt; | F = table(A, B) <br/> F = table(A, B, C) <br/> And, several other forms (see below Table 6.)
-cdf()<br/> pnorm()<br/> pexp()<br/> pchisq()<br/> pf()<br/> pt()<br/> icdf()<br/> qnorm()<br/> qexp()<br/> qchisq()<br/> qf()<br/> qt() | p=cdf(target=q, ...) returns the cumulative probability P[X &lt;= q]. <br/> q=icdf(target=p, ...) returns the inverse cumulative probability i.e., it returns q such that the given target p = P[X&lt;=q]. <br/> For more details, please see the section "Probability Distribution Functions" below Table 6. | Input: (target=&lt;scalar&gt;, dist="...", ...) <br/> Output: &lt;scalar&gt; | p = cdf(target=q, dist="normal", mean=1.5, sd=2); is same as p=pnorm(target=q, mean=1.5, sd=2); <br/> q=icdf(target=p, dist="normal") is same as q=qnorm(target=p, mean=0,sd=1) <br/> More examples can be found in the section "Probability Distribution Functions" below Table 6.
-aggregate() | Splits/groups the values from X according to the corresponding values from G, and then applies the function fn on each group. <br/> The result F is a column matrix, in which each row contains the value computed from a distinct group in G. More specifically, F[k,1] = fn( {X[i,1] \\| 1&lt;=i&lt;=n and G[i,1] = k} ), where n = nrow(X) = nrow(G). <br/> Note that the distinct values in G are used as row indexes in the result matrix F. Therefore, nrow(F) = max(G). It is thus recommended that the values in G are consecutive and start from 1. <br/> This function supports multiple other variants, which can be found below, at the end of this Table 6. | Input:<br/> (target = X &lt;(n x 1) matrix, or matrix&gt;,<br/> &nbsp;&nbsp;&nbsp;groups = G &lt;(n x 1) matrix&gt;,<br/> &nbsp;&nbsp;&nbsp;fn= "..." <br/> &nbsp;&nbsp;&nbsp;[,weights= W&lt;(n x 1) matrix&gt;] <br/> &nbsp;&nbsp;&nbsp;[,ngroups=N] )<br/>Output: F &lt;matrix&gt; <br/> Note: X is a (n x 1) matrix unless ngroups is specified with no weights, in which case X is a regular (n x m) matrix.<br/> The parameter fn takes one of the following functions: "count", "sum", "mean", "variance", "centralmoment". In the case of central moment, one must also provide the order of the moment that need to be computed (see example). | F = aggregate(target=X, groups=G, fn= "..." [,weights = W]) <br/> F = aggregate(target=X, groups=G1, fn= "sum"); <br/> F = aggregate(target=Y, groups=G2, fn= "mean", weights=W); <br/> F = aggregate(target=Z, groups=G3, fn= "centralmoment", order= "2"); <br/> And, several other forms (see below Table 6.)
+table() | Returns the contingency table of two vectors A and B. The resulting table F consists of max(A) rows and max(B) columns. <br/> More precisely, F[i,j] = \\|{ k \\| A[k] = i and B[k] = j, 1 ≤ k ≤ n }\\|, where A and B are two n-dimensional vectors. <br/> This function supports multiple other variants, which can be found below, at the end of this Table 7. | Input: (&lt;(n x 1) matrix&gt;, &lt;(n x 1) matrix&gt;), [&lt;(n x 1) matrix&gt;]) <br/> Output: &lt;matrix&gt; | F = table(A, B) <br/> F = table(A, B, C) <br/> And, several other forms (see below Table 7.)
+cdf()<br/> pnorm()<br/> pexp()<br/> pchisq()<br/> pf()<br/> pt()<br/> icdf()<br/> qnorm()<br/> qexp()<br/> qchisq()<br/> qf()<br/> qt() | p=cdf(target=q, ...) returns the cumulative probability P[X &lt;= q]. <br/> q=icdf(target=p, ...) returns the inverse cumulative probability i.e., it returns q such that the given target p = P[X&lt;=q]. <br/> For more details, please see the section "Probability Distribution Functions" below Table 7. | Input: (target=&lt;scalar&gt;, dist="...", ...) <br/> Output: &lt;scalar&gt; | p = cdf(target=q, dist="normal", mean=1.5, sd=2); is same as p=pnorm(target=q, mean=1.5, sd=2); <br/> q=icdf(target=p, dist="normal") is same as q=qnorm(target=p, mean=0,sd=1) <br/> More examples can be found in the section "Probability Distribution Functions" below Table 7.
+aggregate() | Splits/groups the values from X according to the corresponding values from G, and then applies the function fn on each group. <br/> The result F is a column matrix, in which each row contains the value computed from a distinct group in G. More specifically, F[k,1] = fn( {X[i,1] \\| 1&lt;=i&lt;=n and G[i,1] = k} ), where n = nrow(X) = nrow(G). <br/> Note that the distinct values in G are used as row indexes in the result matrix F. Therefore, nrow(F) = max(G). It is thus recommended that the values in G are consecutive and start from 1. <br/> This function supports multiple other variants, which can be found below, at the end of this Table 7. | Input:<br/> (target = X &lt;(n x 1) matrix, or matrix&gt;,<br/> &nbsp;&nbsp;&nbsp;groups = G &lt;(n x 1) matrix&gt;,<br/> &nbsp;&nbsp;&nbsp;fn= "..." <br/> &nbsp;&nbsp;&nbsp;[,weights= W&lt;(n x 1) matrix&gt;] <br/> &nbsp;&nbsp;&nbsp;[,ngroups=N] )<br/>Output: F &lt;matrix&gt; <br/> Note: X is a (n x 1) matrix unless ngroups is specified with no weights, in which case X is a regular (n x m) matrix.<br/> The parameter fn takes one of the following functions: "count", "sum", "mean", "variance", "centralmoment". In the case of central moment, one must also provide the order of the moment that need to be computed (see example). | F = aggregate(target=X, groups=G, fn= "..." [,weights = W]) <br/> F = aggregate(target=X, groups=G1, fn= "sum"); <br/> F = aggregate(target=Y, groups=G2, fn= "mean", weights=W); <br/> F = aggregate(target=Z, groups=G3, fn= "centralmoment", order= "2"); <br/> And, several other forms (see below Table 7.)
 interQuartileMean() | Returns the mean of all x in X such that x&gt;quantile(X, 0.25) and x&lt;=quantile(X, 0.75). X, W are column matrices (vectors) of the same size. W contains the weights for data in X. | Input: (X &lt;(n x 1) matrix&gt; [, W &lt;(n x 1) matrix&gt;)]) <br/> Output: &lt;scalar&gt; | interQuartileMean(X) <br/> interQuartileMean(X, W)
 quantile () | The p-quantile for a random variable X is the value x such that Pr[X&lt;x] &lt;= p and Pr[X&lt;= x] &gt;= p <br/> let n=nrow(X), i=ceiling(p*n), quantile() will return X[i]. p is a scalar (0&lt;p&lt;1) that specifies the quantile to be computed. Optionally, a weight vector may be provided for X. | Input: (X &lt;(n x 1) matrix&gt;, [W &lt;(n x 1) matrix&gt;),] p &lt;scalar&gt;) <br/> Output: &lt;scalar&gt; | quantile(X, p) <br/> quantile(X, W, p)
 quantile () | Returns a column matrix with list of all quantiles requested in P. | Input: (X &lt;(n x 1) matrix&gt;, [W &lt;(n x 1) matrix&gt;),] P &lt;(q x 1) matrix&gt;) <br/> Output: matrix | quantile(X, P) <br/> quantile(X, W, P)
@@ -679,7 +707,7 @@ outer(vector1, vector2, "op") | Applies element wise binary operation "op" (for 
 The built-in function table() supports different types of input parameters. These variations are described below:
 
   * Basic form: `F=table(A,B)`
-    As described above in Table 6.
+    As described above in Table 7.
   * Weighted form: `F=table(A,B,W)`
     Users can provide an optional third parameter C with the same dimensions as of A and B. In this case, the output F[i,j] = ∑kC[k], where A[k] = i and B[k] = j (1 ≤ k ≤ n).
   * Scalar form
@@ -697,11 +725,11 @@ The built-in function table() supports different types of input parameters. Thes
 The built-in function aggregate() supports different types of input parameters. These variations are described below:
 
   * Basic form: `F=aggregate(target=X, groups=G, fn="sum")`
-    As described above in Table 6.
+    As described above in Table 7.
   * Weighted form: `F=aggregate(target=X, groups=G, weights=W, fn="sum")`
     Users can provide an optional parameter W with the same dimensions as of A and B. In this case, fn computes the weighted statistics over values from X, which are grouped by values from G.
   * Specified Output Size
-As noted in Table 6, the number of rows in the output matrix F is equal to the maximum value in the grouping matrix G. Therefore, the dimensions of F are known only after its execution is complete. When needed, users can precisely control the size of the output matrix via an additional argument, `ngroups`, as shown below: <br/>
+As noted in Table 7, the number of rows in the output matrix F is equal to the maximum value in the grouping matrix G. Therefore, the dimensions of F are known only after its execution is complete. When needed, users can precisely control the size of the output matrix via an additional argument, `ngroups`, as shown below: <br/>
     `F = aggregate(target=X, groups=G, fn="sum", ngroups=10);` <br/>
 The output F will have exactly 10 rows and 1 column. F may be a truncated or padded (with zeros) version of the output produced by `aggregate(target=X, groups=G, fn="sum")` – depending on the values of `ngroups` and `max(G)`. For example, if `max(G) < ngroups` then the last (`ngroups-max(G)`) rows will have zeros.
 
@@ -788,7 +816,7 @@ is same as
 
 ### Mathematical and Trigonometric Built-In Functions
 
-**Table 7**: Mathematical and Trigonometric Built-In Functions
+**Table 8**: Mathematical and Trigonometric Built-In Functions
 
 Function | Description | Parameters | Example
 -------- | ----------- | ---------- | -------
@@ -799,12 +827,12 @@ sign() | Returns a matrix representing the signs of the input matrix elements, w
 
 ### Linear Algebra Built-In Functions
 
-**Table 8**: Linear Algebra Built-In Functions
+**Table 9**: Linear Algebra Built-In Functions
 
 Function | Description | Parameters | Example
 -------- | ----------- | ---------- | -------
 cholesky() | Computes the Cholesky decomposition of symmetric input matrix A | Input: (A &lt;matrix&gt;) <br/> Output: &lt;matrix&gt; | <span style="white-space: nowrap;">A = matrix("4 12 -16 12 37 -43</span> -16 -43 98", rows=3, cols=3) <br/> B = cholesky(A)<br/> Matrix B: [[2, 0, 0], [6, 1, 0], [-8, 5, 3]]
-diag() | Create diagonal matrix from (n x 1) or (1 x n) matrix, or take diagonal from square matrix | Input: (n x 1) or (1 x n) matrix, or (n x n) matrix <br/> Output: (n x n) matrix, or (n x 1) matrix | diag(X)
+diag() | Create diagonal matrix from (n x 1) matrix, or take diagonal from square matrix | Input: (n x 1) matrix, or (n x n) matrix <br/> Output: (n x n) matrix, or (n x 1) matrix | D = diag(matrix(1.0, rows=3, cols=1))<br/> E = diag(matrix(1.0, rows=3, cols=3))
 eigen() | Computes Eigen decomposition of input matrix A. The Eigen decomposition consists of two matrices V and w such that A = V %\*% diag(w) %\*% t(V). The columns of V are the eigenvectors of the original matrix A. And, the eigen values are given by w. <br/> It is important to note that this function can operate only on small-to-medium sized input matrix that can fit in the main memory. For larger matrices, an out-of-memory exception is raised. | Input : (A &lt;matrix&gt;) <br/> Output : [w &lt;(m x 1) matrix&gt;, V &lt;matrix&gt;] <br/> A is a square symmetric matrix with dimensions (m x m). This function returns two matrices w and V, where w is (m x 1) and V is of size (m x m). | [w, V] = eigen(A)
 lu() | Computes Pivoted LU decomposition of input matrix A. The LU decomposition consists of three matrices P, L, and U such that P %\*% A = L %\*% U, where P is a permutation matrix that is used to rearrange the rows in A before the decomposition can be computed. L is a lower-triangular matrix whereas U is an upper-triangular matrix. <br/> It is important to note that this function can operate only on small-to-medium sized input matrix that can fit in the main memory. For larger matrices, an out-of-memory exception is raised. | Input : (A &lt;matrix&gt;) <br/> Output : [&lt;matrix&gt;, &lt;matrix&gt;, &lt;matrix&gt;] <br/> A is a square matrix with dimensions m x m. This function returns three matrices P, L, and U, all of which are of size m x m. | [P, L, U] = lu(A)
 qr() | Computes QR decomposition of input matrix A using Householder reflectors. The QR decomposition of A consists of two matrices Q and R such that A = Q%\*%R where Q is an orthogonal matrix (i.e., Q%\*%t(Q) = t(Q)%\*%Q = I, identity matrix) and R is an upper triangular matrix. For efficiency purposes, this function returns the matrix of Householder reflector vectors H instead of Q (which is a large m x m potentially dense matrix). The Q matrix can be explicitly computed from H, if needed. In most applications of QR, one is interested in calculating Q %\*% B or t(Q) %\*% B – and, both can be computed directly using H instead of explicitly constructing the large Q matrix. <br/> It is important to note that this function can operate only on small-to-medium sized input matrix that can fit in the main memory. For larger matrices, an out-of-memory exception is raised. | Input : (A &lt;matrix&gt;) <br/> Output : [&lt;matrix&gt;, &lt;matrix&gt;] <br/> A is a (m x n) matrix, which can either be a square matrix (m=n) or a rectangular matrix (m != n). This function returns two matrices H and R of size (m x n) i.e., same size as of the input matrix A. | [H, R] = qr(A)
@@ -853,10 +881,10 @@ can span multiple part files.
 
 The binary format can only be read and written by SystemML.
 
-Let's look at a matrix and examples of its data represented in the supported formats with corresponding metadata. In Table 9, we have
+Let's look at a matrix and examples of its data represented in the supported formats with corresponding metadata. In the table below, we have
 a matrix consisting of 4 rows and 3 columns.
 
-**Table 9**: Matrix
+**Table 10**: Matrix
 
 <table>
 	<tr>
@@ -902,7 +930,8 @@ Below, we have examples of this matrix in the CSV, Matrix Market, IJV, and Binar
 	    "format": "csv",
 	    "header": false,
 	    "sep": ",",
-	    "description": { "author": "SystemML" }
+	    "author": "SystemML",
+	    "created": "2017-01-01 00:00:01 PST"
 	}
 </div>
 
@@ -934,7 +963,8 @@ Below, we have examples of this matrix in the CSV, Matrix Market, IJV, and Binar
 	    "cols": 3,
 	    "nnz": 6,
 	    "format": "text",
-	    "description": { "author": "SystemML" }
+	    "author": "SystemML",
+	    "created": "2017-01-01 00:00:01 PST"
 	}
 </div>
 
@@ -952,7 +982,8 @@ Below, we have examples of this matrix in the CSV, Matrix Market, IJV, and Binar
 	    "cols_in_block": 1000,
 	    "nnz": 6,
 	    "format": "binary",
-	    "description": { "author": "SystemML" }
+	    "author": "SystemML",
+	    "created": "2017-01-01 00:00:01 PST"
 	}
 </div>
 
@@ -961,18 +992,19 @@ Below, we have examples of this matrix in the CSV, Matrix Market, IJV, and Binar
 As another example, here we see the content of the MTD file `scalar.mtd` associated with a scalar data file `scalar`
 that contains the scalar value 2.0.
 
-    {
-        "data_type": "scalar",
-        "value_type": "double",
-        "format": "text",
-        "description": { "author": "SystemML" }
-    }
+	{
+	    "data_type": "scalar",
+	    "value_type": "double",
+	    "format": "text",
+	    "author": "SystemML",
+	    "created": "2017-01-01 00:00:01 PST"
+	}
 
 
 Metadata is represented as an MTD file that contains a single JSON object with the attributes described below.
 
 
-**Table 10**: MTD attributes
+**Table 11**: MTD attributes
 
 Parameter Name | Description | Optional | Permissible values | Data type valid for
 -------------- | ----------- | -------- | ------------------ | -------------------
@@ -984,13 +1016,15 @@ Parameter Name | Description | Optional | Permissible values | Data type valid f
 `nnz` | Number of non-zero values | Yes | any integer &gt; `0` | `matrix`
 `format` | Data file format | Yes. Default value is `text` | `csv`, `mm`, `text`, `binary` | `matrix`, `scalar`. Formats `csv` and `mm` are applicable only to matrices
 `description` | Description of the data | Yes | Any valid JSON string or object | `matrix`, `scalar`
+`author` | User that created the metadata file, defaults to `SystemML` | N/A | N/A | N/A
+`created` | Date/time when metadata file was written | N/A | N/A | N/A
 
 
 In addition, when reading or writing CSV files, the metadata may contain one or more of the following five attributes.
 Note that this metadata can be specified as parameters to the `read` and `write` function calls.
 
 
-**Table 11**: Additional MTD attributes when reading/writing CSV files
+**Table 12**: Additional MTD attributes when reading/writing CSV files
 
 Parameter Name | Description | Optional | Permissible values | Data type valid for
 -------------- | ----------- | -------- | ------------------ | -------------------
@@ -1064,7 +1098,7 @@ Additionally, `readMM()` and `read.csv()` are supported and can be used instead 
 #### Write Built-In Function
 
 The `write` method is used to persist `scalar` and `matrix` data to files in the local file system or HDFS. The syntax of `write` is shown below.
-The parameters are described in Table 12. Note that the set of supported parameters for `write` is NOT the same as for `read`.
+The parameters are described in Table 13. Note that the set of supported parameters for `write` is NOT the same as for `read`.
 SystemML writes an MTD file for the written data.
 
     write(identifier, "outputfile", [additional parameters])
@@ -1072,13 +1106,13 @@ SystemML writes an MTD file for the written data.
 The user can use constant string concatenation in the `"outputfile"` parameter to give the full path of the file, where `+` is used as the concatenation operator.
 
 
-**Table 12**: Parameters for `write()` method
+**Table 13**: Parameters for `write()` method
 
 Parameter Name | Description | Optional | Permissible Values
 -------------- | ----------- | -------- | ------------------
 `identifier` | Variable whose data is to be written to a file. Data can be `matrix` or `scalar`. | No | Any variable name
 `"outputfile"` | The path to the data file in the file system | No | Any valid filename
-`[additional parameters]` | See Tables 10 and 11 | |
+`[additional parameters]` | See Tables 11 and 12 | |
 
 ##### **Examples**
 
@@ -1095,7 +1129,8 @@ Example content of `out/file.ijv.mtd`:
         "cols": 8,
         "nnz": 4,
         "format": "text",
-        "description": { "author": "SystemML" }
+        "author": "SystemML",
+        "created": "2017-01-01 00:00:01 PST"
     }
 
 Write `V` to `out/file` in `binary` format:
@@ -1113,7 +1148,8 @@ Example content of `out/file.mtd`:
         "rows_in_block": 1000,
         "cols_in_block": 1000,
         "format": "binary",
-        "description": { "author": "SystemML" }
+        "author": "SystemML",
+        "created": "2017-01-01 00:00:01 PST"
     }
 
 Write `V` to `n.csv` in `csv` format with column headers, `";"` as delimiter, and zero values are not written.
@@ -1131,7 +1167,8 @@ Example content of `n.csv.mtd`:
         "format": "csv",
         "header": true,
         "sep": ";",
-        "description": { "author": "SystemML" }
+        "author": "SystemML",
+        "created": "2017-01-01 00:00:01 PST"
     }
 
 Write `x` integer value to file `out/scalar_i`
@@ -1144,7 +1181,8 @@ Example content of `out/scalar_i.mtd`:
         "data_type": "scalar",
         "value_type": "int",
         "format": "text",
-        "description": { "author": "SystemML" }
+        "author": "SystemML",
+        "created": "2017-01-01 00:00:01 PST"
     }
 
 Unlike `read`, the `write` function does not need a constant string expression, so the following example will work:
@@ -1155,6 +1193,26 @@ Unlike `read`, the `write` function does not need a constant string expression, 
     file = "A" + i + ".mtx";
     write(A, dir + file, format="csv");
 
+The `description` parameter can be used to attach a description to the metadata:
+
+	A = matrix("1 2 3 4", rows=2, cols=2)
+	write(A, "mymatrix.csv", format="csv", description="my matrix")
+
+This will generate the following `mymatrix.csv.mtd` metadata file:
+
+	{
+	    "data_type": "matrix",
+	    "value_type": "double",
+	    "rows": 2,
+	    "cols": 2,
+	    "nnz": 4,
+	    "format": "csv",
+	    "header": false,
+	    "sep": ",",
+	    "description": "my matrix",
+	    "author": "SystemML",
+	    "created": "2017-01-01 00:00:01 PST"
+	}
 
 ### Data Pre-Processing Built-In Functions
 
@@ -1171,7 +1229,7 @@ The transformations are specified to operate on individual columns. The set of a
 
 The following table indicates which transformations can be used simultaneously on a single column.
 
-** Table 13**: Data transformations that can be used simultaneously.
+**Table 14**: Data transformations that can be used simultaneously.
 
 <div style="float:left">
 <table>
@@ -1295,7 +1353,7 @@ The `transform()` function returns the actual transformed data in the form of a 
 
 As an example of the `transform()` function, consider the following [`data.csv`](files/dml-language-reference/data.csv) file that represents a sample of homes data.
 
-**Table 14**: The [`data.csv`](files/dml-language-reference/data.csv) homes data set
+**Table 15**: The [`data.csv`](files/dml-language-reference/data.csv) homes data set
 
 zipcode | district | sqft | numbedrooms | numbathrooms | floors | view  | saleprice | askingprice
 --------|----------|------|-------------|--------------|--------|-------|-----------|------------
@@ -1439,15 +1497,406 @@ Note that the metadata generated during the training phase (located at `/user/ml
 
 ### Other Built-In Functions
 
-**Table 15**: Other Built-In Functions
+**Table 16**: Other Built-In Functions
 
 Function | Description | Parameters | Example
 -------- | ----------- | ---------- | -------
 append() | Append a string to another string separated by "\n" <br/> Limitation: The string may grow up to 1 MByte. | Input: (&lt;string&gt;, &lt;string&gt;) <br/> Output: &lt;string&gt; | s = "iter=" + i <br/> i = i + 1 <br/> s = append(s, "iter=" + i) <br/> write(s, "s.out")
-toString() | Formats a Matrix object into a string. <br/> "rows" & "cols" : number of rows and columns to print<br/> "decimal" : number of digits after the decimal<br/>"sparse" : set to true to print in sparse format, i.e. _RowIndex_ _ColIndex_ _Value_<br/>"sep" and "linesep" : inter-element separator and the line separator strings| Input : (&lt;matrix&gt;,<br/> &nbsp;&nbsp;rows=100,<br/> &nbsp;&nbsp;cols=100,<br/> &nbsp;&nbsp;decimal=3,<br/> &nbsp;&nbsp;sparse=FALSE,<br/> &nbsp;&nbsp;sep=" ",<br/> &nbsp;&nbsp;linesep="\n") <br/> Output: &lt;string&gt; | X = matrix(seq(1, 9), rows=3, cols=3)<br/>str = toString(X, sep=" \| ")
-print() | Prints the value of a scalar variable x. This built-in takes an optional string parameter. | Input: (&lt;scalar&gt;) | print("hello") <br/> print("hello" + "world") <br/> print("value of x is " + x )
+toString() | Formats a Matrix or Frame object into a string. <br/> "rows" & "cols" : number of rows and columns to print<br/> "decimal" : number of digits after the decimal<br/>"sparse" : set to true to print Matrix object in sparse format, i.e. _RowIndex_ _ColIndex_ _Value_<br/>"sep" and "linesep" : inter-element separator and the line separator strings| Input : (&lt;matrix&gt; or &lt;frame&gt;,<br/> &nbsp;&nbsp;rows=100,<br/> &nbsp;&nbsp;cols=100,<br/> &nbsp;&nbsp;decimal=3,<br/> &nbsp;&nbsp;sparse=FALSE,<br/> &nbsp;&nbsp;sep=" ",<br/> &nbsp;&nbsp;linesep="\n") <br/> Output: &lt;string&gt; | X = matrix(seq(1, 9), rows=3, cols=3)<br/>str = toString(X, sep=" \| ") <br/><br/>F = as.frame(X)<br/>print(toString(F, rows=2, cols=2))
+print() | Prints a scalar variable. The print() function allows printf-style formatting by optionally allowing multiple arguments, where the first argument is the string that specifies the formatting and the additional arguments are the arguments to format. | Input: &lt;scalar&gt;<br/>or<br/>&lt;string, args...&gt; | print("hello") <br/> print("hello" + "world") <br/> print("value of x is " + x ) <br/><br/>a='hello';<br/>b=3;<br/>c=4.5;<br/>d=TRUE;<br/>print('%s %d %f %b', a, b, c, d); <br/><br/>a='hello';<br/>b='goodbye';<br/>c=4;<br/>d=3;<br/>e=3.0;<br/>f=5.0;<br/>g=FALSE;<br/>print('%s %d %f %b', (a+b), (c-d), (e*f), !g);
 stop() | Halts the execution of DML program by printing the message that is passed in as the argument. <br/> Note that the use of stop() is not allowed inside a parfor loop. |  Input: (&lt;scalar&gt;) | stop("Inputs to DML program are invalid") <br/> stop("Class labels must be either -1 or +1")
 order() | Sort a column of the matrix X in decreasing/increasing order and return either index (index.return=TRUE) or data (index.return=FALSE). | Input: (target=X, by=column, decreasing, index.return) | order(X, by=1, decreasing=FALSE, index.return=FALSE)
+
+
+## Frames
+
+The `frame` data type represents tabular data.  In contrast to a `matrix`, whose element values are of type `double`, a `frame` can be associated with a schema to specify additional value types.  Frames can be read from and written to files and support both left and right indexing.    Built-in functions are provided to convert between frames and matrices.  Advanced transform operations can also be applied.  Note that frames are only supported for standalone and spark modes.
+
+### Creating Frames
+
+To create a `frame`, specify <code>data_type="frame"</code> when reading data from a file.  Input formats csv, text, and binary are supported.
+
+    A = read("fileA", data_type="frame", rows=10, cols=8);
+    B = read("dataB", data_type="frame", rows=3, cols=3, format="csv");
+
+A schema can be specified when creating a `frame` where the schema is a string containing a value type per column.  The supported value types for a schema are `string`, `double`, `int`, `boolean`.  Note <code>schema=""</code> resolves to a string schema and if no schema is specified, the default is <code>""</code>. 
+
+This example shows creating a frame with <code>schema="string,double,int,boolean"</code> since the data has four columns (one of each supported value type).
+
+    tableSchema = "string,double,int,boolean";
+    C = read("tableC", data_type="frame", schema=tableSchema, rows=1600, cols=4, format="csv");
+
+*Note: the header line in frame CSV files is sensitive to white spaces.* <br/>
+For example, CSV1 with header <code>ID,FirstName,LastName</code> results in three columns with tokens between separators.  In contrast, CSV2 with header <code>ID, FirstName,LastName</code> also results in three columns but the second column has a space preceding <code> FirstName</code>.  This extra space is significant when referencing the second column by name in transform specifications as described in [Transforming Frames](dml-language-reference.html#transforming-frames).
+
+<div class="codetabs2">
+
+<div data-lang="CSV1" markdown="1">
+	ID,FirstName,LastName
+	1,FirstName1,LastName1
+	2,FirstName2,LastName2
+</div>
+
+<div data-lang="CSV2" markdown="1">
+	ID, FirstName,LastName
+	1,FirstName1,LastName1
+	2,FirstName2,LastName2
+</div>
+
+<div data-lang="CSV MTD" markdown="1">
+	{
+	    "data_type": "frame",
+	    "format": "csv",
+	    "header": true
+	}
+</div>
+
+</div>
+
+### Appending Frames
+
+Built-In functions <code>cbind()</code> and <code>rbind()</code> are supported for frames to add columns or rows to an existing frame.
+
+**Table F1**: Frame Append Built-In Functions
+
+Function | Description | Parameters | Example
+-------- | ----------- | ---------- | -------
+cbind() | Column-wise frame concatenation. Concatenates the second frame as additional columns to the first frame. | Input: (X &lt;frame&gt;, Y &lt;frame&gt;) <br/>Output: &lt;frame&gt; <br/> X and Y are frames, where the number of rows in X and the number of rows in Y are the same. | A = read("file1", data_type="frame", rows=2, cols=3, format="binary") <br/> B = read("file2", data_type="frame", rows=2, cols=3, format="binary") <br/> C = cbind(A, B) <br/> # Dimensions of C: 2 X 6
+rbind() | Row-wise frame concatenation. Concatenates the second frame as additional rows to the first frame. | Input: (X &lt;fame&gt;, Y &lt;frame&gt;) <br/>Output: &lt;frame&gt; <br/> X and Y are frames, where the number of columns in X and the number of columns in Y are the same. | A = read("file1", data_type="frame", rows=2, cols=3, format="binary") <br/> B = read("file2", data_type="frame", rows=2, cols=3, format="binary") <br/> C = rbind(A, B) <br/> # Dimensions of C: 4 X 3
+
+### Indexing Frames
+
+Similar to matrices, frames support both right and left indexing.  Note for left indexing, the right hand side frame size and selected left hand side frame slice must match.
+
+    # = [right indexing]
+    A = read("inputA", data_type="frame", rows=10, cols=10, format="binary")
+    B = A[4:5, 6:7]
+    C = A[1, ]
+    D = A[, 3]
+    E = A[, 1:2]
+
+    # [left indexing] =
+    F = read("inputF", data_type="frame", rows=10, cols=10, format="binary")
+    F[4:5, 6:7] = B
+    F[1, ] = C
+    F[, 3] = D
+    F[, 1:2] = E
+
+### Casting Frames
+
+Frames support converting between matrices and scalars using <code>as.frame(), as.matrix()</code> and <code>as.scalar()</code>.  Casting a frame to a matrix is a best effort operation, which tries to parse doubles.  If there are strings that cannot be parsed, the <code>as.frame()</code> operation produces errors.  For example, a <code>java.lang.NumberFormatException</code> may occur for invalid data since Java's <code>Double.parseDouble()</code> is used internally for parsing.
+
+**Table F2**: Casting Built-In Functions
+
+Function | Description | Parameters | Example
+-------- | ----------- | ---------- | -------
+as.frame(&lt;matrix&gt;) | Matrix is cast to frame. | Input: (&lt;matrix&gt;) <br/> Output: &lt;frame&gt; | A = read("inputMatrixDataFile") <br/> B = as.frame(A) <br/>write(B, "outputFrameDataFile", format="binary")
+as.frame(&lt;scalar&gt;) | Scalar is cast to 1x1 frame. | Input: (&lt;scalar&gt;) <br/> Output: &lt;frame&gt; | A = read("inputScalarData", data_type="scalar", value_type="string") <br/> B = as.frame(A) <br/> write(B, "outputFrameData")
+as.matrix(&lt;frame&gt;) | Frame is cast to matrix. | Input: (&lt;frame&gt;) <br/> Output: &lt;matrix&gt; | B = read("inputFrameDataFile") <br/> C = as.matrix(B) <br/>write(C, "outputMatrixDataFile", format="binary")
+as.scalar(&lt;frame&gt;) | 1x1 Frame is cast to scalar. | Input: (&lt;frame&gt;) <br/> Output: &lt;scalar&gt; | B = read("inputFrameData", data_type="frame", schema="string", rows=1, cols=1) <br/> C = as.scalar(B) <br/> write(C, "outputScalarData")
+
+*Note: <code>as.frame(matrix)</code> produces a double schema, and <code>as.scalar(frame)</code> produces of scalar of value type given by the frame schema.*
+
+### Transforming Frames
+
+Frames support additional [Data Pre-Processing Built-In Functions](dml-language-reference.html#data-pre-processing-built-in-functions) as shown below.
+
+Function | Description | Parameters | Example
+-------- | ----------- | ---------- | -------
+transformencode() | Transforms a frame into a matrix using specification. <br/> Builds and applies frame metadata. | Input:<br/> target = &lt;frame&gt; <br/> spec = &lt;json specification&gt; <br/> Outputs: &lt;matrix&gt;, &lt;frame&gt;|[transformencode](dml-language-reference.html#transformencode)
+transformdecode() | Transforms a matrix into a frame using specification. <br/> Valid only for specific transformation types. | Input:<br/> target = &lt;matrix&gt; <br/> spec = &lt;json specification&gt; <br/> meta = &lt;frame&gt; <br/> Output: &lt;frame&gt; |[transformdecode](dml-language-reference.html#transformdecode)
+transformapply() | Transforms a frame into a matrix using specification. <br/> Applies existing frame metadata. |  Input:<br/> target = &lt;frame&gt; <br/> spec = &lt;json specification&gt; <br/> meta = &lt;frame&gt; <br/> Output: &lt;matrix&gt; | [transformapply](dml-language-reference.html#transformapply)
+
+The following table summarizes the supported transformations for <code>transformencode(), transformdecode(), transformapply()</code>.  Note only recoding, dummy coding and pass-through are reversible, i.e., subject to <code>transformdecode()</code>, whereas binning, missing value imputation, and omit are not.
+
+**Table F3**: Frame data transformation types.
+
+<div style="float:left">
+<table>
+  <thead>
+    <tr>
+      <th>&nbsp;</th>
+      <th>encode</th>
+      <th>decode</th>
+      <th>apply</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="grayboldcell">RCD</td>
+      <td class="centerboldcell lightgreen">*</td>
+      <td class="centerboldcell lightgreen">*</td>
+      <td class="centerboldcell lightgreen">*</td>
+    </tr>
+    <tr>
+      <td class="grayboldcell">DCD</td>
+      <td class="centerboldcell lightgreen">*</td>
+      <td class="centerboldcell lightgreen">*</td>
+      <td class="centerboldcell lightgreen">*</td>
+    </tr>
+    <tr>
+      <td class="grayboldcell">BIN</td>
+      <td class="centerboldcell lightgreen">*</td>
+      <td class="centerboldcell lightred">x</td>
+      <td class="centerboldcell lightgreen">*</td>
+    </tr>
+    <tr>
+      <td class="grayboldcell">MVI</td>
+      <td class="centerboldcell lightgreen">*</td>
+      <td class="centerboldcell lightred">x</td>
+      <td class="centerboldcell lightgreen">*</td>
+    </tr>
+    <tr>
+      <td class="grayboldcell">OMIT</td>
+      <td class="centerboldcell lightgreen">*</td>
+      <td class="centerboldcell lightred">x</td>
+      <td class="centerboldcell lightgreen">*</td>
+    </tr>
+  </tbody>
+</table>
+
+</div>
+<div style="float:left; margin-left:5px;">
+<table>
+  <thead>
+    <tr>
+      <th>Key</th>
+      <th>Meaning</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td class="boldcell">RCD</td><td>Recoding</td></tr>
+    <tr><td class="boldcell">DCD</td><td>Dummycoding</td></tr>
+    <tr><td class="boldcell">BIN</td><td>Binning</td></tr>
+    <tr><td class="boldcell">MVI</td><td>Missing value handling by imputation</td></tr>
+    <tr><td class="boldcell">OMIT</td><td>Missing value handling by omitting</td></tr>
+  </tbody>
+</table>
+</div>
+<div style="float:left; margin-left:5px;">
+<table>
+  <thead>
+    <tr>
+      <th>Key</th>
+      <th>Meaning</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td class="centerboldcell lightgreen">*</td><td>Supported</td></tr>
+    <tr><td class="centerboldcell lightred">x</td><td>Not supported</td></tr>
+  </tbody>
+</table>
+</div>
+
+<br style="clear: left;" />
+<br/>
+
+
+The following examples use [`homes.csv`](files/dml-language-reference/homes.csv) data set.
+
+**Table F4**: The [`homes.csv`](files/dml-language-reference/homes.csv) data set
+
+zipcode | district | sqft | numbedrooms | numbathrooms | floors | view  | saleprice | askingprice
+--------|----------|------|-------------|--------------|--------|-------|-----------|------------
+95141   | west     | 1373 | 7           | 1            | 3      | FALSE | 695       | 698
+91312   | south    | 3261 | 6           | 2            | 2      | FALSE | 902       | 906
+94555   | north    | 1835 | 3           | 3            | 3      | TRUE  | 888       | 892
+95141   | east     | 2833 | 6           | 2.5          | 2      | TRUE  | 927       | 932
+96334   | south    | 2742 | 6           | 2.5          | 2      | FALSE | 872       | 876
+96334   | north    | 2195 | 5           | 2.5          | 2      | FALSE | 799       | 803
+98755   | north    | 3469 | 7           | 2.5          | 2      | FALSE | 958       | 963
+96334   | west     | 1685 | 7           | 1.5          | 2      | TRUE  | 757       | 760
+95141   | west     | 2238 | 4           | 3            | 3      | FALSE | 894       | 899
+91312   | west     | 1245 | 4           | 1            | 1      | FALSE | 547       | 549
+98755   | south    | 3702 | 7           | 3            | 1      | FALSE | 959       | 964
+98755   | north    | 1865 | 7           | 1            | 2      | TRUE  | 742       | 745
+94555   | north    | 3837 | 3           | 1            | 1      | FALSE | 839       | 842
+91312   | west     | 2139 | 3           | 1            | 3      | TRUE  | 820       | 824
+95141   | north    | 3824 | 4           | 3            | 1      | FALSE | 954       | 958
+98755   | east     | 2858 | 5           | 1.5          | 1      | FALSE | 759       | 762
+91312   | south    | 1827 | 7           | 3            | 1      | FALSE | 735       | 738
+91312   | south    | 3557 | 2           | 2.5          | 1      | FALSE | 888       | 892
+91312   | south    | 2553 | 2           | 2.5          | 2      | TRUE  | 884       | 889
+96334   | west     | 1682 | 3           | 1.5          | 1      | FALSE | 625       | 628
+
+
+The metadata file [`homes.csv.mtd`](files/dml-language-reference/homes.csv.mtd) looks as follows:
+
+	{
+	    "data_type": "frame",
+	    "format": "csv",
+	    "header": true,
+	}
+
+#### transformencode
+
+The <code>transformencode()</code> function takes a frame and outputs a matrix based on defined transformation specification.  In addition, the corresponding metadata is output as a <code>frame</code>.
+
+*Note: the metadata output is simply a frame so all frame operations (including read/write) can also be applied to the metadata.*
+
+This example replaces values in specific columns to create a recoded matrix with associated frame identifying the mapping between original and substituted values.  An example transformation specification file [`homes.tfspec_recode2.json`](files/dml-language-reference/homes.tfspec_recode2.json) is given below:
+
+	{
+	     "recode": [ "zipcode", "district", "view" ]
+	}
+
+The following DML utilizes the `transformencode()` function.
+
+    F1 = read("/user/ml/homes.csv", data_type="frame", format="csv");
+    jspec = read("/user/ml/homes.tfspec_recode2.json", data_type="scalar", value_type="string");
+    [X, M] = transformencode(target=F1, spec=jspec);
+    print(toString(X));
+    if(1==1){}
+    print(toString(M));
+
+The transformed matrix X and output M are as follows.
+
+    1.000 1.000 1373.000 7.000 1.000 3.000 1.000 695.000 698.000
+    2.000 2.000 3261.000 6.000 2.000 2.000 1.000 902.000 906.000
+    3.000 3.000 1835.000 3.000 3.000 3.000 2.000 888.000 892.000
+    1.000 4.000 2833.000 6.000 2.500 2.000 2.000 927.000 932.000
+    4.000 2.000 2742.000 6.000 2.500 2.000 1.000 872.000 876.000
+    4.000 3.000 2195.000 5.000 2.500 2.000 1.000 799.000 803.000
+    5.000 3.000 3469.000 7.000 2.500 2.000 1.000 958.000 963.000
+    4.000 1.000 1685.000 7.000 1.500 2.000 2.000 757.000 760.000
+    1.000 1.000 2238.000 4.000 3.000 3.000 1.000 894.000 899.000
+    2.000 1.000 1245.000 4.000 1.000 1.000 1.000 547.000 549.000
+    5.000 2.000 3702.000 7.000 3.000 1.000 1.000 959.000 964.000
+    5.000 3.000 1865.000 7.000 1.000 2.000 2.000 742.000 745.000
+    3.000 3.000 3837.000 3.000 1.000 1.000 1.000 839.000 842.000
+    2.000 1.000 2139.000 3.000 1.000 3.000 2.000 820.000 824.000
+    1.000 3.000 3824.000 4.000 3.000 1.000 1.000 954.000 958.000
+    5.000 4.000 2858.000 5.000 1.500 1.000 1.000 759.000 762.000
+    2.000 2.000 1827.000 7.000 3.000 1.000 1.000 735.000 738.000
+    2.000 2.000 3557.000 2.000 2.500 1.000 1.000 888.000 892.000
+    2.000 2.000 2553.000 2.000 2.500 2.000 2.000 884.000 889.000
+    4.000 1.000 1682.000 3.000 1.500 1.000 1.000 625.000 628.000
+
+
+    # FRAME: nrow = 5, ncol = 9
+    # zipcode district sqft numbedrooms numbathrooms floors view saleprice askingprice
+    # STRING STRING STRING STRING STRING STRING STRING STRING STRING
+    96334·4 south·2 FALSE·1
+    95141·1 east·4 TRUE·2
+    98755·5 north·3
+    94555·3 west·1
+    91312·2
+
+<br/>
+As mentioned in [Creating Frames](dml-language-reference.html#creating-frames), the header line in frame CSV files is sensitive to white space.  The tabs below show compatible transform specifications for the given CSV header.  Note the extra (possibly inadvertent) space before the <code> district</code> column in CSV2 impacts the transform specification.  More specifically,  transform spec1 does not match the header in CSV2.  To match, either remove the extra space before <code> district</code> in CSV2 or use spec2 which quotes the <code> district</code> token name to include the extra space.
+
+<div class="codetabs2">
+
+<div data-lang="CSV1" markdown="1">
+	zipcode,district,sqft,numbedrooms,numbathrooms,floors,view,saleprice,askingprice
+	95141,west,1373,7,1,3,FALSE,695,698
+    91312,south,3261,6,2,2,FALSE,902,906
+</div>
+
+<div data-lang="CSV2" markdown="1">
+	zipcode, district,sqft,numbedrooms,numbathrooms,floors,view,saleprice,askingprice
+	95141,west,1373,7,1,3,FALSE,695,698
+    91312,south,3261,6,2,2,FALSE,902,906
+</div>
+
+<div data-lang="spec1" markdown="1">
+	{
+	     ids:false, recode: [ zipcode, district, view ]
+	}
+</div>
+
+<div data-lang="spec2" markdown="1">
+	{
+	     ids:false, recode: [ zipcode, " district", view ]
+	}
+</div>
+
+<div data-lang="CSV MTD" markdown="1">
+	{
+	    "data_type": "frame",
+	    "format": "csv",
+	    "header": true
+	}
+</div>
+
+</div>
+<br/>
+
+#### transformdecode
+
+The <code>transformdecode()</code> function can be used to transform a <code>matrix</code> back into a <code>frame</code>.  Only recoding, dummy coding and pass-through transformations are reversible and can be used with <code>transformdecode()</code>.  The transformations binning, missing value imputation, and omit are not reversible and cannot be used with <code>transformdecode()</code>.
+
+The next example takes the outputs from the [transformencode](dml-language-reference.html#transformencode) example and reconstructs the original data using the same transformation specification. 
+
+    F1 = read("/user/ml/homes.csv", data_type="frame", format="csv");
+    jspec = read("/user/ml/homes.tfspec_recode2.json", data_type="scalar", value_type="string");
+    [X, M] = transformencode(target=F1, spec=jspec);
+    F2 = transformdecode(target=X, spec=jspec, meta=M);
+    print(toString(F2));
+
+    # FRAME: nrow = 20, ncol = 9
+    # C1 C2 C3 C4 C5 C6 C7 C8 C9
+    # STRING STRING DOUBLE DOUBLE DOUBLE DOUBLE STRING DOUBLE DOUBLE
+    95141 west  1373.000 7.000 1.000 3.000 FALSE 695.000 698.000
+    91312 south 3261.000 6.000 2.000 2.000 FALSE 902.000 906.000
+    94555 north 1835.000 3.000 3.000 3.000 TRUE  888.000 892.000
+    95141 east  2833.000 6.000 2.500 2.000 TRUE  927.000 932.000
+    96334 south 2742.000 6.000 2.500 2.000 FALSE 872.000 876.000
+    96334 north 2195.000 5.000 2.500 2.000 FALSE 799.000 803.000
+    98755 north 3469.000 7.000 2.500 2.000 FALSE 958.000 963.000
+    96334 west  1685.000 7.000 1.500 2.000 TRUE  757.000 760.000
+    95141 west  2238.000 4.000 3.000 3.000 FALSE 894.000 899.000
+    91312 west  1245.000 4.000 1.000 1.000 FALSE 547.000 549.000
+    98755 south 3702.000 7.000 3.000 1.000 FALSE 959.000 964.000
+    98755 north 1865.000 7.000 1.000 2.000 TRUE  742.000 745.000
+    94555 north 3837.000 3.000 1.000 1.000 FALSE 839.000 842.000
+    91312 west  2139.000 3.000 1.000 3.000 TRUE  820.000 824.000
+    95141 north 3824.000 4.000 3.000 1.000 FALSE 954.000 958.000
+    98755 east  2858.000 5.000 1.500 1.000 FALSE 759.000 762.000
+    91312 south 1827.000 7.000 3.000 1.000 FALSE 735.000 738.000
+    91312 south 3557.000 2.000 2.500 1.000 FALSE 888.000 892.000
+    91312 south 2553.000 2.000 2.500 2.000 TRUE  884.000 889.000
+    96334 west  1682.000 3.000 1.500 1.000 FALSE 625.000 628.000
+
+
+#### transformapply
+
+In contrast to <code>transformencode()</code>, which creates and applies frame metadata (transformencode := build+apply), <code>transformapply()</code> applies *existing* metadata (transformapply := apply).
+
+The following example uses <code>transformapply()</code> with the input matrix and second output (i.e., existing frame metadata built with <code>transformencode()</code>) from the [transformencode](dml-language-reference.html#transformencode) example for the [`homes.tfspec_bin2.json`](files/dml-language-reference/homes.tfspec_bin2.json) transformation specification.
+
+    {
+     "recode": [ zipcode, "district", "view" ], "bin": [
+     { "name": "saleprice"  , "method": "equi-width", "numbins": 3 }
+     ,{ "name": "sqft", "method": "equi-width", "numbins": 4 }]
+    }
+    
+    F1 = read("/user/ml/homes.csv", data_type="frame", format="csv");
+    jspec = read("/user/ml/homes.tfspec_bin2.json", data_type="scalar", value_type="string");
+    [X, M] = transformencode(target=F1, spec=jspec);
+    X2 = transformapply(target=F1, spec=jspec, meta=M);
+    print(toString(X2));
+    
+    1.000 1.000 1.000 7.000 1.000 3.000 1.000 1.000 698.000
+    2.000 2.000 1.000 6.000 2.000 2.000 1.000 1.000 906.000
+    3.000 3.000 1.000 3.000 3.000 3.000 2.000 1.000 892.000
+    1.000 4.000 1.000 6.000 2.500 2.000 2.000 1.000 932.000
+    4.000 2.000 1.000 6.000 2.500 2.000 1.000 1.000 876.000
+    4.000 3.000 1.000 5.000 2.500 2.000 1.000 1.000 803.000
+    5.000 3.000 1.000 7.000 2.500 2.000 1.000 1.000 963.000
+    4.000 1.000 1.000 7.000 1.500 2.000 2.000 1.000 760.000
+    1.000 1.000 1.000 4.000 3.000 3.000 1.000 1.000 899.000
+    2.000 1.000 1.000 4.000 1.000 1.000 1.000 1.000 549.000
+    5.000 2.000 1.000 7.000 3.000 1.000 1.000 1.000 964.000
+    5.000 3.000 1.000 7.000 1.000 2.000 2.000 1.000 745.000
+    3.000 3.000 1.000 3.000 1.000 1.000 1.000 1.000 842.000
+    2.000 1.000 1.000 3.000 1.000 3.000 2.000 1.000 824.000
+    1.000 3.000 1.000 4.000 3.000 1.000 1.000 1.000 958.000
+    5.000 4.000 1.000 5.000 1.500 1.000 1.000 1.000 762.000
+    2.000 2.000 1.000 7.000 3.000 1.000 1.000 1.000 738.000
+    2.000 2.000 1.000 2.000 2.500 1.000 1.000 1.000 892.000
+    2.000 2.000 1.000 2.000 2.500 2.000 2.000 1.000 889.000
+    4.000 1.000 1.000 3.000 1.500 1.000 1.000 1.000 628.000
 
 
 * * *

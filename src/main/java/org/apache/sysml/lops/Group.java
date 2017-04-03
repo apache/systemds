@@ -30,19 +30,18 @@ import org.apache.sysml.parser.Expression.*;
 
 public class Group extends Lop  
 {
-
-	
-	
 	public enum OperationTypes {Sort};
 	
 	OperationTypes operation;
 	
 	/**
 	 * Constructor to create a grouping operation.
-	 * @param input
-	 * @param op
+	 * 
+	 * @param input low-level operator
+	 * @param op group operation type
+	 * @param dt data type
+	 * @param vt value type
 	 */
-
 	public Group(Lop input, Group.OperationTypes op, DataType dt, ValueType vt) 
 	{
 		super(Lop.Type.Grouping, dt, vt);		
@@ -65,11 +64,7 @@ public class Group extends Lop
 	}
 
 	@Override
-	public String toString() 
-	{
-		//return "Group " + "Operation: " + operation;
+	public String toString() {
 		return "Operation: " + operation;
-	
 	}
-
 }

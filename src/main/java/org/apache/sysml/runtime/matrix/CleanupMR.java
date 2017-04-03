@@ -44,6 +44,7 @@ import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
 import org.apache.sysml.runtime.util.LocalFileUtils;
@@ -105,14 +106,7 @@ public class CleanupMR
 		
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @param path
-	 * @param numTasks
-	 * @throws DMLRuntimeException
-	 * @throws IOException
-	 */
+
 	private static void writeCleanupTasksToFile(Path path, int numTasks)
 		throws DMLRuntimeException, IOException
 	{
@@ -129,10 +123,8 @@ public class CleanupMR
 		{
 			throw new DMLRuntimeException("Error writing cleanup tasks to taskfile "+path.toString(), ex);
 		}
-		finally
-		{
-			if( br != null )
-				br.close();
+		finally {
+			IOUtilFunctions.closeSilently(br);
 		}
 	}
 	

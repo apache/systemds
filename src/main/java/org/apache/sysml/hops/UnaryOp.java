@@ -60,14 +60,11 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 		//default constructor for clone
 	}
 	
-	public UnaryOp(String l, DataType dt, ValueType vt, OpOp1 o, Hop inp)
-			throws HopsException 
-	{
+	public UnaryOp(String l, DataType dt, ValueType vt, OpOp1 o, Hop inp) {
 		super(l, dt, vt);
 
 		getInput().add(0, inp);
 		inp.getParent().add(this);
-
 		_op = o;
 		
 		//compute unknown dims and nnz
@@ -77,19 +74,6 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 	// this is for OpOp1, e.g. A = -B (0-B); and a=!b
 	public OpOp1 getOp() {
 		return _op;
-	}
-	
-	public void printMe() throws HopsException {
-		if (LOG.isDebugEnabled()){
-			if (getVisited() != VisitStatus.DONE) {
-				super.printMe();
-				LOG.debug("  Operation: " + _op);
-				for (Hop h : getInput()) {
-					h.printMe();
-				}
-			}
-			setVisited(VisitStatus.DONE);
-		}
 	}
 
 	@Override
@@ -140,7 +124,15 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 					if( optype == null )
 						throw new HopsException("Unknown UnaryCP lop type for UnaryOp operation type '"+_op+"'");
 					
-					UnaryCP unary1 = new UnaryCP(input.constructLops(), optype, getDataType(), getValueType());
+					UnaryCP unary1 = null;
+					if((_op == Hop.OpOp1.NROW || _op == Hop.OpOp1.NCOL || _op == Hop.OpOp1.LENGTH) &&
+						input instanceof UnaryOp && ((UnaryOp) input).getOp() == OpOp1.SELP) {
+						// Dimensions does not change during sel+ operation.
+						// This case is helpful to avoid unnecessary sel+ operation for fused maxpooling.
+						unary1 = new UnaryCP(input.getInput().get(0).constructLops(), optype, getDataType(), getValueType());
+					}
+					else
+						unary1 = new UnaryCP(input.constructLops(), optype, getDataType(), getValueType());
 					setOutputDimensions(unary1);
 					setLineNumbers(unary1);
 
@@ -164,7 +156,10 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 				}
 				else //default unary 
 				{
-					int k = isCumulativeUnaryOperation() ? OptimizerUtils.getConstrainedNumThreads( _maxNumThreads ) : 1;					
+					int k = isCumulativeUnaryOperation() ? OptimizerUtils.getConstrainedNumThreads( _maxNumThreads ) : 1;
+					if(_op == OpOp1.SELP || _op == OpOp1.EXP) {
+						et = findGPUExecTypeByMemEstimate(et);
+					}
 					Unary unary1 = new Unary(input.constructLops(), HopsOpOp1LopsU.get(_op), 
 							                 getDataType(), getValueType(), et, k);
 					setOutputDimensions(unary1);
@@ -364,11 +359,9 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 	 * realizations are possible for specific scenarios (e.g., when the preaggregated intermediate
 	 * fit into the map task memory budget) or by creating custom job types.
 	 * 
-	 * 
-	 * 
-	 * @return
-	 * @throws HopsException
-	 * @throws LopsException
+	 * @return low-level operator
+	 * @throws HopsException if HopsException occurs
+	 * @throws LopsException if LopsException occurs
 	 */
 	private Lop constructLopsMRCumulativeUnary() 
 		throws HopsException, LopsException 
@@ -445,13 +438,7 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 		
 		return TEMP;
 	}
-	
-	/**
-	 * 
-	 * @return
-	 * @throws HopsException
-	 * @throws LopsException
-	 */
+
 	private Lop constructLopsSparkCumulativeUnary() 
 		throws HopsException, LopsException 
 	{
@@ -510,11 +497,7 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 		
 		return TEMP;
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	private OperationTypes getCumulativeAggType()
 	{
 		switch( _op ) {
@@ -525,11 +508,7 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 			default: 		return null;
 		}
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	private double getCumulativeInitValue()
 	{
 		switch( _op ) {
@@ -605,20 +584,12 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 	{
 		return true;
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	private boolean isInMemoryOperation() 
 	{
 		return ( _op == OpOp1.INVERSE );
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public boolean isCumulativeUnaryOperation() 
 	{
 		return (   _op == OpOp1.CUMSUM 
@@ -626,11 +597,7 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 				|| _op == OpOp1.CUMMIN
 				|| _op == OpOp1.CUMMAX  );
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public boolean isCastUnaryOperation() 
 	{
 		return (   _op == OpOp1.CAST_AS_MATRIX

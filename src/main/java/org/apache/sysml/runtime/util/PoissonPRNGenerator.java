@@ -34,9 +34,7 @@ public class PoissonPRNGenerator extends PRNGenerator
 {
 	PoissonDistribution _pdist = null;
 	double _mean = Double.NaN;
-	
-	private static final double DEFAULT_MEAN = 1.0;
-	
+
 	public PoissonPRNGenerator() {
 		// default mean and default seed
 		super();
@@ -51,13 +49,7 @@ public class PoissonPRNGenerator extends PRNGenerator
 		_mean = mean;
 		setup(_mean, seed);
 	}
-	
-	public PoissonPRNGenerator(long sd) {
-		// default mean
-		super();
-		setup(DEFAULT_MEAN, sd);
-	}
-	
+
 	public void setup(double mean, long sd) {
 		seed = sd;
 		

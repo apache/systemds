@@ -19,21 +19,16 @@
 
 package org.apache.sysml.hops.cost;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.StringTokenizer;
 import java.util.Map.Entry;
+import java.util.StringTokenizer;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.conf.ConfigurationManager;
-import org.apache.sysml.hops.Hop;
-import org.apache.sysml.hops.HopsException;
-import org.apache.sysml.hops.recompile.Recompiler;
 import org.apache.sysml.lops.Lop;
-import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.ExternalFunctionProgramBlock;
@@ -79,12 +74,6 @@ public abstract class CostEstimator
 	protected static final VarStats _unknownStats = new VarStats(1,1,-1,-1,-1,false);
 	protected static final VarStats _scalarStats = new VarStats(1,1,1,1,1,true);
 	
-	/**
-	 * 
-	 * @param rtprog
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	public double getTimeEstimate(Program rtprog, LocalVariableMap vars, HashMap<String,VarStats> stats) 
 		throws DMLRuntimeException
 	{
@@ -100,14 +89,6 @@ public abstract class CostEstimator
 		return costs;
 	}
 	
-	/**
-	 * 
-	 * @param pb
-	 * @param vars
-	 * @param stats
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	public double getTimeEstimate(ProgramBlock pb, LocalVariableMap vars, HashMap<String,VarStats> stats, boolean recursive) 
 		throws DMLRuntimeException
 	{
@@ -117,44 +98,7 @@ public abstract class CostEstimator
 		//get cost estimate
 		return rGetTimeEstimate(pb, stats, new HashSet<String>(), recursive);
 	}
-	
-		
-	/**
-	 * 
-	 * @param hops
-	 * @param vars
-	 * @return
-	 * @throws DMLRuntimeException 
-	 * @throws IOException 
-	 * @throws LopsException 
-	 * @throws HopsException 
-	 */
-	public double getTimeEstimate( ArrayList<Hop> hops, LocalVariableMap vars, HashMap<String,VarStats> stats ) 
-		throws DMLRuntimeException, HopsException, LopsException, IOException
-	{
-		double costs = 0;
-		
-		ArrayList<Instruction> linst = Recompiler.recompileHopsDag(null, hops, vars, null, false, 0);
-		ProgramBlock pb = new ProgramBlock(null);
-		pb.setInstructions(linst);
-		
-		//obtain stats from symboltable (e.g., during recompile)
-		maintainVariableStatistics(vars, stats);
-		
-		//get cost estimate
-		costs = rGetTimeEstimate(pb, stats, new HashSet<String>(), true);
-		
-		return costs;
-	}
-	
-	/**
-	 * 
-	 * @param pb
-	 * @param vars
-	 * @param stats
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	private double rGetTimeEstimate(ProgramBlock pb, HashMap<String,VarStats> stats, HashSet<String> memoFunc, boolean recursive) 
 		throws DMLRuntimeException
 	{
@@ -272,13 +216,6 @@ public abstract class CostEstimator
 		return ret;
 	}
 	
-	
-	/**
-	 * 
-	 * @param vars
-	 * @param stats
-	 * @throws DMLRuntimeException 
-	 */
 	private void maintainVariableStatistics( LocalVariableMap vars, HashMap<String, VarStats> stats ) 
 		throws DMLRuntimeException
 	{
@@ -308,11 +245,6 @@ public abstract class CostEstimator
 		}
 	}
 	
-	/**
-	 * 
-	 * @param inst
-	 * @param stats
-	 */
 	private void maintainCPInstVariableStatistics( CPInstruction inst, HashMap<String, VarStats> stats )
 	{
 		if( inst instanceof VariableCPInstruction )
@@ -382,12 +314,6 @@ public abstract class CostEstimator
 		}
 	}
 
-	/**
-	 * 
-	 * @param inst
-	 * @param stats
-	 * @throws DMLRuntimeException 
-	 */
 	private void maintainMRJobInstVariableStatistics( Instruction inst, HashMap<String, VarStats> stats ) 
 		throws DMLRuntimeException
 	{
@@ -486,12 +412,7 @@ public abstract class CostEstimator
 			stats.put(varname, varvs);
 		}	
 	}
-	
-	/**
-	 * 
-	 * @param inst
-	 * @return
-	 */
+
 	protected String replaceInstructionPatch( String inst )
 	{
 		String ret = inst;
@@ -505,12 +426,6 @@ public abstract class CostEstimator
 		return ret;
 	}
 	
-	/**
-	 * 
-	 * @param inst
-	 * @param stats
-	 * @return
-	 */
 	private Object[] extractCPInstStatistics( Instruction inst, HashMap<String, VarStats> stats )
 	{		
 		Object[] ret = new Object[2]; //stats, attrs
@@ -665,12 +580,6 @@ public abstract class CostEstimator
 		vs[2] = _unknownStats;	
 	}
 	
-	/**
-	 * 
-	 * @param inst
-	 * @param stats
-	 * @return
-	 */
 	private Object[] extractMRJobInstStatistics( Instruction inst, HashMap<String, VarStats> stats )
 	{
 		Object[] ret = new Object[2]; //stats, attrs
@@ -704,11 +613,6 @@ public abstract class CostEstimator
 		return ret;
 	}	
 	
-	/**
-	 * 
-	 * @param inst
-	 * @param stats
-	 */
 	private void cleanupMRJobVariableStatistics( Instruction inst, HashMap<String, VarStats> stats )
 	{
 		MRJobInstruction jinst = (MRJobInstruction)inst;
@@ -729,15 +633,7 @@ public abstract class CostEstimator
 		}
 	}	
 	
-	/**
-	 * TODO use of vars - needed for recompilation
-	 * TODO w/o exception
-	 * 
-	 * @param vars
-	 * @param stats
-	 * @param pred
-	 * @return
-	 */
+	// TODO use of vars - needed for recompilation w/o exception
 	private int getNumIterations(HashMap<String,VarStats> stats, String[] pred)
 	{
 		int N = DEFAULT_NUMITER;
@@ -754,27 +650,10 @@ public abstract class CostEstimator
 		}           
 		return N;              
 	}
-	
-	
-	/**
-	 * 
-	 * @param inst
-	 * @param vs
-	 * @param args
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	protected abstract double getCPInstTimeEstimate( Instruction inst, VarStats[] vs, String[] args  ) 
 		throws DMLRuntimeException;
-	
-	/**
-	 * 
-	 * @param inst
-	 * @param vs
-	 * @param args
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	protected abstract double getMRJobInstTimeEstimate( Instruction inst, VarStats[] vs, String[] args  ) 
 		throws DMLRuntimeException;
 }

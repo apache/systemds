@@ -81,24 +81,12 @@ public class LibMatrixReorg
 	/////////////////////////
 	// public interface    //
 	/////////////////////////
-	
-	/**
-	 * 
-	 * @param op
-	 * @return
-	 */
+
 	public static boolean isSupportedReorgOperator( ReorgOperator op )
 	{
 		return (getReorgType(op) != ReorgType.INVALID);
 	}
 
-	/**
-	 * 
-	 * @param in
-	 * @param out
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	public static MatrixBlock reorg( MatrixBlock in, MatrixBlock out, ReorgOperator op ) 
 		throws DMLRuntimeException
 	{
@@ -123,14 +111,7 @@ public class LibMatrixReorg
 				throw new DMLRuntimeException("Unsupported reorg operator: "+op.fn);
 		}
 	}
-	
-	/**
-	 * 
-	 * @param in
-	 * @param out
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static MatrixBlock transpose( MatrixBlock in, MatrixBlock out ) 
 		throws DMLRuntimeException
 	{
@@ -173,15 +154,7 @@ public class LibMatrixReorg
 		
 		return out;
 	}
-	
-	/**
-	 * 
-	 * @param in
-	 * @param out
-	 * @param k
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static MatrixBlock transpose( MatrixBlock in, MatrixBlock out, int k ) 
 		throws DMLRuntimeException
 	{
@@ -238,14 +211,7 @@ public class LibMatrixReorg
 		
 		return out;
 	}
-	
-	/**
-	 * 
-	 * @param in
-	 * @param out
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static MatrixBlock rev( MatrixBlock in, MatrixBlock out ) 
 		throws DMLRuntimeException
 	{
@@ -270,15 +236,7 @@ public class LibMatrixReorg
 
 		return out;
 	}
-	
-	/**
-	 * 
-	 * @param in
-	 * @param rows1
-	 * @param brlen
-	 * @param out
-	 * @throws DMLRuntimeException  
-	 */
+
 	public static void rev( IndexedMatrixValue in, long rlen, int brlen, ArrayList<IndexedMatrixValue> out ) 
 		throws DMLRuntimeException
 	{
@@ -323,14 +281,7 @@ public class LibMatrixReorg
 			}
 		}
 	}
-	
-	/**
-	 * 
-	 * @param in
-	 * @param out
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static MatrixBlock diag( MatrixBlock in, MatrixBlock out ) 
 		throws DMLRuntimeException
 	{
@@ -356,18 +307,7 @@ public class LibMatrixReorg
 		
 		return out;
 	}
-	
-	/**
-	 * 
-	 * 
-	 * @param in
-	 * @param out
-	 * @param by
-	 * @param desc
-	 * @param ixret
-	 * @return
-	 * @throws DMLRuntimeException 
-	 */
+
 	public static MatrixBlock sort(MatrixBlock in, MatrixBlock out, int by, boolean desc, boolean ixret) 
 		throws DMLRuntimeException
 	{
@@ -476,13 +416,14 @@ public class LibMatrixReorg
 	
 	/**
 	 * CP reshape operation (single input, single output matrix) 
-	 *
-	 * @param out
-	 * @param rows
-	 * @param cols
-	 * @param rowwise
-	 * @return
-	 * @throws DMLRuntimeException 
+	 * 
+	 * @param in input matrix
+	 * @param out output matrix
+	 * @param rows number of rows
+	 * @param cols number of columns
+	 * @param rowwise if true, reshape by row
+	 * @return output matrix
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static MatrixBlock reshape( MatrixBlock in, MatrixBlock out, int rows, int cols, boolean rowwise ) 
 		throws DMLRuntimeException
@@ -525,20 +466,20 @@ public class LibMatrixReorg
 	/**
 	 * MR reshape interface - for reshape we cannot view blocks independently, and hence,
 	 * there are different CP and MR interfaces.
-	 *  
-	 * @param in
-	 * @param rows1
-	 * @param cols1
-	 * @param brlen1
-	 * @param bclen1
-	 * @param out
-	 * @param rows2
-	 * @param cols2
-	 * @param brlen2
-	 * @param bclen2
-	 * @param rowwise
-	 * @return
-	 * @throws DMLRuntimeException
+	 * 
+	 * @param in indexed matrix value
+	 * @param rows1 number of rows 1
+	 * @param cols1 number of columns 1
+	 * @param brlen1 number of rows in a block 1
+	 * @param bclen1 number of columns in a block 1
+	 * @param out list of indexed matrix values
+	 * @param rows2 number of rows 2
+	 * @param cols2 number of columns 2
+	 * @param brlen2 number of rows in a block 2
+	 * @param bclen2 number of columns in a block 2
+	 * @param rowwise if true, reshape by row
+	 * @return list of indexed matrix values
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static ArrayList<IndexedMatrixValue> reshape( IndexedMatrixValue in, long rows1, long cols1, int brlen1, int bclen1, 
 			                      ArrayList<IndexedMatrixValue> out, long rows2, long cols2, int brlen2, int bclen2, boolean rowwise ) 	
@@ -567,28 +508,16 @@ public class LibMatrixReorg
 		
 		return out;
 	}
-	
+
 	/**
 	 * CP rmempty operation (single input, single output matrix) 
 	 * 
-	 * @param in
-	 * @param out
-	 * @param rows
-	 * @throws DMLRuntimeException 
-	 */
-	public static MatrixBlock rmempty(MatrixBlock in, MatrixBlock ret, boolean rows) 
-		throws DMLRuntimeException
-	{
-		return rmempty(in, ret, rows, null);
-	}
-		
-	/**
-	 * CP rmempty operation (single input, single output matrix) 
-	 * 
-	 * @param in
-	 * @param out
-	 * @param rows
-	 * @throws DMLRuntimeException 
+	 * @param in input matrix
+	 * @param ret output matrix
+	 * @param rows ?
+	 * @param select ?
+	 * @return matrix block
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static MatrixBlock rmempty(MatrixBlock in, MatrixBlock ret, boolean rows, MatrixBlock select) 
 		throws DMLRuntimeException
@@ -596,7 +525,7 @@ public class LibMatrixReorg
 		//check for empty inputs 
 		//(the semantics of removeEmpty are that for an empty m-by-n matrix, the output 
 		//is an empty 1-by-n or m-by-1 matrix because we don't allow matrices with dims 0)
-		if( in.isEmptyBlock(false) ) {
+		if( in.isEmptyBlock(false) && select == null  ) {
 			if( rows )
 				ret.reset(1, in.clen, in.sparse);
 			else //cols
@@ -614,10 +543,14 @@ public class LibMatrixReorg
 	 * MR rmempty interface - for rmempty we cannot view blocks independently, and hence,
 	 * there are different CP and MR interfaces.
 	 * 
-	 * @param imv1
-	 * @param imv2
-	 * @param out
-	 * @throws DMLRuntimeException 
+	 * @param data ?
+	 * @param offset ?
+	 * @param rmRows ?
+	 * @param len ?
+	 * @param brlen number of rows in a block
+	 * @param bclen number of columns in a block
+	 * @param outList list of indexed matrix values
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void rmempty(IndexedMatrixValue data, IndexedMatrixValue offset, boolean rmRows, long len, long brlen, long bclen, ArrayList<IndexedMatrixValue> outList) 
 		throws DMLRuntimeException
@@ -703,11 +636,14 @@ public class LibMatrixReorg
 	/**
 	 * CP rexpand operation (single input, single output)
 	 * 
-	 * @param in
-	 * @param ret
-	 * @param rows
-	 * @return
-	 * @throws DMLRuntimeException
+	 * @param in input matrix
+	 * @param ret output matrix
+	 * @param max ?
+	 * @param rows ?
+	 * @param cast ?
+	 * @param ignore ?
+	 * @return output matrix
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static MatrixBlock rexpand(MatrixBlock in, MatrixBlock ret, double max, boolean rows, boolean cast, boolean ignore) 
 		throws DMLRuntimeException
@@ -739,14 +675,15 @@ public class LibMatrixReorg
 	/**
 	 * MR/Spark rexpand operation (single input, multiple outputs incl empty blocks)
 	 * 
-	 * @param data
-	 * @param offset
-	 * @param rmRows
-	 * @param len
-	 * @param brlen
-	 * @param bclen
-	 * @param outList
-	 * @throws DMLRuntimeException
+	 * @param data indexed matrix value
+	 * @param max ?
+	 * @param rows ?
+	 * @param cast ?
+	 * @param ignore ?
+	 * @param brlen number of rows in a block
+	 * @param bclen number of columns in a block
+	 * @param outList list of indexed matrix values
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void rexpand(IndexedMatrixValue data, double max, boolean rows, boolean cast, boolean ignore, long brlen, long bclen, ArrayList<IndexedMatrixValue> outList) 
 		throws DMLRuntimeException
@@ -786,12 +723,6 @@ public class LibMatrixReorg
 	// private CP implementation //
 	///////////////////////////////
 
-	
-	/**
-	 * 
-	 * @param op
-	 * @return
-	 */
 	private static ReorgType getReorgType( ReorgOperator op )
 	{
 		if( op.fn instanceof SwapIndex )  //transpose
@@ -808,13 +739,7 @@ public class LibMatrixReorg
 				
 		return ReorgType.INVALID;
 	}
-	
-	/**
-	 * 
-	 * @param in
-	 * @param out
-	 * @throws DMLRuntimeException 
-	 */
+
 	private static void transposeDenseToDense(MatrixBlock in, MatrixBlock out, int rl, int ru, int cl, int cu) 
 		throws DMLRuntimeException
 	{
@@ -853,12 +778,7 @@ public class LibMatrixReorg
 				}
 		}
 	}
-	
-	/**
-	 * 
-	 * @param in
-	 * @param out
-	 */
+
 	private static void transposeDenseToSparse(MatrixBlock in, MatrixBlock out)
 	{
 		//NOTE: called only in sequential execution
@@ -899,12 +819,7 @@ public class LibMatrixReorg
 				}
 		}
 	}
-	
-	/**
-	 * 
-	 * @param in
-	 * @param out
-	 */
+
 	private static void transposeSparseToSparse(MatrixBlock in, MatrixBlock out, int rl, int ru, int cl, int cu, int[] cnt)
 	{
 		//NOTE: called only in sequential or column-wise parallel execution
@@ -967,13 +882,7 @@ public class LibMatrixReorg
 			}
 		}
 	}
-	
-	/**
-	 * 
-	 * @param in
-	 * @param out
-	 * @throws DMLRuntimeException 
-	 */
+
 	private static void transposeSparseToDense(MatrixBlock in, MatrixBlock out, int rl, int ru, int cl, int cu) 
 		throws DMLRuntimeException
 	{
@@ -1029,16 +938,7 @@ public class LibMatrixReorg
 			}
 		}
 	}
-	
-	/**
-	 * 
-	 * @param a
-	 * @param c
-	 * @param aix
-	 * @param cix
-	 * @param n2
-	 * @param len
-	 */
+
 	private static void transposeRow( double[] a, double[] c, int aix, int cix, int n2, int len )
 	{
 		final int bn = len%8;
@@ -1060,14 +960,7 @@ public class LibMatrixReorg
 			c[ cix + 7*n2 ] = a[ aix+7 ];	
 		}
 	}
-	
-	/**
-	 * 
-	 * @param in
-	 * @param rl
-	 * @param ru
-	 * @return
-	 */
+
 	private static int[] countNnzPerColumn(MatrixBlock in, int rl, int ru) {
 		//initial pass to determine capacity (this helps to prevent
 		//sparse row reallocations and mem inefficiency w/ skew
@@ -1082,13 +975,7 @@ public class LibMatrixReorg
 		}
 		return cnt;
 	}
-	
-	/**
-	 * 
-	 * @param cnt
-	 * @param cnt2
-	 * @return
-	 */
+
 	private static int[] mergeNnzCounts(int[] cnt, int[] cnt2) {
 		if( cnt == null )
 			return cnt2;
@@ -1096,13 +983,7 @@ public class LibMatrixReorg
 			cnt[i] += cnt2[i];
 		return cnt;
 	}
-	
-	/**
-	 * 
-	 * @param in
-	 * @param out
-	 * @throws DMLRuntimeException
-	 */
+
 	private static void reverseDense(MatrixBlock in, MatrixBlock out) 
 		throws DMLRuntimeException
 	{
@@ -1128,13 +1009,7 @@ public class LibMatrixReorg
 				System.arraycopy(a, aix, c, len-aix-n, n);
 		}
 	}
-	
-	/**
-	 * 
-	 * @param in
-	 * @param out
-	 * @throws DMLRuntimeException
-	 */
+
 	private static void reverseSparse(MatrixBlock in, MatrixBlock out) 
 		throws DMLRuntimeException
 	{
@@ -1161,8 +1036,8 @@ public class LibMatrixReorg
 	 * Generic implementation diagV2M (non-performance critical)
 	 * (in most-likely DENSE, out most likely SPARSE)
 	 * 
-	 * @param in
-	 * @param out
+	 * @param in input matrix
+	 * @param out output matrix
 	 */
 	private static void diagV2M( MatrixBlock in, MatrixBlock out )
 	{
@@ -1183,8 +1058,8 @@ public class LibMatrixReorg
 	 * 
 	 * NOTE: squared block assumption (checked on entry diag)
 	 * 
-	 * @param in
-	 * @param out
+	 * @param in input matrix
+	 * @param out output matrix
 	 */
 	private static void diagM2V( MatrixBlock in, MatrixBlock out )
 	{
@@ -1197,17 +1072,7 @@ public class LibMatrixReorg
 				out.quickSetValue(i, 0, val);
 		}
 	}
-	
-	
-	/**
-	 * 
-	 * @param in
-	 * @param out
-	 * @param rows
-	 * @param cols
-	 * @param rowwise
-	 * @throws DMLRuntimeException 
-	 */
+
 	private static void reshapeDense( MatrixBlock in, MatrixBlock out, int rows, int cols, boolean rowwise ) 
 		throws DMLRuntimeException
 	{
@@ -1272,15 +1137,7 @@ public class LibMatrixReorg
 			}
 		}
 	}
-	
-	/**
-	 * 
-	 * @param in
-	 * @param out
-	 * @param rows
-	 * @param cols
-	 * @param rowwise
-	 */
+
 	private static void reshapeSparse( MatrixBlock in, MatrixBlock out, int rows, int cols, boolean rowwise )
 	{
 		int rlen = in.rlen;
@@ -1393,15 +1250,7 @@ public class LibMatrixReorg
 			}
 		}
 	}
-	
-	/**
-	 * 
-	 * @param in
-	 * @param out
-	 * @param rows
-	 * @param cols
-	 * @param rowwise
-	 */
+
 	private static void reshapeDenseToSparse( MatrixBlock in, MatrixBlock out, int rows, int cols, boolean rowwise )
 	{
 		int rlen = in.rlen;
@@ -1471,16 +1320,7 @@ public class LibMatrixReorg
 			}
 		}
 	}
-	
-	/**
-	 * 
-	 * @param in
-	 * @param out
-	 * @param rows
-	 * @param cols
-	 * @param rowwise
-	 * @throws DMLRuntimeException 
-	 */
+
 	private static void reshapeSparseToDense( MatrixBlock in, MatrixBlock out, int rows, int cols, boolean rowwise ) 
 		throws DMLRuntimeException
 	{
@@ -1562,21 +1402,7 @@ public class LibMatrixReorg
 	///////////////////////////////
 	// private MR implementation //
 	///////////////////////////////
-	
-	/**
-	 * 
-	 * @param ixin
-	 * @param rows1
-	 * @param cols1
-	 * @param brlen1
-	 * @param bclen1
-	 * @param rows2
-	 * @param cols2
-	 * @param brlen2
-	 * @param bclen2
-	 * @param rowwise
-	 * @return
-	 */
+
 	private static Collection<MatrixIndexes> computeAllResultBlockIndexes( MatrixIndexes ixin,
             long rows1, long cols1, int brlen1, int bclen1,
             long rows2, long cols2, int brlen2, int bclen2, boolean rowwise )
@@ -1650,22 +1476,7 @@ public class LibMatrixReorg
 		
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @param rix
-	 * @param rows1
-	 * @param cols1
-	 * @param brlen1
-	 * @param bclen1
-	 * @param rows2
-	 * @param cols2
-	 * @param brlen2
-	 * @param bclen2
-	 * @param rowwise
-	 * @param reuse 
-	 * @return
-	 */
+
 	@SuppressWarnings("unused")
 	private static HashMap<MatrixIndexes, MatrixBlock> createAllResultBlocks( Collection<MatrixIndexes> rix,
             long nnz, long rows1, long cols1, int brlen1, int bclen1,
@@ -1705,21 +1516,7 @@ public class LibMatrixReorg
 		
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @param in
-	 * @param row_offset
-	 * @param col_offset
-	 * @param rix
-	 * @param rows1
-	 * @param cols1
-	 * @param rows2
-	 * @param cols2
-	 * @param brlen2
-	 * @param bclen2
-	 * @param rowwise
-	 */
+
 	private static void reshapeDense( MatrixBlock in, long row_offset, long col_offset, 
 			HashMap<MatrixIndexes,MatrixBlock> rix,
             long rows1, long cols1, 
@@ -1759,20 +1556,6 @@ public class LibMatrixReorg
 		}				
     }
 
-	/**
-	 * 
-	 * @param in
-	 * @param row_offset
-	 * @param col_offset
-	 * @param rix
-	 * @param rows1
-	 * @param cols1
-	 * @param rows2
-	 * @param cols2
-	 * @param brlen2
-	 * @param bclen2
-	 * @param rowwise
-	 */
 	private static void reshapeSparse( MatrixBlock in, long row_offset, long col_offset, 
 			HashMap<MatrixIndexes,MatrixBlock> rix,
             long rows1, long cols1,
@@ -1817,17 +1600,17 @@ public class LibMatrixReorg
 	/**
 	 * Assumes internal (0-begin) indices ai, aj as input; computes external block indexes (1-begin) 
 	 * 
-	 * @param ixout
-	 * @param ai
-	 * @param aj
-	 * @param rows1
-	 * @param cols1
-	 * @param rows2
-	 * @param cols2
-	 * @param brlen2
-	 * @param bclen2
-	 * @param rowwise
-	 * @return
+	 * @param ixout matrix indexes
+	 * @param ai ?
+	 * @param aj ?
+	 * @param rows1 ?
+	 * @param cols1 ?
+	 * @param rows2 ?
+	 * @param cols2 ?
+	 * @param brlen2 ?
+	 * @param bclen2 ?
+	 * @param rowwise ?
+	 * @return matrix indexes
 	 */
 	private static MatrixIndexes computeResultBlockIndex( MatrixIndexes ixout, long ai, long aj,
 			            long rows1, long cols1, long rows2, long cols2, int brlen2, int bclen2, boolean rowwise )
@@ -1853,21 +1636,7 @@ public class LibMatrixReorg
 		ixout.setIndexes(bci, bcj);	
 		return ixout;
 	}
-	
-	/**
-	 * 
-	 * @param ixout
-	 * @param ai
-	 * @param aj
-	 * @param rows1
-	 * @param cols1
-	 * @param rows2
-	 * @param cols2
-	 * @param brlen2
-	 * @param bclen2
-	 * @param rowwise
-	 * @return
-	 */
+
 	private static MatrixIndexes computeInBlockIndex( MatrixIndexes ixout, long ai, long aj,
             long rows1, long cols1, long rows2, long cols2, int brlen2, int bclen2, boolean rowwise )
 	{
@@ -1890,14 +1659,6 @@ public class LibMatrixReorg
 		return ixout;
 	}
 
-	/**
-	 * 
-	 * @param in
-	 * @param ret
-	 * @param select
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	private static MatrixBlock removeEmptyRows(MatrixBlock in, MatrixBlock ret, MatrixBlock select) 
 		throws DMLRuntimeException 
 	{	
@@ -1947,6 +1708,8 @@ public class LibMatrixReorg
 		rlen2 = Math.max(rlen2, 1); //ensure valid output
 		boolean sp = MatrixBlock.evalSparseFormatInMemory(rlen2, n, in.nonZeros);
 		ret.reset(rlen2, n, sp);
+		if( in.isEmptyBlock(false) )
+			return ret;
 		
 		if( in.sparse ) //* <- SPARSE
 		{
@@ -1987,14 +1750,6 @@ public class LibMatrixReorg
 		return ret;
 	}
 
-	
-	/**
-	 * @param in
-	 * @param ret
-	 * @param select
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	private static MatrixBlock removeEmptyColumns(MatrixBlock in, MatrixBlock ret, MatrixBlock select) 
 		throws DMLRuntimeException 
 	{
@@ -2055,7 +1810,9 @@ public class LibMatrixReorg
 		clen2 = Math.max(clen2, 1); //ensure valid output
 		boolean sp = MatrixBlock.evalSparseFormatInMemory(m, clen2, in.nonZeros);
 		ret.reset(m, clen2, sp);
-			
+		if( in.isEmptyBlock(false) )
+			return ret;
+		
 		if( in.sparse ) //* <- SPARSE 
 		{
 			//note: output dense or sparse
@@ -2100,17 +1857,7 @@ public class LibMatrixReorg
 		
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @param in
-	 * @param ret
-	 * @param max
-	 * @param cast
-	 * @param ignore
-	 * @return
-	 * @throws DMLRuntimeException 
-	 */
+
 	private static MatrixBlock rexpandRows(MatrixBlock in, MatrixBlock ret, int max, boolean cast, boolean ignore) 
 		throws DMLRuntimeException
 	{
@@ -2157,17 +1904,7 @@ public class LibMatrixReorg
 		
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @param in
-	 * @param ret
-	 * @param max
-	 * @param cast
-	 * @param ignore
-	 * @return
-	 * @throws DMLRuntimeException 
-	 */
+
 	private static MatrixBlock rexpandColumns(MatrixBlock in, MatrixBlock ret, int max, boolean cast, boolean ignore) 
 		throws DMLRuntimeException
 	{
@@ -2198,14 +1935,7 @@ public class LibMatrixReorg
 		
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @param in
-	 * @param ixin
-	 * @param tmp
-	 * @param len
-	 */
+
 	private static void copyColVector( MatrixBlock in, int ixin, double[] tmp, int[] tmpi, int len)
 	{
 		//copy value array from input matrix
@@ -2231,7 +1961,7 @@ public class LibMatrixReorg
 	 * order into a descending sorted order. This method assumes dense
 	 * column vectors as input.
 	 * 
-	 * @param m1
+	 * @param m1 matrix
 	 */
 	private static void sortReverseDense( MatrixBlock m1 )
 	{
@@ -2244,11 +1974,7 @@ public class LibMatrixReorg
 			a[rlen - i - 1] = tmp;
 		}
 	}
-	
-	/**
-	 * 
-	 * @param m1
-	 */
+
 	private static void sortReverseDense( int[] a )
 	{
 		int rlen = a.length;
@@ -2259,11 +1985,7 @@ public class LibMatrixReorg
 			a[rlen - i - 1] = tmp;
 		}
 	}
-	
-	/**
-	 * 
-	 * @param a
-	 */
+
 	private static void sortReverseDense( double[] a )
 	{
 		int rlen = a.length;
@@ -2275,12 +1997,6 @@ public class LibMatrixReorg
 		}
 	}
 
-	/**
-	 * 
-	 * @param c
-	 * @param ai
-	 * @param len
-	 */
 	@SuppressWarnings("unused")
 	private static void countAgg( int[] c, int[] ai, final int len ) 
 	{
@@ -2325,10 +2041,7 @@ public class LibMatrixReorg
 			c[ aix[ i+7 ] ] ++;
 		}
 	}
-	
-	/**
-	 *
-	 */
+
 	@SuppressWarnings("unused")
 	private static class AscRowComparator implements Comparator<Integer> 
 	{
@@ -2349,10 +2062,7 @@ public class LibMatrixReorg
 			return (val0 < val1 ? -1 : (val0 == val1 ? 0 : 1));
 		}		
 	}
-	
-	/**
-	 * 
-	 */
+
 	@SuppressWarnings("unused")
 	private static class DescRowComparator implements Comparator<Integer> 
 	{
@@ -2373,10 +2083,7 @@ public class LibMatrixReorg
 			return (val0 > val1 ? -1 : (val0 == val1 ? 0 : 1));
 		}		
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class TransposeTask implements Callable<Object>
 	{
 		private MatrixBlock _in = null;
@@ -2416,10 +2123,7 @@ public class LibMatrixReorg
 			return null;
 		}
 	}
-	
-	/**
-	 * 
-	 */
+
 	private static class CountNnzTask implements Callable<int[]>
 	{
 		private MatrixBlock _in = null;

@@ -47,13 +47,7 @@ public class BinaryMInstruction extends BinaryMRInstructionBase implements IDist
 		
 		_vectorType = vtype;
 	}
-	
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static BinaryMInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{	

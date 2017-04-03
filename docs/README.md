@@ -27,6 +27,7 @@ Jekyll (and optionally Pygments) can be installed on the Mac OS in the following
     $ brew install ruby
     $ gem install jekyll
     $ gem install jekyll-redirect-from
+    $ gem install bundler
     $ brew install python
     $ pip install Pygments
     $ gem install pygments.rb

@@ -61,13 +61,7 @@ public class RemoveEmptyMRInstruction extends BinaryInstruction
 	{
 		return _len;
 	}
-	
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static RemoveEmptyMRInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{

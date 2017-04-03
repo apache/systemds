@@ -25,20 +25,20 @@ limitations under the License.
 # 5 Matrix Factorization
 
 
-## 5.1 Principle Component Analysis
+## 5.1 Principal Component Analysis
 
 ### Description
 
-Principle Component Analysis (PCA) is a simple, non-parametric method to
+Principal Component Analysis (PCA) is a simple, non-parametric method to
 transform the given data set with possibly correlated columns into a set
-of linearly uncorrelated or orthogonal columns, called *principle
-components*. The principle components are ordered in such a way
+of linearly uncorrelated or orthogonal columns, called *principal
+components*. The principal components are ordered in such a way
 that the first component accounts for the largest possible variance,
-followed by remaining principle components in the decreasing order of
+followed by remaining principal components in the decreasing order of
 the amount of variance captured from the data. PCA is often used as a
 dimensionality reduction technique, where the original data is projected
 or rotated onto a low-dimensional space with basis vectors defined by
-top-$K$ (for a given value of $K$) principle components.
+top-$K$ (for a given value of $K$) principal components.
 
 
 ### Usage
@@ -80,19 +80,19 @@ top-$K$ (for a given value of $K$) principle components.
 **INPUT**: Location (on HDFS) to read the input matrix.
 
 **K**: Indicates dimension of the new vector space constructed from $K$
-    principle components. It must be a value between `1` and the number
+    principal components. It must be a value between `1` and the number
     of columns in the input data.
 
 **CENTER**: (default: `0`) `0` or `1`. Indicates whether or not to
     *center* input data prior to the computation of
-    principle components.
+    principal components.
 
 **SCALE**: (default: `0`) `0` or `1`. Indicates whether or not to
     *scale* input data prior to the computation of
-    principle components.
+    principal components.
 
 **PROJDATA**: `0` or `1`. Indicates whether or not the input data must be projected
-    on to new vector space defined over principle components.
+    on to new vector space defined over principal components.
 
 **OFMT**: (default: `"csv"`) Matrix file output format, such as `text`,
 `mm`, or `csv`; see read/write functions in
@@ -170,7 +170,7 @@ SystemML Language Reference for details.
 
 #### Details
 
-Principle Component Analysis (PCA) is a non-parametric procedure for
+Principal Component Analysis (PCA) is a non-parametric procedure for
 orthogonal linear transformation of the input data to a new coordinate
 system, such that the greatest variance by some projection of the data
 comes to lie on the first coordinate (called the first principal
@@ -178,8 +178,8 @@ component), the second greatest variance on the second coordinate, and
 so on. In other words, PCA first selects a normalized direction in
 $m$-dimensional space ($m$ is the number of columns in the input data)
 along which the variance in input data is maximized – this is referred
-to as the first principle component. It then repeatedly finds other
-directions (principle components) in which the variance is maximized. At
+to as the first principal component. It then repeatedly finds other
+directions (principal components) in which the variance is maximized. At
 every step, PCA restricts the search for only those directions that are
 perpendicular to all previously selected directions. By doing so, PCA
 aims to reduce the redundancy among input variables. To understand the
@@ -211,7 +211,7 @@ OUTPUT (if PROJDATA is set to $1$) in the new coordinate system. The
 produced model consists of basis vectors MODEL$/dominant.eigen.vectors$
 for the new coordinate system; eigen values
 MODEL$/dominant.eigen.values$; and the standard deviation
-MODEL$/dominant.eigen.standard.deviations$ of principle components. When
+MODEL$/dominant.eigen.standard.deviations$ of principal components. When
 MODEL is provided, INPUT data is rotated according to the coordinate
 system defined by MODEL$/dominant.eigen.vectors$. The resulting data is
 stored at location OUTPUT.

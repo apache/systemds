@@ -23,12 +23,7 @@ import org.apache.sysml.parser.Expression.ValueType;
 
 public abstract class ScalarObjectFactory
 {
-	/**
-	 * 
-	 * @param vt
-	 * @param obj
-	 * @return
-	 */
+
 	public static ScalarObject createScalarObject(ValueType vt, Object obj) {
 		switch( vt ) {
 			case BOOLEAN: return new BooleanObject((Boolean)obj);

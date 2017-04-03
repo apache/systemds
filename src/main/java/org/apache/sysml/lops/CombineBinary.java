@@ -40,10 +40,12 @@ public class CombineBinary extends Lop
 	OperationTypes operation;
 
 	/**
-	 * @param input - input lop
-	 * @param op - operation type
+	 * @param op operation type
+	 * @param input1 low-level operator 1
+	 * @param input2 low-level operator 2
+	 * @param dt data type
+	 * @param vt value type
 	 */
-	
 	public CombineBinary(OperationTypes op, Lop input1, Lop input2, DataType dt, ValueType vt) 
 	{
 		super(Lop.Type.CombineBinary, dt, vt);	

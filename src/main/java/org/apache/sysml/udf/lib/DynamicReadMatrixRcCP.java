@@ -31,10 +31,6 @@ import org.apache.sysml.udf.Scalar;
 import org.apache.sysml.udf.Matrix.ValueType;
 import org.apache.sysml.udf.Scalar.ScalarValueType;
 
-/**
- * 
- *
- */
 public class DynamicReadMatrixRcCP extends PackageFunction 
 {	
 	

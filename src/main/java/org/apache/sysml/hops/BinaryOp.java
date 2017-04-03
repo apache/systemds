@@ -19,6 +19,7 @@
 
 package org.apache.sysml.hops;
 
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.lops.Aggregate;
@@ -35,6 +36,7 @@ import org.apache.sysml.lops.CentralMoment;
 import org.apache.sysml.lops.CoVariance;
 import org.apache.sysml.lops.CombineBinary;
 import org.apache.sysml.lops.CombineUnary;
+import org.apache.sysml.lops.ConvolutionTransform;
 import org.apache.sysml.lops.Data;
 import org.apache.sysml.lops.DataPartition;
 import org.apache.sysml.lops.Group;
@@ -72,22 +74,24 @@ public class BinaryOp extends Hop
 	private boolean outer = false;
 	
 	public static AppendMethod FORCED_APPEND_METHOD = null;
+	
+	
 	public enum AppendMethod { 
-		CP_APPEND, //in-memory general case append
+		CP_APPEND, //in-memory general case append (implicitly selected for CP)
 		MR_MAPPEND, //map-only append (rhs must be vector and fit in mapper mem)
 		MR_RAPPEND, //reduce-only append (output must have at most one column block)
 		MR_GAPPEND, //map-reduce general case append (map-extend, aggregate)
 		SP_GAlignedAppend // special case for general case in Spark where left.getCols() % left.getColsPerBlock() == 0
 	};
 	
-	private enum MMBinaryMethod{
-		CP_BINARY,
+	private enum MMBinaryMethod {
+		CP_BINARY, //(implicitly selected for CP) 
 		MR_BINARY_R, //both mm, mv 
 		MR_BINARY_M, //only mv (mr/spark)
 		MR_BINARY_OUTER_M,
 		MR_BINARY_OUTER_R, //only vv 
 		MR_BINARY_UAGG_CHAIN, //(mr/spark)
-	}
+	};
 	
 	private BinaryOp() {
 		//default constructor for clone
@@ -367,13 +371,7 @@ public class BinaryOp extends Hop
 			setLops(cm);
 		}
 	}
-	
-	/**
-	 * 
-	 * @param et
-	 * @throws LopsException
-	 * @throws HopsException
-	 */
+
 	private void constructLopsCovariance(ExecType et) 
 		throws LopsException, HopsException 
 	{
@@ -485,13 +483,7 @@ public class BinaryOp extends Hop
 			setLops(pick);
 		}
 	}
-	
-	/**
-	 * 
-	 * @param et
-	 * @throws HopsException
-	 * @throws LopsException
-	 */
+
 	private void constructLopsAppend(ExecType et) 
 		throws HopsException, LopsException 
 	{
@@ -544,12 +536,7 @@ public class BinaryOp extends Hop
 		setLineNumbers(append);
 		setLops(append);
 	}
-	
-	/**
-	 * 
-	 * @throws HopsException
-	 * @throws LopsException
-	 */
+
 	private void constructLopsBinaryDefault() 
 		throws HopsException, LopsException 
 	{
@@ -586,7 +573,10 @@ public class BinaryOp extends Hop
 			else //general case
 				ot = HopsOpOp2LopsU.get(op);
 			
-			
+			if(DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR || getMemEstimate() < OptimizerUtils.GPU_MEMORY_BUDGET) 
+					&& (op == OpOp2.MULT || op == OpOp2.PLUS || op == OpOp2.MINUS || op == OpOp2.DIV || op == OpOp2.POW) ) {
+				et = ExecType.GPU;
+			}
 			Unary unary1 = new Unary(getInput().get(0).constructLops(),
 						   getInput().get(1).constructLops(), ot, getDataType(), getValueType(), et);
 		
@@ -601,7 +591,28 @@ public class BinaryOp extends Hop
 			ExecType et = optFindExecType();
 			if ( et == ExecType.CP ) 
 			{
-				Binary binary = new Binary(getInput().get(0).constructLops(), getInput().get(1).constructLops(), HopsOpOp2LopsB.get(op),
+				if(DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR || getMemEstimate() < OptimizerUtils.GPU_MEMORY_BUDGET) 
+						&& (op == OpOp2.MULT || op == OpOp2.PLUS || op == OpOp2.MINUS || op == OpOp2.DIV || op == OpOp2.POW)) {
+					et = ExecType.GPU;
+				}
+				
+				Lop binary = null;
+				
+				boolean isLeftXGt = (getInput().get(0) instanceof BinaryOp) && ((BinaryOp) getInput().get(0)).getOp() == OpOp2.GREATER;
+				Hop potentialZero = isLeftXGt ? ((BinaryOp) getInput().get(0)).getInput().get(1) : null;
+				
+				boolean isLeftXGt0 = isLeftXGt && potentialZero != null
+						&& potentialZero instanceof LiteralOp && ((LiteralOp) potentialZero).getDoubleValue() == 0;
+						
+				if(op == OpOp2.MULT && isLeftXGt0 && 
+					!getInput().get(0).isVector() && !getInput().get(1).isVector()
+					&& getInput().get(0).dimsKnown() && getInput().get(1).dimsKnown()) {
+					binary = new ConvolutionTransform(getInput().get(0).getInput().get(0).constructLops(), 
+									getInput().get(1).constructLops(),
+									ConvolutionTransform.OperationTypes.RELU_BACKWARD, getDataType(), getValueType(), et, -1);
+				}
+				else
+					binary = new Binary(getInput().get(0).constructLops(), getInput().get(1).constructLops(), HopsOpOp2LopsB.get(op),
 						getDataType(), getValueType(), et);
 				
 				setOutputDimensions(binary);
@@ -743,20 +754,6 @@ public class BinaryOp extends Hop
 		String s = new String("");
 		s += "b(" + HopsOpOp2String.get(op) + ")";
 		return s;
-	}
-
-	public void printMe() throws HopsException {
-		if (LOG.isDebugEnabled()){
-			if (getVisited() != VisitStatus.DONE) {
-				super.printMe();
-				LOG.debug("  Operation: " + op );
-				for (Hop h : getInput()) {
-					h.printMe();
-				}
-				;
-			}
-			setVisited(VisitStatus.DONE);
-		}
 	}
 
 	@Override
@@ -1014,12 +1011,15 @@ public class BinaryOp extends Hop
 	/**
 	 * General case binary append.
 	 * 
-	 * @param left
-	 * @param right
-	 * @param cbind 
-	 * @return
-	 * @throws HopsException 
-	 * @throws LopsException 
+	 * @param left high-level operator left
+	 * @param right high-level operator right
+	 * @param dt data type
+	 * @param vt value type
+	 * @param cbind true if cbind
+	 * @param current current high-level operator
+	 * @return low-level operator
+	 * @throws HopsException if HopsException occurs
+	 * @throws LopsException if LopsException occurs
 	 */
 	public static Lop constructMRAppendLop( Hop left, Hop right, DataType dt, ValueType vt, boolean cbind, Hop current ) 
 		throws HopsException, LopsException
@@ -1106,18 +1106,7 @@ public class BinaryOp extends Hop
 		
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @param left
-	 * @param right
-	 * @param dt
-	 * @param vt
-	 * @param current
-	 * @return
-	 * @throws HopsException
-	 * @throws LopsException
-	 */
+
 	public static Lop constructSPAppendLop( Hop left, Hop right, DataType dt, ValueType vt, boolean cbind, Hop current ) 
 		throws HopsException, LopsException
 	{
@@ -1167,14 +1156,16 @@ public class BinaryOp extends Hop
 	/**
 	 * Special case tertiary append. Here, we also compile a MR_RAPPEND or MR_GAPPEND
 	 * 
-	 * @param left
-	 * @param right
-	 * @param dt
-	 * @param vt
-	 * @param current
-	 * @return
-	 * @throws HopsException
-	 * @throws LopsException
+	 * @param left ?
+	 * @param right1 ?
+	 * @param right2 ?
+	 * @param dt ?
+	 * @param vt ?
+	 * @param cbind ?
+	 * @param current ?
+	 * @return low-level operator
+	 * @throws HopsException if HopsException occurs
+	 * @throws LopsException if LopsException occurs
 	 */
 	public static Lop constructAppendLopChain( Hop left, Hop right1, Hop right2, DataType dt, ValueType vt, boolean cbind, Hop current ) 
 		throws HopsException, LopsException
@@ -1228,6 +1219,14 @@ public class BinaryOp extends Hop
 	 * Estimates the memory footprint of MapMult operation depending on which input is put into distributed cache.
 	 * This function is called by <code>optFindAppendMethod()</code> to decide the execution strategy, as well as by 
 	 * piggybacking to decide the number of Map-side instructions to put into a single GMR job. 
+	 * 
+	 * @param m1_dim1 ?
+	 * @param m1_dim2 ?
+	 * @param m2_dim1 ?
+	 * @param m2_dim2 ?
+	 * @param m1_rpb ?
+	 * @param m1_cpb ?
+	 * @return memory footprint estimate
 	 */
 	public static double footprintInMapper( long m1_dim1, long m1_dim2, long m2_dim1, long m2_dim2, long m1_rpb, long m1_cpb ) {
 		double footprint = 0;
@@ -1244,14 +1243,6 @@ public class BinaryOp extends Hop
 		return footprint;
 	}
 	
-	/**
-	 * 
-	 * @param m1_dim1
-	 * @param m1_dim2
-	 * @param m2_dim1
-	 * @param m2_dim2
-	 * @return
-	 */
 	private static AppendMethod optFindAppendMethod( long m1_dim1, long m1_dim2, long m2_dim1, long m2_dim2, long m1_rpb, long m1_cpb, boolean cbind )
 	{
 		if(FORCED_APPEND_METHOD != null) {
@@ -1321,23 +1312,12 @@ public class BinaryOp extends Hop
 		return AppendMethod.MR_GAPPEND; 	
 	}
 
-	/**
-	 * 
-	 * @param rightInput
-	 * @return
-	 */
 	private static boolean requiresPartitioning( Hop rightInput )
 	{
 		return (   rightInput.dimsKnown() //known input size 
                 && rightInput.getDim1()*rightInput.getDim2() > DistributedCacheInput.PARTITION_SIZE);
 	}
 	
-	/**
-	 * 
-	 * @param left
-	 * @param right
-	 * @return
-	 */
 	public static boolean requiresReplication( Hop left, Hop right )
 	{
 		return (!(left.getDim2()>=1 && right.getDim2()>=1) //cols of any input unknown 
@@ -1376,12 +1356,6 @@ public class BinaryOp extends Hop
 		return MMBinaryMethod.MR_BINARY_R;
 	}
 	
-	/**
-	 * 
-	 * @param left
-	 * @param right
-	 * @return
-	 */
 	private MMBinaryMethod optFindMMBinaryMethod(Hop left, Hop right)
 	{
 		long m1_dim1 = left.getDim1();
@@ -1550,11 +1524,6 @@ public class BinaryOp extends Hop
 				&& getInput().get(1) == that2.getInput().get(1));
 	}
 	
-	/**
-	 * 
-	 * @param op
-	 * @return
-	 */
 	public boolean supportsMatrixScalarOperations()
 	{
 		return (   op==OpOp2.PLUS    ||op==OpOp2.MINUS 
@@ -1568,10 +1537,6 @@ public class BinaryOp extends Hop
 		         ||op==OpOp2.LOG     ||op==OpOp2.POW );
 	}
 	
-	/**
-	 * 
-	 * @return
-	 */
 	public boolean isPPredOperation()
 	{
 		return (   op==OpOp2.LESS    ||op==OpOp2.LESSEQUAL

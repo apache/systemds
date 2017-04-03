@@ -26,13 +26,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.log4j.Logger;
 import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.api.MLContextProxy;
 import org.apache.sysml.api.jmlc.JMLCUtils;
-import org.apache.sysml.api.monitoring.SparkMonitoringUtil;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.parser.DataExpression;
@@ -41,13 +41,11 @@ import org.apache.sysml.parser.IntIdentifier;
 import org.apache.sysml.parser.StringIdentifier;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
-import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
-import org.apache.sysml.runtime.instructions.spark.functions.SparkListener;
 import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.utils.Explain.ExplainType;
@@ -59,19 +57,14 @@ import org.apache.sysml.utils.Explain.ExplainType;
  */
 public class MLContext {
 	/**
-	 * Minimum Spark version supported by SystemML.
+	 * Logger for MLContext
 	 */
-	public static final String SYSTEMML_MINIMUM_SPARK_VERSION = "1.4.0";
+	public static Logger log = Logger.getLogger(MLContext.class);
 
 	/**
 	 * SparkContext object.
 	 */
 	private SparkContext sc = null;
-
-	/**
-	 * SparkMonitoringUtil monitors SystemML performance on Spark.
-	 */
-	private SparkMonitoringUtil sparkMonitoringUtil = null;
 
 	/**
 	 * Reference to the currently executing script.
@@ -101,10 +94,27 @@ public class MLContext {
 	private boolean statistics = false;
 
 	/**
+	 * Whether or not GPU mode should be enabled
+	 */
+	private boolean gpu = false;
+
+	/**
+	 * The number of heavy hitters that are printed as part of the statistics
+	 * option
+	 */
+	private int statisticsMaxHeavyHitters = 10;
+
+	/**
 	 * The level and type of program explanation that should be displayed if
 	 * explain is set to true.
 	 */
 	private ExplainLevel explainLevel = null;
+
+	/**
+	 * Whether or not all values should be maintained in the symbol table
+	 * after execution.
+	 */
+	private boolean maintainSymbolTable = false;
 
 	private List<String> scriptHistoryStrings = new ArrayList<String>();
 	private Map<String, Script> scripts = new LinkedHashMap<String, Script>();
@@ -202,12 +212,26 @@ public class MLContext {
 	 */
 	private void initMLContext(SparkContext sc, boolean monitorPerformance) {
 
+		try {
+			MLContextUtil.verifySparkVersionSupported(sc);
+		} catch (MLContextException e) {
+			if (info() != null) {
+				log.warn("Apache Spark " + this.info().minimumRecommendedSparkVersion() + " or above is recommended for SystemML " + this.info().version());
+			} else {
+				try {
+					String minSparkVersion = MLContextUtil.getMinimumRecommendedSparkVersionFromPom();
+					log.warn("Apache Spark " + minSparkVersion + " or above is recommended for this version of SystemML.");
+				} catch (MLContextException e1) {
+					log.error("Minimum recommended Spark version could not be determined from SystemML jar file manifest or pom.xml");
+				}
+			}
+		}
+
 		if (activeMLContext == null) {
 			System.out.println(MLContextUtil.welcomeMessage());
 		}
 
 		this.sc = sc;
-		MLContextUtil.verifySparkVersionSupported(sc);
 		// by default, run in hybrid Spark mode for optimal performance
 		DMLScript.rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK;
 
@@ -216,20 +240,6 @@ public class MLContext {
 
 		MLContextUtil.setDefaultConfig();
 		MLContextUtil.setCompilerConfig();
-
-		if (monitorPerformance) {
-			SparkListener sparkListener = new SparkListener(sc);
-			sparkMonitoringUtil = new SparkMonitoringUtil(sparkListener);
-			sc.addSparkListener(sparkListener);
-		}
-	}
-
-	/**
-	 * Clean up the variables from the buffer pool, including evicted files,
-	 * because the buffer pool holds references.
-	 */
-	public void clearCache() {
-		CacheableData.cleanupCacheDir();
 	}
 
 	/**
@@ -256,18 +266,23 @@ public class MLContext {
 			throw new MLContextException(e);
 		}
 	}
-
+	
 	/**
 	 * Execute a DML or PYDML Script.
 	 *
 	 * @param script
 	 *            The DML or PYDML Script object to execute.
+	 * @return the results as a MLResults object
 	 */
 	public MLResults execute(Script script) {
-		ScriptExecutor scriptExecutor = new ScriptExecutor(sparkMonitoringUtil);
+		ScriptExecutor scriptExecutor = new ScriptExecutor();
 		scriptExecutor.setExplain(explain);
 		scriptExecutor.setExplainLevel(explainLevel);
+		scriptExecutor.setGPU(gpu);
 		scriptExecutor.setStatistics(statistics);
+		scriptExecutor.setStatisticsMaxHeavyHitters(statisticsMaxHeavyHitters);
+		scriptExecutor.setInit(scriptHistoryStrings.isEmpty());
+		scriptExecutor.setMaintainSymbolTable(maintainSymbolTable);
 		return execute(script, scriptExecutor);
 	}
 
@@ -280,6 +295,7 @@ public class MLContext {
 	 *            the DML or PYDML Script object
 	 * @param scriptExecutor
 	 *            the ScriptExecutor that defines the script execution pathway
+	 * @return the results as a MLResults object
 	 */
 	public MLResults execute(Script script, ScriptExecutor scriptExecutor) {
 		try {
@@ -310,15 +326,6 @@ public class MLContext {
 	 */
 	public void setConfig(String configFilePath) {
 		MLContextUtil.setConfig(configFilePath);
-	}
-
-	/**
-	 * Obtain the SparkMonitoringUtil if it is available.
-	 *
-	 * @return the SparkMonitoringUtil if it is available.
-	 */
-	public SparkMonitoringUtil getSparkMonitoringUtil() {
-		return sparkMonitoringUtil;
 	}
 
 	/**
@@ -353,6 +360,30 @@ public class MLContext {
 		this.explain = explain;
 	}
 
+
+	/**
+	 * Obtain whether or not all values should be maintained in the symbol table
+	 * after execution.
+	 * 
+	 * @return {@code true} if all values should be maintained in the symbol
+	 *         table, {@code false} otherwise
+	 */
+	public boolean isMaintainSymbolTable() {
+		return maintainSymbolTable;
+	}
+
+	/**
+	 * Set whether or not all values should be maintained in the symbol table
+	 * after execution.
+	 * 
+	 * @param maintainSymbolTable
+	 *            {@code true} if all values should be maintained in the symbol
+	 *            table, {@code false} otherwise
+	 */
+	public void setMaintainSymbolTable(boolean maintainSymbolTable) {
+		this.maintainSymbolTable = maintainSymbolTable;
+	}
+
 	/**
 	 * Set the level of program explanation that should be displayed if explain
 	 * is set to true.
@@ -381,9 +412,28 @@ public class MLContext {
 				}
 			}
 		}
-		throw new MLContextException("Failed to parse explain level: "+ explainLevel + " " +
-				"(valid types: hops, runtime, recompile_hops, recompile_runtime).");
+		throw new MLContextException("Failed to parse explain level: " + explainLevel + " "
+				+ "(valid types: hops, runtime, recompile_hops, recompile_runtime).");
 	}
+
+	/**
+	 * Whether or not to use (an available) GPU on the driver node.
+	 * If a GPU is not available, and the GPU mode is set, SystemML will crash when the program is run.
+	 * @param enable
+	 * 					true if needs to be enabled, false otherwise
+	 */
+	public void setGPU(boolean enable) {
+		this.gpu = enable;
+	}
+
+	/**
+	 * Whether or not the GPU mode is enabled.
+	 * @return true if enabled, false otherwise
+	 */
+	public boolean isGPU() {
+		return this.gpu;
+	}
+
 
 	/**
 	 * Used internally by MLContextProxy.
@@ -399,14 +449,15 @@ public class MLContext {
 				// Do not check metadata file for registered reads
 				exp.setCheckMetadata(false);
 
-				//Value retured from getVarParam is of type stringidentifier at runtime, but at compile type its Expression
-				//Could not find better way to compare this condition.
-				Expression datatypeExp = ((DataExpression)source).getVarParam("data_type");
+				// Value retured from getVarParam is of type stringidentifier at
+				// runtime, but at compile type its Expression
+				// Could not find better way to compare this condition.
+				Expression datatypeExp = ((DataExpression) source).getVarParam("data_type");
 				String datatype = "matrix";
-				if(datatypeExp != null)
+				if (datatypeExp != null)
 					datatype = datatypeExp.toString();
 
-				if(datatype.compareToIgnoreCase("frame") != 0) {
+				if (datatype.compareToIgnoreCase("frame") != 0) {
 					MatrixObject mo = getMatrixObject(target);
 					if (mo != null) {
 						int blp = source.getBeginLine();
@@ -419,28 +470,29 @@ public class MLContext {
 								new IntIdentifier(mo.getNumColumns(), source.getFilename(), blp, bcp, elp, ecp));
 						exp.addVarParam(DataExpression.READNUMNONZEROPARAM,
 								new IntIdentifier(mo.getNnz(), source.getFilename(), blp, bcp, elp, ecp));
-						exp.addVarParam(DataExpression.DATATYPEPARAM, new StringIdentifier("matrix", source.getFilename(),
-								blp, bcp, elp, ecp));
-						exp.addVarParam(DataExpression.VALUETYPEPARAM, new StringIdentifier("double", source.getFilename(),
-								blp, bcp, elp, ecp));
+						exp.addVarParam(DataExpression.DATATYPEPARAM,
+								new StringIdentifier("matrix", source.getFilename(), blp, bcp, elp, ecp));
+						exp.addVarParam(DataExpression.VALUETYPEPARAM,
+								new StringIdentifier("double", source.getFilename(), blp, bcp, elp, ecp));
 
 						if (mo.getMetaData() instanceof MatrixFormatMetaData) {
 							MatrixFormatMetaData metaData = (MatrixFormatMetaData) mo.getMetaData();
 							if (metaData.getOutputInfo() == OutputInfo.CSVOutputInfo) {
-								exp.addVarParam(DataExpression.FORMAT_TYPE, new StringIdentifier(
-										DataExpression.FORMAT_TYPE_VALUE_CSV, source.getFilename(), blp, bcp, elp, ecp));
+								exp.addVarParam(DataExpression.FORMAT_TYPE,
+										new StringIdentifier(DataExpression.FORMAT_TYPE_VALUE_CSV, source.getFilename(),
+												blp, bcp, elp, ecp));
 							} else if (metaData.getOutputInfo() == OutputInfo.TextCellOutputInfo) {
-								exp.addVarParam(DataExpression.FORMAT_TYPE, new StringIdentifier(
-										DataExpression.FORMAT_TYPE_VALUE_TEXT, source.getFilename(), blp, bcp, elp, ecp));
+								exp.addVarParam(DataExpression.FORMAT_TYPE,
+										new StringIdentifier(DataExpression.FORMAT_TYPE_VALUE_TEXT,
+												source.getFilename(), blp, bcp, elp, ecp));
 							} else if (metaData.getOutputInfo() == OutputInfo.BinaryBlockOutputInfo) {
-								exp.addVarParam(
-										DataExpression.ROWBLOCKCOUNTPARAM,
-										new IntIdentifier(mo.getNumRowsPerBlock(), source.getFilename(), blp, bcp, elp, ecp));
-								exp.addVarParam(DataExpression.COLUMNBLOCKCOUNTPARAM,
-										new IntIdentifier(mo.getNumColumnsPerBlock(), source.getFilename(), blp, bcp, elp,
-												ecp));
-								exp.addVarParam(DataExpression.FORMAT_TYPE, new StringIdentifier(
-										DataExpression.FORMAT_TYPE_VALUE_BINARY, source.getFilename(), blp, bcp, elp, ecp));
+								exp.addVarParam(DataExpression.ROWBLOCKCOUNTPARAM, new IntIdentifier(
+										mo.getNumRowsPerBlock(), source.getFilename(), blp, bcp, elp, ecp));
+								exp.addVarParam(DataExpression.COLUMNBLOCKCOUNTPARAM, new IntIdentifier(
+										mo.getNumColumnsPerBlock(), source.getFilename(), blp, bcp, elp, ecp));
+								exp.addVarParam(DataExpression.FORMAT_TYPE,
+										new StringIdentifier(DataExpression.FORMAT_TYPE_VALUE_BINARY,
+												source.getFilename(), blp, bcp, elp, ecp));
 							} else {
 								throw new MLContextException("Unsupported format through MLContext");
 							}
@@ -480,7 +532,7 @@ public class MLContext {
 		public ArrayList<Instruction> performCleanupAfterRecompilation(ArrayList<Instruction> instructions) {
 			if (executingScript == null || executingScript.getOutputVariables() == null)
 				return instructions;
-			
+
 			Set<String> outputVariableNames = executingScript.getOutputVariables();
 			return JMLCUtils.cleanupRuntimeInstructions(instructions, outputVariableNames.toArray(new String[0]));
 		}
@@ -489,6 +541,7 @@ public class MLContext {
 	/**
 	 * Used internally by MLContextProxy.
 	 *
+	 * @return InternalProxy object used by MLContextProxy
 	 */
 	public InternalProxy getInternalProxy() {
 		return internalProxy;
@@ -516,6 +569,18 @@ public class MLContext {
 	public void setStatistics(boolean statistics) {
 		DMLScript.STATISTICS = statistics;
 		this.statistics = statistics;
+	}
+
+	/**
+	 * Sets the maximum number of heavy hitters that are printed out as part of
+	 * the statistics.
+	 *
+	 * @param maxHeavyHitters
+	 *            maximum number of heavy hitters to print
+	 */
+	public void setStatisticsMaxHeavyHitters(int maxHeavyHitters) {
+		DMLScript.STATISTICS_COUNT = maxHeavyHitters;
+		this.statisticsMaxHeavyHitters = maxHeavyHitters;
 	}
 
 	/**
@@ -552,32 +617,71 @@ public class MLContext {
 	}
 
 	/**
-	 * Clear all the scripts, removing them from the history, and clear the
-	 * cache.
+	 * Closes the mlcontext, which includes the cleanup of static and local
+	 * state as well as scratch space and buffer pool cleanup. Note that the
+	 * spark context is not explicitly closed to allow external reuse.
 	 */
-	public void clear() {
-		Set<String> scriptNames = scripts.keySet();
-		for (String scriptName : scriptNames) {
-			Script script = scripts.get(scriptName);
-			script.clearAll();
-		}
-
-		scripts.clear();
-		scriptHistoryStrings.clear();
-
-		clearCache();
-	}
-
 	public void close() {
 		// reset static status (refs to sc / mlcontext)
 		SparkExecutionContext.resetSparkContextStatic();
 		MLContextProxy.setActive(false);
 		activeMLContext = null;
 
+		// cleanup scratch space and buffer pool
+		try {
+			DMLScript.cleanupHadoopExecution(ConfigurationManager.getDMLConfig());
+		} catch (Exception ex) {
+			throw new MLContextException("Failed to cleanup working directories.", ex);
+		}
+
 		// clear local status, but do not stop sc as it
 		// may be used or stopped externally
-		clear();
+		for (Script script : scripts.values())
+			script.clearAll();
+		scripts.clear();
+		scriptHistoryStrings.clear();
 		resetConfig();
 		sc = null;
 	}
+
+	/**
+	 * Obtain information about the project such as version and build time from
+	 * the manifest in the SystemML jar file.
+	 * 
+	 * @return information about the project
+	 */
+	public ProjectInfo info() {
+		try {
+			ProjectInfo projectInfo = ProjectInfo.getProjectInfo();
+			return projectInfo;
+		} catch (Exception e) {
+			log.warn("Project information not available");
+			return null;
+		}
+	}
+
+	/**
+	 * Obtain the SystemML version number.
+	 * 
+	 * @return the SystemML version number
+	 */
+	public String version() {
+		if (info() == null) {
+			return "Version not available";
+		}
+		return info().version();
+	}
+
+	/**
+	 * Obtain the SystemML jar file build time.
+	 * 
+	 * @return the SystemML jar file build time
+	 */
+	public String buildTime() {
+		if (info() == null) {
+			return "Build time not available";
+		}
+		return info().buildTime();
+	}
+
 }

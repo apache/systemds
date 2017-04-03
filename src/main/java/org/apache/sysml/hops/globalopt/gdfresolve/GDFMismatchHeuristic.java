@@ -32,7 +32,7 @@ public abstract class GDFMismatchHeuristic
 	/**
 	 * Returns the name of the implementing mismatch heuristic.
 	 * 
-	 * @return
+	 * @return the name of the implementing mismatch heuristic
 	 */
 	public abstract String getName();
 	
@@ -40,9 +40,9 @@ public abstract class GDFMismatchHeuristic
 	 * Resolve the mismatch of two given rewrite configurations. This call returns true,
 	 * if and only if the new configuration is chosen.
 	 * 
-	 * @param currRc
-	 * @param newRc
-	 * @return
+	 * @param currRc the current rewrite config
+	 * @param newRc the new rewrite config
+	 * @return true if and only if the new configuration is chosen
 	 */
 	public abstract boolean resolveMismatch( RewriteConfig currRc, RewriteConfig newRc );
 }

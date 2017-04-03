@@ -23,7 +23,9 @@ import java.io.DataOutput;
 import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.UTFDataFormatException;
 
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.data.MatrixBlockDataOutput;
 import org.apache.sysml.runtime.matrix.data.SparseBlock;
 
@@ -175,6 +177,15 @@ public class FastBufferedDataOutputStream extends FilterOutputStream implements 
 	}
 
 	@Override
+	public void writeShort(int v) throws IOException {
+		if (_count+2 > _bufflen) {
+		    flushBuffer();
+		}
+		shortToBa(v, _buff, _count);
+		_count += 2;	
+	}
+
+	@Override
 	public void writeBytes(String s) throws IOException {
 		throw new IOException("Not supported.");
 	}
@@ -195,16 +206,33 @@ public class FastBufferedDataOutputStream extends FilterOutputStream implements 
 	}
 
 	@Override
-	public void writeShort(int v) throws IOException {
-		throw new IOException("Not supported.");
-	}
-
-	@Override
 	public void writeUTF(String s) throws IOException {
-		byte[] strBytes = s.getBytes("UTF-8");
-		write(strBytes, 0, strBytes.length);
+		int slen = s.length();
+		int utflen = IOUtilFunctions.getUTFSize(s) - 2;
+		if (utflen-2 > 65535)
+			throw new UTFDataFormatException("encoded string too long: "+utflen);
+		
+		//write utf len (2 bytes) 
+		writeShort(utflen);
+		
+		//write utf payload
+		for( int i=0; i<slen; i++ ) {
+			if (_count+3 > _bufflen)
+			    flushBuffer();
+			char c = s.charAt(i);
+			if( c>= 0x0001 && c<=0x007F ) //1 byte range
+				_buff[_count++] = (byte) c;
+			else if( c>=0x0800 ) { //3 byte range
+				_buff[_count++] = (byte) (0xE0 | ((c >> 12) & 0x0F));
+				_buff[_count++] = (byte) (0x80 | ((c >>  6) & 0x3F));
+				_buff[_count++] = (byte) (0x80 | ((c >>  0) & 0x3F));
+			}
+			else { //2 byte range and null
+				_buff[_count++] = (byte) (0xC0 | ((c >>  6) & 0x1F));
+				_buff[_count++] = (byte) (0x80 | ((c >>  0) & 0x3F));
+			}
+		}
 	}
-
 
     ///////////////////////////////////////////////
     // Implementation of MatrixBlockDSMDataOutput
@@ -291,13 +319,14 @@ public class FastBufferedDataOutputStream extends FilterOutputStream implements 
 		for( int i=lrlen; i<rlen; i++ )
 			writeInt( 0 );
 	}
-	
-	/**
-	 * 
-	 * @param val
-	 * @param ba
-	 * @param off
-	 */
+
+	private static void shortToBa( final int val, byte[] ba, final int off )
+	{
+		//shift and mask out 2 bytes
+		ba[ off+0 ] = (byte)((val >>>  8) & 0xFF);
+		ba[ off+1 ] = (byte)((val >>>  0) & 0xFF);
+	}
+
 	private static void intToBa( final int val, byte[] ba, final int off )
 	{
 		//shift and mask out 4 bytes
@@ -306,13 +335,7 @@ public class FastBufferedDataOutputStream extends FilterOutputStream implements 
 		ba[ off+2 ] = (byte)((val >>>  8) & 0xFF);
 		ba[ off+3 ] = (byte)((val >>>  0) & 0xFF);
 	}
-	
-	/**
-	 * 
-	 * @param val
-	 * @param ba
-	 * @param off
-	 */
+
 	private static void longToBa( final long val, byte[] ba, final int off )
 	{
 		//shift and mask out 8 bytes

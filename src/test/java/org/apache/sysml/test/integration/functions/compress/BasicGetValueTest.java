@@ -46,9 +46,10 @@ public class BasicGetValueTest extends AutomatedTestBase
 	}
 	
 	public enum ValueType {
-		RAND,
-		RAND_ROUND,
-		CONST,
+		RAND, //UC
+		CONST, //RLE
+		RAND_ROUND_OLE, //OLE
+		RAND_ROUND_DDC, //RLE
 	}
 	
 	@Override
@@ -72,13 +73,23 @@ public class BasicGetValueTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testDenseRoundRandDataCompression() {
-		runGetValueTest(SparsityType.DENSE, ValueType.RAND_ROUND, true);
+	public void testDenseRoundRandDataOLECompression() {
+		runGetValueTest(SparsityType.DENSE, ValueType.RAND_ROUND_OLE, true);
 	}
 	
 	@Test
-	public void testSparseRoundRandDataCompression() {
-		runGetValueTest(SparsityType.SPARSE, ValueType.RAND_ROUND, true);
+	public void testSparseRoundRandDataOLECompression() {
+		runGetValueTest(SparsityType.SPARSE, ValueType.RAND_ROUND_OLE, true);
+	}
+	
+	@Test
+	public void testDenseRoundRandDataDDCCompression() {
+		runGetValueTest(SparsityType.DENSE, ValueType.RAND_ROUND_DDC, true);
+	}
+	
+	@Test
+	public void testSparseRoundRandDataDDCCompression() {
+		runGetValueTest(SparsityType.SPARSE, ValueType.RAND_ROUND_DDC, true);
 	}
 	
 	@Test
@@ -107,13 +118,13 @@ public class BasicGetValueTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testDenseRoundRandDataNoCompression() {
-		runGetValueTest(SparsityType.DENSE, ValueType.RAND_ROUND, false);
+	public void testDenseRoundRandDataOLENoCompression() {
+		runGetValueTest(SparsityType.DENSE, ValueType.RAND_ROUND_OLE, false);
 	}
 	
 	@Test
-	public void testSparseRoundRandDataNoCompression() {
-		runGetValueTest(SparsityType.SPARSE, ValueType.RAND_ROUND, false);
+	public void testSparseRoundRandDataOLENoCompression() {
+		runGetValueTest(SparsityType.SPARSE, ValueType.RAND_ROUND_OLE, false);
 	}
 	
 	@Test
@@ -146,8 +157,10 @@ public class BasicGetValueTest extends AutomatedTestBase
 			//generate input data
 			double min = (vtype==ValueType.CONST)? 10 : -10;
 			double[][] input = TestUtils.generateTestMatrix(rows, cols, min, 10, sparsity, 7);
-			if( vtype==ValueType.RAND_ROUND )
+			if( vtype==ValueType.RAND_ROUND_OLE || vtype==ValueType.RAND_ROUND_DDC ) {
+				CompressedMatrixBlock.ALLOW_DDC_ENCODING = (vtype==ValueType.RAND_ROUND_DDC);
 				input = TestUtils.round(input);
+			}
 			MatrixBlock mb = DataConverter.convertToMatrixBlock(input);
 			
 			//compress given matrix block
@@ -165,6 +178,9 @@ public class BasicGetValueTest extends AutomatedTestBase
 		}
 		catch(Exception ex) {
 			throw new RuntimeException(ex);
+		}
+		finally {
+			CompressedMatrixBlock.ALLOW_DDC_ENCODING = true;
 		}
 	}
 }

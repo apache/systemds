@@ -45,11 +45,6 @@ public class AdaptivePartialBlock implements WritableComparable<AdaptivePartialB
 		
 	}
 	
-	public AdaptivePartialBlock(MatrixBlock block)
-	{
-		set(block);
-	}
-	
 	public AdaptivePartialBlock(PartialBlock cell)
 	{
 		set(cell);

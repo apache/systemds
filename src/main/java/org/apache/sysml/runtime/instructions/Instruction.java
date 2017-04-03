@@ -22,7 +22,6 @@ package org.apache.sysml.runtime.instructions;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import org.apache.sysml.api.monitoring.Location;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.DataIdentifier;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -32,11 +31,10 @@ import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 public abstract class Instruction 
 {
 	public enum INSTRUCTION_TYPE { 
-		CONTROL_PROGRAM, 
-		MAPREDUCE, 
-		EXTERNAL_LIBRARY, 
-		MAPREDUCE_JOB, 
-		BREAKPOINT, 
+		CONTROL_PROGRAM,
+		MAPREDUCE,
+		MAPREDUCE_JOB,
+		BREAKPOINT,
 		SPARK,
 		GPU
 	};
@@ -48,7 +46,6 @@ public abstract class Instruction
 	public static final String VALUETYPE_PREFIX = Lop.VALUETYPE_PREFIX;
 	public static final String LITERAL_PREFIX = Lop.LITERAL_PREFIX;
 	public static final String INSTRUCTION_DELIM = Lop.INSTRUCTION_DELIMITOR;
-	public static final String NAME_VALUE_SEPARATOR = Lop.NAME_VALUE_SEPARATOR;
 	public static final String SP_INST_PREFIX = "sp_";
 	public static final String GPU_INST_PREFIX = "gpu_";
 	
@@ -73,8 +70,12 @@ public abstract class Instruction
 	}
 	
 	/**
-	 * Setter for instruction line number 
-	 * @param ln Exact (or approximate) DML script line number
+	 * Setter for instruction line/column number 
+	 * 
+	 * @param beginLine beginning line position
+	 * @param endLine ending line position
+	 * @param beginCol beginning column position
+	 * @param endCol ending column position
 	 */
 	public void setLocation ( int beginLine, int endLine,  int beginCol, int endCol) {
 		this.beginLine = beginLine;
@@ -109,16 +110,6 @@ public abstract class Instruction
 			this.endCol = oldInst.endCol;
 		}
 	}
-	
-	public Location getLocation() {
-		// Rather than exposing 4 different getter methods. Also Location doesnot contain any references to Spark libraries
-		if(beginLine == -1 || endLine == -1 || beginCol == -1 || endCol == -1) {
-			return null;
-		}
-		else
-			return new Location(beginLine, endLine, beginCol, endCol);
-	}
-	
 	
 	/**
 	 * Getter for instruction line number
@@ -168,11 +159,7 @@ public abstract class Instruction
 		else
 			return getOpcode();
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public boolean requiresLabelUpdate()
 	{
 		return instString.contains( Lop.VARIABLE_NAME_PLACEHOLDER );
@@ -183,9 +170,9 @@ public abstract class Instruction
 	 * should overwrite this method in order to update (1) the in-memory instruction
 	 * and (2) the instruction string 
 	 * 
-	 * @param pattern
-	 * @param replace
-	 * @throws DMLRuntimeException 
+	 * @param pattern ?
+	 * @param replace ?
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public void updateInstructionThreadID(String pattern, String replace) 
 		throws DMLRuntimeException
@@ -198,9 +185,9 @@ public abstract class Instruction
 	 * Overwriting methods should first call the super method and subsequently do
 	 * their custom setup.
 	 * 
-	 * @param ec
-	 * @return
-	 * @throws DMLRuntimeException 
+	 * @param ec execution context
+	 * @return instruction
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public Instruction preprocessInstruction(ExecutionContext ec)
 		throws DMLRuntimeException
@@ -215,8 +202,8 @@ public abstract class Instruction
 	/**
 	 * This method should be used to execute the instruction. 
 	 * 
-	 * @param ec
-	 * @throws DMLRuntimeException
+	 * @param ec execution context
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public abstract void processInstruction(ExecutionContext ec) 
 		throws DMLRuntimeException;
@@ -226,7 +213,8 @@ public abstract class Instruction
 	 * Overwriting methods should first do their custom tear down and subsequently 
 	 * call the super method.
 	 * 
-	 * @param ec
+	 * @param ec execution context
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public void postprocessInstruction(ExecutionContext ec)
 		throws DMLRuntimeException

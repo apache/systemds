@@ -25,11 +25,6 @@ import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.lops.compile.JobType;
 import org.apache.sysml.parser.Expression.*;
 
-
-/**
- * 
- * 
- */
 public class CumulativePartialAggregate extends Lop 
 {
 	
@@ -51,13 +46,6 @@ public class CumulativePartialAggregate extends Lop
 		init(input, dt, vt, et);
 	}
 	
-	/**
-	 * 
-	 * @param input
-	 * @param dt
-	 * @param vt
-	 * @param et
-	 */
 	private void init(Lop input, DataType dt, ValueType vt, ExecType et) 
 	{
 		this.addInput(input);
@@ -90,10 +78,6 @@ public class CumulativePartialAggregate extends Lop
 		return "CumulativePartialAggregate";
 	}
 	
-	/**
-	 * 
-	 * @return
-	 */
 	private String getOpcode() 
 	{
 		switch( _op ) {
@@ -106,25 +90,12 @@ public class CumulativePartialAggregate extends Lop
 	}
 	
 	@Override
-	public String getInstructions(int input_index, int output_index)
-		throws LopsException 
-	{
-		StringBuilder sb = new StringBuilder();
-		sb.append( getExecType() );
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( getOpcode() );
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( getInputs().get(0).prepInputOperand(input_index) );
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( this.prepOutputOperand(output_index) );
-
-		return sb.toString();
+	public String getInstructions(int input_index, int output_index) {
+		return getInstructions(String.valueOf(input_index), String.valueOf(output_index));
 	}
 	
 	@Override
-	public String getInstructions(String input, String output)
-		throws LopsException 
-	{
+	public String getInstructions(String input, String output) {
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );
 		sb.append( OPERAND_DELIMITOR );
@@ -132,7 +103,7 @@ public class CumulativePartialAggregate extends Lop
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( getInputs().get(0).prepInputOperand(input) );
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( this.prepOutputOperand(output) );
+		sb.append( prepOutputOperand(output) );
 
 		return sb.toString();
 	}

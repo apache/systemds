@@ -21,7 +21,6 @@ package org.apache.sysml.runtime.functionobjects;
 
 public class Not extends ValueFunction 
 {
-
 	private static final long serialVersionUID = -3137270229584267263L;
 
 	private static Not singleObj = null;
@@ -34,11 +33,6 @@ public class Not extends ValueFunction
 		if ( singleObj == null )
 			singleObj = new Not();
 		return singleObj;
-	}
-	
-	public Object clone() throws CloneNotSupportedException {
-		// cloning is not supported for singleton classes
-		throw new CloneNotSupportedException();
 	}
 
 	@Override

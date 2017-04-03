@@ -45,16 +45,7 @@ import org.apache.sysml.runtime.util.MapReduceTool;
  */
 public class FrameWriterBinaryBlockParallel extends FrameWriterBinaryBlock
 {	
-	/**
-	 * 
-	 * @param path
-	 * @param job
-	 * @param src
-	 * @param rlen
-	 * @param clen
-	 * @throws IOException
-	 * @throws DMLRuntimeException
-	 */
+
 	protected void writeBinaryBlockFrameToHDFS( Path path, JobConf job, FrameBlock src, long rlen, long clen )
 		throws IOException, DMLRuntimeException
 	{
@@ -101,9 +92,6 @@ public class FrameWriterBinaryBlockParallel extends FrameWriterBinaryBlock
 		}	
 	}
 
-	/**
-	 * 
-	 */
 	private class WriteFileTask implements Callable<Object> 
 	{
 		private Path _path = null;

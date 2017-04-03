@@ -45,8 +45,22 @@ public class ApplyTfCSVSPARK {
 	/**
 	 * Apply transformation metadata and generate the result in CSV format, as a
 	 * JavaRDD of Strings.
+	 * 
+	 * @param sec spark execution context
+	 * @param inputRDD input rdd
+	 * @param tfMtdPath transform metadata path
+	 * @param spec transform specification as json string
+	 * @param tmpPath temporary file path
+	 * @param prop csv file format properties
+	 * @param numCols number of columns
+	 * @param headerLine header line
+	 * @return JavaPairRDD of long-strings
+	 * @throws IOException if IOException occurs
+	 * @throws ClassNotFoundException if ClassNotFoundException occurs
+	 * @throws InterruptedException if InterruptedException occurs
+	 * @throws IllegalArgumentException if IllegalArgumentException occurs
+	 * @throws JSONException if JSONException occurs
 	 */
-
 	public static JavaPairRDD<Long, String> runSparkJob(
 			SparkExecutionContext sec, JavaRDD<Tuple2<LongWritable, Text>> inputRDD, 
 			String tfMtdPath, String spec, String tmpPath, CSVFileFormatProperties prop, 
@@ -98,10 +112,6 @@ public class ApplyTfCSVSPARK {
 		private static final long serialVersionUID = 1496686437276906911L;
 
 		TfUtils _tfmapper = null;
-		
-		ApplyTfCSVMap(boolean hasHeader, String delim, String naStrings, String specFile, String tmpPath, String tfMtdPath, long numCols, String headerLine, Broadcast<TfUtils> tf) throws IllegalArgumentException, IOException, JSONException {
-			_tfmapper = tf.getValue();
-		}
 		
 		ApplyTfCSVMap(Broadcast<TfUtils> tf) throws IllegalArgumentException, IOException, JSONException {
 			_tfmapper = tf.getValue();

@@ -30,10 +30,6 @@ import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.util.LocalFileUtils;
 
-/**
- * 
- * 
- */
 public class LazyWriteBuffer 
 {
 	public enum RPolicy {
@@ -42,7 +38,7 @@ public class LazyWriteBuffer
 	}
 	
 	//global size limit in bytes
-	private static long _limit; 
+	private static final long _limit; 
 	
 	//current size in bytes
 	private static long _size;  
@@ -59,13 +55,7 @@ public class LazyWriteBuffer
 		long maxMem = InfrastructureAnalyzer.getLocalMaxMemory();
 		_limit = (long)(CacheableData.CACHING_BUFFER_SIZE * maxMem);
 	}
-	
-	/**
-	 * 
-	 * @param fname
-	 * @param mb
-	 * @throws IOException
-	 */
+
 	public static void writeBlock( String fname, CacheBlock cb ) 
 		throws IOException
 	{	
@@ -125,11 +115,7 @@ public class LazyWriteBuffer
 				CacheStatistics.incrementFSWrites();
 		}	
 	}
-	
-	/**
-	 * 
-	 * @param fname
-	 */
+
 	public static void deleteBlock( String fname )
 	{
 		boolean requiresDelete = true;
@@ -149,13 +135,7 @@ public class LazyWriteBuffer
 		if( requiresDelete )
 			_fClean.deleteFile(fname);
 	}
-	
-	/**
-	 * 
-	 * @param fname
-	 * @return
-	 * @throws IOException
-	 */
+
 	public static CacheBlock readBlock( String fname, boolean matrix ) 
 		throws IOException
 	{
@@ -193,10 +173,7 @@ public class LazyWriteBuffer
 		
 		return cb;
 	}
-		
-	/**
-	 * 
-	 */
+
 	public static void init() {
 		_mQueue = new EvictionQueue();
 		_fClean = new FileCleaner();
@@ -204,10 +181,7 @@ public class LazyWriteBuffer
 		if( CacheableData.CACHING_BUFFER_PAGECACHE )
 			PageCache.init();
 	}
-	
-	/**
-	 * 
-	 */
+
 	public static void cleanup() {
 		if( _mQueue != null )
 			_mQueue.clear();
@@ -216,18 +190,17 @@ public class LazyWriteBuffer
 		if( CacheableData.CACHING_BUFFER_PAGECACHE )
 			PageCache.clear();
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public static long getWriteBufferSize() {
 		long maxMem = InfrastructureAnalyzer.getLocalMaxMemory();
 		return (long)(CacheableData.CACHING_BUFFER_SIZE * maxMem);
 	}
 	
 	/**
+	 * Print current status of buffer pool, including all entries.
+	 * NOTE: use only for debugging or testing.  
 	 * 
+	 * @param position the position
 	 */
 	public static void printStatus( String position )
 	{
@@ -248,6 +221,33 @@ public class LazyWriteBuffer
 			
 			System.out.println("\tWB: buffer element ("+count+"): "+fname+", "+bbuff.getSize()+", "+bbuff.isShallow());
 			count--;
+		}
+	}
+	
+	/**
+	 * Evicts all buffer pool entries. 
+	 * NOTE: use only for debugging or testing.
+	 * 
+	 * @throws IOException if IOException occurs
+	 */
+	public static void forceEviction() 
+		throws IOException 
+	{
+		//evict all matrices and frames
+		while( !_mQueue.isEmpty() )
+		{
+			//remove first entry from eviction queue
+			Entry<String, ByteBuffer> entry = _mQueue.removeFirst();
+			ByteBuffer tmp = entry.getValue();
+			
+			if( tmp != null ) {
+				//wait for pending serialization
+				tmp.checkSerialized();
+				
+				//evict matrix
+				tmp.evictBuffer(entry.getKey());
+				tmp.freeMemory();
+			}
 		}
 	}
 	
@@ -308,7 +308,7 @@ public class LazyWriteBuffer
 				_pool.shutdown();
 		}
 		
-		private class FileCleanerTask implements Runnable {
+		private static class FileCleanerTask implements Runnable {
 			private String _fname = null;
 			
 			public FileCleanerTask( String fname ) {

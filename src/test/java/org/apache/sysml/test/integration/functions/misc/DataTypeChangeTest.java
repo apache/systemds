@@ -190,11 +190,11 @@ public class DataTypeChangeTest extends AutomatedTestBase
 			HashMap<String, String> argVals = new HashMap<String,String>();
 			
 			//read script
-			BufferedReader in = new BufferedReader(new FileReader(fullTestName));
-			String s1 = null;
-			while ((s1 = in.readLine()) != null)
-				dmlScriptString += s1 + "\n";
-			in.close();	
+			try( BufferedReader in = new BufferedReader(new FileReader(fullTestName)) ) {
+				String s1 = null;
+				while ((s1 = in.readLine()) != null)
+					dmlScriptString += s1 + "\n";
+			}	
 			
 			//parsing and dependency analysis
 			AParserWrapper parser = AParserWrapper.createParser(false);

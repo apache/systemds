@@ -71,14 +71,6 @@ public class IndexedIdentifier extends DataIdentifier
    		_origDim2 = -1L;
 	}
 	
-	/**
-	 * 	
-	 * @param ids
-	 * @param currConstVars
-	 * @param conditional
-	 * @return
-	 * @throws LanguageException
-	 */
 	public IndexPair calculateIndexedDimensions(HashMap<String,DataIdentifier> ids, HashMap<String, ConstIdentifier> currConstVars, boolean conditional) 
 		throws LanguageException 
 	{	
@@ -716,35 +708,6 @@ public class IndexedIdentifier extends DataIdentifier
 		
 		return result;
 	}
-	
-	public void setAllPositions (String filename, int blp, int bcp, ArrayList<ArrayList<Expression>> exprListList){
-		setFilename(filename);
-		setBeginLine(blp);
-		setBeginColumn(bcp);
-		
-		Expression rightMostIndexExpr = null;
-		if (exprListList != null){
-			for(ArrayList<Expression> exprList : exprListList){
-				if (exprList != null){
-					for (Expression expr : exprList){
-						if (expr != null) {
-							rightMostIndexExpr = expr;
-						}
-					}
-				}
-			}
-		}
-		
-		if (rightMostIndexExpr != null){
-			setEndLine(rightMostIndexExpr.getEndLine());
-			setEndColumn(rightMostIndexExpr.getEndColumn());
-		}
-		else {
-			setEndLine(blp);
-			setEndColumn(bcp);
-		}
-	}
-	
 	
 	public void setProperties(Identifier i){
 		_dataType = i.getDataType();

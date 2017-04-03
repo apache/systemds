@@ -49,11 +49,15 @@ public class GroupedAggregate extends Lop
 
 	/**
 	 * Constructor to perform grouped aggregate.
-	 * inputParameterLops <- parameters required to compute different aggregates (hashmap)
+	 * inputParameterLops &lt;- parameters required to compute different aggregates (hashmap)
 	 *   "combinedinput" -- actual data
 	 *   "function" -- aggregate function
+	 * 
+	 * @param inputParameterLops map of input parameter lops
+	 * @param weights weights
+	 * @param dt data type
+	 * @param vt value type
 	 */
-	
 	public GroupedAggregate(
 			HashMap<String, Lop> inputParameterLops, boolean weights,
 			DataType dt, ValueType vt) {		
@@ -84,13 +88,6 @@ public class GroupedAggregate extends Lop
 		_numThreads = k;
 	}
 	
-	/**
-	 * 
-	 * @param inputParameterLops
-	 * @param dt
-	 * @param vt
-	 * @param et
-	 */
 	private void init(HashMap<String, Lop> inputParameterLops, 
 			DataType dt, ValueType vt, ExecType et) {
 		if ( et == ExecType.MR ) {

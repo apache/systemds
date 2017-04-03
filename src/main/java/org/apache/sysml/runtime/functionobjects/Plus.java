@@ -27,7 +27,6 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 
 public class Plus extends ValueFunction implements Serializable 
 {
-
 	private static final long serialVersionUID = -3573790367761963555L;
 
 	private static Plus singleObj = null;
@@ -42,23 +41,8 @@ public class Plus extends ValueFunction implements Serializable
 		return singleObj;
 	}
 	
-	public Object clone() throws CloneNotSupportedException {
-		// cloning is not supported for singleton classes
-		throw new CloneNotSupportedException();
-	}
-	
 	@Override
 	public double execute(double in1, double in2) {
-		return in1 + in2;
-	}
-
-	@Override
-	public double execute(double in1, long in2) {
-		return in1 + in2;
-	}
-
-	@Override
-	public double execute(long in1, double in2) {
 		return in1 + in2;
 	}
 
@@ -74,6 +58,5 @@ public class Plus extends ValueFunction implements Serializable
 
 	public String execute ( String in1, String in2 ) throws DMLRuntimeException {
 		return in1 + in2;
-	}
-	
+	}	
 }

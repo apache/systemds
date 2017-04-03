@@ -28,7 +28,6 @@ import org.apache.sysml.parser.Expression.ValueType;
 
 public class RepMat extends Lop 
 {
-	
 	public static final String OPCODE = "rep";
 	
 	private boolean _repCols = true;
@@ -36,11 +35,13 @@ public class RepMat extends Lop
 	/**
 	 * Constructor to setup a partial Matrix-Vector Multiplication
 	 * 
-	 * @param input
-	 * @param op
-	 * @return 
-	 * @throws LopsException
-	 */	
+	 * @param input1 low-level operator 1
+	 * @param input2 low-level operator 2
+	 * @param repCols ?
+	 * @param dt data type
+	 * @param vt value type
+	 * @throws LopsException if LopsException occurs
+	 */
 	public RepMat(Lop input1, Lop input2, boolean repCols, DataType dt, ValueType vt) 
 		throws LopsException 
 	{
@@ -86,7 +87,7 @@ public class RepMat extends Lop
 		sb.append( getInputs().get(1).prepScalarInputOperand(getExecType()));
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( this.prepOutputOperand(output_index));
+		sb.append( prepOutputOperand(output_index));
 		
 		return sb.toString();
 	}

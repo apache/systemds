@@ -29,7 +29,6 @@ import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.DataOpTypes;
 import org.apache.sysml.hops.Hop.OpOp1;
 import org.apache.sysml.hops.Hop.OpOp2;
-import org.apache.sysml.hops.Hop.VisitStatus;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.LiteralOp;
 import org.apache.sysml.hops.UnaryOp;
@@ -88,28 +87,17 @@ public class RewriteConstantFolding extends HopRewriteRule
 
 		return rule_ConstantFolding(root);
 	}
-	
 
-	/**
-	 * 
-	 * @param hop
-	 * @throws HopsException
-	 */
 	private Hop rule_ConstantFolding( Hop hop ) 
 		throws HopsException 
 	{
 		return rConstantFoldingExpression(hop);
 	}
-	
-	/**
-	 * 
-	 * @param root
-	 * @throws HopsException
-	 */
+
 	private Hop rConstantFoldingExpression( Hop root ) 
 		throws HopsException
 	{
-		if( root.getVisited() == VisitStatus.DONE )
+		if( root.isVisited() )
 			return root;
 		
 		//recursively process childs (before replacement to allow bottom-recursion)
@@ -179,7 +167,7 @@ public class RewriteConstantFolding extends HopRewriteRule
 			
 		
 		//mark processed
-		root.setVisited( VisitStatus.DONE );
+		root.setVisited();
 		return root;
 	}
 	
@@ -189,11 +177,12 @@ public class RewriteConstantFolding extends HopRewriteRule
 	 * we use the same compilation and runtime for constant folding as we would 
 	 * use for actual instruction execution. 
 	 * 
-	 * @return
-	 * @throws IOException 
-	 * @throws LopsException 
-	 * @throws DMLRuntimeException 
-	 * @throws HopsException 
+	 * @param bop high-level operator
+	 * @return literal op
+	 * @throws LopsException if LopsException occurs
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
+	 * @throws IOException if IOException occurs
+	 * @throws HopsException if HopsException occurs
 	 */
 	private LiteralOp evalScalarOperation( Hop bop ) 
 		throws LopsException, DMLRuntimeException, IOException, HopsException
@@ -236,21 +225,13 @@ public class RewriteConstantFolding extends HopRewriteRule
 		ec.getVariables().removeAll();
 		
 		//set literal properties (scalar)
- 		literal.setDim1(0);
-		literal.setDim2(0);
-		literal.setRowsInBlock(-1);
-		literal.setColsInBlock(-1);
-		
+		HopRewriteUtils.setOutputParametersForScalar(literal);
+ 		
 		//System.out.println("Constant folded in "+time.stop()+"ms.");
 		
 		return literal;
 	}
 	
-	/**
-	 * 
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	private static ProgramBlock getProgramBlock() 
 		throws DMLRuntimeException
 	{
@@ -259,10 +240,6 @@ public class RewriteConstantFolding extends HopRewriteRule
 		return _tmpPB;
 	}
 	
-	/**
-	 * 
-	 * @return
-	 */
 	private static ExecutionContext getExecutionContext()
 	{
 		if( _tmpEC == null )
@@ -270,11 +247,6 @@ public class RewriteConstantFolding extends HopRewriteRule
 		return _tmpEC;
 	}
 	
-	/**
-	 * 
-	 * @param hop
-	 * @return
-	 */
 	private boolean isApplicableBinaryOp( Hop hop )
 	{
 		ArrayList<Hop> in = hop.getInput();
@@ -288,11 +260,6 @@ public class RewriteConstantFolding extends HopRewriteRule
 		//messes up the explain runtime output due to introduced \n 
 	}
 	
-	/**
-	 * 
-	 * @param hop
-	 * @return
-	 */
 	private boolean isApplicableUnaryOp( Hop hop )
 	{
 		ArrayList<Hop> in = hop.getInput();
@@ -303,34 +270,20 @@ public class RewriteConstantFolding extends HopRewriteRule
 				&& hop.getDataType() == DataType.SCALAR);
 	}
 	
-	/**
-	 * 
-	 * @param hop
-	 * @return
-	 * @throws HopsException
-	 */
 	private boolean isApplicableFalseConjunctivePredicate( Hop hop ) 
 		throws HopsException
 	{
 		ArrayList<Hop> in = hop.getInput();
-		return (   hop instanceof BinaryOp 
-				&& ((BinaryOp)hop).getOp()==OpOp2.AND
+		return (   HopRewriteUtils.isBinary(hop, OpOp2.AND)
 				&& ( (in.get(0) instanceof LiteralOp && !((LiteralOp)in.get(0)).getBooleanValue())   
 				   ||(in.get(1) instanceof LiteralOp && !((LiteralOp)in.get(1)).getBooleanValue())) );			
 	}
 	
-	/**
-	 * 
-	 * @param hop
-	 * @return
-	 * @throws HopsException
-	 */
 	private boolean isApplicableTrueDisjunctivePredicate( Hop hop ) 
 		throws HopsException
 	{
 		ArrayList<Hop> in = hop.getInput();
-		return (   hop instanceof BinaryOp 
-				&& ((BinaryOp)hop).getOp()==OpOp2.OR
+		return (   HopRewriteUtils.isBinary(hop, OpOp2.OR)
 				&& ( (in.get(0) instanceof LiteralOp && ((LiteralOp)in.get(0)).getBooleanValue())   
 				   ||(in.get(1) instanceof LiteralOp && ((LiteralOp)in.get(1)).getBooleanValue())) );			
 	}

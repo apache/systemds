@@ -36,6 +36,7 @@ import org.apache.hadoop.mapred.Reporter;
 
 import org.apache.sysml.runtime.controlprogram.parfor.util.PairWritableBlock;
 import org.apache.sysml.runtime.controlprogram.parfor.util.PairWritableCell;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixCell;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
@@ -69,9 +70,6 @@ public class DataPartitionerRemoteReducer
 		_reducer.processKeyValueList(key, valueList, out, reporter);
 	}
 
-	/**
-	 * 
-	 */
 	public void configure(JobConf job)
 	{
 		String fnameNew = MRJobConfiguration.getPartitioningFilename( job );
@@ -86,10 +84,7 @@ public class DataPartitionerRemoteReducer
 		else
 			throw new RuntimeException("Unable to configure reducer with unknown output info: "+oi.toString());	
 	}
-	
-	/**
-	 * 
-	 */
+
 	@Override
 	public void close() throws IOException 
 	{
@@ -157,10 +152,8 @@ public class DataPartitionerRemoteReducer
 					_sb.setLength(0);
 				}
 			} 
-			finally
-			{
-				if( writer != null )
-					writer.close();
+			finally {
+				IOUtilFunctions.closeSilently(writer);
 			}
 		}
 		

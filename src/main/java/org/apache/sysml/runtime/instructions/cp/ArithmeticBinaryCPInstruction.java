@@ -27,15 +27,8 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 
 
 public abstract class ArithmeticBinaryCPInstruction extends BinaryCPInstruction 
-{
-		
-	public ArithmeticBinaryCPInstruction(Operator op, 
-								   CPOperand in1, 
-								   CPOperand in2, 
-								   CPOperand out, 
-								   String opcode,
-								   String istr )
-	{
+{		
+	public ArithmeticBinaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr) {
 		super(op, in1, in2, out, opcode, istr);
 		_cptype = CPINSTRUCTION_TYPE.ArithmeticBinary;
 	}
@@ -48,61 +41,17 @@ public abstract class ArithmeticBinaryCPInstruction extends BinaryCPInstruction
 		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		String opcode = parseBinaryInstruction(str, in1, in2, out);
 		
-		// Arithmetic operations must be performed on DOUBLE or INT
-		ValueType vt1 = in1.getValueType();
-		DataType dt1 = in1.getDataType();
-		ValueType vt2 = in2.getValueType();
-		DataType dt2 = in2.getDataType();
-		ValueType vt3 = out.getValueType();
-		DataType dt3 = out.getDataType();
+		checkOutputDataType(in1, in2, out);
 		
-		//prithvi TODO
-		//make sure these checks belong here
-		//if either input is a matrix, then output
-		//has to be a matrix
-		if((dt1 == DataType.MATRIX  || dt2 == DataType.MATRIX) && dt3 != DataType.MATRIX) {
-			throw new DMLRuntimeException("Element-wise matrix operations between variables " + in1.getName() + 
-					" and " + in2.getName() + " must produce a matrix, which " + out.getName() + "is not");
-		}
-		
-		Operator operator = (dt1 != dt2) ?
-					InstructionUtils.parseScalarBinaryOperator(opcode, (dt1 == DataType.SCALAR)) : 
+		Operator operator = (in1.getDataType() != in2.getDataType()) ?
+					InstructionUtils.parseScalarBinaryOperator(opcode, (in1.getDataType() == DataType.SCALAR)) : 
 					InstructionUtils.parseBinaryOperator(opcode);
 		
-		if ( opcode.equalsIgnoreCase("+") && dt1 == DataType.SCALAR && dt2 == DataType.SCALAR) 
-		{
+		if( in1.getDataType() == DataType.SCALAR && in2.getDataType() == DataType.SCALAR ) 
 			return new ScalarScalarArithmeticCPInstruction(operator, in1, in2, out, opcode, str);
-		} 
-		else if(dt1 == DataType.SCALAR && dt2 == DataType.SCALAR){
-			if ( (vt1 != ValueType.DOUBLE && vt1 != ValueType.INT)
-					|| (vt2 != ValueType.DOUBLE && vt2 != ValueType.INT)
-					|| (vt3 != ValueType.DOUBLE && vt3 != ValueType.INT) )
-				throw new DMLRuntimeException("Unexpected ValueType in ArithmeticInstruction.");
-			
-			//haven't we already checked for this above -- prithvi
-			if ( vt1 != ValueType.DOUBLE && vt1 != ValueType.INT ) {
-				throw new DMLRuntimeException("Unexpected ValueType (" + vt1 + ") in ArithmeticInstruction: " + str);
-			}
-			
-			return new ScalarScalarArithmeticCPInstruction(operator, in1, in2, out, opcode, str);
-		
-		} else if (dt1 == DataType.MATRIX || dt2 == DataType.MATRIX){
-			if(vt1 == ValueType.STRING 
-			   || vt2 == ValueType.STRING 
-			   || vt3 == ValueType.STRING)
-				throw new DMLRuntimeException("We do not support element-wise string operations on matrices "
-												  + in1.getName()
-												  + ", "
-												  + in2.getName()
-												  + " and "
-												  + out.getName());
-				
-			if(dt1 == DataType.MATRIX && dt2 == DataType.MATRIX)
-				return new MatrixMatrixArithmeticCPInstruction(operator, in1, in2, out, opcode, str);
-			else
-				return new ScalarMatrixArithmeticCPInstruction(operator, in1, in2, out, opcode, str);	
-		}
-		
-		return null;
+		else if( in1.getDataType() == DataType.MATRIX && in2.getDataType() == DataType.MATRIX )
+			return new MatrixMatrixArithmeticCPInstruction(operator, in1, in2, out, opcode, str);
+		else
+			return new ScalarMatrixArithmeticCPInstruction(operator, in1, in2, out, opcode, str);	
 	}
 }

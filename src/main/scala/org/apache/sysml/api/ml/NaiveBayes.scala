@@ -46,13 +46,13 @@ class NaiveBayes(override val uid: String, val sc: SparkContext) extends Estimat
   
   // Note: will update the y_mb as this will be called by Python mllearn
   def fit(X_mb: MatrixBlock, y_mb: MatrixBlock): NaiveBayesModel = {
-    val ret = fit(X_mb, y_mb, sc)
-    new NaiveBayesModel("naive")(ret._1, ret._2, sc)
+    val ret = baseFit(X_mb, y_mb, sc)
+    new NaiveBayesModel("naive")(ret, sc)
   }
   
   def fit(df: ScriptsUtils.SparkDataType): NaiveBayesModel = {
-    val ret = fit(df, sc)
-    new NaiveBayesModel("naive")(ret._1, ret._2, sc)
+    val ret = baseFit(df, sc)
+    new NaiveBayesModel("naive")(ret, sc)
   }
   
   def getTrainingScript(isSingleNode:Boolean):(Script, String, String)  = {
@@ -74,11 +74,11 @@ object NaiveBayesModel {
 }
 
 class NaiveBayesModel(override val uid: String)
-  (val mloutput: MLResults, val labelMapping: java.util.HashMap[Int, String], val sc: SparkContext) 
+  (val mloutput: MLResults, val sc: SparkContext) 
   extends Model[NaiveBayesModel] with HasLaplace with BaseSystemMLClassifierModel {
   
   override def copy(extra: ParamMap): NaiveBayesModel = {
-    val that = new NaiveBayesModel(uid)(mloutput, labelMapping, sc)
+    val that = new NaiveBayesModel(uid)(mloutput, sc)
     copyValues(that, extra)
   }
   
@@ -103,7 +103,7 @@ class NaiveBayesModel(override val uid: String)
     (ret, "D")
   }
   
-  def transform(X: MatrixBlock): MatrixBlock = transform(X, mloutput, labelMapping, sc, "probs")
-  def transform(df: ScriptsUtils.SparkDataType): DataFrame = transform(df, mloutput, labelMapping, sc, "probs")
+  def transform(X: MatrixBlock): MatrixBlock = baseTransform(X, mloutput, sc, "probs")
+  def transform(df: ScriptsUtils.SparkDataType): DataFrame = baseTransform(df, mloutput, sc, "probs")
   
 }

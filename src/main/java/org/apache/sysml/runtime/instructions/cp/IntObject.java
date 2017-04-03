@@ -24,19 +24,16 @@ import org.apache.sysml.parser.Expression.ValueType;
 
 public class IntObject extends ScalarObject
 {
-
 	private static final long serialVersionUID = 353170585998999528L;
 
 	//we use consistently to the compiler long in terms of integer (8 byte)
 	private long _value;
 
-	public IntObject(long val)
-	{
+	public IntObject(long val) {
 		this(null,val);
 	}
 
-	public IntObject(String name, long val)
-	{
+	public IntObject(String name, long val) {
 		super(name, ValueType.INT);
 		_value = val;
 	}
@@ -64,14 +61,5 @@ public class IntObject extends ScalarObject
 	@Override
 	public Object getValue(){
 		return _value;
-	}
-
-	public String toString() { 
-		return getStringValue();
-	}
-
-	@Override
-	public String getDebugName() {
-		return null;
 	}
 }

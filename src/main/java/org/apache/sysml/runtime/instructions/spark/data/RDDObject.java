@@ -23,36 +23,28 @@ import org.apache.spark.api.java.JavaPairRDD;
 
 public class RDDObject extends LineageObject
 {
-
 	private JavaPairRDD<?,?> _rddHandle = null;
 	
 	//meta data on origin of given rdd handle
 	private boolean _checkpointed = false; //created via checkpoint instruction
 	private boolean _hdfsfile = false;     //created from hdfs file
 	private String  _hdfsFname = null;     //hdfs filename, if created from hdfs.  
+	private boolean _parRDD = false;
 	
-	public RDDObject( JavaPairRDD<?,?> rddvar, String varName)
-	{
+	public RDDObject( JavaPairRDD<?,?> rddvar, String varName) {
+		super(varName);
 		_rddHandle = rddvar;
-		_varName = varName;
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
-	public JavaPairRDD<?,?> getRDD()
-	{
+
+	public JavaPairRDD<?,?> getRDD() {
 		return _rddHandle;
 	}
 	
-	public void setCheckpointRDD( boolean flag )
-	{
+	public void setCheckpointRDD( boolean flag ) {
 		_checkpointed = flag;
 	}
 	
-	public boolean isCheckpointRDD() 
-	{
+	public boolean isCheckpointRDD() {
 		return _checkpointed;
 	}
 	
@@ -72,13 +64,21 @@ public class RDDObject extends LineageObject
 		return _hdfsFname;
 	}
 	
+	public void setParallelizedRDD( boolean flag ) {
+		_parRDD = flag;
+	}
+	
+	public boolean isParallelizedRDD() {
+		return _parRDD; 
+	}
+	
 
 	/**
 	 * Indicates if rdd is an hdfs file or a checkpoint over an hdfs file;
 	 * in both cases, we can directly read the file instead of collecting
 	 * the given rdd.
 	 * 
-	 * @return
+	 * @return true if rdd is an hdfs file or a checkpoint over an hdfs file
 	 */
 	public boolean allowsShortCircuitRead()
 	{
@@ -91,21 +91,13 @@ public class RDDObject extends LineageObject
 		
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public boolean allowsShortCircuitCollect()
 	{
 		return ( isCheckpointRDD() && getLineageChilds().size() == 1
 			     && getLineageChilds().get(0) instanceof RDDObject );
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public boolean rHasCheckpointRDDChilds()
 	{
 		//probe for checkpoint rdd

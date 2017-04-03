@@ -19,8 +19,6 @@
 
 package org.apache.sysml.runtime.instructions.spark;
 
-import java.util.List;
-
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -133,14 +131,7 @@ public class CSVReblockSPInstruction extends UnarySPInstruction
 		sec.setRDDHandleForVariable(output.getName(), out);
 		sec.addLineageRDD(output.getName(), input1.getName());
 	}
-	
-	/**
-	 * 
-	 * @param sec
-	 * @param mcOut
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	@SuppressWarnings("unchecked")
 	protected JavaPairRDD<MatrixIndexes,MatrixBlock> processMatrixCSVReblockInstruction(SparkExecutionContext sec, MatrixCharacteristics mcOut) 
 		throws DMLRuntimeException
@@ -154,16 +145,9 @@ public class CSVReblockSPInstruction extends UnarySPInstruction
 		return RDDConverterUtils.csvToBinaryBlock(sec.getSparkContext(), 
 				in, mcOut, _hasHeader, _delim, _fill, _fillValue);
 	}
-	
-	/**
-	 * 
-	 * @param sec
-	 * @param mcOut
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	@SuppressWarnings("unchecked")
-	protected JavaPairRDD<Long,FrameBlock> processFrameCSVReblockInstruction(SparkExecutionContext sec, MatrixCharacteristics mcOut, List<ValueType> schema) 
+	protected JavaPairRDD<Long,FrameBlock> processFrameCSVReblockInstruction(SparkExecutionContext sec, MatrixCharacteristics mcOut, ValueType[] schema) 
 		throws DMLRuntimeException
 	{
 		//get input rdd (needs to be longwritable/text for consistency with meta data, in case of

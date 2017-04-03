@@ -47,11 +47,16 @@ public class UAggOuterChain extends Lop
 	/**
 	 * Constructor to setup a unaryagg outer chain
 	 * 
-	 * @param input
-	 * @param op
-	 * @return 
-	 * @throws LopsException
-	 */	
+	 * @param input1 low-level operator 1
+	 * @param input2 low-level operator 2
+	 * @param uaop aggregate operation type
+	 * @param uadir partial aggregate direction type
+	 * @param bop binary operation type
+	 * @param dt data type
+	 * @param vt value type
+	 * @param et execution type
+	 * @throws LopsException if LopsException occurs
+	 */
 	public UAggOuterChain(Lop input1, Lop input2, Aggregate.OperationTypes uaop, PartialAggregate.DirectionTypes uadir, Binary.OperationTypes bop, DataType dt, ValueType vt, ExecType et) 
 		throws LopsException 
 	{
@@ -96,34 +101,9 @@ public class UAggOuterChain extends Lop
 	}
 	
 	@Override
-	public String getInstructions(int input_index1, int input_index2, int output_index)
-	{
-		StringBuilder sb = new StringBuilder();
-		
-		//exec type
-		sb.append(getExecType());
-		sb.append(Lop.OPERAND_DELIMITOR);
-		
-		//inst op code
-		sb.append(OPCODE);
-		sb.append(Lop.OPERAND_DELIMITOR);
-
-		//outer operation op code
-		sb.append(PartialAggregate.getOpcode(_uaggOp, _uaggDir));		
-		sb.append(Lop.OPERAND_DELIMITOR);
-
-		//inner operation op code
-		sb.append(Binary.getOpcode(_binOp));
-		sb.append(Lop.OPERAND_DELIMITOR);
-				
-		//inputs and outputs
-		sb.append( getInputs().get(0).prepInputOperand(input_index1));
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( getInputs().get(1).prepInputOperand(input_index2));
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( this.prepOutputOperand(output_index));
-				
-		return sb.toString();
+	public String getInstructions(int input_index1, int input_index2, int output_index) {
+		return getInstructions(String.valueOf(input_index1), 
+				String.valueOf(input_index2), String.valueOf(output_index));
 	}
 	
 	@Override
@@ -159,14 +139,12 @@ public class UAggOuterChain extends Lop
 	
 	
 	@Override
-	public boolean usesDistributedCache() 
-	{
+	public boolean usesDistributedCache() {
 		return true;
 	}
 	
 	@Override
-	public int[] distributedCacheInputIndex() 
-	{
+	public int[] distributedCacheInputIndex() {
 		return new int[]{2};
 	}
 }

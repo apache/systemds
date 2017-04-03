@@ -82,6 +82,7 @@ import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PExecMode;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.POptMode;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PResultMerge;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PTaskPartitioner;
+import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PartitionFormat;
 import org.apache.sysml.runtime.controlprogram.WhileProgramBlock;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
@@ -89,10 +90,10 @@ import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
 import org.apache.sysml.runtime.controlprogram.parfor.ResultMergeLocalFile;
+import org.apache.sysml.runtime.controlprogram.parfor.opt.CostEstimator.TestMeasure;
 import org.apache.sysml.runtime.controlprogram.parfor.opt.OptNode.ExecType;
 import org.apache.sysml.runtime.controlprogram.parfor.opt.OptNode.NodeType;
 import org.apache.sysml.runtime.controlprogram.parfor.opt.OptNode.ParamType;
-import org.apache.sysml.runtime.controlprogram.parfor.opt.PerfTestTool.TestMeasure;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.cp.Data;
@@ -136,8 +137,8 @@ import org.apache.sysml.yarn.ropt.YarnClusterAnalyzer;
  * 	 
  * TODO fuse also result merge into fused data partitioning and execute
  *      (for writing the result directly from execute we need to partition
- *      columns/rows according to blocksize -> rewrite (only applicable if 
- *      numCols/blocksize>numreducers)+custom MR partitioner)
+ *      columns/rows according to blocksize -&gt; rewrite (only applicable if 
+ *      numCols/blocksize&gt;numreducers)+custom MR partitioner)
  * 
  * 
  * TODO take remote memory into account in data/result partitioning rewrites (smaller/larger)
@@ -148,11 +149,10 @@ import org.apache.sysml.yarn.ropt.YarnClusterAnalyzer;
  */
 public class OptimizerRuleBased extends Optimizer
 {
-	
 	public static final double PROB_SIZE_THRESHOLD_REMOTE = 100; //wrt # top-level iterations (min)
 	public static final double PROB_SIZE_THRESHOLD_PARTITIONING = 2; //wrt # top-level iterations (min)
 	public static final double PROB_SIZE_THRESHOLD_MB = 256*1024*1024; //wrt overall memory consumption (min)
-	public static final int MAX_REPLICATION_FACTOR_PARTITIONING = 5;     
+	public static final int MAX_REPLICATION_FACTOR_PARTITIONING = 5;
 	public static final int MAX_REPLICATION_FACTOR_EXPORT = 7;    
 	public static final boolean ALLOW_REMOTE_NESTED_PARALLELISM = false;
 	public static final boolean APPLY_REWRITE_NESTED_PARALLELISM = false;
@@ -217,7 +217,6 @@ public class OptimizerRuleBased extends Optimizer
 		LOG.debug("--- "+getOptMode()+" OPTIMIZER -------");
 
 		OptNode pn = plan.getRoot();
-		double M0 = -1, M1 = -1, M2 = -1; //memory consumption
 		
 		//early abort for empty parfor body 
 		if( pn.isLeaf() )
@@ -235,32 +234,42 @@ public class OptimizerRuleBased extends Optimizer
 		
 		//ESTIMATE memory consumption 
 		pn.setSerialParFor(); //for basic mem consumption 
-		M0 = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn);
-		LOG.debug(getOptMode()+" OPT: estimated mem (serial exec) M="+toMB(M0) );
+		double M0a = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn);
+		LOG.debug(getOptMode()+" OPT: estimated mem (serial exec) M="+toMB(M0a) );
 		
 		//OPTIMIZE PARFOR PLAN
 		
-		// rewrite 1: data partitioning (incl. log. recompile RIX)
-		HashMap<String, PDataPartitionFormat> partitionedMatrices = new HashMap<String,PDataPartitionFormat>();
-		rewriteSetDataPartitioner( pn, ec.getVariables(), partitionedMatrices );
-		M1 = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn); //reestimate
+		// rewrite 1: data partitioning (incl. log. recompile RIX and flag opt nodes)
+		HashMap<String, PartitionFormat> partitionedMatrices = new HashMap<String, PartitionFormat>();
+		rewriteSetDataPartitioner( pn, ec.getVariables(), partitionedMatrices, OptimizerUtils.getLocalMemBudget() );
+		double M0b = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn); //reestimate
 		
 		// rewrite 2: remove unnecessary compare matrix (before result partitioning)
 		rewriteRemoveUnnecessaryCompareMatrix(pn, ec);
 		
 		// rewrite 3: rewrite result partitioning (incl. log/phy recompile LIX) 
-		boolean flagLIX = rewriteSetResultPartitioning( pn, M1, ec.getVariables() );
-		M1 = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn); //reestimate 
-		M2 = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn, LopProperties.ExecType.CP);
+		boolean flagLIX = rewriteSetResultPartitioning( pn, M0b, ec.getVariables() );
+		double M1 = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn); //reestimate 
 		LOG.debug(getOptMode()+" OPT: estimated new mem (serial exec) M="+toMB(M1) );
+		
+		//determine memory consumption for what-if: all-cp or partitioned 
+		double M2 = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn, LopProperties.ExecType.CP);
 		LOG.debug(getOptMode()+" OPT: estimated new mem (serial exec, all CP) M="+toMB(M2) );
+		double M3 = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn, true);
+		LOG.debug(getOptMode()+" OPT: estimated new mem (cond partitioning) M="+toMB(M3) );
 		
 		// rewrite 4: execution strategy
-		boolean flagRecompMR = rewriteSetExecutionStategy( pn, M0, M1, M2, flagLIX );
+		boolean flagRecompMR = rewriteSetExecutionStategy( pn, M0a, M1, M2, M3, flagLIX );
 		
 		//exec-type-specific rewrites
 		if( pn.getExecType() == ExecType.MR || pn.getExecType()==ExecType.SPARK )
 		{
+			if( M1 > _rm && M3 <= _rm  ) {
+				// rewrite 1: data partitioning (apply conditional partitioning)
+				rewriteSetDataPartitioner( pn, ec.getVariables(), partitionedMatrices, M3 );
+				M1 = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn); //reestimate 		
+			}
+			
 			if( flagRecompMR ){
 				//rewrite 5: set operations exec type
 				rewriteSetOperationsExecType( pn, flagRecompMR );
@@ -346,10 +355,6 @@ public class OptimizerRuleBased extends Optimizer
 		return true;
 	}
 
-	/**
-	 * 
-	 * @param pn
-	 */
 	protected void analyzeProblemAndInfrastructure( OptNode pn )
 	{
 		_N       = Long.parseLong(pn.getParam(ParamType.NUM_ITERATIONS)); 
@@ -357,51 +362,49 @@ public class OptimizerRuleBased extends Optimizer
 		_lk      = InfrastructureAnalyzer.getLocalParallelism();
 		_lkmaxCP = (int) Math.ceil( PAR_K_FACTOR * _lk ); 
 		_lkmaxMR = (int) Math.ceil( PAR_K_MR_FACTOR * _lk );
-		_rnk     = InfrastructureAnalyzer.getRemoteParallelNodes();  
-		_rk      = InfrastructureAnalyzer.getRemoteParallelMapTasks();
-		_rk2     = InfrastructureAnalyzer.getRemoteParallelReduceTasks();
-		_rkmax   = (int) Math.ceil( PAR_K_FACTOR * _rk ); 
-		_rkmax2  = (int) Math.ceil( PAR_K_FACTOR * _rk2 ); 
 		_lm      = OptimizerUtils.getLocalMemBudget();
-		_rm      = OptimizerUtils.getRemoteMemBudgetMap(false); 	
-		_rm2     = OptimizerUtils.getRemoteMemBudgetReduce(); 	
 		
-		//correction of max parallelism if yarn enabled because yarn
-		//does not have the notion of map/reduce slots and hence returns 
-		//small constants of map=10*nodes, reduce=2*nodes
-		//(not doing this correction would loose available degree of parallelism)
-		if( InfrastructureAnalyzer.isYarnEnabled() ) {
-			long tmprk = YarnClusterAnalyzer.getNumCores();
-			_rk = (int) Math.max( _rk, tmprk );
-			_rk2 = (int) Math.max( _rk2, tmprk/2 );
-		}
-		
-		//correction of max parallelism and memory if spark runtime enabled because
-		//spark limits the available parallelism by its own executor configuration
+		//spark-specific cluster characteristics
 		if( OptimizerUtils.isSparkExecutionMode() ) {
-			_rk = (int) SparkExecutionContext.getDefaultParallelism(true);
+			//we get all required cluster characteristics from spark's configuration
+			//to avoid invoking yarns cluster status
+			_rnk = SparkExecutionContext.getNumExecutors(); 
+			_rk  = (int) SparkExecutionContext.getDefaultParallelism(true);
 			_rk2 = _rk; //equal map/reduce unless we find counter-examples 
-			_rkmax   = (int) Math.ceil( PAR_K_FACTOR * _rk ); 
-			_rkmax2  = (int) Math.ceil( PAR_K_FACTOR * _rk2 ); 
 			int cores = SparkExecutionContext.getDefaultParallelism(true)
 					/ SparkExecutionContext.getNumExecutors();
 			int ccores = (int) Math.min(cores, _N);
-			_rm = SparkExecutionContext.getBroadcastMemoryBudget() / ccores;
+			_rm  = SparkExecutionContext.getBroadcastMemoryBudget() / ccores;
 			_rm2 = SparkExecutionContext.getBroadcastMemoryBudget() / ccores;
 		}
+		//mr/yarn-specific cluster characteristics
+		else {
+			_rnk = InfrastructureAnalyzer.getRemoteParallelNodes();  
+			_rk  = InfrastructureAnalyzer.getRemoteParallelMapTasks();
+			_rk2 = InfrastructureAnalyzer.getRemoteParallelReduceTasks();
+			_rm  = OptimizerUtils.getRemoteMemBudgetMap(false); 	
+			_rm2 = OptimizerUtils.getRemoteMemBudgetReduce(); 	
+		
+			//correction of max parallelism if yarn enabled because yarn
+			//does not have the notion of map/reduce slots and hence returns 
+			//small constants of map=10*nodes, reduce=2*nodes
+			//(not doing this correction would loose available degree of parallelism)
+			if( InfrastructureAnalyzer.isYarnEnabled() ) {
+				long tmprk = YarnClusterAnalyzer.getNumCores();
+				_rk  = (int) Math.max( _rk, tmprk );
+				_rk2 = (int) Math.max( _rk2, tmprk/2 );
+			}
+		}
+		
+		_rkmax   = (int) Math.ceil( PAR_K_FACTOR * _rk ); 
+		_rkmax2  = (int) Math.ceil( PAR_K_FACTOR * _rk2 ); 
 	}
 	
 	///////
 	//REWRITE set data partitioner
 	///
-	
-	/**
-	 * 
-	 * @param n
-	 * @param partitionedMatrices  
-	 * @throws DMLRuntimeException 
-	 */
-	protected boolean rewriteSetDataPartitioner(OptNode n, LocalVariableMap vars, HashMap<String, PDataPartitionFormat> partitionedMatrices ) 
+
+	protected boolean rewriteSetDataPartitioner(OptNode n, LocalVariableMap vars, HashMap<String, PartitionFormat> partitionedMatrices, double thetaM ) 
 		throws DMLRuntimeException
 	{
 		if( n.getNodeType() != NodeType.PARFOR )
@@ -421,20 +424,19 @@ public class OptimizerRuleBased extends Optimizer
 			&& (_N >= PROB_SIZE_THRESHOLD_PARTITIONING || _Nmax >= PROB_SIZE_THRESHOLD_PARTITIONING) ) //only if beneficial wrt problem size
 		{
 			ArrayList<String> cand = pfsb.getReadOnlyParentVars();
-			HashMap<String, PDataPartitionFormat> cand2 = new HashMap<String, PDataPartitionFormat>();
+			HashMap<String, PartitionFormat> cand2 = new HashMap<String, PartitionFormat>();
 			for( String c : cand )
 			{
-				PDataPartitionFormat dpf = pfsb.determineDataPartitionFormat( c );
-				//System.out.println("Partitioning Format: "+dpf);
-				if( dpf != PDataPartitionFormat.NONE 
-					&& dpf != PDataPartitionFormat.BLOCK_WISE_M_N ) //FIXME
+				PartitionFormat dpf = pfsb.determineDataPartitionFormat( c );
+				
+				if( dpf != PartitionFormat.NONE 
+					&& dpf._dpf != PDataPartitionFormat.BLOCK_WISE_M_N ) 
 				{
 					cand2.put( c, dpf );
-				}
-					
+				}	
 			}
 			
-			apply = rFindDataPartitioningCandidates(n, cand2, vars);
+			apply = rFindDataPartitioningCandidates(n, cand2, vars, thetaM);
 			if( apply )
 				partitionedMatrices.putAll(cand2);
 		}
@@ -457,15 +459,8 @@ public class OptimizerRuleBased extends Optimizer
 		
 		return blockwise;
 	}
-	
-	/**
-	 * 
-	 * @param n
-	 * @param cand
-	 * @return
-	 * @throws DMLRuntimeException 
-	 */
-	protected boolean rFindDataPartitioningCandidates( OptNode n, HashMap<String, PDataPartitionFormat> cand, LocalVariableMap vars ) 
+
+	protected boolean rFindDataPartitioningCandidates( OptNode n, HashMap<String, PartitionFormat> cand, LocalVariableMap vars, double thetaM ) 
 		throws DMLRuntimeException
 	{
 		boolean ret = false;
@@ -474,7 +469,7 @@ public class OptimizerRuleBased extends Optimizer
 		{
 			for( OptNode cn : n.getChilds() )
 				if( cn.getNodeType() != NodeType.FUNCCALL ) //prevent conflicts with aliases
-					ret |= rFindDataPartitioningCandidates( cn, cand, vars );
+					ret |= rFindDataPartitioningCandidates( cn, cand, vars, thetaM );
 		}
 		else if( n.getNodeType()== NodeType.HOP
 			     && n.getParam(ParamType.OPSTRING).equals(IndexingOp.OPSTRING) )
@@ -483,24 +478,26 @@ public class OptimizerRuleBased extends Optimizer
 			String inMatrix = h.getInput().get(0).getName();
 			if( cand.containsKey(inMatrix) ) //Required Condition: partitioning applicable
 			{
-				PDataPartitionFormat dpf = cand.get(inMatrix);
+				PartitionFormat dpf = cand.get(inMatrix);
 				double mnew = getNewRIXMemoryEstimate( n, inMatrix, dpf, vars );
 				//NOTE: for the moment, we do not partition according to the remote mem, because we can execute 
 				//it even without partitioning in CP. However, advanced optimizers should reason about this 					   
 				//double mold = h.getMemEstimate();
-				if(	   n.getExecType() == ExecType.MR ||  n.getExecType()==ExecType.SPARK ) //Opt Condition: MR/Spark
-				   // || (mold > _rm && mnew <= _rm)   ) //Opt Condition: non-MR special cases (for remote exec)
+				if(	   n.getExecType() == ExecType.MR ||  n.getExecType()==ExecType.SPARK  //Opt Condition: MR/Spark
+					|| h.getMemEstimate() > thetaM ) //Opt Condition: mem estimate > constraint to force partitioning	
 				{
 					//NOTE: subsequent rewrites will still use the MR mem estimate
 					//(guarded by subsequent operations that have at least the memory req of one partition)
-					//if( mnew < _lm ) //apply rewrite if partitions fit into memory
-					//	n.setExecType(ExecType.CP);
-					//else
-					//	n.setExecType(ExecType.CP); //CP_FILE, but hop still in MR 
-					n.setExecType(ExecType.CP);
+					n.setExecType(ExecType.CP); //partition ref only (see below)
 					n.addParam(ParamType.DATA_PARTITION_FORMAT, dpf.toString());
 					h.setMemEstimate( mnew ); //CP vs CP_FILE in ProgramRecompiler bases on mem_estimate
 					ret = true;
+				}
+				//keep track of nodes that allow conditional data partitioning and their mem
+				else
+				{
+					n.addParam(ParamType.DATA_PARTITION_COND, String.valueOf(true));
+					n.addParam(ParamType.DATA_PARTITION_COND_MEM, String.valueOf(mnew));
 				}
 			}
 		}
@@ -513,13 +510,14 @@ public class OptimizerRuleBased extends Optimizer
 	 * 
 	 * NOTE: Using the dimensions without sparsity is a conservative worst-case consideration.
 	 * 
-	 * @param n
-	 * @param varName
-	 * @param dpf
-	 * @return
-	 * @throws DMLRuntimeException 
+	 * @param n internal representation of a plan alternative for program blocks and instructions
+	 * @param varName variable name
+	 * @param dpf data partition format
+	 * @param vars local variable map
+	 * @return memory estimate
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	protected double getNewRIXMemoryEstimate( OptNode n, String varName, PDataPartitionFormat dpf, LocalVariableMap vars ) 
+	protected double getNewRIXMemoryEstimate( OptNode n, String varName, PartitionFormat dpf, LocalVariableMap vars ) 
 		throws DMLRuntimeException
 	{
 		double mem = -1;
@@ -531,7 +529,7 @@ public class OptimizerRuleBased extends Optimizer
 			MatrixObject mo = (MatrixObject) dat;
 			
 			//those are worst-case (dense) estimates
-			switch( dpf )
+			switch( dpf._dpf )
 			{
 				case COLUMN_WISE:
 					mem = OptimizerUtils.estimateSize(mo.getNumRows(), 1); 
@@ -539,10 +537,12 @@ public class OptimizerRuleBased extends Optimizer
 				case ROW_WISE:
 					mem = OptimizerUtils.estimateSize(1, mo.getNumColumns());
 					break;
-				case BLOCK_WISE_M_N:
-					mem = Integer.MAX_VALUE; //TODO
+				case COLUMN_BLOCK_WISE_N:
+					mem = OptimizerUtils.estimateSize(mo.getNumRows(), dpf._N); 
 					break;
-					
+				case ROW_BLOCK_WISE_N:
+					mem = OptimizerUtils.estimateSize(dpf._N, mo.getNumColumns()); 
+					break;	
 				default:
 					//do nothing
 			}	
@@ -551,26 +551,6 @@ public class OptimizerRuleBased extends Optimizer
 		return mem;
 	}
 
-	/**
-	 * 
-	 * @param mo
-	 * @param dpf
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
-	protected static LopProperties.ExecType getRIXExecType( MatrixObject mo, PDataPartitionFormat dpf ) 
-		throws DMLRuntimeException
-	{
-		return getRIXExecType(mo, dpf, false);
-	}
-	
-	/**
-	 * 
-	 * @param mo
-	 * @param dpf
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	protected static LopProperties.ExecType getRIXExecType( MatrixObject mo, PDataPartitionFormat dpf, boolean withSparsity ) 
 		throws DMLRuntimeException
 	{
@@ -608,51 +588,8 @@ public class OptimizerRuleBased extends Optimizer
 		else
 			return LopProperties.ExecType.CP_FILE;
 	}
-	
-	/**
-	 * 
-	 * @param mo
-	 * @param dpf
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
-	public static PDataPartitionFormat decideBlockWisePartitioning( MatrixObject mo, PDataPartitionFormat dpf ) 
-		throws DMLRuntimeException
-	{
-		long rlen = mo.getNumRows();
-		long clen = mo.getNumColumns();
-		long brlen = mo.getNumRowsPerBlock();
-		long bclen = mo.getNumColumnsPerBlock();
-		long k = InfrastructureAnalyzer.getRemoteParallelMapTasks();
-		
-		PDataPartitionFormat ret = dpf;
-		if( getRIXExecType(mo, dpf)==LopProperties.ExecType.CP )
-		if( ret == PDataPartitionFormat.ROW_WISE )
-		{
-			if( rlen/brlen > 4*k && //note: average sparsity, read must deal with it
-				getRIXExecType(mo, PDataPartitionFormat.ROW_BLOCK_WISE, false)==LopProperties.ExecType.CP )
-			{
-				ret = PDataPartitionFormat.ROW_BLOCK_WISE;				
-			}
-		}
-		else if( ret == PDataPartitionFormat.COLUMN_WISE )
-		{
-			if( clen/bclen > 4*k && //note: average sparsity, read must deal with it
-				getRIXExecType(mo, PDataPartitionFormat.COLUMN_BLOCK_WISE, false)==LopProperties.ExecType.CP )
-			{
-				ret = PDataPartitionFormat.COLUMN_BLOCK_WISE;				
-			}
-		}
-				
-		return ret;	
-	}
-	
-	/**
-	 * 
-	 * @return
-	 * @throws DMLRuntimeException 
-	 */
-	public static boolean allowsBinaryCellPartitions( MatrixObject mo, PDataPartitionFormat dpf ) 
+
+	public static boolean allowsBinaryCellPartitions( MatrixObject mo, PartitionFormat dpf ) 
 		throws DMLRuntimeException
 	{
 		return (getRIXExecType(mo, PDataPartitionFormat.COLUMN_BLOCK_WISE, false)==LopProperties.ExecType.CP );
@@ -662,11 +599,6 @@ public class OptimizerRuleBased extends Optimizer
 	//REWRITE set result partitioning
 	///
 
-	/**
-	 * 
-	 * @param n
-	 * @throws DMLRuntimeException
-	 */
 	protected boolean rewriteSetResultPartitioning(OptNode n, double M, LocalVariableMap vars) 
 		throws DMLRuntimeException
 	{
@@ -702,16 +634,7 @@ public class OptimizerRuleBased extends Optimizer
 	
 		return apply;
 	}
-	
-	/**
-	 * 
-	 * @param nlist
-	 * @param resultVars
-	 * @param vars
-	 * @param iterVarname
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	protected boolean isResultPartitionableAll( Collection<OptNode> nlist, ArrayList<String> resultVars, LocalVariableMap vars, String iterVarname ) 
 		throws DMLRuntimeException
 	{
@@ -725,16 +648,7 @@ public class OptimizerRuleBased extends Optimizer
 		
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @param n
-	 * @param resultVars
-	 * @param vars
-	 * @param iterVarname
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	protected boolean isResultPartitionable( OptNode n, ArrayList<String> resultVars, LocalVariableMap vars, String iterVarname ) 
 		throws DMLRuntimeException
 	{
@@ -825,60 +739,30 @@ public class OptimizerRuleBased extends Optimizer
 		
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @param rows
-	 * @return
-	 */
+
 	private double estimateSizeSparseRowBlock( long rows ) {
 		//see MatrixBlock.estimateSizeSparseInMemory
 		return 44 + rows * 8;
 	}
-	
-	/**
-	 * 
-	 * @param cols
-	 * @param nnz
-	 * @return
-	 */
+
 	private double estimateSizeSparseRow( long cols, long nnz ) {
 		//see MatrixBlock.estimateSizeSparseInMemory
 		long cnnz = Math.max(SparseRow.initialCapacity, Math.max(cols, nnz));
 		return ( 116 + 12 * cnnz ); //sparse row
 	}
-	
-	/**
-	 * 
-	 * @param cols
-	 * @return
-	 */
+
 	private double estimateSizeSparseRowMin( long cols ) {
 		//see MatrixBlock.estimateSizeSparseInMemory
 		long cnnz = Math.min(SparseRow.initialCapacity, cols);
 		return ( 116 + 12 * cnnz ); //sparse row
 	}
-	
-	/**
-	 * 
-	 * @param budget
-	 * @param rows
-	 * @return
-	 */
+
 	private int estimateNumTasksSparseCol( double budget, long rows ) {
 		//see MatrixBlock.estimateSizeSparseInMemory
 		double lbudget = budget - rows * 116;
 		return (int) Math.floor( lbudget / 12 );
 	}
-	
-	/**
-	 * 
-	 * @param n
-	 * @throws DMLRuntimeException
-	 * @throws HopsException
-	 * @throws LopsException
-	 * @throws IOException
-	 */
+
 	protected void recompileLIX( OptNode n, LocalVariableMap vars ) 
 		throws DMLRuntimeException, HopsException, LopsException, IOException
 	{
@@ -908,12 +792,7 @@ public class OptimizerRuleBased extends Optimizer
 		//set new mem estimate (last, otherwise overwritten from recompile)
 		h.setMemEstimate(_rm-1);
 	}
-	
-	/**
-	 * 
-	 * @param parent
-	 * @return
-	 */
+
 	protected HashMap<Hop, Double> getPartitionedRIXEstimates(OptNode parent)
 	{
 		HashMap<Hop, Double> estimates = new HashMap<Hop, Double>();
@@ -925,12 +804,7 @@ public class OptimizerRuleBased extends Optimizer
 			}
 		return estimates;
 	}
-	
-	/**
-	 * 
-	 * @param parent
-	 * @param estimates
-	 */
+
 	protected void resetPartitionRIXEstimates( HashMap<Hop, Double> estimates )
 	{
 		for( Entry<Hop, Double> e : estimates.entrySet() )
@@ -945,14 +819,8 @@ public class OptimizerRuleBased extends Optimizer
 	///////
 	//REWRITE set execution strategy
 	///
-	
-	/**
-	 * 
-	 * @param n
-	 * @param M
-	 * @throws DMLRuntimeException 
-	 */
-	protected boolean rewriteSetExecutionStategy(OptNode n, double M0, double M, double M2, boolean flagLIX) 
+
+	protected boolean rewriteSetExecutionStategy(OptNode n, double M0, double M, double M2, double M3, boolean flagLIX) 
 		throws DMLRuntimeException
 	{
 		boolean isCPOnly = n.isCPOnly();
@@ -963,26 +831,27 @@ public class OptimizerRuleBased extends Optimizer
 		PDataPartitioner REMOTE_DP = OptimizerUtils.isSparkExecutionMode() ? PDataPartitioner.REMOTE_SPARK : PDataPartitioner.REMOTE_MR;
 
 		//deciding on the execution strategy
-		if( ConfigurationManager.isParallelParFor()            //allowed remote parfor execution
-			&& ( (isCPOnly && M <= _rm )    //Required: all instruction can be be executed in CP
-			   ||(isCPOnlyPossible && M2 <= _rm)) )  //Required: cp inst fit into remote JVM mem 
+		if( ConfigurationManager.isParallelParFor()  //allowed remote parfor execution
+			&& ( (isCPOnly && M <= _rm )             //Required: all inst already in cp and fit in remote mem
+			   ||(isCPOnly && M3 <= _rm ) 	         //Required: all inst already in cp and fit partitioned in remote mem
+			   ||(isCPOnlyPossible && M2 <= _rm)) )  //Required: all inst forced to cp fit in remote mem
 		{
 			//at this point all required conditions for REMOTE_MR given, now its an opt decision
 			int cpk = (int) Math.min( _lk, Math.floor( _lm / M ) ); //estimated local exploited par  
 			
 			//MR if local par cannot be exploited due to mem constraints (this implies that we work on large data)
 			//(the factor of 2 is to account for hyper-threading and in order prevent too eager remote parfor)
-			if( 2*cpk < _lk && 2*cpk < _N && 2*cpk < _rk )
+			if( 2*cpk < _lk && 2*cpk < _N && 2*cpk < _rk ) //incl conditional partitioning
 			{
 				n.setExecType( REMOTE ); //remote parfor
 			}
 			//MR if problem is large enough and remote parallelism is larger than local   
-			else if( _lk < _N && _lk < _rk && isLargeProblem(n, M0) )
+			else if( _lk < _N && _lk < _rk && M <= _rm && isLargeProblem(n, M0) )
 			{
 				n.setExecType( REMOTE ); //remote parfor
 			}
 			//MR if MR operations in local, but CP only in remote (less overall MR jobs)
-			else if( (!isCPOnly) && isCPOnlyPossible )
+			else if( !isCPOnly && isCPOnlyPossible )
 			{
 				n.setExecType( REMOTE ); //remote parfor
 			}
@@ -1024,25 +893,13 @@ public class OptimizerRuleBased extends Optimizer
 		
 		return requiresRecompile;
 	}
-	
-	/**
-	 * 
-	 * @param pn
-	 * @return
-	 */
+
 	protected boolean isLargeProblem(OptNode pn, double M0)
 	{
 		return ((_N >= PROB_SIZE_THRESHOLD_REMOTE || _Nmax >= 10 * PROB_SIZE_THRESHOLD_REMOTE )
 				&& M0 > PROB_SIZE_THRESHOLD_MB ); //original operations at least larger than 256MB
 	}
-	
-	/**
-	 * 
-	 * @param n
-	 * @param memBudget
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	protected boolean isCPOnlyPossible( OptNode n, double memBudget ) 
 		throws DMLRuntimeException
 	{
@@ -1074,13 +931,7 @@ public class OptimizerRuleBased extends Optimizer
 	///////
 	//REWRITE set operations exec type
 	///
-	
-	/**
-	 * 
-	 * @param pn
-	 * @param recompile
-	 * @throws DMLRuntimeException
-	 */
+
 	protected void rewriteSetOperationsExecType(OptNode pn, boolean recompile) 
 		throws DMLRuntimeException
 	{
@@ -1098,13 +949,7 @@ public class OptimizerRuleBased extends Optimizer
 		//debug output
 		LOG.debug(getOptMode()+" OPT: rewrite 'set operation exec type CP' - result="+count);
 	}
-	
-	/**
-	 * 
-	 * @param n
-	 * @param et
-	 * @return
-	 */
+
 	protected int setOperationExecType( OptNode n, ExecType et )
 	{
 		int count = 0;
@@ -1131,8 +976,9 @@ public class OptimizerRuleBased extends Optimizer
 	 * NOTE: if MAX_REPLICATION_FACTOR_PARTITIONING is set larger than 10, co-location may
 	 * throw warnings per split since this exceeds "max block locations"
 	 * 
-	 * @param n
-	 * @throws DMLRuntimeException 
+	 * @param n internal representation of a plan alternative for program blocks and instructions
+	 * @param vars local variable map
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	protected void rewriteDataColocation( OptNode n, LocalVariableMap vars ) 
 		throws DMLRuntimeException
@@ -1175,15 +1021,7 @@ public class OptimizerRuleBased extends Optimizer
 		_numEvaluatedPlans++;
 		LOG.debug(getOptMode()+" OPT: rewrite 'enable data colocation' - result="+apply+((apply)?" ("+varname+")":"") );
 	}
-	
-	/**
-	 * 
-	 * @param n
-	 * @param cand
-	 * @param iterVarname
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	protected void rFindDataColocationCandidates( OptNode n, HashSet<String> cand, String iterVarname ) 
 		throws DMLRuntimeException
 	{
@@ -1196,11 +1034,11 @@ public class OptimizerRuleBased extends Optimizer
 			     && n.getParam(ParamType.OPSTRING).equals(IndexingOp.OPSTRING)
 			     && n.getParam(ParamType.DATA_PARTITION_FORMAT) != null )
 		{
-			PDataPartitionFormat dpf = PDataPartitionFormat.valueOf(n.getParam(ParamType.DATA_PARTITION_FORMAT));
+			PartitionFormat dpf = PartitionFormat.valueOf(n.getParam(ParamType.DATA_PARTITION_FORMAT));
 			Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
 			String inMatrix = h.getInput().get(0).getName();
 			String indexAccess = null;
-			switch( dpf )
+			switch( dpf._dpf )
 			{
 				case ROW_WISE: //input 1 and 2 eq
 					if( h.getInput().get(1) instanceof DataOp )
@@ -1231,11 +1069,13 @@ public class OptimizerRuleBased extends Optimizer
 	 * 
 	 * NOTE: this rewrite requires 'set data partitioner' to be executed in order to
 	 * leverage the partitioning information in the plan tree. 
-	 *  
-	 * @param n
-	 * @throws DMLRuntimeException 
+	 * 
+	 * @param n internal representation of a plan alternative for program blocks and instructions
+	 * @param partitionedMatrices map of data partition formats
+	 * @param vars local variable map
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	protected void rewriteSetPartitionReplicationFactor( OptNode n, HashMap<String, PDataPartitionFormat> partitionedMatrices, LocalVariableMap vars ) 
+	protected void rewriteSetPartitionReplicationFactor( OptNode n, HashMap<String, PartitionFormat> partitionedMatrices, LocalVariableMap vars ) 
 		throws DMLRuntimeException
 	{
 		boolean apply = false;
@@ -1245,8 +1085,8 @@ public class OptimizerRuleBased extends Optimizer
 		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
         							.getAbstractPlanMapping().getMappedProg(n.getID())[1];
 		
-		if(    n.getExecType()==ExecType.MR
-			&& n.getParam(ParamType.DATA_PARTITIONER).equals(PDataPartitioner.REMOTE_MR.toString())
+		if(((n.getExecType()==ExecType.MR && n.getParam(ParamType.DATA_PARTITIONER).equals(PDataPartitioner.REMOTE_MR.name()))
+		    || (n.getExecType()==ExecType.SPARK && n.getParam(ParamType.DATA_PARTITIONER).equals(PDataPartitioner.REMOTE_SPARK.name())))
 		    && n.hasNestedParallelism(false) 
 		    && n.hasNestedPartitionReads(false) )		
 		{
@@ -1256,7 +1096,7 @@ public class OptimizerRuleBased extends Optimizer
 			replication = (int)Math.min( _N, _rnk );
 			
 			//account for internal max constraint (note hadoop will warn if max > 10)
-			replication = (int)Math.min( replication, MAX_REPLICATION_FACTOR_EXPORT );
+			replication = (int)Math.min( replication, MAX_REPLICATION_FACTOR_PARTITIONING );
 			
 			//account for remaining hdfs capacity
 			try {
@@ -1301,10 +1141,10 @@ public class OptimizerRuleBased extends Optimizer
 	 * matrices that are created as in-memory objects before parfor execution. 
 	 * 
 	 * NOTE: this rewrite requires 'set execution strategy' to be executed. 
-	 *  
-	 * @param n
-	 * @param partitionedMatrices 
-	 * @throws DMLRuntimeException 
+	 * 
+	 * @param n internal representation of a plan alternative for program blocks and instructions
+	 * @param vars local variable map
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	protected void rewriteSetExportReplicationFactor( OptNode n, LocalVariableMap vars ) 
 		throws DMLRuntimeException
@@ -1339,14 +1179,7 @@ public class OptimizerRuleBased extends Optimizer
 	///////
 	//REWRITE enable nested parallelism
 	///
-	
-	/**
-	 * 
-	 * @param n
-	 * @param M
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	@SuppressWarnings("all")
 	protected boolean rewriteNestedParallelism(OptNode n, double M, boolean flagLIX ) 
 		throws DMLRuntimeException
@@ -1412,16 +1245,7 @@ public class OptimizerRuleBased extends Optimizer
 	///////
 	//REWRITE set degree of parallelism
 	///
-		
-	/**
-	 * 
-	 * @param n
-	 * @param M
-	 * @param kMax
-	 * @param mMax  (per node)
-	 * @param nested
-	 * @throws DMLRuntimeException 
-	 */
+
 	protected void rewriteSetDegreeOfParallelism(OptNode n, double M, boolean flagNested) 
 		throws DMLRuntimeException 
 	{
@@ -1440,7 +1264,7 @@ public class OptimizerRuleBased extends Optimizer
 			
 			//ensure local memory constraint (for spark more conservative in order to 
 			//prevent unnecessary guarded collect)
-			double mem = OptimizerUtils.isSparkExecutionMode() ? _lm/2 : _lm;
+			double mem = (OptimizerUtils.isSparkExecutionMode() && !n.isCPOnly()) ? _lm/2 : _lm;
 			kMax = Math.min( kMax, (int)Math.floor( mem / M ) );
 			kMax = Math.max( kMax, 1);
 			
@@ -1493,13 +1317,7 @@ public class OptimizerRuleBased extends Optimizer
 		_numEvaluatedPlans++;
 		LOG.debug(getOptMode()+" OPT: rewrite 'set degree of parallelism' - result=(see EXPLAIN)" );
 	}
-	
-	/**
-	 * 
-	 * @param n
-	 * @param par
-	 * @throws DMLRuntimeException 
-	 */
+
 	protected void rAssignRemainingParallelism(OptNode n, int parforK, int opsK) 
 		throws DMLRuntimeException
 	{		
@@ -1578,12 +1396,7 @@ public class OptimizerRuleBased extends Optimizer
 	///////
 	//REWRITE set task partitioner
 	///
-	
-	/**
-	 * 
-	 * @param n
-	 * @param partitioner
-	 */
+
 	protected void rewriteSetTaskPartitioner(OptNode pn, boolean flagNested, boolean flagLIX) 
 	{
 		//assertions (warnings of corrupt optimizer decisions)
@@ -1621,13 +1434,7 @@ public class OptimizerRuleBased extends Optimizer
 			setTaskPartitioner( pn, PTaskPartitioner.NAIVE );
 		}
 	}
-	
-	/**
-	 * 
-	 * @param n
-	 * @param partitioner
-	 * @param flagLIX
-	 */
+
 	protected void setTaskPartitioner( OptNode n, PTaskPartitioner partitioner )
 	{
 		long id = n.getID();
@@ -1676,15 +1483,14 @@ public class OptimizerRuleBased extends Optimizer
 	 * (if we were not able to select REMOTE_MR as execution strategy wrt mapper budget)
 	 * TODO modify 'set exec strategy' and related rewrites for conditional data partitioning.
 	 * 
-	 * 
-	 * @param M 
-	 * @param partitionedMatrices, ExecutionContext ec 
-	 * 
-	 * @param n
-	 * @param partitioner
-	 * @throws DMLRuntimeException 
+	 * @param pn internal representation of a plan alternative for program blocks and instructions
+	 * @param M ?
+	 * @param flagLIX ?
+	 * @param partitionedMatrices map of data partition formats
+	 * @param vars local variable map
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	protected void rewriteSetFusedDataPartitioningExecution(OptNode pn, double M, boolean flagLIX, HashMap<String, PDataPartitionFormat> partitionedMatrices, LocalVariableMap vars) 
+	protected void rewriteSetFusedDataPartitioningExecution(OptNode pn, double M, boolean flagLIX, HashMap<String, PartitionFormat> partitionedMatrices, LocalVariableMap vars) 
 		throws DMLRuntimeException 
 	{
 		//assertions (warnings of corrupt optimizer decisions)
@@ -1700,8 +1506,8 @@ public class OptimizerRuleBased extends Optimizer
 		// (this also implies that the body is CP only)
 		
 		// try to merge MR data partitioning and MR exec 
-		if( (pn.getExecType()==ExecType.MR || pn.getExecType()==ExecType.SPARK) //MR/SP EXEC and CP body
-			&& M < _rm2 //fits into remote memory of reducers	
+		if( (pn.getExecType()==ExecType.MR && M < _rm2 //fits into remote memory of reducers
+			|| pn.getExecType()==ExecType.SPARK) //MR/SP EXEC and CP body
 			&& partitioner!=null && partitioner.equals(REMOTE_DP.toString()) //MR/SP partitioning
 			&& partitionedMatrices.size()==1 ) //only one partitioned matrix
 		{
@@ -1710,15 +1516,17 @@ public class OptimizerRuleBased extends Optimizer
 			
 			//partitioned matrix
 			String moVarname = partitionedMatrices.keySet().iterator().next();
-			PDataPartitionFormat moDpf = partitionedMatrices.get(moVarname);
+			PartitionFormat moDpf = partitionedMatrices.get(moVarname);
 			MatrixObject mo = (MatrixObject)vars.get(moVarname);
 			
 			//check if access via iteration variable and sizes match
 			String iterVarname = pfpb.getIterablePredicateVars()[0];
 			
 			if( rIsAccessByIterationVariable(pn, moVarname, iterVarname) &&
-			   ((moDpf==PDataPartitionFormat.ROW_WISE && mo.getNumRows()==_N ) ||
-				(moDpf==PDataPartitionFormat.COLUMN_WISE && mo.getNumColumns()==_N)) )
+			   ((moDpf==PartitionFormat.ROW_WISE && mo.getNumRows()==_N ) ||
+				(moDpf==PartitionFormat.COLUMN_WISE && mo.getNumColumns()==_N) ||
+				(moDpf._dpf==PDataPartitionFormat.ROW_BLOCK_WISE_N && mo.getNumRows()<=_N*moDpf._N)||
+				(moDpf._dpf==PDataPartitionFormat.COLUMN_BLOCK_WISE_N && mo.getNumColumns()<=_N*moDpf._N)) )
 			{
 				int k = (int)Math.min(_N,_rk2);
 				
@@ -1736,14 +1544,7 @@ public class OptimizerRuleBased extends Optimizer
 		
 		LOG.debug(getOptMode()+" OPT: rewrite 'set fused data partitioning and execution' - result="+apply );
 	}
-	
-	/**
-	 * 
-	 * @param n
-	 * @param iterVarname
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	protected boolean rIsAccessByIterationVariable( OptNode n, String varName, String iterVarname ) 
 		throws DMLRuntimeException
 	{
@@ -1758,19 +1559,25 @@ public class OptimizerRuleBased extends Optimizer
 			     && n.getParam(ParamType.OPSTRING).equals(IndexingOp.OPSTRING)
 			     && n.getParam(ParamType.DATA_PARTITION_FORMAT) != null )
 		{
-			PDataPartitionFormat dpf = PDataPartitionFormat.valueOf(n.getParam(ParamType.DATA_PARTITION_FORMAT));
+			PartitionFormat dpf = PartitionFormat.valueOf(n.getParam(ParamType.DATA_PARTITION_FORMAT));
 			Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
 			String inMatrix = h.getInput().get(0).getName();
 			String indexAccess = null;
-			switch( dpf )
+			switch( dpf._dpf )
 			{
 				case ROW_WISE: //input 1 and 2 eq
 					if( h.getInput().get(1) instanceof DataOp )
 						indexAccess = h.getInput().get(1).getName();
 					break;
+				case ROW_BLOCK_WISE_N: //input 1 and 2 have same slope and var
+					indexAccess = rGetVarFromExpression(h.getInput().get(1));
+					break;
 				case COLUMN_WISE: //input 3 and 4 eq
 					if( h.getInput().get(3) instanceof DataOp )
 						indexAccess = h.getInput().get(3).getName();
+					break;
+				case COLUMN_BLOCK_WISE_N: //input 3 and 4 have same slope and var
+					indexAccess = rGetVarFromExpression(h.getInput().get(3));
 					break;
 					
 				default:
@@ -1784,11 +1591,22 @@ public class OptimizerRuleBased extends Optimizer
 		return ret;
 	}
 	
+	private static String rGetVarFromExpression(Hop current) {
+		String var = null;
+		for( Hop c : current.getInput() ) {
+			var = rGetVarFromExpression(c);
+			if( var != null )
+				return var;
+		}
+		return (current instanceof DataOp) ?
+			current.getName() : null;
+	}
+	
 	///////
 	//REWRITE transpose sparse vector operations
 	///
 	
-	protected void rewriteSetTranposeSparseVectorOperations(OptNode pn, HashMap<String, PDataPartitionFormat> partitionedMatrices, LocalVariableMap vars) 
+	protected void rewriteSetTranposeSparseVectorOperations(OptNode pn, HashMap<String, PartitionFormat> partitionedMatrices, LocalVariableMap vars) 
 		throws DMLRuntimeException 
 	{
 		//assertions (warnings of corrupt optimizer decisions)
@@ -1804,12 +1622,12 @@ public class OptimizerRuleBased extends Optimizer
 			&& partitionedMatrices.size()==1 ) //general applicable
 		{
 			String moVarname = partitionedMatrices.keySet().iterator().next();
-			PDataPartitionFormat moDpf = partitionedMatrices.get(moVarname);
+			PartitionFormat moDpf = partitionedMatrices.get(moVarname);
 			Data dat = vars.get(moVarname);
 			
 			if(    dat !=null && dat instanceof MatrixObject 
-				&& moDpf == PDataPartitionFormat.COLUMN_WISE	
-				&& ((MatrixObject)dat).getSparsity()<= MatrixBlock.SPARSITY_TURN_POINT  //check for sparse matrix
+				&& moDpf == PartitionFormat.COLUMN_WISE	
+				&& ((MatrixObject)dat).getSparsity()<=MatrixBlock.SPARSITY_TURN_POINT  //check for sparse matrix
 				&& rIsTransposeSafePartition(pn, moVarname) ) //tranpose-safe
 			{
 				pfpb.setTransposeSparseColumnVector( true );
@@ -1820,14 +1638,7 @@ public class OptimizerRuleBased extends Optimizer
 		
 		LOG.debug(getOptMode()+" OPT: rewrite 'set transpose sparse vector operations' - result="+apply );			
 	}
-	
-	/**
-	 * 
-	 * @param n
-	 * @param iterVarname
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	protected boolean rIsTransposeSafePartition( OptNode n, String varName ) 
 		throws DMLRuntimeException
 	{
@@ -1862,15 +1673,7 @@ public class OptimizerRuleBased extends Optimizer
 	///////
 	//REWRITE set in-place result indexing
 	///
-	
-	/**
-	 * 
-	 * @param pn
-	 * @param M
-	 * @param vars
-	 * @param inPlaceResultVars
-	 * @throws DMLRuntimeException
-	 */
+
 	protected void rewriteSetInPlaceResultIndexing(OptNode pn, double M, LocalVariableMap vars, HashSet<String> inPlaceResultVars, ExecutionContext ec) 
 		throws DMLRuntimeException 
 	{
@@ -2301,38 +2104,36 @@ public class OptimizerRuleBased extends Optimizer
 	private void rGetUIPConsumerList(Hop hop, HashMap <String, ArrayList<UIPCandidateHop>> uipCandHopHM)
 		throws DMLRuntimeException
 	{
-		if(hop.getVisited() != Hop.VisitStatus.DONE)
-		{
-			if ((!(!hop.getParent().isEmpty() && hop.getParent().get(0) instanceof LeftIndexingOp)) &&
-				   ((hop instanceof DataOp && ((DataOp)hop).getDataOpType() == DataOpTypes.TRANSIENTREAD ) ||
-					(hop instanceof ReorgOp && (((ReorgOp)hop).getOp() == ReOrgOp.RESHAPE || ((ReorgOp)hop).getOp() == ReOrgOp.TRANSPOSE)) ||
-					(hop instanceof FunctionOp)))
-			{	
-				// If candidate's name is same as input hop.
-				String uipCandiateID = hop.getName();
-				ArrayList <UIPCandidateHop> uipCandHopList = uipCandHopHM.get(uipCandiateID);
-				
-				if (uipCandHopList != null) 
+		if(hop.isVisited())
+			return;
+		
+		if ((!(!hop.getParent().isEmpty() && hop.getParent().get(0) instanceof LeftIndexingOp)) &&
+			   ((hop instanceof DataOp && ((DataOp)hop).getDataOpType() == DataOpTypes.TRANSIENTREAD ) ||
+				(hop instanceof ReorgOp && (((ReorgOp)hop).getOp() == ReOrgOp.RESHAPE || ((ReorgOp)hop).getOp() == ReOrgOp.TRANSPOSE)) ||
+				(hop instanceof FunctionOp)))
+		{	
+			// If candidate's name is same as input hop.
+			String uipCandiateID = hop.getName();
+			ArrayList <UIPCandidateHop> uipCandHopList = uipCandHopHM.get(uipCandiateID);
+			
+			if (uipCandHopList != null) 
+			{
+				for (UIPCandidateHop uipCandHop: uipCandHopList)
 				{
-					for (UIPCandidateHop uipCandHop: uipCandHopList)
-					{
-						// Add consumers for candidate hop.
-						ArrayList<Hop> consumerHops = uipCandHop.getConsumerHops();
-						if(uipCandHop.getConsumerHops() == null)
-							consumerHops = new ArrayList<Hop>();
-						consumerHops.add(getRootHop(hop));
-						uipCandHop.setConsumerHops(consumerHops);
-					}
+					// Add consumers for candidate hop.
+					ArrayList<Hop> consumerHops = uipCandHop.getConsumerHops();
+					if(uipCandHop.getConsumerHops() == null)
+						consumerHops = new ArrayList<Hop>();
+					consumerHops.add(getRootHop(hop));
+					uipCandHop.setConsumerHops(consumerHops);
 				}
 			}
-			
-			for(Hop hopIn: hop.getInput())
-			{
-				rGetUIPConsumerList(hopIn, uipCandHopHM);
-			}
-			
-			hop.setVisited(Hop.VisitStatus.DONE);
 		}
+		
+		for(Hop hopIn: hop.getInput())
+			rGetUIPConsumerList(hopIn, uipCandHopHM);
+		
+		hop.setVisited();
 	}
 	
 
@@ -2560,61 +2361,51 @@ public class OptimizerRuleBased extends Optimizer
 	private void rValidateUIPConsumerList(Hop hop, HashMap <String, ArrayList<UIPCandidateHop>> uipCandHopHM)
 			throws DMLRuntimeException 
 	{
-		if(hop.getVisited() != Hop.VisitStatus.DONE)
+		if(hop.isVisited())
+			return;
+		
+		for(Entry<String, ArrayList <UIPCandidateHop>> entry: uipCandHopHM.entrySet())
 		{
-			for(Entry<String, ArrayList <UIPCandidateHop>> entry: uipCandHopHM.entrySet())
-			{
-				ArrayList <UIPCandidateHop> uipCandHopList = entry.getValue();
-				if (uipCandHopList != null) 
-				{
-					for (UIPCandidateHop uipCandHop: uipCandHopList)
-					{
-						ArrayList<Hop> consumerHops = uipCandHop.getConsumerHops();
-						if(consumerHops != null)
-						{
-							// If consumer has read then remove candidate from the list (set flag to false).
-							for (Hop consumerHop: consumerHops)
-								if(hop.getName().equals(consumerHop.getName()))
-								{
-									uipCandHop.setUpdateInPlace(false);
-									break;
-								}
+			if (entry.getValue() == null)
+				continue;
+			for (UIPCandidateHop uipCandHop: entry.getValue()) {
+				ArrayList<Hop> consumerHops = uipCandHop.getConsumerHops();
+				if(consumerHops != null) {
+					// If consumer has read then remove candidate from the list (set flag to false).
+					for (Hop consumerHop: consumerHops)
+						if(hop.getName().equals(consumerHop.getName())) {
+							uipCandHop.setUpdateInPlace(false);
+							break;
 						}
-					}
 				}
 			}
-			hop.setVisited(Hop.VisitStatus.DONE);
 		}
+		hop.setVisited();
 	}
 
 	private void rValidateUIPConsumerList(Hop hop, HashMap <String, ArrayList<UIPCandidateHop>> uipCandHopHM, VariableSet readVariables)
 			throws DMLRuntimeException 
 	{
-		if(hop.getVisited() != Hop.VisitStatus.DONE)
+		if(hop.isVisited())
+			return;
+		
+		for(Entry<String, ArrayList <UIPCandidateHop>> entry: uipCandHopHM.entrySet())
 		{
-			for(Entry<String, ArrayList <UIPCandidateHop>> entry: uipCandHopHM.entrySet())
-			{
-				ArrayList <UIPCandidateHop> uipCandHopList = entry.getValue();
-				if (uipCandHopList != null) 
-				{
-					for (UIPCandidateHop uipCandHop: uipCandHopList)
-					{
-						ArrayList<Hop> consumerHops = uipCandHop.getConsumerHops();
-						if(consumerHops != null)
-						{
-							// If consumer has read then remove candidate from the list (set flag to false).
-							for (Hop consumerHop: consumerHops)
-								if(readVariables.containsVariable(consumerHop.getName()))
-								{
-									uipCandHop.setUpdateInPlace(false);
-									break;
-								}
+			if (entry.getValue() == null)
+				continue;
+			for (UIPCandidateHop uipCandHop: entry.getValue()) {
+				ArrayList<Hop> consumerHops = uipCandHop.getConsumerHops();
+				if(consumerHops != null) {
+					// If consumer has read then remove candidate from the list (set flag to false).
+					for (Hop consumerHop: consumerHops)
+						if(readVariables.containsVariable(consumerHop.getName())) {
+							uipCandHop.setUpdateInPlace(false);
+							break;
 						}
-					}
 				}
 			}
-			hop.setVisited(Hop.VisitStatus.DONE);
 		}
+		hop.setVisited();
 	}
 	
 	
@@ -2622,14 +2413,7 @@ public class OptimizerRuleBased extends Optimizer
 	{
 		return listUIPRes.get();
 	}
-	
-	/**
-	 * 
-	 * @param n
-	 * @param retVars
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	protected boolean rHasOnlyInPlaceSafeLeftIndexing( OptNode n, ArrayList<String> retVars ) 
 		throws DMLRuntimeException
 	{
@@ -2653,13 +2437,7 @@ public class OptimizerRuleBased extends Optimizer
 		
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @param retVars
-	 * @param vars
-	 * @return
-	 */
+
 	private double computeTotalSizeResultVariables(ArrayList<String> retVars, LocalVariableMap vars, int k)
 	{
 		double sum = 1;
@@ -2687,14 +2465,7 @@ public class OptimizerRuleBased extends Optimizer
 	///////
 	//REWRITE disable CP caching  
 	///
-	
-	/**
-	 * 
-	 * @param pn
-	 * @param inplaceResultVars
-	 * @param vars
-	 * @throws DMLRuntimeException
-	 */
+
 	protected void rewriteDisableCPCaching(OptNode pn, HashSet<String> inplaceResultVars, LocalVariableMap vars) 
 		throws DMLRuntimeException 
 	{
@@ -2718,14 +2489,7 @@ public class OptimizerRuleBased extends Optimizer
 		
 		LOG.debug(getOptMode()+" OPT: rewrite 'disable CP caching' - result="+apply+" (M="+toMB(M_sumInterm)+")" );			
 	}
-	
-	/**
-	 * 
-	 * @param n
-	 * @param inplaceResultVars 
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	protected double rComputeSumMemoryIntermediates( OptNode n, HashSet<String> inplaceResultVars, 
 													HashMap <String, ArrayList <UIPCandidateHop>> uipCands )	
 		throws DMLRuntimeException
@@ -2798,15 +2562,8 @@ public class OptimizerRuleBased extends Optimizer
 	///////
 	//REWRITE enable runtime piggybacking
 	///
-	
-	/**
-	 * 
-	 * @param n
-	 * @param partitionedMatrices.keySet() 
-	 * @param vars 
-	 * @throws DMLRuntimeException
-	 */
-	protected void rewriteEnableRuntimePiggybacking( OptNode n, LocalVariableMap vars, HashMap<String, PDataPartitionFormat> partitionedMatrices ) 
+
+	protected void rewriteEnableRuntimePiggybacking( OptNode n, LocalVariableMap vars, HashMap<String, PartitionFormat> partitionedMatrices ) 
 		throws DMLRuntimeException
 	{
 		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
@@ -2831,15 +2588,7 @@ public class OptimizerRuleBased extends Optimizer
 		LOG.debug(getOptMode()+" OPT: rewrite 'enable runtime piggybacking' - result="+apply+
 				" ("+ProgramConverter.serializeStringCollection(sharedVars)+")" );
 	}
-	
-	/**
-	 * 
-	 * @param n
-	 * @param inputVars
-	 * @param partitionedVars
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	protected boolean rHasSharedMRInput( OptNode n, Set<String> inputVars, Set<String> partitionedVars, HashSet<String> sharedVars ) 
 		throws DMLRuntimeException
 	{
@@ -2865,7 +2614,7 @@ public class OptimizerRuleBased extends Optimizer
 					ret = true;
 					sharedVars.add(ch.getName());
 				}
-				else if(    ch instanceof ReorgOp && ((ReorgOp)ch).getOp()==ReOrgOp.TRANSPOSE 
+				else if( HopRewriteUtils.isTransposeOperation(ch)  
 					&& ch.getInput().get(0) instanceof DataOp && ch.getInput().get(0).getDataType() == DataType.MATRIX
 					&& inputVars.contains(ch.getInput().get(0).getName()) )
 					//&& !partitionedVars.contains(ch.getInput().get(0).getName()))
@@ -2883,12 +2632,7 @@ public class OptimizerRuleBased extends Optimizer
 	///////
 	//REWRITE inject spark loop checkpointing
 	///
-	
-	/**
-	 * 
-	 * @param n
-	 * @throws DMLRuntimeException
-	 */
+
 	protected void rewriteInjectSparkLoopCheckpointing(OptNode n) 
 		throws DMLRuntimeException 
 	{
@@ -2925,12 +2669,7 @@ public class OptimizerRuleBased extends Optimizer
 	///////
 	//REWRITE inject spark repartition for zipmm
 	///
-	
-	/**
-	 * 
-	 * @param n
-	 * @throws DMLRuntimeException
-	 */
+
 	protected void rewriteInjectSparkRepartition(OptNode n, LocalVariableMap vars) 
 		throws DMLRuntimeException 
 	{
@@ -2978,12 +2717,7 @@ public class OptimizerRuleBased extends Optimizer
 		LOG.debug(getOptMode()+" OPT: rewrite 'inject spark input repartition' - result="+ret.size()+
 				" ("+ProgramConverter.serializeStringCollection(ret)+")" );
 	}
-	
-	/**
-	 * 
-	 * @param n
-	 * @param cand
-	 */
+
 	private void rCollectZipmmPartitioningCandidates( OptNode n, HashSet<String> cand )
 	{
 		//collect zipmm inputs
@@ -2998,8 +2732,7 @@ public class OptimizerRuleBased extends Optimizer
 				for( Hop in : h.getInput() ) {
 					if( in instanceof DataOp )
 						cand.add( in.getName() );
-					else if( in instanceof ReorgOp 
-						&& ((ReorgOp)in).getOp()==ReOrgOp.TRANSPOSE
+					else if( HopRewriteUtils.isTransposeOperation(in)
 						&& in.getInput().get(0) instanceof DataOp )
 						cand.add( in.getInput().get(0).getName() );
 				}
@@ -3015,12 +2748,7 @@ public class OptimizerRuleBased extends Optimizer
 	///////
 	//REWRITE set spark eager rdd caching
 	///
-	
-	/**
-	 * 
-	 * @param n
-	 * @throws DMLRuntimeException
-	 */
+
 	protected void rewriteSetSparkEagerRDDCaching(OptNode n, LocalVariableMap vars) 
 		throws DMLRuntimeException 
 	{
@@ -3071,13 +2799,7 @@ public class OptimizerRuleBased extends Optimizer
 	///////
 	//REWRITE remove compare matrix (for result merge, needs to be invoked before setting result merge)
 	///
-	
-	/**
-	 *
-	 * 
-	 * @param n
-	 * @throws DMLRuntimeException 
-	 */
+
 	protected void rewriteRemoveUnnecessaryCompareMatrix( OptNode n, ExecutionContext ec ) 
 		throws DMLRuntimeException
 	{
@@ -3111,17 +2833,7 @@ public class OptimizerRuleBased extends Optimizer
 		_numEvaluatedPlans++;
 		LOG.debug(getOptMode()+" OPT: rewrite 'remove unnecessary compare matrix' - result="+(!cleanedVars.isEmpty())+" ("+ProgramConverter.serializeStringCollection(cleanedVars)+")" );
 	}
-	
 
-	/**
-	 * 
-	 * @param n
-	 * @param resultVar
-	 * @param iterVarname
-	 * @param mo
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	protected boolean rContainsResultFullReplace( OptNode n, String resultVar, String iterVarname, MatrixObject mo ) 
 		throws DMLRuntimeException
 	{
@@ -3139,16 +2851,7 @@ public class OptimizerRuleBased extends Optimizer
 		
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @param n
-	 * @param resultVar
-	 * @param iterVarname
-	 * @param mo
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	protected boolean isResultFullReplace( OptNode n, String resultVar, String iterVarname, MatrixObject mo ) 
 		throws DMLRuntimeException
 	{
@@ -3187,13 +2890,7 @@ public class OptimizerRuleBased extends Optimizer
 		
 		return false;
 	}
-	
-	/**
-	 * 
-	 * @param n
-	 * @param var
-	 * @return
-	 */
+
 	protected boolean rIsReadInRightIndexing(OptNode n, String var) 
 	{
 		//NOTE: This method checks if a given variables is used in right indexing
@@ -3222,13 +2919,7 @@ public class OptimizerRuleBased extends Optimizer
 	///////
 	//REWRITE set result merge
 	///
-	
-	/**
-	 *
-	 * 
-	 * @param n
-	 * @throws DMLRuntimeException 
-	 */
+
 	protected void rewriteSetResultMerge( OptNode n, LocalVariableMap vars, boolean inLocal ) 
 		throws DMLRuntimeException
 	{
@@ -3284,13 +2975,7 @@ public class OptimizerRuleBased extends Optimizer
 		_numEvaluatedPlans++;
 		LOG.debug(getOptMode()+" OPT: rewrite 'set result merge' - result="+ret );
 	}
-	
-	/**
-	 * 
-	 * @param resultVars
-	 * @param vars
-	 * @return
-	 */
+
 	protected boolean determineFlagCellFormatWoCompare( ArrayList<String> resultVars, LocalVariableMap vars  )
 	{
 		boolean ret = true;
@@ -3320,14 +3005,7 @@ public class OptimizerRuleBased extends Optimizer
 		
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @param n
-	 * @param resultVars
-	 * @return
-	 * @throws DMLRuntimeException 
-	 */
+
 	protected boolean hasResultMRLeftIndexing( OptNode n, ArrayList<String> resultVars, LocalVariableMap vars, boolean checkSize ) 
 		throws DMLRuntimeException
 	{
@@ -3369,12 +3047,12 @@ public class OptimizerRuleBased extends Optimizer
 	/**
 	 * Heuristically compute total result sizes, if larger than local mem budget assumed to be large.
 	 * 
-	 * @param n
-	 * @param resultVars
-	 * @param vars
-	 * @param checkSize
-	 * @return
-	 * @throws DMLRuntimeException
+	 * @param pn internal representation of a plan alternative for program blocks and instructions
+	 * @param resultVars list of result variables
+	 * @param vars local variable map
+	 * @param checkSize ?
+	 * @return true if result sizes larger than local memory budget
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	protected boolean hasLargeTotalResults( OptNode pn, ArrayList<String> resultVars, LocalVariableMap vars, boolean checkSize ) 
 		throws DMLRuntimeException
@@ -3412,14 +3090,7 @@ public class OptimizerRuleBased extends Optimizer
 		
 		return ( totalSize >= _lm ); //heuristic:  large if >= local mem budget 
 	}
-	
-	/**
-	 * 
-	 * @param tp
-	 * @param N
-	 * @param k
-	 * @return
-	 */
+
 	protected long estimateNumTasks( PTaskPartitioner tp, long N, int k )
 	{
 		long W = -1;
@@ -3437,15 +3108,7 @@ public class OptimizerRuleBased extends Optimizer
 		
 		return W;
 	}
-	
-	/**
-	 * 
-	 * @param n
-	 * @param resultVars
-	 * @param vars
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	protected boolean hasOnlyInMemoryResults( OptNode n, ArrayList<String> resultVars, LocalVariableMap vars, boolean inLocal ) 
 		throws DMLRuntimeException
 	{
@@ -3480,13 +3143,7 @@ public class OptimizerRuleBased extends Optimizer
 		
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @param nodes
-	 * @param vars
-	 * @throws DMLRuntimeException 
-	 */
+
 	protected void rInvokeSetResultMerge( Collection<OptNode> nodes, LocalVariableMap vars, boolean inLocal) 
 		throws DMLRuntimeException
 	{
@@ -3500,13 +3157,7 @@ public class OptimizerRuleBased extends Optimizer
 			else if( n.getChilds()!=null )  
 				rInvokeSetResultMerge(n.getChilds(), vars, inLocal);
 	}
-	
-	/**
-	 * 
-	 * @param rows
-	 * @param cols
-	 * @return
-	 */
+
 	public static boolean isInMemoryResultMerge( long rows, long cols, double memBudget )
 	{
 		if( !ParForProgramBlock.USE_PARALLEL_RESULT_MERGE )
@@ -3523,11 +3174,6 @@ public class OptimizerRuleBased extends Optimizer
 	//REWRITE set recompile memory budget
 	///
 
-	/**
-	 * 
-	 * @param n
-	 * @param M
-	 */
 	protected void rewriteSetRecompileMemoryBudget( OptNode n )
 	{
 		double newLocalMem = _lm; 
@@ -3553,12 +3199,7 @@ public class OptimizerRuleBased extends Optimizer
 	///////
 	//REWRITE remove recursive parfor
 	///
-	
-	/**
-	 * 
-	 * @param n
-	 * @throws DMLRuntimeException
-	 */
+
 	protected void rewriteRemoveRecursiveParFor(OptNode n, LocalVariableMap vars) 
 		throws DMLRuntimeException 
 	{
@@ -3590,14 +3231,7 @@ public class OptimizerRuleBased extends Optimizer
 		_numEvaluatedPlans++;
 		LOG.debug(getOptMode()+" OPT: rewrite 'remove recursive parfor' - result="+recPBs.size()+"/"+count );
 	}
-	
-	/**
-	 * 
-	 * @param n
-	 * @param cand
-	 * @param recContext
-	 * @return
-	 */
+
 	protected void rFindRecursiveParFor( OptNode n, HashSet<ParForProgramBlock> cand, boolean recContext )
 	{
 		//recursive invocation
@@ -3618,16 +3252,7 @@ public class OptimizerRuleBased extends Optimizer
 			cand.add(pfpb);
 		}
 	}
-	
-	/**
-	 * 
-	 * @param n
-	 * @param parfor
-	 * @param recPBs
-	 * @throws DMLRuntimeException
-	 * @throws HopsException
-	 * @throws LanguageException
-	 */
+
 	protected void rFindAndUnfoldRecursiveFunction( OptNode n, ParForProgramBlock parfor, HashSet<ParForProgramBlock> recPBs, LocalVariableMap vars )
 		throws DMLRuntimeException, HopsException, LanguageException
 	{
@@ -3691,13 +3316,7 @@ public class OptimizerRuleBased extends Optimizer
 			for( OptNode c : n.getChilds() )
 				rFindAndUnfoldRecursiveFunction(c, parfor, recPBs, vars);
 	}
-	
-	/**
-	 * 
-	 * @param n
-	 * @param parfor
-	 * @return
-	 */
+
 	protected boolean rContainsNode( OptNode n, ParForProgramBlock parfor )
 	{
 		boolean ret = false;
@@ -3717,13 +3336,7 @@ public class OptimizerRuleBased extends Optimizer
 		
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @param n
-	 * @param pbs
-	 * @return
-	 */
+
 	protected HashSet<ParForProgramBlock> rGetAllParForPBs( OptNode n, HashSet<ParForProgramBlock> pbs )
 	{
 		//collect parfor
@@ -3741,15 +3354,7 @@ public class OptimizerRuleBased extends Optimizer
 		
 		return pbs;
 	}
-	
-	/**
-	 * 
-	 * @param n
-	 * @param oldName
-	 * @param newName
-	 * @throws DMLRuntimeException
-	 * @throws HopsException 
-	 */
+
 	protected void rReplaceFunctionNames( OptNode n, String oldName, String newName ) 
 		throws DMLRuntimeException, HopsException
 	{
@@ -3792,14 +3397,7 @@ public class OptimizerRuleBased extends Optimizer
 			for( OptNode c : n.getChilds() )
 				rReplaceFunctionNames(c, oldName, newName);
 	}
-	
-	/**
-	 * 
-	 * @param n
-	 * @param recPBs
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	protected int removeRecursiveParFor( OptNode n, HashSet<ParForProgramBlock> recPBs ) 
 		throws DMLRuntimeException
 	{
@@ -3846,12 +3444,7 @@ public class OptimizerRuleBased extends Optimizer
 	///////
 	//REWRITE remove unnecessary parfor
 	///
-	
-	/**
-	 * 
-	 * @param n
-	 * @throws DMLRuntimeException
-	 */
+
 	protected void rewriteRemoveUnnecessaryParFor(OptNode n) 
 		throws DMLRuntimeException 
 	{
@@ -3860,13 +3453,7 @@ public class OptimizerRuleBased extends Optimizer
 		_numEvaluatedPlans++;
 		LOG.debug(getOptMode()+" OPT: rewrite 'remove unnecessary parfor' - result="+count );
 	}
-	
-	/**
-	 * 
-	 * @param n
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	protected int removeUnnecessaryParFor( OptNode n ) 
 		throws DMLRuntimeException
 	{
@@ -3949,12 +3536,7 @@ public class OptimizerRuleBased extends Optimizer
 		{
 			this.hopCandidate = hopCandidate;
 		}
-		
-		ProgramBlock getProgramBlock()
-		{
-			return pb;
-		}
-		
+
 		int getLocation()
 		{
 			return this.iLocation;

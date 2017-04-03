@@ -42,48 +42,26 @@ public class CTableMap
 		_maxRow = -1;
 		_maxCol = -1;
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public int size() 
 	{
 		return _map.size();
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	@Deprecated
 	public ArrayList<LLDoubleEntry> entrySet()
 	{
 		return _map.extractValues();
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public long getMaxRow() {
 		return _maxRow;
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public long getMaxColumn() {
 		return _maxCol;
 	}
-	
-	/**
-	 * 
-	 * @param row
-	 * @param col
-	 * @param w
-	 */
+
 	public void aggregate(long row, long col, double w) 
 	{
 		//hash group-by for core ctable computation
@@ -93,13 +71,7 @@ public class CTableMap
 		_maxRow = Math.max(_maxRow, row);
 		_maxCol = Math.max(_maxCol, col);
 	}
-	
-	/**
-	 * 
-	 * @param rlen
-	 * @param clen
-	 * @return
-	 */
+
 	public MatrixBlock toMatrixBlock(int rlen, int clen)
 	{
 		//allocate new matrix block

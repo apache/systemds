@@ -68,7 +68,7 @@
 	<dependencySets>
 		<dependencySet>
 			<includes>
-				<include>*:antlr*</include>
+				<include>*:antlr4-runtime*</include>
 				<include>*:wink-json4j*</include>
 			</includes>
 			<scope>compile</scope>
@@ -83,7 +83,6 @@
 		<dependencySet>
 			<includes>
 				<include>*:${artifactId}*</include>
-				<include>*:avro*</include>
 				<include>*:commons-cli*</include>
 				<include>*:commons-collections*</include>
 				<include>*:commons-configuration*</include>

@@ -48,16 +48,6 @@ public class FrameWriterTextCSVParallel extends FrameWriterTextCSV
 		super(props);
 	}
 
-	/**
-	 * 
-	 * @param path
-	 * @param job
-	 * @param src
-	 * @param rlen
-	 * @param clen
-	 * @param csvprops
-	 * @throws IOException
-	 */
 	@Override
 	protected void writeCSVFrameToHDFS( Path path, JobConf job, FrameBlock src, long rlen, long clen, CSVFileFormatProperties csvprops ) 
 		throws IOException

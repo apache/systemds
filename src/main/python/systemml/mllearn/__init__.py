@@ -19,6 +19,29 @@
 #
 #-------------------------------------------------------------
 
+"""
+===================
+SystemML Algorithms
+===================
+
+
+==================== =========================================================
+Classification Algorithms
+==============================================================================
+LogisticRegression   Performs binomial and multinomial logistic regression
+SVM                  Performs both binary-class and multi-class SVM
+NaiveBayes           Multinomial naive bayes classifier
+==================== =========================================================
+
+==================== =========================================================
+Regression Algorithms
+==============================================================================
+LinearRegression     Performs linear regression
+==================== =========================================================
+
+
+"""
+
 from .estimators import *
 
 __all__ = estimators.__all__

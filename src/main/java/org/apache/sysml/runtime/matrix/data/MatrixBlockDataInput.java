@@ -38,10 +38,10 @@ public interface MatrixBlockDataInput
 	 * Reads the double array from the data input into the given dense block
 	 * and returns the number of non-zeros. 
 	 * 
-	 * @param len
-	 * @param varr
-	 * @return
-	 * @throws IOException
+	 * @param len ?
+	 * @param varr ?
+	 * @return number of non-zeros
+	 * @throws IOException if IOException occurs
 	 */
 	public long readDoubleArray(int len, double[] varr) 
 		throws IOException;
@@ -50,9 +50,10 @@ public interface MatrixBlockDataInput
 	 * Reads the sparse rows array from the data input into a sparse block
 	 * and returns the number of non-zeros.
 	 * 
-	 * @param rlen
-	 * @param rows
-	 * @throws IOException
+	 * @param rlen ?
+	 * @param rows sparse block
+	 * @return number of non-zeros
+	 * @throws IOException if IOExcepton occurs
 	 */
 	public long readSparseRows(int rlen, SparseBlock rows) 
 		throws IOException;

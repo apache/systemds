@@ -74,11 +74,6 @@ public class CM extends ValueFunction
 		//execution due to state in cm object (buff2, buff3)	
 		return new CM( type ); 
 	}
-	
-	public Object clone() throws CloneNotSupportedException {
-		// cloning is not supported for singleton classes
-		throw new CloneNotSupportedException();
-	}
 
 	public AggregateOperationTypes getAggOpType() {
 		return _type;

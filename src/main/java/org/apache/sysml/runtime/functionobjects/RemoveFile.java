@@ -27,7 +27,6 @@ import org.apache.sysml.runtime.util.MapReduceTool;
 
 public class RemoveFile extends FileFunction 
 {
-		
 	private static RemoveFile singleObj = null;
 
 	private RemoveFile() {
@@ -39,11 +38,6 @@ public class RemoveFile extends FileFunction
 			singleObj = new RemoveFile();
 		return singleObj;
 	}
-	
-	public Object clone() throws CloneNotSupportedException {
-		// cloning is not supported for singleton classes
-		throw new CloneNotSupportedException();
-	}
 
 	@Override
 	public String execute (String fname) throws DMLRuntimeException {
@@ -54,5 +48,4 @@ public class RemoveFile extends FileFunction
 		}
 		return null;
 	}
-
 }

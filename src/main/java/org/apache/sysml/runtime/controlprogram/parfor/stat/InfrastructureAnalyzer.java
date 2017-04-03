@@ -26,6 +26,8 @@ import org.apache.hadoop.mapred.ClusterStatus;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
@@ -65,11 +67,7 @@ public class InfrastructureAnalyzer
 		//analyze remote Hadoop cluster properties
 		//analyzeHadoopCluster(); //note: due to overhead - analyze on-demand
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public static boolean isJavaVersionLessThanJDK8()
 	{
 		return _isLtJDK8;
@@ -82,7 +80,7 @@ public class InfrastructureAnalyzer
 	 * Gets the number of logical processors of the current node,
 	 * including hyper-threading if enabled.
 	 * 
-	 * @return
+	 * @return number of local processors of the current node
 	 */
 	public static int getLocalParallelism()
 	{
@@ -93,7 +91,7 @@ public class InfrastructureAnalyzer
 	 * Gets the number of cluster nodes (number of tasktrackers). If multiple tasktracker
 	 * are started per node, each tasktracker is viewed as individual node.
 	 * 
-	 * @return
+	 * @return number of cluster nodes
 	 */
 	public static int getRemoteParallelNodes() 
 	{
@@ -104,9 +102,9 @@ public class InfrastructureAnalyzer
 	}	
 	
 	/**
-	 * Gets the total number of available map slots.
+	 * Gets the number of remote parallel map slots.
 	 * 
-	 * @return
+	 * @return number of remote parallel map tasks
 	 */
 	public static int getRemoteParallelMapTasks()
 	{
@@ -115,20 +113,16 @@ public class InfrastructureAnalyzer
 		
 		return _remoteParMap;
 	}
-	
-	/**
-	 * 
-	 * @param pmap
-	 */
+
 	public static void setRemoteParallelMapTasks(int pmap)
 	{
 		_remoteParMap = pmap;
 	}
 	
 	/**
-	 * Gets the total number of available reduce slots.
+	 * Gets the total number of remote parallel reduce slots.
 	 * 
-	 * @return
+	 * @return number of remote parallel reduce tasks
 	 */
 	public static int getRemoteParallelReduceTasks()
 	{
@@ -137,29 +131,11 @@ public class InfrastructureAnalyzer
 		
 		return _remoteParReduce;
 	}
-	
-	/**
-	 * 
-	 * @param preduce
-	 */
+
 	public static void setRemoteParallelReduceTasks(int preduce)
 	{
 		_remoteParReduce = preduce;
 	}
-	
-	/**
-	 * Gets the totals number of available map and reduce slots.
-	 * 
-	 * @return
-	 */
-	public static int getRemoteParallelTasks()
-	{
-		if( _remoteParMap == -1 )
-			analyzeHadoopCluster();
-		
-		return _remoteParMap + _remoteParReduce;
-	}
-	
 	
 	///////
 	//methods for obtaining memory properties
@@ -167,17 +143,13 @@ public class InfrastructureAnalyzer
 	/**
 	 * Gets the maximum memory [in bytes] of the current JVM.
 	 * 
-	 * @return
+	 * @return maximum memory of the current JVM
 	 */
 	public static long getLocalMaxMemory()
 	{
 		return _localJVMMaxMem;
 	}
-	
-	/**
-	 * 
-	 * @param localMem
-	 */
+
 	public static void setLocalMaxMemory( long localMem )
 	{
 		_localJVMMaxMem = localMem;
@@ -186,7 +158,7 @@ public class InfrastructureAnalyzer
 	/**
 	 * Gets the maximum memory [in bytes] of a hadoop map task JVM.
 	 * 
-	 * @return
+	 * @return maximum memory of remote hadoop map task jvm
 	 */
 	public static long getRemoteMaxMemoryMap()
 	{
@@ -195,11 +167,7 @@ public class InfrastructureAnalyzer
 		
 		return _remoteJVMMaxMemMap;
 	}
-	
-	/**
-	 * 
-	 * @param remoteMem
-	 */
+
 	public static void setRemoteMaxMemoryMap( long remoteMem )
 	{
 		_remoteJVMMaxMemMap = remoteMem;
@@ -208,7 +176,7 @@ public class InfrastructureAnalyzer
 	/**
 	 * Gets the maximum memory [in bytes] of a hadoop reduce task JVM.
 	 * 
-	 * @return
+	 * @return maximum memory of remote hadoop reduce task jvm
 	 */
 	public static long getRemoteMaxMemoryReduce()
 	{
@@ -217,33 +185,16 @@ public class InfrastructureAnalyzer
 		
 		return _remoteJVMMaxMemReduce;
 	}
-	
-	/**
-	 * 
-	 * @param remoteMem
-	 */
+
 	public static void setRemoteMaxMemoryReduce( long remoteMem )
 	{
 		_remoteJVMMaxMemReduce = remoteMem;
 	}
-	
-	/**
-	 * Gets the maximum memory requirement [in bytes] of a given hadoop job.
-	 * 
-	 * @param conf
-	 * @return
-	 */
-	public static long getRemoteMaxMemory( JobConf job )
-	{
-		return (1024*1024) * Math.max(
-				               job.getMemoryForMapTask(),
-				               job.getMemoryForReduceTask() );			
-	}
-	
+
 	/**
 	 * Gets the maximum sort buffer memory requirement [in bytes] of a hadoop task.
 	 * 
-	 * @return
+	 * @return maximum sort buffer memory of hadoop task
 	 */
 	public static long getRemoteMaxMemorySortBuffer( )
 	{
@@ -279,7 +230,7 @@ public class InfrastructureAnalyzer
 	/**
 	 * Gets the maximum local parallelism constraint.
 	 * 
-	 * @return
+	 * @return maximum local parallelism constraint
 	 */
 	public static int getCkMaxCP() 
 	{
@@ -290,18 +241,20 @@ public class InfrastructureAnalyzer
 	/**
 	 * Gets the maximum remote parallelism constraint
 	 * 
-	 * @return
+	 * @return maximum remote parallelism constraint
 	 */
 	public static int getCkMaxMR() 
 	{
-		//default value (if not specified)
-		return getRemoteParallelMapTasks();
+		if( OptimizerUtils.isSparkExecutionMode() )
+			return SparkExecutionContext.getDefaultParallelism(true);
+		else
+			return getRemoteParallelMapTasks();
 	}
 
 	/**
 	 * Gets the maximum memory constraint [in bytes].
 	 * 
-	 * @return
+	 * @return maximum memory constraint
 	 */
 	public static long getCmMax() 
 	{
@@ -312,7 +265,7 @@ public class InfrastructureAnalyzer
 	/**
 	 * Gets the HDFS blocksize of the used cluster in bytes.
 	 * 
-	 * @return
+	 * @return HDFS block size
 	 */
 	public static long getHDFSBlockSize()
 	{
@@ -321,12 +274,7 @@ public class InfrastructureAnalyzer
 		
 		return _blocksize;		
 	}
-	
 
-	/**
-	 * 
-	 * @return
-	 */
 	public static boolean isYarnEnabled()
 	{
 		if( _remoteJVMMaxMemMap == -1 )
@@ -334,13 +282,7 @@ public class InfrastructureAnalyzer
 		
 		return _yarnEnabled;
 	}
-	
-	
-	/**
-	 * 
-	 * @param javaOpts
-	 * @return
-	 */
+
 	public static long extractMaxMemoryOpt(String javaOpts)
 	{
 		long ret = -1; //mem in bytes
@@ -371,13 +313,7 @@ public class InfrastructureAnalyzer
 		
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @param job
-	 * @param key
-	 * @param bytes
-	 */
+
 	public static void setMaxMemoryOpt(JobConf job, String key, long bytes)
 	{
 		String javaOptsOld = job.get( key );
@@ -410,8 +346,9 @@ public class InfrastructureAnalyzer
 	 * NOTE: on YARN the number of slots is a spurious indicator 
 	 * because containers are purely scheduled based on memory. 
 	 * 
-	 * @return
-	 * @throws IOException
+	 * @param mapOnly if true, only look at map tasks
+	 * @return cluster utilization (current / capacity)
+	 * @throws IOException if IOException occurs
 	 */
 	public static double getClusterUtilization(boolean mapOnly) 
 		throws IOException
@@ -523,12 +460,7 @@ public class InfrastructureAnalyzer
 		//analyze if local mode (internally requires yarn_enabled)
 		_localJT = analyzeLocalMode(job);		
 	}
-	
-	/**
-	 * 
-	 * @param job
-	 * @return
-	 */
+
 	private static boolean analyzeLocalMode(JobConf job)
 	{
 		//analyze if local mode (if yarn enabled, we always assume cluster mode

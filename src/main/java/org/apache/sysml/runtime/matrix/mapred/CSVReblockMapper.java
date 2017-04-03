@@ -162,12 +162,17 @@ public class CSVReblockMapper extends MapperBase implements Mapper<LongWritable,
 			ByteWritable key=new ByteWritable();
 			OffsetCount value=new OffsetCount();
 			Path p=new Path(job.get(CSVReblockMR.ROWID_FILE_NAME));
-			SequenceFile.Reader reader = new SequenceFile.Reader(fs, p, job);
-			while (reader.next(key, value)) {
-				if(key.get()==matrixIndex && filename.equals(value.filename))
-					offsetMap.put(value.fileOffset, value.count);
+			SequenceFile.Reader reader = null;
+			try {
+				reader = new SequenceFile.Reader(fs, p, job);
+				while (reader.next(key, value)) {
+					if(key.get()==matrixIndex && filename.equals(value.filename))
+						offsetMap.put(value.fileOffset, value.count);
+				}
 			}
-			reader.close();
+			finally {
+				IOUtilFunctions.closeSilently(reader);
+			}
 		} 
 		catch (IOException e) {
 			throw new RuntimeException(e);

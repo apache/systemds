@@ -28,7 +28,7 @@ public abstract class Statement
 	
 	protected static final Log LOG = LogFactory.getLog(Statement.class.getName());
 	
-	public static final String OUTPUTSTATEMENT = "write";
+	public static final String OUTPUTSTATEMENT = "WRITE";
 					
 	// parameter names for seq()
 	public static final String SEQ_FROM = "from"; 
@@ -115,38 +115,11 @@ public abstract class Statement
 	public String printWarningLocation(){
 		return "WARNING: " + _filename + " -- line " + _beginLine + ", column " + _beginColumn + " -- ";
 	}
-	
-	public String printInfoLocation(){
-		return "INFO: " + _filename + " -- line " + _beginLine + ", column " + _beginColumn + " -- ";
-	}
-	
-	public String printErrorLocation(int beginLine, int beginColumn){
-		return "ERROR: " + _filename + " -- line " + beginLine + ", column " + beginColumn + " -- ";
-	}
-	
-	public String printWarningLocation(int beginLine, int beginColumn){
-		return "WARNING: " + _filename + " -- line " + beginLine + ", column " + beginColumn + " -- ";
-	}
-	
-	public String printInfoLocation(int beginLine, int beginColumn){
-		return "INFO: " + _filename + " -- line " + beginLine + ", column " + beginColumn + " -- ";
-	}
-
-	public void raiseValidateError( String msg ) throws LanguageException {
-		raiseValidateError(msg, false, null);
-	}
 
 	public void raiseValidateError( String msg, boolean conditional ) throws LanguageException {
 		raiseValidateError(msg, conditional, null);
 	}
 	
-	/**
-	* 
-	* @param msg
-	* @param conditional
-	* @param code
-	* @throws LanguageException
-	*/
 	public void raiseValidateError( String msg, boolean conditional, String errorCode ) 
 		throws LanguageException
 	{

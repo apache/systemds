@@ -48,9 +48,10 @@ public class ParUnaryAggregateTest extends AutomatedTestBase
 	}
 	
 	public enum ValueType {
-		RAND,
-		RAND_ROUND,
-		CONST,
+		RAND, //UC
+		CONST, //RLE
+		RAND_ROUND_OLE, //OLE
+		RAND_ROUND_DDC, //RLE
 	}
 	
 	public enum AggType {
@@ -89,13 +90,23 @@ public class ParUnaryAggregateTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testRowSumsDenseRoundRandDataCompression() {
-		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND, AggType.ROWSUMS, true);
+	public void testRowSumsDenseRoundRandDataOLECompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND_OLE, AggType.ROWSUMS, true);
 	}
 	
 	@Test
-	public void testRowSumsSparseRoundRandDataCompression() {
-		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND, AggType.ROWSUMS, true);
+	public void testRowSumsSparseRoundRandDataOLECompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND_OLE, AggType.ROWSUMS, true);
+	}
+	
+	@Test
+	public void testRowSumsDenseRoundRandDataDDCCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND_DDC, AggType.ROWSUMS, true);
+	}
+	
+	@Test
+	public void testRowSumsSparseRoundRandDataDDCCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND_DDC, AggType.ROWSUMS, true);
 	}
 	
 	@Test
@@ -124,13 +135,13 @@ public class ParUnaryAggregateTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testRowSumsDenseRoundRandDataNoCompression() {
-		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND, AggType.ROWSUMS, false);
+	public void testRowSumsDenseRoundRandDataOLENoCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND_OLE, AggType.ROWSUMS, false);
 	}
 	
 	@Test
-	public void testRowSumsSparseRoundRandDataNoCompression() {
-		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND, AggType.ROWSUMS, false);
+	public void testRowSumsSparseRoundRandDataOLENoCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND_OLE, AggType.ROWSUMS, false);
 	}
 	
 	@Test
@@ -159,13 +170,23 @@ public class ParUnaryAggregateTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testColSumsDenseRoundRandDataCompression() {
-		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND, AggType.COLSUMS, true);
+	public void testColSumsDenseRoundRandDataOLECompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND_OLE, AggType.COLSUMS, true);
 	}
 	
 	@Test
-	public void testColSumsSparseRoundRandDataCompression() {
-		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND, AggType.COLSUMS, true);
+	public void testColSumsSparseRoundRandDataOLECompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND_OLE, AggType.COLSUMS, true);
+	}
+	
+	@Test
+	public void testColSumsDenseRoundRandDataDDCCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND_DDC, AggType.COLSUMS, true);
+	}
+	
+	@Test
+	public void testColSumsSparseRoundRandDataDDCCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND_DDC, AggType.COLSUMS, true);
 	}
 	
 	@Test
@@ -194,13 +215,13 @@ public class ParUnaryAggregateTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testColSumsDenseRoundRandDataNoCompression() {
-		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND, AggType.COLSUMS, false);
+	public void testColSumsDenseRoundRandDataOLENoCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND_OLE, AggType.COLSUMS, false);
 	}
 	
 	@Test
-	public void testColSumsSparseRoundRandDataNoCompression() {
-		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND, AggType.COLSUMS, false);
+	public void testColSumsSparseRoundRandDataOLENoCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND_OLE, AggType.COLSUMS, false);
 	}
 	
 	@Test
@@ -229,13 +250,23 @@ public class ParUnaryAggregateTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testSumDenseRoundRandDataCompression() {
-		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND, AggType.SUM, true);
+	public void testSumDenseRoundRandDataOLECompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND_OLE, AggType.SUM, true);
 	}
 	
 	@Test
-	public void testSumSparseRoundRandDataCompression() {
-		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND, AggType.SUM, true);
+	public void testSumSparseRoundRandDataOLECompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND_OLE, AggType.SUM, true);
+	}
+	
+	@Test
+	public void testSumDenseRoundRandDataDDCCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND_DDC, AggType.SUM, true);
+	}
+	
+	@Test
+	public void testSumSparseRoundRandDataDDCCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND_DDC, AggType.SUM, true);
 	}
 	
 	@Test
@@ -264,13 +295,13 @@ public class ParUnaryAggregateTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testSumDenseRoundRandDataNoCompression() {
-		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND, AggType.SUM, false);
+	public void testSumDenseRoundRandDataOLENoCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND_OLE, AggType.SUM, false);
 	}
 	
 	@Test
-	public void testSumSparseRoundRandDataNoCompression() {
-		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND, AggType.SUM, false);
+	public void testSumSparseRoundRandDataOLENoCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND_OLE, AggType.SUM, false);
 	}
 	
 	@Test
@@ -299,13 +330,23 @@ public class ParUnaryAggregateTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testRowSumsSqDenseRoundRandDataCompression() {
-		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND, AggType.ROWSUMSSQ, true);
+	public void testRowSumsSqDenseRoundRandDataOLECompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND_OLE, AggType.ROWSUMSSQ, true);
 	}
 	
 	@Test
-	public void testRowSumsSqSparseRoundRandDataCompression() {
-		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND, AggType.ROWSUMSSQ, true);
+	public void testRowSumsSqSparseRoundRandDataOLECompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND_OLE, AggType.ROWSUMSSQ, true);
+	}
+	
+	@Test
+	public void testRowSumsSqDenseRoundRandDataDDCCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND_DDC, AggType.ROWSUMSSQ, true);
+	}
+	
+	@Test
+	public void testRowSumsSqSparseRoundRandDataDDCCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND_DDC, AggType.ROWSUMSSQ, true);
 	}
 	
 	@Test
@@ -334,13 +375,13 @@ public class ParUnaryAggregateTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testRowSumsSqDenseRoundRandDataNoCompression() {
-		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND, AggType.ROWSUMSSQ, false);
+	public void testRowSumsSqDenseRoundRandDataOLENoCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND_OLE, AggType.ROWSUMSSQ, false);
 	}
 	
 	@Test
-	public void testRowSumsSqSparseRoundRandDataNoCompression() {
-		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND, AggType.ROWSUMSSQ, false);
+	public void testRowSumsSqSparseRoundRandDataOLENoCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND_OLE, AggType.ROWSUMSSQ, false);
 	}
 	
 	@Test
@@ -369,13 +410,23 @@ public class ParUnaryAggregateTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testColSumsSqDenseRoundRandDataCompression() {
-		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND, AggType.COLSUMSSQ, true);
+	public void testColSumsSqDenseRoundRandDataOLECompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND_OLE, AggType.COLSUMSSQ, true);
 	}
 	
 	@Test
-	public void testColSumsSqSparseRoundRandDataCompression() {
-		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND, AggType.COLSUMSSQ, true);
+	public void testColSumsSqSparseRoundRandDataOLECompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND_OLE, AggType.COLSUMSSQ, true);
+	}
+	
+	@Test
+	public void testColSumsSqDenseRoundRandDataDDCCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND_DDC, AggType.COLSUMSSQ, true);
+	}
+	
+	@Test
+	public void testColSumsSqSparseRoundRandDataDDCCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND_DDC, AggType.COLSUMSSQ, true);
 	}
 	
 	@Test
@@ -404,13 +455,13 @@ public class ParUnaryAggregateTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testColSumsSqDenseRoundRandDataNoCompression() {
-		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND, AggType.COLSUMSSQ, false);
+	public void testColSumsSqDenseRoundRandDataOLENoCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND_OLE, AggType.COLSUMSSQ, false);
 	}
 	
 	@Test
-	public void testColSumsSqSparseRoundRandDataNoCompression() {
-		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND, AggType.COLSUMSSQ, false);
+	public void testColSumsSqSparseRoundRandDataOLENoCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND_OLE, AggType.COLSUMSSQ, false);
 	}
 	
 	@Test
@@ -439,13 +490,23 @@ public class ParUnaryAggregateTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testSumSqDenseRoundRandDataCompression() {
-		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND, AggType.SUMSQ, true);
+	public void testSumSqDenseRoundRandDataOLECompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND_OLE, AggType.SUMSQ, true);
 	}
 	
 	@Test
-	public void testSumSqSparseRoundRandDataCompression() {
-		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND, AggType.SUMSQ, true);
+	public void testSumSqSparseRoundRandDataOLECompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND_OLE, AggType.SUMSQ, true);
+	}
+	
+	@Test
+	public void testSumSqDenseRoundRandDataDDCCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND_DDC, AggType.SUMSQ, true);
+	}
+	
+	@Test
+	public void testSumSqSparseRoundRandDataDDCCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND_DDC, AggType.SUMSQ, true);
 	}
 	
 	@Test
@@ -474,13 +535,13 @@ public class ParUnaryAggregateTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testSumSqDenseRoundRandDataNoCompression() {
-		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND, AggType.SUMSQ, false);
+	public void testSumSqDenseRoundRandDataOLENoCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND_OLE, AggType.SUMSQ, false);
 	}
 	
 	@Test
-	public void testSumSqSparseRoundRandDataNoCompression() {
-		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND, AggType.SUMSQ, false);
+	public void testSumSqSparseRoundRandDataOLENoCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND_OLE, AggType.SUMSQ, false);
 	}
 	
 	@Test
@@ -493,7 +554,6 @@ public class ParUnaryAggregateTest extends AutomatedTestBase
 		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.CONST, AggType.SUMSQ, false);
 	}
 	
-
 	@Test
 	public void testRowMaxsDenseRandDataCompression() {
 		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND, AggType.ROWMAXS, true);
@@ -510,13 +570,23 @@ public class ParUnaryAggregateTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testRowMaxsDenseRoundRandDataCompression() {
-		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND, AggType.ROWMAXS, true);
+	public void testRowMaxsDenseRoundRandDataOLECompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND_OLE, AggType.ROWMAXS, true);
 	}
 	
 	@Test
-	public void testRowMaxsSparseRoundRandDataCompression() {
-		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND, AggType.ROWMAXS, true);
+	public void testRowMaxsSparseRoundRandDataOLECompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND_OLE, AggType.ROWMAXS, true);
+	}
+	
+	@Test
+	public void testRowMaxsDenseRoundRandDataDDCCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND_DDC, AggType.ROWMAXS, true);
+	}
+	
+	@Test
+	public void testRowMaxsSparseRoundRandDataDDCCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND_DDC, AggType.ROWMAXS, true);
 	}
 	
 	@Test
@@ -545,13 +615,13 @@ public class ParUnaryAggregateTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testRowMaxsDenseRoundRandDataNoCompression() {
-		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND, AggType.ROWMAXS, false);
+	public void testRowMaxsDenseRoundRandDataOLENoCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND_OLE, AggType.ROWMAXS, false);
 	}
 	
 	@Test
-	public void testRowMaxsSparseRoundRandDataNoCompression() {
-		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND, AggType.ROWMAXS, false);
+	public void testRowMaxsSparseRoundRandDataOLENoCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND_OLE, AggType.ROWMAXS, false);
 	}
 	
 	@Test
@@ -580,13 +650,23 @@ public class ParUnaryAggregateTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testColMaxsDenseRoundRandDataCompression() {
-		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND, AggType.COLMAXS, true);
+	public void testColMaxsDenseRoundRandDataOLECompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND_OLE, AggType.COLMAXS, true);
 	}
 	
 	@Test
-	public void testColMaxsSparseRoundRandDataCompression() {
-		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND, AggType.COLMAXS, true);
+	public void testColMaxsSparseRoundRandDataOLECompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND_OLE, AggType.COLMAXS, true);
+	}
+	
+	@Test
+	public void testColMaxsDenseRoundRandDataDDCCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND_DDC, AggType.COLMAXS, true);
+	}
+	
+	@Test
+	public void testColMaxsSparseRoundRandDataDDCCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND_DDC, AggType.COLMAXS, true);
 	}
 	
 	@Test
@@ -615,13 +695,13 @@ public class ParUnaryAggregateTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testColMaxsDenseRoundRandDataNoCompression() {
-		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND, AggType.COLMAXS, false);
+	public void testColMaxsDenseRoundRandDataOLENoCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND_OLE, AggType.COLMAXS, false);
 	}
 	
 	@Test
-	public void testColMaxsSparseRoundRandDataNoCompression() {
-		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND, AggType.COLMAXS, false);
+	public void testColMaxsSparseRoundRandDataOLENoCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND_OLE, AggType.COLMAXS, false);
 	}
 	
 	@Test
@@ -650,13 +730,23 @@ public class ParUnaryAggregateTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testMaxDenseRoundRandDataCompression() {
-		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND, AggType.MAX, true);
+	public void testMaxDenseRoundRandDataOLECompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND_OLE, AggType.MAX, true);
 	}
 	
 	@Test
-	public void testMaxSparseRoundRandDataCompression() {
-		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND, AggType.MAX, true);
+	public void testMaxSparseRoundRandDataOLECompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND_OLE, AggType.MAX, true);
+	}
+	
+	@Test
+	public void testMaxDenseRoundRandDataDDCCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND_DDC, AggType.MAX, true);
+	}
+	
+	@Test
+	public void testMaxSparseRoundRandDataDDCCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND_DDC, AggType.MAX, true);
 	}
 	
 	@Test
@@ -685,13 +775,13 @@ public class ParUnaryAggregateTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testMaxDenseRoundRandDataNoCompression() {
-		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND, AggType.MAX, false);
+	public void testMaxDenseRoundRandDataOLENoCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND_OLE, AggType.MAX, false);
 	}
 	
 	@Test
-	public void testMaxSparseRoundRandDataNoCompression() {
-		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND, AggType.MAX, false);
+	public void testMaxSparseRoundRandDataOLENoCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND_OLE, AggType.MAX, false);
 	}
 	
 	@Test
@@ -720,13 +810,23 @@ public class ParUnaryAggregateTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testRowMinsDenseRoundRandDataCompression() {
-		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND, AggType.ROWMINS, true);
+	public void testRowMinsDenseRoundRandDataOLECompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND_OLE, AggType.ROWMINS, true);
 	}
 	
 	@Test
-	public void testRowMinsSparseRoundRandDataCompression() {
-		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND, AggType.ROWMINS, true);
+	public void testRowMinsSparseRoundRandDataOLECompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND_OLE, AggType.ROWMINS, true);
+	}
+	
+	@Test
+	public void testRowMinsDenseRoundRandDataDDCCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND_DDC, AggType.ROWMINS, true);
+	}
+	
+	@Test
+	public void testRowMinsSparseRoundRandDataDDCCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND_DDC, AggType.ROWMINS, true);
 	}
 	
 	@Test
@@ -755,13 +855,13 @@ public class ParUnaryAggregateTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testRowMinsDenseRoundRandDataNoCompression() {
-		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND, AggType.ROWMINS, false);
+	public void testRowMinsDenseRoundRandDataOLENoCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND_OLE, AggType.ROWMINS, false);
 	}
 	
 	@Test
-	public void testRowMinsSparseRoundRandDataNoCompression() {
-		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND, AggType.ROWMINS, false);
+	public void testRowMinsSparseRoundRandDataOLENoCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND_OLE, AggType.ROWMINS, false);
 	}
 	
 	@Test
@@ -790,13 +890,23 @@ public class ParUnaryAggregateTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testColMinsDenseRoundRandDataCompression() {
-		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND, AggType.COLMINS, true);
+	public void testColMinsDenseRoundRandDataOLECompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND_OLE, AggType.COLMINS, true);
 	}
 	
 	@Test
-	public void testColMinsSparseRoundRandDataCompression() {
-		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND, AggType.COLMINS, true);
+	public void testColMinsSparseRoundRandDataOLECompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND_OLE, AggType.COLMINS, true);
+	}
+	
+	@Test
+	public void testColMinsDenseRoundRandDataDDCCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND_DDC, AggType.COLMINS, true);
+	}
+	
+	@Test
+	public void testColMinsSparseRoundRandDataDDCCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND_DDC, AggType.COLMINS, true);
 	}
 	
 	@Test
@@ -825,13 +935,13 @@ public class ParUnaryAggregateTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testColMinsDenseRoundRandDataNoCompression() {
-		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND, AggType.COLMINS, false);
+	public void testColMinsDenseRoundRandDataOLENoCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND_OLE, AggType.COLMINS, false);
 	}
 	
 	@Test
-	public void testColMinsSparseRoundRandDataNoCompression() {
-		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND, AggType.COLMINS, false);
+	public void testColMinsSparseRoundRandDataOLENoCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND_OLE, AggType.COLMINS, false);
 	}
 	
 	@Test
@@ -860,13 +970,23 @@ public class ParUnaryAggregateTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testMinDenseRoundRandDataCompression() {
-		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND, AggType.MIN, true);
+	public void testMinDenseRoundRandDataOLECompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND_OLE, AggType.MIN, true);
 	}
 	
 	@Test
-	public void testMinSparseRoundRandDataCompression() {
-		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND, AggType.MIN, true);
+	public void testMinSparseRoundRandDataOLECompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND_OLE, AggType.MIN, true);
+	}
+	
+	@Test
+	public void testMinDenseRoundRandDataDDCCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND_DDC, AggType.MIN, true);
+	}
+	
+	@Test
+	public void testMinSparseRoundRandDataDDCCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND_DDC, AggType.MIN, true);
 	}
 	
 	@Test
@@ -895,13 +1015,13 @@ public class ParUnaryAggregateTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testMinDenseRoundRandDataNoCompression() {
-		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND, AggType.MIN, false);
+	public void testMinDenseRoundRandDataOLENoCompression() {
+		runUnaryAggregateTest(SparsityType.DENSE, ValueType.RAND_ROUND_OLE, AggType.MIN, false);
 	}
 	
 	@Test
-	public void testMinSparseRoundRandDataNoCompression() {
-		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND, AggType.MIN, false);
+	public void testMinSparseRoundRandDataOLENoCompression() {
+		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.RAND_ROUND_OLE, AggType.MIN, false);
 	}
 	
 	@Test
@@ -933,8 +1053,10 @@ public class ParUnaryAggregateTest extends AutomatedTestBase
 			//generate input data
 			double min = (vtype==ValueType.CONST)? 10 : -10;
 			double[][] input = TestUtils.generateTestMatrix(rows, cols1, min, 10, sparsity, 7);
-			if( vtype==ValueType.RAND_ROUND )
+			if( vtype==ValueType.RAND_ROUND_OLE || vtype==ValueType.RAND_ROUND_DDC ) {
+				CompressedMatrixBlock.ALLOW_DDC_ENCODING = (vtype==ValueType.RAND_ROUND_DDC);
 				input = TestUtils.round(input);
+			}
 			MatrixBlock mb = DataConverter.convertToMatrixBlock(input);
 			mb = mb.appendOperations(MatrixBlock.seqOperations(0.1, rows-0.1, 1), new MatrixBlock()); //uc group
 			
@@ -978,6 +1100,9 @@ public class ParUnaryAggregateTest extends AutomatedTestBase
 		}
 		catch(Exception ex) {
 			throw new RuntimeException(ex);
+		}
+		finally {
+			CompressedMatrixBlock.ALLOW_DDC_ENCODING = true;
 		}
 	}
 }

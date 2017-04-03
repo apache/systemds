@@ -47,11 +47,7 @@ public final class MatrixIndexingCPFileInstruction extends IndexingCPInstruction
 	public MatrixIndexingCPFileInstruction(Operator op, CPOperand in, CPOperand rl, CPOperand ru, CPOperand cl, CPOperand cu, CPOperand out, String opcode, String istr) {
 		super( op, in, rl, ru, cl, cu, out, opcode, istr );
 	}
-	
-	public MatrixIndexingCPFileInstruction(Operator op, CPOperand lhsInput, CPOperand rhsInput, CPOperand rl, CPOperand ru, CPOperand cl, CPOperand cu, CPOperand out, String opcode, String istr) {
-		super( op, lhsInput, rhsInput, rl, ru, cl, cu, out, opcode, istr);
-	}
-	
+
 	public static MatrixIndexingCPFileInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{		
@@ -118,9 +114,15 @@ public final class MatrixIndexingCPFileInstruction extends IndexingCPInstruction
 					case ROW_WISE:
 						mcNew = new MatrixCharacteristics( 1, mc.getCols(), mc.getRowsPerBlock(), mc.getColsPerBlock() );
 						break;
+					case ROW_BLOCK_WISE_N:
+						mcNew = new MatrixCharacteristics( mo.getPartitionSize(), mc.getCols(), mc.getRowsPerBlock(), mc.getColsPerBlock() );
+						break;	
 					case COLUMN_WISE:
 						mcNew = new MatrixCharacteristics( mc.getRows(), 1, mc.getRowsPerBlock(), mc.getColsPerBlock() );
-						break;					
+						break;
+					case COLUMN_BLOCK_WISE_N:
+						mcNew = new MatrixCharacteristics( mc.getRows(), mo.getPartitionSize(), mc.getRowsPerBlock(), mc.getColsPerBlock() );
+						break;	
 					default:
 						throw new DMLRuntimeException("Unsupported partition format for CP_FILE rangeReIndex: "+ mo.getPartitionFormat());
 				}

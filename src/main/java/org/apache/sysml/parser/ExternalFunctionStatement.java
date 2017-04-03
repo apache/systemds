@@ -19,10 +19,7 @@
 
 package org.apache.sysml.parser;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-
-
 
 public class ExternalFunctionStatement extends FunctionStatement
 {
@@ -51,17 +48,6 @@ public class ExternalFunctionStatement extends FunctionStatement
 		super();
 	}
 	
-	
-	
-	public ExternalFunctionStatement( ArrayList<DataIdentifier> functionInputs, ArrayList<DataIdentifier> functionOutputs, HashMap<String,String> map)
-	{
-		super();
-		_inputParams = functionInputs; 
-		_outputParams = (functionOutputs == null) ? new ArrayList<DataIdentifier>() : functionOutputs;
-		setOtherParams(map);
-	}
-	
-	
 	public void setOtherParams(HashMap<String,String> params){
 		_otherParams = params;
 	}
@@ -73,7 +59,8 @@ public class ExternalFunctionStatement extends FunctionStatement
 	/**
 	 * Validates all attributes and attribute values.
 	 * 
-	 * @throws LanguageException
+	 * @param sb statement block
+	 * @throws LanguageException if LanguageException occurs
 	 */
 	public void validateParameters(StatementBlock sb) //always unconditional  
 		throws LanguageException 

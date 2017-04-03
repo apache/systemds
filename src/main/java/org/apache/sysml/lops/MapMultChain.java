@@ -28,7 +28,6 @@ import org.apache.sysml.parser.Expression.ValueType;
 
 public class MapMultChain extends Lop 
 {
-	
 	public static final String OPCODE = "mapmmchain";
 	public static final String OPCODE_CP = "mmchain";
 
@@ -45,11 +44,13 @@ public class MapMultChain extends Lop
 	/**
 	 * Constructor to setup a map mult chain without weights
 	 * 
-	 * @param input
-	 * @param op
-	 * @return 
-	 * @throws LopsException
-	 */	
+	 * @param input1 low-level operator 1
+	 * @param input2 low-level operator 2
+	 * @param dt data type
+	 * @param vt value type
+	 * @param et execution type
+	 * @throws LopsException if LopsException occurs
+	 */
 	public MapMultChain(Lop input1, Lop input2, DataType dt, ValueType vt, ExecType et) 
 		throws LopsException 
 	{
@@ -67,11 +68,15 @@ public class MapMultChain extends Lop
 	/**
 	 * Constructor to setup a map mult chain with weights
 	 * 
-	 * @param input
-	 * @param op
-	 * @return 
-	 * @throws LopsException
-	 */	
+	 * @param input1 low-level operator 1
+	 * @param input2 low-level operator 2
+	 * @param input3 low-level operator 3
+	 * @param chain chain type
+	 * @param dt data type
+	 * @param vt value type
+	 * @param et execution type
+	 * @throws LopsException if LopsException occurs
+	 */
 	public MapMultChain(Lop input1, Lop input2, Lop input3, ChainType chain, DataType dt, ValueType vt, ExecType et) 
 		throws LopsException 
 	{
@@ -88,10 +93,6 @@ public class MapMultChain extends Lop
 		setupLopProperties(et);
 	}
 
-	/**
-	 * 
-	 * @param et
-	 */
 	private void setupLopProperties( ExecType et )
 	{
 		if( et == ExecType.MR )
@@ -124,93 +125,20 @@ public class MapMultChain extends Lop
 	}
 	
 	@Override
-	public String getInstructions(int input_index1, int input_index2, int output_index)
-	{
-		//MR instruction XtXv
-		StringBuilder sb = new StringBuilder();
-		
-		sb.append(getExecType());
-		sb.append(Lop.OPERAND_DELIMITOR);
-		
-		sb.append(OPCODE);
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( getInputs().get(0).prepInputOperand(input_index1));
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( getInputs().get(1).prepInputOperand(input_index2));
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( this.prepOutputOperand(output_index));
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(_chainType);
-		
-		return sb.toString();
+	public String getInstructions(int input_index1, int input_index2, int output_index) {
+		return getInstructions(String.valueOf(input_index1), String.valueOf(input_index2), 
+				null, String.valueOf(output_index));
 	}
 	
 	@Override
-	public String getInstructions(int input_index1, int input_index2, int input_index3, int output_index)
-	{
-		//MR instruction XtwXv
-		StringBuilder sb = new StringBuilder();
-		
-		sb.append(getExecType());
-		sb.append(Lop.OPERAND_DELIMITOR);
-		
-		sb.append(OPCODE);
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( getInputs().get(0).prepInputOperand(input_index1));
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( getInputs().get(1).prepInputOperand(input_index2));
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( getInputs().get(2).prepInputOperand(input_index3));
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( this.prepOutputOperand(output_index));
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(_chainType);
-		
-		return sb.toString();
+	public String getInstructions(int input_index1, int input_index2, int input_index3, int output_index) {
+		return getInstructions(String.valueOf(input_index1), String.valueOf(input_index2), 
+				String.valueOf(input_index3), String.valueOf(output_index));
 	}
 
 	@Override
-	public String getInstructions(String input1, String input2, String output)
-	{
-		//Spark instruction XtXv
-		StringBuilder sb = new StringBuilder();
-		
-		sb.append(getExecType());
-		sb.append(Lop.OPERAND_DELIMITOR);
-		
-		if( getExecType()==ExecType.CP )
-			sb.append(OPCODE_CP);
-		else
-			sb.append(OPCODE);
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( getInputs().get(0).prepInputOperand(input1));
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( getInputs().get(1).prepInputOperand(input2));
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( this.prepOutputOperand(output));
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(_chainType);
-		
-		//append degree of parallelism for matrix multiplications
-		if( getExecType()==ExecType.CP ) {
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( _numThreads );
-		}
-		
-		return sb.toString();
+	public String getInstructions(String input1, String input2, String output) {
+		return getInstructions(input1, input2, null, output);
 	}
 	
 	@Override
@@ -233,11 +161,13 @@ public class MapMultChain extends Lop
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append( getInputs().get(1).prepInputOperand(input2));
 		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( getInputs().get(2).prepInputOperand(input3));
+		if( input3 != null ) {
+			sb.append(Lop.OPERAND_DELIMITOR);
+			sb.append( getInputs().get(2).prepInputOperand(input3));
+		}
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( this.prepOutputOperand(output));
+		sb.append(prepOutputOperand(output));
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append(_chainType);
@@ -252,20 +182,13 @@ public class MapMultChain extends Lop
 	}
 	
 	@Override
-	public boolean usesDistributedCache() 
-	{
+	public boolean usesDistributedCache() {
 		return true;
 	}
 	
 	@Override
-	public int[] distributedCacheInputIndex() 
-	{
-		if( _chainType == ChainType.XtXv )
-			return new int[]{2};
-		else if( _chainType == ChainType.XtwXv || _chainType == ChainType.XtXvy )
-			return new int[]{2,3};
-		
-		//error
-		return new int[]{-1};
+	public int[] distributedCacheInputIndex() {
+		return (_chainType == ChainType.XtXv) ?
+			new int[]{2} : new int[]{2,3};
 	}
 }

@@ -26,13 +26,8 @@ import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
-/**
- * 
- * 
- */
 public class CTable extends ValueFunction 
 {
-
 	private static final long serialVersionUID = -5374880447194177236L;
 
 	private static CTable singleObj = null;
@@ -46,20 +41,7 @@ public class CTable extends ValueFunction
 			singleObj = new CTable();
 		return singleObj;
 	}
-	
-	public Object clone() throws CloneNotSupportedException {
-		// cloning is not supported for singleton classes
-		throw new CloneNotSupportedException();
-	}
-	
-	/**
-	 * 
-	 * @param v1
-	 * @param v2
-	 * @param w
-	 * @param ctableResult
-	 * @throws DMLRuntimeException
-	 */
+
 	public void execute(double v1, double v2, double w, boolean ignoreZeros, CTableMap resultMap) 
 		throws DMLRuntimeException 
 	{	
@@ -87,14 +69,6 @@ public class CTable extends ValueFunction
 		resultMap.aggregate(row, col, w);	
 	}	
 
-	/**
-	 * 
-	 * @param v1
-	 * @param v2
-	 * @param w
-	 * @param ctableResult
-	 * @throws DMLRuntimeException
-	 */
 	public void execute(double v1, double v2, double w, boolean ignoreZeros, MatrixBlock ctableResult) 
 		throws DMLRuntimeException 
 	{	
@@ -127,15 +101,7 @@ public class CTable extends ValueFunction
 		ctableResult.quickSetValue((int)row-1, (int)col-1,
 				ctableResult.quickGetValue((int)row-1, (int)col-1) + w);
 	}
-	
-	/**
-	 * 
-	 * @param row
-	 * @param v2
-	 * @param w
-	 * @param maxCol
-	 * @return
-	 */
+
 	public int execute(int row, double v2, double w, int maxCol, MatrixBlock ctableResult) 
 		throws DMLRuntimeException 
 	{	
@@ -159,14 +125,6 @@ public class CTable extends ValueFunction
 		return Math.max(maxCol, (int)col);
 	}
 
-	/**
-	 * 
-	 * @param row
-	 * @param v2
-	 * @param w
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	public Pair<MatrixIndexes,Double> execute( long row, double v2, double w ) 
 		throws DMLRuntimeException
 	{

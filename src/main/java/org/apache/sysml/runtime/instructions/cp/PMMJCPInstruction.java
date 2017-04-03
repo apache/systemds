@@ -25,10 +25,6 @@ import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-/**
- * 
- * 
- */
 public class PMMJCPInstruction extends ComputationCPInstruction
 {	
 	
@@ -39,13 +35,7 @@ public class PMMJCPInstruction extends ComputationCPInstruction
 		super(op, in1, in2, in3, out, opcode, istr);
 		_numThreads = k;
 	}
-	
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	public static PMMJCPInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{

@@ -35,41 +35,24 @@ public class BinaryScalar extends Lop
 {	
 	
 	public enum OperationTypes {
-		ADD, SUBTRACT, SUBTRACTRIGHT, MULTIPLY, DIVIDE, MODULUS, INTDIV,
+		ADD, SUBTRACT, MULTIPLY, DIVIDE, MODULUS, INTDIV,
 		LESS_THAN, LESS_THAN_OR_EQUALS, GREATER_THAN, GREATER_THAN_OR_EQUALS, EQUALS, NOT_EQUALS,
 		AND, OR, 
 		LOG,POW,MAX,MIN,PRINT,
 		IQSIZE,
-		Over,
 	}
 	
 	OperationTypes operation;
-
-	/**
-	 * This overloaded constructor is used for setting exec type in case of spark backend
-	 */
-	public BinaryScalar(Lop input1, Lop input2, OperationTypes op, DataType dt, ValueType vt, ExecType et) 
-	{
-		super(Lop.Type.BinaryCP, dt, vt);		
-		operation = op;		
-		this.addInput(input1);
-		this.addInput(input2);
-		input1.addOutput(this);
-		input2.addOutput(this);
-
-		boolean breaksAlignment = false; // this field does not carry any meaning for this lop
-		boolean aligner = false;
-		boolean definesMRJob = false;
-		lps.addCompatibility(JobType.INVALID);
-		this.lps.setProperties(inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
-	}
 	
 	/**
 	 * Constructor to perform a scalar operation
-	 * @param input
-	 * @param op
+	 * 
+	 * @param input1 low-level operator 1
+	 * @param input2 low-level operator 2
+	 * @param op operation type
+	 * @param dt data type
+	 * @param vt value type
 	 */
-
 	public BinaryScalar(Lop input1, Lop input2, OperationTypes op, DataType dt, ValueType vt) 
 	{
 		super(Lop.Type.BinaryCP, dt, vt);		
@@ -131,11 +114,6 @@ public class BinaryScalar extends Lop
 		}
 	}
 	
-	/**
-	 * 
-	 * @param op
-	 * @return
-	 */
 	public static String getOpcode( OperationTypes op )
 	{
 		switch ( op ) 

@@ -53,14 +53,7 @@ public class InputInfo implements Serializable
 		inputKeyClass=keyCls;
 		inputValueClass=valueCls;
 	}
-	public InputInfo(Class<? extends InputFormat> formatCls, 
-			Class<? extends Writable> keyCls, Class<? extends Writable> valueCls, MetaData md)
-	{
-		inputFormatClass=formatCls;
-		inputKeyClass=keyCls;
-		inputValueClass=valueCls;
-		metadata=md;
-	}
+
 	public void setMetaData(MetaData md)
 	{
 		metadata=md;
@@ -134,12 +127,7 @@ public class InputInfo implements Serializable
 			return CSVInputInfo;
 		return null;
 	}
-	
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 */
+
 	public static InputInfo stringExternalToInputInfo(String str) {
 		if( DataExpression.FORMAT_TYPE_VALUE_TEXT.equals(str) )
 			return InputInfo.TextCellInputInfo;

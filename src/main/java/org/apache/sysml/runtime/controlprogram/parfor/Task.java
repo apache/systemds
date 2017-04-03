@@ -86,39 +86,13 @@ public class Task implements Serializable
 	{
 		return _iterations.size();
 	}
-	
-	/**
-	 * 
-	 * @param task
-	 */
-	public void mergeTask( Task task )
-	{
-		//check for set iteration type
-		if( _type==TaskType.RANGE )
-			throw new RuntimeException("Task Merging not supported for tasks of type ITERATION_RANGE.");
-		
-		//check for same iteration name
-		String var1 = _iterations.getFirst().getName();
-		String var2 = task._iterations.getFirst().getName();
-		if( !var1.equals(var2) )
-			throw new RuntimeException("Task Merging not supported for tasks with different variable names");
-	
-		//merge tasks
-		for( IntObject o : task._iterations )
-			_iterations.addLast( o );
-	}
-	
 
 	@Override
 	public String toString() 
 	{
 		return toFormatedString();
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public String toFormatedString()
 	{
 		StringBuilder sb = new StringBuilder();
@@ -141,11 +115,7 @@ public class Task implements Serializable
 		sb.append("})");
 		return sb.toString();
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public String toCompactString()
 	{
 		StringBuilder sb = new StringBuilder( );
@@ -172,11 +142,7 @@ public class Task implements Serializable
 		
 		return sb.toString();
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
+
 	public String toCompactString( int maxDigits )
 	{
 		StringBuilder sb = new StringBuilder( );
@@ -207,12 +173,7 @@ public class Task implements Serializable
 		
 		return sb.toString();
 	}
-	
-	/**
-	 * 
-	 * @param stask
-	 * @return
-	 */
+
 	public static Task parseCompactString( String stask )
 	{
 		StringTokenizer st = new StringTokenizer( stask.trim(), "." );		

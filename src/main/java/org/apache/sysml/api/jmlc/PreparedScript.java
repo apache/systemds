@@ -91,7 +91,7 @@ public class PreparedScript
 	 * 
 	 * @param varname input variable name
 	 * @param scalar boolean value
-	 * @throws DMLException
+	 * @throws DMLException if DMLException occurs
 	 */
 	public void setScalar(String varname, boolean scalar) throws DMLException {
 		setScalar(varname, scalar, false);
@@ -103,7 +103,7 @@ public class PreparedScript
 	 * @param varname input variable name
 	 * @param scalar boolean value
 	 * @param reuse if {@code true}, preserve value over multiple {@code executeScript} calls
-	 * @throws DMLException
+	 * @throws DMLException if DMLException occurs
 	 */
 	public void setScalar(String varname, boolean scalar, boolean reuse) throws DMLException {
 		setScalar(varname, new BooleanObject(varname, scalar), reuse);
@@ -114,7 +114,7 @@ public class PreparedScript
 	 * 
 	 * @param varname input variable name
 	 * @param scalar long value
-	 * @throws DMLException
+	 * @throws DMLException if DMLException occurs
 	 */
 	public void setScalar(String varname, long scalar) throws DMLException {
 		setScalar(varname, scalar, false);
@@ -126,7 +126,7 @@ public class PreparedScript
 	 * @param varname input variable name
 	 * @param scalar long value
 	 * @param reuse if {@code true}, preserve value over multiple {@code executeScript} calls
-	 * @throws DMLException
+	 * @throws DMLException if DMLException occurs
 	 */
 	public void setScalar(String varname, long scalar, boolean reuse) throws DMLException {
 		setScalar(varname, new IntObject(varname, scalar), reuse);
@@ -136,7 +136,7 @@ public class PreparedScript
 	 * 
 	 * @param varname input variable name
 	 * @param scalar double value
-	 * @throws DMLException
+	 * @throws DMLException if DMLException occurs
 	 */
 	public void setScalar(String varname, double scalar) throws DMLException {
 		setScalar(varname, scalar, false);
@@ -148,7 +148,7 @@ public class PreparedScript
 	 * @param varname input variable name
 	 * @param scalar double value
 	 * @param reuse if {@code true}, preserve value over multiple {@code executeScript} calls
-	 * @throws DMLException
+	 * @throws DMLException if DMLException occurs
 	 */
 	public void setScalar(String varname, double scalar, boolean reuse) throws DMLException {
 		setScalar(varname, new DoubleObject(varname, scalar), reuse);
@@ -159,7 +159,7 @@ public class PreparedScript
 	 * 
 	 * @param varname input variable name
 	 * @param scalar string value
-	 * @throws DMLException
+	 * @throws DMLException if DMLException occurs
 	 */
 	public void setScalar(String varname, String scalar) throws DMLException {
 		setScalar(varname, scalar, false);
@@ -171,7 +171,7 @@ public class PreparedScript
 	 * @param varname input variable name
 	 * @param scalar string value
 	 * @param reuse if {@code true}, preserve value over multiple {@code executeScript} calls
-	 * @throws DMLException
+	 * @throws DMLException if DMLException occurs
 	 */
 	public void setScalar(String varname, String scalar, boolean reuse) throws DMLException {
 		setScalar(varname, new StringObject(varname, scalar), reuse);
@@ -185,7 +185,7 @@ public class PreparedScript
 	 * @param varname input variable name
 	 * @param scalar scalar object
 	 * @param reuse if {@code true}, preserve value over multiple {@code executeScript} calls
-	 * @throws DMLException
+	 * @throws DMLException if DMLException occurs
 	 */
 	public void setScalar(String varname, ScalarObject scalar, boolean reuse) 
 		throws DMLException
@@ -201,7 +201,7 @@ public class PreparedScript
 	 * 
 	 * @param varname input variable name
 	 * @param matrix two-dimensional double array matrix representation
-	 * @throws DMLException
+	 * @throws DMLException if DMLException occurs
 	 */
 	public void setMatrix(String varname, double[][] matrix) throws DMLException {
 		setMatrix(varname, matrix, false);
@@ -213,7 +213,7 @@ public class PreparedScript
 	 * @param varname input variable name
 	 * @param matrix two-dimensional double array matrix representation
 	 * @param reuse if {@code true}, preserve value over multiple {@code executeScript} calls
-	 * @throws DMLException
+	 * @throws DMLException if DMLException occurs
 	 */
 	public void setMatrix(String varname, double[][] matrix, boolean reuse) throws DMLException {
 		setMatrix(varname, DataConverter.convertToMatrixBlock(matrix), reuse);
@@ -227,7 +227,7 @@ public class PreparedScript
 	 * @param varname input variable name
 	 * @param matrix matrix represented as a MatrixBlock
 	 * @param reuse if {@code true}, preserve value over multiple {@code executeScript} calls
-	 * @throws DMLException
+	 * @throws DMLException if DMLException occurs
 	 */
 	public void setMatrix(String varname, MatrixBlock matrix, boolean reuse)
 		throws DMLException
@@ -257,7 +257,7 @@ public class PreparedScript
 	 * 
 	 * @param varname input variable name
 	 * @param frame two-dimensional string array frame representation
-	 * @throws DMLException
+	 * @throws DMLException if DMLException occurs
 	 */
 	public void setFrame(String varname, String[][] frame) throws DMLException {
 		setFrame(varname, frame, false);
@@ -269,7 +269,7 @@ public class PreparedScript
 	 * @param varname input variable name
 	 * @param frame two-dimensional string array frame representation
 	 * @param schema list representing the types of the frame columns
-	 * @throws DMLException
+	 * @throws DMLException if DMLException occurs
 	 */
 	public void setFrame(String varname, String[][] frame, List<ValueType> schema) throws DMLException {
 		setFrame(varname, frame, schema, false);
@@ -282,7 +282,7 @@ public class PreparedScript
 	 * @param frame two-dimensional string array frame representation
 	 * @param schema list representing the types of the frame columns
 	 * @param colnames frame column names
-	 * @throws DMLException
+	 * @throws DMLException if DMLException occurs
 	 */
 	public void setFrame(String varname, String[][] frame, List<ValueType> schema, List<String> colnames) throws DMLException {
 		setFrame(varname, frame, schema, colnames, false);
@@ -294,7 +294,7 @@ public class PreparedScript
 	 * @param varname input variable name
 	 * @param frame two-dimensional string array frame representation
 	 * @param reuse if {@code true}, preserve value over multiple {@code executeScript} calls
-	 * @throws DMLException
+	 * @throws DMLException if DMLException occurs
 	 */
 	public void setFrame(String varname, String[][] frame, boolean reuse) throws DMLException {
 		setFrame(varname, DataConverter.convertToFrameBlock(frame), reuse);
@@ -307,10 +307,10 @@ public class PreparedScript
 	 * @param frame two-dimensional string array frame representation
 	 * @param schema list representing the types of the frame columns
 	 * @param reuse if {@code true}, preserve value over multiple {@code executeScript} calls
-	 * @throws DMLException
+	 * @throws DMLException if DMLException occurs
 	 */
 	public void setFrame(String varname, String[][] frame, List<ValueType> schema, boolean reuse) throws DMLException {
-		setFrame(varname, DataConverter.convertToFrameBlock(frame, schema), reuse);
+		setFrame(varname, DataConverter.convertToFrameBlock(frame, schema.toArray(new ValueType[0])), reuse);
 	}
 	
 	/**
@@ -321,10 +321,11 @@ public class PreparedScript
 	 * @param schema list representing the types of the frame columns
 	 * @param colnames frame column names
 	 * @param reuse if {@code true}, preserve value over multiple {@code executeScript} calls
-	 * @throws DMLException
+	 * @throws DMLException if DMLException occurs
 	 */
 	public void setFrame(String varname, String[][] frame, List<ValueType> schema, List<String> colnames, boolean reuse) throws DMLException {
-		setFrame(varname, DataConverter.convertToFrameBlock(frame, schema, colnames), reuse);
+		setFrame(varname, DataConverter.convertToFrameBlock( frame, 
+				schema.toArray(new ValueType[0]), colnames.toArray(new String[0])), reuse);
 	}
 	
 	/**
@@ -335,7 +336,7 @@ public class PreparedScript
 	 * @param varname input variable name
 	 * @param frame frame represented as a FrameBlock
 	 * @param reuse if {@code true}, preserve value over multiple {@code executeScript} calls
-	 * @throws DMLException
+	 * @throws DMLException if DMLException occurs
 	 */
 	public void setFrame(String varname, FrameBlock frame, boolean reuse)
 		throws DMLException
@@ -371,7 +372,7 @@ public class PreparedScript
 	 * result variables according to bound and registered outputs.
 	 * 
 	 * @return ResultVariables object encapsulating output results
-	 * @throws DMLException 
+	 * @throws DMLException if DMLException occurs
 	 */
 	public ResultVariables executeScript() 
 		throws DMLException
@@ -406,7 +407,7 @@ public class PreparedScript
 	 * Explain the DML/PyDML program and view result as a string.
 	 * 
 	 * @return string results of explain
-	 * @throws DMLException
+	 * @throws DMLException if DMLException occurs
 	 */
 	public String explain() throws DMLException {
 		return Explain.explain(_prog);

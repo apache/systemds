@@ -19,18 +19,12 @@
 
 package org.apache.sysml.hops.cost;
 
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-
-import org.apache.sysml.hops.Hop;
-import org.apache.sysml.hops.HopsException;
-import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.Program;
@@ -43,8 +37,7 @@ public class CostEstimationWrapper
 	
 	public enum CostType { 
 		NUM_MRJOBS, //based on number of MR jobs, [number MR jobs]
-		STATIC, // based on FLOPS, read/write, etc, [time in sec]      
-		DYNAMIC // based on dynamic offline performance profile, [time in sec]
+		STATIC // based on FLOPS, read/write, etc, [time in sec]
 	};
 	
 	private static final boolean LDEBUG = false; //internal local debug level
@@ -74,12 +67,6 @@ public class CostEstimationWrapper
 		}
 	}
 	
-	/**
-	 * 
-	 * @param rtprog
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	public static double getTimeEstimate(Program rtprog, ExecutionContext ec) 
 		throws DMLRuntimeException
 	{
@@ -93,13 +80,6 @@ public class CostEstimationWrapper
 		return costs;
 	}
 	
-	/**
-	 * 
-	 * @param pb
-	 * @param ec
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
 	public static double getTimeEstimate(ProgramBlock pb, ExecutionContext ec, boolean recursive) 
 		throws DMLRuntimeException
 	{
@@ -112,37 +92,7 @@ public class CostEstimationWrapper
 		LOG.debug("Finished estimation in "+time.stop()+"ms.");
 		return costs;
 	}
-	
-	/**
-	 * 
-	 * @param hops
-	 * @param ec
-	 * @return
-	 * @throws DMLRuntimeException
-	 * @throws HopsException
-	 * @throws LopsException
-	 * @throws IOException
-	 */
-	public static double getTimeEstimate( ArrayList<Hop> hops, ExecutionContext ec ) 
-		throws DMLRuntimeException, HopsException, LopsException, IOException
-	{
-		Timing time = new Timing(true);
-		
-		HashMap<String,VarStats> stats = new HashMap<String, VarStats>();
-		LocalVariableMap vars = (ec!=null)? ec.getVariables() : new LocalVariableMap(); 
-		
-		double costs = _costEstim.getTimeEstimate(hops, vars, stats);
-		LOG.debug("Finished estimation in "+time.stop()+"ms.");
-		
-		return costs;
-	}
-	
-	/**
-	 * 
-	 * @param type
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
+
 	private static CostEstimator createCostEstimator( CostType type ) 
 		throws DMLRuntimeException
 	{

@@ -66,10 +66,6 @@ public class BinaryBlockSerialization implements Serialization
 		return new MatrixBlockSerializer();
 	}
 
-	/**
-	 * 
-	 * 
-	 */
 	public static class MatrixBlockDeserializer implements Deserializer<MatrixBlock>
 	{
 		private FastBufferedDataInputStream _in = null; 
@@ -103,15 +99,10 @@ public class BinaryBlockSerialization implements Serialization
 		public void close() 
 			throws IOException 
 		{
-			if( _in != null )
-				_in.close();
+			IOUtilFunctions.closeSilently(_in);
 		}
 	}
-	
-	/**
-	 * 
-	 * 
-	 */
+
 	public static class MatrixBlockSerializer implements Serializer<MatrixBlock>
 	{
 		private FastBufferedDataOutputStream _out = null;
@@ -136,9 +127,8 @@ public class BinaryBlockSerialization implements Serialization
 		@Override
 		public void close() 
 			throws IOException 
-		{			
-			if( _out != null )
-				_out.close();
+		{
+			IOUtilFunctions.closeSilently(_out);
 		}
 	}
 }

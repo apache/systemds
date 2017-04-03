@@ -67,7 +67,7 @@ public class EncoderPassThrough extends Encoder
 	public MatrixBlock apply(FrameBlock in, MatrixBlock out) {
 		for( int j=0; j<_colList.length; j++ ) {
 			int col = _colList[j]-1;
-			ValueType vt = in.getSchema().get(col);
+			ValueType vt = in.getSchema()[col];
 			for( int i=0; i<in.getNumRows(); i++ ) {
 				Object val = in.get(i, col);
 				out.quickSetValue(i, col, (val==null||(vt==ValueType.STRING 

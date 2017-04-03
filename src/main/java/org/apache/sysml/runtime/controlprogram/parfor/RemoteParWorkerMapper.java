@@ -77,10 +77,7 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 		//filenames across tasks of one reused worker (preaggregation)
 		_rvarFnames = new HashMap<String, String>();
 	}
-	
-	/**
-	 * 
-	 */
+
 	@Override
 	public void map(LongWritable key, Text value, OutputCollector<Writable, Writable> out, Reporter reporter) 
 		throws IOException
@@ -113,12 +110,9 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 		//print heaver hitter per task
 		JobConf job = ConfigurationManager.getCachedJobConf();
 		if( DMLScript.STATISTICS && !InfrastructureAnalyzer.isLocalMode(job) )
-			LOG.info("\nSystemML Statistics:\nHeavy hitter instructions (name, time, count):\n" + Statistics.getHeavyHitters(10));	
+			LOG.info("\nSystemML Statistics:\nHeavy hitter instructions (name, time, count):\n" + Statistics.getHeavyHitters(DMLScript.STATISTICS_COUNT));
 	}
 
-	/**
-	 * 
-	 */
 	@Override
 	public void configure(JobConf job)
 	{
@@ -224,9 +218,6 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 		}
 	}
 
-	/**
-	 * 
-	 */
 	@Override
 	public void close() 
 		throws IOException 

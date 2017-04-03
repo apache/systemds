@@ -29,6 +29,8 @@ import java.util.Map.Entry;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.apache.sysml.api.DMLException;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.hops.codegen.cplan.CNode;
@@ -45,6 +47,7 @@ import org.apache.sysml.hops.codegen.template.TemplateBase.CloseType;
 import org.apache.sysml.hops.codegen.template.TemplateBase.TemplateType;
 import org.apache.sysml.hops.codegen.template.CPlanMemoTable;
 import org.apache.sysml.hops.codegen.template.PlanSelection;
+import org.apache.sysml.hops.codegen.template.PlanSelectionFuseCostBased;
 import org.apache.sysml.hops.codegen.template.PlanSelectionFuseAll;
 import org.apache.sysml.hops.codegen.template.PlanSelectionFuseNoRedundancy;
 import org.apache.sysml.hops.codegen.template.CPlanMemoTable.MemoTableEntry;
@@ -108,6 +111,14 @@ public class SpoofCompiler
 		
 		public static PlanCachePolicy get(boolean planCache, boolean compileLiterals) {
 			return !planCache ? NONE : compileLiterals ? CONSTANT : CSLH;
+		}
+	}
+	
+	static {
+		// for internal debugging only
+		if( LDEBUG ) {
+			Logger.getLogger("org.apache.sysml.hops.codegen")
+				  .setLevel((Level) Level.TRACE);
 		}
 	}
 	
@@ -242,8 +253,8 @@ public class SpoofCompiler
 			cplans = cleanupCPlans(cplans);
 			
 			//explain before modification
-			if( LDEBUG && !cplans.isEmpty() ) { //existing cplans
-				LOG.info("Codegen EXPLAIN (before optimize): \n"+Explain.explainHops(roots));
+			if( LOG.isTraceEnabled() && !cplans.isEmpty() ) { //existing cplans
+				LOG.trace("Codegen EXPLAIN (before optimize): \n"+Explain.explainHops(roots));
 			}
 			
 			//source code generation for all cplans
@@ -258,12 +269,12 @@ public class SpoofCompiler
 					String src = tmp.getValue().codegen(false);
 					
 					//explain debug output cplans or generated source code
-					if( LDEBUG || DMLScript.EXPLAIN.isHopsType(recompile) ) {
+					if( LOG.isTraceEnabled() || DMLScript.EXPLAIN.isHopsType(recompile) ) {
 						LOG.info("Codegen EXPLAIN (generated cplan for HopID: " +  cplan.getKey() +"):");
 						LOG.info(tmp.getValue().getClassname()
 								+Explain.explainCPlan(cplan.getValue().getValue()));
 					}
-					if( LDEBUG || DMLScript.EXPLAIN.isRuntimeType(recompile) ) {
+					if( LOG.isTraceEnabled() || DMLScript.EXPLAIN.isRuntimeType(recompile) ) {
 						LOG.info("Codegen EXPLAIN (generated code for HopID: " +  cplan.getKey() +"):");
 						LOG.info(src);
 					}
@@ -276,14 +287,14 @@ public class SpoofCompiler
 					if( PLAN_CACHE_POLICY!=PlanCachePolicy.NONE )
 						planCache.putPlan(tmp.getValue(), cla);
 				}
-				else if( LDEBUG || DMLScript.STATISTICS ) {
+				else if( DMLScript.STATISTICS ) {
 					Statistics.incrementCodegenPlanCacheHits();
 				}
 				
 				//make class available and maintain hits
 				if(cla != null)
 					clas.put(cplan.getKey(), new Pair<Hop[],Class<?>>(tmp.getKey(),cla));
-				if( LDEBUG || DMLScript.STATISTICS )
+				if( DMLScript.STATISTICS )
 					Statistics.incrementCodegenPlanCacheTotal();
 			}
 			
@@ -297,8 +308,8 @@ public class SpoofCompiler
 				ret = rewriteCSE.rewriteHopDAGs(ret, new ProgramRewriteStatus());	
 				
 				//explain after modification
-				if( LDEBUG ) {
-					LOG.info("Codegen EXPLAIN (after optimize): \n"+Explain.explainHops(roots));
+				if( LOG.isTraceEnabled() ) {
+					LOG.trace("Codegen EXPLAIN (after optimize): \n"+Explain.explainHops(roots));
 				}
 			}
 		}
@@ -333,6 +344,7 @@ public class SpoofCompiler
 			case FUSE_NO_REDUNDANCY: 
 				return new PlanSelectionFuseNoRedundancy();
 			case FUSE_COST_BASED:
+				return new PlanSelectionFuseCostBased();
 			default:	
 				throw new RuntimeException("Unsupported "
 					+ "plan selector: "+PLAN_SEL_POLICY);

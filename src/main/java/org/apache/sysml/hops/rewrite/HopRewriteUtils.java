@@ -186,6 +186,12 @@ public class HopRewriteUtils
 		return Long.MAX_VALUE;
 	}
 	
+	public static boolean isLiteralOfValue( Hop hop, double val ) {
+		return (hop instanceof LiteralOp 
+			&& (hop.getValueType()==ValueType.DOUBLE || hop.getValueType()==ValueType.INT)
+			&& getDoubleValueSafe((LiteralOp)hop)==val);
+	}
+	
 	public static ScalarObject getScalarObject( LiteralOp op )
 	{
 		ScalarObject ret = null;
@@ -749,6 +755,15 @@ public class HopRewriteUtils
 	public static boolean isTransposeOfItself(Hop hop1, Hop hop2) {
 		return isTransposeOperation(hop1) && hop1.getInput().get(0) == hop2
 			|| isTransposeOperation(hop2) && hop2.getInput().get(0) == hop1;	
+	}
+	
+	public static boolean isTsmmInput(Hop input) {
+		if( input.getParent().size()==2 )
+			for(int i=0; i<2; i++)
+				if( isMatrixMultiply(input.getParent().get(i)) && isTransposeOfItself(
+					input.getParent().get(i).getInput().get(0), input.getParent().get(i).getInput().get(1)) )
+					return true;
+		return false;
 	}
 	
 	public static boolean isBinary(Hop hop, OpOp2 type) {

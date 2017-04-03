@@ -38,7 +38,7 @@ import org.apache.sysml.hops.codegen.template.TemplateBase.TemplateType;
 
 public class CPlanMemoTable 
 {
-	private static final Log LOG = LogFactory.getLog(SpoofCompiler.class.getName());
+	private static final Log LOG = LogFactory.getLog(CPlanMemoTable.class.getName());
 	
 	protected HashMap<Long, List<MemoTableEntry>> _plans;
 	protected HashMap<Long, Hop> _hopRefs;
@@ -132,8 +132,8 @@ public class CPlanMemoTable
 	}
 
 	public void pruneSuboptimal(ArrayList<Hop> roots) {
-		if( SpoofCompiler.LDEBUG )
-			LOG.info("#1: Memo before plan selection ("+size()+" plans)\n"+this);
+		if( LOG.isTraceEnabled() )
+			LOG.trace("#1: Memo before plan selection ("+size()+" plans)\n"+this);
 		
 		//build index of referenced entries
 		HashSet<Long> ix = new HashSet<Long>();
@@ -162,16 +162,16 @@ public class CPlanMemoTable
 		for( Entry<Long, List<MemoTableEntry>> e : _plans.entrySet() )
 			for( MemoTableEntry me : e.getValue() ) {
 				for( int i=0; i<=2; i++ )
-					if( me.isPlanRef(i) && _hopRefs.get(me.intput(i)).getParent().size()==1 )
-						_plansBlacklist.add(me.intput(i));
+					if( me.isPlanRef(i) && _hopRefs.get(me.input(i)).getParent().size()==1 )
+						_plansBlacklist.add(me.input(i));
 			}
 		
 		//core plan selection
 		PlanSelection selector = SpoofCompiler.createPlanSelector();
 		selector.selectPlans(this, roots);
 		
-		if( SpoofCompiler.LDEBUG )
-			LOG.info("#2: Memo after plan selection ("+size()+" plans)\n"+this);
+		if( LOG.isTraceEnabled() )
+			LOG.trace("#2: Memo after plan selection ("+size()+" plans)\n"+this);
 	}
 	
 	public List<MemoTableEntry> get(long hopID) {
@@ -204,6 +204,15 @@ public class CPlanMemoTable
 		//single plan per type, get plan w/ best rank in preferred order
 		return Collections.min(tmp, Comparator.comparing(
 			p -> (p.type==pref) ? -1 : p.type.getRank()));
+	}
+	
+	public long[] getAllRefs(long hopID) {
+		long[] refs = new long[3];
+		for( MemoTableEntry me : get(hopID) )
+			for( int i=0; i<3; i++ )
+				if( me.isPlanRef(i) )
+					refs[i] |= me.input(i);
+		return refs;
 	}
 	
 	public int size() {
@@ -263,7 +272,7 @@ public class CPlanMemoTable
 				+  ((input2 >= 0) ? 1 : 0)
 				+  ((input3 >= 0) ? 1 : 0);
 		}
-		public long intput(int index) {
+		public long input(int index) {
 			return (index==0) ? input1 : (index==1) ? input2 : input3;
 		}
 		public boolean subsumes(MemoTableEntry that) {

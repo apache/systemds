@@ -28,10 +28,10 @@ public class CNodeUnary extends CNode
 {
 	public enum UnaryType {
 		ROW_SUMS, LOOKUP_R, LOOKUP_RC, LOOKUP0, //codegen specific
-		EXP, POW2, MULT2, SQRT, LOG,
+		EXP, POW2, MULT2, SQRT, LOG, LOG_NZ,
 		ABS, ROUND, CEIL, FLOOR, SIGN, 
 		SIN, COS, TAN, ASIN, ACOS, ATAN,
-		SELP, SPROP, SIGMOID, LOG_NZ; 
+		SELP, SPROP, SIGMOID; 
 		
 		public static boolean contains(String value) {
 			for( UnaryType ut : values()  )
@@ -156,7 +156,7 @@ public class CNodeUnary extends CNode
 			case LOOKUP_R:	return "u(ixr)";
 			case LOOKUP_RC:	return "u(ixrc)";
 			case LOOKUP0:	return "u(ix0)";
-			default:		return "u("+_type.name()+")";
+			default:		return "u("+_type.name().toLowerCase()+")";
 		}
 	}
 

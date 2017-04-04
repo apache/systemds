@@ -453,11 +453,13 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 				case CEIL:
 				case FLOOR:
 				case SIGN:
-				case SELP:   costs = 1; break; 
+				case SELP:    costs = 1; break; 
 				case SPROP:
-				case SQRT:   costs = 2; break;
-				case EXP:    costs = 18; break;
-				case LOG:    costs = 32; break;
+				case SQRT:    costs = 2; break;
+				case EXP:     costs = 18; break;
+				case SIGMOID: costs = 21; break;
+				case LOG:    
+				case LOG_NZ:  costs = 32; break;
 				case NCOL:
 				case NROW:
 				case PRINT:
@@ -466,6 +468,12 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 				case CAST_AS_INT:
 				case CAST_AS_MATRIX:
 				case CAST_AS_SCALAR: costs = 1; break;
+				case SIN:     costs = 18; break;
+				case COS:     costs = 22; break;
+				case TAN:     costs = 42; break;
+				case ASIN:    costs = 93; break;
+				case ACOS:    costs = 103; break;
+				case ATAN:    costs = 40; break;
 				case CUMSUM:
 				case CUMMIN:
 				case CUMMAX:
@@ -480,6 +488,10 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 				case MULT: 
 				case PLUS:
 				case MINUS:
+				case MIN:
+				case MAX: 
+				case AND:
+				case OR:
 				case EQUAL:
 				case NOTEQUAL:
 				case LESS:
@@ -487,11 +499,16 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 				case GREATER:
 				case GREATEREQUAL: 
 				case CBIND:
-				case RBIND: costs = 1; break;
-				case DIV:   costs = 22; break;
-				case LOG:   costs = 32; break;
-				case POW:   costs = (HopRewriteUtils.isLiteralOfValue(
+				case RBIND:   costs = 1; break;
+				case INTDIV:  costs = 6; break;
+				case MODULUS: costs = 8; break;
+				case DIV:    costs = 22; break;
+				case LOG:
+				case LOG_NZ: costs = 32; break;
+				case POW:    costs = (HopRewriteUtils.isLiteralOfValue(
 						current.getInput().get(1), 2) ? 1 : 16); break;
+				case MINUS_NZ:
+				case MINUS1_MULT: costs = 2; break;
 				default:
 					throw new RuntimeException("Cost model not "
 						+ "implemented yet for: "+((BinaryOp)current).getOp());

@@ -35,9 +35,9 @@ public class CNodeBinary extends CNode
 		VECT_LESS_SCALAR, VECT_LESSEQUAL_SCALAR, VECT_GREATER_SCALAR, VECT_GREATEREQUAL_SCALAR,
 		MULT, DIV, PLUS, MINUS, MODULUS, INTDIV, 
 		LESS, LESSEQUAL, GREATER, GREATEREQUAL, EQUAL,NOTEQUAL,
-		MIN, MAX, AND, OR, LOG, POW,
-		MINUS1_MULT;
-
+		MIN, MAX, AND, OR, LOG, LOG_NZ, POW,
+		MINUS1_MULT, MINUS_NZ;
+		
 		public static boolean contains(String value) {
 			for( BinType bt : values()  )
 				if( bt.name().equals(value) )
@@ -85,41 +85,45 @@ public class CNodeBinary extends CNode
 				
 				/*Can be replaced by function objects*/
 				case MULT:
-					return "    double %TMP% = %IN1% * %IN2%;\n" ;
+					return "    double %TMP% = %IN1% * %IN2%;\n";
 				
 				case DIV:
-					return "    double %TMP% = %IN1% / %IN2%;\n" ;
+					return "    double %TMP% = %IN1% / %IN2%;\n";
 				case PLUS:
-					return "    double %TMP% = %IN1% + %IN2%;\n" ;
+					return "    double %TMP% = %IN1% + %IN2%;\n";
 				case MINUS:
-					return "    double %TMP% = %IN1% - %IN2%;\n" ;
+					return "    double %TMP% = %IN1% - %IN2%;\n";
 				case MODULUS:
-					return "    double %TMP% = LibSpoofPrimitives.mod(%IN1%, %IN2%);\n" ;
+					return "    double %TMP% = LibSpoofPrimitives.mod(%IN1%, %IN2%);\n";
 				case INTDIV: 
-					return "    double %TMP% = LibSpoofPrimitives.intDiv(%IN1%, %IN2%);\n" ;
+					return "    double %TMP% = LibSpoofPrimitives.intDiv(%IN1%, %IN2%);\n";
 				case LESS:
-					return "    double %TMP% = (%IN1% < %IN2%) ? 1 : 0;\n" ;
+					return "    double %TMP% = (%IN1% < %IN2%) ? 1 : 0;\n";
 				case LESSEQUAL:
-					return "    double %TMP% = (%IN1% <= %IN2%) ? 1 : 0;\n" ;
+					return "    double %TMP% = (%IN1% <= %IN2%) ? 1 : 0;\n";
 				case GREATER:
-					return "    double %TMP% = (%IN1% > %IN2%) ? 1 : 0;\n" ;
+					return "    double %TMP% = (%IN1% > %IN2%) ? 1 : 0;\n";
 				case GREATEREQUAL: 
-					return "    double %TMP% = (%IN1% >= %IN2%) ? 1 : 0;\n" ;
+					return "    double %TMP% = (%IN1% >= %IN2%) ? 1 : 0;\n";
 				case EQUAL:
-					return "    double %TMP% = (%IN1% == %IN2%) ? 1 : 0;\n" ;
+					return "    double %TMP% = (%IN1% == %IN2%) ? 1 : 0;\n";
 				case NOTEQUAL: 
-					return "    double %TMP% = (%IN1% != %IN2%) ? 1 : 0;\n" ;
+					return "    double %TMP% = (%IN1% != %IN2%) ? 1 : 0;\n";
 				
 				case MIN:
-					return "    double %TMP% = (%IN1% <= %IN2%) ? %IN1% : %IN2%;\n" ;
+					return "    double %TMP% = (%IN1% <= %IN2%) ? %IN1% : %IN2%;\n";
 				case MAX:
-					return "    double %TMP% = (%IN1% >= %IN2%) ? %IN1% : %IN2%;\n" ;
+					return "    double %TMP% = (%IN1% >= %IN2%) ? %IN1% : %IN2%;\n";
 				case LOG:
-					return "    double %TMP% = FastMath.log(%IN1%)/FastMath.log(%IN2%);\n" ;
+					return "    double %TMP% = FastMath.log(%IN1%)/FastMath.log(%IN2%);\n";
+				case LOG_NZ:
+					return "    double %TMP% = (%IN1% == 0) ? 0 : FastMath.log(%IN1%)/FastMath.log(%IN2%);\n";	
 				case POW:
-					return "    double %TMP% = Math.pow(%IN1%, %IN2%);\n" ;
+					return "    double %TMP% = Math.pow(%IN1%, %IN2%);\n";
 				case MINUS1_MULT:
-					return "    double %TMP% = 1 - %IN1% * %IN2%;\n" ;
+					return "    double %TMP% = 1 - %IN1% * %IN2%;\n";
+				case MINUS_NZ:
+					return "    double %TMP% = (%IN1% != 0) ? %IN1% - %IN2% : 0;\n";
 					
 				default: 
 					throw new RuntimeException("Invalid binary type: "+this.toString());
@@ -225,6 +229,7 @@ public class CNodeBinary extends CNode
 			case DIV: return "b(/)";
 			case PLUS: return "b(+)";
 			case MINUS: return "b(-)";
+			case POW: return "b(^)";
 			case MODULUS: return "b(%%)";
 			case INTDIV: return "b(%/%)";
 			case LESS: return "b(<)";
@@ -233,8 +238,11 @@ public class CNodeBinary extends CNode
 			case GREATEREQUAL: return "b(>=)";
 			case EQUAL: return "b(==)";
 			case NOTEQUAL: return "b(!=)";
+			case OR: return "b(|)";
+			case AND: return "b(&)";
 			case MINUS1_MULT: return "b(1-*)";
-			default: return "b("+_type.name()+")";
+			case MINUS_NZ: return "b(-nz)";
+			default: return "b("+_type.name().toLowerCase()+")";
 		}
 	}
 	
@@ -277,7 +285,8 @@ public class CNodeBinary extends CNode
 			case DIV: 
 			case PLUS: 
 			case MINUS: 
-			case MINUS1_MULT:	
+			case MINUS1_MULT:
+			case MINUS_NZ:
 			case MODULUS: 
 			case INTDIV: 	
 			//SCALAR Comparison
@@ -293,6 +302,7 @@ public class CNodeBinary extends CNode
 			case AND: 
 			case OR: 			
 			case LOG: 
+			case LOG_NZ:	
 			case POW: 
 				_rows = 0;
 				_cols = 0;

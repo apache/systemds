@@ -35,7 +35,7 @@ source("nn/optim/sgd_nesterov.dml") as sgd_nesterov
 
 train = function(matrix[double] X, matrix[double] y,
                  matrix[double] X_val, matrix[double] y_val,
-                 int C, int Hin, int Win)
+                 int C, int Hin, int Win, int epochs)
     return (matrix[double] W1, matrix[double] b1,
             matrix[double] W2, matrix[double] b2,
             matrix[double] W3, matrix[double] b3,
@@ -55,6 +55,7 @@ train = function(matrix[double] X, matrix[double] y,
    *  - C: Number of input channels (dimensionality of input depth).
    *  - Hin: Input height.
    *  - Win: Input width.
+   *  - epochs: Total number of full training loops over the full data set.
    *
    * Outputs:
    *  - W1: 1st layer weights (parameters) matrix, of shape (F1, C*Hf*Wf).
@@ -102,7 +103,6 @@ train = function(matrix[double] X, matrix[double] y,
   # Optimize
   print("Starting optimization")
   batch_size = 64
-  epochs = 10
   iters = ceil(N / batch_size)
   for (e in 1:epochs) {
     for(i in 1:iters) {

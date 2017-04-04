@@ -19,6 +19,22 @@
 
 package org.apache.sysml.api;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URI;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Scanner;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -77,22 +93,6 @@ import org.apache.sysml.utils.Statistics;
 import org.apache.sysml.yarn.DMLAppMasterUtils;
 import org.apache.sysml.yarn.DMLYarnClientProxy;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.URI;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Scanner;
-
 
 public class DMLScript 
 {	
@@ -100,7 +100,7 @@ public class DMLScript
 		HADOOP, 	    // execute all matrix operations in MR
 		SINGLE_NODE,    // execute all matrix operations in CP
 		HYBRID,         // execute matrix operations in CP or MR
-		HYBRID_SPARK,   // execute matrix operations in CP or Spark   
+		HYBRID_SPARK,   // execute matrix operations in CP or Spark
 		SPARK			// execute matrix operations in Spark
 	}
 	

@@ -19,6 +19,8 @@
 
 package org.apache.sysml.runtime.controlprogram.parfor;
 
+import java.util.Collection;
+
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.conf.ConfigurationManager;
@@ -29,8 +31,6 @@ import org.apache.sysml.runtime.controlprogram.parfor.stat.Stat;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.StatisticMonitor;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
-
-import java.util.Collection;
 
 /**
  * Instances of this class can be used to execute tasks in parallel. Within each ParWorker 

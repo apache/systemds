@@ -642,9 +642,6 @@ public class GPUContext {
 	public String toString() {
 		return "GPUContext{" +
 						"deviceNum=" + deviceNum +
-						", cudnnHandle=" + cudnnHandle +
-						", cublasHandle=" + cublasHandle +
-						", cusparseHandle=" + cusparseHandle +
 						'}';
 	}
 }

@@ -136,12 +136,22 @@ import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice;
  */
 public class LibMatrixCUDA {
 
-	// Assume Compute Capability 3.0
+    private static final Log LOG = LogFactory.getLog(LibMatrixCUDA.class.getName());
+
+    // Assume Compute Capability 3.0
 	// MAX BLOCKS is 2^31 - 1 For compute capability > 3.0
 	// MAX_THREADS is 1024 For compute capability > 3.0
 	private static int _MAX_THREADS = -1;
 	private static int _MAX_BLOCKS  = -1;
 	private static int _WARP_SIZE 	= -1;
+
+    //********************************************************************/
+    //***************************** UTILS ********************************/
+    //********************************************************************/
+
+    static GPUContext getGPUContext() throws DMLRuntimeException {
+        return GPUContext.getGPUContext();
+    }
 
 	/**
 	 * Utility function to get maximum number of threads supported by the active CUDA device.
@@ -154,7 +164,7 @@ public class LibMatrixCUDA {
 	 */
 	static int getMaxThreads() throws DMLRuntimeException{
 		if (_MAX_THREADS == -1){
-			_MAX_THREADS = GPUContext.getGPUContext().getMaxThreadsPerBlock();
+			_MAX_THREADS = getGPUContext().getMaxThreadsPerBlock();
 		}
 		return _MAX_THREADS;
 	}
@@ -170,7 +180,7 @@ public class LibMatrixCUDA {
 	 */
 	static int getMaxBlocks() throws DMLRuntimeException{
 		if (_MAX_BLOCKS == -1){
-			_MAX_BLOCKS = GPUContext.getGPUContext().getMaxBlocks();
+			_MAX_BLOCKS = getGPUContext().getMaxBlocks();
 		}
 		return _MAX_BLOCKS;
 	}
@@ -186,7 +196,7 @@ public class LibMatrixCUDA {
 	 */
 	static int getWarpSize() throws DMLRuntimeException {
 		if (_WARP_SIZE == -1) {
-			_WARP_SIZE = GPUContext.getGPUContext().getWarpSize();
+			_WARP_SIZE = getGPUContext().getWarpSize();
 		}
 		return _WARP_SIZE;
 	}
@@ -199,44 +209,47 @@ public class LibMatrixCUDA {
 
 
 	private static cusparseHandle getCusparseHandle() throws DMLRuntimeException{
-		return GPUContext.getGPUContext().getCusparseHandle();
+		return getGPUContext().getCusparseHandle();
 	}
 
 	private static cublasHandle getCublasHandle() throws DMLRuntimeException {
-		return GPUContext.getGPUContext().getCublasHandle();
+		return getGPUContext().getCublasHandle();
 	}
 
 	private static cudnnHandle getCudnnHandle() throws DMLRuntimeException {
-		return GPUContext.getGPUContext().getCudnnHandle();
+		return getGPUContext().getCudnnHandle();
 	}
-	
+
 	private static JCudaKernels getCudaKernels() throws DMLRuntimeException {
-		return GPUContext.getGPUContext().getKernels();
+		return getGPUContext().getKernels();
 	}
 
 
 	private static Pointer allocate(String instName, long size) throws DMLRuntimeException {
-		return GPUContext.getGPUContext().allocate(instName, size);
+		return getGPUContext().allocate(instName, size);
 	}
 
 	private static Pointer allocate(long size) throws DMLRuntimeException {
-		return GPUContext.getGPUContext().allocate(size);
+		return getGPUContext().allocate(size);
 	}
 
 	private static void cudaFreeHelper(Pointer toFree) throws DMLRuntimeException {
-		GPUContext.getGPUContext().cudaFreeHelper(toFree);
+		getGPUContext().cudaFreeHelper(toFree);
 	}
 
 	private static void cudaFreeHelper(String instName, Pointer toFree) throws DMLRuntimeException {
-		GPUContext.getGPUContext().cudaFreeHelper(instName, toFree);
+		getGPUContext().cudaFreeHelper(instName, toFree);
 	}
+
+    //********************************************************************/
+    //************************ End of UTILS ******************************/
+    //********************************************************************/
 
 	//********************************************************************/
 	//***************** DEEP LEARNING Operators **************************/
 	//********************************************************************/
 
 
-	private static final Log LOG = LogFactory.getLog(LibMatrixCUDA.class.getName());
 
 	private static int CONVOLUTION_PREFERENCE = cudnnConvolutionFwdPreference.CUDNN_CONVOLUTION_FWD_NO_WORKSPACE;
 	
@@ -362,14 +375,15 @@ public class LibMatrixCUDA {
 
 		cudaFreeHelper(tmp);
 		*/
+		LOG.trace("GPU : conv2dBiasAdd");
 		conv2d(instName, image, filter, outputBlock, N, C, H, W, K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
+		cudaDeviceSynchronize();
 		biasAdd(instName, outputBlock, bias, outputBlock);
 	}
 	
 	public static void conv2d(String instName, MatrixObject image, MatrixObject filter, MatrixObject outputBlock, int N, int C, int H, int W,
 														int K, int R, int S, int pad_h, int pad_w, int stride_h, int stride_w, int P, int Q)
 					throws DMLRuntimeException {
-
 		Pointer imagePointer = getDensePointer(image, true, instName);
 		Pointer filterPointer = getDensePointer(filter, true, instName);
 		Pointer dstPointer = getDensePointer(outputBlock, true, instName);
@@ -380,7 +394,8 @@ public class LibMatrixCUDA {
 	public static void conv2d(String instName, Pointer image, Pointer filter, Pointer output, int N,
 														 int C, int H, int W, int K, int R, int S, int pad_h, int pad_w, int stride_h, int stride_w, int P, int Q)
 					throws DMLRuntimeException {
-		cudnnFilterDescriptor filterDesc = null;
+        LOG.trace("GPU : conv2d");
+        cudnnFilterDescriptor filterDesc = null;
 		cudnnConvolutionDescriptor convDesc = null;
 		Pointer workSpace = null;
 		long sizeInBytes = 0;
@@ -437,7 +452,7 @@ public class LibMatrixCUDA {
 				throw new DMLRuntimeException("Could not executed cudnnConvolutionForward: " + cudnnStatus.stringFor(status));
 			}
 		} catch (CudaException e) {
-			throw new DMLRuntimeException("Error in conv2d in GPUContext " + GPUContext.getGPUContext().toString() + " from Thread " + Thread.currentThread().toString(), e);
+			throw new DMLRuntimeException("Error in conv2d in GPUContext " + getGPUContext().toString() + " from Thread " + Thread.currentThread().toString(), e);
 		} finally {
 			long t3 = 0;
 			if (GPUStatistics.DISPLAY_STATISTICS) t3 = System.nanoTime();
@@ -459,7 +474,7 @@ public class LibMatrixCUDA {
 		return convDesc;
 	}
 
-	public static  Pointer pointerTo(double value) {
+	private static Pointer pointerTo(double value) {
 		return Pointer.to(new double[] { value });
 	}
 
@@ -496,7 +511,8 @@ public class LibMatrixCUDA {
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void reluBackward(String instName, MatrixObject input, MatrixObject dout, MatrixObject outputBlock) throws DMLRuntimeException {
-		long rows = input.getNumRows();
+        LOG.trace("GPU : reluBackward");
+        long rows = input.getNumRows();
 		long cols = input.getNumColumns();
 		Pointer imagePointer = getDensePointer(input, instName);
 		Pointer doutPointer = getDensePointer(dout, instName);
@@ -523,7 +539,8 @@ public class LibMatrixCUDA {
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void biasMultiply(String instName, MatrixObject input, MatrixObject bias, MatrixObject outputBlock) throws DMLRuntimeException {
-		if(isInSparseFormat(input)) {
+        LOG.trace("GPU : biasMultiply");
+        if(isInSparseFormat(input)) {
 			input.getGPUObject().sparseToDense(instName);
 		}
 		if(isInSparseFormat(bias)) {
@@ -587,7 +604,8 @@ public class LibMatrixCUDA {
 	 * @throws DMLRuntimeException
 	 */
 	private static void biasAdd(String instName, Pointer image, Pointer bias, Pointer output, int rows, int cols, int k) throws DMLRuntimeException {
-		int PQ = cols / k;
+        LOG.trace("GPU : biasAdd");
+        int PQ = cols / k;
 		long t1 = 0;
 		if (GPUStatistics.DISPLAY_STATISTICS) t1 = System.nanoTime();
 		getCudaKernels().launchKernel("bias_add",
@@ -627,7 +645,8 @@ public class LibMatrixCUDA {
 	public static void batchNormalizationForwardInference(String instName, MatrixObject image, 
 			MatrixObject scale, MatrixObject bias, MatrixObject runningMean, MatrixObject runningVar, 
 			MatrixObject ret, double epsilon) throws DMLRuntimeException {
-		int mode = cudnnBatchNormMode.CUDNN_BATCHNORM_SPATIAL;
+        LOG.trace("GPU : batchNormalizationForwardInference");
+        int mode = cudnnBatchNormMode.CUDNN_BATCHNORM_SPATIAL;
 		
 		int N = (int) image.getNumRows();
 		int C = (int) scale.getNumColumns();
@@ -672,7 +691,8 @@ public class LibMatrixCUDA {
 	public static void batchNormalizationForwardTraining(String instName, MatrixObject image, 
 			MatrixObject scale,  MatrixObject bias, MatrixObject runningMean, MatrixObject runningVar, 
 			MatrixObject ret, MatrixObject retRunningMean, MatrixObject retRunningVar, double epsilon, double exponentialAverageFactor) throws DMLRuntimeException {
-		int mode = cudnnBatchNormMode.CUDNN_BATCHNORM_SPATIAL;
+        LOG.trace("GPU : batchNormalizationForwardTraining");
+        int mode = cudnnBatchNormMode.CUDNN_BATCHNORM_SPATIAL;
 		
 		int N = (int) image.getNumRows();
 		int C = (int) scale.getNumColumns();
@@ -776,7 +796,8 @@ public class LibMatrixCUDA {
 	public static void batchNormalizationBackward(String instName, MatrixObject image, MatrixObject dout, 
 			MatrixObject scale, MatrixObject ret, MatrixObject retScale, MatrixObject retBias,
 			double epsilon) throws DMLRuntimeException {
-		int mode = cudnnBatchNormMode.CUDNN_BATCHNORM_SPATIAL;
+        LOG.trace("GPU : batchNormalizationBackward");
+        int mode = cudnnBatchNormMode.CUDNN_BATCHNORM_SPATIAL;
 		
 		int N = (int) image.getNumRows();
 		int C = (int) scale.getNumColumns();
@@ -828,7 +849,8 @@ public class LibMatrixCUDA {
 																					MatrixObject outputBlock, int N, int C, int H, int W, int K, int R,
 																					int S, int pad_h, int pad_w, int stride_h, int stride_w, int P,
 																					int Q) throws DMLRuntimeException {
-		cudnnFilterDescriptor dwDesc = null;
+        LOG.trace("GPU : conv2dBackwardFilter");
+        cudnnFilterDescriptor dwDesc = null;
 		cudnnConvolutionDescriptor convDesc = null;
 
 		Pointer workSpace = null;
@@ -870,7 +892,7 @@ public class LibMatrixCUDA {
 				throw new DMLRuntimeException("Could not executed cudnnConvolutionBackwardFilter: " + jcuda.jcudnn.cudnnStatus.stringFor(status));
 			}
 		} catch (CudaException e) {
-				throw new DMLRuntimeException("Error in conv2d in GPUContext " + GPUContext.getGPUContext().toString() + " from Thread " + Thread.currentThread().toString(), e);
+				throw new DMLRuntimeException("Error in conv2d in GPUContext " + getGPUContext().toString() + " from Thread " + Thread.currentThread().toString(), e);
 		} finally {
 			long t3=0;
 			if (GPUStatistics.DISPLAY_STATISTICS) t3 = System.nanoTime();
@@ -913,7 +935,8 @@ public class LibMatrixCUDA {
 																				MatrixObject output, int N, int C, int H, int W, int K, int R,
 																				int S, int pad_h, int pad_w, int stride_h, int stride_w, int P,
 																				int Q) throws DMLRuntimeException {
-		cudnnFilterDescriptor wDesc = null;
+        LOG.trace("GPU : conv2dBackwardData");
+        cudnnFilterDescriptor wDesc = null;
 		cudnnConvolutionDescriptor convDesc = null;
 
 		Pointer workSpace = null;
@@ -952,7 +975,7 @@ public class LibMatrixCUDA {
 				throw new DMLRuntimeException("Could not executed cudnnConvolutionBackwardData: " + jcuda.jcudnn.cudnnStatus.stringFor(status));
 			}
 		} catch (CudaException e) {
-			throw new DMLRuntimeException("Error in conv2d in GPUContext " + GPUContext.getGPUContext().toString() + " from Thread " + Thread.currentThread().toString(), e);
+			throw new DMLRuntimeException("Error in conv2d in GPUContext " + getGPUContext().toString() + " from Thread " + Thread.currentThread().toString(), e);
 		}
 		finally {
 			long t3=0;
@@ -993,7 +1016,7 @@ public class LibMatrixCUDA {
 			MatrixObject outputBlock, int N, int C, int H, int W, int K, int R,
 			int S, int pad_h, int pad_w, int stride_h, int stride_w, int P,
 			int Q) throws DMLRuntimeException {
-		Pointer x = getDensePointer(image, true, instName);
+        Pointer x = getDensePointer(image, true, instName);
 		cudnnTensorDescriptor xDesc = allocateTensorDescriptor(image, N, C, H, W);
 		performMaxpooling(instName, x, xDesc, outputBlock, N, C, H, W, K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
 	}
@@ -1002,7 +1025,8 @@ public class LibMatrixCUDA {
 			MatrixObject outputBlock, int N, int C, int H, int W, int K, int R,
 			int S, int pad_h, int pad_w, int stride_h, int stride_w, int P,
 			int Q) throws DMLRuntimeException {
-		Pointer y = getDensePointer(outputBlock, true, instName);
+        LOG.trace("GPU : performMaxpooling");
+        Pointer y = getDensePointer(outputBlock, true, instName);
 		cudnnPoolingDescriptor poolingDesc = null;
 
 		try {
@@ -1021,7 +1045,7 @@ public class LibMatrixCUDA {
 				throw new DMLRuntimeException("Could not executed cudnnPoolingForward: " + jcuda.jcudnn.cudnnStatus.stringFor(status));
 			}
 		} catch (CudaException e) {
-			throw new DMLRuntimeException("Error in conv2d in GPUContext " + GPUContext.getGPUContext().toString() + " from Thread " + Thread.currentThread().toString(), e);
+			throw new DMLRuntimeException("Error in conv2d in GPUContext " + getGPUContext().toString() + " from Thread " + Thread.currentThread().toString(), e);
 		}
 		finally {
 			long t3=0;
@@ -1056,7 +1080,8 @@ public class LibMatrixCUDA {
 			MatrixObject outputBlock, int N, int C, int H, int W, int K, int R,
 			int S, int pad_h, int pad_w, int stride_h, int stride_w, int P,
 			int Q) throws DMLRuntimeException {
-		cudnnTensorDescriptor srcTensorDesc = allocateTensorDescriptor(image, N, C, H, W);
+        LOG.trace("GPU : reluMaxpooling");
+        cudnnTensorDescriptor srcTensorDesc = allocateTensorDescriptor(image, N, C, H, W);
 		long size  = image.getNumRows() * image.getNumColumns() * Sizeof.DOUBLE;
 		Pointer tmp = allocate(size);
 		performCuDNNReLU(instName, image, tmp, srcTensorDesc);
@@ -1091,7 +1116,8 @@ public class LibMatrixCUDA {
 																				MatrixObject outputBlock, int N, int C, int H, int W, int K, int R,
 																				int S, int pad_h, int pad_w, int stride_h, int stride_w, int P,
 																				int Q) throws DMLRuntimeException {
-		Pointer y = null;
+        LOG.trace("GPU : maxpoolingBackward");
+        Pointer y = null;
 		cudnnPoolingDescriptor poolingDesc = null;
 
 		try {
@@ -1133,7 +1159,7 @@ public class LibMatrixCUDA {
 				throw new DMLRuntimeException("Could not executed cudnnPoolingBackward: " + jcuda.jcudnn.cudnnStatus.stringFor(status));
 			}
 		} catch (CudaException e) {
-			throw new DMLRuntimeException("Error in conv2d in GPUContext " + GPUContext.getGPUContext().toString() + " from Thread " + Thread.currentThread().toString(), e);
+			throw new DMLRuntimeException("Error in conv2d in GPUContext " + getGPUContext().toString() + " from Thread " + Thread.currentThread().toString(), e);
 		}
 		finally {
 			long t4=0;
@@ -1151,7 +1177,8 @@ public class LibMatrixCUDA {
 	private static void performCuDNNReLU(String instName, MatrixObject in, Pointer dstData, cudnnTensorDescriptor srcTensorDesc) throws DMLRuntimeException {
 		long t0=0;
 		try {
-			cudnnTensorDescriptor dstTensorDesc = srcTensorDesc;
+            LOG.trace("GPU : performCuDNNReLU");
+            cudnnTensorDescriptor dstTensorDesc = srcTensorDesc;
 			
 			Pointer srcData = getDensePointer(in, true, instName);
 			cudnnActivationDescriptor activationDescriptor = new cudnnActivationDescriptor();
@@ -1164,7 +1191,7 @@ public class LibMatrixCUDA {
 							zero(), dstTensorDesc, dstData);
 			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_ACTIVATION_FORWARD_LIB, System.nanoTime() - t0);
 		} catch (CudaException e) {
-			throw new DMLRuntimeException("Error in conv2d in GPUContext " + GPUContext.getGPUContext().toString() + " from Thread " + Thread.currentThread().toString(), e);
+			throw new DMLRuntimeException("Error in conv2d in GPUContext " + getGPUContext().toString() + " from Thread " + Thread.currentThread().toString(), e);
 		}
 		finally {
 			long t1=0;
@@ -1183,14 +1210,15 @@ public class LibMatrixCUDA {
 	 * @throws DMLRuntimeException	if an error occurs
 	 */
 	public static void relu(ExecutionContext ec, String instName, MatrixObject in, String outputName) throws DMLRuntimeException {
-		long N = in.getNumRows();
+        long N = in.getNumRows();
 		long CHW = in.getNumColumns();
 		MatrixObject output = ec.getMatrixObject(outputName);
 		getDenseMatrixOutputForGPUInstruction(ec, instName, outputName);	// Allocated the dense output matrix
 		long t0=0;
 		cudnnTensorDescriptor srcTensorDesc = in.getGPUObject().getTensorDescriptor();
 		if(N*CHW >= numDoublesIn2GB ||  srcTensorDesc == null) {
-			// Invokes relu(double* A,  double* ret, int rlen, int clen)
+            LOG.trace("GPU : relu custom kernel");
+            // Invokes relu(double* A,  double* ret, int rlen, int clen)
 			if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
 			Pointer dstData = getDensePointer(output, instName);
 			Pointer srcData = getDensePointer(in, instName); // TODO: FIXME: Add sparse kernel support for relu
@@ -1228,7 +1256,8 @@ public class LibMatrixCUDA {
 	 */
 	public static void matmultTSMM(ExecutionContext ec, String instName, MatrixObject left, String outputName,
 																 boolean isLeftTransposed) throws DMLRuntimeException {
-		if(isInSparseFormat(left)) {
+        LOG.trace("GPU : matmultTSMM");
+        if(isInSparseFormat(left)) {
 			// For sparse TSMM, invoke matmult (TODO: possible performance improvement)
 			matmult(ec, instName, left, left, outputName, isLeftTransposed, !isLeftTransposed);
 			return;
@@ -1280,7 +1309,8 @@ public class LibMatrixCUDA {
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private static void copyUpperToLowerTriangle(String instName, MatrixObject ret) throws DMLRuntimeException {
-		if(isInSparseFormat(ret)) {
+        LOG.trace("GPU : copyUpperToLowerTriangle");
+        if(isInSparseFormat(ret)) {
 			throw new DMLRuntimeException("Sparse GPU copyUpperToLowerTriangle is not implemented");
 		}
 		if(ret.getNumRows() != ret.getNumColumns()) {
@@ -1307,40 +1337,40 @@ public class LibMatrixCUDA {
 	 * Examines sparsity and shapes and routes call to appropriate method
 	 * from cuBLAS or cuSparse
 	 * C = op(A) x op(B)
-	 * @param ec									Current {@link ExecutionContext} instance
-	 * @param instName name of the invoking instruction to record{@link Statistics}.
-	 * @param left1								Matrix A
-	 * @param right1							Matrix B
-	 * @param outputName					Name of the output matrix C (in code generated after LOP layer)
-	 * @param isLeftTransposed1		op for A, transposed or not
-	 * @param isRightTransposed1	op for B, tranposed or not
+	 * @param ec                    Current {@link ExecutionContext} instance
+	 * @param instName              name of the invoking instruction to record{@link Statistics}.
+	 * @param left                  Matrix A
+	 * @param right                 Matrix B
+	 * @param outputName            Name of the output matrix C (in code generated after LOP layer)
+	 * @param isLeftTransposed      op for A, transposed or not
+	 * @param isRightTransposed     op for B, tranposed or not
 	 * @return	output of matrix multiply
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static MatrixObject matmult(ExecutionContext ec, String instName, MatrixObject left1, MatrixObject right1, String outputName,
-																		 boolean isLeftTransposed1, boolean isRightTransposed1) throws DMLRuntimeException {
+	public static MatrixObject matmult(ExecutionContext ec, String instName, MatrixObject left, MatrixObject right, String outputName,
+																		 boolean isLeftTransposed, boolean isRightTransposed) throws DMLRuntimeException {
+        LOG.trace("GPU : matmult");
+        if(!left.getGPUObject().isAllocated() || !right.getGPUObject().isAllocated())
+			throw new DMLRuntimeException("One of input is not allocated:" + left.getGPUObject().isAllocated() + " " + right.getGPUObject().isAllocated());
 
-		if(!left1.getGPUObject().isAllocated() || !right1.getGPUObject().isAllocated())
-			throw new DMLRuntimeException("One of input is not allocated:" + left1.getGPUObject().isAllocated() + " " + right1.getGPUObject().isAllocated());
-
-		boolean bothDense = !left1.getGPUObject().isSparse() && !right1.getGPUObject().isSparse();
-		boolean bothSparse = left1.getGPUObject().isSparse() && right1.getGPUObject().isSparse();
+		boolean bothDense = !left.getGPUObject().isSparse() && !right.getGPUObject().isSparse();
+		boolean bothSparse = left.getGPUObject().isSparse() && right.getGPUObject().isSparse();
 
 		MatrixObject output = ec.getMatrixObject(outputName);
 
 		if (bothDense) {		// Dense C = Dense A * Dense B
 			// For both dense, do cuBLAS
 			getDenseMatrixOutputForGPUInstruction(ec, instName, outputName);	// Allocated the dense output matrix
-			denseDenseMatmult(instName, output, left1, right1, isLeftTransposed1, isRightTransposed1);
+			denseDenseMatmult(instName, output, left, right, isLeftTransposed, isRightTransposed);
 		}
 		else if (bothSparse){	// Sparse C = Sparse A * Sparse B
 			ec.allocateGPUMatrixObject(outputName);
-			bothSparseMatmult(instName, output, left1, right1, isLeftTransposed1, isRightTransposed1);
+			bothSparseMatmult(instName, output, left, right, isLeftTransposed, isRightTransposed);
 		}
 		else {	// Either of A or B is sparse, Sparse C = Sparse/Dense A * Dense/Sparse B
 			// Convert the dense to sparse and use the cusparseDcsrgemm routine
 			ec.allocateGPUMatrixObject(outputName);
-			eitherSparseMatmult(instName, output, left1, right1, isLeftTransposed1, isRightTransposed1);
+			eitherSparseMatmult(instName, output, left, right, isLeftTransposed, isRightTransposed);
 		}
 
 		return output;
@@ -1349,19 +1379,16 @@ public class LibMatrixCUDA {
 	/**
 	 * One of the matrices is sparse, the other dense
 	 * C = op(A) x op(B)
-	 * @param instName the invoking instruction's name for record {@link Statistics}.
-	 * @param output				allocated output object for C on host to which GPU output will be attached
-	 * @param left					Matrix A on host
-	 * @param right					Matrix B on host
-	 * @param isLeftTransposed		op for A, tranposed or not
-	 * @param isRightTransposed		op for B, transposed or not
+	 * @param instName          the invoking instruction's name for record {@link Statistics}.
+	 * @param output            allocated output object for C on host to which GPU output will be attached
+	 * @param left              Matrix A on host
+	 * @param right             Matrix B on host
+	 * @param isLeftTransposed  op for A, tranposed or not
+	 * @param isRightTransposed op for B, transposed or not
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	protected static void eitherSparseMatmult(String instName, MatrixObject output, MatrixObject left, MatrixObject right,
+	private static void eitherSparseMatmult(String instName, MatrixObject output, MatrixObject left, MatrixObject right,
 																						boolean isLeftTransposed, boolean isRightTransposed) throws DMLRuntimeException {
-
-		int transA = isLeftTransposed ? CUSPARSE_OPERATION_TRANSPOSE : CUSPARSE_OPERATION_NON_TRANSPOSE;
-		int transB = isRightTransposed ? CUSPARSE_OPERATION_TRANSPOSE : CUSPARSE_OPERATION_NON_TRANSPOSE;
 
 		int m = (int) (isLeftTransposed ? left.getNumColumns() : left.getNumRows()) ;
 		int n = (int) (isRightTransposed ? right.getNumRows() : right.getNumColumns());
@@ -1376,10 +1403,10 @@ public class LibMatrixCUDA {
 
 		if (left.getGPUObject().isSparse()) {
 			// Left sparse, right dense
-			sparseDenseMatmult(instName, output, left, right, isLeftTransposed, isRightTransposed, transA, transB, m, n, k);
+			sparseDenseMatmult(instName, output, left, right, isLeftTransposed, isRightTransposed, m, n, k);
 		} else {
 			// Left dense, right sparse
-			denseSparseMatmult(instName, output, right, left, isLeftTransposed, isRightTransposed, transA, transB, m, n, k);
+			denseSparseMatmult(instName, left, right, output, isLeftTransposed, isRightTransposed, m, n, k);
 		}
 	}
 
@@ -1388,30 +1415,28 @@ public class LibMatrixCUDA {
 	 * If B is ultrasparse, A is converted to a sparse matrix and {@code sparseSparseMatmult(MatrixObject, int, int, int, int, int, CSRPointer, CSRPointer)} is invoked
 	 * otherwise B is converted to a dense matrix and {@code denseDenseMatmult(Pointer, int, int, int, int, boolean, boolean, Pointer, Pointer)} is invoked.
 	 * @param instName the invoking instruction's name for record {@link Statistics}.
-	 * @param output ?
-	 * @param right ?
-	 * @param left ?
-	 * @param isLeftTransposed ?
-	 * @param isRightTransposed ?
-	 * @param transA ?
-	 * @param transB ?
+	 * @param left {@link MatrixObject} of A
+	 * @param right {@link MatrixObject} of B
+	 * @param output {@link MatrixObject} of the output matrix C
+	 * @param isLeftTransposed whether matrix A needs to be transposed
+	 * @param isRightTransposed whether matrix B needs to be transposed
 	 * @param m ?
 	 * @param n ?
 	 * @param k ?
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	protected static void denseSparseMatmult(String instName, MatrixObject output, MatrixObject right, MatrixObject left,
-																					 boolean isLeftTransposed, boolean isRightTransposed, int transA, int transB, int m, int n, int k)
+	private static void denseSparseMatmult(String instName, MatrixObject left, MatrixObject right, MatrixObject output,
+                                             boolean isLeftTransposed, boolean isRightTransposed, int m, int n, int k)
 					throws DMLRuntimeException {
 		// right sparse, left dense
 		CSRPointer B = right.getGPUObject().jcudaSparseMatrixPtr;
 		Pointer ADense = getDensePointer(left, instName);
 		if (B.isUltraSparse(k, n)){
-			LOG.debug(" GPU Dense-Sparse Matrix Multiplication (Converted to Sparse-Sparse)");
-			// Convert left to CSR and do cuSparse matmul
+            LOG.trace(" GPU : Convert d M %*% sp M --> sp M %*% sp M)");
+
+            // Convert left to CSR and do cuSparse matmul
 			int rowsA = (int)left.getNumRows();
 			int colsA = (int)left.getNumColumns();
-
 
 			long t0=0,t1=0, t2=0;
 			if (DMLScript.STATISTICS) t0 = System.nanoTime();
@@ -1419,12 +1444,12 @@ public class LibMatrixCUDA {
 			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_TRANSPOSE_LIB, System.nanoTime() - t0);
 
 			if (GPUStatistics.DISPLAY_STATISTICS) t1 = System.nanoTime();
-			CSRPointer A = GPUObject.columnMajorDenseToRowMajorSparse(getCusparseHandle(), rowsA, colsA, AT);
+			CSRPointer A = GPUObject.columnMajorDenseToRowMajorSparse(getCusparseHandle(), AT, rowsA, colsA);
 			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_DENSE_TO_SPARSE, System.nanoTime() - t1);
 
 			if (DMLScript.STATISTICS) GPUStatistics.cudaDenseToSparseTime.getAndAdd(System.nanoTime() - t0);
 			if (DMLScript.STATISTICS) GPUStatistics.cudaDenseToSparseCount.getAndAdd(1);
-			sparseSparseMatmult(instName, output, transA, transB, m, n, k, A, B);
+			sparseSparseMatmult(instName, A, B, output, isLeftTransposed, isRightTransposed, m, n, k);
 
 			if (GPUStatistics.DISPLAY_STATISTICS) t2 = System.nanoTime();
 			A.deallocate();
@@ -1432,7 +1457,7 @@ public class LibMatrixCUDA {
 			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_CUDA_FREE, System.nanoTime() - t2, 2);
 
 		} else {
-			LOG.debug(" GPU Dense-Sparse Matrix Multiplication (Converted to Dense-Dense)");
+            LOG.trace(" GPU : Convert d M %*% sp M --> d M %*% d M)");
 			// Convert right to dense and do a cuBlas matmul
 			// BDenseTransposed is a column major matrix
 			// Note the arguments to denseDenseMatmult to accommodate for this.
@@ -1467,30 +1492,27 @@ public class LibMatrixCUDA {
 	 * @param right ?
 	 * @param isLeftTransposed ?
 	 * @param isRightTransposed ?
-	 * @param transA ?
-	 * @param transB ?
 	 * @param m ?
 	 * @param n ?
 	 * @param k ?
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	protected static void sparseDenseMatmult(String instName, MatrixObject output, MatrixObject left, MatrixObject right,
-																					 boolean isLeftTransposed, boolean isRightTransposed, int transA, int transB, int m, int n, int k)
+	private static void sparseDenseMatmult(String instName, MatrixObject output, MatrixObject left, MatrixObject right,
+																					 boolean isLeftTransposed, boolean isRightTransposed, int m, int n, int k)
 					throws DMLRuntimeException {
 		CSRPointer A = left.getGPUObject().jcudaSparseMatrixPtr;
 		Pointer BDense = getDensePointer(right, instName);
 
 		if (n == 1){
 			// Sparse Matrix - Dense Vector multiply
-			LOG.debug(" GPU Sparse Matrix - Dense Vector Mutliply");
-			sparseMatrixDenseVectorMult(instName, output, A, BDense, transA, (int)left.getNumRows(), (int)left.getNumColumns());
+			sparseMatrixDenseVectorMult(instName, output, A, BDense, isLeftTransposed, (int)left.getNumRows(), (int)left.getNumColumns());
 
 		} else {
 
 			long t0=0, t1=0, t2=0;
 			// Sparse Matrix Dense Matrix multiply
 			if (A.isUltraSparse(m, k)){
-				LOG.debug(" GPU Sparse-Dense Matrix Multiplication (Converted to Sparse-Sparse)");
+				LOG.trace(" GPU : Convert sp M %*% d M --> sp M %*% sp M)");
 				// Convert right to CSR and do cuSparse matmul
 				int rowsB = (int)right.getNumRows();
 				int colsB = (int)right.getNumColumns();
@@ -1500,13 +1522,13 @@ public class LibMatrixCUDA {
 				if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_TRANSPOSE_LIB, System.nanoTime() - t0);
 
 				if (GPUStatistics.DISPLAY_STATISTICS) t1 = System.nanoTime();
-				CSRPointer B = GPUObject.columnMajorDenseToRowMajorSparse(getCusparseHandle(), rowsB, colsB, BT);
+				CSRPointer B = GPUObject.columnMajorDenseToRowMajorSparse(getCusparseHandle(), BT, rowsB, colsB);
 				if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_DENSE_TO_SPARSE, System.nanoTime() - t1);
 
 				if (DMLScript.STATISTICS) GPUStatistics.cudaDenseToSparseTime.getAndAdd(System.nanoTime() - t0);
 				if (DMLScript.STATISTICS) GPUStatistics.cudaDenseToSparseCount.getAndAdd(1);
 
-				sparseSparseMatmult(instName, output, transA, transB, m, n, k, A, B);
+				sparseSparseMatmult(instName, A, B, output, isLeftTransposed, isRightTransposed, m, n, k);
 
 				if (GPUStatistics.DISPLAY_STATISTICS) t2 = System.nanoTime();
 				B.deallocate();
@@ -1514,7 +1536,7 @@ public class LibMatrixCUDA {
 				if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_CUDA_FREE, System.nanoTime() - t2, 2);
 
 			} else {
-				LOG.debug(" GPU Sparse-Dense Matrix Multiplication (Converted to Dense-Dense)");
+                LOG.trace(" GPU : Convert sp M %*% d M --> d M %*% d M)");
 				// Convert left to dense and do a cuBlas matmul
 				// ADenseTransposed is a column major matrix
 				// Note the arguments to denseDenseMatmult to accommodate for this.
@@ -1547,16 +1569,19 @@ public class LibMatrixCUDA {
 	 * @param output	allocated output on the host, to which the GPU output C will be attached
 	 * @param A			sparse matrix A on the GPU
 	 * @param B_dense	dense matrix/vector B on the GPU
-	 * @param transA	op for A, tranposed or not
+	 * @param isATranposed	op for A, tranposed or not
 	 * @param m			number of rows in A (not op(A))
 	 * @param k			number of cols in A or number of rows in B (not op(A) or op(B))
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	protected static void sparseMatrixDenseVectorMult(String instName, MatrixObject output, CSRPointer A, Pointer B_dense, int transA,
+	private static void sparseMatrixDenseVectorMult(String instName, MatrixObject output, CSRPointer A, Pointer B_dense, boolean isATranposed,
 																										int m, int k) throws DMLRuntimeException {
+        LOG.trace("GPU : sp M %*% dense V");
+        int transA = CUSPARSE_OPERATION_NON_TRANSPOSE;
 		long size = m * Sizeof.DOUBLE;
-		if (transA == CUSPARSE_OPERATION_TRANSPOSE){
+		if (isATranposed){
 			size = k * Sizeof.DOUBLE;
+            transA = CUSPARSE_OPERATION_TRANSPOSE;
 		}
 		Pointer C_dense = allocate(instName, (int)size);
 		long t1=0;
@@ -1581,13 +1606,9 @@ public class LibMatrixCUDA {
 	 * @param isRightTransposed ?
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	protected static void bothSparseMatmult(String instName, MatrixObject output, MatrixObject left, MatrixObject right,
+	private static void bothSparseMatmult(String instName, MatrixObject output, MatrixObject left, MatrixObject right,
 																					boolean isLeftTransposed, boolean isRightTransposed) throws DMLRuntimeException {
-
-		int transA = isLeftTransposed ? CUSPARSE_OPERATION_TRANSPOSE : CUSPARSE_OPERATION_NON_TRANSPOSE;
-		int transB = isRightTransposed ? CUSPARSE_OPERATION_TRANSPOSE : CUSPARSE_OPERATION_NON_TRANSPOSE;
-
-		int m = (int) (isLeftTransposed ? left.getNumColumns() : left.getNumRows()) ;
+        int m = (int) (isLeftTransposed ? left.getNumColumns() : left.getNumRows()) ;
 		int n = (int) (isRightTransposed ? right.getNumRows() : right.getNumColumns());
 		int k = (int) (isLeftTransposed ? left.getNumRows() :  left.getNumColumns());
 		int k1 = (int) (isRightTransposed ? right.getNumColumns() : right.getNumRows());
@@ -1603,52 +1624,54 @@ public class LibMatrixCUDA {
 		// TODO if (m == 1) {	// Vector-matrix multiplication
 
 		if (!isRightTransposed && right.getNumColumns() == 1){ 	// Matrix-Vector multiplication
-			sparseMatrixVectorMult(instName, output, transA, (int)left.getNumRows(), (int)left.getNumColumns(), (int)right.getNumRows(), A, B);
+			sparseMatrixVectorMult(instName, output, isLeftTransposed, (int)left.getNumRows(), (int)left.getNumColumns(), (int)right.getNumRows(), A, B);
 		} else {												// Matrix-Matrix multiplication
-			sparseSparseMatmult(instName, output, transA, transB, m, n, k, A, B);
+			sparseSparseMatmult(instName, A, B, output, isLeftTransposed, isRightTransposed, m, n, k);
 		}
 	}
 
 	/**
 	 * Does a sparse matrix-vector multiply.
 	 * C = op(A) x B, A is a sparse matrix, B is a sparse vector with numCols = 1.
-	 * @param instName the invoking instruction's name for record {@link Statistics}.
-	 * @param output	allocated output object C to which the GPU output matrix will be attached
-	 * @param transA	if A is to be transposed or not (the op in op(A))
-	 * @param m			number of rows in A (not op(A))
-	 * @param n			number of cols in A (not op(A))
-	 * @param k			number of rows in B, (cols in B is assumed to be 1)
-	 * @param A			left sparse matrix on GPU
-	 * @param B			right sparse vector on GPU
+	 * @param instName      the invoking instruction's name for record {@link Statistics}.
+	 * @param output        allocated output object C to which the GPU output matrix will be attached
+	 * @param isATranposed  if A is to be transposed or not (the op in op(A))
+	 * @param m             number of rows in A (not op(A))
+	 * @param n             number of cols in A (not op(A))
+	 * @param k             number of rows in B, (cols in B is assumed to be 1)
+	 * @param A             left sparse matrix on GPU
+	 * @param B             right sparse vector on GPU
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	protected static void sparseMatrixVectorMult(String instName, MatrixObject output, int transA, int m, int n, int k,
+	private static void sparseMatrixVectorMult(String instName, MatrixObject output, boolean isATranposed, int m, int n, int k,
 																							 CSRPointer A, CSRPointer B) throws DMLRuntimeException {
-		LOG.debug(" GPU Sparse Matrix Sparse Vector Multiply (Converted to Sparse Matrix Dense Vector Multiply)");
 		long t0=0;
 		if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
 		Pointer BDenseVector = B.toColumnMajorDenseMatrix(getCusparseHandle(), getCublasHandle(), k, 1);
 		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_SPARSE_TO_DENSE, System.nanoTime() - t0);
-		sparseMatrixDenseVectorMult(instName, output, A, BDenseVector, transA, m, k);
+		sparseMatrixDenseVectorMult(instName, output, A, BDenseVector, isATranposed, m, k);
 	}
 
 	/**
 	 * Does a sparse-sparse Matrix multiply
 	 * C = op(A) x op(B), A, B are sparse matrices
-	 * @param instName the invoking instruction's name for record {@link Statistics}.
-	 * @param output	allocated output object on host to which the GPU output matrix will be attached
-	 * @param transA	op for A - to be transposed or not
-	 * @param transB	op for B
-	 * @param m			number of rows in op(A)
-	 * @param n			number of cols in op(B)
-	 * @param k			number of cols in op(A) or rows in op(B)
-	 * @param A			left sparse matrix on GPU
-	 * @param B			right sparse matrix on GPU
+	 * @param instName          the invoking instruction's name for record {@link Statistics}.
+	 * @param A                 left sparse matrix on GPU
+	 * @param B                 right sparse matrix on GPU
+	 * @param output            allocated output object on host to which the GPU output matrix will be attached
+	 * @param isLeftTransposed  op for A - to be transposed or not
+	 * @param isRightTransposed op for B
+	 * @param m                 number of rows in op(A)
+	 * @param n                 number of cols in op(B)
+	 * @param k                 number of cols in op(A) or rows in op(B)
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	protected static void sparseSparseMatmult(String instName, MatrixObject output, int transA, int transB, int m, int n, int k,
-																						CSRPointer A, CSRPointer B) throws DMLRuntimeException {
-		LOG.debug(" GPU Sparse-Sparse Matrix Multiply ");
+	private static void sparseSparseMatmult(String instName, CSRPointer A, CSRPointer B, MatrixObject output,
+                                              boolean isLeftTransposed, boolean isRightTransposed, int m, int n, int k) throws DMLRuntimeException {
+        LOG.trace("GPU : sp M %*% sp M");
+
+        int transA = isLeftTransposed ? CUSPARSE_OPERATION_TRANSPOSE : CUSPARSE_OPERATION_NON_TRANSPOSE;
+        int transB = isRightTransposed ? CUSPARSE_OPERATION_TRANSPOSE : CUSPARSE_OPERATION_NON_TRANSPOSE;
 
 		long t0=0, t1=0;
 		if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
@@ -1656,7 +1679,6 @@ public class LibMatrixCUDA {
 		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_SPARSE_ALLOCATE_LIB, System.nanoTime() - t0);
 
 		output.getGPUObject().setSparseMatrixCudaPointer(C);
-		long sizeOfC = CSRPointer.estimateSize(C.nnz, output.getNumRows());
 		output.getGPUObject().addReadLock();
 
 		if (GPUStatistics.DISPLAY_STATISTICS) t1 = System.nanoTime();
@@ -1671,26 +1693,26 @@ public class LibMatrixCUDA {
 	/**
 	 * Dense dense matrix multiply
 	 * C = op(A) * op(B), A and B are dense matrices
-	 * @param instName name of the invoking instruction to record{@link Statistics}.
-	 * @param output				output object C on host with GPU data allocated
-	 * @param left1					left matrix A on host (in row-major order)
-	 * @param right1				right matrix B on host (in row-major order)
-	 * @param isLeftTransposed1 	op for A, transposed or not
-	 * @param isRightTransposed1	op for B, transposed or not
+	 * @param instName          name of the invoking instruction to record{@link Statistics}.
+	 * @param output            output object C on host with GPU data allocated
+	 * @param left              left matrix A (in row-major order)
+	 * @param right             right matrix B (in row-major order)
+	 * @param isLeftTransposed  op for A, transposed or not
+	 * @param isRightTransposed op for B, transposed or not
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	protected static void denseDenseMatmult(String instName, MatrixObject output, MatrixObject left1, MatrixObject right1,
-																					boolean isLeftTransposed1, boolean isRightTransposed1) throws DMLRuntimeException {
+	private static void denseDenseMatmult(String instName, MatrixObject output, MatrixObject left, MatrixObject right,
+																					boolean isLeftTransposed, boolean isRightTransposed) throws DMLRuntimeException {
 
-		Pointer leftPtr = getDensePointer(left1, instName);
-		Pointer rightPtr = getDensePointer(right1, instName);
+		Pointer leftPtr = getDensePointer(left, instName);
+		Pointer rightPtr = getDensePointer(right, instName);
 
-		int leftRows = (int) left1.getNumRows();
-		int leftCols = (int) left1.getNumColumns();
-		int rightRows = (int) right1.getNumRows();
-		int rightCols = (int) right1.getNumColumns();
+		int leftRows = (int) left.getNumRows();
+		int leftCols = (int) left.getNumColumns();
+		int rightRows = (int) right.getNumRows();
+		int rightCols = (int) right.getNumColumns();
 		Pointer C = getDensePointer(output, instName);
-		denseDenseMatmult(instName, C, leftRows, leftCols, rightRows, rightCols, isLeftTransposed1, isRightTransposed1,
+		denseDenseMatmult(instName, C, leftRows, leftCols, rightRows, rightCols, isLeftTransposed, isRightTransposed,
 						leftPtr, rightPtr);
 	}
 
@@ -1702,25 +1724,27 @@ public class LibMatrixCUDA {
 	 * We do t(B) %*% t(A) to get t(C);
 	 * If we were to calculate t(t(C), we would get the resultant matrix C, but this would be in column-major format.
 	 * What we really want is t(C). This we already have as the result of t(B) %*% t(A).
-	 * @param instName name of the invoking instruction to record{@link Statistics}.
-	 * @param output			output allocated on GPU in column major format
-	 * @param leftRows1			number of rows in A
-	 * @param leftCols1			number of cols in A
-	 * @param rightRows1		number of rows in B
-	 * @param rightCols1		number of cols in B
-	 * @param isLeftTransposed1		op for A, transposed or not
-	 * @param isRightTransposed1	op for B, transposed or not
-	 * @param leftPtr			A allocated on the GPU in row-major format
-	 * @param rightPtr			B allocated on the GPU in row-major format
+	 * @param instName           name of the invoking instruction to record{@link Statistics}.
+	 * @param output             output allocated on GPU in column major format
+	 * @param leftRows1          number of rows in A
+	 * @param leftCols1          number of cols in A
+	 * @param rightRows1         number of rows in B
+	 * @param rightCols1         number of cols in B
+	 * @param isLeftTransposed1  op for A, transposed or not
+	 * @param isRightTransposed1 op for B, transposed or not
+	 * @param leftPtr            A allocated on the GPU in row-major format
+	 * @param rightPtr           B allocated on the GPU in row-major format
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void denseDenseMatmult(String instName, Pointer output, int leftRows1, int leftCols1, int rightRows1,
 																			 int rightCols1, boolean isLeftTransposed1, boolean isRightTransposed1, Pointer leftPtr, Pointer rightPtr)
 					throws DMLRuntimeException {
+        LOG.trace("GPU : d M %*% d M");
 
 		Pointer A = rightPtr;
 		Pointer B = leftPtr;
 
+		// To compensate for the input matrices being in row-major format instead of column-major (the way cublas expects)
 		int leftRows = rightCols1;
 		int leftCols = rightRows1;
 		int rightRows = leftCols1;
@@ -1730,10 +1754,10 @@ public class LibMatrixCUDA {
 		boolean isRightTransposed = isLeftTransposed1;
 
 		// Note: the dimensions are swapped
-		int m = (int) (isLeftTransposed ? leftCols : leftRows) ;
-		int n = (int) (isRightTransposed ? rightRows : rightCols);
-		int k = (int) (isLeftTransposed ?  leftRows : leftCols);
-		int k1 = (int) (isRightTransposed ?  rightCols : rightRows);
+		int m = isLeftTransposed ? leftCols : leftRows ;
+		int n = isRightTransposed ? rightRows : rightCols;
+		int k = isLeftTransposed ?  leftRows : leftCols;
+		int k1 = isRightTransposed ?  rightCols : rightRows;
 		if(k != k1)
 			throw new DMLRuntimeException("Dimension mismatch: " + k + " != " + k1);
 
@@ -1806,7 +1830,7 @@ public class LibMatrixCUDA {
 	 */
 	public static void unaryAggregate(ExecutionContext ec, String instName, MatrixObject in1, String output, AggregateUnaryOperator op)
 					throws DMLRuntimeException {
-
+        LOG.trace("GPU : unaryAggregate");
 		final int REDUCTION_ALL = 1;
 		final int REDUCTION_ROW = 2;
 		final int REDUCTION_COL = 3;
@@ -2121,7 +2145,7 @@ public class LibMatrixCUDA {
 	 * @throws DMLRuntimeException if error
 	 */
 	private static void squareMatrix(String instName, Pointer in, Pointer out, int rlen, int clen) throws DMLRuntimeException {
-		ScalarOperator power2op = new RightScalarOperator(Power.getPowerFnObject(), 2);
+        ScalarOperator power2op = new RightScalarOperator(Power.getPowerFnObject(), 2);
 		matrixScalarOp(instName, in, 2, rlen, clen, out, power2op);
 	}
 
@@ -2134,7 +2158,9 @@ public class LibMatrixCUDA {
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private static double reduceAll(String instName, String kernelFunction, Pointer in, int n) throws DMLRuntimeException {
-		int[] tmp = getKernelParamsForReduceAll(n);
+        LOG.trace("GPU : reduceAll for " + kernelFunction);
+
+        int[] tmp = getKernelParamsForReduceAll(n);
 		int blocks = tmp[0], threads = tmp[1], sharedMem = tmp[2];
 
 		Pointer tempOut = allocate(instName, n * Sizeof.DOUBLE);
@@ -2177,7 +2203,9 @@ public class LibMatrixCUDA {
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private static void reduceRow(String instName, String kernelFunction, Pointer in, Pointer out, int rows, int cols) throws DMLRuntimeException {
-		int[] tmp = getKernelParamsForReduceByRow(rows, cols);
+        LOG.trace("GPU : reduceRow for " + kernelFunction);
+
+        int[] tmp = getKernelParamsForReduceByRow(rows, cols);
 		int blocks = tmp[0], threads = tmp[1], sharedMem = tmp[2];
 
 		long t0=0;
@@ -2200,7 +2228,9 @@ public class LibMatrixCUDA {
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private static void reduceCol(String instName, String kernelFunction, Pointer in, Pointer out, int rows, int cols) throws DMLRuntimeException {
-		int[] tmp = getKernelParamsForReduceByCol(rows, cols);
+        LOG.trace("GPU : reduceCol for " + kernelFunction);
+
+        int[] tmp = getKernelParamsForReduceByCol(rows, cols);
 		int blocks = tmp[0], threads = tmp[1], sharedMem = tmp[2];
 
 		long t0=0;
@@ -2298,11 +2328,12 @@ public class LibMatrixCUDA {
 	 */
 	public static void matrixScalarArithmetic(ExecutionContext ec, String instName, MatrixObject in, String outputName, boolean isInputTransposed, ScalarOperator op) throws DMLRuntimeException {
 		double constant = op.getConstant();
-		boolean isCUDALibAvailable = (op.fn instanceof Multiply
+        LOG.trace("GPU : matrixScalarArithmetic, scalar: " + constant);
+        boolean isCUDALibAvailable = (op.fn instanceof Multiply
 						|| (op.fn instanceof Divide && op instanceof RightScalarOperator && constant != 0)) && !isSparseAndEmpty(in);
 		if(!isCUDALibAvailable) {
 			if(constant == 0) {
-				if(op.fn instanceof Plus || (op.fn instanceof Minus && op instanceof RightScalarOperator) || op.fn instanceof Or) {
+                if(op.fn instanceof Plus || (op.fn instanceof Minus && op instanceof RightScalarOperator) || op.fn instanceof Or) {
 					deviceCopy(ec, instName, in, outputName, isInputTransposed);
 				}
 				else if(op.fn instanceof Multiply || op.fn instanceof And) {
@@ -2368,10 +2399,10 @@ public class LibMatrixCUDA {
 																						String outputName, boolean isLeftTransposed, boolean isRightTransposed, BinaryOperator op) throws DMLRuntimeException {
 		boolean isCUDALibAvailable = (op.fn instanceof Plus || op.fn instanceof Minus) && !isSparseAndEmpty(in1) && !isSparseAndEmpty(in2) && !isVector(in1) && !isVector(in2);
 		if(!isCUDALibAvailable) {
-			matrixMatrixOp(ec, instName, in1, in2, outputName, isLeftTransposed, isRightTransposed, op);
+            matrixMatrixOp(ec, instName, in1, in2, outputName, isLeftTransposed, isRightTransposed, op);
 		}
 		else {
-			double alpha;
+            double alpha;
 			double beta;
 			if(op.fn instanceof Plus) {
 				alpha = 1.0;
@@ -2428,14 +2459,15 @@ public class LibMatrixCUDA {
 	 * @throws DMLRuntimeException throws runtime exception
 	 */
 	private static void matrixScalarOp(String instName, Pointer a, double scalar, int rlenA, int clenA, Pointer c, ScalarOperator op) throws DMLRuntimeException {
-		int isLeftScalar = (op instanceof LeftScalarOperator) ? 1 : 0;
-    int size = rlenA * clenA;
+        LOG.trace("GPU : matrix_scalar_op");
+        int isLeftScalar = (op instanceof LeftScalarOperator) ? 1 : 0;
+        int size = rlenA * clenA;
 		long t0=0;
-    if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
-		getCudaKernels().launchKernel("matrix_scalar_op",
-						ExecutionConfig.getConfigForSimpleVectorOperations(size),
-						a, scalar, c, size, getBinaryOp(op.fn), isLeftScalar);
-		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_MATRIX_SCALAR_OP_KERNEL, System.nanoTime() - t0);
+        if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
+            getCudaKernels().launchKernel("matrix_scalar_op",
+                            ExecutionConfig.getConfigForSimpleVectorOperations(size),
+                            a, scalar, c, size, getBinaryOp(op.fn), isLeftScalar);
+            if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_MATRIX_SCALAR_OP_KERNEL, System.nanoTime() - t0);
 	}
 
 	/**
@@ -2454,7 +2486,7 @@ public class LibMatrixCUDA {
 	private static void matrixMatrixOp(ExecutionContext ec, String instName, MatrixObject in1, MatrixObject in2,
 																		 String outputName, boolean isLeftTransposed, boolean isRightTransposed, BinaryOperator op) throws DMLRuntimeException {
 
-		boolean isEmpty1 = isSparseAndEmpty(in1);
+        boolean isEmpty1 = isSparseAndEmpty(in1);
 		boolean isEmpty2 = isSparseAndEmpty(in2);
 		int rlenA = (int) in1.getNumRows();
 		int rlenB = (int) in2.getNumRows();
@@ -2515,7 +2547,8 @@ public class LibMatrixCUDA {
 	 * @throws DMLRuntimeException
 	 */
 	private static void matrixMatrixOp(String instName, Pointer a, Pointer b, int maxRlen, int maxClen, int vecStatusA, int vecStatusB, Pointer c, BinaryOperator op) throws DMLRuntimeException {
-		long t0=0;
+        LOG.trace("GPU : matrix_matrix_cellwise_op");
+        long t0=0;
 		if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
 		getCudaKernels().launchKernel("matrix_matrix_cellwise_op",
             ExecutionConfig.getConfigForSimpleMatrixOperations(maxRlen, maxClen),
@@ -2694,7 +2727,9 @@ public class LibMatrixCUDA {
 	 */
 	private static void dgeam(ExecutionContext ec, String instName, MatrixObject in1, MatrixObject in2, String outputName,
 														boolean isLeftTransposed, boolean isRightTransposed, double alpha, double beta) throws DMLRuntimeException {
-		Pointer alphaPtr = pointerTo(alpha);
+        LOG.trace("GPU : dgeam");
+
+        Pointer alphaPtr = pointerTo(alpha);
 		Pointer betaPtr = pointerTo(beta);
 		int transa = isLeftTransposed ? CUBLAS_OP_T : CUBLAS_OP_N;
 		int transb = isRightTransposed ? CUBLAS_OP_T : CUBLAS_OP_N;
@@ -2804,6 +2839,7 @@ public class LibMatrixCUDA {
 	 * @throws DMLRuntimeException	if DMLRuntimeException occurs
 	 */
 	public static void exp(ExecutionContext ec, String instName, MatrixObject in1, String outputName) throws DMLRuntimeException {
+	    LOG.trace("GPU : exp");
 		GPUObject in = in1.getGPUObject();
 		boolean isSparseAndEmpty = in.isSparseAndEmpty();
 		long t1=0;
@@ -2840,7 +2876,7 @@ public class LibMatrixCUDA {
 	 */
 	public static void axpy(ExecutionContext ec, String instName, MatrixObject in1, MatrixObject in2,
 													String outputName,  double constant) throws DMLRuntimeException {
-		Pointer A = getDensePointer(in1, instName);
+        Pointer A = getDensePointer(in1, instName);
 		Pointer B = getDensePointer(in2, instName);
 		MatrixObject out = ec.getMatrixObject(outputName);
 		getDenseMatrixOutputForGPUInstruction(ec, instName, outputName);	// Allocated the dense output matrix
@@ -2848,7 +2884,9 @@ public class LibMatrixCUDA {
 		
 		long t1=0, t2=0;
 		if(in1.getNumRows() == in2.getNumRows() && in1.getNumColumns() == in2.getNumColumns()) {
-			// Matrix-Matrix daxpy
+            LOG.trace("GPU : cublasDaxpy");
+
+            // Matrix-Matrix daxpy
 			long n = in1.getNumRows()*in2.getNumColumns(); // Since A is always a matrix
 			Pointer alphaPtr = pointerTo(constant);
 			// C <- A + alpha*B
@@ -2864,7 +2902,9 @@ public class LibMatrixCUDA {
 			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_DAXPY_LIB, System.nanoTime() - t2);
 		}
 		else {
-			// Matrix-Vector daxpy
+            LOG.trace("GPU : daxpy_matrix_vector");
+
+            // Matrix-Vector daxpy
 			// Note: Vector-Matrix operation is not supported
 			// daxpy_matrix_vector(double* A,  double* B, double alpha, double* ret, int rlenA, int clenA, int rlenB, int clenB)
 			if (GPUStatistics.DISPLAY_STATISTICS) t1 = System.nanoTime();

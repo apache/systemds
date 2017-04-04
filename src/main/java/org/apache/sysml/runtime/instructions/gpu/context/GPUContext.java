@@ -72,7 +72,7 @@ public class GPUContext {
 
 	protected static final Log LOG = LogFactory.getLog(GPUContext.class.getName());
 
-	/** Eviction policies for {@link GPUContext#evict(long)} */
+    /** Eviction policies for {@link GPUContext#evict(long)} */
 	public enum EvictionPolicy {
 		LRU, LFU, MIN_EVICT
 	}
@@ -227,7 +227,7 @@ public class GPUContext {
 		} else {
 			LOG.trace("GPU : in allocate from instruction " + instructionName + ", allocating new block of size " + (size/1024.0) + " Kbytes on " + this);
 			if (DMLScript.STATISTICS) t0 = System.nanoTime();
-			GPUObject.ensureFreeSpace(instructionName, size);
+			ensureFreeSpace(instructionName, size);
 			A = new Pointer();
 			cudaMalloc(A, size);
 			if (DMLScript.STATISTICS) GPUStatistics.cudaAllocTime.getAndAdd(System.nanoTime() - t0);
@@ -302,6 +302,27 @@ public class GPUContext {
 			freeList.add(toFree);
 		}
 	}
+
+    /**
+     * Thin wrapper over {@link GPUContext#evict(long)}
+     * @param size size to check
+     * @throws DMLRuntimeException if DMLRuntimeException occurs
+     */
+    void ensureFreeSpace(long size) throws DMLRuntimeException {
+        ensureFreeSpace(null, size);
+    }
+
+    /**
+     * Thin wrapper over {@link GPUContext#evict(long)}
+     * @param instructionName instructionName name of the instruction for which performance measurements are made
+     * @param size size to check
+     * @throws DMLRuntimeException if DMLRuntimeException occurs
+     */
+    void ensureFreeSpace(String instructionName, long size) throws DMLRuntimeException {
+        if(size >= getAvailableMemory()) {
+            evict(instructionName, size);
+        }
+    }
 
 	/**
 	 * Convenience wrapper over {@link GPUContext#evict(String, long)}

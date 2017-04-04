@@ -105,24 +105,28 @@ public class GPUObject {
 	protected MatrixObject mat = null;
 
 	private static Pointer allocate(String instName, long size) throws DMLRuntimeException {
-		return GPUContext.getGPUContext().allocate(instName, size);
+		return getGPUContext().allocate(instName, size);
 	}
 
 	private static Pointer allocate(long size) throws DMLRuntimeException {
-		return GPUContext.getGPUContext().allocate(size);
+		return getGPUContext().allocate(size);
 	}
 
 	private static void cudaFreeHelper(Pointer toFree) throws DMLRuntimeException {
-		GPUContext.getGPUContext().cudaFreeHelper(toFree);
+        getGPUContext().cudaFreeHelper(toFree);
 	}
 
 	private static void cudaFreeHelper(Pointer toFree, boolean eager) throws DMLRuntimeException {
-		GPUContext.getGPUContext().cudaFreeHelper(toFree, eager);
+        getGPUContext().cudaFreeHelper(toFree, eager);
 	}
 
 	private static void cudaFreeHelper(String instName, Pointer toFree, boolean eager) throws DMLRuntimeException {
-		GPUContext.getGPUContext().cudaFreeHelper(instName, toFree, eager);
+        getGPUContext().cudaFreeHelper(instName, toFree, eager);
 	}
+
+	private static GPUContext getGPUContext() throws DMLRuntimeException {
+	    return GPUContext.getGPUContext();
+    }
 
 	/**
 	 * Transposes a dense matrix on the GPU by calling the cublasDgeam operation
@@ -136,13 +140,13 @@ public class GPUObject {
 	 */
 	public static Pointer transpose(Pointer densePtr, int m, int n, int lda, int ldc) throws DMLRuntimeException {
 		LOG.trace("GPU : transpose of block of size [" + m + "," + n + "]");
-		Pointer alpha = LibMatrixCUDA.pointerTo(1.0);
-		Pointer beta = LibMatrixCUDA.pointerTo(0.0);
+        Pointer alpha = Pointer.to(new double[]{1.0});
+        Pointer beta = Pointer.to(new double[]{0.0});
 		Pointer A = densePtr;
 		Pointer C = allocate(((long)m)*getDoubleSizeOf(n));
 
 		// Transpose the matrix to get a dense matrix
-		JCublas2.cublasDgeam(GPUContext.getGPUContext().getCublasHandle(), CUBLAS_OP_T, CUBLAS_OP_T, m, n, alpha, A, lda, beta, new Pointer(), lda, C, ldc);
+		JCublas2.cublasDgeam(getGPUContext().getCublasHandle(), CUBLAS_OP_T, CUBLAS_OP_T, m, n, alpha, A, lda, beta, new Pointer(), lda, C, ldc);
 		return C;
 	}
 
@@ -153,18 +157,18 @@ public class GPUObject {
 	 * Caller is responsible for deallocating memory on GPU.
 	 *
 	 * @param cusparseHandle handle to cusparse library
+	 * @param densePtr [in] dense matrix pointer on the GPU in row major
 	 * @param rows number of rows
 	 * @param cols number of columns
-	 * @param densePtr [in] dense matrix pointer on the GPU in row major
 	 * @return CSR (compressed sparse row) pointer
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static CSRPointer columnMajorDenseToRowMajorSparse(cusparseHandle cusparseHandle, int rows, int cols, Pointer densePtr) throws DMLRuntimeException {
+	public static CSRPointer columnMajorDenseToRowMajorSparse(cusparseHandle cusparseHandle, Pointer densePtr, int rows, int cols) throws DMLRuntimeException {
 		cusparseMatDescr matDescr = CSRPointer.getDefaultCuSparseMatrixDescriptor();
 		Pointer nnzPerRowPtr = null;
 		Pointer nnzTotalDevHostPtr = null;
 
-		ensureFreeSpace(getIntSizeOf(rows + 1));
+		getGPUContext().ensureFreeSpace(getIntSizeOf(rows + 1));
 		nnzPerRowPtr = allocate(getIntSizeOf(rows));
 		nnzTotalDevHostPtr = allocate(getIntSizeOf(1));
 
@@ -220,11 +224,6 @@ public class GPUObject {
 		return sb.toString();
 	}
 
-	private String getClassAndMethod(StackTraceElement st) {
-		String [] str = st.getClassName().split("\\.");
-		return str[str.length - 1] + "." + st.getMethodName();
-	}
-
 	/**
 	 * Convenience method to directly examine the Sparse matrix on GPU
 	 * @return CSR (compressed sparse row) pointer
@@ -272,7 +271,7 @@ public class GPUObject {
 		LOG.trace("GPU : dense -> sparse on " + this);
 		long t0=0;
 		if (DMLScript.STATISTICS) t0 = System.nanoTime();
-		cusparseHandle cusparseHandle = GPUContext.getGPUContext().getCusparseHandle();
+		cusparseHandle cusparseHandle = getGPUContext().getCusparseHandle();
 		if(cusparseHandle == null)
 			throw new DMLRuntimeException("Expected cusparse to be initialized");
 		int rows = toIntExact(mat.getNumRows());
@@ -282,7 +281,7 @@ public class GPUObject {
 			throw new DMLRuntimeException("Expected allocated dense matrix before denseToSparse() call");
 
 		convertDensePtrFromRowMajorToColumnMajor();
-		setSparseMatrixCudaPointer(columnMajorDenseToRowMajorSparse(cusparseHandle, rows, cols, jcudaDenseMatrixPtr));
+		setSparseMatrixCudaPointer(columnMajorDenseToRowMajorSparse(cusparseHandle, jcudaDenseMatrixPtr, rows, cols));
 		// TODO: What if mat.getNnz() is -1 ?
 		if (DMLScript.STATISTICS) GPUStatistics.cudaDenseToSparseTime.addAndGet(System.nanoTime() - t0);
 		if (DMLScript.STATISTICS) GPUStatistics.cudaDenseToSparseCount.addAndGet(1);
@@ -363,7 +362,7 @@ public class GPUObject {
 		if(jcudaSparseMatrixPtr == null || !isAllocated())
 			throw new DMLRuntimeException("Expected allocated sparse matrix before sparseToDense() call");
 
-		cusparseHandle cusparseHandle = GPUContext.getGPUContext().getCusparseHandle();
+		cusparseHandle cusparseHandle = getGPUContext().getCusparseHandle();
 		if(cusparseHandle == null)
 			throw new DMLRuntimeException("Expected cusparse to be initialized");
 		int rows = toIntExact(mat.getNumRows());
@@ -462,7 +461,7 @@ public class GPUObject {
 		setDenseMatrixCudaPointer(allocate(size));
 		addReadLock();
 		// The "fill" kernel is called which treats the matrix "jcudaDensePtr" like a vector and fills it with value "v"
-		GPUContext.getGPUContext().getKernels().launchKernel("fill", ExecutionConfig.getConfigForSimpleVectorOperations(numElems), jcudaDenseMatrixPtr, v, numElems);
+		getGPUContext().getKernels().launchKernel("fill", ExecutionConfig.getConfigForSimpleVectorOperations(numElems), jcudaDenseMatrixPtr, v, numElems);
 	}
 
 	/**
@@ -501,7 +500,7 @@ public class GPUObject {
 			// Dense block, size = numRows * numCols
 			allocateDenseMatrixOnDevice();
 			allocated = true;
-			GPUContext.getGPUContext().recordBlockUsage(this);
+			getGPUContext().recordBlockUsage(this);
 		}
 		dirty = true;
 		if(!isAllocated())
@@ -518,7 +517,7 @@ public class GPUObject {
 			mat.setDirty(true);
 			allocateSparseMatrixOnDevice();
 			allocated = true;
-			GPUContext.getGPUContext().recordBlockUsage(this);
+			getGPUContext().recordBlockUsage(this);
 
 		}
 		dirty = true;
@@ -560,7 +559,7 @@ public class GPUObject {
 			throw new CacheException("Redundant release of GPU object");
 		}
 		LOG.trace("GPU : updateReleaseLocks, new number of read locks is " + readLocks.get() + ", on " + this);
-		GPUContext.EvictionPolicy evictionPolicy = GPUContext.getGPUContext().evictionPolicy;
+		GPUContext.EvictionPolicy evictionPolicy = getGPUContext().evictionPolicy;
 		switch (evictionPolicy){
 			case LRU : timestamp.set(System.nanoTime()); break;
 			case LFU : timestamp.addAndGet(1); break;
@@ -647,28 +646,7 @@ public class GPUObject {
 		return GPUSize;
 	}
 
-	/**
-	 * Thin wrapper over {@link GPUContext#evict(long)}
-	 * @param size size to check
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
-	 */
-	static void ensureFreeSpace(long size) throws DMLRuntimeException {
-		ensureFreeSpace(null, size);
-	}
-
-	/**
-	 * Thin wrapper over {@link GPUContext#evict(long)}
-	 * @param instructionName instructionName name of the instruction for which performance measurements are made
-	 * @param size size to check
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
-	 */
-	static void ensureFreeSpace(String instructionName, long size) throws DMLRuntimeException {
-		if(size >= getAvailableMemory()) {
-			GPUContext.getGPUContext().evict(instructionName, size);
-		}
-	}
-
-	void copyFromHostToDevice() throws DMLRuntimeException {
+    void copyFromHostToDevice() throws DMLRuntimeException {
 		LOG.trace("GPU : copyFromHostToDevice, on " + this);
 		long start=0;
 		if (DMLScript.STATISTICS) start = System.nanoTime();
@@ -725,7 +703,7 @@ public class GPUObject {
 				values = csrBlock.values();
 			}
 			allocateSparseMatrixOnDevice();
-			GPUContext.getGPUContext().recordBlockUsage(this);
+			getGPUContext().recordBlockUsage(this);
 
 			if(copyToDevice) {
 				CSRPointer.copyToDevice(jcudaSparseMatrixPtr, tmp.getNumRows(), tmp.getNonZeros(), rowPtr, colInd, values);
@@ -743,7 +721,7 @@ public class GPUObject {
 
 			// Copy dense block
 			allocateDenseMatrixOnDevice();
-			GPUContext.getGPUContext().recordBlockUsage(this);
+			getGPUContext().recordBlockUsage(this);
 
 			cudaMemcpy(jcudaDenseMatrixPtr, Pointer.to(data), getDoubleSizeOf(mat.getNumRows()*mat.getNumColumns()), cudaMemcpyHostToDevice);
 		}
@@ -832,13 +810,9 @@ public class GPUObject {
 	 * @throws CacheException ?
 	 */
 	public void clearData(boolean eager) throws DMLRuntimeException {
-		GPUContext.getGPUContext().removeRecordedUsage(this);
+		getGPUContext().removeRecordedUsage(this);
 		deallocateMemoryOnDevice(eager);
 
-	}
-
-	private static long getAvailableMemory() throws DMLRuntimeException {
-		return GPUContext.getGPUContext().getAvailableMemory();
 	}
 
 	/**
@@ -947,7 +921,7 @@ public class GPUObject {
 				// with no memory allocated on the GPU.
 				return r;
 			}
-			ensureFreeSpace(getDoubleSizeOf(nnz2) + getIntSizeOf(rows + 1) + getIntSizeOf(nnz2));
+			getGPUContext().ensureFreeSpace(getDoubleSizeOf(nnz2) + getIntSizeOf(rows + 1) + getIntSizeOf(nnz2));
 			// increment the cudaCount by 1 for the allocation of all 3 arrays
 			r.val = allocate(null, getDoubleSizeOf(nnz2));
 			r.rowPtr = allocate(null, getIntSizeOf(rows + 1));

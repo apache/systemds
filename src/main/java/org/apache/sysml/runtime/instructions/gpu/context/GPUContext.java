@@ -18,36 +18,6 @@
  */
 package org.apache.sysml.runtime.instructions.gpu.context;
 
-import jcuda.Pointer;
-import jcuda.driver.JCudaDriver;
-import jcuda.jcublas.JCublas2;
-import jcuda.jcublas.cublasHandle;
-import jcuda.jcudnn.JCudnn;
-import jcuda.jcudnn.cudnnHandle;
-import jcuda.jcusparse.JCusparse;
-import jcuda.jcusparse.cusparseHandle;
-import jcuda.runtime.JCuda;
-import jcuda.runtime.cudaDeviceProp;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.conf.ConfigurationManager;
-import org.apache.sysml.conf.DMLConfig;
-import org.apache.sysml.hops.OptimizerUtils;
-import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
-import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
-import org.apache.sysml.utils.GPUStatistics;
-import org.apache.sysml.utils.LRUCacheMap;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.Queue;
-
 import static jcuda.driver.JCudaDriver.cuDeviceGetCount;
 import static jcuda.driver.JCudaDriver.cuInit;
 import static jcuda.jcublas.JCublas2.cublasCreate;
@@ -63,6 +33,37 @@ import static jcuda.runtime.JCuda.cudaMalloc;
 import static jcuda.runtime.JCuda.cudaMemGetInfo;
 import static jcuda.runtime.JCuda.cudaMemset;
 import static jcuda.runtime.JCuda.cudaSetDevice;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.Queue;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.conf.DMLConfig;
+import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
+import org.apache.sysml.utils.GPUStatistics;
+import org.apache.sysml.utils.LRUCacheMap;
+
+import jcuda.Pointer;
+import jcuda.driver.JCudaDriver;
+import jcuda.jcublas.JCublas2;
+import jcuda.jcublas.cublasHandle;
+import jcuda.jcudnn.JCudnn;
+import jcuda.jcudnn.cudnnHandle;
+import jcuda.jcusparse.JCusparse;
+import jcuda.jcusparse.cusparseHandle;
+import jcuda.runtime.JCuda;
+import jcuda.runtime.cudaDeviceProp;
 
 /**
  * Represents a context per GPU accessible through the same JVM

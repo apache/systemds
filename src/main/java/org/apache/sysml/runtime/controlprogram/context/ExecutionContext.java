@@ -19,6 +19,9 @@
 
 package org.apache.sysml.runtime.controlprogram.context;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.debug.DMLFrame;
 import org.apache.sysml.debug.DMLProgramCounter;
@@ -47,9 +50,6 @@ import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.util.MapReduceTool;
-
-import java.util.ArrayList;
-import java.util.HashMap;
 
 
 public class ExecutionContext 

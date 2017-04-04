@@ -19,6 +19,10 @@
 
 package org.apache.sysml.api.mlcontext;
 
+import java.io.IOException;
+import java.util.Map;
+import java.util.Set;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.jmlc.JMLCUtils;
@@ -48,10 +52,6 @@ import org.apache.sysml.utils.Explain;
 import org.apache.sysml.utils.Explain.ExplainCounts;
 import org.apache.sysml.utils.Explain.ExplainType;
 import org.apache.sysml.utils.Statistics;
-
-import java.io.IOException;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * ScriptExecutor executes a DML or PYDML Script object using SystemML. This is

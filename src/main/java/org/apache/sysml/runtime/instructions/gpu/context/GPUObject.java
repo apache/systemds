@@ -18,34 +18,6 @@
  */
 package org.apache.sysml.runtime.instructions.gpu.context;
 
-import jcuda.Pointer;
-import jcuda.jcublas.JCublas2;
-import jcuda.jcublas.cublasHandle;
-import jcuda.jcudnn.cudnnTensorDescriptor;
-import jcuda.jcusparse.JCusparse;
-import jcuda.jcusparse.cusparseDirection;
-import jcuda.jcusparse.cusparseHandle;
-import jcuda.jcusparse.cusparseMatDescr;
-import jcuda.jcusparse.cusparsePointerMode;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.controlprogram.caching.CacheException;
-import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
-import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
-import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
-import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.apache.sysml.runtime.matrix.data.SparseBlock;
-import org.apache.sysml.runtime.matrix.data.SparseBlockCOO;
-import org.apache.sysml.runtime.matrix.data.SparseBlockCSR;
-import org.apache.sysml.runtime.matrix.data.SparseBlockMCSR;
-import org.apache.sysml.utils.GPUStatistics;
-
-import java.util.Arrays;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
-
 import static jcuda.jcublas.cublasOperation.CUBLAS_OP_T;
 import static jcuda.jcudnn.JCudnn.cudnnCreateTensorDescriptor;
 import static jcuda.jcudnn.JCudnn.cudnnDestroyTensorDescriptor;
@@ -67,6 +39,35 @@ import static jcuda.runtime.JCuda.cudaDeviceSynchronize;
 import static jcuda.runtime.JCuda.cudaMemcpy;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice;
+
+import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.caching.CacheException;
+import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
+import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.SparseBlock;
+import org.apache.sysml.runtime.matrix.data.SparseBlockCOO;
+import org.apache.sysml.runtime.matrix.data.SparseBlockCSR;
+import org.apache.sysml.runtime.matrix.data.SparseBlockMCSR;
+import org.apache.sysml.utils.GPUStatistics;
+
+import jcuda.Pointer;
+import jcuda.jcublas.JCublas2;
+import jcuda.jcublas.cublasHandle;
+import jcuda.jcudnn.cudnnTensorDescriptor;
+import jcuda.jcusparse.JCusparse;
+import jcuda.jcusparse.cusparseDirection;
+import jcuda.jcusparse.cusparseHandle;
+import jcuda.jcusparse.cusparseMatDescr;
+import jcuda.jcusparse.cusparsePointerMode;
 
 /**
  * Handle to a matrix block on the GPU

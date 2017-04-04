@@ -430,8 +430,22 @@ public class GPUObject {
 	}
 
 	public boolean isAllocated() {
-		return (jcudaDenseMatrixPtr != null || jcudaSparseMatrixPtr != null);
+        boolean eitherAllocated = (jcudaDenseMatrixPtr != null || jcudaSparseMatrixPtr != null);
+        return eitherAllocated;
 	}
+
+	public boolean isInputAllocated() {
+        try {
+            boolean eitherAllocated = (jcudaDenseMatrixPtr != null || jcudaSparseMatrixPtr != null);
+            boolean isAllocatedOnThisGPUContext = getGPUContext().isBlockAllocated(this);
+            if (eitherAllocated && !isAllocatedOnThisGPUContext)
+                LOG.warn("GPU : A block was allocated but was not on this GPUContext, GPUContext=" + getGPUContext());
+            return eitherAllocated && isAllocatedOnThisGPUContext;
+        } catch (DMLRuntimeException e){
+            LOG.info("GPU : System is in an inconsistent state");
+            throw new RuntimeException(e);
+        }
+    }
 
 	/**
 	 * Allocates a sparse and empty {@link GPUObject}
@@ -469,8 +483,9 @@ public class GPUObject {
 	 * Being allocated is a prerequisite to being sparse and empty.
 	 *
 	 * @return true if sparse and empty
+     * @throws DMLRuntimeException if error
 	 */
-	public boolean isSparseAndEmpty() {
+	public boolean isSparseAndEmpty() throws DMLRuntimeException{
 		boolean isSparseAndAllocated = isAllocated()&& LibMatrixCUDA.isInSparseFormat(mat);
 		boolean isEmptyAndSparseAndAllocated = isSparseAndAllocated && jcudaSparseMatrixPtr.nnz == 0;
 		return isEmptyAndSparseAndAllocated;

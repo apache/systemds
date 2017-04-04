@@ -279,7 +279,7 @@ public class ExecutionContext
 			mo.setGPUObject(GPUContext.getGPUContext().createGPUObject(mo));
 		}
 		boolean acquired = false;
-		if( !mo.getGPUObject().isAllocated() ) {
+		if( !mo.getGPUObject().isInputAllocated() ) {
 			mo.acquireRead();
 			acquired = true;
 		}

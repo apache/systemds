@@ -26,7 +26,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.apache.sysml.api.DMLException;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.LiteralOp;
@@ -40,18 +39,18 @@ import org.apache.sysml.hops.globalopt.gdfgraph.GDFNode.NodeType;
 import org.apache.sysml.hops.ipa.FunctionCallGraph;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.DMLProgram;
-import org.apache.sysml.parser.ForStatement;
 import org.apache.sysml.parser.ExternalFunctionStatement;
+import org.apache.sysml.parser.ForStatement;
 import org.apache.sysml.parser.ForStatementBlock;
 import org.apache.sysml.parser.FunctionStatement;
 import org.apache.sysml.parser.FunctionStatementBlock;
 import org.apache.sysml.parser.IfStatement;
 import org.apache.sysml.parser.IfStatementBlock;
+import org.apache.sysml.parser.LanguageException;
 import org.apache.sysml.parser.ParForStatementBlock;
+import org.apache.sysml.parser.StatementBlock;
 import org.apache.sysml.parser.WhileStatement;
 import org.apache.sysml.parser.WhileStatementBlock;
-import org.apache.sysml.parser.LanguageException;
-import org.apache.sysml.parser.StatementBlock;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.ExternalFunctionProgramBlock;
 import org.apache.sysml.runtime.controlprogram.ForProgramBlock;
@@ -436,30 +435,7 @@ public class Explain
 				
 		return counts;		
 	}
-
-	public static ExplainType parseExplainType( String arg ) 
-		throws DMLException
-	{
-		ExplainType ret = ExplainType.NONE;
-		
-		if( arg !=null )
-		{
-			if( arg.equalsIgnoreCase("hops") )
-				ret = ExplainType.HOPS;
-			else if( arg.equalsIgnoreCase("runtime") )
-				ret = ExplainType.RUNTIME;
-			else if( arg.equalsIgnoreCase("recompile_hops") )
-				ret = ExplainType.RECOMPILE_HOPS;
-			else if( arg.equalsIgnoreCase("recompile_runtime") )
-				ret = ExplainType.RECOMPILE_RUNTIME;
-			else 
-				throw new DMLException("Failed to parse explain type: "+arg+" " +
-						               "(valid types: hops, runtime, recompile_hops, recompile_runtime).");
-		}
-		
-		return ret;
-	}
-
+	
 	public static String getIdentation( int level ) {
 		return createOffset(level);
 	}

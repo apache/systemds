@@ -19,6 +19,8 @@
 
 package org.apache.sysml.test.unit;
 
+import java.util.Map;
+
 import org.apache.commons.cli.AlreadySelectedException;
 import org.apache.commons.cli.MissingOptionException;
 import org.apache.commons.cli.Options;
@@ -28,8 +30,6 @@ import org.apache.sysml.api.mlcontext.ScriptType;
 import org.apache.sysml.utils.Explain;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.util.Map;
 
 
 public class CLIOptionsParserTest {

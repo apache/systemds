@@ -19,6 +19,22 @@
 
 package org.apache.sysml.api;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URI;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Scanner;
+
 import org.apache.commons.cli.AlreadySelectedException;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -87,22 +103,6 @@ import org.apache.sysml.utils.GPUStatistics;
 import org.apache.sysml.utils.Statistics;
 import org.apache.sysml.yarn.DMLAppMasterUtils;
 import org.apache.sysml.yarn.DMLYarnClientProxy;
-
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.URI;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Scanner;
 
 
 public class DMLScript 
@@ -316,8 +316,8 @@ public class DMLScript
 		// Positional arguments map is created as ("$1", "a"), ("$2", 123), ....
 		if (line.hasOption("args")){
 			String[] argValues = line.getOptionValues("args");
-			int k=1;
-			for (String str : argValues){
+			for (int k=0; k<argValues.length; k++){
+				String str = argValues[k];
 				if (!str.isEmpty()) {
 					dmlOptions.argVals.put("$" + k, str);
 					k++;

@@ -423,6 +423,15 @@ public class GPUContext {
 		}
 	}
 
+    /**
+     * Whether the GPU associated with this {@link GPUContext} has recorded the usage of a certain block
+     * @param o the block
+     * @return true if present, false otherwise
+     */
+	public boolean isBlockAllocated(GPUObject o){
+	    return allocatedGPUObjects.contains(o);
+    }
+
 	/**
 	 * @see GPUContext#allocatedGPUObjects
 	 * Records the usage of a matrix block

@@ -672,20 +672,18 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				{
 					Hop leftC1 = left.getInput().get(0);
 					Hop leftC2 = left.getInput().get(1);
-					//System.out.println("aOp2:"+((BinaryOp)left).getOp()+": "+leftC1.getName()+" "+leftC2.getName());
-						
+					
 					if( leftC1.getDataType()==DataType.MATRIX && leftC2.getDataType()==DataType.MATRIX &&
 						(right == leftC1 || right == leftC2) && leftC1 !=leftC2 ){ //any mult order
 						X = right;
 						Y = ( right == leftC1 ) ? leftC2 : leftC1;
 					}
 					if( X != null ){ //rewrite 'binary +/-' 
-						HopRewriteUtils.removeChildReference(parent, hi);
 						LiteralOp literal = new LiteralOp(1);
 						BinaryOp plus = HopRewriteUtils.createBinary(Y, literal, bop.getOp());
 						BinaryOp mult = HopRewriteUtils.createBinary(plus, X, OpOp2.MULT);
-						
-						HopRewriteUtils.addChildReference(parent, mult, pos);							
+						HopRewriteUtils.replaceChildReference(parent, hi, mult, pos);
+						HopRewriteUtils.cleanupUnreferenced(hi, left);
 						hi = mult;
 						applied = true;
 						
@@ -706,7 +704,8 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 						LiteralOp literal = new LiteralOp(1);
 						BinaryOp plus = HopRewriteUtils.createBinary(literal, Y, bop.getOp());
 						BinaryOp mult = HopRewriteUtils.createBinary(plus, X, OpOp2.MULT);
-						HopRewriteUtils.replaceChildReference(parent, hi, mult, pos);	
+						HopRewriteUtils.replaceChildReference(parent, hi, mult, pos);
+						HopRewriteUtils.cleanupUnreferenced(hi, right);
 						hi = mult;
 
 						LOG.debug("Applied simplifyDistributiveBinaryOperation2");
@@ -759,6 +758,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 						BinaryOp bop3 = HopRewriteUtils.createBinary(left, left2, op);
 						BinaryOp bop4 = HopRewriteUtils.createBinary(bop3, right2, op);
 						HopRewriteUtils.replaceChildReference(parent, bop, bop4, pos);	
+						HopRewriteUtils.cleanupUnreferenced(bop, bop2);
 						hi = bop4;
 						
 						applied = true;
@@ -780,12 +780,10 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 						&& (right2.getDim1() > 1 || right.getDim1() == 1) ) //X not vector, or Y vector
 					{
 						//((op()*X)*Y) -> op()*(X*Y)
-						HopRewriteUtils.removeChildReference(parent, bop);
-						
 						BinaryOp bop3 = HopRewriteUtils.createBinary(right2, right, op);
 						BinaryOp bop4 = HopRewriteUtils.createBinary(left2, bop3, op);
-						
-						HopRewriteUtils.addChildReference(parent, bop4, pos);	
+						HopRewriteUtils.replaceChildReference(parent, bop, bop4, pos);
+						HopRewriteUtils.cleanupUnreferenced(bop, bop2);
 						hi = bop4;
 						
 						LOG.debug("Applied simplifyBushyBinaryOperation2");
@@ -1125,7 +1123,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				}		
 			}
 			//select positive (selp) operator
-			if( bop.getOp() == OpOp2.MULT && left.getDataType()==DataType.MATRIX && right.getDataType()==DataType.MATRIX )
+			else if( bop.getOp() == OpOp2.MULT && left.getDataType()==DataType.MATRIX && right.getDataType()==DataType.MATRIX )
 			{
 				//by definition, either left or right or none applies. 
 				//note: if there are multiple consumers on the intermediate tmp=(X>0), it's still beneficial
@@ -1173,9 +1171,8 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					}
 				}
 			}
-			
 			//select positive (selp) operator; pattern: max(X,0) -> selp+
-			if( bop.getOp() == OpOp2.MAX && left.getDataType()==DataType.MATRIX 
+			else if( bop.getOp() == OpOp2.MAX && left.getDataType()==DataType.MATRIX 
 					&& right instanceof LiteralOp && HopRewriteUtils.getDoubleValue((LiteralOp)right)==0 )
 			{
 				UnaryOp unary = HopRewriteUtils.createUnary(left, OpOp1.SELP);
@@ -1185,9 +1182,8 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				
 				LOG.debug("Applied fuseBinarySubDAGToUnaryOperation-selp3");
 			}
-			
 			//select positive (selp) operator; pattern: max(0,X) -> selp+
-			if( bop.getOp() == OpOp2.MAX && right.getDataType()==DataType.MATRIX 
+			else if( bop.getOp() == OpOp2.MAX && right.getDataType()==DataType.MATRIX 
 					&& left instanceof LiteralOp && HopRewriteUtils.getDoubleValue((LiteralOp)left)==0 )
 			{
 				UnaryOp unary = HopRewriteUtils.createUnary(right, OpOp1.SELP);

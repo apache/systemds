@@ -1005,7 +1005,7 @@ public abstract class Hop
 	};
 	
 	// Operations that require a variable number of operands
-	public enum MultipleOperandOperation {
+	public enum MultiInputOp {
 		PRINTF
 	}
 	
@@ -1250,10 +1250,10 @@ public abstract class Hop
 	 * constructLops() method that is used to construct the Lops that correspond
 	 * to a Hop.
 	 */
-	protected static final HashMap<MultipleOperandOperation, MultipleCP.OperationType> MultipleOperandOperationHopTypeToLopType;
+	protected static final HashMap<MultiInputOp, MultipleCP.OperationType> MultipleOperandOperationHopTypeToLopType;
 	static {
-		MultipleOperandOperationHopTypeToLopType = new HashMap<MultipleOperandOperation, MultipleCP.OperationType>();
-		MultipleOperandOperationHopTypeToLopType.put(MultipleOperandOperation.PRINTF, MultipleCP.OperationType.PRINTF);
+		MultipleOperandOperationHopTypeToLopType = new HashMap<MultiInputOp, MultipleCP.OperationType>();
+		MultipleOperandOperationHopTypeToLopType.put(MultiInputOp.PRINTF, MultipleCP.OperationType.PRINTF);
 	}
 
 	protected static final HashMap<Hop.OpOp1, String> HopsOpOp12String;

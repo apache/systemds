@@ -41,6 +41,7 @@ import org.apache.sysml.hops.Hop.AggOp;
 import org.apache.sysml.hops.Hop.DataGenMethod;
 import org.apache.sysml.hops.Hop.DataOpTypes;
 import org.apache.sysml.hops.Hop.Direction;
+import org.apache.sysml.hops.Hop.MultiInputOp;
 import org.apache.sysml.hops.Hop.OpOp2;
 import org.apache.sysml.hops.Hop.OpOp3;
 import org.apache.sysml.hops.Hop.ParamBuiltinOp;
@@ -949,7 +950,6 @@ public class DMLTranslator
 								current.getEndColumn());
 						output.add(stopHop);
 					} else if (ptype == PRINTTYPE.PRINTF) {
-						Hop.MultipleOperandOperation printfOperation = Hop.MultipleOperandOperation.PRINTF;
 						List<Expression> expressions = ps.getExpressions();
 						Hop[] inHops = new Hop[expressions.size()];
 						// process the expressions (function parameters) that
@@ -962,7 +962,7 @@ public class DMLTranslator
 						}
 						target.setValueType(ValueType.STRING);
 						Hop printfHop = new MultipleOp(target.getName(), target.getDataType(), target.getValueType(),
-								printfOperation, inHops);
+								MultiInputOp.PRINTF, inHops);
 						output.add(printfHop);
 					}
 

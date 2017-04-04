@@ -156,6 +156,7 @@ public class CNodeUnary extends CNode
 			case LOOKUP_R:	return "u(ixr)";
 			case LOOKUP_RC:	return "u(ixrc)";
 			case LOOKUP0:	return "u(ix0)";
+			case POW2:      return "^2";
 			default:		return "u("+_type.name().toLowerCase()+")";
 		}
 	}

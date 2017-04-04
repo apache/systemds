@@ -212,6 +212,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				Hop hnew = HopRewriteUtils.createDataGenOpByVal( new LiteralOp(hi.getDim1()), 
 						                                         new LiteralOp(hi.getDim2()), 0);
 				HopRewriteUtils.replaceChildReference(parent, hi, hnew, pos);
+				HopRewriteUtils.cleanupUnreferenced(hi, input);
 				hi = hnew;
 				
 				LOG.debug("Applied removeEmptyRightIndexing");
@@ -235,6 +236,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				
 				//remove unnecessary right indexing
 				HopRewriteUtils.replaceChildReference(parent, hi, input, pos);
+				HopRewriteUtils.cleanupUnreferenced(hi);
 				hi = input;
 				
 				LOG.debug("Applied removeUnnecessaryRightIndexing");
@@ -258,6 +260,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				//remove unnecessary right indexing		
 				Hop hnew = HopRewriteUtils.createDataGenOp( input1, 0);
 				HopRewriteUtils.replaceChildReference(parent, hi, hnew, pos);
+				HopRewriteUtils.cleanupUnreferenced(hi, input2);
 				hi = hnew;
 				
 				LOG.debug("Applied removeEmptyLeftIndexing");
@@ -279,6 +282,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				
 				//remove unnecessary right indexing				
 				HopRewriteUtils.replaceChildReference(parent, hi, input, pos);
+				HopRewriteUtils.cleanupUnreferenced(hi);
 				hi = input;
 				
 				LOG.debug("Applied removeUnnecessaryLeftIndexing");

@@ -35,7 +35,7 @@ import org.apache.sysml.parser.Expression.ValueType;
  *
  */
 public class MultipleOp extends Hop {
-	protected MultipleOperandOperation multipleOperandOperation = null;
+	protected MultiInputOp multipleOperandOperation = null;
 
 	protected MultipleOp() {
 	}
@@ -58,7 +58,7 @@ public class MultipleOp extends Hop {
 	 *             thrown if a HopsException occurs
 	 */
 	public MultipleOp(String name, DataType dataType, ValueType valueType,
-			MultipleOperandOperation multipleOperandOperation, Hop... inputs) throws HopsException {
+			MultiInputOp multipleOperandOperation, Hop... inputs) throws HopsException {
 		super(name, dataType, valueType);
 		this.multipleOperandOperation = multipleOperandOperation;
 
@@ -71,7 +71,7 @@ public class MultipleOp extends Hop {
 		refreshSizeInformation();
 	}
 
-	public MultipleOperandOperation getOp() {
+	public MultiInputOp getOp() {
 		return multipleOperandOperation;
 	}
 
@@ -158,7 +158,7 @@ public class MultipleOp extends Hop {
 		if (!(that instanceof MultipleOp))
 			return false;
 
-		if (multipleOperandOperation == MultipleOperandOperation.PRINTF) {
+		if (multipleOperandOperation == MultiInputOp.PRINTF) {
 			return false;
 		}
 

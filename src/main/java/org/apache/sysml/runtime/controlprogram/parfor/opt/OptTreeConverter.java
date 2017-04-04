@@ -516,7 +516,7 @@ public class OptTreeConverter
 			LopProperties.ExecType et = (hop.getExecType()!=null) ? 
 					   hop.getExecType() : LopProperties.ExecType.CP;
 			switch( et ) {
-				case CP:case GPU:
+				case CP:
 					node.setExecType(ExecType.CP); break;
 				case SPARK:
 					node.setExecType(ExecType.SPARK); break;

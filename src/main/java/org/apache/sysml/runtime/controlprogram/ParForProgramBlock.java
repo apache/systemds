@@ -102,7 +102,6 @@ import org.apache.sysml.runtime.instructions.cp.DoubleObject;
 import org.apache.sysml.runtime.instructions.cp.IntObject;
 import org.apache.sysml.runtime.instructions.cp.StringObject;
 import org.apache.sysml.runtime.instructions.cp.VariableCPInstruction;
-import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
@@ -630,10 +629,6 @@ public class ParForProgramBlock extends ForProgramBlock
 			switch( _execMode )
 			{
 				case LOCAL: //create parworkers as local threads
-					if (DMLScript.USE_ACCELERATOR) {
-						setDegreeOfParallelism(GPUContext.getDeviceCount());
-						GPUContext.getGPUContext().destroy(); // destroy current GPUContext so that parfor can use the most number of GPUs
-					}
 					executeLocalParFor(ec, iterVar, from, to, incr);
 					break;
 					

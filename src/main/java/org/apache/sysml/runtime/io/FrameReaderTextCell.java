@@ -47,7 +47,6 @@ import org.apache.sysml.runtime.util.UtilFunctions;
  */
 public class FrameReaderTextCell extends FrameReader
 {
-
 	@Override
 	public final FrameBlock readFrameFromHDFS(String fname, ValueType[] schema, String[] names, long rlen, long clen)
 		throws IOException, DMLRuntimeException
@@ -71,11 +70,7 @@ public class FrameReaderTextCell extends FrameReader
 		return ret;
 	}
 
-	public final FrameBlock readFrameFromInputStream(InputStream is, long rlen, long clen) 
-		throws IOException, DMLRuntimeException {
-		return readFrameFromInputStream(is, getDefSchema(clen), getDefColNames(clen), rlen, clen);
-	}
-
+	@Override
 	public final FrameBlock readFrameFromInputStream(InputStream is, ValueType[] schema, String[] names, long rlen, long clen) 
 		throws IOException, DMLRuntimeException 
 	{

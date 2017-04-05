@@ -20,6 +20,7 @@
 package org.apache.sysml.runtime.io;
 
 import java.io.IOException;
+import java.io.InputStream;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -38,7 +39,6 @@ import org.apache.sysml.runtime.matrix.data.FrameBlock;
  */
 public class FrameReaderBinaryBlock extends FrameReader
 {
-
 	@Override
 	public final FrameBlock readFrameFromHDFS(String fname, ValueType[] schema, String[] names, long rlen, long clen) 
 		throws IOException, DMLRuntimeException 
@@ -60,6 +60,13 @@ public class FrameReaderBinaryBlock extends FrameReader
 		readBinaryBlockFrameFromHDFS(path, job, fs, ret, rlen, clen);
 		
 		return ret;
+	}
+	
+	@Override
+	public FrameBlock readFrameFromInputStream(InputStream is, ValueType[] schema, String[] names, long rlen, long clen)
+		throws IOException, DMLRuntimeException 
+	{
+		throw new DMLRuntimeException("Not implemented yet.");
 	}
 
 	protected void readBinaryBlockFrameFromHDFS( Path path, JobConf job, FileSystem fs, FrameBlock dest, long rlen, long clen )

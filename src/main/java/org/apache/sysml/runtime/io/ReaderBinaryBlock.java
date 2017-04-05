@@ -20,6 +20,7 @@
 package org.apache.sysml.runtime.io;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -72,6 +73,13 @@ public class ReaderBinaryBlock extends MatrixReader
 		ret.examSparsity();
 		
 		return ret;
+	}
+	
+	@Override
+	public MatrixBlock readMatrixFromInputStream(InputStream is, long rlen, long clen, int brlen, int bclen, long estnnz) 
+		throws IOException, DMLRuntimeException 
+	{
+		throw new DMLRuntimeException("Not implemented yet.");
 	}
 
 	public ArrayList<IndexedMatrixValue> readIndexedMatrixBlocksFromHDFS(String fname, long rlen, long clen, int brlen, int bclen) 

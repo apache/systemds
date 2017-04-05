@@ -34,6 +34,7 @@ import org.junit.runners.Suite;
 	FrameReadMetaTest.class,
 	FrameTransformTest.class,
 	JMLCInputOutputTest.class,
+	JMLCInputStreamReadTest.class,
 	ReuseModelVariablesTest.class,
 	SystemTMulticlassSVMScoreTest.class
 })

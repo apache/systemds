@@ -20,6 +20,7 @@
 package org.apache.sysml.runtime.io;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -111,6 +112,13 @@ public class ReaderTextCSVParallel extends MatrixReader
 		return ret;
 	}
 
+	@Override
+	public MatrixBlock readMatrixFromInputStream(InputStream is, long rlen, long clen, int brlen, int bclen, long estnnz) 
+		throws IOException, DMLRuntimeException 
+	{
+		throw new DMLRuntimeException("Not implemented yet.");
+	}
+	
 	private void readCSVMatrixFromHDFS(InputSplit[] splits, Path path, JobConf job, 
 			MatrixBlock dest, long rlen, long clen, int brlen, int bclen, 
 			boolean hasHeader, String delim, boolean fill, double fillValue) 

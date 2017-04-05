@@ -21,6 +21,7 @@ package org.apache.sysml.runtime.io;
 
 import java.io.EOFException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -54,6 +55,9 @@ public abstract class MatrixReader
 	public abstract MatrixBlock readMatrixFromHDFS( String fname, long rlen, long clen, int brlen, int bclen, long estnnz )
 		throws IOException, DMLRuntimeException;
 
+	public abstract MatrixBlock readMatrixFromInputStream( InputStream is, long rlen, long clen, int brlen, int bclen, long estnnz )
+			throws IOException, DMLRuntimeException;
+	
 	public static Path[] getSequenceFilePaths( FileSystem fs, Path file ) 
 		throws IOException
 	{

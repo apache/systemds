@@ -21,6 +21,7 @@ package org.apache.sysml.runtime.io;
 
 import java.io.EOFException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.LinkedList;
 
 import org.apache.hadoop.fs.FileStatus;
@@ -42,7 +43,6 @@ import org.apache.sysml.runtime.util.UtilFunctions;
  */
 public abstract class FrameReader 
 {
-
 	public abstract FrameBlock readFrameFromHDFS( String fname, ValueType[] schema, String[] names, long rlen, long clen)
 		throws IOException, DMLRuntimeException;
 
@@ -56,6 +56,21 @@ public abstract class FrameReader
 		throws IOException, DMLRuntimeException
 	{
 		return readFrameFromHDFS(fname, getDefSchema(clen), getDefColNames(clen), rlen, clen);
+	}
+
+	public abstract FrameBlock readFrameFromInputStream( InputStream is, ValueType[] schema, String[] names, long rlen, long clen)
+		throws IOException, DMLRuntimeException;
+
+	public FrameBlock readFrameFromInputStream( InputStream is, ValueType[] schema, long rlen, long clen )
+		throws IOException, DMLRuntimeException
+	{
+		return readFrameFromInputStream(is, schema, getDefColNames(schema.length), rlen, clen);
+	}
+
+	public FrameBlock readFrameFromInputStream( InputStream is, long rlen, long clen )
+		throws IOException, DMLRuntimeException
+	{
+		return readFrameFromInputStream(is, getDefSchema(clen), getDefColNames(clen), rlen, clen);
 	}
 
 	public ValueType[] getDefSchema( long clen )

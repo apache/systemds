@@ -639,17 +639,31 @@ public class GPUContext {
    * This method MUST BE called so that the GPU is available to be used again
    * @throws DMLRuntimeException
    */
-	public void destroy() throws DMLRuntimeException {
-    LOG.trace("GPU : this context was destroyed, this = " + this.toString());
-	  synchronized (GPUContext.class) {
-      assignedGPUContextsMap.entrySet().removeIf(e -> e.getValue().equals(this));
-      freeDevices.add(deviceNum);
-			LOG.trace("GPU : removed this from contexts map (size : " + assignedGPUContextsMap.size() + ") and added freed up device back into freeDevices (size : " + freeDevices.size()+ ")");
-
-		}
-    cudnnDestroy(cudnnHandle);
-    cublasDestroy(cublasHandle);
-    cusparseDestroy(cusparseHandle);
+    public void destroy() throws DMLRuntimeException {
+        LOG.trace("GPU : this context was destroyed, this = " + this.toString());
+        while(allocatedGPUObjects.isEmpty()) {
+            GPUObject o = allocatedGPUObjects.get(0);
+            o.clearData();
+        }
+        for (LinkedList<Pointer> l : freeCUDASpaceMap.values()) {
+            for (Pointer p : l) {
+                cudaFreeHelper(p, true);
+            }
+        }
+        cudaBlockSizeMap.clear();
+        freeCUDASpaceMap.clear();
+        allocatedGPUObjects.clear();
+        cudnnDestroy(cudnnHandle);
+        cublasDestroy(cublasHandle);
+        cusparseDestroy(cusparseHandle);
+        cudnnHandle = null;
+        cublasHandle = null;
+        cusparseHandle = null;
+        synchronized (GPUContext.class) {
+            assignedGPUContextsMap.entrySet().removeIf(e -> e.getValue().equals(this));
+            freeDevices.add(deviceNum);
+            LOG.trace("GPU : removed this from contexts map (size : " + assignedGPUContextsMap.size() + ") and added freed up device back into freeDevices (size : " + freeDevices.size()+ ")");
+        }
 	}
 
 	@Override

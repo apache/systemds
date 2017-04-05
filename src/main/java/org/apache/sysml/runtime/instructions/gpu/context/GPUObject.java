@@ -441,7 +441,7 @@ public class GPUObject {
             boolean isAllocatedOnThisGPUContext = getGPUContext().isBlockRecorded(this);
             if (eitherAllocated && !isAllocatedOnThisGPUContext) {
                 LOG.warn("GPU : A block was allocated but was not on this GPUContext, GPUContext=" + getGPUContext());
-                GPUContext.getAssignedGPUContextsMap().values().forEach(gpuContext -> System.out.println(gpuContext.toString() + " " + gpuContext.isBlockRecorded(this)));
+                GPUContext.getAssignedGPUContextsMap().values().forEach(gpuContext -> LOG.warn(gpuContext.toString() + " " + gpuContext.isBlockRecorded(this)));
             }
             return eitherAllocated && isAllocatedOnThisGPUContext;
         } catch (DMLRuntimeException e){

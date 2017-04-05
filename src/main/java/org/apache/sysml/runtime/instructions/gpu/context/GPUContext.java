@@ -495,8 +495,6 @@ public class GPUContext {
 		long free[] = {0};
 		long total[] = {0};
 		cudaMemGetInfo(free, total);
-		LOG.info("Total GPU memory: " + (total[0] * (1e-6)) + " MB");
-		LOG.info("Available GPU memory: " + (free[0] * (1e-6)) + " MB");
 
 		long start = System.nanoTime();
 		cudnnHandle = new cudnnHandle();
@@ -511,6 +509,8 @@ public class GPUContext {
     kernels = new JCudaKernels();
 
 		GPUStatistics.cudaLibrariesInitTime = System.nanoTime() - start;
+		LOG.info(" GPU memory - Total: " + (total[0] * (1e-6)) + " MB, Available: " + (free[0] * (1e-6)) + " MB on " + this);
+
 	}
 
 	/**

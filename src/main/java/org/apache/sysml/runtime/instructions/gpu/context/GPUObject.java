@@ -438,9 +438,11 @@ public class GPUObject {
 	public boolean isInputAllocated() {
         try {
             boolean eitherAllocated = (jcudaDenseMatrixPtr != null || jcudaSparseMatrixPtr != null);
-            boolean isAllocatedOnThisGPUContext = getGPUContext().isBlockAllocated(this);
-            if (eitherAllocated && !isAllocatedOnThisGPUContext)
+            boolean isAllocatedOnThisGPUContext = getGPUContext().isBlockRecorded(this);
+            if (eitherAllocated && !isAllocatedOnThisGPUContext) {
                 LOG.warn("GPU : A block was allocated but was not on this GPUContext, GPUContext=" + getGPUContext());
+                GPUContext.getAssignedGPUContextsMap().values().forEach(gpuContext -> System.out.println(gpuContext.toString() + " " + gpuContext.isBlockRecorded(this)));
+            }
             return eitherAllocated && isAllocatedOnThisGPUContext;
         } catch (DMLRuntimeException e){
             LOG.info("GPU : System is in an inconsistent state");

@@ -99,7 +99,11 @@ public class GPUContext {
   /** Stores the cached deviceProperties */
   private static cudaDeviceProp[] deviceProperties;
 
-  /** Maintiains a mapping of threads assigned to GPUContexts. Each thread  is given a new GPUContext
+    public static HashMap<Thread, GPUContext> getAssignedGPUContextsMap() {
+        return assignedGPUContextsMap;
+    }
+
+    /** Maintiains a mapping of threads assigned to GPUContexts. Each thread  is given a new GPUContext
    * as long as there are enough GPUs to accommodate them
    * The size of this map also represents the number of GPUs that are in use */
   private static HashMap<Thread, GPUContext> assignedGPUContextsMap = new HashMap<>();
@@ -429,7 +433,7 @@ public class GPUContext {
      * @param o the block
      * @return true if present, false otherwise
      */
-	public boolean isBlockAllocated(GPUObject o){
+	public boolean isBlockRecorded(GPUObject o){
 	    return allocatedGPUObjects.contains(o);
     }
 

@@ -1,24 +1,3 @@
-#-------------------------------------------------------------
-#
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
-#
-#-------------------------------------------------------------
-
 /*
  * MNIST LeNet Example
  */
@@ -35,7 +14,7 @@ source("nn/optim/sgd_nesterov.dml") as sgd_nesterov
 
 train = function(matrix[double] X, matrix[double] y,
                  matrix[double] X_val, matrix[double] y_val,
-                 int C, int Hin, int Win)
+                 int C, int Hin, int Win, int epochs)
     return (matrix[double] W1, matrix[double] b1,
             matrix[double] W2, matrix[double] b2,
             matrix[double] W3, matrix[double] b3,
@@ -55,6 +34,7 @@ train = function(matrix[double] X, matrix[double] y,
    *  - C: Number of input channels (dimensionality of input depth).
    *  - Hin: Input height.
    *  - Win: Input width.
+   *  - epochs: Total number of full training loops over the full data set.
    *
    * Outputs:
    *  - W1: 1st layer weights (parameters) matrix, of shape (F1, C*Hf*Wf).
@@ -101,14 +81,13 @@ train = function(matrix[double] X, matrix[double] y,
 
   # Optimize
   print("Starting optimization")
-  epochs = 2
   batch_size = 32
   parallel_batches = 8  # NOTE: This would ideally be a builin-function
   group_batch_size = parallel_batches*batch_size
-  groups = ceil(N/group_batch_size)
-  print("Total Epochs: "+epochs+" Batch size: "+batch_size+
-        " Degree of parallelism: "+parallel_batches+" Group batch size: "+group_batch_size+
-        " Num groups: "+groups)
+  groups = as.integer(ceil(N/group_batch_size))
+  print("Total Epochs: "+epochs+", Batch size: "+batch_size+
+        ", Degree of parallelism: "+parallel_batches+", Group batch size: "+group_batch_size+
+        ", Num groups: "+groups)
   # Loop over the dataset multiple times
   for (e in 1:epochs) {
     # Grab groups of mini-batches

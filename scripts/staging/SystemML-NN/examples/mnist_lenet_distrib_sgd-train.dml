@@ -1,24 +1,3 @@
-#-------------------------------------------------------------
-#
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
-#
-#-------------------------------------------------------------
-
 # MNIST LeNet - Train
 #
 # This script trains a convolutional net using the "LeNet" architecture
@@ -32,8 +11,10 @@
 #  - C: Number of color chanels in the images.
 #  - Hin: Input image height.
 #  - Win: Input image width.
-#  - out_dir: Directory to store weights and bias matrices of
-#     trained model, as well as final test accuracy.
+#  - epochs: [DEFAULT: 10] Total number of full training loops over
+#     the full data set.
+#  - out_dir: [DEFAULT: "."] Directory to store weights and bias
+#     matrices of trained model, as well as final test accuracy.
 #  - fmt: [DEFAULT: "csv"] File format of `train` and `test` data.
 #     Options include: "csv", "mm", "text", and "binary".
 #
@@ -58,20 +39,22 @@
 #   ```
 #   spark-submit --master local[*] --driver-memory 10G
 #   --conf spark.driver.maxResultSize=0 --conf spark.akka.frameSize=128
-#   $SYSTEMML_HOME/target/SystemML.jar -f mnist_lenet_multi_gpu-train.dml
+#   $SYSTEMML_HOME/target/SystemML.jar -f mnist_lenet_distrib_sgd-train.dml
 #   -nvargs train=data/mnist/mnist_train.csv test=data/mnist/mnist_test.csv
-#   C=1 Hin=28 Win=28 out_dir=model/mnist_lenet
+#   C=1 Hin=28 Win=28 epochs=10 out_dir=model/mnist_lenet
 #   ```
 #
-source("mnist_lenet_multi_gpu.dml") as mnist_lenet
+source("mnist_lenet_distrib_sgd.dml") as mnist_lenet
 
-# Read training data
+# Read training data & settings
 fmt = ifdef($fmt, "csv")
 train = read($train, format=fmt)
 test = read($test, format=fmt)
 C = $C
 Hin = $Hin
 Win = $Win
+epochs = ifdef($epochs, 10)
+out_dir = ifdef($out_dir, ".")
 
 # Extract images and labels
 images = train[,2:ncol(train)]
@@ -94,17 +77,17 @@ y = labels[5001:nrow(images),]
 y_val = labels[1:5000,]
 
 # Train
-[W1, b1, W2, b2, W3, b3, W4, b4] = mnist_lenet::train(X, y, X_val, y_val, C, Hin, Win)
+[W1, b1, W2, b2, W3, b3, W4, b4] = mnist_lenet::train(X, y, X_val, y_val, C, Hin, Win, epochs)
 
 # Write model out
-write(W1, $out_dir+"/W1")
-write(b1, $out_dir+"/b1")
-write(W2, $out_dir+"/W2")
-write(b2, $out_dir+"/b2")
-write(W3, $out_dir+"/W3")
-write(b3, $out_dir+"/b3")
-write(W4, $out_dir+"/W4")
-write(b4, $out_dir+"/b4")
+write(W1, out_dir+"/W1")
+write(b1, out_dir+"/b1")
+write(W2, out_dir+"/W2")
+write(b2, out_dir+"/b2")
+write(W3, out_dir+"/W3")
+write(b3, out_dir+"/b3")
+write(W4, out_dir+"/W4")
+write(b4, out_dir+"/b4")
 
 # Eval on test set
 probs = mnist_lenet::predict(X_test, C, Hin, Win, W1, b1, W2, b2, W3, b3, W4, b4)
@@ -112,7 +95,7 @@ probs = mnist_lenet::predict(X_test, C, Hin, Win, W1, b1, W2, b2, W3, b3, W4, b4
 
 # Output results
 print("Test Accuracy: " + accuracy)
-write(accuracy, $out_dir+"/accuracy")
+write(accuracy, out_dir+"/accuracy")
 
 print("")
 print("")

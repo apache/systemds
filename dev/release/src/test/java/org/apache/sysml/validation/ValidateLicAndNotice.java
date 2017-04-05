@@ -27,6 +27,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -58,6 +59,7 @@ public class ValidateLicAndNotice
 	public static final int FILE_NOT_IN_ZIP = 4; 	// 0000 0000 0000 0100
 	public static final int FAILED_TO_EXTRACT = 8; 	// 0000 0000 0000 1000
 	public static final int LIC_NOT_EXIST = 16;		// 0000 0000 0001 0000
+	public static final int INVALID_NOTICE = 32;	// 0000 0000 0010 0000
 	public static final int FAILURE = 0xFFFF;
 
 	public static final boolean bSUCCESS = true;
@@ -83,6 +85,7 @@ public class ValidateLicAndNotice
 	public static final String ZIP = "zip";
 	public static final String TGZ = "tgz";
 	public static final String LICENSE = "LICENSE";
+	public static final String NOTICE = "NOTICE";
 	public static final String JAR = "jar";
 	public static final String DLL = "dll";
 	public static final String EXP = "exp";
@@ -156,10 +159,13 @@ public class ValidateLicAndNotice
 				retCode = SUCCESS;
 
 				List<String> filesAll = null;
-				// Extract license only at first time in all filetypes validation for a given zip.
-				if(fileType == JAR)
+				// Extract license/notice only at first time in all filetypes validation for a given zip.
+				if(fileType == JAR) {
 					if (!ValidateLicAndNotice.extractFile(libDirectory + "/" + zipFile, LICENSE, outTempDir.getAbsolutePath(), true))
 						return FAILED_TO_EXTRACT;
+					if (!ValidateLicAndNotice.extractFile(libDirectory + "/" + zipFile, NOTICE, outTempDir.getAbsolutePath(), true))
+						return FAILED_TO_EXTRACT;
+				}
 
 				filesAll = getFiles(libDirectory + "/" + zipFile, fileType);
 
@@ -175,25 +181,31 @@ public class ValidateLicAndNotice
 						fileSysml.add(file);
 				}
 
-				// Validate shaded jar only one time.
-				if(fileType == JAR)
-					for (String file : fileSysml)
-						retCode += ValidateLicAndNotice.validateShadedLic(libDirectory + "/" + zipFile, file, outTempDir.getAbsolutePath());
 
 				List<String> bad2 = getLICENSEFilesNotInList(licenseFile, files, fileType);
 				if (bad2.size() > 0) {
-					System.err.println("Files in LICENSE but not in Distribution: " + bad2);
+					debugPrint(DEBUG_WARNING,"Files in LICENSE but not in Distribution: " + bad2);
 					retCode += FILE_NOT_IN_ZIP;
 				}
 
 				List<String> bad1 = getFilesNotInLICENSE(licenseFile, files, fileType);
 				if (bad1.size() > 0) {
-					System.err.println("Files in distribution but not in LICENSE: " + bad1);
+					debugPrint(DEBUG_ERROR,"Files in distribution but not in LICENSE: " + bad1);
 					retCode += FILE_NOT_IN_LIC;
 				}
 
+				// Validate shaded jar and notice only one time for each zip/tgz file.
+				if(fileType == JAR) {
+					for (String file : fileSysml)
+						retCode += ValidateLicAndNotice.validateShadedLic(libDirectory + "/" + zipFile, file, outTempDir.getAbsolutePath());
+					if (!validateNotice(outTempDir.getAbsolutePath()+"/"+NOTICE)) {
+						debugPrint(DEBUG_ERROR, "Notice validation falied, please check notice file manually in this zip/tgz file.");
+						retCode += INVALID_NOTICE;
+					}
+				}
+
 				if (retCode > SUCCESS) {
-					debugPrint(DEBUG_ERROR, "License validation of file types " + fileType + " failed for zip file " + zipFile + " with error code " + retCode + ", please validate file manually.");
+					debugPrint(DEBUG_ERROR, "License/Notice validation of file types " + fileType + " failed for zip/tgz file " + zipFile + " with error code " + retCode + ", please validate file manually.");
 					retCodeForAllFileTypes = FAILURE;
 				}
 			}
@@ -646,6 +658,49 @@ public class ValidateLicAndNotice
 			e.printStackTrace();
 		}
 		return (files);
+	}
+
+	/**
+	 * This will return if NOTICE file is valid or not.
+	 *
+	 * @param	noticeFile is the noticew file to be verified.
+	 * @return 	Returns if NOTICE file validatation successful or failure.
+	 */
+	public static boolean validateNotice(String noticeFile) throws Exception {
+
+		boolean bValidNotice = bSUCCESS;
+
+		LocalDateTime currentTime = LocalDateTime.now();
+
+		String noticeLines[] = new String[4];
+		boolean noticeLineIn[] = new boolean[4];
+
+		noticeLines[0] = "Apache SystemML";
+		noticeLines[1] = "Copyright [2015-" + currentTime.getYear() + "] The Apache Software Foundation";
+		noticeLines[2] = "This product includes software developed at";
+		noticeLines[3] = "The Apache Software Foundation (http://www.apache.org/)";
+
+		BufferedReader reader = new BufferedReader(new FileReader(noticeFile));
+		String line = null;
+		while ((line = reader.readLine()) != null) {
+			line = line.trim();
+			for (int i = 0; i < noticeLines.length; i++) {
+				if (line.contains(noticeLines[i])) {
+					noticeLineIn[i] = true;
+				}
+			}
+		}
+
+		for (int i = 0; i < noticeLines.length; i++) {
+			if (!noticeLineIn[i]) {
+				bValidNotice = bFAILURE;
+			}
+		}
+
+		if(bValidNotice == bSUCCESS)
+			debugPrint(DEBUG_INFO2, "Notice validation successful.");
+
+		return bValidNotice;
 	}
 
 	/**

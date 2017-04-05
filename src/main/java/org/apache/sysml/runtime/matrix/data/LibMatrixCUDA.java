@@ -335,7 +335,7 @@ public class LibMatrixCUDA {
 		if(isInSparseFormat(image)) {
 			image.getGPUObject().sparseToDense(instName);
 		}
-		return image.getGPUObject().jcudaDenseMatrixPtr;
+		return image.getGPUObject().getJcudaDenseMatrixPtr();
 	}
 	
 	/**
@@ -554,9 +554,9 @@ public class LibMatrixCUDA {
 		if(bias.getNumColumns() != 1 || cols % K != 0) {
 			throw new DMLRuntimeException("Incorrect inputs for bias_multiply: input[" + rows + " X " + cols + "] and bias[" + K + " X " + bias.getNumColumns() + "]");
 		}
-		Pointer imagePointer = input.getGPUObject().jcudaDenseMatrixPtr;
-		Pointer biasPointer = bias.getGPUObject().jcudaDenseMatrixPtr;
-		Pointer outputPointer = outputBlock.getGPUObject().jcudaDenseMatrixPtr;
+		Pointer imagePointer = input.getGPUObject().getJcudaDenseMatrixPtr();
+		Pointer biasPointer = bias.getGPUObject().getJcudaDenseMatrixPtr();
+		Pointer outputPointer = outputBlock.getGPUObject().getJcudaDenseMatrixPtr();
 		long t1 = 0;
 		if (GPUStatistics.DISPLAY_STATISTICS) t1 = System.nanoTime();
 		getCudaKernels().launchKernel("bias_multiply",
@@ -1430,7 +1430,7 @@ public class LibMatrixCUDA {
                                              boolean isLeftTransposed, boolean isRightTransposed, int m, int n, int k)
 					throws DMLRuntimeException {
 		// right sparse, left dense
-		CSRPointer B = right.getGPUObject().jcudaSparseMatrixPtr;
+		CSRPointer B = right.getGPUObject().getJcudaSparseMatrixPtr();
 		Pointer ADense = getDensePointer(left, instName);
 		if (B.isUltraSparse(k, n)){
             LOG.trace(" GPU : Convert d M %*% sp M --> sp M %*% sp M)" + ", GPUContext=" + getGPUContext());
@@ -1501,7 +1501,7 @@ public class LibMatrixCUDA {
 	private static void sparseDenseMatmult(String instName, MatrixObject output, MatrixObject left, MatrixObject right,
 																					 boolean isLeftTransposed, boolean isRightTransposed, int m, int n, int k)
 					throws DMLRuntimeException {
-		CSRPointer A = left.getGPUObject().jcudaSparseMatrixPtr;
+		CSRPointer A = left.getGPUObject().getJcudaSparseMatrixPtr();
 		Pointer BDense = getDensePointer(right, instName);
 
 		if (n == 1){
@@ -1619,8 +1619,8 @@ public class LibMatrixCUDA {
 		if(m == -1 || n == -1 || k == -1)
 			throw new DMLRuntimeException("Incorrect dimensions");
 
-		CSRPointer A = left.getGPUObject().jcudaSparseMatrixPtr;
-		CSRPointer B = right.getGPUObject().jcudaSparseMatrixPtr;
+		CSRPointer A = left.getGPUObject().getJcudaSparseMatrixPtr();
+		CSRPointer B = right.getGPUObject().getJcudaSparseMatrixPtr();
 
 		// TODO if (m == 1) {	// Vector-matrix multiplication
 
@@ -2594,7 +2594,7 @@ public class LibMatrixCUDA {
 
 	private static boolean isSparseAndEmpty(MatrixObject in1) {
 		boolean isSparse1 = isInSparseFormat(in1);
-		boolean isEmpty1 = isSparse1 && in1.getGPUObject().jcudaSparseMatrixPtr.nnz == 0;
+		boolean isEmpty1 = isSparse1 && in1.getGPUObject().getJcudaSparseMatrixPtr().nnz == 0;
 		return isEmpty1;
 	}
 
@@ -2758,13 +2758,13 @@ public class LibMatrixCUDA {
 				in1.getGPUObject().denseToSparse();
 				if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_DENSE_TO_SPARSE, System.nanoTime() - t0);
 			}
-			CSRPointer A = in1.getGPUObject().jcudaSparseMatrixPtr;
+			CSRPointer A = in1.getGPUObject().getJcudaSparseMatrixPtr();
 			if(!isInSparseFormat(in2)) {
 				if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
 				in2.getGPUObject().denseToSparse();
 				if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_DENSE_TO_SPARSE, System.nanoTime() - t0);
 			}
-			CSRPointer B = in2.getGPUObject().jcudaSparseMatrixPtr;
+			CSRPointer B = in2.getGPUObject().getJcudaSparseMatrixPtr();
 
 			ec.allocateGPUMatrixObject(outputName);
 

@@ -20,9 +20,9 @@
 #-------------------------------------------------------------
 
 #  
-# THIS SCRIPT COMPUTES AN APPROXIMATE FACTORIZATIONOF A LOW-RANK MATRIX X INTO TWO MATRICES U AND V 
-# USING ALTERNATING-LEAST-SQUARES (ALS) ALGORITHM WITH CONJUGATE GRADIENT 
-# MATRICES U AND V ARE COMPUTED BY MINIMIZING A LOSS FUNCTION (WITH REGULARIZATION)
+# THIS SCRIPT COMPUTES AN APPROXIMATE FACTORIZATION OF A LOW-RANK MATRIX X INTO TWO MATRICES U AND V
+# USING THE ALTERNATING-LEAST-SQUARES (ALS) ALGORITHM WITH CONJUGATE GRADIENT.
+# MATRICES U AND V ARE COMPUTED BY MINIMIZING A LOSS FUNCTION (WITH REGULARIZATION).
 #
 # INPUT   PARAMETERS:
 # ---------------------------------------------------------------------------------------------
@@ -37,7 +37,7 @@
 #                           "wL2" = weighted L2 regularization
 # lambda  Double   0.000001 Regularization parameter, no regularization if 0.0
 # maxi    Int      50       Maximum number of iterations
-# check   Boolean  FALSE    Check for convergence after every iteration, i.e., updating U and V once
+# check   Boolean  TRUE     Check for convergence after every iteration, i.e., updating U and V once
 # thr     Double   0.0001   Assuming check is set to TRUE, the algorithm stops and convergence is declared 
 #                           if the decrease in loss in any two consecutive iterations falls below this threshold; 
 #                           if check is FALSE thr is ignored
@@ -55,13 +55,13 @@ fileU      = $U;
 fileV      = $V;
 
 # Default values of some parameters
-r          = ifdef ($rank, 10);         # $rank=10;
-reg	       = ifdef ($reg, "L2")         # $reg="L2";
-lambda	   = ifdef ($lambda, 0.000001); # $lambda=0.000001;
-max_iter   = ifdef ($maxi, 50);         # $maxi=50;
-check      = ifdef ($check, TRUE);	    # $check=FALSE;
-thr        = ifdef ($thr, 0.0001);      # $thr=0.0001;
-fmtO       = ifdef ($fmt, "text");      # $fmt="text";
+r          = ifdef($rank, 10);
+reg        = ifdef($reg, "L2");
+lambda     = ifdef($lambda, 0.000001);
+max_iter   = ifdef($maxi, 50);
+check      = ifdef($check, TRUE);
+thr        = ifdef($thr, 0.0001);
+fmtO       = ifdef($fmt, "text");
  
  
 ###### MAIN PART ######
@@ -76,6 +76,8 @@ V = rand (rows = n, cols = r, min = -0.5, max = 0.5); # nxr
 W = (X != 0);
   
 # check for regularization
+row_nonzeros = matrix(0,rows=1,cols=1);
+col_nonzeros = matrix(0,rows=1,cols=1);
 if( reg == "L2" ) {
   print ("BEGIN ALS-CG SCRIPT WITH NONZERO SQUARED LOSS + L2 WITH LAMBDA - " + lambda);
   row_nonzeros = matrix(1, nrow(W), 1);
@@ -100,6 +102,7 @@ else {
 is_U = TRUE;  # TRUE = Optimize U, FALSE = Optimize V
 maxinneriter = r ; # min (ncol (U), 15);
 
+loss_init = 0.0; # only used if check is TRUE
 if( check ) {
   loss_init = 0.5 * sum( (X != 0) * (U %*% t(V) - X) ^ 2);
   loss_init = loss_init + 0.5 * lambda * (sum (U ^ 2 * row_nonzeros) + sum (V ^ 2 * col_nonzeros));

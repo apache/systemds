@@ -170,7 +170,6 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				hi = fuseLogNzBinaryOperation(hop, hi, i);           //e.g., ppred(X,0,"!=")*log(X,0.5) -> log_nz(X,0.5)
 			}
 			hi = simplifyOuterSeqExpand(hop, hi, i);             //e.g., outer(v, seq(1,m), "==") -> rexpand(v, max=m, dir=row, ignore=true, cast=false)
-			hi = simplifyTableSeqExpand(hop, hi, i);             //e.g., table(seq(1,nrow(v)), v, nrow(v), m) -> rexpand(v, max=m, dir=row, ignore=false, cast=true)
 			//hi = removeUnecessaryPPred(hop, hi, i);            //e.g., ppred(X,X,"==")->matrix(1,rows=nrow(X),cols=ncol(X))
 
 			//process childs recursively after rewrites (to investigate pattern newly created by rewrites)
@@ -1632,52 +1631,6 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		return hi;
 	}
 	
-	private Hop simplifyTableSeqExpand(Hop parent, Hop hi, int pos) 
-		throws HopsException
-	{
-		//pattern: table(seq(1,nrow(v)), v, nrow(v), m) -> rexpand(v, max=m, dir=row, ignore=false, cast=true)
-		//note: this rewrite supports both left/right sequence 
-		
-		if(    hi instanceof TernaryOp && hi.getInput().size()==5 //table without weights 
-			&& hi.getInput().get(2) instanceof LiteralOp
-			&& HopRewriteUtils.getDoubleValue((LiteralOp)hi.getInput().get(2))==1	
-			&& hi.getInput().get(3) instanceof LiteralOp && hi.getInput().get(4) instanceof LiteralOp)
-		{
-			if(  (HopRewriteUtils.isBasic1NSequence(hi.getInput().get(0)) &&
-				   hi.getInput().get(4) instanceof LiteralOp)   //pattern a: table(seq(1,nrow(v)), v, nrow(v), m)
-			   ||(HopRewriteUtils.isBasic1NSequence(hi.getInput().get(1)) &&
-				   hi.getInput().get(3) instanceof LiteralOp) ) //pattern b: table(v, seq(1,nrow(v)), m, nrow(v))
-			{
-				//determine variable parameters for pattern a/b
-				int ixTgt = HopRewriteUtils.isBasic1NSequence(hi.getInput().get(0)) ? 1 : 0;
-				int ixMax = HopRewriteUtils.isBasic1NSequence(hi.getInput().get(0)) ? 4 : 3;
-				String direction = HopRewriteUtils.isBasic1NSequence(hi.getInput().get(0)) ? "cols" : "rows";
-				
-				//setup input parameter hops
-				HashMap<String,Hop> inputargs = new HashMap<String,Hop>();
-				inputargs.put("target", hi.getInput().get(ixTgt));
-				inputargs.put("max", hi.getInput().get(ixMax));
-				inputargs.put("dir", new LiteralOp(direction));
-				inputargs.put("ignore", new LiteralOp(false));
-				inputargs.put("cast", new LiteralOp(true));
-			
-				//create new hop
-				ParameterizedBuiltinOp pbop = new ParameterizedBuiltinOp("tmp", DataType.MATRIX, ValueType.DOUBLE, 
-						ParamBuiltinOp.REXPAND, inputargs);
-				pbop.setOutputBlocksizes(hi.getRowsInBlock(), hi.getColsInBlock());
-				pbop.refreshSizeInformation();
-		
-				//relink new hop into original position
-				HopRewriteUtils.replaceChildReference(parent, hi, pbop, pos);
-				hi = pbop;
-				
-				LOG.debug("Applied simplifyTableSeqExpand (line "+hi.getBeginLine()+")");	
-			}
-		}
-	
-		return hi;
-	}
-
 	/**
 	 * NOTE: currently disabled since this rewrite is INVALID in the
 	 * presence of NaNs (because (NaN!=NaN) is true). 

@@ -538,6 +538,15 @@ public class HopRewriteUtils
 		return mmult;
 	}
 	
+	public static ParameterizedBuiltinOp createParameterizedBuiltinOp(Hop input, HashMap<String,Hop> args, ParamBuiltinOp op) {
+		ParameterizedBuiltinOp pbop = new ParameterizedBuiltinOp("tmp", DataType.MATRIX, ValueType.DOUBLE, op, args);
+		pbop.setOutputBlocksizes(input.getRowsInBlock(), input.getColsInBlock());
+		copyLineNumbers(input, pbop);
+		pbop.refreshSizeInformation();
+		
+		return pbop;
+	}
+	
 	public static Hop createValueHop( Hop hop, boolean row ) 
 		throws HopsException
 	{
@@ -881,22 +890,29 @@ public class HopRewriteUtils
 			|| (hop.getInput().get(0).getDataType()==DataType.MATRIX && hop.getInput().get(1).getDataType()==DataType.SCALAR));
 	}
 	
-	public static boolean isBasic1NSequence(Hop hop)
-	{
-		boolean ret = false;
-		
-		if( hop instanceof DataGenOp )
-		{
+	public static boolean isBasic1NSequence(Hop hop) {
+		if( hop instanceof DataGenOp && ((DataGenOp)hop).getOp() == DataGenMethod.SEQ  ) {
 			DataGenOp dgop = (DataGenOp) hop;
-			if( dgop.getOp() == DataGenMethod.SEQ ){
-				Hop from = dgop.getInput().get(dgop.getParamIndex(Statement.SEQ_FROM));
-				Hop incr = dgop.getInput().get(dgop.getParamIndex(Statement.SEQ_INCR));
-				ret = (from instanceof LiteralOp && getDoubleValueSafe((LiteralOp)from)==1)
-					&&(incr instanceof LiteralOp && getDoubleValueSafe((LiteralOp)incr)==1);
-			}
+			Hop from = dgop.getInput().get(dgop.getParamIndex(Statement.SEQ_FROM));
+			Hop incr = dgop.getInput().get(dgop.getParamIndex(Statement.SEQ_INCR));
+			return (from instanceof LiteralOp && getDoubleValueSafe((LiteralOp)from)==1)
+				&&(incr instanceof LiteralOp && getDoubleValueSafe((LiteralOp)incr)==1);
 		}
-		
-		return ret;
+		return false;
+	}
+	
+	public static boolean isBasic1NSequence(Hop seq, Hop input, boolean row) {
+		if( seq instanceof DataGenOp && ((DataGenOp)seq).getOp() == DataGenMethod.SEQ  ) {
+			DataGenOp dgop = (DataGenOp) seq;
+			Hop from = dgop.getInput().get(dgop.getParamIndex(Statement.SEQ_FROM));
+			Hop to = dgop.getInput().get(dgop.getParamIndex(Statement.SEQ_TO));
+			Hop incr = dgop.getInput().get(dgop.getParamIndex(Statement.SEQ_INCR));
+			return isLiteralOfValue(from, 1) && isLiteralOfValue(incr, 1)
+				&& (isLiteralOfValue(to, row?input.getDim1():input.getDim2())
+					|| (to instanceof UnaryOp && ((UnaryOp)to).getOp()==(row?
+						OpOp1.NROW:OpOp1.NCOL) && to.getInput().get(0)==input));
+		}
+		return false;
 	}
 	
 	public static boolean isBasicN1Sequence(Hop hop)

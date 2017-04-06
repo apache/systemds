@@ -41,6 +41,7 @@ import org.apache.sysml.hops.Hop.OpOp3;
 import org.apache.sysml.hops.Hop.ParamBuiltinOp;
 import org.apache.sysml.hops.Hop.ReOrgOp;
 import org.apache.sysml.hops.HopsException;
+import org.apache.sysml.hops.IndexingOp;
 import org.apache.sysml.hops.LeftIndexingOp;
 import org.apache.sysml.hops.LiteralOp;
 import org.apache.sysml.hops.MemoTable;
@@ -545,6 +546,16 @@ public class HopRewriteUtils
 		pbop.refreshSizeInformation();
 		
 		return pbop;
+	}
+	
+	public static Hop createScalarIndexing(Hop input, long rix, long cix) {
+		LiteralOp row = new LiteralOp(rix);
+		LiteralOp col = new LiteralOp(cix);
+		IndexingOp ix = new IndexingOp("tmp", DataType.MATRIX, ValueType.DOUBLE, input, row, row, col, col, true, true);
+		ix.setOutputBlocksizes(input.getRowsInBlock(), input.getColsInBlock());
+		copyLineNumbers(input, ix);
+		ix.refreshSizeInformation();
+		return createUnary(ix, OpOp1.CAST_AS_SCALAR);
 	}
 	
 	public static Hop createValueHop( Hop hop, boolean row ) 

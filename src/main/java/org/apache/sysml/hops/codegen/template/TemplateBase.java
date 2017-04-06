@@ -26,11 +26,11 @@ import org.apache.sysml.runtime.matrix.data.Pair;
 public abstract class TemplateBase 
 {	
 	public enum TemplateType {
+		//ordering specifies type preferences
+		MultiAggTpl,
 		RowAggTpl,
 		OuterProdTpl,
 		CellTpl;
-		
-		//rank in preferred order
 		public int getRank() {
 			return this.ordinal();
 		}

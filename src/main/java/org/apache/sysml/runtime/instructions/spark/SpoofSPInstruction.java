@@ -24,6 +24,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
@@ -31,6 +32,7 @@ import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.codegen.CodegenUtils;
 import org.apache.sysml.runtime.codegen.SpoofCellwise;
+import org.apache.sysml.runtime.codegen.SpoofMultiAggregate;
 import org.apache.sysml.runtime.codegen.SpoofCellwise.AggOp;
 import org.apache.sysml.runtime.codegen.SpoofCellwise.CellType;
 import org.apache.sysml.runtime.codegen.SpoofOperator;
@@ -148,6 +150,18 @@ public class SpoofSPInstruction extends SPInstruction
 				MatrixBlock tmpMB = RDDAggregateUtils.aggStable(out, aggop);
 				sec.setVariable(_out.getName(), new DoubleObject(tmpMB.getValue(0, 0)));
 			}
+		}
+		else if(_class.getSuperclass() == SpoofMultiAggregate.class)
+		{
+			SpoofMultiAggregate op = (SpoofMultiAggregate) CodegenUtils.createInstance(_class); 	
+			AggOp[] aggOps = op.getAggOps();
+			
+			MatrixBlock tmpMB = in
+					.mapToPair(new MultiAggregateFunction(_class.getName(), _classBytes, bcMatrices, scalars))
+					.values().fold(new MatrixBlock(), new MultiAggAggregateFunction(aggOps) );
+			
+			sec.setMatrixOutput(_out.getName(), tmpMB);
+			return;
 		}
 		else if(_class.getSuperclass() == SpoofOuterProduct.class) // outer product operator
 		{
@@ -344,7 +358,88 @@ public class SpoofSPInstruction extends SPInstruction
 			}
 			return ret;
 		}
-	}	
+	}
+	
+	private static class MultiAggregateFunction implements PairFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock> 
+	{
+		private static final long serialVersionUID = -5224519291577332734L;
+		
+		private ArrayList<PartitionedBroadcast<MatrixBlock>> _vectors = null;
+		private ArrayList<ScalarObject> _scalars = null;
+		private byte[] _classBytes = null;
+		private String _className = null;
+		private SpoofOperator _op = null;
+		
+		public MultiAggregateFunction(String className, byte[] classBytes, ArrayList<PartitionedBroadcast<MatrixBlock>> bcMatrices, ArrayList<ScalarObject> scalars) 
+			throws DMLRuntimeException
+		{
+			_className = className;
+			_classBytes = classBytes;
+			_vectors = bcMatrices;
+			_scalars = scalars;
+		}
+		
+		@Override
+		public Tuple2<MatrixIndexes, MatrixBlock> call(Tuple2<MatrixIndexes, MatrixBlock> arg)
+			throws Exception 
+		{
+			//lazy load of shipped class
+			if( _op == null ) {
+				Class<?> loadedClass = CodegenUtils.getClass(_className, _classBytes);
+				_op = (SpoofOperator) CodegenUtils.createInstance(loadedClass); 
+			}
+				
+			//execute core operation
+			ArrayList<MatrixBlock> inputs = getVectorInputsFromBroadcast(arg._2(), arg._1());
+			MatrixBlock blkOut = new MatrixBlock();
+			_op.execute(inputs, _scalars, blkOut);
+			
+			return new Tuple2<MatrixIndexes,MatrixBlock>(arg._1(), blkOut);
+		}
+		
+		private ArrayList<MatrixBlock> getVectorInputsFromBroadcast(MatrixBlock blkIn, MatrixIndexes ixIn) 
+			throws DMLRuntimeException 
+		{
+			ArrayList<MatrixBlock> ret = new ArrayList<MatrixBlock>();
+			ret.add(blkIn);
+			for( PartitionedBroadcast<MatrixBlock> in : _vectors ) {
+				int rowIndex = (int)((in.getNumRowBlocks()>=ixIn.getRowIndex())?ixIn.getRowIndex():1);
+				int colIndex = (int)((in.getNumColumnBlocks()>=ixIn.getColumnIndex())?ixIn.getColumnIndex():1);
+				ret.add(in.getBlock(rowIndex, colIndex));
+			}
+			return ret;
+		}
+	}
+	
+	private static class MultiAggAggregateFunction implements Function2<MatrixBlock, MatrixBlock, MatrixBlock> 
+	{
+		private static final long serialVersionUID = 5978731867787952513L;
+		
+		private AggOp[] _ops = null;
+		
+		public MultiAggAggregateFunction( AggOp[] ops ) {
+			_ops = ops;	
+		}
+		
+		@Override
+		public MatrixBlock call(MatrixBlock arg0, MatrixBlock arg1)
+			throws Exception 
+		{
+			//prepare combiner block
+			if( arg0.getNumRows() <= 0 || arg0.getNumColumns() <= 0) {
+				arg0.copy(arg1);
+				return arg0;
+			}
+			else if( arg1.getNumRows() <= 0 || arg1.getNumColumns() <= 0 ) {
+				return arg0;
+			}
+			
+			//aggregate second input (in-place)
+			SpoofMultiAggregate.aggregatePartialResults(_ops, arg0, arg1);
+			
+			return arg0;
+		}
+	}
 	
 	private static class OuterProductFunction implements PairFlatMapFunction<Iterator<Tuple2<MatrixIndexes, MatrixBlock>>, MatrixIndexes, MatrixBlock> 
 	{

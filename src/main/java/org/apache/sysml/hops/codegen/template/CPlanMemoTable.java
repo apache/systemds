@@ -80,10 +80,14 @@ public class CPlanMemoTable
 	}
 	
 	public void add(Hop hop, TemplateType type, long in1, long in2, long in3) {
+		add(hop, new MemoTableEntry(type, in1, in2, in3));
+	}
+	
+	public void add(Hop hop, MemoTableEntry me) {
 		_hopRefs.put(hop.getHopID(), hop);
 		if( !_plans.containsKey(hop.getHopID()) )
 			_plans.put(hop.getHopID(), new ArrayList<MemoTableEntry>());
-		_plans.get(hop.getHopID()).add(new MemoTableEntry(type, in1, in2, in3));
+		_plans.get(hop.getHopID()).add(me);
 	}
 	
 	public void addAll(Hop hop, MemoTableEntrySet P) {

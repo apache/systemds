@@ -32,6 +32,7 @@ import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.LiteralOp;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.codegen.cplan.CNode;
+import org.apache.sysml.hops.codegen.cplan.CNodeMultiAgg;
 import org.apache.sysml.hops.codegen.cplan.CNodeTpl;
 import org.apache.sysml.hops.globalopt.gdfgraph.GDFLoopNode;
 import org.apache.sysml.hops.globalopt.gdfgraph.GDFNode;
@@ -380,9 +381,13 @@ public class Explain
 		sb.append("----------------------------------------\n");
 		
 		//explain body dag
-		cplan.getOutput().resetVisitStatus();
-		sb.append(explainCNode(cplan.getOutput(), 1));
-		cplan.getOutput().resetVisitStatus();
+		cplan.resetVisitStatusOutputs();
+		if( cplan instanceof CNodeMultiAgg )
+			for( CNode output : ((CNodeMultiAgg)cplan).getOutputs() )
+				sb.append(explainCNode(output, 1));
+		else
+			sb.append(explainCNode(cplan.getOutput(), 1));
+		cplan.resetVisitStatusOutputs();
 		sb.append("----------------------------------------\n");
 		
 		return sb.toString();

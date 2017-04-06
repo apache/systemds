@@ -34,6 +34,7 @@ import org.junit.runners.Suite;
 	AlgorithmPNMF.class,
 	CellwiseTmplTest.class,
 	DAGCellwiseTmplTest.class,
+	MultiAggTmplTest.class,
 	OuterProdTmplTest.class,
 	RowAggTmplTest.class,
 	RowVectorComparisonTest.class,

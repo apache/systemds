@@ -36,6 +36,7 @@ import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.hops.codegen.cplan.CNode;
 import org.apache.sysml.hops.codegen.cplan.CNodeCell;
 import org.apache.sysml.hops.codegen.cplan.CNodeData;
+import org.apache.sysml.hops.codegen.cplan.CNodeMultiAgg;
 import org.apache.sysml.hops.codegen.cplan.CNodeOuterProduct;
 import org.apache.sysml.hops.codegen.cplan.CNodeTernary;
 import org.apache.sysml.hops.codegen.cplan.CNodeTernary.TernaryType;
@@ -73,6 +74,7 @@ import org.apache.sysml.parser.LanguageException;
 import org.apache.sysml.parser.StatementBlock;
 import org.apache.sysml.parser.WhileStatement;
 import org.apache.sysml.parser.WhileStatementBlock;
+import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.codegen.CodegenUtils;
 import org.apache.sysml.runtime.codegen.SpoofCellwise.CellType;
@@ -91,7 +93,7 @@ public class SpoofCompiler
 	public static final boolean PRUNE_REDUNDANT_PLANS = true;
 	public static PlanCachePolicy PLAN_CACHE_POLICY   = PlanCachePolicy.CSLH;
 	public static final int PLAN_CACHE_SIZE           = 1024; //max 1K classes 
-	public static final PlanSelector PLAN_SEL_POLICY  = PlanSelector.FUSE_ALL; 
+	public static final PlanSelector PLAN_SEL_POLICY  = PlanSelector.FUSE_COST_BASED; 
 
 	public enum CompilerType {
 		JAVAC,
@@ -449,7 +451,7 @@ public class SpoofCompiler
 		throws DMLException
 	{		
 		//top-down memoization of processed dag nodes
-		if( hop.isVisited() )
+		if( hop == null || hop.isVisited() )
 			return;
 		
 		//generate cplan for existing memo table entry
@@ -518,6 +520,17 @@ public class SpoofCompiler
 					hop.getRowsInBlock(), hop.getColsInBlock(), hop.getNnz());
 			if(tmpCNode instanceof CNodeOuterProduct && ((CNodeOuterProduct)tmpCNode).isTransposeOutput() )
 				hnew = HopRewriteUtils.createTranspose(hnew);
+			else if( tmpCNode instanceof CNodeMultiAgg ) {
+				ArrayList<Hop> roots = ((CNodeMultiAgg)tmpCNode).getRootNodes();
+				hnew.setDataType(DataType.MATRIX);
+				HopRewriteUtils.setOutputParameters(hnew, 1, roots.size(), 
+					inHops[0].getRowsInBlock(), inHops[0].getColsInBlock(), -1);
+				//inject artificial right indexing operations for all parents of all nodes
+				for( int i=0; i<roots.size(); i++ ) {
+					Hop hnewi = HopRewriteUtils.createScalarIndexing(hnew, 1, i+1);
+					HopRewriteUtils.rewireAllParentChildReferences(roots.get(i), hnewi);
+				}
+			}
 			else if( tmpCNode instanceof CNodeCell && ((CNodeCell)tmpCNode).requiredCastDtm() ) {
 				HopRewriteUtils.setOutputParametersForScalar(hnew);
 				hnew = HopRewriteUtils.createUnary(hnew, OpOp1.CAST_AS_MATRIX);
@@ -550,7 +563,11 @@ public class SpoofCompiler
 			
 			//collect cplan leaf node names
 			HashSet<Long> leafs = new HashSet<Long>();
-			rCollectLeafIDs(tpl.getOutput(), leafs);
+			if( tpl instanceof CNodeMultiAgg )
+				for( CNode out : ((CNodeMultiAgg)tpl).getOutputs() )
+					rCollectLeafIDs(out, leafs);
+			else
+				rCollectLeafIDs(tpl.getOutput(), leafs);
 			
 			//create clean cplan w/ minimal inputs
 			if( inHops.length == leafs.size() )
@@ -571,12 +588,29 @@ public class SpoofCompiler
 				CNodeData in1 = (CNodeData)tpl.getInput().get(0);
 				rFindAndRemoveLookup(tpl.getOutput(), in1);
 			}
+			else if( tpl instanceof CNodeMultiAgg ) {
+				CNodeData in1 = (CNodeData)tpl.getInput().get(0);
+				for( CNode output : ((CNodeMultiAgg)tpl).getOutputs() )
+					rFindAndRemoveLookup(output, in1);
+			}
 			
 			//remove invalid plans with column indexing on main input
 			if( tpl instanceof CNodeCell ) {
 				CNodeData in1 = (CNodeData)tpl.getInput().get(0);
-				if( rHasLookupRC1(tpl.getOutput(), in1) )
+				if( rHasLookupRC1(tpl.getOutput(), in1) ) {
 					cplans2.remove(e.getKey());
+					if( LOG.isTraceEnabled() )
+						LOG.trace("Removed cplan due to invalid rc1 indexing on main input.");
+				}
+			}
+			else if( tpl instanceof CNodeMultiAgg ) {
+				CNodeData in1 = (CNodeData)tpl.getInput().get(0);
+				for( CNode output : ((CNodeMultiAgg)tpl).getOutputs() )
+					if( rHasLookupRC1(output, in1) ) {
+						cplans2.remove(e.getKey());
+						if( LOG.isTraceEnabled() )
+							LOG.trace("Removed cplan due to invalid rc1 indexing on main input.");
+					}
 			}
 			
 			//remove cplan w/ single op and w/o agg

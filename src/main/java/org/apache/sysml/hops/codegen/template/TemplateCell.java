@@ -66,6 +66,11 @@ public class TemplateCell extends TemplateBase
 	public TemplateCell(boolean closed) {
 		super(TemplateType.CellTpl, closed);
 	}
+	
+	public TemplateCell(TemplateType type, boolean closed) {
+		super(type, closed);
+	}
+	
 
 	@Override
 	public boolean open(Hop hop) {
@@ -134,7 +139,7 @@ public class TemplateCell extends TemplateBase
 		return new Pair<Hop[],CNodeTpl>(sinHops.toArray(new Hop[0]), tpl);
 	}
 	
-	private void rConstructCplan(Hop hop, CPlanMemoTable memo, HashMap<Long, CNode> tmp, HashSet<Hop> inHops, boolean compileLiterals) 
+	protected void rConstructCplan(Hop hop, CPlanMemoTable memo, HashMap<Long, CNode> tmp, HashSet<Hop> inHops, boolean compileLiterals) 
 	{
 		//memoization for common subexpression elimination and to avoid redundant work 
 		if( tmp.containsKey(hop.getHopID()) )
@@ -269,7 +274,7 @@ public class TemplateCell extends TemplateBase
 		tmp.put(hop.getHopID(), out);
 	}
 	
-	public static boolean isValidOperation(Hop hop) 
+	protected static boolean isValidOperation(Hop hop) 
 	{	
 		//prepare indicators for binary operations
 		boolean isBinaryMatrixScalar = false;

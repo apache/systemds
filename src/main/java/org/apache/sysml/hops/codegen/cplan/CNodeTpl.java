@@ -20,8 +20,10 @@
 package org.apache.sysml.hops.codegen.cplan;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 
 import org.apache.sysml.hops.codegen.SpoofFusedOp.SpoofOutputDimsType;
 import org.apache.sysml.hops.codegen.cplan.CNodeUnary.UnaryType;
@@ -62,6 +64,10 @@ public abstract class CNodeTpl extends CNode implements Cloneable
 		return ret;
 	}
 	
+	public void resetVisitStatusOutputs() {
+		getOutput().resetVisitStatus();
+	}
+	
 	public String codegen() {
 		return codegen(false);
 	}
@@ -73,6 +79,10 @@ public abstract class CNodeTpl extends CNode implements Cloneable
 	public abstract String getTemplateInfo();
 	
 	protected void renameInputs(ArrayList<CNode> inputs, int startIndex) {
+		renameInputs(Collections.singletonList(_output), inputs, startIndex);
+	}
+	
+	protected void renameInputs(List<CNode> outputs, ArrayList<CNode> inputs, int startIndex) {
 		//create map of hopID to data nodes with new names, used for CSE
 		HashMap<Long, CNode> nodes = new HashMap<Long, CNode>();
 		for(int i=startIndex, sPos=0, mPos=0; i < inputs.size(); i++) {
@@ -87,7 +97,8 @@ public abstract class CNodeTpl extends CNode implements Cloneable
 		}
 		
 		//single pass to replace all names
-		rReplaceDataNode(_output, nodes, new HashMap<Long, CNode>());
+		for( CNode output : outputs )
+			rReplaceDataNode(output, nodes, new HashMap<Long, CNode>());
 	}
 	
 	protected void rReplaceDataNode( CNode root, CNode input, String newName ) {
@@ -100,6 +111,19 @@ public abstract class CNodeTpl extends CNode implements Cloneable
 		names.put(tmp.getHopID(), new CNodeData(tmp, newName));
 		
 		rReplaceDataNode(root, names, new HashMap<Long,CNode>());
+	}
+	
+	protected void rReplaceDataNode( ArrayList<CNode> roots, CNode input, String newName ) {
+		if( !(input instanceof CNodeData) )
+			return;
+			
+		//create temporary name mapping
+		HashMap<Long, CNode> names = new HashMap<Long, CNode>();
+		CNodeData tmp = (CNodeData)input;
+		names.put(tmp.getHopID(), new CNodeData(tmp, newName));
+		
+		for( CNode root : roots )
+			rReplaceDataNode(root, names, new HashMap<Long,CNode>());
 	}
 	
 	/**
@@ -216,7 +240,7 @@ public abstract class CNodeTpl extends CNode implements Cloneable
 	}
 	
 	protected static boolean equalInputReferences(CNode current1, CNode current2, ArrayList<CNode> input1, ArrayList<CNode> input2) {
-		boolean ret = true;
+		boolean ret = (input1.size() == input2.size());
 		
 		//process childs recursively
 		for( int i=0; ret && i<current1.getInput().size(); i++ )
@@ -228,6 +252,13 @@ public abstract class CNodeTpl extends CNode implements Cloneable
 				== indexOf(input2, (CNodeData)current2);
 		}
 		
+		return ret;
+	}
+	
+	protected static boolean equalInputReferences(ArrayList<CNode> current1, ArrayList<CNode> current2, ArrayList<CNode> input1, ArrayList<CNode> input2) {
+		boolean ret = (current1.size() == current2.size());
+		for( int i=0; ret && i<current1.size(); i++ )
+			ret &= equalInputReferences(current1.get(i), current2.get(i), input1, input2);
 		return ret;
 	}
 	

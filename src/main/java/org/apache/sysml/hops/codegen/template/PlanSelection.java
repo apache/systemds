@@ -59,7 +59,8 @@ public abstract class PlanSelection
 		return (me.type == TemplateType.OuterProdTpl 
 				&& (me.closed || HopRewriteUtils.isBinaryMatrixMatrixOperation(hop)))
 			|| (me.type == TemplateType.RowAggTpl && me.closed)	
-			|| (me.type == TemplateType.CellTpl);
+			|| (me.type == TemplateType.CellTpl)
+			|| (me.type == TemplateType.MultiAggTpl);
 	}
 	
 	protected void addBestPlan(long hopID, MemoTableEntry me) {

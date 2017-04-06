@@ -187,6 +187,7 @@ public class TemplateUtils
 		switch( type ) {
 			case CellTpl: tpl = new TemplateCell(closed); break;
 			case RowAggTpl: tpl = new TemplateRowAgg(closed); break;
+			case MultiAggTpl: tpl = new TemplateMultiAgg(closed); break;
 			case OuterProdTpl: tpl = new TemplateOuterProduct(closed); break;
 		}
 		return tpl;
@@ -197,6 +198,7 @@ public class TemplateUtils
 		switch( type ) {
 			case CellTpl: tpl = new TemplateBase[]{new TemplateCell(closed), new TemplateRowAgg(closed)}; break;
 			case RowAggTpl: tpl = new TemplateBase[]{new TemplateRowAgg(closed)}; break;
+			case MultiAggTpl: tpl = new TemplateBase[]{new TemplateMultiAgg(closed)}; break;
 			case OuterProdTpl: tpl = new TemplateBase[]{new TemplateOuterProduct(closed)}; break;
 		}
 		return tpl;

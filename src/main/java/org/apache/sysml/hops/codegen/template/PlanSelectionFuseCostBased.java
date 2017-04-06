@@ -35,6 +35,7 @@ import org.apache.sysml.hops.AggBinaryOp;
 import org.apache.sysml.hops.AggUnaryOp;
 import org.apache.sysml.hops.BinaryOp;
 import org.apache.sysml.hops.Hop;
+import org.apache.sysml.hops.Hop.Direction;
 import org.apache.sysml.hops.IndexingOp;
 import org.apache.sysml.hops.ParameterizedBuiltinOp;
 import org.apache.sysml.hops.ReorgOp;
@@ -81,7 +82,10 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 			if( LOG.isTraceEnabled() )
 				LOG.trace("Partition materialization points: "+Arrays.toString(M.toArray(new Long[0])));
 			
-			//step 3: plan enumeration and plan selection
+			//step 3: create composite templates entries
+			createAndAddMultiAggPlans(memo, partition, R);
+			
+			//step 4: plan enumeration and plan selection
 			selectPlans(memo, partition, R, M);
 		}
 	
@@ -213,6 +217,74 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 			&& partition.contains(hop.getHopID());
 	}
 	
+	private static void createAndAddMultiAggPlans(CPlanMemoTable memo, HashSet<Long> partition, HashSet<Long> R)
+	{
+		//create index of plans that reference full aggregates to avoid circular dependencies
+		HashSet<Long> refHops = new HashSet<Long>();
+		for( Entry<Long, List<MemoTableEntry>> e : memo._plans.entrySet() )
+			if( !e.getValue().isEmpty() ) {
+				Hop hop = memo._hopRefs.get(e.getKey());
+				for( Hop c : hop.getInput() )
+					refHops.add(c.getHopID());
+			}
+		
+		//find all full aggregations (the fact that they are in the same partition guarantees 
+		//that they also have common subexpressions, also full aggregations are by def root nodes)
+		ArrayList<Long> fullAggs = new ArrayList<Long>();
+		for( Long hopID : R ) {
+			Hop root = memo._hopRefs.get(hopID);
+			if( !refHops.contains(hopID) && root instanceof AggUnaryOp 
+				&& ((AggUnaryOp)root).getDirection()==Direction.RowCol)
+				fullAggs.add(hopID);
+		}
+		if( LOG.isTraceEnabled() ) {
+			LOG.trace("Found ua(RC) aggregations: " +
+				Arrays.toString(fullAggs.toArray(new Long[0])));
+		}
+		
+		//construct and add multiagg template plans (w/ max 3 aggregations)
+		for( int i=0; i<fullAggs.size(); i+=3 ) {
+			int ito = Math.min(i+3, fullAggs.size());
+			if( ito-i >= 2 ) {
+				MemoTableEntry me = new MemoTableEntry(TemplateType.MultiAggTpl,
+					fullAggs.get(i), fullAggs.get(i+1), ((ito-i)==3)?fullAggs.get(i+2):-1);
+				if( isValidMultiAggregate(memo, me) ) {
+					for( int j=i; j<ito; j++ ) {
+						memo.add(memo._hopRefs.get(fullAggs.get(j)), me);
+						if( LOG.isTraceEnabled() )
+							LOG.trace("Added multiagg plan: "+fullAggs.get(j)+" "+me);
+					}
+				}
+				else if( LOG.isTraceEnabled() ) {
+					LOG.trace("Removed invalid multiagg plan: "+me);
+				}
+			}
+		}
+	}
+	
+	private static boolean isValidMultiAggregate(CPlanMemoTable memo, MemoTableEntry me) {
+		//ensure that aggregates are independent of each other, i.e.,
+		//they to not have potentially transitive parent child references
+		boolean ret = true;
+		for( int i=0; i<3; i++ ) 
+			if( me.isPlanRef(i) ) {
+				HashSet<Long> probe = new HashSet<Long>();
+				for( int j=0; j<3; j++ )
+					if( i != j )
+						probe.add(me.input(j));
+				ret &= rCheckMultiAggregate(memo._hopRefs.get(me.input(i)), probe);
+			}
+		return ret;
+	}
+	
+	private static boolean rCheckMultiAggregate(Hop current, HashSet<Long> probe) {
+		boolean ret = true;
+		for( Hop c : current.getInput() )
+			ret &= rCheckMultiAggregate(c, probe);
+		ret &= !probe.contains(current.getHopID());
+		return ret;
+	}
+	
 	private void selectPlans(CPlanMemoTable memo, HashSet<Long> partition, HashSet<Long> R, ArrayList<Long> M) 
 	{
 		//if no materialization points, use basic fuse-all w/ partition awareness
@@ -275,7 +347,7 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 			Iterator<MemoTableEntry> iter = memo.get(hopID).iterator();
 			while( iter.hasNext() ) {
 				MemoTableEntry me = iter.next();
-				if( !hasNoRefToMaterialization(me, M, plan) ){
+				if( !hasNoRefToMaterialization(me, M, plan) && me.type!=TemplateType.OuterProdTpl ){
 					iter.remove();
 					if( LOG.isTraceEnabled() )
 						LOG.trace("Removed memo table entry: "+me);
@@ -418,7 +490,7 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 				if( LOG.isTraceEnabled() )
 					LOG.trace("Cost vector for fused operator: "+costVect);
 				costs += costVect.outSize * 8 / WRITE_BANDWIDTH; //time for output write
-				costs += Math.min(
+				costs += Math.max(
 						costVect.computeCosts*costVect.getMaxInputSize()/ COMPUTE_BANDWIDTH, 
 						costVect.getSumInputSizes() * 8 / READ_BANDWIDTH); 
 			}

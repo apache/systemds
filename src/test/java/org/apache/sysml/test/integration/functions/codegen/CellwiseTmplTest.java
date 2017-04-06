@@ -274,8 +274,8 @@ public class CellwiseTmplTest extends AutomatedTestBase
 			}
 			
 			if( !(rewrites && testname.equals(TEST_NAME2)) ) //sigmoid
-				Assert.assertTrue(heavyHittersContainsSubString("spoofCell") 
-					|| heavyHittersContainsSubString("sp_spoofCell"));
+				Assert.assertTrue(heavyHittersContainsSubString(
+						"spoofCell", "sp_spoofCell", "spoofMA", "sp_spoofMA"));
 			if( testname.equals(TEST_NAME7) ) //ensure matrix mult is fused
 				Assert.assertTrue(!heavyHittersContainsSubString("tsmm"));
 			else if( testname.equals(TEST_NAME10) ) //ensure min/max is fused

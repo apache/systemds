@@ -22,24 +22,24 @@
 /*
  * Various tests, not including gradient checks.
  */
-source("nn/layers/batch_norm.dml") as batch_norm
+source("nn/layers/batch_norm1d.dml") as batch_norm1d
+source("nn/layers/batch_norm2d.dml") as batch_norm2d
 source("nn/layers/conv2d.dml") as conv2d
 source("nn/layers/conv2d_builtin.dml") as conv2d_builtin
 source("nn/layers/cross_entropy_loss.dml") as cross_entropy_loss
 source("nn/layers/max_pool2d.dml") as max_pool2d
 source("nn/layers/max_pool2d_builtin.dml") as max_pool2d_builtin
-source("nn/layers/spatial_batch_norm.dml") as spatial_batch_norm
 source("nn/layers/tanh.dml") as tanh
 source("nn/test/conv2d_simple.dml") as conv2d_simple
 source("nn/test/max_pool2d_simple.dml") as max_pool2d_simple
 source("nn/test/util.dml") as test_util
 source("nn/util.dml") as util
 
-batch_norm = function() {
+batch_norm1d = function() {
   /*
-   * Test for the batch normalization function.
+   * Test for the 1D batch normalization function.
    */
-  print("Testing the batch normalization function.")
+  print("Testing the 1D batch normalization function.")
 
   # Generate data
   N = 4  # Number of examples
@@ -50,11 +50,11 @@ batch_norm = function() {
   X = matrix(seq(1,16), rows=N, cols=D)
 
   # Create layer
-  [gamma, beta, ema_mean, ema_var] = batch_norm::init(D)
+  [gamma, beta, ema_mean, ema_var] = batch_norm1d::init(D)
 
   # Forward
   [out, ema_mean_upd, ema_var_upd, cache_mean, cache_var, cache_norm] =
-      batch_norm::forward(X, gamma, beta, mode, ema_mean, ema_var, mu, eps)
+      batch_norm1d::forward(X, gamma, beta, mode, ema_mean, ema_var, mu, eps)
 
   # Equivalency check
   target = matrix("-1.34160721 -1.34160721 -1.34160733 -1.34160709
@@ -428,11 +428,11 @@ max_pool2d = function() {
   tmp = test_util::check_all_equal(out_builtin, target)
 }
 
-spatial_batch_norm = function() {
+batch_norm2d = function() {
   /*
-   * Test for the spatial batch normalization function.
+   * Test for the 2D (spatial) batch normalization function.
    */
-  print("Testing the spatial batch normalization function.")
+  print("Testing the 2D (spatial) batch normalization function.")
 
   # Generate data
   N = 2  # Number of examples
@@ -474,11 +474,11 @@ spatial_batch_norm = function() {
               55  58 52  0 99", rows=N, cols=C*Hin*Win)
 
   # Create layer
-  [gamma, beta, ema_mean, ema_var] = spatial_batch_norm::init(C)
+  [gamma, beta, ema_mean, ema_var] = batch_norm2d::init(C)
 
   # Forward
   [out, ema_mean_upd, ema_var_upd, cache_mean, cache_var, cache_norm] =
-      spatial_batch_norm::forward(X, gamma, beta, C, Hin, Win, mode, ema_mean, ema_var, mu, eps)
+      batch_norm2d::forward(X, gamma, beta, C, Hin, Win, mode, ema_mean, ema_var, mu, eps)
 
   # Equivalency check
   target = matrix("0.86215019 -0.76679718 -1.00517964  0.26619387  0.94161105

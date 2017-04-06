@@ -39,6 +39,8 @@ source("nn/layers/max_pool2d.dml") as max_pool2d
 source("nn/layers/max_pool2d_builtin.dml") as max_pool2d_builtin
 source("nn/layers/relu.dml") as relu
 source("nn/layers/rnn.dml") as rnn
+source("nn/layers/scale_shift1d.dml") as scale_shift1d
+source("nn/layers/scale_shift2d.dml") as scale_shift2d
 source("nn/layers/sigmoid.dml") as sigmoid
 source("nn/layers/softmax.dml") as softmax
 source("nn/layers/tanh.dml") as tanh
@@ -217,6 +219,113 @@ batch_norm1d = function() {
         beta[i,j] = old + h
         [outph, ema_mean_upd, ema_var_upd, cache_mean, cache_var, cache_norm] =
             batch_norm1d::forward(X, gamma, beta, mode, ema_mean, ema_var, mu, eps)
+        lossph = l2_loss::forward(outph, y)
+        beta[i,j] = old  # reset
+        dbeta_num = (lossph-lossmh) / (2*h)  # numerical derivative
+
+        # Check error
+        rel_error = test_util::check_rel_grad_error(as.scalar(dbeta[i,j]), dbeta_num,
+                                                    lossph, lossmh)
+      }
+    }
+  }
+}
+
+batch_norm2d = function() {
+  /*
+   * Gradient check for the 2D (spatial) batch normalization layer.
+   */
+  print("Grad checking the 2D (spatial) batch normalization layer with L2 loss.")
+
+  # Generate data
+  N = 3 # num examples
+  C = 2  # num channels
+  Hin = 5  # input height
+  Win = 5  # input width
+  mu = 0.9  # momentum
+  eps = 1e-5  # epsilon
+  X = rand(rows=N, cols=C*Hin*Win)
+  y = rand(rows=N, cols=C*Hin*Win)
+  gamma = rand(rows=C, cols=1)
+  beta = rand(rows=C, cols=1)
+  ema_mean = rand(rows=C, cols=1)
+  ema_var = rand(rows=C, cols=1)
+  #[dummy, dummy, ema_mean, ema_var] = batch_norm2d::init(C)
+
+  # Check training & testing modes
+  for (i in 1:2) {
+    if (i == 1)
+      mode = 'train'
+    else
+      mode = 'test'
+    print(" - Grad checking the '"+mode+"' mode.")
+
+    # Compute analytical gradients of loss wrt parameters
+    [out, ema_mean_upd, ema_var_upd, cache_mean, cache_var, cache_norm] =
+        batch_norm2d::forward(X, gamma, beta, C, Hin, Win, mode, ema_mean, ema_var, mu, eps)
+    dout = l2_loss::backward(out, y)
+    [dX, dgamma, dbeta] = batch_norm2d::backward(dout, out, ema_mean_upd, ema_var_upd,
+                                                 cache_mean, cache_var, cache_norm,
+                                                 X, gamma, beta, C, Hin, Win, mode,
+                                                 ema_mean, ema_var, mu, eps)
+
+    # Grad check
+    h = 1e-5
+    print("   - Grad checking X.")
+    for (i in 1:nrow(X)) {
+      for (j in 1:ncol(X)) {
+        # Compute numerical derivative
+        old = as.scalar(X[i,j])
+        X[i,j] = old - h
+        [outmh, ema_mean_upd, ema_var_upd, cache_mean, cache_var, cache_norm] =
+            batch_norm2d::forward(X, gamma, beta, C, Hin, Win, mode, ema_mean, ema_var, mu, eps)
+        lossmh = l2_loss::forward(outmh, y)
+        X[i,j] = old + h
+        [outph, ema_mean_upd, ema_var_upd, cache_mean, cache_var, cache_norm] =
+            batch_norm2d::forward(X, gamma, beta, C, Hin, Win, mode, ema_mean, ema_var, mu, eps)
+        lossph = l2_loss::forward(outph, y)
+        X[i,j] = old  # reset
+        dX_num = (lossph-lossmh) / (2*h)  # numerical derivative
+
+        # Check error
+        rel_error = test_util::check_rel_grad_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
+      }
+    }
+
+    print("   - Grad checking gamma.")
+    for (i in 1:nrow(gamma)) {
+      for (j in 1:ncol(gamma)) {
+        # Compute numerical derivative
+        old = as.scalar(gamma[i,j])
+        gamma[i,j] = old - h
+        [outmh, ema_mean_upd, ema_var_upd, cache_mean, cache_var, cache_norm] =
+            batch_norm2d::forward(X, gamma, beta, C, Hin, Win, mode, ema_mean, ema_var, mu, eps)
+        lossmh = l2_loss::forward(outmh, y)
+        gamma[i,j] = old + h
+        [outph, ema_mean_upd, ema_var_upd, cache_mean, cache_var, cache_norm] =
+            batch_norm2d::forward(X, gamma, beta, C, Hin, Win, mode, ema_mean, ema_var, mu, eps)
+        lossph = l2_loss::forward(outph, y)
+        gamma[i,j] = old  # reset
+        dgamma_num = (lossph-lossmh) / (2*h)  # numerical derivative
+
+        # Check error
+        rel_error = test_util::check_rel_grad_error(as.scalar(dgamma[i,j]), dgamma_num,
+                                                    lossph, lossmh)
+      }
+    }
+
+    print("   - Grad checking beta.")
+    for (i in 1:nrow(beta)) {
+      for (j in 1:ncol(beta)) {
+        # Compute numerical derivative
+        old = as.scalar(beta[i,j])
+        beta[i,j] = old - h
+        [outmh, ema_mean_upd, ema_var_upd, cache_mean, cache_var, cache_norm] =
+            batch_norm2d::forward(X, gamma, beta, C, Hin, Win, mode, ema_mean, ema_var, mu, eps)
+        lossmh = l2_loss::forward(outmh, y)
+        beta[i,j] = old + h
+        [outph, ema_mean_upd, ema_var_upd, cache_mean, cache_var, cache_norm] =
+            batch_norm2d::forward(X, gamma, beta, C, Hin, Win, mode, ema_mean, ema_var, mu, eps)
         lossph = l2_loss::forward(outph, y)
         beta[i,j] = old  # reset
         dbeta_num = (lossph-lossmh) / (2*h)  # numerical derivative
@@ -1199,6 +1308,168 @@ rnn = function() {
   }
 }
 
+scale_shift1d = function() {
+  /*
+   * Gradient check for the 1D scale & shift layer.
+   */
+  print("Grad checking the 1D scale & shift layer with L2 loss.")
+
+  # Generate data
+  N = 3 # num examples
+  D = 100 # num features
+  X = rand(rows=N, cols=D)
+  y = rand(rows=N, cols=D)
+  [gamma, beta] = scale_shift1d::init(D)
+
+  # Compute analytical gradients of loss wrt parameters
+  out = scale_shift1d::forward(X, gamma, beta)
+  dout = l2_loss::backward(out, y)
+  [dX, dgamma, dbeta] = scale_shift1d::backward(dout, out, X, gamma, beta)
+
+  # Grad check
+  h = 1e-5
+  print(" - Grad checking X.")
+  for (i in 1:nrow(X)) {
+    for (j in 1:ncol(X)) {
+      # Compute numerical derivative
+      old = as.scalar(X[i,j])
+      X[i,j] = old - h
+      outmh = scale_shift1d::forward(X, gamma, beta)
+      lossmh = l2_loss::forward(outmh, y)
+      X[i,j] = old + h
+      outph = scale_shift1d::forward(X, gamma, beta)
+      lossph = l2_loss::forward(outph, y)
+      X[i,j] = old  # reset
+      dX_num = (lossph-lossmh) / (2*h)  # numerical derivative
+
+      # Check error
+      rel_error = test_util::check_rel_grad_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
+    }
+  }
+
+  print(" - Grad checking gamma.")
+  for (i in 1:nrow(gamma)) {
+    for (j in 1:ncol(gamma)) {
+      # Compute numerical derivative
+      old = as.scalar(gamma[i,j])
+      gamma[i,j] = old - h
+      outmh = scale_shift1d::forward(X, gamma, beta)
+      lossmh = l2_loss::forward(outmh, y)
+      gamma[i,j] = old + h
+      outph = scale_shift1d::forward(X, gamma, beta)
+      lossph = l2_loss::forward(outph, y)
+      gamma[i,j] = old  # reset
+      dgamma_num = (lossph-lossmh) / (2*h)  # numerical derivative
+
+      # Check error
+      rel_error = test_util::check_rel_grad_error(as.scalar(dgamma[i,j]), dgamma_num,
+                                                  lossph, lossmh)
+    }
+  }
+
+  print(" - Grad checking beta.")
+  for (i in 1:nrow(beta)) {
+    for (j in 1:ncol(beta)) {
+      # Compute numerical derivative
+      old = as.scalar(beta[i,j])
+      beta[i,j] = old - h
+      outmh = scale_shift1d::forward(X, gamma, beta)
+      lossmh = l2_loss::forward(outmh, y)
+      beta[i,j] = old + h
+      outph = scale_shift1d::forward(X, gamma, beta)
+      lossph = l2_loss::forward(outph, y)
+      beta[i,j] = old  # reset
+      dbeta_num = (lossph-lossmh) / (2*h)  # numerical derivative
+
+      # Check error
+      rel_error = test_util::check_rel_grad_error(as.scalar(dbeta[i,j]), dbeta_num,
+                                                  lossph, lossmh)
+    }
+  }
+}
+
+scale_shift2d = function() {
+  /*
+   * Gradient check for the 2D scale & shift layer.
+   */
+  print("Grad checking the 2D scale & shift layer with L2 loss.")
+
+  # Generate data
+  N = 3 # num examples
+  C = 2  # num channels
+  Hin = 5  # input height
+  Win = 5  # input width
+  X = rand(rows=N, cols=C*Hin*Win)
+  y = rand(rows=N, cols=C*Hin*Win)
+  [gamma, beta] = scale_shift2d::init(C)
+
+  # Compute analytical gradients of loss wrt parameters
+  out = scale_shift2d::forward(X, gamma, beta, C, Hin, Win)
+  dout = l2_loss::backward(out, y)
+  [dX, dgamma, dbeta] = scale_shift2d::backward(dout, out, X, gamma, beta, C, Hin, Win)
+
+  # Grad check
+  h = 1e-5
+  print(" - Grad checking X.")
+  for (i in 1:nrow(X)) {
+    for (j in 1:ncol(X)) {
+      # Compute numerical derivative
+      old = as.scalar(X[i,j])
+      X[i,j] = old - h
+      outmh = scale_shift2d::forward(X, gamma, beta, C, Hin, Win)
+      lossmh = l2_loss::forward(outmh, y)
+      X[i,j] = old + h
+      outph = scale_shift2d::forward(X, gamma, beta, C, Hin, Win)
+      lossph = l2_loss::forward(outph, y)
+      X[i,j] = old  # reset
+      dX_num = (lossph-lossmh) / (2*h)  # numerical derivative
+
+      # Check error
+      rel_error = test_util::check_rel_grad_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
+    }
+  }
+
+  print(" - Grad checking gamma.")
+  for (i in 1:nrow(gamma)) {
+    for (j in 1:ncol(gamma)) {
+      # Compute numerical derivative
+      old = as.scalar(gamma[i,j])
+      gamma[i,j] = old - h
+      outmh = scale_shift2d::forward(X, gamma, beta, C, Hin, Win)
+      lossmh = l2_loss::forward(outmh, y)
+      gamma[i,j] = old + h
+      outph = scale_shift2d::forward(X, gamma, beta, C, Hin, Win)
+      lossph = l2_loss::forward(outph, y)
+      gamma[i,j] = old  # reset
+      dgamma_num = (lossph-lossmh) / (2*h)  # numerical derivative
+
+      # Check error
+      rel_error = test_util::check_rel_grad_error(as.scalar(dgamma[i,j]), dgamma_num,
+                                                  lossph, lossmh)
+    }
+  }
+
+  print(" - Grad checking beta.")
+  for (i in 1:nrow(beta)) {
+    for (j in 1:ncol(beta)) {
+      # Compute numerical derivative
+      old = as.scalar(beta[i,j])
+      beta[i,j] = old - h
+      outmh = scale_shift2d::forward(X, gamma, beta, C, Hin, Win)
+      lossmh = l2_loss::forward(outmh, y)
+      beta[i,j] = old + h
+      outph = scale_shift2d::forward(X, gamma, beta, C, Hin, Win)
+      lossph = l2_loss::forward(outph, y)
+      beta[i,j] = old  # reset
+      dbeta_num = (lossph-lossmh) / (2*h)  # numerical derivative
+
+      # Check error
+      rel_error = test_util::check_rel_grad_error(as.scalar(dbeta[i,j]), dbeta_num,
+                                                  lossph, lossmh)
+    }
+  }
+}
+
 sigmoid = function() {
   /*
    * Gradient check for the sigmoid nonlinearity layer.
@@ -1272,114 +1543,6 @@ softmax = function() {
 
       # Check error
       rel_error = test_util::check_rel_grad_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
-    }
-  }
-}
-
-batch_norm2d = function() {
-  /*
-   * Gradient check for the 2D (spatial) batch normalization layer.
-   */
-  print("Grad checking the 2D (spatial) batch normalization layer with L2 loss.")
-
-  # Generate data
-  N = 3 # num examples
-  N = 2  # num examples
-  C = 2  # num channels
-  Hin = 5  # input height
-  Win = 5  # input width
-  mu = 0.9  # momentum
-  eps = 1e-5  # epsilon
-  X = rand(rows=N, cols=C*Hin*Win)
-  y = rand(rows=N, cols=C*Hin*Win)
-  gamma = rand(rows=C, cols=1)
-  beta = rand(rows=C, cols=1)
-  ema_mean = rand(rows=C, cols=1)
-  ema_var = rand(rows=C, cols=1)
-  #[dummy, dummy, ema_mean, ema_var] = batch_norm2d::init(C)
-
-  # Check training & testing modes
-  for (i in 1:2) {
-    if (i == 1)
-      mode = 'train'
-    else
-      mode = 'test'
-    print(" - Grad checking the '"+mode+"' mode.")
-
-    # Compute analytical gradients of loss wrt parameters
-    [out, ema_mean_upd, ema_var_upd, cache_mean, cache_var, cache_norm] =
-        batch_norm2d::forward(X, gamma, beta, C, Hin, Win, mode, ema_mean, ema_var, mu, eps)
-    dout = l2_loss::backward(out, y)
-    [dX, dgamma, dbeta] = batch_norm2d::backward(dout, out, ema_mean_upd, ema_var_upd,
-                                                 cache_mean, cache_var, cache_norm,
-                                                 X, gamma, beta, C, Hin, Win, mode,
-                                                 ema_mean, ema_var, mu, eps)
-
-    # Grad check
-    h = 1e-5
-    print("   - Grad checking X.")
-    for (i in 1:nrow(X)) {
-      for (j in 1:ncol(X)) {
-        # Compute numerical derivative
-        old = as.scalar(X[i,j])
-        X[i,j] = old - h
-        [outmh, ema_mean_upd, ema_var_upd, cache_mean, cache_var, cache_norm] =
-            batch_norm2d::forward(X, gamma, beta, C, Hin, Win, mode, ema_mean, ema_var, mu, eps)
-        lossmh = l2_loss::forward(outmh, y)
-        X[i,j] = old + h
-        [outph, ema_mean_upd, ema_var_upd, cache_mean, cache_var, cache_norm] =
-            batch_norm2d::forward(X, gamma, beta, C, Hin, Win, mode, ema_mean, ema_var, mu, eps)
-        lossph = l2_loss::forward(outph, y)
-        X[i,j] = old  # reset
-        dX_num = (lossph-lossmh) / (2*h)  # numerical derivative
-
-        # Check error
-        rel_error = test_util::check_rel_grad_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
-      }
-    }
-
-    print("   - Grad checking gamma.")
-    for (i in 1:nrow(gamma)) {
-      for (j in 1:ncol(gamma)) {
-        # Compute numerical derivative
-        old = as.scalar(gamma[i,j])
-        gamma[i,j] = old - h
-        [outmh, ema_mean_upd, ema_var_upd, cache_mean, cache_var, cache_norm] =
-            batch_norm2d::forward(X, gamma, beta, C, Hin, Win, mode, ema_mean, ema_var, mu, eps)
-        lossmh = l2_loss::forward(outmh, y)
-        gamma[i,j] = old + h
-        [outph, ema_mean_upd, ema_var_upd, cache_mean, cache_var, cache_norm] =
-            batch_norm2d::forward(X, gamma, beta, C, Hin, Win, mode, ema_mean, ema_var, mu, eps)
-        lossph = l2_loss::forward(outph, y)
-        gamma[i,j] = old  # reset
-        dgamma_num = (lossph-lossmh) / (2*h)  # numerical derivative
-
-        # Check error
-        rel_error = test_util::check_rel_grad_error(as.scalar(dgamma[i,j]), dgamma_num,
-                                                    lossph, lossmh)
-      }
-    }
-
-    print("   - Grad checking beta.")
-    for (i in 1:nrow(beta)) {
-      for (j in 1:ncol(beta)) {
-        # Compute numerical derivative
-        old = as.scalar(beta[i,j])
-        beta[i,j] = old - h
-        [outmh, ema_mean_upd, ema_var_upd, cache_mean, cache_var, cache_norm] =
-            batch_norm2d::forward(X, gamma, beta, C, Hin, Win, mode, ema_mean, ema_var, mu, eps)
-        lossmh = l2_loss::forward(outmh, y)
-        beta[i,j] = old + h
-        [outph, ema_mean_upd, ema_var_upd, cache_mean, cache_var, cache_norm] =
-            batch_norm2d::forward(X, gamma, beta, C, Hin, Win, mode, ema_mean, ema_var, mu, eps)
-        lossph = l2_loss::forward(outph, y)
-        beta[i,j] = old  # reset
-        dbeta_num = (lossph-lossmh) / (2*h)  # numerical derivative
-
-        # Check error
-        rel_error = test_util::check_rel_grad_error(as.scalar(dbeta[i,j]), dbeta_num,
-                                                    lossph, lossmh)
-      }
     }
   }
 }

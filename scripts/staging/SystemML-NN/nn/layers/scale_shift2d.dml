@@ -1,0 +1,107 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+/*
+ * 2D Scale & Shift layer.
+ */
+source("nn/util.dml") as util
+
+forward = function(matrix[double] X, matrix[double] gamma, matrix[double] beta,
+                   int C, int Hin, int Win)
+    return (matrix[double] out) {
+  /*
+   * Computes the forward pass for a 2D scale & shift layer.  The input
+   * data has N examples, each represented as a 3D volume unrolled into
+   * a single vector.
+   *
+   * A 2D scale & shift layer introduces learnable parameters
+   * (gamma, beta) to scale and shift the input on a per-channel basis.
+   *
+   *   `y = x*gamma + beta`
+   *
+   * Inputs:
+   *  - X: Inputs, of shape (N, C*Hin*Win).
+   *  - gamma: Scale parameters, of shape (C, 1).
+   *  - beta: Shift parameters, of shape (C, 1).
+   *  - C: Number of input channels (dimensionality of input depth).
+   *  - Hin: Input height.
+   *  - Win: Input width.
+   *
+   * Outputs:
+   *  - out: Outputs, of shape (N, C*Hin*Win).
+   */
+  # Scale and shift
+  scaled = bias_multiply(X, gamma)  # shape (N, C*Hin*Win)
+  out = bias_add(scaled, beta)  # shape (N, C*Hin*Win)
+}
+
+backward = function(matrix[double] dout, matrix[double] out,
+                    matrix[double] X, matrix[double] gamma, matrix[double] beta,
+                    int C, int Hin, int Win)
+      return (matrix[double] dX, matrix[double] dgamma, matrix[double] dbeta) {
+  /*
+   * Computes the backward pass for a 2D scale & shift layer.
+   *
+   * Inputs:
+   *  - dout: Gradient wrt `out` from upstream, of shape (N, C*Hin*Win).
+   *  - out: Outputs from the forward pass, of shape (N, C*Hin*Win).
+   *  - X: Input data matrix to the forward pass, of
+   *      shape (N, C*Hin*Win).
+   *  - gamma: Scale parameters, of shape (C, 1).
+   *  - beta: Shift parameters, of shape (C, 1).
+   *  - C: Number of input channels (dimensionality of input depth).
+   *  - Hin: Input height.
+   *  - Win: Input width.
+   *
+   * Outputs:
+   *  - dX: Gradient wrt `X`, of shape (N, C*Hin*Win).
+   *  - dgamma: Gradient wrt `W`, of shape (C, 1).
+   *  - dbeta: Gradient wrt `b`, of shape (C, 1).
+   *
+   */
+  # Compute gradients during training
+  dgamma = util::channel_sums(dout*X, C, Hin, Win)  # shape (C, 1)
+  dbeta = util::channel_sums(dout, C, Hin, Win)  # shape (C, 1)
+  dX = bias_multiply(dout, gamma)  # shape (N, C*Hin*Win)
+}
+
+init = function(int C)
+    return (matrix[double] gamma, matrix[double] beta) {
+  /*
+   * Initialize the parameters of this layer.
+   *
+   * By default, we initialize to an identity function, with a scale
+   * filler of `1`, and a shift filler of `0`.
+   *
+   * Note: This is just a convenience function, and parameters
+   * may be initialized manually if needed.
+   *
+   * Inputs:
+   *  - C: Number of input channels (dimensionality of input depth).
+   *
+   * Outputs:
+   *  - gamma: Scale parameters, of shape (C, 1).
+   *  - beta: Shift parameters, of shape (C, 1).
+   */
+   gamma = matrix(1, rows=C, cols=1)
+   beta = matrix(0, rows=C, cols=1)
+}
+

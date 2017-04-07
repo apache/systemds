@@ -23,14 +23,12 @@ import static org.apache.sysml.api.mlcontext.ScriptFactory.dmlFromFile;
 
 import java.io.File;
 
-import org.apache.spark.SparkConf;
-import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.sql.SparkSession;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.api.mlcontext.MLContext;
 import org.apache.sysml.api.mlcontext.Matrix;
 import org.apache.sysml.api.mlcontext.Script;
-import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.utils.TestUtils;
 import org.junit.After;
@@ -92,12 +90,10 @@ public class MLContextMultipleScriptsTest extends AutomatedTestBase
 		DMLScript.rtplatform = platform;
 		
 		//create mlcontext
-		SparkConf conf = SparkExecutionContext.createSystemMLSparkConf()
-				.setAppName("MLContextFrameTest").setMaster("local");
-		JavaSparkContext sc = new JavaSparkContext(conf);
-		MLContext ml = new MLContext(sc);
+		SparkSession spark = createSystemMLSparkSession("MLContextMultipleScriptsTest", "local");
+		MLContext ml = new MLContext(spark);
 		ml.setExplain(true);
-		
+
 		String dml1 = baseDirectory + File.separator + "MultiScript1.dml";
 		String dml2 = baseDirectory + File.separator + (wRead?"MultiScript2b.dml":"MultiScript2.dml");
 		String dml3 = baseDirectory + File.separator + (wRead?"MultiScript3b.dml":"MultiScript3.dml");
@@ -119,9 +115,9 @@ public class MLContextMultipleScriptsTest extends AutomatedTestBase
 		finally {
 			DMLScript.rtplatform = oldplatform;
 			
-			// stop spark context to allow single jvm tests (otherwise the
+			// stop underlying spark context to allow single jvm tests (otherwise the
 			// next test that tries to create a SparkContext would fail)
-			sc.stop();
+			spark.stop();
 			// clear status mlcontext and spark exec context
 			ml.close();
 		}

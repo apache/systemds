@@ -47,10 +47,12 @@ import org.apache.spark.mllib.util.MLUtils;
 import org.apache.spark.rdd.RDD;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
+import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
+import org.apache.sysml.api.MLContextProxy;
 import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.conf.ConfigurationManager;
@@ -170,12 +172,12 @@ public final class MLContextUtil {
 	 * Check that the Spark version is supported. If it isn't supported, throw
 	 * an MLContextException.
 	 * 
-	 * @param sc
-	 *            SparkContext
+	 * @param spark
+	 *            SparkSession
 	 * @throws MLContextException
 	 *             thrown if Spark version isn't supported
 	 */
-	public static void verifySparkVersionSupported(SparkContext sc) {
+	public static void verifySparkVersionSupported(SparkSession spark) {
 		String minimumRecommendedSparkVersion = null;
 		try {
 			// If this is being called using the SystemML jar file,
@@ -192,7 +194,7 @@ public final class MLContextUtil {
 				throw new MLContextException("Minimum recommended Spark version could not be determined from SystemML jar file manifest or pom.xml");
 			}
 		}
-		String sparkVersion = sc.version();
+		String sparkVersion = spark.version();
 		if (!MLContextUtil.isSparkVersionSupported(sparkVersion, minimumRecommendedSparkVersion)) {
 			throw new MLContextException(
 					"Spark " + sparkVersion + " or greater is recommended for this version of SystemML.");
@@ -1027,7 +1029,7 @@ public final class MLContextUtil {
 	 * @return the Spark Context
 	 */
 	public static SparkContext getSparkContext(MLContext mlContext) {
-		return mlContext.getSparkContext();
+		return mlContext.getSparkSession().sparkContext();
 	}
 
 	/**
@@ -1038,7 +1040,38 @@ public final class MLContextUtil {
 	 * @return the Java Spark Context
 	 */
 	public static JavaSparkContext getJavaSparkContext(MLContext mlContext) {
-		return new JavaSparkContext(mlContext.getSparkContext());
+		return new JavaSparkContext(mlContext.getSparkSession().sparkContext());
+	}
+
+	/**
+	 * Obtain the Spark Context from the MLContextProxy
+	 * 
+	 * @return the Spark Context
+	 */
+	public static SparkContext getSparkContextFromProxy() {
+		MLContext activeMLContext = (MLContext) MLContextProxy.getActiveMLContextForAPI();
+		SparkContext sc = getSparkContext(activeMLContext);
+		return sc;
+	}
+
+	/**
+	 * Obtain the Java Spark Context from the MLContextProxy
+	 * 
+	 * @return the Java Spark Context
+	 */
+	public static JavaSparkContext getJavaSparkContextFromProxy() {
+		MLContext activeMLContext = (MLContext) MLContextProxy.getActiveMLContextForAPI();
+		JavaSparkContext jsc = getJavaSparkContext(activeMLContext);
+		return jsc;
+	}
+
+	/**
+	 * Obtain the Spark Session from the MLContextProxy
+	 * 
+	 * @return the Spark Session
+	 */
+	public static SparkSession getSparkSessionFromProxy() {
+		return ((MLContext) MLContextProxy.getActiveMLContextForAPI()).getSparkSession();
 	}
 
 	/**

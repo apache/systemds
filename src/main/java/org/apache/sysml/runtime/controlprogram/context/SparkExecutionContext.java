@@ -39,6 +39,7 @@ import org.apache.spark.storage.StorageLevel;
 import org.apache.spark.util.LongAccumulator;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.MLContextProxy;
+import org.apache.sysml.api.mlcontext.MLContextUtil;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.lops.Checkpoint;
@@ -85,10 +86,11 @@ public class SparkExecutionContext extends ExecutionContext
 	private static final boolean LDEBUG = false; //local debug flag
 	
 	//internal configurations 
-	private static final boolean LAZY_SPARKCTX_CREATION = true;
-	private static final boolean ASYNCHRONOUS_VAR_DESTROY = true;
-	private static final boolean FAIR_SCHEDULER_MODE = true;
-	
+	private static boolean LAZY_SPARKCTX_CREATION = true;
+	private static boolean ASYNCHRONOUS_VAR_DESTROY = true;
+
+	public static boolean FAIR_SCHEDULER_MODE = true;
+
 	//executor memory and relative fractions as obtained from the spark configuration
 	private static SparkClusterConfig _sconf = null;
 	
@@ -198,7 +200,7 @@ public class SparkExecutionContext extends ExecutionContext
 				_spctx = new JavaSparkContext(mlCtx.getSparkContext());
 			} else if (mlCtxObj instanceof org.apache.sysml.api.mlcontext.MLContext) {
 				org.apache.sysml.api.mlcontext.MLContext mlCtx = (org.apache.sysml.api.mlcontext.MLContext) mlCtxObj;
-				_spctx = new JavaSparkContext(mlCtx.getSparkContext());
+				_spctx = MLContextUtil.getJavaSparkContext(mlCtx);
 			}
 		}
 		else 
@@ -267,12 +269,12 @@ public class SparkExecutionContext extends ExecutionContext
 		
 		return conf;
 	}
-	
+
 	/**
 	 * Spark instructions should call this for all matrix inputs except broadcast
 	 * variables.
 	 * 
-	 * @param varname varible name
+	 * @param varname variable name
 	 * @return JavaPairRDD of MatrixIndexes-MatrixBlocks
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */

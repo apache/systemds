@@ -27,7 +27,6 @@ import java.util.HashMap;
 import java.util.List;
 
 import org.apache.hadoop.io.LongWritable;
-import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
@@ -42,6 +41,7 @@ import org.apache.sysml.api.mlcontext.FrameFormat;
 import org.apache.sysml.api.mlcontext.FrameMetadata;
 import org.apache.sysml.api.mlcontext.FrameSchema;
 import org.apache.sysml.api.mlcontext.MLContext;
+import org.apache.sysml.api.mlcontext.MLContextUtil;
 import org.apache.sysml.api.mlcontext.MLResults;
 import org.apache.sysml.api.mlcontext.Script;
 import org.apache.sysml.api.mlcontext.ScriptFactory;
@@ -49,7 +49,6 @@ import org.apache.sysml.parser.DataExpression;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.parser.ParseException;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDConverterUtils;
 import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDConverterUtils.LongFrameToLongWritableFrameFunction;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -99,18 +98,15 @@ public class FrameTest extends AutomatedTestBase
 		schemaMixedLarge = (ValueType[]) schemaMixedLargeList.toArray(schemaMixedLarge);
 	}
 
-	private static SparkConf conf;
+	private static SparkSession spark;
 	private static JavaSparkContext sc;
 	private static MLContext ml;
 
 	@BeforeClass
 	public static void setUpClass() {
-		if (conf == null)
-			conf = SparkExecutionContext.createSystemMLSparkConf()
-				.setAppName("FrameTest").setMaster("local");
-		if (sc == null)
-			sc = new JavaSparkContext(conf);
-		ml = new MLContext(sc);
+		spark = createSystemMLSparkSession("FrameTest", "local");
+		ml = new MLContext(spark);
+		sc = MLContextUtil.getJavaSparkContext(ml);
 	}
 
 	@Override
@@ -237,16 +233,15 @@ public class FrameTest extends AutomatedTestBase
 		if(bFromDataFrame)
 		{
 			//Create DataFrame for input A 
-			SparkSession sparkSession = SparkSession.builder().sparkContext(sc.sc()).getOrCreate();
 			StructType dfSchemaA = FrameRDDConverterUtils.convertFrameSchemaToDFSchema(schema, false);
 
 			JavaRDD<Row> rowRDDA = FrameRDDConverterUtils.csvToRowRDD(sc, input("A"), DataExpression.DEFAULT_DELIM_DELIMITER, schema);
-			dfA = sparkSession.createDataFrame(rowRDDA, dfSchemaA);
+			dfA = spark.createDataFrame(rowRDDA, dfSchemaA);
 			
 			//Create DataFrame for input B 
 			StructType dfSchemaB = FrameRDDConverterUtils.convertFrameSchemaToDFSchema(schemaB, false);
 			JavaRDD<Row> rowRDDB = FrameRDDConverterUtils.csvToRowRDD(sc, input("B"), DataExpression.DEFAULT_DELIM_DELIMITER, schemaB);
-			dfB = sparkSession.createDataFrame(rowRDDB, dfSchemaB);
+			dfB = spark.createDataFrame(rowRDDB, dfSchemaB);
 		}
 
 		try 
@@ -386,11 +381,11 @@ public class FrameTest extends AutomatedTestBase
 
 	@AfterClass
 	public static void tearDownClass() {
-		// stop spark context to allow single jvm tests (otherwise the
+		// stop underlying spark context to allow single jvm tests (otherwise the
 		// next test that tries to create a SparkContext would fail)
-		sc.stop();
+		spark.stop();
 		sc = null;
-		conf = null;
+		spark = null;
 
 		// clear status mlcontext and spark exec context
 		ml.close();

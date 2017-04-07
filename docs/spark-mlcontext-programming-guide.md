@@ -47,10 +47,10 @@ spark-shell --executor-memory 4G --driver-memory 4G --jars SystemML.jar
 
 ## Create MLContext
 
-All primary classes that a user interacts with are located in the `org.apache.sysml.api.mlcontext package`.
-For convenience, we can additionally add a static import of ScriptFactory to shorten the syntax for creating Script objects.
-An `MLContext` object can be created by passing its constructor a reference to the `SparkContext`. If successful, you
-should see a "`Welcome to Apache SystemML!`" message.
+All primary classes that a user interacts with are located in the `org.apache.sysml.api.mlcontext` package.
+For convenience, we can additionally add a static import of `ScriptFactory` to shorten the syntax for creating `Script` objects.
+An `MLContext` object can be created by passing its constructor a reference to the `SparkSession` (`spark`) or `SparkContext` (`sc`).
+If successful, you should see a "`Welcome to Apache SystemML!`" message.
 
 <div class="codetabs">
 
@@ -58,7 +58,7 @@ should see a "`Welcome to Apache SystemML!`" message.
 {% highlight scala %}
 import org.apache.sysml.api.mlcontext._
 import org.apache.sysml.api.mlcontext.ScriptFactory._
-val ml = new MLContext(sc)
+val ml = new MLContext(spark)
 {% endhighlight %}
 </div>
 
@@ -70,7 +70,7 @@ import org.apache.sysml.api.mlcontext._
 scala> import org.apache.sysml.api.mlcontext.ScriptFactory._
 import org.apache.sysml.api.mlcontext.ScriptFactory._
 
-scala> val ml = new MLContext(sc)
+scala> val ml = new MLContext(spark)
 
 Welcome to Apache SystemML!
 
@@ -1753,7 +1753,7 @@ Archiver-Version: Plexus Archiver
 Artifact-Id: systemml
 Build-Jdk: 1.8.0_60
 Build-Time: 2017-02-03 22:32:43 UTC
-Built-By: deroneriksson
+Built-By: sparkuser
 Created-By: Apache Maven 3.3.9
 Group-Id: org.apache.systemml
 Main-Class: org.apache.sysml.api.DMLScript

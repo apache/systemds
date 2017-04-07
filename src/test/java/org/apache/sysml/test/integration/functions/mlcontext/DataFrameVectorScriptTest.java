@@ -24,7 +24,6 @@ import static org.apache.sysml.api.mlcontext.ScriptFactory.dml;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.ml.linalg.DenseVector;
@@ -45,7 +44,6 @@ import org.apache.sysml.api.mlcontext.Script;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -54,6 +52,8 @@ import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 
@@ -74,6 +74,16 @@ public class DataFrameVectorScriptTest extends AutomatedTestBase
 	private final static double sparsity1 = 0.9;
 	private final static double sparsity2 = 0.1;
 	private final static double eps=0.0000000001;
+
+	private static SparkSession spark;
+	private static MLContext ml;
+
+	@BeforeClass
+	public static void setUpClass() {
+		spark = createSystemMLSparkSession("DataFrameVectorScriptTest", "local");
+		ml = new MLContext(spark);
+		ml.setExplain(true);
+	}
 
 	@Override
 	public void setUp() {
@@ -239,21 +249,10 @@ public class DataFrameVectorScriptTest extends AutomatedTestBase
 	public void testVectorMixed2ConversionSparse() {
 		testDataFrameScriptInput(schemaMixed2, false, true, false);
 	}
-	
-	/**
-	 * 
-	 * @param schema
-	 * @param containsID
-	 * @param dense
-	 * @param unknownDims
-	 */
+
 	private void testDataFrameScriptInput(ValueType[] schema, boolean containsID, boolean dense, boolean unknownDims) {
 		
 		//TODO fix inconsistency ml context vs jmlc register Xf
-		
-		JavaSparkContext sc = null;
-		MLContext ml = null;
-		
 		try
 		{
 			//generate input data and setup metadata
@@ -264,25 +263,15 @@ public class DataFrameVectorScriptTest extends AutomatedTestBase
 			int blksz = ConfigurationManager.getBlocksize();
 			MatrixCharacteristics mc1 = new MatrixCharacteristics(rows1, cols, blksz, blksz, mbA.getNonZeros());
 			MatrixCharacteristics mc2 = unknownDims ? new MatrixCharacteristics() : new MatrixCharacteristics(mc1);
-			
-			//setup spark context
-			SparkConf conf = SparkExecutionContext.createSystemMLSparkConf()
-					.setAppName("MLContextFrameTest").setMaster("local");
-			sc = new JavaSparkContext(conf);
-			SparkSession sparkSession = SparkSession.builder().sparkContext(sc.sc()).getOrCreate();
-			
+
 			//create input data frame
-			Dataset<Row> df = createDataFrame(sparkSession, mbA, containsID, schema);
+			Dataset<Row> df = createDataFrame(spark, mbA, containsID, schema);
 
 			// Create full frame metadata, and empty frame metadata
 			FrameMetadata meta = new FrameMetadata(containsID ? FrameFormat.DF_WITH_INDEX :
 				FrameFormat.DF, mc2.getRows(), mc2.getCols());
 			FrameMetadata metaEmpty = new FrameMetadata();
 
-			//create mlcontext
-			ml = new MLContext(sc);
-			ml.setExplain(true);
-			
 			//run scripts and obtain result
 			Script script1 = dml(
 					"Xm = as.matrix(Xf);")
@@ -304,15 +293,6 @@ public class DataFrameVectorScriptTest extends AutomatedTestBase
 		catch( Exception ex ) {
 			ex.printStackTrace();
 			throw new RuntimeException(ex);
-		}
-		finally {
-			// stop spark context to allow single jvm tests (otherwise the
-			// next test that tries to create a SparkContext would fail)
-			if( sc != null )
-				sc.stop();
-			// clear status mlcontext and spark exec context
-			if( ml != null )
-				ml.close();
 		}
 	}
 
@@ -366,5 +346,17 @@ public class DataFrameVectorScriptTest extends AutomatedTestBase
 		JavaSparkContext sc = new JavaSparkContext(sparkSession.sparkContext());
 		JavaRDD<Row> rowRDD = sc.parallelize(list);
 		return sparkSession.createDataFrame(rowRDD, dfSchema);
+	}
+
+	@AfterClass
+	public static void tearDownClass() {
+		// stop underlying spark context to allow single jvm tests (otherwise the
+		// next test that tries to create a SparkContext would fail)
+		spark.stop();
+		spark = null;
+
+		// clear status mlcontext and spark exec context
+		ml.close();
+		ml = null;
 	}
 }

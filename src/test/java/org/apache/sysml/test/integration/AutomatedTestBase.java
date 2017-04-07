@@ -35,6 +35,8 @@ import java.util.HashMap;
 import org.apache.sysml.lops.Lop;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.spark.sql.SparkSession;
+import org.apache.spark.sql.SparkSession.Builder;
 import org.apache.wink.json4j.JSONObject;
 import org.junit.After;
 import org.junit.Assert;
@@ -1787,5 +1789,29 @@ public abstract class AutomatedTestBase
 				if(opcode.contains(s))
 				return true;
 		return false;		
+	}
+
+	/**
+	 * Create a SystemML-preferred Spark Session.
+	 * 
+	 * @param appName the application name
+	 * @param master the master value (ie, "local", etc)
+	 * @return Spark Session
+	 */
+	public static SparkSession createSystemMLSparkSession(String appName, String master) {
+		Builder builder = SparkSession.builder();
+		if (appName != null) {
+			builder.appName(appName);
+		}
+		if (master != null) {
+			builder.master(master);
+		}
+		builder.config("spark.driver.maxResultSize", "0");
+		if (SparkExecutionContext.FAIR_SCHEDULER_MODE) {
+			builder.config("spark.scheduler.mode", "FAIR");
+		}
+		builder.config("spark.locality.wait", "5s");
+		SparkSession spark = builder.getOrCreate();
+		return spark;
 	}
 }

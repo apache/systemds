@@ -26,7 +26,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 
-import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
@@ -34,10 +33,12 @@ import org.apache.spark.api.java.function.Function;
 import org.apache.spark.mllib.linalg.distributed.CoordinateMatrix;
 import org.apache.spark.mllib.linalg.distributed.MatrixEntry;
 import org.apache.spark.rdd.RDD;
+import org.apache.spark.sql.SparkSession;
 import org.apache.sysml.api.DMLException;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.api.mlcontext.MLContext;
+import org.apache.sysml.api.mlcontext.MLContextUtil;
 import org.apache.sysml.api.mlcontext.MLResults;
 import org.apache.sysml.api.mlcontext.Matrix;
 import org.apache.sysml.api.mlcontext.MatrixFormat;
@@ -47,7 +48,6 @@ import org.apache.sysml.api.mlcontext.ScriptFactory;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.parser.ParseException;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -76,7 +76,7 @@ public class GNMFTest extends AutomatedTestBase
 	int numRegisteredInputs;
 	int numRegisteredOutputs;
 
-	private static SparkConf conf;
+	private static SparkSession spark;
 	private static JavaSparkContext sc;
 	private static MLContext ml;
 
@@ -87,12 +87,9 @@ public class GNMFTest extends AutomatedTestBase
 
 	@BeforeClass
 	public static void setUpClass() {
-		if (conf == null)
-			conf = SparkExecutionContext.createSystemMLSparkConf()
-				.setAppName("GNMFTest").setMaster("local");
-		if (sc == null)
-			sc = new JavaSparkContext(conf);
-		ml = new MLContext(sc);
+		spark = createSystemMLSparkSession("GNMFTest", "local");
+		ml = new MLContext(spark);
+		sc = MLContextUtil.getJavaSparkContext(ml);
 	}
 
 	@Parameters
@@ -267,11 +264,11 @@ public class GNMFTest extends AutomatedTestBase
 
 	@AfterClass
 	public static void tearDownClass() {
-		// stop spark context to allow single jvm tests (otherwise the
+		// stop underlying spark context to allow single jvm tests (otherwise the
 		// next test that tries to create a SparkContext would fail)
-		sc.stop();
+		spark.stop();
 		sc = null;
-		conf = null;
+		spark = null;
 
 		// clear status mlcontext and spark exec context
 		ml.close();

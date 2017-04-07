@@ -19,13 +19,6 @@
 
 package org.apache.sysml.test.integration.functions.misc;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.util.HashMap;
-
-import org.junit.Assert;
-import org.junit.Test;
-
 import org.apache.sysml.api.DMLException;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
@@ -36,6 +29,12 @@ import org.apache.sysml.parser.DMLTranslator;
 import org.apache.sysml.parser.LanguageException;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
+import org.junit.Assert;
+import org.junit.Test;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.util.HashMap;
 
 /**
  * GENERAL NOTE
@@ -148,11 +147,7 @@ public class DataTypeChangeTest extends AutomatedTestBase
 	public void testDataTypeChangeValidate4f() { runTest("dt_change_4f", false); }
 	
 	
-	/**
-	 * 
-	 * @param cfc
-	 * @param vt
-	 */
+
 	private void runTest( String testName, boolean exceptionExpected ) 
 	{
         String RI_HOME = SCRIPT_DIR + TEST_DIR;
@@ -166,11 +161,7 @@ public class DataTypeChangeTest extends AutomatedTestBase
 		runTest(true, exceptionExpected, DMLException.class, -1);
 	}
 	
-	/**
-	 * 
-	 * @param scriptFilename
-	 * @param expectedException
-	 */
+
 	private void runValidateTest( String fullTestName, boolean expectedException )
 	{
 		boolean raisedException = false;
@@ -197,7 +188,7 @@ public class DataTypeChangeTest extends AutomatedTestBase
 			}	
 			
 			//parsing and dependency analysis
-			AParserWrapper parser = AParserWrapper.createParser(false);
+			AParserWrapper parser = AParserWrapper.createParser(org.apache.sysml.api.ScriptType.DML);
 			DMLProgram prog = parser.parse(DMLScript.DML_FILE_PATH_ANTLR_PARSER, dmlScriptString, argVals);
 			DMLTranslator dmlt = new DMLTranslator(prog);
 			dmlt.liveVariableAnalysis(prog);

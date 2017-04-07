@@ -30,6 +30,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.sysml.api.ScriptType;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.util.LocalFileUtils;
 

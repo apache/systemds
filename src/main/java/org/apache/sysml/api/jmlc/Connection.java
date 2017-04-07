@@ -19,21 +19,12 @@
 
 package org.apache.sysml.api.jmlc;
 
-import java.io.BufferedReader;
-import java.io.Closeable;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.HashMap;
-import java.util.Map;
-
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.sysml.api.DMLException;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
-import org.apache.sysml.api.mlcontext.ScriptType;
+import org.apache.sysml.api.ScriptType;
 import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.conf.ConfigurationManager;
@@ -60,6 +51,15 @@ import org.apache.sysml.runtime.transform.TfUtils;
 import org.apache.sysml.runtime.transform.meta.TfMetaUtils;
 import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.wink.json4j.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.Closeable;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Interaction with SystemML using the JMLC (Java Machine Learning Connector) API is initiated with
@@ -165,7 +165,7 @@ public class Connection implements Closeable
 		try
 		{
 			//parsing
-			AParserWrapper parser = AParserWrapper.createParser(parsePyDML);
+			AParserWrapper parser = AParserWrapper.createParser(parsePyDML ? ScriptType.PYDML : ScriptType.DML);
 			DMLProgram prog = parser.parse(null, script, args);
 			
 			//language validate

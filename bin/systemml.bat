@@ -117,7 +117,7 @@ set CMD=java -Xmx4g -Xms2g -Xmn400m ^
      org.apache.sysml.api.DMLScript ^
      -f %SCRIPT_FILE% ^
      -exec singlenode ^
-     -config="%PROJECT_ROOT_DIR%\conf\SystemML-config.xml" ^
+     -config "%PROJECT_ROOT_DIR%\conf\SystemML-config.xml" ^
      %DML_OPT_ARGS%
 
 :: execute the java command
@@ -141,7 +141,7 @@ GOTO Msg
 
 :Msg
 ECHO Usage: runStandaloneSystemML.bat ^<dml-filename^> [arguments] [-help]
-ECHO Script internally invokes 'java -Xmx4g -Xms4g -Xmn400m -jar jSystemML.jar -f ^<dml-filename^> -exec singlenode -config=SystemML-config.xml [Optional-Arguments]'
+ECHO Script internally invokes 'java -Xmx4g -Xms4g -Xmn400m -jar jSystemML.jar -f ^<dml-filename^> -exec singlenode -config SystemML-config.xml [Optional-Arguments]'
 GOTO ExitErr
 
 :ExitErr

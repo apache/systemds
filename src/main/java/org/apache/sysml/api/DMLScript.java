@@ -19,22 +19,15 @@
 
 package org.apache.sysml.api;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.URI;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Scanner;
-
+import org.apache.commons.cli.AlreadySelectedException;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.OptionBuilder;
+import org.apache.commons.cli.OptionGroup;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.PosixParser;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -46,7 +39,6 @@ import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.util.GenericOptionsParser;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.apache.sysml.api.mlcontext.ScriptType;
 import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
@@ -73,12 +65,12 @@ import org.apache.sysml.runtime.controlprogram.caching.CacheStatistics;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
-import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
-import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDHandler;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.CleanupMR;
 import org.apache.sysml.runtime.matrix.data.LibMatrixDNN;
 import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
@@ -93,6 +85,22 @@ import org.apache.sysml.utils.Statistics;
 import org.apache.sysml.yarn.DMLAppMasterUtils;
 import org.apache.sysml.yarn.DMLYarnClientProxy;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URI;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Scanner;
+
 
 public class DMLScript 
 {	
@@ -103,65 +111,76 @@ public class DMLScript
 		HYBRID_SPARK,   // execute matrix operations in CP or Spark   
 		SPARK			// execute matrix operations in Spark
 	}
-	
-	public static RUNTIME_PLATFORM rtplatform = OptimizerUtils.getDefaultExecutionMode();
-	public static boolean STATISTICS = false; //default statistics
-	public static int STATISTICS_COUNT = 10;	//default statistics maximum heavy hitter count
-	public static boolean ENABLE_DEBUG_MODE = false; //default debug mode
-	public static boolean USE_LOCAL_SPARK_CONFIG = false; //set default local spark configuration - used for local testing
-	public static String DML_FILE_PATH_ANTLR_PARSER = null;
-	public static ExplainType EXPLAIN = ExplainType.NONE; //default explain
+
+	/**
+	 * Set of DMLOptions that can be set through the command line
+	 * and {@link org.apache.sysml.api.mlcontext.MLContext}
+	 * The values have been initialized with the default values
+	 * Despite there being a DML and PyDML, this class is named DMLOptions
+	 * to keep it consistent with {@link DMLScript} and {@link DMLOptions}
+	 */
+	public static class DMLOptions {
+		public Map<String, String>  argVals       = new HashMap<>();  // Arguments map containing either named arguments or arguments by position for a DML program
+		public String               configFile    = null;             // Path to config file if default config and default config is to be overriden
+		public boolean              clean         = false;            // Whether to clean up all SystemML working directories (FS, DFS)
+		public boolean              stats         = false;            // Whether to record and print the statistics
+		public int                  statsCount    = 10;	              // Default statistics count
+		public Explain.ExplainType  explainType   = Explain.ExplainType.NONE;  // Whether to print the "Explain" and if so, what type
+		public DMLScript.RUNTIME_PLATFORM execMode = OptimizerUtils.getDefaultExecutionMode();  // Execution mode standalone, MR, Spark or a hybrid
+		public boolean              gpu           = false;            // Whether to use the GPU
+		public boolean              forceGPU      = false;            // Whether to ignore memory & estimates and always use the GPU
+		public boolean              debug         = false;            // to go into debug mode to be able to step through a program
+		public ScriptType           scriptType    = ScriptType.DML;   // whether the script is a DML or PyDML script
+		public String               filePath      = null;             // path to script
+		public String               script        = null;             // the script itself
+		public boolean              help          = false;            // whether to print the usage option
+
+		public final static DMLOptions defaultOptions = new DMLOptions();
+
+		@Override
+		public String toString() {
+			return "DMLOptions{" +
+							"argVals=" + argVals +
+							", configFile='" + configFile + '\'' +
+							", clean=" + clean +
+							", stats=" + stats +
+							", statsCount=" + statsCount +
+							", explainType=" + explainType +
+							", execMode=" + execMode +
+							", gpu=" + gpu +
+							", forceGPU=" + forceGPU +
+							", debug=" + debug +
+							", scriptType=" + scriptType +
+							", filePath='" + filePath + '\'' +
+							", script='" + script + '\'' +
+							", help=" + help +
+							'}';
+		}
+	}
+
+	public static RUNTIME_PLATFORM  rtplatform          = DMLOptions.defaultOptions.execMode;    // the execution mode
+	public static boolean           STATISTICS          = DMLOptions.defaultOptions.stats;       // whether to print statistics
+	public static int               STATISTICS_COUNT    = DMLOptions.defaultOptions.statsCount;  // statistics maximum heavy hitter count
+	public static boolean           ENABLE_DEBUG_MODE   = DMLOptions.defaultOptions.debug;       // debug mode
+	public static ExplainType       EXPLAIN             = DMLOptions.defaultOptions.explainType; // explain type
+	public static String            DML_FILE_PATH_ANTLR_PARSER = DMLOptions.defaultOptions.filePath; // filename of dml/pydml script
+
 	/**
 	 * Global variable indicating the script type (DML or PYDML). Can be used
 	 * for DML/PYDML-specific tasks, such as outputting booleans in the correct
 	 * case (TRUE/FALSE for DML and True/False for PYDML).
 	 */
-	public static ScriptType SCRIPT_TYPE = ScriptType.DML;
-	
-	public static boolean USE_ACCELERATOR = false;
-	public static boolean FORCE_ACCELERATOR = false;
-	
-	// flag that indicates whether or not to suppress any prints to stdout
-	public static boolean _suppressPrint2Stdout = false;
-	
-	public static String _uuid = IDHandler.createDistributedUniqueID(); 
+	public static ScriptType        SCRIPT_TYPE         = DMLOptions.defaultOptions.scriptType;
+	public static boolean           USE_ACCELERATOR     = DMLOptions.defaultOptions.gpu;
+	public static boolean           FORCE_ACCELERATOR   = DMLOptions.defaultOptions.forceGPU;
+
+
+	public static boolean _suppressPrint2Stdout = false;  // flag that indicates whether or not to suppress any prints to stdout
+	public static boolean USE_LOCAL_SPARK_CONFIG = false; //set default local spark configuration - used for local testing
 	public static boolean _activeAM = false;
-	
+
+	public static String _uuid = IDHandler.createDistributedUniqueID();
 	private static final Log LOG = LogFactory.getLog(DMLScript.class.getName());
-	
-	public static String USAGE = 
-			"Usage is " + DMLScript.class.getCanonicalName() + " -f <filename>" 
-	        //+ " (-exec <mode>)?" + " (-explain <type>)?" + " (-stats)?" + " (-clean)?" + " (-config=<config_filename>)? 
-			+ " [-options] ([-args | -nvargs] <args-list>)? \n" 
-			+ "   -f: <filename> will be interpreted as a filename path (if <filename> is prefixed\n"
-			+ "         with hdfs or gpfs it is read from DFS, otherwise from local file system)\n" 
-			//undocumented feature in beta 08/2014 release
-			//+ "   -s: <filename> will be interpreted as a DML script string \n"
-			+ "   -python: (optional) parses Python-like DML\n"
-			+ "   -debug: (optional) run in debug mode\n"
-			+ "   -gpu: <flags> (optional) use acceleration whenever possible. Current version only supports CUDA.\n"
-			+ "			Supported <flags> for this mode is force=(true|false)\n"
-			// Later add optional flags to indicate optimizations turned on or off. Currently they are turned off.
-			//+ "   -debug: <flags> (optional) run in debug mode\n"
-			//+ "			Optional <flags> that is supported for this mode is optimize=(on|off)\n"
-			+ "   -exec: <mode> (optional) execution mode (hadoop, singlenode, [hybrid], hybrid_spark)\n"
-			+ "   -explain: <type> (optional) explain plan (hops, [runtime], recompile_hops, recompile_runtime)\n"
-			+ "   -stats: <count> (optional) monitor and report caching/recompilation statistics, default heavy hitter count is 10\n"
-			+ "   -clean: (optional) cleanup all SystemML working directories (FS, DFS).\n"
-			+ "         All other flags are ignored in this mode. \n"
-			+ "   -config: (optional) use config file <config_filename> (default: use parameter\n"
-			+ "         values in default SystemML-config.xml config file; if <config_filename> is\n" 
-			+ "         prefixed with hdfs or gpfs it is read from DFS, otherwise from local file system)\n"
-			+ "   -args: (optional) parameterize DML script with contents of [args list], ALL args\n"
-			+ "         after -args flag, each argument must be an unnamed-argument, where 1st value\n"
-			+ "         after -args will replace $1 in DML script, 2nd value will replace $2, etc.\n"
-			+ "   -nvargs: (optional) parameterize DML script with contents of [args list], ALL args\n"
-			+ "         after -nvargs flag, each argument must be be named-argument of form argName=argValue,\n"
-			+ "         where value will replace $argName in DML script, argName must be a valid DML variable\n"
-			+ "         name (start with letter, contain only letters, numbers, or underscores).\n"
-			+ "   <args-list>: (optional) args to DML script \n" 
-			+ "   -? | -help: (optional) show this help message \n";
-	
 	
 	///////////////////////////////
 	// public external interface
@@ -193,21 +212,19 @@ public class DMLScript
 	public static boolean isActiveAM(){
 		return _activeAM;
 	}
-	
-	
+
 	/**
-	 * Default DML script invocation (e.g., via 'hadoop jar SystemML.jar -f Test.dml')
-	 * 
+	 *
 	 * @param args command-line arguments
 	 * @throws IOException if an IOException occurs
 	 * @throws DMLException if a DMLException occurs
 	 */
-	public static void main(String[] args) 
+	public static void main(String[] args)
 		throws IOException, DMLException
 	{
 		Configuration conf = new Configuration(ConfigurationManager.getCachedJobConf());
 		String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
-		
+
 		try {
 			DMLScript.executeScript(conf, otherArgs);
 		} catch (ParseException pe) {
@@ -216,7 +233,200 @@ public class DMLScript
 			// In case of DMLScriptException, simply print the error message.
 			System.err.println(e.getMessage());
 		}
-	} 
+	}
+
+	/**
+	 * Parses command line arguments to create a {@link DMLOptions} instance with the correct options
+	 * @param args	arguments from the command line
+	 * @param options	an {@link Options} instance containing the options that need to be parsed
+	 * @return an instance of {@link Options} that contain the correct {@link Option}s.
+	 * @throws org.apache.commons.cli.ParseException if there is an incorrect option specified in the CLI
+	 */
+	public static DMLOptions parseCLArguments(String[] args, Options options) throws org.apache.commons.cli.ParseException {
+
+		CommandLineParser clParser = new PosixParser();
+		CommandLine line = clParser.parse(options, args);
+
+		DMLOptions dmlOptions = new DMLOptions();
+		dmlOptions.help = line.hasOption("help");
+		dmlOptions.scriptType = line.hasOption("python") ? ScriptType.PYDML : ScriptType.DML;
+		dmlOptions.debug = line.hasOption("debug");
+		dmlOptions.gpu = line.hasOption("gpu");
+		if (dmlOptions.gpu) {
+			String force = line.getOptionValue("gpu");
+			if (force != null) {
+				if (force.equalsIgnoreCase("force")) {
+					dmlOptions.forceGPU = true;
+				} else {
+					throw new org.apache.commons.cli.ParseException("Invalid argument specified for -gpu option");
+				}
+			}
+		}
+		if (line.hasOption("exec")){
+			String execMode = line.getOptionValue("exec");
+			if (execMode != null){
+				if (execMode.equalsIgnoreCase("hadoop")) dmlOptions.execMode = RUNTIME_PLATFORM.HADOOP;
+				else if (execMode.equalsIgnoreCase("singlenode")) dmlOptions.execMode = RUNTIME_PLATFORM.SINGLE_NODE;
+				else if (execMode.equalsIgnoreCase("hybrid")) dmlOptions.execMode = RUNTIME_PLATFORM.HYBRID;
+				else if (execMode.equalsIgnoreCase("hybrid_spark")) dmlOptions.execMode = RUNTIME_PLATFORM.HYBRID_SPARK;
+				else if (execMode.equalsIgnoreCase("spark")) dmlOptions.execMode = RUNTIME_PLATFORM.SPARK;
+				else throw new org.apache.commons.cli.ParseException("Invalid argument specified for -exec option, must be one of [hadoop, singlenode, hybrid, hybrid_spark, spark]");
+			}
+		}
+		if (line.hasOption("explain")) {
+			dmlOptions.explainType = ExplainType.RUNTIME;
+			String explainType = line.getOptionValue("explain");
+			if (explainType != null){
+				if (explainType.equalsIgnoreCase("hops")) dmlOptions.explainType = ExplainType.HOPS;
+				else if (explainType.equalsIgnoreCase("runtime")) dmlOptions.explainType = ExplainType.RUNTIME;
+				else if (explainType.equalsIgnoreCase("recompile_hops")) dmlOptions.explainType = ExplainType.RECOMPILE_HOPS;
+				else if (explainType.equalsIgnoreCase("recompile_runtime")) dmlOptions.explainType = ExplainType.RECOMPILE_RUNTIME;
+				else throw new org.apache.commons.cli.ParseException("Invalid argument specified for -hops option, must be one of [hops, runtime, recompile_hops, recompile_runtime]");
+			}
+		}
+		dmlOptions.stats = line.hasOption("stats");
+		if (dmlOptions.stats){
+			String statsCount = line.getOptionValue("stats");
+			if (statsCount != null) {
+				try {
+					dmlOptions.statsCount = Integer.parseInt(statsCount);
+				} catch (NumberFormatException e) {
+					throw new org.apache.commons.cli.ParseException("Invalid argument specified for -stats option, must be a valid integer");
+				}
+			}
+		}
+
+		dmlOptions.clean = line.hasOption("clean");
+
+		if (line.hasOption("config")){
+			dmlOptions.configFile = line.getOptionValue("config");
+		}
+
+		if (line.hasOption("f")){
+			dmlOptions.filePath = line.getOptionValue("f");
+		}
+
+		if (line.hasOption("s")){
+			dmlOptions.script = line.getOptionValue("s");
+		}
+
+		// Positional arguments map is created as ("$1", "a"), ("$2", 123), ....
+		if (line.hasOption("args")){
+			String[] argValues = line.getOptionValues("args");
+			int k=1;
+			for (String str : argValues){
+				if (!str.isEmpty()) {
+					dmlOptions.argVals.put("$" + k, str);
+					k++;
+				}
+			}
+		}
+
+		// Named arguments map is created as ("$K, 123), ("$X", "X.csv"), ....
+		if (line.hasOption("nvargs")){
+			String varNameRegex = "^[a-zA-Z]([a-zA-Z0-9_])*$";
+			String[] nvargValues = line.getOptionValues("nvargs");
+			for (String str : nvargValues){
+				if (!str.isEmpty()){
+					String[] kv = str.split("=");
+					if (kv.length != 2){
+						throw new org.apache.commons.cli.ParseException("Invalid argument specified for -nvargs option, must be a list of space separated K=V pairs, where K is a valid name of a variable in the DML/PyDML program");
+					}
+					if (!kv[0].matches(varNameRegex)) {
+						throw new org.apache.commons.cli.ParseException("Invalid argument specified for -nvargs option, " + kv[0] + " does not seem like a valid variable name in DML. Valid variable names in DML start with upper-case or lower-case letter, and contain only letters, digits, or underscores");
+					}
+					dmlOptions.argVals.put("$" + kv[0], kv[1]);
+				}
+			}
+		}
+
+		return dmlOptions;
+
+	}
+
+	/**
+	 * Creates an {@link Options} instance for the command line parameters
+	 *  As of SystemML 0.13, Apache Commons CLI 1.2 is transitively in the classpath
+	 *  However the most recent version of Apache Commons CLI is 1.4
+	 *  Creating CLI options is done using Static methods. This obviously makes it
+	 *  thread unsafe. Instead of {@link OptionBuilder}, CLI 1.4 uses Option.Builder which
+	 *  has non-static methods.
+	 * @return an appropriate instance of {@link Options}
+	 */
+	@SuppressWarnings("static-access")
+	public static Options createCLIOptions() {
+		Options options = new Options();
+		Option nvargsOpt = OptionBuilder.withArgName("key=value")
+						.withDescription("parameterizes DML script with named parameters of the form <key=value>; <key> should be a valid identifier in DML/PyDML")
+						.hasArgs()
+						.create("nvargs");
+		Option argsOpt = OptionBuilder.withArgName("argN")
+						.withDescription("specifies positional parameters; first value will replace $1 in DML program; $2 will replace 2nd and so on")
+						.hasArgs()
+						.create("args");
+		Option configOpt = OptionBuilder.withArgName("filename")
+						.withDescription("uses a given configuration file (can be on local/hdfs/gpfs; default values in SystemML-config.xml")
+						.hasArg()
+						.create("config");
+		Option cleanOpt = OptionBuilder.withDescription("cleans up all SystemML working directories (FS, DFS); all other flags are ignored in this mode. \n")
+						.create("clean");
+		Option statsOpt = OptionBuilder.withArgName("count")
+						.withDescription("monitors and reports caching/recompilation statistics; heavy hitter <count> is 10 unless overridden; default off")
+						.hasOptionalArg()
+						.create("stats");
+		Option explainOpt = OptionBuilder.withArgName("level")
+						.withDescription("explains plan levels; can be 'hops' / 'runtime'[default] / 'recompile_hops' / 'recompile_runtime'")
+						.hasOptionalArg()
+						.create("explain");
+		Option execOpt = OptionBuilder.withArgName("mode")
+						.withDescription("sets execution mode; can be 'hadoop' / 'singlenode' / 'hybrid'[default] / 'hybrid_spark' / 'spark'")
+						.hasArg()
+						.create("exec");
+		Option gpuOpt = OptionBuilder.withArgName("force")
+						.withDescription("uses CUDA instructions when reasonable; set <force> option to skip conservative memory estimates and use GPU wherever possible; default off")
+						.hasOptionalArg()
+						.create("gpu");
+		Option debugOpt = OptionBuilder.withDescription("runs in debug mode; default off")
+						.create("debug");
+		Option pythonOpt = OptionBuilder.withDescription("parses Python-like DML")
+						.create("python");
+		Option fileOpt = OptionBuilder.withArgName("filename")
+						.withDescription("specifies dml/pydml file to execute; path can be local/hdfs/gpfs (prefixed with appropriate URI)")
+						.isRequired()
+						.hasArg()
+						.create("f");
+		Option scriptOpt = OptionBuilder.withArgName("script_contents")
+						.withDescription("specified script string to execute directly")
+						.isRequired()
+						.hasArg()
+						.create("s");
+		Option helpOpt = OptionBuilder.withDescription("shows usage message")
+						.create("help");
+
+		OptionGroup fileOrScriptOpt = new OptionGroup();
+		// Either a clean(-clean), a file(-f), a script(-s) or help(-help) needs to be specified
+		fileOrScriptOpt.addOption(scriptOpt);
+		fileOrScriptOpt.addOption(fileOpt);
+		fileOrScriptOpt.addOption(cleanOpt);
+		fileOrScriptOpt.addOption(helpOpt);
+		fileOrScriptOpt.setRequired(true);
+
+		OptionGroup argsOrNVArgsOpt = new OptionGroup();
+		argsOrNVArgsOpt.addOption(nvargsOpt).addOption(argsOpt);	// Either -args or -nvargs
+
+		options.addOption(configOpt);
+		options.addOption(cleanOpt);
+		options.addOption(statsOpt);
+		options.addOption(explainOpt);
+		options.addOption(execOpt);
+		options.addOption(gpuOpt);
+		options.addOption(debugOpt);
+		options.addOption(pythonOpt);
+		options.addOptionGroup(fileOrScriptOpt);
+		options.addOptionGroup(argsOrNVArgsOpt);
+		options.addOption(helpOpt);
+		return options;
+	}
 
 	/**
 	 * Single entry point for all public invocation alternatives (e.g.,
@@ -231,126 +441,85 @@ public class DMLScript
 	public static boolean executeScript( Configuration conf, String[] args ) 
 		throws DMLException
 	{
-		//Step 1: parse arguments 
-		//check for help 
-		if( args.length==0 || (args.length==1 && (args[0].equalsIgnoreCase("-help")|| args[0].equalsIgnoreCase("-?"))) ){
-			System.err.println( USAGE );
-			return true;
-		}
-		
-		//check for clean
-		else if( args.length==1 && args[0].equalsIgnoreCase("-clean") ){
-			cleanSystemMLWorkspace();
-			return true;
-		}
-			
-		//check number of args - print usage if incorrect
-		if( args.length < 2 ){
-			System.err.println( "ERROR: Unrecognized invocation arguments." );
-			System.err.println( USAGE );
-			return false;
-		}
-				
-		//check script arg - print usage if incorrect
-		if (!(args[0].equals("-f") || args[0].equals("-s"))){
-			System.err.println("ERROR: First argument must be either -f or -s");
-			System.err.println( USAGE );
-			return false;
-		}
-		
 		//parse arguments and set execution properties
-		RUNTIME_PLATFORM oldrtplatform = rtplatform; //keep old rtplatform
-		ExplainType oldexplain = EXPLAIN; //keep old explain
-		
-		// Reset global flags to avoid errors in test suite
-		ENABLE_DEBUG_MODE = false;
-		
-		boolean parsePyDML = false;
+		RUNTIME_PLATFORM oldrtplatform  = rtplatform;  //keep old rtplatform
+		ExplainType oldexplain          = EXPLAIN;     //keep old explain
+
+		Options options = createCLIOptions();
 		try
 		{
-			String fnameOptConfig = null; //optional config filename
-			String[] scriptArgs = null; //optional script arguments
-			boolean namedScriptArgs = false;
-			
-			for( int i=2; i<args.length; i++ )
-			{
-				if( args[i].equalsIgnoreCase("-explain") ) { 
-					EXPLAIN = ExplainType.RUNTIME;
-					if( args.length > (i+1) && !args[i+1].startsWith("-") )
-						EXPLAIN = Explain.parseExplainType(args[++i]);
-				}
-				else if( args[i].equalsIgnoreCase("-stats") ) {
-					STATISTICS = true;
-					if (args.length > (i + 1) && !args[i + 1].startsWith("-"))
-						STATISTICS_COUNT = Integer.parseInt(args[++i]);
-				}
-				else if ( args[i].equalsIgnoreCase("-exec")) {
-					rtplatform = parseRuntimePlatform(args[++i]);
-					if( rtplatform==null ) 
-						return false;
-				}
-				else if (args[i].startsWith("-config=")) // legacy
-					fnameOptConfig = args[i].substring(8).replaceAll("\"", "");
-				else if (args[i].equalsIgnoreCase("-config"))
-					fnameOptConfig = args[++i];
-				else if( args[i].equalsIgnoreCase("-debug") ) {					
-					ENABLE_DEBUG_MODE = true;
-				}
-				else if( args[i].equalsIgnoreCase("-gpu") ) {	
-					USE_ACCELERATOR = true;
-					if( args.length > (i+1) && !args[i+1].startsWith("-") ) {
-						String flag = args[++i];
-						if(flag.startsWith("force=")) {
-							String [] flagOptions = flag.split("=");
-							if(flagOptions.length == 2)
-								FORCE_ACCELERATOR = Boolean.parseBoolean(flagOptions[1]);
-							else
-								throw new DMLRuntimeException("Unsupported \"force\" option for -gpu:" + flag);
-						}
-						else {
-							throw new DMLRuntimeException("Unsupported flag for -gpu:" + flag);
-						}
-					}
-					GPUContext.getGPUContext(); // creates the singleton GPU context object. Return value ignored.
-				}
-				else if( args[i].equalsIgnoreCase("-python") ) {
-					parsePyDML = true;
-				}
-				else if (args[i].startsWith("-args") || args[i].startsWith("-nvargs")) {
-					namedScriptArgs = args[i].startsWith("-nvargs"); i++;
-					scriptArgs = new String[args.length - i];
-					System.arraycopy(args, i, scriptArgs, 0, scriptArgs.length); 
-					break;
-				}
-				else{
-					System.err.println("ERROR: Unknown argument: " + args[i]);
-					return false;
-				}
+			DMLOptions dmlOptions = parseCLArguments(args, options);
+
+			// String[] scriptArgs = null; //optional script arguments
+			// boolean namedScriptArgs = false;
+
+			STATISTICS        = dmlOptions.stats;
+			STATISTICS_COUNT  = dmlOptions.statsCount;
+			USE_ACCELERATOR   = dmlOptions.gpu;
+			FORCE_ACCELERATOR = dmlOptions.forceGPU;
+			EXPLAIN           = dmlOptions.explainType;
+			ENABLE_DEBUG_MODE = dmlOptions.debug;
+			SCRIPT_TYPE       = dmlOptions.scriptType;
+			rtplatform        = dmlOptions.execMode;
+
+			String fnameOptConfig = dmlOptions.configFile;
+			boolean isFile = dmlOptions.filePath != null;
+			String fileOrScript = isFile ? dmlOptions.filePath : dmlOptions.script;
+
+			boolean help = dmlOptions.help;
+
+			if (help) {
+				HelpFormatter formatter = new HelpFormatter();
+				formatter.printHelp( "systemml", options );
+				return true;
 			}
-			
+
+			if (USE_ACCELERATOR){
+				GPUContext.getGPUContext();
+			}
+
+			if (dmlOptions.clean) {
+				cleanSystemMLWorkspace();
+				return true;
+			}
+
 			//set log level
 			if (!ENABLE_DEBUG_MODE)
 				setLoggingProperties( conf );
 		
 			//Step 2: prepare script invocation
-			if (StringUtils.endsWithIgnoreCase(args[1], ".pydml")) {
-				parsePyDML = true;
-			}
-			String dmlScriptStr = readDMLScript(args[0], args[1]);
-			Map<String, String> argVals = createArgumentsMap(namedScriptArgs, scriptArgs);
-			
-			DML_FILE_PATH_ANTLR_PARSER = args[1];
-			
-			//Step 3: invoke dml script
-			printInvocationInfo(args[1], fnameOptConfig, argVals);
-			if (ENABLE_DEBUG_MODE) {
-				// inner try loop is just to isolate the debug exception, which will allow to manage the bugs from debugger v/s runtime
-				launchDebugger(dmlScriptStr, fnameOptConfig, argVals, parsePyDML);
-			}
-			else {
-				execute(dmlScriptStr, fnameOptConfig, argVals, args, parsePyDML);
+			if (isFile && StringUtils.endsWithIgnoreCase(fileOrScript, ".pydml")) {
+				SCRIPT_TYPE = ScriptType.PYDML;
 			}
 
+			String dmlScriptStr = readDMLScript(isFile, fileOrScript);
+			Map<String, String> argVals = dmlOptions.argVals;
+
+			DML_FILE_PATH_ANTLR_PARSER = dmlOptions.filePath;
+			
+			//Step 3: invoke dml script
+			printInvocationInfo(fileOrScript, fnameOptConfig, argVals);
+			if (ENABLE_DEBUG_MODE) {
+				// inner try loop is just to isolate the debug exception, which will allow to manage the bugs from debugger v/s runtime
+				launchDebugger(dmlScriptStr, fnameOptConfig, argVals, SCRIPT_TYPE);
+			}
+			else {
+				execute(dmlScriptStr, fnameOptConfig, argVals, args, SCRIPT_TYPE);
+			}
+
+		}
+		catch(AlreadySelectedException e)
+		{
+			System.err.println("Mutually exclusive options were selected. " + e.getMessage());
+			HelpFormatter formatter = new HelpFormatter();
+			formatter.printHelp( "systemml", options );
+			return false;
+		}
+		catch(org.apache.commons.cli.ParseException e)
+		{
+			System.err.println(e.getMessage());
+			HelpFormatter formatter = new HelpFormatter();
+			formatter.printHelp( "systemml", options );
 		}
 		catch (ParseException pe) {
 			throw pe;
@@ -378,6 +547,17 @@ public class DMLScript
 	// private internal utils (argument parsing)
 	////////
 
+	@Deprecated()
+	/**
+	 * Creates an argument map appropriate for consumption by the backend
+	 * The only method using this is the legacy {@link MLContext} api.
+	 * Once that is removed, this function should be removed as well.
+	 * This method uses a fragile position based argument for -args & -nvargs
+	 * @param hasNamedArgs true for named arguments, false for positional arguments
+	 * @param args in "k=v" format for named arguments and "v" for positional arguments
+	 * @return	a map containing either ($K,V) or ($1,V) for named and positional arguments respectively
+	 * @throws LanguageException when a named argument is an invalid identifier for DML/PyDML
+	 */
 	protected static Map<String,String> createArgumentsMap(boolean hasNamedArgs, String[] args)
 		throws LanguageException
 	{			
@@ -397,7 +577,7 @@ public class DMLScript
 				arg.equalsIgnoreCase("-stats") || 
 				arg.equalsIgnoreCase("-exec") ||
 				arg.equalsIgnoreCase("-debug") ||
-				arg.startsWith("-config="))
+				arg.startsWith("-config"))
 			{
 					throw new LanguageException("-args or -nvargs must be the final argument for DMLScript!");
 			}
@@ -430,17 +610,26 @@ public class DMLScript
 		
 		return argMap;
 	}
-	
-	protected static String readDMLScript( String argname, String script ) 
+
+
+	/**
+	 * Reads the DML/PyDML script into a String
+	 * @param isFile	Whether the string argument is a path to a file or the script itself
+	 * @param scriptOrFilename script or filename
+	 * @return a string representation of the script
+	 * @throws IOException	if error
+	 * @throws LanguageException	if error
+	 */
+	protected static String readDMLScript( boolean isFile, String scriptOrFilename )
 		throws IOException, LanguageException
 	{
-		boolean fromFile = argname.equals("-f");
 		String dmlScriptStr;
 		
-		if( fromFile )
+		if( isFile )
 		{
+			String fileName = scriptOrFilename;
 			//read DML script from file
-			if(script == null)
+			if(fileName == null)
 				throw new LanguageException("DML script path was not specified!");
 			
 			StringBuilder sb = new StringBuilder();
@@ -448,21 +637,21 @@ public class DMLScript
 			try 
 			{
 				//read from hdfs or gpfs file system
-				if(    script.startsWith("hdfs:") 
-					|| script.startsWith("gpfs:") ) 
+				if(    fileName.startsWith("hdfs:")
+					|| fileName.startsWith("gpfs:") )
 				{ 
-					if( !LocalFileUtils.validateExternalFilename(script, true) )
+					if( !LocalFileUtils.validateExternalFilename(fileName, true) )
 						throw new LanguageException("Invalid (non-trustworthy) hdfs filename.");
 					FileSystem fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
-					Path scriptPath = new Path(script);
+					Path scriptPath = new Path(fileName);
 					in = new BufferedReader(new InputStreamReader(fs.open(scriptPath)));
 				}
 				// from local file system
 				else 
 				{ 
-					if( !LocalFileUtils.validateExternalFilename(script, false) )
+					if( !LocalFileUtils.validateExternalFilename(fileName, false) )
 						throw new LanguageException("Invalid (non-trustworthy) local filename.");
-					in = new BufferedReader(new FileReader(script));
+					in = new BufferedReader(new FileReader(fileName));
 				}
 				
 				//core script reading
@@ -486,11 +675,12 @@ public class DMLScript
 		}
 		else
 		{
+			String scriptString = scriptOrFilename;
 			//parse given script string 
-			if(script == null)
+			if(scriptString == null)
 				throw new LanguageException("DML script was not specified!");
 			
-			InputStream is = new ByteArrayInputStream(script.getBytes());
+			InputStream is = new ByteArrayInputStream(scriptString.getBytes());
 			Scanner scan = new Scanner(is);
 			dmlScriptStr = scan.useDelimiter("\\A").next();	
 			scan.close();
@@ -498,26 +688,7 @@ public class DMLScript
 		
 		return dmlScriptStr;
 	}
-	
-	private static RUNTIME_PLATFORM parseRuntimePlatform( String platform )
-	{
-		RUNTIME_PLATFORM lrtplatform = null;
-		
-		if ( platform.equalsIgnoreCase("hadoop")) 
-			lrtplatform = RUNTIME_PLATFORM.HADOOP;
-		else if ( platform.equalsIgnoreCase("singlenode"))
-			lrtplatform = RUNTIME_PLATFORM.SINGLE_NODE;
-		else if ( platform.equalsIgnoreCase("hybrid"))
-			lrtplatform = RUNTIME_PLATFORM.HYBRID;
-		else if ( platform.equalsIgnoreCase("spark"))
-			lrtplatform = RUNTIME_PLATFORM.SPARK;
-		else if ( platform.equalsIgnoreCase("hybrid_spark"))
-			lrtplatform = RUNTIME_PLATFORM.HYBRID_SPARK;
-		else 
-			System.err.println("ERROR: Unknown runtime platform: " + platform);
-		
-		return lrtplatform;
-	}
+
 	
 	private static void setLoggingProperties( Configuration conf )
 	{
@@ -550,7 +721,7 @@ public class DMLScript
 	 * @param fnameOptConfig configuration file
 	 * @param argVals map of argument values
 	 * @param allArgs arguments
-	 * @param parsePyDML true if PYDML, false if DML
+	 * @param scriptType type of script (DML or PyDML)
 	 * @throws ParseException if ParseException occurs
 	 * @throws IOException if IOException occurs
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
@@ -558,10 +729,10 @@ public class DMLScript
 	 * @throws HopsException if HopsException occurs
 	 * @throws LopsException if LopsException occurs
 	 */
-	private static void execute(String dmlScriptStr, String fnameOptConfig, Map<String,String> argVals, String[] allArgs, boolean parsePyDML)
+	private static void execute(String dmlScriptStr, String fnameOptConfig, Map<String,String> argVals, String[] allArgs, ScriptType scriptType)
 		throws ParseException, IOException, DMLRuntimeException, LanguageException, HopsException, LopsException 
 	{	
-		SCRIPT_TYPE = parsePyDML ? ScriptType.PYDML : ScriptType.DML;
+		SCRIPT_TYPE = scriptType;
 
 		//print basic time and environment info
 		printStartExecInfo( dmlScriptStr );
@@ -580,7 +751,7 @@ public class DMLScript
 		
 		//Step 3: parse dml script
 		Statistics.startCompileTimer();
-		AParserWrapper parser = AParserWrapper.createParser(parsePyDML);
+		AParserWrapper parser = AParserWrapper.createParser(scriptType);
 		DMLProgram prog = parser.parse(DML_FILE_PATH_ANTLR_PARSER, dmlScriptStr, argVals);
 		
 		//Step 4: construct HOP DAGs (incl LVA, validate, and setup)
@@ -691,7 +862,7 @@ public class DMLScript
 	 * @param dmlScriptStr DML script contents (including new lines)
 	 * @param fnameOptConfig Full path of configuration file for SystemML
 	 * @param argVals Key-value pairs defining arguments of DML script
-	 * @param parsePyDML true if PYDML, false if DML
+	 * @param scriptType type of script (DML or PyDML)
 	 * @throws ParseException if ParseException occurs
 	 * @throws IOException if IOException occurs
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
@@ -700,7 +871,7 @@ public class DMLScript
 	 * @throws HopsException if HopsException occurs
 	 * @throws LopsException if LopsException occurs
 	 */
-	private static void launchDebugger(String dmlScriptStr, String fnameOptConfig, Map<String,String> argVals, boolean parsePyDML)
+	private static void launchDebugger(String dmlScriptStr, String fnameOptConfig, Map<String,String> argVals, ScriptType scriptType)
 		throws ParseException, IOException, DMLRuntimeException, DMLDebuggerException, LanguageException, HopsException, LopsException 
 	{		
 		DMLDebuggerProgramInfo dbprog = new DMLDebuggerProgramInfo();
@@ -710,7 +881,7 @@ public class DMLScript
 		ConfigurationManager.setGlobalConfig(conf);
 
 		//Step 2: parse dml script
-		AParserWrapper parser = AParserWrapper.createParser(parsePyDML);
+		AParserWrapper parser = AParserWrapper.createParser(scriptType);
 		DMLProgram prog = parser.parse(DML_FILE_PATH_ANTLR_PARSER, dmlScriptStr, argVals);
 		
 		//Step 3: construct HOP DAGs (incl LVA and validate)

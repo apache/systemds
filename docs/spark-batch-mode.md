@@ -43,10 +43,10 @@ mode in more depth.
 
 SystemML can be invoked in Hadoop Batch mode using the following syntax:
 
-    spark-submit SystemML.jar [-? | -help | -f <filename>] (-config=<config_filename>) ([-args | -nvargs] <args-list>)
+    spark-submit SystemML.jar [-? | -help | -f <filename>] (-config <config_filename>) ([-args | -nvargs] <args-list>)
 
 The DML script to invoke is specified after the `-f` argument. Configuration settings can be passed to SystemML
-using the optional `-config=` argument. DML scripts can optionally take named arguments (`-nvargs`) or positional
+using the optional `-config ` argument. DML scripts can optionally take named arguments (`-nvargs`) or positional
 arguments (`-args`). Named arguments are preferred over positional arguments. Positional arguments are considered
 to be deprecated. All the primary algorithm scripts included with SystemML use named arguments.
 

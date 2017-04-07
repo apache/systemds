@@ -225,7 +225,7 @@ public class MLContextTest extends AutomatedTestBase {
 		System.out.println("MLContextTest - execute DML script");
 		String testString = "hello dml world!";
 		setExpectedStdOut(testString);
-		Script script = new Script("print('" + testString + "');", org.apache.sysml.api.mlcontext.ScriptType.DML);
+		Script script = new Script("print('" + testString + "');", org.apache.sysml.api.ScriptType.DML);
 		ml.execute(script);
 	}
 
@@ -234,7 +234,7 @@ public class MLContextTest extends AutomatedTestBase {
 		System.out.println("MLContextTest - execute PYDML script");
 		String testString = "hello pydml world!";
 		setExpectedStdOut(testString);
-		Script script = new Script("print('" + testString + "')", org.apache.sysml.api.mlcontext.ScriptType.PYDML);
+		Script script = new Script("print('" + testString + "')", org.apache.sysml.api.ScriptType.PYDML);
 		ml.execute(script);
 	}
 
@@ -403,7 +403,7 @@ public class MLContextTest extends AutomatedTestBase {
 		System.out.println("MLContextTest - custom execution step DML");
 		String testString = "custom execution step";
 		setExpectedStdOut(testString);
-		Script script = new Script("print('" + testString + "');", org.apache.sysml.api.mlcontext.ScriptType.DML);
+		Script script = new Script("print('" + testString + "');", org.apache.sysml.api.ScriptType.DML);
 
 		ScriptExecutor scriptExecutor = new ScriptExecutor() {
 			// turn off global data flow optimization check
@@ -420,7 +420,7 @@ public class MLContextTest extends AutomatedTestBase {
 		System.out.println("MLContextTest - custom execution step PYDML");
 		String testString = "custom execution step";
 		setExpectedStdOut(testString);
-		Script script = new Script("print('" + testString + "')", org.apache.sysml.api.mlcontext.ScriptType.PYDML);
+		Script script = new Script("print('" + testString + "')", org.apache.sysml.api.ScriptType.PYDML);
 
 		ScriptExecutor scriptExecutor = new ScriptExecutor() {
 			// turn off global data flow optimization check
@@ -1558,7 +1558,7 @@ public class MLContextTest extends AutomatedTestBase {
 	public void testOneScriptTwoExecutionsDML() {
 		System.out.println("MLContextTest - one script with two executions DML");
 
-		Script script = new Script(org.apache.sysml.api.mlcontext.ScriptType.DML);
+		Script script = new Script(org.apache.sysml.api.ScriptType.DML);
 
 		double[][] m1 = new double[][] { { 1.0, 2.0 }, { 3.0, 4.0 } };
 		script.setScriptString("sum1 = sum(m1);").in("m1", m1).out("sum1");
@@ -1577,7 +1577,7 @@ public class MLContextTest extends AutomatedTestBase {
 	public void testOneScriptTwoExecutionsPYDML() {
 		System.out.println("MLContextTest - one script with two executions PYDML");
 
-		Script script = new Script(org.apache.sysml.api.mlcontext.ScriptType.PYDML);
+		Script script = new Script(org.apache.sysml.api.ScriptType.PYDML);
 
 		double[][] m1 = new double[][] { { 1.0, 2.0 }, { 3.0, 4.0 } };
 		script.setScriptString("sum1 = sum(m1)").in("m1", m1).out("sum1");

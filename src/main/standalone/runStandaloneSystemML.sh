@@ -76,7 +76,7 @@ java ${SYSTEMML_STANDALONE_OPTS} \
 org.apache.sysml.api.DMLScript \
 -f ${SCRIPT_FILE} \
 -exec singlenode \
--config=$CURRENT_PATH"/SystemML-config.xml" \
+-config $CURRENT_PATH"/SystemML-config.xml" \
 $@"
 
 $CMD

@@ -59,12 +59,12 @@ public class MultiAggTmplTest extends AutomatedTestBase
 	}
 
 	@Test	
-	public void testCodegenRowAgg1CP() {
+	public void testCodegenMultiAgg1CP() {
 		testCodegenIntegration( TEST_NAME1, false, ExecType.CP );
 	}
 	
 	@Test	
-	public void testCodegenRowAgg1Spark() {
+	public void testCodegenMultiAgg1Spark() {
 		testCodegenIntegration( TEST_NAME1, false, ExecType.SPARK );
 	}
 	
@@ -74,12 +74,12 @@ public class MultiAggTmplTest extends AutomatedTestBase
 	}
 
 	@Test	
-	public void testCodegenRowAgg2CP() {
+	public void testCodegenMultiAgg2CP() {
 		testCodegenIntegration( TEST_NAME2, false, ExecType.CP );
 	}
 	
 	@Test	
-	public void testCodegenRowAgg2Spark() {
+	public void testCodegenMultiAgg2Spark() {
 		testCodegenIntegration( TEST_NAME2, false, ExecType.SPARK );
 	}
 	

@@ -70,8 +70,7 @@ public abstract class SpoofOperator implements Serializable
 		for(int i=offset; i<offset+len; i++) {
 			//convert empty or sparse to dense temporary block (note: we don't do
 			//this in place because this block might be used by multiple threads)
-			if( (inputs.get(i).isEmptyBlock(false) && !inputs.get(i).isAllocated())
-				|| inputs.get(i).isInSparseFormat() ) {
+			if( inputs.get(i).isInSparseFormat() && inputs.get(i).isAllocated() ) {
 				MatrixBlock tmp = inputs.get(i);
 				b[i-offset] = DataConverter.convertToDoubleVector(tmp);
 				LOG.warn(getClass().getName()+": Converted "+tmp.getNumRows()+"x"+tmp.getNumColumns()+
@@ -91,5 +90,11 @@ public abstract class SpoofOperator implements Serializable
 		for(int i=0; i < scalarObjects.size(); i++)
 			scalars[i] = scalarObjects.get(i).getDoubleValue();
 		return scalars;
+	}
+	
+	//abstraction for safely accessing sideways matrices without the need 
+	//to allocate empty matrices as dense, see prepInputMatrices
+	protected static double getValue(double[] data, int index) {
+		return (data!=null) ? data[index] : 0;
 	}
 }

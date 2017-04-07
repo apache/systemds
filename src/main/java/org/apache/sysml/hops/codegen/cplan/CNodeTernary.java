@@ -54,7 +54,7 @@ public class CNodeTernary extends CNode
 					return "    double %TMP% = Double.isNaN(%IN1%) ? %IN3% : %IN1%;\n";
 					
 				case LOOKUP_RC1:
-					return "    double %TMP% = %IN1%[rowIndex*%IN2%+%IN3%-1];\n";	
+					return "    double %TMP% = getValue(%IN1%, rowIndex*%IN2%+%IN3%-1);\n";	
 					
 				default: 
 					throw new RuntimeException("Invalid ternary type: "+this.toString());

@@ -23,6 +23,7 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.utils.GPUStatistics;
@@ -43,10 +44,10 @@ public class MatrixBuiltinGPUInstruction extends BuiltinUnaryGPUInstruction {
 		ec.setMetaData(_output.getName(), mat.getNumRows(), mat.getNumColumns());
 
 		if(opcode.equals("sel+")) {
-			LibMatrixCUDA.relu(ec, getExtendedOpcode(), mat, _output.getName());
+			LibMatrixCUDA.relu(ec, ec.getGPUContext(), getExtendedOpcode(), mat, _output.getName());
 
 		} else if (opcode.equals("exp")) {
-			LibMatrixCUDA.exp(ec, getExtendedOpcode(), mat, _output.getName());
+			LibMatrixCUDA.exp(ec, ec.getGPUContext(), getExtendedOpcode(), mat, _output.getName());
 		}
 		else {
 			throw new DMLRuntimeException("Unsupported GPU operator:" + opcode);

@@ -73,7 +73,7 @@ public class GPUContext {
 
 	protected static final Log LOG = LogFactory.getLog(GPUContext.class.getName());
 
-    /** Eviction policies for {@link GPUContext#evict(long)} */
+  /** Eviction policies for {@link GPUContext#evict(long)} */
 	public enum EvictionPolicy {
 		LRU, LFU, MIN_EVICT
 	}
@@ -524,7 +524,7 @@ public class GPUContext {
 	 * @return a valid {@link GPUContext} instance or null if no more GPUs available
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public synchronized static GPUContext getGPUContext() throws DMLRuntimeException {
+	public synchronized static GPUContext createGPUContext() throws DMLRuntimeException {
 	  // do once - initialization of GPU
 	  if (!initialized) initializeGPU();
 	  // If the singleton for the current thread has already been created, well and
@@ -547,7 +547,7 @@ public class GPUContext {
 	}
 
 	public GPUObject createGPUObject(MatrixObject mo) {
-    return new GPUObject(mo);
+    return new GPUObject(this, mo);
 	}
 
 	/**
@@ -672,4 +672,5 @@ public class GPUContext {
 						"deviceNum=" + deviceNum +
 						'}';
 	}
+
 }

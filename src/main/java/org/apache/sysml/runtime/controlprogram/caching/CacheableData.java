@@ -22,6 +22,7 @@ package org.apache.sysml.runtime.controlprogram.caching;
 import java.io.File;
 import java.io.IOException;
 import java.lang.ref.SoftReference;
+import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.commons.lang.mutable.MutableBoolean;
@@ -36,6 +37,7 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.LazyWriteBuffer.RPolicy;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysml.runtime.instructions.cp.Data;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUObject;
 import org.apache.sysml.runtime.instructions.spark.data.BroadcastObject;
 import org.apache.sysml.runtime.instructions.spark.data.RDDObject;
@@ -188,7 +190,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	//for lazily evaluated RDDs, and (2) as abstraction for environments that do not necessarily have spark libraries available
 	private RDDObject _rddHandle = null; //RDD handle
 	private BroadcastObject<T> _bcHandle = null; //Broadcast handle
-	protected GPUObject _gpuHandle = null;
+	protected HashMap<GPUContext, GPUObject> _gpuObjects = null; //Per GPUContext object allocated on GPU
 	
 	/**
 	 * Basic constructor for any cacheable data.
@@ -201,6 +203,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		_uniqueID = (int)_seq.getNextID();		
 		_cacheStatus = CacheStatus.EMPTY;
 		_numReadThreads = 0;
+		_gpuObjects = new HashMap<>();
 	}
 	
 	/**
@@ -214,7 +217,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		_hdfsFileName = that._hdfsFileName;
 		_hdfsFileExists = that._hdfsFileExists; 
 		_varName = that._varName;
-		_gpuHandle = that._gpuHandle;
+		_gpuObjects = that._gpuObjects;
 	}
 
 	

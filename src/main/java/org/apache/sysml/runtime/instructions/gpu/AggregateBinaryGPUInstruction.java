@@ -26,6 +26,7 @@ import org.apache.sysml.runtime.functionobjects.Plus;
 import org.apache.sysml.runtime.functionobjects.SwapIndex;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.AggregateBinaryOperator;
@@ -96,7 +97,7 @@ public class AggregateBinaryGPUInstruction extends GPUInstruction
 		int clen = (int) (_isRightTransposed ? m2.getNumRows() : m2.getNumColumns());
 
 		ec.setMetaData(_output.getName(), rlen, clen);
-		LibMatrixCUDA.matmult(ec, getExtendedOpcode(), m1, m2, _output.getName(), _isLeftTransposed, _isRightTransposed);
+		LibMatrixCUDA.matmult(ec, ec.getGPUContext(), getExtendedOpcode(), m1, m2, _output.getName(), _isLeftTransposed, _isRightTransposed);
         
 		//release inputs/outputs
 		ec.releaseMatrixInputForGPUInstruction(_input1.getName());

@@ -19,7 +19,6 @@
 
 package org.apache.sysml.runtime.instructions.gpu;
 
-import jcuda.runtime.JCuda;
 import org.apache.sysml.lops.runtime.RunMRJobs;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
@@ -30,6 +29,8 @@ import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.utils.GPUStatistics;
 import org.apache.sysml.utils.Statistics;
+
+import jcuda.runtime.JCuda;
 
 public abstract class GPUInstruction extends Instruction
 {

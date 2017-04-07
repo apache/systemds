@@ -25,6 +25,7 @@ import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.functionobjects.SwapIndex;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
@@ -81,10 +82,10 @@ public class ReorgGPUInstruction extends GPUInstruction
 		
 		//execute operation
 		ec.setMetaData(_output.getName(), rlen, clen);
-		LibMatrixCUDA.transpose(ec, getExtendedOpcode(), mat, _output.getName());
+		LibMatrixCUDA.transpose(ec, ec.getGPUContext(), getExtendedOpcode(), mat, _output.getName());
 		
 		//release inputs/outputs
 		ec.releaseMatrixInputForGPUInstruction(_input.getName());
-        ec.releaseMatrixOutputForGPUInstruction(_output.getName());
+		ec.releaseMatrixOutputForGPUInstruction(_output.getName());
 	}
 }

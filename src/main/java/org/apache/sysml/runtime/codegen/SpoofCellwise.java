@@ -122,10 +122,10 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		boolean sparseSafe = isSparseSafe() || (b.length == 0 
 				&& genexec( 0, b, scalars, m, n, 0, 0 ) == 0);
 		
-		double sum = 0;
+		double ret = 0;
 		if( k <= 1 ) //SINGLE-THREADED
 		{
-			sum = ( !inputs.get(0).isInSparseFormat() ) ?
+			ret = ( !inputs.get(0).isInSparseFormat() ) ?
 				executeDenseAndAgg(inputs.get(0).getDenseBlock(), b, scalars, m, n, sparseSafe, 0, m) :
 				executeSparseAndAgg(inputs.get(0).getSparseBlock(), b, scalars, m, n, sparseSafe, 0, m);
 		}
@@ -143,11 +143,18 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 				pool.shutdown();
 			
 				//aggregate partial results
-				KahanObject kbuff = new KahanObject(0, 0);
-				KahanPlus kplus = KahanPlus.getKahanPlusFnObject();
-				for( Future<Double> task : taskret )
-					kplus.execute2(kbuff, task.get());
-				sum = kbuff._sum;
+				ValueFunction vfun = getAggFunction();
+				if( vfun instanceof KahanFunction ) {
+					KahanObject kbuff = new KahanObject(0, 0);
+					KahanPlus kplus = KahanPlus.getKahanPlusFnObject();
+					for( Future<Double> task : taskret )
+						kplus.execute2(kbuff, task.get());
+					ret = kbuff._sum;	
+				}
+				else {
+					for( Future<Double> task : taskret )
+						ret = vfun.execute(ret, task.get());
+				}
 			}
 			catch(Exception ex) {
 				throw new DMLRuntimeException(ex);
@@ -157,9 +164,9 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		//correction for min/max
 		if( (_aggOp == AggOp.MIN || _aggOp == AggOp.MAX) && sparseSafe 
 			&& inputs.get(0).getNonZeros()<inputs.get(0).getNumRows()*inputs.get(0).getNumColumns() )
-			sum = getAggFunction().execute(sum, 0); //unseen 0 might be max or min value
+			ret = getAggFunction().execute(ret, 0); //unseen 0 might be max or min value
 		
-		return new DoubleObject(sum);
+		return new DoubleObject(ret);
 	}
 
 	@Override

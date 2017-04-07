@@ -48,7 +48,9 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	private static final String TEST_NAME10 = TEST_NAME+10; //min/max(X + 7 * Y)
 	private static final String TEST_NAME11 = TEST_NAME+11; //replace((0 / (X - 500))+1, 0/0, 7)
 	private static final String TEST_NAME12 = TEST_NAME+12; //((X/3) %% 0.6) + ((X/3) %/% 0.6)
-
+	private static final String TEST_NAME13 = TEST_NAME+13; //min(X + 7 * Y) large
+	
+	
 	private static final String TEST_DIR = "functions/codegen/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + CellwiseTmplTest.class.getSimpleName() + "/";
 	private final static String TEST_CONF6 = "SystemML-config-codegen6.xml";
@@ -60,7 +62,7 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		for( int i=1; i<=12; i++ ) {
+		for( int i=1; i<=13; i++ ) {
 			addTestConfiguration( TEST_NAME+i, new TestConfiguration(
 					TEST_CLASS_DIR, TEST_NAME+i, new String[] {String.valueOf(i)}) );
 		}
@@ -126,6 +128,11 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	public void testCodegenCellwiseRewrite12() {
 		testCodegenIntegration( TEST_NAME12, true, ExecType.CP  );
 	}
+	
+	@Test
+	public void testCodegenCellwiseRewrite13() {
+		testCodegenIntegration( TEST_NAME13, true, ExecType.CP  );
+	}
 
 	@Test
 	public void testCodegenCellwise1() {
@@ -186,6 +193,11 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	@Test
 	public void testCodegenCellwise12() {
 		testCodegenIntegration( TEST_NAME12, false, ExecType.CP  );
+	}
+	
+	@Test
+	public void testCodegenCellwise13() {
+		testCodegenIntegration( TEST_NAME13, false, ExecType.CP  );
 	}
 
 	@Test

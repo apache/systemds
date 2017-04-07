@@ -244,7 +244,7 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 				fullAggs.add(hopID);
 		}
 		if( LOG.isTraceEnabled() ) {
-			LOG.trace("Found ua(RC) aggregations: " +
+			LOG.trace("Found within-partition ua(RC) aggregations: " +
 				Arrays.toString(fullAggs.toArray(new Long[0])));
 		}
 		
@@ -276,6 +276,12 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 		Hop.resetVisitStatus(roots);
 		for( Hop hop : roots )
 			rCollectAggregatesSharedRead(hop, fullAggs);
+		
+		if( LOG.isTraceEnabled() ) {
+			for( Entry<Long, ArrayList<Long>> e : fullAggs.entrySet() )
+				LOG.trace("Found across-partition ua(RC) aggregations for "+e.getKey()+": " +
+					Arrays.toString(e.getValue().toArray(new Long[0])));
+		}
 		
 		//construct and add multiagg template plans (w/ max 3 aggregations)
 		for( Entry<Long, ArrayList<Long>> e : fullAggs.entrySet() ) {
@@ -531,8 +537,8 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 				costs += rGetPlanCosts(memo, c, visited, partition, M, plan, computeCosts, costVect, best.type);
 			else { //include children and I/O costs
 				costs += rGetPlanCosts(memo, c, visited, partition, M, plan, computeCosts, null, null);
-				if( costVect != null )
-					costVect.addInputSize( c.getHopID(), Math.max(current.getDim1(),1)*Math.max(current.getDim2(),1));
+				if( costVect != null && c.getDataType().isMatrix() )
+					costVect.addInputSize( c.getHopID(), Math.max(c.getDim1(),1)*Math.max(c.getDim2(),1));
 			}				
 		}	
 		
@@ -711,6 +717,7 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 		@Override
 		public String toString() {
 			return "["+outSize+", "+computeCosts+", {"
+				+Arrays.toString(inSizes.keySet().toArray(new Long[0]))+", "
 				+Arrays.toString(inSizes.values().toArray(new Double[0]))+"}]";
 		}
 	}

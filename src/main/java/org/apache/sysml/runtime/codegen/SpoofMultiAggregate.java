@@ -156,14 +156,18 @@ public abstract class SpoofMultiAggregate extends SpoofOperator implements Seria
 	
 	
 	private void setInitialOutputValues(double[] c) {
-		for( int k=0; k<_aggOps.length; k++ ) {
-			switch(_aggOps[k]) {
-				case SUM:
-				case SUM_SQ: c[k] = 0; break;
-				case MIN: c[k] = Double.MAX_VALUE; break;
-				case MAX: c[k] = -Double.MAX_VALUE; break;
-			}
+		for( int k=0; k<_aggOps.length; k++ )
+			c[k] = getInitialValue(_aggOps[k]);
+	}
+	
+	public static double getInitialValue(AggOp aggop) {
+		switch( aggop ) {
+			case SUM:
+			case SUM_SQ: return 0; 
+			case MIN:    return Double.MAX_VALUE;
+			case MAX:    return -Double.MAX_VALUE;
 		}
+		return 0;
 	}
 	
 

@@ -106,7 +106,10 @@ public class CNodeMultiAgg extends CNodeTpl
 		for( int i=0; i<_outputs.size(); i++ ) {
 			CNode out = _outputs.get(i);
 			String tmpOut = getAggTemplate(i);
-			tmpOut = tmpOut.replace("%IN%", out.getVarname());
+			//get variable name (w/ handling of direct consumption of inputs)
+			String varName = (out instanceof CNodeData && ((CNodeData)out).getHopID()==
+				((CNodeData)_inputs.get(0)).getHopID()) ? "a" : out.getVarname(); 
+			tmpOut = tmpOut.replace("%IN%", varName);
 			tmpOut = tmpOut.replace("%IX%", String.valueOf(i));
 			sb.append(tmpOut);
 		}

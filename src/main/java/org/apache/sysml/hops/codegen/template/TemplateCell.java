@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 import org.apache.sysml.hops.AggBinaryOp;
 import org.apache.sysml.hops.AggUnaryOp;
 import org.apache.sysml.hops.BinaryOp;
+import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.UnaryOp;
 import org.apache.sysml.hops.Hop.AggOp;
@@ -149,7 +150,7 @@ public class TemplateCell extends TemplateBase
 		MemoTableEntry me = memo.getBest(hop.getHopID(), TemplateType.CellTpl);
 		for( int i=0; i<hop.getInput().size(); i++ ) {
 			Hop c = hop.getInput().get(i);
-			if( me.isPlanRef(i) )
+			if( me!=null && me.isPlanRef(i) && !(c instanceof DataOp) )
 				rConstructCplan(c, memo, tmp, inHops, compileLiterals);
 			else {
 				CNodeData cdata = TemplateUtils.createCNodeData(c, compileLiterals);	

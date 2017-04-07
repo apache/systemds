@@ -34,7 +34,9 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.hops.AggBinaryOp;
 import org.apache.sysml.hops.AggUnaryOp;
 import org.apache.sysml.hops.BinaryOp;
+import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.Hop;
+import org.apache.sysml.hops.Hop.AggOp;
 import org.apache.sysml.hops.Hop.Direction;
 import org.apache.sysml.hops.IndexingOp;
 import org.apache.sysml.hops.ParameterizedBuiltinOp;
@@ -82,12 +84,15 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 			if( LOG.isTraceEnabled() )
 				LOG.trace("Partition materialization points: "+Arrays.toString(M.toArray(new Long[0])));
 			
-			//step 3: create composite templates entries
+			//step 3: create composite templates (within the partition)
 			createAndAddMultiAggPlans(memo, partition, R);
 			
 			//step 4: plan enumeration and plan selection
 			selectPlans(memo, partition, R, M);
 		}
+		
+		//step 5: add composite templates (across partitions)
+		createAndAddMultiAggPlans(memo, roots);
 	
 		//take all distinct best plans
 		for( Entry<Long, List<MemoTableEntry>> e : getBestPlans().entrySet() )
@@ -217,6 +222,7 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 			&& partition.contains(hop.getHopID());
 	}
 	
+	//within-partition multi-agg templates
 	private static void createAndAddMultiAggPlans(CPlanMemoTable memo, HashSet<Long> partition, HashSet<Long> R)
 	{
 		//create index of plans that reference full aggregates to avoid circular dependencies
@@ -262,6 +268,30 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 		}
 	}
 	
+	//across-partition multi-agg templates
+	private static void createAndAddMultiAggPlans(CPlanMemoTable memo, ArrayList<Hop> roots)
+	{
+		//#1: collect full aggregations over shared inputs (otherwise never fused)
+		HashMap<Long, ArrayList<Long>> fullAggs = new HashMap<Long, ArrayList<Long>>();
+		Hop.resetVisitStatus(roots);
+		for( Hop hop : roots )
+			rCollectAggregatesSharedRead(hop, fullAggs);
+		
+		//construct and add multiagg template plans (w/ max 3 aggregations)
+		for( Entry<Long, ArrayList<Long>> e : fullAggs.entrySet() ) {
+			if( e.getValue().size()<=1 )
+				continue;
+			ArrayList<Long> aggs = e.getValue();
+			MemoTableEntry me = new MemoTableEntry(TemplateType.MultiAggTpl,
+				aggs.get(0), aggs.get(1), (aggs.size()>2)?aggs.get(2):-1);
+			for( int i=0; i<aggs.size(); i++ ) {
+				memo.add(memo._hopRefs.get(aggs.get(i)), me);
+				if( LOG.isTraceEnabled() )
+					LOG.trace("Added multiagg* plan: "+aggs.get(i)+" "+me);
+			}
+		}
+	}
+	
 	private static boolean isValidMultiAggregate(CPlanMemoTable memo, MemoTableEntry me) {
 		//ensure that aggregates are independent of each other, i.e.,
 		//they to not have potentially transitive parent child references
@@ -283,6 +313,28 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 			ret &= rCheckMultiAggregate(c, probe);
 		ret &= !probe.contains(current.getHopID());
 		return ret;
+	}
+	
+	private static void rCollectAggregatesSharedRead(Hop current, HashMap<Long, ArrayList<Long>> aggs) {
+		if( current.isVisited() )
+			return;
+		
+		//collect all applicable full aggregations per read
+		if( HopRewriteUtils.isAggUnaryOp(current, AggOp.SUM, AggOp.SUM_SQ, AggOp.MIN, AggOp.MAX)
+			&& ((AggUnaryOp)current).getDirection()==Direction.RowCol
+			&& current.getInput().get(0) instanceof DataOp )
+		{
+			Hop input = current.getInput().get(0);
+			if( !aggs.containsKey(input.getHopID()) )
+				aggs.put(input.getHopID(), new ArrayList<Long>());
+			aggs.get(input.getHopID()).add(current.getHopID());
+		}
+		
+		//recursively process children
+		for( Hop c : current.getInput() )
+			rCollectAggregatesSharedRead(c, aggs);
+		
+		current.setVisited();
 	}
 	
 	private void selectPlans(CPlanMemoTable memo, HashSet<Long> partition, HashSet<Long> R, ArrayList<Long> M) 

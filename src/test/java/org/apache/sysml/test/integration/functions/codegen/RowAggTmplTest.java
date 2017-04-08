@@ -45,6 +45,7 @@ public class RowAggTmplTest extends AutomatedTestBase
 	private static final String TEST_NAME7 = TEST_NAME+"7"; //t(X)%*%(X%*%v-y); sum((X%*%v-y)^2);
 	private static final String TEST_NAME8 = TEST_NAME+"8"; //colSums((X/rowSums(X))>0.7)
 	private static final String TEST_NAME9 = TEST_NAME+"9"; //t(X) %*% (v - abs(y))
+	private static final String TEST_NAME10 = TEST_NAME+"10"; //Y=(X<=rowMins(X)); R=colSums((Y/rowSums(Y)));
 	
 	private static final String TEST_DIR = "functions/codegen/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + RowAggTmplTest.class.getSimpleName() + "/";
@@ -56,7 +57,7 @@ public class RowAggTmplTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		for(int i=1; i<=9; i++)
+		for(int i=1; i<=10; i++)
 			addTestConfiguration( TEST_NAME+i, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME+i, new String[] { String.valueOf(i) }) );
 	}
 	
@@ -105,6 +106,11 @@ public class RowAggTmplTest extends AutomatedTestBase
 		testCodegenIntegration( TEST_NAME9, true, ExecType.CP );	
 	}
 	
+	@Test
+	public void testCodegenRowAggRewrite10() {
+		testCodegenIntegration( TEST_NAME10, true, ExecType.CP );	
+	}
+	
 	@Test	
 	public void testCodegenRowAgg1() {
 		testCodegenIntegration( TEST_NAME1, false, ExecType.CP );
@@ -148,6 +154,11 @@ public class RowAggTmplTest extends AutomatedTestBase
 	@Test
 	public void testCodegenRowAgg9() {
 		testCodegenIntegration( TEST_NAME9, false, ExecType.CP );	
+	}
+	
+	@Test
+	public void testCodegenRowAgg10() {
+		testCodegenIntegration( TEST_NAME10, false, ExecType.CP );	
 	}
 	
 	private void testCodegenIntegration( String testname, boolean rewrites, ExecType instType )

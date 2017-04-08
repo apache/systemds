@@ -21,13 +21,15 @@ package org.apache.sysml.hops.codegen.cplan;
 
 import java.util.Arrays;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.sysml.parser.Expression.DataType;
 
 
 public class CNodeUnary extends CNode
 {
 	public enum UnaryType {
-		ROW_SUMS, LOOKUP_R, LOOKUP_RC, LOOKUP0, //codegen specific
+		LOOKUP_R, LOOKUP_RC, LOOKUP0, //codegen specific
+		ROW_SUMS, ROW_MINS, ROW_MAXS, //codegen specific
 		EXP, POW2, MULT2, SQRT, LOG, LOG_NZ,
 		ABS, ROUND, CEIL, FLOOR, SIGN, 
 		SIN, COS, TAN, ASIN, ACOS, ATAN,
@@ -43,8 +45,11 @@ public class CNodeUnary extends CNode
 		public String getTemplate(boolean sparse) {
 			switch( this ) {
 				case ROW_SUMS:
-					return sparse ? "    double %TMP% = LibSpoofPrimitives.vectSum(%IN1v%, %IN1i%, %POS1%, %LEN%);\n": 
-									"    double %TMP% = LibSpoofPrimitives.vectSum(%IN1%, %POS1%, %LEN%);\n"; 
+				case ROW_MINS:
+				case ROW_MAXS:
+					String vectName = StringUtils.capitalize(this.toString().substring(4,7).toLowerCase());
+					return sparse ? "    double %TMP% = LibSpoofPrimitives.vect"+vectName+"(%IN1v%, %IN1i%, %POS1%, %LEN%);\n": 
+									"    double %TMP% = LibSpoofPrimitives.vect"+vectName+"(%IN1%, %POS1%, %LEN%);\n"; 
 				case EXP:
 					return "    double %TMP% = FastMath.exp(%IN1%);\n";
 			    case LOOKUP_R:
@@ -153,6 +158,8 @@ public class CNodeUnary extends CNode
 	public String toString() {
 		switch(_type) {
 			case ROW_SUMS:  return "u(R+)";
+			case ROW_MINS:  return "u(Rmin)";
+			case ROW_MAXS:  return "u(Rmax)";
 			case LOOKUP_R:	return "u(ixr)";
 			case LOOKUP_RC:	return "u(ixrc)";
 			case LOOKUP0:	return "u(ix0)";
@@ -165,6 +172,8 @@ public class CNodeUnary extends CNode
 	public void setOutputDims() {
 		switch(_type) {
 			case ROW_SUMS:
+			case ROW_MINS:
+			case ROW_MAXS:
 			case EXP:
 			case LOOKUP_R:
 			case LOOKUP_RC:

@@ -55,6 +55,7 @@ import org.apache.sysml.runtime.matrix.data.Pair;
 
 public class TemplateRowAgg extends TemplateBase 
 {
+	private static final Hop.AggOp[] SUPPORTED_ROW_AGG = new AggOp[]{AggOp.SUM, AggOp.MIN, AggOp.MAX};
 	private static final Hop.OpOp2[] SUPPORTED_VECT_BINARY = new OpOp2[]{OpOp2.MULT, OpOp2.DIV, 
 			OpOp2.EQUAL, OpOp2.NOTEQUAL, OpOp2.LESS, OpOp2.LESSEQUAL, OpOp2.GREATER, OpOp2.GREATEREQUAL};
 	
@@ -157,11 +158,12 @@ public class TemplateRowAgg extends TemplateBase
 		if(hop instanceof AggUnaryOp)
 		{
 			CNode cdata1 = tmp.get(hop.getInput().get(0).getHopID());
-			if(  ((AggUnaryOp)hop).getDirection() == Direction.Row && ((AggUnaryOp)hop).getOp() == AggOp.SUM  ) {
+			if( ((AggUnaryOp)hop).getDirection() == Direction.Row && HopRewriteUtils.isAggUnaryOp(hop, SUPPORTED_ROW_AGG) ) {
 				if(hop.getInput().get(0).getDim2()==1)
 					out = (cdata1.getDataType()==DataType.SCALAR) ? cdata1 : new CNodeUnary(cdata1,UnaryType.LOOKUP_R);
 				else {
-					out = new CNodeUnary(cdata1, UnaryType.ROW_SUMS);
+					String opcode = "ROW_"+((AggUnaryOp)hop).getOp().name().toUpperCase()+"S";
+					out = new CNodeUnary(cdata1, UnaryType.valueOf(opcode));
 					inHops2.put("X", hop.getInput().get(0));
 				}
 			}
@@ -282,6 +284,10 @@ public class TemplateRowAgg extends TemplateBase
 					TemplateUtils.createCNodeData(new LiteralOp(hop.getInput().get(0).getDim2()), true), 
 					TemplateUtils.createCNodeData(hop.getInput().get(4), true),
 					TernaryType.LOOKUP_RC1);
+		}
+		
+		if( out == null ) {
+			throw new RuntimeException(hop.getHopID()+" "+hop.getOpString());
 		}
 		
 		if( out.getDataType().isMatrix() ) {

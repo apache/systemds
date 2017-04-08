@@ -74,7 +74,7 @@ public class LibSpoofPrimitives
 		return c;
 	}
 
-	// custom vector sums
+	// custom vector sums, mins, maxs
 	
 	/**
 	 * Computes c = sum(A), where A is a dense vectors. 
@@ -89,14 +89,14 @@ public class LibSpoofPrimitives
 		final int bn = len%8;
 				
 		//compute rest
-		for( int i = 0; i < bn; i++, ai++ )
-			val += a[ ai ];
+		for( int i = ai; i < ai+bn; i++ )
+			val += a[ i ];
 		
 		//unrolled 8-block (for better instruction-level parallelism)
-		for( int i = bn; i < len; i+=8, ai+=8 ) {
+		for( int i = ai+bn; i < ai+len; i+=8 ) {
 			//read 64B cacheline of a, compute cval' = sum(a) + cval
-			val += a[ ai+0 ] + a[ ai+1 ] + a[ ai+2 ] + a[ ai+3 ]
-			     + a[ ai+4 ] + a[ ai+5 ] + a[ ai+6 ] + a[ ai+7 ];
+			val += a[ i+0 ] + a[ i+1 ] + a[ i+2 ] + a[ i+3 ]
+			     + a[ i+4 ] + a[ i+5 ] + a[ i+6 ] + a[ i+7 ];
 		}
 		
 		//scalar result
@@ -118,22 +118,50 @@ public class LibSpoofPrimitives
 				
 		//compute rest
 		for( int i = ai; i < ai+bn; i++ )
-			val += avals[ ai+aix[i] ];
+			val += avals[ aix[i] ];
 		
 		//unrolled 8-block (for better instruction-level parallelism)
 		for( int i = ai+bn; i < ai+len; i+=8 )
 		{
 			//read 64B of a via 'gather'
 			//compute cval' = sum(a) + cval
-			val += avals[ ai+aix[i+0] ] + avals[ ai+aix[i+1] ]
-			     + avals[ ai+aix[i+2] ] + avals[ ai+aix[i+3] ]
-			     + avals[ ai+aix[i+4] ] + avals[ ai+aix[i+5] ]
-			     + avals[ ai+aix[i+6] ] + avals[ ai+aix[i+7] ];
+			val += avals[ aix[i+0] ] + avals[ aix[i+1] ]
+			     + avals[ aix[i+2] ] + avals[ aix[i+3] ]
+			     + avals[ aix[i+4] ] + avals[ aix[i+5] ]
+			     + avals[ aix[i+6] ] + avals[ aix[i+7] ];
 		}
 		
 		//scalar result
 		return val; 
+	}
+	
+	public static double vectMin(double[] a, int ai, int len) { 
+		double val = Double.MAX_VALUE;
+		for( int i = ai; i < ai+len; i++ )
+			val = Math.min(a[ai], val);
+		return val; 
 	} 
+	
+	public static double vectMin(double[] avals, int[] aix, int ai, int len) {
+		double val = Double.MAX_VALUE;
+		for( int i = ai; i < ai+len; i++ )
+			val = Math.min(avals[aix[i]], val);
+		return val;
+	}
+	
+	public static double vectMax(double[] a, int ai, int len) { 
+		double val = -Double.MAX_VALUE;
+		for( int i = ai; i < ai+len; i++ )
+			val = Math.max(a[ai], val);
+		return val; 
+	} 
+	
+	public static double vectMax(double[] avals, int[] aix, int ai, int len) {
+		double val = -Double.MAX_VALUE;
+		for( int i = ai; i < ai+len; i++ )
+			val = Math.max(avals[aix[i]], val);
+		return val;
+	}
 	
 	//custom vector div
 	
@@ -202,7 +230,7 @@ public class LibSpoofPrimitives
 	public static double[] vectNotequalWrite(double[] a, double bval, int ai, int len) {
 		double[] c = allocVector(len, false);
 		for( int j = 0; j < len; j++, ai++)
-			c[j] = (a[j] != bval) ? 1 : 0;
+			c[j] = (a[ai] != bval) ? 1 : 0;
 		return c;
 	}
 
@@ -228,7 +256,7 @@ public class LibSpoofPrimitives
 	public static double[] vectLessWrite(double[] a, double bval, int ai, int len) {
 		double[] c = allocVector(len, false);
 		for( int j = 0; j < len; j++, ai++)
-			c[j] = (a[j] < bval) ? 1 : 0;
+			c[j] = (a[ai] < bval) ? 1 : 0;
 		return c;
 	}
 
@@ -254,7 +282,7 @@ public class LibSpoofPrimitives
 	public static double[] vectLessequalWrite(double[] a, double bval, int ai, int len) {
 		double[] c = allocVector(len, false);
 		for( int j = 0; j < len; j++, ai++)
-			c[j] = (a[j] <= bval) ? 1 : 0;
+			c[j] = (a[ai] <= bval) ? 1 : 0;
 		return c;
 	}
 
@@ -280,7 +308,7 @@ public class LibSpoofPrimitives
 	public static double[] vectGreaterWrite(double[] a, double bval, int ai, int len) {
 		double[] c = allocVector(len, false);
 		for( int j = 0; j < len; j++, ai++)
-			c[j] = (a[j] > bval) ? 1 : 0;
+			c[j] = (a[ai] > bval) ? 1 : 0;
 		return c;
 	}
 
@@ -306,7 +334,7 @@ public class LibSpoofPrimitives
 	public static double[] vectGreaterequalWrite(double[] a, double bval, int ai, int len) {
 		double[] c = allocVector(len, false);
 		for( int j = 0; j < len; j++, ai++)
-			c[j] = (a[j] >= bval) ? 1 : 0;
+			c[j] = (a[ai] >= bval) ? 1 : 0;
 		return c;
 	}
 

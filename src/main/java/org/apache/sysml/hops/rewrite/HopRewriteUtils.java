@@ -22,6 +22,7 @@ package org.apache.sysml.hops.rewrite;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.conf.ConfigurationManager;
@@ -1066,46 +1067,24 @@ public class HopRewriteUtils
 	//////////////////////////////////////
 	// utils for lookup tables
 	
-	public static boolean isValidOp( AggOp input, AggOp[] validTab )
-	{
-		for( AggOp valid : validTab )
-			if( valid == input )
-				return true;
-		return false;
+	public static boolean isValidOp( AggOp input, AggOp[] validTab ) {
+		return ArrayUtils.contains(validTab, input);
 	}
 	
-	public static boolean isValidOp( OpOp1 input, OpOp1[] validTab )
-	{
-		for( OpOp1 valid : validTab )
-			if( valid == input )
-				return true;
-		return false;
+	public static boolean isValidOp( OpOp1 input, OpOp1[] validTab ) {
+		return ArrayUtils.contains(validTab, input);
 	}
 	
-	public static boolean isValidOp( OpOp2 input, OpOp2[] validTab )
-	{
-		for( OpOp2 valid : validTab )
-			if( valid == input )
-				return true;
-		return false;
+	public static boolean isValidOp( OpOp2 input, OpOp2[] validTab ) {
+		return ArrayUtils.contains(validTab, input);
 	}
 	
-	public static boolean isValidOp( ReOrgOp input, ReOrgOp[] validTab )
-	{
-		for( ReOrgOp valid : validTab )
-			if( valid == input )
-				return true;
-		return false;
+	public static boolean isValidOp( ReOrgOp input, ReOrgOp[] validTab ) {
+		return ArrayUtils.contains(validTab, input);
 	}
 	
-	public static int getValidOpPos( OpOp2 input, OpOp2[] validTab )
-	{
-		for( int i=0; i<validTab.length; i++ ) {
-			 OpOp2 valid = validTab[i];
-			 if( valid == input )
-					return i;
-		}
-		return -1;
+	public static int getValidOpPos( OpOp2 input, OpOp2[] validTab ) {
+		return ArrayUtils.indexOf(validTab, input);
 	}
 	
 	/**

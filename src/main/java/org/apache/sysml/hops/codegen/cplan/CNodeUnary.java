@@ -130,8 +130,9 @@ public class CNodeUnary extends CNode
 		sb.append(_inputs.get(0).codegen(sparse));
 		
 		//generate unary operation
+		boolean lsparse = sparse && (_inputs.get(0) instanceof CNodeData);
 		String var = createVarname();
-		String tmp = _type.getTemplate(sparse);
+		String tmp = _type.getTemplate(lsparse);
 		tmp = tmp.replaceAll("%TMP%", var);
 		
 		String varj = _inputs.get(0).getVarname();
@@ -142,7 +143,9 @@ public class CNodeUnary extends CNode
 		tmp = tmp.replaceAll("%IN1%", varj );
 		
 		//replace start position of main input
-		String spos = !varj.startsWith("b") ? varj+"i" : "0";
+		String spos = (!varj.startsWith("b") 
+			&& _inputs.get(0) instanceof CNodeData 
+			&& _inputs.get(0).getDataType().isMatrix()) ? varj+"i" : "0";
 		tmp = tmp.replaceAll("%POS1%", spos);
 		tmp = tmp.replaceAll("%POS2%", spos);
 		

@@ -25,6 +25,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.sysml.hops.AggBinaryOp;
 import org.apache.sysml.hops.AggUnaryOp;
 import org.apache.sysml.hops.BinaryOp;
@@ -293,5 +294,9 @@ public class TemplateUtils
 			ret += countVectorIntermediates(c);
 		return ret + ((node instanceof CNodeBinary 
 			&& ((CNodeBinary)node).getType().isVectorScalarPrimitive()) ? 1 : 0);
+	}
+
+	public static boolean isType(TemplateType type, TemplateType... validTypes) {
+		return ArrayUtils.contains(validTypes, type);
 	}
 }

@@ -41,7 +41,7 @@ public class AlgorithmLinregCG extends AutomatedTestBase
 	private final static String TEST_CONF = "SystemML-config-codegen.xml";
 	private final static File   TEST_CONF_FILE = new File(SCRIPT_DIR + TEST_DIR, TEST_CONF);
 	
-	private final static double eps = 1e-5;
+	private final static double eps = 1e-1;
 	
 	private final static int rows = 2468;
 	private final static int cols = 507;

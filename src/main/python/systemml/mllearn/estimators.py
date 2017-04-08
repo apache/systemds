@@ -554,7 +554,7 @@ class Caffe2DML(BaseSystemMLClassifier):
     >>> caffe2DML = Caffe2DML(sqlCtx, 'lenet_solver.proto').set(max_iter=500)
     >>> caffe2DML.fit(X, y)
     """
-    def __init__(self, sqlCtx, solver, weights=None, ignore_weights=None, transferUsingDF=False, tensorboard_log_dir=None):
+    def __init__(self, sqlCtx, solver, input_shape, weights=None, ignore_weights=None, transferUsingDF=False, tensorboard_log_dir=None):
         """
         Performs training/prediction for a given caffe network. 
 
@@ -562,6 +562,7 @@ class Caffe2DML(BaseSystemMLClassifier):
         ----------
         sqlCtx: PySpark SQLContext
         solver: caffe solver file path
+        input_shape: 3-element list (number of channels, input height, input width)
         weights: directory whether learned weights are stored (default: None)
         ignore_weights: names of layers to not read from the weights directory (list of string, default:None)
         transferUsingDF: whether to pass the input dataset via PySpark DataFrame (default: False)
@@ -571,8 +572,10 @@ class Caffe2DML(BaseSystemMLClassifier):
         self.sc = sqlCtx._sc
         self.uid = "Caffe2DML"
         self.model = None
+        if len(input_shape) != 3:
+            raise ValueError('Expected input_shape as list of 3 element')
         solver = self.sc._jvm.org.apache.sysml.api.dl.Utils.readCaffeSolver(solver)
-        self.estimator = self.sc._jvm.org.apache.sysml.api.dl.Caffe2DML(self.sc._jsc.sc(), solver)
+        self.estimator = self.sc._jvm.org.apache.sysml.api.dl.Caffe2DML(self.sc._jsc.sc(), solver, str(input_shape[0]), str(input_shape[1]), str(input_shape[2]))
         self.weights = weights
         if weights is not None:
             self.estimator.setInput("$weights", str(weights))
@@ -597,30 +600,14 @@ class Caffe2DML(BaseSystemMLClassifier):
                 self.labelMap[int(keys[i])] = values[i]
             # self.encode(classes) # Giving incorrect results
     
-    def set(self, num_classes=None, input_shape=None, display=None, max_iter=None, normalize_input=None, validation_split=None, snapshot=None, snapshot_prefix=None, debug=None):
+    def set(self, num_classes=None, debug=None):
         """
         Set input to Caffe2DML
         
         Parameters
         ----------
-        num_classes: number of classes in the dataset (default: derived from the last layer of network)
-        input_shape: 3-element list (number of channels, input height, input width) (default: (1, sqrt(ncol(image)), sqrt(ncol(image))))
-        display: number of iterations after which we should print training loss (default: fetched from the solver file)
-        max_iter: maximum number of iterations (default: fetched from the solver file)
-        normalize_input: whether to normalize the inputs or not (default: False)
-        validation_split: Percentage of validation split (default: 0.1)
-        snapshot: Number of iterations after which to snapshot (default: fetched from the solver file)
-        snapshot_prefix: path to the directory where to snapshot (default: fetched from the solver file)
         debug: to add debugging DML code such as classification report, print DML script, etc (default: False)
         """
-        if num_classes is not None: self.estimator.setInput("$num_classes", str(num_classes))
-        if input_shape is not None: self.estimator.setInputShape(str(input_shape[0]), str(input_shape[1]), str(input_shape[2]))
-        if display is not None: self.estimator.setInput("$display", str(display))
-        if max_iter is not None: self.estimator.setInput("$max_iter", str(max_iter))
-        if normalize_input is not None: self.estimator.setInput("$normalize_input", str(normalize_input).upper())
-        if validation_split is not None: self.estimator.setInput("$validation_split", str(validation_split))
-        if snapshot is not None: self.estimator.setInput("$snapshot", str(snapshot))
-        if snapshot_prefix is not None: self.estimator.setInput("$snapshot_prefix", str(snapshot_prefix))
         if debug is not None: self.estimator.setInput("$debug", str(debug).upper())
         return self
     

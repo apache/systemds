@@ -23,9 +23,9 @@ import org.apache.sysml.runtime.DMLRuntimeException
 import caffe.Caffe
 
 trait CaffeSolver {
+  def sourceFileName:String;
   def update(dmlScript:StringBuilder, layer:CaffeLayer):Unit;
   def init(dmlScript:StringBuilder, layer:CaffeLayer):Unit;
-  def source(dmlScript:StringBuilder):Unit;
   
   // ----------------------------------------------------------------
   // Used for Fine-tuning
@@ -55,8 +55,8 @@ trait CaffeSolver {
   def l2reg_update(lambda:Double, dmlScript:StringBuilder, layer:CaffeLayer):Unit = {
     // val donotRegularizeLayers:Boolean = layer.isInstanceOf[BatchNorm] || layer.isInstanceOf[Scale];
     if(lambda != 0 && layer.shouldUpdateWeight) {
-      dmlScript.append("\t").append(layer.dW + "_reg = l2_reg::backward(" + layer.weight + ", " + lambda + ")\n")
-      dmlScript.append("\t").append(layer.dW + " = " + layer.dW + " + " + layer.dW + "_reg\n")
+      dmlScript.append("\t").append(layer.dWeight + "_reg = l2_reg::backward(" + layer.weight + ", " + lambda + ")\n")
+      dmlScript.append("\t").append(layer.dWeight + " = " + layer.dWeight + " + " + layer.dWeight + "_reg\n")
     }
   }
 }
@@ -77,11 +77,11 @@ class LearningRatePolicy(lr_policy:String="exp", base_lr:Double=0.01) {
   def updateLearningRate(dmlScript:StringBuilder):Unit = {
     val new_lr = lr_policy.toLowerCase match {
       case "fixed" => base_lr.toString
-      case "step" => "(" + base_lr + " * " +  gamma + " ^ " + " floor(epoch/" + step + "))"
-      case "exp" => "(" + base_lr + " * " + gamma + "^epoch)"
-      case "inv" =>  "(" + base_lr + "* (1 + " + gamma + " * epoch) ^ (-" + power + "))"
-      case "poly" => "(" + base_lr  + " * (1 - epoch/ max_epoch) ^ " + power + ")"
-      case "sigmoid" => "(" + base_lr + "( 1/(1 + exp(-" + gamma + "* (epoch - " + step + "))))"
+      case "step" => "(" + base_lr + " * " +  gamma + " ^ " + " floor(e/" + step + "))"
+      case "exp" => "(" + base_lr + " * " + gamma + "^e)"
+      case "inv" =>  "(" + base_lr + "* (1 + " + gamma + " * e) ^ (-" + power + "))"
+      case "poly" => "(" + base_lr  + " * (1 - e/ max_epochs) ^ " + power + ")"
+      case "sigmoid" => "(" + base_lr + "( 1/(1 + exp(-" + gamma + "* (e - " + step + "))))"
       case _ => throw new DMLRuntimeException("The lr policy is not supported:" + lr_policy)
     }
     dmlScript.append("lr = " + new_lr + "\n")
@@ -97,15 +97,15 @@ class SGD(lambda:Double=5e-04, momentum:Double=0.9) extends CaffeSolver {
     l2reg_update(lambda, dmlScript, layer)
     if(momentum == 0) {
       // Use sgd
-      if(layer.shouldUpdateWeight) dmlScript.append("\t").append(layer.weight + " = sgd::update(" + commaSep(layer.weight, layer.dW, getWeightLr(layer)) + ")\n")
-      if(layer.shouldUpdateBias) dmlScript.append("\t").append(layer.bias + " = sgd::update(" + commaSep(layer.bias, layer.dB, getBiasLr(layer)) + ")\n")
+      if(layer.shouldUpdateWeight) dmlScript.append("\t").append(layer.weight + " = sgd::update(" + commaSep(layer.weight, layer.dWeight, getWeightLr(layer)) + ")\n")
+      if(layer.shouldUpdateBias) dmlScript.append("\t").append(layer.bias + " = sgd::update(" + commaSep(layer.bias, layer.dBias, getBiasLr(layer)) + ")\n")
     }
     else {
       // Use sgd_momentum
       if(layer.shouldUpdateWeight) dmlScript.append("\t").append("["+ commaSep(layer.weight, layer.weight+"_v") + "] " + 
-          "= sgd_momentum::update(" + commaSep(layer.weight, layer.dW, getWeightLr(layer), momentum.toString, layer.weight+"_v") + ")\n")
+          "= sgd_momentum::update(" + commaSep(layer.weight, layer.dWeight, getWeightLr(layer), momentum.toString, layer.weight+"_v") + ")\n")
       if(layer.shouldUpdateBias) dmlScript.append("\t").append("["+ commaSep(layer.bias, layer.bias+"_v") + "] " + 
-          "= sgd_momentum::update(" + commaSep(layer.bias, layer.dB, getBiasLr(layer), momentum.toString, layer.bias+"_v") + ")\n")
+          "= sgd_momentum::update(" + commaSep(layer.bias, layer.dBias, getBiasLr(layer), momentum.toString, layer.bias+"_v") + ")\n")
     }
   }
   def init(dmlScript:StringBuilder, layer:CaffeLayer):Unit = {
@@ -114,9 +114,7 @@ class SGD(lambda:Double=5e-04, momentum:Double=0.9) extends CaffeSolver {
       if(layer.shouldUpdateBias) dmlScript.append(layer.bias+"_v = sgd_momentum::init(" + layer.bias + ")\n")
     }
   }
-  def source(dmlScript:StringBuilder):Unit = 
-    if(momentum == 0) Caffe2DML.source(dmlScript, "sgd", Caffe2DML.optimDir) 
-    else Caffe2DML.source(dmlScript, "sgd_momentum", Caffe2DML.optimDir)
+  def sourceFileName:String = if(momentum == 0) "sgd" else "sgd_momentum" 
 }
 
 /**
@@ -129,15 +127,15 @@ class AdaGrad(lambda:Double=5e-04, epsilon:Double=1e-6) extends CaffeSolver {
   def update(dmlScript:StringBuilder, layer:CaffeLayer):Unit = {
     l2reg_update(lambda, dmlScript, layer)
     if(layer.shouldUpdateWeight) dmlScript.append("\t").append("["+ commaSep(layer.weight, layer.weight+"_cache") + "] " + 
-        "= adagrad::update(" + commaSep(layer.weight, layer.dW, getWeightLr(layer), epsilon.toString, layer.weight+"_cache") + ")\n")
+        "= adagrad::update(" + commaSep(layer.weight, layer.dWeight, getWeightLr(layer), epsilon.toString, layer.weight+"_cache") + ")\n")
     if(layer.shouldUpdateBias) dmlScript.append("\t").append("["+ commaSep(layer.bias, layer.bias+"_cache") + "] " + 
-        "= adagrad::update(" + commaSep(layer.bias, layer.dB, getBiasLr(layer), epsilon.toString, layer.bias+"_cache") + ")\n")
+        "= adagrad::update(" + commaSep(layer.bias, layer.dBias, getBiasLr(layer), epsilon.toString, layer.bias+"_cache") + ")\n")
   }
   def init(dmlScript:StringBuilder, layer:CaffeLayer):Unit = {
     if(layer.shouldUpdateWeight) dmlScript.append(layer.weight+"_cache = adagrad::init(" + layer.weight + ")\n")
     if(layer.shouldUpdateBias) dmlScript.append(layer.bias+"_cache = adagrad::init(" + layer.bias + ")\n")
   }
-  def source(dmlScript:StringBuilder):Unit = Caffe2DML.source(dmlScript, "adagrad", Caffe2DML.optimDir)
+  def sourceFileName:String = "adagrad"
 }
 
 /**
@@ -148,13 +146,13 @@ class Nesterov(lambda:Double=5e-04, momentum:Double=0.9) extends CaffeSolver {
   def update(dmlScript:StringBuilder, layer:CaffeLayer):Unit = {
     l2reg_update(lambda, dmlScript, layer)
     if(layer.shouldUpdateWeight) dmlScript.append("\t").append("["+ commaSep(layer.weight, layer.weight+"_v") + "] " + 
-        "= sgd_nesterov::update(" + commaSep(layer.weight, layer.dW, getWeightLr(layer), momentum.toString, layer.weight+"_v") + ")\n")
+        "= sgd_nesterov::update(" + commaSep(layer.weight, layer.dWeight, getWeightLr(layer), momentum.toString, layer.weight+"_v") + ")\n")
     if(layer.shouldUpdateBias) dmlScript.append("\t").append("["+ commaSep(layer.bias, layer.bias+"_v") + "] " + 
-        "= sgd_nesterov::update(" + commaSep(layer.bias, layer.dB, getBiasLr(layer), momentum.toString, layer.bias+"_v") + ")\n")
+        "= sgd_nesterov::update(" + commaSep(layer.bias, layer.dBias, getBiasLr(layer), momentum.toString, layer.bias+"_v") + ")\n")
   }
   def init(dmlScript:StringBuilder, layer:CaffeLayer):Unit = {
     if(layer.shouldUpdateWeight) dmlScript.append(layer.weight+"_v = sgd_nesterov::init(" + layer.weight + ")\n")
     if(layer.shouldUpdateBias) dmlScript.append(layer.bias+"_v = sgd_nesterov::init(" + layer.bias + ")\n")
   }
-  def source(dmlScript:StringBuilder):Unit = Caffe2DML.source(dmlScript, "sgd_nesterov", Caffe2DML.optimDir)
+  def sourceFileName:String = "sgd_nesterov"
 }

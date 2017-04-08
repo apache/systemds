@@ -49,351 +49,368 @@ import org.apache.sysml.api.ml._
 import java.util.Random
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
+import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer
+
 
 object Caffe2DML  {
   val LOG = LogFactory.getLog(classOf[Caffe2DML].getName())
   def fileSep():String = { if(File.separator.equals("\\")) "\\\\" else File.separator }
   def setNNLibraryPath(path:String):Unit = { prefix = path + fileSep + "nn"}  
   // ------------------------------------------------------------------------
-  var numTabs = 0
   var prefix = Utils.getPrefix()
   def layerDir = prefix + fileSep + "layers" + fileSep
   def optimDir = prefix + fileSep + "optim" + fileSep
-  val alreadyImported:HashSet[String] = new HashSet[String]
-  def source(dmlScript:StringBuilder, sourceFileName:String, dir:String=layerDir):Unit = {
-    if(sourceFileName != null && !alreadyImported.contains(sourceFileName)) {
-      alreadyImported.add(sourceFileName)
-      dmlScript.append("source(\"" + dir +  sourceFileName + ".dml\") as " + sourceFileName + "\n")
-    }
-  }
+  
+  // Naming conventions:
+  val X = "X"; val y = "y"; val batchSize = "BATCH_SIZE"; val numImages = "num_images"; val numValidationImages = "num_validation"
+  val XVal = "X_val"; val yVal = "y_val"
 }
 
-class Caffe2DML(val sc: SparkContext, val solverParam:Caffe.SolverParameter, val solver:CaffeSolver, val net:CaffeNetwork, val lrPolicy:LearningRatePolicy) extends Estimator[Caffe2DMLModel] 
-  with BaseSystemMLClassifier {
+class Caffe2DML(val sc: SparkContext, val solverParam:Caffe.SolverParameter, 
+    val solver:CaffeSolver, val net:CaffeNetwork, 
+    val lrPolicy:LearningRatePolicy, val numChannels:String, val height:String, val width:String) extends Estimator[Caffe2DMLModel] 
+  with BaseSystemMLClassifier with DMLGenerator {
+  // --------------------------------------------------------------
   // Invoked by Python, MLPipeline
-  def this(sc: SparkContext, solver1:Caffe.SolverParameter, networkPath:String) {
+  def this(sc: SparkContext, solver1:Caffe.SolverParameter, networkPath:String, numChannels:String, height:String, width:String) {
     this(sc, solver1, Utils.parseSolver(solver1), 
-        new CaffeNetwork(networkPath, caffe.Caffe.Phase.TRAIN),
-        new LearningRatePolicy(solver1))
+        new CaffeNetwork(networkPath, caffe.Caffe.Phase.TRAIN, numChannels, height, width),
+        new LearningRatePolicy(solver1), numChannels, height, width)
   }
-  def this(sc: SparkContext, solver1:Caffe.SolverParameter) {
-    this(sc, solver1, solver1.getNet)
+  def this(sc: SparkContext, solver1:Caffe.SolverParameter, numChannels:String, height:String, width:String) {
+    this(sc, solver1, Utils.parseSolver(solver1), new CaffeNetwork(solver1.getNet, caffe.Caffe.Phase.TRAIN, numChannels, height, width), 
+        new LearningRatePolicy(solver1), numChannels, height, width)
   } 
-  val rand = new Random
-  val uid:String = "caffe_classifier_" + rand.nextLong + "_" + rand.nextLong 
-  val layersToIgnore:HashSet[String] = new HashSet[String]() 
-  def setWeightsToIgnore(layerName:String):Unit = layersToIgnore.add(layerName)
-  def setWeightsToIgnore(layerNames:ArrayList[String]):Unit = layersToIgnore.addAll(layerNames)
-  
-  // -----------------------------------------------------------------------
-  // Logic to determine the input shape (i.e. channel, height, width) of the image as we get flattened NumPy array or Vector
-  // If the image is square gray-scale (for example: MNIST), the user need not provide the input shape.
-  // However, for any other situation (i.e. RGB image or non-square gray-scale image), the user must provide the input shape.
-  var input_shape_known = false
-  def setInputShape(numChannels:String, height:String, width:String):Unit = {
-	input_shape_known = true
-	net.dataLayers.map(l => { l.dataOutputShape = (numChannels, height, width) })
-  }
-  def setInputShape(numChannels:Int, height:Int, width:Int):Unit = setInputShape(numChannels.toString, height.toString, width.toString)
-  def setInputShape(X_mb: MatrixBlock):Unit = {
-	if(!input_shape_known) {
-		val height = Math.sqrt(X_mb.getNumColumns).toInt
-		if(Math.sqrt(X_mb.getNumColumns) == height)
-			setInputShape(1, height, height)
-	    else
-	    	throw new DMLRuntimeException("Cannot infer input_shape. Please set(input_shape=[number_channels, image_height, image_width])")
-	}
-  }
-  def setInputShape(df: ScriptsUtils.SparkDataType):Unit = {
-	 if(!input_shape_known) {
-	  	val numColumns = df.select("features").first().get(0).asInstanceOf[org.apache.spark.ml.linalg.Vector].size
-		val height = Math.sqrt(numColumns).toInt
-		if(Math.sqrt(numColumns) == height)
-			setInputShape(1, height, height)
-	    else
-	    	throw new DMLRuntimeException("Cannot infer input_shape. Please set(input_shape=[number_channels, image_height, image_width])")
-	} 
-  }
-  // -----------------------------------------------------------------------
-		  
-  val inputs:java.util.HashMap[String, String] = new java.util.HashMap[String, String]() 
-  def setInput(key: String, value:String):Unit = inputs.put(key, value)
-  
+  val uid:String = "caffe_classifier_" + (new Random).nextLong
   override def copy(extra: org.apache.spark.ml.param.ParamMap): Estimator[Caffe2DMLModel] = {
-    val that = new Caffe2DML(sc, solverParam, solver, net, lrPolicy)
+    val that = new Caffe2DML(sc, solverParam, solver, net, lrPolicy, numChannels, height, width)
     copyValues(that, extra)
   }
-  
-  // def transformSchema(schema: StructType): StructType = schema
-  
-  
-
-	// --------------------------------------------------------------
-	// Note: will update the y_mb as this will be called by Python mllearn
+  // Note: will update the y_mb as this will be called by Python mllearn
   def fit(X_mb: MatrixBlock, y_mb: MatrixBlock): Caffe2DMLModel = {
-	setInputShape(X_mb)
     val ret = baseFit(X_mb, y_mb, sc)
     new Caffe2DMLModel(ret, Utils.numClasses(net), sc, solver, net, lrPolicy, this)
   }
-  
   def fit(df: ScriptsUtils.SparkDataType): Caffe2DMLModel = {
-	setInputShape(df) 
     val ret = baseFit(df, sc)
     new Caffe2DMLModel(ret, Utils.numClasses(net), sc, solver, net, lrPolicy, this)
   }
 	// --------------------------------------------------------------
-  var _tensorboardLogDir:String = null
-  def setTensorBoardLogDir(log:String): Unit = { _tensorboardLogDir = log }
-  def tensorboardLogDir:String = {
-    if(_tensorboardLogDir == null) {
-      _tensorboardLogDir = java.io.File.createTempFile("temp", System.nanoTime().toString()).getAbsolutePath
+  
+  // Used for simplifying transfer learning
+  private val layersToIgnore:HashSet[String] = new HashSet[String]() 
+  def setWeightsToIgnore(layerName:String):Unit = layersToIgnore.add(layerName)
+  def setWeightsToIgnore(layerNames:ArrayList[String]):Unit = layersToIgnore.addAll(layerNames)
+  	  
+  // Input parameters to prediction and scoring script
+  val inputs:java.util.HashMap[String, String] = new java.util.HashMap[String, String]()
+  def setInput(key: String, value:String):Unit = inputs.put(key, value)
+  customAssert(solverParam.getTestIterCount <= 1, "Multiple test_iter variables are not supported")
+  customAssert(solverParam.getMaxIter > 0, "Please set max_iter to a positive value")
+  customAssert(net.getLayers.filter(net.getCaffeLayer(_).isInstanceOf[IsLossLayer]).length == 1, "Expected exactly one loss layer")
+    
+  // TODO: throw error or warning if user tries to set solver_mode == GPU instead of using setGPU method
+  
+  // Method called by Python mllearn to visualize variable of certain layer
+  def visualizeLayer(layerName:String, varType:String, aggFn:String): Unit = visualizeLayer(net, layerName, varType, aggFn)
+  
+  // -------------------------------------------------------------------------------------------
+  // Helper functions to generate DML
+  // Initializes Caffe2DML.X, Caffe2DML.y, Caffe2DML.XVal, Caffe2DML.yVal and Caffe2DML.numImages
+  private def trainTestSplit(numValidationBatches:Int):Unit = {
+    if(numValidationBatches > 0) {
+      if(solverParam.getDisplay <= 0) 
+        throw new DMLRuntimeException("Since test_iter and test_interval is greater than zero, you should set display to be greater than zero")
+      tabDMLScript.append(Caffe2DML.numValidationImages).append(" = " + numValidationBatches + " * " + Caffe2DML.batchSize + "\n")
+      tabDMLScript.append("# Sanity check to ensure that validation set is not too large\n")
+      val maxValidationSize = "ceil(0.3 * " + Caffe2DML.numImages + ")"
+      ifBlock(Caffe2DML.numValidationImages  + " > " + maxValidationSize) {
+        assign(tabDMLScript, "max_test_iter", "floor(" + maxValidationSize + " / " + Caffe2DML.batchSize + ")")
+        tabDMLScript.append("stop(" +
+            dmlConcat(asDMLString("Too large validation size. Please reduce test_iter to "), "max_test_iter") 
+            + ")\n")
+      }
+      val one = "1"
+      val rl = int_add(Caffe2DML.numValidationImages, one)
+      rightIndexing(tabDMLScript.append(Caffe2DML.X).append(" = "), "X_full", rl, Caffe2DML.numImages, null, null)
+      tabDMLScript.append("; ")
+      rightIndexing(tabDMLScript.append(Caffe2DML.y).append(" = "), "y_full", rl, Caffe2DML.numImages, null, null)
+      tabDMLScript.append("; ")
+      rightIndexing(tabDMLScript.append(Caffe2DML.XVal).append(" = "), "X_full", one, Caffe2DML.numValidationImages, null, null)
+      tabDMLScript.append("; ")
+      rightIndexing(tabDMLScript.append(Caffe2DML.yVal).append(" = "), "y_full", one, Caffe2DML.numValidationImages, null, null)
+      tabDMLScript.append("; ")
+      tabDMLScript.append(Caffe2DML.numImages).append(" = nrow(y)\n")
     }
-    _tensorboardLogDir
+    else {
+      assign(tabDMLScript, Caffe2DML.X, "X_full")
+	    assign(tabDMLScript, Caffe2DML.y, "y_full")
+	    tabDMLScript.append(Caffe2DML.numImages).append(" = nrow(" + Caffe2DML.y + ")\n")
+    }
   }
   
-	var doVisualize = false
-	val visDMLScript: StringBuilder = new StringBuilder 
-	private def checkTensorBoardDependency():Unit = {
-	  try {
-	    if(!doVisualize)
-	      Class.forName( "com.google.protobuf.GeneratedMessageV3")
-	  } catch {
-	    case _:ClassNotFoundException => throw new DMLRuntimeException("To use visualize() feature, you will have to include protobuf-java-3.2.0.jar in your classpath. Hint: you can download the jar from http://central.maven.org/maven2/com/google/protobuf/protobuf-java/3.2.0/protobuf-java-3.2.0.jar")   
-	  }
-	}
-	def visualizeLoss(): Unit = {
-	   checkTensorBoardDependency()
-	   doVisualize = true
-	   visDMLScript.append("viz_counter1 = visualize(\" \", \" \", \"training_loss\", iter, training_loss, \"" + tensorboardLogDir + "\");\n")
-	   visDMLScript.append("viz_counter = viz_counter + viz_counter1\n")
-	   visDMLScript.append("viz_counter1 = visualize(\" \", \" \", \"validation_loss\", iter, validation_loss, \"" + tensorboardLogDir + "\");\n")
-	   visDMLScript.append("viz_counter = viz_counter + viz_counter1\n")
-	   visDMLScript.append("viz_counter1 = visualize(\" \", \" \", \"training_accuracy\", iter, training_accuracy, \"" + tensorboardLogDir + "\");\n")
-	   visDMLScript.append("viz_counter = viz_counter + viz_counter1\n")
-	   visDMLScript.append("viz_counter1 = visualize(\" \", \" \", \"validation_accuracy\", iter, validation_accuracy, \"" + tensorboardLogDir + "\");\n")
-	   visDMLScript.append("viz_counter = viz_counter + viz_counter1\n")
-	}
-	
-	
-	def visualizeLayer(layerName:String, varType:String, aggFn:String): Unit = {
-	  // 'weight', 'bias', 'dweight', 'dbias', 'output' or 'doutput'
-	  // 'sum', 'mean', 'var' or 'sd'
-	  checkTensorBoardDependency()
-	  doVisualize = true
-	  if(net.getLayers.filter(_.equals(layerName)).size == 0)
-	    throw new DMLRuntimeException("Cannot visualize the layer:" + layerName)
-	  val dmlVar = {
-	    val l = net.getCaffeLayer(layerName)
-	    varType match {
-	      case "weight" => l.weight
-	      case "bias" => l.bias
-	      case "dweight" => l.dW
-	      case "dbias" => l.dB
-	      case "output" => l.outVar
-	      case "doutput" => l.dOut
-	      case _ => throw new DMLRuntimeException("Cannot visualize the variable of type:" + varType)
-	    }
-	   }
-	  if(dmlVar == null)
-	    throw new DMLRuntimeException("Cannot visualize the variable of type:" + varType)
-	  visDMLScript.append("viz_counter1 = visualize(\"" + layerName + "\", \"" + varType + "\", \"" + aggFn + "\", iter, " + aggFn + "(" + dmlVar + "), \"" + tensorboardLogDir + "\")\n")
-	  visDMLScript.append("viz_counter = viz_counter + viz_counter1\n")
-	}
-	
-	def write(varName:String, quotedFileName:String, format:String):String = "write(" + varName + ", " + quotedFileName + ", format=\"" + format + "\")\n"
-	
+  private def printClassificationReport():Unit = {
+    ifBlock("debug"){
+      assign(tabDMLScript, "num_rows_error_measures", min("10", ncol("yb")))
+      assign(tabDMLScript, "error_measures", matrix("0", "num_rows_error_measures", "5"))
+      forBlock("class_i", "1", "num_rows_error_measures") {
+        assign(tabDMLScript, "tp", "sum( (true_yb == predicted_yb) * (true_yb == class_i) )")
+        assign(tabDMLScript, "tp_plus_fp", "sum( (predicted_yb == class_i) )")
+        assign(tabDMLScript, "tp_plus_fn", "sum( (true_yb == class_i) )")
+        assign(tabDMLScript, "precision", "tp / tp_plus_fp")
+        assign(tabDMLScript, "recall", "tp / tp_plus_fn")
+        assign(tabDMLScript, "f1Score", "2*precision*recall / (precision+recall)")
+        assign(tabDMLScript, "error_measures[class_i,1]", "class_i")
+        assign(tabDMLScript, "error_measures[class_i,2]", "precision")
+        assign(tabDMLScript, "error_measures[class_i,3]", "recall")
+        assign(tabDMLScript, "error_measures[class_i,4]", "f1Score")
+        assign(tabDMLScript, "error_measures[class_i,5]", "tp_plus_fn")
+      }
+      val dmlTab = "\\t"
+      val header = "class    " + dmlTab + "precision" + dmlTab + "recall  " + dmlTab + "f1-score" + dmlTab + "num_true_labels\\n"
+      val errorMeasures = "toString(error_measures, decimal=7, sep=" + asDMLString(dmlTab) + ")"
+      tabDMLScript.append(print(dmlConcat(asDMLString(header), errorMeasures)))
+    }
+  }
+  
+  // Append the DML to display training and validation loss
+  private def displayLoss(lossLayer:IsLossLayer, shouldValidate:Boolean):Unit = {
+    if(solverParam.getDisplay > 0) {
+      // Append the DML to compute training loss
+      tabDMLScript.append("# Compute training loss & accuracy\n")
+      ifBlock("iter  %% " + solverParam.getDisplay + " == 0") {
+        assign(tabDMLScript, "loss", "0"); assign(tabDMLScript, "accuracy", "0")
+        lossLayer.computeLoss(dmlScript, numTabs)
+        assign(tabDMLScript, "training_loss", "loss"); assign(tabDMLScript, "training_accuracy", "accuracy")
+        tabDMLScript.append(print( dmlConcat( asDMLString("Iter:"), "iter", 
+            asDMLString(", training loss:"), "training_loss", asDMLString(", training accuracy:"), "training_accuracy" )))
+        appendTrainingVisualizationBody(dmlScript, numTabs)
+        printClassificationReport
+      }
+      if(shouldValidate) {
+        // Append the DML to compute validation loss
+        val numValidationBatches = if(solverParam.getTestIterCount > 0) solverParam.getTestIter(0) else 0
+        tabDMLScript.append("# Compute validation loss & accuracy\n")
+        ifBlock("iter  %% " + solverParam.getTestInterval + " == 0") {
+          assign(tabDMLScript, "loss", "0"); assign(tabDMLScript, "accuracy", "0")
+          solverParam.getTestAlgo.toLowerCase match {
+            case "minibatch" => {
+              assign(tabDMLScript, "validation_loss", "0")
+              assign(tabDMLScript, "validation_accuracy", "0")
+              forBlock("iVal", "1", "num_iters_per_epoch") {
+    	          getValidationBatch(tabDMLScript)
+    	          tabDMLScript.append("iter = start_iter + i\n")
+    	          forward;  lossLayer.computeLoss(dmlScript, numTabs)
+                tabDMLScript.append("validation_loss = validation_loss + loss\n")
+                tabDMLScript.append("validation_accuracy = validation_accuracy + accuracy\n")
+    	        }
+              tabDMLScript.append("validation_accuracy = validation_accuracy / num_iters_per_epoch\n")
+            }
+            case "batch" => {
+              assign(tabDMLScript, "Xb", Caffe2DML.XVal); assign(tabDMLScript, "yb", Caffe2DML.yVal)
+              net.getLayers.map(layer => net.getCaffeLayer(layer).forward(tabDMLScript, false))
+              lossLayer.computeLoss(dmlScript, numTabs)
+              assign(tabDMLScript, "validation_loss", "loss"); assign(tabDMLScript, "validation_accuracy", "accuracy")
+              
+            }
+            case _ => throw new DMLRuntimeException("Unsupported test algo:" + solverParam.getTestAlgo)
+          }
+          tabDMLScript.append(print( dmlConcat( asDMLString("Iter:"), "iter", 
+              asDMLString(", validation loss:"), "validation_loss", asDMLString(", validation accuracy:"), "validation_accuracy" )))
+          appendValidationVisualizationBody(dmlScript, numTabs)
+        }
+      }
+    }
+  }
+  
+  private def performSnapshot():Unit = {
+    if(solverParam.getSnapshot > 0) {
+      ifBlock("iter %% snapshot == 0") {
+        tabDMLScript.append("snapshot_dir= \"" + solverParam.getSnapshotPrefix + "\" + \"/iter_\" + iter + \"/\"\n")
+        net.getLayers.map(net.getCaffeLayer(_)).filter(_.weight != null).map(l => tabDMLScript.append(write(l.weight, "snapshot_dir + \"" + l.param.getName + "_weight.mtx\"", "binary")))
+  		  net.getLayers.map(net.getCaffeLayer(_)).filter(_.bias != null).map(l => tabDMLScript.append(write(l.bias, "snapshot_dir + \"" + l.param.getName + "_bias.mtx\"", "binary")))
+      }
+  	}
+  }
+  
+  private def forward():Unit = {
+    tabDMLScript.append("# Perform forward pass\n")
+	  net.getLayers.map(layer => net.getCaffeLayer(layer).forward(tabDMLScript, false))
+  }
+  private def backward():Unit = backward("")
+  private def backward(suffix:String):Unit = {
+    tabDMLScript.append("# Perform backward pass\n")
+    net.getLayers.reverse.map(layer => net.getCaffeLayer(layer).backward(tabDMLScript, suffix))
+  }
+  private def update():Unit = {
+    tabDMLScript.append("# Update the parameters\n")
+    net.getLayers.map(layer => solver.update(tabDMLScript, net.getCaffeLayer(layer)))
+  }
+  private def initAggGradients():Unit = {
+    tabDMLScript.append("# Data structure to store gradients computed in parallel")
+    net.getLayers.map(layer => net.getCaffeLayer(layer)).map(l => {
+      if(l.shouldUpdateWeight) assign(tabDMLScript, l.dWeight + "_agg", matrix("0", "parallel_batches", multiply(nrow(l.weight), ncol(l.weight))))
+      if(l.shouldUpdateBias) assign(tabDMLScript, l.dBias + "_agg", matrix("0", "parallel_batches", multiply(nrow(l.bias), ncol(l.bias)))) 
+    })
+  }
+  private def flattenAndStoreAggGradients_j():Unit = {
+    tabDMLScript.append("# Flatten and store gradients for this parallel execution\n")
+    net.getLayers.map(layer => net.getCaffeLayer(layer)).map(l => {
+      if(l.shouldUpdateWeight) assign(tabDMLScript, l.dWeight + "_agg[j,]", 
+          matrix(l.dWeight, "1", multiply(nrow(l.weight), ncol(l.weight)))) 
+      if(l.shouldUpdateWeight) assign(tabDMLScript, l.dBias + "_agg[j,]", 
+          matrix(l.dBias, "1", multiply(nrow(l.bias), ncol(l.bias))))
+    })
+  }
+  private def aggregateAggGradients():Unit = {
+    tabDMLScript.append("# Aggregate the gradients\n")
+    net.getLayers.map(layer => net.getCaffeLayer(layer)).map(l => {
+      if(l.shouldUpdateWeight) assign(tabDMLScript, l.dWeight, 
+          matrix(colSums(l.dWeight + "_agg"), nrow(l.weight), ncol(l.weight))) 
+      if(l.shouldUpdateWeight) assign(tabDMLScript, l.dBias, 
+          matrix(colSums(l.dBias + "_agg"), nrow(l.bias), ncol(l.bias)))
+    })
+  }
+  // -------------------------------------------------------------------------------------------
+  
+  private def multiply(v1:String, v2:String):String = v1 + "*" + v2
+  private def colSums(m:String):String = "colSums(" + m + ")"
+  
 	// Script generator
 	def getTrainingScript(isSingleNode:Boolean):(Script, String, String)  = {
 	  val startTrainingTime = System.nanoTime()
-	  val display = if(inputs.containsKey("$display")) inputs.get("$display").toInt else solverParam.getDisplay
-	  val validationPercentage = if(inputs.containsKey("$validation_split")) inputs.get("$validation_split").toDouble else 0.1
 	  val DEBUG_TRAINING = if(inputs.containsKey("$debug")) inputs.get("$debug").toLowerCase.toBoolean else false
-	  if(validationPercentage > 1 || validationPercentage < 0) throw new DMLRuntimeException("Incorrect validation percentage. Should be between (0, 1).")
+    reset()
 	  
-	  val snapshot = if(inputs.containsKey("$snapshot")) inputs.get("$snapshot").toInt else solverParam.getSnapshot
-	  val snapshotPrefix = if(inputs.containsKey("$snapshot_prefix")) inputs.get("$snapshot_prefix") else solverParam.getSnapshotPrefix
+	  // Add source for layers as well as solver as well as visualization header
+	  source(net, solver, Array[String]("l2_reg"))
+	  appendVisualizationHeaders(dmlScript, numTabs)
 	  
-	  val dmlScript = new StringBuilder
-	  // Append source statements for each layer
-	  Caffe2DML.alreadyImported.clear()
-	  net.getLayers.map(layer =>  net.getCaffeLayer(layer).source(dmlScript))
-	  Caffe2DML.source(dmlScript, "l2_reg")
-	  solver.source(dmlScript)
-	  if(doVisualize) {
-	    dmlScript.append("visualize = externalFunction(String layerName, String varType, String aggFn, Double x, Double y, String logDir) return (Double B) " +
-	        "implemented in (classname=\"org.apache.sysml.udf.lib.Caffe2DMLVisualizeWrapper\",exectype=\"mem\"); \n")
-	    dmlScript.append("viz_counter = 0\n")
-	    System.out.println("Please use the following command for visualizing: tensorboard --logdir=" + tensorboardLogDir)
-	  }
-	        
-	  dmlScript.append("X_full = read(\" \", format=\"csv\")\n")
-	  dmlScript.append("y_full = read(\" \", format=\"csv\")\n")
-	  dmlScript.append("weights = ifdef($weights, \" \")\n")
-	  dmlScript.append("snapshot_prefix = ifdef($snapshot_prefix, \" \")\n")
-	  dmlScript.append("normalize_input = ifdef($normalize_input, FALSE)\n")
-	  dmlScript.append("max_iter = ifdef($max_iter, " + solverParam.getMaxIter + ")\n")
-	  dmlScript.append("num_images = nrow(y_full)\n")
-	  dmlScript.append("debug = ifdef($debug, FALSE)\n")
+	  // Read and convert to one-hote encoding
+	  assign(tabDMLScript, "X_full", "read(\" \", format=\"csv\")")
+	  assign(tabDMLScript, "y_full", "read(\" \", format=\"csv\")")
+	  tabDMLScript.append(Caffe2DML.numImages).append(" = nrow(y_full)\n")
+	  tabDMLScript.append("weights = ifdef($weights, \" \")\n")
+	  tabDMLScript.append("debug = ifdef($debug, FALSE)\n")
+	  tabDMLScript.append("# Convert to one-hot encoding (Assumption: 1-based labels) \n")
+	  tabDMLScript.append("y_full = table(seq(1," + Caffe2DML.numImages + ",1), y_full, " + Caffe2DML.numImages + ", " + Utils.numClasses(net) + ")\n")
 	  
-	  dmlScript.append("# Convert to one-hot encoding (Assumption: 1-based labels) \n")
-	  dmlScript.append("y_full = table(seq(1,num_images,1), y_full, num_images, " + Utils.numClasses(net) + ")\n")
-	  
-	  dmlScript.append("# Normalize the inputs\n")
-	  dmlScript.append("if(normalize_input) { \n")
-	  dmlScript.append("\tX_full = (X_full - rowMeans(X_full)) / rowSds(X_full)\n")
-	  dmlScript.append("}\n")
-	  
-	  dmlScript.append("# Initialize the layers\n")
-	  net.getLayers.map(layer => net.getCaffeLayer(layer).init(dmlScript))
+	  // Initialize the layers and solvers
+	  tabDMLScript.append("# Initialize the layers and solvers\n")
+	  net.getLayers.map(layer => net.getCaffeLayer(layer).init(tabDMLScript))
 	  if(inputs.containsKey("$weights")) {
 		  // Loading existing weights. Note: keeping the initialization code in case the layer wants to initialize non-weights and non-bias
-		  dmlScript.append("# Load the weights. Note: keeping the initialization code in case the layer wants to initialize non-weights and non-bias\n")
-		  net.getLayers.filter(l => !layersToIgnore.contains(l)).map(net.getCaffeLayer(_)).filter(_.weight != null).map(l => dmlScript.append(read(l.weight, l.param.getName + "_weight.mtx")))
-		  net.getLayers.filter(l => !layersToIgnore.contains(l)).map(net.getCaffeLayer(_)).filter(_.bias != null).map(l => dmlScript.append(read(l.bias, l.param.getName + "_bias.mtx")))
+		  tabDMLScript.append("# Load the weights. Note: keeping the initialization code in case the layer wants to initialize non-weights and non-bias\n")
+		  net.getLayers.filter(l => !layersToIgnore.contains(l)).map(net.getCaffeLayer(_)).filter(_.weight != null).map(l => tabDMLScript.append(read(l.weight, l.param.getName + "_weight.mtx")))
+		  net.getLayers.filter(l => !layersToIgnore.contains(l)).map(net.getCaffeLayer(_)).filter(_.bias != null).map(l => tabDMLScript.append(read(l.bias, l.param.getName + "_bias.mtx")))
 	  }
+	  net.getLayers.map(layer => solver.init(tabDMLScript, net.getCaffeLayer(layer)))
 	  
 	  // Split into training and validation set
-	  if(validationPercentage > 0) {
-	    dmlScript.append("num_validation = ceil(" + validationPercentage + " * num_images)\n")
-	    dmlScript.append("X = X_full[(num_validation+1):num_images,]; y = y_full[(num_validation+1):num_images,] \n")
-	    dmlScript.append("X_val = X_full[1:num_validation,]; y_val = y_full[1:num_validation,] \n")
-	    dmlScript.append("num_images = nrow(y)\n")
-	  }
-	  else {
-	    dmlScript.append("X = X_full; y = y_full;\n")
-	  }
-	  net.getLayers.map(layer => solver.init(dmlScript, net.getCaffeLayer(layer)))
-	  dmlScript.append("iter = 0; beg = 1;\n")
-	  dmlScript.append("num_iters_per_epoch = ceil(num_images/BATCH_SIZE);\n")
-	  dmlScript.append("epoch = 0;\n")
-	  dmlScript.append("max_epoch = ceil(max_iter/num_iters_per_epoch);\n")
+	  // Initializes Caffe2DML.X, Caffe2DML.y, Caffe2DML.XVal, Caffe2DML.yVal and Caffe2DML.numImages
+	  val shouldValidate = solverParam.getTestInterval > 0 && solverParam.getTestIterCount > 0 && solverParam.getTestIter(0) > 0
+	  trainTestSplit(if(shouldValidate) solverParam.getTestIter(0) else 0)
 	  
-	  // ----------------------------
-	  dmlScript.append("while(iter < max_iter) {\n")
-    // Append forward and backward functions for each layer
-    numTabs = 1
-    dmlScript.append("\tif(iter %% num_iters_per_epoch == 0) {\n")
-    dmlScript.append("\t\t# Learning rate\n")
-	  lrPolicy.updateLearningRate(dmlScript.append("\t\t"))
-	  dmlScript.append("\t\tepoch = epoch + 1\n")
-	  dmlScript.append("\t}\n")
-	  
-    appendBatch(dmlScript, "\t")
-    dmlScript.append("\t").append("# Perform forward pass\n")
-    net.getLayers.map(layer => net.getCaffeLayer(layer).forward(dmlScript, "\t", false))
-    
-    dmlScript.append("\t").append("\n\t# Perform backward pass\n")
-    net.getLayers.reverse.map(layer => net.getCaffeLayer(layer).backward(dmlScript.append("\t")))
-    net.getLayers.map(layer => solver.update(dmlScript, net.getCaffeLayer(layer)))
-    if(display > 0 && validationPercentage > 0) {
-      numTabs += 1
-      dmlScript.append("\t").append("if(iter %% " + display + " == 0) {\n")
-      dmlScript.append("\t\t").append("# Compute training loss & accuracy\n")
-      dmlScript.append("\t\t").append("loss = 0\n")
-      if(DEBUG_TRAINING) {
-    	  dmlScript.append("\t\t").append("print(\"Classification report (on current batch):\")\n")
-      }
-      net.getLayers.map(layer => net.getCaffeLayer(layer).computeLoss(dmlScript, "\t\t"))
-      dmlScript.append("\t\t").append("training_loss = loss; loss = 0\n")
-      dmlScript.append("\t\t").append("training_accuracy = accuracy\n")
-      
-      // Debugging prints to figure out learning rate:
-      // if(DEBUG_TRAINING) {
-	  //    net.getLayers.map(layer => if(net.getCaffeLayer(layer).shouldUpdateWeight) dmlScript.append("\t\t").append("print(\"mean(gradient of " + layer + "'s weight) =\" + mean(" + net.getCaffeLayer(layer).dW + "))\n"))
-      // }
-      
-      dmlScript.append("\t\t").append("# Compute validation loss & accuracy\n")
-      dmlScript.append("\t\t").append("Xb = X_val; yb = y_val;\n")
-      net.getLayers.map(layer => net.getCaffeLayer(layer).forward(dmlScript, "\t\t", false))
-      if(DEBUG_TRAINING) {
-    	  dmlScript.append("\t\t").append("print(\"Classification report (on validation set):\")\n")
-      }
-      net.getLayers.map(layer => net.getCaffeLayer(layer).computeLoss(dmlScript, "\t\t"))
-      dmlScript.append("\t\t").append("validation_loss = loss\n")
-      dmlScript.append("\t\t").append("validation_accuracy = accuracy\n")
-      if(doVisualize)
-        dmlScript.append(visDMLScript.toString)
-      dmlScript.append("\t\t").append("print(\"Iter: \" + iter + \", training (loss / accuracy): (\" + training_loss + \" / \" + training_accuracy + \"%), validation (loss / accuracy): (\" + validation_loss + \" / \" + validation_accuracy + \"%).\")\n")
-      dmlScript.append("\t").append("}\n")
-      numTabs -= 1
-    }
-	  dmlScript.append("\n\t").append("iter = iter + 1\n")
-	  if(snapshot > 0) {
-		  dmlScript.append("\n\t").append("if(snapshot_prefix != \" \" & iter %% snapshot == 0){\n")
-		  dmlScript.append("\n\t").append("\tsnapshot_dir= snapshot_prefix + \"/iter_\" + iter + \"/\"\n")
-		  net.getLayers.map(net.getCaffeLayer(_)).filter(_.weight != null).map(l => dmlScript.append(write(l.weight, "snapshot_dir + \"" + l.param.getName + "_weight.mtx\"", "binary")))
-		  net.getLayers.map(net.getCaffeLayer(_)).filter(_.bias != null).map(l => dmlScript.append(write(l.bias, "snapshot_dir + \"" + l.param.getName + "_bias.mtx\"", "binary")))
-		  dmlScript.append("\n\t").append("}\n")
+	  // Set iteration-related variables such as max_epochs, num_iters_per_epoch, lr, etc.
+	  val lossLayers = net.getLayers.filter(layer => net.getCaffeLayer(layer).isInstanceOf[IsLossLayer]).map(layer => net.getCaffeLayer(layer).asInstanceOf[IsLossLayer])
+	  if(lossLayers.length != 1) throw new DMLRuntimeException("Expected exactly one loss layer")
+	  solverParam.getTrainAlgo.toLowerCase match {
+	    case "batch" => 
+	      assign(tabDMLScript, "max_epochs", solverParam.getMaxIter.toString)
+	    case _ => {
+	      ceilDivide(tabDMLScript, "num_iters_per_epoch", Caffe2DML.numImages, Caffe2DML.batchSize)
+	      ceilDivide(tabDMLScript, "max_epochs", solverParam.getMaxIter.toString, "num_iters_per_epoch")
+	    }
 	  }
-	  dmlScript.append("\n}")
-	  if(doVisualize)
-	    dmlScript.append("print(viz_counter)")
-	  numTabs = 0
-	  // ----------------------------
+	  assign(tabDMLScript, "start_iter", "0")
+	  assign(tabDMLScript, "lr", solverParam.getBaseLr.toString)
 	  
-	  
-	  val trainingScript = dmlScript.toString()
-	  if(DEBUG_TRAINING) {
-    	Utils.prettyPrintDMLScript(trainingScript)
+	  // ----------------------------------------------------------------------------
+	  // Main logic
+	  forBlock("e", "1", "max_epochs") {
+	    solverParam.getTrainAlgo.toLowerCase match {
+	      case "minibatch" => 
+	        forBlock("i", "1", "num_iters_per_epoch") {
+	          getTrainingBatch(tabDMLScript)
+	          tabDMLScript.append("iter = start_iter + i\n")
+	          forward; backward; update
+	          displayLoss(lossLayers(0), shouldValidate)
+            performSnapshot
+	        }
+	      case "batch" => {
+          tabDMLScript.append("iter = start_iter + i\n")
+          forward; backward; update
+          displayLoss(lossLayers(0), shouldValidate)
+          performSnapshot
+	      }
+	      case "allreduce" => {
+	        forBlock("i", "1", "num_iters_per_epoch") {
+	          getTrainingBatch(tabDMLScript)
+	          assign(tabDMLScript, "X_group_batch", "Xb")
+	          assign(tabDMLScript, "y_group_batch", "yb")
+	          tabDMLScript.append("iter = start_iter + i\n")
+	          initAggGradients
+	          parForBlock("j", "1", "nrow(y_group_batch)") {
+	            assign(tabDMLScript, "Xb", "X_group_batch[j,]")
+	            assign(tabDMLScript, "yb", "y_group_batch[j,]")
+	            forward; backward("_agg")
+              flattenAndStoreAggGradients_j
+	          }
+	          aggregateAggGradients
+            tabDMLScript.append("iter = start_iter + parallel_batches\n")    
+	          update
+            displayLoss(lossLayers(0), shouldValidate)
+            performSnapshot
+	        }
+	      }
+	      case _ => throw new DMLRuntimeException("Unsupported train algo:" + solverParam.getTrainAlgo)
+	    }
+	    // After every epoch, update the learning rate
+	    tabDMLScript.append("# Learning rate\n")
+	    lrPolicy.updateLearningRate(tabDMLScript)
+	    tabDMLScript.append("start_iter = start_iter + num_iters_per_epoch\n")
 	  }
+	  // ----------------------------------------------------------------------------
+	  
+	  // Check if this is necessary
+	  if(doVisualize) tabDMLScript.append("print(" + asDMLString("Visualization counter:") + " + viz_counter)")
+	  
+	  val trainingScript = tabDMLScript.toString()
+	  // Print script generation time and the DML script on stdout
+	  System.out.println("Time taken to generate training script from Caffe proto: " + ((System.nanoTime() - startTrainingTime)*1e-9) + " seconds." )
+	  if(DEBUG_TRAINING) Utils.prettyPrintDMLScript(trainingScript)
+	  
+	  // Set input/output variables and execute the script
 	  val script = dml(trainingScript).in(inputs)
-    
 	  net.getLayers.map(net.getCaffeLayer(_)).filter(_.weight != null).map(l => script.out(l.weight))
 	  net.getLayers.map(net.getCaffeLayer(_)).filter(_.bias != null).map(l => script.out(l.bias))
-	  
-	  if(DEBUG_TRAINING) {
-	    System.out.println("Time taken to generate training script from Caffe proto:" + ((System.nanoTime() - startTrainingTime)*1e-9) + "secs." )
-	  }
-	  
 	  (script, "X_full", "y_full")
 	}
-	
-	def read(varName:String, fileName:String, sep:String="/"):String =  varName + " = read(weights + \"" + sep + fileName + "\")\n"
-			
-	def appendBatch(dmlScript:StringBuilder, prefix:String): Unit = {
-		dmlScript.append(prefix).append("end = beg + BATCH_SIZE - 1\n")
-	    dmlScript.append(prefix).append("if(end > num_images) end = num_images\n")
-	    dmlScript.append(prefix).append("Xb = X[beg:end,]; yb = y[beg:end,]\n")
-	    dmlScript.append(prefix).append("beg = beg + BATCH_SIZE\n")
-	    dmlScript.append(prefix).append("if(beg > num_images) beg = 1\n")
-	}
-	
-	def getPrevLayerIDForSingleInputLayer(prevLayerIDs:List[Int]): Int = {
-	  if(prevLayerIDs.size != 1) {
-	    throw new LanguageException("Multiple bottom layers is not handled")
-	  }
-	  prevLayerIDs.get(0)
-	}
-
-	// --------------------------------------------------------------
-	// DML generation utility functions
-	var prevTab:String = null
-	var prevNumTabs = -1
-	var numTabs = 2
-	def tabs():String = if(numTabs == prevNumTabs) prevTab else { prevTab = ""; for(i <- 0 until numTabs) { prevTab += "\t" } ; prevTab  }
-	// --------------------------------------------------------------
-
 }
 
 class Caffe2DMLModel(val mloutput: MLResults,  
-    val numClasses:String, val sc: SparkContext, val solver:CaffeSolver, val net:CaffeNetwork, val lrPolicy:LearningRatePolicy,
+    val numClasses:String, val sc: SparkContext, val solver:CaffeSolver,
+    val net:CaffeNetwork, val lrPolicy:LearningRatePolicy,
     val estimator:Caffe2DML) 
-  extends Model[Caffe2DMLModel] with HasMaxOuterIter with BaseSystemMLClassifierModel {
-  val rand = new Random
-  val uid:String = "caffe_model_" + rand.nextLong + "_" + rand.nextLong 
-  
-  def this(estimator:Caffe2DML) = this(null, Utils.numClasses(estimator.net), estimator.sc, estimator.solver, estimator.net, estimator.lrPolicy, estimator)
-  
+  extends Model[Caffe2DMLModel] with HasMaxOuterIter with BaseSystemMLClassifierModel with DMLGenerator {
+  // --------------------------------------------------------------
+  // Invoked by Python, MLPipeline
+  val uid:String = "caffe_model_" + (new Random).nextLong 
+  def this(estimator:Caffe2DML) =  {
+    this(null, Utils.numClasses(estimator.net), estimator.sc, estimator.solver,
+        estimator.net,
+        // new CaffeNetwork(estimator.solverParam.getNet, caffe.Caffe.Phase.TEST, estimator.numChannels, estimator.height, estimator.width), 
+        estimator.lrPolicy, estimator) 
+  }
+      
   override def copy(extra: org.apache.spark.ml.param.ParamMap): Caffe2DMLModel = {
     val that = new Caffe2DMLModel(mloutput, numClasses, sc, solver, net, lrPolicy, estimator)
     copyValues(that, extra)
   }
-  
-  def write(varName:String, fileName:String, format:String):String = "write(" + varName + ", \"" + fileName + "\", format=\"" + format + "\")\n"
+  // --------------------------------------------------------------
   
   def save(outputDir:String, format:String="binary", sep:String="/"):Unit = {
 	  if(mloutput == null) throw new DMLRuntimeException("Cannot save as you need to train the model first using fit")
-	  
 	  val dmlScript = new StringBuilder
 	  dmlScript.append("print(\"Saving the model to " + outputDir + "...\")\n")
 	  net.getLayers.map(net.getCaffeLayer(_)).filter(_.weight != null).map(l => dmlScript.append(write(l.weight, outputDir + sep + l.param.getName + "_weight.mtx", format)))
@@ -408,79 +425,74 @@ class Caffe2DMLModel(val mloutput: MLResults,
 //	  val rdd = sc.parallelize(labelMapping.map(x => x._1.toString + "," + x._2.toString).toList)
 //	  rdd.saveAsTextFile(outputDir + sep + "labelMapping.csv")
 	}
-  
-  def read(varName:String, fileName:String, sep:String="/"):String =  varName + " = read(weights + \"" + sep + fileName + "\")\n"
-  
-  def updateMeanAndVariance(enable: Boolean): Unit  = net.getLayers.map(layer =>  {
-	    val l = net.getCaffeLayer(layer)
-	    if(l.isInstanceOf[BatchNorm])
-	      l.asInstanceOf[BatchNorm].update_mean_var = enable
-	  })
-  
-	def updateRemoteParForPrediction(enable: Boolean): Unit  = net.getLayers.map(layer =>  {
-	    val l = net.getCaffeLayer(layer)
-	    if(l.isInstanceOf[SoftmaxWithLoss])
-	      l.asInstanceOf[SoftmaxWithLoss].remote_parfor_prediction = enable
-	  })
-	  
+    
   def getPredictionScript(mloutput: MLResults, isSingleNode:Boolean): (Script, String)  = {
+    reset()
     val startPredictionTime = System.nanoTime()
-	  val dmlScript = new StringBuilder
 	  val DEBUG_PREDICTION = if(estimator.inputs.containsKey("$debug")) estimator.inputs.get("$debug").toLowerCase.toBoolean else false
-	  dmlScript.append("weights = ifdef($weights, \" \")\n")
+	  
+	  // Append source statements for each layer
+	  source(net, solver, null)
+    tabDMLScript.append("weights = ifdef($weights, \" \")\n")
+	  // Initialize the layers and solvers
+	  tabDMLScript.append("# Initialize the layers and solvers\n")
+	  net.getLayers.map(layer => net.getCaffeLayer(layer).init(tabDMLScript))
 	  if(mloutput == null && estimator.inputs.containsKey("$weights")) {
 		  // fit was not called
-		  net.getLayers.map(net.getCaffeLayer(_)).filter(_.weight != null).map(l => dmlScript.append(read(l.weight, l.param.getName + "_weight.mtx")))
-		  net.getLayers.map(net.getCaffeLayer(_)).filter(_.bias != null).map(l => dmlScript.append(read(l.bias, l.param.getName + "_bias.mtx")))
+		  net.getLayers.map(net.getCaffeLayer(_)).filter(_.weight != null).map(l => tabDMLScript.append(read(l.weight, l.param.getName + "_weight.mtx")))
+		  net.getLayers.map(net.getCaffeLayer(_)).filter(_.bias != null).map(l => tabDMLScript.append(read(l.bias, l.param.getName + "_bias.mtx")))
 	  }
 	  else if(mloutput == null) {
 		  throw new DMLRuntimeException("Cannot call predict/score without calling either fit or by providing weights")
 	  }
+	  net.getLayers.map(layer => solver.init(tabDMLScript, net.getCaffeLayer(layer)))
 	  
-	  if(estimator.inputs.containsKey("$debug") && estimator.inputs.get("$debug").equals("TRUE")) {
-		  System.out.println("The output shape of layers:")
-		  net.getLayers.map(layer =>  System.out.println(net.getCaffeLayer(layer).param.getName + " " + net.getCaffeLayer(layer).outputShape))
-	  }
+//	  if(estimator.inputs.containsKey("$debug") && estimator.inputs.get("$debug").equals("TRUE")) {
+//		  System.out.println("The output shape of layers:")
+//		  net.getLayers.map(layer =>  System.out.println(net.getCaffeLayer(layer).param.getName + " " + net.getCaffeLayer(layer).outputShape))
+//	  }
 	  
 	  // Donot update mean and variance in batchnorm
-	  updateMeanAndVariance(false)
+	  net.getLayers.filter(net.getCaffeLayer(_).isInstanceOf[BatchNorm]).map(_.asInstanceOf[BatchNorm].update_mean_var = false)
+	  tabDMLScript.append("X_full = read(\" \", format=\"csv\")\n")
+	  assign(tabDMLScript, "X", "X_full")
+	  tabDMLScript.append(Caffe2DML.numImages + " = nrow(X_full)\n")
 	  
-	  // Append source statements for each layer
-	  Caffe2DML.alreadyImported.clear()
-	  net.getLayers.map(layer =>  net.getCaffeLayer(layer).source(dmlScript))
-	  dmlScript.append("X_full = read(\" \", format=\"csv\")\n")
-	  dmlScript.append("num_images = nrow(X_full)\n")
-	  
-	  // If there is a convolution or maxpooling layer (eg: CNN), use parfor prediction as this is best we can get.
-	  // Else use full-test training to exploit our distributed operators (eg: auto-encoder)
-	  val shouldUseParforPrediction = net.getLayers.foldLeft(false)((prev, layer) => prev || net.getCaffeLayer(layer).isInstanceOf[Convolution] || net.getCaffeLayer(layer).isInstanceOf[MaxPooling])
-	  if(shouldUseParforPrediction) {
-	    updateRemoteParForPrediction(true)
-	    val lastLayerShape = net.getCaffeLayer(net.getLayers.last).outputShape
-	    dmlScript.append("Prob = matrix(0, rows=num_images, cols=" + lastLayerShape._1 + ")\n")
-	    dmlScript.append("parfor(i in 1:num_images) {\n")
-	    dmlScript.append("Xb = X_full[i,]; \n")
-	    if(estimator.inputs.containsKey("$normalize_input") && estimator.inputs.get("$normalize_input").equalsIgnoreCase("TRUE")) {
-	      dmlScript.append("\tXb = (Xb - mean(Xb)) / sd(Xb)\n")
-	    }
-  		net.getLayers.map(layer => net.getCaffeLayer(layer).forward(dmlScript, "", true))
-  		net.getLayers.map(layer => net.getCaffeLayer(layer).predict(dmlScript))
-  		dmlScript.append("}\n")
-	    updateRemoteParForPrediction(false)
-	  }
-	  else {
-	    if(estimator.inputs.containsKey("$normalize_input") && estimator.inputs.get("$normalize_input").equalsIgnoreCase("TRUE")) {
-	      dmlScript.append("\tX_full = (X_full - rowMeans(X_full)) / rowSds(X_full)\n")
-	    }
-  	  dmlScript.append("Xb = X_full; \n")
-  		net.getLayers.map(layer => net.getCaffeLayer(layer).forward(dmlScript, "", true))
-  		net.getLayers.map(layer => net.getCaffeLayer(layer).predict(dmlScript))
-	  }
+	  val lossLayers = net.getLayers.filter(layer => net.getCaffeLayer(layer).isInstanceOf[IsLossLayer]).map(layer => net.getCaffeLayer(layer).asInstanceOf[IsLossLayer])
+	  customAssert(lossLayers.length == 1, "Expected exactly one loss layer, but found " + lossLayers.length + ":" + net.getLayers.filter(layer => net.getCaffeLayer(layer).isInstanceOf[IsLossLayer]))
+	  assign(tabDMLScript, "Prob", matrix("0", Caffe2DML.numImages, numClasses))
+	  estimator.solverParam.getTestAlgo.toLowerCase match {
+      case "minibatch" => {
+        ceilDivide(tabDMLScript(), "num_iters", Caffe2DML.numImages, Caffe2DML.batchSize)
+        forBlock("i", "1", "num_iters") {
+          getTestBatch(tabDMLScript)
+          net.getLayers.map(layer => net.getCaffeLayer(layer).forward(tabDMLScript, true))
+          assign(tabDMLScript, "Prob[beg:end,]", lossLayers(0).out)
+        }
+      }
+      case "batch" => {
+        assign(tabDMLScript, "Xb", "X_full")
+        net.getLayers.map(layer => net.getCaffeLayer(layer).forward(tabDMLScript, true))
+        assign(tabDMLScript, "Prob", lossLayers(0).out)
+      }
+      case "allreduce" => {
+        ceilDivide(tabDMLScript(), "num_iters", Caffe2DML.numImages, Caffe2DML.batchSize)
+        parForBlock("i", "1", "num_iters") {
+          getTestBatch(tabDMLScript)
+          net.getLayers.map(layer => net.getCaffeLayer(layer).forward(tabDMLScript, true))
+          assign(tabDMLScript, "Prob[beg:end,]", lossLayers(0).out)
+        }
+      }
+      case _ => throw new DMLRuntimeException("Unsupported test algo:" + estimator.solverParam.getTestAlgo)
+    }
 		
 		val predictionScript = dmlScript.toString()
-		if(DEBUG_PREDICTION) {
-			Utils.prettyPrintDMLScript(predictionScript)
-		}
+		System.out.println("Time taken to generate prediction script from Caffe proto:" + ((System.nanoTime() - startPredictionTime)*1e-9) + "secs." )
+		if(DEBUG_PREDICTION) Utils.prettyPrintDMLScript(predictionScript)
+		
+		// Reset
+	  net.getLayers.filter(net.getCaffeLayer(_).isInstanceOf[BatchNorm]).map(_.asInstanceOf[BatchNorm].update_mean_var = true)
+		
 	  val script = dml(predictionScript).out("Prob").in(estimator.inputs)
 	  if(mloutput != null) {
 	    // fit was called
@@ -488,22 +500,14 @@ class Caffe2DMLModel(val mloutput: MLResults,
   	  net.getLayers.map(net.getCaffeLayer(_)).filter(_.bias != null).map(l => script.in(l.bias, mloutput.getBinaryBlockMatrix(l.bias)))
 	  }
 	  
-	  updateMeanAndVariance(true)
-	  
-	  if(DEBUG_PREDICTION) {
-	    System.out.println("Time taken to generate prediction script from Caffe proto:" + ((System.nanoTime() - startPredictionTime)*1e-9) + "secs." )
-	  }
-	  
 	  (script, "X_full")
   }
   
   // Prediction
   def transform(X: MatrixBlock): MatrixBlock = {
-	  estimator.setInputShape(X)
 	  baseTransform(X, mloutput, sc, "Prob")
   }
   def transform(df: ScriptsUtils.SparkDataType): DataFrame = {
-	  estimator.setInputShape(df)
 	  baseTransform(df, mloutput, sc, "Prob")
   }
 }

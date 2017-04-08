@@ -43,14 +43,12 @@ object CaffeNetwork {
   val LOG = LogFactory.getLog(classOf[CaffeNetwork].getName)
 }
 
-class CaffeNetwork(netFilePath:String, val currentPhase:Phase
-    //, val numChannels:Int, val inputHeight:Int, val inputWidth:Int
+class CaffeNetwork(netFilePath:String, val currentPhase:Phase, 
+     val numChannels:String, val height:String, val width:String
     ) extends Network {
   private def isIncludedInCurrentPhase(l:LayerParameter): Boolean = {
     if(l.getIncludeCount == 0) true else l.getIncludeList.filter(r => r.hasPhase() && r.getPhase != currentPhase).length == 0
-    // (l.getPhase == currentPhase)
   }
-  val dataLayers:ArrayList[Data] = new ArrayList[Data]();
   private var id = 1
   
   // --------------------------------------------------------------------------------
@@ -172,7 +170,7 @@ class CaffeNetwork(netFilePath:String, val currentPhase:Phase
       case "relu" => new ReLU(param, id, this)
       case "softmaxwithloss" => new SoftmaxWithLoss(param, id, this)
       case "dropout" => new Dropout(param, id, this)
-      case "data" => { val ret = new Data(param, id, this); dataLayers.add(ret); ret }
+      case "data" => new Data(param, id, this, numChannels, height, width)
       case "batchnorm" => new BatchNorm(param, id, this)
       case "scale" => new Scale(param, id, this)
       case "eltwise" => new Elementwise(param, id, this)

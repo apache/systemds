@@ -453,7 +453,7 @@ class Caffe2DMLModel(val mloutput: MLResults,
 //	  }
 	  
 	  // Donot update mean and variance in batchnorm
-	  net.getLayers.filter(net.getCaffeLayer(_).isInstanceOf[BatchNorm]).map(_.asInstanceOf[BatchNorm].update_mean_var = false)
+	  net.getLayers.filter(net.getCaffeLayer(_).isInstanceOf[BatchNorm]).map(net.getCaffeLayer(_).asInstanceOf[BatchNorm].update_mean_var = false)
 	  tabDMLScript.append("X_full = read(\" \", format=\"csv\")\n")
 	  assign(tabDMLScript, "X", "X_full")
 	  tabDMLScript.append(Caffe2DML.numImages + " = nrow(X_full)\n")
@@ -491,7 +491,7 @@ class Caffe2DMLModel(val mloutput: MLResults,
 		if(DEBUG_PREDICTION) Utils.prettyPrintDMLScript(predictionScript)
 		
 		// Reset
-	  net.getLayers.filter(net.getCaffeLayer(_).isInstanceOf[BatchNorm]).map(_.asInstanceOf[BatchNorm].update_mean_var = true)
+		net.getLayers.filter(net.getCaffeLayer(_).isInstanceOf[BatchNorm]).map(net.getCaffeLayer(_).asInstanceOf[BatchNorm].update_mean_var = true)
 		
 	  val script = dml(predictionScript).out("Prob").in(estimator.inputs)
 	  if(mloutput != null) {

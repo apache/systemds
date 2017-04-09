@@ -28,9 +28,12 @@ import java.util.stream.Collectors;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.AggOp;
 import org.apache.sysml.hops.codegen.cplan.CNode;
+import org.apache.sysml.hops.codegen.cplan.CNodeData;
 import org.apache.sysml.hops.codegen.template.CPlanMemoTable.MemoTableEntry;
 import org.apache.sysml.hops.codegen.cplan.CNodeMultiAgg;
 import org.apache.sysml.hops.codegen.cplan.CNodeTpl;
+import org.apache.sysml.hops.codegen.cplan.CNodeUnary;
+import org.apache.sysml.hops.codegen.cplan.CNodeUnary.UnaryType;
 import org.apache.sysml.runtime.matrix.data.Pair;
 
 public class TemplateMultiAgg extends TemplateCell 
@@ -96,7 +99,12 @@ public class TemplateMultiAgg extends TemplateCell
 		ArrayList<CNode> outputs = new ArrayList<CNode>();
 		ArrayList<AggOp> aggOps = new ArrayList<AggOp>();
 		for( Hop root : roots ) {
-			outputs.add(tmp.get(root.getHopID()));
+			CNode node = tmp.get(root.getHopID());
+			if( node instanceof CNodeData //add indexing ops for sideways data inputs
+				&& ((CNodeData)inputs.get(0)).getHopID() != ((CNodeData)node).getHopID() )
+				node = new CNodeUnary(node, (roots.get(0).getDim2()==1) ? 
+						UnaryType.LOOKUP_R : UnaryType.LOOKUP_RC);
+			outputs.add(node);
 			aggOps.add(TemplateUtils.getAggOp(root));
 		}
 		CNodeMultiAgg tpl = new CNodeMultiAgg(inputs, outputs);

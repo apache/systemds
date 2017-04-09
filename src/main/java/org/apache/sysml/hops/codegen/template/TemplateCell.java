@@ -150,7 +150,8 @@ public class TemplateCell extends TemplateBase
 		MemoTableEntry me = memo.getBest(hop.getHopID(), TemplateType.CellTpl);
 		for( int i=0; i<hop.getInput().size(); i++ ) {
 			Hop c = hop.getInput().get(i);
-			if( me!=null && me.isPlanRef(i) && !(c instanceof DataOp) )
+			if( me!=null && me.isPlanRef(i) && !(c instanceof DataOp)
+				&& (me.type!=TemplateType.MultiAggTpl || memo.contains(c.getHopID(), TemplateType.CellTpl)))
 				rConstructCplan(c, memo, tmp, inHops, compileLiterals);
 			else {
 				CNodeData cdata = TemplateUtils.createCNodeData(c, compileLiterals);	

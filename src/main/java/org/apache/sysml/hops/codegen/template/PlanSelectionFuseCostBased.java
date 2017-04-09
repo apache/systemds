@@ -25,16 +25,17 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.hops.AggBinaryOp;
 import org.apache.sysml.hops.AggUnaryOp;
 import org.apache.sysml.hops.BinaryOp;
-import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.AggOp;
 import org.apache.sysml.hops.Hop.Direction;
@@ -268,32 +269,91 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 		}
 	}
 	
-	//across-partition multi-agg templates
-	private static void createAndAddMultiAggPlans(CPlanMemoTable memo, ArrayList<Hop> roots)
+	//across-partition multi-agg templates with shared reads
+	private void createAndAddMultiAggPlans(CPlanMemoTable memo, ArrayList<Hop> roots)
 	{
-		//#1: collect full aggregations over shared inputs (otherwise never fused)
-		HashMap<Long, ArrayList<Long>> fullAggs = new HashMap<Long, ArrayList<Long>>();
+		//collect full aggregations as initial set of candidates
+		HashSet<Long> fullAggs = new HashSet<Long>();
 		Hop.resetVisitStatus(roots);
 		for( Hop hop : roots )
-			rCollectAggregatesSharedRead(hop, fullAggs);
+			rCollectFullAggregates(hop, fullAggs);
+
+		//remove operators with assigned multi-agg plans
+		Iterator<Long> iter = fullAggs.iterator();
+		while( iter.hasNext() ) {
+			if( memo.contains(iter.next(), TemplateType.MultiAggTpl) )
+				iter.remove();
+		}
+	
+		//check applicability for further analysis
+		if( fullAggs.size() <= 1 )
+			return;
+	
+		if( LOG.isTraceEnabled() ) {
+			LOG.trace("Found across-partition ua(RC) aggregations: " +
+				Arrays.toString(fullAggs.toArray(new Long[0])));
+		}
+		
+		//collect information for all candidates 
+		//(subsumed aggregations, and inputs to fused operators) 
+		List<AggregateInfo> aggInfos = new ArrayList<AggregateInfo>();
+		for( Long hopID : fullAggs ) {
+			Hop aggHop = memo._hopRefs.get(hopID);
+			AggregateInfo tmp = new AggregateInfo(aggHop);
+			for( Hop c : aggHop.getInput() )
+				rExtractAggregateInfo(memo, c, tmp, TemplateType.CellTpl);
+			if( tmp._fusedInputs.isEmpty() )
+				tmp.addFusedInput(aggHop.getInput().get(0).getHopID());
+			aggInfos.add(tmp);	
+		}
 		
 		if( LOG.isTraceEnabled() ) {
-			for( Entry<Long, ArrayList<Long>> e : fullAggs.entrySet() )
-				LOG.trace("Found across-partition ua(RC) aggregations for "+e.getKey()+": " +
-					Arrays.toString(e.getValue().toArray(new Long[0])));
+			LOG.trace("Extracted across-partition ua(RC) aggregation info: ");
+			for( AggregateInfo info : aggInfos )
+				LOG.trace(info);
+		}
+		
+		//sort aggregations by num dependencies to simplify merging
+		//clusters of aggregations with parallel dependencies
+		aggInfos = aggInfos.stream().sorted(Comparator.comparing(
+			a -> a._inputAggs.size())).collect(Collectors.toList());
+		
+		//greedy grouping of multi-agg candidates
+		boolean converged = false;
+		while( !converged ) {
+			AggregateInfo merged = null;
+			for( int i=0; i<aggInfos.size(); i++ ) {
+				AggregateInfo current = aggInfos.get(i);
+				for( int j=i+1; j<aggInfos.size(); j++ ) {
+					AggregateInfo that = aggInfos.get(j);
+					if( current.isMergable(that) ) {
+						merged = current.merge(that);
+						aggInfos.remove(j); j--;
+					}
+				}
+			}
+			converged = (merged == null);
+		}
+		
+		if( LOG.isTraceEnabled() ) {
+			LOG.trace("Merged across-partition ua(RC) aggregation info: ");
+			for( AggregateInfo info : aggInfos )
+				LOG.trace(info);
 		}
 		
 		//construct and add multiagg template plans (w/ max 3 aggregations)
-		for( Entry<Long, ArrayList<Long>> e : fullAggs.entrySet() ) {
-			if( e.getValue().size()<=1 )
+		for( AggregateInfo info : aggInfos ) {
+			if( info._aggregates.size()<=1 )
 				continue;
-			ArrayList<Long> aggs = e.getValue();
+			Long[] aggs = info._aggregates.keySet().toArray(new Long[0]);
 			MemoTableEntry me = new MemoTableEntry(TemplateType.MultiAggTpl,
-				aggs.get(0), aggs.get(1), (aggs.size()>2)?aggs.get(2):-1);
-			for( int i=0; i<aggs.size(); i++ ) {
-				memo.add(memo._hopRefs.get(aggs.get(i)), me);
+				aggs[0], aggs[1], (aggs.length>2)?aggs[2]:-1);
+			for( int i=0; i<aggs.length; i++ ) {
+				memo.add(memo._hopRefs.get(aggs[i]), me);
+				addBestPlan(aggs[i], me);
 				if( LOG.isTraceEnabled() )
-					LOG.trace("Added multiagg* plan: "+aggs.get(i)+" "+me);
+					LOG.trace("Added multiagg* plan: "+aggs[i]+" "+me);
+				
 			}
 		}
 	}
@@ -321,26 +381,44 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 		return ret;
 	}
 	
-	private static void rCollectAggregatesSharedRead(Hop current, HashMap<Long, ArrayList<Long>> aggs) {
+	private static void rCollectFullAggregates(Hop current, HashSet<Long> aggs) {
 		if( current.isVisited() )
 			return;
 		
 		//collect all applicable full aggregations per read
 		if( HopRewriteUtils.isAggUnaryOp(current, AggOp.SUM, AggOp.SUM_SQ, AggOp.MIN, AggOp.MAX)
-			&& ((AggUnaryOp)current).getDirection()==Direction.RowCol
-			&& current.getInput().get(0) instanceof DataOp )
+			&& ((AggUnaryOp)current).getDirection()==Direction.RowCol )
 		{
-			Hop input = current.getInput().get(0);
-			if( !aggs.containsKey(input.getHopID()) )
-				aggs.put(input.getHopID(), new ArrayList<Long>());
-			aggs.get(input.getHopID()).add(current.getHopID());
+			aggs.add(current.getHopID());
 		}
 		
 		//recursively process children
 		for( Hop c : current.getInput() )
-			rCollectAggregatesSharedRead(c, aggs);
+			rCollectFullAggregates(c, aggs);
 		
 		current.setVisited();
+	}
+	
+	private static void rExtractAggregateInfo(CPlanMemoTable memo, Hop current, AggregateInfo aggInfo, TemplateType type) {
+		//collect input aggregates (dependents)
+		if( HopRewriteUtils.isAggUnaryOp(current, AggOp.SUM, AggOp.SUM_SQ, AggOp.MIN, AggOp.MAX)
+			&& ((AggUnaryOp)current).getDirection()==Direction.RowCol )
+		{
+			aggInfo.addInputAggregate(current.getHopID());
+		}
+		
+		//recursively process children
+		MemoTableEntry me = (type!=null) ? memo.getBest(current.getHopID()) : null;
+		for( int i=0; i< current.getInput().size(); i++ ) {
+			Hop c = current.getInput().get(i);
+			if( me != null && me.isPlanRef(i) )
+				rExtractAggregateInfo(memo, c, aggInfo, type);
+			else {
+				if( type != null && c.getDataType().isMatrix()  ) //add fused input
+					aggInfo.addFusedInput(c.getHopID());
+				rExtractAggregateInfo(memo, c, aggInfo, null);
+			}
+		}
 	}
 	
 	private void selectPlans(CPlanMemoTable memo, HashSet<Long> partition, HashSet<Long> R, ArrayList<Long> M) 
@@ -719,6 +797,46 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 			return "["+outSize+", "+computeCosts+", {"
 				+Arrays.toString(inSizes.keySet().toArray(new Long[0]))+", "
 				+Arrays.toString(inSizes.values().toArray(new Double[0]))+"}]";
+		}
+	}
+	
+	private static class AggregateInfo {
+		public final HashMap<Long,Hop> _aggregates;
+		public final HashSet<Long> _inputAggs = new HashSet<Long>();
+		public final HashSet<Long> _fusedInputs = new HashSet<Long>();
+		public AggregateInfo(Hop aggregate) {
+			_aggregates = new HashMap<Long, Hop>();
+			_aggregates.put(aggregate.getHopID(), aggregate);
+		}
+		public void addInputAggregate(long hopID) {
+			_inputAggs.add(hopID);
+		}
+		public void addFusedInput(long hopID) {
+			_fusedInputs.add(hopID);
+		}
+		public boolean isMergable(AggregateInfo that) {
+			//check independence
+			boolean ret = _aggregates.size()<3 
+				&& _aggregates.size()+that._aggregates.size()<=3;
+			for( Long hopID : that._aggregates.keySet() )
+				ret &= !_inputAggs.contains(hopID);
+			for( Long hopID : _aggregates.keySet() )
+				ret &= !that._inputAggs.contains(hopID);
+			//check partial shared reads
+			return ret && !CollectionUtils.intersection(
+				_fusedInputs, that._fusedInputs).isEmpty();
+		}
+		public AggregateInfo merge(AggregateInfo that) {
+			_aggregates.putAll(that._aggregates);
+			_inputAggs.addAll(that._inputAggs);
+			_fusedInputs.addAll(that._fusedInputs);
+			return this;
+		}
+		@Override
+		public String toString() {
+			return "["+Arrays.toString(_aggregates.keySet().toArray(new Long[0]))+": "
+				+"{"+Arrays.toString(_inputAggs.toArray(new Long[0]))+"}," 
+				+"{"+Arrays.toString(_fusedInputs.toArray(new Long[0]))+"}]"; 
 		}
 	}
 }

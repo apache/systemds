@@ -62,6 +62,11 @@ public class CPlanMemoTable
 		return _plans.containsKey(hopID);
 	}
 	
+	public boolean contains(long hopID, TemplateType type) {
+		return contains(hopID) && get(hopID).stream()
+			.filter(p -> p.type==type).findAny().isPresent();
+	}
+	
 	public boolean containsTopLevel(long hopID) {
 		return !_plansBlacklist.contains(hopID)
 			&& getBest(hopID) != null;

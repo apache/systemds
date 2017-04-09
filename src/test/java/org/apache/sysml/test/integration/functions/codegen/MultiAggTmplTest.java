@@ -38,6 +38,10 @@ public class MultiAggTmplTest extends AutomatedTestBase
 	private static final String TEST_NAME = "multiAggPattern";
 	private static final String TEST_NAME1 = TEST_NAME+"1"; //min(X>7), max(X>7)
 	private static final String TEST_NAME2 = TEST_NAME+"2"; //sum(X>7), sum((X>7)^2)
+	private static final String TEST_NAME3 = TEST_NAME+"3"; //sum(X==7), sum(X==3)
+	private static final String TEST_NAME4 = TEST_NAME+"4"; //sum(X*Y), sum(X^2), sum(Y^2)
+	private static final String TEST_NAME5 = TEST_NAME+"5"; //sum(V*X), sum(Y*Z), sum(X+Y-Z)
+	private static final String TEST_NAME6 = TEST_NAME+"6"; //min(X), max(X), sum(X)
 	
 	private static final String TEST_DIR = "functions/codegen/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + MultiAggTmplTest.class.getSimpleName() + "/";
@@ -49,7 +53,7 @@ public class MultiAggTmplTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		for(int i=1; i<=2; i++)
+		for(int i=1; i<=6; i++)
 			addTestConfiguration( TEST_NAME+i, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME+i, new String[] { String.valueOf(i) }) );
 	}
 	
@@ -81,6 +85,66 @@ public class MultiAggTmplTest extends AutomatedTestBase
 	@Test	
 	public void testCodegenMultiAgg2Spark() {
 		testCodegenIntegration( TEST_NAME2, false, ExecType.SPARK );
+	}
+	
+	@Test	
+	public void testCodegenMultiAggRewrite3CP() {
+		testCodegenIntegration( TEST_NAME3, true, ExecType.CP );
+	}
+
+	@Test	
+	public void testCodegenMultiAgg3CP() {
+		testCodegenIntegration( TEST_NAME3, false, ExecType.CP );
+	}
+	
+	@Test	
+	public void testCodegenMultiAgg3Spark() {
+		testCodegenIntegration( TEST_NAME3, false, ExecType.SPARK );
+	}
+	
+	@Test	
+	public void testCodegenMultiAggRewrite4CP() {
+		testCodegenIntegration( TEST_NAME4, true, ExecType.CP );
+	}
+
+	@Test	
+	public void testCodegenMultiAgg4CP() {
+		testCodegenIntegration( TEST_NAME4, false, ExecType.CP );
+	}
+	
+	@Test	
+	public void testCodegenMultiAgg4Spark() {
+		testCodegenIntegration( TEST_NAME4, false, ExecType.SPARK );
+	}
+	
+	@Test	
+	public void testCodegenMultiAggRewrite5CP() {
+		testCodegenIntegration( TEST_NAME5, true, ExecType.CP );
+	}
+
+	@Test	
+	public void testCodegenMultiAgg5CP() {
+		testCodegenIntegration( TEST_NAME5, false, ExecType.CP );
+	}
+	
+	@Test	
+	public void testCodegenMultiAgg5Spark() {
+		testCodegenIntegration( TEST_NAME5, false, ExecType.SPARK );
+	}
+	
+	@Test	
+	public void testCodegenMultiAggRewrite6CP() {
+		testCodegenIntegration( TEST_NAME6, true, ExecType.CP );
+	}
+
+	@Test	
+	public void testCodegenMultiAgg6CP() {
+		testCodegenIntegration( TEST_NAME6, false, ExecType.CP );
+	}
+	
+	@Test	
+	public void testCodegenMultiAgg6Spark() {
+		testCodegenIntegration( TEST_NAME6, false, ExecType.SPARK );
 	}
 	
 	private void testCodegenIntegration( String testname, boolean rewrites, ExecType instType )

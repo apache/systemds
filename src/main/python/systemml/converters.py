@@ -80,7 +80,8 @@ def _convertDenseMatrixToMB(sc, src):
 
 def _copyRowBlock(i, sc, ret, src, numRowsPerBlock,  rlen, clen):
     rowIndex = int(i / numRowsPerBlock)
-    mb = _convertSPMatrixToMB(sc, src[i:i+numRowsPerBlock,]) if isinstance(src, spmatrix) else _convertDenseMatrixToMB(sc, src[i:i+numRowsPerBlock,])
+    tmp = src[i:min(i+numRowsPerBlock, rlen),]
+    mb = _convertSPMatrixToMB(sc, tmp) if isinstance(src, spmatrix) else _convertDenseMatrixToMB(sc, tmp)
     sc._jvm.org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt.copyRowBlocks(mb, rowIndex, ret, numRowsPerBlock, rlen, clen)
     return i
     

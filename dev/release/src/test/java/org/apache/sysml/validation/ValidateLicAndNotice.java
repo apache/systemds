@@ -59,7 +59,8 @@ public class ValidateLicAndNotice
 	public static final int FILE_NOT_IN_ZIP = 4; 	// 0000 0000 0000 0100
 	public static final int FAILED_TO_EXTRACT = 8; 	// 0000 0000 0000 1000
 	public static final int LIC_NOT_EXIST = 16;		// 0000 0000 0001 0000
-	public static final int INVALID_NOTICE = 32;	// 0000 0000 0010 0000
+	public static final int JS_CSS_LIC_NOT_EXIST = 32;	// 0000 0000 0010 0000
+	public static final int INVALID_NOTICE = 64;	// 0000 0000 0100 0000
 	public static final int FAILURE = 0xFFFF;
 
 	public static final boolean bSUCCESS = true;
@@ -73,7 +74,8 @@ public class ValidateLicAndNotice
 	public static final int DEBUG_WARNING = 1;
 	public static final int DEBUG_INFO = 2;
 	public static final int DEBUG_INFO2 = 3;
-	public static final int DEBUG_CODE = 4;
+	public static final int DEBUG_INFO3 = 4;
+	public static final int DEBUG_CODE = 5;
 
 
 	static final int BUFFER = 2048;
@@ -93,19 +95,32 @@ public class ValidateLicAndNotice
 	public static final String PDB = "pdb";
 	public static final String EXE = "exe";
 	public static final String CLASS = "class";
+	public static final String JS = "js";
+	public static final String CSS = "css";
+	public static final String LIC_TEXT_DELIM = "=====";
 
 	public static String[] fileTypes = {JAR, DLL, EXP, LIB, PDB, EXE};
 
 	// Zip Distribution directory.
 	private String strDistroDir =  "../../../target/release/incubator-systemml/target/";
 
-	public static final ArrayList<String[]> packageLicenses = new ArrayList<String[]> ();
-	static {
-		String[] strA1 = {"org/antlr", "ANTLR 4 Runtime (http://www.antlr.org/antlr4-runtime) org.antlr:antlr4-runtime:4.5.3"};
-		String[] strA2 = {"org/apache/wink/json4j","Apache Wink :: JSON4J (http://www.apache.org/wink/wink-json4j/) org.apache.wink:wink-json4j:1.4"};
+	static final String[][] packageLicenses =
+			{		{"org/antlr", "ANTLR 4 Runtime (http://www.antlr.org/antlr4-runtime) org.antlr:antlr4-runtime:4.5.3"},
+					{"org/apache/wink/json4j","Apache Wink :: JSON4J (http://www.apache.org/wink/wink-json4j/) org.apache.wink:wink-json4j:1.4"}
+			};
 
-		packageLicenses.add(strA1);
-		packageLicenses.add(strA2);
+	public static HashMap<String, String[][]> hmJSLicenses = new HashMap<String, String[][]>();
+	static {
+
+		String [][] strTemp1 = {{"Bootstrap v3.3.6", "Copyright (c) 2011-2015 Twitter, Inc.", "false"}};
+		hmJSLicenses.put("bootstrap.min.js", strTemp1);
+		String [][] strTemp2 = {{"Normalize v3.0.3", "Copyright (c) Nicolas Gallagher and Jonathan Neal", "false"}};
+		hmJSLicenses.put("bootstrap.min.css", strTemp2);
+		String [][] strTemp3 = {{"AnchorJS v1.1.1", "Copyright (c) 2015 Bryan Braun", "false"}};
+		hmJSLicenses.put("anchor.min.js", strTemp3);
+		String [][] strTemp4 = {{"jQuery v1.12.0", "(c) jQuery Foundation", "false"},
+								{"jQuery v1.12.0", "Copyright jQuery Foundation and other contributors, https://jquery.org/", "false"}};
+		hmJSLicenses.put("jquery-1.12.0.min.js", strTemp4);
 	}
 
 	public ValidateLicAndNotice() {
@@ -202,17 +217,23 @@ public class ValidateLicAndNotice
 						debugPrint(DEBUG_ERROR, "Notice validation falied, please check notice file manually in this zip/tgz file.");
 						retCode += INVALID_NOTICE;
 					}
+					if (!validateJSCssLicense(licenseFile, libDirectory + "/" + zipFile)) {
+						debugPrint(DEBUG_ERROR, "JS/CSS license validation falied, please check license file manually in this zip/tgz file.");
+						retCode += JS_CSS_LIC_NOT_EXIST;
+					}
 				}
 
-				if (retCode > SUCCESS) {
-					debugPrint(DEBUG_ERROR, "License/Notice validation of file types " + fileType + " failed for zip/tgz file " + zipFile + " with error code " + retCode + ", please validate file manually.");
+				if (retCode  == SUCCESS)
+					debugPrint(DEBUG_INFO3, "Validation of file type '." + fileType + "' in zip/tgz file : " + zipFile + " completed successfully.");
+				else {
+					debugPrint(DEBUG_ERROR, "License/Notice validation failed for zip/tgz file " + zipFile + " with error code " + retCode + ", please validate file manually.");
 					retCodeForAllFileTypes = FAILURE;
 				}
 			}
 			if(retCodeForAllFileTypes == SUCCESS)
-				debugPrint(DEBUG_INFO, "Validation of zip file : " + zipFile + " completed successfully.");
+				debugPrint(DEBUG_INFO, "Validation of zip/tgz file : " + zipFile + " completed successfully.");
 
-			retCodeAll = retCode != SUCCESS?FAILURE:retCodeAll;
+			retCodeAll = retCodeForAllFileTypes != SUCCESS?FAILURE:retCodeAll;
 		}
 		debugPrint(DEBUG_INFO, "======================================================================================");
 
@@ -263,10 +284,10 @@ public class ValidateLicAndNotice
 		HashSet <String> packageValidLic = new HashSet<String>();
 		while ((line = reader.readLine()) != null) {
 			line = line.trim();
-			for(int i=0; i <packageLicenses.size(); ++i) {
-				if (line.contains(packageLicenses.get(i)[1])) {
-					packageValidLic.add(packageLicenses.get(i)[0]);
-					debugPrint(DEBUG_INFO2, "License for package " + packageLicenses.get(i)[0] + " exists.");
+			for(int i=0; i <packageLicenses.length; ++i) {
+				if (line.contains(packageLicenses[i][1])) {
+					packageValidLic.add(packageLicenses[i][0]);
+					debugPrint(DEBUG_INFO3, "License for package " + packageLicenses[i][0] + " exists.");
 				}
 			}
 		}
@@ -704,6 +725,112 @@ public class ValidateLicAndNotice
 	}
 
 	/**
+	 * This will validate license for JavaScript & CSS files within a zip/tgz file.
+	 *
+	 * @param	licenseFile is the file against which contents of zip/tgz file gets compared.
+	 * @param	zipFileName is the name of zip/tgz file from which list of JavaScript files will be returned.
+	 * @return  Success or Failure code
+	 */
+	public static boolean validateJSCssLicense(File licenseFile, String zipFileName) throws Exception
+	{
+		boolean bRetCode = bSUCCESS;
+
+		try {
+			List<String> jsFiles = getFiles(zipFileName, JS);
+			List<String> cssFiles = getFiles(zipFileName, CSS);
+			HashMap<String, Boolean> jsCssFileHashMap = new HashMap<String, Boolean>();
+			for (String jsFile : jsFiles)
+				if(jsFile.compareTo("main.js") != 0)
+					jsCssFileHashMap.put(jsFile, Boolean.FALSE);
+			for (String cssFile : cssFiles)
+				if(cssFile.compareTo("main.css") != 0)
+					jsCssFileHashMap.put(cssFile, Boolean.FALSE);
+
+			BufferedReader reader = new BufferedReader(new FileReader(licenseFile));
+			String line = null;
+			HashSet<String> packageValidLic = new HashSet<String>();
+			while ((line = reader.readLine()) != null) {
+				line = line.trim();
+				//Move to beginning of individual License text
+				if (line.startsWith(LIC_TEXT_DELIM))
+					break;
+			}
+
+			while ((line = reader.readLine()) != null) {
+				line = line.trim();
+
+				List<String> curLicense = new ArrayList<String>();
+				//Read all lines until end of individual License text
+				while (!line.startsWith(LIC_TEXT_DELIM)) {
+					curLicense.add(line);
+					if ((line = reader.readLine()) == null)
+						break;
+				}
+
+				//Verify jsFiles against current license foumd.
+				Iterator<Map.Entry<String, String[][]>> itJSLicenses = hmJSLicenses.entrySet().iterator();
+				while (itJSLicenses.hasNext()) {
+					Map.Entry<String, String[][]> pairJSLicense = (Map.Entry<String, String[][]>) itJSLicenses.next();
+
+					String[][] JSLicenseList = pairJSLicense.getValue();
+
+					for (String[] license : JSLicenseList) {
+						boolean bLicFirstPartFound = false;
+
+						for (String licLine : curLicense) {
+							if (!bLicFirstPartFound && licLine.startsWith(license[0]))
+								bLicFirstPartFound = true;
+
+							if (bLicFirstPartFound && licLine.contains(license[1])) {
+								license[2] = "true";
+								break;
+							}
+						}
+					}
+				}
+			}
+
+			//Validate all js/css files against license found in LICENSE file.
+			Iterator<Map.Entry<String, Boolean>> itJSCssFiles = jsCssFileHashMap.entrySet().iterator();
+			while (itJSCssFiles.hasNext()) {
+				Map.Entry<String, Boolean> pairJSCSSFile = (Map.Entry<String, Boolean>) itJSCssFiles.next();
+
+				String[][] jsFileLicList = hmJSLicenses.get(pairJSCSSFile.getKey());
+				if(jsFileLicList == null) {
+					debugPrint(DEBUG_WARNING, "JS/CSS license does not exist for file " + pairJSCSSFile.getKey());
+					bRetCode = bFAILURE;
+					continue;
+				}
+
+				boolean bValidLic = true;
+				for (String[] jsFileLic : jsFileLicList) {
+					if (jsFileLic[2].compareTo("true") != 0) {
+						bValidLic = false;
+						break;
+					}
+				}
+
+				if (bValidLic) {
+					jsCssFileHashMap.put(pairJSCSSFile.getKey(), Boolean.TRUE);
+					debugPrint(DEBUG_INFO3, "JS/CSS license exists for file " + pairJSCSSFile.getKey());
+				}
+				else {
+					debugPrint(DEBUG_WARNING, "JS/CSS license does not exist for file " + pairJSCSSFile.getKey());
+					bRetCode = bFAILURE;
+				}
+			}
+
+			if (bRetCode == bSUCCESS)
+				debugPrint(DEBUG_INFO2, "JS/CSS license validation successful.");
+
+		} catch (Exception e) {
+			System.out.println(e);
+			e.printStackTrace();
+		}
+		return bRetCode;
+	}
+
+	/**
 	 * This is main() program.
 	 *
 	 * @param	args is list of arguments
@@ -747,6 +874,9 @@ public class ValidateLicAndNotice
 				break;
 			case DEBUG_INFO2:
 				displayMessage = "INFO2: " + message;
+				break;
+			case DEBUG_INFO3:
+				displayMessage = "INFO3: " + message;
 				break;
 			case DEBUG_CODE:
 				displayMessage = "DEBUG: " + message;

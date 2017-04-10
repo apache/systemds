@@ -23,6 +23,7 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.ref.SoftReference;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.commons.lang.mutable.MutableBoolean;
@@ -345,14 +346,15 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			bc.setBackReference(this);
 	}
 
-	public GPUObject getGPUObject() {
-		return _gpuHandle;
-	}
-	
-	public void setGPUObject(GPUObject handle) {
-		_gpuHandle = handle;
-	}
-	
+	public GPUObject getGPUObject(GPUContext gCtx) {
+	    return _gpuObjects.get(gCtx);
+    }
+
+    public void setGPUObject(GPUContext gCtx, GPUObject gObj) throws DMLRuntimeException {
+	    GPUObject old = _gpuObjects.put(gCtx, gObj);
+	    if (old != null)
+	        throw new DMLRuntimeException("GPU : Inconsistent internal state - this CacheableData already has a GPUObject assigned to the current GPUContext (" + gCtx + ")");
+    }
 	
 	// *********************************************
 	// ***                                       ***
@@ -388,12 +390,20 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		if( _data == null )
 			getCache();
 			
-		//call acquireHostRead if gpuHandle is set as well as is allocated  
-		if( _gpuHandle != null && _gpuHandle.isAllocated()) {
-			_gpuHandle.acquireHostRead();
-			if( _data == null )
-				getCache();
-		}
+		//call acquireHostRead if gpuHandle is set as well as is allocated
+        boolean copiedFromGPU = false;
+        for (Map.Entry<GPUContext, GPUObject> kv : _gpuObjects.entrySet()) {
+            GPUObject gObj = kv.getValue();
+            if (gObj != null && copiedFromGPU) {
+                LOG.error("Inconsistent internal state - A copy of this CacheableData was dirty on more than 1 GPU");
+                throw new CacheException("Internal Error : Inconsistent internal state, A copy of this CacheableData was dirty on more than 1 GPU");
+            } else if (gObj != null){
+                copiedFromGPU = gObj.acquireHostRead();
+                if( _data == null )
+                    getCache();
+            }
+        }
+
 		//read data from HDFS/RDD if required
 		//(probe data for cache_nowrite / jvm_reuse)  
 		if( isEmpty(true) && _data==null ) 
@@ -665,9 +675,15 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			_rddHandle.setBackReference(null);
 		if( _bcHandle != null )
 			_bcHandle.setBackReference(null);
-		if( _gpuHandle != null )
-			_gpuHandle.clearData();
-		
+		if( _gpuObjects != null ) {
+		    for (GPUObject gObj : _gpuObjects.values()){
+		        if (gObj != null) {
+                    gObj.clearData();
+                }
+            }
+        }
+        _gpuObjects.clear();
+
 		// change object state EMPTY
 		setDirty(false);
 		setEmpty();
@@ -735,10 +751,19 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 
 		LOG.trace("Exporting " + this.getDebugName() + " to " + fName + " in format " + outputFormat);
 		
-		//TODO remove 
-		if( getGPUObject() != null && getGPUObject().isAllocated() ) {
-			getGPUObject().acquireHostRead();
-		}
+		//TODO remove
+        boolean copiedFromGPU = false;
+        for (Map.Entry<GPUContext, GPUObject> kv : _gpuObjects.entrySet()) {
+            GPUObject gObj = kv.getValue();
+            if (gObj != null && copiedFromGPU) {
+                LOG.error("Inconsistent internal state - A copy of this CacheableData was dirty on more than 1 GPU");
+                throw new CacheException("Internal Error : Inconsistent internal state, A copy of this CacheableData was dirty on more than 1 GPU");
+            } else if (gObj != null){
+                copiedFromGPU = gObj.acquireHostRead();
+                if( _data == null )
+                    getCache();
+            }
+        }
 				
 		boolean pWrite = false; // !fName.equals(_hdfsFileName); //persistent write flag
 		if ( fName.equals(_hdfsFileName) ) {

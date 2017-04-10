@@ -65,6 +65,7 @@ public class GPUObject {
 
 	private static final Log LOG = LogFactory.getLog(GPUObject.class.getName());
 
+	/** GPUContext that owns this GPUObject */
 	private final GPUContext gpuContext;
 
 	/** Pointer to the underlying dense matrix block on GPU */
@@ -662,7 +663,7 @@ public class GPUObject {
 		long start=0;
 		if (DMLScript.STATISTICS) start = System.nanoTime();
 
-		MatrixBlock tmp = mat.acquireRead(ec);
+		MatrixBlock tmp = mat.acquireRead();
 		if(tmp.isInSparseFormat()) {
 
 			int rowPtr[] = null;

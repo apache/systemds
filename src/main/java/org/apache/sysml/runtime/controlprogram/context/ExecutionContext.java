@@ -255,7 +255,7 @@ public class ExecutionContext
     {
         MatrixObject mo = allocateGPUMatrixObject(varName);
         mo.getMatrixCharacteristics().setNonZeros(nnz);
-				boolean allocated = mo.getGPUObject().acquireDeviceModifySparse();
+				boolean allocated = mo.getGPUObject(getGPUContext()).acquireDeviceModifySparse();
         return new Pair<MatrixObject, Boolean>(mo, allocated);
     } 
 
@@ -268,7 +268,8 @@ public class ExecutionContext
 	public MatrixObject allocateGPUMatrixObject(String varName) throws DMLRuntimeException {
 		MatrixObject mo = getMatrixObject(varName);
 		if( mo.getGPUObject(getGPUContext()) == null ) {
-			mo.setGPUObject(getGPUContext().createGPUObject(mo));
+			GPUObject newGObj = getGPUContext().createGPUObject(mo);
+			mo.setGPUObject(getGPUContext(), newGObj);
 		}
 		return mo;
 	}
@@ -282,14 +283,15 @@ public class ExecutionContext
 			throw new DMLRuntimeException("No matrix object available for variable:" + varName);
 		}
 		if( mo.getGPUObject(getGPUContext()) == null ) {
-			mo.setGPUObject(getGPUContext().createGPUObject(mo));
+			GPUObject newGObj = getGPUContext().createGPUObject(mo);
+			mo.setGPUObject(getGPUContext(), newGObj);
 		}
 		boolean acquired = false;
-		if( !mo.getGPUObject().isInputAllocated() ) {
+		if( !mo.getGPUObject(getGPUContext()).isInputAllocated() ) {
 			mo.acquireRead();
 			acquired = true;
 		}
-		copied = mo.getGPUObject(getGPUContext().acquireDeviceRead());
+		copied = mo.getGPUObject(getGPUContext()).acquireDeviceRead();
 		if(acquired) {
 			mo.release();
 		}

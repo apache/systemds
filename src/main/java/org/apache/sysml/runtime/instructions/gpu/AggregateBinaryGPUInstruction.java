@@ -26,7 +26,6 @@ import org.apache.sysml.runtime.functionobjects.Plus;
 import org.apache.sysml.runtime.functionobjects.SwapIndex;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
-import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.AggregateBinaryOperator;
@@ -114,6 +113,6 @@ public class AggregateBinaryGPUInstruction extends GPUInstruction
 	@SuppressWarnings("unused")
 	private boolean isSparse(ExecutionContext ec, String var) throws DMLRuntimeException {
 		MatrixObject mo = ec.getMatrixObject(var);
-		return LibMatrixCUDA.isInSparseFormat(mo);
+		return LibMatrixCUDA.isInSparseFormat(ec.getGPUContext(), mo);
 	}
 }

@@ -483,7 +483,7 @@ public class GPUObject {
      * @throws DMLRuntimeException if error
 	 */
 	public boolean isSparseAndEmpty() throws DMLRuntimeException{
-		boolean isSparseAndAllocated = isAllocated()&& LibMatrixCUDA.isInSparseFormat(mat);
+		boolean isSparseAndAllocated = isAllocated()&& LibMatrixCUDA.isInSparseFormat(getGPUContext(), mat);
 		boolean isEmptyAndSparseAndAllocated = isSparseAndAllocated && getJcudaSparseMatrixPtr().nnz == 0;
 		return isEmptyAndSparseAndAllocated;
 	}
@@ -649,7 +649,7 @@ public class GPUObject {
 		long clen = mat.getNumColumns();
 		long nnz = mat.getNnz();
 
-		if(LibMatrixCUDA.isInSparseFormat(mat)) {
+		if(LibMatrixCUDA.isInSparseFormat(getGPUContext(), mat)) {
 			GPUSize = CSRPointer.estimateSize(nnz, rlen);
 		}
 		else {
@@ -774,7 +774,7 @@ public class GPUObject {
 			if (DMLScript.STATISTICS) GPUStatistics.cudaFromDevCount.addAndGet(1);
 		}
 		else if (getJcudaSparseMatrixPtr() != null){
-			if(!LibMatrixCUDA.isInSparseFormat(mat))
+			if(!LibMatrixCUDA.isInSparseFormat(getGPUContext(), mat))
 				throw new DMLRuntimeException("Block not in sparse format on host yet the device sparse matrix pointer is not null");
 
 			if(this.isSparseAndEmpty()){

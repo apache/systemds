@@ -25,7 +25,6 @@ import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
-import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.ScalarOperator;
@@ -63,7 +62,7 @@ public class ScalarMatrixArithmeticGPUInstruction extends ArithmeticBinaryGPUIns
 		
 		LibMatrixCUDA.matrixScalarArithmetic(ec, ec.getGPUContext(), getExtendedOpcode(), in1, _output.getName(), isTransposed, sc_op);
 		
-		GPUContext.releaseMatrixInputForGPUInstruction(mat.getName());
-        GPUContext.releaseMatrixOutputForGPUInstruction(_output.getName());
+		ec.releaseMatrixInputForGPUInstruction(mat.getName());
+		ec.releaseMatrixOutputForGPUInstruction(_output.getName());
 	}
 }

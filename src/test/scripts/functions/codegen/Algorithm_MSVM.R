@@ -35,7 +35,7 @@ if(nrow(X) < 2)
 
 lambda = 0.001
 num_samples = nrow(X)
-dimensions = nrow(X)
+dimensions = ncol(X)
 num_features = ncol(X)
 
 min_y = min(Y)

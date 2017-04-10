@@ -119,13 +119,10 @@ public class AlgorithmMSVM extends AutomatedTestBase
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
 			loadTestConfiguration(config);
 			
-			/* This is for running the junit test the new way, i.e., construct the arguments directly */
-			String HOME = SCRIPT_DIR + TEST_DIR;
-			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{ "-explain", "-stats",
-				"-args", input("X"), input("Y"),
-				String.valueOf(intercept), String.valueOf(epsilon),
-				String.valueOf(maxiter), output("w")};
+			fullDMLScriptName = "scripts/algorithms/m-svm.dml";
+			programArgs = new String[]{ "-explain", "-stats", "-nvargs", "X="+input("X"), "Y="+input("Y"),
+					"icpt="+String.valueOf(intercept), "tol="+String.valueOf(epsilon), "reg=0.001",
+					"maxiter="+String.valueOf(maxiter), "model="+output("w"), "Log=\" \""};
 
 			rCmd = getRCmd(inputDir(), String.valueOf(intercept),String.valueOf(epsilon),
 				String.valueOf(maxiter), expectedDir());

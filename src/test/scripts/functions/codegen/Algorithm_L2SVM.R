@@ -40,15 +40,14 @@ if(num_min + num_max != nrow(Y)){
 		Y = 2/(check_max - check_min)*Y - (check_min + check_max)/(check_max - check_min)
 }
 
-N = nrow(X)
-D = ncol(X)
+dimensions = ncol(X)
 
 if (intercept == 1) {
-	ones  = matrix(1,N,1)
+	ones  = matrix(1, rows=num_samples, cols=1)
 	X = cbind(X, ones);
 }
 
-num_rows_in_w = D
+num_rows_in_w = dimensions
 if(intercept == 1){
 	num_rows_in_w = num_rows_in_w + 1
 }
@@ -59,6 +58,9 @@ s = g_old
 
 Xw = matrix(0,nrow(X),1)
 iter = 0
+positive_label = check_max
+negative_label = check_min
+
 continue = TRUE
 while(continue && iter < maxiterations){
 	t = 0
@@ -94,5 +96,13 @@ while(continue && iter < maxiterations){
 	
 	iter = iter + 1
 }
+
+extra_model_params = matrix(0, 4, 1)
+extra_model_params[1,1] = positive_label
+extra_model_params[2,1] = negative_label
+extra_model_params[3,1] = intercept
+extra_model_params[4,1] = dimensions
+
+w = t(cbind(t(w), t(extra_model_params)))
 
 writeMM(as(w,"CsparseMatrix"), paste(args[5], "w", sep=""));

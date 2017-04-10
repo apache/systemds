@@ -38,7 +38,8 @@ import org.apache.sysml.runtime.codegen.SpoofCellwise.CellType;
 import org.apache.sysml.runtime.codegen.SpoofOperator;
 import org.apache.sysml.runtime.codegen.SpoofOuterProduct;
 import org.apache.sysml.runtime.codegen.SpoofOuterProduct.OutProdType;
-import org.apache.sysml.runtime.codegen.SpoofRowAggregate;
+import org.apache.sysml.runtime.codegen.SpoofRowwise;
+import org.apache.sysml.runtime.codegen.SpoofRowwise.RowType;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.functionobjects.Builtin;
@@ -195,11 +196,36 @@ public class SpoofSPInstruction extends SPInstruction
 				sec.setVariable(_out.getName(), new DoubleObject(tmp.getValue(0, 0)));
 			}
 		}
-		else if( _class.getSuperclass() == SpoofRowAggregate.class ) { //row aggregate operator
-			RowAggregateFunction fmmc = new RowAggregateFunction(_class.getName(), _classBytes, bcMatrices, scalars);
-			JavaPairRDD<MatrixIndexes,MatrixBlock> tmpRDD = in.mapToPair(fmmc);
-			MatrixBlock tmpMB = RDDAggregateUtils.sumStable(tmpRDD);		
-			sec.setMatrixOutput(_out.getName(), tmpMB);
+		else if( _class.getSuperclass() == SpoofRowwise.class ) { //row aggregate operator
+			SpoofRowwise op = (SpoofRowwise) CodegenUtils.createInstance(_class); 	
+			RowwiseFunction fmmc = new RowwiseFunction(_class.getName(), _classBytes, bcMatrices, scalars);
+			
+			if( op.getRowType().isColumnAgg() ) {
+				JavaPairRDD<MatrixIndexes,MatrixBlock> tmpRDD = in.mapToPair(fmmc);
+				MatrixBlock tmpMB = RDDAggregateUtils.sumStable(tmpRDD);		
+				sec.setMatrixOutput(_out.getName(), tmpMB);
+			}
+			else //row-agg or no-agg 
+			{
+				out = in.mapToPair(fmmc);
+				if( op.getRowType()==RowType.ROW_AGG && mcIn.getCols() > mcIn.getColsPerBlock() ) {
+					//TODO investigate if some other side effect of correct blocks
+					if( out.partitions().size() > mcIn.getNumRowBlocks() )
+						out = RDDAggregateUtils.sumByKeyStable(out, (int)mcIn.getNumRowBlocks(), false);
+					else
+						out = RDDAggregateUtils.sumByKeyStable(out, false);
+				}
+				
+				sec.setRDDHandleForVariable(_out.getName(), out);
+				
+				//maintain lineage information for output rdd
+				sec.addLineageRDD(_out.getName(), _in[0].getName());
+				for( String bcVar : bcVars )
+					sec.addLineageBroadcast(_out.getName(), bcVar);
+				
+				//update matrix characteristics
+				updateOutputMatrixCharacteristics(sec, op);
+			}
 			return;
 		}
 		else {
@@ -236,7 +262,7 @@ public class SpoofSPInstruction extends SPInstruction
 		}
 	}
 		
-	private static class RowAggregateFunction implements PairFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock> 
+	private static class RowwiseFunction implements PairFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock> 
 	{
 		private static final long serialVersionUID = -7926980450209760212L;
 
@@ -244,9 +270,9 @@ public class SpoofSPInstruction extends SPInstruction
 		private ArrayList<ScalarObject> _scalars = null;
 		private byte[] _classBytes = null;
 		private String _className = null;
-		private SpoofOperator _op = null;
+		private SpoofRowwise _op = null;
 		
-		public RowAggregateFunction(String className, byte[] classBytes, ArrayList<PartitionedBroadcast<MatrixBlock>> bcMatrices, ArrayList<ScalarObject> scalars) 
+		public RowwiseFunction(String className, byte[] classBytes, ArrayList<PartitionedBroadcast<MatrixBlock>> bcMatrices, ArrayList<ScalarObject> scalars) 
 			throws DMLRuntimeException
 		{			
 			_className = className;
@@ -262,7 +288,7 @@ public class SpoofSPInstruction extends SPInstruction
 			//lazy load of shipped class
 			if( _op == null ) {
 				Class<?> loadedClass = CodegenUtils.getClass(_className, _classBytes);
-				_op = (SpoofOperator) CodegenUtils.createInstance(loadedClass); 
+				_op = (SpoofRowwise) CodegenUtils.createInstance(loadedClass); 
 			}
 			
 			//get main input block and indexes
@@ -272,7 +298,9 @@ public class SpoofSPInstruction extends SPInstruction
 			
 			//prepare output and execute single-threaded operator
 			ArrayList<MatrixBlock> inputs = getVectorInputsFromBroadcast(blkIn, rowIx);
-			MatrixIndexes ixOut = new MatrixIndexes(1,1);
+			MatrixIndexes ixOut = new MatrixIndexes(
+				_op.getRowType().isColumnAgg() ? 1 : ixIn.getRowIndex(),
+				_op.getRowType()!=RowType.NO_AGG ? 1 : ixIn.getColumnIndex());
 			MatrixBlock blkOut = new MatrixBlock();
 			_op.execute(inputs, _scalars, blkOut);
 			

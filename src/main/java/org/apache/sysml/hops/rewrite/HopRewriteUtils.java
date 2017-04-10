@@ -792,13 +792,8 @@ public class HopRewriteUtils
 	}
 	
 	public static boolean isBinary(Hop hop, OpOp2... types) {
-		if( hop instanceof BinaryOp ) {
-			BinaryOp bop = (BinaryOp) hop;
-			for( OpOp2 type : types )
-				if( type == bop.getOp() )
-					return true;
-		}
-		return false;
+		return ( hop instanceof BinaryOp 
+			&& ArrayUtils.contains(types, ((BinaryOp) hop).getOp()));
 	}
 	
 	public static boolean isBinary(Hop hop, OpOp2 type, int maxParents) {
@@ -830,6 +825,11 @@ public class HopRewriteUtils
 	
 	public static boolean isUnary(Hop hop, OpOp1 type, int maxParents) {
 		return isUnary(hop, type) && hop.getParent().size() <= maxParents;
+	}
+	
+	public static boolean isUnary(Hop hop, OpOp1... types) {
+		return ( hop instanceof UnaryOp 
+			&& ArrayUtils.contains(types, ((UnaryOp) hop).getOp()));
 	}
 	
 	public static boolean isMatrixMultiply(Hop hop) {

@@ -22,6 +22,7 @@ package org.apache.sysml.runtime.codegen;
 import java.util.Arrays;
 import java.util.LinkedList;
 
+import org.apache.commons.math3.util.FastMath;
 import org.apache.sysml.runtime.functionobjects.IntegerDivide;
 import org.apache.sysml.runtime.functionobjects.Modulus;
 import org.apache.sysml.runtime.matrix.data.LibMatrixMult;
@@ -73,6 +74,10 @@ public class LibSpoofPrimitives
 		LibMatrixMult.vectMultiplyAdd(bval, a, c, bix, bi, 0, len);
 		return c;
 	}
+	
+	public static void vectWrite(double[] a, double[] c, int ci, int len) {
+		System.arraycopy(a, 0, c, ci, len);
+	}
 
 	// custom vector sums, mins, maxs
 	
@@ -113,32 +118,14 @@ public class LibSpoofPrimitives
 	 * @return sum value
 	 */
 	public static double vectSum(double[] avals, int[] aix, int ai, int len) {
-		double val = 0;
-		final int bn = len%8;
-				
-		//compute rest
-		for( int i = ai; i < ai+bn; i++ )
-			val += avals[ aix[i] ];
-		
-		//unrolled 8-block (for better instruction-level parallelism)
-		for( int i = ai+bn; i < ai+len; i+=8 )
-		{
-			//read 64B of a via 'gather'
-			//compute cval' = sum(a) + cval
-			val += avals[ aix[i+0] ] + avals[ aix[i+1] ]
-			     + avals[ aix[i+2] ] + avals[ aix[i+3] ]
-			     + avals[ aix[i+4] ] + avals[ aix[i+5] ]
-			     + avals[ aix[i+6] ] + avals[ aix[i+7] ];
-		}
-		
-		//scalar result
-		return val; 
+		//forward to dense as column indexes not required here
+		return vectSum(avals, ai, len);
 	}
 	
 	public static double vectMin(double[] a, int ai, int len) { 
 		double val = Double.MAX_VALUE;
 		for( int i = ai; i < ai+len; i++ )
-			val = Math.min(a[ai], val);
+			val = Math.min(a[i], val);
 		return val; 
 	} 
 	
@@ -152,7 +139,7 @@ public class LibSpoofPrimitives
 	public static double vectMax(double[] a, int ai, int len) { 
 		double val = -Double.MAX_VALUE;
 		for( int i = ai; i < ai+len; i++ )
-			val = Math.max(a[ai], val);
+			val = Math.max(a[i], val);
 		return val; 
 	} 
 	
@@ -186,6 +173,84 @@ public class LibSpoofPrimitives
 		double[] c = allocVector(len, true);
 		for( int j = ai; j < ai+len; j++ )
 			c[aix[j]] = a[j] / bval;
+		return c;
+	}
+	
+	//custom vector minus
+	
+	public static void vectMinusAdd(double[] a, double bval, double[] c, int ai, int ci, int len) {
+		for( int j = ai; j < ai+len; j++, ci++)
+			c[ci] +=  a[j] - bval;
+	} 
+
+	public static void vectMinusAdd(double[] a, double bval, double[] c, int[] aix, int ai, int ci, int len) {
+		for( int j = ai; j < ai+len; j++ )
+			c[ci + aix[j]] += a[j] - bval;
+	}
+	
+	public static double[] vectMinusWrite(double[] a, double bval, int ai, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = 0; j < len; j++, ai++)
+			c[j] = a[ai] - bval;
+		return c;
+	}
+
+	public static double[] vectMinusWrite(double[] a, double bval, int[] aix, int ai, int len) {
+		double[] c = allocVector(len, true);
+		for( int j = ai; j < ai+len; j++ )
+			c[aix[j]] = a[j] - bval;
+		return c;
+	}
+
+	//custom exp
+	
+	public static void vectExpAdd(double[] a, double[] c, int ai, int ci, int len) {
+		for( int j = ai; j < ai+len; j++, ci++)
+			c[ci] +=  FastMath.exp(a[j]);
+	} 
+
+	public static void vectExpAdd(double[] a, double[] c, int[] aix, int ai, int ci, int len) {
+		for( int j = ai; j < ai+len; j++ )
+			c[ci + aix[j]] += FastMath.exp(a[j]);
+	}
+	
+	public static double[] vectExpWrite(double[] a, int ai, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = 0; j < len; j++, ai++)
+			c[j] = FastMath.exp(a[ai]);
+		return c;
+	}
+
+	public static double[] vectExpWrite(double[] a, int[] aix, int ai, int len) {
+		double[] c = allocVector(len, true);
+		for( int j = ai; j < ai+len; j++ )
+			c[aix[j]] = FastMath.exp(a[j]);
+		return c;
+	}
+
+	//custom log
+	
+	public static void vectLogAdd(double[] a, double[] c, int ai, int ci, int len) {
+		for( int j = ai; j < ai+len; j++, ci++)
+			c[ci] +=  FastMath.log(a[j]);
+	} 
+
+	public static void vectLogAdd(double[] a, double[] c, int[] aix, int ai, int ci, int len) {
+		for( int j = ai; j < ai+len; j++ )
+			c[ci + aix[j]] += FastMath.log(a[j]);
+	}
+	
+	public static double[] vectLogWrite(double[] a, int ai, int len) {
+		double[] c = allocVector(len, false);
+		for( int j = 0; j < len; j++, ai++)
+			c[j] = FastMath.log(a[ai]);
+		return c;
+	}
+
+	public static double[] vectLogWrite(double[] a, int[] aix, int ai, int len) {
+		double[] c = allocVector(len, true);
+		for( int j = ai; j < ai+len; j++ )
+			c[aix[j]] = FastMath.log(a[j]);
 		return c;
 	}
 	

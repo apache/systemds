@@ -54,7 +54,9 @@ public class CNodeTernary extends CNode
 					return "    double %TMP% = Double.isNaN(%IN1%) ? %IN3% : %IN1%;\n";
 					
 				case LOOKUP_RC1:
-					return "    double %TMP% = getValue(%IN1%, rowIndex*%IN2%+%IN3%-1);\n";	
+					return sparse ?
+							"    double %TMP% = getValue(%IN1v%, rowIndex*%IN2%+%IN3%-1);\n" :	
+							"    double %TMP% = getValue(%IN1%, rowIndex*%IN2%+%IN3%-1);\n";	
 					
 				default: 
 					throw new RuntimeException("Invalid ternary type: "+this.toString());
@@ -94,6 +96,9 @@ public class CNodeTernary extends CNode
 		tmp = tmp.replaceAll("%TMP%", var);
 		for( int j=1; j<=3; j++ ) {
 			String varj = _inputs.get(j-1).getVarname();
+			//replace sparse and dense inputs
+			tmp = tmp.replaceAll("%IN"+j+"v%", 
+				varj+(varj.startsWith("b")?"":"vals") );
 			tmp = tmp.replaceAll("%IN"+j+"%", varj );
 		}
 		sb.append(tmp);

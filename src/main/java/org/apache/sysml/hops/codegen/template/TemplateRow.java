@@ -40,7 +40,7 @@ import org.apache.sysml.hops.codegen.cplan.CNodeBinary;
 import org.apache.sysml.hops.codegen.cplan.CNodeBinary.BinType;
 import org.apache.sysml.hops.codegen.cplan.CNodeTernary.TernaryType;
 import org.apache.sysml.hops.codegen.cplan.CNodeData;
-import org.apache.sysml.hops.codegen.cplan.CNodeRowAgg;
+import org.apache.sysml.hops.codegen.cplan.CNodeRow;
 import org.apache.sysml.hops.codegen.cplan.CNodeTernary;
 import org.apache.sysml.hops.codegen.cplan.CNodeTpl;
 import org.apache.sysml.hops.codegen.cplan.CNodeUnary;
@@ -49,22 +49,24 @@ import org.apache.sysml.hops.codegen.template.CPlanMemoTable.MemoTableEntry;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.hops.Hop.AggOp;
 import org.apache.sysml.hops.Hop.Direction;
+import org.apache.sysml.hops.Hop.OpOp1;
 import org.apache.sysml.hops.Hop.OpOp2;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.matrix.data.Pair;
 
-public class TemplateRowAgg extends TemplateBase 
+public class TemplateRow extends TemplateBase 
 {
 	private static final Hop.AggOp[] SUPPORTED_ROW_AGG = new AggOp[]{AggOp.SUM, AggOp.MIN, AggOp.MAX};
-	private static final Hop.OpOp2[] SUPPORTED_VECT_BINARY = new OpOp2[]{OpOp2.MULT, OpOp2.DIV, 
+	private static final Hop.OpOp1[] SUPPORTED_VECT_UNARY = new OpOp1[]{OpOp1.EXP, OpOp1.LOG};
+	private static final Hop.OpOp2[] SUPPORTED_VECT_BINARY = new OpOp2[]{OpOp2.MULT, OpOp2.DIV, OpOp2.MINUS, 
 			OpOp2.EQUAL, OpOp2.NOTEQUAL, OpOp2.LESS, OpOp2.LESSEQUAL, OpOp2.GREATER, OpOp2.GREATEREQUAL};
 	
-	public TemplateRowAgg() {
-		super(TemplateType.RowAggTpl);
+	public TemplateRow() {
+		super(TemplateType.RowTpl);
 	}
 	
-	public TemplateRowAgg(boolean closed) {
-		super(TemplateType.RowAggTpl, closed);
+	public TemplateRow(boolean closed) {
+		super(TemplateType.RowTpl, closed);
 	}
 	
 	@Override
@@ -78,7 +80,8 @@ public class TemplateRowAgg extends TemplateBase
 	@Override
 	public boolean fuse(Hop hop, Hop input) {
 		return !isClosed() && 
-			(  (hop instanceof BinaryOp && (HopRewriteUtils.isBinaryMatrixColVectorOperation(hop)
+			(  (hop instanceof BinaryOp && TemplateUtils.isOperationSupported(hop) 
+				&& (HopRewriteUtils.isBinaryMatrixColVectorOperation(hop)
 					|| HopRewriteUtils.isBinaryMatrixScalarOperation(hop)) ) 
 			|| ((hop instanceof UnaryOp || hop instanceof ParameterizedBuiltinOp) 
 					&& TemplateCell.isValidOperation(hop))		
@@ -91,7 +94,8 @@ public class TemplateRowAgg extends TemplateBase
 	public boolean merge(Hop hop, Hop input) {
 		//merge rowagg tpl with cell tpl if input is a vector
 		return !isClosed() &&
-			((hop instanceof BinaryOp && input.getDim2()==1) //matrix-scalar/vector-vector ops )
+			((hop instanceof BinaryOp && input.getDim2()==1 //matrix-scalar/vector-vector ops )
+				&& TemplateUtils.isOperationSupported(hop))
 			 ||(hop instanceof AggBinaryOp && input.getDim2()==1
 				&& HopRewriteUtils.isTransposeOperation(hop.getInput().get(0))));
 	}
@@ -126,7 +130,8 @@ public class TemplateRowAgg extends TemplateBase
 		for( Hop in : sinHops )
 			inputs.add(tmp.get(in.getHopID()));
 		CNode output = tmp.get(hop.getHopID());
-		CNodeRowAgg tpl = new CNodeRowAgg(inputs, output);
+		CNodeRow tpl = new CNodeRow(inputs, output);
+		tpl.setRowType(TemplateUtils.getRowType(hop, sinHops.get(0)));
 		tpl.setNumVectorIntermediates(TemplateUtils
 			.countVectorIntermediates(output));
 		
@@ -141,7 +146,7 @@ public class TemplateRowAgg extends TemplateBase
 			return;
 		
 		//recursively process required childs
-		MemoTableEntry me = memo.getBest(hop.getHopID(), TemplateType.RowAggTpl);
+		MemoTableEntry me = memo.getBest(hop.getHopID(), TemplateType.RowTpl);
 		for( int i=0; i<hop.getInput().size(); i++ ) {
 			Hop c = hop.getInput().get(i);
 			if( me.isPlanRef(i) )
@@ -204,13 +209,28 @@ public class TemplateRowAgg extends TemplateBase
 		else if(hop instanceof UnaryOp)
 		{
 			CNode cdata1 = tmp.get(hop.getInput().get(0).getHopID());
-			if( TemplateUtils.isColVector(cdata1) )
-				cdata1 = new CNodeUnary(cdata1, UnaryType.LOOKUP_R);
-			else if( cdata1 instanceof CNodeData && hop.getInput().get(0).getDataType().isMatrix() )
-				cdata1 = new CNodeUnary(cdata1, UnaryType.LOOKUP_RC);
 			
-			String primitiveOpName = ((UnaryOp)hop).getOp().toString();
-			out = new CNodeUnary(cdata1, UnaryType.valueOf(primitiveOpName));
+			// if one input is a matrix then we need to do vector by scalar operations
+			if(hop.getInput().get(0).getDim1() > 1 && hop.getInput().get(0).getDim2() > 1 ) 
+			{
+				if( HopRewriteUtils.isUnary(hop, SUPPORTED_VECT_UNARY) ) {
+					String opname = "VECT_"+((UnaryOp)hop).getOp().name()+"_SCALAR";
+					out = new CNodeUnary(cdata1, UnaryType.valueOf(opname));
+				}
+				else 
+					throw new RuntimeException("Unsupported unary matrix "
+							+ "operation: " + ((UnaryOp)hop).getOp().name());
+			}
+			else //general scalar case
+			{
+				if( TemplateUtils.isColVector(cdata1) )
+					cdata1 = new CNodeUnary(cdata1, UnaryType.LOOKUP_R);
+				else if( cdata1 instanceof CNodeData && hop.getInput().get(0).getDataType().isMatrix() )
+					cdata1 = new CNodeUnary(cdata1, UnaryType.LOOKUP_RC);
+				
+				String primitiveOpName = ((UnaryOp)hop).getOp().toString();
+				out = new CNodeUnary(cdata1, UnaryType.valueOf(primitiveOpName));
+			}
 		}
 		else if(hop instanceof BinaryOp)
 		{

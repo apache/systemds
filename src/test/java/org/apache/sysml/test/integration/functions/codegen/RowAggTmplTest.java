@@ -46,6 +46,9 @@ public class RowAggTmplTest extends AutomatedTestBase
 	private static final String TEST_NAME8 = TEST_NAME+"8"; //colSums((X/rowSums(X))>0.7)
 	private static final String TEST_NAME9 = TEST_NAME+"9"; //t(X) %*% (v - abs(y))
 	private static final String TEST_NAME10 = TEST_NAME+"10"; //Y=(X<=rowMins(X)); R=colSums((Y/rowSums(Y)));
+	private static final String TEST_NAME11 = TEST_NAME+"11"; //y - X %*% v
+	private static final String TEST_NAME12 = TEST_NAME+"12"; //Y=(X>=v); R=Y/rowSums(Y)
+	private static final String TEST_NAME13 = TEST_NAME+"13"; //rowSums(X)+rowSums(Y)
 	
 	private static final String TEST_DIR = "functions/codegen/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + RowAggTmplTest.class.getSimpleName() + "/";
@@ -57,108 +60,203 @@ public class RowAggTmplTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		for(int i=1; i<=10; i++)
+		for(int i=1; i<=13; i++)
 			addTestConfiguration( TEST_NAME+i, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME+i, new String[] { String.valueOf(i) }) );
 	}
 	
 	@Test	
-	public void testCodegenRowAggRewrite1() {
+	public void testCodegenRowAggRewrite1CP() {
 		testCodegenIntegration( TEST_NAME1, true, ExecType.CP );
 	}
 	
 	@Test
-	public void testCodegenRowAggRewrite2() {
-		testCodegenIntegration( TEST_NAME2, true, ExecType.CP );
-	}
-	
-	@Test
-	public void testCodegenRowAggRewrite3() {
-		testCodegenIntegration( TEST_NAME3, true, ExecType.CP );
-	}
-	
-	@Test
-	public void testCodegenRowAggRewrite4() {
-		testCodegenIntegration( TEST_NAME4, true, ExecType.CP );	
-	}
-	
-	@Test
-	public void testCodegenRowAggRewrite5() {
-		testCodegenIntegration( TEST_NAME5, true, ExecType.CP );	
-	}
-	
-	@Test
-	public void testCodegenRowAggRewrite6() {
-		testCodegenIntegration( TEST_NAME6, true, ExecType.CP );	
-	}
-	
-	@Test
-	public void testCodegenRowAggRewrite7() {
-		testCodegenIntegration( TEST_NAME7, true, ExecType.CP );	
-	}
-	
-	@Test
-	public void testCodegenRowAggRewrite8() {
-		testCodegenIntegration( TEST_NAME8, true, ExecType.CP );	
-	}
-	
-	@Test
-	public void testCodegenRowAggRewrite9() {
-		testCodegenIntegration( TEST_NAME9, true, ExecType.CP );	
-	}
-	
-	@Test
-	public void testCodegenRowAggRewrite10() {
-		testCodegenIntegration( TEST_NAME10, true, ExecType.CP );	
-	}
-	
-	@Test	
-	public void testCodegenRowAgg1() {
+	public void testCodegenRowAgg1CP() {
 		testCodegenIntegration( TEST_NAME1, false, ExecType.CP );
 	}
 	
 	@Test
-	public void testCodegenRowAgg2() {
+	public void testCodegenRowAgg1SP() {
+		testCodegenIntegration( TEST_NAME1, false, ExecType.SPARK );
+	}
+	
+	@Test	
+	public void testCodegenRowAggRewrite2CP() {
+		testCodegenIntegration( TEST_NAME2, true, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenRowAgg2CP() {
 		testCodegenIntegration( TEST_NAME2, false, ExecType.CP );
 	}
 	
 	@Test
-	public void testCodegenRowAgg3() {
+	public void testCodegenRowAgg2SP() {
+		testCodegenIntegration( TEST_NAME2, false, ExecType.SPARK );
+	}
+	
+	@Test	
+	public void testCodegenRowAggRewrite3CP() {
+		testCodegenIntegration( TEST_NAME3, true, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenRowAgg3CP() {
 		testCodegenIntegration( TEST_NAME3, false, ExecType.CP );
 	}
 	
 	@Test
-	public void testCodegenRowAgg4() {
-		testCodegenIntegration( TEST_NAME4, false, ExecType.CP );	
+	public void testCodegenRowAgg3SP() {
+		testCodegenIntegration( TEST_NAME3, false, ExecType.SPARK );
+	}
+	
+	@Test	
+	public void testCodegenRowAggRewrite4CP() {
+		testCodegenIntegration( TEST_NAME4, true, ExecType.CP );
 	}
 	
 	@Test
-	public void testCodegenRowAgg5() {
-		testCodegenIntegration( TEST_NAME5, false, ExecType.CP );	
+	public void testCodegenRowAgg4CP() {
+		testCodegenIntegration( TEST_NAME4, false, ExecType.CP );
 	}
 	
 	@Test
-	public void testCodegenRowAgg6() {
-		testCodegenIntegration( TEST_NAME6, false, ExecType.CP );	
+	public void testCodegenRowAgg4SP() {
+		testCodegenIntegration( TEST_NAME4, false, ExecType.SPARK );
+	}
+	
+	@Test	
+	public void testCodegenRowAggRewrite5CP() {
+		testCodegenIntegration( TEST_NAME5, true, ExecType.CP );
 	}
 	
 	@Test
-	public void testCodegenRowAgg7() {
-		testCodegenIntegration( TEST_NAME7, false, ExecType.CP );	
+	public void testCodegenRowAgg5CP() {
+		testCodegenIntegration( TEST_NAME5, false, ExecType.CP );
 	}
 	
 	@Test
-	public void testCodegenRowAgg8() {
-		testCodegenIntegration( TEST_NAME8, false, ExecType.CP );	
+	public void testCodegenRowAgg5SP() {
+		testCodegenIntegration( TEST_NAME5, false, ExecType.SPARK );
+	}
+	
+	@Test	
+	public void testCodegenRowAggRewrite6CP() {
+		testCodegenIntegration( TEST_NAME6, true, ExecType.CP );
 	}
 	
 	@Test
-	public void testCodegenRowAgg9() {
-		testCodegenIntegration( TEST_NAME9, false, ExecType.CP );	
+	public void testCodegenRowAgg6CP() {
+		testCodegenIntegration( TEST_NAME6, false, ExecType.CP );
 	}
 	
 	@Test
-	public void testCodegenRowAgg10() {
-		testCodegenIntegration( TEST_NAME10, false, ExecType.CP );	
+	public void testCodegenRowAgg6SP() {
+		testCodegenIntegration( TEST_NAME6, false, ExecType.SPARK );
+	}
+	
+	@Test	
+	public void testCodegenRowAggRewrite7CP() {
+		testCodegenIntegration( TEST_NAME7, true, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenRowAgg7CP() {
+		testCodegenIntegration( TEST_NAME7, false, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenRowAgg7SP() {
+		testCodegenIntegration( TEST_NAME7, false, ExecType.SPARK );
+	}
+	
+	@Test	
+	public void testCodegenRowAggRewrite8CP() {
+		testCodegenIntegration( TEST_NAME8, true, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenRowAgg8CP() {
+		testCodegenIntegration( TEST_NAME8, false, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenRowAgg8SP() {
+		testCodegenIntegration( TEST_NAME8, false, ExecType.SPARK );
+	}
+	
+	@Test	
+	public void testCodegenRowAggRewrite9CP() {
+		testCodegenIntegration( TEST_NAME9, true, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenRowAgg9CP() {
+		testCodegenIntegration( TEST_NAME9, false, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenRowAgg9SP() {
+		testCodegenIntegration( TEST_NAME9, false, ExecType.SPARK );
+	}
+	
+	@Test	
+	public void testCodegenRowAggRewrite10CP() {
+		testCodegenIntegration( TEST_NAME10, true, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenRowAgg10CP() {
+		testCodegenIntegration( TEST_NAME10, false, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenRowAgg10SP() {
+		testCodegenIntegration( TEST_NAME10, false, ExecType.SPARK );
+	}
+	
+	@Test	
+	public void testCodegenRowAggRewrite11CP() {
+		testCodegenIntegration( TEST_NAME11, true, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenRowAgg11CP() {
+		testCodegenIntegration( TEST_NAME11, false, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenRowAgg11SP() {
+		testCodegenIntegration( TEST_NAME11, false, ExecType.SPARK );
+	}
+	
+	@Test	
+	public void testCodegenRowAggRewrite12CP() {
+		testCodegenIntegration( TEST_NAME12, true, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenRowAgg12CP() {
+		testCodegenIntegration( TEST_NAME12, false, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenRowAgg12SP() {
+		testCodegenIntegration( TEST_NAME12, false, ExecType.SPARK );
+	}
+	
+	@Test	
+	public void testCodegenRowAggRewrite13CP() {
+		testCodegenIntegration( TEST_NAME13, true, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenRowAgg13CP() {
+		testCodegenIntegration( TEST_NAME13, false, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenRowAgg13SP() {
+		testCodegenIntegration( TEST_NAME13, false, ExecType.SPARK );
 	}
 	
 	private void testCodegenIntegration( String testname, boolean rewrites, ExecType instType )

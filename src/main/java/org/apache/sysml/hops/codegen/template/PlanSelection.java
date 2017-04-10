@@ -58,7 +58,7 @@ public abstract class PlanSelection
 	protected static boolean isValid(MemoTableEntry me, Hop hop) {
 		return (me.type == TemplateType.OuterProdTpl 
 				&& (me.closed || HopRewriteUtils.isBinaryMatrixMatrixOperation(hop)))
-			|| (me.type == TemplateType.RowAggTpl && me.closed)	
+			|| (me.type == TemplateType.RowTpl)	
 			|| (me.type == TemplateType.CellTpl)
 			|| (me.type == TemplateType.MultiAggTpl);
 	}

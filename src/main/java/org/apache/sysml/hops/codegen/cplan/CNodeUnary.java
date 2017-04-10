@@ -30,6 +30,7 @@ public class CNodeUnary extends CNode
 	public enum UnaryType {
 		LOOKUP_R, LOOKUP_RC, LOOKUP0, //codegen specific
 		ROW_SUMS, ROW_MINS, ROW_MAXS, //codegen specific
+		VECT_EXP_SCALAR, VECT_LOG_SCALAR,
 		EXP, POW2, MULT2, SQRT, LOG, LOG_NZ,
 		ABS, ROUND, CEIL, FLOOR, SIGN, 
 		SIN, COS, TAN, ASIN, ACOS, ATAN,
@@ -46,10 +47,19 @@ public class CNodeUnary extends CNode
 			switch( this ) {
 				case ROW_SUMS:
 				case ROW_MINS:
-				case ROW_MAXS:
+				case ROW_MAXS: {
 					String vectName = StringUtils.capitalize(this.toString().substring(4,7).toLowerCase());
 					return sparse ? "    double %TMP% = LibSpoofPrimitives.vect"+vectName+"(%IN1v%, %IN1i%, %POS1%, %LEN%);\n": 
 									"    double %TMP% = LibSpoofPrimitives.vect"+vectName+"(%IN1%, %POS1%, %LEN%);\n"; 
+				}
+			
+				case VECT_EXP_SCALAR:
+				case VECT_LOG_SCALAR: {
+					String vectName = getVectorPrimitiveName();
+					return sparse ? "    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1v%, %IN1i%, %POS1%, %LEN%);\n" : 
+									"    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %POS1%, %LEN%);\n";
+				}
+					
 				case EXP:
 					return "    double %TMP% = FastMath.exp(%IN1%);\n";
 			    case LOOKUP_R:
@@ -100,6 +110,17 @@ public class CNodeUnary extends CNode
 				default: 
 					throw new RuntimeException("Invalid unary type: "+this.toString());
 			}
+		}
+		public boolean isVectorScalarPrimitive() {
+			return this == UnaryType.VECT_EXP_SCALAR 
+				|| this == UnaryType.VECT_LOG_SCALAR;
+		}
+		public UnaryType getVectorAddPrimitive() {
+			return UnaryType.valueOf("VECT_"+getVectorPrimitiveName().toUpperCase()+"_ADD");
+		}
+		public String getVectorPrimitiveName() {
+			String [] tmp = this.name().split("_");
+			return StringUtils.capitalize(tmp[1].toLowerCase());
 		}
 	}
 	
@@ -163,6 +184,8 @@ public class CNodeUnary extends CNode
 			case ROW_SUMS:  return "u(R+)";
 			case ROW_MINS:  return "u(Rmin)";
 			case ROW_MAXS:  return "u(Rmax)";
+			case VECT_EXP_SCALAR: return "u(vexp)";
+			case VECT_LOG_SCALAR: return "u(vlog)";
 			case LOOKUP_R:	return "u(ixr)";
 			case LOOKUP_RC:	return "u(ixrc)";
 			case LOOKUP0:	return "u(ix0)";
@@ -174,6 +197,13 @@ public class CNodeUnary extends CNode
 	@Override
 	public void setOutputDims() {
 		switch(_type) {
+			case VECT_EXP_SCALAR:
+			case VECT_LOG_SCALAR:	
+				_rows = _inputs.get(0)._rows;
+				_cols = _inputs.get(0)._cols;
+				_dataType= DataType.MATRIX;
+				break;
+			
 			case ROW_SUMS:
 			case ROW_MINS:
 			case ROW_MAXS:

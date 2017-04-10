@@ -34,17 +34,32 @@ import org.apache.sysml.runtime.matrix.data.SparseBlock;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
 
-public abstract class SpoofRowAggregate extends SpoofOperator
+public abstract class SpoofRowwise extends SpoofOperator
 {
 	private static final long serialVersionUID = 6242910797139642998L;
 	private static final long PAR_NUMCELL_THRESHOLD = 1024*1024;   //Min 1M elements
 	
-	protected final boolean _colVector;
+	public enum RowType {
+		NO_AGG,    //no aggregation
+		ROW_AGG,   //row aggregation (e.g., rowSums() or X %*% v)
+		COL_AGG,   //col aggregation (e.g., colSums() or t(y) %*% X)
+		COL_AGG_T; //transposed col aggregation (e.g., t(X) %*% y)
+		
+		public boolean isColumnAgg() {
+			return (this == COL_AGG || this == COL_AGG_T);
+		}
+	}
+	
+	protected final RowType _type;
 	protected final int _reqVectMem;
 	
-	public SpoofRowAggregate(boolean colVector, int reqVectMem) {
-		_colVector = colVector;
+	public SpoofRowwise(RowType type, int reqVectMem) {
+		_type = type;
 		_reqVectMem = reqVectMem;
+	}
+	
+	public RowType getRowType() {
+		return _type;
 	}
 
 	@Override
@@ -61,9 +76,9 @@ public abstract class SpoofRowAggregate extends SpoofOperator
 			throw new RuntimeException("Invalid input arguments.");
 		
 		//result allocation and preparations
-		out.reset(_colVector ? inputs.get(0).getNumColumns() : 1, 
-			_colVector ? 1 : inputs.get(0).getNumColumns(), false);
-		out.allocateDenseBlock();
+		final int m = inputs.get(0).getNumRows();
+		final int n = inputs.get(0).getNumColumns();
+		allocateOutputMatrix(m, n, out);
 		double[] c = out.getDenseBlock();
 		
 		//input preparation
@@ -71,9 +86,8 @@ public abstract class SpoofRowAggregate extends SpoofOperator
 		double[] scalars = prepInputScalars(scalarObjects);
 		
 		//core sequential execute
-		final int m = inputs.get(0).getNumRows();
-		final int n = inputs.get(0).getNumColumns();		
-		LibSpoofPrimitives.setupThreadLocalMemory(_reqVectMem, out.getNumColumns());
+		
+		LibSpoofPrimitives.setupThreadLocalMemory(_reqVectMem, n);
 		if( !inputs.get(0).isInSparseFormat() )
 			executeDense(inputs.get(0).getDenseBlock(), b, scalars, c, n, 0, m);
 		else
@@ -81,7 +95,8 @@ public abstract class SpoofRowAggregate extends SpoofOperator
 	
 		//post-processing
 		LibSpoofPrimitives.cleanupThreadLocalMemory();
-		out.recomputeNonZeros();	
+		out.recomputeNonZeros();
+		out.examSparsity();
 	}
 	
 	@Override
@@ -99,37 +114,60 @@ public abstract class SpoofRowAggregate extends SpoofOperator
 			throw new RuntimeException("Invalid input arguments.");
 		
 		//result allocation and preparations
-		out.reset(_colVector ? inputs.get(0).getNumColumns() : 1, 
-			_colVector ? 1 : inputs.get(0).getNumColumns(), false);
-		out.allocateDenseBlock();
+		final int m = inputs.get(0).getNumRows();
+		final int n = inputs.get(0).getNumColumns();
+		allocateOutputMatrix(m, n, out);
 		
 		//input preparation
 		double[][] b = prepInputMatrices(inputs);
 		double[] scalars = prepInputScalars(scalarObjects);
 		
 		//core parallel execute
-		final int m = inputs.get(0).getNumRows();
-		final int n = inputs.get(0).getNumColumns();		
-		try {
-			ExecutorService pool = Executors.newFixedThreadPool( k );
-			ArrayList<ParExecTask> tasks = new ArrayList<ParExecTask>();
-			int nk = UtilFunctions.roundToNext(Math.min(8*k,m/32), k);
-			int blklen = (int)(Math.ceil((double)m/nk));
-			for( int i=0; i<nk & i*blklen<m; i++ )
-				tasks.add(new ParExecTask(inputs.get(0), b, scalars, n, i*blklen, Math.min((i+1)*blklen, m)));
-			//execute tasks
-			List<Future<double[]>> taskret = pool.invokeAll(tasks);	
+		ExecutorService pool = Executors.newFixedThreadPool( k );
+		int nk = UtilFunctions.roundToNext(Math.min(8*k,m/32), k);
+		int blklen = (int)(Math.ceil((double)m/nk));
+		try
+		{
+			if( _type.isColumnAgg() ) {
+				//execute tasks
+				ArrayList<ParColAggTask> tasks = new ArrayList<ParColAggTask>();
+				for( int i=0; i<nk & i*blklen<m; i++ )
+					tasks.add(new ParColAggTask(inputs.get(0), b, scalars, n, i*blklen, Math.min((i+1)*blklen, m)));
+				List<Future<double[]>> taskret = pool.invokeAll(tasks);	
+				//aggregate partial results
+				for( Future<double[]> task : taskret )
+					LibMatrixMult.vectAdd(task.get(), out.getDenseBlock(), 0, 0, n);
+				out.recomputeNonZeros();
+			}
+			else {
+				//execute tasks
+				ArrayList<ParExecTask> tasks = new ArrayList<ParExecTask>();
+				for( int i=0; i<nk & i*blklen<m; i++ )
+					tasks.add(new ParExecTask(inputs.get(0), b, out, scalars, n, i*blklen, Math.min((i+1)*blklen, m)));
+				List<Future<Long>> taskret = pool.invokeAll(tasks);
+				//aggregate nnz, no need to aggregate results
+				long nnz = 0;
+				for( Future<Long> task : taskret )
+					nnz += task.get();
+				out.setNonZeros(nnz);
+			}
+			
 			pool.shutdown();
-			//aggregate partial results
-			for( Future<double[]> task : taskret )
-				LibMatrixMult.vectAdd(task.get(), out.getDenseBlock(), 0, 0, n);
+			out.examSparsity();
 		}
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
+		}	
+	}
+	
+	private void allocateOutputMatrix(int m, int n, MatrixBlock out) {
+		switch( _type ) {
+			case NO_AGG: out.reset(m, n, false); break;
+			case ROW_AGG: out.reset(m, 1, false); break;
+			case COL_AGG: out.reset(1, n, false); break;
+			case COL_AGG_T: out.reset(n, 1, false); break;
 		}
-		
-		//post-processing
-		out.recomputeNonZeros();	
+		out.allocateDenseBlock();
 	}
 	
 	private void executeDense(double[] a, double[][] b, double[] scalars, double[] c, int n, int rl, int ru) 
@@ -169,9 +207,9 @@ public abstract class SpoofRowAggregate extends SpoofOperator
 
 	
 	/**
-	 * Task for multi-threaded operations.
+	 * Task for multi-threaded column aggregation operations.
 	 */
-	private class ParExecTask implements Callable<double[]> 
+	private class ParColAggTask implements Callable<double[]> 
 	{
 		private final MatrixBlock _a;
 		private final double[][] _b;
@@ -180,7 +218,7 @@ public abstract class SpoofRowAggregate extends SpoofOperator
 		private final int _rl;
 		private final int _ru;
 
-		protected ParExecTask( MatrixBlock a, double[][] b, double[] scalars, int clen, int rl, int ru ) {
+		protected ParColAggTask( MatrixBlock a, double[][] b, double[] scalars, int clen, int rl, int ru ) {
 			_a = a;
 			_b = b;
 			_scalars = scalars;
@@ -203,6 +241,45 @@ public abstract class SpoofRowAggregate extends SpoofOperator
 			
 			LibSpoofPrimitives.cleanupThreadLocalMemory();
 			return c;
+		}
+	}
+	
+	/**
+	 * Task for multi-threaded execution with no or row aggregation.
+	 */
+	private class ParExecTask implements Callable<Long> 
+	{
+		private final MatrixBlock _a;
+		private final double[][] _b;
+		private final MatrixBlock _c;
+		private final double[] _scalars;
+		private final int _clen;
+		private final int _rl;
+		private final int _ru;
+
+		protected ParExecTask( MatrixBlock a, double[][] b, MatrixBlock c, double[] scalars, int clen, int rl, int ru ) {
+			_a = a;
+			_b = b;
+			_c = c;
+			_scalars = scalars;
+			_clen = clen;
+			_rl = rl;
+			_ru = ru;
+		}
+		
+		@Override
+		public Long call() throws DMLRuntimeException {
+			//allocate vector intermediates
+			LibSpoofPrimitives.setupThreadLocalMemory(_reqVectMem, _clen);
+			
+			if( !_a.isInSparseFormat() )
+				executeDense(_a.getDenseBlock(), _b, _scalars, _c.getDenseBlock(), _clen, _rl, _ru);
+			else
+				executeSparse(_a.getSparseBlock(), _b, _scalars, _c.getDenseBlock(), _clen, _rl, _ru);
+			LibSpoofPrimitives.cleanupThreadLocalMemory();
+			
+			//maintain nnz for row partition
+			return _c.recomputeNonZeros(_rl, _ru-1, 0, _c.getNumColumns()-1);
 		}
 	}
 }

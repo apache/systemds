@@ -68,6 +68,8 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 	private static final double COMPUTE_BANDWIDTH = 2d*1024*1024*1024 //2GFLOPs/core
 		* InfrastructureAnalyzer.getLocalParallelism();
 	
+	private final static TemplateRow ROW_TPL = new TemplateRow();
+	
 	@Override
 	public void selectPlans(CPlanMemoTable memo, ArrayList<Hop> roots) 
 	{
@@ -466,6 +468,11 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 			for( Long hopID : R )
 				rPruneSuboptimalPlans(memo, memo._hopRefs.get(hopID), 
 					visited, partition, M, bestPlan);
+			HashSet<Long> visited2 = new HashSet<Long>();
+			for( Long hopID : R )
+				rPruneInvalidPlans(memo, memo._hopRefs.get(hopID), 
+					visited2, partition, M, bestPlan);
+			
 			for( Long hopID : R )
 				rSelectPlansFuseAll(memo, 
 					memo._hopRefs.get(hopID), null, partition);
@@ -494,6 +501,48 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 		//process children recursively
 		for( Hop c : current.getInput() )
 			rPruneSuboptimalPlans(memo, c, visited, partition, M, plan);
+		
+		visited.add(current.getHopID());		
+	}
+	
+	private static void rPruneInvalidPlans(CPlanMemoTable memo, Hop current, HashSet<Long> visited, HashSet<Long> partition, ArrayList<Long> M, boolean[] plan) {
+		//memoization (not via hops because in middle of dag)
+		if( visited.contains(current.getHopID()) )
+			return;
+		
+		//process children recursively
+		for( Hop c : current.getInput() )
+			rPruneInvalidPlans(memo, c, visited, partition, M, plan);
+		
+		//find invalid row aggregate leaf nodes (see TemplateRow.open) w/o matrix inputs, 
+		//i.e., plans that become invalid after the previous pruning step
+		long hopID = current.getHopID();
+		if( partition.contains(hopID) && memo.contains(hopID, TemplateType.RowTpl) ) {
+			for( MemoTableEntry me : memo.get(hopID) ) {
+				if( me.type==TemplateType.RowTpl ) {
+					//convert leaf node with pure vector inputs
+					if( !me.hasPlanRef() && !TemplateUtils.hasMatrixInput(current) ) {
+						me.type = TemplateType.CellTpl;
+						if( LOG.isTraceEnabled() )
+							LOG.trace("Converted leaf memo table entry from row to cell: "+me);
+					}
+					
+					//convert inner node without row template input
+					if( me.hasPlanRef() && !ROW_TPL.open(current) ) {
+						boolean hasRowInput = false;
+						for( int i=0; i<3; i++ )
+							if( me.isPlanRef(i) )
+								hasRowInput |= memo.contains(me.input(i), TemplateType.RowTpl);
+						if( !hasRowInput ) {
+							me.type = TemplateType.CellTpl;
+							if( LOG.isTraceEnabled() )
+								LOG.trace("Converted inner memo table entry from row to cell: "+me);	
+						}
+					}
+					
+				}
+			}
+		}
 		
 		visited.add(current.getHopID());		
 	}

@@ -43,6 +43,7 @@ import org.apache.sysml.hops.codegen.cplan.CNodeData;
 import org.apache.sysml.hops.codegen.cplan.CNodeTernary;
 import org.apache.sysml.hops.codegen.cplan.CNodeUnary;
 import org.apache.sysml.hops.codegen.cplan.CNodeUnary.UnaryType;
+import org.apache.sysml.hops.codegen.template.CPlanMemoTable.MemoTableEntry;
 import org.apache.sysml.hops.codegen.template.TemplateBase.TemplateType;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.hops.codegen.cplan.CNodeTernary.TernaryType;
@@ -50,11 +51,12 @@ import org.apache.sysml.hops.codegen.cplan.CNodeTpl;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.codegen.SpoofCellwise.CellType;
 import org.apache.sysml.runtime.codegen.SpoofOuterProduct.OutProdType;
+import org.apache.sysml.runtime.codegen.SpoofRowwise.RowType;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class TemplateUtils 
 {
-	public static final TemplateBase[] TEMPLATES = new TemplateBase[]{new TemplateRowAgg(), new TemplateCell(), new TemplateOuterProduct()};
+	public static final TemplateBase[] TEMPLATES = new TemplateBase[]{new TemplateRow(), new TemplateCell(), new TemplateOuterProduct()};
 	
 	public static boolean isVector(Hop hop) {
 		return (hop.getDataType() == DataType.MATRIX 
@@ -98,6 +100,13 @@ public class TemplateUtils
 		return left.dimsKnown() && right.dimsKnown() 
 			&& left.getDataType().isMatrix() && right.getDataType().isMatrix()
 			&& left.getDim2() > right.getDim2();
+	}
+	
+	public static boolean hasMatrixInput( Hop hop ) {
+		for( Hop c : hop.getInput() )
+			if( isMatrix(c) )
+				return true;
+		return false;
 	}
 
 	public static boolean isOperationSupported(Hop h) {
@@ -187,7 +196,7 @@ public class TemplateUtils
 		TemplateBase tpl = null;
 		switch( type ) {
 			case CellTpl: tpl = new TemplateCell(closed); break;
-			case RowAggTpl: tpl = new TemplateRowAgg(closed); break;
+			case RowTpl: tpl = new TemplateRow(closed); break;
 			case MultiAggTpl: tpl = new TemplateMultiAgg(closed); break;
 			case OuterProdTpl: tpl = new TemplateOuterProduct(closed); break;
 		}
@@ -197,8 +206,8 @@ public class TemplateUtils
 	public static TemplateBase[] createCompatibleTemplates(TemplateType type, boolean closed) {
 		TemplateBase[] tpl = null;
 		switch( type ) {
-			case CellTpl: tpl = new TemplateBase[]{new TemplateCell(closed), new TemplateRowAgg(closed)}; break;
-			case RowAggTpl: tpl = new TemplateBase[]{new TemplateRowAgg(closed)}; break;
+			case CellTpl: tpl = new TemplateBase[]{new TemplateCell(closed), new TemplateRow(closed)}; break;
+			case RowTpl: tpl = new TemplateBase[]{new TemplateRow(closed)}; break;
 			case MultiAggTpl: tpl = new TemplateBase[]{new TemplateMultiAgg(closed)}; break;
 			case OuterProdTpl: tpl = new TemplateBase[]{new TemplateOuterProduct(closed)}; break;
 		}
@@ -209,6 +218,17 @@ public class TemplateUtils
 		return (hop instanceof AggBinaryOp) ? CellType.FULL_AGG :
 			(hop instanceof AggUnaryOp) ? ((((AggUnaryOp) hop).getDirection() == Direction.RowCol) ? 
 			CellType.FULL_AGG : CellType.ROW_AGG) : CellType.NO_AGG;
+	}
+	
+	public static RowType getRowType(Hop output, Hop input) {
+		if( HopRewriteUtils.isEqualSize(output, input) )
+			return RowType.NO_AGG;
+		else if( output.getDim1()==input.getDim1() && output.getDim2()==1 )
+			return RowType.ROW_AGG;
+		else if( output.getDim1()==input.getDim2() && output.getDim2()==1 )
+			return RowType.COL_AGG_T;
+		else
+			return RowType.COL_AGG;
 	}
 	
 	public static AggOp getAggOp(Hop hop) {
@@ -292,11 +312,36 @@ public class TemplateUtils
 		int ret = 0;
 		for( CNode c : node.getInput() )
 			ret += countVectorIntermediates(c);
-		return ret + ((node instanceof CNodeBinary 
+		int cntBin = ((node instanceof CNodeBinary 
 			&& ((CNodeBinary)node).getType().isVectorScalarPrimitive()) ? 1 : 0);
+		int cntUn = ((node instanceof CNodeUnary
+				&& ((CNodeUnary)node).getType().isVectorScalarPrimitive()) ? 1 : 0);
+		return ret + cntBin + cntUn;
 	}
 
 	public static boolean isType(TemplateType type, TemplateType... validTypes) {
 		return ArrayUtils.contains(validTypes, type);
+	}
+	
+	public static boolean hasCommonRowTemplateMatrixInput(Hop input1, Hop input2, CPlanMemoTable memo) {
+		//if second input has no row template, it's always true
+		if( !memo.contains(input2.getHopID(), TemplateType.RowTpl) )
+			return true;
+		//check for common row template input
+		return getRowTemplateMatrixInput(input1, memo)
+			== getRowTemplateMatrixInput(input2, memo);
+	}
+	
+	public static long getRowTemplateMatrixInput(Hop current, CPlanMemoTable memo) {
+		MemoTableEntry me = memo.getBest(current.getHopID(), TemplateType.RowTpl);
+		long ret = -1;
+		for( int i=0; ret<0 && i<current.getInput().size(); i++ ) {
+			Hop input = current.getInput().get(i);
+			if( me.isPlanRef(i) && memo.contains(input.getHopID(), TemplateType.RowTpl) )
+				ret = getRowTemplateMatrixInput(input, memo);
+			else if( !me.isPlanRef(i) && isMatrix(input) )
+				ret = input.getHopID();
+		}
+		return ret;
 	}
 }

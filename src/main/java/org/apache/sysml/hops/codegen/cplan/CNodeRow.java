@@ -20,19 +20,23 @@
 package org.apache.sysml.hops.codegen.cplan;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import org.apache.sysml.hops.codegen.SpoofFusedOp.SpoofOutputDimsType;
+import org.apache.sysml.runtime.codegen.SpoofRowwise.RowType;
 
-public class CNodeRowAgg extends CNodeTpl
+public class CNodeRow extends CNodeTpl
 {
 	private static final String TEMPLATE = 
 			  "package codegen;\n"
 			+ "import org.apache.sysml.runtime.codegen.LibSpoofPrimitives;\n"
-			+ "import org.apache.sysml.runtime.codegen.SpoofRowAggregate;\n"
+			+ "import org.apache.sysml.runtime.codegen.SpoofRowwise;\n"
+			+ "import org.apache.sysml.runtime.codegen.SpoofRowwise.RowType;\n"
+			+ "import org.apache.commons.math3.util.FastMath;\n"
 			+ "\n"
-			+ "public final class %TMP% extends SpoofRowAggregate { \n"
+			+ "public final class %TMP% extends SpoofRowwise { \n"
 			+ "  public %TMP%() {\n"
-			+ "    super(%COL_VECTOR%, %VECT_MEM%);\n"
+			+ "    super(RowType.%TYPE%, %VECT_MEM%);\n"
 			+ "  }\n"
 			+ "  protected void genexecRowDense( double[] a, int ai, double[][] b, double[] scalars, double[] c, int len, int rowIndex ) { \n"
 			+ "%BODY_dense%"
@@ -42,12 +46,15 @@ public class CNodeRowAgg extends CNodeTpl
 			+ "  }\n"			
 			+ "}\n";
 
-	public CNodeRowAgg(ArrayList<CNode> inputs, CNode output ) {
+	private static final String TEMPLATE_ROWAGG_OUT = "    c[rowIndex] = %IN%;\n";
+	private static final String TEMPLATE_NOAGG_OUT = "    LibSpoofPrimitives.vectWrite(%IN%, c, rowIndex*len, len);\n";
+	
+	public CNodeRow(ArrayList<CNode> inputs, CNode output ) {
 		super(inputs, output);
 	}
 	
-	//number of intermediate vectors
-	private int _numVectors = -1;
+	private RowType _type = null; //access pattern 
+	private int _numVectors = -1; //number of intermediate vectors
 	
 	public void setNumVectorIntermediates(int num) {
 		_numVectors = num;
@@ -55,6 +62,15 @@ public class CNodeRowAgg extends CNodeTpl
 	
 	public int getNumVectorIntermediates() {
 		return _numVectors;
+	}
+	
+	public void setRowType(RowType type) {
+		_type = type;
+		_hash = 0;
+	}
+	
+	public RowType getRowType() {
+		return _type;
 	}
 	
 	@Override
@@ -67,9 +83,11 @@ public class CNodeRowAgg extends CNodeTpl
 		renameInputs(_inputs, 1);
 		
 		//generate dense/sparse bodies
-		String tmpDense = _output.codegen(false);
+		String tmpDense = _output.codegen(false)
+			+ getOutputStatement(_output.getVarname());
 		_output.resetGenerated();
-		String tmpSparse = _output.codegen(true);
+		String tmpSparse = _output.codegen(true)
+			+ getOutputStatement(_output.getVarname());
 		tmp = tmp.replaceAll("%TMP%", createVarname());
 		tmp = tmp.replaceAll("%BODY_dense%", tmpDense);
 		tmp = tmp.replaceAll("%BODY_sparse%", tmpSparse);
@@ -82,10 +100,19 @@ public class CNodeRowAgg extends CNodeTpl
 		tmp = tmp.replaceAll("%LEN%", "len");
 		
 		//replace colvector information and number of vector intermediates
-		tmp = tmp.replaceAll("%COL_VECTOR%", String.valueOf(_output._cols==1));
+		tmp = tmp.replaceAll("%TYPE%", _type.name());
 		tmp = tmp.replaceAll("%VECT_MEM%", String.valueOf(_numVectors));
 		
 		return tmp;
+	}
+	
+	private String getOutputStatement(String varName) {
+		if( !_type.isColumnAgg() ) {
+			String tmp = (_type==RowType.NO_AGG) ?
+				TEMPLATE_NOAGG_OUT : TEMPLATE_ROWAGG_OUT;
+			return tmp.replace("%IN%", varName);
+		}
+		return "";
 	}
 
 	@Override
@@ -103,21 +130,31 @@ public class CNodeRowAgg extends CNodeTpl
 	
 	@Override
 	public CNodeTpl clone() {
-		return new CNodeRowAgg(_inputs, _output);
+		CNodeRow tmp = new CNodeRow(_inputs, _output);
+		tmp.setRowType(_type);
+		tmp.setNumVectorIntermediates(_numVectors);
+		return tmp;
 	}
 	
 	@Override
 	public int hashCode() {
-		return super.hashCode();
+		if( _hash == 0 ) {
+			int h1 = super.hashCode();
+			int h2 = _type.hashCode();
+			int h3 = _numVectors;
+			_hash = Arrays.hashCode(new int[]{h1,h2,h3});
+		}
+		return _hash;
 	}
 	
 	@Override 
 	public boolean equals(Object o) {
-		if(!(o instanceof CNodeRowAgg))
+		if(!(o instanceof CNodeRow))
 			return false;
 		
-		CNodeRowAgg that = (CNodeRowAgg)o;
+		CNodeRow that = (CNodeRow)o;
 		return super.equals(o)
+			&& _type == that._type
 			&& _numVectors == that._numVectors	
 			&& equalInputReferences(
 				_output, that._output, _inputs, that._inputs);
@@ -126,7 +163,9 @@ public class CNodeRowAgg extends CNodeTpl
 	@Override
 	public String getTemplateInfo() {
 		StringBuilder sb = new StringBuilder();
-		sb.append("SPOOF ROWAGGREGATE [reqVectMem=");
+		sb.append("SPOOF ROWAGGREGATE [type=");
+		sb.append(_type.name());
+		sb.append(", reqVectMem=");
 		sb.append(_numVectors);
 		sb.append("]");
 		return sb.toString();

@@ -440,7 +440,8 @@ public class SpoofCompiler
 				Hop input2 = hop.getInput().get(k);
 				if( memo.contains(input2.getHopID()) && !memo.get(input2.getHopID()).get(0).closed
 					&& TemplateUtils.isType(memo.get(input2.getHopID()).get(0).type, tpl.getType(), TemplateType.CellTpl)
-					&& tpl.merge(hop, input2) ) 
+					&& tpl.merge(hop, input2) && (tpl.getType()!=TemplateType.RowTpl || pos==-1 
+						|| TemplateUtils.hasCommonRowTemplateMatrixInput(hop.getInput().get(pos), input2, memo)))
 					P.crossProduct(k, -1L, input2.getHopID());
 				else
 					P.crossProduct(k, -1L);

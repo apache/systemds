@@ -253,7 +253,7 @@ public class CPlanMemoTable
 	
 	public static class MemoTableEntry 
 	{
-		public final TemplateType type;
+		public TemplateType type;
 		public final long input1; 
 		public final long input2;
 		public final long input3;

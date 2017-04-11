@@ -21,7 +21,6 @@ package org.apache.sysml.runtime.instructions.gpu.context;
 import static jcuda.driver.JCudaDriver.cuCtxCreate;
 import static jcuda.driver.JCudaDriver.cuCtxGetCurrent;
 import static jcuda.driver.JCudaDriver.cuDeviceGet;
-import static jcuda.driver.JCudaDriver.cuInit;
 import static jcuda.driver.JCudaDriver.cuLaunchKernel;
 import static jcuda.driver.JCudaDriver.cuModuleGetFunction;
 import static jcuda.driver.JCudaDriver.cuModuleLoadDataEx;
@@ -32,7 +31,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 
-import jcuda.runtime.JCuda;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
 
@@ -43,6 +41,7 @@ import jcuda.driver.CUdevice;
 import jcuda.driver.CUfunction;
 import jcuda.driver.CUmodule;
 import jcuda.driver.CUresult;
+import jcuda.runtime.JCuda;
 
 /**
  * Utility class that allows LibMatrixCUDA as well as GPUObject to invoke custom CUDA kernels.
@@ -54,36 +53,36 @@ import jcuda.driver.CUresult;
  */
 public class JCudaKernels {
 
-	private static String ptxFileName = "/kernels/SystemML.ptx";
+	private final static String ptxFileName = "/kernels/SystemML.ptx";
 	private HashMap<String, CUfunction> kernels = new HashMap<String, CUfunction>();
 	private CUmodule module;
+	private final int deviceNum;
 	
 	/**
 	 * Loads the kernels in the file ptxFileName. Though cubin files are also supported, we will stick with
 	 * ptx file as they are target-independent similar to Java's .class files.
-	 * 
+	 * @param deviceNum  the device number for which to initiate the driver API
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public JCudaKernels() throws DMLRuntimeException {
+	JCudaKernels(int deviceNum) throws DMLRuntimeException {
+		this.deviceNum = deviceNum;
 		shutdown();
-		initCUDA();
+		initCUDA(deviceNum);
 		module = new CUmodule();
 		// Load the kernels specified in the ptxFileName file
 		checkResult(cuModuleLoadDataEx(module, initKernels(ptxFileName), 0, new int[0], Pointer.to(new int[0])));
 	}
-	
-	/**
-     * Initializes the JCuda driver API. Then it will try to attach to the 
-     * current CUDA context. If no active CUDA context exists, then it will 
-     * try to create one, for the device which is specified by the current 
-     * deviceNumber.
-     * 
-	 * @throws DMLRuntimeException If it is neither possible to attach to an 
-     * existing context, nor to create a new context.
-     */
-    private static void initCUDA() throws DMLRuntimeException {
-        checkResult(cuInit(0));
 
+	/**
+	 * Initializes the JCuda driver API. Then it will try to attach to the
+	 * current CUDA context. If no active CUDA context exists, then it will
+	 * try to create one, for the device which is specified by the current
+	 * deviceNumber.
+	 * @param deviceNum device number for which to initialize this
+	 * @throws DMLRuntimeException If it is neither possible to attach to an 
+	 * existing context, nor to create a new context.
+	 */
+    private static void initCUDA(int deviceNum) throws DMLRuntimeException {
         // Try to obtain the current context
         CUcontext context = new CUcontext();
         checkResult(cuCtxGetCurrent(context));
@@ -92,19 +91,18 @@ public class JCudaKernels {
         // has to be created.
         CUcontext nullContext = new CUcontext(); 
         if (context.equals(nullContext)) {
-            createContext();
+            createContext(deviceNum);
         }
     }
     
     /**
      * Tries to create a context for device 'deviceNumber'.
-     * @throws DMLRuntimeException 
-     * 
+		 * @param deviceNumber the GPU for which to create the context
+     * @throws DMLRuntimeException if error
      * @throws CudaException If the device can not be 
      * accessed or the context can not be created
      */
-    private static void createContext() throws DMLRuntimeException {
-    	int deviceNumber = 0;
+    private static void createContext(int deviceNumber) throws DMLRuntimeException {
         CUdevice device = new CUdevice();
         checkResult(cuDeviceGet(device, deviceNumber));
         CUcontext context = new CUcontext();

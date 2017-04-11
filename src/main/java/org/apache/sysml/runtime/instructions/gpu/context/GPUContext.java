@@ -129,7 +129,7 @@ public class GPUContext {
     // cublasSetPointerMode(LibMatrixCUDA.cublasHandle, cublasPointerMode.CUBLAS_POINTER_MODE_DEVICE);
     cusparseHandle = new cusparseHandle();
     cusparseCreate(cusparseHandle);
-    kernels = new JCudaKernels();
+    kernels = new JCudaKernels(deviceNum);
 
     GPUStatistics.cudaLibrariesInitTime = System.nanoTime() - start;
     LOG.info(" GPU memory - Total: " + (total[0] * (1e-6)) + " MB, Available: " + (free[0] * (1e-6)) + " MB on " + this);

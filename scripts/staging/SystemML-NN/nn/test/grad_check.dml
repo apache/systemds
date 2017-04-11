@@ -23,7 +23,8 @@
  * Gradient checks for various architectures.
  */
 source("nn/layers/affine.dml") as affine
-source("nn/layers/batch_norm.dml") as batch_norm
+source("nn/layers/batch_norm1d.dml") as batch_norm1d
+source("nn/layers/batch_norm2d.dml") as batch_norm2d
 source("nn/layers/conv2d.dml") as conv2d
 source("nn/layers/conv2d_builtin.dml") as conv2d_builtin
 source("nn/layers/cross_entropy_loss.dml") as cross_entropy_loss
@@ -40,7 +41,6 @@ source("nn/layers/relu.dml") as relu
 source("nn/layers/rnn.dml") as rnn
 source("nn/layers/sigmoid.dml") as sigmoid
 source("nn/layers/softmax.dml") as softmax
-source("nn/layers/spatial_batch_norm.dml") as spatial_batch_norm
 source("nn/layers/tanh.dml") as tanh
 source("nn/test/conv2d_simple.dml") as conv2d_simple
 source("nn/test/max_pool2d_simple.dml") as max_pool2d_simple
@@ -125,11 +125,11 @@ affine = function() {
   }
 }
 
-batch_norm = function() {
+batch_norm1d = function() {
   /*
-   * Gradient check for the batch normalization layer.
+   * Gradient check for the 1D batch normalization layer.
    */
-  print("Grad checking the batch normalization layer with L2 loss.")
+  print("Grad checking the 1D batch normalization layer with L2 loss.")
 
   # Generate data
   N = 3 # num examples
@@ -142,7 +142,7 @@ batch_norm = function() {
   beta = rand(rows=1, cols=D)
   ema_mean = rand(rows=1, cols=D)
   ema_var = rand(rows=1, cols=D)
-  #[dummy, dummy, ema_mean, ema_var] = batch_norm::init(D)
+  #[dummy, dummy, ema_mean, ema_var] = batch_norm1d::init(D)
 
   # Check training & testing modes
   for (i in 1:2) {
@@ -154,11 +154,11 @@ batch_norm = function() {
 
     # Compute analytical gradients of loss wrt parameters
     [out, ema_mean_upd, ema_var_upd, cache_mean, cache_var, cache_norm] =
-        batch_norm::forward(X, gamma, beta, mode, ema_mean, ema_var, mu, eps)
+        batch_norm1d::forward(X, gamma, beta, mode, ema_mean, ema_var, mu, eps)
     dout = l2_loss::backward(out, y)
-    [dX, dgamma, dbeta] = batch_norm::backward(dout, out, ema_mean_upd, ema_var_upd,
-                                               cache_mean, cache_var, cache_norm,
-                                               X, gamma, beta, mode, ema_mean, ema_var, mu, eps)
+    [dX, dgamma, dbeta] = batch_norm1d::backward(dout, out, ema_mean_upd, ema_var_upd,
+                                                 cache_mean, cache_var, cache_norm,
+                                                 X, gamma, beta, mode, ema_mean, ema_var, mu, eps)
 
     # Grad check
     h = 1e-5
@@ -169,11 +169,11 @@ batch_norm = function() {
         old = as.scalar(X[i,j])
         X[i,j] = old - h
         [outmh, ema_mean_upd, ema_var_upd, cache_mean, cache_var, cache_norm] =
-            batch_norm::forward(X, gamma, beta, mode, ema_mean, ema_var, mu, eps)
+            batch_norm1d::forward(X, gamma, beta, mode, ema_mean, ema_var, mu, eps)
         lossmh = l2_loss::forward(outmh, y)
         X[i,j] = old + h
         [outph, ema_mean_upd, ema_var_upd, cache_mean, cache_var, cache_norm] =
-            batch_norm::forward(X, gamma, beta, mode, ema_mean, ema_var, mu, eps)
+            batch_norm1d::forward(X, gamma, beta, mode, ema_mean, ema_var, mu, eps)
         lossph = l2_loss::forward(outph, y)
         X[i,j] = old  # reset
         dX_num = (lossph-lossmh) / (2*h)  # numerical derivative
@@ -190,11 +190,11 @@ batch_norm = function() {
         old = as.scalar(gamma[i,j])
         gamma[i,j] = old - h
         [outmh, ema_mean_upd, ema_var_upd, cache_mean, cache_var, cache_norm] =
-            batch_norm::forward(X, gamma, beta, mode, ema_mean, ema_var, mu, eps)
+            batch_norm1d::forward(X, gamma, beta, mode, ema_mean, ema_var, mu, eps)
         lossmh = l2_loss::forward(outmh, y)
         gamma[i,j] = old + h
         [outph, ema_mean_upd, ema_var_upd, cache_mean, cache_var, cache_norm] =
-            batch_norm::forward(X, gamma, beta, mode, ema_mean, ema_var, mu, eps)
+            batch_norm1d::forward(X, gamma, beta, mode, ema_mean, ema_var, mu, eps)
         lossph = l2_loss::forward(outph, y)
         gamma[i,j] = old  # reset
         dgamma_num = (lossph-lossmh) / (2*h)  # numerical derivative
@@ -212,11 +212,11 @@ batch_norm = function() {
         old = as.scalar(beta[i,j])
         beta[i,j] = old - h
         [outmh, ema_mean_upd, ema_var_upd, cache_mean, cache_var, cache_norm] =
-            batch_norm::forward(X, gamma, beta, mode, ema_mean, ema_var, mu, eps)
+            batch_norm1d::forward(X, gamma, beta, mode, ema_mean, ema_var, mu, eps)
         lossmh = l2_loss::forward(outmh, y)
         beta[i,j] = old + h
         [outph, ema_mean_upd, ema_var_upd, cache_mean, cache_var, cache_norm] =
-            batch_norm::forward(X, gamma, beta, mode, ema_mean, ema_var, mu, eps)
+            batch_norm1d::forward(X, gamma, beta, mode, ema_mean, ema_var, mu, eps)
         lossph = l2_loss::forward(outph, y)
         beta[i,j] = old  # reset
         dbeta_num = (lossph-lossmh) / (2*h)  # numerical derivative
@@ -1276,11 +1276,11 @@ softmax = function() {
   }
 }
 
-spatial_batch_norm = function() {
+batch_norm2d = function() {
   /*
-   * Gradient check for the spatial batch normalization layer.
+   * Gradient check for the 2D (spatial) batch normalization layer.
    */
-  print("Grad checking the spatial batch normalization layer with L2 loss.")
+  print("Grad checking the 2D (spatial) batch normalization layer with L2 loss.")
 
   # Generate data
   N = 3 # num examples
@@ -1296,7 +1296,7 @@ spatial_batch_norm = function() {
   beta = rand(rows=C, cols=1)
   ema_mean = rand(rows=C, cols=1)
   ema_var = rand(rows=C, cols=1)
-  #[dummy, dummy, ema_mean, ema_var] = spatial_batch_norm::init(C)
+  #[dummy, dummy, ema_mean, ema_var] = batch_norm2d::init(C)
 
   # Check training & testing modes
   for (i in 1:2) {
@@ -1308,12 +1308,12 @@ spatial_batch_norm = function() {
 
     # Compute analytical gradients of loss wrt parameters
     [out, ema_mean_upd, ema_var_upd, cache_mean, cache_var, cache_norm] =
-        spatial_batch_norm::forward(X, gamma, beta, C, Hin, Win, mode, ema_mean, ema_var, mu, eps)
+        batch_norm2d::forward(X, gamma, beta, C, Hin, Win, mode, ema_mean, ema_var, mu, eps)
     dout = l2_loss::backward(out, y)
-    [dX, dgamma, dbeta] = spatial_batch_norm::backward(dout, out, ema_mean_upd, ema_var_upd,
-                                                       cache_mean, cache_var, cache_norm,
-                                                       X, gamma, beta, C, Hin, Win, mode,
-                                                       ema_mean, ema_var, mu, eps)
+    [dX, dgamma, dbeta] = batch_norm2d::backward(dout, out, ema_mean_upd, ema_var_upd,
+                                                 cache_mean, cache_var, cache_norm,
+                                                 X, gamma, beta, C, Hin, Win, mode,
+                                                 ema_mean, ema_var, mu, eps)
 
     # Grad check
     h = 1e-5
@@ -1324,13 +1324,11 @@ spatial_batch_norm = function() {
         old = as.scalar(X[i,j])
         X[i,j] = old - h
         [outmh, ema_mean_upd, ema_var_upd, cache_mean, cache_var, cache_norm] =
-            spatial_batch_norm::forward(X, gamma, beta, C, Hin, Win, mode,
-                                        ema_mean, ema_var, mu, eps)
+            batch_norm2d::forward(X, gamma, beta, C, Hin, Win, mode, ema_mean, ema_var, mu, eps)
         lossmh = l2_loss::forward(outmh, y)
         X[i,j] = old + h
         [outph, ema_mean_upd, ema_var_upd, cache_mean, cache_var, cache_norm] =
-            spatial_batch_norm::forward(X, gamma, beta, C, Hin, Win, mode,
-                                        ema_mean, ema_var, mu, eps)
+            batch_norm2d::forward(X, gamma, beta, C, Hin, Win, mode, ema_mean, ema_var, mu, eps)
         lossph = l2_loss::forward(outph, y)
         X[i,j] = old  # reset
         dX_num = (lossph-lossmh) / (2*h)  # numerical derivative
@@ -1347,13 +1345,11 @@ spatial_batch_norm = function() {
         old = as.scalar(gamma[i,j])
         gamma[i,j] = old - h
         [outmh, ema_mean_upd, ema_var_upd, cache_mean, cache_var, cache_norm] =
-            spatial_batch_norm::forward(X, gamma, beta, C, Hin, Win, mode,
-                                        ema_mean, ema_var, mu, eps)
+            batch_norm2d::forward(X, gamma, beta, C, Hin, Win, mode, ema_mean, ema_var, mu, eps)
         lossmh = l2_loss::forward(outmh, y)
         gamma[i,j] = old + h
         [outph, ema_mean_upd, ema_var_upd, cache_mean, cache_var, cache_norm] =
-            spatial_batch_norm::forward(X, gamma, beta, C, Hin, Win, mode,
-                                        ema_mean, ema_var, mu, eps)
+            batch_norm2d::forward(X, gamma, beta, C, Hin, Win, mode, ema_mean, ema_var, mu, eps)
         lossph = l2_loss::forward(outph, y)
         gamma[i,j] = old  # reset
         dgamma_num = (lossph-lossmh) / (2*h)  # numerical derivative
@@ -1371,13 +1367,11 @@ spatial_batch_norm = function() {
         old = as.scalar(beta[i,j])
         beta[i,j] = old - h
         [outmh, ema_mean_upd, ema_var_upd, cache_mean, cache_var, cache_norm] =
-            spatial_batch_norm::forward(X, gamma, beta, C, Hin, Win, mode,
-                                        ema_mean, ema_var, mu, eps)
+            batch_norm2d::forward(X, gamma, beta, C, Hin, Win, mode, ema_mean, ema_var, mu, eps)
         lossmh = l2_loss::forward(outmh, y)
         beta[i,j] = old + h
         [outph, ema_mean_upd, ema_var_upd, cache_mean, cache_var, cache_norm] =
-            spatial_batch_norm::forward(X, gamma, beta, C, Hin, Win, mode,
-                                        ema_mean, ema_var, mu, eps)
+            batch_norm2d::forward(X, gamma, beta, C, Hin, Win, mode, ema_mean, ema_var, mu, eps)
         lossph = l2_loss::forward(outph, y)
         beta[i,j] = old  # reset
         dbeta_num = (lossph-lossmh) / (2*h)  # numerical derivative

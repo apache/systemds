@@ -37,7 +37,8 @@ tmp = grad_check::log_loss()
 
 # Other layers
 tmp = grad_check::affine()
-tmp = grad_check::batch_norm()
+tmp = grad_check::batch_norm1d()
+tmp = grad_check::batch_norm2d()
 tmp = grad_check::conv2d_simple()
 tmp = grad_check::conv2d()
 tmp = grad_check::conv2d_builtin()
@@ -52,7 +53,6 @@ tmp = grad_check::relu()
 tmp = grad_check::rnn()
 tmp = grad_check::sigmoid()
 tmp = grad_check::softmax()
-tmp = grad_check::spatial_batch_norm()
 tmp = grad_check::tanh()
 
 # Example model
@@ -69,13 +69,13 @@ print("")
 print("Starting other tests.")
 print("---")
 
-tmp = test::batch_norm()
+tmp = test::batch_norm1d()
+tmp = test::batch_norm2d()
 tmp = test::im2col()
 tmp = test::padding()
 tmp = test::conv2d()
 tmp = test::cross_entropy_loss()
 tmp = test::max_pool2d()
-tmp = test::spatial_batch_norm()
 tmp = test::tanh()
 
 print("---")

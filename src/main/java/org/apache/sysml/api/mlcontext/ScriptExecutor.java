@@ -48,6 +48,7 @@ import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysml.utils.Explain;
 import org.apache.sysml.utils.Explain.ExplainCounts;
 import org.apache.sysml.utils.Explain.ExplainType;
@@ -244,6 +245,17 @@ public class ScriptExecutor {
 		if (symbolTable != null) {
 			executionContext.setVariables(symbolTable);
 		}
+		try {
+			if (gpu) {
+				GPUContext gCtx = GPUContextPool.getFromPool();
+				if (gCtx == null)
+					throw new MLContextException("GPU : no GPUs or no more free GPUs available");
+				executionContext.setGPUContext(gCtx);
+			}
+		} catch (DMLRuntimeException e) {
+			throw new MLContextException("GPU : Exception occurred during initialization");
+		}
+
 	}
 
 	/**
@@ -324,12 +336,6 @@ public class ScriptExecutor {
 		script.setScriptExecutor(this);
 		// Set global variable indicating the script type
 		DMLScript.SCRIPT_TYPE = script.getScriptType();
-		try {
-			if (gpu)
-				GPUContext.getGPUContext();
-		} catch (DMLRuntimeException e) {
-			throw new MLContextException("Exception occurred during initialization of GPU", e);
-		}
 	}
 
 	/**
@@ -338,8 +344,10 @@ public class ScriptExecutor {
 	protected void cleanupAfterExecution() {
 		restoreInputsInSymbolTable();
 		try {
-			if (gpu)
-				GPUContext.getGPUContext().destroy();
+			if (gpu) {
+				GPUContext gCtx = executionContext.getGPUContext();
+				GPUContextPool.returnToPool(gCtx);
+			}
 		} catch (DMLRuntimeException e) {
 			throw new MLContextException("Exception occurred during cleanup of GPU related resources", e);
 		}

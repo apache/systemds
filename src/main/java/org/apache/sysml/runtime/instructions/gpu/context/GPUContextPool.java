@@ -22,11 +22,11 @@ import static jcuda.driver.JCudaDriver.cuDeviceGetCount;
 import static jcuda.driver.JCudaDriver.cuInit;
 import static jcuda.runtime.JCuda.cudaGetDeviceProperties;
 
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Queue;
 
-import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.utils.GPUStatistics;
 
@@ -37,7 +37,9 @@ import jcuda.jcusparse.JCusparse;
 import jcuda.runtime.JCuda;
 import jcuda.runtime.cudaDeviceProp;
 
-public class GPUContextFactory {
+public class GPUContextPool {
+
+  protected static final Log LOG = LogFactory.getLog(GPUContextPool.class.getName());
 
   /** Whether cuda has been initialized */
   static boolean initialized = false;
@@ -45,18 +47,14 @@ public class GPUContextFactory {
   /** The total number of cuda devices on this machine */
   static int deviceCount = -1;
 
-  /** The list of free devices */
-  static Queue<Integer> freeDevices = new LinkedList<>();
-
-  /**
-   * Maintiains a mapping of threads assigned to GPUContexts. Each thread  is given a new GPUContext
-   * as long as there are enough GPUs to accommodate them
-   * The size of this map also represents the number of GPUs that are in use
-   */
-  static HashMap<Thread, GPUContext> assignedGPUContextsMap = new HashMap<>();
-
   /** Stores the cached deviceProperties */
   static cudaDeviceProp[] deviceProperties;
+
+  /** Set of free GPUContexts */
+  static Queue<GPUContext> freePool = new LinkedList<>();
+
+  /** Set of busy GPUContexts */
+  static Queue<GPUContext> busyPool = new LinkedList<>();
 
   /**
    * Static initialization of the number of devices
@@ -64,7 +62,7 @@ public class GPUContextFactory {
    * Initializes the CUDA driver
    * All these need be done once, and not per GPU
    */
-  public synchronized static void initializeGPU() {
+  public synchronized static void initializeGPU() throws DMLRuntimeException {
     GPUContext.LOG.info("Initializing CUDA");
     long start = System.nanoTime();
     JCuda.setExceptionsEnabled(true);
@@ -86,9 +84,10 @@ public class GPUContextFactory {
       deviceProperties[i] = properties;
     }
 
-    // Populate the list of free devices
-    for (int i = 0; i < deviceCount; i++) {
-      freeDevices.add(i);
+    // Initialize the pool of GPUContexts
+    for (int i=0; i<deviceCount; i++){
+      GPUContext gCtx = new GPUContext(i);
+      freePool.add(gCtx);
     }
 
     GPUContext.LOG.info("Total number of GPUs on the machine: " + deviceCount);
@@ -105,43 +104,56 @@ public class GPUContextFactory {
   }
 
   /**
-   * Singleton Factory method for creation/retrieval of a {@link GPUContext} for the current thread
-   * This method is threadsafe
-   * Each {@link GPUContext} instance is attached to a thread and a physical GPU
-   *
-   * @return a valid {@link GPUContext} instance or null if no more GPUs available
-   * @throws DMLRuntimeException if DMLRuntimeException occurs
+   * Gets an initialized GPUContext from a pool of GPUContexts, each linked to a GPU
+   * @return null if not more GPUContexts in pool, a valid GPUContext otherwise
    */
-  public synchronized static GPUContext createGPUContext() throws DMLRuntimeException {
-    // do once - initialization of GPU
+  public static synchronized GPUContext getFromPool() throws DMLRuntimeException {
     if (!initialized) initializeGPU();
-    // If the singleton for the current thread has already been created, well and
-    // good. Other wise create a new GPUContext object, provided there are enough number
-    // of GPUs left on the system
-    Thread thisThread = Thread.currentThread();
-    GPUContext activeGPUContext = assignedGPUContextsMap.get(thisThread);
-    if (activeGPUContext == null) {
-      Integer deviceNum = freeDevices.poll();
-      if (deviceNum == null) { // no more devices to allocate
-        return null;
-      }
-      activeGPUContext = new GPUContext(deviceNum);
-      activeGPUContext.ensureComputeCapability();
-      OptimizerUtils.GPU_MEMORY_BUDGET = activeGPUContext.getAvailableMemory();
-      assignedGPUContextsMap.put(thisThread, activeGPUContext);
-      GPUContext.LOG.trace("Created context for thread " + thisThread + ", with GPU " + deviceNum);
-    }
-    return activeGPUContext;
+    GPUContext gCtx = freePool.poll();
+    busyPool.add(gCtx);
+    LOG.trace("GPU : got GPUContext (" + gCtx + ") from freePool. New sizes - FreePool[" + freePool.size() + "], BusyPool[" + busyPool.size() + "]");
+    return gCtx;
+  }
+
+  /**
+   * Get the number of free GPUContexts
+   * @return number of free GPUContexts
+   */
+  public static synchronized int getAvailableCount() {
+    return freePool.size();
   }
 
   /**
    * Gets the device properties
    * @param device the device number (on a machine with more than 1 GPU)
    * @return the device properties
+   * @throws DMLRuntimeException if there is problem initializing the GPUContexts
    */
-  static cudaDeviceProp getGPUProperties(int device){
+  static cudaDeviceProp getGPUProperties(int device) throws DMLRuntimeException {
     // do once - initialization of GPU
     if (!initialized) initializeGPU();
     return deviceProperties[device];
   }
+
+  public static int getDeviceCount() throws DMLRuntimeException {
+    if (!initialized) initializeGPU();
+    return deviceCount;
+  }
+
+  /**
+   * Returns a {@link GPUContext} back to the pool of {@link GPUContext}s
+   * @param gCtx the GPUContext instance to return. If null, nothing happens
+   * @throws DMLRuntimeException if error
+   */
+  public static void returnToPool(GPUContext gCtx) throws DMLRuntimeException {
+    if (gCtx == null)
+      return;
+    gCtx.clearMemory();
+    synchronized (GPUContextPool.class) {
+      boolean removed = busyPool.remove(gCtx);
+      freePool.add(gCtx);
+      LOG.trace("GPU : returned GPUContext (" + gCtx + ") to freePool. New sizes - FreePool[" + freePool.size() + "], BusyPool[" + busyPool.size() + "]");
+    }
+  }
+
 }

@@ -103,6 +103,7 @@ import org.apache.sysml.runtime.instructions.cp.IntObject;
 import org.apache.sysml.runtime.instructions.cp.StringObject;
 import org.apache.sysml.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
@@ -631,8 +632,9 @@ public class ParForProgramBlock extends ForProgramBlock
 			{
 				case LOCAL: //create parworkers as local threads
 					if (DMLScript.USE_ACCELERATOR) {
-						setDegreeOfParallelism(GPUContext.getDeviceCount());
-						GPUContext.getGPUContext().destroy(); // destroy current GPUContext so that parfor can use the most number of GPUs
+						GPUContextPool.returnToPool(ec.getGPUContext());
+						ec.setGPUContext(null);
+						setDegreeOfParallelism(GPUContextPool.getDeviceCount());
 					}
 					executeLocalParFor(ec, iterVar, from, to, incr);
 					break;
@@ -824,6 +826,14 @@ public class ParForProgramBlock extends ForProgramBlock
 						String[] parts = DMLProgram.splitFunctionKey(fn);
 						_prog.removeFunctionProgramBlock(parts[0], parts[1]);
 					}
+			}
+
+			if (DMLScript.USE_ACCELERATOR) {
+				for (int i = 0; i < _numThreads; i++) {
+					GPUContext gCtx = workers[i].getExecutionContext().getGPUContext();
+					GPUContextPool.returnToPool(gCtx);
+				}
+				ec.setGPUContext(GPUContextPool.getFromPool());
 			}
 		}
 		finally 
@@ -1404,6 +1414,9 @@ public class ParForProgramBlock extends ForProgramBlock
 			
 			//deep copy execution context (including prepare parfor update-in-place)
 			ExecutionContext cpEc = ProgramConverter.createDeepCopyExecutionContext(ec);
+			if (DMLScript.USE_ACCELERATOR){
+				cpEc.setGPUContext(GPUContextPool.getFromPool());
+			}
 			
 			//prepare basic update-in-place variables (vars dropped on result merge)
 			prepareUpdateInPlaceVariables(cpEc, pwID);

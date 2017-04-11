@@ -308,10 +308,16 @@ public class TemplateUtils
 		return ret;
 	}
 	
-	public static int countVectorIntermediates(CNode node) {
+	public static int countVectorIntermediates(CNode node, HashSet<Long> memo) {
+		//memoization to prevent double counting
+		if( memo.contains(node.getID()) )
+			return 0;
+		memo.add(node.getID());
+		//compute vector requirements over all inputs
 		int ret = 0;
 		for( CNode c : node.getInput() )
-			ret += countVectorIntermediates(c);
+			ret += countVectorIntermediates(c, memo);
+		//compute vector requirements of current node
 		int cntBin = ((node instanceof CNodeBinary 
 			&& ((CNodeBinary)node).getType().isVectorScalarPrimitive()) ? 1 : 0);
 		int cntUn = ((node instanceof CNodeUnary
@@ -328,8 +334,9 @@ public class TemplateUtils
 		if( !memo.contains(input2.getHopID(), TemplateType.RowTpl) )
 			return true;
 		//check for common row template input
-		return getRowTemplateMatrixInput(input1, memo)
-			== getRowTemplateMatrixInput(input2, memo);
+		long tmp1 = getRowTemplateMatrixInput(input1, memo);
+		long tmp2 = getRowTemplateMatrixInput(input2, memo);
+		return (tmp1 == tmp2);
 	}
 	
 	public static long getRowTemplateMatrixInput(Hop current, CPlanMemoTable memo) {

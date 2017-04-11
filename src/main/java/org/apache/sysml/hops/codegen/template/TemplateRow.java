@@ -71,8 +71,10 @@ public class TemplateRow extends TemplateBase
 	
 	@Override
 	public boolean open(Hop hop) {
-		return (hop instanceof AggBinaryOp && hop.getDim2()==1
-			&& hop.getInput().get(0).getDim1()>1 && hop.getInput().get(0).getDim2()>1)
+		return (hop instanceof BinaryOp && hop.getInput().get(0).getDim2()>1 
+				&& hop.getInput().get(1).getDim2()==1 && TemplateCell.isValidOperation(hop)) 
+			|| (hop instanceof AggBinaryOp && hop.getDim2()==1
+				&& hop.getInput().get(0).getDim1()>1 && hop.getInput().get(0).getDim2()>1)
 			|| (hop instanceof AggUnaryOp && ((AggUnaryOp)hop).getDirection()!=Direction.RowCol 
 				&& hop.getInput().get(0).getDim1()>1 && hop.getInput().get(0).getDim2()>1);
 	}
@@ -133,7 +135,7 @@ public class TemplateRow extends TemplateBase
 		CNodeRow tpl = new CNodeRow(inputs, output);
 		tpl.setRowType(TemplateUtils.getRowType(hop, sinHops.get(0)));
 		tpl.setNumVectorIntermediates(TemplateUtils
-			.countVectorIntermediates(output));
+			.countVectorIntermediates(output, new HashSet<Long>()));
 		
 		// return cplan instance
 		return new Pair<Hop[],CNodeTpl>(sinHops.toArray(new Hop[0]), tpl);

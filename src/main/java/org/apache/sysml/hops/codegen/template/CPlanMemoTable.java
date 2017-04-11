@@ -212,7 +212,7 @@ public class CPlanMemoTable
 
 		//single plan per type, get plan w/ best rank in preferred order
 		return Collections.min(tmp, Comparator.comparing(
-			p -> (p.type==pref) ? -1 : p.type.getRank()));
+			p -> (p.type==pref) ? -p.countPlanRefs() : p.type.getRank()+1));
 	}
 	
 	public long[] getAllRefs(long hopID) {

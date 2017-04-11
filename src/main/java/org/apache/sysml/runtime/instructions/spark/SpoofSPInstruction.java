@@ -260,6 +260,19 @@ public class SpoofSPInstruction extends SPInstruction
 			else if( type == OutProdType.RIGHT_OUTER_PRODUCT )
 				mcOut.set(mcIn2.getRows(), mcIn2.getCols(), mcIn2.getRowsPerBlock(), mcIn2.getColsPerBlock());
 		}
+		else if(op instanceof SpoofRowwise) {
+			MatrixCharacteristics mcIn = sec.getMatrixCharacteristics(_in[0].getName());
+			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(_out.getName());
+			RowType type = ((SpoofRowwise)op).getRowType();
+			if( type == RowType.NO_AGG )
+				mcOut.set(mcIn);
+			else if( type == RowType.ROW_AGG )
+				mcOut.set(mcIn.getRows(), 1, mcIn.getRowsPerBlock(), mcIn.getColsPerBlock());
+			else if( type == RowType.COL_AGG )
+				mcOut.set(1, mcIn.getCols(), mcIn.getRowsPerBlock(), mcIn.getColsPerBlock());
+			else if( type == RowType.COL_AGG_T )
+				mcOut.set(mcIn.getCols(), 1, mcIn.getRowsPerBlock(), mcIn.getColsPerBlock());
+		}
 	}
 		
 	private static class RowwiseFunction implements PairFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock> 

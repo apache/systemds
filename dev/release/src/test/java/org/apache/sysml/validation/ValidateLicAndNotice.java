@@ -121,6 +121,8 @@ public class ValidateLicAndNotice
 		String [][] strTemp4 = {{"jQuery v1.12.0", "(c) jQuery Foundation", "false"},
 								{"jQuery v1.12.0", "Copyright jQuery Foundation and other contributors, https://jquery.org/", "false"}};
 		hmJSLicenses.put("jquery-1.12.0.min.js", strTemp4);
+		String [][] strTemp5 = {{"Pygments", "Copyright (c) 2006-2017 by the respective authors (see AUTHORS file).", "false"}};
+		hmJSLicenses.put("pygments-default.css", strTemp5);
 	}
 
 	public ValidateLicAndNotice() {

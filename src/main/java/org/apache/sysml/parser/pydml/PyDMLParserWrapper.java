@@ -36,15 +36,14 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.parser.AParserWrapper;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.FunctionStatementBlock;
 import org.apache.sysml.parser.ImportStatement;
 import org.apache.sysml.parser.LanguageException;
 import org.apache.sysml.parser.ParseException;
+import org.apache.sysml.parser.ParserWrapper;
 import org.apache.sysml.parser.Statement;
 import org.apache.sysml.parser.common.CustomErrorListener;
-import org.apache.sysml.parser.dml.DMLParserWrapper;
 import org.apache.sysml.parser.pydml.PydmlParser.FunctionStatementContext;
 import org.apache.sysml.parser.pydml.PydmlParser.ProgramrootContext;
 import org.apache.sysml.parser.pydml.PydmlParser.StatementContext;
@@ -55,7 +54,7 @@ import org.apache.sysml.parser.pydml.PydmlParser.StatementContext;
  * Note: ExpressionInfo and StatementInfo are simply wrapper objects and are reused in both DML and PyDML parsers.
  *
  */
-public class PyDMLParserWrapper extends AParserWrapper
+public class PyDMLParserWrapper extends ParserWrapper
 {
 	private static final Log LOG = LogFactory.getLog(DMLScript.class.getName());
 
@@ -89,14 +88,14 @@ public class PyDMLParserWrapper extends AParserWrapper
 		ANTLRInputStream in;
 		try {
 			if(dmlScript == null) {
-				dmlScript = DMLParserWrapper.readDMLScript(fileName, LOG);
+				dmlScript = readDMLScript(fileName, LOG);
 			}
 			
 			InputStream stream = new ByteArrayInputStream(dmlScript.getBytes());
 			in = new org.antlr.v4.runtime.ANTLRInputStream(stream);
 		} 
 		catch (FileNotFoundException e) {
-			throw new ParseException("Cannot find file: " + fileName, e);
+			throw new ParseException("Cannot find file/resource: " + fileName, e);
 		} 
 		catch (IOException e) {
 			throw new ParseException("Cannot open file: " + fileName, e);

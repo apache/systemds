@@ -22,18 +22,17 @@ package org.apache.sysml.parser;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.sysml.conf.ConfigurationManager;
-import org.apache.sysml.parser.common.CommonSyntacticValidator;
 import org.apache.sysml.parser.common.CustomErrorListener.ParseIssue;
-import org.apache.sysml.parser.dml.DMLParserWrapper;
-import org.apache.sysml.parser.pydml.PyDMLParserWrapper;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.util.LocalFileUtils;
 
@@ -41,8 +40,7 @@ import org.apache.sysml.runtime.util.LocalFileUtils;
  * Base class for all dml parsers in order to make the various compilation chains
  * independent of the used parser.
  */
-public abstract class AParserWrapper 
-{
+public abstract class ParserWrapper {
 	protected boolean atLeastOneError = false;
 	protected boolean atLeastOneWarning = false;
 	protected List<ParseIssue> parseIssues;
@@ -50,28 +48,6 @@ public abstract class AParserWrapper
 	public abstract DMLProgram parse(String fileName, String dmlScript, Map<String, String> argVals)
 		throws ParseException;
 
-	
-	/**
-	 * Factory method for creating parser wrappers
-	 * 
-	 * @param pydml true if a PyDML parser is needed
-	 * @return parser wrapper
-	 */
-	public static AParserWrapper createParser(boolean pydml)
-	{
-		AParserWrapper ret = null;
-		
-		//create the parser instance
-		if( pydml )
-			ret = new PyDMLParserWrapper();
-		else
-			ret = new DMLParserWrapper();
-		
-		CommonSyntacticValidator.init();
-		
-		return ret;
-	}
-	
 	/**
 	 * Custom wrapper to convert statement into statement blocks. Called by doParse and in DmlSyntacticValidator for for, parfor, while, ...
 	 * @param current a statement
@@ -120,7 +96,8 @@ public abstract class AParserWrapper
 			//read from hdfs or gpfs file system
 			if(    script.startsWith("hdfs:") 
 				|| script.startsWith("gpfs:") ) 
-			{ 
+			{
+				LOG.debug("Looking for the following file in HDFS or GPFS: " + script);
 				if( !LocalFileUtils.validateExternalFilename(script, true) )
 					throw new LanguageException("Invalid (non-trustworthy) hdfs filename.");
 				FileSystem fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
@@ -129,7 +106,8 @@ public abstract class AParserWrapper
 			}
 			// from local file system
 			else 
-			{ 
+			{
+				LOG.debug("Looking for the following file in the local file system: " + script);
 				if( !LocalFileUtils.validateExternalFilename(script, false) )
 					throw new LanguageException("Invalid (non-trustworthy) local filename.");
 				in = new BufferedReader(new FileReader(script));
@@ -145,8 +123,26 @@ public abstract class AParserWrapper
 		}
 		catch (IOException ex)
 		{
-			LOG.error("Failed to read the script from the file system", ex);
-			throw ex;
+			String resPath = scriptPathToResourcePath(script);
+			LOG.debug("Looking for the following resource from the SystemML jar file: " + resPath);
+			InputStream is = ParserWrapper.class.getResourceAsStream(resPath);
+			if (is == null) {
+				if (resPath.startsWith("/scripts")) {
+					LOG.error("Failed to read from the file system ('" + script + "') or SystemML jar file ('" + resPath + "')");
+					throw ex;
+				} else {
+					// for accessing script packages in the scripts directory
+					String scriptsResPath = "/scripts" + resPath;
+					LOG.debug("Looking for the following resource from the SystemML jar file: " + scriptsResPath);
+					is = ParserWrapper.class.getResourceAsStream(scriptsResPath);
+					if (is == null) {
+						LOG.error("Failed to read from the file system ('" + script + "') or SystemML jar file ('" + resPath + "' or '" + scriptsResPath + "')");
+						throw ex;
+					}
+				}
+			}
+			String s = IOUtils.toString(is);
+			return s;
 		}
 		finally {
 			IOUtilFunctions.closeSilently(in);
@@ -156,7 +152,20 @@ public abstract class AParserWrapper
 		
 		return dmlScriptStr;
 	}
-	
+
+	private static String scriptPathToResourcePath(String scriptPath) {
+		String resPath = scriptPath;
+		if (resPath.startsWith(".")) {
+			resPath = resPath.substring(1);
+		} else if (resPath.startsWith("\\")) {
+			// do nothing
+		} else if (!resPath.startsWith("/")) {
+			resPath = "/" + resPath;
+		}
+		resPath = resPath.replace("\\", "/");
+		return resPath;
+	}
+
 	public boolean isAtLeastOneError() {
 		return atLeastOneError;
 	}

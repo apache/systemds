@@ -23,19 +23,19 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.HashMap;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 import org.apache.sysml.api.DMLException;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
-import org.apache.sysml.parser.AParserWrapper;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.DMLTranslator;
 import org.apache.sysml.parser.LanguageException;
+import org.apache.sysml.parser.ParserFactory;
+import org.apache.sysml.parser.ParserWrapper;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * GENERAL NOTE
@@ -197,7 +197,7 @@ public class DataTypeChangeTest extends AutomatedTestBase
 			}	
 			
 			//parsing and dependency analysis
-			AParserWrapper parser = AParserWrapper.createParser(false);
+			ParserWrapper parser = ParserFactory.createParser(false);
 			DMLProgram prog = parser.parse(DMLScript.DML_FILE_PATH_ANTLR_PARSER, dmlScriptString, argVals);
 			DMLTranslator dmlt = new DMLTranslator(prog);
 			dmlt.liveVariableAnalysis(prog);

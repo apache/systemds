@@ -40,11 +40,12 @@ import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.rewrite.ProgramRewriter;
 import org.apache.sysml.hops.rewrite.RewriteRemovePersistentReadWrite;
-import org.apache.sysml.parser.AParserWrapper;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.DMLTranslator;
 import org.apache.sysml.parser.DataExpression;
 import org.apache.sysml.parser.ParseException;
+import org.apache.sysml.parser.ParserFactory;
+import org.apache.sysml.parser.ParserWrapper;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
@@ -165,7 +166,7 @@ public class Connection implements Closeable
 		try
 		{
 			//parsing
-			AParserWrapper parser = AParserWrapper.createParser(parsePyDML);
+			ParserWrapper parser = ParserFactory.createParser(parsePyDML);
 			DMLProgram prog = parser.parse(null, script, args);
 			
 			//language validate

@@ -51,7 +51,6 @@ import org.apache.sysml.hops.OptimizerUtils.OptimizationLevel;
 import org.apache.sysml.hops.globalopt.GlobalOptimizerWrapper;
 import org.apache.sysml.hops.rewrite.ProgramRewriter;
 import org.apache.sysml.hops.rewrite.RewriteRemovePersistentReadWrite;
-import org.apache.sysml.parser.AParserWrapper;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.DMLTranslator;
 import org.apache.sysml.parser.DataExpression;
@@ -60,6 +59,8 @@ import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.parser.IntIdentifier;
 import org.apache.sysml.parser.LanguageException;
 import org.apache.sysml.parser.ParseException;
+import org.apache.sysml.parser.ParserFactory;
+import org.apache.sysml.parser.ParserWrapper;
 import org.apache.sysml.parser.StringIdentifier;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
@@ -1516,7 +1517,7 @@ public class MLContext {
 		_rtprog = null;
 		
 		//parsing
-		AParserWrapper parser = AParserWrapper.createParser(parsePyDML);
+		ParserWrapper parser = ParserFactory.createParser(parsePyDML);
 		DMLProgram prog;
 		if (isFile) {
 			prog = parser.parse(dmlScriptFilePath, null, argVals);

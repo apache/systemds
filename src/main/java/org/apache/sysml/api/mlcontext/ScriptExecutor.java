@@ -36,11 +36,12 @@ import org.apache.sysml.hops.globalopt.GlobalOptimizerWrapper;
 import org.apache.sysml.hops.rewrite.ProgramRewriter;
 import org.apache.sysml.hops.rewrite.RewriteRemovePersistentReadWrite;
 import org.apache.sysml.lops.LopsException;
-import org.apache.sysml.parser.AParserWrapper;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.DMLTranslator;
 import org.apache.sysml.parser.LanguageException;
 import org.apache.sysml.parser.ParseException;
+import org.apache.sysml.parser.ParserFactory;
+import org.apache.sysml.parser.ParserWrapper;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.Program;
@@ -431,7 +432,7 @@ public class ScriptExecutor {
 	 */
 	protected void parseScript() {
 		try {
-			AParserWrapper parser = AParserWrapper.createParser(script.getScriptType().isPYDML());
+			ParserWrapper parser = ParserFactory.createParser(script.getScriptType().isPYDML());
 			Map<String, Object> inputParameters = script.getInputParameters();
 			Map<String, String> inputParametersStringMaps = MLContextUtil.convertInputParametersForParser(
 					inputParameters, script.getScriptType());

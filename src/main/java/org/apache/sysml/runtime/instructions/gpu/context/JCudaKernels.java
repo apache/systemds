@@ -18,13 +18,9 @@
  */
 package org.apache.sysml.runtime.instructions.gpu.context;
 
-import static jcuda.driver.JCudaDriver.cuCtxCreate;
-import static jcuda.driver.JCudaDriver.cuCtxGetCurrent;
-import static jcuda.driver.JCudaDriver.cuDeviceGet;
 import static jcuda.driver.JCudaDriver.cuLaunchKernel;
 import static jcuda.driver.JCudaDriver.cuModuleGetFunction;
 import static jcuda.driver.JCudaDriver.cuModuleLoadDataEx;
-import static jcuda.driver.JCudaDriver.cuModuleUnload;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -34,10 +30,7 @@ import java.util.HashMap;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
 
-import jcuda.CudaException;
 import jcuda.Pointer;
-import jcuda.driver.CUcontext;
-import jcuda.driver.CUdevice;
 import jcuda.driver.CUfunction;
 import jcuda.driver.CUmodule;
 import jcuda.driver.CUresult;
@@ -66,55 +59,9 @@ public class JCudaKernels {
 	 */
 	JCudaKernels(int deviceNum) throws DMLRuntimeException {
 		this.deviceNum = deviceNum;
-		shutdown();
-		initCUDA(deviceNum);
 		module = new CUmodule();
 		// Load the kernels specified in the ptxFileName file
 		checkResult(cuModuleLoadDataEx(module, initKernels(ptxFileName), 0, new int[0], Pointer.to(new int[0])));
-	}
-
-	/**
-	 * Initializes the JCuda driver API. Then it will try to attach to the
-	 * current CUDA context. If no active CUDA context exists, then it will
-	 * try to create one, for the device which is specified by the current
-	 * deviceNumber.
-	 * @param deviceNum device number for which to initialize this
-	 * @throws DMLRuntimeException If it is neither possible to attach to an 
-	 * existing context, nor to create a new context.
-	 */
-    private static void initCUDA(int deviceNum) throws DMLRuntimeException {
-        // Try to obtain the current context
-        CUcontext context = new CUcontext();
-        checkResult(cuCtxGetCurrent(context));
-        
-        // If the context is 'null', then a new context
-        // has to be created.
-        CUcontext nullContext = new CUcontext(); 
-        if (context.equals(nullContext)) {
-            createContext(deviceNum);
-        }
-    }
-    
-    /**
-     * Tries to create a context for device 'deviceNumber'.
-		 * @param deviceNumber the GPU for which to create the context
-     * @throws DMLRuntimeException if error
-     * @throws CudaException If the device can not be 
-     * accessed or the context can not be created
-     */
-    private static void createContext(int deviceNumber) throws DMLRuntimeException {
-        CUdevice device = new CUdevice();
-        checkResult(cuDeviceGet(device, deviceNumber));
-        CUcontext context = new CUcontext();
-        checkResult(cuCtxCreate(context, 0, device));
-    }
-    
-	/**
-	 * Performs cleanup actions such as unloading the module
-	 */
-	public void shutdown() {
-		if(module != null)
-			cuModuleUnload(module);
 	}
 
 	/**

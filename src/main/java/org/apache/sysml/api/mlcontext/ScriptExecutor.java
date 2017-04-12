@@ -248,6 +248,7 @@ public class ScriptExecutor {
 		try {
 			if (gpu) {
 				GPUContext gCtx = GPUContextPool.getFromPool();
+				gCtx.initializeThread();
 				if (gCtx == null)
 					throw new MLContextException("GPU : no GPUs or no more free GPUs available");
 				executionContext.setGPUContext(gCtx);

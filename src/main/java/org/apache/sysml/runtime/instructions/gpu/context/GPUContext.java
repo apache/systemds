@@ -140,6 +140,17 @@ public class GPUContext {
     return deviceNum;
   }
 
+  /**
+   * Sets the device for the calling thread.
+   * This method must be called after {@link GPUContextPool#getFromPool()}
+   * is called.
+   * If in a multi-threaded env like parfor, this method must be called when in the
+   * appropriate thread
+   */
+  public void initializeThread() {
+    cudaSetDevice(deviceNum);
+  }
+
   @SuppressWarnings("unused")
   public static int cudaGetDevice() {
     int[] device = new int[1];

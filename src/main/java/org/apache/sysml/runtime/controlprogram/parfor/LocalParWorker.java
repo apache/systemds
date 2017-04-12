@@ -79,6 +79,8 @@ public class LocalParWorker extends ParWorker implements Runnable
 			SparkExecutionContext sec = (SparkExecutionContext)_ec;
 			sec.setThreadLocalSchedulerPool("parforPool"+_workerID);
 		}
+
+		_ec.getGPUContext().initializeThread();
 		
 		//setup compiler config for worker thread
 		ConfigurationManager.setLocalConfig(_cconf);

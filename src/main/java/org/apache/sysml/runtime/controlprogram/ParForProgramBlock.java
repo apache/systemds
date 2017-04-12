@@ -828,12 +828,15 @@ public class ParForProgramBlock extends ForProgramBlock
 					}
 			}
 
+			// Frees up the GPUContexts used in the threaded Parfor and sets
+			// the main thread to use the GPUContext
 			if (DMLScript.USE_ACCELERATOR) {
 				for (int i = 0; i < _numThreads; i++) {
 					GPUContext gCtx = workers[i].getExecutionContext().getGPUContext();
 					GPUContextPool.returnToPool(gCtx);
 				}
 				ec.setGPUContext(GPUContextPool.getFromPool());
+				ec.getGPUContext().initializeThread();
 			}
 		}
 		finally 
@@ -1414,6 +1417,9 @@ public class ParForProgramBlock extends ForProgramBlock
 			
 			//deep copy execution context (including prepare parfor update-in-place)
 			ExecutionContext cpEc = ProgramConverter.createDeepCopyExecutionContext(ec);
+
+			// If GPU mode is enabled, gets a GPUContext from the pool of GPUContexts
+			// and sets it in the ExecutionContext
 			if (DMLScript.USE_ACCELERATOR){
 				cpEc.setGPUContext(GPUContextPool.getFromPool());
 			}

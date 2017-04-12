@@ -1026,8 +1026,8 @@ max_pool2d = function() {
 
   for (pad in 0:1) {
     print(" - Grad checking w/ pad="+pad+".")
-    Hout = as.integer((Hin + 2*pad - Hf)/stride + 1)
-    Wout = as.integer((Win + 2*pad - Wf)/stride + 1)
+    Hout = as.integer(floor((Hin + 2*pad - Hf)/stride + 1))
+    Wout = as.integer(floor((Win + 2*pad - Wf)/stride + 1))
     y = rand(rows=N, cols=C*Hout*Wout)
 
     # Compute analytical gradients of loss wrt parameters
@@ -1075,8 +1075,8 @@ max_pool2d_builtin = function() {
 
   for (pad in 0:1) {
     print(" - Grad checking w/ pad="+pad+".")
-    Hout = as.integer((Hin + 2 * pad - Hf) / stride + 1)
-    Wout = as.integer((Win + 2 * pad - Wf) / stride + 1)
+    Hout = as.integer(floor((Hin + 2 * pad - Hf) / stride + 1))
+    Wout = as.integer(floor((Win + 2 * pad - Wf) / stride + 1))
     y = rand(rows=N, cols=C*Hout*Wout)
 
     # Compute analytical gradients of loss wrt parameters
@@ -1128,8 +1128,8 @@ max_pool2d_simple = function() {
 
   for (pad in 0:1) {
     print(" - Grad checking w/ pad="+pad+".")
-    Hout = as.integer((Hin + 2*pad - Hf)/stride + 1)
-    Wout = as.integer((Win + 2*pad - Wf)/stride + 1)
+    Hout = as.integer(floor((Hin + 2*pad - Hf)/stride + 1))
+    Wout = as.integer(floor((Win + 2*pad - Wf)/stride + 1))
     y = rand(rows=N, cols=C*Hout*Wout)
 
     # Compute analytical gradients of loss wrt parameters

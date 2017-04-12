@@ -394,7 +394,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
         boolean copiedFromGPU = false;
         for (Map.Entry<GPUContext, GPUObject> kv : _gpuObjects.entrySet()) {
             GPUObject gObj = kv.getValue();
-            if (gObj != null && copiedFromGPU) {
+            if (gObj != null && copiedFromGPU && gObj.isDirty()) {
                 LOG.error("Inconsistent internal state - A copy of this CacheableData was dirty on more than 1 GPU");
                 throw new CacheException("Internal Error : Inconsistent internal state, A copy of this CacheableData was dirty on more than 1 GPU");
             } else if (gObj != null){
@@ -754,7 +754,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
         boolean copiedFromGPU = false;
         for (Map.Entry<GPUContext, GPUObject> kv : _gpuObjects.entrySet()) {
             GPUObject gObj = kv.getValue();
-            if (gObj != null && copiedFromGPU) {
+            if (gObj != null && copiedFromGPU && gObj.isDirty()) {
                 LOG.error("Inconsistent internal state - A copy of this CacheableData was dirty on more than 1 GPU");
                 throw new CacheException("Internal Error : Inconsistent internal state, A copy of this CacheableData was dirty on more than 1 GPU");
             } else if (gObj != null){

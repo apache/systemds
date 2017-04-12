@@ -836,6 +836,11 @@ public class GPUObject {
 		return jcudaSparseMatrixPtr;
 	}
 
+	/** Whether this block is dirty on the GPU */
+	public boolean isDirty() {
+		return dirty;
+	}
+
 	@Override
 	public String toString() {
 		final StringBuilder sb = new StringBuilder("GPUObject{");

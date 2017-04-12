@@ -81,7 +81,7 @@ forward = function(matrix[double] X, matrix[double] gamma, matrix[double] beta,
    */
   N = nrow(X)
 
-  if(mode == 'train') {
+  if (mode == 'train') {
     # Compute feature-wise mean and variance
     mean = colMeans(X)  # shape (1, D)
     # var = (1/N) * colSums((X-mean)^2)

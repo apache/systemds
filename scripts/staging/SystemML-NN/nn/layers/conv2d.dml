@@ -67,8 +67,8 @@ forward = function(matrix[double] X, matrix[double] W, matrix[double] b,
    */
   N = nrow(X)
   F = nrow(W)
-  Hout = as.integer((Hin + 2*padh - Hf)/strideh + 1)
-  Wout = as.integer((Win + 2*padw - Wf)/stridew + 1)
+  Hout = as.integer(floor((Hin + 2*padh - Hf)/strideh + 1))
+  Wout = as.integer(floor((Win + 2*padw - Wf)/stridew + 1))
 
   # Create output volume
   out = matrix(0, rows=N, cols=F*Hout*Wout)

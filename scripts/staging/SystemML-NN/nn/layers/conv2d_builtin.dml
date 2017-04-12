@@ -66,8 +66,8 @@ forward = function(matrix[double] X, matrix[double] W, matrix[double] b,
    */
   N = nrow(X)
   F = nrow(W)
-  Hout = as.integer((Hin + 2*padh - Hf)/strideh + 1)
-  Wout = as.integer((Win + 2*padw - Wf)/stridew + 1)
+  Hout = as.integer(floor((Hin + 2*padh - Hf)/strideh + 1))
+  Wout = as.integer(floor((Win + 2*padw - Wf)/stridew + 1))
 
   # Convolution - built-in implementation
   out = conv2d(X, W, input_shape=[N,C,Hin,Win], filter_shape=[F,C,Hf,Wf],

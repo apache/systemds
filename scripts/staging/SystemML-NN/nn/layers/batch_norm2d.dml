@@ -88,7 +88,7 @@ forward = function(matrix[double] X, matrix[double] gamma, matrix[double] beta,
    */
   N = nrow(X)
 
-  if(mode == 'train') {
+  if (mode == 'train') {
     # Compute channel-wise mean and variance
     # Since we don't have tensors, we will compute the means and variances in a piece-wise fashion.
     #  - mean of total group is mean of subgroup means

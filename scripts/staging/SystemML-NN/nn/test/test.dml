@@ -147,8 +147,8 @@ im2col = function() {
   Wf = 3  # filter width
   stride = 2
   pad = (Hin * stride - Hin + Hf - stride) / 2
-  Hout = as.integer((Hin + 2 * pad - Hf) / stride + 1)
-  Wout = as.integer((Win + 2 * pad - Wf) / stride + 1)
+  Hout = as.integer(floor((Hin + 2*pad - Hf)/stride + 1))
+  Wout = as.integer(floor((Win + 2*pad - Wf)/stride + 1))
   x = rand(rows=C, cols=Hin*Win)
 
   # pad
@@ -156,6 +156,11 @@ im2col = function() {
 
   # im2col
   x_cols = util::im2col(x_pad, Hin+2*pad, Win+2*pad, Hf, Wf, stride, stride)
+
+  if (ncol(x_cols) != Hout*Wout) {
+    print("ERROR: im2col does not yield the correct output size: "
+          + ncol(x_cols)+" (actual) vs. "+Hout*Wout+" (correct).")
+  }
 
   # col2im
   x_pad2 = util::col2im(x_cols, C, Hin+2*pad, Win+2*pad, Hf, Wf, stride, stride, "none")

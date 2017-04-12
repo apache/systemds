@@ -64,8 +64,8 @@ im2col = function(matrix[double] img, int Hin, int Win, int Hf, int Wf, int stri
    *      out into columns, of shape (C*Hf*Wf, Hout*Wout).
    */
   C = nrow(img)
-  Hout = as.integer((Hin-Hf)/strideh + 1)
-  Wout = as.integer((Win-Wf)/stridew + 1)
+  Hout = as.integer(floor((Hin-Hf)/strideh + 1))
+  Wout = as.integer(floor((Win-Wf)/stridew + 1))
 
   # Note: We start with `img_cols` transposed to allow for row-major
   # left-indexing inside the loop, which is more performant.
@@ -119,8 +119,8 @@ col2im = function(matrix[double] img_cols, int C, int Hin, int Win, int Hf, int 
    * Outputs:
    *  - img: Input image, of shape (C, Hin*Win).
    */
-  Hout = as.integer((Hin-Hf)/strideh + 1)
-  Wout = as.integer((Win-Wf)/stridew + 1)
+  Hout = as.integer(floor((Hin-Hf)/strideh + 1))
+  Wout = as.integer(floor((Win-Wf)/stridew + 1))
 
   img = matrix(0, rows=C, cols=Hin*Win)  # zeros
   for (hout in 1:Hout) {  # all output rows

@@ -56,8 +56,8 @@ forward = function(matrix[double] X, int C, int Hin, int Win, int Hf, int Wf,
    *  - Wout: Output width.
    */
   N = nrow(X)
-  Hout = as.integer((Hin-Hf)/strideh + 1)
-  Wout = as.integer((Win-Wf)/stridew + 1)
+  Hout = as.integer(floor((Hin + 2*padh - Hf)/strideh + 1))
+  Wout = as.integer(floor((Win + 2*padw - Wf)/stridew + 1))
 
   # Max pooling - built-in implementation
   out = max_pool(X, input_shape=[N,C,Hin,Win], pool_size=[Hf,Wf],

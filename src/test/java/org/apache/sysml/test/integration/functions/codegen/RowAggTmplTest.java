@@ -49,6 +49,8 @@ public class RowAggTmplTest extends AutomatedTestBase
 	private static final String TEST_NAME11 = TEST_NAME+"11"; //y - X %*% v
 	private static final String TEST_NAME12 = TEST_NAME+"12"; //Y=(X>=v); R=Y/rowSums(Y)
 	private static final String TEST_NAME13 = TEST_NAME+"13"; //rowSums(X)+rowSums(Y)
+	private static final String TEST_NAME14 = TEST_NAME+"14"; //colSums(max(floor(round(abs(min(sign(X+Y),1)))),7))
+	private static final String TEST_NAME15 = TEST_NAME+"15"; //systemml nn - softmax backward (partially)
 	
 	private static final String TEST_DIR = "functions/codegen/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + RowAggTmplTest.class.getSimpleName() + "/";
@@ -60,7 +62,7 @@ public class RowAggTmplTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		for(int i=1; i<=13; i++)
+		for(int i=1; i<=15; i++)
 			addTestConfiguration( TEST_NAME+i, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME+i, new String[] { String.valueOf(i) }) );
 	}
 	
@@ -257,6 +259,36 @@ public class RowAggTmplTest extends AutomatedTestBase
 	@Test
 	public void testCodegenRowAgg13SP() {
 		testCodegenIntegration( TEST_NAME13, false, ExecType.SPARK );
+	}
+	
+	@Test	
+	public void testCodegenRowAggRewrite14CP() {
+		testCodegenIntegration( TEST_NAME14, true, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenRowAgg14CP() {
+		testCodegenIntegration( TEST_NAME14, false, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenRowAgg14SP() {
+		testCodegenIntegration( TEST_NAME14, false, ExecType.SPARK );
+	}
+	
+	@Test	
+	public void testCodegenRowAggRewrite15CP() {
+		testCodegenIntegration( TEST_NAME15, true, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenRowAgg15CP() {
+		testCodegenIntegration( TEST_NAME15, false, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenRowAgg15SP() {
+		testCodegenIntegration( TEST_NAME15, false, ExecType.SPARK );
 	}
 	
 	private void testCodegenIntegration( String testname, boolean rewrites, ExecType instType )

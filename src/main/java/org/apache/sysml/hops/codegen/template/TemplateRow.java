@@ -57,8 +57,10 @@ import org.apache.sysml.runtime.matrix.data.Pair;
 public class TemplateRow extends TemplateBase 
 {
 	private static final Hop.AggOp[] SUPPORTED_ROW_AGG = new AggOp[]{AggOp.SUM, AggOp.MIN, AggOp.MAX};
-	private static final Hop.OpOp1[] SUPPORTED_VECT_UNARY = new OpOp1[]{OpOp1.EXP, OpOp1.LOG};
-	private static final Hop.OpOp2[] SUPPORTED_VECT_BINARY = new OpOp2[]{OpOp2.MULT, OpOp2.DIV, OpOp2.MINUS, 
+	private static final Hop.OpOp1[] SUPPORTED_VECT_UNARY = new OpOp1[]{
+			OpOp1.EXP, OpOp1.SQRT, OpOp1.LOG, OpOp1.ABS, OpOp1.ROUND, OpOp1.CEIL, OpOp1.FLOOR, OpOp1.SIGN};
+	private static final Hop.OpOp2[] SUPPORTED_VECT_BINARY = new OpOp2[]{
+			OpOp2.MULT, OpOp2.DIV, OpOp2.MINUS, OpOp2.PLUS, OpOp2.POW, OpOp2.MIN, OpOp2.MAX,
 			OpOp2.EQUAL, OpOp2.NOTEQUAL, OpOp2.LESS, OpOp2.LESSEQUAL, OpOp2.GREATER, OpOp2.GREATEREQUAL};
 	
 	public TemplateRow() {
@@ -216,7 +218,7 @@ public class TemplateRow extends TemplateBase
 			if(hop.getInput().get(0).getDim1() > 1 && hop.getInput().get(0).getDim2() > 1 ) 
 			{
 				if( HopRewriteUtils.isUnary(hop, SUPPORTED_VECT_UNARY) ) {
-					String opname = "VECT_"+((UnaryOp)hop).getOp().name()+"_SCALAR";
+					String opname = "VECT_"+((UnaryOp)hop).getOp().name();
 					out = new CNodeUnary(cdata1, UnaryType.valueOf(opname));
 				}
 				else 

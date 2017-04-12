@@ -30,7 +30,8 @@ public class CNodeUnary extends CNode
 	public enum UnaryType {
 		LOOKUP_R, LOOKUP_RC, LOOKUP0, //codegen specific
 		ROW_SUMS, ROW_MINS, ROW_MAXS, //codegen specific
-		VECT_EXP_SCALAR, VECT_LOG_SCALAR,
+		VECT_EXP, VECT_POW2, VECT_MULT2, VECT_SQRT, VECT_LOG,
+		VECT_ABS, VECT_ROUND, VECT_CEIL, VECT_FLOOR, VECT_SIGN, 
 		EXP, POW2, MULT2, SQRT, LOG, LOG_NZ,
 		ABS, ROUND, CEIL, FLOOR, SIGN, 
 		SIN, COS, TAN, ASIN, ACOS, ATAN,
@@ -53,8 +54,16 @@ public class CNodeUnary extends CNode
 									"    double %TMP% = LibSpoofPrimitives.vect"+vectName+"(%IN1%, %POS1%, %LEN%);\n"; 
 				}
 			
-				case VECT_EXP_SCALAR:
-				case VECT_LOG_SCALAR: {
+				case VECT_EXP:
+				case VECT_POW2:
+				case VECT_MULT2: 
+				case VECT_SQRT: 
+				case VECT_LOG:
+				case VECT_ABS:
+				case VECT_ROUND:
+				case VECT_CEIL:
+				case VECT_FLOOR:
+				case VECT_SIGN: {
 					String vectName = getVectorPrimitiveName();
 					return sparse ? "    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1v%, %IN1i%, %POS1%, %LEN%);\n" : 
 									"    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %POS1%, %LEN%);\n";
@@ -112,8 +121,11 @@ public class CNodeUnary extends CNode
 			}
 		}
 		public boolean isVectorScalarPrimitive() {
-			return this == UnaryType.VECT_EXP_SCALAR 
-				|| this == UnaryType.VECT_LOG_SCALAR;
+			return this == VECT_EXP || this == VECT_POW2
+				|| this == VECT_MULT2 || this == VECT_SQRT
+				|| this == VECT_LOG || this == VECT_ABS
+				|| this == VECT_ROUND || this == VECT_CEIL
+				|| this == VECT_FLOOR || this == VECT_SIGN;
 		}
 		public UnaryType getVectorAddPrimitive() {
 			return UnaryType.valueOf("VECT_"+getVectorPrimitiveName().toUpperCase()+"_ADD");
@@ -184,8 +196,16 @@ public class CNodeUnary extends CNode
 			case ROW_SUMS:  return "u(R+)";
 			case ROW_MINS:  return "u(Rmin)";
 			case ROW_MAXS:  return "u(Rmax)";
-			case VECT_EXP_SCALAR: return "u(vexp)";
-			case VECT_LOG_SCALAR: return "u(vlog)";
+			case VECT_EXP:
+			case VECT_POW2:
+			case VECT_MULT2: 
+			case VECT_SQRT: 
+			case VECT_LOG:
+			case VECT_ABS:
+			case VECT_ROUND:
+			case VECT_CEIL:
+			case VECT_FLOOR:
+			case VECT_SIGN: return "u(v"+_type.name().toLowerCase()+")";
 			case LOOKUP_R:	return "u(ixr)";
 			case LOOKUP_RC:	return "u(ixrc)";
 			case LOOKUP0:	return "u(ix0)";
@@ -197,8 +217,16 @@ public class CNodeUnary extends CNode
 	@Override
 	public void setOutputDims() {
 		switch(_type) {
-			case VECT_EXP_SCALAR:
-			case VECT_LOG_SCALAR:	
+			case VECT_EXP:
+			case VECT_POW2:
+			case VECT_MULT2: 
+			case VECT_SQRT: 
+			case VECT_LOG:
+			case VECT_ABS:
+			case VECT_ROUND:
+			case VECT_CEIL:
+			case VECT_FLOOR:
+			case VECT_SIGN:	
 				_rows = _inputs.get(0)._rows;
 				_cols = _inputs.get(0)._cols;
 				_dataType= DataType.MATRIX;

@@ -29,10 +29,12 @@ public class CNodeBinary extends CNode
 {
 	public enum BinType {
 		DOT_PRODUCT,
-		VECT_MULT_ADD, VECT_DIV_ADD, VECT_MINUS_ADD,
+		VECT_MULT_ADD, VECT_DIV_ADD, VECT_MINUS_ADD, VECT_PLUS_ADD,
+		VECT_POW_ADD, VECT_MIN_ADD, VECT_MAX_ADD,
 		VECT_EQUAL_ADD, VECT_NOTEQUAL_ADD, VECT_LESS_ADD, 
 		VECT_LESSEQUAL_ADD, VECT_GREATER_ADD, VECT_GREATEREQUAL_ADD,
-		VECT_MULT_SCALAR, VECT_DIV_SCALAR, VECT_MINUS_SCALAR, 
+		VECT_MULT_SCALAR, VECT_DIV_SCALAR, VECT_MINUS_SCALAR, VECT_PLUS_SCALAR,
+		VECT_POW_SCALAR, VECT_MIN_SCALAR, VECT_MAX_SCALAR,
 		VECT_EQUAL_SCALAR, VECT_NOTEQUAL_SCALAR, VECT_LESS_SCALAR, 
 		VECT_LESSEQUAL_SCALAR, VECT_GREATER_SCALAR, VECT_GREATEREQUAL_SCALAR,
 		MULT, DIV, PLUS, MINUS, MODULUS, INTDIV, 
@@ -61,6 +63,11 @@ public class CNodeBinary extends CNode
 				
 				case VECT_MULT_ADD:
 				case VECT_DIV_ADD:
+				case VECT_MINUS_ADD:
+				case VECT_PLUS_ADD:
+				case VECT_POW_ADD:
+				case VECT_MIN_ADD:
+				case VECT_MAX_ADD:	
 				case VECT_EQUAL_ADD:
 				case VECT_NOTEQUAL_ADD:
 				case VECT_LESS_ADD:
@@ -72,9 +79,13 @@ public class CNodeBinary extends CNode
 									"    LibSpoofPrimitives.vect"+vectName+"Add(%IN1%, %IN2%, %OUT%, %POS1%, %POSOUT%, %LEN%);\n";
 				}
 				
+				case VECT_MULT_SCALAR:
 				case VECT_DIV_SCALAR:
 				case VECT_MINUS_SCALAR:
-				case VECT_MULT_SCALAR:
+				case VECT_PLUS_SCALAR:
+				case VECT_POW_SCALAR:
+				case VECT_MIN_SCALAR:
+				case VECT_MAX_SCALAR:	
 				case VECT_EQUAL_SCALAR:
 				case VECT_NOTEQUAL_SCALAR:
 				case VECT_LESS_SCALAR:
@@ -133,7 +144,10 @@ public class CNodeBinary extends CNode
 			}
 		}
 		public boolean isVectorScalarPrimitive() {
-			return this == VECT_DIV_SCALAR || this == VECT_MULT_SCALAR || this == VECT_MINUS_SCALAR
+			return this == VECT_DIV_SCALAR || this == VECT_MULT_SCALAR 
+				|| this == VECT_MINUS_SCALAR || this == VECT_PLUS_SCALAR
+				|| this == VECT_POW_SCALAR 
+				|| this == VECT_MIN_SCALAR || this == VECT_MAX_SCALAR
 				|| this == VECT_EQUAL_SCALAR || this == VECT_NOTEQUAL_SCALAR
 				|| this == VECT_LESS_SCALAR || this == VECT_LESSEQUAL_SCALAR
 				|| this == VECT_GREATER_SCALAR || this == VECT_GREATEREQUAL_SCALAR;
@@ -215,6 +229,10 @@ public class CNodeBinary extends CNode
 			case VECT_MULT_ADD: return "b(vma)";
 			case VECT_DIV_ADD: return "b(vda)";
 			case VECT_MINUS_ADD: return "b(vmia)";
+			case VECT_PLUS_ADD: return "b(vpa)";
+			case VECT_POW_ADD: return "b(vpowa)";
+			case VECT_MIN_ADD: return "b(vmina)";
+			case VECT_MAX_ADD: return "b(vmaxa)";
 			case VECT_EQUAL_ADD: return "b(veqa)";
 			case VECT_NOTEQUAL_ADD: return "b(vneqa)";
 			case VECT_LESS_ADD: return "b(vlta)";
@@ -224,6 +242,10 @@ public class CNodeBinary extends CNode
 			case VECT_MULT_SCALAR:  return "b(vm)";
 			case VECT_DIV_SCALAR:  return "b(vd)";
 			case VECT_MINUS_SCALAR:  return "b(vmi)";
+			case VECT_PLUS_SCALAR: return "b(vp)";
+			case VECT_POW_SCALAR: return "b(vpow)";
+			case VECT_MIN_SCALAR: return "b(vmin)";
+			case VECT_MAX_SCALAR: return "b(vmax)";
 			case VECT_EQUAL_SCALAR: return "b(veq)";
 			case VECT_NOTEQUAL_SCALAR: return "b(vneq)";
 			case VECT_LESS_SCALAR: return "b(vlt)";
@@ -259,6 +281,10 @@ public class CNodeBinary extends CNode
 			case VECT_MULT_ADD: 
 			case VECT_DIV_ADD:
 			case VECT_MINUS_ADD:
+			case VECT_PLUS_ADD:
+			case VECT_POW_ADD:
+			case VECT_MIN_ADD:
+			case VECT_MAX_ADD:
 			case VECT_EQUAL_ADD: 
 			case VECT_NOTEQUAL_ADD: 
 			case VECT_LESS_ADD: 
@@ -273,6 +299,10 @@ public class CNodeBinary extends CNode
 			case VECT_DIV_SCALAR: 	
 			case VECT_MULT_SCALAR:
 			case VECT_MINUS_SCALAR:
+			case VECT_PLUS_SCALAR:
+			case VECT_POW_SCALAR:
+			case VECT_MIN_SCALAR:
+			case VECT_MAX_SCALAR:
 			case VECT_EQUAL_SCALAR: 
 			case VECT_NOTEQUAL_SCALAR: 
 			case VECT_LESS_SCALAR: 

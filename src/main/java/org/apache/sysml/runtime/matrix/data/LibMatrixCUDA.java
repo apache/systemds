@@ -2348,9 +2348,9 @@ public class LibMatrixCUDA {
 			throw new DMLRuntimeException("GPU : Invalid internal state, the GPUContext set with the ExecutionContext is not the same used to run this LibMatrixCUDA function");
 		double constant = op.getConstant();
 		LOG.trace("GPU : matrixScalarArithmetic, scalar: " + constant + ", GPUContext=" + gCtx);
-		boolean isCUDALibAvailable = (op.fn instanceof Multiply
-				|| (op.fn instanceof Divide && op instanceof RightScalarOperator && constant != 0)) && !isSparseAndEmpty(gCtx, in);
-		if(!isCUDALibAvailable) {
+		//boolean isCUDALibAvailable = (op.fn instanceof Multiply
+		//		|| (op.fn instanceof Divide && op instanceof RightScalarOperator && constant != 0)) && !isSparseAndEmpty(gCtx, in);
+		//if(!isCUDALibAvailable) {
 			if(constant == 0) {
                 if(op.fn instanceof Plus || (op.fn instanceof Minus && op instanceof RightScalarOperator) || op.fn instanceof Or) {
 					deviceCopy(ec, gCtx, instName, in, outputName, isInputTransposed);
@@ -2382,23 +2382,23 @@ public class LibMatrixCUDA {
 			else {
 				matrixScalarOp(ec, gCtx, instName, in, outputName, isInputTransposed, op);
 			}
-		}
-		else {
-			double alpha = 0;
-			if(op.fn instanceof Multiply) {
-				alpha = op.getConstant();
-			}
-			else if(op.fn instanceof Divide && op instanceof RightScalarOperator) {
-				alpha = Math.pow(op.getConstant(), -1.0);
-			}
-			else {
-				throw new DMLRuntimeException("Unsupported op");
-			}
+		// }
+		//else {
+		//	double alpha = 0;
+		//	if(op.fn instanceof Multiply) {
+		//		alpha = op.getConstant();
+		//	}
+		//	else if(op.fn instanceof Divide && op instanceof RightScalarOperator) {
+		//		alpha = Math.pow(op.getConstant(), -1.0);
+		//	}
+		//	else {
+		//		throw new DMLRuntimeException("Unsupported op");
+		//	}
 
 			// TODO: Performance optimization: Call cublasDaxpy if(in.getNumRows() == 1 || in.getNumColumns() == 1)
 			// C = alpha* op( A ) + beta* op ( B )
-			dgeam(ec, gCtx, instName, in, in, outputName, isInputTransposed, isInputTransposed, alpha, 0.0);
-		}
+		//	dgeam(ec, gCtx, instName, in, in, outputName, isInputTransposed, isInputTransposed, alpha, 0.0);
+		//}
 	}
 
 	/**

@@ -682,7 +682,6 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
                 }
             }
         }
-        _gpuObjects.clear();
 
 		// change object state EMPTY
 		setDirty(false);

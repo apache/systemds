@@ -172,6 +172,7 @@ public class FunctionCallCPInstruction extends CPInstruction
 		// Create a symbol table under a new execution context for the function invocation,
 		// and copy the function arguments into the created table. 
 		ExecutionContext fn_ec = ExecutionContextFactory.createContext(false, ec.getProgram());
+		fn_ec.setGPUContext(ec.getGPUContext());
 		fn_ec.setVariables(functionVariables);
 		
 		// execute the function block

@@ -277,21 +277,23 @@ public class ExecutionContext
 	public Pair<MatrixObject, Boolean> getMatrixInputForGPUInstruction(String varName)
 			throws DMLRuntimeException 
 	{
+		GPUContext gCtx = getGPUContext();
 		boolean copied = false;
 		MatrixObject mo = getMatrixObject(varName);
 		if(mo == null) {
 			throw new DMLRuntimeException("No matrix object available for variable:" + varName);
 		}
-		if( mo.getGPUObject(getGPUContext()) == null ) {
-			GPUObject newGObj = getGPUContext().createGPUObject(mo);
-			mo.setGPUObject(getGPUContext(), newGObj);
-		}
+
 		boolean acquired = false;
-		if( !mo.getGPUObject(getGPUContext()).isInputAllocated() ) {
+		if( mo.getGPUObject(gCtx) == null ) {
+			GPUObject newGObj = gCtx.createGPUObject(mo);
+			mo.setGPUObject(gCtx, newGObj);
+		} else if( !mo.getGPUObject(gCtx).isInputAllocated() ) {
 			mo.acquireRead();
 			acquired = true;
 		}
-		copied = mo.getGPUObject(getGPUContext()).acquireDeviceRead();
+
+		copied = mo.getGPUObject(gCtx).acquireDeviceRead();
 		if(acquired) {
 			mo.release();
 		}

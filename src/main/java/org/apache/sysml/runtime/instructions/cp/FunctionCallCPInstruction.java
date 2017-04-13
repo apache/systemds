@@ -188,7 +188,9 @@ public class FunctionCallCPInstruction extends CPInstruction
 			String fname = DMLProgram.constructFunctionKey(_namespace, _functionName);
 			throw new DMLRuntimeException("error executing function " + fname, e);
 		}
-		
+
+
+		fn_ec.getGPUContext().initializeThread();
 		LocalVariableMap retVars = fn_ec.getVariables();  
 		
 		// cleanup all returned variables w/o binding 

@@ -85,7 +85,8 @@ public abstract class SpoofMultiAggregate extends SpoofOperator implements Seria
 		out.reset(1, _aggOps.length, false);
 		out.allocateDenseBlock();
 		double[] c = out.getDenseBlock();
-	
+		setInitialOutputValues(c);
+		
 		//input preparation
 		double[][] b = prepInputMatrices(inputs);
 		double[] scalars = prepInputScalars(scalarObjects);
@@ -94,7 +95,6 @@ public abstract class SpoofMultiAggregate extends SpoofOperator implements Seria
 		
 		if( k <= 1 ) //SINGLE-THREADED
 		{
-			setInitialOutputValues(c);
 			if( !inputs.get(0).isInSparseFormat() )
 				executeDense(inputs.get(0).getDenseBlock(), b, scalars, c, m, n, 0, m);
 			else	

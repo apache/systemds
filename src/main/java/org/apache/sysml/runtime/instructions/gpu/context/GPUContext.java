@@ -114,6 +114,7 @@ public class GPUContext {
   protected GPUContext(int deviceNum) throws DMLRuntimeException {
     this.deviceNum = deviceNum;
     cudaSetDevice(deviceNum);
+    LOG.info("Setting to " + deviceNum + " from thread " + Thread.currentThread());
 
     long free[] = {0};
     long total[] = {0};
@@ -149,6 +150,7 @@ public class GPUContext {
    */
   public void initializeThread() {
     cudaSetDevice(deviceNum);
+    LOG.info("cudaSetDevice to " + deviceNum + " from thread " + Thread.currentThread() + ", currently set - " + cudaGetDevice());
   }
 
   @SuppressWarnings("unused")

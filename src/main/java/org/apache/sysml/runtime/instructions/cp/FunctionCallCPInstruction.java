@@ -40,6 +40,7 @@ import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 
 public class FunctionCallCPInstruction extends CPInstruction 
 {	
@@ -173,8 +174,10 @@ public class FunctionCallCPInstruction extends CPInstruction
 		// and copy the function arguments into the created table. 
 		ExecutionContext fn_ec = ExecutionContextFactory.createContext(false, ec.getProgram());
 		fn_ec.setGPUContext(ec.getGPUContext());
+		if (ec.getGPUContext().getDeviceNum() != GPUContext.cudaGetDevice())
+			throw new DMLRuntimeException("What happenede here ????????");
 		fn_ec.setVariables(functionVariables);
-		
+		LOG.info("Now calling function with " + fn_ec.getGPUContext() + " from thread " + Thread.currentThread() + ", cudaGetDevice=" + GPUContext.cudaGetDevice());
 		// execute the function block
 		try {
 			fpb._functionName = this._functionName;
@@ -188,6 +191,8 @@ public class FunctionCallCPInstruction extends CPInstruction
 			String fname = DMLProgram.constructFunctionKey(_namespace, _functionName);
 			throw new DMLRuntimeException("error executing function " + fname, e);
 		}
+
+		LOG.info("done with function call, " + fn_ec.getGPUContext() + " from thread " + Thread.currentThread() + ", cudaGetDevice=" + GPUContext.cudaGetDevice());
 
 
 		fn_ec.getGPUContext().initializeThread();

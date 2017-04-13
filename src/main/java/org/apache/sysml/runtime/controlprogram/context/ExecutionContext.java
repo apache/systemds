@@ -22,6 +22,8 @@ package org.apache.sysml.runtime.controlprogram.context;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.debug.DMLFrame;
 import org.apache.sysml.debug.DMLProgramCounter;
@@ -54,7 +56,8 @@ import org.apache.sysml.runtime.util.MapReduceTool;
 
 public class ExecutionContext 
 {
-	
+	protected static final Log LOG = LogFactory.getLog(ExecutionContext.class.getName());
+
 	//program reference (e.g., function repository)
 	protected Program _prog = null;
 	
@@ -103,6 +106,7 @@ public class ExecutionContext
 
     public void setGPUContext(GPUContext _gpuContext) {
         this._gpuContext = _gpuContext;
+				LOG.info("setting GPUContext to " + _gpuContext + ", cudaGetDevice=" + GPUContext.cudaGetDevice() + " from thread " + Thread.currentThread());
     }
 
 	/* -------------------------------------------------------

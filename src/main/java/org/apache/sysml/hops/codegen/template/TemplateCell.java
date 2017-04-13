@@ -165,10 +165,7 @@ public class TemplateCell extends TemplateBase
 		if(hop instanceof UnaryOp)
 		{
 			CNode cdata1 = tmp.get(hop.getInput().get(0).getHopID());
-			if( TemplateUtils.isColVector(cdata1) )
-				cdata1 = new CNodeUnary(cdata1, UnaryType.LOOKUP_R);
-			else if( cdata1 instanceof CNodeData && hop.getInput().get(0).getDataType().isMatrix() )
-				cdata1 = new CNodeUnary(cdata1, UnaryType.LOOKUP_RC);
+			cdata1 = TemplateUtils.wrapLookupIfNecessary(cdata1, hop.getInput().get(0));
 			
 			String primitiveOpName = ((UnaryOp)hop).getOp().name();
 			out = new CNodeUnary(cdata1, UnaryType.valueOf(primitiveOpName));
@@ -180,17 +177,9 @@ public class TemplateCell extends TemplateBase
 			CNode cdata2 = tmp.get(hop.getInput().get(1).getHopID());
 			String primitiveOpName = bop.getOp().name();
 			
-			//cdata1 is vector
-			if( TemplateUtils.isColVector(cdata1) )
-				cdata1 = new CNodeUnary(cdata1, UnaryType.LOOKUP_R);
-			else if( cdata1 instanceof CNodeData && hop.getInput().get(0).getDataType().isMatrix() )
-				cdata1 = new CNodeUnary(cdata1, UnaryType.LOOKUP_RC);
-			
-			//cdata2 is vector
-			if( TemplateUtils.isColVector(cdata2) )
-				cdata2 = new CNodeUnary(cdata2, UnaryType.LOOKUP_R);
-			else if( cdata2 instanceof CNodeData && hop.getInput().get(1).getDataType().isMatrix() )
-				cdata2 = new CNodeUnary(cdata2, UnaryType.LOOKUP_RC);
+			//add lookups if required
+			cdata1 = TemplateUtils.wrapLookupIfNecessary(cdata1, hop.getInput().get(0));
+			cdata2 = TemplateUtils.wrapLookupIfNecessary(cdata2, hop.getInput().get(1));
 			
 			if( bop.getOp()==OpOp2.POW && cdata2.isLiteral() && cdata2.getVarname().equals("2") )
 				out = new CNodeUnary(cdata1, UnaryType.POW2);
@@ -206,17 +195,9 @@ public class TemplateCell extends TemplateBase
 			CNode cdata2 = tmp.get(hop.getInput().get(1).getHopID());
 			CNode cdata3 = tmp.get(hop.getInput().get(2).getHopID());
 			
-			//cdata1 is vector
-			if( TemplateUtils.isColVector(cdata1) )
-				cdata1 = new CNodeUnary(cdata1, UnaryType.LOOKUP_R);
-			else if( cdata1 instanceof CNodeData && hop.getInput().get(0).getDataType().isMatrix() )
-				cdata1 = new CNodeUnary(cdata1, UnaryType.LOOKUP_RC);
-			
-			//cdata3 is vector
-			if( TemplateUtils.isColVector(cdata3) )
-				cdata3 = new CNodeUnary(cdata3, UnaryType.LOOKUP_R);
-			else if( cdata3 instanceof CNodeData && hop.getInput().get(2).getDataType().isMatrix() )
-				cdata3 = new CNodeUnary(cdata3, UnaryType.LOOKUP_RC);
+			//add lookups if required
+			cdata1 = TemplateUtils.wrapLookupIfNecessary(cdata1, hop.getInput().get(0));
+			cdata3 = TemplateUtils.wrapLookupIfNecessary(cdata3, hop.getInput().get(2));
 			
 			//construct ternary cnode, primitive operation derived from OpOp3
 			out = new CNodeTernary(cdata1, cdata2, cdata3, 
@@ -225,10 +206,7 @@ public class TemplateCell extends TemplateBase
 		else if( hop instanceof ParameterizedBuiltinOp ) 
 		{
 			CNode cdata1 = tmp.get(((ParameterizedBuiltinOp)hop).getTargetHop().getHopID());
-			if( TemplateUtils.isColVector(cdata1) )
-				cdata1 = new CNodeUnary(cdata1, UnaryType.LOOKUP_R);
-			else if( cdata1 instanceof CNodeData && hop.getInput().get(0).getDataType().isMatrix() )
-				cdata1 = new CNodeUnary(cdata1, UnaryType.LOOKUP_RC);
+			cdata1 = TemplateUtils.wrapLookupIfNecessary(cdata1, hop.getInput().get(0));
 			
 			CNode cdata2 = tmp.get(((ParameterizedBuiltinOp)hop).getParameterHop("pattern").getHopID());
 			CNode cdata3 = tmp.get(((ParameterizedBuiltinOp)hop).getParameterHop("replacement").getHopID());
@@ -290,8 +268,8 @@ public class TemplateCell extends TemplateBase
 			
 			isBinaryMatrixScalar = (ldt.isScalar() || rdt.isScalar());	
 			isBinaryMatrixVector = hop.dimsKnown() 
-				&& ((ldt.isMatrix() && TemplateUtils.isVectorOrScalar(right) && !TemplateUtils.isBinaryMatrixRowVector(hop)) 
-				|| (rdt.isMatrix() && TemplateUtils.isVectorOrScalar(left) && !TemplateUtils.isBinaryMatrixRowVector(hop)) );
+				&& ((ldt.isMatrix() && TemplateUtils.isVectorOrScalar(right)) 
+				|| (rdt.isMatrix() && TemplateUtils.isVectorOrScalar(left)) );
 			isBinaryMatrixMatrixDense = hop.dimsKnown() && HopRewriteUtils.isEqualSize(left, right)
 				&& ldt.isMatrix() && rdt.isMatrix() && !HopRewriteUtils.isSparse(left) && !HopRewriteUtils.isSparse(right);
 		}

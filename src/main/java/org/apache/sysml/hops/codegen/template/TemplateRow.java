@@ -227,10 +227,7 @@ public class TemplateRow extends TemplateBase
 			}
 			else //general scalar case
 			{
-				if( TemplateUtils.isColVector(cdata1) )
-					cdata1 = new CNodeUnary(cdata1, UnaryType.LOOKUP_R);
-				else if( cdata1 instanceof CNodeData && hop.getInput().get(0).getDataType().isMatrix() )
-					cdata1 = new CNodeUnary(cdata1, UnaryType.LOOKUP_RC);
+				cdata1 = TemplateUtils.wrapLookupIfNecessary(cdata1, hop.getInput().get(0));
 				
 				String primitiveOpName = ((UnaryOp)hop).getOp().toString();
 				out = new CNodeUnary(cdata1, UnaryType.valueOf(primitiveOpName));
@@ -271,17 +268,9 @@ public class TemplateRow extends TemplateBase
 			CNode cdata2 = tmp.get(hop.getInput().get(1).getHopID());
 			CNode cdata3 = tmp.get(hop.getInput().get(2).getHopID());
 			
-			//cdata1 is vector
-			if( TemplateUtils.isColVector(cdata1) )
-				cdata1 = new CNodeUnary(cdata1, UnaryType.LOOKUP_R);
-			else if( cdata1 instanceof CNodeData && hop.getInput().get(0).getDataType().isMatrix() )
-				cdata1 = new CNodeUnary(cdata1, UnaryType.LOOKUP_RC);
-			
-			//cdata3 is vector
-			if( TemplateUtils.isColVector(cdata3) )
-				cdata3 = new CNodeUnary(cdata3, UnaryType.LOOKUP_R);
-			else if( cdata3 instanceof CNodeData && hop.getInput().get(2).getDataType().isMatrix() )
-				cdata3 = new CNodeUnary(cdata3, UnaryType.LOOKUP_RC);
+			//add lookups if required
+			cdata1 = TemplateUtils.wrapLookupIfNecessary(cdata1, hop.getInput().get(0));
+			cdata3 = TemplateUtils.wrapLookupIfNecessary(cdata3, hop.getInput().get(2));
 			
 			//construct ternary cnode, primitive operation derived from OpOp3
 			out = new CNodeTernary(cdata1, cdata2, cdata3, 
@@ -290,10 +279,7 @@ public class TemplateRow extends TemplateBase
 		else if( hop instanceof ParameterizedBuiltinOp ) 
 		{
 			CNode cdata1 = tmp.get(((ParameterizedBuiltinOp)hop).getTargetHop().getHopID());
-			if( TemplateUtils.isColVector(cdata1) )
-				cdata1 = new CNodeUnary(cdata1, UnaryType.LOOKUP_R);
-			else if( cdata1 instanceof CNodeData && hop.getInput().get(0).getDataType().isMatrix() )
-				cdata1 = new CNodeUnary(cdata1, UnaryType.LOOKUP_RC);
+			cdata1 = TemplateUtils.wrapLookupIfNecessary(cdata1, hop.getInput().get(0));
 			
 			CNode cdata2 = tmp.get(((ParameterizedBuiltinOp)hop).getParameterHop("pattern").getHopID());
 			CNode cdata3 = tmp.get(((ParameterizedBuiltinOp)hop).getParameterHop("replacement").getHopID());

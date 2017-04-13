@@ -74,6 +74,17 @@ public class TemplateUtils
 			&& hop.getNumRows() == 1 && hop.getNumCols() != 1);
 	}
 	
+	public static CNode wrapLookupIfNecessary(CNode node, Hop hop) {
+		CNode ret = node;
+		if( isColVector(node) )
+			ret = new CNodeUnary(node, UnaryType.LOOKUP_R);
+		else if( isRowVector(node) )
+			ret = new CNodeUnary(node, UnaryType.LOOKUP_C);
+		else if( node instanceof CNodeData && hop.getDataType().isMatrix() )
+			ret = new CNodeUnary(node, UnaryType.LOOKUP_RC);
+		return ret;
+	}
+	
 	public static boolean isMatrix(Hop hop) {
 		return (hop.getDataType() == DataType.MATRIX && hop.getDim1() != 1 && hop.getDim2()!=1);
 	}
@@ -256,9 +267,12 @@ public class TemplateUtils
 	}
 	
 	public static boolean isLookup(CNode node) {
-		return (node instanceof CNodeUnary 
-				&& (((CNodeUnary)node).getType()==UnaryType.LOOKUP_R 
-				|| ((CNodeUnary)node).getType()==UnaryType.LOOKUP_RC));
+		return isUnary(node, UnaryType.LOOKUP_R, UnaryType.LOOKUP_C, UnaryType.LOOKUP_RC);
+	}
+	
+	public static boolean isUnary(CNode node, UnaryType...types) {
+		return node instanceof CNodeUnary
+			&& ArrayUtils.contains(types, ((CNodeUnary)node).getType());
 	}
 
 	public static CNodeData createCNodeData(Hop hop, boolean compileLiterals) {

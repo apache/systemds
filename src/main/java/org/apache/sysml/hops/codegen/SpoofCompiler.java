@@ -41,8 +41,6 @@ import org.apache.sysml.hops.codegen.cplan.CNodeOuterProduct;
 import org.apache.sysml.hops.codegen.cplan.CNodeTernary;
 import org.apache.sysml.hops.codegen.cplan.CNodeTernary.TernaryType;
 import org.apache.sysml.hops.codegen.cplan.CNodeTpl;
-import org.apache.sysml.hops.codegen.cplan.CNodeUnary;
-import org.apache.sysml.hops.codegen.cplan.CNodeUnary.UnaryType;
 import org.apache.sysml.hops.codegen.template.TemplateBase;
 import org.apache.sysml.hops.codegen.template.TemplateBase.CloseType;
 import org.apache.sysml.hops.codegen.template.TemplateBase.TemplateType;
@@ -641,9 +639,7 @@ public class SpoofCompiler
 	private static void rFindAndRemoveLookup(CNode node, CNodeData mainInput) {
 		for( int i=0; i<node.getInput().size(); i++ ) {
 			CNode tmp = node.getInput().get(i);
-			if( tmp instanceof CNodeUnary && (((CNodeUnary)tmp).getType()==UnaryType.LOOKUP_R 
-					|| ((CNodeUnary)tmp).getType()==UnaryType.LOOKUP_RC)
-				&& tmp.getInput().get(0) instanceof CNodeData
+			if( TemplateUtils.isLookup(tmp) && tmp.getInput().get(0) instanceof CNodeData
 				&& ((CNodeData)tmp.getInput().get(0)).getHopID()==mainInput.getHopID() )
 			{
 				node.getInput().set(i, tmp.getInput().get(0));

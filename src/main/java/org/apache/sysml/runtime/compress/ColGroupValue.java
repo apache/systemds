@@ -28,6 +28,7 @@ import org.apache.sysml.runtime.functionobjects.KahanFunction;
 import org.apache.sysml.runtime.functionobjects.KahanPlus;
 import org.apache.sysml.runtime.instructions.cp.KahanObject;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysml.runtime.matrix.operators.ScalarOperator;
 
@@ -46,7 +47,11 @@ public abstract class ColGroupValue extends ColGroup
 	//slight performance decrease for parallel incl multi-threaded, hence not applied for
 	//distributed operations (also because compression time + garbage collection increases)
 	public static final boolean SORT_VALUES_BY_LENGTH = true; 
-		
+	
+	//thread-local pairs of reusable temporary vectors for positions and values
+	private static ThreadLocal<Pair<int[], double[]>> memPool = new ThreadLocal<Pair<int[], double[]>>() {
+		@Override protected Pair<int[], double[]> initialValue() { return new Pair<int[], double[]>(); }
+	};
 	
 	/** Distinct values associated with individual bitmaps. */
 	protected double[] _values; //linearized <numcol vals> <numcol vals>
@@ -184,7 +189,12 @@ public abstract class ColGroupValue extends ColGroup
 	}
 
 	protected final double[] preaggValues(int numVals, double[] b) {
-		double[] ret = new double[numVals];
+		return preaggValues(numVals, b, false);
+	}
+	
+	protected final double[] preaggValues(int numVals, double[] b, boolean allocNew) {
+		double[] ret = allocNew ? new double[numVals] : 
+			allocDVector(numVals, false);
 		for( int k = 0; k < numVals; k++ )
 			ret[k] = sumValues(k, b);
 		
@@ -300,4 +310,46 @@ public abstract class ColGroupValue extends ColGroup
 	 */
 	public abstract void unaryAggregateOperations(AggregateUnaryOperator op, MatrixBlock result, int rl, int ru)
 		throws DMLRuntimeException;
+	
+
+	//dynamic memory management
+	
+	public static void setupThreadLocalMemory(int len) {
+		Pair<int[], double[]> p = new Pair<int[], double[]>();
+		p.setKey(new int[len]);
+		p.setValue(new double[len]);
+		memPool.set(p);
+	}
+	
+	public static void cleanupThreadLocalMemory() {
+		memPool.remove();
+	}
+	
+	protected static double[] allocDVector(int len, boolean reset) {
+		Pair<int[], double[]> p = memPool.get();
+		
+		//sanity check for missing setup
+		if( p.getValue() == null )
+			return new double[len];
+		
+		//get and reset if necessary
+		double[] tmp = p.getValue();
+		if( reset )
+			Arrays.fill(tmp, 0, len, 0);
+		return tmp;
+	}
+	
+	protected static int[] allocIVector(int len, boolean reset) {
+		Pair<int[], double[]> p = memPool.get();
+		
+		//sanity check for missing setup
+		if( p.getKey() == null )
+			return new int[len];
+		
+		//get and reset if necessary
+		int[] tmp = p.getKey();
+		if( reset )
+			Arrays.fill(tmp, 0, len, 0);
+		return tmp;
+	}
 }

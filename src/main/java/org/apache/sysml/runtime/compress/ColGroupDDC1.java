@@ -223,7 +223,7 @@ public class ColGroupDDC1 extends ColGroupDDC
 				sb[j] = b[grps[i]._colIndexes[j]];
 			}	
 			//pre-aggregate all distinct values (guaranteed <=255)
-			vals[i] = grps[i].preaggValues(grps[i].getNumValues(), sb);
+			vals[i] = grps[i].preaggValues(grps[i].getNumValues(), sb, true);
 		}
 		
 		//cache-conscious matrix-vector multiplication
@@ -247,7 +247,7 @@ public class ColGroupDDC1 extends ColGroupDDC
 		{
 			//iterative over codes and pre-aggregate inputs per code (guaranteed <=255)
 			//temporary array also avoids false sharing in multi-threaded environments
-			double[] vals = new double[numVals];
+			double[] vals = allocDVector(numVals, true);
 			for( int i=0; i<nrow; i++ ) {
 				vals[_data[i]&0xFF] += a[i];
 			}

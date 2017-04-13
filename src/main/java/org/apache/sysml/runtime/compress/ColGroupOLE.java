@@ -380,8 +380,8 @@ public class ColGroupOLE extends ColGroupOffset
 			//step 1: prepare position and value arrays
 			
 			//current pos per OLs / output values
-			int[] apos = new int[numVals];
-			double[] cvals = new double[numVals];
+			int[] apos = allocIVector(numVals, true);
+			double[] cvals = allocDVector(numVals, true);
 			
 			//step 2: cache conscious matrix-vector via horizontal scans 
 			for( int ai=0; ai<n; ai+=blksz2 ) 
@@ -687,7 +687,7 @@ public class ColGroupOLE extends ColGroupOffset
 	 * @return array of positions for all values
 	 */
 	private int[] skipScan(int numVals, int rl) {
-		int[] ret = new int[numVals];
+		int[] ret = allocIVector(numVals, rl==0);
 		final int blksz = BitmapEncoder.BITMAP_BLOCK_SZ;
 		
 		if( rl > 0 ) { //rl aligned with blksz		

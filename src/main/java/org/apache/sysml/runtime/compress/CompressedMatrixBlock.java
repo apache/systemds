@@ -1358,6 +1358,8 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	private static void rightMultByVector(ArrayList<ColGroup> groups, MatrixBlock vect, MatrixBlock ret, boolean inclUC, int rl, int ru) 
 		throws DMLRuntimeException 
 	{
+		ColGroupValue.setupThreadLocalMemory(getMaxNumValues(groups));
+		
 		boolean cacheDDC1 = ColGroupValue.LOW_LEVEL_OPT 
 			&& ru-rl > ColGroupOffset.WRITE_CACHE_BLKSZ;
 		
@@ -1383,6 +1385,8 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 			if( !(grp instanceof ColGroupUncompressed) 
 				&& !(cacheDDC1 && grp instanceof ColGroupDDC1) )
 				grp.rightMultByVector(vect, ret, rl, ru);
+		
+		ColGroupValue.cleanupThreadLocalMemory();
 	}
 	
 	/**
@@ -1412,12 +1416,16 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		result.reset();
 		result.allocateDenseBlock();
 		
+		// setup memory pool for reuse
+		ColGroupValue.setupThreadLocalMemory(getMaxNumValues(colGroups));
+		
 		// delegate matrix-vector operation to each column group
 		for (ColGroup grp : colGroups) {			
 			grp.leftMultByRowVector(rowVector, result);
 		}
-
+		
 		// post-processing
+		ColGroupValue.cleanupThreadLocalMemory();
 		result.recomputeNonZeros();
 	}
 	
@@ -1457,10 +1465,10 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 			
 			//compute remaining compressed column groups in parallel
 			ExecutorService pool = Executors.newFixedThreadPool( Math.min(colGroups.size()-((uc!=null)?1:0), k) );
+			ArrayList<ColGroup>[] grpParts = createStaticTaskPartitioning(4*k, false);
 			ArrayList<LeftMatrixMultTask> tasks = new ArrayList<LeftMatrixMultTask>();
-			for( ColGroup grp : colGroups )
-				if( !(grp instanceof ColGroupUncompressed) )
-					tasks.add(new LeftMatrixMultTask(grp, rowVector, result));
+			for( ArrayList<ColGroup> groups : grpParts )
+				tasks.add(new LeftMatrixMultTask(groups, rowVector, result));
 			List<Future<Object>> ret = pool.invokeAll(tasks);	
 			pool.shutdown();
 			for( Future<Object> tmp : ret )
@@ -1535,6 +1543,15 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		
 		return grpParts;
 	}
+	
+	private static int getMaxNumValues(List<ColGroup> groups) {
+		int numVals = 1;
+		for( ColGroup grp : groups )
+			if( grp instanceof ColGroupValue )
+				numVals = Math.max(numVals, 
+					((ColGroupValue)grp).getNumValues());
+		return numVals;
+	}
 
 	private ColGroupUncompressed getUncompressedColGroup()
 	{
@@ -1547,12 +1564,12 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 
 	private static class LeftMatrixMultTask implements Callable<Object> 
 	{
-		private final ColGroup _group;
+		private final ArrayList<ColGroup> _groups;
 		private final MatrixBlock _vect;
 		private final MatrixBlock _ret;
 		
-		protected LeftMatrixMultTask( ColGroup group, MatrixBlock vect, MatrixBlock ret)  {
-			_group = group;
+		protected LeftMatrixMultTask( ArrayList<ColGroup> groups, MatrixBlock vect, MatrixBlock ret)  {
+			_groups = groups;
 			_vect = vect;
 			_ret = ret;
 		}
@@ -1560,8 +1577,14 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		@Override
 		public Object call() throws DMLRuntimeException 
 		{
+			// setup memory pool for reuse
+			ColGroupValue.setupThreadLocalMemory(getMaxNumValues(_groups));
+			
 			// delegate matrix-vector operation to each column group
-			_group.leftMultByRowVector(_vect, _ret);
+			for(ColGroup grp : _groups)
+				grp.leftMultByRowVector(_vect, _ret);
+			
+			ColGroupValue.cleanupThreadLocalMemory();
 			return null;
 		}
 	}

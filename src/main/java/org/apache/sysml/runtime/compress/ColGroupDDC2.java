@@ -221,7 +221,7 @@ public class ColGroupDDC2 extends ColGroupDDC
 		{
 			//iterative over codes and pre-aggregate inputs per code
 			//temporary array also avoids false sharing in multi-threaded environments
-			double[] vals = new double[numVals];
+			double[] vals = allocDVector(numVals, true);
 			for( int i=0; i<nrow; i++ ) {
 				vals[_data[i]] += a[i];
 			}

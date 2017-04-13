@@ -53,9 +53,6 @@ public class GPUContextPool {
   /** Set of free GPUContexts */
   static Queue<GPUContext> freePool = new LinkedList<>();
 
-  /** Set of busy GPUContexts */
-  static Queue<GPUContext> busyPool = new LinkedList<>();
-
   /**
    * Static initialization of the number of devices
    * Also sets behaviour for J{Cuda, Cudnn, Cublas, Cusparse} in case of error
@@ -110,8 +107,7 @@ public class GPUContextPool {
   public static synchronized GPUContext getFromPool() throws DMLRuntimeException {
     if (!initialized) initializeGPU();
     GPUContext gCtx = freePool.poll();
-    busyPool.add(gCtx);
-    LOG.trace("GPU : got GPUContext (" + gCtx + ") from freePool. New sizes - FreePool[" + freePool.size() + "], BusyPool[" + busyPool.size() + "]");
+    LOG.trace("GPU : got GPUContext (" + gCtx + ") from freePool. New sizes - FreePool[" + freePool.size() + "]");
     return gCtx;
   }
 
@@ -145,15 +141,12 @@ public class GPUContextPool {
    * @param gCtx the GPUContext instance to return. If null, nothing happens
    * @throws DMLRuntimeException if error
    */
-  public static void returnToPool(GPUContext gCtx) throws DMLRuntimeException {
+  public static synchronized void returnToPool(GPUContext gCtx) throws DMLRuntimeException {
     if (gCtx == null)
       return;
-    gCtx.clearMemory();
-    synchronized (GPUContextPool.class) {
-      boolean removed = busyPool.remove(gCtx);
-      freePool.add(gCtx);
-      LOG.trace("GPU : returned GPUContext (" + gCtx + ") to freePool. New sizes - FreePool[" + freePool.size() + "], BusyPool[" + busyPool.size() + "]");
-    }
+    freePool.add(gCtx);
+    LOG.trace("GPU : returned GPUContext (" + gCtx + ") to freePool. New sizes - FreePool[" + freePool.size() + "]");
+
   }
 
 }

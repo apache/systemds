@@ -40,7 +40,6 @@ import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
-import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 
 public class FunctionCallCPInstruction extends CPInstruction 
 {	
@@ -177,7 +176,6 @@ public class FunctionCallCPInstruction extends CPInstruction
 		ec.setGPUContext(null);
 		fn_ec.getGPUContext().initializeThread();
 		fn_ec.setVariables(functionVariables);
-		LOG.info("Now calling function with " + fn_ec.getGPUContext() + " from thread " + Thread.currentThread() + ", cudaGetDevice=" + GPUContext.cudaGetDevice());
 		// execute the function block
 		try {
 			fpb._functionName = this._functionName;
@@ -191,9 +189,6 @@ public class FunctionCallCPInstruction extends CPInstruction
 			String fname = DMLProgram.constructFunctionKey(_namespace, _functionName);
 			throw new DMLRuntimeException("error executing function " + fname, e);
 		}
-
-		LOG.info("done with function call, " + fn_ec.getGPUContext() + " from thread " + Thread.currentThread() + ", cudaGetDevice=" + GPUContext.cudaGetDevice());
-
 		LocalVariableMap retVars = fn_ec.getVariables();  
 		
 		// cleanup all returned variables w/o binding 

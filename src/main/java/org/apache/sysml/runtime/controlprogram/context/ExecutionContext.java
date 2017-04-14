@@ -54,8 +54,7 @@ import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.util.MapReduceTool;
 
 
-public class ExecutionContext 
-{
+public class ExecutionContext {
 	protected static final Log LOG = LogFactory.getLog(ExecutionContext.class.getName());
 
 	//program reference (e.g., function repository)
@@ -106,7 +105,6 @@ public class ExecutionContext
 
     public void setGPUContext(GPUContext _gpuContext) {
         this._gpuContext = _gpuContext;
-				LOG.info("setting GPUContext to " + _gpuContext + ", cudaGetDevice=" + GPUContext.cudaGetDevice() + " from thread " + Thread.currentThread());
     }
 
 	/* -------------------------------------------------------
@@ -498,7 +496,7 @@ public class ExecutionContext
 		return varlist;
 	}
 
-	public void cleanupMatrixObject(MatrixObject mo) 
+	public void cleanupMatrixObject(MatrixObject mo)
 		throws DMLRuntimeException 
 	{
 		try

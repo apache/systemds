@@ -725,6 +725,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	private void executeLocalParFor( ExecutionContext ec, IntObject itervar, IntObject from, IntObject to, IntObject incr ) 
 		throws DMLRuntimeException, InterruptedException
 	{
+		LOG.trace("Local Par For (multi-threaded) with degree of parallelism : " + _numThreads);
 		/* Step 1) init parallel workers, task queue and threads
 		 *         start threads (from now on waiting for tasks)
 		 * Step 2) create tasks

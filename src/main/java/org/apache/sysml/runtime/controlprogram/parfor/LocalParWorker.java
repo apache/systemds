@@ -80,6 +80,7 @@ public class LocalParWorker extends ParWorker implements Runnable
 			sec.setThreadLocalSchedulerPool("parforPool"+_workerID);
 		}
 
+		// Initialize this GPUContext to this thread
 		_ec.getGPUContext().initializeThread();
 		
 		//setup compiler config for worker thread

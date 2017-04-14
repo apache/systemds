@@ -36,12 +36,20 @@ trait CaffeLayer extends BaseDMLGenerator {
   def init(dmlScript:StringBuilder):Unit;
   def forward(dmlScript:StringBuilder, isPrediction:Boolean):Unit;
   def backward(dmlScript:StringBuilder, outSuffix:String):Unit;
-  def outputShape:(String, String, String) = bottomLayerOutputShape
+  var computedOutputShape:(String, String, String) = null
+  def outputShape:(String, String, String) = {
+    if(computedOutputShape == null) computedOutputShape = bottomLayerOutputShape
+    computedOutputShape
+  }
   // -------------------------------------------------
+  var computedBottomLayerOutputShape:(String, String, String) = null
   def bottomLayerOutputShape:(String, String, String) = {
-    val ret = net.getBottomLayers(param.getName).map(l => net.getCaffeLayer(l)).toList
-    if(ret.size == 0) throw new LanguageException("Expected atleast 1 bottom layer for " + param.getName)
-    else ret(0).outputShape
+    if(computedBottomLayerOutputShape == null) {
+      val ret = net.getBottomLayers(param.getName).map(l => net.getCaffeLayer(l)).toList
+      if(ret.size == 0) throw new LanguageException("Expected atleast 1 bottom layer for " + param.getName)
+      computedBottomLayerOutputShape = ret(0).outputShape
+    }
+    computedBottomLayerOutputShape
   }
   def param:LayerParameter
   def id:Int
@@ -53,17 +61,25 @@ trait CaffeLayer extends BaseDMLGenerator {
   // X (feature map from the previous layer) ----> Forward pass  ----> out (feature map to the next layer)
   // dX (errors to the previous layer)       <---- Backward pass <---- dout (errors from the next layer)
   def out = "out" + id  
+  var computedX:String = null
   def X:String = {
-    val ret = net.getBottomLayers(param.getName).map(l => net.getCaffeLayer(l)).toList
-    if(ret.size == 0) throw new LanguageException("Expected atleast 1 bottom layer for " + param.getName)
-    else if(ret.size == 1) ret(0).out
-    else sum(new StringBuilder, ret.map(_.out).toList).toString()
+    if(computedX == null) {
+      val ret = net.getBottomLayers(param.getName).map(l => net.getCaffeLayer(l)).toList
+      if(ret.size == 0) throw new LanguageException("Expected atleast 1 bottom layer for " + param.getName)
+      else if(ret.size == 1)    computedX = ret(0).out
+      else                      computedX = sum(new StringBuilder, ret.map(_.out).toList).toString()
+    }
+    computedX
   }
+  var computedDout:String = null
   def dout: String = {
-    val ret = net.getTopLayers(param.getName).map(l => net.getCaffeLayer(l)).toList
-    if(ret.size == 0) throw new LanguageException("Expected atleast 1 top layer for " + param.getName)
-    else if(ret.size == 1) ret(0).dX
-    else sum(new StringBuilder, ret.map(_.dX).toList).toString()
+    if(computedDout == null) {
+      val ret = net.getTopLayers(param.getName).map(l => net.getCaffeLayer(l)).toList
+      if(ret.size == 0) throw new LanguageException("Expected atleast 1 top layer for " + param.getName)
+      else if(ret.size == 1)     computedDout = ret(0).dX
+      else                       computedDout = sum(new StringBuilder, ret.map(_.dX).toList).toString()
+    }
+    computedDout
   }
   val dX = "dOut" + id
   // --------------------------------------------------------------------------------------
@@ -189,9 +205,7 @@ class Elementwise(val param:LayerParameter, val id:Int, val net:CaffeNetwork) ex
   }
   override def backward(dmlScript: StringBuilder, outSuffix:String): Unit = assign(dmlScript, dX + outSuffix, dout)
   override def outputShape = {
-    if(_out == null) {
-      _out = net.getCaffeLayer(net.getBottomLayers(param.getName).take(1).toSeq.get(0)).outputShape
-    }
+    if(_out == null) _out = net.getCaffeLayer(net.getBottomLayers(param.getName).take(1).toSeq.get(0)).outputShape
     _out
   }
   var _out:(String, String, String) = null

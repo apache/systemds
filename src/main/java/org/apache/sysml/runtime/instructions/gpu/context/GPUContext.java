@@ -150,7 +150,7 @@ public class GPUContext {
    */
   public void initializeThread() {
     cudaSetDevice(deviceNum);
-    LOG.info("cudaSetDevice to " + deviceNum + " from thread " + Thread.currentThread() + ", currently set - " + cudaGetDevice());
+    LOG.info("cudaSetDevice to " + deviceNum + " from thread " + Thread.currentThread() + ", currently set - " + cudaGetDevice() + ", this=" + this);
   }
 
   @SuppressWarnings("unused")

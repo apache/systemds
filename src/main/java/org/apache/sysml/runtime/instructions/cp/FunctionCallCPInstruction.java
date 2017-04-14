@@ -174,8 +174,8 @@ public class FunctionCallCPInstruction extends CPInstruction
 		// and copy the function arguments into the created table. 
 		ExecutionContext fn_ec = ExecutionContextFactory.createContext(false, ec.getProgram());
 		fn_ec.setGPUContext(ec.getGPUContext());
-		if (ec.getGPUContext().getDeviceNum() != GPUContext.cudaGetDevice())
-			throw new DMLRuntimeException("What happenede here ????????");
+		ec.setGPUContext(null);
+		fn_ec.getGPUContext().initializeThread();
 		fn_ec.setVariables(functionVariables);
 		LOG.info("Now calling function with " + fn_ec.getGPUContext() + " from thread " + Thread.currentThread() + ", cudaGetDevice=" + GPUContext.cudaGetDevice());
 		// execute the function block
@@ -194,8 +194,6 @@ public class FunctionCallCPInstruction extends CPInstruction
 
 		LOG.info("done with function call, " + fn_ec.getGPUContext() + " from thread " + Thread.currentThread() + ", cudaGetDevice=" + GPUContext.cudaGetDevice());
 
-
-		fn_ec.getGPUContext().initializeThread();
 		LocalVariableMap retVars = fn_ec.getVariables();  
 		
 		// cleanup all returned variables w/o binding 
@@ -214,6 +212,10 @@ public class FunctionCallCPInstruction extends CPInstruction
 		
 		// Unpin the pinned variables
 		ec.unpinVariables(_boundInputParamNames, pinStatus);
+
+		ec.setGPUContext(fn_ec.getGPUContext());
+		fn_ec.setGPUContext(null);
+		ec.getGPUContext().initializeThread();
 		
 		// add the updated binding for each return variable to the variables in original symbol table
 		for (int i=0; i< fpb.getOutputParams().size(); i++){

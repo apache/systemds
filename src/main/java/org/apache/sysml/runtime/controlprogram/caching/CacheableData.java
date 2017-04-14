@@ -346,15 +346,15 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			bc.setBackReference(this);
 	}
 
-	public GPUObject getGPUObject(GPUContext gCtx) {
-	    return _gpuObjects.get(gCtx);
-    }
+	public synchronized GPUObject getGPUObject(GPUContext gCtx) {
+		return _gpuObjects.get(gCtx);
+	}
 
-    public void setGPUObject(GPUContext gCtx, GPUObject gObj) throws DMLRuntimeException {
-	    GPUObject old = _gpuObjects.put(gCtx, gObj);
-	    if (old != null)
-	        throw new DMLRuntimeException("GPU : Inconsistent internal state - this CacheableData already has a GPUObject assigned to the current GPUContext (" + gCtx + ")");
-    }
+	public synchronized void setGPUObject(GPUContext gCtx, GPUObject gObj) throws DMLRuntimeException {
+		GPUObject old = _gpuObjects.put(gCtx, gObj);
+		if (old != null)
+				throw new DMLRuntimeException("GPU : Inconsistent internal state - this CacheableData already has a GPUObject assigned to the current GPUContext (" + gCtx + ")");
+	}
 	
 	// *********************************************
 	// ***                                       ***

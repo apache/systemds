@@ -205,8 +205,12 @@ public class Dag<N extends Lop>
 		return scratchFilePath;
 	}
 
+	public static String getNextUniqueFilenameSuffix() {
+		return "temp" + job_id.getNextID();
+	}
+	
 	public String getNextUniqueFilename() {
-		return getFilePath() + "temp" + job_id.getNextID();
+		return getFilePath() + getNextUniqueFilenameSuffix();
 	}
 	
 	public static String getNextUniqueVarname(DataType dt) {

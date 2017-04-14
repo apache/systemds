@@ -41,6 +41,7 @@ import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.functionobjects.IntegerDivide;
 import org.apache.sysml.runtime.functionobjects.Modulus;
@@ -885,7 +886,10 @@ public class OptimizerUtils
 	 * @return unique temp file name
 	 */
 	public static String getUniqueTempFileName() {
-		return new Dag<Lop>().getNextUniqueFilename();
+		return ConfigurationManager.getScratchSpace()
+			+ Lop.FILE_SEPARATOR + Lop.PROCESS_PREFIX + DMLScript.getUUID()
+			+ Lop.FILE_SEPARATOR + ProgramConverter.CP_ROOT_THREAD_ID + Lop.FILE_SEPARATOR 
+			+ Dag.getNextUniqueFilenameSuffix();
 	}
 
 	public static boolean allowsToFilterEmptyBlockOutputs( Hop hop ) 

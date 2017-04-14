@@ -518,7 +518,7 @@ public class MLContext {
 		if( format.equals("csv") ) {
 			int blksz = ConfigurationManager.getBlocksize();
 			MatrixCharacteristics mc = new MatrixCharacteristics(rlen, clen, blksz, blksz, nnz);
-			mo = new MatrixObject(ValueType.DOUBLE, null, new MatrixFormatMetaData(mc, OutputInfo.CSVOutputInfo, InputInfo.CSVInputInfo));
+			mo = new MatrixObject(ValueType.DOUBLE, OptimizerUtils.getUniqueTempFileName(), new MatrixFormatMetaData(mc, OutputInfo.CSVOutputInfo, InputInfo.CSVInputInfo));
 		}
 		else if( format.equals("text") ) {
 			if(rlen == -1 || clen == -1) {
@@ -526,7 +526,7 @@ public class MLContext {
 			}
 			int blksz = ConfigurationManager.getBlocksize();
 			MatrixCharacteristics mc = new MatrixCharacteristics(rlen, clen, blksz, blksz, nnz);
-			mo = new MatrixObject(ValueType.DOUBLE, null, new MatrixFormatMetaData(mc, OutputInfo.TextCellOutputInfo, InputInfo.TextCellInputInfo));
+			mo = new MatrixObject(ValueType.DOUBLE, OptimizerUtils.getUniqueTempFileName(), new MatrixFormatMetaData(mc, OutputInfo.TextCellOutputInfo, InputInfo.TextCellInputInfo));
 		}
 		else if( format.equals("mm") ) {
 			// TODO: Handle matrix market
@@ -588,7 +588,7 @@ public class MLContext {
 			if(rlen == -1 || clen == -1) {
 				throw new DMLRuntimeException("The metadata is required in registerInput for format:" + format);
 			}
-			fo = new FrameObject(null, new MatrixFormatMetaData(mc, OutputInfo.TextCellOutputInfo, InputInfo.TextCellInputInfo));
+			fo = new FrameObject(OptimizerUtils.getUniqueTempFileName(), new MatrixFormatMetaData(mc, OutputInfo.TextCellOutputInfo, InputInfo.TextCellInputInfo));
 		}
 		else {
 			

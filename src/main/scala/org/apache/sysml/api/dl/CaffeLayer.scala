@@ -127,7 +127,7 @@ class Data(val param:LayerParameter, val id:Int, val net:CaffeNetwork, val numCh
 // Fuse 
 class BatchNorm(val param:LayerParameter, val id:Int, val net:CaffeNetwork) extends CaffeLayer with HasWeight with HasBias {
   // val scale =  
-  override def sourceFileName = "spatial_batch_norm"
+  override def sourceFileName = "batch_norm2d"
   override def init(dmlScript:StringBuilder) = invokeInit(dmlScript, List[String](gamma, beta, ema_mean, ema_var), numChannels)
   var update_mean_var = true
   def forward(dmlScript: StringBuilder, isPrediction: Boolean): Unit = {

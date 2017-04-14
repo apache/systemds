@@ -137,15 +137,10 @@ def convertImageToNumPyArr(im, img_shape=None, add_rotated_images=False, add_mir
         im = im.convert(expected_mode)
     def _im2NumPy(im):
         if expected_mode == 'L':
-            return np.array(im.getdata()).reshape((1, -1))
+            return np.asarray(im.getdata()).reshape((1, -1))
         else:
-            r, g, b = im.split()
-            # Since the format is  (N, CHW)
-            r1 = np.array(r.getdata()).reshape((1, -1))
-            g1 = np.array(g.getdata()).reshape((1, -1))
-            b1 = np.array(b.getdata()).reshape((1, -1))
-            return np.hstack( (r1, g1, b1) )
-        return np.array(im.getdata()).reshape((im.size[0],im.size[1], num_channels)).reshape((1, -1))
+            # (H,W,C) --> (C,H,W) --> (1, C*H*W)
+            return np.asarray(im).transpose(2, 0, 1).reshape((1, -1))
     ret = _im2NumPy(im)
     if add_rotated_images:
         ret = np.vstack((ret, _im2NumPy(im.rotate(90)), _im2NumPy(im.rotate(180)), _im2NumPy(im.rotate(270)) ))

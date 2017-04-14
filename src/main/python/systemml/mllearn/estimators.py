@@ -228,11 +228,11 @@ class BaseSystemMLClassifier(BaseSystemMLEstimator):
             return [ self.labelMap[int(i)] for i in y ]
         
     def predict(self, X):
-        predictions = np.array(super(BaseSystemMLClassifier, self).predict(X))
+        predictions = np.asarray(super(BaseSystemMLClassifier, self).predict(X))
         try:
-            return np.array(predictions, dtype='double')
+            return np.asarray(predictions, dtype='double')
         except ValueError:
-            return np.array(predictions, dtype='str')
+            return np.asarray(predictions, dtype='str')
             
     def score(self, X, y):
         """
@@ -243,11 +243,11 @@ class BaseSystemMLClassifier(BaseSystemMLEstimator):
         X: NumPy ndarray, Pandas DataFrame, scipy sparse matrix
         y: NumPy ndarray, Pandas DataFrame, scipy sparse matrix
         """
-        predictions = np.array(self.predict(X))
+        predictions = np.asarray(self.predict(X))
         if np.issubdtype(predictions.dtype.type, np.number):
             return accuracy_score(y, predictions)
         else:
-            return accuracy_score(np.array(y, dtype='str'), np.array(predictions, dtype='str'))
+            return accuracy_score(np.asarray(y, dtype='str'), np.asarray(predictions, dtype='str'))
 
 class BaseSystemMLRegressor(BaseSystemMLEstimator):
 
@@ -592,8 +592,8 @@ class Caffe2DML(BaseSystemMLClassifier):
         if(self.weights is not None):
             self.model = self.sc._jvm.org.apache.sysml.api.dl.Caffe2DMLModel(self.estimator)
             df = self.sqlCtx.read.csv(self.weights + sep + 'labels.txt', header=False).toPandas()
-            keys = np.array(df._c0, dtype='int')
-            values = np.array(df._c1, dtype='str')
+            keys = np.asarray(df._c0, dtype='int')
+            values = np.asarray(df._c1, dtype='str')
             self.labelMap = {}
             self.le = None
             for i in range(len(keys)):

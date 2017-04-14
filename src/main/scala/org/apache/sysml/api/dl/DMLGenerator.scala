@@ -175,7 +175,7 @@ trait NextBatchGenerator extends TabbedDMLGenerator {
     assignBatch(tabDMLScript, "Xb", Caffe2DML.X, "yb", Caffe2DML.y, "", Caffe2DML.numImages, "i")
   }
 	def getTrainingBatch(tabDMLScript:StringBuilder, X:String, y:String, numImages:String):Unit = {
-	  assignBatch(tabDMLScript, "Xb", X, "yb", y, "", Caffe2DML.numImages, "i")
+	  assignBatch(tabDMLScript, "Xb", X, "yb", y, "", numImages, "i")
   }
   def getTrainingMaxiBatch(tabDMLScript:StringBuilder):Unit = {
     assignBatch(tabDMLScript, "X_group_batch", Caffe2DML.X, "y_group_batch", Caffe2DML.y, "group_", Caffe2DML.numImages, "g")

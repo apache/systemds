@@ -421,9 +421,6 @@ class Caffe2DMLModel(val mloutput: MLResults,
 	  net.getLayers.map(net.getCaffeLayer(_)).filter(_.bias != null).map(l => script.in(l.bias, mloutput.getBinaryBlockMatrix(l.bias)))
 	  val ml = new MLContext(sc)
 	  ml.execute(script)
-	  
-//	  val rdd = sc.parallelize(labelMapping.map(x => x._1.toString + "," + x._2.toString).toList)
-//	  rdd.saveAsTextFile(outputDir + sep + "labelMapping.csv")
 	}
     
   def getPredictionScript(mloutput: MLResults, isSingleNode:Boolean): (Script, String)  = {

@@ -1899,8 +1899,12 @@ public class LibMatrixReorg
 				if( val == Math.floor(val) && val >= 1 && val <= max )
 					ret.appendValue((int)(val-1), i+tmpi[j], 1);
 			}
-			
 		}
+		
+		//ensure valid output sparse representation 
+		//(necessary due to cache-conscious processing w/ unstable sort)
+		if( ret.isInSparseFormat() )
+			ret.sortSparseRows();
 		
 		return ret;
 	}
@@ -1940,7 +1944,7 @@ public class LibMatrixReorg
 	{
 		//copy value array from input matrix
 		if( in.isEmptyBlock(false) ) {
-			Arrays.fill(tmp, 0, 0, len);
+			Arrays.fill(tmp, 0, len, 0);
 		}
 		else if( in.sparse ){ //SPARSE
 			for( int i=0; i<len; i++ )

@@ -123,9 +123,14 @@ public class CNodeRow extends CNodeTpl
 
 	@Override
 	public SpoofOutputDimsType getOutputDimType() {
-		return (_output._cols==1) ? 
-			SpoofOutputDimsType.COLUMN_DIMS_ROWS : //column vector
-			SpoofOutputDimsType.COLUMN_DIMS_COLS;  //row vector
+		switch( _type ) {
+			case NO_AGG: return SpoofOutputDimsType.INPUT_DIMS;
+			case ROW_AGG: return SpoofOutputDimsType.ROW_DIMS;
+			case COL_AGG: return SpoofOutputDimsType.COLUMN_DIMS_COLS; //row vector
+			case COL_AGG_T: return SpoofOutputDimsType.COLUMN_DIMS_ROWS; //column vector
+			default:
+				throw new RuntimeException("Unsupported row type: "+_type.toString());
+		}
 	}
 	
 	@Override

@@ -583,21 +583,10 @@ public class SpoofCompiler
 						tmp.toArray(new Hop[0]),tpl));
 			}
 			
-			//remove spurious lookups on main input of cell template
-			if( tpl instanceof CNodeCell || tpl instanceof CNodeOuterProduct ) {
-				CNodeData in1 = (CNodeData)tpl.getInput().get(0);
-				rFindAndRemoveLookup(tpl.getOutput(), in1);
-			}
-			else if( tpl instanceof CNodeMultiAgg ) {
-				CNodeData in1 = (CNodeData)tpl.getInput().get(0);
-				for( CNode output : ((CNodeMultiAgg)tpl).getOutputs() )
-					rFindAndRemoveLookup(output, in1);
-			}
-			
 			//remove invalid plans with column indexing on main input
 			if( tpl instanceof CNodeCell ) {
 				CNodeData in1 = (CNodeData)tpl.getInput().get(0);
-				if( rHasLookupRC1(tpl.getOutput(), in1) ) {
+				if( rHasLookupRC1(tpl.getOutput(), in1) || isLookupRC1(tpl.getOutput(), in1) ) {
 					cplans2.remove(e.getKey());
 					if( LOG.isTraceEnabled() )
 						LOG.trace("Removed cplan due to invalid rc1 indexing on main input.");
@@ -606,16 +595,26 @@ public class SpoofCompiler
 			else if( tpl instanceof CNodeMultiAgg ) {
 				CNodeData in1 = (CNodeData)tpl.getInput().get(0);
 				for( CNode output : ((CNodeMultiAgg)tpl).getOutputs() )
-					if( rHasLookupRC1(output, in1) ) {
+					if( rHasLookupRC1(output, in1) || isLookupRC1(output, in1) ) {
 						cplans2.remove(e.getKey());
 						if( LOG.isTraceEnabled() )
 							LOG.trace("Removed cplan due to invalid rc1 indexing on main input.");
 					}
 			}
 			
+			//remove spurious lookups on main input of cell template
+			if( tpl instanceof CNodeCell || tpl instanceof CNodeOuterProduct ) {
+				CNodeData in1 = (CNodeData)tpl.getInput().get(0);
+				rFindAndRemoveLookup(tpl.getOutput(), in1);
+			}
+			else if( tpl instanceof CNodeMultiAgg ) {
+				CNodeData in1 = (CNodeData)tpl.getInput().get(0);
+				rFindAndRemoveLookupMultiAgg((CNodeMultiAgg)tpl, in1);
+			}
+			
 			//remove cplan w/ single op and w/o agg
-			if( tpl instanceof CNodeCell && ((CNodeCell)tpl).getCellType()==CellType.NO_AGG
-				&& TemplateUtils.hasSingleOperation(tpl) ) 
+			if( tpl instanceof CNodeCell && ((((CNodeCell)tpl).getCellType()==CellType.NO_AGG
+				&& TemplateUtils.hasSingleOperation(tpl))|| TemplateUtils.hasNoOperation(tpl)) ) 
 				cplans2.remove(e.getKey());
 				
 			//remove cplan if empty
@@ -636,6 +635,20 @@ public class SpoofCompiler
 			rCollectLeafIDs(c, leafs);
 	}
 	
+	private static void rFindAndRemoveLookupMultiAgg(CNodeMultiAgg node, CNodeData mainInput) {
+		//process all outputs individually
+		for( CNode output : node.getOutputs() )
+			rFindAndRemoveLookup(output, mainInput);
+		
+		//handle special case, of lookup being itself the output node
+		for( int i=0; i < node.getOutputs().size(); i++) {
+			CNode tmp = node.getOutputs().get(i);
+			if( TemplateUtils.isLookup(tmp) && tmp.getInput().get(0) instanceof CNodeData
+				&& ((CNodeData)tmp.getInput().get(0)).getHopID()==mainInput.getHopID() )
+				node.getOutputs().set(i, tmp.getInput().get(0));
+		}
+	}
+	
 	private static void rFindAndRemoveLookup(CNode node, CNodeData mainInput) {
 		for( int i=0; i<node.getInput().size(); i++ ) {
 			CNode tmp = node.getInput().get(i);
@@ -653,14 +666,18 @@ public class SpoofCompiler
 		boolean ret = false;
 		for( int i=0; i<node.getInput().size() && !ret; i++ ) {
 			CNode tmp = node.getInput().get(i);
-			if( tmp instanceof CNodeTernary && ((CNodeTernary)tmp).getType()==TernaryType.LOOKUP_RC1 
-				&& tmp.getInput().get(0) instanceof CNodeData
-				&& ((CNodeData)tmp.getInput().get(0)).getHopID() == mainInput.getHopID())
+			if( isLookupRC1(tmp, mainInput) )
 				ret = true;
 			else
 				ret |= rHasLookupRC1(tmp, mainInput);
 		}
 		return ret;
+	}
+	
+	private static boolean isLookupRC1(CNode node, CNodeData mainInput) {
+		return (node instanceof CNodeTernary && ((CNodeTernary)node).getType()==TernaryType.LOOKUP_RC1 
+				&& node.getInput().get(0) instanceof CNodeData
+				&& ((CNodeData)node.getInput().get(0)).getHopID() == mainInput.getHopID());
 	}
 	
 	/**

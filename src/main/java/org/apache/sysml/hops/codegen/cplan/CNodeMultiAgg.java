@@ -137,7 +137,7 @@ public class CNodeMultiAgg extends CNodeTpl
 
 	@Override
 	public SpoofOutputDimsType getOutputDimType() {
-		return SpoofOutputDimsType.COLUMN_DIMS_COLS;  //row vector
+		return SpoofOutputDimsType.MULTI_SCALAR;
 	}
 	
 	@Override

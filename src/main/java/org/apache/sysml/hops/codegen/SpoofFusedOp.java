@@ -41,6 +41,7 @@ public class SpoofFusedOp extends Hop implements MultiThreadedHop
 		COLUMN_DIMS_ROWS,
 		COLUMN_DIMS_COLS,
 		SCALAR,
+		MULTI_SCALAR,
 		ROW_RANK_DIMS, // right wdivmm 
 		COLUMN_RANK_DIMS  // left wdivmm
 	}
@@ -159,6 +160,10 @@ public class SpoofFusedOp extends Hop implements MultiThreadedHop
 			case SCALAR:
 				setDim1(0);
 				setDim2(0);
+				break;
+			case MULTI_SCALAR:
+				setDim1(1); //row vector
+				//dim2 statically set from outside
 				break;
 			case ROW_RANK_DIMS:
 				setDim1(getInput().get(0).getDim1());

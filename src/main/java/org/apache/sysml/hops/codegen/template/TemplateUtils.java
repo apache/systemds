@@ -267,12 +267,18 @@ public class TemplateUtils
 	}
 	
 	public static boolean isLookup(CNode node) {
-		return isUnary(node, UnaryType.LOOKUP_R, UnaryType.LOOKUP_C, UnaryType.LOOKUP_RC);
+		return isUnary(node, UnaryType.LOOKUP_R, UnaryType.LOOKUP_C, UnaryType.LOOKUP_RC)
+			|| isTernary(node, TernaryType.LOOKUP_RC1);
 	}
 	
 	public static boolean isUnary(CNode node, UnaryType...types) {
 		return node instanceof CNodeUnary
 			&& ArrayUtils.contains(types, ((CNodeUnary)node).getType());
+	}
+	
+	public static boolean isTernary(CNode node, TernaryType...types) {
+		return node instanceof CNodeTernary
+			&& ArrayUtils.contains(types, ((CNodeTernary)node).getType());
 	}
 
 	public static CNodeData createCNodeData(Hop hop, boolean compileLiterals) {
@@ -310,6 +316,11 @@ public class TemplateUtils
 		CNode output = tpl.getOutput();
 		return (output instanceof CNodeUnary || output instanceof CNodeBinary
 				|| output instanceof CNodeTernary) && hasOnlyDataNodeOrLookupInputs(output);
+	}
+	
+	public static boolean hasNoOperation(CNodeTpl tpl) {
+		return tpl.getOutput() instanceof CNodeData 
+			|| isLookup(tpl.getOutput());
 	}
 	
 	public static boolean hasOnlyDataNodeOrLookupInputs(CNode node) {

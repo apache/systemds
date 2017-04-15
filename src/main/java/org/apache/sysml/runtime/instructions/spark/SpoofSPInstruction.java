@@ -31,6 +31,7 @@ import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.codegen.CodegenUtils;
+import org.apache.sysml.runtime.codegen.LibSpoofPrimitives;
 import org.apache.sysml.runtime.codegen.SpoofCellwise;
 import org.apache.sysml.runtime.codegen.SpoofMultiAggregate;
 import org.apache.sysml.runtime.codegen.SpoofCellwise.AggOp;
@@ -198,16 +199,15 @@ public class SpoofSPInstruction extends SPInstruction
 		}
 		else if( _class.getSuperclass() == SpoofRowwise.class ) { //row aggregate operator
 			SpoofRowwise op = (SpoofRowwise) CodegenUtils.createInstance(_class); 	
-			RowwiseFunction fmmc = new RowwiseFunction(_class.getName(), _classBytes, bcMatrices, scalars);
+			RowwiseFunction fmmc = new RowwiseFunction(_class.getName(), _classBytes, bcMatrices, scalars, (int)mcIn.getCols());
+			out = in.mapPartitionsToPair(fmmc, op.getRowType()==RowType.ROW_AGG);
 			
 			if( op.getRowType().isColumnAgg() ) {
-				JavaPairRDD<MatrixIndexes,MatrixBlock> tmpRDD = in.mapToPair(fmmc);
-				MatrixBlock tmpMB = RDDAggregateUtils.sumStable(tmpRDD);		
+				MatrixBlock tmpMB = RDDAggregateUtils.sumStable(out);		
 				sec.setMatrixOutput(_out.getName(), tmpMB);
 			}
 			else //row-agg or no-agg 
 			{
-				out = in.mapToPair(fmmc);
 				if( op.getRowType()==RowType.ROW_AGG && mcIn.getCols() > mcIn.getColsPerBlock() ) {
 					//TODO investigate if some other side effect of correct blocks
 					if( out.partitions().size() > mcIn.getNumRowBlocks() )
@@ -275,27 +275,29 @@ public class SpoofSPInstruction extends SPInstruction
 		}
 	}
 		
-	private static class RowwiseFunction implements PairFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock> 
+	private static class RowwiseFunction implements PairFlatMapFunction<Iterator<Tuple2<MatrixIndexes, MatrixBlock>>, MatrixIndexes, MatrixBlock> 
 	{
 		private static final long serialVersionUID = -7926980450209760212L;
 
-		private ArrayList<PartitionedBroadcast<MatrixBlock>> _vectors = null;
-		private ArrayList<ScalarObject> _scalars = null;
-		private byte[] _classBytes = null;
-		private String _className = null;
+		private final ArrayList<PartitionedBroadcast<MatrixBlock>> _vectors;
+		private final ArrayList<ScalarObject> _scalars;
+		private final byte[] _classBytes;
+		private final String _className;
+		private final int _clen;
 		private SpoofRowwise _op = null;
 		
-		public RowwiseFunction(String className, byte[] classBytes, ArrayList<PartitionedBroadcast<MatrixBlock>> bcMatrices, ArrayList<ScalarObject> scalars) 
+		public RowwiseFunction(String className, byte[] classBytes, ArrayList<PartitionedBroadcast<MatrixBlock>> bcMatrices, ArrayList<ScalarObject> scalars, int clen) 
 			throws DMLRuntimeException
 		{			
 			_className = className;
 			_classBytes = classBytes;
 			_vectors = bcMatrices;
 			_scalars = scalars;
+			_clen = clen;
 		}
 		
 		@Override
-		public Tuple2<MatrixIndexes, MatrixBlock> call( Tuple2<MatrixIndexes, MatrixBlock> arg0 ) 
+		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call( Iterator<Tuple2<MatrixIndexes, MatrixBlock>> arg ) 
 			throws Exception 
 		{
 			//lazy load of shipped class
@@ -304,21 +306,37 @@ public class SpoofSPInstruction extends SPInstruction
 				_op = (SpoofRowwise) CodegenUtils.createInstance(loadedClass); 
 			}
 			
-			//get main input block and indexes
-			MatrixIndexes ixIn = arg0._1();
-			MatrixBlock blkIn = arg0._2();
-			int rowIx = (int)ixIn.getRowIndex();
+			//setup local memory for reuse
+			LibSpoofPrimitives.setupThreadLocalMemory(_op.getNumIntermediates(), _clen);
 			
-			//prepare output and execute single-threaded operator
-			ArrayList<MatrixBlock> inputs = getVectorInputsFromBroadcast(blkIn, rowIx);
-			MatrixIndexes ixOut = new MatrixIndexes(
-				_op.getRowType().isColumnAgg() ? 1 : ixIn.getRowIndex(),
-				_op.getRowType()!=RowType.NO_AGG ? 1 : ixIn.getColumnIndex());
-			MatrixBlock blkOut = new MatrixBlock();
-			_op.execute(inputs, _scalars, blkOut);
+			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
+			boolean aggIncr = _op.getRowType().isColumnAgg(); //aggregate entire partition to avoid allocations
+			MatrixBlock blkOut = aggIncr ? new MatrixBlock() : null;
 			
-			//output new tuple
-			return new Tuple2<MatrixIndexes, MatrixBlock>(ixOut, blkOut);
+			while( arg.hasNext() ) {
+				//get main input block and indexes
+				Tuple2<MatrixIndexes,MatrixBlock> e = arg.next();
+				MatrixIndexes ixIn = e._1();
+				MatrixBlock blkIn = e._2();
+				int rowIx = (int)ixIn.getRowIndex();
+				
+				//prepare output and execute single-threaded operator
+				ArrayList<MatrixBlock> inputs = getVectorInputsFromBroadcast(blkIn, rowIx);
+				blkOut = aggIncr ? blkOut : new MatrixBlock();
+				_op.execute(inputs, _scalars, blkOut, false, aggIncr);
+				if( !aggIncr ) {
+					MatrixIndexes ixOut = new MatrixIndexes(ixIn.getRowIndex(),
+						_op.getRowType()!=RowType.NO_AGG ? 1 : ixIn.getColumnIndex());
+					ret.add(new Tuple2<MatrixIndexes, MatrixBlock>(ixOut, blkOut));
+				}
+			}
+			
+			//cleanup and final result preparations
+			LibSpoofPrimitives.cleanupThreadLocalMemory();
+			if( aggIncr )
+				ret.add(new Tuple2<MatrixIndexes, MatrixBlock>(new MatrixIndexes(1,1), blkOut));
+			
+			return ret.iterator();
 		}
 		
 		private ArrayList<MatrixBlock> getVectorInputsFromBroadcast(MatrixBlock blkIn, int rowIndex) 

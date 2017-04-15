@@ -61,6 +61,10 @@ public abstract class SpoofRowwise extends SpoofOperator
 	public RowType getRowType() {
 		return _type;
 	}
+	
+	public int getNumIntermediates() {
+		return _reqVectMem;
+	}
 
 	@Override
 	public String getSpoofType() {
@@ -69,7 +73,13 @@ public abstract class SpoofRowwise extends SpoofOperator
 	
 	@Override
 	public void execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, MatrixBlock out)	
-		throws DMLRuntimeException
+		throws DMLRuntimeException 
+	{
+		execute(inputs, scalarObjects, out, true, false);
+	}
+	
+	public void execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, MatrixBlock out, boolean allocTmp, boolean aggIncr) 
+		throws DMLRuntimeException	
 	{
 		//sanity check
 		if( inputs==null || inputs.size() < 1 || out==null )
@@ -78,23 +88,27 @@ public abstract class SpoofRowwise extends SpoofOperator
 		//result allocation and preparations
 		final int m = inputs.get(0).getNumRows();
 		final int n = inputs.get(0).getNumColumns();
-		allocateOutputMatrix(m, n, out);
+		if( !aggIncr || !out.isAllocated() )
+			allocateOutputMatrix(m, n, out);
 		double[] c = out.getDenseBlock();
 		
 		//input preparation
 		double[][] b = prepInputMatrices(inputs);
 		double[] scalars = prepInputScalars(scalarObjects);
 		
-		//core sequential execute
+		//setup thread-local memory if necessary
+		if( allocTmp )
+			LibSpoofPrimitives.setupThreadLocalMemory(_reqVectMem, n);
 		
-		LibSpoofPrimitives.setupThreadLocalMemory(_reqVectMem, n);
+		//core sequential execute
 		if( !inputs.get(0).isInSparseFormat() )
 			executeDense(inputs.get(0).getDenseBlock(), b, scalars, c, n, 0, m);
 		else
 			executeSparse(inputs.get(0).getSparseBlock(), b, scalars, c, n, 0, m);
 	
 		//post-processing
-		LibSpoofPrimitives.cleanupThreadLocalMemory();
+		if( allocTmp )
+			LibSpoofPrimitives.cleanupThreadLocalMemory();
 		out.recomputeNonZeros();
 		out.examSparsity();
 	}

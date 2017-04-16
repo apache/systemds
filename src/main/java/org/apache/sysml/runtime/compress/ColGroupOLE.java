@@ -201,41 +201,32 @@ public class ColGroupOLE extends ColGroupOffset
 	@Override
 	public void decompressToBlock(MatrixBlock target, int colpos) 
 	{
-		if( LOW_LEVEL_OPT && getNumValues() > 1 )
-		{
-			final int blksz = BitmapEncoder.BITMAP_BLOCK_SZ;
-			final int numCols = getNumCols();
-			final int numVals = getNumValues();
-			final int n = getNumRows();
-			double[] c = target.getDenseBlock();
-			
-			//cache blocking config and position array
-			int[] apos = new int[numVals];					
-			
-			//cache conscious append via horizontal scans 
-			for( int bi=0; bi<n; bi+=blksz ) {
-				for (int k = 0, off=0; k < numVals; k++, off+=numCols) {
-					int boff = _ptr[k];
-					int blen = len(k);					
-					int bix = apos[k];
-					if( bix >= blen ) 
-						continue;
-					int len = _data[boff+bix];
-					int pos = boff+bix+1;
-					for( int i=pos; i<pos+len; i++ ) {
-						c[bi+_data[i]] = _values[off+colpos];
-					}
-					apos[k] += len + 1;
+		final int blksz = BitmapEncoder.BITMAP_BLOCK_SZ;
+		final int numCols = getNumCols();
+		final int numVals = getNumValues();
+		final int n = getNumRows();
+		double[] c = target.getDenseBlock();
+		
+		//cache blocking config and position array
+		int[] apos = allocIVector(numVals, true);
+		
+		//cache conscious append via horizontal scans 
+		for( int bi=0; bi<n; bi+=blksz ) {
+			for (int k = 0, off=0; k < numVals; k++, off+=numCols) {
+				int boff = _ptr[k];
+				int blen = len(k);
+				int bix = apos[k];
+				if( bix >= blen )
+					continue;
+				int len = _data[boff+bix];
+				int pos = boff+bix+1;
+				for( int i=pos; i<pos+len; i++ ) {
+					c[bi+_data[i]] = _values[off+colpos];
 				}
-			}	
-			
-			target.recomputeNonZeros();
+				apos[k] += len + 1;
+			}
 		}
-		else
-		{
-			//call generic decompression with decoder
-			super.decompressToBlock(target, colpos);
-		}
+		target.recomputeNonZeros();
 	}
 	
 	@Override

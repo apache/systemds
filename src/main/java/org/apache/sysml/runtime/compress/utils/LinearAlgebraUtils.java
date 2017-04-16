@@ -147,25 +147,16 @@ public class LinearAlgebraUtils
 		return val;
 	}
 
-	public static void copyUpperToLowerTriangle( MatrixBlock ret )
-	{
-		double[] c = ret.getDenseBlock();
-		final int m = ret.getNumRows();
-		final int n = ret.getNumColumns();
-		
-		//copy symmetric values
-		for( int i=0, uix=0; i<m; i++, uix+=n )
-			for( int j=i+1, lix=j*n+i; j<n; j++, lix+=n )
-				c[ lix ] = c[ uix+j ];
+	public static void copyUpperToLowerTriangle( MatrixBlock ret ) {
+		LibMatrixMult.copyUpperToLowerTriangle(ret);
 	}
-
-	public static void copyNonZerosToRowCol( MatrixBlock ret, MatrixBlock tmp, int ix )
-	{
+	
+	public static void copyNonZerosToUpperTriangle( MatrixBlock ret, MatrixBlock tmp, int ix ) {
+		double[] a = tmp.getDenseBlock();
 		for(int i=0; i<tmp.getNumColumns(); i++) {
-			double val = tmp.quickGetValue(0, i);
-			if( val != 0 ) {
-				ret.setValueDenseUnsafe(ix, i, val);
-				ret.setValueDenseUnsafe(i, ix, val);
+			if( a[i] != 0 ) {
+				ret.setValueDenseUnsafe(
+					(ix<i)?ix:i, (ix<i)?i:ix, a[i]);
 			}
 		}
 	}

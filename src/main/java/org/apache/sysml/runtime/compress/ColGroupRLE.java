@@ -192,47 +192,38 @@ public class ColGroupRLE extends ColGroupOffset
 	@Override
 	public void decompressToBlock(MatrixBlock target, int colpos) 
 	{
-		if( LOW_LEVEL_OPT && getNumValues() > 1 )
-		{
-			final int blksz = 128 * 1024;
-			final int numCols = getNumCols();
-			final int numVals = getNumValues();
-			final int n = getNumRows();
-			double[] c = target.getDenseBlock();
-			
-			//position and start offset arrays
-			int[] apos = new int[numVals];
-			int[] astart = new int[numVals];
-			
-			//cache conscious append via horizontal scans 
-			for( int bi=0; bi<n; bi+=blksz ) {
-				int bimax = Math.min(bi+blksz, n);					
-				for (int k=0, off=0; k < numVals; k++, off+=numCols) {
-					int boff = _ptr[k];
-					int blen = len(k);
-					int bix = apos[k];
-					if( bix >= blen ) 
-						continue;
-					int start = astart[k];
-					for( ; bix<blen & start<bimax; bix+=2) {
-						start += _data[boff + bix];
-						int len = _data[boff + bix+1];
-						for( int i=start; i<start+len; i++ )
-							c[i] = _values[off+colpos];
-						start += len;
-					}
-					apos[k] = bix;	
-					astart[k] = start;
+		final int blksz = 128 * 1024;
+		final int numCols = getNumCols();
+		final int numVals = getNumValues();
+		final int n = getNumRows();
+		double[] c = target.getDenseBlock();
+		
+		//position and start offset arrays
+		int[] astart = new int[numVals];
+		int[] apos = allocIVector(numVals, true);
+		
+		//cache conscious append via horizontal scans 
+		for( int bi=0; bi<n; bi+=blksz ) {
+			int bimax = Math.min(bi+blksz, n);
+			for (int k=0, off=0; k < numVals; k++, off+=numCols) {
+				int boff = _ptr[k];
+				int blen = len(k);
+				int bix = apos[k];
+				if( bix >= blen )
+					continue;
+				int start = astart[k];
+				for( ; bix<blen & start<bimax; bix+=2) {
+					start += _data[boff + bix];
+					int len = _data[boff + bix+1];
+					for( int i=start; i<start+len; i++ )
+						c[i] = _values[off+colpos];
+					start += len;
 				}
+				apos[k] = bix;	
+				astart[k] = start;
 			}
-			
-			target.recomputeNonZeros();
 		}
-		else
-		{
-			//call generic decompression with decoder
-			super.decompressToBlock(target, colpos);
-		}
+		target.recomputeNonZeros();
 	}
 	
 	@Override

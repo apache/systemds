@@ -171,6 +171,16 @@ public class ColGroupDDC2 extends ColGroupDDC
 	}
 	
 	@Override
+	public void decompressToBlock(MatrixBlock target, int colpos) {
+		int nrow = getNumRows();
+		int ncol = getNumCols();
+		double[] c = target.getDenseBlock();
+		for( int i = 0; i < nrow; i++ )
+			c[i] = _values[_data[i]*ncol+colpos];
+		target.recomputeNonZeros();
+	}
+	
+	@Override
 	protected void countNonZerosPerRow(int[] rnnz, int rl, int ru) {
 		final int ncol = getNumCols();
 		final int numVals = getNumValues();

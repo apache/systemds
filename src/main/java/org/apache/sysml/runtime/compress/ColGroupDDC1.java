@@ -169,6 +169,16 @@ public class ColGroupDDC1 extends ColGroupDDC
 	}
 	
 	@Override
+	public void decompressToBlock(MatrixBlock target, int colpos) {
+		int nrow = getNumRows();
+		int ncol = getNumCols();
+		double[] c = target.getDenseBlock();
+		for( int i = 0; i < nrow; i++ )
+			c[i] = _values[(_data[i]&0xFF)*ncol+colpos];
+		target.recomputeNonZeros();
+	}
+	
+	@Override
 	protected void countNonZerosPerRow(int[] rnnz, int rl, int ru) {
 		final int ncol = getNumCols();
 		final int numVals = getNumValues();
@@ -243,36 +253,19 @@ public class ColGroupDDC1 extends ColGroupDDC
 		final int ncol = getNumCols();
 		final int numVals = getNumValues();
 		
-		if( 8*numVals < getNumRows() ) 
-		{
-			//iterative over codes and pre-aggregate inputs per code (guaranteed <=255)
-			//temporary array also avoids false sharing in multi-threaded environments
-			double[] vals = allocDVector(numVals, true);
-			for( int i=0; i<nrow; i++ ) {
-				vals[_data[i]&0xFF] += a[i];
-			}
-			
-			//post-scaling of pre-aggregate with distinct values
-			for( int k=0, valOff=0; k<numVals; k++, valOff+=ncol ) {
-				double aval = vals[k];
-				for( int j=0; j<ncol; j++ ) {
-					int colIx = _colIndexes[j];
-					c[colIx] += aval * _values[valOff+j];
-				}	
-			}
+		//iterative over codes and pre-aggregate inputs per code (guaranteed <=255)
+		//temporary array also avoids false sharing in multi-threaded environments
+		double[] vals = allocDVector(numVals, true);
+		for( int i=0; i<nrow; i++ ) {
+			vals[_data[i]&0xFF] += a[i];
 		}
-		else //general case
-		{
-			//iterate over codes, compute all, and add to the result
-			for( int i=0; i<nrow; i++ ) {
-				double aval = a[i];
-				if( aval != 0 ) {
-					int valOff = (_data[i]&0xFF) * ncol;
-					for( int j=0; j<ncol; j++ ) {
-						int colIx = _colIndexes[j];
-						c[colIx] += aval * _values[valOff+j];
-					}
-				}
+		
+		//post-scaling of pre-aggregate with distinct values
+		for( int k=0, valOff=0; k<numVals; k++, valOff+=ncol ) {
+			double aval = vals[k];
+			for( int j=0; j<ncol; j++ ) {
+				int colIx = _colIndexes[j];
+				c[colIx] += aval * _values[valOff+j];
 			}	
 		}
 	}

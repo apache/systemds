@@ -102,7 +102,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	public static final boolean TRANSPOSE_INPUT = true;
 	public static final boolean MATERIALIZE_ZEROS = false;
 	public static final long MIN_PAR_AGG_THRESHOLD = 16*1024*1024; //16MB
-	public static final boolean INVESTIGATE_ESTIMATES = false;
+	public static boolean INVESTIGATE_ESTIMATES = false;
 	public static boolean ALLOW_DDC_ENCODING = true;
 	private static final boolean LDEBUG = true; //local debug flag
 	private static final Level LDEBUG_LEVEL = Level.DEBUG; //DEBUG/TRACE for details
@@ -912,7 +912,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 			BinaryOperator bop = new BinaryOperator(Multiply.getMultiplyFnObject());
 			LibMatrixBincell.bincellOpInPlace(tmp, w, bop);
 		}
-		leftMultByVectorTranspose(_colGroups, tmp, out, true);
+		leftMultByVectorTranspose(_colGroups, tmp, out, true, true);
 		
 		//System.out.println("Compressed MMChain in "+time.stop());
 		
@@ -1003,7 +1003,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 			if( op.getNumThreads()>1 )
 				leftMultByVectorTranspose(_colGroups, mb, ret, false, op.getNumThreads());
 			else
-				leftMultByVectorTranspose(_colGroups, mb, ret, false);
+				leftMultByVectorTranspose(_colGroups, mb, ret, false, true);
 		}
 		else {
 			//NOTE: we could decompress and invoke super.aggregateBinary but for now
@@ -1221,6 +1221,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 			leftMultByTransposeSelf(_colGroups, out, 0, _colGroups.size());
 			
 			// post-processing
+			LinearAlgebraUtils.copyUpperToLowerTriangle(out);
 			out.recomputeNonZeros();
 		}
 		
@@ -1278,6 +1279,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 			}
 			
 			// post-processing
+			LinearAlgebraUtils.copyUpperToLowerTriangle(out);
 			out.recomputeNonZeros();
 		}
 		
@@ -1402,7 +1404,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	 * @param doTranspose if true, transpose vector
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private static void leftMultByVectorTranspose(List<ColGroup> colGroups, MatrixBlock vector, MatrixBlock result, boolean doTranspose) 
+	private static void leftMultByVectorTranspose(List<ColGroup> colGroups, MatrixBlock vector, MatrixBlock result, boolean doTranspose, boolean allocTmp) 
 		throws DMLRuntimeException 
 	{
 		//transpose vector if required
@@ -1417,7 +1419,8 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		result.allocateDenseBlock();
 		
 		// setup memory pool for reuse
-		ColGroupValue.setupThreadLocalMemory(getMaxNumValues(colGroups));
+		if( allocTmp )
+			ColGroupValue.setupThreadLocalMemory(getMaxNumValues(colGroups));
 		
 		// delegate matrix-vector operation to each column group
 		for (ColGroup grp : colGroups) {			
@@ -1425,7 +1428,8 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		}
 		
 		// post-processing
-		ColGroupValue.cleanupThreadLocalMemory();
+		if( allocTmp )
+			ColGroupValue.cleanupThreadLocalMemory();
 		result.recomputeNonZeros();
 	}
 	
@@ -1488,9 +1492,14 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		final int numRows = groups.get(0).getNumRows();
 		final int numGroups = groups.size();		
 		
-		//preallocated dense matrix block
-		MatrixBlock lhs = new MatrixBlock(numRows, 1, false);
+		//preallocated dense tmp matrix blocks
+		MatrixBlock lhs = new MatrixBlock(1, numRows, false);
+		MatrixBlock tmpret = new MatrixBlock(1, result.getNumColumns(), false);
 		lhs.allocateDenseBlock();
+		tmpret.allocateDenseBlock();
+		
+		// setup memory pool for reuse
+		ColGroupValue.setupThreadLocalMemory(getMaxNumValues(groups));
 		
 		//approach: for each colgroup, extract uncompressed columns one at-a-time
 		//vector-matrix multiplies against remaining col groups
@@ -1504,19 +1513,22 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 			//for all uncompressed lhs columns vectors
 			for( int j=0; j<ixgroup.length; j++ ) {
 				//decompress single column
-				lhs.reset(numRows, 1, false);				
+				if( !(group instanceof ColGroupDDC) )
+					lhs.reset(1, numRows, false);				
 				group.decompressToBlock(lhs, j);
 				
 				if( !lhs.isEmptyBlock(false) ) {
 					//compute vector-matrix partial result
-					MatrixBlock tmpret = new MatrixBlock(1,result.getNumColumns(),false);
-					leftMultByVectorTranspose(tmpList, lhs, tmpret, true);								
+					leftMultByVectorTranspose(tmpList, lhs, tmpret, false, false);								
 					
 					//write partial results (disjoint non-zeros)
-					LinearAlgebraUtils.copyNonZerosToRowCol(result, tmpret, ixgroup[j]);	
+					LinearAlgebraUtils.copyNonZerosToUpperTriangle(result, tmpret, ixgroup[j]);	
 				}
 			}
 		}
+		
+		//post processing
+		ColGroupValue.cleanupThreadLocalMemory();
 	}
 
 	@SuppressWarnings("unchecked")

@@ -149,7 +149,7 @@ class TestMLLearn(unittest.TestCase):
         y_train = y_digits[:int(.9 * n_samples)]
         X_test = X_digits[int(.9 * n_samples):]
         y_test = y_digits[int(.9 * n_samples):]
-        svm = SVM(sparkSession, is_multi_class=True, tol=0.001)
+        svm = SVM(sparkSession, is_multi_class=True, tol=0.0001)
         mllearn_predicted = svm.fit(X_train, y_train).predict(X_test)
         from sklearn import linear_model, svm
         clf = svm.LinearSVC()

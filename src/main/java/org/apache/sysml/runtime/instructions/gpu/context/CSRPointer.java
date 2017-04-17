@@ -9,7 +9,6 @@ import static jcuda.jcusparse.JCusparse.cusparseXcsrgeamNnz;
 import static jcuda.jcusparse.JCusparse.cusparseXcsrgemmNnz;
 import static jcuda.jcusparse.cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO;
 import static jcuda.jcusparse.cusparseMatrixType.CUSPARSE_MATRIX_TYPE_GENERAL;
-import static jcuda.runtime.JCuda.cudaDeviceSynchronize;
 import static jcuda.runtime.JCuda.cudaMemcpy;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice;
@@ -314,7 +313,7 @@ public class CSRPointer {
   private static void step1AllocateRowPointers(GPUContext gCtx, cusparseHandle handle, CSRPointer C, int rowsC) throws DMLRuntimeException {
     LOG.trace("GPU : step1AllocateRowPointers" + ", GPUContext=" + gCtx);
     cusparseSetPointerMode(handle, cusparsePointerMode.CUSPARSE_POINTER_MODE_HOST);
-    cudaDeviceSynchronize();
+    //cudaDeviceSynchronize;
     // Do not increment the cudaCount of allocations on GPU
     C.rowPtr = gCtx.allocate(getIntSizeOf((long) rowsC + 1));
   }
@@ -338,7 +337,7 @@ public class CSRPointer {
             A.descr, toIntExact(A.nnz), A.rowPtr, A.colInd,
             B.descr, toIntExact(B.nnz), B.rowPtr, B.colInd,
             C.descr, C.rowPtr, Pointer.to(CnnzArray));
-    cudaDeviceSynchronize();
+    //cudaDeviceSynchronize;
     if (CnnzArray[0] != -1) {
       C.nnz = CnnzArray[0];
     } else {
@@ -375,7 +374,7 @@ public class CSRPointer {
             A.descr, toIntExact(A.nnz), A.rowPtr, A.colInd,
             B.descr, toIntExact(B.nnz), B.rowPtr, B.colInd,
             C.descr, C.rowPtr, Pointer.to(CnnzArray));
-    cudaDeviceSynchronize();
+    //cudaDeviceSynchronize;
     if (CnnzArray[0] != -1) {
       C.nnz = CnnzArray[0];
     } else {
@@ -422,7 +421,7 @@ public class CSRPointer {
     if (val != null && rowPtr != null && colInd != null && nnz > 0) {
       // Note: cusparseDcsr2dense method cannot handle empty blocks
       cusparseDcsr2dense(cusparseHandle, rows, cols, descr, val, rowPtr, colInd, A, rows);
-      cudaDeviceSynchronize();
+      //cudaDeviceSynchronize;
     } else {
       LOG.warn("in CSRPointer, the values array, row pointers array or column indices array was null");
     }

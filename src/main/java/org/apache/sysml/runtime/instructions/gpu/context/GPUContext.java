@@ -24,12 +24,14 @@ import static jcuda.jcudnn.JCudnn.cudnnCreate;
 import static jcuda.jcudnn.JCudnn.cudnnDestroy;
 import static jcuda.jcusparse.JCusparse.cusparseCreate;
 import static jcuda.jcusparse.JCusparse.cusparseDestroy;
+import static jcuda.runtime.JCuda.cudaDeviceScheduleBlockingSync;
 import static jcuda.runtime.JCuda.cudaFree;
 import static jcuda.runtime.JCuda.cudaGetDeviceCount;
 import static jcuda.runtime.JCuda.cudaMalloc;
 import static jcuda.runtime.JCuda.cudaMemGetInfo;
 import static jcuda.runtime.JCuda.cudaMemset;
 import static jcuda.runtime.JCuda.cudaSetDevice;
+import static jcuda.runtime.JCuda.cudaSetDeviceFlags;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -114,6 +116,8 @@ public class GPUContext {
   protected GPUContext(int deviceNum) throws DMLRuntimeException {
     this.deviceNum = deviceNum;
     cudaSetDevice(deviceNum);
+
+    cudaSetDeviceFlags(cudaDeviceScheduleBlockingSync);
 
     long free[] = {0};
     long total[] = {0};

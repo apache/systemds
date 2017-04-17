@@ -26,7 +26,6 @@ import static jcuda.jcudnn.cudnnDataType.CUDNN_DATA_DOUBLE;
 import static jcuda.jcudnn.cudnnTensorFormat.CUDNN_TENSOR_NCHW;
 import static jcuda.jcusparse.JCusparse.cusparseDdense2csr;
 import static jcuda.jcusparse.JCusparse.cusparseDnnz;
-import static jcuda.runtime.JCuda.cudaDeviceSynchronize;
 import static jcuda.runtime.JCuda.cudaMemcpy;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice;
@@ -168,7 +167,7 @@ public class GPUObject {
 
 		// Output is in dense vector format, convert it to CSR
 		cusparseDnnz(cusparseHandle, cusparseDirection.CUSPARSE_DIRECTION_ROW, rows, cols, matDescr, densePtr, rows, nnzPerRowPtr, nnzTotalDevHostPtr);
-		cudaDeviceSynchronize();
+		//cudaDeviceSynchronize();
 		int[] nnzC = {-1};
 
 		long t2=0;
@@ -185,7 +184,7 @@ public class GPUObject {
 
 		CSRPointer C = CSRPointer.allocateEmpty(gCtx, nnzC[0], rows);
 		cusparseDdense2csr(cusparseHandle, rows, cols, matDescr, densePtr, rows, nnzPerRowPtr, C.val, C.rowPtr, C.colInd);
-		cudaDeviceSynchronize();
+		//cudaDeviceSynchronize();
 
 		gCtx.cudaFreeHelper(nnzPerRowPtr);
 		gCtx.cudaFreeHelper(nnzTotalDevHostPtr);

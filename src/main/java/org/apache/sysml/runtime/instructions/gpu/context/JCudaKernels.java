@@ -34,7 +34,6 @@ import jcuda.Pointer;
 import jcuda.driver.CUfunction;
 import jcuda.driver.CUmodule;
 import jcuda.driver.CUresult;
-import jcuda.runtime.JCuda;
 
 /**
  * Utility class that allows LibMatrixCUDA as well as GPUObject to invoke custom CUDA kernels.
@@ -112,7 +111,7 @@ public class JCudaKernels {
 				config.gridDimX, config.gridDimY, config.gridDimZ, 
 				config.blockDimX, config.blockDimY, config.blockDimZ, 
 				config.sharedMemBytes, config.stream, Pointer.to(kernelParams), null));
-		JCuda.cudaDeviceSynchronize();
+		//JCuda.cudaDeviceSynchronize();
 	}
 	
     public static void checkResult(int cuResult) throws DMLRuntimeException {

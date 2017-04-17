@@ -358,7 +358,7 @@ public class LibMatrixCUDA {
 		*/
 		LOG.trace("GPU : conv2dBiasAdd" + ", GPUContext=" + gCtx);
 		conv2d(gCtx, instName, image, filter, outputBlock, N, C, H, W, K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
-		cudaDeviceSynchronize();
+		//cudaDeviceSynchronize;
 		biasAdd(gCtx, instName, outputBlock, bias, outputBlock);
 	}
 	
@@ -1073,7 +1073,7 @@ public class LibMatrixCUDA {
 		long size  = image.getNumRows() * image.getNumColumns() * Sizeof.DOUBLE;
 		Pointer tmp = gCtx.allocate(size);
 		performCuDNNReLU(gCtx, instName, image, tmp, srcTensorDesc);
-		cudaDeviceSynchronize(); // It seemed like the cudnn operation in performCuDNNReLU was being done aysnchronously, this adds the neccesary sync
+		//cudaDeviceSynchronize; // It seemed like the cudnn operation in performCuDNNReLU was being done aysnchronously, this adds the neccesary sync
 		performMaxpooling(gCtx, instName, tmp, srcTensorDesc, outputBlock, N, C, H, W, K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
 		gCtx.cudaFreeHelper(tmp);
 	}
@@ -1589,7 +1589,7 @@ public class LibMatrixCUDA {
 		long t1=0;
 		if (GPUStatistics.DISPLAY_STATISTICS) t1 = System.nanoTime();
 		cusparseDcsrmv(getCusparseHandle(gCtx), transA, m, k, (int)A.nnz, one(), A.descr, A.val, A.rowPtr, A.colInd, B_dense, zero(), C_dense);
-		cudaDeviceSynchronize(); 	// Since cusparseDcsrmv is asynchronously executed
+		//cudaDeviceSynchronize; 	// Since cusparseDcsrmv is asynchronously executed
 		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_SPARSE_MATRIX_DENSE_VECTOR_LIB, System.nanoTime() - t1);
 
 		output.getGPUObject(gCtx).setDenseMatrixCudaPointer(C_dense);
@@ -1691,7 +1691,7 @@ public class LibMatrixCUDA {
 						A.descr, (int)A.nnz, A.val, A.rowPtr, A.colInd,
 						B.descr, (int)B.nnz, B.val, B.rowPtr, B.colInd,
 						C.descr, C.val, C.rowPtr, C.colInd);
-		cudaDeviceSynchronize();
+		//cudaDeviceSynchronize;
 		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_SPARSE_MATRIX_SPARSE_MATRIX_LIB, System.nanoTime() - t1);
 	}
 
@@ -2181,7 +2181,7 @@ public class LibMatrixCUDA {
 
 		if (GPUStatistics.DISPLAY_STATISTICS) t1 = System.nanoTime();
 		getCudaKernels(gCtx).launchKernel(kernelFunction, new ExecutionConfig(blocks, threads, sharedMem), in, tempOut, n);
-		cudaDeviceSynchronize();
+		//cudaDeviceSynchronize;
 		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_REDUCE_ALL_KERNEL, System.nanoTime() - t1);
 
 		int s = blocks;
@@ -2225,7 +2225,7 @@ public class LibMatrixCUDA {
 		if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
 		getCudaKernels(gCtx).launchKernel(kernelFunction, new ExecutionConfig(blocks, threads, sharedMem),
 						in, out, rows, cols);
-		cudaDeviceSynchronize();
+		//cudaDeviceSynchronize;
 		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_REDUCE_ROW_KERNEL, System.nanoTime() - t0);
 
 	}
@@ -2251,7 +2251,7 @@ public class LibMatrixCUDA {
 		if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
 		getCudaKernels(gCtx).launchKernel(kernelFunction, new ExecutionConfig(blocks, threads, sharedMem),
 						in, out, rows, cols);
-		cudaDeviceSynchronize();
+		//cudaDeviceSynchronize;
 		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_REDUCE_COL_KERNEL, System.nanoTime() - t0);
 	}
 
@@ -2816,7 +2816,7 @@ public class LibMatrixCUDA {
 			JCusparse.cusparseDcsrgeam(getCusparseHandle(gCtx), m, n, alphaPtr, A.descr, (int)A.nnz, A.val, A.rowPtr, A.colInd, betaPtr,
 							B.descr, (int)B.nnz, B.val, B.rowPtr, B.colInd,
 							C.descr, C.val, C.rowPtr, C.colInd);
-			cudaDeviceSynchronize();
+			//cudaDeviceSynchronize;
 			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_SPARSE_DGEAM_LIB, System.nanoTime() - t0);
 		}
 		else {

@@ -30,8 +30,6 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.utils.GPUStatistics;
 import org.apache.sysml.utils.Statistics;
 
-import jcuda.runtime.JCuda;
-
 public abstract class GPUInstruction extends Instruction
 {
 	public enum GPUINSTRUCTION_TYPE { AggregateUnary, AggregateBinary, Convolution, MMTSJ, Reorg, ArithmeticBinary, BuiltinUnary, Builtin };
@@ -150,7 +148,7 @@ public abstract class GPUInstruction extends Instruction
 	public void postprocessInstruction(ExecutionContext ec)
 					throws DMLRuntimeException
 	{
-		JCuda.cudaDeviceSynchronize();
+		//JCuda.cudaDeviceSynchronize();
 	}
 
 	/**

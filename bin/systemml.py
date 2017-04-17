@@ -40,8 +40,9 @@ dml_script_class = join(build_dir, 'classes', 'org', 'apache', 'sysml', 'api', '
 build_err_msg = 'You must build the project before running this script.'
 build_dir_err_msg = 'Could not find target directory ' + build_dir + '. ' + build_err_msg
 
-list_of_libraries = [f for f in os.listdir(lib_dir) if os.path.isfile(join(lib_dir, f))]
-lib_dir_err_msg = 'Could not find required libraries\n' + '\n'.join(list_of_libraries) + '\n' + build_err_msg
+#list_of_libraries = [f for f in os.listdir(lib_dir) and os.path.isfile(join(lib_dir, f))]
+#lib_dir_err_msg = 'Could not find required libraries\n' + '\n'.join(list_of_libraries) + '\n' + build_err_msg
+lib_dir_err_msg = 'Could not find required libraries.' + build_err_msg
 dml_script_err_msg = 'Could not find ' + dml_script_class + '. ' + build_err_msg
 
 # check if the project had been built and the jar files exist
@@ -114,7 +115,7 @@ if 'SYSTEMML_JAVA_OPTS' in os.environ:
     del os.environ['SYSTEMML_JAVA_OPTS']
 
 # Invoke the jar with options and arguments
-cmd = ['java', systemml_default_java_opts, 'org.apache.sysml.api.DMLScript', '-f', script_file, '-exec singlenode', '-config', systemml_config_path] + sys.argv[1:]
+cmd = ['java', systemml_default_java_opts, 'org.apache.sysml.api.DMLScript', '-f', script_file, '-exec singlenode', '-config', systemml_config_path] + sys.argv[2:]
 print(' '.join(cmd))
 
 #return_code = subprocess.call(cmd)

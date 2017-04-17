@@ -835,6 +835,9 @@ public class DMLScript
 		// into performance problems are recorded and displayed
 		GPUStatistics.DISPLAY_STATISTICS = dmlconf.getBooleanValue(DMLConfig.EXTRA_GPU_STATS);
 		LibMatrixDNN.DISPLAY_STATISTICS = dmlconf.getBooleanValue(DMLConfig.EXTRA_DNN_STATS);
+
+		// Sets the maximum number of GPUs per process, -1 for all available GPUs
+		GPUContextPool.PER_PROCESS_MAX_GPUS = dmlconf.getIntValue(DMLConfig.MAX_GPUS_PER_PROCESS);
 		
 		//Step 10: execute runtime program
 		Statistics.startRunTimer();

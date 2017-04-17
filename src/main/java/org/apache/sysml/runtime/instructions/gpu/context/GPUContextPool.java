@@ -41,6 +41,9 @@ public class GPUContextPool {
 
   protected static final Log LOG = LogFactory.getLog(GPUContextPool.class.getName());
 
+  /** Maximum number of gpus to use, -1 for all */
+  public static int PER_PROCESS_MAX_GPUS = -1;
+
   /** Whether cuda has been initialized */
   static boolean initialized = false;
 
@@ -73,6 +76,9 @@ public class GPUContextPool {
     cuDeviceGetCount(deviceCountArray);        // Obtain the number of devices
     deviceCount = deviceCountArray[0];
     deviceProperties = new cudaDeviceProp[deviceCount];
+
+    if (PER_PROCESS_MAX_GPUS > 0)
+       deviceCount = Math.min(PER_PROCESS_MAX_GPUS, deviceCount);
 
     // Initialize the list of devices
     for (int i = 0; i < deviceCount; i++) {

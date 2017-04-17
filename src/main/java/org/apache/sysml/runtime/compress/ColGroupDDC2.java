@@ -301,7 +301,7 @@ public class ColGroupDDC2 extends ColGroupDDC
 		double[] c = result.getDenseBlock();
 		
 		//pre-aggregate nnz per value tuple
-		double[] vals = sumAllValues(kplus, kbuff);
+		double[] vals = sumAllValues(kplus, kbuff, false);
 		
 		//scan data and add to result (use kahan plus not general KahanFunction
 		//for correctness in case of sqk+)

@@ -164,13 +164,18 @@ public abstract class ColGroupValue extends ColGroup
 	}
 	
 	protected final double[] sumAllValues(KahanFunction kplus, KahanObject kbuff) {
+		return sumAllValues(kplus, kbuff, true);
+	}
+	
+	protected final double[] sumAllValues(KahanFunction kplus, KahanObject kbuff, boolean allocNew) {
 		//quick path: sum 
 		if( getNumCols()==1 && kplus instanceof KahanPlus )
 			return _values; //shallow copy of values
 		
 		//pre-aggregate value tuple 
 		final int numVals = getNumValues();
-		double[] ret = new double[numVals];
+		double[] ret = allocNew ? new double[numVals] :
+			allocDVector(numVals, false);
 		for( int k=0; k<numVals; k++ )
 			ret[k] = sumValues(k, kplus, kbuff);
 		

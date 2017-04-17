@@ -302,7 +302,7 @@ public class ColGroupDDC1 extends ColGroupDDC
 		double[] c = result.getDenseBlock();
 		
 		//pre-aggregate nnz per value tuple
-		double[] vals = sumAllValues(kplus, kbuff);
+		double[] vals = sumAllValues(kplus, kbuff, false);
 		
 		//scan data and add to result (use kahan plus not general KahanFunction
 		//for correctness in case of sqk+)
@@ -332,14 +332,24 @@ public class ColGroupDDC1 extends ColGroupDDC
 		//iterative over codes of all groups and add to output
 		//(use kahan plus not general KahanFunction for correctness in case of sqk+)
 		int blksz = 1024; //16KB
-		for( int bi=rl; bi<ru; bi+=blksz )
-			for( int j=0; j<grps.length; j++ )
-				for( int i=bi; i<Math.min(bi+blksz, ru); i++ ) { 
-					kbuff.set(c[2*i], c[2*i+1]);
-					kplus2.execute2(kbuff, vals[j][grps[j]._data[i]&0xFF]);
-					c[2*i] = kbuff._sum;
-					c[2*i+1] = kbuff._correction;
-				}
+		double[] tmpAgg = new double[blksz];
+		for( int bi=rl; bi<ru; bi+=blksz ) {
+			Arrays.fill(tmpAgg, 0);
+			//aggregate all groups 
+			for( int j=0; j<grps.length; j++ ) {
+				double[] valsj = vals[j];
+				byte[] dataj = grps[j]._data;
+				for( int i=bi; i<Math.min(bi+blksz, ru); i++ )
+					tmpAgg[i-bi] += valsj[dataj[i]&0xFF];
+			}
+			//add partial results of all ddc groups
+			for( int i=bi; i<Math.min(bi+blksz, ru); i++ ) {
+				kbuff.set(c[2*i], c[2*i+1]);
+				kplus2.execute2(kbuff, tmpAgg[i-bi]);
+				c[2*i] = kbuff._sum;
+				c[2*i+1] = kbuff._correction;
+			}	
+		}
 	}
 	
 	@Override

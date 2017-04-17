@@ -482,7 +482,7 @@ public class ColGroupRLE extends ColGroupOffset
 			//current pos / values per RLE list
 			int[] astart = new int[numVals];
 			int[] apos = skipScan(numVals, rl, astart);
-			double[] aval = sumAllValues(kplus, kbuff);
+			double[] aval = sumAllValues(kplus, kbuff, false);
 			
 			//step 2: cache conscious matrix-vector via horizontal scans 
 			for( int bi=rl; bi<ru; bi+=blksz ) 

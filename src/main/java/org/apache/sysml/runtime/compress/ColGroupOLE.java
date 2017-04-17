@@ -472,7 +472,7 @@ public class ColGroupOLE extends ColGroupOffset
 			
 			//step 1: prepare position and value arrays
 			int[] apos = skipScan(numVals, rl);
-			double[] aval = sumAllValues(kplus, kbuff);
+			double[] aval = sumAllValues(kplus, kbuff, false);
 					
 			//step 2: cache conscious row sums via horizontal scans 
 			for( int bi=rl; bi<ru; bi+=blksz2 ) 

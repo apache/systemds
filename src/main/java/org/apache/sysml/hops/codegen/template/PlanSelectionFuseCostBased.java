@@ -41,6 +41,7 @@ import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.AggOp;
 import org.apache.sysml.hops.Hop.Direction;
 import org.apache.sysml.hops.IndexingOp;
+import org.apache.sysml.hops.LiteralOp;
 import org.apache.sysml.hops.ParameterizedBuiltinOp;
 import org.apache.sysml.hops.ReorgOp;
 import org.apache.sysml.hops.TernaryOp;
@@ -781,13 +782,26 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 				case RBIND:   costs = 1; break;
 				case INTDIV:  costs = 6; break;
 				case MODULUS: costs = 8; break;
-				case DIV:    costs = 22; break;
+				case DIV:     costs = 22; break;
 				case LOG:
-				case LOG_NZ: costs = 32; break;
-				case POW:    costs = (HopRewriteUtils.isLiteralOfValue(
+				case LOG_NZ:  costs = 32; break;
+				case POW:     costs = (HopRewriteUtils.isLiteralOfValue(
 						current.getInput().get(1), 2) ? 1 : 16); break;
 				case MINUS_NZ:
 				case MINUS1_MULT: costs = 2; break;
+				case CENTRALMOMENT:
+					int type = (int) (current.getInput().get(1) instanceof LiteralOp ? 
+						HopRewriteUtils.getIntValueSafe((LiteralOp)current.getInput().get(1)) : 2);
+					switch( type ) {
+						case 0: costs = 1; break; //count
+						case 1: costs = 8; break; //mean
+						case 2: costs = 16; break; //cm2
+						case 3: costs = 31; break; //cm3
+						case 4: costs = 51; break; //cm4
+						case 5: costs = 16; break; //variance
+					}
+					break;
+				case COVARIANCE: costs = 23; break;
 				default:
 					throw new RuntimeException("Cost model not "
 						+ "implemented yet for: "+((BinaryOp)current).getOp());
@@ -797,6 +811,20 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 			switch( ((TernaryOp)current).getOp() ) {
 				case PLUS_MULT: 
 				case MINUS_MULT: costs = 2; break;
+				case CTABLE:     costs = 3; break;
+				case CENTRALMOMENT:
+					int type = (int) (current.getInput().get(1) instanceof LiteralOp ? 
+						HopRewriteUtils.getIntValueSafe((LiteralOp)current.getInput().get(1)) : 2);
+					switch( type ) {
+						case 0: costs = 2; break; //count
+						case 1: costs = 9; break; //mean
+						case 2: costs = 17; break; //cm2
+						case 3: costs = 32; break; //cm3
+						case 4: costs = 52; break; //cm4
+						case 5: costs = 17; break; //variance
+					}
+					break;
+				case COVARIANCE: costs = 23; break;
 				default:
 					throw new RuntimeException("Cost model not "
 						+ "implemented yet for: "+((TernaryOp)current).getOp());

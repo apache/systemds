@@ -71,6 +71,7 @@ import org.apache.sysml.parser.Expression.ParameterizedBuiltinFunctionOp;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.parser.PrintStatement.PRINTTYPE;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.Program;
 
 
 public class DMLTranslator 
@@ -280,10 +281,16 @@ public class DMLTranslator
 		resetHopsDAGVisitStatus(dmlp);
 	}
 	
-	public void codgenHopsDAG(DMLProgram dmlp) 
+	public void codgenHopsDAG(DMLProgram dmlp)
 		throws LanguageException, HopsException, DMLRuntimeException 
 	{
-		SpoofCompiler.generateCode(dmlp);	
+		SpoofCompiler.generateCode(dmlp);
+	}
+	
+	public void codgenHopsDAG(Program rtprog)
+		throws LanguageException, HopsException, DMLRuntimeException, LopsException, IOException 
+	{
+		SpoofCompiler.generateCode(rtprog);
 	}
 	
 	public void constructLops(DMLProgram dmlp) throws ParseException, LanguageException, HopsException, LopsException {

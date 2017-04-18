@@ -19,6 +19,7 @@
 
 package org.apache.sysml.hops.codegen;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -38,6 +39,7 @@ import org.apache.sysml.hops.codegen.cplan.CNodeCell;
 import org.apache.sysml.hops.codegen.cplan.CNodeData;
 import org.apache.sysml.hops.codegen.cplan.CNodeMultiAgg;
 import org.apache.sysml.hops.codegen.cplan.CNodeOuterProduct;
+import org.apache.sysml.hops.codegen.cplan.CNodeRow;
 import org.apache.sysml.hops.codegen.cplan.CNodeTernary;
 import org.apache.sysml.hops.codegen.cplan.CNodeTernary.TernaryType;
 import org.apache.sysml.hops.codegen.cplan.CNodeTpl;
@@ -52,6 +54,8 @@ import org.apache.sysml.hops.codegen.template.PlanSelectionFuseNoRedundancy;
 import org.apache.sysml.hops.codegen.template.CPlanMemoTable.MemoTableEntry;
 import org.apache.sysml.hops.codegen.template.CPlanMemoTable.MemoTableEntrySet;
 import org.apache.sysml.hops.codegen.template.TemplateUtils;
+import org.apache.sysml.hops.recompile.RecompileStatus;
+import org.apache.sysml.hops.recompile.Recompiler;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.OpOp1;
 import org.apache.sysml.hops.HopsException;
@@ -61,6 +65,7 @@ import org.apache.sysml.hops.rewrite.ProgramRewriteStatus;
 import org.apache.sysml.hops.rewrite.ProgramRewriter;
 import org.apache.sysml.hops.rewrite.RewriteCommonSubexpressionElimination;
 import org.apache.sysml.hops.rewrite.RewriteRemoveUnnecessaryCasts;
+import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.ForStatement;
 import org.apache.sysml.parser.ForStatementBlock;
@@ -76,6 +81,14 @@ import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.codegen.CodegenUtils;
 import org.apache.sysml.runtime.codegen.SpoofCellwise.CellType;
+import org.apache.sysml.runtime.controlprogram.ForProgramBlock;
+import org.apache.sysml.runtime.controlprogram.FunctionProgramBlock;
+import org.apache.sysml.runtime.controlprogram.IfProgramBlock;
+import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
+import org.apache.sysml.runtime.controlprogram.Program;
+import org.apache.sysml.runtime.controlprogram.ProgramBlock;
+import org.apache.sysml.runtime.controlprogram.WhileProgramBlock;
+import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.utils.Explain;
 import org.apache.sysml.utils.Statistics;
@@ -87,6 +100,7 @@ public class SpoofCompiler
 	//internal configuration flags
 	public static boolean LDEBUG                      = false;
 	public static CompilerType JAVA_COMPILER          = CompilerType.JANINO; 
+	public static IntegrationType INTEGRATION         = IntegrationType.HOPS;
 	public static final boolean RECOMPILE_CODEGEN     = true;
 	public static final boolean PRUNE_REDUNDANT_PLANS = true;
 	public static PlanCachePolicy PLAN_CACHE_POLICY   = PlanCachePolicy.CSLH;
@@ -96,6 +110,11 @@ public class SpoofCompiler
 	public enum CompilerType {
 		JAVAC,
 		JANINO,
+	}
+	
+	public enum IntegrationType {
+		HOPS,
+		RUNTIME,
 	}
 	
 	public enum PlanSelector {
@@ -131,22 +150,34 @@ public class SpoofCompiler
 			new RewriteCommonSubexpressionElimination(true),
 			new RewriteRemoveUnnecessaryCasts());
 	
-	public static void generateCode(DMLProgram dmlp) 
+	public static void generateCode(DMLProgram dmlprog) 
 		throws LanguageException, HopsException, DMLRuntimeException
 	{
 		// for each namespace, handle function statement blocks
-		for (String namespaceKey : dmlp.getNamespaces().keySet()) {
-			for (String fname : dmlp.getFunctionStatementBlocks(namespaceKey).keySet()) {
-				FunctionStatementBlock fsblock = dmlp.getFunctionStatementBlock(namespaceKey,fname);
+		for (String namespaceKey : dmlprog.getNamespaces().keySet()) {
+			for (String fname : dmlprog.getFunctionStatementBlocks(namespaceKey).keySet()) {
+				FunctionStatementBlock fsblock = dmlprog.getFunctionStatementBlock(namespaceKey,fname);
 				generateCodeFromStatementBlock(fsblock);
 			}
 		}
 		
 		// handle regular statement blocks in "main" method
-		for (int i = 0; i < dmlp.getNumStatementBlocks(); i++) {
-			StatementBlock current = dmlp.getStatementBlock(i);
+		for (int i = 0; i < dmlprog.getNumStatementBlocks(); i++) {
+			StatementBlock current = dmlprog.getStatementBlock(i);
 			generateCodeFromStatementBlock(current);
 		}
+	}
+	
+	public static void generateCode(Program rtprog) 
+		throws LanguageException, HopsException, DMLRuntimeException, LopsException, IOException
+	{
+		// handle all function program blocks
+		for( FunctionProgramBlock pb : rtprog.getFunctionProgramBlocks().values() )
+			generateCodeFromProgramBlock(pb);
+		
+		// handle regular program blocks in "main" method
+		for( ProgramBlock pb : rtprog.getProgramBlocks() )
+			generateCodeFromProgramBlock(pb);
 	}
 	
 	public static void generateCodeFromStatementBlock(StatementBlock current)
@@ -163,7 +194,7 @@ public class SpoofCompiler
 		{
 			WhileStatementBlock wsb = (WhileStatementBlock) current;
 			WhileStatement wstmt = (WhileStatement)wsb.getStatement(0);
-			wsb.setPredicateHops(optimize(wsb.getPredicateHops(), true));
+			wsb.setPredicateHops(optimize(wsb.getPredicateHops(), false));
 			for (StatementBlock sb : wstmt.getBody())
 				generateCodeFromStatementBlock(sb);
 		}	
@@ -171,7 +202,7 @@ public class SpoofCompiler
 		{
 			IfStatementBlock isb = (IfStatementBlock) current;
 			IfStatement istmt = (IfStatement)isb.getStatement(0);
-			isb.setPredicateHops(optimize(isb.getPredicateHops(), true));
+			isb.setPredicateHops(optimize(isb.getPredicateHops(), false));
 			for (StatementBlock sb : istmt.getIfBody())
 				generateCodeFromStatementBlock(sb);
 			for (StatementBlock sb : istmt.getElseBody())
@@ -181,9 +212,9 @@ public class SpoofCompiler
 		{
 			ForStatementBlock fsb = (ForStatementBlock) current;
 			ForStatement fstmt = (ForStatement)fsb.getStatement(0);
-			fsb.setFromHops(optimize(fsb.getFromHops(), true));
-			fsb.setToHops(optimize(fsb.getToHops(), true));
-			fsb.setIncrementHops(optimize(fsb.getIncrementHops(), true));
+			fsb.setFromHops(optimize(fsb.getFromHops(), false));
+			fsb.setToHops(optimize(fsb.getToHops(), false));
+			fsb.setIncrementHops(optimize(fsb.getIncrementHops(), false));
 			for (StatementBlock sb : fstmt.getBody())
 				generateCodeFromStatementBlock(sb);
 		}
@@ -191,6 +222,56 @@ public class SpoofCompiler
 		{
 			current.set_hops( generateCodeFromHopDAGs(current.get_hops()) );
 			current.updateRecompilationFlag();
+		}
+	}
+	
+	public static void generateCodeFromProgramBlock(ProgramBlock current)
+		throws HopsException, DMLRuntimeException, LopsException, IOException
+	{		
+		if (current instanceof FunctionProgramBlock)
+		{
+			FunctionProgramBlock fsb = (FunctionProgramBlock)current;
+			for (ProgramBlock pb : fsb.getChildBlocks())
+				generateCodeFromProgramBlock(pb);
+		}
+		else if (current instanceof WhileProgramBlock)
+		{
+			WhileProgramBlock wpb = (WhileProgramBlock) current;
+			WhileStatementBlock wsb = (WhileStatementBlock)wpb.getStatementBlock();
+			
+			if( wsb!=null && wsb.getPredicateHops()!=null )
+				wpb.setPredicate(generateCodeFromHopDAGsToInst(wsb.getPredicateHops()));
+			for (ProgramBlock sb : wpb.getChildBlocks())
+				generateCodeFromProgramBlock(sb);
+		}
+		else if (current instanceof IfProgramBlock)
+		{
+			IfProgramBlock ipb = (IfProgramBlock) current;
+			IfStatementBlock isb = (IfStatementBlock) ipb.getStatementBlock();
+			if( isb!=null && isb.getPredicateHops()!=null )
+				ipb.setPredicate(generateCodeFromHopDAGsToInst(isb.getPredicateHops()));
+			for (ProgramBlock pb : ipb.getChildBlocksIfBody())
+				generateCodeFromProgramBlock(pb);
+			for (ProgramBlock pb : ipb.getChildBlocksElseBody())
+				generateCodeFromProgramBlock(pb);
+		}
+		else if (current instanceof ForProgramBlock) //incl parfor
+		{
+			ForProgramBlock fpb = (ForProgramBlock) current;
+			ForStatementBlock fsb = (ForStatementBlock) fpb.getStatementBlock();
+			if( fsb!=null && fsb.getFromHops()!=null )
+				fpb.setFromInstructions(generateCodeFromHopDAGsToInst(fsb.getFromHops()));
+			if( fsb!=null && fsb.getToHops()!=null )
+				fpb.setToInstructions(generateCodeFromHopDAGsToInst(fsb.getToHops()));
+			if( fsb!=null && fsb.getIncrementHops()!=null )
+				fpb.setIncrementInstructions(generateCodeFromHopDAGsToInst(fsb.getIncrementHops()));
+			for (ProgramBlock pb : fpb.getChildBlocks())
+				generateCodeFromProgramBlock(pb);
+		}
+		else //generic (last-level)
+		{
+			StatementBlock sb = current.getStatementBlock();
+			current.setInstructions( generateCodeFromHopDAGsToInst(sb, sb.get_hops()) );
 		}
 	}
 
@@ -205,6 +286,22 @@ public class SpoofCompiler
 		Hop.resetVisitStatus(optimized);
 		
 		return optimized;
+	}
+	
+	public static ArrayList<Instruction> generateCodeFromHopDAGsToInst(StatementBlock sb, ArrayList<Hop> roots) 
+		throws DMLRuntimeException, HopsException, LopsException, IOException 
+	{
+		//create copy of hop dag, call codegen, and generate instructions
+		return Recompiler.recompileHopsDag(sb, roots, 
+			new LocalVariableMap(), new RecompileStatus(), false, 0);
+	}
+	
+	public static ArrayList<Instruction> generateCodeFromHopDAGsToInst(Hop root) 
+		throws DMLRuntimeException, HopsException, LopsException, IOException 
+	{
+		//create copy of hop dag, call codegen, and generate instructions
+		return Recompiler.recompileHopsDag(root, 
+			new LocalVariableMap(), new RecompileStatus(), false, 0);
 	}
 	
 	
@@ -321,6 +418,8 @@ public class SpoofCompiler
 			Statistics.incrementCodegenDAGCompile();
 			Statistics.incrementCodegenCompileTime(System.nanoTime()-t0);
 		}
+		
+		Hop.resetVisitStatus(roots);
 			
 		return ret;
 	}
@@ -370,11 +469,12 @@ public class SpoofCompiler
 		memo.pruneSuboptimal(roots);
 		
 		//construct actual cplan representations
+		//note: we do not use the hop visit status due to jumps over fused operators which would
+		//corrupt subsequent resets, leaving partial hops dags in visited status
 		LinkedHashMap<Long, Pair<Hop[],CNodeTpl>> ret = new LinkedHashMap<Long, Pair<Hop[],CNodeTpl>>();
-		Hop.resetVisitStatus(roots);
+		HashSet<Long> visited = new HashSet<Long>();
 		for( Hop hop : roots )
-			rConstructCPlans(hop, memo, ret, compileLiterals);
-		Hop.resetVisitStatus(roots);
+			rConstructCPlans(hop, memo, ret, compileLiterals, visited);
 		
 		return ret;
 	}
@@ -447,11 +547,11 @@ public class SpoofCompiler
 		return P;
 	}
 	
-	private static void rConstructCPlans(Hop hop, CPlanMemoTable memo, HashMap<Long, Pair<Hop[],CNodeTpl>> cplans, boolean compileLiterals) 
+	private static void rConstructCPlans(Hop hop, CPlanMemoTable memo, HashMap<Long, Pair<Hop[],CNodeTpl>> cplans, boolean compileLiterals, HashSet<Long> visited) 
 		throws DMLException
 	{		
 		//top-down memoization of processed dag nodes
-		if( hop == null || hop.isVisited() )
+		if( hop == null || visited.contains(hop.getHopID()) )
 			return;
 		
 		//generate cplan for existing memo table entry
@@ -466,14 +566,14 @@ public class SpoofCompiler
 		//process children recursively, but skip compiled operator
 		if( cplans.containsKey(hop.getHopID()) ) {
 			for( Hop c : cplans.get(hop.getHopID()).getKey() )
-				rConstructCPlans(c, memo, cplans, compileLiterals);
+				rConstructCPlans(c, memo, cplans, compileLiterals, visited);
 		}
 		else {
 			for( Hop c : hop.getInput() )
-				rConstructCPlans(c, memo, cplans, compileLiterals);	
+				rConstructCPlans(c, memo, cplans, compileLiterals, visited);	
 		}
 		
-		hop.setVisited();
+		visited.add(hop.getHopID());
 	}
 	
 	////////////////////
@@ -536,7 +636,8 @@ public class SpoofCompiler
 				hnew = HopRewriteUtils.createUnary(hnew, OpOp1.CAST_AS_MATRIX);
 			}
 			
-			HopRewriteUtils.rewireAllParentChildReferences(hop, hnew);
+			if( !(tmpCNode instanceof CNodeMultiAgg) )
+				HopRewriteUtils.rewireAllParentChildReferences(hop, hnew);
 			memo.add(hnew.getHopID());
 		}
 		
@@ -613,8 +714,9 @@ public class SpoofCompiler
 			}
 			
 			//remove cplan w/ single op and w/o agg
-			if( tpl instanceof CNodeCell && ((((CNodeCell)tpl).getCellType()==CellType.NO_AGG
-				&& TemplateUtils.hasSingleOperation(tpl))|| TemplateUtils.hasNoOperation(tpl)) ) 
+			if( (tpl instanceof CNodeCell && ((((CNodeCell)tpl).getCellType()==CellType.NO_AGG
+				&& TemplateUtils.hasSingleOperation(tpl))|| TemplateUtils.hasNoOperation(tpl)))
+				|| tpl instanceof CNodeRow && TemplateUtils.hasSingleOperation(tpl)) 
 				cplans2.remove(e.getKey());
 				
 			//remove cplan if empty

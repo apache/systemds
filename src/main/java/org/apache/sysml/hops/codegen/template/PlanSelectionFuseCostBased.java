@@ -281,6 +281,7 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 		Hop.resetVisitStatus(roots);
 		for( Hop hop : roots )
 			rCollectFullAggregates(hop, fullAggs);
+		Hop.resetVisitStatus(roots);
 
 		//remove operators with assigned multi-agg plans
 		Iterator<Long> iter = fullAggs.iterator();
@@ -365,10 +366,18 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 	}
 	
 	private static boolean isValidMultiAggregate(CPlanMemoTable memo, MemoTableEntry me) {
+		//ensure input consistent sizes (otherwise potential for incorrect results)
+		boolean ret = true;
+		Hop refSize = memo._hopRefs.get(me.input1).getInput().get(0);
+		for( int i=1; ret && i<3; i++ ) {
+			if( me.isPlanRef(i) )
+				ret &= HopRewriteUtils.isEqualSize(refSize, 
+					memo._hopRefs.get(me.input(i)).getInput().get(0));
+		}
+		
 		//ensure that aggregates are independent of each other, i.e.,
 		//they to not have potentially transitive parent child references
-		boolean ret = true;
-		for( int i=0; i<3; i++ ) 
+		for( int i=0; ret && i<3; i++ ) 
 			if( me.isPlanRef(i) ) {
 				HashSet<Long> probe = new HashSet<Long>();
 				for( int j=0; j<3; j++ )
@@ -891,8 +900,12 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 			for( Long hopID : _aggregates.keySet() )
 				ret &= !that._inputAggs.contains(hopID);
 			//check partial shared reads
-			return ret && !CollectionUtils.intersection(
+			ret &= !CollectionUtils.intersection(
 				_fusedInputs, that._fusedInputs).isEmpty();
+			//check consistent sizes (result correctness)
+			return ret && HopRewriteUtils.isEqualSize(
+				_aggregates.values().iterator().next().getInput().get(0),
+				that._aggregates.values().iterator().next().getInput().get(0));
 		}
 		public AggregateInfo merge(AggregateInfo that) {
 			_aggregates.putAll(that._aggregates);

@@ -125,7 +125,7 @@ public abstract class SpoofMultiAggregate extends SpoofOperator implements Seria
 		}
 	
 		//post-processing
-		out.recomputeNonZeros();	
+		out.recomputeNonZeros();
 		out.examSparsity();	
 	}
 	

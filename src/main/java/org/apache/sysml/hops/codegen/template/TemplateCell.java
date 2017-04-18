@@ -146,8 +146,15 @@ public class TemplateCell extends TemplateBase
 		if( tmp.containsKey(hop.getHopID()) )
 			return;
 		
-		//recursively process required childs
 		MemoTableEntry me = memo.getBest(hop.getHopID(), TemplateType.CellTpl);
+		
+		//recursively process required childs
+		if( me!=null && (me.type == TemplateType.RowTpl || me.type == TemplateType.OuterProdTpl) ) {
+			CNodeData cdata = TemplateUtils.createCNodeData(hop, compileLiterals);	
+			tmp.put(hop.getHopID(), cdata);
+			inHops.add(hop);
+			return;
+		}
 		for( int i=0; i<hop.getInput().size(); i++ ) {
 			Hop c = hop.getInput().get(i);
 			if( me!=null && me.isPlanRef(i) && !(c instanceof DataOp)

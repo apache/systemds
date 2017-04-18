@@ -224,10 +224,8 @@ public class HopRewriteUtils
 	
 	
 
-	public static int getChildReferencePos( Hop parent, Hop child )
-	{
-		ArrayList<Hop> childs = parent.getInput();
-		return childs.indexOf(child);
+	public static int getChildReferencePos( Hop parent, Hop child ) {
+		return parent.getInput().indexOf(child);
 	}
 	
 	public static void removeChildReference( Hop parent, Hop child ) {
@@ -263,7 +261,7 @@ public class HopRewriteUtils
 	public static void rewireAllParentChildReferences( Hop hold, Hop hnew ) {
 		ArrayList<Hop> parents = new ArrayList<Hop>(hold.getParent());
 		for( Hop lparent : parents )
-			HopRewriteUtils.replaceChildReference(lparent, hold, hnew);	
+			HopRewriteUtils.replaceChildReference(lparent, hold, hnew);
 	}
 	
 	public static void replaceChildReference( Hop parent, Hop inOld, Hop inNew ) {

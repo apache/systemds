@@ -70,12 +70,9 @@ import org.apache.sysml.parser.WhileStatement;
 import org.apache.sysml.parser.WhileStatementBlock;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
-import org.apache.sysml.runtime.instructions.cp.BooleanObject;
 import org.apache.sysml.runtime.instructions.cp.Data;
-import org.apache.sysml.runtime.instructions.cp.DoubleObject;
-import org.apache.sysml.runtime.instructions.cp.IntObject;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
-import org.apache.sysml.runtime.instructions.cp.StringObject;
+import org.apache.sysml.runtime.instructions.cp.ScalarObjectFactory;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
 import org.apache.sysml.udf.lib.DeNaNWrapper;
@@ -695,16 +692,8 @@ public class InterProceduralAnalysis
 				//always propagate scalar literals into functions
 				//(for multiple calls, literal equivalence already checked)
 				if( input instanceof LiteralOp ) {
-					LiteralOp lit = (LiteralOp)input;
-					ScalarObject scalar = null;
-					switch(input.getValueType()) {
-						case DOUBLE:	scalar = new DoubleObject(lit.getDoubleValue()); break;
-						case INT:		scalar = new IntObject(lit.getLongValue()); break;
-						case BOOLEAN: 	scalar = new BooleanObject(lit.getBooleanValue()); break;
-						case STRING:	scalar = new StringObject(lit.getStringValue()); break;
-						default: //do nothing
-					}
-					vars.put(dat.getName(), scalar);
+					vars.put(dat.getName(), ScalarObjectFactory
+						.createScalarObject(input.getValueType(), (LiteralOp)input));
 				}
 				//propagate scalar variables into functions if called once
 				//and input scalar is existing variable in symbol table

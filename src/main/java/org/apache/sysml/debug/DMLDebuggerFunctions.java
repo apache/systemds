@@ -34,14 +34,9 @@ import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.MRJobInstruction;
-import org.apache.sysml.runtime.instructions.cp.BooleanObject;
 import org.apache.sysml.runtime.instructions.cp.BreakPointInstruction;
 import org.apache.sysml.runtime.instructions.cp.CPInstruction;
-import org.apache.sysml.runtime.instructions.cp.Data;
-import org.apache.sysml.runtime.instructions.cp.DoubleObject;
-import org.apache.sysml.runtime.instructions.cp.IntObject;
-import org.apache.sysml.runtime.instructions.cp.ScalarObject;
-import org.apache.sysml.runtime.instructions.cp.StringObject;
+import org.apache.sysml.runtime.instructions.cp.ScalarObjectFactory;
 import org.apache.sysml.runtime.instructions.cp.BreakPointInstruction.BPINSTRUCTION_STATUS;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
@@ -269,28 +264,8 @@ public class DMLDebuggerFunctions {
 		if (variables != null && !variables.keySet().isEmpty()) {
 			if (variables.get(varname) != null) {
 				if (variables.get(varname).getDataType() == DataType.SCALAR) {
-					Data value;
-					switch(variables.get(varname).getValueType()) {
-						case DOUBLE:
-							double d = Double.parseDouble(args[1]);
-							value = (ScalarObject) new DoubleObject(d);
-							break;
-						case INT:
-							long i = Long.parseLong(args[1]);
-							value = (ScalarObject) new IntObject(i);
-							break;
-						case BOOLEAN:
-							boolean b = Boolean.parseBoolean(args[1]);
-							value = (ScalarObject) new BooleanObject(b);
-							break;
-						case STRING:
-							value = (ScalarObject) new StringObject(args[1]);
-							break;
-						default:
-							System.err.println("Invalid scalar value type.");
-							return;
-					}
-					variables.put(varname, value);
+					variables.put(varname, ScalarObjectFactory
+						.createScalarObject(variables.get(varname).getValueType(), args[1]));
 					System.out.println(varname + " = " + variables.get(varname).toString());
 				}
 				else

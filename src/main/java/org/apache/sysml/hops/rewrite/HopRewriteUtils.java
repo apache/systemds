@@ -56,12 +56,8 @@ import org.apache.sysml.parser.DataIdentifier;
 import org.apache.sysml.parser.Statement;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
-import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.instructions.cp.BooleanObject;
-import org.apache.sysml.runtime.instructions.cp.DoubleObject;
-import org.apache.sysml.runtime.instructions.cp.IntObject;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
-import org.apache.sysml.runtime.instructions.cp.StringObject;
+import org.apache.sysml.runtime.instructions.cp.ScalarObjectFactory;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
@@ -196,26 +192,13 @@ public class HopRewriteUtils
 	
 	public static ScalarObject getScalarObject( LiteralOp op )
 	{
-		ScalarObject ret = null;
-		
-		try
-		{
-			switch( op.getValueType() )
-			{
-				case DOUBLE:  ret = new DoubleObject(op.getDoubleValue()); break;
-				case INT:	  ret = new IntObject(op.getLongValue()); break;
-				case BOOLEAN: ret = new BooleanObject(op.getBooleanValue()); break;
-				case STRING:  ret = new StringObject(op.getStringValue()); break;
-				default:
-					throw new DMLRuntimeException("Invalid scalar object value type: "+op.getValueType());
-			}
+		try {
+			return ScalarObjectFactory
+				.createScalarObject(op.getValueType(), op);
 		}
-		catch(Exception ex)
-		{
+		catch(Exception ex) {
 			throw new RuntimeException("Failed to create scalar object for constant. Continue.", ex);
 		}
-		
-		return ret;
 	}
 	
 

@@ -151,9 +151,18 @@ public class FunctionCallCPInstruction extends CPInstruction
 				//get input matrix/frame/scalar
 				currFormalParamValue = (operand.getDataType()!=DataType.SCALAR) ? ec.getVariable(varname) : 
 					ec.getScalarInput(varname, operand.getValueType(), operand.isLiteral());
+				
+				//graceful value type conversion for scalar inputs with wrong type
+				if( currFormalParamValue.getDataType() == DataType.SCALAR
+					&& currFormalParamValue.getValueType() != operand.getValueType() )
+				{
+					ScalarObject so = (ScalarObject) currFormalParamValue;
+					currFormalParamValue = ScalarObjectFactory
+						.createScalarObject(operand.getValueType(), so);
+				}
 			}
 			
-			functionVariables.put(currFormalParamName,currFormalParamValue);						
+			functionVariables.put(currFormalParamName, currFormalParamValue);						
 		}
 		
 		// Pin the input variables so that they do not get deleted 

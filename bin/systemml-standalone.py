@@ -20,9 +20,9 @@
 #
 #-------------------------------------------------------------
 
-import sys
 import os
 import shutil
+import sys
 from os.path import join, exists
 
 
@@ -154,12 +154,39 @@ systemml_default_java_opts = \
     '-Duser.dir=' + user_dir
 
 
-# Add any custom Java options set by the user at command line, overriding defaults as necessary.
+# Reads in key-value pairs from the conf/systemml-env.sh file
+def parse_env_file(env_file_path):
+    env_vars = {}
+    with open(env_file_path) as f:
+        for l in f:
+            l = l.strip()
+            if l and not(l.startswith('#')) and '=' in l:
+                k, v = l.split('=', 1)
+                k = k.strip()
+                v = v.strip()
+                if len(v) > 0:
+                    quoted = v[0] == v[len(v) - 1] and v[0] in ['"', "'"]
 
+                # strip quotes
+                if quoted:
+                    v = v[1:-1]
+                env_vars[k] = v
+    return env_vars
+
+
+# Add any custom Java options set by the user at command line, overriding defaults as necessary.
 if 'SYSTEMML_JAVA_OPTS' in os.environ:
     systemml_java_opts = os.environ['SYSTEMML_JAVA_OPTS']
     systemml_default_java_opts = systemml_default_java_opts + ' ' + systemml_java_opts
-    del os.environ['SYSTEMML_JAVA_OPTS']
+    # del os.environ['SYSTEMML_JAVA_OPTS']
+
+# Add any custom Java options set by the user in the environment variables file,
+# overriding defaults as necessary.
+systemml_env_path = join(project_root_dir, 'conf', 'systemml-env.sh')
+if exists(systemml_env_path):
+    env_vars = parse_env_file(systemml_env_path)
+    os.environ.update(env_vars)
+
 
 # Invoke the jar with options and arguments
 cmd = ['java', systemml_default_java_opts, 'org.apache.sysml.api.DMLScript', '-f', script_file, '-exec singlenode', '-config', systemml_config_path] + sys.argv[2:]

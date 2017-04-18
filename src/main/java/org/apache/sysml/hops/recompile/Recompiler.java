@@ -198,8 +198,14 @@ public class Recompiler
 				rUpdateStatistics( hopRoot, vars );
 			
 			// dynamic hop rewrites
-			if( !inplace )
+			if( !inplace ) {
 				_rewriter.get().rewriteHopDAGs( hops, null );
+				
+				//update stats after rewrites
+				Hop.resetVisitStatus(hops);
+				for( Hop hopRoot : hops )
+					rUpdateStatistics( hopRoot, vars );
+			}
 			
 			// refresh memory estimates (based on updated stats,
 			// before: init memo table with propagated worst-case estimates,
@@ -303,8 +309,13 @@ public class Recompiler
 			rUpdateStatistics( hops, vars );
 			
 			// dynamic hop rewrites
-			if( !inplace )
+			if( !inplace ) {
 				_rewriter.get().rewriteHopDAG( hops, null );
+				
+				//update stats after rewrites
+				hops.resetVisitStatus();
+				rUpdateStatistics( hops, vars );
+			}
 			
 			// refresh memory estimates (based on updated stats)
 			MemoTable memo = new MemoTable();

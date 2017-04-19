@@ -131,7 +131,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 		boolean flagRecompMR = rewriteSetExecutionStategy( pn, M0a, M1, M2, M3, flagLIX );
 
 		//exec-type-specific rewrites
-		if( pn.getExecType() == ExecType.MR || pn.getExecType() == ExecType.SPARK )
+		if( pn.getExecType() == getRemoteExecType() )
 		{
 			if( M1 > _rm && M3 <= _rm  ) {
 				// rewrite 1: data partitioning (apply conditional partitioning)

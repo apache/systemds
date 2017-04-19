@@ -848,8 +848,10 @@ public class DMLTranslator
 			if (current instanceof AssignmentStatement) {
 				AssignmentStatement as = (AssignmentStatement) current;
 				DataIdentifier target = as.getTarget();
-				if (liveOut.containsVariable(target.getName())) {
-					liveOutToTemp.put(target.getName(), Integer.valueOf(i));
+				if (target != null) {
+					if (liveOut.containsVariable(target.getName())) {
+						liveOutToTemp.put(target.getName(), Integer.valueOf(i));
+					}
 				}
 			}
 			if (current instanceof MultiAssignmentStatement) {
@@ -1065,7 +1067,13 @@ public class DMLTranslator
 
 					//create function op
 					FunctionType ftype = fsb.getFunctionOpType();
-					FunctionOp fcall = new FunctionOp(ftype, fci.getNamespace(), fci.getName(), finputs, new String[]{target.getName()});
+					FunctionOp fcall = null;
+					if (target == null) {
+						fcall = new FunctionOp(ftype, fci.getNamespace(), fci.getName(), finputs, new String[]{});
+					} else {
+						fcall = new FunctionOp(ftype, fci.getNamespace(), fci.getName(), finputs, new String[]{target.getName()});
+					}
+
 					output.add(fcall);
 					
 					//TODO function output dataops (phase 3)

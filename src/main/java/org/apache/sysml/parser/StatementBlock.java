@@ -596,14 +596,16 @@ public class StatementBlock extends LiveVariableAnalysis
 					setStatementFormatType(as, conditional);
 				
 				// Handle const vars: (a) basic constant propagation, and (b) transitive constant propagation over assignments 
-				currConstVars.remove(target.getName());
-				if(source instanceof ConstIdentifier && !(target instanceof IndexedIdentifier)){ //basic
-					currConstVars.put(target.getName(), (ConstIdentifier)source);
-				}
-				if( source instanceof DataIdentifier && !(target instanceof IndexedIdentifier) ){ //transitive
-					DataIdentifier diSource = (DataIdentifier) source;
-					if( currConstVars.containsKey(diSource.getName()) ){
-						currConstVars.put(target.getName(), currConstVars.get(diSource.getName()));
+				if (target != null) {
+					currConstVars.remove(target.getName());
+					if(source instanceof ConstIdentifier && !(target instanceof IndexedIdentifier)){ //basic
+						currConstVars.put(target.getName(), (ConstIdentifier)source);
+					}
+					if( source instanceof DataIdentifier && !(target instanceof IndexedIdentifier) ){ //transitive
+						DataIdentifier diSource = (DataIdentifier) source;
+						if( currConstVars.containsKey(diSource.getName()) ){
+							currConstVars.put(target.getName(), currConstVars.get(diSource.getName()));
+						}
 					}
 				}
 			
@@ -634,8 +636,11 @@ public class StatementBlock extends LiveVariableAnalysis
 						}
 					}
 				}
+				if (target == null) {
+					// function has no return value
+				}
 				// CASE: target NOT indexed identifier
-				if (!(target instanceof IndexedIdentifier)){
+				else if (!(target instanceof IndexedIdentifier)){
 					target.setProperties(source.getOutput());
 					if (source.getOutput() instanceof IndexedIdentifier){
 						target.setDimensions(source.getOutput().getDim1(), source.getOutput().getDim2());
@@ -688,7 +693,9 @@ public class StatementBlock extends LiveVariableAnalysis
 					((IndexedIdentifier)target).setDimensions(targetSize._row, targetSize._col);		
 				}
 				
-				ids.addVariable(target.getName(), target);
+				if (target != null) {
+					ids.addVariable(target.getName(), target);
+				}
 				
 			}
 			

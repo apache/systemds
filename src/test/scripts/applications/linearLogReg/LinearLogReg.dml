@@ -23,7 +23,6 @@
 # Can be adapted for L2-SVMs and more general unconstrained optimization problems also
 # setup optimization parameters (See: Trust Region Newton Method for Logistic Regression, Lin, Weng and Keerthi, JMLR 9 (2008) 627-650)
 
-# Note this script is externalized to customers, please do not change w/o consulting component owner.
 # How to invoke this dml script LinearLogReg.dml?
 # Assume LLR_HOME is set to the home of the dml script
 # Assume input and output directories are on hdfs as INPUT_DIR and OUTPUT_DIR

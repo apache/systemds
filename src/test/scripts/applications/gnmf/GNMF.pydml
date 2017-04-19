@@ -19,7 +19,6 @@
 #
 #-------------------------------------------------------------
 
-# Note this script is externalized to customers, please do not change w/o consulting component owner.
 # How to invoke this dml script GNMF.pydml?
 # Assume GNMF_HOME is set to the home of the pydml script
 # Assume input and output directories are on hdfs as INPUT_DIR and OUTPUT_DIR

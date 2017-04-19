@@ -175,8 +175,7 @@ public class ResultMergeRemoteMR extends ResultMerge
 		String jobname = "ParFor-RMMR";
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		
-		JobConf job;
-		job = new JobConf( ResultMergeRemoteMR.class );
+		JobConf job = new JobConf( ResultMergeRemoteMR.class );
 		job.setJobName(jobname+_pfid);
 
 		//maintain dml script counters

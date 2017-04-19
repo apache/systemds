@@ -180,7 +180,7 @@ val prediction = model.transform(X_test_df)
 </div>
 </div>
 
-### Arguments
+### Arguments for Spark and Hadoop invocation
 
 **X**: Location (on HDFS) to read the input matrix of feature vectors; each row
 constitutes one feature vector.
@@ -592,7 +592,7 @@ val prediction = model.transform(X_test_df)
 </div>
 </div>
 
-#### Arguments
+#### Arguments for Spark and Hadoop invocation
 
 **X**: Location (on HDFS) to read the matrix of feature vectors; each
 row constitutes one feature vector.
@@ -861,7 +861,7 @@ val prediction = model.transform(X_test_df)
 </div>
 
 
-#### Arguments
+#### Arguments for Spark and Hadoop invocation
 
 **X**: Location (on HDFS) containing the explanatory variables in
     a matrix. Each row constitutes an example.
@@ -1212,7 +1212,7 @@ val prediction = model.transform(X_test_df)
 </div>
 
 
-### Arguments
+### Arguments for Spark and Hadoop invocation
 
 **X**: Location (on HDFS) to read the matrix of feature vectors; each
     row constitutes one feature vector.
@@ -1472,7 +1472,7 @@ implementation is well-suited to handle large-scale data and builds a
 </div>
 
 
-### Arguments
+### Arguments for Spark and Hadoop invocation
 
 **X**: Location (on HDFS) to read the matrix of feature vectors; each row
 constitutes one feature vector. Note that categorical features in $X$
@@ -1887,7 +1887,7 @@ for classification in parallel.
 </div>
 
 
-### Arguments
+### Arguments for Spark and Hadoop invocation
 
 **X**: Location (on HDFS) to read the matrix of feature vectors; each row
 constitutes one feature vector. Note that categorical features in $X$

@@ -168,7 +168,7 @@ y_test = lr.fit(df_train)
 </div>
 
 
-### Arguments
+### Arguments for Spark and Hadoop invocation
 
 **X**: Location (on HDFS) to read the matrix of feature vectors, each row
 constitutes one feature vector
@@ -570,7 +570,7 @@ lowest AIC is computed.
 </div>
 </div>
 
-### Arguments
+### Arguments for Spark and Hadoop invocation
 
 **X**: Location (on HDFS) to read the matrix of feature vectors, each row
 contains one feature vector.
@@ -782,7 +782,7 @@ distributions and link functions, see below for details.
 </div>
 </div>
 
-### Arguments
+### Arguments for Spark and Hadoop invocation
 
 **X**: Location (on HDFS) to read the matrix of feature vectors; each row
 constitutes an example.
@@ -1255,7 +1255,7 @@ distribution family is supported (see below for details).
 </div>
 
 
-### Arguments
+### Arguments for Spark and Hadoop invocation
 
 **X**: Location (on HDFS) to read the matrix of feature vectors; each row is an
 example.
@@ -1503,7 +1503,7 @@ this step outside the scope of `GLM-predict.dml` for now.
 </div>
 
 
-### Arguments
+### Arguments for Spark and Hadoop invocation
 
 **X**: Location (on HDFS) to read the $n\,{\times}\,m$-matrix $X$ of feature
 vectors, each row constitutes one feature vector (one record)

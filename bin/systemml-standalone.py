@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 #-------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -165,11 +165,10 @@ def parse_env_file(env_file_path):
                 k = k.strip()
                 v = v.strip()
                 if len(v) > 0:
-                    quoted = v[0] == v[len(v) - 1] and v[0] in ['"', "'"]
+                    # strip quotes
+                    if v[0] == v[len(v) - 1] and v[0] in ['"', "'"]:
+                        v = v[1:-1]
 
-                # strip quotes
-                if quoted:
-                    v = v[1:-1]
                 env_vars[k] = v
     return env_vars
 

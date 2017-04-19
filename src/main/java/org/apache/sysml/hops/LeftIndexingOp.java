@@ -113,15 +113,7 @@ public class LeftIndexingOp  extends Hop
 				Lop bottom=getInput().get(3).constructLops();
 				Lop left=getInput().get(4).constructLops();
 				Lop right=getInput().get(5).constructLops();
-				/*
-				//need to creat new lops for converting the index ranges
-				//original range is (a, b) --> (c, d)
-				//newa=2-a, newb=2-b
-				Lops two=new Data(null,	Data.OperationTypes.READ, null, "2", Expression.DataType.SCALAR, Expression.ValueType.INT, false);
-				Lops newTop=new Binary(two, top, HopsOpOp2LopsB.get(Hops.OpOp2.MINUS), Expression.DataType.SCALAR, Expression.ValueType.INT, et);
-				Lops newLeft=new Binary(two, left, HopsOpOp2LopsB.get(Hops.OpOp2.MINUS), Expression.DataType.SCALAR, Expression.ValueType.INT, et);
-				//newc=leftmatrix.row-a+1, newd=leftmatrix.row
-				*/
+				
 				//right hand matrix
 				Lop nrow=new UnaryCP(getInput().get(0).constructLops(), 
 								OperationTypes.NROW, DataType.SCALAR, ValueType.INT);
@@ -298,7 +290,9 @@ public class LeftIndexingOp  extends Hop
 			//(this is important for indexing sparse matrices into empty matrices).
 			MatrixCharacteristics mcM1 = memo.getAllInputStats(getInput().get(0));
 			MatrixCharacteristics mcM2 = memo.getAllInputStats(getInput().get(1));
-			if( mcM1.getNonZeros()>=0 && mcM2.getNonZeros()>=0  ) {
+			if( mcM1.getNonZeros()>=0 && mcM2.getNonZeros()>=0
+				&& hasConstantIndexingRange() ) 
+			{
 				long lnnz = mcM1.getNonZeros() + mcM2.getNonZeros();
 				_outputMemEstimate = computeOutputMemEstimate( _dim1, _dim2, lnnz );
 				_memEstimate = getInputSize(0) //original matrix (left)
@@ -316,7 +310,7 @@ public class LeftIndexingOp  extends Hop
 		{
 			Hop input1 = getInput().get(0);
 			Hop input2 = getInput().get(1);
-			if( input1.dimsKnown() ) {
+			if( input1.dimsKnown() && hasConstantIndexingRange() ) {
 				sparsity = OptimizerUtils.getLeftIndexingSparsity(
 						input1.getDim1(), input1.getDim2(), input1.getNnz(), 
 						input2.getDim1(), input2.getDim2(), input2.getNnz());
@@ -351,8 +345,8 @@ public class LeftIndexingOp  extends Hop
 			double sparsity = OptimizerUtils.getLeftIndexingSparsity(
 					mc1.getRows(), mc1.getCols(), mc1.getNonZeros(), 
 					mc2.getRows(), mc2.getCols(), mc2.getNonZeros());
-			long lnnz = (long)(sparsity * mc1.getRows() * mc1.getCols());
-			        
+			long lnnz = !hasConstantIndexingRange() ? -1 :
+					(long)(sparsity * mc1.getRows() * mc1.getCols());
 			ret = new long[]{mc1.getRows(), mc1.getCols(), lnnz};
 		}
 		
@@ -442,7 +436,11 @@ public class LeftIndexingOp  extends Hop
 		setDim2( input1.getDim2() );
 		
 		//refresh output nnz if exactly known; otherwise later inference
-		if( input1.getNnz() == 0 )  {
+		//note: leveraging the nnz for estimating the output sparsity is
+		//only valid for constant index identifiers (e.g., after literal 
+		//replacement during dynamic recompilation), otherwise this could
+		//lead to underestimation and hence OOMs in loops
+		if( input1.getNnz() == 0 && hasConstantIndexingRange() )  {
 			if( input2.getDataType()==DataType.SCALAR )
 				setNnz(1);
 			else 
@@ -450,6 +448,13 @@ public class LeftIndexingOp  extends Hop
 		}
 		else
 			setNnz(-1);
+	}
+	
+	private boolean hasConstantIndexingRange() {
+		return (getInput().get(2) instanceof LiteralOp
+			&& getInput().get(3) instanceof LiteralOp
+			&& getInput().get(4) instanceof LiteralOp
+			&& getInput().get(5) instanceof LiteralOp);
 	}
 
 	private void checkAndModifyRecompilationStatus()

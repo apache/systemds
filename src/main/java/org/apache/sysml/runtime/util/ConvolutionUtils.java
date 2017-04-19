@@ -22,6 +22,18 @@ package org.apache.sysml.runtime.util;
 
 public class ConvolutionUtils {
 	
+	public static String getConv2dOutputMap(String H, String R, String verticalStride, String heightPadding) {
+		long padX2 = -1;
+		try {
+			padX2 = Long.parseLong(heightPadding)*2;
+			return "" + getP(Long.parseLong(H), Long.parseLong(R), Long.parseLong(verticalStride), Long.parseLong(heightPadding));
+		} catch(Exception e) {
+			  if(padX2 == -1) 			return "((" + H + " + 2*" + heightPadding + " - " + R + ") / " + verticalStride + "+ 1)";
+			  else if(padX2 == 0) 	return "((" + H + " - " + R + ") / " + verticalStride + "+ 1)";
+			  else 									return "((" + H + " + " + padX2 + " - " + R + ") / " + verticalStride + "+ 1)";
+		}
+	}
+	
 	public static long getP(long H, long R, long verticalStride, long heightPadding) {
 		long ret = (H + 2 * heightPadding - R) / verticalStride + 1;
 		if(ret <= 0) {

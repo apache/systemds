@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-__all__ = [ 'getNumCols', 'convertToMatrixBlock', 'convertToNumPyArr', 'convertToPandasDF', 'SUPPORTED_TYPES' , 'convertToLabeledDF']
+__all__ = [ 'getNumCols', 'convertToMatrixBlock', 'convertToNumPyArr', 'convertToPandasDF', 'SUPPORTED_TYPES' , 'convertToLabeledDF', 'convertImageToNumPyArr']
 
 import numpy as np
 import pandas as pd
@@ -118,6 +118,35 @@ def convertToNumPyArr(sc, mb):
     else:
         raise TypeError('sc needs to be of type SparkContext') # TODO: We can generalize this by creating py4j gateway ourselves
 
+# Example usage: convertImageToNumPyArr(im, img_shape=(3, 224, 224), add_rotated_images=True, add_mirrored_images=True)
+# The above call returns a numpy array of shape (6, 50176) in NCHW format
+def convertImageToNumPyArr(im, img_shape=None, add_rotated_images=False, add_mirrored_images=False):
+    from PIL import Image
+    if img_shape is not None:
+        num_channels = img_shape[0]
+        size = (img_shape[1], img_shape[2])
+    else:
+        num_channels = 1 if im.mode == 'L' else 3
+        size = None
+    if num_channels != 1 and num_channels != 3:
+        raise ValueError('Expected the number of channels to be either 1 or 3')
+    if size is not None:
+        im = im.resize(size, Image.LANCZOS)
+    expected_mode = 'L' if num_channels == 1 else 'RGB'
+    if expected_mode is not im.mode:
+        im = im.convert(expected_mode)
+    def _im2NumPy(im):
+        if expected_mode == 'L':
+            return np.asarray(im.getdata()).reshape((1, -1))
+        else:
+            # (H,W,C) --> (C,H,W) --> (1, C*H*W)
+            return np.asarray(im).transpose(2, 0, 1).reshape((1, -1))
+    ret = _im2NumPy(im)
+    if add_rotated_images:
+        ret = np.vstack((ret, _im2NumPy(im.rotate(90)), _im2NumPy(im.rotate(180)), _im2NumPy(im.rotate(270)) ))
+    if add_mirrored_images:
+        ret = np.vstack((ret, _im2NumPy(im.transpose(Image.FLIP_LEFT_RIGHT)), _im2NumPy(im.transpose(Image.FLIP_TOP_BOTTOM))))
+    return ret
 
 def convertToPandasDF(X):
     if not isinstance(X, pd.DataFrame):

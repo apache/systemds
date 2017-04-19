@@ -33,6 +33,8 @@ import org.apache.sysml.api.mlcontext._
 import org.apache.sysml.api.mlcontext.ScriptFactory._
 import org.apache.spark.sql._
 import org.apache.sysml.api.mlcontext.MLContext.ExplainLevel
+import java.util.HashMap
+import scala.collection.JavaConversions._
 
 trait HasLaplace extends Params {
   final val laplace: Param[Double] = new Param[Double](this, "laplace", "Laplace smoothing specified by the user to avoid creation of 0 probabilities.")
@@ -65,8 +67,25 @@ trait HasRegParam extends Params {
   final def getRegParam: Double = $(regParam)
 }
 
-trait BaseSystemMLEstimator {
-  
+trait BaseSystemMLEstimatorOrModel {
+  var enableGPU:Boolean = false
+  var explain:Boolean = false
+  var statistics:Boolean = false
+  val config:HashMap[String, String] = new HashMap[String, String]()
+  def setGPU(enableGPU1:Boolean):BaseSystemMLEstimatorOrModel = { enableGPU = enableGPU1; this}
+  def setExplain(explain1:Boolean):BaseSystemMLEstimatorOrModel = { explain = explain1; this}
+  def setStatistics(statistics1:Boolean):BaseSystemMLEstimatorOrModel = { statistics = statistics1; this}
+  def setConfigProperty(key:String, value:String):BaseSystemMLEstimatorOrModel = { config.put(key, value); this}
+  def updateML(ml:MLContext):Unit = {
+    ml.setGPU(enableGPU); ml.setExplain(explain); ml.setStatistics(statistics); config.map(x => ml.setConfigProperty(x._1, x._2))
+  }
+  def copyProperties(other:BaseSystemMLEstimatorOrModel):BaseSystemMLEstimatorOrModel = {
+    other.setGPU(enableGPU); other.setExplain(explain); other.setStatistics(statistics); config.map(x => other.setConfigProperty(x._1, x._2))
+    return other
+  }
+}
+
+trait BaseSystemMLEstimator extends BaseSystemMLEstimatorOrModel {
   def transformSchema(schema: StructType): StructType = schema
   
   // Returns the script and variables for X and y
@@ -79,9 +98,10 @@ trait BaseSystemMLEstimator {
   def toDouble(d:Double): java.lang.Double = {
     double2Double(d)
   }
+  
 }
 
-trait BaseSystemMLEstimatorModel {
+trait BaseSystemMLEstimatorModel extends BaseSystemMLEstimatorOrModel {
   def toDouble(i:Int): java.lang.Double = {
     double2Double(i.toDouble)
   }
@@ -96,19 +116,19 @@ trait BaseSystemMLEstimatorModel {
 }
 
 trait BaseSystemMLClassifier extends BaseSystemMLEstimator {
-  
   def baseFit(X_mb: MatrixBlock, y_mb: MatrixBlock, sc: SparkContext): MLResults = {
     val isSingleNode = true
     val ml = new MLContext(sc)
+    updateML(ml)
     y_mb.recomputeNonZeros();
     val ret = getTrainingScript(isSingleNode)
     val script = ret._1.in(ret._2, X_mb).in(ret._3, y_mb)
     ml.execute(script)
   }
-  
   def baseFit(df: ScriptsUtils.SparkDataType, sc: SparkContext): MLResults = {
     val isSingleNode = false
     val ml = new MLContext(df.rdd.sparkContext)
+    updateML(ml)
     val mcXin = new MatrixCharacteristics()
     val Xin = RDDConverterUtils.dataFrameToBinaryBlock(sc, df.asInstanceOf[DataFrame].select("features"), mcXin, false, true)
     val revLabelMapping = new java.util.HashMap[Int, String]
@@ -121,10 +141,11 @@ trait BaseSystemMLClassifier extends BaseSystemMLEstimator {
 }
 
 trait BaseSystemMLClassifierModel extends BaseSystemMLEstimatorModel {
-  
+
   def baseTransform(X: MatrixBlock, mloutput: MLResults, sc: SparkContext, probVar:String): MatrixBlock = {
     val isSingleNode = true
     val ml = new MLContext(sc)
+    updateML(ml)
     val script = getPredictionScript(mloutput, isSingleNode)
     // Uncomment for debugging
     // ml.setExplainLevel(ExplainLevel.RECOMPILE_RUNTIME)
@@ -137,11 +158,12 @@ trait BaseSystemMLClassifierModel extends BaseSystemMLEstimatorModel {
     }
     return ret
   }
-  
+
   def baseTransform(df: ScriptsUtils.SparkDataType, mloutput: MLResults, sc: SparkContext, 
       probVar:String, outputProb:Boolean=true): DataFrame = {
     val isSingleNode = false
     val ml = new MLContext(sc)
+    updateML(ml)
     val mcXin = new MatrixCharacteristics()
     val Xin = RDDConverterUtils.dataFrameToBinaryBlock(df.rdd.sparkContext, df.asInstanceOf[DataFrame].select("features"), mcXin, false, true)
     val script = getPredictionScript(mloutput, isSingleNode)

@@ -570,6 +570,7 @@ class Caffe2DML(BaseSystemMLClassifier):
         """
         self.sqlCtx = sqlCtx
         self.sc = sqlCtx._sc
+        createJavaObject(self.sc, 'dummy')
         self.uid = "Caffe2DML"
         self.model = None
         if len(input_shape) != 3:

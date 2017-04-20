@@ -939,7 +939,7 @@ public class LibMatrixReorg
 		}
 	}
 
-	private static void transposeRow( double[] a, double[] c, int aix, int cix, int n2, int len )
+	static void transposeRow( double[] a, double[] c, int aix, int cix, int n2, int len )
 	{
 		final int bn = len%8;
 		

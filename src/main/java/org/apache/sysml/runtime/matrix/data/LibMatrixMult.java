@@ -385,8 +385,8 @@ public class LibMatrixMult
 			matrixMultTransposeSelfDense(m1, ret, leftTranspose, 0, ret.rlen );
 
 		//post-processing
-		copyUpperToLowerTriangle( ret );		
-		ret.recomputeNonZeros();
+		long nnz = copyUpperToLowerTriangle(ret);
+		ret.setNonZeros(nnz);
 		ret.examSparsity();	
 		
 		//System.out.println("TSMM ("+m1.isInSparseFormat()+","+m1.getNumRows()+","+m1.getNumColumns()+","+m1.getNonZeros()+","+leftTranspose+") in "+time.stop());
@@ -436,8 +436,8 @@ public class LibMatrixMult
 		}
 		
 		//post-processing
-		copyUpperToLowerTriangle( ret );		
-		ret.recomputeNonZeros();
+		long nnz = copyUpperToLowerTriangle(ret);		
+		ret.setNonZeros(nnz);
 		ret.examSparsity();	
 		
 		//System.out.println("TSMM k="+k+" ("+m1.isInSparseFormat()+","+m1.getNumRows()+","+m1.getNumColumns()+","+m1.getNonZeros()+","+leftTranspose+") in "+time.stop());
@@ -3413,17 +3413,47 @@ public class LibMatrixMult
 	 * result down to lower triangular matrix once.
 	 * 
 	 * @param ret matrix
+	 * @return number of non zeros
 	 */
-	public static void copyUpperToLowerTriangle( MatrixBlock ret )
+	public static long copyUpperToLowerTriangle( MatrixBlock ret )
 	{
-		double[] c = ret.denseBlock;
-		final int m = ret.rlen;
-		final int n = ret.clen;
+		//ret is guaranteed to be a squared, symmetric matrix
+		if( ret.rlen != ret.clen )
+			throw new RuntimeException("Invalid non-squared input matrix.");
 		
-		//copy symmetric values
-		for( int i=0, uix=0; i<m; i++, uix+=n )
-			for( int j=i+1, lix=j*n+i; j<n; j++, lix+=n )
-				c[ lix ] = c[ uix+j ];
+		final double[] c = ret.denseBlock;
+		final int n = ret.rlen;
+		long nnz = 0;
+		
+		//blocked execution (2x128KB for L2 blocking)
+		final int blocksizeIJ = 128; 
+		
+		//handle blocks on diagonal
+		for( int bi = 0; bi<n; bi+=blocksizeIJ ) {
+			int bimin = Math.min(bi+blocksizeIJ, n);
+			for( int i=bi, rix=bi*n; i<bimin; i++, rix+=n ) {
+				LibMatrixReorg.transposeRow(c, c, rix+bi, bi*n+i, n, bimin-bi);
+				for( int j=rix+i+1; j<rix+bimin; j++ )
+					nnz += (c[j] != 0) ? 2 : 0;
+				nnz++; //for diagonal element
+			}
+		}
+		
+		//handle non-diagonal blocks (full block copies)
+		for( int bi = 0; bi<n; bi+=blocksizeIJ ) {
+			int bimin = Math.min(bi+blocksizeIJ, n);
+			for( int bj = bi; bj<n; bj+=blocksizeIJ ) 
+				if( bi != bj ) { //not on diagonal
+					int bjmin = Math.min(bj+blocksizeIJ, n);
+					for( int i=bi, rix=bi*n; i<bimin; i++, rix+=n ) {
+						LibMatrixReorg.transposeRow(c, c, rix+bj, bj*n+i, n, bjmin-bj);
+						for( int j=rix+bj; j<rix+bjmin; j++ )
+							nnz += (c[j] != 0) ? 2 : 0;
+					}
+				}
+		}
+		
+		return nnz;
 	}
 
 	private static MatrixBlock prepMatrixMultTransposeSelfInput( MatrixBlock m1, boolean leftTranspose ) 
@@ -3676,13 +3706,11 @@ public class LibMatrixMult
 		}
 		
 		@Override
-		public Object call() throws DMLRuntimeException
-		{
+		public Object call() throws DMLRuntimeException {
 			if( _m1.sparse )
 				matrixMultTransposeSelfSparse(_m1, _ret, _left, _rl, _ru);
 			else
 				matrixMultTransposeSelfDense(_m1, _ret, _left, _rl, _ru);
-			
 			return null;
 		}
 	}

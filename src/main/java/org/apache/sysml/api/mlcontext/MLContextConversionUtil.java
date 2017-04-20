@@ -169,7 +169,7 @@ public class MLContextConversionUtil {
 			matrixObject.acquireModify(matrixBlock);
 			matrixObject.release();
 			return matrixObject;
-		} catch (CacheException e) {
+		} catch (DMLRuntimeException e) {
 			throw new MLContextException("Exception converting MatrixBlock to MatrixObject", e);
 		}
 	}
@@ -197,7 +197,7 @@ public class MLContextConversionUtil {
 			frameObject.acquireModify(frameBlock);
 			frameObject.release();
 			return frameObject;
-		} catch (CacheException e) {
+		} catch (DMLRuntimeException e) {
 			throw new MLContextException("Exception converting FrameBlock to FrameObject", e);
 		}
 	}

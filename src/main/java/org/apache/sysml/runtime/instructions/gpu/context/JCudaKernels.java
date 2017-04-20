@@ -45,7 +45,7 @@ import jcuda.driver.CUmodule;
 import jcuda.driver.CUresult;
 
 /**
- * Utility class that allows LibMatrixCUDA as well as JCudaObject to invoke custom CUDA kernels.
+ * Utility class that allows LibMatrixCUDA as well as GPUObject to invoke custom CUDA kernels.
  * 
  * The utility org.apache.sysml.runtime.instructions.gpu.context.JCudaKernels simplifies the launching of the kernels. 
  * For example: to launch a kernel 

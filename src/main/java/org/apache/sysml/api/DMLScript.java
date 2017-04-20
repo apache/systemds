@@ -102,7 +102,7 @@ public class DMLScript
 		HADOOP, 	    // execute all matrix operations in MR
 		SINGLE_NODE,    // execute all matrix operations in CP
 		HYBRID,         // execute matrix operations in CP or MR
-		HYBRID_SPARK,   // execute matrix operations in CP or Spark   
+		HYBRID_SPARK,   // execute matrix operations in CP or Spark
 		SPARK			// execute matrix operations in Spark
 	}
 	
@@ -313,7 +313,6 @@ public class DMLScript
 							throw new DMLRuntimeException("Unsupported flag for -gpu:" + flag);
 						}
 					}
-					GPUContext.getGPUContext(); // creates the singleton GPU context object. Return value ignored.
 				}
 				else if( args[i].equalsIgnoreCase("-python") ) {
 					parsePyDML = true;
@@ -677,7 +676,7 @@ public class DMLScript
 		finally //ensure cleanup/shutdown
 		{	
 			if(DMLScript.USE_ACCELERATOR && ec != null)
-				ec.destroyGPUContext();
+				GPUContext.getGPUContext().destroy();
 			if( dmlconf.getBooleanValue(DMLConfig.CODEGEN) )
 				SpoofCompiler.cleanupCodeGenerator();
 			if(ec != null && ec instanceof SparkExecutionContext)

@@ -339,7 +339,7 @@ public class ScriptExecutor {
 		restoreInputsInSymbolTable();
 		try {
 			if (gpu)
-				executionContext.destroyGPUContext();
+				GPUContext.getGPUContext().destroy();
 		} catch (DMLRuntimeException e) {
 			throw new MLContextException("Exception occurred during cleanup of GPU related resources", e);
 		}

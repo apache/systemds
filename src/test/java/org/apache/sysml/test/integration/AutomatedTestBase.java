@@ -826,7 +826,7 @@ public abstract class AutomatedTestBase
 	 * comparison files.
 	 * </p>
 	 * 
-	 * @param configurationName
+	 * @param config
 	 *            test configuration name
 	 * 
 	 */
@@ -841,7 +841,7 @@ public abstract class AutomatedTestBase
 	 * comparison files.
 	 * </p>
 	 * 
-	 * @param configurationName
+	 * @param config
 	 *            test configuration name
 	 * @param cacheDirectory
 	 *            subdirectory for reusing R script expected results
@@ -1510,7 +1510,7 @@ public abstract class AutomatedTestBase
 	/**
 	 * Enables expection of a line in standard output stream.
 	 * 
-	 * @param expected
+	 * @param expectedLine
 	 */
 	public void setExpectedStdOut(String expectedLine) {
 		this.expectedStdOut = expectedLine;

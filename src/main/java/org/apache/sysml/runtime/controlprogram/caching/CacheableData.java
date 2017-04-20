@@ -34,9 +34,9 @@ import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.LazyWriteBuffer.RPolicy;
-import org.apache.sysml.runtime.instructions.gpu.context.GPUObject;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysml.runtime.instructions.cp.Data;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUObject;
 import org.apache.sysml.runtime.instructions.spark.data.BroadcastObject;
 import org.apache.sysml.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -49,6 +49,7 @@ import org.apache.sysml.runtime.matrix.data.NumItemsByEachReducerMetaData;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.util.LocalFileUtils;
 import org.apache.sysml.runtime.util.MapReduceTool;
+
 
 /**
  * Each object of this class is a cache envelope for some large piece of data
@@ -517,10 +518,10 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 * 
 	 * @param newData new data
 	 * @return cacheable data
-	 * @throws CacheException if CacheException occurs
+	 * @throws DMLRuntimeException if error occurs
 	 */
 	public synchronized T acquireModify(T newData)
-		throws CacheException
+		throws DMLRuntimeException
 	{
 		if( LOG.isTraceEnabled() )
 			LOG.trace("Acquire modify newdata "+getVarName());
@@ -631,10 +632,10 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 * In-Status:  EMPTY, EVICTABLE, EVICTED;
 	 * Out-Status: EMPTY.
 	 * 
-	 * @throws CacheException if CacheException occurs
+	 * @throws DMLRuntimeException if error occurs
 	 */
 	public synchronized void clearData() 
-		throws CacheException
+		throws DMLRuntimeException
 	{
 		if( LOG.isTraceEnabled() )
 			LOG.trace("Clear data "+getVarName());

@@ -94,13 +94,7 @@ public class ExecutionContext
 	public void setVariables(LocalVariableMap vars) {
 		_variables = vars;
 	}
-	
-	public void destroyGPUContext() throws DMLRuntimeException {
-		if(GPUContext.isGPUContextCreated)
-			GPUContext.getGPUContext().destroy();
-	}
-	
-	
+
 	/* -------------------------------------------------------
 	 * Methods to handle variables and associated data objects
 	 * -------------------------------------------------------
@@ -264,7 +258,7 @@ public class ExecutionContext
 	public MatrixObject allocateGPUMatrixObject(String varName) throws DMLRuntimeException {
 		MatrixObject mo = getMatrixObject(varName);
 		if( mo.getGPUObject() == null ) {
-			mo.setGPUObject(GPUContext.createGPUObject(mo));
+			mo.setGPUObject(GPUContext.getGPUContext().createGPUObject(mo));
 		}
 		return mo;
 	}
@@ -278,10 +272,10 @@ public class ExecutionContext
 			throw new DMLRuntimeException("No matrix object available for variable:" + varName);
 		}
 		if( mo.getGPUObject() == null ) {
-			mo.setGPUObject(GPUContext.createGPUObject(mo));
+			mo.setGPUObject(GPUContext.getGPUContext().createGPUObject(mo));
 		}
 		boolean acquired = false;
-		if( !mo.getGPUObject().isAllocated() ) {
+		if( !mo.getGPUObject().isInputAllocated() ) {
 			mo.acquireRead();
 			acquired = true;
 		}

@@ -26,7 +26,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.io.File;
 
-object Caffe2DMLLoader {
+class Caffe2DMLLoader {
   def loadCaffe2DML(filePath:String):Unit = {
     val url = new File(filePath).toURI().toURL();
 		val classLoader = ClassLoader.getSystemClassLoader().asInstanceOf[URLClassLoader];

@@ -48,6 +48,7 @@ def _getJarFileName(sc, suffix):
     return jar_file_name
 
 def _getLoaderInstance(sc, jar_file_name, className, hint):
+    err_msg = 'Unable to load systemml-*.jar into current pyspark session.'
     if os.path.isfile(jar_file_name):
         sc._jsc.addJar(jar_file_name)
         jar_file_url = sc._jvm.java.io.File(jar_file_name).toURI().toURL()
@@ -55,7 +56,7 @@ def _getLoaderInstance(sc, jar_file_name, className, hint):
         jar_file_url_arr = sc._gateway.new_array(url_class, 1)
         jar_file_url_arr[0] = jar_file_url
         url_class_loader = sc._jvm.java.net.URLClassLoader(jar_file_url_arr, sc._jsc.getClass().getClassLoader())
-        c1 = sc._jvm.java.lang.Class.forName('org.apache.sysml.utils.SystemMLLoaderUtils', True, url_class_loader)
+        c1 = sc._jvm.java.lang.Class.forName(className, True, url_class_loader)
         return c1.newInstance()
     else:
         raise ImportError(err_msg + ' Hint: Download the jar from http://systemml.apache.org/download and ' + hint )

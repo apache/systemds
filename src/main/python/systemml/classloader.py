@@ -86,6 +86,6 @@ def createJavaObject(sc, obj_type):
             raise ImportError(err_msg + ' Hint: ' + hint + jar_file_name)
         # Now load caffe2dml
         jar_file_name = _getJarFileName(sc, 'caffe2dml')
-        x = _getLoaderInstance(sc, jar_file_name, 'oorg.apache.sysml.api.dl.Caffe2DMLLoader', hint + 'systemml-*-caffe2dml.jar')
+        x = _getLoaderInstance(sc, jar_file_name, 'org.apache.sysml.api.dl.Caffe2DMLLoader', hint + 'systemml-*-caffe2dml.jar')
         x.loadCaffe2DML(jar_file_name)
         return ret

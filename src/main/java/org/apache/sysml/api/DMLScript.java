@@ -477,10 +477,6 @@ public class DMLScript
 				return true;
 			}
 
-			if (USE_ACCELERATOR){
-				GPUContext.getGPUContext();
-			}
-
 			if (dmlOptions.clean) {
 				cleanSystemMLWorkspace();
 				return true;

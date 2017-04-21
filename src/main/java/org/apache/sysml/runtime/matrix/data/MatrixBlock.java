@@ -5067,11 +5067,11 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		return removeEmptyOperations(ret, rows, null);
 	}
 
-	public MatrixBlock rexpandOperations( MatrixBlock ret, double max, boolean rows, boolean cast, boolean ignore )
+	public MatrixBlock rexpandOperations( MatrixBlock ret, double max, boolean rows, boolean cast, boolean ignore, int k )
 		throws DMLRuntimeException 
 	{	
 		MatrixBlock result = checkType(ret);
-		return LibMatrixReorg.rexpand(this, result, max, rows, cast, ignore);
+		return LibMatrixReorg.rexpand(this, result, max, rows, cast, ignore, k);
 	}
 	
 	

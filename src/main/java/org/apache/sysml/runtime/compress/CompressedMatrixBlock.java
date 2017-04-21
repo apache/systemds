@@ -2007,11 +2007,11 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 
 	@Override
 	public MatrixBlock rexpandOperations(MatrixBlock ret, double max,
-			boolean rows, boolean cast, boolean ignore)
+			boolean rows, boolean cast, boolean ignore, int k)
 			throws DMLRuntimeException {
 		printDecompressWarning("rexpandOperations");
 		MatrixBlock tmp = isCompressed() ? decompress() : this;
-		return tmp.rexpandOperations(ret, max, rows, cast, ignore);
+		return tmp.rexpandOperations(ret, max, rows, cast, ignore, k);
 	}
 
 	@Override

@@ -57,7 +57,6 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 	private static final String TOSTRING_SEPARATOR = " ";
 	private static final String TOSTRING_LINESEPARATOR = "\n";
 	
-	
 	private int arity;
 	protected HashMap<String,String> params;
 	
@@ -248,7 +247,9 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 			boolean dirVal = params.get("dir").equals("rows");
 			boolean cast = Boolean.parseBoolean(params.get("cast"));
 			boolean ignore = Boolean.parseBoolean(params.get("ignore"));
-			MatrixBlock ret = (MatrixBlock) target.rexpandOperations(new MatrixBlock(), maxVal, dirVal, cast, ignore);
+			int numThreads = Integer.parseInt(params.get("k"));
+			MatrixBlock ret = (MatrixBlock) target.rexpandOperations(
+				new MatrixBlock(), maxVal, dirVal, cast, ignore, numThreads);
 			
 			//release locks
 			ec.setMatrixOutput(output.getName(), ret);

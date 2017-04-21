@@ -645,7 +645,7 @@ public class LibMatrixReorg
 	 * @return output matrix
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static MatrixBlock rexpand(MatrixBlock in, MatrixBlock ret, double max, boolean rows, boolean cast, boolean ignore) 
+	public static MatrixBlock rexpand(MatrixBlock in, MatrixBlock ret, double max, boolean rows, boolean cast, boolean ignore, int k) 
 		throws DMLRuntimeException
 	{
 		//prepare parameters
@@ -669,7 +669,7 @@ public class LibMatrixReorg
 		if( rows )
 			return rexpandRows(in, ret, lmax, cast, ignore);
 		else //cols
-			return rexpandColumns(in, ret, lmax, cast, ignore);
+			return rexpandColumns(in, ret, lmax, cast, ignore, k);
 	}
 
 	/**
@@ -694,7 +694,7 @@ public class LibMatrixReorg
 		
 		//execute rexpand operations incl sanity checks
 		//TODO more robust (memory efficient) implementation w/o tmp block
-		MatrixBlock tmp = rexpand(in, new MatrixBlock(), max, rows, cast, ignore);
+		MatrixBlock tmp = rexpand(in, new MatrixBlock(), max, rows, cast, ignore, 1);
 		
 		//prepare outputs blocks (slice tmp block into output blocks ) 
 		if( rows ) //expanded vertically
@@ -1909,7 +1909,7 @@ public class LibMatrixReorg
 		return ret;
 	}
 
-	private static MatrixBlock rexpandColumns(MatrixBlock in, MatrixBlock ret, int max, boolean cast, boolean ignore) 
+	private static MatrixBlock rexpandColumns(MatrixBlock in, MatrixBlock ret, int max, boolean cast, boolean ignore, int k) 
 		throws DMLRuntimeException
 	{
 		//set meta data
@@ -1918,10 +1918,43 @@ public class LibMatrixReorg
 		final long nnz = in.nonZeros;
 		boolean sp = MatrixBlock.evalSparseFormatInMemory(rlen, clen, nnz);
 		ret.reset(rlen, clen, sp);
+		ret.allocateDenseOrSparseBlock();
 		
+		//execute rexpand columns
+		long rnnz = 0; //real nnz (due to cutoff max)
+		if( k <= 1 || in.getNumRows() <= PAR_NUMCELL_THRESHOLD ) {
+			rnnz = rexpandColumns(in, ret, max, cast, ignore, 0, rlen);
+		}
+		else {
+			try {
+				ExecutorService pool = Executors.newFixedThreadPool( k );
+				ArrayList<RExpandColsTask> tasks = new ArrayList<RExpandColsTask>();
+				int blklen = (int)(Math.ceil((double)rlen/k/8));
+				for( int i=0; i<8*k & i*blklen<rlen; i++ )
+					tasks.add(new RExpandColsTask(in, ret, 
+						max, cast, ignore, i*blklen, Math.min((i+1)*blklen, rlen)));
+				List<Future<Long>> taskret = pool.invokeAll(tasks);	
+				pool.shutdown();
+				for( Future<Long> task : taskret )
+					rnnz += task.get();
+			}
+			catch(Exception ex) {
+				throw new DMLRuntimeException(ex);
+			}
+		}
+		
+		//post-processing
+		ret.setNonZeros(rnnz);
+		
+		return ret;
+	}
+
+	private static long rexpandColumns(MatrixBlock in, MatrixBlock ret, int max, boolean cast, boolean ignore, int rl, int ru) 
+		throws DMLRuntimeException
+	{
 		//expand input horizontally (input vector likely dense 
 		//but generic implementation for general case)
-		for( int i=0; i<rlen; i++ )
+		for( int i=rl; i<ru; i++ )
 		{
 			//get value and cast if necessary (table)
 			double val = in.quickGetValue(i, 0);
@@ -1931,15 +1964,23 @@ public class LibMatrixReorg
 			//handle invalid values if not to be ignored
 			if( !ignore && val<=0 )
 				throw new DMLRuntimeException("Invalid input value <= 0 for ignore=false: "+val);
-				
+			
 			//set expanded value if matching
-			if( val == Math.floor(val) && val >= 1 && val <= max )
-				ret.appendValue(i, (int)(val-1), 1);
+			if( val == Math.floor(val) && val >= 1 && val <= max ) {
+				//update target without global nnz maintenance
+				if( ret.isInSparseFormat() ) {
+					ret.sparseBlock.allocate(i, 1);
+					ret.sparseBlock.append(i, (int)(val-1), 1);
+				}
+				else
+					ret.setValueDenseUnsafe(i, (int)(val-1), 1);
+			}
 		}
 		
-		return ret;
+		//recompute nnz of partition
+		return ret.recomputeNonZeros(rl, ru-1, 0, ret.getNumColumns()-1);
 	}
-
+	
 	private static void copyColVector( MatrixBlock in, int ixin, double[] tmp, int[] tmpi, int len)
 	{
 		//copy value array from input matrix
@@ -2143,6 +2184,32 @@ public class LibMatrixReorg
 		@Override
 		public int[] call() throws DMLRuntimeException {
 			return countNnzPerColumn(_in, _rl, _ru);
+		}
+	}
+	
+	private static class RExpandColsTask implements Callable<Long>
+	{
+		private final MatrixBlock _in;
+		private final MatrixBlock _out;
+		private final int _max;
+		private final boolean _cast;
+		private final boolean _ignore;
+		private final int _rl;
+		private final int _ru;
+
+		protected RExpandColsTask(MatrixBlock in, MatrixBlock out, int max, boolean cast, boolean ignore, int rl, int ru) {
+			_in = in;
+			_out = out;
+			_max = max;
+			_cast = cast;
+			_ignore = ignore;
+			_rl = rl;
+			_ru = ru;
+		}
+		
+		@Override
+		public Long call() throws DMLRuntimeException {
+			return rexpandColumns(_in, _out, _max, _cast, _ignore, _rl, _ru);
 		}
 	}
 }

@@ -784,8 +784,9 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 	{
 		if( et == ExecType.CP || et == ExecType.SPARK )
 		{
+			int k = OptimizerUtils.getConstrainedNumThreads( _maxNumThreads );
 			ParameterizedBuiltin pbilop = new ParameterizedBuiltin(inputlops, 
-					HopsParameterizedBuiltinLops.get(_op), getDataType(), getValueType(), et);
+					HopsParameterizedBuiltinLops.get(_op), getDataType(), getValueType(), et, k);
 			setOutputDimensions(pbilop);
 			setLineNumbers(pbilop);
 			setLops(pbilop);

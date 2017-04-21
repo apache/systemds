@@ -48,7 +48,16 @@ public class ParameterizedBuiltin extends Lop
 	private HashMap<String, Lop> _inputParams;
 	private boolean _bRmEmptyBC;
 
+	//cp-specific parameters
+	private int _numThreads = 1;
+	
 	public ParameterizedBuiltin(HashMap<String, Lop> paramLops, OperationTypes op, DataType dt, ValueType vt, ExecType et) 
+			throws HopsException 
+	{
+		this(paramLops, op, dt, vt, et, 1);
+	}
+	
+	public ParameterizedBuiltin(HashMap<String, Lop> paramLops, OperationTypes op, DataType dt, ValueType vt, ExecType et, int k) 
 		throws HopsException 
 	{
 		super(Lop.Type.ParameterizedBuiltin, dt, vt);
@@ -60,6 +69,7 @@ public class ParameterizedBuiltin extends Lop
 		}
 		
 		_inputParams = paramLops;
+		_numThreads = k;
 		
 		boolean breaksAlignment = false;
 		boolean aligner = false;
@@ -229,8 +239,15 @@ public class ParameterizedBuiltin extends Lop
 			sb.append( _bRmEmptyBC );
 			sb.append(OPERAND_DELIMITOR);
 		}
-
-		sb.append(this.prepOutputOperand(output));
+		
+		if( getExecType()==ExecType.CP && _operation == OperationTypes.REXPAND ) {
+			sb.append( "k" );
+			sb.append( Lop.NAME_VALUE_SEPARATOR );
+			sb.append( _numThreads );	
+			sb.append(OPERAND_DELIMITOR);
+		}
+		
+		sb.append(prepOutputOperand(output));
 		
 		return sb.toString();
 	}

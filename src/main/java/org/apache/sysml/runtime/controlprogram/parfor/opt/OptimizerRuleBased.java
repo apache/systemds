@@ -1359,7 +1359,8 @@ public class OptimizerRuleBased extends Optimizer
 					if(    ConfigurationManager.isParallelMatrixOperations() 
 						&& h instanceof MultiThreadedHop //abop, datagenop, qop, paramop
 						&& !( h instanceof ParameterizedBuiltinOp //only paramop-grpagg
-							 && ((ParameterizedBuiltinOp)h).getOp()!=ParamBuiltinOp.GROUPEDAGG)
+							 && !HopRewriteUtils.isValidOp(((ParameterizedBuiltinOp)h).getOp(), 
+								ParamBuiltinOp.GROUPEDAGG, ParamBuiltinOp.REXPAND))
 						&& !( h instanceof UnaryOp //only unaryop-cumulativeagg
 							 && !((UnaryOp)h).isCumulativeUnaryOperation() )
 						&& !( h instanceof ReorgOp //only reorgop-transpose

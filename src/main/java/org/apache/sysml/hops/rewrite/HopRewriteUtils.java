@@ -1048,23 +1048,27 @@ public class HopRewriteUtils
 	//////////////////////////////////////
 	// utils for lookup tables
 	
-	public static boolean isValidOp( AggOp input, AggOp[] validTab ) {
+	public static boolean isValidOp( AggOp input, AggOp... validTab ) {
 		return ArrayUtils.contains(validTab, input);
 	}
 	
-	public static boolean isValidOp( OpOp1 input, OpOp1[] validTab ) {
+	public static boolean isValidOp( OpOp1 input, OpOp1... validTab ) {
 		return ArrayUtils.contains(validTab, input);
 	}
 	
-	public static boolean isValidOp( OpOp2 input, OpOp2[] validTab ) {
+	public static boolean isValidOp( OpOp2 input, OpOp2... validTab ) {
 		return ArrayUtils.contains(validTab, input);
 	}
 	
-	public static boolean isValidOp( ReOrgOp input, ReOrgOp[] validTab ) {
+	public static boolean isValidOp( ReOrgOp input, ReOrgOp... validTab ) {
 		return ArrayUtils.contains(validTab, input);
 	}
 	
-	public static int getValidOpPos( OpOp2 input, OpOp2[] validTab ) {
+	public static boolean isValidOp( ParamBuiltinOp input, ParamBuiltinOp... validTab ) {
+		return ArrayUtils.contains(validTab, input);
+	}
+	
+	public static int getValidOpPos( OpOp2 input, OpOp2... validTab ) {
 		return ArrayUtils.indexOf(validTab, input);
 	}
 	

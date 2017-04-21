@@ -282,7 +282,7 @@ class MLContext(object):
 
     def __repr__(self):
         return "MLContext"
-
+    
     def execute(self, script):
         """
         Execute a DML / PyDML script.
@@ -351,6 +351,17 @@ class MLContext(object):
         self._ml.setStatistics(bool(statistics))
         return self
 
+    def setGPU(self, enable):
+        """
+        Whether or not to enable GPU.
+
+        Parameters
+        ----------
+        enable: boolean
+        """
+        self._ml.setGPU(bool(enable))
+        return self
+    
     def setStatisticsMaxHeavyHitters(self, maxHeavyHitters):
         """
         The maximum number of heavy hitters that are printed as part of the statistics.

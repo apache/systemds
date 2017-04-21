@@ -432,7 +432,7 @@ public class ScriptExecutor {
 	 */
 	protected void parseScript() {
 		try {
-			ParserWrapper parser = ParserFactory.createParser(script.getScriptType().isPYDML());
+			ParserWrapper parser = ParserFactory.createParser(script.getScriptType());
 			Map<String, Object> inputParameters = script.getInputParameters();
 			Map<String, String> inputParametersStringMaps = MLContextUtil.convertInputParametersForParser(
 					inputParameters, script.getScriptType());

@@ -166,7 +166,7 @@ public class Connection implements Closeable
 		try
 		{
 			//parsing
-			ParserWrapper parser = ParserFactory.createParser(parsePyDML);
+			ParserWrapper parser = ParserFactory.createParser(parsePyDML ? ScriptType.PYDML : ScriptType.DML);
 			DMLProgram prog = parser.parse(null, script, args);
 			
 			//language validate

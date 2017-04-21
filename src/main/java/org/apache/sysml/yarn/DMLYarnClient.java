@@ -52,7 +52,6 @@ import org.apache.hadoop.yarn.client.api.YarnClientApplication;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.util.ConverterUtils;
 import org.apache.hadoop.yarn.util.Records;
-
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.parser.ParseException;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -429,7 +428,7 @@ public class DMLYarnClient
 			command.append(' ');
 			if( i>0 && _args[i-1].equals("-f") ){
 				command.append(_hdfsDMLScript);
-				command.append(" -config=" + _hdfsDMLConfig);
+				command.append(" -config " + _hdfsDMLConfig);
 			}
 			else if( _args[i].startsWith("-config") ){
 				//ignore because config added with -f

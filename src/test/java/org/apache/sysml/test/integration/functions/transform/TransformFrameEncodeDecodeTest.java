@@ -19,8 +19,6 @@
 
 package org.apache.sysml.test.integration.functions.transform;
 
-import org.junit.Assert;
-import org.junit.Test;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.hops.OptimizerUtils;
@@ -34,6 +32,8 @@ import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
 import org.apache.sysml.utils.Statistics;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class TransformFrameEncodeDecodeTest extends AutomatedTestBase 
 {
@@ -161,8 +161,15 @@ public class TransformFrameEncodeDecodeTest extends AutomatedTestBase
 				"DATA=" + HOME + "input/" + DATASET,
 				"TFSPEC=" + HOME + "input/" + SPEC,
 				"TFDATA=" + output("tfout"), "SEP=,",
-				"OFMT=" + ofmt, "OSEP=\",\"" };
-	
+				"OFMT=" + ofmt, "OSEP=," };
+
+			// Originally OSEP was set to
+			// OSEP=","
+			// Apache Commons CLI strips away the leading and trailing quotes, leaving us with
+			// OSEP=",
+			// This is just a feature/bug and is reported in CLI-262,
+			// though even a fix is unlikely to be backported to 1.2
+
 			OptimizerUtils.ALLOW_FRAME_CSV_REBLOCK = true;
 			runTest(true, false, null, -1); 
 			

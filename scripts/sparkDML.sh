@@ -116,7 +116,7 @@ $SPARK_HOME/bin/spark-submit \
      ${conf} \
      ${SYSTEMML_HOME}/SystemML.jar \
          -f ${f} \
-         -config=${SYSTEMML_HOME}/SystemML-config.xml \
+         -config ${SYSTEMML_HOME}/SystemML-config.xml \
          -exec hybrid_spark \
          $explain \
          $stats \

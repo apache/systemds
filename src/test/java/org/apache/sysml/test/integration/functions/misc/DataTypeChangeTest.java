@@ -148,11 +148,7 @@ public class DataTypeChangeTest extends AutomatedTestBase
 	public void testDataTypeChangeValidate4f() { runTest("dt_change_4f", false); }
 	
 	
-	/**
-	 * 
-	 * @param cfc
-	 * @param vt
-	 */
+
 	private void runTest( String testName, boolean exceptionExpected ) 
 	{
         String RI_HOME = SCRIPT_DIR + TEST_DIR;
@@ -166,11 +162,7 @@ public class DataTypeChangeTest extends AutomatedTestBase
 		runTest(true, exceptionExpected, DMLException.class, -1);
 	}
 	
-	/**
-	 * 
-	 * @param scriptFilename
-	 * @param expectedException
-	 */
+
 	private void runValidateTest( String fullTestName, boolean expectedException )
 	{
 		boolean raisedException = false;
@@ -197,7 +189,7 @@ public class DataTypeChangeTest extends AutomatedTestBase
 			}	
 			
 			//parsing and dependency analysis
-			ParserWrapper parser = ParserFactory.createParser(false);
+			ParserWrapper parser = ParserFactory.createParser(org.apache.sysml.api.mlcontext.ScriptType.DML);
 			DMLProgram prog = parser.parse(DMLScript.DML_FILE_PATH_ANTLR_PARSER, dmlScriptString, argVals);
 			DMLTranslator dmlt = new DMLTranslator(prog);
 			dmlt.liveVariableAnalysis(prog);

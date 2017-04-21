@@ -1515,7 +1515,7 @@ public abstract class AutomatedTestBase
 	/**
 	 * Enables expection of a line in standard output stream.
 	 * 
-	 * @param expected
+	 * @param expectedLine
 	 */
 	public void setExpectedStdOut(String expectedLine) {
 		this.expectedStdOut = expectedLine;

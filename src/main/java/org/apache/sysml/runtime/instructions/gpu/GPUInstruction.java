@@ -19,7 +19,6 @@
 
 package org.apache.sysml.runtime.instructions.gpu;
 
-import jcuda.runtime.JCuda;
 import org.apache.sysml.lops.runtime.RunMRJobs;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
@@ -149,7 +148,7 @@ public abstract class GPUInstruction extends Instruction
 	public void postprocessInstruction(ExecutionContext ec)
 					throws DMLRuntimeException
 	{
-		JCuda.cudaDeviceSynchronize();
+		//JCuda.cudaDeviceSynchronize();
 	}
 
 	/**

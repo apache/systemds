@@ -32,6 +32,7 @@ import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.utils.GPUStatistics;
@@ -107,7 +108,7 @@ public class MMTSJGPUInstruction extends GPUInstruction
 
                 //execute operations 
                 ec.setMetaData(_output.getName(), rlen, clen);
-                LibMatrixCUDA.matmultTSMM(ec, getExtendedOpcode(), mat, _output.getName(), isLeftTransposed);
+                LibMatrixCUDA.matmultTSMM(ec, ec.getGPUContext(), getExtendedOpcode(), mat, _output.getName(), isLeftTransposed);
                 
                 ec.releaseMatrixInputForGPUInstruction(_input.getName());
                 ec.releaseMatrixOutputForGPUInstruction(_output.getName());

@@ -102,6 +102,8 @@ import org.apache.sysml.runtime.instructions.cp.DoubleObject;
 import org.apache.sysml.runtime.instructions.cp.IntObject;
 import org.apache.sysml.runtime.instructions.cp.StringObject;
 import org.apache.sysml.runtime.instructions.cp.VariableCPInstruction;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
@@ -629,6 +631,11 @@ public class ParForProgramBlock extends ForProgramBlock
 			switch( _execMode )
 			{
 				case LOCAL: //create parworkers as local threads
+					if (DMLScript.USE_ACCELERATOR) {
+						GPUContextPool.returnToPool(ec.getGPUContext());
+						ec.setGPUContext(null);
+						setDegreeOfParallelism(GPUContextPool.getDeviceCount());
+					}
 					executeLocalParFor(ec, iterVar, from, to, incr);
 					break;
 					
@@ -718,6 +725,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	private void executeLocalParFor( ExecutionContext ec, IntObject itervar, IntObject from, IntObject to, IntObject incr ) 
 		throws DMLRuntimeException, InterruptedException
 	{
+		LOG.trace("Local Par For (multi-threaded) with degree of parallelism : " + _numThreads);
 		/* Step 1) init parallel workers, task queue and threads
 		 *         start threads (from now on waiting for tasks)
 		 * Step 2) create tasks
@@ -819,6 +827,17 @@ public class ParForProgramBlock extends ForProgramBlock
 						String[] parts = DMLProgram.splitFunctionKey(fn);
 						_prog.removeFunctionProgramBlock(parts[0], parts[1]);
 					}
+			}
+
+			// Frees up the GPUContexts used in the threaded Parfor and sets
+			// the main thread to use the GPUContext
+			if (DMLScript.USE_ACCELERATOR) {
+				for (int i = 0; i < _numThreads; i++) {
+					GPUContext gCtx = workers[i].getExecutionContext().getGPUContext();
+					GPUContextPool.returnToPool(gCtx);
+				}
+				ec.setGPUContext(GPUContextPool.getFromPool());
+				ec.getGPUContext().initializeThread();
 			}
 		}
 		finally 
@@ -1399,6 +1418,12 @@ public class ParForProgramBlock extends ForProgramBlock
 			
 			//deep copy execution context (including prepare parfor update-in-place)
 			ExecutionContext cpEc = ProgramConverter.createDeepCopyExecutionContext(ec);
+
+			// If GPU mode is enabled, gets a GPUContext from the pool of GPUContexts
+			// and sets it in the ExecutionContext
+			if (DMLScript.USE_ACCELERATOR){
+				cpEc.setGPUContext(GPUContextPool.getFromPool());
+			}
 			
 			//prepare basic update-in-place variables (vars dropped on result merge)
 			prepareUpdateInPlaceVariables(cpEc, pwID);

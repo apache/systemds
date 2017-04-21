@@ -172,8 +172,12 @@ public class FunctionCallCPInstruction extends CPInstruction
 		// Create a symbol table under a new execution context for the function invocation,
 		// and copy the function arguments into the created table. 
 		ExecutionContext fn_ec = ExecutionContextFactory.createContext(false, ec.getProgram());
+		if (DMLScript.USE_ACCELERATOR) {
+			fn_ec.setGPUContext(ec.getGPUContext());
+			ec.setGPUContext(null);
+			fn_ec.getGPUContext().initializeThread();
+		}
 		fn_ec.setVariables(functionVariables);
-		
 		// execute the function block
 		try {
 			fpb._functionName = this._functionName;
@@ -187,7 +191,6 @@ public class FunctionCallCPInstruction extends CPInstruction
 			String fname = DMLProgram.constructFunctionKey(_namespace, _functionName);
 			throw new DMLRuntimeException("error executing function " + fname, e);
 		}
-		
 		LocalVariableMap retVars = fn_ec.getVariables();  
 		
 		// cleanup all returned variables w/o binding 
@@ -206,6 +209,12 @@ public class FunctionCallCPInstruction extends CPInstruction
 		
 		// Unpin the pinned variables
 		ec.unpinVariables(_boundInputParamNames, pinStatus);
+
+		if (DMLScript.USE_ACCELERATOR) {
+			ec.setGPUContext(fn_ec.getGPUContext());
+			fn_ec.setGPUContext(null);
+			ec.getGPUContext().initializeThread();
+		}
 		
 		// add the updated binding for each return variable to the variables in original symbol table
 		for (int i=0; i< fpb.getOutputParams().size(); i++){

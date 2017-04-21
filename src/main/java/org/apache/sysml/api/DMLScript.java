@@ -89,6 +89,7 @@ import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDHandler;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.CleanupMR;
 import org.apache.sysml.runtime.matrix.data.LibMatrixDNN;
@@ -111,7 +112,7 @@ public class DMLScript
 		HADOOP, 	    // execute all matrix operations in MR
 		SINGLE_NODE,    // execute all matrix operations in CP
 		HYBRID,         // execute matrix operations in CP or MR
-		HYBRID_SPARK,   // execute matrix operations in CP or Spark   
+		HYBRID_SPARK,   // execute matrix operations in CP or Spark
 		SPARK			// execute matrix operations in Spark
 	}
 
@@ -476,10 +477,6 @@ public class DMLScript
 				return true;
 			}
 
-			if (USE_ACCELERATOR){
-				GPUContext.getGPUContext();
-			}
-
 			if (dmlOptions.clean) {
 				cleanSystemMLWorkspace();
 				return true;
@@ -834,21 +831,35 @@ public class DMLScript
 		// into performance problems are recorded and displayed
 		GPUStatistics.DISPLAY_STATISTICS = dmlconf.getBooleanValue(DMLConfig.EXTRA_GPU_STATS);
 		LibMatrixDNN.DISPLAY_STATISTICS = dmlconf.getBooleanValue(DMLConfig.EXTRA_DNN_STATS);
+
+		// Sets the maximum number of GPUs per process, -1 for all available GPUs
+		GPUContextPool.PER_PROCESS_MAX_GPUS = dmlconf.getIntValue(DMLConfig.MAX_GPUS_PER_PROCESS);
 		
 		//Step 10: execute runtime program
 		Statistics.startRunTimer();
 		ExecutionContext ec = null;
+		GPUContext gCtx = null;
 		try 
 		{  
 			//run execute (w/ exception handling to ensure proper shutdown)
 			ec = ExecutionContextFactory.createContext(rtprog);
+			if (DMLScript.USE_ACCELERATOR && ec != null){
+				gCtx = GPUContextPool.getFromPool();
+				gCtx.initializeThread();
+				ec.setGPUContext(gCtx);
+				if (gCtx == null) {
+					throw new DMLRuntimeException("GPU : Could not create GPUContext, either no GPU or all GPUs currently in use");
+				}
+			}
 			rtprog.execute( ec );  
 			
 		}
 		finally //ensure cleanup/shutdown
-		{	
-			if(DMLScript.USE_ACCELERATOR && ec != null)
-				ec.destroyGPUContext();
+		{
+			if(DMLScript.USE_ACCELERATOR && ec.getGPUContext() != null) {
+				GPUContextPool.returnToPool(ec.getGPUContext());
+			}
+
 			if( dmlconf.getBooleanValue(DMLConfig.CODEGEN) )
 				SpoofCompiler.cleanupCodeGenerator();
 			if(ec != null && ec instanceof SparkExecutionContext)

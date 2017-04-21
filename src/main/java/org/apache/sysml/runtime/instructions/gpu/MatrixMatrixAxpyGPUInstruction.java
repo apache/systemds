@@ -26,6 +26,7 @@ import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.utils.GPUStatistics;
@@ -103,11 +104,11 @@ public class MatrixMatrixAxpyGPUInstruction extends ArithmeticBinaryGPUInstructi
 					" and input2:" + rlen2 + " X " + clen2);
 		}
 		
-		LibMatrixCUDA.axpy(ec, getExtendedOpcode(), in1, in2, _output.getName(), multiplier*scalar.getDoubleValue());
+		LibMatrixCUDA.axpy(ec, ec.getGPUContext(), getExtendedOpcode(), in1, in2, _output.getName(), multiplier*scalar.getDoubleValue());
 		
 		ec.releaseMatrixInputForGPUInstruction(_input1.getName());
 		ec.releaseMatrixInputForGPUInstruction(_input2.getName());
-        ec.releaseMatrixOutputForGPUInstruction(_output.getName());
+		ec.releaseMatrixOutputForGPUInstruction(_output.getName());
 	}
 	
 	private boolean isValidMMOperation(long rlen1, long rlen2, long clen1, long clen2) {

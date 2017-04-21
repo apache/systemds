@@ -364,11 +364,28 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		allocateSparseRowsBlock(true);
 	}
 
-	public void allocateSparseRowsBlock(boolean clearNNZ)
-	{	
+	public void allocateSparseRowsBlock(boolean clearNNZ) {
 		//allocate block if non-existing or too small (guaranteed to be 0-initialized)
+		//but do not replace existing block even if not in default type
 		if( sparseBlock == null || sparseBlock.numRows()<rlen ) {
 			sparseBlock = SparseBlockFactory.createSparseBlock(DEFAULT_SPARSEBLOCK, rlen);
+		}
+		
+		//clear nnz if necessary
+		if( clearNNZ ) {
+			nonZeros = 0;
+		}
+	}
+	
+	public void allocateAndResetSparseRowsBlock(boolean clearNNZ, SparseBlock.Type stype)
+	{
+		//allocate block if non-existing or too small (guaranteed to be 0-initialized)
+		if( sparseBlock == null || sparseBlock.numRows()<rlen
+			|| !SparseBlockFactory.isSparseBlockType(sparseBlock, stype))  {
+			sparseBlock = SparseBlockFactory.createSparseBlock(stype, rlen);
+		}
+		else {
+			sparseBlock.reset(estimatedNNzsPerRow, clen);
 		}
 		
 		//clear nnz if necessary
@@ -1767,7 +1784,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		//check type information
 		if( bformat<0 || bformat>=BlockType.values().length )
 			throw new IOException("invalid format: '"+bformat+"' (need to be 0-"+BlockType.values().length+").");
-			
+		
 		BlockType format=BlockType.values()[bformat];
 		try 
 		{
@@ -1776,7 +1793,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 				case ULTRA_SPARSE_BLOCK:
 					nonZeros = readNnzInfo( in, true );
 					sparse = evalSparseFormatInMemory(rlen, clen, nonZeros);
-					cleanupBlock(true, true); //clean all
+					cleanupBlock(true, !(sparse && sparseBlock instanceof SparseBlockCSR));
 					if( sparse )
 						readUltraSparseBlock(in);
 					else
@@ -1798,7 +1815,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 					break;
 				case EMPTY_BLOCK:
 					sparse = true;
-					cleanupBlock(true, true); //clean all
+					cleanupBlock(true, !(sparseBlock instanceof SparseBlockCSR));
+					if( sparseBlock != null )
+						sparseBlock.reset();
 					nonZeros = 0;
 					break;
 			}
@@ -1902,20 +1921,19 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 
 	private void readUltraSparseBlock(DataInput in) 
 		throws IOException 
-	{	
-		allocateSparseRowsBlock(false); //adjust to size
-		resetSparse(); //reset all sparse rows
+	{
+		//allocate ultra-sparse block in CSR to avoid unnecessary size overhead 
+		//and to allow efficient reset without repeated sparse row allocation
+		
+		//adjust size and ensure reuse block is in CSR format
+		allocateAndResetSparseRowsBlock(false, SparseBlock.Type.CSR);
 		
 		if( clen > 1 ) //ULTRA-SPARSE BLOCK
 		{ 
-			//block: read ijv-triples
-			for(long i=0; i<nonZeros; i++) {
-				int r = in.readInt();
-				int c = in.readInt();
-				double val = in.readDouble();
-				sparseBlock.allocate(r, 1, clen);
-				sparseBlock.append(r, c, val);
-			}
+			//block: read ijv-triples (ordered by row and column) via custom 
+			//init to avoid repeated updates of row pointers per append
+			SparseBlockCSR sblockCSR = (SparseBlockCSR) sparseBlock;
+			sblockCSR.initUltraSparse((int)nonZeros, in);
 		}
 		else //ULTRA-SPARSE COL
 		{

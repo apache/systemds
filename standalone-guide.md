@@ -605,5 +605,5 @@ script (`runStandaloneSystemML.sh` or `runStandaloneSystemML.bat`) to increase
 the memory available to the JVM, i.e:
 
     java -Xmx16g -Xms4g -Xmn1g -cp ${CLASSPATH} org.apache.sysml.api.DMLScript \
-         -f ${SCRIPT_FILE} -exec singlenode -config=SystemML-config.xml \
+         -f ${SCRIPT_FILE} -exec singlenode -config SystemML-config.xml \
          $@

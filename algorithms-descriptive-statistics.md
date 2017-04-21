@@ -130,7 +130,7 @@ to compute the mean of a categorical attribute like ‘Hair Color’.
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f Univar-Stats.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          TYPES=<file>
@@ -169,7 +169,7 @@ be stored. The format of the output matrix is defined by
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f Univar-Stats.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          TYPES=/user/ml/types.mtx
@@ -590,7 +590,7 @@ attributes like ‘Hair Color’.
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f bivar-stats.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          index1=<file>
@@ -659,7 +659,7 @@ are defined in [**Table 2**](algorithms-descriptive-statistics.html#table2).
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f bivar-stats.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          index1=/user/ml/S1.mtx
@@ -1152,7 +1152,7 @@ becomes reversed and amplified (from $+0.1$ to $-0.5$) if we ignore the months.
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f stratstats.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Xcid=[file]
@@ -1360,7 +1360,7 @@ SystemML Language Reference for details.
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f stratstats.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          Xcid=/user/ml/Xcid.mtx
@@ -1388,7 +1388,7 @@ SystemML Language Reference for details.
                                  --conf spark.akka.frameSize=128
                                  SystemML.jar
                                  -f stratstats.dml
-                                 -config=SystemML-config.xml
+                                 -config SystemML-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/Data.mtx
                                          Xcid=/user/ml/Xcid.mtx

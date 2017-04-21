@@ -1144,7 +1144,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		if( sparse && sparseBlock!=null ) //SPARSE (max long)
 		{
 			//note: rlen might be <= sparseBlock.numRows()
-			nonZeros = sparseBlock.size(0, rlen);
+			nonZeros = sparseBlock.size(0, sparseBlock.numRows());
 		}
 		else if( !sparse && denseBlock!=null ) //DENSE (max int)
 		{

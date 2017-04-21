@@ -277,7 +277,7 @@
 		            </configuration>
 		          </execution>
 		          <execution>
-		            <id>caffe2dml</id>
+		            <id>extra</id>
 		            <goals><goal>jar</goal></goals>
 		            <phase>package</phase>
 		            <configuration>
@@ -288,8 +288,9 @@
 							<Main-Class>org.apache.sysml.api.DMLScript</Main-Class>
 						</manifestEntries>
 					  </archive>
-		              <classifier>caffe2dml</classifier>
+		              <classifier>extra</classifier>
 		              <includes>
+		              	<include>**/META-INF/*</include>
 		                <include>**/caffe/*</include>
 		                <include>**/org/tensorflow/framework/*</include>
 		                <include>**/org/tensorflow/util/*</include>

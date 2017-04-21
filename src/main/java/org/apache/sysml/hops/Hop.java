@@ -50,7 +50,6 @@ import org.apache.sysml.runtime.util.UtilFunctions;
 
 public abstract class Hop 
 {
-	
 	protected static final Log LOG =  LogFactory.getLog(Hop.class.getName());
 	
 	public static final long CPThreshold = 2000;
@@ -92,6 +91,7 @@ public abstract class Hop
 	protected double _memEstimate = OptimizerUtils.INVALID_SIZE;
 	protected double _processingMemEstimate = 0;
 	protected double _spBroadcastMemEstimate = 0;
+	protected boolean _validCPSizeEstimate = false;
 	
 	// indicates if there are unknowns during compilation 
 	// (in that case re-complication ensures robustness and efficiency)
@@ -198,10 +198,10 @@ public abstract class Hop
 			//Step 2: check valid output and input sizes for cp (<16GB for DENSE)
 			//(if the memory estimate is smaller than max_numcells we are guaranteed to have it in sparse representation)
 			invalid |= !(  OptimizerUtils.isValidCPMatrixSize(_dim1, _dim2, OptimizerUtils.getSparsity(_dim1, _dim2, _nnz))
-					    || getOutputMemEstimate() < OptimizerUtils.MAX_NUMCELLS_CP_DENSE );
+					    || getOutputMemEstimate() < 8*OptimizerUtils.MAX_NUMCELLS_CP_DENSE || _validCPSizeEstimate );
 			for( Hop in : getInput() )
 				invalid |= !(   OptimizerUtils.isValidCPMatrixSize(in._dim1, in._dim2, OptimizerUtils.getSparsity(in._dim1, in._dim2, in._nnz))
-						     || in.getOutputMemEstimate() < OptimizerUtils.MAX_NUMCELLS_CP_DENSE);
+						     || in.getOutputMemEstimate() < 8*OptimizerUtils.MAX_NUMCELLS_CP_DENSE || in._validCPSizeEstimate);
 			
 			//force exec type mr if necessary
 			if( invalid ) { 
@@ -612,7 +612,7 @@ public abstract class Hop
 					//nnz always exactly known (see dimsKnown(true))
 					_outputMemEstimate = computeOutputMemEstimate( _dim1, _dim2, _nnz );
 				}
-				//1b) infer output statistics and mem estimate based on these statistics
+				//1b) infer output statistics and mem estimate based on worst-case statistics
 				else if( memo.hasInputStatistics(this) )
 				{
 					//infer the output stats
@@ -682,9 +682,13 @@ public abstract class Hop
 		
 		////////
 		//Step 3) Compute final hop memory estimate  
-			
+		
 		//final estimate (sum of inputs/intermediates/output)
 		_memEstimate = getInputOutputSize();
+		
+		//update optional valid cp size estimate (based on worst-case dimensions)
+		_validCPSizeEstimate = (wstats!=null) ? OptimizerUtils.isValidCPMatrixSize(
+			wstats[0], wstats[1], OptimizerUtils.getSparsity(wstats[0], wstats[1], wstats[2])) : false;
 	}
 
 	

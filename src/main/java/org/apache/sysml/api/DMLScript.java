@@ -319,8 +319,7 @@ public class DMLScript
 			for (int k=0; k<argValues.length; k++){
 				String str = argValues[k];
 				if (!str.isEmpty()) {
-					dmlOptions.argVals.put("$" + k, str);
-					k++;
+					dmlOptions.argVals.put("$" + (k+1), str);
 				}
 			}
 		}

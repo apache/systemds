@@ -103,7 +103,7 @@ import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
-import org.apache.sysml.runtime.matrix.data.SparseRow;
+import org.apache.sysml.runtime.matrix.data.SparseRowVector;
 import org.apache.sysml.utils.Explain;
 import org.apache.sysml.yarn.ropt.YarnClusterAnalyzer;
 
@@ -750,13 +750,13 @@ public class OptimizerRuleBased extends Optimizer
 
 	private double estimateSizeSparseRow( long cols, long nnz ) {
 		//see MatrixBlock.estimateSizeSparseInMemory
-		long cnnz = Math.max(SparseRow.initialCapacity, Math.max(cols, nnz));
+		long cnnz = Math.max(SparseRowVector.initialCapacity, Math.max(cols, nnz));
 		return ( 116 + 12 * cnnz ); //sparse row
 	}
 
 	private double estimateSizeSparseRowMin( long cols ) {
 		//see MatrixBlock.estimateSizeSparseInMemory
-		long cnnz = Math.min(SparseRow.initialCapacity, cols);
+		long cnnz = Math.min(SparseRowVector.initialCapacity, cols);
 		return ( 116 + 12 * cnnz ); //sparse row
 	}
 

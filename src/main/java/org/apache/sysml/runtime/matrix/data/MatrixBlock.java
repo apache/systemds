@@ -730,7 +730,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 					int len = b.size(i);
 					int[] ix = b.indexes(i);
 					double[] val = b.values(i);
-					sparseBlock.allocate(aix, estimatedNNzsPerRow, clen);
+					sparseBlock.allocate(aix, sparseBlock.size(aix)+len);
 					for( int j=pos; j<pos+len; j++ )
 						sparseBlock.append(aix, coloffset+ix[j], val[j]);	
 				}

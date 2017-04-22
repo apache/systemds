@@ -642,6 +642,7 @@ public class LibMatrixReorg
 	 * @param rows ?
 	 * @param cast ?
 	 * @param ignore ?
+	 * @param k degree of parallelism
 	 * @return output matrix
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */

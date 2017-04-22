@@ -845,11 +845,11 @@ public class DMLScript
 			ec = ExecutionContextFactory.createContext(rtprog);
 			if (DMLScript.USE_ACCELERATOR && ec != null){
 				gCtx = GPUContextPool.getFromPool();
-				gCtx.initializeThread();
-				ec.setGPUContext(gCtx);
 				if (gCtx == null) {
 					throw new DMLRuntimeException("GPU : Could not create GPUContext, either no GPU or all GPUs currently in use");
 				}
+				gCtx.initializeThread();
+				ec.setGPUContext(gCtx);
 			}
 			rtprog.execute( ec );  
 			

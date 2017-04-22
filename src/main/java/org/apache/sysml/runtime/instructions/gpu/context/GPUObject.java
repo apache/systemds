@@ -96,9 +96,9 @@ public class GPUObject {
 	/** Enclosing {@link MatrixObject} instance */
 	protected MatrixObject mat = null;
 
-	private Pointer allocate(String instName, long size) throws DMLRuntimeException {
-		return getGPUContext().allocate(instName, size);
-	}
+//	private Pointer allocate(String instName, long size) throws DMLRuntimeException {
+//		return getGPUContext().allocate(instName, size);
+//	}
 
 	private Pointer allocate(long size) throws DMLRuntimeException {
 		return getGPUContext().allocate(size);
@@ -108,9 +108,9 @@ public class GPUObject {
 		getGPUContext().cudaFreeHelper(toFree);
 	}
 
-	private void cudaFreeHelper(Pointer toFree, boolean eager) throws DMLRuntimeException {
-		getGPUContext().cudaFreeHelper(toFree, eager);
-	}
+//	private void cudaFreeHelper(Pointer toFree, boolean eager) throws DMLRuntimeException {
+//		getGPUContext().cudaFreeHelper(toFree, eager);
+//	}
 
 	private void cudaFreeHelper(String instName, Pointer toFree, boolean eager) throws DMLRuntimeException {
 		getGPUContext().cudaFreeHelper(instName, toFree, eager);
@@ -200,7 +200,6 @@ public class GPUObject {
 	 * @return the debug string
 	 * @throws DMLRuntimeException  if DMLRuntimeException occurs
 	 */
-	@SuppressWarnings("unused")
 	public static String debugString(Pointer A, long rows, long cols) throws DMLRuntimeException {
 		StringBuffer sb = new StringBuffer();
 		int len = toIntExact(rows * cols);
@@ -230,6 +229,8 @@ public class GPUObject {
 	 * Make sure to call {@link #addReadLock()} after this to set appropriate state, if you are not sure what you are doing.
 	 * Needed for operations like {@link JCusparse#cusparseDcsrgemm(cusparseHandle, int, int, int, int, int, cusparseMatDescr, int, Pointer, Pointer, Pointer, cusparseMatDescr, int, Pointer, Pointer, Pointer, cusparseMatDescr, Pointer, Pointer, Pointer)}
 	 * @param sparseMatrixPtr CSR (compressed sparse row) pointer
+	 * 
+	 * @throws DMLRuntimeException ?
 	 */
 	public void setSparseMatrixCudaPointer(CSRPointer sparseMatrixPtr) throws DMLRuntimeException {
 		this.jcudaSparseMatrixPtr = sparseMatrixPtr;
@@ -245,6 +246,7 @@ public class GPUObject {
 	 * Make sure to call {@link #addReadLock()} after this to set appropriate state, if you are not sure what you are doing.
 	 *
 	 * @param densePtr dense pointer
+	 * @throws DMLRuntimeException ?
 	 */
 	public void setDenseMatrixCudaPointer(Pointer densePtr) throws DMLRuntimeException{
 		this.jcudaDenseMatrixPtr = densePtr;
@@ -543,7 +545,7 @@ public class GPUObject {
 	/**
 	 * if the data is allocated on the GPU and is dirty, it is copied back to the host memory
 	 * @return true if a copy to host happened, false otherwise
-	 * @throws CacheException
+	 * @throws CacheException ?
 	 */
 	public boolean acquireHostRead() throws CacheException {
 		boolean copied = false;
@@ -825,17 +827,26 @@ public class GPUObject {
 
 	}
 
-	/** Pointer to dense matrix */
+	/** 
+	 * Pointer to dense matrix 
+	 * @return ?
+	 */
 	public Pointer getJcudaDenseMatrixPtr() {
 		return jcudaDenseMatrixPtr;
 	}
 
-	/** Pointer to sparse matrix */
+	/** 
+	 * Pointer to sparse matrix
+	 * @return ?
+	 */
 	public CSRPointer getJcudaSparseMatrixPtr() {
 		return jcudaSparseMatrixPtr;
 	}
 
-	/** Whether this block is dirty on the GPU */
+	/** 
+	 * Whether this block is dirty on the GPU 
+	 * @return ?
+	 */
 	public boolean isDirty() {
 		return dirty;
 	}

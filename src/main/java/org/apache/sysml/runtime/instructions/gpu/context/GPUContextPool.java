@@ -61,6 +61,7 @@ public class GPUContextPool {
    * Also sets behaviour for J{Cuda, Cudnn, Cublas, Cusparse} in case of error
    * Initializes the CUDA driver
    * All these need be done once, and not per GPU
+   * @throws DMLRuntimeException ?
    */
   public synchronized static void initializeGPU() throws DMLRuntimeException {
     GPUContext.LOG.info("Initializing CUDA");
@@ -109,6 +110,7 @@ public class GPUContextPool {
   /**
    * Gets an initialized GPUContext from a pool of GPUContexts, each linked to a GPU
    * @return null if not more GPUContexts in pool, a valid GPUContext otherwise
+   * @throws DMLRuntimeException ?
    */
   public static synchronized GPUContext getFromPool() throws DMLRuntimeException {
     if (!initialized) initializeGPU();

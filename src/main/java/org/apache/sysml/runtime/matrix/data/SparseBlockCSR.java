@@ -171,7 +171,7 @@ public class SparseBlockCSR extends SparseBlock
 	 * 
 	 * @param nnz number of non-zeros to read
 	 * @param in data input stream of ijv triples, ordered by ij
-	 * @throws IOException
+	 * @throws IOException if deserialization error occurs
 	 */
 	public void initUltraSparse(int nnz, DataInput in) 
 		throws IOException 

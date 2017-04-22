@@ -86,25 +86,25 @@ public class CSRPointer {
     allocateMatDescrPointer();
   }
 
-  private Pointer allocate(String instName, long size) throws DMLRuntimeException {
-    return getGPUContext().allocate(instName, size);
-  }
+//  private Pointer allocate(String instName, long size) throws DMLRuntimeException {
+//    return getGPUContext().allocate(instName, size);
+//  }
 
   private Pointer allocate(long size) throws DMLRuntimeException {
     return getGPUContext().allocate(size);
   }
 
-  private void cudaFreeHelper(Pointer toFree) throws DMLRuntimeException {
-    getGPUContext().cudaFreeHelper(toFree);
-  }
+//  private void cudaFreeHelper(Pointer toFree) throws DMLRuntimeException {
+//    getGPUContext().cudaFreeHelper(toFree);
+//  }
 
   private void cudaFreeHelper(Pointer toFree, boolean eager) throws DMLRuntimeException {
     getGPUContext().cudaFreeHelper(toFree, eager);
   }
 
-  private void cudaFreeHelper(String instName, Pointer toFree, boolean eager) throws DMLRuntimeException {
-    getGPUContext().cudaFreeHelper(instName, toFree, eager);
-  }
+//  private void cudaFreeHelper(String instName, Pointer toFree, boolean eager) throws DMLRuntimeException {
+//    getGPUContext().cudaFreeHelper(instName, toFree, eager);
+//  }
 
   private static long getDoubleSizeOf(long numElems) {
     return numElems * ((long)jcuda.Sizeof.DOUBLE);
@@ -235,6 +235,7 @@ public class CSRPointer {
    * Estimates the number of non-zero elements from the result of a sparse matrix multiplication C = A * B
    * and returns the {@link CSRPointer} to C with the appropriate GPU memory.
    *
+   * @param gCtx ?
    * @param handle a valid {@link cusparseHandle}
    * @param A      Sparse Matrix A on GPU
    * @param transA 'T' if A is to be transposed, 'N' otherwise
@@ -298,6 +299,7 @@ public class CSRPointer {
   /**
    * Factory method to allocate an empty CSR Sparse matrix on the GPU
    *
+   * @param gCtx ?
    * @param nnz2 number of non-zeroes
    * @param rows number of rows
    * @return a {@link CSRPointer} instance that encapsulates the CSR matrix on GPU
@@ -449,6 +451,8 @@ public class CSRPointer {
 
   /**
    * Calls cudaFree lazily on the allocated {@link Pointer} instances
+   * 
+   * @throws DMLRuntimeException ?
    */
   public void deallocate() throws DMLRuntimeException {
     deallocate(false);
@@ -458,6 +462,7 @@ public class CSRPointer {
    * Calls cudaFree lazily or eagerly on the allocated {@link Pointer} instances
    *
    * @param eager whether to do eager or lazy cudaFrees
+   * @throws DMLRuntimeException ?
    */
   public void deallocate(boolean eager) throws DMLRuntimeException {
     if (nnz > 0) {

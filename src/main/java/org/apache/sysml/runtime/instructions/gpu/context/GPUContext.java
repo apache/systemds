@@ -155,7 +155,6 @@ public class GPUContext {
     cudaSetDevice(deviceNum);
   }
 
-  @SuppressWarnings("unused")
   public static int cudaGetDevice() {
     int[] device = new int[1];
     JCuda.cudaGetDevice(device);
@@ -492,6 +491,7 @@ public class GPUContext {
    * Gets the device properties for the active GPU (set with cudaSetDevice())
    *
    * @return the device properties
+   * @throws DMLRuntimeException ?
    */
   public cudaDeviceProp getGPUProperties() throws DMLRuntimeException {
     return GPUContextPool.getGPUProperties(deviceNum);
@@ -501,6 +501,7 @@ public class GPUContext {
    * Gets the maximum number of threads per block for "active" GPU
    *
    * @return the maximum number of threads per block
+   * @throws DMLRuntimeException ?
    */
   public int getMaxThreadsPerBlock() throws DMLRuntimeException {
     cudaDeviceProp deviceProps = getGPUProperties();
@@ -511,6 +512,7 @@ public class GPUContext {
    * Gets the maximum number of blocks supported by the active cuda device
    *
    * @return the maximum number of blocks supported
+   * @throws DMLRuntimeException ?
    */
   public int getMaxBlocks() throws DMLRuntimeException {
     cudaDeviceProp deviceProp = getGPUProperties();
@@ -521,6 +523,7 @@ public class GPUContext {
    * Gets the shared memory per block supported by the active cuda device
    *
    * @return the shared memory per block
+   * @throws DMLRuntimeException ?
    */
   public long getMaxSharedMemory() throws DMLRuntimeException {
     cudaDeviceProp deviceProp = getGPUProperties();
@@ -531,6 +534,7 @@ public class GPUContext {
    * Gets the warp size supported by the active cuda device
    *
    * @return the warp size
+   * @throws DMLRuntimeException ?
    */
   public int getWarpSize() throws DMLRuntimeException {
     cudaDeviceProp deviceProp = getGPUProperties();
@@ -574,7 +578,7 @@ public class GPUContext {
   /**
    * Clears all memory used by this {@link GPUContext}
    * Be careful to ensure that no memory is currently being used before invoking this
-   * @throws DMLRuntimeException
+   * @throws DMLRuntimeException ?
    */
   public void clearMemory() throws DMLRuntimeException {
     while (allocatedGPUObjects.isEmpty()) {

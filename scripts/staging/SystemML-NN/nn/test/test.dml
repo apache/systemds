@@ -64,7 +64,7 @@ batch_norm1d = function() {
   out = matrix(out, rows=1, cols=N*D)
   for (i in 1:length(out)) {
     rel_error = test_util::check_rel_error(as.scalar(out[1,i]),
-                                      as.scalar(target[1,i]), 1e-3, 1e-4)
+                                           as.scalar(target[1,i]), 1e-3, 1e-4)
   }
 }
 
@@ -102,9 +102,9 @@ conv2d = function() {
   out_builtin = matrix(out_builtin, rows=1, cols=N*F*Hout*Wout)
   for (i in 1:length(out)) {
     rel_error = test_util::check_rel_error(as.scalar(out[1,i]),
-                                      as.scalar(out_simple[1,i]), 1e-10, 1e-12)
+                                           as.scalar(out_simple[1,i]), 1e-10, 1e-12)
     rel_error = test_util::check_rel_error(as.scalar(out[1,i]),
-                                      as.scalar(out_builtin[1,i]), 1e-10, 1e-12)
+                                           as.scalar(out_builtin[1,i]), 1e-10, 1e-12)
   }
 }
 
@@ -247,9 +247,9 @@ max_pool2d = function() {
       out_builtin = matrix(out_builtin, rows=1, cols=N*C*Hout*Wout)
       for (i in 1:length(out)) {
         rel_error = test_util::check_rel_error(as.scalar(out[1,i]),
-                                          as.scalar(out_simple[1,i]), 1e-10, 1e-12)
+                                               as.scalar(out_simple[1,i]), 1e-10, 1e-12)
         rel_error = test_util::check_rel_error(as.scalar(out[1,i]),
-                                          as.scalar(out_builtin[1,i]), 1e-10, 1e-12)
+                                               as.scalar(out_builtin[1,i]), 1e-10, 1e-12)
       }
 
       #print("   - Testing backward")
@@ -267,9 +267,9 @@ max_pool2d = function() {
       dX_builtin = matrix(dX_builtin, rows=1, cols=N*C*Hin*Win)
       for (i in 1:length(dX)) {
         rel_error = test_util::check_rel_error(as.scalar(dX[1,i]),
-                                          as.scalar(dX_simple[1,i]), 1e-10, 1e-12)
+                                               as.scalar(dX_simple[1,i]), 1e-10, 1e-12)
         rel_error = test_util::check_rel_error(as.scalar(dX[1,i]),
-                                          as.scalar(dX_builtin[1,i]), 1e-10, 1e-12)
+                                               as.scalar(dX_builtin[1,i]), 1e-10, 1e-12)
       }
     }
   }
@@ -515,12 +515,12 @@ batch_norm2d = function() {
                    0.0294075   0.65676796 -1.53899395 -1.46057391 -0.71558321
                    0.61755812  1.36254871  0.18624771  1.36254871 -0.48032296
                   -0.71558321 -0.59795308 -1.30373383  1.28412855 -0.63716316
-                   0.18624771  0.30387771  0.06861746 -1.97030437  1.91148913", rows=1,
-                                                                                cols=N*C*Hin*Win)
+                   0.18624771  0.30387771  0.06861746 -1.97030437  1.91148913",
+                  rows=1, cols=N*C*Hin*Win)
   out = matrix(out, rows=1, cols=N*C*Hin*Win)
   for (i in 1:length(out)) {
     rel_error = test_util::check_rel_error(as.scalar(out[1,i]),
-                                      as.scalar(target[1,i]), 1e-3, 1e-4)
+                                           as.scalar(target[1,i]), 1e-3, 1e-4)
   }
 }
 

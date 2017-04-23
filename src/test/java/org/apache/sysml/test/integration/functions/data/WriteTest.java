@@ -19,12 +19,13 @@
 
 package org.apache.sysml.test.integration.functions.data;
 
-import static org.junit.Assert.*;
-
 import org.junit.Test;
-
+import org.apache.sysml.runtime.io.MatrixReader;
+import org.apache.sysml.runtime.io.MatrixReaderFactory;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.test.integration.BinaryMatrixCharacteristics;
+import org.apache.sysml.runtime.matrix.data.InputInfo;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
@@ -96,16 +97,15 @@ public class WriteTest extends AutomatedTestBase
 				
 		runTest();
 		
-		//compareResults();
-		
-		BinaryMatrixCharacteristics matrix = TestUtils.readBlocksFromSequenceFile(output("a"),1000,1000);
-		assertEquals(rows, matrix.getRows());
-		assertEquals(cols, matrix.getCols());
-		double[][] matrixValues = matrix.getValues();
-		for(int i = 0; i < rows; i++) {
-			for(int j = 0; j < cols; j++) {
-				assertEquals(i + "," + j, a[i][j], matrixValues[i][j], 0);
-			}
+		//read and compare output matrix
+		try {
+			MatrixReader reader = MatrixReaderFactory.createMatrixReader(InputInfo.BinaryBlockInputInfo);
+			MatrixBlock mb = reader.readMatrixFromHDFS(output("a"), rows, cols, 1000, 1000, -1);
+			checkDMLMetaDataFile("a", new MatrixCharacteristics(rows,cols,1000,1000));
+			TestUtils.compareMatrices(a, DataConverter.convertToDoubleMatrix(mb), rows, cols, 0);
+		}
+		catch(Exception ex) {
+			throw new RuntimeException(ex);
 		}
 	}
 	

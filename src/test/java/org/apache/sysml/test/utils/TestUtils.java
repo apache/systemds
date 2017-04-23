@@ -40,7 +40,6 @@ import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Locale;
 import java.util.Random;
 import java.util.StringTokenizer;
@@ -58,8 +57,8 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.io.FrameWriter;
 import org.apache.sysml.runtime.io.FrameWriterFactory;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
-import org.apache.sysml.runtime.matrix.data.IJV;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixCell;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
@@ -67,7 +66,6 @@ import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.test.integration.AutomatedTestBase;
-import org.apache.sysml.test.integration.BinaryMatrixCharacteristics;
 
 
 /**
@@ -1048,8 +1046,10 @@ public class TestUtils
 	 * Checks a matrix against a number of specifications.
 	 * </p>
 	 * 
-	 * @param matrix
-	 *            matrix
+	 * @param data
+	 *            matrix data
+	 * @param mc
+	 *            matrix characteristics
 	 * @param rows
 	 *            number of rows
 	 * @param cols
@@ -1059,14 +1059,13 @@ public class TestUtils
 	 * @param max
 	 *            maximum value
 	 */
-	public static void checkMatrix(BinaryMatrixCharacteristics matrix, long rows, long cols, double min, double max) {
-		assertEquals(rows, matrix.getRows());
-		assertEquals(cols, matrix.getCols());
-		double[][] matrixValues = matrix.getValues();
+	public static void checkMatrix(double[][] data, MatrixCharacteristics mc, long rows, long cols, double min, double max) {
+		assertEquals(rows, mc.getRows());
+		assertEquals(cols, mc.getCols());
 		for (int i = 0; i < rows; i++) {
 			for (int j = 0; j < cols; j++) {
 				assertTrue("invalid value",
-						((matrixValues[i][j] >= min && matrixValues[i][j] <= max) || matrixValues[i][j] == 0));
+						((data[i][j] >= min && data[i][j] <= max) || data[i][j] == 0));
 			}
 		}
 	}
@@ -1815,174 +1814,6 @@ public class TestUtils
 		}
 
 		return false;
-	}
-
-	/**
-	 * <p>
-	 * Reads binary cells from a file. A matrix characteristic is created which
-	 * contains the characteristics of the matrix read from the file and the
-	 * values.
-	 * </p>
-	 * 
-	 * @param directory
-	 *            directory containing the matrix
-	 * @return matrix characteristics
-	 */
-	@SuppressWarnings("deprecation")
-	public static BinaryMatrixCharacteristics readCellsFromSequenceFile(String directory) {
-		try {
-			FileSystem fs = FileSystem.get(conf);
-			FileStatus[] files = fs.listStatus(new Path(directory));
-
-			HashMap<MatrixIndexes, Double> valueMap = new HashMap<MatrixIndexes, Double>();
-			int rows = 0;
-			int cols = 0;
-			MatrixIndexes indexes = new MatrixIndexes();
-			MatrixCell value = new MatrixCell();
-			for (FileStatus file : files) {
-				SequenceFile.Reader reader = null;
-				try {
-					reader = new SequenceFile.Reader(FileSystem.get(conf), file.getPath(), conf);
-					while (reader.next(indexes, value)) {
-						if (rows < indexes.getRowIndex())
-							rows = (int) indexes.getRowIndex();
-						if (cols < indexes.getColumnIndex())
-							cols = (int) indexes.getColumnIndex();
-						valueMap.put(new MatrixIndexes(indexes), value.getValue());
-					}
-				}
-				finally {
-					IOUtilFunctions.closeSilently(reader);
-				}
-			}
-
-			double[][] values = new double[rows][cols];
-			long nonZeros = 0;
-			for (MatrixIndexes index : valueMap.keySet()) {
-				values[(int)index.getRowIndex() - 1][(int)index.getColumnIndex() - 1] = valueMap.get(index);
-				if (valueMap.get(index) != 0)
-					nonZeros++;
-			}
-
-			return new BinaryMatrixCharacteristics(values, rows, cols, 0, 0, 0, 0, nonZeros);
-		} catch (IOException e) {
-			e.printStackTrace();
-			fail("unable to read sequence file in " + directory);
-		}
-
-		return null;
-	}
-
-	/**
-	 * <p>
-	 * Reads binary blocks from a file. A matrix characteristic is created which
-	 * contains the characteristics of the matrix read from the file and the
-	 * values.
-	 * </p>
-	 * 
-	 * @param directory
-	 *            directory containing the matrix
-	 * @param rowsInBlock
-	 *            rows in block
-	 * @param colsInBlock
-	 *            columns in block
-	 * @return matrix characteristics
-	 */
-	@SuppressWarnings("deprecation")
-	public static BinaryMatrixCharacteristics readBlocksFromSequenceFile(String directory, int rowsInBlock,
-			int colsInBlock) {
-		try {
-			FileSystem fs = FileSystem.get(conf);
-			FileStatus[] files = fs.listStatus(new Path(directory));
-
-			HashMap<MatrixIndexes, Double> valueMap = new HashMap<MatrixIndexes, Double>();
-			int rowsInLastBlock = -1;
-			int colsInLastBlock = -1;
-			int rows = 0;
-			int cols = 0;
-			MatrixIndexes indexes = new MatrixIndexes();
-			MatrixBlock value = new MatrixBlock();
-			for (FileStatus file : files) {
-				SequenceFile.Reader reader = new SequenceFile.Reader(FileSystem.get(conf), file.getPath(), conf);
-
-				try {
-					while (reader.next(indexes, value)) {
-						if (value.getNumRows() < rowsInBlock) {
-							if (rowsInLastBlock == -1)
-								rowsInLastBlock = value.getNumRows();
-							else if (rowsInLastBlock != value.getNumRows())
-								fail("invalid block sizes");
-							rows = (int) ((indexes.getRowIndex() - 1) * rowsInBlock + value.getNumRows());
-						} else if (value.getNumRows() == rowsInBlock) {
-							if (rows <= (indexes.getRowIndex() * rowsInBlock + value.getNumRows())) {
-								if (rowsInLastBlock == -1)
-									rows = (int) ((indexes.getRowIndex() - 1) * rowsInBlock + value.getNumRows());
-								else
-									fail("invalid block sizes");
-							}
-						} else {
-							fail("invalid block sizes");
-						}
-	
-						if (value.getNumColumns() < colsInBlock) {
-							if (colsInLastBlock == -1)
-								colsInLastBlock = value.getNumColumns();
-							else if (colsInLastBlock != value.getNumColumns())
-								fail("invalid block sizes");
-							cols = (int) ((indexes.getColumnIndex() - 1) * colsInBlock + value.getNumColumns());
-						} else if (value.getNumColumns() == colsInBlock) {
-							if (cols <= (indexes.getColumnIndex() * colsInBlock + value.getNumColumns())) {
-								if (colsInLastBlock == -1)
-									cols = (int) ((indexes.getColumnIndex() - 1) * colsInBlock + value.getNumColumns());
-								else
-									fail("invalid block sizes");
-							}
-						} else {
-							fail("invalid block sizes");
-						}
-	
-						if (value.isInSparseFormat()) {
-							Iterator<IJV> iter = value.getSparseBlockIterator();
-							while( iter.hasNext() )
-							{
-								IJV cell = iter.next();
-								valueMap.put(new MatrixIndexes(((indexes.getRowIndex() - 1) * rowsInBlock + cell.getI()),
-										(int) ((indexes.getColumnIndex() - 1) * colsInBlock + cell.getJ())), cell.getV());
-							}
-							
-						} else {
-							double[] valuesInBlock = value.getDenseBlock();
-							for (int i = 0; i < value.getNumRows(); i++) {
-								for (int j = 0; j < value.getNumColumns(); j++) {
-									valueMap.put(new MatrixIndexes(((indexes.getRowIndex() - 1) * rowsInBlock + i),
-											(int) ((indexes.getColumnIndex() - 1) * colsInBlock + j)), valuesInBlock[i
-											* value.getNumColumns() + j]);
-								}
-							}
-						}
-					}
-				}
-				finally {
-					IOUtilFunctions.closeSilently(reader);
-				}
-			}
-
-			long nonZeros = 0;
-			double[][] values = new double[rows][cols];
-			for (MatrixIndexes index : valueMap.keySet()) {
-				values[(int)index.getRowIndex()][(int)index.getColumnIndex()] = valueMap.get(index);
-				if (valueMap.get(index) != 0)
-					nonZeros++;
-			}
-
-			return new BinaryMatrixCharacteristics(values, rows, cols, rowsInBlock, rowsInLastBlock, colsInBlock,
-					colsInLastBlock, nonZeros);
-		} catch (IOException e) {
-			e.printStackTrace();
-			fail("unable to read sequence file in " + directory);
-		}
-
-		return null;
 	}
 
 	/**

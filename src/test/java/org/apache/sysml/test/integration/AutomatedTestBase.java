@@ -479,20 +479,6 @@ public abstract class AutomatedTestBase
 		return matrix;
 	}
 
-	/**
-	 * <p>
-	 * Generates a random matrix with the specified characteristics and writes
-	 * it to a file.
-	 * </p>
-	 * 
-	 * @param matrix
-	 *            matrix characteristics
-	 */
-	protected void createRandomMatrix(TestMatrixCharacteristics matrix) {
-		createRandomMatrix(matrix.getMatrixName(), matrix.getRows(), matrix.getCols(), matrix.getMinValue(), matrix
-				.getMaxValue(), matrix.getSparsity(), matrix.getSeed());
-	}
-	
 	private void cleanupExistingData(String fname, boolean cleanupRData) throws IOException {
 		MapReduceTool.deleteFileIfExistOnHDFS(fname);
 		MapReduceTool.deleteFileIfExistOnHDFS(fname + ".mtd");

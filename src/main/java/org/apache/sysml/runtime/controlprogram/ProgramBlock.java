@@ -145,7 +145,8 @@ public class ProgramBlock
 				&& _sb != null 
 				&& _sb.requiresRecompilation() )
 			{
-				tmp = Recompiler.recompileHopsDag(_sb, _sb.get_hops(), ec.getVariables(), null, false, _tid);
+				tmp = Recompiler.recompileHopsDag(
+					_sb, _sb.get_hops(), ec.getVariables(), null, false, true, _tid);
 				
 				if( MLContextProxy.isActive() )
 					tmp = MLContextProxy.performCleanupAfterRecompilation(tmp);
@@ -188,7 +189,8 @@ public class ProgramBlock
 			if(    ConfigurationManager.isDynamicRecompilation() 
 				&& requiresRecompile )
 			{
-				tmp = Recompiler.recompileHopsDag(hops, ec.getVariables(), null, false, _tid);
+				tmp = Recompiler.recompileHopsDag(
+					hops, ec.getVariables(), null, false, true, _tid);
 			}
 			if( DMLScript.STATISTICS ){
 				long t1 = System.nanoTime();

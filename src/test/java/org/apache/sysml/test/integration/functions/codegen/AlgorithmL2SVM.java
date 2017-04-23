@@ -123,7 +123,7 @@ public class AlgorithmL2SVM extends AutomatedTestBase
 			fullDMLScriptName = "scripts/algorithms/l2-svm.dml";
 			programArgs = new String[]{ "-explain", "-stats", "-nvargs", "X="+input("X"), "Y="+input("Y"),
 				"icpt="+String.valueOf(intercept), "tol="+String.valueOf(epsilon), "reg=0.001",
-				"maxiter="+String.valueOf(maxiter), "model="+output("w"), "Log=\" \""};
+				"maxiter="+String.valueOf(maxiter), "model="+output("w"), "Log= "};
 
 			rCmd = getRCmd(inputDir(), String.valueOf(intercept),String.valueOf(epsilon),
 				String.valueOf(maxiter), expectedDir());

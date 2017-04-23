@@ -183,7 +183,8 @@ public class ProgramRecompiler
 				if( ret )
 				{
 					//construct new instructions
-					ArrayList<Instruction> newInst = Recompiler.recompileHopsDag(sb, sb.get_hops(), ec.getVariables(), null, true, 0);
+					ArrayList<Instruction> newInst = Recompiler.recompileHopsDag(
+						sb, sb.get_hops(), ec.getVariables(), null, true, false, 0);
 					pb.setInstructions( newInst ); 
 				}
 			}
@@ -251,7 +252,7 @@ public class ProgramRecompiler
 				//replace constant literals
 				Hop.resetVisitStatus(hops);
 				for( Hop hopRoot : hops )
-					Recompiler.rReplaceLiterals( hopRoot, vars );
+					Recompiler.rReplaceLiterals( hopRoot, vars, true );
 			}	
 		}
 	}
@@ -261,7 +262,7 @@ public class ProgramRecompiler
 	{
 		if( pred != null ){
 			pred.resetVisitStatus();
-			Recompiler.rReplaceLiterals(pred, vars);
+			Recompiler.rReplaceLiterals(pred, vars, true);
 		}
 	}
 	
@@ -380,7 +381,8 @@ public class ProgramRecompiler
 			if( ret )
 			{
 				//construct new instructions
-				tmp = Recompiler.recompileHopsDag(hop, ec.getVariables(), null, true, 0);
+				tmp = Recompiler.recompileHopsDag(
+					hop, ec.getVariables(), null, true, false, 0);
 			}
 		}
 		catch(Exception ex)

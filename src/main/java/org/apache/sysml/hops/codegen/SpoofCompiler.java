@@ -293,7 +293,7 @@ public class SpoofCompiler
 	{
 		//create copy of hop dag, call codegen, and generate instructions
 		return Recompiler.recompileHopsDag(sb, roots, 
-			new LocalVariableMap(), new RecompileStatus(), false, 0);
+			new LocalVariableMap(), new RecompileStatus(), false, false, 0);
 	}
 	
 	public static ArrayList<Instruction> generateCodeFromHopDAGsToInst(Hop root) 
@@ -301,7 +301,7 @@ public class SpoofCompiler
 	{
 		//create copy of hop dag, call codegen, and generate instructions
 		return Recompiler.recompileHopsDag(root, 
-			new LocalVariableMap(), new RecompileStatus(), false, 0);
+			new LocalVariableMap(), new RecompileStatus(), false, false, 0);
 	}
 	
 	

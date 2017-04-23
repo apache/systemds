@@ -154,6 +154,7 @@ public class Recompiler
 	 * @param vars local variable map
 	 * @param status the recompile status
 	 * @param inplace true if in place
+	 * @param litreplace true if literal replacement
 	 * @param tid thread id
 	 * @return list of instructions
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
@@ -161,7 +162,8 @@ public class Recompiler
 	 * @throws LopsException if LopsException occurs
 	 * @throws IOException if IOException occurs
 	 */
-	public static ArrayList<Instruction> recompileHopsDag( StatementBlock sb, ArrayList<Hop> hops, LocalVariableMap vars, RecompileStatus status, boolean inplace, long tid ) 
+	public static ArrayList<Instruction> recompileHopsDag( StatementBlock sb, ArrayList<Hop> hops, 
+			LocalVariableMap vars, RecompileStatus status, boolean inplace, boolean litreplace, long tid ) 
 		throws DMLRuntimeException, HopsException, LopsException, IOException
 	{
 		ArrayList<Instruction> newInst = null;
@@ -186,10 +188,10 @@ public class Recompiler
 			}
 
 			// replace scalar reads with literals 
-			if( !inplace ) {
+			if( !inplace && litreplace ) {
 				Hop.resetVisitStatus(hops);
 				for( Hop hopRoot : hops )
-					rReplaceLiterals( hopRoot, vars );
+					rReplaceLiterals( hopRoot, vars, false );
 			}
 			
 			// refresh matrix characteristics (update stats)			
@@ -268,6 +270,7 @@ public class Recompiler
 	 * @param vars local variable map
 	 * @param status recompile status
 	 * @param inplace true if in place
+	 * @param litreplace true if literal replacement
 	 * @param tid thread id
 	 * @return list of instructions
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
@@ -275,7 +278,8 @@ public class Recompiler
 	 * @throws LopsException if LopsException occurs
 	 * @throws IOException if IOException occurs
 	 */
-	public static ArrayList<Instruction> recompileHopsDag( Hop hops, LocalVariableMap vars, RecompileStatus status, boolean inplace, long tid ) 
+	public static ArrayList<Instruction> recompileHopsDag( Hop hops, LocalVariableMap vars, 
+			RecompileStatus status, boolean inplace, boolean litreplace, long tid ) 
 		throws DMLRuntimeException, HopsException, LopsException, IOException
 	{
 		ArrayList<Instruction> newInst = null;
@@ -299,9 +303,9 @@ public class Recompiler
 			}
 			
 			// replace scalar reads with literals 
-			if( !inplace ) {
+			if( !inplace && litreplace ) {
 				hops.resetVisitStatus();
-				rReplaceLiterals( hops, vars );
+				rReplaceLiterals( hops, vars, false );
 			}
 			
 			// refresh matrix characteristics (update stats)			
@@ -864,7 +868,8 @@ public class Recompiler
 				//&& Recompiler.requiresRecompilation( sb.get_hops() ) 
 				/*&& !Recompiler.containsNonRecompileInstructions(tmp)*/ )
 			{
-				tmp = Recompiler.recompileHopsDag(sb, sb.get_hops(), vars, status, true, tid);
+				tmp = Recompiler.recompileHopsDag(
+					sb, sb.get_hops(), vars, status, true, false, tid);
 				pb.setInstructions( tmp );
 				
 				//propagate stats across hops (should be executed on clone of vars)
@@ -1098,10 +1103,9 @@ public class Recompiler
 	private static MatrixObject createOutputMatrix( long dim1, long dim2, long nnz )
 	{
 		MatrixObject moOut = new MatrixObject(ValueType.DOUBLE, null);
+		int blksz = ConfigurationManager.getBlocksize();
 		MatrixCharacteristics mc = new MatrixCharacteristics( 
-									dim1, dim2,
-									ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(),
-									nnz);
+				dim1, dim2, blksz, blksz, nnz);
 		MatrixFormatMetaData meta = new MatrixFormatMetaData(mc,null,null);
 		moOut.setMetaData(meta);
 		
@@ -1118,7 +1122,8 @@ public class Recompiler
 		{
 			Hop hops = isb.getPredicateHops();
 			if( hops != null ) {
-				ArrayList<Instruction> tmp = recompileHopsDag(hops, vars, status, true, tid);
+				ArrayList<Instruction> tmp = recompileHopsDag(
+						hops, vars, status, true, false, tid);
 				ipb.setPredicate( tmp );
 				if( ParForProgramBlock.RESET_RECOMPILATION_FLAGs
 					&& resetRecompile ) 
@@ -1141,7 +1146,8 @@ public class Recompiler
 		{
 			Hop hops = wsb.getPredicateHops();
 			if( hops != null ) {
-				ArrayList<Instruction> tmp = recompileHopsDag(hops, vars, status, true, tid);
+				ArrayList<Instruction> tmp = recompileHopsDag(
+					hops, vars, status, true, false, tid);
 				wpb.setPredicate( tmp );
 				if( ParForProgramBlock.RESET_RECOMPILATION_FLAGs 
 					&& resetRecompile ) 
@@ -1171,17 +1177,20 @@ public class Recompiler
 				&& resetRecompile ) 
 			{
 				if( fromHops != null ) {
-					ArrayList<Instruction> tmp = recompileHopsDag(fromHops, vars, status, true, tid);
+					ArrayList<Instruction> tmp = recompileHopsDag(
+						fromHops, vars, status, true, false, tid);
 					fpb.setFromInstructions(tmp);
 					Hop.resetRecompilationFlag(fromHops,ExecType.CP);
 				}
 				if( toHops != null ) {
-					ArrayList<Instruction> tmp = recompileHopsDag(toHops, vars, status, true, tid);
+					ArrayList<Instruction> tmp = recompileHopsDag(
+						toHops, vars, status, true, false, tid);
 					fpb.setToInstructions(tmp);
 					Hop.resetRecompilationFlag(toHops,ExecType.CP);
 				}
 				if( incrHops != null ) {
-					ArrayList<Instruction> tmp = recompileHopsDag(incrHops, vars, status, true, tid);
+					ArrayList<Instruction> tmp = recompileHopsDag(
+						incrHops, vars, status, true, false, tid);
 					fpb.setIncrementInstructions(tmp);
 					Hop.resetRecompilationFlag(incrHops,ExecType.CP);
 				}
@@ -1190,15 +1199,18 @@ public class Recompiler
 			else //no reset of recompilation flags
 			{
 				if( fromHops != null ) {
-					ArrayList<Instruction> tmp = recompileHopsDag(fromHops, vars, status, true, tid);
+					ArrayList<Instruction> tmp = recompileHopsDag(
+						fromHops, vars, status, true, false, tid);
 					fpb.setFromInstructions(tmp);
 				}
 				if( toHops != null ) {
-					ArrayList<Instruction> tmp = recompileHopsDag(toHops, vars, status, true, tid);
+					ArrayList<Instruction> tmp = recompileHopsDag(
+						toHops, vars, status, true, false, tid);
 					fpb.setToInstructions(tmp);
 				}
 				if( incrHops != null ) {
-					ArrayList<Instruction> tmp = recompileHopsDag(incrHops, vars, status, true, tid);
+					ArrayList<Instruction> tmp = recompileHopsDag(
+						incrHops, vars, status, true, false, tid);
 					fpb.setIncrementInstructions(tmp);
 				}
 			}
@@ -1608,13 +1620,15 @@ public class Recompiler
 	 * 
 	 * @param hop high-level operator
 	 * @param vars local variable map
+	 * @param scalarsOnly if true, replace only scalar variables but no matrix operations;
+	 *            if false, apply full literal replacement
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static void rReplaceLiterals( Hop hop, LocalVariableMap vars ) 
+	public static void rReplaceLiterals( Hop hop, LocalVariableMap vars, boolean scalarsOnly ) 
 		throws DMLRuntimeException
 	{
 		//public interface 
-		LiteralReplacement.rReplaceLiterals(hop, vars);
+		LiteralReplacement.rReplaceLiterals(hop, vars, scalarsOnly);
 	}
 	
 	public static void rSetExecType( Hop hop, ExecType etype )

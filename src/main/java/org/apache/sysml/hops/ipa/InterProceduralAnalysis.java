@@ -535,7 +535,7 @@ public class InterProceduralAnalysis
 			//old stats in, new stats out if updated
 			ArrayList<Hop> roots = sb.get_hops();
 			DMLProgram prog = sb.getDMLProg();
-			//replace scalar transient reads with literals
+			//replace scalar reads with literals
 			Hop.resetVisitStatus(roots);
 			propagateScalarsAcrossDAG(roots, callVars);
 			//refresh stats across dag
@@ -550,7 +550,7 @@ public class InterProceduralAnalysis
 	/**
 	 * Propagate scalar values across DAGs.
 	 *
-	 * This replaces scalar transient reads with literals.
+	 * This replaces scalar reads and typecasts thereof with literals.
 	 *
 	 * @param roots  List of HOPs.
 	 * @param vars  Map of variables eligible for propagation.
@@ -561,9 +561,9 @@ public class InterProceduralAnalysis
 	{
 		for (Hop hop : roots) {
 			try {
-				Recompiler.rReplaceLiterals(hop, vars);
+				Recompiler.rReplaceLiterals(hop, vars, true);
 			} catch (Exception ex) {
-				throw new HopsException("Failed to replace transient reads w/ literals.", ex);
+				throw new HopsException("Failed to perform scalar literal replacement.", ex);
 			}
 		}
 	}

@@ -115,7 +115,7 @@ public abstract class ColGroupValue extends ColGroup
 	}
 
 	/**
-	 * Obtain number of distrinct sets of values associated with the bitmaps in this column group.
+	 * Obtain number of distinct sets of values associated with the bitmaps in this column group.
 	 * 
 	 * @return the number of distinct sets of values associated with the bitmaps
 	 *         in this column group
@@ -126,6 +126,41 @@ public abstract class ColGroupValue extends ColGroup
 
 	public double[] getValues() {
 		return _values;
+	}
+	
+	public MatrixBlock getValuesAsBlock() {
+		boolean containsZeros = (this instanceof ColGroupOffset) ?
+			((ColGroupOffset)this)._zeros : false;
+		int rlen = containsZeros ? _values.length+1 : _values.length;
+		MatrixBlock ret = new MatrixBlock(rlen, 1, false);
+		for( int i=0; i<_values.length; i++ )
+			ret.quickSetValue(i, 0, _values[i]);
+		return ret;
+	}
+	
+	public abstract int[] getCounts();
+	
+	public int[] getCounts(boolean inclZeros) {
+		int[] counts = getCounts();
+		if( inclZeros && this instanceof ColGroupOffset ) {
+			counts = Arrays.copyOf(counts, counts.length+1);
+			int sum = 0;
+			for( int i=0; i<counts.length; i++ )
+				sum += counts[i];
+			counts[counts.length-1] = getNumRows()-sum;
+		}
+		return counts;
+	}
+	
+	public MatrixBlock getCountsAsBlock() {
+		return getCountsAsBlock(getCounts());
+	}
+	
+	public static MatrixBlock getCountsAsBlock(int[] counts) {
+		MatrixBlock ret = new MatrixBlock(counts.length, 1, false);
+		for( int i=0; i<counts.length; i++ )
+			ret.quickSetValue(i, 0, counts[i]);
+		return ret;
 	}
 	
 	protected int containsAllZeroValue() {

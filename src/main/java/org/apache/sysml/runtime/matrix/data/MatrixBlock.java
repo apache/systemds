@@ -4821,7 +4821,6 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			t += quickGetValue(i,1);
 		} while(t<pos && i < getNumRows());
 		
-		//System.out.println("values: " + quickGetValue(i,0) + "," + quickGetValue(i,1) + " -- " + quickGetValue(i+1,0) + "," +  quickGetValue(i+1,1));
 		if ( quickGetValue(i,1) != 0 ) {
 			// i^th value is present in the data set, simply return it
 			if ( average ) {

@@ -89,6 +89,7 @@ import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysml.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysml.runtime.util.IndexRange;
+import org.apache.sysml.runtime.util.SortUtils;
 
 /**
  * Experimental version of MatrixBlock that allows a compressed internal
@@ -1901,17 +1902,29 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	@Override
 	public CM_COV_Object cmOperations(CMOperator op) throws DMLRuntimeException {
 		printDecompressWarning("cmOperations");
-		MatrixBlock tmp = isCompressed() ? decompress() : this;
-		return tmp.cmOperations(op);
+		if( !isCompressed() || isEmptyBlock() )
+			return super.cmOperations(op);
+		ColGroup grp = _colGroups.get(0);
+		if( grp instanceof ColGroupUncompressed )
+			return ((ColGroupUncompressed)grp).getData().cmOperations(op);
+		
+		ColGroupValue grpVal = (ColGroupValue)grp;
+		MatrixBlock vals = grpVal.getValuesAsBlock();
+		MatrixBlock counts = ColGroupValue.getCountsAsBlock(grpVal.getCounts(true));
+		return vals.cmOperations(op, counts);
 	}
 
 	@Override
 	public CM_COV_Object cmOperations(CMOperator op, MatrixBlock weights)
 			throws DMLRuntimeException {
 		printDecompressWarning("cmOperations");
-		MatrixBlock left = isCompressed() ? decompress() : this;
 		MatrixBlock right = getUncompressed(weights);
-		return left.cmOperations(op, right);
+		if( !isCompressed() || isEmptyBlock() )
+			return super.cmOperations(op, right);
+		ColGroup grp = _colGroups.get(0);
+		if( grp instanceof ColGroupUncompressed )
+			return ((ColGroupUncompressed)grp).getData().cmOperations(op);
+		return decompress().cmOperations(op, right);
 	}
 
 	@Override
@@ -1937,9 +1950,23 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	public MatrixValue sortOperations(MatrixValue weights, MatrixValue result)
 			throws DMLRuntimeException {
 		printDecompressWarning("sortOperations");
-		MatrixBlock left = isCompressed() ? decompress() : this;
 		MatrixBlock right = getUncompressed(weights);
-		return left.sortOperations(right, result);
+		if( !isCompressed() )
+			return super.sortOperations(right, result);
+		ColGroup grp = _colGroups.get(0);
+		if( grp instanceof ColGroupUncompressed )
+			return ((ColGroupUncompressed)grp).getData().sortOperations(right, result);
+		
+		if( right == null ) {
+			ColGroupValue grpVal = (ColGroupValue)grp;
+			MatrixBlock vals = grpVal.getValuesAsBlock();
+			int[] counts = grpVal.getCounts(true);
+			SortUtils.sortByValue(0, vals.getNumRows(), vals.getDenseBlock(), counts);
+			MatrixBlock counts2 = ColGroupValue.getCountsAsBlock(counts);
+			return vals.sortOperations(counts2, result);
+		}
+		else
+			return decompress().sortOperations(right, result);
 	}
 
 	@Override

@@ -226,6 +226,27 @@ public class ColGroupRLE extends ColGroupOffset
 		target.recomputeNonZeros();
 	}
 	
+	@Override 
+	public int[] getCounts() {
+		final int numVals = getNumValues();
+		
+		int[] counts = new int[numVals];
+		for (int k = 0; k < numVals; k++) {
+			int boff = _ptr[k];
+			int blen = len(k);
+			int curRunEnd = 0;
+			int count = 0;
+			for (int bix = 0; bix < blen; bix+=2) {
+				int curRunStartOff = curRunEnd + _data[boff+bix];
+				curRunEnd = curRunStartOff + _data[boff+bix+1];
+				count += curRunEnd-curRunStartOff;
+			}
+			counts[k] = count;
+		}
+		
+		return counts;
+	}
+	
 	@Override
 	public void rightMultByVector(MatrixBlock vector, MatrixBlock result, int rl, int ru)
 			throws DMLRuntimeException 

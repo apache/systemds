@@ -177,6 +177,19 @@ public class ColGroupDDC1 extends ColGroupDDC
 			c[i] = _values[(_data[i]&0xFF)*ncol+colpos];
 		target.recomputeNonZeros();
 	}
+
+	@Override 
+	public int[] getCounts() {
+		final int nrow = getNumRows();
+		final int numVals = getNumValues();
+		
+		int[] counts = new int[numVals];
+		for( int i=0; i<nrow; i++ ) {
+			counts[_data[i]&0xFF] ++;
+		}
+		
+		return counts;
+	}
 	
 	@Override
 	protected void countNonZerosPerRow(int[] rnnz, int rl, int ru) {
@@ -272,15 +285,11 @@ public class ColGroupDDC1 extends ColGroupDDC
 	
 	@Override
 	protected void computeSum(MatrixBlock result, KahanFunction kplus) {
-		final int nrow = getNumRows();
 		final int ncol = getNumCols();
 		final int numVals = getNumValues();
 		
 		//iterative over codes and count per code (guaranteed <=255)
-		int[] counts = new int[numVals];
-		for( int i=0; i<nrow; i++ ) {
-			counts[_data[i]&0xFF] ++;
-		}
+		int[] counts = getCounts();
 		
 		//post-scaling of pre-aggregate with distinct values
 		KahanObject kbuff = new KahanObject(result.quickGetValue(0, 0), result.quickGetValue(0, 1));

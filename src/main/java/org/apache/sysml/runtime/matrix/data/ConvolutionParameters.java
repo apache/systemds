@@ -35,7 +35,7 @@ public class ConvolutionParameters implements Serializable {
 	public int P; public int Q; public int numThreads;
 	
 	
-	MatrixBlock input1; MatrixBlock input2; MatrixBlock output;
+	public MatrixBlock input1; public MatrixBlock input2; public MatrixBlock output;
 	
 	public MatrixBlock bias;
 	public int [] start_indexes_h, end_indexes_h, start_indexes_w, end_indexes_w; 

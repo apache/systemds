@@ -34,7 +34,16 @@ Q=as.integer(args[9])
 w=matrix(seq(1, numFilters*numChannels*filterSize*filterSize), numFilters, numChannels*filterSize*filterSize, byrow=TRUE)
 dout=matrix(seq(1, numImg*numFilters*P*Q), numImg, numFilters*P*Q, byrow=TRUE)
 
-
+if(as.logical(args[11])) {
+	zero_mask = (w - mean(w)) > 0 
+	w = w * zero_mask
+}
+if(as.logical(args[12])) {
+	zero_mask = (dout - mean(dout)) > 0 
+	dout = dout * zero_mask
+}
+w = w - mean(w)
+dout = dout - mean(dout)
 col2im <- function(img_cols, C, Hin, Win, Hf, Wf,
                   strideh, stridew, reduction) {
 

@@ -48,21 +48,84 @@ public class PoolBackwardTest extends AutomatedTestBase
 	public void testMaxPool2DBackwardDense1() 
 	{
 		int numImg = 1; int imgSize = 4; int numChannels = 1;  int stride = 2; int pad = 0; int poolSize1 = 2; int poolSize2 = 2;
-		runPoolTest(ExecType.CP, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max");
+		runPoolTest(ExecType.CP, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max", false, false);
 	}
 	
 	@Test
 	public void testMaxPool2DBackwardDense2() 
 	{
 		int numImg = 3; int imgSize = 6; int numChannels = 3;  int stride = 1; int pad = 0; int poolSize1 = 2; int poolSize2 = 2;
-		runPoolTest(ExecType.CP, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max");
+		runPoolTest(ExecType.CP, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max", false, false);
 	}
 	
 	@Test
 	public void testMaxPool2DBackwardDense3() 
 	{
 		int numImg = 2; int imgSize = 7; int numChannels = 2;  int stride = 2; int pad = 0; int poolSize1 = 3; int poolSize2 = 3;
-		runPoolTest(ExecType.CP, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max");
+		runPoolTest(ExecType.CP, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max", false, false);
+	}
+	
+	@Test
+	public void testMaxPool2DBackwardSparse1() 
+	{
+		int numImg = 1; int imgSize = 4; int numChannels = 1;  int stride = 2; int pad = 0; int poolSize1 = 2; int poolSize2 = 2;
+		runPoolTest(ExecType.CP, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max", true, false);
+	}
+	
+	@Test
+	public void testMaxPool2DBackwardSparse2() 
+	{
+		int numImg = 3; int imgSize = 6; int numChannels = 3;  int stride = 1; int pad = 0; int poolSize1 = 2; int poolSize2 = 2;
+		runPoolTest(ExecType.CP, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max", true, false);
+	}
+	
+	@Test
+	public void testMaxPool2DBackwardSparse3() 
+	{
+		int numImg = 2; int imgSize = 7; int numChannels = 2;  int stride = 2; int pad = 0; int poolSize1 = 3; int poolSize2 = 3;
+		runPoolTest(ExecType.CP, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max", true, false);
+	}
+	
+	@Test
+	public void testMaxPool2DBackwardSparse4() 
+	{
+		int numImg = 1; int imgSize = 4; int numChannels = 1;  int stride = 2; int pad = 0; int poolSize1 = 2; int poolSize2 = 2;
+		runPoolTest(ExecType.CP, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max", true, true);
+	}
+	
+	@Test
+	public void testMaxPool2DBackwardSparse5() 
+	{
+		int numImg = 3; int imgSize = 6; int numChannels = 3;  int stride = 1; int pad = 0; int poolSize1 = 2; int poolSize2 = 2;
+		runPoolTest(ExecType.CP, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max", true, true);
+	}
+	
+	@Test
+	public void testMaxPool2DBackwardSparse6() 
+	{
+		int numImg = 2; int imgSize = 7; int numChannels = 2;  int stride = 2; int pad = 0; int poolSize1 = 3; int poolSize2 = 3;
+		runPoolTest(ExecType.CP, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max", true, true);
+	}
+	
+	@Test
+	public void testMaxPool2DBackwardSparse7() 
+	{
+		int numImg = 1; int imgSize = 4; int numChannels = 1;  int stride = 2; int pad = 0; int poolSize1 = 2; int poolSize2 = 2;
+		runPoolTest(ExecType.CP, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max", false, true);
+	}
+	
+	@Test
+	public void testMaxPool2DBackwardSparse8() 
+	{
+		int numImg = 3; int imgSize = 6; int numChannels = 3;  int stride = 1; int pad = 0; int poolSize1 = 2; int poolSize2 = 2;
+		runPoolTest(ExecType.CP, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max", false, true);
+	}
+	
+	@Test
+	public void testMaxPool2DBackwardSparse9() 
+	{
+		int numImg = 2; int imgSize = 7; int numChannels = 2;  int stride = 2; int pad = 0; int poolSize1 = 3; int poolSize2 = 3;
+		runPoolTest(ExecType.CP, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max", false, true);
 	}
 	
 	/**
@@ -71,7 +134,7 @@ public class PoolBackwardTest extends AutomatedTestBase
 	 * @param sparse
 	 */
 	public void runPoolTest( ExecType et, int imgSize, int numImg, int numChannels, int stride, 
-			int pad, int poolSize1, int poolSize2, String poolMode) 
+			int pad, int poolSize1, int poolSize2, String poolMode, boolean sparse1, boolean sparse2) 
 	{
 		RUNTIME_PLATFORM oldRTP = rtplatform;
 			
@@ -79,13 +142,15 @@ public class PoolBackwardTest extends AutomatedTestBase
 		
 		try
 		{
-		    TestConfiguration config = getTestConfiguration(TEST_NAME);
-		    if(et == ExecType.SPARK) {
-		    	rtplatform = RUNTIME_PLATFORM.SPARK;
-		    }
-		    else {
-		    	rtplatform = (et==ExecType.MR)? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.SINGLE_NODE;
-		    }
+			String sparseVal1 = (""+sparse1).toUpperCase();
+			String sparseVal2 = (""+sparse2).toUpperCase();
+			TestConfiguration config = getTestConfiguration(TEST_NAME);
+	    if(et == ExecType.SPARK) {
+	    	rtplatform = RUNTIME_PLATFORM.SPARK;
+	    }
+	    else {
+	    	rtplatform = (et==ExecType.MR)? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.SINGLE_NODE;
+	    }
 			if( rtplatform == RUNTIME_PLATFORM.SPARK )
 				DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 			
@@ -100,7 +165,7 @@ public class PoolBackwardTest extends AutomatedTestBase
 					"" + numChannels, "" + poolSize1, "" + poolSize2, 
 					"" + stride, "" + pad, poolMode, 
 					"" + P, "" + P, 
-					output("B")};
+					output("B"), sparseVal1, sparseVal2};
 			        
 			boolean exceptionExpected = false;
 			int expectedNumberOfJobs = -1;
@@ -109,7 +174,8 @@ public class PoolBackwardTest extends AutomatedTestBase
 			fullRScriptName = RI_HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + imgSize + " " + numImg + 
 					" " + numChannels + " " + poolSize1 + 
-					" " + poolSize2 + " " + stride + " " + pad + " " +  P + " " + P + " " + expectedDir(); 
+					" " + poolSize2 + " " + stride + " " + pad + " " +  P + " " + P + " " + expectedDir() +
+					" " + sparseVal1 + " " + sparseVal2; 
 			
 			// Run comparison R script
 			runRScript(true);
@@ -124,6 +190,7 @@ public class PoolBackwardTest extends AutomatedTestBase
 			rtplatform = oldRTP;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
+		
 	}
 	
 }

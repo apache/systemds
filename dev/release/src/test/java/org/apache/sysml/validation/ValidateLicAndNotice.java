@@ -52,54 +52,7 @@ import org.apache.commons.io.FileUtils;
  */
 public class ValidateLicAndNotice 
 {
-	//Return codes
-	public static final int SUCCESS = 0;
-	public static final int NO_ZIP_TGZ = 1;			// 0000 0000 0000 0001
-	public static final int FILE_NOT_IN_LIC = 2; 	// 0000 0000 0000 0010
-	public static final int FILE_NOT_IN_ZIP = 4; 	// 0000 0000 0000 0100
-	public static final int FAILED_TO_EXTRACT = 8; 	// 0000 0000 0000 1000
-	public static final int LIC_NOT_EXIST = 16;		// 0000 0000 0001 0000
-	public static final int JS_CSS_LIC_NOT_EXIST = 32;	// 0000 0000 0010 0000
-	public static final int INVALID_NOTICE = 64;	// 0000 0000 0100 0000
-	public static final int FAILURE = 0xFFFF;
-
-	public static final boolean bSUCCESS = true;
-	public static final boolean bFAILURE = false;
-
-
-	//DEBUG PRINT CODE
-	public static final int DEBUG_PRINT_LEVEL = 3;
-
-	public static final int DEBUG_ERROR = 0;
-	public static final int DEBUG_WARNING = 1;
-	public static final int DEBUG_INFO = 2;
-	public static final int DEBUG_INFO2 = 3;
-	public static final int DEBUG_INFO3 = 4;
-	public static final int DEBUG_CODE = 5;
-
-
-	static final int BUFFER = 2048;
-
-	//String constants
-	public static final String SYSTEMML_NAME = "SystemML";
-	public static final String SYSTEMML_PACKAGE = "org/apache/sysml";
-
-	public static final String ZIP = "zip";
-	public static final String TGZ = "tgz";
-	public static final String LICENSE = "LICENSE";
-	public static final String NOTICE = "NOTICE";
-	public static final String JAR = "jar";
-	public static final String DLL = "dll";
-	public static final String EXP = "exp";
-	public static final String LIB = "lib";
-	public static final String PDB = "pdb";
-	public static final String EXE = "exe";
-	public static final String CLASS = "class";
-	public static final String JS = "js";
-	public static final String CSS = "css";
-	public static final String LIC_TEXT_DELIM = "=====";
-
-	public static String[] fileTypes = {JAR, DLL, EXP, LIB, PDB, EXE};
+	public static String[] fileTypes = {Constants.JAR, Constants.DLL, Constants.EXP, Constants.LIB, Constants.PDB, Constants.EXE};
 
 	// Zip Distribution directory.
 	private String strDistroDir =  "../../../target/release/incubator-systemml/target/";
@@ -147,13 +100,13 @@ public class ValidateLicAndNotice
 	 */
 	public int validate() throws Exception {
 
-		int retCode = SUCCESS, retCodeForAllFileTypes = SUCCESS, retCodeAll = SUCCESS;
+		int retCode = Constants.SUCCESS, retCodeForAllFileTypes = Constants.SUCCESS, retCodeAll = Constants.SUCCESS;
 
 		File distroRoot = new File( getDistroDir());
 		File libDirectory = distroRoot;
 		if (!libDirectory.exists()) {
-			debugPrint(DEBUG_ERROR, "Distribution folder '" + libDirectory.getAbsoluteFile().toString() + "' does not exist.");
-			return NO_ZIP_TGZ;
+			Utility.debugPrint(Constants.DEBUG_ERROR, "Distribution folder '" + libDirectory.getAbsoluteFile().toString() + "' does not exist.");
+			return Constants.NO_ZIP_TGZ;
 		}
 
 		File outTempDir = File.createTempFile("outTemp", "");
@@ -162,37 +115,37 @@ public class ValidateLicAndNotice
 
 		List<String> zips = getZipsInDistro(libDirectory);
 		if(zips.size() == 0) {
-			debugPrint(DEBUG_ERROR, "Can't find zip/tgz files in folder: " + libDirectory.getAbsoluteFile().toString());
-			return NO_ZIP_TGZ;
+			Utility.debugPrint(Constants.DEBUG_ERROR, "Can't find zip/tgz files in folder: " + libDirectory.getAbsoluteFile().toString());
+			return Constants.NO_ZIP_TGZ;
 		}
 
 		for (String zipFile: zips)
 		{
-			retCodeForAllFileTypes = SUCCESS;
-			debugPrint(DEBUG_INFO, "======================================================================================");
-			debugPrint(DEBUG_INFO, "Validating zip file : " + zipFile + " ...");
+			retCodeForAllFileTypes = Constants.SUCCESS;
+			Utility.debugPrint(Constants.DEBUG_INFO, "======================================================================================");
+			Utility.debugPrint(Constants.DEBUG_INFO, "Validating zip file : " + zipFile + " ...");
 
 			for (String fileType: fileTypes) {
-				retCode = SUCCESS;
+				retCode = Constants.SUCCESS;
 
 				List<String> filesAll = null;
 				// Extract license/notice only at first time in all filetypes validation for a given zip.
-				if(fileType == JAR) {
-					if (!ValidateLicAndNotice.extractFile(libDirectory + "/" + zipFile, LICENSE, outTempDir.getAbsolutePath(), true))
-						return FAILED_TO_EXTRACT;
-					if (!ValidateLicAndNotice.extractFile(libDirectory + "/" + zipFile, NOTICE, outTempDir.getAbsolutePath(), true))
-						return FAILED_TO_EXTRACT;
+				if(fileType == Constants.JAR) {
+					if (!ValidateLicAndNotice.extractFile(libDirectory + "/" + zipFile, Constants.LICENSE, outTempDir.getAbsolutePath(), true))
+						return Constants.FAILED_TO_EXTRACT;
+					if (!ValidateLicAndNotice.extractFile(libDirectory + "/" + zipFile, Constants.NOTICE, outTempDir.getAbsolutePath(), true))
+						return Constants.FAILED_TO_EXTRACT;
 				}
 
 				filesAll = getFiles(libDirectory + "/" + zipFile, fileType);
 
-				File licenseFile = new File(outTempDir, LICENSE);
+				File licenseFile = new File(outTempDir, Constants.LICENSE);
 				List<String> files = new ArrayList<String>();
 				List<String> fileSysml = new ArrayList<String>();
 				for (String file : filesAll) {
-					int sysmlLen = SYSTEMML_NAME.length();
+					int sysmlLen = Constants.SYSTEMML_NAME.length();
 					String strBegPart = file.substring(0, sysmlLen);
-					if (strBegPart.compareToIgnoreCase(SYSTEMML_NAME) != 0)
+					if (strBegPart.compareToIgnoreCase(Constants.SYSTEMML_NAME) != 0)
 						files.add(file);
 					else
 						fileSysml.add(file);
@@ -201,43 +154,43 @@ public class ValidateLicAndNotice
 
 				List<String> bad2 = getLICENSEFilesNotInList(licenseFile, files, fileType);
 				if (bad2.size() > 0) {
-					debugPrint(DEBUG_WARNING,"Files in LICENSE but not in Distribution: " + bad2);
-					retCode += FILE_NOT_IN_ZIP;
+					Utility.debugPrint(Constants.DEBUG_WARNING,"Files in LICENSE but not in Distribution: " + bad2);
+					retCode += Constants.FILE_NOT_IN_ZIP;
 				}
 
 				List<String> bad1 = getFilesNotInLICENSE(licenseFile, files, fileType);
 				if (bad1.size() > 0) {
-					debugPrint(DEBUG_ERROR,"Files in distribution but not in LICENSE: " + bad1);
-					retCode += FILE_NOT_IN_LIC;
+					Utility.debugPrint(Constants.DEBUG_ERROR,"Files in distribution but not in LICENSE: " + bad1);
+					retCode += Constants.FILE_NOT_IN_LIC;
 				}
 
 				// Validate shaded jar and notice only one time for each zip/tgz file.
-				if(fileType == JAR) {
+				if(fileType == Constants.JAR) {
 					for (String file : fileSysml)
 						retCode += ValidateLicAndNotice.validateShadedLic(libDirectory + "/" + zipFile, file, outTempDir.getAbsolutePath());
-					if (!validateNotice(outTempDir.getAbsolutePath()+"/"+NOTICE)) {
-						debugPrint(DEBUG_ERROR, "Notice validation falied, please check notice file manually in this zip/tgz file.");
-						retCode += INVALID_NOTICE;
+					if (!validateNotice(outTempDir.getAbsolutePath()+"/"+Constants.NOTICE)) {
+						Utility.debugPrint(Constants.DEBUG_ERROR, "Notice validation falied, please check notice file manually in this zip/tgz file.");
+						retCode += Constants.INVALID_NOTICE;
 					}
 					if (!validateJSCssLicense(licenseFile, libDirectory + "/" + zipFile)) {
-						debugPrint(DEBUG_ERROR, "JS/CSS license validation falied, please check license file manually in this zip/tgz file.");
-						retCode += JS_CSS_LIC_NOT_EXIST;
+						Utility.debugPrint(Constants.DEBUG_ERROR, "JS/CSS license validation falied, please check license file manually in this zip/tgz file.");
+						retCode += Constants.JS_CSS_LIC_NOT_EXIST;
 					}
 				}
 
-				if (retCode  == SUCCESS)
-					debugPrint(DEBUG_INFO3, "Validation of file type '." + fileType + "' in zip/tgz file : " + zipFile + " completed successfully.");
+				if (retCode  == Constants.SUCCESS)
+					Utility.debugPrint(Constants.DEBUG_INFO3, "Validation of file type '." + fileType + "' in zip/tgz file : " + zipFile + " completed successfully.");
 				else {
-					debugPrint(DEBUG_ERROR, "License/Notice validation failed for zip/tgz file " + zipFile + " with error code " + retCode + ", please validate file manually.");
-					retCodeForAllFileTypes = FAILURE;
+					Utility.debugPrint(Constants.DEBUG_ERROR, "License/Notice validation failed for zip/tgz file " + zipFile + " with error code " + retCode + ", please validate file manually.");
+					retCodeForAllFileTypes = Constants.FAILURE;
 				}
 			}
-			if(retCodeForAllFileTypes == SUCCESS)
-				debugPrint(DEBUG_INFO, "Validation of zip/tgz file : " + zipFile + " completed successfully.");
+			if(retCodeForAllFileTypes == Constants.SUCCESS)
+				Utility.debugPrint(Constants.DEBUG_INFO, "Validation of zip/tgz file : " + zipFile + " completed successfully.");
 
-			retCodeAll = retCodeForAllFileTypes != SUCCESS?FAILURE:retCodeAll;
+			retCodeAll = retCodeForAllFileTypes != Constants.SUCCESS?Constants.FAILURE:retCodeAll;
 		}
-		debugPrint(DEBUG_INFO, "======================================================================================");
+		Utility.debugPrint(Constants.DEBUG_INFO, "======================================================================================");
 
 		FileUtils.deleteDirectory(outTempDir);
 		return retCodeAll;
@@ -257,15 +210,15 @@ public class ValidateLicAndNotice
 		File outTempDir2 = new File (outTempDir + "/" + "2");
 		outTempDir2.mkdir();
 		if(!ValidateLicAndNotice.extractFile(zipFileName, file, outTempDir2.getAbsolutePath(), false))
-			return FAILED_TO_EXTRACT;
-		if(!ValidateLicAndNotice.extractFile(outTempDir2.getAbsolutePath()+"/"+file, LICENSE, outTempDir2.getAbsolutePath(), true))
-			return FAILED_TO_EXTRACT;
+			return Constants.FAILED_TO_EXTRACT;
+		if(!ValidateLicAndNotice.extractFile(outTempDir2.getAbsolutePath()+"/"+file, Constants.LICENSE, outTempDir2.getAbsolutePath(), true))
+			return Constants.FAILED_TO_EXTRACT;
 
 		HashMap<String, Boolean> hashMapPackages = getPackagesFromZip(outTempDir2.getAbsolutePath() + "/" + file);
 		for (String packageName: hashMapPackages.keySet())
-			debugPrint(DEBUG_CODE, "Package: " + packageName + " Licensed: " + hashMapPackages.get(packageName));
+			Utility.debugPrint(Constants.DEBUG_CODE, "Package: " + packageName + " Licensed: " + hashMapPackages.get(packageName));
 
-		int iRetCode = ValidateLicAndNotice.validatePackages(outTempDir2.getAbsolutePath()+"/"+LICENSE, hashMapPackages);
+		int iRetCode = ValidateLicAndNotice.validatePackages(outTempDir2.getAbsolutePath()+"/"+Constants.LICENSE, hashMapPackages);
 
 		FileUtils.deleteDirectory(outTempDir2);
 		return iRetCode;
@@ -280,7 +233,7 @@ public class ValidateLicAndNotice
 	 */
 	public static int validatePackages(String licenseFile, HashMap<String, Boolean> hashMapPackages) throws Exception
 	{
-		int iRetCode = SUCCESS;
+		int iRetCode = Constants.SUCCESS;
 		BufferedReader reader = new BufferedReader(new FileReader(licenseFile));
 		String line = null;
 		HashSet <String> packageValidLic = new HashSet<String>();
@@ -289,7 +242,7 @@ public class ValidateLicAndNotice
 			for(int i=0; i <packageLicenses.length; ++i) {
 				if (line.contains(packageLicenses[i][1])) {
 					packageValidLic.add(packageLicenses[i][0]);
-					debugPrint(DEBUG_INFO3, "License for package " + packageLicenses[i][0] + " exists.");
+					Utility.debugPrint(Constants.DEBUG_INFO3, "License for package " + packageLicenses[i][0] + " exists.");
 				}
 			}
 		}
@@ -308,8 +261,8 @@ public class ValidateLicAndNotice
 		while (itPackages.hasNext()) {
 			Map.Entry pairPackage = (Map.Entry) itPackages.next();
 			if(!(Boolean)pairPackage.getValue()) {
-				debugPrint(DEBUG_WARNING, "Could not validate license for package " + pairPackage.getKey() + ", please validate manually.");
-				iRetCode = LIC_NOT_EXIST;
+				Utility.debugPrint(Constants.DEBUG_WARNING, "Could not validate license for package " + pairPackage.getKey() + ", please validate manually.");
+				iRetCode = Constants.LIC_NOT_EXIST;
 			}
 		}
 
@@ -330,13 +283,13 @@ public class ValidateLicAndNotice
 			Enumeration e = zipfile.entries();
 			while(e.hasMoreElements()) {
 				entry = (ZipEntry) e.nextElement();
-				if(! entry.getName().startsWith(SYSTEMML_PACKAGE) &&
-				     entry.getName().endsWith("." + CLASS)) {
+				if(! entry.getName().startsWith(Constants.SYSTEMML_PACKAGE) &&
+				     entry.getName().endsWith("." + Constants.CLASS)) {
 					int iPos = entry.getName().lastIndexOf("/");
 					if (iPos > 0) {
 						String strPackageName = entry.getName().substring(0, iPos);
 						packages.put(strPackageName, Boolean.FALSE);
-						debugPrint(DEBUG_CODE, "Package found : " + strPackageName);
+						Utility.debugPrint(Constants.DEBUG_CODE, "Package found : " + strPackageName);
 					}
 				}
 			}
@@ -452,7 +405,7 @@ public class ValidateLicAndNotice
 	private List<String> getZipsInDistro(File directory) {
 		List<String> zips = new ArrayList<String>();
 		for (String fileName : directory.list())
-			if ((fileName.endsWith("." + ZIP)) || (fileName.endsWith("." + TGZ)))
+			if ((fileName.endsWith("." + Constants.ZIP)) || (fileName.endsWith("." + Constants.TGZ)))
 				zips.add(fileName);
 		return zips;
 	}
@@ -487,12 +440,12 @@ public class ValidateLicAndNotice
 	 * @return  Success or Failure
 	 */
 	public static boolean extractFile(String zipFileName, String fileName, String strDestLoc, boolean bFirstDirLevel) {
-		debugPrint(DEBUG_CODE, "Extracting " + fileName + " from jar/zip/tgz file " + zipFileName);
-		if (zipFileName.endsWith("." + ZIP) || zipFileName.endsWith("." + JAR))
+		Utility.debugPrint(Constants.DEBUG_CODE, "Extracting " + fileName + " from jar/zip/tgz file " + zipFileName);
+		if (zipFileName.endsWith("." + Constants.ZIP) || zipFileName.endsWith("." + Constants.JAR))
 			return extractFileFromZip(zipFileName, fileName, strDestLoc, bFirstDirLevel);
-		else if (zipFileName.endsWith("." + TGZ))
+		else if (zipFileName.endsWith("." + Constants.TGZ))
 			return extractFileFromTGZ(zipFileName, fileName, strDestLoc, bFirstDirLevel);
-		return bFAILURE;
+		return Constants.bFAILURE;
 	}
 
 
@@ -506,7 +459,7 @@ public class ValidateLicAndNotice
 	 * @return  Sucess or Failure
 	 */
 	public static boolean extractFileFromZip (String zipFileName, String fileName, String strDestLoc, boolean bFirstDirLevel) {
-		boolean bRetCode = bFAILURE;
+		boolean bRetCode = Constants.bFAILURE;
 		try {
 			BufferedOutputStream bufOut = null;
 			BufferedInputStream bufIn = null;
@@ -523,17 +476,17 @@ public class ValidateLicAndNotice
 					continue;
 				bufIn = new BufferedInputStream(zipfile.getInputStream(entry));
 				int count;
-				byte data[] = new byte[BUFFER];
+				byte data[] = new byte[Constants.BUFFER];
 				String strOutFileName = strDestLoc == null ? entry.getName(): strDestLoc + "/" + fileName; 
 				FileOutputStream fos = new FileOutputStream(strOutFileName);
-				bufOut = new BufferedOutputStream(fos, BUFFER);
-				while ((count = bufIn.read(data, 0, BUFFER)) != -1) {
+				bufOut = new BufferedOutputStream(fos, Constants.BUFFER);
+				while ((count = bufIn.read(data, 0, Constants.BUFFER)) != -1) {
 					bufOut.write(data, 0, count);
 				}
 				bufOut.flush();
 				bufOut.close();
 				bufIn.close();
-				bRetCode = bSUCCESS;
+				bRetCode = Constants.bSUCCESS;
 				break;
 			}
 		} catch(Exception e) {
@@ -553,7 +506,7 @@ public class ValidateLicAndNotice
 	 */
 	public static boolean extractFileFromTGZ (String tgzFileName, String fileName, String strDestLoc, boolean bFirstDirLevel) {
 
-		boolean bRetCode = bFAILURE;
+		boolean bRetCode = Constants.bFAILURE;
 
 		TarArchiveInputStream tarIn = null; 
 
@@ -564,7 +517,7 @@ public class ValidateLicAndNotice
 							new BufferedInputStream(
 								new FileInputStream(tgzFileName))));
 		} catch(Exception e) {
-			debugPrint(DEBUG_ERROR, "Exception in unzipping tar file: " + e);
+			Utility.debugPrint(Constants.DEBUG_ERROR, "Exception in unzipping tar file: " + e);
 			return bRetCode;
 		} 
 
@@ -581,17 +534,17 @@ public class ValidateLicAndNotice
 					continue;
 				bufIn = new BufferedInputStream (tarIn);
 				int count;
-				byte data[] = new byte[BUFFER];
+				byte data[] = new byte[Constants.BUFFER];
 				String strOutFileName = strDestLoc == null ? tarEntry.getName(): strDestLoc + "/" + fileName; 
 				FileOutputStream fos = new FileOutputStream(strOutFileName);
-				bufOut = new BufferedOutputStream(fos, BUFFER);
-				while ((count = bufIn.read(data, 0, BUFFER)) != -1) {
+				bufOut = new BufferedOutputStream(fos, Constants.BUFFER);
+				while ((count = bufIn.read(data, 0, Constants.BUFFER)) != -1) {
 					bufOut.write(data, 0, count);
             			}
 				bufOut.flush();
 				bufOut.close();
 				bufIn.close();
-				bRetCode = bSUCCESS;
+				bRetCode = Constants.bSUCCESS;
 				break;
 			}
 		} catch(Exception e) {
@@ -608,9 +561,9 @@ public class ValidateLicAndNotice
 	 * @return	Returns list of files having specified extention from zip file .
 	 */
 	public static List<String> getFiles (String zipFileName, String fileExt) {
-		if (zipFileName.endsWith("." + ZIP))
+		if (zipFileName.endsWith("." + Constants.ZIP))
 			return getFilesFromZip (zipFileName, fileExt);
-		else if (zipFileName.endsWith("." + TGZ))
+		else if (zipFileName.endsWith("." + Constants.TGZ))
 			return getFilesFromTGZ (zipFileName, fileExt);
 		return null;
 	}
@@ -661,7 +614,7 @@ public class ValidateLicAndNotice
 							new BufferedInputStream(
 								new FileInputStream(tgzFileName))));
 		} catch(Exception e) {
-			debugPrint(DEBUG_ERROR, "Exception in unzipping tar file: " + e);
+			Utility.debugPrint(Constants.DEBUG_ERROR, "Exception in unzipping tar file: " + e);
 			return null;
 		} 
 
@@ -691,7 +644,7 @@ public class ValidateLicAndNotice
 	 */
 	public static boolean validateNotice(String noticeFile) throws Exception {
 
-		boolean bValidNotice = bSUCCESS;
+		boolean bValidNotice = Constants.bSUCCESS;
 
 		LocalDateTime currentTime = LocalDateTime.now();
 
@@ -716,12 +669,12 @@ public class ValidateLicAndNotice
 
 		for (int i = 0; i < noticeLines.length; i++) {
 			if (!noticeLineIn[i]) {
-				bValidNotice = bFAILURE;
+				bValidNotice = Constants.bFAILURE;
 			}
 		}
 
-		if(bValidNotice == bSUCCESS)
-			debugPrint(DEBUG_INFO2, "Notice validation successful.");
+		if(bValidNotice == Constants.bSUCCESS)
+			Utility.debugPrint(Constants.DEBUG_INFO2, "Notice validation successful.");
 
 		return bValidNotice;
 	}
@@ -735,11 +688,11 @@ public class ValidateLicAndNotice
 	 */
 	public static boolean validateJSCssLicense(File licenseFile, String zipFileName) throws Exception
 	{
-		boolean bRetCode = bSUCCESS;
+		boolean bRetCode = Constants.bSUCCESS;
 
 		try {
-			List<String> jsFiles = getFiles(zipFileName, JS);
-			List<String> cssFiles = getFiles(zipFileName, CSS);
+			List<String> jsFiles = getFiles(zipFileName, Constants.JS);
+			List<String> cssFiles = getFiles(zipFileName, Constants.CSS);
 			HashMap<String, Boolean> jsCssFileHashMap = new HashMap<String, Boolean>();
 			for (String jsFile : jsFiles)
 				if(jsFile.compareTo("main.js") != 0)
@@ -754,7 +707,7 @@ public class ValidateLicAndNotice
 			while ((line = reader.readLine()) != null) {
 				line = line.trim();
 				//Move to beginning of individual License text
-				if (line.startsWith(LIC_TEXT_DELIM))
+				if (line.startsWith(Constants.LIC_TEXT_DELIM))
 					break;
 			}
 
@@ -763,7 +716,7 @@ public class ValidateLicAndNotice
 
 				List<String> curLicense = new ArrayList<String>();
 				//Read all lines until end of individual License text
-				while (!line.startsWith(LIC_TEXT_DELIM)) {
+				while (!line.startsWith(Constants.LIC_TEXT_DELIM)) {
 					curLicense.add(line);
 					if ((line = reader.readLine()) == null)
 						break;
@@ -799,8 +752,8 @@ public class ValidateLicAndNotice
 
 				String[][] jsFileLicList = hmJSLicenses.get(pairJSCSSFile.getKey());
 				if(jsFileLicList == null) {
-					debugPrint(DEBUG_WARNING, "JS/CSS license does not exist for file " + pairJSCSSFile.getKey());
-					bRetCode = bFAILURE;
+					Utility.debugPrint(Constants.DEBUG_WARNING, "JS/CSS license does not exist for file " + pairJSCSSFile.getKey());
+					bRetCode = Constants.bFAILURE;
 					continue;
 				}
 
@@ -814,16 +767,16 @@ public class ValidateLicAndNotice
 
 				if (bValidLic) {
 					jsCssFileHashMap.put(pairJSCSSFile.getKey(), Boolean.TRUE);
-					debugPrint(DEBUG_INFO3, "JS/CSS license exists for file " + pairJSCSSFile.getKey());
+					Utility.debugPrint(Constants.DEBUG_INFO3, "JS/CSS license exists for file " + pairJSCSSFile.getKey());
 				}
 				else {
-					debugPrint(DEBUG_WARNING, "JS/CSS license does not exist for file " + pairJSCSSFile.getKey());
-					bRetCode = bFAILURE;
+					Utility.debugPrint(Constants.DEBUG_WARNING, "JS/CSS license does not exist for file " + pairJSCSSFile.getKey());
+					bRetCode = Constants.bFAILURE;
 				}
 			}
 
-			if (bRetCode == bSUCCESS)
-				debugPrint(DEBUG_INFO2, "JS/CSS license validation successful.");
+			if (bRetCode == Constants.bSUCCESS)
+				Utility.debugPrint(Constants.DEBUG_INFO2, "JS/CSS license validation successful.");
 
 		} catch (Exception e) {
 			System.out.println(e);
@@ -848,47 +801,11 @@ public class ValidateLicAndNotice
 		try { 
 			int retCode = valLic.validate();
 
-			debugPrint(DEBUG_INFO, "Return code = " + retCode);
+			Utility.debugPrint(Constants.DEBUG_INFO, "Return code = " + retCode);
 		}
 		catch (Exception e) {
-			debugPrint(DEBUG_ERROR, "Error while validating license in zip/tgz file." + e);
+			Utility.debugPrint(Constants.DEBUG_ERROR, "Error while validating license in zip/tgz file." + e);
 		}
-	}
-
-	/**
-	 * This will be used to output on console in consistent and controlled based on DEBUG flag.
-	 *
-	 * @param	debugLevel is the debuglevel message user wants to prrint message.
-	 * @param 	message is the message to be displayed.
-	 * @return
-	 */
-	public static void debugPrint(int debugLevel, String message) {
-		String displayMessage = "";
-		switch (debugLevel) {
-			case DEBUG_ERROR:
-				displayMessage = "ERROR: " + message;
-				break;
-			case DEBUG_WARNING:
-				displayMessage = "WARNING: " + message;
-				break;
-			case DEBUG_INFO:
-				displayMessage = "INFO: " + message;
-				break;
-			case DEBUG_INFO2:
-				displayMessage = "INFO2: " + message;
-				break;
-			case DEBUG_INFO3:
-				displayMessage = "INFO3: " + message;
-				break;
-			case DEBUG_CODE:
-				displayMessage = "DEBUG: " + message;
-				break;
-			default:
-				break;
-		}
-
-		if(debugLevel <= DEBUG_PRINT_LEVEL)
-			System.out.println(displayMessage);
 	}
 
 }

@@ -203,8 +203,10 @@ public class ColGroupRLE extends ColGroupOffset
 		int[] apos = allocIVector(numVals, true);
 		
 		//cache conscious append via horizontal scans 
+		int nnz = 0;
 		for( int bi=0; bi<n; bi+=blksz ) {
 			int bimax = Math.min(bi+blksz, n);
+			Arrays.fill(c, bi, bimax, 0);
 			for (int k=0, off=0; k < numVals; k++, off+=numCols) {
 				int boff = _ptr[k];
 				int blen = len(k);
@@ -215,15 +217,15 @@ public class ColGroupRLE extends ColGroupOffset
 				for( ; bix<blen & start<bimax; bix+=2) {
 					start += _data[boff + bix];
 					int len = _data[boff + bix+1];
-					for( int i=start; i<start+len; i++ )
-						c[i] = _values[off+colpos];
+					Arrays.fill(c, start, start+len, _values[off+colpos]);
+					nnz += len;
 					start += len;
 				}
 				apos[k] = bix;	
 				astart[k] = start;
 			}
 		}
-		target.recomputeNonZeros();
+		target.setNonZeros(nnz);
 	}
 	
 	@Override 
@@ -421,6 +423,37 @@ public class ColGroupRLE extends ColGroupOffset
 		}
 	}
 
+	@Override
+	public void leftMultByRowVector(ColGroupDDC a, MatrixBlock result)
+			throws DMLRuntimeException 
+	{
+		//note: this method is only applicable for numrows < blocksize
+		double[] c = result.getDenseBlock();
+		final int numCols = getNumCols();
+		final int numVals = getNumValues();
+
+		//iterate over all values and their bitmaps
+		for (int k=0, valOff=0; k<numVals; k++, valOff+=numCols) 
+		{	
+			int boff = _ptr[k];
+			int blen = len(k);
+			
+			double vsum = 0;
+			int curRunEnd = 0;
+			for ( int bix = 0; bix < blen; bix+=2 ) {
+				int curRunStartOff = curRunEnd + _data[boff+bix];
+				int curRunLen = _data[boff+bix+1];
+				for( int i=curRunStartOff; i<curRunStartOff+curRunLen; i++ )
+					vsum += a.getData(i, 0);
+				curRunEnd = curRunStartOff + curRunLen;
+			}
+			
+			//scale partial results by values and write results
+			for( int j = 0; j < numCols; j++ )
+				c[ _colIndexes[j] ] += vsum * _values[ valOff+j ];
+		}
+	}
+	
 	@Override
 	public ColGroup scalarOperation(ScalarOperator op)
 			throws DMLRuntimeException 

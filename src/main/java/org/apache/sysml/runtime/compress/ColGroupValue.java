@@ -296,6 +296,11 @@ public abstract class ColGroupValue extends ColGroup
 		for( int j=0; j<numCols; j++ )
 			result.quickSetValue(0, _colIndexes[j], vals[j]);
 	}
+
+	//additional vector-matrix multiplication to avoid DDC uncompression
+	public abstract void leftMultByRowVector(ColGroupDDC vector, MatrixBlock result) 
+		throws DMLRuntimeException;
+
 	
 	/**
 	 * Method for use by subclasses. Applies a scalar operation to the value

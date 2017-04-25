@@ -173,9 +173,10 @@ public class ColGroupDDC1 extends ColGroupDDC
 		int nrow = getNumRows();
 		int ncol = getNumCols();
 		double[] c = target.getDenseBlock();
+		int nnz = 0;
 		for( int i = 0; i < nrow; i++ )
-			c[i] = _values[(_data[i]&0xFF)*ncol+colpos];
-		target.recomputeNonZeros();
+			nnz += ((c[i] = _values[(_data[i]&0xFF)*ncol+colpos])!=0) ? 1 : 0;
+		target.setNonZeros(nnz);
 	}
 
 	@Override 
@@ -263,7 +264,6 @@ public class ColGroupDDC1 extends ColGroupDDC
 		double[] a = ConverterUtils.getDenseVector(vector);
 		double[] c = result.getDenseBlock();
 		final int nrow = getNumRows();
-		final int ncol = getNumCols();
 		final int numVals = getNumValues();
 		
 		//iterative over codes and pre-aggregate inputs per code (guaranteed <=255)
@@ -274,13 +274,23 @@ public class ColGroupDDC1 extends ColGroupDDC
 		}
 		
 		//post-scaling of pre-aggregate with distinct values
-		for( int k=0, valOff=0; k<numVals; k++, valOff+=ncol ) {
-			double aval = vals[k];
-			for( int j=0; j<ncol; j++ ) {
-				int colIx = _colIndexes[j];
-				c[colIx] += aval * _values[valOff+j];
-			}	
-		}
+		postScaling(vals, c);
+	}
+	
+	@Override
+	public void leftMultByRowVector(ColGroupDDC a, MatrixBlock result) throws DMLRuntimeException {
+		double[] c = result.getDenseBlock();
+		final int nrow = getNumRows();
+		final int numVals = getNumValues();
+		
+		//iterative over codes and pre-aggregate inputs per code (guaranteed <=255)
+		//temporary array also avoids false sharing in multi-threaded environments
+		double[] vals = allocDVector(numVals, true);
+		for( int i=0; i<nrow; i++ )
+			vals[_data[i]&0xFF] += a.getData(i, 0);
+		
+		//post-scaling of pre-aggregate with distinct values
+		postScaling(vals, c);
 	}
 	
 	@Override

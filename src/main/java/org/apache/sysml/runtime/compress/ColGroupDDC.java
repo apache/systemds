@@ -200,7 +200,18 @@ public abstract class ColGroupDDC extends ColGroupValue
 				c[i] = builtin.execute2(c[i], getData(i, j));
 	}
 	
-	
+	protected final void postScaling(double[] vals, double[] c) {
+		final int ncol = getNumCols();
+		final int numVals = getNumValues();
+		
+		for( int k=0, valOff=0; k<numVals; k++, valOff+=ncol ) {
+			double aval = vals[k];
+			for( int j=0; j<ncol; j++ ) {
+				int colIx = _colIndexes[j];
+				c[colIx] += aval * _values[valOff+j];
+			}	
+		}
+	}
 
 	/**
 	 * Generic get value for byte-length-agnostic access.

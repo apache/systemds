@@ -211,7 +211,9 @@ public class ColGroupOLE extends ColGroupOffset
 		int[] apos = allocIVector(numVals, true);
 		
 		//cache conscious append via horizontal scans 
+		int nnz = 0;
 		for( int bi=0; bi<n; bi+=blksz ) {
+			Arrays.fill(c, bi, Math.min(bi+blksz, n), 0);
 			for (int k = 0, off=0; k < numVals; k++, off+=numCols) {
 				int boff = _ptr[k];
 				int blen = len(k);
@@ -222,11 +224,12 @@ public class ColGroupOLE extends ColGroupOffset
 				int pos = boff+bix+1;
 				for( int i=pos; i<pos+len; i++ ) {
 					c[bi+_data[i]] = _values[off+colpos];
+					nnz++;
 				}
 				apos[k] += len + 1;
 			}
 		}
-		target.recomputeNonZeros();
+		target.setNonZeros(nnz);
 	}
 	
 	@Override 
@@ -445,6 +448,30 @@ public class ColGroupOLE extends ColGroupOffset
 		}
 	}
 
+	@Override
+	public void leftMultByRowVector(ColGroupDDC a, MatrixBlock result)
+		throws DMLRuntimeException 
+	{
+		//note: this method is only applicable for numrows < blocksize
+		double[] c = result.getDenseBlock();
+		final int numCols = getNumCols();
+		final int numVals = getNumValues();
+		
+		//iterate over all values and their bitmaps
+		for (int k=0, valOff=0; k<numVals; k++, valOff+=numCols) {
+			int boff = _ptr[k];
+			
+			//iterate over bitmap blocks and add partial results
+			double vsum = 0;
+			for( int j = boff+1; j < boff+1+_data[boff]; j++ )
+				vsum += a.getData(_data[j], 0);
+			
+			//scale partial results by values and write results
+			for( int j = 0; j < numCols; j++ )
+				c[ _colIndexes[j] ] += vsum * _values[ valOff+j ];
+		}
+	}
+	
 	@Override
 	protected final void computeSum(MatrixBlock result, KahanFunction kplus)
 	{

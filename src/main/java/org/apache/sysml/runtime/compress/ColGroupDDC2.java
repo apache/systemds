@@ -175,9 +175,10 @@ public class ColGroupDDC2 extends ColGroupDDC
 		int nrow = getNumRows();
 		int ncol = getNumCols();
 		double[] c = target.getDenseBlock();
+		int nnz = 0;
 		for( int i = 0; i < nrow; i++ )
-			c[i] = _values[_data[i]*ncol+colpos];
-		target.recomputeNonZeros();
+			nnz += ((c[i] = _values[_data[i]*ncol+colpos])!=0) ? 1 : 0;
+		target.setNonZeros(nnz);
 	}
 	
 	@Override 
@@ -250,27 +251,49 @@ public class ColGroupDDC2 extends ColGroupDDC
 			}
 			
 			//post-scaling of pre-aggregate with distinct values
-			for( int k=0, valOff=0; k<numVals; k++, valOff+=ncol ) {
-				double aval = vals[k];
-				for( int j=0; j<ncol; j++ ) {
-					int colIx = _colIndexes[j];
-					c[colIx] += aval * _values[valOff+j];
-				}	
-			}
+			postScaling(vals, c);
 		}
 		else //general case
-		{
-		
+		{	
 			//iterate over codes, compute all, and add to the result
 			for( int i=0; i<nrow; i++ ) {
 				double aval = a[i];
-				if( aval != 0 ) {
-					int valOff = _data[i] * ncol;
-					for( int j=0; j<ncol; j++ ) {
-						int colIx = _colIndexes[j];
-						c[colIx] += aval * _values[valOff+j];
-					}
-				}
+				if( aval != 0 )
+					for( int j=0, valOff=_data[i]*ncol; j<ncol; j++ )
+						c[_colIndexes[j]] += aval * _values[valOff+j];
+			}
+		}
+	}
+	
+	@Override
+	public void leftMultByRowVector(ColGroupDDC a, MatrixBlock result) 
+		throws DMLRuntimeException 
+	{
+		double[] c = result.getDenseBlock();
+		final int nrow = getNumRows();
+		final int ncol = getNumCols();
+		final int numVals = getNumValues();
+		
+		if( 8*numVals < getNumRows() )
+		{
+			//iterative over codes and pre-aggregate inputs per code
+			//temporary array also avoids false sharing in multi-threaded environments
+			double[] vals = allocDVector(numVals, true);
+			for( int i=0; i<nrow; i++ ) {
+				vals[_data[i]] += a.getData(i, 0);
+			}
+			
+			//post-scaling of pre-aggregate with distinct values
+			postScaling(vals, c);
+		}
+		else //general case
+		{	
+			//iterate over codes, compute all, and add to the result
+			for( int i=0; i<nrow; i++ ) {
+				double aval = a.getData(i, 0);
+				if( aval != 0 )
+					for( int j=0, valOff=_data[i]*ncol; j<ncol; j++ )
+						c[_colIndexes[j]] += aval * _values[valOff+j];
 			}
 		}
 	}

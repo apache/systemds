@@ -128,27 +128,20 @@ public class LinearAlgebraUtils
 		final int bn = len%8;
 		
 		//rest, not aligned to 8-blocks
-		for( int j = 0; j < bn; j++, ai++ )
-			val += a[ ai ];
+		for( int j = ai; j < ai+bn; j++ )
+			val += a[ j ];
 		
 		//unrolled 8-block (for better instruction-level parallelism)
-		for( int j = bn; j < len; j+=8, ai+=8 )
-		{
-			val += a[ ai+0 ]
-			     + a[ ai+1 ]
-			     + a[ ai+2 ]
-			     + a[ ai+3 ]
-			     + a[ ai+4 ]
-			     + a[ ai+5 ]
-			     + a[ ai+6 ]
-			     + a[ ai+7 ];
+		for( int j = ai+bn; j < ai+len; j+=8 ) {
+			val += a[ j+0 ] + a[ j+1 ] + a[ j+2 ] + a[ j+3 ]
+			     + a[ j+4 ] + a[ j+5 ] + a[ j+6 ] + a[ j+7 ];
 		}
 		
 		return val;
 	}
 
-	public static void copyUpperToLowerTriangle( MatrixBlock ret ) {
-		LibMatrixMult.copyUpperToLowerTriangle(ret);
+	public static long copyUpperToLowerTriangle( MatrixBlock ret ) {
+		return LibMatrixMult.copyUpperToLowerTriangle(ret);
 	}
 	
 	public static void copyNonZerosToUpperTriangle( MatrixBlock ret, MatrixBlock tmp, int ix ) {

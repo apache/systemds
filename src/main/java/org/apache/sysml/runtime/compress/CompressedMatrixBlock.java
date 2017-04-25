@@ -1222,8 +1222,8 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 			leftMultByTransposeSelf(_colGroups, out, 0, _colGroups.size());
 			
 			// post-processing
-			LinearAlgebraUtils.copyUpperToLowerTriangle(out);
-			out.recomputeNonZeros();
+			out.setNonZeros(LinearAlgebraUtils
+				.copyUpperToLowerTriangle(out));
 		}
 		
 		if( LOG.isDebugEnabled() )
@@ -1280,8 +1280,8 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 			}
 			
 			// post-processing
-			LinearAlgebraUtils.copyUpperToLowerTriangle(out);
-			out.recomputeNonZeros();
+			out.setNonZeros(LinearAlgebraUtils
+				.copyUpperToLowerTriangle(out));
 		}
 		
 		if( LOG.isDebugEnabled() )
@@ -1434,6 +1434,21 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		result.recomputeNonZeros();
 	}
 	
+	private static void leftMultByVectorTranspose(List<ColGroup> colGroups, ColGroupDDC vector, MatrixBlock result) 
+		throws DMLRuntimeException 
+	{
+		// initialize and allocate the result
+		result.reset();
+		
+		// delegate matrix-vector operation to each column group
+		for( ColGroup grp : colGroups ) {			
+			((ColGroupValue)grp).leftMultByRowVector(vector, result);
+		}
+		
+		// post-processing
+		result.recomputeNonZeros();
+	}
+	
 	/**
 	 * Multi-thread version of leftMultByVectorTranspose.
 	 * 
@@ -1492,6 +1507,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	{
 		final int numRows = groups.get(0).getNumRows();
 		final int numGroups = groups.size();		
+		final boolean containsUC = containsUncompressedColGroup(groups);
 		
 		//preallocated dense tmp matrix blocks
 		MatrixBlock lhs = new MatrixBlock(1, numRows, false);
@@ -1511,20 +1527,28 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 			int[] ixgroup = group.getColIndices();
 			List<ColGroup> tmpList = groups.subList(i, numGroups);
 			
-			//for all uncompressed lhs columns vectors
-			for( int j=0; j<ixgroup.length; j++ ) {
-				//decompress single column
-				if( !(group instanceof ColGroupDDC) )
-					lhs.reset(1, numRows, false);				
-				group.decompressToBlock(lhs, j);
+			if( group instanceof ColGroupDDC //single DDC group
+				&& ixgroup.length==1 && !containsUC && numRows<BitmapEncoder.BITMAP_BLOCK_SZ ) 
+			{
+				//compute vector-matrix partial result
+				leftMultByVectorTranspose(tmpList, (ColGroupDDC)group, tmpret);								
 				
-				if( !lhs.isEmptyBlock(false) ) {
-					//compute vector-matrix partial result
-					leftMultByVectorTranspose(tmpList, lhs, tmpret, false, false);								
+				//write partial results (disjoint non-zeros)
+				LinearAlgebraUtils.copyNonZerosToUpperTriangle(result, tmpret, ixgroup[0]);	
+			}
+			else {
+				//for all uncompressed lhs columns vectors
+				for( int j=0; j<ixgroup.length; j++ ) {
+					group.decompressToBlock(lhs, j);
 					
-					//write partial results (disjoint non-zeros)
-					LinearAlgebraUtils.copyNonZerosToUpperTriangle(result, tmpret, ixgroup[j]);	
-				}
+					if( !lhs.isEmptyBlock(false) ) {
+						//compute vector-matrix partial result
+						leftMultByVectorTranspose(tmpList, lhs, tmpret, false, false);								
+						
+						//write partial results (disjoint non-zeros)
+						LinearAlgebraUtils.copyNonZerosToUpperTriangle(result, tmpret, ixgroup[j]);	
+					}
+				}	
 			}
 		}
 		
@@ -1573,6 +1597,13 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 				return (ColGroupUncompressed)grp;
 		
 		return null;
+	}
+	
+	private static boolean containsUncompressedColGroup(ArrayList<ColGroup> groups) {
+		for( ColGroup grp : groups )
+			if( grp instanceof ColGroupUncompressed ) 
+				return true;
+		return false;
 	}
 
 	private static class LeftMatrixMultTask implements Callable<Object> 

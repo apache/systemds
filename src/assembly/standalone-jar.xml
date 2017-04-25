@@ -116,7 +116,7 @@
 					<exclude>META-INF/NOTICE</exclude>
 				</excludes>
 			</unpackOptions>
-			<scope>provided</scope>
+			<scope>compile</scope>
 			<unpack>true</unpack>
 		</dependencySet>
 	</dependencySets>

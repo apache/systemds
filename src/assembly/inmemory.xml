@@ -96,7 +96,7 @@
 				</excludes>
 			</unpackOptions>
 			<outputDirectory>.</outputDirectory>
-			<scope>provided</scope>
+			<scope>compile</scope>
 			<unpack>true</unpack>
 		</dependencySet>
 	</dependencySets>

@@ -29,7 +29,8 @@ public class RDDObject extends LineageObject
 	private boolean _checkpointed = false; //created via checkpoint instruction
 	private boolean _hdfsfile = false;     //created from hdfs file
 	private String  _hdfsFname = null;     //hdfs filename, if created from hdfs.  
-	private boolean _parRDD = false;
+	private boolean _parRDD = false;       //is a parallelized rdd at driver
+	private boolean _pending = true;       //is a pending rdd operation
 	
 	public RDDObject( JavaPairRDD<?,?> rddvar, String varName) {
 		super(varName);
@@ -70,6 +71,14 @@ public class RDDObject extends LineageObject
 	
 	public boolean isParallelizedRDD() {
 		return _parRDD; 
+	}
+	
+	public void setPending(boolean flag) {
+		_pending = flag;
+	}
+	
+	public boolean isPending() {
+		return _pending;
 	}
 	
 

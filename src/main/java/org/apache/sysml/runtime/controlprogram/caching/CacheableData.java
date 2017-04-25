@@ -204,7 +204,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		_uniqueID = (int)_seq.getNextID();		
 		_cacheStatus = CacheStatus.EMPTY;
 		_numReadThreads = 0;
-		_gpuObjects = new HashMap<>();
+		_gpuObjects = new HashMap<GPUContext, GPUObject>();
 	}
 	
 	/**
@@ -835,14 +835,19 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 				throw new CacheException ("Export to " + fName + " failed.", e);
 			}
 		}
-		else if( getRDDHandle()!=null && //pending rdd operation
-				!getRDDHandle().allowsShortCircuitRead() )
+		else if( getRDDHandle()!=null && getRDDHandle().isPending()
+			&& !getRDDHandle().isHDFSFile() 
+			&& !getRDDHandle().allowsShortCircuitRead() )
 		{
 			//CASE 3: pending rdd operation (other than checkpoints)
 			try
 			{
+				//write matrix or frame
 				writeBlobFromRDDtoHDFS(getRDDHandle(), fName, outputFormat);
 				writeMetaData( fName, outputFormat, formatProperties );
+
+				//update rdd status
+				getRDDHandle().setPending(false);
 			}
 			catch (Exception e) {
 				throw new CacheException ("Export to " + fName + " failed.", e);

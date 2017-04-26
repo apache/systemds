@@ -47,13 +47,12 @@ limitations under the License.
 * To run the examples, please first download and unzip the project via GitHub using the "Clone or download" button on the [homepage of the project](https://github.com/dusenberrymw/systemml-nn), *or* via the following commands:
 
   ```
-  curl -LO https://github.com/dusenberrymw/systemml-nn/archive/master.zip
-  unzip master.zip
+  git clone https://github.com/dusenberrymw/systemml-nn.git
   ```
 
-* Then, move into the `examples` folder via:
+* Then, move into the `systemml-nn` folder via:
   ```
-  cd systemml-nn-master/examples/
+  cd systemml-nn
   ```
 
 ## Data

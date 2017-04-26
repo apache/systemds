@@ -47,17 +47,21 @@
 # where each example is a 28x28 pixel image of grayscale values in
 # the range [0,255] stretched out as 784 pixels.
 #
-# Sample Invocation:
-# Execute using Spark
+# Sample Invocation (running from outside the `nn` folder):
+# 1. Download images.
+#
+#   For example, save images to `nn/examples/data/mnist/images.csv`.
+#
+# 2. Execute using Spark
 #   ```
 #   spark-submit --master local[*] --driver-memory 5G
-#   --conf spark.driver.maxResultSize=0 --conf spark.akka.frameSize=128
-#   $SYSTEMML_HOME/target/SystemML.jar -f mnist_lenet-predict.dml
-#   -nvargs X=data/mnist/images.csv C=1 Hin=28 Win=28
-#   model_dir=model/mnist_lenet out_dir=data/mnist
+#   --conf spark.driver.maxResultSize=0 --conf spark.rpc.message.maxSize=128
+#   $SYSTEMML_HOME/target/SystemML.jar -f nn/examples/mnist_lenet-predict.dml
+#   -nvargs X=nn/examples/data/mnist/images.csv C=1 Hin=28 Win=28
+#   model_dir=nn/examples/model/mnist_lenet out_dir=nn/examples/data/mnist
 #   ```
 #
-source("mnist_lenet.dml") as mnist_lenet
+source("nn/examples/mnist_lenet.dml") as mnist_lenet
 
 # Read training data
 fmt = ifdef($fmt, "csv")

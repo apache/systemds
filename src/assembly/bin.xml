@@ -103,15 +103,6 @@
 	<!-- Include all the libraries needed to run in standalone mode. -->
 	<dependencySets>
 		<dependencySet>
-			<excludes>
-				<exclude>*:${artifactId}*</exclude> <!-- exclude from base dir -->
-				<!-- Exclude compile-scoped dependencies since they are in main artifact jar -->
-				<exclude>*:antlr4-runtime*</exclude>
-				<exclude>*:wink-json4j*</exclude>
-			</excludes>
-		</dependencySet>
-
-		<dependencySet>
 			<includes>
 				<include>*:${artifactId}*</include>
 				<include>*:commons-cli*</include>
@@ -131,13 +122,12 @@
 				<include>*:jackson-core-asl*</include>
 				<include>*:jackson-mapper-asl*</include>
 				<include>*:log4j*</include>
-				<include>*:opencsv*</include>
 				<include>*:protobuf-java*</include>
 				<include>*:slf4j-api*</include>
 				<include>*:slf4j-log4j*</include>
 			</includes>
 			<outputDirectory>./lib</outputDirectory>
-			<scope>provided</scope>
+			<scope>compile</scope>
 		</dependencySet>
 	</dependencySets>
 </assembly>

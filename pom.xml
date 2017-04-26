@@ -164,11 +164,12 @@
 							<goal>shade</goal>
 						</goals>
 						<configuration>
-						  <artifactSet>
-							  <!--<excludes>
-								<exclude>org.jcuda:*</exclude>
-							</excludes>-->
-						  </artifactSet>
+							<artifactSet>
+								<includes>
+									<include>org.apache.wink:wink-json4j:*</include>
+									<include>org.antlr:antlr4-runtime:*</include>
+								</includes>
+							</artifactSet>
 						</configuration>
 					</execution>
 				</executions>
@@ -1117,11 +1118,10 @@
 
 	<dependencies>
 		<dependency>
-	  		<groupId>com.google.protobuf</groupId>
-	  		<artifactId>protobuf-java</artifactId>
-	  		<version>3.2.0</version>
-	  		<scope>provided</scope>
-	  	</dependency>
+			<groupId>com.google.protobuf</groupId>
+			<artifactId>protobuf-java</artifactId>
+			<version>3.2.0</version>
+		</dependency>
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcuda</artifactId>
@@ -1232,13 +1232,11 @@
 			<groupId>org.apache.spark</groupId>
 			<artifactId>spark-mllib_${scala.binary.version}</artifactId>
 			<version>${spark.version}</version>
-			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-common</artifactId>
 			<version>${hadoop.version}</version>
-			<scope>provided</scope>
 			<exclusions>
 				<exclusion>
 					<groupId>javax.servlet</groupId>
@@ -1250,7 +1248,6 @@
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-hdfs</artifactId>
 			<version>${hadoop.version}</version>
-			<scope>provided</scope>
 			<exclusions>
 				<exclusion>
 					<groupId>javax.servlet</groupId>
@@ -1262,13 +1259,11 @@
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-client</artifactId>
 			<version>${hadoop.version}</version>
-			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-mapreduce-client-app</artifactId>
 			<version>${hadoop.version}</version>
-			<scope>provided</scope>
 			<exclusions>
 				<exclusion>
 					<groupId>javax.servlet</groupId>
@@ -1286,20 +1281,17 @@
 			<groupId>commons-logging</groupId>
 			<artifactId>commons-logging</artifactId>
 			<version>1.1.3</version>
-			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-math3</artifactId>
 			<version>3.4.1</version>
-			<scope>provided</scope>
 		</dependency>
 
 		<dependency>
 			<groupId>log4j</groupId>
 			<artifactId>log4j</artifactId>
 			<version>1.2.15</version>
-			<scope>provided</scope>
 			<exclusions>
 				<exclusion>
 					<groupId>com.sun.jmx</groupId>
@@ -1314,13 +1306,6 @@
 					<artifactId>jms</artifactId>
 				</exclusion>
 			</exclusions>
-		</dependency>
-
-		<dependency>
-			<groupId>net.sf.opencsv</groupId>
-			<artifactId>opencsv</artifactId>
-			<version>2.3</version>
-			<scope>provided</scope>
 		</dependency>
 
 		<dependency>
@@ -1340,7 +1325,6 @@
 			<groupId>commons-collections</groupId>
 			<artifactId>commons-collections</artifactId>
 			<version>3.2.1</version>
-			<scope>provided</scope>
 		</dependency>
 
 		<!-- fast java compiler for codegen, consistent version w/ spark -->
@@ -1374,34 +1358,29 @@
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-yarn-api</artifactId>
 			<version>${hadoop.version}</version>
-			<scope>provided</scope>
 		</dependency>
 
 		<dependency>
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-yarn-common</artifactId>
 			<version>${hadoop.version}</version>
-			<scope>provided</scope>
 		</dependency>
 
 		<dependency>
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-yarn-client</artifactId>
 			<version>${hadoop.version}</version>
-			<scope>provided</scope>
 		</dependency>
 
 		<dependency>
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-mapreduce-client-common</artifactId>
 			<version>${hadoop.version}</version>
-			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.scala-lang</groupId>
 			<artifactId>scala-library</artifactId>
 			<version>${scala.version}</version>
-			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.scala-lang</groupId>

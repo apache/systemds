@@ -22,16 +22,19 @@
 # MNIST LeNet - Train
 #
 # This script trains a convolutional net using the "LeNet" architecture
-# on images of handwritten digits.
+# on images of handwritten digits using distributed synchronous SGD.
 #
 # Inputs:
 #  - train: File containing labeled MNIST training images.
 #     The format is "label, pixel_1, pixel_2, ..., pixel_n".
 #  - test: File containing labeled MNIST test images.
 #     The format is "label, pixel_1, pixel_2, ..., pixel_n".
-#  - C: Number of color chanels in the images.
-#  - Hin: Input image height.
-#  - Win: Input image width.
+#  - C: [DEFAULT: 1] Number of color chanels in the images.
+#  - Hin: [DEFAULT: 28] Input image height.
+#  - Win: [DEFAULT: 28] Input image width.
+#  - K: [DEFAULT: 10] Number of dummy classes to use.
+#  - batch_size: [DEFAULT: 32] Number of examples in individual batches.
+#  - parallel_batches: [DEFAULT: 4] Number of batches to run in parallel.
 #  - epochs: [DEFAULT: 10] Total number of full training loops over
 #     the full data set.
 #  - out_dir: [DEFAULT: "."] Directory to store weights and bias
@@ -53,27 +56,31 @@
 # Sample Invocation (running from wihtin the `examples` folder):
 # 1. Download data (60,000 training examples, and 10,000 test examples)
 #   ```
-#   get_mnist_data.sh
+#   nn/examples/get_mnist_data.sh
 #   ```
 #
 # 2. Execute using Spark
 #   ```
 #   spark-submit --master local[*] --driver-memory 10G
 #   --conf spark.driver.maxResultSize=0 --conf spark.akka.frameSize=128
-#   $SYSTEMML_HOME/target/SystemML.jar -f mnist_lenet_distrib_sgd-train.dml
-#   -nvargs train=data/mnist/mnist_train.csv test=data/mnist/mnist_test.csv
-#   C=1 Hin=28 Win=28 epochs=10 out_dir=model/mnist_lenet
+#   $SYSTEMML_HOME/target/SystemML.jar -f nn/examples/mnist_lenet_distrib_sgd-train.dml
+#   -nvargs train=nn/examples/data/mnist/mnist_train.csv test=nn/examples/data/mnist/mnist_test.csv
+#   C=1 Hin=28 Win=28 K=10 batch_size=32 parallel_batches=4 epochs=10
+#   out_dir=nn/examples/model/mnist_lenet
 #   ```
 #
-source("mnist_lenet_distrib_sgd.dml") as mnist_lenet
+source("nn/examples/mnist_lenet_distrib_sgd.dml") as mnist_lenet
 
 # Read training data & settings
 fmt = ifdef($fmt, "csv")
 train = read($train, format=fmt)
 test = read($test, format=fmt)
-C = $C
-Hin = $Hin
-Win = $Win
+C = ifdef($C, 1)
+Hin = ifdef($Hin, 28)
+Win = ifdef($Win, 28)
+K = ifdef($K, 10)
+batch_size = ifdef($batch_size, 32)
+parallel_batches = ifdef($parallel_batches, 4)
 epochs = ifdef($epochs, 10)
 out_dir = ifdef($out_dir, ".")
 
@@ -81,24 +88,25 @@ out_dir = ifdef($out_dir, ".")
 images = train[,2:ncol(train)]
 labels = train[,1]
 X_test = test[,2:ncol(test)]
-y_test = test[,1]
+Y_test = test[,1]
 
 # Scale images to [-1,1], and one-hot encode the labels
 n = nrow(train)
 n_test = nrow(test)
 images = (images / 255.0) * 2 - 1
-labels = table(seq(1, n), labels+1, n, 10)
+labels = table(seq(1, n), labels+1, n, K)
 X_test = (X_test / 255.0) * 2 - 1
-y_test = table(seq(1, n_test), y_test+1, n_test, 10)
+Y_test = table(seq(1, n_test), Y_test+1, n_test, K)
 
 # Split into training (55,000 examples) and validation (5,000 examples)
 X = images[5001:nrow(images),]
 X_val = images[1:5000,]
-y = labels[5001:nrow(images),]
-y_val = labels[1:5000,]
+Y = labels[5001:nrow(images),]
+Y_val = labels[1:5000,]
 
 # Train
-[W1, b1, W2, b2, W3, b3, W4, b4] = mnist_lenet::train(X, y, X_val, y_val, C, Hin, Win, epochs)
+[W1, b1, W2, b2, W3, b3, W4, b4] = mnist_lenet::train(X, Y, X_val, Y_val, C, Hin, Win, batch_size,
+    parallel_batches, epochs)
 
 # Write model out
 write(W1, out_dir+"/W1")
@@ -112,7 +120,7 @@ write(b4, out_dir+"/b4")
 
 # Eval on test set
 probs = mnist_lenet::predict(X_test, C, Hin, Win, W1, b1, W2, b2, W3, b3, W4, b4)
-[loss, accuracy] = mnist_lenet::eval(probs, y_test)
+[loss, accuracy] = mnist_lenet::eval(probs, Y_test)
 
 # Output results
 print("Test Accuracy: " + accuracy)

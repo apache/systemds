@@ -22,7 +22,8 @@
 # MNIST LeNet - Train
 #
 # This script trains a convolutional net using the "LeNet" architecture
-# on images of handwritten digits.
+# on generated dummy data using distributed synchronous SGD.  This is
+# mainly for engine development purposes.
 #
 # Inputs:
 #  - N: [DEFAULT: 1024] Number of train dummy images to generate.
@@ -33,7 +34,7 @@
 #  - Win: [DEFAULT: 224] Input image width.
 #  - K: [DEFAULT: 10] Number of dummy classes to use.
 #  - batch_size: [DEFAULT: 32] Number of examples in individual batches.
-#  - parallel_batches: [DEFAULT: 8] Number of batches to run in parallel.
+#  - parallel_batches: [DEFAULT: 4] Number of batches to run in parallel.
 #  - epochs: [DEFAULT: 10] Total number of full training loops over
 #     the full data set.
 #  - out_dir: [DEFAULT: "."] Directory to store weights and bias
@@ -53,15 +54,19 @@
 # Sample Invocation (running from wihtin the `examples` folder):
 # 1. Download data (60,000 training examples, and 10,000 test examples)
 #   ```
-#   get_mnist_data.sh
+#   nn/examples/get_mnist_data.sh
 #   ```
 #
 # 2. Execute using Spark
 #   ```
-#   spark-submit --master local[*] --driver-memory 10G --conf spark.driver.maxResultSize=0 --conf spark.rpc.message.maxSize=128 $SYSTEMML_HOME/target/SystemML.jar -f mnist_lenet_distrib_sgd-train-dummy-data.dml -nvargs N=1024 Nval=512 Ntest=512 C=1 Hin=28 Win=28 K=10 batch_size=32 parallel_batches=8 epochs=10 out_dir=model/mnist_lenet
+#   spark-submit --master local[*] --driver-memory 10G --conf spark.driver.maxResultSize=0
+#   --conf spark.rpc.message.maxSize=128 $SYSTEMML_HOME/target/SystemML.jar
+#   -f nn/examples/mnist_lenet_distrib_sgd-train-dummy-data.dml -nvargs N=1024 Nval=512 Ntest=512
+#   C=1 Hin=28 Win=28 K=10 batch_size=32 parallel_batches=8 epochs=10
+#   out_dir=nn/examples/model/mnist_lenet
 #   ```
 #
-source("mnist_lenet_distrib_sgd.dml") as mnist_lenet
+source("nn/examples/mnist_lenet_distrib_sgd.dml") as mnist_lenet
 
 # Read training data & settings
 N = ifdef($N, 1024)
@@ -72,7 +77,7 @@ Hin = ifdef($Hin, 224)
 Win = ifdef($Win, 224)
 K = ifdef($K, 10)
 batch_size = ifdef($batch_size, 32)
-parallel_batches = ifdef($parallel_batches, 8)
+parallel_batches = ifdef($parallel_batches, 4)
 epochs = ifdef($epochs, 10)
 out_dir = ifdef($out_dir, ".")
 

@@ -44,16 +44,19 @@
 # the range [0,255] stretched out as 784 pixels.
 #
 # Sample Invocation:
-# Execute using Spark
+# 1. Download images.
+#
+#   For example, save images to `nn/examples/data/mnist/images.csv`.
+#
+# 2. Execute using Spark
 #   ```
 #   spark-submit --master local[*] --driver-memory 5G
-#   --conf spark.driver.maxResultSize=0 --conf spark.akka.frameSize=128
-#   $SYSTEMML_HOME/target/SystemML.jar -f mnist_softmax-predict.dml
-#   -nvargs X=data/mnist/images.csv model_dir=model/mnist_softmax
-#   out_dir=data/mnist
-#   ```
+#   --conf spark.driver.maxResultSize=0 --conf spark.rpc.message.maxSize=128
+#   $SYSTEMML_HOME/target/SystemML.jar -f nn/examples/mnist_softmax-predict.dml
+#   -nvargs X=nn/examples/data/mnist/images.csv
+#   model_dir=nn/examples/model/mnist_softmax out_dir=nn/examples/data/mnist
 #
-source("mnist_softmax.dml") as mnist_softmax
+source("nn/examples/mnist_softmax.dml") as mnist_softmax
 
 # Read training data
 fmt = ifdef($fmt, "csv")

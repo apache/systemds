@@ -48,24 +48,26 @@
 # Sample Invocation (running from wihtin the `examples` folder):
 # 1. Download data (60,000 training examples, and 10,000 test examples)
 #   ```
-#   get_mnist_data.sh
+#   nn/examples/get_mnist_data.sh
 #   ```
 #
 # 2. Execute using Spark
 #   ```
-#   spark-submit --master local[*] --driver-memory 5G
-#   --conf spark.driver.maxResultSize=0 --conf spark.akka.frameSize=128
-#   $SYSTEMML_HOME/target/SystemML.jar -f mnist_softmax-train.dml
-#   -nvargs train=data/mnist/mnist_train.csv test=data/mnist/mnist_test.csv
-#   out_dir=model/mnist_softmax
+#   spark-submit --master local[*] --driver-memory 10G
+#   --conf spark.driver.maxResultSize=0 --conf spark.rpc.message.maxSize=128
+#   $SYSTEMML_HOME/target/SystemML.jar -f nn/examples/mnist_softmax-train.dml
+#   -nvargs train=nn/examples/data/mnist/mnist_train.csv test=nn/examples/data/mnist/mnist_test.csv
+#   epochs=1 out_dir=nn/examples/model/mnist_softmax
 #   ```
 #
-source("mnist_softmax.dml") as mnist_softmax
+source("nn/examples/mnist_softmax.dml") as mnist_softmax
 
 # Read training data
 fmt = ifdef($fmt, "csv")
 train = read($train, format=fmt)
 test = read($test, format=fmt)
+epochs = ifdef($epochs, 1)
+out_dir = ifdef($out_dir, ".")
 
 # Extract images and labels
 images = train[,2:ncol(train)]
@@ -89,11 +91,11 @@ y = labels[5001:nrow(images),]
 y_val = labels[1:5000,]
 
 # Train
-[W, b] = mnist_softmax::train(X, y, X_val, y_val)
+[W, b] = mnist_softmax::train(X, y, X_val, y_val, epochs)
 
 # Write model out
-write(W, $out_dir+"/W")
-write(b, $out_dir+"/b")
+write(W, out_dir+"/W")
+write(b, out_dir+"/b")
 
 # Eval on test set
 probs = mnist_softmax::predict(X_test, W, b)
@@ -101,7 +103,7 @@ probs = mnist_softmax::predict(X_test, W, b)
 
 # Output results
 print("Test Accuracy: " + accuracy)
-write(accuracy, $out_dir+"/accuracy")
+write(accuracy, out_dir+"/accuracy")
 
 print("")
 print("")

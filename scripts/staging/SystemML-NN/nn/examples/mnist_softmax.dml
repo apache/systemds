@@ -29,7 +29,8 @@ source("nn/layers/softmax.dml") as softmax
 source("nn/optim/sgd_nesterov.dml") as sgd_nesterov
 
 train = function(matrix[double] X, matrix[double] y,
-                 matrix[double] X_val, matrix[double] y_val)
+                 matrix[double] X_val, matrix[double] y_val,
+                 int epochs)
     return (matrix[double] W, matrix[double] b) {
   /*
    * Trains a softmax classifier.
@@ -42,6 +43,7 @@ train = function(matrix[double] X, matrix[double] y,
    *  - y: Target matrix, of shape (N, K).
    *  - X_val: Input validation data matrix, of shape (N, C*Hin*Win).
    *  - y_val: Target validation matrix, of shape (N, K).
+   *  - epochs: Total number of full training loops over the full data set.
    *
    * Outputs:
    *  - W: Weights (parameters) matrix, of shape (D, M).
@@ -66,7 +68,6 @@ train = function(matrix[double] X, matrix[double] y,
   # Optimize
   print("Starting optimization")
   batch_size = 50
-  epochs = 1
   iters = 1000 #ceil(N / batch_size)
   for (e in 1:epochs) {
     for(i in 1:iters) {

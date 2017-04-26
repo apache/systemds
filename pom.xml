@@ -632,9 +632,10 @@
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>exec-maven-plugin</artifactId>
-				<version>1.5.0</version>
+				<version>1.6.0</version>
 				<executions>
 					<execution>
+						<id>install-dependency-for-integration-tests</id>
 						<phase>prepare-package</phase>
 						<goals>
 							<goal>java</goal>
@@ -644,6 +645,20 @@
 							<arguments>
 								<argument>true</argument> <!-- <argument>${skipTests}</argument> -->
 								<argument>${enableGPU}</argument>
+							</arguments>
+						</configuration>
+					</execution>
+					<execution>
+						<id>generate-classes-for-mlcontext</id>
+						<phase>prepare-package</phase>
+						<goals>
+							<goal>java</goal>
+						</goals>
+						<configuration>
+							<mainClass>org.apache.sysml.utils.GenerateClassesForMLContext</mainClass>
+							<arguments>
+								<arguments>scripts</arguments>
+								<arguments>target/classes</arguments>
 							</arguments>
 						</configuration>
 					</execution>
@@ -1043,7 +1058,7 @@
 					<plugin>
 						<groupId>org.codehaus.mojo</groupId>
 						<artifactId>exec-maven-plugin</artifactId>
-						<version>1.5.0</version>
+						<version>1.6.0</version>
 						<executions>
 							<execution>
 								<id>generate-python-package-1</id>

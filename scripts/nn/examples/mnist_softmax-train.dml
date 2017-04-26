@@ -73,7 +73,7 @@ out_dir = ifdef($out_dir, ".")
 images = train[,2:ncol(train)]
 labels = train[,1]
 X_test = test[,2:ncol(test)]
-y_test = test[,1]
+Y_test = test[,1]
 
 # Scale images to [0,1], and one-hot encode the labels
 n = nrow(train)
@@ -82,16 +82,16 @@ classes = 10
 images = images / 255.0
 labels = table(seq(1, n), labels+1, n, classes)
 X_test = X_test / 255.0
-y_test = table(seq(1, n_test), y_test+1, n_test, classes)
+Y_test = table(seq(1, n_test), Y_test+1, n_test, classes)
 
 # Split into training (55,000 examples) and validation (5,000 examples)
 X = images[5001:nrow(images),]
 X_val = images[1:5000,]
-y = labels[5001:nrow(images),]
-y_val = labels[1:5000,]
+Y = labels[5001:nrow(images),]
+Y_val = labels[1:5000,]
 
 # Train
-[W, b] = mnist_softmax::train(X, y, X_val, y_val, epochs)
+[W, b] = mnist_softmax::train(X, Y, X_val, Y_val, epochs)
 
 # Write model out
 write(W, out_dir+"/W")
@@ -99,7 +99,7 @@ write(b, out_dir+"/b")
 
 # Eval on test set
 probs = mnist_softmax::predict(X_test, W, b)
-[loss, accuracy] = mnist_softmax::eval(probs, y_test)
+[loss, accuracy] = mnist_softmax::eval(probs, Y_test)
 
 # Output results
 print("Test Accuracy: " + accuracy)

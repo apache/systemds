@@ -167,7 +167,6 @@ fi
 if [[ "$BIN_VERIFY" == "true" ]]; then
     echo "`date +%Y-%m-%dT%H:%M:%S`: INFO: Verifying binary files for runtime execution..."
 
-#    java -classpath ../../../../..//target/lib/commons-compress-1.4.1.jar:../../../../..//target/lib/commons-io-2.4.jar:. org/apache/sysml/validation/ValidateBuildAndBinary $TAG $WORK_DIR
     $EXEC_DIR/src/test/bin/verifyBuild.sh $TAG $WORK_DIR
     RET_CODE=$?
     if [[ $RET_CODE == 0 ]]; then

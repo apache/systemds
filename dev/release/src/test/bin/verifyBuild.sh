@@ -164,10 +164,24 @@ runCommand "$SPARK_HOME/bin/spark-submit systemml-$VER_NAME-incubating.jar -s \"
 echo "`date +%Y-%m-%dT%H:%M:%S`: INFO: Verifying Hadoop batch mode..."
 echo "`date +%Y-%m-%dT%H:%M:%S`: INFO: Verifying Hadoop batch mode..." >> $OUT_FILE
 runCommand "$HADOOP_HOME/bin/hadoop jar systemml-$VER_NAME-incubating.jar -s \"print('hello world');\""
-runCommand "cd ../.."
+runCommand "cd ../../"
+
+
+## Verify Python scripts through spark-submit 
+echo "`date +%Y-%m-%dT%H:%M:%S`: INFO: Verifying Python scripts..."
+echo "`date +%Y-%m-%dT%H:%M:%S`: INFO: Verifying Python scripts..." >> $OUT_FILE
+runCommand "pip install --upgrade systemml-$VER_NAME-incubating-python.tgz"
+runCommand "cd ../../../"
+runCommand "$SPARK_HOME/bin/spark-submit src/test/python/matrix_sum_example.py"
+
+runCommand "$SPARK_HOME/bin/spark-submit target/release/incubator-systemml/src/main/python/tests/test_matrix_agg_fn.py"
+runCommand "$SPARK_HOME/bin/spark-submit target/release/incubator-systemml/src/main/python/tests/test_matrix_binary_op.py"
+runCommand "$SPARK_HOME/bin/spark-submit target/release/incubator-systemml/src/main/python/tests/test_mlcontext.py"
+runCommand "$SPARK_HOME/bin/spark-submit target/release/incubator-systemml/src/main/python/tests/test_mllearn_df.py"
+runCommand "$SPARK_HOME/bin/spark-submit target/release/incubator-systemml/src/main/python/tests/test_mllearn_numpy.py"
+
 
 echo "`date +%Y-%m-%dT%H:%M:%S`: INFO: Verification of binary files completed successfully."
 # echo "================================================================================"
 
 exit 0
-

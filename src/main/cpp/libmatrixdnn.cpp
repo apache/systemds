@@ -297,7 +297,8 @@ void conv2dBackwardFilterSparse(int apos, int alen, int* aix, double* avals, dou
     delete [] loweredMat;
 	delete [] rotatedDoutPtr;
      
-    // Inplace transpose addition         
+    // Inplace transpose addition 
+    int iter = 0;       
     for(int i = 0; i < CRS; i++) {
 		for(int j = 0; j < K; j++, iter++) {
 			int index = j*CRS+i;

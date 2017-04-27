@@ -373,11 +373,6 @@ public class LibMatrixDNN {
 				conv2dDenseCount.addAndGet(1);
 			}
 		}
-		
-		runConvTask(TaskType.LoopedIm2ColConv2d, params);
-		
-		//post-processing: maintain nnz
-		outputBlock.recomputeNonZeros();
 	}
 	
 	// Single-threaded matrix multiplication

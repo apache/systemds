@@ -240,6 +240,7 @@ void conv2dBackwardDataDense(double* filterPtr, double* doutPtr, double* retPtr,
 
 void conv2dSparse(int apos, int alen, int* aix, double* avals, double* filterPtr, double* retPtr, int N, int C, int H, int W, 
 			int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads) {
+	setNumThreadsForBLAS(1);
 	double* loweredMat = new double[C * R * S * P * Q];
 	
 	// Step 1: Perform im2col
@@ -251,11 +252,60 @@ void conv2dSparse(int apos, int alen, int* aix, double* avals, double* filterPtr
 	im2col(temp, loweredMat, 1, C, H, W, K,
        R, S, stride_h, stride_w, pad_h, pad_w,
        P, Q);	
+	delete [] temp;
 	
 	// Step 2: filter (K X CRS) %*% loweredMat (CRS X PQ)
     matmult(filterPtr, loweredMat, retPtr, K, C * R * S, P * Q, 1);
     
 	delete [] loweredMat;
+}
+
+void conv2dBackwardFilterSparse(int apos, int alen, int* aix, double* avals, double* doutPtr, double* retPtr, int N, int C, int H, int W, 
+			int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads) {
+	setNumThreadsForBLAS(1);
+	int CHW = C * H * W;
+	int CRS = C*R*S;
+	int PQ = P*Q;
+	int KPQ = K*PQ;
+	int m1 = CRS;
+	int n1 = K;
+	int k1 = PQ;
+	
+	double* loweredMat = new double[CRS * PQ];
+	
+	// Step 1: Perform im2col
+	double* temp = new double[C * H * W];
+	std::size_t size = C * H * W * sizeof(double);
+	std::memset(temp, 0, size);
+	for(int j=apos; j<apos+alen; j++)
+		temp[ aix[j] ] = avals[j];
+	im2col(temp, loweredMat, 1, C, H, W, K,
+       R, S, stride_h, stride_w, pad_h, pad_w,
+       P, Q);
+    delete [] temp;
+    
+    // Step 2: Rotate dout
+    double* rotatedDoutPtr = new double[KPQ];
+    rotate180(doutPtr, rotatedDoutPtr, 1, C, H, W, K,
+           R, S, stride_h, stride_w, pad_h, pad_w,
+           P, Q);
+	
+	// Multiply to get CRS X K
+	double* temp1 = new double[CRS * K];
+    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, m1, n1, k1, 1.0, loweredMat, k1,
+              rotatedDoutPtr, n1, 1.0, temp1, n1);
+    delete [] loweredMat;
+	delete [] rotatedDoutPtr;
+     
+    // Inplace transpose addition         
+    for(int i = 0; i < CRS; i++) {
+		for(int j = 0; j < K; j++, iter++) {
+			int index = j*CRS+i;
+			retPtr[index] += temp1[iter];
+		}
+	}
+    
+	delete [] temp1;
 }
 
 void conv2dBiasAddDense(double* inputPtr, double* biasPtr, double* filterPtr, double* retPtr, int N, int C, int H, int W, int K, int R, int S,

@@ -52,14 +52,6 @@ JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dDense
 
 /*
  * Class:     org_apache_sysml_utils_NativeHelper
- * Method:    conv2dSparse
- * Signature: (II[I[D[D[DIIIIIIIIIIIIII)Z
- */
-JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dSparse
-  (JNIEnv *, jclass, jint, jint, jintArray, jdoubleArray, jdoubleArray, jdoubleArray, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint);
-
-/*
- * Class:     org_apache_sysml_utils_NativeHelper
  * Method:    conv2dBiasAddDense
  * Signature: ([D[D[D[DIIIIIIIIIIIIII)Z
  */
@@ -84,6 +76,22 @@ JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dBackwa
 
 /*
  * Class:     org_apache_sysml_utils_NativeHelper
+ * Method:    conv2dSparse
+ * Signature: (II[I[D[D[DIIIIIIIIIIIIII)Z
+ */
+JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dSparse
+  (JNIEnv *, jclass, jint, jint, jintArray, jdoubleArray, jdoubleArray, jdoubleArray, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint);
+
+/*
+ * Class:     org_apache_sysml_utils_NativeHelper
+ * Method:    conv2dBackwardFilterSparse
+ * Signature: (II[I[D[D[DIIIIIIIIIIIIII)Z
+ */
+JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dBackwardFilterSparseDense
+  (JNIEnv *, jclass, jint, jint, jintArray, jdoubleArray, jdoubleArray, jdoubleArray, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint);
+
+/*
+ * Class:     org_apache_sysml_utils_NativeHelper
  * Method:    setMaxNumThreads
  * Signature: (I)V
  */
@@ -94,4 +102,5 @@ JNIEXPORT void JNICALL Java_org_apache_sysml_utils_NativeHelper_setMaxNumThreads
 }
 #endif
 #endif
+
  

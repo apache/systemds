@@ -157,7 +157,7 @@ public class LibMatrixDNN {
 		if(params.bias != null && params.bias.isInSparseFormat())
 			params.bias.sparseToDense(); // Since bias is extremely small array
 		
-		if(params.enableNative && params.input1.isInSparseFormat() && !params.input2.isInSparseFormat())
+		if(isEligibleForConv2dSparse(params))
 			Statistics.numNativeLibMatrixDNNCalls.increment();
 		
 		runConvTask(TaskType.LoopedIm2ColConv2d, params);
@@ -178,6 +178,9 @@ public class LibMatrixDNN {
 	public static void conv2dBackwardData(MatrixBlock filter, MatrixBlock dout, MatrixBlock outputBlock, ConvolutionParameters params) throws DMLRuntimeException {
 		checkInputsConv2dBackwardData(filter, dout, outputBlock, params);
 		
+		if(isEligibleForConv2dBackwardDataDense(params))
+			Statistics.numNativeLibMatrixDNNCalls.increment();
+		
 		runConvTask(TaskType.LoopedIm2ColConv2dBwdData, params);
 		
 		//post-processing: maintain nnz
@@ -195,6 +198,9 @@ public class LibMatrixDNN {
 	 */
 	public static void conv2dBackwardFilter(MatrixBlock input, MatrixBlock dout, MatrixBlock outputBlock, ConvolutionParameters params) throws DMLRuntimeException {
 		checkInputsConv2dBackwardFilter(input, dout, outputBlock, params);
+		
+		if(isEligibleForConv2dBackwardFilterSparseDense(params))
+			Statistics.numNativeLibMatrixDNNCalls.increment();
 		
 		runConvTask(TaskType.LoopedIm2ColConv2dBwdFilter, params);
 		
@@ -223,7 +229,7 @@ public class LibMatrixDNN {
 		checkOrThrowException("Incorrect input to conv2d_backward_data: Number of rows of input errors != "
 				+ "batch size in input_shape", dout.getNumRows(), params.N);
 		checkOrThrowException("Incorrect input to conv2d_backward_data: Number of columns of input errors != "
-				+ "expected input error channels*heigh*width", dout.getNumColumns(), params.K, params.P, params.Q);
+				+ "expected input error channels*height*width", dout.getNumColumns(), params.K, params.P, params.Q);
 		if(params.stride_h <= 0 || params.stride_w <= 0) 
 			throw new DMLRuntimeException("Only positive strides supported:" + params.stride_h + ", " + params.stride_w);
 		
@@ -966,12 +972,11 @@ public class LibMatrixDNN {
 	private static void addMatrixBlocks(int poolSize, TaskType type, ConvolutionParameters params, 
 			ConcurrentLinkedQueue<MatrixBlock> im2ColOutBlocks, ConcurrentLinkedQueue<MatrixBlock> doutReshapedBlocks,
 			ConcurrentLinkedQueue<MatrixBlock> partialRetBlocks) {
+		boolean isEligibleForConv2dSparse = isEligibleForConv2dSparse(params) && type == TaskType.LoopedIm2ColConv2d;
+		boolean isEligibleForConv2dBackwardFilterSparseDense = isEligibleForConv2dBackwardFilterSparseDense(params) && type == TaskType.LoopedIm2ColConv2dBwdFilter;
 		for(int i = 0; i < poolSize; i++) {
 			if(type == TaskType.LoopedIm2ColConv2d || type == TaskType.LoopedIm2ColConv2dBwdFilter) {
-				if(params.enableNative && params.input1.isInSparseFormat() && !params.input2.isInSparseFormat() && type == TaskType.LoopedIm2ColConv2d) {
-					// Fall back to native sparse conv2d ... hence no need to create im2col blocks.
-				}
-				else {
+				if(!isEligibleForConv2dSparse && !isEligibleForConv2dBackwardFilterSparseDense) {
 					MatrixBlock im2ColOutBlock = new MatrixBlock(params.C*params.R*params.S, params.P*params.Q, false);
 					im2ColOutBlock.allocateDenseBlock();
 					im2ColOutBlocks.add(im2ColOutBlock);
@@ -1039,6 +1044,21 @@ public class LibMatrixDNN {
 	}
 	// ----------------------------------------------------------------------------------------------------------------
 	
+	private static boolean isEligibleForConv2dBackwardFilterSparseDense(ConvolutionParameters params) {
+		// NativeHelper.conv2dBackwardFilterSparseDense only if filter is sparse. 
+		// dout converted to dense if sparse.
+		return params.enableNative && params.input1.isInSparseFormat();
+	}
+	private static boolean isEligibleForConv2dSparse(ConvolutionParameters params) {
+		// NativeHelper.conv2dSparse only if filter is dense and input is sparse
+		return params.enableNative && params.input1.isInSparseFormat() && !params.input2.isInSparseFormat();
+	}
+	private static boolean isEligibleForConv2dBackwardDataDense(ConvolutionParameters params) {
+		// NativeHelper.conv2dBackwardFilterSparseDense only if input is sparse. 
+		// dout converted to dense if sparse.
+		return params.enableNative && !params.input1.isInSparseFormat();
+	}
+	
 	/**
 	 * The ConvTask allows the convolution operations (such s conv2d, conv2d_backward, maxpooling, etc)
 	 * to be executed in multi-thread manner.
@@ -1085,11 +1105,8 @@ public class LibMatrixDNN {
 					break;
 				case LoopedIm2ColConv2d:
 				{	
-					if(_params.enableNative && _params.input1.isInSparseFormat() && !_params.input2.isInSparseFormat()) {
+					if(isEligibleForConv2dSparse(_params)) {
 						// NativeHelper.conv2dSparse only if filter is dense and input is sparse
-						// TODO: Double-check if this is faster than 
-						// performing im2col on Java and matmult with MKL
-						// Also, check the correctness
 						int KPQ = _params.K*_params.P*_params.Q;
 						double[] temp = new double[KPQ];
 						for(int n = _rl; n < _ru; n++)  {
@@ -1099,7 +1116,7 @@ public class LibMatrixDNN {
 								int[] aix = _params.input1.getSparseBlock().indexes(n);
 								double[] avals = _params.input1.getSparseBlock().values(n);
 								NativeHelper.conv2dSparse(apos, alen, aix, avals, _params.input2.getDenseBlock(), temp, 
-										_params.N, _params.C, _params.H, _params.W, _params.K, _params.R, _params.S, 
+										1, _params.C, _params.H, _params.W, _params.K, _params.R, _params.S, 
 										_params.stride_h, _params.stride_w, _params.pad_h, _params.pad_w, _params.P, _params.Q, 1);
 								System.arraycopy(temp, 0, _params.output.denseBlock, n*KPQ, KPQ);
 							}
@@ -1130,22 +1147,54 @@ public class LibMatrixDNN {
 				}
 				case LoopedIm2ColConv2dBwdFilter:
 				{
-					MatrixBlock im2ColOutBlock = _im2ColOutBlocks.remove();
 					MatrixBlock partialRetBlock = _partialRetBlocks.remove();
 					MatrixBlock doutReshapedBlock = _doutReshapedBlocks.remove();
-					double [] temp = _params.input1.isInSparseFormat() ? new double[_params.input1.getNumColumns()] : null;
-					for(int n = _rl; n < _ru; n++) 
-						partialRetBlock = doLoopedIm2ColConv2dBwdFilter(n, im2ColOutBlock, doutReshapedBlock, partialRetBlock, _params, temp);
-					_im2ColOutBlocks.add(im2ColOutBlock);
-					_partialRetBlocks.add(partialRetBlock);
+					if(isEligibleForConv2dBackwardFilterSparseDense(_params)) {
+						double [] dout_n = doutReshapedBlock.getDenseBlock();
+						for(int n = _rl; n < _ru; n++) {
+							if( !_params.input1.getSparseBlock().isEmpty(n) ) {
+								dout_n = getRowInDenseFormat(_params.input2, n, dout_n);
+								int apos = _params.input1.getSparseBlock().pos(n);
+								int alen = _params.input1.getSparseBlock().size(n);
+								int[] aix = _params.input1.getSparseBlock().indexes(n);
+								double[] avals = _params.input1.getSparseBlock().values(n);
+								NativeHelper.conv2dBackwardFilterSparseDense(apos, alen, aix, avals, 
+										dout_n, partialRetBlock.getDenseBlock(), 1, _params.C, _params.H, _params.W, _params.K, 
+										_params.R, _params.S, _params.stride_h, _params.stride_w, _params.pad_h, _params.pad_w, _params.P, _params.Q, 1);
+							}
+						}
+					}
+					else {
+						MatrixBlock im2ColOutBlock = _im2ColOutBlocks.remove();
+						double [] temp = _params.input1.isInSparseFormat() ? new double[_params.input1.getNumColumns()] : null;
+						for(int n = _rl; n < _ru; n++) 
+							partialRetBlock = doLoopedIm2ColConv2dBwdFilter(n, im2ColOutBlock, doutReshapedBlock, partialRetBlock, _params, temp);
+						_im2ColOutBlocks.add(im2ColOutBlock);
+					}
 					_doutReshapedBlocks.add(doutReshapedBlock);
+					_partialRetBlocks.add(partialRetBlock);
 					break;
 				}
 				case LoopedIm2ColConv2dBwdData:
 				{
 					MatrixBlock doutReshapedBlock = _doutReshapedBlocks.remove();
-					for(int n = _rl; n < _ru; n++) 
-						doLoopedIm2ColConv2dBwdData(n, doutReshapedBlock, _params);
+					if(isEligibleForConv2dBackwardDataDense(_params)) {
+						double [] dout_n = doutReshapedBlock.getDenseBlock();
+						int CHW = _params.C*_params.H*_params.W;
+						double [] ret = new double[CHW];
+						double [] filterArr = _params.input1.getDenseBlock();
+						for(int n = _rl; n < _ru; n++) {
+							filterArr = getRowInDenseFormat(_params.input2, n, dout_n);
+							NativeHelper.conv2dBackwardDataDense(filterArr, filterArr, ret, 1, 
+									_params.C, _params.H, _params.W, _params.K, 
+									_params.R, _params.S, _params.stride_h, _params.stride_w, _params.pad_h, _params.pad_w, _params.P, _params.Q, 1);
+							System.arraycopy(ret, 0, _params.output.getDenseBlock(), n*CHW, CHW);
+						}
+					}
+					else {
+						for(int n = _rl; n < _ru; n++) 
+							doLoopedIm2ColConv2dBwdData(n, doutReshapedBlock, _params);
+					}
 					_doutReshapedBlocks.add(doutReshapedBlock);
 					break;
 				}
@@ -1288,16 +1337,24 @@ public class LibMatrixDNN {
 	}
 	
 	// Returns the row of matrix in dense format
-	private static double [] getRowInDenseFormat(MatrixBlock input, int n, double []  temp) {
+	private static double [] getRowInDenseFormat(MatrixBlock input, int n, double []  temp) throws DMLRuntimeException {
+		if(input.getNumColumns() != temp.length) {
+			throw new DMLRuntimeException("Invalid parameters");
+		}
 		// Use temporary array to avoid binary search
-		Arrays.fill(temp, 0);
-		if( !input.sparseBlock.isEmpty(n) ) {
-			int apos = input.sparseBlock.pos(n);
-			int alen = input.sparseBlock.size(n);
-			int[] aix = input.sparseBlock.indexes(n);
-			double[] avals = input.sparseBlock.values(n);
-			for(int j=apos; j<apos+alen; j++)
-				temp[ aix[j] ] = avals[j];
+		if(input.isInSparseFormat()) {
+			Arrays.fill(temp, 0);
+			if( !input.sparseBlock.isEmpty(n) ) {
+				int apos = input.sparseBlock.pos(n);
+				int alen = input.sparseBlock.size(n);
+				int[] aix = input.sparseBlock.indexes(n);
+				double[] avals = input.sparseBlock.values(n);
+				for(int j=apos; j<apos+alen; j++)
+					temp[ aix[j] ] = avals[j];
+			}
+		}
+		else {
+			System.arraycopy(input, n*input.getNumColumns(), temp, 0, input.getNumColumns());
 		}
 		return temp;
 	}

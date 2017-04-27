@@ -233,19 +233,33 @@ public class NativeHelper {
 	public static native boolean matrixMultDenseDense(double [] m1, double [] m2, double [] ret, int m1rlen, int m1clen, int m2clen, int numThreads);
 	private static native boolean tsmm(double [] m1, double [] ret, int m1rlen, int m1clen, boolean isLeftTranspose, int numThreads);
 	
+	// ----------------------------------------------------------------------------------------------------------------
 	// LibMatrixDNN operations:
 	// N = number of images, C = number of channels, H = image height, W = image width
 	// K = number of filters, R = filter height, S = filter width
+	// TODO: case not handled: sparse filters (which will only be executed in Java). Since filters are relatively smaller, this is a low priority.
+	
+	// Called by ConvolutionCPInstruction if both input and filter are dense
 	public static native boolean conv2dDense(double [] input, double [] filter, double [] ret, int N, int C, int H, int W, 
-			int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads);
-	public static native boolean conv2dSparse(int apos, int alen, int[] aix, double[] avals, double [] filter, double [] ret, int N, int C, int H, int W, 
 			int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads);
 	public static native boolean conv2dBiasAddDense(double [] input, double [] bias, double [] filter, double [] ret, int N, int C, int H, int W, 
 			int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads);
-	public static native boolean conv2dBackwardDataDense(double [] filter, double [] dout, double [] ret, int N, int C, int H, int W, 
-			int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads);
+	// Called by ConvolutionCPInstruction if both input and filter are dense
 	public static native boolean conv2dBackwardFilterDense(double [] input, double [] dout, double [] ret, int N, int C, int H, int W, 
 			int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads);
+	// If both filter and dout are dense, then called by ConvolutionCPInstruction
+	// Else, called by LibMatrixDNN's thread if filter is dense. dout[n] is converted to dense if sparse.
+	public static native boolean conv2dBackwardDataDense(double [] filter, double [] dout, double [] ret, int N, int C, int H, int W, 
+			int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads);
+	
+	// Currently only supported with numThreads = 1 and sparse input
+	// Called by LibMatrixDNN's thread if input is sparse. dout[n] is converted to dense if sparse.
+	public static native boolean conv2dBackwardFilterSparseDense(int apos, int alen, int[] aix, double[] avals, double [] dout, double [] ret, int N, int C, int H, int W, 
+			int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads);
+	// Called by LibMatrixDNN's thread if input is sparse and filter is dense
+	public static native boolean conv2dSparse(int apos, int alen, int[] aix, double[] avals, double [] filter, double [] ret, int N, int C, int H, int W, 
+			int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads);
+	// ----------------------------------------------------------------------------------------------------------------
 	
 	private static native void setMaxNumThreads(int numThreads);
 }

@@ -636,9 +636,9 @@ public class Statistics
 		if( DMLScript.STATISTICS ) 
 		{
 			if(NativeHelper.blasType != null && (numNativeLibMatrixMultCalls.longValue() > 0 || 
-					numNativeLibMatrixDNNCalls.longValue() > 0 || numNativeFailures.longValue() > 0)) {
+					numNativeLibMatrixDNNCalls.longValue() > 0)) {
 				String blas = NativeHelper.blasType != null ? NativeHelper.blasType : ""; 
-				sb.append("Native " + blas + " calls (Mult/DNN/Fails):\t" + numNativeLibMatrixMultCalls.longValue()  + "/" + numNativeLibMatrixDNNCalls.longValue() + "/" + numNativeFailures.longValue() + ".\n");
+				sb.append("Native " + blas + " calls (LibMatrixMult/LibMatrixDNN):\t" + numNativeLibMatrixMultCalls.longValue()  + "/" + numNativeLibMatrixDNNCalls.longValue() + ".\n");
 			}
 			sb.append("Cache hits (Mem, WB, FS, HDFS):\t" + CacheStatistics.displayHits() + ".\n");
 			sb.append("Cache writes (WB, FS, HDFS):\t" + CacheStatistics.displayWrites() + ".\n");

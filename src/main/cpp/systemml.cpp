@@ -125,6 +125,25 @@ JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dSparse
   return (jboolean) true;
 }
 
+JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dBackwardFilterSparseDense
+  (JNIEnv * env, jclass, jint apos, jint alen, jintArray aix, jdoubleArray avals, jdoubleArray dout,  
+  	jdoubleArray ret, jint N, jint C, jint H, jint W, jint K, jint R, jint S,
+    jint stride_h, jint stride_w, jint pad_h, jint pad_w, jint P, jint Q, jint numThreads) {
+  int* aixPtr = ((int*)env->GetPrimitiveArrayCritical(aix, NULL));
+  double* avalsPtr = GET_DOUBLE_ARRAY(env, avals, numThreads);
+  double* filterPtr = GET_DOUBLE_ARRAY(env, filter, numThreads);
+  double* retPtr = GET_DOUBLE_ARRAY(env, ret, numThreads);
+  
+  conv2dSparse((int)apos, (int)alen, aixPtr, avalsPtr, filterPtr, retPtr, (int)N, (int)C, (int)H, (int)W, 
+			(int)K, (int)R, (int)S, (int)stride_h, (int)stride_w, (int)pad_h, (int)pad_w, (int)P, (int)Q, (int)numThreads);
+  
+  RELEASE_INPUT_DOUBLE_ARRAY(env, avals, avalsPtr, numThreads);
+  RELEASE_INPUT_DOUBLE_ARRAY(env, filter, filterPtr, numThreads);
+  env->ReleasePrimitiveArrayCritical(aix, aixPtr, JNI_ABORT);
+  RELEASE_DOUBLE_ARRAY(env, ret, retPtr, numThreads); 
+  return (jboolean) true;
+}
+
 JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dDense(
 	JNIEnv* env, jclass, jdoubleArray input, jdoubleArray filter,
     jdoubleArray ret, jint N, jint C, jint H, jint W, jint K, jint R, jint S,

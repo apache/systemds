@@ -297,8 +297,10 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction
 	// This increases the number of native calls. For example:the cases where filter is sparse but input is dense
 	private boolean isFilterSparse(MatrixBlock filter) throws DMLRuntimeException {
 		long numElems = filter.getNumRows()*filter.getNumColumns();
-		if(filter.isInSparseFormat() && numElems < 1e+6)
-			filter.sparseToDense(); // if filter is less than 1 MB
+		// if filter is less than 10 MB in dense format (which handles almost all the cases).
+		// In fact, using threshold of 1 MB is still sufficient for common CNNs.
+		if(filter.isInSparseFormat() && numElems < 10e+6)
+			filter.sparseToDense(); 
 		return filter.isInSparseFormat();
 	}
 	

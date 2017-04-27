@@ -23,8 +23,8 @@
 #include "libmatrixdnn.h"
 
 // Linux:
-// g++ -o libsystemml_mkl-linux-x86_64.so *.cpp  -I$JAVA_HOME/include -I$MKLROOT/include -I$JAVA_HOME/include/linux -lmkl_rt -lpthread  -lm -ldl -DUSE_INTEL_MKL -DUSE_GNU_THREADING -L$MKLROOT/lib/intel64 -m64 -fopenmp -O3 -shared -fPIC
-// g++ -o libsystemml_openblas-linux-x86_64.so *.cpp  -I$JAVA_HOME/include  -I$JAVA_HOME/include/linux -lopenblas -lpthread -lm -ldl -DUSE_OPEN_BLAS -L/opt/OpenBLAS/lib/ -fopenmp -O3 -shared -fPIC
+// g++ -o libsystemml_mkl-Linux-x86_64.so *.cpp  -I$JAVA_HOME/include -I$MKLROOT/include -I$JAVA_HOME/include/linux -lmkl_rt -lpthread  -lm -ldl -DUSE_INTEL_MKL -DUSE_GNU_THREADING -L$MKLROOT/lib/intel64 -m64 -fopenmp -O3 -shared -fPIC
+// g++ -o libsystemml_openblas-Linux-x86_64.so *.cpp  -I$JAVA_HOME/include  -I$JAVA_HOME/include/linux -lopenblas -lpthread -lm -ldl -DUSE_OPEN_BLAS -L/opt/OpenBLAS/lib/ -fopenmp -O3 -shared -fPIC
 
 // Mac OSX:
 // g++ -o libsystemml_mkl-linux-x86_64.dylib *.cpp  -I$JAVA_HOME/include -I$MKLROOT/include -I$JAVA_HOME/include/linux -lmkl_rt -lpthread  -lm -ldl -DUSE_INTEL_MKL -DUSE_GNU_THREADING -L$MKLROOT/lib/intel64 -m64 -fopenmp -O3 -dynamiclib -fPIC -undefined dynamic_lookup
@@ -103,6 +103,25 @@ JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_tsmm
   
   RELEASE_INPUT_DOUBLE_ARRAY(env, m1, m1Ptr, numThreads);
   RELEASE_DOUBLE_ARRAY(env, ret, retPtr, numThreads);
+  return (jboolean) true;
+}
+
+JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dSparse
+  (JNIEnv * env, jclass, jint apos, jint alen, jintArray aix, jdoubleArray avals, jdoubleArray filter,
+    jdoubleArray ret, jint N, jint C, jint H, jint W, jint K, jint R, jint S,
+    jint stride_h, jint stride_w, jint pad_h, jint pad_w, jint P, jint Q, jint numThreads) {
+  int* aixPtr = ((int*)env->GetPrimitiveArrayCritical(aix, NULL));
+  double* avalsPtr = GET_DOUBLE_ARRAY(env, avals, numThreads);
+  double* filterPtr = GET_DOUBLE_ARRAY(env, filter, numThreads);
+  double* retPtr = GET_DOUBLE_ARRAY(env, ret, numThreads);
+  
+  conv2dSparse((int)apos, (int)alen, aixPtr, avalsPtr, filterPtr, retPtr, (int)N, (int)C, (int)H, (int)W, 
+			(int)K, (int)R, (int)S, (int)stride_h, (int)stride_w, (int)pad_h, (int)pad_w, (int)P, (int)Q, (int)numThreads);
+  
+  RELEASE_INPUT_DOUBLE_ARRAY(env, avals, avalsPtr, numThreads);
+  RELEASE_INPUT_DOUBLE_ARRAY(env, filter, filterPtr, numThreads);
+  env->ReleasePrimitiveArrayCritical(aix, aixPtr, JNI_ABORT);
+  RELEASE_DOUBLE_ARRAY(env, ret, retPtr, numThreads); 
   return (jboolean) true;
 }
 

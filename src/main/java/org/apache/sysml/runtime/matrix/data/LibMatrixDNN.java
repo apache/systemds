@@ -37,7 +37,6 @@ import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysml.runtime.util.ConvolutionUtils;
 import org.apache.sysml.utils.NativeHelper;
-import org.apache.sysml.utils.Statistics;
 
 /**
  * This class allows users to invoke deep learning related operations 
@@ -393,7 +392,6 @@ public class LibMatrixDNN {
 				ret.allocateDenseBlock();
 			NativeHelper.matrixMultDenseDense(m1.denseBlock, m2.denseBlock, 
 					ret.denseBlock, m1.getNumRows(), m1.getNumColumns(), m2.getNumColumns(), 1);
-			Statistics.numNativeLibMatrixMultCalls.increment();
 			ret.recomputeNonZeros();
 		}
 	}
@@ -971,9 +969,14 @@ public class LibMatrixDNN {
 			ConcurrentLinkedQueue<MatrixBlock> partialRetBlocks) {
 		for(int i = 0; i < poolSize; i++) {
 			if(type == TaskType.LoopedIm2ColConv2d || type == TaskType.LoopedIm2ColConv2dBwdFilter) {
-				MatrixBlock im2ColOutBlock = new MatrixBlock(params.C*params.R*params.S, params.P*params.Q, false);
-				im2ColOutBlock.allocateDenseBlock();
-				im2ColOutBlocks.add(im2ColOutBlock);
+				if(params.enableNative && params.input1.isInSparseFormat() && !params.input2.isInSparseFormat() && type == TaskType.LoopedIm2ColConv2d) {
+					// Fall back to native sparse conv2d ... hence no need to create im2col blocks.
+				}
+				else {
+					MatrixBlock im2ColOutBlock = new MatrixBlock(params.C*params.R*params.S, params.P*params.Q, false);
+					im2ColOutBlock.allocateDenseBlock();
+					im2ColOutBlocks.add(im2ColOutBlock);
+				}
 			}
 			
 			if(type == TaskType.LoopedIm2ColConv2dBwdFilter) {
@@ -1083,11 +1086,34 @@ public class LibMatrixDNN {
 					break;
 				case LoopedIm2ColConv2d:
 				{	
-					MatrixBlock im2ColOutBlock = _im2ColOutBlocks.remove();
-					double [] temp = _params.input1.isInSparseFormat() ? new double[_params.input1.getNumColumns()] : null;
-					for(int n = _rl; n < _ru; n++) 
-						doLoopedIm2ColConv2d(n, im2ColOutBlock, _params, temp);
-					_im2ColOutBlocks.add(im2ColOutBlock);
+					if(_params.enableNative && _params.input1.isInSparseFormat() && !_params.input2.isInSparseFormat()) {
+						// NativeHelper.conv2dSparse only if filter is dense and input is sparse
+						// TODO: Double-check if this is faster than 
+						// performing im2col on Java and matmult with MKL
+						// Also, check the correctness
+						int KPQ = _params.K*_params.P*_params.Q;
+						double[] temp = new double[KPQ];
+						for(int n = _rl; n < _ru; n++)  {
+							if( !_params.input1.getSparseBlock().isEmpty(n) ) {
+								int apos = _params.input1.getSparseBlock().pos(n);
+								int alen = _params.input1.getSparseBlock().size(n);
+								int[] aix = _params.input1.getSparseBlock().indexes(n);
+								double[] avals = _params.input1.getSparseBlock().values(n);
+								NativeHelper.conv2dSparse(apos, alen, aix, avals, _params.input2.getDenseBlock(), temp, 
+										_params.N, _params.C, _params.H, _params.W, _params.K, _params.R, _params.S, 
+										_params.stride_h, _params.stride_w, _params.pad_h, _params.pad_w, _params.P, _params.Q, 1);
+								System.arraycopy(temp, 0, _params.output.denseBlock, n*KPQ, KPQ);
+							}
+						}
+					}
+					else {
+						// In all other cases, perform im2col in Java + matmult (either native or java).
+						MatrixBlock im2ColOutBlock = _im2ColOutBlocks.remove();
+						double [] temp = _params.input1.isInSparseFormat() ? new double[_params.input1.getNumColumns()] : null;
+						for(int n = _rl; n < _ru; n++) 
+							doLoopedIm2ColConv2d(n, im2ColOutBlock, _params, temp);
+						_im2ColOutBlocks.add(im2ColOutBlock);
+					}
 					if(_params.bias != null) {
 						// bias is always converted to dense format
 						double [] biasArr = _params.bias.getDenseBlock();

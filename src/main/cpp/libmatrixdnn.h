@@ -29,4 +29,7 @@ void conv2dBackwardDataDense(double* filterPtr, double* doutPtr, double* retPtr,
 void conv2dBiasAddDense(double* inputPtr, double* biasPtr, double* filterPtr, double* retPtr, int N, int C, int H, int W, int K, int R, int S,
     int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, bool addBias, int numThreads);
     
+void conv2dSparse(int apos, int alen, int* aix, double* avals, double* filter, double* ret, int N, int C, int H, int W, 
+			int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads);
+			
 #endif

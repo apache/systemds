@@ -238,6 +238,26 @@ void conv2dBackwardDataDense(double* filterPtr, double* doutPtr, double* retPtr,
     
 }
 
+void conv2dSparse(int apos, int alen, int* aix, double* avals, double* filterPtr, double* retPtr, int N, int C, int H, int W, 
+			int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads) {
+	double* loweredMat = new double[C * R * S * P * Q];
+	
+	// Step 1: Perform im2col
+	double* temp = new double[C * H * W];
+	std::size_t size = C * H * W * sizeof(double);
+	std::memset(temp, 0, size);
+	for(int j=apos; j<apos+alen; j++)
+		temp[ aix[j] ] = avals[j];
+	im2col(temp, loweredMat, 1, C, H, W, K,
+       R, S, stride_h, stride_w, pad_h, pad_w,
+       P, Q);	
+	
+	// Step 2: filter (K X CRS) %*% loweredMat (CRS X PQ)
+    matmult(filterPtr, loweredMat, retPtr, K, C * R * S, P * Q, 1);
+    
+	delete [] loweredMat;
+}
+
 void conv2dBiasAddDense(double* inputPtr, double* biasPtr, double* filterPtr, double* retPtr, int N, int C, int H, int W, int K, int R, int S,
     int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, bool addBias, int numThreads) {
   // First step:  Avoids oversubscription and other openmp/internal blas threading issues

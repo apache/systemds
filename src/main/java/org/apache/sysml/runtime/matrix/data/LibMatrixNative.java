@@ -47,7 +47,7 @@ public class LibMatrixNative {
 	
 	public static void matrixMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int k, boolean examSparsity) throws DMLRuntimeException {
 		// Sanity check:
-		k = k > 1 ? k : 1;
+		k = k <= 0 ? NativeHelper.getMaxNumThreads() : k;
 		
 		// check inputs / outputs
 		if (m1.isEmptyBlock(false) || m2.isEmptyBlock(false)) {
@@ -55,10 +55,12 @@ public class LibMatrixNative {
 				ret.examSparsity(); // turn empty dense into sparse
 			return;
 		}
-		if (NativeHelper.isNativeLibraryLoaded() && !isMatMultMemoryBound(m1.rlen, m1.clen, m2.clen) && !m1.isInSparseFormat() && !m2.isInSparseFormat()) {
+		if (NativeHelper.isNativeLibraryLoaded() && 
+				!isMatMultMemoryBound(m1.rlen, m1.clen, m2.clen) && !m1.isInSparseFormat() && !m2.isInSparseFormat()) {
 			ret.sparse = false;
 			ret.allocateDenseBlock();
-			if (NativeHelper.matrixMultDenseDense(m1.denseBlock, m2.denseBlock, ret.denseBlock, m1.getNumRows(), m1.getNumColumns(), m2.getNumColumns(), k > 0 ? k : NativeHelper.getMaxNumThreads())) {
+			if (NativeHelper.matrixMultDenseDense(m1.denseBlock, m2.denseBlock, 
+					ret.denseBlock, m1.getNumRows(), m1.getNumColumns(), m2.getNumColumns(), k)) {
 				Statistics.numNativeLibMatrixMultCalls.increment();
 				ret.recomputeNonZeros();
 				// post-processing (nnz maintained in parallel)
@@ -71,7 +73,7 @@ public class LibMatrixNative {
 			}
 		}
 		if (k == 1)
-			LibMatrixMult.matrixMult(m1, m2, ret);
+			LibMatrixMult.matrixMult(m1, m2, ret, examSparsity);
 		else
 			LibMatrixMult.matrixMult(m1, m2, ret, k);
 	}
@@ -87,6 +89,7 @@ public class LibMatrixNative {
 	 */
 	public static void conv2d(MatrixBlock input, MatrixBlock filter, MatrixBlock outputBlock, ConvolutionParameters params) throws DMLRuntimeException {
 		LibMatrixDNN.checkInputsConv2d(input, filter, outputBlock, params);
+		params.numThreads = params.numThreads <= 0 ? NativeHelper.getMaxNumThreads() : params.numThreads;
 		if(NativeHelper.isNativeLibraryLoaded() && !input.isInSparseFormat() && !filter.isInSparseFormat()) {
 			setNumThreads(params);
 			if(params.bias == null) {
@@ -143,6 +146,7 @@ public class LibMatrixNative {
 	 */
 	public static void conv2dBackwardFilter(MatrixBlock input, MatrixBlock dout, MatrixBlock outputBlock, ConvolutionParameters params) throws DMLRuntimeException {
 		LibMatrixDNN.checkInputsConv2dBackwardFilter(input, dout, outputBlock, params);
+		params.numThreads = params.numThreads <= 0 ? NativeHelper.getMaxNumThreads() : params.numThreads;
 		if(NativeHelper.isNativeLibraryLoaded() && !dout.isInSparseFormat() && !input.isInSparseFormat()) {
 			setNumThreads(params);
 			if(NativeHelper.conv2dBackwardFilterDense(input.denseBlock, dout.denseBlock, outputBlock.denseBlock, params.N, params.C, params.H, params.W, 
@@ -173,6 +177,7 @@ public class LibMatrixNative {
 	 */
 	public static void conv2dBackwardData(MatrixBlock filter, MatrixBlock dout, MatrixBlock outputBlock, ConvolutionParameters params) throws DMLRuntimeException {
 		LibMatrixDNN.checkInputsConv2dBackwardData(filter, dout, outputBlock, params);
+		params.numThreads = params.numThreads <= 0 ? NativeHelper.getMaxNumThreads() : params.numThreads;
 		if(NativeHelper.isNativeLibraryLoaded() && !dout.isInSparseFormat() && !filter.isInSparseFormat()) {
 			setNumThreads(params);
 			if(NativeHelper.conv2dBackwardDataDense(filter.denseBlock, dout.denseBlock, outputBlock.denseBlock, params.N, params.C, params.H, params.W, 

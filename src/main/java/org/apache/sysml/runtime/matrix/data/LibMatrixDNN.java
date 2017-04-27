@@ -378,11 +378,11 @@ public class LibMatrixDNN {
 	// Single-threaded matrix multiplication
 	private static void singleThreadedMatMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, 
 			boolean recomputeNNZM1, boolean recomputeNNZM2, ConvolutionParameters params) throws DMLRuntimeException {
+		if(recomputeNNZM1)
+			m1.recomputeNonZeros();
+		if(recomputeNNZM2)
+			m2.recomputeNonZeros();
 		if(!params.enableNative || m1.isInSparseFormat() || m2.isInSparseFormat()) {
-			if(recomputeNNZM1)
-				m1.recomputeNonZeros();
-			if(recomputeNNZM2)
-				m2.recomputeNonZeros();
 			LibMatrixMult.matrixMult(m1, m2, ret, false);
 		}
 		else {

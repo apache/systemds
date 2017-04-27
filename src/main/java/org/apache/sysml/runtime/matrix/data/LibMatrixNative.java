@@ -50,7 +50,8 @@ public class LibMatrixNative {
 		k = k <= 0 ? NativeHelper.getMaxNumThreads() : k;
 		
 		// check inputs / outputs
-		if (m1.isEmptyBlock(false) || m2.isEmptyBlock(false)) {
+		if (m1.isEmptyBlock() || m2.isEmptyBlock()) {
+			ret.setNonZeros(0);
 			if(examSparsity)
 				ret.examSparsity(); // turn empty dense into sparse
 			return;

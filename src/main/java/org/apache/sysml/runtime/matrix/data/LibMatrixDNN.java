@@ -301,11 +301,10 @@ public class LibMatrixDNN {
 		MatrixBlock filter = params.input1;
 		MatrixBlock dout = params.input2;
 		doRotate180(n, 0, dout, dout_reshaped.denseBlock, params, true);
-		dout_reshaped.recomputeNonZeros();
 		
 		MatrixBlock temp = new MatrixBlock(params.P*params.Q, params.C*params.R*params.S, false);
 		long t1 = DMLScript.STATISTICS && DISPLAY_STATISTICS ? System.nanoTime() : 0;
-		LibMatrixMult.matrixMult(dout_reshaped, filter, temp, false);
+		singleThreadedMatMult(dout_reshaped, filter, temp, true, false, params);
 		long t2 = DMLScript.STATISTICS && DISPLAY_STATISTICS ? System.nanoTime() : 0 ;
 		doCol2imOverSingleImage(n, temp, params);
 		long t3 = DMLScript.STATISTICS && DISPLAY_STATISTICS ? System.nanoTime() : 0 ;
@@ -319,15 +318,13 @@ public class LibMatrixDNN {
 			MatrixBlock im2ColOutBlock, MatrixBlock dout_reshaped, MatrixBlock partialRetBlock, ConvolutionParameters params, double []  tempIm2ColArr) throws DMLRuntimeException {
 		long t1 = DMLScript.STATISTICS && DISPLAY_STATISTICS ? System.nanoTime() : 0;
 		doIm2col(n, im2ColOutBlock, params, tempIm2ColArr);
-		im2ColOutBlock.recomputeNonZeros();
 		long t2 = DMLScript.STATISTICS && DISPLAY_STATISTICS ? System.nanoTime() : 0 ;
 		
 		doRotate180(n, 0, params.input2, dout_reshaped.denseBlock, params, true);
-		dout_reshaped.recomputeNonZeros();
 		
 		MatrixBlock temp = new MatrixBlock(params.C*params.R*params.S, params.K, false);
 		long t3 = DMLScript.STATISTICS && DISPLAY_STATISTICS ? System.nanoTime() : 0 ;
-		LibMatrixMult.matrixMult(im2ColOutBlock, dout_reshaped, temp, false);
+		singleThreadedMatMult(im2ColOutBlock, dout_reshaped, temp, true, true, params);
 		long t4 = DMLScript.STATISTICS && DISPLAY_STATISTICS ? System.nanoTime() : 0 ;
 		if(DMLScript.STATISTICS && DISPLAY_STATISTICS) {
 			loopedConvBwdFilterMatMultTime.addAndGet(t4-t3);
@@ -378,15 +375,31 @@ public class LibMatrixDNN {
 		outputBlock.recomputeNonZeros();
 	}
 	
+	// Single-threaded matrix multiplication
+	private static void singleThreadedMatMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, 
+			boolean recomputeNNZM1, boolean recomputeNNZM2, ConvolutionParameters params) throws DMLRuntimeException {
+		if(!params.enableNative || m1.isInSparseFormat() || m2.isInSparseFormat()) {
+			if(recomputeNNZM1)
+				m1.recomputeNonZeros();
+			if(recomputeNNZM2)
+				m2.recomputeNonZeros();
+			LibMatrixMult.matrixMult(m1, m2, ret, false);
+		}
+		else {
+			if(ret.getDenseBlock() == null)
+				ret.allocateDenseBlock();
+			LibMatrixNative.matrixMult(m1, m2, ret, 1);
+		}
+	}
+	
 	private static void doLoopedIm2ColConv2d(int n, MatrixBlock im2ColOutBlock, ConvolutionParameters params, double []  temp) throws DMLRuntimeException {
 		long t1 = DMLScript.STATISTICS && DISPLAY_STATISTICS ? System.nanoTime() : 0;
 		doIm2col(n, im2ColOutBlock, params, temp);
-		im2ColOutBlock.recomputeNonZeros();
 		long t2 = DMLScript.STATISTICS && DISPLAY_STATISTICS ? System.nanoTime() : 0;
 		
 		MatrixBlock matMultOutBlock = new MatrixBlock(params.K, params.P*params.Q, false);
-		// Note: For native BLAS, use  
-		LibMatrixMult.matrixMult(params.input2, im2ColOutBlock, matMultOutBlock, false);
+		singleThreadedMatMult(params.input2, im2ColOutBlock, matMultOutBlock, false, true, params);
+		
 		long t3 = DMLScript.STATISTICS && DISPLAY_STATISTICS ? System.nanoTime() : 0;
 		
 		if(DMLScript.STATISTICS && DISPLAY_STATISTICS) {

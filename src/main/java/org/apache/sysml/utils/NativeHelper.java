@@ -127,17 +127,17 @@ public class NativeHelper {
 	private static boolean isMKLAvailable() {
 		// ------------------------------------------------------------
 		// Set environment variable MKL_THREADING_LAYER to GNU on Linux for performance
-		if(SystemUtils.IS_OS_LINUX || SystemUtils.IS_OS_MAC_OSX) {
-			try {
-				loadLibrary("preload_systemml", "");
-			} catch (IOException e) {
-				LOG.warn("Unable to load preload_systemml (required for loading MKL-enabled SystemML library):" + e.getMessage());
-				return false;
-			}
-			// The most reliable way in my investigation to ensure that MKL runs smoothly with OpenMP (used by conv2d*)
-			// is setting the environment variable MKL_THREADING_LAYER to GNU
-			EnvironmentHelper.setEnv("MKL_THREADING_LAYER", "GNU");
-			String gompLibrary = SystemUtils.IS_OS_LINUX ? "gomp" : "iomp5";
+		try {
+			loadLibrary("preload_systemml", "");
+		} catch (IOException e) {
+			LOG.warn("Unable to load preload_systemml (required for loading MKL-enabled SystemML library):" + e.getMessage());
+			return false;
+		}
+		// The most reliable way in my investigation to ensure that MKL runs smoothly with OpenMP (used by conv2d*)
+		// is setting the environment variable MKL_THREADING_LAYER to GNU
+		EnvironmentHelper.setEnv("MKL_THREADING_LAYER", "GNU");
+		if(SystemUtils.IS_OS_LINUX) {
+			String gompLibrary = "gomp";
 			if(!loadBLAS(gompLibrary, gompLibrary + " required for loading MKL-enabled SystemML library")) 
 				return false;
 		}

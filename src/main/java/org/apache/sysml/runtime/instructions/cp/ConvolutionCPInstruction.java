@@ -339,8 +339,8 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction
 		int P = (int) ConvolutionUtils.getP(H, R, stride_h, pad_h);
 		int Q = (int) ConvolutionUtils.getQ(W, S, stride_w, pad_w);
 		
-		boolean enableNative = ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.NATIVE_BLAS);
 		ConvolutionParameters params = new ConvolutionParameters(N, C, H, W, K, R, S, stride_h, stride_w, pad_h, pad_w, _numThreads);
+		params.enableNative = ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.NATIVE_BLAS) && NativeHelper.isNativeLibraryLoaded();
 		if (instOpcode.equalsIgnoreCase("maxpooling") || instOpcode.equalsIgnoreCase("relu_maxpooling")) {
 			if(matBlock.isEmptyBlock()) {
 				outputBlock = new MatrixBlock(N, C*P*Q, true);
@@ -370,7 +370,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction
 			}
 			else {
 				outputBlock = getDenseOutputBlock(N, K*P*Q);
-				if(enableNative && NativeHelper.isNativeLibraryLoaded() && !matBlock.isInSparseFormat() && !isFilterSparse(filter))
+				if(params.enableNative && !isFilterSparse(filter) && !matBlock.isInSparseFormat())
 					LibMatrixNative.conv2d(matBlock, filter, outputBlock, params);
 				else
 					LibMatrixDNN.conv2d(matBlock, filter, outputBlock, params);
@@ -388,7 +388,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction
 				if(!bias.isEmptyBlock()) {
 					params.bias = bias;
 				}
-				if(enableNative && NativeHelper.isNativeLibraryLoaded() && !matBlock.isInSparseFormat() && !isFilterSparse(filter))
+				if(params.enableNative && !isFilterSparse(filter) && !matBlock.isInSparseFormat())
 					LibMatrixNative.conv2d(matBlock, filter, outputBlock, params);
 				else
 					LibMatrixDNN.conv2d(matBlock, filter, outputBlock, params);
@@ -403,7 +403,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction
 			}
 			else {
 				outputBlock = getDenseOutputBlock(K, C*R*S);
-				if(enableNative && NativeHelper.isNativeLibraryLoaded() && !dout.isInSparseFormat() && !matBlock.isInSparseFormat())
+				if(params.enableNative && !matBlock.isInSparseFormat() && !dout.isInSparseFormat())
 					LibMatrixNative.conv2dBackwardFilter(matBlock, dout, outputBlock, params);
 				else
 					LibMatrixDNN.conv2dBackwardFilter(matBlock, dout, outputBlock, params);
@@ -417,7 +417,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction
 			}
 			else {
 				outputBlock = getDenseOutputBlock(N, C * H * W);
-				if(enableNative && NativeHelper.isNativeLibraryLoaded() && !dout.isInSparseFormat() && !isFilterSparse(matBlock))
+				if(params.enableNative && !isFilterSparse(matBlock) && !dout.isInSparseFormat())
 					LibMatrixNative.conv2dBackwardData(matBlock, dout, outputBlock, params);
 				else
 					LibMatrixDNN.conv2dBackwardData(matBlock, dout, outputBlock, params);

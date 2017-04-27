@@ -1354,7 +1354,7 @@ public class LibMatrixDNN {
 			}
 		}
 		else {
-			System.arraycopy(input, n*input.getNumColumns(), temp, 0, input.getNumColumns());
+			System.arraycopy(input.getDenseBlock(), n*input.getNumColumns(), temp, 0, input.getNumColumns());
 		}
 		return temp;
 	}

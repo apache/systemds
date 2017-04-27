@@ -388,7 +388,7 @@ public class LibMatrixDNN {
 		else {
 			if(ret.getDenseBlock() == null)
 				ret.allocateDenseBlock();
-			LibMatrixNative.matrixMult(m1, m2, ret, 1);
+			LibMatrixNative.matrixMult(m1, m2, ret, 1, false);
 		}
 	}
 	

@@ -42,12 +42,17 @@ public class LibMatrixNative {
 	 * @throws DMLRuntimeException if error occurs
 	 */
 	public static void matrixMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int k) throws DMLRuntimeException {
+		matrixMult(m1, m2, ret, k, true);
+	}
+	
+	public static void matrixMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int k, boolean examSparsity) throws DMLRuntimeException {
 		// Sanity check:
 		k = k > 1 ? k : 1;
 		
 		// check inputs / outputs
 		if (m1.isEmptyBlock(false) || m2.isEmptyBlock(false)) {
-			ret.examSparsity(); // turn empty dense into sparse
+			if(examSparsity)
+				ret.examSparsity(); // turn empty dense into sparse
 			return;
 		}
 		if (NativeHelper.isNativeLibraryLoaded() && !isMatMultMemoryBound(m1.rlen, m1.clen, m2.clen) && !m1.isInSparseFormat() && !m2.isInSparseFormat()) {
@@ -57,7 +62,8 @@ public class LibMatrixNative {
 				Statistics.numNativeLibMatrixMultCalls.increment();
 				ret.recomputeNonZeros();
 				// post-processing (nnz maintained in parallel)
-				ret.examSparsity();
+				if(examSparsity)
+					ret.examSparsity();
 				return;
 			} else {
 				// Else fall back to Java

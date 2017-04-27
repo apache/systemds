@@ -19,10 +19,8 @@
 
 package org.apache.sysml.test.integration.scripts.nn;
 
-import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.SparkSession;
 import org.apache.sysml.api.mlcontext.MLContext;
-import org.apache.sysml.api.mlcontext.MLContextUtil;
 import org.apache.sysml.api.mlcontext.Script;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.junit.After;
@@ -43,14 +41,12 @@ public class NNTest extends AutomatedTestBase {
 	private static final String ERROR_STRING = "ERROR:";
 
 	private static SparkSession spark;
-	private static JavaSparkContext sc;
 	private static MLContext ml;
 
 	@BeforeClass
 	public static void setUpClass() {
 		spark = createSystemMLSparkSession("MLContextTest", "local");
 		ml = new MLContext(spark);
-		sc = MLContextUtil.getJavaSparkContext(ml);
 	}
 
 	@Override
@@ -76,7 +72,6 @@ public class NNTest extends AutomatedTestBase {
 		// stop underlying spark context to allow single jvm tests (otherwise the
 		// next test that tries to create a SparkContext would fail)
 		spark.stop();
-		sc = null;
 		spark = null;
 
 		// clear status mlcontext and spark exec context

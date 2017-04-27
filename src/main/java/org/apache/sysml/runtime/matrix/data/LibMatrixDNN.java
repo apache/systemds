@@ -709,26 +709,33 @@ public class LibMatrixDNN {
 		int K = bias.getNumRows();
 		int PQ = input.getNumColumns() / K;
 		
-		ConvolutionParameters params = new ConvolutionParameters(N, PQ, -1, -1, K, -1, -1, -1, -1, -1, -1, numThreads);
-		params.input1 = input;
-		params.input2 = bias;
-		params.output = outputBlock;
-		
 		if(bias.getNumColumns() != 1 || input.getNumColumns() % K != 0) {
 			throw new DMLRuntimeException("Incorrect inputs for bias_add: input[" + N + " X " + input.getNumColumns()  + "] and bias[" + K + " X " + bias.getNumColumns() + "]");
 		}
 		
+		double [] outputArray = outputBlock.getDenseBlock();
 		if(input.isEmptyBlock()) {
-			double [] outputArray = outputBlock.getDenseBlock();
 			for(int n = 0;  n < N; n++) 
 				ConvolutionUtils.fillBias(bias, outputArray, n, n+1, N, K, PQ);
 		}
 		else {
-			runConvTask(TaskType.BiasAdd, params);
+			// Handles both dense and sparse inputs and copies it to dense output
+			outputBlock.copy(input); 
+			int index = 0;
+			if(bias.isInSparseFormat())
+				bias.sparseToDense(); // Since bias is extremely small array
+			double [] biasArr = bias.getDenseBlock();
+			for(int n = 0; n < N; n++) {
+				for(int k = 0; k < K; k++) {
+					for(int pq = 0; pq < PQ; pq++, index++) {
+						outputArray[index] += biasArr[k];
+					}
+				}
+			}
 		}
 		
 		//post-processing: maintain nnz
-		params.output.recomputeNonZeros();
+		outputBlock.recomputeNonZeros();
 	}
 	
 	
@@ -759,7 +766,21 @@ public class LibMatrixDNN {
 		}
 		
 		if(!input.isEmptyBlock() && !bias.isEmptyBlock()) {
-			runConvTask(TaskType.BiasMultiply, params);
+			// Handles both dense and sparse inputs and copies it to dense output
+			outputBlock.copy(input); 
+			double [] outputArray = outputBlock.getDenseBlock();
+			int index = 0;
+			if(bias.isInSparseFormat())
+				bias.sparseToDense(); // Since bias is extremely small array
+			double [] biasArr = bias.getDenseBlock();
+			for(int n = 0; n < N; n++) {
+				for(int k = 0; k < K; k++) {
+					for(int pq = 0; pq < PQ; pq++, index++) {
+						outputArray[index] *= biasArr[k];
+					}
+				}
+			}
+			
 			//post-processing: maintain nnz
 			params.output.recomputeNonZeros();
 		}

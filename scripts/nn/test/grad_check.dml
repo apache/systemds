@@ -1612,11 +1612,12 @@ two_layer_affine_l2_net = function() {
   M = 10 # number of hidden neurons
   [W1, b1] = affine::init(D, M)
   [W2, b2] = affine::init(M, yD)
+  W2 = W2 / sqrt(2)  # different initialization, since being fed into l2 loss, instead of relu
 
   # Optimize for short "burn-in" time to move to characteristic
   # mode of operation and unmask any real issues.
   print(" - Burn-in:")
-  lr = 0.0001
+  lr = 0.01
   decay = 0.99
   for(i in 1:5) {
     # Compute forward and backward passes of net
@@ -1635,7 +1636,7 @@ two_layer_affine_l2_net = function() {
   [pred, loss, dX, dW1, db1, dW2, db2] = two_layer_affine_l2_net_run(X, y, W1, b1, W2, b2)
 
   # Grad check
-  h = 1e-5
+  h = 1e-6
   print(" - Grad checking X.")
   for (i in 1:2) {
     for (j in 1:ncol(X)) {

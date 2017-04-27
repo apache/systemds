@@ -36,6 +36,8 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysml.runtime.util.ConvolutionUtils;
+import org.apache.sysml.utils.NativeHelper;
+import org.apache.sysml.utils.Statistics;
 
 /**
  * This class allows users to invoke deep learning related operations 
@@ -378,17 +380,21 @@ public class LibMatrixDNN {
 	// Single-threaded matrix multiplication
 	private static void singleThreadedMatMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, 
 			boolean recomputeNNZM1, boolean recomputeNNZM2, ConvolutionParameters params) throws DMLRuntimeException {
-		if(recomputeNNZM1)
-			m1.recomputeNonZeros();
-		if(recomputeNNZM2)
-			m2.recomputeNonZeros();
 		if(!params.enableNative || m1.isInSparseFormat() || m2.isInSparseFormat()) {
+			if(recomputeNNZM1)
+				m1.recomputeNonZeros();
+			if(recomputeNNZM2)
+				m2.recomputeNonZeros();
 			LibMatrixMult.matrixMult(m1, m2, ret, false);
 		}
 		else {
+			ret.sparse = false;
 			if(ret.getDenseBlock() == null)
 				ret.allocateDenseBlock();
-			LibMatrixNative.matrixMult(m1, m2, ret, 1, false);
+			NativeHelper.matrixMultDenseDense(m1.denseBlock, m2.denseBlock, 
+					ret.denseBlock, m1.getNumRows(), m1.getNumColumns(), m2.getNumColumns(), 1);
+			Statistics.numNativeLibMatrixMultCalls.increment();
+			ret.recomputeNonZeros();
 		}
 	}
 	

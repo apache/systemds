@@ -24,6 +24,8 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 
@@ -110,7 +112,10 @@ public abstract class ParserWrapper {
 				LOG.debug("Looking for the following file in the local file system: " + script);
 				if( !LocalFileUtils.validateExternalFilename(script, false) )
 					throw new LanguageException("Invalid (non-trustworthy) local filename.");
-				in = new BufferedReader(new FileReader(script));
+				if (Files.exists(Paths.get(script)))
+					in = new BufferedReader(new FileReader(script));
+				else  // check in scripts/ directory for file (useful for tests)
+					in = new BufferedReader(new FileReader("scripts/" + script));
 			}
 			
 			//core script reading

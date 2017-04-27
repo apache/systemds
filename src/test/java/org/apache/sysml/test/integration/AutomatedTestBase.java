@@ -20,6 +20,7 @@
 package org.apache.sysml.test.integration;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -228,6 +229,8 @@ public abstract class AutomatedTestBase
 
 	private String expectedStdOut;
 	private int iExpectedStdOutState = 0;
+	private String unexpectedStdOut;
+	private int iUnexpectedStdOutState = 0;
 	private PrintStream originalPrintStreamStd = null;
 
 	private String expectedStdErr;
@@ -839,7 +842,7 @@ public abstract class AutomatedTestBase
 		String testDirectory = config.getTestDirectory();
 		if (testDirectory != null) {
 			if (isTargetTestDirectory(testDirectory)) {
-				baseDirectory = TEST_DATA_DIR + testDirectory;				
+				baseDirectory = TEST_DATA_DIR + testDirectory;
 				sourceDirectory = SCRIPT_DIR + getSourceDirectory(testDirectory);
 			}
 			else {
@@ -1465,6 +1468,7 @@ public abstract class AutomatedTestBase
 				|| iExpectedStdOutState == 2);
 		assertTrue("expected String did not occur (stderr): " + expectedStdErr, iExpectedStdErrState == 0
 				|| iExpectedStdErrState == 2);
+		assertFalse("unexpected String occurred: " + unexpectedStdOut, iUnexpectedStdOutState == 1);
 		TestUtils.displayAssertionBuffer();
 
 
@@ -1495,7 +1499,7 @@ public abstract class AutomatedTestBase
 	}
 
 	/**
-	 * Enables expection of a line in standard output stream.
+	 * Enables detection of expected output of a line in standard output stream.
 	 * 
 	 * @param expectedLine
 	 */
@@ -1509,8 +1513,6 @@ public abstract class AutomatedTestBase
 	/**
 	 * This class is used to compare the standard output stream against an
 	 * expected string.
-	 * 
-	 *
 	 * 
 	 */
 	class ExpectedOutputStream extends OutputStream {
@@ -1544,8 +1546,6 @@ public abstract class AutomatedTestBase
 	 * This class is used to compare the standard error stream against an
 	 * expected string.
 	 * 
-	 *
-	 * 
 	 */
 	class ExpectedErrorStream extends OutputStream {
 		private String line = "";
@@ -1564,6 +1564,39 @@ public abstract class AutomatedTestBase
 				}
 			}
 			originalErrStreamStd.write(b);
+		}
+	}
+
+	/**
+	 * Enables detection of unexpected output of a line in standard output stream.
+	 *
+	 * @param unexpectedLine  String that should not occur in stdout.
+	 */
+	public void setUnexpectedStdOut(String unexpectedLine) {
+		this.unexpectedStdOut = unexpectedLine;
+		originalPrintStreamStd = System.out;
+		System.setOut(new PrintStream(new UnexpectedOutputStream()));
+	}
+
+	/**
+	 * This class is used to compare the standard output stream against
+	 * an unexpected string.
+	 */
+	class UnexpectedOutputStream extends OutputStream {
+		private String line = "";
+
+		@Override
+		public void write(int b) throws IOException {
+			line += String.valueOf((char) b);
+			if (((char) b) == '\n') {
+				/** new line */
+				if (line.contains(unexpectedStdOut)) {
+					iUnexpectedStdOutState = 1;  // error!
+				} else {
+					line = "";  // reset buffer
+				}
+			}
+			originalPrintStreamStd.write(b);
 		}
 	}
 

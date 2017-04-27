@@ -71,6 +71,7 @@ public class DMLConfig
 	public static final String CP_PARALLEL_MATRIXMULT = "cp.parallel.matrixmult";
 	public static final String CP_PARALLEL_TEXTIO   = "cp.parallel.textio";
 	public static final String COMPRESSED_LINALG    = "compressed.linalg";
+	public static final String NATIVE_BLAS    			= "native.blas";
 	public static final String CODEGEN              = "codegen.enabled"; //boolean
 	public static final String CODEGEN_PLANCACHE    = "codegen.plancache"; //boolean
 	public static final String CODEGEN_LITERALS     = "codegen.literals"; //1..heuristic, 2..always
@@ -115,6 +116,7 @@ public class DMLConfig
 		_defaultVals.put(CODEGEN,                "false" );
 		_defaultVals.put(CODEGEN_PLANCACHE,      "true" );
 		_defaultVals.put(CODEGEN_LITERALS,       "1" );
+		_defaultVals.put(NATIVE_BLAS,      			 "true" );
 
 		_defaultVals.put(EXTRA_GPU_STATS,       "false" );
 		_defaultVals.put(EXTRA_DNN_STATS,       "false" );
@@ -404,7 +406,7 @@ public class DMLConfig
 				LOCAL_TMP_DIR,SCRATCH_SPACE,OPTIMIZATION_LEVEL,
 				NUM_REDUCERS, DEFAULT_BLOCK_SIZE,
 				YARN_APPMASTER, YARN_APPMASTERMEM, YARN_MAPREDUCEMEM, 
-				CP_PARALLEL_MATRIXMULT, CP_PARALLEL_TEXTIO,
+				CP_PARALLEL_MATRIXMULT, CP_PARALLEL_TEXTIO, NATIVE_BLAS,
 				COMPRESSED_LINALG, CODEGEN, CODEGEN_LITERALS, CODEGEN_PLANCACHE,
 				EXTRA_GPU_STATS, EXTRA_DNN_STATS
 		}; 

@@ -128,7 +128,10 @@ public abstract class AutomatedTestBase
 			}
 			else {
 				System.setProperty("java.library.path", cwd + File.separator
-					+ "\\src\\test\\config\\hadoop_bin_windows\\bin");
+					+ "\\src\\test\\config\\hadoop_bin_windows\\bin"
+					// For testing BLAS on Windows 
+					// + File.pathSeparator + "C:\\Program Files (x86)\\IntelSWTools\\compilers_and_libraries_2017.0.109\\windows\\redist\\intel64_win\\mkl"
+						);
 			}
 			
 

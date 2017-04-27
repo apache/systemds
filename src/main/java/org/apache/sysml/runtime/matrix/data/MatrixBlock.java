@@ -35,6 +35,7 @@ import java.util.stream.LongStream;
 import org.apache.commons.math3.random.Well1024a;
 import org.apache.hadoop.io.DataInputBuffer;
 import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.Hop.OpOp2;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.lops.MMTSJ.MMTSJType;
@@ -4873,15 +4874,26 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		
 		return sum_wt;
 	}
-
+	
 	public MatrixValue aggregateBinaryOperations(MatrixIndexes m1Index, MatrixValue m1Value, MatrixIndexes m2Index, MatrixValue m2Value, 
-			MatrixValue result, AggregateBinaryOperator op ) 
-		throws DMLRuntimeException
+			MatrixValue result, AggregateBinaryOperator op ) throws DMLRuntimeException
 	{
-		return aggregateBinaryOperations(m1Value, m2Value, result, op);
+		boolean enableNativeBLAS = ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.NATIVE_BLAS);
+		return aggregateBinaryOperations(m1Value, m2Value, result, op, enableNativeBLAS);
 	}
 
-	public MatrixValue aggregateBinaryOperations(MatrixValue m1Value, MatrixValue m2Value, MatrixValue result, AggregateBinaryOperator op) 
+	public MatrixValue aggregateBinaryOperations(MatrixIndexes m1Index, MatrixValue m1Value, MatrixIndexes m2Index, MatrixValue m2Value, 
+			MatrixValue result, AggregateBinaryOperator op, boolean enableNativeBLAS ) throws DMLRuntimeException
+	{
+		return aggregateBinaryOperations(m1Value, m2Value, result, op, enableNativeBLAS);
+	}
+	
+	public MatrixValue aggregateBinaryOperations(MatrixValue m1Value, MatrixValue m2Value, MatrixValue result, AggregateBinaryOperator op) throws DMLRuntimeException {
+		boolean enableNativeBLAS = ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.NATIVE_BLAS); 
+		return aggregateBinaryOperations(m1Value, m2Value, result, op, enableNativeBLAS);
+	}
+
+	public MatrixValue aggregateBinaryOperations(MatrixValue m1Value, MatrixValue m2Value, MatrixValue result, AggregateBinaryOperator op, boolean nativeMatMult) 
 		throws DMLRuntimeException
 	{
 		//check input types, dimensions, configuration
@@ -4907,7 +4919,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			ret.reset(rl, cl, sp.sparse, sp.estimatedNonZeros);
 		
 		//compute matrix multiplication (only supported binary aggregate operation)
-		if( op.getNumThreads() > 1 )
+		if( nativeMatMult )
+			LibMatrixNative.matrixMult(m1, m2, ret, op.getNumThreads());
+		else if( op.getNumThreads() > 1 )
 			LibMatrixMult.matrixMult(m1, m2, ret, op.getNumThreads());
 		else
 			LibMatrixMult.matrixMult(m1, m2, ret);

@@ -136,3 +136,46 @@ by setting the configuration `systemml.stats.extraGPU` and `systemml.stats.extra
 Out-Of-Memory on executors is often caused due to side-effects of lazy evaluation and in-memory input data of Spark for large-scale problems. 
 Though we are constantly improving our optimizer to address this scenario, a quick hack to resolve this is reducing the number of cores allocated to the executor.
 We would highly appreciate if you file a bug report on our [issue tracker](https://issues.apache.org/jira/browse/SYSTEMML) if and when you encounter OOM.
+
+## Slow performance with OpenBLAS
+
+SystemML expects that OpenBLAS was built with OpenMP. If not, please follow below steps:
+
+    git clone https://github.com/xianyi/OpenBLAS.git
+    cd OpenBLAS/
+    make clean
+    make USE_OPENMP=1
+    sudo make install
+
+You may also want to add `/opt/OpenBLAS/lib` to your LD_LIBRARY_PATH or `java.library.path`.
+
+## SystemML with MKL is not enabled on Linux
+
+First, make sure MKL is in LD_LIBRARY_PATH. You can put following line in `~/.bashrc`
+
+	export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/intel/mkl/lib/intel64/
+
+GNU OpenMP is required for loading SystemML with MKL. Make sure `libgomp.so` is available in the LD_LIBRARY_PATH.
+
+	sudo ln -s /lib64/libgomp.so.1 /usr/lib64/libgomp.so
+
+## SystemML with MKL is not enabled on Mac
+
+OpenMP (`libiomp5.dylib`) and `libmkl_rt.dylib` are required for loading SystemML with MKL.
+You can find the path to these libraries using the commands:
+
+	find /opt/intel -name "*iomp*"
+	find /opt/intel -name "*mkl_rt*"
+	
+Please add the path to these libraries in LD_LIBRARY_PATH or provide it via `java.library.path`
+(or Spark's `--driver-library-path` flag).
+	
+	# Please remember to edit yourversion
+	export INTEL_LIB_ROOT=/opt/intel/compilers_and_libraries_yourversion
+	$SPARK_HOME/bin/spark-submit --driver-library-path $INTEL_LIB_ROOT/mac/compiler/lib:$INTEL_LIB_ROOT/mac/mkl/lib SystemML.jar ...
+
+## OpenBLAS support on Mac
+
+The current version of SystemML does not support OpenBLAS on Mac as 
+the default installation of openblas (via brew) on MacOSX throws "Incompatible library versions" error.
+Please consider using Intel MKL until that is resolved.

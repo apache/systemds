@@ -51,6 +51,7 @@
 				<exclude>**/temp/**/*</exclude>
 				<!--SYSTEML-479 -->
 				<exclude>./src/test/config/hadoop_bin_windows/**</exclude>
+				<exclude>./src/main/cpp/lib/**</exclude>
 			</excludes>
 		</fileSet>
 

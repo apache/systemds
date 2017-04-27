@@ -37,6 +37,7 @@ import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysml.runtime.util.ConvolutionUtils;
 import org.apache.sysml.utils.NativeHelper;
+import org.apache.sysml.utils.Statistics;
 
 /**
  * This class allows users to invoke deep learning related operations 
@@ -155,6 +156,9 @@ public class LibMatrixDNN {
 		
 		if(params.bias != null && params.bias.isInSparseFormat())
 			params.bias.sparseToDense(); // Since bias is extremely small array
+		
+		if(params.enableNative && params.input1.isInSparseFormat() && !params.input2.isInSparseFormat())
+			Statistics.numNativeLibMatrixDNNCalls.increment();
 		
 		runConvTask(TaskType.LoopedIm2ColConv2d, params);
 		

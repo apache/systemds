@@ -29,6 +29,7 @@ import static jcuda.jcusparse.JCusparse.cusparseXcsrgemmNnz;
 import static jcuda.jcusparse.cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO;
 import static jcuda.jcusparse.cusparseMatrixType.CUSPARSE_MATRIX_TYPE_GENERAL;
 import static jcuda.runtime.JCuda.cudaMemcpy;
+import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToDevice;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice;
 
@@ -39,6 +40,7 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.utils.GPUStatistics;
 
 import jcuda.Pointer;
+import jcuda.Sizeof;
 import jcuda.jcublas.cublasHandle;
 import jcuda.jcusparse.cusparseHandle;
 import jcuda.jcusparse.cusparseMatDescr;
@@ -52,10 +54,10 @@ public class CSRPointer {
 
   private static final Log LOG = LogFactory.getLog(CSRPointer.class.getName());
 
+  private static final double ULTRA_SPARSITY_TURN_POINT = 0.0004;
+
   /** {@link GPUContext} instance to track the GPU to do work on */
   private final GPUContext gpuContext;
-
-  private static final double ULTRA_SPARSITY_TURN_POINT = 0.0004;
 
   public static cusparseMatDescr matrixDescriptor;
 
@@ -73,6 +75,27 @@ public class CSRPointer {
 
   /** descriptor of matrix, only CUSPARSE_MATRIX_TYPE_GENERAL supported */
   public cusparseMatDescr descr;
+
+
+  public CSRPointer clone(int rows) throws DMLRuntimeException {
+    CSRPointer me = this;
+    CSRPointer that = new CSRPointer(me.getGPUContext());
+
+    that.allocateMatDescrPointer();
+    long totalSize = estimateSize(me.nnz, rows);
+    that.gpuContext.ensureFreeSpace(totalSize);
+
+    that.nnz = me.nnz;
+    that.val = allocate(that.nnz * Sizeof.DOUBLE);
+    that.rowPtr = allocate(rows * Sizeof.DOUBLE);
+    that.colInd = allocate(that.nnz * Sizeof.DOUBLE);
+
+    cudaMemcpy(that.val, me.val, that.nnz * Sizeof.DOUBLE, cudaMemcpyDeviceToDevice);
+    cudaMemcpy(that.rowPtr, me.rowPtr, rows * Sizeof.DOUBLE, cudaMemcpyDeviceToDevice);
+    cudaMemcpy(that.colInd, me.colInd, that.nnz * Sizeof.DOUBLE, cudaMemcpyDeviceToDevice);
+
+    return that;
+  }
 
   /**
    * Default constructor to help with Factory method {@link #allocateEmpty(GPUContext, long, long)}
@@ -114,7 +137,7 @@ public class CSRPointer {
     return numElems * ((long)jcuda.Sizeof.INT);
   }
 
-  private GPUContext getGPUContext() throws DMLRuntimeException {
+  private GPUContext getGPUContext() {
     return gpuContext;
   }
 

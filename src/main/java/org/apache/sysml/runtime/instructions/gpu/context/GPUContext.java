@@ -22,8 +22,13 @@ import static jcuda.jcublas.JCublas2.cublasCreate;
 import static jcuda.jcublas.JCublas2.cublasDestroy;
 import static jcuda.jcudnn.JCudnn.cudnnCreate;
 import static jcuda.jcudnn.JCudnn.cudnnDestroy;
+import static jcuda.jcusolver.JCusolverDn.cusolverDnDestroy;
+import static jcuda.jcusolver.JCusolverSp.cusolverSpDestroy;
 import static jcuda.jcusparse.JCusparse.cusparseCreate;
 import static jcuda.jcusparse.JCusparse.cusparseDestroy;
+import static jcuda.jcusolver.JCusolverDn.cusolverDnCreate;
+import static jcuda.jcusolver.JCusolverSp.cusolverSpCreate;
+
 import static jcuda.runtime.JCuda.cudaDeviceScheduleBlockingSync;
 import static jcuda.runtime.JCuda.cudaFree;
 import static jcuda.runtime.JCuda.cudaGetDeviceCount;
@@ -54,6 +59,8 @@ import org.apache.sysml.utils.LRUCacheMap;
 import jcuda.Pointer;
 import jcuda.jcublas.cublasHandle;
 import jcuda.jcudnn.cudnnHandle;
+import jcuda.jcusolver.cusolverDnHandle;
+import jcuda.jcusolver.cusolverSpHandle;
 import jcuda.jcusparse.cusparseHandle;
 import jcuda.runtime.JCuda;
 import jcuda.runtime.cudaDeviceProp;
@@ -90,14 +97,20 @@ public class GPUContext {
    * so that an extraneous host to dev transfer can be avoided */
   private ArrayList<GPUObject> allocatedGPUObjects = new ArrayList<>();
 
-  /** cudnnHandle specific to the active GPU for this GPUContext */
+  /** cudnnHandle for Deep Neural Network operations on the GPU */
   private cudnnHandle cudnnHandle;
 
-  /** cublasHandle specific to the active GPU for this GPUContext */
+  /** cublasHandle for BLAS operations on the GPU */
   private cublasHandle cublasHandle;
 
-  /** cusparseHandle specific to the active GPU for this GPUContext */
+  /** cusparseHandle for certain sparse BLAS operations on the GPU */
   private cusparseHandle cusparseHandle;
+
+  /** cusolverDnHandle for invoking solve() function on dense matrices on the GPU */
+  private cusolverDnHandle cusolverDnHandle;
+
+  /** cusolverSpHandle for invoking solve() function on sparse matrices on the GPU */
+  private cusolverSpHandle cusolverSpHandle;
 
   /** to launch custom CUDA kernel, specific to the active GPU for this GPUContext */
   private JCudaKernels kernels;
@@ -133,6 +146,12 @@ public class GPUContext {
     // cublasSetPointerMode(LibMatrixCUDA.cublasHandle, cublasPointerMode.CUBLAS_POINTER_MODE_DEVICE);
     cusparseHandle = new cusparseHandle();
     cusparseCreate(cusparseHandle);
+
+    cusolverDnHandle = new cusolverDnHandle();
+    cusolverDnCreate(cusolverDnHandle);
+    cusolverSpHandle = new cusolverSpHandle();
+    cusolverSpCreate(cusolverSpHandle);
+
     kernels = new JCudaKernels(deviceNum);
 
     GPUStatistics.cudaLibrariesInitTime = System.nanoTime() - start;
@@ -553,6 +572,14 @@ public class GPUContext {
     return cusparseHandle;
   }
 
+  public cusolverDnHandle getCusolverDnHandle() {
+    return cusolverDnHandle;
+  }
+
+  public cusolverSpHandle getCusolverSpHandle() {
+    return cusolverSpHandle;
+  }
+
   public JCudaKernels getKernels() {
     return kernels;
   }
@@ -569,6 +596,8 @@ public class GPUContext {
     cudnnDestroy(cudnnHandle);
     cublasDestroy(cublasHandle);
     cusparseDestroy(cusparseHandle);
+    cusolverDnDestroy(cusolverDnHandle);
+    cusolverSpDestroy(cusolverSpHandle);
     cudnnHandle = null;
     cublasHandle = null;
     cusparseHandle = null;

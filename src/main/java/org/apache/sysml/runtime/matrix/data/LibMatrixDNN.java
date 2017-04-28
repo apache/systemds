@@ -1054,7 +1054,7 @@ public class LibMatrixDNN {
 		return params.enableNative && params.input1.isInSparseFormat() && !params.input2.isInSparseFormat();
 	}
 	private static boolean isEligibleForConv2dBackwardDataDense(ConvolutionParameters params) {
-		// NativeHelper.conv2dBackwardFilterSparseDense only if input is sparse. 
+		// NativeHelper.conv2dBackwardDataDense only if filter is dense. 
 		// dout converted to dense if sparse.
 		return params.enableNative && !params.input1.isInSparseFormat();
 	}
@@ -1179,12 +1179,11 @@ public class LibMatrixDNN {
 				{
 					MatrixBlock doutReshapedBlock = _doutReshapedBlocks.remove();
 					if(isEligibleForConv2dBackwardDataDense(_params)) {
-						double [] dout_n = doutReshapedBlock.getDenseBlock();
 						int CHW = _params.C*_params.H*_params.W;
 						double [] ret = new double[CHW];
 						double [] filterArr = _params.input1.getDenseBlock();
 						for(int n = _rl; n < _ru; n++) {
-							filterArr = getRowInDenseFormat(_params.input2, n, dout_n);
+							double [] dout_n = getRowInDenseFormat(_params.input2, n, doutReshapedBlock.getDenseBlock());
 							if(n > _rl)
 								Arrays.fill(ret, 0);
 							NativeHelper.conv2dBackwardDataDense(filterArr, dout_n, ret, 1, 

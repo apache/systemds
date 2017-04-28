@@ -181,14 +181,15 @@ void conv2dBackwardFilterDense(double* inputPtr, double* doutPtr, double* retPtr
   // Inplace transpose addition
   int numRow = CRS;
   for(int t = 0; t < numOpenMPThreads; t++) {
+  	int iter = 0;
   	double* temp1 = temp + numTempElem*t;
-  	// Inplace transpose addition
-    for(int iter = 0; iter<K*CRS; iter++) {
-    	int i = iter / K;
-    	int j = iter % K;
-    	retPtr[iter] += temp1[CRS*j + i];
-    }
-  } 
+	for(int i = 0; i < CRS; i++) {
+		for(int j = 0; j < K; j++, iter++) {
+			int index = j*numRow+i;
+			retPtr[index] += temp1[iter];
+		}
+	}
+  }
   
   delete [] temp;
   delete [] loweredMatArrays;
@@ -289,11 +290,9 @@ void conv2dBackwardFilterSparseDense(int apos, int alen, int* aix, double* avals
     matmult(loweredMat, rotatedDoutPtr, temp1, C * R * S, P * Q, K, 1);
     delete [] loweredMat;
      
-    // Inplace transpose addition
+    // Inplace addition
     for(int iter = 0; iter<K*CRS; iter++) {
-    	int i = iter / K;
-    	int j = iter % K;
-    	retPtr[iter] += temp1[CRS*j + i];
+    	retPtr[iter] += temp1[iter];
     }
     
 	delete [] temp1;

@@ -107,7 +107,11 @@ public class GPUObject {
 	public Object clone() {
 		GPUObject me = this;
 		GPUObject that = new GPUObject(me.gpuContext, me.mat);
-		System.arraycopy(me.tensorShape, 0, that.tensorShape, 0, me.tensorShape.length);
+		if (me.tensorShape != null) {
+            that.tensorShape = new int[me.tensorShape.length];
+            System.arraycopy(me.tensorShape, 0, that.tensorShape, 0, me.tensorShape.length);
+            that.allocateTensorDescriptor(me.tensorShape[0], me.tensorShape[1], me.tensorShape[2], me.tensorShape[3]);
+        }
 		that.dirty = me.dirty;
 		that.readLocks = new AtomicInteger(me.readLocks.get());
 		that.timestamp = new AtomicLong(me.timestamp.get());
@@ -119,8 +123,8 @@ public class GPUObject {
 			long cols = me.mat.getNumColumns();
 			long size = rows * cols * Sizeof.DOUBLE;
 			me.gpuContext.ensureFreeSpace((int)size);
-			Pointer ptrCopy = allocate(size);
-			cudaMemcpy(ptrCopy, me.jcudaDenseMatrixPtr, size, cudaMemcpyDeviceToDevice);
+			that.jcudaDenseMatrixPtr = allocate(size);
+			cudaMemcpy(that.jcudaDenseMatrixPtr, me.jcudaDenseMatrixPtr, size, cudaMemcpyDeviceToDevice);
 		}
 
 		if (me.jcudaSparseMatrixPtr != null){
@@ -128,7 +132,6 @@ public class GPUObject {
 			that.jcudaSparseMatrixPtr = me.jcudaSparseMatrixPtr.clone((int)rows);
 		}
 
-		that.allocateTensorDescriptor(me.tensorShape[0], me.tensorShape[1], me.tensorShape[2], me.tensorShape[3]);
 
 		} catch (DMLRuntimeException e){
 			throw new RuntimeException(e);

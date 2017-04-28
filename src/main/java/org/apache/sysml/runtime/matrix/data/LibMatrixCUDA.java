@@ -113,7 +113,6 @@ import org.apache.sysml.utils.Statistics;
 import jcuda.CudaException;
 import jcuda.Pointer;
 import jcuda.Sizeof;
-import jcuda.jcublas.JCublas;
 import jcuda.jcublas.JCublas2;
 import jcuda.jcublas.cublasDiagType;
 import jcuda.jcublas.cublasFillMode;
@@ -129,7 +128,6 @@ import jcuda.jcudnn.cudnnHandle;
 import jcuda.jcudnn.cudnnPoolingDescriptor;
 import jcuda.jcudnn.cudnnStatus;
 import jcuda.jcudnn.cudnnTensorDescriptor;
-import jcuda.jcusolver.JCusolver;
 import jcuda.jcusolver.JCusolverDn;
 import jcuda.jcusparse.JCusparse;
 import jcuda.jcusparse.cusparseHandle;
@@ -2984,100 +2982,106 @@ public class LibMatrixCUDA {
 	}
 
 
-	/**
-	 * Implements the "solve" function for systemml Ax = B (A is of size m*n, B is of size m*1, x is of size n*1)
-	 * @param ec a valid {@link ExecutionContext}
-	 * @param gCtx a valid {@link GPUContext}
-	 * @param instName the invoking instruction's name for record {@link Statistics}.
-	 * @param in1 input matrix A
-	 * @param in2 input matrix B
-	 * @param outputName name of the output matrix
-	 * @throws DMLRuntimeException if an error occurs
-	 */
-	public static void solve(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, MatrixObject in2, String outputName) throws DMLRuntimeException {
-		if (ec.getGPUContext() != gCtx)
-			throw new DMLRuntimeException("GPU : Invalid internal state, the GPUContext set with the ExecutionContext is not the same used to run this LibMatrixCUDA function");
+    /**
+     * Implements the "solve" function for systemml Ax = B (A is of size m*n, B is of size m*1, x is of size n*1)
+     *
+     * @param ec         a valid {@link ExecutionContext}
+     * @param gCtx       a valid {@link GPUContext}
+     * @param instName   the invoking instruction's name for record {@link Statistics}.
+     * @param in1        input matrix A
+     * @param in2        input matrix B
+     * @param outputName name of the output matrix
+     * @throws DMLRuntimeException if an error occurs
+     */
+    public static void solve(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, MatrixObject in2, String outputName) throws DMLRuntimeException {
+        if (ec.getGPUContext() != gCtx)
+            throw new DMLRuntimeException("GPU : Invalid internal state, the GPUContext set with the ExecutionContext is not the same used to run this LibMatrixCUDA function");
 
-		// x = solve(A, b)
+        // x = solve(A, b)
 
-		// Both Sparse
-		if(!isInSparseFormat(gCtx, in1) && !isInSparseFormat(gCtx, in2)) {	// Both dense
-			GPUObject Aobj = in1.getGPUObject(gCtx);
-			GPUObject bobj = in2.getGPUObject(gCtx);
-			int m = (int)in1.getNumRows();
-			int n = (int)in1.getNumColumns();
-			if ((int)in2.getNumRows() != m)
-				throw new DMLRuntimeException("GPU : Incorrect input for solve(), rows in A should be the same as rows in B");
-			if ((int)in2.getNumColumns() != 1)
-				throw new DMLRuntimeException("GPU : Incorrect input for solve(), columns in B should be 1");
-
-
-			// Copy over matrices and
-			// convert dense matrices to row major
-			// Operation in cuSolver and cuBlas are for column major dense matrices
-			// and are destructive to the original input
-			GPUObject ATobj = (GPUObject)Aobj.clone();
-			ATobj.denseRowMajorToColumnMajor();
-			Pointer A = ATobj.getJcudaDenseMatrixPtr();
-
-			GPUObject bTobj = (GPUObject)bobj.clone();
-			bTobj.denseRowMajorToColumnMajor();
-			Pointer b = bTobj.getJcudaDenseMatrixPtr();
-
-			// The following set of operations is done following the example in the cusolver documentation
-			// http://docs.nvidia.com/cuda/cusolver/#ormqr-example1
-
-			// step 3: query working space of geqrf and ormqr
-			int[] lwork = {0};
-			JCusolverDn.cusolverDnDgeqrf_bufferSize(gCtx.getCusolverDnHandle(), m, n, A, m, lwork);
-
-			// step 4: compute QR factorization
-			Pointer work = gCtx.allocate(lwork[0] * Sizeof.DOUBLE);
-			Pointer tau = gCtx.allocate(Math.max(m, m) * Sizeof.DOUBLE);
-			Pointer devInfo = gCtx.allocate(Sizeof.INT);
-			JCusolverDn.cusolverDnDgeqrf(gCtx.getCusolverDnHandle(), m, n, A, m, tau, work, lwork[0], devInfo);
-
-			int[] qrError = {-1};
-			cudaMemcpy(Pointer.to(qrError), devInfo, Sizeof.INT, cudaMemcpyDeviceToHost);
-			if (qrError[0] != 0){
-				throw new DMLRuntimeException("GPU : Error in call to geqrf (QR factorization) as part of solve, argument " + qrError[0] + " was wrong");
-			}
-
-			// step 5: compute Q^T*B
-			JCusolverDn.cusolverDnDormqr(gCtx.getCusolverDnHandle(), cublasSideMode.CUBLAS_SIDE_LEFT, cublasOperation.CUBLAS_OP_T, m, 1, n, A, m, tau, b, m, work, lwork[0], devInfo);
-			cudaMemcpy(Pointer.to(qrError), devInfo, Sizeof.INT, cudaMemcpyDeviceToHost);
-			if (qrError[0] != 0){
-				throw new DMLRuntimeException("GPU : Error in call to ormqr (to compuete Q^T*B after QR factorization) as part of solve, argument " + qrError[0] + " was wrong");
-			}
-
-			// step 6: compute x = R \ Q^T*B
-			JCublas2.cublasDtrsm(gCtx.getCublasHandle(),
-							cublasSideMode.CUBLAS_SIDE_LEFT, cublasFillMode.CUBLAS_FILL_MODE_UPPER, cublasOperation.CUBLAS_OP_N, cublasDiagType.CUBLAS_DIAG_NON_UNIT,
-							n, 1, pointerTo(1.0), A, m, b, m);
-
-			gCtx.cudaFreeHelper(work);
-			gCtx.cudaFreeHelper(tau);
-			gCtx.cudaFreeHelper(tau);
-			ATobj.clearData();
-
-			bTobj.denseColumnMajorToRowMajor();
-
-			MatrixObject out = ec.getMatrixObject(outputName);
-			out.setGPUObject(gCtx, bTobj);
+        // Both Sparse
+        if (!isInSparseFormat(gCtx, in1) && !isInSparseFormat(gCtx, in2)) {    // Both dense
+            GPUObject Aobj = in1.getGPUObject(gCtx);
+            GPUObject bobj = in2.getGPUObject(gCtx);
+            int m = (int) in1.getNumRows();
+            int n = (int) in1.getNumColumns();
+            if ((int) in2.getNumRows() != m)
+                throw new DMLRuntimeException("GPU : Incorrect input for solve(), rows in A should be the same as rows in B");
+            if ((int) in2.getNumColumns() != 1)
+                throw new DMLRuntimeException("GPU : Incorrect input for solve(), columns in B should be 1");
 
 
-		} else if (isInSparseFormat(gCtx, in1) && isInSparseFormat(gCtx, in2)) { // Both sparse
-			throw new DMLRuntimeException("GPU : solve on sparse inputs not supported");
-		} else if (!isInSparseFormat(gCtx, in1) && isInSparseFormat(gCtx, in2)) { // A is dense, b is sparse
-			// Pointer A = getDensePointer(gCtx, in1, instName);
-			// Pointer B = getDensePointer(gCtx, in2, instName);
-			throw new DMLRuntimeException("GPU : solve on sparse inputs not supported");
-		} else if (isInSparseFormat(gCtx, in1) && !isInSparseFormat(gCtx, in2)) { // A is sparse, b is dense
-			throw new DMLRuntimeException("GPU : solve on sparse inputs not supported");
-		}
+            // Copy over matrices and
+            // convert dense matrices to row major
+            // Operation in cuSolver and cuBlas are for column major dense matrices
+            // and are destructive to the original input
+            GPUObject ATobj = (GPUObject) Aobj.clone();
+            ATobj.denseRowMajorToColumnMajor();
+            Pointer A = ATobj.getJcudaDenseMatrixPtr();
+
+            GPUObject bTobj = (GPUObject) bobj.clone();
+            bTobj.denseRowMajorToColumnMajor();
+            Pointer b = bTobj.getJcudaDenseMatrixPtr();
+
+            // The following set of operations is done following the example in the cusolver documentation
+            // http://docs.nvidia.com/cuda/cusolver/#ormqr-example1
+
+            // step 3: query working space of geqrf and ormqr
+            int[] lwork = {0};
+            JCusolverDn.cusolverDnDgeqrf_bufferSize(gCtx.getCusolverDnHandle(), m, n, A, m, lwork);
+
+            // step 4: compute QR factorization
+            Pointer work = gCtx.allocate(lwork[0] * Sizeof.DOUBLE);
+            Pointer tau = gCtx.allocate(Math.max(m, m) * Sizeof.DOUBLE);
+            Pointer devInfo = gCtx.allocate(Sizeof.INT);
+            JCusolverDn.cusolverDnDgeqrf(gCtx.getCusolverDnHandle(), m, n, A, m, tau, work, lwork[0], devInfo);
+
+            int[] qrError = {-1};
+            cudaMemcpy(Pointer.to(qrError), devInfo, Sizeof.INT, cudaMemcpyDeviceToHost);
+            if (qrError[0] != 0) {
+                throw new DMLRuntimeException("GPU : Error in call to geqrf (QR factorization) as part of solve, argument " + qrError[0] + " was wrong");
+            }
+
+            // step 5: compute Q^T*B
+            JCusolverDn.cusolverDnDormqr(gCtx.getCusolverDnHandle(), cublasSideMode.CUBLAS_SIDE_LEFT, cublasOperation.CUBLAS_OP_T, m, 1, n, A, m, tau, b, m, work, lwork[0], devInfo);
+            cudaMemcpy(Pointer.to(qrError), devInfo, Sizeof.INT, cudaMemcpyDeviceToHost);
+            if (qrError[0] != 0) {
+                throw new DMLRuntimeException("GPU : Error in call to ormqr (to compuete Q^T*B after QR factorization) as part of solve, argument " + qrError[0] + " was wrong");
+            }
+
+            // step 6: compute x = R \ Q^T*B
+            JCublas2.cublasDtrsm(gCtx.getCublasHandle(),
+                cublasSideMode.CUBLAS_SIDE_LEFT, cublasFillMode.CUBLAS_FILL_MODE_UPPER, cublasOperation.CUBLAS_OP_N, cublasDiagType.CUBLAS_DIAG_NON_UNIT,
+                n, 1, pointerTo(1.0), A, m, b, m);
+
+            bTobj.denseColumnMajorToRowMajor();
+
+            // TODO  : Find a way to assign bTobj directly to the output and set the correct flags so as to not crash
+            // There is an avoidable copy happening here
+            MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, instName, outputName);
+            cudaMemcpy(out.getGPUObject(gCtx).getJcudaDenseMatrixPtr(), bTobj.getJcudaDenseMatrixPtr(), n * 1 * Sizeof.DOUBLE, cudaMemcpyDeviceToDevice);
+
+            gCtx.cudaFreeHelper(work);
+            gCtx.cudaFreeHelper(tau);
+            gCtx.cudaFreeHelper(tau);
+            ATobj.clearData();
+            bTobj.clearData();
+
+            //debugPrintMatrix(b, n, 1);
 
 
-	}
+        } else if (isInSparseFormat(gCtx, in1) && isInSparseFormat(gCtx, in2)) { // Both sparse
+            throw new DMLRuntimeException("GPU : solve on sparse inputs not supported");
+        } else if (!isInSparseFormat(gCtx, in1) && isInSparseFormat(gCtx, in2)) { // A is dense, b is sparse
+            // Pointer A = getDensePointer(gCtx, in1, instName);
+            // Pointer B = getDensePointer(gCtx, in2, instName);
+            throw new DMLRuntimeException("GPU : solve on sparse inputs not supported");
+        } else if (isInSparseFormat(gCtx, in1) && !isInSparseFormat(gCtx, in2)) { // A is sparse, b is dense
+            throw new DMLRuntimeException("GPU : solve on sparse inputs not supported");
+        }
+
+
+    }
 
 	//********************************************************************/
 	//*****************  END OF Builtin Functions ************************/

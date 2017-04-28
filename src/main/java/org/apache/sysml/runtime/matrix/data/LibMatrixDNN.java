@@ -1153,7 +1153,7 @@ public class LibMatrixDNN {
 						double [] dout_n = doutReshapedBlock.getDenseBlock();
 						for(int n = _rl; n < _ru; n++) {
 							if( !_params.input1.getSparseBlock().isEmpty(n) ) {
-								dout_n = getRowInDenseFormat(_params.input2, n, dout_n);
+								doRotate180(n, 0, _params.input2, dout_n, _params, true);
 								int apos = _params.input1.getSparseBlock().pos(n);
 								int alen = _params.input1.getSparseBlock().size(n);
 								int[] aix = _params.input1.getSparseBlock().indexes(n);

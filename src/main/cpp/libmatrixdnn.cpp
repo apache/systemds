@@ -259,7 +259,7 @@ void conv2dSparse(int apos, int alen, int* aix, double* avals, double* filterPtr
 	delete [] loweredMat;
 }
 
-void conv2dBackwardFilterSparse(int apos, int alen, int* aix, double* avals, double* doutPtr, double* retPtr, int N, int C, int H, int W, 
+void conv2dBackwardFilterSparseDense(int apos, int alen, int* aix, double* avals, double* rotatedDoutPtr, double* retPtr, int N, int C, int H, int W, 
 			int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads) {
 	setNumThreadsForBLAS(1);
 	int CHW = C * H * W;
@@ -282,19 +282,12 @@ void conv2dBackwardFilterSparse(int apos, int alen, int* aix, double* avals, dou
        R, S, stride_h, stride_w, pad_h, pad_w,
        P, Q);
     delete [] temp;
-    
-    // Step 2: Rotate dout
-    double* rotatedDoutPtr = new double[KPQ];
-    rotate180(doutPtr, rotatedDoutPtr, 1, C, H, W, K,
-           R, S, stride_h, stride_w, pad_h, pad_w,
-           P, Q);
 	
 	// Multiply to get CRS X K
 	double* temp1 = new double[CRS * K];
 	// Step 3: loweredMat (CRS X PQ) %*% rotatedDoutPtr (PQ X K) 
     matmult(loweredMat, rotatedDoutPtr, temp1, C * R * S, P * Q, K, 1);
     delete [] loweredMat;
-	delete [] rotatedDoutPtr;
      
     // Inplace transpose addition
     for(int iter = 0; iter<K*CRS; iter++) {

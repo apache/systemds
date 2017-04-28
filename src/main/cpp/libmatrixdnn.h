@@ -32,7 +32,7 @@ void conv2dBiasAddDense(double* inputPtr, double* biasPtr, double* filterPtr, do
 void conv2dSparse(int apos, int alen, int* aix, double* avals, double* filter, double* ret, int N, int C, int H, int W, 
 			int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads);
 
-void conv2dBackwardFilterSparse(int apos, int alen, int* aix, double* avals, double* dout, double* ret, int N, int C, int H, int W, 
+void conv2dBackwardFilterSparseDense(int apos, int alen, int* aix, double* avals, double* rotatedDoutPtr, double* ret, int N, int C, int H, int W, 
 			int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads);
 			
 #endif

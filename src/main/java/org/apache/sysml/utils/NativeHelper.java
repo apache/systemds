@@ -254,7 +254,7 @@ public class NativeHelper {
 	
 	// Currently only supported with numThreads = 1 and sparse input
 	// Called by LibMatrixDNN's thread if input is sparse. dout[n] is converted to dense if sparse.
-	public static native boolean conv2dBackwardFilterSparseDense(int apos, int alen, int[] aix, double[] avals, double [] dout, double [] ret, int N, int C, int H, int W, 
+	public static native boolean conv2dBackwardFilterSparseDense(int apos, int alen, int[] aix, double[] avals, double [] rotatedDoutPtr, double [] ret, int N, int C, int H, int W, 
 			int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads);
 	// Called by LibMatrixDNN's thread if input is sparse and filter is dense
 	public static native boolean conv2dSparse(int apos, int alen, int[] aix, double[] avals, double [] filter, double [] ret, int N, int C, int H, int W, 

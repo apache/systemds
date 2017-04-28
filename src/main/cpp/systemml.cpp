@@ -134,7 +134,7 @@ JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dBackwa
   double* doutPtr = GET_DOUBLE_ARRAY(env, dout, numThreads);
   double* retPtr = GET_DOUBLE_ARRAY(env, ret, numThreads);
   
-  conv2dBackwardFilterSparse((int)apos, (int)alen, aixPtr, avalsPtr, doutPtr, retPtr, (int)N, (int)C, (int)H, (int)W, 
+  conv2dBackwardFilterSparseDense((int)apos, (int)alen, aixPtr, avalsPtr, doutPtr, retPtr, (int)N, (int)C, (int)H, (int)W, 
 			(int)K, (int)R, (int)S, (int)stride_h, (int)stride_w, (int)pad_h, (int)pad_w, (int)P, (int)Q, (int)numThreads);
   
   RELEASE_INPUT_DOUBLE_ARRAY(env, avals, avalsPtr, numThreads);

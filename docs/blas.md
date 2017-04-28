@@ -103,7 +103,7 @@ install Visual Studio Community edition to get these dlls:
 3. Mac:
 
 	```bash
-	brew install gcc
+	brew install gcc --without-multilib
 	```
 
 # Developer Guide

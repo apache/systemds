@@ -323,7 +323,7 @@ public class GPUObject {
 	}
 
 	/**
-	 * Convenience method. Converts Row Major Dense Matrix --> Column Major Dense Matrix
+	 * Convenience method. Converts Row Major Dense Matrix to Column Major Dense Matrix
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public void denseRowMajorToColumnMajor() throws DMLRuntimeException {
@@ -342,7 +342,7 @@ public class GPUObject {
 	}
 
 	/**
-	 * Convenience method. Converts Column Major Dense Matrix --> Row Major Dense Matrix
+	 * Convenience method. Converts Column Major Dense Matrix to Row Major Dense Matrix
 	 * @throws DMLRuntimeException
 	 */
 	public void denseColumnMajorToRowMajor() throws DMLRuntimeException {

@@ -88,8 +88,18 @@ downloading [pre-built binaries](https://sourceforge.net/projects/openblas/) to 
 	# Centos/RedHat
 	sudo yum install gcc-c++
 	# Ubuntu
-	sudo apt-get install g++
+	sudo apt-get install g++ 
 	```
+
+We also depend on GNU OpenMP (gomp) which will be installed by GCC.
+To find the location of `gomp` on your system, please use the command `ldconfig -p | grep libgomp`.
+If gomp is available as `/lib64/libgomp.so.1` instead of `/lib64/libgomp.so`,
+please add a softlink to it:
+
+	```bash
+	sudo ln -s /lib64/libgomp.so.1 /lib64/libgomp.so
+	```
+
 
 2. Windows:
 

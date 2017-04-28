@@ -972,8 +972,8 @@ public class LibMatrixDNN {
 	private static void addMatrixBlocks(int poolSize, TaskType type, ConvolutionParameters params, 
 			ConcurrentLinkedQueue<MatrixBlock> im2ColOutBlocks, ConcurrentLinkedQueue<MatrixBlock> doutReshapedBlocks,
 			ConcurrentLinkedQueue<MatrixBlock> partialRetBlocks) {
-		boolean isEligibleForConv2dSparse = isEligibleForConv2dSparse(params) && type == TaskType.LoopedIm2ColConv2d;
-		boolean isEligibleForConv2dBackwardFilterSparseDense = isEligibleForConv2dBackwardFilterSparseDense(params) && type == TaskType.LoopedIm2ColConv2dBwdFilter;
+		boolean isEligibleForConv2dSparse = (type == TaskType.LoopedIm2ColConv2d) && isEligibleForConv2dSparse(params);
+		boolean isEligibleForConv2dBackwardFilterSparseDense = (type == TaskType.LoopedIm2ColConv2dBwdFilter) && isEligibleForConv2dBackwardFilterSparseDense(params) ;
 		for(int i = 0; i < poolSize; i++) {
 			if(type == TaskType.LoopedIm2ColConv2d || type == TaskType.LoopedIm2ColConv2dBwdFilter) {
 				if(!isEligibleForConv2dSparse && !isEligibleForConv2dBackwardFilterSparseDense) {
@@ -1185,7 +1185,7 @@ public class LibMatrixDNN {
 						double [] filterArr = _params.input1.getDenseBlock();
 						for(int n = _rl; n < _ru; n++) {
 							filterArr = getRowInDenseFormat(_params.input2, n, dout_n);
-							NativeHelper.conv2dBackwardDataDense(filterArr, filterArr, ret, 1, 
+							NativeHelper.conv2dBackwardDataDense(filterArr, dout_n, ret, 1, 
 									_params.C, _params.H, _params.W, _params.K, 
 									_params.R, _params.S, _params.stride_h, _params.stride_w, _params.pad_h, _params.pad_w, _params.P, _params.Q, 1);
 							System.arraycopy(ret, 0, _params.output.getDenseBlock(), n*CHW, CHW);

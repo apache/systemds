@@ -173,22 +173,21 @@ void conv2dBackwardFilterDense(double* inputPtr, double* doutPtr, double* retPtr
     
     // Multiply to get CRS X K
     double* temp1 = temp + numTempElem*omp_get_thread_num();
-    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, m1, n1, k1, 1.0, loweredMat, k1,
-              rotatedDoutPtr, n1, 1.0, temp1, n1);
+    // Step 3: loweredMat (CRS X PQ) %*% rotated_dout (PQ X K) 
+    matmult(loweredMat, rotatedDoutPtr, temp1, C * R * S, P * Q, K, 1);
               
   } // end omp parallel for
   
   // Inplace transpose addition
   int numRow = CRS;
   for(int t = 0; t < numOpenMPThreads; t++) {
-  	int iter = 0;
   	double* temp1 = temp + numTempElem*t;
-	for(int i = 0; i < CRS; i++) {
-		for(int j = 0; j < K; j++, iter++) {
-			int index = j*numRow+i;
-			retPtr[index] += temp1[iter];
-		}
-	}
+  	// Inplace transpose addition
+    for(int iter = 0; iter<K*CRS; iter++) {
+    	int i = iter / K;
+    	int j = iter % K;
+    	retPtr[iter] += temp1[CRS*j + i];
+    }
   } 
   
   delete [] temp;
@@ -292,19 +291,17 @@ void conv2dBackwardFilterSparse(int apos, int alen, int* aix, double* avals, dou
 	
 	// Multiply to get CRS X K
 	double* temp1 = new double[CRS * K];
-    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, m1, n1, k1, 1.0, loweredMat, k1,
-              rotatedDoutPtr, n1, 1.0, temp1, n1);
+	// Step 3: loweredMat (CRS X PQ) %*% rotatedDoutPtr (PQ X K) 
+    matmult(loweredMat, rotatedDoutPtr, temp1, C * R * S, P * Q, K, 1);
     delete [] loweredMat;
 	delete [] rotatedDoutPtr;
      
-    // Inplace transpose addition 
-    int iter = 0;       
-    for(int i = 0; i < CRS; i++) {
-		for(int j = 0; j < K; j++, iter++) {
-			int index = j*CRS+i;
-			retPtr[index] += temp1[iter];
-		}
-	}
+    // Inplace transpose addition
+    for(int iter = 0; iter<K*CRS; iter++) {
+    	int i = iter / K;
+    	int j = iter % K;
+    	retPtr[iter] += temp1[CRS*j + i];
+    }
     
 	delete [] temp1;
 }

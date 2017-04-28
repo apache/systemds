@@ -1185,6 +1185,8 @@ public class LibMatrixDNN {
 						double [] filterArr = _params.input1.getDenseBlock();
 						for(int n = _rl; n < _ru; n++) {
 							filterArr = getRowInDenseFormat(_params.input2, n, dout_n);
+							if(n > _rl)
+								Arrays.fill(ret, 0);
 							NativeHelper.conv2dBackwardDataDense(filterArr, dout_n, ret, 1, 
 									_params.C, _params.H, _params.W, _params.K, 
 									_params.R, _params.S, _params.stride_h, _params.stride_w, _params.pad_h, _params.pad_w, _params.P, _params.Q, 1);

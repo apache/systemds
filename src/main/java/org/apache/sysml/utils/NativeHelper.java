@@ -110,7 +110,7 @@ public class NativeHelper {
 	    				LOG.warn("Unsupported BLAS:" + userSpecifiedBLAS);
 	    			}
 	    			// =============================================================================
-				    if(loadLibraryHelper("libsystemml_" + blasType + "-Linux-x86_64.so")) {
+				    if(blasType != null && loadLibraryHelper("libsystemml_" + blasType + "-Linux-x86_64.so")) {
 							LOG.info("Using native blas: " + blasType);
 							isSystemMLLoaded = true;
 						}

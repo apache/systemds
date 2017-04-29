@@ -76,9 +76,10 @@ public class NativeHelper {
 			// - Developer testing of different BLAS 
 			// - Provides fine-grained control. Certain machines could use mkl while others use openblas, etc.
 			boolean enabledViaConfig = (dmlConfig == null) ? true : dmlConfig.getBooleanValue(DMLConfig.NATIVE_BLAS);
-			boolean enabledViaEnvironmentVariable = userSpecifiedBLAS.equals("mkl") || userSpecifiedBLAS.equals("openblas");
+			boolean enabledViaEnvironmentVariable = userSpecifiedBLAS.equals("") || userSpecifiedBLAS.equals("mkl") || userSpecifiedBLAS.equals("openblas");
 			
 			if(enabledViaConfig && enabledViaEnvironmentVariable) {
+				long start = System.nanoTime();
 				if(!supportedArchitectures.containsKey(SystemUtils.OS_ARCH)) {
 					LOG.warn("Unsupported architecture for native BLAS:" + SystemUtils.OS_ARCH);
 					return;
@@ -92,24 +93,38 @@ public class NativeHelper {
     				// If both MKL and OpenBLAS are not available we fall back to Java BLAS.
 	    			if(userSpecifiedBLAS.equalsIgnoreCase("")) {
 	    				blasType = isMKLAvailable() ? "mkl" : isOpenBLASAvailable() ? "openblas" : null;
+	    				if(blasType == null)
+	    					LOG.warn("Unable to load either MKL or OpenBLAS");
 	    			}
 	    			else if(userSpecifiedBLAS.equalsIgnoreCase("mkl")) {
 	    				blasType = isMKLAvailable() ? "mkl" : null;
+	    				if(blasType == null)
+	    					LOG.warn("Unable to load MKL");
 	    			}
 	    			else if(userSpecifiedBLAS.equalsIgnoreCase("openblas")) {
 	    				blasType = isOpenBLASAvailable() ? "openblas" : null;
+	    				if(blasType == null)
+	    					LOG.warn("Unable to load OpenBLAS");
 	    			}
 	    			else {
 	    				LOG.warn("Unsupported BLAS:" + userSpecifiedBLAS);
 	    			}
 	    			// =============================================================================
-				    
-						if(blasType != null && loadLibraryHelper("libsystemml_" + blasType + "-Linux-x86_64.so")) {
+				    if(loadLibraryHelper("libsystemml_" + blasType + "-Linux-x86_64.so")) {
 							LOG.info("Using native blas: " + blasType);
 							isSystemMLLoaded = true;
 						}
 	    		}
 	    	}
+	    	double timeToLoadInMilliseconds = (System.nanoTime()-start)*1e-6;
+	    	if(timeToLoadInMilliseconds > 100) 
+	    		LOG.warn("Time to load native blas: " + timeToLoadInMilliseconds + " milliseconds.");
+			}
+			else {
+				if(enabledViaConfig)
+					LOG.warn("Using internal Java BLAS as native BLAS support is disabled by the configuration 'native.blas'.");
+				else
+					LOG.warn("Using internal Java BLAS as native BLAS support is disabled by the environment variable 'SYSTEMML_BLAS=" + userSpecifiedBLAS + "'.");
 			}
 			attemptedLoading = true;
 		}
@@ -154,6 +169,8 @@ public class NativeHelper {
 	}
 	
 	private static boolean isOpenBLASAvailable() {
+		if(!loadBLAS("gomp", "gomp required for loading OpenBLAS-enabled SystemML library")) 
+			return false;
 		return loadBLAS("openblas", null);
 	}
 	

@@ -54,53 +54,62 @@ public class NativeHelper {
 	}
 	
 	private static boolean attemptedLoading = false;
-	// This will throw a detailed stack trace in case of fatal errors
+	
+	// Performing loading in a method instead of a static block will throw a detailed stack trace in case of fatal errors
 	private static void init() {
+		// Only Linux supported for BLAS
+		if(!SystemUtils.IS_OS_LINUX)
+			return;
+		
+		// attemptedLoading variable ensures that we don't try to load SystemML and other dependencies 
+		// again and again especially in the parfor (hence the double-checking with synchronized).
 		if(!attemptedLoading) {
 			DMLConfig dmlConfig = ConfigurationManager.getDMLConfig();
-			if(dmlConfig != null && dmlConfig.getBooleanValue(DMLConfig.NATIVE_BLAS)) {
-		    if(supportedArchitectures.containsKey(SystemUtils.OS_ARCH)) {
-		    	synchronized(NativeHelper.class) {
-		    		if(!attemptedLoading) {
-		    			String userSpecifiedBLAS = System.getenv("SYSTEMML_BLAS");
-		    			if(userSpecifiedBLAS != null) {
-		    				LOG.info("SYSTEMML_BLAS is set to " + userSpecifiedBLAS);
-		    				if(userSpecifiedBLAS.trim().equals("")) {
-			    				// Check if MKL is enabled, if not then check if openblas is enabled
-							    blasType = isMKLAvailable() ? "mkl" : (isOpenBLASAvailable() ? "openblas" : null);
-			    			}
-			    			else if(userSpecifiedBLAS.equalsIgnoreCase("mkl")) {
-			    				blasType = isMKLAvailable() ? "mkl" : null;
-			    			}
-			    			else if(userSpecifiedBLAS.equalsIgnoreCase("openblas")) {
-			    				blasType = isOpenBLASAvailable() ? "openblas" : null;
-			    			}
-			    			else {
-			    				LOG.warn("Unsupported BLAS:" + userSpecifiedBLAS);
-			    			}
-		    			}
-		    			else {
-		    				// Default behavior:
-		    				// Check if MKL is enabled, if not then check if openblas is enabled
-						    blasType = isMKLAvailable() ? "mkl" : (isOpenBLASAvailable() ? "openblas" : null);
-		    			}
-		    			
-					    
-							if(blasType != null) {
-								try {
-									loadLibrary("systemml", "_" + blasType);
-									LOG.info("Using native blas: " + blasType);
-									isSystemMLLoaded = true;
-								} catch (IOException e) {
-									LOG.warn("Using Java-based BLAS as unable to load native BLAS");
-								}
-							}
-		    		}
-		    	}
-		    }
-		    else {
-		    	LOG.warn("Unsupported architecture for native BLAS:" + SystemUtils.OS_ARCH);
-		    }
+			String userSpecifiedBLAS = System.getenv("SYSTEMML_BLAS");
+			userSpecifiedBLAS = (userSpecifiedBLAS == null) ? "" :  userSpecifiedBLAS.trim().toLowerCase();
+			// -------------------------------------------------------------------------------------
+			// We allow BLAS to be enabled or disabled or explicitly selected in one of the two ways:
+			// 1. DML Configuration: native.blas (boolean flag)
+			// 2. Environment variable: SYSTEMML_BLAS (can be set to mkl, openblas or none)
+			// The option 1 will be removed in later SystemML versions.
+			// The option 2 is useful for two reasons:
+			// - Developer testing of different BLAS 
+			// - Provides fine-grained control. Certain machines could use mkl while others use openblas, etc.
+			boolean enabledViaConfig = (dmlConfig == null) ? true : dmlConfig.getBooleanValue(DMLConfig.NATIVE_BLAS);
+			boolean enabledViaEnvironmentVariable = userSpecifiedBLAS.equals("mkl") || userSpecifiedBLAS.equals("openblas");
+			
+			if(enabledViaConfig && enabledViaEnvironmentVariable) {
+				if(!supportedArchitectures.containsKey(SystemUtils.OS_ARCH)) {
+					LOG.warn("Unsupported architecture for native BLAS:" + SystemUtils.OS_ARCH);
+					return;
+				}
+	    	synchronized(NativeHelper.class) {
+	    		if(!attemptedLoading) {
+	    			// -----------------------------------------------------------------------------
+	    			// =============================================================================
+	    			// By default, we will native.blas=true and we will attempt to load MKL first.
+    				// If MKL is not enabled then we try to load OpenBLAS.
+    				// If both MKL and OpenBLAS are not available we fall back to Java BLAS.
+	    			if(userSpecifiedBLAS.equalsIgnoreCase("")) {
+	    				blasType = isMKLAvailable() ? "mkl" : isOpenBLASAvailable() ? "openblas" : null;
+	    			}
+	    			else if(userSpecifiedBLAS.equalsIgnoreCase("mkl")) {
+	    				blasType = isMKLAvailable() ? "mkl" : null;
+	    			}
+	    			else if(userSpecifiedBLAS.equalsIgnoreCase("openblas")) {
+	    				blasType = isOpenBLASAvailable() ? "openblas" : null;
+	    			}
+	    			else {
+	    				LOG.warn("Unsupported BLAS:" + userSpecifiedBLAS);
+	    			}
+	    			// =============================================================================
+				    
+						if(blasType != null && loadLibraryHelper("libsystemml_" + blasType + "-Linux-x86_64.so")) {
+							LOG.info("Using native blas: " + blasType);
+							isSystemMLLoaded = true;
+						}
+	    		}
+	    	}
 			}
 			attemptedLoading = true;
 		}
@@ -111,6 +120,9 @@ public class NativeHelper {
 		if(maxNumThreads == -1)
 			maxNumThreads = OptimizerUtils.getConstrainedNumThreads(-1);
 		if(isSystemMLLoaded && !setMaxNumThreads && maxNumThreads != -1) {
+			// This method helps us decide whether to use GetPrimitiveArrayCritical or GetDoubleArrayElements in JNI as each has different tradeoffs.
+			// In current implementation, we always use GetPrimitiveArrayCritical as it has proven to be fastest. 
+			// We can revisit this decision later and hence I would not recommend removing this method. 
 			setMaxNumThreads(maxNumThreads);
 			setMaxNumThreads = true;
 		}
@@ -127,38 +139,22 @@ public class NativeHelper {
 	private static boolean isMKLAvailable() {
 		// ------------------------------------------------------------
 		// Set environment variable MKL_THREADING_LAYER to GNU on Linux for performance
-		try {
-			loadLibrary("preload_systemml", "");
-		} catch (IOException e) {
-			LOG.warn("Unable to load preload_systemml (required for loading MKL-enabled SystemML library):" + e.getMessage());
+		if(!loadLibraryHelper("libpreload_systemml-Linux-x86_64.so")) {
+			LOG.warn("Unable to load preload_systemml (required for loading MKL-enabled SystemML library)");
 			return false;
 		}
 		// The most reliable way in my investigation to ensure that MKL runs smoothly with OpenMP (used by conv2d*)
 		// is setting the environment variable MKL_THREADING_LAYER to GNU
 		EnvironmentHelper.setEnv("MKL_THREADING_LAYER", "GNU");
-		if(SystemUtils.IS_OS_LINUX || SystemUtils.IS_OS_MAC_OSX) {
-			String gompLibrary = SystemUtils.IS_OS_LINUX ? "gomp" : "iomp5";
-			if(!loadBLAS(gompLibrary, gompLibrary + " required for loading MKL-enabled SystemML library")) 
-				return false;
-		}
+		if(!loadBLAS("gomp", "gomp required for loading MKL-enabled SystemML library")) 
+			return false;
+		
 		// ------------------------------------------------------------
-		return loadBLAS("mkl_rt");
+		return loadBLAS("mkl_rt", null);
 	}
 	
 	private static boolean isOpenBLASAvailable() {
-		// OpenBLAS is not supported on MacOSX
-		// Default installation of openblas on MacOSX throws "Incompatible library versions" error.
-		// Until that is fixed, SystemML will not support OpenBLAS on Mac OSX. This is documented in the troubleshooting guide.
-		if(SystemUtils.IS_OS_MAC_OSX)
-			return false;
-		else if(SystemUtils.IS_OS_WINDOWS) 
-			return loadBLAS("openblas") || loadBLAS("libopenblas"); 
-		else 
-			return loadBLAS("openblas");
-	}
-	
-	private static boolean loadBLAS(String blas) {
-		return loadBLAS(blas, null);
+		return loadBLAS("openblas", null);
 	}
 	
 	private static boolean loadBLAS(String blas, String optionalMsg) {
@@ -174,36 +170,11 @@ public class NativeHelper {
 			return false;
 		}
 	}
-	
-	private static void loadLibrary(String libName, String suffix1) throws IOException {
-		String prefix = SystemUtils.IS_OS_WINDOWS ? "" : "lib";
-		String suffix2 = "";
-		String os = "";
-		if (SystemUtils.IS_OS_MAC_OSX) {
-			suffix2 = "dylib";
-			os = "Darwin";
-		} else if (SystemUtils.IS_OS_LINUX) {
-			suffix2 = "so";
-			os = "Linux";
-		} else if (SystemUtils.IS_OS_WINDOWS) {
-			suffix2 = "dll";
-			os = "Windows";
-		} else {
-			LOG.warn("Unsupported OS for native BLAS:" + SystemUtils.OS_NAME);
-			throw new IOException("Unsupported OS");
-		}
-		
-		String arch = supportedArchitectures.get(SystemUtils.OS_ARCH);
-		if(arch == null) {
-			LOG.warn("Unsupported architecture for native BLAS:" + SystemUtils.OS_ARCH);
-			throw new IOException("Unsupported architecture:" + SystemUtils.OS_ARCH);
-		}
-		loadLibraryHelper(prefix + libName + suffix1 + "-" + os + "-" + arch + "." + suffix2);
-	}
 
-	private static void loadLibraryHelper(String path) throws IOException {
+	private static boolean loadLibraryHelper(String path)  {
 		InputStream in = null; OutputStream out = null;
 		try {
+			// This logic is added because Java doesnot allow to load library from a resource file.
 			in = NativeHelper.class.getResourceAsStream("/lib/"+path);
 			if(in != null) {
 				File temp = File.createTempFile(path, "");
@@ -213,20 +184,23 @@ public class NativeHelper {
         in.close(); in = null;
         out.close(); out = null;
 				System.load(temp.getAbsolutePath());
+				return true;
 			}
 			else
-				throw new IOException("No lib available in the jar:" + path);
-			
+				LOG.warn("No lib available in the jar:" + path);
 		} catch(IOException e) {
-			LOG.info("Unable to load library " + path + " from resource:" + e.getMessage());
-			throw e;
+			LOG.warn("Unable to load library " + path + " from resource:" + e.getMessage());
 		} finally {
 			if(out != null)
-				out.close();
+				try {
+					out.close();
+				} catch (IOException e) {}
 			if(in != null)
-				in.close();
+				try {
+					in.close();
+				} catch (IOException e) {}
 		}
-		
+		return false;
 	}
 	
 	// TODO: Add pmm, wsloss, mmchain, etc.
@@ -261,5 +235,8 @@ public class NativeHelper {
 			int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads);
 	// ----------------------------------------------------------------------------------------------------------------
 	
+	// This method helps us decide whether to use GetPrimitiveArrayCritical or GetDoubleArrayElements in JNI as each has different tradeoffs.
+	// In current implementation, we always use GetPrimitiveArrayCritical as it has proven to be fastest. 
+	// We can revisit this decision later and hence I would not recommend removing this method. 
 	private static native void setMaxNumThreads(int numThreads);
 }

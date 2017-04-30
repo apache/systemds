@@ -725,7 +725,7 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 			rGetComputeCosts(c, partition, computeCosts);
 		
 		//get costs for given hop
-		double costs = 0;
+		double costs = 1;
 		if( current instanceof UnaryOp ) {
 			switch( ((UnaryOp)current).getOp() ) {
 				case ABS:   
@@ -759,7 +759,7 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 				case CUMMAX:
 				case CUMPROD: costs = 1; break;
 				default:
-					throw new RuntimeException("Cost model not "
+					LOG.warn("Cost model not "
 						+ "implemented yet for: "+((UnaryOp)current).getOp());
 			}
 		}
@@ -803,7 +803,7 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 					break;
 				case COVARIANCE: costs = 23; break;
 				default:
-					throw new RuntimeException("Cost model not "
+					LOG.warn("Cost model not "
 						+ "implemented yet for: "+((BinaryOp)current).getOp());
 			}
 		}
@@ -826,7 +826,7 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 					break;
 				case COVARIANCE: costs = 23; break;
 				default:
-					throw new RuntimeException("Cost model not "
+					LOG.warn("Cost model not "
 						+ "implemented yet for: "+((TernaryOp)current).getOp());
 			}
 		}
@@ -849,7 +849,7 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 			case MIN:
 			case MAX:    costs = 1; break;
 			default:
-				throw new RuntimeException("Cost model not "
+				LOG.warn("Cost model not "
 					+ "implemented yet for: "+((AggUnaryOp)current).getOp());			
 			}
 		}

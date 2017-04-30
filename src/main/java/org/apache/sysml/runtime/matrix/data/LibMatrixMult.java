@@ -17,7 +17,6 @@
  * under the License.
  */
 
-
 package org.apache.sysml.runtime.matrix.data;
 
 import java.util.ArrayList;
@@ -123,7 +122,7 @@ public class LibMatrixMult
 	{
 		matrixMult(m1, m2, ret, rl, ru, true);
 	}
-
+	
 	public static void matrixMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int rl, int ru, boolean examSparsity) 
 		throws DMLRuntimeException
 	{	
@@ -132,9 +131,9 @@ public class LibMatrixMult
 			ret.examSparsity(); //turn empty dense into sparse
 			return;
 		}
-		
+			
 		//Timing time = new Timing(true);
-		
+			
 		//pre-processing: output allocation
 		boolean tm2 = checkPrepMatrixMultRightInput(m1,m2);
 		m2 = prepMatrixMultRightInput(m1, m2);
@@ -166,6 +165,7 @@ public class LibMatrixMult
 		if(examSparsity)
 			ret.examSparsity();
 		
+		
 		//System.out.println("MM ("+m1.isInSparseFormat()+","+m1.getNumRows()+","+m1.getNumColumns()+","+m1.getNonZeros()+")x" +
 		//		              "("+m2.isInSparseFormat()+","+m2.getNumRows()+","+m2.getNumColumns()+","+m2.getNonZeros()+") in "+time.stop());
 	}
@@ -188,7 +188,7 @@ public class LibMatrixMult
 			ret.examSparsity(); //turn empty dense into sparse
 			return;
 		}
-		
+			
 		//check too high additional vector-matrix memory requirements (fallback to sequential)
 		//check too small workload in terms of flops (fallback to sequential too)
 		if( m1.rlen == 1 && (8L * m2.clen * k > MEM_OVERHEAD_THRESHOLD || !LOW_LEVEL_OPTIMIZATION || m2.clen==1 || m1.isUltraSparse() || m2.isUltraSparse()) 
@@ -246,6 +246,7 @@ public class LibMatrixMult
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
 		}
+		
 		
 		//post-processing (nnz maintained in parallel)
 		ret.examSparsity();

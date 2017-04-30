@@ -141,7 +141,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction
 			return new ConvolutionGPUInstruction(in1, in2, in3, out, opcode, str, stride,
 					padding, input_shape, filter_shape);
 		}
-		else if (opcode.equalsIgnoreCase("maxpooling") || opcode.equalsIgnoreCase("relu_maxpooling")) {
+		else if (opcode.equalsIgnoreCase("maxpooling")) {
 			InstructionUtils.checkNumFields(parts, 14);
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand out = new CPOperand(parts[14]);
@@ -303,7 +303,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction
 			LibMatrixCUDA.conv2dBackwardData(ec.getGPUContext(), getExtendedOpcode(), filter, dout, out, N, C, H, W,
 					K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
 		}
-		else if (instOpcode.equalsIgnoreCase("maxpooling") || instOpcode.equalsIgnoreCase("relu_maxpooling")) {
+		else if (instOpcode.equalsIgnoreCase("maxpooling")) {
 			MatrixObject image = getMatrixInputForGPUInstruction(ec, _input1.getName());
 
 			if(image.getNumRows() != N || image.getNumColumns() != C*H*W) 
@@ -315,9 +315,6 @@ public class ConvolutionGPUInstruction extends GPUInstruction
 			if(instOpcode.equalsIgnoreCase("maxpooling"))
 				LibMatrixCUDA.maxpooling(ec.getGPUContext(), getExtendedOpcode(), image, out, N, C, H, W,
 					K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
-			else
-				LibMatrixCUDA.reluMaxpooling(ec.getGPUContext(), getExtendedOpcode(), image, out, N, C, H, W,
-						K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
 		}
 		else if (instOpcode.equalsIgnoreCase("maxpooling_backward")) {
 			MatrixObject image = getMatrixInputForGPUInstruction(ec, _input1.getName());
@@ -341,7 +338,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction
 		// release inputs/outputs
 		ec.releaseMatrixInputForGPUInstruction(_input1.getName());
 
-		if (!( instOpcode.equalsIgnoreCase("maxpooling") || instOpcode.equalsIgnoreCase("relu_maxpooling")) )
+		if ( !instOpcode.equalsIgnoreCase("maxpooling") )
 			ec.releaseMatrixInputForGPUInstruction(_input2.getName());
 
 		if (instOpcode.equalsIgnoreCase("conv2d_bias_add"))

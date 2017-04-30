@@ -34,7 +34,7 @@ public class ConvolutionParameters implements Serializable {
 	public int K; public int R; public int S; public int stride_h; public int stride_w; public int pad_h; public int pad_w;
 	public int P; public int Q; public int numThreads;
 	
-	
+	public boolean enableNative = false;
 	public MatrixBlock input1; public MatrixBlock input2; public MatrixBlock output;
 	
 	public MatrixBlock bias;

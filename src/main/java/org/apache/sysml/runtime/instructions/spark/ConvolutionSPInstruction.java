@@ -25,6 +25,8 @@ import java.util.Iterator;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.broadcast.Broadcast;
+import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -41,6 +43,7 @@ import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
 import org.apache.sysml.runtime.matrix.data.ConvolutionParameters;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.LibMatrixDNN;
+import org.apache.sysml.runtime.matrix.data.LibMatrixNative;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
@@ -281,7 +284,8 @@ public class ConvolutionSPInstruction extends UnarySPInstruction {
 			int Q = (int) ConvolutionUtils.getQ(W, S, stride_w, pad_w);
 			
 			ConvolutionParameters params = new ConvolutionParameters(numRowsPerBlock, C, H, W, K, R, S, stride_h, stride_w, pad_h, pad_w, 1);
-			JavaPairRDD<MatrixIndexes,MatrixBlock> out = inputRDD.mapPartitionsToPair(new RDDConv2dMapMMFunction(filterBroadcast, params, instOpcode, biasBroadcast, mcRdd.getRows()), true);
+			boolean enableNativeBLAS = ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.NATIVE_BLAS); 
+			JavaPairRDD<MatrixIndexes,MatrixBlock> out = inputRDD.mapPartitionsToPair(new RDDConv2dMapMMFunction(filterBroadcast, params, instOpcode, biasBroadcast, mcRdd.getRows(), enableNativeBLAS), true);
 			
 			//put output RDD handle into symbol table
 			sec.setRDDHandleForVariable(output.getName(), out);
@@ -316,15 +320,16 @@ public class ConvolutionSPInstruction extends UnarySPInstruction {
 		Broadcast<MatrixBlock> filterBroadcast = null;
 		Broadcast<MatrixBlock> biasBroadcast = null;
 		ConvolutionParameters params = null;
-		String instOpcode = null;
+		String instOpcode = null; boolean enableNative;
 		long numRows = 0;
 		public RDDConv2dMapMMFunction(Broadcast<MatrixBlock> filterBroadcast, 
-				ConvolutionParameters params, String instOpcode, Broadcast<MatrixBlock> biasBroadcast, long numRows) {
+				ConvolutionParameters params, String instOpcode, Broadcast<MatrixBlock> biasBroadcast, long numRows, boolean enableNativeBLAS) {
 			this.filterBroadcast = filterBroadcast;
 			this.params = params;
 			this.instOpcode = instOpcode;
 			this.biasBroadcast = biasBroadcast;
 			this.numRows = numRows;
+			this.enableNative = enableNativeBLAS;
 		}
 		
 		private MatrixBlock processRectangularBlock(MatrixBlock matBlock) throws Exception {
@@ -336,7 +341,10 @@ public class ConvolutionSPInstruction extends UnarySPInstruction {
 				}
 				else {
 					outputBlock = getDenseOutputBlock(params.N, params.K*params.P*params.Q);
-					LibMatrixDNN.conv2d(matBlock, filter, outputBlock, params);
+					if(enableNative)
+						LibMatrixNative.conv2d(matBlock, filter, outputBlock, params);
+					else
+						LibMatrixDNN.conv2d(matBlock, filter, outputBlock, params);
 				}
 			}
 			else if (instOpcode.equalsIgnoreCase("conv2d_bias_add")) {
@@ -349,7 +357,10 @@ public class ConvolutionSPInstruction extends UnarySPInstruction {
 					outputBlock = getDenseOutputBlock(params.N, params.K*params.P*params.Q);
 					if(!bias.isEmptyBlock())
 						params.bias = bias;
-					LibMatrixDNN.conv2d(matBlock, filter, outputBlock, params);
+					if(enableNative)
+						LibMatrixNative.conv2d(matBlock, filter, outputBlock, params);
+					else
+						LibMatrixDNN.conv2d(matBlock, filter, outputBlock, params);
 				}
 			}
 			else if(instOpcode.equalsIgnoreCase("maxpooling") || instOpcode.equalsIgnoreCase("relu_maxpooling")) {

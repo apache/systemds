@@ -1043,41 +1043,6 @@ public class LibMatrixCUDA {
 	}
 	
 	/**
-	 * performs relu followed by maxpooling on GPU by exploiting cudnnPoolingForward(...)
-	 * @param gCtx   a valid {@link GPUContext}
-	 * @param instName the invoking instruction's name for record {@link Statistics}.
-	 * @param image image as matrix object
-	 * @param outputBlock output matrix
-	 * @param N				batch size
-	 * @param C				number of channels
-	 * @param H				height of image
-	 * @param W				width of image
-	 * @param K				number of filters
-	 * @param R				height of filter
-	 * @param S				width of filter
-	 * @param pad_h			vertical padding
-	 * @param pad_w			horizontal padding
-	 * @param stride_h		horizontal stride
-	 * @param stride_w		vertical stride
-	 * @param P				(H - R + 1 + 2*pad_h)/stride_h
-	 * @param Q				(W - S + 1 + 2*pad_w)/stride_w
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
-	 */
-	public static void reluMaxpooling(GPUContext gCtx, String instName, MatrixObject image,
-			MatrixObject outputBlock, int N, int C, int H, int W, int K, int R,
-			int S, int pad_h, int pad_w, int stride_h, int stride_w, int P,
-			int Q) throws DMLRuntimeException {
-        LOG.trace("GPU : reluMaxpooling" + ", GPUContext=" + gCtx);
-        cudnnTensorDescriptor srcTensorDesc = allocateTensorDescriptor(gCtx, image, N, C, H, W);
-		long size  = image.getNumRows() * image.getNumColumns() * Sizeof.DOUBLE;
-		Pointer tmp = gCtx.allocate(size);
-		performCuDNNReLU(gCtx, instName, image, tmp, srcTensorDesc);
-		//cudaDeviceSynchronize; // It seemed like the cudnn operation in performCuDNNReLU was being done aysnchronously, this adds the neccesary sync
-		performMaxpooling(gCtx, instName, tmp, srcTensorDesc, outputBlock, N, C, H, W, K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
-		gCtx.cudaFreeHelper(tmp);
-	}
-
-	/**
 	 * Performs maxpoolingBackward on GPU by exploiting cudnnPoolingBackward(...)
 	 * This method computes the backpropogation errors for previous layer of maxpooling operation
 	 * @param gCtx   a valid {@link GPUContext}

@@ -21,15 +21,20 @@ package org.apache.sysml.runtime.instructions.cp;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+
+import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.functionobjects.SwapIndex;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.ConvolutionParameters;
 import org.apache.sysml.runtime.matrix.data.LibMatrixDNN;
+import org.apache.sysml.runtime.matrix.data.LibMatrixNative;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysml.runtime.util.ConvolutionUtils;
+import org.apache.sysml.utils.NativeHelper;
 
 public class ConvolutionCPInstruction extends UnaryCPInstruction 
 {	
@@ -131,7 +136,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction
 			return new ConvolutionCPInstruction(in, out, opcode, str, stride,
 					padding, input_shape, filter_shape, k);
 		} 
-		else if (opcode.equalsIgnoreCase("maxpooling_backward")
+		else if (opcode.equalsIgnoreCase("maxpooling_backward") || opcode.equalsIgnoreCase("relu_maxpooling_backward")
 				|| opcode.equalsIgnoreCase("conv2d")
 				|| opcode.equalsIgnoreCase("conv2d_backward_filter")
 				|| opcode.equalsIgnoreCase("conv2d_backward_data")) {
@@ -288,6 +293,17 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction
 		ec.setMatrixOutput(getOutputVariableName(), outputBlock);
 	}
 	
+	// Assumption: enableNative && NativeHelper.isNativeLibraryLoaded() is true
+	// This increases the number of native calls. For example:the cases where filter is sparse but input is dense
+	private boolean isFilterSparse(MatrixBlock filter) throws DMLRuntimeException {
+		long numElems = filter.getNumRows()*filter.getNumColumns();
+		// if filter is less than 10 MB in dense format (which handles almost all the cases).
+		// In fact, using threshold of 1 MB is still sufficient for common CNNs.
+		if(filter.isInSparseFormat() && numElems < 10e+6)
+			filter.sparseToDense(); 
+		return filter.isInSparseFormat();
+	}
+	
 	
 	@Override
 	public void processInstruction(ExecutionContext ec)
@@ -326,6 +342,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction
 		int Q = (int) ConvolutionUtils.getQ(W, S, stride_w, pad_w);
 		
 		ConvolutionParameters params = new ConvolutionParameters(N, C, H, W, K, R, S, stride_h, stride_w, pad_h, pad_w, _numThreads);
+		params.enableNative = ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.NATIVE_BLAS) && NativeHelper.isNativeLibraryLoaded();
 		if (instOpcode.equalsIgnoreCase("maxpooling") || instOpcode.equalsIgnoreCase("relu_maxpooling")) {
 			if(matBlock.isEmptyBlock()) {
 				outputBlock = new MatrixBlock(N, C*P*Q, true);
@@ -337,14 +354,17 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction
 				LibMatrixDNN.maxpooling(matBlock, outputBlock, params);
 			}
 		}
-		else if (instOpcode.equalsIgnoreCase("maxpooling_backward")) {
+		else if (instOpcode.equalsIgnoreCase("maxpooling_backward") || instOpcode.equalsIgnoreCase("relu_maxpooling_backward")) {
 			MatrixBlock dout = ec.getMatrixInput(_in2.getName());
 			if(matBlock.isEmptyBlock() || dout.isEmptyBlock()) {
 				outputBlock = new MatrixBlock(N, C*H*W, true);
 			}
 			else {
 				outputBlock = getDenseOutputBlock(N, C*H*W);
-				LibMatrixDNN.maxpoolingBackward(matBlock, dout, outputBlock, params);
+				if(instOpcode.equalsIgnoreCase("maxpooling_backward"))
+					LibMatrixDNN.maxpoolingBackward(matBlock, dout, outputBlock, params, false);
+				else
+					LibMatrixDNN.maxpoolingBackward(matBlock, dout, outputBlock, params, true);
 			}
 			ec.releaseMatrixInput(_in2.getName());
 		}
@@ -355,7 +375,10 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction
 			}
 			else {
 				outputBlock = getDenseOutputBlock(N, K*P*Q);
-				LibMatrixDNN.conv2d(matBlock, filter, outputBlock, params);
+				if(params.enableNative && !isFilterSparse(filter) && !matBlock.isInSparseFormat())
+					LibMatrixNative.conv2d(matBlock, filter, outputBlock, params);
+				else
+					LibMatrixDNN.conv2d(matBlock, filter, outputBlock, params);
 			}
 			ec.releaseMatrixInput(_in2.getName());
 		}
@@ -367,9 +390,13 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction
 			}
 			else {
 				outputBlock = getDenseOutputBlock(N, K*P*Q);
-				if(!bias.isEmptyBlock())
+				if(!bias.isEmptyBlock()) {
 					params.bias = bias;
-				LibMatrixDNN.conv2d(matBlock, filter, outputBlock, params);
+				}
+				if(params.enableNative && !isFilterSparse(filter) && !matBlock.isInSparseFormat())
+					LibMatrixNative.conv2d(matBlock, filter, outputBlock, params);
+				else
+					LibMatrixDNN.conv2d(matBlock, filter, outputBlock, params);
 			}
 			ec.releaseMatrixInput(_in3.getName());
 			ec.releaseMatrixInput(_in2.getName());
@@ -381,7 +408,10 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction
 			}
 			else {
 				outputBlock = getDenseOutputBlock(K, C*R*S);
-				LibMatrixDNN.conv2dBackwardFilter(matBlock, dout, outputBlock, params);
+				if(params.enableNative && !matBlock.isInSparseFormat() && !dout.isInSparseFormat())
+					LibMatrixNative.conv2dBackwardFilter(matBlock, dout, outputBlock, params);
+				else
+					LibMatrixDNN.conv2dBackwardFilter(matBlock, dout, outputBlock, params);
 			}
 			ec.releaseMatrixInput(_in2.getName());
 		}
@@ -392,7 +422,10 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction
 			}
 			else {
 				outputBlock = getDenseOutputBlock(N, C * H * W);
-				LibMatrixDNN.conv2dBackwardData(matBlock, dout, outputBlock, params);
+				if(params.enableNative && !isFilterSparse(matBlock) && !dout.isInSparseFormat())
+					LibMatrixNative.conv2dBackwardData(matBlock, dout, outputBlock, params);
+				else
+					LibMatrixDNN.conv2dBackwardData(matBlock, dout, outputBlock, params);
 			}
 			ec.releaseMatrixInput(_in2.getName());
 		}

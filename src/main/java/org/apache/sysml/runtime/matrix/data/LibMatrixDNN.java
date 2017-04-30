@@ -36,6 +36,8 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysml.runtime.util.ConvolutionUtils;
+import org.apache.sysml.utils.NativeHelper;
+import org.apache.sysml.utils.Statistics;
 
 /**
  * This class allows users to invoke deep learning related operations 
@@ -57,10 +59,10 @@ public class LibMatrixDNN {
 	public static boolean DISPLAY_STATISTICS = false; //conv2d summaries in stats output
 
 	private enum TaskType {
-		MaxPooling_Forward, MaxPooling_Backward, 
+		MaxPooling_Forward, MaxPooling_Backward, MaxPooling_Relu_Backward,
 		// Alternate approaches that we tried but the performance was unsatisfactory be included: direct, non-looped im2col
 		LoopedIm2ColConv2d, LoopedIm2ColConv2dBwdFilter, LoopedIm2ColConv2dBwdData,
-		BiasAdd, ReluBackward, BiasMultiply
+		ReluBackward
 	}
 	
 	// ------------------------------------------------------------------------------------------------
@@ -141,6 +143,30 @@ public class LibMatrixDNN {
 	// ------------------------------------------------------------------------------------------------
 	
 	/**
+	 * This method performs convolution (i.e. cross-correlation) operation on input
+	 * 
+	 * @param input input batch 
+	 * @param filter filter
+	 * @param outputBlock output of convolution
+	 * @param params convolution parameters
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
+	 */
+	public static void conv2d(MatrixBlock input, MatrixBlock filter, MatrixBlock outputBlock, ConvolutionParameters params) throws DMLRuntimeException {
+		LibMatrixDNN.checkInputsConv2d(input, filter, outputBlock, params);
+		
+		if(params.bias != null && params.bias.isInSparseFormat())
+			params.bias.sparseToDense(); // Since bias is extremely small array
+		
+		if(isEligibleForConv2dSparse(params))
+			Statistics.numNativeLibMatrixDNNCalls.increment();
+		
+		runConvTask(TaskType.LoopedIm2ColConv2d, params);
+		
+		//post-processing: maintain nnz
+		outputBlock.recomputeNonZeros();
+	}
+	
+	/**
 	 * This method computes the backpropogation errors for previous layer of convolution operation
 	 * 
 	 * @param filter filter used in conv2d 
@@ -150,25 +176,10 @@ public class LibMatrixDNN {
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void conv2dBackwardData(MatrixBlock filter, MatrixBlock dout, MatrixBlock outputBlock, ConvolutionParameters params) throws DMLRuntimeException {
-		params.input1 = filter;
-		params.input2 = dout;
-		params.output = outputBlock;
-		if(filter.getNumRows() != params.K || filter.getNumColumns() != params.C*params.R*params.S || 
-				dout.getNumRows() != params.N || dout.getNumColumns() != params.K*params.P*params.Q) {
-			throw new DMLRuntimeException("Incorrect input to conv2d_backward_filter");
-		}
-		if(params.stride_h <= 0 || params.stride_w <= 0) {
-			throw new DMLRuntimeException("Only positive strides supported");
-		}
+		checkInputsConv2dBackwardData(filter, dout, outputBlock, params);
 		
-		if(DMLScript.STATISTICS && DISPLAY_STATISTICS) {
-			if(filter.isInSparseFormat() || dout.isInSparseFormat()) {
-				conv2dBwdDataSparseCount.addAndGet(1);
-			}
-			else {
-				conv2dBwdDataDenseCount.addAndGet(1);
-			}
-		}
+		if(isEligibleForConv2dBackwardDataDense(params))
+			Statistics.numNativeLibMatrixDNNCalls.increment();
 		
 		runConvTask(TaskType.LoopedIm2ColConv2dBwdData, params);
 		
@@ -186,16 +197,70 @@ public class LibMatrixDNN {
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void conv2dBackwardFilter(MatrixBlock input, MatrixBlock dout, MatrixBlock outputBlock, ConvolutionParameters params) throws DMLRuntimeException {
+		checkInputsConv2dBackwardFilter(input, dout, outputBlock, params);
+		
+		if(isEligibleForConv2dBackwardFilterSparseDense(params))
+			Statistics.numNativeLibMatrixDNNCalls.increment();
+		
+		runConvTask(TaskType.LoopedIm2ColConv2dBwdFilter, params);
+		
+		//post-processing: maintain nnz
+		outputBlock.recomputeNonZeros();
+	}
+	
+	
+	private static void checkOrThrowException(String msg, long lhs, long rhs) throws DMLRuntimeException {
+		if(lhs != rhs)
+			throw new DMLRuntimeException(msg + ":" + lhs + " != " + rhs);
+	}
+	private static void checkOrThrowException(String msg, long lhs, long rhs1, long rhs2, long rhs3) throws DMLRuntimeException {
+		if(lhs != (rhs1*rhs2*rhs3))
+			throw new DMLRuntimeException(msg + ":" + lhs + " != (" + rhs1 + " * " + rhs2 + " * " + rhs3);
+	}
+	
+	static void checkInputsConv2dBackwardData(MatrixBlock filter, MatrixBlock dout, MatrixBlock outputBlock, ConvolutionParameters params)  throws DMLRuntimeException {
+		params.input1 = filter;
+		params.input2 = dout;
+		params.output = outputBlock;
+		checkOrThrowException("Incorrect input to conv2d_backward_data: Number of rows of input filter != "
+				+ "number of filters in filter_shape", filter.getNumRows(), params.K);
+		checkOrThrowException("Incorrect input to conv2d_backward_data: Number of columns of input filter != "
+				+ "channels*filter_height*filter_height in filter_shape", filter.getNumColumns(), params.C, params.R, params.S);
+		checkOrThrowException("Incorrect input to conv2d_backward_data: Number of rows of input errors != "
+				+ "batch size in input_shape", dout.getNumRows(), params.N);
+		checkOrThrowException("Incorrect input to conv2d_backward_data: Number of columns of input errors != "
+				+ "expected input error channels*height*width", dout.getNumColumns(), params.K, params.P, params.Q);
+		if(params.stride_h <= 0 || params.stride_w <= 0) 
+			throw new DMLRuntimeException("Only positive strides supported:" + params.stride_h + ", " + params.stride_w);
+		
+		if(DMLScript.STATISTICS && DISPLAY_STATISTICS) {
+			if(filter.isInSparseFormat() || dout.isInSparseFormat()) {
+				conv2dBwdDataSparseCount.addAndGet(1);
+			}
+			else {
+				conv2dBwdDataDenseCount.addAndGet(1);
+			}
+		}
+		
+		int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
+		if (!(ALLOW_MULTI_THREADED_OPS && params.isOutputThreadSafe() && constrainedNumThreads > 1))
+			params.numThreads = 1;
+	}
+	
+	static void checkInputsConv2dBackwardFilter(MatrixBlock input, MatrixBlock dout, MatrixBlock outputBlock, ConvolutionParameters params)  throws DMLRuntimeException {
 		params.input1 = input;
 		params.input2 = dout;
 		params.output = outputBlock;
-		if(input.getNumRows() != params.N || input.getNumColumns() != params.C*params.H*params.W || 
-				dout.getNumRows() != params.N || dout.getNumColumns() != params.K*params.P*params.Q) {
-			throw new DMLRuntimeException("Incorrect input to conv2d_backward_filter");
-		}
-		if(params.stride_h <= 0 || params.stride_w <= 0) {
-			throw new DMLRuntimeException("Only positive strides supported");
-		}
+		checkOrThrowException("Incorrect input to conv2d_backward_filter: Number of rows of input data != "
+				+ "batch size in input_shape", input.getNumRows(), params.N);
+		checkOrThrowException("Incorrect input to conv2d_backward_filter: Number of columns of input data != "
+				+ "channels*input_height*input_height in input_shape", input.getNumColumns(), params.C, params.H, params.W);
+		checkOrThrowException("Incorrect input to conv2d_backward_filter: Number of rows of input errors != "
+				+ "batch size in input_shape", dout.getNumRows(), params.N);
+		checkOrThrowException("Incorrect input to conv2d_backward_filter: Number of columns of input errors != "
+				+ "expected input error channels*height*width", dout.getNumColumns(), params.K, params.P, params.Q);
+		if(params.stride_h <= 0 || params.stride_w <= 0) 
+			throw new DMLRuntimeException("Only positive strides supported:" + params.stride_h + ", " + params.stride_w);
 		
 		if(DMLScript.STATISTICS && DISPLAY_STATISTICS) {
 			if(input.isInSparseFormat() || dout.isInSparseFormat()) {
@@ -205,11 +270,6 @@ public class LibMatrixDNN {
 				conv2dBwdFilterDenseCount.addAndGet(1);
 			}
 		}
-		
-		runConvTask(TaskType.LoopedIm2ColConv2dBwdFilter, params);
-		
-		//post-processing: maintain nnz
-		outputBlock.recomputeNonZeros();
 	}
 	
 	/**
@@ -252,11 +312,10 @@ public class LibMatrixDNN {
 		MatrixBlock filter = params.input1;
 		MatrixBlock dout = params.input2;
 		doRotate180(n, 0, dout, dout_reshaped.denseBlock, params, true);
-		dout_reshaped.recomputeNonZeros();
 		
 		MatrixBlock temp = new MatrixBlock(params.P*params.Q, params.C*params.R*params.S, false);
 		long t1 = DMLScript.STATISTICS && DISPLAY_STATISTICS ? System.nanoTime() : 0;
-		LibMatrixMult.matrixMult(dout_reshaped, filter, temp, false);
+		singleThreadedMatMult(dout_reshaped, filter, temp, true, false, params);
 		long t2 = DMLScript.STATISTICS && DISPLAY_STATISTICS ? System.nanoTime() : 0 ;
 		doCol2imOverSingleImage(n, temp, params);
 		long t3 = DMLScript.STATISTICS && DISPLAY_STATISTICS ? System.nanoTime() : 0 ;
@@ -270,15 +329,13 @@ public class LibMatrixDNN {
 			MatrixBlock im2ColOutBlock, MatrixBlock dout_reshaped, MatrixBlock partialRetBlock, ConvolutionParameters params, double []  tempIm2ColArr) throws DMLRuntimeException {
 		long t1 = DMLScript.STATISTICS && DISPLAY_STATISTICS ? System.nanoTime() : 0;
 		doIm2col(n, im2ColOutBlock, params, tempIm2ColArr);
-		im2ColOutBlock.recomputeNonZeros();
 		long t2 = DMLScript.STATISTICS && DISPLAY_STATISTICS ? System.nanoTime() : 0 ;
 		
 		doRotate180(n, 0, params.input2, dout_reshaped.denseBlock, params, true);
-		dout_reshaped.recomputeNonZeros();
 		
 		MatrixBlock temp = new MatrixBlock(params.C*params.R*params.S, params.K, false);
 		long t3 = DMLScript.STATISTICS && DISPLAY_STATISTICS ? System.nanoTime() : 0 ;
-		LibMatrixMult.matrixMult(im2ColOutBlock, dout_reshaped, temp, false);
+		singleThreadedMatMult(im2ColOutBlock, dout_reshaped, temp, true, true, params);
 		long t4 = DMLScript.STATISTICS && DISPLAY_STATISTICS ? System.nanoTime() : 0 ;
 		if(DMLScript.STATISTICS && DISPLAY_STATISTICS) {
 			loopedConvBwdFilterMatMultTime.addAndGet(t4-t3);
@@ -298,15 +355,21 @@ public class LibMatrixDNN {
 		ret[2] = j % W;
 	}
 	
-	public static void conv2d(MatrixBlock input, MatrixBlock filter, MatrixBlock outputBlock, ConvolutionParameters params) throws DMLRuntimeException {
+	static void checkInputsConv2d(MatrixBlock input, MatrixBlock filter, MatrixBlock outputBlock, ConvolutionParameters params) throws DMLRuntimeException {
 		params.input1 = input;
 		params.input2 = filter;
 		params.output = outputBlock;
 		
-		if(input.getNumRows() != params.N || input.getNumColumns() != params.C*params.H*params.W || 
-				filter.getNumRows() != params.K || filter.getNumColumns() != params.C*params.R*params.S) {
-			throw new DMLRuntimeException("Incorrect input to conv2d: " + input.getNumRows());
-		}
+		checkOrThrowException("Incorrect input to conv2d: Number of rows of input filter != "
+				+ "number of filters in filter_shape", filter.getNumRows(), params.K);
+		checkOrThrowException("Incorrect input to conv2d: Number of columns of input filter != "
+				+ "channels*filter_height*filter_height in filter_shape", filter.getNumColumns(), params.C, params.R, params.S);
+		checkOrThrowException("Incorrect input to conv2d: Number of rows of input data != "
+				+ "batch size in input_shape", input.getNumRows(), params.N);
+		checkOrThrowException("Incorrect input to conv2d: Number of columns of input data != "
+				+ "channels*input_height*input_height in input_shape", input.getNumColumns(), params.C, params.H, params.W);
+		if(params.stride_h <= 0 || params.stride_w <= 0) 
+			throw new DMLRuntimeException("Only positive strides supported:" + params.stride_h + ", " + params.stride_w);
 		
 		if(DMLScript.STATISTICS && DISPLAY_STATISTICS) {
 			if(input.isInSparseFormat() || filter.isInSparseFormat()) {
@@ -316,21 +379,36 @@ public class LibMatrixDNN {
 				conv2dDenseCount.addAndGet(1);
 			}
 		}
-		
-		runConvTask(TaskType.LoopedIm2ColConv2d, params);
-		
-		//post-processing: maintain nnz
-		outputBlock.recomputeNonZeros();
+	}
+	
+	// Single-threaded matrix multiplication
+	private static void singleThreadedMatMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, 
+			boolean recomputeNNZM1, boolean recomputeNNZM2, ConvolutionParameters params) throws DMLRuntimeException {
+		if(!params.enableNative || m1.isInSparseFormat() || m2.isInSparseFormat()) {
+			if(recomputeNNZM1)
+				m1.recomputeNonZeros();
+			if(recomputeNNZM2)
+				m2.recomputeNonZeros();
+			LibMatrixMult.matrixMult(m1, m2, ret, false);
+		}
+		else {
+			ret.sparse = false;
+			if(ret.getDenseBlock() == null)
+				ret.allocateDenseBlock();
+			NativeHelper.matrixMultDenseDense(m1.denseBlock, m2.denseBlock, 
+					ret.denseBlock, m1.getNumRows(), m1.getNumColumns(), m2.getNumColumns(), 1);
+			ret.recomputeNonZeros();
+		}
 	}
 	
 	private static void doLoopedIm2ColConv2d(int n, MatrixBlock im2ColOutBlock, ConvolutionParameters params, double []  temp) throws DMLRuntimeException {
 		long t1 = DMLScript.STATISTICS && DISPLAY_STATISTICS ? System.nanoTime() : 0;
 		doIm2col(n, im2ColOutBlock, params, temp);
-		im2ColOutBlock.recomputeNonZeros();
 		long t2 = DMLScript.STATISTICS && DISPLAY_STATISTICS ? System.nanoTime() : 0;
 		
 		MatrixBlock matMultOutBlock = new MatrixBlock(params.K, params.P*params.Q, false);
-		LibMatrixMult.matrixMult(params.input2, im2ColOutBlock, matMultOutBlock, false);
+		singleThreadedMatMult(params.input2, im2ColOutBlock, matMultOutBlock, false, true, params);
+		
 		long t3 = DMLScript.STATISTICS && DISPLAY_STATISTICS ? System.nanoTime() : 0;
 		
 		if(DMLScript.STATISTICS && DISPLAY_STATISTICS) {
@@ -380,9 +458,11 @@ public class LibMatrixDNN {
 	 * @param dout dout matrix
 	 * @param outputBlock output matrix
 	 * @param params convolution parameters
+	 * @param performReluBackward perform ReLU backward
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static void maxpoolingBackward(MatrixBlock input, MatrixBlock dout, MatrixBlock outputBlock, ConvolutionParameters params) throws DMLRuntimeException {
+	public static void maxpoolingBackward(MatrixBlock input, MatrixBlock dout, MatrixBlock outputBlock, 
+			ConvolutionParameters params, boolean performReluBackward) throws DMLRuntimeException {
 		params.input1 = input;
 		params.input2 = dout;
 		params.output = outputBlock;
@@ -407,7 +487,10 @@ public class LibMatrixDNN {
 			throw new DMLRuntimeException("Sparse maxpooling_backward is not supported");
 
 		fillIndexesArray(params);
-		runConvTask(TaskType.MaxPooling_Backward, params);
+		if(performReluBackward)
+			runConvTask(TaskType.MaxPooling_Relu_Backward, params);
+		else
+			runConvTask(TaskType.MaxPooling_Backward, params);
 		
 		//post-processing: maintain nnz 
 		outputBlock.recomputeNonZeros();
@@ -440,7 +523,7 @@ public class LibMatrixDNN {
 		}
 	}
 	
-	private static void doPoolingBackward(int n, ConvolutionParameters params) throws DMLRuntimeException {
+	private static void doPoolingBackward(int n, ConvolutionParameters params, boolean performReluBackward) throws DMLRuntimeException {
 		double [] inputArray = null;
 		if (!params.input1.isInSparseFormat())
 			inputArray = params.input1.getDenseBlock();
@@ -455,19 +538,19 @@ public class LibMatrixDNN {
 			
 		if(inputArray != null) {
 			if(doutArray != null)
-				doPoolingBackwardDenseDense(n, inputArray, doutArray, outputArray, params);
+				doPoolingBackwardDenseDense(n, inputArray, doutArray, outputArray, params, performReluBackward);
 			else
-				doPoolingBackwardDenseSparse(n, inputArray, params.input2, outputArray, params);
+				doPoolingBackwardDenseSparse(n, inputArray, params.input2, outputArray, params, performReluBackward);
 		}
 		else {
 			if(doutArray != null)
-				doPoolingBackwardSparseDense(n, doutArray, outputArray, params);
+				doPoolingBackwardSparseDense(n, doutArray, outputArray, params, performReluBackward);
 			else
-				doPoolingBackwardSparseSparse(n, outputArray, params);
+				doPoolingBackwardSparseSparse(n, outputArray, params, performReluBackward);
 		}
 	}
 	
-	private static void doPoolingBackwardSparseDense(int n, double [] doutArray,  double [] outputArray, ConvolutionParameters params) throws DMLRuntimeException {
+	private static void doPoolingBackwardSparseDense(int n, double [] doutArray,  double [] outputArray, ConvolutionParameters params, boolean performReluBackward) throws DMLRuntimeException {
 		if (!params.input1.isInSparseFormat())
 			throw new DMLRuntimeException("Incorrect usage: Call optimized versions");
 		
@@ -477,7 +560,7 @@ public class LibMatrixDNN {
 					double inVal = doutArray[n*params.C*params.P*params.Q + c*params.P*params.Q +  p * params.Q + q];
 					if(inVal != 0) {
 						final int inputOffset = n*params.C*params.H*params.W + c*params.H*params.W;
-						int maxIndex = getMaxIndexSparse(p, q, inputOffset, n, c, params.input1, params);
+						int maxIndex = getMaxIndexSparse(p, q, inputOffset, n, c, params.input1, params, performReluBackward);
 						if(maxIndex != -1)
 							outputArray[maxIndex] += inVal;
 					}
@@ -486,7 +569,7 @@ public class LibMatrixDNN {
 		}
 	}
 	
-	private static void doPoolingBackwardSparseSparse(int n, double [] outputArray, ConvolutionParameters params) throws DMLRuntimeException {
+	private static void doPoolingBackwardSparseSparse(int n, double [] outputArray, ConvolutionParameters params, boolean performReluBackward) throws DMLRuntimeException {
 		if (!params.input1.isInSparseFormat())
 			throw new DMLRuntimeException("Incorrect usage: Call optimized versions");
 		
@@ -502,7 +585,7 @@ public class LibMatrixDNN {
 				int p = tensorIndexes[1];
 				int q = tensorIndexes[2];
 				final int inputOffset = n*params.C*params.H*params.W + c*params.H*params.W;
-				int maxIndex = getMaxIndexSparse(p, q, inputOffset, n, c, params.input1, params);
+				int maxIndex = getMaxIndexSparse(p, q, inputOffset, n, c, params.input1, params, performReluBackward);
 				if(maxIndex != -1)
 					outputArray[maxIndex] += avals[j];
 			}
@@ -510,7 +593,7 @@ public class LibMatrixDNN {
 	}
 	
 	private static void doPoolingBackwardDenseSparse(int n, double [] inputArray, 
-			MatrixBlock dout, double [] outputArray, ConvolutionParameters params) throws DMLRuntimeException {
+			MatrixBlock dout, double [] outputArray, ConvolutionParameters params, boolean performReluBackward) throws DMLRuntimeException {
 		if( !dout.sparseBlock.isEmpty(n) ) {
 			int [] tensorIndexes = new int[3];
 			int apos = dout.sparseBlock.pos(n);
@@ -523,7 +606,7 @@ public class LibMatrixDNN {
 				int p = tensorIndexes[1];
 				int q = tensorIndexes[2];
 				final int inputOffset = n*params.C*params.H*params.W + c*params.H*params.W;
-				int maxIndex = getMaxIndex(p, q, inputOffset, inputArray, params);
+				int maxIndex = getMaxIndex(p, q, inputOffset, inputArray, params, performReluBackward);
 				if(maxIndex != -1)
 					outputArray[maxIndex] += avals[j];
 			}
@@ -531,14 +614,14 @@ public class LibMatrixDNN {
 	}
 	
 	private static void doPoolingBackwardDenseDense(int n, double [] inputArray, double [] doutArray, 
-			double [] outputArray, ConvolutionParameters params) {
+			double [] outputArray, ConvolutionParameters params, boolean performReluBackward) {
 		for (int c = 0; c < params.C; c++) {
 			final int inputOffset = n*params.C*params.H*params.W + c*params.H*params.W;
 			final int outputOffset = n*params.C*params.P*params.Q + c*params.P*params.Q;
 			
 			for (int p = 0; p < params.P; p++) {
 				for (int q = 0; q < params.Q; q++) {
-					int maxIndex = getMaxIndex(p, q, inputOffset, inputArray, params);
+					int maxIndex = getMaxIndex(p, q, inputOffset, inputArray, params, performReluBackward);
 					if(maxIndex != -1)
 						outputArray[maxIndex] += doutArray[outputOffset +  p * params.Q + q];
 				}
@@ -556,10 +639,11 @@ public class LibMatrixDNN {
 	 * @param c number of channels 
 	 * @param input input matrix
 	 * @param params convolution parameters
+	 * @param performReluBackward perform ReLU on input
 	 * @return index of the cell with maximum value
 	 * @throws DMLRuntimeException if error occurs
 	 */
-	private static int getMaxIndexSparse(int p, int q, int inputOffset, int n, int c, MatrixBlock input, ConvolutionParameters params) throws DMLRuntimeException {
+	private static int getMaxIndexSparse(int p, int q, int inputOffset, int n, int c, MatrixBlock input, ConvolutionParameters params, boolean performReluBackward) throws DMLRuntimeException {
 		if(!input.isInSparseFormat())
 			throw new DMLRuntimeException("Incorrect usage: Only sparse format supported");
 		
@@ -591,9 +675,10 @@ public class LibMatrixDNN {
 				int h = tensorIndexes[1];
 				int w = tensorIndexes[2];
 				if(h >= start_index_h && h < end_index_h && w >= start_index_w && w < end_index_w) {
-					if(maxVal < avals[j]) {
+					double val = performReluBackward && avals[j] < 0 ? 0 : avals[j]; 
+					if(maxVal < val) {
 						maxIndex = inputOffset +  h*params.W + w;
-						maxVal = avals[j];
+						maxVal = val;
 					}
 				}
 			}
@@ -612,9 +697,10 @@ public class LibMatrixDNN {
 	 * @param inputOffset offset to be used for input index
 	 * @param inputArray input array
 	 * @param params convolution parameters
+	 * @param performReluBackward perform ReLU backward
 	 * @return index of cell with maximum value
 	 */
-	private static int getMaxIndex(int p, int q, int inputOffset, double [] inputArray, ConvolutionParameters params) {
+	private static int getMaxIndex(int p, int q, int inputOffset, double [] inputArray, ConvolutionParameters params, boolean performReluBackward) {
 		int start_index_h = params.start_indexes_h[p];
 		int end_index_h = params.end_indexes_h[p];
 		int start_index_w = params.start_indexes_w[q];
@@ -632,6 +718,7 @@ public class LibMatrixDNN {
 		for (int h = start_index_h; h < end_index_h; h++) {
 			for (int w = start_index_w; w < end_index_w; w++) {
 				currDoutVal = inputArray[inputOffset +  h*params.W + w];
+				currDoutVal = performReluBackward && currDoutVal < 0 ? 0 : currDoutVal;
 				if(maxVal < currDoutVal) {
 					maxIndex = inputOffset +  h*params.W + w;
 					maxVal = currDoutVal;
@@ -894,11 +981,15 @@ public class LibMatrixDNN {
 	private static void addMatrixBlocks(int poolSize, TaskType type, ConvolutionParameters params, 
 			ConcurrentLinkedQueue<MatrixBlock> im2ColOutBlocks, ConcurrentLinkedQueue<MatrixBlock> doutReshapedBlocks,
 			ConcurrentLinkedQueue<MatrixBlock> partialRetBlocks) {
+		boolean isEligibleForConv2dSparse = (type == TaskType.LoopedIm2ColConv2d) && isEligibleForConv2dSparse(params);
+		boolean isEligibleForConv2dBackwardFilterSparseDense = (type == TaskType.LoopedIm2ColConv2dBwdFilter) && isEligibleForConv2dBackwardFilterSparseDense(params) ;
 		for(int i = 0; i < poolSize; i++) {
 			if(type == TaskType.LoopedIm2ColConv2d || type == TaskType.LoopedIm2ColConv2dBwdFilter) {
-				MatrixBlock im2ColOutBlock = new MatrixBlock(params.C*params.R*params.S, params.P*params.Q, false);
-				im2ColOutBlock.allocateDenseBlock();
-				im2ColOutBlocks.add(im2ColOutBlock);
+				if(!isEligibleForConv2dSparse && !isEligibleForConv2dBackwardFilterSparseDense) {
+					MatrixBlock im2ColOutBlock = new MatrixBlock(params.C*params.R*params.S, params.P*params.Q, false);
+					im2ColOutBlock.allocateDenseBlock();
+					im2ColOutBlocks.add(im2ColOutBlock);
+				}
 			}
 			
 			if(type == TaskType.LoopedIm2ColConv2dBwdFilter) {
@@ -962,6 +1053,21 @@ public class LibMatrixDNN {
 	}
 	// ----------------------------------------------------------------------------------------------------------------
 	
+	private static boolean isEligibleForConv2dBackwardFilterSparseDense(ConvolutionParameters params) {
+		// NativeHelper.conv2dBackwardFilterSparseDense only if filter is sparse. 
+		// dout converted to dense if sparse.
+		return params.enableNative && params.input1.isInSparseFormat();
+	}
+	private static boolean isEligibleForConv2dSparse(ConvolutionParameters params) {
+		// NativeHelper.conv2dSparse only if filter is dense and input is sparse
+		return params.enableNative && params.input1.isInSparseFormat() && !params.input2.isInSparseFormat();
+	}
+	private static boolean isEligibleForConv2dBackwardDataDense(ConvolutionParameters params) {
+		// NativeHelper.conv2dBackwardDataDense only if filter is dense. 
+		// dout converted to dense if sparse.
+		return params.enableNative && !params.input1.isInSparseFormat();
+	}
+	
 	/**
 	 * The ConvTask allows the convolution operations (such s conv2d, conv2d_backward, maxpooling, etc)
 	 * to be executed in multi-thread manner.
@@ -1001,55 +1107,108 @@ public class LibMatrixDNN {
 					break;
 				case MaxPooling_Backward:
 					for(int n = _rl; n < _ru; n++) 
-						doPoolingBackward(n, _params);
+						doPoolingBackward(n, _params, false);
 					break;
-				case BiasAdd:
-				{
-					double [] dest = _params.output.getDenseBlock();
-					ConvolutionUtils.binaryBiasOperations(_params.input1, _params.bias, dest, _params.K, _params.P*_params.Q, 
-							_rl, _ru, _binaryElementWiseAddition);
+				case MaxPooling_Relu_Backward:
+					for(int n = _rl; n < _ru; n++) 
+						doPoolingBackward(n, _params, true);
 					break;
-				}
-				case BiasMultiply:
-				{
-					double [] dest = _params.output.getDenseBlock();
-					ConvolutionUtils.binaryBiasOperations(_params.input1, _params.bias, dest, _params.K, _params.P*_params.Q, 
-							_rl, _ru, _binaryElementWiseMultiplication);
-					break;
-				}
 				case ReluBackward:
 					lnnz = doReluBackward(_params, _rl, _ru);
 					break;
 				case LoopedIm2ColConv2d:
 				{	
-					MatrixBlock im2ColOutBlock = _im2ColOutBlocks.remove();
-					double [] temp = _params.input1.isInSparseFormat() ? new double[_params.input1.getNumColumns()] : null;
-					for(int n = _rl; n < _ru; n++) 
-						doLoopedIm2ColConv2d(n, im2ColOutBlock, _params, temp);
-					_im2ColOutBlocks.add(im2ColOutBlock);
-					if(_params.bias != null)
-						ConvolutionUtils.binaryBiasOperationInPlace(_params.bias, _params.output.getDenseBlock(), _params.K, 
-								_params.P*_params.Q, _rl, _ru, _binaryElementWiseAddition);
+					if(isEligibleForConv2dSparse(_params)) {
+						// NativeHelper.conv2dSparse only if filter is dense and input is sparse
+						int KPQ = _params.K*_params.P*_params.Q;
+						double[] temp = new double[KPQ];
+						for(int n = _rl; n < _ru; n++)  {
+							if( !_params.input1.getSparseBlock().isEmpty(n) ) {
+								int apos = _params.input1.getSparseBlock().pos(n);
+								int alen = _params.input1.getSparseBlock().size(n);
+								int[] aix = _params.input1.getSparseBlock().indexes(n);
+								double[] avals = _params.input1.getSparseBlock().values(n);
+								NativeHelper.conv2dSparse(apos, alen, aix, avals, _params.input2.getDenseBlock(), temp, 
+										1, _params.C, _params.H, _params.W, _params.K, _params.R, _params.S, 
+										_params.stride_h, _params.stride_w, _params.pad_h, _params.pad_w, _params.P, _params.Q, 1);
+								System.arraycopy(temp, 0, _params.output.denseBlock, n*KPQ, KPQ);
+							}
+						}
+					}
+					else {
+						// In all other cases, perform im2col in Java + matmult (either native or java).
+						MatrixBlock im2ColOutBlock = _im2ColOutBlocks.remove();
+						double [] temp = _params.input1.isInSparseFormat() ? new double[_params.input1.getNumColumns()] : null;
+						for(int n = _rl; n < _ru; n++) 
+							doLoopedIm2ColConv2d(n, im2ColOutBlock, _params, temp);
+						_im2ColOutBlocks.add(im2ColOutBlock);
+					}
+					if(_params.bias != null) {
+						// bias is always converted to dense format
+						double [] biasArr = _params.bias.getDenseBlock();
+						int PQ = _params.P*_params.Q;
+						int index = _rl*_params.K*PQ;
+						for(int n = _rl; n < _ru; n++) {
+							for(int k = 0; k < _params.K; k++) {
+								for(int pq = 0; pq < PQ; pq++, index++) {
+									_params.output.denseBlock[index] += biasArr[k];
+								}
+							}
+						}
+					}
 					break;
 				}
 				case LoopedIm2ColConv2dBwdFilter:
 				{
-					MatrixBlock im2ColOutBlock = _im2ColOutBlocks.remove();
 					MatrixBlock partialRetBlock = _partialRetBlocks.remove();
 					MatrixBlock doutReshapedBlock = _doutReshapedBlocks.remove();
-					double [] temp = _params.input1.isInSparseFormat() ? new double[_params.input1.getNumColumns()] : null;
-					for(int n = _rl; n < _ru; n++) 
-						partialRetBlock = doLoopedIm2ColConv2dBwdFilter(n, im2ColOutBlock, doutReshapedBlock, partialRetBlock, _params, temp);
-					_im2ColOutBlocks.add(im2ColOutBlock);
-					_partialRetBlocks.add(partialRetBlock);
+					if(isEligibleForConv2dBackwardFilterSparseDense(_params)) {
+						double [] dout_n = doutReshapedBlock.getDenseBlock();
+						for(int n = _rl; n < _ru; n++) {
+							if( !_params.input1.getSparseBlock().isEmpty(n) ) {
+								doRotate180(n, 0, _params.input2, dout_n, _params, true);
+								int apos = _params.input1.getSparseBlock().pos(n);
+								int alen = _params.input1.getSparseBlock().size(n);
+								int[] aix = _params.input1.getSparseBlock().indexes(n);
+								double[] avals = _params.input1.getSparseBlock().values(n);
+								NativeHelper.conv2dBackwardFilterSparseDense(apos, alen, aix, avals, 
+										dout_n, partialRetBlock.getDenseBlock(), 1, _params.C, _params.H, _params.W, _params.K, 
+										_params.R, _params.S, _params.stride_h, _params.stride_w, _params.pad_h, _params.pad_w, _params.P, _params.Q, 1);
+							}
+						}
+					}
+					else {
+						MatrixBlock im2ColOutBlock = _im2ColOutBlocks.remove();
+						double [] temp = _params.input1.isInSparseFormat() ? new double[_params.input1.getNumColumns()] : null;
+						for(int n = _rl; n < _ru; n++) 
+							partialRetBlock = doLoopedIm2ColConv2dBwdFilter(n, im2ColOutBlock, doutReshapedBlock, partialRetBlock, _params, temp);
+						_im2ColOutBlocks.add(im2ColOutBlock);
+					}
 					_doutReshapedBlocks.add(doutReshapedBlock);
+					_partialRetBlocks.add(partialRetBlock);
 					break;
 				}
 				case LoopedIm2ColConv2dBwdData:
 				{
 					MatrixBlock doutReshapedBlock = _doutReshapedBlocks.remove();
-					for(int n = _rl; n < _ru; n++) 
-						doLoopedIm2ColConv2dBwdData(n, doutReshapedBlock, _params);
+					if(isEligibleForConv2dBackwardDataDense(_params)) {
+						int CHW = _params.C*_params.H*_params.W;
+						double [] ret = new double[CHW];
+						double [] filterArr = _params.input1.getDenseBlock();
+						for(int n = _rl; n < _ru; n++) {
+							double [] dout_n = getRowInDenseFormat(_params.input2, n, doutReshapedBlock.getDenseBlock());
+							if(n > _rl)
+								Arrays.fill(ret, 0);
+							NativeHelper.conv2dBackwardDataDense(filterArr, dout_n, ret, 1, 
+									_params.C, _params.H, _params.W, _params.K, 
+									_params.R, _params.S, _params.stride_h, _params.stride_w, _params.pad_h, _params.pad_w, _params.P, _params.Q, 1);
+							System.arraycopy(ret, 0, _params.output.getDenseBlock(), n*CHW, CHW);
+						}
+					}
+					else {
+						for(int n = _rl; n < _ru; n++) 
+							doLoopedIm2ColConv2dBwdData(n, doutReshapedBlock, _params);
+					}
 					_doutReshapedBlocks.add(doutReshapedBlock);
 					break;
 				}
@@ -1192,16 +1351,24 @@ public class LibMatrixDNN {
 	}
 	
 	// Returns the row of matrix in dense format
-	private static double [] getRowInDenseFormat(MatrixBlock input, int n, double []  temp) {
+	private static double [] getRowInDenseFormat(MatrixBlock input, int n, double []  temp) throws DMLRuntimeException {
+		if(input.getNumColumns() != temp.length) {
+			throw new DMLRuntimeException("Invalid parameters");
+		}
 		// Use temporary array to avoid binary search
-		Arrays.fill(temp, 0);
-		if( !input.sparseBlock.isEmpty(n) ) {
-			int apos = input.sparseBlock.pos(n);
-			int alen = input.sparseBlock.size(n);
-			int[] aix = input.sparseBlock.indexes(n);
-			double[] avals = input.sparseBlock.values(n);
-			for(int j=apos; j<apos+alen; j++)
-				temp[ aix[j] ] = avals[j];
+		if(input.isInSparseFormat()) {
+			Arrays.fill(temp, 0);
+			if( !input.sparseBlock.isEmpty(n) ) {
+				int apos = input.sparseBlock.pos(n);
+				int alen = input.sparseBlock.size(n);
+				int[] aix = input.sparseBlock.indexes(n);
+				double[] avals = input.sparseBlock.values(n);
+				for(int j=apos; j<apos+alen; j++)
+					temp[ aix[j] ] = avals[j];
+			}
+		}
+		else {
+			System.arraycopy(input.getDenseBlock(), n*input.getNumColumns(), temp, 0, input.getNumColumns());
 		}
 		return temp;
 	}

@@ -35,13 +35,15 @@ w=matrix(seq(1, numFilters*numChannels*filterSize*filterSize), numFilters, numCh
 if(as.logical(args[9])) {
 	zero_mask = (x - mean(x)) > 0 
 	x = x * zero_mask
+} else {
+	x = x - mean(x)
 }
 if(as.logical(args[10])) {
 	zero_mask = (w - mean(w)) > 0 
 	w = w * zero_mask
+} else {
+	w = w - mean(w)
 }
-x = x - mean(x)
-w = w - mean(w)
 pad_image <- function(img, Hin, Win, padh, padw){
   C = nrow(img)
   img_padded = matrix(0, C, (Hin+2*padh)*(Win+2*padw), byrow=TRUE)  # zeros

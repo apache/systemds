@@ -111,6 +111,10 @@
 			</excludes>
 			<targetPath>kernels</targetPath>
 		</resource>
+		<resource>
+			<directory>src/main/cpp/lib</directory>
+			<targetPath>lib</targetPath>
+		</resource>
 	</resources>
 
 		<plugins>

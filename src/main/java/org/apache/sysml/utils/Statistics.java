@@ -112,6 +112,17 @@ public class Statistics
 		return numExecutedMRJobs.longValue();
 	}
 	
+	private static LongAdder numNativeFailures = new LongAdder();
+	public static LongAdder numNativeLibMatrixMultCalls = new LongAdder();
+	public static LongAdder numNativeLibMatrixDNNCalls = new LongAdder();
+	public static void incrementNativeFailuresCounter() {
+		numNativeFailures.increment();
+		// This is very rare and am not sure it is possible at all. Our initial experiments never encountered this case.
+		// Note: all the native calls have a fallback to Java; so if the user wants she can recompile SystemML by 
+		// commenting this exception and everything should work fine.
+		throw new RuntimeException("Unexpected ERROR: OOM caused during JNI transfer. Please disable native BLAS by setting enviroment variable: SYSTEMML_BLAS=none");
+	}
+	
 	public static void incrementNoOfExecutedMRJobs() {
 		numExecutedMRJobs.increment();
 	}
@@ -366,6 +377,9 @@ public class Statistics
 		resetCPHeavyHitters();
 
 		GPUStatistics.reset();
+		numNativeLibMatrixMultCalls.reset();
+		numNativeLibMatrixDNNCalls.reset();
+		numNativeFailures.reset();
 		LibMatrixDNN.resetStatistics();
 	}
 
@@ -621,6 +635,11 @@ public class Statistics
 		//show extended caching/compilation statistics
 		if( DMLScript.STATISTICS ) 
 		{
+			if(NativeHelper.blasType != null && (numNativeLibMatrixMultCalls.longValue() > 0 || 
+					numNativeLibMatrixDNNCalls.longValue() > 0)) {
+				String blas = NativeHelper.blasType != null ? NativeHelper.blasType : ""; 
+				sb.append("Native " + blas + " calls (LibMatrixMult/LibMatrixDNN):\t" + numNativeLibMatrixMultCalls.longValue()  + "/" + numNativeLibMatrixDNNCalls.longValue() + ".\n");
+			}
 			sb.append("Cache hits (Mem, WB, FS, HDFS):\t" + CacheStatistics.displayHits() + ".\n");
 			sb.append("Cache writes (WB, FS, HDFS):\t" + CacheStatistics.displayWrites() + ".\n");
 			sb.append("Cache times (ACQr/m, RLS, EXP):\t" + CacheStatistics.displayTime() + " sec.\n");

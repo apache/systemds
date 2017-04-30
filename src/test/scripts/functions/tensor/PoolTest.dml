@@ -33,7 +33,9 @@ if($10) {
 	zero_mask = (x - mean(x)) > 0 
 	x = x * zero_mask
 }
-x = x - mean(x)
+else {
+	x = x - mean(x)
+}
 if(poolMode == "max") {
 	output = max_pool(x, stride=[stride, stride], padding=[pad, pad], input_shape=[numImg, numChannels, imgSize, imgSize], pool_size=[poolSize1, poolSize2])
 }

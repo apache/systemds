@@ -136,3 +136,7 @@ by setting the configuration `systemml.stats.extraGPU` and `systemml.stats.extra
 Out-Of-Memory on executors is often caused due to side-effects of lazy evaluation and in-memory input data of Spark for large-scale problems. 
 Though we are constantly improving our optimizer to address this scenario, a quick hack to resolve this is reducing the number of cores allocated to the executor.
 We would highly appreciate if you file a bug report on our [issue tracker](https://issues.apache.org/jira/browse/SYSTEMML) if and when you encounter OOM.
+
+## Native BLAS errors
+
+Please see [the user guide of native backend](http://apache.github.io/incubator-systemml/native-backend).

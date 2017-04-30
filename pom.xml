@@ -254,15 +254,51 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jar-plugin</artifactId>
-				<configuration>
-					<archive>
+				<executions>
+				  <execution>
+		            <goals><goal>jar</goal></goals>
+		            <phase>package</phase>
+		            <configuration>
+		              <archive>
 						<index>true</index>
 						<manifestEntries>
 							<Build-Timestamp>${maven.build.timestamp}</Build-Timestamp>
 							<Main-Class>org.apache.sysml.api.DMLScript</Main-Class>
 						</manifestEntries>
-					</archive>
-				</configuration>
+					  </archive>
+					  <classifier>lite</classifier>
+		              <excludes>
+		                <exclude>**/caffe/*</exclude>
+		                <exclude>**/org/tensorflow/*</exclude>
+		                <exclude>**/org/tensorflow/framework/*</exclude>
+		                <exclude>**/org/tensorflow/util/*</exclude>
+		                <exclude>**/org/apache/sysml/api/dl/*</exclude>
+		              </excludes>
+		            </configuration>
+		          </execution>
+		          <execution>
+		            <id>extra</id>
+		            <goals><goal>jar</goal></goals>
+		            <phase>package</phase>
+		            <configuration>
+		              <archive>
+						<index>true</index>
+						<manifestEntries>
+							<Build-Timestamp>${maven.build.timestamp}</Build-Timestamp>
+							<Main-Class>org.apache.sysml.api.DMLScript</Main-Class>
+						</manifestEntries>
+					  </archive>
+		              <classifier>extra</classifier>
+		              <includes>
+		              	<include>**/META-INF/*</include>
+		                <include>**/caffe/*</include>
+		                <include>**/org/tensorflow/framework/*</include>
+		                <include>**/org/tensorflow/util/*</include>
+		                <include>**/org/apache/sysml/api/dl/*</include>
+		              </includes>
+		            </configuration>
+		          </execution>
+		        </executions>
 			</plugin>
 
 			<plugin>
@@ -582,6 +618,7 @@
 						<phase>package</phase>
 						<configuration>
 							<target name="copy and rename JAR">
+								<move file="${project.build.directory}/${project.artifactId}-${project.version}-lite.jar" tofile="${project.build.directory}/${project.artifactId}-${project.version}.jar" />
 								<copy file="${project.build.directory}/${project.artifactId}-${project.version}.jar" tofile="${project.build.directory}/SystemML.jar" />
 							</target>
 						</configuration>

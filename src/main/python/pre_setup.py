@@ -33,3 +33,6 @@ for file in os.listdir(os.path.join(root_dir, 'target')):
     if fnmatch.fnmatch(file, 'systemml-*-incubating-SNAPSHOT.jar') or fnmatch.fnmatch(file, 'systemml-*-incubating.jar'):
         shutil.copyfile(os.path.join(root_dir, 'target', file),
                         os.path.join(java_dir_full_path, file))
+    if fnmatch.fnmatch(file, 'systemml-*-incubating-SNAPSHOT-extra.jar') or fnmatch.fnmatch(file, 'systemml-*-incubating-extra.jar'):
+        shutil.copyfile(os.path.join(root_dir, 'target', file),
+                        os.path.join(java_dir_full_path, file))

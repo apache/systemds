@@ -25,6 +25,7 @@ import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.api.ScriptExecutorUtils;
 import org.apache.sysml.api.jmlc.JMLCUtils;
 import org.apache.sysml.api.mlcontext.MLContext.ExplainLevel;
 import org.apache.sysml.conf.ConfigurationManager;
@@ -47,8 +48,6 @@ import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
-import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
-import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysml.utils.Explain;
 import org.apache.sysml.utils.Explain.ExplainCounts;
 import org.apache.sysml.utils.Explain.ExplainType;
@@ -118,7 +117,9 @@ public class ScriptExecutor {
 	protected boolean init = false;
 	protected boolean explain = false;
 	protected boolean gpu = false;
+	protected boolean oldGPU = false;
 	protected boolean statistics = false;
+	protected boolean oldStatistics = false;
 	protected ExplainLevel explainLevel;
 	protected int statisticsMaxHeavyHitters = 10;
 	protected boolean maintainSymbolTable = false;
@@ -245,18 +246,10 @@ public class ScriptExecutor {
 		if (symbolTable != null) {
 			executionContext.setVariables(symbolTable);
 		}
-		try {
-			if (gpu) {
-				GPUContext gCtx = GPUContextPool.getFromPool();
-				if (gCtx == null)
-					throw new MLContextException("GPU : no GPUs or no more free GPUs available");
-				executionContext.setGPUContext(gCtx);
-				gCtx.initializeThread();
-			}
-		} catch (DMLRuntimeException e) {
-			throw new MLContextException("GPU : Exception occurred during initialization");
-		}
-
+		oldGPU = DMLScript.USE_ACCELERATOR; 
+		oldStatistics = DMLScript.STATISTICS;
+		DMLScript.USE_ACCELERATOR = gpu;
+		DMLScript.STATISTICS = statistics;
 	}
 
 	/**
@@ -290,9 +283,6 @@ public class ScriptExecutor {
 	public MLResults execute(Script script) {
 
 		// main steps in script execution
-		if(statistics) {
-			Statistics.startRunTimer();
-		}
 		setup(script);
 		parseScript();
 		liveVariableAnalysis();
@@ -307,18 +297,18 @@ public class ScriptExecutor {
 		countCompiledMRJobsAndSparkInstructions();
 		initializeCachingAndScratchSpace();
 		cleanupRuntimeProgram();
-		createAndInitializeExecutionContext();
-		executeRuntimeProgram();
-		cleanupAfterExecution();
-
+		
+		try {
+			createAndInitializeExecutionContext();
+			executeRuntimeProgram();
+		}
+		finally {
+			cleanupAfterExecution();
+		}
+		
 		// add symbol table to MLResults
 		MLResults mlResults = new MLResults(script);
 		script.setResults(mlResults);
-
-		if (statistics) {
-			Statistics.stopRunTimer();
-			System.out.println(Statistics.display(statisticsMaxHeavyHitters));
-		}
 
 		return mlResults;
 	}
@@ -344,14 +334,8 @@ public class ScriptExecutor {
 	 */
 	protected void cleanupAfterExecution() {
 		restoreInputsInSymbolTable();
-		try {
-			if (gpu) {
-				GPUContext gCtx = executionContext.getGPUContext();
-				GPUContextPool.returnToPool(gCtx);
-			}
-		} catch (DMLRuntimeException e) {
-			throw new MLContextException("Exception occurred during cleanup of GPU related resources", e);
-		}
+		DMLScript.USE_ACCELERATOR = oldGPU;
+		DMLScript.STATISTICS = oldStatistics;
 	}
 
 	/**
@@ -394,7 +378,7 @@ public class ScriptExecutor {
 	 */
 	protected void executeRuntimeProgram() {
 		try {
-			runtimeProgram.execute(executionContext);
+			ScriptExecutorUtils.executeRuntimeProgram(runtimeProgram, executionContext, config);
 		} catch (DMLRuntimeException e) {
 			throw new MLContextException("Exception occurred while executing runtime program", e);
 		}
@@ -667,7 +651,6 @@ public class ScriptExecutor {
 	 */
 	public void setGPU(boolean enabled) {
 		this.gpu = enabled;
-		DMLScript.USE_ACCELERATOR = enabled;
 	}
 
 }

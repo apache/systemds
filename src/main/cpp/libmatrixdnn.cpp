@@ -27,14 +27,6 @@
 #include <cstring>
 #include "omp.h"
 
-#ifdef USE_OPEN_BLAS
-#include <cblas.h>
-extern void openblas_set_num_threads(int numThreads);
-#elif defined USE_INTEL_MKL
-#include <mkl.h>
-#include <mkl_service.h>
-#endif
-
 void rotate180(double* inputArray, double* outputArray, int N, int C, int H, int W,
             int K, int R, int S, int stride_h, int stride_w, int pad_h,
             int pad_w, int P, int Q) {

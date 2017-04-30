@@ -59,7 +59,21 @@ cd OpenBLAS/
 make clean
 make USE_OPENMP=1
 sudo make install
+# After installation, you may also want to add `/opt/OpenBLAS/lib` to your LD_LIBRARY_PATH or `java.library.path`.
 ```
+
+You can check if the OpenBLAS on you system is compiled with OpenMP or not using following commands:
+
+```bash
+$ ldconfig -p | grep libopenblas.so
+libopenblas.so (libc6,x86-64) => /opt/OpenBLAS/lib/libopenblas.so
+$ ldd /opt/OpenBLAS/lib/libopenblas.so | grep libgomp
+libgomp.so.1 => /lib64/libgomp.so.1
+```
+
+If you don't see any output after the second command, then OpenBLAS installed on your system is using its internal threading.
+In this case, we highly recommend that you reinstall OpenBLAS using the above commands.
+
 
 ## Step 2: Install other dependencies
 
@@ -94,6 +108,34 @@ If you want to use SystemML with Spark, please add the following line to `spark-
 
 - Java: `-Djava.library.path=/path/to/blas-n-other-dependencies`
 - [Spark](http://spark.apache.org/docs/latest/configuration.html): `--driver-library-path`
+
+## Common issues on Linux
+
+1. Unable to load `gomp`
+
+First make sure if gomp is available on your system.
+
+	```bash
+	ldconfig -p | grep  libgomp
+	```
+
+If the above command returns no results, then you may have to install `gcc`.
+On the other hand, if the above command only returns libgomp with major suffix (such as `so.1`),
+then please execute the below command:
+
+	```bash
+	sudo ln -s /lib64/libgomp.so.1 /usr/lib64/libgomp.so
+	```
+
+2. Unable to load `mkl_rt`
+
+By default, Intel MKL libraries will be installed in the location `/opt/intel/mkl/lib/intel64/`.
+Make sure that this path is accessible to Java as per instructions provided in the above section.
+
+3. Unable to load `openblas`
+
+By default, OpenBLAS libraries will be installed in the location `/opt/OpenBLAS/lib/`.
+Make sure that this path is accessible to Java as per instructions provided in the above section.
 
 # Developer Guide
 

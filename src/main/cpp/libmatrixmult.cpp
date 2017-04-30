@@ -23,15 +23,6 @@
 #include "omp.h"
 #include <cmath>
 
-#ifdef USE_OPEN_BLAS
-#include <cblas.h>
-extern void openblas_set_num_threads(int numThreads);
-#elif defined USE_INTEL_MKL
-#include <mkl.h>
-#include <mkl_service.h>
-#endif
-
-
 int SYSML_CURRENT_NUM_THREADS = -1;
 void setNumThreadsForBLAS(int numThreads) {
 	if(SYSML_CURRENT_NUM_THREADS != numThreads) {

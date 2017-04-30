@@ -854,6 +854,10 @@
 								<exclude>src/main/python/systemml.egg-info/**</exclude>
 								<!-- Compiled ptx file from nvcc -->
 								<exclude>src/main/cpp/kernels/SystemML.ptx</exclude>
+								<!-- Proto files -->
+								<exclude>src/main/proto/caffe/caffe.proto</exclude>
+								<exclude>src/main/proto/tensorflow/event.proto</exclude>
+								<exclude>src/main/proto/tensorflow/summary.proto</exclude>
 								<!-- Test Validation files -->
 								<exclude>src/test/scripts/functions/jmlc/**/*.impute</exclude>
 								<exclude>src/test/scripts/functions/jmlc/**/*.map</exclude>

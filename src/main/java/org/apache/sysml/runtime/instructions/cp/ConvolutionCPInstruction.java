@@ -136,7 +136,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction
 			return new ConvolutionCPInstruction(in, out, opcode, str, stride,
 					padding, input_shape, filter_shape, k);
 		} 
-		else if (opcode.equalsIgnoreCase("maxpooling_backward")
+		else if (opcode.equalsIgnoreCase("maxpooling_backward") || opcode.equalsIgnoreCase("relu_maxpooling_backward")
 				|| opcode.equalsIgnoreCase("conv2d")
 				|| opcode.equalsIgnoreCase("conv2d_backward_filter")
 				|| opcode.equalsIgnoreCase("conv2d_backward_data")) {
@@ -354,14 +354,17 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction
 				LibMatrixDNN.maxpooling(matBlock, outputBlock, params);
 			}
 		}
-		else if (instOpcode.equalsIgnoreCase("maxpooling_backward")) {
+		else if (instOpcode.equalsIgnoreCase("maxpooling_backward") || instOpcode.equalsIgnoreCase("relu_maxpooling_backward")) {
 			MatrixBlock dout = ec.getMatrixInput(_in2.getName());
 			if(matBlock.isEmptyBlock() || dout.isEmptyBlock()) {
 				outputBlock = new MatrixBlock(N, C*H*W, true);
 			}
 			else {
 				outputBlock = getDenseOutputBlock(N, C*H*W);
-				LibMatrixDNN.maxpoolingBackward(matBlock, dout, outputBlock, params);
+				if(instOpcode.equalsIgnoreCase("maxpooling_backward"))
+					LibMatrixDNN.maxpoolingBackward(matBlock, dout, outputBlock, params, false);
+				else
+					LibMatrixDNN.maxpoolingBackward(matBlock, dout, outputBlock, params, true);
 			}
 			ec.releaseMatrixInput(_in2.getName());
 		}

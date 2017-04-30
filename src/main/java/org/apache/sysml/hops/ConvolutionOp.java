@@ -150,9 +150,16 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 		OperationTypes lopOp = HopsConv2Lops.get(op);
 
-		if(op == ConvOp.MAX_POOLING && isInputReLU(inputs.get(0))) {
+		// RELU_MAX_POOLING and RELU_MAX_POOLING_BACKWARD is extremely useful for CP backend 
+		// by reducing unnecessary sparse-to-dense-to-sparse conversion.
+		// For other backends, this operators is not necessary as it reduces an additional relu operator.
+		if(et == ExecType.CP && op == ConvOp.MAX_POOLING && isInputReLU(inputs.get(0))) {
 			in = inputs.get(0).getInput().get(0).constructLops();
 			lopOp = OperationTypes.RELU_MAX_POOLING;
+		}
+		else if(et == ExecType.CP && op == ConvOp.MAX_POOLING_BACKWARD && isInputReLU(inputs.get(0))) {
+			in = inputs.get(0).getInput().get(0).constructLops();
+			lopOp = OperationTypes.RELU_MAX_POOLING_BACKWARD;
 		}
 		else if(op == ConvOp.BIAS_ADD && isInputConv2d(inputs.get(0))) {
 			lopOp = OperationTypes.DIRECT_CONV2D_BIAS_ADD;

@@ -59,7 +59,7 @@ public class LibMatrixDNN {
 	public static boolean DISPLAY_STATISTICS = false; //conv2d summaries in stats output
 
 	private enum TaskType {
-		MaxPooling_Forward, MaxPooling_Backward, 
+		MaxPooling_Forward, MaxPooling_Backward, MaxPooling_Relu_Backward,
 		// Alternate approaches that we tried but the performance was unsatisfactory be included: direct, non-looped im2col
 		LoopedIm2ColConv2d, LoopedIm2ColConv2dBwdFilter, LoopedIm2ColConv2dBwdData,
 		ReluBackward
@@ -458,9 +458,11 @@ public class LibMatrixDNN {
 	 * @param dout dout matrix
 	 * @param outputBlock output matrix
 	 * @param params convolution parameters
+	 * @param performReluBackward perform ReLU backward
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static void maxpoolingBackward(MatrixBlock input, MatrixBlock dout, MatrixBlock outputBlock, ConvolutionParameters params) throws DMLRuntimeException {
+	public static void maxpoolingBackward(MatrixBlock input, MatrixBlock dout, MatrixBlock outputBlock, 
+			ConvolutionParameters params, boolean performReluBackward) throws DMLRuntimeException {
 		params.input1 = input;
 		params.input2 = dout;
 		params.output = outputBlock;
@@ -485,7 +487,10 @@ public class LibMatrixDNN {
 			throw new DMLRuntimeException("Sparse maxpooling_backward is not supported");
 
 		fillIndexesArray(params);
-		runConvTask(TaskType.MaxPooling_Backward, params);
+		if(performReluBackward)
+			runConvTask(TaskType.MaxPooling_Relu_Backward, params);
+		else
+			runConvTask(TaskType.MaxPooling_Backward, params);
 		
 		//post-processing: maintain nnz 
 		outputBlock.recomputeNonZeros();
@@ -518,7 +523,7 @@ public class LibMatrixDNN {
 		}
 	}
 	
-	private static void doPoolingBackward(int n, ConvolutionParameters params) throws DMLRuntimeException {
+	private static void doPoolingBackward(int n, ConvolutionParameters params, boolean performReluBackward) throws DMLRuntimeException {
 		double [] inputArray = null;
 		if (!params.input1.isInSparseFormat())
 			inputArray = params.input1.getDenseBlock();
@@ -533,19 +538,19 @@ public class LibMatrixDNN {
 			
 		if(inputArray != null) {
 			if(doutArray != null)
-				doPoolingBackwardDenseDense(n, inputArray, doutArray, outputArray, params);
+				doPoolingBackwardDenseDense(n, inputArray, doutArray, outputArray, params, performReluBackward);
 			else
-				doPoolingBackwardDenseSparse(n, inputArray, params.input2, outputArray, params);
+				doPoolingBackwardDenseSparse(n, inputArray, params.input2, outputArray, params, performReluBackward);
 		}
 		else {
 			if(doutArray != null)
-				doPoolingBackwardSparseDense(n, doutArray, outputArray, params);
+				doPoolingBackwardSparseDense(n, doutArray, outputArray, params, performReluBackward);
 			else
-				doPoolingBackwardSparseSparse(n, outputArray, params);
+				doPoolingBackwardSparseSparse(n, outputArray, params, performReluBackward);
 		}
 	}
 	
-	private static void doPoolingBackwardSparseDense(int n, double [] doutArray,  double [] outputArray, ConvolutionParameters params) throws DMLRuntimeException {
+	private static void doPoolingBackwardSparseDense(int n, double [] doutArray,  double [] outputArray, ConvolutionParameters params, boolean performReluBackward) throws DMLRuntimeException {
 		if (!params.input1.isInSparseFormat())
 			throw new DMLRuntimeException("Incorrect usage: Call optimized versions");
 		
@@ -555,7 +560,7 @@ public class LibMatrixDNN {
 					double inVal = doutArray[n*params.C*params.P*params.Q + c*params.P*params.Q +  p * params.Q + q];
 					if(inVal != 0) {
 						final int inputOffset = n*params.C*params.H*params.W + c*params.H*params.W;
-						int maxIndex = getMaxIndexSparse(p, q, inputOffset, n, c, params.input1, params);
+						int maxIndex = getMaxIndexSparse(p, q, inputOffset, n, c, params.input1, params, performReluBackward);
 						if(maxIndex != -1)
 							outputArray[maxIndex] += inVal;
 					}
@@ -564,7 +569,7 @@ public class LibMatrixDNN {
 		}
 	}
 	
-	private static void doPoolingBackwardSparseSparse(int n, double [] outputArray, ConvolutionParameters params) throws DMLRuntimeException {
+	private static void doPoolingBackwardSparseSparse(int n, double [] outputArray, ConvolutionParameters params, boolean performReluBackward) throws DMLRuntimeException {
 		if (!params.input1.isInSparseFormat())
 			throw new DMLRuntimeException("Incorrect usage: Call optimized versions");
 		
@@ -580,7 +585,7 @@ public class LibMatrixDNN {
 				int p = tensorIndexes[1];
 				int q = tensorIndexes[2];
 				final int inputOffset = n*params.C*params.H*params.W + c*params.H*params.W;
-				int maxIndex = getMaxIndexSparse(p, q, inputOffset, n, c, params.input1, params);
+				int maxIndex = getMaxIndexSparse(p, q, inputOffset, n, c, params.input1, params, performReluBackward);
 				if(maxIndex != -1)
 					outputArray[maxIndex] += avals[j];
 			}
@@ -588,7 +593,7 @@ public class LibMatrixDNN {
 	}
 	
 	private static void doPoolingBackwardDenseSparse(int n, double [] inputArray, 
-			MatrixBlock dout, double [] outputArray, ConvolutionParameters params) throws DMLRuntimeException {
+			MatrixBlock dout, double [] outputArray, ConvolutionParameters params, boolean performReluBackward) throws DMLRuntimeException {
 		if( !dout.sparseBlock.isEmpty(n) ) {
 			int [] tensorIndexes = new int[3];
 			int apos = dout.sparseBlock.pos(n);
@@ -601,7 +606,7 @@ public class LibMatrixDNN {
 				int p = tensorIndexes[1];
 				int q = tensorIndexes[2];
 				final int inputOffset = n*params.C*params.H*params.W + c*params.H*params.W;
-				int maxIndex = getMaxIndex(p, q, inputOffset, inputArray, params);
+				int maxIndex = getMaxIndex(p, q, inputOffset, inputArray, params, performReluBackward);
 				if(maxIndex != -1)
 					outputArray[maxIndex] += avals[j];
 			}
@@ -609,14 +614,14 @@ public class LibMatrixDNN {
 	}
 	
 	private static void doPoolingBackwardDenseDense(int n, double [] inputArray, double [] doutArray, 
-			double [] outputArray, ConvolutionParameters params) {
+			double [] outputArray, ConvolutionParameters params, boolean performReluBackward) {
 		for (int c = 0; c < params.C; c++) {
 			final int inputOffset = n*params.C*params.H*params.W + c*params.H*params.W;
 			final int outputOffset = n*params.C*params.P*params.Q + c*params.P*params.Q;
 			
 			for (int p = 0; p < params.P; p++) {
 				for (int q = 0; q < params.Q; q++) {
-					int maxIndex = getMaxIndex(p, q, inputOffset, inputArray, params);
+					int maxIndex = getMaxIndex(p, q, inputOffset, inputArray, params, performReluBackward);
 					if(maxIndex != -1)
 						outputArray[maxIndex] += doutArray[outputOffset +  p * params.Q + q];
 				}
@@ -634,10 +639,11 @@ public class LibMatrixDNN {
 	 * @param c number of channels 
 	 * @param input input matrix
 	 * @param params convolution parameters
+	 * @param performReluBackward perform ReLU on input
 	 * @return index of the cell with maximum value
 	 * @throws DMLRuntimeException if error occurs
 	 */
-	private static int getMaxIndexSparse(int p, int q, int inputOffset, int n, int c, MatrixBlock input, ConvolutionParameters params) throws DMLRuntimeException {
+	private static int getMaxIndexSparse(int p, int q, int inputOffset, int n, int c, MatrixBlock input, ConvolutionParameters params, boolean performReluBackward) throws DMLRuntimeException {
 		if(!input.isInSparseFormat())
 			throw new DMLRuntimeException("Incorrect usage: Only sparse format supported");
 		
@@ -669,9 +675,10 @@ public class LibMatrixDNN {
 				int h = tensorIndexes[1];
 				int w = tensorIndexes[2];
 				if(h >= start_index_h && h < end_index_h && w >= start_index_w && w < end_index_w) {
-					if(maxVal < avals[j]) {
+					double val = performReluBackward && avals[j] < 0 ? 0 : avals[j]; 
+					if(maxVal < val) {
 						maxIndex = inputOffset +  h*params.W + w;
-						maxVal = avals[j];
+						maxVal = val;
 					}
 				}
 			}
@@ -690,9 +697,10 @@ public class LibMatrixDNN {
 	 * @param inputOffset offset to be used for input index
 	 * @param inputArray input array
 	 * @param params convolution parameters
+	 * @param performReluBackward perform ReLU backward
 	 * @return index of cell with maximum value
 	 */
-	private static int getMaxIndex(int p, int q, int inputOffset, double [] inputArray, ConvolutionParameters params) {
+	private static int getMaxIndex(int p, int q, int inputOffset, double [] inputArray, ConvolutionParameters params, boolean performReluBackward) {
 		int start_index_h = params.start_indexes_h[p];
 		int end_index_h = params.end_indexes_h[p];
 		int start_index_w = params.start_indexes_w[q];
@@ -710,6 +718,7 @@ public class LibMatrixDNN {
 		for (int h = start_index_h; h < end_index_h; h++) {
 			for (int w = start_index_w; w < end_index_w; w++) {
 				currDoutVal = inputArray[inputOffset +  h*params.W + w];
+				currDoutVal = performReluBackward && currDoutVal < 0 ? 0 : currDoutVal;
 				if(maxVal < currDoutVal) {
 					maxIndex = inputOffset +  h*params.W + w;
 					maxVal = currDoutVal;
@@ -1098,7 +1107,11 @@ public class LibMatrixDNN {
 					break;
 				case MaxPooling_Backward:
 					for(int n = _rl; n < _ru; n++) 
-						doPoolingBackward(n, _params);
+						doPoolingBackward(n, _params, false);
+					break;
+				case MaxPooling_Relu_Backward:
+					for(int n = _rl; n < _ru; n++) 
+						doPoolingBackward(n, _params, true);
 					break;
 				case ReluBackward:
 					lnnz = doReluBackward(_params, _rl, _ru);

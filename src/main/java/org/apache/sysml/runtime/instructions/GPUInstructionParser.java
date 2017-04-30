@@ -41,7 +41,6 @@ public class GPUInstructionParser  extends InstructionParser
 		// Neural Network Operators
 		String2GPUInstructionType.put( "relu_backward",          GPUINSTRUCTION_TYPE.Convolution);
 		String2GPUInstructionType.put( "conv2d",                 GPUINSTRUCTION_TYPE.Convolution);
-		String2GPUInstructionType.put( "relu_maxpooling",          GPUINSTRUCTION_TYPE.Convolution);
 		String2GPUInstructionType.put( "conv2d_bias_add",                 GPUINSTRUCTION_TYPE.Convolution);
 		String2GPUInstructionType.put( "conv2d_backward_filter", GPUINSTRUCTION_TYPE.Convolution);
 		String2GPUInstructionType.put( "conv2d_backward_data",   GPUINSTRUCTION_TYPE.Convolution);

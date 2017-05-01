@@ -256,6 +256,7 @@
 				<artifactId>maven-jar-plugin</artifactId>
 				<executions>
 				  <execution>
+				  	<id>default-jar</id>
 		            <goals><goal>jar</goal></goals>
 		            <phase>package</phase>
 		            <configuration>
@@ -266,7 +267,6 @@
 							<Main-Class>org.apache.sysml.api.DMLScript</Main-Class>
 						</manifestEntries>
 					  </archive>
-					  <classifier>lite</classifier>
 		              <excludes>
 		                <exclude>**/caffe/*</exclude>
 		                <exclude>**/org/tensorflow/*</exclude>
@@ -619,7 +619,6 @@
 						<phase>package</phase>
 						<configuration>
 							<target name="copy and rename JAR">
-								<move file="${project.build.directory}/${project.artifactId}-${project.version}-lite.jar" tofile="${project.build.directory}/${project.artifactId}-${project.version}.jar" />
 								<copy file="${project.build.directory}/${project.artifactId}-${project.version}.jar" tofile="${project.build.directory}/SystemML.jar" />
 							</target>
 						</configuration>

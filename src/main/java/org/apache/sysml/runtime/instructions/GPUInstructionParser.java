@@ -23,6 +23,7 @@ import java.util.HashMap;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.gpu.AggregateBinaryGPUInstruction;
 import org.apache.sysml.runtime.instructions.gpu.ArithmeticBinaryGPUInstruction;
+import org.apache.sysml.runtime.instructions.gpu.BuiltinBinaryGPUInstruction;
 import org.apache.sysml.runtime.instructions.gpu.BuiltinUnaryGPUInstruction;
 import org.apache.sysml.runtime.instructions.gpu.ConvolutionGPUInstruction;
 import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
@@ -68,12 +69,15 @@ public class GPUInstructionParser  extends InstructionParser
 		String2GPUInstructionType.put( "^2"   , GPUINSTRUCTION_TYPE.ArithmeticBinary); //special ^ case
 		String2GPUInstructionType.put( "*2"   , GPUINSTRUCTION_TYPE.ArithmeticBinary); //special * case
 		String2GPUInstructionType.put( "-nz"  , GPUINSTRUCTION_TYPE.ArithmeticBinary); //special - case
-		String2GPUInstructionType.put( "+*"  , GPUINSTRUCTION_TYPE.ArithmeticBinary); 
-		String2GPUInstructionType.put( "-*"  , GPUINSTRUCTION_TYPE.ArithmeticBinary); 
+		String2GPUInstructionType.put( "+*"  	, GPUINSTRUCTION_TYPE.ArithmeticBinary);
+		String2GPUInstructionType.put( "-*"  	, GPUINSTRUCTION_TYPE.ArithmeticBinary);
 		
 		// Builtin functions
-		String2GPUInstructionType.put( "sel+"  , GPUINSTRUCTION_TYPE.BuiltinUnary);
-		String2GPUInstructionType.put( "exp"  , GPUINSTRUCTION_TYPE.BuiltinUnary);
+		String2GPUInstructionType.put( "sel+"  	, GPUINSTRUCTION_TYPE.BuiltinUnary);
+		String2GPUInstructionType.put( "exp"  	, GPUINSTRUCTION_TYPE.BuiltinUnary);
+
+		String2GPUInstructionType.put( "solve"  , GPUINSTRUCTION_TYPE.BuiltinBinary);
+
 
 		// Aggregate Unary
 		String2GPUInstructionType.put( "ua+"	 	 , GPUINSTRUCTION_TYPE.AggregateUnary);	// Sum
@@ -95,7 +99,7 @@ public class GPUInstructionParser  extends InstructionParser
 		String2GPUInstructionType.put( "uasqk+"	 , GPUINSTRUCTION_TYPE.AggregateUnary);	// Sum of Squares
 		String2GPUInstructionType.put( "uarsqk+" , GPUINSTRUCTION_TYPE.AggregateUnary);	// Row Sum of Squares
 		String2GPUInstructionType.put( "uacsqk+" , GPUINSTRUCTION_TYPE.AggregateUnary);	// Col Sum of Squares
-		String2GPUInstructionType.put( "uavar" 	 , GPUINSTRUCTION_TYPE.AggregateUnary);		// Variance
+		String2GPUInstructionType.put( "uavar" 	 , GPUINSTRUCTION_TYPE.AggregateUnary);	// Variance
 		String2GPUInstructionType.put( "uarvar"  , GPUINSTRUCTION_TYPE.AggregateUnary);	// Row Variance
 		String2GPUInstructionType.put( "uacvar"  , GPUINSTRUCTION_TYPE.AggregateUnary);	// Col Variance
 	}
@@ -132,6 +136,9 @@ public class GPUInstructionParser  extends InstructionParser
 			
 			case BuiltinUnary:
 				return BuiltinUnaryGPUInstruction.parseInstruction(str);
+
+			case BuiltinBinary:
+				return BuiltinBinaryGPUInstruction.parseInstruction(str);
 			
 			case Convolution:
 				return ConvolutionGPUInstruction.parseInstruction(str);

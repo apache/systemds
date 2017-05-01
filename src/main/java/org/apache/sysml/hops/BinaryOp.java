@@ -592,7 +592,7 @@ public class BinaryOp extends Hop
 			if ( et == ExecType.CP ) 
 			{
 				if(DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR || getMemEstimate() < OptimizerUtils.GPU_MEMORY_BUDGET) 
-						&& (op == OpOp2.MULT || op == OpOp2.PLUS || op == OpOp2.MINUS || op == OpOp2.DIV || op == OpOp2.POW)) {
+						&& (op == OpOp2.MULT || op == OpOp2.PLUS || op == OpOp2.MINUS || op == OpOp2.DIV || op == OpOp2.POW || op == OpOp2.SOLVE)) {
 					et = ExecType.GPU;
 				}
 				

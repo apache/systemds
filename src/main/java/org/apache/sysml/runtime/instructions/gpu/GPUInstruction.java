@@ -32,7 +32,7 @@ import org.apache.sysml.utils.Statistics;
 
 public abstract class GPUInstruction extends Instruction
 {
-	public enum GPUINSTRUCTION_TYPE { AggregateUnary, AggregateBinary, Convolution, MMTSJ, Reorg, ArithmeticBinary, BuiltinUnary, Builtin };
+	public enum GPUINSTRUCTION_TYPE { AggregateUnary, AggregateBinary, Convolution, MMTSJ, Reorg, ArithmeticBinary, BuiltinUnary, BuiltinBinary, Builtin };
 
 	// Memory/conversions
 	public final static String MISC_TIMER_HOST_TO_DEVICE = 				"H2D";	// time spent in bringing data to gpu (from host)

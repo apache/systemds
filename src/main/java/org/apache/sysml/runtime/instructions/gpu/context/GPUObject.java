@@ -26,7 +26,9 @@ import static jcuda.jcudnn.cudnnDataType.CUDNN_DATA_DOUBLE;
 import static jcuda.jcudnn.cudnnTensorFormat.CUDNN_TENSOR_NCHW;
 import static jcuda.jcusparse.JCusparse.cusparseDdense2csr;
 import static jcuda.jcusparse.JCusparse.cusparseDnnz;
+import static jcuda.runtime.JCuda.cudaMalloc;
 import static jcuda.runtime.JCuda.cudaMemcpy;
+import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToDevice;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice;
 
@@ -50,6 +52,7 @@ import org.apache.sysml.runtime.matrix.data.SparseBlockMCSR;
 import org.apache.sysml.utils.GPUStatistics;
 
 import jcuda.Pointer;
+import jcuda.Sizeof;
 import jcuda.jcublas.JCublas2;
 import jcuda.jcudnn.cudnnTensorDescriptor;
 import jcuda.jcusparse.JCusparse;
@@ -100,6 +103,43 @@ public class GPUObject {
 //		return getGPUContext().allocate(instName, size);
 //	}
 
+	@Override
+	public Object clone() {
+		GPUObject me = this;
+		GPUObject that = new GPUObject(me.gpuContext, me.mat);
+		if (me.tensorShape != null) {
+            that.tensorShape = new int[me.tensorShape.length];
+            System.arraycopy(me.tensorShape, 0, that.tensorShape, 0, me.tensorShape.length);
+            that.allocateTensorDescriptor(me.tensorShape[0], me.tensorShape[1], me.tensorShape[2], me.tensorShape[3]);
+        }
+		that.dirty = me.dirty;
+		that.readLocks = new AtomicInteger(me.readLocks.get());
+		that.timestamp = new AtomicLong(me.timestamp.get());
+		that.isSparse = me.isSparse;
+
+		try {
+		if (me.jcudaDenseMatrixPtr != null) {
+			long rows = me.mat.getNumRows();
+			long cols = me.mat.getNumColumns();
+			long size = rows * cols * Sizeof.DOUBLE;
+			me.gpuContext.ensureFreeSpace((int)size);
+			that.jcudaDenseMatrixPtr = allocate(size);
+			cudaMemcpy(that.jcudaDenseMatrixPtr, me.jcudaDenseMatrixPtr, size, cudaMemcpyDeviceToDevice);
+		}
+
+		if (me.jcudaSparseMatrixPtr != null){
+			long rows = mat.getNumRows();
+			that.jcudaSparseMatrixPtr = me.jcudaSparseMatrixPtr.clone((int)rows);
+		}
+
+
+		} catch (DMLRuntimeException e){
+			throw new RuntimeException(e);
+		}
+
+		return that;
+	}
+
 	private Pointer allocate(long size) throws DMLRuntimeException {
 		return getGPUContext().allocate(size);
 	}
@@ -116,7 +156,7 @@ public class GPUObject {
 		getGPUContext().cudaFreeHelper(instName, toFree, eager);
 	}
 
-	private GPUContext getGPUContext() throws DMLRuntimeException {
+	private GPUContext getGPUContext() {
 		return gpuContext;
 	}
 
@@ -275,7 +315,7 @@ public class GPUObject {
 		if(getJcudaDenseMatrixPtr() == null || !isAllocated())
 			throw new DMLRuntimeException("Expected allocated dense matrix before denseToSparse() call");
 
-		convertDensePtrFromRowMajorToColumnMajor();
+		denseRowMajorToColumnMajor();
 		setSparseMatrixCudaPointer(columnMajorDenseToRowMajorSparse(getGPUContext(), cusparseHandle, getJcudaDenseMatrixPtr(), rows, cols));
 		// TODO: What if mat.getNnz() is -1 ?
 		if (DMLScript.STATISTICS) GPUStatistics.cudaDenseToSparseTime.addAndGet(System.nanoTime() - t0);
@@ -283,10 +323,10 @@ public class GPUObject {
 	}
 
 	/**
-	 * Convenience method. Converts Row Major Dense Matrix --> Column Major Dense Matrix
+	 * Convenience method. Converts Row Major Dense Matrix to Column Major Dense Matrix
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private void convertDensePtrFromRowMajorToColumnMajor() throws DMLRuntimeException {
+	public void denseRowMajorToColumnMajor() throws DMLRuntimeException {
 		LOG.trace("GPU : dense Ptr row-major -> col-major on " + this + ", GPUContext=" + getGPUContext());
 		int m = toIntExact(mat.getNumRows());
 		int n = toIntExact(mat.getNumColumns());
@@ -301,7 +341,11 @@ public class GPUObject {
 		setDenseMatrixCudaPointer(tmp);
 	}
 
-	private void convertDensePtrFromColMajorToRowMajor() throws DMLRuntimeException {
+	/**
+	 * Convenience method. Converts Column Major Dense Matrix to Row Major Dense Matrix
+	 * @throws DMLRuntimeException
+	 */
+	public void denseColumnMajorToRowMajor() throws DMLRuntimeException {
 		LOG.trace("GPU : dense Ptr row-major -> col-major on " + this + ", GPUContext=" + getGPUContext());
 
 		int n = toIntExact(mat.getNumRows());
@@ -340,7 +384,7 @@ public class GPUObject {
 			throw new DMLRuntimeException("Expected allocated sparse matrix before sparseToDense() call");
 
 		sparseToColumnMajorDense();
-		convertDensePtrFromColMajorToRowMajor();
+		denseColumnMajorToRowMajor();
 		if (DMLScript.STATISTICS) end = System.nanoTime();
 		if (instructionName != null && GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instructionName, GPUInstruction.MISC_TIMER_SPARSE_TO_DENSE, end - start);
 		if (DMLScript.STATISTICS) GPUStatistics.cudaSparseToDenseTime.addAndGet(end - start);
@@ -431,17 +475,12 @@ public class GPUObject {
 	}
 
 	public boolean isInputAllocated() {
-		try {
-			boolean eitherAllocated = (getJcudaDenseMatrixPtr() != null || getJcudaSparseMatrixPtr() != null);
-			boolean isAllocatedOnThisGPUContext = getGPUContext().isBlockRecorded(this);
-			if (eitherAllocated && !isAllocatedOnThisGPUContext) {
-				LOG.warn("GPU : A block was allocated but was not on this GPUContext, GPUContext=" + getGPUContext());
-			}
-			return eitherAllocated && isAllocatedOnThisGPUContext;
-		} catch (DMLRuntimeException e){
-			LOG.info("GPU : System is in an inconsistent state");
-			throw new RuntimeException(e);
+		boolean eitherAllocated = (getJcudaDenseMatrixPtr() != null || getJcudaSparseMatrixPtr() != null);
+		boolean isAllocatedOnThisGPUContext = getGPUContext().isBlockRecorded(this);
+		if (eitherAllocated && !isAllocatedOnThisGPUContext) {
+			LOG.warn("GPU : A block was allocated but was not on this GPUContext, GPUContext=" + getGPUContext());
 		}
+		return eitherAllocated && isAllocatedOnThisGPUContext;
 	}
 
 	/**
@@ -862,6 +901,5 @@ public class GPUObject {
 		sb.append('}');
 		return sb.toString();
 	}
-
 
 }

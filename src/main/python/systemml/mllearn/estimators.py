@@ -67,19 +67,71 @@ class BaseSystemMLEstimator(Estimator):
         """
         self.label_col = colName
 
-    def setGPU(self, enableGPU):
-        self.estimator.setGPU(enableGPU)
+    def setGPU(self, enable):
+        """
+        Whether or not to enable GPU.
+
+        Parameters
+        ----------
+        enable: boolean
+        """
+        self.estimator.setGPU(enable)
         return self
     
+    def setForceGPU(self, enable):
+        """
+        Whether or not to force the usage of GPU operators.
+
+        Parameters
+        ----------
+        enable: boolean
+        """
+        self.estimator.setForceGPU(enable)
+        return self
+        
     def setExplain(self, explain):
+        """
+        Explanation about the program. Mainly intended for developers.
+
+        Parameters
+        ----------
+        explain: boolean
+        """
         self.estimator.setExplain(explain)
         return self
             
-    def setStatistics(self, stat):
-        self.estimator.setStatistics(stat)
+    def setStatistics(self, statistics):
+        """
+        Whether or not to output statistics (such as execution time, elapsed time)
+        about script executions.
+
+        Parameters
+        ----------
+        statistics: boolean
+        """
+        self.estimator.setStatistics(statistics)
         return self
     
+    def setStatisticsMaxHeavyHitters(self, maxHeavyHitters):
+        """
+        The maximum number of heavy hitters that are printed as part of the statistics.
+
+        Parameters
+        ----------
+        maxHeavyHitters: int
+        """
+        self.estimator.setStatisticsMaxHeavyHitters(maxHeavyHitters)
+        return self
+        
     def setConfigProperty(self, propertyName, propertyValue):
+        """
+        Set configuration property, such as setConfigProperty("localtmpdir", "/tmp/systemml").
+
+        Parameters
+        ----------
+        propertyName: String
+        propertyValue: String
+        """
         self.estimator.setConfigProperty(propertyName, propertyValue)
         return self
     

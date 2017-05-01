@@ -98,6 +98,11 @@ public class MLContext {
 	 * Whether or not GPU mode should be enabled
 	 */
 	private boolean gpu = false;
+	
+	/**
+	 * Whether or not GPU mode should be force
+	 */
+	private boolean forceGPU = false;
 
 	/**
 	 * The number of heavy hitters that are printed as part of the statistics
@@ -273,6 +278,7 @@ public class MLContext {
 		scriptExecutor.setExplain(explain);
 		scriptExecutor.setExplainLevel(explainLevel);
 		scriptExecutor.setGPU(gpu);
+		scriptExecutor.setForceGPU(forceGPU);
 		scriptExecutor.setStatistics(statistics);
 		scriptExecutor.setStatisticsMaxHeavyHitters(statisticsMaxHeavyHitters);
 		scriptExecutor.setInit(scriptHistoryStrings.isEmpty());
@@ -418,6 +424,16 @@ public class MLContext {
 	 */
 	public void setGPU(boolean enable) {
 		this.gpu = enable;
+	}
+	
+	/**
+	 * Whether or not to explicitly "force" the usage of GPU.
+	 * If a GPU is not available, and the GPU mode is set or if available memory on GPU is less, SystemML will crash when the program is run.
+	 * @param enable
+	 * 					true if needs to be enabled, false otherwise
+	 */
+	public void setForceGPU(boolean enable) {
+		this.forceGPU = enable;
 	}
 
 	/**

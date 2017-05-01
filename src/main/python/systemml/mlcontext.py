@@ -362,6 +362,17 @@ class MLContext(object):
         self._ml.setGPU(bool(enable))
         return self
     
+    def setForceGPU(self, enable):
+        """
+        Whether or not to force the usage of GPU operators.
+
+        Parameters
+        ----------
+        enable: boolean
+        """
+        self._ml.setForceGPU(bool(enable))
+        return self
+        
     def setStatisticsMaxHeavyHitters(self, maxHeavyHitters):
         """
         The maximum number of heavy hitters that are printed as part of the statistics.
@@ -397,6 +408,18 @@ class MLContext(object):
         self._ml.setExplainLevel(explainLevel)
         return self
 
+    def setConfigProperty(self, propertyName, propertyValue):
+        """
+        Set configuration property, such as setConfigProperty("localtmpdir", "/tmp/systemml").
+
+        Parameters
+        ----------
+        propertyName: String
+        propertyValue: String
+        """
+        self._ml.setConfigProperty(propertyName, propertyValue)
+        return self
+    
     def version(self):
         """Display the project version."""
         return self._ml.version()

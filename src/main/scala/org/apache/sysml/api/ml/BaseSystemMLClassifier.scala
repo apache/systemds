@@ -69,18 +69,24 @@ trait HasRegParam extends Params {
 
 trait BaseSystemMLEstimatorOrModel {
   var enableGPU:Boolean = false
+  var forceGPU:Boolean = false
   var explain:Boolean = false
   var statistics:Boolean = false
+  var statisticsMaxHeavyHitters:Int = 10
   val config:HashMap[String, String] = new HashMap[String, String]()
   def setGPU(enableGPU1:Boolean):BaseSystemMLEstimatorOrModel = { enableGPU = enableGPU1; this}
+  def setForceGPU(enableGPU1:Boolean):BaseSystemMLEstimatorOrModel = { forceGPU = enableGPU1; this}
   def setExplain(explain1:Boolean):BaseSystemMLEstimatorOrModel = { explain = explain1; this}
   def setStatistics(statistics1:Boolean):BaseSystemMLEstimatorOrModel = { statistics = statistics1; this}
+  def setStatisticsMaxHeavyHitters(statisticsMaxHeavyHitters1:Int):BaseSystemMLEstimatorOrModel = { statisticsMaxHeavyHitters = statisticsMaxHeavyHitters1; this}
   def setConfigProperty(key:String, value:String):BaseSystemMLEstimatorOrModel = { config.put(key, value); this}
   def updateML(ml:MLContext):Unit = {
     ml.setGPU(enableGPU); ml.setExplain(explain); ml.setStatistics(statistics); config.map(x => ml.setConfigProperty(x._1, x._2))
   }
   def copyProperties(other:BaseSystemMLEstimatorOrModel):BaseSystemMLEstimatorOrModel = {
-    other.setGPU(enableGPU); other.setExplain(explain); other.setStatistics(statistics); config.map(x => other.setConfigProperty(x._1, x._2))
+    other.setGPU(enableGPU); other.setForceGPU(forceGPU);
+    other.setExplain(explain); other.setStatistics(statistics); other.setStatisticsMaxHeavyHitters(statisticsMaxHeavyHitters);
+    config.map(x => other.setConfigProperty(x._1, x._2))
     return other
   }
 }

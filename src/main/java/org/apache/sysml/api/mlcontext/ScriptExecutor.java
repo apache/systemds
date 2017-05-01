@@ -118,6 +118,8 @@ public class ScriptExecutor {
 	protected boolean explain = false;
 	protected boolean gpu = false;
 	protected boolean oldGPU = false;
+	protected boolean forceGPU = false;
+	protected boolean oldForceGPU = false;
 	protected boolean statistics = false;
 	protected boolean oldStatistics = false;
 	protected ExplainLevel explainLevel;
@@ -248,7 +250,9 @@ public class ScriptExecutor {
 		}
 		oldGPU = DMLScript.USE_ACCELERATOR; 
 		oldStatistics = DMLScript.STATISTICS;
+		oldForceGPU = DMLScript.FORCE_ACCELERATOR;
 		DMLScript.USE_ACCELERATOR = gpu;
+		DMLScript.FORCE_ACCELERATOR = forceGPU;
 		DMLScript.STATISTICS = statistics;
 	}
 
@@ -335,6 +339,7 @@ public class ScriptExecutor {
 	protected void cleanupAfterExecution() {
 		restoreInputsInSymbolTable();
 		DMLScript.USE_ACCELERATOR = oldGPU;
+		DMLScript.FORCE_ACCELERATOR = oldForceGPU;
 		DMLScript.STATISTICS = oldStatistics;
 	}
 
@@ -651,6 +656,15 @@ public class ScriptExecutor {
 	 */
 	public void setGPU(boolean enabled) {
 		this.gpu = enabled;
+	}
+	
+	/**
+	 * Whether or not to force GPU usage
+	 * @param enabled
+	 * 					true if enabled, false otherwise
+	 */
+	public void setForceGPU(boolean enabled) {
+		this.forceGPU = enabled;
 	}
 
 }

@@ -248,12 +248,8 @@ public class ScriptExecutor {
 		if (symbolTable != null) {
 			executionContext.setVariables(symbolTable);
 		}
-		oldGPU = DMLScript.USE_ACCELERATOR; 
-		oldStatistics = DMLScript.STATISTICS;
-		oldForceGPU = DMLScript.FORCE_ACCELERATOR;
-		DMLScript.USE_ACCELERATOR = gpu;
-		DMLScript.FORCE_ACCELERATOR = forceGPU;
-		DMLScript.STATISTICS = statistics;
+        oldStatistics = DMLScript.STATISTICS;
+        DMLScript.STATISTICS = statistics;
 	}
 
 	/**
@@ -654,17 +650,21 @@ public class ScriptExecutor {
 	 * @param enabled
 	 * 					true if enabled, false otherwise
 	 */
-	public void setGPU(boolean enabled) {
-		this.gpu = enabled;
-	}
+    public void setGPU(boolean enabled) {
+        this.gpu = enabled;
+        oldGPU = DMLScript.USE_ACCELERATOR;
+        DMLScript.USE_ACCELERATOR = gpu;
+    }
 	
 	/**
 	 * Whether or not to force GPU usage
 	 * @param enabled
 	 * 					true if enabled, false otherwise
 	 */
-	public void setForceGPU(boolean enabled) {
-		this.forceGPU = enabled;
-	}
+    public void setForceGPU(boolean enabled) {
+        this.forceGPU = enabled;
+        oldForceGPU = DMLScript.FORCE_ACCELERATOR;
+        DMLScript.FORCE_ACCELERATOR = forceGPU;
+    }
 
 }

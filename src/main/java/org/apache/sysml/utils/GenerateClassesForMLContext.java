@@ -583,9 +583,9 @@ public class GenerateClassesForMLContext {
 	/**
 	 * Create a method that returns either: (1) the full function body, or (2)
 	 * the function body up to the end of the documentation comment for the
-	 * function. If (1) is generated, the method name will be followed by two
-	 * underscores. If (2) is generated, the method name will be followed by one
-	 * underscore. If (2) is generated but no end of documentation comment is
+	 * function. If (1) is generated, the method name will be followed
+	 * "__source". If (2) is generated, the method name will be followed by
+	 * "__docs". If (2) is generated but no end of documentation comment is
 	 * detected, the full function body will be displayed.
 	 * 
 	 * @param fs
@@ -643,8 +643,8 @@ public class GenerateClassesForMLContext {
 	/**
 	 * Generate method for returning (1) the full function body, or (2) the
 	 * function body up to the end of the documentation comment. (1) will have
-	 * "__" appended to the end of the function name. (2) will have "_" appended
-	 * to the end of the function name.
+	 * "__source" appended to the end of the function name. (2) will have
+	 * "__docs" appended to the end of the function name.
 	 * 
 	 * @param fs
 	 *            a SystemML function statement
@@ -652,8 +652,9 @@ public class GenerateClassesForMLContext {
 	 *            either the full function body or the function body up to the
 	 *            end of the documentation comment
 	 * @param full
-	 *            if {@code true}, append "__" to the end of the function name;
-	 *            if {@code false}, append "_" to the end of the function name
+	 *            if {@code true}, append "__source" to the end of the function
+	 *            name; if {@code false}, append "__docs" to the end of the
+	 *            function name
 	 * @return string representation of the function description method
 	 */
 	public static String generateDescriptionFunctionCallMethod(FunctionStatement fs, String functionString,
@@ -662,9 +663,9 @@ public class GenerateClassesForMLContext {
 		sb.append("public String ");
 		sb.append(fs.getName());
 		if (full) {
-			sb.append("__");
+			sb.append("__source");
 		} else {
-			sb.append("_");
+			sb.append("__docs");
 		}
 		sb.append("() {\n");
 		sb.append("String docString = \"" + functionString + "\";\n");
@@ -780,7 +781,7 @@ public class GenerateClassesForMLContext {
 			for (int i = 0; i < oparams.size(); i++) {
 				DataIdentifier oparam = oparams.get(i);
 				String type = getParamTypeAsString(oparam);
-				String name = oparam.getName().toLowerCase();
+				String name = oparam.getName();
 				String fstring = "public " + type + " " + name + ";";
 				CtField field = CtField.make(fstring, ctFuncOut);
 				ctFuncOut.addField(field);
@@ -797,13 +798,13 @@ public class GenerateClassesForMLContext {
 				}
 				DataIdentifier oparam = oparams.get(i);
 				String type = getParamTypeAsString(oparam);
-				String name = oparam.getName().toLowerCase();
+				String name = oparam.getName();
 				con.append(type + " " + name);
 			}
 			con.append(") {\n");
 			for (int i = 0; i < oparams.size(); i++) {
 				DataIdentifier oparam = oparams.get(i);
-				String name = oparam.getName().toLowerCase();
+				String name = oparam.getName();
 				con.append("this." + name + "=" + name + ";\n");
 			}
 			con.append("}\n");
@@ -817,7 +818,7 @@ public class GenerateClassesForMLContext {
 			s.append("StringBuilder sb = new StringBuilder();\n");
 			for (int i = 0; i < oparams.size(); i++) {
 				DataIdentifier oparam = oparams.get(i);
-				String name = oparam.getName().toLowerCase();
+				String name = oparam.getName();
 				s.append("sb.append(\"" + name + " (" + getSimpleParamTypeAsString(oparam) + "): \" + " + name
 						+ " + \"\\n\");\n");
 			}

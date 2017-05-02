@@ -31,6 +31,40 @@ limitations under the License.
 
 Caffe2DML is an experimental API that converts an Caffe specification to DML.
 
+## Example: Train Lenet
+
+1. Install `mlextend` package to get MNIST data: `pip install mlxtend`.
+2. (Optional but recommended) Follow the steps mentioned in [the user guide]([the user guide of native backend](http://apache.github.io/incubator-systemml/native-backend)) and install Intel MKL.
+3. Install [SystemML](http://apache.github.io/incubator-systemml/beginners-guide-python#install-systemml).
+4. Invoke PySpark shell: `pyspark --conf spark.executorEnv.LD_LIBRARY_PATH=/path/to/blas-n-other-dependencies`.
+
+```bash
+# Download the MNIST dataset
+from mlxtend.data import mnist_data
+import numpy as np
+from sklearn.utils import shuffle
+X, y = mnist_data()
+X, y = shuffle(X, y)
+
+# Split the data into training and test
+n_samples = len(X)
+X_train = X[:int(.9 * n_samples)]
+y_train = y[:int(.9 * n_samples)]
+X_test = X[int(.9 * n_samples):]
+y_test = y[int(.9 * n_samples):]
+
+# Download the Lenet network
+import urllib
+urllib.urlretrieve('https://raw.githubusercontent.com/niketanpansare/model_zoo/master/caffe/vision/lenet/mnist/lenet.proto', 'lenet.proto')
+urllib.urlretrieve('https://raw.githubusercontent.com/niketanpansare/model_zoo/master/caffe/vision/lenet/mnist/lenet_solver.proto', 'lenet_solver.proto')
+
+# Train Lenet On MNIST using scikit-learn like API
+from systemml.mllearn import Caffe2DML
+lenet = Caffe2DML(sqlCtx, solver='lenet_solver.proto', input_shape=(1, 28, 28)).set(debug=True).setStatistics(True)
+lenet.fit(X_train, y_train)
+y_predicted = lenet.predict(X_test)
+```
+
 ## Frequently asked questions
 
 - How to set batch size ?

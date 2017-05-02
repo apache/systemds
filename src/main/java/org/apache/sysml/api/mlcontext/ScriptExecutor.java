@@ -248,8 +248,30 @@ public class ScriptExecutor {
 		if (symbolTable != null) {
 			executionContext.setVariables(symbolTable);
 		}
-        oldStatistics = DMLScript.STATISTICS;
-        DMLScript.STATISTICS = statistics;
+    
+	}
+	
+	/**
+	 * Set the global flags (for example: statistics, gpu, etc).
+	 */
+	protected void setGlobalFlags() {
+		oldStatistics = DMLScript.STATISTICS;
+    DMLScript.STATISTICS = statistics;
+    oldForceGPU = DMLScript.FORCE_ACCELERATOR;
+    DMLScript.FORCE_ACCELERATOR = forceGPU;
+    oldGPU = DMLScript.USE_ACCELERATOR;
+    DMLScript.USE_ACCELERATOR = gpu;
+    DMLScript.STATISTICS_COUNT = statisticsMaxHeavyHitters;
+	}
+	
+	/**
+	 * Reset the global flags (for example: statistics, gpu, etc) post-execution. 
+	 */
+	protected void resetGlobalFlags() {
+		DMLScript.STATISTICS = oldStatistics;
+		DMLScript.FORCE_ACCELERATOR = oldForceGPU;
+		DMLScript.USE_ACCELERATOR = oldGPU;
+		DMLScript.STATISTICS_COUNT = 10;
 	}
 
 	/**
@@ -327,6 +349,7 @@ public class ScriptExecutor {
 		script.setScriptExecutor(this);
 		// Set global variable indicating the script type
 		DMLScript.SCRIPT_TYPE = script.getScriptType();
+		setGlobalFlags();
 	}
 
 	/**
@@ -334,9 +357,7 @@ public class ScriptExecutor {
 	 */
 	protected void cleanupAfterExecution() {
 		restoreInputsInSymbolTable();
-		DMLScript.USE_ACCELERATOR = oldGPU;
-		DMLScript.FORCE_ACCELERATOR = oldForceGPU;
-		DMLScript.STATISTICS = oldStatistics;
+		resetGlobalFlags();
 	}
 
 	/**
@@ -652,8 +673,6 @@ public class ScriptExecutor {
 	 */
     public void setGPU(boolean enabled) {
         this.gpu = enabled;
-        oldGPU = DMLScript.USE_ACCELERATOR;
-        DMLScript.USE_ACCELERATOR = gpu;
     }
 	
 	/**
@@ -663,8 +682,6 @@ public class ScriptExecutor {
 	 */
     public void setForceGPU(boolean enabled) {
         this.forceGPU = enabled;
-        oldForceGPU = DMLScript.FORCE_ACCELERATOR;
-        DMLScript.FORCE_ACCELERATOR = forceGPU;
     }
 
 }

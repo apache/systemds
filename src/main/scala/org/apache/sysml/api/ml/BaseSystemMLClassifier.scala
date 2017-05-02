@@ -81,7 +81,9 @@ trait BaseSystemMLEstimatorOrModel {
   def setStatisticsMaxHeavyHitters(statisticsMaxHeavyHitters1:Int):BaseSystemMLEstimatorOrModel = { statisticsMaxHeavyHitters = statisticsMaxHeavyHitters1; this}
   def setConfigProperty(key:String, value:String):BaseSystemMLEstimatorOrModel = { config.put(key, value); this}
   def updateML(ml:MLContext):Unit = {
-    ml.setGPU(enableGPU); ml.setExplain(explain); ml.setStatistics(statistics); config.map(x => ml.setConfigProperty(x._1, x._2))
+    ml.setGPU(enableGPU); ml.setForceGPU(forceGPU);
+    ml.setExplain(explain); ml.setStatistics(statistics); ml.setStatisticsMaxHeavyHitters(statisticsMaxHeavyHitters); 
+    config.map(x => ml.setConfigProperty(x._1, x._2))
   }
   def copyProperties(other:BaseSystemMLEstimatorOrModel):BaseSystemMLEstimatorOrModel = {
     other.setGPU(enableGPU); other.setForceGPU(forceGPU);

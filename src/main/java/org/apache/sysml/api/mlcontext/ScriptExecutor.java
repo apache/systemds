@@ -256,12 +256,12 @@ public class ScriptExecutor {
 	 */
 	protected void setGlobalFlags() {
 		oldStatistics = DMLScript.STATISTICS;
-    DMLScript.STATISTICS = statistics;
-    oldForceGPU = DMLScript.FORCE_ACCELERATOR;
-    DMLScript.FORCE_ACCELERATOR = forceGPU;
-    oldGPU = DMLScript.USE_ACCELERATOR;
-    DMLScript.USE_ACCELERATOR = gpu;
-    DMLScript.STATISTICS_COUNT = statisticsMaxHeavyHitters;
+		DMLScript.STATISTICS = statistics;
+		oldForceGPU = DMLScript.FORCE_ACCELERATOR;
+		DMLScript.FORCE_ACCELERATOR = forceGPU;
+		oldGPU = DMLScript.USE_ACCELERATOR;
+		DMLScript.USE_ACCELERATOR = gpu;
+		DMLScript.STATISTICS_COUNT = statisticsMaxHeavyHitters;
 	}
 	
 	/**

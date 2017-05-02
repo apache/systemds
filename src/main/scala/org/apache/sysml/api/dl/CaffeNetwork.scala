@@ -136,14 +136,14 @@ class CaffeNetwork(netFilePath:String, val currentPhase:Phase,
   // The bottom layers are the layers available in the getBottomList (from Caffe .proto files)
   private val _bottomLayers:Map[String, Set[String]] = convertTupleListToMap(
       _caffeLayerParams.flatMap(l => expandBottomList(l.getName, l.getBottomList)))
-  CaffeNetwork.LOG.info("Bottom layers:" + _bottomLayers)
+  CaffeNetwork.LOG.debug("Bottom layers:" + _bottomLayers)
   
   // Find the top layers by reversing the bottom list
   private val _topLayers:Map[String, Set[String]] = convertTupleListToMap(flipKeyValues(_bottomLayers.toList))
-  CaffeNetwork.LOG.info("Top layers:" + _topLayers)
+  CaffeNetwork.LOG.debug("Top layers:" + _topLayers)
   
   private val _layers: Map[String, CaffeLayer] = _caffeLayerParams.map(l => l.getName -> convertLayerParameterToCaffeLayer(l)).toMap
-  CaffeNetwork.LOG.info("Layers:" + _layers)
+  CaffeNetwork.LOG.debug("Layers:" + _layers)
   private val _layerIDs: Map[String, Int] = _layers.entrySet().map(x => x.getKey -> x.getValue.id).toMap
   
   

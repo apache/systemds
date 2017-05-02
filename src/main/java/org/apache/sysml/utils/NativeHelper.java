@@ -25,6 +25,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import java.util.HashMap;
+import java.util.Vector;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.File;
@@ -94,24 +95,45 @@ public class NativeHelper {
 	    			if(userSpecifiedBLAS.equalsIgnoreCase("")) {
 	    				blasType = isMKLAvailable() ? "mkl" : isOpenBLASAvailable() ? "openblas" : null;
 	    				if(blasType == null)
-	    					LOG.warn("Unable to load either MKL or OpenBLAS");
+	    					LOG.info("Unable to load either MKL or OpenBLAS. Please set ");
 	    			}
 	    			else if(userSpecifiedBLAS.equalsIgnoreCase("mkl")) {
 	    				blasType = isMKLAvailable() ? "mkl" : null;
 	    				if(blasType == null)
-	    					LOG.warn("Unable to load MKL");
+	    					LOG.info("Unable to load MKL");
 	    			}
 	    			else if(userSpecifiedBLAS.equalsIgnoreCase("openblas")) {
 	    				blasType = isOpenBLASAvailable() ? "openblas" : null;
 	    				if(blasType == null)
-	    					LOG.warn("Unable to load OpenBLAS");
+	    					LOG.info("Unable to load OpenBLAS");
 	    			}
 	    			else {
-	    				LOG.warn("Unsupported BLAS:" + userSpecifiedBLAS);
+	    				LOG.info("Unsupported BLAS:" + userSpecifiedBLAS);
 	    			}
 	    			// =============================================================================
 				    if(blasType != null && loadLibraryHelper("libsystemml_" + blasType + "-Linux-x86_64.so")) {
-							LOG.info("Using native blas: " + blasType);
+				    	String blasPathAndHint = "";
+				    	// ------------------------------------------------------------
+				    	// This logic gets the list of native libraries that are loaded
+				    	try {
+				    		java.lang.reflect.Field loadedLibraryNamesField = ClassLoader.class.getDeclaredField("loadedLibraryNames");
+								loadedLibraryNamesField.setAccessible(true);
+								@SuppressWarnings("unchecked")
+								Vector<String> libraries = (Vector<String>) loadedLibraryNamesField.get(ClassLoader.getSystemClassLoader());
+								LOG.debug("List of native libraries loaded:" + libraries);
+								for(String library : libraries) {
+									if(library.endsWith("libmkl_rt.so"))
+										blasPathAndHint = " from the path " + library;
+									else if(library.endsWith("libopenblas.so")) {
+										blasPathAndHint = " from the path " + library + ". Hint: Please make sure that the libopenblas.so is built with GNU OpenMP threading (ldd " + library + " | grep libgomp).";
+									}
+								}
+							} catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) {
+								LOG.debug("Error while finding list of native libraries:" + e.getMessage());
+							}
+				    	// ------------------------------------------------------------
+				    	
+							LOG.info("Using native blas: " + blasType + blasPathAndHint);
 							isSystemMLLoaded = true;
 						}
 	    		}
@@ -155,7 +177,7 @@ public class NativeHelper {
 		// ------------------------------------------------------------
 		// Set environment variable MKL_THREADING_LAYER to GNU on Linux for performance
 		if(!loadLibraryHelper("libpreload_systemml-Linux-x86_64.so")) {
-			LOG.warn("Unable to load preload_systemml (required for loading MKL-enabled SystemML library)");
+			LOG.debug("Unable to load preload_systemml (required for loading MKL-enabled SystemML library)");
 			return false;
 		}
 		// The most reliable way in my investigation to ensure that MKL runs smoothly with OpenMP (used by conv2d*)
@@ -181,9 +203,9 @@ public class NativeHelper {
 		}
 		catch (UnsatisfiedLinkError e) {
 			if(optionalMsg != null)
-				LOG.warn("Unable to load " + blas + "(" + optionalMsg + "):" + e.getMessage());
+				LOG.debug("Unable to load " + blas + "(" + optionalMsg + "):" + e.getMessage());
 			else
-				LOG.warn("Unable to load " + blas + ":" + e.getMessage());
+				LOG.debug("Unable to load " + blas + ":" + e.getMessage());
 			return false;
 		}
 	}

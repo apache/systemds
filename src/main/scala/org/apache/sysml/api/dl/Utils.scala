@@ -76,18 +76,6 @@ object Utils {
 	  }
     
   }
-	
-  def getPrefix():String = {
-    val f = new File("nn")
-    if(f.exists() && f.isDirectory()) {
-      Caffe2DML.LOG.info("Since nn directory exists in current folder, using it.")
-      return "nn"
-    }
-    else {
-      // TODO: Extract from the jar
-      throw new RuntimeException("In current version, we require that you download the nn folder into current directory from https://github.com/apache/incubator-systemml/tree/master/scripts/staging/SystemML-NN")
-    }
-  }
   
 	// --------------------------------------------------------------
 	// Caffe utility functions

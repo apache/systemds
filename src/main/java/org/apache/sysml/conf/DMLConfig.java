@@ -116,7 +116,7 @@ public class DMLConfig
 		_defaultVals.put(CODEGEN,                "false" );
 		_defaultVals.put(CODEGEN_PLANCACHE,      "true" );
 		_defaultVals.put(CODEGEN_LITERALS,       "1" );
-		_defaultVals.put(NATIVE_BLAS,      			 "true" );
+		_defaultVals.put(NATIVE_BLAS,      			 "false" );
 
 		_defaultVals.put(EXTRA_GPU_STATS,       "false" );
 		_defaultVals.put(EXTRA_DNN_STATS,       "false" );

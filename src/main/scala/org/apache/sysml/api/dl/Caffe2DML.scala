@@ -53,13 +53,10 @@ import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyze
 
 
 object Caffe2DML  {
-  val LOG = LogFactory.getLog(classOf[Caffe2DML].getName())
-  def fileSep():String = { if(File.separator.equals("\\")) "\\\\" else File.separator }
-  def setNNLibraryPath(path:String):Unit = { prefix = path + fileSep + "nn"}  
+  val LOG = LogFactory.getLog(classOf[Caffe2DML].getName()) 
   // ------------------------------------------------------------------------
-  var prefix = Utils.getPrefix()
-  def layerDir = prefix + fileSep + "layers" + fileSep
-  def optimDir = prefix + fileSep + "optim" + fileSep
+  def layerDir = "nn/layers/"
+  def optimDir = "nn/optim/"
   
   // Naming conventions:
   val X = "X"; val y = "y"; val batchSize = "BATCH_SIZE"; val numImages = "num_images"; val numValidationImages = "num_validation"

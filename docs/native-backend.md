@@ -1,3 +1,8 @@
+---
+layout: global
+title: Using SystemML with Native BLAS support
+description: Using SystemML with Native BLAS support
+---
 <!--
 {% comment %}
 Licensed to the Apache Software Foundation (ASF) under one or more
@@ -17,6 +22,11 @@ limitations under the License.
 {% endcomment %}
 -->
 
+* This will become a table of contents (this text will be scraped).
+{:toc}
+
+<br/>
+
 # User Guide
 
 By default, SystemML implements all its matrix operations in Java.
@@ -25,16 +35,16 @@ This simplifies deployment especially in a distributed environment.
 In some cases (such as deep learning), the user might want to use native BLAS
 rather than SystemML's internal Java library for performing single-node
 operations such matrix multiplication, convolution, etc.
+
+To allow SystemML to use native BLAS rather than internal Java library,
+please set the configuration property `native.blas` to `true`.
+
 By default, SystemML will first attempt to use Intel MKL (if installed)
 and then OpenBLAS (if installed).
 If both Intel MKL and OpenBLAS are not available, SystemML
 falls back to its internal Java library.
 
-To force SystemML to use internal Java library rather than native BLAS,
-please set the configuration property `native.blas` to `false`.
-
-The current version of SystemML only supports BLAS on Linux machines.
-
+The current version of SystemML only supports BLAS on **Linux** machines.
 
 ## Step 1: Install BLAS
 
@@ -95,19 +105,20 @@ sudo ln -s /lib64/libgomp.so.1 /lib64/libgomp.so
 	
 ## Step 3: Provide the location of the native libraries
 
-1. Add the location of the native libraries (i.e. BLAS and other dependencies) 
+1. Pass the location of the native libraries using command-line options:
+
+- [Spark](http://spark.apache.org/docs/latest/configuration.html): `--conf spark.executorEnv.LD_LIBRARY_PATH=/path/to/blas-n-other-dependencies`
+- Java: `-Djava.library.path=/path/to/blas-n-other-dependencies`
+
+2. Alternatively, you can add the location of the native libraries (i.e. BLAS and other dependencies) 
 to the environment variable `LD_LIBRARY_PATH` (on Linux). 
-If you want to use SystemML with Spark, please add the following line to `spark-env.sh`
+If you want to use SystemML with Spark, please add the following line to `spark-env.sh` 
+(or to the bash profile).
 
 	```bash
 	export LD_LIBRARY_PATH=/path/to/blas-n-other-dependencies
-	# Or export SPARK_LIBRARY_PATH=/path/to/blas-n-other-dependencies
 	```
 
-2. Alternatively, you can pass the location of the native libraries using command-line options:
-
-- Java: `-Djava.library.path=/path/to/blas-n-other-dependencies`
-- [Spark](http://spark.apache.org/docs/latest/configuration.html): `--driver-library-path`
 
 ## Common issues on Linux
 

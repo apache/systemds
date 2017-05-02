@@ -57,6 +57,7 @@ machine in R-like and Python-like declarative languages.
   in Standalone Mode.
 * [JMLC](jmlc) - Java Machine Learning Connector.
   * See [Java Machine Learning Connector (JMLC)](jmlc) for more information.
+* *Experimental* [Caffe2DML API](http://apache.github.io/incubator-systemml/beginners-guide-caffe2dml) for Deep Learning.
 
 ## Language Guides
 

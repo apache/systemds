@@ -313,7 +313,6 @@ public abstract class Hop
 		}
 	}
 
-	@SuppressWarnings("unused") //see CHECKPOINT_SPARSE_CSR
 	private void constructAndSetCheckpointLopIfRequired() 
 		throws HopsException
 	{
@@ -345,11 +344,13 @@ public abstract class Hop
 				//investigate need for serialized storage of large sparse matrices
 				//(compile- instead of runtime-level for better debugging)
 				boolean serializedStorage = false;
-				if( getDataType()==DataType.MATRIX && dimsKnown(true) && !Checkpoint.CHECKPOINT_SPARSE_CSR ) {
+				if( getDataType()==DataType.MATRIX && dimsKnown(true) ) {
 					double matrixPSize = OptimizerUtils.estimatePartitionedSizeExactSparsity(_dim1, _dim2, _rows_in_block, _cols_in_block, _nnz);
 					double dataCache = SparkExecutionContext.getDataMemoryBudget(true, true);
-					serializedStorage = (MatrixBlock.evalSparseFormatInMemory(_dim1, _dim2, _nnz)
-							             && matrixPSize > dataCache ); //sparse in-memory does not fit in agg mem 
+					serializedStorage = MatrixBlock.evalSparseFormatInMemory(_dim1, _dim2, _nnz)
+						&& matrixPSize > dataCache //sparse in-memory does not fit in agg mem 
+						&& (OptimizerUtils.getSparsity(_dim1, _dim2, _nnz) < MatrixBlock.ULTRA_SPARSITY_TURN_POINT
+							|| !Checkpoint.CHECKPOINT_SPARSE_CSR ); //ultra-sparse or sparse w/o csr
 				}
 				else if( !dimsKnown(true) ) {
 					setRequiresRecompile();

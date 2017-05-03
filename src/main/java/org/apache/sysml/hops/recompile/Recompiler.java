@@ -1311,7 +1311,15 @@ public class Recompiler
 		}
 		
 	}
-	
+
+	/**
+	 * Remove any scalar variables from the calling program's
+	 * variable map if the variable is updated in this block.
+	 *
+	 * @param callVars  Calling program's map of variables eligible for
+	 *                     propagation.
+	 * @param sb  DML statement blocks.
+	 */
 	public static void removeUpdatedScalars( LocalVariableMap callVars, StatementBlock sb )
 	{
 		if( sb != null )

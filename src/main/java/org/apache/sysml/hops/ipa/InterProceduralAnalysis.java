@@ -460,8 +460,22 @@ public class InterProceduralAnalysis
 	/////////////////////////////
 	// INTRA-PROCEDURE ANALYSIS
 	//////	
-	
-	private void propagateStatisticsAcrossBlock( StatementBlock sb, Map<String, Integer> fcand, LocalVariableMap callVars, Map<String, Set<Long>> fcandSafeNNZ, Set<String> unaryFcands, Set<String> fnStack ) 
+
+	/**
+	 * Perform intra-procedural analysis (IPA) by propagating statistics
+	 * across statement blocks.
+	 *
+	 * @param sb  DML statement blocks.
+	 * @param fcand  Function candidates.
+	 * @param callVars  Calling program's map of variables eligible for
+	 *                     propagation.
+	 * @param fcandSafeNNZ  Function candidate safe non-zeros.
+	 * @param unaryFcands  Unary function candidates.
+	 * @param fnStack  Function stack to determine current scope.
+	 * @throws HopsException
+	 * @throws ParseException
+	 */
+	private void propagateStatisticsAcrossBlock( StatementBlock sb, Map<String, Integer> fcand, LocalVariableMap callVars, Map<String, Set<Long>> fcandSafeNNZ, Set<String> unaryFcands, Set<String> fnStack )
 		throws HopsException, ParseException
 	{
 		if (sb instanceof FunctionStatementBlock)
@@ -553,7 +567,8 @@ public class InterProceduralAnalysis
 	 * This replaces scalar reads and typecasts thereof with literals.
 	 *
 	 * @param roots  List of HOPs.
-	 * @param vars  Map of variables eligible for propagation.
+	 * @param vars  Calling program's map of variables eligible for
+	 *                 propagation.
 	 * @throws HopsException
 	 */
 	private void propagateScalarsAcrossDAG(ArrayList<Hop> roots, LocalVariableMap vars)
@@ -589,8 +604,15 @@ public class InterProceduralAnalysis
 			throw new HopsException("Failed to update Hop DAG statistics.", ex);
 		}
 	}
-	
-	private void propagateStatisticsAcrossDAG( ArrayList<Hop> roots, LocalVariableMap vars ) 
+
+	/**
+	 * Propagate matrix sizes across DAGs.
+	 *
+	 * @param roots  List of HOPs.
+	 * @param vars  Map of variables eligible for propagation.
+	 * @throws HopsException
+	 */
+	private void propagateStatisticsAcrossDAG( ArrayList<Hop> roots, LocalVariableMap vars )
 		throws HopsException
 	{
 		if( roots == null )
@@ -615,14 +637,44 @@ public class InterProceduralAnalysis
 	/////////////////////////////
 	// INTER-PROCEDURE ANALYIS
 	//////
-	
-	private void propagateStatisticsIntoFunctions(DMLProgram prog, ArrayList<Hop> roots, Map<String, Integer> fcand, LocalVariableMap callVars, Map<String, Set<Long>> fcandSafeNNZ, Set<String> unaryFcands, Set<String> fnStack ) 
+
+	/**
+	 * Propagate statistics from the calling program into a function
+	 * block.
+	 *
+	 * @param prog  The DML program.
+	 * @param roots List of HOPs in this DAG for propagation.
+	 * @param fcand  Function candidates.
+	 * @param callVars  Calling program's map of variables eligible for
+	 *                     propagation.
+	 * @param fcandSafeNNZ  Function candidate safe non-zeros.
+	 * @param unaryFcands  Unary function candidates.
+	 * @param fnStack  Function stack to determine current scope.
+	 * @throws HopsException
+	 * @throws ParseException
+	 */
+	private void propagateStatisticsIntoFunctions(DMLProgram prog, ArrayList<Hop> roots, Map<String, Integer> fcand, LocalVariableMap callVars, Map<String, Set<Long>> fcandSafeNNZ, Set<String> unaryFcands, Set<String> fnStack )
 			throws HopsException, ParseException
 	{
 		for( Hop root : roots )
 			propagateStatisticsIntoFunctions(prog, root, fcand, callVars, fcandSafeNNZ, unaryFcands, fnStack);
 	}
-	
+
+	/**
+	 * Propagate statistics from the calling program into a function
+	 * block.
+	 *
+	 * @param prog  The DML program.
+	 * @param hop HOP to propagate statistics into.
+	 * @param fcand  Function candidates.
+	 * @param callVars  Calling program's map of variables eligible for
+	 *                     propagation.
+	 * @param fcandSafeNNZ  Function candidate safe non-zeros.
+	 * @param unaryFcands  Unary function candidates.
+	 * @param fnStack  Function stack to determine current scope.
+	 * @throws HopsException
+	 * @throws ParseException
+	 */
 	private void propagateStatisticsIntoFunctions(DMLProgram prog, Hop hop, Map<String, Integer> fcand, LocalVariableMap callVars, Map<String, Set<Long>> fcandSafeNNZ, Set<String> unaryFcands, Set<String> fnStack ) 
 		throws HopsException, ParseException
 	{

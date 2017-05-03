@@ -35,7 +35,6 @@ import java.util.stream.LongStream;
 import org.apache.commons.math3.random.Well1024a;
 import org.apache.hadoop.io.DataInputBuffer;
 import org.apache.sysml.conf.ConfigurationManager;
-import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.Hop.OpOp2;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.lops.MMTSJ.MMTSJType;
@@ -86,6 +85,7 @@ import org.apache.sysml.runtime.util.FastBufferedDataInputStream;
 import org.apache.sysml.runtime.util.FastBufferedDataOutputStream;
 import org.apache.sysml.runtime.util.IndexRange;
 import org.apache.sysml.runtime.util.UtilFunctions;
+import org.apache.sysml.utils.NativeHelper;
 
 
 
@@ -4878,8 +4878,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	public MatrixValue aggregateBinaryOperations(MatrixIndexes m1Index, MatrixValue m1Value, MatrixIndexes m2Index, MatrixValue m2Value, 
 			MatrixValue result, AggregateBinaryOperator op ) throws DMLRuntimeException
 	{
-		boolean enableNativeBLAS = ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.NATIVE_BLAS);
-		return aggregateBinaryOperations(m1Value, m2Value, result, op, enableNativeBLAS);
+		return aggregateBinaryOperations(m1Value, m2Value, result, op, NativeHelper.isNativeLibraryLoaded());
 	}
 
 	public MatrixValue aggregateBinaryOperations(MatrixIndexes m1Index, MatrixValue m1Value, MatrixIndexes m2Index, MatrixValue m2Value, 
@@ -4889,8 +4888,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	}
 	
 	public MatrixValue aggregateBinaryOperations(MatrixValue m1Value, MatrixValue m2Value, MatrixValue result, AggregateBinaryOperator op) throws DMLRuntimeException {
-		boolean enableNativeBLAS = ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.NATIVE_BLAS); 
-		return aggregateBinaryOperations(m1Value, m2Value, result, op, enableNativeBLAS);
+		return aggregateBinaryOperations(m1Value, m2Value, result, op, NativeHelper.isNativeLibraryLoaded());
 	}
 
 	public MatrixValue aggregateBinaryOperations(MatrixValue m1Value, MatrixValue m2Value, MatrixValue result, AggregateBinaryOperator op, boolean nativeMatMult) 

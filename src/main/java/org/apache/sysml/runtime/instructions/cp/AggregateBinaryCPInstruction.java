@@ -19,8 +19,6 @@
 
 package org.apache.sysml.runtime.instructions.cp;
 
-import org.apache.sysml.conf.ConfigurationManager;
-import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -33,6 +31,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
+import org.apache.sysml.utils.NativeHelper;
 
 public class AggregateBinaryCPInstruction extends BinaryCPInstruction
 {
@@ -81,8 +80,7 @@ public class AggregateBinaryCPInstruction extends BinaryCPInstruction
 		if( matBlock2 instanceof CompressedMatrixBlock )
 			soresBlock = (MatrixBlock) (matBlock2.aggregateBinaryOperations(matBlock1, matBlock2, new MatrixBlock(), ab_op));
 		else  {
-			boolean enableNative = ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.NATIVE_BLAS);
-			soresBlock = (MatrixBlock) (matBlock1.aggregateBinaryOperations(matBlock1, matBlock2, new MatrixBlock(), ab_op, enableNative));
+			soresBlock = (MatrixBlock) (matBlock1.aggregateBinaryOperations(matBlock1, matBlock2, new MatrixBlock(), ab_op, NativeHelper.isNativeLibraryLoaded()));
 		}
 			
 		//release inputs/outputs

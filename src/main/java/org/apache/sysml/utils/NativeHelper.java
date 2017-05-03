@@ -56,6 +56,8 @@ public class NativeHelper {
 	
 	private static boolean attemptedLoading = false;
 	
+	private static String hintOnFailures = "";
+	
 	// Performing loading in a method instead of a static block will throw a detailed stack trace in case of fatal errors
 	private static void init() {
 		// Only Linux supported for BLAS
@@ -66,8 +68,6 @@ public class NativeHelper {
 		// again and again especially in the parfor (hence the double-checking with synchronized).
 		if(!attemptedLoading) {
 			DMLConfig dmlConfig = ConfigurationManager.getDMLConfig();
-			String userSpecifiedBLAS = System.getenv("SYSTEMML_BLAS");
-			userSpecifiedBLAS = (userSpecifiedBLAS == null) ? "" :  userSpecifiedBLAS.trim().toLowerCase();
 			// -------------------------------------------------------------------------------------
 			// We allow BLAS to be enabled or disabled or explicitly selected in one of the two ways:
 			// 1. DML Configuration: native.blas (boolean flag)
@@ -76,13 +76,12 @@ public class NativeHelper {
 			// The option 2 is useful for two reasons:
 			// - Developer testing of different BLAS 
 			// - Provides fine-grained control. Certain machines could use mkl while others use openblas, etc.
-			boolean enabledViaConfig = (dmlConfig == null) ? true : dmlConfig.getBooleanValue(DMLConfig.NATIVE_BLAS);
-			boolean enabledViaEnvironmentVariable = userSpecifiedBLAS.equals("") || userSpecifiedBLAS.equals("mkl") || userSpecifiedBLAS.equals("openblas");
-			
-			if(enabledViaConfig && enabledViaEnvironmentVariable) {
+			String userSpecifiedBLAS = (dmlConfig == null) ? "auto" : dmlConfig.getTextValue(DMLConfig.NATIVE_BLAS).trim().toLowerCase();
+						
+			if(userSpecifiedBLAS.equals("auto") || userSpecifiedBLAS.equals("mkl") || userSpecifiedBLAS.equals("openblas")) {
 				long start = System.nanoTime();
 				if(!supportedArchitectures.containsKey(SystemUtils.OS_ARCH)) {
-					LOG.warn("Unsupported architecture for native BLAS:" + SystemUtils.OS_ARCH);
+					LOG.info("Unsupported architecture for native BLAS:" + SystemUtils.OS_ARCH);
 					return;
 				}
 	    	synchronized(NativeHelper.class) {
@@ -92,23 +91,24 @@ public class NativeHelper {
 	    			// By default, we will native.blas=true and we will attempt to load MKL first.
     				// If MKL is not enabled then we try to load OpenBLAS.
     				// If both MKL and OpenBLAS are not available we fall back to Java BLAS.
-	    			if(userSpecifiedBLAS.equalsIgnoreCase("")) {
+	    			if(userSpecifiedBLAS.equals("auto")) {
 	    				blasType = isMKLAvailable() ? "mkl" : isOpenBLASAvailable() ? "openblas" : null;
 	    				if(blasType == null)
-	    					LOG.info("Unable to load either MKL or OpenBLAS. Please set ");
+	    					LOG.info("Unable to load either MKL or OpenBLAS due to " + hintOnFailures);
 	    			}
-	    			else if(userSpecifiedBLAS.equalsIgnoreCase("mkl")) {
+	    			else if(userSpecifiedBLAS.equals("mkl")) {
 	    				blasType = isMKLAvailable() ? "mkl" : null;
 	    				if(blasType == null)
-	    					LOG.info("Unable to load MKL");
+	    					LOG.info("Unable to load MKL due to " + hintOnFailures);
 	    			}
-	    			else if(userSpecifiedBLAS.equalsIgnoreCase("openblas")) {
+	    			else if(userSpecifiedBLAS.equals("openblas")) {
 	    				blasType = isOpenBLASAvailable() ? "openblas" : null;
 	    				if(blasType == null)
-	    					LOG.info("Unable to load OpenBLAS");
+	    					LOG.info("Unable to load OpenBLAS due to " + hintOnFailures);
 	    			}
 	    			else {
-	    				LOG.info("Unsupported BLAS:" + userSpecifiedBLAS);
+	    				// Only thrown at development time.
+	    				throw new RuntimeException("Unsupported BLAS:" + userSpecifiedBLAS);
 	    			}
 	    			// =============================================================================
 				    if(blasType != null && loadLibraryHelper("libsystemml_" + blasType + "-Linux-x86_64.so")) {
@@ -141,14 +141,11 @@ public class NativeHelper {
 	    		}
 	    	}
 	    	double timeToLoadInMilliseconds = (System.nanoTime()-start)*1e-6;
-	    	if(timeToLoadInMilliseconds > 100) 
+	    	if(timeToLoadInMilliseconds > 1000) 
 	    		LOG.warn("Time to load native blas: " + timeToLoadInMilliseconds + " milliseconds.");
 			}
 			else {
-				if(enabledViaConfig)
-					LOG.warn("Using internal Java BLAS as native BLAS support is disabled by the configuration 'native.blas'.");
-				else
-					LOG.warn("Using internal Java BLAS as native BLAS support is disabled by the environment variable 'SYSTEMML_BLAS=" + userSpecifiedBLAS + "'.");
+				LOG.warn("Using internal Java BLAS as native BLAS support the configuration 'native.blas'=" + userSpecifiedBLAS + ".");
 			}
 			attemptedLoading = true;
 		}
@@ -180,6 +177,7 @@ public class NativeHelper {
 		// Set environment variable MKL_THREADING_LAYER to GNU on Linux for performance
 		if(!loadLibraryHelper("libpreload_systemml-Linux-x86_64.so")) {
 			LOG.debug("Unable to load preload_systemml (required for loading MKL-enabled SystemML library)");
+			hintOnFailures = hintOnFailures + " libpreload_systemml-Linux-x86_64.so";
 			return false;
 		}
 		// The most reliable way in my investigation to ensure that MKL runs smoothly with OpenMP (used by conv2d*)
@@ -204,6 +202,8 @@ public class NativeHelper {
 			 return true;
 		}
 		catch (UnsatisfiedLinkError e) {
+			if(!hintOnFailures.contains(blas))
+				hintOnFailures = hintOnFailures + blas + " ";
 			if(optionalMsg != null)
 				LOG.debug("Unable to load " + blas + "(" + optionalMsg + "):" + e.getMessage());
 			else

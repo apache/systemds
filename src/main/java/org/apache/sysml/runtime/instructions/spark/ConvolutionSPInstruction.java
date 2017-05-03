@@ -25,8 +25,6 @@ import java.util.Iterator;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.broadcast.Broadcast;
-import org.apache.sysml.conf.ConfigurationManager;
-import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -49,6 +47,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysml.runtime.util.ConvolutionUtils;
+import org.apache.sysml.utils.NativeHelper;
 
 import scala.Tuple2;
 
@@ -284,7 +283,7 @@ public class ConvolutionSPInstruction extends UnarySPInstruction {
 			int Q = (int) ConvolutionUtils.getQ(W, S, stride_w, pad_w);
 			
 			ConvolutionParameters params = new ConvolutionParameters(numRowsPerBlock, C, H, W, K, R, S, stride_h, stride_w, pad_h, pad_w, 1);
-			boolean enableNativeBLAS = ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.NATIVE_BLAS); 
+			boolean enableNativeBLAS = NativeHelper.isNativeLibraryLoaded(); 
 			JavaPairRDD<MatrixIndexes,MatrixBlock> out = inputRDD.mapPartitionsToPair(new RDDConv2dMapMMFunction(filterBroadcast, params, instOpcode, biasBroadcast, mcRdd.getRows(), enableNativeBLAS), true);
 			
 			//put output RDD handle into symbol table

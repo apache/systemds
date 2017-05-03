@@ -22,8 +22,6 @@ package org.apache.sysml.runtime.instructions.cp;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import org.apache.sysml.conf.ConfigurationManager;
-import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.functionobjects.SwapIndex;
@@ -342,7 +340,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction
 		int Q = (int) ConvolutionUtils.getQ(W, S, stride_w, pad_w);
 		
 		ConvolutionParameters params = new ConvolutionParameters(N, C, H, W, K, R, S, stride_h, stride_w, pad_h, pad_w, _numThreads);
-		params.enableNative = ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.NATIVE_BLAS) && NativeHelper.isNativeLibraryLoaded();
+		params.enableNative = NativeHelper.isNativeLibraryLoaded();
 		if (instOpcode.equalsIgnoreCase("maxpooling") || instOpcode.equalsIgnoreCase("relu_maxpooling")) {
 			if(matBlock.isEmptyBlock()) {
 				outputBlock = new MatrixBlock(N, C*P*Q, true);

@@ -66,8 +66,8 @@
    <!-- if codegen.enabled, compile literals as constants: 1..heuristic, 2..always -->
    <codegen.literals>1</codegen.literals>
    
-   <!-- enables native blas for matrix multiplication and convolution, experimental feature -->
-   <native.blas>false</native.blas>
+   <!-- enables native blas for matrix multiplication and convolution, experimental feature (options: auto, mkl, openblas, none) -->
+   <native.blas>auto</native.blas>
 
    <!-- prints extra statistics information for GPU -->
    <systemml.stats.extraGPU>false</systemml.stats.extraGPU>

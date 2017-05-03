@@ -747,7 +747,20 @@ public class InterProceduralAnalysis
 				DataIdentifier di = foutputOps.get(i);
 				String fvarname = di.getName(); //name in function signature
 				String pvarname = outputVars[i]; //name in calling program
-				
+
+				// If the calling program is reassigning a variable with the output of this
+				// function, and the datatype differs between that variable and this function
+				// output, remove that variable from the calling program's variable map.
+				if( callVars.keySet().contains(pvarname) ) {
+					DataType fdataType = di.getDataType();
+					DataType pdataType = callVars.get(pvarname).getDataType();
+					if( fdataType != pdataType ) {
+						// datatype has changed, and the calling program is reassigning the
+						// the variable, so remove it from the calling variable map
+						callVars.remove(pvarname);
+					}
+				}
+				// Update or add to the calling program's variable map.
 				if( di.getDataType()==DataType.MATRIX && tmpVars.keySet().contains(fvarname) )
 				{
 					MatrixObject moIn = (MatrixObject) tmpVars.get(fvarname);

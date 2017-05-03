@@ -115,22 +115,24 @@ public class NativeHelper {
 				    	String blasPathAndHint = "";
 				    	// ------------------------------------------------------------
 				    	// This logic gets the list of native libraries that are loaded
-				    	try {
-				    		java.lang.reflect.Field loadedLibraryNamesField = ClassLoader.class.getDeclaredField("loadedLibraryNames");
-								loadedLibraryNamesField.setAccessible(true);
-								@SuppressWarnings("unchecked")
-								Vector<String> libraries = (Vector<String>) loadedLibraryNamesField.get(ClassLoader.getSystemClassLoader());
-								LOG.debug("List of native libraries loaded:" + libraries);
-								for(String library : libraries) {
-									if(library.endsWith("libmkl_rt.so"))
-										blasPathAndHint = " from the path " + library;
-									else if(library.endsWith("libopenblas.so")) {
-										blasPathAndHint = " from the path " + library + ". Hint: Please make sure that the libopenblas.so is built with GNU OpenMP threading (ldd " + library + " | grep libgomp).";
+				    	if(LOG.isDebugEnabled()) {
+				    		// Only perform the checking of library paths when DEBUG is enabled to avoid runtime overhead. 
+					    	try {
+					    		java.lang.reflect.Field loadedLibraryNamesField = ClassLoader.class.getDeclaredField("loadedLibraryNames");
+									loadedLibraryNamesField.setAccessible(true);
+									@SuppressWarnings("unchecked")
+									Vector<String> libraries = (Vector<String>) loadedLibraryNamesField.get(ClassLoader.getSystemClassLoader());
+									LOG.debug("List of native libraries loaded:" + libraries);
+									for(String library : libraries) {
+										if(library.contains("libmkl_rt") || library.contains("libopenblas")) {
+											blasPathAndHint = " from the path " + library;
+											break;
+										}
 									}
+								} catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) {
+									LOG.debug("Error while finding list of native libraries:" + e.getMessage());
 								}
-							} catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) {
-								LOG.debug("Error while finding list of native libraries:" + e.getMessage());
-							}
+				    	}
 				    	// ------------------------------------------------------------
 				    	
 							LOG.info("Using native blas: " + blasType + blasPathAndHint);

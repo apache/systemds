@@ -35,9 +35,9 @@ import org.apache.sysml.runtime.instructions.gpu.AggregateUnaryGPUInstruction;
 
 public class GPUInstructionParser  extends InstructionParser 
 {
-	public static final HashMap<String, GPUINSTRUCTION_TYPE> String2GPUInstructionType;
+	static final HashMap<String, GPUINSTRUCTION_TYPE> String2GPUInstructionType;
 	static {
-		String2GPUInstructionType = new HashMap<String, GPUINSTRUCTION_TYPE>();
+		String2GPUInstructionType = new HashMap<>();
 
 		// Neural Network Operators
 		String2GPUInstructionType.put( "relu_backward",          GPUINSTRUCTION_TYPE.Convolution);

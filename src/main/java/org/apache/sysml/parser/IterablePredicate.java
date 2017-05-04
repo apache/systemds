@@ -23,8 +23,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import org.apache.sysml.lops.Lop;
-import org.apache.sysml.parser.Expression.DataType;
-import org.apache.sysml.parser.Expression.ValueType;
 
 
 public class IterablePredicate extends Expression 

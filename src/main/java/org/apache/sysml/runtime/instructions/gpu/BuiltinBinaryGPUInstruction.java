@@ -30,7 +30,9 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 
 public abstract class BuiltinBinaryGPUInstruction extends GPUInstruction {
 
+  @SuppressWarnings("unused")
   private int _arity;
+
   CPOperand output;
   CPOperand input1, input2;
 

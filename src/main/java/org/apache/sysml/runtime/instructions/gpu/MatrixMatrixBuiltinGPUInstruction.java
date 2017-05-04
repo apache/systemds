@@ -45,6 +45,7 @@ public class MatrixMatrixBuiltinGPUInstruction extends BuiltinBinaryGPUInstructi
     MatrixObject mat2 = getMatrixInputForGPUInstruction(ec, input2.getName());
 
     if(opcode.equals("solve")) {
+      ec.setMetaData(output.getName(), mat1.getNumColumns(), 1);
       LibMatrixCUDA.solve(ec, ec.getGPUContext(), getExtendedOpcode(), mat1, mat2, output.getName());
 
     } else {

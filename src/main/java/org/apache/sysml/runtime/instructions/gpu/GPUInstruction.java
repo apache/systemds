@@ -35,16 +35,20 @@ public abstract class GPUInstruction extends Instruction
 	public enum GPUINSTRUCTION_TYPE { AggregateUnary, AggregateBinary, Convolution, MMTSJ, Reorg, ArithmeticBinary, BuiltinUnary, BuiltinBinary, Builtin };
 
 	// Memory/conversions
-	public final static String MISC_TIMER_HOST_TO_DEVICE = 				"H2D";	// time spent in bringing data to gpu (from host)
-	public final static String MISC_TIMER_DEVICE_TO_HOST =				"D2H"; 	// time spent in bringing data from gpu (to host)
-	public final static String MISC_TIMER_DEVICE_TO_DEVICE = 			"D2D"; 	// time spent in copying data from one region on the device to another
-	public final static String MISC_TIMER_SPARSE_TO_DENSE = 			"s2d";	// time spent in converting data from sparse to dense
-	public final static String MISC_TIMER_DENSE_TO_SPARSE = 			"d2s";	// time spent in converting data from dense to sparse
-	public final static String MISC_TIMER_CUDA_FREE = 						"f";		// time spent in calling cudaFree
-	public final static String MISC_TIMER_ALLOCATE = 							"a";		// time spent to allocate memory on gpu
-	public final static String MISC_TIMER_ALLOCATE_DENSE_OUTPUT = "ao";		// time spent to allocate dense output (recorded differently than MISC_TIMER_ALLOCATE)
-	public final static String MISC_TIMER_SET_ZERO = 							"az";		// time spent to allocate
-	public final static String MISC_TIMER_REUSE = 								"r";		// time spent in reusing already allocated memory on GPU (mainly for the count)
+	public final static String MISC_TIMER_HOST_TO_DEVICE =          "H2D";	// time spent in bringing data to gpu (from host)
+	public final static String MISC_TIMER_DEVICE_TO_HOST =          "D2H"; 	// time spent in bringing data from gpu (to host)
+	public final static String MISC_TIMER_DEVICE_TO_DEVICE =        "D2D"; 	// time spent in copying data from one region on the device to another
+	public final static String MISC_TIMER_SPARSE_TO_DENSE =         "s2d";	// time spent in converting data from sparse to dense
+	public final static String MISC_TIMER_DENSE_TO_SPARSE =         "d2s";	// time spent in converting data from dense to sparse
+	public final static String MISC_TIMER_ROW_TO_COLUMN_MAJOR =     "r2c";	// time spent in converting data from row major to column major
+	public final static String MISC_TIMER_COLUMN_TO_ROW_MAJOR =     "c2r";	// time spent in converting data from column major to row major
+	public final static String MISC_TIMER_OBJECT_CLONE =            "clone";// time spent in cloning (deep copying) a GPUObject instance
+
+	public final static String MISC_TIMER_CUDA_FREE =               "f";		// time spent in calling cudaFree
+	public final static String MISC_TIMER_ALLOCATE =                "a";		// time spent to allocate memory on gpu
+	public final static String MISC_TIMER_ALLOCATE_DENSE_OUTPUT =   "ao";		// time spent to allocate dense output (recorded differently than MISC_TIMER_ALLOCATE)
+	public final static String MISC_TIMER_SET_ZERO =                "az";		// time spent to allocate
+	public final static String MISC_TIMER_REUSE =                   "r";		// time spent in reusing already allocated memory on GPU (mainly for the count)
 
 	// Matmult instructions
 	public final static String MISC_TIMER_SPARSE_ALLOCATE_LIB = 						"Msao";		// time spend in allocating for sparse matrix output
@@ -58,6 +62,10 @@ public abstract class GPUInstruction extends Instruction
 
 	// Other BLAS instructions
 	public final static String MISC_TIMER_DAXPY_LIB = "daxpy";	// time spent in daxpy
+	public final static String MISC_TIMER_QR_BUFFER = "qr_buffer"; 	// time spent in calculating buffer needed to perform QR
+	public final static String MISC_TIMER_QR = "qr"; 	// time spent in doing QR
+	public final static String MISC_TIMER_ORMQR = "ormqr"; // time spent in ormqr
+	public final static String MISC_TIMER_TRSM = "trsm"; // time spent in cublas Dtrsm
 
 	// Transpose
 	public final static String MISC_TIMER_SPARSE_DGEAM_LIB = 	"sdgeaml"; 	// time spent in sparse transpose (and other ops of type a*op(A) + b*op(B))

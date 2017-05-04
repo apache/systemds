@@ -307,6 +307,8 @@ public class GPUContext {
         freeList = new LinkedList<Pointer>();
         freeCUDASpaceMap.put(size, freeList);
       }
+      if (freeList.contains(toFree))
+        throw new RuntimeException("GPU : Internal state corrupted, double free");
       freeList.add(toFree);
     }
   }

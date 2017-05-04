@@ -329,6 +329,7 @@ public class LibMatrixCUDA {
 	 * @return a sparse matrix pointer
 	 * @throws DMLRuntimeException if error occurs
 	 */
+	@SuppressWarnings("unused")
 	private static CSRPointer getSparsePointer(GPUContext gCtx, MatrixObject input, String instName) throws DMLRuntimeException {
 		if(!isInSparseFormat(gCtx, input)) {
 			input.getGPUObject(gCtx).denseToSparse();
@@ -2754,6 +2755,25 @@ public class LibMatrixCUDA {
 		Pointer betaPtr = pointerTo(beta);
 		int transa = isLeftTransposed ? CUBLAS_OP_T : CUBLAS_OP_N;
 		int transb = isRightTransposed ? CUBLAS_OP_T : CUBLAS_OP_N;
+
+		int lda = (int) in1.getNumColumns();
+		int ldb = (int) in2.getNumColumns();
+		int m = (int) in1.getNumColumns();
+		int n = (int) in2.getNumRows();
+		if (isLeftTransposed && isRightTransposed) {
+			m = (int) in1.getNumRows();
+			n = (int) in2.getNumColumns();
+		}
+		else if (isLeftTransposed) {
+			m = (int) in1.getNumRows();
+		} else if (isRightTransposed) {
+			n = (int) in2.getNumColumns();
+		}
+		int ldc = m;
+
+
+
+		/**
 		int m = (int) in1.getNumRows();
 		int n = (int) in1.getNumColumns();
 		if(!isLeftTransposed && isRightTransposed) {
@@ -2763,6 +2783,7 @@ public class LibMatrixCUDA {
 		int lda = isLeftTransposed ? n : m;
 		int ldb = isRightTransposed ? n : m;
 		int ldc = m;
+		**/
 
 		MatrixObject out = ec.getMatrixObject(outputName);
 		boolean isSparse1 = isInSparseFormat(gCtx, in1);
@@ -2963,8 +2984,10 @@ public class LibMatrixCUDA {
             throw new DMLRuntimeException("GPU : Invalid internal state, the GPUContext set with the ExecutionContext is not the same used to run this LibMatrixCUDA function");
 
         // x = solve(A, b)
+		LOG.trace("GPU : solve" + ", GPUContext=" + gCtx);
 
-        // Both Sparse
+		long t0 = -1;
+
         if (!isInSparseFormat(gCtx, in1) && !isInSparseFormat(gCtx, in2)) {    // Both dense
             GPUObject Aobj = in1.getGPUObject(gCtx);
             GPUObject bobj = in2.getGPUObject(gCtx);
@@ -2980,55 +3003,75 @@ public class LibMatrixCUDA {
             // convert dense matrices to row major
             // Operation in cuSolver and cuBlas are for column major dense matrices
             // and are destructive to the original input
+			if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
             GPUObject ATobj = (GPUObject) Aobj.clone();
-            ATobj.denseRowMajorToColumnMajor();
+			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_OBJECT_CLONE, System.nanoTime() - t0);
+			if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
+			ATobj.denseRowMajorToColumnMajor();
+            if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_ROW_TO_COLUMN_MAJOR, System.nanoTime() - t0);
             Pointer A = ATobj.getJcudaDenseMatrixPtr();
 
+			if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
             GPUObject bTobj = (GPUObject) bobj.clone();
-            bTobj.denseRowMajorToColumnMajor();
-            Pointer b = bTobj.getJcudaDenseMatrixPtr();
+			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_OBJECT_CLONE, System.nanoTime() - t0);
+			if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
+			bTobj.denseRowMajorToColumnMajor();
+			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_ROW_TO_COLUMN_MAJOR, System.nanoTime() - t0);
+
+			Pointer b = bTobj.getJcudaDenseMatrixPtr();
 
             // The following set of operations is done following the example in the cusolver documentation
             // http://docs.nvidia.com/cuda/cusolver/#ormqr-example1
 
             // step 3: query working space of geqrf and ormqr
-            int[] lwork = {0};
+			if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
+			int[] lwork = {0};
             JCusolverDn.cusolverDnDgeqrf_bufferSize(gCtx.getCusolverDnHandle(), m, n, A, m, lwork);
+			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_QR_BUFFER, System.nanoTime() - t0);
 
-            // step 4: compute QR factorization
-            Pointer work = gCtx.allocate(lwork[0] * Sizeof.DOUBLE);
-            Pointer tau = gCtx.allocate(Math.max(m, m) * Sizeof.DOUBLE);
+
+			// step 4: compute QR factorization
+            Pointer work = gCtx.allocate(instName, lwork[0] * Sizeof.DOUBLE);
+            Pointer tau = gCtx.allocate(instName, Math.max(m, m) * Sizeof.DOUBLE);
             Pointer devInfo = gCtx.allocate(Sizeof.INT);
-            JCusolverDn.cusolverDnDgeqrf(gCtx.getCusolverDnHandle(), m, n, A, m, tau, work, lwork[0], devInfo);
+			if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
+			JCusolverDn.cusolverDnDgeqrf(gCtx.getCusolverDnHandle(), m, n, A, m, tau, work, lwork[0], devInfo);
+			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_QR, System.nanoTime() - t0);
 
-            int[] qrError = {-1};
+
+			int[] qrError = {-1};
             cudaMemcpy(Pointer.to(qrError), devInfo, Sizeof.INT, cudaMemcpyDeviceToHost);
             if (qrError[0] != 0) {
                 throw new DMLRuntimeException("GPU : Error in call to geqrf (QR factorization) as part of solve, argument " + qrError[0] + " was wrong");
             }
 
             // step 5: compute Q^T*B
-            JCusolverDn.cusolverDnDormqr(gCtx.getCusolverDnHandle(), cublasSideMode.CUBLAS_SIDE_LEFT, cublasOperation.CUBLAS_OP_T, m, 1, n, A, m, tau, b, m, work, lwork[0], devInfo);
-            cudaMemcpy(Pointer.to(qrError), devInfo, Sizeof.INT, cudaMemcpyDeviceToHost);
+			if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
+			JCusolverDn.cusolverDnDormqr(gCtx.getCusolverDnHandle(), cublasSideMode.CUBLAS_SIDE_LEFT, cublasOperation.CUBLAS_OP_T, m, 1, n, A, m, tau, b, m, work, lwork[0], devInfo);
+			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_ORMQR, System.nanoTime() - t0);
+			cudaMemcpy(Pointer.to(qrError), devInfo, Sizeof.INT, cudaMemcpyDeviceToHost);
             if (qrError[0] != 0) {
                 throw new DMLRuntimeException("GPU : Error in call to ormqr (to compuete Q^T*B after QR factorization) as part of solve, argument " + qrError[0] + " was wrong");
             }
 
             // step 6: compute x = R \ Q^T*B
-            JCublas2.cublasDtrsm(gCtx.getCublasHandle(),
+			if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
+			JCublas2.cublasDtrsm(gCtx.getCublasHandle(),
                 cublasSideMode.CUBLAS_SIDE_LEFT, cublasFillMode.CUBLAS_FILL_MODE_UPPER, cublasOperation.CUBLAS_OP_N, cublasDiagType.CUBLAS_DIAG_NON_UNIT,
                 n, 1, pointerTo(1.0), A, m, b, m);
+			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_TRSM, System.nanoTime() - t0);
 
-            bTobj.denseColumnMajorToRowMajor();
+			if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
+			bTobj.denseColumnMajorToRowMajor();
+			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_COLUMN_TO_ROW_MAJOR, System.nanoTime() - t0);
 
             // TODO  : Find a way to assign bTobj directly to the output and set the correct flags so as to not crash
             // There is an avoidable copy happening here
             MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, instName, outputName);
             cudaMemcpy(out.getGPUObject(gCtx).getJcudaDenseMatrixPtr(), bTobj.getJcudaDenseMatrixPtr(), n * 1 * Sizeof.DOUBLE, cudaMemcpyDeviceToDevice);
 
-            gCtx.cudaFreeHelper(work);
-            gCtx.cudaFreeHelper(tau);
-            gCtx.cudaFreeHelper(tau);
+            gCtx.cudaFreeHelper(instName, work);
+            gCtx.cudaFreeHelper(instName, tau);
             ATobj.clearData();
             bTobj.clearData();
 

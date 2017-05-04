@@ -242,27 +242,40 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		switch(op) 
 		{
 			case MAX_POOLING: {
-				ret[0] = getInput().get(0)._dim1;
+				// input
+				long N = getInput().get(0)._dim1;
+				ret[0] = N;
 				ret[1] = getExtractedVal(params.C, params.P, params.Q);
 				ret[2] = -1;
 				break;
 			}
 			case DIRECT_CONV2D: {
-				ret[0] = getInput().get(0)._dim1;
-				ret[1] = getExtractedVal(getInput().get(1)._dim1, params.P, params.Q);
+				// input, filter
+				long N = getInput().get(0)._dim1;
+				ret[0] = N;
+				ret[1] = getExtractedVal(params.K, params.P, params.Q);
 				ret[2] = -1;
 				break;
 			}
 			case DIRECT_CONV2D_BACKWARD_FILTER: {
-				ret[0] = getInput().get(1)._dim1;
-				ret[1] = getInput().get(1)._dim2;
+				// input, dout	
+				ret[0] = params.K;
+				ret[1] = getExtractedVal(params.C, params.R, params.S);
 				ret[2] = -1;
 				break;
 			}
-			case MAX_POOLING_BACKWARD:
-			case DIRECT_CONV2D_BACKWARD_DATA: {
+			case MAX_POOLING_BACKWARD: {
+				// input, dout
 				ret[0] = getInput().get(0)._dim1;
 				ret[1] = getInput().get(0)._dim2;
+				ret[2] = -1;
+				break;
+			}
+			case DIRECT_CONV2D_BACKWARD_DATA: {
+				// filter, dout
+				long N = getInput().get(1)._dim1;
+				ret[0] = N;
+				ret[1] = getExtractedVal(params.C, params.H, params.W);
 				ret[2] = -1;
 				break;
 			}
@@ -390,13 +403,16 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		{
 			case MAX_POOLING:
 			{	
-				_dim1 = getInput().get(0)._dim1;
+				// input
+				long N = getInput().get(0)._dim1;
+				_dim1 = N;
 				_dim2 = getExtractedVal(params.C, params.P, params.Q);
 				_nnz = -1; // cannot infer stats
 				break;
 			}
 			case MAX_POOLING_BACKWARD:
 			{
+				// input, dout
 				_dim1 = getInput().get(0)._dim1;
 				_dim2 = getInput().get(0)._dim2;
 				_nnz = -1;
@@ -404,22 +420,27 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 			}
 			case DIRECT_CONV2D:
 			{
-				_dim1 = getInput().get(0)._dim1;
-				_dim2 = getExtractedVal(getInput().get(1)._dim1, params.P, params.Q);
+				// input, filter
+				long N = getInput().get(0)._dim1;
+				_dim1 = N;
+				_dim2 = getExtractedVal(params.K, params.P, params.Q);
 				_nnz = -1; // cannot infer stats
 				break;
 			}
 			case DIRECT_CONV2D_BACKWARD_DATA:
 			{
-				_dim1 = getInput().get(0)._dim1;
-				_dim2 = getInput().get(0)._dim2;
+				// filter, dout
+				long N = getInput().get(1)._dim1;
+				_dim1 = N;
+				_dim2 = getExtractedVal(params.C, params.H, params.W);
 				_nnz = -1; // cannot infer stats
 				break;
 			}
 			case DIRECT_CONV2D_BACKWARD_FILTER:
 			{
-				_dim1 = getInput().get(1)._dim1;
-				_dim2 = getInput().get(1)._dim2;
+				// input, dout	
+				_dim1 = params.K;
+				_dim2 = getExtractedVal(params.C, params.R, params.S);
 				_nnz = -1; // cannot infer stats
 				break;
 			}

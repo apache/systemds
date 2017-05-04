@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
+import org.antlr.v4.parse.ANTLRParser.option_return;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.conf.ConfigurationManager;
@@ -2152,7 +2153,7 @@ public class DMLTranslator
 		if (target == null) {
 			target = createTarget(source);
 		}
-
+		
 		// Construct the hop based on the type of Builtin function
 		switch (source.getOpCode()) {
 
@@ -2785,7 +2786,12 @@ public class DMLTranslator
 			throw new ParseException("Unsupported builtin function type: "+source.getOpCode());
 		}
 		
-		setIdentifierParams(currBuiltinOp, source.getOutput());
+		if( !(source.getOpCode() == BuiltinFunctionOp.CONV2D || source.getOpCode() == BuiltinFunctionOp.CONV2D_BACKWARD_DATA ||
+				source.getOpCode() == BuiltinFunctionOp.CONV2D_BACKWARD_FILTER || source.getOpCode() == BuiltinFunctionOp.MAX_POOL ||
+				source.getOpCode() == BuiltinFunctionOp.MAX_POOL_BACKWARD) ) {
+			// Since the dimension of output doesnot match that of input variable for these operations
+			setIdentifierParams(currBuiltinOp, source.getOutput());
+		}
 		currBuiltinOp.setAllPositions(source.getBeginLine(), source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
 		return currBuiltinOp;
 	}

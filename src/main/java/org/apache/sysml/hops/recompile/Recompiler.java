@@ -1311,12 +1311,19 @@ public class Recompiler
 		}
 		
 	}
-	
+
+	/**
+	 * Remove any scalar variables from the variable map if the variable
+	 * is updated in this block.
+	 *
+	 * @param callVars  Map of variables eligible for propagation.
+	 * @param sb  DML statement block.
+	 */
 	public static void removeUpdatedScalars( LocalVariableMap callVars, StatementBlock sb )
 	{
 		if( sb != null )
 		{
-			//remove update scalar variables from constants
+			//remove updated scalar variables from constants
 			for( String varname : sb.variablesUpdated().getVariables().keySet() )
 			{
 				Data dat = callVars.get(varname);

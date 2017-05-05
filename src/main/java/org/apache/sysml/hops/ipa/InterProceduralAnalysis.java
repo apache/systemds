@@ -467,13 +467,12 @@ public class InterProceduralAnalysis
 	 *
 	 * @param sb  DML statement blocks.
 	 * @param fcand  Function candidates.
-	 * @param callVars  Calling program's map of variables eligible for
-	 *                     propagation.
+	 * @param callVars  Map of variables eligible for propagation.
 	 * @param fcandSafeNNZ  Function candidate safe non-zeros.
 	 * @param unaryFcands  Unary function candidates.
 	 * @param fnStack  Function stack to determine current scope.
-	 * @throws HopsException
-	 * @throws ParseException
+	 * @throws HopsException  If a HopsException occurs.
+	 * @throws ParseException  If a ParseException occurs.
 	 */
 	private void propagateStatisticsAcrossBlock( StatementBlock sb, Map<String, Integer> fcand, LocalVariableMap callVars, Map<String, Set<Long>> fcandSafeNNZ, Set<String> unaryFcands, Set<String> fnStack )
 		throws HopsException, ParseException
@@ -566,10 +565,15 @@ public class InterProceduralAnalysis
 	 *
 	 * This replaces scalar reads and typecasts thereof with literals.
 	 *
+	 * Ultimately, this leads to improvements because the size
+	 * expression evaluation over DAGs with scalar symbol table entries
+	 * (which is also applied during IPA) is limited to supported
+	 * operations, whereas literal replacement is a brute force method
+	 * that applies to all (including future) operations.
+	 *
 	 * @param roots  List of HOPs.
-	 * @param vars  Calling program's map of variables eligible for
-	 *                 propagation.
-	 * @throws HopsException
+	 * @param vars  Map of variables eligible for propagation.
+	 * @throws HopsException  If a HopsException occurs.
 	 */
 	private void propagateScalarsAcrossDAG(ArrayList<Hop> roots, LocalVariableMap vars)
 		throws HopsException
@@ -608,9 +612,9 @@ public class InterProceduralAnalysis
 	/**
 	 * Propagate matrix sizes across DAGs.
 	 *
-	 * @param roots  List of HOPs.
+	 * @param roots  List of HOP DAG root nodes.
 	 * @param vars  Map of variables eligible for propagation.
-	 * @throws HopsException
+	 * @throws HopsException  If a HopsException occurs.
 	 */
 	private void propagateStatisticsAcrossDAG( ArrayList<Hop> roots, LocalVariableMap vars )
 		throws HopsException
@@ -643,15 +647,15 @@ public class InterProceduralAnalysis
 	 * block.
 	 *
 	 * @param prog  The DML program.
-	 * @param roots List of HOPs in this DAG for propagation.
+	 * @param roots List of HOP DAG root notes for propagation.
 	 * @param fcand  Function candidates.
 	 * @param callVars  Calling program's map of variables eligible for
 	 *                     propagation.
 	 * @param fcandSafeNNZ  Function candidate safe non-zeros.
 	 * @param unaryFcands  Unary function candidates.
 	 * @param fnStack  Function stack to determine current scope.
-	 * @throws HopsException
-	 * @throws ParseException
+	 * @throws HopsException  If a HopsException occurs.
+	 * @throws ParseException  If a ParseException occurs.
 	 */
 	private void propagateStatisticsIntoFunctions(DMLProgram prog, ArrayList<Hop> roots, Map<String, Integer> fcand, LocalVariableMap callVars, Map<String, Set<Long>> fcandSafeNNZ, Set<String> unaryFcands, Set<String> fnStack )
 			throws HopsException, ParseException
@@ -672,8 +676,8 @@ public class InterProceduralAnalysis
 	 * @param fcandSafeNNZ  Function candidate safe non-zeros.
 	 * @param unaryFcands  Unary function candidates.
 	 * @param fnStack  Function stack to determine current scope.
-	 * @throws HopsException
-	 * @throws ParseException
+	 * @throws HopsException  If a HopsException occurs.
+	 * @throws ParseException  If a ParseException occurs.
 	 */
 	private void propagateStatisticsIntoFunctions(DMLProgram prog, Hop hop, Map<String, Integer> fcand, LocalVariableMap callVars, Map<String, Set<Long>> fcandSafeNNZ, Set<String> unaryFcands, Set<String> fnStack ) 
 		throws HopsException, ParseException
@@ -784,7 +788,20 @@ public class InterProceduralAnalysis
 			}
 		}
 	}
-	
+
+	/**
+	 * Extract return variable statistics from this function into the
+	 * calling program.
+	 *
+	 * @param fstmt  The function statement.
+	 * @param fop  The function op.
+	 * @param tmpVars  Function's map of variables eligible for
+	 *                    extraction.
+	 * @param callVars  Calling program's map of variables.
+	 * @param overwrite  Whether or not to overwrite variables in the
+	 *                      calling program's variable map.
+	 * @throws HopsException  If a HopsException occurs.
+	 */
 	private void extractFunctionCallReturnStatistics( FunctionStatement fstmt, FunctionOp fop, LocalVariableMap tmpVars, LocalVariableMap callVars, boolean overwrite ) 
 		throws HopsException
 	{

@@ -61,6 +61,13 @@ object Caffe2DML  {
   // Naming conventions:
   val X = "X"; val y = "y"; val batchSize = "BATCH_SIZE"; val numImages = "num_images"; val numValidationImages = "num_validation"
   val XVal = "X_val"; val yVal = "y_val"
+  
+  var USE_NESTEROV_UDF = {
+    // Developer environment variable flag 'USE_NESTEROV_UDF' until codegen starts working.
+    // Then, we will remove this flag and also the class org.apache.sysml.udf.lib.SGDNesterovUpdate
+    val envFlagNesterovUDF = System.getenv("USE_NESTEROV_UDF")
+    envFlagNesterovUDF != null && envFlagNesterovUDF.toBoolean
+  }
 }
 
 class Caffe2DML(val sc: SparkContext, val solverParam:Caffe.SolverParameter, 
@@ -282,6 +289,10 @@ class Caffe2DML(val sc: SparkContext, val solverParam:Caffe.SolverParameter,
 	  // Add source for layers as well as solver as well as visualization header
 	  source(net, solver, Array[String]("l2_reg"))
 	  appendVisualizationHeaders(dmlScript, numTabs)
+	  
+	  if(Caffe2DML.USE_NESTEROV_UDF) {
+	    tabDMLScript(dmlScript, numTabs).append("update_nesterov = externalFunction(matrix[double] X, matrix[double] dX, double lr, double mu, matrix[double] v) return (matrix[double] X, matrix[double] v) implemented in (classname=\"org.apache.sysml.udf.lib.SGDNesterovUpdate\",exectype=\"mem\");  \n")
+	  }
 	  
 	  // Read and convert to one-hote encoding
 	  assign(tabDMLScript, "X_full", "read(\" \", format=\"csv\")")

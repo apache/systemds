@@ -67,6 +67,10 @@ public class SGDNesterovUpdate extends PackageFunction {
 		
 		throw new RuntimeException("Invalid function output being requested");
 	}
+	
+	boolean isDense(MatrixBlock X) {
+		return !X.isInSparseFormat() && X.getDenseBlock() != null;
+	}
 
 	@Override
 	public void execute() {
@@ -81,19 +85,53 @@ public class SGDNesterovUpdate extends PackageFunction {
 			updatedV = new Matrix( "tmp_" + rand.nextLong(), v.getNumRows(), v.getNumColumns(), ValueType.Double );
 			MatrixBlock updatedVMB = allocateDenseMatrixBlock(updatedV);
 			double [] updatedVData = updatedVMB.getDenseBlock();
-			multiplyByConstant(v, mu, updatedVData);
-			multiplyByConstant(dX, -lr, updatedVData);
-			updatedVMB.setNonZeros(-1); // rather than updatedVMB.recomputeNonZeros();
+			if(isDense(v) && isDense(dX)) {
+				double [] vArr = v.getDenseBlock();
+				double [] dXArr = dX.getDenseBlock();
+				int nnz = 0;
+				for(int i = 0; i < updatedVData.length; i++) {
+					updatedVData[i] = mu*vArr[i] - lr*dXArr[i];
+					nnz += (updatedVData[i]!=0) ? 1 : 0;
+				}
+				updatedVMB.setNonZeros(nnz); 
+			}
+			else {
+				multiplyByConstant(v, mu, updatedVData);
+				multiplyByConstant(dX, -lr, updatedVData);
+				updatedVMB.recomputeNonZeros();
+			}
 			updatedV.setMatrixDoubleArray(updatedVMB, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
 			
 			// X = X - mu * v_prev + (1 + mu) * v
 			updatedX = new Matrix( "tmp_" + rand.nextLong(), X.getNumRows(), X.getNumColumns(), ValueType.Double );
 			MatrixBlock updatedXMB = allocateDenseMatrixBlock(updatedX);
 			double [] updatedXData = updatedXMB.getDenseBlock();
-			copy(X, updatedXData);
-			multiplyByConstant(v, -mu, updatedXData);
-			multiplyByConstant(updatedVData, 1+mu, updatedXData);
-			updatedXMB.setNonZeros(-1); // rather than updatedXMB.recomputeNonZeros();
+			if(isDense(X) && isDense(v)) {
+				double [] XArr = X.getDenseBlock();
+				double [] vPrevArr = v.getDenseBlock();
+				int nnz = 0; double muPlus1 = mu+1;
+				for(int i = 0; i < updatedXData.length; i++) {
+					updatedXData[i] = XArr[i] - mu*vPrevArr[i] + muPlus1*updatedVData[i];
+					nnz += (updatedXData[i]!=0) ? 1 : 0;
+				}
+				updatedXMB.setNonZeros(nnz); 
+			}
+			else if(isDense(v)) {
+				copy(X, updatedXData);
+				double [] vPrevArr = v.getDenseBlock();
+				int nnz = 0; double muPlus1 = mu+1;
+				for(int i = 0; i < updatedXData.length; i++) {
+					updatedXData[i] += - mu*vPrevArr[i] + muPlus1*updatedVData[i];
+					nnz += (updatedXData[i]!=0) ? 1 : 0;
+				}
+				updatedXMB.setNonZeros(nnz);
+			}
+			else {
+				copy(X, updatedXData);
+				multiplyByConstant(v, -mu, updatedXData);
+				multiplyByConstant(updatedVData, 1+mu, updatedXData);
+				updatedXMB.recomputeNonZeros();
+			}
 			updatedX.setMatrixDoubleArray(updatedXMB, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
 			
 			((Matrix) getFunctionInput(0)).getMatrixObject().release();

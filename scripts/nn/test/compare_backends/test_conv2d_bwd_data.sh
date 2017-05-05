@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 #-------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -20,12 +20,11 @@
 #
 #-------------------------------------------------------------
 
-export SPARK_HOME=~/spark-2.1.0-bin-hadoop2.7
-
 jars='.'
 os_suffix='linux-x86_64'
 version='0.8.0'
 
+# Downloads the jcuda jars
 for lib in jcuda jcublas jcufft jcusparse jcusolver jcurand jnvgraph jcudnn
 do
         file=$lib'-'$version'.jar'
@@ -43,22 +42,28 @@ do
         jars=$jars','$file
 done
 
+# N = Number of images, C = number of channels, H = height, W = width
+# F = number of filters, Hf = filter height, Wf = filter width
 N=5
 C=3
 H=28
 W=28
-K=32 
-R=3 
-S=3
+F=32 
+Hf=3 
+Wf=3
 for sparsity in 0.1 0.2 0.5 0.6 0.9
 do
 	for stride in 1 2 3
 	do
 		for pad in 0 1 2
 		do
-			$SPARK_HOME/bin/spark-submit SystemML.jar -f gen_conv2d_bwd_data.dml -nvargs sp=$sparsity N=$N C=$C H=$H W=$W K=$K R=$R S=$S stride=$stride pad=$pad
-			$SPARK_HOME/bin/spark-submit SystemML.jar -f test_conv2d_bwd_data.dml -nvargs stride=$stride pad=$pad out=out_cp.csv N=$N C=$C H=$H W=$W K=$K R=$R S=$S
-			$SPARK_HOME/bin/spark-submit --jars $jars SystemML.jar -f test_conv2d_bwd_data.dml -stats -gpu force  -nvargs stride=$stride pad=$pad out=out_gpu.csv N=$N C=$C H=$H W=$W K=$K R=$R S=$S
+			# Generating the data
+			$SPARK_HOME/bin/spark-submit SystemML.jar -f gen_conv2d_bwd_data.dml -nvargs sp=$sparsity N=$N C=$C H=$H W=$W F=$F Hf=$Hf Wf=$Wf stride=$stride pad=$pad
+			# Running a test in CPU mode
+			$SPARK_HOME/bin/spark-submit SystemML.jar -f test_conv2d_bwd_data.dml -nvargs stride=$stride pad=$pad out=out_cp.csv N=$N C=$C H=$H W=$W F=$F Hf=$Hf Wf=$Wf
+			# Running a test in GPU mode
+			$SPARK_HOME/bin/spark-submit --jars $jars SystemML.jar -f test_conv2d_bwd_data.dml -stats -gpu force  -nvargs stride=$stride pad=$pad out=out_gpu.csv N=$N C=$C H=$H W=$W F=$F Hf=$Hf Wf=$Wf
+			# Comparing the CPU vs GPU results to make sure they are the same
 			$SPARK_HOME/bin/spark-submit SystemML.jar -f compare.dml -args out_cp.csv out_gpu.csv "conv2d_backward_data:stride="$stride",pad="$pad",sparsity="$sparsity
 			rm -rf out_cp.csv out_gpu.csv out_cp.csv.mtd out_gpu.csv.mtd
 		done

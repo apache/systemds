@@ -100,6 +100,7 @@
 				<exclude>perftest</exclude>
 				<exclude>staging/**/*</exclude>
 				<exclude>staging</exclude>
+				<exclude>nn/test/**/*</exclude>
 				<!-- <exclude>*.sh</exclude> --> <!-- applies to sparkDML.sh -->
 			</excludes>
 			<targetPath>scripts</targetPath>

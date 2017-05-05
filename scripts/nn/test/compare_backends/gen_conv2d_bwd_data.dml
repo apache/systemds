@@ -19,10 +19,11 @@
 #
 #-------------------------------------------------------------
 
-P = floor(($H + 2 * $pad - $R) / $stride) + 1
-Q = floor(($W + 2 * $pad - $S) / $stride) + 1
+Hout = floor(($H + 2 * $pad - $Hf) / $stride) + 1
+Wout = floor(($W + 2 * $pad - $Wf) / $stride) + 1
 
-w = rand(rows=$K, cols=$C*$R*$S, sparsity=$sp, min=-0.5, max=1)
-dout = rand(rows=$N, cols=$K*P*Q, sparsity=$sp, min=-0.5, max=1)
+w = rand(rows=$F, cols=$C*$Hf*$Wf, sparsity=$sp, min=-0.5, max=1)
+dout = rand(rows=$N, cols=$F*Hout*Wout, sparsity=$sp, min=-0.5, max=1)
+
 write(w, "filter.mtx", format="binary")
 write(dout, "dout.mtx", format="binary")

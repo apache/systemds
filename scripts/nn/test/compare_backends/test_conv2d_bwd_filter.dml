@@ -21,5 +21,5 @@
 
 X = read("input.mtx")
 dout = read("dout.mtx")
-out = conv2d_backward_filter(X, dout, input_shape=[$N,$C,$H,$W], filter_shape=[$K, $C, $R, $S], stride=[$stride,$stride], padding=[$pad,$pad])
+out = conv2d_backward_filter(X, dout, input_shape=[$N,$C,$H,$W], filter_shape=[$F, $C, $Hf, $Wf], stride=[$stride,$stride], padding=[$pad,$pad])
 write(out, $out, format="csv")

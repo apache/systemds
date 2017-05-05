@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 #-------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -21,11 +21,6 @@
 #-------------------------------------------------------------
 
 # Additional tests to compare the accuracy of different convolution related operators with CuDNN
-./test_conv2d_bwd_filter.sh
-./test_conv2d_bwd_data.sh
-./test_conv2d.sh
-./test_maxpool.sh
-export SYSTEMML_BLAS=none
 ./test_conv2d_bwd_filter.sh
 ./test_conv2d_bwd_data.sh
 ./test_conv2d.sh

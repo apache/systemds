@@ -21,5 +21,5 @@
 
 X = read("input.mtx")
 w = read("filter.mtx")
-out = conv2d(X, w, input_shape=[$N,$C,$H,$W], filter_shape=[$K, $C, $R, $S], stride=[$stride,$stride], padding=[$pad,$pad])
+out = conv2d(X, w, input_shape=[$N,$C,$H,$W], filter_shape=[$F, $C, $Hf, $Wf], stride=[$stride,$stride], padding=[$pad,$pad])
 write(out, $out, format="csv")

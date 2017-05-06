@@ -18,6 +18,7 @@
  */
 package org.apache.sysml.runtime.matrix.data;
 
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.utils.NativeHelper;
@@ -60,9 +61,13 @@ public class LibMatrixNative {
 				!isMatMultMemoryBound(m1.rlen, m1.clen, m2.clen) && !m1.isInSparseFormat() && !m2.isInSparseFormat()) {
 			ret.sparse = false;
 			ret.allocateDenseBlock();
+			long start = DMLScript.STATISTICS ? System.nanoTime() : 0;
 			if (NativeHelper.matrixMultDenseDense(m1.denseBlock, m2.denseBlock, 
 					ret.denseBlock, m1.getNumRows(), m1.getNumColumns(), m2.getNumColumns(), k)) {
-				Statistics.numNativeLibMatrixMultCalls.increment();
+				if(DMLScript.STATISTICS) {
+					Statistics.nativeLibMatrixMultTime += System.nanoTime() - start;
+					Statistics.numNativeLibMatrixMultCalls.increment();
+				}
 				ret.recomputeNonZeros();
 				// post-processing (nnz maintained in parallel)
 				if(examSparsity)
@@ -94,10 +99,14 @@ public class LibMatrixNative {
 		if(NativeHelper.isNativeLibraryLoaded() && !input.isInSparseFormat() && !filter.isInSparseFormat()) {
 			setNumThreads(params);
 			if(params.bias == null) {
+				long start = DMLScript.STATISTICS ? System.nanoTime() : 0;
 				if(NativeHelper.conv2dDense(input.denseBlock, filter.denseBlock, outputBlock.denseBlock, params.N, params.C, params.H, params.W, 
 						params.K, params.R, params.S, params.stride_h, params.stride_w, params.pad_h, params.pad_w, 
 						params.P, params.Q, params.numThreads)) {
-					Statistics.numNativeLibMatrixDNNCalls.increment();
+					if(DMLScript.STATISTICS) {
+						Statistics.nativeConv2dTime += System.nanoTime() - start;
+						Statistics.numNativeLibMatrixDNNCalls.increment();
+					}
 					// post-processing: maintain nnz
 					outputBlock.recomputeNonZeros();
 					return;
@@ -110,11 +119,15 @@ public class LibMatrixNative {
 			else {
 				if(params.bias.isInSparseFormat())
 					params.bias.sparseToDense(); // Bias matrix is usually extremely small
+				long start = DMLScript.STATISTICS ? System.nanoTime() : 0;
 				if(NativeHelper.conv2dBiasAddDense(input.denseBlock, params.bias.denseBlock, filter.denseBlock, outputBlock.denseBlock, 
 						params.N, params.C, params.H, params.W, 
 						params.K, params.R, params.S, params.stride_h, params.stride_w, params.pad_h, params.pad_w, 
 						params.P, params.Q, params.numThreads)) {
-					Statistics.numNativeLibMatrixDNNCalls.increment();
+					if(DMLScript.STATISTICS) {
+						Statistics.nativeConv2dTime += System.nanoTime() - start;
+						Statistics.numNativeLibMatrixDNNCalls.increment();
+					}
 					// post-processing: maintain nnz
 					outputBlock.recomputeNonZeros();
 					return;
@@ -150,10 +163,14 @@ public class LibMatrixNative {
 		params.numThreads = params.numThreads <= 0 ? NativeHelper.getMaxNumThreads() : params.numThreads;
 		if(NativeHelper.isNativeLibraryLoaded() && !dout.isInSparseFormat() && !input.isInSparseFormat()) {
 			setNumThreads(params);
+			long start = DMLScript.STATISTICS ? System.nanoTime() : 0;
 			if(NativeHelper.conv2dBackwardFilterDense(input.denseBlock, dout.denseBlock, outputBlock.denseBlock, params.N, params.C, params.H, params.W, 
 						params.K, params.R, params.S, params.stride_h, params.stride_w, params.pad_h, params.pad_w, 
 						params.P, params.Q, params.numThreads)) {
-				Statistics.numNativeLibMatrixDNNCalls.increment();
+				if(DMLScript.STATISTICS) {
+					Statistics.nativeConv2dBwdFilterTime += System.nanoTime() - start;
+					Statistics.numNativeLibMatrixDNNCalls.increment();
+				}
 				// post-processing: maintain nnz
 				outputBlock.recomputeNonZeros();
 				return;
@@ -181,10 +198,14 @@ public class LibMatrixNative {
 		params.numThreads = params.numThreads <= 0 ? NativeHelper.getMaxNumThreads() : params.numThreads;
 		if(NativeHelper.isNativeLibraryLoaded() && !dout.isInSparseFormat() && !filter.isInSparseFormat()) {
 			setNumThreads(params);
+			long start = DMLScript.STATISTICS ? System.nanoTime() : 0;
 			if(NativeHelper.conv2dBackwardDataDense(filter.denseBlock, dout.denseBlock, outputBlock.denseBlock, params.N, params.C, params.H, params.W, 
 						params.K, params.R, params.S, params.stride_h, params.stride_w, params.pad_h, params.pad_w, 
 						params.P, params.Q, params.numThreads)) {
-				Statistics.numNativeLibMatrixDNNCalls.increment();
+				if(DMLScript.STATISTICS) {
+					Statistics.nativeConv2dBwdDataTime += System.nanoTime() - start;
+					Statistics.numNativeLibMatrixDNNCalls.increment();
+				}
 				// post-processing: maintain nnz
 				outputBlock.recomputeNonZeros();
 				return;

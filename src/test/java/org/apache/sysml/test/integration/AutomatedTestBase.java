@@ -1432,6 +1432,35 @@ public abstract class AutomatedTestBase
 	}
 
 	/**
+	 * Checks that the number of Spark instructions that the current test case has
+	 * compiled is equal to the expected number. Generates a JUnit error message
+	 * if the number is out of line.
+	 *
+	 * @param expectedNumCompiled
+	 *            number of Spark instructions that the current test case is
+	 *            expected to compile
+	 */
+	protected void checkNumCompiledSparkInst(int expectedNumCompiled) {
+		assertEquals("Unexpected number of compiled Spark instructions.",
+				expectedNumCompiled, Statistics.getNoOfCompiledSPInst());
+	}
+
+	/**
+	 * Checks that the number of Spark instructions that the current test case has
+	 * executed (as opposed to compiling into the execution plan) is equal to
+	 * the expected number. Generates a JUnit error message if the number is out
+	 * of line.
+	 *
+	 * @param expectedNumExecuted
+	 *            number of Spark instructions that the current test case is
+	 *            expected to run
+	 */
+	protected void checkNumExecutedSparkInst(int expectedNumExecuted) {
+		assertEquals("Unexpected number of executed Spark instructions.",
+				expectedNumExecuted, Statistics.getNoOfExecutedSPInst());
+	}
+
+	/**
 	 * <p>
 	 * Checks the results of a computation against a number of characteristics.
 	 * </p>

@@ -116,8 +116,10 @@ public abstract class MatrixReader
 			//create synchronization points for MCSR (start row per block row)
 			if( sblock instanceof SparseBlockMCSR && clen > bclen      //multiple col blocks 
 				&& clen > 0 && bclen > 0 && rlen > 0 && brlen > 0 ) {  //all dims known
+				//note: allocate w/ min 2 nnz to ensure allocated row object because
+				//adaptive change from scalar to row could cause synchronization issues
 				for( int i=0; i<rlen; i+=brlen )
-					sblock.allocate(i, Math.max((int)(estnnz/rlen),1), (int)clen);
+					sblock.allocate(i, Math.max((int)(estnnz/rlen),2), (int)clen);
 			}
 		}
 		

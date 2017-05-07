@@ -156,7 +156,7 @@ public class LibMatrixDNN {
 			params.bias.sparseToDense(); // Since bias is extremely small array
 		
 		if(isEligibleForConv2dSparse(params))
-			Statistics.numNativeLibMatrixDNNCalls.increment();
+			Statistics.numNativeSparseConv2dCalls.increment();
 		
 		runConvTask(TaskType.LoopedIm2ColConv2d, params);
 		
@@ -177,7 +177,7 @@ public class LibMatrixDNN {
 		checkInputsConv2dBackwardData(filter, dout, outputBlock, params);
 		
 		if(isEligibleForConv2dBackwardDataDense(params))
-			Statistics.numNativeLibMatrixDNNCalls.increment();
+			Statistics.numNativeSparseConv2dBwdDataCalls.increment();
 		
 		runConvTask(TaskType.LoopedIm2ColConv2dBwdData, params);
 		
@@ -198,7 +198,7 @@ public class LibMatrixDNN {
 		checkInputsConv2dBackwardFilter(input, dout, outputBlock, params);
 		
 		if(isEligibleForConv2dBackwardFilterSparseDense(params))
-			Statistics.numNativeLibMatrixDNNCalls.increment();
+			Statistics.numNativeSparseConv2dBwdFilterCalls.increment();
 		
 		runConvTask(TaskType.LoopedIm2ColConv2dBwdFilter, params);
 		

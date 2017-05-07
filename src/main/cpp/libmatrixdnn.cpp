@@ -184,22 +184,6 @@ int conv2dBackwardFilterDense(double* inputPtr, double* doutPtr, double* retPtr,
   delete [] rotatedDoutPtrArrays;
   
   // Inplace transpose addition
-#ifdef USE_INTEL_MKL
-#pragma omp parallel for num_threads(numOpenMPThreads)
-  for(int t = 0; t < numOpenMPThreads; t++) {
-    double* temp1 = temp + numTempElem*t;
-    // Perform in-place transposition
-    mkl_dimatcopy('R', 'T', CRS, K, 1, temp1, CRS, CRS);
-  }
-#pragma omp parallel for num_threads(numOpenMPThreads)
-  for(int i = 0; i < K*CRS; i++) {
-  	for(int t = 0; t < numOpenMPThreads; t++) {
-  	  // Addition of transposed arrays
-  	  double* temp1 = temp + numTempElem*t;
-  	  retPtr[i] += temp1[i];
-  	}
-  }
-#else
   int numRow = CRS;
   for(int t = 0; t < numOpenMPThreads; t++) {
   	int iter = 0;
@@ -211,7 +195,6 @@ int conv2dBackwardFilterDense(double* inputPtr, double* doutPtr, double* retPtr,
 		}
 	}
   }
-#endif
   
   delete [] temp;
   return computeNNZ(retPtr, K*CRS);

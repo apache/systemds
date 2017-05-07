@@ -22,6 +22,7 @@ package org.apache.sysml.runtime.instructions.spark;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.storage.StorageLevel;
 import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.lops.Checkpoint;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
@@ -121,10 +122,11 @@ public class CheckpointSPInstruction extends UnarySPInstruction
 					out = ((JavaPairRDD<Long,FrameBlock>)in)
 						.mapValues(new CopyFrameBlockFunction(false));	
 			}
-		
+			
 			//convert mcsr into memory-efficient csr if potentially sparse
 			if( input1.getDataType()==DataType.MATRIX 
-				&& OptimizerUtils.checkSparseBlockCSRConversion(mcIn) ) 
+				&& OptimizerUtils.checkSparseBlockCSRConversion(mcIn)
+				&& !_level.equals(Checkpoint.SER_STORAGE_LEVEL) ) 
 			{				
 				out = ((JavaPairRDD<MatrixIndexes,MatrixBlock>)out)
 					.mapValues(new CreateSparseBlockFunction(SparseBlock.Type.CSR));

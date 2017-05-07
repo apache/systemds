@@ -723,7 +723,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 				int aix = rowoffset+i;
 					
 				//single block append (avoid re-allocations)
-				if( sparseBlock.isEmpty(aix) && coloffset==0 ) { 
+				if( sparseBlock.isEmpty(aix) && coloffset==0
+					&& b instanceof SparseBlockMCSR ) { 
 					sparseBlock.set(aix, b.get(i), deep);
 				}
 				else { //general case

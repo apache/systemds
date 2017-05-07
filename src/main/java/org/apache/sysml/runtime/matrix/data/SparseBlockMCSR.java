@@ -134,8 +134,10 @@ public class SparseBlockMCSR extends SparseBlock
 	
 	@Override
 	public void allocate(int r, int ennz, int maxnnz) {
-		if( _rows[r] == null )
-			_rows[r] = new SparseRowVector(ennz, maxnnz);
+		if( _rows[r] == null ) {
+			_rows[r] = (ennz == 1) ? new SparseRowScalar() :
+				new SparseRowVector(ennz, maxnnz);
+		}
 	}
 	
 	@Override

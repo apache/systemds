@@ -95,7 +95,8 @@ public abstract class MatrixReader
 	 * @throws IOException if IOException occurs
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	protected static MatrixBlock createOutputMatrixBlock( long rlen, long clen, int bclen, int brlen, long estnnz, boolean mallocDense, boolean mallocSparse ) 
+	protected static MatrixBlock createOutputMatrixBlock( long rlen, long clen, 
+			int bclen, int brlen, long estnnz, boolean mallocDense, boolean mallocSparse ) 
 		throws IOException, DMLRuntimeException
 	{
 		//check input dimension
@@ -116,7 +117,7 @@ public abstract class MatrixReader
 			if( sblock instanceof SparseBlockMCSR && clen > bclen      //multiple col blocks 
 				&& clen > 0 && bclen > 0 && rlen > 0 && brlen > 0 ) {  //all dims known
 				for( int i=0; i<rlen; i+=brlen )
-					ret.getSparseBlock().allocate(i, Math.min((int)(estnnz/rlen),1), (int)clen);
+					sblock.allocate(i, Math.max((int)(estnnz/rlen),1), (int)clen);
 			}
 		}
 		

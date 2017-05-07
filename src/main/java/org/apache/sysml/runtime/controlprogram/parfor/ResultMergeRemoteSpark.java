@@ -24,7 +24,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.spark.api.java.JavaPairRDD;
-
+import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
@@ -151,10 +151,12 @@ public class ResultMergeRemoteSpark extends ResultMerge
 			job.setInputFormat(ii.inputFormatClass);
 			Path[] paths = new Path[ inputs.length ];
 			for(int i=0; i<paths.length; i++) {
-				//ensure presence of hdfs if inputs come from memory
-				if( inputs[i].isDirty() )
-					inputs[i].exportData();
+				//ensure input exists on hdfs (e.g., if in-memory or RDD)
+				inputs[i].exportData();
 				paths[i] = new Path( inputs[i].getFileName() );
+				//update rdd handle to allow lazy evaluation by guarding 
+				//against cleanup of temporary result files
+				setRDDHandleForMerge(inputs[i], sec);
 			}
 			FileInputFormat.setInputPaths(job, paths);
 			
@@ -184,6 +186,8 @@ public class ResultMergeRemoteSpark extends ResultMerge
 		    
 			//Step 3: create output rdd handle w/ lineage
 			ret = new RDDObject(out, varname);
+			for(int i=0; i<paths.length; i++)
+				ret.addLineageChild(inputs[i].getRDDHandle());
 			if( withCompare )
 				ret.addLineageChild(compare.getRDDHandle());
 		}
@@ -207,5 +211,16 @@ public class ResultMergeRemoteSpark extends ResultMerge
 		int ret = (int)Math.min( numRed, reducerGroups );
 		
 		return ret; 	
+	}
+	
+	@SuppressWarnings("unchecked")
+	private void setRDDHandleForMerge(MatrixObject mo, SparkExecutionContext sec) {
+		InputInfo iinfo = InputInfo.BinaryBlockInputInfo;
+		JavaSparkContext sc = sec.getSparkContext();
+		JavaPairRDD<MatrixIndexes,MatrixBlock> rdd = (JavaPairRDD<MatrixIndexes,MatrixBlock>) 
+			sc.hadoopFile( mo.getFileName(), iinfo.inputFormatClass, iinfo.inputKeyClass, iinfo.inputValueClass);
+		RDDObject rddhandle = new RDDObject(rdd, mo.getVarName());
+		rddhandle.setHDFSFile(true);
+		mo.setRDDHandle(rddhandle);
 	}
 }

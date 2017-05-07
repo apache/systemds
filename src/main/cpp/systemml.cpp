@@ -205,7 +205,7 @@ JNIEXPORT jint JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dBackwardDa
   return (jint) nnz;
 }
 
-JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dBackwardFilterDense(
+JNIEXPORT jint JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dBackwardFilterDense(
 	JNIEnv* env, jclass, jdoubleArray input, jdoubleArray dout,
     jdoubleArray ret, jint N, jint C, jint H, jint W, jint K, jint R, jint S,
     jint stride_h, jint stride_w, jint pad_h, jint pad_w, jint P, jint Q, jint numThreads) {

@@ -189,7 +189,7 @@ int conv2dBackwardFilterDense(double* inputPtr, double* doutPtr, double* retPtr,
   for(int t = 0; t < numOpenMPThreads; t++) {
     double* temp1 = temp + numTempElem*t;
     // Perform in-place transposition
-    mkl_dimatcopy('R', 'T', CRS, K, temp1, 1, CRS, CRS);
+    mkl_dimatcopy('R', 'T', CRS, K, 1, temp1, CRS, CRS);
   }
 #pragma omp parallel for num_threads(numOpenMPThreads)
   for(int i = 0; i < K*CRS; i++) {

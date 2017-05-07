@@ -45,34 +45,42 @@ JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_tsmm
 /*
  * Class:     org_apache_sysml_utils_NativeHelper
  * Method:    conv2dDense
- * Signature: ([D[D[DIIIIIIIIIIIIII)Z
+ * Signature: ([D[D[DIIIIIIIIIIIIII)I
  */
-JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dDense
+JNIEXPORT jint JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dDense
   (JNIEnv *, jclass, jdoubleArray, jdoubleArray, jdoubleArray, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint);
 
 /*
  * Class:     org_apache_sysml_utils_NativeHelper
  * Method:    conv2dBiasAddDense
- * Signature: ([D[D[D[DIIIIIIIIIIIIII)Z
+ * Signature: ([D[D[D[DIIIIIIIIIIIIII)I
  */
-JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dBiasAddDense
+JNIEXPORT jint JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dBiasAddDense
   (JNIEnv *, jclass, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint);
 
 /*
  * Class:     org_apache_sysml_utils_NativeHelper
- * Method:    conv2dBackwardDataDense
- * Signature: ([D[D[DIIIIIIIIIIIIII)Z
+ * Method:    conv2dBackwardFilterDense
+ * Signature: ([D[D[DIIIIIIIIIIIIII)I
  */
-JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dBackwardDataDense
+JNIEXPORT jint JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dBackwardFilterDense
   (JNIEnv *, jclass, jdoubleArray, jdoubleArray, jdoubleArray, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint);
 
 /*
  * Class:     org_apache_sysml_utils_NativeHelper
- * Method:    conv2dBackwardFilterDense
- * Signature: ([D[D[DIIIIIIIIIIIIII)Z
+ * Method:    conv2dBackwardDataDense
+ * Signature: ([D[D[DIIIIIIIIIIIIII)I
  */
-JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dBackwardFilterDense
+JNIEXPORT jint JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dBackwardDataDense
   (JNIEnv *, jclass, jdoubleArray, jdoubleArray, jdoubleArray, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint);
+
+/*
+ * Class:     org_apache_sysml_utils_NativeHelper
+ * Method:    conv2dBackwardFilterSparseDense
+ * Signature: (II[I[D[D[DIIIIIIIIIIIIII)Z
+ */
+JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dBackwardFilterSparseDense
+  (JNIEnv *, jclass, jint, jint, jintArray, jdoubleArray, jdoubleArray, jdoubleArray, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint);
 
 /*
  * Class:     org_apache_sysml_utils_NativeHelper
@@ -80,14 +88,6 @@ JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dBackwa
  * Signature: (II[I[D[D[DIIIIIIIIIIIIII)Z
  */
 JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dSparse
-  (JNIEnv *, jclass, jint, jint, jintArray, jdoubleArray, jdoubleArray, jdoubleArray, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint);
-
-/*
- * Class:     org_apache_sysml_utils_NativeHelper
- * Method:    conv2dBackwardFilterSparse
- * Signature: (II[I[D[D[DIIIIIIIIIIIIII)Z
- */
-JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dBackwardFilterSparseDense
   (JNIEnv *, jclass, jint, jint, jintArray, jdoubleArray, jdoubleArray, jdoubleArray, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint);
 
 /*
@@ -102,5 +102,6 @@ JNIEXPORT void JNICALL Java_org_apache_sysml_utils_NativeHelper_setMaxNumThreads
 }
 #endif
 #endif
+
 
  

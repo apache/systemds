@@ -144,7 +144,7 @@ JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dBackwa
   return (jboolean) true;
 }
 
-JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dDense(
+JNIEXPORT jint JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dDense(
 	JNIEnv* env, jclass, jdoubleArray input, jdoubleArray filter,
     jdoubleArray ret, jint N, jint C, jint H, jint W, jint K, jint R, jint S,
     jint stride_h, jint stride_w, jint pad_h, jint pad_w, jint P, jint Q, jint numThreads) {
@@ -152,18 +152,18 @@ JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dDense(
   double* filterPtr = GET_DOUBLE_ARRAY(env, filter, numThreads);
   double* retPtr = GET_DOUBLE_ARRAY(env, ret, numThreads);
   if(inputPtr == NULL || filterPtr == NULL || retPtr == NULL)
-  	return (jboolean) false;
+  	return (jint) -1;
   
-  conv2dBiasAddDense(inputPtr, 0, filterPtr, retPtr, (int) N, (int) C, (int) H, (int) W, (int) K, (int) R, (int) S,
+  int nnz = conv2dBiasAddDense(inputPtr, 0, filterPtr, retPtr, (int) N, (int) C, (int) H, (int) W, (int) K, (int) R, (int) S,
     (int) stride_h, (int) stride_w, (int) pad_h, (int) pad_w, (int) P, (int) Q, false, (int) numThreads);
     
   RELEASE_INPUT_DOUBLE_ARRAY(env, input, inputPtr, numThreads);
   RELEASE_INPUT_DOUBLE_ARRAY(env, filter, filterPtr, numThreads);
   RELEASE_DOUBLE_ARRAY(env, ret, retPtr, numThreads); 
-  return (jboolean) true;
+  return (jint) nnz;
 }
 
-JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dBiasAddDense(
+JNIEXPORT jint JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dBiasAddDense(
 	JNIEnv* env, jclass, jdoubleArray input, jdoubleArray bias, jdoubleArray filter,
     jdoubleArray ret, jint N, jint C, jint H, jint W, jint K, jint R, jint S,
     jint stride_h, jint stride_w, jint pad_h, jint pad_w, jint P, jint Q, jint numThreads) {
@@ -173,19 +173,19 @@ JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dBiasAd
   double* filterPtr = GET_DOUBLE_ARRAY(env, filter, numThreads);
   double* retPtr = GET_DOUBLE_ARRAY(env, ret, numThreads);
   if(inputPtr == NULL || biasPtr == NULL || filterPtr == NULL || retPtr == NULL)
-  	return (jboolean) false;
+  	return (jint) -1;
   
-  conv2dBiasAddDense(inputPtr, biasPtr, filterPtr, retPtr, (int) N, (int) C, (int) H, (int) W, (int) K, (int) R, (int) S,
+  int nnz = conv2dBiasAddDense(inputPtr, biasPtr, filterPtr, retPtr, (int) N, (int) C, (int) H, (int) W, (int) K, (int) R, (int) S,
     (int) stride_h, (int) stride_w, (int) pad_h, (int) pad_w, (int) P, (int) Q, true, (int) numThreads);
     
   RELEASE_INPUT_DOUBLE_ARRAY(env, input, inputPtr, numThreads);
   RELEASE_INPUT_DOUBLE_ARRAY(env, bias, biasPtr, numThreads);
   RELEASE_INPUT_DOUBLE_ARRAY(env, filter, filterPtr, numThreads);
   RELEASE_DOUBLE_ARRAY(env, ret, retPtr, numThreads); 
-  return (jboolean) true;
+  return (jint) nnz;
 }
 
-JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dBackwardDataDense(
+JNIEXPORT jint JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dBackwardDataDense(
 	JNIEnv* env, jclass, jdoubleArray filter, jdoubleArray dout,
     jdoubleArray ret, jint N, jint C, jint H, jint W, jint K, jint R, jint S,
     jint stride_h, jint stride_w, jint pad_h, jint pad_w, jint P, jint Q, jint numThreads) {
@@ -194,15 +194,15 @@ JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dBackwa
   double* doutPtr = GET_DOUBLE_ARRAY(env, dout, numThreads);
   double* retPtr = GET_DOUBLE_ARRAY(env, ret, numThreads);
   if(doutPtr == NULL || filterPtr == NULL || retPtr == NULL)
-  	return (jboolean) false;
+  	return (jint) -1;
   
-  conv2dBackwardDataDense(filterPtr, doutPtr, retPtr, (int) N, (int) C, (int) H, (int) W, (int) K, (int) R, (int) S,
+  int nnz = conv2dBackwardDataDense(filterPtr, doutPtr, retPtr, (int) N, (int) C, (int) H, (int) W, (int) K, (int) R, (int) S,
     (int) stride_h, (int) stride_w, (int) pad_h, (int) pad_w, (int) P, (int) Q, (int) numThreads);
   
   RELEASE_INPUT_DOUBLE_ARRAY(env, filter, filterPtr, numThreads);
   RELEASE_INPUT_DOUBLE_ARRAY(env, dout, doutPtr, numThreads);
   RELEASE_DOUBLE_ARRAY(env, ret, retPtr, numThreads);
-  return (jboolean) true;
+  return (jint) nnz;
 }
 
 JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dBackwardFilterDense(
@@ -213,13 +213,13 @@ JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dBackwa
   double* doutPtr = GET_DOUBLE_ARRAY(env, dout, numThreads);
   double* retPtr = GET_DOUBLE_ARRAY(env, ret, numThreads);
   if(doutPtr == NULL || inputPtr == NULL || retPtr == NULL)
-  	return (jboolean) false;
+  	return (jint) -1;
   
-  conv2dBackwardFilterDense(inputPtr, doutPtr, retPtr, (int) N, (int) C, (int) H, (int) W, (int) K, (int) R, (int) S,
+  int nnz = conv2dBackwardFilterDense(inputPtr, doutPtr, retPtr, (int) N, (int) C, (int) H, (int) W, (int) K, (int) R, (int) S,
     (int) stride_h, (int) stride_w, (int) pad_h, (int) pad_w, (int) P, (int) Q, (int) numThreads);
   
   RELEASE_INPUT_DOUBLE_ARRAY(env, input, inputPtr, numThreads);
   RELEASE_INPUT_DOUBLE_ARRAY(env, dout, doutPtr, numThreads);
   RELEASE_DOUBLE_ARRAY(env, ret, retPtr, numThreads);
-  return (jboolean) true;
+  return (jint) nnz;
 }

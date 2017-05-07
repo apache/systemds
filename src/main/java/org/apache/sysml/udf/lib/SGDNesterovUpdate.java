@@ -39,7 +39,7 @@ import org.apache.sysml.udf.Matrix.ValueType;
  * Assumption: the input batch fits in CP (which is also the assumption of most deep learning systems).
  * 
  * Usage:
- * update_nesterov = externalFunction(matrix[double] X, matrix[double] dX, double lr, double mu, matrix[double] v) return (matrix[double] X, matrix[double] v) implemented in (classname="org.apache.sysml.udf.lib.SGDNesterovUpdate",exectype="mem");
+ * update_nesterov = externalFunction(matrix[double] X, matrix[double] dX, double lr, double mu, matrix[double] v, double lambda) return (matrix[double] X, matrix[double] v) implemented in (classname="org.apache.sysml.udf.lib.SGDNesterovUpdate",exectype="mem");
  * [X, v] = update_nesterov(X, dX, lr, mu, v);
  * 
  * 
@@ -81,16 +81,19 @@ public class SGDNesterovUpdate extends PackageFunction {
 			double mu = Double.parseDouble(((Scalar)getFunctionInput(3)).getValue());
 			MatrixBlock v = ((Matrix) getFunctionInput(4)).getMatrixObject().acquireRead();
 			
-			// v = mu * v - lr * dX
+			double lambda = Double.parseDouble(((Scalar)getFunctionInput(5)).getValue());
+			
+			// v = mu * v - lr * dX - lr*lambda*X
 			updatedV = new Matrix( "tmp_" + rand.nextLong(), v.getNumRows(), v.getNumColumns(), ValueType.Double );
 			MatrixBlock updatedVMB = allocateDenseMatrixBlock(updatedV);
 			double [] updatedVData = updatedVMB.getDenseBlock();
-			if(isDense(v) && isDense(dX)) {
+			if(isDense(v) && isDense(dX) && isDense(X)) {
 				double [] vArr = v.getDenseBlock();
 				double [] dXArr = dX.getDenseBlock();
+				double [] XArr = X.getDenseBlock();
 				int nnz = 0;
 				for(int i = 0; i < updatedVData.length; i++) {
-					updatedVData[i] = mu*vArr[i] - lr*dXArr[i];
+					updatedVData[i] = mu*vArr[i] - lr*dXArr[i] - lr*lambda*XArr[i];
 					nnz += (updatedVData[i]!=0) ? 1 : 0;
 				}
 				updatedVMB.setNonZeros(nnz); 
@@ -98,8 +101,10 @@ public class SGDNesterovUpdate extends PackageFunction {
 			else {
 				multiplyByConstant(v, mu, updatedVData);
 				multiplyByConstant(dX, -lr, updatedVData);
+				multiplyByConstant(X, -lr*lambda, updatedVData);
 				updatedVMB.recomputeNonZeros();
 			}
+			
 			updatedV.setMatrixDoubleArray(updatedVMB, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
 			
 			// X = X - mu * v_prev + (1 + mu) * v

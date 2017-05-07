@@ -34,6 +34,7 @@ import java.util.stream.LongStream;
 
 import org.apache.commons.math3.random.Well1024a;
 import org.apache.hadoop.io.DataInputBuffer;
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.Hop.OpOp2;
 import org.apache.sysml.hops.OptimizerUtils;
@@ -86,6 +87,7 @@ import org.apache.sysml.runtime.util.FastBufferedDataOutputStream;
 import org.apache.sysml.runtime.util.IndexRange;
 import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.utils.NativeHelper;
+import org.apache.sysml.utils.Statistics;
 
 
 
@@ -103,6 +105,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	public static final SparseBlock.Type DEFAULT_INPLACE_SPARSEBLOCK = SparseBlock.Type.CSR;
 	//basic header (int rlen, int clen, byte type)
 	public static final int HEADER_SIZE = 9;
+	
+	private static final boolean DISPLAY_STATISTICS = false; // Developer flag to measure performance overhead of various functions in this class
 	
 	public enum BlockType{
 		EMPTY_BLOCK,  
@@ -336,6 +340,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			allocateDenseBlock();
 	}
 	
+	@SuppressWarnings("unused")
 	public void allocateDenseBlock(boolean clearNNZ) 
 			throws RuntimeException 
 	{
@@ -350,7 +355,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		
 		//allocate block if non-existing or too small (guaranteed to be 0-initialized),
 		if(denseBlock == null || denseBlock.length < limit) {
+			long start = DISPLAY_STATISTICS && DMLScript.STATISTICS ? System.nanoTime() : 0;
 			denseBlock = new double[(int)limit];
+			Statistics.allocateDoubleArrTime += DISPLAY_STATISTICS && DMLScript.STATISTICS ? (System.nanoTime() - start) : 0;
 		}
 		
 		//clear nnz if necessary
@@ -986,9 +993,11 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * 
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
+	@SuppressWarnings("unused")
 	public void examSparsity() 
 		throws DMLRuntimeException
 	{
+		long start = DISPLAY_STATISTICS && DMLScript.STATISTICS ? System.nanoTime() : 0;
 		//determine target representation
 		boolean sparseDst = evalSparseFormatInMemory(); 
 				
@@ -1002,6 +1011,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			sparseToDense();
 		else if( !sparse && sparseDst )
 			denseToSparse();
+		
+		Statistics.examSparsityTime += DISPLAY_STATISTICS && DMLScript.STATISTICS ? (System.nanoTime() - start) : 0;
 	}
 	
 	/**
@@ -1141,6 +1152,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * of the entire matrix block.
 	 * 
 	 */
+	@SuppressWarnings("unused")
 	public void recomputeNonZeros()
 	{
 		if( sparse && sparseBlock!=null ) //SPARSE (max long)
@@ -1150,12 +1162,14 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		}
 		else if( !sparse && denseBlock!=null ) //DENSE (max int)
 		{
+			long start = DISPLAY_STATISTICS && DMLScript.STATISTICS ? System.nanoTime() : 0;
 			double[] a = denseBlock;
 			final int limit=rlen*clen;
 			int nnz = 0;
 			for(int i=0; i<limit; i++)
 				nnz += (a[i]!=0) ? 1 : 0;
 			nonZeros = nnz;
+			Statistics.recomputeNNZTime += DISPLAY_STATISTICS && DMLScript.STATISTICS ? (System.nanoTime() - start) : 0;
 		}
 	}
 	

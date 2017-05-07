@@ -291,7 +291,7 @@ class Caffe2DML(val sc: SparkContext, val solverParam:Caffe.SolverParameter,
 	  appendVisualizationHeaders(dmlScript, numTabs)
 	  
 	  if(Caffe2DML.USE_NESTEROV_UDF) {
-	    tabDMLScript(dmlScript, numTabs).append("update_nesterov = externalFunction(matrix[double] X, matrix[double] dX, double lr, double mu, matrix[double] v) return (matrix[double] X, matrix[double] v, double lambda) implemented in (classname=\"org.apache.sysml.udf.lib.SGDNesterovUpdate\",exectype=\"mem\");  \n")
+	    tabDMLScript(dmlScript, numTabs).append("update_nesterov = externalFunction(matrix[double] X, matrix[double] dX, double lr, double mu, matrix[double] v, double lambda) return (matrix[double] X, matrix[double] v) implemented in (classname=\"org.apache.sysml.udf.lib.SGDNesterovUpdate\",exectype=\"mem\");  \n")
 	  }
 	  
 	  // Read and convert to one-hote encoding

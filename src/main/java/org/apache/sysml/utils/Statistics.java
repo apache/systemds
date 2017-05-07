@@ -647,8 +647,9 @@ public class Statistics
 			if(NativeHelper.blasType != null) {
 				String blas = NativeHelper.blasType != null ? NativeHelper.blasType : ""; 
 				sb.append("Native " + blas + " calls (LibMatrixMult/LibMatrixDNN):\t" + numNativeLibMatrixMultCalls.longValue()  + "/" + numNativeLibMatrixDNNCalls.longValue() + ".\n");
-				sb.append("Native " + blas + " times (mult/conv/bwdF/bwdD):\t" + (nativeLibMatrixMultTime*1e-9) + "/" +
-						(nativeConv2dTime*1e-9) + "/" + (nativeConv2dBwdFilterTime*1e-9) + "/" + (nativeConv2dBwdDataTime*1e-9) + ".\n");
+				sb.append("Native " + blas + " times (mult/conv/bwdF/bwdD):\t" + String.format("%.3f", nativeLibMatrixMultTime*1e-9) + "/" +
+						String.format("%.3f", nativeConv2dTime*1e-9) + "/" + String.format("%.3f", nativeConv2dBwdFilterTime*1e-9) + "/" + 
+						String.format("%.3f", nativeConv2dBwdDataTime*1e-9) + ".\n");
 			}
 			sb.append("Cache hits (Mem, WB, FS, HDFS):\t" + CacheStatistics.displayHits() + ".\n");
 			sb.append("Cache writes (WB, FS, HDFS):\t" + CacheStatistics.displayWrites() + ".\n");

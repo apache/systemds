@@ -106,7 +106,7 @@ public class LibMatrixNative {
 				if(nnz != -1) {
 					if(DMLScript.STATISTICS) {
 						Statistics.nativeConv2dTime += System.nanoTime() - start;
-						Statistics.numNativeLibMatrixDNNCalls.increment();
+						Statistics.numNativeConv2dCalls.increment();
 					}
 					// post-processing: maintain nnz
 					outputBlock.setNonZeros(nnz);
@@ -128,7 +128,7 @@ public class LibMatrixNative {
 				if(nnz != -1) {
 					if(DMLScript.STATISTICS) {
 						Statistics.nativeConv2dTime += System.nanoTime() - start;
-						Statistics.numNativeLibMatrixDNNCalls.increment();
+						Statistics.numNativeConv2dCalls.increment();
 					}
 					// post-processing: maintain nnz
 					outputBlock.setNonZeros(nnz);
@@ -172,7 +172,7 @@ public class LibMatrixNative {
 			if(nnz != -1) {
 				if(DMLScript.STATISTICS) {
 					Statistics.nativeConv2dBwdFilterTime += System.nanoTime() - start;
-					Statistics.numNativeLibMatrixDNNCalls.increment();
+					Statistics.numNativeConv2dBwdFilterCalls.increment();
 				}
 				// post-processing: maintain nnz
 				outputBlock.setNonZeros(nnz);
@@ -208,7 +208,7 @@ public class LibMatrixNative {
 			if(nnz != -1) {
 				if(DMLScript.STATISTICS) {
 					Statistics.nativeConv2dBwdDataTime += System.nanoTime() - start;
-					Statistics.numNativeLibMatrixDNNCalls.increment();
+					Statistics.numNativeConv2dBwdDataCalls.increment();
 				}
 				// post-processing: maintain nnz
 				outputBlock.setNonZeros(nnz);

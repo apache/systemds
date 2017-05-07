@@ -114,7 +114,9 @@ public class Statistics
 	
 	private static LongAdder numNativeFailures = new LongAdder();
 	public static LongAdder numNativeLibMatrixMultCalls = new LongAdder();
-	public static LongAdder numNativeLibMatrixDNNCalls = new LongAdder();
+	public static LongAdder numNativeConv2dCalls = new LongAdder();
+	public static LongAdder numNativeConv2dBwdDataCalls = new LongAdder();
+	public static LongAdder numNativeConv2dBwdFilterCalls = new LongAdder();
 	public static long nativeLibMatrixMultTime = 0;
 	public static long nativeConv2dTime = 0;
 	public static long nativeConv2dBwdDataTime = 0;
@@ -387,7 +389,9 @@ public class Statistics
 
 		GPUStatistics.reset();
 		numNativeLibMatrixMultCalls.reset();
-		numNativeLibMatrixDNNCalls.reset();
+		numNativeConv2dCalls.reset();
+		numNativeConv2dBwdDataCalls.reset();
+		numNativeConv2dBwdFilterCalls.reset();
 		numNativeFailures.reset();
 		nativeLibMatrixMultTime = 0;
 		nativeConv2dTime = 0;
@@ -650,8 +654,10 @@ public class Statistics
 		{
 			if(NativeHelper.blasType != null) {
 				String blas = NativeHelper.blasType != null ? NativeHelper.blasType : ""; 
-				sb.append("Native " + blas + " calls (LibMatrixMult/LibMatrixDNN):\t" + numNativeLibMatrixMultCalls.longValue()  + "/" + numNativeLibMatrixDNNCalls.longValue() + ".\n");
-				sb.append("Native " + blas + " times (mult/conv/bwdF/bwdD):\t" + String.format("%.3f", nativeLibMatrixMultTime*1e-9) + "/" +
+				sb.append("Native " + blas + " calls (dense mult/conv/bwdF/bwdD):\t" + numNativeLibMatrixMultCalls.longValue()  + "/" + 
+						numNativeConv2dCalls.longValue() + "/" + numNativeConv2dBwdFilterCalls.longValue()
+						+ "/" + numNativeConv2dBwdDataCalls.longValue() + ".\n");
+				sb.append("Native " + blas + " times (dense mult/conv/bwdF/bwdD):\t" + String.format("%.3f", nativeLibMatrixMultTime*1e-9) + "/" +
 						String.format("%.3f", nativeConv2dTime*1e-9) + "/" + String.format("%.3f", nativeConv2dBwdFilterTime*1e-9) + "/" + 
 						String.format("%.3f", nativeConv2dBwdDataTime*1e-9) + ".\n");
 			}

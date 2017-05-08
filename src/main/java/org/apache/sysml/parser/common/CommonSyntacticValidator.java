@@ -733,6 +733,8 @@ public abstract class CommonSyntacticValidator {
 
 		functCall.setAllPositions(currentFile, ctx.start.getLine(), ctx.start.getCharPositionInLine(), ctx.stop.getLine(), ctx.stop.getCharPositionInLine());
 
+		functCall.setAllPositions(currentFile, ctx.start.getLine(), ctx.start.getCharPositionInLine(), ctx.stop.getLine(), ctx.stop.getCharPositionInLine());
+
 		setAssignmentStatement(ctx, info, target, functCall);
 	}
 

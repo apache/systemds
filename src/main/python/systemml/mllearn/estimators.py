@@ -645,8 +645,6 @@ class Caffe2DML(BaseSystemMLClassifier):
             start_time = time.time()
             convert_caffemodel(self, network_file_path, weights)
             print("Time to read caffemodel = %s seconds." % (time.time() - start_time))
-            self.le = None
-            self.labelMap = None
         elif weights is not None:
             self.estimator.setInput("$weights", str(weights))
             self._loadLabelTxt()

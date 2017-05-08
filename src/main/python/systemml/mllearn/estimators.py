@@ -276,8 +276,10 @@ class BaseSystemMLClassifier(BaseSystemMLEstimator):
     def decode(self, y):
         if self.le is not None:
             return self.le.inverse_transform(np.asarray(y - 1, dtype=int))
-        else:
+        elif self.labelMap is not None:
             return [ self.labelMap[int(i)] for i in y ]
+        else:
+            return y
         
     def predict(self, X):
         predictions = np.asarray(super(BaseSystemMLClassifier, self).predict(X))
@@ -639,6 +641,8 @@ class Caffe2DML(BaseSystemMLClassifier):
                 network_file_path = deploy_net
             self.model = self.sc._jvm.org.apache.sysml.api.dl.Caffe2DMLModel(self.estimator)
             convert_caffemodel(self, network_file_path, weights)
+            self.le = None
+            self.labelMap = None
         elif weights is not None:
             self.estimator.setInput("$weights", str(weights))
             self._loadLabelTxt()

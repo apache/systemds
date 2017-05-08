@@ -226,7 +226,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction
 		MatrixBlock outputBlock =  new MatrixBlock(input.getNumRows(), input.getNumColumns(), 
 			LibMatrixDNN.SUPPORTS_SPARSE_OUTPUTS && (input.isInSparseFormat() || dout.isInSparseFormat()));
 		
-		if( !input.isEmptyBlock() && !dout.isEmptyBlock() ) {
+		if( !input.isEmpty() && !dout.isEmpty() ) {
 			outputBlock.allocateDenseOrSparseBlock();
 			LibMatrixDNN.reluBackward(input, dout, outputBlock, _numThreads);
 		}
@@ -246,10 +246,10 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction
 			throw new DMLRuntimeException("Expected the number of columns of bias matrix to be 1, but found " + bias.getNumColumns());
 		}
 		
-		if(input.isEmptyBlock() && bias.isEmptyBlock()) {
+		if(input.isEmpty() && bias.isEmpty()) {
 			outputBlock = new MatrixBlock(input.getNumRows(), input.getNumColumns(), true);
 		}
-		else if(bias.isEmptyBlock()) {
+		else if(bias.isEmpty()) {
 			outputBlock = new MatrixBlock(input);
 		}
 		else {
@@ -274,7 +274,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction
 			throw new DMLRuntimeException("Expected the number of columns of bias matrix to be 1, but found " + bias.getNumColumns());
 		}
 		
-		if(bias.isEmptyBlock()) {
+		if(bias.isEmpty()) {
 			// Anything multiplied by zero is zero
 			outputBlock = new MatrixBlock(input.getNumRows(), input.getNumColumns(), true);
 		}
@@ -342,7 +342,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction
 		ConvolutionParameters params = new ConvolutionParameters(N, C, H, W, K, R, S, stride_h, stride_w, pad_h, pad_w, _numThreads);
 		params.enableNative = NativeHelper.isNativeLibraryLoaded();
 		if (instOpcode.equalsIgnoreCase("maxpooling") || instOpcode.equalsIgnoreCase("relu_maxpooling")) {
-			if(matBlock.isEmptyBlock()) {
+			if(matBlock.isEmpty()) {
 				outputBlock = new MatrixBlock(N, C*P*Q, true);
 			}
 			else {
@@ -354,7 +354,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction
 		}
 		else if (instOpcode.equalsIgnoreCase("maxpooling_backward") || instOpcode.equalsIgnoreCase("relu_maxpooling_backward")) {
 			MatrixBlock dout = ec.getMatrixInput(_in2.getName());
-			if(matBlock.isEmptyBlock() || dout.isEmptyBlock()) {
+			if(matBlock.isEmpty() || dout.isEmpty()) {
 				outputBlock = new MatrixBlock(N, C*H*W, true);
 			}
 			else {
@@ -368,7 +368,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction
 		}
 		else if (instOpcode.equalsIgnoreCase("conv2d")) {
 			MatrixBlock filter = ec.getMatrixInput(_in2.getName());
-			if(filter.isEmptyBlock() || matBlock.isEmptyBlock()) {
+			if(filter.isEmpty() || matBlock.isEmpty()) {
 				outputBlock = new MatrixBlock(N, K*P*Q, true);
 			}
 			else {
@@ -383,12 +383,12 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction
 		else if (instOpcode.equalsIgnoreCase("conv2d_bias_add")) {
 			MatrixBlock filter = ec.getMatrixInput(_in3.getName());
 			MatrixBlock bias = ec.getMatrixInput(_in2.getName());
-			if((filter.isEmptyBlock() || matBlock.isEmptyBlock()) && bias.isEmptyBlock()) {
+			if((filter.isEmpty() || matBlock.isEmpty()) && bias.isEmpty()) {
 				outputBlock = new MatrixBlock(N, K*P*Q, true);
 			}
 			else {
 				outputBlock = getDenseOutputBlock(N, K*P*Q);
-				if(!bias.isEmptyBlock()) {
+				if(!bias.isEmpty()) {
 					params.bias = bias;
 				}
 				if(params.enableNative && !isFilterSparse(filter) && !matBlock.isInSparseFormat())
@@ -401,7 +401,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction
 		}
 		else if (instOpcode.equalsIgnoreCase("conv2d_backward_filter")) {
 			MatrixBlock dout = ec.getMatrixInput(_in2.getName());
-			if(dout.isEmptyBlock() || matBlock.isEmptyBlock()) {
+			if(dout.isEmpty() || matBlock.isEmpty()) {
 				outputBlock = new MatrixBlock(K, C*R*S, true);
 			}
 			else {
@@ -415,7 +415,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction
 		}
 		else if (instOpcode.equalsIgnoreCase("conv2d_backward_data")) {
 			MatrixBlock dout = ec.getMatrixInput(_in2.getName());
-			if(dout.isEmptyBlock() || matBlock.isEmptyBlock()) {
+			if(dout.isEmpty() || matBlock.isEmpty()) {
 				outputBlock = new MatrixBlock(N, C * H * W, true);
 			}
 			else {

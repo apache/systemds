@@ -317,8 +317,8 @@ class Caffe2DML(val sc: SparkContext, val solverParam:Caffe.SolverParameter,
 	  }
 	  else if(registeredInputs.size() > 0) {
 	    // Called by .caffemodel
-	    net.getLayers.filter(l => !layersToIgnore.contains(l)).map(net.getCaffeLayer(_)).filter(_.weight != null).map(l => tabDMLScript.append(l.weight + " = " + l.param.getName + "_weight"))
-	    net.getLayers.filter(l => !layersToIgnore.contains(l)).map(net.getCaffeLayer(_)).filter(_.bias != null).map(l => tabDMLScript.append(l.bias + " = " + l.param.getName + "_bias"))
+	    net.getLayers.filter(l => !layersToIgnore.contains(l)).map(net.getCaffeLayer(_)).filter(_.weight != null).map(l => tabDMLScript.append(l.weight + " = " + l.param.getName + "_weight" + "\n"))
+	    net.getLayers.filter(l => !layersToIgnore.contains(l)).map(net.getCaffeLayer(_)).filter(_.bias != null).map(l => tabDMLScript.append(l.bias + " = " + l.param.getName + "_bias" + "\n"))
 	  }
 	  net.getLayers.map(layer => solver.init(tabDMLScript, net.getCaffeLayer(layer)))
 	  
@@ -457,8 +457,8 @@ class Caffe2DMLModel(val mloutput: MLResults,
 	  }
 	  else if(estimator.registeredInputs.size() > 0) {
 	    // Called by .caffemodel
-	    net.getLayers.map(net.getCaffeLayer(_)).filter(_.weight != null).map(l => tabDMLScript.append(l.weight + " = " + l.param.getName + "_weight"))
-		  net.getLayers.map(net.getCaffeLayer(_)).filter(_.bias != null).map(l => tabDMLScript.append(l.bias + " = " +  l.param.getName + "_bias"))
+	    net.getLayers.map(net.getCaffeLayer(_)).filter(_.weight != null).map(l => tabDMLScript.append(l.weight + " = " + l.param.getName + "_weight" + "\n"))
+		  net.getLayers.map(net.getCaffeLayer(_)).filter(_.bias != null).map(l => tabDMLScript.append(l.bias + " = " +  l.param.getName + "_bias" + "\n"))
 	    
 	  }
 	  else if(mloutput == null) {

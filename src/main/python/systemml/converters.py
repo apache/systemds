@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-__all__ = [ 'getNumCols', 'convertToMatrixBlock', 'convertToNumPyArr', 'convertToPandasDF', 'SUPPORTED_TYPES' , 'convertToLabeledDF', 'convertImageToNumPyArr']
+__all__ = [ 'getNumCols', 'convertToMatrixBlock', 'convert_caffemodel', 'convertToNumPyArr', 'convertToPandasDF', 'SUPPORTED_TYPES' , 'convertToLabeledDF', 'convertImageToNumPyArr']
 
 import numpy as np
 import pandas as pd
@@ -36,6 +36,40 @@ def getNumCols(numPyArr):
     else:
         return numPyArr.shape[1]
 
+def convert_caffemodel(caffe2dmlObj, network_file, caffemodel_file):
+    """
+    Saves the weights and bias in the caffemodel file to output_dir. This method requires caffe to be installed.
+    Parameters
+    ----------
+    caffe2dmlObj: Caffe2DML object
+        Caffe2DML object which should be used for registering the weights and bias
+    
+    network_file: string
+        Path to the input network file
+        
+    caffemodel_file: string
+        Path to the input caffemodel file
+    """
+    import caffe
+    net = caffe.Net(network_file, caffemodel_file, caffe.TEST)
+    for layerName in net.params.keys():
+    num_parameters = len(net.params[layerName])
+    if num_parameters == 0:
+        continue
+    elif num_parameters == 2:
+        # Weights and Biases
+        w = net.params[layerName][0].data
+        w = w.reshape(w.shape[0], -1)
+        b = net.params[layerName][1].data
+        b = b.reshape(b.shape[0], -1)
+        layerType = net.layers[list(net._layer_names).index(layerName)].type
+        if layerType == 'InnerProduct':
+            b = b.T
+            w = w.T
+        caffe2dmlObj.estimator.setInput(layerName + '_bias', convertToMatrixBlock(caffe2dmlObj.sc, b))
+        caffe2dmlObj.estimator.setInput(layerName + '_weight', convertToMatrixBlock(caffe2dmlObj.sc, w))
+    else:
+        raise ValueError('Unsupported number of parameters:' + str(num_parameters))
 
 def convertToLabeledDF(sparkSession, X, y=None):
     from pyspark.ml.feature import VectorAssembler

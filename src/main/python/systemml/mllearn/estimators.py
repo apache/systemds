@@ -630,7 +630,9 @@ class Caffe2DML(BaseSystemMLClassifier):
         solver = self.sc._jvm.org.apache.sysml.api.dl.Utils.readCaffeSolver(solver)
         self.estimator = self.sc._jvm.org.apache.sysml.api.dl.Caffe2DML(self.sc._jsc.sc(), solver, str(input_shape[0]), str(input_shape[1]), str(input_shape[2]))
         self.weights = weights
-        if weights is not None:
+        if weights is not None and weights.endswith('.caffemodel'):
+            convert_caffemodel(self.estimator, self.estimator.getNetworkFilePath(), weights)
+        elif weights is not None:
             self.estimator.setInput("$weights", str(weights))
             self._loadLabelTxt()
             if ignore_weights is not None:

@@ -81,7 +81,7 @@ trait BaseSystemMLEstimatorOrModel {
   def setStatistics(statistics1:Boolean):BaseSystemMLEstimatorOrModel = { statistics = statistics1; this}
   def setStatisticsMaxHeavyHitters(statisticsMaxHeavyHitters1:Int):BaseSystemMLEstimatorOrModel = { statisticsMaxHeavyHitters = statisticsMaxHeavyHitters1; this}
   def setConfigProperty(key:String, value:String):BaseSystemMLEstimatorOrModel = { config.put(key, value); this}
-  def setInput(key:String, mb:MatrixBlock): BaseSystemMLEstimatorOrModel = { registeredInputs.put(key, mb); this}
+  def setInputMatrixBlock(key:String, mb:MatrixBlock): BaseSystemMLEstimatorOrModel = { registeredInputs.put(key, mb); this}
   def updateML(ml:MLContext):Unit = {
     ml.setGPU(enableGPU); ml.setForceGPU(forceGPU);
     ml.setExplain(explain); ml.setStatistics(statistics); ml.setStatisticsMaxHeavyHitters(statisticsMaxHeavyHitters); 
@@ -91,7 +91,7 @@ trait BaseSystemMLEstimatorOrModel {
     other.setGPU(enableGPU); other.setForceGPU(forceGPU);
     other.setExplain(explain); other.setStatistics(statistics); other.setStatisticsMaxHeavyHitters(statisticsMaxHeavyHitters);
     config.map(x => other.setConfigProperty(x._1, x._2))
-    registeredInputs.map(x => other.setInput(x._1, x._2))
+    registeredInputs.map(x => other.setInputMatrixBlock(x._1, x._2))
     return other
   }
 }

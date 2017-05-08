@@ -66,8 +66,8 @@ def convert_caffemodel(caffe2dmlObj, network_file, caffemodel_file):
             if layerType == 'InnerProduct':
                 b = b.T
                 w = w.T
-            caffe2dmlObj.estimator.setInput(layerName + '_bias', convertToMatrixBlock(caffe2dmlObj.sc, b))
-            caffe2dmlObj.estimator.setInput(layerName + '_weight', convertToMatrixBlock(caffe2dmlObj.sc, w))
+            caffe2dmlObj.estimator.setInputMatrixBlock(layerName + '_bias', convertToMatrixBlock(caffe2dmlObj.sc, b))
+            caffe2dmlObj.estimator.setInputMatrixBlock(layerName + '_weight', convertToMatrixBlock(caffe2dmlObj.sc, w))
         else:
             raise ValueError('Unsupported number of parameters:' + str(num_parameters))
 

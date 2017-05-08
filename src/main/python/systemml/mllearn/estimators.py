@@ -606,7 +606,7 @@ class Caffe2DML(BaseSystemMLClassifier):
     >>> caffe2DML = Caffe2DML(sqlCtx, 'lenet_solver.proto').set(max_iter=500)
     >>> caffe2DML.fit(X, y)
     """
-    def __init__(self, sqlCtx, solver, input_shape, weights=None, deployNet=None, ignore_weights=None, transferUsingDF=False, tensorboard_log_dir=None):
+    def __init__(self, sqlCtx, solver, input_shape, weights=None, deploy_net=None, ignore_weights=None, transferUsingDF=False, tensorboard_log_dir=None):
         """
         Performs training/prediction for a given caffe network. 
 
@@ -616,7 +616,7 @@ class Caffe2DML(BaseSystemMLClassifier):
         solver: caffe solver file path
         input_shape: 3-element list (number of channels, input height, input width)
         weights: directory whether learned weights are stored (default: None)
-        deployNet: optional deploy network used if weights are passed as .caffemodel (default: None)
+        deploy_net: optional deploy network used if weights are passed as .caffemodel (default: None)
         ignore_weights: names of layers to not read from the weights directory (list of string, default:None)
         transferUsingDF: whether to pass the input dataset via PySpark DataFrame (default: False)
         tensorboard_log_dir: directory to store the event logs (default: None, we use a temporary directory)
@@ -632,12 +632,12 @@ class Caffe2DML(BaseSystemMLClassifier):
         self.estimator = self.sc._jvm.org.apache.sysml.api.dl.Caffe2DML(self.sc._jsc.sc(), solver, str(input_shape[0]), str(input_shape[1]), str(input_shape[2]))
         self.weights = weights
         if weights is not None and weights.endswith('.caffemodel'):
-            if deployNet is None:
+            if deploy_net is None:
                 import unicodedata
-                networkFilePath = unicodedata.normalize('NFKD', self.estimator.getNetworkFilePath()).encode('ascii','ignore')
+                network_file_path = unicodedata.normalize('NFKD', self.estimator.getNetworkFilePath()).encode('ascii','ignore')
             else:
-                networkFilePath = deployNet
-            convert_caffemodel(self.estimator, networkFilePath, weights)
+                network_file_path = deploy_net
+            convert_caffemodel(self.estimator, network_file_path, weights)
         elif weights is not None:
             self.estimator.setInput("$weights", str(weights))
             self._loadLabelTxt()

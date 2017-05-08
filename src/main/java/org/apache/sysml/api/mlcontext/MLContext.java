@@ -122,6 +122,12 @@ public class MLContext {
 	 */
 	private boolean maintainSymbolTable = false;
 
+	/**
+	 * Whether or not all values should be maintained in the symbol table
+	 * after execution.
+	 */
+	private boolean maintainSymbolTable = false;
+
 	private List<String> scriptHistoryStrings = new ArrayList<String>();
 	private Map<String, Script> scripts = new LinkedHashMap<String, Script>();
 

@@ -608,7 +608,7 @@ class Caffe2DML(BaseSystemMLClassifier):
     >>> caffe2DML = Caffe2DML(sqlCtx, 'lenet_solver.proto').set(max_iter=500)
     >>> caffe2DML.fit(X, y)
     """
-    def __init__(self, sqlCtx, solver, input_shape, weights=None, deploy_net=None, ignore_weights=None, transferUsingDF=False, tensorboard_log_dir=None):
+    def __init__(self, sqlCtx, solver, input_shape, weights=None, deploy_net=None, labels=None, ignore_weights=None, transferUsingDF=False, tensorboard_log_dir=None):
         """
         Performs training/prediction for a given caffe network. 
 
@@ -619,6 +619,7 @@ class Caffe2DML(BaseSystemMLClassifier):
         input_shape: 3-element list (number of channels, input height, input width)
         weights: directory whether learned weights are stored (default: None)
         deploy_net: optional deploy network used if weights are passed as .caffemodel (default: None)
+        labels: file describing the labels used if the weights are passed as .caffemodel (default: None)
         ignore_weights: names of layers to not read from the weights directory (list of string, default:None)
         transferUsingDF: whether to pass the input dataset via PySpark DataFrame (default: False)
         tensorboard_log_dir: directory to store the event logs (default: None, we use a temporary directory)
@@ -639,8 +640,11 @@ class Caffe2DML(BaseSystemMLClassifier):
                 network_file_path = unicodedata.normalize('NFKD', self.estimator.getNetworkFilePath()).encode('ascii','ignore')
             else:
                 network_file_path = deploy_net
-            self.model = self.sc._jvm.org.apache.sysml.api.dl.Caffe2DMLModel(self.estimator)
+            self._loadLabelTxt(labels=labels)
+            import time
+            start_time = time.time()
             convert_caffemodel(self, network_file_path, weights)
+            print("Time to read caffemodel = %s seconds." % (time.time() - start_time))
             self.le = None
             self.labelMap = None
         elif weights is not None:
@@ -654,17 +658,21 @@ class Caffe2DML(BaseSystemMLClassifier):
         if tensorboard_log_dir is not None:
             self.estimator.setTensorBoardLogDir(tensorboard_log_dir)
     
-    def _loadLabelTxt(self, format="binary", sep="/"):
-        if(self.weights is not None):
-            self.model = self.sc._jvm.org.apache.sysml.api.dl.Caffe2DMLModel(self.estimator)
+    def _loadLabelTxt(self, labels=None, format="binary", sep="/"):
+        self.model = self.sc._jvm.org.apache.sysml.api.dl.Caffe2DMLModel(self.estimator)
+        if labels is not None:
             df = self.sqlCtx.read.csv(self.weights + sep + 'labels.txt', header=False).toPandas()
-            keys = np.asarray(df._c0, dtype='int')
-            values = np.asarray(df._c1, dtype='str')
-            self.labelMap = {}
-            self.le = None
-            for i in range(len(keys)):
-                self.labelMap[int(keys[i])] = values[i]
-            # self.encode(classes) # Giving incorrect results
+        elif(self.weights is not None):
+            df = self.sqlCtx.read.csv(self.weights + sep + 'labels.txt', header=False).toPandas()
+        else:
+            raise ValueError('Either labels or weights should be not None')
+        keys = np.asarray(df._c0, dtype='int')
+        values = np.asarray(df._c1, dtype='str')
+        self.labelMap = {}
+        self.le = None
+        for i in range(len(keys)):
+            self.labelMap[int(keys[i])] = values[i]
+        # self.encode(classes) # Giving incorrect results
     
     def set(self, num_classes=None, debug=None):
         """

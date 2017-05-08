@@ -19,14 +19,6 @@
 
 package org.apache.sysml.parser.pydml;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ErrorNode;
@@ -115,6 +107,14 @@ import org.apache.sysml.parser.pydml.PydmlParser.TypedArgNoAssignContext;
 import org.apache.sysml.parser.pydml.PydmlParser.UnaryExpressionContext;
 import org.apache.sysml.parser.pydml.PydmlParser.ValueDataTypeCheckContext;
 import org.apache.sysml.parser.pydml.PydmlParser.WhileStatementContext;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * TODO: Refactor duplicated parser code dml/pydml (entire package).

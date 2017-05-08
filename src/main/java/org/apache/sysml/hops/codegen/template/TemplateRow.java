@@ -78,7 +78,8 @@ public class TemplateRow extends TemplateBase
 			|| (hop instanceof AggBinaryOp && hop.getDim2()==1
 				&& hop.getInput().get(0).getDim1()>1 && hop.getInput().get(0).getDim2()>1)
 			|| (hop instanceof AggUnaryOp && ((AggUnaryOp)hop).getDirection()!=Direction.RowCol 
-				&& hop.getInput().get(0).getDim1()>1 && hop.getInput().get(0).getDim2()>1);
+				&& hop.getInput().get(0).getDim1()>1 && hop.getInput().get(0).getDim2()>1
+				&& HopRewriteUtils.isAggUnaryOp(hop, SUPPORTED_ROW_AGG));
 	}
 
 	@Override
@@ -89,7 +90,8 @@ public class TemplateRow extends TemplateBase
 					|| HopRewriteUtils.isBinaryMatrixScalarOperation(hop)) ) 
 			|| ((hop instanceof UnaryOp || hop instanceof ParameterizedBuiltinOp) 
 					&& TemplateCell.isValidOperation(hop))		
-			|| (hop instanceof AggUnaryOp && ((AggUnaryOp)hop).getDirection()!=Direction.RowCol)
+			|| (hop instanceof AggUnaryOp && ((AggUnaryOp)hop).getDirection()!=Direction.RowCol
+				&& HopRewriteUtils.isAggUnaryOp(hop, SUPPORTED_ROW_AGG))
 			|| (hop instanceof AggBinaryOp && hop.getDim1()>1 
 				&& HopRewriteUtils.isTransposeOperation(hop.getInput().get(0))));
 	}

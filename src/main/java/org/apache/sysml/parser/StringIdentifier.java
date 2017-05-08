@@ -46,7 +46,7 @@ public class StringIdentifier extends ConstIdentifier
 	}
 	
 	public String toString(){
-		return _val;
+		return "'" + _val + "'";
 	}
 	
 	@Override

@@ -678,4 +678,16 @@ public class Script {
 		return this;
 	}
 
+	/**
+	 * Execute the script and return the results as an MLResults object.
+	 * 
+	 * @return results as an MLResults object
+	 */
+	public MLResults execute() {
+		MLContext ml = MLContext.getActiveMLContext();
+		if (ml == null) {
+			throw new MLContextException("No MLContext object exists. Please create one.");
+		}
+		return ml.execute(this);
+	}
 }

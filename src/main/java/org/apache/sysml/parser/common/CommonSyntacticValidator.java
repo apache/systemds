@@ -29,6 +29,7 @@ import java.util.regex.Pattern;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.parser.AssignmentStatement;
 import org.apache.sysml.parser.BinaryExpression;
 import org.apache.sysml.parser.BooleanExpression;
@@ -88,7 +89,9 @@ public abstract class CommonSyntacticValidator {
 	}
 
 	protected void notifyErrorListeners(String message, Token op) {
-		errorListener.validationError(op.getLine(), op.getCharPositionInLine(), message);
+		if (!DMLScript.VALIDATOR_IGNORE_ISSUES) {
+			errorListener.validationError(op.getLine(), op.getCharPositionInLine(), message);
+		}
 	}
 
 	protected void raiseWarning(String message, Token op) {
@@ -487,6 +490,18 @@ public abstract class CommonSyntacticValidator {
 
 	protected void setPrintStatement(ParserRuleContext ctx, String functionName,
 			ArrayList<ParameterExpression> paramExpression, StatementInfo thisinfo) {
+		if (DMLScript.VALIDATOR_IGNORE_ISSUES == true) { // create dummy print statement
+			try {
+				int line = ctx.start.getLine();
+				int col = ctx.start.getCharPositionInLine();
+				ArrayList<Expression> expList = new ArrayList<Expression>();
+				thisinfo.stmt = new PrintStatement(functionName, expList, line, col, line, col);
+				setFileLineColumn(thisinfo.stmt, ctx);
+			} catch (LanguageException e) {
+				e.printStackTrace();
+			}
+			return;
+		}
 		int numParams = paramExpression.size();
 		if (numParams == 0) {
 			notifyErrorListeners(functionName + "() must have more than 0 parameters", ctx.start);

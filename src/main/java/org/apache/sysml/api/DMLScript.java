@@ -178,6 +178,10 @@ public class DMLScript
 	public static boolean _suppressPrint2Stdout = false;  // flag that indicates whether or not to suppress any prints to stdout
 	public static boolean USE_LOCAL_SPARK_CONFIG = false; //set default local spark configuration - used for local testing
 	public static boolean _activeAM = false;
+	/**
+	 * If true, allow DMLProgram to be generated while not halting due to validation errors/warnings
+	 */
+	public static boolean VALIDATOR_IGNORE_ISSUES = false;
 
 	public static String _uuid = IDHandler.createDistributedUniqueID();
 	private static final Log LOG = LogFactory.getLog(DMLScript.class.getName());

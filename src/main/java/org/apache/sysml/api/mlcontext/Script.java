@@ -386,6 +386,31 @@ public class Script {
 	}
 
 	/**
+	 * Register output variables.
+	 * 
+	 * @param outputNames
+	 *            names of the output variables
+	 * @return {@code this} Script object to allow chaining of methods
+	 */
+	public Script out(scala.collection.Seq<String> outputNames) {
+		List<String> list = JavaConversions.seqAsJavaList(outputNames);
+		outputVariables.addAll(list);
+		return this;
+	}
+
+	/**
+	 * Register output variables.
+	 * 
+	 * @param outputNames
+	 *            names of the output variables
+	 * @return {@code this} Script object to allow chaining of methods
+	 */
+	public Script out(List<String> outputNames) {
+		outputVariables.addAll(outputNames);
+		return this;
+	}
+
+	/**
 	 * Clear the inputs, outputs, and symbol table.
 	 */
 	public void clearIOS() {

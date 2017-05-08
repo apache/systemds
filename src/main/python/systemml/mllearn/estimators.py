@@ -661,8 +661,8 @@ class Caffe2DML(BaseSystemMLClassifier):
     def _loadLabelTxt(self, labels=None, format="binary", sep="/"):
         self.model = self.sc._jvm.org.apache.sysml.api.dl.Caffe2DMLModel(self.estimator)
         if labels is not None:
-            df = self.sqlCtx.read.csv(self.weights + sep + 'labels.txt', header=False).toPandas()
-        elif(self.weights is not None):
+            df = self.sqlCtx.read.csv(labels, header=False).toPandas()
+        elif self.weights is not None:
             df = self.sqlCtx.read.csv(self.weights + sep + 'labels.txt', header=False).toPandas()
         else:
             raise ValueError('Either labels or weights should be not None')

@@ -637,6 +637,7 @@ class Caffe2DML(BaseSystemMLClassifier):
                 network_file_path = unicodedata.normalize('NFKD', self.estimator.getNetworkFilePath()).encode('ascii','ignore')
             else:
                 network_file_path = deploy_net
+            self.model = self.sc._jvm.org.apache.sysml.api.dl.Caffe2DMLModel(self.estimator)
             convert_caffemodel(self, network_file_path, weights)
         elif weights is not None:
             self.estimator.setInput("$weights", str(weights))

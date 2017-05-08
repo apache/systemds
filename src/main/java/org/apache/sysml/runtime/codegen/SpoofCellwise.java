@@ -363,6 +363,9 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 	private double executeSparseAndAgg(SparseBlock sblock, double[][] b, double[] scalars, int m, int n, boolean sparseSafe, int rl, int ru) 
 		throws DMLRuntimeException 
 	{
+		if( sparseSafe && sblock == null )
+			return 0;
+		
 		ValueFunction vfun = getAggFunction();
 		double ret = 0;
 		
@@ -371,22 +374,30 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 			KahanObject kbuff = new KahanObject(0, 0);
 			KahanFunction kplus = (KahanFunction) vfun;
 	
-			if( !sparseSafe ) {
-				for(int i=rl; i<ru; i++)
-					for(int j=0; j<n; j++) {
-						double valij = (sblock != null) ? sblock.get(i, j) : 0;
-						kplus.execute2( kbuff, genexec(valij, b, scalars, m, n, i, j)); 
+			//note: sequential scan algorithm for both sparse-safe and -unsafe 
+			//in order to avoid binary search for sparse-unsafe 
+			for(int i=rl; i<ru; i++) {
+				int lastj = -1;
+				//handle non-empty rows
+				if( sblock != null && !sblock.isEmpty(i) ) {
+					int apos = sblock.pos(i);
+					int alen = sblock.size(i);
+					int[] aix = sblock.indexes(i);
+					double[] avals = sblock.values(i);
+					for(int k=apos; k<apos+alen; k++) {
+						//process zeros before current non-zero
+						if( !sparseSafe )
+							for(int j=lastj+1; j<aix[k]; j++)
+								kplus.execute2(kbuff, genexec(0, b, scalars, m, n, i, j));
+						//process current non-zero
+						lastj = aix[k];
+						kplus.execute2(kbuff, genexec(avals[k], b, scalars, m, n, i, lastj));
 					}
-			}
-			else if( sblock != null ) {
-				for( int i=rl; i<ru; i++ )
-					if( !sblock.isEmpty(i) ) {
-						int apos = sblock.pos(i);
-						int alen = sblock.size(i);
-						double[] avals = sblock.values(i);
-						for( int j=apos; j<apos+alen; j++ )
-							kplus.execute2( kbuff, genexec(avals[j], b, scalars, m, n, i, j)); 
-					}	
+				}
+				//process empty rows or remaining zeros
+				if( !sparseSafe )
+					for(int j=lastj+1; j<n; j++)
+						kplus.execute2(kbuff, genexec(0, b, scalars, m, n, i, j));
 			}
 			ret = kbuff._sum;
 		}
@@ -394,24 +405,34 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		//note: sparse safe with zero value as min/max handled outside
 		else {
 			ret = (_aggOp==AggOp.MIN) ? Double.MAX_VALUE : -Double.MAX_VALUE; 
-			if( !sparseSafe ) {
-				for(int i=rl; i<ru; i++)
-					for(int j=0; j<n; j++) {
-						double valij = (sblock != null) ? sblock.get(i, j) : 0;
-						ret = vfun.execute( ret, genexec(valij, b, scalars, m, n, i, j)); 
+			ret = (sparseSafe && sblock.size() < (long)m*n) ? 0 : ret;
+			
+			//note: sequential scan algorithm for both sparse-safe and -unsafe 
+			//in order to avoid binary search for sparse-unsafe 
+			for(int i=rl; i<ru; i++) {
+				int lastj = -1;
+				//handle non-empty rows
+				if( sblock != null && !sblock.isEmpty(i) ) {
+					int apos = sblock.pos(i);
+					int alen = sblock.size(i);
+					int[] aix = sblock.indexes(i);
+					double[] avals = sblock.values(i);
+					for(int k=apos; k<apos+alen; k++) {
+						//process zeros before current non-zero
+						if( !sparseSafe )
+							for(int j=lastj+1; j<aix[k]; j++)
+								ret = vfun.execute(ret, genexec(0, b, scalars, m, n, i, j));
+						//process current non-zero
+						lastj = aix[k];
+						ret = vfun.execute(ret, genexec(avals[k], b, scalars, m, n, i, lastj));
 					}
+				}
+				//process empty rows or remaining zeros
+				if( !sparseSafe )
+					for(int j=lastj+1; j<n; j++)
+						ret = vfun.execute(ret, genexec(0, b, scalars, m, n, i, j));
 			}
-			else if( sblock != null ) {
-				for( int i=rl; i<ru; i++ )
-					if( !sblock.isEmpty(i) ) {
-						int apos = sblock.pos(i);
-						int alen = sblock.size(i);
-						double[] avals = sblock.values(i);
-						for( int j=apos; j<apos+alen; j++ )
-							ret = vfun.execute( ret, genexec(avals[j], b, scalars, m, n, i, j)); 
-					}	
-			}
-		}		
+		}
 		
 		return ret;
 	}
@@ -419,31 +440,36 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 	private long executeSparse(SparseBlock sblock, double[][] b, double[] scalars, double[] c, int m, int n, boolean sparseSafe, int rl, int ru) 
 		throws DMLRuntimeException 
 	{
+		if( sparseSafe && sblock == null )
+			return 0;
+		
 		long lnnz = 0;
 		if( _type == CellType.NO_AGG )
 		{
-			if( sparseSafe ) {
-				if( sblock != null ) {
-					for( int i=rl; i<ru; i++ )
-						if( !sblock.isEmpty(i) ) {
-							int apos = sblock.pos(i);
-							int alen = sblock.size(i);
-							double[] avals = sblock.values(i);
-							for( int j=apos; j<apos+alen; j++ ) {
-								double val = genexec(avals[j], b, scalars, m, n, i, j);
-								c[i*n+sblock.indexes(i)[j]] = val;
-								lnnz += (val!=0) ? 1 : 0;
-							}
-						}
-				}
-			}
-			else { //sparse-unsafe
-				for(int i=rl, cix=rl*n; i<ru; i++, cix+=n)
-					for(int j=0; j<n; j++) {
-						double valij = (sblock != null) ? sblock.get(i, j) : 0;
-						c[cix+j] = genexec(valij, b, scalars, m, n, i, j); 
-						lnnz += (c[cix+j]!=0) ? 1 : 0;
+			//note: sequential scan algorithm for both sparse-safe and -unsafe 
+			//in order to avoid binary search for sparse-unsafe 
+			for(int i=rl, cix=rl*n; i<ru; i++, cix+=n) {
+				int lastj = -1;
+				//handle non-empty rows
+				if( sblock != null && !sblock.isEmpty(i) ) {
+					int apos = sblock.pos(i);
+					int alen = sblock.size(i);
+					int[] aix = sblock.indexes(i);
+					double[] avals = sblock.values(i);
+					for(int k=apos; k<apos+alen; k++) {
+						//process zeros before current non-zero
+						if( !sparseSafe )
+							for(int j=lastj+1; j<aix[k]; j++)
+								lnnz += ((c[cix+j]=genexec(0, b, scalars, m, n, i, j))!=0)?1:0;
+						//process current non-zero
+						lastj = aix[k];
+						lnnz += ((c[cix+lastj]=genexec(avals[k], b, scalars, m, n, i, lastj))!=0)?1:0;
 					}
+				}
+				//process empty rows or remaining zeros
+				if( !sparseSafe )
+					for(int j=lastj+1; j<n; j++)
+						lnnz += ((c[cix+j]=genexec(0, b, scalars, m, n, i, j))!=0)?1:0;
 			}
 		}
 		else if( _type == CellType.ROW_AGG ) 
@@ -454,51 +480,64 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 				KahanObject kbuff = new KahanObject(0, 0);
 				KahanFunction kplus = (KahanFunction) vfun;
 
-				if( !sparseSafe ) { 
-					for(int i=rl; i<ru; i++) {
-						kbuff.set(0, 0);
-						for(int j=0; j<n; j++)
-							kplus.execute2( kbuff, genexec( (sblock != null) ? 
-								sblock.get(i, j) : 0, b, scalars, m, n, i, j)); 
-						lnnz += ((c[i] = kbuff._sum)!=0) ? 1 : 0;
-					}
-				}
-				else if( sblock != null ) { //general case
-					for( int i=rl; i<ru; i++ ) {
-						if( sblock.isEmpty(i) ) continue;
-						kbuff.set(0, 0);
+				//note: sequential scan algorithm for both sparse-safe and -unsafe 
+				//in order to avoid binary search for sparse-unsafe 
+				for(int i=rl; i<ru; i++) {
+					kbuff.set(0, 0);
+					int lastj = -1;
+					//handle non-empty rows
+					if( sblock != null && !sblock.isEmpty(i) ) {
 						int apos = sblock.pos(i);
 						int alen = sblock.size(i);
+						int[] aix = sblock.indexes(i);
 						double[] avals = sblock.values(i);
-						for( int j=apos; j<apos+alen; j++ )
-							kplus.execute2(kbuff, genexec(avals[j], b, scalars, m, n, i, j));
-						lnnz += ((c[i] = kbuff._sum)!=0) ? 1 : 0;	
+						for(int k=apos; k<apos+alen; k++) {
+							//process zeros before current non-zero
+							if( !sparseSafe )
+								for(int j=lastj+1; j<aix[k]; j++)
+									kplus.execute2(kbuff, genexec(0, b, scalars, m, n, i, j));
+							//process current non-zero
+							lastj = aix[k];
+							kplus.execute2(kbuff, genexec(avals[k], b, scalars, m, n, i, lastj));
+						}
 					}
+					//process empty rows or remaining zeros
+					if( !sparseSafe )
+						for(int j=lastj+1; j<n; j++)
+							kplus.execute2(kbuff, genexec(0, b, scalars, m, n, i, j));
+					lnnz += ((c[i] = kbuff._sum)!=0) ? 1 : 0;
 				}
 			}
 			else {
 				double initialVal = (_aggOp==AggOp.MIN) ? Double.MAX_VALUE : -Double.MAX_VALUE;
-				if( !sparseSafe ) { 
-					for(int i=rl; i<ru; i++) {
-						double tmp = initialVal;
-						for(int j=0; j<n; j++)
-							tmp = vfun.execute( tmp, genexec( (sblock != null) ? 
-								sblock.get(i, j) : 0, b, scalars, m, n, i, j)); 
-						lnnz += ((c[i] = tmp)!=0) ? 1 : 0;
-					}
-				}
-				else if( sblock != null ) { //general case
-					for( int i=rl; i<ru; i++ ) {
-						if( sblock.isEmpty(i) ) continue;
+				
+				//note: sequential scan algorithm for both sparse-safe and -unsafe 
+				//in order to avoid binary search for sparse-unsafe 
+				for(int i=rl; i<ru; i++) {
+					double tmp = (sparseSafe && sblock.size(i) < n) ? 0 : initialVal;
+					int lastj = -1;
+					//handle non-empty rows
+					if( sblock != null && !sblock.isEmpty(i) ) {
 						int apos = sblock.pos(i);
 						int alen = sblock.size(i);
+						int[] aix = sblock.indexes(i);
 						double[] avals = sblock.values(i);
-						double tmp = (alen < n) ? 0 : initialVal;
-						for( int j=apos; j<apos+alen; j++ )
-							tmp = vfun.execute(tmp, genexec(avals[j], b, scalars, m, n, i, j));
-						lnnz += ((c[i] = tmp)!=0) ? 1 : 0;	
+						for(int k=apos; k<apos+alen; k++) {
+							//process zeros before current non-zero
+							if( !sparseSafe )
+								for(int j=lastj+1; j<aix[k]; j++)
+									tmp = vfun.execute(tmp, genexec(0, b, scalars, m, n, i, j));
+							//process current non-zero
+							lastj = aix[k];
+							tmp = vfun.execute( tmp, genexec(avals[k], b, scalars, m, n, i, lastj));
+						}
 					}
-				}				
+					//process empty rows or remaining zeros
+					if( !sparseSafe )
+						for(int j=lastj+1; j<n; j++)
+							tmp = vfun.execute(tmp, genexec(0, b, scalars, m, n, i, j));
+					lnnz += ((c[i] = tmp)!=0) ? 1 : 0;
+				}
 			}
 		}
 		

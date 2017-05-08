@@ -1138,7 +1138,7 @@ public class LibMatrixDNN {
 					else {
 						// In all other cases, perform im2col in Java + matmult (either native or java).
 						MatrixBlock im2ColOutBlock = _im2ColOutBlocks.remove();
-						double [] temp = _params.input1.isInSparseFormat() ? new double[_params.input1.getNumColumns()] : null;
+						double [] temp = (_params.input1.isInSparseFormat() || _params.input1.denseBlock == null) ? new double[_params.input1.getNumColumns()] : null;
 						for(int n = _rl; n < _ru; n++) 
 							doLoopedIm2ColConv2d(n, im2ColOutBlock, _params, temp);
 						_im2ColOutBlocks.add(im2ColOutBlock);

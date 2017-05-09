@@ -27,6 +27,14 @@
 #include <cstring>
 #include "omp.h"
 
+int computeNNZ(double* arr, int limit) {
+  int nnz = 0;
+  #pragma omp parallel for reduction(+: nnz)
+  for(int i=0; i<limit; i++)
+    nnz += (arr[i]!=0) ? 1 : 0;
+  return nnz;
+}
+
 void rotate180(double* inputArray, double* outputArray, int N, int C, int H, int W,
             int K, int R, int S, int stride_h, int stride_w, int pad_h,
             int pad_w, int P, int Q) {
@@ -124,7 +132,7 @@ void im2col(double* inputArray, double* outputArray, int N, int C, int H, int W,
 } 
 
 
-void conv2dBackwardFilterDense(double* inputPtr, double* doutPtr, double* retPtr, int N, int C, int H, int W, int K, int R, int S,
+int conv2dBackwardFilterDense(double* inputPtr, double* doutPtr, double* retPtr, int N, int C, int H, int W, int K, int R, int S,
     int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads) {
   // First step: Avoids oversubscription and other openmp/internal blas threading issues
   setNumThreadsForBLAS(1);
@@ -150,7 +158,8 @@ void conv2dBackwardFilterDense(double* inputPtr, double* doutPtr, double* retPtr
 
 #pragma omp parallel for num_threads(numOpenMPThreads)
   for (int n = 0; n < N; n++) {
-  	double* loweredMat = loweredMatArrays + numIm2ColElem*omp_get_thread_num();
+    int threadID = omp_get_thread_num();
+  	double* loweredMat = loweredMatArrays + numIm2ColElem*threadID;
 
     // Step 1: Perform im2col
     im2col(inputPtr + n * CHW, loweredMat, 1, C, H, W, K,
@@ -158,17 +167,21 @@ void conv2dBackwardFilterDense(double* inputPtr, double* doutPtr, double* retPtr
            P, Q);
            
     // Step 2: Rotate dout
-    double* rotatedDoutPtr = rotatedDoutPtrArrays + numRotatedElem*omp_get_thread_num();
+    double* rotatedDoutPtr = rotatedDoutPtrArrays + numRotatedElem*threadID;
     rotate180(doutPtr + n * KPQ, rotatedDoutPtr, 1, C, H, W, K,
            R, S, stride_h, stride_w, pad_h, pad_w,
            P, Q);
     
-    // Multiply to get CRS X K
-    double* temp1 = temp + numTempElem*omp_get_thread_num();
-    // Step 3: loweredMat (CRS X PQ) %*% rotated_dout (PQ X K) 
-    matmult(loweredMat, rotatedDoutPtr, temp1, C * R * S, P * Q, K, 1);
-              
+    // Multiply to get tmp1 = CRS X K
+    double* temp1 = temp + numTempElem*threadID;
+    // Step 3: temp1 = alpha * (loweredMat (CRS X PQ) %*% rotated_dout (PQ X K)) + beta*temp1
+    int m1rlen = C * R * S; int m1clen = P * Q; int m2clen = K;
+    double* m1Ptr = loweredMat; double* m2Ptr = rotatedDoutPtr; double alpha = 1; double beta = 1;
+    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, m1rlen, m2clen, m1clen, alpha, m1Ptr, m1clen, m2Ptr, m2clen, beta, temp1, m2clen);
   } // end omp parallel for
+  
+  delete [] loweredMatArrays;
+  delete [] rotatedDoutPtrArrays;
   
   // Inplace transpose addition
   int numRow = CRS;
@@ -184,11 +197,10 @@ void conv2dBackwardFilterDense(double* inputPtr, double* doutPtr, double* retPtr
   }
   
   delete [] temp;
-  delete [] loweredMatArrays;
-  delete [] rotatedDoutPtrArrays;
+  return computeNNZ(retPtr, K*CRS);
 }
 
-void conv2dBackwardDataDense(double* filterPtr, double* doutPtr, double* retPtr, int N, int C, int H, int W, int K, int R, int S,
+int conv2dBackwardDataDense(double* filterPtr, double* doutPtr, double* retPtr, int N, int C, int H, int W, int K, int R, int S,
     int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads) {
    // First step: Avoids oversubscription and other openmp/internal blas threading issues
   setNumThreadsForBLAS(1);
@@ -207,27 +219,28 @@ void conv2dBackwardDataDense(double* filterPtr, double* doutPtr, double* retPtr,
 
 #pragma omp parallel for num_threads(numOpenMPThreads)
   for (int n = 0; n < N; n++) {
+    int threadID = omp_get_thread_num();
     // Step 1: Rotate dout
-    double* rotatedDoutPtr = rotatedDoutPtrArrays + numRotatedElem*omp_get_thread_num();
+    double* rotatedDoutPtr = rotatedDoutPtrArrays + numRotatedElem*threadID;
     rotate180(doutPtr + n * KPQ, rotatedDoutPtr, 1, C, H, W, K,
            R, S, stride_h, stride_w, pad_h, pad_w,
            P, Q);
 
     // Step 2: t(rotatedDout (PQ X K) %*% filter (K X CRS))
-    double* col2imInput = col2imInputArrays + numCol2ImElem*omp_get_thread_num();
+    double* col2imInput = col2imInputArrays + numCol2ImElem*threadID;
     matmult(rotatedDoutPtr, filterPtr, col2imInput,
             PQ, K, CRS, 1);
 
     // Step 3: Perform col2im
-    col2im(col2imInput, retPtr + n * CHW, 1, C, H, W, K,
+    double* outputArr = retPtr + n * CHW;
+    col2im(col2imInput, outputArr, 1, C, H, W, K,
            R, S, stride_h, stride_w, pad_h, pad_w,
            P, Q);
-
   } // end omp parallel for
   
   delete [] rotatedDoutPtrArrays;
   delete [] col2imInputArrays;
-    
+  return computeNNZ(retPtr, N*CHW);
 }
 
 void conv2dSparse(int apos, int alen, int* aix, double* avals, double* filterPtr, double* retPtr, int N, int C, int H, int W, 
@@ -290,7 +303,8 @@ void conv2dBackwardFilterSparseDense(int apos, int alen, int* aix, double* avals
 	delete [] temp1;
 }
 
-void conv2dBiasAddDense(double* inputPtr, double* biasPtr, double* filterPtr, double* retPtr, int N, int C, int H, int W, int K, int R, int S,
+
+int conv2dBiasAddDense(double* inputPtr, double* biasPtr, double* filterPtr, double* retPtr, int N, int C, int H, int W, int K, int R, int S,
     int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, bool addBias, int numThreads) {
   // First step:  Avoids oversubscription and other openmp/internal blas threading issues
   setNumThreadsForBLAS(1);
@@ -306,7 +320,8 @@ void conv2dBiasAddDense(double* inputPtr, double* biasPtr, double* filterPtr, do
   
 #pragma omp parallel for num_threads(numOpenMPThreads)
   for (int n = 0; n < N; n++) {
-    double* loweredMat = loweredMatArrays + numIm2ColElem*omp_get_thread_num();
+    int threadID = omp_get_thread_num();
+    double* loweredMat = loweredMatArrays + numIm2ColElem*threadID;
 
     // Step 1: Perform im2col
     im2col(inputPtr + n * CHW, loweredMat, 1, C, H, W, K,
@@ -318,8 +333,8 @@ void conv2dBiasAddDense(double* inputPtr, double* biasPtr, double* filterPtr, do
             C * R * S, P * Q, 1);
     
     // Step 3: Add bias
+    double* outputArr = retPtr + n*KPQ;
     if(addBias) {
-	    double* outputArr = retPtr + n*KPQ;
 	    int index = 0;
 		for(int k = 0; k < K; k++) {
 			for(int pq = 0; pq < PQ; pq++, index++) {
@@ -330,4 +345,5 @@ void conv2dBiasAddDense(double* inputPtr, double* biasPtr, double* filterPtr, do
   } // end omp parallel for
   
   delete [] loweredMatArrays;
+  return computeNNZ(retPtr, N*KPQ);
 }

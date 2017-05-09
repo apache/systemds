@@ -84,7 +84,7 @@ public class LibMatrixDNN {
 	private static AtomicLong loopedConvBwdDataCol2ImTime = new AtomicLong(0);
 	
 	public static void appendStatistics(StringBuilder sb) {
-		if(DMLScript.STATISTICS && DISPLAY_STATISTICS && (conv2dDenseCount.get() != 0 || conv2dSparseCount.get() != 0)) {
+		if(DMLScript.STATISTICS && DISPLAY_STATISTICS) {
 			sb.append("LibMatrixDNN dense count (conv/bwdF/bwdD/im2col/maxBwd):\t" 
 					+ conv2dDenseCount.get() + "/"
 					+ conv2dBwdFilterDenseCount.get() + "/"
@@ -97,15 +97,13 @@ public class LibMatrixDNN {
 					+ conv2dBwdDataSparseCount.get() + "/"
 					+ im2colSparseCount.get() + "/"
 					+ maxPoolBwdSparseCount.get() + ".\n");
-			if(loopedConvMatMultTime.get() != 0 || loopedConvIm2ColTime.get() != 0) {
-				sb.append("LibMatrixDNN conv(im2col/matmult), bwdF (im2col/matmult), bwdD (col2im/matmult) time:\t" +
-						String.format("%.3f", loopedConvIm2ColTime.get()*1e-9) + "/" +
-						String.format("%.3f", loopedConvMatMultTime.get()*1e-9) + "/" + 
-						String.format("%.3f", loopedConvBwdFilterIm2ColTime.get()*1e-9) + "/" +
-						String.format("%.3f", loopedConvBwdFilterMatMultTime.get()*1e-9) + "/" +
-						String.format("%.3f", loopedConvBwdDataCol2ImTime.get()*1e-9) + "/" +
-						String.format("%.3f", loopedConvBwdDataMatMultTime.get()*1e-9) + " sec.\n");
-			}
+			sb.append("LibMatrixDNN conv(im2col/matmult), bwdF (im2col/matmult), bwdD (col2im/matmult) time:\t" +
+					String.format("%.3f", loopedConvIm2ColTime.get()*1e-9) + "/" +
+					String.format("%.3f", loopedConvMatMultTime.get()*1e-9) + "/" + 
+					String.format("%.3f", loopedConvBwdFilterIm2ColTime.get()*1e-9) + "/" +
+					String.format("%.3f", loopedConvBwdFilterMatMultTime.get()*1e-9) + "/" +
+					String.format("%.3f", loopedConvBwdDataCol2ImTime.get()*1e-9) + "/" +
+					String.format("%.3f", loopedConvBwdDataMatMultTime.get()*1e-9) + " sec.\n");
 		}
 	}
 	public static void resetStatistics() {
@@ -158,7 +156,7 @@ public class LibMatrixDNN {
 			params.bias.sparseToDense(); // Since bias is extremely small array
 		
 		if(isEligibleForConv2dSparse(params))
-			Statistics.numNativeLibMatrixDNNCalls.increment();
+			Statistics.numNativeSparseConv2dCalls.increment();
 		
 		runConvTask(TaskType.LoopedIm2ColConv2d, params);
 		
@@ -179,7 +177,7 @@ public class LibMatrixDNN {
 		checkInputsConv2dBackwardData(filter, dout, outputBlock, params);
 		
 		if(isEligibleForConv2dBackwardDataDense(params))
-			Statistics.numNativeLibMatrixDNNCalls.increment();
+			Statistics.numNativeSparseConv2dBwdDataCalls.increment();
 		
 		runConvTask(TaskType.LoopedIm2ColConv2dBwdData, params);
 		
@@ -200,7 +198,7 @@ public class LibMatrixDNN {
 		checkInputsConv2dBackwardFilter(input, dout, outputBlock, params);
 		
 		if(isEligibleForConv2dBackwardFilterSparseDense(params))
-			Statistics.numNativeLibMatrixDNNCalls.increment();
+			Statistics.numNativeSparseConv2dBwdFilterCalls.increment();
 		
 		runConvTask(TaskType.LoopedIm2ColConv2dBwdFilter, params);
 		

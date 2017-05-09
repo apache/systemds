@@ -114,7 +114,21 @@ public class Statistics
 	
 	private static LongAdder numNativeFailures = new LongAdder();
 	public static LongAdder numNativeLibMatrixMultCalls = new LongAdder();
-	public static LongAdder numNativeLibMatrixDNNCalls = new LongAdder();
+	public static LongAdder numNativeConv2dCalls = new LongAdder();
+	public static LongAdder numNativeConv2dBwdDataCalls = new LongAdder();
+	public static LongAdder numNativeConv2dBwdFilterCalls = new LongAdder();
+	public static LongAdder numNativeSparseConv2dCalls = new LongAdder();
+	public static LongAdder numNativeSparseConv2dBwdFilterCalls = new LongAdder();
+	public static LongAdder numNativeSparseConv2dBwdDataCalls = new LongAdder();
+	public static long nativeLibMatrixMultTime = 0;
+	public static long nativeConv2dTime = 0;
+	public static long nativeConv2dBwdDataTime = 0;
+	public static long nativeConv2dBwdFilterTime = 0;
+	
+	public static long recomputeNNZTime = 0;
+	public static long examSparsityTime = 0;
+	public static long allocateDoubleArrTime = 0;
+	
 	public static void incrementNativeFailuresCounter() {
 		numNativeFailures.increment();
 		// This is very rare and am not sure it is possible at all. Our initial experiments never encountered this case.
@@ -378,8 +392,17 @@ public class Statistics
 
 		GPUStatistics.reset();
 		numNativeLibMatrixMultCalls.reset();
-		numNativeLibMatrixDNNCalls.reset();
+		numNativeSparseConv2dCalls.reset();
+		numNativeSparseConv2dBwdDataCalls.reset();
+		numNativeSparseConv2dBwdFilterCalls.reset();
+		numNativeConv2dCalls.reset();
+		numNativeConv2dBwdDataCalls.reset();
+		numNativeConv2dBwdFilterCalls.reset();
 		numNativeFailures.reset();
+		nativeLibMatrixMultTime = 0;
+		nativeConv2dTime = 0;
+		nativeConv2dBwdFilterTime = 0;
+		nativeConv2dBwdDataTime = 0;
 		LibMatrixDNN.resetStatistics();
 	}
 
@@ -635,11 +658,23 @@ public class Statistics
 		//show extended caching/compilation statistics
 		if( DMLScript.STATISTICS ) 
 		{
-			if(NativeHelper.blasType != null && (numNativeLibMatrixMultCalls.longValue() > 0 || 
-					numNativeLibMatrixDNNCalls.longValue() > 0)) {
+			if(NativeHelper.blasType != null) {
 				String blas = NativeHelper.blasType != null ? NativeHelper.blasType : ""; 
-				sb.append("Native " + blas + " calls (LibMatrixMult/LibMatrixDNN):\t" + numNativeLibMatrixMultCalls.longValue()  + "/" + numNativeLibMatrixDNNCalls.longValue() + ".\n");
+				sb.append("Native " + blas + " calls (dense mult/conv/bwdF/bwdD):\t" + numNativeLibMatrixMultCalls.longValue()  + "/" + 
+						numNativeConv2dCalls.longValue() + "/" + numNativeConv2dBwdFilterCalls.longValue()
+						+ "/" + numNativeConv2dBwdDataCalls.longValue() + ".\n");
+				sb.append("Native " + blas + " calls (sparse conv/bwdF/bwdD):\t" +  
+						numNativeSparseConv2dCalls.longValue() + "/" + numNativeSparseConv2dBwdFilterCalls.longValue()
+						+ "/" + numNativeSparseConv2dBwdDataCalls.longValue() + ".\n");
+				sb.append("Native " + blas + " times (dense mult/conv/bwdF/bwdD):\t" + String.format("%.3f", nativeLibMatrixMultTime*1e-9) + "/" +
+						String.format("%.3f", nativeConv2dTime*1e-9) + "/" + String.format("%.3f", nativeConv2dBwdFilterTime*1e-9) + "/" + 
+						String.format("%.3f", nativeConv2dBwdDataTime*1e-9) + ".\n");
 			}
+			if(recomputeNNZTime != 0 || examSparsityTime != 0 || allocateDoubleArrTime != 0) {
+				sb.append("MatrixBlock times (recomputeNNZ/examSparsity/allocateDoubleArr):\t" + String.format("%.3f", recomputeNNZTime*1e-9) + "/" +
+					String.format("%.3f", examSparsityTime*1e-9) + "/" + String.format("%.3f", allocateDoubleArrTime*1e-9)  + ".\n");
+			}
+			
 			sb.append("Cache hits (Mem, WB, FS, HDFS):\t" + CacheStatistics.displayHits() + ".\n");
 			sb.append("Cache writes (WB, FS, HDFS):\t" + CacheStatistics.displayWrites() + ".\n");
 			sb.append("Cache times (ACQr/m, RLS, EXP):\t" + CacheStatistics.displayTime() + " sec.\n");

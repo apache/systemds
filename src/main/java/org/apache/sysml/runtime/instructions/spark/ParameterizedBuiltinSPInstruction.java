@@ -411,10 +411,18 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			long brlen = mcIn.getRowsPerBlock();
 			long bclen = mcIn.getColsPerBlock();
 			
-			//execute remove empty rows/cols operation
+			//repartition input vector for higher degree of parallelism 
+			//(avoid scenarios where few input partitions create huge outputs)
+			MatrixCharacteristics mcTmp = new MatrixCharacteristics(dirRows?lmaxVal:mcIn.getRows(), 
+					dirRows?mcIn.getRows():lmaxVal, (int)brlen, (int)bclen, mcIn.getRows());
+			int numParts = (int)Math.min(SparkUtils.getNumPreferredPartitions(mcTmp, in), mcIn.getNumBlocks());
+			if( numParts > in.getNumPartitions()*2 )
+				in = in.repartition(numParts);
+			
+			//execute rexpand rows/cols operation (no shuffle required because outputs are
+			//block-aligned with the input, i.e., one input block generates n output blocks)
 			JavaPairRDD<MatrixIndexes,MatrixBlock> out = in
 					.flatMapToPair(new RDDRExpandFunction(maxVal, dirRows, cast, ignore, brlen, bclen));		
-			out = RDDAggregateUtils.mergeByKey(out, false);
 			
 			//store output rdd handle
 			sec.setRDDHandleForVariable(output.getName(), out);

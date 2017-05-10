@@ -38,6 +38,7 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -2713,6 +2714,54 @@ public class MLContextTest extends AutomatedTestBase {
 		Script script = pydml(s);
 		setExpectedStdOut("return values");
 		ml.execute(script);
+	}
+
+	@Test
+	public void testOutputListDML() {
+		System.out.println("MLContextTest - output specified as List DML");
+
+		List<String> outputs = Arrays.asList("x","y");
+		Script script = dml("a=1;x=a+1;y=x+1").out(outputs);
+		MLResults results = ml.execute(script);
+		Assert.assertEquals(2, results.getLong("x"));
+		Assert.assertEquals(3, results.getLong("y"));
+	}
+
+	@Test
+	public void testOutputListPYDML() {
+		System.out.println("MLContextTest - output specified as List PYDML");
+
+		List<String> outputs = Arrays.asList("x","y");
+		Script script = pydml("a=1\nx=a+1\ny=x+1").out(outputs);
+		MLResults results = ml.execute(script);
+		Assert.assertEquals(2, results.getLong("x"));
+		Assert.assertEquals(3, results.getLong("y"));
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@Test
+	public void testOutputScalaSeqDML() {
+		System.out.println("MLContextTest - output specified as Scala Seq DML");
+
+		List outputs = Arrays.asList("x","y");
+		Seq seq = JavaConversions.asScalaBuffer(outputs).toSeq();
+		Script script = dml("a=1;x=a+1;y=x+1").out(seq);
+		MLResults results = ml.execute(script);
+		Assert.assertEquals(2, results.getLong("x"));
+		Assert.assertEquals(3, results.getLong("y"));
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@Test
+	public void testOutputScalaSeqPYDML() {
+		System.out.println("MLContextTest - output specified as Scala Seq PYDML");
+
+		List outputs = Arrays.asList("x","y");
+		Seq seq = JavaConversions.asScalaBuffer(outputs).toSeq();
+		Script script = pydml("a=1\nx=a+1\ny=x+1").out(seq);
+		MLResults results = ml.execute(script);
+		Assert.assertEquals(2, results.getLong("x"));
+		Assert.assertEquals(3, results.getLong("y"));
 	}
 
 	// NOTE: Uncomment these tests once they work

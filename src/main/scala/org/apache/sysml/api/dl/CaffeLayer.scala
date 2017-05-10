@@ -200,7 +200,7 @@ class Elementwise(val param:LayerParameter, val id:Int, val net:CaffeNetwork) ex
   override def init(dmlScript: StringBuilder): Unit = {}
   if(param.getEltwiseParam.hasOperation && param.getEltwiseParam.getOperation != EltwiseOp.SUM)
     throw new LanguageException("Currently only elementwise sum operation supported")
-  def forward(dmlScript: StringBuilder, isPrediction: Boolean): Unit = {
+  override def forward(dmlScript: StringBuilder, isPrediction: Boolean): Unit = {
     addAndAssign(dmlScript, out, param.getBottomList.map(b => net.getCaffeLayer(b).out).toList)
   }
   override def backward(dmlScript: StringBuilder, outSuffix:String): Unit = assign(dmlScript, dX + outSuffix, dout)
@@ -210,6 +210,68 @@ class Elementwise(val param:LayerParameter, val id:Int, val net:CaffeNetwork) ex
   }
   var _out:(String, String, String) = null
   
+}
+
+class Concat(val param:LayerParameter, val id:Int, val net:CaffeNetwork) extends CaffeLayer {
+  override def sourceFileName = null
+  override def init(dmlScript: StringBuilder): Unit = {}
+  val _childLayers = net.getBottomLayers(param.getName).map(l => net.getCaffeLayer(l)).toList
+  def _getMultiFn(fn:String):String = {
+    var tmp = fn + "(" + _childLayers(0).out + ", " + _childLayers(1).out + ")"
+    for(i <- 2 until _childLayers.size) {
+      tmp = fn + "(" + tmp + ", " +  _childLayers(i).out + ")"
+    }
+    tmp
+  }
+  override def forward(dmlScript: StringBuilder, isPrediction: Boolean): Unit = {
+    if(param.getConcatParam.getAxis == 0) {
+      // rbind the inputs
+      assign(dmlScript, out, _getMultiFn("rbind"))
+    }
+    else if(param.getConcatParam.getAxis == 1) {
+      throw new DMLRuntimeException("Channel-wise concatenation is not supported")
+    }
+    else {
+      throw new DMLRuntimeException("Incorrect axis parameter for the layer " + param.getName)
+    }
+  }
+  override def backward(dmlScript: StringBuilder, outSuffix:String): Unit = {
+    if(param.getConcatParam.getAxis == 0) {
+      // rbind the inputs
+      dmlScript.append("# TODO: Backward of concat layer")
+    }
+    else if(param.getConcatParam.getAxis == 1) {
+      throw new DMLRuntimeException("Channel-wise concatenation is not supported")
+    }
+    else {
+      throw new DMLRuntimeException("Incorrect axis parameter for the layer " + param.getName)
+    }
+  }
+  def sumChannels():String = {
+    val channels = _childLayers.map(_.outputShape._1)
+    try { 
+      channels.reduce((c1, c2) => (c1.toInt + c2.toInt).toString())
+    }
+    catch { 
+      case _:Throwable => sum(new StringBuilder, channels).toString
+    }
+  }
+  override def outputShape = {
+    if(_out == null) {
+      if(param.getConcatParam.getAxis == 0) {
+        _out = _childLayers(0).outputShape
+      }
+      else if(param.getConcatParam.getAxis == 1) {
+        _out = (sumChannels(), _childLayers(0).outputShape._2, _childLayers(0).outputShape._3) 
+        throw new DMLRuntimeException("Channel-wise concatenation is not supported")
+      }
+      else {
+        throw new DMLRuntimeException("Incorrect axis parameter for the layer " + param.getName)
+      }
+    }
+    _out
+  }
+  var _out:(String, String, String) = null
 }
 
 class SoftmaxWithLoss(val param:LayerParameter, val id:Int, val net:CaffeNetwork) extends CaffeLayer with IsLossLayer {

@@ -227,8 +227,9 @@ class Elementwise(val param:LayerParameter, val id:Int, val net:CaffeNetwork) ex
 class Concat(val param:LayerParameter, val id:Int, val net:CaffeNetwork) extends CaffeLayer {
   override def sourceFileName = null
   override def init(dmlScript: StringBuilder): Unit = {}
-  val _childLayers = net.getBottomLayers(param.getName).map(l => net.getCaffeLayer(l)).toList
+  var _childLayers:List[CaffeLayer] = null 
   def _getMultiFn(fn:String):String = {
+    if(_childLayers == null) _childLayers = net.getBottomLayers(param.getName).map(l => net.getCaffeLayer(l)).toList
     var tmp = fn + "(" + _childLayers(0).out + ", " + _childLayers(1).out + ")"
     for(i <- 2 until _childLayers.size) {
       tmp = fn + "(" + tmp + ", " +  _childLayers(i).out + ")"
@@ -281,6 +282,7 @@ class Concat(val param:LayerParameter, val id:Int, val net:CaffeNetwork) extends
   }
   override def outputShape = {
     if(_out == null) {
+      if(_childLayers == null) _childLayers = net.getBottomLayers(param.getName).map(l => net.getCaffeLayer(l)).toList
       if(param.getConcatParam.getAxis == 0) {
         _out = _childLayers(0).outputShape
       }

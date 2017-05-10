@@ -74,6 +74,9 @@ trait BaseDMLGenerator {
     dmlScript.append("\n")
   }
   def invoke(dmlScript:StringBuilder, namespace1:String, returnVariables:List[String], functionName:String, arguments:List[String]):Unit = {
+    invoke(dmlScript, namespace1, returnVariables, functionName, arguments, true)
+  }
+  def invoke(dmlScript:StringBuilder, namespace1:String, returnVariables:List[String], functionName:String, arguments:List[String], appendNewLine:Boolean):Unit = {
     if(returnVariables.length == 0) throw new DMLRuntimeException("User-defined functions should have atleast one return value")
     if(returnVariables.length > 1) dmlScript.append("[")
     dmlScript.append(returnVariables(0))
@@ -96,10 +99,15 @@ trait BaseDMLGenerator {
   	    }
       }
     }
-    dmlScript.append(")\n")
+    dmlScript.append(")")
+    if(appendNewLine) 
+      dmlScript.append("\n")
+  }
+  def invoke(dmlScript:StringBuilder, namespace1:String, returnVariables:List[String], functionName:String, appendNewLine:Boolean, arguments:String*):Unit = {
+    invoke(dmlScript, namespace1, returnVariables, functionName, arguments.toList, appendNewLine)
   }
   def invoke(dmlScript:StringBuilder, namespace1:String, returnVariables:List[String], functionName:String, arguments:String*):Unit = {
-    invoke(dmlScript, namespace1, returnVariables, functionName, arguments.toList)
+    invoke(dmlScript, namespace1, returnVariables, functionName, arguments.toList, true)
   }
   def rightIndexing(dmlScript:StringBuilder, varName:String, rl:String, ru:String, cl:String, cu:String):StringBuilder = {
     dmlScript.append(varName).append("[")
@@ -244,7 +252,7 @@ trait VisualizeDMLGenerator extends TabbedDMLGenerator {
 	      case "dweight" => l.dWeight
 	      case "dbias" => l.dBias
 	      case "output" => l.out
-	      case "doutput" => l.dX
+	      // case "doutput" => l.dX
 	      case _ => throw new DMLRuntimeException("Cannot visualize the variable of type:" + varType)
 	    }
 	   }

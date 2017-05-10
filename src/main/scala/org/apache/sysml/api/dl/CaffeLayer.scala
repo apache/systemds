@@ -76,12 +76,12 @@ trait CaffeLayer extends BaseDMLGenerator {
     if(computedDout == null) {
       val ret = net.getTopLayers(param.getName).map(l => net.getCaffeLayer(l)).toList
       if(ret.size == 0) throw new LanguageException("Expected atleast 1 top layer for " + param.getName)
-      else if(ret.size == 1)     computedDout = ret(0).dX
-      else                       computedDout = sum(new StringBuilder, ret.map(_.dX).toList).toString()
+      else if(ret.size == 1)     computedDout = ret(0).dX(id)
+      else                       computedDout = sum(new StringBuilder, ret.map(_.dX(id)).toList).toString()
     }
     computedDout
   }
-  val dX = "dOut" + id
+  def dX(bottomLayerID:Int) = "dOut" + id + "_" + bottomLayerID
   // --------------------------------------------------------------------------------------
   // No need to override these methods in subclasses, instead classes that have weights and biases 
   // should implement HasWeight and HasBias traits.
@@ -99,8 +99,20 @@ trait CaffeLayer extends BaseDMLGenerator {
   def invokeForward(dmlScript:StringBuilder, returnVariables:List[String], arguments:String*):Unit = {
     invoke(dmlScript, sourceFileName + "::", returnVariables, "forward", arguments.toList)
   }
+  // Assumption: the first variable of resultVariables is always dX
   def invokeBackward(dmlScript:StringBuilder, outSuffix:String, resultVariables:List[String],  arguments:String*):Unit = {
-    invoke(dmlScript, sourceFileName + "::", resultVariables.map(_ + outSuffix), "backward", arguments.toList)
+    invoke(dmlScript, sourceFileName + "::", resultVariables.map(_ + outSuffix), "backward", arguments.toList, false)
+    val bottomLayerIDs = net.getBottomLayers(param.getName).map(l => net.getCaffeLayer(l).id)
+    dmlScript.append("; ")
+    bottomLayerIDs.map(bottomLayerID => dmlScript.append( dX(bottomLayerID) + outSuffix + " = " + resultVariables(0) + outSuffix + "; "))
+    dmlScript.append("\n")
+  }
+  def assignDoutToDX(dmlScript:StringBuilder, outSuffix:String):Unit = {
+    dmlScript.append("dOut" + id  + outSuffix + " = " + dout)
+    val bottomLayerIDs = net.getBottomLayers(param.getName).map(l => net.getCaffeLayer(l).id)
+    dmlScript.append("; ")
+    bottomLayerIDs.map(bottomLayerID => dmlScript.append( dX(bottomLayerID) + outSuffix + " = " + "dOut" + id + outSuffix + "; "))
+    dmlScript.append("\n")
   }
   // --------------------------------------------------------------------------------------
 }
@@ -153,7 +165,7 @@ class BatchNorm(val param:LayerParameter, val id:Int, val net:CaffeNetwork) exte
   }
   
   def backward(dmlScript: StringBuilder, outSuffix:String): Unit = {
-    invokeBackward(dmlScript, outSuffix, List[String](dX, dgamma, dbeta), dout, out, ema_mean, ema_var, cache_mean, cache_var, cache_norm, X, gamma, beta, numChannels, 
+    invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id, dgamma, dbeta), dout, out, ema_mean, ema_var, cache_mean, cache_var, cache_norm, X, gamma, beta, numChannels, 
           Hin, Win, "\"train\"", ema_mean, ema_var,  ma_fraction, eps)
   }
   
@@ -191,7 +203,7 @@ class Scale(val param:LayerParameter, val id:Int, val net:CaffeNetwork) extends 
   override def sourceFileName = null
   override def init(dmlScript: StringBuilder): Unit = {}
   def forward(dmlScript: StringBuilder, isPrediction: Boolean): Unit = assign(dmlScript, out, X)
-  override def backward(dmlScript: StringBuilder, outSuffix:String): Unit = assign(dmlScript, dX + outSuffix, dout)
+  override def backward(dmlScript: StringBuilder, outSuffix:String): Unit = assignDoutToDX(dmlScript, outSuffix)
 }
 // ------------------------------------------------------------------
 
@@ -203,7 +215,7 @@ class Elementwise(val param:LayerParameter, val id:Int, val net:CaffeNetwork) ex
   override def forward(dmlScript: StringBuilder, isPrediction: Boolean): Unit = {
     addAndAssign(dmlScript, out, param.getBottomList.map(b => net.getCaffeLayer(b).out).toList)
   }
-  override def backward(dmlScript: StringBuilder, outSuffix:String): Unit = assign(dmlScript, dX + outSuffix, dout)
+  override def backward(dmlScript: StringBuilder, outSuffix:String): Unit = assignDoutToDX(dmlScript, outSuffix)
   override def outputShape = {
     if(_out == null) _out = net.getCaffeLayer(net.getBottomLayers(param.getName).take(1).toSeq.get(0)).outputShape
     _out
@@ -235,10 +247,21 @@ class Concat(val param:LayerParameter, val id:Int, val net:CaffeNetwork) extends
       throw new DMLRuntimeException("Incorrect axis parameter for the layer " + param.getName)
     }
   }
+  def startIndex(outSuffix:String):String = "concat_start_index_" + outSuffix
+  def endIndex(outSuffix:String):String = "concat_start_index_" + outSuffix
+  def getConcatIndex(bottomLayerOut:String, outSuffix:String):String = 
+     startIndex(outSuffix) + " = " + endIndex(outSuffix) + " + 1; " +
+     endIndex(outSuffix) + " = " + startIndex(outSuffix) + " + nrow(" + bottomLayerOut + "); "
   override def backward(dmlScript: StringBuilder, outSuffix:String): Unit = {
     if(param.getConcatParam.getAxis == 0) {
       // rbind the inputs
       dmlScript.append("# TODO: Backward of concat layer")
+      dmlScript.append("dOut" + id  + outSuffix + " = " + dout)
+      val bottomLayerIDsAndOut = net.getBottomLayers(param.getName).map(l => (net.getCaffeLayer(l).id, net.getCaffeLayer(l).out)).toList
+      dmlScript.append(endIndex(outSuffix) + " = 0; " + getConcatIndex(bottomLayerIDsAndOut(0)._2, outSuffix))
+      bottomLayerIDsAndOut.map(x  => dmlScript.append( dX(x._1) + outSuffix + " = " + dout 
+          + "[" + startIndex(outSuffix) + ":" + endIndex(outSuffix) + ",]" + "; " + getConcatIndex(x._2, outSuffix)))
+      dmlScript.append("\n")
     }
     else if(param.getConcatParam.getAxis == 1) {
       throw new DMLRuntimeException("Channel-wise concatenation is not supported")
@@ -281,8 +304,13 @@ class SoftmaxWithLoss(val param:LayerParameter, val id:Int, val net:CaffeNetwork
   override def forward(dmlScript:StringBuilder, isPrediction:Boolean) = 
     invokeForward(dmlScript, List[String](out), scores)
   override def backward(dmlScript:StringBuilder, outSuffix:String) =  {
-    invoke(dmlScript, "cross_entropy_loss::", List[String]("dProbs" + outSuffix), "backward", out, "yb")
-    invoke(dmlScript.append("\t"), "softmax::", List[String](dX + outSuffix), "backward", "dProbs", scores)
+    invoke(dmlScript, "cross_entropy_loss::", List[String]("dProbs" + outSuffix), "backward", false, out, "yb")
+    dmlScript.append("; ") 
+    invoke(dmlScript, "softmax::", List[String]("dOut" + id + outSuffix), "backward", false, "dProbs", scores)
+    val bottomLayerIDs = net.getBottomLayers(param.getName).map(l => net.getCaffeLayer(l).id)
+    dmlScript.append("; ")
+    bottomLayerIDs.map(bottomLayerID => dmlScript.append( dX(bottomLayerID) + outSuffix + " = " + "dOut" + id + outSuffix + "; "))
+    dmlScript.append("\n")
   }
   override def computeLoss(dmlScript:StringBuilder, numTabs:Int) = {
     val tabBuilder = new StringBuilder
@@ -315,7 +343,7 @@ class ReLU(val param:LayerParameter, val id:Int, val net:CaffeNetwork) extends C
   override def sourceFileName = "relu"
   override def init(dmlScript:StringBuilder) = { }
   override def forward(dmlScript:StringBuilder, isPrediction:Boolean) = invokeForward(dmlScript, List[String](out), X)
-  override def backward(dmlScript:StringBuilder, outSuffix:String) = invokeBackward(dmlScript, outSuffix, List[String](dX), dout, X)
+  override def backward(dmlScript:StringBuilder, outSuffix:String) = invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id), dout, X)
   // -------------------------------------------------
 }
 
@@ -328,7 +356,7 @@ class Dropout(val param:LayerParameter, val id:Int, val net:CaffeNetwork) extend
       invokeForward(dmlScript, List[String](out, mask), X, p, seed)
     else
       assign(dmlScript, out, X) // Forward-pass not required to be performed during prediction for Dropout layer
-  override def backward(dmlScript:StringBuilder, outSuffix:String) = invokeBackward(dmlScript, outSuffix, List[String](dX), dout, X, p, mask)
+  override def backward(dmlScript:StringBuilder, outSuffix:String) = invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id), dout, X, p, mask)
   // -------------------------------------------------
   def mask = "mask" + id
   def p = param.getDropoutParam.getDropoutRatio.toString
@@ -342,7 +370,7 @@ class InnerProduct(val param:LayerParameter, val id:Int, val net:CaffeNetwork) e
   override def forward(dmlScript:StringBuilder, isPrediction:Boolean) = 
       invokeForward(dmlScript, List[String](out), X, weight, bias)
   override def backward(dmlScript:StringBuilder, outSuffix:String) = 
-      invokeBackward(dmlScript, outSuffix, List[String](dX, dWeight, dBias), dout, X, weight, bias)
+      invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id, dWeight, dBias), dout, X, weight, bias)
   // -------------------------------------------------
   def numNeurons = param.getInnerProductParam.getNumOutput.toString
   def numFeatures = int_mult(bottomLayerOutputShape._1, bottomLayerOutputShape._2, bottomLayerOutputShape._3)
@@ -357,7 +385,7 @@ class MaxPooling(val param:LayerParameter, val id:Int, val net:CaffeNetwork) ext
     invokeForward(dmlScript, List[String](out, "ignoreHout_"+id, "ignoreWout_"+id), 
         X, numChannels, Hin, Win, kernel_h, kernel_w, stride_h, stride_w, pad_h, pad_w)
   override def backward(dmlScript:StringBuilder, outSuffix:String) = 
-    invokeBackward(dmlScript, outSuffix, List[String](dX), dout, Hout, Wout, X, numChannels, Hin, Win, kernel_h, kernel_w, stride_h, stride_w, pad_h, pad_w)
+    invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id), dout, Hout, Wout, X, numChannels, Hin, Win, kernel_h, kernel_w, stride_h, stride_w, pad_h, pad_w)
   override def outputShape = ( numChannels, Hout, Wout )
   // -------------------------------------------------
   def Hin = bottomLayerOutputShape._2
@@ -388,7 +416,7 @@ class Convolution(val param:LayerParameter, val id:Int, val net:CaffeNetwork) ex
     invokeForward(dmlScript, List[String](out, "ignoreHout_"+id, "ignoreWout_"+id), 
         X, weight, bias, numChannels, Hin, Win, kernel_h, kernel_w, stride_h, stride_w, pad_h, pad_w)
   override def backward(dmlScript:StringBuilder, outSuffix:String) = 
-    invokeBackward(dmlScript, outSuffix, List[String](dX, dWeight, dBias), dout, Hout, Wout, X, weight, bias, numChannels, Hin, Win, kernel_h, kernel_w, stride_h, stride_w, pad_h, pad_w)
+    invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id, dWeight, dBias), dout, Hout, Wout, X, weight, bias, numChannels, Hin, Win, kernel_h, kernel_w, stride_h, stride_w, pad_h, pad_w)
   override def outputShape = ( numKernels, Hout, Wout )
   // -------------------------------------------------
   def numChannels = bottomLayerOutputShape._1
@@ -396,6 +424,46 @@ class Convolution(val param:LayerParameter, val id:Int, val net:CaffeNetwork) ex
   def Win = bottomLayerOutputShape._3
   def Hout = ConvolutionUtils.getConv2dOutputMap(bottomLayerOutputShape._2, kernel_h, stride_h, pad_h) 
   def Wout =  ConvolutionUtils.getConv2dOutputMap(bottomLayerOutputShape._3, kernel_w, stride_w, pad_w)
+  // -------------------------------------------------
+  def convParam = param.getConvolutionParam
+  def numKernels = convParam.getNumOutput.toString
+  def kernel_h = if(convParam.hasKernelH) convParam.getKernelH.toString 
+                   else if(convParam.getKernelSizeCount > 0)  convParam.getKernelSize(0).toString 
+                   else throw new LanguageException("Incorrect kernel parameters")
+  def kernel_w = if(convParam.hasKernelW) convParam.getKernelW.toString 
+                   else if(convParam.getKernelSizeCount > 0)  convParam.getKernelSize(0).toString 
+                   else throw new LanguageException("Incorrect kernel parameters")
+  def stride_h = if(convParam.hasStrideH) convParam.getStrideH.toString 
+                   else if(convParam.getStrideCount > 0)  convParam.getStride(0).toString 
+                   else throw new LanguageException("Incorrect stride parameters:" + convParam.getStrideH + " " + convParam.getStrideList + " " + param.getName)
+  def stride_w = if(convParam.hasStrideW) convParam.getStrideW.toString 
+                   else if(convParam.getStrideCount > 0)  convParam.getStride(0).toString 
+                   else throw new LanguageException("Incorrect stride parameters")
+  def pad_h =   if(convParam.hasPadH) convParam.getPadH.toString 
+                   else if(convParam.getPadCount > 0)  convParam.getPad(0).toString 
+                   else throw new LanguageException("Incorrect pad parameters")
+  def pad_w =   if(convParam.hasPadW) convParam.getPadW.toString 
+                   else if(convParam.getPadCount > 0)  convParam.getPad(0).toString 
+                   else throw new LanguageException("Incorrect pad parameters")
+}
+
+class DeConvolution(val param:LayerParameter, val id:Int, val net:CaffeNetwork) extends CaffeLayer with HasWeight with HasBias {
+  override def sourceFileName: String = "conv2d_transpose"
+  override def init(dmlScript: StringBuilder): Unit = invokeInit(dmlScript, List[String](weight, bias), numKernels, numChannels, kernel_h, kernel_w)
+  override def forward(dmlScript: StringBuilder,isPrediction: Boolean): Unit =
+    invokeForward(dmlScript, List[String](out, "ignoreHout_"+id, "ignoreWout_"+id), 
+        X, weight, bias, numChannels, Hin, Win, kernel_h, kernel_w, stride_h, stride_w, pad_h, pad_w)
+  override def backward(dmlScript:StringBuilder, outSuffix:String) = 
+    invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id, dWeight, dBias), dout, Hout, Wout, X, weight, bias, numChannels, Hin, Win, kernel_h, kernel_w, stride_h, stride_w, pad_h, pad_w)
+  override def outputShape = ( numChannels, Hout, Wout )
+  // -------------------------------------------------
+  def numChannels = bottomLayerOutputShape._1
+  def Hin = bottomLayerOutputShape._2
+  def Win = bottomLayerOutputShape._3
+  // TODO: Pritvi ---> Please double check this !!
+  def Hout = ConvolutionUtils.getConv2dOutputMap(bottomLayerOutputShape._2, kernel_h, stride_h, pad_h) 
+  def Wout =  ConvolutionUtils.getConv2dOutputMap(bottomLayerOutputShape._3, kernel_w, stride_w, pad_w)
+  // -------------------------------------------------
   def convParam = param.getConvolutionParam
   def numKernels = convParam.getNumOutput.toString
   def kernel_h = if(convParam.hasKernelH) convParam.getKernelH.toString 

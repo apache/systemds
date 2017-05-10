@@ -242,7 +242,8 @@ class Concat(val param:LayerParameter, val id:Int, val net:CaffeNetwork) extends
       assign(dmlScript, out, _getMultiFn("rbind"))
     }
     else if(param.getConcatParam.getAxis == 1) {
-      throw new DMLRuntimeException("Channel-wise concatenation is not supported")
+      dmlScript.append("# TODO: Channel-wise concatenation forward of " + _getMultiFn(""))
+      // throw new DMLRuntimeException("Channel-wise concatenation is not supported")
     }
     else {
       throw new DMLRuntimeException("Incorrect axis parameter for the layer " + param.getName)
@@ -265,7 +266,8 @@ class Concat(val param:LayerParameter, val id:Int, val net:CaffeNetwork) extends
       dmlScript.append("\n")
     }
     else if(param.getConcatParam.getAxis == 1) {
-      throw new DMLRuntimeException("Channel-wise concatenation is not supported")
+      dmlScript.append("# TODO: Channel-wise concatenation backward of " + _getMultiFn(""))
+      // throw new DMLRuntimeException("Channel-wise concatenation is not supported")
     }
     else {
       throw new DMLRuntimeException("Incorrect axis parameter for the layer " + param.getName)

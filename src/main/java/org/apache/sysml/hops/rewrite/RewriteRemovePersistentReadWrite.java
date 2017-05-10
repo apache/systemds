@@ -150,6 +150,8 @@ public class RewriteRemovePersistentReadWrite extends HopRewriteRule
 				case PERSISTENTWRITE:
 					if( _outputs.contains(dop.getName()) ) {
 						dop.setDataOpType(DataOpTypes.TRANSIENTWRITE);
+						dop.setRowsInBlock(dop.getInput().get(0).getRowsInBlock());
+						dop.setColsInBlock(dop.getInput().get(0).getColsInBlock());
 						if (hop.getDataType() == DataType.SCALAR) {
 							dop.removeInput("iofilename");
 						}

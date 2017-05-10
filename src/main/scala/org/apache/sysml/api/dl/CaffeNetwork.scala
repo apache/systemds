@@ -175,6 +175,7 @@ class CaffeNetwork(netFilePath:String, val currentPhase:Phase,
       case "scale" => new Scale(param, id, this)
       case "eltwise" => new Elementwise(param, id, this)
       case "concat" => new Concat(param, id, this)
+      case "deconvolution" => new DeConvolution(param, id, this)
       case _ => throw new LanguageException("Layer of type " + param.getType + " is not supported")
     }
   }

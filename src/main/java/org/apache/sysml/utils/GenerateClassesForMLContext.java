@@ -79,7 +79,7 @@ public class GenerateClassesForMLContext {
 	public static boolean skipStagingDir = true;
 	public static boolean skipPerfTestDir = true;
 	public static boolean skipObsoleteDir = true;
-	public static boolean skipTestDir = true;
+	public static boolean skipCompareBackendsDir = true;
 
 	public static void main(String[] args) throws Throwable {
 		if (args.length == 2) {
@@ -371,9 +371,9 @@ public class GenerateClassesForMLContext {
 			}
 			return true;
 		}
-		if ("test".equalsIgnoreCase(dir.getName()) && skipTestDir) {
+		if ("compare_backends".equalsIgnoreCase(dir.getName()) && skipCompareBackendsDir) {
 			if (displayMessage) {
-				System.out.println("Skipping test directory: " + dir.getPath());
+				System.out.println("Skipping compare_backends directory: " + dir.getPath());
 			}
 			return true;
 		}

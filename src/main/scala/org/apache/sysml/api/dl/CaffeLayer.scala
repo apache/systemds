@@ -289,8 +289,7 @@ class Concat(val param:LayerParameter, val id:Int, val net:CaffeNetwork) extends
         _out = _childLayers(0).outputShape
       }
       else if(param.getConcatParam.getAxis == 1) {
-        _out = (sumChannels(), _childLayers(0).outputShape._2, _childLayers(0).outputShape._3) 
-        throw new DMLRuntimeException("Channel-wise concatenation is not supported")
+        _out = (sumChannels(), _childLayers(0).outputShape._2, _childLayers(0).outputShape._3)
       }
       else {
         throw new DMLRuntimeException("Incorrect axis parameter for the layer " + param.getName)

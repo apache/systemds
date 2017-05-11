@@ -658,7 +658,7 @@ conv2d_transpose = function() {
       [outmh, Hout, Wout] = conv2d_transpose::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
                                                       pad, pad, out_pad, out_pad)
 
-	  lossmh = l2_loss::forward(outmh, y)
+      lossmh = l2_loss::forward(outmh, y)
 	
       X[i,j] = old + h
       [outph, Hout, Wout] = conv2d_transpose::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
@@ -708,19 +708,19 @@ conv2d_transpose = function() {
       [outmh, Hout, Wout] = conv2d_transpose::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
                                                       pad, pad, out_pad, out_pad)
 
-	  lossmh = l2_loss::forward(outmh, y)
+      lossmh = l2_loss::forward(outmh, y)
 
-	  b[i,j] = old + h
-	  [outph, Hout, Wout] = conv2d_transpose::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
-	                                                  pad, pad, out_pad, out_pad)
+      b[i,j] = old + h
+      [outph, Hout, Wout] = conv2d_transpose::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
+                                                      pad, pad, out_pad, out_pad)
 	
       lossph = l2_loss::forward(outph, y)
 
-	  b[i,j] = old
+      b[i,j] = old
 	
       db_num = (lossph-lossmh) / (2*h)
 
-	  rel_error = test_util::check_rel_grad_error(as.scalar(db[i,j]), db_num, lossph, lossmh)
+      rel_error = test_util::check_rel_grad_error(as.scalar(db[i,j]), db_num, lossph, lossmh)
     }
   }
 }

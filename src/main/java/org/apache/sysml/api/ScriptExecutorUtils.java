@@ -16,10 +16,12 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.apache.sysml.api;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.sysml.api.mlcontext.MLContext;
+import org.apache.sysml.api.mlcontext.MLContextException;
+import org.apache.sysml.api.mlcontext.ScriptExecutor;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.codegen.SpoofCompiler;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -32,52 +34,81 @@ import org.apache.sysml.utils.GPUStatistics;
 import org.apache.sysml.utils.Statistics;
 
 public class ScriptExecutorUtils {
-	private static final Log LOG = LogFactory.getLog(ScriptExecutorUtils.class.getName());
-	
+
 	/**
 	 * Execute the runtime program. This involves execution of the program
 	 * blocks that make up the runtime program and may involve dynamic
 	 * recompilation.
 	 * 
-	 * @param rtprog runtime program
-	 * @param ec execution context
-	 * @param dmlconf dml configuration
-	 * @throws DMLRuntimeException if error occurs
+	 * @param se
+	 *            script executor
+	 * @throws DMLRuntimeException
+	 *             if exception occurs
 	 */
-	public static void executeRuntimeProgram(Program rtprog, ExecutionContext ec, DMLConfig dmlconf) throws DMLRuntimeException {
-		// Whether extra statistics useful for developers and others interested in digging
-		// into performance problems are recorded and displayed
+	public static void executeRuntimeProgram(ScriptExecutor se) throws DMLRuntimeException {
+		Program prog = se.getRuntimeProgram();
+		ExecutionContext ec = se.getExecutionContext();
+		DMLConfig config = se.getConfig();
+		executeRuntimeProgram(prog, ec, config);
+	}
+
+	/**
+	 * Execute the runtime program. This involves execution of the program
+	 * blocks that make up the runtime program and may involve dynamic
+	 * recompilation.
+	 * 
+	 * @param rtprog
+	 *            runtime program
+	 * @param ec
+	 *            execution context
+	 * @param dmlconf
+	 *            dml configuration
+	 * @throws DMLRuntimeException
+	 *             if error occurs
+	 */
+	public static void executeRuntimeProgram(Program rtprog, ExecutionContext ec, DMLConfig dmlconf)
+			throws DMLRuntimeException {
+		// Whether extra statistics useful for developers and others interested
+		// in digging into performance problems are recorded and displayed
 		GPUStatistics.DISPLAY_STATISTICS = dmlconf.getBooleanValue(DMLConfig.EXTRA_GPU_STATS);
 		LibMatrixDNN.DISPLAY_STATISTICS = dmlconf.getBooleanValue(DMLConfig.EXTRA_DNN_STATS);
 
-		// Sets the maximum number of GPUs per process, -1 for all available GPUs
+		// Sets the maximum number of GPUs per process, -1 for all available
+		// GPUs
 		GPUContextPool.PER_PROCESS_MAX_GPUS = dmlconf.getIntValue(DMLConfig.MAX_GPUS_PER_PROCESS);
 		Statistics.startRunTimer();
 		GPUContext gCtx = null;
-		try {  
-			//run execute (w/ exception handling to ensure proper shutdown)
-			if (DMLScript.USE_ACCELERATOR && ec != null){
+		try {
+			// run execute (w/ exception handling to ensure proper shutdown)
+			if (DMLScript.USE_ACCELERATOR && ec != null) {
 				gCtx = GPUContextPool.getFromPool();
 				if (gCtx == null) {
-					throw new DMLRuntimeException("GPU : Could not create GPUContext, either no GPU or all GPUs currently in use");
+					throw new DMLRuntimeException(
+							"GPU : Could not create GPUContext, either no GPU or all GPUs currently in use");
 				}
 				gCtx.initializeThread();
 				ec.setGPUContext(gCtx);
 			}
-			rtprog.execute( ec );  
-		}
-		finally //ensure cleanup/shutdown
-		{
-			if(DMLScript.USE_ACCELERATOR && ec.getGPUContext() != null) {
+			rtprog.execute(ec);
+		} finally { // ensure cleanup/shutdown
+			if (DMLScript.USE_ACCELERATOR && ec.getGPUContext() != null) {
 				GPUContextPool.returnToPool(ec.getGPUContext());
 			}
-			if( dmlconf.getBooleanValue(DMLConfig.CODEGEN) )
+			if (dmlconf.getBooleanValue(DMLConfig.CODEGEN))
 				SpoofCompiler.cleanupCodeGenerator();
-			
-			//display statistics (incl caching stats if enabled)
+
+			// display statistics (incl caching stats if enabled)
 			Statistics.stopRunTimer();
-			LOG.info(Statistics.display());
+
+			MLContext ml = MLContext.getActiveMLContext();
+			if (ml == null) {
+				throw new MLContextException("No MLContext object exists. Please create one.");
+			}
+			if (ml.isStatistics()) {
+				int statisticsMaxHeavyHitters = ml.getStatisticsMaxHeavyHitters();
+				System.out.println(Statistics.display(statisticsMaxHeavyHitters));
+			}
 		}
 	}
-	
+
 }

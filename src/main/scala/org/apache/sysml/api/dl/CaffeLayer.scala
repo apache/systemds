@@ -242,7 +242,7 @@ class Concat(val param:LayerParameter, val id:Int, val net:CaffeNetwork) extends
       assign(dmlScript, out, _getMultiFn("rbind"))
     }
     else if(param.getConcatParam.getAxis == 1) {
-      dmlScript.append("# TODO: Channel-wise concatenation forward of " + _getMultiFn(""))
+      dmlScript.append("# TODO: Channel-wise concatenation forward of " + _getMultiFn("") + "\n")
       // throw new DMLRuntimeException("Channel-wise concatenation is not supported")
     }
     else {
@@ -257,7 +257,7 @@ class Concat(val param:LayerParameter, val id:Int, val net:CaffeNetwork) extends
   override def backward(dmlScript: StringBuilder, outSuffix:String): Unit = {
     if(param.getConcatParam.getAxis == 0) {
       // rbind the inputs
-      dmlScript.append("# TODO: Backward of concat layer")
+      dmlScript.append("# TODO: Backward of concat layer\n")
       dmlScript.append("dOut" + id  + outSuffix + " = " + dout)
       val bottomLayerIDsAndOut = net.getBottomLayers(param.getName).map(l => (net.getCaffeLayer(l).id, net.getCaffeLayer(l).out)).toList
       dmlScript.append(endIndex(outSuffix) + " = 0; " + getConcatIndex(bottomLayerIDsAndOut(0)._2, outSuffix))
@@ -266,7 +266,7 @@ class Concat(val param:LayerParameter, val id:Int, val net:CaffeNetwork) extends
       dmlScript.append("\n")
     }
     else if(param.getConcatParam.getAxis == 1) {
-      dmlScript.append("# TODO: Channel-wise concatenation backward of " + _getMultiFn(""))
+      dmlScript.append("# TODO: Channel-wise concatenation backward of " + _getMultiFn("") + "\n")
       // throw new DMLRuntimeException("Channel-wise concatenation is not supported")
     }
     else {
@@ -438,21 +438,22 @@ class Convolution(val param:LayerParameter, val id:Int, val net:CaffeNetwork) ex
                    else throw new LanguageException("Incorrect kernel parameters")
   def stride_h = if(convParam.hasStrideH) convParam.getStrideH.toString 
                    else if(convParam.getStrideCount > 0)  convParam.getStride(0).toString 
-                   else throw new LanguageException("Incorrect stride parameters:" + convParam.getStrideH + " " + convParam.getStrideList + " " + param.getName)
+                   else "1"
   def stride_w = if(convParam.hasStrideW) convParam.getStrideW.toString 
                    else if(convParam.getStrideCount > 0)  convParam.getStride(0).toString 
-                   else throw new LanguageException("Incorrect stride parameters")
+                   else "1"
   def pad_h =   if(convParam.hasPadH) convParam.getPadH.toString 
                    else if(convParam.getPadCount > 0)  convParam.getPad(0).toString 
-                   else throw new LanguageException("Incorrect pad parameters")
+                   else "0"
   def pad_w =   if(convParam.hasPadW) convParam.getPadW.toString 
                    else if(convParam.getPadCount > 0)  convParam.getPad(0).toString 
-                   else throw new LanguageException("Incorrect pad parameters")
+                   else "0"
 }
 
 class DeConvolution(val param:LayerParameter, val id:Int, val net:CaffeNetwork) extends CaffeLayer with HasWeight with HasBias {
   override def sourceFileName: String = "conv2d_transpose"
-  override def init(dmlScript: StringBuilder): Unit = invokeInit(dmlScript, List[String](weight, bias), numKernels, numChannels, kernel_h, kernel_w)
+  override def init(dmlScript: StringBuilder): Unit = 
+    invokeInit(dmlScript, List[String](weight, bias), numKernels, numChannels, kernel_h, kernel_w)
   override def forward(dmlScript: StringBuilder,isPrediction: Boolean): Unit =
     invokeForward(dmlScript, List[String](out, "ignoreHout_"+id, "ignoreWout_"+id), 
         X, weight, bias, numChannels, Hin, Win, kernel_h, kernel_w, stride_h, stride_w, pad_h, pad_w)
@@ -477,14 +478,14 @@ class DeConvolution(val param:LayerParameter, val id:Int, val net:CaffeNetwork) 
                    else throw new LanguageException("Incorrect kernel parameters")
   def stride_h = if(convParam.hasStrideH) convParam.getStrideH.toString 
                    else if(convParam.getStrideCount > 0)  convParam.getStride(0).toString 
-                   else throw new LanguageException("Incorrect stride parameters:" + convParam.getStrideH + " " + convParam.getStrideList + " " + param.getName)
+                   else "1"
   def stride_w = if(convParam.hasStrideW) convParam.getStrideW.toString 
                    else if(convParam.getStrideCount > 0)  convParam.getStride(0).toString 
-                   else throw new LanguageException("Incorrect stride parameters")
+                   else "1"
   def pad_h =   if(convParam.hasPadH) convParam.getPadH.toString 
                    else if(convParam.getPadCount > 0)  convParam.getPad(0).toString 
-                   else throw new LanguageException("Incorrect pad parameters")
+                   else "0"
   def pad_w =   if(convParam.hasPadW) convParam.getPadW.toString 
                    else if(convParam.getPadCount > 0)  convParam.getPad(0).toString 
-                   else throw new LanguageException("Incorrect pad parameters")
+                   else "0"
 }

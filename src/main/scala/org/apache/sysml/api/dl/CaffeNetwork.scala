@@ -125,6 +125,18 @@ class CaffeNetwork(netFilePath:String, val currentPhase:Phase,
     }
     else l
   })
+  
+  // Condition 5: Deal with incorrect naming
+  // Example: layer { name: foo, bottom: arbitrary, top: bar } ... Rename the layer to bar
+  private def isIncorrectNamingLayer(l:LayerParameter): Boolean = l.getTopCount == 1 && !l.getTop(0).equalsIgnoreCase(l.getName)
+  _caffeLayerParams = _caffeLayerParams.map(l => {
+    if(isIncorrectNamingLayer(l)) {
+      val builder = l.toBuilder();
+      builder.setName(l.getTop(0))
+      builder.build()
+    }
+    else l
+  })
 
   // --------------------------------------------------------------------------------
   

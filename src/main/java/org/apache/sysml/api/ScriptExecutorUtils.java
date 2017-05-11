@@ -20,7 +20,6 @@
 package org.apache.sysml.api;
 
 import org.apache.sysml.api.mlcontext.MLContext;
-import org.apache.sysml.api.mlcontext.MLContextException;
 import org.apache.sysml.api.mlcontext.ScriptExecutor;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.codegen.SpoofCompiler;
@@ -101,10 +100,7 @@ public class ScriptExecutorUtils {
 			Statistics.stopRunTimer();
 
 			MLContext ml = MLContext.getActiveMLContext();
-			if (ml == null) {
-				throw new MLContextException("No MLContext object exists. Please create one.");
-			}
-			if (ml.isStatistics()) {
+			if ((ml != null) && (ml.isStatistics())) {
 				int statisticsMaxHeavyHitters = ml.getStatisticsMaxHeavyHitters();
 				System.out.println(Statistics.display(statisticsMaxHeavyHitters));
 			}

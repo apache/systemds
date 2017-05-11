@@ -623,11 +623,11 @@ conv2d_transpose = function() {
    */
   print("Grad checking the 2D convolution transpose layer with L2 loss.")
 
-  N = 1
-  C = 1
+  N = 2
+  C = 2
   Hin = 3
   Win = 3
-  F = 1
+  F = 2
   Hf = 3
   Wf = 3
   stride = 2
@@ -638,15 +638,15 @@ conv2d_transpose = function() {
 
   [W,b] = conv2d_transpose::init(F, C, Hf, Wf)
   
-  [out, Hout, Wout] = 
- 	conv2d_transpose::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad, out_pad, out_pad)
+  [out, Hout, Wout] = conv2d_transpose::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
+                                                pad, pad, out_pad, out_pad)
   
   y = rand(rows=N, cols=F*Hout*Wout)
   
   dout = l2_loss::backward(out,y)
   
-  [dX, dW, db] = 
-  	conv2d_transpose::backward(dout, Hout, Wout, X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
+  [dX, dW, db] = conv2d_transpose::backward(dout, Hout, Wout, X, W, b, C, Hin, Win, Hf, Wf,
+                                            stride, stride, pad, pad)
   
   h = 1e-5
   print(" - Grad checking X.")
@@ -655,22 +655,22 @@ conv2d_transpose = function() {
       old = as.scalar(X[i,j])
       X[i,j] = old - h
 
-	  [outmh, Hout, Wout] = 
-	  	conv2d_transpose::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad, out_pad, out_pad)
+      [outmh, Hout, Wout] = conv2d_transpose::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
+                                                      pad, pad, out_pad, out_pad)
 
 	  lossmh = l2_loss::forward(outmh, y)
 	
       X[i,j] = old + h
-      [outph, Hout, Wout] = 
-      	conv2d_transpose::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad, out_pad, out_pad)
+      [outph, Hout, Wout] = conv2d_transpose::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
+                                                      pad, pad, out_pad, out_pad)
 
-	  lossph = l2_loss::forward(outph, y)
+      lossph = l2_loss::forward(outph, y)
 
-	  X[i,j] = old
+      X[i,j] = old
 
-	  dX_num = (lossph-lossmh) / (2*h)
+      dX_num = (lossph-lossmh) / (2*h)
 
-	  rel_error = test_util::check_rel_grad_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
+      rel_error = test_util::check_rel_grad_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
     }
   }
 
@@ -680,14 +680,14 @@ conv2d_transpose = function() {
       old = as.scalar(W[i,j])
       W[i,j] = old - h
 
-      [outmh, Hout, Wout] = 
-      	conv2d_transpose::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad, out_pad, out_pad)
+      [outmh, Hout, Wout] = conv2d_transpose::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
+                                                      pad, pad, out_pad, out_pad)
       
       lossmh = l2_loss::forward(outmh, y)
 
       W[i,j] = old + h
-      [outph, Hout, Wout] = 
-      	conv2d_transpose::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad, out_pad, out_pad)
+      [outph, Hout, Wout] = conv2d_transpose::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
+                                                      pad, pad, out_pad, out_pad)
       
       lossph = l2_loss::forward(outph, y)
 
@@ -705,14 +705,14 @@ conv2d_transpose = function() {
       old = as.scalar(b[i,j])
       b[i,j] = old - h
 
-      [outmh, Hout, Wout] = 
-      	conv2d_transpose::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad, out_pad, out_pad)
+      [outmh, Hout, Wout] = conv2d_transpose::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
+                                                      pad, pad, out_pad, out_pad)
 
 	  lossmh = l2_loss::forward(outmh, y)
 
 	  b[i,j] = old + h
-	  [outph, Hout, Wout] = 
-	  	conv2d_transpose::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad, out_pad, out_pad)
+	  [outph, Hout, Wout] = conv2d_transpose::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
+	                                                  pad, pad, out_pad, out_pad)
 	
       lossph = l2_loss::forward(outph, y)
 

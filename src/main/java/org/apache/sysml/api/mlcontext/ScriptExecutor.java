@@ -400,7 +400,7 @@ public class ScriptExecutor {
 	 */
 	protected void executeRuntimeProgram() {
 		try {
-			ScriptExecutorUtils.executeRuntimeProgram(runtimeProgram, executionContext, config);
+			ScriptExecutorUtils.executeRuntimeProgram(this);
 		} catch (DMLRuntimeException e) {
 			throw new MLContextException("Exception occurred while executing runtime program", e);
 		}
@@ -611,6 +611,11 @@ public class ScriptExecutor {
 		this.statistics = statistics;
 	}
 
+	/**
+	 * Set the maximum number of heavy hitters to display with statistics.
+	 * 
+	 * @param maxHeavyHitters the maximum number of heavy hitters
+	 */
 	public void setStatisticsMaxHeavyHitters(int maxHeavyHitters) {
 		this.statisticsMaxHeavyHitters = maxHeavyHitters;
 	}
@@ -667,21 +672,31 @@ public class ScriptExecutor {
 	}
 
 	/**
-	 * Whether or not to enable GPU usage
+	 * Whether or not to enable GPU usage.
+	 * 
 	 * @param enabled
-	 * 					true if enabled, false otherwise
+	 * 					{@code true} if enabled, {@code false} otherwise
 	 */
     public void setGPU(boolean enabled) {
         this.gpu = enabled;
     }
 	
 	/**
-	 * Whether or not to force GPU usage
+	 * Whether or not to force GPU usage.
+	 * 
 	 * @param enabled
-	 * 					true if enabled, false otherwise
+	 * 					{@code true} if enabled, {@code false} otherwise
 	 */
     public void setForceGPU(boolean enabled) {
         this.forceGPU = enabled;
     }
 
+	/**
+	 * Obtain the SystemML configuration properties.
+	 * 
+	 * @return the configuration properties
+	 */
+	public DMLConfig getConfig() {
+		return config;
+	}
 }

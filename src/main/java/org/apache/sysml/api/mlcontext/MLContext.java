@@ -694,4 +694,13 @@ public class MLContext {
 		return info().buildTime();
 	}
 
+	/**
+	 * Obtain the maximum number of heavy hitters that are printed out as part
+	 * of the statistics.
+	 * 
+	 * @return maximum number of heavy hitters to print
+	 */
+	public int getStatisticsMaxHeavyHitters() {
+		return statisticsMaxHeavyHitters;
+	}
 }

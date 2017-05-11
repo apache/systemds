@@ -312,8 +312,8 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 jQuery v1.12.0 (jquery-1.12.0.min.js) includes sizzle.js (sizzle.min.js)
 which is distributed under the following license (http://sizzlejs.com/):
- 
-Copyright JS Foundation and other contributors, https://js.foundation/
+
+Copyright jQuery Foundation and other contributors, https://jquery.org/
 
 This software consists of voluntary contributions made by many
 individuals. For exact contribution history, see the revision history

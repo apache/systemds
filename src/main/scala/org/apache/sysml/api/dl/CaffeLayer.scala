@@ -156,14 +156,133 @@ class Data(val param:LayerParameter, val id:Int, val net:CaffeNetwork, val numCh
 class BatchNorm(val param:LayerParameter, val id:Int, val net:CaffeNetwork) extends CaffeLayer with HasWeight with HasBias {
   // val scale =  
   override def sourceFileName = "batch_norm2d"
+  /*
+   * Initialize the parameters of this layer.
+   *
+   * Note: This is just a convenience function, and parameters
+   * may be initialized manually if needed.
+   *
+   * Inputs:
+   *  - C: Number of input channels (dimensionality of input depth).
+   *
+   * Outputs:
+   *  - gamma: Scale parameters, of shape (C, 1).
+   *  - beta: Shift parameters, of shape (C, 1).
+   *  - ema_mean: Exponential moving average of the mean, of
+   *      shape (C, 1).
+   *  - ema_var: Exponential moving average of the variance, of
+   *      shape (C, 1).
+   */
   override def init(dmlScript:StringBuilder) = invokeInit(dmlScript, List[String](gamma, beta, ema_mean, ema_var), numChannels)
   var update_mean_var = true
+  /*
+   * Computes the forward pass for a 2D (spatial) batch normalization
+   * layer.  The input data has N examples, each represented as a 3D
+   * volume unrolled into a single vector.
+   *
+   * A spatial batch normalization layer uses the per-channel sample
+   * mean and per-channel uncorrected sample variance during training
+   * to normalize each channel of the input data.  Additionally, it
+   * introduces learnable parameters (gamma, beta) to control the
+   * amount of normalization.
+   *
+   *   `y = ((x-mean) / sqrt(var+eps)) * gamma + beta`
+   *
+   * This implementation maintains exponential moving averages of the
+   * mean and variance during training for use during testing.
+   *
+   * Reference:
+   *  - Batch Normalization: Accelerating Deep Network Training by
+   *    Reducing Internal Covariate Shift, S. Ioffe & C. Szegedy, 2015
+   *    - https://arxiv.org/abs/1502.03167
+   *
+   * Inputs:
+   *  - X: Inputs, of shape (N, C*Hin*Win).
+   *  - gamma: Scale parameters, of shape (C, 1).
+   *  - beta: Shift parameters, of shape (C, 1).
+   *  - C: Number of input channels (dimensionality of input depth).
+   *  - Hin: Input height.
+   *  - Win: Input width.
+   *  - mode: 'train' or 'test' to indicate if the model is currently
+   *      being trained or tested.  During training, the current batch
+   *      mean and variance will be used to normalize the inputs, while
+   *      during testing, the exponential average of the mean and
+   *      variance over all previous batches will be used.
+   *  - ema_mean: Exponential moving average of the mean, of
+   *      shape (C, 1).
+   *  - ema_var: Exponential moving average of the variance, of
+   *      shape (C, 1).
+   *  - mu: Momentum value for moving averages.
+   *      Typical values are in the range of [0.9, 0.999].
+   *  - epsilon: Smoothing term to avoid divide by zero errors.
+   *      Typical values are in the range of [1e-5, 1e-3].
+   *
+   * Outputs:
+   *  - out: Outputs, of shape (N, C*Hin*Win).
+   *  - ema_mean_upd: Updated exponential moving average of the mean,
+   *      of shape (C, 1).
+   *  - ema_var_upd: Updated exponential moving average of the variance,
+   *      of shape (C, 1).
+   *  - cache_mean: Cache of the batch mean, of shape (C, 1).
+   *      Note: This is used for performance during training.
+   *  - cache_var: Cache of the batch variance, of shape (C, 1).
+   *      Note: This is used for performance during training.
+   *  - cache_norm: Cache of the normalized inputs, of
+   *      shape (C, N*Hin*Win). Note: This is used for performance
+   *      during training.
+   */
   def forward(dmlScript: StringBuilder, isPrediction: Boolean): Unit = {
     val mode = if(isPrediction) "\"test\"" else "\"train\""
     invokeForward(dmlScript, List[String](out, withSuffix(ema_mean), withSuffix(ema_var), withSuffix(cache_mean), withSuffix(cache_var), withSuffix(cache_norm)), 
         X, gamma, beta, numChannels, Hin, Win, mode, ema_mean, ema_var,  ma_fraction, eps)  
   }
-  
+  /*
+   * Computes the backward pass for a 2D (spatial) batch normalization
+   * layer.
+   *
+   * Inputs:
+   *  - dout: Gradient wrt `out` from upstream, of shape (N, C*Hin*Win).
+   *  - out: Outputs from the forward pass, of shape (N, C*Hin*Win).
+   *  - ema_mean_upd: Updated exponential moving average of the mean
+   *      from the forward pass, of shape (C, 1).
+   *  - ema_var_upd: Updated exponential moving average of the variance
+   *      from the forward pass, of shape (C, 1).
+   *  - cache_mean: Cache of the batch mean from the forward pass, of
+   *      shape (C, 1).  Note: This is used for performance during
+   *      training.
+   *  - cache_var: Cache of the batch variance from the forward pass,
+   *      of shape (C, 1).  Note: This is used for performance during
+   *      training.
+   *  - cache_norm: Cache of the normalized inputs from the forward
+   *      pass, of shape (C, N*Hin*Win).  Note: This is used for
+   *      performance during training.
+   *  - X: Input data matrix to the forward pass, of
+   *      shape (N, C*Hin*Win).
+   *  - gamma: Scale parameters, of shape (C, 1).
+   *  - beta: Shift parameters, of shape (C, 1).
+   *  - C: Number of input channels (dimensionality of input depth).
+   *  - Hin: Input height.
+   *  - Win: Input width.
+   *  - mode: 'train' or 'test' to indicate if the model is currently
+   *      being trained or tested.  During training, the current batch
+   *      mean and variance will be used to normalize the inputs, while
+   *      during testing, the exponential average of the mean and
+   *      variance over all previous batches will be used.
+   *  - ema_mean: Exponential moving average of the mean, of
+   *      shape (C, 1).
+   *  - ema_var: Exponential moving average of the variance, of
+   *      shape (C, 1).
+   *  - mu: Momentum value for moving averages.
+   *      Typical values are in the range of [0.9, 0.999].
+   *  - epsilon: Smoothing term to avoid divide by zero errors.
+   *      Typical values are in the range of [1e-5, 1e-3].
+   *
+   * Outputs:
+   *  - dX: Gradient wrt `X`, of shape (N, C*Hin*Win).
+   *  - dgamma: Gradient wrt `W`, of shape (C, 1).
+   *  - dbeta: Gradient wrt `b`, of shape (C, 1).
+   *
+   */
   def backward(dmlScript: StringBuilder, outSuffix:String): Unit = {
     invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id, dgamma, dbeta), dout, out, ema_mean, ema_var, cache_mean, cache_var, cache_norm, X, gamma, beta, numChannels, 
           Hin, Win, "\"train\"", ema_mean, ema_var,  ma_fraction, eps)
@@ -202,6 +321,7 @@ class Scale(val param:LayerParameter, val id:Int, val net:CaffeNetwork) extends 
   if(!param.getScaleParam.getBiasTerm) throw new LanguageException("Add \"scale_param { bias_term: true }\" to the layer " + param.getName)
   override def sourceFileName = null
   override def init(dmlScript: StringBuilder): Unit = {}
+  // TODO: Generalize this !!
   def forward(dmlScript: StringBuilder, isPrediction: Boolean): Unit = assign(dmlScript, out, X)
   override def backward(dmlScript: StringBuilder, outSuffix:String): Unit = assignDoutToDX(dmlScript, outSuffix)
 }
@@ -227,7 +347,11 @@ class Elementwise(val param:LayerParameter, val id:Int, val net:CaffeNetwork) ex
 class Concat(val param:LayerParameter, val id:Int, val net:CaffeNetwork) extends CaffeLayer {
   override def sourceFileName = null
   override def init(dmlScript: StringBuilder): Unit = {}
-  var _childLayers:List[CaffeLayer] = null 
+  var _childLayers:List[CaffeLayer] = null
+  
+  // Utility function to create string of format:
+  // fn(fn(fn(_childLayers(0).out, _childLayers(1).out), _childLayers(2).out), ...)
+  // This is useful because we do not support multi-input cbind and rbind in DML.
   def _getMultiFn(fn:String):String = {
     if(_childLayers == null) _childLayers = net.getBottomLayers(param.getName).map(l => net.getCaffeLayer(l)).toList
     var tmp = fn + "(" + _childLayers(0).out + ", " + _childLayers(1).out + ")"
@@ -236,42 +360,73 @@ class Concat(val param:LayerParameter, val id:Int, val net:CaffeNetwork) extends
     }
     tmp
   }
+  
+  /*
+   * Computes the forward pass for a concatenation layer.
+   *
+   * Inputs:
+   *  - n_i * c_i * h * w for each input blob i from 1 to K.
+   *
+   * Outputs:
+   *  - out: Outputs, of shape 
+   *    - if axis = 0: (n_1 + n_2 + ... + n_K) * c_1 * h * w, and all input c_i should be the same.
+   *    - if axis = 1: n_1 * (c_1 + c_2 + ... + c_K) * h * w, and all input n_i should be the same.
+   */
   override def forward(dmlScript: StringBuilder, isPrediction: Boolean): Unit = {
     if(param.getConcatParam.getAxis == 0) {
       // rbind the inputs
       assign(dmlScript, out, _getMultiFn("rbind"))
     }
     else if(param.getConcatParam.getAxis == 1) {
-      dmlScript.append("# TODO: Channel-wise concatenation forward of " + _getMultiFn("") + "\n")
-      // throw new DMLRuntimeException("Channel-wise concatenation is not supported")
+      // cbind the inputs
+      assign(dmlScript, out, _getMultiFn("cbind"))
     }
     else {
       throw new DMLRuntimeException("Incorrect axis parameter for the layer " + param.getName)
     }
   }
+  
   def startIndex(outSuffix:String):String = "concat_start_index_" + outSuffix
   def endIndex(outSuffix:String):String = "concat_start_index_" + outSuffix
   def getConcatIndex(bottomLayerOut:String, outSuffix:String):String = 
      startIndex(outSuffix) + " = " + endIndex(outSuffix) + " + 1; " +
      endIndex(outSuffix) + " = " + startIndex(outSuffix) + " + nrow(" + bottomLayerOut + "); "
+  
+  /*
+   * Computes the backward pass for a concatenation layer.
+   *
+   * The top gradients are deconcatenated back to the inputs.
+   *
+   */
   override def backward(dmlScript: StringBuilder, outSuffix:String): Unit = {
+    val bottomLayers = net.getBottomLayers(param.getName).map(l => net.getCaffeLayer(l)).toList
+    val dOutVar = "dOut" + id  + outSuffix
+    // concat_end_index = 0
+    dmlScript.append(dOutVar + " = " + dout + "; concat_end_index" + outSuffix + " = 0; ")
+    
+    val indexString = "concat_start_index" + outSuffix + " : concat_end_index" + outSuffix
+    val doutVarAssignment = if(param.getConcatParam.getAxis == 0) " = " + dOutVar + "[" +  indexString + ", ]; "
+                            else " = " + dOutVar + "[," +  indexString + " ]; "
+    
+    // concat_start_index = concat_end_index + 1
+    // concat_end_index = concat_start_index + $$ - 1
+    val initializeIndexString = "concat_start_index" + outSuffix + " = concat_end_index" + outSuffix + " + 1; concat_end_index" + outSuffix + 
+        " = concat_start_index" + outSuffix + " + $$ - 1; "
     if(param.getConcatParam.getAxis == 0) {
-      // rbind the inputs
-      dmlScript.append("# TODO: Backward of concat layer\n")
-      dmlScript.append("dOut" + id  + outSuffix + " = " + dout)
-      val bottomLayerIDsAndOut = net.getBottomLayers(param.getName).map(l => (net.getCaffeLayer(l).id, net.getCaffeLayer(l).out)).toList
-      dmlScript.append(endIndex(outSuffix) + " = 0; " + getConcatIndex(bottomLayerIDsAndOut(0)._2, outSuffix))
-      bottomLayerIDsAndOut.map(x  => dmlScript.append( dX(x._1) + outSuffix + " = " + dout 
-          + "[" + startIndex(outSuffix) + ":" + endIndex(outSuffix) + ",]" + "; " + getConcatIndex(x._2, outSuffix)))
-      dmlScript.append("\n")
-    }
-    else if(param.getConcatParam.getAxis == 1) {
-      dmlScript.append("# TODO: Channel-wise concatenation backward of " + _getMultiFn("") + "\n")
-      // throw new DMLRuntimeException("Channel-wise concatenation is not supported")
+      bottomLayers.map(l => {
+        dmlScript.append(initializeIndexString.replaceAll("$$", nrow(l.out)))
+                  // X1 = Z[concat_start_index:concat_end_index,]
+                 .append( dX(l.id) + outSuffix + doutVarAssignment)
+      })
     }
     else {
-      throw new DMLRuntimeException("Incorrect axis parameter for the layer " + param.getName)
+      bottomLayers.map(l => {
+        dmlScript.append(initializeIndexString.replaceAll("$$", int_mult(l.outputShape._1, l.outputShape._2, l.outputShape._3) ))
+                  // X1 = Z[concat_start_index:concat_end_index,]
+                 .append( dX(l.id) + outSuffix + doutVarAssignment)
+      })
     }
+    dmlScript.append("\n")
   }
   def sumChannels():String = {
     val channels = _childLayers.map(_.outputShape._1)
@@ -342,10 +497,35 @@ class SoftmaxWithLoss(val param:LayerParameter, val id:Int, val net:CaffeNetwork
 }
 
 class ReLU(val param:LayerParameter, val id:Int, val net:CaffeNetwork) extends CaffeLayer {
+  // TODO: Leaky ReLU: negative_slope [default 0]: specifies whether to leak the negative part by multiplying it with the slope value rather than setting it to 0.
   // -------------------------------------------------
   override def sourceFileName = "relu"
   override def init(dmlScript:StringBuilder) = { }
+  /*
+   * Computes the forward pass for a ReLU nonlinearity layer.
+   *
+   * Performs an element-wise evaluation of `f(input) = max(0, input)`.
+   *
+   * Inputs:
+   *  - X: Inputs, of shape (any, any).
+   *
+   * Outputs:
+   *  - out: Outputs, of same shape as `X`.
+   */
   override def forward(dmlScript:StringBuilder, isPrediction:Boolean) = invokeForward(dmlScript, List[String](out), X)
+  /*
+   * Computes the backward pass for a ReLU nonlinearity layer.
+   *
+   * Essentially performs a pass-through of the upstream gradient
+   * for cells > 0.
+   *
+   * Inputs:
+   *  - dout: Gradient wrt `out` from upstream, of same shape as `X`.
+   *  - X: Previous input data matrix, of shape (any, any).
+   *
+   * Outputs:
+   *  - dX: Gradient wrt `X`, of same shape as `X`.
+   */
   override def backward(dmlScript:StringBuilder, outSuffix:String) = invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id), dout, X)
   // -------------------------------------------------
 }
@@ -354,29 +534,114 @@ class Dropout(val param:LayerParameter, val id:Int, val net:CaffeNetwork) extend
   // -------------------------------------------------
   override def sourceFileName = "dropout"
   override def init(dmlScript:StringBuilder) = { }
+  /*
+   * Computes the forward pass for an inverted dropout layer.
+   *
+   * Drops the inputs element-wise with a probability p, and divides
+   * by p to maintain the expected values of those inputs (which are
+   * the outputs of neurons) at test time.
+   *
+   * Inputs:
+   *  - X: Inputs, of shape (any, any).
+   *  - p: Probability of keeping a neuron output.
+   *  - seed: [Optional: -1] Random number generator seed to allow for
+   *      deterministic evaluation.  Set to -1 for a random seed.
+   *
+   * Outputs:
+   *  - out: Outputs, of same shape as `X`.
+   *  - mask: Dropout mask used to compute the output.
+   */
   override def forward(dmlScript:StringBuilder, isPrediction:Boolean) =
     if(!isPrediction)
       invokeForward(dmlScript, List[String](out, mask), X, p, seed)
     else
       assign(dmlScript, out, X) // Forward-pass not required to be performed during prediction for Dropout layer
-  override def backward(dmlScript:StringBuilder, outSuffix:String) = invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id), dout, X, p, mask)
+  /*
+   * Computes the backward pass for an inverted dropout layer.
+   *
+   * Applies the mask to the upstream gradient, and divides by p to
+   * maintain the expected values at test time.
+   *
+   * Inputs:
+   *  - dout: Gradient wrt `out`, of same shape as `X`.
+   *  - X: Inputs, of shape (any, any).
+   *  - p: Probability of keeping a neuron output.
+   *  - mask: Dropout mask used to compute the output.
+   *
+   * Outputs:
+   *  - dX: Gradient wrt `X`, of same shape as `X`.
+   */
+  override def backward(dmlScript:StringBuilder, outSuffix:String) = invokeBackward(dmlScript, outSuffix, 
+      List[String]("dOut" + id), dout, X, p, mask)
   // -------------------------------------------------
   def mask = "mask" + id
-  def p = param.getDropoutParam.getDropoutRatio.toString
+  // dropout ratio
+  def p = if(param.getDropoutParam.hasDropoutRatio()) param.getDropoutParam.getDropoutRatio.toString else "0.5"
   def seed = "-1"
 }
 
 class InnerProduct(val param:LayerParameter, val id:Int, val net:CaffeNetwork) extends CaffeLayer with HasWeight with HasBias {
   // -------------------------------------------------
+  // TODO: bias_filler [default type: 'constant' value: 0]; bias_term [default true]: specifies whether to learn and apply a set of additive biases to the filter outputs
   override def sourceFileName = "affine"
+  /*
+   * Initialize the parameters of this layer.
+   *
+   * Note: This is just a convenience function, and parameters
+   * may be initialized manually if needed.
+   *
+   * We use the heuristic by He et al., which limits the magnification
+   * of inputs/gradients during forward/backward passes by scaling
+   * unit-Gaussian weights by a factor of sqrt(2/n), under the
+   * assumption of relu neurons.
+   *  - http://arxiv.org/abs/1502.01852
+   *
+   * Inputs:
+   *  - D: Dimensionality of the input features (number of features).
+   *  - M: Number of neurons in this layer.
+   *
+   * Outputs:
+   *  - W: Weights, of shape (D, M).
+   *  - b: Biases, of shape (1, M).
+   */
   override def init(dmlScript:StringBuilder) = invokeInit(dmlScript, List[String](weight, bias), numFeatures, numNeurons)
+  /*
+   * Computes the forward pass for an affine (fully-connected) layer
+   * with M neurons.  The input data has N examples, each with D
+   * features.
+   *
+   * Inputs:
+   *  - X: Inputs, of shape (N, D).
+   *  - W: Weights, of shape (D, M).
+   *  - b: Biases, of shape (1, M).
+   *
+   * Outputs:
+   *  - out: Outputs, of shape (N, M).
+   */
   override def forward(dmlScript:StringBuilder, isPrediction:Boolean) = 
       invokeForward(dmlScript, List[String](out), X, weight, bias)
+  /*
+   * Computes the backward pass for a fully-connected (affine) layer
+   * with M neurons.
+   *
+   * Inputs:
+   *  - dout: Gradient wrt `out` from upstream, of shape (N, M).
+   *  - X: Inputs, of shape (N, D).
+   *  - W: Weights, of shape (D, M).
+   *  - b: Biases, of shape (1, M).
+   *
+   * Outputs:
+   *  - dX: Gradient wrt `X`, of shape (N, D).
+   *  - dW: Gradient wrt `W`, of shape (D, M).
+   *  - db: Gradient wrt `b`, of shape (1, M).
+   */
   override def backward(dmlScript:StringBuilder, outSuffix:String) = 
       invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id, dWeight, dBias), dout, X, weight, bias)
   // -------------------------------------------------
+  // num_output (c_o): the number of filters
   def numNeurons = param.getInnerProductParam.getNumOutput.toString
   def numFeatures = int_mult(bottomLayerOutputShape._1, bottomLayerOutputShape._2, bottomLayerOutputShape._3)
+  // n * c_o * 1 * 1
   override def outputShape = ( param.getInnerProductParam.getNumOutput.toString, "1", "1" )
 }
 
@@ -384,11 +649,65 @@ class MaxPooling(val param:LayerParameter, val id:Int, val net:CaffeNetwork) ext
   // -------------------------------------------------
   override def sourceFileName = "max_pool2d_builtin"
   override def init(dmlScript:StringBuilder) = {}
+  /*
+   * Computes the forward pass for a 2D spatial max pooling layer.
+   * The input data has N examples, each represented as a 3D volume
+   * unrolled into a single vector.
+   *
+   * This implementation uses a built-in operator for higher
+   * performance.
+   *
+   * Inputs:
+   *  - X: Inputs, of shape (N, C*Hin*Win).
+   *  - C: Number of input channels (dimensionality of input depth).
+   *  - Hin: Input height.
+   *  - Win: Input width.
+   *  - Hf: Filter height.
+   *  - Wf: Filter width.
+   *  - strideh: Stride over height.
+   *  - stridew: Stride over width.
+   *  - padh: Padding for top and bottom sides.
+   *      A typical value is 0.
+   *  - padw: Padding for left and right sides.
+   *      A typical value is 0.
+   *
+   * Outputs:
+   *  - out: Outputs, of shape (N, C*Hout*Wout).
+   *  - Hout: Output height.
+   *  - Wout: Output width.
+   */
   override def forward(dmlScript:StringBuilder, isPrediction:Boolean) = 
     invokeForward(dmlScript, List[String](out, "ignoreHout_"+id, "ignoreWout_"+id), 
         X, numChannels, Hin, Win, kernel_h, kernel_w, stride_h, stride_w, pad_h, pad_w)
+  /*
+   * Computes the backward pass for a 2D spatial max pooling layer.
+   * The input data has N examples, each represented as a 3D volume
+   * unrolled into a single vector.
+   *
+   * Inputs:
+   *  - dout: Gradient wrt `out` from upstream, of
+   *      shape (N, C*Hout*Wout).
+   *  - Hout: Output height.
+   *  - Wout: Output width.
+   *  - X: Inputs, of shape (N, C*Hin*Win).
+   *  - C: Number of input channels (dimensionality of input depth).
+   *  - Hin: Input height.
+   *  - Win: Input width.
+   *  - Hf: Filter height.
+   *  - Wf: Filter width.
+   *  - strideh: Stride over height.
+   *  - stridew: Stride over width.
+   *  - padh: Padding for top and bottom sides.
+   *      A typical value is 0.
+   *  - padw: Padding for left and right sides.
+   *      A typical value is 0.
+   *
+   * Outputs:
+   *  - dX: Gradient wrt `X`, of shape (N, C*Hin*Win).
+   */
   override def backward(dmlScript:StringBuilder, outSuffix:String) = 
     invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id), dout, Hout, Wout, X, numChannels, Hin, Win, kernel_h, kernel_w, stride_h, stride_w, pad_h, pad_w)
+  // n * c * h_o * w_o, where h_o and w_o are computed in the same way as convolution.
   override def outputShape = ( numChannels, Hout, Wout )
   // -------------------------------------------------
   def Hin = bottomLayerOutputShape._2
@@ -397,29 +716,129 @@ class MaxPooling(val param:LayerParameter, val id:Int, val net:CaffeNetwork) ext
   def Wout =  ConvolutionUtils.getConv2dOutputMap(bottomLayerOutputShape._3, kernel_w, stride_w, pad_w)
   def poolingParam = param.getPoolingParam
   def numChannels = bottomLayerOutputShape._1
+  // kernel_size (or kernel_h and kernel_w): specifies height and width of each filter
   def kernel_h = if(poolingParam.hasKernelH) poolingParam.getKernelH.toString 
                    else poolingParam.getKernelSize.toString 
   def kernel_w = if(poolingParam.hasKernelW) poolingParam.getKernelW.toString 
                    else poolingParam.getKernelSize.toString
+  // stride (or stride_h and stride_w) [default 1]: specifies the intervals at which to apply the filters to the input
   def stride_h = if(poolingParam.hasStrideH) poolingParam.getStrideH.toString 
-                   else poolingParam.getStride.toString
+                   else if(poolingParam.hasStride) poolingParam.getStride.toString
+                   else "1"
   def stride_w = if(poolingParam.hasStrideW) poolingParam.getStrideW.toString 
-                   else poolingParam.getStride.toString
+                   else if(poolingParam.hasStride) poolingParam.getStride.toString
+                   else "1"
+  // pad (or pad_h and pad_w) [default 0]: specifies the number of pixels to (implicitly) add to each side of the input
   def pad_h =   if(poolingParam.hasPadH) poolingParam.getPadH.toString 
-                   else poolingParam.getPad.toString
+                   else if(poolingParam.hasPad) poolingParam.getPad.toString
+                   else "0"
   def pad_w =   if(poolingParam.hasPadW) poolingParam.getPadW.toString 
-                   else poolingParam.getPad.toString
+                   else if(poolingParam.hasPad) poolingParam.getPad.toString
+                   else "0"
 }
 
 class Convolution(val param:LayerParameter, val id:Int, val net:CaffeNetwork) extends CaffeLayer with HasWeight with HasBias {
   // -------------------------------------------------
   override def sourceFileName = "conv2d_builtin";
+  /*
+   * Initialize the parameters of this layer.
+   *
+   * Note: This is just a convenience function, and parameters
+   * may be initialized manually if needed.
+   *
+   * We use the heuristic by He et al., which limits the magnification
+   * of inputs/gradients during forward/backward passes by scaling
+   * unit-Gaussian weights by a factor of sqrt(2/n), under the
+   * assumption of relu neurons.
+   *  - http://arxiv.org/abs/1502.01852
+   *
+   * Inputs:
+   *  - F: Number of filters.
+   *  - C: Number of input channels (dimensionality of depth).
+   *  - Hf: Filter height.
+   *  - Wf: Filter width.
+   *
+   * Outputs:
+   *  - W: Weights, of shape (F, C*Hf*Wf).
+   *  - b: Biases, of shape (F, 1).
+   */
   override def init(dmlScript:StringBuilder) = invokeInit(dmlScript, List[String](weight, bias), numKernels, numChannels, kernel_h, kernel_w)
+  /*
+   * Computes the forward pass for a 2D spatial convolutional layer with
+   * F filters.  The input data has N examples, each represented as a 3D
+   * volume unrolled into a single vector.
+   *
+   * This implementation uses a built-in operator for higher
+   * performance.
+   *
+   * Inputs:
+   *  - X: Inputs, of shape (N, C*Hin*Win).
+   *  - W: Weights, of shape (F, C*Hf*Wf).
+   *  - b: Biases, of shape (F, 1).
+   *  - C: Number of input channels (dimensionality of depth).
+   *  - Hin: Input height.
+   *  - Win: Input width.
+   *  - Hf: Filter height.
+   *  - Wf: Filter width.
+   *  - strideh: Stride over height.
+   *  - stridew: Stride over width.
+   *  - padh: Padding for top and bottom sides.
+   *      For same output height as input, set `padh = (Hf - 1) / 2`,
+   *      assuming `strideh = 1`.
+   *      More generally, `padh = (Hin*(strideh-1) + Hf - strideh) / 2`
+   *      preserves the spatial dimensions of the input.
+   *  - padw: Padding for left and right sides.
+   *      For same output width as input, set `padw = (Wf - 1) / 2`,
+   *      assuming `stridew = 1`.
+   *      More generally, `padw = (Win*(stridew-1) + Wf - stridew) / 2`
+   *      preserves the spatial dimensions of the input.
+   *
+   * Outputs:
+   *  - out: Outputs, of shape (N, F*Hout*Wout).
+   *  - Hout: Output height.
+   *  - Wout: Output width.
+   */
   override def forward(dmlScript:StringBuilder, isPrediction:Boolean) = 
     invokeForward(dmlScript, List[String](out, "ignoreHout_"+id, "ignoreWout_"+id), 
         X, weight, bias, numChannels, Hin, Win, kernel_h, kernel_w, stride_h, stride_w, pad_h, pad_w)
+  /*
+   * Computes the backward pass for a 2D spatial convolutional layer
+   * with F filters.
+   *
+   * Inputs:
+   *  - dout: Gradient wrt `out` from upstream, of
+   *      shape (N, F*Hout*Wout).
+   *  - Hout: Output height.
+   *  - Wout: Output width.
+   *  - X: Inputs, of shape (N, C*Hin*Win).
+   *  - W: Weights, of shape (F, C*Hf*Wf).
+   *  - b: Biases, of shape (F, 1).
+   *  - C: Number of input channels (dimensionality of depth).
+   *  - Hin: Input height.
+   *  - Win: Input width.
+   *  - Hf: Filter height.
+   *  - Wf: Filter width.
+   *  - strideh: Stride over height.
+   *  - stridew: Stride over width.
+   *  - padh: Padding for top and bottom sides.
+   *      For same output height as input, set `padh = (Hf - 1) / 2`,
+   *      assuming `strideh = 1`.
+   *      More generally, `padh = (Hin*(strideh-1) + Hf - strideh) / 2`
+   *      preserves the spatial dimensions of the input.
+   *  - padw: Padding for left and right sides.
+   *      For same output width as input, set `padw = (Wf - 1) / 2`,
+   *      assuming `stridew = 1`.
+   *      More generally, `padw = (Win*(stridew-1) + Wf - stridew) / 2`
+   *      preserves the spatial dimensions of the input.
+   *
+   * Outputs:
+   *  - dX: Gradient wrt `X`, of shape (N, C*Hin*Win).
+   *  - dW: Gradient wrt `W`, of shape (F, C*Hf*Wf).
+   *  - db: Gradient wrt `b`, of shape (F, 1).
+   */
   override def backward(dmlScript:StringBuilder, outSuffix:String) = 
     invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id, dWeight, dBias), dout, Hout, Wout, X, weight, bias, numChannels, Hin, Win, kernel_h, kernel_w, stride_h, stride_w, pad_h, pad_w)
+  // n * c_o * h_o * w_o, where h_o = (h_i + 2 * pad_h - kernel_h) / stride_h + 1 and w_o likewise.
   override def outputShape = ( numKernels, Hout, Wout )
   // -------------------------------------------------
   def numChannels = bottomLayerOutputShape._1
@@ -429,19 +848,23 @@ class Convolution(val param:LayerParameter, val id:Int, val net:CaffeNetwork) ex
   def Wout =  ConvolutionUtils.getConv2dOutputMap(bottomLayerOutputShape._3, kernel_w, stride_w, pad_w)
   // -------------------------------------------------
   def convParam = param.getConvolutionParam
+  // num_output (c_o): the number of filters
   def numKernels = convParam.getNumOutput.toString
+  // kernel_size (or kernel_h and kernel_w): specifies height and width of each filter
   def kernel_h = if(convParam.hasKernelH) convParam.getKernelH.toString 
                    else if(convParam.getKernelSizeCount > 0)  convParam.getKernelSize(0).toString 
                    else throw new LanguageException("Incorrect kernel parameters")
   def kernel_w = if(convParam.hasKernelW) convParam.getKernelW.toString 
                    else if(convParam.getKernelSizeCount > 0)  convParam.getKernelSize(0).toString 
                    else throw new LanguageException("Incorrect kernel parameters")
+  // stride (or stride_h and stride_w) [default 1]: specifies the intervals at which to apply the filters to the input
   def stride_h = if(convParam.hasStrideH) convParam.getStrideH.toString 
                    else if(convParam.getStrideCount > 0)  convParam.getStride(0).toString 
                    else "1"
   def stride_w = if(convParam.hasStrideW) convParam.getStrideW.toString 
                    else if(convParam.getStrideCount > 0)  convParam.getStride(0).toString 
                    else "1"
+  // pad (or pad_h and pad_w) [default 0]: specifies the number of pixels to (implicitly) add to each side of the input
   def pad_h =   if(convParam.hasPadH) convParam.getPadH.toString 
                    else if(convParam.getPadCount > 0)  convParam.getPad(0).toString 
                    else "0"
@@ -452,36 +875,129 @@ class Convolution(val param:LayerParameter, val id:Int, val net:CaffeNetwork) ex
 
 class DeConvolution(val param:LayerParameter, val id:Int, val net:CaffeNetwork) extends CaffeLayer with HasWeight with HasBias {
   override def sourceFileName: String = "conv2d_transpose"
+  /*
+   * Utility function to initialize the parameters of this layer.
+   *
+   * We use the heuristic by He et al., which limits the magnification
+   * of inputs/gradients during forward/backward passes by scaling
+   * unit-Gaussian weights by a factor of sqrt(2/n), under the
+   * assumption of relu neurons.
+   *  - http://arxiv.org/abs/1502.01852
+   *
+   * Inputs:
+   *  - F: Number of filters.
+   *  - C: Number of input channels (dimensionality of depth).
+   *  - Hf: Filter height.
+   *  - Wf: Filter width.
+   *
+   * Outputs:
+   *  - W: Weights, of shape (F, C*Hf*Wf).
+   *  - b: Biases, of shape (F, 1).
+   */
   override def init(dmlScript: StringBuilder): Unit = 
     invokeInit(dmlScript, List[String](weight, bias), numKernels, numChannels, kernel_h, kernel_w)
+    
+  /*
+   * Computes the forward pass for a 2D spatial transpose convolutional
+   * layer with F filters.  The input data has N examples, each
+   * represented as a 3D tensor flattened into a single vector.
+   *
+   * Inputs:
+   *  - X: Inputs, of shape (N, C*Hin*Win).
+   *  - W: Weights, of shape (F, C*Hf*Wf).
+   *  - b: Biases, of shape (F, 1).
+   *  - C: Number of input channels (dimensionality of depth).
+   *  - Hin: Input height.
+   *  - Win: Input width.
+   *  - Hf: Filter height.
+   *  - Wf: Filter width.
+   *  - strideh: Stride over height.
+   *  - stridew: Stride over width.
+   *  - padh: Padding for top and bottom sides.
+   *  - padw: Padding for left and right sides.
+   *  - out_padh: extra padding for top side. This should 
+   *      lie in [0, strideh-1].
+   *  - out_padw: extra padding for right side. This should
+   *      lie in [0, stridew-1].
+   *
+   * Outputs:
+   *  - out: Outputs, of shape (N, F*Hout*Wout).
+   *  - Hout: Output height.
+   *  - Wout: Output width.
+   */
   override def forward(dmlScript: StringBuilder,isPrediction: Boolean): Unit =
     invokeForward(dmlScript, List[String](out, "ignoreHout_"+id, "ignoreWout_"+id), 
-        X, weight, bias, numChannels, Hin, Win, kernel_h, kernel_w, stride_h, stride_w, pad_h, pad_w)
+        X, weight, bias, numChannels, Hin, Win, kernel_h, kernel_w, stride_h, stride_w, pad_h, pad_w, "0", "0")
+        
+  /*
+   * Computes the backward pass for a 2D spatial transpose
+   * convolutional layer with F filters.
+   *
+   * Inputs:
+   *  - dout: Gradient wrt `out` from upstream, of
+   *      shape (N, F*Hout*Wout).
+   *  - Hout: Output height.
+   *  - Wout: Output width.
+   *  - X: Inputs, of shape (N, C*Hin*Win).
+   *  - W: Weights, of shape (F, C*Hf*Wf).
+   *  - b: Biases, of shape (F, 1).
+   *  - C: Number of input channels (dimensionality of depth).
+   *  - Hin: Input height.
+   *  - Win: Input width.
+   *  - Hf: Filter height.
+   *  - Wf: Filter width.
+   *  - strideh: Stride over height.
+   *  - stridew: Stride over width.
+   *  - padh: Padding for top and bottom sides.
+   *  - padw: Padding for left and right sides.
+   *
+   * Outputs:
+   *  - dX: Gradient wrt `X`, of shape (N, C*Hin*Win).
+   *  - dW: Gradient wrt `W`, of shape (F, C*Hf*Wf).
+   *  - db: Gradient wrt `b`, of shape (F, 1).
+   */
   override def backward(dmlScript:StringBuilder, outSuffix:String) = 
-    invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id, dWeight, dBias), dout, Hout, Wout, X, weight, bias, numChannels, Hin, Win, kernel_h, kernel_w, stride_h, stride_w, pad_h, pad_w)
+    invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id, dWeight, dBias), 
+        dout, Hout, Wout, X, weight, bias, numChannels, Hin, Win, kernel_h, kernel_w, stride_h, stride_w, pad_h, pad_w)
+  // n * c_o * h_o * w_o, where h_o = (h_i + 2 * pad_h - kernel_h) / stride_h + 1 and w_o likewise.
   override def outputShape = ( numChannels, Hout, Wout )
   // -------------------------------------------------
   def numChannels = bottomLayerOutputShape._1
   def Hin = bottomLayerOutputShape._2
   def Win = bottomLayerOutputShape._3
-  // TODO: Pritvi ---> Please double check this !!
-  def Hout = ConvolutionUtils.getConv2dOutputMap(bottomLayerOutputShape._2, kernel_h, stride_h, pad_h) 
-  def Wout =  ConvolutionUtils.getConv2dOutputMap(bottomLayerOutputShape._3, kernel_w, stride_w, pad_w)
+  // Hout = strideh * (Hin-1) - 2*padh + Hf + out_padh
+  def Hout:String =  try { 
+    (stride_h.toInt * (Hin.toInt-1) - 2*pad_h.toInt + kernel_h.toInt).toString()
+  }
+  catch { 
+    case _:Throwable => stride_h + " * " +  "(" + Hin + "-1) - 2*" + pad_h + " + " + kernel_h
+  }
+  // Wout = stridew * (Win-1) - 2*padw + Wf + out_padw
+  def Wout:String =  try { 
+    (stride_w.toInt * (Win.toInt-1) - 2*pad_w.toInt + kernel_w.toInt).toString()
+  }
+  catch { 
+    case _:Throwable => stride_w + " * " +  "(" + Win + "-1) - 2*" + pad_w + " + " + kernel_w
+  }
   // -------------------------------------------------
   def convParam = param.getConvolutionParam
+  // num_output (c_o): the number of filters
   def numKernels = convParam.getNumOutput.toString
+  // kernel_size (or kernel_h and kernel_w): specifies height and width of each filter
   def kernel_h = if(convParam.hasKernelH) convParam.getKernelH.toString 
                    else if(convParam.getKernelSizeCount > 0)  convParam.getKernelSize(0).toString 
                    else throw new LanguageException("Incorrect kernel parameters")
   def kernel_w = if(convParam.hasKernelW) convParam.getKernelW.toString 
                    else if(convParam.getKernelSizeCount > 0)  convParam.getKernelSize(0).toString 
                    else throw new LanguageException("Incorrect kernel parameters")
+  // stride (or stride_h and stride_w) [default 1]: specifies the intervals at which to apply the filters to the input
   def stride_h = if(convParam.hasStrideH) convParam.getStrideH.toString 
                    else if(convParam.getStrideCount > 0)  convParam.getStride(0).toString 
                    else "1"
   def stride_w = if(convParam.hasStrideW) convParam.getStrideW.toString 
                    else if(convParam.getStrideCount > 0)  convParam.getStride(0).toString 
                    else "1"
+  // pad (or pad_h and pad_w) [default 0]: specifies the number of pixels to (implicitly) add to each side of the input
   def pad_h =   if(convParam.hasPadH) convParam.getPadH.toString 
                    else if(convParam.getPadCount > 0)  convParam.getPad(0).toString 
                    else "0"

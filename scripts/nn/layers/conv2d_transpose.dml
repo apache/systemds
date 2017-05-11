@@ -222,11 +222,11 @@ init_bilinear = function(int C, int K)
    * of C*K*K 0s. In the above example, C*K^2 = 48 (e.g., 32 trailing
    * 0s in the first row and 16 leading 0s in the second row).
    *
-   * The 'if' statement is required because for the special case of C=1
-   * we do not need to intersperse with 0s (no question of being channel
-   * -wise independent since we have only 1 channel).
+   * Note that, in the special case of C=1 we do not need to
+   * intersperse with 0s (no question of being channel-wise independent
+   * since we have only 1 channel).
    */
-  if(C > 1){
+  #if(C > 1){
     /*
      * Append C*K*K trailing 0s to the K*K kernel and replicate the
      * resulting row C times
@@ -242,7 +242,7 @@ init_bilinear = function(int C, int K)
      */
     repl_weights_row = matrix(repl_weights, rows=1, cols=C*(C+1)*K^2)
     W = matrix(repl_weights_row[1,1:(C*K)^2], rows=C, cols=C*K^2)
-  }else W = weights
+  #}else W = weights
 
   b = matrix(0, rows=C, cols=1)
 }

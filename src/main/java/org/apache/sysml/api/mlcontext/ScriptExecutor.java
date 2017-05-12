@@ -26,6 +26,7 @@ import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.ScriptExecutorUtils;
+import org.apache.sysml.api.DMLScript.DMLOptions;
 import org.apache.sysml.api.jmlc.JMLCUtils;
 import org.apache.sysml.api.mlcontext.MLContext.ExplainLevel;
 import org.apache.sysml.conf.ConfigurationManager;
@@ -271,7 +272,7 @@ public class ScriptExecutor {
 		DMLScript.STATISTICS = oldStatistics;
 		DMLScript.FORCE_ACCELERATOR = oldForceGPU;
 		DMLScript.USE_ACCELERATOR = oldGPU;
-		DMLScript.STATISTICS_COUNT = 10;
+		DMLScript.STATISTICS_COUNT = DMLOptions.defaultOptions.statsCount;
 	}
 
 	/**
@@ -338,8 +339,9 @@ public class ScriptExecutor {
 	/**
 	 * Sets the script in the ScriptExecutor, checks that the script has a type
 	 * and string, sets the ScriptExecutor in the script, sets the script string
-	 * in the Spark Monitor, and globally sets the script type.
-	 * Also does GPU initialization
+	 * in the Spark Monitor, globally sets the script type, sets global flags,
+	 * and resets statistics if needed.
+	 * 
 	 * @param script
 	 *            the DML or PYDML script to execute
 	 */
@@ -350,6 +352,9 @@ public class ScriptExecutor {
 		// Set global variable indicating the script type
 		DMLScript.SCRIPT_TYPE = script.getScriptType();
 		setGlobalFlags();
+		if (statistics) {
+			Statistics.reset();
+		}
 	}
 
 	/**

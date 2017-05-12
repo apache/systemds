@@ -31,7 +31,6 @@ import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.SparkSession;
 import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.api.MLContextProxy;
 import org.apache.sysml.api.jmlc.JMLCUtils;
 import org.apache.sysml.conf.ConfigurationManager;
@@ -117,6 +116,12 @@ public class MLContext {
 	private ExplainLevel explainLevel = null;
 
 	/**
+	 * The runtime platform on which to execute. By default, MLContext runs on
+	 * {@code ExecutionType.DRIVER_AND_SPARK}.
+	 */
+	private ExecutionType executionType = ExecutionType.DRIVER_AND_SPARK;
+
+	/**
 	 * Whether or not all values should be maintained in the symbol table
 	 * after execution.
 	 */
@@ -158,6 +163,38 @@ public class MLContext {
 			}
 		}
 	};
+
+	/**
+	 * The different types of execution environments supported by SystemML. The
+	 * default execution type is {@code DRIVER_AND_SPARK}. {@code DRIVER} refers
+	 * to all operations occurring in the local driver JVM. {@code SPARK} refers
+	 * to all operations occurring on Spark. {@code HADOOP} refers to all
+	 * operations occurring on Hadoop. {@code DRIVER_AND_SPARK} refers to
+	 * operations occurring in the local driver JVM and on Spark when
+	 * appropriate. {@code DRIVER_AND_HADOOP} refers to operations occurring in
+	 * the local driver JVM and on Hadoop when appropriate.
+	 *
+	 */
+	public enum ExecutionType {
+		DRIVER, SPARK, HADOOP, DRIVER_AND_SPARK, DRIVER_AND_HADOOP;
+
+		public DMLScript.RUNTIME_PLATFORM getRuntimePlatform() {
+			switch (this) {
+			case DRIVER:
+				return DMLScript.RUNTIME_PLATFORM.SINGLE_NODE;
+			case SPARK:
+				return DMLScript.RUNTIME_PLATFORM.SPARK;
+			case HADOOP:
+				return DMLScript.RUNTIME_PLATFORM.HADOOP;
+			case DRIVER_AND_SPARK:
+				return DMLScript.RUNTIME_PLATFORM.HYBRID_SPARK;
+			case DRIVER_AND_HADOOP:
+				return DMLScript.RUNTIME_PLATFORM.HYBRID;
+			default:
+				return DMLScript.RUNTIME_PLATFORM.HYBRID_SPARK;
+			}
+		}
+	}
 
 	/**
 	 * Retrieve the currently active MLContext. This is used internally by
@@ -231,8 +268,7 @@ public class MLContext {
 		}
 
 		this.spark = spark;
-		// by default, run in hybrid Spark mode for optimal performance
-		DMLScript.rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK;
+		DMLScript.rtplatform = executionType.getRuntimePlatform();
 
 		activeMLContext = this;
 		MLContextProxy.setActive(true);
@@ -275,6 +311,7 @@ public class MLContext {
 	 */
 	public MLResults execute(Script script) {
 		ScriptExecutor scriptExecutor = new ScriptExecutor();
+		scriptExecutor.setExecutionType(executionType);
 		scriptExecutor.setExplain(explain);
 		scriptExecutor.setExplainLevel(explainLevel);
 		scriptExecutor.setGPU(gpu);
@@ -703,4 +740,25 @@ public class MLContext {
 	public int getStatisticsMaxHeavyHitters() {
 		return statisticsMaxHeavyHitters;
 	}
+
+	/**
+	 * Obtain the current execution environment.
+	 * 
+	 * @return the execution environment
+	 */
+	public ExecutionType getExecutionType() {
+		return executionType;
+	}
+
+	/**
+	 * Set the execution environment.
+	 * 
+	 * @param executionType
+	 *            the execution environment
+	 */
+	public void setExecutionType(ExecutionType executionType) {
+		DMLScript.rtplatform = executionType.getRuntimePlatform();
+		this.executionType = executionType;
+	}
+
 }

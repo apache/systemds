@@ -99,6 +99,18 @@ trait CaffeLayer extends BaseDMLGenerator {
   def invokeForward(dmlScript:StringBuilder, returnVariables:List[String], arguments:String*):Unit = {
     invoke(dmlScript, sourceFileName + "::", returnVariables, "forward", arguments.toList)
   }
+  // -----------------------------------------------------------------------------------
+  // All the layers (with the exception of Concat) call one of the below methods in the backward function.
+  // The preceding layer expects that 'dX(bottomLayerID) + outSuffix' is assigned. 
+  // l1 <--- dX(1) <-----|
+  //                     |-- [current layer: dOut3 (computed by backward)] <---- "dOut" + id + outSuffix
+  // l2 <--- dX(2) <-----|
+  // The below functions perform two functions:
+  // 1. Compute backward: either call dml file's backward (for example: invokeBackward) or just propagate next layers errors (assignDoutToDX)
+  // 2. Then make sure that all the preceding layer get the errors using:
+  //        bottomLayerIDs.map(bottomLayerID => dmlScript.append( dX(bottomLayerID) + outSuffix + " = " + "dOut" + id + outSuffix + "; "))
+  
+  // The layers that have a corresponding dml script call this method.
   // Assumption: the first variable of resultVariables is always dX
   def invokeBackward(dmlScript:StringBuilder, outSuffix:String, resultVariables:List[String],  arguments:String*):Unit = {
     invoke(dmlScript, sourceFileName + "::", resultVariables.map(_ + outSuffix), "backward", arguments.toList, false)
@@ -107,6 +119,7 @@ trait CaffeLayer extends BaseDMLGenerator {
     bottomLayerIDs.map(bottomLayerID => dmlScript.append( dX(bottomLayerID) + outSuffix + " = " + resultVariables(0) + outSuffix + "; "))
     dmlScript.append("\n")
   }
+  // On-the-fly layers (such as Scale and Elementwise) call this function to propagate next layers errors to the previous layer
   def assignDoutToDX(dmlScript:StringBuilder, outSuffix:String):Unit = {
     dmlScript.append("dOut" + id  + outSuffix + " = " + dout)
     val bottomLayerIDs = net.getBottomLayers(param.getName).map(l => net.getCaffeLayer(l).id)

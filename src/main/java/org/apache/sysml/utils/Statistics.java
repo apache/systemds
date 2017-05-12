@@ -22,6 +22,7 @@ package org.apache.sysml.utils;
 import java.lang.management.CompilationMXBean;
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
+import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -504,42 +505,94 @@ public class Statistics
 		return _cpInstCounts.get(opcode);
 	}
 
+	/**
+	 * Obtain a string tabular representation of the heavy hitter instructions
+	 * that displays the time, instruction count, and optionally GPU stats about
+	 * each instruction.
+	 * 
+	 * @param num
+	 *            the maximum number of heavy hitters to display
+	 * @return string representing the heavy hitter instructions in tabular
+	 *         format
+	 */
 	@SuppressWarnings("unchecked")
-	public static String getHeavyHitters( int num )
-	{
+	public static String getHeavyHitters(int num) {
 		int len = _cpInstTime.size();
-		if( num <= 0 || len <= 0 )
+		if (num <= 0 || len <= 0)
 			return "-";
-		
-		//get top k via sort
-		Entry<String,Long>[] tmp = _cpInstTime.entrySet().toArray(new Entry[len]);
+
+		// get top k via sort
+		Entry<String, Long>[] tmp = _cpInstTime.entrySet().toArray(new Entry[len]);
 		Arrays.sort(tmp, new Comparator<Entry<String, Long>>() {
-		    public int compare(Entry<String, Long> e1, Entry<String, Long> e2) {
-		        return e1.getValue().compareTo(e2.getValue());
-		    }
+			public int compare(Entry<String, Long> e1, Entry<String, Long> e2) {
+				return e1.getValue().compareTo(e2.getValue());
+			}
 		});
-		
-		//prepare output string
+
+		final String numCol = "#";
+		final String instCol = "Instruction";
+		final String timeSCol = "Time(s)";
+		final String timeNsCol = "Time(ns)";
+		final String countCol = "Count";
+		final String gpuCol = "GPU";
 		StringBuilder sb = new StringBuilder();
-		for( int i=0; i<Math.min(num, len); i++ ){
-			String key = tmp[len-1-i].getKey();
-			sb.append("-- "+(i+1)+") \t");
-			sb.append(key);
-			sb.append(" \t");
-			sb.append(String.format("%.3f", ((double)tmp[len-1-i].getValue())/1000000000));
-			sb.append(" sec \t");
-			sb.append(_cpInstCounts.get(key));
-			sb.append("\t");
+		int numHittersToDisplay = Math.min(num, len);
+		int maxNumLen = String.valueOf(numHittersToDisplay).length();
+		int maxInstLen = instCol.length();
+		int maxTimeSLen = timeSCol.length();
+		int maxTimeNsLen = timeNsCol.length();
+		int maxCountLen = countCol.length();
+		DecimalFormat sFormat = new DecimalFormat("#,##0.000");
+		DecimalFormat nsFormat = new DecimalFormat("#,###");
+		for (int i = 0; i < numHittersToDisplay; i++) {
+			Entry<String, Long> hh = tmp[len - 1 - i];
+			String instruction = hh.getKey();
+			Long timeNs = hh.getValue();
+			double timeS = (double) timeNs / 1000000000.0;
+
+			maxInstLen = Math.max(maxInstLen, instruction.length());
+
+			String timeSString = sFormat.format(timeS);
+			maxTimeSLen = Math.max(maxTimeSLen, timeSString.length());
+
+			String timeNsString = nsFormat.format(timeNs);
+			maxTimeNsLen = Math.max(maxTimeNsLen, timeNsString.length());
+
+			maxCountLen = Math.max(maxCountLen, String.valueOf(_cpInstCounts.get(instruction)).length());
+		}
+		sb.append(String.format("%" + maxNumLen + "s  %-" + maxInstLen + "s  %" + maxTimeSLen + "s  %" + maxTimeNsLen
+				+ "s  %" + maxCountLen + "s", numCol, instCol, timeSCol, timeNsCol, countCol));
+		if (GPUStatistics.DISPLAY_STATISTICS) {
+			sb.append("  ");
+			sb.append(gpuCol);
+		}
+		sb.append("\n");
+		for (int i = 0; i < numHittersToDisplay; i++) {
+			String instruction = tmp[len - 1 - i].getKey();
+
+			Long timeNs = tmp[len - 1 - i].getValue();
+			String timeNsString = nsFormat.format(timeNs);
+
+			double timeS = (double) timeNs / 1000000000.0;
+			String timeSString = sFormat.format(timeS);
+
+			Long count = _cpInstCounts.get(instruction);
+			sb.append(
+					String.format(
+							"%" + maxNumLen + "d  %-" + maxInstLen + "s  %" + maxTimeSLen + "s  %" + maxTimeNsLen
+									+ "s  %" + maxCountLen + "d",
+							(i + 1), instruction, timeSString, timeNsString, count));
 			// Add the miscellaneous timer info
 			if (GPUStatistics.DISPLAY_STATISTICS) {
-				sb.append(GPUStatistics.getStringForCPMiscTimesPerInstruction(key));
+				sb.append("  ");
+				sb.append(GPUStatistics.getStringForCPMiscTimesPerInstruction(instruction));
 			}
 			sb.append("\n");
 		}
-		
+
 		return sb.toString();
 	}
-	
+
 	/**
 	 * Returns the total time of asynchronous JIT compilation in milliseconds.
 	 * 
@@ -715,7 +768,7 @@ public class Statistics
 			sb.append("Total JVM GC count:\t\t" + getJVMgcCount() + ".\n");
 			sb.append("Total JVM GC time:\t\t" + ((double)getJVMgcTime())/1000 + " sec.\n");
 			LibMatrixDNN.appendStatistics(sb);
-			sb.append("Heavy hitter instructions (name, time, count):\n" + getHeavyHitters(maxHeavyHitters));
+			sb.append("Heavy hitter instructions:\n" + getHeavyHitters(maxHeavyHitters));
 		}
 		
 		return sb.toString();

@@ -405,7 +405,7 @@ public class ScriptExecutor {
 	 */
 	protected void executeRuntimeProgram() {
 		try {
-			ScriptExecutorUtils.executeRuntimeProgram(this);
+			ScriptExecutorUtils.executeRuntimeProgram(this, statistics ? statisticsMaxHeavyHitters : 0);
 		} catch (DMLRuntimeException e) {
 			throw new MLContextException("Exception occurred while executing runtime program", e);
 		}

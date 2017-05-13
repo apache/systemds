@@ -20,6 +20,14 @@
 #ifndef _libmatrixdnn_h
 #define _libmatrixdnn_h
 
+#ifdef USE_INTEL_MKL
+	#include <mkl.h>
+	#if INTEL_MKL_VERSION < 20170000
+		// Will throw an error at development time in non-standard settings
+		PLEASE DONOT COMPILE SHARED LIBRARIES WITH OLDER MKL VERSIONS
+	#endif
+#endif
+
 int conv2dBackwardFilterDense(double* inputPtr, double* doutPtr, double* retPtr, int N, int C, int H, int W, int K, int R, int S,
     int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads);
 

@@ -2114,7 +2114,7 @@ $m$ with the intercept or $m+1$ without the intercept.
 
 | Statistic             | Formula |
 | --------------------- | ------------- |
-| $\texttt{PLAIN_R2}_j$ | $$ \displaystyle 1 - \frac{\sum\limits_{i=1}^n \,(y_{i,j} - \mu_{i,j})^2}{\sum\limits_{i=1}^n \Big(y_{i,j} - \frac{N_{i\mathstrut}}{N^{\mathstrut}} \sum\limits_{i'=1}^n  y_{i',j} \Big)^{2}} $$
+| $\texttt{R2}_j$ | $$ \displaystyle 1 - \frac{\sum\limits_{i=1}^n \,(y_{i,j} - \mu_{i,j})^2}{\sum\limits_{i=1}^n \Big(y_{i,j} - \frac{N_{i\mathstrut}}{N^{\mathstrut}} \sum\limits_{i'=1}^n  y_{i',j} \Big)^{2}} $$
 | $\texttt{ADJUSTED_R2}_j$ | $$ \displaystyle 1 - {\textstyle\frac{N_{\mathstrut} - 1}{N^{\mathstrut} - m}}  \, \frac{\sum\limits_{i=1}^n \,(y_{i,j} - \mu_{i,j})^2}{\sum\limits_{i=1}^n \Big(y_{i,j} - \frac{N_{i\mathstrut}}{N^{\mathstrut}} \sum\limits_{i'=1}^n  y_{i',j} \Big)^{2}} $$
  
 
@@ -2125,7 +2125,7 @@ $m$ with the intercept or $m+1$ without the intercept.
 
 | Statistic             | Formula |
 | --------------------- | ------------- |
-| $\texttt{PLAIN_R2_NOBIAS}_j$ | $$ \displaystyle 1 - \frac{\sum\limits_{i=1}^n \Big(y_{i,j} \,{-}\, \mu_{i,j} \,{-}\, \frac{N_{i\mathstrut}}{N^{\mathstrut}} \sum\limits_{i'=1}^n  (y_{i',j} \,{-}\, \mu_{i',j}) \Big)^{2}}{\sum\limits_{i=1}^n \Big(y_{i,j} - \frac{N_{i\mathstrut}}{N^{\mathstrut}} \sum\limits_{i'=1}^n y_{i',j} \Big)^{2}} $$
+| $\texttt{R2_NOBIAS}_j$ | $$ \displaystyle 1 - \frac{\sum\limits_{i=1}^n \Big(y_{i,j} \,{-}\, \mu_{i,j} \,{-}\, \frac{N_{i\mathstrut}}{N^{\mathstrut}} \sum\limits_{i'=1}^n  (y_{i',j} \,{-}\, \mu_{i',j}) \Big)^{2}}{\sum\limits_{i=1}^n \Big(y_{i,j} - \frac{N_{i\mathstrut}}{N^{\mathstrut}} \sum\limits_{i'=1}^n y_{i',j} \Big)^{2}} $$
 | $\texttt{ADJUSTED_R2_NOBIAS}_j$ | $$ \displaystyle 1 - {\textstyle\frac{N_{\mathstrut} - 1}{N^{\mathstrut} - m'}} \, \frac{\sum\limits_{i=1}^n \Big(y_{i,j} \,{-}\, \mu_{i,j} \,{-}\, \frac{N_{i\mathstrut}}{N^{\mathstrut}} \sum\limits_{i'=1}^n  (y_{i',j} \,{-}\, \mu_{i',j}) \Big)^{2}}{\sum\limits_{i=1}^n \Big(y_{i,j} - \frac{N_{i\mathstrut}}{N^{\mathstrut}} \sum\limits_{i'=1}^n y_{i',j} \Big)^{2}} $$
 
 

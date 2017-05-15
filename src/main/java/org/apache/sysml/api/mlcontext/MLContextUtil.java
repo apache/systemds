@@ -975,10 +975,11 @@ public final class MLContextUtil {
 	 */
 	public static String welcomeMessage() {
         StringBuilder sb = new StringBuilder();
-        sb.append("\nWelcome to Apache SystemML!\n Version ");
+        sb.append("\nWelcome to Apache SystemML!\n");
         try {
             ProjectInfo info = ProjectInfo.getProjectInfo();
             if (info.version() != null) {
+            	sb.append("Version ");
                 sb.append(info.version());
             }
         } catch (MLContextException e) {

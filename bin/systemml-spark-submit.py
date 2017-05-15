@@ -100,3 +100,9 @@ cmd = ['$SPARK_HOME/bin/spark-submit', '--jars', target_jars, '--f', script_file
 return_code = os.system(' '.join(cmd))
 # For debugging
 # print(' '.join(cmd))
+
+return_code = os.system(' '.join(cmd))
+
+if return_code != 0:
+    print('Failed to run SystemML. Exit code :' + str(return_code))
+    print(' '.join(cmd))

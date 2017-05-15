@@ -544,6 +544,7 @@ public class Statistics
 		int maxCountLen = countCol.length();
 		DecimalFormat sFormat = new DecimalFormat("#,##0.000");
 		DecimalFormat nsFormat = new DecimalFormat("#,###");
+		boolean showNs = false;
 		for (int i = 0; i < numHittersToDisplay; i++) {
 			Entry<String, Long> hh = tmp[len - 1 - i];
 			String instruction = hh.getKey();
@@ -559,9 +560,18 @@ public class Statistics
 			maxTimeNsLen = Math.max(maxTimeNsLen, timeNsString.length());
 
 			maxCountLen = Math.max(maxCountLen, String.valueOf(_cpInstCounts.get(instruction)).length());
+			if (timeNs < 1000000) {
+				showNs = true;
+			}
 		}
-		sb.append(String.format("%" + maxNumLen + "s  %-" + maxInstLen + "s  %" + maxTimeSLen + "s  %" + maxTimeNsLen
-				+ "s  %" + maxCountLen + "s", numCol, instCol, timeSCol, timeNsCol, countCol));
+		if (showNs) {
+			sb.append(String.format("%" + maxNumLen + "s  %-" + maxInstLen + "s  %" + maxTimeSLen + "s  %"
+					+ maxTimeNsLen + "s  %" + maxCountLen + "s", numCol, instCol, timeSCol, timeNsCol, countCol));
+		} else {
+			sb.append(String.format(
+					"%" + maxNumLen + "s  %-" + maxInstLen + "s  %" + maxTimeSLen + "s  %" + maxCountLen + "s", numCol,
+					instCol, timeSCol, countCol));
+		}
 		if (GPUStatistics.DISPLAY_STATISTICS) {
 			sb.append("  ");
 			sb.append(gpuCol);
@@ -577,11 +587,17 @@ public class Statistics
 			String timeSString = sFormat.format(timeS);
 
 			Long count = _cpInstCounts.get(instruction);
-			sb.append(
-					String.format(
-							"%" + maxNumLen + "d  %-" + maxInstLen + "s  %" + maxTimeSLen + "s  %" + maxTimeNsLen
-									+ "s  %" + maxCountLen + "d",
-							(i + 1), instruction, timeSString, timeNsString, count));
+			if (showNs) {
+				sb.append(
+						String.format(
+								"%" + maxNumLen + "d  %-" + maxInstLen + "s  %" + maxTimeSLen + "s  %" + maxTimeNsLen
+										+ "s  %" + maxCountLen + "d",
+								(i + 1), instruction, timeSString, timeNsString, count));
+			} else {
+				sb.append(String.format(
+						"%" + maxNumLen + "d  %-" + maxInstLen + "s  %" + maxTimeSLen + "s  %" + maxCountLen + "d",
+						(i + 1), instruction, timeSString, count));
+			}
 			// Add the miscellaneous timer info
 			if (GPUStatistics.DISPLAY_STATISTICS) {
 				sb.append("  ");

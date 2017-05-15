@@ -532,7 +532,6 @@ public class Statistics
 		final String numCol = "#";
 		final String instCol = "Instruction";
 		final String timeSCol = "Time(s)";
-		final String timeNsCol = "Time(ns)";
 		final String countCol = "Count";
 		final String gpuCol = "GPU";
 		StringBuilder sb = new StringBuilder();
@@ -540,11 +539,8 @@ public class Statistics
 		int maxNumLen = String.valueOf(numHittersToDisplay).length();
 		int maxInstLen = instCol.length();
 		int maxTimeSLen = timeSCol.length();
-		int maxTimeNsLen = timeNsCol.length();
 		int maxCountLen = countCol.length();
 		DecimalFormat sFormat = new DecimalFormat("#,##0.000");
-		DecimalFormat nsFormat = new DecimalFormat("#,###");
-		boolean showNs = false;
 		for (int i = 0; i < numHittersToDisplay; i++) {
 			Entry<String, Long> hh = tmp[len - 1 - i];
 			String instruction = hh.getKey();
@@ -556,22 +552,11 @@ public class Statistics
 			String timeSString = sFormat.format(timeS);
 			maxTimeSLen = Math.max(maxTimeSLen, timeSString.length());
 
-			String timeNsString = nsFormat.format(timeNs);
-			maxTimeNsLen = Math.max(maxTimeNsLen, timeNsString.length());
-
 			maxCountLen = Math.max(maxCountLen, String.valueOf(_cpInstCounts.get(instruction)).length());
-			if (timeNs < 1000000) {
-				showNs = true;
-			}
 		}
-		if (showNs) {
-			sb.append(String.format("%" + maxNumLen + "s  %-" + maxInstLen + "s  %" + maxTimeSLen + "s  %"
-					+ maxTimeNsLen + "s  %" + maxCountLen + "s", numCol, instCol, timeSCol, timeNsCol, countCol));
-		} else {
-			sb.append(String.format(
-					"%" + maxNumLen + "s  %-" + maxInstLen + "s  %" + maxTimeSLen + "s  %" + maxCountLen + "s", numCol,
-					instCol, timeSCol, countCol));
-		}
+		sb.append(String.format(
+				" %" + maxNumLen + "s  %-" + maxInstLen + "s  %" + maxTimeSLen + "s  %" + maxCountLen + "s", numCol,
+				instCol, timeSCol, countCol));
 		if (GPUStatistics.DISPLAY_STATISTICS) {
 			sb.append("  ");
 			sb.append(gpuCol);
@@ -581,23 +566,14 @@ public class Statistics
 			String instruction = tmp[len - 1 - i].getKey();
 
 			Long timeNs = tmp[len - 1 - i].getValue();
-			String timeNsString = nsFormat.format(timeNs);
-
 			double timeS = (double) timeNs / 1000000000.0;
 			String timeSString = sFormat.format(timeS);
 
 			Long count = _cpInstCounts.get(instruction);
-			if (showNs) {
-				sb.append(
-						String.format(
-								"%" + maxNumLen + "d  %-" + maxInstLen + "s  %" + maxTimeSLen + "s  %" + maxTimeNsLen
-										+ "s  %" + maxCountLen + "d",
-								(i + 1), instruction, timeSString, timeNsString, count));
-			} else {
-				sb.append(String.format(
-						"%" + maxNumLen + "d  %-" + maxInstLen + "s  %" + maxTimeSLen + "s  %" + maxCountLen + "d",
-						(i + 1), instruction, timeSString, count));
-			}
+			sb.append(String.format(
+					" %" + maxNumLen + "d  %-" + maxInstLen + "s  %" + maxTimeSLen + "s  %" + maxCountLen + "d",
+					(i + 1), instruction, timeSString, count));
+
 			// Add the miscellaneous timer info
 			if (GPUStatistics.DISPLAY_STATISTICS) {
 				sb.append("  ");

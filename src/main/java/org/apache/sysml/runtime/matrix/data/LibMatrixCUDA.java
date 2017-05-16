@@ -2885,29 +2885,239 @@ public class LibMatrixCUDA {
 	 * @throws DMLRuntimeException	if DMLRuntimeException occurs
 	 */
 	public static void exp(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) throws DMLRuntimeException {
+		LOG.trace("GPU : exp" + ", GPUContext=" + gCtx);
+		// e^0 = 1, create a dense block full of 1s
+		unaryOp(ec, gCtx, in1, "matrix_exp", 1, outputName, instName, GPUInstruction.MISC_TIMER_EXP_KERNEL);
+	}
+
+	/**
+	 * Performs an "sqrt" operation on a matrix on the GPU
+	 * @param ec	execution context
+	 * @param gCtx a valid {@link GPUContext}
+	 * @param instName the invoking instruction's name for record {@link Statistics}.
+	 * @param in1	input matrix
+	 * @param outputName	output matrix name
+	 * @throws DMLRuntimeException	if DMLRuntimeException occurs
+	 */
+	public static void sqrt(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) throws DMLRuntimeException {
+		LOG.trace("GPU : sqrt" + ", GPUContext=" + gCtx);
+		// sqrt(0) = 0, create a dense block full of 0s
+		unaryOp(ec, gCtx, in1, "matrix_sqrt", 0, outputName, instName, GPUInstruction.MISC_TIMER_SQRT_KERNEL);
+	}
+
+	/**
+	 * Performs an "round" operation on a matrix on the GPU
+	 * @param ec	execution context
+	 * @param gCtx a valid {@link GPUContext}
+	 * @param instName the invoking instruction's name for record {@link Statistics}.
+	 * @param in1	input matrix
+	 * @param outputName	output matrix name
+	 * @throws DMLRuntimeException	if DMLRuntimeException occurs
+	 */
+	public static void round(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) throws DMLRuntimeException {
+		LOG.trace("GPU : round" + ", GPUContext=" + gCtx);
+		// round(0) = 0, create a dense block full of 0s
+		unaryOp(ec, gCtx, in1, "matrix_round", 0, outputName, instName, GPUInstruction.MISC_TIMER_ROUND_KERNEL);
+	}
+
+	/**
+	 * Performs an "abs" operation on a matrix on the GPU
+	 * @param ec	execution context
+	 * @param gCtx a valid {@link GPUContext}
+	 * @param instName the invoking instruction's name for record {@link Statistics}.
+	 * @param in1	input matrix
+	 * @param outputName	output matrix name
+	 * @throws DMLRuntimeException	if DMLRuntimeException occurs
+	 */
+	public static void abs(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) throws DMLRuntimeException {
+		LOG.trace("GPU : abs" + ", GPUContext=" + gCtx);
+		// abs(0) = 0, create a dense block full of 0s
+		unaryOp(ec, gCtx, in1, "matrix_abs", 0, outputName, instName, GPUInstruction.MISC_TIMER_ABS_KERNEL);
+	}
+
+	/**
+	 * Performs an "log" operation on a matrix on the GPU
+	 * @param ec	execution context
+	 * @param gCtx a valid {@link GPUContext}
+	 * @param instName the invoking instruction's name for record {@link Statistics}.
+	 * @param in1	input matrix
+	 * @param outputName	output matrix name
+	 * @throws DMLRuntimeException	if DMLRuntimeException occurs
+	 */
+	public static void log(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) throws DMLRuntimeException {
+		LOG.trace("GPU : log" + ", GPUContext=" + gCtx);
+		// log(0) = -Inf
+		unaryOp(ec, gCtx, in1, "matrix_log", Double.NEGATIVE_INFINITY, outputName, instName, GPUInstruction.MISC_TIMER_LOG_KERNEL);
+	}
+
+	/**
+	 * Performs an "floor" operation on a matrix on the GPU
+	 * @param ec	execution context
+	 * @param gCtx a valid {@link GPUContext}
+	 * @param instName the invoking instruction's name for record {@link Statistics}.
+	 * @param in1	input matrix
+	 * @param outputName	output matrix name
+	 * @throws DMLRuntimeException	if DMLRuntimeException occurs
+	 */
+	public static void floor(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) throws DMLRuntimeException {
+		LOG.trace("GPU : floor" + ", GPUContext=" + gCtx);
+		// floor(0) = 0
+		unaryOp(ec, gCtx, in1, "matrix_floor", 0, outputName, instName, GPUInstruction.MISC_TIMER_FLOOR_KERNEL);
+	}
+
+	/**
+	 * Performs an "ceil" operation on a matrix on the GPU
+	 * @param ec	execution context
+	 * @param gCtx a valid {@link GPUContext}
+	 * @param instName the invoking instruction's name for record {@link Statistics}.
+	 * @param in1	input matrix
+	 * @param outputName	output matrix name
+	 * @throws DMLRuntimeException	if DMLRuntimeException occurs
+	 */
+	public static void ceil(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) throws DMLRuntimeException {
+		LOG.trace("GPU : ceil" + ", GPUContext=" + gCtx);
+		// ceil(0) = 0
+		unaryOp(ec, gCtx, in1, "matrix_ceil", 0, outputName, instName, GPUInstruction.MISC_TIMER_CEIL_KERNEL);
+	}
+
+	/**
+	 * Performs an "sin" operation on a matrix on the GPU
+	 * @param ec	execution context
+	 * @param gCtx a valid {@link GPUContext}
+	 * @param instName the invoking instruction's name for record {@link Statistics}.
+	 * @param in1	input matrix
+	 * @param outputName	output matrix name
+	 * @throws DMLRuntimeException	if DMLRuntimeException occurs
+	 */
+	public static void sin(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) throws DMLRuntimeException {
+		LOG.trace("GPU : sin" + ", GPUContext=" + gCtx);
+		// sin(0) = 0
+		unaryOp(ec, gCtx, in1, "matrix_sin", 0, outputName, instName, GPUInstruction.MISC_TIMER_SIN_KERNEL);
+	}
+
+	/**
+	 * Performs an "cos" operation on a matrix on the GPU
+	 * @param ec	execution context
+	 * @param gCtx a valid {@link GPUContext}
+	 * @param instName the invoking instruction's name for record {@link Statistics}.
+	 * @param in1	input matrix
+	 * @param outputName	output matrix name
+	 * @throws DMLRuntimeException	if DMLRuntimeException occurs
+	 */
+	public static void cos(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) throws DMLRuntimeException {
+		LOG.trace("GPU : cos" + ", GPUContext=" + gCtx);
+		// cos(0) = 1
+		unaryOp(ec, gCtx, in1, "matrix_cos", 1, outputName, instName, GPUInstruction.MISC_TIMER_COS_KERNEL);
+	}
+
+	/**
+	 * Performs an "tan" operation on a matrix on the GPU
+	 * @param ec	execution context
+	 * @param gCtx a valid {@link GPUContext}
+	 * @param instName the invoking instruction's name for record {@link Statistics}.
+	 * @param in1	input matrix
+	 * @param outputName	output matrix name
+	 * @throws DMLRuntimeException	if DMLRuntimeException occurs
+	 */
+	public static void tan(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) throws DMLRuntimeException {
+		LOG.trace("GPU : tan" + ", GPUContext=" + gCtx);
+		// tan(0) = 0
+		unaryOp(ec, gCtx, in1, "matrix_tan", 0, outputName, instName, GPUInstruction.MISC_TIMER_TAN_KERNEL);
+	}
+
+	/**
+	 * Performs an "asin" operation on a matrix on the GPU
+	 * @param ec	execution context
+	 * @param gCtx a valid {@link GPUContext}
+	 * @param instName the invoking instruction's name for record {@link Statistics}.
+	 * @param in1	input matrix
+	 * @param outputName	output matrix name
+	 * @throws DMLRuntimeException	if DMLRuntimeException occurs
+	 */
+	public static void asin(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) throws DMLRuntimeException {
+		LOG.trace("GPU : asin" + ", GPUContext=" + gCtx);
+		// asin(0) = 0
+		unaryOp(ec, gCtx, in1, "matrix_asin", 0, outputName, instName, GPUInstruction.MISC_TIMER_ASIN_KERNEL);
+	}
+
+	/**
+	 * Performs an "acos" operation on a matrix on the GPU
+	 * @param ec	execution context
+	 * @param gCtx a valid {@link GPUContext}
+	 * @param instName the invoking instruction's name for record {@link Statistics}.
+	 * @param in1	input matrix
+	 * @param outputName	output matrix name
+	 * @throws DMLRuntimeException	if DMLRuntimeException occurs
+	 */
+	public static void acos(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) throws DMLRuntimeException {
+		LOG.trace("GPU : acos" + ", GPUContext=" + gCtx);
+		// acos(0) = PI/2
+		unaryOp(ec, gCtx, in1, "matrix_acos", Math.PI/2.0, outputName, instName, GPUInstruction.MISC_TIMER_ACOS_KERNEL);
+	}
+
+	/**
+	 * Performs an "atan" operation on a matrix on the GPU
+	 * @param ec	execution context
+	 * @param gCtx a valid {@link GPUContext}
+	 * @param instName the invoking instruction's name for record {@link Statistics}.
+	 * @param in1	input matrix
+	 * @param outputName	output matrix name
+	 * @throws DMLRuntimeException	if DMLRuntimeException occurs
+	 */
+	public static void atan(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) throws DMLRuntimeException {
+		LOG.trace("GPU : atan" + ", GPUContext=" + gCtx);
+		// atan(0) = 0
+		unaryOp(ec, gCtx, in1, "matrix_atan", 0, outputName, instName, GPUInstruction.MISC_TIMER_ATAN_KERNEL);
+	}
+
+	/**
+	 * Performs an "sign" operation on a matrix on the GPU
+	 * @param ec	execution context
+	 * @param gCtx a valid {@link GPUContext}
+	 * @param instName the invoking instruction's name for record {@link Statistics}.
+	 * @param in1	input matrix
+	 * @param outputName	output matrix name
+	 * @throws DMLRuntimeException	if DMLRuntimeException occurs
+	 */
+	public static void sign(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) throws DMLRuntimeException {
+		LOG.trace("GPU : sign" + ", GPUContext=" + gCtx);
+		// sign(0) = 0
+		unaryOp(ec, gCtx, in1, "matrix_sign", 0, outputName, instName, GPUInstruction.MISC_TIMER_SIGN_KERNEL);
+	}
+
+
+	/**
+	 * A helper function for all Unary ops (sqrt, abs, sin.. etc)
+	 * @param ec valid execution context
+	 * @param gCtx a valid {@link GPUContext}
+	 * @param in1 input matrix
+	 * @param kernel name of CUDA kernel for the unary op to execute
+	 * @param sparseAndEmptyFillValue the result of the unary op on a completely empty input matrix block
+	 * @param outputName output matrix name
+	 * @param instName the invoking instruction's name for record {@link Statistics}.
+	 * @param kernelTimer the name of the timer to measure the kernel invocation
+	 * @throws DMLRuntimeException
+	 */
+	private static void unaryOp(ExecutionContext ec, GPUContext gCtx, MatrixObject in1, String kernel, double sparseAndEmptyFillValue, String outputName, String instName, String kernelTimer) throws DMLRuntimeException {
 		if (ec.getGPUContext() != gCtx)
 			throw new DMLRuntimeException("GPU : Invalid internal state, the GPUContext set with the ExecutionContext is not the same used to run this LibMatrixCUDA function");
-		LOG.trace("GPU : exp" + ", GPUContext=" + gCtx);
 		GPUObject in = in1.getGPUObject(gCtx);
 		boolean isSparseAndEmpty = in.isSparseAndEmpty();
 		long t1=0;
 		if (isSparseAndEmpty) {
-			// e^0 = 1, create a dense block full of 1s
 			MatrixObject out = ec.getMatrixObject(outputName);
 			ec.allocateGPUMatrixObject(outputName);
-			out.getGPUObject(gCtx).allocateAndFillDense(1);
+			out.getGPUObject(gCtx).allocateAndFillDense(sparseAndEmptyFillValue);
 		} else {
 			// Dense
 			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, instName, outputName);
 			Pointer output = getDensePointer(gCtx, out, instName);
-			// If the input is in sparse format, convert it to dense.
-			// The output will always be dense, because for all x, exp(x) > 0
 			Pointer input = getDensePointer(gCtx, in1, instName);
 			int size = (int)(in1.getNumColumns() * in1.getNumRows());
 			if (GPUStatistics.DISPLAY_STATISTICS) t1 = System.nanoTime();
-			getCudaKernels(gCtx).launchKernel("matrix_exp", ExecutionConfig.getConfigForSimpleVectorOperations(size),
-							input, output, size);
-			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_EXP_KERNEL, System.nanoTime() - t1);
+			getCudaKernels(gCtx).launchKernel(kernel, ExecutionConfig.getConfigForSimpleVectorOperations(size),
+					input, output, size);
+			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, kernelTimer, System.nanoTime() - t1);
 		}
 	}
 

@@ -69,12 +69,27 @@ public class GPUInstructionParser  extends InstructionParser
 		String2GPUInstructionType.put( "^2"   , GPUINSTRUCTION_TYPE.ArithmeticBinary); //special ^ case
 		String2GPUInstructionType.put( "*2"   , GPUINSTRUCTION_TYPE.ArithmeticBinary); //special * case
 		String2GPUInstructionType.put( "-nz"  , GPUINSTRUCTION_TYPE.ArithmeticBinary); //special - case
-		String2GPUInstructionType.put( "+*"  	, GPUINSTRUCTION_TYPE.ArithmeticBinary);
-		String2GPUInstructionType.put( "-*"  	, GPUINSTRUCTION_TYPE.ArithmeticBinary);
+		String2GPUInstructionType.put( "+*"   , GPUINSTRUCTION_TYPE.ArithmeticBinary);
+		String2GPUInstructionType.put( "-*"   , GPUINSTRUCTION_TYPE.ArithmeticBinary);
 		
 		// Builtin functions
 		String2GPUInstructionType.put( "sel+"  	, GPUINSTRUCTION_TYPE.BuiltinUnary);
 		String2GPUInstructionType.put( "exp"  	, GPUINSTRUCTION_TYPE.BuiltinUnary);
+		String2GPUInstructionType.put( "log"  	, GPUINSTRUCTION_TYPE.BuiltinUnary);
+		String2GPUInstructionType.put( "abs"  	, GPUINSTRUCTION_TYPE.BuiltinUnary);
+		String2GPUInstructionType.put( "sqrt"  	, GPUINSTRUCTION_TYPE.BuiltinUnary);
+		String2GPUInstructionType.put( "round"  , GPUINSTRUCTION_TYPE.BuiltinUnary);
+		String2GPUInstructionType.put( "floor"  , GPUINSTRUCTION_TYPE.BuiltinUnary);
+		String2GPUInstructionType.put( "ceil"  	, GPUINSTRUCTION_TYPE.BuiltinUnary);
+		String2GPUInstructionType.put( "sin"  	, GPUINSTRUCTION_TYPE.BuiltinUnary);
+		String2GPUInstructionType.put( "cos"  	, GPUINSTRUCTION_TYPE.BuiltinUnary);
+		String2GPUInstructionType.put( "tan"  	, GPUINSTRUCTION_TYPE.BuiltinUnary);
+		String2GPUInstructionType.put( "asin"  	, GPUINSTRUCTION_TYPE.BuiltinUnary);
+		String2GPUInstructionType.put( "acos"  	, GPUINSTRUCTION_TYPE.BuiltinUnary);
+		String2GPUInstructionType.put( "atan"  	, GPUINSTRUCTION_TYPE.BuiltinUnary);
+		String2GPUInstructionType.put( "sign"  	, GPUINSTRUCTION_TYPE.BuiltinUnary);
+
+
 
 		String2GPUInstructionType.put( "solve"  , GPUINSTRUCTION_TYPE.BuiltinBinary);
 

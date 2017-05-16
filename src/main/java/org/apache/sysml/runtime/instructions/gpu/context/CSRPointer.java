@@ -467,7 +467,7 @@ public class CSRPointer {
       cusparseDcsr2dense(cusparseHandle, rows, cols, descr, val, rowPtr, colInd, A, rows);
       //cudaDeviceSynchronize;
     } else {
-      LOG.warn("in CSRPointer, the values array, row pointers array or column indices array was null");
+      LOG.debug("in CSRPointer, the values array, row pointers array or column indices array was null");
     }
     return A;
   }

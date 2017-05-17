@@ -24,6 +24,7 @@ import os
 import sys
 from os.path import join, exists
 from os import environ
+import argparse
 
 
 # error help print
@@ -39,6 +40,18 @@ if len(sys.argv) < 2:
     print('Wrong usage')
     print_usage_and_exit()
 
+parser = argparse.ArgumentParser(description='System-ML Spark Submit Script', add_help=False, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+parser.add_argument('--help', action='help', help='Print this usage message and exit')
+parser.add_argument('--master', default='local[*]', help='local, yarn-client, yarn-cluster', metavar='\b')
+parser.add_argument('--driver-memory', default='5G', help='Memory for driver (e.g. 512M)', metavar='\b')
+parser.add_argument('--num-executors', default='2', help='Number of executors to launch', metavar='\b')
+parser.add_argument('--executor-memory', default='2G', help='Memory per executor', metavar='\b')
+parser.add_argument('--executor-cores', default='1', help='Number of cores', metavar='\b')
+parser.add_argument('-f', required=True, help='DML script file name', metavar='\b')
+parser.add_argument('-nvargs', nargs='*')
+args = parser.parse_args()
+arg_dict = vars(args)
+
 # find the systemML root path which contains the bin folder, the script folder and the target folder
 # tolerate path with spaces
 script_dir = os.path.dirname(os.path.realpath(__file__))
@@ -48,6 +61,7 @@ user_dir = os.getcwd()
 scripts_dir = join(project_root_dir, 'scripts')
 build_dir = join(project_root_dir, 'target')
 target_jars = build_dir + '/' + '*.jar'
+log4j_properties_path = join(project_root_dir, 'conf', 'log4j.properties')
 
 
 build_err_msg = 'You must build the project before running this script.'
@@ -73,8 +87,7 @@ if not(exists(systemml_config_path)):
     print('... created ' + systemml_config_path)
 
 
-script_file = sys.argv[1]
-
+script_file = arg_dict['f']
 
 # from http://stackoverflow.com/questions/1724693/find-a-file-in-python
 def find_file(name, path):
@@ -94,8 +107,16 @@ if not(exists(script_file)):
         script_file = script_file_found
         print('DML Script:' + script_file)
 
-cmd = ['$SPARK_HOME/bin/spark-submit', '--jars', target_jars, '--f', script_file,
-       '-exec spark', '-config', systemml_config_path] + sys.argv[2:]
+log_conf = '--conf spark.driver.extraJavaOptions="-Dlog4j.configuration=file:{}" '.format(log4j_properties_path)
+max_result_conf = '--conf spark.driver.maxResultSize=0 '
+frame_size_conf = '--conf spark.akka.frameSize=128 '
+default_conf = log_conf + max_result_conf + frame_size_conf
+
+
+cmd = ['$SPARK_HOME/bin/spark-submit', '--master', arg_dict['master'], '--driver-memory', arg_dict['driver_memory'],
+       '--num-executors', arg_dict['num_executors'], '--executor-memory', arg_dict['executor_memory'],
+       '--executor-cores', arg_dict['executor_cores'], default_conf, '--jars', target_jars, '-f', script_file,
+       '-exec hybrid_spark', '-config', systemml_config_path, '-nvargs ' + ' '.join(arg_dict['nvargs'])]
 
 return_code = os.system(' '.join(cmd))
 # For debugging
@@ -106,3 +127,4 @@ return_code = os.system(' '.join(cmd))
 if return_code != 0:
     print('Failed to run SystemML. Exit code :' + str(return_code))
     print(' '.join(cmd))
+

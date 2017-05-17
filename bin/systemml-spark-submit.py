@@ -47,6 +47,7 @@ parser.add_argument('--driver-memory', default='5G', help='Memory for driver (e.
 parser.add_argument('--num-executors', default='2', help='Number of executors to launch', metavar='\b')
 parser.add_argument('--executor-memory', default='2G', help='Memory per executor', metavar='\b')
 parser.add_argument('--executor-cores', default='1', help='Number of cores', metavar='\b')
+parser.add_argument('--conf', default='', help='Configuration settings', metavar='\b')
 parser.add_argument('-f', required=True, help='DML script file name', metavar='\b')
 parser.add_argument('-nvargs', nargs='*')
 args = parser.parse_args()
@@ -110,7 +111,7 @@ if not(exists(script_file)):
 log_conf = '--conf spark.driver.extraJavaOptions="-Dlog4j.configuration=file:{}" '.format(log4j_properties_path)
 max_result_conf = '--conf spark.driver.maxResultSize=0 '
 frame_size_conf = '--conf spark.akka.frameSize=128 '
-default_conf = log_conf + max_result_conf + frame_size_conf
+default_conf = log_conf + max_result_conf + frame_size_conf + arg_dict['conf']
 
 
 cmd = ['$SPARK_HOME/bin/spark-submit', '--master', arg_dict['master'], '--driver-memory', arg_dict['driver_memory'],

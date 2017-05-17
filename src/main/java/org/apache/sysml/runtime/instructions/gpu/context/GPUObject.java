@@ -510,7 +510,9 @@ public class GPUObject {
 		setDenseMatrixCudaPointer(allocate(size));
 		addReadLock();
 		// The "fill" kernel is called which treats the matrix "jcudaDensePtr" like a vector and fills it with value "v"
-		getGPUContext().getKernels().launchKernel("fill", ExecutionConfig.getConfigForSimpleVectorOperations(numElems), getJcudaDenseMatrixPtr(), v, numElems);
+		// If the fill value is 0, no need to call the special kernel, the allocate memsets the allocated region to 0
+		if (v != 0)
+			getGPUContext().getKernels().launchKernel("fill", ExecutionConfig.getConfigForSimpleVectorOperations(numElems), getJcudaDenseMatrixPtr(), v, numElems);
 	}
 
 	/**

@@ -57,11 +57,11 @@
 # AVG_RES_Y             Average of the residual Y - pred(Y|X), i.e. residual bias
 # STDEV_RES_Y           Standard Deviation of the residual Y - pred(Y|X)
 # DISPERSION            GLM-style dispersion, i.e. residual sum of squares / # deg. fr.
-# R2                    Plain R^2 of residual with bias included vs. total average
+# R2                    R^2 of residual with bias included vs. total average
 # ADJUSTED_R2           Adjusted R^2 of residual with bias included vs. total average
-# R2_NOBIAS             Plain R^2 of residual with bias subtracted vs. total average
+# R2_NOBIAS             R^2 of residual with bias subtracted vs. total average
 # ADJUSTED_R2_NOBIAS    Adjusted R^2 of residual with bias subtracted vs. total average
-# R2_VS_0               * Plain R^2 of residual with bias included vs. zero constant
+# R2_VS_0               * R^2 of residual with bias included vs. zero constant
 # ADJUSTED_R2_VS_0      * Adjusted R^2 of residual with bias included vs. zero constant
 # -------------------------------------------------------------------------------------
 # * The last two statistics are only printed if there is no intercept (icpt=0)

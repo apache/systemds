@@ -45,23 +45,18 @@ for running SystemML from Spark via Scala, Python, or Java.
   * [Spark Shell Example (Scala)](spark-mlcontext-programming-guide#spark-shell-example)
   * [Jupyter Notebook Example (PySpark)](spark-mlcontext-programming-guide#jupyter-pyspark-notebook-example---poisson-nonnegative-matrix-factorization)
 * [Spark Batch](spark-batch-mode) - Algorithms are automatically optimized to run across Spark clusters.
-  * See [Invoking SystemML in Spark Batch Mode](spark-batch-mode) for detailed information.
 * [Hadoop Batch](hadoop-batch-mode) - Algorithms are automatically optimized when distributed across Hadoop clusters.
-  * See [Invoking SystemML in Hadoop Batch Mode](hadoop-batch-mode) for detailed information.
 * [Standalone](standalone-guide) - Standalone mode allows data scientists to rapidly prototype algorithms on a single
 machine in R-like and Python-like declarative languages.
-  * The [Standalone Guide](standalone-guide) provides examples of algorithm execution
-  in Standalone Mode.
 * [JMLC](jmlc) - Java Machine Learning Connector.
-  * See [Java Machine Learning Connector (JMLC)](jmlc) for more information.
-* *Experimental* [Caffe2DML API](http://apache.github.io/incubator-systemml/beginners-guide-caffe2dml) for Deep Learning.
+* *Experimental* [Caffe2DML API](beginners-guide-caffe2dml) for Deep Learning.
 
 ## Language Guides
 
 * [Python API Reference](python-reference) - API Reference Guide for Python users.
 * [DML Language Reference](dml-language-reference) -
 DML is a high-level R-like declarative language for machine learning.
-* **PyDML Language Reference** **(Coming Soon)** -
+* **PyDML Language Reference** -
 PyDML is a high-level Python-like declarative language for machine learning.
 * [Beginner's Guide to DML and PyDML](beginners-guide-to-dml-and-pydml) -
 An introduction to the basics of DML and PyDML.

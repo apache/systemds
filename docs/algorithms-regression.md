@@ -346,11 +346,11 @@ pair per each line.
 | AVG\_RES\_Y           | Average of the residual $Y - \mathop{\mathrm{pred}}(Y \mid X)$, i.e. residual bias
 | STDEV\_RES\_Y         | Standard Deviation of the residual $Y - \mathop{\mathrm{pred}}(Y \mid X)$
 | DISPERSION            | GLM-style dispersion, i.e. residual sum of squares / \#deg. fr.
-| PLAIN\_R2             | Plain $R^2$ of residual with bias included vs. total average
+| R2                    | $R^2$ of residual with bias included vs. total average
 | ADJUSTED\_R2          | Adjusted $R^2$ of residual with bias included vs. total average
-| PLAIN\_R2\_NOBIAS     | Plain $R^2$ of residual with bias subtracted vs. total average
+| R2\_NOBIAS            | Plain $R^2$ of residual with bias subtracted vs. total average
 | ADJUSTED\_R2\_NOBIAS  | Adjusted $R^2$ of residual with bias subtracted vs. total average
-| PLAIN\_R2\_VS\_0      | * Plain $R^2$ of residual with bias included vs. zero constant
+| R2\_VS\_0             | * $R^2$ of residual with bias included vs. zero constant
 | ADJUSTED\_R2\_VS\_0   | * Adjusted $R^2$ of residual with bias included vs. zero constant
 
 \* The last two statistics are only printed if there is no intercept (`icpt=0`)
@@ -471,7 +471,7 @@ $n\,{-}\,m\,{-}\,1$ is positive and the regularization constant
 $\lambda$ is negligible or zero. The formulas for $\sigma$ and
 $R^2$ are:
 
-$$R^2_{\textrm{plain}} = 1 - \frac{\mathrm{RSS}}{\mathrm{TSS}},\quad
+$$R^2 = 1 - \frac{\mathrm{RSS}}{\mathrm{TSS}},\quad
 \sigma \,=\, \sqrt{\frac{\mathrm{RSS}}{n - m - 1}},\quad
 R^2_{\textrm{adj.}} = 1 - \frac{\sigma^2 (n-1)}{\mathrm{TSS}}$$ 
 
@@ -1881,9 +1881,9 @@ statistic;
 | AVG\_RES\_Y          |  +  |       | $Y$-column residual average of $Y - pred. mean(Y\\|X)$ |
 | STDEV\_RES\_Y        |  +  |       | $Y$-column residual st. dev. of $Y - pred. mean(Y\\|X)$ |
 | PRED\_STDEV\_RES     |  +  |   +   | Model-predicted $Y$-column residual st. deviation|
-| PLAIN\_R2            |  +  |       | Plain $R^2$ of $Y$-column residual with bias included |
+| R2                   |  +  |       | $R^2$ of $Y$-column residual with bias included |
 | ADJUSTED\_R2         |  +  |       | Adjusted $R^2$ of $Y$-column residual w. bias included |
-| PLAIN\_R2\_NOBIAS    |  +  |       | Plain $R^2$ of $Y$-column residual, bias subtracted |
+| R2\_NOBIAS           |  +  |       | $R^2$ of $Y$-column residual, bias subtracted |
 | ADJUSTED\_R2\_NOBIAS |  +  |       | Adjusted $R^2$ of $Y$-column residual, bias subtracted |
 
 * * *
@@ -2114,7 +2114,7 @@ $m$ with the intercept or $m+1$ without the intercept.
 
 | Statistic             | Formula |
 | --------------------- | ------------- |
-| $\texttt{PLAIN_R2}_j$ | $$ \displaystyle 1 - \frac{\sum\limits_{i=1}^n \,(y_{i,j} - \mu_{i,j})^2}{\sum\limits_{i=1}^n \Big(y_{i,j} - \frac{N_{i\mathstrut}}{N^{\mathstrut}} \sum\limits_{i'=1}^n  y_{i',j} \Big)^{2}} $$
+| $\texttt{R2}_j$ | $$ \displaystyle 1 - \frac{\sum\limits_{i=1}^n \,(y_{i,j} - \mu_{i,j})^2}{\sum\limits_{i=1}^n \Big(y_{i,j} - \frac{N_{i\mathstrut}}{N^{\mathstrut}} \sum\limits_{i'=1}^n  y_{i',j} \Big)^{2}} $$
 | $\texttt{ADJUSTED_R2}_j$ | $$ \displaystyle 1 - {\textstyle\frac{N_{\mathstrut} - 1}{N^{\mathstrut} - m}}  \, \frac{\sum\limits_{i=1}^n \,(y_{i,j} - \mu_{i,j})^2}{\sum\limits_{i=1}^n \Big(y_{i,j} - \frac{N_{i\mathstrut}}{N^{\mathstrut}} \sum\limits_{i'=1}^n  y_{i',j} \Big)^{2}} $$
  
 
@@ -2125,7 +2125,7 @@ $m$ with the intercept or $m+1$ without the intercept.
 
 | Statistic             | Formula |
 | --------------------- | ------------- |
-| $\texttt{PLAIN_R2_NOBIAS}_j$ | $$ \displaystyle 1 - \frac{\sum\limits_{i=1}^n \Big(y_{i,j} \,{-}\, \mu_{i,j} \,{-}\, \frac{N_{i\mathstrut}}{N^{\mathstrut}} \sum\limits_{i'=1}^n  (y_{i',j} \,{-}\, \mu_{i',j}) \Big)^{2}}{\sum\limits_{i=1}^n \Big(y_{i,j} - \frac{N_{i\mathstrut}}{N^{\mathstrut}} \sum\limits_{i'=1}^n y_{i',j} \Big)^{2}} $$
+| $\texttt{R2_NOBIAS}_j$ | $$ \displaystyle 1 - \frac{\sum\limits_{i=1}^n \Big(y_{i,j} \,{-}\, \mu_{i,j} \,{-}\, \frac{N_{i\mathstrut}}{N^{\mathstrut}} \sum\limits_{i'=1}^n  (y_{i',j} \,{-}\, \mu_{i',j}) \Big)^{2}}{\sum\limits_{i=1}^n \Big(y_{i,j} - \frac{N_{i\mathstrut}}{N^{\mathstrut}} \sum\limits_{i'=1}^n y_{i',j} \Big)^{2}} $$
 | $\texttt{ADJUSTED_R2_NOBIAS}_j$ | $$ \displaystyle 1 - {\textstyle\frac{N_{\mathstrut} - 1}{N^{\mathstrut} - m'}} \, \frac{\sum\limits_{i=1}^n \Big(y_{i,j} \,{-}\, \mu_{i,j} \,{-}\, \frac{N_{i\mathstrut}}{N^{\mathstrut}} \sum\limits_{i'=1}^n  (y_{i',j} \,{-}\, \mu_{i',j}) \Big)^{2}}{\sum\limits_{i=1}^n \Big(y_{i,j} - \frac{N_{i\mathstrut}}{N^{\mathstrut}} \sum\limits_{i'=1}^n y_{i',j} \Big)^{2}} $$
 
 

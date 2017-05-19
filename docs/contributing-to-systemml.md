@@ -202,3 +202,21 @@ previously pushed from a different branch, one simple solution is to delete the 
 branch and perform the `subtree` command again.
 
 	git push origin --delete gh-pages
+
+
+## Code Format
+
+### Java Code Format
+
+Java in SystemML should be formatted using a standard format. The "SystemML Format" at
+`dev/code-style/systemml-style.xml` can be imported into Eclipse and IntelliJ for this
+purpose.
+
+No trailing whitespace is preferred. IDEs such as Eclipse and IntelliJ can be configured
+for this option.
+
+
+### DML Code Format
+
+DML in SystemML should be formatted according to a standard format. Indentation in DML
+files should be two spaces.

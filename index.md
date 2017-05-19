@@ -23,9 +23,6 @@ limitations under the License.
 {% endcomment %}
 -->
 
-SystemML is now an **Apache Incubator** project! Please see the [**Apache SystemML**](http://systemml.apache.org/)
-website for more information.
-
 SystemML is a flexible, scalable machine learning system.
 SystemML's distinguishing characteristics are:
 

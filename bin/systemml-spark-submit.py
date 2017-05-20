@@ -48,7 +48,7 @@ cparser.add_argument('-stats',  default='10', help='Monitor and report caching/r
                                                    'heavy hitter <count> is 10 unless overridden')
 cparser.add_argument('-explain', default='runtime', help='explains plan levels can be hops, runtime, '
                                                          'recompile_hops, recompile_runtime', metavar='')
-cparser.add_argument('-exe', default='hybrid_spark', help='System-ML backend (e.g spark, spark-hybrid)', metavar='')
+cparser.add_argument('-exec', default='hybrid_spark', help='System-ML backend (e.g spark, spark-hybrid)', metavar='')
 cparser.add_argument('-f', required=True, help='specifies dml/pydml file to execute; path can be local/hdfs/gpfs',
                      metavar='')
 
@@ -123,7 +123,7 @@ cmd_spark = ['$SPARK_HOME/bin/spark-submit', '--master', args.master, '--driver-
              '--executor-cores', args.executor_cores, '--conf', default_conf]
 
 cmd_system_ml = ['--jars', target_jars, '-nvargs', ' '.join(args.nvargs), '-config', systemml_config_path_arg,
-                 '-stats', args.stats, '-explain', args.explain, '-exec', args.exe,
+                 '-stats', args.stats, '-explain', args.explain, '-exec', vars(args)['exec'],
                  '-f', script_file]
 
 cmd = cmd_spark + cmd_system_ml

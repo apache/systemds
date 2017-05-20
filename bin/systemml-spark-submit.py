@@ -49,7 +49,6 @@ cparser.add_argument('-stats',  default='10', help='Monitor and report caching/r
 cparser.add_argument('-explain', default='runtime', help='explains plan levels can be hops, runtime, '
                                                          'recompile_hops, recompile_runtime', metavar='')
 cparser.add_argument('-exe', default='hybrid_spark', help='System-ML backend (e.g spark, spark-hybrid)', metavar='')
-cparser.add_argument('-debug', default='off', help='runs in debug mode', metavar='')
 cparser.add_argument('-f', required=True, help='specifies dml/pydml file to execute; path can be local/hdfs/gpfs',
                      metavar='')
 
@@ -131,7 +130,7 @@ cmd = cmd_spark + cmd_system_ml
 
 return_code = os.system(' '.join(cmd))
 # For debugging
-# print(' '.join(cmd_system_ml))
+# print(' '.join(cmd))
 
 return_code = os.system(' '.join(cmd))
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#-------------------------------------------------------------
+# -------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -18,7 +18,7 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-#-------------------------------------------------------------
+# -------------------------------------------------------------
 
 import os
 import sys
@@ -26,32 +26,34 @@ from os.path import join, exists
 from os import environ
 import argparse
 
-
-# error help print
-def print_usage_and_exit():
-    this_script = sys.argv[0]
-    print('Usage: ' + this_script + ' <dml-filename> [arguments]')
-    sys.exit(1)
-
 if environ.get('SPARK_HOME') is None:
     print('SPARK_HOME not set')
 
-if len(sys.argv) < 2:
-    print('Wrong usage')
-    print_usage_and_exit()
+cparser = argparse.ArgumentParser(description='System-ML Spark Submit Script', add_help=False)
+cparser.add_argument('--help', action='help', help='Print this usage message and exit')
 
-parser = argparse.ArgumentParser(description='System-ML Spark Submit Script', add_help=False, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parser.add_argument('--help', action='help', help='Print this usage message and exit')
-parser.add_argument('--master', default='local[*]', help='local, yarn-client, yarn-cluster', metavar='\b')
-parser.add_argument('--driver-memory', default='5G', help='Memory for driver (e.g. 512M)', metavar='\b')
-parser.add_argument('--num-executors', default='2', help='Number of executors to launch', metavar='\b')
-parser.add_argument('--executor-memory', default='2G', help='Memory per executor', metavar='\b')
-parser.add_argument('--executor-cores', default='1', help='Number of cores', metavar='\b')
-parser.add_argument('--conf', default='', help='Configuration settings', metavar='\b')
-parser.add_argument('-f', required=True, help='DML script file name', metavar='\b')
-parser.add_argument('-nvargs', nargs='*')
-args = parser.parse_args()
-arg_dict = vars(args)
+# SPARK-SUBMIT Options
+cparser.add_argument('--master', default='local[*]', help='local, yarn-client, yarn-cluster', metavar='')
+cparser.add_argument('--driver-memory', default='5G', help='Memory for driver (e.g. 512M)', metavar='')
+cparser.add_argument('--num-executors', default='2', help='Number of executors to launch', metavar='')
+cparser.add_argument('--executor-memory', default='2G', help='Memory per executor', metavar='')
+cparser.add_argument('--executor-cores', default='1', help='Number of cores', metavar='')
+cparser.add_argument('--conf', default='', help='Spark configuration file', nargs='+', metavar='')
+
+# SYSTEM-ML Options
+cparser.add_argument('-nvargs', required=True, help='List of attributeName-attributeValue pairs', nargs='+')
+cparser.add_argument('-args', help='List of positional argument values', metavar='', nargs='+')
+cparser.add_argument('-config', help='System-ML configuration file (e.g SystemML-config.xml)', metavar='')
+cparser.add_argument('-stats',  default='10', help='Monitor and report caching/recompilation statistics, '
+                                                   'heavy hitter <count> is 10 unless overridden')
+cparser.add_argument('-explain', default='runtime', help='explains plan levels can be hops, runtime, '
+                                                         'recompile_hops, recompile_runtime', metavar='')
+cparser.add_argument('-exe', default='hybrid_spark', help='System-ML backend (e.g spark, spark-hybrid)', metavar='')
+cparser.add_argument('-debug', default='off', help='runs in debug mode', metavar='')
+cparser.add_argument('-f', required=True, help='specifies dml/pydml file to execute; path can be local/hdfs/gpfs',
+                     metavar='')
+
+args = cparser.parse_args()
 
 # find the systemML root path which contains the bin folder, the script folder and the target folder
 # tolerate path with spaces
@@ -64,12 +66,10 @@ build_dir = join(project_root_dir, 'target')
 target_jars = build_dir + '/' + '*.jar'
 log4j_properties_path = join(project_root_dir, 'conf', 'log4j.properties')
 
-
 build_err_msg = 'You must build the project before running this script.'
 build_dir_err_msg = 'Could not find target directory ' + build_dir + '. ' + build_err_msg
 
-
-if not(exists(build_dir)):
+if not (exists(build_dir)):
     print(build_dir_err_msg)
     sys.exit(1)
 
@@ -80,15 +80,22 @@ if user_dir == project_root_dir or user_dir == join(project_root_dir, 'bin'):
     user_dir = join(project_root_dir, 'temp')
     print('Output dir: ' + user_dir)
 
+
 # if the SystemML-config.xml does not exist, create it from the template
 systemml_config_path = join(project_root_dir, 'conf', 'SystemML-config.xml')
 systemml_template_config_path = join(project_root_dir, 'conf', 'SystemML-config.xml.template')
-if not(exists(systemml_config_path)):
+if not (exists(systemml_config_path)):
     shutil.copyfile(systemml_template_config_path, systemml_config_path)
     print('... created ' + systemml_config_path)
 
+# if SystemML-config.xml is provided as arguments
+if args.config is None:
+    systemml_config_path_arg = systemml_config_path
+else:
+    systemml_config_path_arg = args.config
 
-script_file = arg_dict['f']
+script_file = args.f
+
 
 # from http://stackoverflow.com/questions/1724693/find-a-file-in-python
 def find_file(name, path):
@@ -97,8 +104,9 @@ def find_file(name, path):
             return join(root, name)
     return None
 
+
 # if the script file path was omitted, try to complete the script path
-if not(exists(script_file)):
+if not (exists(script_file)):
     script_file_name = os.path.abspath(script_file)
     script_file_found = find_file(script_file, scripts_dir)
     if script_file_found is None:
@@ -108,24 +116,25 @@ if not(exists(script_file)):
         script_file = script_file_found
         print('DML Script:' + script_file)
 
-log_conf = '--conf spark.driver.extraJavaOptions="-Dlog4j.configuration=file:{}" '.format(log4j_properties_path)
-max_result_conf = '--conf spark.driver.maxResultSize=0 '
-frame_size_conf = '--conf spark.akka.frameSize=128 '
-default_conf = log_conf + max_result_conf + frame_size_conf + arg_dict['conf']
+log_conf = 'spark.driver.extraJavaOptions="-Dlog4j.configuration=file:{}" '.format(log4j_properties_path)
+default_conf = log_conf + ' '.join(args.conf)
 
+cmd_spark = ['$SPARK_HOME/bin/spark-submit', '--master', args.master, '--driver-memory', args.driver_memory,
+             '--num-executors', args.num_executors, '--executor-memory', args.executor_memory,
+             '--executor-cores', args.executor_cores, '--conf', default_conf]
 
-cmd = ['$SPARK_HOME/bin/spark-submit', '--master', arg_dict['master'], '--driver-memory', arg_dict['driver_memory'],
-       '--num-executors', arg_dict['num_executors'], '--executor-memory', arg_dict['executor_memory'],
-       '--executor-cores', arg_dict['executor_cores'], default_conf, '--jars', target_jars, '-f', script_file,
-       '-exec hybrid_spark', '-config', systemml_config_path, '-nvargs ' + ' '.join(arg_dict['nvargs'])]
+cmd_system_ml = ['--jars', target_jars, '-nvargs', ' '.join(args.nvargs), '-config', systemml_config_path_arg,
+                 '-stats', args.stats, '-explain', args.explain, '-exec', args.exe,
+                 '-f', script_file]
+
+cmd = cmd_spark + cmd_system_ml
 
 return_code = os.system(' '.join(cmd))
 # For debugging
-# print(' '.join(cmd))
+# print(' '.join(cmd_system_ml))
 
 return_code = os.system(' '.join(cmd))
 
 if return_code != 0:
     print('Failed to run SystemML. Exit code :' + str(return_code))
     print(' '.join(cmd))
-

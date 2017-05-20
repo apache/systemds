@@ -99,6 +99,9 @@ class Caffe2DML(val sc: SparkContext, val solverParam:Caffe.SolverParameter,
     val ret = baseFit(df, sc)
     new Caffe2DMLModel(ret, Utils.numClasses(net), sc, solver, net, lrPolicy, this)
   }
+  
+  def getNetworkFilePath():String = solverParam.getNet
+  def getOutputNumClasses(): String = Utils.numClasses(net)
 	// --------------------------------------------------------------
   
   // Used for simplifying transfer learning
@@ -312,6 +315,11 @@ class Caffe2DML(val sc: SparkContext, val solverParam:Caffe.SolverParameter,
 		  net.getLayers.filter(l => !layersToIgnore.contains(l)).map(net.getCaffeLayer(_)).filter(_.weight != null).map(l => tabDMLScript.append(read(l.weight, l.param.getName + "_weight.mtx")))
 		  net.getLayers.filter(l => !layersToIgnore.contains(l)).map(net.getCaffeLayer(_)).filter(_.bias != null).map(l => tabDMLScript.append(read(l.bias, l.param.getName + "_bias.mtx")))
 	  }
+	  else if(registeredInputs.size() > 0) {
+	    // Called by .caffemodel
+	    net.getLayers.filter(l => !layersToIgnore.contains(l)).map(net.getCaffeLayer(_)).filter(_.weight != null).map(l => tabDMLScript.append(l.weight + " = " + l.param.getName + "_weight" + "\n"))
+	    net.getLayers.filter(l => !layersToIgnore.contains(l)).map(net.getCaffeLayer(_)).filter(_.bias != null).map(l => tabDMLScript.append(l.bias + " = " + l.param.getName + "_bias" + "\n"))
+	  }
 	  net.getLayers.map(layer => solver.init(tabDMLScript, net.getCaffeLayer(layer)))
 	  
 	  // Split into training and validation set
@@ -446,6 +454,12 @@ class Caffe2DMLModel(val mloutput: MLResults,
 		  // fit was not called
 		  net.getLayers.map(net.getCaffeLayer(_)).filter(_.weight != null).map(l => tabDMLScript.append(read(l.weight, l.param.getName + "_weight.mtx")))
 		  net.getLayers.map(net.getCaffeLayer(_)).filter(_.bias != null).map(l => tabDMLScript.append(read(l.bias, l.param.getName + "_bias.mtx")))
+	  }
+	  else if(estimator.registeredInputs.size() > 0) {
+	    // Called by .caffemodel
+	    net.getLayers.map(net.getCaffeLayer(_)).filter(_.weight != null).map(l => tabDMLScript.append(l.weight + " = " + l.param.getName + "_weight" + "\n"))
+		  net.getLayers.map(net.getCaffeLayer(_)).filter(_.bias != null).map(l => tabDMLScript.append(l.bias + " = " +  l.param.getName + "_bias" + "\n"))
+	    
 	  }
 	  else if(mloutput == null) {
 		  throw new DMLRuntimeException("Cannot call predict/score without calling either fit or by providing weights")

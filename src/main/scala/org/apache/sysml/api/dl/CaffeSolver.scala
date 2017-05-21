@@ -88,11 +88,30 @@ class LearningRatePolicy(lr_policy:String="exp", base_lr:Double=0.01) {
   }
 }
 
-/**
- * lambda: regularization parameter
- * momentum: Momentum value. Typical values are in the range of [0.5, 0.99], usually started at the lower end and annealed towards the higher end.
- */
 class SGD(lambda:Double=5e-04, momentum:Double=0.9) extends CaffeSolver {
+  /*
+   * Performs an SGD update with momentum.
+   *
+   * In SGD with momentum, we assume that the parameters have a velocity
+   * that continues with some momentum, and that is influenced by the
+   * gradient.
+   *
+   * Inputs:
+   *  - X: Parameters to update, of shape (any, any).
+   *  - dX: Gradient wrt `X` of a loss function being optimized, of
+   *      same shape as `X`.
+   *  - lr: Learning rate.
+   *  - mu: Momentum value.
+   *      Typical values are in the range of [0.5, 0.99], usually
+   *      started at the lower end and annealed towards the higher end.
+   *  - v: State maintaining the velocity of the parameters `X`, of same
+   *      shape as `X`.
+   *
+   * Outputs:
+   *  - X: Updated parameters `X`, of same shape as input `X`.
+   *  - v: Updated velocity of the parameters `X`, of same shape as
+   *      input `X`.
+   */
   def update(dmlScript:StringBuilder, layer:CaffeLayer):Unit = {
     l2reg_update(lambda, dmlScript, layer)
     if(momentum == 0) {
@@ -117,13 +136,34 @@ class SGD(lambda:Double=5e-04, momentum:Double=0.9) extends CaffeSolver {
   def sourceFileName:String = if(momentum == 0) "sgd" else "sgd_momentum" 
 }
 
-/**
- * lambda: regularization parameter
- * epsilon: Smoothing term to avoid divide by zero errors. Typical values are in the range of [1e-8, 1e-4].
- * 
- * See Adaptive Subgradient Methods for Online Learning and Stochastic Optimization, Duchi et al.
- */
 class AdaGrad(lambda:Double=5e-04, epsilon:Double=1e-6) extends CaffeSolver {
+  /*
+   * Performs an Adagrad update.
+   *
+   * This is an adaptive learning rate optimizer that maintains the
+   * sum of squared gradients to automatically adjust the effective
+   * learning rate.
+   *
+   * Reference:
+   *  - Adaptive Subgradient Methods for Online Learning and Stochastic
+   *    Optimization, Duchi et al.
+   *      - http://jmlr.org/papers/v12/duchi11a.html
+   *
+   * Inputs:
+   *  - X: Parameters to update, of shape (any, any).
+   *  - dX: Gradient wrt `X` of a loss function being optimized, of
+   *      same shape as `X`.
+   *  - lr: Learning rate.
+   *  - epsilon: Smoothing term to avoid divide by zero errors.
+   *      Typical values are in the range of [1e-8, 1e-4].
+   *  - cache: State that maintains per-parameter sum of squared
+   *      gradients, of same shape as `X`.
+   *
+   * Outputs:
+   *  - X: Updated parameters `X`, of same shape as input `X`.
+   *  - cache: State that maintains per-parameter sum of squared
+   *      gradients, of same shape as `X`.
+   */
   def update(dmlScript:StringBuilder, layer:CaffeLayer):Unit = {
     l2reg_update(lambda, dmlScript, layer)
     if(layer.shouldUpdateWeight) dmlScript.append("\t").append("["+ commaSep(layer.weight, layer.weight+"_cache") + "] " + 
@@ -138,11 +178,39 @@ class AdaGrad(lambda:Double=5e-04, epsilon:Double=1e-6) extends CaffeSolver {
   def sourceFileName:String = "adagrad"
 }
 
-/**
- * lambda: regularization parameter
- * momentum: Momentum value. Typical values are in the range of [0.5, 0.99], usually started at the lower end and annealed towards the higher end.
- */
 class Nesterov(lambda:Double=5e-04, momentum:Double=0.9) extends CaffeSolver {
+  /*
+   * Performs an SGD update with Nesterov momentum.
+   *
+   * As with regular SGD with momentum, in SGD with Nesterov momentum,
+   * we assume that the parameters have a velocity that continues
+   * with some momentum, and that is influenced by the gradient.
+   * In this view specifically, we perform the position update from the
+   * position that the momentum is about to carry the parameters to,
+   * rather than from the previous position.  Additionally, we always
+   * store the parameters in their position after momentum.
+   *
+   * Reference:
+   *  - Advances in optimizing Recurrent Networks, Bengio et al.,
+   *    section 3.5.
+   *    - http://arxiv.org/abs/1212.0901
+   *
+   * Inputs:
+   *  - X: Parameters to update, of shape (any, any).
+   *  - dX: Gradient wrt `X` of a loss function being optimized, of
+   *      same shape as `X`.
+   *  - lr: Learning rate.
+   *  - mu: Momentum value.
+   *      Typical values are in the range of [0.5, 0.99], usually
+   *      started at the lower end and annealed towards the higher end.
+   *  - v: State maintaining the velocity of the parameters `X`, of same
+   *      shape as `X`.
+   *
+   * Outputs:
+   *  - X: Updated parameters X, of same shape as input X.
+   *  - v: Updated velocity of the parameters X, of same shape as
+   *      input v.
+   */
   def update(dmlScript:StringBuilder, layer:CaffeLayer):Unit = {
     val fn = if(Caffe2DML.USE_NESTEROV_UDF) "update_nesterov" else "sgd_nesterov::update"
     val lastParameter = if(Caffe2DML.USE_NESTEROV_UDF) (", " + lambda) else ""

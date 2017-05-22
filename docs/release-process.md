@@ -174,11 +174,9 @@ contents of the artifacts. If the project dependencies (ie, libraries) have chan
 since the last release, the LICENSE and NOTICE files must be updated to reflect these
 changes.
 
-Each artifact *should* contain a DISCLAIMER file.
-
 For more information, see:
 
-1. <http://incubator.apache.org/guides/releasemanagement.html>
+1. <http://www.apache.org/dev/#releases>
 2. <http://www.apache.org/dev/licensing-howto.html>
 
 

@@ -31,14 +31,6 @@
 
 	<fileSets>
 		<fileSet>
-			<directory>${basedir}</directory>
-			<includes>
-				<include>DISCLAIMER</include>
-			</includes>
-			<outputDirectory>META-INF</outputDirectory>
-		</fileSet>
-
-		<fileSet>
 			<directory>${basedir}/src/assembly/inmemory</directory>
 			<includes>
 				<include>LICENSE</include>

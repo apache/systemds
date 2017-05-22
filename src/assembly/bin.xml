@@ -90,14 +90,6 @@
 			</includes>
 			<outputDirectory>.</outputDirectory>
 		</fileSet>
-
-		<fileSet>
-			<directory>${basedir}</directory>
-			<includes>
-				<include>DISCLAIMER</include>
-			</includes>
-			<outputDirectory>.</outputDirectory>
-		</fileSet>
 	</fileSets>
 
 	<!-- Include all the libraries needed to run in standalone mode. -->

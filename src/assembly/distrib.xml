@@ -62,14 +62,6 @@
 			</includes>
 			<outputDirectory>.</outputDirectory>
 		</fileSet>
-
-		<fileSet>
-			<directory>${basedir}</directory>
-			<includes>
-				<include>DISCLAIMER</include>
-			</includes>
-			<outputDirectory>.</outputDirectory>
-		</fileSet>
 	</fileSets>
 
 	<files>

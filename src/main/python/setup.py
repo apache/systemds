@@ -55,7 +55,6 @@ for path, subdirs, files in os.walk(java_dir_full_path):
     for name in files:
         PACKAGE_DATA = PACKAGE_DATA + [ os.path.join(path, name).replace('./', '') ]
 PACKAGE_DATA = PACKAGE_DATA + [os.path.join(python_dir, 'LICENSE'),
-                               os.path.join(python_dir, 'DISCLAIMER'),
                                os.path.join(python_dir, 'NOTICE')]
 
 setup(

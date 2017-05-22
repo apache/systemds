@@ -68,18 +68,18 @@
 #	M[,6]: lower 100*(1-alpha)% confidence interval of betas
 #	M[,7]: upper 100*(1-alpha)% confidence interval of betas
 #
-# Two log files containing a summary of some statistics of the fitted model:
+# Two matrices containing a summary of some statistics of the fitted model:
 # 1- File S with the following format 
-#	- line 1: no. of observations
-#	- line 2: no. of events
-#   - line 3: log-likelihood 
-#	- line 4: AIC
-#	- line 5: Rsquare (Cox & Snell)
-#	- line 6: max possible Rsquare
+#	- row 1: no. of observations
+#	- row 2: no. of events
+#   - row 3: log-likelihood 
+#	- row 4: AIC
+#	- row 5: Rsquare (Cox & Snell)
+#	- row 6: max possible Rsquare
 # 2- File T with the following format
-#	- line 1: Likelihood ratio test statistic, degree of freedom, P-value
-#	- line 2: Wald test statistic, degree of freedom, P-value
-#	- line 3: Score (log-rank) test statistic, degree of freedom, P-value
+#	- row 1: Likelihood ratio test statistic, degree of freedom, P-value
+#	- row 2: Wald test statistic, degree of freedom, P-value
+#	- row 3: Score (log-rank) test statistic, degree of freedom, P-value
 # 
 # Additionally, the following matrices are stored (needed for prediction)
 # 1- A column matrix RT that contains the order-preserving recoded timestamps from X 
@@ -210,7 +210,14 @@ if (ncol (X_orig) < 3) {
 	loglik = -o;
 	S_str = "no. of records " + N + " loglik " + loglik;
 	if (fileS != " ") {
-		write (S_str, fileS, format = fmtO);
+	  S = matrix(0, 6, 1);
+	  S[1, 1] = N;
+	  S[2, 1] = 0; # number of events
+	  S[3, 1] = loglik;
+	  S[4, 1] = -1; # AIC
+	  S[5, 1] = -1; # Rsquare
+	  S[6, 1] = -1; #Rsquare_max
+		write (S, fileS, format = fmtO);
 	} else {
 		print (S_str);
 	}

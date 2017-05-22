@@ -34,6 +34,14 @@ void setNumThreadsForBLAS(int numThreads) {
 	    SYSML_CURRENT_NUM_THREADS = numThreads;
 	}
 }
+
+bool useSinglePrecision;
+bool isSinglePrecision() {
+  return useSinglePrecision;
+}
+void setSinglePrecision(bool enableSinglePrecision) {
+  useSinglePrecision = enableSinglePrecision;
+}
  
 // Multiplies two matrices m1Ptr and m2Ptr in row-major format of shape
 // (m1rlen, m1clen) and (m1clen, m2clen)
@@ -51,6 +59,15 @@ void matmult(double* m1Ptr, double* m2Ptr, double* retPtr, int m1rlen,
   	cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, m, n, k, 1, m1Ptr, k, m2Ptr, n, 0, retPtr, n);
 }
 
+void matmult(float* m1Ptr, float* m2Ptr, float* retPtr, int m1rlen, int m1clen, int m2clen, int numThreads) {
+  int m = m1rlen;
+  int n = m2clen;
+  int k = m1clen;
+  
+  setNumThreadsForBLAS(numThreads);
+  cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, m, n, k, 1, m1Ptr, k, m2Ptr, n, 0, retPtr, n);           
+}
+
 void tsmm(double* m1Ptr, double* retPtr, int m1rlen, int m1clen, bool isLeftTranspose, int numThreads) {
   int m = isLeftTranspose ? m1clen : m1rlen;
   int n = isLeftTranspose ? m1clen : m1rlen;
@@ -60,4 +77,13 @@ void tsmm(double* m1Ptr, double* retPtr, int m1rlen, int m1clen, bool isLeftTran
   
   cblas_dgemm(CblasRowMajor, isLeftTranspose ? CblasTrans : CblasNoTrans, isLeftTranspose ? CblasNoTrans : CblasTrans, m, n, k, 1, m1Ptr, k, m1Ptr, n, 0, retPtr, n);
 }
- 
+
+void tsmm(float* m1Ptr, float* retPtr, int m1rlen, int m1clen, bool isLeftTranspose,  int numThreads) {
+  int m = isLeftTranspose ? m1clen : m1rlen;
+  int n = isLeftTranspose ? m1clen : m1rlen;
+  int k = isLeftTranspose ? m1rlen : m1clen;
+  
+  setNumThreadsForBLAS(numThreads);
+  
+  cblas_sgemm(CblasRowMajor, isLeftTranspose ? CblasTrans : CblasNoTrans, isLeftTranspose ? CblasNoTrans : CblasTrans, m, n, k, 1, m1Ptr, k, m1Ptr, n, 0, retPtr, n);
+}

@@ -31,7 +31,8 @@
   #include "omp.h"
 #endif
 
-int computeNNZ(double* arr, int limit) {
+template <typename T>
+int computeNNZ(T* arr, int limit) {
   int nnz = 0;
 #ifndef USE_INTEL_MKL
   #pragma omp parallel for reduction(+: nnz)
@@ -41,7 +42,8 @@ int computeNNZ(double* arr, int limit) {
   return nnz;
 }
 
-void rotate180(double* inputArray, double* outputArray, int N, int C, int H, int W,
+template <typename T>
+void rotate180(T* inputArray, T* outputArray, int N, int C, int H, int W,
             int K, int R, int S, int stride_h, int stride_w, int pad_h,
             int pad_w, int P, int Q) {
     int PQ = P*Q;
@@ -55,7 +57,8 @@ void rotate180(double* inputArray, double* outputArray, int N, int C, int H, int
 	}
 }
 
-void col2im(double* inputArray, double* outputArray, int N, int C, int H, int W,
+template <typename T>
+void col2im(T* inputArray, T* outputArray, int N, int C, int H, int W,
             int K, int R, int S, int stride_h, int stride_w, int pad_h,
             int pad_w, int P, int Q) {
 	for (int p = 0; p < P; p++) {
@@ -88,11 +91,13 @@ void col2im(double* inputArray, double* outputArray, int N, int C, int H, int W,
 	}
 }
 
-void im2col(double* inputArray, double* outputArray, int N, int C, int H, int W,
+
+template <typename T>
+void im2col(T* inputArray, T* outputArray, int N, int C, int H, int W,
             int K, int R, int S, int stride_h, int stride_w, int pad_h,
             int pad_w, int P, int Q) {
   int CRS = C * R * S;
-  std::size_t size = Q * sizeof(double);
+  std::size_t size = Q * sizeof(T);
   if (stride_h == 1 && stride_w == 1 && pad_h == 0 && pad_w == 0) {
     for (int c = 0; c < CRS; ++c) {
       int wOffset = c % S;
@@ -139,17 +144,32 @@ void im2col(double* inputArray, double* outputArray, int N, int C, int H, int W,
 
 #ifdef USE_INTEL_MKL
 // Returns true if error
-bool MKL_DNN_ERROR(dnnError_t code) {
+bool MKL_DNN_EXECUTE(dnnPrimitive_t primitive, void *resources[]) {
+  dnnError_t code;
+  // Assumption: Step 1: Create a description of a DNN operation already executed.
+  if(isSinglePrecision()) {
+    // Step 2: Perform the DNN operation
+    code = dnnExecute_F32(primitive, resources);
+    // Step 3: Destroy the description of the operation
+    dnnDelete_F32(primitive);
+  }
+  else {
+    // Step 2: Perform the DNN operation
+    code = dnnExecute_F64(primitive, resources);
+    // Step 3: Destroy the description of the operation
+    dnnDelete_F64(primitive);
+  }
   if(code == E_SUCCESS) return false;
   else if(code == E_INCORRECT_INPUT_PARAMETER) std::cerr << "ERROR: Incorrect input parameter\n";
   else if(code == E_MEMORY_ERROR) std::cerr << "ERROR: Memory error\n";
   else if(code == E_UNSUPPORTED_DIMENSION) std::cerr << "ERROR: Unsupported dimensions\n";
   else if(code == E_UNIMPLEMENTED) std::cerr << "ERROR: Unimplemented operation\n";
   return true;
-} 
+}
 #endif
 
-int conv2dBackwardFilterDense(double* inputPtr, double* doutPtr, double* retPtr, int N, int C, int H, int W, int K, int R, int S,
+template <typename T>
+int conv2dBackwardFilterDense(T* inputPtr, T* doutPtr, T* retPtr, int N, int C, int H, int W, int K, int R, int S,
     int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads) {
   int CRS = C*R*S;
 #ifdef USE_INTEL_MKL
@@ -170,12 +190,8 @@ int conv2dBackwardFilterDense(double* inputPtr, double* doutPtr, double* retPtr,
       srcSize, dstSize, filterSize, convolutionStrides, pads, dnnBorderZeros);
   
   // Step 2: Perform the DNN operation
-  if(MKL_DNN_ERROR(dnnExecute_F64(pConvolution, resources))) {
+  if(MKL_DNN_EXECUTE(pConvolution, resources)) 
     return -1; // nnz == -1 indicates error.
-  }
-  
-  // Step 3: Destroy the description of the operation
-  dnnDelete_F64(pConvolution);
 #else
   // First step: Avoids oversubscription and other openmp/internal blas threading issues
   setNumThreadsForBLAS(1);
@@ -243,7 +259,8 @@ int conv2dBackwardFilterDense(double* inputPtr, double* doutPtr, double* retPtr,
   return computeNNZ(retPtr, K*CRS);
 }
 
-int conv2dBackwardDataDense(double* filterPtr, double* doutPtr, double* retPtr, int N, int C, int H, int W, int K, int R, int S,
+template <typename T>
+int conv2dBackwardDataDense(T* filterPtr, T* doutPtr, T* retPtr, int N, int C, int H, int W, int K, int R, int S,
     int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads) {
   int CHW = C * H * W;
 #ifdef USE_INTEL_MKL
@@ -264,12 +281,9 @@ int conv2dBackwardDataDense(double* filterPtr, double* doutPtr, double* retPtr, 
       srcSize, dstSize, filterSize, convolutionStrides, pads, dnnBorderZeros);
   
   // Step 2: Perform the DNN operation
-  if(MKL_DNN_ERROR(dnnExecute_F64(pConvolution, resources))) {
+  if(MKL_DNN_EXECUTE(pConvolution, resources))
     return -1; // nnz == -1 indicates error.
-  }
   
-  // Step 3: Destroy the description of the operation
-  dnnDelete_F64(pConvolution);
 #else 
    // First step: Avoids oversubscription and other openmp/internal blas threading issues
   setNumThreadsForBLAS(1);
@@ -312,20 +326,21 @@ int conv2dBackwardDataDense(double* filterPtr, double* doutPtr, double* retPtr, 
   return computeNNZ(retPtr, N*CHW);
 }
 
-void conv2dSparse(int apos, int alen, int* aix, double* avals, double* filterPtr, double* retPtr, int N, int C, int H, int W, 
+template <typename T>
+void conv2dSparse(int apos, int alen, int* aix, double* avals, T* filterPtr, T* retPtr, int N, int C, int H, int W, 
 			int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads) {
 	setNumThreadsForBLAS(1);
-	double* loweredMat = new double[C * R * S * P * Q];
+	T* loweredMat = new T[C * R * S * P * Q];
 	
 	// Step 1: Perform im2col
-	double* temp = new double[C * H * W];
-	std::size_t size = C * H * W * sizeof(double);
+	T* temp = new T[C * H * W];
+	std::size_t size = C * H * W * sizeof(T);
 	std::memset(temp, 0, size);
 	for(int j=apos; j<apos+alen; j++)
-		temp[ aix[j] ] = avals[j];
+		temp[ aix[j] ] = static_cast<T>(avals[j]);
 	im2col(temp, loweredMat, 1, C, H, W, K,
        R, S, stride_h, stride_w, pad_h, pad_w,
-       P, Q);	
+       P, Q);
 	delete [] temp;
 	
 	// Step 2: filter (K X CRS) %*% loweredMat (CRS X PQ)
@@ -334,7 +349,8 @@ void conv2dSparse(int apos, int alen, int* aix, double* avals, double* filterPtr
 	delete [] loweredMat;
 }
 
-void conv2dBackwardFilterSparseDense(int apos, int alen, int* aix, double* avals, double* rotatedDoutPtr, double* retPtr, int N, int C, int H, int W, 
+template <typename T>
+void conv2dBackwardFilterSparseDense(int apos, int alen, int* aix, double* avals, T* rotatedDoutPtr, T* retPtr, int N, int C, int H, int W, 
 			int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads) {
 	setNumThreadsForBLAS(1);
 	int CHW = C * H * W;
@@ -345,21 +361,21 @@ void conv2dBackwardFilterSparseDense(int apos, int alen, int* aix, double* avals
 	int n1 = K;
 	int k1 = PQ;
 	
-	double* loweredMat = new double[CRS * PQ];
+	T* loweredMat = new T[CRS * PQ];
 	
 	// Step 1: Perform im2col
-	double* temp = new double[C * H * W];
-	std::size_t size = C * H * W * sizeof(double);
+	T* temp = new T[C * H * W];
+	std::size_t size = C * H * W * sizeof(T);
 	std::memset(temp, 0, size);
 	for(int j=apos; j<apos+alen; j++)
-		temp[ aix[j] ] = avals[j];
+		temp[ aix[j] ] = static_cast<T>(avals[j]);
 	im2col(temp, loweredMat, 1, C, H, W, K,
        R, S, stride_h, stride_w, pad_h, pad_w,
        P, Q);
     delete [] temp;
 	
 	// Multiply to get CRS X K
-	double* temp1 = new double[CRS * K];
+	T* temp1 = new T[CRS * K];
 	// Step 3: loweredMat (CRS X PQ) %*% rotatedDoutPtr (PQ X K) 
     matmult(loweredMat, rotatedDoutPtr, temp1, C * R * S, P * Q, K, 1);
     delete [] loweredMat;
@@ -372,8 +388,8 @@ void conv2dBackwardFilterSparseDense(int apos, int alen, int* aix, double* avals
 	delete [] temp1;
 }
 
-
-int conv2dBiasAddDense(double* inputPtr, double* biasPtr, double* filterPtr, double* retPtr, int N, int C, int H, int W, int K, int R, int S,
+template <typename T>
+int conv2dBiasAddDense(T* inputPtr, T* biasPtr, T* filterPtr, T* retPtr, int N, int C, int H, int W, int K, int R, int S,
     int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, bool addBias, int numThreads) {
   int KPQ = K * P * Q;
   
@@ -392,22 +408,27 @@ int conv2dBiasAddDense(double* inputPtr, double* biasPtr, double* filterPtr, dou
   resources[dnnResourceFilter] = filterPtr;
   resources[dnnResourceDst] = retPtr;
   if(addBias) {
-    dnnConvolutionCreateForwardBias_F64(&pConvolution, NULL, dnnAlgorithmConvolutionDirect, dimension, 
-      srcSize, dstSize, filterSize, convolutionStrides, pads, dnnBorderZeros);
+    if(isSinglePrecision())
+      dnnConvolutionCreateForwardBias_F32(&pConvolution, NULL, dnnAlgorithmConvolutionDirect, dimension, 
+        srcSize, dstSize, filterSize, convolutionStrides, pads, dnnBorderZeros);
+    else
+      dnnConvolutionCreateForwardBias_F64(&pConvolution, NULL, dnnAlgorithmConvolutionDirect, dimension, 
+        srcSize, dstSize, filterSize, convolutionStrides, pads, dnnBorderZeros);
     resources[dnnResourceBias] = biasPtr;
   }
   else { 
-    dnnConvolutionCreateForward_F64(&pConvolution, NULL, dnnAlgorithmConvolutionDirect, dimension, 
-      srcSize, dstSize, filterSize, convolutionStrides, pads, dnnBorderZeros);
+    if(isSinglePrecision())
+      dnnConvolutionCreateForward_F32(&pConvolution, NULL, dnnAlgorithmConvolutionDirect, dimension, 
+        srcSize, dstSize, filterSize, convolutionStrides, pads, dnnBorderZeros);
+	else
+      dnnConvolutionCreateForward_F64(&pConvolution, NULL, dnnAlgorithmConvolutionDirect, dimension, 
+        srcSize, dstSize, filterSize, convolutionStrides, pads, dnnBorderZeros);
   }
   
   // Step 2: Perform the DNN operation
-  if(MKL_DNN_ERROR(dnnExecute_F64(pConvolution, resources))) {
+  if(MKL_DNN_EXECUTE(pConvolution, resources))
     return -1; // nnz == -1 indicates error.
-  }
   
-  // Step 3: Destroy the description of the operation
-  dnnDelete_F64(pConvolution);
 #else 
   // ------------------------------------------------------------------------------------
   // First step:  Avoids oversubscription and other openmp/internal blas threading issues

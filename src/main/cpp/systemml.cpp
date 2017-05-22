@@ -51,6 +51,9 @@
 	((double*)env->GetPrimitiveArrayCritical(input, NULL))
 // ( maxThreads != -1 && ((int)numThreads) == maxThreads ? ((double*)env->GetPrimitiveArrayCritical(input, NULL)) :  env->GetDoubleArrayElements(input,NULL) )
  
+ #define GET_FLOAT_ARRAY(env, input, numThreads) \
+	((float*)env->GetPrimitiveArrayCritical(input, NULL))
+	
 // ------------------------------------------------------------------- 
 // From: https://developer.android.com/training/articles/perf-jni.html
 // 0
@@ -63,6 +66,10 @@
 	env->ReleasePrimitiveArrayCritical(input, inputPtr, JNI_ABORT)
 // ( maxThreads != -1 && ((int)numThreads) == maxThreads ? env->ReleasePrimitiveArrayCritical(input, inputPtr, JNI_ABORT) : env->ReleaseDoubleArrayElements(input, inputPtr, JNI_ABORT) )
 
+// For consistency
+#define RELEASE_INPUT_FLOAT_ARRAY(env, input, inputPtr, numThreads) \
+	env->ReleasePrimitiveArrayCritical(input, inputPtr, JNI_ABORT)
+	
 #define RELEASE_DOUBLE_ARRAY(env, input, inputPtr, numThreads) \
 	env->ReleasePrimitiveArrayCritical(input, inputPtr, 0)
 // ( maxThreads != -1 && ((int)numThreads) == maxThreads ? env->ReleasePrimitiveArrayCritical(input, inputPtr, 0) :  env->ReleaseDoubleArrayElements(input, inputPtr, 0) )
@@ -75,6 +82,22 @@ JNIEXPORT void JNICALL Java_org_apache_sysml_utils_NativeHelper_setMaxNumThreads
   maxThreads = (int) jmaxThreads;
 }
 
+JNIEXPORT void JNICALL Java_org_apache_sysml_utils_NativeHelper_setFloatDatatype(JNIEnv * env, jclass cls, jboolean useFloatDataType1) {
+  setSinglePrecision((bool)useFloatDataType1);
+}
+
+void copyFP32ToFP64(float* src, double* dest, int size) {
+  for(int i = 0; i < size; i++) {
+    dest[i] = static_cast<double>(src[i]);
+  }
+}
+
+void copyFP64ToFP32(double* src, float* dest, int size) {
+  for(int i = 0; i < size; i++) {
+    dest[i] = static_cast<float>(src[i]);
+  }
+}
+
 JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_matrixMultDenseDense(
     JNIEnv* env, jclass cls, jdoubleArray m1, jdoubleArray m2, jdoubleArray ret,
     jint m1rlen, jint m1clen, jint m2clen, jint numThreads) {
@@ -84,7 +107,24 @@ JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_matrixMultDe
   if(m1Ptr == NULL || m2Ptr == NULL || retPtr == NULL)
   	return (jboolean) false;
 
-  matmult(m1Ptr, m2Ptr, retPtr, (int)m1rlen, (int)m1clen, (int)m2clen, (int)numThreads);
+  if(isSinglePrecision()) {
+    int m1PtrLen = (int)m1rlen*(int)m1clen; 
+    int m2PtrLen = (int)m1clen*(int)m2clen; 
+    int retPtrLen = (int)m1rlen*(int)m2clen;
+    float* m1PtrFP32 = new float[m1PtrLen];
+    float* m2PtrFP32 = new float[m2PtrLen];
+    float* retPtrFP32 = new float[retPtrLen];
+    copyFP64ToFP32(m1Ptr, m1PtrFP32, m1PtrLen);
+    copyFP64ToFP32(m2Ptr, m2PtrFP32, m2PtrLen);
+    matmult(m1PtrFP32, m2PtrFP32, retPtrFP32, (int)m1rlen, (int)m1clen, (int)m2clen, (int)numThreads);
+    copyFP32ToFP64(retPtrFP32, retPtr, retPtrLen);
+    delete [] m1PtrFP32;
+    delete [] m2PtrFP32;
+    delete [] retPtrFP32;
+  }
+  else {
+    matmult(m1Ptr, m2Ptr, retPtr, (int)m1rlen, (int)m1clen, (int)m2clen, (int)numThreads);
+  }
 
   RELEASE_INPUT_DOUBLE_ARRAY(env, m1, m1Ptr, numThreads);
   RELEASE_INPUT_DOUBLE_ARRAY(env, m2, m2Ptr, numThreads);
@@ -99,7 +139,20 @@ JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_tsmm
   if(m1Ptr == NULL || retPtr == NULL)
   	return (jboolean) false;
 
-  tsmm(m1Ptr, retPtr, (int) m1rlen, (int) m1clen, (bool) isLeftTranspose, (int) numThreads);
+  if(isSinglePrecision()) {
+    int m1PtrLen = (int)m1rlen*(int)m1clen; 
+    int retPtrLen = ((bool) isLeftTranspose) ? ((int)m1clen*(int)m1clen) : ((int)m1rlen*(int)m1rlen);
+    float* m1PtrFP32 = new float[m1PtrLen];
+    float* retPtrFP32 = new float[retPtrLen];
+    copyFP64ToFP32(m1Ptr, m1PtrFP32, m1PtrLen);
+    tsmm(m1PtrFP32, retPtrFP32, (int) m1rlen, (int) m1clen, (bool) isLeftTranspose, (int) numThreads);
+    copyFP32ToFP64(retPtrFP32, retPtr, retPtrLen);
+    delete [] m1PtrFP32;
+    delete [] retPtrFP32;
+  }
+  else {
+    tsmm(m1Ptr, retPtr, (int) m1rlen, (int) m1clen, (bool) isLeftTranspose, (int) numThreads);
+  }
   
   RELEASE_INPUT_DOUBLE_ARRAY(env, m1, m1Ptr, numThreads);
   RELEASE_DOUBLE_ARRAY(env, ret, retPtr, numThreads);
@@ -125,6 +178,29 @@ JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dSparse
   return (jboolean) true;
 }
 
+JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dSparseFP32
+  (JNIEnv * env, jclass, jint apos, jint alen, jintArray aix, jdoubleArray avals, jfloatArray filter, 
+    jdoubleArray ret, jint N, jint C, jint H, jint W, jint K, jint R, jint S,
+    jint stride_h, jint stride_w, jint pad_h, jint pad_w, jint P, jint Q, jint numThreads) {
+  int* aixPtr = ((int*)env->GetPrimitiveArrayCritical(aix, NULL));
+  double* avalsPtr = GET_DOUBLE_ARRAY(env, avals, numThreads);
+  float* filterPtr = GET_FLOAT_ARRAY(env, filter, numThreads);
+  double* retPtr = GET_DOUBLE_ARRAY(env, ret, numThreads);
+  
+  int retPtrLen = (int)N * (int)K * (int)P * (int)Q;
+  float* retPtrFP32 = new float[retPtrLen];
+  conv2dSparse((int)apos, (int)alen, aixPtr, avalsPtr, filterPtr, retPtrFP32, (int)N, (int)C, (int)H, (int)W, 
+			(int)K, (int)R, (int)S, (int)stride_h, (int)stride_w, (int)pad_h, (int)pad_w, (int)P, (int)Q, (int)numThreads);
+  copyFP32ToFP64(retPtrFP32, retPtr, retPtrLen);
+  delete [] retPtrFP32;
+  
+  RELEASE_INPUT_DOUBLE_ARRAY(env, avals, avalsPtr, numThreads);
+  RELEASE_INPUT_FLOAT_ARRAY(env, filter, filterPtr, numThreads);
+  env->ReleasePrimitiveArrayCritical(aix, aixPtr, JNI_ABORT);
+  RELEASE_DOUBLE_ARRAY(env, ret, retPtr, numThreads); 
+  return (jboolean) true;
+}
+
 JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dBackwardFilterSparseDense
   (JNIEnv * env, jclass, jint apos, jint alen, jintArray aix, jdoubleArray avals, jdoubleArray dout,  
   	jdoubleArray ret, jint N, jint C, jint H, jint W, jint K, jint R, jint S,
@@ -134,9 +210,22 @@ JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dBackwa
   double* doutPtr = GET_DOUBLE_ARRAY(env, dout, numThreads);
   double* retPtr = GET_DOUBLE_ARRAY(env, ret, numThreads);
   
-  conv2dBackwardFilterSparseDense((int)apos, (int)alen, aixPtr, avalsPtr, doutPtr, retPtr, (int)N, (int)C, (int)H, (int)W, 
-			(int)K, (int)R, (int)S, (int)stride_h, (int)stride_w, (int)pad_h, (int)pad_w, (int)P, (int)Q, (int)numThreads);
-  
+  if(isSinglePrecision()) {
+    int doutPtrLen = (int)N * (int)K * (int)P * (int)Q; 
+    int retPtrLen = (int)K * (int)C * (int)R * (int)S;
+    float* doutPtrFP32 = new float[doutPtrLen];
+    float* retPtrFP32 = new float[retPtrLen];
+    copyFP64ToFP32(doutPtr, doutPtrFP32, doutPtrLen);
+    conv2dBackwardFilterSparseDense((int)apos, (int)alen, aixPtr, avalsPtr, doutPtrFP32, retPtrFP32, (int)N, (int)C, (int)H, (int)W, 
+				(int)K, (int)R, (int)S, (int)stride_h, (int)stride_w, (int)pad_h, (int)pad_w, (int)P, (int)Q, (int)numThreads);
+    copyFP32ToFP64(retPtrFP32, retPtr, retPtrLen);
+    delete [] doutPtrFP32;
+    delete [] retPtrFP32;
+  }
+  else {
+	  conv2dBackwardFilterSparseDense((int)apos, (int)alen, aixPtr, avalsPtr, doutPtr, retPtr, (int)N, (int)C, (int)H, (int)W, 
+				(int)K, (int)R, (int)S, (int)stride_h, (int)stride_w, (int)pad_h, (int)pad_w, (int)P, (int)Q, (int)numThreads);
+  }
   RELEASE_INPUT_DOUBLE_ARRAY(env, avals, avalsPtr, numThreads);
   RELEASE_INPUT_DOUBLE_ARRAY(env, dout, doutPtr, numThreads);
   env->ReleasePrimitiveArrayCritical(aix, aixPtr, JNI_ABORT);
@@ -154,7 +243,8 @@ JNIEXPORT jint JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dDense(
   if(inputPtr == NULL || filterPtr == NULL || retPtr == NULL)
   	return (jint) -1;
   
-  int nnz = conv2dBiasAddDense(inputPtr, 0, filterPtr, retPtr, (int) N, (int) C, (int) H, (int) W, (int) K, (int) R, (int) S,
+  double* ignoreBiasPtr = filterPtr; // to avoid template argument deduction/substitution failed error while compilation.
+  int nnz = conv2dBiasAddDense(inputPtr, ignoreBiasPtr, filterPtr, retPtr, (int) N, (int) C, (int) H, (int) W, (int) K, (int) R, (int) S,
     (int) stride_h, (int) stride_w, (int) pad_h, (int) pad_w, (int) P, (int) Q, false, (int) numThreads);
     
   RELEASE_INPUT_DOUBLE_ARRAY(env, input, inputPtr, numThreads);

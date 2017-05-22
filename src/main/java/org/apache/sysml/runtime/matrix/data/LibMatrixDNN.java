@@ -155,8 +155,12 @@ public class LibMatrixDNN {
 		if(params.bias != null && params.bias.isInSparseFormat())
 			params.bias.sparseToDense(); // Since bias is extremely small array
 		
-		if(isEligibleForConv2dSparse(params))
+		if(isEligibleForConv2dSparse(params)) {
 			Statistics.numNativeSparseConv2dCalls.increment();
+			params.input2FP32 = new float[filter.denseBlock.length];
+			for(int i = 0; i < filter.denseBlock.length; i++)
+				params.input2FP32[i] = (float) filter.denseBlock[i];
+		}
 		
 		runConvTask(TaskType.LoopedIm2ColConv2d, params);
 		
@@ -1126,9 +1130,14 @@ public class LibMatrixDNN {
 								int alen = _params.input1.getSparseBlock().size(n);
 								int[] aix = _params.input1.getSparseBlock().indexes(n);
 								double[] avals = _params.input1.getSparseBlock().values(n);
-								NativeHelper.conv2dSparse(apos, alen, aix, avals, _params.input2.getDenseBlock(), temp, 
-										1, _params.C, _params.H, _params.W, _params.K, _params.R, _params.S, 
-										_params.stride_h, _params.stride_w, _params.pad_h, _params.pad_w, _params.P, _params.Q, 1);
+								if(NativeHelper.isFP32)
+									NativeHelper.conv2dSparseFP32(apos, alen, aix, avals, _params.input2FP32, temp, 
+											1, _params.C, _params.H, _params.W, _params.K, _params.R, _params.S, 
+											_params.stride_h, _params.stride_w, _params.pad_h, _params.pad_w, _params.P, _params.Q, 1);
+								else
+									NativeHelper.conv2dSparse(apos, alen, aix, avals, _params.input2.getDenseBlock(), temp, 
+											1, _params.C, _params.H, _params.W, _params.K, _params.R, _params.S, 
+											_params.stride_h, _params.stride_w, _params.pad_h, _params.pad_w, _params.P, _params.Q, 1);
 								System.arraycopy(temp, 0, _params.output.denseBlock, n*KPQ, KPQ);
 							}
 						}

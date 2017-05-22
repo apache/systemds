@@ -51,12 +51,18 @@
 #endif
 
 void setNumThreadsForBLAS(int numThreads);
+bool isSinglePrecision();
+void setSinglePrecision(bool enableSinglePrecision);
 
 // Multiplies two matrices m1Ptr and m2Ptr in row-major format of shape
 // (m1rlen, m1clen) and (m1clen, m2clen)
 void matmult(double* m1Ptr, double* m2Ptr, double* retPtr, int m1rlen,
              int m1clen, int m2clen, int numThreads);
-             
+void matmult(float* m1Ptr, float* m2Ptr, float* retPtr, int m1rlen,
+             int m1clen, int m2clen, int numThreads);
+                          
 void tsmm(double* m1Ptr, double* retPtr, int m1rlen, int m1clen, bool isLeftTranspose,  int numThreads);
-             
+
+void tsmm(float* m1Ptr, float* retPtr, int m1rlen, int m1clen, bool isLeftTranspose,  int numThreads);
+
 #endif

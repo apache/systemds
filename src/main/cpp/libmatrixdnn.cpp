@@ -168,8 +168,18 @@ bool MKL_DNN_EXECUTE(dnnPrimitive_t primitive, void *resources[]) {
 }
 #endif
 
+void matMultAndAdd(double* m1Ptr, double* m2Ptr, double* ret, int m1rlen, int m1clen, int m2clen) {
+	double alpha = 1; double beta = 1;
+	cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, m1rlen, m2clen, m1clen, alpha, m1Ptr, m1clen, m2Ptr, m2clen, beta, ret, m2clen);
+}
+
+void matMultAndAdd(float* m1Ptr, float* m2Ptr, float* ret, int m1rlen, int m1clen, int m2clen) {
+	double alpha = 1; double beta = 1;
+	cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, m1rlen, m2clen, m1clen, alpha, m1Ptr, m1clen, m2Ptr, m2clen, beta, ret, m2clen);
+}
+
 template <typename T>
-int conv2dBackwardFilterDense(T* inputPtr, T* doutPtr, T* retPtr, int N, int C, int H, int W, int K, int R, int S,
+int conv2dBackwardFilterDenseHelper(T* inputPtr, T* doutPtr, T* retPtr, int N, int C, int H, int W, int K, int R, int S,
     int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads) {
   int CRS = C*R*S;
 #ifdef USE_INTEL_MKL
@@ -186,7 +196,11 @@ int conv2dBackwardFilterDense(T* inputPtr, T* doutPtr, T* retPtr, int N, int C, 
   resources[dnnResourceDiffDst] = doutPtr;
   resources[dnnResourceSrc] = inputPtr;
   resources[dnnResourceDiffFilter] = retPtr;
-  dnnConvolutionCreateBackwardFilter_F64(&pConvolution, NULL, dnnAlgorithmConvolutionDirect, dimension, 
+  if(isSinglePrecision())
+  	dnnConvolutionCreateBackwardFilter_F32(&pConvolution, NULL, dnnAlgorithmConvolutionDirect, dimension, 
+      srcSize, dstSize, filterSize, convolutionStrides, pads, dnnBorderZeros);
+  else
+  	dnnConvolutionCreateBackwardFilter_F64(&pConvolution, NULL, dnnAlgorithmConvolutionDirect, dimension, 
       srcSize, dstSize, filterSize, convolutionStrides, pads, dnnBorderZeros);
   
   // Step 2: Perform the DNN operation
@@ -209,15 +223,15 @@ int conv2dBackwardFilterDense(T* inputPtr, T* doutPtr, T* retPtr, int N, int C, 
   
   // Allocate temporary data structures used in parallel for
   int numOpenMPThreads = MIN(numThreads, N);
-  double* temp = new double[numTempElem*numOpenMPThreads];
-  std::memset(temp, 0, numTempElem*numOpenMPThreads*sizeof(double));
-  double* rotatedDoutPtrArrays = new double[numRotatedElem*numOpenMPThreads];
-  double* loweredMatArrays = new double[numIm2ColElem*numOpenMPThreads];
+  T* temp = new T[numTempElem*numOpenMPThreads];
+  std::memset(temp, 0, numTempElem*numOpenMPThreads*sizeof(T));
+  T* rotatedDoutPtrArrays = new T[numRotatedElem*numOpenMPThreads];
+  T* loweredMatArrays = new T[numIm2ColElem*numOpenMPThreads];
 
 #pragma omp parallel for num_threads(numOpenMPThreads)
   for (int n = 0; n < N; n++) {
     int threadID = omp_get_thread_num();
-  	double* loweredMat = loweredMatArrays + numIm2ColElem*threadID;
+  	T* loweredMat = loweredMatArrays + numIm2ColElem*threadID;
 
     // Step 1: Perform im2col
     im2col(inputPtr + n * CHW, loweredMat, 1, C, H, W, K,
@@ -225,17 +239,16 @@ int conv2dBackwardFilterDense(T* inputPtr, T* doutPtr, T* retPtr, int N, int C, 
            P, Q);
            
     // Step 2: Rotate dout
-    double* rotatedDoutPtr = rotatedDoutPtrArrays + numRotatedElem*threadID;
+    T* rotatedDoutPtr = rotatedDoutPtrArrays + numRotatedElem*threadID;
     rotate180(doutPtr + n * KPQ, rotatedDoutPtr, 1, C, H, W, K,
            R, S, stride_h, stride_w, pad_h, pad_w,
            P, Q);
     
     // Multiply to get tmp1 = CRS X K
-    double* temp1 = temp + numTempElem*threadID;
+    T* temp1 = temp + numTempElem*threadID;
     // Step 3: temp1 = alpha * (loweredMat (CRS X PQ) %*% rotated_dout (PQ X K)) + beta*temp1
     int m1rlen = C * R * S; int m1clen = P * Q; int m2clen = K;
-    double* m1Ptr = loweredMat; double* m2Ptr = rotatedDoutPtr; double alpha = 1; double beta = 1;
-    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, m1rlen, m2clen, m1clen, alpha, m1Ptr, m1clen, m2Ptr, m2clen, beta, temp1, m2clen);
+    matMultAndAdd(loweredMat, rotatedDoutPtr, temp1, m1rlen, m1clen, m2clen);
   } // end omp parallel for
   
   delete [] loweredMatArrays;
@@ -245,7 +258,7 @@ int conv2dBackwardFilterDense(T* inputPtr, T* doutPtr, T* retPtr, int N, int C, 
   int numRow = CRS;
   for(int t = 0; t < numOpenMPThreads; t++) {
   	int iter = 0;
-  	double* temp1 = temp + numTempElem*t;
+  	T* temp1 = temp + numTempElem*t;
 	for(int i = 0; i < CRS; i++) {
 		for(int j = 0; j < K; j++, iter++) {
 			int index = j*numRow+i;
@@ -259,8 +272,21 @@ int conv2dBackwardFilterDense(T* inputPtr, T* doutPtr, T* retPtr, int N, int C, 
   return computeNNZ(retPtr, K*CRS);
 }
 
+
+int conv2dBackwardFilterDense(double* inputPtr, double* doutPtr, double* retPtr, int N, int C, int H, int W, int K, int R, int S,
+    int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads) {
+    return conv2dBackwardFilterDenseHelper(inputPtr, doutPtr, retPtr, N, C, H, W, K, R, S,
+    stride_h, stride_w, pad_h, pad_w, P, Q, numThreads);
+}
+
+int conv2dBackwardFilterDense(float* inputPtr, float* doutPtr, float* retPtr, int N, int C, int H, int W, int K, int R, int S,
+    int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads) {
+    return conv2dBackwardFilterDenseHelper(inputPtr, doutPtr, retPtr, N, C, H, W, K, R, S,
+    stride_h, stride_w, pad_h, pad_w, P, Q, numThreads);
+}
+
 template <typename T>
-int conv2dBackwardDataDense(T* filterPtr, T* doutPtr, T* retPtr, int N, int C, int H, int W, int K, int R, int S,
+int conv2dBackwardDataDenseHelper(T* filterPtr, T* doutPtr, T* retPtr, int N, int C, int H, int W, int K, int R, int S,
     int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads) {
   int CHW = C * H * W;
 #ifdef USE_INTEL_MKL
@@ -277,7 +303,11 @@ int conv2dBackwardDataDense(T* filterPtr, T* doutPtr, T* retPtr, int N, int C, i
   resources[dnnResourceDiffDst] = doutPtr;
   resources[dnnResourceFilter] = filterPtr;
   resources[dnnResourceDiffSrc] = retPtr;
-  dnnConvolutionCreateBackwardData_F64(&pConvolution, NULL, dnnAlgorithmConvolutionDirect, dimension, 
+  if(isSinglePrecision())
+  	dnnConvolutionCreateBackwardData_F32(&pConvolution, NULL, dnnAlgorithmConvolutionDirect, dimension, 
+      srcSize, dstSize, filterSize, convolutionStrides, pads, dnnBorderZeros);
+  else
+  	dnnConvolutionCreateBackwardData_F64(&pConvolution, NULL, dnnAlgorithmConvolutionDirect, dimension, 
       srcSize, dstSize, filterSize, convolutionStrides, pads, dnnBorderZeros);
   
   // Step 2: Perform the DNN operation
@@ -296,25 +326,25 @@ int conv2dBackwardDataDense(T* filterPtr, T* doutPtr, T* retPtr, int N, int C, i
 
   // Allocate temporary data structures used in parallel for
   int numOpenMPThreads = MIN(numThreads, N);
-  double* rotatedDoutPtrArrays = new double[numRotatedElem*numOpenMPThreads];
-  double* col2imInputArrays = new double[numCol2ImElem*numOpenMPThreads];
+  T* rotatedDoutPtrArrays = new T[numRotatedElem*numOpenMPThreads];
+  T* col2imInputArrays = new T[numCol2ImElem*numOpenMPThreads];
 
 #pragma omp parallel for num_threads(numOpenMPThreads)
   for (int n = 0; n < N; n++) {
     int threadID = omp_get_thread_num();
     // Step 1: Rotate dout
-    double* rotatedDoutPtr = rotatedDoutPtrArrays + numRotatedElem*threadID;
+    T* rotatedDoutPtr = rotatedDoutPtrArrays + numRotatedElem*threadID;
     rotate180(doutPtr + n * KPQ, rotatedDoutPtr, 1, C, H, W, K,
            R, S, stride_h, stride_w, pad_h, pad_w,
            P, Q);
 
     // Step 2: t(rotatedDout (PQ X K) %*% filter (K X CRS))
-    double* col2imInput = col2imInputArrays + numCol2ImElem*threadID;
+    T* col2imInput = col2imInputArrays + numCol2ImElem*threadID;
     matmult(rotatedDoutPtr, filterPtr, col2imInput,
             PQ, K, CRS, 1);
 
     // Step 3: Perform col2im
-    double* outputArr = retPtr + n * CHW;
+    T* outputArr = retPtr + n * CHW;
     col2im(col2imInput, outputArr, 1, C, H, W, K,
            R, S, stride_h, stride_w, pad_h, pad_w,
            P, Q);
@@ -326,8 +356,20 @@ int conv2dBackwardDataDense(T* filterPtr, T* doutPtr, T* retPtr, int N, int C, i
   return computeNNZ(retPtr, N*CHW);
 }
 
+int conv2dBackwardDataDense(double* filterPtr, double* doutPtr, double* retPtr, int N, int C, int H, int W, int K, int R, int S,
+    int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads) {
+	return conv2dBackwardDataDenseHelper(filterPtr,  doutPtr,  retPtr, N, C, H, W, K, R, S,
+    	stride_h, stride_w, pad_h, pad_w, P, Q, numThreads);
+}
+
+int conv2dBackwardDataDense(float* filterPtr, float* doutPtr, float* retPtr, int N, int C, int H, int W, int K, int R, int S,
+    int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads) {
+	return conv2dBackwardDataDenseHelper(filterPtr,  doutPtr,  retPtr, N, C, H, W, K, R, S,
+    	stride_h, stride_w, pad_h, pad_w, P, Q, numThreads);
+}
+
 template <typename T>
-void conv2dSparse(int apos, int alen, int* aix, double* avals, T* filterPtr, T* retPtr, int N, int C, int H, int W, 
+void conv2dSparseHelper(int apos, int alen, int* aix, double* avals, T* filterPtr, T* retPtr, int N, int C, int H, int W, 
 			int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads) {
 	setNumThreadsForBLAS(1);
 	T* loweredMat = new T[C * R * S * P * Q];
@@ -349,8 +391,20 @@ void conv2dSparse(int apos, int alen, int* aix, double* avals, T* filterPtr, T* 
 	delete [] loweredMat;
 }
 
+void conv2dSparse(int apos, int alen, int* aix, double* avals, float* filter, float* ret, int N, int C, int H, int W, 
+			int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads) {
+	conv2dSparseHelper(apos, alen, aix, avals, filter, ret, N, C, H, W, 
+			K, R, S, stride_h, stride_w, pad_h, pad_w, P, Q, numThreads);
+}
+
+void conv2dSparse(int apos, int alen, int* aix, double* avals, double* filter, double* ret, int N, int C, int H, int W, 
+			int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads) {
+	conv2dSparseHelper(apos, alen, aix, avals, filter, ret, N, C, H, W, 
+			K, R, S, stride_h, stride_w, pad_h, pad_w, P, Q, numThreads);	
+}
+
 template <typename T>
-void conv2dBackwardFilterSparseDense(int apos, int alen, int* aix, double* avals, T* rotatedDoutPtr, T* retPtr, int N, int C, int H, int W, 
+void conv2dBackwardFilterSparseDenseHelper(int apos, int alen, int* aix, double* avals, T* rotatedDoutPtr, T* retPtr, int N, int C, int H, int W, 
 			int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads) {
 	setNumThreadsForBLAS(1);
 	int CHW = C * H * W;
@@ -388,8 +442,20 @@ void conv2dBackwardFilterSparseDense(int apos, int alen, int* aix, double* avals
 	delete [] temp1;
 }
 
+void conv2dBackwardFilterSparseDense(int apos, int alen, int* aix, double* avals, double* rotatedDoutPtr, double* retPtr, int N, int C, int H, int W, 
+			int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads) {
+	conv2dBackwardFilterSparseDenseHelper(apos, alen, aix, avals, rotatedDoutPtr, retPtr, N, C, H, W, 
+			K, R, S, stride_h, stride_w, pad_h, pad_w, P, Q, numThreads);
+}
+
+void conv2dBackwardFilterSparseDense(int apos, int alen, int* aix, double* avals, float* rotatedDoutPtr, float* retPtr, int N, int C, int H, int W, 
+			int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads) {
+	conv2dBackwardFilterSparseDenseHelper(apos, alen, aix, avals, rotatedDoutPtr, retPtr, N, C, H, W, 
+			K, R, S, stride_h, stride_w, pad_h, pad_w, P, Q, numThreads);
+}
+
 template <typename T>
-int conv2dBiasAddDense(T* inputPtr, T* biasPtr, T* filterPtr, T* retPtr, int N, int C, int H, int W, int K, int R, int S,
+int conv2dBiasAddDenseHelper(T* inputPtr, T* biasPtr, T* filterPtr, T* retPtr, int N, int C, int H, int W, int K, int R, int S,
     int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, bool addBias, int numThreads) {
   int KPQ = K * P * Q;
   
@@ -440,12 +506,12 @@ int conv2dBiasAddDense(T* inputPtr, T* biasPtr, T* filterPtr, T* retPtr, int N, 
   
   // Allocate temporary data structures used in parallel for
   int numOpenMPThreads = MIN(numThreads, N);
-  double* loweredMatArrays = new double[numIm2ColElem*numOpenMPThreads];
+  T* loweredMatArrays = new T[numIm2ColElem*numOpenMPThreads];
   
 #pragma omp parallel for num_threads(numOpenMPThreads)
   for (int n = 0; n < N; n++) {
     int threadID = omp_get_thread_num();
-    double* loweredMat = loweredMatArrays + numIm2ColElem*threadID;
+    T* loweredMat = loweredMatArrays + numIm2ColElem*threadID;
 
     // Step 1: Perform im2col
     im2col(inputPtr + n * CHW, loweredMat, 1, C, H, W, K,
@@ -457,7 +523,7 @@ int conv2dBiasAddDense(T* inputPtr, T* biasPtr, T* filterPtr, T* retPtr, int N, 
             C * R * S, P * Q, 1);
     
     // Step 3: Add bias
-    double* outputArr = retPtr + n*KPQ;
+    T* outputArr = retPtr + n*KPQ;
     if(addBias) {
 	    int index = 0;
 		for(int k = 0; k < K; k++) {
@@ -472,4 +538,16 @@ int conv2dBiasAddDense(T* inputPtr, T* biasPtr, T* filterPtr, T* retPtr, int N, 
 #endif
   
   return computeNNZ(retPtr, N*KPQ);
+}
+
+int conv2dBiasAddDense(double* inputPtr, double* biasPtr, double* filterPtr, double* retPtr, int N, int C, int H, int W, int K, int R, int S,
+    int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, bool addBias, int numThreads) {
+	return conv2dBiasAddDenseHelper(inputPtr, biasPtr, filterPtr, retPtr, N, C, H, W, K, R, S,
+    	stride_h, stride_w, pad_h, pad_w, P, Q, addBias, numThreads);
+}
+
+int conv2dBiasAddDense(float* inputPtr, float* biasPtr, float* filterPtr, float* retPtr, int N, int C, int H, int W, int K, int R, int S,
+    int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, bool addBias, int numThreads) {
+    return conv2dBiasAddDenseHelper(inputPtr, biasPtr, filterPtr, retPtr, N, C, H, W, K, R, S,
+    	stride_h, stride_w, pad_h, pad_w, P, Q, addBias, numThreads);
 }

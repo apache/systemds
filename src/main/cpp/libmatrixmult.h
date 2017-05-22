@@ -62,7 +62,6 @@ void matmult(float* m1Ptr, float* m2Ptr, float* retPtr, int m1rlen,
              int m1clen, int m2clen, int numThreads);
                           
 void tsmm(double* m1Ptr, double* retPtr, int m1rlen, int m1clen, bool isLeftTranspose,  int numThreads);
-
 void tsmm(float* m1Ptr, float* retPtr, int m1rlen, int m1clen, bool isLeftTranspose,  int numThreads);
 
 #endif

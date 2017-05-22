@@ -176,7 +176,7 @@ changes.
 
 For more information, see:
 
-1. <http://incubator.apache.org/guides/releasemanagement.html>
+1. <http://www.apache.org/dev/#releases>
 2. <http://www.apache.org/dev/licensing-howto.html>
 
 

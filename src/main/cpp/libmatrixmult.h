@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
- 
+
 #ifndef _libmatrixmult_h
 #define _libmatrixmult_h
 
@@ -32,7 +32,7 @@
 // *****************************************************************
 
 //#ifdef __cplusplus
-//extern "C" {
+// extern "C" {
 //#endif
 //#ifdef __cplusplus
 //}
@@ -40,8 +40,9 @@
 
 // Since we call cblas_dgemm in openmp for loop,
 // we call "extension" APIs for setting number of threads of the given API.
-// For example: for OpenBLAS we use openblas_set_num_threads and  
-// for MKL we use mkl_set_num_threads. This avoids performance degradation due to overprovisioning.
+// For example: for OpenBLAS we use openblas_set_num_threads and
+// for MKL we use mkl_set_num_threads. This avoids performance degradation due
+// to overprovisioning.
 #ifdef USE_OPEN_BLAS
 #include <cblas.h>
 // extern "C" void openblas_set_num_threads(int numThreads);
@@ -58,10 +59,12 @@ void setSinglePrecision(bool enableSinglePrecision);
 // (m1rlen, m1clen) and (m1clen, m2clen)
 void matmult(double* m1Ptr, double* m2Ptr, double* retPtr, int m1rlen,
              int m1clen, int m2clen, int numThreads);
-void matmult(float* m1Ptr, float* m2Ptr, float* retPtr, int m1rlen,
-             int m1clen, int m2clen, int numThreads);
-                          
-void tsmm(double* m1Ptr, double* retPtr, int m1rlen, int m1clen, bool isLeftTranspose,  int numThreads);
-void tsmm(float* m1Ptr, float* retPtr, int m1rlen, int m1clen, bool isLeftTranspose,  int numThreads);
+void matmult(float* m1Ptr, float* m2Ptr, float* retPtr, int m1rlen, int m1clen,
+             int m2clen, int numThreads);
+
+void tsmm(double* m1Ptr, double* retPtr, int m1rlen, int m1clen,
+          bool isLeftTranspose, int numThreads);
+void tsmm(float* m1Ptr, float* retPtr, int m1rlen, int m1clen,
+          bool isLeftTranspose, int numThreads);
 
 #endif

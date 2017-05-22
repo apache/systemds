@@ -22,9 +22,8 @@ limitations under the License.
 **Issue Tracker:** [JIRA](https://issues.apache.org/jira/browse/SYSTEMML)
 **Download:** [Download SystemML](http://systemml.apache.org/download.html)
 
-**SystemML** is now an **Apache Incubator** project! Please see the [**Apache SystemML (incubating)**](http://systemml.apache.org/)
-website for more information. The latest project documentation can be found at the
-[**SystemML Documentation**](http://apache.github.io/incubator-systemml/) website on GitHub.
+**SystemML** is now an **Apache Top Level Project**! Please see the [**Apache SystemML**](http://systemml.apache.org/)
+website for more information.
 
 SystemML is a flexible, scalable machine learning system.
 SystemML's distinguishing characteristics are:

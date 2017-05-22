@@ -660,7 +660,7 @@ public class GPUObject {
 		long rows = mat.getNumRows();
 		long nnz = mat.getNnz();
 		assert rows > 0 : "Internal error - invalid number of rows when allocating a sparse matrix";
-		assert nnz > 0 : "Internal error - invalid number of non zeroes when allocating a sparse matrix";
+		assert nnz >= 0 : "Internal error - invalid number of non zeroes when allocating a sparse matrix";
 		CSRPointer tmp = CSRPointer.allocateEmpty(getGPUContext(), nnz, rows);
 		setSparseMatrixCudaPointer(tmp);
 		addReadLock();
@@ -754,6 +754,7 @@ public class GPUObject {
 				colInd = csrBlock.indexes();
 				values = csrBlock.values();
 			}
+
 			allocateSparseMatrixOnDevice();
 			getGPUContext().recordBlockUsage(this);
 

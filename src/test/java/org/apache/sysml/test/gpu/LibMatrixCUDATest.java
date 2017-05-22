@@ -8,9 +8,7 @@ import org.apache.sysml.api.mlcontext.ScriptFactory;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.utils.TestUtils;
 import org.apache.sysml.utils.Statistics;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.Set;
 
@@ -23,6 +21,7 @@ public class LibMatrixCUDATest extends AutomatedTestBase {
 	private final static String TEST_NAME = "LibMatrixCUDATest";
 
 	private final double THRESHOLD = 1e-9;
+	private static SparkSession spark;
 
 	@Override public void setUp() {
 		TestUtils.clearAssertionInformation();
@@ -30,24 +29,88 @@ public class LibMatrixCUDATest extends AutomatedTestBase {
 		getAndLoadTestConfiguration(TEST_NAME);
 	}
 
+	@BeforeClass public static void beforeClass() {
+		spark = createSystemMLSparkSession("LibMatrixCUDATest", "local");
+	}
+
+	// ****************************************************************
+	// Unary Op Tests *************************************************
+	// ****************************************************************
+
+	final int[] unaryOpRowSizes = new int[]{ 1, 64, 130, 1024, 2049 };
+	final int[] unaryOpColSizes = new int[]{ 1, 64, 130, 1024, 2049 };
+	final double[] unaryOpSparsities = new double[] { 0.00, 0.3, 0.9 };
+	final int unaryOpSeed = 42;
+
+
 	@Test public void testSin() throws Exception {
-		SparkSession spark = createSystemMLSparkSession("LibMatrixCUDATest", "local");
+		testUnaryOp("sin", "gpu_sin", unaryOpRowSizes, unaryOpColSizes, unaryOpSparsities, unaryOpSeed);
+	}
 
-		String function = "sin";
-		String heavyHitterOpCode = "gpu_sin";
+	@Test public void testCos() throws Exception {
+		testUnaryOp("cos", "gpu_cos", unaryOpRowSizes, unaryOpColSizes, unaryOpSparsities, unaryOpSeed);
+	}
 
-		int m = 100;
-		int n = 100;
-		double sparsity = 1.0;
+	@Test public void testTan() throws Exception {
+		testUnaryOp("tan", "gpu_tan", unaryOpRowSizes, unaryOpColSizes, unaryOpSparsities, unaryOpSeed);
+	}
 
-		Matrix in1 = generateInputMatrix(spark, m, n, sparsity);
-		Matrix outCPU = runUnaryOpOnCPU(spark, function, in1);
-		assertHeavyHitterPresent(heavyHitterOpCode);
-		Matrix outGPU = runUnaryOpOnGPU(spark, function, in1);
-		assertEqualMatrices(outCPU, outGPU);
+	@Test public void testAsin() throws Exception {
+		testUnaryOp("asin", "gpu_asin", unaryOpRowSizes, unaryOpColSizes, unaryOpSparsities, unaryOpSeed);
+	}
 
-		spark.stop();
+	@Test public void testAcos() throws Exception {
+		testUnaryOp("acos", "gpu_acos", unaryOpRowSizes, unaryOpColSizes, unaryOpSparsities, unaryOpSeed);
+	}
 
+	@Test public void testAtan() throws Exception {
+		testUnaryOp("atan", "gpu_atan", unaryOpRowSizes, unaryOpColSizes, unaryOpSparsities, unaryOpSeed);
+	}
+
+	@Test public void testExp() throws Exception {
+		testUnaryOp("exp", "gpu_exp", unaryOpRowSizes, unaryOpColSizes, unaryOpSparsities, unaryOpSeed);
+	}
+
+	@Test public void testLog() throws Exception {
+		testUnaryOp("atan", "gpu_atan", unaryOpRowSizes, unaryOpColSizes, unaryOpSparsities, unaryOpSeed);
+	}
+
+	// ****************************************************************
+	// Unary Op Tests *************************************************
+	// ****************************************************************
+
+
+
+	/**
+	 * Tests unary ops with a variety of matrix shapes and sparsities.
+	 * Test is skipped for blocks of size 1x1.
+	 * @param function name of the dml builtin unary op
+	 * @param heavyHitterOpCode the string printed for the unary op heavy hitter when executed on gpu
+	 * @param rows array of row sizes
+	 * @param columns array of column sizes
+	 * @param sparsities array of sparsities
+	 * @param seed seed to use for random input matrix generation
+	 */
+	private void testUnaryOp(String function, String heavyHitterOpCode, int[] rows, int[] columns, double[] sparsities, int seed) {
+		for (int i = 0; i < rows.length; i++) {
+			for (int j = 0; j < columns.length; j++) {
+				for (int k = 0; k < sparsities.length; k++) {
+					int row = rows[i];
+					int column = columns[j];
+					double sparsity = sparsities[k];
+					// Skip the case of a scalar unary op
+					if (row == 1 && column == 1)
+						continue;
+
+					System.out.println("Matrix of size [" + row + ", " + column + "], sparsity = " + sparsity);
+					Matrix in1 = generateInputMatrix(spark, row, column, sparsity, seed);
+					Matrix outCPU = runUnaryOpOnCPU(spark, function, in1);
+					Matrix outGPU = runUnaryOpOnGPU(spark, function, in1);
+					//assertHeavyHitterPresent(heavyHitterOpCode);
+					assertEqualMatrices(outCPU, outGPU);
+				}
+			}
+		}
 	}
 
 	/**
@@ -120,14 +183,23 @@ public class LibMatrixCUDATest extends AutomatedTestBase {
 	 * @param sparsity sparsity (1 = completely dense, 0 = completely sparse)
 	 * @return a random matrix with given size and sparsity
 	 */
-	private Matrix generateInputMatrix(SparkSession spark, int m, int n, double sparsity) {
+	private Matrix generateInputMatrix(SparkSession spark, int m, int n, double sparsity, int seed) {
 		// Generate a random matrix of size m * n
 		MLContext genMLC = new MLContext(spark);
-		Script generateScript = ScriptFactory
-				.dmlFromString("in1 = rand(rows=" + m + ", cols=" + n + ", sparsity = " + sparsity + ")").out("in1");
+		String scriptStr;
+		if (sparsity == 0.0) {
+			scriptStr = "in1 = matrix(0, rows=" + m + ", cols=" + n + ")";
+		} else {
+			scriptStr = "in1 = rand(rows=" + m + ", cols=" + n + ", sparsity = " + sparsity + ", seed= " + seed +")";
+		}
+		Script generateScript = ScriptFactory.dmlFromString(scriptStr).out("in1");
 		Matrix in1 = genMLC.execute(generateScript).getMatrix("in1");
 		genMLC.close();
 		return in1;
+	}
+
+	@AfterClass public static void afterClass() {
+		spark.close();
 	}
 
 	@After public void tearDown() {

@@ -214,9 +214,6 @@ public class InterProceduralAnalysis
 		if( REMOVE_CONSTANT_BINARY_OPS ) {
 			removeConstantBinaryOps(dmlp);
 		}
-		
-		//TODO evaluate potential of SECOND_CHANCE
-		//(consistent call stats after first IPA pass and hence additional potential)
 	}
 	
 	public Set<String> analyzeSubProgram( StatementBlock sb ) 

@@ -1,8 +1,13 @@
 package org.apache.sysml.test.gpu;
 
 import org.apache.commons.math3.util.FastMath;
+import org.apache.spark.sql.SparkSession;
 import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.api.mlcontext.MLContext;
+import org.apache.sysml.api.mlcontext.Matrix;
 import org.apache.sysml.api.mlcontext.MatrixMetadata;
+import org.apache.sysml.api.mlcontext.Script;
+import org.apache.sysml.api.mlcontext.ScriptFactory;
 import org.apache.sysml.parser.Expression;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
@@ -17,6 +22,10 @@ import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.matrix.data.SparseBlock;
+import org.apache.sysml.test.integration.AutomatedTestBase;
+import org.apache.sysml.test.utils.TestUtils;
+import org.junit.After;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -27,74 +36,52 @@ import static org.junit.Assert.*;
 /**
  * Unit tests for GPU methods
  */
-public class LibMatrixCUDATest {
+public class LibMatrixCUDATest extends AutomatedTestBase {
 
-	private final long seed1 = 42;
-	private final long seed2 = -1;
-	private static GPUContext gCtx;
-	private static ExecutionContext ec;
+    private final static String TEST_DIR = "org/apache/sysml/api/mlcontext";
+    private final static String TEST_NAME = "LibMatrixCUDATest";
 
-	@BeforeClass
-	public void setup() throws Exception{
-		DMLScript.USE_ACCELERATOR = true;
-		DMLScript.FORCE_ACCELERATOR = true;
-		DMLScript.rtplatform = DMLScript.RUNTIME_PLATFORM.SINGLE_NODE;
-		gCtx = GPUContextPool.getFromPool();
-		ec = ExecutionContextFactory.createContext();
-	}
+    @Override
+    public void setUp() {
+        TestUtils.clearAssertionInformation();
+        addTestConfiguration(TEST_DIR, TEST_NAME);
+        getAndLoadTestConfiguration(TEST_NAME);
+    }
 
 	@Test
 	public void test1() throws Exception {
-		int min = -100;
-		int max = 100;
-		int rows = 100;
-		int cols = 100;
-		boolean sparse = true;
-		double sparsity = 0.5;
+        SparkSession spark = createSystemMLSparkSession("LibMatrixCUDATest", "local");
 
-		String inputName = "in1";
+        MLContext cpuMLC = new MLContext(spark);
+        Script generateScript = ScriptFactory.dmlFromString("A = rand(rows=100, cols=100)").out("A");
+        Matrix A = cpuMLC.execute(generateScript).getMatrix("A");
 
-		MatrixObject mobj = new MatrixObject(Expression.ValueType.DOUBLE, inputName + "_91" );
-		mobj.setVarName(inputName);
-		mobj.setDataType(Expression.DataType.MATRIX);
-		//clone meta data because it is updated on copy-on-write, otherwise there
-		//is potential for hidden side effects between variables.
-		MatrixFormatMetaData metadata = new MatrixFormatMetaData(new MatrixCharacteristics(rows, cols, rows, cols), new OutputInfo()
-		mobj.setMetaData(metadata);
-		mobj.setUpdateType(MatrixObject.UpdateType.COPY);
-		ec.setVariable(inputName, mobj);
+        Script sinScript = ScriptFactory.dmlFromString("B = sin(A)").in("A", A).out("B");
+        Matrix B = cpuMLC.execute(sinScript).getMatrix("B");
+        cpuMLC.close();
+        spark.stop();
 
-		MatrixBlock in1 = new MatrixBlock(rows, cols, sparse);
-		in1.allocateSparseRowsBlock();
-		Random valueR = new Random(seed1);
-		Random nnzR = new Random(seed2);
+        MLContext gpuMLC = new MLContext(spark);
+        gpuMLC.setGPU(true);
+        gpuMLC.setForceGPU(true);
+        gpuMLC.setStatistics(true);
+        sinScript = ScriptFactory.dmlFromString("B = sin(A)").in("A", A).out("B");
+        Matrix BGpu = gpuMLC.execute(sinScript).getMatrix("B");
 
-		SparseBlock blk = in1.getSparseBlock();
-		int range = max - min;
-		for (int i=0; i<rows; i++) {
-			for (int j = 0; j < cols; j++) {
-				double nnz = nnzR.nextGaussian();
-				if (nnz <= sparsity) {
-					double v1 = valueR.nextDouble();
-					double v = min + range * v1;
-					blk.set(i, j, v);
-				}
-			}
-		}
+        double[][] b = B.to2DDoubleArray();
+        double[][] bgpu = BGpu.to2DDoubleArray();
 
-		MatrixBlock out = new MatrixBlock(rows, cols, true);
-		out.allocateSparseRowsBlock();
-		SparseBlock outBlk = out.getSparseBlock();
-		for (int i=0; i<rows; i++){
-			for (int j=0; j<cols; j++){
-				FastMath.sin(outBlk.get(i,j);
-			}
-		}
-
-		LibMatrixCUDA.sin(ec, gCtx, null, in, "testOutput");
+        for (int i = 0; i < b.length; i++) {
+            Assert.assertArrayEquals(b[i], bgpu[i], 1e-9);
+        }
+        gpuMLC.close();
+        spark.stop();
 
 	}
 
-
+    @After
+    public void tearDown() {
+        super.tearDown();
+    }
 
 }

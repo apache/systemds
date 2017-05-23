@@ -42,56 +42,56 @@ public class GPUInstructionParser  extends InstructionParser
 		// Neural Network Operators
 		String2GPUInstructionType.put( "relu_backward",          GPUINSTRUCTION_TYPE.Convolution);
 		String2GPUInstructionType.put( "conv2d",                 GPUINSTRUCTION_TYPE.Convolution);
-		String2GPUInstructionType.put( "conv2d_bias_add",                 GPUINSTRUCTION_TYPE.Convolution);
+		String2GPUInstructionType.put( "conv2d_bias_add",        GPUINSTRUCTION_TYPE.Convolution);
 		String2GPUInstructionType.put( "conv2d_backward_filter", GPUINSTRUCTION_TYPE.Convolution);
 		String2GPUInstructionType.put( "conv2d_backward_data",   GPUINSTRUCTION_TYPE.Convolution);
 		String2GPUInstructionType.put( "maxpooling",             GPUINSTRUCTION_TYPE.Convolution);
 		String2GPUInstructionType.put( "maxpooling_backward",    GPUINSTRUCTION_TYPE.Convolution);
-		String2GPUInstructionType.put( "bias_add",    			 GPUINSTRUCTION_TYPE.Convolution);
-		String2GPUInstructionType.put( "bias_multiply",    			 GPUINSTRUCTION_TYPE.Convolution);
+		String2GPUInstructionType.put( "bias_add",               GPUINSTRUCTION_TYPE.Convolution);
+		String2GPUInstructionType.put( "bias_multiply",          GPUINSTRUCTION_TYPE.Convolution);
 
 		// Matrix Multiply Operators
-		String2GPUInstructionType.put( "ba+*",                   GPUINSTRUCTION_TYPE.AggregateBinary);
-		String2GPUInstructionType.put( "tsmm",                   GPUINSTRUCTION_TYPE.MMTSJ);
+		String2GPUInstructionType.put( "ba+*", GPUINSTRUCTION_TYPE.AggregateBinary);
+		String2GPUInstructionType.put( "tsmm", GPUINSTRUCTION_TYPE.MMTSJ);
 
 		// Reorg/Transpose
-		String2GPUInstructionType.put( "r'",                   	 GPUINSTRUCTION_TYPE.Reorg);
+		String2GPUInstructionType.put( "r'",   GPUINSTRUCTION_TYPE.Reorg);
 	
 		// Binary Cellwise
-		String2GPUInstructionType.put( "+"    , GPUINSTRUCTION_TYPE.ArithmeticBinary);
-		String2GPUInstructionType.put( "-"    , GPUINSTRUCTION_TYPE.ArithmeticBinary);
-		String2GPUInstructionType.put( "*"    , GPUINSTRUCTION_TYPE.ArithmeticBinary);
-		String2GPUInstructionType.put( "/"    , GPUINSTRUCTION_TYPE.ArithmeticBinary);
-		String2GPUInstructionType.put( "%%"   , GPUINSTRUCTION_TYPE.ArithmeticBinary);
-		String2GPUInstructionType.put( "%/%"  , GPUINSTRUCTION_TYPE.ArithmeticBinary);
-		String2GPUInstructionType.put( "^"    , GPUINSTRUCTION_TYPE.ArithmeticBinary);
-		String2GPUInstructionType.put( "1-*"  , GPUINSTRUCTION_TYPE.ArithmeticBinary); //special * case
-		String2GPUInstructionType.put( "^2"   , GPUINSTRUCTION_TYPE.ArithmeticBinary); //special ^ case
-		String2GPUInstructionType.put( "*2"   , GPUINSTRUCTION_TYPE.ArithmeticBinary); //special * case
-		String2GPUInstructionType.put( "-nz"  , GPUINSTRUCTION_TYPE.ArithmeticBinary); //special - case
-		String2GPUInstructionType.put( "+*"   , GPUINSTRUCTION_TYPE.ArithmeticBinary);
-		String2GPUInstructionType.put( "-*"   , GPUINSTRUCTION_TYPE.ArithmeticBinary);
+		String2GPUInstructionType.put( "+",    GPUINSTRUCTION_TYPE.ArithmeticBinary);
+		String2GPUInstructionType.put( "-",    GPUINSTRUCTION_TYPE.ArithmeticBinary);
+		String2GPUInstructionType.put( "*",    GPUINSTRUCTION_TYPE.ArithmeticBinary);
+		String2GPUInstructionType.put( "/",    GPUINSTRUCTION_TYPE.ArithmeticBinary);
+		String2GPUInstructionType.put( "%%",   GPUINSTRUCTION_TYPE.ArithmeticBinary);
+		String2GPUInstructionType.put( "%/%",  GPUINSTRUCTION_TYPE.ArithmeticBinary);
+		String2GPUInstructionType.put( "^",    GPUINSTRUCTION_TYPE.ArithmeticBinary);
+		String2GPUInstructionType.put( "1-*",  GPUINSTRUCTION_TYPE.ArithmeticBinary); //special * case
+		String2GPUInstructionType.put( "^2",   GPUINSTRUCTION_TYPE.ArithmeticBinary); //special ^ case
+		String2GPUInstructionType.put( "*2",   GPUINSTRUCTION_TYPE.ArithmeticBinary); //special * case
+		String2GPUInstructionType.put( "-nz",  GPUINSTRUCTION_TYPE.ArithmeticBinary); //special - case
+		String2GPUInstructionType.put( "+*",   GPUINSTRUCTION_TYPE.ArithmeticBinary);
+		String2GPUInstructionType.put( "-*",   GPUINSTRUCTION_TYPE.ArithmeticBinary);
 		
 		// Builtin functions
-		String2GPUInstructionType.put( "sel+"  	, GPUINSTRUCTION_TYPE.BuiltinUnary);
-		String2GPUInstructionType.put( "exp"  	, GPUINSTRUCTION_TYPE.BuiltinUnary);
-		String2GPUInstructionType.put( "log"  	, GPUINSTRUCTION_TYPE.BuiltinUnary);
-		String2GPUInstructionType.put( "abs"  	, GPUINSTRUCTION_TYPE.BuiltinUnary);
-		String2GPUInstructionType.put( "sqrt"  	, GPUINSTRUCTION_TYPE.BuiltinUnary);
-		String2GPUInstructionType.put( "round"  , GPUINSTRUCTION_TYPE.BuiltinUnary);
-		String2GPUInstructionType.put( "floor"  , GPUINSTRUCTION_TYPE.BuiltinUnary);
-		String2GPUInstructionType.put( "ceil"  	, GPUINSTRUCTION_TYPE.BuiltinUnary);
-		String2GPUInstructionType.put( "sin"  	, GPUINSTRUCTION_TYPE.BuiltinUnary);
-		String2GPUInstructionType.put( "cos"  	, GPUINSTRUCTION_TYPE.BuiltinUnary);
-		String2GPUInstructionType.put( "tan"  	, GPUINSTRUCTION_TYPE.BuiltinUnary);
-		String2GPUInstructionType.put( "asin"  	, GPUINSTRUCTION_TYPE.BuiltinUnary);
-		String2GPUInstructionType.put( "acos"  	, GPUINSTRUCTION_TYPE.BuiltinUnary);
-		String2GPUInstructionType.put( "atan"  	, GPUINSTRUCTION_TYPE.BuiltinUnary);
-		String2GPUInstructionType.put( "sign"  	, GPUINSTRUCTION_TYPE.BuiltinUnary);
+		String2GPUInstructionType.put( "sel+",  GPUINSTRUCTION_TYPE.BuiltinUnary);
+		String2GPUInstructionType.put( "exp",   GPUINSTRUCTION_TYPE.BuiltinUnary);
+		String2GPUInstructionType.put( "log",   GPUINSTRUCTION_TYPE.BuiltinUnary);
+		String2GPUInstructionType.put( "abs",   GPUINSTRUCTION_TYPE.BuiltinUnary);
+		String2GPUInstructionType.put( "sqrt",  GPUINSTRUCTION_TYPE.BuiltinUnary);
+		String2GPUInstructionType.put( "round", GPUINSTRUCTION_TYPE.BuiltinUnary);
+		String2GPUInstructionType.put( "floor", GPUINSTRUCTION_TYPE.BuiltinUnary);
+		String2GPUInstructionType.put( "ceil",  GPUINSTRUCTION_TYPE.BuiltinUnary);
+		String2GPUInstructionType.put( "sin",   GPUINSTRUCTION_TYPE.BuiltinUnary);
+		String2GPUInstructionType.put( "cos",   GPUINSTRUCTION_TYPE.BuiltinUnary);
+		String2GPUInstructionType.put( "tan",   GPUINSTRUCTION_TYPE.BuiltinUnary);
+		String2GPUInstructionType.put( "asin",  GPUINSTRUCTION_TYPE.BuiltinUnary);
+		String2GPUInstructionType.put( "acos",  GPUINSTRUCTION_TYPE.BuiltinUnary);
+		String2GPUInstructionType.put( "atan",  GPUINSTRUCTION_TYPE.BuiltinUnary);
+		String2GPUInstructionType.put( "sign",  GPUINSTRUCTION_TYPE.BuiltinUnary);
 
 
 
-		String2GPUInstructionType.put( "solve"  , GPUINSTRUCTION_TYPE.BuiltinBinary);
+		String2GPUInstructionType.put( "solve", GPUINSTRUCTION_TYPE.BuiltinBinary);
 
 
 		// Aggregate Unary

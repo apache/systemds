@@ -88,7 +88,7 @@ public abstract class GPUTests extends AutomatedTestBase {
 	 * @param expected expected matrix
 	 * @param actual   actual matrix
 	 */
-	protected void assertEqualMatrices(Matrix expected, Matrix actual) {
+	private void assertEqualMatrices(Matrix expected, Matrix actual) {
 		double[][] expected2D = expected.to2DDoubleArray();
 		double[][] actual2D = actual.to2DDoubleArray();
 		for (int i = 0; i < expected2D.length; i++) {
@@ -101,20 +101,22 @@ public abstract class GPUTests extends AutomatedTestBase {
 	 *
 	 * @param heavyHitterOpCode opcode of the heavy hitter for the unary op
 	 */
-	private void assertHeavyHitterPresent(String heavyHitterOpCode) {
+	protected void assertHeavyHitterPresent(String heavyHitterOpCode) {
 		Set<String> heavyHitterOpCodes = Statistics.getCPHeavyHitterOpCodes();
 		Assert.assertTrue(heavyHitterOpCodes.contains(heavyHitterOpCode));
 	}
 
 	/**
 	 * Runs a program on the CPU
-	 * @param spark a valid {@link SparkSession}
+	 *
+	 * @param spark     a valid {@link SparkSession}
 	 * @param scriptStr the script to run (as a string)
-	 * @param inputs map of input variables names in the scriptStr (of variable_name -> object)
-	 * @param outStrs list of variable names needed as output from the scriptStr
+	 * @param inputs    map of input variables names in the scriptStr (of variable_name -> object)
+	 * @param outStrs   list of variable names needed as output from the scriptStr
 	 * @return list of output objects in order of outStrs
 	 */
-	protected List<Object> runOnCPU(SparkSession spark, String scriptStr, Map<String, Object> inputs, List<String> outStrs){
+	protected List<Object> runOnCPU(SparkSession spark, String scriptStr, Map<String, Object> inputs,
+			List<String> outStrs) {
 		MLContext cpuMLC = new MLContext(spark);
 		List<Object> outputs = new ArrayList<>();
 		Script script = ScriptFactory.dmlFromString(scriptStr).in(inputs).out(outStrs);
@@ -128,13 +130,15 @@ public abstract class GPUTests extends AutomatedTestBase {
 
 	/**
 	 * Runs a program on the GPU
-	 * @param spark a valid {@link SparkSession}
+	 *
+	 * @param spark     a valid {@link SparkSession}
 	 * @param scriptStr the script to run (as a string)
-	 * @param inputs map of input variables names in the scriptStr (of variable_name -> object)
-	 * @param outStrs list of variable names needed as output from the scriptStr
+	 * @param inputs    map of input variables names in the scriptStr (of variable_name -> object)
+	 * @param outStrs   list of variable names needed as output from the scriptStr
 	 * @return list of output objects in order of outStrs
 	 */
-	protected List<Object> runOnGPU(SparkSession spark, String scriptStr, Map<String, Object> inputs, List<String> outStrs){
+	protected List<Object> runOnGPU(SparkSession spark, String scriptStr, Map<String, Object> inputs,
+			List<String> outStrs) {
 		MLContext gpuMLC = new MLContext(spark);
 		gpuMLC.setGPU(true);
 		gpuMLC.setForceGPU(true);
@@ -147,5 +151,29 @@ public abstract class GPUTests extends AutomatedTestBase {
 		}
 		gpuMLC.close();
 		return outputs;
+	}
+
+	/**
+	 * Assert that the two objects are equal. Supported types are Boolean, Integer, String, Double and Matrix
+	 *
+	 * @param expected
+	 * @param actual
+	 */
+	protected void assertEqualObjects(Object expected, Object actual) {
+		Assert.assertEquals(expected.getClass(), actual.getClass());
+
+		if (expected instanceof Boolean) {
+			Assert.assertEquals(((Boolean) expected).booleanValue(), ((Boolean) actual).booleanValue());
+		} else if (expected instanceof Double) {
+			Assert.assertEquals(((Double) expected).doubleValue(), ((Double) actual).doubleValue(), THRESHOLD);
+		} else if (expected instanceof String) {
+			Assert.assertEquals(expected.toString(), actual.toString());
+		} else if (expected instanceof Integer) {
+			Assert.assertEquals(((Integer) expected).intValue(), ((Integer) actual).intValue());
+		} else if (expected instanceof Matrix)
+			assertEqualMatrices((Matrix) expected, (Matrix) actual);
+		else {
+			Assert.fail("Invalid types for comparison");
+		}
 	}
 }

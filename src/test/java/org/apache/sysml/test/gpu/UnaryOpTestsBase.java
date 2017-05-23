@@ -20,7 +20,6 @@
 package org.apache.sysml.test.gpu;
 
 import org.apache.sysml.api.mlcontext.Matrix;
-import org.junit.Assert;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -32,15 +31,16 @@ import java.util.List;
 public abstract class UnaryOpTestsBase extends GPUTests {
 
 	// Set of rows and column sizes & sparsities to test unary ops
-	final int[] unaryOpRowSizes = new int[] { 1, 64, 130, 1024, 2049 };
-	final int[] unaryOpColSizes = new int[] { 1, 64, 130, 1024, 2049 };
-	final double[] unaryOpSparsities = new double[] { 0.0, 0.03, 0.3, 0.9 };
-	final int unaryOpSeed = 42;
+	private final int[] rowSizes = new int[] { 1, 64, 130, 1024, 2049 };
+	private final int[] columnSizes = new int[] { 1, 64, 130, 1024, 2049 };
+	private final double[] sparsities = new double[] { 0.0, 0.03, 0.3, 0.9 };
+	private final int seed = 42;
 
 	/**
 	 * Tests unary ops with a variety of matrix shapes and sparsities.
 	 * Test is skipped for blocks of size 1x1.
-	 *  @param function          name of the dml builtin unary op
+	 *
+	 * @param function          name of the dml builtin unary op
 	 * @param heavyHitterOpCode the string printed for the unary op heavy hitter when executed on gpu
 	 */
 	protected void testSimpleUnaryOpMatrixOutput(String function, String heavyHitterOpCode) {
@@ -51,16 +51,17 @@ public abstract class UnaryOpTestsBase extends GPUTests {
 	/**
 	 * Tests slightly more involved unary ops with a variety of matrix shapes and sparsities.
 	 * Test is skipped for blocks of size 1x1
-	 * @param scriptStr script string
+	 *
+	 * @param scriptStr         script string
 	 * @param heavyHitterOpCode the string printed for the unary op heavy hitter when executed on gpu
-	 * @param inStr name of input variable in provided script string
-	 * @param outStr name of output variable in script string
+	 * @param inStr             name of input variable in provided script string
+	 * @param outStr            name of output variable in script string
 	 */
 	protected void testUnaryOpMatrixOutput(String scriptStr, String heavyHitterOpCode, String inStr, String outStr) {
-		int[] rows = unaryOpRowSizes;
-		int[] columns = unaryOpColSizes;
-		double[] sparsities = unaryOpSparsities;
-		int seed = unaryOpSeed;
+		int[] rows = rowSizes;
+		int[] columns = columnSizes;
+		double[] sparsities = this.sparsities;
+		int seed = this.seed;
 
 		for (int i = 0; i < rows.length; i++) {
 			for (int j = 0; j < columns.length; j++) {
@@ -85,26 +86,4 @@ public abstract class UnaryOpTestsBase extends GPUTests {
 		}
 	}
 
-	/**
-	 * Assert that the two objects are equal. Supported types are Boolean, Integer, String, Double and Matrix
-	 * @param expected
-	 * @param actual
-	 */
-	protected void assertEqualObjects(Object expected, Object actual) {
-		Assert.assertEquals(expected.getClass(), actual.getClass());
-
-		if (expected instanceof Boolean) {
-			Assert.assertEquals(((Boolean) expected).booleanValue(), ((Boolean) actual).booleanValue());
-		} else if (expected instanceof Double) {
-			Assert.assertEquals(((Double) expected).doubleValue(), ((Double) actual).doubleValue(), THRESHOLD);
-		} else if (expected instanceof String) {
-			Assert.assertEquals(expected.toString(), actual.toString());
-		} else if (expected instanceof Integer) {
-			Assert.assertEquals(((Integer) expected).intValue(), ((Integer) actual).intValue());
-		} else if (expected instanceof Matrix)
-			assertEqualMatrices((Matrix) expected, (Matrix) actual);
-		else {
-			Assert.fail("Invalid types for comparison");
-		}
-	}
 }

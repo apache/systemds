@@ -613,7 +613,7 @@ public class GPUContext {
         LOG.warn("Attempted to free GPU Memory when a block[" + o + "] is still on GPU memory, copying it back to host.");
         o.acquireHostRead();
       }
-      o.clearData();
+      o.clearData(true);
     }
     allocatedGPUObjects.clear();
   }

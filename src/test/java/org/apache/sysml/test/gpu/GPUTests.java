@@ -31,6 +31,9 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -101,5 +104,48 @@ public abstract class GPUTests extends AutomatedTestBase {
 	private void assertHeavyHitterPresent(String heavyHitterOpCode) {
 		Set<String> heavyHitterOpCodes = Statistics.getCPHeavyHitterOpCodes();
 		Assert.assertTrue(heavyHitterOpCodes.contains(heavyHitterOpCode));
+	}
+
+	/**
+	 * Runs a program on the CPU
+	 * @param spark a valid {@link SparkSession}
+	 * @param scriptStr the script to run (as a string)
+	 * @param inputs map of input variables names in the scriptStr (of variable_name -> object)
+	 * @param outStrs list of variable names needed as output from the scriptStr
+	 * @return list of output objects in order of outStrs
+	 */
+	protected List<Object> runOnCPU(SparkSession spark, String scriptStr, Map<String, Object> inputs, List<String> outStrs){
+		MLContext cpuMLC = new MLContext(spark);
+		List<Object> outputs = new ArrayList<>();
+		Script script = ScriptFactory.dmlFromString(scriptStr).in(inputs).out(outStrs);
+		for (String outStr : outStrs) {
+			Object output = cpuMLC.execute(script).get(outStr);
+			outputs.add(output);
+		}
+		cpuMLC.close();
+		return outputs;
+	}
+
+	/**
+	 * Runs a program on the GPU
+	 * @param spark a valid {@link SparkSession}
+	 * @param scriptStr the script to run (as a string)
+	 * @param inputs map of input variables names in the scriptStr (of variable_name -> object)
+	 * @param outStrs list of variable names needed as output from the scriptStr
+	 * @return list of output objects in order of outStrs
+	 */
+	protected List<Object> runOnGPU(SparkSession spark, String scriptStr, Map<String, Object> inputs, List<String> outStrs){
+		MLContext gpuMLC = new MLContext(spark);
+		gpuMLC.setGPU(true);
+		gpuMLC.setForceGPU(true);
+		gpuMLC.setStatistics(true);
+		List<Object> outputs = new ArrayList<>();
+		Script script = ScriptFactory.dmlFromString(scriptStr).in(inputs).out(outStrs);
+		for (String outStr : outStrs) {
+			Object output = gpuMLC.execute(script).get(outStr);
+			outputs.add(output);
+		}
+		gpuMLC.close();
+		return outputs;
 	}
 }

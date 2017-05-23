@@ -19,12 +19,12 @@
 
 package org.apache.sysml.test.gpu;
 
-import org.apache.spark.sql.SparkSession;
-import org.apache.sysml.api.mlcontext.MLContext;
 import org.apache.sysml.api.mlcontext.Matrix;
-import org.apache.sysml.api.mlcontext.Script;
-import org.apache.sysml.api.mlcontext.ScriptFactory;
 import org.junit.Assert;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 
 /**
  * Abstract class for all Unary Op tests
@@ -34,22 +34,34 @@ public abstract class UnaryOpTestsBase extends GPUTests {
 	// Set of rows and column sizes & sparsities to test unary ops
 	final int[] unaryOpRowSizes = new int[] { 1, 64, 130, 1024, 2049 };
 	final int[] unaryOpColSizes = new int[] { 1, 64, 130, 1024, 2049 };
-	final double[] unaryOpSparsities = new double[] { 0.00, 0.3, 0.9 };
+	final double[] unaryOpSparsities = new double[] { 0.0, 0.03, 0.3, 0.9 };
 	final int unaryOpSeed = 42;
 
 	/**
 	 * Tests unary ops with a variety of matrix shapes and sparsities.
 	 * Test is skipped for blocks of size 1x1.
-	 *
-	 * @param function          name of the dml builtin unary op
+	 *  @param function          name of the dml builtin unary op
 	 * @param heavyHitterOpCode the string printed for the unary op heavy hitter when executed on gpu
-	 * @param rows              array of row sizes
-	 * @param columns           array of column sizes
-	 * @param sparsities        array of sparsities
-	 * @param seed              seed to use for random input matrix generation
 	 */
-	protected void testUnaryOpMatrixOutput(String function, String heavyHitterOpCode, int[] rows, int[] columns,
-			double[] sparsities, int seed) {
+	protected void testSimpleUnaryOpMatrixOutput(String function, String heavyHitterOpCode) {
+		String scriptStr = "out = " + function + "(in1)";
+		testUnaryOpMatrixOutput(scriptStr, heavyHitterOpCode, "in1", "out");
+	}
+
+	/**
+	 * Tests slightly more involved unary ops with a variety of matrix shapes and sparsities.
+	 * Test is skipped for blocks of size 1x1
+	 * @param scriptStr script string
+	 * @param heavyHitterOpCode the string printed for the unary op heavy hitter when executed on gpu
+	 * @param inStr name of input variable in provided script string
+	 * @param outStr name of output variable in script string
+	 */
+	protected void testUnaryOpMatrixOutput(String scriptStr, String heavyHitterOpCode, String inStr, String outStr) {
+		int[] rows = unaryOpRowSizes;
+		int[] columns = unaryOpColSizes;
+		double[] sparsities = unaryOpSparsities;
+		int seed = unaryOpSeed;
+
 		for (int i = 0; i < rows.length; i++) {
 			for (int j = 0; j < columns.length; j++) {
 				for (int k = 0; k < sparsities.length; k++) {
@@ -62,70 +74,37 @@ public abstract class UnaryOpTestsBase extends GPUTests {
 
 					System.out.println("Matrix of size [" + row + ", " + column + "], sparsity = " + sparsity);
 					Matrix in1 = generateInputMatrix(spark, row, column, sparsity, seed);
-					Object outCPU = runUnaryOpOnCPU(spark, function, in1);
-					Object outGPU = runUnaryOpOnGPU(spark, function, in1);
+					HashMap<String, Object> inputs = new HashMap<>();
+					inputs.put(inStr, in1);
+					List<Object> outCPU = runOnCPU(spark, scriptStr, inputs, Arrays.asList(outStr));
+					List<Object> outGPU = runOnGPU(spark, scriptStr, inputs, Arrays.asList(outStr));
 					//assertHeavyHitterPresent(heavyHitterOpCode);
-					assertEqualObjects(outCPU, outGPU);
+					assertEqualObjects(outCPU.get(0), outGPU.get(0));
 				}
 			}
 		}
 	}
 
-	protected void assertEqualObjects(Object outCPU, Object outGPU) {
-		Assert.assertEquals(outCPU.getClass(), outGPU.getClass());
+	/**
+	 * Assert that the two objects are equal. Supported types are Boolean, Integer, String, Double and Matrix
+	 * @param expected
+	 * @param actual
+	 */
+	protected void assertEqualObjects(Object expected, Object actual) {
+		Assert.assertEquals(expected.getClass(), actual.getClass());
 
-		if (outCPU instanceof Boolean) {
-			Assert.assertEquals(((Boolean) outCPU).booleanValue(), ((Boolean) outGPU).booleanValue());
-		} else if (outCPU instanceof Double) {
-			Assert.assertEquals(((Double) outCPU).doubleValue(), ((Double) outGPU).doubleValue(), THRESHOLD);
-
-		} else if (outCPU instanceof String) {
-			Assert.assertEquals(outCPU.toString(), outGPU.toString());
-
-		} else if (outCPU instanceof Integer) {
-			Assert.assertEquals(((Integer) outCPU).intValue(), ((Integer) outGPU).intValue());
-
-		} else if (outCPU instanceof Matrix)
-			assertEqualMatrices((Matrix) outCPU, (Matrix) outGPU);
+		if (expected instanceof Boolean) {
+			Assert.assertEquals(((Boolean) expected).booleanValue(), ((Boolean) actual).booleanValue());
+		} else if (expected instanceof Double) {
+			Assert.assertEquals(((Double) expected).doubleValue(), ((Double) actual).doubleValue(), THRESHOLD);
+		} else if (expected instanceof String) {
+			Assert.assertEquals(expected.toString(), actual.toString());
+		} else if (expected instanceof Integer) {
+			Assert.assertEquals(((Integer) expected).intValue(), ((Integer) actual).intValue());
+		} else if (expected instanceof Matrix)
+			assertEqualMatrices((Matrix) expected, (Matrix) actual);
 		else {
 			Assert.fail("Invalid types for comparison");
 		}
-	}
-
-	/**
-	 * Runs the program for a unary op on the GPU
-	 *
-	 * @param spark    valid instance of {@link SparkSession}
-	 * @param function dml builtin function string of the unary op
-	 * @param in1      input matrix
-	 * @return output from running the unary op on the input matrix (on GPU)
-	 */
-	protected Object runUnaryOpOnGPU(SparkSession spark, String function, Matrix in1) {
-		String scriptStr2 = "out = " + function + "(in1)";
-		MLContext gpuMLC = new MLContext(spark);
-		gpuMLC.setGPU(true);
-		gpuMLC.setForceGPU(true);
-		gpuMLC.setStatistics(true);
-		Script sinScript2 = ScriptFactory.dmlFromString(scriptStr2).in("in1", in1).out("out");
-		Object outGPU = gpuMLC.execute(sinScript2).get("out");
-		gpuMLC.close();
-		return outGPU;
-	}
-
-	/**
-	 * Runs the program for a unary op on the cpu
-	 *
-	 * @param spark    valid instance of {@link SparkSession}
-	 * @param function dml builtin function string of the unary op
-	 * @param in1      input matrix
-	 * @return output from running the unary op on the input matrix
-	 */
-	protected Object runUnaryOpOnCPU(SparkSession spark, String function, Matrix in1) {
-		String scriptStr1 = "out = " + function + "(in1)";
-		MLContext cpuMLC = new MLContext(spark);
-		Script sinScript = ScriptFactory.dmlFromString(scriptStr1).in("in1", in1).out("out");
-		Object outCPU = cpuMLC.execute(sinScript).get("out");
-		cpuMLC.close();
-		return outCPU;
 	}
 }

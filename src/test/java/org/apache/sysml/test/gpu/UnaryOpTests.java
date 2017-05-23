@@ -1,10 +1,29 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 package org.apache.sysml.test.gpu;
 
 import org.apache.sysml.test.utils.TestUtils;
 import org.junit.Test;
 
 /**
- * Unit tests for GPU methods
+ * Unit tests for Unary ops on GPU
  */
 public class UnaryOpTests extends UnaryOpTestsBase {
 
@@ -16,66 +35,63 @@ public class UnaryOpTests extends UnaryOpTestsBase {
 		getAndLoadTestConfiguration(TEST_NAME);
 	}
 
-
-	// ****************************************************************
-	// Unary Op Tests *************************************************
-	// ****************************************************************
-
 	@Test public void testSin() throws Exception {
-		testUnaryOpMatrixOutput("sin", "gpu_sin", unaryOpRowSizes, unaryOpColSizes, unaryOpSparsities, unaryOpSeed);
+		testSimpleUnaryOpMatrixOutput("sin", "gpu_sin");
 	}
 
 	@Test public void testCos() throws Exception {
-		testUnaryOpMatrixOutput("cos", "gpu_cos", unaryOpRowSizes, unaryOpColSizes, unaryOpSparsities, unaryOpSeed);
+		testSimpleUnaryOpMatrixOutput("cos", "gpu_cos");
 	}
 
 	@Test public void testTan() throws Exception {
-		testUnaryOpMatrixOutput("tan", "gpu_tan", unaryOpRowSizes, unaryOpColSizes, unaryOpSparsities, unaryOpSeed);
+		testSimpleUnaryOpMatrixOutput("tan", "gpu_tan");
 	}
 
 	@Test public void testAsin() throws Exception {
-		testUnaryOpMatrixOutput("asin", "gpu_asin", unaryOpRowSizes, unaryOpColSizes, unaryOpSparsities, unaryOpSeed);
+		testSimpleUnaryOpMatrixOutput("asin", "gpu_asin");
 	}
 
 	@Test public void testAcos() throws Exception {
-		testUnaryOpMatrixOutput("acos", "gpu_acos", unaryOpRowSizes, unaryOpColSizes, unaryOpSparsities, unaryOpSeed);
+		testSimpleUnaryOpMatrixOutput("acos", "gpu_acos");
 	}
 
 	@Test public void testAtan() throws Exception {
-		testUnaryOpMatrixOutput("atan", "gpu_atan", unaryOpRowSizes, unaryOpColSizes, unaryOpSparsities, unaryOpSeed);
+		testSimpleUnaryOpMatrixOutput("atan", "gpu_atan");
 	}
 
 	@Test public void testExp() throws Exception {
-		testUnaryOpMatrixOutput("exp", "gpu_exp", unaryOpRowSizes, unaryOpColSizes, unaryOpSparsities, unaryOpSeed);
+		testSimpleUnaryOpMatrixOutput("exp", "gpu_exp");
 	}
 
 	@Test public void testLog() throws Exception {
-		testUnaryOpMatrixOutput("log", "gpu_log", unaryOpRowSizes, unaryOpColSizes, unaryOpSparsities, unaryOpSeed);
+		testSimpleUnaryOpMatrixOutput("log", "gpu_log");
 	}
 
 	@Test public void testSqrt() throws Exception {
-		testUnaryOpMatrixOutput("sqrt", "gpu_sqrt", unaryOpRowSizes, unaryOpColSizes, unaryOpSparsities, unaryOpSeed);
+		testSimpleUnaryOpMatrixOutput("sqrt", "gpu_sqrt");
 	}
 
 	@Test public void testAbs() throws Exception {
-		testUnaryOpMatrixOutput("abs", "gpu_abs", unaryOpRowSizes, unaryOpColSizes, unaryOpSparsities, unaryOpSeed);
+		testSimpleUnaryOpMatrixOutput("abs", "gpu_abs");
 	}
 
 	@Test public void testRound() throws Exception {
-		testUnaryOpMatrixOutput("round", "gpu_round", unaryOpRowSizes, unaryOpColSizes, unaryOpSparsities, unaryOpSeed);
+		testSimpleUnaryOpMatrixOutput("round", "gpu_round");
 	}
 
 	@Test public void testFloor() throws Exception {
-		testUnaryOpMatrixOutput("sqrt", "gpu_floor", unaryOpRowSizes, unaryOpColSizes, unaryOpSparsities, unaryOpSeed);
+		testSimpleUnaryOpMatrixOutput("sqrt", "gpu_floor");
 	}
 
 	@Test public void testCeil() throws Exception {
-		testUnaryOpMatrixOutput("ceil", "gpu_ceil", unaryOpRowSizes, unaryOpColSizes, unaryOpSparsities, unaryOpSeed);
+		testSimpleUnaryOpMatrixOutput("ceil", "gpu_ceil");
 	}
 
+	@Test public void testSign() throws Exception {
+		testSimpleUnaryOpMatrixOutput("sign", "gpu_sign");
+	}
 
-	// ****************************************************************
-	// Unary Op Tests *************************************************
-	// ****************************************************************
-
+	@Test public void testSelp() throws Exception {
+		testUnaryOpMatrixOutput("out = max(in1, 0)", "gpu_selp", "in1", "out");
+	}
 }

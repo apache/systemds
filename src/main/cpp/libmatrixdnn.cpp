@@ -31,6 +31,9 @@
 #include "omp.h"
 #endif
 
+#define STR1(x) #x
+#define STR(x) STR1(x)
+
 template <typename T>
 int computeNNZ(T* arr, int limit) {
   int nnz = 0;
@@ -141,21 +144,30 @@ void im2col(T* inputArray, T* outputArray, int N, int C, int H, int W, int K,
 }
 
 #ifdef USE_INTEL_MKL
-
-// Returns true if error
-bool CHECK_MKL_DNN_SUCCESS(dnnError_t code) {
-  if (code == E_SUCCESS)
-    return false;
-  else if (code == E_INCORRECT_INPUT_PARAMETER)
-    std::cerr << "ERROR: Incorrect input parameter\n";
-  else if (code == E_MEMORY_ERROR)
-    std::cerr << "ERROR: Memory error\n";
-  else if (code == E_UNSUPPORTED_DIMENSION)
-    std::cerr << "ERROR: Unsupported dimensions\n";
-  else if (code == E_UNIMPLEMENTED)
-    std::cerr << "ERROR: Unimplemented operation\n";
-  return true;
+#define CHECK_MKL_ERROR(dnnCall) { \
+  dnnError_t code = dnnCall; \
+  if (code != E_SUCCESS) { \
+  	if (code == E_INCORRECT_INPUT_PARAMETER) \
+    	std::cerr << "ERROR: Incorrect input parameter:" << STR(dnnCall) << "\n"; \
+  	else if (code == E_MEMORY_ERROR) \
+    	std::cerr << "ERROR: Memory error:" << STR(dnnCall) << "\n"; \
+  	else if (code == E_UNSUPPORTED_DIMENSION) \
+    	std::cerr << "ERROR: Unsupported dimensions:" << STR(dnnCall) << "\n"; \
+  	else if (code == E_UNIMPLEMENTED) \
+    	std::cerr << "ERROR: Unimplemented operation:" << STR(dnnCall) << "\n"; \
+    return -1; \
+  } \
 }
+
+#define MKL_DNN_EXECUTE() \
+  if (isSinglePrecision()) { \
+    CHECK_MKL_ERROR(dnnExecute_F32(pConvolution, resources)) \
+    dnnDelete_F32(pConvolution); \
+  } else { \
+    CHECK_MKL_ERROR(dnnExecute_F64(pConvolution, resources)) \
+    dnnDelete_F64(pConvolution); \
+  } \
+
 #endif
 
 void matMultAndAdd(double* m1Ptr, double* m2Ptr, double* ret, int m1rlen,
@@ -195,28 +207,15 @@ int conv2dBackwardFilterDenseHelper(T* inputPtr, T* doutPtr, T* retPtr, int N,
   resources[dnnResourceSrc] = inputPtr;
   resources[dnnResourceDiffFilter] = retPtr;
   if (isSinglePrecision())
-    dnnConvolutionCreateBackwardFilter_F32(
+    CHECK_MKL_ERROR(dnnConvolutionCreateBackwardFilter_F32(
         &pConvolution, NULL, dnnAlgorithmConvolutionDirect, dimension, srcSize,
-        dstSize, filterSize, convolutionStrides, pads, dnnBorderZeros);
+        dstSize, filterSize, convolutionStrides, pads, dnnBorderZeros))
   else
-    dnnConvolutionCreateBackwardFilter_F64(
+    CHECK_MKL_ERROR(dnnConvolutionCreateBackwardFilter_F64(
         &pConvolution, NULL, dnnAlgorithmConvolutionDirect, dimension, srcSize,
-        dstSize, filterSize, convolutionStrides, pads, dnnBorderZeros);
+        dstSize, filterSize, convolutionStrides, pads, dnnBorderZeros))
 
-  dnnError_t code;
-  if (isSinglePrecision()) {
-    // Step 2: Perform the DNN operation
-    code = dnnExecute_F32(pConvolution, resources);
-    // Step 3: Destroy the description of the operation
-    dnnDelete_F32(pConvolution);
-  } else {
-    // Step 2: Perform the DNN operation
-    code = dnnExecute_F64(pConvolution, resources);
-    // Step 3: Destroy the description of the operation
-    dnnDelete_F64(pConvolution);
-  }
-  if (CHECK_MKL_DNN_SUCCESS(code))
-    return -1;  // nnz == -1 indicates error.
+  MKL_DNN_EXECUTE()
     
 #else
   // First step: Avoids oversubscription and other openmp/internal blas
@@ -325,28 +324,15 @@ int conv2dBackwardDataDenseHelper(T* filterPtr, T* doutPtr, T* retPtr, int N,
   resources[dnnResourceFilter] = filterPtr;
   resources[dnnResourceDiffSrc] = retPtr;
   if (isSinglePrecision())
-    dnnConvolutionCreateBackwardData_F32(
+    CHECK_MKL_ERROR(dnnConvolutionCreateBackwardData_F32(
         &pConvolution, NULL, dnnAlgorithmConvolutionDirect, dimension, srcSize,
-        dstSize, filterSize, convolutionStrides, pads, dnnBorderZeros);
+        dstSize, filterSize, convolutionStrides, pads, dnnBorderZeros))
   else
-    dnnConvolutionCreateBackwardData_F64(
+    CHECK_MKL_ERROR(dnnConvolutionCreateBackwardData_F64(
         &pConvolution, NULL, dnnAlgorithmConvolutionDirect, dimension, srcSize,
-        dstSize, filterSize, convolutionStrides, pads, dnnBorderZeros);
+        dstSize, filterSize, convolutionStrides, pads, dnnBorderZeros))
 
-  dnnError_t code;
-  if (isSinglePrecision()) {
-    // Step 2: Perform the DNN operation
-    code = dnnExecute_F32(pConvolution, resources);
-    // Step 3: Destroy the description of the operation
-    dnnDelete_F32(pConvolution);
-  } else {
-    // Step 2: Perform the DNN operation
-    code = dnnExecute_F64(pConvolution, resources);
-    // Step 3: Destroy the description of the operation
-    dnnDelete_F64(pConvolution);
-  }
-  if (CHECK_MKL_DNN_SUCCESS(code))
-    return -1;  // nnz == -1 indicates error.
+  MKL_DNN_EXECUTE()
 
 #else
   // First step: Avoids oversubscription and other openmp/internal blas
@@ -531,43 +517,30 @@ int conv2dBiasAddDenseHelper(T* inputPtr, T* biasPtr, T* filterPtr, T* retPtr,
   resources[dnnResourceDst] = retPtr;
   if (addBias) {
     if (isSinglePrecision())
-      dnnConvolutionCreateForwardBias_F32(
+      CHECK_MKL_ERROR(dnnConvolutionCreateForwardBias_F32(
           &pConvolution, NULL, dnnAlgorithmConvolutionDirect, dimension,
           srcSize, dstSize, filterSize, convolutionStrides, pads,
-          dnnBorderZeros);
+          dnnBorderZeros))
     else
-      dnnConvolutionCreateForwardBias_F64(
+      CHECK_MKL_ERROR(dnnConvolutionCreateForwardBias_F64(
           &pConvolution, NULL, dnnAlgorithmConvolutionDirect, dimension,
           srcSize, dstSize, filterSize, convolutionStrides, pads,
-          dnnBorderZeros);
+          dnnBorderZeros))
     resources[dnnResourceBias] = biasPtr;
   } else {
     if (isSinglePrecision())
-      dnnConvolutionCreateForward_F32(&pConvolution, NULL,
+      CHECK_MKL_ERROR(dnnConvolutionCreateForward_F32(&pConvolution, NULL,
                                       dnnAlgorithmConvolutionDirect, dimension,
                                       srcSize, dstSize, filterSize,
-                                      convolutionStrides, pads, dnnBorderZeros);
+                                      convolutionStrides, pads, dnnBorderZeros))
     else
-      dnnConvolutionCreateForward_F64(&pConvolution, NULL,
+      CHECK_MKL_ERROR(dnnConvolutionCreateForward_F64(&pConvolution, NULL,
                                       dnnAlgorithmConvolutionDirect, dimension,
                                       srcSize, dstSize, filterSize,
-                                      convolutionStrides, pads, dnnBorderZeros);
+                                      convolutionStrides, pads, dnnBorderZeros))
   }
 
-  dnnError_t code;
-  if (isSinglePrecision()) {
-    // Step 2: Perform the DNN operation
-    code = dnnExecute_F32(pConvolution, resources);
-    // Step 3: Destroy the description of the operation
-    dnnDelete_F32(pConvolution);
-  } else {
-    // Step 2: Perform the DNN operation
-    code = dnnExecute_F64(pConvolution, resources);
-    // Step 3: Destroy the description of the operation
-    dnnDelete_F64(pConvolution);
-  }
-  if (CHECK_MKL_DNN_SUCCESS(code))
-    return -1;  // nnz == -1 indicates error.
+  MKL_DNN_EXECUTE()
 
 #else
   // ------------------------------------------------------------------------------------

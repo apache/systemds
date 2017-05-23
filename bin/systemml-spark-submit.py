@@ -41,7 +41,7 @@ cparser.add_argument('--executor-cores', default='1', help='Number of cores', me
 cparser.add_argument('--conf', default='', help='Spark configuration file', nargs='+', metavar='')
 
 # SYSTEM-ML Options
-cparser.add_argument('-nvargs', required=True, help='List of attributeName-attributeValue pairs', nargs='+')
+cparser.add_argument('-nvargs', help='List of attributeName-attributeValue pairs', nargs='+')
 cparser.add_argument('-args', help='List of positional argument values', metavar='', nargs='+')
 cparser.add_argument('-config', help='System-ML configuration file (e.g SystemML-config.xml)', metavar='')
 cparser.add_argument('-stats',  default='10', help='Monitor and report caching/recompilation statistics, '
@@ -51,8 +51,20 @@ cparser.add_argument('-explain', default='runtime', help='explains plan levels c
 cparser.add_argument('-exec', default='hybrid_spark', help='System-ML backend (e.g spark, spark-hybrid)', metavar='')
 cparser.add_argument('-f', required=True, help='specifies dml/pydml file to execute; path can be local/hdfs/gpfs',
                      metavar='')
+cparser.add_argument('-debug', help='runs in debug mode', metavar='')
 
 args = cparser.parse_args()
+
+ml_options = []
+if args.nvargs is not None:
+    ml_options.append('-nvargs')
+    ml_options.append(' '.join(args.nvargs))
+if args.args is not None:
+    ml_options.append('-args')
+    ml_options.append(' '.join(args.args))
+if args.debug is not None:
+    ml_options.append('-debug')
+    ml_options.append(' '.join(args.debug))
 
 # find the systemML root path which contains the bin folder, the script folder and the target folder
 # tolerate path with spaces
@@ -122,9 +134,9 @@ cmd_spark = ['$SPARK_HOME/bin/spark-submit', '--master', args.master, '--driver-
              '--num-executors', args.num_executors, '--executor-memory', args.executor_memory,
              '--executor-cores', args.executor_cores, '--conf', default_conf]
 
-cmd_system_ml = ['--jars', target_jars, '-nvargs', ' '.join(args.nvargs), '-config', systemml_config_path_arg,
+cmd_system_ml = ['--jars', target_jars, '-config', systemml_config_path_arg,
                  '-stats', args.stats, '-explain', args.explain, '-exec', vars(args)['exec'],
-                 '-f', script_file]
+                 '-f', script_file, ' '.join(ml_options)]
 
 cmd = cmd_spark + cmd_system_ml
 

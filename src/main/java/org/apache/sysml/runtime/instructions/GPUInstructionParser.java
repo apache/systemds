@@ -95,28 +95,28 @@ public class GPUInstructionParser  extends InstructionParser
 
 
 		// Aggregate Unary
-		String2GPUInstructionType.put( "ua+"	 	 , GPUINSTRUCTION_TYPE.AggregateUnary);	// Sum
-		String2GPUInstructionType.put( "uak+"	   , GPUINSTRUCTION_TYPE.AggregateUnary);	// Sum
-		String2GPUInstructionType.put( "uar+"		 , GPUINSTRUCTION_TYPE.AggregateUnary);	// Row Sum
-		String2GPUInstructionType.put( "uark+"	 , GPUINSTRUCTION_TYPE.AggregateUnary);	// Row Sum
-		String2GPUInstructionType.put( "uac+"	 	 , GPUINSTRUCTION_TYPE.AggregateUnary);	// Col Sum
-		String2GPUInstructionType.put( "uack+"	 , GPUINSTRUCTION_TYPE.AggregateUnary);	// Col Sum
-		String2GPUInstructionType.put( "ua*"	 	 , GPUINSTRUCTION_TYPE.AggregateUnary);	// Multiplication
-		String2GPUInstructionType.put( "uamean"	 , GPUINSTRUCTION_TYPE.AggregateUnary);	// Mean
-		String2GPUInstructionType.put( "uarmean" , GPUINSTRUCTION_TYPE.AggregateUnary);	// Row Mean
-		String2GPUInstructionType.put( "uacmean" , GPUINSTRUCTION_TYPE.AggregateUnary);	// Col Mean
-		String2GPUInstructionType.put( "uamax"	 , GPUINSTRUCTION_TYPE.AggregateUnary);	// Max
-		String2GPUInstructionType.put( "uarmax"	 , GPUINSTRUCTION_TYPE.AggregateUnary);	// Row Max
-		String2GPUInstructionType.put( "uacmax"	 , GPUINSTRUCTION_TYPE.AggregateUnary);	// Col Max
-		String2GPUInstructionType.put( "uamin"	 , GPUINSTRUCTION_TYPE.AggregateUnary);	// Min
-		String2GPUInstructionType.put( "uarmin"	 , GPUINSTRUCTION_TYPE.AggregateUnary);	// Row Min
-		String2GPUInstructionType.put( "uacmin"	 , GPUINSTRUCTION_TYPE.AggregateUnary);	// Col Min
-		String2GPUInstructionType.put( "uasqk+"	 , GPUINSTRUCTION_TYPE.AggregateUnary);	// Sum of Squares
-		String2GPUInstructionType.put( "uarsqk+" , GPUINSTRUCTION_TYPE.AggregateUnary);	// Row Sum of Squares
-		String2GPUInstructionType.put( "uacsqk+" , GPUINSTRUCTION_TYPE.AggregateUnary);	// Col Sum of Squares
-		String2GPUInstructionType.put( "uavar" 	 , GPUINSTRUCTION_TYPE.AggregateUnary);	// Variance
-		String2GPUInstructionType.put( "uarvar"  , GPUINSTRUCTION_TYPE.AggregateUnary);	// Row Variance
-		String2GPUInstructionType.put( "uacvar"  , GPUINSTRUCTION_TYPE.AggregateUnary);	// Col Variance
+		String2GPUInstructionType.put( "ua+"     , GPUINSTRUCTION_TYPE.AggregateUnary); // Sum
+		String2GPUInstructionType.put( "uak+"    , GPUINSTRUCTION_TYPE.AggregateUnary); // Sum
+		String2GPUInstructionType.put( "uar+"    , GPUINSTRUCTION_TYPE.AggregateUnary); // Row Sum
+		String2GPUInstructionType.put( "uark+"   , GPUINSTRUCTION_TYPE.AggregateUnary); // Row Sum
+		String2GPUInstructionType.put( "uac+"    , GPUINSTRUCTION_TYPE.AggregateUnary); // Col Sum
+		String2GPUInstructionType.put( "uack+"   , GPUINSTRUCTION_TYPE.AggregateUnary); // Col Sum
+		String2GPUInstructionType.put( "ua*"     , GPUINSTRUCTION_TYPE.AggregateUnary); // Multiplication
+		String2GPUInstructionType.put( "uamean"  , GPUINSTRUCTION_TYPE.AggregateUnary); // Mean
+		String2GPUInstructionType.put( "uarmean" , GPUINSTRUCTION_TYPE.AggregateUnary); // Row Mean
+		String2GPUInstructionType.put( "uacmean" , GPUINSTRUCTION_TYPE.AggregateUnary); // Col Mean
+		String2GPUInstructionType.put( "uamax"   , GPUINSTRUCTION_TYPE.AggregateUnary); // Max
+		String2GPUInstructionType.put( "uarmax"  , GPUINSTRUCTION_TYPE.AggregateUnary); // Row Max
+		String2GPUInstructionType.put( "uacmax"  , GPUINSTRUCTION_TYPE.AggregateUnary); // Col Max
+		String2GPUInstructionType.put( "uamin"   , GPUINSTRUCTION_TYPE.AggregateUnary); // Min
+		String2GPUInstructionType.put( "uarmin"  , GPUINSTRUCTION_TYPE.AggregateUnary); // Row Min
+		String2GPUInstructionType.put( "uacmin"  , GPUINSTRUCTION_TYPE.AggregateUnary); // Col Min
+		String2GPUInstructionType.put( "uasqk+"  , GPUINSTRUCTION_TYPE.AggregateUnary); // Sum of Squares
+		String2GPUInstructionType.put( "uarsqk+" , GPUINSTRUCTION_TYPE.AggregateUnary); // Row Sum of Squares
+		String2GPUInstructionType.put( "uacsqk+" , GPUINSTRUCTION_TYPE.AggregateUnary); // Col Sum of Squares
+		String2GPUInstructionType.put( "uavar"   , GPUINSTRUCTION_TYPE.AggregateUnary); // Variance
+		String2GPUInstructionType.put( "uarvar"  , GPUINSTRUCTION_TYPE.AggregateUnary); // Row Variance
+		String2GPUInstructionType.put( "uacvar"  , GPUINSTRUCTION_TYPE.AggregateUnary); // Col Variance
 	}
 	
 	public static GPUInstruction parseSingleInstruction (String str ) 

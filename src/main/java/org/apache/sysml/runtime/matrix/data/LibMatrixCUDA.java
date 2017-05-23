@@ -1580,7 +1580,6 @@ public class LibMatrixCUDA {
 		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_SPARSE_MATRIX_DENSE_VECTOR_LIB, System.nanoTime() - t1);
 
 		output.getGPUObject(gCtx).setDenseMatrixCudaPointer(C_dense);
-		output.getGPUObject(gCtx).addReadLock();
 	}
 
 	/**
@@ -1671,7 +1670,6 @@ public class LibMatrixCUDA {
 		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_SPARSE_ALLOCATE_LIB, System.nanoTime() - t0);
 
 		output.getGPUObject(gCtx).setSparseMatrixCudaPointer(C);
-		output.getGPUObject(gCtx).addReadLock();
 
 		if (GPUStatistics.DISPLAY_STATISTICS) t1 = System.nanoTime();
 		cusparseDcsrgemm(getCusparseHandle(gCtx), transA, transB, m, n, k,
@@ -2790,7 +2788,6 @@ public class LibMatrixCUDA {
 			CSRPointer B = in2.getGPUObject(gCtx).getJcudaSparseMatrixPtr();
 
 			ec.allocateGPUMatrixObject(outputName);
-			out.getGPUObject(gCtx).addReadLock();
 
 			if (in1 == in2 && isLeftTransposed == true && isLeftTransposed == isRightTransposed) {
 				// Special case for transpose

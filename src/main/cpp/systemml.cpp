@@ -21,6 +21,7 @@
 #include "systemml.h"
 #include "libmatrixmult.h"
 #include "libmatrixdnn.h"
+#include <cstring>
 
 // Linux:
 // g++ -o lib/libsystemml_mkl-Linux-x86_64.so *.cpp  -I$JAVA_HOME/include -I$MKLROOT/include -I$JAVA_HOME/include/linux -lmkl_rt -lpthread  -lm -ldl -DUSE_INTEL_MKL -DUSE_MKL_DNN -L$MKLROOT/lib/intel64 -m64 -O3 -shared -fPIC
@@ -84,6 +85,10 @@
 
 // -------------------------------------------------------------------
 
+#define INT_KCRS (((int)K) * ((int)C) * ((int)R) * ((int)S))
+#define INT_NCHW (((int)N) * ((int)C) * ((int)H) * ((int)W))
+#define INT_NKPQ (((int)N) * ((int)K) * ((int)P) * ((int)Q))
+
 int maxThreads = -1;
 JNIEXPORT void JNICALL
 Java_org_apache_sysml_utils_NativeHelper_setMaxNumThreads(JNIEnv*, jclass,
@@ -98,15 +103,29 @@ Java_org_apache_sysml_utils_NativeHelper_setFloatDatatype(
 }
 
 void copyFP32ToFP64(float* src, double* dest, int size) {
+#ifndef USE_INTEL_MKL
+#pragma omp parallel for
+#endif
   for (int i = 0; i < size; i++) {
     dest[i] = static_cast<double>(src[i]);
   }
 }
 
-void copyFP64ToFP32(double* src, float* dest, int size) {
+float* getFP32Array(int size) {
+  float* retPtrFP32 = new float[size];
+  std::memset(retPtrFP32, 0, size * sizeof(float));
+  return retPtrFP32;
+}
+
+float* getFP32Array(double* src, int size) {
+  float* dest = new float[size];
+#ifndef USE_INTEL_MKL
+#pragma omp parallel for
+#endif
   for (int i = 0; i < size; i++) {
     dest[i] = static_cast<float>(src[i]);
   }
+  return dest;
 }
 
 JNIEXPORT jboolean JNICALL
@@ -119,14 +138,10 @@ Java_org_apache_sysml_utils_NativeHelper_matrixMultDenseDense(
   if (m1Ptr == NULL || m2Ptr == NULL || retPtr == NULL) return (jboolean) false;
 
   if (isSinglePrecision()) {
-    int m1PtrLen = (int)m1rlen * (int)m1clen;
-    int m2PtrLen = (int)m1clen * (int)m2clen;
     int retPtrLen = (int)m1rlen * (int)m2clen;
-    float* m1PtrFP32 = new float[m1PtrLen];
-    float* m2PtrFP32 = new float[m2PtrLen];
-    float* retPtrFP32 = new float[retPtrLen];
-    copyFP64ToFP32(m1Ptr, m1PtrFP32, m1PtrLen);
-    copyFP64ToFP32(m2Ptr, m2PtrFP32, m2PtrLen);
+    float* m1PtrFP32 = getFP32Array(m1Ptr, ((int)m1rlen) * ((int)m1clen));
+    float* m2PtrFP32 = getFP32Array(m2Ptr, ((int)m1clen) * ((int)m2clen));
+    float* retPtrFP32 = getFP32Array(retPtrLen);
     matmult(m1PtrFP32, m2PtrFP32, retPtrFP32, (int)m1rlen, (int)m1clen,
             (int)m2clen, (int)numThreads);
     copyFP32ToFP64(retPtrFP32, retPtr, retPtrLen);
@@ -152,12 +167,10 @@ JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_tsmm(
   if (m1Ptr == NULL || retPtr == NULL) return (jboolean) false;
 
   if (isSinglePrecision()) {
-    int m1PtrLen = (int)m1rlen * (int)m1clen;
-    int retPtrLen = ((bool)isLeftTranspose) ? ((int)m1clen * (int)m1clen)
-                                            : ((int)m1rlen * (int)m1rlen);
-    float* m1PtrFP32 = new float[m1PtrLen];
-    float* retPtrFP32 = new float[retPtrLen];
-    copyFP64ToFP32(m1Ptr, m1PtrFP32, m1PtrLen);
+    int retPtrLen = ((bool)isLeftTranspose) ? (((int)m1clen) * ((int)m1clen))
+                                            : (((int)m1rlen) * ((int)m1rlen));
+    float* m1PtrFP32 = getFP32Array(m1Ptr, ((int)m1rlen) * ((int)m1clen));
+    float* retPtrFP32 = getFP32Array(retPtrLen);
     tsmm(m1PtrFP32, retPtrFP32, (int)m1rlen, (int)m1clen, (bool)isLeftTranspose,
          (int)numThreads);
     copyFP32ToFP64(retPtrFP32, retPtr, retPtrLen);
@@ -207,13 +220,12 @@ Java_org_apache_sysml_utils_NativeHelper_conv2dSparseFP32(
   float* filterPtr = GET_FLOAT_ARRAY(env, filter, numThreads);
   double* retPtr = GET_DOUBLE_ARRAY(env, ret, numThreads);
 
-  int retPtrLen = (int)N * (int)K * (int)P * (int)Q;
-  float* retPtrFP32 = new float[retPtrLen];
+  float* retPtrFP32 = getFP32Array(INT_NKPQ);
   conv2dSparse((int)apos, (int)alen, aixPtr, avalsPtr, filterPtr, retPtrFP32,
                (int)N, (int)C, (int)H, (int)W, (int)K, (int)R, (int)S,
                (int)stride_h, (int)stride_w, (int)pad_h, (int)pad_w, (int)P,
                (int)Q, (int)numThreads);
-  copyFP32ToFP64(retPtrFP32, retPtr, retPtrLen);
+  copyFP32ToFP64(retPtrFP32, retPtr, INT_NKPQ);
   delete[] retPtrFP32;
 
   RELEASE_INPUT_DOUBLE_ARRAY(env, avals, avalsPtr, numThreads);
@@ -235,16 +247,13 @@ Java_org_apache_sysml_utils_NativeHelper_conv2dBackwardFilterSparseDense(
   double* retPtr = GET_DOUBLE_ARRAY(env, ret, numThreads);
 
   if (isSinglePrecision()) {
-    int doutPtrLen = (int)N * (int)K * (int)P * (int)Q;
-    int retPtrLen = (int)K * (int)C * (int)R * (int)S;
-    float* doutPtrFP32 = new float[doutPtrLen];
-    float* retPtrFP32 = new float[retPtrLen];
-    copyFP64ToFP32(doutPtr, doutPtrFP32, doutPtrLen);
+    float* doutPtrFP32 = getFP32Array(doutPtr, INT_NKPQ);
+    float* retPtrFP32 = getFP32Array(INT_KCRS);
     conv2dBackwardFilterSparseDense(
         (int)apos, (int)alen, aixPtr, avalsPtr, doutPtrFP32, retPtrFP32, (int)N,
         (int)C, (int)H, (int)W, (int)K, (int)R, (int)S, (int)stride_h,
         (int)stride_w, (int)pad_h, (int)pad_w, (int)P, (int)Q, (int)numThreads);
-    copyFP32ToFP64(retPtrFP32, retPtr, retPtrLen);
+    copyFP32ToFP64(retPtrFP32, retPtr, INT_KCRS);
     delete[] doutPtrFP32;
     delete[] retPtrFP32;
   } else {
@@ -272,23 +281,18 @@ JNIEXPORT jint JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dDense(
   
   int nnz = -1;
   if (isSinglePrecision()) {
-    int inputPtrLen = (int)N * (int)C * (int)H * (int)W;
-    int filterPtrLen = (int)K * (int)C * (int)R * (int)S;
-    int retPtrLen = (int)N * (int)K * (int)P * (int)Q;
-    float* inputPtrFP32 = new float[inputPtrLen];
-    float* filterPtrFP32 = new float[filterPtrLen];
-    float* retPtrFP32 = new float[retPtrLen];
-    copyFP64ToFP32(inputPtr, inputPtrFP32, inputPtrLen);
-    copyFP64ToFP32(filterPtr, filterPtrFP32, filterPtrLen);
+    float* inputPtrFP32 = getFP32Array(inputPtr, INT_NCHW);
+    float* filterPtrFP32 = getFP32Array(filterPtr, INT_KCRS);
+    float* retPtrFP32 = getFP32Array(INT_NKPQ);
     // to avoid template argument deduction/substitution failed error while compilation.
     float* ignoreBiasPtr = filterPtrFP32;
     nnz = conv2dBiasAddDense(
       inputPtrFP32, ignoreBiasPtr, filterPtrFP32, retPtrFP32, (int)N, (int)C, (int)H,
       (int)W, (int)K, (int)R, (int)S, (int)stride_h, (int)stride_w, (int)pad_h,
       (int)pad_w, (int)P, (int)Q, false, (int)numThreads);
+    copyFP32ToFP64(retPtrFP32, retPtr, INT_NKPQ);
     delete[] inputPtrFP32;
     delete[] filterPtrFP32;
-    copyFP32ToFP64(retPtrFP32, retPtr, retPtrLen);
     delete[] retPtrFP32;
   } else {
   	// to avoid template argument deduction/substitution failed error while compilation.
@@ -321,25 +325,18 @@ Java_org_apache_sysml_utils_NativeHelper_conv2dBiasAddDense(
 
   int nnz = -1;
   if (isSinglePrecision()) {
-    int inputPtrLen = (int)N * (int)C * (int)H * (int)W;
-    int filterPtrLen = (int)K * (int)C * (int)R * (int)S;
-    int biasPtrLen = (int)K;
-    int retPtrLen = (int)N * (int)K * (int)P * (int)Q;
-    float* inputPtrFP32 = new float[inputPtrLen];
-    float* filterPtrFP32 = new float[filterPtrLen];
-    float* retPtrFP32 = new float[retPtrLen];
-    float* biasPtrFP32 = new float[biasPtrLen];
-    copyFP64ToFP32(inputPtr, inputPtrFP32, inputPtrLen);
-    copyFP64ToFP32(biasPtr, biasPtrFP32, biasPtrLen);
-    copyFP64ToFP32(filterPtr, filterPtrFP32, filterPtrLen);
+    float* inputPtrFP32 = getFP32Array(inputPtr, INT_NCHW);
+    float* biasPtrFP32 = getFP32Array(biasPtr, (int)K);
+    float* filterPtrFP32 = getFP32Array(filterPtr, INT_KCRS);
+    float* retPtrFP32 = getFP32Array(INT_NKPQ);
     nnz = conv2dBiasAddDense(
       inputPtrFP32, biasPtrFP32, filterPtrFP32, retPtrFP32, (int)N, (int)C, (int)H,
       (int)W, (int)K, (int)R, (int)S, (int)stride_h, (int)stride_w, (int)pad_h,
       (int)pad_w, (int)P, (int)Q, true, (int)numThreads);
+    copyFP32ToFP64(retPtrFP32, retPtr, INT_NKPQ);
     delete[] inputPtrFP32;
     delete[] filterPtrFP32;
     delete[] biasPtrFP32;
-    copyFP32ToFP64(retPtrFP32, retPtr, retPtrLen);
     delete[] retPtrFP32;
   } else {
   	nnz = conv2dBiasAddDense(
@@ -368,21 +365,16 @@ Java_org_apache_sysml_utils_NativeHelper_conv2dBackwardDataDense(
 
   int nnz = -1;
   if (isSinglePrecision()) {
-    int doutPtrLen = (int)N * (int)K * (int)P * (int)Q;
-    int filterPtrLen = (int)K * (int)C * (int)R * (int)S;
-    int retPtrLen = (int)N * (int)C * (int)H * (int)W;
-    float* doutPtrFP32 = new float[doutPtrLen];
-    float* filterPtrFP32 = new float[filterPtrLen];
-    float* retPtrFP32 = new float[retPtrLen];
-    copyFP64ToFP32(doutPtr, doutPtrFP32, doutPtrLen);
-    copyFP64ToFP32(filterPtr, filterPtrFP32, filterPtrLen);
+    float* doutPtrFP32 = getFP32Array(doutPtr, INT_NKPQ);
+    float* filterPtrFP32 = getFP32Array(filterPtr, INT_KCRS);
+    float* retPtrFP32 = getFP32Array(INT_NCHW);
     nnz = conv2dBackwardDataDense(
       filterPtrFP32, doutPtrFP32, retPtrFP32, (int)N, (int)C, (int)H, (int)W, (int)K,
       (int)R, (int)S, (int)stride_h, (int)stride_w, (int)pad_h, (int)pad_w,
       (int)P, (int)Q, (int)numThreads);
+    copyFP32ToFP64(retPtrFP32, retPtr, INT_NCHW);
     delete[] doutPtrFP32;
     delete[] filterPtrFP32;
-    copyFP32ToFP64(retPtrFP32, retPtr, retPtrLen);
     delete[] retPtrFP32;
   } else {
   	nnz = conv2dBackwardDataDense(
@@ -410,21 +402,16 @@ Java_org_apache_sysml_utils_NativeHelper_conv2dBackwardFilterDense(
 
   int nnz = -1;
   if (isSinglePrecision()) {
-    int doutPtrLen = (int)N * (int)K * (int)P * (int)Q;
-    int inputPtrLen = (int)N * (int)C * (int)H * (int)W;
-    int retPtrLen = (int)K * (int)C * (int)R * (int)S;
-    float* inputPtrFP32 = new float[inputPtrLen];
-    float* doutPtrFP32 = new float[doutPtrLen];
-    float* retPtrFP32 = new float[retPtrLen];
-    copyFP64ToFP32(doutPtr, doutPtrFP32, doutPtrLen);
-    copyFP64ToFP32(inputPtr, inputPtrFP32, inputPtrLen);
+    float* doutPtrFP32 = getFP32Array(doutPtr, INT_NKPQ);
+    float* inputPtrFP32 = getFP32Array(inputPtr, INT_NCHW);
+    float* retPtrFP32 = getFP32Array(INT_KCRS);
     nnz = conv2dBackwardFilterDense(
       inputPtrFP32, doutPtrFP32, retPtrFP32, (int)N, (int)C, (int)H, (int)W, (int)K, (int)R,
       (int)S, (int)stride_h, (int)stride_w, (int)pad_h, (int)pad_w, (int)P,
       (int)Q, (int)numThreads);
+    copyFP32ToFP64(retPtrFP32, retPtr, INT_KCRS);
     delete[] doutPtrFP32;
     delete[] inputPtrFP32;
-    copyFP32ToFP64(retPtrFP32, retPtr, retPtrLen);
     delete[] retPtrFP32;
   } else {
   	nnz = conv2dBackwardFilterDense(

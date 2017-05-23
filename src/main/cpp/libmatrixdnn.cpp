@@ -141,22 +141,9 @@ void im2col(T* inputArray, T* outputArray, int N, int C, int H, int W, int K,
 }
 
 #ifdef USE_INTEL_MKL
+
 // Returns true if error
-bool MKL_DNN_EXECUTE(dnnPrimitive_t primitive, void* resources[]) {
-  dnnError_t code;
-  // Assumption: Step 1: Create a description of a DNN operation already
-  // executed.
-  if (isSinglePrecision()) {
-    // Step 2: Perform the DNN operation
-    code = dnnExecute_F32(primitive, resources);
-    // Step 3: Destroy the description of the operation
-    dnnDelete_F32(primitive);
-  } else {
-    // Step 2: Perform the DNN operation
-    code = dnnExecute_F64(primitive, resources);
-    // Step 3: Destroy the description of the operation
-    dnnDelete_F64(primitive);
-  }
+bool CHECK_MKL_DNN_SUCCESS(dnnError_t code) {
   if (code == E_SUCCESS)
     return false;
   else if (code == E_INCORRECT_INPUT_PARAMETER)
@@ -216,9 +203,21 @@ int conv2dBackwardFilterDenseHelper(T* inputPtr, T* doutPtr, T* retPtr, int N,
         &pConvolution, NULL, dnnAlgorithmConvolutionDirect, dimension, srcSize,
         dstSize, filterSize, convolutionStrides, pads, dnnBorderZeros);
 
-  // Step 2: Perform the DNN operation
-  if (MKL_DNN_EXECUTE(pConvolution, resources))
+  dnnError_t code;
+  if (isSinglePrecision()) {
+    // Step 2: Perform the DNN operation
+    code = dnnExecute_F32(pConvolution, resources);
+    // Step 3: Destroy the description of the operation
+    dnnDelete_F32(pConvolution);
+  } else {
+    // Step 2: Perform the DNN operation
+    code = dnnExecute_F64(pConvolution, resources);
+    // Step 3: Destroy the description of the operation
+    dnnDelete_F64(pConvolution);
+  }
+  if (CHECK_MKL_DNN_SUCCESS(code))
     return -1;  // nnz == -1 indicates error.
+    
 #else
   // First step: Avoids oversubscription and other openmp/internal blas
   // threading issues
@@ -334,8 +333,19 @@ int conv2dBackwardDataDenseHelper(T* filterPtr, T* doutPtr, T* retPtr, int N,
         &pConvolution, NULL, dnnAlgorithmConvolutionDirect, dimension, srcSize,
         dstSize, filterSize, convolutionStrides, pads, dnnBorderZeros);
 
-  // Step 2: Perform the DNN operation
-  if (MKL_DNN_EXECUTE(pConvolution, resources))
+  dnnError_t code;
+  if (isSinglePrecision()) {
+    // Step 2: Perform the DNN operation
+    code = dnnExecute_F32(pConvolution, resources);
+    // Step 3: Destroy the description of the operation
+    dnnDelete_F32(pConvolution);
+  } else {
+    // Step 2: Perform the DNN operation
+    code = dnnExecute_F64(pConvolution, resources);
+    // Step 3: Destroy the description of the operation
+    dnnDelete_F64(pConvolution);
+  }
+  if (CHECK_MKL_DNN_SUCCESS(code))
     return -1;  // nnz == -1 indicates error.
 
 #else
@@ -544,8 +554,19 @@ int conv2dBiasAddDenseHelper(T* inputPtr, T* biasPtr, T* filterPtr, T* retPtr,
                                       convolutionStrides, pads, dnnBorderZeros);
   }
 
-  // Step 2: Perform the DNN operation
-  if (MKL_DNN_EXECUTE(pConvolution, resources))
+  dnnError_t code;
+  if (isSinglePrecision()) {
+    // Step 2: Perform the DNN operation
+    code = dnnExecute_F32(pConvolution, resources);
+    // Step 3: Destroy the description of the operation
+    dnnDelete_F32(pConvolution);
+  } else {
+    // Step 2: Perform the DNN operation
+    code = dnnExecute_F64(pConvolution, resources);
+    // Step 3: Destroy the description of the operation
+    dnnDelete_F64(pConvolution);
+  }
+  if (CHECK_MKL_DNN_SUCCESS(code))
     return -1;  // nnz == -1 indicates error.
 
 #else

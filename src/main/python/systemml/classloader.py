@@ -43,7 +43,7 @@ def _getJarFileName(sc, suffix):
     jar_file_name = '_ignore.jar'
     java_dir = os.path.join(imp.find_module("systemml")[1], "systemml-java")
     for file in os.listdir(java_dir):
-        if fnmatch.fnmatch(file, 'systemml-*-incubating-SNAPSHOT' + suffix + '.jar') or fnmatch.fnmatch(file, 'systemml-*-incubating' + suffix + '.jar'):
+        if fnmatch.fnmatch(file, 'systemml-*-SNAPSHOT' + suffix + '.jar') or fnmatch.fnmatch(file, 'systemml-*' + suffix + '.jar'):
             jar_file_name = os.path.join(java_dir, file)
     return jar_file_name
 

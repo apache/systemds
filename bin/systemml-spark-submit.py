@@ -76,7 +76,7 @@ user_dir = os.getcwd()
 scripts_dir = join(project_root_dir, 'scripts')
 build_dir = join(project_root_dir, 'target')
 target_jars = build_dir + '/' + '*.jar'
-log4j_properties_path = join(project_root_dir, 'conf', 'log4j.properties')
+log4j_properties_path = join(project_root_dir, 'conf', 'log4j.properties.template')
 
 build_err_msg = 'You must build the project before running this script.'
 build_dir_err_msg = 'Could not find target directory ' + build_dir + '. ' + build_err_msg

@@ -25,6 +25,7 @@ import sys
 from os.path import join, exists
 from os import environ
 import argparse
+import shutil
 
 if environ.get('SPARK_HOME') is None:
     print('SPARK_HOME not set')

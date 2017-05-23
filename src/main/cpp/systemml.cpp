@@ -269,14 +269,35 @@ JNIEXPORT jint JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dDense(
   double* filterPtr = GET_DOUBLE_ARRAY(env, filter, numThreads);
   double* retPtr = GET_DOUBLE_ARRAY(env, ret, numThreads);
   if (inputPtr == NULL || filterPtr == NULL || retPtr == NULL) return (jint)-1;
-
-  double* ignoreBiasPtr = filterPtr;  // to avoid template argument
-                                      // deduction/substitution failed error
-                                      // while compilation.
-  int nnz = conv2dBiasAddDense(
+  
+  int nnz = -1;
+  if (isSinglePrecision()) {
+    int inputPtrLen = (int)N * (int)C * (int)H * (int)W;
+    int filterPtrLen = (int)K * (int)C * (int)R * (int)S;
+    int retPtrLen = (int)N * (int)K * (int)P * (int)Q;
+    float* inputPtrFP32 = new float[inputPtrLen];
+    float* filterPtrFP32 = new float[filterPtrLen];
+    float* retPtrFP32 = new float[retPtrLen];
+    copyFP64ToFP32(inputPtr, inputPtrFP32, inputPtrLen);
+    copyFP64ToFP32(filterPtr, filterPtrFP32, filterPtrLen);
+    // to avoid template argument deduction/substitution failed error while compilation.
+    float* ignoreBiasPtr = filterPtrFP32;
+    nnz = conv2dBiasAddDense(
+      inputPtrFP32, ignoreBiasPtr, filterPtrFP32, retPtrFP32, (int)N, (int)C, (int)H,
+      (int)W, (int)K, (int)R, (int)S, (int)stride_h, (int)stride_w, (int)pad_h,
+      (int)pad_w, (int)P, (int)Q, false, (int)numThreads);
+    delete[] inputPtrFP32;
+    delete[] filterPtrFP32;
+    copyFP32ToFP64(retPtrFP32, retPtr, retPtrLen);
+    delete[] retPtrFP32;
+  } else {
+  	// to avoid template argument deduction/substitution failed error while compilation.
+    double* ignoreBiasPtr = filterPtr;
+  	nnz = conv2dBiasAddDense(
       inputPtr, ignoreBiasPtr, filterPtr, retPtr, (int)N, (int)C, (int)H,
       (int)W, (int)K, (int)R, (int)S, (int)stride_h, (int)stride_w, (int)pad_h,
       (int)pad_w, (int)P, (int)Q, false, (int)numThreads);
+  }
 
   RELEASE_INPUT_DOUBLE_ARRAY(env, input, inputPtr, numThreads);
   RELEASE_INPUT_DOUBLE_ARRAY(env, filter, filterPtr, numThreads);
@@ -298,10 +319,34 @@ Java_org_apache_sysml_utils_NativeHelper_conv2dBiasAddDense(
       retPtr == NULL)
     return (jint)-1;
 
-  int nnz = conv2dBiasAddDense(
-      inputPtr, biasPtr, filterPtr, retPtr, (int)N, (int)C, (int)H, (int)W,
-      (int)K, (int)R, (int)S, (int)stride_h, (int)stride_w, (int)pad_h,
+  int nnz = -1;
+  if (isSinglePrecision()) {
+    int inputPtrLen = (int)N * (int)C * (int)H * (int)W;
+    int filterPtrLen = (int)K * (int)C * (int)R * (int)S;
+    int biasPtrLen = (int)K;
+    int retPtrLen = (int)N * (int)K * (int)P * (int)Q;
+    float* inputPtrFP32 = new float[inputPtrLen];
+    float* filterPtrFP32 = new float[filterPtrLen];
+    float* retPtrFP32 = new float[retPtrLen];
+    float* biasPtrFP32 = new float[biasPtrLen];
+    copyFP64ToFP32(inputPtr, inputPtrFP32, inputPtrLen);
+    copyFP64ToFP32(biasPtr, biasPtrFP32, biasPtrLen);
+    copyFP64ToFP32(filterPtr, filterPtrFP32, filterPtrLen);
+    nnz = conv2dBiasAddDense(
+      inputPtrFP32, biasPtrFP32, filterPtrFP32, retPtrFP32, (int)N, (int)C, (int)H,
+      (int)W, (int)K, (int)R, (int)S, (int)stride_h, (int)stride_w, (int)pad_h,
       (int)pad_w, (int)P, (int)Q, true, (int)numThreads);
+    delete[] inputPtrFP32;
+    delete[] filterPtrFP32;
+    delete[] biasPtrFP32;
+    copyFP32ToFP64(retPtrFP32, retPtr, retPtrLen);
+    delete[] retPtrFP32;
+  } else {
+  	nnz = conv2dBiasAddDense(
+      inputPtr, biasPtr, filterPtr, retPtr, (int)N, (int)C, (int)H,
+      (int)W, (int)K, (int)R, (int)S, (int)stride_h, (int)stride_w, (int)pad_h,
+      (int)pad_w, (int)P, (int)Q, true, (int)numThreads);
+  }
 
   RELEASE_INPUT_DOUBLE_ARRAY(env, input, inputPtr, numThreads);
   RELEASE_INPUT_DOUBLE_ARRAY(env, bias, biasPtr, numThreads);
@@ -321,11 +366,31 @@ Java_org_apache_sysml_utils_NativeHelper_conv2dBackwardDataDense(
   double* retPtr = GET_DOUBLE_ARRAY(env, ret, numThreads);
   if (doutPtr == NULL || filterPtr == NULL || retPtr == NULL) return (jint)-1;
 
-  int nnz = conv2dBackwardDataDense(
+  int nnz = -1;
+  if (isSinglePrecision()) {
+    int doutPtrLen = (int)N * (int)K * (int)P * (int)Q;
+    int filterPtrLen = (int)K * (int)C * (int)R * (int)S;
+    int retPtrLen = (int)N * (int)C * (int)H * (int)W;
+    float* doutPtrFP32 = new float[doutPtrLen];
+    float* filterPtrFP32 = new float[filterPtrLen];
+    float* retPtrFP32 = new float[retPtrLen];
+    copyFP64ToFP32(doutPtr, doutPtrFP32, doutPtrLen);
+    copyFP64ToFP32(filterPtr, filterPtrFP32, filterPtrLen);
+    nnz = conv2dBackwardDataDense(
+      filterPtrFP32, doutPtrFP32, retPtrFP32, (int)N, (int)C, (int)H, (int)W, (int)K,
+      (int)R, (int)S, (int)stride_h, (int)stride_w, (int)pad_h, (int)pad_w,
+      (int)P, (int)Q, (int)numThreads);
+    delete[] doutPtrFP32;
+    delete[] filterPtrFP32;
+    copyFP32ToFP64(retPtrFP32, retPtr, retPtrLen);
+    delete[] retPtrFP32;
+  } else {
+  	nnz = conv2dBackwardDataDense(
       filterPtr, doutPtr, retPtr, (int)N, (int)C, (int)H, (int)W, (int)K,
       (int)R, (int)S, (int)stride_h, (int)stride_w, (int)pad_h, (int)pad_w,
       (int)P, (int)Q, (int)numThreads);
-
+  }
+  
   RELEASE_INPUT_DOUBLE_ARRAY(env, filter, filterPtr, numThreads);
   RELEASE_INPUT_DOUBLE_ARRAY(env, dout, doutPtr, numThreads);
   RELEASE_DOUBLE_ARRAY(env, ret, retPtr, numThreads);
@@ -343,10 +408,30 @@ Java_org_apache_sysml_utils_NativeHelper_conv2dBackwardFilterDense(
   double* retPtr = GET_DOUBLE_ARRAY(env, ret, numThreads);
   if (doutPtr == NULL || inputPtr == NULL || retPtr == NULL) return (jint)-1;
 
-  int nnz = conv2dBackwardFilterDense(
+  int nnz = -1;
+  if (isSinglePrecision()) {
+    int doutPtrLen = (int)N * (int)K * (int)P * (int)Q;
+    int inputPtrLen = (int)N * (int)C * (int)H * (int)W;
+    int retPtrLen = (int)K * (int)C * (int)R * (int)S;
+    float* inputPtrFP32 = new float[inputPtrLen];
+    float* doutPtrFP32 = new float[doutPtrLen];
+    float* retPtrFP32 = new float[retPtrLen];
+    copyFP64ToFP32(doutPtr, doutPtrFP32, doutPtrLen);
+    copyFP64ToFP32(inputPtr, inputPtrFP32, inputPtrLen);
+    nnz = conv2dBackwardFilterDense(
+      inputPtrFP32, doutPtrFP32, retPtrFP32, (int)N, (int)C, (int)H, (int)W, (int)K, (int)R,
+      (int)S, (int)stride_h, (int)stride_w, (int)pad_h, (int)pad_w, (int)P,
+      (int)Q, (int)numThreads);
+    delete[] doutPtrFP32;
+    delete[] inputPtrFP32;
+    copyFP32ToFP64(retPtrFP32, retPtr, retPtrLen);
+    delete[] retPtrFP32;
+  } else {
+  	nnz = conv2dBackwardFilterDense(
       inputPtr, doutPtr, retPtr, (int)N, (int)C, (int)H, (int)W, (int)K, (int)R,
       (int)S, (int)stride_h, (int)stride_w, (int)pad_h, (int)pad_w, (int)P,
       (int)Q, (int)numThreads);
+  }
 
   RELEASE_INPUT_DOUBLE_ARRAY(env, input, inputPtr, numThreads);
   RELEASE_INPUT_DOUBLE_ARRAY(env, dout, doutPtr, numThreads);

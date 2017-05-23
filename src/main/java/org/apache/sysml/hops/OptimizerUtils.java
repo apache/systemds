@@ -157,6 +157,18 @@ public class OptimizerUtils
 	public static boolean ALLOW_INTER_PROCEDURAL_ANALYSIS = true;
 
 	/**
+	 * Enables an additional "second chance" pass of static rewrites + IPA after the initial pass of
+	 * IPA.  Without this, there are many situations in which sizes will remain unknown even after
+	 * recompilation, thus leading to distributed ops.  With the second chance enabled, sizes in
+	 * these situations can be determined.  For example, the alternation of constant folding
+	 * (static rewrite) and scalar replacement (IPA) can allow for size propagation without dynamic
+	 * rewrites or recompilation due to replacement of scalars with literals during IPA, which
+	 * enables constant folding of sub-DAGs of literals during static rewrites, which in turn allows
+	 * for scalar propagation during IPA.
+	 */
+	public static boolean ALLOW_IPA_SECOND_CHANCE = true;
+
+	/**
 	 * Enables sum product rewrites such as mapmultchains. In the future, this will cover 
 	 * all sum-product related rewrites.
 	 */
@@ -294,6 +306,7 @@ public class OptimizerUtils
 				ALLOW_ALGEBRAIC_SIMPLIFICATION = false;
 				ALLOW_AUTO_VECTORIZATION = false;
 				ALLOW_INTER_PROCEDURAL_ANALYSIS = false;
+				ALLOW_IPA_SECOND_CHANCE = false;
 				ALLOW_BRANCH_REMOVAL = false;
 				ALLOW_SUM_PRODUCT_REWRITES = false;
 				break;
@@ -305,6 +318,7 @@ public class OptimizerUtils
 				ALLOW_ALGEBRAIC_SIMPLIFICATION = false;
 				ALLOW_AUTO_VECTORIZATION = false;
 				ALLOW_INTER_PROCEDURAL_ANALYSIS = false;
+				ALLOW_IPA_SECOND_CHANCE = false;
 				ALLOW_BRANCH_REMOVAL = false;
 				ALLOW_SUM_PRODUCT_REWRITES = false;
 				ALLOW_LOOP_UPDATE_IN_PLACE = false;

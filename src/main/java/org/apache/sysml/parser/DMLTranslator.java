@@ -266,10 +266,20 @@ public class DMLTranslator
 		//propagate size information from main into functions (but conservatively)
 		if( OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS ) {
 			InterProceduralAnalysis ipa = new InterProceduralAnalysis();
-		    ipa.analyzeProgram(dmlp);
-		   	resetHopsDAGVisitStatus(dmlp);
+			ipa.analyzeProgram(dmlp);
+			resetHopsDAGVisitStatus(dmlp);
+			if (OptimizerUtils.ALLOW_IPA_SECOND_CHANCE) {
+				// SECOND CHANCE:
+				// Rerun static rewrites + IPA to allow for further improvements, such as making use
+				// of constant folding (static rewrite) after scalar -> literal replacement (IPA),
+				// and then further scalar -> literal replacement (IPA).
+				rewriter.rewriteProgramHopDAGs(dmlp);
+				resetHopsDAGVisitStatus(dmlp);
+				ipa.analyzeProgram(dmlp);
+				resetHopsDAGVisitStatus(dmlp);
+			}
 		}
-		
+
 		//apply hop rewrites (dynamic rewrites, after IPA)
 		ProgramRewriter rewriter2 = new ProgramRewriter(false, true);
 		rewriter2.rewriteProgramHopDAGs(dmlp);

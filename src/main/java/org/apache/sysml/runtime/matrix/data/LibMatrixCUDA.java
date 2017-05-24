@@ -2346,14 +2346,21 @@ public class LibMatrixCUDA {
 				else if(op.fn instanceof Power) {
 					setOutputToConstant(ec, gCtx, instName, 1.0, outputName);
 				}
-				else if(op.fn instanceof Divide && isSparseAndEmpty(gCtx, in)) {
-					setOutputToConstant(ec, gCtx, instName, Double.NaN, outputName);
-				}
-				else if(op.fn instanceof Divide) {
-					//For division, IEEE 754 defines x/0.0 as INFINITY and 0.0/0.0 as NaN.
-					compareAndSet(ec, gCtx, instName, in, outputName, 0.0, 1e-6, Double.NaN, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY);
-				}
-				else {
+                // TODO:
+                // x/0.0 is either +Infinity or -Infinity according to Java.
+                // In the context of a matrix, different elements of the matrix
+                // could have different values.
+                // If the IEEE 754 standard defines otherwise, this logic needs
+                // to be re-enabled and the Java computation logic for divide by zero
+                // needs to be revisited
+                //else if(op.fn instanceof Divide && isSparseAndEmpty(gCtx, in)) {
+                //	setOutputToConstant(ec, gCtx, instName, Double.NaN, outputName);
+                //}
+                //else if(op.fn instanceof Divide) {
+                //	//For division, IEEE 754 defines x/0.0 as INFINITY and 0.0/0.0 as NaN.
+                //	compareAndSet(ec, gCtx, instName, in, outputName, 0.0, 1e-6, Double.NaN, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY);
+                //}
+                else {
 					// TODO: Potential to optimize
 					matrixScalarOp(ec, gCtx, instName, in, outputName, isInputTransposed, op);
 				}

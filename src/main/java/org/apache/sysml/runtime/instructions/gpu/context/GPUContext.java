@@ -579,7 +579,6 @@ public class GPUContext {
 
   /**
    * Destroys this GPUContext object
-   * This method MUST BE called so that the GPU is available to be used again
    *
    * @throws DMLRuntimeException if error
    */
@@ -607,7 +606,7 @@ public class GPUContext {
    */
   public void clearMemory() throws DMLRuntimeException {
     clearTemporaryMemory();
-    while (allocatedGPUObjects.isEmpty()) {
+    while (!allocatedGPUObjects.isEmpty()) {
       GPUObject o = allocatedGPUObjects.get(0);
       if (o.isDirty()){
         LOG.warn("Attempted to free GPU Memory when a block[" + o + "] is still on GPU memory, copying it back to host.");

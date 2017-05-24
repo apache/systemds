@@ -25,11 +25,12 @@ import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(Suite.class) @SuiteClasses({
-		MatrixMatrixElementWiseOpTests.class,
-		ReorgOpTests.class,
-		AggregateUnaryOpTests.class,
-		UnaryOpTests.class,
-		MatrixMultiplicationOpTest.class,
+    ScalarMatrixElementwiseOpTests.class,
+	MatrixMatrixElementWiseOpTests.class,
+	ReorgOpTests.class,
+	AggregateUnaryOpTests.class,
+	UnaryOpTests.class,
+	MatrixMultiplicationOpTest.class,
 })
 public class ZPackageSuite {
 

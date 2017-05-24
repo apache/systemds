@@ -68,7 +68,6 @@ public class MatrixMatrixElementWiseOpTests extends GPUTests {
         runMatrixMatrixElementwiseTest("O = X ^ Y", "X", "Y", "O", "gpu_%");
     }
 
-
     /**
      * Runs a simple matrix-matrix elementwise op test
      *
@@ -77,7 +76,8 @@ public class MatrixMatrixElementWiseOpTests extends GPUTests {
      * @param input2    name of the second input variable in the script string
      * @param output    name of the output variable in the script string
      */
-    private void runMatrixMatrixElementwiseTest(String scriptStr, String input1, String input2, String output, String heavyHitterOpcode) {
+    private void runMatrixMatrixElementwiseTest(String scriptStr, String input1, String input2, String output,
+        String heavyHitterOpcode) {
         for (int i = 0; i < rowSizes.length; i++) {
             for (int j = 0; j < columnSizes.length; j++) {
                 for (int k = 0; k < sparsities.length; k++) {

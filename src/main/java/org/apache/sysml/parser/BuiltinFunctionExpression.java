@@ -1173,7 +1173,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			break;
 		}
 		default:
-			if (this.isMathFunction()) {
+			if( isMathFunction() ) {
 				checkMathFunctionParam();
 				//unary operations
 				if( getSecondExpr() == null ) {
@@ -1186,6 +1186,9 @@ public class BuiltinFunctionExpression extends DataIdentifier
 				//binary operations
 				else {
 					setBinaryOutputProperties(output);
+					// override computed value type for special cases
+					if( getOpCode() == BuiltinFunctionOp.LOG )
+						output.setValueType(ValueType.DOUBLE);
 				}
 			} 
 			else {

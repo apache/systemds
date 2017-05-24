@@ -29,6 +29,13 @@ import shutil
 
 if environ.get('SPARK_HOME') is None:
     print('SPARK_HOME not set')
+    sys.exit(1)
+
+# error help print
+def print_usage_and_exit():
+    this_script = sys.argv[0]
+    print('Usage: ' + this_script + '-f <dml-filename> [arguments]')
+    sys.exit(1)
 
 cparser = argparse.ArgumentParser(description='System-ML Spark Submit Script', add_help=False)
 cparser.add_argument('--help', action='help', help='Print this usage message and exit')

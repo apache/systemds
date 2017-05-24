@@ -6,7 +6,7 @@ import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(Suite.class) @SuiteClasses({
-		ElementWiseOpTests.class,
+		MatrixMatrixElementWiseOpTests.class,
 		ReorgOpTests.class,
 		AggregateUnaryOpTests.class,
 		UnaryOpTests.class,

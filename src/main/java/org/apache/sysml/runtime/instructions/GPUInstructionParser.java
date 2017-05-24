@@ -62,8 +62,8 @@ public class GPUInstructionParser  extends InstructionParser
 		String2GPUInstructionType.put( "-",    GPUINSTRUCTION_TYPE.ArithmeticBinary);
 		String2GPUInstructionType.put( "*",    GPUINSTRUCTION_TYPE.ArithmeticBinary);
 		String2GPUInstructionType.put( "/",    GPUINSTRUCTION_TYPE.ArithmeticBinary);
-		String2GPUInstructionType.put( "%%",   GPUINSTRUCTION_TYPE.ArithmeticBinary);
-		String2GPUInstructionType.put( "%/%",  GPUINSTRUCTION_TYPE.ArithmeticBinary);
+		//String2GPUInstructionType.put( "%%",   GPUINSTRUCTION_TYPE.ArithmeticBinary);
+		//String2GPUInstructionType.put( "%/%",  GPUINSTRUCTION_TYPE.ArithmeticBinary);
 		String2GPUInstructionType.put( "^",    GPUINSTRUCTION_TYPE.ArithmeticBinary);
 		String2GPUInstructionType.put( "1-*",  GPUINSTRUCTION_TYPE.ArithmeticBinary); //special * case
 		String2GPUInstructionType.put( "^2",   GPUINSTRUCTION_TYPE.ArithmeticBinary); //special ^ case

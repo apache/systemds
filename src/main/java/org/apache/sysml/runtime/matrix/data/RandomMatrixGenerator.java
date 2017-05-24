@@ -137,7 +137,7 @@ public class RandomMatrixGenerator {
 	 * @param min    minimum of range of random numbers
 	 * @param max    maximum of range of random numbers
 	 * @param mean   the poisson mean
-	 * @throws DMLRuntimeException
+	 * @throws DMLRuntimeException if error
 	 */
 	public RandomMatrixGenerator(PDF pdf, int r, int c, int rpb, int cpb, double sp, double min, double max, double mean) throws DMLRuntimeException
 	{

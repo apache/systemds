@@ -791,11 +791,6 @@ public abstract class AutomatedTestBase
 		Assert.assertEquals(mc.getCols(), rmc.getCols());
 	}
 	
-	/**
-	 * 
-	 * @param fileName
-	 * @return
-	 */
 	public static MatrixCharacteristics readDMLMetaDataFile(String fileName)
 	{
 		try {
@@ -810,6 +805,17 @@ public abstract class AutomatedTestBase
 		}
 	}
 	
+	public static ValueType readDMLMetaDataValueType(String fileName)
+	{
+		try {
+			String fname = baseDirectory + OUTPUT_DIR + fileName +".mtd";
+			JSONObject meta = new DataExpression().readMetadataFile(fname, false);
+			return ValueType.valueOf(meta.get(DataExpression.VALUETYPEPARAM).toString().toUpperCase());
+		}
+		catch(Exception ex) {
+			throw new RuntimeException(ex);
+		}
+	}
 	
 	/**
 	 * <p>

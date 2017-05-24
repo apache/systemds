@@ -1309,8 +1309,6 @@ public class MLContextConversionUtil {
 			return frame;
 		} catch (CacheException e) {
 			throw new MLContextException("CacheException while converting frame object to 2D string array", e);
-		} catch (DMLRuntimeException e) {
-			throw new MLContextException("DMLRuntimeException while converting frame object to 2D string array", e);
 		}
 	}
 

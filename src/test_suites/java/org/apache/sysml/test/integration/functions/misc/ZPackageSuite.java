@@ -64,7 +64,8 @@ import org.junit.runners.Suite;
 	SetWorkingDirTest.class,
 	ToStringTest.class,
 	ValueTypeAutoCastingTest.class,
-	ValueTypeCastingTest.class
+	ValueTypeCastingTest.class,
+	ValueTypeMatrixScalarBuiltinTest.class,
 })
 
 

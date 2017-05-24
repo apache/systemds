@@ -32,37 +32,37 @@ import java.util.List;
  */
 public class ReorgOpTests extends GPUTests {
 
-    private final static String TEST_NAME = "ReorgOpTests";
-    private final int[] rowSizes = new int[] { 1, 64, 130, 1024, 2049 };
-    private final int[] columnSizes = new int[] { 1, 64, 130, 1024, 2049 };
-    private final double[] sparsities = new double[] { 0.0, 0.03, 0.3, 0.9 };
-    private final int seed = 42;
+	private final static String TEST_NAME = "ReorgOpTests";
+	private final int[] rowSizes = new int[] { 1, 64, 130, 1024, 2049 };
+	private final int[] columnSizes = new int[] { 1, 64, 130, 1024, 2049 };
+	private final double[] sparsities = new double[] { 0.0, 0.03, 0.3, 0.9 };
+	private final int seed = 42;
 
-    @Override public void setUp() {
-        TestUtils.clearAssertionInformation();
-        addTestConfiguration(TEST_DIR, TEST_NAME);
-        getAndLoadTestConfiguration(TEST_NAME);
-    }
+	@Override public void setUp() {
+		TestUtils.clearAssertionInformation();
+		addTestConfiguration(TEST_DIR, TEST_NAME);
+		getAndLoadTestConfiguration(TEST_NAME);
+	}
 
-    @Test public void transposeTest() {
-        String scriptStr = "out = t(in1)";
+	@Test public void transposeTest() {
+		String scriptStr = "out = t(in1)";
 
-        for (int i = 0; i < rowSizes.length; i++) {
-            for (int j = 0; j < columnSizes.length; j++) {
-                for (int k = 0; k < sparsities.length; k++) {
-                    int m = rowSizes[i];
-                    int n = columnSizes[j];
-                    double sparsity = sparsities[k];
-                    HashMap<String, Object> inputs = new HashMap<>();
-                    Matrix in1 = generateInputMatrix(spark, m, n, sparsity, seed);
-                    inputs.put("in1", in1);
-                    List<Object> cpuOuts = runOnCPU(spark, scriptStr, inputs, Arrays.asList("out"));
-                    List<Object> gpuOuts = runOnGPU(spark, scriptStr, inputs, Arrays.asList("out"));
-                    //assertHeavyHitterPresent("gpu_r'");
-                    assertEqualObjects(cpuOuts.get(0), gpuOuts.get(0));
-                }
-            }
-        }
+		for (int i = 0; i < rowSizes.length; i++) {
+			for (int j = 0; j < columnSizes.length; j++) {
+				for (int k = 0; k < sparsities.length; k++) {
+					int m = rowSizes[i];
+					int n = columnSizes[j];
+					double sparsity = sparsities[k];
+					HashMap<String, Object> inputs = new HashMap<>();
+					Matrix in1 = generateInputMatrix(spark, m, n, sparsity, seed);
+					inputs.put("in1", in1);
+					List<Object> cpuOuts = runOnCPU(spark, scriptStr, inputs, Arrays.asList("out"));
+					List<Object> gpuOuts = runOnGPU(spark, scriptStr, inputs, Arrays.asList("out"));
+					//assertHeavyHitterPresent("gpu_r'");
+					assertEqualObjects(cpuOuts.get(0), gpuOuts.get(0));
+				}
+			}
+		}
 
-    }
+	}
 }

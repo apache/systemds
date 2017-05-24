@@ -92,10 +92,10 @@ public class AggregateUnaryOpTests extends UnaryOpTestsBase {
 		testSimpleUnaryOpMatrixOutput("var", "gpu_uavar");
 	}
 
-    // ****************************************************************
-    // ************************ IGNORED TEST **************************
-    // FIXME : There is a bug in colVars
-    @Ignore @Test public void colVars() {
+	// ****************************************************************
+	// ************************ IGNORED TEST **************************
+	// FIXME : There is a bug in colVars
+	@Ignore @Test public void colVars() {
 		testSimpleUnaryOpMatrixOutput("colVars", "gpu_uacvar");
 	}
 

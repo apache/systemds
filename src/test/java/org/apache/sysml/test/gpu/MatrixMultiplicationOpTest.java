@@ -31,14 +31,14 @@ import java.util.List;
  * Tests matrix multiplication on the GPU
  */
 public class MatrixMultiplicationOpTest extends GPUTests {
-    private final static String TEST_NAME = "MatrixMultiplicationOpTest";
-    private final int seed = 42;
+	private final static String TEST_NAME = "MatrixMultiplicationOpTest";
+	private final int seed = 42;
 
-    @Override public void setUp() {
-        TestUtils.clearAssertionInformation();
-        addTestConfiguration(TEST_DIR, TEST_NAME);
-        getAndLoadTestConfiguration(TEST_NAME);
-    }
+	@Override public void setUp() {
+		TestUtils.clearAssertionInformation();
+		addTestConfiguration(TEST_DIR, TEST_NAME);
+		getAndLoadTestConfiguration(TEST_NAME);
+	}
 
 	@Test public void matrixMatrixTest1() {
 		String scriptStr = "O = X %*% Y";
@@ -133,25 +133,25 @@ public class MatrixMultiplicationOpTest extends GPUTests {
 	}
 
 	@Test public void transposeSelfMatrixMultiply() {
-	    String scriptStr = "O = t(X) %*% X";
+		String scriptStr = "O = t(X) %*% X";
 
-	    int[] sizes = {1, 128, 512, 1024, 2049};
-	    double[] sparsities = {0.0, 0.03, 0.3, 0.9};
+		int[] sizes = { 1, 128, 512, 1024, 2049 };
+		double[] sparsities = { 0.0, 0.03, 0.3, 0.9 };
 
-	    for (int i=0; i<sizes.length; i++){
-	        for (int j=0; j<sparsities.length; j++){
-	            int side = sizes[i];
-	            double sparsity = sparsities[j];
-	            Matrix X = generateInputMatrix(spark, side, side, sparsity, seed);
-                HashMap<String, Object> inputs = new HashMap<>();
-                inputs.put("X", X);
-                List<Object> cpuOuts = runOnCPU(spark, scriptStr, inputs, Arrays.asList("O"));
-                List<Object> gpuOuts = runOnGPU(spark, scriptStr, inputs, Arrays.asList("O"));
-                //assertHeavyHitterPresent("gpu_tsmm'");
-                assertEqualObjects(cpuOuts.get(0), gpuOuts.get(0));
-            }
-        }
-    }
+		for (int i = 0; i < sizes.length; i++) {
+			for (int j = 0; j < sparsities.length; j++) {
+				int side = sizes[i];
+				double sparsity = sparsities[j];
+				Matrix X = generateInputMatrix(spark, side, side, sparsity, seed);
+				HashMap<String, Object> inputs = new HashMap<>();
+				inputs.put("X", X);
+				List<Object> cpuOuts = runOnCPU(spark, scriptStr, inputs, Arrays.asList("O"));
+				List<Object> gpuOuts = runOnGPU(spark, scriptStr, inputs, Arrays.asList("O"));
+				//assertHeavyHitterPresent("gpu_tsmm'");
+				assertEqualObjects(cpuOuts.get(0), gpuOuts.get(0));
+			}
+		}
+	}
 
 	/**
 	 * Assert that matrix multiplication is the same on gpu and cpu

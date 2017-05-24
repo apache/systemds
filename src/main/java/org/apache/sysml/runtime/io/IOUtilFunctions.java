@@ -19,15 +19,16 @@
 
 package org.apache.sysml.runtime.io;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 
+import org.apache.commons.io.input.ReaderInputStream;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -315,7 +316,7 @@ public class IOUtilFunctions
 	 * see java docs: docs/api/java/io/DataInput.html#modified-utf-8
 	 * 
 	 * @param value string value
-	 * @return string size for modified UTF-8 specifiecation
+	 * @return string size for modified UTF-8 specification
 	 */
 	public static int getUTFSize(String value) {
 		if( value == null )
@@ -333,7 +334,7 @@ public class IOUtilFunctions
 	public static InputStream toInputStream(String input) throws IOException {
 		if( input == null ) 
 			return null;
-		return new ByteArrayInputStream(input.getBytes("UTF-8"));
+		return new ReaderInputStream(new StringReader(input), "UTF-8");
 	}
 
 	public static String toString(InputStream input) throws IOException {

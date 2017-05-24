@@ -556,10 +556,8 @@ public class DataConverter
 	 * 
 	 * @param frame frame block
 	 * @return 2d string array
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static String[][] convertToStringFrame(FrameBlock frame) 
-		throws DMLRuntimeException
 	{
 		String[][] ret = new String[frame.getNumRows()][];
 		Iterator<String[]> iter = frame.getStringRowIterator();		

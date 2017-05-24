@@ -196,8 +196,7 @@ public class Connection implements Closeable
 			// don't chain ParseException (for cleaner error output)
 			throw pe;
 		}
-		catch(Exception ex)
-		{
+		catch(Exception ex) {
 			throw new DMLException(ex);
 		}
 			
@@ -248,7 +247,8 @@ public class Connection implements Closeable
 				sb.append( tmp );
 				sb.append( "\n" );
 			}
-		} finally {
+		}
+		finally {
 			IOUtilFunctions.closeSilently(in);
 		}
 		
@@ -335,20 +335,8 @@ public class Connection implements Closeable
 	public double[][] convertToDoubleMatrix(String input, String meta) 
 		throws IOException
 	{
-		try {
-			//parse json meta data 
-			JSONObject jmtd = new JSONObject(meta);
-			int rows = jmtd.getInt(DataExpression.READROWPARAM);
-			int cols = jmtd.getInt(DataExpression.READCOLPARAM);
-			String format = jmtd.getString(DataExpression.FORMAT_TYPE);
-			
-			//parse the input matrix
-			InputStream is = IOUtilFunctions.toInputStream(input);
-			return convertToDoubleMatrix(is, rows, cols, format);
-		}
-		catch(Exception ex) {
-			throw new IOException(ex);
-		}
+		MatrixBlock mb = convertToMatrix(input, meta);
+		return DataConverter.convertToDoubleMatrix(mb);
 	}
 	
 	/**
@@ -361,11 +349,8 @@ public class Connection implements Closeable
 	 * @return matrix as a two-dimensional double array
 	 * @throws IOException if IOException occurs
 	 */
-	public double[][] convertToDoubleMatrix(String input, int rows, int cols) 
-		throws IOException
-	{
-		InputStream is = IOUtilFunctions.toInputStream(input);
-		return convertToDoubleMatrix(is, rows, cols);
+	public double[][] convertToDoubleMatrix(String input, int rows, int cols) throws IOException {
+		return convertToDoubleMatrix(IOUtilFunctions.toInputStream(input), rows, cols);
 	}
 	
 	/**
@@ -396,7 +381,95 @@ public class Connection implements Closeable
 	public double[][] convertToDoubleMatrix(InputStream input, int rows, int cols, String format) 
 		throws IOException
 	{
-		double[][] ret = null;
+		MatrixBlock mb = convertToMatrix(input, rows, cols, format);
+		return DataConverter.convertToDoubleMatrix(mb);
+	}
+	
+	/**
+	 * Converts an input string representation of a matrix in csv or textcell format
+	 * into a matrix block. The meta data string is the SystemML generated
+	 * .mtd file including the number of rows and columns.
+	 * 
+	 * @param input string matrix in csv or textcell format
+	 * @param meta string representing SystemML matrix metadata in JSON format
+	 * @return matrix as a matrix block
+	 * @throws IOException if IOException occurs
+	 */
+	public MatrixBlock convertToMatrix(String input, String meta) throws IOException {
+		return convertToMatrix(IOUtilFunctions.toInputStream(input), meta);
+	}
+	
+	/**
+	 * Converts an input stream of a string matrix in csv or textcell format
+	 * into a matrix block. The meta data string is the SystemML generated
+	 * .mtd file including the number of rows and columns.
+	 * 
+	 * @param input InputStream to a string matrix in csv or textcell format
+	 * @param meta string representing SystemML matrix metadata in JSON format
+	 * @return matrix as a matrix block
+	 * @throws IOException if IOException occurs
+	 */
+	public MatrixBlock convertToMatrix(InputStream input, String meta) 
+		throws IOException
+	{
+		try {
+			//parse json meta data 
+			JSONObject jmtd = new JSONObject(meta);
+			int rows = jmtd.getInt(DataExpression.READROWPARAM);
+			int cols = jmtd.getInt(DataExpression.READCOLPARAM);
+			String format = jmtd.getString(DataExpression.FORMAT_TYPE);
+			
+			//parse the input matrix
+			return convertToMatrix(input, rows, cols, format);
+		}
+		catch(Exception ex) {
+			throw new IOException(ex);
+		}
+	}
+	
+	/**
+	 * Converts an input string representation of a matrix in textcell format
+	 * into a matrix block. 
+	 * 
+	 * @param input string matrix in textcell format
+	 * @param rows number of rows in the matrix
+	 * @param cols number of columns in the matrix
+	 * @return matrix as a matrix block
+	 * @throws IOException if IOException occurs
+	 */
+	public MatrixBlock convertToMatrix(String input, int rows, int cols) throws IOException {
+		return convertToMatrix(IOUtilFunctions.toInputStream(input), rows, cols);
+	}
+	
+	/**
+	 * Converts an input stream of a string matrix in textcell format
+	 * into a matrix block. 
+	 * 
+	 * @param input InputStream to a string matrix in textcell format
+	 * @param rows number of rows in the matrix
+	 * @param cols number of columns in the matrix
+	 * @return matrix as a matrix block
+	 * @throws IOException if IOException occurs
+	 */
+	public MatrixBlock convertToMatrix(InputStream input, int rows, int cols) throws IOException {
+		return convertToMatrix(input, rows, cols, DataExpression.FORMAT_TYPE_VALUE_TEXT);
+	}
+	
+	/**
+	 * Converts an input stream of a string matrix in csv or textcell format
+	 * into a matrix block. 
+	 * 
+	 * @param input InputStream to a string matrix in csv or textcell format
+	 * @param rows number of rows in the matrix
+	 * @param cols number of columns in the matrix
+	 * @param format input format of the given stream
+	 * @return matrix as a matrix block
+	 * @throws IOException if IOException occurs
+	 */
+	public MatrixBlock convertToMatrix(InputStream input, int rows, int cols, String format) 
+		throws IOException
+	{
+		MatrixBlock ret = null;
 
 		//sanity check input format
 		if(!(DataExpression.FORMAT_TYPE_VALUE_TEXT.equals(format)
@@ -410,14 +483,12 @@ public class Connection implements Closeable
 			InputInfo iinfo = DataExpression.FORMAT_TYPE_VALUE_CSV.equals(format) ? 
 					InputInfo.CSVInputInfo : InputInfo.TextCellInputInfo;
 			MatrixReader reader = MatrixReaderFactory.createMatrixReader(iinfo);
-			MatrixBlock mb = reader.readMatrixFromInputStream(input, rows, cols, 
-					ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(), (long)rows*cols);
-		
-			//convert to double array
-			ret = DataConverter.convertToDoubleMatrix( mb );
+			int blksz = ConfigurationManager.getBlocksize();
+			ret = reader.readMatrixFromInputStream(input, 
+					rows, cols, blksz, blksz, (long)rows*cols);
 		}
 		catch(DMLRuntimeException rex) {
-			throw new IOException( rex );
+			throw new IOException(rex);
 		}
 		
 		return ret;
@@ -494,24 +565,12 @@ public class Connection implements Closeable
 	public String[][] convertToStringFrame(String input, String meta) 
 		throws IOException
 	{
-		try {
-			//parse json meta data 
-			JSONObject jmtd = new JSONObject(meta);
-			int rows = jmtd.getInt(DataExpression.READROWPARAM);
-			int cols = jmtd.getInt(DataExpression.READCOLPARAM);
-			String format = jmtd.getString(DataExpression.FORMAT_TYPE);
-			
-			//parse the input frame
-			InputStream is = IOUtilFunctions.toInputStream(input);
-			return convertToStringFrame(is, rows, cols, format);
-		}
-		catch(Exception ex) {
-			throw new IOException(ex);
-		}
+		FrameBlock fb = convertToFrame(input, meta);
+		return DataConverter.convertToStringFrame(fb);
 	}
 	
 	/**
-	 * Converts an input string representation of a frame in textcell format
+	 * Converts an input stream of a string frame in textcell format
 	 * into a dense string array. 
 	 * 
 	 * @param input string frame in textcell format
@@ -520,11 +579,8 @@ public class Connection implements Closeable
 	 * @return frame as a two-dimensional string array
 	 * @throws IOException if IOException occurs
 	 */
-	public String[][] convertToStringFrame(String input, int rows, int cols) 
-		throws IOException
-	{
-		InputStream is = IOUtilFunctions.toInputStream(input);
-		return convertToStringFrame(is, rows, cols);
+	public String[][] convertToStringFrame(String input, int rows, int cols) throws IOException {
+		return convertToStringFrame(IOUtilFunctions.toInputStream(input), rows, cols);
 	}
 	
 	/**
@@ -555,7 +611,95 @@ public class Connection implements Closeable
 	public String[][] convertToStringFrame(InputStream input, int rows, int cols, String format) 
 		throws IOException
 	{
-		String[][] ret = null;
+		FrameBlock fb = convertToFrame(input, rows, cols, format);
+		return DataConverter.convertToStringFrame(fb);
+	}
+	
+	/**
+	 * Converts an input string representation of a frame in csv or textcell format
+	 * into a frame block. The meta data string is the SystemML generated
+	 * .mtd file including the number of rows and columns.
+	 * 
+	 * @param input string frame in csv or textcell format
+	 * @param meta string representing SystemML frame metadata in JSON format
+	 * @return frame as a frame block
+	 * @throws IOException if IOException occurs
+	 */
+	public FrameBlock convertToFrame(String input, String meta) throws IOException {
+		return convertToFrame(IOUtilFunctions.toInputStream(input), meta);
+	}
+	
+	/**
+	 * Converts an input stream of a string frame in csv or textcell format
+	 * into a frame block. The meta data string is the SystemML generated
+	 * .mtd file including the number of rows and columns.
+	 * 
+	 * @param input InputStream to a string frame in csv or textcell format
+	 * @param meta string representing SystemML frame metadata in JSON format
+	 * @return frame as a frame block
+	 * @throws IOException if IOException occurs
+	 */
+	public FrameBlock convertToFrame(InputStream input, String meta) 
+		throws IOException
+	{
+		try {
+			//parse json meta data 
+			JSONObject jmtd = new JSONObject(meta);
+			int rows = jmtd.getInt(DataExpression.READROWPARAM);
+			int cols = jmtd.getInt(DataExpression.READCOLPARAM);
+			String format = jmtd.getString(DataExpression.FORMAT_TYPE);
+			
+			//parse the input frame
+			return convertToFrame(input, rows, cols, format);
+		}
+		catch(Exception ex) {
+			throw new IOException(ex);
+		}
+	}
+	
+	/**
+	 * Converts an input string representation of a frame in textcell format
+	 * into a frame block. 
+	 * 
+	 * @param input string frame in textcell format
+	 * @param rows number of rows in the frame
+	 * @param cols number of columns in the frame
+	 * @return frame as a frame block
+	 * @throws IOException if IOException occurs
+	 */
+	public FrameBlock convertToFrame(String input, int rows, int cols) throws IOException {
+		return convertToFrame(IOUtilFunctions.toInputStream(input), rows, cols);
+	}
+	
+	/**
+	 * Converts an input stream of a string frame in textcell format
+	 * into a frame block. 
+	 * 
+	 * @param input InputStream to a string frame in textcell format
+	 * @param rows number of rows in the frame
+	 * @param cols number of columns in the frame
+	 * @return frame as a frame block
+	 * @throws IOException if IOException occurs
+	 */
+	public FrameBlock convertToFrame(InputStream input, int rows, int cols) throws IOException {
+		return convertToFrame(input, rows, cols, DataExpression.FORMAT_TYPE_VALUE_TEXT);
+	}
+	
+	/**
+	 * Converts an input stream of a frame in csv or textcell format
+	 * into a frame block. 
+	 * 
+	 * @param input InputStream to a string frame in csv or textcell format
+	 * @param rows number of rows in the frame
+	 * @param cols number of columns in the frame
+	 * @param format input format of the given stream
+	 * @return frame as a frame block
+	 * @throws IOException if IOException occurs
+	 */
+	public FrameBlock convertToFrame(InputStream input, int rows, int cols, String format) 
+		throws IOException
+	{
+		FrameBlock ret = null;
 	
 		//sanity check input format
 		if(!(DataExpression.FORMAT_TYPE_VALUE_TEXT.equals(format)
@@ -569,13 +713,10 @@ public class Connection implements Closeable
 			InputInfo iinfo = DataExpression.FORMAT_TYPE_VALUE_CSV.equals(format) ? 
 					InputInfo.CSVInputInfo : InputInfo.TextCellInputInfo;
 			FrameReader reader = FrameReaderFactory.createFrameReader(iinfo);
-			FrameBlock mb = reader.readFrameFromInputStream(input, rows, cols);
-		
-			//convert to double array
-			ret = DataConverter.convertToStringFrame( mb );
+			ret = reader.readFrameFromInputStream(input, rows, cols);
 		}
 		catch(DMLRuntimeException rex) {
-			throw new IOException( rex );
+			throw new IOException(rex);
 		}
 		
 		return ret;

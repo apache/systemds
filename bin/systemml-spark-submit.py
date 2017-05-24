@@ -27,6 +27,7 @@ from os import environ
 import argparse
 import shutil
 
+
 if environ.get('SPARK_HOME') is None:
     print('SPARK_HOME not set')
     sys.exit(1)
@@ -57,9 +58,9 @@ cparser.add_argument('-stats',  default='10', help='Monitor and report caching/r
 cparser.add_argument('-explain', default='runtime', help='explains plan levels can be hops, runtime, '
                                                          'recompile_hops, recompile_runtime', metavar='')
 cparser.add_argument('-exec', default='hybrid_spark', help='System-ML backend (e.g spark, spark-hybrid)', metavar='')
+cparser.add_argument('-debug', help='runs in debug mode', metavar='')
 cparser.add_argument('-f', required=True, help='specifies dml/pydml file to execute; path can be local/hdfs/gpfs',
                      metavar='')
-cparser.add_argument('-debug', help='runs in debug mode', metavar='')
 
 args = cparser.parse_args()
 

@@ -436,6 +436,7 @@
 						<exclude>**/slowtest/**</exclude>
 						<exclude>**/integration/**</exclude>
 						<exclude>**/test/unit/**</exclude>
+						<exclude>**/test/gpu/**</exclude>
 					</excludes>
 
 				</configuration>

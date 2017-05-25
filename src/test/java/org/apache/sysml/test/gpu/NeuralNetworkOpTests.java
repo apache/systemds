@@ -17,23 +17,25 @@
  * under the License.
  */
 
-package org.apache.sysml.test.integration.gpu;
 
-import org.apache.sysml.test.gpu.*;
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
-import org.junit.runners.Suite.SuiteClasses;
+package org.apache.sysml.test.gpu;
 
-@RunWith(Suite.class) @SuiteClasses({
-	BinaryOpTests.class,
-	NeuralNetworkOpTests.class,
-    ScalarMatrixElementwiseOpTests.class,
-	MatrixMatrixElementWiseOpTests.class,
-	ReorgOpTests.class,
-	AggregateUnaryOpTests.class,
-	UnaryOpTests.class,
-	MatrixMultiplicationOpTest.class,
-})
-public class ZPackageSuite {
+import org.apache.sysml.test.utils.TestUtils;
+import org.junit.Test;
 
+/** Test neural network operations on the GPU */
+public class NeuralNetworkOpTests extends GPUTests {
+
+	private final static String TEST_NAME = "NeuralNetworkOpTests";
+	private final int seed = 42;
+
+	@Override public void setUp() {
+		TestUtils.clearAssertionInformation();
+		addTestConfiguration(TEST_DIR, TEST_NAME);
+		getAndLoadTestConfiguration(TEST_NAME);
+	}
+
+	@Test public void testConv2d(){
+		// TODO
+	}
 }

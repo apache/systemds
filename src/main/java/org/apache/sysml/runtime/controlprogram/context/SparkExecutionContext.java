@@ -356,9 +356,8 @@ public class SparkExecutionContext extends ExecutionContext
 			boolean fromFile = false;
 			if( !OptimizerUtils.checkSparkCollectMemoryBudget(mc, 0) || !_parRDDs.reserve(
 					OptimizerUtils.estimatePartitionedSizeExactSparsity(mc))) {
-				if( mo.isDirty() ) { //write only if necessary
+				if( mo.isDirty() || !mo.isHDFSFileExists() ) //write if necessary
 					mo.exportData();
-				}
 				rdd = sc.hadoopFile( mo.getFileName(), inputInfo.inputFormatClass, inputInfo.inputKeyClass, inputInfo.inputValueClass);
 				rdd = SparkUtils.copyBinaryBlockMatrix((JavaPairRDD<MatrixIndexes, MatrixBlock>)rdd); //cp is workaround for read bug			
 				fromFile = true;

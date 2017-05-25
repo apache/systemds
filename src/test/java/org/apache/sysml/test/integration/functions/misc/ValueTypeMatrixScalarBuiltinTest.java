@@ -112,7 +112,7 @@ public class ValueTypeMatrixScalarBuiltinTest extends AutomatedTestBase
 		loadTestConfiguration(getTestConfiguration(testName));
 		
 		//setup arguments and run test
-        String RI_HOME = SCRIPT_DIR + TEST_DIR;
+		String RI_HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = RI_HOME + testName + ".dml";
 		programArgs = new String[]{"-args", 
 			vtIn==ValueType.DOUBLE ? "7.7" : "7", output("R")};

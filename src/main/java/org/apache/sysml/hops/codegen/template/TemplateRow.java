@@ -200,6 +200,7 @@ public class TemplateRow extends TemplateBase
 				inHops.add(hop.getInput().get(0).getInput().get(0));
 				
 				out = new CNodeBinary(cdata1, cdata2, BinType.VECT_MULT_ADD);
+				inHops2.put("X", hop.getInput().get(0).getInput().get(0));
 			}
 			else
 			{

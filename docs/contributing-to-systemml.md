@@ -34,28 +34,28 @@ There are many ways to become involved with SystemML:
 ### Development Mailing List
 
 Perhaps the easiest way to obtain help and contribute to SystemML is to join the SystemML Development
-mailing list (dev@systemml.incubator.apache.org). You can subscribe to this list by sending an email to
-[dev-subscribe@systemml.incubator.apache.org](mailto:dev-subscribe@systemml.incubator.apache.org).
-You can unsubscribe from this list by sending an email to [dev-unsubscribe@systemml.incubator.apache.org](mailto:dev-unsubscribe@systemml.incubator.apache.org). The dev mailing list archive can be found
-[here](http://mail-archives.apache.org/mod_mbox/incubator-systemml-dev/).
+mailing list (dev@systemml.apache.org). You can subscribe to this list by sending an email to
+[dev-subscribe@systemml.apache.org](mailto:dev-subscribe@systemml.apache.org).
+You can unsubscribe from this list by sending an email to [dev-unsubscribe@systemml.apache.org](mailto:dev-unsubscribe@systemml.apache.org). The dev mailing list archive can be found
+[here](http://mail-archives.apache.org/mod_mbox/systemml-dev/).
 
 ### Issues Mailing List
 
 The issues mailing list archive can be found
-[here](http://mail-archives.apache.org/mod_mbox/incubator-systemml-issues/).
+[here](http://mail-archives.apache.org/mod_mbox/systemml-issues/).
 To subscribe to the issues list, send an email to
-[issues-subscribe@systemml.incubator.apache.org](mailto:issues-subscribe@systemml.incubator.apache.org).
+[issues-subscribe@systemml.apache.org](mailto:issues-subscribe@systemml.apache.org).
 To unsubscribe from the issues list, send an email to
-[issues-unsubscribe@systemml.incubator.apache.org](mailto:issues-unsubscribe@systemml.incubator.apache.org).
+[issues-unsubscribe@systemml.apache.org](mailto:issues-unsubscribe@systemml.apache.org).
 
 ### Commits Mailing List
 
 The commits mailing list archive can be found
-[here](http://mail-archives.apache.org/mod_mbox/incubator-systemml-commits/).
+[here](http://mail-archives.apache.org/mod_mbox/systemml-commits/).
 To subscribe to the issues list, send an email to
-[commits-subscribe@systemml.incubator.apache.org](mailto:commits-subscribe@systemml.incubator.apache.org).
+[commits-subscribe@systemml.apache.org](mailto:commits-subscribe@systemml.apache.org).
 To unsubscribe from the issues list, send an email to
-[commits-unsubscribe@systemml.incubator.apache.org](mailto:commits-unsubscribe@systemml.incubator.apache.org).
+[commits-unsubscribe@systemml.apache.org](mailto:commits-unsubscribe@systemml.apache.org).
 
 
 ## Issue Tracker

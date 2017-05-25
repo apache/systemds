@@ -50,15 +50,15 @@
 	<mailingLists>
 		<mailingList>
 			<name>Dev Mailing List</name>
-			<post>dev@systemml.incubator.apache.org</post>
-			<subscribe>dev-subscribe@systemml.incubator.apache.org</subscribe>
-			<unsubscribe>dev-unsubscribe@systemml.incubator.apache.org</unsubscribe>
+			<post>dev@systemml.apache.org</post>
+			<subscribe>dev-subscribe@systemml.apache.org</subscribe>
+			<unsubscribe>dev-unsubscribe@systemml.apache.org</unsubscribe>
 		</mailingList>
 		<mailingList>
 			<name>Commits Mailing List</name>
-			<post>commits@systemml.incubator.apache.org</post>
-			<subscribe>commits-subscribe@systemml.incubator.apache.org</subscribe>
-			<unsubscribe>commits-unsubscribe@systemml.incubator.apache.org</unsubscribe>
+			<post>commits@systemml.apache.org</post>
+			<subscribe>commits-subscribe@systemml.apache.org</subscribe>
+			<unsubscribe>commits-unsubscribe@systemml.apache.org</unsubscribe>
 		</mailingList>
 	</mailingLists>
 

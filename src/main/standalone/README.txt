@@ -17,7 +17,7 @@ limitations under the License.
 # Apache SystemML
 
 **Documentation:** [SystemML Documentation](http://apache.github.io/incubator-systemml/)
-**Mailing List:** [Dev Mailing List](mailto:dev@systemml.incubator.apache.org)
+**Mailing List:** [Dev Mailing List](mailto:dev@systemml.apache.org)
 **Build Status:** [![Build Status](https://sparktc.ibmcloud.com/jenkins/job/SystemML-DailyTest/badge/icon)](https://sparktc.ibmcloud.com/jenkins/job/SystemML-DailyTest)
 **Issue Tracker:** [JIRA](https://issues.apache.org/jira/browse/SYSTEMML)
 **Download:** [Download SystemML](http://systemml.apache.org/download.html)

@@ -122,4 +122,12 @@
 			<scope>compile</scope>
 		</dependencySet>
 	</dependencySets>
+
+	<files>
+		<file>
+			<source>target/${artifactId}-${project.version}.jar</source>
+			<outputDirectory>.</outputDirectory>
+			<destName>SystemML.jar</destName>
+		</file>
+	</files>
 </assembly>

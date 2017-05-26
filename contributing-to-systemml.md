@@ -209,8 +209,9 @@ branch and perform the `subtree` command again.
 ### Java Code Format
 
 Java in SystemML should be formatted using a standard format. The "SystemML Format" at
-`dev/code-style/systemml-style.xml` can be imported into Eclipse and IntelliJ for this
-purpose.
+`dev/code-style/systemml-style-eclipse.xml` can be imported into Eclipse and
+`dev/code-style/systemml-style-intellij.xml` can be imported into IntelliJ
+for this purpose.
 
 No trailing whitespace is preferred. IDEs such as Eclipse and IntelliJ can be configured
 for this option.

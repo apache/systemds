@@ -37,6 +37,41 @@ import org.apache.sysml.api.mlcontext.MLContext.ExplainLevel
 import java.util.HashMap
 import scala.collection.JavaConversions._
 
+
+/****************************************************
+DESIGN DOCUMENT for MLLEARN API:
+The mllearn API supports LogisticRegression, LinearRegression, SVM, NaiveBayes 
+and Caffe2DML. Every algorithm in this API has a python wrapper (implemented in the mllearn python package)
+and a Scala class where the actual logic is implementation. 
+Both wrapper and scala class follow the below hierarchy to reuse code and simplify the implementation.
+
+
+                  BaseSystemMLEstimator
+                          |
+      --------------------------------------------
+      |                                          |
+BaseSystemMLClassifier                  BaseSystemMLRegressor
+      ^                                          ^
+      |                                          |
+SVM, Caffe2DML, ...                          LinearRegression
+
+
+To conform with MLLib API, for every algorithm, we support two classes for every algorithm:
+1. Estimator for training: For example: SVM extends Estimator[SVMModel].
+2. Model for prediction: For example: SVMModel extends Model[SVMModel]
+
+Both BaseSystemMLRegressor and BaseSystemMLClassifier implements following methods for training:
+1. For compatibility with scikit-learn: baseFit(X_mb: MatrixBlock, y_mb: MatrixBlock, sc: SparkContext): MLResults
+2. For compatibility with MLLib: baseFit(df: ScriptsUtils.SparkDataType, sc: SparkContext): MLResults
+
+In the above methods, we execute the DML script for the given algorithm using MLContext.
+The missing piece of the puzzle is how does BaseSystemMLRegressor and BaseSystemMLClassifier interfaces
+get the DML script. To enable this, each wrapper class has to implement following methods:
+1. getTrainingScript(isSingleNode:Boolean):(Script object of mlcontext, variable name of X in the script:String, variable name of y in the script:String)
+2. getPredictionScript(isSingleNode:Boolean): (Script object of mlcontext, variable name of X in the script:String)
+
+****************************************************/
+
 trait HasLaplace extends Params {
   final val laplace: Param[Double] = new Param[Double](this, "laplace", "Laplace smoothing specified by the user to avoid creation of 0 probabilities.")
   setDefault(laplace, 1.0)

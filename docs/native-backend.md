@@ -74,18 +74,14 @@ sudo make install
 # After installation, you may also want to add `/opt/OpenBLAS/lib` to your LD_LIBRARY_PATH or `java.library.path`.
 ```
 
-You can check if the OpenBLAS on you system is compiled with OpenMP or not using following commands:
+We also depend on GNU OpenMP (gomp) which will be installed by GCC.
+To find the location of `gomp` on your system, please use the command `ldconfig -p | grep libgomp`.
+If gomp is available as `/lib64/libgomp.so.1` instead of `/lib64/libgomp.so`,
+please add a softlink to it:
 
 ```bash
-$ ldconfig -p | grep libopenblas.so
-libopenblas.so (libc6,x86-64) => /opt/OpenBLAS/lib/libopenblas.so
-$ ldd /opt/OpenBLAS/lib/libopenblas.so | grep libgomp
-libgomp.so.1 => /lib64/libgomp.so.1
+sudo ln -s /lib64/libgomp.so.1 /lib64/libgomp.so
 ```
-
-If you don't see any output after the second command, then OpenBLAS installed on your system is using its internal threading.
-In this case, we highly recommend that you reinstall OpenBLAS using the above commands.
-
 
 ## Step 2: Install other dependencies
 
@@ -95,60 +91,75 @@ sudo yum install gcc-c++
 # Ubuntu
 sudo apt-get install g++ 
 ```
-
-We also depend on GNU OpenMP (gomp) which will be installed by GCC.
-To find the location of `gomp` on your system, please use the command `ldconfig -p | grep libgomp`.
-If gomp is available as `/lib64/libgomp.so.1` instead of `/lib64/libgomp.so`,
-please add a softlink to it:
-
-```bash
-sudo ln -s /lib64/libgomp.so.1 /lib64/libgomp.so
-```
 	
 ## Step 3: Provide the location of the native libraries
 
 1. Pass the location of the native libraries using command-line options:
 
-- [Spark](http://spark.apache.org/docs/latest/configuration.html): `--conf spark.executorEnv.LD_LIBRARY_PATH=/path/to/blas-n-other-dependencies`
-- Java: `-Djava.library.path=/path/to/blas-n-other-dependencies`
+	- [Spark](http://spark.apache.org/docs/latest/configuration.html): `--conf spark.executorEnv.LD_LIBRARY_PATH=/path/to/blas-n-other-dependencies`
+	- Java: `-Djava.library.path=/path/to/blas-n-other-dependencies`
 
 2. Alternatively, you can add the location of the native libraries (i.e. BLAS and other dependencies) 
 to the environment variable `LD_LIBRARY_PATH` (on Linux). 
 If you want to use SystemML with Spark, please add the following line to `spark-env.sh` 
 (or to the bash profile).
 
-	```bash
 	export LD_LIBRARY_PATH=/path/to/blas-n-other-dependencies
-	```
-
+ 
 
 ## Common issues on Linux
 
-1. Unable to load `gomp`
+- Unable to load `gomp`.
 
 First make sure if gomp is available on your system.
 
-	```bash
 	ldconfig -p | grep  libgomp
-	```
 
 If the above command returns no results, then you may have to install `gcc`.
 On the other hand, if the above command only returns libgomp with major suffix (such as `so.1`),
 then please execute the below command:
 
-	```bash
 	sudo ln -s /lib64/libgomp.so.1 /usr/lib64/libgomp.so
-	```
 
-2. Unable to load `mkl_rt`
+- Unable to load `mkl_rt`.
 
 By default, Intel MKL libraries will be installed in the location `/opt/intel/mkl/lib/intel64/`.
 Make sure that this path is accessible to Java as per instructions provided in the above section.
 
-3. Unable to load `openblas`
+- Unable to load `openblas`.
 
 By default, OpenBLAS libraries will be installed in the location `/opt/OpenBLAS/lib/`.
 Make sure that this path is accessible to Java as per instructions provided in the above section.
+
+- Using OpenBLAS without OpenMP can lead to performance degradation when using SystemML.
+ 
+You can check if the OpenBLAS on you system is compiled with OpenMP or not using following commands:
+If you don't see any output after the second command, then OpenBLAS installed on your system is using its internal threading.
+In this case, we highly recommend that you reinstall OpenBLAS using the above commands.
+
+	$ ldconfig -p | grep libopenblas.so
+	libopenblas.so (libc6,x86-64) => /opt/OpenBLAS/lib/libopenblas.so
+	$ ldd /opt/OpenBLAS/lib/libopenblas.so | grep libgomp
+	libgomp.so.1 => /lib64/libgomp.so.1
+
+- Using MKL can lead to slow performance for convolution instruction.
+
+We noticed that double-precision MKL DNN primitives for convolution instruction
+is considerably slower than than  the corresponding single-precision MKL DNN primitives
+as of MKL 2017 Update 1. We anticipate that this performance bug will be fixed in the future MKL versions.
+Until then or until SystemML supports single-precision matrices, we recommend that you use OpenBLAS when using script with `conv2d`.
+
+Here are the runtime performance in seconds of `conv2d` on 64 images of size 256 X 256 with sparsity 0.9
+and 32 filter of size 5x5 with stride = [1,1] and pad=[1,1].
+  
+
+|                               | MKL    | OpenBLAS |
+|-------------------------------|--------|----------|
+| Single-precision, channels=3  | 5.144  | 7.918    |
+| Double-precision, channels=3  | 12.599 | 8.688    |
+| Single-precision, channels=32 | 10.765 | 21.963   |
+| Double-precision, channels=32 | 71.118 | 34.881   |
+
 
 # Developer Guide
 
@@ -176,16 +187,13 @@ For this project, I typically make a directory in the `cpp` folder (this folder)
 
 3. Install cmake
 
-	```bash
 	# Centos/RedHat
 	sudo yum install cmake3
 	# Ubuntu
 	sudo apt-get install cmake
-	```
 
 4. Compile the libs using the below script. 
 
-	```bash
 	mkdir INTEL && cd INTEL
 	cmake -DUSE_INTEL_MKL=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS="-DUSE_GNU_THREADING -m64" ..
 	make install
@@ -196,7 +204,7 @@ For this project, I typically make a directory in the `cpp` folder (this folder)
 	cd ..
 	# The below script helps maintain this document as well as avoid accidental inclusion of non-standard dependencies.
 	./check-dependency-linux-x86_64.sh
-	```
+	
 
 
 The generated library files are placed in src/main/cpp/lib. This location can be changed from the CMakeLists.txt file.
@@ -211,3 +219,4 @@ The current set of dependencies other than MKL and OpenBLAS, are as follows:
 - Additional OpenBLAS dependencies: Fortran runtime (`libgfortran.so.3`) and GCC `__float128` shared support library (`libquadmath.so.0`)
 
 If CMake cannot detect your OpenBLAS installation, set the `OpenBLAS_HOME` environment variable to the OpenBLAS Home.
+

@@ -40,16 +40,16 @@ To understand more about DML and PyDML, we recommend that you read [Beginner's G
 For convenience of Python users, SystemML exposes several language-level APIs that allow Python users to use SystemML
 and its algorithms without the need to know DML or PyDML. We explain these APIs in the below sections.
 
-## matrix API
+## matrix class
 
-The matrix class allows users to perform linear algebra operations in SystemML using a NumPy-like interface.
-This class supports several arithmetic operators (such as +, -, *, /, ^, etc).
-
-matrix class is a python wrapper that implements basic matrix
-operators, matrix functions as well as converters to common Python
+The matrix class is an **experimental** feature that is often referred to as Python DSL.
+It allows the user to perform linear algebra operations in SystemML using a NumPy-like interface.
+It implements basic matrix operators, matrix functions as well as converters to common Python
 types (for example: Numpy arrays, PySpark DataFrame and Pandas
 DataFrame).
 
+### Operators
+ 
 The operators supported are:
 
 1.  Arithmetic operators: +, -, *, /, //, %, \** as well as dot
@@ -57,51 +57,24 @@ The operators supported are:
 2.  Indexing in the matrix
 3.  Relational/Boolean operators: \<, \<=, \>, \>=, ==, !=, &, \|
 
-In addition, following functions are supported for matrix:
+This class also supports several input/output formats such as NumPy arrays, Pandas DataFrame, SciPy sparse matrix and PySpark DataFrame.
 
-1.  transpose
-2.  Aggregation functions: sum, mean, var, sd, max, min, argmin,
-    argmax, cumsum
-3.  Global statistical built-In functions: exp, log, abs, sqrt,
-    round, floor, ceil, sin, cos, tan, asin, acos, atan, sign, solve
-
-For all the above functions, we always return a two dimensional matrix, especially for aggregation functions with axis. 
-For example: Assuming m1 is a matrix of (3, n), NumPy returns a 1d vector of dimension (3,) for operation m1.sum(axis=1)
-whereas SystemML returns a 2d matrix of dimension (3, 1).
-
-Note: an evaluated matrix contains a data field computed by eval
-method as DataFrame or NumPy array.
-
-It is important to note that matrix class also supports most of NumPy's universal functions (i.e. ufuncs).
-The current version of NumPy explicitly disables overriding ufunc, but this should be enabled in next release. 
-Until then to test above code, please use:
-
-```bash
-git clone https://github.com/niketanpansare/numpy.git
-cd numpy
-python setup.py install
-```
-
-This will enable NumPy's functions to invoke matrix class:
+Here is a small example that demonstrates the usage:
 
 ```python
-import systemml as sml
-import numpy as np
-m1 = sml.matrix(np.ones((3,3)) + 2)
-m2 = sml.matrix(np.ones((3,3)) + 3)
-np.add(m1, m2)
-``` 
+>>> import systemml as sml
+>>> import numpy as np
+>>> m1 = sml.matrix(np.ones((3,3)) + 2)
+>>> m2 = sml.matrix(np.ones((3,3)) + 3)
+>>> m2 = m1 * (m2 + m1)
+>>> m4 = 1.0 - m2
+>>> m4.sum(axis=1).toNumPy()
+array([[-60.],
+       [-60.],
+       [-60.]])
+```
 
-The matrix class doesnot support following ufuncs:
-
-- Complex number related ufunc (for example: `conj`)
-- Hyperbolic/inverse-hyperbolic functions (for example: sinh, arcsinh, cosh, ...)
-- Bitwise operators
-- Xor operator
-- Infinite/Nan-checking (for example: isreal, iscomplex, isfinite, isinf, isnan)
-- Other ufuncs: copysign, nextafter, modf, frexp, trunc.
-
-This class also supports several input/output formats such as NumPy arrays, Pandas DataFrame, SciPy sparse matrix and PySpark DataFrame.
+### Lazy evaluation
 
 By default, the operations are evaluated lazily to avoid conversion overhead and also to maximize optimization scope.
 To disable lazy evaluation, please us `set_lazy` method:
@@ -130,28 +103,123 @@ save(mVar4, " ")
 # This matrix (mVar8) is backed by NumPy array. To fetch the NumPy array, invoke toNumPy() method.
 ``` 
 
-### Usage:
+Since matrix is backed by lazy evaluation and uses a recursive Depth First Search (DFS),
+you may run into `RuntimeError: maximum recursion depth exceeded`. 
+Please see below [troubleshooting steps](http://apache.github.io/incubator-systemml/python-reference#maximum-recursion-depth-exceeded)
+
+
+### Built-in functions
+
+In addition to the above mentioned operators, following functions are supported. 
+
+- transpose: Transposes the input matrix. 
+
+- Aggregation functions: prod, sum, mean, var, sd, max, min, argmin, argmax, cumsum
+
+|                                                      | Description                                                                                                                     | Parameters                                                                                                                                                                                                                  |
+|------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| prod(self)                                           | Return the product of all cells in matrix                                                                                       | self: input matrix object                                                                                                                                                                                                   |
+| sum(self, axis=None)                                 | Compute the sum along the specified axis                                                                                        | axis : int, optional                                                                                                                                                                                                        |
+| mean(self, axis=None)                                | Compute the arithmetic mean along the specified axis                                                                            | axis : int, optional                                                                                                                                                                                                        |
+| var(self, axis=None)                                 | Compute the variance along the specified axis. We assume that delta degree of freedom is 1 (unlike NumPy which assumes ddof=0). | axis : int, optional                                                                                                                                                                                                        |
+| moment(self, moment=1, axis=None)                    | Calculates the nth moment about the mean                                                                                        | moment : int (can be 1, 2, 3 or 4), axis : int, optional                                                                                                                                                                    |
+| sd(self, axis=None)                                  | Compute the standard deviation along the specified axis                                                                         | axis : int, optional                                                                                                                                                                                                        |
+| max(self, other=None, axis=None)                     | Compute the maximum value along the specified axis                                                                              | other: matrix or numpy array (& other supported types) or scalar, axis : int, optional                                                                                                                                      |
+| min(self, other=None, axis=None)                     | Compute the minimum value along the specified axis                                                                              | other: matrix or numpy array (& other supported types) or scalar, axis : int, optional                                                                                                                                      |
+| argmin(self, axis=None)                              | Returns the indices of the minimum values along an axis.                                                                        | axis : int, optional,(only axis=1, i.e. rowIndexMax is supported in this version)                                                                                                                                           |
+| argmax(self, axis=None)                              | Returns the indices of the maximum values along an axis.                                                                        | axis : int, optional (only axis=1, i.e. rowIndexMax is supported in this version)                                                                                                                                           |
+| cumsum(self, axis=None)                              | Returns the indices of the maximum values along an axis.                                                                        | axis : int, optional (only axis=0, i.e. cumsum along the rows is supported in this version)                                                                                                                                 |
+
+- Global statistical built-In functions: exp, log, abs, sqrt, round, floor, ceil, sin, cos, tan, asin, acos, atan, sign, solve
+
+|                                                      | Description                                                                                                                     | Parameters                                                                                                                                                                                              |
+|------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| solve(A, b)                                          | Computes the least squares solution for system of linear equations A %*% x = b                                                  | A, b: input matrices                                                                                                                                                                                    |
+
+
+- Built-in sampling functions: normal, uniform, poisson
+
+|                                                      | Description                                                                                                                     | Parameters                                                                                                                                                                                                                  |
+|------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| normal(loc=0.0, scale=1.0, size=(1,1), sparsity=1.0) | Draw random samples from a normal (Gaussian) distribution.                                                                      | loc: Mean ("centre") of the distribution, scale: Standard deviation (spread or "width") of the distribution, size: Output shape (only tuple of length 2, i.e. (m, n), supported), sparsity: Sparsity (between 0.0 and 1.0). |
+| uniform(low=0.0, high=1.0, size=(1,1), sparsity=1.0) | Draw samples from a uniform distribution.                                                                                       | low: Lower boundary of the output interval, high: Upper boundary of the output interval, size: Output shape (only tuple of length 2, i.e. (m, n), supported), sparsity: Sparsity (between 0.0 and 1.0).                     |
+| poisson(lam=1.0, size=(1,1), sparsity=1.0)           | Draw samples from a Poisson distribution.                                                                                       | lam: Expectation of interval, should be > 0, size: Output shape (only tuple of length 2, i.e. (m, n), supported), sparsity: Sparsity (between 0.0 and 1.0).                                                                 |
+
+- Other builtin functions: hstack, vstack, trace
+
+|                                                      | Description                                                                                                                     | Parameters                                                                                                                                                                                                                  |
+|------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| hstack(self, other)                                  | Stack matrices horizontally (column wise). Invokes cbind internally.                                                            | self: lhs matrix object, other: rhs matrix object                                                                                                                                                                           |
+| vstack(self, other)                                  | Stack matrices vertically (row wise). Invokes rbind internally.                                                                 | self: lhs matrix object, other: rhs matrix object                                                                                                                                                                           |
+| trace(self)                                          | Return the sum of the cells of the main diagonal square matrix                                                                  | self: input matrix                                                                                                                                                                                                          |
+
+Here is an example that uses the above functions and trains a simple linear regression model:
+
+```python
+>>> import numpy as np
+>>> from sklearn import datasets
+>>> import systemml as sml
+>>> # Load the diabetes dataset
+>>> diabetes = datasets.load_diabetes()
+>>> # Use only one feature
+>>> diabetes_X = diabetes.data[:, np.newaxis, 2]
+>>> # Split the data into training/testing sets
+>>> X_train = diabetes_X[:-20]
+>>> X_test = diabetes_X[-20:]
+>>> # Split the targets into training/testing sets
+>>> y_train = diabetes.target[:-20]
+>>> y_test = diabetes.target[-20:]
+>>> # Train Linear Regression model
+>>> X = sml.matrix(X_train)
+>>> y = sml.matrix(np.matrix(y_train).T)
+>>> A = X.transpose().dot(X)
+>>> b = X.transpose().dot(y)
+>>> beta = sml.solve(A, b).toNumPy()
+>>> y_predicted = X_test.dot(beta)
+>>> print('Residual sum of squares: %.2f' % np.mean((y_predicted - y_test) ** 2))
+Residual sum of squares: 25282.12
+```
+
+For all the above functions, we always return a two dimensional matrix, especially for aggregation functions with axis. 
+For example: Assuming m1 is a matrix of (3, n), NumPy returns a 1d vector of dimension (3,) for operation m1.sum(axis=1)
+whereas SystemML returns a 2d matrix of dimension (3, 1).
+
+Note: an evaluated matrix contains a data field computed by eval
+method as DataFrame or NumPy array.
+
+### Support for NumPy's universal functions
+
+The matrix class also supports most of NumPy's universal functions (i.e. ufuncs).
+The current version of NumPy explicitly disables overriding ufunc, but this should be enabled in next release. 
+Until then to test above code, please use:
+
+```bash
+git clone https://github.com/niketanpansare/numpy.git
+cd numpy
+python setup.py install
+```
+
+This will enable NumPy's functions to invoke matrix class:
 
 ```python
 import systemml as sml
 import numpy as np
 m1 = sml.matrix(np.ones((3,3)) + 2)
 m2 = sml.matrix(np.ones((3,3)) + 3)
-m2 = m1 * (m2 + m1)
-m4 = 1.0 - m2
-m4.sum(axis=1).toNumPy()
-```
+np.add(m1, m2)
+``` 
 
-Output:
+The matrix class doesnot support following ufuncs:
 
-```bash
-array([[-60.],
-       [-60.],
-       [-60.]])
-```
+- Complex number related ufunc (for example: `conj`)
+- Hyperbolic/inverse-hyperbolic functions (for example: sinh, arcsinh, cosh, ...)
+- Bitwise operators
+- Xor operator
+- Infinite/Nan-checking (for example: isreal, iscomplex, isfinite, isinf, isnan)
+- Other ufuncs: copysign, nextafter, modf, frexp, trunc.
 
 
-### Design Decisions:
+### Design Decisions of matrix class (Developer documentation)
 
 1.  Until eval() method is invoked, we create an AST (not exposed to
 the user) that consist of unevaluated operations and data
@@ -241,6 +309,10 @@ beta = ml.execute(script).get('B_out').toNumPy()
 
 
 ## mllearn API
+
+mllearn API is designed to be compatible with scikit-learn and MLLib.
+The classes that are part of mllearn API are LogisticRegression, LinearRegression, SVM, NaiveBayes 
+and [Caffe2DML](http://apache.github.io/incubator-systemml/beginners-guide-caffe2dml).
 
 The below code describes how to use mllearn API for training:
 
@@ -410,8 +482,6 @@ Output:
 |    4.0| 15|  apache hadoop|  [apache, hadoop]|(20,[9,14],[1.0,1...|[5.41688748236143...|       2.0|
 +-------+---+---------------+------------------+--------------------+--------------------+----------+
 ```
-
-
 
 
 ## Troubleshooting Python APIs

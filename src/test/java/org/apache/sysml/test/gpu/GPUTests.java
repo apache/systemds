@@ -46,6 +46,11 @@ public abstract class GPUTests extends AutomatedTestBase {
 
 	protected final static String TEST_DIR = "org/apache/sysml/api/mlcontext";
 	protected static SparkSession spark;
+
+	protected double getTHRESHOLD() {
+		return THRESHOLD;
+	}
+
 	protected final double THRESHOLD = 1e-9;
 
 	@BeforeClass public static void beforeClass() {
@@ -57,16 +62,32 @@ public abstract class GPUTests extends AutomatedTestBase {
 	}
 
 	@After public void tearDown() {
-		GPUContext gCtx = null;
+		clearGPUMemory();
+		super.tearDown();
+	}
+
+	/**
+	 * Clear out the memory on all GPUs
+	 */
+	protected void clearGPUMemory() {
 		try {
-			gCtx = GPUContextPool.getFromPool();
-			gCtx.clearMemory();
-			GPUContextPool.returnToPool(gCtx);
+			int count = GPUContextPool.getDeviceCount();
+			int freeCount = GPUContextPool.getAvailableCount();
+			Assert.assertTrue("All GPUContexts have not been returned to the GPUContextPool", count == freeCount);
+			ArrayList<GPUContext> gpuContexts = new ArrayList<>();
+			for (int i=0; i<count; i++) {
+				GPUContext gCtx = GPUContextPool.getFromPool();
+				gCtx.initializeThread();
+				gCtx.clearMemory();
+				gpuContexts.add(gCtx);
+			}
+			for (GPUContext gCtx : gpuContexts) {
+				GPUContextPool.returnToPool(gCtx);
+			}
 
 		} catch (DMLRuntimeException e) {
 			// Ignore
 		}
-		super.tearDown();
 	}
 
 	/**
@@ -104,7 +125,7 @@ public abstract class GPUTests extends AutomatedTestBase {
 		double[][] expected2D = expected.to2DDoubleArray();
 		double[][] actual2D = actual.to2DDoubleArray();
 		for (int i = 0; i < expected2D.length; i++) {
-			Assert.assertArrayEquals(expected2D[i], actual2D[i], THRESHOLD);
+			Assert.assertArrayEquals(expected2D[i], actual2D[i], getTHRESHOLD());
 		}
 	}
 
@@ -177,7 +198,7 @@ public abstract class GPUTests extends AutomatedTestBase {
 		if (expected instanceof Boolean) {
 			Assert.assertEquals(((Boolean) expected).booleanValue(), ((Boolean) actual).booleanValue());
 		} else if (expected instanceof Double) {
-			Assert.assertEquals(((Double) expected).doubleValue(), ((Double) actual).doubleValue(), THRESHOLD);
+			Assert.assertEquals(((Double) expected).doubleValue(), ((Double) actual).doubleValue(), getTHRESHOLD());
 		} else if (expected instanceof String) {
 			Assert.assertEquals(expected.toString(), actual.toString());
 		} else if (expected instanceof Integer) {

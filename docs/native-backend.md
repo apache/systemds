@@ -74,7 +74,7 @@ sudo make install
 # After installation, you may also want to add `/opt/OpenBLAS/lib` to your LD_LIBRARY_PATH or `java.library.path`.
 ```
 
-We also depend on GNU OpenMP (gomp) which will be installed by GCC.
+When using OpenBLAS, we also depend on GNU OpenMP (gomp) which will be installed by GCC.
 To find the location of `gomp` on your system, please use the command `ldconfig -p | grep libgomp`.
 If gomp is available as `/lib64/libgomp.so.1` instead of `/lib64/libgomp.so`,
 please add a softlink to it:
@@ -149,8 +149,9 @@ is considerably slower than than  the corresponding single-precision MKL DNN pri
 as of MKL 2017 Update 1. We anticipate that this performance bug will be fixed in the future MKL versions.
 Until then or until SystemML supports single-precision matrices, we recommend that you use OpenBLAS when using script with `conv2d`.
 
-Here are the runtime performance in seconds of `conv2d` on 64 images of size 256 X 256 with sparsity 0.9
-and 32 filter of size 5x5 with stride = [1,1] and pad=[1,1].
+Here are the end-to-end runtime performance in seconds of 10 `conv2d` operations 
+on randomly generated 64 images of size 256 X 256 with sparsity 0.9
+and 32 filter of size 5x5 with stride = [1,1] and pad=[1,1]. 
   
 
 |                               | MKL    | OpenBLAS |
@@ -160,6 +161,9 @@ and 32 filter of size 5x5 with stride = [1,1] and pad=[1,1].
 | Single-precision, channels=32 | 10.765 | 21.963   |
 | Double-precision, channels=32 | 71.118 | 34.881   |
 
+Setup used in the above experiment:
+1. Intel MKL 2017 Update 1, OpenBLAS compiled with GNU OpenMP from source using `g++`.
+2. CPU: `Intel(R) Xeon(R) CPU E5-2620 v3 @ 2.40GHz`
 
 # Developer Guide
 
@@ -179,32 +183,37 @@ Also, the C, C++ compilers and their flags are picked up by cmake when set in st
 
 For this project, I typically make a directory in the `cpp` folder (this folder) and name it the config I use. For instance, `INTEL` for Intel MKL and `OPENBLAS` for OpenBLAS.
 
-1. Install `g++`, OpenBLAS and MKL using the above instructions
+- Install `g++`, OpenBLAS and MKL using the above instructions
 
-2. Set `JAVA_HOME` to JDK.
+- Set `JAVA_HOME` to JDK.
 
-	export JAVA_HOME=<path to JDK 1.8>
+```bash
+export JAVA_HOME=<path to JDK 1.8>
+```
 
-3. Install cmake
+- Install cmake
 
-	# Centos/RedHat
-	sudo yum install cmake3
-	# Ubuntu
-	sudo apt-get install cmake
+```bash
+# Centos/RedHat
+sudo yum install cmake3
+# Ubuntu
+sudo apt-get install cmake
+```
 
-4. Compile the libs using the below script. 
+- Compile the libs using the below script. 
 
-	mkdir INTEL && cd INTEL
-	cmake -DUSE_INTEL_MKL=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS="-DUSE_GNU_THREADING -m64" ..
-	make install
-	cd ..
-	mkdir OPENBLAS && cd OPENBLAS
-	cmake -DUSE_OPEN_BLAS=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS="-m64" ..
-	make install
-	cd ..
-	# The below script helps maintain this document as well as avoid accidental inclusion of non-standard dependencies.
-	./check-dependency-linux-x86_64.sh
-	
+```bash
+mkdir INTEL && cd INTEL
+cmake -DUSE_INTEL_MKL=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS="-DUSE_GNU_THREADING -m64" ..
+make install
+cd ..
+mkdir OPENBLAS && cd OPENBLAS
+cmake -DUSE_OPEN_BLAS=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS="-m64" ..
+make install
+cd ..
+# The below script helps maintain this document as well as avoid accidental inclusion of non-standard dependencies.
+./check-dependency-linux-x86_64.sh
+```
 
 
 The generated library files are placed in src/main/cpp/lib. This location can be changed from the CMakeLists.txt file.

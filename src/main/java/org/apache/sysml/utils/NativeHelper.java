@@ -145,7 +145,7 @@ public class NativeHelper {
 	    		LOG.warn("Time to load native blas: " + timeToLoadInMilliseconds + " milliseconds.");
 			}
 			else {
-				LOG.warn("Using internal Java BLAS as native BLAS support the configuration 'native.blas'=" + userSpecifiedBLAS + ".");
+				LOG.debug("Using internal Java BLAS as native BLAS support the configuration 'native.blas'=" + userSpecifiedBLAS + ".");
 			}
 			attemptedLoading = true;
 		}

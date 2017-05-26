@@ -26,13 +26,13 @@ import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(Suite.class) @SuiteClasses({
 	BinaryOpTests.class,
-	NeuralNetworkOpTests.class,
     ScalarMatrixElementwiseOpTests.class,
 	MatrixMatrixElementWiseOpTests.class,
 	ReorgOpTests.class,
 	AggregateUnaryOpTests.class,
 	UnaryOpTests.class,
 	MatrixMultiplicationOpTest.class,
+    NeuralNetworkOpTests.class,
 })
 public class ZPackageSuite {
 

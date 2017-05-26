@@ -62,9 +62,10 @@ public class MatrixMatrixElementWiseOpTests extends GPUTests {
 		runMatrixColumnVectorTest("O = X + Y", "X", "Y", "O", "gpu_+");
 	}
 
-	@Test public void testMatrixRowVectorAdd() {
-		runMatrixRowVectorTest("O = X + Y", "X", "Y", "O", "gpu_+");
-	}
+    @Test
+    public void testMatrixRowVectorAdd() {
+        runMatrixRowVectorTest("O = X + Y", "X", "Y", "O", "gpu_+");
+    }
 
 	@Test public void testSubtract() {
 		runMatrixMatrixElementwiseTest("O = X - Y", "X", "Y", "O", "gpu_-");

@@ -32,40 +32,42 @@ import java.util.List;
  */
 public class BinaryOpTests extends GPUTests {
 
-	private final static String TEST_NAME = "BinaryOpTests";
-	private final int seed = 42;
+    private final static String TEST_NAME = "BinaryOpTests";
+    private final int seed = 42;
 
-	@Override public void setUp() {
-		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_DIR, TEST_NAME);
-		getAndLoadTestConfiguration(TEST_NAME);
-	}
+    @Override
+    public void setUp() {
+        TestUtils.clearAssertionInformation();
+        addTestConfiguration(TEST_DIR, TEST_NAME);
+        getAndLoadTestConfiguration(TEST_NAME);
+    }
 
-	@Test public void testSolve() {
-		// Test Ax = b
-		// Dimensions of A = m * n
-		// Dimensions of x = n * 1
-		// Dimensions of b = m * 1
+    @Test
+    public void testSolve() {
+        // Test Ax = b
+        // Dimensions of A = m * n
+        // Dimensions of x = n * 1
+        // Dimensions of b = m * 1
 
-		String scriptStr = "x = solve(A, b)";
-		double sparsity = 1.0; // Only dense matrices supported by "solve"
-		final int[] sides = { 32, 33, 128, 256, 513, 2049 };
-		for (int i = 0; i < sides.length; i++) {
-			for (int j = i; j < sides.length; j++) {
-				int m = sides[j];
-				int n = sides[i];
-				System.out.println("In solve, A[" + m + ", " + n + "], b[" + m + ", 1]");
-				Matrix A = generateInputMatrix(spark, m, n, sparsity, seed);
-				Matrix b = generateInputMatrix(spark, m, 1, sparsity, seed);
-				HashMap<String, Object> inputs = new HashMap<>();
-				inputs.put("A", A);
-				inputs.put("b", b);
-				List<Object> outCPU = runOnCPU(spark, scriptStr, inputs, Arrays.asList("x"));
-				List<Object> outGPU = runOnGPU(spark, scriptStr, inputs, Arrays.asList("x"));
-				assertHeavyHitterPresent("gpu_solve");
-				assertEqualObjects(outCPU.get(0), outGPU.get(0));
-			}
-		}
+        String scriptStr = "x = solve(A, b)";
+        double sparsity = 1.0; // Only dense matrices supported by "solve"
+        final int[] sides = { 32, 33, 128, 256, 513, 2049 };
+        for (int i = 0; i < sides.length; i++) {
+            for (int j = i; j < sides.length; j++) {
+                int m = sides[j];
+                int n = sides[i];
+                System.out.println("In solve, A[" + m + ", " + n + "], b[" + m + ", 1]");
+                Matrix A = generateInputMatrix(spark, m, n, sparsity, seed);
+                Matrix b = generateInputMatrix(spark, m, 1, sparsity, seed);
+                HashMap<String, Object> inputs = new HashMap<>();
+                inputs.put("A", A);
+                inputs.put("b", b);
+                List<Object> outCPU = runOnCPU(spark, scriptStr, inputs, Arrays.asList("x"));
+                List<Object> outGPU = runOnGPU(spark, scriptStr, inputs, Arrays.asList("x"));
+                assertHeavyHitterPresent("gpu_solve");
+                assertEqualObjects(outCPU.get(0), outGPU.get(0));
+            }
+        }
 
-	}
+    }
 }

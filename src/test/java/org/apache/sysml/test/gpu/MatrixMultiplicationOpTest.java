@@ -31,16 +31,17 @@ import java.util.List;
  * Tests matrix multiplication on the GPU
  */
 public class MatrixMultiplicationOpTest extends GPUTests {
-	private final static String TEST_NAME = "MatrixMultiplicationOpTest";
-	private final int seed = 42;
+    private final static String TEST_NAME = "MatrixMultiplicationOpTest";
+    private final int seed = 42;
 
-	@Override public void setUp() {
-		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_DIR, TEST_NAME);
-		getAndLoadTestConfiguration(TEST_NAME);
-	}
+    @Override
+    public void setUp() {
+        TestUtils.clearAssertionInformation();
+        addTestConfiguration(TEST_DIR, TEST_NAME);
+        getAndLoadTestConfiguration(TEST_NAME);
+    }
 
-	@Test public void matrixMatrixTest1() {
+    @Test public void matrixMatrixTest1() {
 		String scriptStr = "O = X %*% Y";
 
 		int[] X1 = { 1, 128, 513, 1024 };

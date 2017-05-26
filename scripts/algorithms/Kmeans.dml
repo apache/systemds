@@ -149,7 +149,7 @@ parfor (run_index in 1 : num_runs, check = 0)
         # Compute the current centroid-based within-cluster sum of squares (WCSS)
         wcss_old = wcss;
         wcss = sumXsq + sum (minD);
-        if (is_verbose == 1) {
+        if (is_verbose == TRUE) {
             if (iter_count == 0) {
                 print ("Run " + run_index + ", At Start-Up:  Centroid WCSS = " + wcss);
             } else {
@@ -208,7 +208,7 @@ if (num_successful_runs > 0) {
     C = All_Centroids [(num_centroids * (best_index - 1) + 1) : (num_centroids * best_index), ];
     print ("Writing out the best-WCSS centroids...");
     write (C, fileC, format=fmtCY);
-    if (is_write_Y == 1) {
+    if (is_write_Y == TRUE) {
         print ("Writing out the best-WCSS cluster labels...");
         D =  -2 * (X %*% t(C)) + t(rowSums (C ^ 2));
         P = (D <= rowMins (D));

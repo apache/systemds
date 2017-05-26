@@ -204,7 +204,7 @@ will use `mllearn` API described in the next section.
 
 ## Invoke SystemML's algorithms
 
-SystemML also exposes a subpackage `mllearn`. This subpackage allows Python users to invoke SystemML algorithms
+SystemML also exposes a subpackage [mllearn](https://apache.github.io/incubator-systemml/python-reference#mllearn-api). This subpackage allows Python users to invoke SystemML algorithms
 using Scikit-learn or MLPipeline API.  
 
 ### Scikit-learn interface
@@ -216,7 +216,6 @@ algorithm.
 import numpy as np
 from sklearn import datasets
 from systemml.mllearn import LinearRegression
-from pyspark.sql import SQLContext
 # Load the diabetes dataset
 diabetes = datasets.load_diabetes()
 # Use only one feature
@@ -228,7 +227,7 @@ X_test = diabetes_X[-20:]
 y_train = diabetes.target[:-20]
 y_test = diabetes.target[-20:]
 # Create linear regression object
-regr = LinearRegression(sqlCtx, fit_intercept=True, C=float("inf"), solver='direct-solve')
+regr = LinearRegression(spark, fit_intercept=True, C=float("inf"), solver='direct-solve')
 # Train the model using the training sets
 regr.fit(X_train, y_train)
 y_predicted = regr.predict(X_test)
@@ -248,24 +247,34 @@ algorithm on digits datasets.
 
 ```python
 # Scikit-learn way
-from sklearn import datasets
+from sklearn import datasets, neighbors
 from systemml.mllearn import LogisticRegression
 digits = datasets.load_digits()
 X_digits = digits.data
-y_digits = digits.target 
+y_digits = digits.target
 n_samples = len(X_digits)
 X_train = X_digits[:int(.9 * n_samples)]
 y_train = y_digits[:int(.9 * n_samples)]
 X_test = X_digits[int(.9 * n_samples):]
 y_test = y_digits[int(.9 * n_samples):]
-logistic = LogisticRegression(sqlCtx)
+logistic = LogisticRegression(spark)
 print('LogisticRegression score: %f' % logistic.fit(X_train, y_train).score(X_test, y_test))
 ```
 
 Output:
 
 ```bash
-LogisticRegression score: 0.922222
+LogisticRegression score: 0.927778
+```
+
+You can also save the trained model and load it later for prediction:
+
+```python
+# Assuming logistic.fit(X_train, y_train) is already invoked
+logistic.save('logistic_model')
+new_logistic = LogisticRegression(spark)
+new_logistic.load('logistic_model')
+print('LogisticRegression score: %f' % new_logistic.score(X_test, y_test))
 ```
 
 ### Passing PySpark DataFrame
@@ -275,7 +284,6 @@ To train the above algorithm on larger dataset, we can load the dataset into Dat
 ```python
 from sklearn import datasets
 from systemml.mllearn import LogisticRegression
-from pyspark.sql import SQLContext
 import pandas as pd
 from sklearn.metrics import accuracy_score
 import systemml as sml
@@ -285,8 +293,8 @@ y_digits = digits.target
 n_samples = len(X_digits)
 # Split the data into training/testing sets and convert to PySpark DataFrame
 df_train = sml.convertToLabeledDF(sqlCtx, X_digits[:int(.9 * n_samples)], y_digits[:int(.9 * n_samples)])
-X_test = sqlCtx.createDataFrame(pd.DataFrame(X_digits[int(.9 * n_samples):]))
-logistic = LogisticRegression(sqlCtx)
+X_test = spark.createDataFrame(pd.DataFrame(X_digits[int(.9 * n_samples):]))
+logistic = LogisticRegression(spark)
 logistic.fit(df_train)
 y_predicted = logistic.predict(X_test)
 y_predicted = y_predicted.select('prediction').toPandas().as_matrix().flatten()
@@ -310,8 +318,7 @@ large data pipelines.
 from pyspark.ml import Pipeline
 from systemml.mllearn import LogisticRegression
 from pyspark.ml.feature import HashingTF, Tokenizer
-from pyspark.sql import SQLContext
-training = sqlCtx.createDataFrame([
+training = spark.createDataFrame([
     (0, "a b c d e spark", 1.0),
     (1, "b d", 2.0),
     (2, "spark f g h", 1.0),
@@ -330,7 +337,7 @@ hashingTF = HashingTF(inputCol="words", outputCol="features", numFeatures=20)
 lr = LogisticRegression(sqlCtx)
 pipeline = Pipeline(stages=[tokenizer, hashingTF, lr])
 model = pipeline.fit(training)
-test = sqlCtx.createDataFrame([
+test = spark.createDataFrame([
     (12, "spark i j k"),
     (13, "l m n"),
     (14, "mapreduce spark"),

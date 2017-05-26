@@ -50,11 +50,11 @@ The current version of SystemML only supports BLAS on **Linux** machines.
 
 ## Step 1: Install BLAS
 
-### Option 1: Install Intel MKL (recommended)
+### Option 1: Install Intel MKL
 
 Download and install the [community version of Intel MKL](https://software.intel.com/sites/campaigns/nest/).
 Intel requires you to first register your email address and then sends the download link to your email address
-with license key.
+with license key. Since we use MKL DNN primitives, we depend on Intel MKL version 2017 or higher.
 
 * Linux users will have to extract the downloaded `.tgz` file, execute `install.sh` and follow the guided setup.
 

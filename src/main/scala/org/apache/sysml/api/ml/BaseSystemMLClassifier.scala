@@ -19,6 +19,7 @@
 
 package org.apache.sysml.api.ml
 
+import org.apache.spark.api.java.JavaSparkContext
 import org.apache.spark.rdd.RDD
 import java.io.File
 import org.apache.spark.SparkContext
@@ -95,7 +96,7 @@ trait BaseSystemMLEstimatorOrModel {
 
 trait BaseSystemMLEstimator extends BaseSystemMLEstimatorOrModel {
   def transformSchema(schema: StructType): StructType = schema
-  
+  var mloutput:MLResults = null
   // Returns the script and variables for X and y
   def getTrainingScript(isSingleNode:Boolean):(Script, String, String)
   
@@ -120,7 +121,37 @@ trait BaseSystemMLEstimatorModel extends BaseSystemMLEstimatorOrModel {
   def transformSchema(schema: StructType): StructType = schema
   
   // Returns the script and variable for X
-  def getPredictionScript(mloutput: MLResults, isSingleNode:Boolean): (Script, String)
+  def getPredictionScript(isSingleNode:Boolean): (Script, String)
+  def baseEstimator():BaseSystemMLEstimator
+  def modelVariables():List[String]
+  // self.model.load(self.sc._jsc, weights, format, sep)
+  def load(sc:JavaSparkContext, outputDir:String, sep:String):Unit = {
+  	val dmlScript = new StringBuilder
+  	dmlScript.append("print(\"Loading the model from " + outputDir + "...\")\n")
+		for(varName <- modelVariables) {
+			dmlScript.append(varName + " = read(\"" + outputDir + sep + varName + ".mtx\")\n")
+		}
+  	val script = dml(dmlScript.toString)
+		for(varName <- modelVariables) {
+			script.out(varName)
+		}
+	  val ml = new MLContext(sc)
+	  baseEstimator.mloutput = ml.execute(script)
+  }
+  def save(sc:JavaSparkContext, outputDir:String, format:String="binary", sep:String="/"):Unit = {
+	  if(baseEstimator.mloutput == null) throw new DMLRuntimeException("Cannot save as you need to train the model first using fit")
+	  val dmlScript = new StringBuilder
+	  dmlScript.append("print(\"Saving the model to " + outputDir + "...\")\n")
+	  for(varName <- modelVariables) {
+	  	dmlScript.append("write(" + varName + ", \"" + outputDir + sep + varName + ".mtx\", format=\"" + format + "\")\n")
+	  }
+	  val script = dml(dmlScript.toString)
+		for(varName <- modelVariables) {
+			script.in(varName, baseEstimator.mloutput.getBinaryBlockMatrix(varName))
+		}
+	  val ml = new MLContext(sc)
+	  ml.execute(script)
+	}
 }
 
 trait BaseSystemMLClassifier extends BaseSystemMLEstimator {
@@ -150,11 +181,11 @@ trait BaseSystemMLClassifier extends BaseSystemMLEstimator {
 
 trait BaseSystemMLClassifierModel extends BaseSystemMLEstimatorModel {
 
-  def baseTransform(X: MatrixBlock, mloutput: MLResults, sc: SparkContext, probVar:String): MatrixBlock = {
+  def baseTransform(X: MatrixBlock, sc: SparkContext, probVar:String): MatrixBlock = {
     val isSingleNode = true
     val ml = new MLContext(sc)
     updateML(ml)
-    val script = getPredictionScript(mloutput, isSingleNode)
+    val script = getPredictionScript(isSingleNode)
     // Uncomment for debugging
     // ml.setExplainLevel(ExplainLevel.RECOMPILE_RUNTIME)
     val modelPredict = ml.execute(script._1.in(script._2, X, new MatrixMetadata(X.getNumRows, X.getNumColumns, X.getNonZeros)))
@@ -167,14 +198,14 @@ trait BaseSystemMLClassifierModel extends BaseSystemMLEstimatorModel {
     return ret
   }
 
-  def baseTransform(df: ScriptsUtils.SparkDataType, mloutput: MLResults, sc: SparkContext, 
+  def baseTransform(df: ScriptsUtils.SparkDataType, sc: SparkContext, 
       probVar:String, outputProb:Boolean=true): DataFrame = {
     val isSingleNode = false
     val ml = new MLContext(sc)
     updateML(ml)
     val mcXin = new MatrixCharacteristics()
     val Xin = RDDConverterUtils.dataFrameToBinaryBlock(df.rdd.sparkContext, df.asInstanceOf[DataFrame].select("features"), mcXin, false, true)
-    val script = getPredictionScript(mloutput, isSingleNode)
+    val script = getPredictionScript(isSingleNode)
     val Xin_bin = new BinaryBlockMatrix(Xin, mcXin)
     val modelPredict = ml.execute(script._1.in(script._2, Xin_bin))
     val predLabelOut = PredictionUtils.computePredictedClassLabelsFromProbability(modelPredict, isSingleNode, sc, probVar)

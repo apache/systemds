@@ -101,6 +101,8 @@
 				<exclude>staging/**/*</exclude>
 				<exclude>staging</exclude>
 				<exclude>nn/test/compare_backends/*</exclude>
+				<exclude>nn/test/compare_backends/*</exclude>
+				<exclude>nn/examples/caffe2dml/**/*</exclude>
 				<!-- <exclude>*.sh</exclude> --> <!-- applies to sparkDML.sh -->
 			</excludes>
 			<targetPath>scripts</targetPath>
@@ -874,6 +876,7 @@
 								<exclude>src/main/proto/caffe/caffe.proto</exclude>
 								<exclude>src/main/proto/tensorflow/event.proto</exclude>
 								<exclude>src/main/proto/tensorflow/summary.proto</exclude>
+								<exclude>scripts/nn/examples/caffe2dml/models/**/*</exclude>
 								<!-- Test Validation files -->
 								<exclude>src/test/scripts/functions/jmlc/**/*.impute</exclude>
 								<exclude>src/test/scripts/functions/jmlc/**/*.map</exclude>

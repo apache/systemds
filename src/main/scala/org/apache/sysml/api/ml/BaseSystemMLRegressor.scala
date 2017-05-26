@@ -60,11 +60,11 @@ trait BaseSystemMLRegressor extends BaseSystemMLEstimator {
 
 trait BaseSystemMLRegressorModel extends BaseSystemMLEstimatorModel {
   
-  def baseTransform(X: MatrixBlock, mloutput: MLResults, sc: SparkContext, predictionVar:String): MatrixBlock = {
+  def baseTransform(X: MatrixBlock, sc: SparkContext, predictionVar:String): MatrixBlock = {
     val isSingleNode = true
     val ml = new MLContext(sc)
     updateML(ml)
-    val script = getPredictionScript(mloutput, isSingleNode)
+    val script = getPredictionScript(isSingleNode)
     val modelPredict = ml.execute(script._1.in(script._2, X))
     val ret = modelPredict.getBinaryBlockMatrix(predictionVar).getMatrixBlock
               
@@ -74,13 +74,13 @@ trait BaseSystemMLRegressorModel extends BaseSystemMLEstimatorModel {
     return ret
   }
   
-  def baseTransform(df: ScriptsUtils.SparkDataType, mloutput: MLResults, sc: SparkContext, predictionVar:String): DataFrame = {
+  def baseTransform(df: ScriptsUtils.SparkDataType, sc: SparkContext, predictionVar:String): DataFrame = {
     val isSingleNode = false
     val ml = new MLContext(sc)
     updateML(ml)
     val mcXin = new MatrixCharacteristics()
     val Xin = RDDConverterUtils.dataFrameToBinaryBlock(df.rdd.sparkContext, df.asInstanceOf[DataFrame], mcXin, false, true)
-    val script = getPredictionScript(mloutput, isSingleNode)
+    val script = getPredictionScript(isSingleNode)
     val Xin_bin = new BinaryBlockMatrix(Xin, mcXin)
     val modelPredict = ml.execute(script._1.in(script._2, Xin_bin))
     val predictedDF = modelPredict.getDataFrame(predictionVar).select(RDDConverterUtils.DF_ID_COLUMN, "C1").withColumnRenamed("C1", "prediction")

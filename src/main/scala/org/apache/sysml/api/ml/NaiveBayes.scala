@@ -46,13 +46,13 @@ class NaiveBayes(override val uid: String, val sc: SparkContext) extends Estimat
   
   // Note: will update the y_mb as this will be called by Python mllearn
   def fit(X_mb: MatrixBlock, y_mb: MatrixBlock): NaiveBayesModel = {
-    val ret = baseFit(X_mb, y_mb, sc)
-    new NaiveBayesModel("naive")(ret, sc)
+    mloutput = baseFit(X_mb, y_mb, sc)
+    new NaiveBayesModel(this)
   }
   
   def fit(df: ScriptsUtils.SparkDataType): NaiveBayesModel = {
-    val ret = baseFit(df, sc)
-    new NaiveBayesModel("naive")(ret, sc)
+    mloutput = baseFit(df, sc)
+    new NaiveBayesModel(this)
   }
   
   def getTrainingScript(isSingleNode:Boolean):(Script, String, String)  = {
@@ -74,15 +74,20 @@ object NaiveBayesModel {
 }
 
 class NaiveBayesModel(override val uid: String)
-  (val mloutput: MLResults, val sc: SparkContext) 
+  (estimator:NaiveBayes, val sc: SparkContext) 
   extends Model[NaiveBayesModel] with HasLaplace with BaseSystemMLClassifierModel {
   
+  def this(estimator:NaiveBayes) =  {
+    this("model")(estimator, estimator.sc)
+  }
+  
   override def copy(extra: ParamMap): NaiveBayesModel = {
-    val that = new NaiveBayesModel(uid)(mloutput, sc)
+    val that = new NaiveBayesModel(uid)(estimator, sc)
     copyValues(that, extra)
   }
   
-  def getPredictionScript(mloutput: MLResults, isSingleNode:Boolean): (Script, String)  = {
+  def modelVariables():List[String] = List[String]("classPrior", "classConditionals")
+  def getPredictionScript(isSingleNode:Boolean): (Script, String)  = {
     val script = dml(ScriptsUtils.getDMLScript(NaiveBayesModel.scriptPath))
       .in("$X", " ")
       .in("$prior", " ")
@@ -90,8 +95,8 @@ class NaiveBayesModel(override val uid: String)
       .in("$probabilities", " ")
       .out("probs")
     
-    val classPrior = mloutput.getBinaryBlockMatrix("classPrior")
-    val classConditionals = mloutput.getBinaryBlockMatrix("classConditionals")
+    val classPrior = estimator.mloutput.getBinaryBlockMatrix("classPrior")
+    val classConditionals = estimator.mloutput.getBinaryBlockMatrix("classConditionals")
     val ret = if(isSingleNode) {
       script.in("prior", classPrior.getMatrixBlock, classPrior.getMatrixMetadata)
             .in("conditionals", classConditionals.getMatrixBlock, classConditionals.getMatrixMetadata)
@@ -103,7 +108,8 @@ class NaiveBayesModel(override val uid: String)
     (ret, "D")
   }
   
-  def transform(X: MatrixBlock): MatrixBlock = baseTransform(X, mloutput, sc, "probs")
-  def transform(df: ScriptsUtils.SparkDataType): DataFrame = baseTransform(df, mloutput, sc, "probs")
+  def baseEstimator():BaseSystemMLEstimator = estimator
+  def transform(X: MatrixBlock): MatrixBlock = baseTransform(X, sc, "probs")
+  def transform(df: ScriptsUtils.SparkDataType): DataFrame = baseTransform(df, sc, "probs")
   
 }

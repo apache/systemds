@@ -212,6 +212,8 @@ gradient iterations, or `0` if no maximum limit provided
 `mm`, or `csv`; see read/write functions in
 SystemML Language Reference for details.
 
+Please see [mllearn documentation](https://apache.github.io/incubator-systemml/python-reference#mllearn-api) for
+more details on the Python API. 
 
 ### Examples
 
@@ -223,7 +225,6 @@ SystemML Language Reference for details.
 import numpy as np
 from sklearn import datasets
 from systemml.mllearn import LinearRegression
-from pyspark.sql import SQLContext
 # Load the diabetes dataset
 diabetes = datasets.load_diabetes()
 # Use only one feature
@@ -235,7 +236,7 @@ diabetes_X_test = diabetes_X[-20:]
 diabetes_y_train = diabetes.target[:-20]
 diabetes_y_test = diabetes.target[-20:]
 # Create linear regression object
-regr = LinearRegression(sqlCtx, solver='direct-solve')
+regr = LinearRegression(spark, solver='direct-solve')
 # Train the model using the training sets
 regr.fit(diabetes_X_train, diabetes_y_train)
 # The mean square error
@@ -278,7 +279,6 @@ print("Residual sum of squares: %.2f" % np.mean((regr.predict(diabetes_X_test) -
 import numpy as np
 from sklearn import datasets
 from systemml.mllearn import LinearRegression
-from pyspark.sql import SQLContext
 # Load the diabetes dataset
 diabetes = datasets.load_diabetes()
 # Use only one feature
@@ -290,7 +290,7 @@ diabetes_X_test = diabetes_X[-20:]
 diabetes_y_train = diabetes.target[:-20]
 diabetes_y_test = diabetes.target[-20:]
 # Create linear regression object
-regr = LinearRegression(sqlCtx, solver='newton-cg')
+regr = LinearRegression(spark, solver='newton-cg')
 # Train the model using the training sets
 regr.fit(diabetes_X_train, diabetes_y_train)
 # The mean square error

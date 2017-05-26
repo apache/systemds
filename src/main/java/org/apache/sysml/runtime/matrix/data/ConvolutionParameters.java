@@ -37,6 +37,8 @@ public class ConvolutionParameters implements Serializable {
 	public boolean enableNative = false;
 	public MatrixBlock input1; public MatrixBlock input2; public MatrixBlock output;
 	
+	public float [] input2FP32; // only applicable for sparse native conv2d (see NativeHelper's conv2dSparseFP32 method)
+	
 	public MatrixBlock bias;
 	public int [] start_indexes_h, end_indexes_h, start_indexes_w, end_indexes_w; 
 	

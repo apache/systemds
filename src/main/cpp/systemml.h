@@ -92,16 +92,29 @@ JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dSparse
 
 /*
  * Class:     org_apache_sysml_utils_NativeHelper
+ * Method:    conv2dSparseFP32
+ * Signature: (II[I[D[F[DIIIIIIIIIIIIII)Z
+ */
+JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dSparseFP32
+  (JNIEnv *, jclass, jint, jint, jintArray, jdoubleArray, jfloatArray, jdoubleArray, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint);
+
+/*
+ * Class:     org_apache_sysml_utils_NativeHelper
  * Method:    setMaxNumThreads
  * Signature: (I)V
  */
 JNIEXPORT void JNICALL Java_org_apache_sysml_utils_NativeHelper_setMaxNumThreads
   (JNIEnv *, jclass, jint);
 
+/*
+ * Class:     org_apache_sysml_utils_NativeHelper
+ * Method:    setFloatDatatype
+ * Signature: (Z)V
+ */
+JNIEXPORT void JNICALL Java_org_apache_sysml_utils_NativeHelper_setFloatDatatype
+  (JNIEnv *, jclass, jboolean);
+
 #ifdef __cplusplus
 }
 #endif
 #endif
-
-
- 

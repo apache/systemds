@@ -46,6 +46,7 @@ public class NativeHelper {
 	private static final Log LOG = LogFactory.getLog(NativeHelper.class.getName());
 	private static HashMap<String, String> supportedArchitectures = new HashMap<String, String>();
 	public static String blasType;
+	public static boolean isFP32 = false;
 	private static int maxNumThreads = -1;
 	private static boolean setMaxNumThreads = false;
 	static {
@@ -137,6 +138,17 @@ public class NativeHelper {
 				    	
 							LOG.info("Using native blas: " + blasType + blasPathAndHint);
 							isSystemMLLoaded = true;
+							String userSpecifiedDataType = (dmlConfig == null) ? "double" : dmlConfig.getTextValue(DMLConfig.NATIVE_BLAS_DATATYPE).trim().toLowerCase();
+							if(userSpecifiedDataType.equals("float")) {
+								isFP32 = true;
+							}
+							else {
+								if(!userSpecifiedDataType.equals("double"))
+									LOG.warn("Incorrect value for the configuration property " + DMLConfig.NATIVE_BLAS_DATATYPE + ":" + userSpecifiedDataType
+											+ ". [Valid values:double|float]. Switching to default type:double.");
+								isFP32 = false;
+							}
+							NativeHelper.setFloatDatatype(isFP32);
 						}
 	    		}
 	    	}
@@ -261,10 +273,15 @@ public class NativeHelper {
 	// Called by LibMatrixDNN's thread if input is sparse and filter is dense
 	public static native boolean conv2dSparse(int apos, int alen, int[] aix, double[] avals, double [] filter, double [] ret, int N, int C, int H, int W, 
 			int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads);
+	// This allows us to convert filter to float once and use it for all rows of input.
+	public static native boolean conv2dSparseFP32(int apos, int alen, int[] aix, double[] avals, float [] filter, double [] ret, int N, int C, int H, int W, 
+			int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads);
 	// ----------------------------------------------------------------------------------------------------------------
 	
 	// This method helps us decide whether to use GetPrimitiveArrayCritical or GetDoubleArrayElements in JNI as each has different tradeoffs.
 	// In current implementation, we always use GetPrimitiveArrayCritical as it has proven to be fastest. 
 	// We can revisit this decision later and hence I would not recommend removing this method. 
 	private static native void setMaxNumThreads(int numThreads);
+	
+	private static native void setFloatDatatype(boolean enableFloat);
 }

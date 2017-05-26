@@ -95,7 +95,7 @@ lenet.setStatistics(True).setExplain(True)
 # If you want to force GPU execution. Please make sure the required dependency are available.  
 # lenet.setGPU(True).setForceGPU(True)
 
-# (Optional but recommended) Enable native BLAS. For more detail see http://apache.github.io/incubator-systemml/native-backend
+# (Optional but recommended) Enable native BLAS. 
 lenet.setConfigProperty("native.blas", "auto")
 
 # In case you want to enable experimental feature such as codegen
@@ -105,6 +105,8 @@ lenet.setConfigProperty("native.blas", "auto")
 lenet.fit(X_train, y_train)
 lenet.predict(X_test)
 ```
+
+For more detail on enabling native BLAS, please see the documentation for the [native backend](http://apache.github.io/incubator-systemml/native-backend).
 
 ## Frequently asked questions
 

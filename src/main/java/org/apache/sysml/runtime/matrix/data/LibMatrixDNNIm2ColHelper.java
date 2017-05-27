@@ -52,7 +52,7 @@ public class LibMatrixDNNIm2ColHelper {
 			this.inputArray = inputArray;
 			this.outputArray = outputArray;
 			this.CRS = params.C * params.R * params.S;
-			this.H = params.H; this.W = params.W; this.R = params.R; this.P = params.P; this.Q = params.Q;
+			this.H = params.H; this.W = params.W; this.R = params.R; this.S = params.S; this.P = params.P; this.Q = params.Q;
 			this.CHW = params.C*params.H*params.W;
 		}
 
@@ -90,7 +90,7 @@ public class LibMatrixDNNIm2ColHelper {
 			this.inputArray = inputArray;
 			this.outputArray = outputArray;
 			this.CRS = params.C * params.R * params.S;
-			this.H = params.H; this.W = params.W; this.R = params.R; this.P = params.P; this.Q = params.Q;
+			this.H = params.H; this.W = params.W; this.R = params.R; this.S = params.S; this.P = params.P; this.Q = params.Q;
 			this.CHW = params.C*params.H*params.W;
 			this.stride_h = params.stride_h; this.stride_w = params.stride_w;
 			this.pad_h = params.pad_h; this.pad_w = params.pad_w;
@@ -134,7 +134,7 @@ public class LibMatrixDNNIm2ColHelper {
 			this.input = input;
 			this.outputArray = im2ColOutBlock.getDenseBlock();
 			this.CRS = params.C * params.R * params.S;
-			this.H = params.H; this.W = params.W; this.R = params.R; this.P = params.P; this.Q = params.Q;
+			this.H = params.H; this.W = params.W; this.R = params.R; this.S = params.S; this.P = params.P; this.Q = params.Q;
 			this.stride_h = params.stride_h; this.stride_w = params.stride_w;
 			this.pad_h = params.pad_h; this.pad_w = params.pad_w;
 			temp = new double[input.getNumColumns()];

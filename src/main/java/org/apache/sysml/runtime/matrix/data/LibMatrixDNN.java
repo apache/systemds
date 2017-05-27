@@ -158,7 +158,7 @@ public class LibMatrixDNN {
 		if(isEligibleForConv2dSparse(params))
 			Statistics.numNativeSparseConv2dCalls.increment();
 		
-		runConvTask(TaskType.LoopedIm2ColConv2d, params);
+		execute(LibMatrixDNNHelper.getConv2dWorkers(params), params);
 		
 		//post-processing: maintain nnz
 		outputBlock.recomputeNonZeros();
@@ -1003,6 +1003,21 @@ public class LibMatrixDNN {
 			}
 		}
 	}
+	
+	private static void execute(ArrayList<Callable<Long>> tasks, ConvolutionParameters params) throws DMLRuntimeException {
+		int k = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
+		try {
+			ExecutorService pool = Executors.newFixedThreadPool( Math.min(k, params.N) );
+			List<Future<Long>> taskret = pool.invokeAll(tasks);
+			pool.shutdown();
+			for( Future<Long> task : taskret )
+				task.get();
+		} 
+		catch (Exception e) {
+			throw new DMLRuntimeException("Error while executing multi-threaded tasks", e);
+		}
+	}
+	
 	// Methods to execute convolution-related tasks using multiple threads.
 	private static void runConvTask(TaskType type, ConvolutionParameters params) throws DMLRuntimeException {
 		int k = OptimizerUtils.getConstrainedNumThreads(params.numThreads);

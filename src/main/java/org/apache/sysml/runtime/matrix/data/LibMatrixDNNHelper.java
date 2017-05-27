@@ -44,6 +44,10 @@ public class LibMatrixDNNHelper {
 	 */
 	public static ArrayList<Callable<Long>> getConv2dWorkers(ConvolutionParameters params) throws DMLRuntimeException {
 		ArrayList<Callable<Long>> ret = new ArrayList<Callable<Long>>();
+		
+		// Try to create as many tasks as threads. 
+		// Creating more tasks will help in tail, but would have additional overhead of maintaining the intermediate
+		// data structures such as im2col blocks.
 		int k = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
 		int taskSize = (int)(Math.ceil((double)params.N / k));
 		

@@ -443,6 +443,20 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 	
 	private void selectPlans(CPlanMemoTable memo, HashSet<Long> partition, HashSet<Long> R, ArrayList<Long> M) 
 	{
+		//prune row aggregates with pure cellwise operations
+		for( Long hopID : R ) {
+			MemoTableEntry me = memo.getBest(hopID, TemplateType.RowTpl);
+			if( me.type == TemplateType.RowTpl && memo.contains(hopID, TemplateType.CellTpl)
+				&& rIsRowTemplateWithoutAgg(memo, memo._hopRefs.get(hopID), new HashSet<Long>())) {
+				List<MemoTableEntry> blacklist = memo.get(hopID, TemplateType.RowTpl); 
+				memo.remove(memo._hopRefs.get(hopID), new HashSet<MemoTableEntry>(blacklist));
+				if( LOG.isTraceEnabled() ) {
+					LOG.trace("Removed row memo table entries w/o aggregation: "
+						+ Arrays.toString(blacklist.toArray(new MemoTableEntry[0])));
+				}
+			}
+		}
+		
 		//if no materialization points, use basic fuse-all w/ partition awareness
 		if( M == null || M.isEmpty() ) {
 			for( Long hopID : R )
@@ -495,6 +509,21 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 				rSelectPlansFuseAll(memo, 
 					memo._hopRefs.get(hopID), null, partition);
 		}
+	}
+	
+	private static boolean rIsRowTemplateWithoutAgg(CPlanMemoTable memo, Hop current, HashSet<Long> visited) {
+		if( visited.contains(current.getHopID()) )
+			return true;
+		
+		boolean ret = true;
+		MemoTableEntry me = memo.getBest(current.getHopID(), TemplateType.RowTpl);
+		for(int i=0; i<3; i++)
+			if( me.isPlanRef(i) )
+				ret &= rIsRowTemplateWithoutAgg(memo, current.getInput().get(i), visited);
+		ret &= !(current instanceof AggUnaryOp || current instanceof AggBinaryOp);
+		
+		visited.add(current.getHopID());
+		return ret;
 	}
 	
 	private static void rPruneSuboptimalPlans(CPlanMemoTable memo, Hop current, HashSet<Long> visited, HashSet<Long> partition, ArrayList<Long> M, boolean[] plan) {

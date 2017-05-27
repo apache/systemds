@@ -3146,8 +3146,8 @@ public class LibMatrixMult
 		}
 	}
 
-	@SuppressWarnings("unused")
-	private static void vectMultiplyWrite( double[] a, double[] b, double[] c, int ai, int bi, int ci, final int len )
+	//note: public for use by codegen for consistency
+	public static void vectMultiplyWrite( double[] a, double[] b, double[] c, int ai, int bi, int ci, final int len )
 	{
 		final int bn = len%8;
 		

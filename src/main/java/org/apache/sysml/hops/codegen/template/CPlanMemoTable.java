@@ -187,6 +187,11 @@ public class CPlanMemoTable
 		return _plans.get(hopID);
 	}
 	
+	public List<MemoTableEntry> get(long hopID, TemplateType type) {
+		return _plans.get(hopID).stream()
+			.filter(p -> p.type==type).collect(Collectors.toList());
+	}
+	
 	public List<MemoTableEntry> getDistinct(long hopID) {
 		//return distinct entries wrt type and closed attributes
 		return _plans.get(hopID).stream()

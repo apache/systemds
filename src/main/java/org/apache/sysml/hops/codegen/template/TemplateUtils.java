@@ -74,6 +74,11 @@ public class TemplateUtils
 			&& hop.getNumRows() == 1 && hop.getNumCols() != 1);
 	}
 	
+	public static boolean isMatrix(CNode hop) {
+		return (hop.getDataType() == DataType.MATRIX 
+			&& hop.getNumRows() != 1 && hop.getNumCols() != 1);
+	}
+	
 	public static CNode wrapLookupIfNecessary(CNode node, Hop hop) {
 		CNode ret = node;
 		if( isColVector(node) )
@@ -343,10 +348,11 @@ public class TemplateUtils
 		for( CNode c : node.getInput() )
 			ret += countVectorIntermediates(c, memo);
 		//compute vector requirements of current node
-		int cntBin = ((node instanceof CNodeBinary 
-			&& ((CNodeBinary)node).getType().isVectorScalarPrimitive()) ? 1 : 0);
-		int cntUn = ((node instanceof CNodeUnary
-				&& ((CNodeUnary)node).getType().isVectorScalarPrimitive()) ? 1 : 0);
+		int cntBin = (node instanceof CNodeBinary 
+			&& (((CNodeBinary)node).getType().isVectorScalarPrimitive() 
+			|| ((CNodeBinary)node).getType().isVectorVectorPrimitive())) ? 1 : 0;
+		int cntUn = (node instanceof CNodeUnary
+				&& ((CNodeUnary)node).getType().isVectorScalarPrimitive()) ? 1 : 0;
 		return ret + cntBin + cntUn;
 	}
 

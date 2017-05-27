@@ -50,7 +50,7 @@ public class RowAggTmplTest extends AutomatedTestBase
 	private static final String TEST_NAME12 = TEST_NAME+"12"; //Y=(X>=v); R=Y/rowSums(Y)
 	private static final String TEST_NAME13 = TEST_NAME+"13"; //rowSums(X)+rowSums(Y)
 	private static final String TEST_NAME14 = TEST_NAME+"14"; //colSums(max(floor(round(abs(min(sign(X+Y),1)))),7))
-	private static final String TEST_NAME15 = TEST_NAME+"15"; //systemml nn - softmax backward (partially)
+	private static final String TEST_NAME15 = TEST_NAME+"15"; //systemml nn - softmax backward
 	private static final String TEST_NAME16 = TEST_NAME+"16"; //Y=X-rowIndexMax(X); R=Y/rowSums(Y)
 	
 	private static final String TEST_DIR = "functions/codegen/";
@@ -344,6 +344,11 @@ public class RowAggTmplTest extends AutomatedTestBase
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 			Assert.assertTrue(heavyHittersContainsSubString("spoofRA") 
 					|| heavyHittersContainsSubString("sp_spoofRA"));
+			
+			//ensure full aggregates for certain patterns
+			if( testname.equals(TEST_NAME15) )
+				Assert.assertTrue(!heavyHittersContainsSubString("uark+"));
+				
 		}
 		finally {
 			rtplatform = platformOld;

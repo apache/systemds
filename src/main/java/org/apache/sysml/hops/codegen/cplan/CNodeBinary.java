@@ -22,6 +22,7 @@ package org.apache.sysml.hops.codegen.cplan;
 import java.util.Arrays;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.sysml.hops.codegen.template.TemplateUtils;
 import org.apache.sysml.parser.Expression.DataType;
 
 
@@ -29,14 +30,20 @@ public class CNodeBinary extends CNode
 {
 	public enum BinType {
 		DOT_PRODUCT,
+		//vector-scalar-add operations
 		VECT_MULT_ADD, VECT_DIV_ADD, VECT_MINUS_ADD, VECT_PLUS_ADD,
 		VECT_POW_ADD, VECT_MIN_ADD, VECT_MAX_ADD,
 		VECT_EQUAL_ADD, VECT_NOTEQUAL_ADD, VECT_LESS_ADD, 
 		VECT_LESSEQUAL_ADD, VECT_GREATER_ADD, VECT_GREATEREQUAL_ADD,
+		//vector-scalar operations
 		VECT_MULT_SCALAR, VECT_DIV_SCALAR, VECT_MINUS_SCALAR, VECT_PLUS_SCALAR,
 		VECT_POW_SCALAR, VECT_MIN_SCALAR, VECT_MAX_SCALAR,
 		VECT_EQUAL_SCALAR, VECT_NOTEQUAL_SCALAR, VECT_LESS_SCALAR, 
 		VECT_LESSEQUAL_SCALAR, VECT_GREATER_SCALAR, VECT_GREATEREQUAL_SCALAR,
+		//vector-vector operations
+		VECT_MULT, VECT_DIV, VECT_MINUS, VECT_PLUS, VECT_MIN, VECT_MAX, VECT_EQUAL, 
+		VECT_NOTEQUAL, VECT_LESS, VECT_LESSEQUAL, VECT_GREATER, VECT_GREATEREQUAL,
+		//scalar-scalar operations
 		MULT, DIV, PLUS, MINUS, MODULUS, INTDIV, 
 		LESS, LESSEQUAL, GREATER, GREATEREQUAL, EQUAL,NOTEQUAL,
 		MIN, MAX, AND, OR, LOG, LOG_NZ, POW,
@@ -50,9 +57,14 @@ public class CNodeBinary extends CNode
 		}
 		
 		public boolean isCommutative() {
-			return ( this == EQUAL || this == NOTEQUAL 
-				|| this == PLUS || this == MULT 
-				|| this == MIN || this == MAX );
+			boolean ssComm = (this==EQUAL || this==NOTEQUAL 
+				|| this==PLUS || this==MULT || this==MIN || this==MAX);
+			boolean vsComm = (this==VECT_EQUAL_SCALAR || this==VECT_NOTEQUAL_SCALAR 
+					|| this==VECT_PLUS_SCALAR || this==VECT_MULT_SCALAR 
+					|| this==VECT_MIN_SCALAR || this==VECT_MAX_SCALAR);
+			boolean vvComm = (this==VECT_EQUAL || this==VECT_NOTEQUAL 
+					|| this==VECT_PLUS || this==VECT_MULT || this==VECT_MIN || this==VECT_MAX);
+			return ssComm || vsComm || vvComm;
 		}
 		
 		public String getTemplate(boolean sparse) {
@@ -61,6 +73,7 @@ public class CNodeBinary extends CNode
 					return sparse ? "    double %TMP% = LibSpoofPrimitives.dotProduct(%IN1v%, %IN2%, %IN1i%, %POS1%, %POS2%, %LEN%);\n" :
 									"    double %TMP% = LibSpoofPrimitives.dotProduct(%IN1%, %IN2%, %POS1%, %POS2%, %LEN%);\n";
 				
+				//vector-scalar-add operations
 				case VECT_MULT_ADD:
 				case VECT_DIV_ADD:
 				case VECT_MINUS_ADD:
@@ -79,6 +92,7 @@ public class CNodeBinary extends CNode
 									"    LibSpoofPrimitives.vect"+vectName+"Add(%IN1%, %IN2%, %OUT%, %POS1%, %POSOUT%, %LEN%);\n";
 				}
 				
+				//vector-scalar operations
 				case VECT_MULT_SCALAR:
 				case VECT_DIV_SCALAR:
 				case VECT_MINUS_SCALAR:
@@ -97,7 +111,26 @@ public class CNodeBinary extends CNode
 									"    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %IN2%, %POS1%, %LEN%);\n";
 				}
 				
-				/*Can be replaced by function objects*/
+				//vector-vector operations
+				case VECT_MULT:
+				case VECT_DIV:
+				case VECT_MINUS:
+				case VECT_PLUS:
+				case VECT_MIN:
+				case VECT_MAX:	
+				case VECT_EQUAL:
+				case VECT_NOTEQUAL:
+				case VECT_LESS:
+				case VECT_LESSEQUAL:
+				case VECT_GREATER:
+				case VECT_GREATEREQUAL: {
+					String vectName = getVectorPrimitiveName();
+					return sparse ? 
+						"    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1v%, %IN2%, %IN1i%, %POS1%, %POS2%, %LEN%);\n" : 
+						"    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %IN2%, %POS1%, %POS2%, %LEN%);\n";
+				}
+				
+				//scalar-scalar operations
 				case MULT:
 					return "    double %TMP% = %IN1% * %IN2%;\n";
 				
@@ -152,6 +185,14 @@ public class CNodeBinary extends CNode
 				|| this == VECT_LESS_SCALAR || this == VECT_LESSEQUAL_SCALAR
 				|| this == VECT_GREATER_SCALAR || this == VECT_GREATEREQUAL_SCALAR;
 		}
+		public boolean isVectorVectorPrimitive() {
+			return this == VECT_DIV || this == VECT_MULT 
+				|| this == VECT_MINUS || this == VECT_PLUS
+				|| this == VECT_MIN || this == VECT_MAX
+				|| this == VECT_EQUAL || this == VECT_NOTEQUAL
+				|| this == VECT_LESS || this == VECT_LESSEQUAL
+				|| this == VECT_GREATER || this == VECT_GREATEREQUAL;
+		}
 		public BinType getVectorAddPrimitive() {
 			return BinType.valueOf("VECT_"+getVectorPrimitiveName().toUpperCase()+"_ADD");
 		}
@@ -187,7 +228,7 @@ public class CNodeBinary extends CNode
 	public String codegen(boolean sparse) {
 		if( _generated )
 			return "";
-			
+		
 		StringBuilder sb = new StringBuilder();
 		
 		//generate children
@@ -195,7 +236,8 @@ public class CNodeBinary extends CNode
 		sb.append(_inputs.get(1).codegen(sparse));
 		
 		//generate binary operation (use sparse template, if data input)
-		boolean lsparse = sparse && (_inputs.get(0) instanceof CNodeData);
+		boolean lsparse = sparse && (_inputs.get(0) instanceof CNodeData 
+			&& !_inputs.get(0).getVarname().startsWith("b"));
 		String var = createVarname();
 		String tmp = _type.getTemplate(lsparse);
 		tmp = tmp.replaceAll("%TMP%", var);
@@ -210,9 +252,9 @@ public class CNodeBinary extends CNode
 			tmp = tmp.replaceAll("%IN"+j+"%", varj );
 			
 			//replace start position of main input
-			tmp = tmp.replaceAll("%POS"+j+"%", (!varj.startsWith("b") 
-				&& _inputs.get(j-1) instanceof CNodeData 
-				&& _inputs.get(j-1).getDataType().isMatrix()) ? varj+"i" : "0");
+			tmp = tmp.replaceAll("%POS"+j+"%", (_inputs.get(j-1) instanceof CNodeData 
+				&& _inputs.get(j-1).getDataType().isMatrix()) ? (!varj.startsWith("b")) ? 
+				varj+"i" : TemplateUtils.isMatrix(_inputs.get(j-1)) ? "rowIndex*len" : "0" : "0");
 		}
 		sb.append(tmp);
 		
@@ -225,50 +267,62 @@ public class CNodeBinary extends CNode
 	@Override
 	public String toString() {
 		switch(_type) {
-			case DOT_PRODUCT: return "b(dot)";
-			case VECT_MULT_ADD: return "b(vma)";
-			case VECT_DIV_ADD: return "b(vda)";
-			case VECT_MINUS_ADD: return "b(vmia)";
-			case VECT_PLUS_ADD: return "b(vpa)";
-			case VECT_POW_ADD: return "b(vpowa)";
-			case VECT_MIN_ADD: return "b(vmina)";
-			case VECT_MAX_ADD: return "b(vmaxa)";
-			case VECT_EQUAL_ADD: return "b(veqa)";
-			case VECT_NOTEQUAL_ADD: return "b(vneqa)";
-			case VECT_LESS_ADD: return "b(vlta)";
-			case VECT_LESSEQUAL_ADD: return "b(vltea)";
-			case VECT_GREATEREQUAL_ADD: return "b(vgtea)";
-			case VECT_GREATER_ADD: return "b(vgta)";
-			case VECT_MULT_SCALAR:  return "b(vm)";
-			case VECT_DIV_SCALAR:  return "b(vd)";
-			case VECT_MINUS_SCALAR:  return "b(vmi)";
-			case VECT_PLUS_SCALAR: return "b(vp)";
-			case VECT_POW_SCALAR: return "b(vpow)";
-			case VECT_MIN_SCALAR: return "b(vmin)";
-			case VECT_MAX_SCALAR: return "b(vmax)";
-			case VECT_EQUAL_SCALAR: return "b(veq)";
-			case VECT_NOTEQUAL_SCALAR: return "b(vneq)";
-			case VECT_LESS_SCALAR: return "b(vlt)";
-			case VECT_LESSEQUAL_SCALAR: return "b(vlte)";
+			case DOT_PRODUCT:              return "b(dot)";
+			case VECT_MULT_ADD:            return "b(vma)";
+			case VECT_DIV_ADD:             return "b(vda)";
+			case VECT_MINUS_ADD:           return "b(vmia)";
+			case VECT_PLUS_ADD:            return "b(vpa)";
+			case VECT_POW_ADD:             return "b(vpowa)";
+			case VECT_MIN_ADD:             return "b(vmina)";
+			case VECT_MAX_ADD:             return "b(vmaxa)";
+			case VECT_EQUAL_ADD:           return "b(veqa)";
+			case VECT_NOTEQUAL_ADD:        return "b(vneqa)";
+			case VECT_LESS_ADD:            return "b(vlta)";
+			case VECT_LESSEQUAL_ADD:       return "b(vltea)";
+			case VECT_GREATEREQUAL_ADD:    return "b(vgtea)";
+			case VECT_GREATER_ADD:         return "b(vgta)";
+			case VECT_MULT_SCALAR:         return "b(vm)";
+			case VECT_DIV_SCALAR:          return "b(vd)";
+			case VECT_MINUS_SCALAR:        return "b(vmi)";
+			case VECT_PLUS_SCALAR:         return "b(vp)";
+			case VECT_POW_SCALAR:          return "b(vpow)";
+			case VECT_MIN_SCALAR:          return "b(vmin)";
+			case VECT_MAX_SCALAR:          return "b(vmax)";
+			case VECT_EQUAL_SCALAR:        return "b(veq)";
+			case VECT_NOTEQUAL_SCALAR:     return "b(vneq)";
+			case VECT_LESS_SCALAR:         return "b(vlt)";
+			case VECT_LESSEQUAL_SCALAR:    return "b(vlte)";
 			case VECT_GREATEREQUAL_SCALAR: return "b(vgte)";
-			case VECT_GREATER_SCALAR: return "b(vgt)";
-			case MULT: return "b(*)";
-			case DIV: return "b(/)";
-			case PLUS: return "b(+)";
-			case MINUS: return "b(-)";
-			case POW: return "b(^)";
-			case MODULUS: return "b(%%)";
-			case INTDIV: return "b(%/%)";
-			case LESS: return "b(<)";
-			case LESSEQUAL: return "b(<=)";
-			case GREATER: return "b(>)";
-			case GREATEREQUAL: return "b(>=)";
-			case EQUAL: return "b(==)";
-			case NOTEQUAL: return "b(!=)";
-			case OR: return "b(|)";
-			case AND: return "b(&)";
-			case MINUS1_MULT: return "b(1-*)";
-			case MINUS_NZ: return "b(-nz)";
+			case VECT_GREATER_SCALAR:      return "b(vgt)";
+			case VECT_MULT:                return "b(v2m)";
+			case VECT_DIV:                 return "b(v2d)";
+			case VECT_MINUS:               return "b(v2mi)";
+			case VECT_PLUS:                return "b(v2p)";
+			case VECT_MIN:                 return "b(v2min)";
+			case VECT_MAX:                 return "b(v2max)";
+			case VECT_EQUAL:               return "b(v2eq)";
+			case VECT_NOTEQUAL:            return "b(v2neq)";
+			case VECT_LESS:                return "b(v2lt)";
+			case VECT_LESSEQUAL:           return "b(v2lte)";
+			case VECT_GREATEREQUAL:        return "b(v2gte)";
+			case VECT_GREATER:             return "b(v2gt)";
+			case MULT:                     return "b(*)";
+			case DIV:                      return "b(/)";
+			case PLUS:                     return "b(+)";
+			case MINUS:                    return "b(-)";
+			case POW:                      return "b(^)";
+			case MODULUS:                  return "b(%%)";
+			case INTDIV:                   return "b(%/%)";
+			case LESS:                     return "b(<)";
+			case LESSEQUAL:                return "b(<=)";
+			case GREATER:                  return "b(>)";
+			case GREATEREQUAL:             return "b(>=)";
+			case EQUAL:                    return "b(==)";
+			case NOTEQUAL:                 return "b(!=)";
+			case OR:                       return "b(|)";
+			case AND:                      return "b(&)";
+			case MINUS1_MULT:              return "b(1-*)";
+			case MINUS_NZ:                 return "b(-nz)";
 			default: return "b("+_type.name().toLowerCase()+")";
 		}
 	}
@@ -309,6 +363,19 @@ public class CNodeBinary extends CNode
 			case VECT_LESSEQUAL_SCALAR: 
 			case VECT_GREATER_SCALAR: 
 			case VECT_GREATEREQUAL_SCALAR:
+			
+			case VECT_DIV: 	
+			case VECT_MULT:
+			case VECT_MINUS:
+			case VECT_PLUS:
+			case VECT_MIN:
+			case VECT_MAX:
+			case VECT_EQUAL: 
+			case VECT_NOTEQUAL: 
+			case VECT_LESS: 
+			case VECT_LESSEQUAL: 
+			case VECT_GREATER: 
+			case VECT_GREATEREQUAL:	
 				_rows = _inputs.get(0)._rows;
 				_cols = _inputs.get(0)._cols;
 				_dataType= DataType.MATRIX;

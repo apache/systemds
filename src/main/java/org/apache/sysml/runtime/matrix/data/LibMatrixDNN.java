@@ -76,8 +76,8 @@ public class LibMatrixDNN {
 	private static AtomicLong im2colDenseCount = new AtomicLong(0);
 	private static AtomicLong maxPoolBwdSparseCount = new AtomicLong(0);
 	private static AtomicLong maxPoolBwdDenseCount = new AtomicLong(0);
-	private static AtomicLong loopedConvMatMultTime = new AtomicLong(0);
-	private static AtomicLong loopedConvIm2ColTime = new AtomicLong(0);
+	static AtomicLong loopedConvMatMultTime = new AtomicLong(0);
+	static AtomicLong loopedConvIm2ColTime = new AtomicLong(0);
 	private static AtomicLong loopedConvBwdFilterMatMultTime = new AtomicLong(0);
 	private static AtomicLong loopedConvBwdFilterIm2ColTime = new AtomicLong(0);
 	private static AtomicLong loopedConvBwdDataMatMultTime = new AtomicLong(0);

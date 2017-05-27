@@ -19,7 +19,6 @@
 package org.apache.sysml.runtime.matrix.data;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.concurrent.Callable;
 
 import org.apache.sysml.api.DMLScript;
@@ -54,10 +53,8 @@ public class LibMatrixDNNHelper {
 		for(int i = 0; i*taskSize < params.N; i++) {
 			if(isEligibleForConv2dSparse(params)) 
 				ret.add(new SparseNativeConv2d(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
-			else if(!params.input1.isInSparseFormat() && params.input1.denseBlock != null)
-				ret.add(new LoopedIm2ColConv2dDenseInput(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
-			else if(params.input1.isInSparseFormat())
-				ret.add(new LoopedIm2ColConv2dSparseInput(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
+			else if(params.input1.denseBlock != null)
+				ret.add(new LoopedIm2ColConv2d(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
 			else
 				throw new DMLRuntimeException("Unsupported operator");
 		}
@@ -66,13 +63,12 @@ public class LibMatrixDNNHelper {
 	
 	/**
 	 * Performs convolution via: partialCopy1(filter %*% im2col(input)) => output
-	 * Applicable when input is in dense format.
 	 */
-	public static class LoopedIm2ColConv2dDenseInput implements Callable<Long> 
+	public static class LoopedIm2ColConv2d implements Callable<Long> 
 	{
 		public int _rl; public int _ru; 
 		private final ConvolutionParameters _params;
-		public LoopedIm2ColConv2dDenseInput(int rl, int ru, ConvolutionParameters params) {
+		public LoopedIm2ColConv2d(int rl, int ru, ConvolutionParameters params) {
 			_rl = rl; _ru = ru;
 			_params = params;
 		}
@@ -82,12 +78,11 @@ public class LibMatrixDNNHelper {
 			int PQ = _params.P*_params.Q; int K = _params.K; int CRS = _params.C*_params.R*_params.S;
 			MatrixBlock im2ColOutBlock = new MatrixBlock(CRS, PQ, false);
 			im2ColOutBlock.allocateDenseBlock();
-			double [] inputArray = _params.input1.getDenseBlock();
-			
+			LibMatrixDNNIm2ColHelper.Im2colWorker im2ColWorker = LibMatrixDNNIm2ColHelper.Im2colWorker.getWorker( _params.input1, im2ColOutBlock, _params);
 			for(int n = _rl; n < _ru; n++)  {
 				// im2col(input) => _im2ColOutBlock
 				long t1 = DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS ? System.nanoTime() : 0;
-				doIm2colDense(n, inputArray, im2ColOutBlock.getDenseBlock(), _params);
+				im2ColWorker.execute(n);
 				long t2 = DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS ? System.nanoTime() : 0;
 				
 				// filter %*% _im2ColOutBlock => matMultOutBlock
@@ -108,50 +103,31 @@ public class LibMatrixDNNHelper {
 			}
 			return 0L;
 		}
-	}
-	
-	/**
-	 * Performs convolution via: partialCopy1(filter %*% im2col(input)) => output
-	 * Applicable when input is in sparse format.
-	 */
-	public static class LoopedIm2ColConv2dSparseInput implements Callable<Long> 
-	{
-		public int _rl; public int _ru; 
-		private final ConvolutionParameters _params;
-		public LoopedIm2ColConv2dSparseInput(int rl, int ru, ConvolutionParameters params) {
-			_rl = rl; _ru = ru;
-			_params = params;
-		}
-
-		@Override
-		public Long call() throws Exception {
-			int PQ = _params.P*_params.Q; int K = _params.K; int CRS = _params.C*_params.R*_params.S;
-			MatrixBlock im2ColOutBlock = new MatrixBlock(CRS, PQ, false);
-			im2ColOutBlock.allocateDenseBlock();
-			double [] temp = new double[_params.input1.getNumColumns()];
-			for(int n = _rl; n < _ru; n++)  {
-				// im2col(input) => _im2ColOutBlock
-				long t1 = DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS ? System.nanoTime() : 0;
-				doIm2colSparse(n, _params.input1, im2ColOutBlock.getDenseBlock(), _params, temp);
-				long t2 = DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS ? System.nanoTime() : 0;
-				
-				// filter %*% _im2ColOutBlock => matMultOutBlock
-				MatrixBlock matMultOutBlock = new MatrixBlock(K, PQ, false);
-				singleThreadedMatMult(_params.input2, im2ColOutBlock, matMultOutBlock, false, true, _params);
-				long t3 = DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS ? System.nanoTime() : 0;
-				
-				if(DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS) {
-					LibMatrixDNN.loopedConvIm2ColTime.addAndGet(t2 - t1);
-					LibMatrixDNN.loopedConvMatMultTime.addAndGet(t3 - t2);
+		
+		// Copy the matrix src of shape [K X PQ] to params.output.denseBlock + destPos
+		private void partialCopy1(MatrixBlock src, double [] dest, int destPos, int K, int PQ) {
+			// Copying is required as LibMatrixMult.matrixMult (and/or Java) is not pointer aware.
+			// This is not required in Native implementation
+			if(!src.isEmptyBlock()) {
+				if(src.isInSparseFormat()) {
+					// Copy the sparse matrix matMultOutBlock of shape [K X PQ] to 
+					// params.output.denseBlock + destPos
+					for(int k = 0; k < src.getNumRows(); k++) {
+						if( !src.sparseBlock.isEmpty(k) ) {
+							int apos = src.sparseBlock.pos(k);
+							int alen = src.sparseBlock.size(k);
+							int[] aix = src.sparseBlock.indexes(k);
+							double[] avals = src.sparseBlock.values(k);
+							for(int j = apos; j < apos+alen; j++) {
+								int pqIndex = aix[j];
+								dest[destPos + k*PQ + pqIndex ] = avals[j];
+							}
+						}
+					}
 				}
-				// Copy the matrix matMultOutBlock of shape [K X PQ] to params.output.denseBlock + destPos
-				partialCopy1(matMultOutBlock, _params.output.getDenseBlock(), n*K*PQ, K, PQ);
+				else 
+					System.arraycopy(src.denseBlock, 0, dest, destPos, K * PQ);
 			}
-			if(_params.bias != null) {
-				// bias is always converted to dense format
-				addBias(_rl, _ru, _params.output.getDenseBlock(), _params.bias.getDenseBlock(), K, PQ);
-			}
-			return 0L;
 		}
 	}
 	
@@ -184,32 +160,6 @@ public class LibMatrixDNNHelper {
 				}
 			}
 			return 0L;
-		}
-	}
-	
-	// Copy the matrix src of shape [K X PQ] to params.output.denseBlock + destPos
-	private static void partialCopy1(MatrixBlock src, double [] dest, int destPos, int K, int PQ) {
-		// Copying is required as LibMatrixMult.matrixMult (and/or Java) is not pointer aware.
-		// This is not required in Native implementation
-		if(!src.isEmptyBlock()) {
-			if(src.isInSparseFormat()) {
-				// Copy the sparse matrix matMultOutBlock of shape [K X PQ] to 
-				// params.output.denseBlock + destPos
-				for(int k = 0; k < src.getNumRows(); k++) {
-					if( !src.sparseBlock.isEmpty(k) ) {
-						int apos = src.sparseBlock.pos(k);
-						int alen = src.sparseBlock.size(k);
-						int[] aix = src.sparseBlock.indexes(k);
-						double[] avals = src.sparseBlock.values(k);
-						for(int j = apos; j < apos+alen; j++) {
-							int pqIndex = aix[j];
-							dest[destPos + k*PQ + pqIndex ] = avals[j];
-						}
-					}
-				}
-			}
-			else 
-				System.arraycopy(src.denseBlock, 0, dest, destPos, K * PQ);
 		}
 	}
 	
@@ -246,106 +196,4 @@ public class LibMatrixDNNHelper {
 		}
 	}
 	
-	private static void doIm2colDense(int n, double [] inputArray, double [] outputArray, ConvolutionParameters params) {
-		int CRS = params.C * params.R * params.S;
-		final int nOffset = n * params.C*params.H*params.W;
-		if (params.stride_h == 1 && params.stride_w == 1 && params.pad_h == 0 && params.pad_w == 0) {
-			for (int c = 0; c < CRS; ++c) {
-				int wOffset = c % params.S;
-				int hOffset = (c / params.S) % params.R;
-				int cInput = c / params.R / params.S;
-				for (int h = 0; h < params.P; ++h) {
-					int hPadded = h + hOffset;
-					int outOffset = (c * params.P + h) * params.Q;
-					int inputOffset = nOffset + (cInput * params.H + hPadded) * params.W;
-					System.arraycopy(inputArray, inputOffset + wOffset, outputArray, outOffset, params.Q);
-					int w = params.Q - 1;
-					int wPadded = w + wOffset;
-					if (hPadded < params.H && wPadded < params.W)
-						outputArray[outOffset + w] = inputArray[inputOffset + wPadded];
-					else
-						outputArray[outOffset + w] = 0;
-				}
-			}
-		} else {
-			for (int c = 0; c < CRS; ++c) {
-				int wOffset = c % params.S;
-				int hOffset = (c / params.S) % params.R;
-				int cInput = c / params.R / params.S;
-				for (int h = 0; h < params.P; ++h) {
-					int outOffset = (c * params.P + h) * params.Q;
-					int hPadded = h * params.stride_h - params.pad_h + hOffset;
-					int inputOffset = nOffset + (cInput * params.H + hPadded) * params.W;
-					if (hPadded < 0 || hPadded >= params.H) {
-						Arrays.fill(outputArray, outOffset, outOffset+params.Q, 0);
-					} else {
-						for (int w = 0; w < params.Q; ++w) {
-							int wPadded = w * params.stride_w - params.pad_w + wOffset;
-							if (wPadded >= 0 && wPadded < params.W)
-								outputArray[outOffset + w] = inputArray[inputOffset + wPadded];
-							else
-								outputArray[outOffset + w] = 0;
-						}
-					}
-				}
-			}
-		}
-	}
-	
-//Returns the row of matrix in dense format
-	private static double [] getRowInDenseFormat(MatrixBlock input, int n, double []  temp) throws DMLRuntimeException {
-		if(input.getNumColumns() != temp.length) {
-			throw new DMLRuntimeException("Invalid parameters");
-		}
-		// Use temporary array to avoid binary search
-		if(input.isInSparseFormat()) {
-			Arrays.fill(temp, 0);
-			if( !input.sparseBlock.isEmpty(n) ) {
-				int apos = input.sparseBlock.pos(n);
-				int alen = input.sparseBlock.size(n);
-				int[] aix = input.sparseBlock.indexes(n);
-				double[] avals = input.sparseBlock.values(n);
-				for(int j=apos; j<apos+alen; j++)
-					temp[ aix[j] ] = avals[j];
-			}
-		}
-		else {
-			System.arraycopy(input.getDenseBlock(), n*input.getNumColumns(), temp, 0, input.getNumColumns());
-		}
-		return temp;
-	}
-	
-	// ------------------------------------------------------------
-	// TODO:
-	
-	// Keeping this as a separate sparse method to allow for further dense optimizations
-	private static void doIm2colSparse(int n, MatrixBlock input, double [] outputArray, ConvolutionParameters params, double []  temp) throws DMLRuntimeException {
-		int CRS = params.C * params.R * params.S;
-		// Using a temporary array improves performance by not requiring binary search for getValue
-		// Since the access pattern depends on ConvolutionParameters, this serves as a temporary fix.
-		temp = getRowInDenseFormat(input, n, temp);
-		// final int nOffset = n * params.C*params.H*params.W;
-		for (int c = 0; c < CRS; ++c) {
-			int wOffset = c % params.S;
-			int hOffset = (c / params.S) % params.R;
-			int cInput = c / params.R / params.S;
-			for (int h = 0; h < params.P; ++h) {
-				int outOffset = (c * params.P + h) * params.Q;
-				int hPadded = h * params.stride_h - params.pad_h + hOffset;
-				int tempOffset = (cInput * params.H + hPadded) * params.W;
-				// int inputOffset = nOffset + tempOffset;
-				if (hPadded < 0 || hPadded >= params.H) {
-					Arrays.fill(outputArray, outOffset, outOffset+params.Q, 0);
-				} else {
-					for (int w = 0; w < params.Q; ++w) {
-						int wPadded = w * params.stride_w - params.pad_w + wOffset;
-						if (wPadded >= 0 && wPadded < params.W) 
-							outputArray[outOffset + w] = temp[tempOffset + wPadded];
-						else
-							outputArray[outOffset + w] = 0;
-					}
-				}
-			}
-		}
-	}
 }

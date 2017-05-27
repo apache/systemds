@@ -74,8 +74,8 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 			throw new RuntimeException("Invalid input arguments.");
 		
 		//input preparation
-		double[][] ab = prepInputMatrices(inputs, 1, 2);
-		double[][] b = prepInputMatrices(inputs, 3);
+		double[][] ab = prepInputMatricesDense(inputs, 1, 2);
+		double[][] b = prepInputMatricesDense(inputs, 3);
 		double[] scalars = prepInputScalars(scalarObjects);
 		
 		//core sequential execute
@@ -103,8 +103,8 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 			throw new RuntimeException("Invalid input arguments.");
 		
 		//input preparation
-		double[][] ab = prepInputMatrices(inputs, 1, 2);
-		double[][] b = prepInputMatrices(inputs, 3);
+		double[][] ab = prepInputMatricesDense(inputs, 1, 2);
+		double[][] b = prepInputMatricesDense(inputs, 3);
 		double[] scalars = prepInputScalars(scalarObjects);
 		
 		//core sequential execute
@@ -167,8 +167,8 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 		}			
 		
 		//input preparation
-		double[][] ab = prepInputMatrices(inputs, 1, 2);
-		double[][] b = prepInputMatrices(inputs, 3);
+		double[][] ab = prepInputMatricesDense(inputs, 1, 2);
+		double[][] b = prepInputMatricesDense(inputs, 3);
 		double[] scalars = prepInputScalars(scalarObjects);
 				
 		//core sequential execute
@@ -238,8 +238,8 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 		}	
 		
 		//input preparation
-		double[][] ab = prepInputMatrices(inputs, 1, 2);
-		double[][] b = prepInputMatrices(inputs, 3);
+		double[][] ab = prepInputMatricesDense(inputs, 1, 2);
+		double[][] b = prepInputMatricesDense(inputs, 3);
 		double[] scalars = prepInputScalars(scalarObjects);
 		
 		//core sequential execute

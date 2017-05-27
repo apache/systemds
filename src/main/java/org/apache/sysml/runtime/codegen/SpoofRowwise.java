@@ -93,7 +93,7 @@ public abstract class SpoofRowwise extends SpoofOperator
 		double[] c = out.getDenseBlock();
 		
 		//input preparation
-		double[][] b = prepInputMatrices(inputs);
+		double[][] b = prepInputMatricesDense(inputs);
 		double[] scalars = prepInputScalars(scalarObjects);
 		
 		//setup thread-local memory if necessary
@@ -133,7 +133,7 @@ public abstract class SpoofRowwise extends SpoofOperator
 		allocateOutputMatrix(m, n, out);
 		
 		//input preparation
-		double[][] b = prepInputMatrices(inputs);
+		double[][] b = prepInputMatricesDense(inputs);
 		double[] scalars = prepInputScalars(scalarObjects);
 		
 		//core parallel execute

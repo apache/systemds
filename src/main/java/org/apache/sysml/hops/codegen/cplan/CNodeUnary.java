@@ -74,9 +74,9 @@ public class CNodeUnary extends CNode
 			    case LOOKUP_R:
 			    	return "    double %TMP% = getValue(%IN1%, rowIndex);\n";
 			    case LOOKUP_C:
-			    	return "    double %TMP% = getValue(%IN1%, colIndex);\n";
+			    	return "    double %TMP% = getValue(%IN1%, n, 0, colIndex);\n";
 			    case LOOKUP_RC:
-			    	return "    double %TMP% = getValue(%IN1%, rowIndex*n+colIndex);\n";	
+			    	return "    double %TMP% = getValue(%IN1%, n, rowIndex, colIndex);\n";	
 				case LOOKUP0:
 					return "    double %TMP% = %IN1%[0];\n" ;
 				case POW2:

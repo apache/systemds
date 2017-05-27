@@ -57,15 +57,15 @@ public abstract class SpoofOperator implements Serializable
 		return execute(inputs, scalars);
 	}
 	
-	protected double[][] prepInputMatrices(ArrayList<MatrixBlock> inputs) {
-		return prepInputMatrices(inputs, 1, inputs.size()-1);
+	protected double[][] prepInputMatricesDense(ArrayList<MatrixBlock> inputs) {
+		return prepInputMatricesDense(inputs, 1, inputs.size()-1);
 	}
 	
-	protected double[][] prepInputMatrices(ArrayList<MatrixBlock> inputs, int offset) {
-		return prepInputMatrices(inputs, offset, inputs.size()-offset);
+	protected double[][] prepInputMatricesDense(ArrayList<MatrixBlock> inputs, int offset) {
+		return prepInputMatricesDense(inputs, offset, inputs.size()-offset);
 	}
 	
-	protected double[][] prepInputMatrices(ArrayList<MatrixBlock> inputs, int offset, int len) {
+	protected double[][] prepInputMatricesDense(ArrayList<MatrixBlock> inputs, int offset, int len) {
 		double[][] b = new double[len][]; 
 		for(int i=offset; i<offset+len; i++) {
 			//convert empty or sparse to dense temporary block (note: we don't do
@@ -85,6 +85,26 @@ public abstract class SpoofOperator implements Serializable
 		return b;
 	}
 	
+	protected SideInput[] prepInputMatricesAbstract(ArrayList<MatrixBlock> inputs) {
+		return prepInputMatricesAbstract(inputs, 1, inputs.size()-1);
+	}
+	
+	protected SideInput[] prepInputMatricesAbstract(ArrayList<MatrixBlock> inputs, int offset) {
+		return prepInputMatricesAbstract(inputs, offset, inputs.size()-offset);
+	}
+	
+	protected SideInput[] prepInputMatricesAbstract(ArrayList<MatrixBlock> inputs, int offset, int len) {
+		SideInput[] b = new SideInput[len]; 
+		for(int i=offset; i<offset+len; i++) {
+			if( inputs.get(i).isInSparseFormat() && inputs.get(i).isAllocated() )
+				b[i-offset] = new SideInput(null, inputs.get(i));
+			else
+				b[i-offset] = new SideInput(inputs.get(i).getDenseBlock(), null);
+		}
+		
+		return b;
+	}
+	
 	protected double[] prepInputScalars(ArrayList<ScalarObject> scalarObjects) {
 		double[] scalars = new double[scalarObjects.size()]; 
 		for(int i=0; i < scalarObjects.size(); i++)
@@ -94,7 +114,34 @@ public abstract class SpoofOperator implements Serializable
 	
 	//abstraction for safely accessing sideways matrices without the need 
 	//to allocate empty matrices as dense, see prepInputMatrices
+	
 	protected static double getValue(double[] data, int index) {
 		return (data!=null) ? data[index] : 0;
+	}
+	
+	protected static double getValue(double[] data, int n, int rowIndex, int colIndex) {
+		return (data!=null) ? data[rowIndex*n+colIndex] : 0;
+	}
+	
+	protected static double getValue(SideInput data, int rowIndex) {
+		//note: wrapper sideinput guaranteed to exist
+		return (data.dBlock!=null) ? data.dBlock[rowIndex] : 
+			(data.mBlock!=null) ? data.mBlock.quickGetValue(rowIndex, 0) : 0;
+	}
+	
+	protected static double getValue(SideInput data, int n, int rowIndex, int colIndex) {
+		//note: wrapper sideinput guaranteed to exist
+		return (data.dBlock!=null) ? data.dBlock[rowIndex*n+colIndex] : 
+			(data.mBlock!=null) ? data.mBlock.quickGetValue(rowIndex, colIndex) : 0;
+	}
+	
+	public static class SideInput {
+		private final double[] dBlock;
+		private final MatrixBlock mBlock;
+	
+		public SideInput(double[] ddata, MatrixBlock mdata) {
+			dBlock = ddata;
+			mBlock = mdata;
+		}
 	}
 }

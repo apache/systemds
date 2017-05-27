@@ -88,7 +88,7 @@ public abstract class SpoofMultiAggregate extends SpoofOperator implements Seria
 		setInitialOutputValues(c);
 		
 		//input preparation
-		double[][] b = prepInputMatrices(inputs);
+		SideInput[] b = prepInputMatricesAbstract(inputs);
 		double[] scalars = prepInputScalars(scalarObjects);
 		final int m = inputs.get(0).getNumRows();
 		final int n = inputs.get(0).getNumColumns();
@@ -129,7 +129,7 @@ public abstract class SpoofMultiAggregate extends SpoofOperator implements Seria
 		out.examSparsity();	
 	}
 	
-	private void executeDense(double[] a, double[][] b, double[] scalars, double[] c, int m, int n, int rl, int ru) throws DMLRuntimeException 
+	private void executeDense(double[] a, SideInput[] b, double[] scalars, double[] c, int m, int n, int rl, int ru) throws DMLRuntimeException 
 	{
 		//core dense aggregation operation
 		for( int i=rl, ix=rl*n; i<ru; i++ ) { 
@@ -140,7 +140,7 @@ public abstract class SpoofMultiAggregate extends SpoofOperator implements Seria
 		}
 	}
 	
-	private void executeSparse(SparseBlock sblock, double[][] b, double[] scalars, double[] c, int m, int n, int rl, int ru) 
+	private void executeSparse(SparseBlock sblock, SideInput[] b, double[] scalars, double[] c, int m, int n, int rl, int ru) 
 		throws DMLRuntimeException 
 	{
 		//core dense aggregation operation
@@ -152,7 +152,7 @@ public abstract class SpoofMultiAggregate extends SpoofOperator implements Seria
 	}
 
 	
-	protected abstract void genexec( double a, double[][] b, double[] scalars, double[] c, int m, int n, int rowIndex, int colIndex);
+	protected abstract void genexec( double a, SideInput[] b, double[] scalars, double[] c, int m, int n, int rowIndex, int colIndex);
 	
 	
 	private void setInitialOutputValues(double[] c) {
@@ -229,14 +229,14 @@ public abstract class SpoofMultiAggregate extends SpoofOperator implements Seria
 	private class ParAggTask implements Callable<double[]> 
 	{
 		private final MatrixBlock _a;
-		private final double[][] _b;
+		private final SideInput[] _b;
 		private final double[] _scalars;
 		private final int _rlen;
 		private final int _clen;
 		private final int _rl;
 		private final int _ru;
 
-		protected ParAggTask( MatrixBlock a, double[][] b, double[] scalars, 
+		protected ParAggTask( MatrixBlock a, SideInput[] b, double[] scalars, 
 				int rlen, int clen, int rl, int ru ) {
 			_a = a;
 			_b = b;

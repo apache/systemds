@@ -30,7 +30,6 @@ public class BooleanExpression extends Expression
 	private BooleanOp _opcode;
 	
 	public BooleanExpression(BooleanOp bop){
-		_kind = Kind.BooleanOp;
 		_opcode = bop;
 		
 		setFilename("MAIN SCRIPT");
@@ -41,7 +40,6 @@ public class BooleanExpression extends Expression
 	}
 	
 	public BooleanExpression(BooleanOp bop, String filename, int beginLine, int beginColumn, int endLine, int endColumn){
-		_kind = Kind.BooleanOp;
 		_opcode = bop;
 		
 		setFilename(filename);

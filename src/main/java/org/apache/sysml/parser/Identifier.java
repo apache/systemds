@@ -25,7 +25,6 @@ import org.apache.sysml.parser.LanguageException.LanguageErrorCodes;
 
 public abstract class Identifier extends Expression
 {
-	
 	protected DataType _dataType;
 	protected ValueType _valueType;
 	protected long _dim1;

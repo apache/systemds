@@ -419,8 +419,12 @@ public class StatementBlock extends LiveVariableAnalysis
 				}
 				StatementBlock sblock = fstmt.getBody().get(0);
 				
-				for (int i =0; i < fstmt.getInputParams().size(); i++){
-					
+				if( fcall.getParamExprs().size() < fstmt.getInputParams().size() ) {
+					sourceExpr.raiseValidateError("Wrong number of function parameters: "+
+						fcall.getParamExprs().size() + ", but " + fstmt.getInputParams().size()+" expected.");
+				}
+				
+				for (int i =0; i < fstmt.getInputParams().size(); i++) {
 					DataIdentifier currFormalParam = fstmt.getInputParams().get(i);
 					
 					// create new assignment statement
@@ -428,23 +432,7 @@ public class StatementBlock extends LiveVariableAnalysis
 					DataIdentifier newTarget = new DataIdentifier(currFormalParam);
 					newTarget.setName(newFormalParameterName);
 					
-					Expression currCallParam = null;
-					if (fcall.getParamExprs().size() > i){
-						// function call has value for parameter
-						currCallParam = fcall.getParamExprs().get(i).getExpr();
-					}
-					else {
-						// use default value for parameter
-						if (fstmt.getInputParams().get(i).getDefaultValue() == null){
-							currFormalParam.raiseValidateError("default parameter for " + currFormalParam + " is undefined", false);
-						}
-						currCallParam = new DataIdentifier(fstmt.getInputParams().get(i).getDefaultValue());
-						currCallParam.setAllPositions( 	fstmt.getInputParams().get(i).getFilename(),
-														fstmt.getInputParams().get(i).getBeginLine(), 
-														fstmt.getInputParams().get(i).getBeginColumn(),
-														fstmt.getInputParams().get(i).getEndLine(),
-														fstmt.getInputParams().get(i).getEndColumn());
-					}
+					Expression currCallParam = fcall.getParamExprs().get(i).getExpr();
 					
 					//auto casting of inputs on inlining (if required)
 					ValueType targetVT = newTarget.getValueType();

@@ -28,14 +28,12 @@ import org.apache.sysml.runtime.util.ConvolutionUtils;
 
 public class BuiltinFunctionExpression extends DataIdentifier 
 {
-	
 	protected Expression[] 	  _args = null;
 	private BuiltinFunctionOp _opcode;
 
 	public BuiltinFunctionExpression(BuiltinFunctionOp bifop, ArrayList<ParameterExpression> args, String fname, int blp, int bcp, int elp, int ecp) {
-		_kind = Kind.BuiltinFunctionOp;
 		_opcode = bifop;
-		this.setAllPositions(fname, blp, bcp, elp, ecp);
+		setAllPositions(fname, blp, bcp, elp, ecp);
 		args = expandConvolutionArguments(args);
 		_args = new Expression[args.size()];
 		for(int i=0; i < args.size(); i++) {
@@ -44,7 +42,6 @@ public class BuiltinFunctionExpression extends DataIdentifier
 	}
 
 	public BuiltinFunctionExpression(BuiltinFunctionOp bifop, Expression[] args, String fname, int blp, int bcp, int elp, int ecp) {
-		_kind = Kind.BuiltinFunctionOp;
 		_opcode = bifop;
 		_args = new Expression[args.length];
 		for(int i=0; i < args.length; i++) {

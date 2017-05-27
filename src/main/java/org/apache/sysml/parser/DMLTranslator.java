@@ -1403,72 +1403,64 @@ public class DMLTranslator
 	 * @throws ParseException if ParseException occurs
 	 */
 	private Hop processExpression(Expression source, DataIdentifier target, HashMap<String, Hop> hops) throws ParseException {
-		if (source.getKind() == Expression.Kind.BinaryOp) {
-			return processBinaryExpression((BinaryExpression) source, target, hops);
-		} else if (source.getKind() == Expression.Kind.RelationalOp) {
-			return processRelationalExpression((RelationalExpression) source, target, hops);
-		} else if (source.getKind() == Expression.Kind.BooleanOp) {
-			return processBooleanExpression((BooleanExpression) source, target, hops);
-		} else if (source.getKind() == Expression.Kind.Data) {
-			if (source instanceof IndexedIdentifier){
-				IndexedIdentifier sourceIndexed = (IndexedIdentifier) source;
-				return processIndexingExpression(sourceIndexed,target,hops);
-			} else if (source instanceof IntIdentifier) {
+		try {	
+			if( source instanceof BinaryExpression )
+				return processBinaryExpression((BinaryExpression) source, target, hops);
+			else if( source instanceof RelationalExpression )
+				return processRelationalExpression((RelationalExpression) source, target, hops);
+			else if( source instanceof BooleanExpression )
+				return processBooleanExpression((BooleanExpression) source, target, hops);
+			else if( source instanceof BuiltinFunctionExpression )
+				return processBuiltinFunctionExpression((BuiltinFunctionExpression) source, target, hops);
+			else if( source instanceof ParameterizedBuiltinFunctionExpression )
+				return processParameterizedBuiltinFunctionExpression((ParameterizedBuiltinFunctionExpression)source, target, hops);
+			else if( source instanceof DataExpression ) {
+				Hop ae = (Hop)processDataExpression((DataExpression)source, target, hops);
+				if (ae instanceof DataOp){
+					String formatName = ((DataExpression)source).getVarParam(DataExpression.FORMAT_TYPE).toString();
+					((DataOp)ae).setInputFormatType(Expression.convertFormatType(formatName));
+				}
+				return ae;
+			}
+			else if (source instanceof IndexedIdentifier)
+				return processIndexingExpression((IndexedIdentifier) source,target,hops);
+			else if (source instanceof IntIdentifier) {
 				IntIdentifier sourceInt = (IntIdentifier) source;
 				LiteralOp litop = new LiteralOp(sourceInt.getValue());
 				litop.setAllPositions(sourceInt.getBeginLine(), sourceInt.getBeginColumn(), sourceInt.getEndLine(), sourceInt.getEndColumn());
 				setIdentifierParams(litop, sourceInt);
 				return litop;
-			} else if (source instanceof DoubleIdentifier) {
+			} 
+			else if (source instanceof DoubleIdentifier) {
 				DoubleIdentifier sourceDouble = (DoubleIdentifier) source;
 				LiteralOp litop = new LiteralOp(sourceDouble.getValue());
 				litop.setAllPositions(sourceDouble.getBeginLine(), sourceDouble.getBeginColumn(), sourceDouble.getEndLine(), sourceDouble.getEndColumn());
 				setIdentifierParams(litop, sourceDouble);
 				return litop;
-			} else if (source instanceof DataIdentifier) {
-				DataIdentifier sourceId = (DataIdentifier) source;
-				return hops.get(sourceId.getName());
-			} else if (source instanceof BooleanIdentifier) {
+			}
+			else if (source instanceof BooleanIdentifier) {
 				BooleanIdentifier sourceBoolean = (BooleanIdentifier) source;
 				LiteralOp litop = new LiteralOp(sourceBoolean.getValue());
 				litop.setAllPositions(sourceBoolean.getBeginLine(), sourceBoolean.getBeginColumn(), sourceBoolean.getEndLine(), sourceBoolean.getEndColumn());
 				setIdentifierParams(litop, sourceBoolean);
 				return litop;
-			} else if (source instanceof StringIdentifier) {
+			} 
+			else if (source instanceof StringIdentifier) {
 				StringIdentifier sourceString = (StringIdentifier) source;
 				LiteralOp litop = new LiteralOp(sourceString.getValue());
 				litop.setAllPositions(sourceString.getBeginLine(), sourceString.getBeginColumn(), sourceString.getEndLine(), sourceString.getEndColumn());
 				setIdentifierParams(litop, sourceString);
 				return litop;
-			}
-		} else if (source.getKind() == Expression.Kind.BuiltinFunctionOp) {
-			try {
-				return processBuiltinFunctionExpression((BuiltinFunctionExpression) source, target, hops);
-			} catch (HopsException e) {
-				throw new ParseException(e.getMessage());
-			}
-		} else if (source.getKind() == Expression.Kind.ParameterizedBuiltinFunctionOp ) {
-			try {
-				return processParameterizedBuiltinFunctionExpression((ParameterizedBuiltinFunctionExpression)source, target, hops);
-			} catch ( HopsException e ) {
-				throw new ParseException(e.getMessage());
-			}
-		} else if (source.getKind() == Expression.Kind.DataOp ) {
-			try {	
-				Hop ae = (Hop)processDataExpression((DataExpression)source, target, hops);
-				
-				if (ae instanceof DataOp){
-					String formatName = ((DataExpression)source).getVarParam(DataExpression.FORMAT_TYPE).toString();
-					((DataOp)ae).setInputFormatType(Expression.convertFormatType(formatName));
-				}
-				//hops.put(target.getName(), ae);
-				return ae;
-			} catch ( Exception e ) {
-				throw new ParseException(e.getMessage());
-			}
+			} 
+			else if (source instanceof DataIdentifier)
+				return hops.get(((DataIdentifier) source).getName());
+		} 
+		catch ( Exception e ) {
+			throw new ParseException(e.getMessage());
 		}
+		
 		return null;
-	} // end method processExpression
+	}
 
 	private DataIdentifier createTarget(Expression source) {
 		Identifier id = source.getOutput();

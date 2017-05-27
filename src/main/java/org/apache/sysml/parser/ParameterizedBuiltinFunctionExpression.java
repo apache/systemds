@@ -107,9 +107,8 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		pbHopMap.put(Expression.ParameterizedBuiltinFunctionOp.TOSTRING, ParamBuiltinOp.TOSTRING);
 	}
 	
-	public static ParameterizedBuiltinFunctionExpression getParamBuiltinFunctionExpression(String functionName, ArrayList<ParameterExpression> paramExprsPassed,
-			String fileName, int blp, int bcp, int elp, int ecp){
-	
+	public static ParameterizedBuiltinFunctionExpression getParamBuiltinFunctionExpression(String functionName, 
+			ArrayList<ParameterExpression> paramExprsPassed, String fileName, int blp, int bcp, int elp, int ecp){
 		if (functionName == null || paramExprsPassed == null)
 			return null;
 		
@@ -125,15 +124,14 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		ParameterizedBuiltinFunctionExpression retVal = new ParameterizedBuiltinFunctionExpression(pbifop,varParams,
 				fileName, blp, bcp, elp, ecp);
 		return retVal;
-	} // end method getBuiltinFunctionExpression
+	}
 	
 			
 	public ParameterizedBuiltinFunctionExpression(ParameterizedBuiltinFunctionOp op, HashMap<String,Expression> varParams,
 			String filename, int blp, int bcp, int elp, int ecp) {
-		_kind = Kind.ParameterizedBuiltinFunctionOp;
 		_opcode = op;
 		_varParams = varParams;
-		this.setAllPositions(filename, blp, bcp, elp, ecp);
+		setAllPositions(filename, blp, bcp, elp, ecp);
 	}
 
 	public Expression rewriteExpression(String prefix) throws LanguageException {

@@ -380,11 +380,9 @@ public class DataExpression extends DataIdentifier
 	
 	public DataExpression(DataOp op, HashMap<String,Expression> varParams, 
 			String filename, int blp, int bcp, int elp, int ecp) {
-		
-		_kind = Kind.DataOp;
 		_opcode = op;
 		_varParams = varParams;
-		this.setAllPositions(filename, blp, bcp, elp, ecp);
+		setAllPositions(filename, blp, bcp, elp, ecp);
 	}
 
 	public Expression rewriteExpression(String prefix) throws LanguageException {
@@ -515,26 +513,23 @@ public class DataExpression extends DataIdentifier
 		if (fileNameExpr instanceof ConstIdentifier){
 			return fileNameExpr.toString();
 		}
-		else if (fileNameExpr instanceof BinaryExpression){
+		else if (fileNameExpr instanceof BinaryExpression) {
 			BinaryExpression expr = (BinaryExpression)fileNameExpr;
-							
-			if (expr.getKind()== Expression.Kind.BinaryOp){
-				Expression.BinaryOp op = expr.getOpCode();
-				switch (op){
-				case PLUS:
-						filename = "";
-						filename = fileNameCat(expr, currConstVars, filename, conditional);
-						// Since we have computed the value of filename, we update
-						// varParams with a const string value
-						StringIdentifier fileString = new StringIdentifier(filename, 
-								this.getFilename(), this.getBeginLine(), this.getBeginColumn(), 
-								this.getEndLine(), this.getEndColumn());
-						removeVarParam(IO_FILENAME);
-						addVarParam(IO_FILENAME, fileString);
-					break;
-				default:
-					raiseValidateError("for read method, parameter " + IO_FILENAME + " can only be const string concatenations. ", conditional);
-				}
+			Expression.BinaryOp op = expr.getOpCode();
+			switch (op){
+			case PLUS:
+					filename = "";
+					filename = fileNameCat(expr, currConstVars, filename, conditional);
+					// Since we have computed the value of filename, we update
+					// varParams with a const string value
+					StringIdentifier fileString = new StringIdentifier(filename, 
+							this.getFilename(), this.getBeginLine(), this.getBeginColumn(), 
+							this.getEndLine(), this.getEndColumn());
+					removeVarParam(IO_FILENAME);
+					addVarParam(IO_FILENAME, fileString);
+				break;
+			default:
+				raiseValidateError("for read method, parameter " + IO_FILENAME + " can only be const string concatenations. ", conditional);
 			}
 		}
 		else {
@@ -1728,17 +1723,14 @@ public class DataExpression extends DataIdentifier
 	{
 		// Processing the left node first
 		if (expr.getLeft() instanceof BinaryExpression 
-				&& ((BinaryExpression)expr.getLeft()).getKind()== BinaryExpression.Kind.BinaryOp
-				&& ((BinaryExpression)expr.getLeft()).getOpCode() == BinaryOp.PLUS){
+			&& ((BinaryExpression)expr.getLeft()).getOpCode() == BinaryOp.PLUS){
 			filename = fileNameCat((BinaryExpression)expr.getLeft(), currConstVars, filename, conditional)+ filename;
 		}
 		else if (expr.getLeft() instanceof ConstIdentifier){
 			filename = ((ConstIdentifier)expr.getLeft()).toString()+ filename;
 		}
 		else if (expr.getLeft() instanceof DataIdentifier 
-				&& ((DataIdentifier)expr.getLeft()).getDataType() == Expression.DataType.SCALAR
-				&& ((DataIdentifier)expr.getLeft()).getKind() == Expression.Kind.Data){ 
-				//&& ((DataIdentifier)expr.getLeft()).getValueType() == Expression.ValueType.STRING){
+			&& ((DataIdentifier)expr.getLeft()).getDataType() == Expression.DataType.SCALAR){ 
 			String name = ((DataIdentifier)expr.getLeft()).getName();
 			filename = ((StringIdentifier)currConstVars.get(name)).getValue() + filename;
 		}
@@ -1746,9 +1738,8 @@ public class DataExpression extends DataIdentifier
 			raiseValidateError("Parameter " + IO_FILENAME + " only supports a const string or const string concatenations.", conditional);
 		}
 		// Now process the right node
-		if (expr.getRight()instanceof BinaryExpression 
-				&& ((BinaryExpression)expr.getRight()).getKind()== BinaryExpression.Kind.BinaryOp
-				&& ((BinaryExpression)expr.getRight()).getOpCode() == BinaryOp.PLUS){
+		if (expr.getRight() instanceof BinaryExpression 
+			&& ((BinaryExpression)expr.getRight()).getOpCode() == BinaryOp.PLUS){
 			filename = filename + fileNameCat((BinaryExpression)expr.getRight(), currConstVars, filename, conditional);
 		}
 		// DRB: CHANGE
@@ -1756,9 +1747,8 @@ public class DataExpression extends DataIdentifier
 			filename = filename + ((ConstIdentifier)expr.getRight()).toString();
 		}
 		else if (expr.getRight() instanceof DataIdentifier 
-				&& ((DataIdentifier)expr.getRight()).getDataType() == Expression.DataType.SCALAR
-				&& ((DataIdentifier)expr.getRight()).getKind() == Expression.Kind.Data 
-				&& ((DataIdentifier)expr.getRight()).getValueType() == Expression.ValueType.STRING){
+			&& ((DataIdentifier)expr.getRight()).getDataType() == Expression.DataType.SCALAR
+			&& ((DataIdentifier)expr.getRight()).getValueType() == Expression.ValueType.STRING){
 			String name = ((DataIdentifier)expr.getRight()).getName();
 			filename =  filename + ((StringIdentifier)currConstVars.get(name)).getValue();
 		}

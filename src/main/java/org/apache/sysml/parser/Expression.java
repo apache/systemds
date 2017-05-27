@@ -26,18 +26,11 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.apache.sysml.hops.Hop.FileFormatTypes;
+import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
 
 
 public abstract class Expression 
 {
-	/**
-	 * The kind of expression. Can be an operator (unary operator, binary operator, boolean operator, built-in function operator,
-	 * parameterized built-in function operator, data operator, relational operator, external built-in function operator, function call operator), data, or literal.
-	 */
-	public enum Kind {
-		BinaryOp, BooleanOp, BuiltinFunctionOp, ParameterizedBuiltinFunctionOp, DataOp, Data, RelationalOp, FunctionCallOp
-	};
-
 	/**
 	 * Binary operators.
 	 */
@@ -194,28 +187,21 @@ public abstract class Expression
 	};
 	
 	protected static final Log LOG = LogFactory.getLog(Expression.class.getName());
-
-	public abstract Expression rewriteExpression(String prefix) throws LanguageException;
-		
 	
-	protected Kind _kind;
+	private static final IDSequence _tempId = new IDSequence();
 	protected Identifier[] _outputs;
-
-	private static int _tempId;
 
 	public Expression() {
 		_outputs = null;
 	}
 
+	public abstract Expression rewriteExpression(String prefix) throws LanguageException;
+	
 	public void setOutput(Identifier output) {
 		if ( _outputs == null) {
 			_outputs = new Identifier[1];
 		}
 		_outputs[0] = output;
-	}
-
-	public Kind getKind() {
-		return _kind;
 	}
 
 	/**
@@ -363,7 +349,7 @@ public abstract class Expression
 	 * @return Temporary name of expression.
 	 */
 	public static String getTempName() {
-		return "parsertemp" + _tempId++;
+		return "parsertemp" + _tempId.getNextID();
 	}
 
 	public abstract VariableSet variablesRead();

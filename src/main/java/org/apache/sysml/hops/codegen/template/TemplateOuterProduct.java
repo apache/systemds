@@ -85,7 +85,9 @@ public class TemplateOuterProduct extends TemplateBase {
 	@Override
 	public CloseType close(Hop hop) {
 		// close on second matrix multiply (after open) or unary aggregate
-		if( hop instanceof AggUnaryOp && HopRewriteUtils.isOuterProductLikeMM(hop.getInput().get(0)) )
+		if( hop instanceof AggUnaryOp && HopRewriteUtils.isOuterProductLikeMM(hop.getInput().get(0))
+			|| (hop instanceof AggBinaryOp && (HopRewriteUtils.isOuterProductLikeMM(hop.getInput().get(0))
+				|| HopRewriteUtils.isOuterProductLikeMM(hop.getInput().get(1)))) )
 			return CloseType.CLOSED_INVALID;
 		else if( (hop instanceof AggUnaryOp) 
 			|| (hop instanceof AggBinaryOp && !HopRewriteUtils.isOuterProductLikeMM(hop) 

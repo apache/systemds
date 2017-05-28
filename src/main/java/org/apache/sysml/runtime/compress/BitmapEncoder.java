@@ -90,9 +90,6 @@ public class BitmapEncoder
 
 	/**
 	 * Encodes the bitmap as a series of run lengths and offsets.
-	 * <p>
-	 * <b>NOTE: This method must be kept in sync with {@link BitmapDecoderRLE}
-	 * !</b>
 	 * 
 	 * @param offsets  uncompressed offset list
 	 * @param len  logical length of the given offset list

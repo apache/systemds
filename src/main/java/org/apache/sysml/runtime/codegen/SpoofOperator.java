@@ -29,6 +29,7 @@ import org.apache.sysml.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.util.DataConverter;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 public abstract class SpoofOperator implements Serializable
 {
@@ -134,18 +135,40 @@ public abstract class SpoofOperator implements Serializable
 	//abstraction for safely accessing sideways matrices without the need 
 	//to allocate empty matrices as dense, see prepInputMatrices
 	
+	protected static double getValue(double[] data, double index) {
+		int iindex = UtilFunctions.toInt(index);
+		return getValue(data, iindex);
+	}
+	
 	protected static double getValue(double[] data, int index) {
 		return (data!=null) ? data[index] : 0;
+	}
+	
+	protected static double getValue(double[] data, int n, double rowIndex, double colIndex) {
+		int irowIndex = UtilFunctions.toInt(rowIndex);
+		int icolIndex = UtilFunctions.toInt(colIndex);
+		return getValue(data, n, irowIndex, icolIndex);
 	}
 	
 	protected static double getValue(double[] data, int n, int rowIndex, int colIndex) {
 		return (data!=null) ? data[rowIndex*n+colIndex] : 0;
 	}
 	
+	protected static double getValue(SideInput data, double rowIndex) {
+		int irowIndex = UtilFunctions.toInt(rowIndex);
+		return getValue(data, irowIndex);
+	}
+	
 	protected static double getValue(SideInput data, int rowIndex) {
 		//note: wrapper sideinput guaranteed to exist
 		return (data.dBlock!=null) ? data.dBlock[rowIndex] : 
 			(data.mBlock!=null) ? data.mBlock.quickGetValue(rowIndex, 0) : 0;
+	}
+	
+	protected static double getValue(SideInput data, int n, double rowIndex, double colIndex) {
+		int irowIndex = UtilFunctions.toInt(rowIndex);
+		int icolIndex = UtilFunctions.toInt(colIndex);
+		return getValue(data, n, irowIndex, icolIndex);
 	}
 	
 	protected static double getValue(SideInput data, int n, int rowIndex, int colIndex) {

@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.PriorityQueue;
 import java.util.concurrent.Callable;
@@ -68,6 +69,7 @@ import org.apache.sysml.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysml.runtime.instructions.cp.KahanObject;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.matrix.data.CTableMap;
+import org.apache.sysml.runtime.matrix.data.IJV;
 import org.apache.sysml.runtime.matrix.data.LibMatrixBincell;
 import org.apache.sysml.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -799,6 +801,9 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		write(os);	
 	}
 	
+	public Iterator<IJV> getIterator(int rl, int ru, boolean inclZeros) {
+		return new ColumnGroupIterator(rl, ru, inclZeros);
+	}
 	
 	//////////////////////////////////////////
 	// Operations (overwrite existing ops for seamless integration)
@@ -2217,5 +2222,51 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		for (int i = from; i <= to; i+=incr)
 			ret.add(i);
 		return ret;
+	}
+	
+	private class ColumnGroupIterator implements Iterator<IJV>
+	{
+		//iterator configuration 
+		private final int _rl;
+		private final int _ru;
+		private final boolean _inclZeros;
+		
+		//iterator state
+		private int _posColGroup = -1;
+		private Iterator<IJV> _iterColGroup = null;
+		private boolean _noNext = false;
+		
+		public ColumnGroupIterator(int rl, int ru, boolean inclZeros) {
+			_rl = rl;
+			_ru = ru;
+			_inclZeros = inclZeros;
+			getNextIterator();
+		}
+
+		@Override
+		public boolean hasNext() {
+			return !_noNext;
+		}
+
+		@Override
+		public IJV next() {
+			if( _noNext )
+				throw new RuntimeException("No more entries.");
+			IJV ret = _iterColGroup.next(); 
+			if( !_iterColGroup.hasNext() )
+				getNextIterator();
+			return ret;
+		}
+		
+		private void getNextIterator() {
+			while( _posColGroup+1 < _colGroups.size() ) {
+				_posColGroup++;
+				_iterColGroup = _colGroups.get(_posColGroup)
+					.getIterator(_rl, _ru, _inclZeros);
+				if( _iterColGroup.hasNext() )
+					return;
+			}
+			_noNext = true;
+		}
 	}
 }

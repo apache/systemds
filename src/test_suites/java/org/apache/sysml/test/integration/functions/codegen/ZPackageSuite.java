@@ -33,6 +33,7 @@ import org.junit.runners.Suite;
 	AlgorithmMLogreg.class,
 	AlgorithmPNMF.class,
 	CellwiseTmplTest.class,
+	CompressedCellwiseTest.class,
 	DAGCellwiseTmplTest.class,
 	MultiAggTmplTest.class,
 	OuterProdTmplTest.class,

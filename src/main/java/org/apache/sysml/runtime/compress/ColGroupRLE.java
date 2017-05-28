@@ -91,11 +91,6 @@ public class ColGroupRLE extends ColGroupOffset
 	public CompressionType getCompType() {
 		return CompressionType.RLE_BITMAP;
 	}
-
-	@Override
-	public Iterator<Integer> getDecodeIterator(int k) {
-		return new BitmapDecoderRLE(_data, _ptr[k], len(k)); 
-	}
 	
 	@Override
 	public void decompressToBlock(MatrixBlock target, int rl, int ru) 
@@ -656,8 +651,8 @@ public class ColGroupRLE extends ColGroupOffset
 		}
 	}
 	
+	@Override
 	public boolean[] computeZeroIndicatorVector()
-		throws DMLRuntimeException 
 	{	
 		boolean[] ret = new boolean[_numRows];
 		final int numVals = getNumValues();
@@ -768,5 +763,67 @@ public class ColGroupRLE extends ColGroupOffset
 		}
 		
 		return new Pair<Integer,Integer>(apos, astart);
+	}
+	
+	@Override
+	public Iterator<Integer> getIterator(int k) {
+		return new RLEValueIterator(k, 0, getNumRows());
+	}
+	
+	@Override
+	public Iterator<Integer> getIterator(int k, int rl, int ru) {
+		return new RLEValueIterator(k, rl, ru);
+	}
+
+	private class RLEValueIterator implements Iterator<Integer>
+	{
+		private final int _ru;
+		private final int _boff;
+		private final int _blen;
+		private int _bix;
+		private int _start;
+		private int _rpos;
+		
+		public RLEValueIterator(int k, int rl, int ru) {
+			_ru = ru;
+			_boff = _ptr[k];
+			_blen = len(k);
+			_bix = 0; 
+			_start = 0; //init first run
+			_rpos = _data[_boff+_bix]; 
+			while( _rpos < rl )
+				nextRowOffset();
+		}
+
+		@Override
+		public boolean hasNext() {
+			return (_rpos < _ru);
+		}
+
+		@Override
+		public Integer next() {
+			int ret = _rpos;
+			nextRowOffset();
+			return ret;
+		}
+		
+		private void nextRowOffset() {
+			if( !hasNext() )
+			  return;
+			//get current run information
+			int lstart = _data[_boff + _bix]; //start
+			int llen = _data[_boff + _bix + 1]; //len
+			//advance to next run if necessary
+			if( _rpos - _start - lstart + 1 >= llen ) {
+				_start += lstart + llen;
+				_bix +=2;
+				_rpos = (_bix>=_blen) ? _ru : 
+					_start + _data[_boff + _bix];
+			}
+			//increment row index within run
+			else {
+				_rpos++;
+			}
+		}
 	}
 }

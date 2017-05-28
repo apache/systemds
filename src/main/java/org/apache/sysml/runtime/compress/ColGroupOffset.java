@@ -35,6 +35,7 @@ import org.apache.sysml.runtime.functionobjects.ReduceAll;
 import org.apache.sysml.runtime.functionobjects.ReduceCol;
 import org.apache.sysml.runtime.functionobjects.ReduceRow;
 import org.apache.sysml.runtime.functionobjects.Builtin.BuiltinCode;
+import org.apache.sysml.runtime.matrix.data.IJV;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.AggregateUnaryOperator;
 
@@ -144,7 +145,7 @@ public abstract class ColGroupOffset extends ColGroupValue
 		
 		// Run through the bitmaps for this column group
 		for (int i = 0; i < numVals; i++) {
-			Iterator<Integer> decoder = getDecodeIterator(i);
+			Iterator<Integer> decoder = getIterator(i);
 			int valOff = i*numCols;
 
 			while (decoder.hasNext()) {
@@ -167,7 +168,7 @@ public abstract class ColGroupOffset extends ColGroupValue
 		
 		// Run through the bitmaps for this column group
 		for (int i = 0; i < numVals; i++) {
-			Iterator<Integer> decoder = getDecodeIterator(i);
+			Iterator<Integer> decoder = getIterator(i);
 			int valOff = i*numCols;
 
 			while (decoder.hasNext()) {
@@ -190,7 +191,7 @@ public abstract class ColGroupOffset extends ColGroupValue
 		
 		// Run through the bitmaps for this column group
 		for (int i = 0; i < numVals; i++) {
-			Iterator<Integer> decoder = getDecodeIterator(i);
+			Iterator<Integer> decoder = getIterator(i);
 			int valOff = i*numCols;
 
 			while (decoder.hasNext()) {
@@ -213,7 +214,7 @@ public abstract class ColGroupOffset extends ColGroupValue
 		final int numCols = getNumCols();
 		final int numVals = getNumValues();
 		for (int i = 0; i < numVals; i++) {
-			Iterator<Integer> decoder = getDecodeIterator(i);
+			Iterator<Integer> decoder = getIterator(i);
 			int valOff = i*numCols;
 			while (decoder.hasNext()) {
 				int row = decoder.next();
@@ -260,18 +261,6 @@ public abstract class ColGroupOffset extends ColGroupValue
 	public boolean hasZeros() {
 		return _zeros;
 	}
-	
-	/**
-	 * @param k
-	 *            index of a specific compressed bitmap (stored in subclass,
-	 *            index same as {@link #getValues})
-	 * @return an object for iterating over the row offsets in this bitmap. Only
-	 *         valid until the next call to this method. May be reused across
-	 *         calls.
-	 */
-	public abstract Iterator<Integer> getDecodeIterator(int k);
-
-	//TODO getDecodeIterator(int k, int rl, int ru)
 
 	/**
 	 * Utility function of sparse-unsafe operations.
@@ -420,5 +409,127 @@ public abstract class ColGroupOffset extends ColGroupValue
 	protected abstract void computeColSums(MatrixBlock result, KahanFunction kplus);
 	
 	protected abstract void computeRowMxx(MatrixBlock result, Builtin builtin, int rl, int ru);
+
+	protected abstract boolean[] computeZeroIndicatorVector();
 	
+	@Override
+	public Iterator<IJV> getIterator(int rl, int ru, boolean inclZeros) {
+		return new OffsetIterator(rl, ru, inclZeros);
+	}
+	
+	/**
+	 * @param k index of value tuple with associated bitmap
+	 * @return an iterator over the row offsets in this bitmap
+	 */
+	public abstract Iterator<Integer> getIterator(int k);
+
+	/**
+	 * 
+	 * @param k index of value tuple with associated bitmap
+	 * @param rl row lower index, inclusive
+	 * @param ru row upper index, exclusive
+	 * @return an iterator over the row offsets in this bitmap
+	 */
+	public abstract Iterator<Integer> getIterator(int k, int rl, int ru);
+
+	
+	protected class OffsetIterator implements Iterator<IJV>
+	{
+		//iterator configuration
+		private final int _rl;
+		private final int _ru;
+		private final boolean _inclZeros;
+		
+		//iterator state
+		private final IJV _buff = new IJV();
+		private Iterator<Integer> _viter = null;
+		private int _vpos = -1;
+		private int _rpos = -1;
+		private int _cpos = -1;
+		
+		public OffsetIterator(int rl, int ru, boolean inclZeros) {
+			_rl = rl;
+			_ru = ru;
+			_inclZeros = inclZeros;
+			_vpos = 0;
+			_rpos = -1;
+			_cpos = 0;
+			getNextValue();
+		}
+
+		@Override
+		public boolean hasNext() {
+			return (_rpos < _ru);
+		}
+
+		@Override
+		public IJV next() {
+			_buff.set(_rpos, _colIndexes[_cpos], (_vpos >= getNumValues()) ? 
+				0 : _values[_vpos*getNumCols()+_cpos]);
+			getNextValue();
+			return _buff;
+		}
+		
+		private void getNextValue() {
+			//advance to next value iterator if required
+			if( _viter == null ) {
+				_viter = (getNumValues()>0) ? //first iterator
+					getIterator(_vpos, _rl, _ru) : new ZeroIterator(_rl, _ru);
+			}
+			else if( _viter instanceof ZeroIterator && !_viter.hasNext() ) {
+				_rpos = _ru; //end after zero iterator
+				return;
+			}
+			else if( _cpos+1 >= getNumCols() && !_viter.hasNext() ) {
+				_vpos++; //
+				if( _vpos < getNumValues() )
+					_viter = getIterator(_vpos, _rl, _ru);
+				else if( _inclZeros && _zeros)
+					_viter = new ZeroIterator(_rl, _ru);
+				else
+					_rpos = _ru; //end w/o zero iterator
+				_rpos = -1;
+			}
+			
+			//get next value
+			if( _rpos < 0 || _cpos+1 >= getNumCols()) {
+				_rpos = _viter.next();
+				_cpos = 0;
+			}
+			else {
+				_cpos++;
+			}
+		}
+	}
+	
+	protected class ZeroIterator implements Iterator<Integer>
+	{
+		private final boolean[] _zeros;
+		private final int _ru;
+		private int _rpos; 
+		
+		public ZeroIterator(int rl, int ru) {
+			_zeros = computeZeroIndicatorVector();
+			_ru = ru;
+			_rpos = rl-1;
+			getNextValue();
+		}
+
+		@Override
+		public boolean hasNext() {
+			return (_rpos < _ru);
+		}
+
+		@Override
+		public Integer next() {
+			int ret = _rpos;
+			getNextValue();
+			return ret;
+		}
+		
+		private void getNextValue() {
+			do { _rpos++; }
+			while( _rpos < _ru && !_zeros[_rpos] );
+		}
+	}
 }

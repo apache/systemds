@@ -36,7 +36,7 @@ import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysml.runtime.util.ConvolutionUtils;
 import org.apache.sysml.utils.Statistics;
 
-/**
+/*
  * This class allows users to invoke deep learning related operations 
  * (such as conv2d, conv2d_backward_data, conv2d_backward_filter, maxpooling, maxpooling_backward, bias_add)
  * using multiple threads.
@@ -44,6 +44,25 @@ import org.apache.sysml.utils.Statistics;
  * The methods accept the input matrices as MatrixBlock and the parameters using ConvolutionParameters.
  * 
  * To run in single thread, please set ConvolutionParameters.numThreads to 1.
+ * 
+ * DESIGN:
+ * 
+ * 1. LibMatrixDNN contains the user-facing methods for deep learning related operations. 
+ * 2. The deep learning tasks are executed in parallel using java's ExecutorService. The key pattern
+ * followed by the above mentioned functions are as follows:
+ *   execute(LibMatrixDNNHelper.get__Workers(params), params);
+ * 3. LibMatrixDNN's execute() method ensures the creation and shutdown of the ExecutorService.
+ * 4. LibMatrixDNNHelper.get__Workers creates appropriate workers based on the runtime characteristics of
+ * the input data (for example: input activations, filter, dout, ...). For code maintenance, these workers
+ * are placed in the respective LibMatrixDNN__Helper files.
+ * 5. The above mentioned workers may also use additional workers such as im2col and rotate180.
+ * We have created similar get__Workers methods to return the appropriate worker based on the
+ * runtime characteristics.
+ * 6. As opposed to earlier implementation, this design reduces branch misprediction as well 
+ * as instruction cache misses. It also allows us to experiment with new operators for different
+ * data characteristics without affecting the performance of other operators. 
+ * 7. This class assumes that the caller (for CP ConvolutionCPInstruction) deals with the empty block cases.  
+ * 
  */
 public class LibMatrixDNN {
 	
@@ -488,14 +507,30 @@ public class LibMatrixDNN {
 		outputBlock.recomputeNonZeros();
 	}
 	
+	/**
+	 * Executes the tasks in parallel using java's ExecutorService.
+	 *  
+	 * @param tasks deep learning related tasks
+	 * @param params convolution parameters
+	 * @throws DMLRuntimeException if the error occurs
+	 */
 	private static void execute(ArrayList<Callable<Long>> tasks, ConvolutionParameters params) throws DMLRuntimeException {
 		int k = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
 		try {
-			ExecutorService pool = Executors.newFixedThreadPool( Math.min(k, params.N) );
-			List<Future<Long>> taskret = pool.invokeAll(tasks);
-			pool.shutdown();
-			for( Future<Long> task : taskret )
-				task.get();
+			if(k == 1) {
+				// Single-threaded execution when called in parfor
+				// this avoid unnecessary creation of threadpool.
+				for(Callable<Long> task : tasks) {
+					task.call();
+				}
+			}
+			else {
+				ExecutorService pool = Executors.newFixedThreadPool( Math.min(k, params.N) );
+				List<Future<Long>> taskret = pool.invokeAll(tasks);
+				pool.shutdown();
+				for( Future<Long> task : taskret )
+					task.get();
+			}
 		} 
 		catch (Exception e) {
 			throw new DMLRuntimeException("Error while executing multi-threaded tasks", e);

@@ -89,11 +89,11 @@ public class LibMatrixDNNPoolingHelper {
 		boolean isNthRowEmpty = false;
 		int apos; int alen; int[] aix; double[] avals;
 		private void getNthSparseRow(int n) {
-			if( !_params.input2.sparseBlock.isEmpty(n) ) {
-				apos = _params.input2.sparseBlock.pos(n);
-				alen = _params.input2.sparseBlock.size(n);
-				aix = _params.input2.sparseBlock.indexes(n);
-				avals = _params.input2.sparseBlock.values(n);
+			if( !_params.input1.sparseBlock.isEmpty(n) ) {
+				apos = _params.input1.sparseBlock.pos(n);
+				alen = _params.input1.sparseBlock.size(n);
+				aix = _params.input1.sparseBlock.indexes(n);
+				avals = _params.input1.sparseBlock.values(n);
 				isNthRowEmpty = false;
 			}
 			else

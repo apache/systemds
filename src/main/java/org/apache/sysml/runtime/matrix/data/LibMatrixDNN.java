@@ -59,10 +59,9 @@ public class LibMatrixDNN {
 	public static boolean DISPLAY_STATISTICS = false; //conv2d summaries in stats output
 
 	private enum TaskType {
-		MaxPooling_Forward, MaxPooling_Backward, MaxPooling_Relu_Backward,
+		MaxPooling_Backward, MaxPooling_Relu_Backward,
 		// Alternate approaches that we tried but the performance was unsatisfactory be included: direct, non-looped im2col
-		LoopedIm2ColConv2dBwdFilter, LoopedIm2ColConv2dBwdData,
-		ReluBackward
+		LoopedIm2ColConv2dBwdFilter, LoopedIm2ColConv2dBwdData
 	}
 	
 	// ------------------------------------------------------------------------------------------------
@@ -128,8 +127,8 @@ public class LibMatrixDNN {
 	}
 	
 	// Commonly used operators
-	private static BinaryOperator _binaryElementWiseAddition = null;
-	private static BinaryOperator _binaryElementWiseMultiplication = null;
+	static BinaryOperator _binaryElementWiseAddition = null;
+	static BinaryOperator _binaryElementWiseMultiplication = null;
 	static {
 		try {
 			_binaryElementWiseAddition = InstructionUtils.parseBinaryOperator("+");
@@ -696,36 +695,11 @@ public class LibMatrixDNN {
 				input.getNumRows() + " != " + dout.getNumRows() + " || " + input.getNumColumns() + " != " + dout.getNumColumns());
 		}
 		
-		runConvTask(TaskType.ReluBackward, params);
+		execute(LibMatrixDNNHelper.getReluBackwardWorkers(params), params);
 		
-		//note: no post-processing as nnz maintained per task
+		// post-processing: maintain nnz
+		outputBlock.recomputeNonZeros();
 	}
-	
-	private static long doReluBackward(ConvolutionParameters params, int rl, int ru) throws DMLRuntimeException {
-		// (X > 0) * dout
-		double [] outputArray = params.output.getDenseBlock();
-		int numOutCols = params.input1.getNumColumns();
-		
-		if(!params.input1.isInSparseFormat() && !params.input2.isInSparseFormat()) {
-			double [] inputArr = params.input1.getDenseBlock();
-			double [] doutArr = params.input2.getDenseBlock();
-			for(int i = rl*numOutCols; i < ru*numOutCols; i++) {
-				outputArray[i] = inputArr[i] > 0 ? doutArr[i] : 0;
-			}
-		}
-		else {
-			// Perform (X > 0)
-			ConvolutionUtils.scalarOperations(params.input1, outputArray, rl*numOutCols, numOutCols, rl, ru, 
-					InstructionUtils.parseScalarBinaryOperator(">", false, 0));
-			// Then perform (X > 0) * dout
-			ConvolutionUtils.binaryOperationInPlace(params.input2, outputArray, rl*numOutCols, numOutCols, rl, ru, 
-					_binaryElementWiseMultiplication);
-		}
-		
-		//post-processing: maintain nnz
-		return params.output.recomputeNonZeros(rl, ru-1, 0, numOutCols-1);
-	}
-	
 	
 	/**
 	 * Performs the operation corresponding to the DML script:
@@ -833,55 +807,11 @@ public class LibMatrixDNN {
 		}
 		
 		fillIndexesArray(params);
-		runConvTask(TaskType.MaxPooling_Forward, params);
 		
-		//post-processing: maintain nnz
+		execute(LibMatrixDNNHelper.getMaxPoolingWorkers(params), params);
+		
+		// post-processing: maintain nnz
 		outputBlock.recomputeNonZeros();
-	}
-	
-	private static void doPooling(int n, ConvolutionParameters params) throws DMLRuntimeException {
-		double [] inputArray = null;
-		if (!params.input1.isInSparseFormat())
-			inputArray = params.input1.getDenseBlock();
-		double [] outputArray = null;
-		if (!params.output.isInSparseFormat())
-			outputArray = params.output.getDenseBlock();
-		else
-			throw new DMLRuntimeException("Expected the output to be allocated in dense format");
-		
-		final int inOffset = n*params.C*params.H*params.W;
-		int out_index = n*params.C*params.P*params.Q;
-		final int HW = params.H*params.W;
-		
-		if(inputArray != null) {
-			for (int c = 0; c < params.C; c++) {
-				final int inOffset1 = inOffset + c*HW;
-				for (int p = 0; p < params.P; p++) {
-					for (int q = 0; q < params.Q; q++, out_index++) {
-						for (int h = params.start_indexes_h[p]; h < params.end_indexes_h[p]; h++) {
-							for (int w = params.start_indexes_w[q]; w < params.end_indexes_w[q]; w++) {
-								outputArray[out_index] = Math.max(outputArray[out_index], inputArray[inOffset1 +  h*params.W + w]);
-							}
-						}
-					}
-				}
-			}
-		}
-		else {
-			// TODO: Optimize sparse maxpooling
-			// Low priority after adding fused relu_maxpooling operator as output of conv2d expected to be dense
-			for (int c = 0; c < params.C; c++) {
-				for (int p = 0; p < params.P; p++) {
-					for (int q = 0; q < params.Q; q++, out_index++) {
-						for (int h = params.start_indexes_h[p]; h < params.end_indexes_h[p]; h++) {
-							for (int w = params.start_indexes_w[q]; w < params.end_indexes_w[q]; w++) {
-								outputArray[out_index] = Math.max(outputArray[out_index], params.input1.quickGetValue(n, c*HW +  h*params.W + w));
-							}
-						}
-					}
-				}
-			}
-		}
 	}
 	
 	private static void doRotate180(int inputN, int outputN, MatrixBlock input, 
@@ -1064,10 +994,6 @@ public class LibMatrixDNN {
 			long lnnz = 0; //nnz per partition
 			
 			switch(_type) {
-				case MaxPooling_Forward:
-					for(int n = _rl; n < _ru; n++)
-						doPooling(n, _params);
-					break;
 				case MaxPooling_Backward:
 					for(int n = _rl; n < _ru; n++) 
 						doPoolingBackward(n, _params, false);
@@ -1075,9 +1001,6 @@ public class LibMatrixDNN {
 				case MaxPooling_Relu_Backward:
 					for(int n = _rl; n < _ru; n++) 
 						doPoolingBackward(n, _params, true);
-					break;
-				case ReluBackward:
-					lnnz = doReluBackward(_params, _rl, _ru);
 					break;
 				case LoopedIm2ColConv2dBwdFilter:
 				{

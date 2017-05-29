@@ -19,11 +19,14 @@
 package org.apache.sysml.runtime.matrix.data;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.concurrent.Callable;
 
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.instructions.InstructionUtils;
+import org.apache.sysml.runtime.util.ConvolutionUtils;
 import org.apache.sysml.utils.NativeHelper;
 
 
@@ -38,6 +41,43 @@ public class LibMatrixDNNHelper {
 	public static boolean isEligibleForConv2dSparse(ConvolutionParameters params) {
 		// NativeHelper.conv2dSparse only if filter is dense and input is sparse
 		return params.enableNative && params.input1.isInSparseFormat() && !params.input2.isInSparseFormat();
+	}
+	
+	/**
+	 * Factory method that returns list of callable tasks for performing maxpooling operation
+	 * 
+	 * @param params convolution parameters
+	 * @return list of callable tasks for performing maxpooling operation
+	 * @throws DMLRuntimeException if error occurs
+	 */
+	public static ArrayList<Callable<Long>> getMaxPoolingWorkers(ConvolutionParameters params) throws DMLRuntimeException {
+		ArrayList<Callable<Long>> ret = new ArrayList<Callable<Long>>();
+		int k = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
+		int taskSize = (int)(Math.ceil((double)params.N / k));
+		for(int i = 0; i*taskSize < params.N; i++) {
+			if(params.input1.isInSparseFormat())
+				ret.add(new SparseMaxPooling(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
+			else
+				ret.add(new DenseMaxPooling(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
+		}
+		return ret;
+	}
+	
+	/**
+	 * Factory method that returns list of callable tasks for performing relu backward operation
+	 * 
+	 * @param params convolution parameters
+	 * @return list of callable tasks for performing relu backward operation
+	 * @throws DMLRuntimeException if error occurs
+	 */
+	public static ArrayList<Callable<Long>> getReluBackwardWorkers(ConvolutionParameters params) throws DMLRuntimeException {
+		ArrayList<Callable<Long>> ret = new ArrayList<Callable<Long>>();
+		int k = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
+		int taskSize = (int)(Math.ceil((double)params.N / k));
+		for(int i = 0; i*taskSize < params.N; i++) {
+			ret.add(new ReluBackward(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
+		}
+		return ret;
 	}
 	
 	/**
@@ -120,6 +160,157 @@ public class LibMatrixDNNHelper {
 			ret.add(mb);
 		}
 		return ret;
+	}
+	
+	/**
+	 * Performs the dense maxpooling
+	 */
+	public static class DenseMaxPooling implements Callable<Long> 
+	{
+		public int _rl; public int _ru; 
+		private final ConvolutionParameters _params;
+		double [] inputArray; double [] outputArray;
+		int C; int P; int Q; int W;
+		public DenseMaxPooling(int rl, int ru, ConvolutionParameters params) {
+			_rl = rl; _ru = ru;
+			_params = params;
+			inputArray = params.input1.getDenseBlock();
+			outputArray = params.output.getDenseBlock();
+			C = params.C; P = params.P; Q = params.Q; W = params.W;
+		}
+		
+		@Override
+		public Long call() throws Exception {
+			final int HW = _params.H*_params.W;
+			final int CHW = _params.C*_params.H*_params.W;
+			final int CPQ = C*P*Q;
+			for(int n = _rl; n < _ru; n++)  {
+				final int inOffset = n*CHW;
+				int out_index = n*CPQ;
+				for (int c = 0; c < C; c++) {
+					final int inOffset1 = inOffset + c*HW;
+					for (int p = 0; p < P; p++) {
+						for (int q = 0; q < Q; q++, out_index++) {
+							for (int h = _params.start_indexes_h[p]; h < _params.end_indexes_h[p]; h++) {
+								for (int w = _params.start_indexes_w[q]; w < _params.end_indexes_w[q]; w++) {
+									outputArray[out_index] = Math.max(outputArray[out_index], inputArray[inOffset1 +  h*W + w]);
+								}
+							}
+						}
+					}
+				}
+			}
+			return 0L;
+		}
+	}
+	
+	/**
+	 * Performs the sparse maxpooling
+	 */
+	public static class SparseMaxPooling implements Callable<Long> 
+	{
+		public int _rl; public int _ru; 
+		private final ConvolutionParameters _params;
+		int HW;
+		double [] outputArray;
+		int C; int P; int Q; int W;
+		public SparseMaxPooling(int rl, int ru, ConvolutionParameters params) {
+			_rl = rl; _ru = ru;
+			_params = params;
+			outputArray = params.output.getDenseBlock();
+			C = params.C; P = params.P; Q = params.Q; W = params.W;
+			HW = _params.H*_params.W;
+		}
+		
+		boolean isNthRowEmpty = false;
+		int apos; int alen; int[] aix; double[] avals;
+		private void getNthSparseRow(int n) {
+			if( !_params.input2.sparseBlock.isEmpty(n) ) {
+				apos = _params.input2.sparseBlock.pos(n);
+				alen = _params.input2.sparseBlock.size(n);
+				aix = _params.input2.sparseBlock.indexes(n);
+				avals = _params.input2.sparseBlock.values(n);
+				isNthRowEmpty = false;
+			}
+			else
+				isNthRowEmpty = true;
+		}
+		int fromIndex = -1; // as per C
+		int toIndex = -1; // as per C
+		private int setSearchIndex(int from, int searchVal) {
+			for(int j = from; j < apos+alen; j++) {
+				if(aix[j] > searchVal)
+					return Math.max(from, j-1);
+			}
+			return apos+alen;
+		}
+		private double getValue(int col) {
+			if( !isNthRowEmpty ) {
+				int index = Arrays.binarySearch(aix, fromIndex, toIndex, col);
+				return index > 0 ? avals[index] : 0;
+			}
+			return 0;
+		}
+		
+		@Override
+		public Long call() throws Exception {
+			final int CPQ = C*P*Q;
+			for(int n = _rl; n < _ru; n++)  {
+				getNthSparseRow(n);
+				int out_index = n*CPQ;
+				for (int c = 0; c < C; c++) {
+					// This allows for binary search in getValue to be more efficient
+					fromIndex = setSearchIndex(apos, c*HW);
+					toIndex = Math.min(apos+alen, setSearchIndex(fromIndex, (c+1)*HW));
+					for (int p = 0; p < P; p++) {
+						for (int q = 0; q < Q; q++, out_index++) {
+							for (int h = _params.start_indexes_h[p]; h < _params.end_indexes_h[p]; h++) {
+								for (int w = _params.start_indexes_w[q]; w < _params.end_indexes_w[q]; w++) {
+									outputArray[out_index] = Math.max(outputArray[out_index], getValue(c*HW +  h*W + w));
+								}
+							}
+						}
+					}
+				}
+			}
+			return 0L;
+		}
+	}
+	
+	/**
+	 * Performs the operation: (X > 0) * dout
+	 */
+	public static class ReluBackward implements Callable<Long> 
+	{
+		public int _rl; public int _ru; 
+		private final ConvolutionParameters _params; 
+		double [] outputArray; int numOutCols;
+		public ReluBackward(int rl, int ru, ConvolutionParameters params) {
+			_rl = rl; _ru = ru;
+			_params = params;
+			outputArray= params.output.getDenseBlock();
+			numOutCols = params.input1.getNumColumns();
+		}
+		
+		@Override
+		public Long call() throws Exception {
+			if(!_params.input1.isInSparseFormat() && !_params.input2.isInSparseFormat()) {
+				double [] inputArr = _params.input1.getDenseBlock();
+				double [] doutArr = _params.input2.getDenseBlock();
+				for(int i = _rl*numOutCols; i < _ru*numOutCols; i++) {
+					outputArray[i] = inputArr[i] > 0 ? doutArr[i] : 0;
+				}
+			}
+			else {
+				// Perform (X > 0)
+				ConvolutionUtils.scalarOperations(_params.input1, outputArray, _rl*numOutCols, numOutCols, _rl, _ru, 
+						InstructionUtils.parseScalarBinaryOperator(">", false, 0));
+				// Then perform (X > 0) * dout
+				ConvolutionUtils.binaryOperationInPlace(_params.input2, outputArray, _rl*numOutCols, numOutCols, _rl, _ru, 
+						LibMatrixDNN._binaryElementWiseMultiplication);
+			}
+			return 0L;
+		}
 	}
 	
 	/**

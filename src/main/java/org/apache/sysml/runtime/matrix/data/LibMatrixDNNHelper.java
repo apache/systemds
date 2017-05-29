@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.Callable;
 
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
@@ -32,16 +31,10 @@ import org.apache.sysml.utils.NativeHelper;
 
 public class LibMatrixDNNHelper {
 	
-	private static void computeTensorIndexes(int j, int [] ret, int H, int W) {
-		ret[0] = j / (H*W);
-		ret[1] = (j - ret[0]*(H*W))/W;
-		ret[2] = j % W;
-	}
-	
-	public static boolean isEligibleForConv2dSparse(ConvolutionParameters params) {
-		// NativeHelper.conv2dSparse only if filter is dense and input is sparse
-		return params.enableNative && params.input1.isInSparseFormat() && !params.input2.isInSparseFormat();
-	}
+	// *********************************** low-level runtime operator selection ***********************************************
+	// *********************************** based on runtime properties (sparsity, native, etc) ********************************
+	// These methods help reduce branch miss predictions and instruction-cache misses.
+	// Also, they simplify the design of LibMatrixDNN and help in code-maintenance.
 	
 	/**
 	 * Factory method that returns list of callable tasks for performing maxpooling operation
@@ -56,9 +49,37 @@ public class LibMatrixDNNHelper {
 		int taskSize = (int)(Math.ceil((double)params.N / k));
 		for(int i = 0; i*taskSize < params.N; i++) {
 			if(params.input1.isInSparseFormat())
-				ret.add(new SparseMaxPooling(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
+				ret.add(new LibMatrixDNNPoolingHelper.SparseMaxPooling(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
 			else
-				ret.add(new DenseMaxPooling(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
+				ret.add(new LibMatrixDNNPoolingHelper.DenseMaxPooling(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
+		}
+		return ret;
+	}
+	
+	/**
+	 * Factory method that returns list of callable tasks for performing maxpooling backward operation
+	 * 
+	 * @param params convolution parameters
+	 * @return list of callable tasks for performing maxpooling backward operation
+	 * @throws DMLRuntimeException if error occurs
+	 */
+	public static ArrayList<Callable<Long>> getMaxPoolingBackwardWorkers(ConvolutionParameters params, boolean performReluBackward) throws DMLRuntimeException {
+		ArrayList<Callable<Long>> ret = new ArrayList<Callable<Long>>();
+		int k = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
+		int taskSize = (int)(Math.ceil((double)params.N / k));
+		for(int i = 0; i*taskSize < params.N; i++) {
+			if(!params.input1.isInSparseFormat()) {
+				if(!params.input2.isInSparseFormat()) 
+					ret.add(new LibMatrixDNNPoolingBackwardHelper.PoolingBackwardDenseDense(i*taskSize, Math.min((i+1)*taskSize, params.N), params, performReluBackward));
+				else
+					ret.add(new LibMatrixDNNPoolingBackwardHelper.PoolingBackwardDenseSparse(i*taskSize, Math.min((i+1)*taskSize, params.N), params, performReluBackward));
+			}
+			else {
+				if(!params.input2.isInSparseFormat()) 
+					ret.add(new LibMatrixDNNPoolingBackwardHelper.PoolingBackwardSparseDense(i*taskSize, Math.min((i+1)*taskSize, params.N), params, performReluBackward));
+				else
+					ret.add(new LibMatrixDNNPoolingBackwardHelper.PoolingBackwardSparseSparse(i*taskSize, Math.min((i+1)*taskSize, params.N), params, performReluBackward));
+			}
 		}
 		return ret;
 	}
@@ -106,16 +127,101 @@ public class LibMatrixDNNHelper {
 		boolean isEmptyDenseInput = !params.input1.isInSparseFormat() && params.input1.denseBlock == null;
 		
 		for(int i = 0; i*taskSize < params.N; i++) {
-			if(isEligibleForConv2dSparse(params)) 
-				ret.add(new SparseNativeConv2d(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
+			if(LibMatrixDNN.isEligibleForConv2dSparse(params)) 
+				ret.add(new LibMatrixDNNConv2dHelper.SparseNativeConv2d(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
 			else if(!isEmptyDenseInput && allChannels)
-				ret.add(new LoopedIm2ColConv2dAllChannels(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
+				ret.add(new LibMatrixDNNConv2dHelper.LoopedIm2ColConv2dAllChannels(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
 			else if(!isEmptyDenseInput && !allChannels)
-				ret.add(new LoopedIm2ColConv2dOneChannel(i*taskSize, Math.min((i+1)*taskSize, params.N), params, filters));
+				ret.add(new LibMatrixDNNConv2dHelper.LoopedIm2ColConv2dOneChannel(i*taskSize, Math.min((i+1)*taskSize, params.N), params, filters));
 			else
 				throw new DMLRuntimeException("Unsupported operator");
 		}
 		return ret;
+	}
+	
+	/**
+	 * Factory method that returns list of callable tasks for performing conv2d backward data
+	 * 
+	 * @param params convolution parameters
+	 * @return list of callable tasks for performing conv2d
+	 * @throws DMLRuntimeException if error occurs
+	 */
+	public static ArrayList<Callable<Long>> getConv2dBackwardDataWorkers(ConvolutionParameters params) throws DMLRuntimeException {
+		ArrayList<Callable<Long>> ret = new ArrayList<Callable<Long>>();
+		
+		// Try to create as many tasks as threads. 
+		// Creating more tasks will help in tail, but would have additional overhead of maintaining the intermediate
+		// data structures such as im2col blocks.
+		int k = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
+		int taskSize = (int)(Math.ceil((double)params.N / k));
+		
+		boolean isEmptyDenseInput = (!params.input1.isInSparseFormat() && params.input1.denseBlock == null) || 
+																(!params.input2.isInSparseFormat() && params.input2.denseBlock == null);
+		
+		for(int i = 0; i*taskSize < params.N; i++) {
+			if(LibMatrixDNN.isEligibleForConv2dBackwardDataDense(params)) 
+				ret.add(new LibMatrixDNNConv2dBackwardDataHelper.SparseNativeConv2dBackwardDataDense(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
+			else if(!isEmptyDenseInput)
+				ret.add(new LibMatrixDNNConv2dBackwardDataHelper.Conv2dBackwardDataDense(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
+			else
+				throw new DMLRuntimeException("Unsupported operator");
+		}
+			
+		return ret;
+	}
+	
+	// *********************************** relu backward operator ******************************************************
+	
+	/**
+	 * Performs the operation: (X > 0) * dout
+	 */
+	public static class ReluBackward implements Callable<Long> 
+	{
+		public int _rl; public int _ru; 
+		private final ConvolutionParameters _params; 
+		double [] outputArray; int numOutCols;
+		public ReluBackward(int rl, int ru, ConvolutionParameters params) {
+			_rl = rl; _ru = ru;
+			_params = params;
+			outputArray= params.output.getDenseBlock();
+			numOutCols = params.input1.getNumColumns();
+		}
+		
+		@Override
+		public Long call() throws Exception {
+			if(!_params.input1.isInSparseFormat() && !_params.input2.isInSparseFormat()) {
+				double [] inputArr = _params.input1.getDenseBlock();
+				double [] doutArr = _params.input2.getDenseBlock();
+				for(int i = _rl*numOutCols; i < _ru*numOutCols; i++) {
+					outputArray[i] = inputArr[i] > 0 ? doutArr[i] : 0;
+				}
+			}
+			else {
+				// Perform (X > 0)
+				ConvolutionUtils.scalarOperations(_params.input1, outputArray, _rl*numOutCols, numOutCols, _rl, _ru, 
+						InstructionUtils.parseScalarBinaryOperator(">", false, 0));
+				// Then perform (X > 0) * dout
+				ConvolutionUtils.binaryOperationInPlace(_params.input2, outputArray, _rl*numOutCols, numOutCols, _rl, _ru, 
+						LibMatrixDNN._binaryElementWiseMultiplication);
+			}
+			return 0L;
+		}
+	}
+	
+	// *********************************** utility methods ******************************************************
+	
+	/**
+	 * Computes tensor indexes from column index such that column index  is equal to ret[0]*HW + ret[1]*W + ret[2]
+	 * 
+	 * @param j column index
+	 * @param ret tensor indexes
+	 * @param H second last dimension
+	 * @param W last dimension
+	 */
+	static void computeTensorIndexes(int j, int [] ret, int H, int W) {
+		ret[0] = j / (H*W);
+		ret[1] = (j - ret[0]*(H*W))/W;
+		ret[2] = j % W;
 	}
 	
 	//Split a filter of size [K, CRS] into c filters of [K, RS]
@@ -162,351 +268,8 @@ public class LibMatrixDNNHelper {
 		return ret;
 	}
 	
-	/**
-	 * Performs the dense maxpooling
-	 */
-	public static class DenseMaxPooling implements Callable<Long> 
-	{
-		public int _rl; public int _ru; 
-		private final ConvolutionParameters _params;
-		double [] inputArray; double [] outputArray;
-		int C; int P; int Q; int W;
-		public DenseMaxPooling(int rl, int ru, ConvolutionParameters params) {
-			_rl = rl; _ru = ru;
-			_params = params;
-			inputArray = params.input1.getDenseBlock();
-			outputArray = params.output.getDenseBlock();
-			C = params.C; P = params.P; Q = params.Q; W = params.W;
-		}
-		
-		@Override
-		public Long call() throws Exception {
-			final int HW = _params.H*_params.W;
-			final int CHW = _params.C*_params.H*_params.W;
-			final int CPQ = C*P*Q;
-			for(int n = _rl; n < _ru; n++)  {
-				final int inOffset = n*CHW;
-				int out_index = n*CPQ;
-				for (int c = 0; c < C; c++) {
-					final int inOffset1 = inOffset + c*HW;
-					for (int p = 0; p < P; p++) {
-						for (int q = 0; q < Q; q++, out_index++) {
-							for (int h = _params.start_indexes_h[p]; h < _params.end_indexes_h[p]; h++) {
-								for (int w = _params.start_indexes_w[q]; w < _params.end_indexes_w[q]; w++) {
-									outputArray[out_index] = Math.max(outputArray[out_index], inputArray[inOffset1 +  h*W + w]);
-								}
-							}
-						}
-					}
-				}
-			}
-			return 0L;
-		}
-	}
-	
-	/**
-	 * Performs the sparse maxpooling
-	 */
-	public static class SparseMaxPooling implements Callable<Long> 
-	{
-		public int _rl; public int _ru; 
-		private final ConvolutionParameters _params;
-		int HW;
-		double [] outputArray;
-		int C; int P; int Q; int W;
-		public SparseMaxPooling(int rl, int ru, ConvolutionParameters params) {
-			_rl = rl; _ru = ru;
-			_params = params;
-			outputArray = params.output.getDenseBlock();
-			C = params.C; P = params.P; Q = params.Q; W = params.W;
-			HW = _params.H*_params.W;
-		}
-		
-		boolean isNthRowEmpty = false;
-		int apos; int alen; int[] aix; double[] avals;
-		private void getNthSparseRow(int n) {
-			if( !_params.input2.sparseBlock.isEmpty(n) ) {
-				apos = _params.input2.sparseBlock.pos(n);
-				alen = _params.input2.sparseBlock.size(n);
-				aix = _params.input2.sparseBlock.indexes(n);
-				avals = _params.input2.sparseBlock.values(n);
-				isNthRowEmpty = false;
-			}
-			else
-				isNthRowEmpty = true;
-		}
-		int fromIndex = -1; // as per C
-		int toIndex = -1; // as per C
-		private int setSearchIndex(int from, int searchVal) {
-			for(int j = from; j < apos+alen; j++) {
-				if(aix[j] > searchVal)
-					return Math.max(from, j-1);
-			}
-			return apos+alen;
-		}
-		private double getValue(int col) {
-			if( !isNthRowEmpty ) {
-				int index = Arrays.binarySearch(aix, fromIndex, toIndex, col);
-				return index > 0 ? avals[index] : 0;
-			}
-			return 0;
-		}
-		
-		@Override
-		public Long call() throws Exception {
-			final int CPQ = C*P*Q;
-			for(int n = _rl; n < _ru; n++)  {
-				getNthSparseRow(n);
-				int out_index = n*CPQ;
-				for (int c = 0; c < C; c++) {
-					// This allows for binary search in getValue to be more efficient
-					fromIndex = setSearchIndex(apos, c*HW);
-					toIndex = Math.min(apos+alen, setSearchIndex(fromIndex, (c+1)*HW));
-					for (int p = 0; p < P; p++) {
-						for (int q = 0; q < Q; q++, out_index++) {
-							for (int h = _params.start_indexes_h[p]; h < _params.end_indexes_h[p]; h++) {
-								for (int w = _params.start_indexes_w[q]; w < _params.end_indexes_w[q]; w++) {
-									outputArray[out_index] = Math.max(outputArray[out_index], getValue(c*HW +  h*W + w));
-								}
-							}
-						}
-					}
-				}
-			}
-			return 0L;
-		}
-	}
-	
-	/**
-	 * Performs the operation: (X > 0) * dout
-	 */
-	public static class ReluBackward implements Callable<Long> 
-	{
-		public int _rl; public int _ru; 
-		private final ConvolutionParameters _params; 
-		double [] outputArray; int numOutCols;
-		public ReluBackward(int rl, int ru, ConvolutionParameters params) {
-			_rl = rl; _ru = ru;
-			_params = params;
-			outputArray= params.output.getDenseBlock();
-			numOutCols = params.input1.getNumColumns();
-		}
-		
-		@Override
-		public Long call() throws Exception {
-			if(!_params.input1.isInSparseFormat() && !_params.input2.isInSparseFormat()) {
-				double [] inputArr = _params.input1.getDenseBlock();
-				double [] doutArr = _params.input2.getDenseBlock();
-				for(int i = _rl*numOutCols; i < _ru*numOutCols; i++) {
-					outputArray[i] = inputArr[i] > 0 ? doutArr[i] : 0;
-				}
-			}
-			else {
-				// Perform (X > 0)
-				ConvolutionUtils.scalarOperations(_params.input1, outputArray, _rl*numOutCols, numOutCols, _rl, _ru, 
-						InstructionUtils.parseScalarBinaryOperator(">", false, 0));
-				// Then perform (X > 0) * dout
-				ConvolutionUtils.binaryOperationInPlace(_params.input2, outputArray, _rl*numOutCols, numOutCols, _rl, _ru, 
-						LibMatrixDNN._binaryElementWiseMultiplication);
-			}
-			return 0L;
-		}
-	}
-	
-	/**
-	 * Performs convolution via: partialCopy1(filter %*% im2col(input)) = output.
-	 * This operator has less memory pressure than LoopedIm2ColConv2dAllChannels.
-	 */
-	public static class LoopedIm2ColConv2dOneChannel implements Callable<Long> 
-	{
-		public int _rl; public int _ru; 
-		private final ConvolutionParameters _params; ArrayList<MatrixBlock> _filters;
-		public LoopedIm2ColConv2dOneChannel(int rl, int ru, ConvolutionParameters params, ArrayList<MatrixBlock> filters) {
-			_rl = rl; _ru = ru;
-			_params = params; 
-			_filters = filters;
-		}
-		
-		@Override
-		public Long call() throws Exception {
-			int PQ = _params.P*_params.Q; int K = _params.K;
-			int RS = _params.R*_params.S;
-			MatrixBlock im2ColOutBlock = new MatrixBlock(RS, PQ, false);
-			im2ColOutBlock.allocateDenseBlock();
-			LibMatrixDNNIm2ColHelper.Im2colWorker im2ColWorker = LibMatrixDNNIm2ColHelper.Im2colWorker.getWorker( _params.input1, im2ColOutBlock, _params, false);
-			long time1 = 0; long time2 = 0;
-			for(int n = _rl; n < _ru; n++)  {
-				for(int c = 0; c < _params.C; c++)  {
-					// im2col(input) => _im2ColOutBlock
-					long t1 = DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS ? System.nanoTime() : 0;
-					im2ColWorker.execute(n, c);
-					long t2 = DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS ? System.nanoTime() : 0;
-					
-					// filter %*% _im2ColOutBlock => matMultOutBlock
-					MatrixBlock matMultOutBlock = new MatrixBlock(K, PQ, false);
-					singleThreadedMatMult(_filters.get(c), im2ColOutBlock, matMultOutBlock, false, true, _params);
-					long t3 = DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS ? System.nanoTime() : 0;
-					
-					if(DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS) {
-						time1 += t2 - t1;
-						time2 += t3 - t2;
-					}
-					
-					// Add the matrix matMultOutBlock of shape [K X PQ] to params.output.denseBlock + destPos
-					add(matMultOutBlock, _params.output.getDenseBlock(), n*K*PQ, K, PQ);
-				}
-			}
-			if(_params.bias != null) {
-				// bias is always converted to dense format
-				addBias(_rl, _ru, _params.output.getDenseBlock(), _params.bias.getDenseBlock(), K, PQ);
-			}
-			if(DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS) {
-				LibMatrixDNN.loopedConvIm2ColTime.addAndGet(time1);
-				LibMatrixDNN.loopedConvMatMultTime.addAndGet(time2);
-			}
-			return 0L;
-		}
-		
-		// Copy the matrix src of shape [K X PQ] to params.output.denseBlock + destPos
-		private void add(MatrixBlock src, double [] dest, int destPos, int K, int PQ) {
-			// Copying is required as LibMatrixMult.matrixMult (and/or Java) is not pointer aware.
-			// This is not required in Native implementation
-			if(!src.isEmptyBlock()) {
-				if(src.isInSparseFormat()) {
-					// Copy the sparse matrix matMultOutBlock of shape [K X PQ] to 
-					// params.output.denseBlock + destPos
-					for(int k = 0; k < src.getNumRows(); k++) {
-						if( !src.sparseBlock.isEmpty(k) ) {
-							int apos = src.sparseBlock.pos(k);
-							int alen = src.sparseBlock.size(k);
-							int[] aix = src.sparseBlock.indexes(k);
-							double[] avals = src.sparseBlock.values(k);
-							for(int j = apos; j < apos+alen; j++) {
-								int pqIndex = aix[j];
-								dest[destPos + k*PQ + pqIndex ] += avals[j];
-							}
-						}
-					}
-				}
-				else {
-					for(int i = 0; i < K * PQ; i++) {
-						dest[destPos+i] += src.denseBlock[i];
-					}
-				}
-			}
-		}
-	}	
-	
-	/**
-	 * Performs convolution via: partialCopy1(filter %*% im2col(input)) = output
-	 */
-	public static class LoopedIm2ColConv2dAllChannels implements Callable<Long> 
-	{
-		public int _rl; public int _ru; 
-		private final ConvolutionParameters _params;
-		public LoopedIm2ColConv2dAllChannels(int rl, int ru, ConvolutionParameters params) {
-			_rl = rl; _ru = ru;
-			_params = params;
-		}
-
-		@Override
-		public Long call() throws Exception {
-			int PQ = _params.P*_params.Q; int K = _params.K; int CRS = _params.C*_params.R*_params.S;
-			MatrixBlock im2ColOutBlock = new MatrixBlock(CRS, PQ, false);
-			im2ColOutBlock.allocateDenseBlock();
-			LibMatrixDNNIm2ColHelper.Im2colWorker im2ColWorker = LibMatrixDNNIm2ColHelper.Im2colWorker.getWorker( _params.input1, im2ColOutBlock, _params, true);
-			long time1 = 0; long time2 = 0;
-			for(int n = _rl; n < _ru; n++)  {
-				// im2col(input) => _im2ColOutBlock
-				long t1 = DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS ? System.nanoTime() : 0;
-				im2ColWorker.execute(n);
-				long t2 = DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS ? System.nanoTime() : 0;
-				
-				// filter %*% _im2ColOutBlock => matMultOutBlock
-				MatrixBlock matMultOutBlock = new MatrixBlock(K, PQ, false);
-				singleThreadedMatMult(_params.input2, im2ColOutBlock, matMultOutBlock, false, true, _params);
-				long t3 = DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS ? System.nanoTime() : 0;
-				
-				if(DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS) {
-					time1 += t2 - t1;
-					time2 += t3 - t2;
-				}
-				
-				// Copy the matrix matMultOutBlock of shape [K X PQ] to params.output.denseBlock + destPos
-				partialCopy1(matMultOutBlock, _params.output.getDenseBlock(), n*K*PQ, K, PQ);
-			}
-			if(_params.bias != null) {
-				// bias is always converted to dense format
-				addBias(_rl, _ru, _params.output.getDenseBlock(), _params.bias.getDenseBlock(), K, PQ);
-			}
-			if(DMLScript.STATISTICS && LibMatrixDNN.DISPLAY_STATISTICS) {
-				LibMatrixDNN.loopedConvIm2ColTime.addAndGet(time1);
-				LibMatrixDNN.loopedConvMatMultTime.addAndGet(time2);
-			}
-			return 0L;
-		}
-		
-		// Copy the matrix src of shape [K X PQ] to params.output.denseBlock + destPos
-		private void partialCopy1(MatrixBlock src, double [] dest, int destPos, int K, int PQ) {
-			// Copying is required as LibMatrixMult.matrixMult (and/or Java) is not pointer aware.
-			// This is not required in Native implementation
-			if(!src.isEmptyBlock()) {
-				if(src.isInSparseFormat()) {
-					// Copy the sparse matrix matMultOutBlock of shape [K X PQ] to 
-					// params.output.denseBlock + destPos
-					for(int k = 0; k < src.getNumRows(); k++) {
-						if( !src.sparseBlock.isEmpty(k) ) {
-							int apos = src.sparseBlock.pos(k);
-							int alen = src.sparseBlock.size(k);
-							int[] aix = src.sparseBlock.indexes(k);
-							double[] avals = src.sparseBlock.values(k);
-							for(int j = apos; j < apos+alen; j++) {
-								int pqIndex = aix[j];
-								dest[destPos + k*PQ + pqIndex ] = avals[j];
-							}
-						}
-					}
-				}
-				else 
-					System.arraycopy(src.denseBlock, 0, dest, destPos, K * PQ);
-			}
-		}
-	}
-	
-	/**
-	 * This operator is used only if native is enabled, filter is dense and input is sparse
-	 */
-	public static class SparseNativeConv2d implements Callable<Long> 
-	{
-		public int _rl; public int _ru; 
-		private final ConvolutionParameters _params;
-		public SparseNativeConv2d(int rl, int ru, ConvolutionParameters params) {
-			_rl = rl; _ru = ru;
-			_params = params;
-		}
-
-		@Override
-		public Long call() throws Exception {
-			int KPQ = _params.K*_params.P*_params.Q;
-			double[] temp = new double[KPQ];
-			for(int n = _rl; n < _ru; n++)  {
-				if( !_params.input1.getSparseBlock().isEmpty(n) ) {
-					int apos = _params.input1.getSparseBlock().pos(n);
-					int alen = _params.input1.getSparseBlock().size(n);
-					int[] aix = _params.input1.getSparseBlock().indexes(n);
-					double[] avals = _params.input1.getSparseBlock().values(n);
-					NativeHelper.conv2dSparse(apos, alen, aix, avals, _params.input2.getDenseBlock(), temp, 
-							1, _params.C, _params.H, _params.W, _params.K, _params.R, _params.S, 
-							_params.stride_h, _params.stride_w, _params.pad_h, _params.pad_w, _params.P, _params.Q, 1);
-					System.arraycopy(temp, 0, _params.output.denseBlock, n*KPQ, KPQ);
-				}
-			}
-			return 0L;
-		}
-	}
-	
 	// Single-threaded matrix multiplication
-	private static void singleThreadedMatMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, 
+	static void singleThreadedMatMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, 
 			boolean recomputeNNZM1, boolean recomputeNNZM2, ConvolutionParameters params) throws DMLRuntimeException {
 		if(!params.enableNative || m1.isInSparseFormat() || m2.isInSparseFormat()) {
 			if(recomputeNNZM1)
@@ -525,7 +288,7 @@ public class LibMatrixDNNHelper {
 		}
 	}
 	
-	private static void addBias(int _rl, int _ru, double [] outputArr, double [] biasArr, int K, int PQ) {
+	static void addBias(int _rl, int _ru, double [] outputArr, double [] biasArr, int K, int PQ) {
 		// double [] biasArr = _params.bias.getDenseBlock();
 		
 		int index = _rl*K*PQ;
@@ -538,4 +301,212 @@ public class LibMatrixDNNHelper {
 		}
 	}
 	
+	/**
+	 * Returns the index of cell with maximum value. This method is optimized for dense input
+	 * 
+	 * @param p output feature map height
+	 * @param q output feature map width
+	 * @param inputOffset offset to be used for input index
+	 * @param inputArray input array
+	 * @param params convolution parameters
+	 * @param performReluBackward perform ReLU backward
+	 * @return index of cell with maximum value
+	 */
+	static int getMaxIndex(int p, int q, int inputOffset, double [] inputArray, ConvolutionParameters params, boolean performReluBackward) {
+		int start_index_h = params.start_indexes_h[p];
+		int end_index_h = params.end_indexes_h[p];
+		int start_index_w = params.start_indexes_w[q];
+		int end_index_w = params.end_indexes_w[q];
+		
+		int maxIndex = -1; 
+		double maxVal = -Double.MAX_VALUE;
+		
+		// Note: We do not treat pad as zero and hence we don't do:  
+		// maxVal = 0 
+		// if start_index_h < 0 || start_index_w < 0 || end_index_h >= params.H || end_index_w >= params.W
+		
+		// Find maxIndex
+		double currDoutVal = -1;
+		for (int h = start_index_h; h < end_index_h; h++) {
+			for (int w = start_index_w; w < end_index_w; w++) {
+				currDoutVal = inputArray[inputOffset +  h*params.W + w];
+				currDoutVal = performReluBackward && currDoutVal < 0 ? 0 : currDoutVal;
+				if(maxVal < currDoutVal) {
+					maxIndex = inputOffset +  h*params.W + w;
+					maxVal = currDoutVal;
+				}
+			}
+		}
+		return maxIndex;
+	}
+	
+	/**
+	 * Returns the index of cell with maximum value. This method is optimized for sparse input
+	 * 
+	 * @param p output feature map height
+	 * @param q output feature map width
+	 * @param inputOffset offset to be used for input index
+	 * @param n number of images
+	 * @param c number of channels 
+	 * @param input input matrix
+	 * @param params convolution parameters
+	 * @param performReluBackward perform ReLU on input
+	 * @return index of the cell with maximum value
+	 * @throws DMLRuntimeException if error occurs
+	 */
+	static int getMaxIndexSparse(int p, int q, int inputOffset, int n, int c, MatrixBlock input, ConvolutionParameters params, boolean performReluBackward) throws DMLRuntimeException {
+		if(!input.isInSparseFormat())
+			throw new DMLRuntimeException("Incorrect usage: Only sparse format supported");
+		
+		int [] tensorIndexes = new int[3];
+		
+		int start_index_h = params.start_indexes_h[p];
+		int end_index_h = params.end_indexes_h[p];
+		int start_index_w = params.start_indexes_w[q];
+		int end_index_w = params.end_indexes_w[q];
+		
+		int maxIndex = -1; 
+		double maxVal = -Double.MAX_VALUE;
+		
+		// Note: We do not treat pad as zero and hence we don't do:  
+		// maxVal = 0 
+		// if start_index_h < 0 || start_index_w < 0 || end_index_h >= params.H || end_index_w >= params.W
+
+		// input.isEmptyBlock() check is done by the caller
+		if( !input.sparseBlock.isEmpty(n) ) {
+			// Find maxIndex
+			int apos = input.sparseBlock.pos(n);
+			int alen = input.sparseBlock.size(n);
+			int[] aix = input.sparseBlock.indexes(n);
+			double[] avals = input.sparseBlock.values(n);
+			for(int j=apos; j<apos+alen; j++) {
+				computeTensorIndexes(aix[j], tensorIndexes, params.H, params.W);
+				if(c != tensorIndexes[0])
+					continue;
+				int h = tensorIndexes[1];
+				int w = tensorIndexes[2];
+				if(h >= start_index_h && h < end_index_h && w >= start_index_w && w < end_index_w) {
+					double val = performReluBackward && avals[j] < 0 ? 0 : avals[j]; 
+					if(maxVal < val) {
+						maxIndex = inputOffset +  h*params.W + w;
+						maxVal = val;
+					}
+				}
+			}
+		}
+		else {
+			maxIndex = inputOffset;
+		}
+		return maxIndex;
+	}
+	
+	// Returns the row of matrix in dense format
+	static void getRowInDenseFormat(MatrixBlock input, int n, double []  ret) throws DMLRuntimeException {
+		if(input.getNumColumns() != ret.length) {
+			throw new DMLRuntimeException("Invalid parameters");
+		}
+		// Use temporary array to avoid binary search
+		if(input.isInSparseFormat()) {
+			Arrays.fill(ret, 0);
+			if( !input.sparseBlock.isEmpty(n) ) {
+				int apos = input.sparseBlock.pos(n);
+				int alen = input.sparseBlock.size(n);
+				int[] aix = input.sparseBlock.indexes(n);
+				double[] avals = input.sparseBlock.values(n);
+				for(int j=apos; j<apos+alen; j++)
+					ret[ aix[j] ] = avals[j];
+			}
+		}
+		else {
+			System.arraycopy(input.getDenseBlock(), n*input.getNumColumns(), ret, 0, input.getNumColumns());
+		}
+	}
+	
+	// ------------------------------------------------------------------------------------------------------
+	// Since col2im always operates on intermediate generated as part of matmult, it is not clear which operator to select apriori.
+	// Therefore, it is provided as utility function rather than an operator (like im2col or rotate180)
+	
+	//Converts input: PQ X CRS matrix and writes to 1 X CHW
+	static void doCol2imOverSingleImage(int outputN, MatrixBlock input, ConvolutionParameters params) throws DMLRuntimeException {
+		if(input.rlen != params.P*params.Q || input.clen != params.C*params.R*params.S) {
+			throw new DMLRuntimeException("Incorrect input dimensions");
+		}
+		
+		double [] outputArray = null;
+		if (!params.output.isInSparseFormat())
+			outputArray = params.output.getDenseBlock();
+		else {
+			throw new DMLRuntimeException("Only dense output is implemented");
+		}
+		
+		if(!input.isInSparseFormat()) {
+			double [] inputArray = input.getDenseBlock();
+			doCol2IMDenseInput(0, outputN, inputArray, outputArray, params);
+		}
+		else {
+			if(!input.isEmptyBlock()) {
+				int [] tensorIndexes = new int[3];
+				for(int i = 0; i < input.getNumRows(); i++) {
+					if( !input.sparseBlock.isEmpty(i) ) {
+						computeTensorIndexes(i, tensorIndexes, params.P, params.Q);
+						int p = tensorIndexes[1];
+						int q = tensorIndexes[2];
+						if(tensorIndexes[0] != 0) 
+							throw new DMLRuntimeException("Incorrect tensor indexes: " + tensorIndexes[0] + " != 0 <" + p + " " + q + " " + tensorIndexes[0] + params.P + " " + params.Q + ">");
+						
+						int apos = input.sparseBlock.pos(i);
+						int alen = input.sparseBlock.size(i);
+						int[] aix = input.sparseBlock.indexes(i);
+						double[] avals = input.sparseBlock.values(i);
+						for(int j = apos; j < apos+alen; j++) {
+							computeTensorIndexes(aix[j], tensorIndexes, params.R, params.S);
+							int c = tensorIndexes[0];
+							int r = tensorIndexes[1];
+							int s = tensorIndexes[2];
+							int h = p*params.stride_h + r - params.pad_h;
+							int w = q*params.stride_w + s - params.pad_w;
+							if(h >= 0 && h < params.H && w >= 0 && w < params.W) {
+								int outIndex = outputN*params.C*params.H*params.W + c*params.H*params.W + h*params.W + w;
+								outputArray[outIndex] += avals[j];
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	// Converts input: PQ X CRS matrix and writes to 1 X CHW if inputN == 0
+	// Or converts input: NPQ X CRS matrix and writes to N X CHW 
+	private static void doCol2IMDenseInput(int inputN, int outputN, double [] inputArray, double [] outputArray, ConvolutionParameters params) throws DMLRuntimeException {
+		final int outputNOffset = outputN*params.C*params.H*params.W;
+		for (int p = 0; p < params.P; p++) {
+			// h = p*params.stride_h + r - params.pad_h
+			//   = r + hOffset
+			// Based on restrictions: h >= 0 and r >= 0 and h < params.H and r < params.R, we get
+			// max(0, - hOffset) <= r < min(params.R, params.H - hOffset)
+			final int hOffset = p*params.stride_h - params.pad_h;
+			final int rStart = Math.max(0, - hOffset);
+			final int rEnd = Math.min(params.R, params.H - hOffset);
+			for (int q = 0; q < params.Q; q++) {
+				// Using the same logic as above on following:
+				// w = q*params.stride_w + s - params.pad_w
+				final int wOffset = q*params.stride_w - params.pad_w;
+				final int sStart = Math.max(0, - wOffset);
+				final int sEnd = Math.min(params.S, params.W - wOffset);
+				final int tempOffset = (inputN*params.P*params.Q + p*params.Q + q)*params.C*params.R*params.S;
+				for (int c = 0; c < params.C; c++) {
+					final int outOffset = outputNOffset + c*params.H*params.W;
+					final int inputOffset = tempOffset + c*params.R*params.S;
+					for (int r = rStart; r < rEnd; r++) {
+						for (int s = sStart; s < sEnd; s++) {
+							int inputIndex = inputOffset + r*params.S + s;
+							int outIndex = outOffset + (hOffset + r)*params.W + wOffset + s;
+							outputArray[outIndex] += inputArray[inputIndex];
+						}
+					}
+				}
+			}
+		}
+	}
 }

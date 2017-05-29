@@ -189,14 +189,10 @@ method as DataFrame or NumPy array.
 
 ### Support for NumPy's universal functions
 
-The matrix class also supports most of NumPy's universal functions (i.e. ufuncs).
-The current version of NumPy explicitly disables overriding ufunc, but this should be enabled in next release. 
-Until then to test above code, please use:
+The matrix class also supports most of NumPy's universal functions (i.e. ufuncs):
 
 ```bash
-git clone https://github.com/niketanpansare/numpy.git
-cd numpy
-python setup.py install
+pip install --ignore-installed 'numpy>=1.13.0rc2'
 ```
 
 This will enable NumPy's functions to invoke matrix class:

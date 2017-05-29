@@ -48,10 +48,14 @@ public class LibSpoofPrimitives
 	// forwarded calls to LibMatrixMult
 	
 	public static double dotProduct(double[] a, double[] b, int ai, int bi, int len) {
+		if( a == null || b == null )
+			return 0;
 		return LibMatrixMult.dotProduct(a, b, ai, bi, len);
 	}
 	
 	public static double dotProduct(double[] a, double[] b, int[] aix, int ai, int bi, int len) {
+		if( a == null || b == null )
+			return 0;
 		return LibMatrixMult.dotProduct(a, b, aix, ai, bi, len);
 	}
 	

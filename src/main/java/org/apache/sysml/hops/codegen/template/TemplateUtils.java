@@ -239,7 +239,9 @@ public class TemplateUtils
 	public static RowType getRowType(Hop output, Hop input) {
 		if( HopRewriteUtils.isEqualSize(output, input) )
 			return RowType.NO_AGG;
-		else if( output.getDim1()==input.getDim1() && output.getDim2()==1 )
+		else if( output.getDim1()==input.getDim1() && output.getDim2()==1 
+			&& !(output instanceof AggBinaryOp && HopRewriteUtils
+				.isTransposeOfItself(output.getInput().get(0),input)))
 			return RowType.ROW_AGG;
 		else if( output.getDim1()==input.getDim2() && output.getDim2()==1 )
 			return RowType.COL_AGG_T;

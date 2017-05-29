@@ -218,13 +218,11 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction
 				.getLongValue();
 	}
 	
-	@SuppressWarnings("unused")
 	public void processReluBackwardInstruction(ExecutionContext ec) throws DMLRuntimeException {
 		// (X > 0) * dout
 		MatrixBlock input = ec.getMatrixInput(input1.getName());
 		MatrixBlock dout = ec.getMatrixInput(_in2.getName());
-		MatrixBlock outputBlock =  new MatrixBlock(input.getNumRows(), input.getNumColumns(), 
-			LibMatrixDNN.SUPPORTS_SPARSE_OUTPUTS && (input.isInSparseFormat() || dout.isInSparseFormat()));
+		MatrixBlock outputBlock =  new MatrixBlock(input.getNumRows(), input.getNumColumns(), (input.isInSparseFormat() || dout.isInSparseFormat()));
 		
 		if( !input.isEmpty() && !dout.isEmpty() ) {
 			outputBlock.allocateDenseOrSparseBlock();

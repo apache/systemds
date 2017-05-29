@@ -140,10 +140,39 @@ public class LibMatrixDNNHelper {
 	}
 	
 	/**
+	 * Factory method that returns list of callable tasks for performing conv2d backward filter
+	 * 
+	 * @param params convolution parameters
+	 * @return list of callable tasks for performing conv2d backward filter
+	 * @throws DMLRuntimeException if error occurs
+	 */
+	public static ArrayList<Callable<Long>> getConv2dBackwardFilterWorkers(ConvolutionParameters params) throws DMLRuntimeException {
+		ArrayList<Callable<Long>> ret = new ArrayList<Callable<Long>>();
+		// Try to create as many tasks as threads. 
+		// Creating more tasks will help in tail, but would have additional overhead of maintaining the intermediate
+		// data structures such as im2col blocks.
+		int k = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
+		int taskSize = (int)(Math.ceil((double)params.N / k));
+		
+		boolean isEmptyDenseInput = (!params.input1.isInSparseFormat() && params.input1.denseBlock == null) || 
+																(!params.input2.isInSparseFormat() && params.input2.denseBlock == null);
+		
+		for(int i = 0; i*taskSize < params.N; i++) {
+			if(LibMatrixDNN.isEligibleForConv2dBackwardFilterSparseDense(params)) 
+				ret.add(new LibMatrixDNNConv2dBackwardFilterHelper.SparseNativeConv2dBackwardFilterDense(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
+			else if(!isEmptyDenseInput)
+				ret.add(new LibMatrixDNNConv2dBackwardFilterHelper.Conv2dBackwardFilter(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
+			else
+				throw new DMLRuntimeException("Unsupported operator");
+		}
+		return ret;
+	}
+	
+	/**
 	 * Factory method that returns list of callable tasks for performing conv2d backward data
 	 * 
 	 * @param params convolution parameters
-	 * @return list of callable tasks for performing conv2d
+	 * @return list of callable tasks for performing conv2d backward data
 	 * @throws DMLRuntimeException if error occurs
 	 */
 	public static ArrayList<Callable<Long>> getConv2dBackwardDataWorkers(ConvolutionParameters params) throws DMLRuntimeException {
@@ -162,7 +191,7 @@ public class LibMatrixDNNHelper {
 			if(LibMatrixDNN.isEligibleForConv2dBackwardDataDense(params)) 
 				ret.add(new LibMatrixDNNConv2dBackwardDataHelper.SparseNativeConv2dBackwardDataDense(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
 			else if(!isEmptyDenseInput)
-				ret.add(new LibMatrixDNNConv2dBackwardDataHelper.Conv2dBackwardDataDense(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
+				ret.add(new LibMatrixDNNConv2dBackwardDataHelper.Conv2dBackwardData(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
 			else
 				throw new DMLRuntimeException("Unsupported operator");
 		}

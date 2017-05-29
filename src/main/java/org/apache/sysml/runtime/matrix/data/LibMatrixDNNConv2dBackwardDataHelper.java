@@ -30,7 +30,8 @@ import org.apache.sysml.utils.NativeHelper;
 public class LibMatrixDNNConv2dBackwardDataHelper {
 
 	/**
-	 * This operator is used only if native is enabled, filter is dense and dout is sparse
+	 * This operator is used only if native is enabled and filter is sparse. 
+	 * dout is converted into dense if sparse.
 	 */
 	public static class SparseNativeConv2dBackwardDataDense implements Callable<Long> 
 	{
@@ -61,13 +62,13 @@ public class LibMatrixDNNConv2dBackwardDataHelper {
 	}
 	
 	/**
-	 * General conv2d backward data operator is used only if native is enabled, filter is dense and dout is sparse
+	 * General conv2d backward data operator
 	 */
-	public static class Conv2dBackwardDataDense implements Callable<Long> {
+	public static class Conv2dBackwardData implements Callable<Long> {
 
 		public int _rl; public int _ru; 
 		private final ConvolutionParameters _params; 
-		public Conv2dBackwardDataDense(int rl, int ru, ConvolutionParameters params) {
+		public Conv2dBackwardData(int rl, int ru, ConvolutionParameters params) {
 			_rl = rl; _ru = ru;
 			_params = params;
 		}

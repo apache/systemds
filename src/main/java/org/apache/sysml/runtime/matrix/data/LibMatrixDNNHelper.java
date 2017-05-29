@@ -202,7 +202,7 @@ public class LibMatrixDNNHelper {
 	// *********************************** relu backward operator ******************************************************
 	
 	/**
-	 * Performs the operation: (X > 0) * dout
+	 * Performs the operation: (X gt 0) * dout
 	 */
 	public static class ReluBackward implements Callable<Long> 
 	{

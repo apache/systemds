@@ -383,12 +383,26 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction
 		else if (instOpcode.equalsIgnoreCase("conv2d_bias_add")) {
 			MatrixBlock filter = ec.getMatrixInput(_in3.getName());
 			MatrixBlock bias = ec.getMatrixInput(_in2.getName());
-			if((filter.isEmpty() || matBlock.isEmpty()) && bias.isEmpty()) {
+			if(bias.getNumRows() != params.K || bias.getNumColumns() != 1) {
+				throw new DMLRuntimeException("Incorrect shape of bias matrix: [" + bias.getNumRows() + " " + bias.getNumColumns() + "]. "
+						+ "Expected: [" + params.K + ", 1]");
+			}
+			boolean isOutputConvEmpty = filter.isEmpty() || matBlock.isEmpty();
+			if(isOutputConvEmpty && bias.isEmpty()) {
+				// bias_add(empty mb, empty mb) = empty mb
 				outputBlock = new MatrixBlock(N, K*P*Q, true);
+			}
+			else if(isOutputConvEmpty && !bias.isEmpty()) {
+				// Add bias to empty output block
+				// bias_add(empty mb, bias)
+				outputBlock = getDenseOutputBlock(N, K*P*Q);
+				for(int n = 0;  n < params.N; n++) 
+					ConvolutionUtils.fillBias(bias, outputBlock.getDenseBlock(), n, n+1, params.N, params.K, params.P*params.Q);
 			}
 			else {
 				outputBlock = getDenseOutputBlock(N, K*P*Q);
 				if(!bias.isEmpty()) {
+					// Handle situation where both input and filter are non empty, but bias is empty
 					params.bias = bias;
 				}
 				if(params.enableNative && !isFilterSparse(filter) && !matBlock.isInSparseFormat())

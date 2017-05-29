@@ -61,7 +61,7 @@ public class LibMatrixDNN {
 	private enum TaskType {
 		MaxPooling_Forward, MaxPooling_Backward, MaxPooling_Relu_Backward,
 		// Alternate approaches that we tried but the performance was unsatisfactory be included: direct, non-looped im2col
-		LoopedIm2ColConv2d, LoopedIm2ColConv2dBwdFilter, LoopedIm2ColConv2dBwdData,
+		LoopedIm2ColConv2dBwdFilter, LoopedIm2ColConv2dBwdData,
 		ReluBackward
 	}
 	
@@ -398,56 +398,6 @@ public class LibMatrixDNN {
 			ret.recomputeNonZeros();
 		}
 	}
-	
-	private static void doLoopedIm2ColConv2d(int n, MatrixBlock im2ColOutBlock, ConvolutionParameters params, double []  temp) throws DMLRuntimeException {
-		long t1 = DMLScript.STATISTICS && DISPLAY_STATISTICS ? System.nanoTime() : 0;
-		doIm2col(n, im2ColOutBlock, params, temp);
-		long t2 = DMLScript.STATISTICS && DISPLAY_STATISTICS ? System.nanoTime() : 0;
-		
-		MatrixBlock matMultOutBlock = new MatrixBlock(params.K, params.P*params.Q, false);
-		singleThreadedMatMult(params.input2, im2ColOutBlock, matMultOutBlock, false, true, params);
-		
-		long t3 = DMLScript.STATISTICS && DISPLAY_STATISTICS ? System.nanoTime() : 0;
-		
-		if(DMLScript.STATISTICS && DISPLAY_STATISTICS) {
-			loopedConvIm2ColTime.addAndGet(t2 - t1);
-			loopedConvMatMultTime.addAndGet(t3 - t2);
-		}
-		
-		// -----------------------------------------------------------------------------
-		// Copying is required as LibMatrixMult.matrixMult (and/or Java) is not pointer aware.
-		// This is not required in Native implementation
-		int destPos = n*params.K*params.P*params.Q;
-		int length = params.K*params.P*params.Q;
-		if(!matMultOutBlock.isEmptyBlock()) {
-			if(matMultOutBlock.isInSparseFormat()) {
-				// Copy the sparse matrix matMultOutBlock of shape [K X PQ] to 
-				// params.output.denseBlock + destPos
-				final int outOffset = n*params.K*params.P*params.Q;
-				final int PQ = params.P*params.Q;
-				for(int k = 0; k < matMultOutBlock.getNumRows(); k++) {
-					if( !matMultOutBlock.sparseBlock.isEmpty(k) ) {
-						int apos = matMultOutBlock.sparseBlock.pos(k);
-						int alen = matMultOutBlock.sparseBlock.size(k);
-						int[] aix = matMultOutBlock.sparseBlock.indexes(k);
-						double[] avals = matMultOutBlock.sparseBlock.values(k);
-						for(int j = apos; j < apos+alen; j++) {
-							int pqIndex = aix[j];
-							params.output.denseBlock[outOffset + k*PQ + pqIndex ] = avals[j];
-						}
-					}
-				}
-			}
-			else
-				System.arraycopy(matMultOutBlock.denseBlock, 0, params.output.denseBlock, destPos, length);
-		}
-		// -----------------------------------------------------------------------------
-		
-		// Recomputing nnz is not required for each individual im2col as it is invoked by outer public methods (i.e. conv2d.
-		//post-processing: maintain nnz
-		// params.output.recomputeNonZeros(); 
-	}
-	
 	
 	/**
 	 * This method computes the backpropogation errors for previous layer of maxpooling operation
@@ -979,10 +929,10 @@ public class LibMatrixDNN {
 	private static void addMatrixBlocks(int poolSize, TaskType type, ConvolutionParameters params, 
 			ConcurrentLinkedQueue<MatrixBlock> im2ColOutBlocks, ConcurrentLinkedQueue<MatrixBlock> doutReshapedBlocks,
 			ConcurrentLinkedQueue<MatrixBlock> partialRetBlocks) {
-		boolean isEligibleForConv2dSparse = (type == TaskType.LoopedIm2ColConv2d) && isEligibleForConv2dSparse(params);
+		boolean isEligibleForConv2dSparse = isEligibleForConv2dSparse(params);
 		boolean isEligibleForConv2dBackwardFilterSparseDense = (type == TaskType.LoopedIm2ColConv2dBwdFilter) && isEligibleForConv2dBackwardFilterSparseDense(params) ;
 		for(int i = 0; i < poolSize; i++) {
-			if(type == TaskType.LoopedIm2ColConv2d || type == TaskType.LoopedIm2ColConv2dBwdFilter) {
+			if(type == TaskType.LoopedIm2ColConv2dBwdFilter) {
 				if(!isEligibleForConv2dSparse && !isEligibleForConv2dBackwardFilterSparseDense) {
 					MatrixBlock im2ColOutBlock = new MatrixBlock(params.C*params.R*params.S, params.P*params.Q, false);
 					im2ColOutBlock.allocateDenseBlock();
@@ -1129,48 +1079,6 @@ public class LibMatrixDNN {
 				case ReluBackward:
 					lnnz = doReluBackward(_params, _rl, _ru);
 					break;
-				case LoopedIm2ColConv2d:
-				{	
-					if(isEligibleForConv2dSparse(_params)) {
-						// NativeHelper.conv2dSparse only if filter is dense and input is sparse
-						int KPQ = _params.K*_params.P*_params.Q;
-						double[] temp = new double[KPQ];
-						for(int n = _rl; n < _ru; n++)  {
-							if( !_params.input1.getSparseBlock().isEmpty(n) ) {
-								int apos = _params.input1.getSparseBlock().pos(n);
-								int alen = _params.input1.getSparseBlock().size(n);
-								int[] aix = _params.input1.getSparseBlock().indexes(n);
-								double[] avals = _params.input1.getSparseBlock().values(n);
-								NativeHelper.conv2dSparse(apos, alen, aix, avals, _params.input2.getDenseBlock(), temp, 
-										1, _params.C, _params.H, _params.W, _params.K, _params.R, _params.S, 
-										_params.stride_h, _params.stride_w, _params.pad_h, _params.pad_w, _params.P, _params.Q, 1);
-								System.arraycopy(temp, 0, _params.output.denseBlock, n*KPQ, KPQ);
-							}
-						}
-					}
-					else {
-						// In all other cases, perform im2col in Java + matmult (either native or java).
-						MatrixBlock im2ColOutBlock = _im2ColOutBlocks.remove();
-						double [] temp = (_params.input1.isInSparseFormat() || _params.input1.denseBlock == null) ? new double[_params.input1.getNumColumns()] : null;
-						for(int n = _rl; n < _ru; n++) 
-							doLoopedIm2ColConv2d(n, im2ColOutBlock, _params, temp);
-						_im2ColOutBlocks.add(im2ColOutBlock);
-					}
-					if(_params.bias != null) {
-						// bias is always converted to dense format
-						double [] biasArr = _params.bias.getDenseBlock();
-						int PQ = _params.P*_params.Q;
-						int index = _rl*_params.K*PQ;
-						for(int n = _rl; n < _ru; n++) {
-							for(int k = 0; k < _params.K; k++) {
-								for(int pq = 0; pq < PQ; pq++, index++) {
-									_params.output.denseBlock[index] += biasArr[k];
-								}
-							}
-						}
-					}
-					break;
-				}
 				case LoopedIm2ColConv2dBwdFilter:
 				{
 					MatrixBlock partialRetBlock = _partialRetBlocks.remove();

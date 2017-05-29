@@ -58,7 +58,8 @@ public class ConvolutionParameters implements Serializable {
 	}
 	
 	public String toString() {
-		return "(" + N + " " + C + " " + H + " " + W + " " + K + " " + R + " " + S + ")";  
+		return "(NCHW=[" + N + " " + C + " " + H + " " + W + "], KCRS=[" + K + " " + R + " " + S + "], stride=[" + stride_h + "," + stride_w  + 
+				"], pad=[" + pad_h + "," + pad_w + "])";  
 	}
 	
 	public ConvolutionParameters(long N, long C, long H, long W,

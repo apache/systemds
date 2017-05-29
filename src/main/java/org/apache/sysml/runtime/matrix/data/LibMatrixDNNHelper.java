@@ -57,17 +57,20 @@ public class LibMatrixDNNHelper {
 		int taskSize = (int)(Math.ceil((double)params.N / k));
 		
 		// TODO: Decide here based on params whether to use LoopedIm2ColConv2dAllChannels or LoopedIm2ColConv2dOneChannel
+		// For now, let's stick to the existing approach of converting [1, CHW] to [CRS, PQ] as it allows matrix multiplication large enough matrix.
 		boolean allChannels = true; ArrayList<MatrixBlock> filters = null;
 		if(!allChannels) {
 			filters = splitFilter(params);
 		}
 		
+		boolean isEmptyDenseInput = !params.input1.isInSparseFormat() && params.input1.denseBlock == null;
+		
 		for(int i = 0; i*taskSize < params.N; i++) {
 			if(isEligibleForConv2dSparse(params)) 
 				ret.add(new SparseNativeConv2d(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
-			else if(params.input1.denseBlock != null && allChannels)
+			else if(!isEmptyDenseInput && allChannels)
 				ret.add(new LoopedIm2ColConv2dAllChannels(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
-			else if(params.input1.denseBlock != null && !allChannels)
+			else if(!isEmptyDenseInput && !allChannels)
 				ret.add(new LoopedIm2ColConv2dOneChannel(i*taskSize, Math.min((i+1)*taskSize, params.N), params, filters));
 			else
 				throw new DMLRuntimeException("Unsupported operator");
@@ -201,7 +204,7 @@ public class LibMatrixDNNHelper {
 				}
 			}
 		}
-	}
+	}	
 	
 	/**
 	 * Performs convolution via: partialCopy1(filter %*% im2col(input)) = output

@@ -34,6 +34,7 @@ import org.junit.runners.Suite;
 	AlgorithmPNMF.class,
 	CellwiseTmplTest.class,
 	CompressedCellwiseTest.class,
+	CompressedMultiAggregateTest.class,
 	DAGCellwiseTmplTest.class,
 	MultiAggTmplTest.class,
 	OuterProdTmplTest.class,

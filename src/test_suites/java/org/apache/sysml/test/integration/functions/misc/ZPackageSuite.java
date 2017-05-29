@@ -51,6 +51,7 @@ import org.junit.runners.Suite;
 	RewriteCTableToRExpandTest.class,
 	RewriteFusedRandTest.class,
 	RewriteLoopVectorization.class,
+	RewriteMatrixMultChainOptTest.class,
 	RewritePushdownSumBinaryMult.class,
 	RewritePushdownSumOnBinaryTest.class,
 	RewritePushdownUaggTest.class,

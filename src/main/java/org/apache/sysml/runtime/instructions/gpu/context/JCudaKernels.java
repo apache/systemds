@@ -18,19 +18,43 @@
  */
 package org.apache.sysml.runtime.instructions.gpu.context;
 
+import jcuda.Sizeof;
+
 // This indirection prepares SystemML's GPU backend to allow
 // for arbitrary datatype
 public abstract class JCudaKernels {
 	private static JCudaKernels singletonObj = new DoublePrecisionKernels();
-	public static JCudaKernels getKernelHandle() {
+	public static JCudaKernels handle() {
 		return singletonObj;
 	}
+	public abstract int cudnnDataType();
+	public abstract int sizeOfDatatype();
 }
 
 class DoublePrecisionKernels extends JCudaKernels {
+
+	@Override
+	public int cudnnDataType() {
+		return jcuda.jcudnn.cudnnDataType.CUDNN_DATA_DOUBLE;
+	}
+
+	@Override
+	public int sizeOfDatatype() {
+		return Sizeof.DOUBLE;
+	}
 	
 }
 
 class SinglePrecisionKernels extends JCudaKernels {
+
+	@Override
+	public int cudnnDataType() {
+		return jcuda.jcudnn.cudnnDataType.CUDNN_DATA_FLOAT;
+	}
+
+	@Override
+	public int sizeOfDatatype() {
+		return Sizeof.FLOAT;
+	}
 	
 }

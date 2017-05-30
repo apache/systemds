@@ -139,7 +139,7 @@ if not (exists(script_file)):
         script_file = script_file_found
         print('DML Script:' + script_file)
 
-log_conf = 'spark.driver.extraJavaOptions="-Dlog4j.configuration=file:{}" '.format(log4j_properties_path)
+log_conf = 'spark.driver.extraJavaOptions=-Dlog4j.configuration=file:{} '.format(log4j_properties_path)
 default_conf = log_conf + ' '.join(args.conf)
 
 cmd_spark = [spark_path, '--master', args.master, '--driver-memory', args.driver_memory,

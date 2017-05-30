@@ -31,17 +31,18 @@ import java.util.List;
  * Tests matrix multiplication on the GPU
  */
 public class MatrixMultiplicationOpTest extends GPUTests {
-    private final static String TEST_NAME = "MatrixMultiplicationOpTest";
-    private final int seed = 42;
+	private final static String TEST_NAME = "MatrixMultiplicationOpTest";
+	private final int seed = 42;
 
-    @Override
-    public void setUp() {
-        TestUtils.clearAssertionInformation();
-        addTestConfiguration(TEST_DIR, TEST_NAME);
-        getAndLoadTestConfiguration(TEST_NAME);
-    }
+	@Override
+	public void setUp() {
+		TestUtils.clearAssertionInformation();
+		addTestConfiguration(TEST_DIR, TEST_NAME);
+		getAndLoadTestConfiguration(TEST_NAME);
+	}
 
-    @Test public void matrixMatrixTest1() {
+	@Test
+	public void matrixMatrixTest1() {
 		String scriptStr = "O = X %*% Y";
 
 		int[] X1 = { 1, 128, 513, 1024 };
@@ -64,7 +65,8 @@ public class MatrixMultiplicationOpTest extends GPUTests {
 		}
 	}
 
-	@Test public void matrixMatrixTest2() {
+	@Test
+	public void matrixMatrixTest2() {
 		String scriptStr = "O = X %*% t(Y)";
 
 		int[] X1 = { 1, 128, 513, 1024 };
@@ -87,7 +89,8 @@ public class MatrixMultiplicationOpTest extends GPUTests {
 		}
 	}
 
-	@Test public void matrixMatrixTest3() {
+	@Test
+	public void matrixMatrixTest3() {
 		String scriptStr = "O = t(X) %*% Y";
 
 		int[] X1 = { 1, 128, 513, 1024 };
@@ -110,7 +113,8 @@ public class MatrixMultiplicationOpTest extends GPUTests {
 		}
 	}
 
-	@Test public void matrixMatrixTest4() {
+	@Test
+	public void matrixMatrixTest4() {
 		String scriptStr = "O = t(X) %*% t(Y)";
 
 		int[] X1 = { 1, 128, 513, 1024 };
@@ -133,7 +137,8 @@ public class MatrixMultiplicationOpTest extends GPUTests {
 		}
 	}
 
-	@Test public void transposeSelfMatrixMultiply() {
+	@Test
+	public void transposeSelfMatrixMultiply() {
 		String scriptStr = "O = t(X) %*% X";
 
 		int[] sizes = { 1, 128, 512, 1024, 2049 };

@@ -40,73 +40,89 @@ public class MatrixMatrixElementWiseOpTests extends GPUTests {
 	private final double[] scalars = new double[] { 0.0, 0.5, 2.0 };
 	private final int seed = 42;
 
-	@Override public void setUp() {
+	@Override
+	public void setUp() {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_DIR, TEST_NAME);
 		getAndLoadTestConfiguration(TEST_NAME);
 	}
 
-	@Test public void testAxpy() {
+	@Test
+	public void testAxpy() {
 		runAxpyTest("O = a*X + Y", "X", "Y", "a", "O", "gpu_-*");
 	}
 
-	@Test public void testAxmy() {
+	@Test
+	public void testAxmy() {
 		runAxpyTest("O = X - a*Y", "X", "Y", "a", "O", "gpu_+*");
 	}
 
-	@Test public void testAdd() {
+	@Test
+	public void testAdd() {
 		runMatrixMatrixElementwiseTest("O = X + Y", "X", "Y", "O", "gpu_+");
 	}
 
-	@Test public void testMatrixColumnVectorAdd() {
+	@Test
+	public void testMatrixColumnVectorAdd() {
 		runMatrixColumnVectorTest("O = X + Y", "X", "Y", "O", "gpu_+");
 	}
 
-    @Test
-    public void testMatrixRowVectorAdd() {
-        runMatrixRowVectorTest("O = X + Y", "X", "Y", "O", "gpu_+");
-    }
+	@Test
+	public void testMatrixRowVectorAdd() {
+		runMatrixRowVectorTest("O = X + Y", "X", "Y", "O", "gpu_+");
+	}
 
-	@Test public void testSubtract() {
+	@Test
+	public void testSubtract() {
 		runMatrixMatrixElementwiseTest("O = X - Y", "X", "Y", "O", "gpu_-");
 	}
 
-	@Test public void testMatrixColumnVectorSubtract() {
+	@Test
+	public void testMatrixColumnVectorSubtract() {
 		runMatrixColumnVectorTest("O = X - Y", "X", "Y", "O", "gpu_-");
 	}
 
-	@Test public void testMatrixRowVectorSubtract() {
+	@Test
+	public void testMatrixRowVectorSubtract() {
 		runMatrixRowVectorTest("O = X - Y", "X", "Y", "O", "gpu_-");
 	}
 
-	@Test public void testMultiply() {
+	@Test
+	public void testMultiply() {
 		runMatrixMatrixElementwiseTest("O = X * Y", "X", "Y", "O", "gpu_*");
 	}
 
-	@Test public void testMatrixColumnVectorMultiply() {
+	@Test
+	public void testMatrixColumnVectorMultiply() {
 		runMatrixColumnVectorTest("O = X * Y", "X", "Y", "O", "gpu_*");
 	}
 
-	@Test public void testMatrixRowVectorMultiply() {
+	@Test
+	public void testMatrixRowVectorMultiply() {
 		runMatrixRowVectorTest("O = X * Y", "X", "Y", "O", "gpu_*");
 	}
 
-	@Test public void testDivide() {
+	@Test
+	public void testDivide() {
 		runMatrixMatrixElementwiseTest("O = X / Y", "X", "Y", "O", "gpu_/");
 	}
 
-	@Test public void testMatrixColumnVectorDivide() {
+	@Test
+	public void testMatrixColumnVectorDivide() {
 		runMatrixColumnVectorTest("O = X / Y", "X", "Y", "O", "gpu_/");
 	}
 
-	@Test public void testMatrixRowVectorDivide() {
+	@Test
+	public void testMatrixRowVectorDivide() {
 		runMatrixRowVectorTest("O = X / Y", "X", "Y", "O", "gpu_/");
 	}
 
 	// ****************************************************************
 	// ************************ IGNORED TEST **************************
 	// FIXME : There is a bug in CPU "^" when a A ^ B is executed where A & B are all zeroes
-	@Ignore @Test public void testPower() {
+	@Ignore
+	@Test
+	public void testPower() {
 		runMatrixMatrixElementwiseTest("O = X ^ Y", "X", "Y", "O", "gpu_%");
 	}
 

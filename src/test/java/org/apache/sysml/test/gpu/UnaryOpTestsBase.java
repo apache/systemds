@@ -30,60 +30,77 @@ import java.util.List;
  */
 public abstract class UnaryOpTestsBase extends GPUTests {
 
-    // Set of rows and column sizes & sparsities to test unary ops
-    private final int[] rowSizes = new int[] { 1, 64, 130, 1024, 2049 };
-    private final int[] columnSizes = new int[] { 1, 64, 130, 1024, 2049 };
-    private final double[] sparsities = new double[] { 0.0, 0.03, 0.3, 0.9 };
-    private final int seed = 42;
+	// Set of rows and column sizes & sparsities to test unary ops
+	private final int[] rowSizes = new int[] { 2049, 1024, 140, 64, 1 };
+	private final int[] columnSizes = new int[] { 2049, 1024, 140, 64, 1 };
+	private final double[] sparsities = new double[] { 0.9, 0.3, 0.03, 0.0 };
+	private final int seed = 42;
 
-    /**
-     * Tests unary ops with a variety of matrix shapes and sparsities.
-     * Test is skipped for blocks of size 1x1.
-     *
-     * @param function          name of the dml builtin unary op
-     * @param heavyHitterOpCode the string printed for the unary op heavy hitter when executed on gpu
-     */
-    protected void testSimpleUnaryOpMatrixOutput(String function, String heavyHitterOpCode) {
-        String scriptStr = "out = " + function + "(in1)";
-        testUnaryOpMatrixOutput(scriptStr, heavyHitterOpCode, "in1", "out");
-    }
+	/**
+	 * Tests unary ops with a variety of matrix shapes and sparsities.
+	 * Test is skipped for blocks of size 1x1.
+	 *
+	 * @param function          name of the dml builtin unary op
+	 * @param heavyHitterOpCode the string printed for the unary op heavy hitter when executed on gpu
+	 */
+	protected void testSimpleUnaryOpMatrixOutput(String function, String heavyHitterOpCode) {
+		String scriptStr = "out = " + function + "(in1)";
+		testUnaryOpMatrixOutput(scriptStr, heavyHitterOpCode, "in1", "out");
+	}
 
-    /**
-     * Tests slightly more involved unary ops with a variety of matrix shapes and sparsities.
-     * Test is skipped for blocks of size 1x1
-     *
-     * @param scriptStr         script string
-     * @param heavyHitterOpCode the string printed for the unary op heavy hitter when executed on gpu
-     * @param inStr             name of input variable in provided script string
-     * @param outStr            name of output variable in script string
-     */
-    protected void testUnaryOpMatrixOutput(String scriptStr, String heavyHitterOpCode, String inStr, String outStr) {
-        int[] rows = rowSizes;
-        int[] columns = columnSizes;
-        double[] sparsities = this.sparsities;
-        int seed = this.seed;
+	/**
+	 * Tests slightly more involved unary ops with a variety of matrix shapes and sparsities.
+	 * Test is skipped for blocks of size 1x1
+	 *
+	 * @param scriptStr         script string
+	 * @param heavyHitterOpCode the string printed for the unary op heavy hitter when executed on gpu
+	 * @param inStr             name of input variable in provided script string
+	 * @param outStr            name of output variable in script string
+	 */
+	protected void testUnaryOpMatrixOutput(String scriptStr, String heavyHitterOpCode, String inStr, String outStr) {
+		int[] rows = rowSizes;
+		int[] columns = columnSizes;
+		double[] sparsities = this.sparsities;
+		int seed = this.seed;
 
-        for (int i = 0; i < rows.length; i++) {
-            for (int j = 0; j < columns.length; j++) {
-                for (int k = 0; k < sparsities.length; k++) {
-                    int row = rows[i];
-                    int column = columns[j];
-                    double sparsity = sparsities[k];
-                    // Skip the case of a scalar unary op
-                    if (row == 1 && column == 1)
-                        continue;
+		for (int i = 0; i < rows.length; i++) {
+			for (int j = 0; j < columns.length; j++) {
+				for (int k = 0; k < sparsities.length; k++) {
+					int row = rows[i];
+					int column = columns[j];
+					double sparsity = sparsities[k];
+					// Skip the case of a scalar unary op
+					if (row == 1 && column == 1)
+						continue;
 
-                    System.out.println("Matrix of size [" + row + ", " + column + "], sparsity = " + sparsity);
-                    Matrix in1 = generateInputMatrix(spark, row, column, sparsity, seed);
-                    HashMap<String, Object> inputs = new HashMap<>();
-                    inputs.put(inStr, in1);
-                    List<Object> outCPU = runOnCPU(spark, scriptStr, inputs, Arrays.asList(outStr));
-                    List<Object> outGPU = runOnGPU(spark, scriptStr, inputs, Arrays.asList(outStr));
-                    //assertHeavyHitterPresent(heavyHitterOpCode);
-                    assertEqualObjects(outCPU.get(0), outGPU.get(0));
-                }
-            }
-        }
-    }
+					testUnaryOpMatrixOutput(scriptStr, heavyHitterOpCode, inStr, outStr, seed, row, column, sparsity);
+				}
+			}
+		}
+	}
+
+	/**
+	 * Tests a single unary op with inputs and outputs of the specified size and sparsity
+	 *
+	 * @param scriptStr         script string
+	 * @param heavyHitterOpCode the string printed for the unary op heavy hitter when executed on gpu
+	 * @param inStr             name of input variable in provided script string
+	 * @param outStr            name of output variable in script string
+	 * @param seed              seed for the random number generator for the random input matrix
+	 * @param row               number of rows of input matrix
+	 * @param column            number of rows of input matrix
+	 * @param sparsity          sparsity of the input matrix
+	 */
+	public void testUnaryOpMatrixOutput(String scriptStr, String heavyHitterOpCode, String inStr, String outStr,
+			int seed, int row, int column, double sparsity) {
+		System.out.println("Matrix of size [" + row + ", " + column + "], sparsity = " + sparsity);
+		Matrix in1 = generateInputMatrix(spark, row, column, sparsity, seed);
+		HashMap<String, Object> inputs = new HashMap<>();
+		inputs.put(inStr, in1);
+		List<Object> outCPU = runOnCPU(spark, scriptStr, inputs, Arrays.asList(outStr));
+		List<Object> outGPU = runOnGPU(spark, scriptStr, inputs, Arrays.asList(outStr));
+		//assertHeavyHitterPresent(heavyHitterOpCode);
+		assertEqualObjects(outCPU.get(0), outGPU.get(0));
+	}
 
 }

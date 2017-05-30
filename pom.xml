@@ -426,7 +426,7 @@
 
 					<!-- Third argument prevents Java from popping up lots of windows on
 						MacOS -->
-					<argLine>-Dfile.encoding=UTF-8 -Xmx2g -Xms2g -Xmn200m -Djava.awt.headless=true</argLine>
+					<argLine>-Dfile.encoding=UTF-8 -Xmx8g -Xms2g -Xmn200m -Djava.awt.headless=true</argLine>
 
 					<includes>
 						<!--  All tests are integration tests as far as Maven is concerned. -->
@@ -474,11 +474,12 @@
 
 					<!-- Last argument prevents Java from popping up lots of windows on
 						MacOS -->
-					<argLine>-Dfile.encoding=UTF-8 -Xmx2g -Xms2g -Xmn200m
+					<argLine>-Dfile.encoding=UTF-8 -Xmx8g -Xms2g -Xmn200m
 						${integrationTestExtraJVMArgs}
 						-Djava.awt.headless=true</argLine>
 
 					<includes>
+						<include>${gpuTestsPath}</include> <!-- Path for GPU integration tests, enabled for gpuTests profile -->
 						<include>**/integration/applications/**/*Suite.java</include>
 						<include>**/integration/conversion/*Suite.java</include>
 						<include>**/integration/functions/data/*Suite.java</include>
@@ -895,6 +896,14 @@
 					</plugin>
 				</plugins>
 			</build>
+		</profile>
+
+		<!-- profile to enable running tests on the GPU -->
+		<profile>
+			<id>gpuTests</id>
+			<properties>
+				<gpuTestsPath>**/integration/gpu/**/*Suite.java</gpuTestsPath>
+			</properties>
 		</profile>
 
 		<profile>

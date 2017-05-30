@@ -180,6 +180,10 @@ runCommand "$SPARK_HOME/bin/spark-submit target/release/incubator-systemml/src/m
 runCommand "$SPARK_HOME/bin/spark-submit target/release/incubator-systemml/src/main/python/tests/test_mllearn_df.py"
 runCommand "$SPARK_HOME/bin/spark-submit target/release/incubator-systemml/src/main/python/tests/test_mllearn_numpy.py"
 
+# Specifying python2 to be used
+runCommand "PYSPARK_PYTHON=python2 spark-submit --master local[*] target/release/incubator-systemml/src/main/python/tests/test_mlcontext.py"
+# Specifying python3 to be used
+runCommand "PYSPARK_PYTHON=python3 spark-submit --master local[*] target/release/incubator-systemml/src/main/python/tests/test_mlcontext.py"
 
 echo "`date +%Y-%m-%dT%H:%M:%S`: INFO: Verification of binary files completed successfully."
 # echo "================================================================================"

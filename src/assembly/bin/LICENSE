@@ -230,12 +230,11 @@ hadoop-yarn-server-web-proxy-2.6.0.jar
 jackson-core-asl-1.9.13.jar
 jackson-mapper-asl-1.9.13.jar
 log4j-1.2.15.jar
-opencsv-2.3.jar
-
+-------------------------------------------------------------------------------
 The following compile-scope dependencies come under the Apache Software License 2.0.
 
 Apache Wink :: JSON4J (http://www.apache.org/wink/wink-json4j/) org.apache.wink:wink-json4j:1.4
-
+-------------------------------------------------------------------------------
 The following windows-only components come under the Apache Software License 2.0.
 
 hadoop.dll
@@ -245,7 +244,6 @@ hadoop.pdb
 libwinutils.lib
 winutils.exe
 winutils.pdb
-
 ===============================================================================
 
 The following ANTLR dependency is distributed under the BSD license.
@@ -290,7 +288,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 The following Protocol Buffer Java API dependencies are distributed under the BSD license.
 
-Protocol Buffer Java API (http://code.google.com/p/protobuf) com.google.protobuf:protobuf-java:2.5.0 (protobuf-java-2.5.0.jar)
+Protocol Buffer Java API (http://code.google.com/p/protobuf) com.google.protobuf:protobuf-java:3.2.0 (protobuf-java-3.2.0.jar)
 
 Copyright 2014, Google Inc.  All rights reserved.
 

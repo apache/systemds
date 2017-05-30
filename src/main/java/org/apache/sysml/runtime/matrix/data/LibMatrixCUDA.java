@@ -102,7 +102,7 @@ import org.apache.sysml.runtime.instructions.gpu.context.CSRPointer;
 import org.apache.sysml.runtime.instructions.gpu.context.ExecutionConfig;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUObject;
-import org.apache.sysml.runtime.instructions.gpu.context.JCudaKernels;
+import org.apache.sysml.runtime.instructions.gpu.context.CustomSystemMLKernels;
 import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
@@ -219,7 +219,7 @@ public class LibMatrixCUDA {
 		return gCtx.getCudnnHandle();
 	}
 
-	private static JCudaKernels getCudaKernels(GPUContext gCtx) throws DMLRuntimeException {
+	private static CustomSystemMLKernels getCudaKernels(GPUContext gCtx) throws DMLRuntimeException {
 		return gCtx.getKernels();
 	}
 

@@ -113,7 +113,7 @@ public class GPUContext {
   private cusolverSpHandle cusolverSpHandle;
 
   /** to launch custom CUDA kernel, specific to the active GPU for this GPUContext */
-  private JCudaKernels kernels;
+  private CustomSystemMLKernels kernels;
 
 	/**
 	 * The minimum CUDA Compute capability needed for SystemML.
@@ -152,7 +152,7 @@ public class GPUContext {
     cusolverSpHandle = new cusolverSpHandle();
     cusolverSpCreate(cusolverSpHandle);
 
-    kernels = new JCudaKernels(deviceNum);
+    kernels = new CustomSystemMLKernels(deviceNum);
 
     GPUStatistics.cudaLibrariesInitTime = System.nanoTime() - start;
     LOG.info(" GPU memory - Total: " + (total[0] * (1e-6)) + " MB, Available: " + (free[0] * (1e-6)) + " MB on " + this);
@@ -582,7 +582,7 @@ public class GPUContext {
     return cusolverSpHandle;
   }
 
-  public JCudaKernels getKernels() {
+  public CustomSystemMLKernels getKernels() {
     return kernels;
   }
 

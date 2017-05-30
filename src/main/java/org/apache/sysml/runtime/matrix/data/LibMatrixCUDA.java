@@ -915,7 +915,7 @@ public class LibMatrixCUDA {
 		}
 	}
 
-	private static long numDoublesIn2GB = 125000000;
+	private static long numDoublesIn2GB = 268435456;
 
 	/**
 	 * This method computes the backpropogation errors for previous layer of convolution operation

@@ -315,6 +315,7 @@ public class CompressedMultiAggregateTest extends AutomatedTestBase
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldRewrites;
 			OptimizerUtils.ALLOW_AUTO_VECTORIZATION = true;
 			OptimizerUtils.ALLOW_OPERATOR_FUSION = true;
+			CompressedMatrixBlock.ALLOW_DDC_ENCODING = true;
 		}
 	}	
 

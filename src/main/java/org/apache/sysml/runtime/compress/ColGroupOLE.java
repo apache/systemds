@@ -798,6 +798,8 @@ public class ColGroupOLE extends ColGroupOffset
 
 		@Override
 		public Integer next() {
+			if( !hasNext() )
+				throw new RuntimeException("No more OLE entries.");
 			int ret = _rpos;
 			nextRowOffset();
 			return ret;

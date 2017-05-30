@@ -411,6 +411,8 @@ public class SpoofCompiler
 			}
 		}
 		catch( Exception ex ) {
+			LOG.error("Codegen failed to optimize the following HOP DAG: \n" + 
+				Explain.explainHops(roots));
 			throw new DMLRuntimeException(ex);
 		}
 		

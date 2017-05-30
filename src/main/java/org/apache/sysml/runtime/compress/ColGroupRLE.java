@@ -802,6 +802,8 @@ public class ColGroupRLE extends ColGroupOffset
 
 		@Override
 		public Integer next() {
+			if( !hasNext() )
+				throw new RuntimeException("No more RLE entries.");
 			int ret = _rpos;
 			nextRowOffset();
 			return ret;

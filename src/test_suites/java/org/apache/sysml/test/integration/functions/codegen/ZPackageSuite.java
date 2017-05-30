@@ -35,6 +35,7 @@ import org.junit.runners.Suite;
 	CellwiseTmplTest.class,
 	CompressedCellwiseTest.class,
 	CompressedMultiAggregateTest.class,
+	CompressedOuterProductTest.class,
 	DAGCellwiseTmplTest.class,
 	MultiAggTmplTest.class,
 	OuterProdTmplTest.class,

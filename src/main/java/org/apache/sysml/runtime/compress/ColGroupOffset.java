@@ -451,7 +451,7 @@ public abstract class ColGroupOffset extends ColGroupValue
 			_rl = rl;
 			_ru = ru;
 			_inclZeros = inclZeros;
-			_vpos = 0;
+			_vpos = -1;
 			_rpos = -1;
 			_cpos = 0;
 			getNextValue();
@@ -461,7 +461,7 @@ public abstract class ColGroupOffset extends ColGroupValue
 		public boolean hasNext() {
 			return (_rpos < _ru);
 		}
-
+		
 		@Override
 		public IJV next() {
 			_buff.set(_rpos, _colIndexes[_cpos], (_vpos >= getNumValues()) ? 
@@ -472,27 +472,28 @@ public abstract class ColGroupOffset extends ColGroupValue
 		
 		private void getNextValue() {
 			//advance to next value iterator if required
-			if( _viter == null ) {
-				_viter = (getNumValues()>0) ? //first iterator
-					getIterator(_vpos, _rl, _ru) : new ZeroIterator(_rl, _ru);
-			}
-			else if( _viter instanceof ZeroIterator && !_viter.hasNext() ) {
+			if(_viter != null && _viter instanceof ZeroIterator && !_viter.hasNext() ) {
 				_rpos = _ru; //end after zero iterator
 				return;
 			}
-			else if( _cpos+1 >= getNumCols() && !_viter.hasNext() ) {
-				_vpos++; //
-				if( _vpos < getNumValues() )
-					_viter = getIterator(_vpos, _rl, _ru);
-				else if( _inclZeros && _zeros)
-					_viter = new ZeroIterator(_rl, _ru);
-				else
-					_rpos = _ru; //end w/o zero iterator
+			else if( _cpos+1 >= getNumCols() && !(_viter!=null && _viter.hasNext()) ) {
+				do {
+					_vpos++;
+					if( _vpos < getNumValues() )
+						_viter = getIterator(_vpos, _rl, _ru);
+					else if( _inclZeros && _zeros)
+						_viter = new ZeroIterator(_rl, _ru);
+					else {
+						_rpos = _ru; //end w/o zero iterator
+						return;
+					}
+				}
+				while(!_viter.hasNext());
 				_rpos = -1;
 			}
 			
-			//get next value
-			if( _rpos < 0 || _cpos+1 >= getNumCols()) {
+			//get next value from valid iterator
+			if( _rpos < 0 || _cpos+1 >= getNumCols() ) {
 				_rpos = _viter.next();
 				_cpos = 0;
 			}

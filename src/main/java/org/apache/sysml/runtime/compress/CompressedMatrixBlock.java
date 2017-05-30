@@ -169,6 +169,10 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	public ArrayList<ColGroup> getColGroups() {
 		return _colGroups;
 	}
+	
+	public int getNumColGroups() {
+		return _colGroups.size();
+	}
 
 	/**
 	 * Obtain whether this block is in compressed form or not.
@@ -802,7 +806,11 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	}
 	
 	public Iterator<IJV> getIterator(int rl, int ru, boolean inclZeros) {
-		return new ColumnGroupIterator(rl, ru, inclZeros);
+		return getIterator(rl, ru, 0, getNumColGroups(), inclZeros);
+	}
+	
+	public Iterator<IJV> getIterator(int rl, int ru, int cgl, int cgu, boolean inclZeros) {
+		return new ColumnGroupIterator(rl, ru, cgl, cgu, inclZeros);
 	}
 	
 	//////////////////////////////////////////
@@ -2229,6 +2237,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		//iterator configuration 
 		private final int _rl;
 		private final int _ru;
+		private final int _cgu;
 		private final boolean _inclZeros;
 		
 		//iterator state
@@ -2236,10 +2245,12 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		private Iterator<IJV> _iterColGroup = null;
 		private boolean _noNext = false;
 		
-		public ColumnGroupIterator(int rl, int ru, boolean inclZeros) {
+		public ColumnGroupIterator(int rl, int ru, int cgl, int cgu, boolean inclZeros) {
 			_rl = rl;
 			_ru = ru;
+			_cgu = cgu;
 			_inclZeros = inclZeros;
+			_posColGroup = cgl-1;
 			getNextIterator();
 		}
 
@@ -2252,14 +2263,14 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		public IJV next() {
 			if( _noNext )
 				throw new RuntimeException("No more entries.");
-			IJV ret = _iterColGroup.next(); 
+			IJV ret = _iterColGroup.next();
 			if( !_iterColGroup.hasNext() )
 				getNextIterator();
 			return ret;
 		}
 		
 		private void getNextIterator() {
-			while( _posColGroup+1 < _colGroups.size() ) {
+			while( _posColGroup+1 < _cgu ) {
 				_posColGroup++;
 				_iterColGroup = _colGroups.get(_posColGroup)
 					.getIterator(_rl, _ru, _inclZeros);

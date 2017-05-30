@@ -34,21 +34,20 @@ import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
 
-public class CompressedCellwiseTest extends AutomatedTestBase 
+public class CompressedOuterProductTest extends AutomatedTestBase 
 {	
-	private static final String TEST_NAME1 = "CompressedCellwiseMain";
-	private static final String TEST_NAME2 = "CompressedCellwiseSide";
+	private static final String TEST_NAME1 = "CompressedOuterProductMain";
 	private static final String TEST_DIR = "functions/codegen/";
-	private static final String TEST_CLASS_DIR = TEST_DIR + CompressedCellwiseTest.class.getSimpleName() + "/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + CompressedOuterProductTest.class.getSimpleName() + "/";
 	private final static String TEST_CONF = "SystemML-config-codegen-compress.xml";
 	private final static File   TEST_CONF_FILE = new File(SCRIPT_DIR + TEST_DIR, TEST_CONF);
 	
 	private static final int rows = 2023;
-	private static final int cols = 20;
+	private static final int cols = 1987;
 	private static final double sparsity1 = 0.9;
 	private static final double sparsity2 = 0.1;
 	private static final double sparsity3 = 0.0;
-	private static final double eps = Math.pow(10, -8);
+	private static final double eps = Math.pow(10, -6);
 	
 	public enum SparsityType {
 		DENSE,
@@ -67,7 +66,6 @@ public class CompressedCellwiseTest extends AutomatedTestBase
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "R" }) );
-		addTestConfiguration( TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "R" }) );
 	}
 		
 	@Test
@@ -131,66 +129,6 @@ public class CompressedCellwiseTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testCompressedCellwiseSideDenseConstCP() {
-		testCompressedCellwise( TEST_NAME2, SparsityType.DENSE, ValueType.CONST, ExecType.CP );
-	}
-	
-	@Test
-	public void testCompressedCellwiseSideDenseRandCP() {
-		testCompressedCellwise( TEST_NAME2, SparsityType.DENSE, ValueType.RAND, ExecType.CP );
-	}
-	
-	@Test
-	public void testCompressedCellwiseSideDenseRand2CP() {
-		testCompressedCellwise( TEST_NAME2, SparsityType.DENSE, ValueType.RAND_ROUND_DDC, ExecType.CP );
-	}
-	
-	@Test
-	public void testCompressedCellwiseSideDenseRand3CP() {
-		testCompressedCellwise( TEST_NAME2, SparsityType.DENSE, ValueType.RAND_ROUND_OLE, ExecType.CP );
-	}
-	
-	@Test
-	public void testCompressedCellwiseSideSparseConstCP() {
-		testCompressedCellwise( TEST_NAME2, SparsityType.SPARSE, ValueType.CONST, ExecType.CP );
-	}
-	
-	@Test
-	public void testCompressedCellwiseSideSparseRandCP() {
-		testCompressedCellwise( TEST_NAME2, SparsityType.SPARSE, ValueType.RAND, ExecType.CP );
-	}
-	
-	@Test
-	public void testCompressedCellwiseSideSparseRand2CP() {
-		testCompressedCellwise( TEST_NAME2, SparsityType.SPARSE, ValueType.RAND_ROUND_DDC, ExecType.CP );
-	}
-	
-	@Test
-	public void testCompressedCellwiseSideSparseRand3CP() {
-		testCompressedCellwise( TEST_NAME2, SparsityType.SPARSE, ValueType.RAND_ROUND_OLE, ExecType.CP );
-	}
-	
-	@Test
-	public void testCompressedCellwiseSideEmptyConstCP() {
-		testCompressedCellwise( TEST_NAME2, SparsityType.EMPTY, ValueType.CONST, ExecType.CP );
-	}
-	
-	@Test
-	public void testCompressedCellwiseSideEmptyRandCP() {
-		testCompressedCellwise( TEST_NAME2, SparsityType.EMPTY, ValueType.RAND, ExecType.CP );
-	}
-	
-	@Test
-	public void testCompressedCellwiseSideEmptyRand2CP() {
-		testCompressedCellwise( TEST_NAME2, SparsityType.EMPTY, ValueType.RAND_ROUND_DDC, ExecType.CP );
-	}
-	
-	@Test
-	public void testCompressedCellwiseSideEmptyRand3CP() {
-		testCompressedCellwise( TEST_NAME2, SparsityType.EMPTY, ValueType.RAND_ROUND_OLE, ExecType.CP );
-	}
-	
-	@Test
 	public void testCompressedCellwiseMainDenseConstSP() {
 		testCompressedCellwise( TEST_NAME1, SparsityType.DENSE, ValueType.CONST, ExecType.SPARK );
 	}
@@ -250,9 +188,6 @@ public class CompressedCellwiseTest extends AutomatedTestBase
 		testCompressedCellwise( TEST_NAME1, SparsityType.EMPTY, ValueType.RAND_ROUND_OLE, ExecType.SPARK );
 	}
 	
-	//TODO compressed side inputs in spark
-	
-	
 	private void testCompressedCellwise(String testname, SparsityType stype, ValueType vtype, ExecType et)
 	{	
 		boolean oldRewrites = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
@@ -306,8 +241,8 @@ public class CompressedCellwiseTest extends AutomatedTestBase
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("R");	
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
-			Assert.assertTrue(heavyHittersContainsSubString("spoofCell") 
-				|| heavyHittersContainsSubString("sp_spoofCell"));
+			Assert.assertTrue(heavyHittersContainsSubString("spoofOP") 
+				|| heavyHittersContainsSubString("sp_spoofOP"));
 		}
 		finally {
 			rtplatform = platformOld;

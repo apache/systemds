@@ -27,16 +27,20 @@ from os import environ
 import argparse
 import shutil
 
-
 if environ.get('SPARK_HOME') is None:
     print('SPARK_HOME not set')
     sys.exit(1)
+else:
+    spark_home = environ.get('SPARK_HOME')
+    spark_path = join(spark_home, 'bin', 'spark-submit')
+
 
 # error help print
 def print_usage_and_exit():
     this_script = sys.argv[0]
     print('Usage: ' + this_script + '-f <dml-filename> [arguments]')
     sys.exit(1)
+
 
 cparser = argparse.ArgumentParser(description='System-ML Spark Submit Script', add_help=False)
 cparser.add_argument('--help', action='help', help='Print this usage message and exit')
@@ -53,8 +57,8 @@ cparser.add_argument('--conf', default='', help='Spark configuration file', narg
 cparser.add_argument('-nvargs', help='List of attributeName-attributeValue pairs', nargs='+')
 cparser.add_argument('-args', help='List of positional argument values', metavar='', nargs='+')
 cparser.add_argument('-config', help='System-ML configuration file (e.g SystemML-config.xml)', metavar='')
-cparser.add_argument('-stats',  default='10', help='Monitor and report caching/recompilation statistics, '
-                                                   'heavy hitter <count> is 10 unless overridden')
+cparser.add_argument('-stats', default='10', help='Monitor and report caching/recompilation statistics, '
+                                                  'heavy hitter <count> is 10 unless overridden')
 cparser.add_argument('-explain', default='runtime', help='explains plan levels can be hops, runtime, '
                                                          'recompile_hops, recompile_runtime', metavar='')
 cparser.add_argument('-exec', default='hybrid_spark', help='System-ML backend (e.g spark, spark-hybrid)', metavar='')
@@ -83,7 +87,7 @@ user_dir = os.getcwd()
 
 scripts_dir = join(project_root_dir, 'scripts')
 build_dir = join(project_root_dir, 'target')
-target_jars = build_dir + '/' + '*.jar'
+target_jars = join(build_dir, '*.jar')
 log4j_properties_path = join(project_root_dir, 'conf', 'log4j.properties.template')
 
 build_err_msg = 'You must build the project before running this script.'
@@ -99,7 +103,6 @@ print('=========================================================================
 if user_dir == project_root_dir or user_dir == join(project_root_dir, 'bin'):
     user_dir = join(project_root_dir, 'temp')
     print('Output dir: ' + user_dir)
-
 
 # if the SystemML-config.xml does not exist, create it from the template
 systemml_config_path = join(project_root_dir, 'conf', 'SystemML-config.xml')
@@ -139,7 +142,7 @@ if not (exists(script_file)):
 log_conf = 'spark.driver.extraJavaOptions="-Dlog4j.configuration=file:{}" '.format(log4j_properties_path)
 default_conf = log_conf + ' '.join(args.conf)
 
-cmd_spark = ['$SPARK_HOME/bin/spark-submit', '--master', args.master, '--driver-memory', args.driver_memory,
+cmd_spark = [spark_path, '--master', args.master, '--driver-memory', args.driver_memory,
              '--num-executors', args.num_executors, '--executor-memory', args.executor_memory,
              '--executor-cores', args.executor_cores, '--conf', default_conf]
 

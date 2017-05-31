@@ -49,25 +49,36 @@ public class BinaryOpTests extends GPUTests {
 		// Dimensions of x = n * 1
 		// Dimensions of b = m * 1
 
-		String scriptStr = "x = solve(A, b)";
 		double sparsity = 1.0; // Only dense matrices supported by "solve"
 		final int[] sides = { 32, 33, 128, 256, 513, 2049 };
 		for (int i = 0; i < sides.length; i++) {
 			for (int j = i; j < sides.length; j++) {
 				int m = sides[j];
 				int n = sides[i];
-				System.out.println("In solve, A[" + m + ", " + n + "], b[" + m + ", 1]");
-				Matrix A = generateInputMatrix(spark, m, n, sparsity, seed);
-				Matrix b = generateInputMatrix(spark, m, 1, sparsity, seed);
-				HashMap<String, Object> inputs = new HashMap<>();
-				inputs.put("A", A);
-				inputs.put("b", b);
-				List<Object> outCPU = runOnCPU(spark, scriptStr, inputs, Arrays.asList("x"));
-				List<Object> outGPU = runOnGPU(spark, scriptStr, inputs, Arrays.asList("x"));
-				assertHeavyHitterPresent("gpu_solve");
-				assertEqualObjects(outCPU.get(0), outGPU.get(0));
+				runSolveTest(sparsity, m, n);
 			}
 		}
 
+	}
+
+	/**
+	 * Runs the test for solve (Ax = b) for input with given dimensions and sparsities
+	 * A can be overdetermined (rows in A > columns in A)
+	 * @param sparsity sparsity for the block A and b
+	 * @param m rows in A
+	 * @param n columns in A
+	 */
+	protected void runSolveTest(double sparsity, int m, int n) {
+		String scriptStr = "x = solve(A, b)";
+		System.out.println("In solve, A[" + m + ", " + n + "], b[" + m + ", 1]");
+		Matrix A = generateInputMatrix(spark, m, n, sparsity, seed);
+		Matrix b = generateInputMatrix(spark, m, 1, sparsity, seed);
+		HashMap<String, Object> inputs = new HashMap<>();
+		inputs.put("A", A);
+		inputs.put("b", b);
+		List<Object> outCPU = runOnCPU(spark, scriptStr, inputs, Arrays.asList("x"));
+		List<Object> outGPU = runOnGPU(spark, scriptStr, inputs, Arrays.asList("x"));
+		assertHeavyHitterPresent("gpu_solve");
+		assertEqualObjects(outCPU.get(0), outGPU.get(0));
 	}
 }

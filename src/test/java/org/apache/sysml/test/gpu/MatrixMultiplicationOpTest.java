@@ -41,6 +41,11 @@ public class MatrixMultiplicationOpTest extends GPUTests {
 		getAndLoadTestConfiguration(TEST_NAME);
 	}
 
+	@Override
+	public double getTHRESHOLD() {
+		return 1e-5;
+	}
+
 	@Test
 	public void matrixMatrixTest1() {
 		String scriptStr = "O = X %*% Y";

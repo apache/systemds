@@ -426,7 +426,7 @@
 
 					<!-- Third argument prevents Java from popping up lots of windows on
 						MacOS -->
-					<argLine>-Dfile.encoding=UTF-8 -Xmx8g -Xms2g -Xmn200m -Djava.awt.headless=true</argLine>
+					<argLine>-Dfile.encoding=UTF-8 -Xmx2g -Xms2g -Xmn200m -Djava.awt.headless=true</argLine>
 
 					<includes>
 						<!--  All tests are integration tests as far as Maven is concerned. -->
@@ -474,7 +474,7 @@
 
 					<!-- Last argument prevents Java from popping up lots of windows on
 						MacOS -->
-					<argLine>-Dfile.encoding=UTF-8 -Xmx8g -Xms2g -Xmn200m
+					<argLine>-Dfile.encoding=UTF-8 -Xmx2g -Xms2g -Xmn200m
 						${integrationTestExtraJVMArgs}
 						-Djava.awt.headless=true</argLine>
 

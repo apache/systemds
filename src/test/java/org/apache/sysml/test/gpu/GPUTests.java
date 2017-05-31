@@ -19,25 +19,27 @@
 
 package org.apache.sysml.test.gpu;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.apache.spark.sql.SparkSession;
 import org.apache.sysml.api.mlcontext.MLContext;
 import org.apache.sysml.api.mlcontext.Matrix;
 import org.apache.sysml.api.mlcontext.Script;
 import org.apache.sysml.api.mlcontext.ScriptFactory;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.utils.Statistics;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * Parent class for all GPU tests
@@ -46,7 +48,7 @@ public abstract class GPUTests extends AutomatedTestBase {
 
 	protected final static String TEST_DIR = "org/apache/sysml/api/mlcontext";
 	protected static SparkSession spark;
-	protected final double THRESHOLD = 1e-9;
+	protected final double THRESHOLD = 1e-9;    // for relative error
 
 	@BeforeClass
 	public static void beforeClass() {
@@ -58,6 +60,11 @@ public abstract class GPUTests extends AutomatedTestBase {
 		spark.close();
 	}
 
+	/**
+	 * Gets threshold for relative error in tests
+	 *
+	 * @return a valid threshold
+	 */
 	protected double getTHRESHOLD() {
 		return THRESHOLD;
 	}
@@ -124,10 +131,32 @@ public abstract class GPUTests extends AutomatedTestBase {
 	 * @param actual   actual matrix
 	 */
 	private void assertEqualMatrices(Matrix expected, Matrix actual) {
-		double[][] expected2D = expected.to2DDoubleArray();
-		double[][] actual2D = actual.to2DDoubleArray();
-		for (int i = 0; i < expected2D.length; i++) {
-			Assert.assertArrayEquals(expected2D[i], actual2D[i], getTHRESHOLD());
+		try {
+			MatrixBlock expectedMB = expected.toMatrixObject().acquireRead();
+			MatrixBlock actualMB = actual.toMatrixObject().acquireRead();
+
+			long rows = expectedMB.getNumRows();
+			long cols = expectedMB.getNumColumns();
+			Assert.assertEquals(rows, actualMB.getNumRows());
+			Assert.assertEquals(cols, actualMB.getNumColumns());
+
+			for (int i = 0; i < rows; i++) {
+				for (int j = 0; j < cols; j++) {
+					double expectedDouble = expectedMB.quickGetValue(i, j);
+					double actualDouble = actualMB.quickGetValue(i, j);
+					if (expectedDouble != 0.0 && !Double.isNaN(expectedDouble) && Double.isFinite(expectedDouble)) {
+						double relativeError = Math.abs((expectedDouble - actualDouble) / expectedDouble);
+						Assert.assertTrue("Comparing floating point numbers, relative error(" + relativeError + ") is more than threshold ("
+								+ getTHRESHOLD() + ")", relativeError < getTHRESHOLD());
+					} else {
+						Assert.assertEquals(expectedDouble, actualDouble, getTHRESHOLD());
+					}
+				}
+			}
+			expected.toMatrixObject().release();
+			actual.toMatrixObject().release();
+		} catch (DMLRuntimeException e){
+			throw new RuntimeException(e);
 		}
 	}
 
@@ -200,7 +229,15 @@ public abstract class GPUTests extends AutomatedTestBase {
 		if (expected instanceof Boolean) {
 			Assert.assertEquals(((Boolean) expected).booleanValue(), ((Boolean) actual).booleanValue());
 		} else if (expected instanceof Double) {
-			Assert.assertEquals(((Double) expected).doubleValue(), ((Double) actual).doubleValue(), getTHRESHOLD());
+			double expectedDouble = ((Double) expected).doubleValue();
+			double actualDouble = ((Double) actual).doubleValue();
+			if (expectedDouble != 0.0 && !Double.isNaN(expectedDouble) && Double.isFinite(expectedDouble)) {
+				double relativeError = Math.abs((expectedDouble - actualDouble) / expectedDouble);
+				Assert.assertTrue("Comparing floating point numbers, relative error(" + relativeError + ") is more than threshold ("
+						+ getTHRESHOLD() + ")", relativeError < getTHRESHOLD());
+			} else {
+				Assert.assertEquals(expectedDouble, actualDouble, getTHRESHOLD());
+			}
 		} else if (expected instanceof String) {
 			Assert.assertEquals(expected.toString(), actual.toString());
 		} else if (expected instanceof Integer) {

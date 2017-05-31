@@ -20,6 +20,9 @@
 package org.apache.sysml.test.gpu;
 
 import org.apache.sysml.api.mlcontext.Matrix;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysml.runtime.util.ConvolutionUtils;
 import org.apache.sysml.test.utils.TestUtils;
 import org.junit.Test;
@@ -38,7 +41,21 @@ public class NeuralNetworkOpTests extends GPUTests {
 
 	// The MAX_OP_SIZE is to take into consideration the memory available on the GPU as well as
 	// limits set by cudnn (operands need to be less than 2GB)
-	private final double MAX_OP_SIZE = 1.5 * 1024 * 1024 * 1024; // 1 GB
+	private static final double MAX_OP_SIZE;
+	static{
+		double MAX = 0.5 * 1024 * 1024 * 1024; // 0.5 GB (this HAS to be less than 2GB)
+		try {
+			// Cap the maximum allowed operand size to 1/3rd of the usable GPU memory or MAX, whichever is lesser
+			GPUContext gCtx = GPUContextPool.getFromPool();
+			long availableMemory = gCtx.getAvailableMemory();
+			double averageMemoryPerOperand = availableMemory / 3.0;
+			MAX_OP_SIZE = Math.min(averageMemoryPerOperand, MAX);
+			GPUContextPool.returnToPool(gCtx);
+		} catch (DMLRuntimeException e){
+			throw new RuntimeException(e);
+		}
+
+	}
 
 	// More comprehensive but time consuming tests
 	/*
@@ -61,10 +78,10 @@ public class NeuralNetworkOpTests extends GPUTests {
 	private final List<Integer> Hlst = Arrays.asList(256, 64);
 	private final List<Integer> Wlst = Arrays.asList(256, 64);
 	private final List<Integer> Klst = Arrays.asList(30, 20);
-	private final List<Integer> Rlst = Arrays.asList(128, 4);
-	private final List<Integer> Slst = Arrays.asList(128, 4);
-	private final List<Integer> strideHeightLst = Arrays.asList(9, 3);
-	private final List<Integer> strideWidthLst = Arrays.asList(9, 3);
+	private final List<Integer> Rlst = Arrays.asList(128, 3, 1);
+	private final List<Integer> Slst = Arrays.asList(128, 3, 1);
+	private final List<Integer> strideHeightLst = Arrays.asList(9, 1);
+	private final List<Integer> strideWidthLst = Arrays.asList(9, 1);
 	private final List<Integer> padHeightLst = Arrays.asList(3, 1);
 	private final List<Integer> padWidthLst = Arrays.asList(3, 1);
 	private final List<Double> sparsitylst = Arrays.asList(1.0);    // Only test for dense
@@ -120,7 +137,7 @@ public class NeuralNetworkOpTests extends GPUTests {
 														double filterSizeInMB = filterSize / (1024.0 * 1024.0);
 														double doutSizeInMB = doutSize / (1024.0 * 1024.0);
 														System.out
-																.format("conv2d_backward_filter, image[%d,%d,%d,%d](%.1fMB), filter[%d,%d,%d,%d](%.1f), dout[%d,%d,%d,%d](%.1fMB), stride[%d,%d], padding[%d,%d]",
+																.format("conv2d, image[%d,%d,%d,%d](%.1fMB), filter[%d,%d,%d,%d](%.1f), dout[%d,%d,%d,%d](%.1fMB), stride[%d,%d], padding[%d,%d]",
 																		N, C, H, W, imageSizeInMB, N, C, R, S,
 																		filterSizeInMB, N, K, P, Q, doutSizeInMB,
 																		strideH, strideW, padH, padW);

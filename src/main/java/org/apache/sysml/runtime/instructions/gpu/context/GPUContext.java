@@ -386,7 +386,7 @@ public class GPUContext {
       return;
 
     if (allocatedGPUObjects.size() == 0) {
-      throw new DMLRuntimeException("There is not enough memory on device for this matrix!");
+      throw new DMLRuntimeException("There is not enough memory on device for this matrix, request (" + neededSize + ")");
     }
 
     Collections.sort(allocatedGPUObjects, new Comparator<GPUObject>() {
@@ -431,7 +431,7 @@ public class GPUContext {
     while (neededSize > getAvailableMemory() && allocatedGPUObjects.size() > 0) {
       GPUObject toBeRemoved = allocatedGPUObjects.get(allocatedGPUObjects.size() - 1);
       if (toBeRemoved.locks.get() > 0) {
-        throw new DMLRuntimeException("There is not enough memory on device for this matrix!");
+        throw new DMLRuntimeException("There is not enough memory on device for this matrix, request (" + neededSize + ")");
       }
       if (toBeRemoved.dirty) {
         toBeRemoved.copyFromDeviceToHost();

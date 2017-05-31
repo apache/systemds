@@ -782,13 +782,23 @@ public class ColGroupOLE extends ColGroupOffset
 			_ru = ru;
 			_boff = _ptr[k];
 			_blen = len(k);
-			_bix = 0;
-			_start = 0; //init first segment
-			_slen = _data[_boff + _bix];
-			_spos = 0;
-			_rpos = _data[_boff + _bix + 1];
-			while( _rpos < rl )
-				nextRowOffset();
+			
+			//initialize position via segment-aligned skip-scan
+			int lrl = rl - rl%BitmapEncoder.BITMAP_BLOCK_SZ;
+			_bix = skipScanVal(k, lrl);
+			_start = lrl; 
+			
+			//move position to actual rl boundary
+			if( _bix < _blen ) {
+				_slen = _data[_boff + _bix];
+				_spos = 0;
+				_rpos = _data[_boff + _bix + 1];
+				while( _rpos < rl )
+					nextRowOffset();
+			}
+			else {
+				_rpos = _ru;
+			}
 		}
 
 		@Override

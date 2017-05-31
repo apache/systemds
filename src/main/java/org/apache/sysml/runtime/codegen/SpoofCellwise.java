@@ -31,6 +31,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.compress.BitmapEncoder;
 import org.apache.sysml.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysml.runtime.functionobjects.Builtin;
 import org.apache.sysml.runtime.functionobjects.Builtin.BuiltinCode;
@@ -196,31 +197,32 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		}
 		
 		//input preparation
+		MatrixBlock a = inputs.get(0);
 		SideInput[] b = prepInputMatricesAbstract(inputs);
 		double[] scalars = prepInputScalars(scalarObjects);
-		final int m = inputs.get(0).getNumRows();
-		final int n = inputs.get(0).getNumColumns();
+		final int m = a.getNumRows();
+		final int n = a.getNumColumns();
 		
 		//sparse safe check 
 		boolean sparseSafe = isSparseSafe() || (b.length == 0
 				&& genexec( 0, b, scalars, m, n, 0, 0 ) == 0);
 		
 		//result allocation and preparations
-		boolean sparseOut = sparseSafe && inputs.get(0).isInSparseFormat()
-				&& _type == CellType.NO_AGG && !(inputs.get(0) instanceof CompressedMatrixBlock);
-		out.reset(inputs.get(0).getNumRows(), _type == CellType.NO_AGG ?
-				inputs.get(0).getNumColumns() : 1, sparseOut);
+		boolean sparseOut = sparseSafe && a.isInSparseFormat()
+				&& _type == CellType.NO_AGG;
+		out.reset(a.getNumRows(), _type == CellType.NO_AGG ?
+				a.getNumColumns() : 1, sparseOut);
 		out.allocateDenseOrSparseBlock();
 		
 		long lnnz = 0;
 		if( k <= 1 ) //SINGLE-THREADED
 		{
 			if( inputs.get(0) instanceof CompressedMatrixBlock )
-				lnnz = executeCompressed((CompressedMatrixBlock)inputs.get(0), b, scalars, out, m, n, sparseSafe, 0, m);
+				lnnz = executeCompressed((CompressedMatrixBlock)a, b, scalars, out, m, n, sparseSafe, 0, m);
 			else if( !inputs.get(0).isInSparseFormat() )
-				lnnz = executeDense(inputs.get(0).getDenseBlock(), b, scalars, out, m, n, sparseSafe, 0, m);
+				lnnz = executeDense(a.getDenseBlock(), b, scalars, out, m, n, sparseSafe, 0, m);
 			else
-				lnnz = executeSparse(inputs.get(0).getSparseBlock(), b, scalars, out, m, n, sparseSafe, 0, m);
+				lnnz = executeSparse(a.getSparseBlock(), b, scalars, out, m, n, sparseSafe, 0, m);
 		}
 		else  //MULTI-THREADED
 		{
@@ -229,9 +231,12 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 				ArrayList<ParExecTask> tasks = new ArrayList<ParExecTask>();
 				int nk = UtilFunctions.roundToNext(Math.min(8*k,m/32), k);
 				int blklen = (int)(Math.ceil((double)m/nk));
+				if( a instanceof CompressedMatrixBlock && sparseOut
+					&& k/2*BitmapEncoder.BITMAP_BLOCK_SZ < m)
+					blklen = BitmapEncoder.getAlignedBlocksize(blklen);
 				for( int i=0; i<nk & i*blklen<m; i++ )
-					tasks.add(new ParExecTask(inputs.get(0), b, scalars, out, 
-						m, n, sparseSafe, i*blklen, Math.min((i+1)*blklen, m))); 
+					tasks.add(new ParExecTask(a, b, scalars, out, m, n,
+						sparseSafe, i*blklen, Math.min((i+1)*blklen, m))); 
 				//execute tasks
 				List<Future<Long>> taskret = pool.invokeAll(tasks);	
 				pool.shutdown();
@@ -253,7 +258,8 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 	/////////
 	//function dispatch
 	
-	private long executeDense(double[] a, SideInput[] b, double[] scalars, MatrixBlock out, int m, int n, boolean sparseSafe, int rl, int ru) 
+	private long executeDense(double[] a, SideInput[] b, double[] scalars, 
+			MatrixBlock out, int m, int n, boolean sparseSafe, int rl, int ru) 
 		throws DMLRuntimeException 
 	{
 		double[] c = out.getDenseBlock();
@@ -270,7 +276,8 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		return -1;
 	}
 	
-	private double executeDenseAndAgg(double[] a, SideInput[] b, double[] scalars, int m, int n, boolean sparseSafe, int rl, int ru) throws DMLRuntimeException 
+	private double executeDenseAndAgg(double[] a, SideInput[] b, double[] scalars, 
+			int m, int n, boolean sparseSafe, int rl, int ru) throws DMLRuntimeException 
 	{
 		//numerically stable aggregation for sum/sum_sq
 		if( _aggOp == AggOp.SUM || _aggOp == AggOp.SUM_SQ )
@@ -279,7 +286,8 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 			return executeDenseAggMxx(a, b, scalars, m, n, sparseSafe, rl, ru);
 	}
 	
-	private long executeSparse(SparseBlock sblock, SideInput[] b, double[] scalars, MatrixBlock out, int m, int n, boolean sparseSafe, int rl, int ru) 
+	private long executeSparse(SparseBlock sblock, SideInput[] b, double[] scalars, 
+			MatrixBlock out, int m, int n, boolean sparseSafe, int rl, int ru) 
 		throws DMLRuntimeException 
 	{
 		if( sparseSafe && sblock == null )
@@ -301,7 +309,8 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		return -1;
 	}
 	
-	private double executeSparseAndAgg(SparseBlock sblock, SideInput[] b, double[] scalars, int m, int n, boolean sparseSafe, int rl, int ru) 
+	private double executeSparseAndAgg(SparseBlock sblock, SideInput[] b, double[] scalars, 
+			int m, int n, boolean sparseSafe, int rl, int ru) 
 		throws DMLRuntimeException 
 	{
 		if( sparseSafe && sblock == null )
@@ -313,15 +322,18 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 			return executeSparseAggMxx(sblock, b, scalars, m, n, sparseSafe, rl, ru);
 	}
 	
-	private long executeCompressed(CompressedMatrixBlock a, SideInput[] b, double[] scalars, MatrixBlock out, int m, int n, boolean sparseSafe, int rl, int ru) 
+	private long executeCompressed(CompressedMatrixBlock a, SideInput[] b, double[] scalars, 
+			MatrixBlock out, int m, int n, boolean sparseSafe, int rl, int ru) 
 		throws DMLRuntimeException 
 	{
-		double[] c = out.getDenseBlock();
-		
 		if( _type == CellType.NO_AGG ) {
-			return executeCompressedNoAgg(a, b, scalars, c, m, n, sparseSafe, rl, ru);
+			long lnnz = executeCompressedNoAgg(a, b, scalars, out, m, n, sparseSafe, rl, ru);
+			if( out.isInSparseFormat() )
+				out.sortSparseRows(rl, ru);
+			return lnnz;
 		}
 		else if( _type == CellType.ROW_AGG ) {
+			double[] c = out.getDenseBlock();
 			if( _aggOp == AggOp.SUM || _aggOp == AggOp.SUM_SQ )
 				return executeCompressedRowAggSum(a, b, scalars, c, m, n, sparseSafe, rl, ru);
 			else
@@ -330,7 +342,8 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		return -1;
 	}
 	
-	private double executeCompressedAndAgg(CompressedMatrixBlock a, SideInput[] b, double[] scalars, int m, int n, boolean sparseSafe, int rl, int ru) throws DMLRuntimeException 
+	private double executeCompressedAndAgg(CompressedMatrixBlock a, SideInput[] b, double[] scalars, 
+			int m, int n, boolean sparseSafe, int rl, int ru) throws DMLRuntimeException 
 	{
 		//numerically stable aggregation for sum/sum_sq
 		if( _aggOp == AggOp.SUM || _aggOp == AggOp.SUM_SQ )
@@ -342,7 +355,8 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 	/////////
 	//core operator skeletons for dense, sparse, and compressed
 
-	private long executeDenseNoAgg(double[] a, SideInput[] b, double[] scalars, double[] c, int m, int n, boolean sparseSafe, int rl, int ru) 
+	private long executeDenseNoAgg(double[] a, SideInput[] b, double[] scalars, 
+			double[] c, int m, int n, boolean sparseSafe, int rl, int ru) 
 		throws DMLRuntimeException 
 	{
 		long lnnz = 0;
@@ -357,7 +371,8 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		return lnnz;
 	}
 	
-	private long executeDenseRowAggSum(double[] a, SideInput[] b, double[] scalars, double[] c, int m, int n, boolean sparseSafe, int rl, int ru) 
+	private long executeDenseRowAggSum(double[] a, SideInput[] b, double[] scalars, 
+			double[] c, int m, int n, boolean sparseSafe, int rl, int ru) 
 		throws DMLRuntimeException 
 	{
 		KahanFunction kplus = (KahanFunction) getAggFunction();
@@ -375,7 +390,8 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		return lnnz;
 	}
 	
-	private long executeDenseRowAggMxx(double[] a, SideInput[] b, double[] scalars, double[] c, int m, int n, boolean sparseSafe, int rl, int ru) 
+	private long executeDenseRowAggMxx(double[] a, SideInput[] b, double[] scalars, 
+			double[] c, int m, int n, boolean sparseSafe, int rl, int ru) 
 		throws DMLRuntimeException 
 	{
 		double initialVal = (_aggOp==AggOp.MIN) ? Double.MAX_VALUE : -Double.MAX_VALUE;
@@ -403,7 +419,8 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		return lnnz;
 	}
 	
-	private double executeDenseAggSum(double[] a, SideInput[] b, double[] scalars, int m, int n, boolean sparseSafe, int rl, int ru) 
+	private double executeDenseAggSum(double[] a, SideInput[] b, double[] scalars, 
+			int m, int n, boolean sparseSafe, int rl, int ru) 
 		throws DMLRuntimeException 
 	{
 		KahanFunction kplus = (KahanFunction) getAggFunction();
@@ -418,7 +435,8 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		return kbuff._sum;
 	}
 	
-	private double executeDenseAggMxx(double[] a, SideInput[] b, double[] scalars, int m, int n, boolean sparseSafe, int rl, int ru) 
+	private double executeDenseAggMxx(double[] a, SideInput[] b, double[] scalars, 
+			int m, int n, boolean sparseSafe, int rl, int ru) 
 		throws DMLRuntimeException 
 	{
 		//safe aggregation for min/max w/ handling of zero entries
@@ -435,7 +453,8 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		return ret;
 	}
 	
-	private long executeSparseNoAggSparse(SparseBlock sblock, SideInput[] b, double[] scalars, MatrixBlock out, int m, int n, boolean sparseSafe, int rl, int ru) 
+	private long executeSparseNoAggSparse(SparseBlock sblock, SideInput[] b, double[] scalars, 
+			MatrixBlock out, int m, int n, boolean sparseSafe, int rl, int ru) 
 		throws DMLRuntimeException 
 	{
 		//note: sequential scan algorithm for both sparse-safe and -unsafe 
@@ -471,7 +490,8 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		return lnnz;
 	}
 	
-	private long executeSparseNoAggDense(SparseBlock sblock, SideInput[] b, double[] scalars, MatrixBlock out, int m, int n, boolean sparseSafe, int rl, int ru) 
+	private long executeSparseNoAggDense(SparseBlock sblock, SideInput[] b, double[] scalars, 
+			MatrixBlock out, int m, int n, boolean sparseSafe, int rl, int ru) 
 		throws DMLRuntimeException 
 	{
 		//note: sequential scan algorithm for both sparse-safe and -unsafe 
@@ -504,7 +524,8 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		return lnnz;
 	}
 	
-	private long executeSparseRowAggSum(SparseBlock sblock, SideInput[] b, double[] scalars, MatrixBlock out, int m, int n, boolean sparseSafe, int rl, int ru) 
+	private long executeSparseRowAggSum(SparseBlock sblock, SideInput[] b, double[] scalars, 
+			MatrixBlock out, int m, int n, boolean sparseSafe, int rl, int ru) 
 		throws DMLRuntimeException 
 	{
 		KahanFunction kplus = (KahanFunction) getAggFunction();
@@ -542,7 +563,8 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		return lnnz;
 	}
 	
-	private long executeSparseRowAggMxx(SparseBlock sblock, SideInput[] b, double[] scalars, MatrixBlock out, int m, int n, boolean sparseSafe, int rl, int ru) 
+	private long executeSparseRowAggMxx(SparseBlock sblock, SideInput[] b, double[] scalars, 
+			MatrixBlock out, int m, int n, boolean sparseSafe, int rl, int ru) 
 		throws DMLRuntimeException 
 	{
 		double initialVal = (_aggOp==AggOp.MIN) ? Double.MAX_VALUE : -Double.MAX_VALUE;
@@ -580,7 +602,8 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		return lnnz;
 	}
 	
-	private double executeSparseAggSum(SparseBlock sblock, SideInput[] b, double[] scalars, int m, int n, boolean sparseSafe, int rl, int ru) 
+	private double executeSparseAggSum(SparseBlock sblock, SideInput[] b, double[] scalars, 
+			int m, int n, boolean sparseSafe, int rl, int ru) 
 		throws DMLRuntimeException 
 	{
 		KahanFunction kplus = (KahanFunction) getAggFunction();
@@ -614,7 +637,8 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		return kbuff._sum;
 	}
 	
-	private double executeSparseAggMxx(SparseBlock sblock, SideInput[] b, double[] scalars, int m, int n, boolean sparseSafe, int rl, int ru) 
+	private double executeSparseAggMxx(SparseBlock sblock, SideInput[] b, double[] scalars, 
+			int m, int n, boolean sparseSafe, int rl, int ru) 
 		throws DMLRuntimeException 
 	{
 		double ret = (_aggOp==AggOp.MIN) ? Double.MAX_VALUE : -Double.MAX_VALUE;
@@ -649,21 +673,41 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		return ret;
 	}
 	
-	private long executeCompressedNoAgg(CompressedMatrixBlock a, SideInput[] b, double[] scalars, double[] c, int m, int n, boolean sparseSafe, int rl, int ru) 
+	private long executeCompressedNoAgg(CompressedMatrixBlock a, SideInput[] b, double[] scalars, 
+			MatrixBlock out, int m, int n, boolean sparseSafe, int rl, int ru) 
 		throws DMLRuntimeException 
 	{
+		double[] c = out.getDenseBlock();
+		SparseBlock csblock = out.getSparseBlock();
+		
+		//preallocate sparse rows to avoid reallocations
+		//note: counting nnz requires segment-aligned boundaries, which is enforced 
+		//whenever k/2 * BITMAP_BLOCK_SZ > m (i.e., it does not limit parallelism)
+		if( out.isInSparseFormat() && rl%BitmapEncoder.BITMAP_BLOCK_SZ==0
+			&& ru%BitmapEncoder.BITMAP_BLOCK_SZ==0) {
+			int[] rnnz = a.countNonZerosPerRow(rl, ru);
+			for( int i=rl; i<ru; i++ )
+				csblock.allocate(i, rnnz[i-rl]);
+		}
+		
 		long lnnz = 0;
 		Iterator<IJV> iter = a.getIterator(rl, ru, !sparseSafe);
 		while( iter.hasNext() ) {
 			IJV cell = iter.next();
 			double val = genexec(cell.getV(), b, scalars, m, n, cell.getI(), cell.getJ());
-			c[cell.getI()*n+cell.getJ()] = val; 
+			if( out.isInSparseFormat() ) {
+				csblock.allocate(cell.getI());
+				csblock.append(cell.getI(), cell.getJ(), val);
+			}
+			else
+				c[cell.getI()*n+cell.getJ()] = val; 
 			lnnz += (val!=0) ? 1 : 0;
 		}
 		return lnnz;
 	}
 	
-	private long executeCompressedRowAggSum(CompressedMatrixBlock a, SideInput[] b, double[] scalars, double[] c, int m, int n, boolean sparseSafe, int rl, int ru) 
+	private long executeCompressedRowAggSum(CompressedMatrixBlock a, SideInput[] b, double[] scalars, 
+			double[] c, int m, int n, boolean sparseSafe, int rl, int ru) 
 		throws DMLRuntimeException 
 	{
 		KahanFunction kplus = (KahanFunction) getAggFunction();
@@ -682,7 +726,8 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		return lnnz;
 	}
 	
-	private long executeCompressedRowAggMxx(CompressedMatrixBlock a, SideInput[] b, double[] scalars, double[] c, int m, int n, boolean sparseSafe, int rl, int ru) 
+	private long executeCompressedRowAggMxx(CompressedMatrixBlock a, SideInput[] b, double[] scalars, 
+			double[] c, int m, int n, boolean sparseSafe, int rl, int ru) 
 		throws DMLRuntimeException 
 	{
 		Arrays.fill(c, rl, ru, (_aggOp==AggOp.MIN) ? Double.MAX_VALUE : -Double.MAX_VALUE);
@@ -699,7 +744,8 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		return lnnz;
 	}
 	
-	private double executeCompressedAggSum(CompressedMatrixBlock a, SideInput[] b, double[] scalars, int m, int n, boolean sparseSafe, int rl, int ru) 
+	private double executeCompressedAggSum(CompressedMatrixBlock a, SideInput[] b, double[] scalars, 
+			int m, int n, boolean sparseSafe, int rl, int ru) 
 		throws DMLRuntimeException 
 	{
 		KahanFunction kplus = (KahanFunction) getAggFunction();
@@ -714,7 +760,8 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		return kbuff._sum;
 	}
 	
-	private double executeCompressedAggMxx(CompressedMatrixBlock a, SideInput[] b, double[] scalars, int m, int n, boolean sparseSafe, int rl, int ru) 
+	private double executeCompressedAggMxx(CompressedMatrixBlock a, SideInput[] b, double[] scalars, 
+			int m, int n, boolean sparseSafe, int rl, int ru) 
 		throws DMLRuntimeException 
 	{
 		//safe aggregation for min/max w/ handling of zero entries
@@ -731,7 +778,8 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		return ret;
 	}
 	
-	protected abstract double genexec( double a, SideInput[] b, double[] scalars, int m, int n, int rowIndex, int colIndex);
+	protected abstract double genexec( double a, SideInput[] b, 
+			double[] scalars, int m, int n, int rowIndex, int colIndex);
 	
 	private class ParAggTask implements Callable<Double> 
 	{

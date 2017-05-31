@@ -594,9 +594,8 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		try {
 			ExecutorService pool = Executors.newFixedThreadPool( k );
 			int rlen = getNumRows();
-			int seqsz = BitmapEncoder.BITMAP_BLOCK_SZ;
-			int blklen = (int)(Math.ceil((double)rlen/k));
-			blklen += (blklen%seqsz != 0)?seqsz-blklen%seqsz:0;
+			int blklen = BitmapEncoder.getAlignedBlocksize(
+				(int)(Math.ceil((double)rlen/k)));
 			ArrayList<DecompressTask> tasks = new ArrayList<DecompressTask>();
 			for( int i=0; i<k & i*blklen<getNumRows(); i++ )
 				tasks.add(new DecompressTask(_colGroups, ret, i*blklen, Math.min((i+1)*blklen,rlen)));
@@ -811,6 +810,13 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	
 	public Iterator<IJV> getIterator(int rl, int ru, int cgl, int cgu, boolean inclZeros) {
 		return new ColumnGroupIterator(rl, ru, cgl, cgu, inclZeros);
+	}
+	
+	public int[] countNonZerosPerRow(int rl, int ru) {
+		int[] rnnz = new int[ru-rl];
+		for (ColGroup grp : _colGroups)
+			grp.countNonZerosPerRow(rnnz, rl, ru);
+		return rnnz;
 	}
 	
 	//////////////////////////////////////////
@@ -1096,9 +1102,8 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 				ExecutorService pool = Executors.newFixedThreadPool( op.getNumThreads() );
 				ArrayList<UnaryAggregateTask> tasks = new ArrayList<UnaryAggregateTask>();
 				if( op.indexFn instanceof ReduceCol && grpParts.length > 0 ) {
-					int seqsz = BitmapEncoder.BITMAP_BLOCK_SZ;
-					int blklen = (int)(Math.ceil((double)rlen/op.getNumThreads()));
-					blklen += (blklen%seqsz != 0)?seqsz-blklen%seqsz:0;
+					int blklen = BitmapEncoder.getAlignedBlocksize(
+						(int)(Math.ceil((double)rlen/op.getNumThreads())));
 					for( int i=0; i<op.getNumThreads() & i*blklen<rlen; i++ )
 						tasks.add(new UnaryAggregateTask(grpParts[0], ret, i*blklen, Math.min((i+1)*blklen,rlen), op));
 				}
@@ -1351,9 +1356,8 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 			//compute remaining compressed column groups in parallel
 			ExecutorService pool = Executors.newFixedThreadPool( k );
 			int rlen = getNumRows();
-			int seqsz = BitmapEncoder.BITMAP_BLOCK_SZ;
-			int blklen = (int)(Math.ceil((double)rlen/k));
-			blklen += (blklen%seqsz != 0)?seqsz-blklen%seqsz:0;
+			int blklen = BitmapEncoder.getAlignedBlocksize(
+				(int)(Math.ceil((double)rlen/k)));
 			ArrayList<RightMatrixMultTask> tasks = new ArrayList<RightMatrixMultTask>();
 			for( int i=0; i<k & i*blklen<getNumRows(); i++ )
 				tasks.add(new RightMatrixMultTask(_colGroups, vector, result, i*blklen, Math.min((i+1)*blklen,rlen)));

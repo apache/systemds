@@ -783,7 +783,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		if( !sparse || sparseBlock==null )
 			return;		
 		for( int i=rl; i<ru; i++ )
-			sparseBlock.sort(i);
+			if( !sparseBlock.isEmpty(i) )
+				sparseBlock.sort(i);
 	}
 	
 	/**

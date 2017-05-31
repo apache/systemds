@@ -476,7 +476,8 @@ public abstract class ColGroupOffset extends ColGroupValue
 				_rpos = _ru; //end after zero iterator
 				return;
 			}
-			else if( _cpos+1 >= getNumCols() && !(_viter!=null && _viter.hasNext()) ) {
+			else if( (_rpos< 0 || _cpos+1 >= getNumCols()) 
+					&& !(_viter!=null && _viter.hasNext()) ) {
 				do {
 					_vpos++;
 					if( _vpos < getNumValues() )

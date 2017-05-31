@@ -19,7 +19,14 @@
 
 package org.apache.sysml.test.integration.gpu;
 
-import org.apache.sysml.test.gpu.*;
+import org.apache.sysml.test.gpu.AggregateUnaryOpTests;
+import org.apache.sysml.test.gpu.BinaryOpTests;
+import org.apache.sysml.test.gpu.MatrixMatrixElementWiseOpTests;
+import org.apache.sysml.test.gpu.MatrixMultiplicationOpTest;
+import org.apache.sysml.test.gpu.NeuralNetworkOpTests;
+import org.apache.sysml.test.gpu.ReorgOpTests;
+import org.apache.sysml.test.gpu.ScalarMatrixElementwiseOpTests;
+import org.apache.sysml.test.gpu.UnaryOpTests;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;

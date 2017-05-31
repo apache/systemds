@@ -26,6 +26,14 @@ import jcuda.jcusolver.cusolverSpHandle;
 import jcuda.jcusparse.cusparseHandle;
 import jcuda.runtime.JCuda;
 import jcuda.runtime.cudaDeviceProp;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Map;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
@@ -37,8 +45,6 @@ import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
 import org.apache.sysml.utils.GPUStatistics;
 import org.apache.sysml.utils.LRUCacheMap;
 
-import java.util.*;
-
 import static jcuda.jcublas.JCublas2.cublasCreate;
 import static jcuda.jcublas.JCublas2.cublasDestroy;
 import static jcuda.jcudnn.JCudnn.cudnnCreate;
@@ -49,7 +55,14 @@ import static jcuda.jcusolver.JCusolverSp.cusolverSpCreate;
 import static jcuda.jcusolver.JCusolverSp.cusolverSpDestroy;
 import static jcuda.jcusparse.JCusparse.cusparseCreate;
 import static jcuda.jcusparse.JCusparse.cusparseDestroy;
-import static jcuda.runtime.JCuda.*;
+import static jcuda.runtime.JCuda.cudaDeviceScheduleBlockingSync;
+import static jcuda.runtime.JCuda.cudaFree;
+import static jcuda.runtime.JCuda.cudaGetDeviceCount;
+import static jcuda.runtime.JCuda.cudaMalloc;
+import static jcuda.runtime.JCuda.cudaMemGetInfo;
+import static jcuda.runtime.JCuda.cudaMemset;
+import static jcuda.runtime.JCuda.cudaSetDevice;
+import static jcuda.runtime.JCuda.cudaSetDeviceFlags;
 
 /**
  * Represents a context per GPU accessible through the same JVM
@@ -537,6 +550,7 @@ public class GPUContext {
    * @return the shared memory per block
    * @throws DMLRuntimeException ?
    */
+  @SuppressWarnings("unused")
   public long getMaxSharedMemory() throws DMLRuntimeException {
     cudaDeviceProp deviceProp = getGPUProperties();
     return deviceProp.sharedMemPerBlock;
@@ -582,6 +596,7 @@ public class GPUContext {
    *
    * @throws DMLRuntimeException if error
    */
+  @SuppressWarnings("unused")
   public void destroy() throws DMLRuntimeException {
     LOG.trace("GPU : this context was destroyed, this = " + this.toString());
     clearMemory();

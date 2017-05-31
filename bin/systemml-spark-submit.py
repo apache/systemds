@@ -140,7 +140,12 @@ if not (exists(script_file)):
         print('DML Script:' + script_file)
 
 log_conf = 'spark.driver.extraJavaOptions=-Dlog4j.configuration=file:{} '.format(log4j_properties_path)
-default_conf = abspath(log_conf) + ' '.join(args.conf)
+
+# Backslash problem in windows.
+if platform.system() == 'Windows':
+    log_conf = log_conf.replace('\\', '//')
+
+default_conf = log_conf + ' '.join(args.conf)
 
 cmd_spark = [spark_path, '--master', args.master, '--driver-memory', args.driver_memory,
              '--num-executors', args.num_executors, '--executor-memory', args.executor_memory,

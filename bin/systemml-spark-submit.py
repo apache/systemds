@@ -22,7 +22,7 @@
 
 import os
 import sys
-from os.path import join, exists
+from os.path import join, exists, abspath
 from os import environ
 import argparse
 import shutil
@@ -130,7 +130,7 @@ def find_file(name, path):
 
 # if the script file path was omitted, try to complete the script path
 if not (exists(script_file)):
-    script_file_name = os.path.abspath(script_file)
+    script_file_name = abspath(script_file)
     script_file_found = find_file(script_file, scripts_dir)
     if script_file_found is None:
         print('Could not find DML script: ' + script_file)
@@ -140,7 +140,7 @@ if not (exists(script_file)):
         print('DML Script:' + script_file)
 
 log_conf = 'spark.driver.extraJavaOptions=-Dlog4j.configuration=file:{} '.format(log4j_properties_path)
-default_conf = log_conf + ' '.join(args.conf)
+default_conf = abspath(log_conf) + ' '.join(args.conf)
 
 cmd_spark = [spark_path, '--master', args.master, '--driver-memory', args.driver_memory,
              '--num-executors', args.num_executors, '--executor-memory', args.executor_memory,

@@ -30,7 +30,6 @@ import org.apache.sysml.api.mlcontext.Matrix;
 import org.apache.sysml.api.mlcontext.Script;
 import org.apache.sysml.api.mlcontext.ScriptFactory;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -146,8 +145,8 @@ public abstract class GPUTests extends AutomatedTestBase {
 					double actualDouble = actualMB.quickGetValue(i, j);
 					if (expectedDouble != 0.0 && !Double.isNaN(expectedDouble) && Double.isFinite(expectedDouble)) {
 						double relativeError = Math.abs((expectedDouble - actualDouble) / expectedDouble);
-						Assert.assertTrue("Comparing floating point numbers, relative error(" + relativeError + ") is more than threshold ("
-								+ getTHRESHOLD() + ")", relativeError < getTHRESHOLD());
+						Assert.assertTrue("Comparing floating point numbers, relative error(" + relativeError
+								+ ") is more than threshold (" + getTHRESHOLD() + ")", relativeError < getTHRESHOLD());
 					} else {
 						Assert.assertEquals(expectedDouble, actualDouble, getTHRESHOLD());
 					}
@@ -155,7 +154,7 @@ public abstract class GPUTests extends AutomatedTestBase {
 			}
 			expected.toMatrixObject().release();
 			actual.toMatrixObject().release();
-		} catch (DMLRuntimeException e){
+		} catch (DMLRuntimeException e) {
 			throw new RuntimeException(e);
 		}
 	}
@@ -233,8 +232,8 @@ public abstract class GPUTests extends AutomatedTestBase {
 			double actualDouble = ((Double) actual).doubleValue();
 			if (expectedDouble != 0.0 && !Double.isNaN(expectedDouble) && Double.isFinite(expectedDouble)) {
 				double relativeError = Math.abs((expectedDouble - actualDouble) / expectedDouble);
-				Assert.assertTrue("Comparing floating point numbers, relative error(" + relativeError + ") is more than threshold ("
-						+ getTHRESHOLD() + ")", relativeError < getTHRESHOLD());
+				Assert.assertTrue("Comparing floating point numbers, relative error(" + relativeError
+						+ ") is more than threshold (" + getTHRESHOLD() + ")", relativeError < getTHRESHOLD());
 			} else {
 				Assert.assertEquals(expectedDouble, actualDouble, getTHRESHOLD());
 			}

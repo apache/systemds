@@ -19,13 +19,13 @@
 
 package org.apache.sysml.test.gpu;
 
-import org.apache.sysml.api.mlcontext.Matrix;
-import org.apache.sysml.test.utils.TestUtils;
-import org.junit.Test;
-
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+
+import org.apache.sysml.api.mlcontext.Matrix;
+import org.apache.sysml.test.utils.TestUtils;
+import org.junit.Test;
 
 /**
  * Tests builtin binary ops on GPU
@@ -64,9 +64,10 @@ public class BinaryOpTests extends GPUTests {
 	/**
 	 * Runs the test for solve (Ax = b) for input with given dimensions and sparsities
 	 * A can be overdetermined (rows in A > columns in A)
+	 *
 	 * @param sparsity sparsity for the block A and b
-	 * @param m rows in A
-	 * @param n columns in A
+	 * @param m        rows in A
+	 * @param n        columns in A
 	 */
 	protected void runSolveTest(double sparsity, int m, int n) {
 		String scriptStr = "x = solve(A, b)";

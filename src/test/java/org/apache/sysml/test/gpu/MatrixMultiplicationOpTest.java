@@ -19,13 +19,13 @@
 
 package org.apache.sysml.test.gpu;
 
-import org.apache.sysml.api.mlcontext.Matrix;
-import org.apache.sysml.test.utils.TestUtils;
-import org.junit.Test;
-
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+
+import org.apache.sysml.api.mlcontext.Matrix;
+import org.apache.sysml.test.utils.TestUtils;
+import org.junit.Test;
 
 /**
  * Tests matrix multiplication on the GPU

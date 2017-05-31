@@ -19,6 +19,10 @@
 
 package org.apache.sysml.test.gpu;
 
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+
 import org.apache.sysml.api.mlcontext.Matrix;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
@@ -26,10 +30,6 @@ import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysml.runtime.util.ConvolutionUtils;
 import org.apache.sysml.test.utils.TestUtils;
 import org.junit.Test;
-
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
 
 /**
  * Test neural network operations on the GPU
@@ -42,7 +42,8 @@ public class NeuralNetworkOpTests extends GPUTests {
 	// The MAX_OP_SIZE is to take into consideration the memory available on the GPU as well as
 	// limits set by cudnn (operands need to be less than 2GB)
 	private static final double MAX_OP_SIZE;
-	static{
+
+	static {
 		double MAX = 0.5 * 1024 * 1024 * 1024; // 0.5 GB (this HAS to be less than 2GB)
 		try {
 			// Cap the maximum allowed operand size to 1/3rd of the usable GPU memory or MAX, whichever is lesser
@@ -51,7 +52,7 @@ public class NeuralNetworkOpTests extends GPUTests {
 			double averageMemoryPerOperand = availableMemory / 3.0;
 			MAX_OP_SIZE = Math.min(averageMemoryPerOperand, MAX);
 			GPUContextPool.returnToPool(gCtx);
-		} catch (DMLRuntimeException e){
+		} catch (DMLRuntimeException e) {
 			throw new RuntimeException(e);
 		}
 

@@ -19,7 +19,7 @@ limitations under the License.
 
 # SystemML
 
-**Documentation:** [SystemML Documentation](http://apache.github.io/incubator-systemml/)<br/>
+**Documentation:** [SystemML Documentation](http://systemml.apache.org/documentation)<br/>
 **Mailing List:** [Dev Mailing List](mailto:dev@systemml.apache.org)<br/>
 **Build Status:** [![Build Status](https://sparktc.ibmcloud.com/jenkins/job/SystemML-DailyTest/badge/icon)](https://sparktc.ibmcloud.com/jenkins/job/SystemML-DailyTest)<br/>
 **Issue Tracker:** [JIRA](https://issues.apache.org/jira/browse/SYSTEMML)<br/>
@@ -34,6 +34,8 @@ SystemML's distinguishing characteristics are:
   1. **Algorithm customizability via R-like and Python-like languages**.
   2. **Multiple execution modes**, including Spark MLContext API, Spark Batch, Hadoop Batch, Standalone, and JMLC.
   3. **Automatic optimization** based on data and cluster characteristics to ensure both efficiency and scalability.
+
+The latest version of SystemML supports: Java 8+, Scala 2.11+, Python 2.7/3.5+, Hadoop 2.6+, and Spark 2.1+.
 
 
 ## Algorithm Customizability
@@ -135,6 +137,6 @@ Before you get started on SystemML, make sure that your environment is set up an
 ## Next Steps!
 
 To get started, please consult the
-[SystemML Documentation](http://apache.github.io/incubator-systemml/) website on GitHub.  We
+[SystemML Documentation](http://systemml.apache.org/documentation).  We
 recommend using the [Spark MLContext API](http://apache.github.io/incubator-systemml/spark-mlcontext-programming-guide.html)
 to run SystemML from Scala or Python using `spark-shell`, `pyspark`, or `spark-submit`.

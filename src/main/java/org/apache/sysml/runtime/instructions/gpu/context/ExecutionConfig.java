@@ -126,7 +126,7 @@ public class ExecutionConfig {
     	Integer ret = maxBlockDimForDevice.get(deviceNumber);
     	if(ret == null) {
     		CUdevice device = new CUdevice();
-            JCudaKernels.checkResult(jcuda.driver.JCudaDriver.cuDeviceGet(device, deviceNumber));
+            CustomSystemMLKernels.checkResult(jcuda.driver.JCudaDriver.cuDeviceGet(device, deviceNumber));
             int maxBlockDimX[] =  {0};
             jcuda.driver.JCudaDriver.cuDeviceGetAttribute(maxBlockDimX, CUdevice_attribute.CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_X, device);
             maxBlockDimForDevice.put(deviceNumber, maxBlockDimX[0]);

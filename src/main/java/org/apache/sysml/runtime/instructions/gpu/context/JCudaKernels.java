@@ -18,142 +18,43 @@
  */
 package org.apache.sysml.runtime.instructions.gpu.context;
 
-import static jcuda.driver.JCudaDriver.cuLaunchKernel;
-import static jcuda.driver.JCudaDriver.cuModuleGetFunction;
-import static jcuda.driver.JCudaDriver.cuModuleLoadDataEx;
+import jcuda.Sizeof;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.HashMap;
+// This indirection prepares SystemML's GPU backend to allow
+// for arbitrary datatype
+public abstract class JCudaKernels {
+	private static JCudaKernels singletonObj = new DoublePrecisionKernels();
+	public static JCudaKernels handle() {
+		return singletonObj;
+	}
+	public abstract int cudnnDataType();
+	public abstract int sizeOfDatatype();
+}
 
-import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.io.IOUtilFunctions;
+class DoublePrecisionKernels extends JCudaKernels {
 
-import jcuda.Pointer;
-import jcuda.driver.CUfunction;
-import jcuda.driver.CUmodule;
-import jcuda.driver.CUresult;
-
-/**
- * Utility class that allows LibMatrixCUDA as well as GPUObject to invoke custom CUDA kernels.
- * 
- * The utility org.apache.sysml.runtime.instructions.gpu.context.JCudaKernels simplifies the launching of the kernels. 
- * For example: to launch a kernel 
- * {@code copyUpperToLowerTriangleDense<<1,1,32,32>>(jcudaDenseMatrixPtr, dim, dim*dim) }, the user has to call:
- * {@code kernels.launchKernel("copyUpperToLowerTriangleDense", new ExecutionConfig(1,1,32,32), jcudaDenseMatrixPtr, dim, dim*dim) }
- */
-public class JCudaKernels {
-
-	private final static String ptxFileName = "/kernels/SystemML.ptx";
-	private HashMap<String, CUfunction> kernels = new HashMap<String, CUfunction>();
-	private CUmodule module;
-//	private final int deviceNum;
-	
-	/**
-	 * Loads the kernels in the file ptxFileName. Though cubin files are also supported, we will stick with
-	 * ptx file as they are target-independent similar to Java's .class files.
-	 * @param deviceNum  the device number for which to initiate the driver API
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
-	 */
-	JCudaKernels(int deviceNum) throws DMLRuntimeException {
-//		this.deviceNum = deviceNum;
-		module = new CUmodule();
-		// Load the kernels specified in the ptxFileName file
-		checkResult(cuModuleLoadDataEx(module, initKernels(ptxFileName), 0, new int[0], Pointer.to(new int[0])));
+	@Override
+	public int cudnnDataType() {
+		return jcuda.jcudnn.cudnnDataType.CUDNN_DATA_DOUBLE;
 	}
 
-	/**
-	 * Setups the kernel parameters and launches the kernel using cuLaunchKernel API. 
-	 * This function currently supports two dimensional grid and blocks.
-	 * 
-	 * @param name name of the kernel
-	 * @param config execution configuration
-	 * @param arguments can be of type Pointer, long, double, float and int
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
-	 */
-	public void launchKernel(String name, ExecutionConfig config, Object ... arguments) throws DMLRuntimeException {
-		CUfunction function = kernels.get(name);
-		if(function == null) {
-			// caching functions into hashmap reduces the lookup overhead
-			function = new CUfunction();
-			checkResult(cuModuleGetFunction(function, module, name));
-		}
-		
-		// Setup parameters
-		Pointer [] kernelParams = new Pointer[arguments.length];
-		for (int i = 0; i < arguments.length; i++) {
-			if(arguments[i] == null) {
-				throw new DMLRuntimeException("The argument to the kernel cannot be null.");
-			}
-			else if(arguments[i] instanceof Pointer) {
-                kernelParams[i] = Pointer.to((Pointer) arguments[i]);
-			}
-			else if(arguments[i] instanceof Integer) {
-                kernelParams[i] = Pointer.to(new int[]{(Integer) arguments[i]});
-			}
-			else if(arguments[i] instanceof Double) {
-                kernelParams[i] = Pointer.to(new double[]{(Double) arguments[i]});
-			}
-			else if(arguments[i] instanceof Long) {
-                kernelParams[i] = Pointer.to(new long[]{(Long) arguments[i]});
-			}
-			else if(arguments[i] instanceof Float) {
-                kernelParams[i] = Pointer.to(new float[]{(Float) arguments[i]});
-			}
-			else {
-				throw new DMLRuntimeException("The argument of type " +  arguments[i].getClass() + " is not supported.");
-			}
-        }
-		
-		// Launches the kernel using CUDA's driver API.
-		checkResult(cuLaunchKernel(function, 
-				config.gridDimX, config.gridDimY, config.gridDimZ, 
-				config.blockDimX, config.blockDimY, config.blockDimZ, 
-				config.sharedMemBytes, config.stream, Pointer.to(kernelParams), null));
-		//JCuda.cudaDeviceSynchronize();
+	@Override
+	public int sizeOfDatatype() {
+		return Sizeof.DOUBLE;
 	}
 	
-    public static void checkResult(int cuResult) throws DMLRuntimeException {
-        if (cuResult != CUresult.CUDA_SUCCESS) {
-            throw new DMLRuntimeException(CUresult.stringFor(cuResult));
-        }
-    }
-    
-    /**
-	 * Reads the ptx file from resource
-	 *  
-	 * @param ptxFileName
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
-	private Pointer initKernels(String ptxFileName) throws DMLRuntimeException {
-		InputStream in = null;
-		ByteArrayOutputStream out = null;
-        try {
-            in = JCudaKernels.class.getResourceAsStream(ptxFileName);
-            if (in != null) {
-        		out = new ByteArrayOutputStream();
-        		byte buffer[] = new byte[8192];
-                while (true) {
-                    int read = in.read(buffer);
-                    if (read == -1)
-                        break;
-                    out.write(buffer, 0, read);
-                }
-                 out.write('\0');
-                out.flush();
-                return Pointer.to(out.toByteArray());
-            }
-            else {
-                throw new DMLRuntimeException( "The input file " + ptxFileName + " not found. (Hint: Please compile SystemML using -DenableGPU=true flag. Example: mvn package -DenableGPU=true).");
-            }
-        } catch (IOException e) {
-        	throw new DMLRuntimeException("Could not initialize the kernels", e);
-		}
-        finally {
-        	IOUtilFunctions.closeSilently(out);
-        	IOUtilFunctions.closeSilently(in);
-		}
+}
+
+class SinglePrecisionKernels extends JCudaKernels {
+
+	@Override
+	public int cudnnDataType() {
+		return jcuda.jcudnn.cudnnDataType.CUDNN_DATA_FLOAT;
 	}
+
+	@Override
+	public int sizeOfDatatype() {
+		return Sizeof.FLOAT;
+	}
+	
 }

@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -52,7 +52,6 @@ import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
-import org.apache.sysml.api.MLContextProxy;
 import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.conf.ConfigurationManager;
@@ -78,6 +77,7 @@ import org.apache.sysml.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysml.utils.MLContextProxy;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -111,7 +111,7 @@ public final class MLContextUtil {
 
 	/**
 	 * Compare two version strings (ie, "1.4.0" and "1.4.1").
-	 * 
+	 *
 	 * @param versionStr1
 	 *            First version string.
 	 * @param versionStr2
@@ -157,7 +157,7 @@ public final class MLContextUtil {
 
 	/**
 	 * Determine whether the Spark version is supported.
-	 * 
+	 *
 	 * @param sparkVersion
 	 *            Spark version string (ie, "1.5.0").
 	 * @param minimumRecommendedSparkVersion
@@ -171,7 +171,7 @@ public final class MLContextUtil {
 	/**
 	 * Check that the Spark version is supported. If it isn't supported, throw
 	 * an MLContextException.
-	 * 
+	 *
 	 * @param spark
 	 *            SparkSession
 	 * @throws MLContextException
@@ -203,7 +203,7 @@ public final class MLContextUtil {
 
 	/**
 	 * Obtain minimum recommended Spark version from the pom.xml file.
-	 * 
+	 *
 	 * @return the minimum recommended Spark version from XML parsing of the pom file (during development).
 	 */
 	static String getMinimumRecommendedSparkVersionFromPom() {
@@ -213,7 +213,7 @@ public final class MLContextUtil {
 	/**
 	 * Obtain the text associated with an XML element from the pom.xml file. In this implementation,
 	 * the element should be uniquely named, or results will be unpredicable.
-	 * 
+	 *
 	 * @param property unique property (element) from the pom.xml file
 	 * @return the text value associated with the given property
 	 */
@@ -249,7 +249,7 @@ public final class MLContextUtil {
 
 	/**
 	 * Set SystemML configuration properties based on a configuration file.
-	 * 
+	 *
 	 * @param configFilePath
 	 *            Path to configuration file.
 	 * @throws MLContextException
@@ -281,7 +281,7 @@ public final class MLContextUtil {
 
 	/**
 	 * Verify that the types of input values are supported.
-	 * 
+	 *
 	 * @param inputs
 	 *            Map of String/Object pairs
 	 * @throws MLContextException
@@ -295,7 +295,7 @@ public final class MLContextUtil {
 
 	/**
 	 * Verify that the type of input value is supported.
-	 * 
+	 *
 	 * @param name
 	 *            The name of the input
 	 * @param value
@@ -329,7 +329,7 @@ public final class MLContextUtil {
 
 	/**
 	 * Verify that the type of input parameter value is supported.
-	 * 
+	 *
 	 * @param parameterName
 	 *            The name of the input parameter
 	 * @param parameterValue
@@ -367,7 +367,7 @@ public final class MLContextUtil {
 	/**
 	 * Is the object one of the supported basic data types? (Integer, Boolean,
 	 * Double, String)
-	 * 
+	 *
 	 * @param object
 	 *            the object type to be examined
 	 * @return {@code true} if type is a basic data type; otherwise
@@ -387,7 +387,7 @@ public final class MLContextUtil {
 	/**
 	 * Obtain the SystemML scalar value type string equivalent of an accepted
 	 * basic type (Integer, Boolean, Double, String)
-	 * 
+	 *
 	 * @param object
 	 *            the object type to be examined
 	 * @return a String representing the type as a SystemML scalar value type
@@ -413,7 +413,7 @@ public final class MLContextUtil {
 	/**
 	 * Is the object one of the supported complex data types? (JavaRDD, RDD,
 	 * DataFrame, BinaryBlockMatrix, Matrix, double[][], MatrixBlock, URL)
-	 * 
+	 *
 	 * @param object
 	 *            the object type to be examined
 	 * @return {@code true} if type is a complex data type; otherwise
@@ -433,7 +433,7 @@ public final class MLContextUtil {
 	/**
 	 * Converts non-string basic input parameter values to strings to pass to
 	 * the parser.
-	 * 
+	 *
 	 * @param basicInputParameterMap
 	 *            map of input parameters
 	 * @param scriptType
@@ -475,7 +475,7 @@ public final class MLContextUtil {
 
 	/**
 	 * Convert input types to internal SystemML representations
-	 * 
+	 *
 	 * @param parameterName
 	 *            The name of the input parameter
 	 * @param parameterValue
@@ -488,7 +488,7 @@ public final class MLContextUtil {
 
 	/**
 	 * Convert input types to internal SystemML representations
-	 * 
+	 *
 	 * @param parameterName
 	 *            The name of the input parameter
 	 * @param parameterValue
@@ -626,7 +626,7 @@ public final class MLContextUtil {
 	/**
 	 * If no metadata is supplied for an RDD or JavaRDD, this method can be used
 	 * to determine whether the data appears to be matrix (or a frame)
-	 * 
+	 *
 	 * @param line
 	 *            a line of the RDD
 	 * @return {@code true} if all the csv-separated values are numbers,
@@ -651,7 +651,7 @@ public final class MLContextUtil {
 	/**
 	 * Examine the DataFrame schema to determine whether the data appears to be
 	 * a matrix.
-	 * 
+	 *
 	 * @param df
 	 *            the DataFrame
 	 * @return {@code true} if the DataFrame appears to be a matrix,
@@ -684,7 +684,7 @@ public final class MLContextUtil {
 	/**
 	 * Return a double-quoted string with inner single and double quotes
 	 * escaped.
-	 * 
+	 *
 	 * @param str
 	 *            the original string
 	 * @return double-quoted string with inner single and double quotes escaped
@@ -714,7 +714,7 @@ public final class MLContextUtil {
 
 	/**
 	 * Display the keys and values in a Map
-	 * 
+	 *
 	 * @param mapName
 	 *            the name of the map
 	 * @param map
@@ -745,7 +745,7 @@ public final class MLContextUtil {
 
 	/**
 	 * Display the values in a Set
-	 * 
+	 *
 	 * @param setName
 	 *            the name of the Set
 	 * @param set
@@ -773,7 +773,7 @@ public final class MLContextUtil {
 
 	/**
 	 * Display the keys and values in the symbol table
-	 * 
+	 *
 	 * @param name
 	 *            the name of the symbol table
 	 * @param symbolTable
@@ -790,7 +790,7 @@ public final class MLContextUtil {
 
 	/**
 	 * Display the keys and values in the symbol table
-	 * 
+	 *
 	 * @param symbolTable
 	 *            the LocalVariableMap
 	 * @return the keys and values in the symbol table as a String
@@ -823,7 +823,7 @@ public final class MLContextUtil {
 
 	/**
 	 * Obtain a symbol table output type as a String
-	 * 
+	 *
 	 * @param symbolTable
 	 *            the symbol table
 	 * @param outputName
@@ -850,7 +850,7 @@ public final class MLContextUtil {
 
 	/**
 	 * Obtain a display of script inputs.
-	 * 
+	 *
 	 * @param name
 	 *            the title to display for the inputs
 	 * @param map
@@ -896,9 +896,9 @@ public final class MLContextUtil {
 				 String str = null;
 				 if(object instanceof MatrixBlock) {
 					 MatrixBlock mb = (MatrixBlock) object;
-					 str = "MatrixBlock [sparse? = " + mb.isInSparseFormat() + ", nonzeros = " + mb.getNonZeros() + ", size: " + mb.getNumRows() + " X " + mb.getNumColumns() + "]";  
+					 str = "MatrixBlock [sparse? = " + mb.isInSparseFormat() + ", nonzeros = " + mb.getNonZeros() + ", size: " + mb.getNumRows() + " X " + mb.getNumColumns() + "]";
 				 }
-				 else 
+				 else
 					 str = object.toString(); // TODO: Deal with OOM for other objects such as Frame, etc
 				 str = StringUtils.abbreviate(str, 100);
 				 sb.append(str);
@@ -910,7 +910,7 @@ public final class MLContextUtil {
 
 	/**
 	 * Obtain a display of the script outputs.
-	 * 
+	 *
 	 * @param name
 	 *            the title to display for the outputs
 	 * @param outputNames
@@ -918,7 +918,7 @@ public final class MLContextUtil {
 	 * @param symbolTable
 	 *            the symbol table
 	 * @return the script outputs represented as a String
-	 * 
+	 *
 	 */
 	public static String displayOutputs(String name, Set<String> outputNames, LocalVariableMap symbolTable) {
 		StringBuilder sb = new StringBuilder();
@@ -930,13 +930,13 @@ public final class MLContextUtil {
 
 	/**
 	 * Obtain a display of the script outputs.
-	 * 
+	 *
 	 * @param outputNames
 	 *            the names of the output variables
 	 * @param symbolTable
 	 *            the symbol table
 	 * @return the script outputs represented as a String
-	 * 
+	 *
 	 */
 	public static String displayOutputs(Set<String> outputNames, LocalVariableMap symbolTable) {
 		StringBuilder sb = new StringBuilder();
@@ -970,7 +970,7 @@ public final class MLContextUtil {
 
 	/**
 	 * The SystemML welcome message
-	 * 
+	 *
 	 * @return the SystemML welcome message
 	 */
 	public static String welcomeMessage() {
@@ -989,7 +989,7 @@ public final class MLContextUtil {
 
 	/**
 	 * Generate a String history entry for a script.
-	 * 
+	 *
 	 * @param script
 	 *            the script
 	 * @param when
@@ -1009,7 +1009,7 @@ public final class MLContextUtil {
 
 	/**
 	 * Generate a String listing of the script execution history.
-	 * 
+	 *
 	 * @param scriptHistory
 	 *            the list of script history entries
 	 * @return the listing of the script execution history as a String
@@ -1031,7 +1031,7 @@ public final class MLContextUtil {
 
 	/**
 	 * Obtain the Spark Context
-	 * 
+	 *
 	 * @param mlContext
 	 *            the SystemML MLContext
 	 * @return the Spark Context
@@ -1042,7 +1042,7 @@ public final class MLContextUtil {
 
 	/**
 	 * Obtain the Java Spark Context
-	 * 
+	 *
 	 * @param mlContext
 	 *            the SystemML MLContext
 	 * @return the Java Spark Context
@@ -1053,39 +1053,39 @@ public final class MLContextUtil {
 
 	/**
 	 * Obtain the Spark Context from the MLContextProxy
-	 * 
+	 *
 	 * @return the Spark Context
 	 */
 	public static SparkContext getSparkContextFromProxy() {
-		MLContext activeMLContext = (MLContext) MLContextProxy.getActiveMLContextForAPI();
+		MLContext activeMLContext = MLContextProxy.getActiveMLContextForAPI();
 		SparkContext sc = getSparkContext(activeMLContext);
 		return sc;
 	}
 
 	/**
 	 * Obtain the Java Spark Context from the MLContextProxy
-	 * 
+	 *
 	 * @return the Java Spark Context
 	 */
 	public static JavaSparkContext getJavaSparkContextFromProxy() {
-		MLContext activeMLContext = (MLContext) MLContextProxy.getActiveMLContextForAPI();
+		MLContext activeMLContext = MLContextProxy.getActiveMLContextForAPI();
 		JavaSparkContext jsc = getJavaSparkContext(activeMLContext);
 		return jsc;
 	}
 
 	/**
 	 * Obtain the Spark Session from the MLContextProxy
-	 * 
+	 *
 	 * @return the Spark Session
 	 */
 	public static SparkSession getSparkSessionFromProxy() {
-		return ((MLContext) MLContextProxy.getActiveMLContextForAPI()).getSparkSession();
+		return MLContextProxy.getActiveMLContextForAPI().getSparkSession();
 	}
 
 	/**
 	 * Determine if the symbol table contains a FrameObject with the given
 	 * variable name.
-	 * 
+	 *
 	 * @param symbolTable
 	 *            the LocalVariableMap
 	 * @param variableName
@@ -1101,7 +1101,7 @@ public final class MLContextUtil {
 	/**
 	 * Determine if the symbol table contains a MatrixObject with the given
 	 * variable name.
-	 * 
+	 *
 	 * @param symbolTable
 	 *            the LocalVariableMap
 	 * @param variableName
@@ -1116,7 +1116,7 @@ public final class MLContextUtil {
 
 	/**
 	 * Delete the 'remove variable' instructions from a runtime program.
-	 * 
+	 *
 	 * @param progam
 	 *            runtime program
 	 */
@@ -1139,7 +1139,7 @@ public final class MLContextUtil {
 	/**
 	 * Recursively traverse program block to delete 'remove variable'
 	 * instructions.
-	 * 
+	 *
 	 * @param pb
 	 *            Program block
 	 */
@@ -1166,7 +1166,7 @@ public final class MLContextUtil {
 
 	/**
 	 * Delete 'remove variable' instructions.
-	 * 
+	 *
 	 * @param instructions
 	 *            list of instructions
 	 */

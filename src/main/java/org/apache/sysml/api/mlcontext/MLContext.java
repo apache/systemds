@@ -32,7 +32,6 @@ import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.SparkSession;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
-import org.apache.sysml.api.MLContextProxy;
 import org.apache.sysml.api.jmlc.JMLCUtils;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
@@ -50,6 +49,7 @@ import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.utils.Explain.ExplainType;
+import org.apache.sysml.utils.MLContextProxy;
 
 /**
  * The MLContext API offers programmatic access to SystemML on Spark from
@@ -98,7 +98,7 @@ public class MLContext {
 	 * Whether or not GPU mode should be enabled
 	 */
 	private boolean gpu = false;
-	
+
 	/**
 	 * Whether or not GPU mode should be force
 	 */
@@ -172,7 +172,7 @@ public class MLContext {
 	/**
 	 * Create an MLContext based on a SparkSession for interaction with SystemML
 	 * on Spark.
-	 * 
+	 *
 	 * @param spark SparkSession
 	 */
 	public MLContext(SparkSession spark) {
@@ -265,7 +265,7 @@ public class MLContext {
 			throw new MLContextException(e);
 		}
 	}
-	
+
 	/**
 	 * Execute a DML or PYDML Script.
 	 *
@@ -364,7 +364,7 @@ public class MLContext {
 	/**
 	 * Obtain whether or not all values should be maintained in the symbol table
 	 * after execution.
-	 * 
+	 *
 	 * @return {@code true} if all values should be maintained in the symbol
 	 *         table, {@code false} otherwise
 	 */
@@ -375,7 +375,7 @@ public class MLContext {
 	/**
 	 * Set whether or not all values should be maintained in the symbol table
 	 * after execution.
-	 * 
+	 *
 	 * @param maintainSymbolTable
 	 *            {@code true} if all values should be maintained in the symbol
 	 *            table, {@code false} otherwise
@@ -425,7 +425,7 @@ public class MLContext {
 	public void setGPU(boolean enable) {
 		this.gpu = enable;
 	}
-	
+
 	/**
 	 * Whether or not to explicitly "force" the usage of GPU.
 	 * If a GPU is not available, and the GPU mode is set or if available memory on GPU is less, SystemML will crash when the program is run.
@@ -657,7 +657,7 @@ public class MLContext {
 	/**
 	 * Obtain information about the project such as version and build time from
 	 * the manifest in the SystemML jar file.
-	 * 
+	 *
 	 * @return information about the project
 	 */
 	public ProjectInfo info() {
@@ -672,7 +672,7 @@ public class MLContext {
 
 	/**
 	 * Obtain the SystemML version number.
-	 * 
+	 *
 	 * @return the SystemML version number
 	 */
 	public String version() {
@@ -684,7 +684,7 @@ public class MLContext {
 
 	/**
 	 * Obtain the SystemML jar file build time.
-	 * 
+	 *
 	 * @return the SystemML jar file build time
 	 */
 	public String buildTime() {
@@ -697,7 +697,7 @@ public class MLContext {
 	/**
 	 * Obtain the maximum number of heavy hitters that are printed out as part
 	 * of the statistics.
-	 * 
+	 *
 	 * @return maximum number of heavy hitters to print
 	 */
 	public int getStatisticsMaxHeavyHitters() {

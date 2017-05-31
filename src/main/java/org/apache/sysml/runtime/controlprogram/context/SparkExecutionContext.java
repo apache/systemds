@@ -38,7 +38,7 @@ import org.apache.spark.storage.RDDInfo;
 import org.apache.spark.storage.StorageLevel;
 import org.apache.spark.util.LongAccumulator;
 import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.api.MLContextProxy;
+import org.apache.sysml.api.mlcontext.MLContext;
 import org.apache.sysml.api.mlcontext.MLContextUtil;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.OptimizerUtils;
@@ -75,6 +75,7 @@ import org.apache.sysml.runtime.matrix.data.SparseBlock;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
 import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.runtime.util.UtilFunctions;
+import org.apache.sysml.utils.MLContextProxy;
 import org.apache.sysml.utils.Statistics;
 
 import scala.Tuple2;
@@ -189,13 +190,12 @@ public class SparkExecutionContext extends ExecutionContext
 		//create a default spark context (master, appname, etc refer to system properties
 		//as given in the spark configuration or during spark-submit)
 
-		Object mlCtxObj = MLContextProxy.getActiveMLContext();
+		MLContext mlCtxObj = MLContextProxy.getActiveMLContext();
 		if(mlCtxObj != null)
 		{
 			// This is when DML is called through spark shell
 			// Will clean the passing of static variables later as this involves minimal change to DMLScript
-			org.apache.sysml.api.mlcontext.MLContext mlCtx = (org.apache.sysml.api.mlcontext.MLContext) mlCtxObj;
-			_spctx = MLContextUtil.getJavaSparkContext(mlCtx);
+			_spctx = MLContextUtil.getJavaSparkContext(mlCtxObj);
 		}
 		else
 		{

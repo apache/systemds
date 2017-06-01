@@ -36,6 +36,7 @@ to find out how to help make SystemML even better!
 
 To download SystemML, visit the [downloads](http://systemml.apache.org/download) page.
 
+This version of SystemML supports: Java 8+, Scala 2.11+, Python 2.7/3.5+, Hadoop 2.6+, and Spark 2.1+.
 
 ## Running SystemML
 

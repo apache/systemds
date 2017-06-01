@@ -436,6 +436,7 @@
 						<exclude>**/slowtest/**</exclude>
 						<exclude>**/integration/**</exclude>
 						<exclude>**/test/unit/**</exclude>
+						<exclude>**/test/gpu/**</exclude>
 					</excludes>
 
 				</configuration>
@@ -478,6 +479,7 @@
 						-Djava.awt.headless=true</argLine>
 
 					<includes>
+						<include>${gpuTestsPath}</include> <!-- Path for GPU integration tests, enabled for gpuTests profile -->
 						<include>**/integration/applications/**/*Suite.java</include>
 						<include>**/integration/conversion/*Suite.java</include>
 						<include>**/integration/functions/data/*Suite.java</include>
@@ -894,6 +896,14 @@
 					</plugin>
 				</plugins>
 			</build>
+		</profile>
+
+		<!-- profile to enable running tests on the GPU -->
+		<profile>
+			<id>gpuTests</id>
+			<properties>
+				<gpuTestsPath>**/integration/gpu/**/*Suite.java</gpuTestsPath>
+			</properties>
 		</profile>
 
 		<profile>

@@ -94,6 +94,7 @@ public class ScriptExecutorUtils {
 			rtprog.execute(ec);
 		} finally { // ensure cleanup/shutdown
 			if (DMLScript.USE_ACCELERATOR && ec.getGPUContext() != null) {
+				ec.getGPUContext().clearTemporaryMemory();
 				GPUContextPool.returnToPool(ec.getGPUContext());
 			}
 			if (dmlconf.getBooleanValue(DMLConfig.CODEGEN))

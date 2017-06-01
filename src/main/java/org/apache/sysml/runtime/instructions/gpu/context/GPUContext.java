@@ -18,25 +18,14 @@
  */
 package org.apache.sysml.runtime.instructions.gpu.context;
 
-import static jcuda.jcublas.JCublas2.cublasCreate;
-import static jcuda.jcublas.JCublas2.cublasDestroy;
-import static jcuda.jcudnn.JCudnn.cudnnCreate;
-import static jcuda.jcudnn.JCudnn.cudnnDestroy;
-import static jcuda.jcusolver.JCusolverDn.cusolverDnDestroy;
-import static jcuda.jcusolver.JCusolverSp.cusolverSpDestroy;
-import static jcuda.jcusparse.JCusparse.cusparseCreate;
-import static jcuda.jcusparse.JCusparse.cusparseDestroy;
-import static jcuda.jcusolver.JCusolverDn.cusolverDnCreate;
-import static jcuda.jcusolver.JCusolverSp.cusolverSpCreate;
-
-import static jcuda.runtime.JCuda.cudaDeviceScheduleBlockingSync;
-import static jcuda.runtime.JCuda.cudaFree;
-import static jcuda.runtime.JCuda.cudaGetDeviceCount;
-import static jcuda.runtime.JCuda.cudaMalloc;
-import static jcuda.runtime.JCuda.cudaMemGetInfo;
-import static jcuda.runtime.JCuda.cudaMemset;
-import static jcuda.runtime.JCuda.cudaSetDevice;
-import static jcuda.runtime.JCuda.cudaSetDeviceFlags;
+import jcuda.Pointer;
+import jcuda.jcublas.cublasHandle;
+import jcuda.jcudnn.cudnnHandle;
+import jcuda.jcusolver.cusolverDnHandle;
+import jcuda.jcusolver.cusolverSpHandle;
+import jcuda.jcusparse.cusparseHandle;
+import jcuda.runtime.JCuda;
+import jcuda.runtime.cudaDeviceProp;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -56,14 +45,24 @@ import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
 import org.apache.sysml.utils.GPUStatistics;
 import org.apache.sysml.utils.LRUCacheMap;
 
-import jcuda.Pointer;
-import jcuda.jcublas.cublasHandle;
-import jcuda.jcudnn.cudnnHandle;
-import jcuda.jcusolver.cusolverDnHandle;
-import jcuda.jcusolver.cusolverSpHandle;
-import jcuda.jcusparse.cusparseHandle;
-import jcuda.runtime.JCuda;
-import jcuda.runtime.cudaDeviceProp;
+import static jcuda.jcublas.JCublas2.cublasCreate;
+import static jcuda.jcublas.JCublas2.cublasDestroy;
+import static jcuda.jcudnn.JCudnn.cudnnCreate;
+import static jcuda.jcudnn.JCudnn.cudnnDestroy;
+import static jcuda.jcusolver.JCusolverDn.cusolverDnCreate;
+import static jcuda.jcusolver.JCusolverDn.cusolverDnDestroy;
+import static jcuda.jcusolver.JCusolverSp.cusolverSpCreate;
+import static jcuda.jcusolver.JCusolverSp.cusolverSpDestroy;
+import static jcuda.jcusparse.JCusparse.cusparseCreate;
+import static jcuda.jcusparse.JCusparse.cusparseDestroy;
+import static jcuda.runtime.JCuda.cudaDeviceScheduleBlockingSync;
+import static jcuda.runtime.JCuda.cudaFree;
+import static jcuda.runtime.JCuda.cudaGetDeviceCount;
+import static jcuda.runtime.JCuda.cudaMalloc;
+import static jcuda.runtime.JCuda.cudaMemGetInfo;
+import static jcuda.runtime.JCuda.cudaMemset;
+import static jcuda.runtime.JCuda.cudaSetDevice;
+import static jcuda.runtime.JCuda.cudaSetDeviceFlags;
 
 /**
  * Represents a context per GPU accessible through the same JVM
@@ -159,6 +158,7 @@ public class GPUContext {
 
   }
 
+  @SuppressWarnings("unused")
   public int getDeviceNum() {
     return deviceNum;
   }
@@ -174,6 +174,7 @@ public class GPUContext {
     cudaSetDevice(deviceNum);
   }
 
+  @SuppressWarnings("unused")
   public static int cudaGetDevice() {
     int[] device = new int[1];
     JCuda.cudaGetDevice(device);
@@ -288,6 +289,9 @@ public class GPUContext {
    * @param eager           true if to be done eagerly
    */
   public void cudaFreeHelper(String instructionName, final Pointer toFree, boolean eager) {
+  	Pointer dummy = new Pointer();
+  	if (toFree == dummy) // trying to free a null pointer
+  		return;
     long t0 = 0;
     assert cudaBlockSizeMap.containsKey(toFree) : "ERROR : Internal state corrupted, cache block size map is not aware of a block it trying to free up";
     long size = cudaBlockSizeMap.get(toFree);
@@ -382,14 +386,14 @@ public class GPUContext {
       return;
 
     if (allocatedGPUObjects.size() == 0) {
-      throw new DMLRuntimeException("There is not enough memory on device for this matrix!");
+      throw new DMLRuntimeException("There is not enough memory on device for this matrix, request (" + neededSize + ")");
     }
 
     Collections.sort(allocatedGPUObjects, new Comparator<GPUObject>() {
       @Override
       public int compare(GPUObject p1, GPUObject p2) {
-        long p1Val = p1.readLocks.get();
-        long p2Val = p2.readLocks.get();
+        long p1Val = p1.locks.get();
+        long p2Val = p2.locks.get();
 
         if (p1Val > 0 && p2Val > 0) {
           // Both are locked, so don't sort
@@ -426,8 +430,8 @@ public class GPUContext {
 
     while (neededSize > getAvailableMemory() && allocatedGPUObjects.size() > 0) {
       GPUObject toBeRemoved = allocatedGPUObjects.get(allocatedGPUObjects.size() - 1);
-      if (toBeRemoved.readLocks.get() > 0) {
-        throw new DMLRuntimeException("There is not enough memory on device for this matrix!");
+      if (toBeRemoved.locks.get() > 0) {
+        throw new DMLRuntimeException("There is not enough memory on device for this matrix, request (" + neededSize + ")");
       }
       if (toBeRemoved.dirty) {
         toBeRemoved.copyFromDeviceToHost();
@@ -546,6 +550,7 @@ public class GPUContext {
    * @return the shared memory per block
    * @throws DMLRuntimeException ?
    */
+  @SuppressWarnings("unused")
   public long getMaxSharedMemory() throws DMLRuntimeException {
     cudaDeviceProp deviceProp = getGPUProperties();
     return deviceProp.sharedMemPerBlock;
@@ -588,10 +593,10 @@ public class GPUContext {
 
   /**
    * Destroys this GPUContext object
-   * This method MUST BE called so that the GPU is available to be used again
    *
    * @throws DMLRuntimeException if error
    */
+  @SuppressWarnings("unused")
   public void destroy() throws DMLRuntimeException {
     LOG.trace("GPU : this context was destroyed, this = " + this.toString());
     clearMemory();
@@ -608,14 +613,51 @@ public class GPUContext {
 
   /**
    * Clears all memory used by this {@link GPUContext}
-   * Be careful to ensure that no memory is currently being used before invoking this
+   * Be careful to ensure that no memory is currently being used in the temporary memory before invoking this
+   * If memory is being used between MLContext invocations, they are pointed to by a {@link GPUObject} instance
+   * which would be part of the {@link MatrixObject}. The cleanup of that {@link MatrixObject} instance will
+   * cause the memory associated with that block on the GPU to be freed up.
    * @throws DMLRuntimeException ?
    */
   public void clearMemory() throws DMLRuntimeException {
-    while (allocatedGPUObjects.isEmpty()) {
+    clearTemporaryMemory();
+    while (!allocatedGPUObjects.isEmpty()) {
       GPUObject o = allocatedGPUObjects.get(0);
-      o.clearData();
+      if (o.isDirty()){
+        LOG.warn("Attempted to free GPU Memory when a block[" + o + "] is still on GPU memory, copying it back to host.");
+        o.acquireHostRead();
+      }
+      o.clearData(true);
     }
+    allocatedGPUObjects.clear();
+  }
+
+  /**
+   * Clears up the memory used to optimize cudaMalloc/cudaFree calls
+   */
+  public void clearTemporaryMemory() {
+    // To record the cuda block sizes needed by allocatedGPUObjects, others are cleared up.
+    HashMap<Pointer, Long> tmpCudaBlockSizeMap = new HashMap<>();
+	  for (GPUObject o : allocatedGPUObjects) {
+		  if (o.isSparse()) {
+			  CSRPointer p = o.getSparseMatrixCudaPointer();
+			  if (p.rowPtr != null && cudaBlockSizeMap.containsKey(p.rowPtr)) {
+				  tmpCudaBlockSizeMap.put(p.rowPtr, cudaBlockSizeMap.get(p.rowPtr));
+			  }
+			  if (p.colInd != null && cudaBlockSizeMap.containsKey(p.colInd)) {
+				  tmpCudaBlockSizeMap.put(p.colInd, cudaBlockSizeMap.get(p.colInd));
+			  }
+			  if (p.val != null && cudaBlockSizeMap.containsKey(p.val)) {
+				  tmpCudaBlockSizeMap.put(p.val, cudaBlockSizeMap.get(p.val));
+			  }
+
+		  } else {
+			  Pointer p = o.getJcudaDenseMatrixPtr();
+			  tmpCudaBlockSizeMap.put(p, cudaBlockSizeMap.get(p));
+		  }
+	  }
+
+    // garbage collect all temporarily allocated spaces
     for (LinkedList<Pointer> l : freeCUDASpaceMap.values()) {
       for (Pointer p : l) {
         cudaFreeHelper(p, true);
@@ -623,7 +665,9 @@ public class GPUContext {
     }
     cudaBlockSizeMap.clear();
     freeCUDASpaceMap.clear();
-    allocatedGPUObjects.clear();
+
+    // Restore only those entries for which there are still blocks on the GPU
+    cudaBlockSizeMap.putAll(tmpCudaBlockSizeMap);
   }
 
   @Override

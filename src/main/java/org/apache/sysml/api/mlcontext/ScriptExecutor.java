@@ -25,9 +25,10 @@ import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.api.ScriptExecutorUtils;
 import org.apache.sysml.api.DMLScript.DMLOptions;
+import org.apache.sysml.api.ScriptExecutorUtils;
 import org.apache.sysml.api.jmlc.JMLCUtils;
+import org.apache.sysml.api.mlcontext.MLContext.ExecutionType;
 import org.apache.sysml.api.mlcontext.MLContext.ExplainLevel;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
@@ -124,6 +125,7 @@ public class ScriptExecutor {
 	protected boolean statistics = false;
 	protected boolean oldStatistics = false;
 	protected ExplainLevel explainLevel;
+	protected ExecutionType executionType;
 	protected int statisticsMaxHeavyHitters = 10;
 	protected boolean maintainSymbolTable = false;
 
@@ -680,21 +682,21 @@ public class ScriptExecutor {
 	 * Whether or not to enable GPU usage.
 	 * 
 	 * @param enabled
-	 * 					{@code true} if enabled, {@code false} otherwise
+	 *            {@code true} if enabled, {@code false} otherwise
 	 */
-    public void setGPU(boolean enabled) {
-        this.gpu = enabled;
-    }
-	
+	public void setGPU(boolean enabled) {
+		this.gpu = enabled;
+	}
+
 	/**
 	 * Whether or not to force GPU usage.
 	 * 
 	 * @param enabled
-	 * 					{@code true} if enabled, {@code false} otherwise
+	 *            {@code true} if enabled, {@code false} otherwise
 	 */
-    public void setForceGPU(boolean enabled) {
-        this.forceGPU = enabled;
-    }
+	public void setForceGPU(boolean enabled) {
+		this.forceGPU = enabled;
+	}
 
 	/**
 	 * Obtain the SystemML configuration properties.
@@ -703,5 +705,25 @@ public class ScriptExecutor {
 	 */
 	public DMLConfig getConfig() {
 		return config;
+	}
+
+	/**
+	 * Obtain the current execution environment.
+	 * 
+	 * @return the execution environment
+	 */
+	public ExecutionType getExecutionType() {
+		return executionType;
+	}
+
+	/**
+	 * Set the execution environment.
+	 * 
+	 * @param executionType
+	 *            the execution environment
+	 */
+	public void setExecutionType(ExecutionType executionType) {
+		DMLScript.rtplatform = executionType.getRuntimePlatform();
+		this.executionType = executionType;
 	}
 }

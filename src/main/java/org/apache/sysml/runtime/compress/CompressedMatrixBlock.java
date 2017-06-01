@@ -77,6 +77,8 @@ import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.MatrixValue;
 import org.apache.sysml.runtime.matrix.data.RandomMatrixGenerator;
 import org.apache.sysml.runtime.matrix.data.SparseBlock;
+import org.apache.sysml.runtime.matrix.data.SparseRow;
+import org.apache.sysml.runtime.matrix.data.SparseRowVector;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
@@ -810,6 +812,14 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	
 	public Iterator<IJV> getIterator(int rl, int ru, int cgl, int cgu, boolean inclZeros) {
 		return new ColumnGroupIterator(rl, ru, cgl, cgu, inclZeros);
+	}
+	
+	public Iterator<double[]> getDenseRowIterator(int rl, int ru) {
+		return new DenseRowIterator(rl, ru);
+	}
+	
+	public Iterator<SparseRow> getSparseRowIterator(int rl, int ru) {
+		return new SparseRowIterator(rl, ru);
 	}
 	
 	public int[] countNonZerosPerRow(int rl, int ru) {
@@ -2277,11 +2287,119 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 			while( _posColGroup+1 < _cgu ) {
 				_posColGroup++;
 				_iterColGroup = _colGroups.get(_posColGroup)
-					.getIterator(_rl, _ru, _inclZeros);
+					.getIterator(_rl, _ru, _inclZeros, false);
 				if( _iterColGroup.hasNext() )
 					return;
 			}
 			_noNext = true;
+		}
+	}
+	
+	private abstract class RowIterator<T> implements Iterator<T>
+	{
+		//iterator configuration 
+		protected final int _rl;
+		protected final int _ru;
+		
+		//iterator state
+		private Iterator<IJV>[] _iters = null;
+		protected final int[] _ixbuff = new int[clen];
+		protected final double[] _vbuff = new double[clen];
+		protected int _rpos;
+		
+		@SuppressWarnings("unchecked")
+		public RowIterator(int rl, int ru) {
+			_rl = rl;
+			_ru = ru;
+			
+			//initialize array of column group iterators
+			_iters = new Iterator[_colGroups.size()];
+			for( int i=0; i<_colGroups.size(); i++ )
+				_iters[i] = _colGroups.get(i).getIterator(
+					_rl, _ru, true, true);
+			Arrays.fill(_ixbuff, -1);
+			
+			//get initial row
+			_rpos = rl-1;
+			getNextRow();
+		}
+		
+		@Override
+		public boolean hasNext() {
+			return (_rpos < _ru);
+		}
+		
+		@Override
+		public abstract T next();
+		
+		protected void getNextRow() {
+			_rpos++;
+			//read iterators if necessary
+			for(int j=0; j<_iters.length; j++) {
+				ColGroup grp = _colGroups.get(j);
+				if( _ixbuff[grp.getColIndex(0)] < _rpos ) {
+					if( _iters[j].hasNext() ) {
+						for( int k=0; k<grp.getNumCols(); k++ ) {
+							IJV cell = _iters[j].next();
+							_ixbuff[cell.getJ()] = cell.getI();
+							_vbuff[cell.getJ()] = cell.getV();
+						}
+					}
+					else {
+						for( int k=0; k<grp.getNumCols(); k++ )
+							_ixbuff[grp.getColIndex(k)] = _ru;
+					}
+				}
+			}
+		}
+	}
+	
+	private class DenseRowIterator extends RowIterator<double[]>
+	{
+		private final double[] _ret = new double[clen];
+		
+		public DenseRowIterator(int rl, int ru) {
+			super(rl, ru);
+		}
+		
+		@Override
+		public double[] next() {
+			if( !hasNext() )
+				throw new RuntimeException("No more rows in row partition ["+_rl+","+_ru+")");
+			//copy currently buffered row entries
+			for( int j=0; j<clen; j++ )
+				_ret[j] = (_ixbuff[j] == _rpos) ? _vbuff[j] : 0;
+			//advance to next row and return buffer
+			getNextRow();
+			return _ret;
+		}
+	}
+	
+	private class SparseRowIterator extends RowIterator<SparseRow>
+	{
+		private final SparseRowVector _ret = new SparseRowVector(clen);
+		
+		public SparseRowIterator(int rl, int ru) {
+			super(rl, ru);
+		}
+
+		@Override
+		public boolean hasNext() {
+			return (_rpos < _ru);
+		}
+
+		@Override
+		public SparseRow next() {
+			if( !hasNext() )
+				throw new RuntimeException("No more rows in row partition ["+_rl+","+_ru+")");
+			//copy currently buffered row entries
+			_ret.setSize(0);
+			for( int j=0; j<clen; j++ )
+				if( _ixbuff[j] == _rpos )
+					_ret.append(j, _vbuff[j]);
+			//advance to next row and return buffer
+			getNextRow();
+			return _ret;
 		}
 	}
 }

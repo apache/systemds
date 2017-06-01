@@ -261,7 +261,8 @@ public abstract class ColGroup implements Serializable
 	public abstract void unaryAggregateOperations(AggregateUnaryOperator op, MatrixBlock result)
 		throws DMLRuntimeException;
 	
-	public abstract Iterator<IJV> getIterator(int rl, int ru, boolean inclZeros);
+	public abstract Iterator<IJV> getIterator(int rl, int ru,
+			boolean inclZeros, boolean rowMajor);
 	
 	/**
 	 * Count the number of non-zeros per row

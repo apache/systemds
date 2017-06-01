@@ -411,18 +411,19 @@ public class ColGroupUncompressed extends ColGroup
 	}
 	
 	@Override
-	public Iterator<IJV> getIterator(int rl, int ru, boolean inclZeros) {
+	public Iterator<IJV> getIterator(int rl, int ru, boolean inclZeros, boolean rowMajor) {
+		//UC iterator is always row major, so no need for custom handling
 		return new UCIterator(rl, ru, inclZeros);
 	}
 	
 	private class UCIterator implements Iterator<IJV>
 	{
-		//iterator configuration 
+		//iterator configuration
 		private final int _ru;
 		private final boolean _inclZeros;
 		
 		//iterator state
-		private final IJV _buff = new IJV(); 
+		private final IJV _buff = new IJV();
 		private int _rpos = -1;
 		private int _cpos = -1;
 		private double _value = 0;
@@ -434,12 +435,12 @@ public class ColGroupUncompressed extends ColGroup
 			_cpos = -1;
 			getNextValue();
 		}
-
+		
 		@Override
 		public boolean hasNext() {
 			return (_rpos < _ru);
 		}
-
+		
 		@Override
 		public IJV next() {
 			_buff.set(_rpos, _colIndexes[_cpos], _value);
@@ -456,7 +457,7 @@ public class ColGroupUncompressed extends ColGroup
 					return; //reached end
 				_value = _data.quickGetValue(_rpos, _cpos);
 			}
-			while( !_inclZeros && _value==0);
+			while( !_inclZeros && _value==0 );
 		}
 	}
 }

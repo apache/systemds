@@ -20,6 +20,7 @@
 package org.apache.sysml.runtime.codegen;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -27,10 +28,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.SparseBlock;
+import org.apache.sysml.runtime.matrix.data.SparseRow;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
 
@@ -101,10 +104,13 @@ public abstract class SpoofRowwise extends SpoofOperator
 			LibSpoofPrimitives.setupThreadLocalMemory(_reqVectMem, n);
 		
 		//core sequential execute
-		if( !inputs.get(0).isInSparseFormat() )
-			executeDense(inputs.get(0).getDenseBlock(), b, scalars, c, n, 0, m);
+		MatrixBlock a = inputs.get(0);
+		if( a instanceof CompressedMatrixBlock )
+			executeCompressed((CompressedMatrixBlock)a, b, scalars, c, n, 0, m);
+		else if( !a.isInSparseFormat() )
+			executeDense(a.getDenseBlock(), b, scalars, c, n, 0, m);
 		else
-			executeSparse(inputs.get(0).getSparseBlock(), b, scalars, c, n, 0, m);
+			executeSparse(a.getSparseBlock(), b, scalars, c, n, 0, m);
 	
 		//post-processing
 		if( allocTmp )
@@ -171,7 +177,7 @@ public abstract class SpoofRowwise extends SpoofOperator
 		}
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
-		}	
+		}
 	}
 	
 	private void allocateOutputMatrix(int m, int n, MatrixBlock out) {
@@ -213,6 +219,29 @@ public abstract class SpoofRowwise extends SpoofOperator
 		}
 	}
 	
+	private void executeCompressed(CompressedMatrixBlock a, double[][] b, double[] scalars, double[] c, int n, int rl, int ru) 
+	{
+		if( a.isEmptyBlock(false) )
+			return;
+		
+		if( !a.isInSparseFormat() ) { //DENSE
+			Iterator<double[]> iter = a.getDenseRowIterator(rl, ru);
+			for( int i=rl; iter.hasNext(); i++ ) {
+				genexecRowDense(iter.next(), 0, b, scalars, c, n, i);
+			}
+		}
+		else { //SPARSE
+			Iterator<SparseRow> iter = a.getSparseRowIterator(rl, ru);
+			for( int i=rl; iter.hasNext(); i++ ) {
+				SparseRow row = iter.next();
+				if( !row.isEmpty() ) {
+					genexecRowSparse(row.values(), row.indexes(), 
+						0, b, scalars, c, row.size(), i);
+				}
+			}
+		}
+	}
+	
 	//methods to be implemented by generated operators of type SpoofRowAggrgate 
 	
 	protected abstract void genexecRowDense( double[] a, int ai, double[][] b, double[] scalars, double[] c, int len, int rowIndex );
@@ -248,7 +277,9 @@ public abstract class SpoofRowwise extends SpoofOperator
 			LibSpoofPrimitives.setupThreadLocalMemory(_reqVectMem, _clen);
 			double[] c = new double[_clen];
 			
-			if( !_a.isInSparseFormat() )
+			if( _a instanceof CompressedMatrixBlock )
+				executeCompressed((CompressedMatrixBlock)_a, _b, _scalars, c, _clen, _rl, _ru);
+			else if( !_a.isInSparseFormat() )
 				executeDense(_a.getDenseBlock(), _b, _scalars, c, _clen, _rl, _ru);
 			else
 				executeSparse(_a.getSparseBlock(), _b, _scalars, c, _clen, _rl, _ru);
@@ -286,7 +317,9 @@ public abstract class SpoofRowwise extends SpoofOperator
 			//allocate vector intermediates
 			LibSpoofPrimitives.setupThreadLocalMemory(_reqVectMem, _clen);
 			
-			if( !_a.isInSparseFormat() )
+			if( _a instanceof CompressedMatrixBlock )
+				executeCompressed((CompressedMatrixBlock)_a, _b, _scalars, _c.getDenseBlock(), _clen, _rl, _ru);
+			else if( !_a.isInSparseFormat() )
 				executeDense(_a.getDenseBlock(), _b, _scalars, _c.getDenseBlock(), _clen, _rl, _ru);
 			else
 				executeSparse(_a.getSparseBlock(), _b, _scalars, _c.getDenseBlock(), _clen, _rl, _ru);

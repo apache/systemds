@@ -239,7 +239,8 @@ public abstract class ColGroupDDC extends ColGroupValue
 	}
 	
 	@Override
-	public Iterator<IJV> getIterator(int rl, int ru, boolean inclZeros) {
+	public Iterator<IJV> getIterator(int rl, int ru, boolean inclZeros, boolean rowMajor) {
+		//DDC iterator is always row major, so no need for custom handling
 		return new DDCIterator(rl, ru, inclZeros);
 	}
 	

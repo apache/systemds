@@ -2643,6 +2643,7 @@ public class LibMatrixCUDA {
 		deviceCopy(instName, srcPtr, destPtr, (int)src.getNumRows(), (int)src.getNumColumns());
 	}
 
+	@SuppressWarnings("unused")
 	private static void compareAndSet(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in, String outputName, double compareVal,  double tolerance,
 																		double ifEqualsVal, double ifLessThanVal, double ifGreaterThanVal) throws DMLRuntimeException {
 		if (ec.getGPUContext() != gCtx)

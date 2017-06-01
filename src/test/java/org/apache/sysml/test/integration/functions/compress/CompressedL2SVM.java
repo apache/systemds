@@ -26,7 +26,6 @@ import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.runtime.compress.CompressedMatrixBlock;
-import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
@@ -36,9 +35,9 @@ import org.junit.Test;
 /**
  * 
  */
-public class CompressedLinregCG extends AutomatedTestBase 
+public class CompressedL2SVM extends AutomatedTestBase 
 {
-	private final static String TEST_NAME1 = "LinregCG";
+	private final static String TEST_NAME1 = "L2SVM";
 	private final static String TEST_DIR = "functions/compress/";
 	private final static String TEST_CONF = "SystemML-config-compress.xml";
 	private final static File   TEST_CONF_FILE = new File(SCRIPT_DIR + TEST_DIR, TEST_CONF);
@@ -62,72 +61,65 @@ public class CompressedLinregCG extends AutomatedTestBase
 	}
 
 	@Test
-	public void testLinregCGDenseCP() {
-		runLinregCGTest(TEST_NAME1, false, ExecType.CP);
+	public void testL2SVMDenseCP() {
+		runL2SVMTest(TEST_NAME1, false, ExecType.CP);
 	}
 	
 	@Test
-	public void testLinregCGSparseCP() {
-		runLinregCGTest(TEST_NAME1, true, ExecType.CP);
+	public void testL2SVMSparseCP() {
+		runL2SVMTest(TEST_NAME1, true, ExecType.CP);
 	}
 	
 	@Test
-	public void testLinregCGDenseSP() {
-		runLinregCGTest(TEST_NAME1, false, ExecType.SPARK);
+	public void testL2SVMDenseSP() {
+		runL2SVMTest(TEST_NAME1, false, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testLinregCGSparseSP() {
-		runLinregCGTest(TEST_NAME1, true, ExecType.SPARK);
+	public void testL2SVMSparseSP() {
+		runL2SVMTest(TEST_NAME1, true, ExecType.SPARK);
 	}
 	
-	private void runLinregCGTest( String testname,boolean sparse, ExecType instType)
+	/**
+	 * 
+	 * @param sparseM1
+	 * @param sparseM2
+	 * @param instType
+	 */
+	private void runL2SVMTest( String testname,boolean sparse, ExecType instType)
 	{
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( instType ){
 			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
-			case SPARK: rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK; break;
-			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
+			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
+			default: rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK; break;
 		}
-	
+		
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK )
+		if( rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK || rtplatform == RUNTIME_PLATFORM.SPARK )
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-		long memOld = InfrastructureAnalyzer.getLocalMaxMemory();
 		
 		try
 		{
 			String TEST_NAME = testname;
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
-			
-			/* This is for running the junit test the new way, i.e., construct the arguments directly */
-			String HOME = SCRIPT_DIR + TEST_DIR;
-			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{ "-explain","-stats",
-					                    "-args", HOME + INPUT_DIR + "X",
-					                             HOME + INPUT_DIR + "y",
-					                             String.valueOf(intercept),
-					                             String.valueOf(epsilon),
-					                             String.valueOf(maxiter),
-					                            HOME + OUTPUT_DIR + "w"};
-			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       HOME + INPUT_DIR + " " + 
-			       String.valueOf(intercept) + " " + String.valueOf(epsilon) + " " + 
-			       String.valueOf(maxiter) + " " + HOME + EXPECTED_DIR;
-			
 			loadTestConfiguration(config);
-	
+			
+			fullDMLScriptName = "scripts/algorithms/l2-svm.dml";
+			programArgs = new String[]{ "-explain", "-stats", "-nvargs", "X="+input("X"), "Y="+input("Y"),
+				"icpt="+String.valueOf(intercept), "tol="+String.valueOf(epsilon), "reg=0.001",
+				"maxiter="+String.valueOf(maxiter), "model="+output("w"), "Log= "};
+
+			rCmd = getRCmd(inputDir(), String.valueOf(intercept),String.valueOf(epsilon),
+				String.valueOf(maxiter), expectedDir());
+
 			//generate actual datasets
-			double[][] X = getRandomMatrix(rows, cols, 1, 1, sparse?sparsity2:sparsity1, 7);
+			double[][] X = getRandomMatrix(rows, cols, 0, 1, sparse?sparsity2:sparsity1, 714);
 			writeInputMatrixWithMTD("X", X, true);
-			double[][] y = getRandomMatrix(rows, 1, 0, 10, 1.0, 3);
-			writeInputMatrixWithMTD("y", y, true);
-			
-			if( rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK  )
-				InfrastructureAnalyzer.setLocalMaxMemory(8*1024*1024);
-			
+			double[][] y = TestUtils.round(getRandomMatrix(rows, 1, 0, 1, 1.0, 136));
+			writeInputMatrixWithMTD("Y", y, true);
+					
 			runTest(true, false, null, -1); 
 			runRScript(true); 
 			
@@ -139,7 +131,6 @@ public class CompressedLinregCG extends AutomatedTestBase
 		finally {
 			rtplatform = platformOld;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
-			InfrastructureAnalyzer.setLocalMaxMemory(memOld);		
 			CompressedMatrixBlock.ALLOW_DDC_ENCODING = true;
 		}
 	}

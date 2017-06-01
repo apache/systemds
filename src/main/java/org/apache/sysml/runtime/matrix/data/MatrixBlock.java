@@ -4894,20 +4894,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	public MatrixValue aggregateBinaryOperations(MatrixIndexes m1Index, MatrixValue m1Value, MatrixIndexes m2Index, MatrixValue m2Value, 
 			MatrixValue result, AggregateBinaryOperator op ) throws DMLRuntimeException
 	{
-		return aggregateBinaryOperations(m1Value, m2Value, result, op, NativeHelper.isNativeLibraryLoaded());
+		return aggregateBinaryOperations(m1Value, m2Value, result, op);
 	}
 
-	public MatrixValue aggregateBinaryOperations(MatrixIndexes m1Index, MatrixValue m1Value, MatrixIndexes m2Index, MatrixValue m2Value, 
-			MatrixValue result, AggregateBinaryOperator op, boolean enableNativeBLAS ) throws DMLRuntimeException
-	{
-		return aggregateBinaryOperations(m1Value, m2Value, result, op, enableNativeBLAS);
-	}
-	
-	public MatrixValue aggregateBinaryOperations(MatrixValue m1Value, MatrixValue m2Value, MatrixValue result, AggregateBinaryOperator op) throws DMLRuntimeException {
-		return aggregateBinaryOperations(m1Value, m2Value, result, op, NativeHelper.isNativeLibraryLoaded());
-	}
-
-	public MatrixValue aggregateBinaryOperations(MatrixValue m1Value, MatrixValue m2Value, MatrixValue result, AggregateBinaryOperator op, boolean nativeMatMult) 
+	public MatrixValue aggregateBinaryOperations(MatrixValue m1Value, MatrixValue m2Value, MatrixValue result, AggregateBinaryOperator op) 
 		throws DMLRuntimeException
 	{
 		//check input types, dimensions, configuration
@@ -4933,7 +4923,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			ret.reset(rl, cl, sp.sparse, sp.estimatedNonZeros);
 		
 		//compute matrix multiplication (only supported binary aggregate operation)
-		if( nativeMatMult )
+		if( NativeHelper.isNativeLibraryLoaded() )
 			LibMatrixNative.matrixMult(m1, m2, ret, op.getNumThreads());
 		else if( op.getNumThreads() > 1 )
 			LibMatrixMult.matrixMult(m1, m2, ret, op.getNumThreads());

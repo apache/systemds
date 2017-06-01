@@ -22,12 +22,8 @@ package org.apache.sysml.api.mlcontext;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.net.URL;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Scanner;
@@ -984,48 +980,6 @@ public final class MLContextUtil {
             }
         } catch (MLContextException e) {
         }
-		return sb.toString();
-	}
-
-	/**
-	 * Generate a String history entry for a script.
-	 *
-	 * @param script
-	 *            the script
-	 * @param when
-	 *            when the script was executed
-	 * @return a script history entry as a String
-	 */
-	public static String createHistoryForScript(Script script, long when) {
-		DateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss.SSS");
-		StringBuilder sb = new StringBuilder();
-		sb.append("Script Name: " + script.getName() + "\n");
-		sb.append("When: " + dateFormat.format(new Date(when)) + "\n");
-		sb.append(script.displayInputs());
-		sb.append(script.displayOutputs());
-		sb.append(script.displaySymbolTable());
-		return sb.toString();
-	}
-
-	/**
-	 * Generate a String listing of the script execution history.
-	 *
-	 * @param scriptHistory
-	 *            the list of script history entries
-	 * @return the listing of the script execution history as a String
-	 */
-	public static String displayScriptHistory(List<String> scriptHistory) {
-		StringBuilder sb = new StringBuilder();
-		sb.append("MLContext Script History:\n");
-		if (scriptHistory.isEmpty()) {
-			sb.append("None");
-		}
-		int i = 1;
-		for (String history : scriptHistory) {
-			sb.append("--------------------------------------------\n");
-			sb.append("#" + (i++) + ":\n");
-			sb.append(history);
-		}
 		return sb.toString();
 	}
 

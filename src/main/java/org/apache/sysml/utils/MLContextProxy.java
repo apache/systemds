@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysml.api;
+package org.apache.sysml.utils;
 
 import java.util.ArrayList;
 
@@ -58,11 +58,11 @@ public class MLContextProxy
 		MLContext.getActiveMLContext().getInternalProxy().setAppropriateVarsForRead(source, targetname);
 	}
 
-	public static Object getActiveMLContext() {
+	public static MLContext getActiveMLContext() {
 		return MLContext.getActiveMLContext();
 	}
 
-	public static Object getActiveMLContextForAPI() {
+	public static MLContext getActiveMLContextForAPI() {
 		if (MLContext.getActiveMLContext() != null) {
 			return MLContext.getActiveMLContext();
 		}

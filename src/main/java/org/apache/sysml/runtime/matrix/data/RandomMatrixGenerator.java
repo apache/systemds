@@ -80,7 +80,7 @@ public class RandomMatrixGenerator {
 	 */
 	public RandomMatrixGenerator(String pdfStr, int r, int c, int rpb, int cpb, double sp, double min, double max) throws DMLRuntimeException
 	{
-		init(PDF.valueOf(pdfStr.toLowerCase()), r, c, rpb, cpb, sp, min, max);
+		init(PDF.valueOf(pdfStr.toUpperCase()), r, c, rpb, cpb, sp, min, max);
 	}
 
 	/**

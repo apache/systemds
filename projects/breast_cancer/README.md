@@ -100,7 +100,7 @@ References:
     # Remove the max result size constraint.
     spark.driver.maxResultSize 0
     # Increase the message size.
-    spark.akka.frameSize 128
+    spark.rpc.message.maxSize 128
     # Extend the network timeout threshold.
     spark.network.timeout 1000s
     # Setup some extra Java options for performance.
@@ -136,3 +136,4 @@ References:
   - Host on server:
     - `python3 path/to/openslide-python/examples/deepzoom/deepzoom_multiserver.py -Q 100 -l HOSTING_URL_HERE path/to/data/`
     - Open local browser to `HOSTING_URL_HERE:5000`.
+

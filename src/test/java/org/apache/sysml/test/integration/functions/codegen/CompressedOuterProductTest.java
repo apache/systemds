@@ -67,128 +67,128 @@ public class CompressedOuterProductTest extends AutomatedTestBase
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "R" }) );
 	}
-		
+	
 	@Test
-	public void testCompressedCellwiseMainDenseConstCP() {
-		testCompressedCellwise( TEST_NAME1, SparsityType.DENSE, ValueType.CONST, ExecType.CP );
+	public void testCompressedOuterProductMainDenseConstCP() {
+		testCompressedCompressedOuterProduct( TEST_NAME1, SparsityType.DENSE, ValueType.CONST, ExecType.CP );
 	}
 	
 	@Test
-	public void testCompressedCellwiseMainDenseRandCP() {
-		testCompressedCellwise( TEST_NAME1, SparsityType.DENSE, ValueType.RAND, ExecType.CP );
+	public void testCompressedOuterProductMainDenseRandCP() {
+		testCompressedCompressedOuterProduct( TEST_NAME1, SparsityType.DENSE, ValueType.RAND, ExecType.CP );
 	}
 	
 	@Test
-	public void testCompressedCellwiseMainDenseRand2CP() {
-		testCompressedCellwise( TEST_NAME1, SparsityType.DENSE, ValueType.RAND_ROUND_DDC, ExecType.CP );
+	public void testCompressedOuterProductMainDenseRand2CP() {
+		testCompressedCompressedOuterProduct( TEST_NAME1, SparsityType.DENSE, ValueType.RAND_ROUND_DDC, ExecType.CP );
 	}
 	
 	@Test
-	public void testCompressedCellwiseMainDenseRand3CP() {
-		testCompressedCellwise( TEST_NAME1, SparsityType.DENSE, ValueType.RAND_ROUND_OLE, ExecType.CP );
+	public void testCompressedOuterProductMainDenseRand3CP() {
+		testCompressedCompressedOuterProduct( TEST_NAME1, SparsityType.DENSE, ValueType.RAND_ROUND_OLE, ExecType.CP );
 	}
 	
 	@Test
-	public void testCompressedCellwiseMainSparseConstCP() {
-		testCompressedCellwise( TEST_NAME1, SparsityType.SPARSE, ValueType.CONST, ExecType.CP );
+	public void testCompressedOuterProductMainSparseConstCP() {
+		testCompressedCompressedOuterProduct( TEST_NAME1, SparsityType.SPARSE, ValueType.CONST, ExecType.CP );
 	}
 	
 	@Test
-	public void testCompressedCellwiseMainSparseRandCP() {
-		testCompressedCellwise( TEST_NAME1, SparsityType.SPARSE, ValueType.RAND, ExecType.CP );
+	public void testCompressedOuterProductMainSparseRandCP() {
+		testCompressedCompressedOuterProduct( TEST_NAME1, SparsityType.SPARSE, ValueType.RAND, ExecType.CP );
 	}
 	
 	@Test
-	public void testCompressedCellwiseMainSparseRand2CP() {
-		testCompressedCellwise( TEST_NAME1, SparsityType.SPARSE, ValueType.RAND_ROUND_DDC, ExecType.CP );
+	public void testCompressedOuterProductMainSparseRand2CP() {
+		testCompressedCompressedOuterProduct( TEST_NAME1, SparsityType.SPARSE, ValueType.RAND_ROUND_DDC, ExecType.CP );
 	}
 	
 	@Test
-	public void testCompressedCellwiseMainSparseRand3CP() {
-		testCompressedCellwise( TEST_NAME1, SparsityType.SPARSE, ValueType.RAND_ROUND_OLE, ExecType.CP );
+	public void testCompressedOuterProductMainSparseRand3CP() {
+		testCompressedCompressedOuterProduct( TEST_NAME1, SparsityType.SPARSE, ValueType.RAND_ROUND_OLE, ExecType.CP );
 	}
 	
 	@Test
-	public void testCompressedCellwiseMainEmptyConstCP() {
-		testCompressedCellwise( TEST_NAME1, SparsityType.EMPTY, ValueType.CONST, ExecType.CP );
+	public void testCompressedOuterProductMainEmptyConstCP() {
+		testCompressedCompressedOuterProduct( TEST_NAME1, SparsityType.EMPTY, ValueType.CONST, ExecType.CP );
 	}
 	
 	@Test
-	public void testCompressedCellwiseMainEmptyRandCP() {
-		testCompressedCellwise( TEST_NAME1, SparsityType.EMPTY, ValueType.RAND, ExecType.CP );
+	public void testCompressedOuterProductMainEmptyRandCP() {
+		testCompressedCompressedOuterProduct( TEST_NAME1, SparsityType.EMPTY, ValueType.RAND, ExecType.CP );
 	}
 	
 	@Test
-	public void testCompressedCellwiseMainEmptyRand2CP() {
-		testCompressedCellwise( TEST_NAME1, SparsityType.EMPTY, ValueType.RAND_ROUND_DDC, ExecType.CP );
+	public void testCompressedOuterProductMainEmptyRand2CP() {
+		testCompressedCompressedOuterProduct( TEST_NAME1, SparsityType.EMPTY, ValueType.RAND_ROUND_DDC, ExecType.CP );
 	}
 	
 	@Test
-	public void testCompressedCellwiseMainEmptyRand3CP() {
-		testCompressedCellwise( TEST_NAME1, SparsityType.EMPTY, ValueType.RAND_ROUND_OLE, ExecType.CP );
+	public void testCompressedOuterProductMainEmptyRand3CP() {
+		testCompressedCompressedOuterProduct( TEST_NAME1, SparsityType.EMPTY, ValueType.RAND_ROUND_OLE, ExecType.CP );
 	}
 	
 	@Test
-	public void testCompressedCellwiseMainDenseConstSP() {
-		testCompressedCellwise( TEST_NAME1, SparsityType.DENSE, ValueType.CONST, ExecType.SPARK );
+	public void testCompressedOuterProductMainDenseConstSP() {
+		testCompressedCompressedOuterProduct( TEST_NAME1, SparsityType.DENSE, ValueType.CONST, ExecType.SPARK );
 	}
 	
 	@Test
-	public void testCompressedCellwiseMainDenseRandSP() {
-		testCompressedCellwise( TEST_NAME1, SparsityType.DENSE, ValueType.RAND, ExecType.SPARK );
+	public void testCompressedOuterProductMainDenseRandSP() {
+		testCompressedCompressedOuterProduct( TEST_NAME1, SparsityType.DENSE, ValueType.RAND, ExecType.SPARK );
 	}
 	
 	@Test
-	public void testCompressedCellwiseMainDenseRand2SP() {
-		testCompressedCellwise( TEST_NAME1, SparsityType.DENSE, ValueType.RAND_ROUND_DDC, ExecType.SPARK );
+	public void testCompressedOuterProductMainDenseRand2SP() {
+		testCompressedCompressedOuterProduct( TEST_NAME1, SparsityType.DENSE, ValueType.RAND_ROUND_DDC, ExecType.SPARK );
 	}
 	
 	@Test
-	public void testCompressedCellwiseMainDenseRand3SP() {
-		testCompressedCellwise( TEST_NAME1, SparsityType.DENSE, ValueType.RAND_ROUND_OLE, ExecType.SPARK );
+	public void testCompressedOuterProductMainDenseRand3SP() {
+		testCompressedCompressedOuterProduct( TEST_NAME1, SparsityType.DENSE, ValueType.RAND_ROUND_OLE, ExecType.SPARK );
 	}
 	
 	@Test
-	public void testCompressedCellwiseMainSparseConstSP() {
-		testCompressedCellwise( TEST_NAME1, SparsityType.SPARSE, ValueType.CONST, ExecType.SPARK );
+	public void testCompressedOuterProductMainSparseConstSP() {
+		testCompressedCompressedOuterProduct( TEST_NAME1, SparsityType.SPARSE, ValueType.CONST, ExecType.SPARK );
 	}
 	
 	@Test
-	public void testCompressedCellwiseMainSparseRandSP() {
-		testCompressedCellwise( TEST_NAME1, SparsityType.SPARSE, ValueType.RAND, ExecType.SPARK );
+	public void testCompressedCompressedOuterProductMainSparseRandSP() {
+		testCompressedCompressedOuterProduct( TEST_NAME1, SparsityType.SPARSE, ValueType.RAND, ExecType.SPARK );
 	}
 	
 	@Test
-	public void testCompressedCellwiseMainSparseRand2SP() {
-		testCompressedCellwise( TEST_NAME1, SparsityType.SPARSE, ValueType.RAND_ROUND_DDC, ExecType.SPARK );
+	public void testCompressedCompressedOuterProductMainSparseRand2SP() {
+		testCompressedCompressedOuterProduct( TEST_NAME1, SparsityType.SPARSE, ValueType.RAND_ROUND_DDC, ExecType.SPARK );
 	}
 	
 	@Test
-	public void testCompressedCellwiseMainSparseRand3SP() {
-		testCompressedCellwise( TEST_NAME1, SparsityType.SPARSE, ValueType.RAND_ROUND_OLE, ExecType.SPARK );
+	public void testCompressedCompressedOuterProductMainSparseRand3SP() {
+		testCompressedCompressedOuterProduct( TEST_NAME1, SparsityType.SPARSE, ValueType.RAND_ROUND_OLE, ExecType.SPARK );
 	}
 	
 	@Test
-	public void testCompressedCellwiseMainEmptyConstSP() {
-		testCompressedCellwise( TEST_NAME1, SparsityType.EMPTY, ValueType.CONST, ExecType.SPARK );
+	public void testCompressedCompressedOuterProductMainEmptyConstSP() {
+		testCompressedCompressedOuterProduct( TEST_NAME1, SparsityType.EMPTY, ValueType.CONST, ExecType.SPARK );
 	}
 	
 	@Test
-	public void testCompressedCellwiseMainEmptyRandSP() {
-		testCompressedCellwise( TEST_NAME1, SparsityType.EMPTY, ValueType.RAND, ExecType.SPARK );
+	public void testCompressedCompressedOuterProductMainEmptyRandSP() {
+		testCompressedCompressedOuterProduct( TEST_NAME1, SparsityType.EMPTY, ValueType.RAND, ExecType.SPARK );
 	}
 	
 	@Test
-	public void testCompressedCellwiseMainEmptyRand2SP() {
-		testCompressedCellwise( TEST_NAME1, SparsityType.EMPTY, ValueType.RAND_ROUND_DDC, ExecType.SPARK );
+	public void testCompressedCompressedOuterProductMainEmptyRand2SP() {
+		testCompressedCompressedOuterProduct( TEST_NAME1, SparsityType.EMPTY, ValueType.RAND_ROUND_DDC, ExecType.SPARK );
 	}
 	
 	@Test
-	public void testCompressedCellwiseMainEmptyRand3SP() {
-		testCompressedCellwise( TEST_NAME1, SparsityType.EMPTY, ValueType.RAND_ROUND_OLE, ExecType.SPARK );
+	public void testCompressedCompressedOuterProductMainEmptyRand3SP() {
+		testCompressedCompressedOuterProduct( TEST_NAME1, SparsityType.EMPTY, ValueType.RAND_ROUND_OLE, ExecType.SPARK );
 	}
 	
-	private void testCompressedCellwise(String testname, SparsityType stype, ValueType vtype, ExecType et)
+	private void testCompressedCompressedOuterProduct(String testname, SparsityType stype, ValueType vtype, ExecType et)
 	{	
 		boolean oldRewrites = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		RUNTIME_PLATFORM platformOld = rtplatform;
@@ -241,8 +241,8 @@ public class CompressedOuterProductTest extends AutomatedTestBase
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("R");	
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
-			Assert.assertTrue(heavyHittersContainsSubString("spoofOP") 
-				|| heavyHittersContainsSubString("sp_spoofOP"));
+			Assert.assertTrue(heavyHittersContainsSubString("spoofOP", 4) 
+				|| heavyHittersContainsSubString("sp_spoofOP", 4));
 		}
 		finally {
 			rtplatform = platformOld;

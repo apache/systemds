@@ -241,8 +241,8 @@ public class CompressedRowAggregateTest extends AutomatedTestBase
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("R");	
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
-			Assert.assertTrue(heavyHittersContainsSubString("spoofRA") 
-				|| heavyHittersContainsSubString("sp_spoofRA"));
+			Assert.assertTrue(heavyHittersContainsSubString("spoofRA", 2) 
+				|| heavyHittersContainsSubString("sp_spoofRA", 2));
 		}
 		finally {
 			rtplatform = platformOld;

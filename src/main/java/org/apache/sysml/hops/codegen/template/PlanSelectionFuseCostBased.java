@@ -457,6 +457,24 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 			}
 		}
 		
+		//prune suboptimal outer product plans that are dominated by outer product plans w/ same number of 
+		//references but better fusion properties (e.g., for the patterns Y=X*(U%*%t(V)) and sum(Y*(U2%*%t(V2))), 
+		//we'd prune sum(X*(U%*%t(V))*Z), Z=U2%*%t(V2) because this would unnecessarily destroy a fusion pattern.
+		for( Long hopID : partition ) {
+			if( memo.countEntries(hopID, TemplateType.OuterProdTpl) == 2 ) {
+				List<MemoTableEntry> entries = memo.get(hopID, TemplateType.OuterProdTpl);
+				MemoTableEntry me1 = entries.get(0);
+				MemoTableEntry me2 = entries.get(1);
+				MemoTableEntry rmEntry = TemplateOuterProduct.dropAlternativePlan(memo, me1, me2);
+				if( rmEntry != null ) {
+					memo.remove(memo._hopRefs.get(hopID), new HashSet<MemoTableEntry>(Arrays.asList(rmEntry)));
+					memo._plansBlacklist.remove(rmEntry.input(rmEntry.getPlanRefIndex()));
+					if( LOG.isTraceEnabled() )
+						LOG.trace("Removed dominated outer product memo table entry: " + rmEntry);
+				}
+			}
+		}
+		
 		//if no materialization points, use basic fuse-all w/ partition awareness
 		if( M == null || M.isEmpty() ) {
 			for( Long hopID : R )
@@ -655,7 +673,7 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 			ArrayList<Long> M, boolean[] plan, HashMap<Long, Double> computeCosts) 
 	{
 		//high level heuristic: every hop or fused operator has the following cost: 
-		//WRITE + min(COMPUTE, READ), where WRITE costs are given by the output size, 
+		//WRITE + max(COMPUTE, READ), where WRITE costs are given by the output size, 
 		//READ costs by the input sizes, and COMPUTE by operation specific FLOP
 		//counts times number of cells of main input, disregarding sparsity for now.
 		
@@ -714,10 +732,12 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 			Hop c = current.getInput().get(i);
 			if( best!=null && best.isPlanRef(i) )
 				costs += rGetPlanCosts(memo, c, visited, partition, M, plan, computeCosts, costVect, best.type);
+			else if( best!=null && isImplicitlyFused(current, i, best.type) )
+				costVect.addInputSize(c.getInput().get(0).getHopID(), Math.max(c.getDim1(),1)*Math.max(c.getDim2(),1));
 			else { //include children and I/O costs
 				costs += rGetPlanCosts(memo, c, visited, partition, M, plan, computeCosts, null, null);
 				if( costVect != null && c.getDataType().isMatrix() )
-					costVect.addInputSize( c.getHopID(), Math.max(c.getDim1(),1)*Math.max(c.getDim2(),1));
+					costVect.addInputSize(c.getHopID(), Math.max(c.getDim1(),1)*Math.max(c.getDim2(),1));
 			}				
 		}	
 		
@@ -725,7 +745,7 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 		if( partition.contains(current.getHopID()) ) {
 			if( opened ) {
 				if( LOG.isTraceEnabled() )
-					LOG.trace("Cost vector for fused operator: "+costVect);
+					LOG.trace("Cost vector for fused operator (hop "+current.getHopID()+"): "+costVect);
 				costs += costVect.outSize * 8 / WRITE_BANDWIDTH; //time for output write
 				costs += Math.max(
 						costVect.computeCosts*costVect.getMaxInputSize()/ COMPUTE_BANDWIDTH, 
@@ -898,6 +918,12 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 		for( Hop p : hop.getParent() )
 			ret |= !partition.contains(p.getHopID());
 		return ret;
+	}
+	
+	private static boolean isImplicitlyFused(Hop hop, int index, TemplateType type) {
+		return type == TemplateType.RowTpl
+			&& HopRewriteUtils.isMatrixMultiply(hop) && index==0 
+			&& HopRewriteUtils.isTransposeOperation(hop.getInput().get(index)); 
 	}
 	
 	private static class CostVector {

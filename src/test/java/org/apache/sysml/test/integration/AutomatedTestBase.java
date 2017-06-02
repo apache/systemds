@@ -1821,6 +1821,13 @@ public abstract class AutomatedTestBase
 				return true;
 		return false;
 	}
+	
+	protected boolean heavyHittersContainsSubString(String str, int minCount) {
+		int count = 0;
+		for( String opcode : Statistics.getCPHeavyHitterOpCodes())
+			count += opcode.contains(str) ? 1 : 0;
+		return (count >= minCount);
+	}
 
 	/**
 	 * Create a SystemML-preferred Spark Session.

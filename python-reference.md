@@ -48,6 +48,9 @@ It implements basic matrix operators, matrix functions as well as converters to 
 types (for example: Numpy arrays, PySpark DataFrame and Pandas
 DataFrame).
 
+The primary reason for supporting this API is to reduce the learning curve for an average Python user,
+who is more likely to know Numpy library, rather than the DML language.
+
 ### Operators
  
 The operators supported are:
@@ -107,6 +110,64 @@ Since matrix is backed by lazy evaluation and uses a recursive Depth First Searc
 you may run into `RuntimeError: maximum recursion depth exceeded`. 
 Please see below [troubleshooting steps](http://apache.github.io/incubator-systemml/python-reference#maximum-recursion-depth-exceeded)
 
+### Dealing with the loops
+
+It is important to note that this API doesnot pushdown loop, which means the
+SystemML engine essentially gets an unrolled DML script.
+This can lead to two issues:
+
+1. Since matrix is backed by lazy evaluation and uses a recursive Depth First Search (DFS),
+you may run into `RuntimeError: maximum recursion depth exceeded`. 
+Please see below [troubleshooting steps](http://apache.github.io/incubator-systemml/python-reference#maximum-recursion-depth-exceeded)
+
+2. Significant parsing/compilation overhead of potentially large unrolled DML script.
+
+The unrolling of the for loop can be demonstrated by the below example:
+ 
+```python
+>>> import systemml as sml
+>>> import numpy as np
+>>> m1 = sml.matrix(np.ones((3,3)) + 2)
+
+Welcome to Apache SystemML!
+
+>>> m2 = sml.matrix(np.ones((3,3)) + 3)
+>>> m3 = m1
+>>> for i in range(5):
+...     m3 = m1 * m3 + m1
+...
+>>> m3
+# This matrix (mVar12) is backed by below given PyDML script (which is not yet evaluated). To fetch the data of this matrix, invoke toNumPy() or toDF() or toPandas() methods.
+mVar1 = load(" ", format="csv")
+mVar3 = mVar1 * mVar1
+mVar4 = mVar3 + mVar1
+mVar5 = mVar1 * mVar4
+mVar6 = mVar5 + mVar1
+mVar7 = mVar1 * mVar6
+mVar8 = mVar7 + mVar1
+mVar9 = mVar1 * mVar8
+mVar10 = mVar9 + mVar1
+mVar11 = mVar1 * mVar10
+mVar12 = mVar11 + mVar1
+save(mVar12, " ")
+```
+
+We can reduce the impact of this unrolling by eagerly evaluating the variables inside the loop:
+
+```python
+>>> import systemml as sml
+>>> import numpy as np
+>>> m1 = sml.matrix(np.ones((3,3)) + 2)
+
+Welcome to Apache SystemML!
+
+>>> m2 = sml.matrix(np.ones((3,3)) + 3)
+>>> m3 = m1
+>>> for i in range(5):
+...     m3 = m1 * m3 + m1
+...     sml.eval(m3)
+
+```
 
 ### Built-in functions
 

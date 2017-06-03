@@ -693,7 +693,11 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		}
 	}
 
-	public void appendRow(int r, SparseRow row)
+	public void appendRow(int r, SparseRow row) {
+		appendRow(r, row, true);
+	}
+	
+	public void appendRow(int r, SparseRow row, boolean deep)
 	{
 		if(row == null)
 			return;
@@ -701,7 +705,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		if(sparse) {
 			//allocation on demand
 			allocateSparseRowsBlock(false);
-			sparseBlock.set(r, row, true);
+			sparseBlock.set(r, row, deep);
 			nonZeros += row.size();
 		}
 		else {

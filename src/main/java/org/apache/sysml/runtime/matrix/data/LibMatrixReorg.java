@@ -60,9 +60,14 @@ import org.apache.sysml.runtime.util.UtilFunctions;
  */
 public class LibMatrixReorg 
 {
-	public static final long PAR_NUMCELL_THRESHOLD = 1024*1024;   //Min 1M elements
-	public static final boolean SHALLOW_DENSE_VECTOR_TRANSPOSE = true;
-	public static final boolean SHALLOW_DENSE_ROWWISE_RESHAPE = true;
+	//minimum number of elements for multi-threaded execution
+	public static final long PAR_NUMCELL_THRESHOLD = 1024*1024; //1M
+	
+	//allow shallow dense/sparse copy for unchanged data (which is 
+	//safe due to copy-on-write and safe update-in-place handling)
+	public static final boolean SHALLOW_COPY_REORG = true;
+	
+	//allow reuse of temporary blocks for certain operations
 	public static final boolean ALLOW_BLOCK_REUSE = false;
 	
 	private enum ReorgType {
@@ -126,7 +131,7 @@ public class LibMatrixReorg
 		//since the physical representation of dense vectors is always the same,
 		//we don't need to create a copy, given our copy on write semantics.
 		//however, note that with update in-place this would be an invalid optimization
-		if( SHALLOW_DENSE_VECTOR_TRANSPOSE && !in.sparse && !out.sparse && (in.rlen==1 || in.clen==1)  ) {
+		if( SHALLOW_COPY_REORG && !in.sparse && !out.sparse && (in.rlen==1 || in.clen==1)  ) {
 			out.denseBlock = in.denseBlock;
 			return out;
 		}
@@ -160,7 +165,7 @@ public class LibMatrixReorg
 	{
 		//redirect small or special cases to sequential execution
 		if( in.isEmptyBlock(false) || (in.rlen * in.clen < PAR_NUMCELL_THRESHOLD) || k == 1
-			|| (SHALLOW_DENSE_VECTOR_TRANSPOSE && !in.sparse && !out.sparse && (in.rlen==1 || in.clen==1) )
+			|| (SHALLOW_COPY_REORG && !in.sparse && !out.sparse && (in.rlen==1 || in.clen==1) )
 			|| (in.sparse && !out.sparse && in.rlen==1) || (!in.sparse && out.sparse && in.rlen==1) 
 			|| (!in.sparse && out.sparse) || !out.isThreadSafe())
 		{
@@ -395,12 +400,11 @@ public class LibMatrixReorg
 			else //SPARSE
 			{
 				out.allocateSparseRowsBlock(false);
-				for( int i=0; i<rlen; i++ ) {
-					int ix = vix[i];
-					if( !in.sparseBlock.isEmpty(ix) ) {
-						out.sparseBlock.set(i, in.sparseBlock.get(ix), true);
+				for( int i=0; i<rlen; i++ )
+					if( !in.sparseBlock.isEmpty(vix[i]) ) {
+						out.sparseBlock.set(i, in.sparseBlock.get(vix[i]),
+							!SHALLOW_COPY_REORG); //row remains unchanged
 					}
-				}
 			}
 		}
 		else
@@ -1085,7 +1089,7 @@ public class LibMatrixReorg
 			return;
 		
 		//shallow dense by-row reshape (w/o result allocation)
-		if( SHALLOW_DENSE_ROWWISE_RESHAPE && rowwise ) {
+		if( SHALLOW_COPY_REORG && rowwise ) {
 			//since the physical representation of dense matrices is always the same,
 			//we don't need to create a copy, given our copy on write semantics.
 			//however, note that with update in-place this would be an invalid optimization
@@ -1677,25 +1681,19 @@ public class LibMatrixReorg
 			{
 				SparseBlock a = in.sparseBlock;				
 				for ( int i=0; i < m; i++ )
-					if ( !a.isEmpty(i) ) {
-						flags[i] = true;
-						rlen2++;
-					}
+					rlen2 += (flags[i] = !a.isEmpty(i)) ? 1 : 0;
 			}
 			else //DENSE
 			{
 				double[] a = in.denseBlock;
-				
-				for(int i=0, aix=0; i<m; i++, aix+=n) {
+				for(int i=0, aix=0; i<m; i++, aix+=n)
 					for(int j=0; j<n; j++)
-						if( a[aix+j] != 0 )
-						{
+						if( a[aix+j] != 0 ) {
 							flags[i] = true;
 							rlen2++;
 							//early abort for current row
 							break; 
 						}
-				}
 			}
 		} 
 		else {			
@@ -1716,8 +1714,10 @@ public class LibMatrixReorg
 		{
 			//note: output dense or sparse
 			for( int i=0, cix=0; i<m; i++ )
-				if( flags[i] )
-					ret.appendRow(cix++, in.sparseBlock.get(i));
+				if( flags[i] ) {
+					ret.appendRow(cix++, in.sparseBlock.get(i),
+						!SHALLOW_COPY_REORG);
+				}
 		}
 		else if( !in.sparse && !ret.sparse )  //DENSE <- DENSE
 		{

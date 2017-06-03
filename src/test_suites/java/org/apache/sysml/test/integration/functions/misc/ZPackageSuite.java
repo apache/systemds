@@ -38,6 +38,7 @@ import org.junit.runners.Suite;
 	IPALiteralReplacementTest.class,
 	IPAScalarRecursionTest.class,
 	IPAScalarVariablePropagationTest.class,
+	IPAConstantFoldingScalarVariablePropagationTest.class,
 	IPAUnknownRecursionTest.class,
 	LongOverflowTest.class,
 	NegativeLoopIncrementsTest.class,

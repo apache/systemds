@@ -103,10 +103,13 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	public static final SparseBlock.Type DEFAULT_SPARSEBLOCK = SparseBlock.Type.MCSR;
 	//default sparse block type for update in place: compressed sparse rows, to prevent serialization
 	public static final SparseBlock.Type DEFAULT_INPLACE_SPARSEBLOCK = SparseBlock.Type.CSR;
+	//allowed overhead for shallow serialize in terms of in-memory-size/x <= serialized-size 
+	public static final double MAX_SHALLOW_SERIALIZE_OVERHEAD = 1.3;
 	//basic header (int rlen, int clen, byte type)
 	public static final int HEADER_SIZE = 9;
 	
-	private static final boolean DISPLAY_STATISTICS = false; // Developer flag to measure performance overhead of various functions in this class
+	//internal stats flag for matrix block internals //TODO remove
+	private static final boolean DISPLAY_STATISTICS = false; 
 	
 	public enum BlockType{
 		EMPTY_BLOCK,  
@@ -2395,14 +2398,18 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		return (long) Math.min(size, Long.MAX_VALUE);
 	}
 
-	public static long estimateSizeSparseInMemory(long nrows, long ncols, double sparsity)
+	public static long estimateSizeSparseInMemory(long nrows, long ncols, double sparsity) {
+		return estimateSizeSparseInMemory(nrows, ncols, sparsity, DEFAULT_SPARSEBLOCK);
+	}
+	
+	public static long estimateSizeSparseInMemory(long nrows, long ncols, double sparsity, SparseBlock.Type stype)
 	{
 		// basic variables and references sizes
 		double size = 44;
 		
 		// delegate memory estimate to individual sparse blocks
 		size += SparseBlockFactory.estimateSizeSparseInMemory(
-			DEFAULT_SPARSEBLOCK, nrows, ncols, sparsity);
+			stype, nrows, ncols, sparsity);
 		
 		// robustness for long overflows
 		return (long) Math.min(size, Long.MAX_VALUE);
@@ -2558,8 +2565,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			return 44;
 		//in-memory size of dense/sparse representation
 		double sp = OptimizerUtils.getSparsity(rlen, clen, nonZeros);
-		return sparse ? estimateSizeSparseInMemory(rlen, clen, sp) : 
-			estimateSizeDenseInMemory(rlen, clen);
+		return !sparse ? estimateSizeDenseInMemory(rlen, clen) :
+			estimateSizeSparseInMemory(rlen, clen, sp,
+			SparseBlockFactory.getSparseBlockType(sparseBlock));
 	}
 	
 	@Override
@@ -2571,7 +2579,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	public boolean isShallowSerialize() {
 		//shallow serialize if dense, dense in serialized form or already in CSR
 		return !sparse || !evalSparseFormatOnDisk()
-			|| (sparse && sparseBlock instanceof SparseBlockCSR);
+			|| (sparse && sparseBlock instanceof SparseBlockCSR)
+			|| (sparse && sparseBlock instanceof SparseBlockMCSR
+				&& getInMemorySize()/MAX_SHALLOW_SERIALIZE_OVERHEAD 
+				<= getExactSerializedSize());
 	}
 	
 	@Override

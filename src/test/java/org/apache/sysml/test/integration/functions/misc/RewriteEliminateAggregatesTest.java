@@ -19,8 +19,6 @@
 
 package org.apache.sysml.test.integration.functions.misc;
 
-import java.util.HashMap;
-
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.hops.OptimizerUtils;
@@ -34,6 +32,8 @@ public class RewriteEliminateAggregatesTest extends AutomatedTestBase
 	private static final String TEST_NAME = "RewriteEliminateAggregate";
 	private static final String TEST_DIR = "functions/misc/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + RewriteEliminateAggregatesTest.class.getSimpleName() + "/";
+	
+	private double tol = Math.pow(10, -10);
 	
 	@Override
 	public void setUp() {
@@ -111,7 +111,7 @@ public class RewriteEliminateAggregatesTest extends AutomatedTestBase
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
 			
 			//generate actual dataset 
-			double[][] A = getRandomMatrix(123, 12, 0, 1, 0.9, 7); 
+			double[][] A = getRandomMatrix(123, 12, -5, 5, 0.9, 7); 
 			writeInputMatrixWithMTD("A", A, true);
 			
 			//run test
@@ -119,9 +119,9 @@ public class RewriteEliminateAggregatesTest extends AutomatedTestBase
 			runRScript(true); 
 			
 			//compare scalars 
-			HashMap<CellIndex, Double> dmlfile = readDMLScalarFromHDFS("Scalar");
-			HashMap<CellIndex, Double> rfile  = readRScalarFromFS("Scalar");
-			TestUtils.compareScalars(dmlfile.toString(), rfile.toString());
+			double ret1 = readDMLScalarFromHDFS("Scalar").get(new CellIndex(1,1));
+			double ret2 = readRScalarFromFS("Scalar").get(new CellIndex(1,1));
+			TestUtils.compareScalars(ret1, ret2, tol);
 			
 			//check for applied rewrites
 			if( rewrites ) {

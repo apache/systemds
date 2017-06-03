@@ -837,6 +837,8 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				Hop input = au2.getInput().get(0);
 				HopRewriteUtils.removeAllChildReferences(au2);
 				HopRewriteUtils.replaceChildReference(au1, au2, input);
+				if( au2.getOp() == AggOp.SUM_SQ )
+					au1.setOp(AggOp.SUM_SQ);
 				
 				LOG.debug("Applied removeUnnecessaryAggregates (line "+hi.getBeginLine()+").");
 			}

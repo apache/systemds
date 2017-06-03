@@ -1,0 +1,101 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# INPUT PARAMETERS:
+# -----------------------------------------------------------------------------
+# NAME   TYPE   DEFAULT  MEANING
+# -----------------------------------------------------------------------------
+# X      matrix  ---     input positive definite matrix to be factorized
+# k      Int     1000    smalles column block of input matrix
+# OUTDIR String  ---     output directory to save the results
+# OFMT   String  CSV     output format
+# -----------------------------------------------------------------------------
+
+# OUTPUT:
+# -----------------------------------------------------------------------------
+# NAME   TYPE    MEANING
+# -----------------------------------------------------------------------------
+# L      matrix  Lower triangular matrix
+# -----------------------------------------------------------------------------
+
+X = read($X);
+k = ifdef($k, 1000);
+# k is used for the base case in the recursive algorithm.
+ofmt = ifdef($OFMT, "CSV")
+
+U_triangular_inv = function(Matrix[double] U)
+  return(Matrix[double] A) {
+    # inverse of upper triangular matrix
+    n = ncol(U)
+
+    if (n == 1) {
+      A = 1/U[1,1]
+    } else if (n == 2) {
+      A = matrix(0, rows=2, cols=2)
+      A[1,1] = U[2,2]
+      A[2,2] = U[1,1]
+      A[1,2] = -U[1,2]
+      A = A/(as.scalar(U[1,1] * U[2,2]))
+    } else {
+      k = as.integer(floor(n/2))
+      U11 = U[1:k,1:k]
+      U12 = U[1:k,k+1:n]
+      U22 = U[k+1:n,k+1:n]
+
+      A11 = U_triangular_inv(U11)
+      A22 = U_triangular_inv(U22)
+      A12 = -A11 %*% (U12 %*% A22)
+      A21 = matrix(0, rows=nrow(A22), cols=ncol(A11))
+
+      A1 = rbind(A11, A21)
+      A2 = rbind(A12, A22)
+      A = cbind(A1, A2)
+    }
+  }
+
+  Choleskey_recursive = function(Matrix[double] A, int nb)
+    return(Matrix[double] L) {
+      n = ncol(A)
+
+      if (n <= nb) {
+        L = cholesky(A)
+      } else {
+        k = as.integer(floor(n/2))
+        A11 = A[1:k,1:k]
+        A21 = A[k+1:n,1:k]
+        A22 = A[k+1:n,k+1:n]
+
+        L11 = Choleskey_recursive(A11, nb)
+        L11inv = U_triangular_inv(t(L11))
+        L21 = A21 %*% L11inv
+        A22 = A22 - L21 %*% t(L21)
+        L22 = Choleskey_recursive(A22, nb)
+        L12 = matrix(0, rows=nrow(L11), cols=ncol(L22))
+
+        L1 = rbind(L11, L21)
+        L2 = rbind(L12, L22)
+        L = cbind(L1, L2)
+      }
+  }
+
+L = Choleskey_recursive(X, k)
+
+write(L, $outdir + "L_30k.csv", ofmt)

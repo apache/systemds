@@ -110,6 +110,29 @@ For more detail on enabling native BLAS, please see the documentation for the [n
 
 ## Frequently asked questions
 
+#### What is the purpose of Caffe2DML API ?
+
+Most deep learning experts are more likely to be familiar with the Caffe's specification
+rather than DML language. For these users, the Caffe2DML API reduces the learning curve to using SystemML.
+Instead of requiring the users to write a DML script for training, fine-tuning and testing the model,
+Caffe2DML takes as an input a network and solver specified in the Caffe specification
+and automatically generates the corresponding DML.
+
+#### With Caffe2DML, does SystemML now require Caffe to be installed ?
+
+Absolutely not. We only support Caffe's API for convenience of the user as stated above.
+Since the Caffe's API is specified in the protobuf format, we are able to generate the java parser files
+and donot require Caffe to be installed. This is also true for Tensorboard feature of Caffe2DML. 
+
+```
+Dml.g4      ---> antlr  ---> DmlLexer.java, DmlListener.java, DmlParser.java ---> parse foo.dml
+caffe.proto ---> protoc ---> target/generated-sources/caffe/Caffe.java       ---> parse caffe_network.proto, caffe_solver.proto 
+```
+
+Again, the SystemML engine doesnot invoke (or depend on) Caffe and TensorFlow for any of its runtime operators.
+Since the grammar files for the respective APIs (i.e. `caffe.proto`) are used by SystemML, 
+we include their licenses in our jar files.
+
 #### How can I speedup the training with Caffe2DML ?
 
 - Enable native BLAS to improve the performance of CP convolution and matrix multiplication operators.

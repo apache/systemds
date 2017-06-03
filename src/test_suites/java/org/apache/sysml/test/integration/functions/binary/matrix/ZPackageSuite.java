@@ -27,10 +27,8 @@ import org.junit.runners.Suite;
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
 	BinUaggChainTest.class,
-	
 	CentralMomentTest.class,
 	CovarianceTest.class,
-	
 	DiagMatrixMultiplicationTest.class,
 	ElementwiseAdditionMultiplicationTest.class,
 	ElementwiseAdditionTest.class,
@@ -38,7 +36,6 @@ import org.junit.runners.Suite;
 	ElementwiseModulusTest.class,
 	ElementwiseMultiplicationTest.class,
 	ElementwiseSubtractionTest.class,
-	
 	MapMultChainTest.class,
 	MapMultLimitTest.class,
 	MatrixMultiplicationTest.class,
@@ -54,7 +51,6 @@ import org.junit.runners.Suite;
 	UaggOuterChainTest.class,
 	UltraSparseMRMatrixMultiplicationTest.class,
 	ZipMMSparkMatrixMultiplicationTest.class
-	
 })
 
 

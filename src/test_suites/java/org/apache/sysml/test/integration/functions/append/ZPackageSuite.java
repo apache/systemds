@@ -26,11 +26,11 @@ import org.junit.runners.Suite;
  *  won't run two of them at once. */
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-  AppendVectorTest.class,
-  StringAppendTest.class,
-  RBindCBindMatrixTest.class,
-  AppendChainTest.class,
-  AppendMatrixTest.class
+	AppendChainTest.class,
+	AppendMatrixTest.class,
+	AppendVectorTest.class,
+	RBindCBindMatrixTest.class,
+	StringAppendTest.class,
 })
 
 

@@ -31,6 +31,7 @@ import org.junit.runners.Suite;
 	AlgorithmL2SVM.class,
 	AlgorithmLinregCG.class,
 	AlgorithmMLogreg.class,
+	AlgorithmMSVM.class,
 	AlgorithmPNMF.class,
 	CellwiseTmplTest.class,
 	CompressedCellwiseTest.class,

@@ -30,7 +30,8 @@ import org.junit.runners.Suite;
 	Conv2DBackwardTest.class,
 	Conv2DTest.class,
 	PoolBackwardTest.class,
-	PoolTest.class
+	PoolTest.class,
+	ReluBackwardTest.class,
 })
 
 

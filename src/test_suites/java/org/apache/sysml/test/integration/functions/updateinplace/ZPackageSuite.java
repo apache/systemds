@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysml.test.integration.applications.parfor;
+package org.apache.sysml.test.integration.functions.updateinplace;
 
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
@@ -26,13 +26,7 @@ import org.junit.runners.Suite;
  *  won't run two of them at once. */
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-  ParForBivariateStatsTest.class,
-  ParForCorrelationTest.class,
-  ParForCorrelationTestLarge.class,
-  ParForCVMulticlassSVMTest.class,
-  ParForNaiveBayesTest.class,
-  ParForSampleTest.class,
-  ParForUnivariateStatsTest.class,
+	UpdateInPlaceTest.class,
 })
 
 

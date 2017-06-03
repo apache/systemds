@@ -1818,7 +1818,7 @@ public abstract class AutomatedTestBase
 		for( String opcode : Statistics.getCPHeavyHitterOpCodes())
 			for( String s : str )
 				if(opcode.contains(s))
-				return true;
+					return true;
 		return false;
 	}
 	

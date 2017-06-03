@@ -49,6 +49,7 @@ import org.junit.runners.Suite;
 	ReadAfterWriteTest.class,
 	RewriteCSETransposeScalarTest.class,
 	RewriteCTableToRExpandTest.class,
+	RewriteEliminateAggregatesTest.class,
 	RewriteFusedRandTest.class,
 	RewriteLoopVectorization.class,
 	RewriteMatrixMultChainOptTest.class,

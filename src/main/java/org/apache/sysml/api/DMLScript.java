@@ -639,17 +639,13 @@ public class DMLScript
 				if(    fileName.startsWith("hdfs:")
 					|| fileName.startsWith("gpfs:") )
 				{ 
-					if( !LocalFileUtils.validateExternalFilename(fileName, true) )
-						throw new LanguageException("Invalid (non-trustworthy) hdfs filename.");
-					FileSystem fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
 					Path scriptPath = new Path(fileName);
+					FileSystem fs = IOUtilFunctions.getFileSystem(scriptPath);
 					in = new BufferedReader(new InputStreamReader(fs.open(scriptPath)));
 				}
 				// from local file system
 				else 
 				{ 
-					if( !LocalFileUtils.validateExternalFilename(fileName, false) )
-						throw new LanguageException("Invalid (non-trustworthy) local filename.");
 					in = new BufferedReader(new FileReader(fileName));
 				}
 				
@@ -969,14 +965,6 @@ public class DMLScript
 		{
 			LOG.warn("Cannot run map/reduce tasks as user '"+userName+"'. Using tasktracker group '"+ttGroupName+"'."); 		 
 		}
-		
-		//validate external filenames working directories
-		String localtmpdir = config.getTextValue(DMLConfig.LOCAL_TMP_DIR);
-		String hdfstmpdir = config.getTextValue(DMLConfig.SCRATCH_SPACE);
-		if( !LocalFileUtils.validateExternalFilename(localtmpdir, false) )
-			throw new DMLRuntimeException("Invalid (non-trustworthy) local working directory.");
-		if( !LocalFileUtils.validateExternalFilename(hdfstmpdir, true) )
-			throw new DMLRuntimeException("Invalid (non-trustworthy) hdfs working directory.");
 	}
 	
 	public static void cleanupHadoopExecution( DMLConfig config ) 

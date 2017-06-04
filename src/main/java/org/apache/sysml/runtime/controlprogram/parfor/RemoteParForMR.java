@@ -258,15 +258,15 @@ public class RemoteParForMR
 	{
 		HashMap<Long,LocalVariableMap> tmp = new HashMap<Long,LocalVariableMap>();
 
-		FileSystem fs = FileSystem.get(job);
 		Path path = new Path(fname);
+		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 		LongWritable key = new LongWritable(); //workerID
 		Text value = new Text();               //serialized var header (incl filename)
 		
 		int countAll = 0;
 		for( Path lpath : MatrixReader.getSequenceFilePaths(fs, path) )
 		{
-			SequenceFile.Reader reader = new SequenceFile.Reader(FileSystem.get(job),lpath,job);
+			SequenceFile.Reader reader = new SequenceFile.Reader(fs,lpath,job);
 			try
 			{
 				while( reader.next(key, value) )

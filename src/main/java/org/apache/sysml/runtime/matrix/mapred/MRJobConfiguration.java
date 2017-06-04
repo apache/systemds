@@ -70,6 +70,7 @@ import org.apache.sysml.runtime.instructions.mr.ReblockInstruction;
 import org.apache.sysml.runtime.instructions.mr.RemoveEmptyMRInstruction;
 import org.apache.sysml.runtime.instructions.mr.UnaryMRInstructionBase;
 import org.apache.sysml.runtime.io.BinaryBlockSerialization;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.AddDummyWeightConverter;
 import org.apache.sysml.runtime.matrix.data.BinaryBlockToBinaryCellConverter;
@@ -748,10 +749,9 @@ public class MRJobConfiguration
 		for(int i=0; i<matrices.length; i++)
 			matrices[i]=new Path(matrices[i]).toString();
 		
-		FileSystem fs=FileSystem.get(job);
-		Path thisFile=new Path(job.get(MRConfigurationNames.MR_MAP_INPUT_FILE)).makeQualified(fs);
-		
-		//Path p=new Path(thisFileName);
+		Path thisFile=new Path(job.get(MRConfigurationNames.MR_MAP_INPUT_FILE));
+		FileSystem fs = IOUtilFunctions.getFileSystem(thisFile, job);
+		thisFile = thisFile.makeQualified(fs);
 		
 		Path thisDir=thisFile.getParent().makeQualified(fs);
 		ArrayList<Byte> representativeMatrixes=new ArrayList<Byte>();

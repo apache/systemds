@@ -43,7 +43,6 @@ import scala.Tuple2;
 
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
-import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.DataGenOp;
 import org.apache.sysml.hops.Hop.DataGenMethod;
 import org.apache.sysml.hops.OptimizerUtils;
@@ -385,12 +384,12 @@ public class RandSPInstruction extends UnarySPInstruction
 		//b) file-based seed rdd construction (for robustness wrt large number of blocks)
 		else
 		{
-			String path = LibMatrixDatagen.generateUniqueSeedPath(dir);
+			Path path = new Path(LibMatrixDatagen.generateUniqueSeedPath(dir));
 			PrintWriter pw = null;
 			try
 			{
-				FileSystem fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
-				pw = new PrintWriter(fs.create(new Path(path)));
+				FileSystem fs = IOUtilFunctions.getFileSystem(path);
+				pw = new PrintWriter(fs.create(path));
 				StringBuilder sb = new StringBuilder();
 				for( long i=0; i<numBlocks; i++ ) {
 					sb.append(1 + i/numColBlocks);
@@ -416,7 +415,7 @@ public class RandSPInstruction extends UnarySPInstruction
 			
 			//create seeds rdd 
 			seedsRDD = sec.getSparkContext()
-					.textFile(path, numPartitions)
+					.textFile(path.toString(), numPartitions)
 					.mapToPair(new ExtractSeedTuple());
 		}
 		
@@ -476,13 +475,12 @@ public class RandSPInstruction extends UnarySPInstruction
 		//b) file-based offset rdd construction (for robustness wrt large number of blocks)
 		else
 		{
-			String path = LibMatrixDatagen.generateUniqueSeedPath(dir);
+			Path path = new Path(LibMatrixDatagen.generateUniqueSeedPath(dir));
 			
 			PrintWriter pw = null;
-			try
-			{
-				FileSystem fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
-				pw = new PrintWriter(fs.create(new Path(path)));
+			try {
+				FileSystem fs = IOUtilFunctions.getFileSystem(path);
+				pw = new PrintWriter(fs.create(path));
 				for( long i=0; i<numBlocks; i++ ) {
 					double off = seq_from + seq_incr*i*rowsInBlock;
 					pw.println(off);
@@ -500,7 +498,7 @@ public class RandSPInstruction extends UnarySPInstruction
 			
 			//create seeds rdd 
 			offsetsRDD = sec.getSparkContext()
-					.textFile(path, numPartitions)
+					.textFile(path.toString(), numPartitions)
 					.map(new ExtractOffsetTuple());
 		}
 		

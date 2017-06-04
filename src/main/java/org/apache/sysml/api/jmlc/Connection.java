@@ -232,8 +232,8 @@ public class Connection implements Closeable
 			if(    fname.startsWith("hdfs:") 
 				|| fname.startsWith("gpfs:") ) 
 			{ 
-				FileSystem fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
 				Path scriptPath = new Path(fname);
+				FileSystem fs = IOUtilFunctions.getFileSystem(scriptPath);
 				in = new BufferedReader(new InputStreamReader(fs.open(scriptPath)));
 			}
 			// from local file system

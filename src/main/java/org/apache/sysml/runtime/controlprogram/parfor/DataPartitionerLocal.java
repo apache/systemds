@@ -239,7 +239,7 @@ public class DataPartitionerLocal extends DataPartitioner
 			//check and add input path
 			JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
 			Path path = new Path(fname);
-			FileSystem fs = FileSystem.get(job);
+			FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 			
 			//prepare sequence file reader, and write to local staging area	
 			LinkedList<Cell> buffer = new LinkedList<Cell>();
@@ -327,7 +327,7 @@ public class DataPartitionerLocal extends DataPartitioner
 			//check and add input path
 			JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
 			Path path = new Path(fname);
-			FileSystem fs = FileSystem.get(job);
+			FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 			
 			//prepare sequence file reader, and write to local staging area
 			MatrixIndexes key = new MatrixIndexes(); 
@@ -400,7 +400,7 @@ public class DataPartitionerLocal extends DataPartitioner
 			//check and add input path
 			JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
 			Path path = new Path(fname);
-			FileSystem fs = FileSystem.get(job);
+			FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 			
 			//prepare sequence file reader, and write to local staging area
 			MatrixIndexes key = new MatrixIndexes(); 
@@ -601,8 +601,8 @@ public class DataPartitionerLocal extends DataPartitioner
 		throws IOException
 	{
 		long key = getKeyFromFilePath(lpdir);
-		FileSystem fs = FileSystem.get(job);
 		Path path =  new Path(dir+"/"+key);
+		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 		SequenceFile.Writer writer = new SequenceFile.Writer(fs, job, path, MatrixIndexes.class, MatrixBlock.class); //beware ca 50ms
 
 		try
@@ -637,8 +637,8 @@ public class DataPartitionerLocal extends DataPartitioner
 		throws IOException
 	{
 		long key = getKeyFromFilePath(lpdir);
-		FileSystem fs = FileSystem.get(job);
 		Path path =  new Path(dir+"/"+key);
+		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 		SequenceFile.Writer writer = new SequenceFile.Writer(fs, job, path, MatrixIndexes.class, MatrixCell.class); //beware ca 50ms
 	
 		try
@@ -667,8 +667,8 @@ public class DataPartitionerLocal extends DataPartitioner
 		throws IOException
 	{
 		long key = getKeyFromFilePath(lpdir);
-		FileSystem fs = FileSystem.get(job);
 		Path path = new Path(dir+"/"+key);
+		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 		BufferedWriter out = new BufferedWriter(new OutputStreamWriter(fs.create(path,true)));		
 		try
 		{

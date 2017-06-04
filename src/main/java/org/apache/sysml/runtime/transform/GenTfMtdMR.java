@@ -33,6 +33,7 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hadoop.mapred.TextInputFormat;
 import org.apache.hadoop.mapred.lib.NullOutputFormat;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
@@ -70,7 +71,7 @@ public class GenTfMtdMR {
 		FileInputFormat.addInputPath(job, new Path(inputPath));
 		// delete outputPath, if exists already.
 		Path outPath = new Path(txMtdPath);
-		FileSystem fs = FileSystem.get(job);
+		FileSystem fs = IOUtilFunctions.getFileSystem(outPath, job);
 		fs.delete(outPath, true);
 		FileOutputFormat.setOutputPath(job, outPath);
 

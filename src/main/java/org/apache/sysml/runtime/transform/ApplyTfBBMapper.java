@@ -72,9 +72,9 @@ public class ApplyTfBBMapper extends MapperBase implements Mapper<LongWritable, 
 			OffsetCount value=new OffsetCount();
 			Path p=new Path(job.get(CSVReblockMR.ROWID_FILE_NAME));
 			
-			FileSystem fs = FileSystem.get(job);
-			Path thisPath=new Path(job.get(MRConfigurationNames.MR_MAP_INPUT_FILE)).makeQualified(fs);
-			String thisfile=thisPath.toString();
+			Path path=new Path(job.get(MRConfigurationNames.MR_MAP_INPUT_FILE));
+			FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
+			String thisfile=path.makeQualified(fs).toString();
 
 			SequenceFile.Reader reader = null;
 			try {

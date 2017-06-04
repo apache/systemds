@@ -33,10 +33,8 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.parser.common.CustomErrorListener.ParseIssue;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
-import org.apache.sysml.runtime.util.LocalFileUtils;
 
 /**
  * Base class for all dml parsers in order to make the various compilation chains
@@ -100,18 +98,14 @@ public abstract class ParserWrapper {
 				|| script.startsWith("gpfs:") ) 
 			{
 				LOG.debug("Looking for the following file in HDFS or GPFS: " + script);
-				if( !LocalFileUtils.validateExternalFilename(script, true) )
-					throw new LanguageException("Invalid (non-trustworthy) hdfs filename.");
-				FileSystem fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
 				Path scriptPath = new Path(script);
+				FileSystem fs = IOUtilFunctions.getFileSystem(scriptPath);
 				in = new BufferedReader(new InputStreamReader(fs.open(scriptPath)));
 			}
 			// from local file system
 			else 
 			{
 				LOG.debug("Looking for the following file in the local file system: " + script);
-				if( !LocalFileUtils.validateExternalFilename(script, false) )
-					throw new LanguageException("Invalid (non-trustworthy) local filename.");
 				if (Files.exists(Paths.get(script)))
 					in = new BufferedReader(new FileReader(script));
 				else  // check in scripts/ directory for file (useful for tests)

@@ -152,8 +152,9 @@ public class CSVReblockMapper extends MapperBase implements Mapper<LongWritable,
 		byte matrixIndex=representativeMatrixes.get(0);
 		try 
 		{
-			FileSystem fs = FileSystem.get(job);
-			Path thisPath=new Path(job.get(MRConfigurationNames.MR_MAP_INPUT_FILE)).makeQualified(fs);
+			Path thisPath=new Path(job.get(MRConfigurationNames.MR_MAP_INPUT_FILE));
+			FileSystem fs = IOUtilFunctions.getFileSystem(thisPath, job);
+			thisPath = thisPath.makeQualified(fs);
 			String filename=thisPath.toString();
 			Path headerPath=new Path(job.getStrings(CSVReblockMR.SMALLEST_FILE_NAME_PER_INPUT)[matrixIndex]).makeQualified(fs);
 			if(headerPath.toString().equals(filename))

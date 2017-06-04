@@ -33,6 +33,7 @@ import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.sysml.runtime.instructions.mr.CSVReblockInstruction;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.CSVReblockMR;
 import org.apache.sysml.runtime.matrix.CSVReblockMR.OffsetCount;
 import org.apache.sysml.runtime.transform.TfUtils;
@@ -91,8 +92,9 @@ public class CSVAssignRowIDMapper extends MapReduceBase implements Mapper<LongWr
 			//it doesn't make sense to have repeated file names in the input, since this is for reblock
 			thisIndex = MRJobConfiguration.getInputMatrixIndexesInMapper(job).get(0);
 			outKey.set(thisIndex);
-			FileSystem fs = FileSystem.get(job);
-			Path thisPath = new Path(job.get(MRConfigurationNames.MR_MAP_INPUT_FILE)).makeQualified(fs);
+			Path thisPath = new Path(job.get(MRConfigurationNames.MR_MAP_INPUT_FILE));
+			FileSystem fs = IOUtilFunctions.getFileSystem(thisPath, job);
+			thisPath = thisPath.makeQualified(fs);
 			filename = thisPath.toString();
 			String[] strs = job.getStrings(CSVReblockMR.SMALLEST_FILE_NAME_PER_INPUT);
 			Path headerPath = new Path(strs[thisIndex]).makeQualified(fs);

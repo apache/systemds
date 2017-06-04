@@ -98,9 +98,9 @@ public class TestUtils
 		try {
 			String lineExpected = null;
 			String lineActual = null;
-			FileSystem fs = FileSystem.get(conf);
 			
 			Path compareFile = new Path(expectedFile);
+			FileSystem fs = IOUtilFunctions.getFileSystem(compareFile, conf);
 			FSDataInputStream fsin = fs.open(compareFile);
 			try( BufferedReader compareIn = new BufferedReader(new InputStreamReader(fsin)) ) {
 				lineExpected = compareIn.readLine();
@@ -130,9 +130,9 @@ public class TestUtils
 		try {
 			HashMap<CellIndex, Double> expectedValues = new HashMap<CellIndex, Double>();
 			
-			FileSystem fs = FileSystem.get(conf);
 			Path outDirectory = new Path(actualDir);
 			Path compareFile = new Path(expectedFile);
+			FileSystem fs = IOUtilFunctions.getFileSystem(outDirectory, conf);
 			FSDataInputStream fsin = fs.open(compareFile);
 			try( BufferedReader compareIn = new BufferedReader(new InputStreamReader(fsin)) ) {
 				String line;
@@ -207,9 +207,9 @@ public class TestUtils
 	 */
 	public static void compareMMMatrixWithJavaMatrix(String expectedFile, String actualDir, double epsilon) {
 		try {
-			FileSystem fs = FileSystem.get(conf);
 			Path outDirectory = new Path(actualDir);
 			Path compareFile = new Path(expectedFile);
+			FileSystem fs = IOUtilFunctions.getFileSystem(outDirectory, conf);
 			FSDataInputStream fsin = fs.open(compareFile);
 			
 			HashMap<CellIndex, Double> expectedValues = new HashMap<CellIndex, Double>();
@@ -300,9 +300,9 @@ public class TestUtils
 	 */
 	public static void compareDMLMatrixWithJavaMatrix(String expectedFile, String actualDir, double epsilon) {
 		try {
-			FileSystem fs = FileSystem.get(conf);
 			Path outDirectory = new Path(actualDir);
 			Path compareFile = new Path(expectedFile);
+			FileSystem fs = IOUtilFunctions.getFileSystem(outDirectory, conf);
 			FSDataInputStream fsin = fs.open(compareFile);
 			
 			HashMap<CellIndex, Double> expectedValues = new HashMap<CellIndex, Double>();
@@ -370,8 +370,8 @@ public class TestUtils
 		
 		try 
 		{
-			FileSystem fs = FileSystem.get(conf);
 			Path outDirectory = new Path(filePath);
+			FileSystem fs = IOUtilFunctions.getFileSystem(outDirectory, conf);
 			String line;
 
 			FileStatus[] outFiles = fs.listStatus(outDirectory);
@@ -462,11 +462,10 @@ public class TestUtils
 	}
 
 	public static double readDMLScalar(String filePath) {
-		FileSystem fs;
 		try {
 			double d=Double.NaN;
-			fs = FileSystem.get(conf);
 			Path outDirectory = new Path(filePath);
+			FileSystem fs = IOUtilFunctions.getFileSystem(outDirectory, conf);
 			String line;
 			FileStatus[] outFiles = fs.listStatus(outDirectory);
 			for (FileStatus file : outFiles) {
@@ -485,11 +484,10 @@ public class TestUtils
 	}
 
 	public static boolean readDMLBoolean(String filePath) {
-		FileSystem fs;
 		try {
 			Boolean b = null;
-			fs = FileSystem.get(conf);
 			Path outDirectory = new Path(filePath);
+			FileSystem fs = IOUtilFunctions.getFileSystem(outDirectory, conf);
 			String line;
 			FileStatus[] outFiles = fs.listStatus(outDirectory);
 			for (FileStatus file : outFiles) {
@@ -508,11 +506,10 @@ public class TestUtils
 	}
 	
 	public static String readDMLString(String filePath) {
-		FileSystem fs;
 		try {
 			StringBuilder sb =  new StringBuilder();
-			fs = FileSystem.get(conf);
 			Path outDirectory = new Path(filePath);
+			FileSystem fs = IOUtilFunctions.getFileSystem(outDirectory, conf);
 			FileStatus[] outFiles = fs.listStatus(outDirectory);
 			for (FileStatus file : outFiles) {
 				FSDataInputStream fsout = fs.open(file.getPath());
@@ -989,8 +986,8 @@ public class TestUtils
 	 */
 	public static void compareDMLHDFSFileWithRFile(String rFile, String hdfsDir, double epsilon) {
 		try {
-			FileSystem fs = FileSystem.get(conf);
 			Path outDirectory = new Path(hdfsDir);
+			FileSystem fs = IOUtilFunctions.getFileSystem(outDirectory, conf);
 			HashMap<CellIndex, Double> expectedValues = new HashMap<CellIndex, Double>();
 			HashMap<CellIndex, Double> actualValues = new HashMap<CellIndex, Double>();
 			try(BufferedReader compareIn = new BufferedReader(new FileReader(rFile))) {
@@ -1089,8 +1086,8 @@ public class TestUtils
 	 */
 	public static void checkMatrix(String outDir, long rows, long cols, double min, double max) {
 		try {
-			FileSystem fs = FileSystem.get(conf);
 			Path outDirectory = new Path(outDir);
+			FileSystem fs = IOUtilFunctions.getFileSystem(outDirectory, conf);
 			assertTrue(outDir + " does not exist", fs.exists(outDirectory));
 			
 			if( fs.getFileStatus(outDirectory).isDirectory() )
@@ -1143,8 +1140,8 @@ public class TestUtils
 	 */
 	public static void checkForOutputExistence(String outDir) {
 		try {
-			FileSystem fs = FileSystem.get(conf);
 			Path outDirectory = new Path(outDir);
+			FileSystem fs = IOUtilFunctions.getFileSystem(outDirectory, conf);
 			FileStatus[] outFiles = fs.listStatus(outDirectory);
 			assertEquals("number of files in directory not 1", 1, outFiles.length);
 			FSDataInputStream fsout = fs.open(outFiles[0].getPath());
@@ -1169,9 +1166,9 @@ public class TestUtils
 	 */
 	public static void removeHDFSDirectories(String[] directories) {
 		try {
-			FileSystem fs = FileSystem.get(conf);
 			for (String directory : directories) {
 				Path dir = new Path(directory);
+				FileSystem fs = IOUtilFunctions.getFileSystem(dir, conf);
 				if (fs.exists(dir) && fs.getFileStatus(dir).isDirectory()) {
 					fs.delete(dir, true);
 				}
@@ -1219,9 +1216,9 @@ public class TestUtils
 	 */
 	public static void removeHDFSFiles(String[] files) {
 		try {
-			FileSystem fs = FileSystem.get(conf);
 			for (String directory : files) {
 				Path dir = new Path(directory);
+				FileSystem fs = IOUtilFunctions.getFileSystem(dir, conf);
 				if (fs.exists(dir) && !fs.getFileStatus(dir).isDirectory()) {
 					fs.delete(dir, false);
 				}
@@ -1258,8 +1255,9 @@ public class TestUtils
 	 */
 	public static void clearDirectory(String directory) {
 		try {
-			FileSystem fs = FileSystem.get(conf);
-			FileStatus[] directoryContent = fs.listStatus(new Path(directory));
+			Path path = new Path(directory);
+			FileSystem fs = IOUtilFunctions.getFileSystem(path, conf);
+			FileStatus[] directoryContent = fs.listStatus(path);
 			for (FileStatus content : directoryContent) {
 				fs.delete(content.getPath(), true);
 			}
@@ -1368,8 +1366,8 @@ public class TestUtils
 	public static void generateTestMatrixToFile(String file, int rows, int cols, double min, double max,
 			double sparsity, long seed) {
 		try {
-			FileSystem fs = FileSystem.get(conf);
 			Path inFile = new Path(file);
+			FileSystem fs = IOUtilFunctions.getFileSystem(inFile, conf);
 			DataOutputStream out = fs.create(inFile);
 			try( PrintWriter pw = new PrintWriter(out) ) {
 				Random random = (seed == -1) ? TestUtils.random : new Random(seed);
@@ -1411,8 +1409,9 @@ public class TestUtils
 		try 
 		{
 			//create outputstream to HDFS / FS and writer
-			FileSystem fs = FileSystem.get(conf);
-			DataOutputStream out = fs.create(new Path(file), true);
+			Path path = new Path(file);
+			FileSystem fs = IOUtilFunctions.getFileSystem(path, conf);
+			DataOutputStream out = fs.create(path, true);
 			try( BufferedWriter pw = new BufferedWriter(new OutputStreamWriter(out))) {
 				//writer actual matrix
 				StringBuilder sb = new StringBuilder();
@@ -1457,8 +1456,9 @@ public class TestUtils
 			//create outputstream to HDFS / FS and writer
 			DataOutputStream out = null;
 			if (!isR) {
-				FileSystem fs = FileSystem.get(conf);
-				out = fs.create(new Path(file), true);
+				Path path = new Path(file);
+				FileSystem fs = IOUtilFunctions.getFileSystem(path, conf);
+				out = fs.create(path, true);
 			} 
 			else {
 				out = new DataOutputStream(new FileOutputStream(file));
@@ -1605,7 +1605,9 @@ public class TestUtils
 		try {
 			SequenceFile.Writer writer = null;
 			try {
-				writer = new SequenceFile.Writer(FileSystem.get(conf), conf, new Path(file),
+				Path path = new Path(file);
+				FileSystem fs = IOUtilFunctions.getFileSystem(path, conf);
+				writer = new SequenceFile.Writer(fs, conf, path,
 					MatrixIndexes.class, MatrixCell.class);
 
 				MatrixIndexes index = new MatrixIndexes();
@@ -1651,7 +1653,9 @@ public class TestUtils
 		SequenceFile.Writer writer = null;
 			
 		try {
-			writer = new SequenceFile.Writer(FileSystem.get(conf), conf, new Path(file),
+			Path path = new Path(file);
+			FileSystem fs = IOUtilFunctions.getFileSystem(path, conf);
+			writer = new SequenceFile.Writer(fs, conf, path,
 					MatrixIndexes.class, MatrixBlock.class);
 
 			MatrixIndexes index = new MatrixIndexes();
@@ -1774,8 +1778,8 @@ public class TestUtils
 	 */
 	public static void removeTemporaryFiles() {
 		try {
-			FileSystem fs = FileSystem.get(conf);
 			Path workingDir = new Path(".");
+			FileSystem fs = IOUtilFunctions.getFileSystem(workingDir, conf);
 			FileStatus[] files = fs.listStatus(workingDir);
 			for (FileStatus file : files) {
 				String fileName = file.getPath().toString().substring(
@@ -1799,8 +1803,8 @@ public class TestUtils
 	 */
 	public static boolean checkForTemporaryFiles() {
 		try {
-			FileSystem fs = FileSystem.get(conf);
 			Path workingDir = new Path(".");
+			FileSystem fs = IOUtilFunctions.getFileSystem(workingDir, conf);
 			FileStatus[] files = fs.listStatus(workingDir);
 			for (FileStatus file : files) {
 				String fileName = file.getPath().toString().substring(
@@ -1828,8 +1832,9 @@ public class TestUtils
 	 */
 	public static Path getFileInDirectory(String directory) {
 		try {
-			FileSystem fs = FileSystem.get(conf);
-			FileStatus[] files = fs.listStatus(new Path(directory));
+			Path path = new Path(directory);
+			FileSystem fs = IOUtilFunctions.getFileSystem(path, conf);
+			FileStatus[] files = fs.listStatus(path);
 			if (files.length != 1)
 				throw new IOException("requires exactly one file in directory " + directory);
 
@@ -1851,8 +1856,9 @@ public class TestUtils
 	 *            filename
 	 */
 	public static void createFile(String filename) throws IOException {
-			FileSystem fs = FileSystem.get(conf);
-			fs.create(new Path(filename));
+		Path path = new Path(filename);
+		FileSystem fs = IOUtilFunctions.getFileSystem(path, conf);
+		fs.create(path);
 	}
 
 	/**

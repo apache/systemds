@@ -34,6 +34,7 @@ import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.io.ReaderBinaryBlock;
 import org.apache.sysml.runtime.io.ReaderTextCSV;
 import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
@@ -142,7 +143,7 @@ public class ScalingTest extends AutomatedTestBase
 		}
 		outputSpec.put(TfUtils.TXMETHOD_SCALE, scaleSpec);
 		
-		FileSystem fs = FileSystem.get(TestUtils.conf);
+		FileSystem fs = IOUtilFunctions.getFileSystem(specFile);
 		try( BufferedWriter out = new BufferedWriter(new OutputStreamWriter(fs.create(new Path(specFile),true))) ) {
 			out.write(outputSpec.toString());
 		}
@@ -157,7 +158,7 @@ public class ScalingTest extends AutomatedTestBase
 		mtd.put("format", "csv");
 		mtd.put("header", false);
 		
-		FileSystem fs = FileSystem.get(TestUtils.conf);
+		FileSystem fs = IOUtilFunctions.getFileSystem(datafile);
 		try( BufferedWriter out = new BufferedWriter(new OutputStreamWriter(fs.create(new Path(datafile+".mtd"),true))) ) {
 			out.write(mtd.toString());
 		}

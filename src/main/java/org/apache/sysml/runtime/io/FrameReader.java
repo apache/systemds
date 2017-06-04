@@ -153,7 +153,7 @@ public abstract class FrameReader
 			throw new IOException("File "+path.toString()+" does not exist on HDFS/LFS.");
 	
 		//check for empty file
-		if( MapReduceTool.isFileEmpty( fs, path.toString() ) )
+		if( MapReduceTool.isFileEmpty(fs, path) )
 			throw new EOFException("Empty input file "+ path.toString() +".");		
 	}
 }

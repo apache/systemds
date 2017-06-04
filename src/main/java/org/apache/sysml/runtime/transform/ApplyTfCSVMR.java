@@ -35,6 +35,7 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hadoop.mapred.TextInputFormat;
 import org.apache.hadoop.mapred.TextOutputFormat;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.CSVReblockMR;
 import org.apache.sysml.runtime.matrix.JobReturn;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -80,7 +81,7 @@ public class ApplyTfCSVMR {
 		FileInputFormat.addInputPath(job, new Path(inputPath));
 		// delete outputPath, if exists already.
 		Path outPath = new Path(outputPath);
-		FileSystem fs = FileSystem.get(job);
+		FileSystem fs = IOUtilFunctions.getFileSystem(outPath, job);
 		fs.delete(outPath, true);
 		FileOutputFormat.setOutputPath(job, outPath);
 

@@ -63,8 +63,8 @@ public class FrameWriterTextCellParallel extends FrameWriterTextCell
 		}
 		
 		//create directory for concurrent tasks
-		MapReduceTool.createDirIfNotExistOnHDFS(path.toString(), DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
-		FileSystem fs = FileSystem.get(job);
+		MapReduceTool.createDirIfNotExistOnHDFS(path, DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
+		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 		
 		//create and execute tasks
 		try 

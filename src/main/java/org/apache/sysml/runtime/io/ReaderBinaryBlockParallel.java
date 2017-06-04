@@ -60,8 +60,8 @@ public class ReaderBinaryBlockParallel extends ReaderBinaryBlock
 		
 		//prepare file access
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());	
-		FileSystem fs = _localFS ? FileSystem.getLocal(job) : FileSystem.get(job);
 		Path path = new Path( (_localFS ? "file:///" : "") + fname); 
+		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 				
 		//check existence and non-empty file
 		checkValidInputFile(fs, path); 

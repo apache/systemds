@@ -30,7 +30,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapred.JobConf;
 import org.apache.wink.json4j.JSONObject;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
@@ -1965,10 +1964,8 @@ public class Recompiler
 		{
 			//get meta data filename
 			String mtdname = DataExpression.getMTDFileName(dop.getFileName());
-			
-			JobConf job = ConfigurationManager.getCachedJobConf();
-			FileSystem fs = FileSystem.get(job);
 			Path path = new Path(mtdname);
+			FileSystem fs = IOUtilFunctions.getFileSystem(mtdname);
 			if( fs.exists(path) ){
 				BufferedReader br = null;
 				try

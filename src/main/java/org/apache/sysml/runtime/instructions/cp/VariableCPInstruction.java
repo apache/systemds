@@ -25,9 +25,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.UnaryCP;
 import org.apache.sysml.parser.Expression.DataType;
@@ -899,8 +897,7 @@ public class VariableCPInstruction extends CPInstruction
 			MapReduceTool.writeObjectToHDFS(scalar.getValue(), fname);
 			MapReduceTool.writeScalarMetaDataFile(fname +".mtd", input1.getValueType());
 
-			JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
-			FileSystem fs = FileSystem.get(job);
+			FileSystem fs = IOUtilFunctions.getFileSystem(fname);
 			if (fs instanceof LocalFileSystem) {
 				Path path = new Path(fname);
 				IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, path);

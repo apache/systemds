@@ -75,7 +75,8 @@ public class ApplyTfCSVMapper implements Mapper<LongWritable, Text, NullWritable
 			
 			// setup the writer for mapper's output
 			// the default part-..... files will be deleted later once the job finishes 
-			br = new BufferedWriter(new OutputStreamWriter(FileSystem.get(_rJob).create( mapOutputPath, true)));
+			FileSystem fs = IOUtilFunctions.getFileSystem(mapOutputPath);
+			br = new BufferedWriter(new OutputStreamWriter(fs.create( mapOutputPath, true)));
 		}
 		
 		// output the header line

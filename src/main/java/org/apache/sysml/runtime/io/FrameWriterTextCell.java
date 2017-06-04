@@ -63,7 +63,7 @@ public class FrameWriterTextCell extends FrameWriter
 	protected void writeTextCellFrameToHDFS( Path path, JobConf job, FrameBlock src, long rlen, long clen )
 		throws IOException
 	{
-		FileSystem fs = FileSystem.get(job);
+		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 		
 		//sequential write to single text file
 		writeTextCellFrameToFile(path, job, fs, src, 0, (int)rlen);	

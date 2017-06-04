@@ -186,9 +186,9 @@ public class TfUtils implements Serializable{
 				return false;
 
 		// check for empty file
-		if (MapReduceTool.isFileEmpty(fs, path.toString()))
+		if( MapReduceTool.isFileEmpty(fs, path) )
 			if ( err )
-			throw new EOFException("Empty input file " + path.toString() + ".");
+				throw new EOFException("Empty input file " + path.toString() + ".");
 			else
 				return false;
 		
@@ -196,21 +196,18 @@ public class TfUtils implements Serializable{
 	}
 	
 	public static String getPartFileName(JobConf job) throws IOException {
-		FileSystem fs = FileSystem.get(job);
-		Path thisPath=new Path(job.get(MRConfigurationNames.MR_MAP_INPUT_FILE)).makeQualified(fs);
-		return thisPath.toString();
+		Path path = new Path(job.get(MRConfigurationNames.MR_MAP_INPUT_FILE));
+		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
+		path = path.makeQualified(fs);
+		return path.toString();
 	}
 	
 	public static boolean isPartFileWithHeader(JobConf job) throws IOException {
-		FileSystem fs = FileSystem.get(job);
-		
 		String thisfile=getPartFileName(job);
-		Path smallestFilePath=new Path(job.get(MRJobConfiguration.TF_SMALLEST_FILE)).makeQualified(fs);
-		
-		if(thisfile.toString().equals(smallestFilePath.toString()))
-			return true;
-		else
-			return false;
+		Path path = new Path(job.get(MRJobConfiguration.TF_SMALLEST_FILE));
+		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
+		path = path.makeQualified(fs);
+		return thisfile.toString().equals(path.toString());
 	}
 	
 	/**
@@ -372,8 +369,8 @@ public class TfUtils implements Serializable{
 			fs = FileSystem.getLocal(job);
 		}
 		else {
-			fs = FileSystem.get(job);
 			tfMtdDir = new Path(getTfMtdDir());
+			fs = IOUtilFunctions.getFileSystem(tfMtdDir, job);
 		}
 		
 		// load transformation metadata 
@@ -501,7 +498,7 @@ public class TfUtils implements Serializable{
 	private Reader initOffsetsReader(JobConf job) throws IOException 
 	{
 		Path path=new Path(job.get(CSVReblockMR.ROWID_FILE_NAME));
-		FileSystem fs = FileSystem.get(job);
+		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 		Path[] files = MatrixReader.getSequenceFilePaths(fs, path);
 		if ( files.length != 1 )
 			throw new IOException("Expecting a single file under counters file: " + path.toString());

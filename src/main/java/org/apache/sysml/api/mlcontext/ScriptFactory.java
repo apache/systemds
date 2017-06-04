@@ -30,8 +30,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.sysml.conf.ConfigurationManager;
-import org.apache.sysml.runtime.util.LocalFileUtils;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 
 /**
  * Factory for creating DML and PYDML Script objects from strings, files, URLs,
@@ -331,13 +330,7 @@ public class ScriptFactory {
 		}
 		String filePath = file.getPath();
 		try {
-			if (!LocalFileUtils.validateExternalFilename(filePath, false)) {
-				throw new MLContextException("Invalid (non-trustworthy) local filename: " + filePath);
-			}
-			String scriptString = FileUtils.readFileToString(file);
-			return scriptString;
-		} catch (IllegalArgumentException e) {
-			throw new MLContextException("Error trying to read script string from file: " + filePath, e);
+			return FileUtils.readFileToString(file);
 		} catch (IOException e) {
 			throw new MLContextException("Error trying to read script string from file: " + filePath, e);
 		}
@@ -359,17 +352,11 @@ public class ScriptFactory {
 		}
 		try {
 			if (scriptFilePath.startsWith("hdfs:") || scriptFilePath.startsWith("gpfs:")) {
-				if (!LocalFileUtils.validateExternalFilename(scriptFilePath, true)) {
-					throw new MLContextException("Invalid (non-trustworthy) hdfs/gpfs filename: " + scriptFilePath);
-				}
-				FileSystem fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
 				Path path = new Path(scriptFilePath);
+				FileSystem fs = IOUtilFunctions.getFileSystem(path);
 				FSDataInputStream fsdis = fs.open(path);
 				return IOUtils.toString(fsdis);
 			} else {// from local file system
-				if (!LocalFileUtils.validateExternalFilename(scriptFilePath, false)) {
-					throw new MLContextException("Invalid (non-trustworthy) local filename: " + scriptFilePath);
-				}
 				File scriptFile = new File(scriptFilePath);
 				return FileUtils.readFileToString(scriptFile);
 			}

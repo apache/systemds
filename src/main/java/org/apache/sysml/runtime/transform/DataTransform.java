@@ -724,12 +724,12 @@ public class DataTransform
 		TransformOperands oprnds = new TransformOperands(insts[0], inputs[0]);
 		
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
-		FileSystem fs = FileSystem.get(job);
 		
 		// find the first file in alphabetical ordering of part files in directory inputPath 
 		String smallestFile = CSVReblockMR.findSmallestFile(job, oprnds.inputPath);
 		
 		// find column names
+		FileSystem fs = IOUtilFunctions.getFileSystem(smallestFile);
 		String headerLine = readHeaderLine(fs, oprnds.inputCSVProperties, smallestFile);
 		HashMap<String, Integer> colNamesToIds = processColumnNames(fs, oprnds.inputCSVProperties, headerLine, smallestFile);
 		String outHeader = getOutputHeader(fs, headerLine, oprnds);
@@ -990,9 +990,10 @@ public class DataTransform
 		throws IOException, DMLRuntimeException, IllegalArgumentException, JSONException 
 	{
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
-		FileSystem fs = FileSystem.get(job);
+		
 		// find the first file in alphabetical ordering of partfiles in directory inputPath 
 		String smallestFile = CSVReblockMR.findSmallestFile(job, oprnds.inputPath);
+		FileSystem fs = IOUtilFunctions.getFileSystem(smallestFile);
 		
 		// find column names
 		String headerLine = readHeaderLine(fs, oprnds.inputCSVProperties, smallestFile);
@@ -1364,7 +1365,7 @@ public class DataTransform
 		TransformOperands oprnds = new TransformOperands(inst.getParams(), inputs[0]);
 		
 		JobConf job = new JobConf();
-		FileSystem fs = FileSystem.get(job);
+		FileSystem fs = IOUtilFunctions.getFileSystem(inputs[0].getFileName());
 		
 		checkIfOutputOverlapsWithTxMtd(oprnds.txMtdPath, outputs[0].getFileName(), fs);
 		

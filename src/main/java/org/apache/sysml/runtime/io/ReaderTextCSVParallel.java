@@ -74,9 +74,9 @@ public class ReaderTextCSVParallel extends MatrixReader
 	{
 		// prepare file access
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
-		FileSystem fs = FileSystem.get(job);
 		Path path = new Path(fname);
-
+		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
+		
 		FileInputFormat.addInputPath(job, path);
 		TextInputFormat informat = new TextInputFormat();
 		informat.configure(job);

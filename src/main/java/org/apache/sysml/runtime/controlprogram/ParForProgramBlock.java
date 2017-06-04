@@ -1633,7 +1633,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		try
 		{
 			Path path = new Path(fname);
-			FileSystem fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
+			FileSystem fs = IOUtilFunctions.getFileSystem(path);
 			br = new BufferedWriter(new OutputStreamWriter(fs.create(path,true)));
 	        
 			boolean flagFirst = true; //workaround for keeping gen order
@@ -1662,7 +1662,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		try
 		{
 			Path path = new Path( fname );
-			FileSystem fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
+			FileSystem fs = IOUtilFunctions.getFileSystem(path);
 			br = new BufferedWriter(new OutputStreamWriter(fs.create(path,true)));
 	        
 			Task t = null;

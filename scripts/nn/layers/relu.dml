@@ -36,7 +36,7 @@ forward = function(matrix[double] X)
    * Outputs:
    *  - out: Outputs, of same shape as `X`.
    */
-  out = max(X, 0)
+  out = max(0, X)
 }
 
 backward = function(matrix[double] dout, matrix[double] X)

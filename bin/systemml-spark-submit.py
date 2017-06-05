@@ -60,9 +60,9 @@ cparser.add_argument('-args', help='List of positional argument values', metavar
 cparser.add_argument('-config', help='System-ML configuration file (e.g SystemML-config.xml)', metavar='')
 cparser.add_argument('-stats', default='10', help='Monitor and report caching/recompilation statistics, '
                                                   'heavy hitter <count> is 10 unless overridden')
-cparser.add_argument('-explain', default='runtime', help='explains plan levels can be hops, runtime, '
-                                                         'recompile_hops, recompile_runtime', metavar='')
 cparser.add_argument('-exec', default='hybrid_spark', help='System-ML backend (e.g spark, spark-hybrid)', metavar='')
+cparser.add_argument('-explain', help='explains plan levels can be hops, runtime, '
+                                      'recompile_hops, recompile_runtime', metavar='')
 cparser.add_argument('-debug', help='runs in debug mode', metavar='')
 cparser.add_argument('-f', required=True, help='specifies dml/pydml file to execute; path can be local/hdfs/gpfs',
                      metavar='')
@@ -79,6 +79,9 @@ if args.args is not None:
 if args.debug is not None:
     ml_options.append('-debug')
     ml_options.append(' '.join(args.debug))
+if args.explain is not None:
+    ml_options.append('-explain')
+    ml_options.append(' '.join(args.explain))
 
 # find the systemML root path which contains the bin folder, the script folder and the target folder
 # tolerate path with spaces
@@ -153,7 +156,7 @@ cmd_spark = [spark_path, '--master', args.master, '--driver-memory', args.driver
              '--executor-cores', args.executor_cores, '--conf', default_conf]
 
 cmd_system_ml = ['--jars', target_jars, '-config', systemml_config_path_arg,
-                 '-stats', args.stats, '-explain', args.explain, '-exec', vars(args)['exec'],
+                 '-stats', args.stats, '-exec', vars(args)['exec'],
                  '-f', script_file, ' '.join(ml_options)]
 
 cmd = cmd_spark + cmd_system_ml

@@ -73,14 +73,14 @@
 #
 # HOW TO INVOKE THIS SCRIPT - EXAMPLE:
 # hadoop jar SystemML.jar -f StepLinearRegDS.dml -nvargs X=INPUT_DIR/X Y=INPUT_DIR/Y B=OUTPUT_DIR/betas
-#     O=OUTPUT_DIR/stats S=OUTPUT_DIR/selected icpt=2 thr=0.01 write_beta=1 fmt=csv
+#     O=OUTPUT_DIR/stats S=OUTPUT_DIR/selected icpt=2 thr=0.01 fmt=csv write_beta=1
 
 fileX = $X;
 fileY = $Y;
 fileB = $B;
 fileS = $S;
 
-write_beta = ifdef($write_beta, 1);
+write_beta = ifdef($write_beta, TRUE);
 
 # currently only the forward selection strategy in supported: start from one feature and iteratively add 
 # features until AIC improves
@@ -132,7 +132,8 @@ if (dir == "forward") {
   parfor (i in 1:m_orig, check = 0) {
     columns_fixed_ordered_1 = matrix(i, rows=1, cols=1);
 
-    [AIC_1, beta_out_i] = linear_regression (X_orig[, i], y, m_orig, columns_fixed_ordered_1, write_beta, 0);
+    [AIC_1, beta_out_i] = linear_regression (X_orig[, i], y, m_orig, columns_fixed_ordered_1,
+                                             write_beta, 0);
 
     AICs[1, i] = AIC_1;
 
@@ -154,7 +155,8 @@ if (dir == "forward") {
   beta_best = beta_out_all[, (column_best-1) * y_ncol + 1: column_best * y_ncol];
 
   if (column_best == 0) {
-    print ("AIC of an empty model is " + AIC_best + " and adding no feature achieves more than " + (thr * 100) + "% decrease in AIC!");
+    print ("AIC of an empty model is " + AIC_best + " and adding no feature achieves more than " +
+           (thr * 100) + "% decrease in AIC!");
     Selected = matrix (0, rows = 1, cols = 1);
     if (intercept_status == 0) {
       B = matrix (beta, rows = m_orig, cols = 1);
@@ -199,7 +201,8 @@ if (dir == "forward") {
     # Determine the best AIC
     for (k in 1:m_orig) {
       AIC_cur = as.scalar (AICs[1, k]);
-      if ( (AIC_cur < AIC_best) & ((AIC_best - AIC_cur) > abs (thr * AIC_best)) & (as.scalar(columns_fixed[1, k]) == 0) ) {
+      if ( (AIC_cur < AIC_best) & ((AIC_best - AIC_cur) > abs (thr * AIC_best)) &
+            (as.scalar(columns_fixed[1, k]) == 0) ) {
         column_best = k;
         AIC_best = as.scalar(AICs[1, k]);
       }
@@ -247,7 +250,8 @@ if (dir == "forward") {
 # Computes linear regression using a direct solver for (X^T X) beta = X^T y.
 # It also outputs the AIC of the computed model.
 
-linear_regression = function (Matrix[Double] X, Matrix[Double] y, Double m_orig, Matrix[Double] Selected, Integer write_beta, Integer writeStats)
+linear_regression = function (Matrix[Double] X, Matrix[Double] y, Double m_orig,
+  Matrix[Double] Selected, Boolean write_beta, Boolean writeStats)
   return (Double AIC, Matrix[Double] beta) {
 
     intercept_status = ifdef ($icpt, 0);

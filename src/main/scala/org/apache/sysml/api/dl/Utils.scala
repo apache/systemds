@@ -237,14 +237,10 @@ object Utils {
 		if(filePath == null)
 			throw new LanguageException("file path was not specified!");
 		if(filePath.startsWith("hdfs:")  || filePath.startsWith("gpfs:")) { 
-			if( !LocalFileUtils.validateExternalFilename(filePath, true) )
-				throw new LanguageException("Invalid (non-trustworthy) hdfs filename.");
 			val fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
 			return new InputStreamReader(fs.open(new Path(filePath)));
 		}
 		else { 
-			if( !LocalFileUtils.validateExternalFilename(filePath, false) )
-				throw new LanguageException("Invalid (non-trustworthy) local filename.");
 			return new InputStreamReader(new FileInputStream(new File(filePath)), "ASCII");
 		}
 	}

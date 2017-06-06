@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -42,7 +42,7 @@ public class MatrixMetadata extends Metadata {
 
 	/**
 	 * Constructor to create a MatrixMetadata object based on matrix format.
-	 * 
+	 *
 	 * @param matrixFormat
 	 *            The matrix format.
 	 */
@@ -53,7 +53,7 @@ public class MatrixMetadata extends Metadata {
 	/**
 	 * Constructor to create a MatrixMetadata object based on matrix format, the
 	 * number of rows, and the number of columns in a matrix.
-	 * 
+	 *
 	 * @param matrixFormat
 	 *            The matrix format.
 	 * @param numRows
@@ -70,7 +70,7 @@ public class MatrixMetadata extends Metadata {
 	/**
 	 * Constructor to create a MatrixMetadata object based on matrix format, the
 	 * number of rows, and the number of columns in a matrix.
-	 * 
+	 *
 	 * @param matrixFormat
 	 *            The matrix format.
 	 * @param numRows
@@ -88,7 +88,7 @@ public class MatrixMetadata extends Metadata {
 	 * Constructor to create a MatrixMetadata object based on matrix format, the
 	 * number of rows, the number of columns, and the number of non-zero values
 	 * in a matrix.
-	 * 
+	 *
 	 * @param matrixFormat
 	 *            The matrix format.
 	 * @param numRows
@@ -109,7 +109,7 @@ public class MatrixMetadata extends Metadata {
 	 * Constructor to create a MatrixMetadata object based on matrix format, the
 	 * number of rows, the number of columns, and the number of non-zero values
 	 * in a matrix.
-	 * 
+	 *
 	 * @param matrixFormat
 	 *            The matrix format.
 	 * @param numRows
@@ -131,7 +131,7 @@ public class MatrixMetadata extends Metadata {
 	 * number of rows, the number of columns, the number of non-zero values, the
 	 * number of rows per block, and the number of columns per block in a
 	 * matrix.
-	 * 
+	 *
 	 * @param matrixFormat
 	 *            The matrix format.
 	 * @param numRows
@@ -160,7 +160,7 @@ public class MatrixMetadata extends Metadata {
 	 * number of rows, the number of columns, the number of non-zero values, the
 	 * number of rows per block, and the number of columns per block in a
 	 * matrix.
-	 * 
+	 *
 	 * @param matrixFormat
 	 *            The matrix format.
 	 * @param numRows
@@ -187,7 +187,7 @@ public class MatrixMetadata extends Metadata {
 	/**
 	 * Constructor to create a MatrixMetadata object based on the number of rows
 	 * and the number of columns in a matrix.
-	 * 
+	 *
 	 * @param numRows
 	 *            The number of rows in the matrix.
 	 * @param numColumns
@@ -201,7 +201,7 @@ public class MatrixMetadata extends Metadata {
 	/**
 	 * Constructor to create a MatrixMetadata object based on the number of rows
 	 * and the number of columns in a matrix.
-	 * 
+	 *
 	 * @param numRows
 	 *            The number of rows in the matrix.
 	 * @param numColumns
@@ -216,7 +216,7 @@ public class MatrixMetadata extends Metadata {
 	 * Constructor to create a MatrixMetadata object based on the number of
 	 * rows, the number of columns, and the number of non-zero values in a
 	 * matrix.
-	 * 
+	 *
 	 * @param numRows
 	 *            The number of rows in the matrix.
 	 * @param numColumns
@@ -234,7 +234,7 @@ public class MatrixMetadata extends Metadata {
 	 * Constructor to create a MatrixMetadata object based on the number of
 	 * rows, the number of columns, and the number of non-zero values in a
 	 * matrix.
-	 * 
+	 *
 	 * @param numRows
 	 *            The number of rows in the matrix.
 	 * @param numColumns
@@ -252,7 +252,7 @@ public class MatrixMetadata extends Metadata {
 	 * Constructor to create a MatrixMetadata object based on the number of
 	 * rows, the number of columns, the number of rows per block, and the number
 	 * of columns per block in a matrix.
-	 * 
+	 *
 	 * @param numRows
 	 *            The number of rows in the matrix.
 	 * @param numColumns
@@ -273,7 +273,7 @@ public class MatrixMetadata extends Metadata {
 	 * Constructor to create a MatrixMetadata object based on the number of
 	 * rows, the number of columns, the number of rows per block, and the number
 	 * of columns per block in a matrix.
-	 * 
+	 *
 	 * @param numRows
 	 *            The number of rows in the matrix.
 	 * @param numColumns
@@ -294,7 +294,7 @@ public class MatrixMetadata extends Metadata {
 	 * Constructor to create a MatrixMetadata object based on the number of
 	 * rows, the number of columns, the number of non-zero values, the number of
 	 * rows per block, and the number of columns per block in a matrix.
-	 * 
+	 *
 	 * @param numRows
 	 *            The number of rows in the matrix.
 	 * @param numColumns
@@ -319,7 +319,7 @@ public class MatrixMetadata extends Metadata {
 	 * Constructor to create a MatrixMetadata object based on the number of
 	 * rows, the number of columns, the number of non-zero values, the number of
 	 * rows per block, and the number of columns per block in a matrix.
-	 * 
+	 *
 	 * @param numRows
 	 *            The number of rows in the matrix.
 	 * @param numColumns
@@ -342,7 +342,7 @@ public class MatrixMetadata extends Metadata {
 	/**
 	 * Constructor to create a MatrixMetadata object based on a
 	 * MatrixCharacteristics object.
-	 * 
+	 *
 	 * @param matrixCharacteristics
 	 *            the matrix metadata as a MatrixCharacteristics object
 	 */
@@ -356,7 +356,7 @@ public class MatrixMetadata extends Metadata {
 
 	/**
 	 * Set the MatrixMetadata fields based on a MatrixCharacteristics object.
-	 * 
+	 *
 	 * @param matrixCharacteristics
 	 *            the matrix metadata as a MatrixCharacteristics object
 	 */
@@ -370,7 +370,7 @@ public class MatrixMetadata extends Metadata {
 
 	/**
 	 * Obtain the number of rows
-	 * 
+	 *
 	 * @return the number of rows
 	 */
 	public Long getNumRows() {
@@ -379,7 +379,7 @@ public class MatrixMetadata extends Metadata {
 
 	/**
 	 * Set the number of rows
-	 * 
+	 *
 	 * @param numRows
 	 *            the number of rows
 	 */
@@ -389,7 +389,7 @@ public class MatrixMetadata extends Metadata {
 
 	/**
 	 * Obtain the number of columns
-	 * 
+	 *
 	 * @return the number of columns
 	 */
 	public Long getNumColumns() {
@@ -398,7 +398,7 @@ public class MatrixMetadata extends Metadata {
 
 	/**
 	 * Set the number of columns
-	 * 
+	 *
 	 * @param numColumns
 	 *            the number of columns
 	 */
@@ -408,7 +408,7 @@ public class MatrixMetadata extends Metadata {
 
 	/**
 	 * Obtain the number of non-zero values
-	 * 
+	 *
 	 * @return the number of non-zero values
 	 */
 	public Long getNumNonZeros() {
@@ -417,7 +417,7 @@ public class MatrixMetadata extends Metadata {
 
 	/**
 	 * Set the number of non-zero values
-	 * 
+	 *
 	 * @param numNonZeros
 	 *            the number of non-zero values
 	 */
@@ -427,7 +427,7 @@ public class MatrixMetadata extends Metadata {
 
 	/**
 	 * Obtain the number of rows per block
-	 * 
+	 *
 	 * @return the number of rows per block
 	 */
 	public Integer getNumRowsPerBlock() {
@@ -436,7 +436,7 @@ public class MatrixMetadata extends Metadata {
 
 	/**
 	 * Set the number of rows per block
-	 * 
+	 *
 	 * @param numRowsPerBlock
 	 *            the number of rows per block
 	 */
@@ -446,7 +446,7 @@ public class MatrixMetadata extends Metadata {
 
 	/**
 	 * Obtain the number of columns per block
-	 * 
+	 *
 	 * @return the number of columns per block
 	 */
 	public Integer getNumColumnsPerBlock() {
@@ -455,7 +455,7 @@ public class MatrixMetadata extends Metadata {
 
 	/**
 	 * Set the number of columns per block
-	 * 
+	 *
 	 * @param numColumnsPerBlock
 	 *            the number of columns per block
 	 */
@@ -466,7 +466,7 @@ public class MatrixMetadata extends Metadata {
 	/**
 	 * Convert the matrix metadata to a MatrixCharacteristics object. If all
 	 * field values are {@code null}, {@code null} is returned.
-	 * 
+	 *
 	 * @return the matrix metadata as a MatrixCharacteristics object, or
 	 *         {@code null} if all field values are null
 	 */
@@ -502,7 +502,7 @@ public class MatrixMetadata extends Metadata {
 
 	/**
 	 * Obtain the matrix format
-	 * 
+	 *
 	 * @return the matrix format
 	 */
 	public MatrixFormat getMatrixFormat() {
@@ -511,7 +511,7 @@ public class MatrixMetadata extends Metadata {
 
 	/**
 	 * Set the matrix format
-	 * 
+	 *
 	 * @param matrixFormat
 	 *            the matrix format
 	 */

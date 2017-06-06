@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -40,7 +40,7 @@ public class BinaryBlockFrame {
 
 	/**
 	 * Convert a Spark DataFrame to a SystemML binary-block representation.
-	 * 
+	 *
 	 * @param dataFrame
 	 *            the Spark DataFrame
 	 * @param frameMetadata
@@ -54,7 +54,7 @@ public class BinaryBlockFrame {
 	/**
 	 * Convert a Spark DataFrame to a SystemML binary-block representation,
 	 * specifying the number of rows and columns.
-	 * 
+	 *
 	 * @param dataFrame
 	 *            the Spark DataFrame
 	 * @param numRows
@@ -63,13 +63,13 @@ public class BinaryBlockFrame {
 	 *            the number of columns
 	 */
 	public BinaryBlockFrame(Dataset<Row> dataFrame, long numRows, long numCols) {
-		this(dataFrame, new FrameMetadata(numRows, numCols, 
-				ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize()));
+		this(dataFrame, new FrameMetadata(numRows, numCols, ConfigurationManager.getBlocksize(),
+				ConfigurationManager.getBlocksize()));
 	}
 
 	/**
 	 * Convert a Spark DataFrame to a SystemML binary-block representation.
-	 * 
+	 *
 	 * @param dataFrame
 	 *            the Spark DataFrame
 	 */
@@ -80,7 +80,7 @@ public class BinaryBlockFrame {
 	/**
 	 * Create a BinaryBlockFrame, specifying the SystemML binary-block frame and
 	 * its metadata.
-	 * 
+	 *
 	 * @param binaryBlocks
 	 *            the {@code JavaPairRDD<Long, FrameBlock>} frame
 	 * @param matrixCharacteristics
@@ -94,7 +94,7 @@ public class BinaryBlockFrame {
 	/**
 	 * Create a BinaryBlockFrame, specifying the SystemML binary-block frame and
 	 * its metadata.
-	 * 
+	 *
 	 * @param binaryBlocks
 	 *            the {@code JavaPairRDD<Long, FrameBlock>} frame
 	 * @param frameMetadata
@@ -108,7 +108,7 @@ public class BinaryBlockFrame {
 	/**
 	 * Obtain a SystemML binary-block frame as a
 	 * {@code JavaPairRDD<Long, FrameBlock>}
-	 * 
+	 *
 	 * @return the SystemML binary-block frame
 	 */
 	public JavaPairRDD<Long, FrameBlock> getBinaryBlocks() {
@@ -117,7 +117,7 @@ public class BinaryBlockFrame {
 
 	/**
 	 * Obtain a SystemML binary-block frame as a {@code FrameBlock}
-	 * 
+	 *
 	 * @return the SystemML binary-block frame as a {@code FrameBlock}
 	 */
 	public FrameBlock getFrameBlock() {
@@ -133,7 +133,7 @@ public class BinaryBlockFrame {
 
 	/**
 	 * Obtain the SystemML binary-block frame characteristics
-	 * 
+	 *
 	 * @return the frame metadata as {@code MatrixCharacteristics}
 	 */
 	public MatrixCharacteristics getMatrixCharacteristics() {
@@ -142,7 +142,7 @@ public class BinaryBlockFrame {
 
 	/**
 	 * Obtain the SystemML binary-block frame metadata
-	 * 
+	 *
 	 * @return the frame metadata as {@code FrameMetadata}
 	 */
 	public FrameMetadata getFrameMetadata() {
@@ -151,7 +151,7 @@ public class BinaryBlockFrame {
 
 	/**
 	 * Set the SystemML binary-block frame metadata
-	 * 
+	 *
 	 * @param frameMetadata
 	 *            the frame metadata
 	 */
@@ -162,7 +162,7 @@ public class BinaryBlockFrame {
 	/**
 	 * Set the SystemML binary-block frame as a
 	 * {@code JavaPairRDD<Long, FrameBlock>}
-	 * 
+	 *
 	 * @param binaryBlocks
 	 *            the SystemML binary-block frame
 	 */

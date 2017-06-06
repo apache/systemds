@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -46,7 +46,7 @@ public class Matrix {
 
 	/**
 	 * Obtain the matrix as a SystemML MatrixObject.
-	 * 
+	 *
 	 * @return the matrix as a SystemML MatrixObject
 	 */
 	public MatrixObject toMatrixObject() {
@@ -55,7 +55,7 @@ public class Matrix {
 
 	/**
 	 * Obtain the matrix as a two-dimensional double array
-	 * 
+	 *
 	 * @return the matrix as a two-dimensional double array
 	 */
 	public double[][] to2DDoubleArray() {
@@ -64,7 +64,7 @@ public class Matrix {
 
 	/**
 	 * Obtain the matrix as a {@code JavaRDD<String>} in IJV format
-	 * 
+	 *
 	 * @return the matrix as a {@code JavaRDD<String>} in IJV format
 	 */
 	public JavaRDD<String> toJavaRDDStringIJV() {
@@ -73,7 +73,7 @@ public class Matrix {
 
 	/**
 	 * Obtain the matrix as a {@code JavaRDD<String>} in CSV format
-	 * 
+	 *
 	 * @return the matrix as a {@code JavaRDD<String>} in CSV format
 	 */
 	public JavaRDD<String> toJavaRDDStringCSV() {
@@ -82,7 +82,7 @@ public class Matrix {
 
 	/**
 	 * Obtain the matrix as a {@code RDD<String>} in CSV format
-	 * 
+	 *
 	 * @return the matrix as a {@code RDD<String>} in CSV format
 	 */
 	public RDD<String> toRDDStringCSV() {
@@ -91,7 +91,7 @@ public class Matrix {
 
 	/**
 	 * Obtain the matrix as a {@code RDD<String>} in IJV format
-	 * 
+	 *
 	 * @return the matrix as a {@code RDD<String>} in IJV format
 	 */
 	public RDD<String> toRDDStringIJV() {
@@ -100,7 +100,7 @@ public class Matrix {
 
 	/**
 	 * Obtain the matrix as a {@code DataFrame} of doubles with an ID column
-	 * 
+	 *
 	 * @return the matrix as a {@code DataFrame} of doubles with an ID column
 	 */
 	public Dataset<Row> toDF() {
@@ -109,7 +109,7 @@ public class Matrix {
 
 	/**
 	 * Obtain the matrix as a {@code DataFrame} of doubles with an ID column
-	 * 
+	 *
 	 * @return the matrix as a {@code DataFrame} of doubles with an ID column
 	 */
 	public Dataset<Row> toDFDoubleWithIDColumn() {
@@ -118,7 +118,7 @@ public class Matrix {
 
 	/**
 	 * Obtain the matrix as a {@code DataFrame} of doubles with no ID column
-	 * 
+	 *
 	 * @return the matrix as a {@code DataFrame} of doubles with no ID column
 	 */
 	public Dataset<Row> toDFDoubleNoIDColumn() {
@@ -128,7 +128,7 @@ public class Matrix {
 
 	/**
 	 * Obtain the matrix as a {@code DataFrame} of vectors with an ID column
-	 * 
+	 *
 	 * @return the matrix as a {@code DataFrame} of vectors with an ID column
 	 */
 	public Dataset<Row> toDFVectorWithIDColumn() {
@@ -137,7 +137,7 @@ public class Matrix {
 
 	/**
 	 * Obtain the matrix as a {@code DataFrame} of vectors with no ID column
-	 * 
+	 *
 	 * @return the matrix as a {@code DataFrame} of vectors with no ID column
 	 */
 	public Dataset<Row> toDFVectorNoIDColumn() {
@@ -147,7 +147,7 @@ public class Matrix {
 
 	/**
 	 * Obtain the matrix as a {@code BinaryBlockMatrix}
-	 * 
+	 *
 	 * @return the matrix as a {@code BinaryBlockMatrix}
 	 */
 	public BinaryBlockMatrix toBinaryBlockMatrix() {
@@ -156,7 +156,7 @@ public class Matrix {
 
 	/**
 	 * Obtain the matrix metadata
-	 * 
+	 *
 	 * @return the matrix metadata
 	 */
 	public MatrixMetadata getMatrixMetadata() {

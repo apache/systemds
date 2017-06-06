@@ -94,9 +94,9 @@ public final class MLContextUtil {
 	 * Complex data types supported by the MLContext API
 	 */
 	@SuppressWarnings("rawtypes")
-	public static final Class[] COMPLEX_DATA_TYPES = { JavaRDD.class, RDD.class, Dataset.class,
-			BinaryBlockMatrix.class, BinaryBlockFrame.class, Matrix.class, Frame.class, (new double[][] {}).getClass(),
-			MatrixBlock.class, URL.class };
+	public static final Class[] COMPLEX_DATA_TYPES = { JavaRDD.class, RDD.class, Dataset.class, BinaryBlockMatrix.class,
+			BinaryBlockFrame.class, Matrix.class, Frame.class, (new double[][] {}).getClass(), MatrixBlock.class,
+			URL.class };
 
 	/**
 	 * All data types supported by the MLContext API
@@ -182,12 +182,15 @@ public final class MLContextUtil {
 			minimumRecommendedSparkVersion = projectInfo.minimumRecommendedSparkVersion();
 		} catch (MLContextException e) {
 			try {
-				// During development (such as in an IDE), there is no jar file typically
-				// built, so attempt to obtain the minimum recommended Spark version from
+				// During development (such as in an IDE), there is no jar file
+				// typically
+				// built, so attempt to obtain the minimum recommended Spark
+				// version from
 				// the pom.xml file
 				minimumRecommendedSparkVersion = getMinimumRecommendedSparkVersionFromPom();
 			} catch (MLContextException e1) {
-				throw new MLContextException("Minimum recommended Spark version could not be determined from SystemML jar file manifest or pom.xml");
+				throw new MLContextException(
+						"Minimum recommended Spark version could not be determined from SystemML jar file manifest or pom.xml");
 			}
 		}
 		String sparkVersion = spark.version();
@@ -200,17 +203,20 @@ public final class MLContextUtil {
 	/**
 	 * Obtain minimum recommended Spark version from the pom.xml file.
 	 *
-	 * @return the minimum recommended Spark version from XML parsing of the pom file (during development).
+	 * @return the minimum recommended Spark version from XML parsing of the pom
+	 *         file (during development).
 	 */
 	static String getMinimumRecommendedSparkVersionFromPom() {
 		return getUniquePomProperty("spark.version");
 	}
 
 	/**
-	 * Obtain the text associated with an XML element from the pom.xml file. In this implementation,
-	 * the element should be uniquely named, or results will be unpredicable.
+	 * Obtain the text associated with an XML element from the pom.xml file. In
+	 * this implementation, the element should be uniquely named, or results
+	 * will be unpredicable.
 	 *
-	 * @param property unique property (element) from the pom.xml file
+	 * @param property
+	 *            unique property (element) from the pom.xml file
 	 * @return the text value associated with the given property
 	 */
 	static String getUniquePomProperty(String property) {
@@ -663,7 +669,7 @@ public final class MLContextUtil {
 			DataType dataType = field.dataType();
 			if ((dataType != DataTypes.DoubleType) && (dataType != DataTypes.IntegerType)
 					&& (dataType != DataTypes.LongType) && (!(dataType instanceof org.apache.spark.ml.linalg.VectorUDT))
-					&& (!(dataType instanceof org.apache.spark.mllib.linalg.VectorUDT)) ) {
+					&& (!(dataType instanceof org.apache.spark.mllib.linalg.VectorUDT))) {
 				// uncomment if we support arrays of doubles for matrices
 				// if (dataType instanceof ArrayType) {
 				// ArrayType arrayType = (ArrayType) dataType;
@@ -851,7 +857,8 @@ public final class MLContextUtil {
 	 *            the title to display for the inputs
 	 * @param map
 	 *            the map of inputs
-	 * @param symbolTable the symbol table
+	 * @param symbolTable
+	 *            the symbol table
 	 * @return the script inputs represented as a String
 	 */
 	public static String displayInputs(String name, Map<String, Object> map, LocalVariableMap symbolTable) {
@@ -887,17 +894,18 @@ public final class MLContextUtil {
 				}
 				sb.append(") ");
 
-				 sb.append(key);
-				 sb.append(": ");
-				 String str = null;
-				 if(object instanceof MatrixBlock) {
-					 MatrixBlock mb = (MatrixBlock) object;
-					 str = "MatrixBlock [sparse? = " + mb.isInSparseFormat() + ", nonzeros = " + mb.getNonZeros() + ", size: " + mb.getNumRows() + " X " + mb.getNumColumns() + "]";
-				 }
-				 else
-					 str = object.toString(); // TODO: Deal with OOM for other objects such as Frame, etc
-				 str = StringUtils.abbreviate(str, 100);
-				 sb.append(str);
+				sb.append(key);
+				sb.append(": ");
+				String str = null;
+				if (object instanceof MatrixBlock) {
+					MatrixBlock mb = (MatrixBlock) object;
+					str = "MatrixBlock [sparse? = " + mb.isInSparseFormat() + ", nonzeros = " + mb.getNonZeros()
+							+ ", size: " + mb.getNumRows() + " X " + mb.getNumColumns() + "]";
+				} else
+					str = object.toString(); // TODO: Deal with OOM for other
+												// objects such as Frame, etc
+				str = StringUtils.abbreviate(str, 100);
+				sb.append(str);
 				sb.append("\n");
 			}
 		}
@@ -970,16 +978,16 @@ public final class MLContextUtil {
 	 * @return the SystemML welcome message
 	 */
 	public static String welcomeMessage() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("\nWelcome to Apache SystemML!\n");
-        try {
-            ProjectInfo info = ProjectInfo.getProjectInfo();
-            if (info.version() != null) {
-            	sb.append("Version ");
-                sb.append(info.version());
-            }
-        } catch (MLContextException e) {
-        }
+		StringBuilder sb = new StringBuilder();
+		sb.append("\nWelcome to Apache SystemML!\n");
+		try {
+			ProjectInfo info = ProjectInfo.getProjectInfo();
+			if (info.version() != null) {
+				sb.append("Version ");
+				sb.append(info.version());
+			}
+		} catch (MLContextException e) {
+		}
 		return sb.toString();
 	}
 

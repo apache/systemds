@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -42,7 +42,7 @@ public class Frame {
 
 	/**
 	 * Obtain the frame as a SystemML FrameObject.
-	 * 
+	 *
 	 * @return the frame as a SystemML FrameObject
 	 */
 	public FrameObject toFrameObject() {
@@ -51,7 +51,7 @@ public class Frame {
 
 	/**
 	 * Obtain the frame as a two-dimensional String array
-	 * 
+	 *
 	 * @return the frame as a two-dimensional String array
 	 */
 	public String[][] to2DStringArray() {
@@ -60,7 +60,7 @@ public class Frame {
 
 	/**
 	 * Obtain the frame as a {@code JavaRDD<String>} in IJV format
-	 * 
+	 *
 	 * @return the frame as a {@code JavaRDD<String>} in IJV format
 	 */
 	public JavaRDD<String> toJavaRDDStringIJV() {
@@ -69,7 +69,7 @@ public class Frame {
 
 	/**
 	 * Obtain the frame as a {@code JavaRDD<String>} in CSV format
-	 * 
+	 *
 	 * @return the frame as a {@code JavaRDD<String>} in CSV format
 	 */
 	public JavaRDD<String> toJavaRDDStringCSV() {
@@ -78,7 +78,7 @@ public class Frame {
 
 	/**
 	 * Obtain the frame as a {@code RDD<String>} in CSV format
-	 * 
+	 *
 	 * @return the frame as a {@code RDD<String>} in CSV format
 	 */
 	public RDD<String> toRDDStringCSV() {
@@ -87,7 +87,7 @@ public class Frame {
 
 	/**
 	 * Obtain the frame as a {@code RDD<String>} in IJV format
-	 * 
+	 *
 	 * @return the frame as a {@code RDD<String>} in IJV format
 	 */
 	public RDD<String> toRDDStringIJV() {
@@ -96,7 +96,7 @@ public class Frame {
 
 	/**
 	 * Obtain the frame as a {@code DataFrame}
-	 * 
+	 *
 	 * @return the frame as a {@code DataFrame}
 	 */
 	public Dataset<Row> toDF() {
@@ -105,7 +105,7 @@ public class Frame {
 
 	/**
 	 * Obtain the matrix as a {@code BinaryBlockFrame}
-	 * 
+	 *
 	 * @return the matrix as a {@code BinaryBlockFrame}
 	 */
 	public BinaryBlockFrame toBinaryBlockFrame() {
@@ -114,7 +114,7 @@ public class Frame {
 
 	/**
 	 * Obtain the frame metadata
-	 * 
+	 *
 	 * @return the frame metadata
 	 */
 	public FrameMetadata getFrameMetadata() {

@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -30,7 +30,8 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 
 /**
- * BinaryBlockMatrix stores data as a SystemML binary-block matrix representation.
+ * BinaryBlockMatrix stores data as a SystemML binary-block matrix
+ * representation.
  *
  */
 public class BinaryBlockMatrix {
@@ -40,7 +41,7 @@ public class BinaryBlockMatrix {
 
 	/**
 	 * Convert a Spark DataFrame to a SystemML binary-block representation.
-	 * 
+	 *
 	 * @param dataFrame
 	 *            the Spark DataFrame
 	 * @param matrixMetadata
@@ -54,7 +55,7 @@ public class BinaryBlockMatrix {
 	/**
 	 * Convert a Spark DataFrame to a SystemML binary-block representation,
 	 * specifying the number of rows and columns.
-	 * 
+	 *
 	 * @param dataFrame
 	 *            the Spark DataFrame
 	 * @param numRows
@@ -63,13 +64,13 @@ public class BinaryBlockMatrix {
 	 *            the number of columns
 	 */
 	public BinaryBlockMatrix(Dataset<Row> dataFrame, long numRows, long numCols) {
-		this(dataFrame, new MatrixMetadata(numRows, numCols, 
-				ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize()));
+		this(dataFrame, new MatrixMetadata(numRows, numCols, ConfigurationManager.getBlocksize(),
+				ConfigurationManager.getBlocksize()));
 	}
 
 	/**
 	 * Convert a Spark DataFrame to a SystemML binary-block representation.
-	 * 
+	 *
 	 * @param dataFrame
 	 *            the Spark DataFrame
 	 */
@@ -80,7 +81,7 @@ public class BinaryBlockMatrix {
 	/**
 	 * Create a BinaryBlockMatrix, specifying the SystemML binary-block matrix
 	 * and its metadata.
-	 * 
+	 *
 	 * @param binaryBlocks
 	 *            the {@code JavaPairRDD<MatrixIndexes, MatrixBlock>} matrix
 	 * @param matrixCharacteristics
@@ -95,7 +96,7 @@ public class BinaryBlockMatrix {
 	/**
 	 * Obtain a SystemML binary-block matrix as a
 	 * {@code JavaPairRDD<MatrixIndexes, MatrixBlock>}
-	 * 
+	 *
 	 * @return the SystemML binary-block matrix
 	 */
 	public JavaPairRDD<MatrixIndexes, MatrixBlock> getBinaryBlocks() {
@@ -104,7 +105,7 @@ public class BinaryBlockMatrix {
 
 	/**
 	 * Obtain a SystemML binary-block matrix as a {@code MatrixBlock}
-	 * 
+	 *
 	 * @return the SystemML binary-block matrix as a {@code MatrixBlock}
 	 */
 	public MatrixBlock getMatrixBlock() {
@@ -119,7 +120,7 @@ public class BinaryBlockMatrix {
 
 	/**
 	 * Obtain the SystemML binary-block matrix characteristics
-	 * 
+	 *
 	 * @return the matrix metadata as {@code MatrixCharacteristics}
 	 */
 	public MatrixCharacteristics getMatrixCharacteristics() {
@@ -128,7 +129,7 @@ public class BinaryBlockMatrix {
 
 	/**
 	 * Obtain the SystemML binary-block matrix metadata
-	 * 
+	 *
 	 * @return the matrix metadata as {@code MatrixMetadata}
 	 */
 	public MatrixMetadata getMatrixMetadata() {
@@ -137,7 +138,7 @@ public class BinaryBlockMatrix {
 
 	/**
 	 * Set the SystemML binary-block matrix metadata
-	 * 
+	 *
 	 * @param matrixMetadata
 	 *            the matrix metadata
 	 */
@@ -148,7 +149,7 @@ public class BinaryBlockMatrix {
 	/**
 	 * Set the SystemML binary-block matrix as a
 	 * {@code JavaPairRDD<MatrixIndexes, MatrixBlock>}
-	 * 
+	 *
 	 * @param binaryBlocks
 	 *            the SystemML binary-block matrix
 	 */

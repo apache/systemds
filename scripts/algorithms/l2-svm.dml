@@ -144,10 +144,6 @@ while(continue == 1 & iter < maxiterations)  {
     s = be * s + g_new
     g_old = g_new
 
-	if(sum(s^2) == 0){
-	    continue = 0
-	}
-
     iter = iter + 1
 }
 
@@ -157,8 +153,11 @@ extra_model_params[2,1] = negative_label
 extra_model_params[3,1] = intercept
 extra_model_params[4,1] = dimensions
 
+weights = w
 w = t(cbind(t(w), t(extra_model_params)))
 write(w, $model, format=cmdLine_fmt)
+write(extra_model_params, "", format=cmdLine_fmt)
+write(weights, "", format=cmdLine_fmt)
 
 logFile = $Log
 if(logFile != " ") {

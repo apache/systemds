@@ -38,10 +38,10 @@ import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.hadoop.yarn.util.ConverterUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.DMLScriptException;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
 
@@ -65,6 +65,11 @@ public class DMLAppMaster
 		throws YarnException, IOException
 	{
 		_conf = new YarnConfiguration();
+		if (OptimizerUtils.isSparkExecutionMode()) {
+			// Work-around jersey issue in https://issues.apache.org/jira/browse/YARN-5271
+			// and https://issues.apache.org/jira/browse/SPARK-15343.
+			_conf.set("yarn.timeline-service.enabled", "false");
+		}
 		
 		//obtain application ID
 		String containerIdString = System.getenv(Environment.CONTAINER_ID.name());

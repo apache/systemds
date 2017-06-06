@@ -53,6 +53,7 @@ import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.util.ConverterUtils;
 import org.apache.hadoop.yarn.util.Records;
 import org.apache.sysml.conf.DMLConfig;
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.parser.ParseException;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLScriptException;
@@ -156,6 +157,11 @@ public class DMLYarnClient
 			
 			// load yarn configuration
 			YarnConfiguration yconf = new YarnConfiguration();
+			if (OptimizerUtils.isSparkExecutionMode()) {
+				// Work-around jersey issue in https://issues.apache.org/jira/browse/YARN-5271
+				// and https://issues.apache.org/jira/browse/SPARK-15343.
+				yconf.set("yarn.timeline-service.enabled", "false");
+			}
 			
 			// create yarn client
 			YarnClient yarnClient = YarnClient.createYarnClient();

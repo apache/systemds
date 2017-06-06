@@ -21,7 +21,7 @@ package org.apache.sysml.conf;
 
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysml.conf.CompilerConfig.ConfigType;
-
+import org.apache.sysml.hops.OptimizerUtils;
 
 
 /**
@@ -50,6 +50,11 @@ public class ConfigurationManager
     //global static initialization
 	static {
 		_rJob = new JobConf();
+		if (OptimizerUtils.isSparkExecutionMode()) {
+			// Work-around jersey issue in https://issues.apache.org/jira/browse/YARN-5271
+			// and https://issues.apache.org/jira/browse/SPARK-15343.
+			_rJob.set("yarn.timeline-service.enabled", "false");
+		}
 		
 		//initialization after job conf in order to prevent cyclic initialization issues 
 		//ConfigManager -> OptimizerUtils -> InfrastructureAnalyer -> ConfigManager 

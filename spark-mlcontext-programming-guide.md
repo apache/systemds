@@ -1237,13 +1237,13 @@ scala> val (min, max, mean) = ml.execute(minMaxMeanScript).getTuple[Double, Doub
 PROGRAM
 --MAIN PROGRAM
 ----GENERIC (lines 1-8) [recompile=false]
-------(12) TRead Xin [10000,100,1000,1000,1000000] [0,0,76 -> 76MB] [chkpt], CP
-------(13) ua(minRC) (12) [0,0,-1,-1,-1] [76,0,0 -> 76MB], CP
-------(21) TWrite minOut (13) [0,0,-1,-1,-1] [0,0,0 -> 0MB], CP
-------(14) ua(maxRC) (12) [0,0,-1,-1,-1] [76,0,0 -> 76MB], CP
-------(27) TWrite maxOut (14) [0,0,-1,-1,-1] [0,0,0 -> 0MB], CP
-------(15) ua(meanRC) (12) [0,0,-1,-1,-1] [76,0,0 -> 76MB], CP
-------(33) TWrite meanOut (15) [0,0,-1,-1,-1] [0,0,0 -> 0MB], CP
+------(12) TRead Xin [10000,100,1000,1000,1000000] {0,0,76 -> 76MB} [chkpt], CP
+------(13) ua(minRC) (12) [0,0,-1,-1,-1] {76,0,0 -> 76MB}, CP
+------(21) TWrite minOut (13) [0,0,-1,-1,-1] {0,0,0 -> 0MB}, CP
+------(14) ua(maxRC) (12) [0,0,-1,-1,-1] {76,0,0 -> 76MB}, CP
+------(27) TWrite maxOut (14) [0,0,-1,-1,-1] {0,0,0 -> 0MB}, CP
+------(15) ua(meanRC) (12) [0,0,-1,-1,-1] {76,0,0 -> 76MB}, CP
+------(33) TWrite meanOut (15) [0,0,-1,-1,-1] {0,0,0 -> 0MB}, CP
 
 min: Double = 5.16651366133658E-9
 max: Double = 0.9999999368927975

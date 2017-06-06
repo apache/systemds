@@ -39,7 +39,7 @@
 # thr         Double    0.01   Threshold to stop the algorithm: if the decrease in the value of AIC falls below thr
 #                              no further features are being checked and the algorithm stops 
 # fmt         String   "text"  Matrix output format for B (the betas) only, usually "text" or "csv"
-# write_beta  Int       1      Should the beta's be returned?
+# write_beta  Boolean   TRUE   Should the beta's be returned?
 #                              0 = no
 #                              1 = yes
 # --------------------------------------------------------------------------------------------
@@ -73,7 +73,7 @@
 #
 # HOW TO INVOKE THIS SCRIPT - EXAMPLE:
 # hadoop jar SystemML.jar -f StepLinearRegDS.dml -nvargs X=INPUT_DIR/X Y=INPUT_DIR/Y B=OUTPUT_DIR/betas
-#     O=OUTPUT_DIR/stats S=OUTPUT_DIR/selected icpt=2 thr=0.01 fmt=csv write_beta=1
+#     O=OUTPUT_DIR/stats S=OUTPUT_DIR/selected icpt=2 thr=0.01 fmt=csv write_beta=TRUE
 
 fileX = $X;
 fileY = $Y;

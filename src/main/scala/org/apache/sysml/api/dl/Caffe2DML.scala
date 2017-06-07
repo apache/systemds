@@ -507,8 +507,8 @@ class Caffe2DMLModel(val mloutput: MLResults,
 	  val script = dml(predictionScript).out("Prob").in(estimator.inputs)
 	  if(mloutput != null) {
 	    // fit was called
-  	  net.getLayers.map(net.getCaffeLayer(_)).filter(_.weight != null).map(l => script.in(l.weight, mloutput.getBinaryBlockMatrix(l.weight)))
-  	  net.getLayers.map(net.getCaffeLayer(_)).filter(_.bias != null).map(l => script.in(l.bias, mloutput.getBinaryBlockMatrix(l.bias)))
+  	  net.getLayers.map(net.getCaffeLayer(_)).filter(_.weight != null).map(l => script.in(l.weight, mloutput.getMatrix(l.weight)))
+  	  net.getLayers.map(net.getCaffeLayer(_)).filter(_.bias != null).map(l => script.in(l.bias, mloutput.getMatrix(l.bias)))
 	  }
 	  (script, "X_full")
   }

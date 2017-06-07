@@ -52,7 +52,8 @@ trait BaseSystemMLRegressor extends BaseSystemMLEstimator {
     val Xin = RDDConverterUtils.dataFrameToBinaryBlock(sc, df.asInstanceOf[DataFrame], mcXin, false, true)
     val yin = df.select("label")
     val ret = getTrainingScript(isSingleNode)
-    val Xbin = new BinaryBlockMatrix(Xin, mcXin)
+    val mmXin = new MatrixMetadata(mcXin)
+    val Xbin = new Matrix(Xin, mmXin)
     val script = ret._1.in(ret._2, Xbin).in(ret._3, yin)
     ml.execute(script)
   }
@@ -66,7 +67,7 @@ trait BaseSystemMLRegressorModel extends BaseSystemMLEstimatorModel {
     updateML(ml)
     val script = getPredictionScript(isSingleNode)
     val modelPredict = ml.execute(script._1.in(script._2, X))
-    val ret = modelPredict.getBinaryBlockMatrix(predictionVar).getMatrixBlock
+    val ret = modelPredict.getMatrix(predictionVar).toMatrixBlock
               
     if(ret.getNumColumns != 1) {
       throw new RuntimeException("Expected prediction to be a column vector")
@@ -81,7 +82,8 @@ trait BaseSystemMLRegressorModel extends BaseSystemMLEstimatorModel {
     val mcXin = new MatrixCharacteristics()
     val Xin = RDDConverterUtils.dataFrameToBinaryBlock(df.rdd.sparkContext, df.asInstanceOf[DataFrame], mcXin, false, true)
     val script = getPredictionScript(isSingleNode)
-    val Xin_bin = new BinaryBlockMatrix(Xin, mcXin)
+    val mmXin = new MatrixMetadata(mcXin)
+    val Xin_bin = new Matrix(Xin, mmXin)
     val modelPredict = ml.execute(script._1.in(script._2, Xin_bin))
     val predictedDF = modelPredict.getDataFrame(predictionVar).select(RDDConverterUtils.DF_ID_COLUMN, "C1").withColumnRenamed("C1", "prediction")
     val dataset = RDDConverterUtilsExt.addIDToDataFrame(df.asInstanceOf[DataFrame], df.sparkSession, RDDConverterUtils.DF_ID_COLUMN)

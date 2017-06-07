@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -24,10 +24,11 @@ import static org.apache.sysml.api.mlcontext.ScriptFactory.dml;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.sysml.api.mlcontext.BinaryBlockMatrix;
 import org.apache.sysml.api.mlcontext.MLContext;
 import org.apache.sysml.api.mlcontext.MLContext.ExplainLevel;
 import org.apache.sysml.api.mlcontext.MLResults;
+import org.apache.sysml.api.mlcontext.Matrix;
+import org.apache.sysml.api.mlcontext.MatrixMetadata;
 import org.apache.sysml.api.mlcontext.Script;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
@@ -43,7 +44,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 
-public class MLContextOutputBlocksizeTest extends AutomatedTestBase 
+public class MLContextOutputBlocksizeTest extends AutomatedTestBase
 {
 	protected final static String TEST_DIR = "org/apache/sysml/api/mlcontext";
 	protected final static String TEST_NAME = "MLContext";
@@ -51,7 +52,7 @@ public class MLContextOutputBlocksizeTest extends AutomatedTestBase
 	private final static int rows = 100;
 	private final static int cols = 63;
 	private final static double sparsity = 0.7;
-	
+
 	private static SparkConf conf;
 	private static JavaSparkContext sc;
 	private static MLContext ml;
@@ -77,47 +78,47 @@ public class MLContextOutputBlocksizeTest extends AutomatedTestBase
 	public void testOutputBlocksizeTextcell() {
 		runMLContextOutputBlocksizeTest("text");
 	}
-	
+
 	@Test
 	public void testOutputBlocksizeCSV() {
 		runMLContextOutputBlocksizeTest("csv");
 	}
-	
+
 	@Test
 	public void testOutputBlocksizeMM() {
 		runMLContextOutputBlocksizeTest("mm");
 	}
-	
+
 	@Test
 	public void testOutputBlocksizeBinary() {
 		runMLContextOutputBlocksizeTest("binary");
 	}
-	
-	
-	private void runMLContextOutputBlocksizeTest(String format) 
+
+
+	private void runMLContextOutputBlocksizeTest(String format)
 	{
 		try
 		{
-			double[][] A = getRandomMatrix(rows, cols, -10, 10, sparsity, 76543); 
-			MatrixBlock mbA = DataConverter.convertToMatrixBlock(A); 
+			double[][] A = getRandomMatrix(rows, cols, -10, 10, sparsity, 76543);
+			MatrixBlock mbA = DataConverter.convertToMatrixBlock(A);
 			int blksz = ConfigurationManager.getBlocksize();
 			MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, blksz, blksz, mbA.getNonZeros());
-			
+
 			//create input dataset
 			JavaPairRDD<MatrixIndexes,MatrixBlock> in = SparkExecutionContext.toMatrixJavaPairRDD(sc, mbA, blksz, blksz);
-			BinaryBlockMatrix bbmatrix = new BinaryBlockMatrix(in, mc);
+			Matrix m = new Matrix(in, new MatrixMetadata(mc));
 
 			ml.setExplain(true);
 			ml.setExplainLevel(ExplainLevel.HOPS);
-			
+
 			//execute script
 			String s ="if( sum(X) > 0 )"
 					+ "   X = X/2;"
 					+ "R = X;"
 					+ "write(R, \"/tmp\", format=\""+format+"\");";
-			Script script = dml(s).in("X", bbmatrix).out("R");
+			Script script = dml(s).in("X", m).out("R");
 			MLResults results = ml.execute(script);
-			
+
 			//compare output matrix characteristics
 			MatrixCharacteristics mcOut = results.getMatrix("R")
 				.getMatrixMetadata().asMatrixCharacteristics();

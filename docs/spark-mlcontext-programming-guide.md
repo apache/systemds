@@ -243,7 +243,7 @@ mean: Double = 0.49996223966662934
 
 Many different types of input and output variables are automatically allowed. These types include
 `Boolean`, `Long`, `Double`, `String`, `Array[Array[Double]]`, `RDD<String>` and `JavaRDD<String>`
-in `CSV` (dense) and `IJV` (sparse) formats, `DataFrame`, `BinaryBlockMatrix`, `Matrix`, and
+in `CSV` (dense) and `IJV` (sparse) formats, `DataFrame`, `Matrix`, and
 `Frame`. RDDs and JavaRDDs are assumed to be CSV format unless MatrixMetadata is supplied indicating
 IJV format.
 
@@ -1606,11 +1606,7 @@ Therefore, if you use a set of data multiple times, one way to potentially impro
 to convert it to a SystemML matrix representation and then use this representation rather than performing
 the data conversion each time.
 
-There are currently two mechanisms for this in SystemML: **(1) BinaryBlockMatrix** and **(2) Matrix**.
-
-**BinaryBlockMatrix:**
-
-If you have an input DataFrame, it can be converted to a BinaryBlockMatrix, and this BinaryBlockMatrix
+If you have an input DataFrame, it can be converted to a Matrix, and this Matrix
 can be passed as an input rather than passing in the DataFrame as an input.
 
 For example, suppose we had a 10000x100 matrix represented as a DataFrame, as we saw in an earlier example.
@@ -1633,10 +1629,10 @@ val minMaxMeanScript = dml(minMaxMean).in("Xin", df, mm).out("minOut", "maxOut",
 {% endhighlight %}
 
 Rather than passing in a DataFrame each time to the Script object creation, let's instead create a
-BinaryBlockMatrix object based on the DataFrame and pass this BinaryBlockMatrix to the Script object
+Matrix object based on the DataFrame and pass this Matrix to the Script object
 creation. If we run the code below in the Spark Shell, we see that the data conversion step occurs
-when the BinaryBlockMatrix object is created. However, when we create a Script object twice, we see
-that no conversion penalty occurs, since this conversion occurred when the BinaryBlockMatrix was
+when the Matrix object is created. However, when we create a Script object twice, we see
+that no conversion penalty occurs, since this conversion occurred when the Matrix was
 created.
 
 {% highlight scala %}
@@ -1649,13 +1645,10 @@ val data = sc.parallelize(0 to numRows-1).map { _ => Row.fromSeq(Seq.fill(numCol
 val schema = StructType((0 to numCols-1).map { i => StructField("C" + i, DoubleType, true) } )
 val df = spark.createDataFrame(data, schema)
 val mm = new MatrixMetadata(numRows, numCols)
-val bbm = new BinaryBlockMatrix(df, mm)
-val minMaxMeanScript = dml(minMaxMean).in("Xin", bbm).out("minOut", "maxOut", "meanOut")
-val minMaxMeanScript = dml(minMaxMean).in("Xin", bbm).out("minOut", "maxOut", "meanOut")
+val matrix = new Matrix(df, mm)
+val minMaxMeanScript = dml(minMaxMean).in("Xin", matrix).out("minOut", "maxOut", "meanOut")
+val minMaxMeanScript = dml(minMaxMean).in("Xin", matrix).out("minOut", "maxOut", "meanOut")
 {% endhighlight %}
-
-
-**Matrix:**
 
 When a matrix is returned as an output, it is returned as a Matrix object, which is a wrapper around
 a SystemML MatrixObject. As a result, an output Matrix is already in a SystemML representation,

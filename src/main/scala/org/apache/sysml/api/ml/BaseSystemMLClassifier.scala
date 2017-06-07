@@ -182,7 +182,7 @@ trait BaseSystemMLEstimatorModel extends BaseSystemMLEstimatorOrModel {
 	  }
 	  val script = dml(dmlScript.toString)
 		for(varName <- modelVariables) {
-			script.in(varName, baseEstimator.mloutput.getBinaryBlockMatrix(varName))
+			script.in(varName, baseEstimator.mloutput.getMatrix(varName))
 		}
 	  val ml = new MLContext(sc)
 	  ml.execute(script)
@@ -208,7 +208,8 @@ trait BaseSystemMLClassifier extends BaseSystemMLEstimator {
     val revLabelMapping = new java.util.HashMap[Int, String]
     val yin = df.select("label")
     val ret = getTrainingScript(isSingleNode)
-    val Xbin = new BinaryBlockMatrix(Xin, mcXin)
+    val mmXin = new MatrixMetadata(mcXin)
+    val Xbin = new Matrix(Xin, mmXin)
     val script = ret._1.in(ret._2, Xbin).in(ret._3, yin)
     ml.execute(script)
   }
@@ -225,7 +226,7 @@ trait BaseSystemMLClassifierModel extends BaseSystemMLEstimatorModel {
     // ml.setExplainLevel(ExplainLevel.RECOMPILE_RUNTIME)
     val modelPredict = ml.execute(script._1.in(script._2, X, new MatrixMetadata(X.getNumRows, X.getNumColumns, X.getNonZeros)))
     val ret = PredictionUtils.computePredictedClassLabelsFromProbability(modelPredict, isSingleNode, sc, probVar)
-              .getBinaryBlockMatrix("Prediction").getMatrixBlock
+              .getMatrix("Prediction").toMatrixBlock
               
     if(ret.getNumColumns != 1) {
       throw new RuntimeException("Expected predicted label to be a column vector")
@@ -241,7 +242,8 @@ trait BaseSystemMLClassifierModel extends BaseSystemMLEstimatorModel {
     val mcXin = new MatrixCharacteristics()
     val Xin = RDDConverterUtils.dataFrameToBinaryBlock(df.rdd.sparkContext, df.asInstanceOf[DataFrame].select("features"), mcXin, false, true)
     val script = getPredictionScript(isSingleNode)
-    val Xin_bin = new BinaryBlockMatrix(Xin, mcXin)
+    val mmXin = new MatrixMetadata(mcXin)
+    val Xin_bin = new Matrix(Xin, mmXin)
     val modelPredict = ml.execute(script._1.in(script._2, Xin_bin))
     val predLabelOut = PredictionUtils.computePredictedClassLabelsFromProbability(modelPredict, isSingleNode, sc, probVar)
     val predictedDF = predLabelOut.getDataFrame("Prediction").select(RDDConverterUtils.DF_ID_COLUMN, "C1").withColumnRenamed("C1", "prediction")

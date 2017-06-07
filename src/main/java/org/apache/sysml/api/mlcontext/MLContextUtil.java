@@ -94,9 +94,8 @@ public final class MLContextUtil {
 	 * Complex data types supported by the MLContext API
 	 */
 	@SuppressWarnings("rawtypes")
-	public static final Class[] COMPLEX_DATA_TYPES = { JavaRDD.class, RDD.class, Dataset.class, BinaryBlockMatrix.class,
-			BinaryBlockFrame.class, Matrix.class, Frame.class, (new double[][] {}).getClass(), MatrixBlock.class,
-			URL.class };
+	public static final Class[] COMPLEX_DATA_TYPES = { JavaRDD.class, RDD.class, Dataset.class, Matrix.class,
+			Frame.class, (new double[][] {}).getClass(), MatrixBlock.class, URL.class };
 
 	/**
 	 * All data types supported by the MLContext API
@@ -414,7 +413,7 @@ public final class MLContextUtil {
 
 	/**
 	 * Is the object one of the supported complex data types? (JavaRDD, RDD,
-	 * DataFrame, BinaryBlockMatrix, Matrix, double[][], MatrixBlock, URL)
+	 * DataFrame, Matrix, double[][], MatrixBlock, URL)
 	 *
 	 * @param object
 	 *            the object type to be examined
@@ -587,26 +586,29 @@ public final class MLContextUtil {
 					return MLContextConversionUtil.dataFrameToFrameObject(name, dataFrame);
 				}
 			}
-		} else if (value instanceof BinaryBlockMatrix) {
-			BinaryBlockMatrix binaryBlockMatrix = (BinaryBlockMatrix) value;
-			if (metadata == null) {
-				metadata = binaryBlockMatrix.getMatrixMetadata();
-			}
-			JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlocks = binaryBlockMatrix.getBinaryBlocks();
-			return MLContextConversionUtil.binaryBlocksToMatrixObject(name, binaryBlocks, (MatrixMetadata) metadata);
-		} else if (value instanceof BinaryBlockFrame) {
-			BinaryBlockFrame binaryBlockFrame = (BinaryBlockFrame) value;
-			if (metadata == null) {
-				metadata = binaryBlockFrame.getFrameMetadata();
-			}
-			JavaPairRDD<Long, FrameBlock> binaryBlocks = binaryBlockFrame.getBinaryBlocks();
-			return MLContextConversionUtil.binaryBlocksToFrameObject(name, binaryBlocks, (FrameMetadata) metadata);
 		} else if (value instanceof Matrix) {
 			Matrix matrix = (Matrix) value;
-			return matrix.toMatrixObject();
+			if ((matrix.hasBinaryBlocks()) && (!matrix.hasMatrixObject())) {
+				if (metadata == null) {
+					metadata = matrix.getMatrixMetadata();
+				}
+				JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlocks = matrix.toBinaryBlocks();
+				return MLContextConversionUtil.binaryBlocksToMatrixObject(name, binaryBlocks,
+						(MatrixMetadata) metadata);
+			} else {
+				return matrix.toMatrixObject();
+			}
 		} else if (value instanceof Frame) {
 			Frame frame = (Frame) value;
-			return frame.toFrameObject();
+			if ((frame.hasBinaryBlocks()) && (!frame.hasFrameObject())) {
+				if (metadata == null) {
+					metadata = frame.getFrameMetadata();
+				}
+				JavaPairRDD<Long, FrameBlock> binaryBlocks = frame.toBinaryBlocks();
+				return MLContextConversionUtil.binaryBlocksToFrameObject(name, binaryBlocks, (FrameMetadata) metadata);
+			} else {
+				return frame.toFrameObject();
+			}
 		} else if (value instanceof double[][]) {
 			double[][] doubleMatrix = (double[][]) value;
 			return MLContextConversionUtil.doubleMatrixToMatrixObject(name, doubleMatrix, (MatrixMetadata) metadata);

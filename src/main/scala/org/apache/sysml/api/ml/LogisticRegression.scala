@@ -103,7 +103,7 @@ class LogisticRegressionModel(override val uid: String)(
   	this("model")(estimator, estimator.sc)
   }
   def getPredictionScript(isSingleNode:Boolean): (Script, String) =
-    PredictionUtils.getGLMPredictionScript(estimator.mloutput.getBinaryBlockMatrix("B_out"), isSingleNode, 3)
+    PredictionUtils.getGLMPredictionScript(estimator.mloutput.getMatrix("B_out"), isSingleNode, 3)
   
   def baseEstimator():BaseSystemMLEstimator = estimator
   def modelVariables():List[String] = List[String]("B_out")

@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -43,6 +43,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
@@ -57,18 +58,21 @@ import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
-import org.apache.sysml.api.mlcontext.BinaryBlockMatrix;
 import org.apache.sysml.api.mlcontext.MLContext;
 import org.apache.sysml.api.mlcontext.MLContextConversionUtil;
 import org.apache.sysml.api.mlcontext.MLContextException;
 import org.apache.sysml.api.mlcontext.MLContextUtil;
 import org.apache.sysml.api.mlcontext.MLResults;
+import org.apache.sysml.api.mlcontext.Matrix;
 import org.apache.sysml.api.mlcontext.MatrixFormat;
 import org.apache.sysml.api.mlcontext.MatrixMetadata;
 import org.apache.sysml.api.mlcontext.Script;
 import org.apache.sysml.api.mlcontext.ScriptExecutor;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -1650,8 +1654,8 @@ public class MLContextTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testInputBinaryBlockMatrixDML() {
-		System.out.println("MLContextTest - input BinaryBlockMatrix DML");
+	public void testInputMatrixBlockDML() {
+		System.out.println("MLContextTest - input MatrixBlock DML");
 
 		List<String> list = new ArrayList<String>();
 		list.add("10,20,30");
@@ -1667,15 +1671,16 @@ public class MLContextTest extends AutomatedTestBase {
 		StructType schema = DataTypes.createStructType(fields);
 		Dataset<Row> dataFrame = spark.createDataFrame(javaRddRow, schema);
 
-		BinaryBlockMatrix binaryBlockMatrix = new BinaryBlockMatrix(dataFrame);
-		Script script = dml("avg = avg(M);").in("M", binaryBlockMatrix).out("avg");
+		Matrix m = new Matrix(dataFrame);
+		MatrixBlock matrixBlock = m.toMatrixBlock();
+		Script script = dml("avg = avg(M);").in("M", matrixBlock).out("avg");
 		double avg = ml.execute(script).getDouble("avg");
 		Assert.assertEquals(50.0, avg, 0.0);
 	}
 
 	@Test
-	public void testInputBinaryBlockMatrixPYDML() {
-		System.out.println("MLContextTest - input BinaryBlockMatrix PYDML");
+	public void testInputMatrixBlockPYDML() {
+		System.out.println("MLContextTest - input MatrixBlock PYDML");
 
 		List<String> list = new ArrayList<String>();
 		list.add("10,20,30");
@@ -1691,20 +1696,24 @@ public class MLContextTest extends AutomatedTestBase {
 		StructType schema = DataTypes.createStructType(fields);
 		Dataset<Row> dataFrame = spark.createDataFrame(javaRddRow, schema);
 
-		BinaryBlockMatrix binaryBlockMatrix = new BinaryBlockMatrix(dataFrame);
-		Script script = pydml("avg = avg(M)").in("M", binaryBlockMatrix).out("avg");
+		Matrix m = new Matrix(dataFrame);
+		MatrixBlock matrixBlock = m.toMatrixBlock();
+		Script script = pydml("avg = avg(M)").in("M", matrixBlock).out("avg");
 		double avg = ml.execute(script).getDouble("avg");
 		Assert.assertEquals(50.0, avg, 0.0);
 	}
 
 	@Test
-	public void testOutputBinaryBlockMatrixDML() {
-		System.out.println("MLContextTest - output BinaryBlockMatrix DML");
+	public void testOutputBinaryBlocksDML() {
+		System.out.println("MLContextTest - output binary blocks DML");
 		String s = "M = matrix('1 2 3 4', rows=2, cols=2);";
-		BinaryBlockMatrix binaryBlockMatrix = ml.execute(dml(s).out("M")).getBinaryBlockMatrix("M");
+		MLResults results = ml.execute(dml(s).out("M"));
+		Matrix m = results.getMatrix("M");
+		JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlocks = m.toBinaryBlocks();
+		MatrixMetadata mm = m.getMatrixMetadata();
+		MatrixCharacteristics mc = mm.asMatrixCharacteristics();
+		JavaRDD<String> javaRDDStringIJV = RDDConverterUtils.binaryBlockToTextCell(binaryBlocks, mc);
 
-		JavaRDD<String> javaRDDStringIJV = MLContextConversionUtil
-				.binaryBlockMatrixToJavaRDDStringIJV(binaryBlockMatrix);
 		List<String> lines = javaRDDStringIJV.collect();
 		Assert.assertEquals("1 1 1.0", lines.get(0));
 		Assert.assertEquals("1 2 2.0", lines.get(1));
@@ -1713,13 +1722,16 @@ public class MLContextTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testOutputBinaryBlockMatrixPYDML() {
-		System.out.println("MLContextTest - output BinaryBlockMatrix PYDML");
+	public void testOutputBinaryBlocksPYDML() {
+		System.out.println("MLContextTest - output binary blocks PYDML");
 		String s = "M = full('1 2 3 4', rows=2, cols=2);";
-		BinaryBlockMatrix binaryBlockMatrix = ml.execute(pydml(s).out("M")).getBinaryBlockMatrix("M");
+		MLResults results = ml.execute(pydml(s).out("M"));
+		Matrix m = results.getMatrix("M");
+		JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlocks = m.toBinaryBlocks();
+		MatrixMetadata mm = m.getMatrixMetadata();
+		MatrixCharacteristics mc = mm.asMatrixCharacteristics();
+		JavaRDD<String> javaRDDStringIJV = RDDConverterUtils.binaryBlockToTextCell(binaryBlocks, mc);
 
-		JavaRDD<String> javaRDDStringIJV = MLContextConversionUtil
-				.binaryBlockMatrixToJavaRDDStringIJV(binaryBlockMatrix);
 		List<String> lines = javaRDDStringIJV.collect();
 		Assert.assertEquals("1 1 1.0", lines.get(0));
 		Assert.assertEquals("1 2 2.0", lines.get(1));

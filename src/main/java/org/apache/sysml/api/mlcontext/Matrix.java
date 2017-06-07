@@ -19,29 +19,90 @@
 
 package org.apache.sysml.api.mlcontext;
 
+import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.rdd.RDD;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 
 /**
  * Matrix encapsulates a SystemML matrix. It allows for easy conversion to
- * various other formats, such as RDDs, JavaRDDs, DataFrames,
- * BinaryBlockMatrices, and double[][]s. After script execution, it offers a
- * convenient format for obtaining SystemML matrix data in Scala tuples.
+ * various other formats, such as RDDs, JavaRDDs, DataFrames, and double[][]s.
+ * After script execution, it offers a convenient format for obtaining SystemML
+ * matrix data in Scala tuples.
  *
  */
 public class Matrix {
 
 	private MatrixObject matrixObject;
 	private SparkExecutionContext sparkExecutionContext;
+	private JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlocks;
+	private MatrixMetadata matrixMetadata;
 
 	public Matrix(MatrixObject matrixObject, SparkExecutionContext sparkExecutionContext) {
 		this.matrixObject = matrixObject;
 		this.sparkExecutionContext = sparkExecutionContext;
+		this.matrixMetadata = new MatrixMetadata(matrixObject.getMatrixCharacteristics());
+	}
+
+	/**
+	 * Convert a Spark DataFrame to a SystemML binary-block representation.
+	 *
+	 * @param dataFrame
+	 *            the Spark DataFrame
+	 * @param matrixMetadata
+	 *            matrix metadata, such as number of rows and columns
+	 */
+	public Matrix(Dataset<Row> dataFrame, MatrixMetadata matrixMetadata) {
+		this.matrixMetadata = matrixMetadata;
+		binaryBlocks = MLContextConversionUtil.dataFrameToMatrixBinaryBlocks(dataFrame, matrixMetadata);
+	}
+
+	/**
+	 * Convert a Spark DataFrame to a SystemML binary-block representation,
+	 * specifying the number of rows and columns.
+	 *
+	 * @param dataFrame
+	 *            the Spark DataFrame
+	 * @param numRows
+	 *            the number of rows
+	 * @param numCols
+	 *            the number of columns
+	 */
+	public Matrix(Dataset<Row> dataFrame, long numRows, long numCols) {
+		this(dataFrame, new MatrixMetadata(numRows, numCols, ConfigurationManager.getBlocksize(),
+				ConfigurationManager.getBlocksize()));
+	}
+
+	/**
+	 * Create a Matrix, specifying the SystemML binary-block matrix and its
+	 * metadata.
+	 *
+	 * @param binaryBlocks
+	 *            the {@code JavaPairRDD<MatrixIndexes, MatrixBlock>} matrix
+	 * @param matrixMetadata
+	 *            matrix metadata, such as number of rows and columns
+	 */
+	public Matrix(JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlocks, MatrixMetadata matrixMetadata) {
+		this.binaryBlocks = binaryBlocks;
+		this.matrixMetadata = matrixMetadata;
+	}
+
+	/**
+	 * Convert a Spark DataFrame to a SystemML binary-block representation.
+	 *
+	 * @param dataFrame
+	 *            the Spark DataFrame
+	 */
+	public Matrix(Dataset<Row> dataFrame) {
+		this(dataFrame, new MatrixMetadata());
 	}
 
 	/**
@@ -146,12 +207,37 @@ public class Matrix {
 	}
 
 	/**
-	 * Obtain the matrix as a {@code BinaryBlockMatrix}
+	 * Obtain the matrix as a {@code JavaPairRDD<MatrixIndexes, MatrixBlock>}
 	 *
-	 * @return the matrix as a {@code BinaryBlockMatrix}
+	 * @return the matrix as a {@code JavaPairRDD<MatrixIndexes, MatrixBlock>}
 	 */
-	public BinaryBlockMatrix toBinaryBlockMatrix() {
-		return MLContextConversionUtil.matrixObjectToBinaryBlockMatrix(matrixObject, sparkExecutionContext);
+	public JavaPairRDD<MatrixIndexes, MatrixBlock> toBinaryBlocks() {
+		if (binaryBlocks != null) {
+			return binaryBlocks;
+		} else if (matrixObject != null) {
+			binaryBlocks = MLContextConversionUtil.matrixObjectToBinaryBlocks(matrixObject, sparkExecutionContext);
+			MatrixCharacteristics mc = matrixObject.getMatrixCharacteristics();
+			matrixMetadata = new MatrixMetadata(mc);
+			return binaryBlocks;
+		}
+		throw new MLContextException("No binary blocks or MatrixObject found");
+	}
+
+	/**
+	 * Obtain the matrix as a {@code MatrixBlock}
+	 *
+	 * @return the matrix as a {@code MatrixBlock}
+	 */
+	public MatrixBlock toMatrixBlock() {
+		if (matrixMetadata == null) {
+			throw new MLContextException("Matrix metadata required to convert binary blocks to a MatrixBlock.");
+		}
+		if (binaryBlocks != null) {
+			return MLContextConversionUtil.binaryBlocksToMatrixBlock(binaryBlocks, matrixMetadata);
+		} else if (matrixObject != null) {
+			return MLContextConversionUtil.binaryBlocksToMatrixBlock(toBinaryBlocks(), matrixMetadata);
+		}
+		throw new MLContextException("No binary blocks or MatrixObject found");
 	}
 
 	/**
@@ -160,11 +246,44 @@ public class Matrix {
 	 * @return the matrix metadata
 	 */
 	public MatrixMetadata getMatrixMetadata() {
-		return new MatrixMetadata(matrixObject.getMatrixCharacteristics());
+		return matrixMetadata;
 	}
 
+	/**
+	 * If {@code MatrixObject} is available, output
+	 * {@code MatrixObject.toString()}. If {@code MatrixObject} is not available
+	 * but {@code MatrixMetadata} is available, output
+	 * {@code MatrixMetadata.toString()}. Otherwise output
+	 * {@code Object.toString()}.
+	 */
 	@Override
 	public String toString() {
-		return matrixObject.toString();
+		if (matrixObject != null) {
+			return matrixObject.toString();
+		} else if (matrixMetadata != null) {
+			return matrixMetadata.toString();
+		} else {
+			return super.toString();
+		}
+	}
+
+	/**
+	 * Whether or not this matrix contains data as binary blocks
+	 *
+	 * @return {@code true} if data as binary blocks are present, {@code false}
+	 *         otherwise.
+	 */
+	public boolean hasBinaryBlocks() {
+		return (binaryBlocks != null);
+	}
+
+	/**
+	 * Whether or not this matrix contains data as a MatrixObject
+	 *
+	 * @return {@code true} if data as binary blocks are present, {@code false}
+	 *         otherwise.
+	 */
+	public boolean hasMatrixObject() {
+		return (matrixObject != null);
 	}
 }

@@ -252,6 +252,31 @@ public class MLContextConversionUtil {
 	}
 
 	/**
+	 * Convert a {@code JavaPairRDD<MatrixIndexes, MatrixBlock>} to a
+	 * {@code MatrixBlock}
+	 *
+	 * @param binaryBlocks
+	 *            {@code JavaPairRDD<MatrixIndexes, MatrixBlock>} representation
+	 *            of a binary-block matrix
+	 * @param matrixMetadata
+	 *            the matrix metadata
+	 * @return the {@code JavaPairRDD<MatrixIndexes, MatrixBlock>} matrix
+	 *         converted to a {@code MatrixBlock}
+	 */
+	public static MatrixBlock binaryBlocksToMatrixBlock(JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlocks,
+			MatrixMetadata matrixMetadata) {
+		try {
+			MatrixBlock matrixBlock = SparkExecutionContext.toMatrixBlock(binaryBlocks,
+					matrixMetadata.getNumRows().intValue(), matrixMetadata.getNumColumns().intValue(),
+					matrixMetadata.getNumRowsPerBlock(), matrixMetadata.getNumColumnsPerBlock(),
+					matrixMetadata.getNumNonZeros());
+			return matrixBlock;
+		} catch (DMLRuntimeException e) {
+			throw new MLContextException("Exception converting binary blocks to MatrixBlock", e);
+		}
+	}
+
+	/**
 	 * Convert a {@code JavaPairRDD<Long, FrameBlock>} to a {@code FrameObject}.
 	 *
 	 * @param variableName
@@ -803,34 +828,6 @@ public class MLContextConversionUtil {
 	}
 
 	/**
-	 * Convert an {@code BinaryBlockMatrix} to a {@code JavaRDD<String>} in IVJ
-	 * format.
-	 *
-	 * @param binaryBlockMatrix
-	 *            the {@code BinaryBlockMatrix}
-	 * @return the {@code BinaryBlockMatrix} converted to a
-	 *         {@code JavaRDD<String>}
-	 */
-	public static JavaRDD<String> binaryBlockMatrixToJavaRDDStringIJV(BinaryBlockMatrix binaryBlockMatrix) {
-		JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlock = binaryBlockMatrix.getBinaryBlocks();
-		MatrixCharacteristics mc = binaryBlockMatrix.getMatrixCharacteristics();
-		return RDDConverterUtils.binaryBlockToTextCell(binaryBlock, mc);
-	}
-
-	/**
-	 * Convert an {@code BinaryBlockMatrix} to a {@code RDD<String>} in IVJ
-	 * format.
-	 *
-	 * @param binaryBlockMatrix
-	 *            the {@code BinaryBlockMatrix}
-	 * @return the {@code BinaryBlockMatrix} converted to a {@code RDD<String>}
-	 */
-	public static RDD<String> binaryBlockMatrixToRDDStringIJV(BinaryBlockMatrix binaryBlockMatrix) {
-		JavaRDD<String> javaRDD = binaryBlockMatrixToJavaRDDStringIJV(binaryBlockMatrix);
-		return JavaRDD.toRDD(javaRDD);
-	}
-
-	/**
 	 * Convert a {@code MatrixObject} to a {@code JavaRDD<String>} in CSV
 	 * format.
 	 *
@@ -1213,11 +1210,11 @@ public class MLContextConversionUtil {
 			SparkExecutionContext sparkExecutionContext, boolean isVectorDF) {
 		try {
 			@SuppressWarnings("unchecked")
-			JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlockMatrix = (JavaPairRDD<MatrixIndexes, MatrixBlock>) sparkExecutionContext
+			JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlocks = (JavaPairRDD<MatrixIndexes, MatrixBlock>) sparkExecutionContext
 					.getRDDHandleForMatrixObject(matrixObject, InputInfo.BinaryBlockInputInfo);
 			MatrixCharacteristics mc = matrixObject.getMatrixCharacteristics();
 
-			return RDDConverterUtils.binaryBlockToDataFrame(spark(), binaryBlockMatrix, mc, isVectorDF);
+			return RDDConverterUtils.binaryBlockToDataFrame(spark(), binaryBlocks, mc, isVectorDF);
 		} catch (DMLRuntimeException e) {
 			throw new MLContextException("DMLRuntimeException while converting matrix object to DataFrame", e);
 		}
@@ -1248,48 +1245,47 @@ public class MLContextConversionUtil {
 	}
 
 	/**
-	 * Convert a {@code MatrixObject} to a {@code BinaryBlockMatrix}.
+	 * Convert a {@code MatrixObject} to a
+	 * {@code JavaPairRDD<MatrixIndexes, MatrixBlock>}.
 	 *
 	 * @param matrixObject
 	 *            the {@code MatrixObject}
 	 * @param sparkExecutionContext
 	 *            the Spark execution context
-	 * @return the {@code MatrixObject} converted to a {@code BinaryBlockMatrix}
+	 * @return the {@code MatrixObject} converted to a
+	 *         {@code JavaPairRDD<MatrixIndexes, MatrixBlock>}
 	 */
-	public static BinaryBlockMatrix matrixObjectToBinaryBlockMatrix(MatrixObject matrixObject,
+	public static JavaPairRDD<MatrixIndexes, MatrixBlock> matrixObjectToBinaryBlocks(MatrixObject matrixObject,
 			SparkExecutionContext sparkExecutionContext) {
 		try {
 			@SuppressWarnings("unchecked")
-			JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlock = (JavaPairRDD<MatrixIndexes, MatrixBlock>) sparkExecutionContext
+			JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlocks = (JavaPairRDD<MatrixIndexes, MatrixBlock>) sparkExecutionContext
 					.getRDDHandleForMatrixObject(matrixObject, InputInfo.BinaryBlockInputInfo);
-			MatrixCharacteristics matrixCharacteristics = matrixObject.getMatrixCharacteristics();
-			return new BinaryBlockMatrix(binaryBlock, matrixCharacteristics);
+			return binaryBlocks;
 		} catch (DMLRuntimeException e) {
-			throw new MLContextException("DMLRuntimeException while converting matrix object to BinaryBlockMatrix", e);
+			throw new MLContextException("DMLRuntimeException while converting matrix object to binary blocks", e);
 		}
 	}
 
 	/**
-	 * Convert a {@code FrameObject} to a {@code BinaryBlockFrame}.
+	 * Convert a {@code FrameObject} to a {@code JavaPairRDD<Long, FrameBlock>}.
 	 *
 	 * @param frameObject
 	 *            the {@code FrameObject}
 	 * @param sparkExecutionContext
 	 *            the Spark execution context
-	 * @return the {@code FrameObject} converted to a {@code BinaryBlockFrame}
+	 * @return the {@code FrameObject} converted to a
+	 *         {@code JavaPairRDD<Long, FrameBlock>}
 	 */
-	public static BinaryBlockFrame frameObjectToBinaryBlockFrame(FrameObject frameObject,
+	public static JavaPairRDD<Long, FrameBlock> frameObjectToBinaryBlocks(FrameObject frameObject,
 			SparkExecutionContext sparkExecutionContext) {
 		try {
 			@SuppressWarnings("unchecked")
-			JavaPairRDD<Long, FrameBlock> binaryBlock = (JavaPairRDD<Long, FrameBlock>) sparkExecutionContext
+			JavaPairRDD<Long, FrameBlock> binaryBlocks = (JavaPairRDD<Long, FrameBlock>) sparkExecutionContext
 					.getRDDHandleForFrameObject(frameObject, InputInfo.BinaryBlockInputInfo);
-			MatrixCharacteristics matrixCharacteristics = frameObject.getMatrixCharacteristics();
-			FrameSchema fs = new FrameSchema(Arrays.asList(frameObject.getSchema()));
-			FrameMetadata fm = new FrameMetadata(fs, matrixCharacteristics);
-			return new BinaryBlockFrame(binaryBlock, fm);
+			return binaryBlocks;
 		} catch (DMLRuntimeException e) {
-			throw new MLContextException("DMLRuntimeException while converting frame object to BinaryBlockFrame", e);
+			throw new MLContextException("DMLRuntimeException while converting frame object to binary blocks", e);
 		}
 	}
 

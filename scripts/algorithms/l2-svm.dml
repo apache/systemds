@@ -35,7 +35,7 @@
 #
 
 cmdLine_fmt = ifdef($fmt, "text")
-cmdLine_icpt = ifdef($icpt, 1)
+cmdLine_icpt = ifdef($icpt, 0)
 cmdLine_tol = ifdef($tol, 0.001)
 cmdLine_reg = ifdef($reg, 1.0)
 cmdLine_maxiter = ifdef($maxiter, 100)
@@ -123,7 +123,7 @@ while(continue == 1 & iter < maxiterations)  {
 
     #update weights
     w = w + step_sz*s
-	Xw = Xw + step_sz*Xd
+	  Xw = Xw + step_sz*Xd
 	
     out = 1 - Y * Xw
     sv = (out > 0)
@@ -132,7 +132,7 @@ while(continue == 1 & iter < maxiterations)  {
     g_new = t(X) %*% (out * Y) - lambda * w
 
     print("ITER " + iter + ": OBJ=" + obj)
-	debug_str = append(debug_str, iter + "," + obj)
+	  debug_str = append(debug_str, iter + "," + obj)
 	
     tmp = sum(s * g_old)
     if(step_sz*tmp < epsilon*obj){
@@ -143,7 +143,9 @@ while(continue == 1 & iter < maxiterations)  {
     be = sum(g_new * g_new)/sum(g_old * g_old)
     s = be * s + g_new
     g_old = g_new
-
+		if(sum(s^2) == 0){
+			continue = 0
+		}
     iter = iter + 1
 }
 

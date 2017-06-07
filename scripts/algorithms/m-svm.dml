@@ -150,7 +150,9 @@ parfor(iter_class in 1:num_classes){
   		be = sum(g_new * g_new)/sum(g_old * g_old)
   		s = be * s + g_new
   		g_old = g_new
-
+			if(sum(s^2) == 0){
+				continue = 0
+			}
   		iter = iter + 1
  	}
 

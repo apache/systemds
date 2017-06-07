@@ -235,8 +235,7 @@ public class Matrix {
 		if (binaryBlocks != null) {
 			return MLContextConversionUtil.binaryBlocksToMatrixBlock(binaryBlocks, matrixMetadata);
 		} else if (matrixObject != null) {
-			toBinaryBlocks();
-			return MLContextConversionUtil.binaryBlocksToMatrixBlock(binaryBlocks, matrixMetadata);
+			return MLContextConversionUtil.binaryBlocksToMatrixBlock(toBinaryBlocks(), matrixMetadata);
 		}
 		throw new MLContextException("No binary blocks or MatrixObject found");
 	}
@@ -250,6 +249,13 @@ public class Matrix {
 		return matrixMetadata;
 	}
 
+	/**
+	 * If {@code MatrixObject} is available, output
+	 * {@code MatrixObject.toString()}. If {@code MatrixObject} is not available
+	 * but {@code MatrixMetadata} is available, output
+	 * {@code MatrixMetadata.toString()}. Otherwise output
+	 * {@code Object.toString()}.
+	 */
 	@Override
 	public String toString() {
 		if (matrixObject != null) {
@@ -268,11 +274,7 @@ public class Matrix {
 	 *         otherwise.
 	 */
 	public boolean hasBinaryBlocks() {
-		if (binaryBlocks == null) {
-			return false;
-		} else {
-			return true;
-		}
+		return (binaryBlocks != null);
 	}
 
 	/**
@@ -282,10 +284,6 @@ public class Matrix {
 	 *         otherwise.
 	 */
 	public boolean hasMatrixObject() {
-		if (matrixObject == null) {
-			return false;
-		} else {
-			return true;
-		}
+		return (matrixObject != null);
 	}
 }

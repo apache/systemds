@@ -21,7 +21,6 @@ package org.apache.sysml.api.mlcontext;
 
 import java.util.Set;
 
-import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.rdd.RDD;
 import org.apache.spark.sql.Dataset;
@@ -38,8 +37,6 @@ import org.apache.sysml.runtime.instructions.cp.IntObject;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.instructions.cp.StringObject;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils;
-import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 
 import scala.Tuple1;
 import scala.Tuple10;
@@ -489,18 +486,6 @@ public class MLResults {
 	public Frame getFrame(String outputName) {
 		FrameObject fo = getFrameObject(outputName);
 		return new Frame(fo, sparkExecutionContext);
-	}
-
-	/**
-	 * Obtain an output as a {@code JavaPairRDD<MatrixIndexes, MatrixBlock>}.
-	 *
-	 * @param outputName
-	 *            the name of the output
-	 * @return the output as a {@code JavaPairRDD<MatrixIndexes, MatrixBlock>}
-	 */
-	public JavaPairRDD<MatrixIndexes, MatrixBlock> getBinaryBlocks(String outputName) {
-		MatrixObject mo = getMatrixObject(outputName);
-		return MLContextConversionUtil.matrixObjectToBinaryBlocks(mo, sparkExecutionContext);
 	}
 
 	/**

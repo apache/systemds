@@ -201,11 +201,7 @@ public class Frame {
 	 *         otherwise.
 	 */
 	public boolean hasBinaryBlocks() {
-		if (binaryBlocks == null) {
-			return false;
-		} else {
-			return true;
-		}
+		return (binaryBlocks != null);
 	}
 
 	/**
@@ -215,10 +211,6 @@ public class Frame {
 	 *         otherwise.
 	 */
 	public boolean hasFrameObject() {
-		if (frameObject == null) {
-			return false;
-		} else {
-			return true;
-		}
+		return (frameObject != null);
 	}
 }

@@ -55,7 +55,7 @@ public class ProgramRewriter
 	
 	//internal local debug level
 	private static final boolean LDEBUG = false; 
-	private static final boolean CHECK = false;
+	private static final boolean CHECK = true;
 	
 	private ArrayList<HopRewriteRule> _dagRuleSet = null;
 	private ArrayList<StatementBlockRewriteRule> _sbRuleSet = null;

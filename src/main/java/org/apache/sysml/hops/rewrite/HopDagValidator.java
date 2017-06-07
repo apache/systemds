@@ -20,6 +20,9 @@
 package org.apache.sysml.hops.rewrite;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -33,30 +36,30 @@ import org.apache.sysml.utils.Explain;
 
 /**
  * This class allows to check hop dags for validity, e.g., parent-child linking.
- * It purpose is soley for debugging purposes (enabled in ProgramRewriter).
+ * It purpose is solely for debugging purposes (enabled in ProgramRewriter).
  * 
  */
 public class HopDagValidator 
 {
 	private static final Log LOG = LogFactory.getLog(HopDagValidator.class.getName());
 	
-	public static void validateHopDag(ArrayList<Hop> roots) 
+	public static void validateHopDag(ArrayList<Hop> roots)
 		throws HopsException
 	{
 		if( roots == null )
 			return;
-		try
-		{
+		try {
 			Hop.resetVisitStatus(roots);
+//			for( Hop hop : roots )
+//				verifyNoVisit(hop);
+			ValidatorState state = new ValidatorState();
 			for( Hop hop : roots )
-				rValidateHop(hop);
+				rValidateHop(hop, state);
 		}
-		catch(HopsException ex)
-		{
+		catch(HopsException ex) {
 			try {
 				LOG.error( "\n"+Explain.explainHops(roots) );
 			}catch(DMLRuntimeException e){}
-			
 			throw ex;
 		}
 	}
@@ -66,46 +69,64 @@ public class HopDagValidator
 	{
 		if( root == null )
 			return;
-		
-		try
-		{
+		try {
 			root.resetVisitStatus();
-			rValidateHop(root);
+//			verifyNoVisit(root);
+			ValidatorState state = new ValidatorState();
+			rValidateHop(root, state);
 		}
-		catch(HopsException ex)
-		{
+		catch(HopsException ex) {
 			try {
 				LOG.error( "\n"+Explain.explain(root) );
 			}catch(DMLRuntimeException e){}
-			
 			throw ex;
 		}
 	}
+
+//	private static void verifyNoVisit(Hop hop) throws HopsException
+//	{
+//		HopsException.check(!hop.isVisited(), "Expected Hop should not be visited after clearing: %s", hop);
+//		for (Hop child : hop.getInput())
+//			verifyNoVisit(child);
+//	}
+
+	private static class ValidatorState {
+		final Set<Hop> seen = Collections.newSetFromMap(new IdentityHashMap<Hop,Boolean>());
+	}
 	
-	private static void rValidateHop( Hop hop ) 
+	private static void rValidateHop(final Hop hop, final ValidatorState state)
 		throws HopsException
 	{
-		if(hop.isVisited())
-			return;
+		boolean seen = !state.seen.add(hop);
+		// seen ==> should be visited // true, true
+		// not seen ==> should not be visited // false, false
+		HopsException.check(seen == hop.isVisited(),
+				"Hop seen previously is %b but hop visited previously is %b for hop %d",
+				seen, !seen, hop.getHopID());
+		if (seen) return;
 		
 		//check parent linking
 		for( Hop parent : hop.getParent() )
-			if( !parent.getInput().contains(hop) )
-				throw new HopsException("Hop id="+hop.getHopID()+" not properly linked to its parent pid="+parent.getHopID()+" "+parent.getClass().getName());
+			HopsException.check(parent.getInput().contains(hop),
+					"Hop id=%d not properly linked to its parent pid=%d %s",
+					hop.getHopID(), parent.getHopID(), parent.getClass().getName());
 		
 		//check child linking
 		for( Hop child : hop.getInput() )
-			if( !child.getParent().contains(hop) )
-				throw new HopsException("Hop id="+hop.getHopID()+" not properly linked to its child cid="+child.getHopID()+" "+child.getClass().getName());
+			HopsException.check(child.getParent().contains(hop),
+					"Hop id=%d not properly linked to its child cid=%d %s",
+					hop.getHopID(), child.getHopID(), child.getClass().getName());
 		
 		//check empty childs
 		if( hop.getInput().isEmpty() )
-			if( !(hop instanceof DataOp || hop instanceof LiteralOp) )
-				throw new HopsException("Hop id="+hop.getHopID()+" is not a dataop/literal but has no childs.");
+			HopsException.check(hop instanceof DataOp || hop instanceof LiteralOp,
+					"Hop id=%d is not a dataop/literal but has no children", hop.getHopID());
 		
 		//recursively process childs
 		for( Hop child : hop.getInput() )
-			rValidateHop(child);
+			rValidateHop(child, state);
+
+//		hop.dimsKnown()
 		
 		hop.setVisited();
 	}

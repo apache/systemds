@@ -45,4 +45,8 @@ public class HopsException extends DMLException
         super(message, cause);
     }
 
+    public static void check(boolean condition, String message, Object... objects) throws HopsException {
+        if (!condition)
+            throw new HopsException(String.format(message, objects));
+    }
 }

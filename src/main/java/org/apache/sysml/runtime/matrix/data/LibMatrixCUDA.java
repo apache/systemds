@@ -422,17 +422,13 @@ public class LibMatrixCUDA {
 			if (CONVOLUTION_PREFERENCE == cudnnConvolutionFwdPreference.CUDNN_CONVOLUTION_FWD_NO_WORKSPACE) {
 				algo = jcuda.jcudnn.cudnnConvolutionFwdAlgo.CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM;
 			} else if (CONVOLUTION_PREFERENCE == cudnnConvolutionFwdPreference.CUDNN_CONVOLUTION_FWD_PREFER_FASTEST) {
-				int[] algos = {
-								jcuda.jcudnn.cudnnConvolutionFwdAlgo.CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM,
-								jcuda.jcudnn.cudnnConvolutionFwdAlgo.CUDNN_CONVOLUTION_FWD_ALGO_GEMM,
-								jcuda.jcudnn.cudnnConvolutionFwdAlgo.CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_PRECOMP_GEMM
-				};
+				int[] algos = {-1};
 				// TODO: Look into FFt, Winograd, etc
 				// Also ensure that GPU has enough memory to allocate memory
 				long sizeInBytesArray[] = {0};
-				algo = jcuda.jcudnn.JCudnn.cudnnGetConvolutionForwardAlgorithm(getCudnnHandle(gCtx), srcTensorDesc, filterDesc, convDesc, dstTensorDesc,
+				jcuda.jcudnn.JCudnn.cudnnGetConvolutionForwardAlgorithm(getCudnnHandle(gCtx), srcTensorDesc, filterDesc, convDesc, dstTensorDesc,
 								CONVOLUTION_PREFERENCE, sizeInBytesArray[0], algos);
-				cudnnGetConvolutionForwardWorkspaceSize(getCudnnHandle(gCtx), srcTensorDesc, filterDesc, convDesc, dstTensorDesc, algo, sizeInBytesArray);
+				cudnnGetConvolutionForwardWorkspaceSize(getCudnnHandle(gCtx), srcTensorDesc, filterDesc, convDesc, dstTensorDesc, algos[0], sizeInBytesArray);
 				if (sizeInBytesArray[0] != 0)
 					workSpace = gCtx.allocate(sizeInBytesArray[0]);
 				sizeInBytes = sizeInBytesArray[0];

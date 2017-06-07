@@ -29,6 +29,8 @@ import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysml.runtime.util.ConvolutionUtils;
 import org.apache.sysml.test.utils.TestUtils;
+import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -37,8 +39,6 @@ import org.junit.Test;
 public class NeuralNetworkOpTests extends GPUTests {
 
 	private final static String TEST_NAME = "NeuralNetworkOpTests";
-	private final int seed = 42;
-
 	// The MAX_OP_SIZE is to take into consideration the memory available on the GPU as well as
 	// limits set by cudnn (operands need to be less than 2GB)
 	private static final double MAX_OP_SIZE;
@@ -58,6 +58,8 @@ public class NeuralNetworkOpTests extends GPUTests {
 
 	}
 
+	private final int seed = 42;
+
 	// More comprehensive but time consuming tests
 	/*
 	private final List<Integer> Nlst = Arrays.asList(128, 64, 32);
@@ -73,14 +75,13 @@ public class NeuralNetworkOpTests extends GPUTests {
     private final List<Integer> padWidthLst = Arrays.asList(3, 1);
     private final List<Double> sparsitylst = Arrays.asList(1.0);    // Only test for dense
     */
-
 	private final List<Integer> Nlst = Arrays.asList(128, 64);
 	private final List<Integer> Clst = Arrays.asList(30, 3);
 	private final List<Integer> Hlst = Arrays.asList(256, 64);
 	private final List<Integer> Wlst = Arrays.asList(256, 64);
 	private final List<Integer> Klst = Arrays.asList(30, 20);
-	private final List<Integer> Rlst = Arrays.asList(128, 3, 1);
-	private final List<Integer> Slst = Arrays.asList(128, 3, 1);
+	private final List<Integer> Rlst = Arrays.asList(128, 3);
+	private final List<Integer> Slst = Arrays.asList(128, 3);
 	private final List<Integer> strideHeightLst = Arrays.asList(9, 1);
 	private final List<Integer> strideWidthLst = Arrays.asList(9, 1);
 	private final List<Integer> padHeightLst = Arrays.asList(3, 1);
@@ -143,9 +144,9 @@ public class NeuralNetworkOpTests extends GPUTests {
 																		filterSizeInMB, N, K, P, Q, doutSizeInMB,
 																		strideH, strideW, padH, padW);
 														Matrix image = generateInputMatrix(spark, (int) N,
-																(int) (C * H * W), sparsity, seed);
+																(int) (C * H * W), 0.0, 10.0, sparsity, seed);
 														Matrix filter = generateInputMatrix(spark, (int) K,
-																(int) (C * R * S), sparsity, seed);
+																(int) (C * R * S), 0.0, 10.0, sparsity, seed);
 														HashMap<String, Object> inputs = new HashMap<>();
 														inputs.put("N", N);
 														inputs.put("C", C);
@@ -179,6 +180,77 @@ public class NeuralNetworkOpTests extends GPUTests {
 				}
 			}
 		}
+	}
+
+	@Ignore
+	@Test
+	/**
+	 * Ignored test to iron out issues
+	 */ public void testConv2dOneCase() {
+		String scriptStr = "O = conv2d(image, filter, padding=[padH, padW], stride=[strideH, strideW], input_shape=[N,C,H,W], filter_shape=[K,C,R,S]); print(toString(O, decimal=10, rows=1000, cols=1000))";
+
+		long N = 32;
+		long C = 3;
+		long H = 128;
+		long W = 128;
+
+		long K = 30;
+		long R = 64;
+		long S = 64;
+
+		long padH = 9;
+		long padW = 9;
+		long strideH = 3;
+		long strideW = 3;
+
+		double sparsity = 1.0;
+
+		// Make sure ops fit in GPU memory and within constraints of cudnn
+		long imageSize = N * C * H * W * 8l;
+		if (imageSize > MAX_OP_SIZE)  // image size
+			Assert.fail();
+		long filterSize = K * C * R * S * 8l;
+		if (filterSize > MAX_OP_SIZE)  // filter size
+			Assert.fail();
+		// filter is smaller than image + padding
+		if (R > (H + padH) || S > (W + padW))
+			Assert.fail();
+
+		int P = (int) ConvolutionUtils.getP(H, R, strideH, padH);
+		int Q = (int) ConvolutionUtils.getQ(W, S, strideW, padW);
+
+		long doutSize = N * K * P * Q * 8l;
+		if (doutSize > MAX_OP_SIZE) // dout/output size
+			Assert.fail();
+
+		double imageSizeInMB = imageSize / (1024.0 * 1024.0);
+		double filterSizeInMB = filterSize / (1024.0 * 1024.0);
+		double doutSizeInMB = doutSize / (1024.0 * 1024.0);
+		System.out
+				.format("conv2d, image[%d,%d,%d,%d](%.1fMB), filter[%d,%d,%d,%d](%.1f), dout[%d,%d,%d,%d](%.1fMB), stride[%d,%d], padding[%d,%d]",
+						N, C, H, W, imageSizeInMB, N, C, R, S, filterSizeInMB, N, K, P, Q, doutSizeInMB, strideH,
+						strideW, padH, padW);
+		Matrix image = generateInputMatrix(spark, (int) N, (int) (C * H * W), 0, 1.0, sparsity, seed);
+		Matrix filter = generateInputMatrix(spark, (int) K, (int) (C * R * S), 0, 1.0, sparsity, seed);
+		HashMap<String, Object> inputs = new HashMap<>();
+		inputs.put("N", N);
+		inputs.put("C", C);
+		inputs.put("H", H);
+		inputs.put("W", W);
+		inputs.put("K", K);
+		inputs.put("R", R);
+		inputs.put("S", S);
+		inputs.put("strideH", strideH);
+		inputs.put("strideW", strideW);
+		inputs.put("padH", padH);
+		inputs.put("padW", padW);
+		inputs.put("image", image);
+		inputs.put("filter", filter);
+		List<Object> outCPU = runOnCPU(spark, scriptStr, inputs, Arrays.asList("O"));
+		List<Object> outGPU = runOnGPU(spark, scriptStr, inputs, Arrays.asList("O"));
+		assertHeavyHitterPresent("gpu_conv2d");
+		assertEqualObjects(outCPU.get(0), outGPU.get(0));
+		clearGPUMemory();
 	}
 
 	@Test
@@ -226,9 +298,9 @@ public class NeuralNetworkOpTests extends GPUTests {
 																		filterSizeInMB, N, K, P, Q, doutSizeInMB,
 																		strideH, strideW, padH, padW);
 														Matrix image = generateInputMatrix(spark, (int) N,
-																(int) (C * H * W), sparsity, seed);
+																(int) (C * H * W), 0.0, 10.0, sparsity, seed);
 														Matrix dout = generateInputMatrix(spark, (int) N,
-																(int) (K * P * Q), sparsity, seed);
+																(int) (K * P * Q), 0.0, 10.0, sparsity, seed);
 														HashMap<String, Object> inputs = new HashMap<>();
 														inputs.put("N", N);
 														inputs.put("C", C);
@@ -310,9 +382,9 @@ public class NeuralNetworkOpTests extends GPUTests {
 																		strideH, strideW, padH, padW);
 
 														Matrix filter = generateInputMatrix(spark, (int) K,
-																(int) (C * R * S), sparsity, seed);
+																(int) (C * R * S), 0.0, 10.0, sparsity, seed);
 														Matrix dout = generateInputMatrix(spark, (int) N,
-																(int) (K * P * Q), sparsity, seed);
+																(int) (K * P * Q), 0.0, 10.0, sparsity, seed);
 														HashMap<String, Object> inputs = new HashMap<>();
 														inputs.put("N", N);
 														inputs.put("C", C);
@@ -392,7 +464,7 @@ public class NeuralNetworkOpTests extends GPUTests {
 																	P, Q, doutSizeInMB, strideH, strideW, padH, padW);
 
 													Matrix image = generateInputMatrix(spark, (int) N,
-															(int) (C * H * W), sparsity, seed);
+															(int) (C * H * W), 0.0, 10.0, sparsity, seed);
 													HashMap<String, Object> inputs = new HashMap<>();
 													inputs.put("N", N);
 													inputs.put("C", C);
@@ -469,9 +541,9 @@ public class NeuralNetworkOpTests extends GPUTests {
 																	P, Q, doutSizeInMB, strideH, strideW, padH, padW);
 
 													Matrix image = generateInputMatrix(spark, (int) N,
-															(int) (C * H * W), sparsity, seed);
+															(int) (C * H * W), 0.0, 10.0, sparsity, seed);
 													Matrix dout = generateInputMatrix(spark, (int) N, (int) (C * P * Q),
-															sparsity, seed);
+															0.0, 10.0, sparsity, seed);
 													HashMap<String, Object> inputs = new HashMap<>();
 													inputs.put("N", N);
 													inputs.put("C", C);

@@ -26,7 +26,7 @@
 # accuracy (%) for the predictions
 #
 # Example Usage:
-# hadoop jar SystemML.jar -f l2-svm-predict.dml -nvargs X=data Y=labels model=model scores=scores accuracy=accuracy confusion=confusion fmt="text"
+# hadoop jar SystemML.jar -f l2-svm-predict.dml -nvargs X=data Y=labels scoring_only=FALSE model=model scores=scores accuracy=accuracy confusion=confusion fmt="text"
 #
 # Note about inputs: 
 # labels (entries in Y) should either be set to +1/-1
@@ -37,6 +37,7 @@ cmdLine_Y = ifdef($Y, " ")
 cmdLine_confusion = ifdef($confusion, " ")
 cmdLine_accuracy = ifdef($accuracy, " ")
 cmdLine_scores = ifdef($scores, " ")
+cmdLine_scoring_only = ifdef($scoring_only, FALSE)
 cmdLine_fmt = ifdef($fmt, "text")
 
 X = read($X)
@@ -61,7 +62,7 @@ scores = b + (X %*% w[1:ncol(X),])
 if(cmdLine_scores != " ")
 	write(scores, cmdLine_scores, format=cmdLine_fmt)
 
-if(cmdLine_Y != " "){
+if(cmdLine_scoring_only == FALSE){
 	y = read(cmdLine_Y)
 
 	pred = (scores >= 0)
@@ -88,22 +89,12 @@ if(cmdLine_Y != " "){
 		check_min_y_plus = sum(pred_is_minus*y_is_plus)
 		check_max_y_minus = sum(pred_is_plus*y_is_minus)
 		check_max_y_plus = sum(pred_is_plus*y_is_plus)
-
-		#s = check_min_y_minus + "," + check_min_y_plus
-		#s = append(s, check_max_y_minus + "," + check_max_y_plus)
-		#s = append(s, "")
-		#write(s, cmdLine_confusion)
 		
-		confusion_mat = matrix(0, rows=3, cols=3)
-        confusion_mat[1,2] = negative_label
-        confusion_mat[1,3] = positive_label
-        confusion_mat[2,1] = negative_label
-        confusion_mat[3,1] = positive_label
-        confusion_mat[2,2] = check_min_y_minus
-        confusion_mat[2,3] = check_max_y_minus
-        confusion_mat[3,2] = check_min_y_plus
-        confusion_mat[3,3] = check_max_y_plus
-
-        write(confusion_mat, cmdLine_confusion, format="csv")
+		confusion_mat = matrix(0, rows=2, cols=2)
+		confusion_mat[1,1] = check_min_y_minus
+		confusion_mat[1,2] = check_min_y_plus
+		confusion_mat[2,1] = check_max_y_minus
+		confusion_mat[2,2] = check_max_y_plus
+		write(confusion_mat, cmdLine_confusion, format="csv")
 	}
 }

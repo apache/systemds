@@ -35,7 +35,7 @@
 #
 
 cmdLine_fmt = ifdef($fmt, "text")
-cmdLine_icpt = ifdef($icpt, 0)
+cmdLine_icpt = ifdef($icpt, 1)
 cmdLine_tol = ifdef($tol, 0.001)
 cmdLine_reg = ifdef($reg, 1.0)
 cmdLine_maxiter = ifdef($maxiter, 100)
@@ -156,8 +156,8 @@ extra_model_params[4,1] = dimensions
 weights = w
 w = t(cbind(t(w), t(extra_model_params)))
 write(w, $model, format=cmdLine_fmt)
-write(extra_model_params, "", format=cmdLine_fmt)
-write(weights, "", format=cmdLine_fmt)
+write(extra_model_params, " ", format=cmdLine_fmt)
+write(weights, " ", format=cmdLine_fmt)
 
 logFile = $Log
 if(logFile != " ") {

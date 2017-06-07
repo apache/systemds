@@ -151,10 +151,6 @@ parfor(iter_class in 1:num_classes){
   		s = be * s + g_new
   		g_old = g_new
 
-		if(sum(s^2) == 0){
-	    	continue = 0
-		}
-
   		iter = iter + 1
  	}
 
@@ -164,8 +160,11 @@ parfor(iter_class in 1:num_classes){
 extra_model_params = matrix(0, rows=2, cols=ncol(w))
 extra_model_params[1, 1] = intercept
 extra_model_params[2, 1] = dimensions
+weights = w
 w = t(cbind(t(w), t(extra_model_params)))
 write(w, $model, format=cmdLine_fmt)
+write(extra_model_params, " ", format=cmdLine_fmt)
+write(weights, " ", format=cmdLine_fmt)
 
 debug_str = "# Class, Iter, Obj"
 for(iter_class in 1:ncol(debug_mat)){

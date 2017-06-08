@@ -229,7 +229,7 @@ if no maximum limit provided
 `mm`, or `csv`; see read/write functions in
 SystemML Language Reference for details.
 
-Please see [mllearn documentation](https://apache.github.io/incubator-systemml/python-reference#mllearn-api) for
+Please see [mllearn documentation](https://apache.github.io/systemml/python-reference#mllearn-api) for
 more details on the Python API. 
 
 ### Examples
@@ -637,7 +637,7 @@ held-out test set. Note that this is an optional argument.
 **confusion**: Location (on HDFS) to store the confusion matrix computed
 using a held-out test set. Note that this is an optional argument.
 
-Please see [mllearn documentation](https://apache.github.io/incubator-systemml/python-reference#mllearn-api) for
+Please see [mllearn documentation](https://apache.github.io/systemml/python-reference#mllearn-api) for
 more details on the Python API. 
 
 #### Examples
@@ -908,7 +908,7 @@ SystemML Language Reference for details.
 **confusion**: Location (on HDFS) to store the confusion matrix computed
     using a held-out test set. Note that this is an optional argument.
 
-Please see [mllearn documentation](https://apache.github.io/incubator-systemml/python-reference#mllearn-api) for
+Please see [mllearn documentation](https://apache.github.io/systemml/python-reference#mllearn-api) for
 more details on the Python API. 
 
 #### Examples
@@ -1246,7 +1246,7 @@ SystemML Language Reference for details.
 **confusion**: Location (on HDFS) to store the confusion matrix computed
     using a held-out test set. Note that this is an optional argument.
 
-Please see [mllearn documentation](https://apache.github.io/incubator-systemml/python-reference#mllearn-api) for
+Please see [mllearn documentation](https://apache.github.io/systemml/python-reference#mllearn-api) for
 more details on the Python API. 
 
 ### Examples

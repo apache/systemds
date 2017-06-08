@@ -58,7 +58,7 @@ algorithms locally without need of a distributed cluster. In order to scale up, 
 across a cluster using Spark or Hadoop.
 This flexibility allows the utilization of an organization's existing resources and expertise.
 In addition, SystemML features a
-[Spark MLContext API](http://apache.github.io/incubator-systemml/spark-mlcontext-programming-guide.html)
+[Spark MLContext API](http://apache.github.io/systemml/spark-mlcontext-programming-guide.html)
 that allows for programmatic interaction via Scala, Python, and Java. SystemML also features an
 embedded API for scoring models.
 
@@ -76,7 +76,7 @@ distributed runtime execution plans and system configurations.
 SystemML features a suite of production-level examples that can be grouped into six broad categories:
 Descriptive Statistics, Classification, Clustering, Regression, Matrix Factorization, and Survival Analysis.
 Detailed descriptions of these algorithms can be found in the
-[SystemML Algorithms Reference](http://apache.github.io/incubator-systemml/algorithms-reference.html).  The goal of these provided algorithms is to serve as production-level examples that can modified or used as inspiration for a new custom algorithm.
+[SystemML Algorithms Reference](http://apache.github.io/systemml/algorithms-reference.html).  The goal of these provided algorithms is to serve as production-level examples that can modified or used as inspiration for a new custom algorithm.
 
 ## Download & Setup
 
@@ -138,5 +138,5 @@ Before you get started on SystemML, make sure that your environment is set up an
 
 To get started, please consult the
 [SystemML Documentation](http://systemml.apache.org/documentation).  We
-recommend using the [Spark MLContext API](http://apache.github.io/incubator-systemml/spark-mlcontext-programming-guide.html)
+recommend using the [Spark MLContext API](http://apache.github.io/systemml/spark-mlcontext-programming-guide.html)
 to run SystemML from Scala or Python using `spark-shell`, `pyspark`, or `spark-submit`.

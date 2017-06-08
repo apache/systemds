@@ -50,10 +50,10 @@ algorithms can be found in the [Algorithms Reference](algorithms-reference.html)
 
 # Download SystemML
 
-Apache incubator releases of SystemML are available from the [Downloads](http://systemml.apache.org/download.html) page.
+Apache SystemML releases are available from the [Downloads](http://systemml.apache.org/download.html) page.
 
 SystemML can also be downloaded from GitHub and built with Maven.
-The SystemML project is available on GitHub at [https://github.com/apache/incubator-systemml](https://github.com/apache/incubator-systemml).
+The SystemML project is available on GitHub at [https://github.com/apache/systemml](https://github.com/apache/systemml).
 Instructions to build SystemML can be found in the <a href="engine-dev-guide.html">Engine Developer Guide</a>.
 
 # Standalone vs Distributed Execution Mode

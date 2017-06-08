@@ -51,7 +51,7 @@ Lenet is a simple convolutional neural network, proposed by Yann LeCun in 1998. 
 Similar to Caffe, the network has been modified to add dropout. 
 For more detail, please see http://yann.lecun.com/exdb/lenet/
 
-The [solver specification](https://raw.githubusercontent.com/apache/incubator-systemml/master/scripts/nn/examples/caffe2dml/models/mnist_lenet/lenet_solver.proto)
+The [solver specification](https://raw.githubusercontent.com/apache/systemml/master/scripts/nn/examples/caffe2dml/models/mnist_lenet/lenet_solver.proto)
 specifies to Caffe2DML to use following configuration when generating the training DML script:  
 - `type: "SGD", momentum: 0.9`: Stochastic Gradient Descent with momentum optimizer with `momentum=0.9`.
 - `lr_policy: "exp", gamma: 0.95, base_lr: 0.01`: Use exponential decay learning rate policy (`base_lr * gamma ^ iter`).
@@ -79,8 +79,8 @@ X_test = X[int(.9 * n_samples):]
 y_test = y[int(.9 * n_samples):]
 
 # Download the Lenet network
-urllib.urlretrieve('https://raw.githubusercontent.com/apache/incubator-systemml/master/scripts/nn/examples/caffe2dml/models/mnist_lenet/lenet.proto', 'lenet.proto')
-urllib.urlretrieve('https://raw.githubusercontent.com/apache/incubator-systemml/master/scripts/nn/examples/caffe2dml/models/mnist_lenet/lenet_solver.proto', 'lenet_solver.proto')
+urllib.urlretrieve('https://raw.githubusercontent.com/apache/systemml/master/scripts/nn/examples/caffe2dml/models/mnist_lenet/lenet.proto', 'lenet.proto')
+urllib.urlretrieve('https://raw.githubusercontent.com/apache/systemml/master/scripts/nn/examples/caffe2dml/models/mnist_lenet/lenet_solver.proto', 'lenet_solver.proto')
 
 # Train Lenet On MNIST using scikit-learn like API
 # MNIST dataset contains 28 X 28 gray-scale (number of channel=1).
@@ -106,7 +106,7 @@ lenet.fit(X_train, y_train)
 lenet.predict(X_test)
 ```
 
-For more detail on enabling native BLAS, please see the documentation for the [native backend](http://apache.github.io/incubator-systemml/native-backend).
+For more detail on enabling native BLAS, please see the documentation for the [native backend](http://apache.github.io/systemml/native-backend).
 
 ## Frequently asked questions
 
@@ -137,7 +137,7 @@ we include their licenses in our jar files.
 
 - Enable native BLAS to improve the performance of CP convolution and matrix multiplication operators.
 If you are using OpenBLAS, please ensure that it was built with `USE_OPENMP` flag turned on.
-For more detail see http://apache.github.io/incubator-systemml/native-backend
+For more detail see http://apache.github.io/systemml/native-backend
 
 ```python
 caffe2dmlObject.setConfigProperty("native.blas", "auto")

@@ -35,7 +35,7 @@ one with an R-like syntax (DML) and one with a Python-like syntax (PyDML).
 Algorithm scripts written in DML and PyDML can be run on Hadoop, on Spark, or in Standalone mode. 
 No script modifications are required to change between modes. SystemML automatically performs advanced optimizations 
 based on data and cluster characteristics, so much of the need to manually tweak algorithms is largely reduced or eliminated.
-To understand more about DML and PyDML, we recommend that you read [Beginner's Guide to DML and PyDML](https://apache.github.io/incubator-systemml/beginners-guide-to-dml-and-pydml.html).
+To understand more about DML and PyDML, we recommend that you read [Beginner's Guide to DML and PyDML](https://apache.github.io/systemml/beginners-guide-to-dml-and-pydml.html).
 
 For convenience of Python users, SystemML exposes several language-level APIs that allow Python users to use SystemML
 and its algorithms without the need to know DML or PyDML. We explain these APIs in the below sections with example usecases.
@@ -92,18 +92,18 @@ If you want to try out the bleeding edge version, please use following commands:
 <div class="codetabs">
 <div data-lang="Python 2" markdown="1">
 ```bash
-git checkout https://github.com/apache/incubator-systemml.git
-cd incubator-systemml
+git checkout https://github.com/apache/systemml.git
+cd systemml
 mvn clean package -P distribution
-pip install target/systemml-0.12.0-incubating-SNAPSHOT-python.tgz
+pip install target/systemml-1.0.0-SNAPSHOT-python.tgz
 ```
 </div>
 <div data-lang="Python 3" markdown="1">
 ```bash
-git checkout https://github.com/apache/incubator-systemml.git
-cd incubator-systemml
+git checkout https://github.com/apache/systemml.git
+cd systemml
 mvn clean package -P distribution
-pip3 install target/systemml-0.12.0-incubating-SNAPSHOT-python.tgz
+pip3 install target/systemml-1.0.0-SNAPSHOT-python.tgz
 ```
 </div>
 </div>
@@ -163,7 +163,7 @@ array([[-60.],
        [-60.]])
 ```
 
-Let us now write a simple script to train [linear regression](https://apache.github.io/incubator-systemml/algorithms-regression.html#linear-regression) 
+Let us now write a simple script to train [linear regression](https://apache.github.io/systemml/algorithms-regression.html#linear-regression) 
 model: $ \beta = solve(X^T X, X^T y) $. For simplicity, we will use direct-solve method and ignore
 regularization parameter as well as intercept. 
 
@@ -204,12 +204,12 @@ will use `mllearn` API described in the next section.
 
 ## Invoke SystemML's algorithms
 
-SystemML also exposes a subpackage [mllearn](https://apache.github.io/incubator-systemml/python-reference#mllearn-api). This subpackage allows Python users to invoke SystemML algorithms
+SystemML also exposes a subpackage [mllearn](https://apache.github.io/systemml/python-reference#mllearn-api). This subpackage allows Python users to invoke SystemML algorithms
 using Scikit-learn or MLPipeline API.  
 
 ### Scikit-learn interface
 
-In the below example, we invoke SystemML's [Linear Regression](https://apache.github.io/incubator-systemml/algorithms-regression.html#linear-regression)
+In the below example, we invoke SystemML's [Linear Regression](https://apache.github.io/systemml/algorithms-regression.html#linear-regression)
 algorithm.
  
 ```python
@@ -242,7 +242,7 @@ Residual sum of squares: 6991.17
 
 As expected, by adding intercept and regularizer the residual error drops significantly.
 
-Here is another example that where we invoke SystemML's [Logistic Regression](https://apache.github.io/incubator-systemml/algorithms-classification.html#multinomial-logistic-regression)
+Here is another example that where we invoke SystemML's [Logistic Regression](https://apache.github.io/systemml/algorithms-classification.html#multinomial-logistic-regression)
 algorithm on digits datasets.
 
 ```python
@@ -363,8 +363,8 @@ Output:
 
 ## Invoking DML/PyDML scripts using MLContext
 
-The below example demonstrates how to invoke the algorithm [scripts/algorithms/MultiLogReg.dml](https://github.com/apache/incubator-systemml/blob/master/scripts/algorithms/MultiLogReg.dml)
-using Python [MLContext API](https://apache.github.io/incubator-systemml/spark-mlcontext-programming-guide).
+The below example demonstrates how to invoke the algorithm [scripts/algorithms/MultiLogReg.dml](https://github.com/apache/systemml/blob/master/scripts/algorithms/MultiLogReg.dml)
+using Python [MLContext API](https://apache.github.io/systemml/spark-mlcontext-programming-guide).
 
 ```python
 from sklearn import datasets
@@ -380,7 +380,7 @@ X_df = sqlCtx.createDataFrame(pd.DataFrame(X_digits[:int(.9 * n_samples)]))
 y_df = sqlCtx.createDataFrame(pd.DataFrame(y_digits[:int(.9 * n_samples)]))
 ml = sml.MLContext(sc)
 # Run the MultiLogReg.dml script at the given URL
-scriptUrl = "https://raw.githubusercontent.com/apache/incubator-systemml/master/scripts/algorithms/MultiLogReg.dml"
+scriptUrl = "https://raw.githubusercontent.com/apache/systemml/master/scripts/algorithms/MultiLogReg.dml"
 script = sml.dml(scriptUrl).input(X=X_df, Y_vec=y_df).output("B_out")
 beta = ml.execute(script).get('B_out').toNumPy()
 ```

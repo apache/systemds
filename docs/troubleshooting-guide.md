@@ -139,4 +139,4 @@ We would highly appreciate if you file a bug report on our [issue tracker](https
 
 ## Native BLAS errors
 
-Please see [the user guide of native backend](http://apache.github.io/incubator-systemml/native-backend).
+Please see [the user guide of native backend](http://apache.github.io/systemml/native-backend).

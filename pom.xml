@@ -38,9 +38,9 @@
 		</license>
 	</licenses>
 	<scm>
-		<connection>scm:git:git@github.com:apache/incubator-systemml</connection>
-		<developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/incubator-systemml</developerConnection>
-		<url>https://git-wip-us.apache.org/repos/asf?p=incubator-systemml.git</url>
+		<connection>scm:git:git@github.com:apache/systemml</connection>
+		<developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/systemml</developerConnection>
+		<url>https://git-wip-us.apache.org/repos/asf?p=systemml.git</url>
 		<tag>HEAD</tag>
 	</scm>
 	<issueManagement>

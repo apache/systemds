@@ -158,6 +158,7 @@ public class GPUContext {
 
   }
 
+  @SuppressWarnings("unused")
   public int getDeviceNum() {
     return deviceNum;
   }
@@ -173,6 +174,7 @@ public class GPUContext {
     cudaSetDevice(deviceNum);
   }
 
+  @SuppressWarnings("unused")
   public static int cudaGetDevice() {
     int[] device = new int[1];
     JCuda.cudaGetDevice(device);
@@ -548,6 +550,7 @@ public class GPUContext {
    * @return the shared memory per block
    * @throws DMLRuntimeException ?
    */
+  @SuppressWarnings("unused")
   public long getMaxSharedMemory() throws DMLRuntimeException {
     cudaDeviceProp deviceProp = getGPUProperties();
     return deviceProp.sharedMemPerBlock;
@@ -593,6 +596,7 @@ public class GPUContext {
    *
    * @throws DMLRuntimeException if error
    */
+  @SuppressWarnings("unused")
   public void destroy() throws DMLRuntimeException {
     LOG.trace("GPU : this context was destroyed, this = " + this.toString());
     clearMemory();

@@ -24,6 +24,7 @@ import static jcuda.runtime.JCuda.cudaGetDeviceProperties;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
 
 import org.apache.commons.logging.Log;
@@ -65,9 +66,12 @@ public class GPUContextPool {
 	/**
 	 * Set of free GPUContexts
 	 */
-	static Queue<GPUContext> freePool = new LinkedList<>();
+	static List<GPUContext> pool = new LinkedList<>();
 
-	ArrayList<GPUContextPool> gpuContextPools = new ArrayList<>();
+	/**
+	 * Whether the pool of GPUs is reserved or not
+	 */
+	static boolean reserved = false;
 
 	/**
 	 * Static initialization of the number of devices
@@ -105,7 +109,7 @@ public class GPUContextPool {
 		// Initialize the pool of GPUContexts
 		for (int i = 0; i < deviceCount; i++) {
 			GPUContext gCtx = new GPUContext(i);
-			freePool.add(gCtx);
+			pool.add(gCtx);
 		}
 
 		GPUContext.LOG.info("Total number of GPUs on the machine: " + deviceCount);
@@ -122,17 +126,19 @@ public class GPUContextPool {
 	}
 
 	/**
-	 * Gets an initialized GPUContext from a pool of GPUContexts, each linked to a GPU
+	 * Reserved and gets an initialized list of GPUContexts
 	 *
-	 * @return null if not more GPUContexts in pool, a valid GPUContext otherwise
+	 * @return null no GPUContexts in pool, otherwise a valid list of GPUContext
 	 * @throws DMLRuntimeException ?
 	 */
-	public static synchronized GPUContext getFromPool() throws DMLRuntimeException {
+	public static synchronized List<GPUContext> reserveAllGPUContexts() throws DMLRuntimeException {
+		if (reserved)
+			throw new DMLRuntimeException("Trying to re-reserve GPUs");
 		if (!initialized)
 			initializeGPU();
-		GPUContext gCtx = freePool.poll();
-		LOG.trace("GPU : got GPUContext (" + gCtx + ") from freePool. New sizes - FreePool[" + freePool.size() + "]");
-		return gCtx;
+		reserved = true;
+		LOG.trace("GPU : Reserved all GPUs");
+		return pool;
 	}
 
 	/**
@@ -141,7 +147,7 @@ public class GPUContextPool {
 	 * @return number of free GPUContexts
 	 */
 	public static synchronized int getAvailableCount() {
-		return freePool.size();
+		return pool.size();
 	}
 
 	/**
@@ -165,17 +171,14 @@ public class GPUContextPool {
 	}
 
 	/**
-	 * Returns a {@link GPUContext} back to the pool of {@link GPUContext}s
-	 *
-	 * @param gCtx the GPUContext instance to return. If null, nothing happens
+	 * Unreserves all GPUContexts
 	 * @throws DMLRuntimeException if error
 	 */
-	public static synchronized void returnToPool(GPUContext gCtx) throws DMLRuntimeException {
-		if (gCtx == null)
-			return;
-		freePool.add(gCtx);
-		LOG.trace(
-				"GPU : returned GPUContext (" + gCtx + ") to freePool. New sizes - FreePool[" + freePool.size() + "]");
+	public static synchronized void freeAllGPUContexts() throws DMLRuntimeException {
+		if (!reserved)
+			throw new DMLRuntimeException("Trying to free unreserved GPUs");
+		reserved = false;
+		LOG.trace("GPU : Unreserved all GPUs");
 
 	}
 

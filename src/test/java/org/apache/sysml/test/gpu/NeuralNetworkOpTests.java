@@ -47,11 +47,11 @@ public class NeuralNetworkOpTests extends GPUTests {
 		double MAX = 0.5 * 1024 * 1024 * 1024; // 0.5 GB (this HAS to be less than 2GB)
 		try {
 			// Cap the maximum allowed operand size to 1/3rd of the usable GPU memory or MAX, whichever is lesser
-			GPUContext gCtx = GPUContextPool.getFromPool();
-			long availableMemory = gCtx.getAvailableMemory();
+			List<GPUContext> gCtxs = GPUContextPool.reserveAllGPUContexts();
+			long availableMemory = gCtxs.get(0).getAvailableMemory();
 			double averageMemoryPerOperand = availableMemory / 3.0;
 			MAX_OP_SIZE = Math.min(averageMemoryPerOperand, MAX);
-			GPUContextPool.returnToPool(gCtx);
+			GPUContextPool.freeAllGPUContexts();
 		} catch (DMLRuntimeException e) {
 			throw new RuntimeException(e);
 		}

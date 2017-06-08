@@ -46,7 +46,7 @@ public class MatrixMatrixBuiltinGPUInstruction extends BuiltinBinaryGPUInstructi
 
     if(opcode.equals("solve")) {
       ec.setMetaData(output.getName(), mat1.getNumColumns(), 1);
-      LibMatrixCUDA.solve(ec, ec.getGPUContext(), getExtendedOpcode(), mat1, mat2, output.getName());
+      LibMatrixCUDA.solve(ec, ec.getGPUContext(0), getExtendedOpcode(), mat1, mat2, output.getName());
 
     } else {
       throw new DMLRuntimeException("Unsupported GPU operator:" + opcode);

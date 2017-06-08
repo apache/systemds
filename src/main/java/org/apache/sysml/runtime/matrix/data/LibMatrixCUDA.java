@@ -1183,7 +1183,7 @@ public class LibMatrixCUDA {
 	 * @throws DMLRuntimeException	if an error occurs
 	 */
 	public static void relu(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in, String outputName) throws DMLRuntimeException {
-		if (ec.getGPUContext() != gCtx)
+		if (ec.getGPUContext(0) != gCtx)
 			throw new DMLRuntimeException("GPU : Invalid internal state, the GPUContext set with the ExecutionContext is not the same used to run this LibMatrixCUDA function");
 		long N = in.getNumRows();
 		long CHW = in.getNumColumns();
@@ -1233,7 +1233,7 @@ public class LibMatrixCUDA {
 	public static void matmultTSMM(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject left, String outputName,
 																 boolean isLeftTransposed) throws DMLRuntimeException {
 		LOG.trace("GPU : matmultTSMM" + ", GPUContext=" + gCtx);
-		if (ec.getGPUContext() != gCtx)
+		if (ec.getGPUContext(0) != gCtx)
 			throw new DMLRuntimeException("GPU : Invalid internal state, the GPUContext set with the ExecutionContext is not the same used to run this LibMatrixCUDA function");
 		if(isInSparseFormat(gCtx, left)) {
 			// For sparse TSMM, invoke matmult (TODO: possible performance improvement)
@@ -1328,7 +1328,7 @@ public class LibMatrixCUDA {
 	 */
 	public static MatrixObject matmult(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject left, MatrixObject right, String outputName,
 																		 boolean isLeftTransposed, boolean isRightTransposed) throws DMLRuntimeException {
-		if (ec.getGPUContext() != gCtx)
+		if (ec.getGPUContext(0) != gCtx)
 			throw new DMLRuntimeException("GPU : Invalid internal state, the GPUContext set with the ExecutionContext is not the same used to run this LibMatrixCUDA function");
 		LOG.trace("GPU : matmult" + ", GPUContext=" + gCtx);
 		if(!left.getGPUObject(gCtx).isAllocated() || !right.getGPUObject(gCtx).isAllocated())
@@ -1819,7 +1819,7 @@ public class LibMatrixCUDA {
 	 */
 	public static void unaryAggregate(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String output, AggregateUnaryOperator op)
 					throws DMLRuntimeException {
-		if (ec.getGPUContext() != gCtx)
+		if (ec.getGPUContext(0) != gCtx)
 			throw new DMLRuntimeException("GPU : Invalid internal state, the GPUContext set with the ExecutionContext is not the same used to run this LibMatrixCUDA function");
 		LOG.trace("GPU : unaryAggregate" + ", GPUContext=" + gCtx);
 		final int REDUCTION_ALL = 1;
@@ -2325,7 +2325,7 @@ public class LibMatrixCUDA {
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void matrixScalarArithmetic(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in, String outputName, boolean isInputTransposed, ScalarOperator op) throws DMLRuntimeException {
-		if (ec.getGPUContext() != gCtx)
+		if (ec.getGPUContext(0) != gCtx)
 			throw new DMLRuntimeException("GPU : Invalid internal state, the GPUContext set with the ExecutionContext is not the same used to run this LibMatrixCUDA function");
 		double constant = op.getConstant();
 		LOG.trace("GPU : matrixScalarArithmetic, scalar: " + constant + ", GPUContext=" + gCtx);
@@ -2405,7 +2405,7 @@ public class LibMatrixCUDA {
 	 */
 	public static void matrixScalarArithmetic(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, MatrixObject in2,
 																						String outputName, boolean isLeftTransposed, boolean isRightTransposed, BinaryOperator op) throws DMLRuntimeException {
-		if (ec.getGPUContext() != gCtx)
+		if (ec.getGPUContext(0) != gCtx)
 			throw new DMLRuntimeException("GPU : Invalid internal state, the GPUContext set with the ExecutionContext is not the same used to run this LibMatrixCUDA function");
 		boolean isCUDALibAvailable = (op.fn instanceof Plus || op.fn instanceof Minus) && !isSparseAndEmpty(gCtx, in1) && !isSparseAndEmpty(gCtx, in2) && !isVector(in1) && !isVector(in2);
 		if(!isCUDALibAvailable) {
@@ -2443,7 +2443,7 @@ public class LibMatrixCUDA {
 	 */
 	private static void matrixScalarOp(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in, String outputName, boolean isInputTransposed,
 																		 ScalarOperator op) throws DMLRuntimeException {
-		if (ec.getGPUContext() != gCtx)
+		if (ec.getGPUContext(0) != gCtx)
 			throw new DMLRuntimeException("GPU : Invalid internal state, the GPUContext set with the ExecutionContext is not the same used to run this LibMatrixCUDA function");
 		if(isInputTransposed)
 			throw new DMLRuntimeException("Transposing the input is not supported");
@@ -2499,7 +2499,7 @@ public class LibMatrixCUDA {
 	 */
 	private static void matrixMatrixOp(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, MatrixObject in2,
 																		 String outputName, boolean isLeftTransposed, boolean isRightTransposed, BinaryOperator op) throws DMLRuntimeException {
-		if (ec.getGPUContext() != gCtx)
+		if (ec.getGPUContext(0) != gCtx)
 			throw new DMLRuntimeException("GPU : Invalid internal state, the GPUContext set with the ExecutionContext is not the same used to run this LibMatrixCUDA function");
 		boolean isEmpty1 = isSparseAndEmpty(gCtx, in1);
 		boolean isEmpty2 = isSparseAndEmpty(gCtx, in2);
@@ -2614,7 +2614,7 @@ public class LibMatrixCUDA {
 	}
 
 	private static void deviceCopy(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject src, String outputName, boolean isInputTransposed) throws DMLRuntimeException {
-		if (ec.getGPUContext() != gCtx)
+		if (ec.getGPUContext(0) != gCtx)
 			throw new DMLRuntimeException("GPU : Invalid internal state, the GPUContext set with the ExecutionContext is not the same used to run this LibMatrixCUDA function");
 		if(!isInputTransposed)
 			deviceCopy(ec, gCtx, instName, src, outputName);
@@ -2642,7 +2642,7 @@ public class LibMatrixCUDA {
 	@SuppressWarnings("unused")
 	private static void compareAndSet(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in, String outputName, double compareVal,  double tolerance,
 																		double ifEqualsVal, double ifLessThanVal, double ifGreaterThanVal) throws DMLRuntimeException {
-		if (ec.getGPUContext() != gCtx)
+		if (ec.getGPUContext(0) != gCtx)
 			throw new DMLRuntimeException("GPU : Invalid internal state, the GPUContext set with the ExecutionContext is not the same used to run this LibMatrixCUDA function");
 		Pointer A = getDensePointer(gCtx, in, instName); // TODO: FIXME: Implement sparse kernel
 		MatrixObject out = ec.getMatrixObject(outputName);
@@ -2670,7 +2670,7 @@ public class LibMatrixCUDA {
 	 * @throws DMLRuntimeException if error
 	 */
 	private static void setOutputToConstant(ExecutionContext ec, GPUContext gCtx, String instName, double constant, String outputName) throws DMLRuntimeException {
-		if (ec.getGPUContext() != gCtx)
+		if (ec.getGPUContext(0) != gCtx)
 			throw new DMLRuntimeException("GPU : Invalid internal state, the GPUContext set with the ExecutionContext is not the same used to run this LibMatrixCUDA function");
 		if(constant == 0) {
 			// TODO: Create sparse empty block instead
@@ -2752,7 +2752,7 @@ public class LibMatrixCUDA {
 	 */
 	private static void dgeam(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, MatrixObject in2, String outputName,
 														boolean isLeftTransposed, boolean isRightTransposed, double alpha, double beta) throws DMLRuntimeException {
-		if (ec.getGPUContext() != gCtx)
+		if (ec.getGPUContext(0) != gCtx)
 			throw new DMLRuntimeException("GPU : Invalid internal state, the GPUContext set with the ExecutionContext is not the same used to run this LibMatrixCUDA function");
 		LOG.trace("GPU : dgeam" + ", GPUContext=" + gCtx);
 
@@ -2879,7 +2879,7 @@ public class LibMatrixCUDA {
 	public static void transpose(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in, String outputName) throws DMLRuntimeException {
 		// C = alpha* op( A ) + beta* op ( B )
 		// = 1.0 * A^T + 0.0 * A^T
-		if (ec.getGPUContext() != gCtx)
+		if (ec.getGPUContext(0) != gCtx)
 			throw new DMLRuntimeException("GPU : Invalid internal state, the GPUContext set with the ExecutionContext is not the same used to run this LibMatrixCUDA function");
 		dgeam(ec, gCtx, instName, in, in, outputName, true, true, 1.0, 0.0);
 	}
@@ -3118,7 +3118,7 @@ public class LibMatrixCUDA {
 	 * @throws DMLRuntimeException
 	 */
 	private static void unaryOp(ExecutionContext ec, GPUContext gCtx, MatrixObject in1, String kernel, double sparseAndEmptyFillValue, String outputName, String instName, String kernelTimer) throws DMLRuntimeException {
-		if (ec.getGPUContext() != gCtx)
+		if (ec.getGPUContext(0) != gCtx)
 			throw new DMLRuntimeException("GPU : Invalid internal state, the GPUContext set with the ExecutionContext is not the same used to run this LibMatrixCUDA function");
 		GPUObject in = in1.getGPUObject(gCtx);
 		boolean isSparseAndEmpty = in.isSparseAndEmpty();
@@ -3154,7 +3154,7 @@ public class LibMatrixCUDA {
 	 */
 	public static void axpy(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, MatrixObject in2,
 													String outputName,  double constant) throws DMLRuntimeException {
-		if (ec.getGPUContext() != gCtx)
+		if (ec.getGPUContext(0) != gCtx)
 			throw new DMLRuntimeException("GPU : Invalid internal state, the GPUContext set with the ExecutionContext is not the same used to run this LibMatrixCUDA function");
 		Pointer A = getDensePointer(gCtx, in1, instName);
 		Pointer B = getDensePointer(gCtx, in2, instName);
@@ -3209,7 +3209,7 @@ public class LibMatrixCUDA {
      * @throws DMLRuntimeException if an error occurs
      */
     public static void solve(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, MatrixObject in2, String outputName) throws DMLRuntimeException {
-        if (ec.getGPUContext() != gCtx)
+        if (ec.getGPUContext(0) != gCtx)
             throw new DMLRuntimeException("GPU : Invalid internal state, the GPUContext set with the ExecutionContext is not the same used to run this LibMatrixCUDA function");
 
         // x = solve(A, b)

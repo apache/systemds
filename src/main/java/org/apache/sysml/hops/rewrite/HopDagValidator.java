@@ -21,6 +21,7 @@ package org.apache.sysml.hops.rewrite;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Set;
 
@@ -31,8 +32,11 @@ import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.LiteralOp;
+import org.apache.sysml.parser.Expression;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.utils.Explain;
+
+import static org.apache.sysml.hops.HopsException.check;
 
 /**
  * This class allows to check hop dags for validity, e.g., parent-child linking.
@@ -85,49 +89,59 @@ public class HopDagValidator
 
 //	private static void verifyNoVisit(Hop hop) throws HopsException
 //	{
-//		HopsException.check(!hop.isVisited(), "Expected Hop should not be visited after clearing: %s", hop);
+//		check(!hop.isVisited(), "Expected Hop should not be visited after clearing: %s", hop);
 //		for (Hop child : hop.getInput())
 //			verifyNoVisit(child);
 //	}
 
 	private static class ValidatorState {
-		final Set<Hop> seen = Collections.newSetFromMap(new IdentityHashMap<Hop,Boolean>());
+		final Set<Long> seen = new HashSet<>();
 	}
 	
 	private static void rValidateHop(final Hop hop, final ValidatorState state)
 		throws HopsException
 	{
-		boolean seen = !state.seen.add(hop);
-		// seen ==> should be visited // true, true
-		// not seen ==> should not be visited // false, false
-		HopsException.check(seen == hop.isVisited(),
+		boolean seen = !state.seen.add(hop.getHopID());
+		check(seen == hop.isVisited(),
 				"Hop seen previously is %b but hop visited previously is %b for hop %d",
 				seen, !seen, hop.getHopID());
-		if (seen) return;
+		if (seen) return; // we saw the Hop previously, no need to re-validate
 		
 		//check parent linking
 		for( Hop parent : hop.getParent() )
-			HopsException.check(parent.getInput().contains(hop),
+			check(parent.getInput().contains(hop),
 					"Hop id=%d not properly linked to its parent pid=%d %s",
 					hop.getHopID(), parent.getHopID(), parent.getClass().getName());
 		
 		//check child linking
 		for( Hop child : hop.getInput() )
-			HopsException.check(child.getParent().contains(hop),
+			check(child.getParent().contains(hop),
 					"Hop id=%d not properly linked to its child cid=%d %s",
 					hop.getHopID(), child.getHopID(), child.getClass().getName());
 		
 		//check empty childs
 		if( hop.getInput().isEmpty() )
-			HopsException.check(hop instanceof DataOp || hop instanceof LiteralOp,
+			check(hop instanceof DataOp || hop instanceof LiteralOp,
 					"Hop id=%d is not a dataop/literal but has no children", hop.getHopID());
+
+//		// check correct number of inputs; supersedes above
+//		ArrayList<Hop> inputs = hop.getInput();
+//		switch (hop)
+
+		// check Matrix types must have Double Value type
+		Expression.DataType dt = hop.getDataType();
+		Expression.ValueType vt = hop.getValueType();
+		if (dt == Expression.DataType.MATRIX )
+			check(vt == Expression.ValueType.DOUBLE,
+				"Operator has Matrix type but Value Type %s is not DOUBLE", hop.getValueType());
+
+
 		
 		//recursively process childs
 		for( Hop child : hop.getInput() )
 			rValidateHop(child, state);
 
-//		hop.dimsKnown()
-		
+
 		hop.setVisited();
 	}
 }

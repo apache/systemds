@@ -111,7 +111,7 @@ public class ExecutionContext {
 	 */
     public GPUContext getGPUContext(int index) {
     	try {
-			return _gpuContexts.get(0);
+			return _gpuContexts.get(index);
 		} catch (IndexOutOfBoundsException e){
     		return null;
 		}

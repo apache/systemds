@@ -22,10 +22,8 @@ import static jcuda.driver.JCudaDriver.cuDeviceGetCount;
 import static jcuda.driver.JCudaDriver.cuInit;
 import static jcuda.runtime.JCuda.cudaGetDeviceProperties;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Queue;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -172,6 +170,7 @@ public class GPUContextPool {
 
 	/**
 	 * Unreserves all GPUContexts
+	 *
 	 * @throws DMLRuntimeException if error
 	 */
 	public static synchronized void freeAllGPUContexts() throws DMLRuntimeException {

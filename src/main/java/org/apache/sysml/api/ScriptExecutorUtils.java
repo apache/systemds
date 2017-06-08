@@ -95,10 +95,8 @@ public class ScriptExecutorUtils {
 			rtprog.execute(ec);
 		} finally { // ensure cleanup/shutdown
 			if (DMLScript.USE_ACCELERATOR && !ec.getGPUContexts().isEmpty()) {
-				for (GPUContext gCtx : ec.getGPUContexts()) {
-					gCtx.clearTemporaryMemory();
-					GPUContextPool.freeAllGPUContexts();
-				}
+				ec.getGPUContexts().forEach(gCtx -> gCtx.clearTemporaryMemory());
+				GPUContextPool.freeAllGPUContexts();
 			}
 			if (dmlconf.getBooleanValue(DMLConfig.CODEGEN))
 				SpoofCompiler.cleanupCodeGenerator();

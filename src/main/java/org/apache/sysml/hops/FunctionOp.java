@@ -80,10 +80,9 @@ public class FunctionOp extends Hop
 		}
 	}
 
+	/** FunctionOps may have any number of inputs. */
 	@Override
-	public int getArity() {
-		return -1;
-	}
+	public void checkArity() throws HopsException {}
 
 	public String getFunctionNamespace()
 	{

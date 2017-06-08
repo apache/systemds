@@ -63,8 +63,8 @@ public class LiteralOp extends Hop
 	}
 
 	@Override
-	public int getArity() {
-		return 0;
+	public void checkArity() throws HopsException {
+		HopsException.check(_input.isEmpty(), this, "should have 0 inputs but has %d inputs", _input.size());
 	}
 
 	@Override

@@ -38,6 +38,10 @@ import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.parser.Statement;
 import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
 
+/**
+ * A DataGenOp can be rand (or matrix constructor), sequence, and sample -
+ * these operators have different parameters and use a map of parameter type to hop position.
+ */
 public class DataGenOp extends Hop implements MultiThreadedHop
 {
 	
@@ -115,8 +119,10 @@ public class DataGenOp extends Hop implements MultiThreadedHop
 	}
 
 	@Override
-	public int getArity() {
-		return -1;
+	public void checkArity() throws HopsException {
+		int sz = _input.size();
+		int pz = _paramIndexMap.size();
+		HopsException.check(sz == pz, this, "has %d inputs but %d parameters", sz, pz);
 	}
 
 	@Override

@@ -170,8 +170,9 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 	}
 
 	@Override
-	public int getArity() {
-		return 4;
+	public void checkArity() throws HopsException {
+		int sz = _input.size();
+		HopsException.check(sz == 3 || sz == 4, this, "should have arity 3 or 4 but has arity %d", sz);
 	}
 
 	public OpOp4 getOp(){

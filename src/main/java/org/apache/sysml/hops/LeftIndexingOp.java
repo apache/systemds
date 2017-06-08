@@ -78,8 +78,9 @@ public class LeftIndexingOp  extends Hop
 	}
 
 	@Override
-	public int getArity() {
-		return 6;
+	public void checkArity() throws HopsException {
+		int sz = _input.size();
+		HopsException.check(sz == 6, this, "should have 6 inputs but has %d inputs", 6);
 	}
 
 	public boolean getRowLowerEqualsUpper(){

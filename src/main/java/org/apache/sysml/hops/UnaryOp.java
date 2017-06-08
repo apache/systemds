@@ -72,8 +72,9 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 	}
 
 	@Override
-	public int getArity() {
-		return 1;
+	public void checkArity() throws HopsException {
+		int sz = _input.size();
+		HopsException.check(sz == 1, this, "should have arity 1 but has arity %d", sz);
 	}
 
 	// this is for OpOp1, e.g. A = -B (0-B); and a=!b

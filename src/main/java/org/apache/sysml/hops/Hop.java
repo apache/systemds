@@ -78,8 +78,8 @@ public abstract class Hop
 	protected long _nnz = -1;
 	protected UpdateType _updateType = UpdateType.COPY;
 
-	protected ArrayList<Hop> _parent = new ArrayList<>();
-	protected ArrayList<Hop> _input = new ArrayList<>(getArity() == -1 ? 5 : getArity());
+	protected ArrayList<Hop> _parent = new ArrayList<>(5);
+	protected ArrayList<Hop> _input = new ArrayList<>(5);
 
 	protected ExecType _etype = null; //currently used exec type
 	protected ExecType _etypeForced = null; //exec type forced via platform or external optimizer
@@ -137,10 +137,16 @@ public abstract class Hop
 	}
 
 	/**
-	 * Each Hop has an expected number of inputs.
-	 * Use -1 if this Hop has an unknown number of inputs, as in {@link MultipleOp}.
+	 * Check whether this Hop has a correct number of inputs.
+	 *
+	 * (Some Hops can have a variable number of inputs, such as DataOp, DataGenOp, ParameterizedBuiltinOp,
+	 * ReorgOp, TernaryOp, QuaternaryOp, MultipleOp, ConvolutionOp, and SpoofFusedOp.)
+	 *
+	 * Parameterized Hops (such as DataOp) can check that the number of parameters matches the number of inputs.
+	 *
+	 * @throws HopsException if this Hop has an illegal number of inputs (a kind of Illegal State)
 	 */
-	public abstract int getArity();
+	public abstract void checkArity() throws HopsException;
 	
 	public ExecType getExecType()
 	{

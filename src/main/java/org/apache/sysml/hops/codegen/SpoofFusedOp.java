@@ -63,9 +63,7 @@ public class SpoofFusedOp extends Hop implements MultiThreadedHop
 	}
 
 	@Override
-	public int getArity() {
-		return -1;
-	}
+	public void checkArity() throws HopsException {}
 
 	@Override
 	public void setMaxNumThreads(int k) {

@@ -113,8 +113,10 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 	}
 
 	@Override
-	public int getArity() {
-		return -1;
+	public void checkArity() throws HopsException {
+		int sz = _input.size();
+		int pz = _paramIndexMap.size();
+		HopsException.check(sz == pz, this, "has %d inputs but %d parameters", sz, pz);
 	}
 
 	public HashMap<String, Integer> getParamIndexMap(){

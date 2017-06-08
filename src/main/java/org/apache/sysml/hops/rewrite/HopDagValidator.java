@@ -20,9 +20,7 @@
 package org.apache.sysml.hops.rewrite;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
-import java.util.IdentityHashMap;
 import java.util.Set;
 
 import org.apache.commons.logging.Log;
@@ -86,41 +84,37 @@ public class HopDagValidator {
 		final long id = hop.getHopID();
 
 		final boolean seen = !state.seen.add(id);
-		check(seen == hop.isVisited(),
-				"Hop seen previously is %b but hop visited previously is %b for hop %d",
-				seen, !seen, id);
+		check(seen == hop.isVisited(), hop,
+				"seen previously is %b but hop visited previously is %b", seen, !seen);
 		if (seen) return; // we saw the Hop previously, no need to re-validate
 		
 		//check parent linking
 		for( Hop parent : hop.getParent() )
-			check(parent.getInput().contains(hop),
-					"Hop id=%d not properly linked to its parent pid=%d %s",
-					id, parent.getHopID(), parent.getClass().getName());
+			check(parent.getInput().contains(hop), hop,
+					"not properly linked to its parent pid=%d %s",
+					parent.getHopID(), parent.getClass().getName());
 
 		final ArrayList<Hop> input = hop.getInput();
-		final int arity = hop.getArity();
 		final Expression.DataType dt = hop.getDataType();
 		final Expression.ValueType vt = hop.getValueType();
 
 		//check child linking
 		for( Hop child : input )
-			check(child.getParent().contains(hop),
-					"Hop id=%d not properly linked to its child cid=%d %s",
-					id, child.getHopID(), child.getClass().getName());
+			check(child.getParent().contains(hop), hop, "not properly linked to its child cid=%d %s",
+					child.getHopID(), child.getClass().getName());
 
 		//check empty children (other variable-length Hops must have at least one child)
 		if( input.isEmpty() )
-			check(hop instanceof DataOp || hop instanceof LiteralOp,
-					"Hop id=%d is not a dataop/literal but has no children", id);
-		// check arity matches number of children
-		if (arity != -1) // for Hops with known, fixed arity
-			check(input.size() == arity,
-					"Hop id=%d has arity %d but has size %d", id, arity, input.size());
+			check(hop instanceof DataOp || hop instanceof LiteralOp, hop,
+					"is not a dataop/literal but has no children");
+
+		// check Hop has a legal arity (number of children)
+		hop.checkArity();
 
 		// check Matrix data type Hops must have Double Value type
 		if (dt == Expression.DataType.MATRIX )
-			check(vt == Expression.ValueType.DOUBLE,
-				"Hop id=%d has Matrix type but Value Type %s is not DOUBLE", id, vt);
+			check(vt == Expression.ValueType.DOUBLE, hop,
+				"has Matrix type but Value Type %s is not DOUBLE", vt);
 
 		//recursively process children
 		for( Hop child : input )

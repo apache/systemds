@@ -45,8 +45,14 @@ public class HopsException extends DMLException
         super(message, cause);
     }
 
+    /** If the condition fails, print the message formatted with objects. */
     public static void check(boolean condition, String message, Object... objects) throws HopsException {
         if (!condition)
             throw new HopsException(String.format(message, objects));
+    }
+    /** If the condition fails, print the Op and its Id, along with the message formatted with objects. */
+    public static void check(boolean condition, Hop hop, String message, Object... objects) throws HopsException {
+        if (!condition)
+            throw new HopsException(String.format(hop.getOpString()+" id="+hop.getHopID()+" "+message, objects));
     }
 }

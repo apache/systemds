@@ -266,9 +266,13 @@ public class ProgramRewriter
 			Hop.resetVisitStatus( roots ); //reset for each rule
 			roots = r.rewriteHopDAGs(roots, state);
 		
-			if( CHECK ) {		
-				LOG.info("Validation after: "+r.getClass().getName());
-				HopDagValidator.validateHopDag(roots);
+			if( CHECK ) {
+				try {
+					HopDagValidator.validateHopDag(roots);
+				} catch (HopsException e) {
+					LOG.error("Invalid hop after running "+r.getClass().getName(), e);
+					throw e;
+				}
 			}
 		}
 		

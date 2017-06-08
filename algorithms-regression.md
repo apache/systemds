@@ -212,7 +212,7 @@ gradient iterations, or `0` if no maximum limit provided
 `mm`, or `csv`; see read/write functions in
 SystemML Language Reference for details.
 
-Please see [mllearn documentation](https://apache.github.io/incubator-systemml/python-reference#mllearn-api) for
+Please see [mllearn documentation](https://apache.github.io/systemml/python-reference#mllearn-api) for
 more details on the Python API. 
 
 ### Examples

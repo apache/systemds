@@ -77,8 +77,8 @@ For best performance, we recommend setting the following flags when running Syst
 # Examples
 
 Please see the MNIST examples in the included
-[SystemML-NN](https://github.com/apache/incubator-systemml/tree/master/scripts/staging/SystemML-NN)
+[SystemML-NN](https://github.com/apache/systemml/tree/master/scripts/staging/SystemML-NN)
 library for examples of Spark Batch mode execution with SystemML to train MNIST classifiers:
 
-  * [MNIST Softmax Classifier](https://github.com/apache/incubator-systemml/blob/master/scripts/staging/SystemML-NN/examples/mnist_softmax-train.dml)
-  * [MNIST LeNet ConvNet](https://github.com/apache/incubator-systemml/blob/master/scripts/staging/SystemML-NN/examples/mnist_lenet-train.dml)
+  * [MNIST Softmax Classifier](https://github.com/apache/systemml/blob/master/scripts/staging/SystemML-NN/examples/mnist_softmax-train.dml)
+  * [MNIST LeNet ConvNet](https://github.com/apache/systemml/blob/master/scripts/staging/SystemML-NN/examples/mnist_lenet-train.dml)

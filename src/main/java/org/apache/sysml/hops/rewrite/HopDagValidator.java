@@ -42,6 +42,8 @@ import static org.apache.sysml.hops.HopsException.check;
  */
 public class HopDagValidator {
 	private static final Log LOG = LogFactory.getLog(HopDagValidator.class.getName());
+
+	private HopDagValidator() {}
 	
 	public static void validateHopDag(final ArrayList<Hop> roots) throws HopsException {
 		if( roots == null )

@@ -99,8 +99,8 @@ echo "`date +%Y-%m-%dT%H:%M:%S`: INFO: Cloning branch and building distribution 
 echo "`date +%Y-%m-%dT%H:%M:%S`: INFO: Cloning branch and building distribution package." >> $OUT_FILE
 echo "=========================================================================================================" >> $OUT_FILE
 runCommand "cd $WORKING_DIR"
-runCommand "git clone https://github.com/apache/incubator-systemml.git"
-runCommand "cd incubator-systemml"
+runCommand "git clone https://github.com/apache/systemml.git"
+runCommand "cd systemml"
 runCommand "git checkout tags/$TAG_NAME -b $TAG_NAME"
 runCommand "mvn -Dmaven.repo.local=$HOME/.m2/temp-repo clean package -P distribution"
 echo "=========================================================================================================" >> $OUT_FILE
@@ -119,15 +119,15 @@ echo "`date +%Y-%m-%dT%H:%M:%S`: INFO: Downloading binaries from distribution lo
 echo "`date +%Y-%m-%dT%H:%M:%S`: INFO: Downloading binaries from distribution location." >> $OUT_FILE
 runCommand "mkdir -p $WORKING_DIR/downloads"
 runCommand "cd $WORKING_DIR/downloads"
-runCommand "wget -r -nH -nd -np -R 'index.html*' https://dist.apache.org/repos/dist/dev/incubator/systemml/$DIST_DIR/"
+runCommand "wget -r -nH -nd -np -R 'index.html*' https://dist.apache.org/repos/dist/dev/systemml/$DIST_DIR/"
 echo "=========================================================================================================" >> $OUT_FILE
 
 ## Verify binary tgz files
 echo "`date +%Y-%m-%dT%H:%M:%S`: INFO: Verifying binary tgz files..."
 echo "`date +%Y-%m-%dT%H:%M:%S`: INFO: Verifying binary tgz files..." >> $OUT_FILE
-runCommand "rm -rf systemml-$VER_NAME-incubating-bin"
-runCommand "tar -xvzf systemml-$VER_NAME-incubating-bin.tgz"
-runCommand "cd systemml-$VER_NAME-incubating-bin"
+runCommand "rm -rf systemml-$VER_NAME-bin"
+runCommand "tar -xvzf systemml-$VER_NAME-bin.tgz"
+runCommand "cd systemml-$VER_NAME-bin"
 runCommand "echo \"print('hello world');\" > hello.dml"
 runCommand "./runStandaloneSystemML.sh hello.dml"
 runCommand "cd .."
@@ -135,9 +135,9 @@ runCommand "cd .."
 ## Verify binary zip files
 echo "`date +%Y-%m-%dT%H:%M:%S`: INFO: Verifying binary zip files..."
 echo "`date +%Y-%m-%dT%H:%M:%S`: INFO: Verifying binary zip files..." >> $OUT_FILE
-runCommand "rm -rf systemml-$VER_NAME-incubating-bin"
-runCommand "unzip systemml-$VER_NAME-incubating-bin.zip"
-runCommand "cd systemml-$VER_NAME-incubating-bin"
+runCommand "rm -rf systemml-$VER_NAME-bin"
+runCommand "unzip systemml-$VER_NAME-bin.zip"
+runCommand "cd systemml-$VER_NAME-bin"
 runCommand "echo \"print('hello world');\" > hello.dml"
 runCommand "./runStandaloneSystemML.sh hello.dml"
 runCommand "cd .."
@@ -145,45 +145,45 @@ runCommand "cd .."
 ## Verify src tgz files
 echo "`date +%Y-%m-%dT%H:%M:%S`: INFO: Verifying source tgz files..."
 echo "`date +%Y-%m-%dT%H:%M:%S`: INFO: Verifying source tgz files..." >> $OUT_FILE
-runCommand "rm -rf systemml-$VER_NAME-incubating-src"
-runCommand "tar -xvzf systemml-$VER_NAME-incubating-src.tgz"
-runCommand "cd systemml-$VER_NAME-incubating-src"
+runCommand "rm -rf systemml-$VER_NAME-src"
+runCommand "tar -xvzf systemml-$VER_NAME-src.tgz"
+runCommand "cd systemml-$VER_NAME-src"
 runCommand "mvn clean package -P distribution"
 runCommand "cd target"
-runCommand "java -cp \"./lib/*:systemml-$VER_NAME-incubating.jar\" org.apache.sysml.api.DMLScript -s \"print('hello world');\""
+runCommand "java -cp \"./lib/*:systemml-$VER_NAME.jar\" org.apache.sysml.api.DMLScript -s \"print('hello world');\""
 runCommand "java -cp \"./lib/*:SystemML.jar\" org.apache.sysml.api.DMLScript -s \"print('hello world');\""
 runCommand "cd ../.."
 
 ## Verify Spark batch mode
 echo "`date +%Y-%m-%dT%H:%M:%S`: INFO: Verifying Spark batch mode..."
 echo "`date +%Y-%m-%dT%H:%M:%S`: INFO: Verifying Spark batch mode..." >> $OUT_FILE
-runCommand "cd systemml-$VER_NAME-incubating-bin/lib"
-runCommand "$SPARK_HOME/bin/spark-submit systemml-$VER_NAME-incubating.jar -s \"print('hello world');\" -exec hybrid_spark"
+runCommand "cd systemml-$VER_NAME-bin/lib"
+runCommand "$SPARK_HOME/bin/spark-submit systemml-$VER_NAME.jar -s \"print('hello world');\" -exec hybrid_spark"
 
 ## Verify Hadoop batch mode
 echo "`date +%Y-%m-%dT%H:%M:%S`: INFO: Verifying Hadoop batch mode..."
 echo "`date +%Y-%m-%dT%H:%M:%S`: INFO: Verifying Hadoop batch mode..." >> $OUT_FILE
-runCommand "$HADOOP_HOME/bin/hadoop jar systemml-$VER_NAME-incubating.jar -s \"print('hello world');\""
+runCommand "$HADOOP_HOME/bin/hadoop jar systemml-$VER_NAME.jar -s \"print('hello world');\""
 runCommand "cd ../../"
 
 
 ## Verify Python scripts through spark-submit 
 echo "`date +%Y-%m-%dT%H:%M:%S`: INFO: Verifying Python scripts..."
 echo "`date +%Y-%m-%dT%H:%M:%S`: INFO: Verifying Python scripts..." >> $OUT_FILE
-runCommand "pip install --upgrade systemml-$VER_NAME-incubating-python.tgz"
+runCommand "pip install --upgrade systemml-$VER_NAME-python.tgz"
 runCommand "cd ../../../"
 runCommand "$SPARK_HOME/bin/spark-submit src/test/python/matrix_sum_example.py"
 
-runCommand "$SPARK_HOME/bin/spark-submit target/release/incubator-systemml/src/main/python/tests/test_matrix_agg_fn.py"
-runCommand "$SPARK_HOME/bin/spark-submit target/release/incubator-systemml/src/main/python/tests/test_matrix_binary_op.py"
-runCommand "$SPARK_HOME/bin/spark-submit target/release/incubator-systemml/src/main/python/tests/test_mlcontext.py"
-runCommand "$SPARK_HOME/bin/spark-submit target/release/incubator-systemml/src/main/python/tests/test_mllearn_df.py"
-runCommand "$SPARK_HOME/bin/spark-submit target/release/incubator-systemml/src/main/python/tests/test_mllearn_numpy.py"
+runCommand "$SPARK_HOME/bin/spark-submit target/release/systemml/src/main/python/tests/test_matrix_agg_fn.py"
+runCommand "$SPARK_HOME/bin/spark-submit target/release/systemml/src/main/python/tests/test_matrix_binary_op.py"
+runCommand "$SPARK_HOME/bin/spark-submit target/release/systemml/src/main/python/tests/test_mlcontext.py"
+runCommand "$SPARK_HOME/bin/spark-submit target/release/systemml/src/main/python/tests/test_mllearn_df.py"
+runCommand "$SPARK_HOME/bin/spark-submit target/release/systemml/src/main/python/tests/test_mllearn_numpy.py"
 
 # Specifying python2 to be used
-runCommand "PYSPARK_PYTHON=python2 spark-submit --master local[*] target/release/incubator-systemml/src/main/python/tests/test_mlcontext.py"
+runCommand "PYSPARK_PYTHON=python2 spark-submit --master local[*] target/release/systemml/src/main/python/tests/test_mlcontext.py"
 # Specifying python3 to be used
-runCommand "PYSPARK_PYTHON=python3 spark-submit --master local[*] target/release/incubator-systemml/src/main/python/tests/test_mlcontext.py"
+runCommand "PYSPARK_PYTHON=python3 spark-submit --master local[*] target/release/systemml/src/main/python/tests/test_mlcontext.py"
 
 echo "`date +%Y-%m-%dT%H:%M:%S`: INFO: Verification of binary files completed successfully."
 # echo "================================================================================"

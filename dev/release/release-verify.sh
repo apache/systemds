@@ -55,7 +55,7 @@ release-verify.sh --compile
 
 # To verify release artifacts
 release-verify.sh --verifyAll --tag=<tagName>
-e.g. ./release-verify.sh --verifyAll --tag=v0.14.0-incubating-rc4
+e.g. ./release-verify.sh --verifyAll --tag=v0.14.0-rc4
 
 # To verify license and notices
 release-verify.sh --verifyLic --distDir=<DistribLocation>
@@ -63,7 +63,7 @@ e.g. ./release-verify.sh --verifyLic --distDir=tmp/relValidation/downloads
 
 # To verify binary files
 release-verify.sh --verifyBin --tag=<tagName>
-e.g. ./release-verify.sh --verifyBin --tag=v0.14.0-incubating-rc4
+e.g. ./release-verify.sh --verifyBin --tag=v0.14.0-rc4
 
 
 EOF
@@ -148,8 +148,8 @@ if [[ "$BIN_VERIFY" == "true" && -z "$TAG" ]]; then
 fi
 
 if [[ "$LIC_NOTICE_VERIFY" == "true" && -z "$DIST_DIR" ]]; then
-    echo "`date +%Y-%m-%dT%H:%M:%S`: WARNING: Since --distDir has not passed, default distribution directory '$EXEC_DIR/target/release/incubator-systemml/target' has been used."
-    DIST_DIR="$EXEC_DIR/target/release/incubator-systemml/target"
+    echo "`date +%Y-%m-%dT%H:%M:%S`: WARNING: Since --distDir has not passed, default distribution directory '$EXEC_DIR/target/release/systemml/target' has been used."
+    DIST_DIR="$EXEC_DIR/target/release/systemml/target"
 elif [[ ${DIST_DIR:0:1} != "/" ]]; then
     DIST_DIR="$ORIG_DIR/$DIST_DIR"
 fi

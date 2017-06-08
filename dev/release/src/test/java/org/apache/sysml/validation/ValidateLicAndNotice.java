@@ -55,7 +55,7 @@ public class ValidateLicAndNotice
 	public static String[] fileTypes = {Constants.JAR, Constants.DLL, Constants.EXP, Constants.LIB, Constants.PDB, Constants.EXE};
 
 	// Zip Distribution directory.
-	private String strDistroDir =  "../../../target/release/incubator-systemml/target/";
+	private String strDistroDir =  "../../../target/release/systemml/target/";
 
 	static final String[][] packageLicenses =
 			{		{"org/antlr", "ANTLR 4 Runtime (http://www.antlr.org/antlr4-runtime) org.antlr:antlr4-runtime:4.5.3"},

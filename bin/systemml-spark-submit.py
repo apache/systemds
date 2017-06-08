@@ -38,8 +38,7 @@ else:
 
 # error help print
 def print_usage_and_exit():
-    this_script = sys.argv[0]
-    print('Usage: ' + this_script + '-f <dml-filename> [arguments]')
+    print('Usage: ./systemml-spark-submit.py -f <dml-filename> [arguments]')
     sys.exit(1)
 
 
@@ -58,17 +57,18 @@ cparser.add_argument('--conf', default='', help='Spark configuration file', narg
 cparser.add_argument('-nvargs', help='List of attributeName-attributeValue pairs', nargs='+')
 cparser.add_argument('-args', help='List of positional argument values', metavar='', nargs='+')
 cparser.add_argument('-config', help='System-ML configuration file (e.g SystemML-config.xml)', metavar='')
-cparser.add_argument('-stats', default='10', help='Monitor and report caching/recompilation statistics, '
-                                                  'heavy hitter <count> is 10 unless overridden')
 cparser.add_argument('-exec', default='hybrid_spark', help='System-ML backend (e.g spark, spark-hybrid)', metavar='')
 cparser.add_argument('-explain', help='explains plan levels can be hops, runtime, '
                                       'recompile_hops, recompile_runtime', metavar='')
-cparser.add_argument('-debug', help='runs in debug mode', metavar='')
-cparser.add_argument('-f', required=True, help='specifies dml/pydml file to execute; path can be local/hdfs/gpfs',
-                     metavar='')
+cparser.add_argument('-debug', help='runs in debug mode', action='store_true')
+cparser.add_argument('-stats', help='Monitor and report caching/recompilation statistics, '
+                                    'heavy hitter <count> is 10 unless overridden')
+cparser.add_argument('-f', required=True, help='specifies dml/pydml file to execute; '
+                                               'path can be local/hdfs/gpfs', metavar='')
 
 args = cparser.parse_args()
 
+# Optional arguments
 ml_options = []
 if args.nvargs is not None:
     ml_options.append('-nvargs')
@@ -76,12 +76,17 @@ if args.nvargs is not None:
 if args.args is not None:
     ml_options.append('-args')
     ml_options.append(' '.join(args.args))
-if args.debug is not None:
+if args.debug is not False:
     ml_options.append('-debug')
-    ml_options.append(' '.join(args.debug))
 if args.explain is not None:
     ml_options.append('-explain')
-    ml_options.append(' '.join(args.explain))
+    ml_options.append(args.explain)
+if args.stats is not None:
+    ml_options.append('-stats')
+    ml_options.append(' '.join(args.stats))
+
+# Assign script file to name received from argparse module
+script_file = args.f
 
 # find the systemML root path which contains the bin folder, the script folder and the target folder
 # tolerate path with spaces
@@ -97,6 +102,7 @@ log4j_properties_path = join(project_root_dir, 'conf', 'log4j.properties.templat
 build_err_msg = 'You must build the project before running this script.'
 build_dir_err_msg = 'Could not find target directory ' + build_dir + '. ' + build_err_msg
 
+# check if the project had been built and the jar files exist
 if not (exists(build_dir)):
     print(build_dir_err_msg)
     sys.exit(1)
@@ -121,8 +127,6 @@ if args.config is None:
 else:
     systemml_config_path_arg = args.config
 
-script_file = args.f
-
 
 # from http://stackoverflow.com/questions/1724693/find-a-file-in-python
 def find_file(name, path):
@@ -130,7 +134,6 @@ def find_file(name, path):
         if name in files:
             return join(root, name)
     return None
-
 
 # if the script file path was omitted, try to complete the script path
 if not (exists(script_file)):
@@ -156,8 +159,7 @@ cmd_spark = [spark_path, '--master', args.master, '--driver-memory', args.driver
              '--executor-cores', args.executor_cores, '--conf', default_conf]
 
 cmd_system_ml = ['--jars', target_jars, '-config', systemml_config_path_arg,
-                 '-stats', args.stats, '-exec', vars(args)['exec'],
-                 '-f', script_file, ' '.join(ml_options)]
+                 '-exec', vars(args)['exec'], '-f', script_file, ' '.join(ml_options)]
 
 cmd = cmd_spark + cmd_system_ml
 

@@ -83,7 +83,7 @@ if args.explain is not None:
     ml_options.append(args.explain)
 if args.stats is not None:
     ml_options.append('-stats')
-    ml_options.append(' '.join(args.stats))
+    ml_options.append(args.stats)
 
 # Assign script file to name received from argparse module
 script_file = args.f

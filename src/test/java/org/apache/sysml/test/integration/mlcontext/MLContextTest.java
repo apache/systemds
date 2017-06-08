@@ -182,7 +182,7 @@ public class MLContextTest extends AutomatedTestBase {
 	@Test
 	public void testCreateDMLScriptBasedOnURL() throws MalformedURLException {
 		System.out.println("MLContextTest - create DML script based on URL");
-		String urlString = "https://raw.githubusercontent.com/apache/incubator-systemml/master/src/test/scripts/applications/hits/HITS.dml";
+		String urlString = "https://raw.githubusercontent.com/apache/systemml/master/src/test/scripts/applications/hits/HITS.dml";
 		URL url = new URL(urlString);
 		Script script = dmlFromUrl(url);
 		String expectedContent = "Licensed to the Apache Software Foundation";
@@ -193,7 +193,7 @@ public class MLContextTest extends AutomatedTestBase {
 	@Test
 	public void testCreatePYDMLScriptBasedOnURL() throws MalformedURLException {
 		System.out.println("MLContextTest - create PYDML script based on URL");
-		String urlString = "https://raw.githubusercontent.com/apache/incubator-systemml/master/src/test/scripts/applications/hits/HITS.pydml";
+		String urlString = "https://raw.githubusercontent.com/apache/systemml/master/src/test/scripts/applications/hits/HITS.pydml";
 		URL url = new URL(urlString);
 		Script script = pydmlFromUrl(url);
 		String expectedContent = "Licensed to the Apache Software Foundation";
@@ -204,7 +204,7 @@ public class MLContextTest extends AutomatedTestBase {
 	@Test
 	public void testCreateDMLScriptBasedOnURLString() throws MalformedURLException {
 		System.out.println("MLContextTest - create DML script based on URL string");
-		String urlString = "https://raw.githubusercontent.com/apache/incubator-systemml/master/src/test/scripts/applications/hits/HITS.dml";
+		String urlString = "https://raw.githubusercontent.com/apache/systemml/master/src/test/scripts/applications/hits/HITS.dml";
 		Script script = dmlFromUrl(urlString);
 		String expectedContent = "Licensed to the Apache Software Foundation";
 		String s = script.getScriptString();
@@ -214,7 +214,7 @@ public class MLContextTest extends AutomatedTestBase {
 	@Test
 	public void testCreatePYDMLScriptBasedOnURLString() throws MalformedURLException {
 		System.out.println("MLContextTest - create PYDML script based on URL string");
-		String urlString = "https://raw.githubusercontent.com/apache/incubator-systemml/master/src/test/scripts/applications/hits/HITS.pydml";
+		String urlString = "https://raw.githubusercontent.com/apache/systemml/master/src/test/scripts/applications/hits/HITS.pydml";
 		Script script = pydmlFromUrl(urlString);
 		String expectedContent = "Licensed to the Apache Software Foundation";
 		String s = script.getScriptString();
@@ -2128,7 +2128,7 @@ public class MLContextTest extends AutomatedTestBase {
 	@Test
 	public void testCSVMatrixFromURLSumDML() throws MalformedURLException {
 		System.out.println("MLContextTest - CSV matrix from URL sum DML");
-		String csv = "https://raw.githubusercontent.com/apache/incubator-systemml/master/src/test/scripts/org/apache/sysml/api/mlcontext/1234.csv";
+		String csv = "https://raw.githubusercontent.com/apache/systemml/master/src/test/scripts/org/apache/sysml/api/mlcontext/1234.csv";
 		URL url = new URL(csv);
 		Script script = dml("print('sum: ' + sum(M));").in("M", url);
 		setExpectedStdOut("sum: 10.0");
@@ -2138,7 +2138,7 @@ public class MLContextTest extends AutomatedTestBase {
 	@Test
 	public void testCSVMatrixFromURLSumPYDML() throws MalformedURLException {
 		System.out.println("MLContextTest - CSV matrix from URL sum PYDML");
-		String csv = "https://raw.githubusercontent.com/apache/incubator-systemml/master/src/test/scripts/org/apache/sysml/api/mlcontext/1234.csv";
+		String csv = "https://raw.githubusercontent.com/apache/systemml/master/src/test/scripts/org/apache/sysml/api/mlcontext/1234.csv";
 		URL url = new URL(csv);
 		Script script = pydml("print('sum: ' + sum(M))").in("M", url);
 		setExpectedStdOut("sum: 10.0");
@@ -2148,7 +2148,7 @@ public class MLContextTest extends AutomatedTestBase {
 	@Test
 	public void testIJVMatrixFromURLSumDML() throws MalformedURLException {
 		System.out.println("MLContextTest - IJV matrix from URL sum DML");
-		String ijv = "https://raw.githubusercontent.com/apache/incubator-systemml/master/src/test/scripts/org/apache/sysml/api/mlcontext/1234.ijv";
+		String ijv = "https://raw.githubusercontent.com/apache/systemml/master/src/test/scripts/org/apache/sysml/api/mlcontext/1234.ijv";
 		URL url = new URL(ijv);
 		MatrixMetadata mm = new MatrixMetadata(MatrixFormat.IJV, 2, 2);
 		Script script = dml("print('sum: ' + sum(M));").in("M", url, mm);
@@ -2159,7 +2159,7 @@ public class MLContextTest extends AutomatedTestBase {
 	@Test
 	public void testIJVMatrixFromURLSumPYDML() throws MalformedURLException {
 		System.out.println("MLContextTest - IJV matrix from URL sum PYDML");
-		String ijv = "https://raw.githubusercontent.com/apache/incubator-systemml/master/src/test/scripts/org/apache/sysml/api/mlcontext/1234.ijv";
+		String ijv = "https://raw.githubusercontent.com/apache/systemml/master/src/test/scripts/org/apache/sysml/api/mlcontext/1234.ijv";
 		URL url = new URL(ijv);
 		MatrixMetadata mm = new MatrixMetadata(MatrixFormat.IJV, 2, 2);
 		Script script = pydml("print('sum: ' + sum(M))").in("M", url, mm);

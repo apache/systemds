@@ -105,7 +105,12 @@ public class TernaryOp extends Hop
 		inp5.getParent().add(this);
 		_dimInputsPresent = true;
 	}
-	
+
+	@Override
+	public int getArity() {
+		return -1;
+	}
+
 	public OpOp3 getOp(){
 		return _op;
 	}

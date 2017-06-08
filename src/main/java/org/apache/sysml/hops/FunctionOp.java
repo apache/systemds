@@ -79,7 +79,12 @@ public class FunctionOp extends Hop
 			in.getParent().add(this);
 		}
 	}
-	
+
+	@Override
+	public int getArity() {
+		return -1;
+	}
+
 	public String getFunctionNamespace()
 	{
 		return _fnamespace;

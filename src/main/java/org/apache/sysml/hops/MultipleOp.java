@@ -71,6 +71,11 @@ public class MultipleOp extends Hop {
 		refreshSizeInformation();
 	}
 
+	@Override
+	public int getArity() {
+		return -1;
+	}
+
 	public MultiInputOp getOp() {
 		return multipleOperandOperation;
 	}

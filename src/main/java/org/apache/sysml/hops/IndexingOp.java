@@ -74,8 +74,12 @@ public class IndexingOp extends Hop
 		setRowLowerEqualsUpper(passedRowsLEU);
 		setColLowerEqualsUpper(passedColsLEU);
 	}
-	
-	
+
+	@Override
+	public int getArity() {
+		return 5;
+	}
+
 	public boolean isRowLowerEqualsUpper(){
 		return _rowLowerEqualsUpper;
 	}

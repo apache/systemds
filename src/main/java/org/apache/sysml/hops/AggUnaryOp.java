@@ -72,7 +72,12 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 		getInput().add(0, inp);
 		inp.getParent().add(this);
 	}
-	
+
+	@Override
+	public int getArity() {
+		return 1;
+	}
+
 	public AggOp getOp()
 	{
 		return _op;

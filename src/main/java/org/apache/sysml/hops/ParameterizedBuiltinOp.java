@@ -112,6 +112,11 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 		refreshSizeInformation();
 	}
 
+	@Override
+	public int getArity() {
+		return -1;
+	}
+
 	public HashMap<String, Integer> getParamIndexMap(){
 		return _paramIndexMap;
 	}

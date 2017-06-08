@@ -113,7 +113,12 @@ public class DataGenOp extends Hop implements MultiThreadedHop
 		//compute unknown dims and nnz
 		refreshSizeInformation();
 	}
-	
+
+	@Override
+	public int getArity() {
+		return -1;
+	}
+
 	@Override
 	public String getOpString() {
 		return "dg(" + _op.toString().toLowerCase() +")";

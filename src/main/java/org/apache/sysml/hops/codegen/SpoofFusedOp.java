@@ -61,7 +61,12 @@ public class SpoofFusedOp extends Hop implements MultiThreadedHop
 		_distSupported = dist;
 		_dimsType = type;
 	}
-	
+
+	@Override
+	public int getArity() {
+		return -1;
+	}
+
 	@Override
 	public void setMaxNumThreads(int k) {
 		_numThreads = k;

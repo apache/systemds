@@ -62,7 +62,11 @@ public class LiteralOp extends Hop
 		this.value_boolean = value;
 	}
 
-	
+	@Override
+	public int getArity() {
+		return 0;
+	}
+
 	@Override
 	public Lop constructLops()
 		throws HopsException, LopsException  

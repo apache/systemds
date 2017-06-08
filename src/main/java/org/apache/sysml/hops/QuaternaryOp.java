@@ -168,7 +168,12 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 		inU.getParent().add(this);
 		inV.getParent().add(this);
 	}
-	
+
+	@Override
+	public int getArity() {
+		return 4;
+	}
+
 	public OpOp4 getOp(){
 		return _op;
 	}

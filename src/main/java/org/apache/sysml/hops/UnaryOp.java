@@ -71,6 +71,11 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 		refreshSizeInformation();
 	}
 
+	@Override
+	public int getArity() {
+		return 1;
+	}
+
 	// this is for OpOp1, e.g. A = -B (0-B); and a=!b
 	public OpOp1 getOp() {
 		return _op;

@@ -78,8 +78,8 @@ public abstract class Hop
 	protected long _nnz = -1;
 	protected UpdateType _updateType = UpdateType.COPY;
 
-	protected ArrayList<Hop> _parent = new ArrayList<Hop>();
-	protected ArrayList<Hop> _input = new ArrayList<Hop>();
+	protected ArrayList<Hop> _parent = new ArrayList<>();
+	protected ArrayList<Hop> _input = new ArrayList<>(getArity() == -1 ? 5 : getArity());
 
 	protected ExecType _etype = null; //currently used exec type
 	protected ExecType _etypeForced = null; //exec type forced via platform or external optimizer
@@ -135,6 +135,12 @@ public abstract class Hop
 	public long getHopID() {
 		return _ID;
 	}
+
+	/**
+	 * Each Hop has an expected number of inputs.
+	 * Use -1 if this Hop has an unknown number of inputs, as in {@link MultipleOp}.
+	 */
+	public abstract int getArity();
 	
 	public ExecType getExecType()
 	{

@@ -91,6 +91,11 @@ public class ReorgOp extends Hop implements MultiThreadedHop
 	}
 
 	@Override
+	public int getArity() {
+		return -1;
+	}
+
+	@Override
 	public void setMaxNumThreads( int k ) {
 		_maxNumThreads = k;
 	}

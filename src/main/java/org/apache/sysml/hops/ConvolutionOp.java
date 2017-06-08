@@ -59,6 +59,11 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		refreshSizeInformation();
 	}
 
+	@Override
+	public int getArity() {
+		return -1;
+	}
+
 	public ConvOp getOp()
 	{
 		return op;

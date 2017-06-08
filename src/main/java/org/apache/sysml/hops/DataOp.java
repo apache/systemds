@@ -182,7 +182,12 @@ public class DataOp extends Hop
 		if (dop == DataOpTypes.TRANSIENTWRITE)
 			setInputFormatType(FileFormatTypes.BINARY);
 	}
-	
+
+	@Override
+	public int getArity() {
+		return -1;
+	}
+
 	public DataOpTypes getDataOpType()
 	{
 		return _dataop;

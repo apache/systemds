@@ -111,6 +111,11 @@ public class BinaryOp extends Hop
 		refreshSizeInformation();
 	}
 
+	@Override
+	public int getArity() {
+		return 2;
+	}
+
 	public OpOp2 getOp() {
 		return op;
 	}

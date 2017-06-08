@@ -77,7 +77,11 @@ public class LeftIndexingOp  extends Hop
 		setColLowerEqualsUpper(passedColsLEU);
 	}
 
-	
+	@Override
+	public int getArity() {
+		return 6;
+	}
+
 	public boolean getRowLowerEqualsUpper(){
 		return _rowLowerEqualsUpper;
 	}

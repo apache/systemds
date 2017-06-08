@@ -27,18 +27,12 @@ import org.junit.runners.Suite;
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
 	FrameCSVReadWriteTest.class,
-	RunTest.class,
-	ScalingTest.class,
-	TransformAndApplyTest.class,
 	TransformCSVFrameEncodeDecodeTest.class,
 	TransformCSVFrameEncodeReadTest.class,
 	TransformEncodeDecodeTest.class,
-	TransformFrameApplyTest.class,
 	TransformFrameEncodeApplyTest.class,
 	TransformFrameEncodeDecodeTest.class,
 	TransformFrameEncodeDecodeTokenTest.class,
-	TransformReadMetaTest.class,
-	TransformTest.class,
 })
 
 

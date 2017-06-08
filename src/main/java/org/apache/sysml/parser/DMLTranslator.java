@@ -1920,13 +1920,6 @@ public class DMLTranslator
 			currBuiltinOp = new ReorgOp(target.getName(), target.getDataType(), target.getValueType(), ReOrgOp.SORT, inputs);
 			
 			break;
-			
-		case TRANSFORM:
-			currBuiltinOp = new ParameterizedBuiltinOp(
-									target.getName(), target.getDataType(), 
-									target.getValueType(), ParamBuiltinOp.TRANSFORM, 
-									paramHops);
-			break;	
 		
 		case TRANSFORMAPPLY:
 			currBuiltinOp = new ParameterizedBuiltinOp(

@@ -28,11 +28,8 @@ import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.FunctionOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.OptimizerUtils;
-import org.apache.sysml.hops.Hop.DataOpTypes;
 import org.apache.sysml.hops.Hop.FileFormatTypes;
-import org.apache.sysml.hops.Hop.ParamBuiltinOp;
 import org.apache.sysml.hops.HopsException;
-import org.apache.sysml.hops.ParameterizedBuiltinOp;
 import org.apache.sysml.parser.Expression.DataType;
 
 /**
@@ -98,7 +95,7 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 			if( canReblock && 
 				( (dop.getDataType() == DataType.MATRIX && (dop.getRowsInBlock() != blocksize || dop.getColsInBlock() != blocksize))
 				||(dop.getDataType() == DataType.FRAME && OptimizerUtils.isSparkExecutionMode() && (dop.getInputFormatType()==FileFormatTypes.TEXT
-						  || dop.getInputFormatType()==FileFormatTypes.CSV && OptimizerUtils.ALLOW_FRAME_CSV_REBLOCK))) ) 
+						  || dop.getInputFormatType()==FileFormatTypes.CSV))) ) 
 			{
 				if( dop.getDataOpType() == DataOp.DataOpTypes.PERSISTENTREAD) 
 				{
@@ -146,27 +143,6 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 				}
 			}
 		} 
-		//TODO remove once transform rebased to frames
-		else if ( (hop instanceof ParameterizedBuiltinOp && ((ParameterizedBuiltinOp)hop).getOp() == ParamBuiltinOp.TRANSFORM) ) {
-			
-			// check if there exists a non-csv-write output. If yes, add reblock
-			boolean rblk = false;
-			for(Hop out : hop.getParent()) 
-			{
-				if ( !(out instanceof DataOp 
-						&& ((DataOp)out).getDataOpType() == DataOpTypes.PERSISTENTWRITE 
-						&& ((DataOp)out).getInputFormatType() == FileFormatTypes.CSV) )
-				{
-					rblk = true;
-					break;
-				}
-			}
-			if ( rblk )
-			{
-				hop.setRequiresReblock(true);
-				hop.setOutputBlocksizes(blocksize, blocksize);
-			}
-		}
 		else //NO DATAOP 
 		{
 			// TODO: following two lines are commented, and the subsequent hack is used instead!

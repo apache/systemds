@@ -17,31 +17,23 @@
  * under the License.
  */
 
-package org.apache.sysml.runtime.transform;
+package org.apache.sysml.runtime.transform.encode;
 
-import java.io.IOException;
-import java.util.Iterator;
-
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.apache.sysml.runtime.transform.encode.Encoder;
+import org.apache.sysml.runtime.transform.TfUtils;
 import org.apache.sysml.runtime.transform.meta.TfMetaUtils;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
-public class OmitAgent extends Encoder 
+public class EncoderOmit extends Encoder 
 {	
 	private static final long serialVersionUID = 1978852120416654195L;
 
 	private int _rmRows = 0;
 
-	public OmitAgent(JSONObject parsedSpec, String[] colnames, int clen) 
+	public EncoderOmit(JSONObject parsedSpec, String[] colnames, int clen) 
 		throws JSONException 
 	{
 		super(null, clen);
@@ -66,23 +58,6 @@ public class OmitAgent extends Encoder
 				return true;
 		}
 		return false;
-	}
-
-	@Override
-	public void mapOutputTransformationMetadata(
-			OutputCollector<IntWritable, DistinctValue> out, int taskID,
-			TfUtils agents) throws IOException {
-	}
-
-	@Override
-	public void mergeAndOutputTransformationMetadata(
-			Iterator<DistinctValue> values, String outputDir, int colID,
-			FileSystem fs, TfUtils agents) throws IOException {
-	}
-
-	@Override
-	public void loadTxMtd(JobConf job, FileSystem fs, Path txMtdDir, TfUtils agents)
-			throws IOException {
 	}
 
 	@Override

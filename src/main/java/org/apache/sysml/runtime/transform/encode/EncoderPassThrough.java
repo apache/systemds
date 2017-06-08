@@ -19,19 +19,10 @@
 
 package org.apache.sysml.runtime.transform.encode;
 
-import java.io.IOException;
-import java.util.Iterator;
 
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.apache.sysml.runtime.transform.DistinctValue;
-import org.apache.sysml.runtime.transform.TfUtils;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
 /**
@@ -88,21 +79,5 @@ public class EncoderPassThrough extends Encoder
 	@Override
 	public void initMetaData(FrameBlock meta) {
 		//do nothing
-	}
-	
-	
-	@Override
-	public void mapOutputTransformationMetadata(OutputCollector<IntWritable, DistinctValue> out, int taskID, TfUtils agents) throws IOException {
-		throw new RuntimeException("File-based api not supported.");
-	}
-
-	@Override
-	public void mergeAndOutputTransformationMetadata(Iterator<DistinctValue> values, String outputDir, int colID, FileSystem fs, TfUtils agents) throws IOException {
-		throw new RuntimeException("File-based api not supported.");	
-	}
-
-	@Override
-	public void loadTxMtd(JobConf job, FileSystem fs, Path txMtdDir, TfUtils agents) throws IOException {
-		throw new RuntimeException("File-based api not supported.");
 	}
 }

@@ -288,11 +288,9 @@ public abstract class Hop
 			
 			try
 			{
-				if(    (this instanceof DataOp  // CSV
-							&& ((DataOp)this).getDataOpType() == DataOpTypes.PERSISTENTREAD
-							&& ((DataOp)this).getInputFormatType() == FileFormatTypes.CSV ) 
-					|| (this instanceof ParameterizedBuiltinOp 
-							&& ((ParameterizedBuiltinOp)this).getOp() == ParamBuiltinOp.TRANSFORM) )
+				if( this instanceof DataOp  // CSV
+					&& ((DataOp)this).getDataOpType() == DataOpTypes.PERSISTENTREAD
+					&& ((DataOp)this).getInputFormatType() == FileFormatTypes.CSV  )
 				{
 					reblock = new CSVReBlock( input, getRowsInBlock(), getColsInBlock(), 
 							getDataType(), getValueType(), et);
@@ -1038,7 +1036,7 @@ public abstract class Hop
 
 	public enum ParamBuiltinOp {
 		INVALID, CDF, INVCDF, GROUPEDAGG, RMEMPTY, REPLACE, REXPAND, 
-		TRANSFORM, TRANSFORMAPPLY, TRANSFORMDECODE, TRANSFORMMETA,
+		TRANSFORMAPPLY, TRANSFORMDECODE, TRANSFORMMETA,
 		TOSTRING
 	};
 
@@ -1298,7 +1296,6 @@ public abstract class Hop
 		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.RMEMPTY, org.apache.sysml.lops.ParameterizedBuiltin.OperationTypes.RMEMPTY);
 		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.REPLACE, org.apache.sysml.lops.ParameterizedBuiltin.OperationTypes.REPLACE);
 		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.REXPAND, org.apache.sysml.lops.ParameterizedBuiltin.OperationTypes.REXPAND);
-		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.TRANSFORM, org.apache.sysml.lops.ParameterizedBuiltin.OperationTypes.TRANSFORM);
 		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.TRANSFORMAPPLY, org.apache.sysml.lops.ParameterizedBuiltin.OperationTypes.TRANSFORMAPPLY);		
 		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.TRANSFORMDECODE, org.apache.sysml.lops.ParameterizedBuiltin.OperationTypes.TRANSFORMDECODE);
 		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.TRANSFORMMETA, org.apache.sysml.lops.ParameterizedBuiltin.OperationTypes.TRANSFORMMETA);

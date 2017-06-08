@@ -28,11 +28,6 @@ import org.apache.commons.lang.ArrayUtils;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
-import org.apache.sysml.runtime.transform.BinAgent;
-import org.apache.sysml.runtime.transform.DummycodeAgent;
-import org.apache.sysml.runtime.transform.MVImputeAgent;
-import org.apache.sysml.runtime.transform.OmitAgent;
-import org.apache.sysml.runtime.transform.RecodeAgent;
 import org.apache.sysml.runtime.transform.TfUtils;
 import org.apache.sysml.runtime.transform.meta.TfMetaUtils;
 import org.apache.sysml.runtime.util.UtilFunctions;
@@ -40,7 +35,6 @@ import org.apache.wink.json4j.JSONObject;
 
 public class EncoderFactory 
 {
-
 	public static Encoder createEncoder(String spec, String[] colnames, int clen, FrameBlock meta) throws DMLRuntimeException {
 		return createEncoder(spec, colnames, UtilFunctions.nCopies(clen, ValueType.STRING), meta);
 	}
@@ -79,7 +73,7 @@ public class EncoderFactory
 			
 			//create individual encoders
 			if( !rcIDs.isEmpty() ) {
-				RecodeAgent ra = new RecodeAgent(jSpec, colnames, clen);
+				EncoderRecode ra = new EncoderRecode(jSpec, colnames, clen);
 				ra.setColList(ArrayUtils.toPrimitive(rcIDs.toArray(new Integer[0])));
 				lencoders.add(ra);	
 			}
@@ -87,13 +81,13 @@ public class EncoderFactory
 				lencoders.add(new EncoderPassThrough(
 						ArrayUtils.toPrimitive(ptIDs.toArray(new Integer[0])), clen));	
 			if( !dcIDs.isEmpty() )
-				lencoders.add(new DummycodeAgent(jSpec, colnames, schema.length));
+				lencoders.add(new EncoderDummycode(jSpec, colnames, schema.length));
 			if( !binIDs.isEmpty() )
-				lencoders.add(new BinAgent(jSpec, colnames, schema.length, true));
+				lencoders.add(new EncoderBin(jSpec, colnames, schema.length, true));
 			if( !oIDs.isEmpty() )
-				lencoders.add(new OmitAgent(jSpec, colnames, schema.length));
+				lencoders.add(new EncoderOmit(jSpec, colnames, schema.length));
 			if( !mvIDs.isEmpty() ) {
-				MVImputeAgent ma = new MVImputeAgent(jSpec, colnames, schema.length);
+				EncoderMVImpute ma = new EncoderMVImpute(jSpec, colnames, schema.length);
 				ma.initRecodeIDList(rcIDs);
 				lencoders.add(ma);
 			}

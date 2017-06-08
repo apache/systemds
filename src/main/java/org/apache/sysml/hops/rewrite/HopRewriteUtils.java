@@ -982,23 +982,6 @@ public class HopRewriteUtils
 		return ret;
 	}
 	
-	public static boolean hasTransformParents( Hop hop )
-	{
-		boolean ret = false;
-		
-		ArrayList<Hop> parents = hop.getParent();
-		for( Hop p : parents )
-		{
-			if(    p instanceof ParameterizedBuiltinOp 
-				&& ((ParameterizedBuiltinOp)p).getOp()==ParamBuiltinOp.TRANSFORM) {
-				ret = true;
-			}
-		}
-			
-				
-		return ret;
-	}
-	
 	public static boolean alwaysRequiresReblock(Hop hop)
 	{
 		return (    hop instanceof DataOp 

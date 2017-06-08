@@ -125,7 +125,6 @@ public class Recompiler
 	//note that we scale this threshold up by the degree of available parallelism
 	private static final long CP_REBLOCK_THRESHOLD_SIZE = (long)1024*1024*1024; 
 	private static final long CP_CSV_REBLOCK_UNKNOWN_THRESHOLD_SIZE = (long)256*1024*1024;
-	private static final long CP_TRANSFORM_UNKNOWN_THRESHOLD_SIZE = (long)1024*1024*1024;
 	
 	/** Local reused rewriter for dynamic rewrites during recompile */
 
@@ -1836,26 +1835,6 @@ public class Recompiler
 		long cpThreshold = CP_REBLOCK_THRESHOLD_SIZE * 
 		           OptimizerUtils.getParallelTextReadParallelism();
 		return (estFilesize < cpThreshold);
-	}
-	
-	public static boolean checkCPTransform(MRJobInstruction inst, MatrixObject[] inputs) 
-		throws DMLRuntimeException, IOException 
-	{
-		boolean ret = true;
-		
-		MatrixObject input = inputs[0]; // there can only be one input in TRANSFORM job
-		
-		Path path = new Path(input.getFileName());
-		long sizeOnHDFS = MapReduceTool.getFilesizeOnHDFS(path);
-		
-		// dimensions are not checked here, since the worst case dimensions 
-		// after transformations (with potential dummycoding) are typically unknown.
-		
-		if( sizeOnHDFS > CP_TRANSFORM_UNKNOWN_THRESHOLD_SIZE 
-				|| sizeOnHDFS*4 > OptimizerUtils.getLocalMemBudget() )
-			ret = false;
-		LOG.info("checkCPTransform(): size = " + sizeOnHDFS + ", recompile to CP = " + ret);
-		return ret;
 	}
 	
 	public static boolean checkCPDataGen( MRJobInstruction inst, String updatedRandInst ) 

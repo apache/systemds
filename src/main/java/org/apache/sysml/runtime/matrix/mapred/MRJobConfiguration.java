@@ -231,33 +231,6 @@ public class MRJobConfiguration
 	 */
 	public static final String NUM_NONZERO_CELLS="nonzeros";
 
-	public static final String TF_NUM_COLS 		= "transform.num.columns";
-	public static final String TF_HAS_HEADER 	= "transform.has.header";
-	public static final String TF_DELIM 		= "transform.field.delimiter";
-	public static final String TF_NA_STRINGS 	= "transform.na.strings";
-	public static final String TF_HEADER		= "transform.header.line";
-	public static final String TF_SPEC 	        = "transform.specification";
-	public static final String TF_TMP_LOC    	= "transform.temp.location";
-	public static final String TF_TRANSFORM     = "transform.omit.na.rows";
-	
-	public static final String TF_SMALLEST_FILE= "transform.smallest.file";
-	public static final String TF_OFFSETS_FILE = "transform.offsets.file";
-	public static final String TF_TXMTD_PATH   = "transform.txmtd.path";
-	
-	/*public static enum DataTransformJobProperty 
-	{
-		RCD_NUM_COLS("recode.num.columns");
-		
-		private final String name;
-		private DataTransformJobProperty(String n) {
-			name = n;
-		}
-	}*/
-	
-	public static enum DataTransformCounters { 
-		TRANSFORMED_NUM_ROWS
-	};
-	
 	public static final int getMiscMemRequired(JobConf job)
 	{
 		return job.getInt(MRConfigurationNames.IO_FILE_BUFFER_SIZE, 4096);

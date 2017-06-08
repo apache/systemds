@@ -270,7 +270,7 @@ public class ProgramRewriter
 				try {
 					HopDagValidator.validateHopDag(roots);
 				} catch (HopsException e) {
-					LOG.error("Invalid hop after running "+r.getClass().getName(), e);
+					LOG.error("Invalid hop after rewriting by "+r.getClass().getName(), e);
 					throw e;
 				}
 			}
@@ -289,10 +289,14 @@ public class ProgramRewriter
 		{
 			root.resetVisitStatus(); //reset for each rule
 			root = r.rewriteHopDAG(root, state);
-		
+
 			if( CHECK ) {
-				LOG.info("Validation after: "+r.getClass().getName());
-				HopDagValidator.validateHopDag(root);
+				try {
+					HopDagValidator.validateHopDag(root);
+				} catch (HopsException e) {
+					LOG.error("Invalid hop after rewriting by "+r.getClass().getName(), e);
+					throw e;
+				}
 			}
 		}
 		

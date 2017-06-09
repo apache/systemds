@@ -164,22 +164,22 @@ public class TernaryAggregateTest extends AutomatedTestBase
 	
 	@Test
 	public void testTernaryAggregateRCDenseVectorCPNoRewrite() {
-		runTernaryAggregateTest(TEST_NAME2, false, true, false, ExecType.CP);
+		runTernaryAggregateTest(TEST_NAME1, false, true, false, ExecType.CP);
 	}
 	
 	@Test
 	public void testTernaryAggregateRCSparseVectorCPNoRewrite() {
-		runTernaryAggregateTest(TEST_NAME2, true, true, false, ExecType.CP);
+		runTernaryAggregateTest(TEST_NAME1, true, true, false, ExecType.CP);
 	}
 	
 	@Test
 	public void testTernaryAggregateRCDenseMatrixCPNoRewrite() {
-		runTernaryAggregateTest(TEST_NAME2, false, false, false, ExecType.CP);
+		runTernaryAggregateTest(TEST_NAME1, false, false, false, ExecType.CP);
 	}
 	
 	@Test
 	public void testTernaryAggregateRCSparseMatrixCPNoRewrite() {
-		runTernaryAggregateTest(TEST_NAME2, true, false, false, ExecType.CP);
+		runTernaryAggregateTest(TEST_NAME1, true, false, false, ExecType.CP);
 	}
 	
 	@Test

@@ -60,6 +60,7 @@ public class LibMatrixDNNHelper {
 	 * Factory method that returns list of callable tasks for performing maxpooling backward operation
 	 * 
 	 * @param params convolution parameters
+	 * @param performReluBackward whether to perform ReLU backward
 	 * @return list of callable tasks for performing maxpooling backward operation
 	 * @throws DMLRuntimeException if error occurs
 	 */

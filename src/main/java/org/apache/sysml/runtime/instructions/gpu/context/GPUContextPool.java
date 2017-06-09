@@ -166,7 +166,7 @@ public class GPUContextPool {
 	 * Number of available devices on this machine
 	 *
 	 * @return number of available GPUs on this machine
-	 * @throws DMLRuntimeException
+	 * @throws DMLRuntimeException if error
 	 */
 	public static int getDeviceCount() throws DMLRuntimeException {
 		if (!initialized)

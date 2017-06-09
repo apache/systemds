@@ -124,9 +124,9 @@ public class GPUContextPool {
 	}
 
 	/**
-	 * Reserved and gets an initialized list of GPUContexts
+	 * Reserves and gets an initialized list of GPUContexts
 	 *
-	 * @return null no GPUContexts in pool, otherwise a valid list of GPUContext
+	 * @return null if no GPUContexts in pool, otherwise a valid list of GPUContext
 	 * @throws DMLRuntimeException ?
 	 */
 	public static synchronized List<GPUContext> reserveAllGPUContexts() throws DMLRuntimeException {
@@ -162,6 +162,12 @@ public class GPUContextPool {
 		return deviceProperties[device];
 	}
 
+	/**
+	 * Number of available devices on this machine
+	 *
+	 * @return number of available GPUs on this machine
+	 * @throws DMLRuntimeException
+	 */
 	public static int getDeviceCount() throws DMLRuntimeException {
 		if (!initialized)
 			initializeGPU();

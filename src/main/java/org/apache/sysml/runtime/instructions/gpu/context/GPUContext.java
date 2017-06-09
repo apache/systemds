@@ -176,8 +176,8 @@ public class GPUContext {
 
 	/**
 	 * Sets the device for the calling thread.
-	 * This method must be called after {@link GPUContextPool#getFromPool()}
-	 * is called.
+	 * This method must be called after
+	 * {@link org.apache.sysml.runtime.controlprogram.context.ExecutionContext#getGPUContext(int)}
 	 * If in a multi-threaded env like parfor, this method must be called when in the
 	 * appropriate thread
 	 */

@@ -144,9 +144,9 @@ public class NeuralNetworkOpTests extends GPUTests {
 																		filterSizeInMB, N, K, P, Q, doutSizeInMB,
 																		strideH, strideW, padH, padW);
 														Matrix image = generateInputMatrix(spark, (int) N,
-																(int) (C * H * W), 0.0, 10.0, sparsity, seed);
+																(int) (C * H * W), -127, 127, sparsity, seed);
 														Matrix filter = generateInputMatrix(spark, (int) K,
-																(int) (C * R * S), 0.0, 10.0, sparsity, seed);
+																(int) (C * R * S), -127, 127, sparsity, seed);
 														HashMap<String, Object> inputs = new HashMap<>();
 														inputs.put("N", N);
 														inputs.put("C", C);
@@ -230,8 +230,8 @@ public class NeuralNetworkOpTests extends GPUTests {
 				.format("conv2d, image[%d,%d,%d,%d](%.1fMB), filter[%d,%d,%d,%d](%.1f), dout[%d,%d,%d,%d](%.1fMB), stride[%d,%d], padding[%d,%d]",
 						N, C, H, W, imageSizeInMB, N, C, R, S, filterSizeInMB, N, K, P, Q, doutSizeInMB, strideH,
 						strideW, padH, padW);
-		Matrix image = generateInputMatrix(spark, (int) N, (int) (C * H * W), 0, 1.0, sparsity, seed);
-		Matrix filter = generateInputMatrix(spark, (int) K, (int) (C * R * S), 0, 1.0, sparsity, seed);
+		Matrix image = generateInputMatrix(spark, (int) N, (int) (C * H * W), -1, 1, sparsity, seed);
+		Matrix filter = generateInputMatrix(spark, (int) K, (int) (C * R * S), -1, 1.0, sparsity, seed);
 		HashMap<String, Object> inputs = new HashMap<>();
 		inputs.put("N", N);
 		inputs.put("C", C);
@@ -298,9 +298,9 @@ public class NeuralNetworkOpTests extends GPUTests {
 																		filterSizeInMB, N, K, P, Q, doutSizeInMB,
 																		strideH, strideW, padH, padW);
 														Matrix image = generateInputMatrix(spark, (int) N,
-																(int) (C * H * W), 0.0, 10.0, sparsity, seed);
+																(int) (C * H * W), 0.-127.0, 127, sparsity, seed);
 														Matrix dout = generateInputMatrix(spark, (int) N,
-																(int) (K * P * Q), 0.0, 10.0, sparsity, seed);
+																(int) (K * P * Q), 0.-127.0, 127, sparsity, seed);
 														HashMap<String, Object> inputs = new HashMap<>();
 														inputs.put("N", N);
 														inputs.put("C", C);
@@ -382,9 +382,9 @@ public class NeuralNetworkOpTests extends GPUTests {
 																		strideH, strideW, padH, padW);
 
 														Matrix filter = generateInputMatrix(spark, (int) K,
-																(int) (C * R * S), 0.0, 10.0, sparsity, seed);
+																(int) (C * R * S), 0.-127.0, 127, sparsity, seed);
 														Matrix dout = generateInputMatrix(spark, (int) N,
-																(int) (K * P * Q), 0.0, 10.0, sparsity, seed);
+																(int) (K * P * Q), 0.-127.0, 127, sparsity, seed);
 														HashMap<String, Object> inputs = new HashMap<>();
 														inputs.put("N", N);
 														inputs.put("C", C);
@@ -464,7 +464,7 @@ public class NeuralNetworkOpTests extends GPUTests {
 																	P, Q, doutSizeInMB, strideH, strideW, padH, padW);
 
 													Matrix image = generateInputMatrix(spark, (int) N,
-															(int) (C * H * W), 0.0, 10.0, sparsity, seed);
+															(int) (C * H * W), 0.-127.0, 127, sparsity, seed);
 													HashMap<String, Object> inputs = new HashMap<>();
 													inputs.put("N", N);
 													inputs.put("C", C);
@@ -541,9 +541,9 @@ public class NeuralNetworkOpTests extends GPUTests {
 																	P, Q, doutSizeInMB, strideH, strideW, padH, padW);
 
 													Matrix image = generateInputMatrix(spark, (int) N,
-															(int) (C * H * W), 0.0, 10.0, sparsity, seed);
+															(int) (C * H * W), 0.-127.0, 127, sparsity, seed);
 													Matrix dout = generateInputMatrix(spark, (int) N, (int) (C * P * Q),
-															0.0, 10.0, sparsity, seed);
+															0.-127.0, 127, sparsity, seed);
 													HashMap<String, Object> inputs = new HashMap<>();
 													inputs.put("N", N);
 													inputs.put("C", C);

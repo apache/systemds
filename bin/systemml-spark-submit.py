@@ -157,6 +157,8 @@ if platform.system() == 'Windows':
 
 if args.conf is not None:
     conf = ' --conf '.join(args.conf + [default_conf])
+else:
+    conf = default_conf
 
 cmd_spark = [spark_path, '--master', args.master, '--driver-memory', args.driver_memory,
              '--num-executors', args.num_executors, '--executor-memory', args.executor_memory,

@@ -145,7 +145,9 @@ public class RewriteEMult extends HopRewriteRule {
 		return HopRewriteUtils.createBinary(hop, new LiteralOp(cnt), Hop.OpOp2.POW);
 	}
 
-	private static Comparator<Hop> compareByDataType = Comparator.comparing(Hop::getDataType).thenComparing(Object::hashCode);
+	private static Comparator<Hop> compareByDataType = Comparator.comparing(Hop::getDataType)
+			.thenComparing(Hop::getName)
+			.thenComparingInt(Object::hashCode);
 
 	private static boolean checkForeignParent(final Set<BinaryOp> emults, final BinaryOp child) {
 		final ArrayList<Hop> parents = child.getParent();

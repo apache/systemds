@@ -516,7 +516,6 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 				}
 			}
 		}
-		
 		return ret;
 	}
 	
@@ -631,24 +630,53 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 		Hop input11 = input1.getInput().get(0);
 		Hop input12 = input1.getInput().get(1);
 		
-		Lop in1 = null;
-		Lop in2 = null;
-		Lop in3 = null;
+		Lop in1 = null, in2 = null, in3 = null;
+		boolean handled = false;
 		
-		if( input11 instanceof BinaryOp && ((BinaryOp)input11).getOp()==OpOp2.MULT )
-		{
-			in1 = input11.getInput().get(0).constructLops();
-			in2 = input11.getInput().get(1).constructLops();
-			in3 = input12.constructLops();
+		if( input11 instanceof BinaryOp ) {
+			BinaryOp b11 = (BinaryOp)input11;
+			switch (b11.getOp()) {
+			case MULT: // A*B*C case
+				in1 = input11.getInput().get(0).constructLops();
+				in2 = input11.getInput().get(1).constructLops();
+				in3 = input12.constructLops();
+				handled = true;
+				break;
+			case POW: // A*A*B case
+				Hop b112 = b11.getInput().get(1);
+				if ( !(input12 instanceof BinaryOp && ((BinaryOp)input12).getOp()==OpOp2.MULT)
+						&& b112 instanceof LiteralOp
+						&& ((LiteralOp)b112).getLongValue() == 2) {
+					in1 = b11.getInput().get(0).constructLops();
+					in2 = in1;
+					in3 = input12.constructLops();
+					handled = true;
+				}
+				break;
+			}
+		} else if( input12 instanceof BinaryOp ) {
+			BinaryOp b12 = (BinaryOp)input12;
+			switch (b12.getOp()) {
+			case MULT: // A*B*C case
+				in1 = input11.constructLops();
+				in2 = input12.getInput().get(0).constructLops();
+				in3 = input12.getInput().get(1).constructLops();
+				handled = true;
+				break;
+			case POW: // A*B*B case
+				Hop b112 = b12.getInput().get(1);
+				if ( b112 instanceof LiteralOp
+						&& ((LiteralOp)b112).getLongValue() == 2) {
+					in1 = b12.getInput().get(0).constructLops();
+					in2 = in1;
+					in3 = input11.constructLops();
+					handled = true;
+				}
+				break;
+			}
 		}
-		else if( input12 instanceof BinaryOp && ((BinaryOp)input12).getOp()==OpOp2.MULT )
-		{
-			in1 = input11.constructLops();
-			in2 = input12.getInput().get(0).constructLops();
-			in3 = input12.getInput().get(1).constructLops();
-		}
-		else
-		{
+
+		if (!handled) {
 			in1 = input11.constructLops();
 			in2 = input12.constructLops();
 			in3 = new LiteralOp(1).constructLops();

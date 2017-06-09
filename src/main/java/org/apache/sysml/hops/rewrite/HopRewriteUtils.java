@@ -241,7 +241,22 @@ public class HopRewriteUtils
 		parent.getInput().add( pos, child );
 		child.getParent().add( parent );
 	}
-	
+
+	/**
+	 * Replace an old Hop with a replacement Hop.
+	 * If the old Hop has no parents, then return the replacement.
+	 * Otherwise rewire each of the Hop's parents into the replacement and return the replacement.
+	 * @return replacement
+	 */
+	public static Hop replaceHop(final Hop old, final Hop replacement) {
+		final ArrayList<Hop> rootParents = old.getParent();
+		if (rootParents.isEmpty())
+			return replacement; // new old!
+		HopRewriteUtils.rewireAllParentChildReferences(old, replacement);
+		return replacement;
+	}
+
+
 	public static void rewireAllParentChildReferences( Hop hold, Hop hnew ) {
 		ArrayList<Hop> parents = new ArrayList<Hop>(hold.getParent());
 		for( Hop lparent : parents )

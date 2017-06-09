@@ -162,6 +162,7 @@ public abstract class Expression
 	 * Data types (matrix, scalar, frame, object, unknown).
 	 */
 	public enum DataType {
+		// Careful: the order of these enums is significant! See RewriteEMult.comparatorByDataType
 		MATRIX, SCALAR, FRAME, OBJECT, UNKNOWN;
 		
 		public boolean isMatrix() {
